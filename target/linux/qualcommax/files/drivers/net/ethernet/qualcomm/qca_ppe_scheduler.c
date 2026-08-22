@@ -3,6 +3,7 @@
 #include <linux/clk.h>
 #include <linux/math64.h>
 #include <linux/string.h>
+#include <net/dcbnl.h>
 #include <net/flow_offload.h>
 #include <net/pkt_cls.h>
 
@@ -787,6 +788,138 @@ static struct ppe_qos_prec ppe_qos_prec(struct qca_ppe_priv *priv, int port)
 	};
 }
 
+/* Which classifier decides a packet's priority is a precedence order per port,
+ * and DCB's apptrust is that order in the other direction: the selectors a user
+ * lists, most trusted first. Only the two this hardware can be told about are
+ * offered - PCP and DSCP - and the classifiers a user cannot name keep the
+ * ranking the driver gave them at probe.
+ */
+static const u8 ppe_apptrust_sel[] = { DCB_APP_SEL_PCP, IEEE_8021QAZ_APP_SEL_DSCP };
+
+#define PPE_QOS_GROUP		0
+
+static int ppe_apptrust_prec(struct qca_ppe_priv *priv, int port, u8 sel)
+{
+	struct ppe_qos_prec p = ppe_qos_prec(priv, port);
+	u32 val, mask;
+
+	regmap_read(priv->regmap, p.reg, &val);
+	mask = sel == IEEE_8021QAZ_APP_SEL_DSCP ? p.dscp : p.pcp;
+
+	return field_get(mask, val);
+}
+
+int qca_ppe_port_get_apptrust(struct dsa_switch *ds, int port, u8 *sel,
+			      int *nsel)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+	int dscp, pcp;
+
+	dscp = ppe_apptrust_prec(priv, port, IEEE_8021QAZ_APP_SEL_DSCP);
+	pcp = ppe_apptrust_prec(priv, port, DCB_APP_SEL_PCP);
+
+	*nsel = 2;
+	sel[0] = dscp > pcp ? IEEE_8021QAZ_APP_SEL_DSCP : DCB_APP_SEL_PCP;
+	sel[1] = dscp > pcp ? DCB_APP_SEL_PCP : IEEE_8021QAZ_APP_SEL_DSCP;
+
+	return 0;
+}
+
+int qca_ppe_port_set_apptrust(struct dsa_switch *ds, int port, const u8 *sel,
+			      int nsel)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+	struct ppe_qos_prec p = ppe_qos_prec(priv, port);
+	u32 dscp = 0, pcp = 0;
+	int i, j;
+
+	/* A precedence of zero is a rank and not an off switch: measured, a port
+	 * whose DSCP precedence is zero classifies by DSCP exactly as it does at
+	 * one. This generation can order the two and cannot take either out of
+	 * the running, so a list that leaves one out is refused rather than
+	 * answered with a port that still trusts it.
+	 */
+	if (nsel != ARRAY_SIZE(ppe_apptrust_sel)) {
+		dev_err(priv->ds.dev,
+			"port %d: both selectors have to be listed; this hardware ranks them and cannot untrust one\n",
+			port);
+		return -EOPNOTSUPP;
+	}
+
+	/* Most trusted first. The two keep the band the other classifiers leave
+	 * them - ACL, preheader and flow sit above both - so ordering them is a
+	 * choice between one and zero rather than a rank that could collide.
+	 */
+	for (i = 0; i < nsel; i++) {
+		for (j = 0; j < ARRAY_SIZE(ppe_apptrust_sel); j++)
+			if (sel[i] == ppe_apptrust_sel[j])
+				break;
+		if (j == ARRAY_SIZE(ppe_apptrust_sel))
+			return -EOPNOTSUPP;
+
+		if (sel[i] == IEEE_8021QAZ_APP_SEL_DSCP)
+			dscp = i ? 0 : 1;
+		else
+			pcp = i ? 0 : 1;
+	}
+
+	regmap_update_bits(priv->regmap, p.reg, p.dscp | p.pcp,
+			   field_prep(p.dscp, dscp) | field_prep(p.pcp, pcp));
+
+	return 0;
+}
+
+/* One DSCP table serves every port - the hardware has two of them and selects
+ * between them per port, which is not the per-port mapping DCB describes, so
+ * the driver keeps every port on the same one and tells DSA the mapping is
+ * global.
+ */
+int qca_ppe_port_get_dscp_prio(struct dsa_switch *ds, int port, u8 dscp)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+	u32 val;
+
+	regmap_read(priv->regmap, PPE_DSCP_QOS_GROUP(PPE_QOS_GROUP, dscp),
+		    &val);
+
+	return FIELD_GET(PPE_QOS_INFO_PRI, val);
+}
+
+int qca_ppe_port_add_dscp_prio(struct dsa_switch *ds, int port, u8 dscp,
+			       u8 prio)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+
+	if (prio > PPE_QOS_MAX_PRI)
+		return -ERANGE;
+
+	regmap_update_bits(priv->regmap,
+			   PPE_DSCP_QOS_GROUP(PPE_QOS_GROUP, dscp),
+			   PPE_QOS_INFO_PRI,
+			   FIELD_PREP(PPE_QOS_INFO_PRI, prio));
+
+	return 0;
+}
+
+/* `dcb app replace` adds the new entry before deleting the old one, so a delete
+ * naming a priority the table no longer holds is that ordering and not a
+ * request to undo anything.
+ */
+int qca_ppe_port_del_dscp_prio(struct dsa_switch *ds, int port, u8 dscp,
+			       u8 prio)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+
+	if (qca_ppe_port_get_dscp_prio(ds, port, dscp) != prio)
+		return 0;
+
+	regmap_update_bits(priv->regmap,
+			   PPE_DSCP_QOS_GROUP(PPE_QOS_GROUP, dscp),
+			   PPE_QOS_INFO_PRI, 0);
+
+	return 0;
+}
+
 /* Which classifier's internal priority wins when several offer one: the flow
  * table first, then the CPU preheader, ACL, DSCP and last a VLAN's PCP.
  */
@@ -806,6 +939,15 @@ static void ppe_qos_init(struct qca_ppe_priv *priv)
 				   field_prep(p.dscp, 1) |
 				   field_prep(p.pcp, 0));
 	}
+
+	/* Trusting PCP is only meaningful if the map behind it says something:
+	 * it resets to zero, which would resolve every tagged frame to priority
+	 * 0 and, because the classifier outranks DSCP once trusted, stop DSCP
+	 * deciding as well. The table is indexed by PCP << 1 | DEI.
+	 */
+	for (i = 0; i < PPE_PCP_QOS_ENTRIES; i++)
+		regmap_write(priv->regmap, PPE_PCP_QOS_GROUP(0, i),
+			     FIELD_PREP(PPE_QOS_INFO_PRI, i >> 1));
 }
 
 const struct psch_tdm_data cppe_psch_tdm_data = {
