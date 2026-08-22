@@ -9,6 +9,13 @@ board=$(board_name)
 case "$FIRMWARE" in
 "mediatek/mt7915_eeprom_dbdc.bin")
 	case "$board" in
+	tplink,ex220-v1-nand)
+		EEPROM=/lib/firmware/$FIRMWARE
+		mkdir -p /tmp/rom_file
+		mount -t jffs2 -o ro "/dev/mtdblock$(find_mtd_index misc_ro)" /tmp/rom_file
+		dd if=/tmp/rom_file/0x00180000 of=$EEPROM bs=1 skip=$((0x90000)) count=$((0xe00)) 2>/dev/null
+		umount /tmp/rom_file
+		;;
 	netis,n6)
 		EEPROM=/lib/firmware/$FIRMWARE
 		head -c $((0xe00)) /dev/mtd2 > $EEPROM
