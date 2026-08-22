@@ -1,0 +1,125 @@
+From 3f82f7752df1231a6954504d51e5a6cec50f4e2d Mon Sep 17 00:00:00 2001
+From: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+Date: Wed, 22 Jul 2026 22:47:26 +0200
+Subject: [PATCH 2/6] realtek: set speed for family D
+
+Set speed for family D.
+
+Signed-off-by: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+---
+ drivers/net/dsa/realtek/rtl8365mb_main.c | 65 ++++++++++++++++++++----
+ 1 file changed, 54 insertions(+), 11 deletions(-)
+
+--- a/drivers/net/dsa/realtek/rtl8365mb_main.c
++++ b/drivers/net/dsa/realtek/rtl8365mb_main.c
+@@ -329,6 +329,7 @@
+ #define RTL8365MB_PORT_SPEED_10M	0
+ #define RTL8365MB_PORT_SPEED_100M	1
+ #define RTL8365MB_PORT_SPEED_1000M	2
++#define RTL8365MB_D_PORT_SPEED_2500M	5
+ 
+ /* External interface force configuration registers 0~2 */
+ #define RTL8365MB_DIGITAL_INTERFACE_FORCE_REG0		0x1310 /* EXT0 */
+@@ -347,6 +348,22 @@
+ #define   RTL8365MB_DIGITAL_INTERFACE_FORCE_DUPLEX_MASK		0x0004
+ #define   RTL8365MB_DIGITAL_INTERFACE_FORCE_SPEED_MASK		0x0003
+ 
++#define   RTL8365MB_D_DIGITAL_INTERFACE_FORCE_SPEED2_MASK	0x3000
++
++#define RTL8365MB_D_DIGITAL_INTERFACE_FORCE_REG0		0x12c0 /* EXT0 */
++#define RTL8365MB_D_DIGITAL_INTERFACE_FORCE_REG1		0x12c1 /* EXT1 */
++#define RTL8365MB_D_DIGITAL_INTERFACE_FORCE_REG(_extint) \
++		((_extint) == 0 ? RTL8365MB_D_DIGITAL_INTERFACE_FORCE_REG0 : \
++		 (_extint) == 1 ? RTL8365MB_D_DIGITAL_INTERFACE_FORCE_REG1 : \
++		 0x0)
++
++#define RTL8365MB_D_DIGITAL_INTERFACE_FORCE_REG0_EN	0x12c8 /* EXT0 */
++#define RTL8365MB_D_DIGITAL_INTERFACE_FORCE_REG1_EN	0x12c9 /* EXT1 */
++#define RTL8365MB_D_DIGITAL_INTERFACE_FORCE_REG_EN(_extint) \
++		((_extint) == 0 ? RTL8365MB_D_DIGITAL_INTERFACE_FORCE_REG0_EN : \
++		 (_extint) == 1 ? RTL8365MB_D_DIGITAL_INTERFACE_FORCE_REG1_EN : \
++		 0x0)
++
+ /* CPU port mask register - controls which ports are treated as CPU ports */
+ #define RTL8365MB_CPU_PORT_MASK_REG	0x1219
+ #define   RTL8365MB_CPU_PORT_MASK_MASK	0x07FF
+@@ -1584,21 +1601,29 @@ static int rtl8365mb_ext_config_forcemod
+ 	u32 r_link;
+ 	int val;
+ 	int ret;
++	enum rtl8365mb_family family;
+ 
+ 	if (!extint)
+ 		return -ENODEV;
+ 
++	family = rtl8365mb_get_family(priv);
+ 	if (link) {
+ 		/* Force the link up with the desired configuration */
+ 		r_link = 1;
+ 		r_rx_pause = rx_pause ? 1 : 0;
+ 		r_tx_pause = tx_pause ? 1 : 0;
+ 
+-		/* The speed field has no value for 2.5 Gbps: the rate is
+-		 * determined by the HSGMII SerDes configuration, and the
+-		 * vendor driver programs the 1 Gbps value here.
+-		 */
+-		if (speed == SPEED_2500 || speed == SPEED_1000) {
++		if (speed == SPEED_2500) {
++			if (family == RTL8365MB_FAMILY_C) {
++				/* The speed field has no value for 2.5 Gbps: the rate is
++				 * determined by the HSGMII SerDes configuration, and the
++				 * vendor driver programs the 1 Gbps value here.
++				 */
++				r_speed = RTL8365MB_PORT_SPEED_1000M;
++			} else {
++				r_speed = RTL8365MB_D_PORT_SPEED_2500M;
++			}
++		} else if (speed == SPEED_1000) {
+ 			r_speed = RTL8365MB_PORT_SPEED_1000M;
+ 		} else if (speed == SPEED_100) {
+ 			r_speed = RTL8365MB_PORT_SPEED_100M;
+@@ -1628,8 +1653,7 @@ static int rtl8365mb_ext_config_forcemod
+ 		r_duplex = 0;
+ 	}
+ 
+-	val = FIELD_PREP(RTL8365MB_DIGITAL_INTERFACE_FORCE_EN_MASK, 1) |
+-	      FIELD_PREP(RTL8365MB_DIGITAL_INTERFACE_FORCE_TXPAUSE_MASK,
++	val = FIELD_PREP(RTL8365MB_DIGITAL_INTERFACE_FORCE_TXPAUSE_MASK,
+ 			 r_tx_pause) |
+ 	      FIELD_PREP(RTL8365MB_DIGITAL_INTERFACE_FORCE_RXPAUSE_MASK,
+ 			 r_rx_pause) |
+@@ -1637,11 +1661,30 @@ static int rtl8365mb_ext_config_forcemod
+ 	      FIELD_PREP(RTL8365MB_DIGITAL_INTERFACE_FORCE_DUPLEX_MASK,
+ 			 r_duplex) |
+ 	      FIELD_PREP(RTL8365MB_DIGITAL_INTERFACE_FORCE_SPEED_MASK, r_speed);
+-	ret = regmap_write(priv->map,
+-			   RTL8365MB_DIGITAL_INTERFACE_FORCE_REG(extint->id),
++
++	if (family == RTL8365MB_FAMILY_C) {
++		val |= FIELD_PREP(RTL8365MB_DIGITAL_INTERFACE_FORCE_EN_MASK, 1);
++		ret = regmap_write(priv->map,
++				   RTL8365MB_DIGITAL_INTERFACE_FORCE_REG(extint->id),
++				   val);
++		if (ret)
++			return ret;
++	} else {
++		/* 2500M = 5 = 0b101; 5/(3 + 1) = 1 -> bit 12 set in SPEED2 */
++		val |= FIELD_PREP(RTL8365MB_D_DIGITAL_INTERFACE_FORCE_SPEED2_MASK,
++			   r_speed/(RTL8365MB_DIGITAL_INTERFACE_FORCE_SPEED_MASK + 1));
++		ret = regmap_write(priv->map,
++			   RTL8365MB_D_DIGITAL_INTERFACE_FORCE_REG(extint->id),
+ 			   val);
+-	if (ret)
+-		return ret;
++		if (ret)
++			return ret;
++
++		ret = regmap_write(priv->map,
++				   RTL8365MB_D_DIGITAL_INTERFACE_FORCE_REG_EN(extint->id),
++				   0xffff);
++		if (ret)
++			return ret;
++	}
+ 
+ 	return 0;
+ }

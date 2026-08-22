@@ -1,0 +1,52 @@
+From b9827e4342f9f7c2d12bf45305bc6650afa84d5f Mon Sep 17 00:00:00 2001
+From: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+Date: Fri, 24 Jul 2026 05:35:45 +0200
+Subject: [PATCH 5/6] kernel: set and get vlan 4k for rtl8367d family chips
+
+Set and get vlan 4k for rtl8367d family chips
+
+Signed-off-by: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+---
+ drivers/net/dsa/realtek/rtl8365mb_vlan.c | 17 +++++++++++++++--
+ 1 file changed, 15 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/dsa/realtek/rtl8365mb_vlan.c
++++ b/drivers/net/dsa/realtek/rtl8365mb_vlan.c
+@@ -96,6 +96,8 @@
+ #define RTL8365MB_METERMAX	63
+ #define RTL8365MB_VLAN_MCMAX	31
+ 
++#define RTL8365MB_D_FID_MAX	3
++
+ /* RTL8367S supports 4k vlans (vid<=4095) and 32 enhanced vlans
+  * for VIDs up to 8191
+  */
+@@ -214,7 +216,12 @@ static int rtl8365mb_vlan_4k_read(struct
+ 	val = FIELD_GET(RTL8365MB_CVLAN_ENTRY_D2_UNTAG_EXT_MASK, data[2]);
+ 	vlan4k->untag |= FIELD_PREP(RTL8365MB_CVLAN_UNTAG_HI_MASK, val);
+ 
+-	vlan4k->fid = FIELD_GET(RTL8365MB_CVLAN_ENTRY_D1_FID_MASK, data[1]);
++	val = data[1];
++	/* FID handling differs between families */
++	if (rtl8365mb_get_family(priv) == RTL8365MB_FAMILY_D) {
++		val &= RTL8365MB_D_FID_MAX;
++	}
++	vlan4k->fid = FIELD_GET(RTL8365MB_CVLAN_ENTRY_D1_FID_MASK, val);
+ 	vlan4k->priority_en =
+ 		FIELD_GET(RTL8365MB_CVLAN_ENTRY_D1_VBPEN_MASK, data[1]);
+ 	vlan4k->priority =
+@@ -249,7 +256,13 @@ static int rtl8365mb_vlan_4k_write(struc
+ 	val = FIELD_GET(RTL8365MB_CVLAN_UNTAG_LO_MASK, vlan4k->untag);
+ 	data[0] |= FIELD_PREP(RTL8365MB_CVLAN_ENTRY_D0_UNTAG_MASK, val);
+ 
+-	data[1] |= FIELD_PREP(RTL8365MB_CVLAN_ENTRY_D1_FID_MASK, vlan4k->fid);
++	/* FID handling differs between families */
++	if (rtl8365mb_get_family(priv) == RTL8365MB_FAMILY_D) {
++		val = (vlan4k->fid & RTL8365MB_D_FID_MAX) | 12; /* ivl_svl - BIT(3), svlan_chek_ivl_svl - BIT(2) */
++	} else {
++		val = vlan4k->fid;
++	}
++	data[1] |= FIELD_PREP(RTL8365MB_CVLAN_ENTRY_D1_FID_MASK, val);
+ 	data[1] |= FIELD_PREP(RTL8365MB_CVLAN_ENTRY_D1_VBPEN_MASK,
+ 			      vlan4k->priority_en);
+ 	data[1] |= FIELD_PREP(RTL8365MB_CVLAN_ENTRY_D1_VBPRI_MASK,

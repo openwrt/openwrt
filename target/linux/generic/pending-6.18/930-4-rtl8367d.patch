@@ -1,0 +1,72 @@
+From 40cf854a5004678fb2c2e6ece89864f69d21fa3e Mon Sep 17 00:00:00 2001
+From: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+Date: Fri, 24 Jul 2026 04:38:53 +0200
+Subject: [PATCH 4/6] drivers: rtl8365mb: set RGMII mode for rtl8367d family
+ chips
+
+Set RGMII mode for rtl8367d family chips
+
+Signed-off-by: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+---
+ drivers/net/dsa/realtek/rtl8365mb_main.c | 36 ++++++++++++++++++++++++
+ 1 file changed, 36 insertions(+)
+
+--- a/drivers/net/dsa/realtek/rtl8365mb_main.c
++++ b/drivers/net/dsa/realtek/rtl8365mb_main.c
+@@ -444,6 +444,17 @@
+ #define   RTL8365MB_PORT_MISC_CFG_VLAN_EGRESS_MODE_MASK		0x0030
+ #define   RTL8365MB_PORT_MISC_CFG_CONGESTION_SUSTAIN_TIME_MASK	0x000F
+ 
++#define RTL8365MB_D_REG_EXT_TXC_DLY			0x13f9
++#define RTL8365MB_D_EXT1_RGMII_TX_DLY_MASK			0x38
++
++#define RTL8365MB_D_REG_TOP_CON0				0x1d70
++#define  RTL8365MB_D_MAC7_SEL_EXT1_MASK			0x2000
++#define  RTL8365MB_D_MAC4_SEL_EXT1_MASK			0x1000
++
++#define RTL8365MB_D_REG_SDS1_MISC0				0x1d78
++#define  RTL8365MB_D_SDS1_MODE_MASK			0x1f
++#define  RTL8365MB_D_PORT_SDS_MODE_DISABLE			0x1f
++
+ /**
+  * enum rtl8365mb_vlan_egress_mode - port VLAN egress mode
+  * @RTL8365MB_VLAN_EGRESS_MODE_ORIGINAL: follow untag mask in VLAN4k table entry
+@@ -1132,6 +1143,7 @@ static int rtl8365mb_ext_config_rgmii(st
+ 	int tx_delay = 0;
+ 	int rx_delay = 0;
+ 	u32 val;
++	u32 data;
+ 	int ret;
+ 
+ 	if (!extint)
+@@ -1200,6 +1212,30 @@ static int rtl8365mb_ext_config_rgmii(st
+ 	if (ret)
+ 		return ret;
+ 
++	if ((rtl8365mb_get_family(priv) == RTL8365MB_FAMILY_D) && (extint->id == 1)) {
++		ret = regmap_update_bits(
++			priv->map, RTL8365MB_D_REG_EXT_TXC_DLY,
++			RTL8365MB_D_EXT1_RGMII_TX_DLY_MASK, 0);
++		if (ret)
++			return ret;
++		/* Configure RGMII/MII mux to port 7 if UTP_PORT4 is not RGMII mode */
++		ret = regmap_read(priv->map, RTL8365MB_D_REG_TOP_CON0, &data);
++		if (ret)
++			return ret;
++		if ((data & RTL8365MB_D_MAC4_SEL_EXT1_MASK) == 0) {
++			ret = regmap_update_bits(
++				priv->map, RTL8365MB_D_REG_TOP_CON0,
++				RTL8365MB_D_MAC7_SEL_EXT1_MASK, RTL8365MB_D_MAC7_SEL_EXT1_MASK);
++			if (ret)
++				return ret;
++		}
++		ret = regmap_update_bits(
++			priv->map, RTL8365MB_D_REG_SDS1_MISC0,
++			RTL8365MB_D_SDS1_MODE_MASK, RTL8365MB_D_PORT_SDS_MODE_DISABLE);
++		if (ret)
++			return ret;
++	}
++
+ 	return 0;
+ }
+ 

@@ -1,0 +1,53 @@
+From 5b003497aab98f05f2755ac0a5ef272fa5c99d69 Mon Sep 17 00:00:00 2001
+From: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+Date: Fri, 24 Jul 2026 03:09:09 +0200
+Subject: [PATCH 3/6] realtek: get pvid for family D
+
+Get pvid for family D chips.
+
+Signed-off-by: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+---
+ drivers/net/dsa/realtek/rtl8365mb_vlan.c | 24 ++++++++++++++++++++----
+ 1 file changed, 20 insertions(+), 4 deletions(-)
+
+--- a/drivers/net/dsa/realtek/rtl8365mb_vlan.c
++++ b/drivers/net/dsa/realtek/rtl8365mb_vlan.c
+@@ -113,6 +113,11 @@
+ #define   RTL8365MB_VLAN_PVID_CTRL_PORT_MCIDX_MASK(_p) \
+ 		(0x1F << RTL8365MB_VLAN_PVID_CTRL_PORT_MCIDX_OFFSET(_p))
+ 
++#define RTL8365MB_D_VLAN_PVID_CTRL_BASE			0x0700
++#define RTL8365MB_D_VLAN_PVID_CTRL_REG(port) \
++	(RTL8365MB_D_VLAN_PVID_CTRL_BASE + (port))
++#define RTL8365MB_D_VLAN_PVID_CTRL_MASK			0xFFF
++
+ /* Frame type filtering registers */
+ #define RTL8365MB_VLAN_ACCEPT_FRAME_TYPE_BASE	0x07aa
+ #define RTL8365MB_VLAN_ACCEPT_FRAME_TYPE_REG(port) \
+@@ -679,11 +684,22 @@ int rtl8365mb_vlan_port_get_pvid(struct
+ 	u8 vlanmc_idx;
+ 	int ret;
+ 
+-	ret = rtl8365mb_vlan_get_pvid_mc(priv, port, &vlanmc_idx, &vlanmc);
+-	if (ret)
+-		return ret;
++	if (rtl8365mb_get_family(priv) == RTL8365MB_FAMILY_C) {
++		ret = rtl8365mb_vlan_get_pvid_mc(priv, port, &vlanmc_idx, &vlanmc);
++		if (ret)
++			return ret;
++
++		*pvid = vlanmc.evid;
++	} else {
++		u32 data;
++
++		ret = regmap_read(priv->map, RTL8365MB_D_VLAN_PVID_CTRL_REG(port), &data);
++		if (ret)
++			return ret;
++
++		*pvid = data & RTL8365MB_D_VLAN_PVID_CTRL_MASK;
++	}
+ 
+-	*pvid = vlanmc.evid;
+ 	return 0;
+ }
+ 
