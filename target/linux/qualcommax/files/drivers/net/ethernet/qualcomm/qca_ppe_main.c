@@ -2026,7 +2026,9 @@ static const struct regmap_config ppe_regmap_cfg = {
 
 static int qca_ppe_probe(struct platform_device *pdev)
 {
+	struct regmap_config regmap_cfg;
 	const struct ppe_data *data;
+	struct resource *res;
 	struct device_node *ports;
 	struct qca_ppe_priv *priv;
 	struct reset_control *rst;
@@ -2057,11 +2059,17 @@ static int qca_ppe_probe(struct platform_device *pdev)
 	if (ret)
 		return ret;
 
-	base = devm_platform_ioremap_resource(pdev, 0);
+	base = devm_platform_get_and_ioremap_resource(pdev, 0, &res);
 	if (IS_ERR(base))
 		return dev_err_probe(&pdev->dev, PTR_ERR(base), "failed to ioremap resource");
 
-	priv->regmap = devm_regmap_init_mmio(&pdev->dev, base, &ppe_regmap_cfg);
+	/* Bound the regmap by what is actually mapped: a register the window
+	 * does not cover is an -EIO rather than a fault on unmapped memory.
+	 */
+	regmap_cfg = ppe_regmap_cfg;
+	regmap_cfg.max_register = resource_size(res) - sizeof(u32);
+
+	priv->regmap = devm_regmap_init_mmio(&pdev->dev, base, &regmap_cfg);
 	if (IS_ERR(priv->regmap))
 		return dev_err_probe(&pdev->dev, PTR_ERR(priv->regmap), "failed to init regmap");
 
@@ -2132,7 +2140,6 @@ static int qca_ppe_probe(struct platform_device *pdev)
 	ppe_mac_hw_init(priv);
 	ppe_ctrlpkt_init(priv);
 
-
 	if (data->type == PPE_TYPE_IPQ6018) {
 		ret = ppe_ipq6018_mux_setup(priv);
 		if (ret)
@@ -2142,6 +2149,8 @@ static int qca_ppe_probe(struct platform_device *pdev)
 	ret = dsa_register_switch(ds);
 	if (ret)
 		goto err_clk;
+
+	ppe_debugfs_init(priv);
 
 	platform_set_drvdata(pdev, priv);
 
@@ -2156,6 +2165,7 @@ static void qca_ppe_remove(struct platform_device *pdev)
 {
 	struct qca_ppe_priv *priv = platform_get_drvdata(pdev);
 
+	ppe_debugfs_exit(priv);
 	dsa_unregister_switch(&priv->ds);
 	clk_bulk_disable_unprepare(priv->num_clks, priv->clks);
 }
