@@ -1,0 +1,36 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Thu, 20 Aug 2026 21:23:00 +0200
+Subject: [PATCH] net/sched: sch_tbf: carry the queue limit into the offload
+
+A driver offloading tbf is told the rate and the burst, but not how deep the
+queue behind them may get - and on hardware whose shaper drains a real queue
+that is the parameter which decides the latency the shaper adds. Without it a
+driver has to invent a depth, or ask the user to attach a child red qdisc purely
+to carry a number tbf already knows.
+
+Pass q->limit, which is what the user wrote as limit or latency, alongside
+the rate and the burst. A driver that ignores the new field behaves as before.
+
+Assisted-by: Claude:claude-opus-5
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+--- a/include/net/pkt_cls.h
++++ b/include/net/pkt_cls.h
+@@ -1042,6 +1042,7 @@ enum tc_tbf_command {
+ struct tc_tbf_qopt_offload_replace_params {
+ 	struct psched_ratecfg rate;
+ 	u32 max_size;
++	u32 limit;
+ 	struct gnet_stats_queue *qstats;
+ };
+ 
+--- a/net/sched/sch_tbf.c
++++ b/net/sched/sch_tbf.c
+@@ -153,6 +153,7 @@ static void tbf_offload_change(struct Qd
+ 	qopt.parent = sch->parent;
+ 	qopt.replace_params.rate = q->rate;
+ 	qopt.replace_params.max_size = q->max_size;
++	qopt.replace_params.limit = q->limit;
+ 	qopt.replace_params.qstats = &sch->qstats;
+ 
+ 	dev->netdev_ops->ndo_setup_tc(dev, TC_SETUP_QDISC_TBF, &qopt);
