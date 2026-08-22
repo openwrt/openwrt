@@ -126,8 +126,10 @@
 #define EDMA_RXDESC_INT_MASK_PKT_INT 0x1
 #define EDMA_RX_MOD_TIMER_INIT 1000
 
-/* QID to ring mapping */
-#define EDMA_QID2RID_TABLE_MEM(q) (0x5a000 + (0x4 * (q)))
+/* PPE queue to receive ring mapping: 64 entries of eight four-bit ring ids */
+#define EDMA_QID2RID_TABLE_MEM(n) (0x5a000 + (0x4 * (n)))
+#define EDMA_QID2RID_DEPTH 0x40
+#define EDMA_QID2RID_RING_MASK 0xf
 
 /* TXDESC to TXCMPL ring mapping */
 #define EDMA_REG_TXDESC2CMPL_MAP(n) (0x0c + 0x4 * (n))
