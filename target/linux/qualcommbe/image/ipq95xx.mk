@@ -14,6 +14,17 @@ define Device/8devices_kiwi-dvk
 endef
 TARGET_DEVICES += 8devices_kiwi-dvk
 
+define Device/linksys_ln6001
+	$(call Device/FitImage)
+	DEVICE_VENDOR := Linksys
+	DEVICE_MODEL := LN6001
+	DEVICE_DTS := ipq9574-linksys-ln6001
+	SOC := ipq9574
+	DEVICE_PACKAGES += kmod-leds-pwm
+	IMAGES :=
+endef
+TARGET_DEVICES += linksys_ln6001
+
 define Device/qcom_rdp433
 	$(call Device/FitImageLzma)
 	DEVICE_VENDOR := Qualcomm Technologies, Inc.
