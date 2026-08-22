@@ -75,6 +75,7 @@ define Package/comgt/install
 	$(INSTALL_DATA) ./files/setpin.gcom $(1)/etc/gcom/setpin.gcom
 	$(INSTALL_DATA) ./files/setmode.gcom $(1)/etc/gcom/setmode.gcom
 	$(INSTALL_DATA) ./files/getcardinfo.gcom $(1)/etc/gcom/getcardinfo.gcom
+	$(INSTALL_DATA) ./files/getmodel.gcom $(1)/etc/gcom/getmodel.gcom
 	$(INSTALL_DATA) ./files/getstrength.gcom $(1)/etc/gcom/getstrength.gcom
 	$(INSTALL_DATA) ./files/getcarrier.gcom $(1)/etc/gcom/getcarrier.gcom
 	$(INSTALL_DATA) ./files/getcnum.gcom $(1)/etc/gcom/getcnum.gcom
