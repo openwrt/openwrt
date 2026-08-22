@@ -17,6 +17,9 @@
 #include <linux/regmap.h>
 #include <linux/reset.h>
 #include <linux/version.h>
+#include <net/dsa.h>
+#include <net/pkt_cls.h>
+
 #include "qca_edma.h"
 
 static void edma_irq_disable_all(struct edma_priv *priv)
@@ -1063,7 +1066,24 @@ drop:
 	return NETDEV_TX_OK;
 }
 
+/* The kernel binds a netfilter flowtable to the DSA user ports, and DSA
+ * forwards the block to the conduit - this driver - rather than to the switch.
+ * Hand it straight back to the switch, which owns the flow tables.
+ */
+static int edma_setup_tc(struct net_device *dev, enum tc_setup_type type,
+			 void *type_data)
+{
+	struct dsa_port *cpu_dp = dev->dsa_ptr;
+
+	if (type != TC_SETUP_FT || !cpu_dp || !cpu_dp->ds->ops->port_setup_tc)
+		return -EOPNOTSUPP;
+
+	return cpu_dp->ds->ops->port_setup_tc(cpu_dp->ds, cpu_dp->index, type,
+					      type_data);
+}
+
 static const struct net_device_ops edma_netdev_ops = {
+	.ndo_setup_tc		= edma_setup_tc,
 	.ndo_open = edma_ndo_open,
 	.ndo_stop = edma_ndo_stop,
 	.ndo_start_xmit = edma_ndo_xmit,
