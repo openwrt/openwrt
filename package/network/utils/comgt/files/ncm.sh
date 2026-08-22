@@ -17,6 +17,7 @@ proto_ncm_init_config() {
 	proto_config_add_string password
 	proto_config_add_string pincode
 	proto_config_add_string delay
+	proto_config_add_int linksettle
 	proto_config_add_string mode
 	proto_config_add_string pdptype
 	proto_config_add_boolean sourcefilter
@@ -24,6 +25,31 @@ proto_ncm_init_config() {
 	proto_config_add_int profile
 	proto_config_add_int mtu
 	proto_config_add_defaults
+}
+
+# Wait for the data link to settle after connecting. Modems typically raise
+# carrier as soon as the call starts and drop it again briefly while the
+# connection is finalised, and the PDP address can change across that flap.
+# Running DHCP too early yields a lease belonging to the dead session.
+ncm_wait_link() {
+	local ifname="$1" settle="$2" timeout="$3"
+	local stable=0 waited=0 carrier
+
+	/sbin/ip link set dev "$ifname" up 2>/dev/null
+
+	while [ "$waited" -lt "$timeout" ]; do
+		carrier=$(cat "/sys/class/net/$ifname/carrier" 2>/dev/null)
+		if [ "$carrier" = "1" ]; then
+			stable=$((stable + 1))
+			[ "$stable" -ge "$settle" ] && return 0
+		else
+			stable=0
+		fi
+		sleep 1
+		waited=$((waited + 1))
+	done
+
+	return 1
 }
 
 proto_ncm_setup() {
@@ -34,8 +60,8 @@ proto_ncm_setup() {
 	local delegate ip4table ip6table mtu sourcefilter $PROTO_DEFAULT_OPTIONS
 	json_get_vars delegate ip4table ip6table mtu sourcefilter $PROTO_DEFAULT_OPTIONS
 
-	local apn auth delay device ifname mode password pdptype pincode profile username
-	json_get_vars apn auth delay device ifname mode password pdptype pincode profile username
+	local apn auth delay device ifname linksettle mode password pdptype pincode profile username
+	json_get_vars apn auth delay device ifname linksettle mode password pdptype pincode profile username
 
 	[ "$metric" = "" ] && metric="0"
 
@@ -177,6 +203,12 @@ proto_ncm_setup() {
 	}
 
 	json_get_vars finalize
+
+	[ -n "$linksettle" ] || linksettle=3
+	[ "$linksettle" -gt 0 ] && {
+		ncm_wait_link "$ifname" "$linksettle" 30 || \
+			echo "Link did not settle, continuing anyway"
+	}
 
 	echo "Setting up $ifname"
 	proto_init_update "$ifname" 1
