@@ -25,7 +25,7 @@ static DEFINE_MUTEX(rtl931x_stack_lock);
 static struct genl_family rtl931x_stack_family;
 
 #define RTL931X_TALK_MAGIC		0x4f53544b /* "OSTK" */
-#define RTL931X_TALK_VERSION		7
+#define RTL931X_TALK_VERSION		8
 #define RTL931X_TALK_PROBE_MESSAGE_LEN	37
 #define RTL931X_TALK_MAX_MESSAGE_LEN	112
 #define RTL931X_TALK_RX_QUEUE_LEN	64
@@ -35,6 +35,9 @@ static struct genl_family rtl931x_stack_family;
 #define RTL931X_TALK_RPC_BUSY_ATTEMPTS	8
 #define RTL931X_TALK_RPC_RETRY_MIN_US	10000
 #define RTL931X_TALK_RPC_RETRY_MAX_US	20000
+#define RTL931X_TALK_PORT_STATUS_RETRY_MS	100
+#define RTL931X_STACK_CARRIER_SYNC_MS	5000
+#define RTL931X_STACK_CARRIER_RETRY_MS	1000
 #define RTL931X_TALK_TARGET_ONE_HOP	0xff
 #define RTL931X_TALK_F_ROUTED		BIT(0)
 #define RTL931X_TALK_F_MASK		RTL931X_TALK_F_ROUTED
@@ -44,6 +47,7 @@ enum rtl931x_talk_type {
 	RTL931X_TALK_TYPE_PONG,
 	RTL931X_TALK_TYPE_RPC_REQUEST,
 	RTL931X_TALK_TYPE_RPC_REPLY,
+	RTL931X_TALK_TYPE_PORT_STATUS,
 };
 
 enum rtl931x_talk_rpc_opcode {
@@ -187,6 +191,16 @@ struct rtl931x_talk_rpc_bridge_sources_request {
 	u8 reserved[4];
 } __packed;
 
+struct rtl931x_talk_port_status {
+	__be64 receiver_boot_nonce;
+	__be64 sequence;
+	__be64 user_port_mask;
+	__be64 carrier_mask;
+	__be32 generation;
+	u8 master_device;
+	u8 reserved[3];
+} __packed;
+
 static_assert(sizeof(struct rtl931x_talk_header) == 28);
 static_assert(sizeof(struct rtl931x_talk_probe) == 9);
 static_assert(RTL931X_TALK_PROBE_MESSAGE_LEN ==
@@ -205,6 +219,7 @@ static_assert(sizeof(struct rtl931x_talk_rpc_delegated_request) == 8);
 static_assert(sizeof(struct rtl931x_talk_rpc_bridge_port_request) == 8);
 static_assert(sizeof(struct rtl931x_talk_rpc_port_vlan_request) == 12);
 static_assert(sizeof(struct rtl931x_talk_rpc_bridge_sources_request) == 16);
+static_assert(sizeof(struct rtl931x_talk_port_status) == 40);
 
 static const u8 rtl931x_talk_dest[ETH_ALEN] = {
 	0x02, 0x00, 0x00, 0x93, 0x10, 0x01,
@@ -339,6 +354,7 @@ static void rtl931x_stack_talk_peer_clear(struct rtl931x_stack_context *stack)
 	stack->last_mutation_opcode = 0;
 	stack->last_mutation_len = 0;
 	stack->last_mutation_result = 0;
+	WRITE_ONCE(stack->peer_port_status_sequence, 0);
 	memset(stack->last_mutation_body, 0,
 	       sizeof(stack->last_mutation_body));
 }
@@ -366,6 +382,7 @@ static void rtl931x_stack_talk_peer_set(struct rtl931x_stack_context *stack,
 		stack->last_mutation_opcode = 0;
 		stack->last_mutation_len = 0;
 		stack->last_mutation_result = 0;
+		WRITE_ONCE(stack->peer_port_status_sequence, 0);
 		memset(stack->last_mutation_body, 0,
 		       sizeof(stack->last_mutation_body));
 	}
@@ -507,10 +524,11 @@ rtl931x_stack_talk_probe_validate(struct sk_buff *skb,
 }
 
 static bool
-rtl931x_stack_talk_rpc_session_validate(struct rtl931x_stack_context *stack,
-					const struct rtl931x_talk_header *header,
-					const struct rtl931x_talk_rpc_header *rpc,
-					const struct rtl931x_talk_rx_metadata *metadata)
+rtl931x_stack_talk_session_validate(struct rtl931x_stack_context *stack,
+				    const struct rtl931x_talk_header *header,
+				    u64 receiver_boot_nonce, u32 generation,
+				    u8 master_device,
+				    const struct rtl931x_talk_rx_metadata *metadata)
 {
 	u64 peer_boot_nonce;
 	u32 device_generation;
@@ -528,9 +546,21 @@ rtl931x_stack_talk_rpc_session_validate(struct rtl931x_stack_context *stack,
 	       header->sender_device == READ_ONCE(stack->peer_id) &&
 	       header->target_device == READ_ONCE(stack->member_id) &&
 	       be64_to_cpu(header->boot_nonce) == peer_boot_nonce &&
-	       be64_to_cpu(rpc->receiver_boot_nonce) == stack->talk_boot_nonce &&
-	       be32_to_cpu(rpc->generation) == READ_ONCE(stack->generation) &&
-	       rpc->master_device == READ_ONCE(stack->master_id);
+	       receiver_boot_nonce == stack->talk_boot_nonce &&
+	       generation == READ_ONCE(stack->generation) &&
+	       master_device == READ_ONCE(stack->master_id);
+}
+
+static bool
+rtl931x_stack_talk_rpc_session_validate(struct rtl931x_stack_context *stack,
+					const struct rtl931x_talk_header *header,
+					const struct rtl931x_talk_rpc_header *rpc,
+					const struct rtl931x_talk_rx_metadata *metadata)
+{
+	return rtl931x_stack_talk_session_validate(stack, header,
+					   be64_to_cpu(rpc->receiver_boot_nonce),
+					   be32_to_cpu(rpc->generation),
+					   rpc->master_device, metadata);
 }
 
 static bool
@@ -569,6 +599,35 @@ rtl931x_stack_talk_rpc_validate(struct rtl931x_stack_context *stack,
 		return false;
 
 	return true;
+}
+
+static bool
+rtl931x_stack_talk_port_status_validate(struct rtl931x_stack_context *stack,
+					struct sk_buff *skb,
+					const struct rtl931x_talk_header *header,
+					const struct rtl931x_talk_rx_metadata *metadata,
+					struct rtl931x_talk_port_status *status)
+{
+	u64 user_port_mask;
+	u64 carrier_mask;
+
+	if (header->type != RTL931X_TALK_TYPE_PORT_STATUS ||
+	    header->message_len != sizeof(*header) + sizeof(*status) ||
+	    be16_to_cpu(header->flags) != RTL931X_TALK_F_ROUTED ||
+	    skb_copy_bits(skb, sizeof(*header), status, sizeof(*status)))
+		return false;
+
+	user_port_mask = be64_to_cpu(status->user_port_mask);
+	carrier_mask = be64_to_cpu(status->carrier_mask);
+	if (!be64_to_cpu(status->sequence) ||
+	    carrier_mask & ~user_port_mask ||
+	    memchr_inv(status->reserved, 0, sizeof(status->reserved)))
+		return false;
+
+	return rtl931x_stack_talk_session_validate(stack, header,
+				be64_to_cpu(status->receiver_boot_nonce),
+				be32_to_cpu(status->generation),
+				status->master_device, metadata);
 }
 
 static u32 rtl931x_stack_carrier_changes(const struct net_device *dev)
@@ -767,6 +826,128 @@ rtl931x_stack_talk_user_port_mask(struct rtl931x_stack_context *stack)
 	return mask;
 }
 
+static void
+rtl931x_stack_port_status_retry(struct rtl931x_stack_context *stack,
+				u64 changed_mask, u64 up_mask)
+{
+	unsigned long flags;
+	u64 retry_mask;
+
+	spin_lock_irqsave(&stack->port_status_lock, flags);
+	retry_mask = changed_mask & ~stack->port_status_changed_mask;
+	stack->port_status_up_mask &= ~retry_mask;
+	stack->port_status_up_mask |= up_mask & retry_mask;
+	stack->port_status_changed_mask |= retry_mask;
+	spin_unlock_irqrestore(&stack->port_status_lock, flags);
+	mod_delayed_work(system_wq, &stack->port_status_work,
+			 msecs_to_jiffies(RTL931X_TALK_PORT_STATUS_RETRY_MS));
+}
+
+static void rtl931x_stack_port_status_work(struct work_struct *work)
+{
+	struct rtl931x_stack_context *stack = container_of(to_delayed_work(work),
+		struct rtl931x_stack_context, port_status_work);
+	struct rtl931x_talk_port_status status = {};
+	unsigned long flags;
+	u32 device_generation;
+	u64 peer_boot_nonce;
+	u64 changed_mask;
+	u64 carrier_mask = 0;
+	u64 user_port_mask;
+	u64 up_mask;
+	u64 sequence;
+	struct dsa_port *dp;
+	int device;
+	int err;
+
+	if (!rtnl_trylock()) {
+		mod_delayed_work(system_wq, &stack->port_status_work,
+				 msecs_to_jiffies(RTL931X_TALK_PORT_STATUS_RETRY_MS));
+		return;
+	}
+	if (!stack->registered || !stack->enabled ||
+	    stack->member_id == stack->master_id ||
+	    !stack->delegated_port_mask || !stack->fabric_link_up ||
+	    !rtl931x_stack_talk_peer_get(stack, &peer_boot_nonce))
+		goto out_unlock;
+
+	spin_lock_irqsave(&stack->port_status_lock, flags);
+	changed_mask = stack->port_status_changed_mask;
+	up_mask = stack->port_status_up_mask;
+	stack->port_status_changed_mask = 0;
+	spin_unlock_irqrestore(&stack->port_status_lock, flags);
+	if (!changed_mask)
+		goto out_unlock;
+
+	user_port_mask = rtl931x_stack_talk_user_port_mask(stack);
+	dsa_switch_for_each_user_port(dp, stack->priv->ds)
+		if (user_port_mask & BIT_ULL(dp->index) && dp->user &&
+		    netif_carrier_ok(dp->user))
+			carrier_mask |= BIT_ULL(dp->index);
+	changed_mask &= user_port_mask;
+	carrier_mask &= ~changed_mask;
+	carrier_mask |= up_mask & changed_mask;
+
+	device = rtl931x_stack_cpu_device_get(stack->priv,
+					      &device_generation);
+	if (device < 0) {
+		rtl931x_stack_port_status_retry(stack, changed_mask, up_mask);
+		goto out_unlock;
+	}
+	sequence = stack->port_status_sequence + 1;
+	if (!sequence)
+		sequence++;
+	status.receiver_boot_nonce = cpu_to_be64(peer_boot_nonce);
+	status.sequence = cpu_to_be64(sequence);
+	status.user_port_mask = cpu_to_be64(user_port_mask);
+	status.carrier_mask = cpu_to_be64(carrier_mask);
+	status.generation = cpu_to_be32(stack->generation);
+	status.master_device = stack->master_id;
+	err = rtl931x_stack_talk_xmit(stack, RTL931X_TALK_TYPE_PORT_STATUS,
+				      RTL931X_STACK_TALK_MODE_UNICAST,
+				      stack->peer_id, stack->port, sequence,
+				      &status, sizeof(status), device_generation);
+	if (err) {
+		rtl931x_stack_port_status_retry(stack, changed_mask, up_mask);
+		goto out_unlock;
+	}
+	stack->port_status_sequence = sequence;
+
+	spin_lock_irqsave(&stack->port_status_lock, flags);
+	changed_mask = stack->port_status_changed_mask;
+	spin_unlock_irqrestore(&stack->port_status_lock, flags);
+	if (changed_mask)
+		mod_delayed_work(system_wq, &stack->port_status_work, 0);
+
+out_unlock:
+	rtnl_unlock();
+}
+
+void rtl931x_stack_port_link_change(struct rtl838x_switch_priv *priv,
+				    int port, bool up)
+{
+	struct rtl931x_stack_context *stack = &priv->stack;
+	unsigned long flags;
+	u64 bit;
+
+	if (!READ_ONCE(stack->enabled) || port < 0 ||
+	    port >= RTL931X_STACK_MAX_PORTS ||
+	    port == READ_ONCE(stack->port) ||
+	    READ_ONCE(stack->member_id) == READ_ONCE(stack->master_id) ||
+	    !(READ_ONCE(stack->delegated_port_mask) & BIT_ULL(port)))
+		return;
+
+	bit = BIT_ULL(port);
+	spin_lock_irqsave(&stack->port_status_lock, flags);
+	stack->port_status_changed_mask |= bit;
+	if (up)
+		stack->port_status_up_mask |= bit;
+	else
+		stack->port_status_up_mask &= ~bit;
+	spin_unlock_irqrestore(&stack->port_status_lock, flags);
+	mod_delayed_work(system_wq, &stack->port_status_work, 0);
+}
+
 static int
 rtl931x_stack_set_local_delegated_ports(struct rtl931x_stack_context *stack,
 					bool delegated,
@@ -942,6 +1123,7 @@ rtl931x_stack_set_delegated_state(struct rtl931x_stack_context *stack,
 				  bool delegated,
 				  struct netlink_ext_ack *extack)
 {
+	unsigned long flags;
 	int matrix_err;
 	int err;
 
@@ -958,6 +1140,13 @@ rtl931x_stack_set_delegated_state(struct rtl931x_stack_context *stack,
 						      stack->delegated_port_mask);
 	if (matrix_err)
 		return matrix_err;
+	if (!stack->delegated_port_mask) {
+		cancel_delayed_work(&stack->port_status_work);
+		spin_lock_irqsave(&stack->port_status_lock, flags);
+		stack->port_status_changed_mask = 0;
+		stack->port_status_up_mask = 0;
+		spin_unlock_irqrestore(&stack->port_status_lock, flags);
+	}
 
 	return err;
 }
@@ -1964,19 +2153,19 @@ rtl931x_stack_talk_rpc_get_switch_info(struct rtl931x_stack_context *stack,
 	u64 delegated_port_mask = 0;
 	u32 capabilities;
 	struct dsa_port *dp;
-	u16 result = RTL931X_TALK_RPC_OK;
 
-	if (!rtnl_trylock())
-		return RTL931X_TALK_RPC_BUSY;
+	/*
+	 * DSA ports and their user netdevices remain stable while the stack is
+	 * registered.  The reported netdevice and delegation state can be read
+	 * locklessly, so do not make this read-only snapshot contend for RTNL.
+	 */
 	user_port_mask = rtl931x_stack_talk_user_port_mask(stack);
 
 	dsa_switch_for_each_user_port(dp, stack->priv->ds) {
 		if (!(user_port_mask & BIT_ULL(dp->index)))
 			continue;
-		if (!dp->user) {
-			result = RTL931X_TALK_RPC_NO_DEVICE;
-			goto out_unlock;
-		}
+		if (!dp->user)
+			return RTL931X_TALK_RPC_NO_DEVICE;
 		if (netif_running(dp->user))
 			admin_up_mask |= BIT_ULL(dp->index);
 		if (netif_carrier_ok(dp->user))
@@ -1984,10 +2173,8 @@ rtl931x_stack_talk_rpc_get_switch_info(struct rtl931x_stack_context *stack,
 		if (READ_ONCE(dp->delegated))
 			delegated_port_mask |= BIT_ULL(dp->index);
 	}
-	if (!user_port_mask) {
-		result = RTL931X_TALK_RPC_NO_DEVICE;
-		goto out_unlock;
-	}
+	if (!user_port_mask)
+		return RTL931X_TALK_RPC_NO_DEVICE;
 
 	info->user_port_mask = cpu_to_be64(user_port_mask);
 	info->admin_up_mask = cpu_to_be64(admin_up_mask);
@@ -1996,7 +2183,8 @@ rtl931x_stack_talk_rpc_get_switch_info(struct rtl931x_stack_context *stack,
 	capabilities =
 		RTL931X_STACK_PEER_CAP_GET_SWITCH |
 		RTL931X_STACK_PEER_CAP_GET_PORT_STATE |
-		RTL931X_STACK_PEER_CAP_SET_DELEGATED;
+		RTL931X_STACK_PEER_CAP_SET_DELEGATED |
+		RTL931X_STACK_PEER_CAP_PORT_STATUS_EVENT;
 	if (!READ_ONCE(stack->flags))
 		capabilities |= RTL931X_STACK_PEER_CAP_BRIDGE_VLAN;
 	info->capabilities = cpu_to_be32(capabilities);
@@ -2006,9 +2194,7 @@ rtl931x_stack_talk_rpc_get_switch_info(struct rtl931x_stack_context *stack,
 	info->stack_port = READ_ONCE(stack->port);
 	info->protocol_version = RTL931X_TALK_VERSION;
 
-out_unlock:
-	rtnl_unlock();
-	return result;
+	return RTL931X_TALK_RPC_OK;
 }
 
 static u16
@@ -2465,6 +2651,7 @@ static int rtl931x_stack_talk_rcv(struct sk_buff *skb, struct net_device *dev,
 	struct rtl931x_talk_rpc_header rpc;
 	struct rtl931x_talk_header header;
 	struct rtl931x_talk_probe probe;
+	struct rtl931x_talk_port_status status;
 	bool queued = false;
 
 	if (!rtl931x_stack_talk_header_validate(stack, skb, &header,
@@ -2473,6 +2660,10 @@ static int rtl931x_stack_talk_rcv(struct sk_buff *skb, struct net_device *dev,
 	if (header.type == RTL931X_TALK_TYPE_PING ||
 	    header.type == RTL931X_TALK_TYPE_PONG) {
 		if (!rtl931x_stack_talk_probe_validate(skb, &header, &probe))
+			goto drop;
+	} else if (header.type == RTL931X_TALK_TYPE_PORT_STATUS) {
+		if (!rtl931x_stack_talk_port_status_validate(stack, skb, &header,
+							     &metadata, &status))
 			goto drop;
 	} else if (!rtl931x_stack_talk_rpc_validate(stack, skb, &header,
 						       &metadata, &rpc, NULL)) {
@@ -2496,6 +2687,31 @@ static int rtl931x_stack_talk_rcv(struct sk_buff *skb, struct net_device *dev,
 drop:
 	kfree_skb(skb);
 	return 0;
+}
+
+static void
+rtl931x_stack_talk_port_status_receive(struct rtl931x_stack_context *stack,
+				       const struct rtl931x_talk_port_status *status)
+{
+	u64 sequence = be64_to_cpu(status->sequence);
+	int err;
+
+	if (!rtnl_trylock())
+		return;
+	if (!stack->registered || stack->member_id != stack->master_id ||
+	    sequence <= READ_ONCE(stack->peer_port_status_sequence))
+		goto out_unlock;
+
+	WRITE_ONCE(stack->peer_port_status_sequence, sequence);
+	err = rtl931x_stack_reps_carrier_update(stack->priv,
+						be64_to_cpu(status->user_port_mask),
+						be64_to_cpu(status->carrier_mask));
+	if (err && err != -ENODEV)
+		dev_err_ratelimited(stack->priv->dev, "failed to apply peer port status event: %pe\n",
+				    ERR_PTR(err));
+
+out_unlock:
+	rtnl_unlock();
 }
 
 static void
@@ -2548,6 +2764,7 @@ static void rtl931x_stack_talk_work(struct work_struct *work)
 	struct rtl931x_talk_rpc_header rpc;
 	struct rtl931x_talk_header header;
 	struct rtl931x_talk_probe probe;
+	struct rtl931x_talk_port_status status;
 	struct sk_buff *skb;
 	int device;
 	u16 flags;
@@ -2572,6 +2789,13 @@ static void rtl931x_stack_talk_work(struct work_struct *work)
 			else
 				rtl931x_stack_talk_rpc_serve(stack, &header, &rpc,
 						      &metadata, rpc_body);
+			goto next;
+		}
+		if (header.type == RTL931X_TALK_TYPE_PORT_STATUS) {
+			if (!rtl931x_stack_talk_port_status_validate(stack, skb, &header,
+								     &metadata, &status))
+				goto next;
+			rtl931x_stack_talk_port_status_receive(stack, &status);
 			goto next;
 		}
 
@@ -2987,6 +3211,8 @@ int rtl931x_stack_peer_get_switch_info(struct rtl838x_switch_priv *priv,
 	      max_body_len < sizeof(struct rtl931x_talk_rpc_port_vlan_request))) ||
 	    ((capabilities & RTL931X_STACK_PEER_CAP_GET_PORT_STATE) &&
 	     max_body_len < sizeof(struct rtl931x_talk_rpc_port_state)) ||
+	    ((capabilities & RTL931X_STACK_PEER_CAP_PORT_STATUS_EVENT) &&
+	     !(capabilities & RTL931X_STACK_PEER_CAP_GET_SWITCH)) ||
 	    max_body_len < sizeof(struct rtl931x_talk_rpc_port_request) ||
 	    max_body_len > RTL931X_STACK_RPC_MAX_BODY_LEN) {
 		NL_SET_ERR_MSG_MOD(extack,
@@ -4253,6 +4479,60 @@ static struct genl_family rtl931x_stack_family __ro_after_init = {
 	.n_small_ops = ARRAY_SIZE(rtl931x_stack_ops),
 };
 
+void rtl931x_stack_carrier_sync_start(struct rtl838x_switch_priv *priv)
+{
+	mod_delayed_work(system_wq, &priv->stack.reps_carrier_work,
+			 msecs_to_jiffies(RTL931X_STACK_CARRIER_SYNC_MS));
+}
+
+void rtl931x_stack_carrier_sync_stop(struct rtl838x_switch_priv *priv)
+{
+	cancel_delayed_work(&priv->stack.reps_carrier_work);
+}
+
+static void rtl931x_stack_reps_carrier_work(struct work_struct *work)
+{
+	struct rtl931x_stack_context *stack = container_of(to_delayed_work(work),
+		struct rtl931x_stack_context, reps_carrier_work);
+	struct rtl931x_stack_peer_switch_info info;
+	bool active, published, fenced;
+	unsigned long delay;
+	int err;
+
+	if (!rtnl_trylock()) {
+		mod_delayed_work(system_wq, &stack->reps_carrier_work,
+				 msecs_to_jiffies(RTL931X_STACK_CARRIER_RETRY_MS));
+		return;
+	}
+	rtl931x_stack_reps_get_status(stack->priv, &active, &published, &fenced);
+	if (!stack->registered || !stack->enabled ||
+	    stack->member_id != stack->master_id ||
+	    !stack->reps_desired || !stack->fabric_link_up ||
+	    !active || !published || fenced)
+		goto out_unlock;
+
+	err = rtl931x_stack_peer_get_switch_info(stack->priv, &info, NULL);
+	if (!err)
+		err = rtl931x_stack_reps_carrier_update(stack->priv,
+							info.user_port_mask,
+							info.carrier_mask);
+	if (err)
+		dev_err_ratelimited(stack->priv->dev, "failed to resynchronize peer port carrier: %pe\n",
+				    ERR_PTR(err));
+
+	rtl931x_stack_reps_get_status(stack->priv, &active, &published, &fenced);
+	if (stack->reps_desired && stack->fabric_link_up && active &&
+	    published && !fenced) {
+		delay = msecs_to_jiffies(err ?
+			RTL931X_STACK_CARRIER_RETRY_MS :
+			RTL931X_STACK_CARRIER_SYNC_MS);
+		mod_delayed_work(system_wq, &stack->reps_carrier_work, delay);
+	}
+
+out_unlock:
+	rtnl_unlock();
+}
+
 static void rtl931x_stack_reps_recovery_work(struct work_struct *work)
 {
 	struct rtl931x_stack_context *stack = container_of(to_delayed_work(work),
@@ -4314,11 +4594,16 @@ void rtl931x_stack_register(struct rtl838x_switch_priv *priv)
 	stack->priv = priv;
 	mutex_init(&stack->talk_request_lock);
 	spin_lock_init(&stack->talk_reply_lock);
+	spin_lock_init(&stack->port_status_lock);
 	init_completion(&stack->talk_reply_completion);
 	stack->talk_peer_boot_nonce = 0;
 	stack->talk_peer_valid = false;
 	stack->talk_pending = false;
 	stack->talk_pending_rpc = false;
+	stack->port_status_changed_mask = 0;
+	stack->port_status_up_mask = 0;
+	stack->port_status_sequence = 0;
+	stack->peer_port_status_sequence = 0;
 	stack->delegated_port_mask = 0;
 	stack->delegated_opened_port_mask = 0;
 	stack->delegated_matrix_mask = 0;
@@ -4349,6 +4634,10 @@ void rtl931x_stack_register(struct rtl838x_switch_priv *priv)
 	atomic_set(&stack->fabric_link_epoch, 0);
 	skb_queue_head_init(&stack->talk_rx_queue);
 	INIT_WORK(&stack->talk_rx_work, rtl931x_stack_talk_work);
+	INIT_DELAYED_WORK(&stack->port_status_work,
+			  rtl931x_stack_port_status_work);
+	INIT_DELAYED_WORK(&stack->reps_carrier_work,
+			  rtl931x_stack_reps_carrier_work);
 	INIT_DELAYED_WORK(&stack->reps_recovery_work,
 			  rtl931x_stack_reps_recovery_work);
 	do {
@@ -4384,6 +4673,8 @@ void rtl931x_stack_unregister(struct rtl838x_switch_priv *priv)
 	struct net_device *stack_port = NULL;
 	int err = 0;
 
+	disable_delayed_work_sync(&stack->port_status_work);
+	disable_delayed_work_sync(&stack->reps_carrier_work);
 	disable_delayed_work_sync(&stack->reps_recovery_work);
 
 	rtnl_lock();

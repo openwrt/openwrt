@@ -125,6 +125,11 @@ multiple distributed bridges and remote LAGs are not implemented yet. Dynamic
 unicast learning and unknown unicast, multicast and broadcast forwarding are
 offloaded.
 
+Follower front-panel link changes are carried to the leader as session-fenced,
+sequenced Device Talk events. The leader also reconciles the complete carrier
+bitmap periodically, so a lost event or a transiently busy receiver does not
+leave representor carrier state stale.
+
 The hardware-offload change updates the private Device Talk protocol. Both
 members must run an image built from the same revision before enabling the
 stack.

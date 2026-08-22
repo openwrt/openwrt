@@ -350,6 +350,7 @@ static void rtldsa_93xx_phylink_mac_link_down(struct phylink_config *config,
 
 	if (priv->family_id == RTL9310_FAMILY_ID) {
 		rtl931x_stack_reps_link_change(priv, port, false);
+		rtl931x_stack_port_link_change(priv, port, false);
 		rtl931x_stack_cpu_update(priv);
 	}
 
@@ -606,6 +607,7 @@ static void rtldsa_93xx_phylink_mac_link_up(struct phylink_config *config,
 
 	if (priv->family_id == RTL9310_FAMILY_ID) {
 		rtl931x_stack_reps_link_change(priv, port, true);
+		rtl931x_stack_port_link_change(priv, port, true);
 		rtl931x_stack_cpu_update(priv);
 	}
 }
