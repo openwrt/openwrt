@@ -1,0 +1,83 @@
+From: Aleksei Sviridkin <f@lex.la>
+Subject: [PATCH] net: phylink: unwind the PHY binding when bringup fails late
+
+phylink_bringup_phy() records the PHY in pl->phydev before its last
+fallible step: on a MAC whose phylink ops implement LPI,
+phy_eee_rx_clock_stop() can fail with a real MDIO error. The callers
+unwind with phy_detach(), which knows nothing about pl->phydev, so a
+pointer to a PHY that is no longer attached outlives the failed
+connect.
+
+What that costs depends on how the caller got here.
+phylink_connect_phy() and the SFP path go through
+phylink_attach_phy(), which refuses to attach while pl->phydev is set
+and turns a transient MDIO error into a permanent -EBUSY.
+phylink_fwnode_phy_connect() has no such check, so a later connect
+overwrites the stale pointer and hides the problem. A disconnect does
+not: phylink_disconnect_phy() hands that pointer to phy_disconnect(),
+and the second phy_detach() on the same PHY drops references the first
+one already released.
+
+Clear the binding on the failure path. This is the same operation
+phylink_disconnect_phy() performs, so both now share a helper. The
+PHY-side fields are left to phy_detach(), which every caller already
+runs on this path.
+
+Submitted upstream: https://lore.kernel.org/netdev/20260902080511.2211261-1-f@lex.la/
+
+Fixes: 03abf2a7c654 ("net: phylink: add EEE management")
+Signed-off-by: Aleksei Sviridkin <f@lex.la>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+---
+--- a/drivers/net/phy/phylink.c
++++ b/drivers/net/phy/phylink.c
+@@ -2074,6 +2074,18 @@ static int phylink_validate_phy(struct p
+ 	return phylink_validate(pl, supported, state);
+ }
+ 
++/* Disassociate @phy from @pl. Caller must hold pl->phydev_mutex. */
++static void phylink_clear_phydev(struct phylink *pl, struct phy_device *phy)
++{
++	mutex_lock(&phy->lock);
++	mutex_lock(&pl->state_mutex);
++	pl->phydev = NULL;
++	pl->phy_enable_tx_lpi = false;
++	pl->mac_tx_clk_stop = false;
++	mutex_unlock(&pl->state_mutex);
++	mutex_unlock(&phy->lock);
++}
++
+ static int phylink_bringup_phy(struct phylink *pl, struct phy_device *phy,
+ 			       phy_interface_t interface)
+ {
+@@ -2188,6 +2200,12 @@ static int phylink_bringup_phy(struct ph
+ 	if (ret == 0 && phy_interrupt_is_valid(phy))
+ 		phy_request_interrupt(phy);
+ 
++	if (ret) {
++		mutex_lock(&pl->phydev_mutex);
++		phylink_clear_phydev(pl, phy);
++		mutex_unlock(&pl->phydev_mutex);
++	}
++
+ 	return ret;
+ }
+ 
+@@ -2361,15 +2379,8 @@ void phylink_disconnect_phy(struct phyli
+ 
+ 	mutex_lock(&pl->phydev_mutex);
+ 	phy = pl->phydev;
+-	if (phy) {
+-		mutex_lock(&phy->lock);
+-		mutex_lock(&pl->state_mutex);
+-		pl->phydev = NULL;
+-		pl->phy_enable_tx_lpi = false;
+-		pl->mac_tx_clk_stop = false;
+-		mutex_unlock(&pl->state_mutex);
+-		mutex_unlock(&phy->lock);
+-	}
++	if (phy)
++		phylink_clear_phydev(pl, phy);
+ 	mutex_unlock(&pl->phydev_mutex);
+ 
+ 	if (phy) {

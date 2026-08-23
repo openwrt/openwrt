@@ -1,0 +1,66 @@
+From: Aleksei Sviridkin <f@lex.la>
+Subject: [PATCH] net: phy: restore the interrupt after a generic-driver bind cycle
+
+A PHY with no specific driver available at attach time gets the generic
+one, and phy_probe() sets phydev->irq to PHY_POLL because that driver
+has no interrupt callbacks. Neither end of that bind cycle puts the
+value back: phy_detach() releases the generic driver so a real one can
+bind later, and a generic probe that fails never reaches phy_detach()
+at all.
+
+The specific driver that binds afterwards therefore starts with
+irq == PHY_POLL, and the PHY is polled for the rest of the uptime with
+no warning on that path. A DSA switch that connects its user ports
+before the rootfs holding the PHY driver module is mounted hits this on
+every boot.
+
+mdiobus_alloc() fills bus->irq[] with PHY_POLL for every address, and
+the bind cycle never writes to that table, so the entry still holds
+whatever the bus registered there. Restore phydev->irq from it on both
+exits, and only where the cycle left PHY_POLL. That guard preserves an
+interrupt mode a MAC installed on the attached PHY after connect, and
+it keeps a restored interrupt number out of the
+phy_connect_direct()/phy_disconnect() asymmetry, where such a MAC would
+have the interrupt requested and never freed.
+
+Submitted upstream: https://lore.kernel.org/netdev/20260902080511.2211261-1-f@lex.la/
+
+Fixes: 00db8189d984 ("This patch adds a PHY Abstraction Layer to the Linux Kernel, enabling ethernet drivers to remain as ignorant as is reasonable of the connected PHY's design and operation details.")
+Signed-off-by: Aleksei Sviridkin <f@lex.la>
+---
+--- a/drivers/net/phy/phy_device.c
++++ b/drivers/net/phy/phy_device.c
+@@ -1611,6 +1611,17 @@ static bool phy_drv_supports_irq(const s
+ 	return phydrv->config_intr && phydrv->handle_interrupt;
+ }
+ 
++/* Undo the PHY_POLL that phy_probe() sets when a driver without
++ * interrupt callbacks binds. The bind cycle never writes bus->irq[],
++ * so the table still holds the pre-bind value; anything else the PHY
++ * carries did not come from the bind and must stand.
++ */
++static void phy_restore_genphy_irq(struct phy_device *phydev)
++{
++	if (phydev->irq == PHY_POLL)
++		phydev->irq = phydev->mdio.bus->irq[phydev->mdio.addr];
++}
++
+ /**
+  * phy_attach_direct - attach a network device to a given PHY device pointer
+  * @dev: network device to attach
+@@ -1773,6 +1784,7 @@ error:
+ 
+ error_module_put:
+ 	module_put(d->driver->owner);
++	phy_restore_genphy_irq(phydev);
+ 	phydev->is_genphy_driven = 0;
+ 	d->driver = NULL;
+ error_put_device:
+@@ -1880,6 +1892,7 @@ void phy_detach(struct phy_device *phyde
+ 	 * real driver could be loaded
+ 	 */
+ 	if (phydev->is_genphy_driven) {
++		phy_restore_genphy_irq(phydev);
+ 		device_release_driver(&phydev->mdio.dev);
+ 		phydev->is_genphy_driven = 0;
+ 	}
