@@ -1079,17 +1079,14 @@ static int rteth_change_mtu(struct net_device *dev, int mtu)
 	/*
 	 * A larger MTU buys a smaller budget, so hand the rings their new limit before the
 	 * switch may deliver larger frames, and the other way around when the MTU shrinks.
-	 * Hold the lock, so rteth_tx_timeout() cannot reprogram the same registers in between.
 	 */
-	scoped_guard(spinlock_irqsave, &ctrl->lock) {
-		if (grow)
-			ctrl->r->set_hol(ctrl);
+	if (grow)
+		ctrl->r->set_hol(ctrl);
 
-		rteth_set_max_packet_length(ctrl);
+	rteth_set_max_packet_length(ctrl);
 
-		if (!grow)
-			ctrl->r->set_hol(ctrl);
-	}
+	if (!grow)
+		ctrl->r->set_hol(ctrl);
 
 	return 0;
 }
