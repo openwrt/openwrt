@@ -1977,8 +1977,13 @@ static int rteth_probe(struct platform_device *pdev)
 
 	ctrl->rx_data = dmam_alloc_coherent(&pdev->dev, sizeof(struct rteth_rx_data) * RTETH_RX_RINGS,
 					    &ctrl->rx_dma, GFP_KERNEL);
+	if (!ctrl->rx_data)
+		return dev_err_probe(&pdev->dev, -ENOMEM, "failed to allocate RX ring memory\n");
+
 	ctrl->tx_data = dmam_alloc_coherent(&pdev->dev, sizeof(struct rteth_tx_data) * RTETH_TX_RINGS,
 					    &ctrl->tx_dma, GFP_KERNEL);
+	if (!ctrl->tx_data)
+		return dev_err_probe(&pdev->dev, -ENOMEM, "failed to allocate TX ring memory\n");
 
 	spin_lock_init(&ctrl->lock);
 	spin_lock_init(&ctrl->rx_lock);
