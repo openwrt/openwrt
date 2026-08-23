@@ -1,0 +1,26 @@
+#!/bin/sh
+
+[ -e /lib/firmware/$FIRMWARE ] && exit 0
+
+. /lib/functions/caldata.sh
+
+board=$(board_name)
+
+case "$FIRMWARE" in
+"ath12k/QCN9274/hw1.0/cal-pci-0000:02:00.0.bin")
+	case "$board" in
+	xiaomi,be7000)
+		caldata_extract "0:ART" 0x1000 0x20000
+		;;
+	esac
+	;;
+"ath12k/QCN9274/hw1.0/cal-pci-0000:03:00.0.bin")
+	case "$board" in
+	xiaomi,be7000)
+		caldata_extract "0:ART" 0x21000 0x20000
+		;;
+	esac
+	;;
+esac
+
+exit 0
