@@ -1,0 +1,52 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Alexander Astrovsky <astrouski@google.com>
+Date: Sun, 23 Aug 2026 21:50:00 +0000
+Subject: [PATCH] driver_nl80211: do not send immutable station attributes on
+ SET_STATION
+
+When modifying an already authorized/associated station (such as when
+updating partner links in an MLD, updating authorization status, or
+reconfiguring station flags), wpa_driver_nl80211_sta_add() uses
+NL80211_CMD_SET_STATION (params->set == 1).
+
+Previously, when FULL_AP_CLIENT_STATE_SUPP was enabled, hostapd included
+NL80211_ATTR_STA_AID, NL80211_ATTR_STA_LISTEN_INTERVAL, and
+NL80211_ATTR_STA_SUPPORT_P2P_PS in the SET_STATION message whenever
+WPA_STA_ASSOCIATED was set.
+
+In cfg80211, cfg80211_check_station_change() explicitly rejects attempts
+to modify AID, listen interval, or P2P PS on associated clients
+(CFG80211_STA_AP_CLIENT), returning -EINVAL.
+
+Fix this by:
+1. Only sending NL80211_ATTR_STA_SUPPORT_P2P_PS on NEW_STATION (!params->set).
+2. Only sending NL80211_ATTR_STA_AID and NL80211_ATTR_STA_LISTEN_INTERVAL
+   during initial association before the station is authorized
+   (!(params->flags & WPA_STA_AUTHORIZED)), avoiding redundant and
+   invalid attributes in subsequent SET_STATION commands.
+
+Signed-off-by: Alexander Astrovsky <astrouski@google.com>
+---
+ src/drivers/driver_nl80211.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+--- a/src/drivers/driver_nl80211.c
++++ b/src/drivers/driver_nl80211.c
+@@ -6391,6 +6391,7 @@ static int wpa_driver_nl80211_sta_add(vo
+ 		}
+ 
+ 		if (is_ap_interface(drv->nlmode) &&
++		    !params->set &&
+ 		    nla_put_u8(msg, NL80211_ATTR_STA_SUPPORT_P2P_PS,
+ 			       params->support_p2p_ps ?
+ 			       NL80211_P2P_PS_SUPPORTED :
+@@ -6423,7 +6424,8 @@ static int wpa_driver_nl80211_sta_add(vo
+ 		if (nla_put_u16(msg, NL80211_ATTR_PEER_AID, params->aid))
+ 			goto fail;
+ 	} else if (FULL_AP_CLIENT_STATE_SUPP(drv->capa.flags) &&
+-		   (params->flags & WPA_STA_ASSOCIATED)) {
++		   (params->flags & WPA_STA_ASSOCIATED) &&
++		   !(params->flags & WPA_STA_AUTHORIZED)) {
+ 		wpa_printf(MSG_DEBUG, "  * aid=%u", params->aid);
+ 		wpa_printf(MSG_DEBUG, "  * listen_interval=%u",
+ 			   params->listen_interval);
