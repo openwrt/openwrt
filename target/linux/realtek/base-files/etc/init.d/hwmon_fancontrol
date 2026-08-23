@@ -35,6 +35,35 @@ plasmacloud_common() {
 	echo 2 > "$path_to_hwmon/pwm2_enable"
 }
 
+dlink_dgs_1210() {
+	local path_to_hwmon="$(find -L /sys/bus/i2c/devices/4-004c -type d -maxdepth 2 -mindepth 2 -name 'hwmon*' || true)"
+
+	if [ -z "$path_to_hwmon" ]; then
+		logger -t hwmon_fancontrol "LM63 hwmon interface not found on i2c 4-004c (kmod lm63 loaded?)"
+		return 1
+	fi
+
+	# Set to manual mode temporarily to allow LUT and frequency setup
+	echo 1 > "$path_to_hwmon/pwm1_enable"
+
+	# Configure PWM frequency (~7826 Hz / PFR divisor 23) matching OEM defaults
+	echo 7826 > "$path_to_hwmon/pwm1_freq"
+
+	# Point 1: If temp > 0 C, set fan speed to PWM 28/64 (OEM default 0x1c)
+	echo 0 > "$path_to_hwmon/pwm1_auto_point1_temp"
+	echo $((0x1c*4)) > "$path_to_hwmon/pwm1_auto_point1_pwm"
+
+	# Point 2: If temp > 51 C, set fan speed to PWM 46/64 (OEM default 0x2e)
+	echo 51000 > "$path_to_hwmon/pwm1_auto_point2_temp"
+	echo $((0x2e*4)) > "$path_to_hwmon/pwm1_auto_point2_pwm"
+
+	# Hysteresis: Set 3 C (3000 mC) hysteresis for LUT (OEM default 0x03)
+	echo 3000 > "$path_to_hwmon/pwm1_auto_point_temp_hyst"
+
+	# Switch to hardware auto mode
+	echo 2 > "$path_to_hwmon/pwm1_enable"
+}
+
 dlink_dgs_1250() {
 	local path_temp_hwmon="$(find /sys/devices/platform/i2c-gpio-4/i2c-4/4-0048/hwmon/ -type d -maxdepth 1 -mindepth 1 -name 'hwmon*')"
 	local path_fan_hwmon="$(find /sys/devices/platform/gpio-fan/hwmon/ -type d -maxdepth 1 -mindepth 1 -name 'hwmon*')"
@@ -91,6 +120,10 @@ boot() {
 	plasmacloud,esx28|\
 	plasmacloud,psx28)
 		plasmacloud_common
+		;;
+	d-link,dgs-1210-28p-f|\
+	d-link,dgs-1210-28mp-f)
+		dlink_dgs_1210
 		;;
 	d-link,dgs-1250-28x)
 		dlink_dgs_1250
