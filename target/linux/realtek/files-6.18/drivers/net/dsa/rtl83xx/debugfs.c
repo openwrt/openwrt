@@ -268,7 +268,11 @@ static void l2_table_print_entry(struct seq_file *m, struct rtl838x_switch_priv 
 			   e->mac[0], e->mac[1], e->mac[2], e->mac[3], e->mac[4], e->mac[5],
 			   e->vid, e->rvid);
 
-		seq_printf(m, "  port %d age %d", e->port, e->age);
+		if (priv->family_id == RTL9310_FAMILY_ID)
+			seq_printf(m, "  device %u port %d age %d",
+				   e->stack_dev, e->port, e->age);
+		else
+			seq_printf(m, "  port %d age %d", e->port, e->age);
 		if (e->is_trunk) {
 			seq_printf(m, "  trunk %d trunk_members: 0x%08llx non-primary: 0x%08llx primary-port: %d",
 				   e->trunk,
