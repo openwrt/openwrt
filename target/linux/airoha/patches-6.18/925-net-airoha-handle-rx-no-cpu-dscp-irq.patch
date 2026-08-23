@@ -1,0 +1,113 @@
+From c392ca0914dd0dd153744bcba24825b05b167f36 Mon Sep 17 00:00:00 2001
+From: Vitaliy Sochnev <sochnev.v.74@gmail.com>
+Date: Sun, 23 Aug 2026 11:47:15 +0100
+Subject: [PATCH] net: airoha: handle RX_NO_CPU_DSCP interrupt, not just
+ RX_DONE
+
+The QDMA hardware raises a dedicated interrupt (NO_CPU_DSCP, one bit
+per ring in QDMA_CSR_INT_ENABLE2/3) when an RX ring runs out of free
+CPU descriptors. airoha_qdma_hw_init() already unmasks this interrupt
+for every ring (INT_RX1_MASK()/INT_RX2_MASK() OR it together with the
+RX_DONE bits before writing the enable register), but
+airoha_irq_handler() only ever extracts the RX_DONE bits from the same
+status word - the NO_CPU_DSCP bits are read and acknowledged (cleared)
+along with everything else at the top of the handler, then silently
+dropped.
+
+This matters because once a ring is genuinely drained to zero posted
+descriptors, no further RX_DONE interrupt can fire for it: hardware
+has nothing left to receive a frame into, so NAPI is never rescheduled
+and airoha_qdma_fill_rx_queue() (which reposts descriptors) is never
+called again. The ring is stuck until the interface is brought down
+and back up.
+
+This is most visible on rings that carry low, bursty volumes of
+protocol control traffic, in particular RX ring 4, to which
+airoha_fe_vip_setup() force-routes ~15 unrelated VIP-classified
+protocols (BOOTP, PPPoE Discovery, ISAKMP, DHCPv6, SIP, LLDP, PPP
+LCP/IPCP/CHAP/PAP/IPv6CP, ...) via PATN_FCPU_EN_MASK, all sharing the
+same RX_DSCP_NUM() default of 16 descriptors. A short burst on that
+ring (e.g. a DHCP lease renewal exchange, or the LCP/IPCP/CHAP/PAP
+negotiation that follows a PPPoE PADO) can drain it faster than the
+CPU reposts descriptors, after which every one of those protocols
+silently stops being received on that device until it is reconfigured
+- with no error, warning, or netdev/ethtool counter indicating why.
+
+Fix airoha_irq_handler() to treat NO_CPU_DSCP the same as RX_DONE for
+the purpose of scheduling NAPI: airoha_qdma_rx_process() already calls
+airoha_qdma_fill_rx_queue() unconditionally at the end of every poll,
+even when zero descriptors were reaped, so scheduling NAPI in response
+to NO_CPU_DSCP is sufficient to make an emptied ring recover on its
+own. airoha_qdma_rx_napi_poll() is updated to re-enable the
+NO_CPU_DSCP bit alongside RX_DONE when napi_complete() runs, mirroring
+the existing disable/enable dance so the interrupt isn't left masked
+after its first use.
+
+Sent to netdev 2026-08-30, targeting the `net` tree. Fixes the
+DHCP-reply black hole tracked at
+https://github.com/openwrt/openwrt/issues/24715; confirmed against a
+real reproduction on hardware and independently by reporters on the
+issue thread. The PPPoE-side black hole on the same issue has a
+separate cause, fixed by the two commits that follow this one.
+
+Signed-off-by: Vitaliy Sochnev <sochnev.v.74@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c | 29 ++++++++++++++++++++++-------
+ 1 file changed, 24 insertions(+), 5 deletions(-)
+
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -1006,13 +1006,15 @@ static int airoha_qdma_rx_napi_poll(stru
+ 		int i, qid = q - &qdma->q_rx[0];
+ 		int intr_reg = qid < RX_DONE_HIGH_OFFSET ? QDMA_INT_REG_IDX1
+ 							 : QDMA_INT_REG_IDX2;
++		u32 bit = qid % RX_DONE_HIGH_OFFSET;
+ 
+ 		for (i = 0; i < ARRAY_SIZE(qdma->irq_banks); i++) {
+ 			if (!(BIT(qid) & RX_IRQ_BANK_PIN_MASK(i)))
+ 				continue;
+ 
+ 			airoha_qdma_irq_enable(&qdma->irq_banks[i], intr_reg,
+-					       BIT(qid % RX_DONE_HIGH_OFFSET));
++					       BIT(bit) |
++					       BIT(bit + RX_NO_CPU_DSCP_LOW_OFFSET));
+ 		}
+ 	}
+ 
+@@ -1656,16 +1658,32 @@ static irqreturn_t airoha_irq_handler(in
+ 	if (!test_bit(DEV_STATE_INITIALIZED, &qdma->eth->state))
+ 		return IRQ_NONE;
+ 
+-	rx_intr1 = intr[1] & RX_DONE_LOW_INT_MASK;
++	/* A ring can also raise NO_CPU_DSCP when it runs out of free RX
++	 * descriptors (e.g. a burst of VIP-classified control traffic
++	 * forced onto a small ring). Once a ring is fully drained no more
++	 * RX_DONE interrupts can fire for it, since there are no free
++	 * descriptors left for hardware to receive into, so without this
++	 * NAPI is never rescheduled and the ring never gets refilled again.
++	 * Treat NO_CPU_DSCP the same as RX_DONE for scheduling NAPI:
++	 * airoha_qdma_rx_process() unconditionally calls
++	 * airoha_qdma_fill_rx_queue() at the end of every poll, even when
++	 * zero descriptors were reaped, so this alone is enough to recover
++	 * the ring.
++	 */
++	rx_intr1 = intr[1] & (RX_DONE_LOW_INT_MASK | RX_NO_CPU_DSCP_LOW_INT_MASK);
+ 	if (rx_intr1) {
+ 		airoha_qdma_irq_disable(irq_bank, QDMA_INT_REG_IDX1, rx_intr1);
+-		rx_intr_mask |= rx_intr1;
++		rx_intr_mask |= (rx_intr1 & RX_DONE_LOW_INT_MASK) |
++				((rx_intr1 & RX_NO_CPU_DSCP_LOW_INT_MASK) >>
++				 RX_NO_CPU_DSCP_LOW_OFFSET);
+ 	}
+ 
+-	rx_intr2 = intr[2] & RX_DONE_HIGH_INT_MASK;
++	rx_intr2 = intr[2] & (RX_DONE_HIGH_INT_MASK | RX_NO_CPU_DSCP_HIGH_INT_MASK);
+ 	if (rx_intr2) {
+ 		airoha_qdma_irq_disable(irq_bank, QDMA_INT_REG_IDX2, rx_intr2);
+-		rx_intr_mask |= (rx_intr2 << 16);
++		rx_intr_mask |= ((rx_intr2 & RX_DONE_HIGH_INT_MASK) |
++				 ((rx_intr2 & RX_NO_CPU_DSCP_HIGH_INT_MASK) >>
++				  RX_NO_CPU_DSCP_LOW_OFFSET)) << 16;
+ 	}
+ 
+ 	for (i = 0; rx_intr_mask && i < ARRAY_SIZE(qdma->q_rx); i++) {
