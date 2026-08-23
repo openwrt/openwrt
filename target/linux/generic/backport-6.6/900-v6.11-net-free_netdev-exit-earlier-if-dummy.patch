@@ -23,7 +23,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -11083,7 +11083,8 @@ void free_netdev(struct net_device *dev)
+@@ -11102,7 +11102,8 @@ void free_netdev(struct net_device *dev)
  	dev->xdp_bulkq = NULL;
  
  	/*  Compatibility with error handling in drivers */
