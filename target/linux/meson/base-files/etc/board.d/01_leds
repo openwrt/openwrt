@@ -10,10 +10,7 @@ board=$(board_name)
 
 case "$board" in
 hardkernel,odroid-c2)
-	ucidef_set_interface_lan "eth0" "dhcp"
-	;;
-*)
-	ucidef_set_interface_lan "eth0"
+	ucidef_set_led_heartbeat "status" "STATUS" "blue:status"
 	;;
 esac
 
