@@ -1,3 +1,5 @@
+DEVICE_VARS += UBOOT BOOT_SCRIPT
+
 define Build/boot-scr
 	rm -f $@-boot.scr
 	mkimage -A arm64 -O linux -T script -C none -a 0 -e 0 \
