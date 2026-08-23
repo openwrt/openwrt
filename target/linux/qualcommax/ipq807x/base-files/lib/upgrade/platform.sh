@@ -128,8 +128,8 @@ linksys_mx_pre_upgrade() {
 		fi
 	fi
 
-	boot_part_ready="$(fw_printenv -n boot_part_ready)"
-	if [ "$boot_part_ready" -ne "3" ]; then
+	boot_part_ready="$(fw_printenv -n boot_part_ready 2>/dev/null)"
+	if [ "$boot_part_ready" != "3" ]; then
 		echo "boot_part_ready 3" >> $setenv_script
 	fi
 
@@ -218,11 +218,7 @@ platform_do_upgrade() {
 		fw_setenv upgrade_available 1
 		nand_do_upgrade "$1"
 		;;
-	linksys,homewrk)
-		CI_UBIPART="rootfs"
-		remove_oem_ubi_volume ubi_rootfs
-		nand_do_upgrade "$1"
-		;;
+	linksys,homewrk|\
 	linksys,mx4200v1|\
 	linksys,mx4200v2|\
 	linksys,mx4300)
