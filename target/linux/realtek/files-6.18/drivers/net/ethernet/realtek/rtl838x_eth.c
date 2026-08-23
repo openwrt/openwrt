@@ -1518,18 +1518,14 @@ static void rteth_set_mac_hw(struct net_device *dev, u8 *mac)
 	u32 mac_lo = (mac[2] << 24) | (mac[3] << 16) | (mac[4] << 8) | mac[5];
 	u32 mac_hi = (mac[0] << 8) | mac[1];
 	struct rteth_ctrl *ctrl;
-	unsigned long flags;
 
 	ctrl = netdev_priv(dev);
-	spin_lock_irqsave(&ctrl->lock, flags);
 
 	for (int i = 0; i < RTETH_MAX_MAC_REGS; i++)
 		if (ctrl->r->mac_reg[i]) {
 			regmap_write(ctrl->map, ctrl->r->mac_reg[i], mac_hi);
 			regmap_write(ctrl->map, ctrl->r->mac_reg[i] + 4, mac_lo);
 		}
-
-	spin_unlock_irqrestore(&ctrl->lock, flags);
 }
 
 static int rteth_set_mac_address(struct net_device *dev, void *p)
