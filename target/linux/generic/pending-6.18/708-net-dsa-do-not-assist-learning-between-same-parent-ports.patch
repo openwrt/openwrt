@@ -1,0 +1,39 @@
+From: Stijn Tintel <stijn@linux-ipv6.be>
+Date: Sun, 23 Aug 2026 18:30:00 +0300
+Subject: [PATCH] net: dsa: do not assist learning between same-parent ports
+
+DSA considers every bridge port which is not one of its own user ports to
+be foreign.  With assisted CPU-port learning enabled, a dynamically
+learned address on such a port is therefore installed on the DSA CPU port.
+
+That is wrong when another switchdev driver exposes a representor for the
+same physical switch.  The bridge assigns both ports to the same hardware
+domain, but DSA overwrites the address learned by the shared hardware with
+a static CPU-port entry.  Hardware-forwarded traffic then follows the CPU
+entry instead of the representor destination.
+
+Use the physical parent ID to recognize bridge ports belonging to the same
+switch.  Keep assisted learning for genuinely foreign ports.
+
+Signed-off-by: Stijn Tintel <stijn@linux-ipv6.be>
+---
+ net/dsa/user.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+--- a/net/dsa/user.c
++++ b/net/dsa/user.c
+@@ -3686,8 +3686,13 @@ static bool dsa_foreign_dev_check(const
+ 	if (netif_is_bridge_master(foreign_dev))
+ 		return !dsa_tree_offloads_bridge_dev(dst, foreign_dev);
+ 
+-	if (netif_is_bridge_port(foreign_dev))
++	if (netif_is_bridge_port(foreign_dev)) {
++		if (netdev_port_same_parent_id((struct net_device *)dev,
++					       (struct net_device *)foreign_dev))
++			return false;
++
+ 		return !dsa_tree_offloads_bridge_port(dst, foreign_dev);
++	}
+ 
+ 	/* Everything else is foreign */
+ 	return true;
