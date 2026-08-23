@@ -20,6 +20,8 @@
 #include <linux/phylink.h>
 #include <linux/pkt_sched.h>
 #include <linux/regmap.h>
+#include <linux/rtnetlink.h>
+#include <linux/workqueue.h>
 #include <net/dsa.h>
 #include <net/dst_metadata.h>
 #include <net/page_pool/helpers.h>
@@ -144,6 +146,7 @@ struct rteth_ctrl {
 	spinlock_t		tx_lock;
 	struct rteth_tx_info	tx_info[RTETH_TX_RINGS];
 	struct rteth_tx_data	*tx_data;
+	struct work_struct	reset_work;
 };
 
 static void rteth_838x_create_tx_header(struct rteth_frag *frag, unsigned int port, int prio)
@@ -1178,25 +1181,37 @@ static void rteth_931x_set_rx_mode(struct net_device *dev)
 	}
 }
 
+static void rteth_reset_work(struct work_struct *work)
+{
+	struct rteth_ctrl *ctrl = container_of(work, struct rteth_ctrl, reset_work);
+	struct net_device *dev = ctrl->dev;
+	int ret;
+
+	rtnl_lock();
+
+	if (!netif_running(dev))
+		goto out;
+
+	rteth_stop(dev);
+	ret = rteth_open(dev);
+	if (ret) {
+		netdev_err(dev, "tx timeout recovery failed: %d\n", ret);
+		netif_device_detach(dev);
+		goto out;
+	}
+
+	netif_trans_update(dev);
+
+out:
+	rtnl_unlock();
+}
+
 static void rteth_tx_timeout(struct net_device *dev, unsigned int txqueue)
 {
 	struct rteth_ctrl *ctrl = netdev_priv(dev);
 
-	pr_warn("%s\n", __func__);
-	scoped_guard(spinlock_irqsave, &ctrl->lock) {
-		rteth_hw_stop(ctrl);
-		rteth_free_tx_buffers(ctrl);
-		rteth_free_rx_buffers(ctrl);
-		if (rteth_setup_ring_buffer(ctrl)) {
-			netdev_err(dev, "tx_timeout recovery failed, bringing interface down\n");
-			netif_device_detach(dev);
-			return;
-		}
-		rteth_hw_ring_setup(ctrl);
-		ctrl->r->hw_en_rxtx(ctrl);
-		netif_trans_update(dev);
-		netif_start_queue(dev);
-	}
+	netif_tx_stop_all_queues(dev);
+	schedule_work(&ctrl->reset_work);
 }
 
 static int rteth_get_dsa_port(struct sk_buff *skb, struct net_device *dev)
@@ -1974,6 +1989,7 @@ static int rteth_probe(struct platform_device *pdev)
 	spin_lock_init(&ctrl->lock);
 	spin_lock_init(&ctrl->rx_lock);
 	spin_lock_init(&ctrl->tx_lock);
+	INIT_WORK(&ctrl->reset_work, rteth_reset_work);
 
 	dev->ethtool_ops = &rteth_ethtool_ops;
 	dev->min_mtu = ETH_ZLEN;
@@ -2105,6 +2121,7 @@ static void rteth_remove(struct platform_device *pdev)
 
 	pr_info("Removing platform driver for rtl838x-eth\n");
 	unregister_netdev(dev);
+	cancel_work_sync(&ctrl->reset_work);
 	rteth_metadata_dst_free(ctrl);
 
 	if (ctrl->phylink)
