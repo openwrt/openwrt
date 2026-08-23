@@ -1366,6 +1366,7 @@ static int rteth_hw_receive(struct net_device *dev, int ring, int budget)
 {
 	int slot, work_done = 0, rx_packets = 0, rx_bytes = 0, rx_dropped = 0, rx_errors = 0;
 	struct rteth_ctrl *ctrl = netdev_priv(dev);
+	struct rteth_rx_info *rx_info = &ctrl->rx_info[ring];
 	unsigned int len, new_offset;
 	struct rteth_frag *frag;
 	struct page_pool *pool;
@@ -1374,12 +1375,12 @@ static int rteth_hw_receive(struct net_device *dev, int ring, int budget)
 	bool is_head, is_tail;
 	struct sk_buff *skb;
 
-	pool = ctrl->rx_info[ring].pool;
-	skb = ctrl->rx_info[ring].skb;
+	pool = rx_info->pool;
+	skb = rx_info->skb;
 	is_tail = !skb;
 
 	while (work_done < budget) {
-		slot = ctrl->rx_info[ring].slot;
+		slot = rx_info->slot;
 		packet_dma = ctrl->rx_data[ring].ring[slot];
 		rmb();
 
@@ -1434,19 +1435,19 @@ static int rteth_hw_receive(struct net_device *dev, int ring, int budget)
 				rx_bytes += skb->len;
 				rx_packets++;
 				skb->protocol = eth_type_trans(skb, dev);
-				napi_gro_receive(&ctrl->rx_info[ring].napi, skb);
+				napi_gro_receive(&rx_info->napi, skb);
 				skb = NULL;
 			}
 		}
 
-		ctrl->rx_info[ring].page[slot] = new_page;
-		ctrl->rx_info[ring].offset[slot] = new_offset;
+		rx_info->page[slot] = new_page;
+		rx_info->offset[slot] = new_offset;
 		frag->dma = page_pool_get_dma_addr(new_page) +
 			    new_offset + ctrl->r->skb_headroom;
 recycle:
 		dma_wmb();
 		ctrl->rx_data[ring].ring[slot] = packet_dma | RING_OWN_HW;
-		ctrl->rx_info[ring].slot = (slot + 1) % RTETH_RX_RING_SIZE;
+		rx_info->slot = (slot + 1) % RTETH_RX_RING_SIZE;
 	}
 
 	spin_lock(&ctrl->rx_lock);
@@ -1457,7 +1458,7 @@ recycle:
 	dev->stats.rx_bytes += rx_bytes;
 	spin_unlock(&ctrl->rx_lock);
 
-	ctrl->rx_info[ring].skb = skb;
+	rx_info->skb = skb;
 
 	return work_done;
 }
