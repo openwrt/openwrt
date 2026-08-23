@@ -37,7 +37,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
-@@ -4580,6 +4580,9 @@ static inline void netif_addr_unlock_bh(
+@@ -4620,6 +4620,9 @@ static inline void netif_addr_unlock_bh(
  
  void ether_setup(struct net_device *dev);
  
@@ -49,7 +49,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  				    unsigned char name_assign_type,
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -10453,25 +10453,12 @@ err_free_name:
+@@ -10458,25 +10458,12 @@ err_free_name:
  }
  EXPORT_SYMBOL(register_netdevice);
  
@@ -79,7 +79,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	/* make sure we BUG if trying to hit standard
  	 * register/unregister code path
  	 */
-@@ -10491,12 +10478,32 @@ int init_dummy_netdev(struct net_device
+@@ -10496,12 +10483,32 @@ int init_dummy_netdev(struct net_device
  	 * because users of this 'device' dont need to change
  	 * its refcount.
  	 */
@@ -113,7 +113,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  /**
   *	register_netdev	- register a network device
   *	@dev: device to register
-@@ -11090,6 +11097,19 @@ void free_netdev(struct net_device *dev)
+@@ -11109,6 +11116,19 @@ void free_netdev(struct net_device *dev)
  EXPORT_SYMBOL(free_netdev);
  
  /**
