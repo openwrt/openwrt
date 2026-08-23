@@ -1,6 +1,7 @@
 TRX_ENDIAN := be
 
 define Device/chinamobile_gs3101
+  $(Device/tcboot_trx)
   DEVICE_VENDOR := ChinaMobile
   DEVICE_MODEL := GS3101
   DEVICE_DTS := en7526f_chinamobile_gs3101
@@ -16,6 +17,7 @@ endef
 TARGET_DEVICES += chinamobile_gs3101
 
 define Device/en751221_generic
+  $(Device/tcboot_trx)
   DEVICE_VENDOR := EN751221 Family
   DEVICE_MODEL := Initramfs Image
   DEVICE_TITLE := EN751221 Initramfs Image
@@ -25,21 +27,23 @@ endef
 TARGET_DEVICES += en751221_generic
 
 define Device/jiuzhou_en7526gt
- DEVICE_VENDOR := Sichuan Jiuzhou
- DEVICE_MODEL := EN7526GT
- DEVICE_DTS := en751221_jiuzhou_en7526gt
- # The factory boot ROM's `jump 80020000` executes this file directly.  A
- # legacy uImage header would therefore be interpreted as MIPS instructions.
- KERNEL_INITRAMFS := kernel-bin | append-dtb
- IMAGES := tclinux.trx
- IMAGE/tclinux.trx := append-kernel | lzma | tclinux-trx
- # 128 MiB board, so it can carry the tools needed to look at the PON and
- # LAN datapaths from the device itself.
- DEVICE_PACKAGES := tcpdump ethtool ip-full
+  $(Device/tcboot_trx)
+  DEVICE_VENDOR := Sichuan Jiuzhou
+  DEVICE_MODEL := EN7526GT
+  DEVICE_DTS := en751221_jiuzhou_en7526gt
+  # The factory boot ROM's `jump 80020000` executes this file directly.  A
+  # legacy uImage header would therefore be interpreted as MIPS instructions.
+  KERNEL_INITRAMFS := kernel-bin | append-dtb
+  IMAGES := tclinux.trx
+  IMAGE/tclinux.trx := append-kernel | lzma | tclinux-trx
+  # 128 MiB board, so it can carry the tools needed to look at the PON and
+  # LAN datapaths from the device itself.
+  DEVICE_PACKAGES := tcpdump ethtool ip-full
 endef
 TARGET_DEVICES += jiuzhou_en7526gt
 
 define Device/genexis_platinum-4410
+  $(Device/tcboot_trx)
   DEVICE_VENDOR := Genexis
   DEVICE_MODEL := Platinum 4410
   DEVICE_DTS := en751221_genexis_platinum-4410
@@ -54,6 +58,7 @@ endef
 TARGET_DEVICES += genexis_platinum-4410
 
 define Device/huawei_hg2821t-u
+  $(Device/tcboot_trx)
   DEVICE_VENDOR := Huawei
   DEVICE_MODEL := HG2821T-U
   DEVICE_DTS := en751221_huawei_hg2821t-u
@@ -74,14 +79,15 @@ endef
 TARGET_DEVICES += huawei_hg2821t-u
 
 define Device/mitrarstar_gpt-2741gnac-n1
+  $(Device/FitImageVmlinuz)
   DEVICE_VENDOR := Mitrastar
   DEVICE_MODEL := GPT-2741GNAC-N1
   DEVICE_DTS := en751221-mitrarstar_gpt-2741gnac-n1
-  KERNEL_INITRAMFS := kernel-bin | append-dtb | uImage none
 endef
 TARGET_DEVICES += mitrarstar_gpt-2741gnac-n1
 
 define Device/nokia_g240g-e
+  $(Device/tcboot_trx)
   DEVICE_VENDOR := Nokia
   DEVICE_MODEL := G-240G-E
   DEVICE_DTS := en751221_nokia_g240g-e
@@ -92,6 +98,7 @@ endef
 TARGET_DEVICES += nokia_g240g-e
 
 define Device/smartfiber_xp8421-b
+  $(Device/tcboot_trx)
   DEVICE_VENDOR := SmartFiber
   DEVICE_MODEL := XP8421-B
   DEVICE_DTS := en751221_smartfiber_xp8421-b
@@ -104,6 +111,7 @@ TARGET_DEVICES += smartfiber_xp8421-b
 # NOTE: This will not work for upgrading from factory because it requires a cryptographic signature
 #       however, it it can be flashed, then it will boot correctly.
 define Device/tplink_archer-vr1200v-v2
+  $(Device/tcboot_trx)
   DEVICE_VENDOR := TP-Link
   DEVICE_MODEL := Archer vr1200v
   DEVICE_VARIANT := v2
@@ -121,6 +129,7 @@ endef
 TARGET_DEVICES += tplink_archer-vr1200v-v2
 
 define Device/zyxel_pmg5617ga
+  $(Device/tcboot_trx)
   DEVICE_VENDOR := Zyxel
   DEVICE_MODEL := PMG5617GA
   DEVICE_DTS := en751221_zyxel_pmg5617ga

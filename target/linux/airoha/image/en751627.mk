@@ -1,6 +1,7 @@
 TRX_ENDIAN := be
 
 define Device/zyxel_ex3301-t0
+  $(Device/tcboot_trx)
   DEVICE_VENDOR := Zyxel
   DEVICE_MODEL := EX3301-T0
   DEVICE_DTS := en751627_zyxel_ex3301-t0
