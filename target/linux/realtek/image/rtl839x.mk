@@ -9,6 +9,24 @@ define Device/d-link_dgs-1210-52
 endef
 TARGET_DEVICES += d-link_dgs-1210-52
 
+define Device/edgecore_ecs2100-52t
+  $(Device/uimage-rt-loader)
+  SOC := rtl8393
+  DEVICE_VENDOR := Edgecore
+  DEVICE_MODEL := ECS2100-52T
+  IMAGE_SIZE := 30720k
+  ECS_BOARD_ID := 01d8
+  KERNEL := $$(KERNEL/rt-loader) | uImage none | edgecore-header
+  KERNEL_INITRAMFS := $$(KERNEL/rt-loader) | uImage none | edgecore-header
+  DEVICE_PACKAGES := \
+	kmod-eeprom-at24 \
+	kmod-hwmon-adt7470 \
+	kmod-hwmon-lm75 \
+	kmod-hwmon-pwmfan \
+	kmod-thermal
+endef
+TARGET_DEVICES += edgecore_ecs2100-52t
+
 define Device/edgecore_ecs4100-12ph
   $(Device/uimage-rt-loader)
   SOC := rtl8393

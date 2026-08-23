@@ -6,9 +6,9 @@ PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/firmware/qca-wireless.git
-PKG_SOURCE_DATE:=2026-08-15
-PKG_SOURCE_VERSION:=ec3c6fec867e891cb6f0b1ecf7f34ede8730c793
-PKG_MIRROR_HASH:=d35ea28f534e2f72b51ad8295aa114fcb6ec6a2ee3a6bb499f3923f68bf04d1e
+PKG_SOURCE_DATE:=2026-08-23
+PKG_SOURCE_VERSION:=0c67bbcca45f7fc00255dbb078754cac89d3f40e
+PKG_MIRROR_HASH:=5d9512363e5fc588f5861c116e889b4910e36bf89782aabd334ceb3e42806d66
 PKG_FLAGS:=nonshared
 
 include $(INCLUDE_DIR)/package.mk
@@ -32,6 +32,7 @@ ALLWIFIBOARDS:= \
 	alfa-network_ap120c-ax \
 	aliyun_ap8220 \
 	arcadyan_aw1000 \
+	askey_sbe1v1k \
 	asus_rt-ax89x \
 	buffalo_wxr-5950ax12 \
 	cambiumnetworks_xe34 \
@@ -231,6 +232,7 @@ $(eval $(call generate-ipq-wifi-package,8devices_mango,8devices Mango))
 $(eval $(call generate-ipq-wifi-package,alfa-network_ap120c-ax,ALFA Network AP120C-AX))
 $(eval $(call generate-ipq-wifi-package,aliyun_ap8220,Aliyun AP8220))
 $(eval $(call generate-ipq-wifi-package,arcadyan_aw1000,Arcadyan AW1000))
+$(eval $(call generate-ipq-wifi-package,askey_sbe1v1k,Askey SBE1V1K))
 $(eval $(call generate-ipq-wifi-package,asus_rt-ax89x,Asus RT-AX89X))
 $(eval $(call generate-ipq-wifi-package,buffalo_wxr-5950ax12,Buffalo WXR-5950AX12))
 $(eval $(call generate-ipq-wifi-package,cambiumnetworks_xe34,Cambium Networks XE3-4))
