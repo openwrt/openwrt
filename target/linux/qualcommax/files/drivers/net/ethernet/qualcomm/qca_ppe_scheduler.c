@@ -454,10 +454,6 @@ static const u8 port_queue_base[PPE_NUM_PORTS] = {
 	0, 144, 160, 176, 192, 208, 224, 240,
 };
 
-static const u8 port_l0_cdrr_num[PPE_NUM_PORTS] = {
-	48, 16, 16, 16, 16, 16, 16, 16,
-};
-
 /* A unicast queue's admission control is four words that take effect on the
  * last one, so the whole entry goes back every time.
  */
@@ -494,30 +490,67 @@ static void ppe_qm_init(struct qca_ppe_priv *priv)
 				port_queue_base[i], i);
 
 	for (i = 0; i < PPE_NUM_PORTS; i++) {
-		u8 max_pri = port_l0_cdrr_num[i];
-		u8 profile;
-
-		if (max_pri > 16)
-			max_pri = 1;
-
 		for (pri = 0; pri < 16; pri++) {
-			u8 cls = (pri >= max_pri) ? max_pri - 1 : pri;
+			/* Two bands per port plus, on a user port, the queues
+			 * of the second scheduler node. On a user port the
+			 * hash offset is added to the class for every packet,
+			 * so a class must be as wide as the spread or the
+			 * smear crosses into the next; the CPU port is given
+			 * no spread, so its two are adjacent. Either way
+			 * l0_port0[] and ppe_l0_scheduler_init() have already
+			 * put the second band a strict priority above the
+			 * first, which is what the small-frame classifier in
+			 * the ACL needs to be worth anything: without it every
+			 * priority shares one queue, and a frame on its way to
+			 * a Wi-Fi client waits behind whatever bulk that queue
+			 * is holding.
+			 *
+			 * Priorities eight and up select the second node's
+			 * queues. No classifier resolves there on its own -
+			 * the DSCP and PCP tables map below eight unless told
+			 * otherwise - so the node carries exactly the traffic
+			 * a rule names into it, and a shaper on the node then
+			 * governs that traffic and nothing else. The CPU port
+			 * has no second node built and folds these priorities
+			 * to best effort.
+			 */
+			u8 cls;
 
-			if (i == 0) {
-				profile = 0;
-				regmap_write(priv->regmap,
-					     PPE_QM_UCAST_PRI_MAP(profile * 16 + pri),
-					     FIELD_PREP(PPE_QM_PRI_CLASS, cls));
-				profile = 15;
-				regmap_write(priv->regmap,
-					     PPE_QM_UCAST_PRI_MAP(profile * 16 + pri),
-					     FIELD_PREP(PPE_QM_PRI_CLASS, cls));
-			} else {
+			if (pri < PPE_FLOW_SPREAD_QUEUES)
+				cls = 0;
+			else if (pri < 2 * PPE_FLOW_SPREAD_QUEUES)
+				cls = i ? PPE_FLOW_SPREAD_QUEUES : 1;
+			else
+				cls = i ? 2 * PPE_FLOW_SPREAD_QUEUES : 0;
+
+			if (i) {
 				regmap_write(priv->regmap,
 					     PPE_QM_UCAST_PRI_MAP(i * 16 + pri),
 					     FIELD_PREP(PPE_QM_PRI_CLASS, cls));
+				continue;
 			}
+
+			/* Profiles 0 and 15 both resolve to the CPU port. */
+			regmap_write(priv->regmap,
+				     PPE_QM_UCAST_PRI_MAP(pri),
+				     FIELD_PREP(PPE_QM_PRI_CLASS, cls));
+			regmap_write(priv->regmap,
+				     PPE_QM_UCAST_PRI_MAP(15 * 16 + pri),
+				     FIELD_PREP(PPE_QM_PRI_CLASS, cls));
 		}
+	}
+
+	/* The 5-tuple hash picks the queue inside a band on every user port;
+	 * profile id equals port id. Profiles 14/15 (CPU code, point offload)
+	 * stay collapsed to offset 0 below.
+	 */
+	for (i = 1; i < PPE_NUM_PORTS; i++) {
+		int h;
+
+		for (h = 0; h < 256; h++)
+			regmap_write(priv->regmap,
+				     PPE_QM_UCAST_HASH_MAP(i * 256 + h),
+				     h % PPE_FLOW_SPREAD_QUEUES);
 	}
 
 	for (i = 0; i < 256; i++) {
@@ -716,13 +749,30 @@ static void ppe_l0_scheduler_init(struct qca_ppe_priv *priv)
 		for (k = 0; k < 2; k++) {
 			for (j = 0; j < counts[k]; j++) {
 				int slot = k ? p->ucast_count - counts[k] + j : j;
-				struct l0_cfg c = {
+				int pri = slot % PPE_MAX_SP_PRI;
+				struct l0_cfg c;
+
+				/* The three bands: queues of one band share one
+				 * (SP, priority) and therefore one DRR list -
+				 * the same layout the CPU port's RSS spread
+				 * uses - draining round-robin at equal weight,
+				 * so a hash bucket is served at no less than
+				 * its share of the port. Band two sits a
+				 * priority above band one; band three is the
+				 * second node's, under the mcast slots that
+				 * share that node.
+				 */
+				if (!k && slot < 3 * PPE_FLOW_SPREAD_QUEUES)
+					pri = slot / PPE_FLOW_SPREAD_QUEUES == 1 ?
+					      PPE_FLOW_SPREAD_QUEUES : 0;
+
+				c = (struct l0_cfg) {
 					.queue = bases[k] + j,
 					.port = p->port,
 					.sp = p->sp_base + slot / PPE_MAX_SP_PRI,
-					.cpri = slot % PPE_MAX_SP_PRI,
+					.cpri = pri,
 					.cdrr = p->cdrr_base + slot,
-					.epri = slot % PPE_MAX_SP_PRI,
+					.epri = pri,
 					.edrr = p->cdrr_base + slot,
 				};
 
@@ -1067,6 +1117,7 @@ static void ppe_port_queue_limit_set(struct qca_ppe_priv *priv, int port)
 
 	for (i = 0; i < p->ucast_count; i++) {
 		u64 rate = i < ARRAY_SIZE(sh->queue_rate) ? sh->queue_rate[i] : 0;
+		u32 w = w0;
 
 		/* A queue given a ceiling of its own is a bottleneck the same
 		 * way a shaped port is, and a tighter one, so the standing
@@ -1075,12 +1126,21 @@ static void ppe_port_queue_limit_set(struct qca_ppe_priv *priv, int port)
 		 * given, because a millisecond is too shallow to hold one
 		 * flow at the rate.
 		 */
-		ppe_ac_uni_write(priv, p->ucast_base + i,
-				 rate ? ppe_ac_uni_static(priv, port, rate,
-							  div_u64(rate * 10,
-								  BITS_PER_BYTE *
-								  1000)) :
-					w0);
+		if (rate)
+			w = ppe_ac_uni_static(priv, port, rate,
+					      div_u64(rate * 10,
+						      BITS_PER_BYTE * 1000));
+		else if (sh->rate_bps && i < 3 * PPE_FLOW_SPREAD_QUEUES)
+			/* A band bucket holds a share of the flows and drains
+			 * at no less than its share of the port, so it takes
+			 * a share of the depth: what one bucket's flows wait
+			 * behind stays bounded whatever the other buckets do.
+			 */
+			w = ppe_ac_uni_static(priv, port, sh->rate_bps,
+					      sh->limit /
+					      PPE_FLOW_SPREAD_QUEUES);
+
+		ppe_ac_uni_write(priv, p->ucast_base + i, w);
 	}
 }
 
@@ -1680,11 +1740,41 @@ static void ppe_rate_limit_init(struct qca_ppe_priv *priv)
 		     FIELD_PREP(PPE_POLICER_SLOT_TIME, PPE_POLICER_SLOT));
 }
 
+/* The 5-tuple RSS hash every unicast packet carries into queue selection.
+ * Out of reset the mask, seed and mix stages are zero and the hash is
+ * degenerate - every flow one bucket - so the spread depends on this. The
+ * seed is fixed rather than random so a flow's bucket survives a reboot.
+ */
+static void ppe_rss_hash_init(struct qca_ppe_priv *priv)
+{
+	static const u32 mix[5] = { 0x13, 0xb, 0x13, 0xb, 0x13 };
+	static const u32 fin[5] = { 0x205, 0x264, 0x227, 0x245, 0x201 };
+	int i;
+
+	regmap_write(priv->regmap, PPE_RSS_HASH_MASK, 0xfff);
+	regmap_write(priv->regmap, PPE_RSS_HASH_SEED, 0x5eedc0de);
+	/* v6 mix: sip[0..3], dip[0..3], proto, dport, sport - one weight per
+	 * field, alternating in that order.
+	 */
+	for (i = 0; i < 11; i++)
+		regmap_write(priv->regmap, PPE_RSS_HASH_MIX(i), mix[i % 2]);
+	for (i = 0; i < 5; i++)
+		regmap_write(priv->regmap, PPE_RSS_HASH_FIN(i), fin[i]);
+
+	regmap_write(priv->regmap, PPE_RSS_HASH_MASK_IPV4, 0xfff);
+	regmap_write(priv->regmap, PPE_RSS_HASH_SEED_IPV4, 0x5eedc0de);
+	for (i = 0; i < 5; i++)
+		regmap_write(priv->regmap, PPE_RSS_HASH_MIX_IPV4(i), mix[i]);
+	for (i = 0; i < 5; i++)
+		regmap_write(priv->regmap, PPE_RSS_HASH_FIN_IPV4(i), fin[i]);
+}
+
 void ppe_scheduler_init(struct qca_ppe_priv *priv)
 {
 	ppe_tdm_init(priv);
 	ppe_bm_init(priv);
 	ppe_qm_init(priv);
+	ppe_rss_hash_init(priv);
 	ppe_l1_scheduler_init(priv);
 	ppe_l0_scheduler_init(priv);
 	ppe_edma_ring_map_init(priv);
