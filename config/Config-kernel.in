@@ -1229,6 +1229,13 @@ if KERNEL_NAMESPACES
 		  Allow user space to create what appear to be multiple instances
 		  of the network stack.
 
+	config KERNEL_TIME_NS
+		bool "Time namespace"
+		default y
+		help
+		  In this namespace boottime and monotonic clocks can be set.
+		  The time will keep going with the same pace.
+
 endif
 
 config KERNEL_POSIX_MQUEUE
