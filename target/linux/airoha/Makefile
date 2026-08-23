@@ -6,7 +6,6 @@ SUBTARGETS:=en7523 an7581 an7583 en751221 en751627 en7528
 FEATURES:=dt squashfs nand ramdisk gpio
 
 KERNEL_PATCHVER:=6.18
-KERNELNAME:=zImage Image vmlinuz dtbs
 
 include $(INCLUDE_DIR)/target.mk
 DEFAULT_PACKAGES += \

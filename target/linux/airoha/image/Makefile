@@ -8,6 +8,18 @@ loadaddr-$(CONFIG_TARGET_airoha_en751221) := 0x80020000
 loadaddr-$(CONFIG_TARGET_airoha_en751627) := 0x80020000
 loadaddr-$(CONFIG_TARGET_airoha_en7528) := 0x80020000
 
+define Device/Default
+  PROFILES = Default $$(DEVICE_NAME)
+  KERNEL_LOADADDR = $(loadaddr-y)
+  SOC = $$(SUBTARGET)
+  FILESYSTEMS := squashfs
+  DEVICE_DTS = $$(SUBTARGET)-$(subst -,_,$(1))
+  DEVICE_DTS_DIR := ../dts
+  IMAGES := sysupgrade.bin
+  IMAGE/sysupgrade.bin := append-kernel | pad-to 128k | append-rootfs | \
+    pad-rootfs | append-metadata
+endef
+
 # tclinux-trx is the image format used by the EN751221 vendor bootloader.
 define Build/tclinux-trx
 	./tclinux-trx.sh --kernel $@ --rootfs $(IMAGE_ROOTFS) \
@@ -37,18 +49,6 @@ define Build/tclinux-free-bootbase-jump
 	mv $@.new $@
 endef
 
-define Device/Default
-  PROFILES = Default $$(DEVICE_NAME)
-  KERNEL_LOADADDR = $(loadaddr-y)
-  SOC = $$(SUBTARGET)
-  FILESYSTEMS := squashfs
-  DEVICE_DTS = $$(SUBTARGET)-$(subst -,_,$(1))
-  DEVICE_DTS_DIR := ../dts
-  IMAGES := sysupgrade.bin
-  IMAGE/sysupgrade.bin := append-kernel | pad-to 128k | append-rootfs | \
-    pad-rootfs | append-metadata
-endef
-
 define Device/FitImage
   KERNEL_NAME := Image
   KERNEL = kernel-bin | gzip | \
@@ -62,6 +62,14 @@ define Device/FitImageLzma
   KERNEL_NAME := Image
   KERNEL = kernel-bin | lzma | \
     fit lzma $$(KDIR)/image-$$(DEVICE_DTS).dtb
+endef
+
+define Device/FitImageVmlinuz
+  KERNEL_NAME := vmlinuz.bin
+  KERNEL = kernel-bin | \
+    fit none $$(KDIR)/image-$$(DEVICE_DTS).dtb
+  KERNEL_INITRAMFS = kernel-bin | \
+    fit none $$(KDIR)/image-$$(DEVICE_DTS).dtb
 endef
 
 define Device/RouterBoot
@@ -123,6 +131,32 @@ define Device/ubi_firmware_chainload
     fit gzip $$(KDIR)/image-$$(DEVICE_DTS).dtb external-static-with-rootfs | \
     append-metadata
   DEVICE_PACKAGES += fitblk
+endef
+
+define Device/tcboot_trx
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  # decompression buffer limit, the size of LZMA-compressed data is read from
+  # the trx header
+  KERNEL_SIZE := 7480k
+  KERNEL_NAME := vmlinuz.bin
+  KERNEL_LOADADDR := 0x80020000
+  KERNEL := kernel-bin | append-dtb
+  UBINIZE_OPTS := -E 5
+endef
+
+# Kernel in a raw TRX partition, root squashfs in UBI. FACTORY_SIZE must be the
+# size of the partition the .trx is written into; that write is linear, so an
+# oversized image overruns it into the next partition.
+define Device/tclinux-ubi
+  $(Device/tcboot_trx)
+  KERNEL_SIZE := 4096k
+  KERNEL := kernel-bin | append-dtb | lzma | kernel-trx
+  KERNEL_INITRAMFS := kernel-bin | append-dtb
+  IMAGES := tclinux.trx sysupgrade.bin
+  IMAGE/tclinux.trx := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | \
+    check-size $$$$(FACTORY_SIZE)
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 
 define Build/staging-copy-file
