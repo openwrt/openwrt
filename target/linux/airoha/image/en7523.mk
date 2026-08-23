@@ -101,6 +101,14 @@ define Device/genexis_zephyr
 endef
 TARGET_DEVICES += genexis_zephyr
 
+define Device/mikrotik_e50ug
+  $(Device/RouterBoot)
+  DEVICE_MODEL := E50UG (hEX refresh)
+  ARTIFACT/uboot-bootloader.bin += | fill-zero 0x100000
+  DEVICE_PACKAGES += kmod-usb-ohci kmod-usb2 kmod-usb3
+endef
+TARGET_DEVICES += mikrotik_e50ug
+
 define Device/mikrotik_e60iugs
   $(Device/RouterBoot)
   DEVICE_MODEL := E60iUGS (hEX S 2025)

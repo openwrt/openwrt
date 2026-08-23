@@ -28,6 +28,13 @@ case "$board" in
     ucidef_set_led_netdev "lan4" "lan4" "mt7530-0:0c::lan" "lan4" "link tx rx"
     # ucidef_set_led_netdev "wan" "wan" "wan" "wan" "link tx rx"
     ;;
+  mikrotik,e50ug)
+    ucidef_set_led_netdev "wan" "wan" "mt7530-0:00:green:wan" "wan" "link tx rx"
+    ucidef_set_led_netdev "lan2" "lan2" "mt7530-0:09:green:lan" "lan2" "link tx rx"
+    ucidef_set_led_netdev "lan3" "lan3" "mt7530-0:0a:green:lan" "lan3" "link tx rx"
+    ucidef_set_led_netdev "lan4" "lan4" "mt7530-0:0b:green:lan" "lan4" "link tx rx"
+    ucidef_set_led_netdev "lan5" "lan5" "mt7530-0:0c:green:lan" "lan5" "link tx rx"
+    ;;
   mikrotik,e60iugs)
     ucidef_set_led_netdev "sfp" "sfp" "green:wan-12" "sfp" "link tx rx"
     ucidef_set_led_netdev "wan" "wan" "mt7530-0:00:green:wan" "wan" "link tx rx"
