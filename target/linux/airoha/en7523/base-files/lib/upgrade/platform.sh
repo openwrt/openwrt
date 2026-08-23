@@ -86,6 +86,7 @@ platform_do_upgrade() {
   tplink,xx230v-v1)
     fit_do_upgrade "$1"
     ;;
+  mikrotik,e50ug |\
   mikrotik,e60iugs)
     platform_do_upgrade_mikrotik_nand "$1"
     ;;
