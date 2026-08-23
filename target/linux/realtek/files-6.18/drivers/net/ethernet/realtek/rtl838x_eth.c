@@ -2134,22 +2134,10 @@ static void rteth_remove(struct platform_device *pdev)
 }
 
 static const struct of_device_id rteth_of_ids[] = {
-	{
-		.compatible = "realtek,rtl8380-eth",
-		.data = &rteth_838x_cfg,
-	},
-	{
-		.compatible = "realtek,rtl8392-eth",
-		.data = &rteth_839x_cfg,
-	},
-	{
-		.compatible = "realtek,rtl9301-eth",
-		.data = &rteth_930x_cfg,
-	},
-	{
-		.compatible = "realtek,rtl9311-eth",
-		.data = &rteth_931x_cfg,
-	},
+	{ .compatible = "realtek,rtl8380-eth", .data = &rteth_838x_cfg, },
+	{ .compatible = "realtek,rtl8392-eth", .data = &rteth_839x_cfg, },
+	{ .compatible = "realtek,rtl9301-eth", .data = &rteth_930x_cfg, },
+	{ .compatible = "realtek,rtl9311-eth", .data = &rteth_931x_cfg, },
 	{ /* sentinel */ }
 };
 MODULE_DEVICE_TABLE(of, rteth_of_ids);
