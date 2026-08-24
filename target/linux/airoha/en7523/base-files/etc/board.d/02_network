@@ -31,7 +31,8 @@ setup_interfaces()
   mikrotik,e50ug)
     ucidef_set_interfaces_lan_wan "lan2 lan3 lan4 lan5" "wan"
     ;;
-  mikrotik,e60iugs)
+  mikrotik,e60iugs | \
+  mikrotik,e62iugs-2axd5axt)
     ucidef_set_interfaces_lan_wan "lan2 lan3 lan4 lan5" "wan sfp"
     ;;
   tplink,ex530v-v1)

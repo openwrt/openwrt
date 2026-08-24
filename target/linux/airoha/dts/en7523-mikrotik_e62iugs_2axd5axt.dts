@@ -1,0 +1,212 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later OR MIT */
+
+#include "en7523-mikrotik.dtsi"
+
+/ {
+	model = "MikroTik E62iUGS-2axD5axT (hAP ax S)";
+	compatible = "mikrotik,e62iugs-2axd5axt", "airoha,en7523";
+
+	aliases {
+		label-mac-device = <&macaddr_hard 0>;
+	};
+
+	sfp1: sfp {
+		compatible = "sff,sfp";
+
+		maximum-power-milliwatt = <3000>;
+		i2c-bus = <&i2c0>;
+
+		tx-fault-gpios = <&pinctrl 17 GPIO_ACTIVE_HIGH>;
+		los-gpios = <&pinctrl 19 GPIO_ACTIVE_HIGH>;
+		tx-disable-gpios = <&pinctrl 20 GPIO_ACTIVE_HIGH>;
+		mod-def0-gpios = <&pinctrl 27 GPIO_ACTIVE_LOW>;
+	};
+
+	poe: ethernet-pse {
+		compatible = "generic,gpio-pse", "mikrotik,gpio-poe";
+
+		status-gpios = <&pinctrl 10 GPIO_ACTIVE_LOW>;
+		enable-gpios = <&pinctrl 13 GPIO_ACTIVE_HIGH>;
+		leds-status-gpios = <&pinctrl 14 GPIO_ACTIVE_LOW>;
+
+		vpse-microvolt = <48000000>;
+
+		pse-pis {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			pse_pi0: pse-pi@0 {
+				reg = <0>;
+				#pse-cells = <0>;
+			};
+		};
+	};
+
+	exports {
+		compatible = "gpio-export";
+
+		usb-pwroff {
+			gpio-export,name = "usb-pwroff";
+			gpio-export,output = <0>;
+
+			/* inverted */
+			gpios = <&pinctrl 3 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&btns {
+	/delete-node/ mode;
+};
+
+&led_power {
+	color = <LED_COLOR_ID_GREEN>;
+};
+
+&leds {
+	/* sfp1 */
+	led@12 {
+		color = <LED_COLOR_ID_GREEN>;
+		function = LED_FUNCTION_WAN;
+		function-enumerator = <12>;
+		gpios = <&pinctrl 12 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&pcie0 {
+	status = "okay";
+};
+
+&pcie1 {
+	status = "okay";
+
+	pcie@1,0 {
+		reg = <0x00000800 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+
+		mt7915@0,0 {
+			reg = <0x0000 0 0 0 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			airoha,npu = <&npu>;
+			airoha,eth = <&eth>;
+
+			/* 2.4 GHz */
+			band@0 {
+				reg = <0>;
+				nvmem-cells = <&macaddr_hard 6>;
+				nvmem-cell-names = "mac-address";
+			};
+
+			/* 5 GHz */
+			band@1 {
+				reg = <1>;
+				nvmem-cells = <&macaddr_hard 7>;
+				nvmem-cell-names = "mac-address";
+			};
+		};
+	};
+};
+
+&pon_pcs {
+	status = "okay";
+};
+
+&usb_pcs {
+	status = "okay";
+};
+
+&gdm2 {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_hard 5>;
+	nvmem-cell-names = "mac-address";
+
+	openwrt,netdev-name = "sfp";
+
+	phy-mode = "2500base-x";
+	managed = "in-band-status";
+	sfp = <&sfp1>;
+};
+
+&gdm3_usb {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_hard 0>;
+	nvmem-cell-names = "mac-address";
+
+	openwrt,netdev-name = "wan";
+
+	phy-mode = "sgmii";
+	managed = "in-band-status";
+	phy-handle = <&en8801sn>;
+};
+
+&mdio {
+	en8801sn: ethernet-phy@0 {
+		compatible = "ethernet-phy-id03a2.9471";
+		reg = <0x0>;
+		phy-mode = "sgmii";
+
+		leds {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			led@1 {
+				reg = <1>;
+
+				color = <LED_COLOR_ID_GREEN>;
+				function = LED_FUNCTION_WAN;
+			};
+		};
+	};
+};
+
+&gsw_port1 {
+	label = "lan5";
+	nvmem-cells = <&macaddr_hard 4>;
+};
+
+&gsw_port2 {
+	label = "lan4";
+	nvmem-cells = <&macaddr_hard 3>;
+};
+
+&gsw_port3 {
+	label = "lan3";
+	nvmem-cells = <&macaddr_hard 2>;
+};
+
+&gsw_port4 {
+	label = "lan2";
+	nvmem-cells = <&macaddr_hard 1>;
+};
+
+&gsw_phy1 {
+	pses = <&pse_pi0>;
+};
+
+&swp1_led0 {
+	mux {
+		pins = "gpio25";
+	};
+};
+
+&swp2_led0 {
+	mux {
+		pins = "gpio24";
+	};
+};
+
+&swp3_led0 {
+	mux {
+		pins = "gpio23";
+	};
+};
+
+&swp4_led0 {
+	mux {
+		pins = "gpio22";
+	};
+};

@@ -87,7 +87,8 @@ platform_do_upgrade() {
     fit_do_upgrade "$1"
     ;;
   mikrotik,e50ug |\
-  mikrotik,e60iugs)
+  mikrotik,e60iugs |\
+  mikrotik,e62iugs-2axd5axt)
     platform_do_upgrade_mikrotik_nand "$1"
     ;;
   *)
