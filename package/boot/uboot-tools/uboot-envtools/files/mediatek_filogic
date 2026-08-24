@@ -155,7 +155,7 @@ ltc,vl7m19k)
 	. /lib/upgrade/nand.sh
 	envubi=$(nand_find_ubi ubi)
 	envdev=/dev/$(nand_find_volume "$envubi" u-boot-env)
-	ubootenv_add_uci_config "$envdev" "0x0" "0x80000" "0x80000" "1"
+	ubootenv_add_uci_config "$envdev" "0x0" "0x80000" "0x1f000" "5"
 	;;
 openembed,som7981)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x80000" "0x80000"
