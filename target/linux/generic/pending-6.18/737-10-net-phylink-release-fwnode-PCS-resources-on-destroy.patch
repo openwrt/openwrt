@@ -1,0 +1,229 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Sean McCully <sean_mccully@yahoo.com>
+Date: Wed, 5 Aug 2026 09:25:00 -0700
+Subject: [PATCH] net: phylink: release firmware-node PCS resources on destroy
+
+phylink_create() registers a firmware-node PCS notifier whenever the
+MAC declares PCS interfaces, but phylink_destroy() does not unregister
+it. Drivers which replace a phylink at runtime consequently leave a
+notifier whose container has already been freed.
+
+Add the matching notifier unregister API and track successful
+registration in phylink. Consolidate destruction and creation-error
+unwinding so the notifier, SFP upstream, link GPIO, pending work and
+available PCS list are all released consistently. Reinitialize PCS list
+nodes during removal so an embedded PCS can be used by a replacement
+phylink. Clear the saved SFP bus pointer when upstream registration
+fails so the common cleanup path does not attempt to remove an upstream
+which was never installed.
+
+This follows the notifier teardown in the upstream fwnode PCS submission
+while retaining the additional cleanup needed by this backport.
+
+Link: https://patch.msgid.link/20260730102444.1967900-6-ansuelsmth@gmail.com
+Signed-off-by: Sean McCully <sean_mccully@yahoo.com>
+---
+ drivers/net/pcs/pcs.c     |    6 +++
+ drivers/net/phy/phylink.c |   83 ++++++++++++++++++++++++++-------------------
+ include/linux/pcs/pcs.h   |   16 +++++++++
+ 3 files changed, 70 insertions(+), 35 deletions(-)
+
+--- a/drivers/net/pcs/pcs.c
++++ b/drivers/net/pcs/pcs.c
+@@ -30,6 +30,12 @@ int register_fwnode_pcs_notifier(struct
+ }
+ EXPORT_SYMBOL_GPL(register_fwnode_pcs_notifier);
+ 
++int unregister_fwnode_pcs_notifier(struct notifier_block *nb)
++{
++	return blocking_notifier_chain_unregister(&fwnode_pcs_notify_list, nb);
++}
++EXPORT_SYMBOL_GPL(unregister_fwnode_pcs_notifier);
++
+ struct phylink_pcs *fwnode_pcs_simple_get(struct fwnode_reference_args *pcsspec,
+ 					  void *data)
+ {
+--- a/drivers/net/phy/phylink.c
++++ b/drivers/net/phy/phylink.c
+@@ -64,6 +64,7 @@ struct phylink {
+ 	/* List of available PCS */
+ 	struct list_head pcs_list;
+ 	struct notifier_block fwnode_pcs_nb;
++	bool fwnode_pcs_nb_registered;
+ 
+ 	/* What interface are supported by the current link.
+ 	 * Can change on removal or addition of new PCS.
+@@ -1920,6 +1921,8 @@ static int phylink_register_sfp(struct p
+ 
+ 	ret = sfp_bus_add_upstream(bus, pl, &sfp_phylink_ops);
+ 	sfp_bus_put(bus);
++	if (ret)
++		pl->sfp_bus = NULL;
+ 
+ 	return ret;
+ }
+@@ -2048,6 +2051,28 @@ static int pcs_provider_notify(struct no
+ 	return NOTIFY_OK;
+ }
+ 
++static void phylink_cleanup(struct phylink *pl)
++{
++	struct phylink_pcs *pcs, *tmp;
++
++	if (pl->fwnode_pcs_nb_registered)
++		unregister_fwnode_pcs_notifier(&pl->fwnode_pcs_nb);
++
++	sfp_bus_del_upstream(pl->sfp_bus);
++	cancel_work_sync(&pl->resolve);
++
++	if (pl->link_gpio)
++		gpiod_put(pl->link_gpio);
++
++	list_for_each_entry_safe(pcs, tmp, &pl->pcs_list, list) {
++		if (pcs->phylink == pl)
++			pcs->phylink = NULL;
++		list_del_init(&pcs->list);
++	}
++
++	kfree(pl);
++}
++
+ /**
+  * phylink_create() - create a phylink instance
+  * @config: a pointer to the target &struct phylink_config
+@@ -2091,10 +2116,8 @@ struct phylink *phylink_create(struct ph
+ 
+ 	/* Fill the PCS list with available PCS from phylink config */
+ 	ret = phylink_fill_available_pcs(pl, config);
+-	if (ret) {
+-		kfree(pl);
+-		return ERR_PTR(ret);
+-	}
++	if (ret)
++		goto err_cleanup;
+ 
+ 	phy_interface_copy(pl->supported_interfaces,
+ 			   config->supported_interfaces);
+@@ -2103,20 +2126,16 @@ struct phylink *phylink_create(struct ph
+ 				 pl->supported_interfaces,
+ 				 pcs->supported_interfaces);
+ 
+-	if (!phy_interface_empty(config->pcs_interfaces)) {
+-		pl->fwnode_pcs_nb.notifier_call = pcs_provider_notify;
+-		register_fwnode_pcs_notifier(&pl->fwnode_pcs_nb);
+-	}
+-
+ 	pl->config = config;
++
+ 	if (config->type == PHYLINK_NETDEV) {
+ 		pl->netdev = to_net_dev(config->dev);
+ 		netif_carrier_off(pl->netdev);
+ 	} else if (config->type == PHYLINK_DEV) {
+ 		pl->dev = config->dev;
+ 	} else {
+-		kfree(pl);
+-		return ERR_PTR(-EINVAL);
++		ret = -EINVAL;
++		goto err_cleanup;
+ 	}
+ 
+ 	pl->mac_supports_eee_ops = phylink_mac_implements_lpi(mac_ops);
+@@ -2148,29 +2167,34 @@ struct phylink *phylink_create(struct ph
+ 	linkmode_copy(pl->link_config.advertising, pl->supported);
+ 	phylink_validate(pl, pl->supported, &pl->link_config);
+ 
+-	ret = phylink_parse_mode(pl, fwnode);
+-	if (ret < 0) {
+-		kfree(pl);
+-		return ERR_PTR(ret);
++	if (!phy_interface_empty(config->pcs_interfaces)) {
++		pl->fwnode_pcs_nb.notifier_call = pcs_provider_notify;
++		ret = register_fwnode_pcs_notifier(&pl->fwnode_pcs_nb);
++		if (!ret)
++			pl->fwnode_pcs_nb_registered = true;
+ 	}
+ 
++	ret = phylink_parse_mode(pl, fwnode);
++	if (ret < 0)
++		goto err_cleanup;
++
+ 	if (pl->cfg_link_an_mode == MLO_AN_FIXED) {
+ 		ret = phylink_parse_fixedlink(pl, fwnode);
+-		if (ret < 0) {
+-			kfree(pl);
+-			return ERR_PTR(ret);
+-		}
++		if (ret < 0)
++			goto err_cleanup;
+ 	}
+ 
+ 	pl->req_link_an_mode = pl->cfg_link_an_mode;
+ 
+ 	ret = phylink_register_sfp(pl, fwnode);
+-	if (ret < 0) {
+-		kfree(pl);
+-		return ERR_PTR(ret);
+-	}
++	if (ret < 0)
++		goto err_cleanup;
+ 
+ 	return pl;
++
++err_cleanup:
++	phylink_cleanup(pl);
++	return ERR_PTR(ret);
+ }
+ EXPORT_SYMBOL_GPL(phylink_create);
+ 
+@@ -2185,18 +2209,7 @@ EXPORT_SYMBOL_GPL(phylink_create);
+  */
+ void phylink_destroy(struct phylink *pl)
+ {
+-	struct phylink_pcs *pcs, *tmp;
+-
+-	sfp_bus_del_upstream(pl->sfp_bus);
+-	if (pl->link_gpio)
+-		gpiod_put(pl->link_gpio);
+-
+-	/* Remove every PCS from phylink PCS list */
+-	list_for_each_entry_safe(pcs, tmp, &pl->pcs_list, list)
+-		list_del(&pcs->list);
+-
+-	cancel_work_sync(&pl->resolve);
+-	kfree(pl);
++	phylink_cleanup(pl);
+ }
+ EXPORT_SYMBOL_GPL(phylink_destroy);
+ 
+--- a/include/linux/pcs/pcs.h
++++ b/include/linux/pcs/pcs.h
+@@ -23,6 +23,17 @@ enum fwnode_pcs_notify_event {
+ int register_fwnode_pcs_notifier(struct notifier_block *nb);
+ 
+ /**
++ * unregister_fwnode_pcs_notifier - Unregister a firmware-node PCS notifier
++ * @nb: pointer to the notifier block
++ *
++ * Removes a notifier block previously registered with
++ * register_fwnode_pcs_notifier().
++ *
++ * Returns 0 or a negative error.
++ */
++int unregister_fwnode_pcs_notifier(struct notifier_block *nb);
++
++/**
+  * fwnode_pcs_get - Retrieves a PCS from a firmware node
+  * @fwnode: firmware node
+  * @index: index fwnode PCS handle in firmware node
+@@ -79,6 +90,11 @@ static inline int register_fwnode_pcs_no
+ {
+ 	return -EOPNOTSUPP;
+ }
++
++static inline int unregister_fwnode_pcs_notifier(struct notifier_block *nb)
++{
++	return -EOPNOTSUPP;
++}
+ 
+ static inline struct phylink_pcs *fwnode_pcs_get(struct fwnode_handle *fwnode,
+ 						 int index)

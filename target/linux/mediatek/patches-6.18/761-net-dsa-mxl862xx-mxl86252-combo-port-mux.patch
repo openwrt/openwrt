@@ -1,0 +1,5210 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Sean McCully <sean_mccully@yahoo.com>
+Date: Tue, 4 Aug 2026 13:40:03 -0700
+Subject: [PATCH] net: dsa: mxl862xx: add MxL86252 support and combo-port SerDes mux
+
+Extend the MxL862xx DSA driver for the MxL86252 (five 2.5G PHYs)
+variant used on the Bananapi BPI-R4 Pro and add combo-port support:
+a devicetree-described SerDes lane mux (ds-mux) that switches a
+switch SerDes between an SFP+ cage and an external 10G PHY, with an
+SFP presence monitor selecting the active channel at runtime. Also
+extends the CTP/flow/RMON/MMD API definitions used by the new port
+paths and fixes host-command and phylink handling for the 10G ports.
+
+Based on the MaxLinear driver files from the MediaTek SDK; original
+copyrights and GPL-2.0 licensing preserved.
+
+Signed-off-by: Sean McCully <sean_mccully@yahoo.com>
+---
+ drivers/net/dsa/mxl862xx/mxl862xx-api.h     |  200 ++++++
+ drivers/net/dsa/mxl862xx/mxl862xx-cmd.h     |  360 ++++++++---
+ drivers/net/dsa/mxl862xx/mxl862xx-ctp.h     |  384 +++++++++++
+ drivers/net/dsa/mxl862xx/mxl862xx-flow.h    |   48 +
+ drivers/net/dsa/mxl862xx/mxl862xx-fw.c      |    1 
+ drivers/net/dsa/mxl862xx/mxl862xx-host.c    |  260 +++++++-
+ drivers/net/dsa/mxl862xx/mxl862xx-host.h    |   18 -
+ drivers/net/dsa/mxl862xx/mxl862xx-phylink.c |  722 ++++++++++++++++++----
+ drivers/net/dsa/mxl862xx/mxl862xx-phylink.h |   17 -
+ drivers/net/dsa/mxl862xx/mxl862xx-rmon.h    |  528 ++++++++++++++++
+ drivers/net/dsa/mxl862xx/mxl862xx-types.h   |  280 ++++++++
+ drivers/net/dsa/mxl862xx/mxl862xx.c         |  906 ++++++++++++++++++++-------
+ drivers/net/dsa/mxl862xx/mxl862xx.h         |  396 +-----------
+ 13 files changed, 3306 insertions(+), 814 deletions(-)
+
+--- a/drivers/net/dsa/mxl862xx/mxl862xx-api.h
++++ b/drivers/net/dsa/mxl862xx/mxl862xx-api.h
+@@ -2299,6 +2299,28 @@ struct mxl862xx_port_cfg {
+ 	__le32 if_rmonmode; /* enum mxl862xx_if_rmon_mode */
+ } __packed;
+ 
++/** select speed when mode is 1
++ *      0 - 10G Quad USXGMII
++ *       1 - 1000BaseX ANeg
++ *       2 - 10G XFI
++ *       3 - 10G Single USXGMII
++ *       4 - 2.5G SGMII
++ *       5 - 2500 Single USXGMI
++ *       6 - 2500BaseX NonANeg
++ *       7 - 1000BaseX NonANeg
++ *       8 - 1G SGMI
++ */
++enum mxl862xx_sfp_port_speed {
++	MXL862XX_SFP_PORT_SPEED_QUAD_10G = 0,
++	MXL862XX_SFP_PORT_SPEED_ANEG_1G,
++	MXL862XX_SFP_PORT_SPEED_XFI_10G,
++	MXL862XX_SFP_PORT_SPEED_USXGMII_10G,
++	MXL862XX_SFP_PORT_SPEED_SGMII_2G,
++	MXL862XX_SFP_PORT_SPEED_USXGMII_2G,
++	MXL862XX_SFP_PORT_SPEED_BASEX_2500,
++	MXL862XX_SFP_PORT_SPEED_BASEX_1000,
++	MXL862XX_SFP_PORT_SPEED_SGMI_1G,
++};
+ /**
+  * enum mxl862xx_port_speed -  Ethernet port speed mode
+  * @MXL862XX_PORT_SPEED_10: 10 Mbit/s
+@@ -2943,4 +2965,182 @@ struct mxl862xx_xpcs_eq_get {
+ 	struct mxl862xx_xpcs_rx_eq_info rx;
+ } __packed;
+ 
++struct mxl862xx_sys_delay {
++	/* m_sec unit is 1ms, the accuracy is 10ms. */
++	__le32 m_sec;
++};
++
++struct mxl862xx_sys_gpio_config {
++	__le16 enable_mask[3];
++	__le16 alt_sel_0[3];
++	__le16 alt_sel_1[3];
++	__le16 dir[3];
++	__le16 out_val[3];
++	/**
++	 * reserve 1 - reserved for open drain in future
++	 * reserve 2 - reserved for pull up enable in future
++	 * reserve 3 - reserved for pull up/down in future
++	 **/
++	__le16 reserve_1[3];
++	__le16 reserve_2[3];
++	__le16 reserve_3[3];
++	/**
++	 * unit is 1ms, the accuracy is 10ms.
++	 **/
++	__le32 timeout_val;
++};
++
++/**
++ * @brief Representation of a sensor readout value.
++ *
++ * The value is represented as having an integer and a fractional part,
++ * and can be obtained using the formula val1 + val2 * 10^(-6). Negative
++ * values also adhere to the above formula, but may need special attention.
++ * Here are some examples of the value representation:
++ *
++ *      0.5: val1 =  0, val2 =  500000
++ *     -0.5: val1 =  0, val2 = -500000
++ *     -1.0: val1 = -1, val2 =  0
++ *     -1.5: val1 = -1, val2 = -500000
++ */
++struct mxl862xx_sys_sensor_value {
++	/** Integer part of the value. */
++	__le32 val1;
++	/** Fractional part of the value (in one-millionth parts). */
++	__le32 val2;
++};
++
++/**
++ * enum mxl862xx_sys_cml_clk_src - CML clock source selection
++ * @SYS_CML_CLK_50MHZ:    LJPLL FOUT0 (50 MHz)
++ * @SYS_CML_CLK_156P25MHZ: LJPLL FOUT1 (156.25 MHz - 10G XGMAC reference)
++ * @SYS_CML_CLK_XO:       25 MHz crystal oscillator pass-through
++ *
++ * SDK reference: ethswbox sys_misc.h, enum starting at SYS_CML_CLK_50MHZ.
++ */
++enum mxl862xx_sys_cml_clk_src {
++	SYS_CML_CLK_50MHZ	= 0,
++	SYS_CML_CLK_156P25MHZ	= 1,
++	SYS_CML_CLK_XO		= 2,
++	SYS_CML_CLK_MAX,
++};
++
++/**
++ * struct mxl862xx_sys_cml_clk_cfg - Enable/Disable/Config CML clock output
++ * @bits: packed 6-bit configuration; use MXL862XX_CML_CLK_* accessors
++ *
++ * On-wire size is exactly one byte, matching the F48X firmware's
++ * sys_cml_clk payload (one byte holding a 6-bit field).
++ *
++ * Bit layout (LSB first, matches SDK sys_misc.h sys_cml_clk):
++ *   bit 0    : clk     - select CML clock output (0 or 1)
++ *   bit 1    : en_val  - 1 to commit the @en field
++ *   bit 2    : en      - enable when en_val=1; disable when en_val=1 & en=0
++ *   bit 3    : src_val - 1 to commit the @src_sel field
++ *   bits 5:4 : src_sel - clock source per &enum mxl862xx_sys_cml_clk_src
++ *
++ * Storage is plain u8 with explicit bit masks rather than a C bitfield:
++ *   - Bitfield bit-packing is host-endian within the storage unit, so a
++ *     bitfield-based struct would only have a well-defined wire layout
++ *     on little-endian hosts (which is fine today, but brittle).
++ *   - A __packed struct with a u32 bitfield still rounds to 4 bytes on
++ *     the wire, mismatching the firmware's 1-byte expectation.
++ */
++struct mxl862xx_sys_cml_clk_cfg {
++	u8 bits;
++} __packed;
++
++#define MXL862XX_CML_CLK_OUT_MASK	GENMASK(0, 0)
++#define MXL862XX_CML_CLK_EN_VAL		BIT(1)
++#define MXL862XX_CML_CLK_EN		BIT(2)
++#define MXL862XX_CML_CLK_SRC_VAL	BIT(3)
++#define MXL862XX_CML_CLK_SRC_SEL_MASK	GENMASK(5, 4)
++
++#define MXL862XX_CML_CLK_OUT(c)		((c) & MXL862XX_CML_CLK_OUT_MASK)
++#define MXL862XX_CML_CLK_SRC_SEL(s)	\
++	(((s) << 4) & MXL862XX_CML_CLK_SRC_SEL_MASK)
++#define MXL862XX_CML_CLK_GET_SRC_SEL(b)	\
++	(((b) & MXL862XX_CML_CLK_SRC_SEL_MASK) >> 4)
++
++/**
++ * struct mxl862xx_sys_reg_rw - 32-bit register read/write payload
++ * @addr: target register address (FW address space, not host PA)
++ * @val:  value read out (REG_RD) or value to write (REG_WR)
++ */
++struct mxl862xx_sys_reg_rw {
++	__le32 addr;
++	__le32 val;
++} __packed;
++
++/**
++ * struct mxl862xx_sys_reg_mod - 32-bit register read-modify-write payload
++ * @addr: target register address
++ * @val:  bits to write where @mask=1
++ * @mask: bit value 1 to write the corresponding bit, 0 to leave unchanged
++ */
++struct mxl862xx_sys_reg_mod {
++	__le32 addr;
++	__le32 val;
++	__le32 mask;
++} __packed;
++
++/**
++ * struct mxl862xx_register_get - Register read parameter for direct chip
++ *                                register access via MXL862XX_COMMON_REGISTERGET.
++ * @addr: Register address (input)
++ * @data: Register value (output, filled by firmware on success)
++ */
++struct mxl862xx_register_get {
++	__le16 addr;
++	__le16 data;
++} __packed;
++
++/**
++ * struct mxl862xx_register_set - Register write parameter for direct chip
++ *                                register access via MXL862XX_COMMON_REGISTERSET.
++ * @addr: Register address
++ * @data: Value to write (no mask: full-word write)
++ */
++struct mxl862xx_register_set {
++	__le16 addr;
++	__le16 data;
++} __packed;
++
++#define MXL862XX_ERROR_BASE 1024
++/** \brief Enumeration for function status return.
++ * The upper four bits are reserved for error classification
++ */
++typedef enum {
++	/** Correct or Expected Status */
++	MXL862XX_STATUS_OK = 0,
++	/** Generic or unknown error occurred */
++	MXL862XX_STATUS_ERR = -1,
++	/** Invalid function parameter */
++	MXL862XX_STATUS_PARAM = -(MXL862XX_ERROR_BASE + 2),
++	/** No space left in VLAN table */
++	MXL862XX_STATUS_VLAN_SPACE = -(MXL862XX_ERROR_BASE + 3),
++	/** Requested VLAN ID not found in table */
++	MXL862XX_STATUS_VLAN_ID = -(MXL862XX_ERROR_BASE + 4),
++	/** Invalid ioctl */
++	MXL862XX_STATUS_INVAL_IOCTL = -(MXL862XX_ERROR_BASE + 5),
++	/** Operation not supported by hardware */
++	MXL862XX_STATUS_NO_SUPPORT = -(MXL862XX_ERROR_BASE + 6),
++	/** Timeout */
++	MXL862XX_STATUS_TIMEOUT = -(MXL862XX_ERROR_BASE + 7),
++	/** At least one value is out of range */
++	MXL862XX_STATUS_VALUE_RANGE = -(MXL862XX_ERROR_BASE + 8),
++	/** The port_id/queue_id/meter_id/etc. is not available in this hardware or the
++	 * selected feature is not available on this port
++	 */
++	MXL862XX_STATUS_PORT_INVALID = -(MXL862XX_ERROR_BASE + 9),
++	/** The interrupt is not available in this hardware */
++	MXL862XX_STATUS_IRQ_INVALID = -(MXL862XX_ERROR_BASE + 10),
++	/** The MAC table is full, an entry could not be added */
++	MXL862XX_STATUS_MAC_TABLE_FULL = -(MXL862XX_ERROR_BASE + 11),
++	/** Locking failed - SWAPI is busy */
++	MXL862XX_STATUS_LOCK_FAILED = -(MXL862XX_ERROR_BASE + 12),
++	/** Multicast Forwarding table entry not found */
++	MXL862XX_STATUS_ENTRY_NOT_FOUND = -(MXL862XX_ERROR_BASE + 13),
++} mxl862xx_return_t;
++
+ #endif /* __MXL862XX_API_H */
+--- a/drivers/net/dsa/mxl862xx/mxl862xx-cmd.h
++++ b/drivers/net/dsa/mxl862xx/mxl862xx-cmd.h
+@@ -2,6 +2,7 @@
+ 
+ #ifndef __MXL862XX_CMD_H
+ #define __MXL862XX_CMD_H
++#include "mxl862xx-api.h"
+ 
+ #define MXL862XX_MMD_DEV		30
+ #define MXL862XX_MMD_REG_CTRL		0
+@@ -11,84 +12,42 @@
+ #define MXL862XX_MMD_REG_DATA_MAX_SIZE \
+ 	(MXL862XX_MMD_REG_DATA_LAST - MXL862XX_MMD_REG_DATA_FIRST + 1)
+ 
+-#define MXL862XX_COMMON_MAGIC		0x100
+-#define MXL862XX_TFLOW_MAGIC		0x200
+-#define MXL862XX_BRDG_MAGIC		0x300
+-#define MXL862XX_BRDGPORT_MAGIC		0x400
+-#define MXL862XX_CTP_MAGIC		0x500
+-#define MXL862XX_QOS_MAGIC		0x600
+-#define MXL862XX_RMON_MAGIC		0x700
+-#define MXL862XX_SWMAC_MAGIC		0xa00
+-#define MXL862XX_EXTVLAN_MAGIC		0xb00
+-#define MXL862XX_VLANFILTER_MAGIC	0xc00
+-#define MXL862XX_STP_MAGIC		0xf00
+-#define MXL862XX_SS_MAGIC		0x1600
+-#define GPY_GPY2XX_MAGIC		0x1800
+-#define SYS_MISC_MAGIC			0x1900
++#define MXL862XX_MMD_DEV 30
++#define MXL862XX_MMD_REG_CTRL 0
++#define MXL862XX_MMD_REG_LEN_RET 1
++#define MXL862XX_MMD_REG_DATA_FIRST 2
++#define MXL862XX_MMD_REG_DATA_LAST 95
++#define MXL862XX_MMD_REG_DATA_MAX_SIZE \
++	(MXL862XX_MMD_REG_DATA_LAST - MXL862XX_MMD_REG_DATA_FIRST + 1)
++
++#define GPY_GPY2XX_MAGIC 0x1800
++
++#define SYS_MISC_MAGIC 0x1900
+ #define MXL862XX_XPCS_MAGIC		0x1a00
+ 
+-#define MXL862XX_COMMON_PORTLINKCFGGET	(MXL862XX_COMMON_MAGIC + 0x5)
+-#define MXL862XX_COMMON_PORTCFGGET	(MXL862XX_COMMON_MAGIC + 0x7)
+-#define MXL862XX_COMMON_CFGGET		(MXL862XX_COMMON_MAGIC + 0x9)
+-#define MXL862XX_COMMON_CFGSET		(MXL862XX_COMMON_MAGIC + 0xa)
+-#define MXL862XX_COMMON_MONITORPORTCFGSET (MXL862XX_COMMON_MAGIC + 0xe)
+-#define MXL862XX_COMMON_REGISTERMOD	(MXL862XX_COMMON_MAGIC + 0x11)
+-
+-#define MXL862XX_TFLOW_PCERULEWRITE	(MXL862XX_TFLOW_MAGIC + 0x2)
+-#define MXL862XX_TFLOW_PCERULEALLOC	(MXL862XX_TFLOW_MAGIC + 0x4)
+-#define MXL862XX_TFLOW_PCERULEFREE	(MXL862XX_TFLOW_MAGIC + 0x5)
+-#define MXL862XX_TFLOW_PCERULELOGICWRITE \
+-					(MXL862XX_TFLOW_MAGIC + 0xa)
+-
+-#define MXL862XX_BRIDGE_ALLOC		(MXL862XX_BRDG_MAGIC + 0x1)
+-#define MXL862XX_BRIDGE_CONFIGSET	(MXL862XX_BRDG_MAGIC + 0x2)
+-#define MXL862XX_BRIDGE_CONFIGGET	(MXL862XX_BRDG_MAGIC + 0x3)
+-#define MXL862XX_BRIDGE_FREE		(MXL862XX_BRDG_MAGIC + 0x4)
+-
+-#define MXL862XX_BRIDGEPORT_ALLOC	(MXL862XX_BRDGPORT_MAGIC + 0x1)
+-#define MXL862XX_BRIDGEPORT_CONFIGSET	(MXL862XX_BRDGPORT_MAGIC + 0x2)
+-#define MXL862XX_BRIDGEPORT_CONFIGGET	(MXL862XX_BRDGPORT_MAGIC + 0x3)
+-#define MXL862XX_BRIDGEPORT_FREE	(MXL862XX_BRDGPORT_MAGIC + 0x4)
+-
+-#define MXL862XX_CTP_PORTASSIGNMENTSET	(MXL862XX_CTP_MAGIC + 0x3)
+-#define MXL862XX_CTP_PORTCONFIGSET	(MXL862XX_CTP_MAGIC + 0x5)
+-
+-#define MXL862XX_QOS_METERCFGSET	(MXL862XX_QOS_MAGIC + 0x2)
+-#define MXL862XX_QOS_METERALLOC		(MXL862XX_QOS_MAGIC + 0x2a)
+-#define MXL862XX_QOS_PMAPPERTABLESET	(MXL862XX_QOS_MAGIC + 0x2e)
+-
+-#define MXL862XX_RMON_PORT_GET		(MXL862XX_RMON_MAGIC + 0x1)
+-
+-#define MXL862XX_MAC_TABLECLEAR		(MXL862XX_SWMAC_MAGIC + 0x1)
+-#define MXL862XX_MAC_TABLEENTRYADD	(MXL862XX_SWMAC_MAGIC + 0x2)
+-#define MXL862XX_MAC_TABLEENTRYREAD	(MXL862XX_SWMAC_MAGIC + 0x3)
+-#define MXL862XX_MAC_TABLEENTRYQUERY	(MXL862XX_SWMAC_MAGIC + 0x4)
+-#define MXL862XX_MAC_TABLEENTRYREMOVE	(MXL862XX_SWMAC_MAGIC + 0x5)
+-#define MXL862XX_MAC_TABLECLEARCOND	(MXL862XX_SWMAC_MAGIC + 0x8)
+-
+-#define MXL862XX_EXTENDEDVLAN_ALLOC	(MXL862XX_EXTVLAN_MAGIC + 0x1)
+-#define MXL862XX_EXTENDEDVLAN_SET	(MXL862XX_EXTVLAN_MAGIC + 0x2)
+-#define MXL862XX_EXTENDEDVLAN_GET	(MXL862XX_EXTVLAN_MAGIC + 0x3)
+-#define MXL862XX_EXTENDEDVLAN_FREE	(MXL862XX_EXTVLAN_MAGIC + 0x4)
+-
+-#define MXL862XX_VLANFILTER_ALLOC	(MXL862XX_VLANFILTER_MAGIC + 0x1)
+-#define MXL862XX_VLANFILTER_SET		(MXL862XX_VLANFILTER_MAGIC + 0x2)
+-#define MXL862XX_VLANFILTER_GET		(MXL862XX_VLANFILTER_MAGIC + 0x3)
+-#define MXL862XX_VLANFILTER_FREE	(MXL862XX_VLANFILTER_MAGIC + 0x4)
+-
+-#define MXL862XX_SS_SPTAG_SET		(MXL862XX_SS_MAGIC + 0x2)
+-
+-#define MXL862XX_TRUNKING_MAGIC		0xe00
+-#define MXL862XX_TRUNKING_CFGSET	(MXL862XX_TRUNKING_MAGIC + 0x2)
+-
+-#define MXL862XX_STP_PORTCFGSET		(MXL862XX_STP_MAGIC + 0x2)
+-
+-#define INT_GPHY_READ			(GPY_GPY2XX_MAGIC + 0x1)
+-#define INT_GPHY_WRITE			(GPY_GPY2XX_MAGIC + 0x2)
+-
+-#define SYS_MISC_FW_UPDATE		(SYS_MISC_MAGIC + 0x1)
+-#define SYS_MISC_FW_VERSION		(SYS_MISC_MAGIC + 0x2)
+-#define SYS_MISC_SFP_SET		(SYS_MISC_MAGIC + 0xe)
++#ifdef MMD_API_TEST
++#define MMD_API_SIMPLE_TEST (0x0 + 0x1)
++#endif
++
++#define MXL862XX_COMMON_MAGIC 0x100
++#define MXL862XX_TFLOW_MAGIC 0x200
++#define MXL862XX_BRDG_MAGIC 0x300
++#define MXL862XX_BRDGPORT_MAGIC 0x400
++#define MXL862XX_CTP_MAGIC 0x500
++#define MXL862XX_QOS_MAGIC 0x600
++#define MXL862XX_RMON_MAGIC 0x700
++#define MXL862XX_DEBUG_MAGIC 0x800
++#define MXL862XX_PMAC_MAGIC 0x900
++#define MXL862XX_SWMAC_MAGIC 0xA00
++#define MXL862XX_EXTVLAN_MAGIC 0xB00
++#define MXL862XX_VLANFILTER_MAGIC 0xC00
++#define MXL862XX_MULTICAST_MAGIC 0xD00
++#define MXL862XX_TRUNKING_MAGIC 0xE00
++#define MXL862XX_STP_MAGIC 0xF00
++#define MXL862XX_PBB_MAGIC 0x1000
++#define MXL862XX_VLAN_RMON_MAGIC 0x1100
++#define MXL862XX_SS_MAGIC 0x1600
++
+ 
+ #define MXL862XX_XPCS_PCS_CONFIG	(MXL862XX_XPCS_MAGIC + 0x1)
+ #define MXL862XX_XPCS_PCS_GET_STATE	(MXL862XX_XPCS_MAGIC + 0x2)
+@@ -99,6 +58,253 @@
+ #define MXL862XX_XPCS_RESET		(MXL862XX_XPCS_MAGIC + 0x9)
+ #define MXL862XX_XPCS_EQ_GET		(MXL862XX_XPCS_MAGIC + 0xc)
+ 
+-#define MMD_API_MAXIMUM_ID		0x7fff
++
++#define MXL862XX_COMMON_REGISTERGET (MXL862XX_COMMON_MAGIC + 0x1)
++#define MXL862XX_COMMON_REGISTERSET (MXL862XX_COMMON_MAGIC + 0x2)
++#define MXL862XX_COMMON_CPU_PORTCFGGET (MXL862XX_COMMON_MAGIC + 0x3)
++#define MXL862XX_COMMON_CPU_PORTCFGSET (MXL862XX_COMMON_MAGIC + 0x4)
++#define MXL862XX_COMMON_PORTLINKCFGGET (MXL862XX_COMMON_MAGIC + 0x5)
++#define MXL862XX_COMMON_PORTLINKCFGSET (MXL862XX_COMMON_MAGIC + 0x6)
++#define MXL862XX_COMMON_PORTCFGGET (MXL862XX_COMMON_MAGIC + 0x7)
++#define MXL862XX_COMMON_PORTCFGSET (MXL862XX_COMMON_MAGIC + 0x8)
++#define MXL862XX_COMMON_CFGGET (MXL862XX_COMMON_MAGIC + 0x9)
++#define MXL862XX_COMMON_CFGSET (MXL862XX_COMMON_MAGIC + 0xA)
++#define MXL862XX_COMMON_MONITORPORTCFGGET (MXL862XX_COMMON_MAGIC + 0xD)
++#define MXL862XX_COMMON_MONITORPORTCFGSET (MXL862XX_COMMON_MAGIC + 0xE)
++#define MXL862XX_COMMON_FREEZE (MXL862XX_COMMON_MAGIC + 0xF)
++#define MXL862XX_COMMON_UNFREEZE (MXL862XX_COMMON_MAGIC + 0x10)
++#define MXL862XX_COMMON_REGISTERMOD (MXL862XX_COMMON_MAGIC + 0x11)
++
++#define MXL862XX_TFLOW_PCERULEREAD (MXL862XX_TFLOW_MAGIC + 0x1)
++#define MXL862XX_TFLOW_PCERULEWRITE (MXL862XX_TFLOW_MAGIC + 0x2)
++#define MXL862XX_TFLOW_PCERULEDELETE (MXL862XX_TFLOW_MAGIC + 0x3)
++#define MXL862XX_TFLOW_PCERULEALLOC (MXL862XX_TFLOW_MAGIC + 0x4)
++#define MXL862XX_TFLOW_PCERULEFREE (MXL862XX_TFLOW_MAGIC + 0x5)
++#define MXL862XX_TFLOW_PCERULEENABLE (MXL862XX_TFLOW_MAGIC + 0x6)
++#define MXL862XX_TFLOW_PCERULEDISABLE (MXL862XX_TFLOW_MAGIC + 0x7)
++
++#define MXL862XX_BRIDGE_ALLOC (MXL862XX_BRDG_MAGIC + 0x1)
++#define MXL862XX_BRIDGE_CONFIGSET (MXL862XX_BRDG_MAGIC + 0x2)
++#define MXL862XX_BRIDGE_CONFIGGET (MXL862XX_BRDG_MAGIC + 0x3)
++#define MXL862XX_BRIDGE_FREE (MXL862XX_BRDG_MAGIC + 0x4)
++
++#define MXL862XX_BRIDGEPORT_ALLOC (MXL862XX_BRDGPORT_MAGIC + 0x1)
++#define MXL862XX_BRIDGEPORT_CONFIGSET (MXL862XX_BRDGPORT_MAGIC + 0x2)
++#define MXL862XX_BRIDGEPORT_CONFIGGET (MXL862XX_BRDGPORT_MAGIC + 0x3)
++#define MXL862XX_BRIDGEPORT_FREE (MXL862XX_BRDGPORT_MAGIC + 0x4)
++
++#define MXL862XX_CTP_PORTASSIGNMENTALLOC (MXL862XX_CTP_MAGIC + 0x1)
++#define MXL862XX_CTP_PORTASSIGNMENTFREE (MXL862XX_CTP_MAGIC + 0x2)
++#define MXL862XX_CTP_PORTASSIGNMENTSET (MXL862XX_CTP_MAGIC + 0x3)
++#define MXL862XX_CTP_PORTASSIGNMENTGET (MXL862XX_CTP_MAGIC + 0x4)
++#define MXL862XX_CTP_PORTCONFIGSET (MXL862XX_CTP_MAGIC + 0x5)
++#define MXL862XX_CTP_PORTCONFIGGET (MXL862XX_CTP_MAGIC + 0x6)
++#define MXL862XX_CTP_PORTCONFIGRESET (MXL862XX_CTP_MAGIC + 0x7)
++
++#define MXL862XX_QOS_METERCFGGET (MXL862XX_QOS_MAGIC + 0x1)
++#define MXL862XX_QOS_METERCFGSET (MXL862XX_QOS_MAGIC + 0x2)
++#define MXL862XX_QOS_DSCP_CLASSGET (MXL862XX_QOS_MAGIC + 0x4)
++#define MXL862XX_QOS_DSCP_CLASSSET (MXL862XX_QOS_MAGIC + 0x5)
++#define MXL862XX_QOS_DSCP_DROPPRECEDENCECFGGET (MXL862XX_QOS_MAGIC + 0x6)
++#define MXL862XX_QOS_DSCP_DROPPRECEDENCECFGSET (MXL862XX_QOS_MAGIC + 0x7)
++#define MXL862XX_QOS_PORTREMARKINGCFGGET (MXL862XX_QOS_MAGIC + 0x8)
++#define MXL862XX_QOS_PORTREMARKINGCFGSET (MXL862XX_QOS_MAGIC + 0x9)
++#define MXL862XX_QOS_PCP_CLASSGET (MXL862XX_QOS_MAGIC + 0xA)
++#define MXL862XX_QOS_PCP_CLASSSET (MXL862XX_QOS_MAGIC + 0xB)
++#define MXL862XX_QOS_PORTCFGGET (MXL862XX_QOS_MAGIC + 0xC)
++#define MXL862XX_QOS_PORTCFGSET (MXL862XX_QOS_MAGIC + 0xD)
++#define MXL862XX_QOS_QUEUEPORTGET (MXL862XX_QOS_MAGIC + 0xE)
++#define MXL862XX_QOS_QUEUEPORTSET (MXL862XX_QOS_MAGIC + 0xF)
++#define MXL862XX_QOS_SCHEDULERCFGGET (MXL862XX_QOS_MAGIC + 0x10)
++#define MXL862XX_QOS_SCHEDULERCFGSET (MXL862XX_QOS_MAGIC + 0x11)
++#define MXL862XX_QOS_SHAPERCFGGET (MXL862XX_QOS_MAGIC + 0x12)
++#define MXL862XX_QOS_SHAPERCFGSET (MXL862XX_QOS_MAGIC + 0x13)
++#define MXL862XX_QOS_SHAPERQUEUEASSIGN (MXL862XX_QOS_MAGIC + 0x14)
++#define MXL862XX_QOS_SHAPERQUEUEDEASSIGN (MXL862XX_QOS_MAGIC + 0x15)
++#define MXL862XX_QOS_SHAPERQUEUEGET (MXL862XX_QOS_MAGIC + 0x16)
++#define MXL862XX_QOS_STORMCFGSET (MXL862XX_QOS_MAGIC + 0x17)
++#define MXL862XX_QOS_STORMCFGGET (MXL862XX_QOS_MAGIC + 0x18)
++#define MXL862XX_QOS_WREDCFGGET (MXL862XX_QOS_MAGIC + 0x19)
++#define MXL862XX_QOS_WREDCFGSET (MXL862XX_QOS_MAGIC + 0x1A)
++#define MXL862XX_QOS_WREDQUEUECFGGET (MXL862XX_QOS_MAGIC + 0x1B)
++#define MXL862XX_QOS_WREDQUEUECFGSET (MXL862XX_QOS_MAGIC + 0x1C)
++#define MXL862XX_QOS_WREDPORTCFGGET (MXL862XX_QOS_MAGIC + 0x1D)
++#define MXL862XX_QOS_WREDPORTCFGSET (MXL862XX_QOS_MAGIC + 0x1E)
++#define MXL862XX_QOS_FLOWCTRLCFGGET (MXL862XX_QOS_MAGIC + 0x1F)
++#define MXL862XX_QOS_FLOWCTRLCFGSET (MXL862XX_QOS_MAGIC + 0x20)
++#define MXL862XX_QOS_FLOWCTRLPORTCFGGET (MXL862XX_QOS_MAGIC + 0x21)
++#define MXL862XX_QOS_FLOWCTRLPORTCFGSET (MXL862XX_QOS_MAGIC + 0x22)
++#define MXL862XX_QOS_QUEUEBUFFERRESERVECFGGET (MXL862XX_QOS_MAGIC + 0x23)
++#define MXL862XX_QOS_QUEUEBUFFERRESERVECFGSET (MXL862XX_QOS_MAGIC + 0x24)
++#define MXL862XX_QOS_COLORMARKINGTABLEGET (MXL862XX_QOS_MAGIC + 0x26)
++#define MXL862XX_QOS_COLORMARKINGTABLESET (MXL862XX_QOS_MAGIC + 0x27)
++#define MXL862XX_QOS_COLORREMARKINGTABLESET (MXL862XX_QOS_MAGIC + 0x28)
++#define MXL862XX_QOS_COLORREMARKINGTABLEGET (MXL862XX_QOS_MAGIC + 0x29)
++#define MXL862XX_QOS_METERALLOC (MXL862XX_QOS_MAGIC + 0x2A)
++#define MXL862XX_QOS_METERFREE (MXL862XX_QOS_MAGIC + 0x2B)
++#define MXL862XX_QOS_DSCP2PCPTABLESET (MXL862XX_QOS_MAGIC + 0x2C)
++#define MXL862XX_QOS_DSCP2PCPTABLEGET (MXL862XX_QOS_MAGIC + 0x2D)
++#define MXL862XX_QOS_PMAPPERTABLESET (MXL862XX_QOS_MAGIC + 0x2E)
++#define MXL862XX_QOS_PMAPPERTABLEGET (MXL862XX_QOS_MAGIC + 0x2F)
++#define MXL862XX_QOS_SVLAN_PCP_CLASSGET (MXL862XX_QOS_MAGIC + 0x30)
++#define MXL862XX_QOS_SVLAN_PCP_CLASSSET (MXL862XX_QOS_MAGIC + 0x31)
++
++#define MXL862XX_RMON_PORT_GET (MXL862XX_RMON_MAGIC + 0x1)
++#define MXL862XX_RMON_MODE_SET (MXL862XX_RMON_MAGIC + 0x2)
++#define MXL862XX_RMON_METER_GET (MXL862XX_RMON_MAGIC + 0x3)
++#define MXL862XX_RMON_CLEAR (MXL862XX_RMON_MAGIC + 0x4)
++#define MXL862XX_RMON_TFLOWGET (MXL862XX_RMON_MAGIC + 0x5)
++#define MXL862XX_RMON_TFLOWCLEAR (MXL862XX_RMON_MAGIC + 0x6)
++#define MXL862XX_RMON_TFLOWCOUNTMODESET (MXL862XX_RMON_MAGIC + 0x7)
++#define MXL862XX_RMON_TFLOWCOUNTMODEGET (MXL862XX_RMON_MAGIC + 0x8)
++
++#define MXL862XX_DEBUG_RMON_PORT_GET (MXL862XX_DEBUG_MAGIC + 0x1)
++
++#define MXL862XX_PMAC_COUNTGET (MXL862XX_PMAC_MAGIC + 0x1)
++#define MXL862XX_PMAC_GBL_CFGSET (MXL862XX_PMAC_MAGIC + 0x2)
++#define MXL862XX_PMAC_GBL_CFGGET (MXL862XX_PMAC_MAGIC + 0x3)
++#define MXL862XX_PMAC_BM_CFGSET (MXL862XX_PMAC_MAGIC + 0x4)
++#define MXL862XX_PMAC_BM_CFGGET (MXL862XX_PMAC_MAGIC + 0x5)
++#define MXL862XX_PMAC_IG_CFGSET (MXL862XX_PMAC_MAGIC + 0x6)
++#define MXL862XX_PMAC_IG_CFGGET (MXL862XX_PMAC_MAGIC + 0x7)
++#define MXL862XX_PMAC_EG_CFGSET (MXL862XX_PMAC_MAGIC + 0x8)
++#define MXL862XX_PMAC_EG_CFGGET (MXL862XX_PMAC_MAGIC + 0x9)
++
++#define MXL862XX_MAC_TABLECLEAR (MXL862XX_SWMAC_MAGIC + 0x1)
++#define MXL862XX_MAC_TABLEENTRYADD (MXL862XX_SWMAC_MAGIC + 0x2)
++#define MXL862XX_MAC_TABLEENTRYREAD (MXL862XX_SWMAC_MAGIC + 0x3)
++#define MXL862XX_MAC_TABLEENTRYQUERY (MXL862XX_SWMAC_MAGIC + 0x4)
++#define MXL862XX_MAC_TABLEENTRYREMOVE (MXL862XX_SWMAC_MAGIC + 0x5)
++#define MXL862XX_MAC_DEFAULTFILTERSET (MXL862XX_SWMAC_MAGIC + 0x6)
++#define MXL862XX_MAC_DEFAULTFILTERGET (MXL862XX_SWMAC_MAGIC + 0x7)
++#define MXL862XX_MAC_TABLECLEARCOND (MXL862XX_SWMAC_MAGIC + 0x8)
++
++#define MXL862XX_EXTENDEDVLAN_ALLOC (MXL862XX_EXTVLAN_MAGIC + 0x1)
++#define MXL862XX_EXTENDEDVLAN_SET (MXL862XX_EXTVLAN_MAGIC + 0x2)
++#define MXL862XX_EXTENDEDVLAN_GET (MXL862XX_EXTVLAN_MAGIC + 0x3)
++#define MXL862XX_EXTENDEDVLAN_FREE (MXL862XX_EXTVLAN_MAGIC + 0x4)
++
++#define MXL862XX_VLANFILTER_ALLOC (MXL862XX_VLANFILTER_MAGIC + 0x1)
++#define MXL862XX_VLANFILTER_SET (MXL862XX_VLANFILTER_MAGIC + 0x2)
++#define MXL862XX_VLANFILTER_GET (MXL862XX_VLANFILTER_MAGIC + 0x3)
++#define MXL862XX_VLANFILTER_FREE (MXL862XX_VLANFILTER_MAGIC + 0x4)
++
++#define MXL862XX_VLAN_COUNTER_MAPPING_SET (MXL862XX_VLAN_RMON_MAGIC + 0x1)
++#define MXL862XX_VLAN_COUNTER_MAPPING_GET (MXL862XX_VLAN_RMON_MAGIC + 0x2)
++#define MXL862XX_VLAN_RMON_GET (MXL862XX_VLAN_RMON_MAGIC + 0x3)
++#define MXL862XX_VLAN_RMON_CLEAR (MXL862XX_VLAN_RMON_MAGIC + 0x4)
++#define MXL862XX_VLAN_RMON_CONTROL_SET (MXL862XX_VLAN_RMON_MAGIC + 0x5)
++#define MXL862XX_VLAN_RMON_CONTROL_GET (MXL862XX_VLAN_RMON_MAGIC + 0x6)
++
++#define MXL862XX_MULTICAST_ROUTERPORTADD (MXL862XX_MULTICAST_MAGIC + 0x1)
++#define MXL862XX_MULTICAST_ROUTERPORTREAD (MXL862XX_MULTICAST_MAGIC + 0x2)
++#define MXL862XX_MULTICAST_ROUTERPORTREMOVE (MXL862XX_MULTICAST_MAGIC + 0x3)
++#define MXL862XX_MULTICAST_SNOOPCFGGET (MXL862XX_MULTICAST_MAGIC + 0x4)
++#define MXL862XX_MULTICAST_SNOOPCFGSET (MXL862XX_MULTICAST_MAGIC + 0x5)
++#define MXL862XX_MULTICAST_TABLEENTRYADD (MXL862XX_MULTICAST_MAGIC + 0x6)
++#define MXL862XX_MULTICAST_TABLEENTRYREAD (MXL862XX_MULTICAST_MAGIC + 0x7)
++#define MXL862XX_MULTICAST_TABLEENTRYREMOVE (MXL862XX_MULTICAST_MAGIC + 0x8)
++
++#define MXL862XX_TRUNKING_CFGGET (MXL862XX_TRUNKING_MAGIC + 0x1)
++#define MXL862XX_TRUNKING_CFGSET (MXL862XX_TRUNKING_MAGIC + 0x2)
++#define MXL862XX_TRUNKING_PORTCFGGET (MXL862XX_TRUNKING_MAGIC + 0x3)
++#define MXL862XX_TRUNKING_PORTCFGSET (MXL862XX_TRUNKING_MAGIC + 0x4)
++
++#define MXL862XX_STP_PORTCFGGET (MXL862XX_STP_MAGIC + 0x1)
++#define MXL862XX_STP_PORTCFGSET (MXL862XX_STP_MAGIC + 0x2)
++#define MXL862XX_STP_BPDU_RULEGET (MXL862XX_STP_MAGIC + 0x3)
++#define MXL862XX_STP_BPDU_RULESET (MXL862XX_STP_MAGIC + 0x4)
++
++#define MXL862XX_PBB_TEMPLATEALLOC (MXL862XX_PBB_MAGIC + 0x1)
++#define MXL862XX_PBB_TEMPLATEFREE (MXL862XX_PBB_MAGIC + 0x2)
++#define MXL862XX_PBB_TEMPLATESET (MXL862XX_PBB_MAGIC + 0x3)
++#define MXL862XX_PBB_TEMPLATEGET (MXL862XX_PBB_MAGIC + 0x4)
++
++#define MXL862XX_SS_SPTAG_GET (MXL862XX_SS_MAGIC + 0x01)
++#define MXL862XX_SS_SPTAG_SET (MXL862XX_SS_MAGIC + 0x02)
++
++#define INT_GPHY_READ (GPY_GPY2XX_MAGIC + 0x01)
++#define INT_GPHY_WRITE (GPY_GPY2XX_MAGIC + 0x02)
++#define INT_GPHY_MOD (GPY_GPY2XX_MAGIC + 0x03)
++#define EXT_MDIO_READ (GPY_GPY2XX_MAGIC + 0x11)
++#define EXT_MDIO_WRITE (GPY_GPY2XX_MAGIC + 0x12)
++#define EXT_MDIO_MOD (GPY_GPY2XX_MAGIC + 0x13)
++
++// PHY_CTL1 0.19
++// AMDIX:0
++// MDIAB:2
++// MDICD:3
++// POLA:4
++// POLB:5
++// POLC:6
++// POLD:7
++// TXADJ:8:11
++// TXOFF:12
++// PHY_MIISTAT 0.24
++
++/*
++ * SYS_MISC opcode block.
++ *
++ * Authoritative reference: MaxLinear F48X Host API SDK v1.2.0.0,
++ *   ethswbox/src/switch_hostapi/include/gswip/mmd_apis.h, lines 350-370.
++ *
++ * Keep these values byte-identical to the SDK. The on-chip WSP firmware
++ * dispatches on the numeric opcode, so a single-byte drift here causes
++ * the host to silently call the wrong FW handler (e.g. issuing REG_RD
++ * with REG_WR's opcode performs a write while the host believes it's
++ * reading). Earlier driver builds had REBOOT mis-placed at 0x08, which
++ * cascaded a +1 shift through every entry below it; do not regress.
++ *
++ * Slots 0x0F-0x12 are intentionally reserved by the SDK and unused.
++ */
++#define SYS_MISC_FW_UPDATE		(SYS_MISC_MAGIC + 0x01)
++#define SYS_MISC_FW_VERSION		(SYS_MISC_MAGIC + 0x02)
++#define SYS_MISC_PVT_TEMP		(SYS_MISC_MAGIC + 0x03)
++#define SYS_MISC_PVT_VOLTAGE		(SYS_MISC_MAGIC + 0x04)
++#define SYS_MISC_DELAY			(SYS_MISC_MAGIC + 0x05)
++#define SYS_MISC_GPIO_CONFIGURE		(SYS_MISC_MAGIC + 0x06)
++#define SYS_MISC_REBOOT			(SYS_MISC_MAGIC + 0x07)
++#define SYS_MISC_REG_RD			(SYS_MISC_MAGIC + 0x08)
++#define SYS_MISC_REG_WR			(SYS_MISC_MAGIC + 0x09)
++#define SYS_MISC_REG_MOD		(SYS_MISC_MAGIC + 0x0A)
++#define SYS_MISC_CML_CLK_GET		(SYS_MISC_MAGIC + 0x0B)
++#define SYS_MISC_CML_CLK_SET		(SYS_MISC_MAGIC + 0x0C)
++#define SYS_MISC_SFP_GET		(SYS_MISC_MAGIC + 0x0D)
++#define SYS_MISC_SFP_SET		(SYS_MISC_MAGIC + 0x0E)
++#define SYS_MISC_LOOP_PASSIVE_START	(SYS_MISC_MAGIC + 0x13)
++#define SYS_MISC_LOOP_PASSIVE_STOP	(SYS_MISC_MAGIC + 0x14)
++#define SYS_MISC_LOOP_ACTIVE_START	(SYS_MISC_MAGIC + 0x15)
++#define SYS_MISC_LOOP_ACTIVE_STOP	(SYS_MISC_MAGIC + 0x16)
++#define SYS_MISC_LOOP_PREVENTION_START	(SYS_MISC_MAGIC + 0x17)
++#define SYS_MISC_LOOP_PREVENTION_STOP	(SYS_MISC_MAGIC + 0x18)
++#define SYS_MISC_SYS_LED_CFG		(SYS_MISC_MAGIC + 0x19)
++
++/*
++ * Backwards-compatibility aliases for legacy names used by earlier
++ * mxl862xx-cmd.h (now consolidated into this file). The legacy names
++ * resolved to wrong opcodes due to the off-by-one shift; pointing them
++ * at the SDK-correct values silently fixes any caller that still uses
++ * the old names. New code should use the SDK names directly.
++ */
++#define SYS_MISC_PVT_SENSOR		SYS_MISC_PVT_TEMP
++#define SYS_MISC_REG_READ		SYS_MISC_REG_RD
++#define SYS_MISC_REG_WRITE		SYS_MISC_REG_WR
++#define SYS_MISC_CLK_GET		SYS_MISC_CML_CLK_GET
++#define SYS_MISC_CLK_SET		SYS_MISC_CML_CLK_SET
++
++/*
++ * Driver-private opcode, not present in the SDK header.
++ * Preserved from the previous mxl862xx-cmd.h for any internal user.
++ */
++#define MXL862XX_TFLOW_PCERULELOGICWRITE	(MXL862XX_TFLOW_MAGIC + 0xa)
++
++#define MMD_API_MAXIMUM_ID 0x7FFF
++
++struct mxl862xx_priv;
++
++int mxl862xx_read(const struct mxl862xx_priv *dev, u32 regaddr);
++int mxl862xx_write(const struct mxl862xx_priv *dev, u32 regaddr, u16 data);
++
++
+ 
+ #endif /* __MXL862XX_CMD_H */
+--- /dev/null
++++ b/drivers/net/dsa/mxl862xx/mxl862xx-ctp.h
+@@ -0,0 +1,384 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++/*
++ * mxl862xx-ctp.h - Header file for DSA Driver for
++ * MaxLinear Mxl862xx switch chips family
++ *
++ * Copyright (C) 2024 MaxLinear Inc.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ */
++#ifndef _MXL862XX_CTP_H_
++#define _MXL862XX_CTP_H_
++
++#include "mxl862xx-types.h"
++
++#pragma pack(push, 1)
++#pragma scalar_storage_order little - endian
++
++/** \brief Logical port mode.
++ * Used by \ref MXL862XX_CTP_port_assignment_t.
++ */
++typedef enum {
++	/** WLAN with 8-bit station ID */
++	MXL862XX_LOGICAL_PORT_8BIT_WLAN = 0,
++	/** WLAN with 9-bit station ID */
++	MXL862XX_LOGICAL_PORT_9BIT_WLAN = 1,
++	/** GPON OMCI context */
++	MXL862XX_LOGICAL_PORT_GPON = 2,
++	/** EPON context */
++	MXL862XX_LOGICAL_PORT_EPON = 3,
++	/** G.INT context */
++	MXL862XX_LOGICAL_PORT_GINT = 4,
++	/** Others (sub interface ID is 0 by default) */
++	MXL862XX_LOGICAL_PORT_OTHER = 0xFF,
++} mxl862xx_logical_port_mode_t;
++
++/** \brief CTP Port configuration mask.
++ * Used by \ref MXL862XX_CTP_port_config_t.
++ */
++typedef enum {
++	/** Mask for \ref MXL862XX_CTP_port_config_t::bridge_port_id */
++	MXL862XX_CTP_PORT_CONFIG_MASK_BRIDGE_PORT_ID = 0x00000001,
++	/** Mask for \ref MXL862XX_CTP_port_config_t::b_forced_traffic_class and
++	 * \ref MXL862XX_CTP_port_config_t::n_default_traffic_class
++	 */
++	MXL862XX_CTP_PORT_CONFIG_MASK_FORCE_TRAFFIC_CLASS = 0x00000002,
++	/** Mask for \ref MXL862XX_CTP_port_config_t::b_ingress_extended_vlan_enable and
++	 * \ref MXL862XX_CTP_port_config_t::n_ingress_extended_vlan_block_id
++	 */
++	MXL862XX_CTP_PORT_CONFIG_MASK_INGRESS_VLAN = 0x00000004,
++	/** Mask for \ref MXL862XX_CTP_port_config_t::b_ingress_extended_vlan_igmp_enable and
++	 * \ref MXL862XX_CTP_port_config_t::n_ingress_extended_vlan_block_id_igmp
++	 */
++	MXL862XX_CTP_PORT_CONFIG_MASK_INGRESS_VLAN_IGMP = 0x00000008,
++	/** Mask for \ref MXL862XX_CTP_port_config_t::b_egress_extended_vlan_enable and
++	 * \ref MXL862XX_CTP_port_config_t::n_egress_extended_vlan_block_id
++	 */
++	MXL862XX_CTP_PORT_CONFIG_MASK_EGRESS_VLAN = 0x00000010,
++	/** Mask for \ref MXL862XX_CTP_port_config_t::b_egress_extended_vlan_igmp_enable and
++	 * \ref MXL862XX_CTP_port_config_t::n_egress_extended_vlan_block_id_igmp
++	 */
++	MXL862XX_CTP_PORT_CONFIG_MASK_EGRESS_VLAN_IGMP = 0x00000020,
++	/** Mask for \ref MXL862XX_CTP_port_config_t::b_ingress_nto1Vlan_enable */
++	MXL862XX_CTP_PORT_CONFIG_MASK_INRESS_NTO1_VLAN = 0x00000040,
++	/** Mask for \ref MXL862XX_CTP_port_config_t::b_egress_nto1Vlan_enable */
++	MXL862XX_CTP_PORT_CONFIG_MASK_EGRESS_NTO1_VLAN = 0x00000080,
++	/** Mask for \ref MXL862XX_CTP_port_config_t::e_ingress_marking_mode */
++	MXL862XX_CTP_PORT_CONFIG_INGRESS_MARKING = 0x00000100,
++	/** Mask for \ref MXL862XX_CTP_port_config_t::e_egress_marking_mode */
++	MXL862XX_CTP_PORT_CONFIG_EGRESS_MARKING = 0x00000200,
++	/** Mask for \ref MXL862XX_CTP_port_config_t::b_egress_marking_override_enable and
++	 * \ref MXL862XX_CTP_port_config_t::e_egress_marking_mode_override
++	 */
++	MXL862XX_CTP_PORT_CONFIG_EGRESS_MARKING_OVERRIDE = 0x00000400,
++	/** Mask for \ref MXL862XX_CTP_port_config_t::e_egress_remarking_mode */
++	MXL862XX_CTP_PORT_CONFIG_EGRESS_REMARKING = 0x00000800,
++	/** Mask for \ref MXL862XX_CTP_port_config_t::b_ingress_metering_enable and
++	 * \ref MXL862XX_CTP_port_config_t::n_ingress_traffic_meter_id
++	 */
++	MXL862XX_CTP_PORT_CONFIG_INGRESS_METER = 0x00001000,
++	/** Mask for \ref MXL862XX_CTP_port_config_t::b_egress_metering_enable and
++	 * \ref MXL862XX_CTP_port_config_t::n_egress_traffic_meter_id
++	 */
++	MXL862XX_CTP_PORT_CONFIG_EGRESS_METER = 0x00002000,
++	/** Mask for \ref MXL862XX_CTP_port_config_t::b_bridging_bypass,
++	 * \ref MXL862XX_CTP_port_config_t::n_dest_logical_port_id,
++	    \ref MXL862XX_CTP_port_config_t::b_pmapper_enable,
++	    \ref MXL862XX_CTP_port_config_t::n_dest_sub_if_id_group,
++	    \ref MXL862XX_CTP_port_config_t::e_pmapper_mapping_mode
++	    \ref mxl862xx_bridge_port_config_t::b_pmapper_id_valid and
++	    \ref MXL862XX_CTP_port_config_t::s_pmapper
++	 */
++	MXL862XX_CTP_PORT_CONFIG_BRIDGING_BYPASS = 0x00004000,
++	/** Mask for \ref MXL862XX_CTP_port_config_t::n_first_flow_entry_index and
++	 * \ref MXL862XX_CTP_port_config_t::n_number_of_flow_entries
++	 */
++	MXL862XX_CTP_PORT_CONFIG_FLOW_ENTRY = 0x00008000,
++	/** Mask for \ref MXL862XX_CTP_port_config_t::b_ingress_loopback_enable,
++	 * \ref MXL862XX_CTP_port_config_t::b_ingress_da_sa_swap_enable,
++	    \ref MXL862XX_CTP_port_config_t::b_egress_loopback_enable,
++	    \ref MXL862XX_CTP_port_config_t::b_egress_da_sa_swap_enable,
++	    \ref MXL862XX_CTP_port_config_t::b_ingress_mirror_enable and
++	    \ref MXL862XX_CTP_port_config_t::b_egress_mirror_enable
++	 */
++	MXL862XX_CTP_PORT_CONFIG_LOOPBACK_AND_MIRROR = 0x00010000,
++
++	/** Enable all fields */
++	MXL862XX_CTP_PORT_CONFIG_MASK_ALL = 0x7FFFFFFF,
++	/** Bypass any check for debug purpose */
++	MXL862XX_CTP_PORT_CONFIG_MASK_FORCE = 0x80000000
++} mxl862xx_ctp_port_config_mask_t;
++
++/** \brief CTP Port Assignment/association with logical port.
++ * Used by \ref MXL862XX_CTP_PORT_ASSIGNMENT_ALLOC, \ref MXL862XX_CTP_PORT_ASSIGNMENT_SET
++    and \ref MXL862XX_CTP_PORT_ASSIGNMENT_GET.
++ */
++typedef struct {
++	/** Logical Port Id. The valid range is hardware dependent. */
++	u8 logical_port_id;
++
++	/** First CTP Port ID mapped to above logical port ID.
++	 *
++	    \remarks
++	    For \ref MXL862XX_CTP_PORT_ASSIGNMENT_ALLOC, this is output when CTP
++	    allocation is successful. For other APIs, this is input.
++	 */
++	u16 first_ctp_port_id;
++	/** Total number of CTP Ports mapped above logical port ID. */
++	u16 number_of_ctp_port;
++
++	/** Logical port mode to define sub interface ID format. */
++	mxl862xx_logical_port_mode_t mode;
++
++	/** Bridge ID (FID)
++	 *
++	    \remarks
++	    For \ref MXL862XX_CTP_PORT_ASSIGNMENT_ALLOC, this is input. Each CTP allocated
++	    is mapped to Bridge Port given by this field. The Bridge Port will be
++	    configured to use first CTP
++	    (\ref MXL862XX_CTP_port_assignment_t::n_first_ctp_port_id) as egress CTP.
++	    For other APIs, this is ignored.
++	 */
++	u16 bridge_port_id;
++} mxl862xx_ctp_port_assignment_t;
++
++/** \brief CTP Port Configuration.
++ * Used by \ref MXL862XX_CTP_PORT_CONFIG_SET and \ref MXL862XX_CTP_PORT_CONFIG_GET.
++ */
++typedef struct {
++	/** Logical Port Id. The valid range is hardware dependent.
++	 * If \ref MXL862XX_CTP_port_config_t::e_mask has
++	    \ref MXL862XX_Ctp_port_config_mask_t::MXL862XX_CTP_PORT_CONFIG_MASK_FORCE, this field
++	    is ignored.
++	 */
++	u8 logical_port_id;
++
++	/** Sub interface ID group. The valid range is hardware/protocol dependent.
++	 *
++	    \remarks
++	    Sub interface ID group is defined for each of \ref MXL862XX_Logical_port_mode_t.
++	    For both \ref MXL862XX_LOGICAL_PORT_8BIT_WLAN and
++	    \ref MXL862XX_LOGICAL_PORT_9BIT_WLAN, this field is VAP.
++	    For \ref MXL862XX_LOGICAL_PORT_GPON, this field is GEM index.
++	    For \ref MXL862XX_LOGICAL_PORT_EPON, this field is stream index.
++	    For \ref MXL862XX_LOGICAL_PORT_GINT, this field is LLID.
++	    For others, this field is 0.
++	    If \ref MXL862XX_CTP_port_config_t::e_mask has
++	    \ref MXL862XX_Ctp_port_config_mask_t::MXL862XX_CTP_PORT_CONFIG_MASK_FORCE, this field
++	    is absolute index of CTP in hardware for debug purpose, bypassing
++	    any check.
++	 */
++	u16 n_sub_if_id_group;
++
++	/** Mask for updating/retrieving fields. */
++	mxl862xx_ctp_port_config_mask_t mask;
++
++	/** Ingress Bridge Port ID to which this CTP port is associated for ingress
++	 * traffic.
++	 */
++	u16 bridge_port_id;
++
++	/** Default traffic class can not be overridden by other rules (except
++	 * traffic flow table and special tag) in processing stages.
++	 */
++	bool forced_traffic_class;
++	/** Default traffic class associated with all ingress traffic from this CTP
++	 * Port.
++	 */
++	u8 default_traffic_class;
++
++	/** Enable Extended VLAN processing for ingress non-IGMP traffic. */
++	bool ingress_extended_vlan_enable;
++	/** Extended VLAN block allocated for ingress non-IGMP traffic. It defines
++	 * extended VLAN process for ingress non-IGMP traffic. Valid when
++	    b_ingress_extended_vlan_enable is TRUE.
++	 */
++	u16 ingress_extended_vlan_block_id;
++	/** Extended VLAN block size for ingress non-IGMP traffic. This is optional.
++	 * If it is 0, the block size of n_ingress_extended_vlan_block_id will be used.
++	    Otherwise, this field will be used.
++	 */
++	u16 ingress_extended_vlan_block_size;
++	/** Enable extended VLAN processing for ingress IGMP traffic. */
++	bool ingress_extended_vlan_igmp_enable;
++	/** Extended VLAN block allocated for ingress IGMP traffic. It defines
++	 * extended VLAN process for ingress IGMP traffic. Valid when
++	    b_ingress_extended_vlan_igmp_enable is TRUE.
++	 */
++	u16 ingress_extended_vlan_block_id_igmp;
++	/** Extended VLAN block size for ingress IGMP traffic. This is optional.
++	 * If it is 0, the block size of n_ingress_extended_vlan_block_id_igmp will be
++	    used. Otherwise, this field will be used.
++	 */
++	u16 ingress_extended_vlan_block_size_igmp;
++
++	/** Enable extended VLAN processing for egress non-IGMP traffic. */
++	bool egress_extended_vlan_enable;
++	/** Extended VLAN block allocated for egress non-IGMP traffic. It defines
++	 * extended VLAN process for egress non-IGMP traffic. Valid when
++	    b_egress_extended_vlan_enable is TRUE.
++	 */
++	u16 egress_extended_vlan_block_id;
++	/** Extended VLAN block size for egress non-IGMP traffic. This is optional.
++	 * If it is 0, the block size of n_egress_extended_vlan_block_id will be used.
++	    Otherwise, this field will be used.
++	 */
++	u16 egress_extended_vlan_block_size;
++	/** Enable extended VLAN processing for egress IGMP traffic. */
++	bool egress_extended_vlan_igmp_enable;
++	/** Extended VLAN block allocated for egress IGMP traffic. It defines
++	 * extended VLAN process for egress IGMP traffic. Valid when
++	    b_egress_extended_vlan_igmp_enable is TRUE.
++	 */
++	u16 egress_extended_vlan_block_id_igmp;
++	/** Extended VLAN block size for egress IGMP traffic. This is optional.
++	 * If it is 0, the block size of n_egress_extended_vlan_block_id_igmp will be
++	    used. Otherwise, this field will be used.
++	 */
++	u16 egress_extended_vlan_block_size_igmp;
++
++	/** For WLAN type logical port, this should be FALSE. For other types, if
++	 * enabled and ingress packet is VLAN tagged, outer VLAN ID is used for
++	    "n_sub_if_id" field in MAC table, otherwise, 0 is used for "n_sub_if_id".
++	 */
++	bool ingress_nto1vlan_enable;
++	/** For WLAN type logical port, this should be FALSE. For other types, if
++	 * enabled and egress packet is known unicast, outer VLAN ID is from
++	     "n_sub_if_id" field in MAC table.
++	 */
++	bool egress_nto1vlan_enable;
++
++	/** Ingress color marking mode for ingress traffic. */
++	mxl862xx_color_marking_mode_t ingress_marking_mode;
++	/** Egress color marking mode for ingress traffic at egress priority queue
++	 * color marking stage
++	 */
++	mxl862xx_color_marking_mode_t egress_marking_mode;
++	/** Egress color marking mode override color marking mode from last stage. */
++	bool egress_marking_override_enable;
++	/** Egress color marking mode for egress traffic. Valid only when
++	 * b_egress_marking_override is TRUE.
++	 */
++	mxl862xx_color_marking_mode_t egress_marking_mode_override;
++
++	/** Color remarking for egress traffic. */
++	mxl862xx_color_remarking_mode_t egress_remarking_mode;
++
++	/** Traffic metering on ingress traffic applies. */
++	bool ingress_metering_enable;
++	/** Meter for ingress CTP process.
++	 *
++	    \remarks
++	    Meter should be allocated with \ref MXL862XX_QOS_METER_ALLOC before CTP
++	    port configuration. If this CTP port is re-set, the last used meter
++	    should be released.
++	 */
++	u16 ingress_traffic_meter_id;
++	/** Traffic metering on egress traffic applies. */
++	bool egress_metering_enable;
++	/** Meter for egress CTP process.
++	 *
++	    \remarks
++	    Meter should be allocated with \ref MXL862XX_QOS_METER_ALLOC before CTP
++	    port configuration. If this CTP port is re-set, the last used meter
++	    should be released.
++	 */
++	u16 egress_traffic_meter_id;
++
++	/** Ingress traffic bypass bridging/multicast processing. Following
++	 * parameters are used to determine destination. Traffic flow table is not
++	    bypassed.
++	 */
++	bool bridging_bypass;
++	/** When b_bridging_bypass is TRUE, this field defines destination logical
++	 * port.
++	 */
++	u8 dest_logical_port_id;
++	/** When b_bridging_bypass is TRUE, this field indicates whether to use
++	 * \ref MXL862XX_CTP_port_config_t::n_dest_sub_if_id_group or
++	    \ref MXL862XX_CTP_port_config_t::e_pmapper_mapping_mode/
++	    \ref MXL862XX_CTP_port_config_t::s_pmapper.
++	 */
++	bool pmapper_enable;
++	/** When b_bridging_bypass is TRUE and b_pmapper_enable is FALSE, this field
++	 * defines destination sub interface ID group.
++	 */
++	u16 dest_sub_if_id_group;
++	/** When b_bridging_bypass is TRUE and b_pmapper_enable is TRUE, this field
++	 * selects either DSCP or PCP to derive sub interface ID.
++	 */
++	mxl862xx_pmapper_mapping_mode_t pmapper_mapping_mode;
++	/** When b_pmapper_enable is TRUE, P-mapper is used. This field determines
++	 * whether s_pmapper.n_pmapper_id is valid. If this field is TRUE, the
++	    P-mapper is re-used and no allocation of new P-mapper or value
++	    change in the P-mapper. If this field is FALSE, allocation is
++	    taken care in the API implementation.
++	 */
++	bool pmapper_id_valid;
++	/** When b_bridging_bypass is TRUE and b_pmapper_enable is TRUE, P-mapper is
++	 * used. If b_pmapper_id_valid is FALSE, API implementation need take care
++	    of P-mapper allocation, and maintain the reference counter of
++	    P-mapper used multiple times. If b_pmapper_id_valid is TRUE, only
++	    s_pmapper.n_pmapper_id is used to associate the P-mapper, and there is
++	    no allocation of new P-mapper or value change in the P-mapper.
++	 */
++	mxl862xx_pmapper_t pmapper;
++
++	/** First traffic flow table entry is associated to this CTP port. Ingress
++	 * traffic from this CTP port will go through traffic flow table search
++	    starting from n_first_flow_entry_index. Should be times of 4.
++	 */
++	u16 first_flow_entry_index;
++	/** Number of traffic flow table entries are associated to this CTP port.
++	 * Ingress traffic from this CTP port will go through PCE rules search
++	    ending at (n_first_flow_entry_index+n_number_of_flow_entries)-1. Should
++	    be times of 4.
++	 */
++	u16 number_of_flow_entries;
++
++	/** Ingress traffic from this CTP port will be redirected to ingress
++	 * logical port of this CTP port with source sub interface ID used as
++	    destination sub interface ID. Following processing except traffic
++	    flow table search is bypassed if loopback enabled.
++	 */
++	bool ingress_loopback_enable;
++	/** Destination/Source MAC address of ingress traffic is swapped before
++	 * transmitted (not swapped during PCE processing stages). If destination
++	    is multicast, there is no swap, but source MAC address is replaced
++	    with global configurable value.
++	 */
++	bool ingress_da_sa_swap_enable;
++	/** Egress traffic to this CTP port will be redirected to ingress logical
++	 * port with same sub interface ID as ingress.
++	 */
++	bool egress_loopback_enable;
++	/** Destination/Source MAC address of egress traffic is swapped before
++	 * transmitted.
++	 */
++	bool egress_da_sa_swap_enable;
++
++	/** If enabled, ingress traffic is mirrored to the monitoring port.
++	 * \remarks
++	    This should be used exclusive with b_ingress_loopback_enable.
++	 */
++	bool ingress_mirror_enable;
++	/** If enabled, egress traffic is mirrored to the monitoring port.
++	 * \remarks
++	    This should be used exclusive with b_egress_loopback_enable.
++	 */
++	bool egress_mirror_enable;
++} mxl862xx_ctp_port_config_t;
++
++#pragma scalar_storage_order default
++#pragma pack(pop)
++
++#endif /*_MXL862XX_CTP_H */
+--- /dev/null
++++ b/drivers/net/dsa/mxl862xx/mxl862xx-flow.h
+@@ -0,0 +1,48 @@
++/* SPDX-License-Identifier: GPL-2.0-or-later */
++/*
++ * mxl862xx-flow.h - Header file for DSA Driver for
++ * MaxLinear Mxl862xx switch chips family
++ *
++ * Copyright (C) 2024 MaxLinear Inc.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ */
++
++#ifndef _MXL862XX_FLOW_H_
++#define _MXL862XX_FLOW_H_
++
++#include "mxl862xx-types.h"
++
++#pragma pack(push, 1)
++#pragma scalar_storage_order little-endian
++
++#define MPCE_RULES_INDEX 0
++#define MPCE_RULES_INDEX_LAST (MPCE_RULES_INDEX + 7)
++#define EAPOL_PCE_RULE_INDEX 8
++#define BPDU_PCE_RULE_INDEX 9
++#define PFC_PCE_RULE_INDEX 10
++
++/** \brief Register access parameter to directly modify internal registers.
++    Used by \ref GSW_REGISTER_MOD. */
++typedef struct {
++	/** Register Address Offset for modifiation. */
++	u16 reg_addr;
++	/** Value to write to 'reg_addr'. */
++	u16 data;
++	/** Mask of bits to be modified. 1 to modify, 0 to ignore. */
++	u16 mask;
++} mxl862xx_register_mod_t;
++
++#pragma scalar_storage_order default
++#pragma pack(pop)
++
++#endif /* _MXL862XX_FLOW_H_ */
+--- a/drivers/net/dsa/mxl862xx/mxl862xx-fw.c
++++ b/drivers/net/dsa/mxl862xx/mxl862xx-fw.c
+@@ -393,6 +393,7 @@ int mxl862xx_devlink_flash_update(struct
+ 	cancel_delayed_work_sync(&priv->stats_work);
+ 	for (i = 0; i < ds->num_ports; i++)
+ 		cancel_work_sync(&priv->ports[i].host_flood_work);
++	cancel_work_sync(&priv->crc_err_work);
+ 
+ 	ret = mxl862xx_flash_firmware(priv, params->fw, ds->devlink);
+ 	if (ret)
+--- a/drivers/net/dsa/mxl862xx/mxl862xx-host.c
++++ b/drivers/net/dsa/mxl862xx/mxl862xx-host.c
+@@ -29,9 +29,13 @@
+ #define MXL862XX_MMD_REG_DATA_MAX_SIZE \
+ 		(MXL862XX_MMD_REG_DATA_LAST - MXL862XX_MMD_REG_DATA_FIRST + 1)
+ 
+-#define MMD_API_SET_DATA_0		2
+-#define MMD_API_GET_DATA_0		5
+-#define MMD_API_RST_DATA		8
++#define MMD_API_SET_DATA_0	(0x0 + 0x2)
++#define MMD_API_SET_DATA_1	(0x0 + 0x3)
++#define MMD_API_SET_DATA_2	(0x0 + 0x4)
++#define MMD_API_GET_DATA_0	(0x0 + 0x5)
++#define MMD_API_GET_DATA_1	(0x0 + 0x6)
++#define MMD_API_GET_DATA_2	(0x0 + 0x7)
++#define MMD_API_RST_DATA	(0x0 + 0x8)
+ 
+ #define MXL862XX_SWITCH_RESET		0x9907
+ 
+@@ -52,6 +56,11 @@ static void mxl862xx_crc_err_work_fn(str
+ 	clear_bit(MXL862XX_FLAG_CRC_ERR, &priv->flags);
+ }
+ 
++void mxl862xx_host_init(struct mxl862xx_priv *priv)
++{
++	INIT_WORK(&priv->crc_err_work, mxl862xx_crc_err_work_fn);
++}
++
+ /* Firmware CRC error codes (outside normal Zephyr errno range). */
+ #define MXL862XX_FW_CRC6_ERR		(-1024)
+ #define MXL862XX_FW_CRC16_ERR		(-1023)
+@@ -248,9 +257,10 @@ static int mxl862xx_issue_cmd(struct mxl
+ 
+ 	ret = mxl862xx_crc6_verify(ctrl_enc, len_enc, &fw_result);
+ 	if (ret) {
+-		if (!test_and_set_bit(MXL862XX_FLAG_CRC_ERR, &priv->flags))
+-			schedule_work(&priv->crc_err_work);
+-		return -EIO;
++		dev_warn_ratelimited(&priv->mdiodev->dev,
++				     "CMD %04x: ctrl/len_ret CRC-6 mismatch\n",
++				     cmd);
++		return -EBADMSG;
+ 	}
+ 
+ 	return fw_result;
+@@ -313,21 +323,36 @@ static int mxl862xx_send_cmd(struct mxl8
+ 	 *   -1023: CRC-16 mismatch on data payload
+ 	 */
+ 	if (ret < 0) {
+-		if ((ret == MXL862XX_FW_CRC6_ERR ||
+-		     ret == MXL862XX_FW_CRC16_ERR) &&
+-		    !test_and_set_bit(MXL862XX_FLAG_CRC_ERR, &priv->flags))
+-			schedule_work(&priv->crc_err_work);
+ 		if (!quiet)
+-			dev_err(&priv->mdiodev->dev,
+-				"CMD %04x returned error %d\n", cmd, ret);
++			dev_warn_ratelimited(&priv->mdiodev->dev,
++					     "CMD %04x returned error %d\n",
++					     cmd, ret);
++		if (ret == -EBADMSG ||
++		    ret == MXL862XX_FW_CRC6_ERR ||
++		    ret == MXL862XX_FW_CRC16_ERR)
++			return -EBADMSG;
+ 		return -EIO;
+ 	}
+ 
+ 	return ret;
+ }
+ 
+-int mxl862xx_api_wrap(struct mxl862xx_priv *priv, u16 cmd, void *_data,
+-		      u16 size, bool read, bool quiet)
++static bool mxl862xx_cmd_is_xpcs(u16 cmd)
++{
++	return (cmd & 0xff00) == MXL862XX_XPCS_MAGIC;
++}
++
++static bool mxl862xx_cmd_is_safe_read(u16 cmd)
++{
++	/* This command only samples the SerDes state and has no cursor or
++	 * clear-on-read side effects, so it is safe to repeat after RST_DATA.
++	 */
++	return cmd == SYS_MISC_SFP_GET;
++}
++
++static int mxl862xx_api_xfer_locked(struct mxl862xx_priv *priv, u16 cmd,
++				    void *_data, u16 size, bool read,
++				    bool quiet)
+ {
+ 	__le16 *data = _data;
+ 	bool use_rst = false;
+@@ -335,16 +360,6 @@ int mxl862xx_api_wrap(struct mxl862xx_pr
+ 	int ret, cmd_ret;
+ 	u16 max, crc, i;
+ 
+-	if (priv->skip_teardown)
+-		return 0;
+-
+-	if (priv->block_host && cmd != SYS_MISC_FW_UPDATE)
+-		return -EBUSY;
+-
+-	dev_dbg(&priv->mdiodev->dev, "CMD %04x DATA %*ph\n", cmd, size, data);
+-
+-	mutex_lock_nested(&priv->mdiodev->bus->mdio_lock, MDIO_MUTEX_NESTED);
+-
+ 	max = (size + 1) / 2;
+ 
+ 	ret = mxl862xx_busy_wait(priv);
+@@ -465,9 +480,10 @@ int mxl862xx_api_wrap(struct mxl862xx_pr
+ 	}
+ 
+ 	if (crc16(0xffff, (const u8 *)data, size) != crc) {
+-		if (!test_and_set_bit(MXL862XX_FLAG_CRC_ERR, &priv->flags))
+-			schedule_work(&priv->crc_err_work);
+-		ret = -EIO;
++		dev_warn_ratelimited(&priv->mdiodev->dev,
++				     "CMD %04x: data payload CRC-16 mismatch\n",
++				     cmd);
++		ret = -EBADMSG;
+ 		goto out;
+ 	}
+ 
+@@ -477,6 +493,84 @@ int mxl862xx_api_wrap(struct mxl862xx_pr
+ 	dev_dbg(&priv->mdiodev->dev, "RET %d DATA %*ph\n", ret, size, data);
+ 
+ out:
++	return ret;
++}
++
++int mxl862xx_api_wrap(struct mxl862xx_priv *priv, u16 cmd, void *data,
++		      u16 size, bool read, bool quiet)
++{
++	u8 request[sizeof(struct mxl862xx_sys_sfp_cfg)];
++	bool retry = read && mxl862xx_cmd_is_safe_read(cmd) &&
++		     size == sizeof(request);
++	bool crc_error = false;
++	int rst_ret;
++	int ret;
++
++	if (priv->skip_teardown)
++		return 0;
++
++	if (priv->block_host && cmd != SYS_MISC_FW_UPDATE)
++		return -EBUSY;
++
++	/* Firmware before 1.0.84 has no XPCS command group. Guard the host
++	 * transport as well as the individual PCS users so a future caller
++	 * cannot corrupt the shared command/data window on legacy firmware.
++	 */
++	if (mxl862xx_cmd_is_xpcs(cmd) && !mxl862xx_fw_has_xpcs_api(priv)) {
++		dev_warn_ratelimited(&priv->mdiodev->dev,
++				     "CMD %04x requires firmware 1.0.84 or newer\n",
++				     cmd);
++		return -EOPNOTSUPP;
++	}
++
++	/* Read replies overwrite their request payload. Preserve the small
++	 * SFP_GET request on the stack for a possible replay.
++	 */
++	if (retry)
++		memcpy(request, data, size);
++
++	dev_dbg(&priv->mdiodev->dev, "CMD %04x DATA %*ph\n", cmd, size, data);
++
++	mutex_lock_nested(&priv->mdiodev->bus->mdio_lock, MDIO_MUTEX_NESTED);
++
++	ret = mxl862xx_api_xfer_locked(priv, cmd, data, size, read, quiet);
++	crc_error = ret == -EBADMSG;
++
++	if (ret == -EBADMSG && retry) {
++		/* Reset a CRC-corrupt data window before replaying an idempotent
++		 * read, while retaining the MDIO lock so no other API transaction
++		 * can interleave. Never issue RST_DATA after -ETIMEDOUT: BUSY may
++		 * still describe the original command, so replacing it with a new
++		 * command would desynchronize the control and data windows.
++		 */
++		rst_ret = mxl862xx_rst_data(priv);
++		if (rst_ret < 0) {
++			crc_error |= rst_ret == -EBADMSG;
++			ret = rst_ret;
++			dev_warn_ratelimited(&priv->mdiodev->dev,
++					     "CMD %04x recovery RST_DATA failed: %d\n",
++					     cmd, rst_ret);
++		} else {
++			memcpy(data, request, size);
++			dev_warn_ratelimited(&priv->mdiodev->dev,
++					     "CMD %04x failed, retrying after RST_DATA\n",
++					     cmd);
++			ret = mxl862xx_api_xfer_locked(priv, cmd, data, size,
++						       read, quiet);
++			crc_error |= ret == -EBADMSG;
++		}
++	}
++
++	/* Defer the destructive recovery worker until a safe retry has been
++	 * exhausted. A successful replay proves that the transport recovered.
++	 */
++	if (ret < 0 && crc_error &&
++	    !test_and_set_bit(MXL862XX_FLAG_CRC_ERR, &priv->flags))
++		schedule_work(&priv->crc_err_work);
++
++	if (ret == -EBADMSG)
++		ret = -EIO;
++
+ 	mutex_unlock(&priv->mdiodev->bus->mdio_lock);
+ 
+ 	return ret;
+@@ -484,10 +578,21 @@ out:
+ 
+ int mxl862xx_reset(struct mxl862xx_priv *priv)
+ {
++	int rst_data_ret;
+ 	int ret;
+ 
+ 	mutex_lock_nested(&priv->mdiodev->bus->mdio_lock, MDIO_MUTEX_NESTED);
+ 
++	/* Clear the host API data window first when the command engine is
++	 * responsive. Keep this best-effort because the switch reset below is
++	 * also the recovery path when the command engine is already wedged.
++	 */
++	rst_data_ret = mxl862xx_rst_data(priv);
++	if (rst_data_ret < 0)
++		dev_dbg(&priv->mdiodev->dev,
++			"RST_DATA before switch reset failed: %pe\n",
++			ERR_PTR(rst_data_ret));
++
+ 	/* Software reset */
+ 	ret = mxl862xx_reg_write(priv, MXL862XX_MMD_REG_LEN_RET, 0);
+ 	if (ret)
+@@ -535,12 +640,105 @@ int mxl862xx_smdio_write(struct mxl862xx
+ 	return ret;
+ }
+ 
+-void mxl862xx_host_init(struct mxl862xx_priv *priv)
++/*
++ * SYS_MISC register read/write/modify helpers.
++ *
++ * These call the firmware's vendor-blessed 32-bit register backdoor
++ * (SYS_MISC_REG_RD/WR/MOD, opcodes 0x1908/9/A). Address space is the
++ * F48X internal register map - NOT host physical addresses. The
++ * firmware decodes and dispatches each access through the same memory
++ * map the on-chip CLI uses.
++ *
++ * Suitable callers: SerDes/PCS investigation
++ * helpers, and any in-driver register touch the FW already gates
++ * behind SYS_MISC.
++ */
++int mxl862xx_sys_reg_read(struct mxl862xx_priv *priv, u32 addr, u32 *val)
+ {
+-	INIT_WORK(&priv->crc_err_work, mxl862xx_crc_err_work_fn);
++	struct mxl862xx_sys_reg_rw rw = { .addr = cpu_to_le32(addr) };
++	int ret;
++
++	if (!val)
++		return -EINVAL;
++
++	ret = MXL862XX_API_READ(priv, SYS_MISC_REG_RD, rw);
++	if (ret)
++		return ret;
++
++	*val = le32_to_cpu(rw.val);
++	return 0;
++}
++
++int mxl862xx_sys_reg_write(struct mxl862xx_priv *priv, u32 addr, u32 val)
++{
++	struct mxl862xx_sys_reg_rw rw = {
++		.addr = cpu_to_le32(addr),
++		.val  = cpu_to_le32(val),
++	};
++
++	return MXL862XX_API_WRITE(priv, SYS_MISC_REG_WR, rw);
+ }
+ 
+-void mxl862xx_host_shutdown(struct mxl862xx_priv *priv)
++int mxl862xx_sys_reg_modify(struct mxl862xx_priv *priv, u32 addr, u32 mask,
++			    u32 val)
+ {
+-	cancel_work_sync(&priv->crc_err_work);
++	struct mxl862xx_sys_reg_mod m = {
++		.addr = cpu_to_le32(addr),
++		.val  = cpu_to_le32(val),
++		.mask = cpu_to_le32(mask),
++	};
++
++	return MXL862XX_API_WRITE(priv, SYS_MISC_REG_MOD, m);
++}
++
++/*
++ * SYS_MISC CML reference-clock helpers.
++ *
++ * The F48X exposes two configurable CML outputs (clk = 0 or 1) feeding
++ * the SerDes PLLs. The source select determines the reference rate:
++ *   0 - 50 MHz   (LJPLL FOUT0)
++ *   1 - 156.25 MHz (LJPLL FOUT1, required for 10G XGMAC)
++ *   2 - 25 MHz   (XO pass-through)
++ *
++ * The SET payload uses *_val flag bits to selectively apply changes:
++ * en_val=1 commits @en, src_val=1 commits @src_sel. The GET path
++ * returns the current state.
++ *
++ * Wrong source selection is a silent killer for SerDes link-up - the
++ * SerDes PLL locks (or doesn't) against this reference. If a port that
++ * should be 10G USXGMII is fed 50 MHz instead of 156.25 MHz, the lane
++ * never reaches block_lock and the FW state machine wedges before
++ * SYS_DPC_MAC_IF_READY.
++ */
++int mxl862xx_sys_cml_clk_get(struct mxl862xx_priv *priv, u8 out, bool *enabled,
++			     enum mxl862xx_sys_cml_clk_src *src)
++{
++	struct mxl862xx_sys_cml_clk_cfg c = {
++		.bits = MXL862XX_CML_CLK_OUT(out),
++	};
++	int ret;
++
++	ret = MXL862XX_API_READ(priv, SYS_MISC_CML_CLK_GET, c);
++	if (ret)
++		return ret;
++
++	if (enabled)
++		*enabled = !!(c.bits & MXL862XX_CML_CLK_EN);
++	if (src)
++		*src = MXL862XX_CML_CLK_GET_SRC_SEL(c.bits);
++	return 0;
++}
++
++int mxl862xx_sys_cml_clk_set(struct mxl862xx_priv *priv, u8 out, bool enable,
++			     enum mxl862xx_sys_cml_clk_src src)
++{
++	struct mxl862xx_sys_cml_clk_cfg c = {
++		.bits = MXL862XX_CML_CLK_OUT(out)		|
++			MXL862XX_CML_CLK_EN_VAL			|
++			(enable ? MXL862XX_CML_CLK_EN : 0)	|
++			MXL862XX_CML_CLK_SRC_VAL		|
++			MXL862XX_CML_CLK_SRC_SEL(src),
++	};
++
++	return MXL862XX_API_WRITE(priv, SYS_MISC_CML_CLK_SET, c);
+ }
+--- a/drivers/net/dsa/mxl862xx/mxl862xx-host.h
++++ b/drivers/net/dsa/mxl862xx/mxl862xx-host.h
+@@ -5,20 +5,34 @@
+ 
+ #include "mxl862xx.h"
+ 
+-void mxl862xx_host_init(struct mxl862xx_priv *priv);
+-void mxl862xx_host_shutdown(struct mxl862xx_priv *priv);
+ int mxl862xx_api_wrap(struct mxl862xx_priv *priv, u16 cmd, void *data, u16 size,
+ 		      bool read, bool quiet);
+ 
+ #define MXL862XX_API_WRITE(dev, cmd, data) \
+ 	mxl862xx_api_wrap(dev, cmd, &(data), sizeof((data)), false, false)
++#define MXL862XX_API_WRITE_QUIET(dev, cmd, data) \
++	mxl862xx_api_wrap(dev, cmd, &(data), sizeof((data)), false, true)
+ #define MXL862XX_API_READ(dev, cmd, data) \
+ 	mxl862xx_api_wrap(dev, cmd, &(data), sizeof((data)), true, false)
+ #define MXL862XX_API_READ_QUIET(dev, cmd, data) \
+ 	mxl862xx_api_wrap(dev, cmd, &(data), sizeof((data)), true, true)
+ 
+ int mxl862xx_reset(struct mxl862xx_priv *priv);
++void mxl862xx_host_init(struct mxl862xx_priv *priv);
+ int mxl862xx_smdio_read(struct mxl862xx_priv *priv, u32 addr);
+ int mxl862xx_smdio_write(struct mxl862xx_priv *priv, u32 addr, u16 val);
+ 
++/* SYS_MISC register-space helpers (proxy through firmware) */
++int mxl862xx_sys_reg_read(struct mxl862xx_priv *priv, u32 addr, u32 *val);
++int mxl862xx_sys_reg_write(struct mxl862xx_priv *priv, u32 addr, u32 val);
++int mxl862xx_sys_reg_modify(struct mxl862xx_priv *priv, u32 addr, u32 mask,
++			    u32 val);
++
++/* SYS_MISC CML reference-clock helpers */
++enum mxl862xx_sys_cml_clk_src;
++int mxl862xx_sys_cml_clk_get(struct mxl862xx_priv *priv, u8 out, bool *enabled,
++			     enum mxl862xx_sys_cml_clk_src *src);
++int mxl862xx_sys_cml_clk_set(struct mxl862xx_priv *priv, u8 out, bool enable,
++			     enum mxl862xx_sys_cml_clk_src src);
++
+ #endif /* __MXL862XX_HOST_H */
+--- a/drivers/net/dsa/mxl862xx/mxl862xx-phylink.c
++++ b/drivers/net/dsa/mxl862xx/mxl862xx-phylink.c
+@@ -17,120 +17,348 @@
+ #include "mxl862xx-host.h"
+ #include "mxl862xx-phylink.h"
+ 
++static struct mxl862xx_pcs *pcs_to_mxl862xx_pcs(struct phylink_pcs *pcs)
++{
++	return container_of(pcs, struct mxl862xx_pcs, pcs);
++}
++
++/* Boolean test against the per-port classification populated at switch
++ * setup time. Avoids open-coding the chip-layout range check at every
++ * callsite (which was the source of an earlier bug where conflating
++ * SERDES_PORTS with SERDES_INSTANCES shrank the range to 2 and broke
++ * mxl_lan5 phy_connect with -EINVAL).
++ */
++bool mxl862xx_port_is_serdes(const struct mxl862xx_priv *priv, int port)
++{
++	if (!priv || port < 0 || port >= MXL862XX_MAX_PORTS)
++		return false;
++	return priv->ports[port].kind == MXL862XX_PORT_KIND_SERDES;
++}
++
++bool mxl862xx_port_has_phy_endpoint(const struct mxl862xx_priv *priv, int port)
++{
++	struct dsa_port *dp;
++
++	if (!priv || !priv->ds || !priv->ds->dst)
++		return false;
++
++	dp = dsa_to_port(priv->ds, port);
++	if (!dp || dp->type != DSA_PORT_TYPE_USER || !dp->dn)
++		return false;
++
++	return of_find_property(dp->dn, "phy-handle", NULL) ||
++	       of_find_property(dp->dn, "sfp", NULL);
++}
++
++static bool mxl862xx_port_has_pcs(const struct mxl862xx_priv *priv, int port)
++{
++	if (!mxl862xx_port_is_serdes(priv, port))
++		return false;
++
++	/* Conduit (CPU/DSA) ports run PCS-less: the firmware brings up
++	 * and monitors the fixed 10gbase-r lane on its own, exactly as
++	 * on the proven 8X bring-up. phylink_get_caps keeps
++	 * pcs_interfaces clear for them, so phylink neither requires
++	 * nor warns about a missing PCS there. Only user-facing SerDes
++	 * endpoints (PHY or SFP) bind the PCS.
++	 */
++	return mxl862xx_port_has_phy_endpoint(priv, port);
++}
++
++static int mxl862xx_fill_available_pcs(struct phylink_config *config,
++				       struct phylink_pcs **available_pcs,
++				       unsigned int num_available_pcs);
++
+ void mxl862xx_phylink_get_caps(struct dsa_switch *ds, int port,
+ 			       struct phylink_config *config)
+ {
+ 	struct mxl862xx_priv *priv = ds->priv;
++	struct dsa_port *dp;
+ 
+ 	config->mac_capabilities = MAC_ASYM_PAUSE | MAC_SYM_PAUSE | MAC_10 |
+ 				   MAC_100 | MAC_1000 | MAC_2500FD;
+ 
+-	switch (port) {
+-	case 1 ... 8:
++	if (port >= 0 && port < priv->hw_info->phy_ports) {
+ 		__set_bit(PHY_INTERFACE_MODE_INTERNAL,
+ 			  config->supported_interfaces);
+-		break;
+-	case 9:
+-	case 13:
+-		__set_bit(PHY_INTERFACE_MODE_SGMII, config->supported_interfaces);
+-		__set_bit(PHY_INTERFACE_MODE_1000BASEX, config->supported_interfaces);
+-		__set_bit(PHY_INTERFACE_MODE_2500BASEX, config->supported_interfaces);
+-		__set_bit(PHY_INTERFACE_MODE_10GBASER, config->supported_interfaces);
+-		__set_bit(PHY_INTERFACE_MODE_10GKR, config->supported_interfaces);
+-		__set_bit(PHY_INTERFACE_MODE_USXGMII, config->supported_interfaces);
+-		fallthrough;
+-	case 10 ... 12:
+-	case 14 ... 16:
+-		if (!MXL862XX_FW_VER_MIN(priv, 1, 0, 84))
+-			break;
+-		__set_bit(PHY_INTERFACE_MODE_QSGMII, config->supported_interfaces);
+-		__set_bit(PHY_INTERFACE_MODE_10G_QXGMII, config->supported_interfaces);
+-
+-		break;
+-	default:
+-		break;
++		return;
+ 	}
+ 
+-	if (port == 9 || port == 13)
++	if (!mxl862xx_port_is_serdes(priv, port))
++		return;
++
++	__set_bit(PHY_INTERFACE_MODE_SGMII, config->supported_interfaces);
++	__set_bit(PHY_INTERFACE_MODE_1000BASEX, config->supported_interfaces);
++	__set_bit(PHY_INTERFACE_MODE_2500BASEX, config->supported_interfaces);
++	__set_bit(PHY_INTERFACE_MODE_10GBASER, config->supported_interfaces);
++	__set_bit(PHY_INTERFACE_MODE_5GBASER, config->supported_interfaces);
++	__set_bit(PHY_INTERFACE_MODE_USXGMII, config->supported_interfaces);
++
++	/* Conduit ports: the fixed 10gbase-r lane toward the SoC is
++	 * firmware-managed end to end; no PCS is bound (mirrors the
++	 * proven 8X bring-up). Leave pcs_interfaces clear so phylink
++	 * does not require one.
++	 */
++	dp = dsa_to_port(ds, port);
++	if (dp && (dp->type == DSA_PORT_TYPE_CPU ||
++		   dp->type == DSA_PORT_TYPE_DSA)) {
+ 		config->mac_capabilities |= MAC_10000FD | MAC_5000FD;
++		return;
++	}
++
++	/* Interfaces that require the dedicated (SerDes) PCS. Without the
++	 * SFP-class modes listed here phylink never attaches the PCS for
++	 * an SFP module running 1000base-x/2500base-x/sgmii, so the port
++	 * silently stays link-down.
++	 */
++	__set_bit(PHY_INTERFACE_MODE_USXGMII, config->pcs_interfaces);
++	__set_bit(PHY_INTERFACE_MODE_10GBASER, config->pcs_interfaces);
++	__set_bit(PHY_INTERFACE_MODE_5GBASER, config->pcs_interfaces);
++	__set_bit(PHY_INTERFACE_MODE_SGMII, config->pcs_interfaces);
++	__set_bit(PHY_INTERFACE_MODE_1000BASEX, config->pcs_interfaces);
++	__set_bit(PHY_INTERFACE_MODE_2500BASEX, config->pcs_interfaces);
++	config->mac_capabilities |= MAC_10000FD | MAC_5000FD;
++
++	if (mxl862xx_port_has_pcs(priv, port)) {
++		config->num_available_pcs = 1;
++		config->fill_available_pcs = mxl862xx_fill_available_pcs;
++	}
+ }
+ 
+-static struct mxl862xx_pcs *pcs_to_mxl862xx_pcs(struct phylink_pcs *pcs)
++/* Deterministic lookup: SerDes Block Number is fixed by the DSA port
++ * index, so priv->serdes_ports[] is indexed directly by block. The slot
++ * is only considered "this port's" once setup_pcs has bound it; that
++ * guards against returning a slot that was set up for a different DSA
++ * port living on the same SerDes block (chip allows it, BPI-R4 Pro
++ * doesn't use it, but this keeps the check honest).
++ */
++static struct mxl862xx_pcs *mxl862xx_legacy_pcs_for_port(struct mxl862xx_priv *priv,
++							 int port)
+ {
+-	return container_of(pcs, struct mxl862xx_pcs, pcs);
++	int slot;
++
++	if (!mxl862xx_port_is_serdes(priv, port))
++		return NULL;
++
++	slot = MXL862XX_SERDES_PORT_ID(port);
++	if (slot < 0 || slot >= ARRAY_SIZE(priv->serdes_ports))
++		return NULL;
++
++	if (!priv->serdes_ports[slot].pcs.ops)
++		return NULL;
++
++	if (priv->serdes_ports[slot].port != port)
++		return NULL;
++
++	return &priv->serdes_ports[slot];
+ }
+ 
+-/* Legacy SFP-based PCS implementation for firmware < 1.0.84 */
+-static int mxl862xx_legacy_pcs_config(struct phylink_pcs *pcs,
+-				      unsigned int neg_mode,
+-				      phy_interface_t interface,
+-				      const unsigned long *advertising,
+-				      bool permit_pause_to_mac)
++static int mxl862xx_fill_available_pcs(struct phylink_config *config,
++				       struct phylink_pcs **available_pcs,
++				       unsigned int num_available_pcs)
+ {
+-	struct mxl862xx_pcs *mpcs = pcs_to_mxl862xx_pcs(pcs);
+-	struct mxl862xx_priv *priv = mpcs->priv;
+-	struct mxl862xx_sys_sfp_cfg ser_intf = {
+-		.option = 0,
+-		.mode = 1,
+-	};
++	struct dsa_port *dp = dsa_phylink_to_port(config);
++	struct mxl862xx_priv *priv = dp->ds->priv;
++	struct mxl862xx_pcs *mpcs;
+ 
+-	if (mpcs->slot != 0)
++	if (!num_available_pcs)
+ 		return 0;
+ 
+-	ser_intf.port_id = mpcs->serdes_id;
++	mpcs = mxl862xx_legacy_pcs_for_port(priv, dp->index);
++	if (!mpcs)
++		return 0;
++
++	available_pcs[0] = &mpcs->pcs;
++	return 0;
++}
++
++static int mxl862xx_usxgmii_pcs_encode_advertisement(phy_interface_t interface,
++						     const unsigned long *advertising)
++{
++	u16 adv = MDIO_USXGMII_LINK;
+ 
+ 	switch (interface) {
+-	case PHY_INTERFACE_MODE_SGMII:
+-		ser_intf.speed = 8;
++	case PHY_INTERFACE_MODE_USXGMII:
+ 		break;
++	default:
++		return 0;
++	}
++
++	if (linkmode_test_bit(ETHTOOL_LINK_MODE_10000baseT_Full_BIT,
++			      advertising) ||
++	    linkmode_test_bit(ETHTOOL_LINK_MODE_10000baseKR_Full_BIT,
++			      advertising) ||
++	    linkmode_test_bit(ETHTOOL_LINK_MODE_10000baseKX4_Full_BIT,
++			      advertising) ||
++	    linkmode_test_bit(ETHTOOL_LINK_MODE_10000baseCR_Full_BIT,
++			      advertising) ||
++	    linkmode_test_bit(ETHTOOL_LINK_MODE_10000baseSR_Full_BIT,
++			      advertising) ||
++	    linkmode_test_bit(ETHTOOL_LINK_MODE_10000baseLR_Full_BIT,
++			      advertising) ||
++	    linkmode_test_bit(ETHTOOL_LINK_MODE_10000baseLRM_Full_BIT,
++			      advertising) ||
++	    linkmode_test_bit(ETHTOOL_LINK_MODE_10000baseER_Full_BIT,
++			      advertising)) {
++		adv |= MDIO_USXGMII_10GFULL;
++		return adv;
++	}
++
++	if (linkmode_test_bit(ETHTOOL_LINK_MODE_5000baseT_Full_BIT,
++			      advertising))
++		return adv | MDIO_USXGMII_5000FULL;
++
++	if (linkmode_test_bit(ETHTOOL_LINK_MODE_2500baseT_Full_BIT,
++			      advertising) ||
++	    linkmode_test_bit(ETHTOOL_LINK_MODE_2500baseX_Full_BIT,
++			      advertising))
++		return adv | MDIO_USXGMII_2500FULL;
++
++	if (linkmode_test_bit(ETHTOOL_LINK_MODE_1000baseT_Full_BIT,
++			      advertising) ||
++	    linkmode_test_bit(ETHTOOL_LINK_MODE_1000baseX_Full_BIT,
++			      advertising) ||
++	    linkmode_test_bit(ETHTOOL_LINK_MODE_1000baseKX_Full_BIT,
++			      advertising))
++		return adv | MDIO_USXGMII_1000FULL;
++
++	if (linkmode_test_bit(ETHTOOL_LINK_MODE_100baseT_Full_BIT,
++			      advertising))
++		return adv | MDIO_USXGMII_100FULL;
++
++	if (linkmode_test_bit(ETHTOOL_LINK_MODE_10baseT_Full_BIT,
++			      advertising))
++		return adv | MDIO_USXGMII_10FULL;
++
++	if (linkmode_empty(advertising))
++		return adv | MDIO_USXGMII_10GFULL;
++
++	return -EINVAL;
++}
++
++/*
++ * Read IEEE 802.3 Clause 49 BASE-R PCS status from the attached PHY.
++ *
++ * MMD3.32 (10GBASE-R STAT1) bit  0 = rx_block_lock
++ *                          bit  1 = high_ber
++ *                          bit 12 = pcs_receive_link
++ *
++ * Vendor-agnostic - works on AS21xxx, GPY, Marvell, etc. We don't read
++ * the BER / errored-block counters here because pcs_get_state must stay
++ * fast.
++ *
++ * Returns 1 if the PCS reports the link as up-and-locked, 0 if it
++ * reports down (either no block lock or no rcv_link), or a negative
++ * errno on bus failure.
++ */
++/*
++ * Detect whether the attached PHY has completed line-side AN and is
++ * reporting link up.
++ *
++ * NOTE: This does NOT prove the PHY's USXGMII PCS to the switch is
++ * framing. It only proves the copper line side is up. The two domains
++ * can disagree (split-brain: line up, lane down). Use this strictly as
++ * a "PHY says line carrier present, switch FW should be observing
++ * something" gate, not as proof of end-to-end packet path.
++ *
++ * IEEE Std 802.3 Clause 45 §45.2.7.1 (MMD7.0 / MDIO_CTRL1):
++ *   bit 15 = RESET      (must be 0)
++ *   bit 12 = AN_ENABLE  (must be 1)
++ *   bit  9 = RESTART_AN (must be 0; transient self-clears during AN)
++ *
++ * IEEE Std 802.3 Clause 45 §45.2.7.2 (MMD7.1 / MDIO_STAT1):
++ *   bit  5 = AN_COMPLETE   (must be 1)
++ *   bit  4 = REMOTE_FAULT  (latched; must be 0)
++ *   bit  3 = AN_ABLE       (must be 1)
++ *   bit  2 = LINK_STATUS   (latched-low; must be 1 when read twice)
++ *
++ * Returns 1 if line side is up, 0 if not, negative errno on bus failure.
++ */
++#define MXL_AN_STAT_REQ_BITS	(BIT(5) | BIT(3) | BIT(2))  /* AN_COMPLETE | AN_ABLE | LINK */
++#define MXL_AN_STAT_BAD_BITS	(BIT(4))                     /* REMOTE_FAULT */
++#define MXL_AN_CTRL_REQ_BITS	(BIT(12))                    /* AN_ENABLE */
++#define MXL_AN_CTRL_BAD_BITS	(BIT(15) | BIT(9))           /* RESET | RESTART_AN */
++
++static int mxl862xx_legacy_pcs_phy_baser_up(struct phy_device *phydev)
++{
++	int stat, ctrl;
++
++	if (!phydev)
++		return -ENODEV;
++
++	stat = phy_read_mmd(phydev, MDIO_MMD_AN, MDIO_STAT1);
++	if (stat < 0)
++		return stat;
++	ctrl = phy_read_mmd(phydev, MDIO_MMD_AN, MDIO_CTRL1);
++	if (ctrl < 0)
++		return ctrl;
++
++	if ((stat & MXL_AN_STAT_REQ_BITS) != MXL_AN_STAT_REQ_BITS)
++		return 0;
++	if (stat & MXL_AN_STAT_BAD_BITS)
++		return 0;
++	if ((ctrl & MXL_AN_CTRL_REQ_BITS) != MXL_AN_CTRL_REQ_BITS)
++		return 0;
++	if (ctrl & MXL_AN_CTRL_BAD_BITS)
++		return 0;
++
++	return 1;
++}
++
++static bool mxl862xx_legacy_speed_matches(phy_interface_t interface,
++					  int speed)
++{
++	switch (interface) {
+ 	case PHY_INTERFACE_MODE_1000BASEX:
+-		ser_intf.speed = (neg_mode & PHYLINK_PCS_NEG_INBAND) ? 1 : 7;
+-		break;
++		return speed == SPEED_1000;
+ 	case PHY_INTERFACE_MODE_2500BASEX:
+-		ser_intf.speed = 4;
+-		break;
++		return speed == SPEED_2500;
++	case PHY_INTERFACE_MODE_5GBASER:
++		return speed == SPEED_5000;
+ 	case PHY_INTERFACE_MODE_10GBASER:
+-		ser_intf.speed = 2;
+-		break;
++	case PHY_INTERFACE_MODE_10GKR:
++		return speed == SPEED_10000;
++	case PHY_INTERFACE_MODE_SGMII:
++	case PHY_INTERFACE_MODE_QSGMII:
+ 	case PHY_INTERFACE_MODE_USXGMII:
+-		ser_intf.speed = 3;
+-		break;
++	case PHY_INTERFACE_MODE_10G_QXGMII:
++		/* SGMII, QSGMII and USXGMII can resolve multiple rates. */
++		return speed != SPEED_UNKNOWN;
+ 	default:
+-		dev_err(priv->ds->dev, "unsupported interface: %s\n",
+-			phy_modes(interface));
+-		return -EINVAL;
++		return false;
+ 	}
+-
+-	return MXL862XX_API_WRITE(priv, SYS_MISC_SFP_SET, ser_intf);
+ }
+ 
+-static void mxl862xx_legacy_pcs_get_state(struct phylink_pcs *pcs,
+-					  unsigned int neg_mode,
+-					  struct phylink_link_state *state)
++/*
++ * Re-sync phylink_link_state from the firmware's PORTLINKCFGGET view.
++ * Do not poll SYS_MISC_SFP_GET here: firmware 1.0.70 can leave that
++ * command BUSY indefinitely, stalling every user of the shared host API.
++ *
++ * A zero-filled/default PORTLINKCFGGET reply looks like link=UP,
++ * speed=10M and duplex=FULL because those enum values are all zero.
++ * Validate fixed-rate interfaces against their configured rate before
++ * accepting link, so that power-on state cannot become false carrier.
++ */
++static void mxl862xx_refresh_state(struct mxl862xx_pcs *mpcs,
++				   struct phylink_link_state *state)
+ {
+-	struct mxl862xx_pcs *mpcs = pcs_to_mxl862xx_pcs(pcs);
+ 	struct mxl862xx_priv *priv = mpcs->priv;
+-	struct mxl862xx_port_link_cfg port_link_cfg = {
+-		.port_id = cpu_to_le16(MXL862XX_PCS_PORT(mpcs)),
+-	};
+-	struct mxl862xx_port_cfg port_cfg = {
+-		.port_id = cpu_to_le16(MXL862XX_PCS_PORT(mpcs)),
++	int port = mpcs->port;
++	struct mxl862xx_port_link_cfg cfg = {
++		.port_id = cpu_to_le16(mxl862xx_fw_port_id(port)),
+ 	};
++	bool link;
+ 	int ret;
+ 
+-	ret = MXL862XX_API_READ(priv, MXL862XX_COMMON_PORTLINKCFGGET,
+-				port_link_cfg);
+-	if (ret)
+-		return;
+-
+-	ret = MXL862XX_API_READ(priv, MXL862XX_COMMON_PORTCFGGET, port_cfg);
+-	if (ret)
++	ret = MXL862XX_API_READ(priv, MXL862XX_COMMON_PORTLINKCFGGET, cfg);
++	if (ret) {
++		dev_warn_ratelimited(priv->ds->dev,
++				     "port %d: PORTLINKCFGGET failed: %d\n",
++				     port, ret);
+ 		return;
++	}
+ 
+-	state->link = (le32_to_cpu(port_link_cfg.link) == MXL862XX_PORT_LINK_UP);
+-	state->an_complete = state->link;
+-
+-	switch (le32_to_cpu(port_link_cfg.speed)) {
++	switch (le32_to_cpu(cfg.speed)) {
+ 	case MXL862XX_PORT_SPEED_10:
+ 		state->speed = SPEED_10;
+ 		break;
+@@ -154,7 +382,7 @@ static void mxl862xx_legacy_pcs_get_stat
+ 		break;
+ 	}
+ 
+-	switch (le32_to_cpu(port_link_cfg.duplex)) {
++	switch (le32_to_cpu(cfg.duplex)) {
+ 	case MXL862XX_DUPLEX_HALF:
+ 		state->duplex = DUPLEX_HALF;
+ 		break;
+@@ -166,35 +394,188 @@ static void mxl862xx_legacy_pcs_get_stat
+ 		break;
+ 	}
+ 
+-	state->pause &= ~(MLO_PAUSE_RX | MLO_PAUSE_TX);
+-	switch (le32_to_cpu(port_cfg.flow_ctrl)) {
+-	case MXL862XX_FLOW_RXTX:
+-		state->pause |= MLO_PAUSE_TXRX_MASK;
++	link = le32_to_cpu(cfg.link) == MXL862XX_PORT_LINK_UP &&
++	       state->duplex != DUPLEX_UNKNOWN &&
++	       mxl862xx_legacy_speed_matches(mpcs->interface, state->speed);
++	state->link = link;
++	state->an_complete = link;
++}
++
++static void mxl862xx_legacy_pcs_get_state(struct phylink_pcs *pcs,
++					  unsigned int neg_mode,
++				   struct phylink_link_state *state)
++{
++	struct mxl862xx_pcs *mpcs = pcs_to_mxl862xx_pcs(pcs);
++	struct mxl862xx_priv *priv = mpcs->priv;
++	struct phy_device *phydev;
++	struct dsa_port *dp;
++	int phy_up;
++
++	/* Keep failures and unresolved firmware replies pessimistically down. */
++	state->link = false;
++	state->an_complete = false;
++	state->speed = SPEED_UNKNOWN;
++	state->duplex = DUPLEX_UNKNOWN;
++
++	dp = dsa_to_port(priv->ds, mpcs->port);
++	phydev = (dp && dp->user) ? dp->user->phydev : NULL;
++
++	/* Direct SFP ports have no PHY, so sample firmware unconditionally.
++	 * With an attached PHY, only query firmware after the PHY's line side
++	 * is up. In particular, do not mistake a negative MDIO error for true.
++	 */
++	phy_up = mxl862xx_legacy_pcs_phy_baser_up(phydev);
++	if (!phydev || phy_up > 0)
++		mxl862xx_refresh_state(mpcs, state);
++	else if (phy_up < 0)
++		dev_warn_ratelimited(priv->ds->dev,
++				     "port %d: PHY status read failed: %d\n",
++				     mpcs->port, phy_up);
++
++	linkmode_copy(state->advertising, mpcs->advertising);
++}
++
++/* Retarget an SFP-facing SerDes lane via the legacy SYS_MISC_SFP API.
++ * mode=0 requests firmware auto-rate so 1G/2.5G/10G modules can frame.
++ */
++static int mxl862xx_legacy_sfp_lane_auto(struct mxl862xx_pcs *mpcs,
++					 phy_interface_t interface)
++{
++	struct mxl862xx_priv *priv = mpcs->priv;
++	struct mxl862xx_sys_sfp_cfg sfp = {
++		.port_id = mpcs->serdes_id,
++		.option = 0,
++		.mode = 1,	/* fixed protocol */
++	};
++	int ret;
++
++	switch (interface) {
++	case PHY_INTERFACE_MODE_1000BASEX:
++		/* If 802.3z AN will not complete against a module that
++		 * expects SerDes-side autoneg, ANEG_1G is the fallback.
++		 */
++		sfp.speed = MXL862XX_SFP_PORT_SPEED_BASEX_1000;
++		break;
++	case PHY_INTERFACE_MODE_2500BASEX:
++		sfp.speed = MXL862XX_SFP_PORT_SPEED_BASEX_2500;
++		break;
++	case PHY_INTERFACE_MODE_SGMII:
++		sfp.speed = MXL862XX_SFP_PORT_SPEED_SGMI_1G;
+ 		break;
+-	case MXL862XX_FLOW_TX:
+-		state->pause |= MLO_PAUSE_TX;
++	case PHY_INTERFACE_MODE_10GBASER:
++		sfp.speed = MXL862XX_SFP_PORT_SPEED_XFI_10G;
+ 		break;
+-	case MXL862XX_FLOW_RX:
+-		state->pause |= MLO_PAUSE_RX;
++	case PHY_INTERFACE_MODE_5GBASER:
++		/* The legacy SYS_MISC_SFP API has no 5GBASE-R protocol
++		 * code (enum mxl862xx_sfp_port_speed only covers 1G,
++		 * 2.5G and 10G variants). Leave firmware auto here; on
++		 * firmware >= 1.0.84 the XPCS path covers 5GBASE-R.
++		 */
++		sfp.mode = 0;
+ 		break;
+-	case MXL862XX_FLOW_OFF:
+ 	default:
++		sfp.mode = 0;	/* unmapped: leave firmware auto */
+ 		break;
+ 	}
++
++	ret = MXL862XX_API_WRITE(priv, SYS_MISC_SFP_SET, sfp);
++	dev_info(priv->ds->dev,
++		 "port %d: SFP_SET mode %u speed %u on SerDes %u for %s: %d\n",
++		 mpcs->port, sfp.mode, sfp.speed, mpcs->serdes_id,
++		 phy_modes(interface), ret);
++	return ret;
++}
++
++static int mxl862xx_legacy_pcs_config(struct phylink_pcs *pcs,
++				      unsigned int neg_mode,
++			       phy_interface_t interface,
++			       const unsigned long *advertising,
++			       bool permit_pause_to_mac)
++{
++	struct mxl862xx_pcs *mpcs = pcs_to_mxl862xx_pcs(pcs);
++	int ret;
++
++	mpcs->neg_mode = neg_mode;
++	if (advertising)
++		linkmode_copy(mpcs->advertising, advertising);
++
++	ret = mxl862xx_usxgmii_pcs_encode_advertisement(interface, mpcs->advertising);
++	if (ret < 0)
++		return ret;
++
++	/* On this firmware the module-facing SerDes lane keeps its
++	 * power-on protocol (USXGMII toward the optional copper PHY)
++	 * until SYS_MISC_SFP_SET retargets it, so an SFP module can
++	 * never frame without this. Request firmware auto-rate for the
++	 * SFP-class modes. The CPU/DSA conduit lane is left alone: its
++	 * fixed 10gbase-r link is firmware-managed and working.
++	 */
++	if (interface != mpcs->interface) {
++		struct dsa_port *dp = dsa_to_port(mpcs->priv->ds, mpcs->port);
++		bool conduit = dp && (dp->type == DSA_PORT_TYPE_CPU ||
++				      dp->type == DSA_PORT_TYPE_DSA);
++
++		switch (interface) {
++		case PHY_INTERFACE_MODE_SGMII:
++		case PHY_INTERFACE_MODE_1000BASEX:
++		case PHY_INTERFACE_MODE_2500BASEX:
++		case PHY_INTERFACE_MODE_10GBASER:
++			if (conduit)
++				break;
++
++			ret = mxl862xx_legacy_sfp_lane_auto(mpcs, interface);
++			if (ret)
++				return ret;
++			break;
++		default:
++			break;
++		}
++	}
++
++	mpcs->interface = interface;
++
++	return 0;
++}
++
++static int mxl862xx_legacy_pcs_enable(struct phylink_pcs *pcs)
++{
++	struct mxl862xx_pcs *mpcs = pcs_to_mxl862xx_pcs(pcs);
++
++	WRITE_ONCE(mpcs->enabled, true);
++
++	return 0;
++}
++
++static void mxl862xx_legacy_pcs_disable(struct phylink_pcs *pcs)
++{
++	struct mxl862xx_pcs *mpcs = pcs_to_mxl862xx_pcs(pcs);
++
++	WRITE_ONCE(mpcs->enabled, false);
++}
++
++static void mxl862xx_legacy_pcs_an_restart(struct phylink_pcs *pcs)
++{
++	struct mxl862xx_pcs *mpcs = pcs_to_mxl862xx_pcs(pcs);
++
++	if (mpcs->interface == PHY_INTERFACE_MODE_NA)
++		return;
++
+ }
+ 
+ static unsigned int
+-mxl862xx_legacy_pcs_inband_caps(struct phylink_pcs *pcs,
+-				phy_interface_t interface)
++mxl862xx_legacy_pcs_inband_caps(struct phylink_pcs *pcs, phy_interface_t interface)
+ {
+ 	switch (interface) {
+-	case PHY_INTERFACE_MODE_SGMII:
+ 	case PHY_INTERFACE_MODE_USXGMII:
++	case PHY_INTERFACE_MODE_10G_QXGMII:
++	case PHY_INTERFACE_MODE_10GKR:
+ 		return LINK_INBAND_ENABLE;
++	case PHY_INTERFACE_MODE_SGMII:
++	case PHY_INTERFACE_MODE_QSGMII:
+ 	case PHY_INTERFACE_MODE_1000BASEX:
++	case PHY_INTERFACE_MODE_2500BASEX:
+ 		return LINK_INBAND_DISABLE | LINK_INBAND_ENABLE;
+ 	case PHY_INTERFACE_MODE_10GBASER:
+-	case PHY_INTERFACE_MODE_2500BASEX:
+ 		return LINK_INBAND_DISABLE;
+ 	default:
+ 		return 0;
+@@ -202,11 +583,60 @@ mxl862xx_legacy_pcs_inband_caps(struct p
+ }
+ 
+ static const struct phylink_pcs_ops mxl862xx_legacy_pcs_ops = {
+-	.pcs_get_state = mxl862xx_legacy_pcs_get_state,
+-	.pcs_config = mxl862xx_legacy_pcs_config,
+-	.pcs_inband_caps = mxl862xx_legacy_pcs_inband_caps,
++	.pcs_enable       = mxl862xx_legacy_pcs_enable,
++	.pcs_disable      = mxl862xx_legacy_pcs_disable,
++	.pcs_get_state    = mxl862xx_legacy_pcs_get_state,
++	.pcs_config       = mxl862xx_legacy_pcs_config,
++	.pcs_inband_caps  = mxl862xx_legacy_pcs_inband_caps,
++	.pcs_an_restart   = mxl862xx_legacy_pcs_an_restart,
+ };
+ 
++static void mxl862xx_phylink_mac_config(struct phylink_config *config,
++					unsigned int mode,
++					const struct phylink_link_state *state)
++{
++	struct dsa_port *dp = dsa_phylink_to_port(config);
++	struct mxl862xx_priv *priv = dp->ds->priv;
++	int port = dp->index;
++	struct mxl862xx_pcs *mpcs;
++	int ret;
++
++	if (!mxl862xx_port_is_serdes(priv, port)) {
++		if (state->interface != PHY_INTERFACE_MODE_INTERNAL)
++			dev_err(dp->ds->dev,
++				"port %d: unsupported interface for internal GPHY: %s\n",
++				port, phy_modes(state->interface));
++
++		return;
++	}
++
++	mpcs = mxl862xx_legacy_pcs_for_port(priv, port);
++	if (!mpcs) {
++		dev_err(dp->ds->dev,
++			"port %d: no PCS slot for SerDes config\n", port);
++		return;
++	}
++
++	ret = mxl862xx_sys_cml_clk_set(priv, 0, true, SYS_CML_CLK_XO);
++	if (ret)
++		dev_warn(dp->ds->dev,
++			 "CML clk0 enable (XO 25MHz) failed: %d - CPU SerDes may not link\n",
++				 ret);
++
++	ret = mxl862xx_sys_cml_clk_set(priv, 1, true, SYS_CML_CLK_156P25MHZ);
++	if (ret) {
++		dev_warn(dp->ds->dev,
++			 "CML clk1 enable (156P25MHz FOUT0) failed: %d - Defaulting to 50mhz link\n",
++				 ret);
++
++		ret = mxl862xx_sys_cml_clk_set(priv, 1, true, SYS_CML_CLK_50MHZ);
++		if (ret)
++			dev_warn(dp->ds->dev,
++				 "CML clk1 enable (50P25MHz FOUT0) failed: %d - SerDes user port may not link\n",
++					 ret);
++	}
++}
++
+ static int mxl862xx_xpcs_if_mode(phy_interface_t interface)
+ {
+ 	switch (interface) {
+@@ -225,6 +655,8 @@ static int mxl862xx_xpcs_if_mode(phy_int
+ 		return MXL862XX_XPCS_IF_10GBASER;
+ 	case PHY_INTERFACE_MODE_10GKR:
+ 		return MXL862XX_XPCS_IF_10GKR;
++	case PHY_INTERFACE_MODE_5GBASER:
++		return MXL862XX_XPCS_IF_5GBASER;
+ 	default:
+ 		return -EINVAL;
+ 	}
+@@ -338,6 +770,17 @@ static int mxl862xx_pcs_config(struct ph
+ 	}
+ 
+ 	ret = MXL862XX_API_READ(priv, MXL862XX_XPCS_PCS_CONFIG, cfg);
++
++	/* Debug instrumentation for the lan_sfp bringup: 1000base-x is
++	 * only used by the SFP-facing serdes, so this is quiet elsewhere.
++	 */
++	if (interface == PHY_INTERFACE_MODE_1000BASEX)
++		dev_info(priv->ds->dev,
++			 "XPCS cfg sds%u slot%u %s neg %#x adv %#x api %d result %d\n",
++			 mpcs->serdes_id, mpcs->slot, phy_modes(interface),
++			 neg_mode, le16_to_cpu(cfg.advertising.cl37), ret,
++			 (s16)le16_to_cpu(cfg.result));
++
+ 	if (ret)
+ 		return ret;
+ 
+@@ -368,8 +811,32 @@ static void mxl862xx_pcs_get_state(struc
+ 			   MXL862XX_XPCS_USX_QUAD : MXL862XX_XPCS_USX_SINGLE;
+ 
+ 	ret = MXL862XX_API_READ(priv, MXL862XX_XPCS_PCS_GET_STATE, st);
+-	if (ret)
++	if (ret) {
++		if (state->interface == PHY_INTERFACE_MODE_1000BASEX)
++			dev_err_ratelimited(priv->ds->dev,
++					    "XPCS get_state sds%u api error %d\n",
++					    mpcs->serdes_id, ret);
+ 		return;
++	}
++
++	/* Debug instrumentation for the lan_sfp bringup: log the raw
++	 * XPCS status whenever it changes. 1000base-x is only used by
++	 * the SFP-facing serdes, so this stays quiet on other ports.
++	 */
++	if (state->interface == PHY_INTERFACE_MODE_1000BASEX) {
++		static u32 last_raw = ~0;
++		u32 raw = st.link | st.an_complete << 1 | st.pcs_fault << 2 |
++			  st.duplex << 3 | st.pause << 4 |
++			  le16_to_cpu(st.lpa.cl37) << 8;
++
++		if (raw != last_raw) {
++			dev_info(priv->ds->dev,
++				 "XPCS state sds%u link %u an %u fault %u lpa %#06x\n",
++				 mpcs->serdes_id, st.link, st.an_complete,
++				 st.pcs_fault, le16_to_cpu(st.lpa.cl37));
++			last_raw = raw;
++		}
++	}
+ 
+ 	state->link = st.link && !st.pcs_fault;
+ 	state->an_complete = st.an_complete;
+@@ -392,6 +859,13 @@ static void mxl862xx_pcs_get_state(struc
+ 						    le16_to_cpu(st.lpa.usx));
+ 		break;
+ 
++	case PHY_INTERFACE_MODE_5GBASER:
++		if (state->link) {
++			state->speed = SPEED_5000;
++			state->duplex = DUPLEX_FULL;
++		}
++		break;
++
+ 	case PHY_INTERFACE_MODE_10GBASER:
+ 	case PHY_INTERFACE_MODE_10GKR:
+ 		if (state->link) {
+@@ -467,13 +941,10 @@ static unsigned int mxl862xx_pcs_inband_
+ 	case PHY_INTERFACE_MODE_QSGMII:
+ 	case PHY_INTERFACE_MODE_1000BASEX:
+ 	case PHY_INTERFACE_MODE_2500BASEX:
+-		return LINK_INBAND_DISABLE | LINK_INBAND_ENABLE;
+ 	case PHY_INTERFACE_MODE_USXGMII:
+ 	case PHY_INTERFACE_MODE_10G_QXGMII:
+ 	case PHY_INTERFACE_MODE_10GKR:
+-		return LINK_INBAND_ENABLE;
+-	case PHY_INTERFACE_MODE_10GBASER:
+-		return LINK_INBAND_DISABLE;
++		return LINK_INBAND_DISABLE | LINK_INBAND_ENABLE;
+ 	default:
+ 		return 0;
+ 	}
+@@ -492,12 +963,14 @@ static const struct phylink_pcs_ops mxl8
+ void mxl862xx_setup_pcs(struct mxl862xx_priv *priv, struct mxl862xx_pcs *pcs,
+ 			int port)
+ {
++	int slot = MXL862XX_SERDES_SLOT(port);
+ 	pcs->priv = priv;
++	pcs->port = port;
+ 	pcs->serdes_id = MXL862XX_SERDES_PORT_ID(port);
+-	pcs->slot = MXL862XX_SERDES_SLOT(port);
++	pcs->slot = slot;
+ 	pcs->interface = PHY_INTERFACE_MODE_NA;
+ 
+-	if (MXL862XX_FW_VER_MIN(priv, 1, 0, 84))
++	if (mxl862xx_fw_has_xpcs_api(priv))
+ 		pcs->pcs.ops = &mxl862xx_pcs_ops;
+ 	else
+ 		pcs->pcs.ops = &mxl862xx_legacy_pcs_ops;
+@@ -513,35 +986,17 @@ void mxl862xx_setup_pcs(struct mxl862xx_
+ 	__set_bit(PHY_INTERFACE_MODE_2500BASEX, pcs->pcs.supported_interfaces);
+ 	__set_bit(PHY_INTERFACE_MODE_10GBASER, pcs->pcs.supported_interfaces);
+ 	__set_bit(PHY_INTERFACE_MODE_10GKR, pcs->pcs.supported_interfaces);
++	__set_bit(PHY_INTERFACE_MODE_5GBASER, pcs->pcs.supported_interfaces);
+ 	__set_bit(PHY_INTERFACE_MODE_USXGMII, pcs->pcs.supported_interfaces);
+ }
+ 
+-static struct phylink_pcs *
+-mxl862xx_phylink_mac_select_pcs(struct phylink_config *config,
+-				phy_interface_t interface)
+-{
+-	struct dsa_port *dp = dsa_phylink_to_port(config);
+-	struct mxl862xx_priv *priv = dp->ds->priv;
+-	int port = dp->index;
+-
+-	switch (port) {
+-	case 9 ... 16:
+-		return &priv->serdes_ports[port - 9].pcs;
+-	default:
+-		return NULL;
+-	}
+-}
+-
+-static void mxl862xx_phylink_mac_config(struct phylink_config *config,
+-					unsigned int mode,
+-					const struct phylink_link_state *state)
+-{
+-}
+-
+ static void mxl862xx_phylink_mac_link_down(struct phylink_config *config,
+ 					   unsigned int mode,
+ 					   phy_interface_t interface)
+ {
++	/* Keep SerDes links firmware-driven. Forcing DOWN here can freeze the
++	 * FW proxy state and prevent in-band AN from recovering.
++	 */
+ }
+ 
+ static void mxl862xx_phylink_mac_link_up(struct phylink_config *config,
+@@ -551,13 +1006,30 @@ static void mxl862xx_phylink_mac_link_up
+ 					 int speed, int duplex,
+ 					 bool tx_pause, bool rx_pause)
+ {
++	/* FW auto-sync; see mac_link_down. Do not force LINK_UP here. */
++}
++
++/*
++ * Refuse EEE / 802.3az Low Power Idle at the MAC layer.
++ *
++ */
++static int mxl862xx_phylink_mac_enable_tx_lpi(struct phylink_config *config,
++					      u32 timer, bool tx_clk_stop)
++{
++	return -ENOTSUPP;
++}
++
++static void mxl862xx_phylink_mac_disable_tx_lpi(struct phylink_config *config)
++{
++	/* Paired stub - LPI was never enabled, nothing to disable. */
+ }
+ 
+ const struct phylink_mac_ops mxl862xx_phylink_mac_ops = {
+-	.mac_config = mxl862xx_phylink_mac_config,
+-	.mac_link_down = mxl862xx_phylink_mac_link_down,
+-	.mac_link_up = mxl862xx_phylink_mac_link_up,
+-	.mac_select_pcs = mxl862xx_phylink_mac_select_pcs,
++	.mac_config         = mxl862xx_phylink_mac_config,
++	.mac_link_down      = mxl862xx_phylink_mac_link_down,
++	.mac_link_up        = mxl862xx_phylink_mac_link_up,
++	.mac_enable_tx_lpi  = mxl862xx_phylink_mac_enable_tx_lpi,
++	.mac_disable_tx_lpi = mxl862xx_phylink_mac_disable_tx_lpi,
+ };
+ 
+ /* --- SerDes ethtool statistics --- */
+@@ -590,7 +1062,7 @@ static bool mxl862xx_port_has_serdes_sta
+ 	 * independent per-port readings.
+ 	 */
+ 	return (port == 9 || port == 13) &&
+-	       MXL862XX_FW_VER_MIN(priv, 1, 0, 84);
++	       mxl862xx_fw_has_xpcs_api(priv);
+ }
+ 
+ int mxl862xx_serdes_stats_count(struct dsa_switch *ds, int port)
+--- a/drivers/net/dsa/mxl862xx/mxl862xx-phylink.h
++++ b/drivers/net/dsa/mxl862xx/mxl862xx-phylink.h
+@@ -8,20 +8,29 @@
+ #include "mxl862xx.h"
+ 
+ #define MXL862XX_SERDES_SLOT(port) \
+-	(((port) - MXL862XX_FIRST_SERDES_PORT) % MXL862XX_SERDES_SLOTS)
++		(((port) - MXL862XX_FIRST_SERDES_PORT) % MXL862XX_SERDES_SLOTS)
++/* SerDes block number (0 or 1) for a given DSA port index. The MxL862xx
++ * has 2 SerDes blocks; each block "owns" a contiguous range of 4 fw_port_id
++ * slots (DSA ports 8..11 -> block 0, 12..15 -> block 1). This mapping is
++ * fixed by the chip layout and is the canonical way to index into
++ * priv->serdes_ports[] -- deterministic regardless of DT node ordering or
++ * which slot inside a block the board actually uses.
++ */
+ #define MXL862XX_SERDES_PORT_ID(port) \
+-	(((port) - MXL862XX_FIRST_SERDES_PORT) / MXL862XX_SERDES_SLOTS)
++	(((port) - MXL862XX_FIRST_SERDES_PORT) / 4)
+ #define MXL862XX_PCS_PORT(mpcs) \
+-	(MXL862XX_FIRST_SERDES_PORT + \
+-	(mpcs)->serdes_id * MXL862XX_SERDES_SLOTS + (mpcs)->slot)
++	       (MXL862XX_FIRST_SERDES_PORT + \
++	       (mpcs)->serdes_id * MXL862XX_SERDES_SLOTS + (mpcs)->slot)
+ 
+ extern const struct phylink_mac_ops mxl862xx_phylink_mac_ops;
+ void mxl862xx_phylink_get_caps(struct dsa_switch *ds, int port,
+ 			       struct phylink_config *config);
+ void mxl862xx_setup_pcs(struct mxl862xx_priv *priv, struct mxl862xx_pcs *pcs,
+ 			int port);
++bool mxl862xx_port_is_serdes(const struct mxl862xx_priv *priv, int port);
+ int mxl862xx_serdes_stats_count(struct dsa_switch *ds, int port);
+ void mxl862xx_serdes_get_strings(struct dsa_switch *ds, int port, u8 *data);
+ void mxl862xx_serdes_get_stats(struct dsa_switch *ds, int port, u64 *data);
++bool mxl862xx_port_has_phy_endpoint(const struct mxl862xx_priv *priv, int port);
+ 
+ #endif /* __MXL862XX_PHYLINK_H */
+--- /dev/null
++++ b/drivers/net/dsa/mxl862xx/mxl862xx-rmon.h
+@@ -0,0 +1,528 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++/*
++ * drivers/net/dsa/host_api/mxl862xx_rmon.h - dsa driver for Maxlinear mxl862xx switch chips family
++ *
++ * Copyright (C) 2024 MaxLinear Inc.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ */
++
++#ifndef _MXL862XX_RMON_H_
++#define _MXL862XX_RMON_H_
++
++#include "mxl862xx-types.h"
++
++#pragma pack(push, 1)
++#pragma scalar_storage_order little - endian
++
++/** \brief Port Type - GSWIP-3.1 only.
++ * Used by \ref MXL862XX_port_cfg_t.
++ */
++typedef enum {
++	/** Logical Port */
++	MXL862XX_LOGICAL_PORT = 0,
++	/** Physical Port
++	 * Applicable only for GSWIP-3.1/3.2
++	 */
++	MXL862XX_PHYSICAL_PORT = 1,
++	/** Connectivity Termination Port (CTP)
++	 * Applicable only for GSWIP-3.1/3.2
++	 */
++	MXL862XX_CTP_PORT = 2,
++	/** Bridge Port
++	 * Applicable only for GSWIP-3.1/3.2
++	 */
++	MXL862XX_BRIDGE_PORT = 3
++} mxl862xx_port_type_t;
++
++/**Defined as per RMON counter table structure
++ * Applicable only for GSWIP 3.1
++ */
++typedef enum {
++	MXL862XX_RMON_CTP_PORT_RX = 0,
++	MXL862XX_RMON_CTP_PORT_TX = 1,
++	MXL862XX_RMON_BRIDGE_PORT_RX = 2,
++	MXL862XX_RMON_BRIDGE_PORT_TX = 3,
++	MXL862XX_RMON_CTP_PORT_PCE_BYPASS = 4,
++	MXL862XX_RMON_TFLOW_RX = 5,
++	MXL862XX_RMON_TFLOW_TX = 6,
++	MXL862XX_RMON_QMAP = 0x0E,
++	MXL862XX_RMON_METER = 0x19,
++	MXL862XX_RMON_PMAC = 0x1C,
++} mxl862xx_rmon_port_type_t;
++
++/** Defined as per RMON counter table structure
++ * Applicable only for GSWIP 3.0
++ */
++typedef enum {
++	MXL862XX_RMON_REDIRECTION = 0X18,
++	MXL862XX_RMON_IF = 0x1A,
++	MXL862XX_RMON_ROUTE = 0x1B,
++	MXL862XX_RMON_PMACIG = 0x1C,
++} mxl862xx_rmon_port_t;
++
++typedef enum {
++	/** Parser microcode table */
++	PMAC_BPMAP_INDEX = 0x00,
++	PMAC_IGCFG_INDEX = 0x01,
++	PMAC_EGCFG_INDEX = 0x02,
++} pm_tbl_cmds_t;
++/** \brief RMON Counters Type enumeration.
++ * Used by \ref MXL862XX_RMON_clear_t and \ref MXL862XX_RMON_mode_t.
++ */
++typedef enum {
++	/** All RMON Types Counters */
++	MXL862XX_RMON_ALL_TYPE = 0,
++	/** All PMAC RMON Counters */
++	MXL862XX_RMON_PMAC_TYPE = 1,
++	/** Port based RMON Counters */
++	MXL862XX_RMON_PORT_TYPE = 2,
++	/** Meter based RMON Counters */
++	MXL862XX_RMON_METER_TYPE = 3,
++	/** Interface based RMON Counters */
++	MXL862XX_RMON_IF_TYPE = 4,
++	/** Route based RMON Counters */
++	MXL862XX_RMON_ROUTE_TYPE = 5,
++	/** Redirected Traffic based RMON Counters */
++	MXL862XX_RMON_REDIRECT_TYPE = 6,
++	/** Bridge Port based RMON Counters */
++	MXL862XX_RMON_BRIDGE_TYPE = 7,
++	/** CTP Port based RMON Counters */
++	MXL862XX_RMON_CTP_TYPE = 8,
++} mxl862xx_rmon_type_t;
++
++/** \brief RMON Counters Mode Enumeration.
++ * This enumeration defines Counters mode - Packets based or Bytes based counting.
++    Metering and Routing Sessions RMON counting support either Byte based or packets based only.
++ */
++typedef enum {
++	/** Packet based RMON Counters */
++	MXL862XX_RMON_COUNT_PKTS = 0,
++	/** Bytes based RMON Counters */
++	MXL862XX_RMON_COUNT_BYTES = 1,
++	/**  number of dropped frames, supported only for interface cunters */
++	MXL862XX_RMON_DROP_COUNT = 2,
++} mxl862xx_rmon_count_mode_t;
++
++/** \brief Used for getting metering RMON counters.
++ * Used by \ref MXL862XX_RMON_METER_GET
++ */
++typedef enum {
++	/* Resereved */
++	MXL862XX_RMON_METER_COLOR_RES = 0,
++	/* Green color */
++	MXL862XX_RMON_METER_COLOR_GREEN = 1,
++	/* Yellow color */
++	MXL862XX_RMON_METER_COLOR_YELLOW = 2,
++	/* Red color */
++	MXL862XX_RMON_METER_COLOR_RED = 3,
++} mxl862xx_rmon_meter_color_t;
++
++/* TFLOW counter type */
++typedef enum {
++	/* Set all Rx/Tx/PCE-Bp-Tx registers to same value */
++	MXL862XX_TFLOW_COUNTER_ALL = 0, //Default for 'set' function.
++	/* SEt PCE Rx register config only */
++	MXL862XX_TFLOW_COUNTER_PCE_Rx = 1, //Default for 'get' function.
++	/* SEt PCE Tx register config only */
++	MXL862XX_TFLOW_COUNTER_PCE_Tx = 2,
++	/* SEt PCE-Bypass Tx register config only */
++	MXL862XX_TFLOW_COUNTER_PCE_BP_Tx = 3,
++} mxl862xx_tflow_count_conf_type_t;
++
++/* TFLOW counter mode type */
++typedef enum {
++	/* Global mode */
++	MXL862XX_TFLOW_CMODE_GLOBAL = 0,
++	/* Logical mode */
++	MXL862XX_TFLOW_CMODE_LOGICAL = 1,
++	/* CTP port mode */
++	MXL862XX_TFLOW_CMODE_CTP = 2,
++	/* Bridge port mode */
++	MXL862XX_TFLOW_CMODE_BRIDGE = 3,
++} mxl862xx_tflow_cmode_type_t;
++
++/* TFLOW CTP counter LSB bits */
++typedef enum {
++	/* Num of valid bits  */
++	MXL862XX_TCM_CTP_VAL_BITS_0 = 0,
++	MXL862XX_TCM_CTP_VAL_BITS_1 = 1,
++	MXL862XX_TCM_CTP_VAL_BITS_2 = 2,
++	MXL862XX_TCM_CTP_VAL_BITS_3 = 3,
++	MXL862XX_TCM_CTP_VAL_BITS_4 = 4,
++	MXL862XX_TCM_CTP_VAL_BITS_5 = 5,
++	MXL862XX_TCM_CTP_VAL_BITS_6 = 6,
++} mxl862xx_tflow_ctp_val_bits_t;
++
++/* TFLOW bridge port counter LSB bits */
++typedef enum {
++	/* Num of valid bits  */
++	MXL862XX_TCM_BRP_VAL_BITS_2 = 2,
++	MXL862XX_TCM_BRP_VAL_BITS_3 = 3,
++	MXL862XX_TCM_BRP_VAL_BITS_4 = 4,
++	MXL862XX_TCM_BRP_VAL_BITS_5 = 5,
++	MXL862XX_TCM_BRP_VAL_BITS_6 = 6,
++} mxl862xx_tflow_brp_val_bits_t;
++
++/**
++ * \brief RMON Counters for individual Port.
++ This structure contains the RMON counters of an Ethernet Switch Port.
++    Used by \ref MXL862XX_RMON_PORT_GET.
++ */
++typedef struct {
++	/** Port Type. This gives information which type of port to get RMON.
++	 * port_id should be based on this field.
++	    This is new in GSWIP-3.1. For GSWIP-2.1/2.2/3.0, this field is always
++	    ZERO (MXL862XX_LOGICAL_PORT).
++	 */
++	mxl862xx_port_type_t port_type;
++	/** Ethernet Port number (zero-based counting). The valid range is hardware
++	 * dependent. An error code is delivered if the selected port is not
++	    available. This parameter specifies for which MAC port the RMON
++	    counter is read. It has to be set by the application before
++	    calling \ref MXL862XX_RMON_PORT_GET.
++	 */
++	u16 port_id;
++	/** Sub interface ID group. The valid range is hardware/protocol dependent.
++	 *
++	    \remarks
++	    This field is valid when \ref MXL862XX_RMON_Port_cnt_t::e_port_type is
++	    \ref MXL862XX_port_type_t::MXL862XX_CTP_PORT.
++	    Sub interface ID group is defined for each of \ref MXL862XX_Logical_port_mode_t.
++	    For both \ref MXL862XX_LOGICAL_PORT_8BIT_WLAN and
++	    \ref MXL862XX_LOGICAL_PORT_9BIT_WLAN, this field is VAP.
++	    For \ref MXL862XX_LOGICAL_PORT_GPON, this field is GEM index.
++	    For \ref MXL862XX_LOGICAL_PORT_EPON, this field is stream index.
++	    For \ref MXL862XX_LOGICAL_PORT_GINT, this field is LLID.
++	    For others, this field is 0.
++	 */
++	u16 sub_if_id_group;
++	/** Separate set of CTP Tx counters when PCE is bypassed. GSWIP-3.1 only.*/
++	bool pce_bypass;
++	/*Applicable only for GSWIP 3.1*/
++	/** Discarded at Extended VLAN Operation Packet Count. GSWIP-3.1 only. */
++	u32 rx_extended_vlan_discard_pkts;
++	/** Discarded MTU Exceeded Packet Count. GSWIP-3.1 only. */
++	u32 mtu_exceed_discard_pkts;
++	/** Tx Undersize (<64) Packet Count. GSWIP-3.1 only. */
++	u32 tx_under_size_good_pkts;
++	/** Tx Oversize (>1518) Packet Count. GSWIP-3.1 only. */
++	u32 tx_oversize_good_pkts;
++	/** Receive Packet Count (only packets that are accepted and not discarded). */
++	u32 rx_good_pkts;
++	/** Receive Unicast Packet Count. */
++	u32 rx_unicast_pkts;
++	/** Receive Broadcast Packet Count. */
++	u32 rx_broadcast_pkts;
++	/** Receive Multicast Packet Count. */
++	u32 rx_multicast_pkts;
++	/** Receive FCS Error Packet Count. */
++	u32 rx_fCSError_pkts;
++	/** Receive Undersize Good Packet Count. */
++	u32 rx_under_size_good_pkts;
++	/** Receive Oversize Good Packet Count. */
++	u32 rx_oversize_good_pkts;
++	/** Receive Undersize Error Packet Count. */
++	u32 rx_under_size_error_pkts;
++	/** Receive Good Pause Packet Count. */
++	u32 rx_good_pause_pkts;
++	/** Receive Oversize Error Packet Count. */
++	u32 rx_oversize_error_pkts;
++	/** Receive Align Error Packet Count. */
++	u32 rx_align_error_pkts;
++	/** Filtered Packet Count. */
++	u32 rx_filtered_pkts;
++	/** Receive Size 64 Bytes Packet Count. */
++	u32 rx64Byte_pkts;
++	/** Receive Size 65-127 Bytes Packet Count. */
++	u32 rx127Byte_pkts;
++	/** Receive Size 128-255 Bytes Packet Count. */
++	u32 rx255Byte_pkts;
++	/** Receive Size 256-511 Bytes Packet Count. */
++	u32 rx511Byte_pkts;
++	/** Receive Size 512-1023 Bytes Packet Count. */
++	u32 rx1023Byte_pkts;
++	/** Receive Size 1024-1522 Bytes (or more, if configured) Packet Count. */
++	u32 rx_max_byte_pkts;
++	/** Overall Transmit Good Packets Count. */
++	u32 tx_good_pkts;
++	/** Transmit Unicast Packet Count. */
++	u32 tx_unicast_pkts;
++	/** Transmit Broadcast Packet Count. */
++	u32 tx_broadcast_pkts;
++	/** Transmit Multicast Packet Count. */
++	u32 tx_multicast_pkts;
++	/** Transmit Single Collision Count. */
++	u32 tx_single_coll_count;
++	/** Transmit Multiple Collision Count. */
++	u32 tx_mult_coll_count;
++	/** Transmit Late Collision Count. */
++	u32 tx_late_coll_count;
++	/** Transmit Excessive Collision Count. */
++	u32 tx_excess_coll_count;
++	/** Transmit Collision Count. */
++	u32 tx_coll_count;
++	/** Transmit Pause Packet Count. */
++	u32 tx_pause_count;
++	/** Transmit Size 64 Bytes Packet Count. */
++	u32 tx64Byte_pkts;
++	/** Transmit Size 65-127 Bytes Packet Count. */
++	u32 tx127Byte_pkts;
++	/** Transmit Size 128-255 Bytes Packet Count. */
++	u32 tx255Byte_pkts;
++	/** Transmit Size 256-511 Bytes Packet Count. */
++	u32 tx511Byte_pkts;
++	/** Transmit Size 512-1023 Bytes Packet Count. */
++	u32 tx1023Byte_pkts;
++	/** Transmit Size 1024-1522 Bytes (or more, if configured) Packet Count. */
++	u32 tx_max_byte_pkts;
++	/** Transmit Drop Packet Count. */
++	u32 tx_dropped_pkts;
++	/** Transmit Dropped Packet Count, based on Congestion Management. */
++	u32 tx_acm_dropped_pkts;
++	/** Receive Dropped Packet Count. */
++	u32 rx_dropped_pkts;
++	/** Receive Good Byte Count (64 bit). */
++	u64 rx_good_bytes;
++	/** Receive Bad Byte Count (64 bit). */
++	u64 rx_bad_bytes;
++	/** Transmit Good Byte Count (64 bit). */
++	u64 tx_good_bytes;
++} mxl862xx_rmon_port_cnt_t;
++
++/** \brief RMON Counters Mode for different Elements.
++ * This structure takes RMON Counter Element Name and mode config
++ */
++typedef struct {
++	/** RMON Counters Type */
++	mxl862xx_rmon_type_t rmon_type;
++	/** RMON Counters Mode */
++	mxl862xx_rmon_count_mode_t count_mode;
++} mxl862xx_rmon_mode_t;
++
++/**
++ * \brief RMON Counters for Meter - Type (GSWIP-3.0 only).
++ This structure contains the RMON counters of one Meter Instance.
++    Used by \ref MXL862XX_RMON_METER_GET.
++ */
++typedef struct {
++	/** Meter Instance number (zero-based counting). The valid range is hardware
++	 * dependent. An error code is delivered if the selected meter is not
++	    available. This parameter specifies for which Meter Id the RMON-1
++	    counter is read. It has to be set by the application before
++	    calling \ref MXL862XX_RMON_METER_GET.
++	 */
++	u8 meter_id;
++	/** Metered Green colored packets or bytes (depending upon mode) count. */
++	u32 green_count;
++	/** Metered Yellow colored packets or bytes (depending upon mode) count. */
++	u32 yellow_count;
++	/** Metered Red colored packets or bytes (depending upon mode) count. */
++	u32 red_count;
++	/** Metered Reserved (Future Use) packets or bytes (depending upon mode) count. */
++	u32 res_count;
++} mxl862xx_rmon_meter_cnt_t;
++
++/** \brief RMON Counters Data Structure for clearance of values.
++ * Used by \ref MXL862XX_RMON_CLEAR.
++ */
++typedef struct {
++	/** RMON Counters Type */
++	mxl862xx_rmon_type_t rmon_type;
++	/** RMON Counters Identifier - Meter, Port, If, Route, etc. */
++	u8 rmon_id;
++} mxl862xx_rmon_clear_t;
++
++/**
++ * \brief Hardware platform TFLOW counter mode.
++   Supported modes include, Global (default), Logical, CTP, Bridge port mode.
++   The number of counters that can be assigned varies based these mode type.
++    Used by \ref MXL862XX_TFLOW_COUNT_MODE_SET and MXL862XX_TFLOW_COUNT_MODE_GET.
++ */
++typedef struct {
++	//Counter type. PCE Rx/Tx/Bp-Tx.
++	mxl862xx_tflow_count_conf_type_t count_type;
++	//Counter mode. Global/Logical/CTP/br_p.
++	mxl862xx_tflow_cmode_type_t count_mode;
++	//The below params are valid only for CTP/br_p types.
++	//A group of ports matching MS (9-n) bits. n is n_ctp_lsb or n_brp_lsb.
++	u16 port_msb;
++	//Number of valid bits in CTP port counter mode.
++	mxl862xx_tflow_ctp_val_bits_t ctp_lsb;
++	//Number of valid bits in bridge port counter mode.
++	mxl862xx_tflow_brp_val_bits_t brp_lsb;
++} mxl862xx_tflow_cmode_conf_t;
++
++/**
++ * \brief Hardware platform extended RMON Counters. GSWIP-3.1 only.
++   This structure contains additional RMON counters. These counters can be
++   used by the packet classification engine and can be freely assigned to
++   dedicated packet rules and flows.
++    Used by \ref MXL862XX_RMON_FLOW_GET.
++ */
++typedef struct {
++	/** If TRUE, use \ref MXL862XX_RMON_flow_get_t::n_index to access the Flow Counter,
++	 * otherwise, use \ref MXL862XX_TFLOW_COUNT_MODE_GET to determine mode and use
++	    \ref MXL862XX_RMON_flow_get_t::port_id and \ref MXL862XX_RMON_flow_get_t::flow_id
++	    to calculate index of the Flow Counter.
++	 */
++	bool use_index;
++	/** Absolute index of Flow Counter. */
++	u16 index;
++	/** Port ID. This could be Logical Port, CTP or Bridge Port. It depends
++	 * on the mode set by \ref MXL862XX_TFLOW_COUNT_MODE_SET.
++	 */
++	u16 port_id;
++	/** \ref MXL862XX_PCE_action_t::flow_id. The range depends on the mode set
++	 * by \ref MXL862XX_TFLOW_COUNT_MODE_SET.
++	 */
++	u16 flow_id;
++
++	/** Rx Packet Counter */
++	u32 rx_pkts;
++	/** Tx Packet Counter (non-PCE-Bypass) */
++	u32 tx_pkts;
++	/** Tx Packet Counter (PCE-Bypass) */
++	u32 tx_pce_bypass_pkts;
++} mxl862xx_rmon_flow_get_t;
++
++/** \brief For debugging Purpose only.
++ * Used for GSWIP 3.1.
++ */
++
++typedef struct {
++	/** Ethernet Port number (zero-based counting). The valid range is hardware
++	 * dependent. An error code is delivered if the selected port is not
++	    available. This parameter specifies for which MAC port the RMON
++	    counter is read. It has to be set by the application before
++	    calling \ref MXL862XX_RMON_PORT_GET.
++	 */
++	u16 port_id;
++	/**Table address selection based on port type
++	 * Applicable only for GSWIP 3.1
++	 \ref MXL862XX_RMON_port_type_t**/
++	mxl862xx_rmon_port_type_t port_type;
++	/*Applicable only for GSWIP 3.1*/
++	u32 rx_extended_vlan_discard_pkts;
++	/*Applicable only for GSWIP 3.1*/
++	u32 mtu_exceed_discard_pkts;
++	/*Applicable only for GSWIP 3.1*/
++	u32 tx_under_size_good_pkts;
++	/*Applicable only for GSWIP 3.1*/
++	u32 tx_oversize_good_pkts;
++	/** Receive Packet Count (only packets that are accepted and not discarded). */
++	u32 rx_good_pkts;
++	/** Receive Unicast Packet Count. */
++	u32 rx_unicast_pkts;
++	/** Receive Broadcast Packet Count. */
++	u32 rx_broadcast_pkts;
++	/** Receive Multicast Packet Count. */
++	u32 rx_multicast_pkts;
++	/** Receive FCS Error Packet Count. */
++	u32 rx_fcserror_pkts;
++	/** Receive Undersize Good Packet Count. */
++	u32 rx_under_size_good_pkts;
++	/** Receive Oversize Good Packet Count. */
++	u32 rx_oversize_good_pkts;
++	/** Receive Undersize Error Packet Count. */
++	u32 rx_under_size_error_pkts;
++	/** Receive Good Pause Packet Count. */
++	u32 rx_good_pause_pkts;
++	/** Receive Oversize Error Packet Count. */
++	u32 rx_oversize_error_pkts;
++	/** Receive Align Error Packet Count. */
++	u32 rx_align_error_pkts;
++	/** Filtered Packet Count. */
++	u32 rx_filtered_pkts;
++	/** Receive Size 64 Bytes Packet Count. */
++	u32 rx64byte_pkts;
++	/** Receive Size 65-127 Bytes Packet Count. */
++	u32 rx127byte_pkts;
++	/** Receive Size 128-255 Bytes Packet Count. */
++	u32 rx255byte_pkts;
++	/** Receive Size 256-511 Bytes Packet Count. */
++	u32 rx511byte_pkts;
++	/** Receive Size 512-1023 Bytes Packet Count. */
++	u32 rx1023byte_pkts;
++	/** Receive Size 1024-1522 Bytes (or more, if configured) Packet Count. */
++	u32 rx_max_byte_pkts;
++	/** Overall Transmit Good Packets Count. */
++	u32 tx_good_pkts;
++	/** Transmit Unicast Packet Count. */
++	u32 tx_unicast_pkts;
++	/** Transmit Broadcast Packet Count. */
++	u32 tx_broadcast_pkts;
++	/** Transmit Multicast Packet Count. */
++	u32 tx_multicast_pkts;
++	/** Transmit Single Collision Count. */
++	u32 tx_single_coll_count;
++	/** Transmit Multiple Collision Count. */
++	u32 tx_mult_coll_count;
++	/** Transmit Late Collision Count. */
++	u32 tx_late_coll_count;
++	/** Transmit Excessive Collision Count. */
++	u32 tx_excess_coll_count;
++	/** Transmit Collision Count. */
++	u32 tx_coll_count;
++	/** Transmit Pause Packet Count. */
++	u32 tx_pause_count;
++	/** Transmit Size 64 Bytes Packet Count. */
++	u32 tx64byte_pkts;
++	/** Transmit Size 65-127 Bytes Packet Count. */
++	u32 tx127byte_pkts;
++	/** Transmit Size 128-255 Bytes Packet Count. */
++	u32 tx255byte_pkts;
++	/** Transmit Size 256-511 Bytes Packet Count. */
++	u32 tx511byte_pkts;
++	/** Transmit Size 512-1023 Bytes Packet Count. */
++	u32 tx1023byte_pkts;
++	/** Transmit Size 1024-1522 Bytes (or more, if configured) Packet Count. */
++	u32 tx_max_byte_pkts;
++	/** Transmit Drop Packet Count. */
++	u32 tx_dropped_pkts;
++	/** Transmit Dropped Packet Count, based on Congestion Management. */
++	u32 tx_acm_dropped_pkts;
++	/** Receive Dropped Packet Count. */
++	u32 rx_dropped_pkts;
++	/** Receive Good Byte Count (64 bit). */
++	u64 rx_good_bytes;
++	/** Receive Bad Byte Count (64 bit). */
++	u64 rx_bad_bytes;
++	/** Transmit Good Byte Count (64 bit). */
++	u64 tx_good_bytes;
++	/**For GSWIP V32 only **/
++	/** Receive Unicast Packet Count for Yellow & Red packet. */
++	u32 rx_unicast_pkts_yellow_red;
++	/** Receive Broadcast Packet Count for Yellow & Red packet. */
++	u32 rx_broadcast_pkts_yellow_red;
++	/** Receive Multicast Packet Count for Yellow & Red packet. */
++	u32 rx_multicast_pkts_yellow_red;
++	/** Receive Good Byte Count (64 bit) for Yellow & Red packet. */
++	u64 rx_good_bytes_yellow_red;
++	/** Receive Packet Count for Yellow & Red packet.  */
++	u32 rx_good_pkts_yellow_red;
++	/** Transmit Unicast Packet Count for Yellow & Red packet. */
++	u32 tx_unicast_pkts_yellow_red;
++	/** Transmit Broadcast Packet Count for Yellow & Red packet. */
++	u32 tx_broadcast_pkts_yellow_red;
++	/** Transmit Multicast Packet Count for Yellow & Red packet. */
++	u32 tx_multicast_pkts_yellow_red;
++	/** Transmit Good Byte Count (64 bit) for Yellow & Red packet. */
++	u64 tx_good_bytes_yellow_red;
++	/** Transmit Packet Count for Yellow & Red packet.  */
++	u32 tx_good_pkts_yellow_red;
++} mxl862xx_debug_rmon_port_cnt_t;
++
++#pragma scalar_storage_order default
++#pragma pack(pop)
++
++#endif /* _MXL862XX_RMON_H_ */
+--- /dev/null
++++ b/drivers/net/dsa/mxl862xx/mxl862xx-types.h
+@@ -0,0 +1,280 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++/*
++ * drivers/net/dsa/host_api/mxl862xx_types.h - DSA Driver for MaxLinear Mxl862xx switch chips family
++ *
++ * Copyright (C) 2024 MaxLinear Inc.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ */
++
++#ifndef _MXL862XX_TYPES_H_
++#define _MXL862XX_TYPES_H_
++
++#include <linux/atomic.h>
++#include <linux/bits.h>
++#include <linux/list.h>
++#include <linux/mdio.h>
++#include <linux/netdevice.h>
++#include <linux/phylink.h>
++#include <linux/spinlock.h>
++#include <linux/types.h>
++#include <linux/workqueue.h>
++#include <net/dsa.h>
++
++#include "mxl862xx-api.h"
++
++#define MXL862XX_MAX_PORTS		17
++
++/* Bit indices for struct mxl862xx_priv::flags */
++#define MXL862XX_FLAG_CRC_ERR		0
++#define MXL862XX_FLAG_WORK_STOPPED	1
++
++#define MXL862XX_FIRST_SERDES_PORT	8
++#define MXL862XX_SERDES_SLOTS		4
++#define MXL862XX_SERDES_INSTANCES	2
++
++#define MXL862XX_MAX_PHY_PORTS		8
++#define MXL862XX_MAX_EXT_PORTS		7
++#define MXL86252_PHY_PORTS		5
++#define MXL86282_PHY_PORTS		8
++#define MXL86252_EXT_PORTS		2
++#define MXL86282_EXT_PORTS		2
++#define MXL862XX_MAX_REAL_PORTS		(MXL862XX_MAX_PHY_PORTS + \
++						 MXL862XX_MAX_EXT_PORTS)
++/* Range of DSA port indexes that can host a SerDes (ports 8..14 = 7).
++ * NOT the number of physical SerDes blocks -- that's
++ * MXL862XX_SERDES_INSTANCES (= 2). Conflating the two breaks
++ * mxl862xx_port_is_serdes() for mxl_lan5 (DSA port 12) and causes
++ * phylink_create to fail with "empty supported_interfaces" -EINVAL.
++ */
++#define MXL862XX_SERDES_PORTS		(MXL862XX_MAX_REAL_PORTS - \
++						 MXL862XX_FIRST_SERDES_PORT)
++#define MXL862XX_DEFAULT_BRIDGE		0
++#define MXL862XX_MAX_BRIDGES		48
++#define MXL862XX_MAX_BRIDGE_PORTS	128
++#define MXL862XX_TOTAL_EVLAN_ENTRIES	1024
++#define MXL862XX_TOTAL_VF_ENTRIES	1024
++#define MXL862XX_MAX_LAG_IDS		16
++
++/* Trunk hash field bitmask (matches PCE_TRUNK_CONF layout) */
++#define MXL862XX_TRUNK_HASH_SA		BIT(0)
++#define MXL862XX_TRUNK_HASH_DA		BIT(1)
++#define MXL862XX_TRUNK_HASH_SIP		BIT(2)
++#define MXL862XX_TRUNK_HASH_DIP		BIT(3)
++#define MXL862XX_TRUNK_HASH_SPORT	BIT(4)
++#define MXL862XX_TRUNK_HASH_DPORT	BIT(5)
++
++/* P-mapper LAG entries occupy indices 9..72 (64 entries) */
++#define MXL862XX_PMAPPER_LAG_FIRST	9
++#define MXL862XX_PMAPPER_LAG_COUNT	64
++
++/* Number of __le16 words in a firmware portmap (128-bit bitmap). */
++#define MXL862XX_FW_PORTMAP_WORDS	(MXL862XX_MAX_BRIDGE_PORTS / 16)
++
++struct mxl862xx_priv;
++struct dentry;
++
++struct mxl862xx_hw_info {
++	u8 num_ports;
++	u8 phy_ports;
++	u8 ext_ports;
++	const struct dsa_switch_ops *ops;
++};
++
++struct mxl862xx_vf_vid {
++	struct list_head list;
++	u16 vid;
++	u16 index;
++	bool untagged;
++};
++
++struct mxl862xx_vf_block {
++	bool allocated;
++	u16 block_id;
++	u16 block_size;
++	u16 active_count;
++	struct list_head vids;
++};
++
++struct mxl862xx_evlan_block {
++	bool allocated;
++	bool in_use;
++	u16 block_id;
++	u16 block_size;
++	u16 n_active;
++};
++
++struct mxl862xx_port_stats {
++	u64 rx_packets;
++	u64 tx_packets;
++	u64 rx_bytes;
++	u64 tx_bytes;
++	u64 rx_errors;
++	u64 tx_errors;
++	u64 rx_dropped;
++	u64 tx_dropped;
++	u64 multicast;
++	u64 collisions;
++	u64 rx_length_errors;
++	u64 rx_crc_errors;
++	u64 rx_frame_errors;
++	u32 prev_rx_good_pkts;
++	u32 prev_tx_good_pkts;
++	u64 prev_rx_good_bytes;
++	u64 prev_tx_good_bytes;
++	u32 prev_rx_fcserror_pkts;
++	u32 prev_rx_under_size_error_pkts;
++	u32 prev_rx_oversize_error_pkts;
++	u32 prev_rx_align_error_pkts;
++	u32 prev_tx_dropped_pkts;
++	u32 prev_rx_dropped_pkts;
++	u32 prev_rx_evlan_discard_pkts;
++	u32 prev_mtu_exceed_discard_pkts;
++	u32 prev_tx_acm_dropped_pkts;
++	u32 prev_rx_multicast_pkts;
++	u32 prev_tx_coll_count;
++};
++
++/**
++ * enum mxl862xx_port_kind - per-port hardware type
++ *
++ * Classifies each chip slot by what hardware lives behind it. Set once
++ * during switch setup from chip-layout properties (hw_info->phy_ports +
++ * FIRST_SERDES_PORT/SERDES_PORTS range); independent of whether the port
++ * is actually wired up in DT. Use to gate SerDes-specific code paths
++ * without resorting to range checks at every callsite.
++ *
++ * @MXL862XX_PORT_KIND_UNUSED: no hardware in this slot for this chip variant
++ *                             (e.g. ports 5-7 on MXL86252, which only has
++ *                             5 GPHYs).
++ * @MXL862XX_PORT_KIND_GPHY:   internal copper GPHY (ports 0..phy_ports-1).
++ * @MXL862XX_PORT_KIND_SERDES: external SerDes lane (ports 8..14).
++ */
++enum mxl862xx_port_kind {
++	MXL862XX_PORT_KIND_UNUSED = 0,
++	MXL862XX_PORT_KIND_GPHY,
++	MXL862XX_PORT_KIND_SERDES,
++};
++
++struct mxl862xx_port {
++	struct mxl862xx_priv *priv;
++	enum mxl862xx_port_kind kind;
++	u16 fid;
++	unsigned long flood_block;
++	bool isolated;
++	bool learning;
++	bool setup_done;
++	u16 pvid;
++	bool vlan_filtering;
++	struct mxl862xx_vf_block vf;
++	struct mxl862xx_evlan_block ingress_evlan;
++	struct mxl862xx_evlan_block egress_evlan;
++	u16 bridge_port_cpu;
++	unsigned long host_flood_block;
++	bool host_flood_uc;
++	bool host_flood_mc;
++	struct work_struct host_flood_work;
++	u16 tag_8021q_vid;
++	struct mxl862xx_evlan_block cpu_egress_evlan;
++	bool hairpin;
++	bool ingress_mirror;
++	bool egress_mirror;
++	struct dsa_lag *lag;
++	bool lag_tx_enabled;
++	u8 lag_hash_bits;
++	int mtu;
++	struct mxl862xx_port_stats stats;
++	spinlock_t stats_lock;
++};
++
++struct mxl862xx_pcs {
++	struct phylink_pcs pcs;
++	struct mxl862xx_priv *priv;
++	int port;
++	int serdes_id;
++	int slot;
++	bool enabled;
++	unsigned int neg_mode;
++	phy_interface_t interface;
++	struct phylink_link_state	state;
++	struct mutex cfg_lock;
++	__ETHTOOL_DECLARE_LINK_MODE_MASK(advertising);
++	u16				usxgmii_advertising;
++};
++
++struct mxl862xx_fw_version {
++	u8 major;
++	u8 minor;
++	u16 revision;
++};
++
++struct dp_mux_data {
++	struct device_node	*of_node;
++	phy_interface_t		phy_mode;
++};
++
++struct combo_port_mux {
++	struct dsa_port		*dp;
++	struct device_node	*orig_of_node;
++	struct gpio_desc	*mod_def0_gpio;
++	struct gpio_desc	*chan_sel_gpio;
++	struct dp_mux_data	*data[2];
++	unsigned int		channel;
++	unsigned int		sfp_present_channel;
++	struct delayed_work	sfp_monitor_work;
++};
++
++struct mxl862xx_priv {
++	struct dsa_switch *ds;
++	struct mdio_device *mdiodev;
++	struct work_struct crc_err_work;
++	const struct mxl862xx_hw_info *hw_info;
++	unsigned long flags;
++	enum dsa_tag_protocol tag_proto;
++	u16 drop_meter;
++	struct mxl862xx_fw_version fw_version;
++	struct mxl862xx_pcs serdes_ports[2];
++	atomic_t serdes_refcount[MXL862XX_SERDES_INSTANCES];
++	struct mxl862xx_port ports[MXL862XX_MAX_PORTS];
++	u16 bridges[MXL862XX_MAX_BRIDGES + 1];
++	u16 evlan_ingress_size;
++	u16 evlan_egress_size;
++	u16 cpu_evlan_ingress_size;
++	u16 vf_block_size;
++	u16 cpu_trap_fid;
++	u16 lag_bridge_ports[MXL862XX_MAX_LAG_IDS + 1];
++	u8 trunk_hash;
++	int mirror_dest;
++	bool block_host;
++	bool skip_teardown;
++	struct delayed_work stats_work;
++	u8 cpu_port;
++	u8 user_pnum;
++	struct combo_port_mux *ds_mux[MXL862XX_MAX_PORTS];
++};
++
++static inline bool mxl862_proto_is_native(enum dsa_tag_protocol proto)
++{
++	return proto == DSA_TAG_PROTO_MXL862;
++}
++
++static inline bool mxl862_proto_is_8021q(enum dsa_tag_protocol proto)
++{
++	return proto == DSA_TAG_PROTO_MXL862_8021Q;
++}
++
++static inline bool mxl862_proto_is_supported(enum dsa_tag_protocol proto)
++{
++	return mxl862_proto_is_native(proto) || mxl862_proto_is_8021q(proto);
++}
++
++#endif /* _MXL862XX_TYPES_H_ */
+--- a/drivers/net/dsa/mxl862xx/mxl862xx.c
++++ b/drivers/net/dsa/mxl862xx/mxl862xx.c
+@@ -10,12 +10,14 @@
+ #include <linux/bitfield.h>
+ #include <linux/delay.h>
+ #include <linux/etherdevice.h>
++#include <linux/gpio/consumer.h>
+ #include <linux/icmpv6.h>
+ #include <linux/if_bridge.h>
+ #include <linux/if_vlan.h>
+ #include <linux/module.h>
+ #include <linux/of_device.h>
+ #include <linux/of_mdio.h>
++#include <linux/of_net.h>
+ #include <linux/phy.h>
+ #include <linux/phylink.h>
+ #include <linux/dsa/8021q.h>
+@@ -354,6 +356,10 @@ static int mxl862xx_setup_mdio(struct ds
+ 	bus->parent = dev;
+ 	bus->phy_mask = ~ds->phys_mii_mask;
+ 
++	/* 10G ports do not support slave MDIO bus yet */
++	if (priv->hw_info->ext_ports <= 2)
++		bus->phy_mask |= 0xff00;
++
+ 	mdio_np = of_get_child_by_name(dev->of_node, "mdio");
+ 	if (!mdio_np)
+ 		return -ENODEV;
+@@ -471,9 +477,9 @@ static int mxl862xx_disable_fw_global_ru
+ {
+ 	static const u16 indices[] = { 1, 3, 4, 6, 7 };
+ 	struct mxl862xx_pce_rule rule;
+-	int i, ret;
++	int ret;
+ 
+-	for (i = 0; i < ARRAY_SIZE(indices); i++) {
++	for (int i = 0; i < ARRAY_SIZE(indices); i++) {
+ 		memset(&rule, 0, sizeof(rule));
+ 		rule.pattern.index = cpu_to_le16(indices[i]);
+ 		/* pattern.enable == 0 -> rule is disabled */
+@@ -534,7 +540,7 @@ static int mxl862xx_cpu_bridge_port_id(s
+ 	if (priv->tag_proto == DSA_TAG_PROTO_MXL862_8021Q && p->bridge_port_cpu)
+ 		return p->bridge_port_cpu;
+ 
+-	return dsa_to_port(ds, port)->cpu_dp->index;
++	return mxl862xx_fw_port_id(dsa_to_port(ds, port)->cpu_dp->index);
+ }
+ 
+ /**
+@@ -580,7 +586,7 @@ static int mxl862xx_set_cpu_ctp_ingress_
+ 	struct mxl862xx_evlan_block *blk = &priv->ports[cpu].ingress_evlan;
+ 	struct mxl862xx_ctp_port_config ctp = {};
+ 
+-	ctp.logical_port_id = cpu;
++	ctp.logical_port_id = mxl862xx_fw_port_id(cpu);
+ 	ctp.mask = cpu_to_le32(MXL862XX_CTP_PORT_CONFIG_MASK_INGRESS_VLAN);
+ 	ctp.ingress_extended_vlan_enable = blk->in_use;
+ 	ctp.ingress_extended_vlan_block_id = cpu_to_le16(blk->block_id);
+@@ -617,7 +623,8 @@ static void mxl862xx_fill_cpu_trap_actio
+ 
+ 	rule->action.port_map_action =
+ 		cpu_to_le32(MXL862XX_PCE_ACTION_PORTMAP_ALTERNATIVE);
+-	mxl862xx_fw_portmap_set_bit(rule->action.forward_port_map, cpu_port);
++	mxl862xx_fw_portmap_set_bit(rule->action.forward_port_map,
++				    mxl862xx_fw_port_id(cpu_port));
+ 
+ 	if (priv->tag_proto == DSA_TAG_PROTO_MXL862_8021Q &&
+ 	    p->cpu_egress_evlan.in_use) {
+@@ -651,7 +658,7 @@ static int mxl862xx_setup_link_local_tra
+ 	struct mxl862xx_priv *priv = ds->priv;
+ 	struct mxl862xx_pce_rule rule = {};
+ 
+-	rule.logicalportid = port;
++	rule.logicalportid = mxl862xx_fw_port_id(port);
+ 	rule.region = cpu_to_le32(MXL862XX_PCE_RULE_CTP);
+ 
+ 	rule.pattern.index = cpu_to_le16(MXL862XX_LINK_LOCAL_CTP_INDEX);
+@@ -689,7 +696,7 @@ static int mxl862xx_setup_snooping_traps
+ 	struct mxl862xx_pce_rule rule = {};
+ 	int ret;
+ 
+-	rule.logicalportid = port;
++	rule.logicalportid = mxl862xx_fw_port_id(port);
+ 	rule.region = cpu_to_le32(MXL862XX_PCE_RULE_CTP);
+ 	mxl862xx_fill_cpu_trap_action(ds, port, &rule);
+ 
+@@ -741,12 +748,11 @@ static int mxl862xx_setup_snooping_traps
+ static bool mxl862xx_is_lag_master(const struct mxl862xx_priv *priv, int port)
+ {
+ 	struct dsa_lag *lag = priv->ports[port].lag;
+-	int i;
+ 
+ 	if (!lag)
+ 		return true;
+ 
+-	for (i = 0; i < port; i++) {
++	for (int i = 0; i < port; i++) {
+ 		if (priv->ports[i].lag == lag)
+ 			return false;
+ 	}
+@@ -760,7 +766,8 @@ static bool mxl862xx_is_lag_master(const
+  * @port: port index
+  *
+  * If @port is a member of a LAG, returns the LAG's dedicated firmware
+- * bridge port ID. Otherwise returns @port itself.
++ * bridge port ID. Otherwise returns the firmware bridge port ID of the
++ * physical port.
+  */
+ static u16 mxl862xx_lag_bridge_port(const struct mxl862xx_priv *priv, int port)
+ {
+@@ -769,7 +776,7 @@ static u16 mxl862xx_lag_bridge_port(cons
+ 	if (lag && priv->lag_bridge_ports[lag->id])
+ 		return priv->lag_bridge_ports[lag->id];
+ 
+-	return port;
++	return mxl862xx_fw_port_id(port);
+ }
+ 
+ static int __mxl862xx_set_bridge_port(struct dsa_switch *ds, int port,
+@@ -783,7 +790,6 @@ static int __mxl862xx_set_bridge_port(st
+ 	u16 bridge_id;
+ 	u16 vf_scan;
+ 	bool enable;
+-	int i, idx;
+ 
+ 	if (dsa_port_is_unused(dp))
+ 		return 0;
+@@ -798,7 +804,8 @@ static int __mxl862xx_set_bridge_port(st
+ 				if (member_dp->cpu_dp->index != port)
+ 					continue;
+ 				mxl862xx_fw_portmap_set_bit(br_port_cfg.bridge_port_map,
+-							    member_dp->index);
++							    mxl862xx_lag_bridge_port(priv,
++										     member_dp->index));
+ 			}
+ 		}
+ 	} else if (dp->bridge) {
+@@ -828,7 +835,7 @@ static int __mxl862xx_set_bridge_port(st
+ 		p->learning = false;
+ 	}
+ 
+-	bridge_id = dp->bridge ? priv->bridges[dp->bridge->num] : p->fid;
++	bridge_id = mxl862xx_active_bridge_id(priv, dp);
+ 
+ 	br_port_cfg.bridge_port_id = cpu_to_le16(bp_id);
+ 	br_port_cfg.bridge_id = cpu_to_le16(bridge_id);
+@@ -843,21 +850,30 @@ static int __mxl862xx_set_bridge_port(st
+ 				       MXL862XX_BRIDGE_PORT_CONFIG_MASK_VLAN_BASED_MAC_LEARNING);
+ 	br_port_cfg.src_mac_learning_disable = !p->learning;
+ 
++	if (bp_id == mxl862xx_fw_port_id(port)) {
++		br_port_cfg.mask |=
++			cpu_to_le32(MXL862XX_BRIDGE_PORT_CONFIG_MASK_EGRESS_CTP_MAPPING);
++		br_port_cfg.dest_logical_port_id = mxl862xx_fw_port_id(port);
++	}
+ 	/* Extended VLAN block assignments.
+ 	 * Ingress: block_size is sent as-is (all entries are finals).
+ 	 * Egress: n_active narrows the scan window to only the
+ 	 * entries actually written by evlan_program_egress.
+ 	 */
+-	br_port_cfg.ingress_extended_vlan_enable = p->ingress_evlan.in_use;
+-	br_port_cfg.ingress_extended_vlan_block_id =
+-		cpu_to_le16(p->ingress_evlan.block_id);
+-	br_port_cfg.ingress_extended_vlan_block_size =
+-		cpu_to_le16(p->ingress_evlan.block_size);
+-	br_port_cfg.egress_extended_vlan_enable = p->egress_evlan.in_use;
+-	br_port_cfg.egress_extended_vlan_block_id =
+-		cpu_to_le16(p->egress_evlan.block_id);
+-	br_port_cfg.egress_extended_vlan_block_size =
+-		cpu_to_le16(p->egress_evlan.n_active);
++	if (!dsa_port_is_cpu(dp)) {
++		br_port_cfg.ingress_extended_vlan_enable =
++			p->ingress_evlan.in_use;
++		br_port_cfg.ingress_extended_vlan_block_id =
++			cpu_to_le16(p->ingress_evlan.block_id);
++		br_port_cfg.ingress_extended_vlan_block_size =
++			cpu_to_le16(p->ingress_evlan.block_size);
++		br_port_cfg.egress_extended_vlan_enable =
++			p->egress_evlan.in_use;
++		br_port_cfg.egress_extended_vlan_block_id =
++			cpu_to_le16(p->egress_evlan.block_id);
++		br_port_cfg.egress_extended_vlan_block_size =
++			cpu_to_le16(p->egress_evlan.n_active);
++	}
+ 
+ 	/* VLAN Filter block assignments (per-port).
+ 	 * The block_size sent to the firmware narrows the HW scan
+@@ -898,8 +914,8 @@ static int __mxl862xx_set_bridge_port(st
+ 	br_port_cfg.vlan_src_mac_vid_enable = p->vlan_filtering;
+ 	br_port_cfg.vlan_dst_mac_vid_enable = p->vlan_filtering;
+ 
+-	for (i = 0; i < ARRAY_SIZE(mxl862xx_flood_meters); i++) {
+-		idx = mxl862xx_flood_meters[i];
++	for (int i = 0; i < ARRAY_SIZE(mxl862xx_flood_meters); i++) {
++		int idx = mxl862xx_flood_meters[i];
+ 		enable = !!(p->flood_block & BIT(idx));
+ 
+ 		br_port_cfg.egress_traffic_sub_meter_id[idx] =
+@@ -918,7 +934,18 @@ static int mxl862xx_set_bridge_port(stru
+ 	u16 lag_bp;
+ 	int ret;
+ 
+-	ret = __mxl862xx_set_bridge_port(ds, port, port);
++	/* The physical bridge port ID is the 1-based firmware port ID,
++	 * not the DSA index. Passing the raw index shifted every
++	 * CONFIGSET onto the previous port's bridge port: ports 0..2
++	 * received their neighbour's (same-shaped) config, which masked
++	 * the bug, while the last port of each contiguous run --
++	 * mxl_lan3 (bp 4) and lan_sfp (bp 13) -- was never configured
++	 * at all and stayed on firmware defaults (bridge_id 0, default
++	 * flood map): tagged/unicast ingress classified into FID 0,
++	 * learned there, and FDB hits forwarded raw to the CPU port
++	 * without the tag_8021q management tag.
++	 */
++	ret = __mxl862xx_set_bridge_port(ds, port, mxl862xx_fw_port_id(port));
+ 	if (ret)
+ 		return ret;
+ 
+@@ -978,11 +1005,20 @@ static int mxl862xx_evlan_block_alloc(st
+ 	struct mxl862xx_extendedvlan_alloc param = {};
+ 	int ret;
+ 
++	if (!blk->block_size || blk->block_size > MXL862XX_TOTAL_EVLAN_ENTRIES) {
++		dev_err(priv->ds->dev, "invalid EVLAN block size %u\n",
++			blk->block_size);
++		return -EINVAL;
++	}
++
+ 	param.number_of_entries = cpu_to_le16(blk->block_size);
+ 
+ 	ret = MXL862XX_API_READ(priv, MXL862XX_EXTENDEDVLAN_ALLOC, param);
+-	if (ret)
++	if (ret) {
++		dev_err(priv->ds->dev, "failed to allocate EVLAN block size %u: %pe\n",
++			blk->block_size, ERR_PTR(ret));
+ 		return ret;
++	}
+ 
+ 	blk->block_id = le16_to_cpu(param.extended_vlan_block_id);
+ 	blk->allocated = true;
+@@ -996,13 +1032,21 @@ static int mxl862xx_vf_block_alloc(struc
+ 	struct mxl862xx_vlanfilter_alloc param = {};
+ 	int ret;
+ 
++	if (!size || size > MXL862XX_TOTAL_VF_ENTRIES) {
++		dev_err(priv->ds->dev, "invalid VF block size %u\n", size);
++		return -EINVAL;
++	}
++
+ 	param.number_of_entries = cpu_to_le16(size);
+ 	param.discard_untagged = 0;
+ 	param.discard_unmatched_tagged = 1;
+ 
+ 	ret = MXL862XX_API_READ(priv, MXL862XX_VLANFILTER_ALLOC, param);
+-	if (ret)
++	if (ret) {
++		dev_err(priv->ds->dev, "failed to allocate VF block size %u: %pe\n",
++			size, ERR_PTR(ret));
+ 		return ret;
++	}
+ 
+ 	*block_id = le16_to_cpu(param.vlan_filter_block_id);
+ 	return 0;
+@@ -1070,17 +1114,283 @@ static void mxl862xx_free_bridge(struct
+ 	priv->bridges[bridge->num] = 0;
+ }
+ 
++#define MXL862XX_MUX_POLL_INTERVAL	msecs_to_jiffies(1000)
++
++static void sfp_monitor_work_func(struct work_struct *work)
++{
++	struct combo_port_mux *mux =
++		container_of(work, struct combo_port_mux, sfp_monitor_work.work);
++	struct dsa_switch *ds = mux->dp->ds;
++	unsigned int new_channel;
++	int sfp_present;
++
++	if (IS_ERR(mux->mod_def0_gpio) || IS_ERR(mux->chan_sel_gpio))
++		goto reschedule;
++
++	sfp_present = gpiod_get_value_cansleep(mux->mod_def0_gpio);
++	if (sfp_present < 0)
++		goto reschedule;
++
++	new_channel = sfp_present ? mux->sfp_present_channel :
++				    !mux->sfp_present_channel;
++
++	if (new_channel >= ARRAY_SIZE(mux->data) || !mux->data[new_channel])
++		goto reschedule;
++
++	if (READ_ONCE(mux->channel) == new_channel)
++		goto reschedule;
++
++	gpiod_set_value_cansleep(mux->chan_sel_gpio, new_channel);
++	WRITE_ONCE(mux->channel, new_channel);
++
++	dev_info(ds->dev, "dsa mux: switch to channel%u\n", new_channel);
++
++reschedule:
++	mod_delayed_work(system_wq, &mux->sfp_monitor_work,
++			 MXL862XX_MUX_POLL_INTERVAL);
++}
++
++static void mxl862xx_free_mux_channel(struct dp_mux_data *data)
++{
++	if (!data)
++		return;
++
++	of_node_put(data->of_node);
++	kfree(data);
++}
++
++static void mxl862xx_free_mux_channels(struct combo_port_mux *mux)
++{
++	for (int i = 0; i < ARRAY_SIZE(mux->data); i++) {
++		mxl862xx_free_mux_channel(mux->data[i]);
++		mux->data[i] = NULL;
++	}
++}
++
++static int ds_add_mux_channel(struct combo_port_mux *mux, struct device_node *np)
++{
++	struct dsa_switch *ds = mux->dp->ds;
++	struct dp_mux_data *data;
++	phy_interface_t phy_mode;
++	u32 id;
++	int err;
++
++	err = of_property_read_u32(np, "reg", &id);
++	if (err) {
++		dev_err(ds->dev, "missing mux channel id\n");
++		return err;
++	}
++
++	if (id >= ARRAY_SIZE(mux->data)) {
++		dev_err(ds->dev, "%d is not a valid mux channel id\n", id);
++		return -EINVAL;
++	}
++
++	if (mux->data[id]) {
++		dev_err(ds->dev, "duplicate mux channel id %u\n", id);
++		return -EEXIST;
++	}
++
++	data = kzalloc(sizeof(*data), GFP_KERNEL);
++	if (unlikely(!data)) {
++		dev_err(ds->dev, "failed to create mux data structure\n");
++		return -ENOMEM;
++	}
++
++	err = of_get_phy_mode(np, &phy_mode);
++	if (err) {
++		dev_err(ds->dev, "incorrect phy-mode\n");
++		goto err_free_data;
++	}
++
++	data->of_node = of_node_get(np);
++	data->phy_mode = phy_mode;
++	mux->data[id] = data;
++
++	return 0;
++
++err_free_data:
++	kfree(data);
++	return err;
++}
++
++static int ds_add_mux(struct mxl862xx_priv *priv, struct device_node *np)
++{
++	struct device *dev = priv->ds->dev;
++	struct device_node *child;
++	struct fwnode_handle *fwnode = of_fwnode_handle(np);
++	struct combo_port_mux *mux;
++	u32 id;
++	int err;
++
++	err = of_property_read_u32(np, "reg", &id);
++	if (err) {
++		dev_err(dev, "missing attach dp id\n");
++		return err;
++	}
++
++	if (id >= MXL862XX_MAX_PORTS) {
++		dev_err(dev, "%d is not a valid attach dp id\n", id);
++		return -EINVAL;
++	}
++
++	if (priv->ds_mux[id]) {
++		dev_err(dev, "duplicate mux for dp id %u\n", id);
++		return -EEXIST;
++	}
++
++	mux = kzalloc(sizeof(*mux), GFP_KERNEL);
++	if (unlikely(!mux)) {
++		dev_err(dev, "failed to create mux structure\n");
++		return -ENOMEM;
++	}
++
++	mux->dp = dsa_to_port(priv->ds, id);
++	mux->orig_of_node = mux->dp->dn;
++
++	mux->mod_def0_gpio = fwnode_gpiod_get_index(fwnode, "mod-def0", 0,
++						    GPIOD_IN,
++						    "?");
++
++	if (IS_ERR(mux->mod_def0_gpio)) {
++		dev_err(dev, "failed to request gpio for mod-def0\n");
++		err = PTR_ERR(mux->mod_def0_gpio);
++		goto err_free_mux;
++	}
++
++	mux->chan_sel_gpio = fwnode_gpiod_get_index(fwnode, "chan-sel", 0,
++						    GPIOD_OUT_LOW, "?");
++
++	if (IS_ERR(mux->chan_sel_gpio)) {
++		dev_err(dev, "failed to request gpio for chan-sel\n");
++		err = PTR_ERR(mux->chan_sel_gpio);
++		goto err_put_mod_def0;
++	}
++
++	of_property_read_u32(np, "sfp-present-channel",
++			     &mux->sfp_present_channel);
++	if (mux->sfp_present_channel >= ARRAY_SIZE(mux->data)) {
++		dev_err(dev, "invalid sfp-present-channel %u\n",
++			mux->sfp_present_channel);
++		err = -EINVAL;
++		goto err_put_chan_sel;
++	}
++
++	priv->ds_mux[id] = mux;
++
++	/* configure default channel to 10G PHY */
++	mux->channel = !mux->sfp_present_channel;
++	gpiod_set_value_cansleep(mux->chan_sel_gpio, mux->channel);
++
++	for_each_child_of_node(np, child) {
++		err = ds_add_mux_channel(mux, child);
++		if (err) {
++			dev_err(dev, "failed to add ds_mux\n");
++			of_node_put(child);
++			goto err_put_chan_sel;
++		}
++	}
++
++	if (!mux->data[0] || !mux->data[1]) {
++		dev_err(dev, "mux needs channel@0 and channel@1\n");
++		err = -EINVAL;
++		goto err_put_chan_sel;
++	}
++
++	INIT_DELAYED_WORK(&mux->sfp_monitor_work, sfp_monitor_work_func);
++	mod_delayed_work(system_wq, &mux->sfp_monitor_work, msecs_to_jiffies(3000));
++
++	return 0;
++
++err_put_chan_sel:
++	mxl862xx_free_mux_channels(mux);
++	gpiod_put(mux->chan_sel_gpio);
++err_put_mod_def0:
++	gpiod_put(mux->mod_def0_gpio);
++err_free_mux:
++	kfree(mux);
++	priv->ds_mux[id] = NULL;
++	return err;
++}
++
++static void mxl862xx_release_mux(struct mxl862xx_priv *priv, int port_id)
++{
++	struct combo_port_mux *mux = priv->ds_mux[port_id];
++
++	if (!mux)
++		return;
++
++	cancel_delayed_work_sync(&mux->sfp_monitor_work);
++
++	if (!IS_ERR_OR_NULL(mux->mod_def0_gpio))
++		gpiod_put(mux->mod_def0_gpio);
++
++	if (!IS_ERR_OR_NULL(mux->chan_sel_gpio))
++		gpiod_put(mux->chan_sel_gpio);
++
++	mxl862xx_free_mux_channels(mux);
++	kfree(mux);
++	priv->ds_mux[port_id] = NULL;
++}
++
++static void mxl862xx_release_all_muxes(struct mxl862xx_priv *priv)
++{
++	for (int i = 0; i < MXL862XX_MAX_PORTS; i++)
++		mxl862xx_release_mux(priv, i);
++}
++
++static void mxl862xx_stop_work(struct mxl862xx_priv *priv, int num_ports)
++{
++	set_bit(MXL862XX_FLAG_WORK_STOPPED, &priv->flags);
++	cancel_delayed_work_sync(&priv->stats_work);
++
++	for (int i = 0; i < num_ports; i++)
++		cancel_work_sync(&priv->ports[i].host_flood_work);
++
++	cancel_work_sync(&priv->crc_err_work);
++}
++
++static void mxl862xx_parse_muxes(struct mxl862xx_priv *priv)
++{
++	struct device *dev = priv->ds->dev;
++	struct device_node *mux_np;
++	struct device_node *child;
++	int ret;
++
++	mux_np = of_get_child_by_name(priv->ds->dev->of_node, "ds-mux-bus");
++	if (!mux_np)
++		return;
++
++	if (!of_device_is_available(mux_np)) {
++		of_node_put(mux_np);
++		return;
++	}
++
++	for_each_available_child_of_node(mux_np, child) {
++		if (!of_device_is_compatible(child, "mxl862xx,ds-mux"))
++			continue;
++
++		ret = ds_add_mux(priv, child);
++		if (ret)
++			dev_err(dev, "failed to add mux %pOF: %pe\n",
++				child, ERR_PTR(ret));
++	}
++
++	of_node_put(mux_np);
++}
++
+ static int mxl862xx_setup(struct dsa_switch *ds)
+ {
+ 	struct mxl862xx_priv *priv = ds->priv;
+-	int n_user_ports = 0, n_cpu_ports = 0, max_vlans;
++	int n_cpu_ports = 0, max_vlans = 0;
+ 	int cpu_egress_rules, cpu_ingress_per_port;
+ 	int ingress_finals, vid_rules;
+ 	int egress_catchalls, evlan_reserved;
+ 	struct dsa_port *dp;
+-	int ret, i, port;
+ 
+-	ret = mxl862xx_reset(priv);
++	priv->user_pnum = 0;
++	priv->cpu_port = U8_MAX;
++	int ret = mxl862xx_reset(priv);
+ 	if (ret)
+ 		return ret;
+ 
+@@ -1088,10 +1398,47 @@ static int mxl862xx_setup(struct dsa_swi
+ 	if (ret)
+ 		return ret;
+ 
+-	for (i = 0; i < ARRAY_SIZE(priv->serdes_ports); i++)
+-		mxl862xx_setup_pcs(priv, &priv->serdes_ports[i],
+-				   i + MXL862XX_FIRST_SERDES_PORT);
++	for (int j = 0; j < MXL862XX_MAX_PORTS; j++) {
++		if (j < priv->hw_info->phy_ports)
++			priv->ports[j].kind = MXL862XX_PORT_KIND_GPHY;
++		else if (j >= MXL862XX_FIRST_SERDES_PORT &&
++			 j < MXL862XX_FIRST_SERDES_PORT + MXL862XX_SERDES_PORTS)
++			priv->ports[j].kind = MXL862XX_PORT_KIND_SERDES;
++		else
++			priv->ports[j].kind = MXL862XX_PORT_KIND_UNUSED;
++	}
++
++	dsa_switch_for_each_port(dp, ds) {
++		int j = dp->index;
++		int slot;
++
++		if (dsa_port_is_user(dp)) {
++			priv->user_pnum++;
++		} else if (dsa_port_is_cpu(dp)) {
++			priv->cpu_port = j;
++			n_cpu_ports++;
++		}
++
++		if (!mxl862xx_port_is_serdes(priv, j))
++			continue;
+ 
++		slot = MXL862XX_SERDES_PORT_ID(j);
++		if (slot < 0 || slot >= ARRAY_SIZE(priv->serdes_ports))
++			continue;
++		if (priv->serdes_ports[slot].pcs.ops) {
++			dev_warn(ds->dev,
++				 "SerDes block %d already bound to port %d; ignoring port %d\n",
++				 slot, priv->serdes_ports[slot].port, j);
++			continue;
++		}
++		mxl862xx_setup_pcs(priv, &priv->serdes_ports[slot], j);
++	}
++
++	if (!priv->user_pnum || !n_cpu_ports) {
++		dev_err(ds->dev, "invalid DSA port layout: users=%u cpus=%d\n",
++			priv->user_pnum, n_cpu_ports);
++		return -EINVAL;
++	}
+ 	/* Calculate Extended VLAN and VLAN Filter block sizes.
+ 	 * With VLAN Filter handling VID membership checks:
+ 	 *   Ingress: only final catchall rules (PVID insertion, 802.1Q
+@@ -1107,64 +1454,71 @@ static int mxl862xx_setup(struct dsa_swi
+ 	 *          + dynamically-sized CPU ingress EVLAN (2 per user port,
+ 	 *            budgeted here to guarantee space).
+ 	 *   VF:    CPU port needs its own VF block for management VIDs.
+-	 *
+-	 * Total EVLAN budget:
+-	 *   n_user_ports * (ingress + egress + cpu_egress + cpu_ingress_share)
+-	 *   <= 1024.
+-	 * Ingress blocks are small (7 entries), so almost all capacity
+-	 * goes to egress VID rules.
+-	 * Total VF budget:
+-	 *   (n_user_ports + n_cpu_ports) * vf_block_size <= 1024.
+-	 */
+-	dsa_switch_for_each_user_port(dp, ds)
+-		n_user_ports++;
+-	dsa_switch_for_each_cpu_port(dp, ds)
+-		n_cpu_ports++;
+-
+-	if (n_user_ports) {
+-		ingress_finals = ARRAY_SIZE(ingress_aware_final);
+-		vid_rules = ARRAY_SIZE(vid_accept_standard);
+-		cpu_egress_rules = ARRAY_SIZE(cpu_egress_tag_8021q);
+-		cpu_ingress_per_port = ARRAY_SIZE(cpu_ingress_reassign);
+-		egress_catchalls = ARRAY_SIZE(tag_8021q_egress_strip);
+-
+-		/* Ingress block: fixed at finals count (7 entries) */
+-		priv->evlan_ingress_size = ingress_finals;
+-
+-		/* CPU port ingress EVLAN: reassign rules per user port */
+-		priv->cpu_evlan_ingress_size =
+-			cpu_ingress_per_port * n_user_ports;
+-
+-		/* Reserve EVLAN entries for tag_8021q:
+-		 *  - virtual bridge port egress blocks (cpu_egress_rules each)
+-		 *  - CPU port ingress EVLAN (cpu_ingress_per_port each)
+-		 *  - user port egress catchalls for mgmt VID stripping
+-		 */
+-		evlan_reserved = n_user_ports * (ingress_finals +
+-						 cpu_egress_rules +
+-						 cpu_ingress_per_port +
+-						 egress_catchalls);
+-
+-		/* Egress block: remaining budget divided equally among
+-		 * user ports. Each untagged VID needs vid_rules (2)
+-		 * EVLAN entries for tag stripping. Tagged-only VIDs
+-		 * need no EVLAN rules at all. The block also includes
+-		 * space for the tag_8021q egress catchall rules.
+-		 */
+-		max_vlans = (MXL862XX_TOTAL_EVLAN_ENTRIES - evlan_reserved) /
+-			    (n_user_ports * vid_rules);
+-		priv->evlan_egress_size = vid_rules * max_vlans +
+-					  egress_catchalls;
+-
+-		/* VLAN Filter block: one per user port plus one per CPU
+-		 * port (used in tag_8021q mode for management VIDs).
+-		 * The 1024-entry table is divided equally among all
+-		 * consumers.
+-		 */
+-		priv->vf_block_size = MXL862XX_TOTAL_VF_ENTRIES /
+-				      (n_user_ports + n_cpu_ports);
++	 */
++
++	/* Ingress block: fixed at finals count (7 entries) */
++	ingress_finals = ARRAY_SIZE(ingress_aware_final);
++	priv->evlan_ingress_size = ingress_finals;
++	vid_rules = ARRAY_SIZE(vid_accept_standard);
++	cpu_egress_rules = ARRAY_SIZE(cpu_egress_tag_8021q);
++	cpu_ingress_per_port = ARRAY_SIZE(cpu_ingress_reassign);
++	egress_catchalls = ARRAY_SIZE(tag_8021q_egress_strip);
++
++	/* CPU port ingress EVLAN: reassign rules per user port */
++	priv->cpu_evlan_ingress_size = cpu_ingress_per_port * priv->user_pnum;
++
++	/* Reserve EVLAN entries for tag_8021q:
++	 *  - user ingress blocks
++	 *  - virtual bridge port egress blocks (cpu_egress_rules each)
++	 *  - CPU port ingress EVLAN blocks
++	 *  - user port egress catchalls for mgmt VID stripping
++	 */
++	evlan_reserved = priv->user_pnum * (ingress_finals +
++					    cpu_egress_rules +
++					    egress_catchalls) +
++			 n_cpu_ports * priv->cpu_evlan_ingress_size;
++	if (evlan_reserved >= MXL862XX_TOTAL_EVLAN_ENTRIES) {
++		dev_err(ds->dev, "EVLAN budget exceeded: users=%u cpus=%d reserved=%d total=%u\n",
++			priv->user_pnum, n_cpu_ports, evlan_reserved,
++			MXL862XX_TOTAL_EVLAN_ENTRIES);
++		return -ENOSPC;
++	}
++
++	/* Egress block: remaining budget divided equally among user ports.
++	 * Each untagged VID needs vid_rules (2) EVLAN entries for tag
++	 * stripping. Tagged-only VIDs need no EVLAN rules at all. The block
++	 * also includes space for the tag_8021q egress catchall rules.
++	 */
++	max_vlans = (MXL862XX_TOTAL_EVLAN_ENTRIES - evlan_reserved) /
++		    (priv->user_pnum * vid_rules);
++	if (!max_vlans) {
++		dev_err(ds->dev, "EVLAN budget leaves no dynamic VLAN space: users=%u cpus=%d reserved=%d total=%u\n",
++			priv->user_pnum, n_cpu_ports, evlan_reserved,
++			MXL862XX_TOTAL_EVLAN_ENTRIES);
++		return -ENOSPC;
+ 	}
+ 
++	priv->evlan_egress_size = vid_rules * max_vlans + egress_catchalls;
++
++	/* VLAN Filter block: one per user port plus one per CPU port (used in
++	 * tag_8021q mode for management VIDs). The 1024-entry table is divided
++	 * equally among all consumers.
++	 */
++	priv->vf_block_size = MXL862XX_TOTAL_VF_ENTRIES /
++			      (priv->user_pnum + n_cpu_ports);
++	if (!priv->vf_block_size) {
++		dev_err(ds->dev, "VF budget leaves zero entries per block: users=%u cpus=%d total=%u\n",
++			priv->user_pnum, n_cpu_ports, MXL862XX_TOTAL_VF_ENTRIES);
++		return -ENOSPC;
++	}
++
++	dev_info(ds->dev,
++		 "EVLAN/VF sizing: users=%u cpus=%d ingress=%u egress=%u cpu_ingress=%u cpu_egress=%d vf=%u reserved=%d max_vlans=%d\n",
++		 priv->user_pnum, n_cpu_ports, priv->evlan_ingress_size,
++		 priv->evlan_egress_size, priv->cpu_evlan_ingress_size,
++		 cpu_egress_rules, priv->vf_block_size, evlan_reserved,
++		 max_vlans);
++
+ 	priv->mirror_dest = -1;
+ 
+ 	ret = mxl862xx_setup_drop_meter(ds);
+@@ -1188,7 +1542,7 @@ static int mxl862xx_setup(struct dsa_swi
+ 	 * traps) is deferred to port_setup().
+ 	 */
+ 	dsa_switch_for_each_cpu_port(dp, ds) {
+-		port = dp->index;
++		int port = dp->index;
+ 
+ 		priv->ports[port].vf.block_size = priv->vf_block_size;
+ 		INIT_LIST_HEAD(&priv->ports[port].vf.vids);
+@@ -1205,7 +1559,7 @@ static int mxl862xx_setup(struct dsa_swi
+ 	}
+ 
+ 	dsa_switch_for_each_user_port(dp, ds) {
+-		port = dp->index;
++		int port = dp->index;
+ 
+ 		priv->ports[port].ingress_evlan.block_size =
+ 			priv->evlan_ingress_size;
+@@ -1274,18 +1628,23 @@ static int mxl862xx_setup(struct dsa_swi
+ 	schedule_delayed_work(&priv->stats_work,
+ 			      MXL862XX_STATS_POLL_INTERVAL);
+ 
+-	return mxl862xx_setup_mdio(ds);
++	ret = mxl862xx_setup_mdio(ds);
++	if (ret)
++		return ret;
++
++	return 0;
+ }
+ 
+ static int mxl862xx_port_state(struct dsa_switch *ds, int port, bool enable)
+ {
++	u16 fw_port = mxl862xx_fw_port_id(port);
+ 	struct mxl862xx_register_mod sdma = {
+-		.addr = cpu_to_le16(MXL862XX_SDMA_PCTRLP(port)),
++		.addr = cpu_to_le16(MXL862XX_SDMA_PCTRLP(fw_port)),
+ 		.data = cpu_to_le16(enable ? MXL862XX_SDMA_PCTRL_EN : 0),
+ 		.mask = cpu_to_le16(MXL862XX_SDMA_PCTRL_EN),
+ 	};
+ 	struct mxl862xx_register_mod fdma = {
+-		.addr = cpu_to_le16(MXL862XX_FDMA_PCTRLP(port)),
++		.addr = cpu_to_le16(MXL862XX_FDMA_PCTRLP(fw_port)),
+ 		.data = cpu_to_le16(enable ? MXL862XX_FDMA_PCTRL_EN : 0),
+ 		.mask = cpu_to_le16(MXL862XX_FDMA_PCTRL_EN),
+ 	};
+@@ -1314,7 +1673,7 @@ static void mxl862xx_port_fast_age(struc
+ {
+ 	struct mxl862xx_mac_table_clear param = {
+ 		.type = MXL862XX_MAC_CLEAR_PHY_PORT,
+-		.port_id = port,
++		.port_id = mxl862xx_fw_port_id(port),
+ 	};
+ 
+ 	if (MXL862XX_API_WRITE(ds->priv, MXL862XX_MAC_TABLECLEARCOND, param))
+@@ -1326,8 +1685,9 @@ static int mxl862xx_configure_ctp_port(s
+ 				       u16 number_of_ctp_ports)
+ {
+ 	struct mxl862xx_ctp_port_assignment ctp_assign = {
+-		.logical_port_id = port,
+-		.first_ctp_port_id = cpu_to_le16(first_ctp_port_id),
++		.logical_port_id = mxl862xx_fw_port_id(port),
++		.first_ctp_port_id =
++			cpu_to_le16(mxl862xx_fw_port_id(first_ctp_port_id)),
+ 		.number_of_ctp_port = cpu_to_le16(number_of_ctp_ports),
+ 		.mode = cpu_to_le32(MXL862XX_LOGICAL_PORT_ETHERNET),
+ 	};
+@@ -1340,7 +1700,7 @@ static int mxl862xx_configure_sp_tag_pro
+ 					   bool enable)
+ {
+ 	struct mxl862xx_ss_sp_tag tag = {
+-		.pid = port,
++		.pid = mxl862xx_fw_port_id(port),
+ 		.mask = MXL862XX_SS_SP_TAG_MASK_RX | MXL862XX_SS_SP_TAG_MASK_TX,
+ 		.rx = enable ? MXL862XX_SS_SP_TAG_RX_TAG_NO_INSERT :
+ 			       MXL862XX_SS_SP_TAG_RX_NO_TAG_INSERT,
+@@ -1357,10 +1717,10 @@ static int mxl862xx_configure_sp_tag_pro
+  * @port: user port index whose VBP to configure
+  *
+  * Each user port in tag_8021q mode has a virtual bridge port (VBP) that
+- * sits on the CPU RX path. The VBP lives in the user port's permanent
+- * per-port FID so host FDB/MDB entries in that FID can target it directly.
+- * Per-port host flood control is implemented via egress sub-meters on
+- * the VBP.
++ * sits on the CPU RX path. The VBP follows the user port's active FID:
++ * standalone traffic uses the port's permanent private FID, and bridged
++ * traffic uses the shared firmware bridge FID allocated for the Linux bridge.
++ * Per-port host flood control is implemented via egress sub-meters on the VBP.
+  *
+  * This is intentionally separate from mxl862xx_set_bridge_port() because
+  * the VBP and the physical bridge port are independent firmware entities:
+@@ -1372,8 +1732,9 @@ static int mxl862xx_set_cpu_vbp(struct d
+ 	struct mxl862xx_bridge_port_config vbp_cfg = {};
+ 	struct mxl862xx_priv *priv = ds->priv;
+ 	struct mxl862xx_port *p = &priv->ports[port];
++	struct dsa_port *dp = dsa_to_port(ds, port);
++	struct dsa_port *cpu_dp = dp->cpu_dp;
+ 	bool enable;
+-	int i, idx;
+ 
+ 	if (!p->bridge_port_cpu)
+ 		return 0;
+@@ -1381,11 +1742,18 @@ static int mxl862xx_set_cpu_vbp(struct d
+ 	vbp_cfg.bridge_port_id = cpu_to_le16(p->bridge_port_cpu);
+ 	vbp_cfg.mask = cpu_to_le32(
+ 		MXL862XX_BRIDGE_PORT_CONFIG_MASK_BRIDGE_ID |
+-		MXL862XX_BRIDGE_PORT_CONFIG_MASK_EGRESS_SUB_METER);
+-	vbp_cfg.bridge_id = cpu_to_le16(p->fid);
++		MXL862XX_BRIDGE_PORT_CONFIG_MASK_BRIDGE_PORT_MAP |
++		MXL862XX_BRIDGE_PORT_CONFIG_MASK_MC_SRC_MAC_LEARNING |
++		MXL862XX_BRIDGE_PORT_CONFIG_MASK_EGRESS_SUB_METER |
++		MXL862XX_BRIDGE_PORT_CONFIG_MASK_EGRESS_CTP_MAPPING);
++	vbp_cfg.bridge_id = cpu_to_le16(mxl862xx_active_bridge_id(priv, dp));
++	vbp_cfg.dest_logical_port_id = mxl862xx_fw_port_id(cpu_dp->index);
++	vbp_cfg.src_mac_learning_disable = 1;
++	mxl862xx_fw_portmap_set_bit(vbp_cfg.bridge_port_map,
++				    mxl862xx_fw_port_id(port));
+ 
+-	for (i = 0; i < ARRAY_SIZE(mxl862xx_flood_meters); i++) {
+-		idx = mxl862xx_flood_meters[i];
++	for (int i = 0; i < ARRAY_SIZE(mxl862xx_flood_meters); i++) {
++		int idx = mxl862xx_flood_meters[i];
+ 		enable = !!(p->host_flood_block & BIT(idx));
+ 
+ 		vbp_cfg.egress_traffic_sub_meter_id[idx] =
+@@ -1542,9 +1910,9 @@ static int mxl862xx_evlan_write_final_ru
+ 					    int n_rules, u16 pvid)
+ {
+ 	u16 start_idx = blk->block_size - n_rules;
+-	int i, ret;
++	int ret;
+ 
+-	for (i = 0; i < n_rules; i++) {
++	for (int i = 0; i < n_rules; i++) {
+ 		ret = mxl862xx_evlan_write_rule(priv, blk->block_id,
+ 						start_idx + i, &rules[i],
+ 						0, false, pvid, 0);
+@@ -1728,7 +2096,7 @@ static int mxl862xx_evlan_program_egress
+ 	struct mxl862xx_vf_vid *vfv;
+ 	u16 old_active = blk->n_active;
+ 	int n_vid, n_catch, ret;
+-	u16 idx = 0, i;
++	u16 idx = 0;
+ 
+ 	if (p->vlan_filtering) {
+ 		vid_rules = vid_accept_standard;
+@@ -1785,7 +2153,7 @@ static int mxl862xx_evlan_program_egress
+ 		if (idx + n_catch > blk->block_size)
+ 			return -ENOSPC;
+ 
+-		for (i = 0; i < n_catch; i++) {
++		for (int i = 0; i < n_catch; i++) {
+ 			ret = mxl862xx_evlan_write_rule(priv, blk->block_id,
+ 							idx++,
+ 							&tag_8021q_egress_strip[i],
+@@ -1799,7 +2167,7 @@ static int mxl862xx_evlan_program_egress
+ 	 * This closes the brief window between writing the new rules
+ 	 * and set_bridge_port narrowing the scan window.
+ 	 */
+-	for (i = idx; i < old_active; i++) {
++	for (int i = idx; i < old_active; i++) {
+ 		ret = mxl862xx_evlan_deactivate_entry(priv,
+ 						      blk->block_id, i);
+ 		if (ret)
+@@ -2090,7 +2458,7 @@ static void mxl862xx_port_mirror_del(str
+ 	};
+ 	struct mxl862xx_monitor_port_cfg mon = {};
+ 	bool active = false;
+-	int i, ret;
++	int ret;
+ 
+ 	if (mirror->ingress)
+ 		ctp.ingress_mirror_enable = 0;
+@@ -2108,7 +2476,7 @@ static void mxl862xx_port_mirror_del(str
+ 		p->egress_mirror = false;
+ 
+ 	/* If no ports have any mirrors active, clear the monitor port */
+-	for (i = 0; i < ds->num_ports; i++) {
++	for (int i = 0; i < ds->num_ports; i++) {
+ 		if (priv->ports[i].ingress_mirror ||
+ 		    priv->ports[i].egress_mirror) {
+ 			active = true;
+@@ -2252,8 +2620,6 @@ static void mxl862xx_lag_build_pmapper(s
+ 	int active_ports[MXL862XX_MAX_PORTS];
+ 	int n_active = 0, master, port;
+ 	struct dsa_port *dp;
+-	int i;
+-
+ 	dsa_lag_foreach_port(dp, ds->dst, lag) {
+ 		if (dp->ds != ds)
+ 			continue;
+@@ -2274,7 +2640,7 @@ static void mxl862xx_lag_build_pmapper(s
+ 	if (!n_active)
+ 		return;
+ 
+-	for (i = 0; i < MXL862XX_PMAPPER_LAG_COUNT; i++) {
++	for (int i = 0; i < MXL862XX_PMAPPER_LAG_COUNT; i++) {
+ 		port = active_ports[i % n_active];
+ 
+ 		pm->dest_sub_if_id_group[MXL862XX_PMAPPER_LAG_FIRST + i] =
+@@ -2289,13 +2655,13 @@ static void mxl862xx_lag_build_pmapper(s
+  * @master_port: LAG master port index
+  */
+ static int mxl862xx_lag_redirect_ctp(struct mxl862xx_priv *priv,
+-				     int port, int master_port)
++				     int port, u16 bridge_port_id)
+ {
+ 	struct mxl862xx_ctp_port_config ctp = {};
+ 
+-	ctp.logical_port_id = port;
++	ctp.logical_port_id = mxl862xx_fw_port_id(port);
+ 	ctp.mask = cpu_to_le32(MXL862XX_CTP_PORT_CONFIG_MASK_BRIDGE_PORT_ID);
+-	ctp.bridge_port_id = cpu_to_le16(master_port);
++	ctp.bridge_port_id = cpu_to_le16(bridge_port_id);
+ 
+ 	return MXL862XX_API_WRITE(priv, MXL862XX_CTP_PORTCONFIGSET, ctp);
+ }
+@@ -2307,7 +2673,8 @@ static int mxl862xx_lag_redirect_ctp(str
+  */
+ static int mxl862xx_lag_restore_ctp(struct mxl862xx_priv *priv, int port)
+ {
+-	return mxl862xx_lag_redirect_ctp(priv, port, port);
++	return mxl862xx_lag_redirect_ctp(priv, port,
++					 mxl862xx_fw_port_id(port));
+ }
+ 
+ /**
+@@ -2535,6 +2902,7 @@ static int mxl862xx_port_bridge_join(str
+ 				     struct netlink_ext_ack *extack)
+ {
+ 	struct mxl862xx_priv *priv = ds->priv;
++	bool new_bridge = false;
+ 	int ret;
+ 
+ 	if (!priv->bridges[bridge.num]) {
+@@ -2543,27 +2911,39 @@ static int mxl862xx_port_bridge_join(str
+ 			return ret;
+ 
+ 		priv->bridges[bridge.num] = ret;
++		new_bridge = true;
++	}
+ 
+-		/* Free bridge here on error, DSA rollback won't. */
+-		ret = mxl862xx_sync_bridge_members(ds, &bridge);
+-		if (ret) {
++	/* Free bridge here on error, DSA rollback won't. */
++	ret = mxl862xx_sync_bridge_members(ds, &bridge);
++	if (ret) {
++		if (new_bridge)
+ 			mxl862xx_free_bridge(ds, &bridge);
++		return ret;
++	}
++
++	/* In tag_8021q mode the CPU-side virtual bridge port participates in
++	 * the same active FID as the user port. When the user port joins a
++	 * bridge, move its VBP from the standalone FID to the shared bridge FID.
++	 */
++	if (priv->tag_proto == DSA_TAG_PROTO_MXL862_8021Q) {
++		ret = mxl862xx_set_cpu_vbp(ds, port);
++		if (ret) {
++			if (new_bridge)
++				mxl862xx_free_bridge(ds, &bridge);
+ 			return ret;
+ 		}
+-
+-		return 0;
+ 	}
+ 
+-	ret = mxl862xx_sync_bridge_members(ds, &bridge);
+-	if (ret)
+-		return ret;
+-
+ 	/* If this port is in a LAG, re-sync the LAG bridge port so it
+ 	 * picks up the new bridge_id (switching from standalone FID to
+ 	 * the shared bridge FID).
+ 	 */
+-	if (priv->ports[port].lag)
++	if (priv->ports[port].lag) {
+ 		ret = mxl862xx_lag_sync(ds, priv->ports[port].lag);
++		if (ret && new_bridge)
++			mxl862xx_free_bridge(ds, &bridge);
++	}
+ 
+ 	return ret;
+ }
+@@ -2641,6 +3021,8 @@ static int mxl862xx_setup_virtual_bridge
+ 
+ 	cpu_dp = dsa_to_port(ds, port)->cpu_dp;
+ 
++	bp_alloc.bridge_port_id =
++		cpu_to_le16(mxl862xx_fw_port_id(port) + 16);
+ 	ret = MXL862XX_API_READ(priv, MXL862XX_BRIDGEPORT_ALLOC, bp_alloc);
+ 	if (ret) {
+ 		dev_err(ds->dev,
+@@ -2659,14 +3041,20 @@ static int mxl862xx_setup_virtual_bridge
+ 		MXL862XX_BRIDGE_PORT_CONFIG_MASK_EGRESS_CTP_MAPPING);
+ 	bp_cfg.bridge_id = cpu_to_le16(priv->ports[port].fid);
+ 	bp_cfg.src_mac_learning_disable = 1;
+-	bp_cfg.dest_logical_port_id = cpu_dp->index;
+-	mxl862xx_fw_portmap_set_bit(bp_cfg.bridge_port_map, port);
++	bp_cfg.dest_logical_port_id = mxl862xx_fw_port_id(cpu_dp->index);
++	mxl862xx_fw_portmap_set_bit(bp_cfg.bridge_port_map,
++				    mxl862xx_fw_port_id(port));
+ 
+ 	ret = MXL862XX_API_WRITE(priv, MXL862XX_BRIDGEPORT_CONFIGSET, bp_cfg);
+ 	if (ret)
+ 		dev_err(ds->dev,
+ 			"failed to configure virtual bridge port %u for port %d: %pe\n",
+ 			priv->ports[port].bridge_port_cpu, port, ERR_PTR(ret));
++	ret = mxl862xx_evlan_program_egress(priv, port);
++	if (ret)
++		dev_err(ds->dev,
++			"failed to program egress EVLAN for port %d: %pe\n",
++			port, ERR_PTR(ret));
+ 
+ 	return ret;
+ }
+@@ -2748,12 +3136,12 @@ static int mxl862xx_tag_8021q_program_cp
+ 	struct mxl862xx_evlan_block *blk = &p->cpu_egress_evlan;
+ 	struct mxl862xx_bridge_port_config bp_cfg = {};
+ 	int n_rules = ARRAY_SIZE(cpu_egress_tag_8021q);
+-	int i, ret;
++	int ret;
+ 
+ 	if (!p->bridge_port_cpu || !p->tag_8021q_vid)
+ 		return 0;
+ 
+-	for (i = 0; i < n_rules; i++) {
++	for (int i = 0; i < n_rules; i++) {
+ 		ret = mxl862xx_evlan_write_rule(priv, blk->block_id,
+ 						i, &cpu_egress_tag_8021q[i],
+ 						0, false, 0,
+@@ -2799,7 +3187,7 @@ static int mxl862xx_tag_8021q_cpu_vlan_p
+ 	struct dsa_port *cpu_dp, *dp;
+ 	struct mxl862xx_port *p;
+ 	u16 idx, old_active, vid;
+-	int cpu, ret, i;
++	int cpu, ret;
+ 
+ 	dsa_switch_for_each_cpu_port(cpu_dp, ds)
+ 		break;
+@@ -2817,7 +3205,7 @@ static int mxl862xx_tag_8021q_cpu_vlan_p
+ 		if (!vid)
+ 			continue;
+ 
+-		for (i = 0; i < ARRAY_SIZE(cpu_ingress_reassign); i++) {
++		for (int i = 0; i < ARRAY_SIZE(cpu_ingress_reassign); i++) {
+ 			rule = cpu_ingress_reassign[i];
+ 
+ 			rule.bridge_port_id = p->bridge_port_cpu;
+@@ -2911,8 +3299,30 @@ static int mxl862xx_tag_8021q_vlan_del(s
+ 		return mxl862xx_tag_8021q_cpu_vlan_del(ds, port, vid);
+ 
+ 	if (priv->ports[port].tag_8021q_vid == vid) {
+-		priv->ports[port].tag_8021q_vid = 0;
+-		mxl862xx_tag_8021q_disable_cpu_egress(ds, port);
++		u16 standalone =
++			dsa_tag_8021q_standalone_vid(dsa_to_port(ds, port));
++
++		/* Each user port has two tag_8021q VIDs: the standalone
++		 * VID (registered once) and a bridge VID while bridged.
++		 * Deleting the bridge VID on bridge-leave must fall back
++		 * to the standalone VID, not disable the CPU egress rule
++		 * - otherwise the port loses its ingress-to-CPU tagging
++		 * and goes deaf until the next re-registration.
++		 */
++		if (vid != standalone) {
++			int ret;
++
++			priv->ports[port].tag_8021q_vid = standalone;
++			ret = mxl862xx_tag_8021q_program_cpu_egress(ds, port);
++			if (ret)
++				return ret;
++			ret = mxl862xx_tag_8021q_cpu_vlan_program(ds);
++			if (ret)
++				return ret;
++		} else {
++			priv->ports[port].tag_8021q_vid = 0;
++			mxl862xx_tag_8021q_disable_cpu_egress(ds, port);
++		}
+ 	}
+ 
+ 	return mxl862xx_vf_del_vid(priv, &priv->ports[port].vf, vid);
+@@ -3022,10 +3432,14 @@ static int mxl862xx_complete_tag_8021q_s
+ 		if (ret)
+ 			return ret;
+ 
+-		priv->ports[port].host_flood_block =
+-			BIT(MXL862XX_BRIDGE_PORT_EGRESS_METER_UNKNOWN_UC) |
+-			BIT(MXL862XX_BRIDGE_PORT_EGRESS_METER_UNKNOWN_MC_IP) |
+-			BIT(MXL862XX_BRIDGE_PORT_EGRESS_METER_UNKNOWN_MC_NON_IP);
++		/* Leave unknown-dest flooding toward the host open. Blocking
++		 * it requires complete host FDB coverage, which shared-MAC
++		 * user netdevs do not get (the DSA core skips the host entry
++		 * when the address matches the conduit) and SA learning is
++		 * disabled on the virtual bridge ports, so blocking would
++		 * black-hole all unicast to those netdevs.
++		 */
++		priv->ports[port].host_flood_block = 0;
+ 
+ 		ret = mxl862xx_set_cpu_vbp(ds, port);
+ 		if (ret)
+@@ -3099,7 +3513,7 @@ static int mxl862xx_change_tag_protocol(
+ 			 */
+ 			ret = mxl862xx_configure_ctp_port(ds, dp->index,
+ 							  dp->index,
+-							  32 - dp->index);
++							  32 - mxl862xx_fw_port_id(dp->index));
+ 			if (ret)
+ 				goto err_restore;
+ 
+@@ -3132,11 +3546,13 @@ static int mxl862xx_change_tag_protocol(
+ 		 * callbacks have set cpu_egress_evlan.in_use, so the
+ 		 * PCE rules get the correct EVLAN treatment.
+ 		 */
+-		ret = mxl862xx_refresh_cpu_targets(ds);
+-		if (ret) {
+-			dsa_tag_8021q_unregister(ds);
+-			mxl862xx_teardown_tag_8021q(ds);
+-			goto err_restore;
++		if (ds->setup) {
++			ret = mxl862xx_refresh_cpu_targets(ds);
++			if (ret) {
++				dsa_tag_8021q_unregister(ds);
++				mxl862xx_teardown_tag_8021q(ds);
++				goto err_restore;
++			}
+ 		}
+ 		break;
+ 
+@@ -3169,15 +3585,18 @@ static int mxl862xx_port_setup(struct ds
+ 	bool is_cpu_port = dsa_port_is_cpu(dp);
+ 	int ret;
+ 
+-	ret = mxl862xx_port_state(ds, port, false);
+-	if (ret)
+-		return ret;
+ 
+-	mxl862xx_port_fast_age(ds, port);
++	if (!is_cpu_port) {
++		ret = mxl862xx_port_state(ds, port, false);
++		if (ret)
++			return ret;
++	}
+ 
+ 	if (dsa_port_is_unused(dp))
+ 		return 0;
+ 
++	mxl862xx_port_fast_age(ds, port);
++
+ 	if (dsa_port_is_dsa(dp)) {
+ 		dev_err(ds->dev, "port %d: DSA links not supported\n", port);
+ 		return -EOPNOTSUPP;
+@@ -3187,18 +3606,42 @@ static int mxl862xx_port_setup(struct ds
+ 	ret = mxl862xx_configure_sp_tag_proto(ds, port,
+ 					      is_cpu_port &&
+ 					      priv->tag_proto == DSA_TAG_PROTO_MXL862);
+-	if (ret)
+-		return ret;
++	if (ret) {
++		/* In tag_8021q mode user ports do not rely on the special tag
++		 * for the data path. Some firmware revisions reject the
++		 * disable request for logical port 0, so keep the port alive
++		 * and continue with the rest of setup.
++		 */
++		if (!is_cpu_port &&
++		    priv->tag_proto == DSA_TAG_PROTO_MXL862_8021Q) {
++			dev_warn(ds->dev,
++				 "port %d: failed to configure special tag: %pe, continuing without special-tag disable\n",
++				 port, ERR_PTR(ret));
++		} else {
++			dev_err(ds->dev,
++				"port %d: failed to configure special tag: %pe\n",
++				port, ERR_PTR(ret));
++			return ret;
++		}
++	}
+ 
+ 	ret = mxl862xx_configure_ctp_port(ds, port, port,
+ 					  (is_cpu_port &&
+ 					   priv->tag_proto == DSA_TAG_PROTO_MXL862) ?
+-					  32 - port : 1);
+-	if (ret)
++					  32 - mxl862xx_fw_port_id(port) : 1);
++	if (ret) {
++		dev_err(ds->dev, "port %d: failed to configure CTP port: %pe\n",
++			port, ERR_PTR(ret));
+ 		return ret;
++	}
+ 
+-	if (is_cpu_port)
+-		return mxl862xx_setup_cpu_bridge(ds, port);
++	if (is_cpu_port) {
++		ret = mxl862xx_setup_cpu_bridge(ds, port);
++		if (ret)
++			dev_err(ds->dev, "port %d: failed to set up CPU bridge: %pe\n",
++				port, ERR_PTR(ret));
++		return ret;
++	}
+ 
+ 	/* The FID and initial bridge port config were set up in setup()
+ 	 * before change_tag_protocol() runs. Reconfigure here now that
+@@ -3221,28 +3664,44 @@ static int mxl862xx_port_setup(struct ds
+ 	if (priv->tag_proto == DSA_TAG_PROTO_MXL862_8021Q) {
+ 		ret = mxl862xx_bridge_config_fwd(ds, priv->ports[port].fid,
+ 						 true, true, true);
+-		priv->ports[port].host_flood_block =
+-			BIT(MXL862XX_BRIDGE_PORT_EGRESS_METER_UNKNOWN_UC) |
+-			BIT(MXL862XX_BRIDGE_PORT_EGRESS_METER_UNKNOWN_MC_IP) |
+-			BIT(MXL862XX_BRIDGE_PORT_EGRESS_METER_UNKNOWN_MC_NON_IP);
++		/* Leave unknown-dest flooding toward the host open. Blocking
++		 * it requires complete host FDB coverage, which shared-MAC
++		 * user netdevs do not get (the DSA core skips the host entry
++		 * when the address matches the conduit) and SA learning is
++		 * disabled on the virtual bridge ports, so blocking would
++		 * black-hole all unicast to those netdevs.
++		 */
++		priv->ports[port].host_flood_block = 0;
+ 	} else {
+ 		ret = mxl862xx_bridge_config_fwd(ds, priv->ports[port].fid,
+ 						 false, false, true);
+ 	}
+-	if (ret)
++	if (ret) {
++		dev_err(ds->dev, "port %d: failed to configure bridge flooding: %pe\n",
++			port, ERR_PTR(ret));
+ 		return ret;
++	}
+ 	ret = mxl862xx_set_bridge_port(ds, port);
+-	if (ret)
++	if (ret) {
++		dev_err(ds->dev, "port %d: failed to configure bridge port: %pe\n",
++			port, ERR_PTR(ret));
+ 		return ret;
++	}
+ 
+ 	/* install link-local and multicast snooping traps */
+ 	ret = mxl862xx_setup_link_local_trap(ds, port);
+-	if (ret)
+-		return ret;
++	if (ret) {
++		dev_warn(ds->dev,
++			 "port %d: failed to install link-local trap: %pe, continuing without link-local trap\n",
++			 port, ERR_PTR(ret));
++	}
+ 
+ 	ret = mxl862xx_setup_snooping_traps(ds, port);
+-	if (ret)
+-		return ret;
++	if (ret) {
++		dev_warn(ds->dev,
++			 "port %d: failed to install snooping traps: %pe, continuing without snooping traps\n",
++			 port, ERR_PTR(ret));
++	}
+ 
+ 	priv->ports[port].setup_done = true;
+ 	return 0;
+@@ -3295,7 +3754,7 @@ static int mxl862xx_get_fid(struct dsa_s
+  *  - CPU port in tag_8021q standalone mode: the virtual bridge port
+  *    (bridge_port_cpu) so known traffic exits through egress EVLAN
+  *  - User port in a LAG: the LAG's dedicated firmware bridge port
+- *  - Otherwise: the port index itself
++ *  - Otherwise: the firmware bridge port ID of the physical port
+  */
+ static int mxl862xx_fdb_bridge_port(struct dsa_switch *ds, int port,
+ 				    const struct dsa_db db)
+@@ -3369,7 +3828,7 @@ static int mxl862xx_mac_portmap_add(stru
+ {
+ 	struct mxl862xx_mac_table_query qparam = {};
+ 	struct mxl862xx_mac_table_add aparam = {};
+-	int i, ret;
++	int ret;
+ 
+ 	ether_addr_copy(qparam.mac, addr);
+ 	qparam.fid = cpu_to_le16(fid);
+@@ -3389,7 +3848,7 @@ static int mxl862xx_mac_portmap_add(stru
+ 		memcpy(aparam.port_map, qparam.port_map,
+ 		       sizeof(aparam.port_map));
+ 
+-	for (i = 0; i < ARRAY_SIZE(aparam.port_map); i++)
++	for (int i = 0; i < ARRAY_SIZE(aparam.port_map); i++)
+ 		aparam.port_map[i] |= add_map[i];
+ 
+ 	return MXL862XX_API_WRITE(priv, MXL862XX_MAC_TABLEENTRYADD, aparam);
+@@ -3415,7 +3874,7 @@ static int mxl862xx_mac_portmap_del(stru
+ 	struct mxl862xx_mac_table_remove rparam = {};
+ 	struct mxl862xx_mac_table_query qparam = {};
+ 	struct mxl862xx_mac_table_add aparam = {};
+-	int i, ret;
++	int ret;
+ 
+ 	ether_addr_copy(qparam.mac, addr);
+ 	qparam.fid = cpu_to_le16(fid);
+@@ -3428,7 +3887,7 @@ static int mxl862xx_mac_portmap_del(stru
+ 	if (!qparam.found)
+ 		return 0;
+ 
+-	for (i = 0; i < ARRAY_SIZE(qparam.port_map); i++)
++	for (int i = 0; i < ARRAY_SIZE(qparam.port_map); i++)
+ 		qparam.port_map[i] &= ~del_map[i];
+ 
+ 	if (mxl862xx_fw_portmap_is_empty(qparam.port_map)) {
+@@ -3608,7 +4067,8 @@ static int mxl862xx_port_fdb_dump(struct
+ 
+ 		entry_port_id = le32_to_cpu(param.port_id);
+ 
+-		if (entry_port_id == port || entry_port_id == lag_bp) {
++		if (entry_port_id == mxl862xx_fw_port_id(port) ||
++		    entry_port_id == lag_bp) {
+ 			ret = cb(param.mac, FIELD_GET(MXL862XX_TCI_VLAN_ID,
+ 						      le16_to_cpu(param.tci)),
+ 				 param.static_entry, data);
+@@ -3698,7 +4158,8 @@ static int mxl862xx_port_mdb_add(struct
+ 	 *   RX: physical port source-filtered -> VBP remains -> CPU receives
+ 	 */
+ 	if (priv->tag_proto == DSA_TAG_PROTO_MXL862_8021Q && db.type == DSA_DB_PORT)
+-		ret = mxl862xx_mdb_add_to_fid(ds, mdb, fid, db.dp->index,
++		ret = mxl862xx_mdb_add_to_fid(ds, mdb, fid,
++					      mxl862xx_fw_port_id(db.dp->index),
+ 					       mdb->vid);
+ 
+ 	return ret;
+@@ -3767,7 +4228,8 @@ static int mxl862xx_port_mdb_del(struct
+ 	 * and the physical port in the portmap -- remove both bits.
+ 	 */
+ 	if (priv->tag_proto == DSA_TAG_PROTO_MXL862_8021Q && db.type == DSA_DB_PORT)
+-		ret = mxl862xx_mdb_del_from_fid(ds, mdb, fid, db.dp->index,
++		ret = mxl862xx_mdb_del_from_fid(ds, mdb, fid,
++						mxl862xx_fw_port_id(db.dp->index),
+ 						 mdb->vid);
+ 
+ 	return ret;
+@@ -3798,17 +4260,17 @@ static int mxl862xx_port_change_mtu(stru
+ {
+ 	struct mxl862xx_priv *priv = ds->priv;
+ 	struct mxl862xx_cfg param = {};
+-	int i, old_max = 0, new_max = 0;
++	int old_max = 0, new_max = 0;
+ 	int ret;
+ 
+-	for (i = 0; i < ds->num_ports; i++) {
++	for (int i = 0; i < ds->num_ports; i++) {
+ 		if (priv->ports[i].mtu > old_max)
+ 			old_max = priv->ports[i].mtu;
+ 	}
+ 
+ 	priv->ports[port].mtu = new_mtu;
+ 
+-	for (i = 0; i < ds->num_ports; i++) {
++	for (int i = 0; i < ds->num_ports; i++) {
+ 		if (priv->ports[i].mtu > new_max)
+ 			new_max = priv->ports[i].mtu;
+ 	}
+@@ -3844,7 +4306,7 @@ static void mxl862xx_port_stp_state_set(
+ 					u8 state)
+ {
+ 	struct mxl862xx_stp_port_cfg param = {
+-		.port_id = cpu_to_le16(port),
++		.port_id = cpu_to_le16(mxl862xx_fw_port_id(port)),
+ 	};
+ 	struct mxl862xx_priv *priv = ds->priv;
+ 	int ret;
+@@ -3915,8 +4377,12 @@ static void mxl862xx_host_flood_work_fn(
+ 	if (priv->tag_proto == DSA_TAG_PROTO_MXL862_8021Q) {
+ 		block = 0;
+ 
+-		if (!p->host_flood_uc)
+-			block |= BIT(MXL862XX_BRIDGE_PORT_EGRESS_METER_UNKNOWN_UC);
++		/* Never block unknown-UC toward the host here: shared-MAC
++		 * user netdevs get no host FDB entry from the DSA core and
++		 * VBP SA learning is off, so an unknown-UC block black-holes
++		 * their unicast. Honor only the MC hint until host FDB
++		 * coverage is complete.
++		 */
+ 		if (!p->host_flood_mc) {
+ 			block |= BIT(MXL862XX_BRIDGE_PORT_EGRESS_METER_UNKNOWN_MC_IP);
+ 			block |= BIT(MXL862XX_BRIDGE_PORT_EGRESS_METER_UNKNOWN_MC_NON_IP);
+@@ -4035,12 +4501,10 @@ static int mxl862xx_port_bridge_flags(st
+ static void mxl862xx_get_strings(struct dsa_switch *ds, int port,
+ 				 u32 stringset, u8 *data)
+ {
+-	int i;
+-
+ 	if (stringset != ETH_SS_STATS)
+ 		return;
+ 
+-	for (i = 0; i < ARRAY_SIZE(mxl862xx_mib); i++)
++	for (int i = 0; i < ARRAY_SIZE(mxl862xx_mib); i++)
+ 		ethtool_puts(&data, mxl862xx_mib[i].name);
+ 
+ 	mxl862xx_serdes_get_strings(ds, port, data);
+@@ -4059,7 +4523,7 @@ static int mxl862xx_read_rmon(struct dsa
+ {
+ 	memset(cnt, 0, sizeof(*cnt));
+ 	cnt->port_type = cpu_to_le32(MXL862XX_CTP_PORT);
+-	cnt->port_id = cpu_to_le16(port);
++	cnt->port_id = cpu_to_le16(mxl862xx_fw_port_id(port));
+ 
+ 	return MXL862XX_API_READ(ds->priv, MXL862XX_RMON_PORT_GET, *cnt);
+ }
+@@ -4069,7 +4533,7 @@ static void mxl862xx_get_ethtool_stats(s
+ {
+ 	const struct mxl862xx_mib_desc *mib;
+ 	struct mxl862xx_rmon_port_cnt cnt;
+-	int ret, i;
++	int ret;
+ 	void *field;
+ 
+ 	ret = mxl862xx_read_rmon(ds, port, &cnt);
+@@ -4078,7 +4542,7 @@ static void mxl862xx_get_ethtool_stats(s
+ 		return;
+ 	}
+ 
+-	for (i = 0; i < ARRAY_SIZE(mxl862xx_mib); i++) {
++	for (int i = 0; i < ARRAY_SIZE(mxl862xx_mib); i++) {
+ 		mib = &mxl862xx_mib[i];
+ 		field = (u8 *)&cnt + mib->offset;
+ 
+@@ -4377,13 +4841,16 @@ static int mxl862xx_probe(struct mdio_de
+ 	struct device *dev = &mdiodev->dev;
+ 	struct mxl862xx_priv *priv;
+ 	struct dsa_switch *ds;
+-	int err, i;
++	int err;
+ 
+ 	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
+ 	if (!priv)
+ 		return -ENOMEM;
+ 
+ 	priv->mdiodev = mdiodev;
++	priv->hw_info = of_device_get_match_data(dev);
++	if (!priv->hw_info)
++		return -EINVAL;
+ 
+ 	ds = devm_kzalloc(dev, sizeof(*ds), GFP_KERNEL);
+ 	if (!ds)
+@@ -4394,14 +4861,12 @@ static int mxl862xx_probe(struct mdio_de
+ 	ds->priv = priv;
+ 	ds->ops = &mxl862xx_switch_ops;
+ 	ds->phylink_mac_ops = &mxl862xx_phylink_mac_ops;
+-	ds->num_ports = MXL862XX_MAX_PORTS;
++	ds->num_ports = priv->hw_info->num_ports;
+ 	ds->fdb_isolation = true;
+ 	ds->max_num_bridges = MXL862XX_MAX_BRIDGES;
+ 	ds->num_lag_ids = MXL862XX_MAX_LAG_IDS;
+ 
+-	mxl862xx_host_init(priv);
+-
+-	for (i = 0; i < MXL862XX_MAX_PORTS; i++) {
++	for (int i = 0; i < ds->num_ports; i++) {
+ 		priv->ports[i].priv = priv;
+ 		INIT_WORK(&priv->ports[i].host_flood_work,
+ 			  mxl862xx_host_flood_work_fn);
+@@ -4409,6 +4874,7 @@ static int mxl862xx_probe(struct mdio_de
+ 	}
+ 
+ 	INIT_DELAYED_WORK(&priv->stats_work, mxl862xx_stats_work_fn);
++	mxl862xx_host_init(priv);
+ 
+ 	priv->tag_proto = DSA_TAG_PROTO_MXL862;
+ 
+@@ -4416,30 +4882,25 @@ static int mxl862xx_probe(struct mdio_de
+ 
+ 	err = dsa_register_switch(ds);
+ 	if (err) {
+-		set_bit(MXL862XX_FLAG_WORK_STOPPED, &priv->flags);
+-		cancel_delayed_work_sync(&priv->stats_work);
+-		mxl862xx_host_shutdown(priv);
+-		for (i = 0; i < MXL862XX_MAX_PORTS; i++)
+-			cancel_work_sync(&priv->ports[i].host_flood_work);
++		mxl862xx_stop_work(priv, ds->num_ports);
++		return err;
+ 	}
+ 
+-	return err;
++	mxl862xx_parse_muxes(priv);
++
++	return 0;
+ }
+ 
+ static void mxl862xx_remove(struct mdio_device *mdiodev)
+ {
+ 	struct dsa_switch *ds = dev_get_drvdata(&mdiodev->dev);
+ 	struct mxl862xx_priv *priv;
+-	int i;
+ 
+ 	if (!ds)
+ 		return;
+ 
+ 	priv = ds->priv;
+ 
+-	set_bit(MXL862XX_FLAG_WORK_STOPPED, &priv->flags);
+-	cancel_delayed_work_sync(&priv->stats_work);
+-
+ 	/* Tear down tag_8021q under RTNL before dsa_unregister_switch().
+ 	 * dsa_tag_8021q_unregister() calls vlan_vid_del() which needs
+ 	 * RTNL. dsa_unregister_switch() takes dsa2_mutex, and other
+@@ -4453,46 +4914,49 @@ static void mxl862xx_remove(struct mdio_
+ 		rtnl_unlock();
+ 	}
+ 
++	mxl862xx_release_all_muxes(priv);
+ 	dsa_unregister_switch(ds);
+ 
+-	mxl862xx_host_shutdown(priv);
+-
+ 	/* Cancel any pending host flood work. dsa_unregister_switch()
+ 	 * has already called port_teardown (which sets setup_done=false),
+ 	 * but a worker could still be blocked on rtnl_lock(). Since we
+ 	 * are now outside RTNL, cancel_work_sync() will not deadlock.
+ 	 */
+-	for (i = 0; i < MXL862XX_MAX_PORTS; i++)
+-		cancel_work_sync(&priv->ports[i].host_flood_work);
++	mxl862xx_stop_work(priv, ds->num_ports);
+ }
+ 
+ static void mxl862xx_shutdown(struct mdio_device *mdiodev)
+ {
+ 	struct dsa_switch *ds = dev_get_drvdata(&mdiodev->dev);
+ 	struct mxl862xx_priv *priv;
+-	int i;
+-
+ 	if (!ds)
+ 		return;
+ 
+ 	priv = ds->priv;
+ 
++	mxl862xx_release_all_muxes(priv);
+ 	dsa_switch_shutdown(ds);
+ 
+-	set_bit(MXL862XX_FLAG_WORK_STOPPED, &priv->flags);
+-	cancel_delayed_work_sync(&priv->stats_work);
+-
+-	mxl862xx_host_shutdown(priv);
+-
+-	for (i = 0; i < MXL862XX_MAX_PORTS; i++)
+-		cancel_work_sync(&priv->ports[i].host_flood_work);
++	mxl862xx_stop_work(priv, ds->num_ports);
+ 
+ 	dev_set_drvdata(&mdiodev->dev, NULL);
+ }
+ 
++static const struct mxl862xx_hw_info mxl86282_data = {
++	.num_ports = MXL862XX_MAX_REAL_PORTS,
++	.phy_ports = MXL86282_PHY_PORTS,
++	.ext_ports = MXL86282_EXT_PORTS,
++};
++
++static const struct mxl862xx_hw_info mxl86252_data = {
++	.num_ports = MXL862XX_MAX_REAL_PORTS,
++	.phy_ports = MXL86252_PHY_PORTS,
++	.ext_ports = MXL86252_EXT_PORTS,
++};
++
+ static const struct of_device_id mxl862xx_of_match[] = {
+-	{ .compatible = "maxlinear,mxl86282" },
+-	{ .compatible = "maxlinear,mxl86252" },
++	{ .compatible = "maxlinear,mxl86282", .data = &mxl86282_data },
++	{ .compatible = "maxlinear,mxl86252", .data = &mxl86252_data },
+ 	{ /* sentinel */ }
+ };
+ MODULE_DEVICE_TABLE(of, mxl862xx_of_match);
+--- a/drivers/net/dsa/mxl862xx/mxl862xx.h
++++ b/drivers/net/dsa/mxl862xx/mxl862xx.h
+@@ -4,37 +4,26 @@
+ #define __MXL862XX_H
+ 
+ #include <asm/byteorder.h>
+-#include <linux/mdio.h>
+-#include <linux/workqueue.h>
+-#include <net/dsa.h>
+-
+-struct mxl862xx_priv;
+-
+-#define MXL862XX_MAX_PORTS		17
+-#define MXL862XX_FIRST_SERDES_PORT	9
+-#define MXL862XX_SERDES_SLOTS		4
+-
+-#define MXL862XX_DEFAULT_BRIDGE		0
+-#define MXL862XX_MAX_BRIDGES		48
+-#define MXL862XX_MAX_BRIDGE_PORTS	128
+-#define MXL862XX_TOTAL_EVLAN_ENTRIES	1024
+-#define MXL862XX_TOTAL_VF_ENTRIES	1024
+-#define MXL862XX_MAX_LAG_IDS		16
+-
+-/* Trunk hash field bitmask (matches PCE_TRUNK_CONF layout) */
+-#define MXL862XX_TRUNK_HASH_SA		BIT(0)
+-#define MXL862XX_TRUNK_HASH_DA		BIT(1)
+-#define MXL862XX_TRUNK_HASH_SIP	BIT(2)
+-#define MXL862XX_TRUNK_HASH_DIP	BIT(3)
+-#define MXL862XX_TRUNK_HASH_SPORT	BIT(4)
+-#define MXL862XX_TRUNK_HASH_DPORT	BIT(5)
+-
+-/* P-mapper LAG entries occupy indices 9..72 (64 entries) */
+-#define MXL862XX_PMAPPER_LAG_FIRST	9
+-#define MXL862XX_PMAPPER_LAG_COUNT	64
++#include <linux/bits.h>
+ 
+-/* Number of __le16 words in a firmware portmap (128-bit bitmap). */
+-#define MXL862XX_FW_PORTMAP_WORDS	(MXL862XX_MAX_BRIDGE_PORTS / 16)
++#include "mxl862xx-types.h"
++
++/**
++ * mxl862xx_fw_port_id - translate a DSA/DT zero-based port index
++ *                       to the firmware port numbering used by
++ *                       control/configuration APIs
++ * @port: DSA port index
++ *
++ * The board DTS exposes physical switch ports with zero-based numbering,
++ * but the firmware control paths inherited from the legacy driver address
++ * physical/logical ports starting at 1. Only use this helper for those
++ * control/configuration APIs. Status/query APIs that explicitly document
++ * zero-based numbering should keep the raw DSA index.
++ */
++static inline u16 mxl862xx_fw_port_id(unsigned int port)
++{
++	return port + 1;
++}
+ 
+ /**
+  * mxl862xx_fw_portmap_set_bit - set a single port bit in a firmware portmap
+@@ -74,254 +63,24 @@ static inline bool mxl862xx_fw_portmap_i
+ }
+ 
+ /**
+- * struct mxl862xx_vf_vid - Per-VID entry within a VLAN Filter block
+- * @list:     Linked into &mxl862xx_vf_block.vids
+- * @vid:      VLAN ID
+- * @index:    Entry index within the VLAN Filter HW block
+- * @untagged: Strip tag on egress for this VID (drives EVLAN tag-stripping)
+- */
+-struct mxl862xx_vf_vid {
+-	struct list_head list;
+-	u16 vid;
+-	u16 index;
+-	bool untagged;
+-};
+-
+-/**
+- * struct mxl862xx_vf_block - Per-port VLAN Filter block
+- * @allocated:    Whether the HW block has been allocated via VLANFILTER_ALLOC
+- * @block_id:     HW VLAN Filter block ID from VLANFILTER_ALLOC
+- * @block_size:   Total entries allocated in this block
+- * @active_count: Number of ALLOW entries at indices [0, active_count).
+- *                The bridge port config sends max(active_count, 1) as
+- *                block_size to narrow the HW scan window.
+- *                discard_unmatched_tagged handles frames outside this range.
+- * @vids:         List of &mxl862xx_vf_vid entries programmed in this block
+- */
+-struct mxl862xx_vf_block {
+-	bool allocated;
+-	u16 block_id;
+-	u16 block_size;
+-	u16 active_count;
+-	struct list_head vids;
+-};
+-
+-/**
+- * struct mxl862xx_evlan_block - Per-port per-direction extended VLAN block
+- * @allocated:  Whether the HW block has been allocated via EXTENDEDVLAN_ALLOC.
+- *              Guards alloc/free idempotency--the block_id is only valid
+- *              while allocated is true.
+- * @in_use:     Whether the EVLAN engine should be enabled for this block
+- *              on the bridge port (sent as the enable flag in
+- *              set_bridge_port). Can be false while allocated is still
+- *              true -- e.g. when all egress VIDs are removed (idx == 0 in
+- *              evlan_program_egress) the block stays allocated for
+- *              potential reuse, but the engine is disabled so an empty
+- *              rule set does not discard all traffic.
+- * @block_id:   HW block ID from EXTENDEDVLAN_ALLOC
+- * @block_size: Total entries allocated
+- * @n_active:   Number of HW entries currently written. The bridge port
+- *              config sends this as the egress scan window, so entries
+- *              beyond n_active are never scanned. Always equals
+- *              block_size for ingress blocks (fixed catchall rules).
+- */
+-struct mxl862xx_evlan_block {
+-	bool allocated;
+-	bool in_use;
+-	u16 block_id;
+-	u16 block_size;
+-	u16 n_active;
+-};
+-
+-/**
+- * struct mxl862xx_port_stats - 64-bit accumulated hardware port statistics
+- * @rx_packets: total received packets
+- * @tx_packets: total transmitted packets
+- * @rx_bytes: total received bytes
+- * @tx_bytes: total transmitted bytes
+- * @rx_errors: total receive errors
+- * @tx_errors: total transmit errors
+- * @rx_dropped: total received packets dropped
+- * @tx_dropped: total transmitted packets dropped
+- * @multicast: total received multicast packets
+- * @collisions: total transmit collisions
+- * @rx_length_errors: received length errors (undersize + oversize)
+- * @rx_crc_errors: received FCS errors
+- * @rx_frame_errors: received alignment errors
+- * @prev_rx_good_pkts: previous snapshot of rx good packet counter
+- * @prev_tx_good_pkts: previous snapshot of tx good packet counter
+- * @prev_rx_good_bytes: previous snapshot of rx good byte counter
+- * @prev_tx_good_bytes: previous snapshot of tx good byte counter
+- * @prev_rx_fcserror_pkts: previous snapshot of rx FCS error counter
+- * @prev_rx_under_size_error_pkts: previous snapshot of rx undersize
+- *                                 error counter
+- * @prev_rx_oversize_error_pkts: previous snapshot of rx oversize
+- *                               error counter
+- * @prev_rx_align_error_pkts: previous snapshot of rx alignment
+- *                            error counter
+- * @prev_tx_dropped_pkts: previous snapshot of tx dropped counter
+- * @prev_rx_dropped_pkts: previous snapshot of rx dropped counter
+- * @prev_rx_evlan_discard_pkts: previous snapshot of extended VLAN
+- *                              discard counter
+- * @prev_mtu_exceed_discard_pkts: previous snapshot of MTU exceed
+- *                                discard counter
+- * @prev_tx_acm_dropped_pkts: previous snapshot of tx ACM dropped
+- *                            counter
+- * @prev_rx_multicast_pkts: previous snapshot of rx multicast counter
+- * @prev_tx_coll_count: previous snapshot of tx collision counter
++ * mxl862xx_active_bridge_id - get the firmware bridge/FID currently used by a
++ *                             DSA port
++ * @priv: driver private data
++ * @dp: DSA port
+  *
+- * The firmware RMON counters are 32-bit free-running (64-bit for byte
+- * counters). This structure holds 64-bit accumulators alongside the
+- * previous raw snapshot so that deltas can be computed across polls,
+- * handling 32-bit wrap correctly via unsigned subtraction.
++ * struct mxl862xx_port::fid is the port's permanent standalone FID. Once a
++ * user port joins a Linux bridge, forwarding moves to the shared firmware
++ * bridge allocated for dp->bridge->num, while the standalone FID is kept for
++ * when the port leaves the bridge again.
+  */
+-struct mxl862xx_port_stats {
+-	u64 rx_packets;
+-	u64 tx_packets;
+-	u64 rx_bytes;
+-	u64 tx_bytes;
+-	u64 rx_errors;
+-	u64 tx_errors;
+-	u64 rx_dropped;
+-	u64 tx_dropped;
+-	u64 multicast;
+-	u64 collisions;
+-	u64 rx_length_errors;
+-	u64 rx_crc_errors;
+-	u64 rx_frame_errors;
+-	u32 prev_rx_good_pkts;
+-	u32 prev_tx_good_pkts;
+-	u64 prev_rx_good_bytes;
+-	u64 prev_tx_good_bytes;
+-	u32 prev_rx_fcserror_pkts;
+-	u32 prev_rx_under_size_error_pkts;
+-	u32 prev_rx_oversize_error_pkts;
+-	u32 prev_rx_align_error_pkts;
+-	u32 prev_tx_dropped_pkts;
+-	u32 prev_rx_dropped_pkts;
+-	u32 prev_rx_evlan_discard_pkts;
+-	u32 prev_mtu_exceed_discard_pkts;
+-	u32 prev_tx_acm_dropped_pkts;
+-	u32 prev_rx_multicast_pkts;
+-	u32 prev_tx_coll_count;
+-};
+-
+-/**
+- * struct mxl862xx_port - per-port state tracked by the driver
+- * @priv:                back-pointer to switch private data; needed by
+- *                       deferred work handlers to access ds and priv
+- * @fid:                 firmware FID for the permanent single-port bridge;
+- *                       kept alive for the lifetime of the port so traffic is
+- *                       never forwarded while the port is unbridged
+- * @flood_block:         bitmask of firmware meter indices that are currently
+- *                       rate-limiting flood traffic on this port (zero-rate
+- *                       meters used to block flooding)
+- * @isolated:            true when port isolation is active (BR_ISOLATED);
+- *                       isolated ports are excluded from each other's
+- *                       forwarding portmaps
+- * @learning:            true when address learning is enabled on this port
+- * @setup_done:          set at end of port_setup, cleared at start of
+- *                       port_teardown; guards deferred work against
+- *                       acting on torn-down state
+- * @pvid:                port VLAN ID (native VLAN) assigned to untagged traffic
+- * @vlan_filtering:      true when VLAN filtering is enabled on this port
+- * @vf:                  per-port VLAN Filter block state
+- * @ingress_evlan:       ingress extended VLAN block state
+- * @egress_evlan:        egress extended VLAN block state
+- * @bridge_port_cpu:     virtual bridge port ID for tag_8021q CPU-side CTP
+- * @host_flood_block:    bitmask of firmware meter indices used to block
+- *                       host flooding on the virtual bridge port (tag_8021q)
+- * @host_flood_uc:       desired host unicast flood state (true = flood);
+- *                       updated atomically by port_set_host_flood, consumed
+- *                       by the deferred host_flood_work
+- * @host_flood_mc:       desired host multicast flood state (true = flood)
+- * @host_flood_work:     deferred work for applying host flood changes;
+- *                       port_set_host_flood runs in atomic context (under
+- *                       netif_addr_lock) so firmware calls must be deferred.
+- *                       The worker acquires rtnl_lock() to serialize with
+- *                       DSA callbacks and checks @setup_done to avoid
+- *                       acting on torn-down ports.
+- * @stats:               64-bit accumulated hardware statistics; updated
+- *                       periodically by the stats polling work
+- * @stats_lock:          protects accumulator reads in .get_stats64 against
+- *                       concurrent updates from the polling work
+- * @tag_8021q_vid:       currently assigned tag_8021q management VID
+- * @hairpin:             true when hairpin mode is active (BR_HAIRPIN_MODE);
+- *                       the port's own bridge port is included in its
+- *                       portmap so bridged frames can egress the ingress
+- *                       port
+- * @ingress_mirror:      true when ingress mirroring is active on this port
+- * @egress_mirror:       true when egress mirroring is active on this port
+- * @lag:                 non-NULL when port is member of a LAG group;
+- *                       points to the DSA LAG structure
+- * @lag_tx_enabled:      true when this port is active for TX in its LAG
+- * @lag_hash_bits:       hash field bitmask (MXL862XX_TRUNK_HASH_*) requested
+- *                       when this port joined its LAG; used to recompute the
+- *                       global trunk_hash when a LAG is destroyed
+- * @mtu:                 per-port requested MTU; the global switch register
+- *                       is set to the maximum across all ports
+- */
+-struct mxl862xx_port {
+-	struct mxl862xx_priv *priv;
+-	u16 fid;
+-	unsigned long flood_block;
+-	bool isolated;
+-	bool learning;
+-	bool setup_done;
+-	u16 pvid;
+-	bool vlan_filtering;
+-	struct mxl862xx_vf_block vf;
+-	struct mxl862xx_evlan_block ingress_evlan;
+-	struct mxl862xx_evlan_block egress_evlan;
+-	u16 bridge_port_cpu;
+-	unsigned long host_flood_block;
+-	bool host_flood_uc;
+-	bool host_flood_mc;
+-	struct work_struct host_flood_work;
+-	u16 tag_8021q_vid;
+-	struct mxl862xx_evlan_block cpu_egress_evlan;
+-	bool hairpin;
+-	bool ingress_mirror;
+-	bool egress_mirror;
+-	struct dsa_lag *lag;
+-	bool lag_tx_enabled;
+-	u8 lag_hash_bits;
+-	int mtu;
+-	struct mxl862xx_port_stats stats;
+-	spinlock_t stats_lock; /* protects stats accumulators */
+-};
+-
+-/**
+- * struct mxl862xx_pcs - link SerDes interfaces to bridge ports
+- * @pcs:       &struct phylink_pcs instance
+- * @priv:      pointer to &struct mxl862xx_priv
+- * @serdes_id: SerDes instance index (0 or 1)
+- * @slot:      slot within the SerDes (0-3 for QSGMII/QUSXGMII, 0 otherwise)
+- * @interface: cached PHY interface, last value passed to pcs_config().
+- *             %PHY_INTERFACE_MODE_NA before the first successful
+- *             pcs_config().  Used by pcs_an_restart() to populate the
+- *             firmware command and by pcs_disable() to skip the
+- *             firmware power-down for shared (QSGMII/QUSXGMII) modes.
+- */
+-struct mxl862xx_pcs {
+-	struct phylink_pcs pcs;
+-	struct mxl862xx_priv *priv;
+-	int serdes_id;
+-	int slot;
+-	phy_interface_t interface;
+-};
++static inline u16 mxl862xx_active_bridge_id(const struct mxl862xx_priv *priv,
++					    const struct dsa_port *dp)
++{
++	if (dp->bridge && priv->bridges[dp->bridge->num])
++		return priv->bridges[dp->bridge->num];
+ 
+-/**
+- * struct mxl862xx_fw_version - firmware version for comparison and display
+- * @major: firmware major version
+- * @minor: firmware minor version
+- * @revision: firmware revision number
+- */
+-struct mxl862xx_fw_version {
+-	u8 major;
+-	u8 minor;
+-	u16 revision;
+-};
++	return priv->ports[dp->index].fid;
++}
+ 
+ #define MXL862XX_FW_VER(maj, min, rev) \
+ 	(((u32)(maj) << 24) | ((u32)(min) << 16) | (rev))
+@@ -330,85 +89,14 @@ struct mxl862xx_fw_version {
+ 			 (priv)->fw_version.revision) >= \
+ 	 MXL862XX_FW_VER(maj, min, rev))
+ 
+-/* Bit indices for struct mxl862xx_priv::flags */
+-#define MXL862XX_FLAG_CRC_ERR		0
+-#define MXL862XX_FLAG_WORK_STOPPED	1
+-
+-/**
+- * struct mxl862xx_priv - driver private data for an MxL862xx switch
+- * @ds:                 pointer to the DSA switch instance
+- * @mdiodev:            MDIO device used to communicate with the switch firmware
+- * @crc_err_work:       deferred work for shutting down all ports on MDIO CRC
+- *                      errors
+- * @flags:              atomic status flags; %MXL862XX_FLAG_CRC_ERR is set
+- *                      before CRC-triggered shutdown and cleared after;
+- *                      %MXL862XX_FLAG_WORK_STOPPED is set before cancelling
+- *                      stats_work to prevent rescheduling during teardown
+- * @tag_proto:          active DSA tag protocol (native or 8021q)
+- * @drop_meter:         index of the single shared zero-rate firmware meter
+- *                      used to unconditionally drop traffic (used to block
+- *                      flooding)
+- * @fw_version:         cached firmware version, populated at probe and
+- *                      compared with MXL862XX_FW_VER_MIN()
+- * @serdes_ports:       SerDes interfaces incl. sub-interfaces in case of
+- *                      10G_QXGMII or QSGMII
+- * @serdes_refcount:    per-XPCS count of sub-ports enabled by phylink;
+- *                      pcs_disable powers an XPCS down when the count
+- *                      reaches zero. atomic_t so concurrent sub-port
+- *                      enable/disable need no extra lock.
+- * @ports:              per-port state, indexed by switch port number
+- * @bridges:            maps DSA bridge number to firmware bridge ID;
+- *                      zero means no firmware bridge allocated for that
+- *                      DSA bridge number. Indexed by dsa_bridge.num
+- *                      (0 .. ds->max_num_bridges).
+- * @evlan_ingress_size: per-port ingress Extended VLAN block size
+- * @evlan_egress_size:  per-port egress Extended VLAN block size
+- * @cpu_evlan_ingress_size: CPU port ingress EVLAN block size (tag_8021q)
+- * @vf_block_size:      per-port VLAN Filter block size
+- * @cpu_trap_fid:       firmware bridge FID allocated for PCE-trapped frames;
+- *                      configured with uc/mc/bc flood all enabled so that
+- *                      IGMP, MLD, and link-local frames always reach the CPU
+- *                      regardless of the ingress port's private FID flood
+- *                      policy. Set once in setup() and referenced by
+- *                      fill_cpu_trap_action() via bFidEnable. The PCE FID
+- *                      action field is 6 bits, so this value must be <= 63.
+- * @lag_bridge_ports:   maps DSA LAG ID to firmware bridge port ID;
+- *                      zero means no bridge port allocated for that LAG.
+- *                      Indexed by lag->id (entry 0 is unused).
+- *                      The bridge port is stable for the LAG's lifetime
+- *                      so FDB/MDB entries never need migration on
+- *                      membership changes.
+- * @trunk_hash:         current global hash field bitmask (6 bits,
+- *                      MXL862XX_TRUNK_HASH_*); union of all active LAGs'
+- *                      hash requirements
+- * @mirror_dest:        current mirror destination port, or -1 if no mirror
+- *                      session is active; used to detect monitor port conflicts
+- * @stats_work:         periodic work item that polls RMON hardware counters
+- *                      and accumulates them into 64-bit per-port stats
++/* The XPCS host-API group was added in firmware 1.0.84. Keep the
++ * capability test in one place so individual PCS and statistics paths
++ * cannot accidentally issue an unsupported command to older firmware.
+  */
+-struct mxl862xx_priv {
+-	struct dsa_switch *ds;
+-	struct mdio_device *mdiodev;
+-	struct work_struct crc_err_work;
+-	unsigned long flags;
+-	enum dsa_tag_protocol tag_proto;
+-	u16 drop_meter;
+-	struct mxl862xx_fw_version fw_version;
+-	struct mxl862xx_pcs serdes_ports[8];
+-	atomic_t serdes_refcount[2];
+-	struct mxl862xx_port ports[MXL862XX_MAX_PORTS];
+-	u16 bridges[MXL862XX_MAX_BRIDGES + 1];
+-	u16 evlan_ingress_size;
+-	u16 evlan_egress_size;
+-	u16 cpu_evlan_ingress_size;
+-	u16 vf_block_size;
+-	u16 cpu_trap_fid;
+-	u16 lag_bridge_ports[MXL862XX_MAX_LAG_IDS + 1];
+-	u8 trunk_hash;
+-	int mirror_dest;
+-	bool block_host;
+-	bool skip_teardown;
+-	struct delayed_work stats_work;
+-};
++static inline bool
++mxl862xx_fw_has_xpcs_api(const struct mxl862xx_priv *priv)
++{
++	return MXL862XX_FW_VER_MIN(priv, 1, 0, 84);
++}
+ 
+ #endif /* __MXL862XX_H */

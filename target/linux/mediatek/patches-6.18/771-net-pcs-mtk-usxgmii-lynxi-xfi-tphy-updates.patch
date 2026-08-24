@@ -1,0 +1,1977 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Sean McCully <sean_mccully@yahoo.com>
+Date: Tue, 4 Aug 2026 13:39:26 -0700
+Subject: [PATCH] net: pcs: mtk: USXGMII/LynxI PCS and XFI T-PHY updates for MT7988
+
+Update the MediaTek USXGMII PCS driver (rate adaptation, 10GBase-R/
+5GBase-R/USXGMII handling), the LynxI PCS (SGMII) driver, and the XFI
+T-PHY driver for the NETSYS v3 ethernet driver. The XFI T-PHY
+instance struct moves to a shared header (linux/phy/phy-mtk-xfi-
+tphy.h) so the PCS drivers can drive the XFI T-PHY helpers directly,
+and a CTLE validity check is added for 10G link tuning; the PCS and
+T-PHY changes are interdependent, so they are carried as one patch.
+Exports mtk_usxgmii_pcs_get/put for the ethernet driver. Pairs with
+the mtk_eth_soc NETSYS v3 patch.
+
+Signed-off-by: Sean McCully <sean_mccully@yahoo.com>
+---
+ drivers/net/pcs/pcs-mtk-lynxi.c         |  255 +++++---
+ drivers/net/pcs/pcs-mtk-usxgmii.c       |  947 +++++++++++++++++++++++++------
+ drivers/phy/mediatek/phy-mtk-xfi-tphy.c |   66 ++
+ include/linux/pcs/pcs-mtk-lynxi.h       |   63 ++
+ include/linux/pcs/pcs-mtk-usxgmii.h     |  167 +++++
+ include/linux/phy/phy-mtk-xfi-tphy.h    |   33 +
+ 6 files changed, 1236 insertions(+), 295 deletions(-)
+
+--- a/drivers/net/pcs/pcs-mtk-lynxi.c
++++ b/drivers/net/pcs/pcs-mtk-lynxi.c
+@@ -30,6 +30,7 @@
+ #define SGMSYS_PCS_CONTROL_1		0x0
+ #define SGMII_BMCR			GENMASK(15, 0)
+ #define SGMII_BMSR			GENMASK(31, 16)
++#define SGMII_LINK_STATUS		BIT(18)
+ #define SGMII_REF_CK_SEL		BIT(24)
+ 
+ #define SGMSYS_PCS_DEVICE_ID		0x4
+@@ -53,9 +54,9 @@
+ #define SGMII_IF_MODE_SGMII		BIT(0)
+ #define SGMII_SPEED_DUPLEX_AN		BIT(1)
+ #define SGMII_SPEED_MASK		GENMASK(3, 2)
+-#define SGMII_SPEED_10			FIELD_PREP(SGMII_SPEED_MASK, 0)
+-#define SGMII_SPEED_100			FIELD_PREP(SGMII_SPEED_MASK, 1)
+-#define SGMII_SPEED_1000		FIELD_PREP(SGMII_SPEED_MASK, 2)
++#define SGMII_SPEED_10			FIELD_PREP_CONST(SGMII_SPEED_MASK, 0)
++#define SGMII_SPEED_100			FIELD_PREP_CONST(SGMII_SPEED_MASK, 1)
++#define SGMII_SPEED_1000		FIELD_PREP_CONST(SGMII_SPEED_MASK, 2)
+ #define SGMII_DUPLEX_HALF		BIT(4)
+ #define SGMII_REMOTE_FAULT_DIS		BIT(8)
+ #define SGMII_TRXBUF_THR_MASK		GENMASK(31, 16)
+@@ -72,7 +73,7 @@
+ 
+ /* Register to power up QPHY */
+ #define SGMSYS_QPHY_PWR_STATE_CTRL	0xe8
+-#define	SGMII_PHYA_PWD			BIT(4)
++#define	SGMII_PHYA_PWD			(BIT(4) | BIT(3) | BIT(0))
+ 
+ /* Register to QPHY wrapper control */
+ #define SGMSYS_QPHY_WRAP_CTRL		0xec
+@@ -83,47 +84,10 @@
+ 
+ #define MTK_NETSYS_V3_AMA_RGC3		0x128
+ 
+-/* struct mtk_pcs_lynxi -  This structure holds each sgmii regmap andassociated
+- *                         data
+- * @regmap:                The register map pointing at the range used to setup
+- *                         SGMII modes
+- * @dev:                   Pointer to device owning the PCS
+- * @ana_rgc3:              The offset of register ANA_RGC3 relative to regmap
+- * @interface:             Currently configured interface mode
+- * @neg_mode:              Currently configured negotiation mode
+- * @advertising:           Currently configured advertisement
+- * @pcs:                   Phylink PCS structure
+- * @flags:                 Flags indicating hardware properties
+- * @last_get_state:        Jiffies at last pcs_get_state call
+- * @link_poll:             Delayed work for link polling when phylink does
+- *                         not poll the PCS
+- * @rstc:                  Reset controller
+- * @sgmii_sel:             SGMII Register Clock
+- * @sgmii_rx:              SGMII RX Clock
+- * @sgmii_tx:              SGMII TX Clock
+- * @node:                  List node
+- */
+-struct mtk_pcs_lynxi {
+-	struct regmap		*regmap;
+-	struct device		*dev;
+-	u32			ana_rgc3;
+-	phy_interface_t		interface;
+-	unsigned int		neg_mode;
+-	__ETHTOOL_DECLARE_LINK_MODE_MASK(advertising);
+-	struct			phylink_pcs pcs;
+-	u32			flags;
+-	struct fwnode_handle	*fwnode;
+-	unsigned long		last_get_state;
+-	struct delayed_work	link_poll;
+-	struct reset_control	*rstc;
+-	struct clk		*sgmii_sel;
+-	struct clk		*sgmii_rx;
+-	struct clk		*sgmii_tx;
+-	struct phy		*xfi_tphy;
+-	struct list_head	node;
+-};
++#define SGMII_PN_SWAP_MASK		GENMASK(1, 0)
++#define SGMII_PN_SWAP_TX_RX		(BIT(0) | BIT(1))
+ 
+-static struct mtk_pcs_lynxi *pcs_to_mtk_pcs_lynxi(struct phylink_pcs *pcs)
++struct mtk_pcs_lynxi *pcs_to_mtk_pcs_lynxi(struct phylink_pcs *pcs)
+ {
+ 	return container_of(pcs, struct mtk_pcs_lynxi, pcs);
+ }
+@@ -135,6 +99,7 @@ static unsigned int mtk_pcs_lynxi_inband
+ 	case PHY_INTERFACE_MODE_1000BASEX:
+ 	case PHY_INTERFACE_MODE_2500BASEX:
+ 	case PHY_INTERFACE_MODE_SGMII:
++	case PHY_INTERFACE_MODE_QSGMII:
+ 		return LINK_INBAND_DISABLE | LINK_INBAND_ENABLE;
+ 
+ 	default:
+@@ -181,7 +146,36 @@ static int mtk_pcs_config_polarity(struc
+ 				  SGMII_PN_SWAP_RX | SGMII_PN_SWAP_TX, val);
+ }
+ 
+-static void mtk_sgmii_reset(struct mtk_pcs_lynxi *mpcs)
++static void mtk_pcs_lynxi_get_state(struct phylink_pcs *pcs,
++				    unsigned int neg_mode,
++				    struct phylink_link_state *state)
++{
++	struct mtk_pcs_lynxi *mpcs = pcs_to_mtk_pcs_lynxi(pcs);
++	unsigned int bm, adv;
++
++	mpcs->last_get_state = jiffies;
++
++	/* Read the BMSR and LPA */
++	regmap_read(mpcs->regmap, SGMSYS_PCS_CONTROL_1, &bm);
++	regmap_read(mpcs->regmap, SGMSYS_PCS_ADVERTISE, &adv);
++
++	phylink_mii_c22_pcs_decode_state(state, neg_mode,
++					 FIELD_GET(SGMII_BMSR, bm),
++					 FIELD_GET(SGMII_LPA, adv));
++
++	/* Cache the resolved state for the link_poll worker, which uses
++	 * it (and last_get_state) to decide whether the analog front-end
++	 * needs a re-init without touching the registers again.
++	 */
++	mpcs->state.interface = state->interface;
++	mpcs->state.link = state->link;
++	mpcs->state.speed = state->speed;
++	mpcs->state.duplex = state->duplex;
++	linkmode_copy(mpcs->state.advertising, state->advertising);
++	linkmode_copy(mpcs->state.lp_advertising, state->lp_advertising);
++}
++
++static void mtk_pcs_lynxi_hw_reset(struct mtk_pcs_lynxi *mpcs)
+ {
+ 	if (!mpcs->rstc)
+ 		return;
+@@ -198,18 +192,17 @@ static int mtk_pcs_lynxi_config(struct p
+ 				bool permit_pause_to_mac)
+ {
+ 	struct mtk_pcs_lynxi *mpcs = pcs_to_mtk_pcs_lynxi(pcs);
+-	bool mode_changed = false, changed;
+ 	unsigned int rgc3, sgm_mode, bmcr, trxbuf_thr = 0x3112;
++	bool mode_changed = false;
+ 	int advertise, link_timer;
+ 	int ret;
+ 
+ 	mpcs->neg_mode = neg_mode;
+ 
+-	if (advertising)
+-		linkmode_copy(mpcs->advertising, advertising);
++	if (!advertising)
++		advertising = mpcs->advertising;
+ 
+-	advertise = phylink_mii_c22_pcs_encode_advertisement(interface,
+-							     mpcs->advertising);
++	advertise = phylink_mii_c22_pcs_encode_advertisement(interface, advertising);
+ 	if (advertise < 0)
+ 		return advertise;
+ 
+@@ -239,11 +232,11 @@ static int mtk_pcs_lynxi_config(struct p
+ 		trxbuf_thr = 0x2111;
+ 	}
+ 
+-	if (mpcs->interface != interface) {
+-		link_timer = phylink_get_link_timer_ns(interface);
+-		if (link_timer < 0)
+-			return link_timer;
++	link_timer = phylink_get_link_timer_ns(interface);
++	if (link_timer < 0)
++		return link_timer;
+ 
++	if (mpcs->interface != interface) {
+ 		/* PHYA power down */
+ 		regmap_set_bits(mpcs->regmap, SGMSYS_QPHY_PWR_STATE_CTRL,
+ 				SGMII_PHYA_PWD);
+@@ -252,7 +245,8 @@ static int mtk_pcs_lynxi_config(struct p
+ 		if (mpcs->xfi_tphy)
+ 			phy_reset(mpcs->xfi_tphy);
+ 
+-		mtk_sgmii_reset(mpcs);
++		mtk_pcs_lynxi_hw_reset(mpcs);
++
+ 		regmap_set_bits(mpcs->regmap, SGMSYS_RESERVED_0,
+ 				SGMII_SW_RESET);
+ 
+@@ -274,12 +268,43 @@ static int mtk_pcs_lynxi_config(struct p
+ 			     SGMII_LINK_TIMER_VAL(link_timer));
+ 
+ 		mpcs->interface = interface;
++		mpcs->neg_mode = neg_mode;
+ 		mode_changed = true;
+ 	}
++	/* PHYA power down */
++	regmap_set_bits(mpcs->regmap, SGMSYS_QPHY_PWR_STATE_CTRL,
++			SGMII_PHYA_PWD);
++
++	/* Reset SGMII PCS state */
++	if (mpcs->xfi_tphy)
++		phy_reset(mpcs->xfi_tphy);
++
++	mtk_pcs_lynxi_hw_reset(mpcs);
++	regmap_set_bits(mpcs->regmap, SGMSYS_RESERVED_0,
++			SGMII_SW_RESET);
++
++	if (interface == PHY_INTERFACE_MODE_2500BASEX)
++		rgc3 = SGMII_PHY_SPEED_3_125G;
++	else
++		rgc3 = SGMII_PHY_SPEED_1_25G;
++
++	/* Configure the underlying interface speed */
++	regmap_update_bits(mpcs->regmap, mpcs->ana_rgc3,
++			   SGMII_PHY_SPEED_MASK, rgc3);
++
++	/* Setup the link timer */
++	regmap_write(mpcs->regmap, SGMSYS_PCS_LINK_TIMER,
++		     SGMII_LINK_TIMER_VAL(link_timer));
+ 
+ 	/* Update the advertisement, noting whether it has changed */
+ 	regmap_update_bits_check(mpcs->regmap, SGMSYS_PCS_ADVERTISE,
+-				 SGMII_ADVERTISE, advertise, &changed);
++				 SGMII_ADVERTISE, advertise, &mode_changed);
++
++	/* Save the advertisement when the advertising pointer does not
++	 * come from link_poll.
++	 */
++	if (mode_changed && advertising != mpcs->advertising)
++		linkmode_copy(mpcs->advertising, advertising);
+ 
+ 	/* Update the sgmsys mode register */
+ 	regmap_update_bits(mpcs->regmap, SGMSYS_SGMII_MODE,
+@@ -308,42 +333,15 @@ static int mtk_pcs_lynxi_config(struct p
+ 	if (mpcs->xfi_tphy)
+ 		phy_set_mode_ext(mpcs->xfi_tphy, PHY_MODE_ETHERNET, interface);
+ 
+-	return changed || mode_changed;
+-}
+-
+-static void mtk_pcs_lynxi_get_state(struct phylink_pcs *pcs,
+-				    unsigned int neg_mode,
+-				    struct phylink_link_state *state)
+-{
+-	struct mtk_pcs_lynxi *mpcs = pcs_to_mtk_pcs_lynxi(pcs);
+-	unsigned int bm, adv;
+-
+-	/* Read the BMSR and LPA */
+-	regmap_read(mpcs->regmap, SGMSYS_PCS_CONTROL_1, &bm);
+-	regmap_read(mpcs->regmap, SGMSYS_PCS_ADVERTISE, &adv);
+-
+-	phylink_mii_c22_pcs_decode_state(state, neg_mode,
+-					 FIELD_GET(SGMII_BMSR, bm),
+-					 FIELD_GET(SGMII_LPA, adv));
+-
+-	mpcs->last_get_state = jiffies;
+-
+-	/* The XFI T-PHY's analog calibration may settle at a bad
+-	 * operating point after hard reset, leaving the TX output
+-	 * non-functional. Re-initialize to get another chance.
+-	 */
+-	if (!state->link && mpcs->xfi_tphy) {
+-		mpcs->interface = PHY_INTERFACE_MODE_NA;
+-		mtk_pcs_lynxi_config(pcs, mpcs->neg_mode,
+-				     state->interface, NULL, false);
+-	}
++	return mode_changed;
+ }
+ 
+ static void mtk_pcs_lynxi_restart_an(struct phylink_pcs *pcs)
+ {
+ 	struct mtk_pcs_lynxi *mpcs = pcs_to_mtk_pcs_lynxi(pcs);
+-
++	mutex_lock(&mpcs->regmap_lock);
+ 	regmap_set_bits(mpcs->regmap, SGMSYS_PCS_CONTROL_1, BMCR_ANRESTART);
++	mutex_unlock(&mpcs->regmap_lock);
+ }
+ 
+ static void mtk_pcs_lynxi_link_up(struct phylink_pcs *pcs,
+@@ -375,10 +373,11 @@ static void mtk_pcs_lynxi_link_up(struct
+ 
+ 		if (duplex != DUPLEX_FULL)
+ 			sgm_mode |= SGMII_DUPLEX_HALF;
+-
++		mutex_lock(&mpcs->regmap_lock);
+ 		regmap_update_bits(mpcs->regmap, SGMSYS_SGMII_MODE,
+ 				   SGMII_DUPLEX_HALF | SGMII_SPEED_MASK,
+ 				   sgm_mode);
++		mutex_unlock(&mpcs->regmap_lock);
+ 	}
+ }
+ 
+@@ -417,24 +416,44 @@ reschedule:
+ static int mtk_pcs_lynxi_enable(struct phylink_pcs *pcs)
+ {
+ 	struct mtk_pcs_lynxi *mpcs = pcs_to_mtk_pcs_lynxi(pcs);
++	int ret;
+ 
+ 	if (mpcs->sgmii_tx && mpcs->sgmii_rx) {
+-		clk_prepare_enable(mpcs->sgmii_rx);
+-		clk_prepare_enable(mpcs->sgmii_tx);
++		ret = clk_prepare_enable(mpcs->sgmii_rx);
++		if (ret)
++			return ret;
++
++		ret = clk_prepare_enable(mpcs->sgmii_tx);
++		if (ret)
++			goto err_disable_rx;
+ 	}
+ 
+ 	if (mpcs->xfi_tphy) {
+-		phy_power_on(mpcs->xfi_tphy);
+-		schedule_delayed_work(&mpcs->link_poll, HZ);
++		ret = phy_power_on(mpcs->xfi_tphy);
++		if (ret)
++			goto err_disable_tx;
+ 	}
+ 
++	if (!delayed_work_pending(&mpcs->link_poll))
++		schedule_delayed_work(&mpcs->link_poll, HZ);
++
+ 	return 0;
++
++err_disable_tx:
++	if (mpcs->sgmii_tx && mpcs->sgmii_rx)
++		clk_disable_unprepare(mpcs->sgmii_tx);
++err_disable_rx:
++	if (mpcs->sgmii_tx && mpcs->sgmii_rx)
++		clk_disable_unprepare(mpcs->sgmii_rx);
++
++	return ret;
+ }
+ 
+ static void mtk_pcs_lynxi_disable(struct phylink_pcs *pcs)
+ {
+ 	struct mtk_pcs_lynxi *mpcs = pcs_to_mtk_pcs_lynxi(pcs);
+ 
++	cancel_delayed_work_sync(&mpcs->link_poll);
+ 	regmap_set_bits(mpcs->regmap, SGMSYS_QPHY_PWR_STATE_CTRL, SGMII_PHYA_PWD);
+ 
+ 	if (mpcs->sgmii_tx && mpcs->sgmii_rx) {
+@@ -443,10 +462,9 @@ static void mtk_pcs_lynxi_disable(struct
+ 	}
+ 
+ 	mpcs->interface = PHY_INTERFACE_MODE_NA;
+-	if (mpcs->xfi_tphy) {
+-		cancel_delayed_work_sync(&mpcs->link_poll);
++	if (mpcs->xfi_tphy)
+ 		phy_power_off(mpcs->xfi_tphy);
+-	}
++
+ }
+ 
+ static const struct phylink_pcs_ops mtk_pcs_lynxi_ops = {
+@@ -509,6 +527,7 @@ static struct phylink_pcs *mtk_pcs_lynxi
+ 	mpcs->flags = flags;
+ 	mpcs->fwnode = fwnode_handle_get(fwnode);
+ 	INIT_DELAYED_WORK(&mpcs->link_poll, mtk_pcs_lynxi_link_poll);
++	mutex_init(&mpcs->regmap_lock);
+ 
+ 	__set_bit(PHY_INTERFACE_MODE_SGMII, mpcs->pcs.supported_interfaces);
+ 	__set_bit(PHY_INTERFACE_MODE_1000BASEX, mpcs->pcs.supported_interfaces);
+@@ -538,7 +557,7 @@ void mtk_pcs_lynxi_destroy(struct phylin
+ }
+ EXPORT_SYMBOL(mtk_pcs_lynxi_destroy);
+ 
+-#ifdef CONFIG_FWNODE_PCS
++#if IS_REACHABLE(CONFIG_FWNODE_PCS)
+ static int mtk_pcs_lynxi_probe(struct platform_device *pdev)
+ {
+ 	struct device *dev = &pdev->dev;
+@@ -583,6 +602,7 @@ static int mtk_pcs_lynxi_probe(struct pl
+ 	pcs = mtk_pcs_lynxi_init(dev, of_fwnode_handle(np), regmap,
+ 				 (uintptr_t)of_device_get_match_data(dev),
+ 				 mpcs);
++
+ 	if (IS_ERR(pcs))
+ 		return PTR_ERR(pcs);
+ 
+@@ -611,6 +631,49 @@ static const struct of_device_id mtk_pcs
+ };
+ MODULE_DEVICE_TABLE(of, mtk_pcs_lynxi_of_match);
+ 
++struct phylink_pcs *mtk_pcs_lynxi_get(struct device *dev, struct device_node *np)
++{
++	struct platform_device *pdev;
++	struct mtk_pcs_lynxi *mpcs;
++
++	if (!np)
++		return NULL;
++
++	if (!of_device_is_available(np))
++		return ERR_PTR(-ENODEV);
++
++	if (!of_match_node(mtk_pcs_lynxi_of_match, np))
++		return ERR_PTR(-EINVAL);
++
++	pdev = of_find_device_by_node(np);
++	if (!pdev || !platform_get_drvdata(pdev)) {
++		if (pdev)
++			put_device(&pdev->dev);
++		return ERR_PTR(-EPROBE_DEFER);
++	}
++
++	mpcs = platform_get_drvdata(pdev);
++	if (!device_link_add(dev, mpcs->dev, DL_FLAG_AUTOREMOVE_CONSUMER)) {
++		put_device(&pdev->dev);
++		return ERR_PTR(-EPROBE_DEFER);
++	}
++
++	return &mpcs->pcs;
++}
++EXPORT_SYMBOL(mtk_pcs_lynxi_get);
++
++void mtk_pcs_lynxi_put(struct phylink_pcs *pcs)
++{
++	struct mtk_pcs_lynxi *mpcs;
++
++	if (!pcs)
++		return;
++
++	mpcs = pcs_to_mtk_pcs_lynxi(pcs);
++	put_device(mpcs->dev);
++}
++EXPORT_SYMBOL(mtk_pcs_lynxi_put);
++
+ static struct platform_driver mtk_pcs_lynxi_driver = {
+ 	.driver = {
+ 		.name			= "mtk-pcs-lynxi",
+@@ -620,7 +683,7 @@ static struct platform_driver mtk_pcs_ly
+ 	.remove = mtk_pcs_lynxi_remove,
+ };
+ module_platform_driver(mtk_pcs_lynxi_driver);
+-#endif
++#endif /* IS_REACHABLE(CONFIG_FWNODE_PCS) */
+ 
+ MODULE_AUTHOR("Daniel Golle <daniel@makrotopia.org>");
+ MODULE_DESCRIPTION("MediaTek SGMII library for LynxI");
+--- a/drivers/net/pcs/pcs-mtk-usxgmii.c
++++ b/drivers/net/pcs/pcs-mtk-usxgmii.c
+@@ -5,6 +5,7 @@
+  *         Daniel Golle <daniel@makrotopia.org>
+  */
+ 
++#include <linux/bitmap.h>
+ #include <linux/clk.h>
+ #include <linux/io.h>
+ #include <linux/mfd/syscon.h>
+@@ -12,85 +13,31 @@
+ #include <linux/mutex.h>
+ #include <linux/of.h>
+ #include <linux/of_platform.h>
+-#include <linux/reset.h>
+-#include <linux/pcs/pcs-provider.h>
++#include <linux/platform_device.h>
++#include <linux/phylink.h>
++#include <linux/pcs/pcs-mtk-usxgmii.h>
+ #include <linux/phy/phy-common-props.h>
+ #include <linux/phy/phy.h>
+-#include <linux/phylink.h>
+-#include <linux/platform_device.h>
++#include <linux/phy/phy-mtk-xfi-tphy.h>
++#include <linux/pcs/pcs-provider.h>
++#include <linux/regmap.h>
++#include <linux/reset.h>
+ #include <linux/rtnetlink.h>
++#include <linux/workqueue.h>
+ 
+-/* USXGMII subsystem config registers */
+-/* Register to control speed */
+-#define RG_PHY_TOP_SPEED_CTRL1			0x80c
+-#define USXGMII_RATE_UPDATE_MODE		BIT(31)
+-#define USXGMII_MAC_CK_GATED			BIT(29)
+-#define USXGMII_IF_FORCE_EN			BIT(28)
+-#define USXGMII_RATE_ADAPT_MODE			GENMASK(10, 8)
+-#define USXGMII_RATE_ADAPT_MODE_X1		0
+-#define USXGMII_RATE_ADAPT_MODE_X2		1
+-#define USXGMII_RATE_ADAPT_MODE_X4		2
+-#define USXGMII_RATE_ADAPT_MODE_X10		3
+-#define USXGMII_RATE_ADAPT_MODE_X100		4
+-#define USXGMII_RATE_ADAPT_MODE_X5		5
+-#define USXGMII_RATE_ADAPT_MODE_X50		6
+-#define USXGMII_XFI_RX_MODE			GENMASK(6, 4)
+-#define USXGMII_XFI_TX_MODE			GENMASK(2, 0)
+-#define USXGMII_XFI_MODE_10G			0
+-#define USXGMII_XFI_MODE_5G			1
+-#define USXGMII_XFI_MODE_2P5G			3
+-
+-/* Register to control PCS AN */
+-#define RG_PCS_AN_CTRL0				0x810
+-#define USXGMII_AN_RESTART			BIT(31)
+-#define USXGMII_AN_SYNC_CNT			GENMASK(30, 11)
+-#define USXGMII_AN_ENABLE			BIT(0)
+-
+-#define RG_PCS_AN_CTRL2				0x818
+-#define USXGMII_LINK_TIMER_IDLE_DETECT		GENMASK(29, 20)
+-#define USXGMII_LINK_TIMER_COMP_ACK_DETECT	GENMASK(19, 10)
+-#define USXGMII_LINK_TIMER_AN_RESTART		GENMASK(9, 0)
+-
+-/* Register to read PCS AN status */
+-#define RG_PCS_AN_STS0				0x81c
+-#define USXGMII_LPA				GENMASK(15, 0)
+-#define USXGMII_LPA_LATCH			BIT(31)
+-
+-/* Register to control SerDes lane polarity */
+-#define RG_PHY_TOP_CTRL0			0x82c
+-#define USXGMII_PN_SWAP_MASK			GENMASK(1, 0)
+-#define USXGMII_PN_SWAP_RX			BIT(1)
+-#define USXGMII_PN_SWAP_TX			BIT(0)
+-
+-/* Register to read PCS link status */
+-#define RG_PCS_RX_STATUS0			0x904
+-#define RG_PCS_RX_STATUS_UPDATE			BIT(16)
+-#define RG_PCS_RX_LINK_STATUS			BIT(2)
+-
+-/* struct mtk_usxgmii_pcs - This structure holds each usxgmii PCS
+- * @pcs:		Phylink PCS structure
+- * @dev:		Pointer to device structure
+- * @base:		IO memory to access PCS hardware
+- * @clk:		Pointer to USXGMII clk
+- * @reset:		Pointer to USXGMII reset control
+- * @fwnode:		Firmware node of the PCS, used to look up
+- *			rx-polarity / tx-polarity properties
+- * @interface:		Currently selected interface mode
+- * @neg_mode:		Currently used phylink neg_mode
+- * @node:		List node
++/* How often the link_poll worker re-checks line-side status. Matches the
++ * cadence of the vendor 5.4 polling implementation (1 Hz).
+  */
+-struct mtk_usxgmii_pcs {
+-	struct phylink_pcs		pcs;
+-	struct device			*dev;
+-	void __iomem			*base;
+-	struct clk			*clk;
+-	struct reset_control		*reset;
+-	struct phy			*xfi_tphy;
+-	struct fwnode_handle		*fwnode;
+-	phy_interface_t			interface;
+-	unsigned int			neg_mode;
+-	struct list_head		node;
+-};
++#define MTK_USXGMII_LINK_POLL_INTERVAL	msecs_to_jiffies(1000)
++
++static LIST_HEAD(mtk_usxgmii_pcs_instances);
++static DEFINE_MUTEX(instance_mutex);
++
++/* Bitmap of in-use instance ids (0..MTK_USXGMII_MAX_PCS-1). Allocated on
++ * probe, freed on remove so a re-bind picks up a stable id and hence the
++ * correct XFI/PEXTP SWSYSRST bits.
++ */
++static DECLARE_BITMAP(mtk_usxgmii_id_bitmap, MTK_USXGMII_MAX_PCS);
+ 
+ static u32 mtk_r32(struct mtk_usxgmii_pcs *mpcs, unsigned int reg)
+ {
+@@ -112,45 +59,226 @@ static struct mtk_usxgmii_pcs *pcs_to_mt
+ 	return container_of(pcs, struct mtk_usxgmii_pcs, pcs);
+ }
+ 
+-static void mtk_usxgmii_reset(struct mtk_usxgmii_pcs *mpcs)
++static int mtk_pcs_config_polarity(struct mtk_usxgmii_pcs *mpcs,
++				   phy_interface_t interface)
+ {
+-	reset_control_assert(mpcs->reset);
+-	udelay(100);
+-	reset_control_deassert(mpcs->reset);
+-
+-	mdelay(10);
+-}
+-
+-static int mtk_usxgmii_config_polarity(struct mtk_usxgmii_pcs *mpcs,
+-				       phy_interface_t interface)
+-{
+-	unsigned int pol;
+-	u32 val = 0;
++	struct fwnode_handle *fwnode = mpcs->fwnode, *pcs_fwnode;
++	unsigned int pol, default_pol = PHY_POL_NORMAL;
++	unsigned int val = 0;
+ 	int ret;
+ 
+-	if (!mpcs->fwnode)
++	if (!fwnode)
+ 		return 0;
+ 
+-	ret = phy_get_rx_polarity(mpcs->fwnode, phy_modes(interface),
++	if (fwnode_property_read_bool(fwnode, "mediatek,pnswap"))
++		default_pol = PHY_POL_INVERT;
++
++	pcs_fwnode = fwnode_get_named_child_node(fwnode, "pcs");
++	if (!pcs_fwnode)
++		pcs_fwnode = fwnode_handle_get(fwnode);
++
++	ret = phy_get_rx_polarity(pcs_fwnode, phy_modes(interface),
+ 				  BIT(PHY_POL_NORMAL) | BIT(PHY_POL_INVERT),
+-				  PHY_POL_NORMAL, &pol);
+-	if (ret)
++				  default_pol, &pol);
++	if (ret) {
++		fwnode_handle_put(pcs_fwnode);
+ 		return ret;
++	}
+ 	if (pol == PHY_POL_INVERT)
+ 		val |= USXGMII_PN_SWAP_RX;
+ 
+-	ret = phy_get_tx_polarity(mpcs->fwnode, phy_modes(interface),
++	ret = phy_get_tx_polarity(pcs_fwnode, phy_modes(interface),
+ 				  BIT(PHY_POL_NORMAL) | BIT(PHY_POL_INVERT),
+-				  PHY_POL_NORMAL, &pol);
++				  default_pol, &pol);
++	fwnode_handle_put(pcs_fwnode);
+ 	if (ret)
+ 		return ret;
+ 	if (pol == PHY_POL_INVERT)
+ 		val |= USXGMII_PN_SWAP_TX;
+ 
+-	mtk_m32(mpcs, RG_PHY_TOP_CTRL0, USXGMII_PN_SWAP_MASK, val);
++	/* Configure the interface polarity */
++	mtk_m32(mpcs, RG_PHY_TOP_CTRL0,
++		USXGMII_PN_SWAP_MASK, val);
++	return val;
++}
++
++static int mtk_usxgmii_pcs_link_status(struct mtk_usxgmii_pcs *mpcs)
++{
++	int status;
++
++	mutex_lock(&mpcs->regmap_lock);
++
++	/* Refresh USXGMII link status by toggling RG_PCS_RX_STATUS_UPDATE */
++	mtk_m32(mpcs, RG_PCS_RX_STATUS0, RG_PCS_RX_STATUS_UPDATE,
++		RG_PCS_RX_STATUS_UPDATE);
++	ndelay(1020);
++	mtk_m32(mpcs, RG_PCS_RX_STATUS0, RG_PCS_RX_STATUS_UPDATE, 0);
++	ndelay(1020);
++
++	/* Read USXGMII link status */
++	status = FIELD_GET(RG_PCS_RX_LINK_STATUS,
++			   mtk_r32(mpcs, RG_PCS_RX_STATUS0));
++
++	mutex_unlock(&mpcs->regmap_lock);
++
++	return status;
++}
++
++static bool mtk_usxgmii_pcs_is_valid_ctle(struct mtk_usxgmii_pcs *mpcs)
++{
++	if (!mpcs->xfi_tphy)
++		return true;
++
++	return mtk_xfi_tphy_is_ctle_valid(mpcs->xfi_tphy);
++}
++
++static int mtk_toprgu_init(struct mtk_usxgmii_pcs *mpcs, struct device_node *r)
++{
++	struct device_node *np;
++
++	np = of_parse_phandle(r, "mediatek,toprgu", 0);
++	if (!np)
++		return 0;
++
++	mpcs->toprgu = syscon_node_to_regmap(np);
++	of_node_put(np);
++	if (IS_ERR(mpcs->toprgu))
++		return PTR_ERR(mpcs->toprgu);
++
+ 	return 0;
+ }
+ 
++static unsigned int mtk_pcs_usxgmii_inband_caps(struct phylink_pcs *pcs,
++						phy_interface_t interface)
++{
++		/* USXGMII *protocol* carries inband AN ordered sets even when
++		 * no user data is flowing. With USXGMII_AN_ENABLE armed in
++		 * pcs_config(), the SoC PCS continuously emits 16-bit AN
++		 * config words on the line — which the partner PHY's host-PCS
++		 * sees as a live data path. The AS21xxx 1.9.2 firmware's
++		 * SYS_DPC_SDS_WAIT_DATA_MODE state requires this constant
++		 * signal to declare the data path up; without it the firmware
++		 * times out into RESTART_AN within milliseconds.
++		 *
++		 * That wire-side carrier is governed by the USXGMII_AN_ENABLE
++		 * register bit, which pcs_config() arms *unconditionally* for
++		 * USXGMII regardless of the resolved neg_mode. So the carrier
++		 * is preserved no matter what mode phylink resolves to.
++		 *
++		 * phylink's neg_mode is a *link-state* concern (whether to
++		 * read link state from the PCS via inband AN, or from a PHY
++		 * interrupt) — it does not control the wire-protocol-level AN
++		 * ordered sets. Report both LINK_INBAND_DISABLE and
++		 * LINK_INBAND_ENABLE here so phylink can resolve cleanly for
++		 * either DT shape:
++		 *   - DT with managed="in-band-status"  -> INBAND_ENABLED
++		 *   - DT with phy-managed (default)      -> OUTBAND
++		 * On BPI-R4 Pro eth1 the DT uses phy-managed (PHY drives link
++		 * state); reporting ENABLE-only would make phylink reject the
++		 * configuration with "firmware wants phy mode, but PCS
++		 * requires inband", which is what you'll see if you revert
++		 * this without also adding managed="in-band-status" to the DT.
++		 *
++		 * The AS21xxx-side bugs that originally masked this analysis
++		 * (eth_speed/restart_an race, and aeon_sds_wait_eth_cfg(0,...)
++		 * skipping the SDS-eth handshake) are fixed in as21xxx.c.
++		 */
++	switch (interface) {
++	case PHY_INTERFACE_MODE_10GBASER:
++	case PHY_INTERFACE_MODE_5GBASER:
++	case PHY_INTERFACE_MODE_10GKR:
++		return LINK_INBAND_DISABLE;
++	case PHY_INTERFACE_MODE_USXGMII:
++		return LINK_INBAND_ENABLE;
++	case PHY_INTERFACE_MODE_2500BASEX:
++	case PHY_INTERFACE_MODE_1000BASEX:
++		return LINK_INBAND_DISABLE | LINK_INBAND_ENABLE;
++	default:
++		return 0;
++	}
++}
++
++static void mtk_usxgmii_reset(struct mtk_usxgmii_pcs *mpcs)
++{
++	if (mpcs->reset) {
++		reset_control_assert(mpcs->reset);
++		usleep_range(100, 500);
++		reset_control_deassert(mpcs->reset);
++		usleep_range(10000, 11000);
++	}
++}
++
++static int mtk_usxgmii_pcs_encode_advertisement(phy_interface_t interface,
++						const unsigned long *advertising)
++{
++	u16 adv = MDIO_USXGMII_LINK;
++
++	switch (interface) {
++	case PHY_INTERFACE_MODE_USXGMII:
++		break;
++	default:
++		return 0;
++	}
++
++	/* The USXGMII in-band word is a resolved link/speed/duplex status
++	 * word, not a Clause 37 ability bitmap. Cache a preferred local word
++	 * from the configured advertisement so state/debug follows phylink
++	 * consistently, but do not write it to hardware: this MTK register
++	 * block exposes AN control/timer and LPA/status, not a documented
++	 * local advertisement register.
++	 */
++	if (linkmode_test_bit(ETHTOOL_LINK_MODE_10000baseT_Full_BIT,
++			      advertising) ||
++	    linkmode_test_bit(ETHTOOL_LINK_MODE_10000baseKR_Full_BIT,
++			      advertising) ||
++	    linkmode_test_bit(ETHTOOL_LINK_MODE_10000baseKX4_Full_BIT,
++			      advertising) ||
++	    linkmode_test_bit(ETHTOOL_LINK_MODE_10000baseCR_Full_BIT,
++			      advertising) ||
++	    linkmode_test_bit(ETHTOOL_LINK_MODE_10000baseSR_Full_BIT,
++			      advertising) ||
++	    linkmode_test_bit(ETHTOOL_LINK_MODE_10000baseLR_Full_BIT,
++			      advertising) ||
++	    linkmode_test_bit(ETHTOOL_LINK_MODE_10000baseLRM_Full_BIT,
++			      advertising) ||
++	    linkmode_test_bit(ETHTOOL_LINK_MODE_10000baseER_Full_BIT,
++			      advertising)) {
++		adv |= MDIO_USXGMII_10GFULL;
++		return adv;
++	}
++
++	if (linkmode_test_bit(ETHTOOL_LINK_MODE_5000baseT_Full_BIT,
++			      advertising))
++		return adv | MDIO_USXGMII_5000FULL;
++
++	if (linkmode_test_bit(ETHTOOL_LINK_MODE_2500baseT_Full_BIT,
++			      advertising) ||
++	    linkmode_test_bit(ETHTOOL_LINK_MODE_2500baseX_Full_BIT,
++			      advertising))
++		return adv | MDIO_USXGMII_2500FULL;
++
++	if (linkmode_test_bit(ETHTOOL_LINK_MODE_1000baseT_Full_BIT,
++			      advertising) ||
++	    linkmode_test_bit(ETHTOOL_LINK_MODE_1000baseX_Full_BIT,
++			      advertising) ||
++	    linkmode_test_bit(ETHTOOL_LINK_MODE_1000baseKX_Full_BIT,
++			      advertising))
++		return adv | MDIO_USXGMII_1000FULL;
++
++	if (linkmode_test_bit(ETHTOOL_LINK_MODE_100baseT_Full_BIT,
++			      advertising))
++		return adv | MDIO_USXGMII_100FULL;
++
++	if (linkmode_test_bit(ETHTOOL_LINK_MODE_10baseT_Full_BIT,
++			      advertising))
++		return adv | MDIO_USXGMII_10FULL;
++
++	if (linkmode_empty(advertising))
++		return adv | MDIO_USXGMII_10GFULL;
++
++	return -EINVAL;
++}
++
+ static int mtk_usxgmii_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
+ 				  phy_interface_t interface,
+ 				  const unsigned long *advertising,
+@@ -158,49 +286,166 @@ static int mtk_usxgmii_pcs_config(struct
+ {
+ 	struct mtk_usxgmii_pcs *mpcs = pcs_to_mtk_usxgmii_pcs(pcs);
+ 	unsigned int an_ctrl = 0, link_timer = 0, xfi_mode = 0, adapt_mode = 0;
++	u16 usxgmii_advertising;
++	bool advertising_changed;
+ 	bool mode_changed = false;
+ 	int ret;
+ 
+-	if (interface == PHY_INTERFACE_MODE_USXGMII) {
+-		an_ctrl = FIELD_PREP(USXGMII_AN_SYNC_CNT, 0x1FF) | USXGMII_AN_ENABLE;
+-		link_timer = FIELD_PREP(USXGMII_LINK_TIMER_IDLE_DETECT, 0x7B) |
+-			     FIELD_PREP(USXGMII_LINK_TIMER_COMP_ACK_DETECT, 0x7B) |
+-			     FIELD_PREP(USXGMII_LINK_TIMER_AN_RESTART, 0x7B);
+-		xfi_mode = FIELD_PREP(USXGMII_XFI_RX_MODE, USXGMII_XFI_MODE_10G) |
+-			   FIELD_PREP(USXGMII_XFI_TX_MODE, USXGMII_XFI_MODE_10G);
+-	} else if (interface == PHY_INTERFACE_MODE_10GBASER) {
+-		an_ctrl = FIELD_PREP(USXGMII_AN_SYNC_CNT, 0x1FF);
+-		link_timer = FIELD_PREP(USXGMII_LINK_TIMER_IDLE_DETECT, 0x7B) |
+-			     FIELD_PREP(USXGMII_LINK_TIMER_COMP_ACK_DETECT, 0x7B) |
+-			     FIELD_PREP(USXGMII_LINK_TIMER_AN_RESTART, 0x7B);
+-		xfi_mode = FIELD_PREP(USXGMII_XFI_RX_MODE, USXGMII_XFI_MODE_10G) |
+-			   FIELD_PREP(USXGMII_XFI_TX_MODE, USXGMII_XFI_MODE_10G);
++	if (advertising)
++		linkmode_copy(mpcs->advertising, advertising);
++
++	ret = mtk_usxgmii_pcs_encode_advertisement(interface,
++						   mpcs->advertising);
++	if (ret < 0)
++		return ret;
++
++	usxgmii_advertising = ret;
++	advertising_changed = mpcs->usxgmii_advertising !=
++			      usxgmii_advertising;
++
++	/* Idempotency: skip the full HW resequence if nothing changed and
++	 * the link_poll worker hasn't asked for a forced reconfigure. The
++	 * worker sets force_reconfig before calling this path when it
++	 * observes a stuck line side.
++	 */
++	switch (interface) {
++	case PHY_INTERFACE_MODE_USXGMII:
++		/* USXGMII protocol requires inband AN to provide constant
++		 * carrier on the line — the AS21xxx firmware's
++		 * SYS_DPC_SDS_WAIT_DATA_MODE state needs to see continuous
++		 * USXGMII ordered sets to declare the data path live. Arm
++		 * USXGMII_AN_ENABLE unconditionally regardless of phylink's
++		 * resolved neg_mode: the AN bit governs wire-protocol behavior,
++		 * neg_mode only governs link-state notification path. See
++		 * pcs_inband_caps() for the full reasoning on why we report
++		 * both modes there.
++		 */
++		an_ctrl    = FIELD_PREP(USXGMII_AN_SYNC_CNT, USXGMII_AN_SYNC_CNT_10G_CLASS) |
++			     USXGMII_AN_ENABLE;
++		link_timer = FIELD_PREP(USXGMII_LINK_TIMER_IDLE_DETECT,
++					USXGMII_LINK_TIMER_FULL_RATE) |
++		     FIELD_PREP(USXGMII_LINK_TIMER_COMP_ACK_DETECT,
++				USXGMII_LINK_TIMER_FULL_RATE) |
++		     FIELD_PREP(USXGMII_LINK_TIMER_AN_RESTART,
++				USXGMII_LINK_TIMER_FULL_RATE);
++		xfi_mode   = FIELD_PREP(USXGMII_XFI_RX_MODE, USXGMII_XFI_MODE_10G) |
++			     FIELD_PREP(USXGMII_XFI_TX_MODE, USXGMII_XFI_MODE_10G);
++		/* adapt_mode stays 0; RATE_UPDATE_MODE is only meaningful for BASER */
++		break;
++	case PHY_INTERFACE_MODE_10GBASER:
++	case PHY_INTERFACE_MODE_10GKR:
++		an_ctrl    = FIELD_PREP(USXGMII_AN_SYNC_CNT, USXGMII_AN_SYNC_CNT_10G_CLASS);
++		link_timer = FIELD_PREP(USXGMII_LINK_TIMER_IDLE_DETECT,
++					USXGMII_LINK_TIMER_FULL_RATE) |
++		     FIELD_PREP(USXGMII_LINK_TIMER_COMP_ACK_DETECT,
++				USXGMII_LINK_TIMER_FULL_RATE) |
++		     FIELD_PREP(USXGMII_LINK_TIMER_AN_RESTART,
++				USXGMII_LINK_TIMER_FULL_RATE);
++		xfi_mode   = FIELD_PREP(USXGMII_XFI_RX_MODE, USXGMII_XFI_MODE_10G) |
++			     FIELD_PREP(USXGMII_XFI_TX_MODE, USXGMII_XFI_MODE_10G);
+ 		adapt_mode = USXGMII_RATE_UPDATE_MODE;
+-	} else if (interface == PHY_INTERFACE_MODE_5GBASER) {
+-		an_ctrl = FIELD_PREP(USXGMII_AN_SYNC_CNT, 0xFF);
+-		link_timer = FIELD_PREP(USXGMII_LINK_TIMER_IDLE_DETECT, 0x3D) |
+-			     FIELD_PREP(USXGMII_LINK_TIMER_COMP_ACK_DETECT, 0x3D) |
+-			     FIELD_PREP(USXGMII_LINK_TIMER_AN_RESTART, 0x3D);
+-		xfi_mode = FIELD_PREP(USXGMII_XFI_RX_MODE, USXGMII_XFI_MODE_5G) |
+-			   FIELD_PREP(USXGMII_XFI_TX_MODE, USXGMII_XFI_MODE_5G);
++		break;
++	case PHY_INTERFACE_MODE_5GBASER:
++		an_ctrl    = FIELD_PREP(USXGMII_AN_SYNC_CNT, USXGMII_AN_SYNC_CNT_5G_CLASS);
++		link_timer = FIELD_PREP(USXGMII_LINK_TIMER_IDLE_DETECT,
++					USXGMII_LINK_TIMER_HALF_RATE) |
++		     FIELD_PREP(USXGMII_LINK_TIMER_COMP_ACK_DETECT,
++				USXGMII_LINK_TIMER_HALF_RATE) |
++		     FIELD_PREP(USXGMII_LINK_TIMER_AN_RESTART,
++				USXGMII_LINK_TIMER_HALF_RATE);
++		xfi_mode   = FIELD_PREP(USXGMII_XFI_RX_MODE, USXGMII_XFI_MODE_5G) |
++			     FIELD_PREP(USXGMII_XFI_TX_MODE, USXGMII_XFI_MODE_5G);
+ 		adapt_mode = USXGMII_RATE_UPDATE_MODE;
+-	} else {
++		break;
++	case PHY_INTERFACE_MODE_2500BASEX:
++		/* 2500BASEX runs the XFI link at 10G with a /4 rate adapt.
++		 * Mirrors the vendor 5.4 path in drivers/net/ethernet/mediatek/
++		 * mtk_usxgmii.c — same an_ctrl / link_timer / xfi_mode as
++		 * 10GBASER, but adapt_mode forces X4 instead of X1.
++		 */
++		an_ctrl    = FIELD_PREP(USXGMII_AN_SYNC_CNT, USXGMII_AN_SYNC_CNT_10G_CLASS);
++		link_timer = FIELD_PREP(USXGMII_LINK_TIMER_IDLE_DETECT,
++					USXGMII_LINK_TIMER_FULL_RATE) |
++		     FIELD_PREP(USXGMII_LINK_TIMER_COMP_ACK_DETECT,
++				USXGMII_LINK_TIMER_FULL_RATE) |
++		     FIELD_PREP(USXGMII_LINK_TIMER_AN_RESTART,
++				USXGMII_LINK_TIMER_FULL_RATE);
++		xfi_mode   = FIELD_PREP(USXGMII_XFI_RX_MODE, USXGMII_XFI_MODE_10G) |
++			     FIELD_PREP(USXGMII_XFI_TX_MODE, USXGMII_XFI_MODE_10G);
++		adapt_mode = USXGMII_RATE_UPDATE_MODE |
++			     FIELD_PREP(USXGMII_RATE_ADAPT_MODE,
++					USXGMII_RATE_ADAPT_MODE_X4);
++		break;
++	case PHY_INTERFACE_MODE_1000BASEX:
++	case PHY_INTERFACE_MODE_SGMII:
++		/* 1G via USXGMII: XFI runs at 10G, rate-adapted /10. AN can
++		 * still be requested on the media side (SGMII in-band) — the
++		 * MAC block decides in its own config path; the PCS just
++		 * provides the line.
++		 */
++		an_ctrl    = FIELD_PREP(USXGMII_AN_SYNC_CNT, USXGMII_AN_SYNC_CNT_10G_CLASS);
++		link_timer = FIELD_PREP(USXGMII_LINK_TIMER_IDLE_DETECT,
++					USXGMII_LINK_TIMER_FULL_RATE) |
++		     FIELD_PREP(USXGMII_LINK_TIMER_COMP_ACK_DETECT,
++				USXGMII_LINK_TIMER_FULL_RATE) |
++		     FIELD_PREP(USXGMII_LINK_TIMER_AN_RESTART,
++				USXGMII_LINK_TIMER_FULL_RATE);
++		xfi_mode   = FIELD_PREP(USXGMII_XFI_RX_MODE, USXGMII_XFI_MODE_10G) |
++			     FIELD_PREP(USXGMII_XFI_TX_MODE, USXGMII_XFI_MODE_10G);
++		adapt_mode = USXGMII_RATE_UPDATE_MODE |
++			     FIELD_PREP(USXGMII_RATE_ADAPT_MODE,
++					USXGMII_RATE_ADAPT_MODE_X10);
++		break;
++	default:
+ 		return -EINVAL;
+ 	}
+ 
+-	adapt_mode |= FIELD_PREP(USXGMII_RATE_ADAPT_MODE, USXGMII_RATE_ADAPT_MODE_X1);
++	if (mpcs->interface == interface && mpcs->neg_mode == neg_mode &&
++	    !advertising_changed && !mpcs->force_reconfig)
++		return 0;
++
++	/* If the above branch didn't already set a rate-adapt factor, default
++	 * to X1 (no rate adaptation) — that's the USXGMII and 10G/5G BASER case.
++	 */
++	if (!FIELD_GET(USXGMII_RATE_ADAPT_MODE, adapt_mode))
++		adapt_mode |= FIELD_PREP(USXGMII_RATE_ADAPT_MODE,
++					 USXGMII_RATE_ADAPT_MODE_X1);
++
++	mutex_lock(&mpcs->regmap_lock);
++
++	/* Reset the XFI T-PHY before the TOPRGU sequence. This mirrors the
++	 * vendor 5.4 path which would phy_reset() before poking SWSYSRST,
++	 * preventing the PEXTP from serving traffic off of stale PLL state
++	 * while the USXGMII block flips back to its reset defaults.
++	 */
++	if (mpcs->xfi_tphy)
++		phy_reset(mpcs->xfi_tphy);
++
++	mtk_usxgmii_reset(mpcs);
++
++	ret = mtk_pcs_config_polarity(mpcs, interface);
++	if (ret < 0) {
++		mutex_unlock(&mpcs->regmap_lock);
++		dev_err(mpcs->dev, "PCS polarity configuration failed: %d\n", ret);
++		return ret;
++	}
++	mpcs->polarity = ret;
+ 
+-	if (mpcs->interface != interface) {
++	if (mpcs->interface != interface || mpcs->neg_mode != neg_mode) {
+ 		mpcs->interface = interface;
++		mpcs->neg_mode = neg_mode;
+ 		mode_changed = true;
+ 	}
+ 
+-	phy_reset(mpcs->xfi_tphy);
+-	mtk_usxgmii_reset(mpcs);
++	if (advertising_changed) {
++		mpcs->usxgmii_advertising = usxgmii_advertising;
++		mode_changed = true;
++	}
+ 
+-	ret = mtk_usxgmii_config_polarity(mpcs, interface);
+-	if (ret)
+-		return ret;
++	/* Clear the force-reconfig request now that we've committed to the
++	 * full HW sequence. Any future idempotent early-return is fine.
++	 */
++	mpcs->force_reconfig = false;
+ 
+ 	/* Setup USXGMII AN ctrl */
+ 	mtk_m32(mpcs, RG_PCS_AN_CTRL0,
+@@ -213,8 +458,6 @@ static int mtk_usxgmii_pcs_config(struct
+ 		USXGMII_LINK_TIMER_AN_RESTART,
+ 		link_timer);
+ 
+-	mpcs->neg_mode = neg_mode;
+-
+ 	/* Gated MAC CK */
+ 	mtk_m32(mpcs, RG_PHY_TOP_SPEED_CTRL1,
+ 		USXGMII_MAC_CK_GATED, USXGMII_MAC_CK_GATED);
+@@ -244,8 +487,20 @@ static int mtk_usxgmii_pcs_config(struct
+ 	if (an_ctrl & USXGMII_AN_ENABLE)
+ 		mtk_m32(mpcs, RG_PHY_TOP_SPEED_CTRL1, USXGMII_IF_FORCE_EN, 0);
+ 
+-	/* Setup PMA/PMD */
+-	phy_set_mode_ext(mpcs->xfi_tphy, PHY_MODE_ETHERNET, interface);
++	mutex_unlock(&mpcs->regmap_lock);
++
++	/* PEXTP / XFI T-PHY register programming for the chosen interface
++	 * lives entirely in the XFI T-PHY driver (mtk_xfi_tphy_setup, called
++	 * via phy_set_mode_ext). The PCS only owns the USXGMII PCS register
++	 * window at mpcs->base; do not duplicate PEXTP writes here.
++	 *
++	 * phy_set_mode_ext can sleep and talks to the XFI T-PHY driver, which
++	 * has its own locking. Drop the regmap_lock before calling it to
++	 * avoid holding our mutex across a foreign driver's sleepable path
++	 * and any lock-order surprises with phy->mutex.
++	 */
++	if (mpcs->xfi_tphy)
++		phy_set_mode_ext(mpcs->xfi_tphy, PHY_MODE_ETHERNET, interface);
+ 
+ 	return mode_changed;
+ }
+@@ -317,41 +572,95 @@ static void mtk_usxgmii_pcs_get_an_state
+ 	phylink_decode_usxgmii_word(state, lpa);
+ }
+ 
+-static void mtk_usxgmii_pcs_get_state(struct phylink_pcs *pcs,
+-				      unsigned int neg_mode,
+-				      struct phylink_link_state *state)
++/* mtk_usxgmii_pcs_refresh_state - sample HW into mpcs->state cache.
++ *
++ * Called by the link_poll worker (and from pcs_get_state when no worker is
++ * scheduled, which can happen between pcs_enable returning and the first
++ * poll firing). Holds regmap_lock across the entire link-status latch
++ * sequence and the AN/fixed-speed read so phylink and the worker can never
++ * see a partially-updated cache.
++ */
++static void mtk_usxgmii_pcs_refresh_state(struct mtk_usxgmii_pcs *mpcs)
+ {
+-	struct mtk_usxgmii_pcs *mpcs = pcs_to_mtk_usxgmii_pcs(pcs);
++	struct phylink_link_state *state = &mpcs->state;
+ 
+-	/* Refresh USXGMII link status by toggling RG_PCS_AN_STATUS_UPDATE */
++	mutex_lock(&mpcs->regmap_lock);
++
++	/* Refresh USXGMII link status by toggling RG_PCS_RX_STATUS_UPDATE.
++	 * Inlined so the entire latch sequence stays in one locked region.
++	 */
+ 	mtk_m32(mpcs, RG_PCS_RX_STATUS0, RG_PCS_RX_STATUS_UPDATE,
+ 		RG_PCS_RX_STATUS_UPDATE);
+ 	ndelay(1020);
+ 	mtk_m32(mpcs, RG_PCS_RX_STATUS0, RG_PCS_RX_STATUS_UPDATE, 0);
+ 	ndelay(1020);
+ 
+-	/* Read USXGMII link status */
+ 	state->link = FIELD_GET(RG_PCS_RX_LINK_STATUS,
+ 				mtk_r32(mpcs, RG_PCS_RX_STATUS0));
+ 
+-	/* Continuously repeat re-configuration sequence until link comes up */
+ 	if (!state->link) {
+-		mtk_usxgmii_pcs_config(pcs, mpcs->neg_mode,
+-				       state->interface, NULL, false);
+-		return;
+-	}
+-
+-	if (FIELD_GET(USXGMII_AN_ENABLE, mtk_r32(mpcs, RG_PCS_AN_CTRL0)))
++		state->speed = SPEED_UNKNOWN;
++		state->duplex = DUPLEX_UNKNOWN;
++		state->pause = 0;
++		state->interface = mpcs->interface;
++	} else if (FIELD_GET(USXGMII_AN_ENABLE, mtk_r32(mpcs, RG_PCS_AN_CTRL0))) {
+ 		mtk_usxgmii_pcs_get_an_state(mpcs, state);
+-	else
++		/* phylink_decode_usxgmii_word writes speed/duplex/pause but
++		 * leaves state->interface untouched; the consumer expects us
++		 * to keep it in sync with whatever pcs_config last selected.
++		 */
++		state->interface = mpcs->interface;
++	} else {
+ 		mtk_usxgmii_pcs_get_fixed_speed(mpcs, state);
++		state->interface = mpcs->interface;
++	}
++
++	mutex_unlock(&mpcs->regmap_lock);
++}
++
++static void mtk_usxgmii_pcs_get_state(struct phylink_pcs *pcs,
++				      unsigned int neg_mode,
++				      struct phylink_link_state *state)
++{
++	struct mtk_usxgmii_pcs *mpcs = pcs_to_mtk_usxgmii_pcs(pcs);
++
++	/* If the worker is gated (pre-enable, mid-teardown) sample HW
++	 * directly so a phylink read still gets fresh data instead of stale
++	 * defaults. Otherwise the worker is keeping the cache fresh on its
++	 * own cadence and we just snapshot it — keeps phylink's read fast
++	 * and avoids repeating the ~2 us RX_STATUS_UPDATE latch sequence on
++	 * every status poll.
++	 */
++	if (!READ_ONCE(mpcs->poll_enable))
++		mtk_usxgmii_pcs_refresh_state(mpcs);
++
++	mutex_lock(&mpcs->regmap_lock);
++
++	if (mpcs->state.interface != PHY_INTERFACE_MODE_NA) {
++		state->interface = mpcs->state.interface;
++		state->speed = mpcs->state.speed;
++		state->duplex = mpcs->state.duplex;
++		state->link = mpcs->state.link;
++	}
++	linkmode_copy(state->advertising, mpcs->advertising);
++	mutex_unlock(&mpcs->regmap_lock);
+ }
+ 
+ static void mtk_usxgmii_pcs_restart_an(struct phylink_pcs *pcs)
+ {
+ 	struct mtk_usxgmii_pcs *mpcs = pcs_to_mtk_usxgmii_pcs(pcs);
++	int link_timer;
++
++	mutex_lock(&mpcs->regmap_lock);
++	link_timer = phylink_get_link_timer_ns(mpcs->interface);
++
++	dev_dbg(mpcs->dev,
++		"%s: pcs restart interface=%s neg_mode=%u link_timer=%d\n",
++		__func__, phy_modes(mpcs->interface), mpcs->neg_mode,
++		link_timer);
+ 
+ 	mtk_m32(mpcs, RG_PCS_AN_CTRL0, USXGMII_AN_RESTART, USXGMII_AN_RESTART);
++	mutex_unlock(&mpcs->regmap_lock);
+ }
+ 
+ static void mtk_usxgmii_pcs_link_up(struct phylink_pcs *pcs, unsigned int neg_mode,
+@@ -359,20 +668,147 @@ static void mtk_usxgmii_pcs_link_up(stru
+ 				    int speed, int duplex)
+ {
+ 	struct mtk_usxgmii_pcs *mpcs = pcs_to_mtk_usxgmii_pcs(pcs);
++	unsigned int adapt_mode = 0;
++	unsigned long t_start;
++	u32 an_ctrl, an_sts, rx_status, top_speed;
++	bool update_adapt = false;
++	bool ctle_valid;
++
++	dev_dbg(mpcs->dev,
++		"%s: entry interface=%s neg_mode=%u speed=%d duplex=%d\n",
++		__func__, phy_modes(interface), neg_mode, speed, duplex);
+ 
+-	/* Reconfiguring USXGMII to ensure the quality of the RX signal
+-	 * after the line side link up.
++	/* Explicitly program the rate adaptation mode based on the negotiated speed.
++	 * This mirrors the dw_xpcs driver and bypasses buggy USXGMII auto-adaptation.
+ 	 */
+-	mtk_usxgmii_pcs_config(pcs, neg_mode, interface, NULL, false);
+-	phy_reset(mpcs->xfi_tphy);
+-	phy_set_mode_ext(mpcs->xfi_tphy, PHY_MODE_ETHERNET, interface);
++	if (interface == PHY_INTERFACE_MODE_USXGMII) {
++		switch (speed) {
++		case SPEED_10000:
++			adapt_mode = USXGMII_RATE_ADAPT_MODE_X1;
++			update_adapt = true;
++			break;
++		case SPEED_5000:
++			adapt_mode = USXGMII_RATE_ADAPT_MODE_X2;
++			update_adapt = true;
++			break;
++		case SPEED_2500:
++			adapt_mode = USXGMII_RATE_ADAPT_MODE_X4;
++			update_adapt = true;
++			break;
++		case SPEED_1000:
++			adapt_mode = USXGMII_RATE_ADAPT_MODE_X10;
++			update_adapt = true;
++			break;
++		case SPEED_100:
++		case SPEED_10:
++			adapt_mode = USXGMII_RATE_ADAPT_MODE_X100;
++			update_adapt = true;
++			break;
++		}
++
++		if (update_adapt) {
++			mutex_lock(&mpcs->regmap_lock);
++			mtk_m32(mpcs, RG_PHY_TOP_SPEED_CTRL1,
++				USXGMII_RATE_ADAPT_MODE | USXGMII_RATE_UPDATE_MODE,
++				FIELD_PREP(USXGMII_RATE_ADAPT_MODE, adapt_mode) |
++				USXGMII_RATE_UPDATE_MODE);
++			mutex_unlock(&mpcs->regmap_lock);
++		}
++	}
++
++	if (interface != PHY_INTERFACE_MODE_USXGMII ||
++	    neg_mode != PHYLINK_PCS_NEG_INBAND_ENABLED)
++		return;
++
++	t_start = jiffies;
++
++	do {
++		msleep(10);
++
++		if (mtk_usxgmii_pcs_link_status(mpcs) &&
++		    mtk_usxgmii_pcs_is_valid_ctle(mpcs))
++			return;
++
++	} while (time_before(jiffies, t_start + msecs_to_jiffies(3000)));
++
++	mutex_lock(&mpcs->regmap_lock);
++	rx_status = mtk_r32(mpcs, RG_PCS_RX_STATUS0);
++	top_speed = mtk_r32(mpcs, RG_PHY_TOP_SPEED_CTRL1);
++	an_ctrl = mtk_r32(mpcs, RG_PCS_AN_CTRL0);
++	an_sts = mtk_r32(mpcs, RG_PCS_AN_STS0);
++	mutex_unlock(&mpcs->regmap_lock);
++
++	ctle_valid = mtk_usxgmii_pcs_is_valid_ctle(mpcs);
++
++	dev_warn(mpcs->dev,
++		 "wait link up timeout: rx_status=0x%08x pcs_link=%u ctle_valid=%u top_speed=0x%08x an_ctrl=0x%08x an_sts=0x%08x\n",
++		 rx_status, !!(rx_status & RG_PCS_RX_LINK_STATUS), ctle_valid,
++		 top_speed, an_ctrl, an_sts);
++}
++
++static void mtk_usxgmii_link_poll(struct work_struct *work)
++{
++	struct mtk_usxgmii_pcs *mpcs = container_of(to_delayed_work(work),
++						    struct mtk_usxgmii_pcs,
++						    link_poll);
++	phy_interface_t interface;
++	unsigned int neg_mode;
++	bool need_reconfig;
++
++	if (!READ_ONCE(mpcs->poll_enable))
++		return;
++
++	mtk_usxgmii_pcs_refresh_state(mpcs);
++
++	interface = mpcs->interface;
++	neg_mode  = mpcs->neg_mode;
++
++	/* No interface yet — phylink hasn't called pcs_config since the last
++	 * enable. Nothing to recover; just keep the cache fresh.
++	 */
++	if (interface == PHY_INTERFACE_MODE_NA)
++		goto resched;
++
++	/* Trigger reconfigure when the line side is down AND the equalizer
++	 * isn't reporting a valid lock. This matches the vendor heuristic:
++	 * a transient down with valid CTLE just means the partner is gone,
++	 * but down + invalid CTLE means the PCS itself has wedged.
++	 */
++	need_reconfig = !mpcs->state.link && !mtk_usxgmii_pcs_is_valid_ctle(mpcs);
++	if (!need_reconfig)
++		goto resched;
++
++	dev_dbg(mpcs->dev,
++		"link_poll: link down + CTLE invalid, requesting reconfigure\n");
++
++	/* Force pcs_config to run the full HW resequence even though
++	 * (interface, neg_mode) match. Cleared inside pcs_config.
++	 */
++	mpcs->force_reconfig = true;
++	mtk_usxgmii_pcs_config(&mpcs->pcs, neg_mode, interface, NULL, false);
++
++resched:
++	if (READ_ONCE(mpcs->poll_enable))
++		schedule_delayed_work(&mpcs->link_poll,
++				      MTK_USXGMII_LINK_POLL_INTERVAL);
+ }
+ 
+ static int mtk_usxgmii_pcs_enable(struct phylink_pcs *pcs)
+ {
+ 	struct mtk_usxgmii_pcs *mpcs = pcs_to_mtk_usxgmii_pcs(pcs);
+ 
+-	phy_power_on(mpcs->xfi_tphy);
++	int ret;
++
++	ret = phy_power_on(mpcs->xfi_tphy);
++	if (ret) {
++		dev_err(mpcs->dev,
++			"failed to power on XFI T-PHY: %d\n", ret);
++		return ret;
++	}
++
++	WRITE_ONCE(mpcs->poll_enable, true);
++	schedule_delayed_work(&mpcs->link_poll,
++			      MTK_USXGMII_LINK_POLL_INTERVAL);
+ 
+ 	return 0;
+ }
+@@ -381,42 +817,70 @@ static void mtk_usxgmii_pcs_disable(stru
+ {
+ 	struct mtk_usxgmii_pcs *mpcs = pcs_to_mtk_usxgmii_pcs(pcs);
+ 
++	/* Order matters: clear poll_enable first so a worker that's about to
++	 * reschedule sees the gate closed, then cancel_sync to flush any
++	 * already-running iteration before we power-off the T-PHY beneath it.
++	 */
++	WRITE_ONCE(mpcs->poll_enable, false);
++	cancel_delayed_work_sync(&mpcs->link_poll);
++
+ 	mpcs->interface = PHY_INTERFACE_MODE_NA;
+-	mpcs->neg_mode = -1;
+ 
+ 	phy_power_off(mpcs->xfi_tphy);
++	dev_dbg(mpcs->dev, "%s: exit\n", __func__);
+ }
+ 
+-static unsigned int mtk_usxgmii_pcs_inband_caps(struct phylink_pcs *pcs,
+-						phy_interface_t interface)
+-{
+-	switch (interface) {
+-	case PHY_INTERFACE_MODE_USXGMII:
+-		return LINK_INBAND_ENABLE;
+-
+-	case PHY_INTERFACE_MODE_5GBASER:
+-	case PHY_INTERFACE_MODE_10GBASER:
+-		return LINK_INBAND_DISABLE;
+-
+-	default:
+-		return 0;
+-	}
+-}
++static const struct of_device_id mtk_usxgmii_of_mtable[] = {
++	{ .compatible = "mediatek,mt7988-usxgmiisys" },
++	{ /* sentinel */ },
++};
++MODULE_DEVICE_TABLE(of, mtk_usxgmii_of_mtable);
+ 
+ static const struct phylink_pcs_ops mtk_usxgmii_pcs_ops = {
+-	.pcs_inband_caps = mtk_usxgmii_pcs_inband_caps,
++	.pcs_inband_caps = mtk_pcs_usxgmii_inband_caps,
++	.pcs_enable = mtk_usxgmii_pcs_enable,
+ 	.pcs_config = mtk_usxgmii_pcs_config,
+ 	.pcs_get_state = mtk_usxgmii_pcs_get_state,
+ 	.pcs_an_restart = mtk_usxgmii_pcs_restart_an,
+ 	.pcs_link_up = mtk_usxgmii_pcs_link_up,
+-	.pcs_enable = mtk_usxgmii_pcs_enable,
+ 	.pcs_disable = mtk_usxgmii_pcs_disable,
+ };
+ 
++/*
++ * Each USXGMII PCS instance gets a stable id in [0, MTK_USXGMII_MAX_PCS)
++ * used to pick the matching XFI/PEXTP reset bits. Allocated under
++ * instance_mutex from a bitmap so ids are *reused* after remove — a
++ * monotonic counter would let a re-bind pick up id=2 and have no matching
++ * SWSYSRST bit.
++ *
++ * Returns the id (>=0) on success, or a negative errno.
++ */
++static int mtk_usxgmii_alloc_id(void)
++{
++	int id;
++
++	id = find_first_zero_bit(mtk_usxgmii_id_bitmap, MTK_USXGMII_MAX_PCS);
++	if (id >= MTK_USXGMII_MAX_PCS)
++		return -ENOSPC;
++
++	__set_bit(id, mtk_usxgmii_id_bitmap);
++	return id;
++}
++
++static void mtk_usxgmii_free_id(int id)
++{
++	if (id < 0 || id >= MTK_USXGMII_MAX_PCS)
++		return;
++
++	__clear_bit(id, mtk_usxgmii_id_bitmap);
++}
++
+ static int mtk_usxgmii_probe(struct platform_device *pdev)
+ {
+ 	struct device *dev = &pdev->dev;
++	struct device_node *np = dev->of_node;
+ 	struct mtk_usxgmii_pcs *mpcs;
++	int ret;
+ 
+ 	mpcs = devm_kzalloc(dev, sizeof(*mpcs), GFP_KERNEL);
+ 	if (!mpcs)
+@@ -430,50 +894,167 @@ static int mtk_usxgmii_probe(struct plat
+ 	mpcs->pcs.ops = &mtk_usxgmii_pcs_ops;
+ 	mpcs->pcs.poll = true;
+ 	mpcs->interface = PHY_INTERFACE_MODE_NA;
+-	mpcs->neg_mode = -1;
+-	mpcs->fwnode = fwnode_handle_get(dev_fwnode(dev));
++	mpcs->neg_mode = PHYLINK_PCS_NEG_NONE;
++	mpcs->fwnode = dev_fwnode(dev);
++	mpcs->id = -1;
++	mpcs->state.interface = PHY_INTERFACE_MODE_NA;
++	mpcs->state.speed = SPEED_UNKNOWN;
++	mpcs->state.duplex = DUPLEX_UNKNOWN;
++	mutex_init(&mpcs->regmap_lock);
++	INIT_LIST_HEAD(&mpcs->node);
++	INIT_DELAYED_WORK(&mpcs->link_poll, mtk_usxgmii_link_poll);
++	mpcs->poll_enable = false;
++	mpcs->force_reconfig = false;
+ 
+-	__set_bit(PHY_INTERFACE_MODE_5GBASER, mpcs->pcs.supported_interfaces);
+-	__set_bit(PHY_INTERFACE_MODE_10GBASER, mpcs->pcs.supported_interfaces);
+ 	__set_bit(PHY_INTERFACE_MODE_USXGMII, mpcs->pcs.supported_interfaces);
++	__set_bit(PHY_INTERFACE_MODE_10GBASER, mpcs->pcs.supported_interfaces);
++	__set_bit(PHY_INTERFACE_MODE_5GBASER, mpcs->pcs.supported_interfaces);
++	__set_bit(PHY_INTERFACE_MODE_2500BASEX, mpcs->pcs.supported_interfaces);
+ 
+-	mpcs->clk = devm_clk_get_enabled(mpcs->dev, NULL);
++	mpcs->clk = devm_clk_get_enabled(dev, NULL);
+ 	if (IS_ERR(mpcs->clk))
+ 		return PTR_ERR(mpcs->clk);
+ 
+-	mpcs->xfi_tphy = devm_of_phy_get(mpcs->dev, dev->of_node, NULL);
+-	if (IS_ERR(mpcs->xfi_tphy))
+-		return PTR_ERR(mpcs->xfi_tphy);
++	mutex_lock(&instance_mutex);
++	ret = mtk_usxgmii_alloc_id();
++	mutex_unlock(&instance_mutex);
++	if (ret < 0) {
++		dev_err(dev, "no free PCS id (max %d)\n", MTK_USXGMII_MAX_PCS);
++		return ret;
++	}
++	mpcs->id = ret;
++
++	ret = mtk_toprgu_init(mpcs, np);
++	if (ret)
++		goto err_free_id;
++
++	mpcs->xfi_tphy = devm_of_phy_get(dev, np, NULL);
++	if (IS_ERR(mpcs->xfi_tphy)) {
++		ret = PTR_ERR(mpcs->xfi_tphy);
++		goto err_free_id;
++	}
+ 
+ 	mpcs->reset = devm_reset_control_get_shared(dev, NULL);
+-	if (IS_ERR(mpcs->reset))
+-		return PTR_ERR(mpcs->reset);
++	if (IS_ERR(mpcs->reset)) {
++		ret = PTR_ERR(mpcs->reset);
++		goto err_free_id;
++	}
+ 
+ 	reset_control_deassert(mpcs->reset);
+ 
+ 	platform_set_drvdata(pdev, mpcs);
+ 
+-	return fwnode_pcs_add_provider(dev_fwnode(dev), fwnode_pcs_simple_get, &mpcs->pcs);
++	mutex_lock(&instance_mutex);
++	list_add_tail(&mpcs->node, &mtk_usxgmii_pcs_instances);
++	mutex_unlock(&instance_mutex);
++
++	ret = fwnode_pcs_add_provider(dev_fwnode(dev), fwnode_pcs_simple_get,
++				      &mpcs->pcs);
++	if (ret) {
++		reset_control_assert(mpcs->reset);
++		goto err_del_instance;
++	}
++
++	return 0;
++
++err_del_instance:
++	mutex_lock(&instance_mutex);
++	list_del(&mpcs->node);
++	mutex_unlock(&instance_mutex);
++
++err_free_id:
++	mutex_lock(&instance_mutex);
++	mtk_usxgmii_free_id(mpcs->id);
++	mutex_unlock(&instance_mutex);
++	return ret;
+ }
+ 
+ static void mtk_usxgmii_remove(struct platform_device *pdev)
+ {
+ 	struct mtk_usxgmii_pcs *mpcs = platform_get_drvdata(pdev);
+ 
++	if (!mpcs)
++		return;
++
+ 	fwnode_pcs_del_provider(dev_fwnode(&pdev->dev));
+ 
+ 	rtnl_lock();
+ 	phylink_release_pcs(&mpcs->pcs);
+ 	rtnl_unlock();
+ 
+-	fwnode_handle_put(mpcs->fwnode);
+-};
++	/* Shut the worker down before tearing the instance out of the list
++	 * so a late firing can't observe a half-freed mpcs.
++	 */
++	WRITE_ONCE(mpcs->poll_enable, false);
++	cancel_delayed_work_sync(&mpcs->link_poll);
+ 
+-static const struct of_device_id mtk_usxgmii_of_mtable[] = {
+-	{ .compatible = "mediatek,mt7988-usxgmiisys" },
+-	{ /* sentinel */ },
+-};
+-MODULE_DEVICE_TABLE(of, mtk_usxgmii_of_mtable);
++	mutex_lock(&instance_mutex);
++	list_del(&mpcs->node);
++	mtk_usxgmii_free_id(mpcs->id);
++	mutex_unlock(&instance_mutex);
++
++	/* Balance the deassert in probe so the next bind comes up from a
++	 * known state. devm_ frees the reset_control itself.
++	 */
++	reset_control_assert(mpcs->reset);
++}
++
++struct phylink_pcs *mtk_usxgmii_pcs_get(struct device *dev, struct device_node *np)
++{
++	struct platform_device *pdev;
++	struct mtk_usxgmii_pcs *mpcs;
++
++	if (!np)
++		return NULL;
++
++	if (!of_device_is_available(np))
++		return ERR_PTR(-ENODEV);
++
++	if (!of_match_node(mtk_usxgmii_of_mtable, np))
++		return ERR_PTR(-EINVAL);
++
++	pdev = of_find_device_by_node(np);
++	if (!pdev || !platform_get_drvdata(pdev)) {
++		if (pdev)
++			put_device(&pdev->dev);
++		return ERR_PTR(-EPROBE_DEFER);
++	}
++
++	mpcs = platform_get_drvdata(pdev);
++	if (!device_link_add(dev, mpcs->dev, DL_FLAG_AUTOREMOVE_CONSUMER)) {
++		/* Without a device link phylink's consumer can outlive the
++		 * PCS provider and end up calling ops on a freed instance.
++		 * Better to defer and let the consumer retry than to race.
++		 */
++		put_device(&pdev->dev);
++		return ERR_PTR(-EPROBE_DEFER);
++	}
++
++	return &mpcs->pcs;
++}
++EXPORT_SYMBOL(mtk_usxgmii_pcs_get);
++
++void mtk_usxgmii_pcs_put(struct phylink_pcs *pcs)
++{
++	struct mtk_usxgmii_pcs *cur, *mpcs = NULL;
++
++	if (!pcs)
++		return;
++
++	mutex_lock(&instance_mutex);
++	list_for_each_entry(cur, &mtk_usxgmii_pcs_instances, node)
++		if (pcs == &cur->pcs) {
++			mpcs = cur;
++			break;
++		}
++	mutex_unlock(&instance_mutex);
++
++	if (WARN_ON(!mpcs))
++		return;
++
++	put_device(mpcs->dev);
++}
++EXPORT_SYMBOL(mtk_usxgmii_pcs_put);
+ 
+ static struct platform_driver mtk_usxgmii_driver = {
+ 	.driver = {
+--- a/drivers/phy/mediatek/phy-mtk-xfi-tphy.c
++++ b/drivers/phy/mediatek/phy-mtk-xfi-tphy.c
+@@ -11,6 +11,7 @@
+ 
+ #include <linux/module.h>
+ #include <linux/device.h>
++#include <linux/bitfield.h>
+ #include <linux/platform_device.h>
+ #include <linux/of.h>
+ #include <linux/io.h>
+@@ -18,11 +19,10 @@
+ #include <linux/reset.h>
+ #include <linux/phy.h>
+ #include <linux/phy/phy.h>
++#include <linux/phy/phy-mtk-xfi-tphy.h>
+ 
+ #include "phy-mtk-io.h"
+ 
+-#define MTK_XFI_TPHY_NUM_CLOCKS		2
+-
+ #define REG_DIG_GLB_70			0x0070
+ #define  XTP_PCS_RX_EQ_IN_PROGRESS(x)	FIELD_PREP(GENMASK(25, 24), (x))
+ #define  XTP_PCS_MODE_MASK		GENMASK(17, 16)
+@@ -56,21 +56,30 @@
+ #define  XTP_GLB_USXGMII_SEL(x)		FIELD_PREP(GENMASK(3, 1), (x))
+ #define  XTP_GLB_USXGMII_EN		BIT(0)
+ 
+-/**
+- * struct mtk_xfi_tphy - run-time data of the XFI phy instance
+- * @base: IO memory area to access phy registers.
+- * @dev: Kernel device used to output prefixed debug info.
+- * @reset: Reset control corresponding to the phy instance.
+- * @clocks: All clocks required for the phy to operate.
+- * @da_war: Enables work-around for 10GBase-R mode.
++/* struct mtk_xfi_tphy and MTK_XFI_TPHY_NUM_CLOCKS are declared in
++ * <linux/phy/phy-mtk-xfi-tphy.h> so the PCS drivers can use the shared
++ * XFI T-PHY helpers.
+  */
+-struct mtk_xfi_tphy {
+-	void __iomem		*base;
+-	struct device		*dev;
+-	struct reset_control	*reset;
+-	struct clk_bulk_data	clocks[MTK_XFI_TPHY_NUM_CLOCKS];
+-	bool			da_war;
+-};
++
++static bool mtk_xfi_tphy_ctle_valid(struct mtk_xfi_tphy *xfi_tphy,
++				    unsigned int *ctle)
++{
++	unsigned int val, local_ctle;
++
++	if (!xfi_tphy || !xfi_tphy->base)
++		return true;
++
++	writel(0x00000404, xfi_tphy->base + 0x00);
++	writel(0x00d600d5, xfi_tphy->base + 0x10);
++	val = readl(xfi_tphy->base + 0xd0);
++
++	local_ctle = FIELD_GET(GENMASK(12, 8), val);
++	if (ctle)
++		*ctle = local_ctle;
++
++	return local_ctle <= 10;
++}
++
+ 
+ /**
+  * mtk_xfi_tphy_setup() - Setup phy for specified interface mode.
+@@ -288,6 +297,7 @@ static int mtk_xfi_tphy_set_mode(struct
+ 				 submode)
+ {
+ 	struct mtk_xfi_tphy *xfi_tphy = phy_get_drvdata(phy);
++	unsigned int ctle = 0;
+ 
+ 	if (mode != PHY_MODE_ETHERNET)
+ 		return -EINVAL;
+@@ -300,6 +310,9 @@ static int mtk_xfi_tphy_set_mode(struct
+ 	case PHY_INTERFACE_MODE_10GBASER:
+ 	case PHY_INTERFACE_MODE_USXGMII:
+ 		mtk_xfi_tphy_setup(xfi_tphy, submode);
++		if (!mtk_xfi_tphy_ctle_valid(xfi_tphy, &ctle))
++			dev_dbg(xfi_tphy->dev, "CTLE not settled after %s setup: %u\n",
++				phy_modes(submode), ctle);
+ 		return 0;
+ 	default:
+ 		return -EINVAL;
+@@ -430,6 +443,27 @@ static int mtk_xfi_tphy_probe(struct pla
+ 	return PTR_ERR_OR_ZERO(phy_provider);
+ }
+ 
++/**
++ * mtk_xfi_tphy_is_ctle_valid() - Check if the XFI T-PHY CTLE is settled.
++ * @phy: Phy instance.
++ *
++ * Peeks at the XFI T-PHY CTLE (continuous-time linear equalizer) setting
++ * to decide whether the RX side has reached a usable signal quality.
++ *
++ * Return: true if CTLE is <= 10 (signal is clean), false otherwise.
++ */
++bool mtk_xfi_tphy_is_ctle_valid(struct phy *phy)
++{
++	struct mtk_xfi_tphy *xfi_tphy;
++
++	if (!phy)
++		return true;
++
++	xfi_tphy = phy_get_drvdata(phy);
++	return mtk_xfi_tphy_ctle_valid(xfi_tphy, NULL);
++}
++EXPORT_SYMBOL_GPL(mtk_xfi_tphy_is_ctle_valid);
++
+ static const struct of_device_id mtk_xfi_tphy_match[] = {
+ 	{ .compatible = "mediatek,mt7988-xfi-tphy", },
+ 	{ /* sentinel */ }
+--- a/include/linux/pcs/pcs-mtk-lynxi.h
++++ b/include/linux/pcs/pcs-mtk-lynxi.h
+@@ -5,8 +5,71 @@
+ #include <linux/phylink.h>
+ #include <linux/regmap.h>
+ 
++/* struct mtk_pcs_lynxi -  This structure holds each sgmii regmap andassociated
++ *                         data
++ * @regmap:                The register map pointing at the range used to setup
++ *                         SGMII modes
++ * @dev:                   Pointer to device owning the PCS
++ * @ana_rgc3:              The offset of register ANA_RGC3 relative to regmap
++ * @interface:             Currently configured interface mode
++ * @neg_mode:              Currently configured negotiation mode
++ * @advertising:           Currently configured advertisement
++ * @pcs:                   Phylink PCS structure
++ * @flags:                 Flags indicating hardware properties
++ * @last_get_state:        Jiffies at last pcs_get_state call
++ * @polarity:		TX/RX PN-swap polarity bits from DT
++ * @link_poll:             Delayed work for link polling when phylink does
++ *                         not poll the PCS
++ * @rstc:                  Reset controller
++ * @sgmii_sel:             SGMII Register Clock
++ * @sgmii_rx:              SGMII RX Clock
++ * @sgmii_tx:              SGMII TX Clock
++ * @node:                  List node
++ */
++struct mtk_pcs_lynxi {
++	struct regmap		*regmap;
++	struct device		*dev;
++	u32			ana_rgc3;
++	phy_interface_t		interface;
++	unsigned int		neg_mode;
++	__ETHTOOL_DECLARE_LINK_MODE_MASK(advertising);
++	struct			phylink_pcs pcs;
++	u32			flags;
++	struct fwnode_handle	*fwnode;
++	unsigned long		last_get_state;
++	struct phylink_link_state	state;
++	struct delayed_work	link_poll;
++	bool				poll_enable;
++	struct reset_control	*rstc;
++	struct clk		*sgmii_sel;
++	struct clk		*sgmii_rx;
++	struct clk		*sgmii_tx;
++	struct phy		*xfi_tphy;
++	struct list_head	node;
++	struct mutex		regmap_lock;
++};
++
++struct mtk_pcs_lynxi *pcs_to_mtk_pcs_lynxi(struct phylink_pcs *pcs);
++
++#define MTK_SGMII_FLAG_PN_SWAP_TX BIT(0)
++#define MTK_SGMII_FLAG_PN_SWAP_RX BIT(1)
++#define MTK_SGMII_FLAG_PHYA_TRX_CK BIT(2)
++
+ struct phylink_pcs *mtk_pcs_lynxi_create(struct device *dev,
+ 					 struct fwnode_handle *fwnode,
+ 					 struct regmap *regmap, u32 ana_rgc3);
+ void mtk_pcs_lynxi_destroy(struct phylink_pcs *pcs);
++
++#if IS_REACHABLE(CONFIG_PCS_MTK_LYNXI) && \
++	IS_REACHABLE(CONFIG_FWNODE_PCS)
++struct phylink_pcs *mtk_pcs_lynxi_get(struct device *dev, struct device_node *np);
++void mtk_pcs_lynxi_put(struct phylink_pcs *pcs);
++#else
++static inline struct phylink_pcs *mtk_pcs_lynxi_get(struct device *dev, struct device_node *np)
++{
++	return NULL;
++}
++
++static inline void mtk_pcs_lynxi_put(struct phylink_pcs *pcs) { }
++#endif /* PCS_MTK_LYNXI && FWNODE_PCS are reachable */
+ #endif
+--- /dev/null
++++ b/include/linux/pcs/pcs-mtk-usxgmii.h
+@@ -0,0 +1,167 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++#ifndef __LINUX_PCS_MTK_USXGMII_H
++#define __LINUX_PCS_MTK_USXGMII_H
++
++#include <linux/phylink.h>
++
++/* USXGMII subsystem config registers */
++/* Register to control speed */
++#define MTK_USXGMII_PCS_MODE    GENMASK(3, 1)
++#define MTK_USXGMII_PCS_LINK    BIT(8)
++#define USXGMII_RATE_UPDATE_MODE		BIT(31)
++#define USXGMII_MAC_CK_GATED			BIT(29)
++#define USXGMII_IF_FORCE_EN			BIT(28)
++#define USXGMII_RATE_ADAPT_MODE			GENMASK(10, 8)
++#define USXGMII_RATE_ADAPT_MODE_X1		0
++#define USXGMII_RATE_ADAPT_MODE_X2		1
++#define USXGMII_RATE_ADAPT_MODE_X4		2
++#define USXGMII_RATE_ADAPT_MODE_X10		3
++#define USXGMII_RATE_ADAPT_MODE_X100		4
++#define USXGMII_RATE_ADAPT_MODE_X5		5
++#define USXGMII_RATE_ADAPT_MODE_X50		6
++#define USXGMII_XFI_RX_MODE			GENMASK(6, 4)
++#define USXGMII_XFI_TX_MODE			GENMASK(2, 0)
++#define USXGMII_XFI_MODE_10G			0
++#define USXGMII_XFI_MODE_5G			1
++#define USXGMII_XFI_MODE_2P5G			3
++
++/* Register to control PCS AN */
++#define USXGMII_AN_RESTART			BIT(31)
++#define USXGMII_AN_SYNC_CNT			GENMASK(30, 11)
++#define USXGMII_AN_ENABLE			BIT(0)
++
++/* USXGMII AN sync count: ~512 idle detections at full 10G class, halved at 5G */
++#define USXGMII_AN_SYNC_CNT_10G_CLASS   0x1FF
++#define USXGMII_AN_SYNC_CNT_5G_CLASS    0x0FF
++
++/* USXGMII AN link timer: 0x7B ticks at full rate, 0x3D at half rate */
++#define USXGMII_LINK_TIMER_FULL_RATE    0x7B
++#define USXGMII_LINK_TIMER_HALF_RATE    0x3D
++
++#define USXGMII_LINK_TIMER_IDLE_DETECT		GENMASK(29, 20)
++#define USXGMII_LINK_TIMER_COMP_ACK_DETECT	GENMASK(19, 10)
++#define USXGMII_LINK_TIMER_AN_RESTART		GENMASK(9, 0)
++#define USXGMII_LPA				GENMASK(15, 0)
++#define USXGMII_LPA_SPEED_MASK  GENMASK(11, 9)
++#define USXGMII_LPA_SPEED_10    0
++#define USXGMII_LPA_SPEED_100   1
++#define USXGMII_LPA_SPEED_1000  2
++#define USXGMII_LPA_SPEED_10000 3
++#define USXGMII_LPA_SPEED_2500  4
++#define USXGMII_LPA_SPEED_5000  5
++#define USXGMII_LPA_DUPLEX      BIT(12)
++#define USXGMII_LPA_LINK        BIT(15)
++#define USXGMII_LPA_LATCH       BIT(31)
++#define USXGMII_PN_SWAP_MASK    GENMASK(1, 0)
++#define USXGMII_PN_SWAP_RX      BIT(1)
++#define USXGMII_PN_SWAP_TX      BIT(0)
++
++/* Register to read PCS AN status */
++#define RG_PHY_TOP_SPEED_CTRL1		0x80c
++#define RG_PCS_AN_CTRL0				0x810
++#define RG_PCS_AN_CTRL2				0x818
++#define RG_PCS_AN_STS0				0x81c
++#define RG_PHY_TOP_CTRL0			0x82C
++#define RG_PCS_RX_STATUS0			0x904
++
++/* Register to read PCS link status */
++#define RG_PCS_RX_STATUS_UPDATE			BIT(16)
++#define RG_PCS_RX_LINK_STATUS			BIT(2)
++
++/* TOPRGU software-reset registers for XFI/PEXTP instances */
++#define TOPRGU_SWSYSRST				0x18
++#define SWSYSRST_UNLOCK_KEY			GENMASK(31, 24)
++#define SWSYSRST_XFI_PLL_GRST			BIT(16)
++#define SWSYSRST_XFI_PEXPT1_GRST		BIT(15)
++#define SWSYSRST_XFI_PEXPT0_GRST		BIT(14)
++#define SWSYSRST_XFI1_GRST			BIT(13)
++#define SWSYSRST_XFI0_GRST			BIT(12)
++#define TOPRGU_SWSYSRST_EN			0xFC
++
++/* Register to control USXGMII XFI PLL digital */
++#define XFI_PLL_DIG_GLB8        0x08
++#define RG_XFI_PLL_EN           BIT(31)
++
++/* Register to control USXGMII XFI PLL analog */
++#define XFI_PLL_ANA_GLB8        0x108
++#define RG_XFI_PLL_ANA_SWWA     0x02283248
++
++/* struct mtk_usxgmii_pcs - This structure holds each usxgmii PCS
++ * @pcs:		Phylink PCS structure
++ * @dev:		Pointer to device structure
++ * @base:		IO memory to access PCS hardware
++ * @clk:		Pointer to USXGMII clk
++ * @reset:		Pointer to USXGMII reset control
++ * @xfi_tphy:		Backing XFI T-PHY (PEXTP)
++ * @interface:		Currently selected interface mode
++ * neg_mode:		Currently used phylink neg_mode
++ * @advertising:	Currently configured local advertisement mask
++ * @usxgmii_advertising: Cached USXGMII in-band control word derived from
++ *			@advertising. This PCS block has no known local
++ *			advertisement register, so this is state/debug only.
++ * @polarity:		TX/RX PN-swap polarity bits from DT
++ * @state:		Cached link state served back from .pcs_get_state
++ *			(the worker updates this; phylink read-only consumer)
++ * @regmap_lock:	Serializes register access between the worker and
++ *			the phylink callbacks.
++ * @link_poll:		1 Hz delayed_work that reconfigures the PCS when the
++ *			line side drops or CTLE reads invalid, and otherwise
++ *			refreshes @state from HW.
++ * @poll_enable:	Gate for @link_poll — cleared on disable to stop the
++ *			reconfig loop from racing teardown.
++ * @force_reconfig:	One-shot flag set by @link_poll before calling back
++ *			into .pcs_config so the idempotency early-return
++ *			doesn't swallow recovery attempts. Cleared inside
++ *			pcs_config after it's consumed.
++ * @toprgu:		syscon regmap for the TOPRGU SWSYSRST block.
++ * @id:			0-based instance id used to pick the matching
++ *			XFI_PEXPT/XFI SWSYSRST bits.
++ * @node:		List node on the file-static instance list.
++ */
++struct mtk_usxgmii_pcs {
++	struct phylink_pcs		pcs;
++	struct device			*dev;
++	void __iomem			*base;
++	struct clk			*clk;
++	struct reset_control		*reset;
++	struct phy			*xfi_tphy;
++	phy_interface_t			interface;
++	unsigned int			neg_mode;
++	__ETHTOOL_DECLARE_LINK_MODE_MASK(advertising);
++	u16				usxgmii_advertising;
++	u32				polarity;
++	struct fwnode_handle	*fwnode;
++	struct phylink_link_state	state;
++	struct mutex			regmap_lock;
++	struct delayed_work		link_poll;
++	bool				poll_enable;
++	bool				force_reconfig;
++	struct list_head		node;
++	struct regmap			*toprgu;
++	int				id;
++};
++
++#define MTK_USXGMII_MAX_PCS	2
++
++/**
++ * mtk_usxgmii_select_pcs() - Get MediaTek PCS instance
++ * @np:		Pointer to device node indentifying a MediaTek USXGMII PCS
++ * @mode:	Ethernet PHY interface mode
++ *
++ * Return PCS identified by a device node and the PHY interface mode in use
++ *
++ * Return:	Pointer to phylink PCS instance of NULL
++ */
++#if IS_REACHABLE(CONFIG_PCS_MTK_USXGMII)
++struct phylink_pcs *mtk_usxgmii_pcs_get(struct device *dev, struct device_node *np);
++void mtk_usxgmii_pcs_put(struct phylink_pcs *pcs);
++#else
++static inline struct phylink_pcs *mtk_usxgmii_pcs_get(struct device *dev, struct device_node *np)
++{
++	return NULL;
++}
++
++static inline void mtk_usxgmii_pcs_put(struct phylink_pcs *pcs) { }
++#endif /* IS_REACHABLE(CONFIG_PCS_MTK_USXGMII) */
++
++#endif /* __LINUX_PCS_MTK_USXGMII_H */
+--- /dev/null
++++ b/include/linux/phy/phy-mtk-xfi-tphy.h
+@@ -0,0 +1,33 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++#ifndef __LINUX_PHY_MTK_XFI_TPHY_H
++#define __LINUX_PHY_MTK_XFI_TPHY_H
++
++#define MTK_XFI_TPHY_NUM_CLOCKS		2
++
++/**
++ * struct mtk_xfi_tphy - run-time data of the XFI phy instance
++ * @base: IO memory area to access phy registers.
++ * @dev: Kernel device used to output prefixed debug info.
++ * @reset: Reset control corresponding to the phy instance.
++ * @clocks: All clocks required for the phy to operate.
++ * @da_war: Enables work-around for 10GBase-R mode.
++ */
++struct mtk_xfi_tphy {
++	void __iomem		*base;
++	struct device		*dev;
++	struct reset_control	*reset;
++	struct clk_bulk_data	clocks[MTK_XFI_TPHY_NUM_CLOCKS];
++	bool			da_war;
++};
++
++#if IS_ENABLED(CONFIG_PHY_MTK_XFI_TPHY)
++bool mtk_xfi_tphy_is_ctle_valid(struct phy *phy);
++#else
++static inline bool mtk_xfi_tphy_is_ctle_valid(struct phy *phy)
++{
++	/* Default to true so the PCS doesn't hang if the PHY driver is missing */
++	return true;
++}
++#endif
++
++#endif /* __LINUX_PHY_MTK_XFI_TPHY_H */

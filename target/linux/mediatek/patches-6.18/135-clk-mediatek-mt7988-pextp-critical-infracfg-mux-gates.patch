@@ -1,0 +1,159 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Sean McCully <sean_mccully@yahoo.com>
+Date: Tue, 4 Aug 2026 13:39:21 -0700
+Subject: [PATCH] clk: mediatek: mt7988: keep PEXTP selectors on, rework infracfg muxes
+
+Mark the four PCIe PEXTP selector clocks CLK_IS_CRITICAL so the PCIe
+PHY reference is never gated behind the controllers' backs, convert
+the infracfg MUX_CLR_SET entries to MUX_GATE_CLR_SET_UPD (adding the
+PCIe gfmux TL selectors), and mark the SEJ clocks critical. This
+matches the MediaTek SDK clock topology for MT7988 and avoids PCIe
+and peripheral clock stalls observed on the Bananapi BPI-R4 Pro.
+
+Signed-off-by: Sean McCully <sean_mccully@yahoo.com>
+---
+ drivers/clk/mediatek/clk-mt7988-infracfg.c |   91 +++++++++++++++-------------
+ drivers/clk/mediatek/clk-mt7988-topckgen.c |   16 ++---
+ 2 files changed, 57 insertions(+), 50 deletions(-)
+
+--- a/drivers/clk/mediatek/clk-mt7988-infracfg.c
++++ b/drivers/clk/mediatek/clk-mt7988-infracfg.c
+@@ -56,45 +56,49 @@ static const char *const infra_pcie_gfmu
+ 
+ static const struct mtk_mux infra_muxes[] = {
+ 	/* MODULE_CLK_SEL_0 */
+-	MUX_CLR_SET(CLK_INFRA_MUX_UART0_SEL, "infra_mux_uart0_sel",
+-		    infra_mux_uart0_parents, 0x0018, 0x0010, 0x0014, 0, 1),
+-	MUX_CLR_SET(CLK_INFRA_MUX_UART1_SEL, "infra_mux_uart1_sel",
+-		    infra_mux_uart1_parents, 0x0018, 0x0010, 0x0014, 1, 1),
+-	MUX_CLR_SET(CLK_INFRA_MUX_UART2_SEL, "infra_mux_uart2_sel",
+-		    infra_mux_uart2_parents, 0x0018, 0x0010, 0x0014, 2, 1),
+-	MUX_CLR_SET(CLK_INFRA_MUX_SPI0_SEL, "infra_mux_spi0_sel",
+-		    infra_mux_spi0_parents, 0x0018, 0x0010, 0x0014, 4, 1),
+-	MUX_CLR_SET(CLK_INFRA_MUX_SPI1_SEL, "infra_mux_spi1_sel",
+-		    infra_mux_spi1_parents, 0x0018, 0x0010, 0x0014, 5, 1),
+-	MUX_CLR_SET(CLK_INFRA_MUX_SPI2_SEL, "infra_mux_spi2_sel",
+-		    infra_mux_spi0_parents, 0x0018, 0x0010, 0x0014, 6, 1),
+-	MUX_CLR_SET(CLK_INFRA_PWM_SEL, "infra_pwm_sel",
+-		    infra_pwm_bck_parents, 0x0018, 0x0010, 0x0014, 14, 2),
+-	MUX_CLR_SET(CLK_INFRA_PWM_CK1_SEL, "infra_pwm_ck1_sel",
+-		    infra_pwm_bck_parents, 0x0018, 0x0010, 0x0014, 16, 2),
+-	MUX_CLR_SET(CLK_INFRA_PWM_CK2_SEL, "infra_pwm_ck2_sel",
+-		    infra_pwm_bck_parents, 0x0018, 0x0010, 0x0014, 18, 2),
+-	MUX_CLR_SET(CLK_INFRA_PWM_CK3_SEL, "infra_pwm_ck3_sel",
+-		    infra_pwm_bck_parents, 0x0018, 0x0010, 0x0014, 20, 2),
+-	MUX_CLR_SET(CLK_INFRA_PWM_CK4_SEL, "infra_pwm_ck4_sel",
+-		    infra_pwm_bck_parents, 0x0018, 0x0010, 0x0014, 22, 2),
+-	MUX_CLR_SET(CLK_INFRA_PWM_CK5_SEL, "infra_pwm_ck5_sel",
+-		    infra_pwm_bck_parents, 0x0018, 0x0010, 0x0014, 24, 2),
+-	MUX_CLR_SET(CLK_INFRA_PWM_CK6_SEL, "infra_pwm_ck6_sel",
+-		    infra_pwm_bck_parents, 0x0018, 0x0010, 0x0014, 26, 2),
+-	MUX_CLR_SET(CLK_INFRA_PWM_CK7_SEL, "infra_pwm_ck7_sel",
+-		    infra_pwm_bck_parents, 0x0018, 0x0010, 0x0014, 28, 2),
+-	MUX_CLR_SET(CLK_INFRA_PWM_CK8_SEL, "infra_pwm_ck8_sel",
+-		    infra_pwm_bck_parents, 0x0018, 0x0010, 0x0014, 30, 2),
++	MUX_GATE_CLR_SET_UPD(CLK_INFRA_MUX_UART0_SEL, "infra_mux_uart0_sel",
++			     infra_mux_uart0_parents, 0x0018, 0x0010, 0x0014, 0, 1, -1, -1, -1),
++	MUX_GATE_CLR_SET_UPD(CLK_INFRA_MUX_UART1_SEL, "infra_mux_uart1_sel",
++			     infra_mux_uart1_parents, 0x0018, 0x0010, 0x0014, 1, 1, -1, -1, -1),
++	MUX_GATE_CLR_SET_UPD(CLK_INFRA_MUX_UART2_SEL, "infra_mux_uart2_sel",
++			     infra_mux_uart2_parents, 0x0018, 0x0010, 0x0014, 2, 1, -1, -1, -1),
++	MUX_GATE_CLR_SET_UPD(CLK_INFRA_MUX_SPI0_SEL, "infra_mux_spi0_sel", infra_mux_spi0_parents,
++			     0x0018, 0x0010, 0x0014, 4, 1, -1, -1, -1),
++	MUX_GATE_CLR_SET_UPD(CLK_INFRA_MUX_SPI1_SEL, "infra_mux_spi1_sel", infra_mux_spi1_parents,
++			     0x0018, 0x0010, 0x0014, 5, 1, -1, -1, -1),
++	MUX_GATE_CLR_SET_UPD(CLK_INFRA_MUX_SPI2_SEL, "infra_mux_spi2_sel", infra_mux_spi0_parents,
++			     0x0018, 0x0010, 0x0014, 6, 1, -1, -1, -1),
++	MUX_GATE_CLR_SET_UPD(CLK_INFRA_PWM_SEL, "infra_pwm_sel", infra_pwm_bck_parents, 0x0018,
++			     0x0010, 0x0014, 14, 2, -1, -1, -1),
++	MUX_GATE_CLR_SET_UPD(CLK_INFRA_PWM_CK1_SEL, "infra_pwm_ck1_sel", infra_pwm_bck_parents,
++			     0x0018, 0x0010, 0x0014, 16, 2, -1, -1, -1),
++	MUX_GATE_CLR_SET_UPD(CLK_INFRA_PWM_CK2_SEL, "infra_pwm_ck2_sel", infra_pwm_bck_parents,
++			     0x0018, 0x0010, 0x0014, 18, 2, -1, -1, -1),
++	MUX_GATE_CLR_SET_UPD(CLK_INFRA_PWM_CK3_SEL, "infra_pwm_ck3_sel", infra_pwm_bck_parents,
++			     0x0018, 0x0010, 0x0014, 20, 2, -1, -1, -1),
++	MUX_GATE_CLR_SET_UPD(CLK_INFRA_PWM_CK4_SEL, "infra_pwm_ck4_sel", infra_pwm_bck_parents,
++			     0x0018, 0x0010, 0x0014, 22, 2, -1, -1, -1),
++	MUX_GATE_CLR_SET_UPD(CLK_INFRA_PWM_CK5_SEL, "infra_pwm_ck5_sel", infra_pwm_bck_parents,
++			     0x0018, 0x0010, 0x0014, 24, 2, -1, -1, -1),
++	MUX_GATE_CLR_SET_UPD(CLK_INFRA_PWM_CK6_SEL, "infra_pwm_ck6_sel", infra_pwm_bck_parents,
++			     0x0018, 0x0010, 0x0014, 26, 2, -1, -1, -1),
++	MUX_GATE_CLR_SET_UPD(CLK_INFRA_PWM_CK7_SEL, "infra_pwm_ck7_sel", infra_pwm_bck_parents,
++			     0x0018, 0x0010, 0x0014, 28, 2, -1, -1, -1),
++	MUX_GATE_CLR_SET_UPD(CLK_INFRA_PWM_CK8_SEL, "infra_pwm_ck8_sel", infra_pwm_bck_parents,
++			     0x0018, 0x0010, 0x0014, 30, 2, -1, -1, -1),
+ 	/* MODULE_CLK_SEL_1 */
+-	MUX_CLR_SET(CLK_INFRA_PCIE_GFMUX_TL_O_P0_SEL, "infra_pcie_gfmux_tl_o_p0_sel",
+-		    infra_pcie_gfmux_tl_ck_o_p0_parents, 0x0028, 0x0020, 0x0024, 0, 2),
+-	MUX_CLR_SET(CLK_INFRA_PCIE_GFMUX_TL_O_P1_SEL, "infra_pcie_gfmux_tl_o_p1_sel",
+-		    infra_pcie_gfmux_tl_ck_o_p1_parents, 0x0028, 0x0020, 0x0024, 2, 2),
+-	MUX_CLR_SET(CLK_INFRA_PCIE_GFMUX_TL_O_P2_SEL, "infra_pcie_gfmux_tl_o_p2_sel",
+-		    infra_pcie_gfmux_tl_ck_o_p2_parents, 0x0028, 0x0020, 0x0024, 4, 2),
+-	MUX_CLR_SET(CLK_INFRA_PCIE_GFMUX_TL_O_P3_SEL, "infra_pcie_gfmux_tl_o_p3_sel",
+-		    infra_pcie_gfmux_tl_ck_o_p3_parents, 0x0028, 0x0020, 0x0024, 6, 2),
++	MUX_GATE_CLR_SET_UPD(CLK_INFRA_PCIE_GFMUX_TL_O_P0_SEL, "infra_pcie_gfmux_tl_o_p0_sel",
++			     infra_pcie_gfmux_tl_ck_o_p0_parents, 0x0028, 0x0020, 0x0024, 0, 2, -1,
++			     -1, -1),
++	MUX_GATE_CLR_SET_UPD(CLK_INFRA_PCIE_GFMUX_TL_O_P1_SEL, "infra_pcie_gfmux_tl_o_p1_sel",
++			     infra_pcie_gfmux_tl_ck_o_p1_parents, 0x0028, 0x0020, 0x0024, 2, 2, -1,
++			     -1, -1),
++	MUX_GATE_CLR_SET_UPD(CLK_INFRA_PCIE_GFMUX_TL_O_P2_SEL, "infra_pcie_gfmux_tl_o_p2_sel",
++			     infra_pcie_gfmux_tl_ck_o_p2_parents, 0x0028, 0x0020, 0x0024, 4, 2, -1,
++			     -1, -1),
++	MUX_GATE_CLR_SET_UPD(CLK_INFRA_PCIE_GFMUX_TL_O_P3_SEL, "infra_pcie_gfmux_tl_o_p3_sel",
++			     infra_pcie_gfmux_tl_ck_o_p3_parents, 0x0028, 0x0020, 0x0024, 6, 2, -1,
++			     -1, -1),
+ };
+ 
+ static const struct mtk_gate_regs infra0_cg_regs = {
+@@ -179,8 +183,10 @@ static const struct mtk_gate infra_clks[
+ 	GATE_INFRA1_FLAGS(CLK_INFRA_133M_DBG_ACKM, "infra_hf_133m_dbg_ackm", "sysaxi_sel", 20,
+ 			  CLK_IS_CRITICAL),
+ 	GATE_INFRA1(CLK_INFRA_66M_AP_DMA_BCK, "infra_66m_ap_dma_bck", "sysaxi_sel", 21),
+-	GATE_INFRA1(CLK_INFRA_66M_SEJ_BCK, "infra_hf_66m_sej_bck", "sysaxi_sel", 29),
+-	GATE_INFRA1(CLK_INFRA_PRE_CK_SEJ_F13M, "infra_pre_ck_sej_f13m", "csw_infra_f26m_sel", 30),
++	GATE_INFRA1_FLAGS(CLK_INFRA_66M_SEJ_BCK, "infra_hf_66m_sej_bck", "sysaxi_sel", 29,
++			  CLK_IS_CRITICAL),
++	GATE_INFRA1_FLAGS(CLK_INFRA_PRE_CK_SEJ_F13M, "infra_pre_ck_sej_f13m",
++			  "csw_infra_f26m_sel", 30, CLK_IS_CRITICAL),
+ 	/* INFRA2 */
+ 	GATE_INFRA2(CLK_INFRA_26M_THERM_SYSTEM, "infra_hf_26m_therm_system", "csw_infra_f26m_sel",
+ 		    0),
+@@ -225,8 +231,9 @@ static const struct mtk_gate infra_clks[
+ 			  CLK_IS_CRITICAL),
+ 	GATE_INFRA3_FLAGS(CLK_INFRA_USB_FRMCNT_CK_P1, "infra_usb_frmcnt_ck_p1", "usb_frmcnt_p1_sel",
+ 			  9, CLK_IS_CRITICAL),
+-	GATE_INFRA3(CLK_INFRA_USB_PIPE, "infra_usb_pipe", "sspxtp_sel", 10),
+-	GATE_INFRA3(CLK_INFRA_USB_PIPE_CK_P1, "infra_usb_pipe_ck_p1", "usb_phy_sel", 11),
++	GATE_INFRA3_FLAGS(CLK_INFRA_USB_PIPE, "infra_usb_pipe", "sspxtp_sel", 10, CLK_IS_CRITICAL),
++	GATE_INFRA3_FLAGS(CLK_INFRA_USB_PIPE_CK_P1, "infra_usb_pipe_ck_p1", "usb_phy_sel", 11,
++			  CLK_IS_CRITICAL),
+ 	GATE_INFRA3(CLK_INFRA_USB_UTMI, "infra_usb_utmi", "top_xtal", 12),
+ 	GATE_INFRA3(CLK_INFRA_USB_UTMI_CK_P1, "infra_usb_utmi_ck_p1", "top_xtal", 13),
+ 	GATE_INFRA3(CLK_INFRA_USB_XHCI, "infra_usb_xhci", "usb_xhci_sel", 14),
+--- a/drivers/clk/mediatek/clk-mt7988-topckgen.c
++++ b/drivers/clk/mediatek/clk-mt7988-topckgen.c
+@@ -225,15 +225,15 @@ static const struct mtk_mux top_muxes[]
+ 				   0x0d0, 0x0d4, 0x0d8, 0, 2, 7, 0x1C4, 21, CLK_IS_CRITICAL),
+ 	MUX_GATE_CLR_SET_UPD_FLAGS(CLK_TOP_INFRA_F26M_SEL, "csw_infra_f26m_sel", sspxtp_parents,
+ 				   0x0d0, 0x0d4, 0x0d8, 8, 1, 15, 0x1C4, 22, CLK_IS_CRITICAL),
+-	MUX_GATE_CLR_SET_UPD(CLK_TOP_PEXTP_P0_SEL, "pextp_p0_sel", sspxtp_parents, 0x0d0, 0x0d4,
+-			     0x0d8, 16, 1, 23, 0x1C4, 23),
+-	MUX_GATE_CLR_SET_UPD(CLK_TOP_PEXTP_P1_SEL, "pextp_p1_sel", sspxtp_parents, 0x0d0, 0x0d4,
+-			     0x0d8, 24, 1, 31, 0x1C4, 24),
++	MUX_GATE_CLR_SET_UPD_FLAGS(CLK_TOP_PEXTP_P0_SEL, "pextp_p0_sel", sspxtp_parents, 0x0d0,
++				   0x0d4, 0x0d8, 16, 1, 23, 0x1C4, 23, CLK_IS_CRITICAL),
++	MUX_GATE_CLR_SET_UPD_FLAGS(CLK_TOP_PEXTP_P1_SEL, "pextp_p1_sel", sspxtp_parents, 0x0d0,
++				   0x0d4, 0x0d8, 24, 1, 31, 0x1C4, 24, CLK_IS_CRITICAL),
+ 	/* CLK_CFG_14 */
+-	MUX_GATE_CLR_SET_UPD(CLK_TOP_PEXTP_P2_SEL, "pextp_p2_sel", sspxtp_parents, 0x0e0, 0x0e4,
+-			     0x0e8, 0, 1, 7, 0x1C4, 25),
+-	MUX_GATE_CLR_SET_UPD(CLK_TOP_PEXTP_P3_SEL, "pextp_p3_sel", sspxtp_parents, 0x0e0, 0x0e4,
+-			     0x0e8, 8, 1, 15, 0x1C4, 26),
++	MUX_GATE_CLR_SET_UPD_FLAGS(CLK_TOP_PEXTP_P2_SEL, "pextp_p2_sel", sspxtp_parents, 0x0e0,
++				   0x0e4, 0x0e8, 0, 1, 7, 0x1C4, 25, CLK_IS_CRITICAL),
++	MUX_GATE_CLR_SET_UPD_FLAGS(CLK_TOP_PEXTP_P3_SEL, "pextp_p3_sel", sspxtp_parents, 0x0e0,
++				   0x0e4, 0x0e8, 8, 1, 15, 0x1C4, 26, CLK_IS_CRITICAL),
+ 	MUX_GATE_CLR_SET_UPD(CLK_TOP_DA_XTP_GLB_P0_SEL, "da_xtp_glb_p0_sel", da_xtp_glb_p0_parents,
+ 			     0x0e0, 0x0e4, 0x0e8, 16, 1, 23, 0x1C4, 27),
+ 	MUX_GATE_CLR_SET_UPD(CLK_TOP_DA_XTP_GLB_P1_SEL, "da_xtp_glb_p1_sel", da_xtp_glb_p0_parents,

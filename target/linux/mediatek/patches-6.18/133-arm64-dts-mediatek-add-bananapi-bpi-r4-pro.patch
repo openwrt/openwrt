@@ -1,0 +1,1929 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Sean McCully <sean_mccully@yahoo.com>
+Date: Tue, 4 Aug 2026 13:40:35 -0700
+Subject: [PATCH] arm64: dts: mediatek: add Bananapi BPI-R4 Pro (8X, 4E, 4E-SFP)
+
+Add device trees for the Bananapi BPI-R4 Pro router board family,
+built around the MediaTek MT7988A (Filogic 880):
+
+- mt7988a-bananapi-bpi-r4-pro.dtsi: common board description:
+  RT5190A PMIC, SPI-NAND with BL2/u-boot-env/Factory/FIP/UBI layout,
+  internal 1G switch port, MaxLinear MxL86252 DSA switch with combo
+  SerDes mux (ds-mux, SFP+ cage vs 10G PHY), two external 10G PHYs
+  running Aeonsemi AS21x1x firmware, WAN-side ethernet SerDes mux,
+  two SFP+ cages, PCA9545 I2C mux (INA226, PCF8563 RTC, EEPROMs,
+  PCA9555 GPIO expander), per-slot buck rails modelled as fixed
+  regulators (mPCIe A/B on the 2-lane ports via vpcie-supply, B-key
+  SIM slot rails via the PCA9555 enables), PCIe lane-select GPIOs as
+  pio hogs, PWM fan with thermal-zone cooling
+  maps, four PCIe controllers (2x mPCIe, M.2 key-B, M.2 key-M).
+- mt7988a-bananapi-bpi-r4-pro.dts: BPI-R4 Pro 8X.
+- mt7988a-bananapi-bpi-r4-pro-4e.dts: 4E variant. The WAN combo
+  (10G SFP or 2.5G RJ45, no lane mux) is selected in software: this
+  variant uses the internal 2.5G PHY on gmac1 and disables the
+  combo's 10G SFP (sfp2). External 10G PHYs and both SerDes muxes are
+  absent; the switch 10G port keeps the dedicated SFP LAN (sfp1).
+- mt7988a-bananapi-bpi-r4-pro-4e-sfp.dts: 4E with SFP WAN - the same
+  WAN combo selected the other way: gmac1 on SFP2 via 10GBase-R with
+  the internal 2.5G PHY disabled; dedicated SFP LAN (sfp1) kept.
+- mt7988a-pinctrl.dtsi: MT7988A pin groups used by the board.
+- dtso overlays: eMMC (HS400) or SD boot device, PCF8563 RTC
+  enablement, B-key slot routing on the 1L lane muxes (CN15/CN18)
+  and MT7996 Wi-Fi with Factory-partition EEPROM data via NVMEM.
+
+The device trees derive from the MediaTek SDK and Frank Wunderlich's
+BPI-R4 Pro bring-up; original copyright and authorship headers are
+preserved. Pairs with the mxl862xx, as21xxx and mtk_eth_soc NETSYS v3
+driver patches in this series.
+
+Signed-off-by: Sean McCully <sean_mccully@yahoo.com>
+---
+ .../mt7988a-bananapi-bpi-r4-pro-4e-sfp.dts         |   82 +
+ .../mediatek/mt7988a-bananapi-bpi-r4-pro-4e.dts    |   79 +
+ .../mediatek/mt7988a-bananapi-bpi-r4-pro-cn15.dtso |   20 
+ .../mediatek/mt7988a-bananapi-bpi-r4-pro-cn18.dtso |   20 
+ .../mediatek/mt7988a-bananapi-bpi-r4-pro-emmc.dtso |   53 +
+ .../mediatek/mt7988a-bananapi-bpi-r4-pro-rtc.dtso  |   19 
+ .../mediatek/mt7988a-bananapi-bpi-r4-pro-sd.dtso   |   55 +
+ .../mt7988a-bananapi-bpi-r4-pro-wifi-mt7996a.dtso  |   57 +
+ .../dts/mediatek/mt7988a-bananapi-bpi-r4-pro.dts   |   24 
+ .../dts/mediatek/mt7988a-bananapi-bpi-r4-pro.dtsi  | 1119 ++++++++++++++++++++
+ arch/arm64/boot/dts/mediatek/mt7988a-pinctrl.dtsi  |  315 ++++++
+ 11 files changed, 1843 insertions(+)
+
+--- /dev/null
++++ b/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro-4e-sfp.dts
+@@ -0,0 +1,82 @@
++// SPDX-License-Identifier: (GPL-2.0-only OR MIT)
++/*
++ * Device Tree for the Banana Pi BPI-R4 Pro 4E-SFP variant.
++ *
++ * Copyright (C) 2025 MediaTek Inc.
++ * Author: Frank Wunderlich <frank-w@public-files.de>
++ *
++ * Like the 4E, the 10G copper PHYs (phy24/phy28) and the SFP/PHY combo
++ * muxes are not populated.  WAN is the SoC SFP cage (sfp2) on gmac1,
++ * and switch port 12 goes straight to the lan SFP cage (sfp1).
++ */
++
++/dts-v1/;
++
++#include "mt7988a-bananapi-bpi-r4-pro.dtsi"
++
++/ {
++	model = "Bananapi BPI-R4 Pro 4E-SFP";
++	compatible = "bananapi,bpi-r4-pro-4e-sfp", "bananapi,bpi-r4-pro",
++		     "mediatek,mt7988a";
++};
++
++&phy24 {
++	status = "disabled";
++};
++
++&phy28 {
++	status = "disabled";
++};
++
++&mux1 {
++	status = "disabled";
++};
++
++&mux2 {
++	status = "disabled";
++};
++
++&ds_mux0 {
++	status = "disabled";
++};
++
++&int_2p5g_phy {
++	status = "disabled";
++};
++
++&i2p5gbe_led0 {
++	status = "disabled";
++	color = <LED_COLOR_ID_GREEN>;
++};
++
++&i2p5gbe_led1 {
++	status = "disabled";
++	color = <LED_COLOR_ID_AMBER>;
++};
++
++&gmac1 {
++	phy-mode = "10gbase-r";
++	phy-connection-type = "10gbase-r";
++	managed = "in-band-status";
++	sfp = <&sfp2>;
++
++	/delete-property/ phy-handle;
++	/delete-property/ mac-type;
++};
++
++&port12 {
++	label = "lan_sfp";
++	phy-mode = "10gbase-r";
++	phy-connection-type = "10gbase-r";
++	managed = "in-band-status";
++	sfp = <&sfp1>;
++
++	/delete-property/ compatible;
++	/delete-property/ phy-handle;
++	/delete-property/ aeon,skip-sds-eth-wait;
++};
++
++&gsw_port2 {
++	status = "okay";
++	label = "lan1";
++};
+--- /dev/null
++++ b/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro-4e.dts
+@@ -0,0 +1,79 @@
++// SPDX-License-Identifier: (GPL-2.0-only OR MIT)
++/*
++ * Device Tree for the Banana Pi BPI-R4 Pro 4E variant.
++ *
++ * Adapts the shared BPI-R4 Pro base to the 4E hardware: the 10G copper
++ * PHYs (phy24/phy28) and the SFP/PHY combo muxes are not populated, WAN
++ * is served by the internal 2.5G PHY.  lan1 (GSW P2) and the lan
++ * SFP cage (switch port 12) are populated on both 4E variants; only
++ * the WAN port differs.
++ */
++
++/dts-v1/;
++
++#include "mt7988a-bananapi-bpi-r4-pro.dtsi"
++
++/ {
++	model = "Bananapi BPI-R4 Pro 4E";
++	compatible = "bananapi,bpi-r4-pro-4e", "bananapi,bpi-r4-pro",
++		     "mediatek,mt7988a";
++};
++
++&phy24 {
++	status = "disabled";
++};
++
++&phy28 {
++	status = "disabled";
++};
++
++&mux1 {
++	status = "disabled";
++};
++
++&mux2 {
++	status = "disabled";
++};
++
++&ds_mux0 {
++	status = "disabled";
++};
++
++&int_2p5g_phy {
++	status = "okay";
++};
++
++&i2p5gbe_led0 {
++	status = "okay";
++	color = <LED_COLOR_ID_GREEN>;
++};
++
++&i2p5gbe_led1 {
++	status = "okay";
++	color = <LED_COLOR_ID_AMBER>;
++};
++
++&gmac1 {
++	phy-mode = "internal";
++	phy-connection-type = "internal";
++	phy-handle = <&int_2p5g_phy>;
++
++	/delete-property/ mac-type;
++	/delete-property/ managed;
++};
++
++&port12 {
++	label = "lan_sfp";
++	phy-mode = "10gbase-r";
++	managed = "in-band-status";
++	sfp = <&sfp1>;
++
++	/delete-property/ compatible;
++	/delete-property/ phy-handle;
++	/delete-property/ aeon,skip-sds-eth-wait;
++};
++
++&gsw_port2 {
++	status = "okay";
++	label = "lan1";
++};
+--- /dev/null
++++ b/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro-cn15.dtso
+@@ -0,0 +1,20 @@
++// SPDX-License-Identifier: (GPL-2.0 OR MIT)
++/*
++ * Copyright (C) 2025 MediaTek Inc.
++ * Author: Frank Wunderlich <frank-w@public-files.de>
++ */
++
++/* This enables key-b slot CN15 on pcie2(11280000 1L0) on BPI-R4-Pro */
++
++/dts-v1/;
++/plugin/;
++
++#include <dt-bindings/gpio/gpio.h>
++
++/ {
++	compatible = "bananapi,bpi-r4-pro", "mediatek,mt7988a";
++};
++
++&{/soc/pinctrl@1001f000/pcie-2-hog} {
++	output-low;
++};
+--- /dev/null
++++ b/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro-cn18.dtso
+@@ -0,0 +1,20 @@
++// SPDX-License-Identifier: (GPL-2.0 OR MIT)
++/*
++ * Copyright (C) 2025 MediaTek Inc.
++ * Author: Frank Wunderlich <frank-w@public-files.de>
++ */
++
++/* This enables key-b slot CN18 on pcie3(11290000 1L1) on BPI-R4-Pro */
++
++/dts-v1/;
++/plugin/;
++
++#include <dt-bindings/gpio/gpio.h>
++
++/ {
++	compatible = "bananapi,bpi-r4-pro", "mediatek,mt7988a";
++};
++
++&{/soc/pinctrl@1001f000/pcie-3-hog} {
++	output-low;
++};
+--- /dev/null
++++ b/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro-emmc.dtso
+@@ -0,0 +1,53 @@
++// SPDX-License-Identifier: (GPL-2.0 OR MIT)
++/*
++ * Copyright (C) 2021 MediaTek Inc.
++ * Author: Frank Wunderlich <frank-w@public-files.de>
++ */
++
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "bananapi,bpi-r4-pro", "mediatek,mt7988a";
++};
++
++&{/soc/mmc@11230000} {
++	pinctrl-names = "default", "state_uhs";
++	pinctrl-0 = <&mmc0_pins_emmc_51>;
++	pinctrl-1 = <&mmc0_pins_emmc_51>;
++	bus-width = <8>;
++	max-frequency = <200000000>;
++	cap-mmc-highspeed;
++	mmc-hs200-1_8v;
++	mmc-hs400-1_8v;
++	hs400-ds-delay = <0x12814>;
++	vqmmc-supply = <&reg_1p8v>;
++	vmmc-supply = <&reg_3p3v>;
++	non-removable;
++	no-sd;
++	no-sdio;
++	#address-cells = <1>;
++	#size-cells = <0>;
++	status = "okay";
++
++	card@0 {
++		compatible = "mmc-card";
++		reg = <0>;
++		partitions {
++			compatible = "gpt-partitions";
++			block-partition-env {
++				partname = "ubootenv";
++				nvmem-layout {
++					compatible = "u-boot,env-layout";
++				};
++			};
++			emmc_rootfs: block-partition-production {
++				partname = "production";
++			};
++		};
++	};
++};
++
++&{/chosen} {
++	rootdisk-emmc = <&emmc_rootfs>;
++};
+--- /dev/null
++++ b/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro-rtc.dtso
+@@ -0,0 +1,19 @@
++// SPDX-License-Identifier: (GPL-2.0 OR MIT)
++/*
++ * Copyright (C) 2023
++ * Author: Daniel Golle <daniel@makrotopia.org>
++ */
++
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "bananapi,bpi-r4-pro", "mediatek,mt7988a";
++
++	fragment@0 {
++		target = <&pcf8563>;
++		__overlay__ {
++			status = "okay";
++		};
++	};
++};
+--- /dev/null
++++ b/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro-sd.dtso
+@@ -0,0 +1,55 @@
++// SPDX-License-Identifier: (GPL-2.0 OR MIT)
++/*
++ * Copyright (C) 2023 MediaTek Inc.
++ * Author: Frank Wunderlich <frank-w@public-files.de>
++ */
++
++/dts-v1/;
++/plugin/;
++
++#include <dt-bindings/gpio/gpio.h>
++
++/ {
++	compatible = "bananapi,bpi-r4-pro", "mediatek,mt7988a";
++};
++
++&{/soc/mmc@11230000} {
++	pinctrl-names = "default", "state_uhs";
++	pinctrl-0 = <&mmc0_pins_sdcard>;
++	pinctrl-1 = <&mmc0_pins_sdcard>;
++	/* GPIO12_WATCHDOG is wired to the MicroSD card-detect switch. */
++	cd-gpios = <&pio 12 GPIO_ACTIVE_LOW>;
++	bus-width = <4>;
++	max-frequency = <48000000>;
++	cap-sd-highspeed;
++	vmmc-supply = <&reg_3p3v>;
++	vqmmc-supply = <&reg_3p3v>;
++	no-mmc;
++	#address-cells = <1>;
++	#size-cells = <0>;
++	status = "okay";
++
++	card@0 {
++		compatible = "mmc-card";
++		reg = <0>;
++
++		partitions {
++			compatible = "gpt-partitions";
++
++			block-partition-env {
++				partname = "ubootenv";
++				nvmem-layout {
++					compatible = "u-boot,env-layout";
++				};
++			};
++
++			sd_rootfs: block-partition-production {
++				partname = "production";
++			};
++		};
++	};
++};
++
++&{/chosen} {
++	rootdisk-sd = <&sd_rootfs>;
++};
+--- /dev/null
++++ b/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro-wifi-mt7996a.dtso
+@@ -0,0 +1,57 @@
++// SPDX-License-Identifier: (GPL-2.0 OR MIT)
++/dts-v1/;
++/plugin/;
++
++/*
++ * The R4 Pro board docs show GPIO4 as the MaxLinear switch reset line, while
++ * the mini-PCIe 12V rail is handled off-SoC. Use the same Factory-partition
++ * calibration data as the legacy mediatek,mtd-eeprom property.
++ */
++
++/ {
++	compatible = "bananapi,bpi-r4-pro-4e-sfp",
++		     "bananapi,bpi-r4-pro-4e",
++		     "bananapi,bpi-r4-pro",
++		     "mediatek,mt7988a";
++
++	fragment@0 {
++		target = <&pcie0>;
++		__overlay__ {
++			#address-cells = <3>;
++			#size-cells = <2>;
++
++			pcie@0,0 {
++				#address-cells = <3>;
++				#size-cells = <2>;
++				reg = <0x0000 0 0 0 0>;
++
++				mt7996@0,0 {
++					compatible = "mediatek,mt76";
++					reg = <0x0000 0 0 0 0>;
++					/delete-property/ mediatek,mtd-eeprom;
++					nvmem-cells = <&wifi_eeprom_data>;
++					nvmem-cell-names = "eeprom";
++				};
++			};
++		};
++	};
++
++	fragment@1 {
++		target = <&pcie1>;
++		__overlay__ {
++			#address-cells = <3>;
++			#size-cells = <2>;
++
++			pcie@0,0 {
++				#address-cells = <3>;
++				#size-cells = <2>;
++				reg = <0x0000 0 0 0 0>;
++
++				mt7996@0,0 {
++					compatible = "mediatek,mt76";
++					reg = <0x0000 0 0 0 0>;
++				};
++			};
++		};
++	};
++};
+--- /dev/null
++++ b/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro.dts
+@@ -0,0 +1,24 @@
++// SPDX-License-Identifier: (GPL-2.0 OR MIT)
++/*
++ * Copyright (C) 2025 MediaTek Inc.
++ * Author: Frank Wunderlich <frank-w@public-files.de>
++ */
++
++/dts-v1/;
++
++#include "mt7988a-bananapi-bpi-r4-pro.dtsi"
++
++/ {
++	model = "Bananapi BPI-R4 Pro";
++	compatible = "bananapi,bpi-r4-pro",
++		     "mediatek,mt7988a";
++
++};
++
++&sfp1 {
++	/delete-property/ mod-def0-gpios;
++};
++
++&sfp2 {
++	/delete-property/ mod-def0-gpios;
++};
+--- /dev/null
++++ b/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro.dtsi
+@@ -0,0 +1,1119 @@
++// SPDX-License-Identifier: (GPL-2.0 OR MIT)
++/*
++ * Copyright (C) 2025 MediaTek Inc.
++ * Author: Sam.Shih <sam.shih@mediatek.com>
++ * Author: Frank Wunderlich <frank-w@public-files.de>
++ */
++
++/dts-v1/;
++#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/input/input.h>
++#include <dt-bindings/leds/common.h>
++#include <dt-bindings/regulator/richtek,rt5190a-regulator.h>
++#include <dt-bindings/thermal/thermal.h>
++#include "mt7988a.dtsi"
++#include "mt7988a-pinctrl.dtsi"
++
++/*
++ * ----------------------------------- Bananapi Bpi R4 Pro PINs ---------------------------------
++ * |    | Function                               | Function                                |    |
++ * |----|----------------------------------------|-----------------------------------------|----|
++ * | 1  | 3V3                                    | 5V                                      | 2  |
++ * | 3  | GPIO18/I2C_1_SDA                       | 5V                                      | 4  |
++ * | 5  | GPIO17/I2C_1_SCL                       | GND                                     | 6  |
++ * | 7  | GPIO62/JTAG_JTRST_N/PWM6/I2P5G_LED1_P0 | GPIO59/JTAG_JTDO/UART2_TX/GBE_LED1_P1   | 8  |
++ * | 9  | GND                                    | GPIO58/JTAG_JTDI/UART2_RX/GBE_LED1_P0   | 10 |
++ * | 11 | GPIO81/UART1_TXD                       | GPIO51/PCM_CLK_I2S_BCLK                 | 12 |
++ * | 13 | GPIO80/UART1_RXD                       | GND                                     | 14 |
++ * | 15 | GPIO50/PCM_FS_I2S_LRCK                 | GPIO61/JTAG_JTCLK/UART2_RTS/GBE_LED1_P3 | 16 |
++ * | 17 | 3v3                                    | GPIO60/JTAG_JTMS/UART2_CTS/GBE_LED1_P2  | 18 |
++ * | 19 | GPIO30/SPI1_MOSI                       | GND                                     | 20 |
++ * | 21 | GPIO29/SPI1_MISO                       | GPIO53/PCM_DTX_I2S_DOUT                 | 22 |
++ * | 23 | GPIO31/SPI1_CLK                        | GPIO28/SPI1_CSB                         | 24 |
++ * | 25 | GND                                    | GPIO52/PCM_DRX_I2S_DIN                  | 26 |
++ * |----|----------------------------------------|-----------------------------------------|----|
++ */
++
++/ {
++	model = "Bananapi BPI-R4 Pro";
++	compatible = "bananapi,bpi-r4-pro",
++		     "mediatek,mt7988a";
++	mediatek,dual-boot;
++	aliases {
++		ethernet0 = &gmac0;
++		ethernet1 = &gmac1;
++		ethernet2 = &gmac2;
++		i2c0 = &i2c0;
++		i2c1 = &i2c1;
++		i2c2 = &i2c2;
++		/* PCA9545 (0-0070) provides 4 i2c channels */
++		i2c3 = &imux0;
++		i2c4 = &imux1_sfp1;
++		i2c5 = &imux2_sfp2;
++		i2c6 = &imux3_wifi;
++	};
++
++	chosen {
++		stdout-path = &serial0;
++		bootargs = "console=ttyS0,115200n1 loglevel=6  \
++			    earlycon=uart8250,mmio32,0x11000000 \
++			    ubi.block=0,firmware root=/dev/fit0 \
++			    rootwait";
++		rootdisk-spim-nand = <&ubi_rootfs>;
++	};
++
++	gpio-keys {
++		compatible = "gpio-keys";
++		pinctrl-names = "default";
++		pinctrl-0 = <&gpio_keys_pins>;
++
++		reset {
++			label = "reset";
++			linux,code = <KEY_RESTART>;
++			gpios = <&pio 13 GPIO_ACTIVE_LOW>;
++			debounce-interval = <10>;
++		};
++
++		wps {
++			label = "WPS";
++			linux,code = <KEY_WPS_BUTTON>;
++			gpios = <&pio 14 GPIO_ACTIVE_LOW>;
++			debounce-interval = <10>;
++		};
++	};
++
++	gpio-leds {
++		compatible = "gpio-leds";
++
++		led_red: sys-led-red {
++			color = <LED_COLOR_ID_RED>;
++			gpios = <&pca9555 15 GPIO_ACTIVE_HIGH>;
++			linux,default-trigger = "panic";
++		};
++
++		led_blue: sys-led-blue {
++			color = <LED_COLOR_ID_BLUE>;
++			gpios = <&pca9555 14 GPIO_ACTIVE_HIGH>;
++			linux,default-trigger = "heartbeat";
++		};
++	};
++
++	memory@40000000 {
++		reg = <0x00 0x40000000 0x00 0x10000000>;
++		device_type = "memory";
++	};
++
++	wsys_adie: wsys_adie@0 {
++		compatible = "mediatek,rebb-mt7988-adie";
++		adie_id = <7976>;
++		sku_type = <3000>;
++	};
++
++	reg_1p8v: regulator-1p8v {
++		compatible = "regulator-fixed";
++		regulator-name = "fixed-1.8V";
++		regulator-min-microvolt = <1800000>;
++		regulator-max-microvolt = <1800000>;
++		regulator-boot-on;
++		regulator-always-on;
++	};
++
++	reg_3p3v: regulator-3p3v {
++		compatible = "regulator-fixed";
++		regulator-name = "fixed-3.3V";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		regulator-boot-on;
++		regulator-always-on;
++	};
++
++	/* SFP1 cage (LAN) */
++	sfp1: sfp1 {
++		compatible = "sff,sfp";
++		i2c-bus = <&imux1_sfp1>;
++		los-gpios = <&pio 70 GPIO_ACTIVE_HIGH>;
++		mod-def0-gpios = <&pio 69 GPIO_ACTIVE_LOW>;
++		tx-disable-gpios = <&pio 21 GPIO_ACTIVE_HIGH>;
++		maximum-power-milliwatt = <3000>;
++	};
++
++	sfp2: sfp2 {
++		compatible = "sff,sfp";
++		i2c-bus = <&imux2_sfp2>;
++		los-gpios = <&pio 2 GPIO_ACTIVE_HIGH>;
++		mod-def0-gpios = <&pio 1 GPIO_ACTIVE_LOW>;
++		tx-disable-gpios = <&pio 0 GPIO_ACTIVE_HIGH>;
++		maximum-power-milliwatt = <3000>;
++	};
++
++	fan: pwm-fan {
++		compatible = "pwm-fan";
++		/* cooling level (0, 1, 2, 3) : (0% duty, 30% duty, 50% duty, 100% duty) */
++		cooling-levels = <0 80 128 255>;
++		#cooling-cells = <2>;
++		status = "okay";
++	};
++
++	trng {
++		compatible = "mediatek,mt7988-rng";
++	};
++};
++
++&cpu_thermal {
++	trips {
++		cpu_trip_crit: crit {
++			temperature = <125000>;
++			hysteresis = <2000>;
++			type = "critical";
++		};
++
++		cpu_trip_hot: hot {
++			temperature = <120000>;
++			hysteresis = <2000>;
++			type = "hot";
++		};
++
++		cpu_trip_active_hot: active-hot {
++			temperature = <117000>;
++			hysteresis = <2000>;
++			type = "active";
++		};
++
++		cpu_trip_active_high: active-high {
++			temperature = <95000>;
++			hysteresis = <2000>;
++			type = "active";
++		};
++
++		cpu_trip_active_med: active-med {
++			temperature = <70000>;
++			hysteresis = <2000>;
++			type = "active";
++		};
++
++		cpu_trip_active_low: active-low {
++			temperature = <30000>;
++			hysteresis = <2000>;
++			type = "active";
++		};
++	};
++
++	cooling-maps {
++		cpu-active-hot {
++		/* active: dynamic cpu frequency scaling */
++			cooling-device = <&cpu0 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
++						<&cpu1 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
++						<&cpu2 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
++						<&cpu3 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
++			trip = <&cpu_trip_active_hot>;
++		};
++
++		cpu-active-high {
++		/* active: set fan to cooling level 2 */
++			cooling-device = <&fan 3 3>;
++			trip = <&cpu_trip_active_high>;
++		};
++
++		cpu-active-low {
++		/* active: set fan to cooling level 1 */
++			cooling-device = <&fan 2 2>;
++			trip = <&cpu_trip_active_med>;
++		};
++
++		cpu-passive {
++		/* passive: set fan to cooling level 0 */
++			cooling-device = <&fan 1 1>;
++			trip = <&cpu_trip_active_low>;
++		};
++	};
++};
++
++&eth {
++	pinctrl-0 = <&mdio0_pins>;
++	pinctrl-names = "default";
++	status = "okay";
++
++	mux: mux-bus {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		mux1: ethernet-mux@1 {
++			compatible = "mediatek,eth-mux";
++			reg = <1>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++			chan-sel-gpios = <&pio 3 GPIO_ACTIVE_HIGH>;
++			mod-def0-gpios = <&pio 1 GPIO_ACTIVE_LOW>;
++			sfp-connected-channel = <1>;
++
++			channel_10: channel@0 {
++				reg = <0>;
++				phy-mode = "usxgmii";
++				phy-connection-type = "usxgmii";
++				managed = "in-band-status";
++				phy-handle = <&phy28>;
++			};
++
++			channel_11: channel@1 {
++				reg = <1>;
++				phy-mode = "10gbase-r";
++				phy-connection-type = "10gbase-r";
++				managed = "in-band-status";
++				sfp = <&sfp2>;
++			};
++		};
++		mux2: ethernet-mux@2 {
++			compatible = "mediatek,eth-mux";
++			reg = <2>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++			chan-sel-gpios = <&pio 54 GPIO_ACTIVE_HIGH>;
++			mod-def0-gpios = <&pio 69 GPIO_ACTIVE_LOW>;
++			sfp-present-channel = <0>;
++			status = "disabled";
++
++			channel_20: channel@0 {
++				reg = <0>;
++				phy-mode = "10gbase-r";
++				phy-connection-type = "10gbase-r";
++				managed = "in-band-status";
++				sfp = <&sfp1>;
++			};
++
++			channel_21: channel@1 {
++				reg = <1>;
++				phy-mode = "10gbase-r";
++				phy-connection-type = "10gbase-r";
++				phy-handle = <&phy24>;
++			};
++		};
++	};
++};
++
++/* 1G Internal Switch Ports (ETH5 / ETH8) */
++&gmac0 {
++	status = "okay";
++	nvmem-cell-names = "mac-address";
++	nvmem-cells = <&gmac0_mac>;
++	fixed-link {
++		/delete-property/ pause;
++	};
++};
++
++/* 10G WAN Combo */
++&gmac1 {
++	phy-mode = "usxgmii";
++	phy-connection-type = "usxgmii";
++	mac-type = "xgdm";
++	phy-handle = <&phy28>;
++	managed = "in-band-status";
++	nvmem-cell-names = "mac-address";
++	nvmem-cells = <&gmac1_mac>;
++	status = "okay";
++};
++
++&gmac2 {
++	phy-mode = "10gbase-r";
++	phy-connection-type = "10gbase-r";
++	mac-type = "xgdm";
++	nvmem-cell-names = "mac-address";
++	nvmem-cells = <&gmac2_mac>;
++	status = "okay";
++
++	fixed-link {
++		speed = <10000>;
++		full-duplex;
++		pause;
++	};
++};
++
++&gsw_phy0 {
++	pinctrl-names = "gbe-led";
++	pinctrl-0 = <&gbe0_led0_pins>;
++};
++
++&gsw_phy1 {
++	pinctrl-names = "gbe-led";
++	pinctrl-0 = <&gbe1_led0_pins>;
++	status = "okay";
++};
++
++&gsw_phy1_led0 {
++	status = "okay";
++	color = <LED_COLOR_ID_GREEN>;
++};
++
++&gsw_port1 {
++	status = "disabled";
++};
++
++&gsw_phy2 {
++	pinctrl-names = "gbe-led";
++	pinctrl-0 = <&gbe2_led0_pins>;
++	status = "okay";
++};
++
++&gsw_phy2_led0 {
++	status = "okay";
++	color = <LED_COLOR_ID_GREEN>;
++};
++
++&gsw_phy3 {
++	pinctrl-names = "gbe-led";
++	pinctrl-0 = <&gbe3_led0_pins>;
++	status = "okay";
++};
++
++&gsw_phy3_led0 {
++	status = "okay";
++	color = <LED_COLOR_ID_GREEN>;
++};
++
++&gsw_port2 {
++	status = "disabled";
++};
++
++&gsw_port3 {
++	status = "disabled";
++};
++
++&cpu0 {
++	proc-supply = <&rt5190_buck3>;
++};
++
++&cpu1 {
++	proc-supply = <&rt5190_buck3>;
++};
++
++&cpu2 {
++	proc-supply = <&rt5190_buck3>;
++};
++
++&cpu3 {
++	proc-supply = <&rt5190_buck3>;
++};
++
++&cci {
++	proc-supply = <&rt5190_buck3>;
++};
++
++&int_2p5g_phy {
++	status = "disabled";
++};
++
++&pio {
++	gpio-line-names = "sfp2-tx-dis", "sfp2-mod-abs", "sfp2-los",
++			  "mtk-usxgmii-sel", "smi-0-rst", "smi-0-mdc",
++			  "smi-0-mdio", "pcie30-2l-0-wake-n", "pcie30-2l-0-clkreq-n",
++			  "pcie30_1l_1_wake_n", "pcie30-1l-1-clkreq-n", "pmic-int",
++			  "sd-det", "reset-btn", "wps-btn",
++			  "pmic-i2c-0-scl", "pmic-i2c-0-sda", "i2c-1-scl",
++			  "i2c_1_sda", "pcie30_2l_0_preset_n", "pcie30_1l_1_preset_n",
++			  "sfp1-tx-disable", "spi0-wp", "spi0-hold",
++			  "spi0-csb", "spi0-miso", "spi0-mosi",
++			  "spi0-clk", "spi1-csb", "spi1-miso",
++			  "spi1-mosi", "spi1-clk", "sdxc-data3",
++			  "sdxc-data2", "sdxc-data1", "sdxc-data0",
++			  "sdxc-cmd", "sdxc-clk", "emmc-rstb",
++			  "emmc-dsl", "emmc-ck", "emmc-cmd",
++			  "emmc-data-7", "emmc-data-6", "emmc-data-5",
++			  "emmc-data-4", "emmc-data-3", "emmc-data-2",
++			  "emmc-data-1", "emmc-data-0", "pcm-fs-i2s-lrck",
++			  "pcm-clk-i2s-bclk", "pcm-drx-i2s-din", "pcm-dtx-i2s-dout",
++			  "mxl-usxgmii-sel", "uart0-rxd",  "uart0-txd",
++			  "fam-pwm-d0", "jtag-jtdi_uart2-rx_gbe-led1-p0",
++			  "jtag-jtdo_uart2-tx_gbe-led1-p1",
++			  "jtag-jtms_uart2-cts_gbe-led1-p2", "jtag-jtclk_uart2-rts_gbe-led1-p3",
++			  "jtag-jtrst-n_pwm6_2p5g-led1-p0",
++			  "pcie-1l1-sel", "led-a", "led-b",
++			  "led-c", "led-d", "led-e",
++			  "sfp1-mod-abs", "sfp1-los", "i2c-2-scl",
++			  "i2c-2-sda",  "pcie30-2l-1-preset-n", "pcie30-1l-0-preset-n",
++			  "pcie30-2l-1-wake-n", "pcie30-2l-1-clkreq-n", "pcie30-1l-0-wake-n",
++			  "pcie30-1l-0-clkreq-n", "pcie-1l0-sel", "uart1-rx",
++			  "uart1-tx", "10g-wan-rst", "10g-lan-rst";
++
++	/* 1L0: 0 = key-b (CN15), 1 = key-m (CN13) */
++	pcie-2-hog {
++		gpio-hog;
++		gpios = <79 GPIO_ACTIVE_HIGH>;
++		output-high;
++		line-name = "pcie-1l0-sel";
++	};
++	/* 1L1: 0 = key-b (CN18), 1 = key-m (CN14) */
++	pcie-3-hog {
++		gpio-hog;
++		gpios = <63 GPIO_ACTIVE_HIGH>;
++		output-high;
++		line-name = "pcie-1l1-sel";
++	};
++	pwm0_pins: pwm0-pins {
++		mux {
++			groups = "pwm0";
++			function = "pwm";
++		};
++	};
++	gpio_keys_pins: gpio-keys-pins {
++		pins {
++			pins = "GPIO_RESET", "GPIO_WPS";
++			bias-pull-up;
++			input-enable;
++		};
++	};
++};
++
++&mdio_bus {
++	clock-frequency = <2500000>;
++
++	phy24: ethernet-phy@24 {
++		reg = <24>;
++		compatible = "ethernet-phy-id7500.9410",
++			     "ethernet-phy-ieee802.3-c45";
++		reset-gpios = <&pio 83 GPIO_ACTIVE_LOW>;
++		reset-assert-us = <200000>;
++		reset-deassert-us = <350000>;
++		firmware-name = "as21x1x_fw.bin";
++
++		leds {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			phy24_led_0: led@0 {
++				reg = <0>;
++				function = LED_FUNCTION_LAN;
++				function-enumerator = <0>;
++				linux,default-trigger = "netdev";
++				active-high;
++				status = "okay";
++			};
++
++			phy24_led_1: led@1 {
++				reg = <1>;
++				function = LED_FUNCTION_LAN;
++				function-enumerator = <1>;
++				linux,default-trigger = "netdev";
++				active-high;
++				status = "okay";
++			};
++		};
++	};
++
++	/* External Aeonsemi AS21xxx for 10G WAN. */
++	phy28: ethernet-phy@28 {
++		reg = <28>;
++		compatible = "ethernet-phy-id7500.9410",
++			     "ethernet-phy-ieee802.3-c45";
++		reset-gpios = <&pio 82 GPIO_ACTIVE_LOW>;
++		reset-assert-us = <200000>;
++		reset-deassert-us = <350000>;
++		firmware-name = "as21x1x_fw.bin";
++
++		leds {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			phy28_led_0: led@0 {
++				reg = <0>;
++				function = LED_FUNCTION_WAN;
++				function-enumerator = <0>;
++				linux,default-trigger = "netdev";
++				active-high;
++				status = "okay";
++			};
++
++			phy28_led_1: led@1 {
++				reg = <1>;
++				function = LED_FUNCTION_WAN;
++				function-enumerator = <1>;
++				linux,default-trigger = "netdev";
++				active-high;
++				status = "okay";
++			};
++		};
++	};
++
++	switch16: switch@16 {
++		compatible = "maxlinear,mxl86252";
++		reg = <16>;
++		dsa,member = <0 0>;
++		status = "okay";
++
++		ds_mux: ds-mux-bus {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			ds_mux0: ds-mux@0 {
++				compatible = "mxl862xx,ds-mux";
++				reg = <12>;
++				#address-cells = <1>;
++				#size-cells = <0>;
++				chan-sel-gpios = <&pio 54 GPIO_ACTIVE_HIGH>;
++				mod-def0-gpios = <&pio 69 GPIO_ACTIVE_LOW>;
++				sfp-present-channel = <0>;
++
++				ds_channel_0: channel@0 {
++					reg = <0>;
++					phy-mode = "10gbase-r";
++					phy-connection-type = "10gbase-r";
++					managed = "in-band-status";
++					sfp = <&sfp1>;
++				};
++
++				ds_channel_1: channel@1 {
++					reg = <1>;
++					phy-mode = "usxgmii";
++					phy-connection-type = "usxgmii";
++					managed = "in-band-status";
++					phy-handle = <&phy24>;
++				};
++			};
++		};
++
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port0: port@0 {
++				reg = <0>;
++				label = "mxl_lan0";
++				phy-handle = <&switchphy0>;
++				phy-mode = "internal";
++				status = "okay";
++			};
++
++			port1: port@1 {
++				reg = <1>;
++				label = "mxl_lan1";
++				phy-handle = <&switchphy1>;
++				phy-mode = "internal";
++				status = "okay";
++			};
++
++			port2: port@2 {
++				reg = <2>;
++				label = "mxl_lan2";
++				phy-handle = <&switchphy2>;
++				phy-mode = "internal";
++				status = "okay";
++			};
++
++			port3: port@3 {
++				reg = <3>;
++				label = "mxl_lan3";
++				phy-handle = <&switchphy3>;
++				phy-mode = "internal";
++				status = "okay";
++			};
++
++			port4: port@4 {
++				reg = <4>;
++				label = "mxl_lan4";
++				phy-handle = <&switchphy4>;
++				phy-mode = "internal";
++				status = "disabled";
++			};
++
++			port12: port@12 {
++				reg = <12>;
++				label = "mxl_lan5";
++				phy-mode = "usxgmii";
++				managed = "in-band-status";
++				phy-handle = <&phy24>;
++				status = "okay";
++				aeon,skip-sds-eth-wait;
++			};
++
++			port8: port@8 {
++				reg = <8>;
++				label = "cpu";
++				phy-mode = "10gbase-r";
++				ethernet = <&gmac2>;
++				dsa-tag-protocol = "mxl862xx-8021q";
++				fixed-link {
++					speed = <10000>;
++					full-duplex;
++				};
++			};
++
++		};
++
++		mdio {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			switchphy0:switchphy@0 {
++				reg= <0>;
++				leds {
++					#address-cells = <1>;
++					#size-cells = <0>;
++					mxl_phy0_led0: led@0 {
++						reg = <0>;
++						label = "lan_green_phy0";
++						function = LED_FUNCTION_LAN;
++						color = <LED_COLOR_ID_GREEN>;
++						status = "okay";
++					};
++					mxl_phy0_led1: led@1 {
++						reg = <1>;
++						label = "lan_amber_phy0";
++						function = LED_FUNCTION_LAN;
++						color = <LED_COLOR_ID_AMBER>;
++						status = "okay";
++					};
++				};
++			};
++
++			switchphy1:switchphy@1 {
++				reg= <1>;
++				leds {
++					#address-cells = <1>;
++					#size-cells = <0>;
++					mxl_phy1_led0: led@0 {
++						reg = <0>;
++						label = "lan_green_phy1";
++						function = LED_FUNCTION_LAN;
++						color = <LED_COLOR_ID_GREEN>;
++						status = "okay";
++					};
++					mxl_phy1_led1: led@1 {
++						reg = <1>;
++						label = "lan_amber_phy1";
++						function = LED_FUNCTION_LAN;
++						color = <LED_COLOR_ID_AMBER>;
++						status = "okay";
++					};
++				};
++			};
++
++			switchphy2:switchphy@2 {
++				reg= <2>;
++				leds {
++					#address-cells = <1>;
++					#size-cells = <0>;
++					mxl_phy2_led0: led@0 {
++						reg = <0>;
++						label = "lan_green_phy2";
++						function = LED_FUNCTION_LAN;
++						color = <LED_COLOR_ID_GREEN>;
++						status = "okay";
++					};
++					mxl_phy2_led1: led@1 {
++						reg = <1>;
++						label = "lan_amber_phy2";
++						function = LED_FUNCTION_LAN;
++						color = <LED_COLOR_ID_AMBER>;
++						status = "okay";
++					};
++				};
++			};
++
++			switchphy3:switchphy@3 {
++				reg= <3>;
++				leds {
++					#address-cells = <1>;
++					#size-cells = <0>;
++					mxl_phy3_led0: led@0 {
++						reg = <0>;
++						label = "lan_green_phy3";
++						function = LED_FUNCTION_LAN;
++						color = <LED_COLOR_ID_GREEN>;
++						status = "okay";
++					};
++					mxl_phy3_led1: led@1 {
++						reg = <1>;
++						label = "lan_amber_phy3";
++						function = LED_FUNCTION_LAN;
++						color = <LED_COLOR_ID_AMBER>;
++						status = "okay";
++					};
++				};
++			};
++
++			switchphy4:switchphy@4 {
++				reg= <4>;
++			};
++		};
++	};
++};
++
++/ {
++	reg_mpcie_a: regulator-mpcie-a {
++		compatible = "regulator-fixed";
++		regulator-name = "mpcie-a-power";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		gpios = <&pca9555 8 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++		startup-delay-us = <500000>;
++	};
++
++	reg_mpcie_b: regulator-mpcie-b {
++		compatible = "regulator-fixed";
++		regulator-name = "mpcie-b-power";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		gpios = <&pca9555 9 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++		startup-delay-us = <500000>;
++	};
++
++	reg_m2key_a: regulator-m2key-a {
++		compatible = "regulator-fixed";
++		regulator-name = "m2key-a-power";
++		gpios = <&pca9555 0 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++		regulator-always-on;
++	};
++};
++
++&switch {
++	dsa,member = <1 0>;
++	status = "okay";
++};
++
++&gsw_phy0_led0 {
++	status = "okay";
++	function = LED_FUNCTION_LAN;
++	color = <LED_COLOR_ID_GREEN>;
++};
++
++&gsw_port0 {
++	label = "lan0";
++	status = "okay";
++};
++
++&i2c0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2c0_pins>;
++	status = "okay";
++
++	rt5190a_64: rt5190a@64 {
++		compatible = "richtek,rt5190a";
++		reg = <0x64>;
++		vin2-supply = <&rt5190_buck1>;
++		vin3-supply = <&rt5190_buck1>;
++		vin4-supply = <&rt5190_buck1>;
++
++		regulators {
++			rt5190_buck1: buck1 {
++				regulator-name = "rt5190a-buck1";
++				regulator-min-microvolt = <5090000>;
++				regulator-max-microvolt = <5090000>;
++				regulator-allowed-modes = <RT5190A_OPMODE_AUTO RT5190A_OPMODE_FPWM>;
++				regulator-boot-on;
++				regulator-always-on;
++			};
++			buck2 {
++				regulator-name = "vcore";
++				regulator-min-microvolt = <600000>;
++				regulator-max-microvolt = <1400000>;
++				regulator-boot-on;
++				regulator-always-on;
++			};
++			rt5190_buck3: buck3 {
++				regulator-name = "vproc";
++				regulator-min-microvolt = <600000>;
++				regulator-max-microvolt = <1400000>;
++				regulator-boot-on;
++			};
++			buck4 {
++				regulator-name = "rt5190a-buck4";
++				regulator-min-microvolt = <850000>;
++				regulator-max-microvolt = <850000>;
++				regulator-allowed-modes = <RT5190A_OPMODE_AUTO RT5190A_OPMODE_FPWM>;
++				regulator-boot-on;
++				regulator-always-on;
++			};
++			ldo {
++				regulator-name = "rt5190a-ldo";
++				regulator-min-microvolt = <1200000>;
++				regulator-max-microvolt = <1200000>;
++				regulator-boot-on;
++				regulator-always-on;
++			};
++		};
++	};
++};
++
++&i2c1 {
++	pinctrl-0 = <&i2c1_pins>;
++	pinctrl-names = "default";
++	status = "okay";
++};
++
++&i2c2 {
++	clock-frequency = <400000>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2c2_1_pins>;
++	status = "okay";
++
++	pca9545: i2c-switch@70 {
++		reg = <0x70>;
++		compatible = "nxp,pca9545";
++		#address-cells = <1>;
++		#size-cells = <0>;
++		i2c-mux-idle-disconnect;
++
++		imux0: i2c@0 {
++			reg = <0>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			ina226: adc@40 {
++				compatible = "ti,ina226";
++				reg = <0x40>;
++			};
++
++			pcf8563: rtc@51 {
++				compatible = "nxp,pcf8563";
++				reg = <0x51>;
++			};
++
++			p24c02: eeprom@57 {
++				compatible = "atmel,24c02";
++				reg = <0x57>;
++				address-bits = <8>;
++				page-size = <8>;
++				size = <256>;
++			};
++
++			pca9555: i2c-gpio-expander@20 {
++				compatible = "nxp,pca9555";
++				gpio-controller;
++				#gpio-cells = <2>;
++				reg = <0x20>;
++				gpio-line-names = "bkey-a-pdn", "bkey-a-vset",
++						  "bkey-b-pdn", "bkey-b-vset",
++						  "bkey-c-pdn", "bkey-c-vset",
++						  "sim-sel", "mpcie-ab-vset",
++						  "mpcie-a-pdn", "mpcie-b-pdn",
++						  "bkey-a-rst", "usb-vbus-ab-pdn",
++						  "bkey-b-rst", "bkey-c-rst",
++						  "sys-led-blue", "sys-led-red";
++			};
++		};
++
++		imux1_sfp1: i2c@1 {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			reg = <1>;
++		};
++
++		imux2_sfp2: i2c@2 {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			reg = <2>;
++		};
++		imux3_wifi: i2c@3 {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			reg = <3>;
++			wifi_eeprom: eeprom@51 {
++				compatible = "atmel,24c02";
++				reg = <0x51>;
++				address-bits = <8>;
++				page-size = <8>;
++				size = <256>;
++			};
++		};
++	};
++};
++
++/* mPCIe SIM2 */
++&pcie0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pcie0_pins>;
++	status = "okay";
++	vpcie-supply = <&reg_mpcie_a>;
++
++	slot0: pcie@0,0 {
++		reg = <0x0000 0 0 0 0>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++
++		mt7996@0,0 {
++			compatible = "mediatek,mt76";
++			reg = <0x0000 0 0 0 0>;
++			device_type = "pci";
++			#address-cells = <3>;
++			#size-cells = <2>;
++			ranges;
++			mediatek,mtd-eeprom = <&factory 0x0>;
++		};
++	};
++};
++
++/* mPCIe B (SIM3), PCIe 2L_1 - powered by reg_mpcie_b */
++&pcie1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pcie1_pins>;
++	vpcie-supply = <&reg_mpcie_b>;
++	status = "okay";
++};
++
++/* PCIe 1L_0 via Switch_A: M.2 key-M A (CN13, default, always-on rail)
++ * or M.2 key-B A (CN15, SIM1) via the cn15 overlay; VDD_BKEY_A is
++ * driven by reg_m2key_a.
++ */
++&pcie2 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pcie2_pins>;
++	vpcie-supply = <&reg_m2key_a>;
++	status = "okay";
++};
++
++/* PCIe 1L_1 via Switch_B: M.2 key-M B (CN14, default, always-on rail;
++ * SSD slot) or M.2 key-B B (CN18) via the cn18 overlay; VDD_BKEY_B is
++ * driven by reg_m2key_b.
++ */
++&pcie3 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pcie3_pins>;
++	vpcie-supply = <&reg_3p3v>;
++	status = "okay";
++};
++
++&pwm {
++	status = "okay";
++};
++
++&fan {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pwm0_pins>;
++	pwms = <&pwm 0 50000>;
++	status = "okay";
++};
++
++&ssusb0 {
++	phys = <&xphyu2port0 PHY_TYPE_USB2>;
++	mediatek,u3p-dis-msk = <1>;
++	status = "okay";
++};
++
++&ssusb1 {
++	status = "okay";
++};
++
++&tphy {
++	status = "okay";
++};
++
++&spi0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&spi0_flash_pins>;
++	status = "okay";
++
++	spi_nand: spi_nand@0 {
++		compatible = "spi-nand";
++		reg = <0>;
++		spi-max-frequency = <52000000>;
++		spi-tx-bus-width = <4>;
++		spi-rx-bus-width = <4>;
++	};
++};
++
++&spi_nand {
++	reg = <0>;
++	spi-max-frequency = <52000000>;
++	spi-tx-bus-width = <4>;
++	spi-rx-bus-width = <4>;
++	mediatek,nmbm;
++	mediatek,bmt-max-ratio = <1>;
++	mediatek,bmt-max-reserved-blocks = <64>;
++
++	partitions {
++		compatible = "fixed-partitions";
++		#address-cells = <1>;
++		#size-cells = <1>;
++
++		partition@0 {
++			label = "BL2";
++			reg = <0x00000 0x0100000>;
++			read-only;
++		};
++
++		partition@100000 {
++			label = "u-boot-env";
++			reg = <0x0100000 0x0080000>;
++		};
++
++		factory: partition@180000 {
++			label = "Factory";
++			reg = <0x180000 0x0400000>;
++
++			nvmem-layout {
++				compatible = "fixed-layout";
++				#address-cells = <1>;
++				#size-cells = <1>;
++
++				wifi_eeprom_data: eeprom@0 {
++					reg = <0x0 0x1e00>;
++				};
++
++				gmac2_mac: eeprom@fffee {
++					reg = <0xfffee 0x6>;
++				};
++				gmac1_mac: eeprom@ffffa {
++					reg = <0xffffa 0x6>;
++				};
++				gmac0_mac: eeprom@ffff4 {
++					reg = <0xffff4 0x6>;
++				};
++			};
++		};
++
++		partition@580000 {
++			label = "FIP";
++			reg = <0x580000 0x0200000>;
++		};
++
++		partition@780000 {
++			label = "ubi";
++			reg = <0x780000 0xF880000>;
++			compatible = "linux,ubi";
++
++			volumes {
++				ubi_rootfs: ubi-volume-fit {
++					volname = "firmware";
++				};
++			};
++		};
++	};
++};
++
++&serial0 {
++	status = "okay";
++};
++
++&serial1 {
++	status = "okay";
++	pinctrl-names = "default";
++	pinctrl-0 = <&uart1_2_lite_pins>;
++};
++
++&serial2 {
++	status = "okay";
++	pinctrl-names = "default";
++	pinctrl-0 = <&uart2_3_pins>;
++};
++
++&xsphy {
++	status = "okay";
++};
++
++/* back USB */
++&lvts {
++	status = "okay";
++};
++
++&watchdog {
++	status = "okay";
++};
++
++/delete-node/ &wmcpu_emi;
++&{/reserved-memory} {
++	wmcpu_emi: wmcpu-reserved@50000000 {
++		reg = <0 0x50000000 0 0x00A00000>;
++		no-map;
++	};
++};
+--- /dev/null
++++ b/arch/arm64/boot/dts/mediatek/mt7988a-pinctrl.dtsi
+@@ -0,0 +1,315 @@
++// SPDX-License-Identifier: (GPL-2.0 OR MIT)
++/*
++ * Copyright (C) 2025 MediaTek Inc.
++ * Author: Tim.Kuo <Tim.Kuo@mediatek.com>
++ */
++#include <dt-bindings/gpio/gpio.h>
++
++&pio {
++	mdio0_pins: mdio0-pins {
++		mux {
++			function = "eth";
++			groups = "mdc_mdio0";
++		};
++
++		conf {
++			groups = "mdc_mdio0";
++			drive-strength = <MTK_DRIVE_10mA>;
++		};
++	};
++
++	gbe0_led0_pins: gbe0-led0-pins {
++		mux {
++			function = "led";
++			groups = "gbe0_led0";
++		};
++	};
++
++	gbe1_led0_pins: gbe1-led0-pins {
++		mux {
++			function = "led";
++			groups = "gbe1_led0";
++		};
++	};
++
++	gbe2_led0_pins: gbe2-led0-pins {
++		mux {
++			function = "led";
++			groups = "gbe2_led0";
++		};
++	};
++
++	gbe3_led0_pins: gbe3-led0-pins {
++		mux {
++			function = "led";
++			groups = "gbe3_led0";
++		};
++	};
++
++	gbe0_led1_pins: gbe0-led1-pins {
++		mux {
++			function = "led";
++			groups = "gbe0_led1";
++		};
++	};
++
++	gbe1_led1_pins: gbe1-led1-pins {
++		mux {
++			function = "led";
++			groups = "gbe1_led1";
++		};
++	};
++
++	gbe2_led1_pins: gbe2-led1-pins {
++		mux {
++			function = "led";
++			groups = "gbe2_led1";
++		};
++	};
++
++	gbe3_led1_pins: gbe3-led1-pins {
++		mux {
++			function = "led";
++			groups = "gbe3_led1";
++		};
++	};
++
++	i2c0_pins: i2c0-g0-pins {
++		mux {
++			function = "i2c";
++			groups = "i2c0_1";
++		};
++	};
++
++	i2c1_pins: i2c1-g0-pins {
++		mux {
++			function = "i2c";
++			groups = "i2c1_0";
++		};
++	};
++
++	i2c1_sfp_pins: i2c1-sfp-g0-pins {
++		mux {
++			function = "i2c";
++			groups = "i2c1_sfp";
++		};
++	};
++
++	i2c2_0_pins: i2c2-g0-pins {
++		mux {
++			function = "i2c";
++			groups = "i2c2_0";
++		};
++	};
++
++	i2c2_1_pins: i2c2-g1-pins {
++		mux {
++			function = "i2c";
++			groups = "i2c2_1";
++		};
++	};
++
++	i2c2_pins: i2c2-g0-pins {
++		mux {
++			function = "i2c";
++			groups = "i2c2_0";
++		};
++	};
++
++	i2p5gbe_led0_pins: 2p5gbe-led0-pins {
++		mux {
++			function = "led";
++			groups = "2p5gbe_led0";
++		};
++	};
++
++	i2p5gbe_led1_pins: 2p5gbe-led1-pins {
++		mux {
++			function = "led";
++			groups = "2p5gbe_led1";
++		};
++	};
++
++	pwm0_pins: pwm0-pins {
++		mux {
++			groups = "pwm0";
++			function = "pwm";
++		};
++	};
++
++	pwm_pins: pwm-pins {
++		mux {
++			function = "pwm";
++			groups = "pwm1";
++		};
++	};
++
++	pwm_rgb_pins: pwm-rgb-pins {
++		mux {
++			function = "pwm";
++			groups = "pwm1", "pwm2", "pwm3";
++		};
++	};
++
++	uart0_pins: uart0-pins {
++		mux {
++			function = "uart";
++			groups =  "uart0";
++		};
++	};
++
++	uart1_0_pins: uart1-0-pins {
++		mux {
++			function = "uart";
++			groups =  "uart1_0";
++		};
++	};
++
++	uart1_1_pins: uart1-1-pins {
++		mux {
++			function = "uart";
++			groups =  "uart1_1";
++		};
++	};
++
++	uart1_2_pins: uart1-2-pins {
++		mux {
++			function = "uart";
++			groups =  "uart1_2";
++		};
++	};
++
++	uart1_2_lite_pins: uart1-2-lite-pins {
++		mux {
++			function = "uart";
++			groups =  "uart1_2_lite";
++		};
++	};
++
++	uart2_pins: uart2-pins {
++		mux {
++			function = "uart";
++			groups =  "uart2";
++		};
++	};
++
++	uart2_0_pins: uart2-0-pins {
++		mux {
++			function = "uart";
++			groups =  "uart2_0";
++		};
++	};
++
++	uart2_1_pins: uart2-1-pins {
++		mux {
++			function = "uart";
++			groups =  "uart2_1";
++		};
++	};
++
++	uart2_2_pins: uart2-2-pins {
++		mux {
++			function = "uart";
++			groups =  "uart2_2";
++		};
++	};
++
++	uart2_3_pins: uart2-3-pins {
++		mux {
++			function = "uart";
++			groups =  "uart2_3";
++		};
++	};
++
++	spi0_flash_pins: spi0-pins {
++		mux {
++			function = "spi";
++			groups = "spi0", "spi0_wp_hold";
++		};
++
++		conf-pu {
++			pins = "SPI0_CSB", "SPI0_HOLD", "SPI0_WP";
++			drive-strength = <MTK_DRIVE_4mA>;
++			bias-pull-up = <MTK_PUPD_SET_R1R0_11>;
++		};
++
++		conf-pd {
++			pins = "SPI0_CLK", "SPI0_MOSI", "SPI0_MISO";
++			drive-strength = <MTK_DRIVE_4mA>;
++			bias-pull-down = <MTK_PUPD_SET_R1R0_11>;
++		};
++	};
++
++	spi0_pins: spi0-pins {
++		mux {
++			function = "spi";
++			groups = "spi0";
++		};
++	};
++
++	spi2_flash_pins: spi2-pins {
++		mux {
++			function = "spi";
++			groups = "spi2", "spi2_wp_hold";
++		};
++
++		conf-pu {
++			pins = "SPI2_CSB", "SPI2_HOLD", "SPI2_WP";
++			drive-strength = <MTK_DRIVE_8mA>;
++			bias-pull-up = <MTK_PUPD_SET_R1R0_11>;
++		};
++
++		conf-pd {
++			pins = "SPI2_CLK", "SPI2_MOSI", "SPI2_MISO";
++			drive-strength = <MTK_DRIVE_8mA>;
++			bias-pull-down = <MTK_PUPD_SET_R1R0_11>;
++		};
++	};
++
++	spi2_pins: spi2-pins {
++		mux {
++			function = "spi";
++			groups = "spi2";
++		};
++	};
++
++	mmc0_pins_emmc_51: mmc0-emmc-51-pins {
++		mux {
++			function = "flash";
++			groups = "emmc_51";
++		};
++
++		conf-cmd-dat {
++			pins = "EMMC_DATA_0", "EMMC_DATA_1", "EMMC_DATA_2",
++			       "EMMC_DATA_3", "EMMC_DATA_4", "EMMC_DATA_5",
++			       "EMMC_DATA_6", "EMMC_DATA_7", "EMMC_CMD";
++			input-enable;
++			drive-strength = <MTK_DRIVE_4mA>;
++			mediatek,pull-up-adv = <1>;	/* pull-up 10K */
++		};
++
++		conf-clk {
++			pins = "EMMC_CK";
++			drive-strength = <MTK_DRIVE_6mA>;
++			mediatek,pull-down-adv = <2>;	/* pull-down 50K */
++		};
++
++		conf-dsl {
++			pins = "EMMC_DSL";
++			mediatek,pull-down-adv = <2>;	/* pull-down 50K */
++		};
++
++		conf-rst {
++			pins = "EMMC_RSTB";
++			drive-strength = <MTK_DRIVE_4mA>;
++			mediatek,pull-up-adv = <1>;	/* pull-up 10K */
++		};
++	};
++
++	mmc0_pins_sdcard: mmc0-sdcard-pins {
++		mux {
++			function = "flash";
++			groups = "sdcard";
++		};
++	};
++};
