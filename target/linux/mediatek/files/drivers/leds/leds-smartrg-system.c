@@ -143,7 +143,8 @@ srg_led_init_led(struct srg_led_ctrl *sysled_ctrl, struct fwnode_handle *fw)
 
 	led_cdev->name = name;
 	led_cdev->brightness = LED_OFF;
-	led_cdev->max_brightness = LED_FULL;
+	/* MCU documented brightness range ends at 254 */
+	led_cdev->max_brightness = 254;
 	led_cdev->brightness_set_blocking = srg_led_set_brightness;
 	led_cdev->blink_set = srg_led_set_pulse;
 
