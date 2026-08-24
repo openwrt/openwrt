@@ -833,7 +833,7 @@ define Device/cudy_re1800-v2-16m
   IMAGE_SIZE := 15872k
   DEVICE_VENDOR := Cudy
   DEVICE_MODEL := RE1800
-  DEVICE_VARIANT := v2 (16 MiB)
+  DEVICE_VARIANT := v2 (16M)
   UIMAGE_NAME := R27
   DEVICE_PACKAGES := kmod-mt7915-firmware -uboot-envtools
   SUPPORTED_DEVICES += R27
