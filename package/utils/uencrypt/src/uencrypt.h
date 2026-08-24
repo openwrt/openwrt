@@ -7,12 +7,11 @@
 #define CRYPT_BUF_SIZE 1024
 
 #ifdef USE_MBEDTLS
-# include <mbedtls/cipher.h>
-
-# if defined(MBEDTLS_MAX_BLOCK_LENGTH) \
-     && MBEDTLS_MAX_BLOCK_LENGTH > CRYPT_BUF_SIZE
+# include <psa/crypto.h>
+# if defined(PSA_BLOCK_CIPHER_BLOCK_MAX_SIZE) \
+     && PSA_BLOCK_CIPHER_BLOCK_MAX_SIZE > CRYPT_BUF_SIZE
 #  undef CRYPT_BUF_SIZE
-#  define CRYPT_BUF_SIZE MAX_BLOCK_LENGTH
+#  define CRYPT_BUF_SIZE PSA_BLOCK_CIPHER_BLOCK_MAX_SIZE
 # endif
 
 unsigned char *hexstr2buf(const char* str, long *len);
