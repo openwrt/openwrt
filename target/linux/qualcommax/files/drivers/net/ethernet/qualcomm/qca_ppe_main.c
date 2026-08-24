@@ -1936,6 +1936,19 @@ static void ppe_mirror_put(struct qca_ppe_priv *priv, u8 dirs)
 	ppe_mirror_analyzer_write(priv);
 }
 
+/* Which analyzer a classifier rule's mirror uses is not known, so it claims
+ * both.
+ */
+int ppe_mirror_analyzer_get(struct qca_ppe_priv *priv, int to_port)
+{
+	return ppe_mirror_get(priv, to_port, BIT(0) | BIT(1));
+}
+
+void ppe_mirror_analyzer_put(struct qca_ppe_priv *priv)
+{
+	ppe_mirror_put(priv, BIT(0) | BIT(1));
+}
+
 int qca_ppe_port_mirror_add(struct dsa_switch *ds, int port,
 			    struct dsa_mall_mirror_tc_entry *mirror,
 			    bool ingress, struct netlink_ext_ack *extack)
@@ -1979,6 +1992,10 @@ void qca_ppe_port_mirror_del(struct dsa_switch *ds, int port,
 
 static const struct dsa_switch_ops qca_ppe_ops = {
 	.port_setup_tc		= qca_ppe_setup_tc,
+	.cls_flower_add		= qca_ppe_cls_flower_add,
+	.cls_flower_del		= qca_ppe_cls_flower_del,
+	.get_rxnfc		= qca_ppe_get_rxnfc,
+	.set_rxnfc		= qca_ppe_set_rxnfc,
 	.port_mirror_add	= qca_ppe_port_mirror_add,
 	.port_mirror_del	= qca_ppe_port_mirror_del,
 	.port_policer_add	= qca_ppe_port_policer_add,
@@ -2234,19 +2251,24 @@ static int qca_ppe_probe(struct platform_device *pdev)
 
 	ppe_mac_hw_init(priv);
 	ppe_ctrlpkt_init(priv);
+	ppe_acl_init(priv);
 
 	if (data->type == PPE_TYPE_IPQ6018)
 		ppe_ipq6018_mux_setup(priv);
 
 	ret = dsa_register_switch(ds);
 	if (ret)
-		return ret;
+		goto err_acl;
 
 	ppe_debugfs_init(priv);
 
 	platform_set_drvdata(pdev, priv);
 
 	return 0;
+
+err_acl:
+	ppe_acl_exit(priv);
+	return ret;
 }
 
 static void qca_ppe_remove(struct platform_device *pdev)
@@ -2255,6 +2277,7 @@ static void qca_ppe_remove(struct platform_device *pdev)
 
 	ppe_debugfs_exit(priv);
 	dsa_unregister_switch(&priv->ds);
+	ppe_acl_exit(priv);
 }
 
 static const struct ppe_data ipq6018_ppe_data = {
