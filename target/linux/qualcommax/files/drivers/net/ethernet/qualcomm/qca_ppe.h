@@ -709,6 +709,11 @@
 #define   PPE_FLOW_E_SPORT_LEN		16
 #define   PPE_FLOW_E_DPORT_OFF		124
 #define   PPE_FLOW_E_DPORT_LEN		16
+/* A protocol the two-bit field cannot name keys on the IP protocol instead,
+ * in the bits the source port holds for one that can.
+ */
+#define   PPE_FLOW_E_IP_PROTO_OFF	108
+#define   PPE_FLOW_E_IP_PROTO_LEN	8
 #define   PPE_FLOW_E_IPV6_OFF		140
 #define   PPE_FLOW_E_PRI_PROFILE_OFF	63
 #define   PPE_FLOW_E_PRI_PROFILE_LEN	5

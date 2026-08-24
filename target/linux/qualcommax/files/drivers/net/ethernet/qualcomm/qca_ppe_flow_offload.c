@@ -250,6 +250,10 @@ static void ppe_entry_set_addr6(u32 *words, u32 offset,
 			      ntohl(addr->s6_addr32[i]));
 }
 
+/* GRE is the one protocol the flowtable offers whose tuple has no ports: the
+ * entry keys on the IP protocol instead, which the hardware selects by naming
+ * no L4 protocol at all.
+ */
 static int ppe_flow_proto(u8 l4proto)
 {
 	switch (l4proto) {
@@ -257,6 +261,8 @@ static int ppe_flow_proto(u8 l4proto)
 		return PPE_FLOW_PROTO_TCP;
 	case IPPROTO_UDP:
 		return PPE_FLOW_PROTO_UDP;
+	case IPPROTO_GRE:
+		return PPE_FLOW_PROTO_OTHER;
 	default:
 		return -EOPNOTSUPP;
 	}
@@ -1047,10 +1053,15 @@ static void ppe_flow_encode(struct ppe_flow_data *data, bool v6, bool snat,
 		ppe_entry_set(fw, PPE_FLOW_E_NEW_PORT_OFF,
 			      PPE_FLOW_E_NEW_PORT_LEN, ntohs(data->dport_new));
 
-	ppe_entry_set(fw, PPE_FLOW_E_SPORT_OFF, PPE_FLOW_E_SPORT_LEN,
-		      ntohs(data->sport));
-	ppe_entry_set(fw, PPE_FLOW_E_DPORT_OFF, PPE_FLOW_E_DPORT_LEN,
-		      ntohs(data->dport));
+	if (ppe_flow_proto(data->l4proto) == PPE_FLOW_PROTO_OTHER) {
+		ppe_entry_set(fw, PPE_FLOW_E_IP_PROTO_OFF,
+			      PPE_FLOW_E_IP_PROTO_LEN, data->l4proto);
+	} else {
+		ppe_entry_set(fw, PPE_FLOW_E_SPORT_OFF, PPE_FLOW_E_SPORT_LEN,
+			      ntohs(data->sport));
+		ppe_entry_set(fw, PPE_FLOW_E_DPORT_OFF, PPE_FLOW_E_DPORT_LEN,
+			      ntohs(data->dport));
+	}
 
 	ppe_entry_set(hw, PPE_HOST_E_VALID_OFF, PPE_HOST_E_VALID_LEN, 1);
 
@@ -1236,10 +1247,11 @@ static int ppe_flow_offload_replace(struct ppe_flow_block *fb,
 		return ppe_flow_reject(priv, PPE_REJECT_KEY);
 	}
 
-	if (!flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_PORTS))
-		return ppe_flow_reject(priv, PPE_REJECT_KEY);
-	{
+	if (ppe_flow_proto(data.l4proto) != PPE_FLOW_PROTO_OTHER) {
 		struct flow_match_ports match;
+
+		if (!flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_PORTS))
+			return ppe_flow_reject(priv, PPE_REJECT_KEY);
 
 		flow_rule_match_ports(rule, &match);
 		data.sport = match.key->src;
