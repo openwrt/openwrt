@@ -10,6 +10,8 @@ issue for the performance improvement.
 Signed-off-by: Luo Jie <quic_luoj@quicinc.com>
 Alex G: print error code when failing to connect phylink
 Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
+Balsam CHIHI: route 1000BASE-X to GMII clock helper for 1G SFP support
+Signed-off-by: Balsam CHIHI <balsam.chihi@moment.tech>
 ---
  drivers/net/ethernet/qualcomm/ppe/Makefile    |   2 +-
  drivers/net/ethernet/qualcomm/ppe/edma.c      | 158 +---
@@ -2263,8 +2265,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  {
 -	struct ppe_device *ppe_dev = ppe_port->ppe_dev;
 -	int ret;
-+	int ret, i;
- 
+-
 -	ret = reset_control_assert(ppe_port->rstcs[PPE_PORT_CLK_RST_MAC]);
 -	if (ret)
 -		goto error;
@@ -2283,7 +2284,8 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
 -	ret = reset_control_deassert(ppe_port->rstcs[PPE_PORT_CLK_RST_MAC]);
 -	if (ret)
 -		goto error;
--
++	int ret, i;
+ 
 -	ret = reset_control_deassert(ppe_port->rstcs[PPE_PORT_CLK_RST_RX]);
 -	if (ret)
 -		goto error;
@@ -2353,7 +2355,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  	if (ret)
  		goto err_mac_config;
  
-@@ -676,8 +702,111 @@ static void ppe_port_mac_config(struct p
+@@ -676,8 +702,112 @@ static void ppe_port_mac_config(struct p
  	return;
  
  err_mac_config:
@@ -2432,6 +2434,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
 +	case PHY_INTERFACE_MODE_SGMII:
 +	case PHY_INTERFACE_MODE_QSGMII:
 +	case PHY_INTERFACE_MODE_PSGMII:
++	case PHY_INTERFACE_MODE_1000BASEX:
 +	case PHY_INTERFACE_MODE_2500BASEX:
 +		rate = ppe_port_mac_clock_rate_get_gmii(speed);
 +		break;
@@ -2467,7 +2470,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  }
  
  /* PPE port GMAC link up configuration */
-@@ -688,6 +817,11 @@ static int ppe_port_gmac_link_up(struct
+@@ -688,6 +818,11 @@ static int ppe_port_gmac_link_up(struct
  	int ret, port = ppe_port->port_id;
  	u32 reg, val;
  
@@ -2479,7 +2482,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  	/* Set GMAC speed */
  	switch (speed) {
  	case SPEED_1000:
-@@ -700,8 +834,8 @@ static int ppe_port_gmac_link_up(struct
+@@ -700,8 +835,8 @@ static int ppe_port_gmac_link_up(struct
  		val = GMAC_SPEED_10;
  		break;
  	default:
@@ -2490,7 +2493,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  		return -EINVAL;
  	}
  
-@@ -720,10 +854,8 @@ static int ppe_port_gmac_link_up(struct
+@@ -720,10 +855,8 @@ static int ppe_port_gmac_link_up(struct
  	if (rx_pause)
  		val |= GMAC_RXFCEN;
  
@@ -2503,7 +2506,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  }
  
  /* PPE port XGMAC link up configuration */
-@@ -764,8 +896,8 @@ static int ppe_port_xgmac_link_up(struct
+@@ -764,8 +897,8 @@ static int ppe_port_xgmac_link_up(struct
  		val = XGMAC_SPEED_10;
  		break;
  	default:
@@ -2514,7 +2517,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  		return -EINVAL;
  	}
  
-@@ -792,10 +924,8 @@ static int ppe_port_xgmac_link_up(struct
+@@ -792,10 +925,8 @@ static int ppe_port_xgmac_link_up(struct
  		return ret;
  
  	/* Enable XGMAC RX*/
@@ -2527,7 +2530,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  }
  
  /* PPE port MAC link up configuration for phylink */
-@@ -813,9 +943,12 @@ static void ppe_port_mac_link_up(struct
+@@ -813,9 +944,12 @@ static void ppe_port_mac_link_up(struct
  	int ret, port = ppe_port->port_id;
  	u32 reg, val;
  
@@ -2542,7 +2545,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  	if (mac_type == PPE_MAC_TYPE_GMAC)
  		ret = ppe_port_gmac_link_up(ppe_port,
  					    speed, duplex, tx_pause, rx_pause);
-@@ -836,17 +969,47 @@ static void ppe_port_mac_link_up(struct
+@@ -836,17 +970,47 @@ static void ppe_port_mac_link_up(struct
  
  	/* Enable PPE port TX */
  	reg = PPE_PORT_BRIDGE_CTRL_ADDR + PPE_PORT_BRIDGE_CTRL_INC * port;
@@ -2595,7 +2598,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  }
  
  /* PPE port MAC link down configuration for phylink */
-@@ -861,48 +1024,28 @@ static void ppe_port_mac_link_down(struc
+@@ -861,48 +1025,28 @@ static void ppe_port_mac_link_down(struc
  	int ret, port = ppe_port->port_id;
  	u32 reg;
  
@@ -2654,7 +2657,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  {
  	struct ppe_port *ppe_port = container_of(config, struct ppe_port,
  						 phylink_config);
-@@ -920,8 +1063,8 @@ struct phylink_pcs *ppe_port_mac_select_
+@@ -920,8 +1064,8 @@ struct phylink_pcs *ppe_port_mac_select_
  					 PPE_PORT_MUX_CTRL_ADDR,
  					 PPE_PORT5_SEL_PCS1, val);
  		if (ret) {
@@ -2665,7 +2668,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  			return NULL;
  		}
  	}
-@@ -936,6 +1079,17 @@ static const struct phylink_mac_ops ppe_
+@@ -936,6 +1080,17 @@ static const struct phylink_mac_ops ppe_
  	.mac_select_pcs = ppe_port_mac_select_pcs,
  };
  
@@ -2683,7 +2686,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  /**
   * ppe_port_phylink_setup() - Set phylink instance for the given PPE port
   * @ppe_port: PPE port
-@@ -950,9 +1104,9 @@ int ppe_port_phylink_setup(struct ppe_po
+@@ -950,9 +1105,9 @@ int ppe_port_phylink_setup(struct ppe_po
  {
  	struct ppe_device *ppe_dev = ppe_port->ppe_dev;
  	struct device_node *pcs_node;
@@ -2695,7 +2698,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  	pcs_node = of_parse_phandle(ppe_port->np, "pcs-handle", 0);
  	if (!pcs_node)
  		return -ENODEV;
-@@ -960,8 +1114,8 @@ int ppe_port_phylink_setup(struct ppe_po
+@@ -960,8 +1115,8 @@ int ppe_port_phylink_setup(struct ppe_po
  	ppe_port->pcs = ipq_pcs_get(pcs_node);
  	of_node_put(pcs_node);
  	if (IS_ERR(ppe_port->pcs)) {
@@ -2706,7 +2709,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  		return PTR_ERR(ppe_port->pcs);
  	}
  
-@@ -971,22 +1125,10 @@ int ppe_port_phylink_setup(struct ppe_po
+@@ -971,22 +1126,10 @@ int ppe_port_phylink_setup(struct ppe_po
  	ppe_port->phylink_config.mac_capabilities = MAC_ASYM_PAUSE |
  		MAC_SYM_PAUSE | MAC_10 | MAC_100 | MAC_1000 |
  		MAC_2500FD | MAC_5000FD | MAC_10000FD;
@@ -2733,7 +2736,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  
  	/* Create phylink */
  	ppe_port->phylink = phylink_create(&ppe_port->phylink_config,
-@@ -994,8 +1136,8 @@ int ppe_port_phylink_setup(struct ppe_po
+@@ -994,8 +1137,8 @@ int ppe_port_phylink_setup(struct ppe_po
  					   ppe_port->interface,
  					   &ppe_phylink_ops);
  	if (IS_ERR(ppe_port->phylink)) {
@@ -2744,7 +2747,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  		ret = PTR_ERR(ppe_port->phylink);
  		goto err_free_pcs;
  	}
-@@ -1003,8 +1145,8 @@ int ppe_port_phylink_setup(struct ppe_po
+@@ -1003,8 +1146,8 @@ int ppe_port_phylink_setup(struct ppe_po
  	/* Connect phylink */
  	ret = phylink_of_phy_connect(ppe_port->phylink, ppe_port->np, 0);
  	if (ret) {
@@ -2755,7 +2758,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  		goto err_free_phylink;
  	}
  
-@@ -1037,7 +1179,7 @@ void ppe_port_phylink_destroy(struct ppe
+@@ -1037,7 +1180,7 @@ void ppe_port_phylink_destroy(struct ppe
  		ppe_port->phylink = NULL;
  	}
  
@@ -2764,7 +2767,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  	if (ppe_port->pcs) {
  		ipq_pcs_put(ppe_port->pcs);
  		ppe_port->pcs = NULL;
-@@ -1050,7 +1192,7 @@ static int ppe_port_clock_init(struct pp
+@@ -1050,7 +1193,7 @@ static int ppe_port_clock_init(struct pp
  	struct device_node *port_node = ppe_port->np;
  	struct reset_control *rstc;
  	struct clk *clk;
@@ -2773,7 +2776,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  
  	for (i = 0; i < PPE_PORT_CLK_RST_MAX; i++) {
  		/* Get PPE port resets which will be used to reset PPE
-@@ -1084,10 +1226,11 @@ err_clk_en:
+@@ -1084,10 +1227,11 @@ err_clk_en:
  err_clk_get:
  	reset_control_put(rstc);
  err_rst:
@@ -2789,7 +2792,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  	}
  
  	return ret;
-@@ -1114,12 +1257,12 @@ static int ppe_port_mac_hw_init(struct p
+@@ -1114,12 +1258,12 @@ static int ppe_port_mac_hw_init(struct p
  
  	/* GMAC RX and TX are initialized as disabled */
  	reg = PPE_PORT_GMAC_ADDR(port);
@@ -2805,7 +2808,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  	val = FIELD_PREP(GMAC_JUMBO_SIZE_M, PPE_PORT_MAC_MAX_FRAME_SIZE);
  	ret = regmap_update_bits(ppe_dev->regmap, reg + GMAC_JUMBO_SIZE_ADDR,
  				 GMAC_JUMBO_SIZE_M, val);
-@@ -1128,13 +1271,13 @@ static int ppe_port_mac_hw_init(struct p
+@@ -1128,13 +1272,13 @@ static int ppe_port_mac_hw_init(struct p
  
  	val = FIELD_PREP(GMAC_MAXFRAME_SIZE_M, PPE_PORT_MAC_MAX_FRAME_SIZE);
  	val |= FIELD_PREP(GMAC_TX_THD_M, 0x1);
@@ -2821,7 +2824,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  				 GMAC_HIGH_IPG_M, val);
  	if (ret)
  		return ret;
-@@ -1142,13 +1285,13 @@ static int ppe_port_mac_hw_init(struct p
+@@ -1142,13 +1286,13 @@ static int ppe_port_mac_hw_init(struct p
  	/* Enable and reset GMAC MIB counters and set as read clear
  	 * mode, the GMAC MIB counters will be cleared after reading.
  	 */
@@ -2839,7 +2842,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  	if (ret)
  		return ret;
  
-@@ -1179,31 +1322,8 @@ static int ppe_port_mac_hw_init(struct p
+@@ -1179,31 +1323,8 @@ static int ppe_port_mac_hw_init(struct p
  		return ret;
  
  	/* Enable and reset XGMAC MIB counters */
@@ -2873,7 +2876,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  }
  
  /**
-@@ -1218,8 +1338,8 @@ static int ppe_port_mac_mib_work_init(st
+@@ -1218,8 +1339,8 @@ static int ppe_port_mac_mib_work_init(st
  int ppe_port_mac_init(struct ppe_device *ppe_dev)
  {
  	struct device_node *ports_node, *port_node;
@@ -2883,7 +2886,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  	phy_interface_t phy_mode;
  
  	ports_node = of_get_child_by_name(ppe_dev->dev->of_node,
-@@ -1259,6 +1379,7 @@ int ppe_port_mac_init(struct ppe_device
+@@ -1259,6 +1380,7 @@ int ppe_port_mac_init(struct ppe_device
  		ppe_ports->port[i].port_id = port;
  		ppe_ports->port[i].np = port_node;
  		ppe_ports->port[i].interface = phy_mode;
@@ -2891,7 +2894,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  
  		ret = ppe_port_clock_init(&ppe_ports->port[i]);
  		if (ret) {
-@@ -1272,12 +1393,6 @@ int ppe_port_mac_init(struct ppe_device
+@@ -1272,12 +1394,6 @@ int ppe_port_mac_init(struct ppe_device
  			goto err_port_node;
  		}
  
@@ -2904,7 +2907,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  		ret = edma_port_setup(&ppe_ports->port[i]);
  		if (ret) {
  			dev_err(ppe_dev->dev, "QCOM EDMA port setup failed\n");
-@@ -1299,8 +1414,11 @@ err_port_setup:
+@@ -1299,8 +1415,11 @@ err_port_setup:
  	}
  
  err_port_clk:
@@ -2918,7 +2921,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  err_port_node:
  	of_node_put(port_node);
  err_ports_node:
-@@ -1322,10 +1440,7 @@ void ppe_port_mac_deinit(struct ppe_devi
+@@ -1322,10 +1441,7 @@ void ppe_port_mac_deinit(struct ppe_devi
  
  	for (i = 0; i < ppe_dev->ports->num; i++) {
  		ppe_port = &ppe_dev->ports->port[i];

@@ -782,6 +782,14 @@ mac80211_prepare_iw_htmode() {
 						;;
 					esac
 				;;
+				6g)
+					if [ "$auto_channel" -eq 0 ] && [ "$channel" -gt 0 ]; then
+						local c_base=$(( (($channel - 1) / 8) * 8 + 1 ))
+						iw_htmode="40 $(( 5950 + ($c_base + 2) * 5 ))"
+					else
+						iw_htmode=""
+					fi
+				;;
 				*)
 					case "$(( ($channel / 4) % 2 ))" in
 						1) iw_htmode="HT40+" ;;
@@ -789,7 +797,7 @@ mac80211_prepare_iw_htmode() {
 					esac
 				;;
 			esac
-			[ "$auto_channel" -gt 0 ] && iw_htmode="HT40+"
+			[ "$auto_channel" -gt 0 ] && [ "$band" != "6g" ] && iw_htmode="HT40+"
 		;;
 		VHT80|HE80|EHT80)
 			iw_htmode="80MHz"
