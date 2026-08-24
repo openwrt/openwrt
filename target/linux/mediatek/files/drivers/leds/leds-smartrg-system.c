@@ -64,6 +64,8 @@ srg_led_set_pulse(struct led_classdev *led_cdev,
 	struct srg_led *sysled = container_of(led_cdev, struct srg_led, led);
 	struct srg_led_ctrl *sysled_ctrl = sysled->ctrl;
 	bool blinking = false, pulsing = false;
+	u8 bright = led_cdev->brightness ? : led_cdev->blink_brightness ? :
+		    led_cdev->max_brightness;
 	u8 cbyte;
 	int ret;
 
@@ -80,7 +82,7 @@ srg_led_set_pulse(struct led_classdev *led_cdev,
 	cbyte = pulsing ? 3 : blinking ? 2 : 0;
 	mutex_lock(&sysled_ctrl->lock);
 	ret = srg_led_i2c_write(sysled_ctrl, sysled->index + 4,
-				(blinking || pulsing) ? 255 : 0);
+				(blinking || pulsing) ? bright : 0);
 	if (!ret) {
 		sysled_ctrl->control[sysled->index] = cbyte;
 		ret = srg_led_control_sync(sysled_ctrl);
