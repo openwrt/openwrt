@@ -1,7 +1,7 @@
-From 8120b9b88ec47ee41b8350e3e4341839f5fdc28e Mon Sep 17 00:00:00 2001
+From bd0a830828df2c06af09a4c7ed176ee6b1b96092 Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
 Date: Tue, 24 Mar 2026 18:17:49 +0000
-Subject: [PATCH 17/19] DO NOT SUBMIT: net: dsa: mxl862xx: re-introduce PCE
+Subject: [PATCH 10/12] DO NOT SUBMIT: net: dsa: mxl862xx: re-introduce PCE
  workaround for old firmware
 
 Re-introduce the legacy PCE rule paths needed for firmware versions
@@ -31,12 +31,12 @@ upstream.
 Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 ---
  drivers/net/dsa/mxl862xx/mxl862xx-cmd.h |  1 +
- drivers/net/dsa/mxl862xx/mxl862xx.c     | 61 +++++++++++++++++++++----
- 2 files changed, 53 insertions(+), 9 deletions(-)
+ drivers/net/dsa/mxl862xx/mxl862xx.c     | 62 +++++++++++++++++++++----
+ 2 files changed, 54 insertions(+), 9 deletions(-)
 
 --- a/drivers/net/dsa/mxl862xx/mxl862xx-cmd.h
 +++ b/drivers/net/dsa/mxl862xx/mxl862xx-cmd.h
-@@ -32,6 +32,7 @@
+@@ -33,6 +33,7 @@
  #define MXL862XX_COMMON_MONITORPORTCFGSET (MXL862XX_COMMON_MAGIC + 0xe)
  #define MXL862XX_COMMON_REGISTERMOD	(MXL862XX_COMMON_MAGIC + 0x11)
  
@@ -46,7 +46,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  #define MXL862XX_TFLOW_PCERULELOGICWRITE \
 --- a/drivers/net/dsa/mxl862xx/mxl862xx.c
 +++ b/drivers/net/dsa/mxl862xx/mxl862xx.c
-@@ -449,6 +449,43 @@ static int mxl862xx_setup_drop_meter(str
+@@ -516,6 +516,44 @@ static int mxl862xx_setup_drop_meter(str
  	return MXL862XX_API_WRITE(priv, MXL862XX_COMMON_REGISTERMOD, reg);
  }
  
@@ -87,10 +87,11 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +
 +	return 0;
 +}
- 
++
  /* Per-CTP logical indices for protocol trap rules.
   *
-@@ -463,16 +500,20 @@ static int mxl862xx_setup_drop_meter(str
+  * The firmware pre-allocates a per-CTP PCE block for every port during
+@@ -529,16 +567,20 @@ static int mxl862xx_setup_drop_meter(str
  #define MXL862XX_MLDV1_CTP_INDEX		3
  #define MXL862XX_MLDV2_CTP_INDEX		4
  
@@ -117,7 +118,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  }
  
  /**
-@@ -1130,9 +1171,11 @@ static int mxl862xx_setup(struct dsa_swi
+@@ -1252,9 +1294,11 @@ static int mxl862xx_setup(struct dsa_swi
  	if (ret)
  		return ret;
  
