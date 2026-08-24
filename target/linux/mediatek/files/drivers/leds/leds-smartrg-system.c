@@ -89,7 +89,10 @@ srg_led_set_pulse(struct led_classdev *led_cdev,
 	}
 	mutex_unlock(&sysled_ctrl->lock);
 
-	return !cbyte;
+	if (ret)
+		return ret;
+
+	return cbyte ? 0 : 1;
 }
 
 static int
