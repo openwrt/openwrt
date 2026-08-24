@@ -10,6 +10,7 @@
  */
 
 #include <linux/bitfield.h>
+#include <linux/cleanup.h>
 #include <linux/clk/clk-conf.h>
 #include <linux/clk-provider.h>
 #include <linux/delay.h>
@@ -469,6 +470,11 @@ static int qca_uniphy_pcs_config_mode(struct phylink_pcs *pcs,
 	dev_dbg(uniphy->dev, "Configuring PCS: chan=%d, interface=%s, neg_mode=0x%x\n",
 		upcs->channel, phy_modes(interface), neg_mode);
 
+	/* Every channel of the instance calls this with its own phylink state
+	 * mutex, so nothing else keeps two of them out of the sequence below.
+	 */
+	guard(mutex)(&uniphy->lock);
+
 	switch (interface) {
 	case PHY_INTERFACE_MODE_1000BASEX:
 		misc2_phy_mode = UNIPHY_MISC2_SGMII;
@@ -482,10 +488,12 @@ static int qca_uniphy_pcs_config_mode(struct phylink_pcs *pcs,
 		break;
 	case PHY_INTERFACE_MODE_QSGMII:
 		mode_ctrl = UNIPHY_CH0_QSGMII_SGMII;
+		mode_ctrl |= FIELD_PREP(UNIPHY_CH0_MODE_CTRL_25M, UNIPHY_CH0_MODE_MAC);
 		misc2_phy_mode = UNIPHY_MISC2_SGMII;
 		break;
 	case PHY_INTERFACE_MODE_PSGMII:
 		mode_ctrl = UNIPHY_CH0_PSGMII_QSGMII;
+		mode_ctrl |= FIELD_PREP(UNIPHY_CH0_MODE_CTRL_25M, UNIPHY_CH0_MODE_MAC);
 		misc2_phy_mode = 0;
 		break;
 	case PHY_INTERFACE_MODE_USXGMII:
@@ -516,6 +524,24 @@ static int qca_uniphy_pcs_config_mode(struct phylink_pcs *pcs,
 			clk_prepare_enable(uniphy->ref_clk.hw.clk);
 	}
 
+	/* TODO: Fix for IPQ6018 and IPQ8074 */
+	if (uniphy->data->uniphy_type == UNIPHY_IPQ5018) {
+		//set force mode for fixed link
+		if (neg_mode == PHYLINK_PCS_NEG_OUTBAND && !phylink_expects_phy(pcs->phylink)) {
+			regmap_set_bits(uniphy->regmap,
+					UNIPHY_CH_CTRL(upcs->channel),
+					UNIPHY_CH_FORCE_MODE);
+		}
+	}
+
+	if (uniphy->interface == interface)
+		return 0;
+
+	/* Invalid until the sequence below completes, so that a bail-out
+	 * leaves no cached mode the hardware does not have.
+	 */
+	uniphy->interface = PHY_INTERFACE_MODE_NA;
+
 	/* First update misc2 PHY mode... */
 	regmap_update_bits(uniphy->regmap, UNIPHY_MISC2_PHY_MODE,
 			   UNIPHY_MISC2_PHY_MODE_MASK, misc2_phy_mode);
@@ -529,21 +555,17 @@ static int qca_uniphy_pcs_config_mode(struct phylink_pcs *pcs,
 	msleep(100);
 
 	/* Second assert XPCS... */
-	if (uniphy->rst_xpcs)
-		reset_control_assert(uniphy->rst_xpcs);
+	if (uniphy->rst_xpcs) {
+		ret = reset_control_assert(uniphy->rst_xpcs);
+		if (ret)
+			return ret;
+	}
 
 	/* ...and disable PHY clock */
-	clk_disable(uniphy->clks[port_rx_clk_idx(upcs)].clk);
-	clk_disable(uniphy->clks[port_tx_clk_idx(upcs)].clk);
-
-	/* TODO: Fix for IPQ6018 and IPQ8074 */
-	if (uniphy->data->uniphy_type == UNIPHY_IPQ5018) {
-		//set force mode for fixed link
-		if (neg_mode == PHYLINK_PCS_NEG_OUTBAND && !phylink_expects_phy(pcs->phylink)) {
-			regmap_set_bits(uniphy->regmap,
-					UNIPHY_CH_CTRL(upcs->channel),
-					UNIPHY_CH_FORCE_MODE);
-		}
+	if (upcs->clks_enabled) {
+		clk_bulk_disable(QCA_UNIPHY_PORT_CLKS,
+				 &uniphy->clks[port_rx_clk_idx(upcs)]);
+		upcs->clks_enabled = false;
 	}
 
 	/* Third update the mode ctrl... */
@@ -561,9 +583,13 @@ static int qca_uniphy_pcs_config_mode(struct phylink_pcs *pcs,
 	 * lots of testing it has been verified that operating
 	 * on the single reset is problematic)
 	 */
-	reset_control_assert(uniphy->rst_soft);
+	ret = reset_control_assert(uniphy->rst_soft);
+	if (ret)
+		goto err_clks;
 	msleep(100);
-	reset_control_deassert(uniphy->rst_soft);
+	ret = reset_control_deassert(uniphy->rst_soft);
+	if (ret)
+		goto err_clks;
 
 	/* ...and wait for calibration */
 	ret = regmap_read_poll_timeout(uniphy->regmap, UNIPHY_OFFSET_CALIB_4,
@@ -572,7 +598,8 @@ static int qca_uniphy_pcs_config_mode(struct phylink_pcs *pcs,
 				       UNIPHY_CALIBRATION_TIMEOUT_US);
 	if (ret) {
 		dev_err(uniphy->dev, "PCS calibration timeout\n");
-		return -EINVAL;
+		ret = -EINVAL;
+		goto err_clks;
 	}
 
 	/* Trigger UNIPHY ref clock to recal rate */
@@ -580,24 +607,54 @@ static int qca_uniphy_pcs_config_mode(struct phylink_pcs *pcs,
 	clk_hw_recalc_rate(&uniphy->tx_clk.hw);
 
 	/* As last step enable PHY clock... */
-	clk_enable(uniphy->clks[port_rx_clk_idx(upcs)].clk);
-	clk_enable(uniphy->clks[port_tx_clk_idx(upcs)].clk);
+	ret = clk_bulk_enable(QCA_UNIPHY_PORT_CLKS,
+			      &uniphy->clks[port_rx_clk_idx(upcs)]);
+	if (ret)
+		return ret;
+	upcs->clks_enabled = true;
 
 	if (interface == PHY_INTERFACE_MODE_USXGMII ||
-	    interface == PHY_INTERFACE_MODE_10GBASER)
-		reset_control_deassert(uniphy->rst_xpcs);
+	    interface == PHY_INTERFACE_MODE_10GBASER) {
+		ret = reset_control_deassert(uniphy->rst_xpcs);
+		if (ret)
+			return ret;
+	}
 
-	if (!uniphy->data->ref_clk_enable)
-		return 0;
+	if (uniphy->data->ref_clk_enable) {
+		/* Trigger UNIPHY ref output clock to recalc rate */
+		clk_hw_recalc_rate(&uniphy->ref_clk.hw);
+		/* Trigger assigned-clock-rates in DT to be applied */
+		ret = of_clk_set_defaults(uniphy->dev->of_node, true);
+		if (ret)
+			return ret;
+		if (!qca_uniphy_refclk_is_enabled(&uniphy->ref_clk.hw)) {
+			ret = qca_uniphy_refclk_enable(&uniphy->ref_clk.hw);
+			if (ret)
+				return ret;
+		}
+	}
 
-	/* Trigger UNIPHY ref output clock to recalc rate */
-	clk_hw_recalc_rate(&uniphy->ref_clk.hw);
-	/* Trigger assigned-clock-rates in DT to be applied */
-	of_clk_set_defaults(uniphy->dev->of_node, true);
-	if (!qca_uniphy_refclk_is_enabled(&uniphy->ref_clk.hw))
-		qca_uniphy_refclk_enable(&uniphy->ref_clk.hw);
+	/* Cache the mode last: a bail-out anywhere above leaves the instance
+	 * half configured, and a mode recorded for it would keep the next
+	 * call from finishing the job.
+	 */
+	uniphy->interface = interface;
 
 	return 0;
+
+err_clks:
+	/* Once another channel configures the same mode the sequence is
+	 * skipped, so nothing else re-enables these.
+	 */
+	if (clk_bulk_enable(QCA_UNIPHY_PORT_CLKS,
+			    &uniphy->clks[port_rx_clk_idx(upcs)]))
+		dev_err(uniphy->dev,
+			"Failed to re-enable clocks for channel %d\n",
+			upcs->channel);
+	else
+		upcs->clks_enabled = true;
+
+	return ret;
 }
 
 static int qca_uniphy_pcs_config_usxgmii(struct phylink_pcs *pcs,
@@ -817,15 +874,23 @@ static int qca_uniphy_pcs_validate(struct phylink_pcs *pcs, unsigned long *suppo
 	}
 }
 
+/*
+ * phylink ignores what pcs_enable() returns and calls pcs_disable() either way,
+ * so the reference it holds is tracked separately from the one the mode
+ * sequence takes: dropping a reference that was never acquired underflows the
+ * clock enable count.
+ */
 static void qca_uniphy_pcs_disable(struct phylink_pcs *pcs)
 {
 	struct qca_uniphy_pcs *upcs = to_qca_uniphy_pcs(pcs);
 	struct qca_uniphy *uniphy = upcs->uniphy;
 
-	if (uniphy->data->uniphy_type == UNIPHY_IPQ5018) {
-		clk_disable(uniphy->clks[port_rx_clk_idx(upcs)].clk);
-		clk_disable(uniphy->clks[port_tx_clk_idx(upcs)].clk);
-	}
+	if (!upcs->phylink_clks_enabled)
+		return;
+
+	clk_bulk_disable(QCA_UNIPHY_PORT_CLKS,
+			 &uniphy->clks[port_rx_clk_idx(upcs)]);
+	upcs->phylink_clks_enabled = false;
 }
 
 static int qca_uniphy_pcs_enable(struct phylink_pcs *pcs)
@@ -834,20 +899,18 @@ static int qca_uniphy_pcs_enable(struct phylink_pcs *pcs)
 	struct qca_uniphy *uniphy = upcs->uniphy;
 	int ret;
 
-	if (uniphy->data->uniphy_type == UNIPHY_IPQ5018) {
-		ret = clk_enable(uniphy->clks[port_rx_clk_idx(upcs)].clk);
-		if (ret) {
-			dev_err(uniphy->dev, "Failed to enable RX clock for channel %d\n",
-				upcs->channel);
-			return ret;
-		}
-		ret = clk_enable(uniphy->clks[port_tx_clk_idx(upcs)].clk);
-		if (ret) {
-			dev_err(uniphy->dev, "Failed to enable TX clock for channel %d\n",
-				upcs->channel);
-			return ret;
-		}
+	if (uniphy->data->uniphy_type != UNIPHY_IPQ5018)
+		return 0;
+
+	ret = clk_bulk_enable(QCA_UNIPHY_PORT_CLKS,
+			      &uniphy->clks[port_rx_clk_idx(upcs)]);
+	if (ret) {
+		dev_err(uniphy->dev, "Failed to enable clocks for channel %d\n",
+			upcs->channel);
+		return ret;
 	}
+
+	upcs->phylink_clks_enabled = true;
 
 	return 0;
 }
@@ -951,6 +1014,10 @@ static int qca_uniphy_probe(struct platform_device *pdev)
 
 	uniphy->dev = dev;
 
+	ret = devm_mutex_init(dev, &uniphy->lock);
+	if (ret)
+		return ret;
+
 	uniphy->data = device_get_match_data(dev);
 	if (!uniphy->data)
 		return -EINVAL;
@@ -994,6 +1061,8 @@ static int qca_uniphy_probe(struct platform_device *pdev)
 		uniphy->port_pcs[i].pcs.poll = true;
 		uniphy->port_pcs[i].uniphy = uniphy;
 		uniphy->port_pcs[i].channel = i;
+		/* devm_clk_bulk_get_all_enabled() left every clock on */
+		uniphy->port_pcs[i].clks_enabled = true;
 	}
 
 	platform_set_drvdata(pdev, uniphy);
