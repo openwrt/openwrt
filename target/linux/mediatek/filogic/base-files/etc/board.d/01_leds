@@ -159,6 +159,10 @@ keenetic,kn-3711|\
 keenetic,kn-3811)
 	ucidef_set_led_netdev "internet" "internet" "green:wan" "wan" "link"
 	;;
+keenetic,kn-3812)
+	ucidef_set_led_netdev "internet" "internet" "green:status" "wan" "link"
+	ucidef_set_led_default "wps" "WPS" "orange:status" "0"
+	;;
 livinet,li320)
 	ucidef_set_led_netdev "wlan2g" "WLAN2G" "green:wlan-2ghz" "phy0-ap0"
 	ucidef_set_led_netdev "wlan5g" "WLAN5G" "green:wlan-5ghz" "phy1-ap0"
