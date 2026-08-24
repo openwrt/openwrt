@@ -1,0 +1,47 @@
+From e1691d4a12febe10eb5b53fefcb66bf2e9feb26d Mon Sep 17 00:00:00 2001
+From: George Moussalem <george.moussalem@outlook.com>
+Date: Fri, 21 Aug 2026 17:08:00 +0400
+Subject: [PATCH v4 05/11] phy: qualcomm: qcom-uniphy-pcie-usb3-28lp: Improve
+ error handling in power_on
+
+When the PHY fails the enable clocks, it leaves the PHY out of reset.
+Fix this by asserting the reset before returning the error.
+
+In addition, language correct the error messages.
+
+Tested-by: Stanislaw Pal <kuncy7@gmail.com>
+Signed-off-by: George Moussalem <george.moussalem@outlook.com>
+---
+ drivers/phy/qualcomm/phy-qcom-uniphy-pcie-usb3-28lp.c | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+--- a/drivers/phy/qualcomm/phy-qcom-uniphy-pcie-usb3-28lp.c
++++ b/drivers/phy/qualcomm/phy-qcom-uniphy-pcie-usb3-28lp.c
+@@ -144,7 +144,7 @@ static int qcom_uniphy_pcie_usb3_power_o
+ 
+ 	ret = reset_control_bulk_assert(phy->num_resets, phy->resets);
+ 	if (ret) {
+-		dev_err(phy->dev, "reset assert failed (%d)\n", ret);
++		dev_err(phy->dev, "failed to assert reset: %d\n", ret);
+ 		return ret;
+ 	}
+ 
+@@ -152,7 +152,7 @@ static int qcom_uniphy_pcie_usb3_power_o
+ 
+ 	ret = reset_control_bulk_deassert(phy->num_resets, phy->resets);
+ 	if (ret) {
+-		dev_err(phy->dev, "reset deassert failed (%d)\n", ret);
++		dev_err(phy->dev, "failed to deassert reset: %d\n", ret);
+ 		return ret;
+ 	}
+ 
+@@ -160,7 +160,8 @@ static int qcom_uniphy_pcie_usb3_power_o
+ 
+ 	ret = clk_bulk_prepare_enable(phy->num_clks, phy->clks);
+ 	if (ret) {
+-		dev_err(phy->dev, "clk prepare and enable failed %d\n", ret);
++		dev_err(phy->dev, "failed to enable clocks: %d\n", ret);
++		reset_control_bulk_assert(phy->num_resets, phy->resets);
+ 		return ret;
+ 	}
+ 

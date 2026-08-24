@@ -1,0 +1,53 @@
+From 786de673c839805717f8996c9f724c02b7790bb6 Mon Sep 17 00:00:00 2001
+From: George Moussalem <george.moussalem@outlook.com>
+Date: Sat, 22 Aug 2026 16:59:57 +0400
+Subject: [PATCH v2 02/10] usb: dwc3: qcom: Add support for selecting UTMI as
+ reference clock
+
+On many Qualcomm chipsets, the UTMI clock is used as the reference clock
+(ex. IPQ5018, IPQ6018, and IPQ9574 and more). Since moving to the new
+flattened snps-dwc3 model, it is no longer possible to pass the
+reference clock to the dwc3 core driver.
+
+The clock rate is used by the dwc3 core to compute the reference clock
+period and frame length adjustment. This is needed when the reference
+clock rate used computes values that deviate from the hardware defaults.
+Above mentioned SoCs require values different from the defaults and, as
+such, the core initializes with the wrong values which leads to
+non-functional USB operation.
+
+In Qualcomm chipsets, if available, the UTMI clock is used as the
+reference clock. Therefore, acquire the reference clock by name
+('mock_utmi') and pass its clock rate to the core using the probe_data
+structure.
+
+Signed-off-by: George Moussalem <george.moussalem@outlook.com>
+---
+ drivers/usb/dwc3/dwc3-qcom.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+--- a/drivers/usb/dwc3/dwc3-qcom.c
++++ b/drivers/usb/dwc3/dwc3-qcom.c
+@@ -617,6 +617,7 @@ static int dwc3_qcom_probe(struct platfo
+ 	int			ret;
+ 	bool			ignore_pipe_clk;
+ 	bool			wakeup_source;
++	struct clk		*ref_clk;
+ 
+ 	qcom = devm_kzalloc(&pdev->dev, sizeof(*qcom), GFP_KERNEL);
+ 	if (!qcom)
+@@ -698,6 +699,14 @@ static int dwc3_qcom_probe(struct platfo
+ 			qcom->current_role = USB_ROLE_DEVICE;
+ 	}
+ 
++	ref_clk = devm_clk_get_optional(dev, "mock_utmi");
++	if (IS_ERR(ref_clk)) {
++		ret = dev_err_probe(dev, PTR_ERR(ref_clk), "failed to get ref clock\n");
++		goto clk_disable;
++	}
++
++	probe_data.ref_clk_rate = clk_get_rate(ref_clk);
++
+ 	qcom->dwc.glue_ops = &dwc3_qcom_glue_ops;
+ 
+ 	qcom->dwc.dev = dev;

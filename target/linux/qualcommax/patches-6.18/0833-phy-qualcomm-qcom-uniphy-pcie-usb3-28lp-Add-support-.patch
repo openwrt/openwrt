@@ -1,0 +1,312 @@
+From ba67d59c8b8b8861a57b1f9bcf973336435bb9b3 Mon Sep 17 00:00:00 2001
+From: George Moussalem <george.moussalem@outlook.com>
+Date: Fri, 21 Aug 2026 17:16:20 +0400
+Subject: [PATCH v4 06/11] phy: qualcomm: qcom-uniphy-pcie-usb3-28lp: Add
+ support for USB3 PHY on IPQ5018
+
+Add support for the USB3 PHY on IPQ5018 chipsets.
+
+The PHY outputs a 250MHz PIPE clock routed to and gated by the GCC, so
+register a fixed rate clock. In addition, add the register/value pairs
+for the PHY initialization sequence.
+
+The PHY requires a 5V supply, so acquire the regulator from the
+devicetree and enable it on power on and disable it on power off.
+
+The code to acquire clocks and resets is the same as for PCIe so no
+changes are needed.
+
+Power on/off sequences for PCIE and USB3 are similar except for the
+delay timings and USB3 requirement for the PHY supply.
+
+Lastly, the PCIe and USB3 pads are muxed so select USB3 mode in TCSR
+which needs to occur before the DWC3 USB3 controller resets.
+Otherwise, the SS link doesn't train and remains stuck in RX.Detect.
+
+Tested-by: Stanislaw Pal <kuncy7@gmail.com>
+Signed-off-by: George Moussalem <george.moussalem@outlook.com>
+---
+ .../qualcomm/phy-qcom-uniphy-pcie-usb3-28lp.c | 156 +++++++++++++++---
+ 1 file changed, 129 insertions(+), 27 deletions(-)
+
+--- a/drivers/phy/qualcomm/phy-qcom-uniphy-pcie-usb3-28lp.c
++++ b/drivers/phy/qualcomm/phy-qcom-uniphy-pcie-usb3-28lp.c
+@@ -14,15 +14,21 @@
+ #include <linux/phy/phy.h>
+ #include <linux/platform_device.h>
+ #include <linux/regmap.h>
++#include <linux/regulator/consumer.h>
+ #include <linux/reset.h>
+ #include <linux/units.h>
+ 
+-#define RST_ASSERT_DELAY_MIN_US		100
+-#define RST_ASSERT_DELAY_MAX_US		150
+-#define PIPE_CLK_DELAY_MIN_US		5000
+-#define PIPE_CLK_DELAY_MAX_US		5100
+-#define CLK_EN_DELAY_MIN_US		30
+-#define CLK_EN_DELAY_MAX_US		50
++#define PCIE_RST_ASSERT_DELAY_MIN_US	100
++#define PCIE_RST_ASSERT_DELAY_MAX_US	150
++#define PCIE_PIPE_CLK_DELAY_MIN_US	5000
++#define PCIE_PIPE_CLK_DELAY_MAX_US	5100
++#define PCIE_CLK_EN_DELAY_MIN_US	30
++#define PCIE_CLK_EN_DELAY_MAX_US	50
++
++#define USB3_RST_ASSERT_DELAY_MIN_US	1
++#define USB3_RST_ASSERT_DELAY_MAX_US	5
++#define USB3_CLK_EN_DELAY_MIN_US	35
++#define USB3_CLK_EN_DELAY_MAX_US	40
+ 
+ #define CDR_CTRL_REG_1			0x80
+ #define CDR_CTRL_REG_2			0x84
+@@ -39,10 +45,13 @@
+ #define PCIE_USB_COMBO_PHY_CFG_EIOS_DTCT_REG		0x3e4
+ #define PCIE_USB_COMBO_PHY_CFG_GEN3_ALIGN_HOLDOFF_TIME	0x3e8
+ 
++#define TCSR_USB_MUX_SEL		BIT(0)
++
++#define PHY_IS_USB3(phy)	((phy)->data->phy_type == PHY_TYPE_USB3)
++
+ enum qcom_uniphy_type {
+ 	PHY_TYPE_PCIE = 1,
+-	PHY_TYPE_PCIE_GEN2,
+-	PHY_TYPE_PCIE_GEN3,
++	PHY_TYPE_USB3,
+ };
+ 
+ struct qcom_uniphy_regs {
+@@ -68,6 +77,9 @@ struct qcom_uniphy {
+ 	int num_resets;
+ 	void __iomem *base;
+ 	int lanes;
++	struct regulator *vreg;
++	struct regmap *tcsr;
++	unsigned int mux_offset;
+ };
+ 
+ #define PHY_INIT_CFG(o, v)		\
+@@ -89,23 +101,39 @@ static const struct qcom_uniphy_regs ipq
+ 	PHY_INIT_CFG(PCIE_USB_COMBO_PHY_CFG_PCS_INTERNAL_CONTROL_2, 0xf101),
+ };
+ 
++static const struct qcom_uniphy_regs ipq5018_usb_regs[] = {
++	PHY_INIT_CFG(SSCG_CTRL_REG_4, 0x1cb9),
++	PHY_INIT_CFG(SSCG_CTRL_REG_5, 0x023a),
++	PHY_INIT_CFG(SSCG_CTRL_REG_3, 0xd360),
++	PHY_INIT_CFG(SSCG_CTRL_REG_1, 0x1),
++	PHY_INIT_CFG(SSCG_CTRL_REG_2, 0xeb),
++};
++
+ static const struct qcom_uniphy_regs ipq5332_pcie_regs[] = {
+ 	PHY_INIT_CFG(PCIE_USB_COMBO_PHY_CFG_PLLCFG, 0x30),
+ 	PHY_INIT_CFG(PCIE_USB_COMBO_PHY_CFG_EIOS_DTCT_REG, 0x53ef),
+ 	PHY_INIT_CFG(PCIE_USB_COMBO_PHY_CFG_GEN3_ALIGN_HOLDOFF_TIME, 0xcf),
+ };
+ 
+-static const struct qcom_uniphy_data ipq5018_data = {
++static const struct qcom_uniphy_data ipq5018_pcie_data = {
+ 	.lane_offset	= 0x800,
+-	.phy_type	= PHY_TYPE_PCIE_GEN2,
++	.phy_type	= PHY_TYPE_PCIE,
+ 	.init_seq	= ipq5018_pcie_regs,
+ 	.init_seq_num	= ARRAY_SIZE(ipq5018_pcie_regs),
+ 	.pipe_clk_rate	= 125 * MEGA,
+ };
+ 
+-static const struct qcom_uniphy_data ipq5332_data = {
++static const struct qcom_uniphy_data ipq5018_usb_data = {
+ 	.lane_offset	= 0x800,
+-	.phy_type	= PHY_TYPE_PCIE_GEN3,
++	.phy_type	= PHY_TYPE_USB3,
++	.init_seq	= ipq5018_usb_regs,
++	.init_seq_num	= ARRAY_SIZE(ipq5018_usb_regs),
++	.pipe_clk_rate	= 250 * MEGA,
++};
++
++static const struct qcom_uniphy_data ipq5332_pcie_data = {
++	.lane_offset	= 0x800,
++	.phy_type	= PHY_TYPE_PCIE,
+ 	.init_seq	= ipq5332_pcie_regs,
+ 	.init_seq_num	= ARRAY_SIZE(ipq5332_pcie_regs),
+ 	.pipe_clk_rate	= 250 * MEGA,
+@@ -134,42 +162,71 @@ static int qcom_uniphy_pcie_usb3_power_o
+ 
+ 	clk_bulk_disable_unprepare(phy->num_clks, phy->clks);
+ 
+-	return reset_control_bulk_assert(phy->num_resets, phy->resets);
++	reset_control_bulk_assert(phy->num_resets, phy->resets);
++
++	if (PHY_IS_USB3(phy))
++		regulator_disable(phy->vreg);
++
++	return 0;
+ }
+ 
+ static int qcom_uniphy_pcie_usb3_power_on(struct phy *x)
+ {
+ 	struct qcom_uniphy *phy = phy_get_drvdata(x);
++	bool is_usb3 = PHY_IS_USB3(phy);
+ 	int ret;
+ 
++	if (is_usb3) {
++		ret = regulator_enable(phy->vreg);
++		if (ret) {
++			dev_err(phy->dev, "failed to enable regulator: %d\n", ret);
++			return ret;
++		}
++	}
++
+ 	ret = reset_control_bulk_assert(phy->num_resets, phy->resets);
+ 	if (ret) {
+ 		dev_err(phy->dev, "failed to assert reset: %d\n", ret);
+-		return ret;
++		goto err_disable_regulator;
+ 	}
+ 
+-	usleep_range(RST_ASSERT_DELAY_MIN_US, RST_ASSERT_DELAY_MAX_US);
++	if (is_usb3)
++		usleep_range(USB3_RST_ASSERT_DELAY_MIN_US,
++			     USB3_RST_ASSERT_DELAY_MAX_US);
++	else
++		usleep_range(PCIE_RST_ASSERT_DELAY_MIN_US,
++			     PCIE_RST_ASSERT_DELAY_MAX_US);
+ 
+ 	ret = reset_control_bulk_deassert(phy->num_resets, phy->resets);
+ 	if (ret) {
+ 		dev_err(phy->dev, "failed to deassert reset: %d\n", ret);
+-		return ret;
++		goto err_disable_regulator;
+ 	}
+ 
+-	usleep_range(PIPE_CLK_DELAY_MIN_US, PIPE_CLK_DELAY_MAX_US);
++	if (!is_usb3)
++		usleep_range(PCIE_PIPE_CLK_DELAY_MIN_US, PCIE_PIPE_CLK_DELAY_MAX_US);
+ 
+ 	ret = clk_bulk_prepare_enable(phy->num_clks, phy->clks);
+ 	if (ret) {
+ 		dev_err(phy->dev, "failed to enable clocks: %d\n", ret);
+ 		reset_control_bulk_assert(phy->num_resets, phy->resets);
+-		return ret;
++		goto err_disable_regulator;
+ 	}
+ 
+-	usleep_range(CLK_EN_DELAY_MIN_US, CLK_EN_DELAY_MAX_US);
++	if (is_usb3)
++		usleep_range(USB3_CLK_EN_DELAY_MIN_US, USB3_CLK_EN_DELAY_MAX_US);
++	else
++		usleep_range(PCIE_CLK_EN_DELAY_MIN_US, PCIE_CLK_EN_DELAY_MAX_US);
+ 
+ 	qcom_uniphy_pcie_usb3_init(phy);
+ 
+ 	return 0;
++
++err_disable_regulator:
++	if (is_usb3)
++		regulator_disable(phy->vreg);
++
++	return ret;
+ }
+ 
+ static inline int qcom_uniphy_pcie_usb3_get_resources(struct platform_device *pdev,
+@@ -203,6 +260,33 @@ static inline int qcom_uniphy_pcie_usb3_
+ 
+ 	phy->num_resets = count;
+ 
++	if (PHY_IS_USB3(phy)) {
++		phy->vreg = devm_regulator_get(dev, "vdd");
++		if (IS_ERR(phy->vreg)) {
++			dev_err(dev, "failed to get regulator: %ld\n",
++				PTR_ERR(phy->vreg));
++			return PTR_ERR(phy->vreg);
++		}
++
++		phy->tcsr = syscon_regmap_lookup_by_phandle_args(dev->of_node,
++								 "qcom,phy-usb-mux-sel",
++								 1, &phy->mux_offset);
++		if (IS_ERR(phy->tcsr)) {
++			ret = PTR_ERR(phy->tcsr);
++			dev_err(dev, "failed to get regmap: %d\n", ret);
++			return ret;
++		}
++
++		phy->lanes = 1;
++	} else {
++		ret = of_property_read_u32(dev_of_node(dev), "num-lanes",
++					   &phy->lanes);
++		if (ret) {
++			dev_err(dev, "Couldn't read num-lanes: %d\n", ret);
++			return ret;
++		}
++	}
++
+ 	return 0;
+ }
+ 
+@@ -230,7 +314,8 @@ static inline int phy_pipe_clk_register(
+ 	struct clk_hw *hw;
+ 	char name[64];
+ 
+-	snprintf(name, sizeof(name), "phy%d_pipe_clk_src", id);
++	snprintf(name, sizeof(name), "%sphy%d_pipe_clk_src",
++		 (PHY_IS_USB3(phy)) ? "usb" : "", id);
+ 	hw = devm_clk_hw_register_fixed_rate(phy->dev, name, NULL, 0,
+ 					     data->pipe_clk_rate);
+ 	if (IS_ERR(hw))
+@@ -240,15 +325,24 @@ static inline int phy_pipe_clk_register(
+ 	return devm_of_clk_add_hw_provider(phy->dev, of_clk_hw_simple_get, hw);
+ }
+ 
++static int qcom_uniphy_usb_mux_select(struct qcom_uniphy *phy, bool enable)
++{
++	return regmap_assign_bits(phy->tcsr, phy->mux_offset,
++				  TCSR_USB_MUX_SEL, enable);
++}
++
+ static const struct of_device_id qcom_uniphy_pcie_usb3_id_table[] = {
+ 	{
+ 		.compatible = "qcom,ipq5018-uniphy-pcie-phy",
+-		.data = &ipq5018_data,
++		.data = &ipq5018_pcie_data,
++	}, {
++		.compatible = "qcom,ipq5018-uniphy-usb3-phy",
++		.data = &ipq5018_usb_data,
+ 	}, {
+ 		.compatible = "qcom,ipq5332-uniphy-pcie-phy",
+-		.data = &ipq5332_data,
++		.data = &ipq5332_pcie_data,
+ 	},
+-	{ },
++	{ }
+ };
+ MODULE_DEVICE_TABLE(of, qcom_uniphy_pcie_usb3_id_table);
+ 
+@@ -277,10 +371,6 @@ static int qcom_uniphy_pcie_usb3_probe(s
+ 	if (!phy->data)
+ 		return -EINVAL;
+ 
+-	ret = of_property_read_u32(dev_of_node(dev), "num-lanes", &phy->lanes);
+-	if (ret)
+-		return dev_err_probe(dev, ret, "Couldn't read num-lanes\n");
+-
+ 	ret = qcom_uniphy_pcie_usb3_get_resources(pdev, phy);
+ 	if (ret < 0)
+ 		return dev_err_probe(&pdev->dev, ret,
+@@ -301,6 +391,18 @@ static int qcom_uniphy_pcie_usb3_probe(s
+ 	if (IS_ERR(phy_provider))
+ 		return PTR_ERR(phy_provider);
+ 
++	/*
++	 * Select USB mux before the controller comes out of reset. Selecting it
++	 * later in .power_on leaves the SuperSpeed pads muxed away while the
++	 * controller resets, and the SS link training remains in Rx.Detect
++	 */
++	if (PHY_IS_USB3(phy)) {
++		ret = qcom_uniphy_usb_mux_select(phy, true);
++		if (ret)
++			return dev_err_probe(&pdev->dev, ret,
++					     "failed to select usb mux\n");
++	}
++
+ 	return 0;
+ }
+ 
