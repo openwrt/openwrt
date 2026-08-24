@@ -8,10 +8,9 @@
 #include <linux/mutex.h>
 #include <linux/of.h>
 
-/**
+/*
  * Driver for SmartRG RGBW LED microcontroller.
  * RGBW LED is connected to a Holtek HT45F0062 that is on the I2C bus.
- *
  */
 
 struct srg_led_ctrl;
@@ -36,7 +35,7 @@ srg_led_i2c_write(struct srg_led_ctrl *sysled_ctrl, u8 reg, u8 value)
 
 /*
  * MC LED Command: 0 = OFF, 1 = ON, 2 = Flash, 3 = Pulse, 4 = Blink
- * */
+ */
 static int
 srg_led_control_sync(struct srg_led_ctrl *sysled_ctrl)
 {
@@ -54,8 +53,7 @@ srg_led_control_sync(struct srg_led_ctrl *sysled_ctrl)
  * This function overrides the led driver timer trigger to offload
  * flashing to the micro-controller.  The negative effect of this
  * is the inability to configure the delay_on and delay_off periods.
- *
- * */
+ */
 static int
 srg_led_set_pulse(struct led_classdev *led_cdev,
 		  unsigned long *delay_on,
@@ -164,7 +162,7 @@ srg_led_init_led(struct srg_led_ctrl *sysled_ctrl, struct fwnode_handle *fw)
 						led_cdev, &init_data);
 	if (ret) {
 		dev_err(&sysled_ctrl->client->dev,
-			"srg_led_init_led: led register %s error ret %d!n",
+			"srg_led_init_led: led register %s error ret %d!\n",
 			led_cdev->name, ret);
 		return ret;
 	}
@@ -173,7 +171,6 @@ srg_led_init_led(struct srg_led_ctrl *sysled_ctrl, struct fwnode_handle *fw)
 }
 
 static int
-
 srg_led_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
@@ -199,7 +196,7 @@ srg_led_probe(struct i2c_client *client)
 		msleep(5);
 	}
 
-	return srg_led_control_sync(sysled_ctrl);;
+	return srg_led_control_sync(sysled_ctrl);
 }
 
 static void srg_led_disable(struct i2c_client *client)
