@@ -46,7 +46,7 @@ Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
 ---
 --- a/drivers/net/phy/phylink.c
 +++ b/drivers/net/phy/phylink.c
-@@ -2712,6 +2712,12 @@ void phylink_start(struct phylink *pl)
+@@ -2713,6 +2713,12 @@ void phylink_start(struct phylink *pl)
  
  	pl->pcs_state = PCS_STATE_STARTING;
  
@@ -59,7 +59,7 @@ Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
  	/* Apply the link configuration to the MAC when starting. This allows
  	 * a fixed-link to start with the correct parameters, and also
  	 * ensures that we set the appropriate advertisement for Serdes links.
-@@ -2724,10 +2730,6 @@ void phylink_start(struct phylink *pl)
+@@ -2725,10 +2731,6 @@ void phylink_start(struct phylink *pl)
  
  	pl->pcs_state = PCS_STATE_STARTED;
  
