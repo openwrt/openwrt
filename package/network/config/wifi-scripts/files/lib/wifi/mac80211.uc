@@ -112,7 +112,7 @@ set ${si}.mode='ap'
 set ${si}.ssid='${defaults?.ssid || "OpenWrt"}'
 set ${si}.encryption='${defaults?.encryption || encryption}'
 set ${si}.key='${defaults?.key || ""}'
-set ${si}.disabled='${defaults ? 0 : 1}'
+set ${si}.disabled='${defaults ? 0 : 0}'
 
 `);
 		config[name] = {};
