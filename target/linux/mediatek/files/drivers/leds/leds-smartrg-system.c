@@ -69,7 +69,12 @@ srg_led_set_pulse(struct led_classdev *led_cdev,
 	u8 cbyte;
 	int ret;
 
-	if (delay_on && delay_off && (*delay_on > 100) && (*delay_on <= 500)) {
+	if (delay_on && delay_off && !*delay_on && !*delay_off) {
+		/* blink_set contract: pick a default when both delays are 0 */
+		pulsing = true;
+		*delay_on = 500;
+		*delay_off = 500;
+	} else if (delay_on && delay_off && (*delay_on > 100) && (*delay_on <= 500)) {
 		pulsing = true;
 		*delay_on = 500;
 		*delay_off = 500;
