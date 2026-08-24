@@ -1,5 +1,5 @@
 DTS_DIR := $(DTS_DIR)/qcom
-DEVICE_VARS += TPLINK_SUPPORT_STRING
+DEVICE_VARS += SENAO_PRODUCT SENAO_ROOTFS_OFFSET SENAO_ROOTFS_SIZE SENAO_VENDOR TPLINK_SUPPORT_STRING
 
 define Build/wax610-netgear-tar
 	mkdir $@.tmp
@@ -20,6 +20,23 @@ define Build/netgear-rbx350-qsdk-ipq-factory
 	$(TOPDIR)/scripts/mkits-qsdk-ipq-image.sh $@.its $(FLASH_SCRIPT) txt $@.metadata ubi $@
 	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $@.its $@.new
 	@mv $@.new $@
+endef
+
+define Build/senao-factory-nand
+	{ \
+		echo 'imxtract $$imgaddr ubi || exit 1'; \
+		printf 'nand device 0 && nand erase %s %s || exit 1\n' \
+			'$(SENAO_ROOTFS_OFFSET)' '$(SENAO_ROOTFS_SIZE)'; \
+		printf 'nand write $$fileaddr %s 0x%x || exit 1\n' \
+			'$(SENAO_ROOTFS_OFFSET)' "$$(stat -c%s $@)"; \
+		echo 'exit 0'; \
+	} > $@.bootscript
+	$(TOPDIR)/scripts/mkits-qsdk-ipq-image.sh $@.its $@.bootscript ubi $@
+	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $@.its $@.fit
+	$(STAGING_DIR_HOST)/bin/mksenaofw -r $(SENAO_VENDOR) -p $(SENAO_PRODUCT) \
+		-t 0 -v 9.9.9.9 -e $@.fit -o $@.new
+	mv $@.new $@
+	rm -f $@.its $@.fit $@.bootscript
 endef
 
 define Device/8devices_mango-dvk
@@ -210,6 +227,13 @@ define Device/netgear_wax214
 	PAGESIZE := 2048
 	DEVICE_DTS_CONFIG := config@cp03-c1
 	SOC := ipq6010
+	SENAO_VENDOR := 0x231
+	SENAO_PRODUCT := 0x11d
+	# rootfs partition bounds from the SMEM layout (mtd11), as used by the stock flash.scr
+	SENAO_ROOTFS_OFFSET := 0x01180000
+	SENAO_ROOTFS_SIZE := 0x03740000
+	IMAGES += ui-factory.bin
+	IMAGE/ui-factory.bin := append-ubi | check-size $$$$(SENAO_ROOTFS_SIZE) | senao-factory-nand
 	DEVICE_PACKAGES := ipq-wifi-netgear_wax214
 endef
 TARGET_DEVICES += netgear_wax214
