@@ -362,6 +362,18 @@
  */
 #define   PPE_ACL_RULE_WORDS		4
 #define   PPE_ACL_MAC_HI		GENMASK(15, 0)	/* w1: bytes 1-0 */
+#define   PPE_ACL_CVID			GENMASK(11, 0)	/* w0; range min */
+#define   PPE_ACL_CPCP			GENMASK(18, 16)	/* w0 */
+#define   PPE_ACL_CTAG_FMT		GENMASK(6, 4)	/* w1 */
+#define   PPE_ACL_STAG_FMT		GENMASK(9, 7)	/* w1 */
+/* The tag-format fields hold one frame format, not a bitmap of the formats a
+ * key accepts: a key naming both the tagged and the priority-tagged encoding
+ * matches neither.
+ */
+#define     PPE_ACL_TAG_UNTAGGED	1
+#define     PPE_ACL_TAG_TAGGED		4
+#define   PPE_ACL_L2_PROT		GENMASK(31, 16)	/* w0 */
+#define   PPE_ACL_PPPOE_SID		GENMASK(15, 0)	/* w1 */
 #define   PPE_ACL_IP_PORT		GENMASK(15, 0)	/* w0: L4 or ICMP */
 #define   PPE_ACL_IP_LO			GENMASK(31, 16)	/* w0 */
 #define   PPE_ACL_IP_HI			GENMASK(15, 0)	/* w1 */
@@ -375,6 +387,8 @@
 #define   PPE_ACL_RULE_TYPE		GENMASK(26, 23)	/* w1 */
 #define     PPE_ACL_TYPE_MAC_DA		0
 #define     PPE_ACL_TYPE_MAC_SA		1
+#define     PPE_ACL_TYPE_VLAN		2
+#define     PPE_ACL_TYPE_L2MISC		3
 #define     PPE_ACL_TYPE_IPV4_DIP	4
 #define     PPE_ACL_TYPE_IPV4_SIP	5
 #define     PPE_ACL_TYPE_IPV6_DIP0	6	/* +1, +2 for the rest */
@@ -423,6 +437,21 @@
 #define   PPE_ACL_POLICER_INDEX		GENMASK(20, 12)	/* word 3 */
 #define   PPE_ACL_QID_EN		BIT(21)		/* word 3 */
 #define   PPE_ACL_QID			GENMASK(29, 22)	/* word 3 */
+/* The tag edit spans the action words and the C-tag priority straddles a word
+ * boundary, so these are written by bit offset.
+ */
+#define   PPE_ACL_ACT_CVID_EN_OFF	64
+#define   PPE_ACL_ACT_CTAG_FMT_OFF	65
+#define   PPE_ACL_ACT_CVID_OFF		66
+#define   PPE_ACL_ACT_VID_LEN		12
+#define   PPE_ACL_ACT_CPCP_EN_OFF	93
+#define   PPE_ACL_ACT_CPCP_OFF		94
+#define   PPE_ACL_ACT_PCP_LEN		3
+#define   PPE_ACL_ACT_EN_LEN		1
+/* The one-bit tag format beside each change enable: the frame leaves carrying
+ * the tag, or leaves without it.
+ */
+#define     PPE_ACL_ACT_TAG_KEEP	1
 /* The counters live in the ingress policer block, not the IPO: the vendor
  * reaches them at its 0x100000 base plus the table's own 0x74000. Packets in
  * word 0, the low 32 bits of the byte count in word 1, its top 8 in word 2.
