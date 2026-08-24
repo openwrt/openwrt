@@ -117,6 +117,15 @@ define Device/mikrotik_e60iugs
 endef
 TARGET_DEVICES += mikrotik_e60iugs
 
+define Device/mikrotik_e62iugs-2axd5axt
+  $(Device/RouterBoot)
+  DEVICE_MODEL := E62iUGS-2axD5axT (hAP ax S)
+  ARTIFACT/uboot-bootloader.bin += | fill-zero 0x100000
+  DEVICE_PACKAGES += kmod-usb-ohci kmod-usb2 kmod-usb3 kmod-sfp kmod-pse-gpio \
+                     kmod-crypto-hw-eip93 kmod-mt7915e kmod-mt7916-firmware
+endef
+TARGET_DEVICES += mikrotik_e62iugs-2axd5axt
+
 define Device/mitrastar_gpt-2742gx4x5v6
   $(Device/Uboot-FitImage)
   DEVICE_VENDOR := MitraStar
