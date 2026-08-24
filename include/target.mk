@@ -271,6 +271,7 @@ ifeq ($(DUMP),1)
     CPU_CFLAGS_generic = -mcpu=generic
     CPU_CFLAGS_cortex-a53 = -mcpu=cortex-a53
     CPU_CFLAGS_cortex-a72 = -mcpu=cortex-a72
+    CPU_CFLAGS_cortex-a73 = -mcpu=cortex-a73
     CPU_CFLAGS_cortex-a76 = -mcpu=cortex-a76
   endif
   ifeq ($(ARCH),riscv64)
