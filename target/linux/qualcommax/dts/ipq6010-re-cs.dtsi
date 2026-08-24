@@ -80,6 +80,8 @@
 
 &qusb_phy_0 {
 	vdd-supply = <&usb_vbus>;
+	dr_mode = "host";
+
 	status = "okay";
 };
 
@@ -100,6 +102,8 @@
 };
 
 &usb3 {
+	dr_mode = "host";
+
 	status = "okay";
 };
 
