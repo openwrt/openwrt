@@ -35,9 +35,20 @@ jiorouter_initial_setup()
 	fi
 
 	ubidetach -m "$mtdnum" 2>/dev/null
-	ubiformat /dev/mtd$mtdnum -y
-	ubiattach -m "$mtdnum"
-	ubimkvol /dev/ubi0 -n 0 -N u-boot-env -s 0x80000
+	ubiformat /dev/mtd$mtdnum -y || exit 1
+	ubiattach -m "$mtdnum" || exit 1
+
+	local ubidev="$(nand_find_ubi ubi)"
+	[ -n "$ubidev" ] || { echo "cannot attach ubi"; exit 1; }
+
+	if ! ubimkvol /dev/$ubidev -n 0 -N u-boot-env -s 0x80000; then
+		echo "failed to create u-boot-env volume - aborting"
+		exit 1
+	fi
+
+	local envdev="$(nand_find_volume "$ubidev" u-boot-env)"
+	[ -n "$envdev" ] || { echo "cannot find u-boot-env volume - aborting"; exit 1; }
+	echo "/dev/$envdev 0x0 0x80000 0x1f000 5" > /etc/fw_env.config
 
 	# Set boot arguments in freshly created U-Boot environment
 	fw_setenv bootcmd 'ubi read 46000000 kernel;fdt addr $(fdtcontroladdr);fdt rm /signature;bootm 0x46000000'
