@@ -78,6 +78,10 @@
 	status = "okay";
 };
 
+&dwc_0 {
+	dr_mode = "host";
+};
+
 &qusb_phy_0 {
 	vdd-supply = <&usb_vbus>;
 	status = "okay";
