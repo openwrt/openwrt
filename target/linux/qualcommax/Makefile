@@ -16,6 +16,9 @@ DEFAULT_PACKAGES += \
 	kmod-leds-gpio kmod-gpio-button-hotplug \
 	kmod-ath11k-ahb \
 	wpad-basic-mbedtls uboot-envtools \
-	e2fsprogs kmod-fs-ext4 losetup
+	e2fsprogs kmod-fs-ext4 losetup \
+	tc-tiny kmod-sched-flower kmod-sched-prio \
+	kmod-sched-act-police kmod-sched-act-pedit \
+	kmod-sched-mqprio kmod-sched-ets dcb
 
 $(eval $(call BuildTarget))
