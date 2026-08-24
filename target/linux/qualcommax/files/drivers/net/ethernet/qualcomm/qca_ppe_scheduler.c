@@ -1019,7 +1019,6 @@ const struct bm_tdm_data hppe_bm_tdm_data = {
  * the one that gets programmed, exactly as the vendor driver picks it.
  */
 #define PPE_SHAPER_SLOT		8
-#define PPE_POLICER_SLOT	600
 #define PPE_TOKEN_UNIT_MAX	16384
 #define PPE_BUCKET_UNIT		65536
 /* 12 byte inter-packet gap plus the 8 byte preamble and start delimiter: what
@@ -1027,9 +1026,8 @@ const struct bm_tdm_data hppe_bm_tdm_data = {
  */
 #define PPE_IPG_PREAMBLE_LEN	20
 
-static int ppe_token_bucket(unsigned long clk, u32 slot, u64 rate_bps,
-			    u32 burst, u32 cir_max, u32 cbs_max,
-			    u32 *cir, u32 *cbs)
+int ppe_token_bucket(unsigned long clk, u32 slot, u64 rate_bps, u32 burst,
+		     u32 cir_max, u32 cbs_max, u32 *cir, u32 *cbs)
 {
 	int sel;
 

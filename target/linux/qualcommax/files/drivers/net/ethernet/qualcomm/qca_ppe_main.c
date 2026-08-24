@@ -1842,31 +1842,53 @@ static void qca_ppe_port_fast_age(struct dsa_switch *ds, int port)
 /* One analyzer serves the whole switch, for both directions, so every mirror on
  * the box has to name the same destination; a second one naming another port is
  * refused rather than silently redirecting the first. The analyzer is a switch
- * port, so mirroring costs a LAN port for as long as it is on.
+ * port, so mirroring costs a LAN port for as long as it is on. A classifier
+ * rule that mirrors takes the same analyzer, which is why this is shared.
  */
+int ppe_mirror_analyzer_get(struct qca_ppe_priv *priv, int to_port)
+{
+	if (priv->mirror_ref && priv->mirror_port != to_port)
+		return -EBUSY;
+
+	regmap_write(priv->regmap, PPE_MIRROR_ANALYZER,
+		     FIELD_PREP(PPE_MIRROR_IN_ANALYZER, to_port) |
+		     FIELD_PREP(PPE_MIRROR_EG_ANALYZER, to_port));
+
+	priv->mirror_port = to_port;
+	priv->mirror_ref++;
+
+	return 0;
+}
+
+void ppe_mirror_analyzer_put(struct qca_ppe_priv *priv)
+{
+	if (--priv->mirror_ref)
+		return;
+
+	regmap_write(priv->regmap, PPE_MIRROR_ANALYZER, 0);
+	priv->mirror_port = -1;
+}
+
 int qca_ppe_port_mirror_add(struct dsa_switch *ds, int port,
 			    struct dsa_mall_mirror_tc_entry *mirror,
 			    bool ingress, struct netlink_ext_ack *extack)
 {
 	struct qca_ppe_priv *priv = ds_to_priv(ds);
+	int ret;
 
-	if (priv->mirror_ref && priv->mirror_port != mirror->to_local_port) {
+	ret = ppe_mirror_analyzer_get(priv, mirror->to_local_port);
+	if (ret) {
 		NL_SET_ERR_MSG_MOD(extack,
 				   "another port is already mirrored elsewhere");
-		return -EBUSY;
+		return ret;
 	}
 
-	regmap_write(priv->regmap, PPE_MIRROR_ANALYZER,
-		     FIELD_PREP(PPE_MIRROR_IN_ANALYZER, mirror->to_local_port) |
-		     FIELD_PREP(PPE_MIRROR_EG_ANALYZER, mirror->to_local_port));
 	regmap_update_bits(priv->regmap, PPE_PORT_MIRROR(port),
 			   ingress ? PPE_PORT_MIRROR_IN_EN :
 				     PPE_PORT_MIRROR_EG_EN,
 			   ingress ? PPE_PORT_MIRROR_IN_EN :
 				     PPE_PORT_MIRROR_EG_EN);
 
-	priv->mirror_port = mirror->to_local_port;
-	priv->mirror_ref++;
 	priv->mirror_dir_ref[port][ingress]++;
 
 	return 0;
@@ -1885,15 +1907,15 @@ void qca_ppe_port_mirror_del(struct dsa_switch *ds, int port,
 				   mirror->ingress ? PPE_PORT_MIRROR_IN_EN :
 						     PPE_PORT_MIRROR_EG_EN, 0);
 
-	if (--priv->mirror_ref)
-		return;
-
-	regmap_write(priv->regmap, PPE_MIRROR_ANALYZER, 0);
-	priv->mirror_port = -1;
+	ppe_mirror_analyzer_put(priv);
 }
 
 static const struct dsa_switch_ops qca_ppe_ops = {
 	.port_setup_tc		= qca_ppe_setup_tc,
+	.cls_flower_add		= qca_ppe_cls_flower_add,
+	.cls_flower_del		= qca_ppe_cls_flower_del,
+	.get_rxnfc		= qca_ppe_get_rxnfc,
+	.set_rxnfc		= qca_ppe_set_rxnfc,
 	.port_mirror_add	= qca_ppe_port_mirror_add,
 	.port_mirror_del	= qca_ppe_port_mirror_del,
 	.port_policer_add	= qca_ppe_port_policer_add,
@@ -2152,10 +2174,11 @@ static int qca_ppe_probe(struct platform_device *pdev)
 	ppe_mac_hw_init(priv);
 	ppe_ctrlpkt_init(priv);
 	ppe_flow_init(priv);
+	ppe_acl_init(priv);
 
 	ret = ppe_flow_offload_init(priv);
 	if (ret)
-		goto err_clk;
+		goto err_acl;
 
 	if (data->type == PPE_TYPE_IPQ6018) {
 		ret = ppe_ipq6018_mux_setup(priv);
@@ -2175,6 +2198,8 @@ static int qca_ppe_probe(struct platform_device *pdev)
 
 err_flow:
 	ppe_flow_offload_exit(priv);
+err_acl:
+	ppe_acl_exit(priv);
 err_clk:
 	clk_bulk_disable_unprepare(priv->num_clks, priv->clks);
 	return ret;
@@ -2190,6 +2215,7 @@ static void qca_ppe_remove(struct platform_device *pdev)
 	 * their FLOW_CLS_DESTROY commands have to find the table still alive.
 	 */
 	ppe_flow_offload_exit(priv);
+	ppe_acl_exit(priv);
 	clk_bulk_disable_unprepare(priv->num_clks, priv->clks);
 }
 
