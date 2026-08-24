@@ -1,5 +1,6 @@
 SUBTARGET:=ipq95xx
 BOARDNAME:=Qualcomm Atheros IPQ95xx
+CPU_TYPE:=cortex-a73
 DEFAULT_PACKAGES += 
 
 define Target/Description
