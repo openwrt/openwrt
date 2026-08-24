@@ -1008,7 +1008,7 @@ define Device/cmcc_rax3000m
   DEVICE_ALT0_VENDOR := CMCC
   DEVICE_ALT0_MODEL := RAX3000Me
   DEVICE_DTS := mt7981b-cmcc-rax3000m
-  DEVICE_DTS_OVERLAY := mt7981b-cmcc-rax3000m-emmc mt7981b-cmcc-rax3000m-nand
+  DEVICE_DTS_OVERLAY := mt7981b-cmcc-rax3000m-emmc mt7981b-cmcc-rax3000m-nand mt7981b-cmcc-rax3000m-ubi
   DEVICE_DTS_DIR := ../dts
   DEVICE_DTC_FLAGS := --pad 4096
   DEVICE_DTS_LOADADDR := 0x43f00000
@@ -1030,7 +1030,9 @@ define Device/cmcc_rax3000m
 	emmc-ddr3-bl31-uboot.fip emmc-ddr3-preloader.bin \
 	emmc-ddr4-bl31-uboot.fip emmc-ddr4-preloader.bin \
 	nand-ddr3-bl31-uboot.fip nand-ddr3-preloader.bin \
-	nand-ddr4-bl31-uboot.fip nand-ddr4-preloader.bin
+	nand-ddr4-bl31-uboot.fip nand-ddr4-preloader.bin \
+	ubi-ddr3-bl31-uboot.fip ubi-ddr3-preloader.bin \
+	ubi-ddr4-bl31-uboot.fip ubi-ddr4-preloader.bin
   ARTIFACT/emmc-gpt.bin := mt798x-gpt emmc
   ARTIFACT/emmc-ddr3-bl31-uboot.fip := mt7981-bl31-uboot cmcc_rax3000m-emmc-ddr3
   ARTIFACT/emmc-ddr3-preloader.bin  := mt7981-bl2 emmc-ddr3-1866
@@ -1040,6 +1042,10 @@ define Device/cmcc_rax3000m
   ARTIFACT/nand-ddr3-preloader.bin  := mt7981-bl2 spim-nand-ddr3-1866
   ARTIFACT/nand-ddr4-bl31-uboot.fip := mt7981-bl31-uboot cmcc_rax3000m-nand-ddr4
   ARTIFACT/nand-ddr4-preloader.bin  := mt7981-bl2 spim-nand-ddr4
+  ARTIFACT/ubi-ddr3-bl31-uboot.fip := mt7981-bl31-uboot cmcc_rax3000m-ubi-ddr3
+  ARTIFACT/ubi-ddr3-preloader.bin  := mt7981-bl2 spim-nand-ubi-ddr3-1866
+  ARTIFACT/ubi-ddr4-bl31-uboot.fip := mt7981-bl31-uboot cmcc_rax3000m-ubi-ddr4
+  ARTIFACT/ubi-ddr4-preloader.bin  := mt7981-bl2 spim-nand-ubi-ddr4
 endef
 TARGET_DEVICES += cmcc_rax3000m
 
