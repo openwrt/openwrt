@@ -1,0 +1,120 @@
+From 712f8b070af3dd86b3379104c881a674d310f8f4 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Sun, 23 Aug 2026 22:27:01 -0300
+Subject: [PATCH] fixes for en7528
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ arch/mips/boot/dts/econet/en7528.dtsi         | 16 +++++++++-------
+ drivers/net/ethernet/airoha/airoha_eth_gen1.c |  8 ++++----
+ drivers/net/ethernet/airoha/airoha_qdma.c     | 14 +++++++++++---
+ 3 files changed, 24 insertions(+), 14 deletions(-)
+
+diff --git a/arch/mips/boot/dts/econet/en7528.dtsi b/arch/mips/boot/dts/econet/en7528.dtsi
+index 827ad42342ff..3eff3712ac4e 100644
+--- a/arch/mips/boot/dts/econet/en7528.dtsi
++++ b/arch/mips/boot/dts/econet/en7528.dtsi
+@@ -480,13 +480,15 @@ eth: ethernet@1fb50000 {
+ 
+ 			interrupt-parent = <&gic>;
+ 
+-			interrupts = <GIC_SHARED 41 IRQ_TYPE_LEVEL_HIGH>,
+-			             <GIC_SHARED 40 IRQ_TYPE_LEVEL_HIGH>,
+-			             <GIC_SHARED 39 IRQ_TYPE_LEVEL_HIGH>,
+-			             <GIC_SHARED 21 IRQ_TYPE_LEVEL_HIGH>,
+-			             <GIC_SHARED 44 IRQ_TYPE_LEVEL_HIGH>,
+-			             <GIC_SHARED 43 IRQ_TYPE_LEVEL_HIGH>,
+-			             <GIC_SHARED 42 IRQ_TYPE_LEVEL_HIGH>,
++			// interrupts = <GIC_SHARED 41 IRQ_TYPE_LEVEL_HIGH>,
++			//              <GIC_SHARED 40 IRQ_TYPE_LEVEL_HIGH>,
++			//              <GIC_SHARED 39 IRQ_TYPE_LEVEL_HIGH>,
++			//              <GIC_SHARED 21 IRQ_TYPE_LEVEL_HIGH>,
++			//              <GIC_SHARED 44 IRQ_TYPE_LEVEL_HIGH>,
++			//              <GIC_SHARED 43 IRQ_TYPE_LEVEL_HIGH>,
++			//              <GIC_SHARED 42 IRQ_TYPE_LEVEL_HIGH>,
++			//              <GIC_SHARED 22 IRQ_TYPE_LEVEL_HIGH>;
++			interrupts = <GIC_SHARED 21 IRQ_TYPE_LEVEL_HIGH>,
+ 			             <GIC_SHARED 22 IRQ_TYPE_LEVEL_HIGH>;
+ 
+ 			#address-cells = <1>;
+diff --git a/drivers/net/ethernet/airoha/airoha_eth_gen1.c b/drivers/net/ethernet/airoha/airoha_eth_gen1.c
+index 05fea691ab00..e48c4cb28b6a 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth_gen1.c
++++ b/drivers/net/ethernet/airoha/airoha_eth_gen1.c
+@@ -201,7 +201,7 @@ static void econet_set_gdm_port_fwd_cfg(struct econet_gdm_port *port,
+ 	 * disabled when special-tag mode is enabled. Do not preserve the
+ 	 * reset value here: some bootloaders leave bit 25 set.
+ 	 */
+-	if (airoha_is(port->eth, econet_en751221))
++	if (airoha_is_gen1(port->eth))
+ 		fc.word &= ~EN751221_GDM_UNTAG_EN;
+ 	else
+ 		set_gdm_fwd_cfg_drop_oversize(&fc, true);
+@@ -218,7 +218,7 @@ static int econet_dev_init(struct net_device *dev)
+ 		port->fport == ETX_FPORT_GDM2 ?
+ 		ETX_FPORT_QDMA1_CPU : ETX_FPORT_QDMA0_CPU);
+ 
+-	if (airoha_is(port->eth, econet_en751221) &&
++	if (airoha_is_gen1(port->eth) &&
+ 	    port->fport == ETX_FPORT_GDM1) {
+ 		struct g1_cport_cfg cport_cfg;
+ 		struct gdm_vlan vlan;
+@@ -265,7 +265,7 @@ static int econet_dev_open(struct net_device *dev)
+ 	 * used by the vendor special-tag datapath.
+ 	 */
+ 	scoped_guard(spinlock, &port->reg_lock) {
+-		if (airoha_is(port->eth, econet_en751221) &&
++		if (airoha_is_gen1(port->eth) &&
+ 		    port->fport == ETX_FPORT_GDM1) {
+ 			struct fwd_cfg fc = econet_rreg(&port->regs->fwd_cfg);
+ 
+@@ -321,7 +321,7 @@ static int econet_dev_stop(struct net_device *dev)
+ 
+ 	scoped_guard(spinlock, &port->reg_lock) {
+ 		econet_wreg(0U, &port->regs->stag_en);
+-		if (airoha_is(port->eth, econet_en751221) &&
++		if (airoha_is_gen1(port->eth) &&
+ 		    port->fport == ETX_FPORT_GDM1) {
+ 			struct fwd_cfg fc = econet_rreg(&port->regs->fwd_cfg);
+ 
+diff --git a/drivers/net/ethernet/airoha/airoha_qdma.c b/drivers/net/ethernet/airoha/airoha_qdma.c
+index cd48b0d73fca..29141c73236c 100644
+--- a/drivers/net/ethernet/airoha/airoha_qdma.c
++++ b/drivers/net/ethernet/airoha/airoha_qdma.c
+@@ -1306,7 +1306,10 @@ static void econet_init_en751221_qdma(struct econet_qdma *qdma)
+ 	econet_wreg(val, &qdma->regs->buf_usage_cfg);
+ 
+ 	/* Match qdma_dev.c: 16-byte WRR scale, accounting weights by byte. */
+-	set_qregs_wrr_mode_use_16b(&wrr, true);
++	if (airoha_is(qdma->common.eth, econet_en7528))
++		set_qregs_wrr_mode_use_16b(&wrr, false);
++	else
++		set_qregs_wrr_mode_use_16b(&wrr, true);
+ 	set_qregs_wrr_mode_by_byte(&wrr, true);
+ 	econet_wreg(wrr, &qdma->regs->wrr_mode);
+ 
+@@ -1464,14 +1467,19 @@ static int econet_init_final(struct econet_qdma *qdma)
+ 	set_qregs_qcfg_msg_word_swap(&qcfg, true);
+ 	set_qregs_qcfg_dscp_byte_swap(&qcfg, airoha_is(qdma->common.eth, econet_en751221));
+ 	set_qregs_qcfg_payload_byte_sw(&qcfg, true);
+-	if (airoha_is(qdma->common.eth, econet_en751221))
++	if (airoha_is_gen1(qdma->common.eth))
+ 		set_qregs_qcfg_dma_pref(&qcfg, QREGS_QCFG_DMA_PREF_ROUND_ROBIN);
+ 	else
+ 		set_qregs_qcfg_dma_pref(&qcfg, QREGS_QCFG_DMA_PREF_TX1_FRX_TX0);
+ 	set_qregs_qcfg_rx_2b_offset(&qcfg, qdma->cfg.rx_2b_offset);
+ 	set_qregs_qcfg_irq_en(&qcfg, true);
+-	set_qregs_qcfg_check_done(&qcfg, !airoha_is(qdma->common.eth, econet_en751221));
++	set_qregs_qcfg_check_done(&qcfg, !airoha_is_gen1(qdma->common.eth));
+ 	set_qregs_qcfg_tx_wb_done(&qcfg, true);
++
++	if (airoha_is(qdma->common.eth, econet_en7528) &&
++	    qdma->common.id == 0)
++		set_qregs_qcfg_tx_immediate_done(&qcfg, true);
++	
+ 	if (airoha_is(qdma->common.eth, econet_en751221)) {
+ 		/*
+ 		 * Stock QDMA_LAN uses TX_IMMEDIATE_DONE (0x9c180075), while
+-- 
+2.55.0
+

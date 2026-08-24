@@ -1,0 +1,1336 @@
+From 6de97770bfaf8cbd276f8365bf4cc0f8d46477db Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Sun, 23 Aug 2026 17:57:46 -0300
+Subject: [PATCH] update airoha mips dts files
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ arch/mips/boot/dts/econet/en751221.dtsi | 555 +++++++++++++++++--
+ arch/mips/boot/dts/econet/en7528.dtsi   | 703 ++++++++++++++++++++++++
+ 2 files changed, 1213 insertions(+), 45 deletions(-)
+ create mode 100644 arch/mips/boot/dts/econet/en7528.dtsi
+
+diff --git a/arch/mips/boot/dts/econet/en751221.dtsi b/arch/mips/boot/dts/econet/en751221.dtsi
+index 2b42091f7112..c64f3014dc7f 100644
+--- a/arch/mips/boot/dts/econet/en751221.dtsi
++++ b/arch/mips/boot/dts/econet/en751221.dtsi
+@@ -1,7 +1,16 @@
+ // SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+-/dts-v1/;
+ 
+ #include <dt-bindings/reset/econet,en751221-scu.h>
++#include <dt-bindings/clock/econet,en751221-scu.h>
++#include <dt-bindings/leds/common.h>
++#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/input/input.h>
++#include <dt-bindings/soc/airoha,scu-ssr.h>
++#include <dt-bindings/thermal/thermal.h>
++#include <dt-bindings/phy/phy.h>
++#include <dt-bindings/soc/airoha,soc-variant.h>
++
++/dts-v1/;
+ 
+ / {
+ 	compatible = "econet,en751221";
+@@ -32,6 +41,53 @@ cpuintc: interrupt-controller {
+ 		#interrupt-cells = <1>;
+ 	};
+ 
++	spi_ctrl: spi_controller@1fa10000 {
++		compatible = "airoha,en7523-spi";
++		reg = <0x1fa10000 0x140>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		spi-rx-bus-width = <2>;
++		spi-tx-bus-width = <2>;
++
++		nand: nand@0 {
++			compatible = "spi-nand";
++			reg = <0>;
++			nand-ecc-engine = <&nand>;
++		};
++	};
++
++	pcie_phy1: pcie-phy@1fac0000 {
++		compatible = "econet,en751221-pcie-phy1";
++		reg = <0x1fac0000 0x1000>;
++		#phy-cells = <0>;
++	};
++
++	pcie_phy0: pcie-phy@1faf2000 {
++		compatible = "econet,en751221-pcie-phy0";
++		reg = <0x1faf2000 0x1000>;
++		#phy-cells = <0>;
++	};
++
++	intc: interrupt-controller@1fb40000 {
++		compatible = "econet,en751221-intc";
++		reg = <0x1fb40000 0x100>;
++		interrupt-parent = <&cpuintc>;
++		interrupts = <2>;
++
++		interrupt-controller;
++		#interrupt-cells = <1>;
++		econet,shadow-interrupts = <7 2>, <8 3>, <13 12>, <30 29>;
++	};
++
++	timer_hpt: timer@1fbf0400 {
++		compatible = "econet,en751221-timer";
++		reg = <0x1fbf0400 0x100>;
++
++		interrupt-parent = <&intc>;
++		interrupts = <30>;
++		clocks = <&hpt_clock>;
++	};
++
+ 	chip_scu: syscon@1fa20000 {
+ 		compatible = "airoha,chip-scu", "syscon";
+ 		reg = <0x1fa20000 0x400>;
+@@ -46,38 +102,167 @@ scuclk: system-controller@1fb00000 {
+ 		#reset-cells = <1>;
+ 	};
+ 
+-	xpon_phy: phy@1faf0000 {
+-		compatible = "econet,en751221-xpon-phy";
+-		reg = <0x1faf0000 0x600>;
++	watchdog: watchdog@1fbf0100 {
++		compatible = "econet,en751221-wdt";
++		reg = <0x1fbf0100 0x3c>;
+ 
++		clocks = <&scuclk EN751221_CLK_BUS>;
++		clock-names = "bus";
++	};
++
++	crypto@1e004000 {
++		compatible = "inside-secure,safexcel-eip93ies";
++		reg = <0x1fb70000 0x1000>;
++		
++		interrupt-parent = <&intc>;
++		interrupts = <28>;
++	};
++
++	i2cclock: i2cclock@0 {
++		#clock-cells = <0>;
++		compatible = "fixed-clock";
++
++		/* 20 MHz */
++		clock-frequency = <20000000>;
++	};
++
++	i2c0: i2c0@1fbf8000 {
++		// compatible = "airoha,en7523-i2c";
++		compatible = "mediatek,mt7621-i2c";
++		reg = <0x1fbf8000 0x100>;
++
++		clocks = <&i2cclock>;
+ 		pinctrl-names = "default";
+-		pinctrl-0 = <&pon_pinctrl>;
++		pinctrl-0 = <&i2c_pins>;
+ 
+-		resets = <&scuclk EN751221_XPON_PHY_RST>;
+-		reset-names = "phy";
++		/* 100 kHz */
++		clock-frequency = <100000>;
++		#address-cells = <1>;
++		#size-cells = <0>;
+ 
+-		airoha,scu = <&scuclk>;
+-		airoha,chip-scu = <&chip_scu>;
++		status = "disabled";
++	};
+ 
+-		#phy-cells = <0>;
++	pciecfg: pciecfg@1fb80000 {
++		compatible = "mediatek,generic-pciecfg", "syscon";
++		reg = <0x1fb80000 0x1000>;
++	};
++
++	pcie0: pcie@1fb81000 {
++		compatible = "econet,en7528-pcie";
++		device_type = "pci";
++		reg = <0x1fb81000 0x1000>;
++		reg-names = "port0";
++		linux,pci-domain = <0>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++		interrupt-parent = <&intc>;
++		interrupts = <23>;
++		interrupt-names = "pcie_irq";
++		clocks = <&scuclk EN751221_CLK_PCIE>;
++		clock-names = "sys_ck0";
++		phys = <&pcie_phy0>;
++		phy-names = "pcie-phy0";
++		bus-range = <0x00 0xff>;
++		ranges = <0x01000000 0 0x00000000 0x1f600000 0 0x00008000>,
++			 <0x82000000 0 0x20000000 0x20000000 0 0x08000000>;
+ 		status = "disabled";
++
++		#interrupt-cells = <1>;
++		interrupt-map-mask = <0 0 0 7>;
++		interrupt-map = <0 0 0 1 &pcie_intc0 0>,
++				<0 0 0 2 &pcie_intc0 1>,
++				<0 0 0 3 &pcie_intc0 2>,
++				<0 0 0 4 &pcie_intc0 3>;
++
++		pcie_intc0: interrupt-controller {
++			interrupt-controller;
++			#address-cells = <0>;
++			#interrupt-cells = <1>;
++		};
++
++		slot0: pcie@0,0 {
++			reg = <0x0000 0 0 0 0>;
++			device_type = "pci";
++			#address-cells = <3>;
++			#size-cells = <2>;
++			ranges;
++		};
+ 	};
+ 
+-	intc: interrupt-controller@1fb40000 {
+-		compatible = "econet,en751221-intc";
+-		reg = <0x1fb40000 0x100>;
+-		interrupt-parent = <&cpuintc>;
+-		interrupts = <2>;
++	pcie1: pcie@1fb83000 {
++		compatible = "econet,en7528-pcie";
++		device_type = "pci";
++		reg = <0x1fb83000 0x1000>;
++		reg-names = "port1";
++		linux,pci-domain = <1>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++		interrupt-parent = <&intc>;
++		interrupts = <24>;
++		interrupt-names = "pcie_irq";
++		clocks = <&scuclk EN751221_CLK_PCIE>;
++		clock-names = "sys_ck1";
++		phys = <&pcie_phy1>;
++		phy-names = "pcie-phy1";
++		bus-range = <0x00 0xff>;
++		ranges = <0x81000000 0 0x00000000 0x1f608000 0 0x00008000>,
++			 <0x82000000 0 0x28000000 0x28000000 0 0x08000000>;
++		status = "disabled";
+ 
+-		interrupt-controller;
+ 		#interrupt-cells = <1>;
+-		econet,shadow-interrupts = <7 2>, <8 3>, <13 12>, <30 29>;
++		interrupt-map-mask = <0 0 0 7>;
++		interrupt-map = <0 0 0 1 &pcie_intc1 0>,
++				<0 0 0 2 &pcie_intc1 1>,
++				<0 0 0 3 &pcie_intc1 2>,
++				<0 0 0 4 &pcie_intc1 3>;
++
++		pcie_intc1: interrupt-controller {
++			interrupt-controller;
++			#address-cells = <0>;
++			#interrupt-cells = <1>;
++		};
++
++		slot1: pcie@1,0 {
++			reg = <0x0800 0 0 0 0>;
++			#address-cells = <3>;
++			#size-cells = <2>;
++			ranges;
++		};
+ 	};
+ 
+-	gpio_syscon: system-controller@1fbf0200 {
+-		compatible = "econet,en751221-gpio-sysctl", "syscon",
+-			     "simple-mfd";
+-		reg = <0x1fbf0200 0x7c>;
++	usb: usb@1fb90000 {
++		compatible = "mediatek,mt8173-xhci", "mediatek,mtk-xhci";
++		reg = <0x1fb90000 0x4000>,
++		      <0x1fa80700 0x100>;
++		reg-names = "mac", "ippc";
++
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		interrupt-parent = <&intc>;
++		interrupts = <17>;
++		usb3-lpm-capable;
++	};
++
++	uart: serial@1fbf0000 {
++		compatible = "ns16550";
++		reg = <0x1fbf0000 0x30>;
++		reg-io-width = <4>;
++		reg-shift = <2>;
++		interrupt-parent = <&intc>;
++		interrupts = <0>;
++		/*
++		 * Conversion of baud rate to clock frequency requires a
++		 * computation that is not in the ns16550 driver, so this
++		 * uart is fixed at 115200 baud.
++		 */
++		clock-frequency = <1843200>;
++	};
++
++	system-controller@1fbf0200 {
++		compatible = "syscon", "simple-mfd";
++		reg = <0x1fbf0200 0xc0>;
+ 
+ 		pinctrl: pinctrl {
+ 			compatible = "econet,en751221-pinctrl";
+@@ -93,7 +278,14 @@ pinctrl: pinctrl {
+ 			interrupt-controller;
+ 			#interrupt-cells = <2>;
+ 
+-			pon_pinctrl: pon-pins {
++			i2c_pins: i2c-pins {
++				mux {
++					function = "pon_i2c";
++					groups = "pon_i2c";
++				};
++			};
++
++			pon_pinctrl: pon {
+ 				mux {
+ 					function = "pon";
+ 					groups = "pon";
+@@ -102,35 +294,308 @@ mux {
+ 		};
+ 	};
+ 
+-	uart: serial@1fbf0000 {
+-		compatible = "ns16550";
+-		reg = <0x1fbf0000 0x30>;
+-		reg-io-width = <4>;
+-		reg-shift = <2>;
+-		interrupt-parent = <&intc>;
+-		interrupts = <0>;
+-		/*
+-		 * Conversion of baud rate to clock frequency requires a
+-		 * computation that is not in the ns16550 driver, so this
+-		 * uart is fixed at 115200 baud.
+-		 */
+-		clock-frequency = <1843200>;
++	xpon_phy: phy@1faf0000 {
++		compatible = "econet,en751221-xpon-phy";
++		// reg = <0x1faf0000 0x5000>;
++		reg = <0x1faf0000 0x600>;
++
++		pinctrl-names = "default";
++		pinctrl-0 = <&pon_pinctrl>;
++
++		resets = <&scuclk EN751221_XPON_PHY_RST>;
++		reset-names = "phy";
++
++		airoha,scu = <&scuclk>;
++		airoha,chip-scu = <&chip_scu>;
++
++		#phy-cells = <0>;
++
++		status = "disabled";
+ 	};
+ 
+-	watchdog: watchdog@1fbf0100 {
+-		compatible = "econet,en751221-wdt";
+-		reg = <0x1fbf0100 0x3c>;
++	xpon: xmac@1fb60000 {
++		compatible = "econet,en751221-xpon";
+ 
+-		clocks = <&scuclk EN751221_CLK_BUS>;
+-		clock-names = "bus";
++		reg = <0x1fb60000 0x10000>,
++		      <0x1fa2ff24 0x4>;
++		reg-names = "mac", "tx-off";
++
++		interrupt-parent = <&intc>;
++		interrupts = <18>;
++		interrupt-names = "dying-gasp";
++
++		resets = <&scuclk EN751221_XPON_MAC_RST>;
++		reset-names = "mac";
++
++		phys = <&xpon_phy>;
++		phy-names = "xpon";
++
++		ethernet = <&gdm2>;
++		airoha,scu = <&scuclk>;
++
++		status = "disabled";
+ 	};
+ 
+-	timer_hpt: timer@1fbf0400 {
+-		compatible = "econet,en751221-timer";
+-		reg = <0x1fbf0400 0x100>;
++	eth: ethernet@1fb50000 {
++		compatible = "econet,en751221-eth";
++		status = "disabled";
++		reg = <0x1fb50000 0x2600>,
++		      <0x1fb54000 0x1000>,
++		      <0x1fb55000 0x1000>,
++		      <0x1fbf9000 0x1000>;
++		reg-names = "fe", "qdma0", "qdma1", "gdmp";
+ 
+ 		interrupt-parent = <&intc>;
+-		interrupts = <30>;
+-		clocks = <&hpt_clock>;
++		interrupts = <21>, <22>;
++		interrupt-names = "qdma0", "qdma1";
++
++		resets = <&scuclk EN751221_FE_RST>,
++		         <&scuclk EN751221_FE_QDMA1_RST>,
++		         <&scuclk EN751221_FE_QDMA2_RST>,
++		         <&scuclk EN751221_GDMA_RST>,
++		         <&scuclk EN751221_FE_UNZIP_RST>,
++		         <&scuclk EN751221_GDMP_RST>;
++		reset-names = "fe", "qdma1", "qdma2", /* rename to pdma, qdma */
++		              "gdma", "fe-unzip", "gdmp";
++
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		gdm1: ethernet@1 {
++			compatible = "econet,eth-mac";
++			reg = <1>;
++			phy-mode = "internal";
++			status = "disabled";
++
++			fixed-link {
++				speed = <1000>;
++				full-duplex;
++				pause;
++			};
++		};
++
++		gdm2: ethernet@2 {
++			compatible = "econet,eth-mac";
++			reg = <2>;
++			phy-mode = "internal";
++			status = "disabled";
++		};
++	};
++
++	switch0: switch@1fb58000 {
++		compatible = "econet,en751221-switch";
++		reg = <0x1fb58000 0x8000>;
++		resets = <&scuclk EN751221_GSW_RST>;
++
++		status = "disabled";
++
++		#address-cells = <1>;
++		#size-cells = <0>;
++		dsa,member = <0 0>;
++
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			fsw_port0: port@0 {
++				reg = <0>;
++				phy-mode = "internal";
++				phy-handle = <&fsw_phy0>;
++				status = "disabled";
++				label = "lan1";
++			};
++
++			fsw_port1: port@1 {
++				reg = <1>;
++				phy-mode = "internal";
++				phy-handle = <&fsw_phy1>;
++				status = "disabled";
++				label = "lan2";
++			};
++
++			fsw_port2: port@2 {
++				reg = <2>;
++				phy-mode = "internal";
++				phy-handle = <&fsw_phy2>;
++				status = "disabled";
++				label = "lan3";
++			};
++
++			fsw_port3: port@3 {
++				reg = <3>;
++				phy-mode = "internal";
++				phy-handle = <&fsw_phy3>;
++				status = "disabled";
++				label = "lan4";
++			};
++
++			fsw_port4: port@4 {
++				reg = <4>;
++				phy-mode = "internal";
++				phy-handle = <&fsw_phy4>;
++				status = "disabled";
++				label = "lan5";
++			};
++
++			gport5: port@5 {
++				reg = <5>;
++				phy-mode = "trgmii";
++				link = <&mcm_port6>;
++
++				fixed-link {
++					speed = <1000>;
++					full-duplex;
++				};
++			};
++
++			port@6 {
++				reg = <6>;
++				label = "cpu";
++				ethernet = <&gdm1>;
++				phy-mode = "internal";
++
++				fixed-link {
++					speed = <1000>;
++					full-duplex;
++				};
++			};
++		};
++
++		mdio: mdio {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			fsw_phy0: ethernet-phy@8 {
++				compatible = "ethernet-phy-ieee802.3-c22";
++				reg = <8>;
++				phy-mode = "internal";
++				status = "disabled";
++			};
++
++			fsw_phy1: ethernet-phy@9 {
++				compatible = "ethernet-phy-ieee802.3-c22";
++				reg = <9>;
++				phy-mode = "internal";
++				status = "disabled";
++			};
++
++			fsw_phy2: ethernet-phy@10 {
++				compatible = "ethernet-phy-ieee802.3-c22";
++				reg = <10>;
++				phy-mode = "internal";
++				status = "disabled";
++			};
++
++			fsw_phy3: ethernet-phy@11 {
++				compatible = "ethernet-phy-ieee802.3-c22";
++				reg = <11>;
++				phy-mode = "internal";
++				status = "disabled";
++			};
++
++			fsw_phy4: ethernet-phy@12 {
++				compatible = "ethernet-phy-ieee802.3-c22";
++				reg = <12>;
++				phy-mode = "internal";
++				status = "disabled";
++			};
++
++			switch1: switch@1f {
++				compatible = "econet,en751221-switch";
++				reg = <0x1f>;
++				mediatek,mcm;
++				dsa,member = <0 1>;
++				status = "disabled";
++
++				#address-cells = <1>;
++				#size-cells = <0>;
++
++				ports {
++					#address-cells = <1>;
++					#size-cells = <0>;
++
++					gsw_port0: port@0 {
++						reg = <0>;
++						phy-mode = "gmii";
++						phy-handle = <&gsw_phy0>;
++						status = "disabled";
++						label = "lan1";
++					};
++
++					gsw_port1: port@1 {
++						reg = <1>;
++						phy-mode = "gmii";
++						phy-handle = <&gsw_phy1>;
++						status = "disabled";
++						label = "lan2";
++					};
++
++					gsw_port2: port@2 {
++						reg = <2>;
++						phy-mode = "gmii";
++						phy-handle = <&gsw_phy2>;
++						status = "disabled";
++						label = "lan3";
++					};
++
++					gsw_port3: port@3 {
++						reg = <3>;
++						phy-mode = "gmii";
++						phy-handle = <&gsw_phy3>;
++						status = "disabled";
++						label = "lan4";
++					};
++
++					gsw_port4: port@4 {
++						reg = <4>;
++						phy-mode = "gmii";
++						phy-handle = <&gsw_phy4>;
++						status = "disabled";
++						label = "lan5";
++					};
++
++					mcm_port6: port@6 {
++						reg = <6>;
++						phy-mode = "trgmii";
++						link = <&gport5>;
++
++						fixed-link {
++							speed = <1000>;
++							full-duplex;
++						};
++					};
++				};
++
++				mdio {
++					#address-cells = <1>;
++					#size-cells = <0>;
++
++					gsw_phy0: ethernet-phy@0 {
++						compatible = "ethernet-phy-ieee802.3-c22";
++						reg = <0>;
++					};
++
++					gsw_phy1: ethernet-phy@1 {
++						compatible = "ethernet-phy-ieee802.3-c22";
++						reg = <1>;
++					};
++
++					gsw_phy2: ethernet-phy@2 {
++						compatible = "ethernet-phy-ieee802.3-c22";
++						reg = <2>;
++					};
++
++					gsw_phy3: ethernet-phy@3 {
++						compatible = "ethernet-phy-ieee802.3-c22";
++						reg = <3>;
++					};
++
++					gsw_phy4: ethernet-phy@4 {
++						compatible = "ethernet-phy-ieee802.3-c22";
++						reg = <4>;
++					};
++				};
++			};
++		};
+ 	};
+ };
+diff --git a/arch/mips/boot/dts/econet/en7528.dtsi b/arch/mips/boot/dts/econet/en7528.dtsi
+new file mode 100644
+index 000000000000..56d32c78f2a7
+--- /dev/null
++++ b/arch/mips/boot/dts/econet/en7528.dtsi
+@@ -0,0 +1,703 @@
++// SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++/dts-v1/;
++
++#include <dt-bindings/interrupt-controller/irq.h>
++#include <dt-bindings/interrupt-controller/mips-gic.h>
++#include <dt-bindings/clock/econet,en7528-scu.h>
++#include <dt-bindings/phy/phy.h>
++#include <dt-bindings/reset/econet,en7528-scu.h>
++#include <dt-bindings/leds/common.h>
++#include <dt-bindings/soc/airoha,scu-ssr.h>
++#include <dt-bindings/soc/airoha,soc-variant.h>
++#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/input/input.h>
++
++
++/ {
++	compatible = "econet,en7528";
++	#address-cells = <1>;
++	#size-cells = <1>;
++
++	chosen {
++		stdout-path = "serial0:115200n8";
++		linux,usable-memory-range = <0x00020000 0x1fe00000>;
++	};
++
++	aliases {
++		serial0 = &uart1;
++	};
++
++	hpt_clock: clock {
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency = <200000000>;  /* 200 MHz */
++	};
++
++	i2cclock: i2c-clock {
++		#clock-cells = <0>;
++		compatible = "fixed-clock";
++
++		/* 20 MHz */
++		clock-frequency = <20000000>;
++	};
++
++	cpus {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		cpu@0 {
++			device_type = "cpu";
++			compatible = "mips,mips1004Kc";
++			reg = <0>;
++		};
++
++		cpu@1 {
++			device_type = "cpu";
++			compatible = "mips,mips1004Kc";
++			reg = <1>;
++		};
++	};
++
++	cpuintc: interrupt-controller {
++		compatible = "mti,cpu-interrupt-controller";
++		interrupt-controller;
++		#address-cells = <0>;
++		#interrupt-cells = <1>;
++	};
++
++	gic: interrupt-controller@1f8c0000 {
++		compatible = "mti,gic";
++		reg = <0x1f8c0000 0x20000>;
++
++		interrupt-controller;
++		#interrupt-cells = <3>;
++
++		interrupt-parent = <&cpuintc>;
++		interrupts = <2>;
++	};
++
++	pcie_phy0: pcie-phy@1faf2000 {
++		compatible = "econet,en7528-pcie-phy0";
++		reg = <0x1faf2000 0x1000>;
++		#phy-cells = <0>;
++	};
++
++	pcie_phy1: pcie-phy@1fac0000 {
++		compatible = "econet,en7528-pcie-phy1";
++		reg = <0x1fac0000 0x1000>;
++		#phy-cells = <0>;
++	};
++
++	chip_scu: syscon@1fa20000 {
++		compatible = "econet,en7528-chip-scu", "syscon";
++		reg = <0x1fa20000 0x400>;
++	};
++
++	scuclk: system-controller@1fb00000 {
++		compatible = "econet,en7528-scu", "syscon";
++		reg = <0x1fb00000 0x1000>;
++
++		airoha,chip-scu = <&chip_scu>;
++		#clock-cells = <1>;
++		#reset-cells = <1>;
++	};
++
++	system-controller@1fbf0200 {
++		compatible = "syscon", "simple-mfd";
++		reg = <0x1fbf0200 0xc0>;
++
++		pinctrl: pinctrl {
++			compatible = "econet,en7528-pinctrl";
++			airoha,chip-scu = <&chip_scu>;
++
++			interrupt-parent = <&gic>;
++			interrupts = <GIC_SHARED 10 IRQ_TYPE_LEVEL_HIGH>;
++
++			gpio-controller;
++			#gpio-cells = <2>;
++
++			interrupt-controller;
++			#interrupt-cells = <2>;
++
++			gpio-ranges = <&pinctrl 0 0 42>;
++
++			pcie0_rst_pins: pcie0-rst-pins {
++				conf {
++					pins = "pcie_reset0";
++					drive-open-drain = <1>;
++				};
++			};
++
++			pcie1_rst_pins: pcie1-rst-pins {
++				conf {
++					pins = "pcie_reset1";
++					drive-open-drain = <1>;
++				};
++			};
++
++			uart2_pins: uart2 {
++				mux {
++					function = "uart";
++					groups = "uart2";
++				};
++			};
++
++			uart3_pins: uart3 {
++				mux {
++					function = "uart";
++					groups = "uart3";
++				};
++			};
++
++			pon_pinctrl: pon {
++				mux {
++					function = "pon";
++					groups = "pon";
++				};
++			};
++
++			swp1_led0: switch_port-1-led0 {
++				mux {
++					function = "phy1_led0";
++					groups = "gpio30";
++				};
++			};
++
++			swp1_led1: switch_port-1-led1 {
++				mux {
++					function = "phy1_led1";
++					groups = "gpio31";
++				};
++			};
++
++			swp2_led0: switch_port-2-led0 {
++				mux {
++					function = "phy2_led0";
++					groups = "gpio32";
++				};
++			};
++
++			swp2_led1: switch_port-2-led1 {
++				mux {
++					function = "phy2_led1";
++					groups = "gpio33";
++				};
++			};
++
++			swp3_led0: switch_port-3-led0 {
++				mux {
++					function = "phy3_led0";
++					groups = "gpio34";
++				};
++			};
++
++			swp3_led1: switch_port-3-led1 {
++				mux {
++					function = "phy3_led1";
++					groups = "gpio35";
++				};
++			};
++
++			swp4_led0: switch_port-4-led0 {
++				mux {
++					function = "phy4_led0";
++					groups = "gpio36";
++				};
++			};
++
++			swp4_led1: switch_port-4-led1 {
++				mux {
++					function = "phy4_led1";
++					groups = "gpio37";
++				};
++			};
++		};
++	};
++
++	timer_hpt: timer@1fbf0400 {
++		compatible = "econet,en7528-timer";
++		reg = <0x1fbf0400 0x14>,
++		      <0x1fbe0000 0x14>;
++
++		interrupt-parent = <&gic>;
++		interrupts = <GIC_SHARED 30 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SHARED 29 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SHARED 37 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SHARED 36 IRQ_TYPE_LEVEL_HIGH>;
++
++		clocks = <&hpt_clock>;
++	};
++
++	spi: spi@1fa10000 {
++		compatible = "airoha,en7523-spi";
++		reg = <0x1fa10000 0x140>,
++		      <0x1fa11000 0x160>;
++
++		clocks = <&scuclk EN7528_CLK_SPI>;
++		clock-names = "spi";
++
++		#address-cells = <1>;
++		#size-cells = <0>;
++	};
++
++	watchdog: watchdog@1fbf0100 {
++		compatible = "econet,en751221-wdt";
++		reg = <0x1fbf0100 0x3c>;
++
++		clocks = <&scuclk EN7528_CLK_BUS>;
++		clock-names = "bus";
++
++		interrupt-parent = <&gic>;
++		interrupts = <GIC_SHARED 50 IRQ_TYPE_LEVEL_HIGH>;
++	};
++
++	crypto@1fb70000 {
++		compatible = "inside-secure,safexcel-eip93ies";
++		reg = <0x1fb70000 0x1000>;
++		interrupts = <GIC_SHARED 7 IRQ_TYPE_LEVEL_HIGH>;
++	};
++
++	i2c0: i2c0@1fbf8000 {
++		compatible = "airoha,en7523-i2c";
++		reg = <0x1fbf8000 0x100>;
++
++		clocks = <&i2cclock>;
++
++		/* 100 kHz */
++		clock-frequency = <100000>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		status = "disabled";
++	};
++
++	usb_phy: usb-phy@1fa80000 {
++		compatible = "econet,en7528-usb-phy";
++		reg = <0x1fa80000 0x1400>;
++		#phy-cells = <1>;
++	};
++
++	usb: usb@1fb90000 {
++		compatible = "econet,en7528-xhci";
++		reg = <0x1fb90000 0x3e00>,
++		      <0x1fb93e00 0x100>;
++		reg-names = "mac", "ippc";
++		interrupt-parent = <&gic>;
++		interrupts = <GIC_SHARED 17 IRQ_TYPE_LEVEL_HIGH>;
++		phys = <&usb_phy PHY_TYPE_USB2>, <&usb_phy PHY_TYPE_USB3>;
++		usb3-lpm-capable;
++		status = "disabled";
++	};
++
++	uart1: serial@1fbf0000 {
++		compatible = "airoha,en7523-uart";
++		reg = <0x1fbf0000 0x30>;
++		reg-io-width = <4>;
++		reg-shift = <2>;
++
++		interrupt-parent = <&gic>;
++		interrupts = <GIC_SHARED 2 IRQ_TYPE_LEVEL_HIGH>;
++
++		/*
++		 * The EcoNet/Airoha UART uses the vendor XYD fractional divider.
++		 * The generic 8250 driver does not program XYD, so keep the bootloader
++		 * XYD setup and expose a fixed 115200 baud base clock.
++		 */
++		clock-frequency = <1843200>;
++	};
++
++	uart2: serial@1fbf0300 {
++		compatible = "airoha,en7523-uart";
++		reg = <0x1fbf0300 0x30>;
++		interrupts = <GIC_SHARED 3 IRQ_TYPE_LEVEL_HIGH>;
++
++		pinctrl-names = "default";
++		pinctrl-0 = <&uart2_pins>;
++
++		status = "disabled";
++	};
++
++	uart3: serial@1fbe1000 {
++		compatible = "airoha,en7523-uart";
++		reg = <0x1fbe1000 0x30>;
++		interrupts = <GIC_SHARED 2 IRQ_TYPE_LEVEL_HIGH>;
++
++		pinctrl-names = "default";
++		pinctrl-0 = <&uart3_pins>;
++
++		status = "disabled";
++	};
++
++	pciecfg: pciecfg@1fb80000 {
++		compatible = "mediatek,generic-pciecfg", "syscon";
++		reg = <0x1fb80000 0x1000>;
++	};
++
++	pcie0: pcie@1fb81000 {
++		compatible = "econet,en7528-pcie";
++		device_type = "pci";
++		reg = <0x1fb81000 0x1000>;
++		reg-names = "port0";
++		linux,pci-domain = <0>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++		interrupt-parent = <&gic>;
++		interrupts = <GIC_SHARED 23 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "pcie_irq";
++		clocks = <&scuclk EN7528_CLK_PCIE>;
++		clock-names = "sys_ck0";
++		phys = <&pcie_phy0>;
++		phy-names = "pcie-phy0";
++		bus-range = <0x00 0xff>;
++		ranges = <0x01000000 0 0x00000000 0x1f600000 0 0x00010000>,
++			 <0x82000000 0 0x20000000 0x20000000 0 0x08000000>;
++		status = "disabled";
++
++		#interrupt-cells = <1>;
++		interrupt-map-mask = <0 0 0 7>;
++		interrupt-map = <0 0 0 1 &pcie_intc0 0>,
++				<0 0 0 2 &pcie_intc0 1>,
++				<0 0 0 3 &pcie_intc0 2>,
++				<0 0 0 4 &pcie_intc0 3>;
++
++		pcie_intc0: interrupt-controller {
++			interrupt-controller;
++			#address-cells = <0>;
++			#interrupt-cells = <1>;
++		};
++
++		slot0: pcie@0,0 {
++			reg = <0x0000 0 0 0 0>;
++			#address-cells = <3>;
++			#size-cells = <2>;
++			ranges;
++		};
++	};
++
++	pcie1: pcie@1fb83000 {
++		compatible = "econet,en7528-pcie";
++		device_type = "pci";
++		reg = <0x1fb83000 0x1000>;
++		reg-names = "port1";
++		linux,pci-domain = <1>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++		interrupt-parent = <&gic>;
++		interrupts = <GIC_SHARED 24 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "pcie_irq";
++		clocks = <&scuclk EN7528_CLK_PCIE>;
++		clock-names = "sys_ck1";
++		phys = <&pcie_phy1>;
++		phy-names = "pcie-phy1";
++		bus-range = <0x00 0xff>;
++		ranges = <0x01000000 0 0x00000000 0x1f610000 0 0x00010000>,
++			 <0x82000000 0 0x28000000 0x28000000 0 0x08000000>;
++		status = "disabled";
++
++		#interrupt-cells = <1>;
++		interrupt-map-mask = <0 0 0 7>;
++		interrupt-map = <0 0 0 1 &pcie_intc1 0>,
++				<0 0 0 2 &pcie_intc1 1>,
++				<0 0 0 3 &pcie_intc1 2>,
++				<0 0 0 4 &pcie_intc1 3>;
++
++		pcie_intc1: interrupt-controller {
++			interrupt-controller;
++			#address-cells = <0>;
++			#interrupt-cells = <1>;
++		};
++
++		slot1: pcie@1,0 {
++			reg = <0x0800 0 0 0 0>;
++			#address-cells = <3>;
++			#size-cells = <2>;
++			ranges;
++		};
++	};
++
++	xpon_phy: phy@1faf0000 {
++		compatible = "airoha,en7528-xpon-phy";
++		reg = <0x1faf0000 0x5000>;
++
++		pinctrl-names = "default";
++		pinctrl-0 = <&pon_pinctrl>;
++
++		resets = <&scuclk EN7528_XPON_PHY_RST>;
++		reset-names = "phy";
++
++		interrupts = <GIC_SHARED 37 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "phy";
++		airoha,scu = <&scuclk>;
++		#phy-cells = <0>;
++
++		status = "disabled";
++	};
++
++	xpon: xmac@1fb60000 {
++		compatible = "airoha,en7528-xpon";
++
++		reg = <0x1fb60000 0x10000>,
++		      <0x1fa2ff24 0x4>;
++		reg-names = "mac", "tx-off";
++
++		interrupts = <GIC_SHARED 38 IRQ_TYPE_LEVEL_HIGH>,
++		             <GIC_SHARED 40 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "mac", "dying-gasp";
++
++		resets = <&scuclk EN7528_XPON_MAC_RST>;
++		reset-names = "mac";
++		phys = <&xpon_phy>;
++		phy-names = "xpon";
++		ethernet = <&gdm2>;
++		airoha,scu = <&scuclk>;
++
++		status = "disabled";
++	};
++
++	eth: ethernet@1fb50000 {
++		compatible = "econet,en7528-eth";
++		status = "disabled";
++		reg = <0x1fb50000 0x2600>,
++		      <0x1fb54000 0x1000>,
++		      <0x1fb55000 0x1000>,
++		      <0x1fa40000 0x8000>;
++		reg-names = "fe", "qdma0", "qdma1", "gdmp";
++
++		resets = <&scuclk EN7528_FE_RST>,
++		         <&scuclk EN7528_FE_QDMA1_RST>,
++		         <&scuclk EN7528_FE_QDMA2_RST>,
++		         <&scuclk EN7528_GDMP_RST>;
++		reset-names = "fe", "qdma0", "qdma1", "gdmp";
++
++		interrupt-parent = <&gic>;
++
++		/*
++		24	QDMA_LAN3_INTR	Ethernet QDMA0 int3
++		25	QDMA_LAN2_INTR	Ethernet QDMA0 int2
++		26	QDMA_LAN1_INTR	Ethernet QDMA0 int1
++		27	QDMA_LAN0_INTR	Ethernet QDMA0 int0
++		28	QDMA_WAN3_INTR	Ethernet QDMA1 int3
++		29	QDMA_WAN2_INTR	Ethernet QDMA1 int2
++		30	QDMA_WAN1_INTR	Ethernet QDMA1 int1
++		31	QDMA_WAN0_INTR	Ethernet QDMA1 int0
++		*/
++		interrupts = <GIC_SHARED 24 IRQ_TYPE_LEVEL_HIGH>,
++		             <GIC_SHARED 25 IRQ_TYPE_LEVEL_HIGH>,
++		             <GIC_SHARED 26 IRQ_TYPE_LEVEL_HIGH>,
++		             <GIC_SHARED 27 IRQ_TYPE_LEVEL_HIGH>,
++		             <GIC_SHARED 28 IRQ_TYPE_LEVEL_HIGH>,
++		             <GIC_SHARED 29 IRQ_TYPE_LEVEL_HIGH>,
++		             <GIC_SHARED 30 IRQ_TYPE_LEVEL_HIGH>,
++		             <GIC_SHARED 31 IRQ_TYPE_LEVEL_HIGH>;
++
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		gdm1: ethernet@1 {
++			compatible = "econet,eth-mac";
++			reg = <1>;
++			phy-mode = "internal";
++			status = "disabled";
++
++			fixed-link {
++				speed = <10000>;
++				full-duplex;
++				pause;
++			};
++		};
++
++		gdm2: ethernet@2 {
++			compatible = "econet,eth-mac";
++			reg = <2>;
++			phy-mode = "internal";
++
++			status = "disabled";
++		};
++	};
++
++	switch: switch@1fb58000 {
++		compatible = "airoha,en7528-switch", "airoha,en7523-switch";
++		reg = <0x1fb58000 0x8000>;
++		resets = <&scuclk EN7528_GSW_RST>;
++
++		interrupt-controller;
++		#interrupt-cells = <1>;
++		interrupt-parent = <&gic>;
++		interrupts = <GIC_SHARED 21 IRQ_TYPE_LEVEL_HIGH>;
++
++		status = "disabled";
++
++		#address-cells = <1>;
++		#size-cells = <1>;
++
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			gsw_port1: port@1 {
++				reg = <1>;
++				phy-mode = "internal";
++				phy-handle = <&gsw_phy1>;
++				status = "disabled";
++			};
++
++			gsw_port2: port@2 {
++				reg = <2>;
++				phy-mode = "internal";
++				phy-handle = <&gsw_phy2>;
++				status = "disabled";
++			};
++
++			gsw_port3: port@3 {
++				reg = <3>;
++				phy-mode = "internal";
++				phy-handle = <&gsw_phy3>;
++				status = "disabled";
++			};
++
++			gsw_port4: port@4 {
++				reg = <4>;
++				phy-mode = "internal";
++				phy-handle = <&gsw_phy4>;
++				status = "disabled";
++			};
++
++			gsw_port6: port@6 {
++				reg = <6>;
++				ethernet = <&gdm1>;
++				phy-mode = "internal";
++
++				fixed-link {
++					speed = <10000>;
++					full-duplex;
++					pause;
++				};
++			};
++		};
++
++		mdio: mdio {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			gsw_phy1: ethernet-phy@9 {
++				compatible = "ethernet-phy-ieee802.3-c22";
++				reg = <9>;
++				phy-mode = "internal";
++				status = "disabled";
++
++				pinctrl-names = "gbe-led";
++				pinctrl-0 = <&swp1_led0 &swp1_led1>;
++				airoha,scu = <&scuclk>;
++
++				leds {
++					#address-cells = <1>;
++					#size-cells = <0>;
++
++					gsw_phy1_led0: led0@0 {
++						reg = <0>;
++						function = LED_FUNCTION_LAN;
++						status = "disabled";
++						active-low;
++					};
++
++					gsw_phy1_led1: led1@1 {
++						reg = <1>;
++						status = "disabled";
++						function = LED_FUNCTION_ACTIVITY;
++						active-low;
++					};
++				};
++			};
++
++			gsw_phy2: ethernet-phy@10 {
++				compatible = "ethernet-phy-ieee802.3-c22";
++				reg = <10>;
++				phy-mode = "internal";
++				status = "disabled";
++
++				pinctrl-names = "gbe-led";
++				pinctrl-0 = <&swp2_led0 &swp2_led1>;
++				airoha,scu = <&scuclk>;
++
++				leds {
++					#address-cells = <1>;
++					#size-cells = <0>;
++
++					gsw_phy2_led0: led0@0 {
++						reg = <0>;
++						function = LED_FUNCTION_LAN;
++						status = "disabled";
++						active-low;
++					};
++
++					gsw_phy2_led1: led1@1 {
++						reg = <1>;
++						status = "disabled";
++						function = LED_FUNCTION_ACTIVITY;
++						active-low;
++					};
++				};
++			};
++
++			gsw_phy3: ethernet-phy@11 {
++				compatible = "ethernet-phy-ieee802.3-c22";
++				reg = <11>;
++				phy-mode = "internal";
++				status = "disabled";
++
++				pinctrl-names = "gbe-led";
++				pinctrl-0 = <&swp3_led0 &swp3_led1>;
++				airoha,scu = <&scuclk>;
++
++				leds {
++					#address-cells = <1>;
++					#size-cells = <0>;
++
++					gsw_phy3_led0: led0@0 {
++						reg = <0>;
++						function = LED_FUNCTION_LAN;
++						status = "disabled";
++						active-low;
++					};
++
++					gsw_phy3_led1: led1@1 {
++						reg = <1>;
++						status = "disabled";
++						function = LED_FUNCTION_ACTIVITY;
++						active-low;
++					};
++				};
++			};
++
++			gsw_phy4: ethernet-phy@12 {
++				compatible = "ethernet-phy-ieee802.3-c22";
++				reg = <12>;
++				phy-mode = "internal";
++				status = "disabled";
++
++				pinctrl-names = "gbe-led";
++				pinctrl-0 = <&swp4_led0 &swp4_led1>;
++				airoha,scu = <&scuclk>;
++
++				leds {
++					#address-cells = <1>;
++					#size-cells = <0>;
++
++					gsw_phy4_led0: led0@0 {
++						reg = <0>;
++						function = LED_FUNCTION_LAN;
++						status = "disabled";
++						active-low;
++					};
++
++					gsw_phy4_led1: led1@1 {
++						reg = <1>;
++						status = "disabled";
++						function = LED_FUNCTION_ACTIVITY;
++						active-low;
++					};
++				};
++			};
++		};
++	};
++};
+-- 
+2.55.0
+

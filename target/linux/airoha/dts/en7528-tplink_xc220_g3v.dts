@@ -111,7 +111,7 @@ model = "TP-Link xc220 g3v";
 	flash@0 {
 		reg = <0>;
 		compatible = "jedec,spi-nor";
-		spi-max-frequency = <25000000>;
+		spi-max-frequency = <40000000>;
 		spi-tx-bus-width = <1>;
 		spi-rx-bus-width = <2>;
 
@@ -144,6 +144,35 @@ model = "TP-Link xc220 g3v";
 			partition@f40000 {
 				label = "misc";
 				reg = <0x00f40000 0x000c0000>;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr: macaddr@4f100 {
+						compatible = "mac-base";
+						reg = <0xf100 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+
+					en7571_bob: en7571_bob@c0000 {
+						reg = <0x10000 0xff>;
+					};
+
+					gponsn: gponsn@40001 {
+						reg = <0x40001 0x10>;
+						#nvmem-cell-cells = <1>;
+					};
+
+					eeprom@50000 {
+						reg = <0x50000 0x2F60>;
+					};
+
+					eeprom@70000 {
+						reg = <0x70000 0x600>;
+					};
+				};
 			};
 		};
 	};
@@ -164,8 +193,8 @@ model = "TP-Link xc220 g3v";
 		compatible = "airoha,en7571";
 		reg = <0x70>;
 
-		// nvmem-cells = <&en7571_bob>;
-		// nvmem-cell-names = "calibration";
+		nvmem-cells = <&en7571_bob>;
+		nvmem-cell-names = "calibration";
 		tx-disable-gpios = <&pinctrl 16 GPIO_ACTIVE_HIGH>;
 
 		#optical-frontend-cells = <0>;
@@ -178,8 +207,9 @@ model = "TP-Link xc220 g3v";
 
 &xpon {
 	status = "okay";
-	airoha,gpon-serial-from-mac;
-	omci-vendor-id = "TPLG";
+	
+	nvmem-cells = <&gponsn>;
+	nvmem-cell-names = "gpon-serial-number";
 
 	optical-frontends = <&en7571>;
 	optical-frontend-names = "pon";
@@ -196,8 +226,8 @@ model = "TP-Link xc220 g3v";
 &gdm2 {
 	status = "okay";
 
-	// nvmem-cells = <&macaddr 0>;
-	// nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr 0>;
+	nvmem-cell-names = "mac-address";
 
 	airoha,xpon-managed;
 	openwrt,netdev-name = "pon0";
