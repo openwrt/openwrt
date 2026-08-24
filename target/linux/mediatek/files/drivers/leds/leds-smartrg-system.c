@@ -196,7 +196,7 @@ static void srg_led_disable(struct i2c_client *client)
 	struct srg_led_ctrl *sysled_ctrl = i2c_get_clientdata(client);
 	int i;
 
-	for (i = 1; i < 10; i++)
+	for (i = 1; i < 9; i++)
 		srg_led_i2c_write(sysled_ctrl, i, 0);
 }
 
