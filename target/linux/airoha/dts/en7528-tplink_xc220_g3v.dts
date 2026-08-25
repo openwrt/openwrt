@@ -25,6 +25,12 @@ model = "TP-Link xc220 g3v";
 		compatible = "gpio-keys-polled";
 		poll-interval = <100>;
 
+		/*
+		#id   gpio  mode  irq   reve  thres action
+		RST   0     1     0     0     50    RST_action
+		WIFI  30    1     0     0     10    NULL
+		*/
+
 		reset {
 			label = "reset";
 			linux,code = <KEY_RESTART>;
@@ -45,22 +51,22 @@ model = "TP-Link xc220 g3v";
 
 		/*
 		#id   gpio  mode  speed reve  priv
-		POWR   36    1     5     1     0
-		XPON   34   0     1     1     0
-		LOS    32   0     5     1     0
-		INET   25   1     1     1     ""
-		WLPS   5    1     5     1     0
-		LAN4  37    6     1     1     "eth0.4"
-		LAN3  35    6     1     1     "eth0.3"
-		LAN2  33    6     1     1     "eth0.2"
-		LAN1  31    6     1     1     "eth0.1"
+		WLPS  5     1     5     1     0
+		INET  25    1     1     1     ""
 		FXS1  27    1     1     1     0
+		LAN1  31    6     1     1     "eth0.1"
+		XPON  34    0     1     1     0
+		LOS   32    0     5     1     0
+		LAN2  33    6     1     1     "eth0.2"
+		LAN3  35    6     1     1     "eth0.3"
+		POWR  36    1     5     1     0
+		LAN4  37    6     1     1     "eth0.4"
 		*/
 
-		// WPS
+		// Wireless
 		led@5 {
 			color = <LED_COLOR_ID_GREEN>;
-			function = LED_FUNCTION_STATUS;
+			function = LED_FUNCTION_WLAN;
 			function-enumerator = <5>;
 			gpios = <&pinctrl 5 GPIO_ACTIVE_LOW>;
 		};
@@ -68,7 +74,7 @@ model = "TP-Link xc220 g3v";
 		// Internet
 		led@25 {
 			color = <LED_COLOR_ID_GREEN>;
-			function = LED_FUNCTION_STATUS;
+			function = LED_FUNCTION_WAN_ONLINE;
 			function-enumerator = <25>;
 			gpios = <&pinctrl 25 GPIO_ACTIVE_LOW>;
 		};
@@ -76,15 +82,15 @@ model = "TP-Link xc220 g3v";
 		// FXS1
 		led@27 {
 			color = <LED_COLOR_ID_GREEN>;
-			function = LED_FUNCTION_STATUS;
+			function = LED_FUNCTION_VOIP;
 			function-enumerator = <27>;
 			gpios = <&pinctrl 27 GPIO_ACTIVE_LOW>;
 		};
 
 		// LOS
 		led@32 {
-			color = <LED_COLOR_ID_GREEN>;
-			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_XPON_LOS;
 			function-enumerator = <32>;
 			gpios = <&pinctrl 32 GPIO_ACTIVE_LOW>;
 		};
@@ -92,7 +98,7 @@ model = "TP-Link xc220 g3v";
 		// xPON
 		led@34 {
 			color = <LED_COLOR_ID_GREEN>;
-			function = LED_FUNCTION_STATUS;
+			function = LED_FUNCTION_XPON;
 			function-enumerator = <34>;
 			gpios = <&pinctrl 34 GPIO_ACTIVE_LOW>;
 		};
@@ -100,7 +106,7 @@ model = "TP-Link xc220 g3v";
 		// Power
 		led_power: led@36 {
 			color = <LED_COLOR_ID_GREEN>;
-			function = LED_FUNCTION_STATUS;
+			function = LED_FUNCTION_POWER;
 			function-enumerator = <36>;
 			gpios = <&pinctrl 36 GPIO_ACTIVE_LOW>;
 		};
@@ -159,11 +165,11 @@ model = "TP-Link xc220 g3v";
 						reg = <0x40001 0x10>;
 					};
 
-					eeprom@50000 {
-						reg = <0x50000 0x2F60>;
+					eeprom2_4: eeprom@60000 {
+						reg = <0x60000 0x200>;
 					};
 
-					eeprom@70000 {
+					eeprom5: eeprom@70000 {
 						reg = <0x70000 0x600>;
 					};
 				};
@@ -178,6 +184,28 @@ model = "TP-Link xc220 g3v";
 
 &pcie1 {
 	status = "okay";
+};
+
+&slot0 {
+	wifi@0,0 {
+		/* 2,4 GHz: MT7592/MT7603 */
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+
+		nvmem-cells = <&eeprom2_4>, <&macaddr 1>;
+		nvmem-cell-names = "eeprom", "mac-address";
+	};
+};
+
+&slot1 {
+	wifi@0,0 {
+		/* Dual-band/5 GHz: MT7663 */
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+
+		nvmem-cells = <&eeprom5>, <&macaddr 2>;
+		nvmem-cell-names = "eeprom", "mac-address";
+	};
 };
 
 &i2c0 {
@@ -201,7 +229,7 @@ model = "TP-Link xc220 g3v";
 
 &xpon {
 	status = "okay";
-	
+
 	nvmem-cells = <&gponsn>;
 	nvmem-cell-names = "gpon-serial-number";
 
@@ -256,36 +284,44 @@ model = "TP-Link xc220 g3v";
 
 &gsw_phy1 {
 	status = "okay";
+	pinctrl-0 = <&swp1_led1>;
 };
 
 &gsw_phy2 {
 	status = "okay";
+	pinctrl-0 = <&swp2_led1>;
 };
 
 &gsw_phy3 {
 	status = "okay";
+	pinctrl-0 = <&swp3_led1>;
 };
 
 &gsw_phy4 {
 	status = "okay";
+	pinctrl-0 = <&swp4_led1>;
 };
 
-&gsw_phy1_led0 {
+&gsw_phy1_led1 {
 	status = "okay";
 	color = <LED_COLOR_ID_GREEN>;
+	function = LED_FUNCTION_LAN;
 };
 
-&gsw_phy2_led0 {
+&gsw_phy2_led1 {
 	status = "okay";
 	color = <LED_COLOR_ID_GREEN>;
+	function = LED_FUNCTION_LAN;
 };
 
-&gsw_phy3_led0 {
+&gsw_phy3_led1 {
 	status = "okay";
 	color = <LED_COLOR_ID_GREEN>;
+	function = LED_FUNCTION_LAN;
 };
 
-&gsw_phy4_led0 {
+&gsw_phy4_led1 {
 	status = "okay";
 	color = <LED_COLOR_ID_GREEN>;
+	function = LED_FUNCTION_LAN;
 };
