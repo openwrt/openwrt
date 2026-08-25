@@ -830,6 +830,7 @@
 #define PPE_FDB_OP_ENTRY_IDX		GENMASK(21, 11)
 
 #define PPE_FDB_RSLT_CMD_ID		GENMASK(3, 0)
+#define PPE_FDB_RSLT_VALID_CNT		GENMASK(8, 5)
 
 #define PPE_FDB_DATA1_VALID		BIT(16)
 #define PPE_FDB_DATA1_LKP_VALID		BIT(17)
@@ -971,6 +972,7 @@ struct qca_ppe_priv {
 	struct clk_bulk_data *clks;
 	int num_clks;
 	spinlock_t fdb_lock;
+	u32 fdb_cmd_id;
 	/* Guards the FDB and the tables the operation engine reaches. */
 	struct mutex flow_lock;
 	/* The VSI, translation-index and bridge-VLAN state is reached from the
