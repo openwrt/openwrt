@@ -54,9 +54,18 @@
 			bias-pull-up;
 		};
 	};
+
+	/* the stock firmware keeps gpio60 high to enable the LED board */
+	led-en {
+		gpio-hog;
+		gpios = <60 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "led-enable";
+	};
 };
 
 &blsp1_uart3 {
+	/* CSR8811 bluetooth, 4-wire HSUART on the hsuart_pins */
 	status = "okay";
 };
 
@@ -392,11 +401,319 @@
 	pinctrl-names = "default";
 	status = "okay";
 
+	/* front panel RGB LEDs, 6 pcs. */
+	lp5569@32 {
+		compatible = "ti,lp5569";
+		reg = <0x32>;
+		clock-mode = /bits/8 <1>; /* internal */
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		multi-led@0 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0>;
+			color = <LED_COLOR_ID_RGB>;
+
+			led@0 {
+				reg = <0>;
+				chan-name = "nbg7815:led1";
+				color = <LED_COLOR_ID_RED>;
+				led-cur = /bits/8 <0xdf>;
+				max-cur = /bits/8 <0xff>;
+			};
+
+			led@1 {
+				reg = <1>;
+				chan-name = "nbg7815:led1";
+				color = <LED_COLOR_ID_GREEN>;
+				led-cur = /bits/8 <0xdf>;
+				max-cur = /bits/8 <0xff>;
+			};
+
+			led@2 {
+				reg = <2>;
+				chan-name = "nbg7815:led1";
+				color = <LED_COLOR_ID_BLUE>;
+				led-cur = /bits/8 <0xdf>;
+				max-cur = /bits/8 <0xff>;
+			};
+		};
+
+		multi-led@1 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <1>;
+			color = <LED_COLOR_ID_RGB>;
+
+			led@3 {
+				reg = <3>;
+				chan-name = "nbg7815:led2";
+				color = <LED_COLOR_ID_RED>;
+				led-cur = /bits/8 <0xdf>;
+				max-cur = /bits/8 <0xff>;
+			};
+
+			led@4 {
+				reg = <4>;
+				chan-name = "nbg7815:led2";
+				color = <LED_COLOR_ID_GREEN>;
+				led-cur = /bits/8 <0xdf>;
+				max-cur = /bits/8 <0xff>;
+			};
+
+			led@5 {
+				reg = <5>;
+				chan-name = "nbg7815:led2";
+				color = <LED_COLOR_ID_BLUE>;
+				led-cur = /bits/8 <0xdf>;
+				max-cur = /bits/8 <0xff>;
+			};
+		};
+
+		multi-led@2 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <2>;
+			color = <LED_COLOR_ID_RGB>;
+
+			led@6 {
+				reg = <6>;
+				chan-name = "nbg7815:led3";
+				color = <LED_COLOR_ID_RED>;
+				led-cur = /bits/8 <0xdf>;
+				max-cur = /bits/8 <0xff>;
+			};
+
+			led@7 {
+				reg = <7>;
+				chan-name = "nbg7815:led3";
+				color = <LED_COLOR_ID_GREEN>;
+				led-cur = /bits/8 <0xdf>;
+				max-cur = /bits/8 <0xff>;
+			};
+
+			led@8 {
+				reg = <8>;
+				chan-name = "nbg7815:led3";
+				color = <LED_COLOR_ID_BLUE>;
+				led-cur = /bits/8 <0xdf>;
+				max-cur = /bits/8 <0xff>;
+			};
+		};
+	};
+
+	lp5569@35 {
+		compatible = "ti,lp5569";
+		reg = <0x35>;
+		clock-mode = /bits/8 <2>; /* external */
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		multi-led@0 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0>;
+			color = <LED_COLOR_ID_RGB>;
+
+			led@6 {
+				reg = <6>;
+				chan-name = "nbg7815:led4";
+				color = <LED_COLOR_ID_RED>;
+				led-cur = /bits/8 <0xdf>;
+				max-cur = /bits/8 <0xff>;
+			};
+
+			led@7 {
+				reg = <7>;
+				chan-name = "nbg7815:led4";
+				color = <LED_COLOR_ID_GREEN>;
+				led-cur = /bits/8 <0xdf>;
+				max-cur = /bits/8 <0xff>;
+			};
+
+			led@8 {
+				reg = <8>;
+				chan-name = "nbg7815:led4";
+				color = <LED_COLOR_ID_BLUE>;
+				led-cur = /bits/8 <0xdf>;
+				max-cur = /bits/8 <0xff>;
+			};
+		};
+
+		multi-led@1 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <1>;
+			color = <LED_COLOR_ID_RGB>;
+
+			led@3 {
+				reg = <3>;
+				chan-name = "nbg7815:led5";
+				color = <LED_COLOR_ID_RED>;
+				led-cur = /bits/8 <0xdf>;
+				max-cur = /bits/8 <0xff>;
+			};
+
+			led@4 {
+				reg = <4>;
+				chan-name = "nbg7815:led5";
+				color = <LED_COLOR_ID_GREEN>;
+				led-cur = /bits/8 <0xdf>;
+				max-cur = /bits/8 <0xff>;
+			};
+
+			led@5 {
+				reg = <5>;
+				chan-name = "nbg7815:led5";
+				color = <LED_COLOR_ID_BLUE>;
+				led-cur = /bits/8 <0xdf>;
+				max-cur = /bits/8 <0xff>;
+			};
+		};
+
+		multi-led@2 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <2>;
+			color = <LED_COLOR_ID_RGB>;
+
+			led@0 {
+				reg = <0>;
+				chan-name = "nbg7815:led6";
+				color = <LED_COLOR_ID_RED>;
+				led-cur = /bits/8 <0xdf>;
+				max-cur = /bits/8 <0xff>;
+			};
+
+			led@1 {
+				reg = <1>;
+				chan-name = "nbg7815:led6";
+				color = <LED_COLOR_ID_GREEN>;
+				led-cur = /bits/8 <0xdf>;
+				max-cur = /bits/8 <0xff>;
+			};
+
+			led@2 {
+				reg = <2>;
+				chan-name = "nbg7815:led6";
+				color = <LED_COLOR_ID_BLUE>;
+				led-cur = /bits/8 <0xdf>;
+				max-cur = /bits/8 <0xff>;
+			};
+		};
+	};
+
 	tmp103@70 {
 		compatible = "ti,tmp103";
 		reg = <0x70>;
 	};
+	/* third front panel RGB LED group (LED7-LED9); the chip answers to the
+	 * lp5569 register layout - a write to the pwm registers at 0x16 lights
+	 * the LEDs, while the lp50xx driver only got -EIO
+	 */
+	lp5569@40 {
+		compatible = "ti,lp5569";
+		reg = <0x40>;
+		clock-mode = /bits/8 <1>; /* internal */
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		multi-led@0 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0>;
+			color = <LED_COLOR_ID_RGB>;
+
+			led@0 {
+				reg = <0>;
+				chan-name = "nbg7815:led7";
+				color = <LED_COLOR_ID_RED>;
+				led-cur = /bits/8 <0xdf>;
+				max-cur = /bits/8 <0xff>;
+			};
+
+			led@1 {
+				reg = <1>;
+				chan-name = "nbg7815:led7";
+				color = <LED_COLOR_ID_GREEN>;
+				led-cur = /bits/8 <0xdf>;
+				max-cur = /bits/8 <0xff>;
+			};
+
+			led@2 {
+				reg = <2>;
+				chan-name = "nbg7815:led7";
+				color = <LED_COLOR_ID_BLUE>;
+				led-cur = /bits/8 <0xdf>;
+				max-cur = /bits/8 <0xff>;
+			};
+		};
+
+		multi-led@1 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <1>;
+			color = <LED_COLOR_ID_RGB>;
+
+			led@3 {
+				reg = <3>;
+				chan-name = "nbg7815:led8";
+				color = <LED_COLOR_ID_RED>;
+				led-cur = /bits/8 <0xdf>;
+				max-cur = /bits/8 <0xff>;
+			};
+
+			led@4 {
+				reg = <4>;
+				chan-name = "nbg7815:led8";
+				color = <LED_COLOR_ID_GREEN>;
+				led-cur = /bits/8 <0xdf>;
+				max-cur = /bits/8 <0xff>;
+			};
+
+			led@5 {
+				reg = <5>;
+				chan-name = "nbg7815:led8";
+				color = <LED_COLOR_ID_BLUE>;
+				led-cur = /bits/8 <0xdf>;
+				max-cur = /bits/8 <0xff>;
+			};
+		};
+
+		multi-led@2 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <2>;
+			color = <LED_COLOR_ID_RGB>;
+
+			led@6 {
+				reg = <6>;
+				chan-name = "nbg7815:led9";
+				color = <LED_COLOR_ID_RED>;
+				led-cur = /bits/8 <0xdf>;
+				max-cur = /bits/8 <0xff>;
+			};
+
+			led@7 {
+				reg = <7>;
+				chan-name = "nbg7815:led9";
+				color = <LED_COLOR_ID_GREEN>;
+				led-cur = /bits/8 <0xdf>;
+				max-cur = /bits/8 <0xff>;
+			};
+
+			led@8 {
+				reg = <8>;
+				chan-name = "nbg7815:led9";
+				color = <LED_COLOR_ID_BLUE>;
+				led-cur = /bits/8 <0xdf>;
+				max-cur = /bits/8 <0xff>;
+			};
+		};
+	};
 };
+
 
 &sdhc_1 {
 	status = "okay";
