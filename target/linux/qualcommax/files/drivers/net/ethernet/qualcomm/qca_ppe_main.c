@@ -352,20 +352,53 @@ static void ppe_port_vsi_set(struct qca_ppe_priv *priv, int port, u32 vsi)
 			     val[i]);
 }
 
+#define PPE_FDB_OP_RETRIES	100
+
+/* The result register reports a command id and how many results are queued
+ * behind it. An operation has finished only once the queue holds one and it
+ * carries this command's id: without the count, a register that has posted
+ * nothing reads back as a completed command 0, and an operation issued
+ * without an id of its own is told it succeeded before the engine has run.
+ */
 static int ppe_fdb_op_wait(struct qca_ppe_priv *priv, u32 rslt_reg,
-			   u32 cmd_id)
+			   u32 cmd_id, u32 *data)
 {
 	u32 val;
 	int i;
 
-	for (i = 0; i < 100; i++) {
+	for (i = 0; i < PPE_FDB_OP_RETRIES; i++) {
+		/* The entry lands in the result data registers and the
+		 * operation is reported in a queue that a read advances, so
+		 * the data is taken first, in the same pass as the report
+		 * that qualifies it.
+		 */
+		if (data) {
+			regmap_read(priv->regmap, PPE_FDB_RD_RSLT_DATA0,
+				    &data[0]);
+			regmap_read(priv->regmap, PPE_FDB_RD_RSLT_DATA1,
+				    &data[1]);
+			regmap_read(priv->regmap, PPE_FDB_RD_RSLT_DATA2,
+				    &data[2]);
+		}
+
 		regmap_read(priv->regmap, rslt_reg, &val);
-		if (FIELD_GET(PPE_FDB_RSLT_CMD_ID, val) == cmd_id)
+		if (FIELD_GET(PPE_FDB_RSLT_VALID_CNT, val) &&
+		    FIELD_GET(PPE_FDB_RSLT_CMD_ID, val) == cmd_id)
 			return 0;
 		udelay(1);
 	}
 
 	return -ETIMEDOUT;
+}
+
+/* Ids are handed out in turn, so a result the previous operation left behind
+ * is never mistaken for this one's.
+ */
+static u32 ppe_fdb_next_cmd_id(struct qca_ppe_priv *priv)
+{
+	priv->fdb_cmd_id = (priv->fdb_cmd_id + 1) & PPE_FDB_OP_CMD_ID;
+
+	return priv->fdb_cmd_id;
 }
 
 static void ppe_fdb_encode(const unsigned char *addr, int port, u32 vsi,
@@ -386,7 +419,7 @@ static void ppe_fdb_encode(const unsigned char *addr, int port, u32 vsi,
 static int ppe_fdb_op(struct qca_ppe_priv *priv, const unsigned char *addr,
 		      int port, u32 vsi, u32 op_type)
 {
-	u32 data0, data1, data2;
+	u32 data0, data1, data2, cmd_id;
 	int ret;
 
 	ppe_fdb_encode(addr, port, vsi, op_type == PPE_FDB_OP_ADD,
@@ -397,11 +430,14 @@ static int ppe_fdb_op(struct qca_ppe_priv *priv, const unsigned char *addr,
 	regmap_write(priv->regmap, PPE_FDB_OP_DATA0, data0);
 	regmap_write(priv->regmap, PPE_FDB_OP_DATA1, data1);
 	regmap_write(priv->regmap, PPE_FDB_OP_DATA2, data2);
+
+	cmd_id = ppe_fdb_next_cmd_id(priv);
 	regmap_write(priv->regmap, PPE_FDB_OP,
+		     FIELD_PREP(PPE_FDB_OP_CMD_ID, cmd_id) |
 		     FIELD_PREP(PPE_FDB_OP_TYPE, op_type) |
 		     FIELD_PREP(PPE_FDB_OP_HASH_BLOCK, 3));
 
-	ret = ppe_fdb_op_wait(priv, PPE_FDB_OP_RSLT, 0);
+	ret = ppe_fdb_op_wait(priv, PPE_FDB_OP_RSLT, cmd_id, NULL);
 
 	spin_unlock_bh(&priv->fdb_lock);
 
@@ -412,12 +448,12 @@ static int ppe_fdb_read_entry(struct qca_ppe_priv *priv, u32 index,
 			      unsigned char *addr, u32 *vsi, int *port,
 			      bool *is_static)
 {
-	u32 data0, data1, data2, cmd_id, val;
+	u32 data[3], cmd_id, val;
 	int ret;
 
-	cmd_id = index % 15;
-
 	spin_lock_bh(&priv->fdb_lock);
+
+	cmd_id = ppe_fdb_next_cmd_id(priv);
 
 	regmap_write(priv->regmap, PPE_FDB_RD_OP_DATA0, 0);
 	regmap_write(priv->regmap, PPE_FDB_RD_OP_DATA1, 0);
@@ -430,51 +466,47 @@ static int ppe_fdb_read_entry(struct qca_ppe_priv *priv, u32 index,
 	      FIELD_PREP(PPE_FDB_OP_ENTRY_IDX, index);
 	regmap_write(priv->regmap, PPE_FDB_RD_OP, val);
 
-	ret = ppe_fdb_op_wait(priv, PPE_FDB_RD_OP_RSLT, cmd_id);
-	if (ret)
-		goto unlock;
+	ret = ppe_fdb_op_wait(priv, PPE_FDB_RD_OP_RSLT, cmd_id, data);
 
-	regmap_read(priv->regmap, PPE_FDB_RD_RSLT_DATA0, &data0);
-	regmap_read(priv->regmap, PPE_FDB_RD_RSLT_DATA1, &data1);
-	regmap_read(priv->regmap, PPE_FDB_RD_RSLT_DATA2, &data2);
-
-unlock:
 	spin_unlock_bh(&priv->fdb_lock);
 
 	if (ret)
 		return ret;
 
-	if (!(data1 & PPE_FDB_DATA1_VALID))
+	if (!(data[1] & PPE_FDB_DATA1_VALID))
 		return -ENOENT;
 
-	if (FIELD_GET(PPE_FDB_DATA2_DST_TYPE, data2) != PPE_FDB_DST_PORT)
+	if (FIELD_GET(PPE_FDB_DATA2_DST_TYPE, data[2]) != PPE_FDB_DST_PORT)
 		return -ENOENT;
 
-	addr[2] = (data0 >> 24) & 0xff;
-	addr[3] = (data0 >> 16) & 0xff;
-	addr[4] = (data0 >> 8) & 0xff;
-	addr[5] = data0 & 0xff;
-	addr[0] = (data1 >> 8) & 0xff;
-	addr[1] = data1 & 0xff;
+	addr[2] = (data[0] >> 24) & 0xff;
+	addr[3] = (data[0] >> 16) & 0xff;
+	addr[4] = (data[0] >> 8) & 0xff;
+	addr[5] = data[0] & 0xff;
+	addr[0] = (data[1] >> 8) & 0xff;
+	addr[1] = data[1] & 0xff;
 
-	*vsi = FIELD_GET(PPE_FDB_DATA1_VSI, data1);
-	*port = FIELD_GET(PPE_FDB_DATA1_DST_LO, data1) |
-		(FIELD_GET(PPE_FDB_DATA2_DST_HI, data2) << 9);
-	*is_static = FIELD_GET(PPE_FDB_DATA2_HIT_AGE, data2) == PPE_FDB_AGE_STATIC;
+	*vsi = FIELD_GET(PPE_FDB_DATA1_VSI, data[1]);
+	*port = FIELD_GET(PPE_FDB_DATA1_DST_LO, data[1]) |
+		(FIELD_GET(PPE_FDB_DATA2_DST_HI, data[2]) << 9);
+	*is_static = FIELD_GET(PPE_FDB_DATA2_HIT_AGE, data[2]) == PPE_FDB_AGE_STATIC;
 
 	return 0;
 }
 
 static int ppe_fdb_flush(struct qca_ppe_priv *priv)
 {
+	u32 cmd_id;
 	int ret;
 
 	spin_lock_bh(&priv->fdb_lock);
 
+	cmd_id = ppe_fdb_next_cmd_id(priv);
 	regmap_write(priv->regmap, PPE_FDB_OP,
+		FIELD_PREP(PPE_FDB_OP_CMD_ID, cmd_id) |
 		FIELD_PREP(PPE_FDB_OP_TYPE, PPE_FDB_OP_FLUSH));
 
-	ret = ppe_fdb_op_wait(priv, PPE_FDB_OP_RSLT, 0);
+	ret = ppe_fdb_op_wait(priv, PPE_FDB_OP_RSLT, cmd_id, NULL);
 
 	spin_unlock_bh(&priv->fdb_lock);
 
@@ -499,7 +531,7 @@ static void ppe_fdb_encode_mcast(const unsigned char *addr, u32 portmap,
 static int ppe_fdb_lookup(struct qca_ppe_priv *priv,
 			  const unsigned char *addr, u32 vsi, u32 *portmap)
 {
-	u32 data1, data2;
+	u32 data[3], cmd_id;
 	int ret;
 
 	spin_lock_bh(&priv->fdb_lock);
@@ -511,29 +543,28 @@ static int ppe_fdb_lookup(struct qca_ppe_priv *priv,
 		     FIELD_PREP(PPE_FDB_DATA1_VSI, vsi));
 	regmap_write(priv->regmap, PPE_FDB_RD_OP_DATA2, 0);
 
+	cmd_id = ppe_fdb_next_cmd_id(priv);
 	regmap_write(priv->regmap, PPE_FDB_RD_OP,
+		     FIELD_PREP(PPE_FDB_OP_CMD_ID, cmd_id) |
 		     FIELD_PREP(PPE_FDB_OP_TYPE, PPE_FDB_OP_GET) |
 		     FIELD_PREP(PPE_FDB_OP_HASH_BLOCK, 3));
 
-	ret = ppe_fdb_op_wait(priv, PPE_FDB_RD_OP_RSLT, 0);
+	ret = ppe_fdb_op_wait(priv, PPE_FDB_RD_OP_RSLT, cmd_id, data);
 	if (ret)
 		goto out;
-
-	regmap_read(priv->regmap, PPE_FDB_RD_RSLT_DATA1, &data1);
-	regmap_read(priv->regmap, PPE_FDB_RD_RSLT_DATA2, &data2);
 
 	/* The destination field of a unicast entry is a port number rather than
 	 * a member map, so an entry of the wrong type read back as one would
 	 * name a set of ports the group was never given.
 	 */
-	if (!(data1 & PPE_FDB_DATA1_VALID) ||
-	    FIELD_GET(PPE_FDB_DATA2_DST_TYPE, data2) != PPE_FDB_DST_PORTMAP) {
+	if (!(data[1] & PPE_FDB_DATA1_VALID) ||
+	    FIELD_GET(PPE_FDB_DATA2_DST_TYPE, data[2]) != PPE_FDB_DST_PORTMAP) {
 		ret = -ENOENT;
 		goto out;
 	}
 
-	*portmap = FIELD_GET(PPE_FDB_DATA1_DST_LO, data1) |
-		   (FIELD_GET(PPE_FDB_DATA2_DST_HI, data2) << 9);
+	*portmap = FIELD_GET(PPE_FDB_DATA1_DST_LO, data[1]) |
+		   (FIELD_GET(PPE_FDB_DATA2_DST_HI, data[2]) << 9);
 
 out:
 	spin_unlock_bh(&priv->fdb_lock);
@@ -544,7 +575,7 @@ static int ppe_fdb_mcast_op(struct qca_ppe_priv *priv,
 			    const unsigned char *addr, u32 portmap,
 			    u32 vsi, u32 op_type)
 {
-	u32 data0, data1, data2;
+	u32 data0, data1, data2, cmd_id;
 	int ret;
 
 	ppe_fdb_encode_mcast(addr, portmap, vsi, &data0, &data1, &data2);
@@ -554,11 +585,14 @@ static int ppe_fdb_mcast_op(struct qca_ppe_priv *priv,
 	regmap_write(priv->regmap, PPE_FDB_OP_DATA0, data0);
 	regmap_write(priv->regmap, PPE_FDB_OP_DATA1, data1);
 	regmap_write(priv->regmap, PPE_FDB_OP_DATA2, data2);
+
+	cmd_id = ppe_fdb_next_cmd_id(priv);
 	regmap_write(priv->regmap, PPE_FDB_OP,
+		     FIELD_PREP(PPE_FDB_OP_CMD_ID, cmd_id) |
 		     FIELD_PREP(PPE_FDB_OP_TYPE, op_type) |
 		     FIELD_PREP(PPE_FDB_OP_HASH_BLOCK, 3));
 
-	ret = ppe_fdb_op_wait(priv, PPE_FDB_OP_RSLT, 0);
+	ret = ppe_fdb_op_wait(priv, PPE_FDB_OP_RSLT, cmd_id, NULL);
 
 	spin_unlock_bh(&priv->fdb_lock);
 
