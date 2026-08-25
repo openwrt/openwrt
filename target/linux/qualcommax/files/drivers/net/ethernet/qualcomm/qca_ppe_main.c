@@ -1509,7 +1509,11 @@ static void qca_ppe_mac_link_up(struct phylink_config *config,
 	struct dsa_port *dp = dsa_phylink_to_port(config);
 	struct qca_ppe_priv *priv = ds_to_priv(dp->ds);
 	int port = dp->index;
-	unsigned long rate;
+	/* Neither speed table below is exhaustive, and a speed outside the one
+	 * its interface lands in leaves the gigabit rate rather than whatever
+	 * the stack held.
+	 */
+	unsigned long rate = 125000000;
 
 	/* Invalid mode for port < 5 */
 	if ((interface == PHY_INTERFACE_MODE_2500BASEX ||
@@ -1599,7 +1603,6 @@ static void qca_ppe_mac_link_up(struct phylink_config *config,
 		}
 		break;
 	default:
-		rate = 125000000;
 		break;
 	}
 
