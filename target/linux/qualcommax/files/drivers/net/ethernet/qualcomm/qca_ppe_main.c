@@ -1207,11 +1207,12 @@ static void ppe_pcs_set_mux_hppe(struct qca_ppe_priv *priv, int port,
 
 	switch (port) {
 	case 4:
+		/* The select names where port 4's GMII comes from, not the
+		 * protocol carried on it, so one value covers every interface
+		 * uniphy0 drives.
+		 */
 		mask = HPPE_PORT4_PCS_SEL;
-		if (interface == PHY_INTERFACE_MODE_QSGMII ||
-		    interface == PHY_INTERFACE_MODE_PSGMII)
-			val = FIELD_PREP(HPPE_PORT4_PCS_SEL,
-					 HPPE_PORT4_PCS0);
+		val = FIELD_PREP(HPPE_PORT4_PCS_SEL, HPPE_PORT4_PCS0);
 		break;
 	case 5:
 		mask = HPPE_PORT5_PCS_SEL | HPPE_PORT5_GMAC_SEL;
