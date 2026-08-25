@@ -522,7 +522,12 @@ static int ppe_fdb_lookup(struct qca_ppe_priv *priv,
 	regmap_read(priv->regmap, PPE_FDB_RD_RSLT_DATA1, &data1);
 	regmap_read(priv->regmap, PPE_FDB_RD_RSLT_DATA2, &data2);
 
-	if (!(data1 & PPE_FDB_DATA1_VALID)) {
+	/* The destination field of a unicast entry is a port number rather than
+	 * a member map, so an entry of the wrong type read back as one would
+	 * name a set of ports the group was never given.
+	 */
+	if (!(data1 & PPE_FDB_DATA1_VALID) ||
+	    FIELD_GET(PPE_FDB_DATA2_DST_TYPE, data2) != PPE_FDB_DST_PORTMAP) {
 		ret = -ENOENT;
 		goto out;
 	}
