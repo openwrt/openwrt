@@ -2,5 +2,5 @@
 
 [ "${ACTION}" = "add" ] && [ -f /etc/board.json ] && {
 	/sbin/wifi config
-	ubus call network.wireless retry
+	ubus call network.wireless config_reload
 }
