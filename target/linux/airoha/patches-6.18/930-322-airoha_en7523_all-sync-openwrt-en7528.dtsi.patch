@@ -1,0 +1,147 @@
+From 578d9c2f9d4080cf5bbacf73dd663ef28e3398d9 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Tue, 25 Aug 2026 13:35:50 -0300
+Subject: [PATCH] sync openwrt en7528.dtsi
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ arch/mips/boot/dts/econet/en7528.dtsi | 55 +++++++++++++++++----------
+ 1 file changed, 34 insertions(+), 21 deletions(-)
+
+diff --git a/arch/mips/boot/dts/econet/en7528.dtsi b/arch/mips/boot/dts/econet/en7528.dtsi
+index 3eff3712ac4e..21d9d861261b 100644
+--- a/arch/mips/boot/dts/econet/en7528.dtsi
++++ b/arch/mips/boot/dts/econet/en7528.dtsi
+@@ -225,7 +225,6 @@ timer_hpt: timer@1fbf0400 {
+ 			reg = <0x1fbf0400 0x14>,
+ 			      <0x1fbe0000 0x14>;
+ 
+-			interrupt-parent = <&gic>;
+ 			interrupts = <GIC_SHARED 30 IRQ_TYPE_LEVEL_HIGH>,
+ 				     <GIC_SHARED 29 IRQ_TYPE_LEVEL_HIGH>,
+ 				     <GIC_SHARED 37 IRQ_TYPE_LEVEL_HIGH>,
+@@ -256,7 +255,6 @@ watchdog: watchdog@1fbf0100 {
+ 			clocks = <&scuclk EN7528_CLK_BUS>;
+ 			clock-names = "bus";
+ 
+-			interrupt-parent = <&gic>;
+ 			interrupts = <GIC_SHARED 9 IRQ_TYPE_LEVEL_HIGH>;
+ 		};
+ 
+@@ -291,7 +289,6 @@ usb: usb@1fb90000 {
+ 			reg = <0x1fb90000 0x3e00>,
+ 			      <0x1fb93e00 0x100>;
+ 			reg-names = "mac", "ippc";
+-			interrupt-parent = <&gic>;
+ 			interrupts = <GIC_SHARED 17 IRQ_TYPE_LEVEL_HIGH>;
+ 			phys = <&usb_phy PHY_TYPE_USB2>, <&usb_phy PHY_TYPE_USB3>;
+ 			usb3-lpm-capable;
+@@ -304,7 +301,6 @@ uart1: serial@1fbf0000 {
+ 			reg-io-width = <4>;
+ 			reg-shift = <2>;
+ 
+-			interrupt-parent = <&gic>;
+ 			interrupts = <GIC_SHARED 2 IRQ_TYPE_LEVEL_HIGH>;
+ 
+ 			/*
+@@ -350,7 +346,6 @@ pcie0: pcie@1fb81000 {
+ 			linux,pci-domain = <0>;
+ 			#address-cells = <3>;
+ 			#size-cells = <2>;
+-			interrupt-parent = <&gic>;
+ 			interrupts = <GIC_SHARED 23 IRQ_TYPE_LEVEL_HIGH>;
+ 			interrupt-names = "pcie_irq";
+ 			clocks = <&scuclk EN7528_CLK_PCIE>;
+@@ -391,7 +386,6 @@ pcie1: pcie@1fb83000 {
+ 			linux,pci-domain = <1>;
+ 			#address-cells = <3>;
+ 			#size-cells = <2>;
+-			interrupt-parent = <&gic>;
+ 			interrupts = <GIC_SHARED 24 IRQ_TYPE_LEVEL_HIGH>;
+ 			interrupt-names = "pcie_irq";
+ 			clocks = <&scuclk EN7528_CLK_PCIE>;
+@@ -426,7 +420,7 @@ slot1: pcie@1,0 {
+ 
+ 		xpon_phy: phy@1faf0000 {
+ 			compatible = "airoha,en7528-xpon-phy";
+-			reg = <0x1faf0000 0x5000>;
++			reg = <0x1faf0000 0x600>;
+ 
+ 			pinctrl-names = "default";
+ 			pinctrl-0 = <&pon_pinctrl>;
+@@ -463,6 +457,28 @@ xpon: xmac@1fb60000 {
+ 			status = "disabled";
+ 		};
+ 
++		/* <GIC_SHARED 53 IRQ_TYPE_LEVEL_HIGH> => WIFI DMA 0 port 0 */
++		/* <GIC_SHARED 54 IRQ_TYPE_LEVEL_HIGH> => WIFI DMA 0 port 1 */
++		/* <GIC_SHARED 55 IRQ_TYPE_LEVEL_HIGH> => WIFI DMA 0 for WOE */
++		/* <GIC_SHARED 56 IRQ_TYPE_LEVEL_HIGH> => WIFI DMA 1 port 0 */
++		/* <GIC_SHARED 56 IRQ_TYPE_LEVEL_HIGH> => WIFI DMA 1 port 1 */
++		/* <GIC_SHARED 58 IRQ_TYPE_LEVEL_HIGH> => WIFI DMA 1 for WOE */
++		wed0: wed@1fa02000 {
++			compatible = "airoha,en7523-wed", "syscon";
++			reg = <0x1fa02000 0xb00>,
++			      <0x1fa06000 0x400>;
++			reg-names = "wed", "wdma";
++			interrupts = <GIC_SHARED 51 IRQ_TYPE_LEVEL_HIGH>;
++		};
++
++		wed1: wed@1fa03000 {
++			compatible = "airoha,en7523-wed", "syscon";
++			reg = <0x1fa03000 0xb00>,
++			      <0x1fa06400 0x400>;
++			reg-names = "wed", "wdma";
++			interrupts = <GIC_SHARED 52 IRQ_TYPE_LEVEL_HIGH>;
++		};
++
+ 		eth: ethernet@1fb50000 {
+ 			compatible = "econet,en7528-eth";
+ 			status = "disabled";
+@@ -478,18 +494,16 @@ eth: ethernet@1fb50000 {
+ 			         <&scuclk EN7528_GDMP_RST>;
+ 			reset-names = "fe", "qdma0", "qdma1", "gdmp";
+ 
+-			interrupt-parent = <&gic>;
+-
+-			// interrupts = <GIC_SHARED 41 IRQ_TYPE_LEVEL_HIGH>,
+-			//              <GIC_SHARED 40 IRQ_TYPE_LEVEL_HIGH>,
+-			//              <GIC_SHARED 39 IRQ_TYPE_LEVEL_HIGH>,
+-			//              <GIC_SHARED 21 IRQ_TYPE_LEVEL_HIGH>,
+-			//              <GIC_SHARED 44 IRQ_TYPE_LEVEL_HIGH>,
+-			//              <GIC_SHARED 43 IRQ_TYPE_LEVEL_HIGH>,
+-			//              <GIC_SHARED 42 IRQ_TYPE_LEVEL_HIGH>,
+-			//              <GIC_SHARED 22 IRQ_TYPE_LEVEL_HIGH>;
+-			interrupts = <GIC_SHARED 21 IRQ_TYPE_LEVEL_HIGH>,
+-			             <GIC_SHARED 22 IRQ_TYPE_LEVEL_HIGH>;
++			airoha,wed = <&wed0>, <&wed1>;
++			interrupts = <GIC_SHARED 21 IRQ_TYPE_LEVEL_HIGH>,  /* QDMA LAN0 */
++			             <GIC_SHARED 22 IRQ_TYPE_LEVEL_HIGH>,  /* QDMA WAN0 */
++			             <GIC_SHARED 39 IRQ_TYPE_LEVEL_HIGH>,  /* QDMA LAN1 */
++			             <GIC_SHARED 40 IRQ_TYPE_LEVEL_HIGH>,  /* QDMA LAN2 */
++			             <GIC_SHARED 41 IRQ_TYPE_LEVEL_HIGH>,  /* QDMA LAN3 */
++			             <GIC_SHARED 42 IRQ_TYPE_LEVEL_HIGH>,  /* QDMA WAN1 */
++			             <GIC_SHARED 43 IRQ_TYPE_LEVEL_HIGH>,  /* QDMA WAN2 */
++			             <GIC_SHARED 44 IRQ_TYPE_LEVEL_HIGH>,  /* QDMA WAN3 */
++			             <GIC_SHARED 33 IRQ_TYPE_LEVEL_HIGH>;  /* Frame Error */
+ 
+ 			#address-cells = <1>;
+ 			#size-cells = <0>;
+@@ -517,13 +531,12 @@ gdm2: ethernet@2 {
+ 		};
+ 
+ 		switch: switch@1fb58000 {
+-			compatible = "airoha,en7528-switch", "econet,en7528-switch", "airoha,en7523-switch";
++			compatible = "airoha,en7528-switch", "econet,en7528-switch";
+ 			reg = <0x1fb58000 0x8000>;
+ 			resets = <&scuclk EN7528_GSW_RST>;
+ 
+ 			interrupt-controller;
+ 			#interrupt-cells = <1>;
+-			interrupt-parent = <&gic>;
+ 			interrupts = <GIC_SHARED 15 IRQ_TYPE_LEVEL_HIGH>;
+ 
+ 			status = "disabled";
+-- 
+2.55.0
+
