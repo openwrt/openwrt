@@ -1,0 +1,249 @@
+From ed07dd558ef1fcfef98b49276ee9752911b9b284 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Tue, 25 Aug 2026 10:12:38 -0300
+Subject: [PATCH] net: optical: airoha: refactor BOB magic validation
+
+Generate EN7570/EN7571 BOB magic values from the shared profile and
+variant fields instead of carrying one define per PON mode. Validate the
+Airoha 0x0507 family signature and device variant separately before
+decoding the PON profile.
+
+This keeps the common magic layout explicit and prevents an EN7570 BOB
+from being treated as valid by EN7571 (and vice versa) during chip init.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/optical/airoha/airoha_lddla.h     | 34 ++++++++++++++-
+ .../net/optical/airoha/airoha_lddla_core.c    |  7 ++--
+ drivers/net/optical/airoha/en7570_main.c      | 24 ++++++++---
+ drivers/net/optical/airoha/en7570_regs.h      |  5 +--
+ drivers/net/optical/airoha/en7571_main.c      | 41 ++++++++++++-------
+ drivers/net/optical/airoha/en7571_regs.h      |  6 +--
+ 6 files changed, 85 insertions(+), 32 deletions(-)
+
+diff --git a/drivers/net/optical/airoha/airoha_lddla.h b/drivers/net/optical/airoha/airoha_lddla.h
+index d9144982fb31..0fad474725df 100644
+--- a/drivers/net/optical/airoha/airoha_lddla.h
++++ b/drivers/net/optical/airoha/airoha_lddla.h
+@@ -54,9 +54,39 @@ struct airoha_lddla;
+  * a newly introduced LDD/LA must not require extending a static chip enum.
+  */
+ #define AIROHA_LDDLA_BOB_MAGIC_COMMON_MASK	GENMASK(23, 8)
+-#define AIROHA_LDDLA_BOB_MAGIC_COMMON_MIN	0x00050700
++#define AIROHA_LDDLA_BOB_MAGIC_BASE		0x00050700
+ #define AIROHA_LDDLA_BOB_MAGIC_PROFILE_MASK	GENMASK(31, 24)
+-#define AIROHA_LDDLA_BOB_MAGIC_CHIP_MASK	GENMASK(7, 0)
++#define AIROHA_LDDLA_BOB_MAGIC_PROFILE_SHIFT	24
++#define AIROHA_LDDLA_BOB_MAGIC_VARIANT_MASK	GENMASK(7, 0)
++
++enum airoha_lddla_bob_profile {
++	AIROHA_LDDLA_BOB_PROFILE_GPON	= 0x07,
++	AIROHA_LDDLA_BOB_PROFILE_XPON	= 0xa7,
++	AIROHA_LDDLA_BOB_PROFILE_EPON	= 0xe7,
++};
++
++#define AIROHA_LDDLA_BOB_MAGIC(_profile, _variant) \
++	((((u32)(_profile) << AIROHA_LDDLA_BOB_MAGIC_PROFILE_SHIFT) & \
++	  AIROHA_LDDLA_BOB_MAGIC_PROFILE_MASK) | \
++	 AIROHA_LDDLA_BOB_MAGIC_BASE | \
++	 ((u32)(_variant) & AIROHA_LDDLA_BOB_MAGIC_VARIANT_MASK))
++
++#define AIROHA_LDDLA_BOB_MAGIC_PROFILE(_magic) \
++	(((u32)(_magic) & AIROHA_LDDLA_BOB_MAGIC_PROFILE_MASK) >> \
++	 AIROHA_LDDLA_BOB_MAGIC_PROFILE_SHIFT)
++
++#define AIROHA_LDDLA_BOB_MAGIC_VARIANT(_magic) \
++	((u32)(_magic) & AIROHA_LDDLA_BOB_MAGIC_VARIANT_MASK)
++
++#define AIROHA_LDDLA_BOB_MAGIC_FAMILY_VALID(_magic) \
++	(((u32)(_magic) & AIROHA_LDDLA_BOB_MAGIC_COMMON_MASK) == \
++	 AIROHA_LDDLA_BOB_MAGIC_BASE)
++
++#define AIROHA_LDDLA_BOB_MAGIC_VALID(_magic, _variant) \
++	(((u32)(_magic) & (AIROHA_LDDLA_BOB_MAGIC_COMMON_MASK | \
++			    AIROHA_LDDLA_BOB_MAGIC_VARIANT_MASK)) == \
++	 (AIROHA_LDDLA_BOB_MAGIC_BASE | \
++	  ((u32)(_variant) & AIROHA_LDDLA_BOB_MAGIC_VARIANT_MASK)))
+ 
+ enum airoha_lddla_bob_endian {
+ 	AIROHA_LDDLA_BOB_ENDIAN_UNKNOWN,
+diff --git a/drivers/net/optical/airoha/airoha_lddla_core.c b/drivers/net/optical/airoha/airoha_lddla_core.c
+index a5972e139ce4..7aff4e9ef337 100644
+--- a/drivers/net/optical/airoha/airoha_lddla_core.c
++++ b/drivers/net/optical/airoha/airoha_lddla_core.c
+@@ -210,18 +210,17 @@ int lddla_lock(struct airoha_lddla *lddla)
+ 
+ static bool lddla_bob_magic_valid(u32 magic)
+ {
+-	return (magic & AIROHA_LDDLA_BOB_MAGIC_COMMON_MASK) ==
+-	       AIROHA_LDDLA_BOB_MAGIC_COMMON_MIN;
++	return AIROHA_LDDLA_BOB_MAGIC_FAMILY_VALID(magic);
+ }
+ 
+ static u8 lddla_bob_magic_chip_id(u32 magic)
+ {
+-	return magic & AIROHA_LDDLA_BOB_MAGIC_CHIP_MASK;
++	return AIROHA_LDDLA_BOB_MAGIC_VARIANT(magic);
+ }
+ 
+ static u8 lddla_bob_magic_profile(u32 magic)
+ {
+-	return (magic & AIROHA_LDDLA_BOB_MAGIC_PROFILE_MASK) >> 24;
++	return AIROHA_LDDLA_BOB_MAGIC_PROFILE(magic);
+ }
+ 
+ /*
+diff --git a/drivers/net/optical/airoha/en7570_main.c b/drivers/net/optical/airoha/en7570_main.c
+index f811a60994a2..76fe7d1680bf 100644
+--- a/drivers/net/optical/airoha/en7570_main.c
++++ b/drivers/net/optical/airoha/en7570_main.c
+@@ -144,13 +144,27 @@ int en7570_init(struct en7570_priv *priv)
+ 
+ 	/* Branch on the PON-mode magic number. */
+ 	magic = lddla_flash_read(&priv->lddla, EN7570_FL_MAGIC);
+-	if (magic == EN7570_MAGIC_GPON) {
++	if (!AIROHA_LDDLA_BOB_MAGIC_VALID(magic, EN7570_BOB_VARIANT)) {
++		dev_warn(priv->lddla.dev,
++			 "invalid BOB magic 0x%08x for EN7570; DDMI disabled\n",
++			 magic);
++		priv->internal_ddmi = EN7570_DDMI_OFF;
++		return 0;
++	}
++
++	switch (magic) {
++	case AIROHA_LDDLA_BOB_MAGIC(AIROHA_LDDLA_BOB_PROFILE_GPON,
++				    EN7570_BOB_VARIANT):
+ 		priv->lddla.pon_mode = EN7570_PON_GPON;
+-	} else if (magic == EN7570_MAGIC_EPON) {
++		break;
++	case AIROHA_LDDLA_BOB_MAGIC(AIROHA_LDDLA_BOB_PROFILE_EPON,
++				    EN7570_BOB_VARIANT):
+ 		priv->lddla.pon_mode = EN7570_PON_EPON;
+-	} else {
+-		dev_warn(priv->lddla.dev, "unknown PON magic 0x%08x; DDMI disabled\n",
+-			 magic);
++		break;
++	default:
++		dev_warn(priv->lddla.dev,
++			 "unsupported EN7570 BOB profile 0x%02lx (magic 0x%08x); DDMI disabled\n",
++			 AIROHA_LDDLA_BOB_MAGIC_PROFILE(magic), magic);
+ 		priv->internal_ddmi = EN7570_DDMI_OFF;
+ 		return 0;	/* leave the optical chain in its default state */
+ 	}
+diff --git a/drivers/net/optical/airoha/en7570_regs.h b/drivers/net/optical/airoha/en7570_regs.h
+index 46f9539bce84..40634b5e348c 100644
+--- a/drivers/net/optical/airoha/en7570_regs.h
++++ b/drivers/net/optical/airoha/en7570_regs.h
+@@ -216,9 +216,8 @@
+ #define EN7570_LOOP_SCL			0x80000000	/* single-closed-loop */
+ #define EN7570_LOOP_DOL			0xc0000000	/* dual-open-loop */
+ 
+-/* PON-mode magic numbers (flash offset 0x094). */
+-#define EN7570_MAGIC_GPON		0x07050700
+-#define EN7570_MAGIC_EPON		0xe7050700
++/* BOB magic variant byte (flash offset 0x094). */
++#define EN7570_BOB_VARIANT		0x00
+ 
+ /* xPON mode enumeration (struct en7570_priv .pon_mode). */
+ #define EN7570_PON_UNKNOWN		(-1)
+diff --git a/drivers/net/optical/airoha/en7571_main.c b/drivers/net/optical/airoha/en7571_main.c
+index b25ebc6ea656..da121b7d64f8 100644
+--- a/drivers/net/optical/airoha/en7571_main.c
++++ b/drivers/net/optical/airoha/en7571_main.c
+@@ -129,6 +129,7 @@ static void en7571_load_config(struct en7571_priv *priv)
+  */
+ int en7571_init(struct en7571_priv *priv)
+ {
++	static const u8 zero[4] = { 0, 0, 0, 0 };
+ 	u32 magic;
+ 
+ 	en7571_load_config(priv);
+@@ -153,35 +154,36 @@ int en7571_init(struct en7571_priv *priv)
+ 
+ 	/* Branch on the PON-mode magic number. */
+ 	magic = lddla_flash_read(&priv->lddla, EN7571_FL_MAGIC);
+-	if (magic == EN7571_MAGIC_GPON) {
++	if (!AIROHA_LDDLA_BOB_MAGIC_VALID(magic, EN7571_BOB_VARIANT))
++		goto invalid_bob;
++
++	switch (magic) {
++	case AIROHA_LDDLA_BOB_MAGIC(AIROHA_LDDLA_BOB_PROFILE_GPON,
++				    EN7571_BOB_VARIANT):
+ 		priv->lddla.pon_mode = EN7571_PON_GPON;
+ 		en7571_tgen_recall(priv);
+ 		en7571_set_t0t1_delay(priv, EN7571_T1_T0_DELAY_GPON);
+ 		en7571_apd_init(priv);
+ 		en7571_apd_control(priv);
+-	} else if (magic == EN7571_MAGIC_EPON) {
++		break;
++	case AIROHA_LDDLA_BOB_MAGIC(AIROHA_LDDLA_BOB_PROFILE_EPON,
++				    EN7571_BOB_VARIANT):
+ 		priv->lddla.pon_mode = EN7571_PON_EPON;
+ 		en7571_tgen_recall(priv);
+ 		en7571_set_t0t1_delay(priv, EN7571_T1_T0_DELAY_EPON);
+ 		/* EPON does not run APD control. */
+-	} else if (magic == EN7571_MAGIC_XPON) {
++		break;
++	case AIROHA_LDDLA_BOB_MAGIC(AIROHA_LDDLA_BOB_PROFILE_XPON,
++				    EN7571_BOB_VARIANT):
+ 		/* Adapter mode: run as GPON but with the EPON burst delay. */
+ 		priv->lddla.pon_mode = EN7571_PON_GPON;
+ 		en7571_tgen_recall(priv);
+ 		en7571_set_t0t1_delay(priv, EN7571_T1_T0_DELAY_EPON);
+ 		en7571_apd_init(priv);
+ 		en7571_apd_control(priv);
+-	} else {
+-		static const u8 zero[4] = { 0, 0, 0, 0 };
+-
+-		dev_warn(priv->lddla.dev, "unknown PON magic 0x%08x; DDMI disabled\n",
+-			 magic);
+-		/* Quiesce the loop set-points, then minimal LOS-only mode. */
+-		lddla_wr(&priv->lddla, EN7571_PWR_CTRL_9, zero, 4);
+-		lddla_wr(&priv->lddla, EN7571_PWR_CTRL_D, zero, 4);
+-		en7571_los_init(priv);
+-		priv->internal_ddmi = EN7571_DDMI_OFF;
+-		return 0;
++		break;
++	default:
++		goto invalid_bob;
+ 	}
+ 
+ 	en7571_reg_init(priv);
+@@ -200,6 +202,17 @@ int en7571_init(struct en7571_priv *priv)
+ 		 priv->lddla.pon_mode == EN7571_PON_GPON ? "GPON" : "EPON",
+ 		 priv->ver, priv->kt, priv->internal_ddmi);
+ 	return 0;
++
++invalid_bob:
++	dev_warn(priv->lddla.dev,
++		 "invalid or unsupported EN7571 BOB magic 0x%08x; DDMI disabled\n",
++		 magic);
++	/* Quiesce the loop set-points, then minimal LOS-only mode. */
++	lddla_wr(&priv->lddla, EN7571_PWR_CTRL_9, zero, 4);
++	lddla_wr(&priv->lddla, EN7571_PWR_CTRL_D, zero, 4);
++	en7571_los_init(priv);
++	priv->internal_ddmi = EN7571_DDMI_OFF;
++	return 0;
+ }
+ 
+ /* ------------------------------------------------------------------ */
+diff --git a/drivers/net/optical/airoha/en7571_regs.h b/drivers/net/optical/airoha/en7571_regs.h
+index d63c5919f63f..e4690b22115e 100644
+--- a/drivers/net/optical/airoha/en7571_regs.h
++++ b/drivers/net/optical/airoha/en7571_regs.h
+@@ -309,10 +309,8 @@
+ #define EN7571_FL_RX_SD_MASK		0x007f0000
+ #define EN7571_FL_KT_DEFAULT		0x00060020
+ 
+-/* PON-mode magic numbers (flash offset 0x094). */
+-#define EN7571_MAGIC_GPON		0x07050701
+-#define EN7571_MAGIC_EPON		0xe7050701
+-#define EN7571_MAGIC_XPON		0xa7050701	/* adapter mode, runs as GPON */
++/* BOB magic variant byte (flash offset 0x094). */
++#define EN7571_BOB_VARIANT		0x01
+ 
+ /* xPON mode enumeration (struct en7571_priv .pon_mode). */
+ #define EN7571_PON_UNKNOWN		(-1)
+-- 
+2.55.0
+
