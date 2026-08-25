@@ -1929,7 +1929,151 @@ static void qca_ppe_get_stats64(struct dsa_switch *ds, int port,
 	spin_unlock_bh(&priv->mib_lock);
 }
 
+/* CarrierSenseErrors, FramesLostDueToIntMACRcvError, InRangeLengthErrors and
+ * OutOfRangeLengthField have no counter in either MAC; left untouched they are
+ * reported as unset rather than as a measured zero.
+ */
+static void qca_ppe_get_eth_mac_stats(struct dsa_switch *ds, int port,
+				      struct ethtool_eth_mac_stats *s)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+	struct qca_ppe_mib_stats *stats;
+
+	if (port < 1 || port >= ds->num_ports)
+		return;
+
+	stats = ppe_port_mib(priv, port);
+
+	spin_lock_bh(&priv->mib_lock);
+	ppe_mib_fold(priv, port);
+
+	s->FramesTransmittedOK = MIB(TXUNI) + MIB(TXMULTI) + MIB(TXBROAD);
+	s->SingleCollisionFrames = MIB(TXSINGLECOL);
+	s->MultipleCollisionFrames = MIB(TXMULTICOL);
+	s->FramesReceivedOK = MIB(RXUNI) + MIB(RXMULTI) + MIB(RXBROAD);
+	s->FrameCheckSequenceErrors = MIB(RXFCSERR);
+	s->AlignmentErrors = MIB(RXALIGNERR);
+	s->OctetsTransmittedOK = MIB(TXBYTE_L);
+	s->FramesWithDeferredXmissions = MIB(TXDEFER);
+	s->LateCollisions = MIB(TXLATECOL);
+	s->FramesAbortedDueToXSColls = MIB(TXABORTCOL);
+	s->FramesLostDueToIntMACXmitError = MIB(TXUNDERRUN);
+	s->OctetsReceivedOK = MIB(RXGOODBYTE_L);
+	s->MulticastFramesXmittedOK = MIB(TXMULTI);
+	s->BroadcastFramesXmittedOK = MIB(TXBROAD);
+	s->FramesWithExcessiveDeferral = MIB(TXEXCESSIVEDEFER);
+	s->MulticastFramesReceivedOK = MIB(RXMULTI);
+	s->BroadcastFramesReceivedOK = MIB(RXBROAD);
+	s->FrameTooLongErrors = MIB(RXTOOLONG);
+
+	spin_unlock_bh(&priv->mib_lock);
+}
+
+/* Pause is the only MAC control opcode either MAC counts. */
+static void qca_ppe_get_eth_ctrl_stats(struct dsa_switch *ds, int port,
+				       struct ethtool_eth_ctrl_stats *s)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+	struct qca_ppe_mib_stats *stats;
+
+	if (port < 1 || port >= ds->num_ports)
+		return;
+
+	stats = ppe_port_mib(priv, port);
+
+	spin_lock_bh(&priv->mib_lock);
+	ppe_mib_fold(priv, port);
+
+	s->MACControlFramesTransmitted = MIB(TXPAUSE);
+	s->MACControlFramesReceived = MIB(RXPAUSE);
+
+	spin_unlock_bh(&priv->mib_lock);
+}
+
+/* The GMAC splits its top bin at 1518 and the XGMAC does not, so the two
+ * halves are summed below into the one 1024-to-max bin both can answer.
+ */
+static const struct ethtool_rmon_hist_range qca_ppe_rmon_ranges[] = {
+	{    0,   64 },
+	{   65,  127 },
+	{  128,  255 },
+	{  256,  511 },
+	{  512, 1023 },
+	{ 1024, PPE_MAX_FRAME_SIZE },
+	{}
+};
+
+static void
+qca_ppe_get_rmon_stats(struct dsa_switch *ds, int port,
+		       struct ethtool_rmon_stats *s,
+		       const struct ethtool_rmon_hist_range **ranges)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+	struct qca_ppe_mib_stats *stats;
+
+	*ranges = qca_ppe_rmon_ranges;
+
+	if (port < 1 || port >= ds->num_ports)
+		return;
+
+	stats = ppe_port_mib(priv, port);
+
+	spin_lock_bh(&priv->mib_lock);
+	ppe_mib_fold(priv, port);
+
+	s->undersize_pkts = MIB(RXRUNT);
+	s->oversize_pkts = MIB(RXTOOLONG);
+	s->fragments = MIB(RXFRAG);
+	s->jabbers = MIB(RXJUMBOFCSERR);
+
+	s->hist[0] = MIB(RXPKT64);
+	s->hist[1] = MIB(RXPKT65TO127);
+	s->hist[2] = MIB(RXPKT128TO255);
+	s->hist[3] = MIB(RXPKT256TO511);
+	s->hist[4] = MIB(RXPKT512TO1023);
+	s->hist[5] = MIB(RXPKT1024TO1518) + MIB(RXPKT1519TOX);
+
+	s->hist_tx[0] = MIB(TXPKT64);
+	s->hist_tx[1] = MIB(TXPKT65TO127);
+	s->hist_tx[2] = MIB(TXPKT128TO255);
+	s->hist_tx[3] = MIB(TXPKT256TO511);
+	s->hist_tx[4] = MIB(TXPKT512TO1023);
+	s->hist_tx[5] = MIB(TXPKT1024TO1518) + MIB(TXPKT1519TOX);
+
+	spin_unlock_bh(&priv->mib_lock);
+}
+
+static void qca_ppe_get_pause_stats(struct dsa_switch *ds, int port,
+				    struct ethtool_pause_stats *s)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+	struct qca_ppe_mib_stats *stats;
+
+	if (port < 1 || port >= ds->num_ports)
+		return;
+
+	stats = ppe_port_mib(priv, port);
+
+	spin_lock_bh(&priv->mib_lock);
+	ppe_mib_fold(priv, port);
+
+	s->tx_pause_frames = MIB(TXPAUSE);
+	s->rx_pause_frames = MIB(RXPAUSE);
+
+	spin_unlock_bh(&priv->mib_lock);
+}
+
 #undef MIB
+
+/* The switch timestamps nothing and has no PHC. Answering at all is still the
+ * difference between ethtool reporting the software timestamping the core
+ * provides and failing the query outright.
+ */
+static int qca_ppe_get_ts_info(struct dsa_switch *ds, int port,
+			       struct kernel_ethtool_ts_info *ts)
+{
+	return 0;
+}
 
 static void qca_ppe_teardown(struct dsa_switch *ds)
 {
@@ -2453,6 +2597,11 @@ static const struct dsa_switch_ops qca_ppe_ops = {
 	.get_sset_count		= qca_ppe_get_sset_count,
 	.get_ethtool_stats	= qca_ppe_get_ethtool_stats,
 	.get_stats64		= qca_ppe_get_stats64,
+	.get_eth_mac_stats	= qca_ppe_get_eth_mac_stats,
+	.get_eth_ctrl_stats	= qca_ppe_get_eth_ctrl_stats,
+	.get_rmon_stats		= qca_ppe_get_rmon_stats,
+	.get_pause_stats	= qca_ppe_get_pause_stats,
+	.get_ts_info		= qca_ppe_get_ts_info,
 	.get_regs_len		= qca_ppe_get_regs_len,
 	.get_regs		= qca_ppe_get_regs,
 	.devlink_info_get	= qca_ppe_devlink_info_get,
