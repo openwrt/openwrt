@@ -1,0 +1,155 @@
+#!/usr/bin/ucode
+// Load CSR PSKEYs over BCSP, the subset of bccmd this board needs.
+//
+//   nbg7815-bt-pskey /dev/ttyMSM1 FILE...
+//
+// Must run while the tty is free, i.e. before hciattach. PSKEYs only take
+// effect this way: sent over HCI after the attach the chip acknowledges
+// them but keeps its defaults.
+import { open, lsdir, basename, IOC_DIR_WRITE } from 'fs';
+
+const SYNC = '\xda\xdc\xed\xed', SYNC_R = '\xac\xaf\xef\xee';
+const CONF = '\xad\xef\xac\xed', CONF_R = '\xde\xad\xd0\xd0';
+
+let tty = ARGV[0], files = slice(ARGV, 1);
+if (!tty || !length(files)) { warn('usage: nbg7815-bt-pskey TTY FILE...\n'); exit(2); }
+
+// hciattach owns the port once the line discipline is attached, and talking
+// BCSP into it from here just hangs. The HCI device shows up below the tty.
+if (length(lsdir(`/sys/class/tty/${basename(tty)}`, /^hci[0-9]+$/))) {
+	warn(`${tty}: already attached, stop the bluetooth service first\n`);
+	exit(1);
+}
+
+let fd = open(tty, 'r+');
+if (!fd) { warn(`${tty}: cannot open\n`); exit(1); }
+
+// 115200 8E1, raw, no flow control: B115200|CS8|CREAD|CLOCAL|PARENB in
+// c_cflag, everything else cleared. BCSP needs even parity - bccmd sets it
+// the same way. VMIN=0/VTIME=1 makes read() return after 0.1s even when
+// nothing arrives, so the loops below cannot block. Built rather than left
+// to stty, which busybox does not have. fs.ioctl() passes a raw request
+// number through when the num argument is null, so TCSETS is reachable.
+let le32 = (v) => chr(v & 0xff) + chr((v >> 8) & 0xff) + chr((v >> 16) & 0xff) + chr(v >> 24);
+let tio = le32(0) + le32(0) + le32(0x19b2) + le32(0) + '\x00';
+for (let i = 0; i < 19; i++) tio += chr(i == 5 ? 1 : 0);   // c_cc, VTIME = 1
+if (fd.ioctl(IOC_DIR_WRITE, 0x5402, null, tio) == null) {
+	warn(`${tty}: cannot set line settings\n`);
+	exit(1);
+}
+
+let send = (p) => { fd.write(p); fd.flush(); };
+
+// BCSP header (reliable/ack/seq, protocol id + length, checksum) in a SLIP
+// frame. No CRC: the chip accepts packets with the crc bit clear.
+let pkt = (proto, rel, seq, ack, pl) => {
+	let n = length(pl);
+	let a = (rel << 7) | (ack << 3) | seq, b = ((n & 0x0f) << 4) | proto, c = n >> 4;
+	let s = chr(a) + chr(b) + chr(c) + chr(~(a + b + c) & 0xff) + pl, o = '\xc0';
+	for (let i = 0; i < length(s); i++) {
+		let ch = substr(s, i, 1);
+		o += (ch == '\xc0') ? '\xdb\xdc' : (ch == '\xdb') ? '\xdb\xdd' : ch;
+	}
+	return o + '\xc0';
+};
+
+// Read what arrived and split it into frames at the 0xc0 delimiters, undoing
+// the escaping. Scanning the raw buffer for byte patterns is not enough - a
+// frame can straddle two reads and escapes would hide the payload.
+let frames = () => {
+	let buf = fd.read(2048) ?? '';
+	// A VTIME timeout surfaces as a zero byte read, which the buffered handle
+	// latches as EOF: every later read would return nothing. Reopening clears
+	// that, and the buffer is drained at this point, so nothing is lost.
+	if (length(buf) < 2048) { fd.close(); fd = open(tty, 'r+'); }
+	let out = [], cur = null;
+	for (let i = 0; i < length(buf); i++) {
+		let b = ord(buf, i);
+		if (b == 0xc0) {
+			if (length(cur) >= 4) push(out, cur);
+			cur = '';
+		} else if (cur != null) {
+			if (b == 0xdb && i + 1 < length(buf)) b = (ord(buf, ++i) == 0xdc) ? 0xc0 : 0xdb;
+			cur += chr(b);
+		}
+	}
+	return out;
+};
+
+let payload = (f) => substr(f, 4, (ord(f, 1) >> 4) | (ord(f, 2) << 4));
+let proto = (f) => ord(f, 1) & 0x0f;
+let ackof = (f) => (ord(f, 0) >> 3) & 7;
+
+// Link establishment. Both sides run the same state machine, so the peer's
+// sync/conf have to be answered - otherwise it never leaves its sync phase.
+// One read can hold dozens of repeats, hence answer per round, not per frame.
+let establish = () => {
+	let synced = false;
+	for (let i = 0; i < 300; i++) {
+		let got = '';
+		for (let f in frames())
+			if (proto(f) == 1) got += payload(f);
+		if (index(got, SYNC_R) >= 0) synced = true;
+		if (index(got, SYNC) >= 0) send(pkt(1, 0, 0, 0, SYNC_R));
+		if (index(got, CONF) >= 0) send(pkt(1, 0, 0, 0, CONF_R));
+		if (synced && index(got, CONF_R) >= 0) return true;
+		send(pkt(1, 0, 0, 0, synced ? CONF : SYNC));
+	}
+	return false;
+};
+
+let seq = 0, sn = 0;
+
+// One BCCMD, then wait for the vendor event that carries its status. The
+// transport ack says nothing about acceptance - a rejected key is acked too.
+// Reset varids get no answer, the chip is already restarting.
+let bccmd = (varid, args) => {
+	// Short commands are rounded up to nine words and zero padded, exactly as
+	// bccmd does - the chip drops anything shorter, warm reset included.
+	let sz = (length(args) < 4) ? 9 : length(args) + 5;
+	let d = '\xc2';
+	for (let v in [ 0x0002, sz, sn++, varid, 0, ...args ]) d += chr(v & 0xff) + chr(v >> 8);
+	while (length(d) < sz * 2 + 1) d += '\x00';
+	let pl = '\x00\xfc' + chr(length(d)) + d, acked = false;
+	for (let i = 0; i < 40; i++) {
+		if (!acked) send(pkt(5, 1, seq, 0, pl));
+		for (let f in frames()) {
+			if (proto(f) == 1 && payload(f) == SYNC) send(pkt(1, 0, 0, 0, SYNC_R));
+			if (!acked && ackof(f) == (seq + 1) % 8) {
+				seq = (seq + 1) % 8;
+				if (varid == 0x4002) return true;
+				acked = true;
+			}
+			if (proto(f) != 5) continue;
+			if (ord(f, 0) & 0x80)          // reliable, so ack it or it repeats
+				send(pkt(0, 0, 0, ((ord(f, 0) & 7) + 1) % 8, ''));
+			let r = payload(f);
+			if (ord(r, 0) == 0xff && ord(r, 2) == 0xc2)
+				return (ord(r, 11) | (ord(r, 12) << 8)) == 0;
+		}
+	}
+	return false;
+};
+
+if (!establish()) { warn('BCSP link establishment failed\n'); exit(1); }
+
+let n = 0;
+for (let f in files) {
+	let src = open(f, 'r');
+	if (!src) { warn(`${f}: cannot read\n`); continue; }
+	for (let l = src.read('line'); length(l); l = src.read('line')) {
+		let m = match(l, /^&([0-9a-fA-F]+)[ \t]*=[ \t]*([0-9a-fA-F ]+)/);
+		if (!m) continue;
+		let val = [];
+		for (let x in split(trim(m[2]), /[ \t]+/)) push(val, hex(x));
+		if (bccmd(0x7003, [ hex(m[1]), length(val), 0x0008, ...val ]))
+			n++;
+		else
+			warn(sprintf('pskey 0x%04x rejected\n', hex(m[1])));
+	}
+	src.close();
+}
+
+bccmd(0x4002, []);                 // warm reset
+fd.close();
+warn(`${n} keys loaded\n`);
