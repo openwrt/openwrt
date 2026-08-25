@@ -312,8 +312,12 @@ static bool edma_rx_page_take(struct edma_priv *priv, struct page *page,
 	return false;
 }
 
+/* @napi_budget is the NAPI budget the poll was given, or zero when the caller
+ * is not a poll: the skb cache napi_consume_skb() recycles into is per-CPU and
+ * is only safe to touch from softirq context.
+ */
 static u32 edma_clean_tx(struct edma_priv *priv, struct edma_ring *txcmpl_ring,
-			 int budget)
+			 int budget, int napi_budget)
 {
 	const struct edma_soc_data *soc = priv->soc;
 	struct platform_device *pdev = priv->pdev;
@@ -358,7 +362,7 @@ static u32 edma_clean_tx(struct edma_priv *priv, struct edma_ring *txcmpl_ring,
 				 le32_to_cpu(txdesc->buffer_addr),
 				 len, DMA_TO_DEVICE);
 		bytes += len - EDMA_TX_PREHDR_SIZE;
-		napi_consume_skb(skb, budget);
+		napi_consume_skb(skb, napi_budget);
 
 next:
 		if (++cons == txcmpl_ring->count)
@@ -479,7 +483,7 @@ next:
 static int edma_tx_napi(struct napi_struct *napi, int budget)
 {
 	struct edma_priv *priv = container_of(napi, struct edma_priv, tx_napi);
-	int work = edma_clean_tx(priv, &priv->txcmpl_ring, budget);
+	int work = edma_clean_tx(priv, &priv->txcmpl_ring, budget, budget);
 	const struct edma_soc_data *soc = priv->soc;
 	u32 val;
 
@@ -758,7 +762,7 @@ err_txcmpl:
 static void edma_rings_drain(struct edma_priv *priv)
 {
 	edma_txdesc_drain(priv, &priv->txdesc_ring);
-	edma_clean_tx(priv, &priv->txcmpl_ring, INT_MAX);
+	edma_clean_tx(priv, &priv->txcmpl_ring, INT_MAX, 0);
 
 	edma_tx_ring_free(priv, &priv->txdesc_ring, sizeof(struct edma_txdesc));
 	edma_ring_free(priv, &priv->txcmpl_ring, sizeof(struct edma_txcmpl));
