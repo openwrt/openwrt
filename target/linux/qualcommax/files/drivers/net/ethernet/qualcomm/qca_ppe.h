@@ -7,6 +7,7 @@
 #include <linux/bitmap.h>
 #include <linux/regmap.h>
 #include <linux/spinlock.h>
+#include <linux/workqueue.h>
 #include <linux/types.h>
 #include <linux/io.h>
 #include <net/dsa.h>
@@ -121,6 +122,12 @@
 
 /* --- XGMAC (base 0x003000) --- */
 #define PPE_MAC_XGMAC_CSR_BASE		0x003000
+
+/* MMC block: transmit counters from 0x800, receive from 0x900. Which offset
+ * answers for which GMAC counter is in the MIB table in qca_ppe_main.c.
+ */
+#define PPE_XGMAC_MIB(xgmac, off)	(PPE_MAC_XGMAC_CSR_BASE + \
+					 (xgmac) * 0x4000 + (off))
 
 #define PPE_XGMAC_TX_CONF(xgmac)	(PPE_MAC_XGMAC_CSR_BASE + (xgmac) * 0x4000)
 #define   PPE_XGMAC_TX_ENABLE		BIT(0)
@@ -500,6 +507,9 @@ struct qca_ppe_vlan_entry {
 	int xlt_pvid_idx;
 };
 
+/* Defined beside the MIB table that dimensions it. */
+struct qca_ppe_mib_stats;
+
 struct qca_ppe_priv {
 	struct dsa_switch ds;
 	struct regmap *regmap;
@@ -517,6 +527,15 @@ struct qca_ppe_priv {
 	struct clk *port_rx_clk[QCA_PPE_MAX_PORTS];
 	struct clk *port_tx_clk[QCA_PPE_MAX_PORTS];
 	struct reset_control *port_rst[QCA_PPE_MAX_PORTS];
+	bool port_xgmac[QCA_PPE_MAX_PORTS];
+	bool mib_xgmac[QCA_PPE_MAX_PORTS];
+	bool mib_rebase[QCA_PPE_MAX_PORTS];
+	struct qca_ppe_mib_stats *port_mib;
+	/* Guards port_mib, port_xgmac, mib_xgmac and mib_rebase; get_stats64
+	 * takes it in atomic context, so it is never a mutex.
+	 */
+	spinlock_t mib_lock;
+	struct delayed_work mib_work;
 };
 
 extern const struct psch_tdm_data cppe_psch_tdm_data;
