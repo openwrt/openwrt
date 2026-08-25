@@ -1,0 +1,5 @@
+#!/bin/sh
+
+[ -f /etc/nbg7815-160mhz.radio.save ] || exit 0
+/sbin/ath11k-160mhz 80 >/dev/null
+exit 0
