@@ -24,6 +24,17 @@ define Device/hasivo_s1300wp-8xgt-4s-plus
 endef
 TARGET_DEVICES += hasivo_s1300wp-8xgt-4s-plus
 
+define Device/mokerlink_10gt080m
+  SOC := rtl9313
+  DEVICE_VENDOR := MokerLink
+  DEVICE_MODEL := 10GT080M
+  IMAGE_SIZE := 14336k
+  DEVICE_PACKAGES := kmod-phy-realtek rtl826x-firmware
+  UIMAGE_MAGIC := 0x83800000
+  $(Device/kernel-lzma)
+endef
+TARGET_DEVICES += mokerlink_10gt080m
+
 define Device/plasmacloud-common
   SOC := rtl9312
   UIMAGE_MAGIC := 0x93100000
