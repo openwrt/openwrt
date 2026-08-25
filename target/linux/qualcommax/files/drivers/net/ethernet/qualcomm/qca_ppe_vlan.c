@@ -301,9 +301,13 @@ int qca_ppe_port_vlan_add(struct dsa_switch *ds, int port,
 
 	entry->ports |= BIT(port);
 
+	/* The action names the VSI the rule classifies into, so it is programmed
+	 * first: a rule made live over the action of whichever VLAN held the
+	 * index before would bridge the frame in that VLAN's domain.
+	 */
+	ppe_xlt_action_set(priv, entry->xlt_idx, entry->vsi);
 	ppe_xlt_rule_set(priv, entry->xlt_idx,
 			 entry->ports | BIT(QCA_PPE_CPU_PORT), vid, false);
-	ppe_xlt_action_set(priv, entry->xlt_idx, entry->vsi);
 
 	ppe_eg_vsi_tag_port_set(priv, entry->vsi, port,
 				untagged ? PPE_EG_UNTAGGED : PPE_EG_TAGGED);
@@ -328,9 +332,9 @@ int qca_ppe_port_vlan_add(struct dsa_switch *ds, int port,
 		priv->port_pvid[port] = vid;
 		entry->pvid_ports |= BIT(port);
 
+		ppe_xlt_action_set(priv, entry->xlt_pvid_idx, entry->vsi);
 		ppe_xlt_rule_set(priv, entry->xlt_pvid_idx,
 				 entry->pvid_ports, 0, true);
-		ppe_xlt_action_set(priv, entry->xlt_pvid_idx, entry->vsi);
 	} else if (priv->port_pvid[port] == vid) {
 		ppe_port_def_cvid_set(priv, port, 0, false);
 		priv->port_pvid[port] = 0;
