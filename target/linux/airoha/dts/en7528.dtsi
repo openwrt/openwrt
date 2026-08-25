@@ -225,7 +225,6 @@
 			reg = <0x1fbf0400 0x14>,
 			      <0x1fbe0000 0x14>;
 
-			interrupt-parent = <&gic>;
 			interrupts = <GIC_SHARED 30 IRQ_TYPE_LEVEL_HIGH>,
 				     <GIC_SHARED 29 IRQ_TYPE_LEVEL_HIGH>,
 				     <GIC_SHARED 37 IRQ_TYPE_LEVEL_HIGH>,
@@ -256,7 +255,6 @@
 			clocks = <&scuclk EN7528_CLK_BUS>;
 			clock-names = "bus";
 
-			interrupt-parent = <&gic>;
 			interrupts = <GIC_SHARED 9 IRQ_TYPE_LEVEL_HIGH>;
 		};
 
@@ -291,7 +289,6 @@
 			reg = <0x1fb90000 0x3e00>,
 			      <0x1fb93e00 0x100>;
 			reg-names = "mac", "ippc";
-			interrupt-parent = <&gic>;
 			interrupts = <GIC_SHARED 17 IRQ_TYPE_LEVEL_HIGH>;
 			phys = <&usb_phy PHY_TYPE_USB2>, <&usb_phy PHY_TYPE_USB3>;
 			usb3-lpm-capable;
@@ -304,7 +301,6 @@
 			reg-io-width = <4>;
 			reg-shift = <2>;
 
-			interrupt-parent = <&gic>;
 			interrupts = <GIC_SHARED 2 IRQ_TYPE_LEVEL_HIGH>;
 
 			/*
@@ -350,7 +346,6 @@
 			linux,pci-domain = <0>;
 			#address-cells = <3>;
 			#size-cells = <2>;
-			interrupt-parent = <&gic>;
 			interrupts = <GIC_SHARED 23 IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-names = "pcie_irq";
 			clocks = <&scuclk EN7528_CLK_PCIE>;
@@ -391,7 +386,6 @@
 			linux,pci-domain = <1>;
 			#address-cells = <3>;
 			#size-cells = <2>;
-			interrupt-parent = <&gic>;
 			interrupts = <GIC_SHARED 24 IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-names = "pcie_irq";
 			clocks = <&scuclk EN7528_CLK_PCIE>;
@@ -463,6 +457,28 @@
 			status = "disabled";
 		};
 
+	  /* <GIC_SHARED 53 IRQ_TYPE_LEVEL_HIGH> => WIFI DMA 0 port 0 */
+	  /* <GIC_SHARED 54 IRQ_TYPE_LEVEL_HIGH> => WIFI DMA 0 port 1 */
+	  /* <GIC_SHARED 55 IRQ_TYPE_LEVEL_HIGH> => WIFI DMA 0 for WOE */
+	  /* <GIC_SHARED 56 IRQ_TYPE_LEVEL_HIGH> => WIFI DMA 1 port 0 */
+	  /* <GIC_SHARED 56 IRQ_TYPE_LEVEL_HIGH> => WIFI DMA 1 port 1 */
+	  /* <GIC_SHARED 58 IRQ_TYPE_LEVEL_HIGH> => WIFI DMA 1 for WOE */
+		wed0: wed@1fa02000 {
+			compatible = "airoha,en7523-wed", "syscon";
+			reg = <0x1fa02000 0xb00>,
+			      <0x1fa06000 0x400>;
+			reg-names = "wed", "wdma";
+			interrupts = <GIC_SHARED 51 IRQ_TYPE_LEVEL_HIGH>;
+		};
+	
+		wed1: wed@1fa03000 {
+			compatible = "airoha,en7523-wed", "syscon";
+			reg = <0x1fa03000 0xb00>,
+			      <0x1fa06400 0x400>;
+			reg-names = "wed", "wdma";
+			interrupts = <GIC_SHARED 52 IRQ_TYPE_LEVEL_HIGH>;
+		};
+
 		eth: ethernet@1fb50000 {
 			compatible = "econet,en7528-eth";
 			status = "disabled";
@@ -478,8 +494,7 @@
 			         <&scuclk EN7528_GDMP_RST>;
 			reset-names = "fe", "qdma0", "qdma1", "gdmp";
 
-			interrupt-parent = <&gic>;
-
+			airoha,wed = <&wed0>, <&wed1>;
 			// interrupts = <GIC_SHARED 41 IRQ_TYPE_LEVEL_HIGH>,
 			//              <GIC_SHARED 40 IRQ_TYPE_LEVEL_HIGH>,
 			//              <GIC_SHARED 39 IRQ_TYPE_LEVEL_HIGH>,
@@ -523,7 +538,6 @@
 
 			interrupt-controller;
 			#interrupt-cells = <1>;
-			interrupt-parent = <&gic>;
 			interrupts = <GIC_SHARED 15 IRQ_TYPE_LEVEL_HIGH>;
 
 			status = "disabled";
@@ -587,7 +601,7 @@
 					status = "disabled";
 
 					pinctrl-names = "gbe-led";
-					pinctrl-0 = <&swp1_led0 &swp1_led1>;
+					pinctrl-0 = <&swp1_led0>;
 					airoha,scu = <&scuclk>;
 
 					leds {
@@ -617,7 +631,7 @@
 					status = "disabled";
 
 					pinctrl-names = "gbe-led";
-					pinctrl-0 = <&swp2_led0 &swp2_led1>;
+					pinctrl-0 = <&swp2_led0>;
 					airoha,scu = <&scuclk>;
 
 					leds {
@@ -647,7 +661,7 @@
 					status = "disabled";
 
 					pinctrl-names = "gbe-led";
-					pinctrl-0 = <&swp3_led0 &swp3_led1>;
+					pinctrl-0 = <&swp3_led0>;
 					airoha,scu = <&scuclk>;
 
 					leds {
@@ -677,7 +691,7 @@
 					status = "disabled";
 
 					pinctrl-names = "gbe-led";
-					pinctrl-0 = <&swp4_led0 &swp4_led1>;
+					pinctrl-0 = <&swp4_led0>;
 					airoha,scu = <&scuclk>;
 
 					leds {
