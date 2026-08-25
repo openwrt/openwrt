@@ -1294,6 +1294,22 @@ define Device/cudy_ap3000-v1
 endef
 TARGET_DEVICES += cudy_ap3000-v1
 
+define Device/cudy_ap3000d-v1
+  DEVICE_VENDOR := Cudy
+  DEVICE_MODEL := AP3000D
+  DEVICE_VARIANT := v1
+  DEVICE_DTS := mt7981b-cudy-ap3000d-v1
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_DTS_LOADADDR := 0x47000000
+  IMAGES := sysupgrade.bin
+  IMAGE_SIZE := 15424k
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  IMAGE/sysupgrade.bin := append-kernel | pad-to 128k | append-rootfs | pad-rootfs | check-size | append-metadata
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
+endef
+TARGET_DEVICES += cudy_ap3000d-v1
+
 define Device/cudy_m3000-v1
   DEVICE_VENDOR := Cudy
   DEVICE_MODEL := M3000

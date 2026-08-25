@@ -277,6 +277,7 @@ platform_do_upgrade() {
 		CI_UBIPART="ubi"
 		nand_do_upgrade "$1"
 		;;
+	cudy,ap3000d-v1|\
 	cudy,re3000-v1|\
 	cudy,wr3000-v1|\
 	kebidumei,ax3000-u22|\
