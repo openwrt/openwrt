@@ -591,6 +591,16 @@ static netdev_tx_t edma_ring_xmit(struct edma_priv *priv, struct net_device *net
 		return NETDEV_TX_BUSY;
 	}
 
+	/* Both refusals come before the preheader is pushed: the qdisc requeues
+	 * the frame as it was handed over, and a second push would prefix it
+	 * twice and hand the hardware a length that no longer describes it.
+	 */
+	idx = prod & (txdesc_ring->count - 1);
+	if (unlikely(txdesc_ring->skb_store[idx] != NULL)) {
+		spin_unlock_bh(&priv->tx_lock);
+		return NETDEV_TX_BUSY;
+	}
+
 	buf_len = skb_headlen(skb);
 
 	tag_info = skb_ext_find(skb, SKB_EXT_DSA_OOB);
@@ -604,12 +614,6 @@ static netdev_tx_t edma_ring_xmit(struct edma_priv *priv, struct net_device *net
 	memset((void *)txph, 0, EDMA_TX_PREHDR_SIZE);
 
 	txph->dst_info = dst_info;
-
-	idx = prod & (txdesc_ring->count - 1);
-	if (unlikely(txdesc_ring->skb_store[idx] != NULL)) {
-		spin_unlock_bh(&priv->tx_lock);
-		return NETDEV_TX_BUSY;
-	}
 
 	txdesc_ring->skb_store[idx] = skb;
 	txph->opaque = idx;
