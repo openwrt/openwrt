@@ -1094,12 +1094,14 @@ static netdev_tx_t edma_ndo_xmit(struct sk_buff *skb, struct net_device *netdev)
 	if (skb_is_nonlinear(skb) && skb_linearize(skb))
 		goto drop;
 
-	if (soc->tx_min_size && skb->len < soc->tx_min_size) {
-		if (skb_padto(skb, soc->tx_min_size)) {
-			netdev->stats.tx_dropped++;
-			return NETDEV_TX_OK;
-		}
-		skb->len = soc->tx_min_size;
+	/* skb_padto() zero-fills the tailroom but leaves the tail where it
+	 * was, so advancing the length by hand puts skb->len past the data a
+	 * later head reallocation copies: the pad would be reallocated
+	 * uninitialised and transmitted.
+	 */
+	if (soc->tx_min_size && skb_put_padto(skb, soc->tx_min_size)) {
+		netdev->stats.tx_dropped++;
+		return NETDEV_TX_OK;
 	}
 
 	nhead = netdev->needed_headroom;
