@@ -1,0 +1,28 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+
+[ "$ACTION" = "add" ] || exit 0
+
+. /lib/functions.sh
+. /lib/functions/system.sh
+
+case "$(board_name)" in
+wallys,dr5018s)
+	base_mac="$(macaddr_setbit_la "$(get_mac_label_dt)")"
+	wifi_mac=
+
+	case "$DEVPATH" in
+	*/c000000.wifi/*)
+		wifi_mac="$base_mac"
+		;;
+	*/b00a040.wifi/*)
+		wifi_mac="$(macaddr_add "$base_mac" 1)"
+		;;
+	*/b00b040.wifi/*)
+		wifi_mac="$(macaddr_add "$base_mac" 2)"
+		;;
+	esac
+
+	[ -n "$wifi_mac" ] && echo -n "$wifi_mac" > "/sys${DEVPATH}/macaddress"
+	;;
+esac
