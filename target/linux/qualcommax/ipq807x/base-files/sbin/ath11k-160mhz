@@ -1,0 +1,208 @@
+#!/bin/sh
+# Switch the ath11k board file between the two radio layouts of the IPQ8074:
+#
+#   3 radios: 2x 5 GHz 4x4, max 80 MHz   (default, as shipped)
+#   2 radios: 1x 5 GHz 4x4, up to 160 MHz
+#
+# Byte 0x40 of the raw BDF carries the radio topology; bit 4 (0x10) enables
+# 160 MHz and drops the second 5 GHz radio - the chip cannot do both.
+# The u16 at 0x0a is a header checksum (~XOR over all u16 words); the
+# firmware rejects the board file without it. XOR is incremental, so
+# flipping bit 4 at 0x40 flips the same bit in the checksum - exactly two
+# bytes change.
+#
+# The uci sections of the second 5 GHz radio (path *wifi+2) are moved out of
+# the way and restored when switching back - marking them disabled is not
+# enough, netifd maps the phy first and retries ("PHY is undefined for
+# device", retry_setup_failed).
+#
+# Flipping the topology bit is not quite enough: the data blocks of the third
+# radio stay in the board file, the firmware keeps announcing a third phy and
+# the driver rejects its regulatory event, because the phy id is then >= the
+# number of radios it knows ("failed to process regulatory info -22", a
+# WARN_ON in ath11k_reg_handle_chan_list()). Board files of devices that are
+# built as two radio designs have zeroes in those blocks, so zero them too.
+# The offsets below were derived by comparing 29 such board files against 8
+# three radio ones and taking the positions where the two groups differ
+# consistently, aligned to the u16 grid the checksum works on.
+#
+# The board file comes from the ipq-wifi package, so the untouched original
+# is always readable below the overlay in /rom and no copy has to be kept.
+# Only the calibration data is built at runtime, by 11-ath11k-caldata out of
+# the 0:art partition, and that file is not touched here.
+#
+# A sysupgrade drops the modified board file and the device is back to three
+# radios, which is deliberate: keeping it would carry a stale board file past
+# an ipq-wifi update. Run this again after upgrading.
+
+BOARD=/lib/firmware/ath11k/IPQ8074/hw2.0/board-2.bin
+ORIG=/rom$BOARD
+SAVE=/etc/nbg7815-160mhz.radio.save
+DEVICE=zyxel,nbg7815
+VARIANT=Zyxel-NBG7815
+BIT=16					# 0x10
+
+# data blocks of the third radio, "offset length" into the raw BDF
+RADIO3="0x22c 2 0xac1a 36 0xaca8 2 0xb406 2 0x16800 6 0x16806 2 0x1680c 8
+	0x16816 2 0x1681c 4 0x16830 2 0x1683e 2 0x16844 4 0x16852 2 0x16858 4
+	0x16864 8 0x16870 8 0x16880 4 0x16894 4 0x168a8 4 0x168bc 4
+	0x1b8cc 128 0x1b95a 300"
+RADIO3_END=113286			# 0x1b95a + 300, highest offset used above
+
+rd() { hexdump -v -s "$1" -n "$2" -e "1/$2 \"%u\"" "$BOARD"; }
+wr() { printf "$(printf '\\%03o' "$2")" | dd of="$BOARD" bs=1 seek="$1" \
+	count=1 conv=notrunc 2>/dev/null; }
+wr16() {
+	wr "$1" $(($2 & 255))
+	wr $(($1 + 1)) $((($2 >> 8) & 255))
+}
+
+. /lib/functions.sh
+
+board=$(board_name)
+[ "$board" = "$DEVICE" ] || {
+	echo "refusing to run: this is for $DEVICE, board is '${board:-unknown}'" >&2
+	exit 1; }
+[ -f "$BOARD" ] || { echo "no board file: $BOARD" >&2; exit 1; }
+
+# board-2.bin: 20 byte signature, then {u32 id, u32 len} TLVs; the board
+# entry holds a name TLV followed by the raw BDF as data TLV. Only a
+# single-entry board file with our variant is touched - offsets would be
+# wrong for anything else.
+NAMELEN=$(rd 32 4)
+BDF=$((36 + NAMELEN + (4 - NAMELEN % 4) % 4 + 8))
+NAME=$(dd if="$BOARD" bs=1 skip=36 count="$NAMELEN" 2>/dev/null)
+case "$NAME" in
+*variant=$VARIANT) ;;
+*)	echo "refusing to run: unexpected board file entry '$NAME'" >&2; exit 1 ;;
+esac
+[ "$(rd $((BDF - 8)) 4)" = "1" ] || { echo "unexpected board file layout" >&2; exit 1; }
+
+# The offsets below are only valid for a board file of the known layout, and
+# dd would happily write past the end and leave a longer file behind whose
+# checksum is consistent over the wrong bytes. The data TLV length sits right
+# in front of the board data.
+BDFLEN=$(rd $((BDF - 4)) 4)
+[ "$BDFLEN" -ge "$RADIO3_END" ] && \
+[ "$(wc -c < "$BOARD")" -ge $((BDF + RADIO3_END)) ] || {
+	echo "refusing to run: the third radio blocks end at $RADIO3_END, but" \
+		"the board data declares $BDFLEN bytes and the file holds" \
+		"$(($(wc -c < "$BOARD") - BDF))" >&2
+	exit 1; }
+
+TOPO=$(rd $((BDF + 64)) 1)
+[ $((TOPO / BIT % 2)) = 1 ] && MODE=160 || MODE=80
+
+show() {
+	if [ "$1" = 160 ]; then
+		echo "2 radios: 1x 5 GHz (160 MHz) + 2.4 GHz"
+	else
+		echo "3 radios: 2x 5 GHz (max 80 MHz) + 2.4 GHz"
+	fi
+}
+
+# uci section of the second 5 GHz radio, gone in 160 MHz mode
+radio2() {
+	uci show wireless 2>/dev/null |
+		sed -n "s/^wireless\.\([^.]*\)\.path='.*wifi+2'$/\1/p"
+}
+
+config() {				# $1 = new mode
+	if [ "$1" = 160 ]; then
+		for r in $(radio2); do
+			ifaces=$(uci show wireless |
+				sed -n "s/^wireless\.\([^.]*\)\.device='$r'$/\1/p")
+			for s in $r $ifaces; do
+				uci show "wireless.$s" | sed 's/^/uci -q set /'
+			done >> "$SAVE"
+			for s in $ifaces $r; do uci -q delete "wireless.$s"; done
+			echo "removed $r $ifaces (no second 5 GHz radio in this mode,"
+			echo "  saved in $SAVE and restored when switching back)"
+		done
+	elif [ -f "$SAVE" ]; then
+		. "$SAVE" && rm -f "$SAVE"
+		echo "restored the second 5 GHz radio config"
+	fi
+	uci commit wireless
+}
+
+reload() {
+	wifi down 2>/dev/null
+	rmmod ath11k_ahb 2>/dev/null
+	sleep 2
+	modprobe ath11k_ahb
+	sleep 15
+	wifi up 2>/dev/null
+	echo "radios now: $(ls /sys/class/ieee80211/ | tr '\n' ' ')"
+}
+
+# Set the topology bit and drop the third radio blocks. Every touched u16 ends
+# up zero, so the checksum delta is just the xor of the original words.
+patch160() {
+	local topo csum off len w
+
+	topo=$(rd $((BDF + 64)) 1)
+	csum=$(($(rd $((BDF + 10)) 2) ^ BIT))
+	wr $((BDF + 64)) $((topo | BIT))
+
+	set -- $RADIO3
+	while [ $# -ge 2 ]; do
+		off=$(($1))
+		len=$2
+		shift 2
+
+		for w in $(hexdump -v -s $((BDF + off)) -n "$len" \
+				-e '1/2 "%u "' "$ORIG"); do
+			csum=$((csum ^ w))
+		done
+
+		dd if=/dev/zero of="$BOARD" bs=1 seek=$((BDF + off)) \
+			count="$len" conv=notrunc 2>/dev/null
+	done
+
+	wr16 $((BDF + 10)) $csum
+}
+
+switch() {
+	[ -f "$ORIG" ] || {
+		echo "no pristine board file below the overlay: $ORIG" >&2
+		exit 1; }
+
+	# Going to 160 MHz starts from an unmodified board file, so the two have
+	# to be identical here. If they are not, something else replaced it - an
+	# ipq-wifi update writes a new one into the overlay while /rom keeps the
+	# one from the image - and patching the wrong data is worse than doing
+	# nothing.
+	if [ "$MODE" = 80 ] && ! cmp -s "$ORIG" "$BOARD"; then
+		echo "refusing to run: $BOARD differs from $ORIG, so it is not the" \
+			"board file this script knows" >&2
+		exit 1
+	fi
+
+	[ "$MODE" = 160 ] && MODE=80 || MODE=160
+
+	cp "$ORIG" "$BOARD" || exit 1
+	[ "$MODE" = 160 ] && patch160
+
+	config "$MODE"
+	echo "switched to: $(show $MODE)"
+
+	if [ "$MODE" = 160 ]; then
+		echo "note: a sysupgrade restores the board file from the image," \
+			"run '${0##*/} 160' again afterwards"
+	fi
+}
+
+case "$1" in
+160)	[ "$MODE" = 160 ] && { echo "already $(show $MODE)"; exit 0; }; switch ;;
+80|3)	[ "$MODE" = 80 ] && { echo "already $(show $MODE)"; exit 0; }; switch ;;
+toggle)	switch ;;
+status|"")
+	show "$MODE"; exit 0 ;;
+*)	echo "usage: ${0##*/} [status|160|80|toggle] [reload]" >&2; exit 1 ;;
+esac
+
+case "$2" in
+reload)	reload; echo "a reboot is still recommended to start from a clean state" ;;
+*)	echo "reboot to apply (recommended), or run '${0##*/} $1 reload'" ;;
+esac
