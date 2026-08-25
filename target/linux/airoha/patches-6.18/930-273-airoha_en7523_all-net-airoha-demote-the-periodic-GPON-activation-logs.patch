@@ -1,0 +1,61 @@
+From 88b391ff44b097d3ac4cff80cfe138435bc27b05 Mon Sep 17 00:00:00 2001
+From: Benjamin Larsson <banan@ludd.ltu.se>
+Date: Sun, 16 Aug 2026 13:32:15 +0200
+Subject: [PATCH] net: airoha: demote the periodic GPON activation logs
+
+While the ONU is looking for an OLT it emits three messages every second,
+one of which is four hundred characters wide.  On the 115200 baud console
+these boards use, that single line occupies the CPU inside printk for about
+thirty-five milliseconds, from the interrupt path of a state machine whose
+ranging responses are themselves measured in milliseconds.  The console also
+drops input, which makes the shell unusable during activation.
+
+None of the three report a state change; they repeat unchanged for every
+serial-number request. Demote them to dev_dbg, where dynamic debug can bring
+them back when activation is being investigated.
+
+Signed-off-by: OpenWrt Project <openwrt-devel@lists.openwrt.org>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_xpon.c | 4 ++--
+ drivers/phy/airoha/phy-airoha-xpon.c      | 2 +-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_xpon.c b/drivers/net/ethernet/airoha/airoha_xpon.c
+index 276deed08fd4..94c368b88586 100644
+--- a/drivers/net/ethernet/airoha/airoha_xpon.c
++++ b/drivers/net/ethernet/airoha/airoha_xpon.c
+@@ -1757,7 +1757,7 @@ static void gpon_cb_set_t3_preamble(void *hw_priv, u8 o3_t3, u8 o5_t3)
+ 	 * and O5=56.  BIT(16) writes a reserved field and leaves EBL off.
+ 	 */
+ 	val = BIT(24) | ((u32)o5_t3 << 8) | o3_t3;
+-	dev_info(priv->dev, "GPON T3 preamble: O3=%u O5=%u reg=%#08x\n",
++	dev_dbg(priv->dev, "GPON T3 preamble: O3=%u O5=%u reg=%#08x\n",
+ 		 o3_t3, o5_t3, val);
+ 	gpon_write(priv, GPON_PLOu_PRMBL_TYPE3, val);
+ 
+@@ -2865,7 +2865,7 @@ static void gpon_irq_work_fn(struct work_struct *work)
+ 			sn_cfg = gpon_read(priv, GPON_SN_MSG_CFG);
+ 			phy_ret = airoha_xpon_phy_get_gpon_tx_counters(
+ 				priv->phy, &phy_tx_frames, &phy_tx_bursts);
+-			dev_info(priv->dev,
++			dev_dbg(priv->dev,
+ 			 	 "GPON SN event: irq=%#08x cfg=%#010x threshold=%lu tx_power=%lu random_delay=%lu rsp=%#06x act=%u serial=%#010x/%#010x guard=%#010x type12=%#010x type3=%#010x pre_delay=%#010x dbg_dly=%#010x tx_sync=%#010x phy_tx=%#010x/%#010x phy_ret=%d\n",
+ 				 active, sn_cfg,
+ 				 FIELD_GET(SN_MSG_CFG_SN_REQ_THR_MASK, sn_cfg),
+diff --git a/drivers/phy/airoha/phy-airoha-xpon.c b/drivers/phy/airoha/phy-airoha-xpon.c
+index 54e3c391cf73..4fa961242355 100644
+--- a/drivers/phy/airoha/phy-airoha-xpon.c
++++ b/drivers/phy/airoha/phy-airoha-xpon.c
+@@ -360,7 +360,7 @@ int airoha_xpon_phy_set_gpon_extended_preamble(struct phy *phy,
+ 			 AIROHA_XPON_PHY_GPON_OPER_RANGING);
+ 
+ 	airoha_xpon_phy_rmw(priv, XPON_GPON_EXT_PREAMBLE, mask, val);
+-	dev_info(priv->dev,
++	dev_dbg(priv->dev,
+ 		 "GPON PHY extended preamble programmed: O3/O4=%u O5=%u reg=%#010x\n",
+ 		 o3_o4_preamble, o5_preamble,
+ 		 airoha_xpon_phy_read(priv, XPON_GPON_EXT_PREAMBLE));
+-- 
+2.55.0
+

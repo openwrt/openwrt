@@ -1,0 +1,540 @@
+From b4fe2c47c4c30cc39969f7d96081bb3e770f35d4 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Tue, 11 Aug 2026 14:04:40 -0300
+Subject: [PATCH] net: airoha: centralize generation-1 FE and PPE registers
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth_gen1.c |  12 +-
+ drivers/net/ethernet/airoha/airoha_ppe.c      | 213 +++++++-----------
+ drivers/net/ethernet/airoha/airoha_regs.h     |  68 ++++++
+ 3 files changed, 149 insertions(+), 144 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_eth_gen1.c b/drivers/net/ethernet/airoha/airoha_eth_gen1.c
+index 8b3c8738f295..796e3126f6a1 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth_gen1.c
++++ b/drivers/net/ethernet/airoha/airoha_eth_gen1.c
+@@ -691,10 +691,6 @@ static inline struct airoha_eth_gen1 *airoha_eth_gen1_priv(struct airoha_eth *et
+ 	return eth->priv;
+ }
+ 
+-#define ECONET_FE_GDM1_OFFSET	0x0400
+-#define ECONET_FE_PPE_OFFSET	0x0c00
+-#define ECONET_FE_GDM2_OFFSET	0x1400
+-#define ECONET_FE_MIN_SIZE	0x2600
+ 
+ #define EN751221_DSA_SPORT_BASE		8
+ #define EN751221_DSA_NUM_PORTS		5
+@@ -903,7 +899,7 @@ int airoha_eth_gen1_probe(struct platform_device *pdev, struct airoha_eth *eth)
+ 	if (!fe_res)
+ 		return dev_err_probe(eth->dev, -EINVAL,
+ 				     "missing fe register resource\n");
+-	if (resource_size(fe_res) < ECONET_FE_MIN_SIZE)
++	if (resource_size(fe_res) < EN751221_FE_MIN_SIZE)
+ 		return dev_err_probe(eth->dev, -EINVAL,
+ 				     "fe register resource is too small\n");
+ 
+@@ -913,10 +909,10 @@ int airoha_eth_gen1_probe(struct platform_device *pdev, struct airoha_eth *eth)
+ 				     "failed to map fe registers\n");
+ 
+ 	eth->fe_regs = fe_base;
+-	priv->gdm[0] = fe_base + ECONET_FE_GDM1_OFFSET;
+-	priv->ppe_base = fe_base + ECONET_FE_PPE_OFFSET;
++	priv->gdm[0] = fe_base + EN751221_FE_GDM1_OFFSET;
++	priv->ppe_base = fe_base + EN751221_FE_PPE_OFFSET;
+ 	eth->ppe_regs = priv->ppe_base;
+-	priv->gdm[1] = fe_base + ECONET_FE_GDM2_OFFSET;
++	priv->gdm[1] = fe_base + EN751221_FE_GDM2_OFFSET;
+ 
+ 	eth->gdmp_regs = devm_platform_ioremap_resource_byname(pdev, "gdmp");
+ 	if (IS_ERR(eth->gdmp_regs))
+diff --git a/drivers/net/ethernet/airoha/airoha_ppe.c b/drivers/net/ethernet/airoha/airoha_ppe.c
+index 72a9aec64f2d..d480aa515492 100644
+--- a/drivers/net/ethernet/airoha/airoha_ppe.c
++++ b/drivers/net/ethernet/airoha/airoha_ppe.c
+@@ -2462,65 +2462,6 @@ static void airoha_ppe_gen2_deinit(struct airoha_eth *eth)
+ 
+ /* EcoNet EN751221 backend. */
+ 
+-#define EN75_PPE_ENTRIES		16384
+-#define EN75_FOE_ENTRY_SIZE		80
+-#define EN75_PPE_TABLE_SIZE		(EN75_PPE_ENTRIES * EN75_FOE_ENTRY_SIZE)
+-#define EN75_PPE_INVALID_HASH		0xffff
+-#define EN75_DPORT_GDMA1		1
+-#define EN75_DPORT_QDMA_HW		6
+-
+-#define EN75_PPE_GLO_CFG		0x200
+-#define EN75_PPE_FLOW_CFG		0x204
+-#define EN75_PPE_IP_PROTO_CHK		0x208
+-#define EN75_PPE_TB_CFG			0x21c
+-#define EN75_PPE_TB_BASE		0x220
+-#define EN75_PPE_TB_USED		0x224
+-#define EN75_PPE_BIND_RATE		0x228
+-#define EN75_PPE_BIND_LIMIT0		0x22c
+-#define EN75_PPE_BIND_LIMIT1		0x230
+-#define EN75_PPE_UNBIND_AGE		0x238
+-#define EN75_PPE_BIND_AGE0		0x23c
+-#define EN75_PPE_BIND_AGE1		0x240
+-#define EN75_PPE_HASH_SEED		0x244
+-#define EN75_PPE_DEFAULT_CPU_PORT	0x248
+-#define EN75_PPE_CACHE_CTL		0x320
+-#define EN75_PPE_CAH_GATE		0x334
+-
+-#define EN75_PPE_GLO_CFG_EN		BIT(0)
+-#define EN75_PPE_GLO_CFG_BUSY		BIT(31)
+-#define EN75_PPE_GLO_CFG_ON		(EN75_PPE_GLO_CFG_EN | BIT(2) | BIT(3) | BIT(9))
+-
+-#define EN75_FE_TIMESTAMP		0x10
+-#define EN75_FE_CDMA1_VLAN_CTRL		0x400
+-#define EN75_FE_GDM1_FWD_CFG		0x500
+-#define EN75_FE_GDM1_VLAN_CHECK		0x510
+-
+-#define EN75_FOE_IB1_BIND_TIMESTAMP	GENMASK(14, 0)
+-#define EN75_FOE_IB1_BIND_KEEPALIVE	BIT(15)
+-#define EN75_FOE_IB1_BIND_VLAN_LAYER	GENMASK(18, 16)
+-#define EN75_FOE_IB1_BIND_PPPOE	BIT(19)
+-#define EN75_FOE_IB1_BIND_VLAN_TAG	BIT(20)
+-#define EN75_FOE_IB1_BIND_CACHE	BIT(22)
+-#define EN75_FOE_IB1_BIND_TTL		BIT(24)
+-#define EN75_FOE_IB1_PACKET_TYPE	GENMASK(27, 25)
+-#define EN75_FOE_IB1_STATE		GENMASK(29, 28)
+-#define EN75_FOE_IB1_UDP		BIT(30)
+-
+-#define EN75_FOE_IB2_QID		GENMASK(2, 0)
+-#define EN75_FOE_IB2_PSE_QOS		BIT(4)
+-#define EN75_FOE_IB2_DEST_PORT		GENMASK(7, 5)
+-#define EN75_FOE_IB2_MULTICAST		BIT(8)
+-#define EN75_FOE_IB2_PORT_MG		GENMASK(17, 12)
+-#define EN75_FOE_IB2_PORT_AG		GENMASK(23, 18)
+-
+-#define EN75_PPE_CPU_REASON_NO_FLOW	0x07
+-#define EN75_PPE_CPU_REASON_HIT_UNBIND	0x0e
+-#define EN75_PPE_CPU_REASON_BIND_RATE	0x0f
+-
+-#define EN75_PPE_PKT_TYPE_IPV4_HNAPT	0
+-#define EN75_FOE_STATE_INVALID		0
+-#define EN75_FOE_STATE_BIND		2
+-
+ struct en75_foe_mac_info {
+ 	u16 vlan1;
+ 	u16 etype;
+@@ -2566,7 +2507,7 @@ struct en75_foe_entry {
+ 	};
+ };
+ 
+-static_assert(sizeof(struct en75_foe_entry) == EN75_FOE_ENTRY_SIZE);
++static_assert(sizeof(struct en75_foe_entry) == EN751221_FOE_ENTRY_SIZE);
+ 
+ struct en75_flow_entry {
+ 	struct list_head list;
+@@ -2595,7 +2536,7 @@ struct en75_ppe {
+ 
+ static void __iomem *en75_ppe_slot(struct en75_ppe *ppe, u16 hash)
+ {
+-	return ppe->foe_table + (size_t)hash * EN75_FOE_ENTRY_SIZE;
++	return ppe->foe_table + (size_t)hash * EN751221_FOE_ENTRY_SIZE;
+ }
+ 
+ static void en75_ppe_read_entry(struct en75_ppe *ppe, u16 hash,
+@@ -2612,23 +2553,23 @@ static bool en75_ppe_cache_cmd(struct en75_ppe *ppe, u32 cmd)
+ {
+ 	u32 val;
+ 
+-	writel((cmd << 12) | BIT(8), ppe->base + EN75_PPE_CACHE_CTL);
+-	return !readl_poll_timeout_atomic(ppe->base + EN75_PPE_CACHE_CTL,
++	writel((cmd << 12) | BIT(8), ppe->base + EN751221_PPE_CACHE_CTL);
++	return !readl_poll_timeout_atomic(ppe->base + EN751221_PPE_CACHE_CTL,
+ 					 val, !(val & BIT(8)), 1, 100000);
+ }
+ 
+ static void en75_ppe_cache_clean(struct en75_ppe *ppe)
+ {
+-	u32 gate = readl(ppe->base + EN75_PPE_CAH_GATE);
++	u32 gate = readl(ppe->base + EN751221_PPE_CAH_GATE);
+ 
+ 	if (!(gate & BIT(0))) {
+-		writel(0x33, ppe->base + EN75_PPE_CAH_GATE);
+-		gate = readl(ppe->base + EN75_PPE_CAH_GATE);
++		writel(0x33, ppe->base + EN751221_PPE_CAH_GATE);
++		gate = readl(ppe->base + EN751221_PPE_CAH_GATE);
+ 	}
+ 
+-	writel(gate & ~BIT(0), ppe->base + EN75_PPE_CAH_GATE);
++	writel(gate & ~BIT(0), ppe->base + EN751221_PPE_CAH_GATE);
+ 	en75_ppe_cache_cmd(ppe, 4);
+-	writel(gate | BIT(0), ppe->base + EN75_PPE_CAH_GATE);
++	writel(gate | BIT(0), ppe->base + EN751221_PPE_CAH_GATE);
+ }
+ 
+ static void en75_foe_entry_prepare(struct en75_foe_entry *entry, u8 l4proto,
+@@ -2638,17 +2579,17 @@ static void en75_foe_entry_prepare(struct en75_foe_entry *entry, u8 l4proto,
+ 	u32 ib2;
+ 
+ 	memset(entry, 0, sizeof(*entry));
+-	entry->ib1 = FIELD_PREP(EN75_FOE_IB1_STATE, EN75_FOE_STATE_BIND) |
+-		FIELD_PREP(EN75_FOE_IB1_PACKET_TYPE,
+-			   EN75_PPE_PKT_TYPE_IPV4_HNAPT) |
+-		FIELD_PREP(EN75_FOE_IB1_UDP, l4proto == IPPROTO_UDP) |
+-		EN75_FOE_IB1_BIND_CACHE | EN75_FOE_IB1_BIND_TTL;
+-
+-	ib2 = FIELD_PREP(EN75_FOE_IB2_DEST_PORT, pse_port) |
+-		FIELD_PREP(EN75_FOE_IB2_PORT_MG, 0x3f) |
+-		FIELD_PREP(EN75_FOE_IB2_PORT_AG, 0x3f);
++	entry->ib1 = FIELD_PREP(EN751221_FOE_IB1_STATE, EN751221_FOE_STATE_BIND) |
++		FIELD_PREP(EN751221_FOE_IB1_PACKET_TYPE,
++			   EN751221_PPE_PKT_TYPE_IPV4_HNAPT) |
++		FIELD_PREP(EN751221_FOE_IB1_UDP, l4proto == IPPROTO_UDP) |
++		EN751221_FOE_IB1_BIND_CACHE | EN751221_FOE_IB1_BIND_TTL;
++
++	ib2 = FIELD_PREP(EN751221_FOE_IB2_DEST_PORT, pse_port) |
++		FIELD_PREP(EN751221_FOE_IB2_PORT_MG, 0x3f) |
++		FIELD_PREP(EN751221_FOE_IB2_PORT_AG, 0x3f);
+ 	if (is_multicast_ether_addr(dest_mac))
+-		ib2 |= EN75_FOE_IB2_MULTICAST;
++		ib2 |= EN751221_FOE_IB2_MULTICAST;
+ 	entry->ipv4.ib2 = ib2;
+ 
+ 	entry->ipv4.l2.dest_mac_hi = get_unaligned_be32(dest_mac);
+@@ -2674,10 +2615,10 @@ static void en75_foe_entry_set_ipv4_tuple(struct en75_foe_entry *entry,
+ 
+ static void en75_foe_entry_set_pse_port(struct en75_foe_entry *entry, u8 port)
+ {
+-	entry->ipv4.ib2 &= ~(EN75_FOE_IB2_DEST_PORT | EN75_FOE_IB2_PSE_QOS);
+-	entry->ipv4.ib2 |= FIELD_PREP(EN75_FOE_IB2_DEST_PORT, port);
+-	if (port == EN75_DPORT_QDMA_HW)
+-		entry->ipv4.ib2 |= EN75_FOE_IB2_PSE_QOS;
++	entry->ipv4.ib2 &= ~(EN751221_FOE_IB2_DEST_PORT | EN751221_FOE_IB2_PSE_QOS);
++	entry->ipv4.ib2 |= FIELD_PREP(EN751221_FOE_IB2_DEST_PORT, port);
++	if (port == EN751221_DPORT_QDMA_HW)
++		entry->ipv4.ib2 |= EN751221_FOE_IB2_PSE_QOS;
+ }
+ 
+ static void en75_foe_entry_set_dsa(struct en75_foe_entry *entry, int port,
+@@ -2688,31 +2629,31 @@ static void en75_foe_entry_set_dsa(struct en75_foe_entry *entry, int port,
+ 	l2->etype = BIT(port) & GENMASK(5, 0);
+ 	if (passthrough)
+ 		l2->etype |= BIT(7);
+-	if (!(entry->ib1 & EN75_FOE_IB1_BIND_VLAN_LAYER))
+-		entry->ib1 |= FIELD_PREP(EN75_FOE_IB1_BIND_VLAN_LAYER, 1);
++	if (!(entry->ib1 & EN751221_FOE_IB1_BIND_VLAN_LAYER))
++		entry->ib1 |= FIELD_PREP(EN751221_FOE_IB1_BIND_VLAN_LAYER, 1);
+ 	else
+ 		l2->etype |= BIT(8);
+ 	l2->vlan1 = 0;
+-	entry->ib1 &= ~EN75_FOE_IB1_BIND_VLAN_TAG;
++	entry->ib1 &= ~EN751221_FOE_IB1_BIND_VLAN_TAG;
+ }
+ 
+ static void en75_foe_entry_set_pppoe(struct en75_foe_entry *entry, u16 sid)
+ {
+ 	struct en75_foe_mac_info *l2 = &entry->ipv4.l2;
+ 
+-	if (!(entry->ib1 & EN75_FOE_IB1_BIND_VLAN_LAYER) ||
+-	    (entry->ib1 & EN75_FOE_IB1_BIND_VLAN_TAG))
++	if (!(entry->ib1 & EN751221_FOE_IB1_BIND_VLAN_LAYER) ||
++	    (entry->ib1 & EN751221_FOE_IB1_BIND_VLAN_TAG))
+ 		l2->etype = ETH_P_PPP_SES;
+-	entry->ib1 |= EN75_FOE_IB1_BIND_PPPOE;
++	entry->ib1 |= EN751221_FOE_IB1_BIND_PPPOE;
+ 	l2->pppoe_id = sid;
+ }
+ 
+ static void en75_foe_entry_set_bind_metadata(struct en75_foe_entry *entry)
+ {
+-	u8 port = FIELD_GET(EN75_FOE_IB2_DEST_PORT, entry->ipv4.ib2);
++	u8 port = FIELD_GET(EN751221_FOE_IB2_DEST_PORT, entry->ipv4.ib2);
+ 
+-	entry->ib1 &= ~EN75_FOE_IB1_BIND_VLAN_LAYER;
+-	entry->ib1 |= FIELD_PREP(EN75_FOE_IB1_BIND_VLAN_LAYER, 1);
++	entry->ib1 &= ~EN751221_FOE_IB1_BIND_VLAN_LAYER;
++	entry->ib1 |= FIELD_PREP(EN751221_FOE_IB1_BIND_VLAN_LAYER, 1);
+ 	entry->ipv4.udf_tsid &= ~0xff;
+ 	entry->ipv4.udf_tsid |= port + 6;
+ }
+@@ -2721,15 +2662,15 @@ static void en75_ppe_commit_entry(struct en75_ppe *ppe,
+ 				  struct en75_foe_entry *entry, u16 hash)
+ {
+ 	void __iomem *slot = en75_ppe_slot(ppe, hash);
+-	u16 timestamp = readl(ppe->fe_base + EN75_FE_TIMESTAMP) &
+-			EN75_FOE_IB1_BIND_TIMESTAMP;
++	u16 timestamp = readl(ppe->fe_base + EN751221_FE_TIMESTAMP) &
++			EN751221_FOE_IB1_BIND_TIMESTAMP;
+ 	const u32 *src;
+ 	int i;
+ 
+-	entry->ib1 &= ~EN75_FOE_IB1_BIND_TIMESTAMP;
+-	entry->ib1 |= FIELD_PREP(EN75_FOE_IB1_BIND_TIMESTAMP, timestamp) |
+-		EN75_FOE_IB1_BIND_CACHE | EN75_FOE_IB1_BIND_TTL |
+-		EN75_FOE_IB1_BIND_KEEPALIVE;
++	entry->ib1 &= ~EN751221_FOE_IB1_BIND_TIMESTAMP;
++	entry->ib1 |= FIELD_PREP(EN751221_FOE_IB1_BIND_TIMESTAMP, timestamp) |
++		EN751221_FOE_IB1_BIND_CACHE | EN751221_FOE_IB1_BIND_TTL |
++		EN751221_FOE_IB1_BIND_KEEPALIVE;
+ 	en75_foe_entry_set_bind_metadata(entry);
+ 
+ 	/*
+@@ -2755,7 +2696,7 @@ static void en75_ppe_commit_entry(struct en75_ppe *ppe,
+ 
+ static void en75_ppe_invalidate_entry(struct en75_ppe *ppe, u16 hash)
+ {
+-	if (hash == EN75_PPE_INVALID_HASH || hash >= EN75_PPE_ENTRIES)
++	if (hash == EN751221_PPE_INVALID_HASH || hash >= EN751221_PPE_ENTRIES)
+ 		return;
+ 	writel(0, en75_ppe_slot(ppe, hash));
+ 	/* Publish the invalid state before the caller clears the cache. */
+@@ -2825,11 +2766,11 @@ static void en75_ppe_rx_check(struct en75_ppe *ppe, struct sk_buff *skb,
+ 	u32 src_ip, dest_ip;
+ 	u16 src_port, dest_port;
+ 
+-	if (!ppe || !READ_ONCE(ppe->armed) || hash >= EN75_PPE_ENTRIES)
++	if (!ppe || !READ_ONCE(ppe->armed) || hash >= EN751221_PPE_ENTRIES)
+ 		return;
+-	if (reason != EN75_PPE_CPU_REASON_NO_FLOW &&
+-	    reason != EN75_PPE_CPU_REASON_HIT_UNBIND &&
+-	    reason != EN75_PPE_CPU_REASON_BIND_RATE)
++	if (reason != EN751221_PPE_CPU_REASON_NO_FLOW &&
++	    reason != EN751221_PPE_CPU_REASON_HIT_UNBIND &&
++	    reason != EN751221_PPE_CPU_REASON_BIND_RATE)
+ 		return;
+ 	if (!en75_ppe_parse_ipv4_tuple(skb, &src_ip, &dest_ip,
+ 				       &src_port, &dest_port))
+@@ -2855,7 +2796,7 @@ static void en75_ppe_rx_check(struct en75_ppe *ppe, struct sk_buff *skb,
+ 			entry.ipv4.orig.dest_ip = swab32(hardware.ipv4.orig.dest_ip);
+ 			entry.ipv4.orig.ports = swab32(hardware.ipv4.orig.ports);
+ 		}
+-		if (flow->hash != EN75_PPE_INVALID_HASH)
++		if (flow->hash != EN751221_PPE_INVALID_HASH)
+ 			en75_ppe_invalidate_entry(ppe, flow->hash);
+ 		flow->hash = hash;
+ 		en75_ppe_commit_entry(ppe, &entry, hash);
+@@ -2887,7 +2828,7 @@ static void en75_ppe_flush(struct en75_ppe *ppe)
+ 		list_del(&flow->list);
+ 		kfree(flow);
+ 	}
+-	memset_io(ppe->foe_table, 0, EN75_PPE_TABLE_SIZE);
++	memset_io(ppe->foe_table, 0, EN751221_PPE_TABLE_SIZE);
+ 	/* Publish the cleared table before invalidating the lookup cache. */
+ 	wmb();
+ 	en75_ppe_cache_clean(ppe);
+@@ -2898,15 +2839,15 @@ static int en75_ppe_engine_set(struct en75_ppe *ppe, bool enable)
+ 	u32 val;
+ 
+ 	if (enable) {
+-		if (readl_poll_timeout_atomic(ppe->base + EN75_PPE_GLO_CFG, val,
+-					      !(val & EN75_PPE_GLO_CFG_BUSY),
++		if (readl_poll_timeout_atomic(ppe->base + EN751221_PPE_GLO_CFG, val,
++					      !(val & EN751221_PPE_GLO_CFG_BUSY),
+ 					      10, 10000))
+ 			return -EBUSY;
+-		writel(EN75_PPE_GLO_CFG_ON, ppe->base + EN75_PPE_GLO_CFG);
++		writel(EN751221_PPE_GLO_CFG_ON, ppe->base + EN751221_PPE_GLO_CFG);
+ 	} else {
+-		val = readl(ppe->base + EN75_PPE_GLO_CFG);
+-		writel(val & ~EN75_PPE_GLO_CFG_EN,
+-		       ppe->base + EN75_PPE_GLO_CFG);
++		val = readl(ppe->base + EN751221_PPE_GLO_CFG);
++		writel(val & ~EN751221_PPE_GLO_CFG_EN,
++		       ppe->base + EN751221_PPE_GLO_CFG);
+ 	}
+ 	return 0;
+ }
+@@ -2925,12 +2866,12 @@ static int en75_ppe_engine_arm(struct en75_ppe *ppe)
+ 	err = en75_ppe_engine_set(ppe, true);
+ 	if (err)
+ 		return err;
+-	writel(0x33, ppe->base + EN75_PPE_CAH_GATE);
++	writel(0x33, ppe->base + EN751221_PPE_CAH_GATE);
+ 	writel(0x0600f700, ppe->fe_base + 0xe04);
+ 	writel(0x00008100, ppe->fe_base + 0xf18);
+-	writel(0x81000001, ppe->fe_base + EN75_FE_CDMA1_VLAN_CTRL);
+-	writel(0x00000001, ppe->fe_base + EN75_FE_GDM1_VLAN_CHECK);
+-	writel(0x03f04004, ppe->fe_base + EN75_FE_GDM1_FWD_CFG);
++	writel(0x81000001, ppe->fe_base + EN751221_FE_CDMA1_VLAN_CTRL);
++	writel(0x00000001, ppe->fe_base + EN751221_FE_GDM1_VLAN_CHECK);
++	writel(0x03f04004, ppe->fe_base + EN751221_FE_GDM1_FWD_CFG);
+ 	writel(0x00000500, ppe->fe_base + 0xe48);
+ 	WRITE_ONCE(ppe->armed, true);
+ 	dev_info(ppe->parent, "PPE hardware flow offload enabled\n");
+@@ -2942,7 +2883,7 @@ static void en75_ppe_engine_disarm(struct en75_ppe *ppe)
+ 	if (!ppe || !READ_ONCE(ppe->armed))
+ 		return;
+ 
+-	writel(0x03f00000, ppe->fe_base + EN75_FE_GDM1_FWD_CFG);
++	writel(0x03f00000, ppe->fe_base + EN751221_FE_GDM1_FWD_CFG);
+ 	WRITE_ONCE(ppe->armed, false);
+ 	en75_ppe_flush(ppe);
+ 	en75_ppe_engine_set(ppe, false);
+@@ -3173,7 +3114,7 @@ static int en75_flow_offload_replace(struct net_device *dev,
+ 		return -EOPNOTSUPP;
+ 	}
+ 
+-	en75_foe_entry_prepare(&entry, l4proto, EN75_DPORT_GDMA1,
++	en75_foe_entry_prepare(&entry, l4proto, EN751221_DPORT_GDMA1,
+ 			       eth.h_source, eth.h_dest);
+ 	en75_foe_entry_set_ipv4_tuple(&entry, false, src_addr, src_port,
+ 				      dest_addr, dest_port);
+@@ -3203,7 +3144,7 @@ static int en75_flow_offload_replace(struct net_device *dev,
+ 	flow->dest_ip = ntohl(dest_addr);
+ 	flow->src_port = ntohs(src_port);
+ 	flow->dest_port = ntohs(dest_port);
+-	flow->hash = EN75_PPE_INVALID_HASH;
++	flow->hash = EN751221_PPE_INVALID_HASH;
+ 
+ 	spin_lock_bh(&ppe->lock);
+ 	if (en75_ppe_find_flow(ppe, cls->cookie)) {
+@@ -3367,7 +3308,7 @@ static int airoha_ppe_gen1_init(struct airoha_eth *eth)
+ 	if (!rmem)
+ 		return dev_err_probe(dev, -EINVAL,
+ 				     "invalid PPE memory-region\n");
+-	if (rmem->size < EN75_PPE_TABLE_SIZE)
++	if (rmem->size < EN751221_PPE_TABLE_SIZE)
+ 		return dev_err_probe(dev, -EINVAL,
+ 				     "PPE FoE region is too small (%pa bytes)\n",
+ 				     &rmem->size);
+@@ -3378,7 +3319,7 @@ static int airoha_ppe_gen1_init(struct airoha_eth *eth)
+ 	ppe = devm_kzalloc(dev, sizeof(*ppe), GFP_KERNEL);
+ 	if (!ppe)
+ 		return -ENOMEM;
+-	ppe->foe_table = devm_ioremap(dev, rmem->base, EN75_PPE_TABLE_SIZE);
++	ppe->foe_table = devm_ioremap(dev, rmem->base, EN751221_PPE_TABLE_SIZE);
+ 	if (!ppe->foe_table)
+ 		return dev_err_probe(dev, -ENOMEM,
+ 				     "failed to map PPE FoE table\n");
+@@ -3390,30 +3331,30 @@ static int airoha_ppe_gen1_init(struct airoha_eth *eth)
+ 	spin_lock_init(&ppe->lock);
+ 	INIT_LIST_HEAD(&ppe->flows);
+ 	INIT_LIST_HEAD(&ppe->block_cb_list);
+-	memset_io(ppe->foe_table, 0, EN75_PPE_TABLE_SIZE);
++	memset_io(ppe->foe_table, 0, EN751221_PPE_TABLE_SIZE);
+ 
+-	writel(lower_32_bits(ppe->foe_phys), ppe->base + EN75_PPE_TB_BASE);
++	writel(lower_32_bits(ppe->foe_phys), ppe->base + EN751221_PPE_TB_BASE);
+ 	tb_cfg = GENMASK(11, 7) |
+ 		 FIELD_PREP(GENMASK(5, 4), 3) |
+ 		 FIELD_PREP(GENMASK(15, 14), 3) |
+ 		 BIT(16) | FIELD_PREP(GENMASK(2, 0), 4) | BIT(3);
+-	writel(tb_cfg, ppe->base + EN75_PPE_TB_CFG);
+-	writel(0xffffffff, ppe->base + EN75_PPE_IP_PROTO_CHK);
+-	writel(BIT(0), ppe->base + EN75_PPE_CACHE_CTL);
++	writel(tb_cfg, ppe->base + EN751221_PPE_TB_CFG);
++	writel(0xffffffff, ppe->base + EN751221_PPE_IP_PROTO_CHK);
++	writel(BIT(0), ppe->base + EN751221_PPE_CACHE_CTL);
+ 	writel(BIT(8) | BIT(9) | BIT(10) | BIT(12) | BIT(13) | BIT(17),
+-	       ppe->base + EN75_PPE_FLOW_CFG);
+-	writel((1000 << 16) | 3, ppe->base + EN75_PPE_UNBIND_AGE);
+-	writel(12 | BIT(16), ppe->base + EN75_PPE_BIND_AGE0);
+-	writel(7 | BIT(16), ppe->base + EN75_PPE_BIND_AGE1);
++	       ppe->base + EN751221_PPE_FLOW_CFG);
++	writel((1000 << 16) | 3, ppe->base + EN751221_PPE_UNBIND_AGE);
++	writel(12 | BIT(16), ppe->base + EN751221_PPE_BIND_AGE0);
++	writel(7 | BIT(16), ppe->base + EN751221_PPE_BIND_AGE1);
+ 	writel(GENMASK(13, 0) | GENMASK(29, 16),
+-	       ppe->base + EN75_PPE_BIND_LIMIT0);
++	       ppe->base + EN751221_PPE_BIND_LIMIT0);
+ 	writel(GENMASK(13, 0) | BIT(16),
+-	       ppe->base + EN75_PPE_BIND_LIMIT1);
+-	writel(30 | BIT(16), ppe->base + EN75_PPE_BIND_RATE);
+-	writel(0x12345678, ppe->base + EN75_PPE_HASH_SEED);
+-	writel(0, ppe->base + EN75_PPE_DEFAULT_CPU_PORT);
+-	writel(readl(ppe->base + EN75_PPE_GLO_CFG) & ~EN75_PPE_GLO_CFG_EN,
+-	       ppe->base + EN75_PPE_GLO_CFG);
++	       ppe->base + EN751221_PPE_BIND_LIMIT1);
++	writel(30 | BIT(16), ppe->base + EN751221_PPE_BIND_RATE);
++	writel(0x12345678, ppe->base + EN751221_PPE_HASH_SEED);
++	writel(0, ppe->base + EN751221_PPE_DEFAULT_CPU_PORT);
++	writel(readl(ppe->base + EN751221_PPE_GLO_CFG) & ~EN751221_PPE_GLO_CFG_EN,
++	       ppe->base + EN751221_PPE_GLO_CFG);
+ 
+ 	ppe->dev.priv = ppe;
+ 	ppe->dev.parent = eth->dev;
+@@ -3423,7 +3364,7 @@ static int airoha_ppe_gen1_init(struct airoha_eth *eth)
+ 
+ 	eth->ppe_dev = &ppe->dev;
+ 	dev_info(dev, "PPE FoE table at %pa, %u entries\n",
+-		 &rmem->base, EN75_PPE_ENTRIES);
++		 &rmem->base, EN751221_PPE_ENTRIES);
+ 	return 0;
+ }
+ 
+diff --git a/drivers/net/ethernet/airoha/airoha_regs.h b/drivers/net/ethernet/airoha/airoha_regs.h
+index 3d9d1889ac68..3d1c5f29060c 100644
+--- a/drivers/net/ethernet/airoha/airoha_regs.h
++++ b/drivers/net/ethernet/airoha/airoha_regs.h
+@@ -39,6 +39,74 @@
+ #define FE_RST_GDM3_MBI_ARB_MASK	BIT(2)
+ #define FE_RST_CORE_MASK		BIT(0)
+ 
++
++/* EN751221/EN7528 generation-1 frame-engine layout. */
++#define EN751221_FE_GDM1_OFFSET		0x0400
++#define EN751221_FE_PPE_OFFSET		0x0c00
++#define EN751221_FE_GDM2_OFFSET		0x1400
++#define EN751221_FE_MIN_SIZE		0x2600
++
++/* EN751221 PPE/FoE register and entry layout. */
++#define EN751221_PPE_ENTRIES		16384
++#define EN751221_FOE_ENTRY_SIZE		80
++#define EN751221_PPE_TABLE_SIZE		(EN751221_PPE_ENTRIES * \
++					 EN751221_FOE_ENTRY_SIZE)
++#define EN751221_PPE_INVALID_HASH	0xffff
++#define EN751221_DPORT_GDMA1		1
++#define EN751221_DPORT_QDMA_HW		6
++
++#define EN751221_PPE_GLO_CFG		0x200
++#define EN751221_PPE_FLOW_CFG		0x204
++#define EN751221_PPE_IP_PROTO_CHK	0x208
++#define EN751221_PPE_TB_CFG		0x21c
++#define EN751221_PPE_TB_BASE		0x220
++#define EN751221_PPE_TB_USED		0x224
++#define EN751221_PPE_BIND_RATE		0x228
++#define EN751221_PPE_BIND_LIMIT0	0x22c
++#define EN751221_PPE_BIND_LIMIT1	0x230
++#define EN751221_PPE_UNBIND_AGE		0x238
++#define EN751221_PPE_BIND_AGE0		0x23c
++#define EN751221_PPE_BIND_AGE1		0x240
++#define EN751221_PPE_HASH_SEED		0x244
++#define EN751221_PPE_DEFAULT_CPU_PORT	0x248
++#define EN751221_PPE_CACHE_CTL		0x320
++#define EN751221_PPE_CAH_GATE		0x334
++
++#define EN751221_PPE_GLO_CFG_EN		BIT(0)
++#define EN751221_PPE_GLO_CFG_BUSY	BIT(31)
++#define EN751221_PPE_GLO_CFG_ON		(EN751221_PPE_GLO_CFG_EN | BIT(2) | \
++					 BIT(3) | BIT(9))
++
++#define EN751221_FE_TIMESTAMP		0x10
++#define EN751221_FE_CDMA1_VLAN_CTRL	0x400
++#define EN751221_FE_GDM1_FWD_CFG	0x500
++#define EN751221_FE_GDM1_VLAN_CHECK	0x510
++
++#define EN751221_FOE_IB1_BIND_TIMESTAMP	GENMASK(14, 0)
++#define EN751221_FOE_IB1_BIND_KEEPALIVE	BIT(15)
++#define EN751221_FOE_IB1_BIND_VLAN_LAYER	GENMASK(18, 16)
++#define EN751221_FOE_IB1_BIND_PPPOE	BIT(19)
++#define EN751221_FOE_IB1_BIND_VLAN_TAG	BIT(20)
++#define EN751221_FOE_IB1_BIND_CACHE	BIT(22)
++#define EN751221_FOE_IB1_BIND_TTL	BIT(24)
++#define EN751221_FOE_IB1_PACKET_TYPE	GENMASK(27, 25)
++#define EN751221_FOE_IB1_STATE		GENMASK(29, 28)
++#define EN751221_FOE_IB1_UDP		BIT(30)
++
++#define EN751221_FOE_IB2_QID		GENMASK(2, 0)
++#define EN751221_FOE_IB2_PSE_QOS	BIT(4)
++#define EN751221_FOE_IB2_DEST_PORT	GENMASK(7, 5)
++#define EN751221_FOE_IB2_MULTICAST	BIT(8)
++#define EN751221_FOE_IB2_PORT_MG	GENMASK(17, 12)
++#define EN751221_FOE_IB2_PORT_AG	GENMASK(23, 18)
++
++#define EN751221_PPE_CPU_REASON_NO_FLOW	0x07
++#define EN751221_PPE_CPU_REASON_HIT_UNBIND	0x0e
++#define EN751221_PPE_CPU_REASON_BIND_RATE	0x0f
++#define EN751221_PPE_PKT_TYPE_IPV4_HNAPT	0
++#define EN751221_FOE_STATE_INVALID	0
++#define EN751221_FOE_STATE_BIND		2
++
+ #define REG_FE_INT_STATUS		0x0008
+ #define	GDM2_RX_INTR3_MASK		BIT(23)
+ #define	GDM2_RX_INTR2_MASK		BIT(22)
+-- 
+2.55.0
+

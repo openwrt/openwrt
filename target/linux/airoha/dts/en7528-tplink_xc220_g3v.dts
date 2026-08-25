@@ -132,13 +132,8 @@ model = "TP-Link xc220 g3v";
 			};
 
 			partition@50000 {
-				label = "kernel";
-				reg = <0x00050000 0x00220000>;
-			};
-
-			partition@270000 {
-				label = "rootfs";
-				reg = <0x00270000 0x00cd0000>;
+				label = "tclinux";
+				reg = <0x00050000 0x00ef0000>;
 			};
 
 			partition@f40000 {
@@ -162,7 +157,6 @@ model = "TP-Link xc220 g3v";
 
 					gponsn: gponsn@40001 {
 						reg = <0x40001 0x10>;
-						#nvmem-cell-cells = <1>;
 					};
 
 					eeprom@50000 {
@@ -221,6 +215,9 @@ model = "TP-Link xc220 g3v";
 
 &gdm1 {
 	status = "okay";
+
+	nvmem-cells = <&macaddr 0>;
+	nvmem-cell-names = "mac-address";
 };
 
 &gdm2 {

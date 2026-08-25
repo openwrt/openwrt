@@ -1,0 +1,181 @@
+From 346bb9f641d673a1233e5b1f4580b0eda4b24e51 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Tue, 11 Aug 2026 19:03:20 -0300
+Subject: [PATCH] watchdog: airoha: add EcoNet EN751221 support
+
+EN751221 uses the same watchdog timer register block as EN7581, but
+its vendor timer setup requires toggle mode on the watchdog timer slot.
+Add per-SoC control data, enable the driver on EcoNet MIPS, and use
+the existing EN751221 BUS clock provider.
+
+The timer control register also contains W1C interrupt status bits.
+Mask sibling timer status bits during read/modify/write and reload the
+watchdog with the direct write sequence used by both vendor trees.
+
+Signed-off-by: OpenAI <noreply@openai.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/watchdog/Kconfig      | 17 ++++++-----
+ drivers/watchdog/airoha_wdt.c | 57 ++++++++++++++++++++++++++---------
+ 2 files changed, 53 insertions(+), 21 deletions(-)
+
+diff --git a/drivers/watchdog/Kconfig b/drivers/watchdog/Kconfig
+index 05008d937e40..4e97ede97457 100644
+--- a/drivers/watchdog/Kconfig
++++ b/drivers/watchdog/Kconfig
+@@ -416,17 +416,20 @@ config SL28CPLD_WATCHDOG
+ 	  To compile this driver as a module, choose M here: the
+ 	  module will be called sl28cpld_wdt.
+ 
+-# ALPHA Architecture
+-
+-# ARM Architecture
++# Airoha/EcoNet SoCs
+ 
+ config AIROHA_WATCHDOG
+-	tristate "Airoha EN7581 Watchdog"
+-	depends on ARCH_AIROHA || COMPILE_TEST
++	tristate "Airoha/EcoNet watchdog"
++	depends on ARCH_AIROHA || ECONET || COMPILE_TEST
++	select COMMON_CLK_EN7523
+ 	select WATCHDOG_CORE
+ 	help
+-	  Watchdog timer embedded into Airoha SoC. This will reboot your
+-	  system when the timeout is reached.
++	  Watchdog timer embedded into Airoha and EcoNet SoCs. This will
++	  reboot your system when the timeout is reached.
++
++# ALPHA Architecture
++
++# ARM Architecture
+ 
+ config ARM_SP805_WATCHDOG
+ 	tristate "ARM SP805 Watchdog"
+diff --git a/drivers/watchdog/airoha_wdt.c b/drivers/watchdog/airoha_wdt.c
+index dc8ca11c14d8..a4086664ed0a 100644
+--- a/drivers/watchdog/airoha_wdt.c
++++ b/drivers/watchdog/airoha_wdt.c
+@@ -24,8 +24,10 @@
+ /* Base address of timer and watchdog registers */
+ #define TIMER_CTRL			0x0
+ #define   WDT_ENABLE			BIT(25)
+-#define   WDT_TIMER_INTERRUPT		BIT(21)
+-/* Timer3 is used as Watchdog Timer */
++#define   WDT_TIMER_INTERRUPT_STATUS	BIT(21)
++#define   WDT_TIMER_STATUS_MASK		GENMASK(21, 16)
++#define   WDT_TIMER_MODE			BIT(13)
++/* The watchdog slot is timer3 on EN7581 and timer5 on EN751221. */
+ #define   WDT_TIMER_ENABLE		BIT(5)
+ #define WDT_TIMER_LOAD_VALUE		0x2c
+ #define WDT_TIMER_CUR_VALUE		0x30
+@@ -33,9 +35,14 @@
+ #define WDT_RELOAD			0x38
+ #define   WDT_RLD			BIT(0)
+ 
++struct airoha_wdt_soc_data {
++	u32 timer_mode;
++};
++
+ /* Airoha watchdog structure description */
+ struct airoha_wdt_desc {
+ 	struct watchdog_device wdog_dev;
++	const struct airoha_wdt_soc_data *soc_data;
+ 	unsigned int wdt_freq;
+ 	void __iomem *base;
+ };
+@@ -51,16 +58,28 @@ module_param(nowayout, bool, 0);
+ MODULE_PARM_DESC(nowayout, "Watchdog cannot be stopped once started (default="
+ 		 __MODULE_STRING(WATCHDOG_NOWAYOUT) ")");
+ 
+-static int airoha_wdt_start(struct watchdog_device *wdog_dev)
++static void airoha_wdt_enable(struct airoha_wdt_desc *airoha_wdt, u32 load)
+ {
+-	struct airoha_wdt_desc *airoha_wdt = watchdog_get_drvdata(wdog_dev);
+ 	u32 val;
+ 
++	/* Program the countdown before enabling the watchdog. */
++	writel(load, airoha_wdt->base + WDT_TIMER_LOAD_VALUE);
++
+ 	val = readl(airoha_wdt->base + TIMER_CTRL);
+-	val |= (WDT_TIMER_ENABLE | WDT_ENABLE | WDT_TIMER_INTERRUPT);
++	/* Interrupt status bits are W1C; preserve pending sibling timers. */
++	val &= ~WDT_TIMER_STATUS_MASK;
++	val |= WDT_TIMER_ENABLE | WDT_ENABLE | WDT_TIMER_INTERRUPT_STATUS;
++	val |= airoha_wdt->soc_data->timer_mode;
+ 	writel(val, airoha_wdt->base + TIMER_CTRL);
+-	val = wdog_dev->timeout * airoha_wdt->wdt_freq;
+-	writel(val, airoha_wdt->base + WDT_TIMER_LOAD_VALUE);
++}
++
++static int airoha_wdt_start(struct watchdog_device *wdog_dev)
++{
++	struct airoha_wdt_desc *airoha_wdt = watchdog_get_drvdata(wdog_dev);
++	u32 load;
++
++	load = wdog_dev->timeout * airoha_wdt->wdt_freq;
++	airoha_wdt_enable(airoha_wdt, load);
+ 
+ 	return 0;
+ }
+@@ -71,7 +90,8 @@ static int airoha_wdt_stop(struct watchdog_device *wdog_dev)
+ 	u32 val;
+ 
+ 	val = readl(airoha_wdt->base + TIMER_CTRL);
+-	val &= (~WDT_ENABLE & ~WDT_TIMER_ENABLE);
++	val &= ~WDT_TIMER_STATUS_MASK;
++	val &= ~(WDT_ENABLE | WDT_TIMER_ENABLE);
+ 	writel(val, airoha_wdt->base + TIMER_CTRL);
+ 
+ 	return 0;
+@@ -80,11 +100,8 @@ static int airoha_wdt_stop(struct watchdog_device *wdog_dev)
+ static int airoha_wdt_ping(struct watchdog_device *wdog_dev)
+ {
+ 	struct airoha_wdt_desc *airoha_wdt = watchdog_get_drvdata(wdog_dev);
+-	u32 val;
+ 
+-	val = readl(airoha_wdt->base + WDT_RELOAD);
+-	val |= WDT_RLD;
+-	writel(val, airoha_wdt->base + WDT_RELOAD);
++	writel(WDT_RLD, airoha_wdt->base + WDT_RELOAD);
+ 
+ 	return 0;
+ }
+@@ -136,6 +153,10 @@ static int airoha_wdt_probe(struct platform_device *pdev)
+ 	if (!airoha_wdt)
+ 		return -ENOMEM;
+ 
++	airoha_wdt->soc_data = device_get_match_data(dev);
++	if (!airoha_wdt->soc_data)
++		return -EINVAL;
++
+ 	airoha_wdt->base = devm_platform_ioremap_resource(pdev, 0);
+ 	if (IS_ERR(airoha_wdt->base))
+ 		return PTR_ERR(airoha_wdt->base);
+@@ -190,8 +211,16 @@ static int airoha_wdt_resume(struct device *dev)
+ 	return 0;
+ }
+ 
++static const struct airoha_wdt_soc_data en7581_wdt_data = {
++};
++
++static const struct airoha_wdt_soc_data en751221_wdt_data = {
++	.timer_mode = WDT_TIMER_MODE,
++};
++
+ static const struct of_device_id airoha_wdt_of_match[] = {
+-	{ .compatible = "airoha,en7581-wdt", },
++	{ .compatible = "airoha,en7581-wdt", .data = &en7581_wdt_data },
++	{ .compatible = "econet,en751221-wdt", .data = &en751221_wdt_data },
+ 	{ },
+ };
+ 
+@@ -212,5 +241,5 @@ module_platform_driver(airoha_wdt_driver);
+ 
+ MODULE_AUTHOR("Mayur Kumar <mayur.kumar@airoha.com>");
+ MODULE_AUTHOR("Christian Marangi <ansuelsmth@gmail.com>");
+-MODULE_DESCRIPTION("Airoha EN7581 Watchdog Driver");
++MODULE_DESCRIPTION("Airoha/EcoNet Watchdog Driver");
+ MODULE_LICENSE("GPL");
+-- 
+2.55.0
+

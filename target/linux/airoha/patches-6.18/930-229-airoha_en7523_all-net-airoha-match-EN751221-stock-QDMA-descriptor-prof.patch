@@ -1,0 +1,49 @@
+From eda7f0aeec77ab2f885fbb15721471314079d035 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Tue, 11 Aug 2026 14:04:29 -0300
+Subject: [PATCH] net: airoha: match EN751221 stock QDMA descriptor profile
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/econet_eth.c | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/econet_eth.c b/drivers/net/ethernet/airoha/econet_eth.c
+index ce1bbdca9046..b60e4c7509e8 100644
+--- a/drivers/net/ethernet/airoha/econet_eth.c
++++ b/drivers/net/ethernet/airoha/econet_eth.c
+@@ -920,7 +920,8 @@ static int econet_init_hw_fwd(struct econet_qdma *qdma)
+ 
+ 	cfg1 = econet_rreg(&qdma->regs->hwf_cfg1);
+ 	set_qregs_hwf_cfg1_fwd_desc_n(&cfg1, num_desc);
+-	set_qregs_hwf_cfg1_overhead(&cfg1, 0x14);
++	set_qregs_hwf_cfg1_overhead_en(&cfg1, true);
++	set_qregs_hwf_cfg1_overhead(&cfg1, qdma->id == 0 ? 0x14 : 0x18);
+ 	set_qregs_hwf_cfg1_start(&cfg1, true);
+ 	econet_wreg(cfg1, &qdma->regs->hwf_cfg1);
+ 
+@@ -2246,18 +2247,18 @@ static void econet_prepare_qdma_cfg(struct econet_qdma_cfg *cfg,
+ 		cfg->num_rx_descs[1] = 512;
+ 		cfg->num_tx_descs[0] = 128;
+ 		cfg->num_tx_descs[1] = 128;
+-		cfg->done_list_size[0] = 256;
++		cfg->done_list_size[0] = 2048;
+ 		cfg->done_list_irq_threshold[0] = 16;
+ 		cfg->num_fwd_descs = 1024;
+ 		cfg->fwd_low_threshold = 128;
+ 		cfg->num_channels = 8;
+ 	} else if (soc->en751221_special_tag && id == 1) {
+ 		/* Vendor QDMA_WAN profile. */
+-		cfg->num_rx_descs[0] = 256;
++		cfg->num_rx_descs[0] = 512;
+ 		cfg->num_rx_descs[1] = 256;
+ 		cfg->num_tx_descs[0] = 1024;
+ 		cfg->num_tx_descs[1] = 128;
+-		cfg->done_list_size[0] = 512;
++		cfg->done_list_size[0] = 2048;
+ 		cfg->done_list_irq_threshold[0] = 16;
+ 		cfg->num_fwd_descs = 4096;
+ 		cfg->fwd_low_threshold = 256;
+-- 
+2.55.0
+

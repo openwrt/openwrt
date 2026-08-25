@@ -1,0 +1,57 @@
+From 80f3fbae0e5d2929c15194b0da9a938e1f866343 Mon Sep 17 00:00:00 2001
+From: Ifran Ali <khanu.i.i.k.2000@gmail.com>
+Date: Sat, 22 Aug 2026 21:21:00 +0530
+Subject: [PATCH] net: omci: reconcile services after a MIB reset
+
+930-176 (net: omci: restore ONU-created MEs on MIB reset) rebuilds the
+MIB on a MIB Reset - the standard ONU-created defaults and the active
+profile's vendor MEs - but omci_agent_mib_reset_locked() never calls
+reconcile_services again afterward, even though
+omci_agent_clear_services_locked() at the top of that same function
+just tore down every applied service.
+
+A MIB Reset is not unusual OLT behavior; it's a normal part of G.988
+post-activation provisioning. On a profile whose datapath is default-
+seeded MIB state rather than explicit OLT Creates (Nokia/ALCL's VEIP
+bridge, for example), that state survives the reset untouched - a
+partial reset only erases OLT-origin objects - but nothing reapplies
+it to hardware. The ONU is left in O5 with OMCI up and no datapath at
+all, indefinitely, until some unrelated event (e.g. an Alloc-ID
+assignment) happens to trigger reconcile again.
+
+Reconcile once more after a successful reset so the just-rebuilt MIB
+gets re-applied to hardware instead of leaving the ONU stranded.
+
+Signed-off-by: Ifran Ali <khanu.i.i.k.2000@gmail.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ net/omci/agent.c | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+diff --git a/net/omci/agent.c b/net/omci/agent.c
+index 775d849f94f4..01e2691ba622 100644
+--- a/net/omci/agent.c
++++ b/net/omci/agent.c
+@@ -2618,6 +2618,19 @@ static int omci_agent_mib_reset_locked(struct omci_device *odev, bool all,
+ 	agent->upload_index = 0;
+ 	omci_agent_reset_duplicate_locked(agent);
+ 
++	/*
++	 * omci_agent_clear_services_locked() above tore down every applied
++	 * service. The MIB objects it left in place (or just rebuilt) may
++	 * still describe a complete datapath - e.g. a profile's default-
++	 * seeded VEIP bridge, which a MIB Reset never touches since it only
++	 * erases OLT-origin objects. Without this, a MIB Reset (which every
++	 * OLT sends as a normal part of post-activation provisioning)
++	 * leaves the ONU in O5 with OMCI up and no datapath, indefinitely,
++	 * until some unrelated event happens to trigger reconcile again.
++	 */
++	if (!ret)
++		omci_agent_reconcile_services_locked(odev);
++
+ 	return ret ?: reset_ret;
+ }
+ 
+-- 
+2.55.0
+

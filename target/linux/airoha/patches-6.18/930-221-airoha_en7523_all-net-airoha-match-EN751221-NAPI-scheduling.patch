@@ -1,0 +1,58 @@
+From cbff23f9afbda6b72d514bfde6a38d1ddd16b301 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Tue, 11 Aug 2026 14:04:22 -0300
+Subject: [PATCH] net: airoha: match EN751221 NAPI scheduling
+
+The EN7512/EN7521 vendor Ethernet path uses normal softirq NAPI with a weight of 128. Avoid inheriting the common Airoha threaded-NAPI default on the MIPS backend and match the LAN RX descriptor low threshold of 32.\n\nSigned-off-by: OpenAI <noreply@openai.com>
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/econet_eth.c | 18 ++++++++++++++++--
+ 1 file changed, 16 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/econet_eth.c b/drivers/net/ethernet/airoha/econet_eth.c
+index ef91fab3bacb..02d77c9af240 100644
+--- a/drivers/net/ethernet/airoha/econet_eth.c
++++ b/drivers/net/ethernet/airoha/econet_eth.c
+@@ -621,7 +621,8 @@ static int econet_init_rx_queue(struct econet_q_rx *q,
+ 		.dev = qdma->dev,
+ 		.napi = &q->napi,
+ 	};
+-	int threshold = clamp(ndesc >> 3, 1, 32);
++	int threshold = qdma->soc->en751221_special_tag && qdma->id == 0 ?
++			32 : clamp(ndesc >> 3, 1, 32);
+ 	struct qregs_rxring_size rrs;
+ 	struct qregs_rxring_low rrl;
+ 	dma_addr_t dma_addr;
+@@ -653,7 +654,12 @@ static int econet_init_rx_queue(struct econet_q_rx *q,
+ 
+ 	memset(q->desc, 0, q->ndesc * sizeof(*q->desc));
+ 
+-	netif_napi_add(qdma->napi_dev, &q->napi, econet_qdma_rx_napi_poll);
++	if (qdma->soc->en751221_special_tag)
++		netif_napi_add_weight(qdma->napi_dev, &q->napi,
++				      econet_qdma_rx_napi_poll, 128);
++	else
++		netif_napi_add(qdma->napi_dev, &q->napi,
++			       econet_qdma_rx_napi_poll);
+ 
+ 	econet_wreg(lower_32_bits(dma_addr), &q->qchain_regs->rxbase);
+ 
+@@ -1347,6 +1353,14 @@ struct econet_qdma *econet_qdma_new(struct econet_eth *eth,
+ 	if (!qdma->napi_dev)
+ 		return ERR_PTR(-ENOMEM);
+ 
++	/*
++	 * The EN7512/EN7521 SDK runs Ethernet NAPI from softirq context. The
++	 * common Airoha helper defaults to threaded NAPI for the newer ARM SoCs,
++	 * which adds avoidable scheduler wakeups to the MIPS packet path.
++	 */
++	if (qdma->soc->en751221_special_tag)
++		qdma->napi_dev->threaded = false;
++
+ 	err = econet_init(eth->dev, qdma, irqs, num_irqs);
+ 	if (err) {
+ 		econet_qdma_destroy(qdma);
+-- 
+2.55.0
+

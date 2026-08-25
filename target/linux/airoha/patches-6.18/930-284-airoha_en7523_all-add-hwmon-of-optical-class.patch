@@ -1,0 +1,729 @@
+From 7143ea7be8c64f65acdedeb7918f9bbb56bc6fb6 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Wed, 19 Aug 2026 16:57:12 -0300
+Subject: [PATCH] add hwmon of optical class
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ Documentation/driver-api/optical-frontend.rst |  19 ++
+ drivers/net/optical/airoha/airoha_lddla.h     |   8 +
+ .../net/optical/airoha/airoha_lddla_core.c    | 145 ++++++++++
+ drivers/net/optical/core.c                    | 258 +++++++++++++++++-
+ drivers/net/optical/hwmon.c                   |  26 +-
+ drivers/net/optical/semtech/gn25l95.c         |   1 +
+ include/linux/optical_frontend.h              |  19 ++
+ 7 files changed, 469 insertions(+), 7 deletions(-)
+
+diff --git a/Documentation/driver-api/optical-frontend.rst b/Documentation/driver-api/optical-frontend.rst
+index 3d240a98b134..290dbc1db876 100644
+--- a/Documentation/driver-api/optical-frontend.rst
++++ b/Documentation/driver-api/optical-frontend.rst
+@@ -89,3 +89,22 @@ before invoking the optional provider ``->tx_enable(false)`` callback.  Enable
+ invokes ``->tx_enable(true)`` first and deasserts the GPIO only after that
+ callback succeeds.  A provider which needs no additional register sequence
+ may omit the callback and rely entirely on the GPIO.
++
++Sysfs and hwmon
++===============
++
++Every registered frontend appears below ``/sys/class/optical_frontend``.  The
++class attributes expose stable identity, selected/supported protocols and
++normalized state.  They are read-only: operational ownership remains with the
++MAC/PHY consumer rather than userspace.
++
++Physical measurements are not duplicated in the optical class.  Providers with
++telemetry register the generic hwmon bridge, which exposes temperature, supply
++voltage, laser bias, Tx/Rx power, thresholds and per-channel alarms using the
++standard hwmon ABI.  The frontend class device contains an ``hwmon`` symlink to
++that device.
++
++Providers may add read-only vendor-specific attribute groups through
++``struct optical_frontend_desc::groups``.  Airoha LDD/LA providers use this for
++``bob/`` metadata describing the normalized factory BOB image; Semtech and
++other providers are not required to implement this group.
+diff --git a/drivers/net/optical/airoha/airoha_lddla.h b/drivers/net/optical/airoha/airoha_lddla.h
+index 53ac24536aba..d33d1b78d20b 100644
+--- a/drivers/net/optical/airoha/airoha_lddla.h
++++ b/drivers/net/optical/airoha/airoha_lddla.h
+@@ -63,6 +63,12 @@ enum airoha_lddla_bob_endian {
+ 	AIROHA_LDDLA_BOB_ENDIAN_BIG,
+ };
+ 
++enum airoha_lddla_bob_source {
++	AIROHA_LDDLA_BOB_SOURCE_NONE,
++	AIROHA_LDDLA_BOB_SOURCE_NVMEM,
++	AIROHA_LDDLA_BOB_SOURCE_FIRMWARE,
++};
++
+ /* Keep the vendor driver names while using the generic alarm ABI. */
+ #define AIROHA_ALARM_TX_LOW_POWER	OPTICAL_FRONTEND_ALARM_TX_LOW_POWER
+ #define AIROHA_ALARM_TX_HIGH_POWER	OPTICAL_FRONTEND_ALARM_TX_HIGH_POWER
+@@ -148,6 +154,7 @@ struct airoha_lddla_ops {
+  * @bob: canonical little-endian in-memory BOB image.
+  * @bob_len: number of valid bytes in @bob.
+  * @bob_valid: true when a valid BOB image was loaded.
++ * @bob_source: origin of the active BOB image.
+  * @bob_source_endian: byte order detected in the source blob.
+  * @bob_magic: normalized BOB magic read from byte 0x94.
+  * @bob_chip_id: model/variant byte dynamically extracted from @bob_magic.
+@@ -175,6 +182,7 @@ struct airoha_lddla {
+ 	u8 bob[AIROHA_LDDLA_BOB_MAX_SIZE];
+ 	size_t bob_len;
+ 	bool bob_valid;
++	enum airoha_lddla_bob_source bob_source;
+ 	enum airoha_lddla_bob_endian bob_source_endian;
+ 	u32 bob_magic;
+ 	u8 bob_chip_id;
+diff --git a/drivers/net/optical/airoha/airoha_lddla_core.c b/drivers/net/optical/airoha/airoha_lddla_core.c
+index 5a6b8eece22a..234e8f106da8 100644
+--- a/drivers/net/optical/airoha/airoha_lddla_core.c
++++ b/drivers/net/optical/airoha/airoha_lddla_core.c
+@@ -33,6 +33,7 @@
+ #include <linux/seq_file.h>
+ #include <linux/slab.h>
+ #include <linux/string.h>
++#include <linux/sysfs.h>
+ #include <linux/unaligned.h>
+ 
+ #include "airoha_lddla.h"
+@@ -341,6 +342,8 @@ static int lddla_bob_load_nvmem(struct airoha_lddla *lddla)
+ 
+ 	ret = lddla_bob_import(lddla, buf, len, "NVMEM");
+ 	kfree(buf);
++	if (!ret)
++		lddla->bob_source = AIROHA_LDDLA_BOB_SOURCE_NVMEM;
+ 	return ret;
+ }
+ #else
+@@ -365,6 +368,8 @@ static int lddla_bob_load_firmware(struct airoha_lddla *lddla)
+ 	ret = lddla_bob_import(lddla, fw->data, fw->size,
+ 			       lddla->bob_fw_name);
+ 	release_firmware(fw);
++	if (!ret)
++		lddla->bob_source = AIROHA_LDDLA_BOB_SOURCE_FIRMWARE;
+ 	return ret;
+ }
+ 
+@@ -433,6 +438,7 @@ void lddla_flash_defaults(struct airoha_lddla *lddla)
+ 	memset(lddla->bob, 0xff, sizeof(lddla->bob));
+ 	lddla->bob_len = min_t(size_t, size, sizeof(lddla->bob));
+ 	lddla->bob_valid = false;
++	lddla->bob_source = AIROHA_LDDLA_BOB_SOURCE_NONE;
+ 	lddla->bob_source_endian = AIROHA_LDDLA_BOB_ENDIAN_UNKNOWN;
+ }
+ 
+@@ -582,6 +588,143 @@ static const struct optical_frontend_ops airoha_lddla_frontend_ops = {
+ 	.tx_rearm = airoha_lddla_frontend_tx_rearm,
+ };
+ 
++static struct airoha_lddla *airoha_lddla_from_frontend_dev(struct device *dev)
++{
++	struct optical_frontend *frontend = optical_frontend_from_dev(dev);
++
++	return frontend ? optical_frontend_get_drvdata(frontend) : NULL;
++}
++
++static ssize_t valid_show(struct device *dev,
++			  struct device_attribute *attr, char *buf)
++{
++	struct airoha_lddla *lddla = airoha_lddla_from_frontend_dev(dev);
++
++	return lddla ? sysfs_emit(buf, "%u\n", lddla->bob_valid) : -ENODEV;
++}
++static DEVICE_ATTR_RO(valid);
++
++static ssize_t source_show(struct device *dev,
++			   struct device_attribute *attr, char *buf)
++{
++	struct airoha_lddla *lddla = airoha_lddla_from_frontend_dev(dev);
++	const char *source;
++
++	if (!lddla)
++		return -ENODEV;
++
++	switch (lddla->bob_source) {
++	case AIROHA_LDDLA_BOB_SOURCE_NVMEM:
++		source = "nvmem";
++		break;
++	case AIROHA_LDDLA_BOB_SOURCE_FIRMWARE:
++		source = "firmware";
++		break;
++	case AIROHA_LDDLA_BOB_SOURCE_NONE:
++	default:
++		source = "none";
++		break;
++	}
++
++	return sysfs_emit(buf, "%s\n", source);
++}
++static DEVICE_ATTR_RO(source);
++
++static ssize_t endian_show(struct device *dev,
++			   struct device_attribute *attr, char *buf)
++{
++	struct airoha_lddla *lddla = airoha_lddla_from_frontend_dev(dev);
++	const char *endian;
++
++	if (!lddla)
++		return -ENODEV;
++
++	switch (lddla->bob_source_endian) {
++	case AIROHA_LDDLA_BOB_ENDIAN_LITTLE:
++		endian = "little";
++		break;
++	case AIROHA_LDDLA_BOB_ENDIAN_BIG:
++		endian = "big";
++		break;
++	case AIROHA_LDDLA_BOB_ENDIAN_UNKNOWN:
++	default:
++		endian = "unknown";
++		break;
++	}
++
++	return sysfs_emit(buf, "%s\n", endian);
++}
++static DEVICE_ATTR_RO(endian);
++
++static ssize_t size_show(struct device *dev,
++			 struct device_attribute *attr, char *buf)
++{
++	struct airoha_lddla *lddla = airoha_lddla_from_frontend_dev(dev);
++
++	return lddla ? sysfs_emit(buf, "%zu\n", lddla->bob_len) : -ENODEV;
++}
++static DEVICE_ATTR_RO(size);
++
++static ssize_t magic_show(struct device *dev,
++			  struct device_attribute *attr, char *buf)
++{
++	struct airoha_lddla *lddla = airoha_lddla_from_frontend_dev(dev);
++
++	if (!lddla)
++		return -ENODEV;
++	if (!lddla->bob_valid)
++		return -ENODATA;
++	return sysfs_emit(buf, "0x%08x\n", lddla->bob_magic);
++}
++static DEVICE_ATTR_RO(magic);
++
++static ssize_t chip_id_show(struct device *dev,
++			    struct device_attribute *attr, char *buf)
++{
++	struct airoha_lddla *lddla = airoha_lddla_from_frontend_dev(dev);
++
++	if (!lddla)
++		return -ENODEV;
++	if (!lddla->bob_valid)
++		return -ENODATA;
++	return sysfs_emit(buf, "0x%02x\n", lddla->bob_chip_id);
++}
++static DEVICE_ATTR_RO(chip_id);
++
++static ssize_t profile_show(struct device *dev,
++			    struct device_attribute *attr, char *buf)
++{
++	struct airoha_lddla *lddla = airoha_lddla_from_frontend_dev(dev);
++
++	if (!lddla)
++		return -ENODEV;
++	if (!lddla->bob_valid)
++		return -ENODATA;
++	return sysfs_emit(buf, "0x%02x\n", lddla->bob_profile);
++}
++static DEVICE_ATTR_RO(profile);
++
++static struct attribute *airoha_lddla_bob_attrs[] = {
++	&dev_attr_valid.attr,
++	&dev_attr_source.attr,
++	&dev_attr_endian.attr,
++	&dev_attr_size.attr,
++	&dev_attr_magic.attr,
++	&dev_attr_chip_id.attr,
++	&dev_attr_profile.attr,
++	NULL,
++};
++
++static const struct attribute_group airoha_lddla_bob_group = {
++	.name = "bob",
++	.attrs = airoha_lddla_bob_attrs,
++};
++
++static const struct attribute_group *airoha_lddla_frontend_groups[] = {
++	&airoha_lddla_bob_group,
++	NULL,
++};
++
+ int lddla_frontend_register(struct airoha_lddla *lddla)
+ {
+ 	const struct airoha_lddla_ops *ops = lddla->ops;
+@@ -589,6 +732,7 @@ int lddla_frontend_register(struct airoha_lddla *lddla)
+ 
+ 	memset(desc, 0, sizeof(*desc));
+ 	desc->name = ops->name;
++	desc->type = "lddla";
+ 	desc->vendor_name = ops->vendor_name ?: "Airoha";
+ 	if (ops->vendor_name) {
+ 		memcpy(desc->vendor_oui, ops->vendor_oui,
+@@ -604,6 +748,7 @@ int lddla_frontend_register(struct airoha_lddla *lddla)
+ 	desc->protocols = ops->protocols;
+ 	desc->thresholds = ops->thresholds;
+ 	desc->telemetry_cache_ms = 100;
++	desc->groups = airoha_lddla_frontend_groups;
+ 
+ 	if (ops->temp_refresh || ops->bosa_temp_refresh)
+ 		desc->capabilities |= OPTICAL_FRONTEND_CAP_TEMPERATURE;
+diff --git a/drivers/net/optical/core.c b/drivers/net/optical/core.c
+index 177407d05650..f9c7d1dcd0c8 100644
+--- a/drivers/net/optical/core.c
++++ b/drivers/net/optical/core.c
+@@ -23,6 +23,7 @@
+ #include <linux/property.h>
+ #include <linux/slab.h>
+ #include <linux/string.h>
++#include <linux/sysfs.h>
+ 
+ struct optical_frontend {
+ 	struct device dev;
+@@ -45,6 +46,215 @@ struct optical_frontend {
+ 
+ static DEFINE_IDA(optical_frontend_ida);
+ 
++static const char *optical_frontend_protocol_name(enum optical_frontend_protocol protocol)
++{
++	switch (protocol) {
++	case OPTICAL_FRONTEND_PROTO_ETHERNET:
++		return "ethernet";
++	case OPTICAL_FRONTEND_PROTO_EPON:
++		return "epon";
++	case OPTICAL_FRONTEND_PROTO_GPON:
++		return "gpon";
++	case OPTICAL_FRONTEND_PROTO_XGPON:
++		return "xgpon";
++	case OPTICAL_FRONTEND_PROTO_XGSPON:
++		return "xgspon";
++	case OPTICAL_FRONTEND_PROTO_NGPON2:
++		return "ngpon2";
++	case OPTICAL_FRONTEND_PROTO_UNSPEC:
++	default:
++		return "unspecified";
++	}
++}
++
++static ssize_t vendor_show(struct device *dev, struct device_attribute *attr,
++			   char *buf)
++{
++	struct optical_frontend *frontend =
++		container_of(dev, struct optical_frontend, dev);
++
++	return sysfs_emit(buf, "%s\n",
++			  frontend->desc->vendor_name ?: "unknown");
++}
++static DEVICE_ATTR_RO(vendor);
++
++static ssize_t model_show(struct device *dev, struct device_attribute *attr,
++			  char *buf)
++{
++	struct optical_frontend *frontend =
++		container_of(dev, struct optical_frontend, dev);
++
++	return sysfs_emit(buf, "%s\n",
++			  frontend->desc->part_number ?: frontend->desc->name);
++}
++static DEVICE_ATTR_RO(model);
++
++static ssize_t type_show(struct device *dev, struct device_attribute *attr,
++			 char *buf)
++{
++	struct optical_frontend *frontend =
++		container_of(dev, struct optical_frontend, dev);
++
++	return sysfs_emit(buf, "%s\n", frontend->desc->type ?: "unknown");
++}
++static DEVICE_ATTR_RO(type);
++
++static ssize_t capabilities_show(struct device *dev,
++				 struct device_attribute *attr, char *buf)
++{
++	struct optical_frontend *frontend =
++		container_of(dev, struct optical_frontend, dev);
++	u32 capabilities = frontend->desc->capabilities;
++
++	if (frontend->tx_disable_gpio)
++		capabilities |= OPTICAL_FRONTEND_CAP_TX_DISABLE;
++
++	return sysfs_emit(buf, "0x%08x\n", capabilities);
++}
++static DEVICE_ATTR_RO(capabilities);
++
++static ssize_t supported_protocols_show(struct device *dev,
++					struct device_attribute *attr,
++					char *buf)
++{
++	struct optical_frontend *frontend =
++		container_of(dev, struct optical_frontend, dev);
++	ssize_t len = 0;
++	unsigned int protocol;
++
++	for (protocol = OPTICAL_FRONTEND_PROTO_ETHERNET;
++	     protocol <= OPTICAL_FRONTEND_PROTO_NGPON2; protocol++) {
++		if (!(frontend->desc->protocols & BIT(protocol)))
++			continue;
++		len += sysfs_emit_at(buf, len, "%s%s", len ? " " : "",
++				     optical_frontend_protocol_name(protocol));
++	}
++
++	return sysfs_emit_at(buf, len, "\n");
++}
++static DEVICE_ATTR_RO(supported_protocols);
++
++static ssize_t protocol_show(struct device *dev, struct device_attribute *attr,
++			     char *buf)
++{
++	struct optical_frontend *frontend =
++		container_of(dev, struct optical_frontend, dev);
++	struct optical_frontend_mode mode;
++	int ret;
++
++	ret = optical_frontend_get_mode(frontend, &mode);
++	if (ret == -ENODATA)
++		return sysfs_emit(buf, "unspecified\n");
++	if (ret)
++		return ret;
++
++	return sysfs_emit(buf, "%s\n", optical_frontend_protocol_name(mode.protocol));
++}
++static DEVICE_ATTR_RO(protocol);
++
++static int optical_frontend_sysfs_state(struct optical_frontend *frontend,
++					struct optical_frontend_state *state)
++{
++	int ret = optical_frontend_get_state(frontend, state);
++
++	return ret == -EOPNOTSUPP ? -ENODATA : ret;
++}
++
++#define OPTICAL_FRONTEND_STATE_ATTR(_name, _flag, _member) \
++static ssize_t _name##_show(struct device *dev, \
++			    struct device_attribute *attr, char *buf) \
++{ \
++	struct optical_frontend *frontend = \
++		container_of(dev, struct optical_frontend, dev); \
++	struct optical_frontend_state state; \
++	int ret; \
++\
++	ret = optical_frontend_sysfs_state(frontend, &state); \
++	if (ret) \
++		return ret; \
++	if (!(state.valid & (_flag))) \
++		return -ENODATA; \
++	return sysfs_emit(buf, "%u\n", state._member); \
++} \
++static DEVICE_ATTR_RO(_name)
++
++OPTICAL_FRONTEND_STATE_ATTR(present, OPTICAL_FRONTEND_STATE_F_PRESENT, present);
++OPTICAL_FRONTEND_STATE_ATTR(ready, OPTICAL_FRONTEND_STATE_F_READY, ready);
++OPTICAL_FRONTEND_STATE_ATTR(rx_los, OPTICAL_FRONTEND_STATE_F_RX_LOS, rx_los);
++OPTICAL_FRONTEND_STATE_ATTR(tx_fault, OPTICAL_FRONTEND_STATE_F_TX_FAULT, tx_fault);
++OPTICAL_FRONTEND_STATE_ATTR(tx_enabled, OPTICAL_FRONTEND_STATE_F_TX_ENABLED,
++			    tx_enabled);
++
++static ssize_t alarms_show(struct device *dev, struct device_attribute *attr,
++			   char *buf)
++{
++	struct optical_frontend *frontend =
++		container_of(dev, struct optical_frontend, dev);
++	struct optical_frontend_telemetry telemetry;
++	int ret;
++
++	ret = optical_frontend_get_telemetry(frontend, &telemetry);
++	if (ret)
++		return ret;
++	if (!(telemetry.valid & OPTICAL_FRONTEND_TELEMETRY_F_ALARMS))
++		return -ENODATA;
++
++	return sysfs_emit(buf, "0x%08x\n", telemetry.alarms);
++}
++static DEVICE_ATTR_RO(alarms);
++
++static struct attribute *optical_frontend_attrs[] = {
++	&dev_attr_vendor.attr,
++	&dev_attr_model.attr,
++	&dev_attr_type.attr,
++	&dev_attr_capabilities.attr,
++	&dev_attr_supported_protocols.attr,
++	&dev_attr_protocol.attr,
++	&dev_attr_present.attr,
++	&dev_attr_ready.attr,
++	&dev_attr_rx_los.attr,
++	&dev_attr_tx_fault.attr,
++	&dev_attr_tx_enabled.attr,
++	&dev_attr_alarms.attr,
++	NULL,
++};
++
++static umode_t optical_frontend_attr_is_visible(struct kobject *kobj,
++						struct attribute *attr, int n)
++{
++	struct device *dev = kobj_to_dev(kobj);
++	struct optical_frontend *frontend =
++		container_of(dev, struct optical_frontend, dev);
++
++	if (attr == &dev_attr_present.attr || attr == &dev_attr_ready.attr)
++		return frontend->ops->get_state ? 0444 : 0;
++	if (attr == &dev_attr_rx_los.attr)
++		return frontend->desc->capabilities & OPTICAL_FRONTEND_CAP_RX_LOS ?
++			0444 : 0;
++	if (attr == &dev_attr_tx_fault.attr)
++		return frontend->desc->capabilities & OPTICAL_FRONTEND_CAP_TX_FAULT ?
++			0444 : 0;
++	if (attr == &dev_attr_tx_enabled.attr)
++		return frontend->tx_disable_gpio || frontend->ops->tx_enable ||
++		       (frontend->desc->capabilities & OPTICAL_FRONTEND_CAP_TX_DISABLE) ?
++			0444 : 0;
++	if (attr == &dev_attr_alarms.attr)
++		return frontend->desc->capabilities & OPTICAL_FRONTEND_CAP_ALARMS ?
++			0444 : 0;
++
++	return 0444;
++}
++
++static const struct attribute_group optical_frontend_group = {
++	.attrs = optical_frontend_attrs,
++	.is_visible = optical_frontend_attr_is_visible,
++};
++
++static const struct attribute_group *optical_frontend_groups[] = {
++	&optical_frontend_group,
++	NULL,
++};
++
+ static void optical_frontend_dev_release(struct device *dev)
+ {
+ 	struct optical_frontend *frontend =
+@@ -57,6 +267,7 @@ static void optical_frontend_dev_release(struct device *dev)
+ static const struct class optical_frontend_class = {
+ 	.name = "optical_frontend",
+ 	.dev_release = optical_frontend_dev_release,
++	.dev_groups = optical_frontend_groups,
+ };
+ 
+ static void optical_frontend_unregister(void *data)
+@@ -117,6 +328,7 @@ devm_optical_frontend_register(struct device *dev,
+ 	device_initialize(&frontend->dev);
+ 	frontend->dev.class = &optical_frontend_class;
+ 	frontend->dev.parent = dev;
++	frontend->dev.groups = desc->groups;
+ 	device_set_node(&frontend->dev, dev_fwnode(dev));
+ 	dev_set_name(&frontend->dev, "frontend%d", frontend->id);
+ 
+@@ -243,6 +455,21 @@ void *optical_frontend_get_drvdata(struct optical_frontend *frontend)
+ }
+ EXPORT_SYMBOL_GPL(optical_frontend_get_drvdata);
+ 
++struct optical_frontend *optical_frontend_from_dev(struct device *dev)
++{
++	if (!dev || dev->class != &optical_frontend_class)
++		return NULL;
++
++	return container_of(dev, struct optical_frontend, dev);
++}
++EXPORT_SYMBOL_GPL(optical_frontend_from_dev);
++
++struct device *optical_frontend_get_device(struct optical_frontend *frontend)
++{
++	return frontend ? &frontend->dev : NULL;
++}
++EXPORT_SYMBOL_GPL(optical_frontend_get_device);
++
+ struct device *optical_frontend_get_provider(struct optical_frontend *frontend)
+ {
+ 	return frontend ? frontend->provider : NULL;
+@@ -354,18 +581,39 @@ EXPORT_SYMBOL_GPL(optical_frontend_tx_rearm);
+ int optical_frontend_get_state(struct optical_frontend *frontend,
+ 			       struct optical_frontend_state *state)
+ {
+-	int ret;
++	int gpio_value;
++	int ret = 0;
+ 
+ 	if (!frontend || !state)
+ 		return -EINVAL;
+-	if (!frontend->ops->get_state)
+-		return -EOPNOTSUPP;
+ 
+ 	memset(state, 0, sizeof(*state));
+ 	mutex_lock(&frontend->op_lock);
+-	ret = frontend->ops->get_state(frontend, state);
+-	mutex_unlock(&frontend->op_lock);
++	if (frontend->ops->get_state) {
++		ret = frontend->ops->get_state(frontend, state);
++		if (ret)
++			goto out;
++	}
++
++	/* TX_DISABLE is a core-owned interlock, so report it even when the
++	 * provider has no matching status register. GPIO values are logical:
++	 * one means disabled regardless of the electrical active level.
++	 */
++	if (frontend->tx_disable_gpio) {
++		gpio_value = gpiod_get_value_cansleep(frontend->tx_disable_gpio);
++		if (gpio_value < 0) {
++			ret = gpio_value;
++			goto out;
++		}
++		state->tx_enabled = !gpio_value;
++		state->valid |= OPTICAL_FRONTEND_STATE_F_TX_ENABLED;
++	}
+ 
++	if (!state->valid)
++		ret = -ENODATA;
++
++out:
++	mutex_unlock(&frontend->op_lock);
+ 	return ret;
+ }
+ EXPORT_SYMBOL_GPL(optical_frontend_get_state);
+diff --git a/drivers/net/optical/hwmon.c b/drivers/net/optical/hwmon.c
+index 25645f59e315..54b251d9b287 100644
+--- a/drivers/net/optical/hwmon.c
++++ b/drivers/net/optical/hwmon.c
+@@ -6,6 +6,7 @@
+ #include <linux/kernel.h>
+ #include <linux/module.h>
+ #include <linux/optical_frontend.h>
++#include <linux/sysfs.h>
+ 
+ static bool optical_frontend_hwmon_has_threshold(
+ 	const struct optical_frontend_desc *desc,
+@@ -285,25 +286,46 @@ static const struct hwmon_chip_info optical_frontend_hwmon_chip_info = {
+ 	.info = optical_frontend_hwmon_info,
+ };
+ 
++static void optical_frontend_hwmon_remove_link(void *data)
++{
++	struct optical_frontend *frontend = data;
++	struct device *dev = optical_frontend_get_device(frontend);
++
++	if (dev)
++		sysfs_remove_link(&dev->kobj, "hwmon");
++}
++
+ int devm_optical_frontend_hwmon_register(struct optical_frontend *frontend)
+ {
+ 	const struct optical_frontend_desc *desc;
++	struct device *frontend_dev;
+ 	struct device *provider;
+ 	struct device *hwmon;
++	int ret;
+ 
+ 	if (!frontend)
+ 		return -EINVAL;
+ 
+ 	desc = optical_frontend_get_desc(frontend);
++	frontend_dev = optical_frontend_get_device(frontend);
+ 	provider = optical_frontend_get_provider(frontend);
+-	if (!desc || !provider)
++	if (!desc || !frontend_dev || !provider)
+ 		return -EINVAL;
+ 
+ 	hwmon = devm_hwmon_device_register_with_info(provider, desc->name,
+ 						     frontend,
+ 						     &optical_frontend_hwmon_chip_info,
+ 						     NULL);
+-	return PTR_ERR_OR_ZERO(hwmon);
++	if (IS_ERR(hwmon))
++		return PTR_ERR(hwmon);
++
++	ret = sysfs_create_link(&frontend_dev->kobj, &hwmon->kobj, "hwmon");
++	if (ret)
++		return ret;
++
++	return devm_add_action_or_reset(provider,
++					optical_frontend_hwmon_remove_link,
++					frontend);
+ }
+ EXPORT_SYMBOL_GPL(devm_optical_frontend_hwmon_register);
+ 
+diff --git a/drivers/net/optical/semtech/gn25l95.c b/drivers/net/optical/semtech/gn25l95.c
+index f8ce5a6091fe..002f20236a64 100644
+--- a/drivers/net/optical/semtech/gn25l95.c
++++ b/drivers/net/optical/semtech/gn25l95.c
+@@ -151,6 +151,7 @@ static const struct optical_frontend_thresholds gn25l95_thresholds = {
+ static const struct gn25l95_chip_data gn25l95_data = {
+ 	.frontend = {
+ 		.name = "gn25l95",
++		.type = "lddla",
+ 		.vendor_name = "Semtech",
+ 		.vendor_oui = { 0x00, 0x00, 0x00 },
+ 		.part_number = "GN25L95",
+diff --git a/include/linux/optical_frontend.h b/include/linux/optical_frontend.h
+index 202f59180e33..426140e30545 100644
+--- a/include/linux/optical_frontend.h
++++ b/include/linux/optical_frontend.h
+@@ -8,6 +8,7 @@
+ #include <linux/kconfig.h>
+ #include <linux/types.h>
+ 
++struct attribute_group;
+ struct device;
+ struct fwnode_handle;
+ struct optical_frontend;
+@@ -152,6 +153,7 @@ struct optical_frontend_thresholds {
+ /**
+  * struct optical_frontend_desc - immutable provider description
+  * @name: short driver/model name used by hwmon and diagnostics
++ * @type: frontend type string exposed through sysfs (for example "lddla")
+  * @vendor_name: vendor string for SFF compatibility
+  * @vendor_oui: vendor OUI for SFF compatibility
+  * @part_number: part number for SFF compatibility
+@@ -161,9 +163,11 @@ struct optical_frontend_thresholds {
+  * @protocols: BIT(OPTICAL_FRONTEND_PROTO_*) bitmap
+  * @thresholds: optional normalized alarm thresholds
+  * @telemetry_cache_ms: core telemetry cache lifetime; zero disables caching
++ * @groups: optional provider-specific sysfs groups on the frontend class device
+  */
+ struct optical_frontend_desc {
+ 	const char *name;
++	const char *type;
+ 	const char *vendor_name;
+ 	u8 vendor_oui[3];
+ 	const char *part_number;
+@@ -173,6 +177,7 @@ struct optical_frontend_desc {
+ 	u32 protocols;
+ 	const struct optical_frontend_thresholds *thresholds;
+ 	u32 telemetry_cache_ms;
++	const struct attribute_group **groups;
+ };
+ 
+ /**
+@@ -211,6 +216,8 @@ devm_optical_frontend_get_by_fwnode(struct device *dev,
+ 				    const struct fwnode_handle *fwnode);
+ 
+ void *optical_frontend_get_drvdata(struct optical_frontend *frontend);
++struct optical_frontend *optical_frontend_from_dev(struct device *dev);
++struct device *optical_frontend_get_device(struct optical_frontend *frontend);
+ struct device *optical_frontend_get_provider(struct optical_frontend *frontend);
+ const struct optical_frontend_desc *
+ optical_frontend_get_desc(struct optical_frontend *frontend);
+@@ -254,6 +261,18 @@ static inline void *optical_frontend_get_drvdata(struct optical_frontend *fronte
+ 	return NULL;
+ }
+ 
++static inline struct optical_frontend *
++optical_frontend_from_dev(struct device *dev)
++{
++	return NULL;
++}
++
++static inline struct device *
++optical_frontend_get_device(struct optical_frontend *frontend)
++{
++	return NULL;
++}
++
+ static inline struct device *
+ optical_frontend_get_provider(struct optical_frontend *frontend)
+ {
+-- 
+2.55.0
+

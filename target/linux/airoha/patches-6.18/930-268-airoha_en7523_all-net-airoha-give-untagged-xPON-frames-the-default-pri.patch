@@ -1,0 +1,47 @@
+From 676437a978338b28d8eadb12ac0ee4e23e0e9d26 Mon Sep 17 00:00:00 2001
+From: Benjamin Larsson <banan@ludd.ltu.se>
+Date: Sun, 16 Aug 2026 12:22:56 +0200
+Subject: [PATCH] net: airoha: give untagged xPON frames the default priority
+
+An OLT commonly expresses its entire upstream service graph through an
+802.1p mapper, one service per p-bit. The transmit classifier reports a
+priority only for a frame that carries a VLAN tag, so an untagged frame is
+looked up with no priority at all and matches none of those services. It is
+then dropped in the transmit path, before a descriptor is built and before
+the hardware sees it.
+
+An untagged frame does have a priority: the default of zero, for which the
+mapper has an entry. Look it up that way, so untagged upstream traffic takes
+the GEM port and T-CONT the OLT provisioned for priority zero.
+
+Signed-off-by: OpenWrt Project <openwrt-devel@lists.openwrt.org>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth_gen1.c | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_eth_gen1.c b/drivers/net/ethernet/airoha/airoha_eth_gen1.c
+index 6049b693b310..1012b0d29916 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth_gen1.c
++++ b/drivers/net/ethernet/airoha/airoha_eth_gen1.c
+@@ -427,8 +427,16 @@ static int econet_xpon_classify(struct econet_gdm_port *port,
+ 		}
+ 	}
+ 
++	/*
++	 * An untagged frame still carries a priority: it is the default of
++	 * zero, and the 802.1p mapper an OLT provisions has an entry for it.
++	 * Treating such a frame as having no priority at all leaves it
++	 * matching no service on an OLT that expresses its whole service graph
++	 * through that mapper, and it is then dropped before ever reaching the
++	 * hardware.
++	 */
+ 	return econet_xpon_lookup_service(port, vlan_valid, vlan_id,
+-					  vlan_valid, pcp, info);
++					  true, pcp, info);
+ }
+ 
+ static netdev_tx_t econet_dev_xmit(struct sk_buff *skb, struct net_device *dev)
+-- 
+2.55.0
+

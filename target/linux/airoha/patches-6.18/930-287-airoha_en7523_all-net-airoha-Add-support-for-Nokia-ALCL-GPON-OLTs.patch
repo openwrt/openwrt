@@ -1,0 +1,918 @@
+From bb23d7927f3c6ef4883cd4460bbefee00086f7bd Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Thu, 20 Aug 2026 11:47:07 -0300
+Subject: [PATCH] net: airoha: Add support for Nokia/ALCL GPON OLTs
+
+Add support for Nokia/ALCL OLTs by implementing automatic MIB seeding for
+VEIP-based datapath configuration, correcting encryption key handling, and
+fixing AES shadow key loading.
+
+- Airoha: Manage service cookies to track rules, fix GEM port CRC failures
+  due to byte-swapped AES keys, and disable HW GRO instead of failing to
+  open the interface.
+- OMCI: Pre-seed Nokia-specific MIB profiles (T-CONTs, GEM TPs, mappers,
+  and bridges) to support HGU/VEIP mode.
+- PLOAM: Fix encryption key exchange timing and fragmentation to meet
+  Nokia OLT requirements.
+
+Signed-off-by: Cristian Papa <pcristian292@gmail.com>
+Signed-off-by: Ifran Ali <khanu.i.i.k.2000@gmail.com>
+Signed-off-by: Matheus Sampaio Queiroga <me@sirherobrine23.com.br>
+Reviewed-by: Matheus Sampaio Queiroga <me@sirherobrine23.com.br>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth_gen1.c | 105 ++++++-
+ drivers/net/ethernet/airoha/airoha_eth_gen2.c |  52 +++-
+ .../net/ethernet/airoha/airoha_gpon_omci.c    |   6 +
+ .../net/ethernet/airoha/airoha_gpon_omci.h    |   1 +
+ drivers/net/ethernet/airoha/airoha_ploam.c    |  13 +-
+ drivers/net/ethernet/airoha/airoha_xpon.c     |  66 +++-
+ include/net/omci.h                            |   4 +
+ net/omci/agent.c                              | 284 +++++++++++++++++-
+ net/omci/me.h                                 |  24 ++
+ 9 files changed, 518 insertions(+), 37 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_eth_gen1.c b/drivers/net/ethernet/airoha/airoha_eth_gen1.c
+index 1012b0d29916..05fea691ab00 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth_gen1.c
++++ b/drivers/net/ethernet/airoha/airoha_eth_gen1.c
+@@ -62,6 +62,14 @@ struct econet_hw_stats {
+ 	u64 rx_len[7];
+ };
+ 
++/*
++ * How many OMCI services may share one data-plane rule.  The OMCI agent
++ * stages one service per UNI, so a single (GEM, VLAN, PCP, T-CONT, queue)
++ * rule arrives once per LAN port plus the VEIP.  They are the same rule for
++ * the classifier, so they share a slot and each contributes a cookie.
++ */
++#define ECONET_XPON_SVC_MAX_COOKIES	8
++
+ struct econet_gdm_port {
+ 	/* Must stay first for common GDM/phylink and PPE metadata. */
+ 	struct airoha_gdm_common common;
+@@ -106,6 +114,10 @@ struct econet_gdm_port {
+ 	spinlock_t xpon_service_lock;
+ 	struct airoha_xpon_service_cfg
+ 		xpon_services[AIROHA_XPON_MAX_SERVICES];
++	/* Cookies referencing each rule; the slot lives until the last one goes. */
++	u32	xpon_service_cookies[AIROHA_XPON_MAX_SERVICES]
++				    [ECONET_XPON_SVC_MAX_COOKIES];
++	u8	xpon_service_ncookies[AIROHA_XPON_MAX_SERVICES];
+ 
+ 	struct econet_qdma *qdma;
+ 
+@@ -1382,6 +1394,56 @@ static int econet_xpon_get_tx_info(struct net_device *netdev, bool vlan_valid,
+ 					  pcp_valid, pcp, info);
+ }
+ 
++/* Same rule from the classifier's point of view?  The cookie is not part of it. */
++static bool econet_xpon_rule_eq(const struct airoha_xpon_service_cfg *a,
++				const struct airoha_xpon_service_cfg *b)
++{
++	return a->gem_port_id == b->gem_port_id && a->tcont == b->tcont &&
++	       a->queue == b->queue &&
++	       a->vlan_valid == b->vlan_valid && a->vlan_id == b->vlan_id &&
++	       a->pcp_valid == b->pcp_valid && a->pcp == b->pcp &&
++	       a->default_service == b->default_service;
++}
++
++/* Slot currently referenced by @cookie, or -1. Caller holds the lock. */
++static int econet_xpon_find_cookie(struct econet_gdm_port *port, u32 cookie)
++{
++	int i, j;
++
++	for (i = 0; i < AIROHA_XPON_MAX_SERVICES; i++) {
++		if (!port->xpon_services[i].valid)
++			continue;
++		for (j = 0; j < port->xpon_service_ncookies[i]; j++)
++			if (port->xpon_service_cookies[i][j] == cookie)
++				return i;
++	}
++	return -1;
++}
++
++/*
++ * Drop @cookie from whichever rule holds it, freeing the slot once no cookie
++ * references it any more.  Caller holds the lock.
++ */
++static void econet_xpon_forget_cookie(struct econet_gdm_port *port, u32 cookie)
++{
++	int i, j;
++
++	i = econet_xpon_find_cookie(port, cookie);
++	if (i < 0)
++		return;
++	for (j = 0; j < port->xpon_service_ncookies[i]; j++) {
++		if (port->xpon_service_cookies[i][j] != cookie)
++			continue;
++		port->xpon_service_ncookies[i]--;
++		port->xpon_service_cookies[i][j] =
++			port->xpon_service_cookies[i][port->xpon_service_ncookies[i]];
++		break;
++	}
++	if (!port->xpon_service_ncookies[i])
++		memset(&port->xpon_services[i], 0,
++		       sizeof(port->xpon_services[i]));
++}
++
+ static int econet_xpon_add_service(struct net_device *netdev,
+ 				   const struct airoha_xpon_service_cfg *cfg)
+ {
+@@ -1396,11 +1458,32 @@ static int econet_xpon_add_service(struct net_device *netdev,
+ 		return ret;
+ 
+ 	spin_lock_bh(&port->xpon_service_lock);
++
++	/* A cookie may come back with a changed rule: detach it first. */
++	econet_xpon_forget_cookie(port, cfg->cookie);
++
++	/*
++	 * Share the slot when the very same rule is already installed.  Without
++	 * this the table fills with duplicates -- the OMCI agent stages one
++	 * service per UNI, so on a 4-LAN ONT every rule lands four or five
++	 * times and a real provisioning run exhausts all 256 slots (measured on
++	 * a Movistar AR line: 115 entries on GEM 257 alone, three of them byte
++	 * identical apart from the cookie), making the last services fail with
++	 * -ENOSPC.  Fewer entries also shortens the TX classifier scan.
++	 */
+ 	for (i = 0; i < AIROHA_XPON_MAX_SERVICES; i++) {
+-		if (!port->xpon_services[i].valid && empty < 0)
+-			empty = i;
+-		if (port->xpon_services[i].valid &&
+-		    port->xpon_services[i].cookie == cfg->cookie) {
++		if (!port->xpon_services[i].valid ||
++		    !econet_xpon_rule_eq(&port->xpon_services[i], cfg) ||
++		    port->xpon_service_ncookies[i] >= ECONET_XPON_SVC_MAX_COOKIES)
++			continue;
++		port->xpon_service_cookies[i][port->xpon_service_ncookies[i]++] =
++			cfg->cookie;
++		spin_unlock_bh(&port->xpon_service_lock);
++		return 0;
++	}
++
++	for (i = 0; i < AIROHA_XPON_MAX_SERVICES; i++) {
++		if (!port->xpon_services[i].valid) {
+ 			empty = i;
+ 			break;
+ 		}
+@@ -1414,6 +1497,8 @@ static int econet_xpon_add_service(struct net_device *netdev,
+ 			port->xpon_services[i].default_service = false;
+ 	port->xpon_services[empty] = *cfg;
+ 	port->xpon_services[empty].valid = true;
++	port->xpon_service_cookies[empty][0] = cfg->cookie;
++	port->xpon_service_ncookies[empty] = 1;
+ 	spin_unlock_bh(&port->xpon_service_lock);
+ 
+ 	return 0;
+@@ -1430,15 +1515,13 @@ static bool econet_xpon_del_service(struct net_device *netdev, u32 cookie,
+ 		return false;
+ 
+ 	spin_lock_bh(&port->xpon_service_lock);
+-	for (i = 0; i < AIROHA_XPON_MAX_SERVICES; i++) {
+-		if (!port->xpon_services[i].valid ||
+-		    port->xpon_services[i].cookie != cookie)
+-			continue;
++	i = econet_xpon_find_cookie(port, cookie);
++	if (i >= 0) {
+ 		if (gem_port_id)
+ 			*gem_port_id = port->xpon_services[i].gem_port_id;
+-		memset(&port->xpon_services[i], 0, sizeof(port->xpon_services[i]));
++		/* Frees the slot only when this was the last cookie on it. */
++		econet_xpon_forget_cookie(port, cookie);
+ 		found = true;
+-		break;
+ 	}
+ 	spin_unlock_bh(&port->xpon_service_lock);
+ 
+@@ -1476,6 +1559,8 @@ static void econet_xpon_flush_services(struct net_device *netdev)
+ 
+ 	spin_lock_bh(&port->xpon_service_lock);
+ 	memset(port->xpon_services, 0, sizeof(port->xpon_services));
++	memset(port->xpon_service_cookies, 0, sizeof(port->xpon_service_cookies));
++	memset(port->xpon_service_ncookies, 0, sizeof(port->xpon_service_ncookies));
+ 	spin_unlock_bh(&port->xpon_service_lock);
+ }
+ 
+diff --git a/drivers/net/ethernet/airoha/airoha_eth_gen2.c b/drivers/net/ethernet/airoha/airoha_eth_gen2.c
+index 12ebc4eadb0c..a6e134fb0a94 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth_gen2.c
++++ b/drivers/net/ethernet/airoha/airoha_eth_gen2.c
+@@ -207,12 +207,20 @@ static int airoha_eth_gen2_set_xpon_mode(struct net_device *netdev,
+ 			EN7523_GPON_MAX_FRAME_LEN : AIROHA_MAX_RX_SIZE;
+ 	airoha_fe_rmw(dev->eth, REG_GDM_LEN_CFG(AIROHA_GDM2_IDX),
+ 		      GDM_SHORT_LEN_MASK | GDM_LONG_LEN_MASK,
+-		      FIELD_PREP(GDM_SHORT_LEN_MASK, ETH_ZLEN) |
++		      FIELD_PREP(GDM_SHORT_LEN_MASK, ETH_HLEN) |
+ 		      FIELD_PREP(GDM_LONG_LEN_MASK, max_frame_len));
+ 
+ 	/* gpon_init_qdma_tx_buff() starts with the implicit ONU-ID T-CONT. */
+-	if (mode == AIROHA_XPON_MODE_GPON)
++	if (mode == AIROHA_XPON_MODE_GPON) {
++		/*
++		 * Downstream GPON frames reach GDM2 after the GPON MAC has
++		 * already checked them, and a frame that failed decryption is
++		 * more useful counted than silently dropped here.
++		 */
++		airoha_fe_clear(dev->eth, REG_GDM_FWD_CFG(AIROHA_GDM2_IDX),
++				GDM_DROP_CRC_ERR_MASK);
+ 		airoha_eth_update_gpon_pse_buf(dev, 1);
++	}
+ 
+ 	/* A mode switch starts from a quiescent GDM2/CDM2 datapath. */
+ 	airoha_fe_clear(dev->eth, REG_GDM_TXCHN_EN(AIROHA_GDM2_IDX), ~0U);
+@@ -1579,17 +1587,18 @@ static int airoha_dev_open(struct net_device *netdev)
+ 	u32 pse_port = FE_PSE_PORT_PPE1;
+ 	int err, qdma_id;
+ 
+-	/* HW LRO is configured on the QDMA and it is shared between
+-	 * all the devices using it. Refuse to open a second device on
+-	 * the same QDMA if LRO is enabled on any device sharing it.
++	/* HW LRO is configured on the QDMA and it is shared between all the
++	 * devices using it. Opening a second device on the same QDMA turns HW
++	 * GRO off rather than refusing to open: on an xPON board GDM2 and the
++	 * WAN share QDMA1, and failing here leaves the PON interface down.
+ 	 */
+ 	qdma = airoha_qdma_deref(dev);
+ 	qdma_id = qdma - &eth->qdma[0];
+ 
+ 	if (qdma->users && airoha_fe_lro_is_enabled(eth, qdma_id)) {
+-		netdev_warn(netdev, "required to disable HW GRO on QDMA%d\n",
++		netdev_info(netdev, "disabling HW GRO on shared QDMA%d\n",
+ 			    qdma_id);
+-		return -EBUSY;
++		airoha_fe_lro_disable(eth, qdma_id);
+ 	}
+ 
+ 	/*
+@@ -1608,8 +1617,24 @@ static int airoha_dev_open(struct net_device *netdev)
+ 		netdev_dbg(netdev,
+ 			   "no PHY or fixed-link, using xPON link state\n");
+ 
+-	if (dev->flags & AIROHA_PRIV_F_XPON_MANAGED)
+-		netif_carrier_off(netdev);
++	if (dev->flags & AIROHA_PRIV_F_XPON_MANAGED) {
++		unsigned long flags;
++		bool link;
++
++		/*
++		 * Forcing carrier off here loses an O5 link that came up before
++		 * the interface was opened, and nothing re-announces it: adopt
++		 * the state the xPON provider already published.
++		 */
++		spin_lock_irqsave(&dev->xpon_state_lock, flags);
++		link = dev->xpon_link.valid && dev->xpon_link.link;
++		spin_unlock_irqrestore(&dev->xpon_state_lock, flags);
++
++		if (link)
++			netif_carrier_on(netdev);
++		else
++			netif_carrier_off(netdev);
++	}
+ 
+ 	netif_tx_start_all_queues(netdev);
+ 	err = airoha_set_vip_for_gdm_port(dev, true);
+@@ -1635,7 +1660,8 @@ static int airoha_dev_open(struct net_device *netdev)
+ 	airoha_set_gdm_port_fwd_cfg(eth, REG_GDM_FWD_CFG(port->id),
+ 				    pse_port);
+ 
+-	if (netdev->features & NETIF_F_GRO_HW)
++	/* airoha_qdma_start() above already counted this device in. */
++	if ((netdev->features & NETIF_F_GRO_HW) && qdma->users <= 1)
+ 		airoha_dev_lro_enable(dev);
+ 
+ 	airoha_update_netdev_features(dev);
+@@ -1855,7 +1881,8 @@ static void airoha_dev_set_qdma(struct airoha_gdm_dev *dev)
+ 			((dev->port->id == AIROHA_GDM3_IDX ||
+ 			  dev->port->id == AIROHA_GDM4_IDX ||
+ 			  dev->port->id == AIROHA_GDM2_IDX) &&
+-			  airoha_ppe_is_enabled(eth, 1)) ? 1 : 0);
++			  airoha_ppe_is_enabled(eth, 1)) ?
++			FE_PSE_PORT_PPE2 : FE_PSE_PORT_PPE1);
+ 	}
+ 
+ 	ppe_id = !airoha_is_lan_gdm_dev(dev) && airoha_ppe_is_enabled(eth, 1);
+@@ -4148,6 +4175,9 @@ static int airoha_en7523_get_sport(struct airoha_gdm_port *port, int nbq)
+ static u32 airoha_en7523_get_vip_port(struct airoha_gdm_port *port, int nbq)
+ {
+ 	switch (port->id) {
++	case AIROHA_GDM2_IDX:
++		/* GDM2 carries the PON datapath and needs its own VIP port. */
++		return BIT(AIROHA_GDM2_IDX);
+ 	case AIROHA_GDM3_IDX:
+ 		if (nbq == 4)
+ 			return XSI_PCIE0_VIP_PORT_MASK;
+diff --git a/drivers/net/ethernet/airoha/airoha_gpon_omci.c b/drivers/net/ethernet/airoha/airoha_gpon_omci.c
+index 36e0eaf3a6db..94b439cfcd82 100644
+--- a/drivers/net/ethernet/airoha/airoha_gpon_omci.c
++++ b/drivers/net/ethernet/airoha/airoha_gpon_omci.c
+@@ -213,6 +213,12 @@ void airoha_gpon_omci_set_state(struct airoha_gpon_omci *omci, u8 state)
+ 	omci_device_set_state(omci->odev, state);
+ }
+ 
++void airoha_gpon_omci_reconcile_services(struct airoha_gpon_omci *omci)
++{
++	if (omci && omci->odev)
++		omci_device_reconcile_services(omci->odev);
++}
++
+ void airoha_gpon_omci_reset_session(struct airoha_gpon_omci *omci)
+ {
+ 	omci_device_reset_session(omci->odev);
+diff --git a/drivers/net/ethernet/airoha/airoha_gpon_omci.h b/drivers/net/ethernet/airoha/airoha_gpon_omci.h
+index d219cff3862d..8941f3a65ceb 100644
+--- a/drivers/net/ethernet/airoha/airoha_gpon_omci.h
++++ b/drivers/net/ethernet/airoha/airoha_gpon_omci.h
+@@ -32,6 +32,7 @@ void airoha_gpon_omci_set_onu_id(struct airoha_gpon_omci *omci, u16 onu_id);
+ void airoha_gpon_omci_set_channel(struct airoha_gpon_omci *omci,
+ 				  u16 gem_port_id, bool valid);
+ void airoha_gpon_omci_set_state(struct airoha_gpon_omci *omci, u8 state);
++void airoha_gpon_omci_reconcile_services(struct airoha_gpon_omci *omci);
+ void airoha_gpon_omci_reset_session(struct airoha_gpon_omci *omci);
+ int airoha_gpon_omci_send_dying_gasp(struct airoha_gpon_omci *omci);
+ bool airoha_gpon_omci_receive(void *data, struct sk_buff *skb,
+diff --git a/drivers/net/ethernet/airoha/airoha_ploam.c b/drivers/net/ethernet/airoha/airoha_ploam.c
+index be546280e508..f494c06880ef 100644
+--- a/drivers/net/ethernet/airoha/airoha_ploam.c
++++ b/drivers/net/ethernet/airoha/airoha_ploam.c
+@@ -204,8 +204,10 @@ static void ploam_send_encrypt_key(struct ploam_priv *pp)
+ 	u8 content[PLOAM_CONTENT_LEN] = {};
+ 	int i;
+ 
+-	/* Two fragments of 8 key bytes each.
+-	 * content[0] = key_idx, content[1] = frag_idx, content[2..9] = key[8] */
++	/* Two fragments of 8 key bytes each, as the Nokia/ALCL OLT expects:
++	 * octet 3 (content[0]) = key_idx (0 or 1)
++	 * octet 4 (content[1]) = frag_idx (0 or 1)
++	 * octets 5..12 (content[2..9]) = 8 key bytes */
+ 	for (i = 0; i < 2; i++) {
+ 		content[0] = pp->key_idx;
+ 		content[1] = i;
+@@ -452,10 +454,15 @@ static void handle_request_key(struct ploam_priv *pp, u8 onu_id)
+ 		return;
+ 
+ 	pp->key_exchange_pending = true;
+-	pp->key_idx ^= 1;
+ 	/* Hardware generates a random key and loads shadow regs */
+ 	pp->ops->request_new_key(pp->hw_priv);
++	/*
++	 * Announce the key under the index the OLT is still using and only
++	 * then flip: toggling first sends Encryption_Key with the index of a
++	 * key the OLT has not been given yet.
++	 */
+ 	ploam_send_encrypt_key(pp);
++	pp->key_idx ^= 1;
+ }
+ 
+ /* PLOAM_DOWN_CONFIGURE_PORT_ID (0x0E) — unicast */
+diff --git a/drivers/net/ethernet/airoha/airoha_xpon.c b/drivers/net/ethernet/airoha/airoha_xpon.c
+index 6d00ed4b975b..1284e9287010 100644
+--- a/drivers/net/ethernet/airoha/airoha_xpon.c
++++ b/drivers/net/ethernet/airoha/airoha_xpon.c
+@@ -1111,9 +1111,15 @@ static void gpon_load_aes_shadow(struct xpon_priv *priv, const u8 key[16],
+ {
+ 	int i;
+ 
++	/*
++	 * The shadow key registers are laid out with the least significant
++	 * word first, so the key bytes go in reversed word order: word 0 takes
++	 * key[12..15]. Loading them straight through decrypts every downstream
++	 * frame with a byte-swapped key and the whole GEM port fails CRC.
++	 */
+ 	for (i = 0; i < 4; i++)
+ 		gpon_write(priv, GPON_AES_SHADOW_KEY0 + i * 4,
+-			   get_unaligned_be32(key + i * 4));
++			   get_unaligned_be32(key + (3 - i) * 4));
+ 
+ 	gpon_write(priv, GPON_AES_CFG,
+ 		   switch_superframe & AES_KEY_SWITCH_CNT_MASK);
+@@ -1248,6 +1254,14 @@ static int gpon_tcont_entity_to_index(struct xpon_priv *priv, u16 entity_id,
+ 
+ 	mutex_lock(&priv->tcont_lock);
+ 	found = gpon_find_tcont_entity_locked(priv, entity_id);
++	if (found < 0 && entity_id >= 0x8000 &&
++	    entity_id < 0x8000 + GPON_MAX_TCONT - 1) {
++		unsigned int fallback = (entity_id - 0x8000) + 1;
++
++		if (fallback < GPON_MAX_TCONT &&
++		    priv->tcont_alloc_id[fallback] != GPON_TCONT_UNASSIGNED)
++			found = fallback;
++	}
+ 	if (found >= 0)
+ 		*index = found;
+ 	mutex_unlock(&priv->tcont_lock);
+@@ -1286,6 +1300,9 @@ static int gpon_set_gem_port_hw(struct xpon_priv *priv, u16 gem_port_id,
+ 	if (gem_port_id >= GPON_MAX_GEM_ID)
+ 		return -EINVAL;
+ 
++	if (gem_port_id == 0)
++		encrypted = false;
++
+ 	cfg = GEM_CMD_WRITE | gem_port_id;
+ 	if (valid)
+ 		cfg |= GEM_VALID;
+@@ -1351,8 +1368,11 @@ static int gpon_set_alloc_id_hw(struct xpon_priv *priv, u16 alloc_id,
+ 	}
+ 
+ 	ret = gpon_config_tcont_hw(priv, index, alloc_id, true);
+-	if (!ret)
++	if (!ret) {
+ 		priv->tcont_alloc_id[index] = alloc_id;
++		if (priv->tcont_entity_id[index] == GPON_TCONT_ENTITY_UNASSIGNED)
++			priv->tcont_entity_id[index] = 0x8000 + index - 1;
++	}
+ out:
+ 	mutex_unlock(&priv->tcont_lock);
+ 	return ret;
+@@ -1890,7 +1910,18 @@ static void gpon_cb_set_gem_encryption(void *hw_priv, u16 port_id,
+ 	struct xpon_priv *priv = hw_priv;
+ 	int ret;
+ 
+-	ret = gpon_set_gem_port_hw(priv, port_id, true, encrypt_mode == 3);
++	/*
++	 * The OMCC is never encrypted in GPON (G.984.3 12.2), but this
++	 * Nokia/ALCL OLT announces encrypt=3 for GEM 0 as well as for the
++	 * service ports. Honouring that on GEM 0 decrypts a plaintext OMCC and
++	 * every OMCI frame fails, so the ONU never answers and the OLT
++	 * deactivates it. Exempt GEM 0 and take the OLT at its word everywhere
++	 * else: with the port left in the clear the service ports deliver
++	 * high-entropy frames with random MACs and nonsense ethertypes, which
++	 * is ciphertext handed up undecrypted.
++	 */
++	ret = gpon_set_gem_port_hw(priv, port_id, true,
++				   port_id && encrypt_mode == 3);
+ 	if (ret)
+ 		dev_err(priv->dev,
+ 			"failed to update GEM port %u encryption: %d\n",
+@@ -1912,6 +1943,8 @@ static void gpon_cb_set_alloc_id(void *hw_priv, u16 alloc_id, bool allocate)
+ 	if (ret)
+ 		dev_err(priv->dev, "failed to %s Alloc-ID %u: %d\n",
+ 			allocate ? "assign" : "remove", alloc_id, ret);
++	else
++		airoha_gpon_omci_reconcile_services(&priv->omci);
+ }
+ 
+ int airoha_gpon_omci_hw_set_olt_profile(void *hw_priv,
+@@ -2107,6 +2140,33 @@ int airoha_gpon_omci_hw_replace_service(void *hw_priv,
+ 	};
+ 	ret = gpon_tcont_entity_to_index(priv, service->tcont_entity_id,
+ 					 &tcont_index);
++	if (ret && service->alloc_id && service->alloc_id != 0xffff) {
++		unsigned int channel;
++
++		/*
++		 * A GPON restart clears the entity->index map in
++		 * gpon_dev_init(), but the OLT does not re-run OMCI when the
++		 * MIB data sync still matches: it only re-sends Assign_Alloc-ID
++		 * over PLOAM, which never reaches the OMCI agent.  The agent
++		 * then re-applies its retained service graph, every lookup here
++		 * returns -ENOENT, and because apply_services is all-or-nothing
++		 * the whole set is rolled back -- leaving an ONU in O5 with OMCI
++		 * up, service=0 and no datapath at all, permanently.
++		 *
++		 * The Alloc-ID is enough to rebuild it: program the T-CONT and
++		 * re-bind entity->index, which is exactly what a first-time
++		 * provisioning does.
++		 */
++		ret = gpon_set_omci_tcont_hw(priv, service->tcont_entity_id,
++					     service->alloc_id, true, &channel);
++		if (!ret) {
++			tcont_index = channel;
++			dev_info(priv->dev,
++				 "rebuilt T-CONT %#x (alloc-id %u) as channel %u after restart\n",
++				 service->tcont_entity_id, service->alloc_id,
++				 channel);
++		}
++	}
+ 	if (ret)
+ 		return ret;
+ 	cfg.tcont = tcont_index;
+diff --git a/include/net/omci.h b/include/net/omci.h
+index a757a863477c..d1455e499d07 100644
+--- a/include/net/omci.h
++++ b/include/net/omci.h
+@@ -241,6 +241,8 @@ struct omci_telemetry {
+  * @gem_ctp_entity_id: GEM port network CTP managed entity
+  * @gem_port_id: GEM port identifier programmed in the GPON MAC
+  * @tcont_entity_id: T-CONT managed entity associated with the GEM port
++ * @alloc_id: Alloc-ID of that T-CONT, so a backend whose entity map was
++ *	cleared by a GPON restart can still resolve the channel
+  * @vlan_id: VLAN identifier used for upstream classification
+  * @pcp: IEEE 802.1p priority used for classification and queue selection
+  * @queue: hardware upstream queue
+@@ -260,6 +262,7 @@ struct omci_service_config {
+ 	u16 gem_ctp_entity_id;
+ 	u16 gem_port_id;
+ 	u16 tcont_entity_id;
++	u16 alloc_id;
+ 	u16 vlan_id;
+ 	u8 pcp;
+ 	u8 queue;
+@@ -355,5 +358,6 @@ int omci_device_set_dying_gasp_enabled(struct omci_device *odev,
+ int omci_device_send_dying_gasp(struct omci_device *odev);
+ void omci_device_receive(struct omci_device *odev, struct sk_buff *skb,
+ 			 u16 gem_port_id, u32 flags);
++int omci_device_reconcile_services(struct omci_device *odev);
+ 
+ #endif /* _NET_OMCI_H */
+diff --git a/net/omci/agent.c b/net/omci/agent.c
+index 1632cfd4cb22..775d849f94f4 100644
+--- a/net/omci/agent.c
++++ b/net/omci/agent.c
+@@ -902,7 +902,6 @@ omci_agent_profile_refresh_locked(struct omci_device *odev,
+ 	if (changed) {
+ 		omci_agent_reset_table_snapshot_locked(agent);
+ 		agent->upload_index = 0;
+-		omci_agent_increment_mib_sync_locked(agent);
+ 		omci_agent_free_object_array(&snapshot);
+ 		xa_destroy(&snapshot);
+ 		dev_info(odev->parent,
+@@ -1110,6 +1109,231 @@ omci_agent_seed_nokia_locked(struct omci_device *odev, u8 profile)
+ 			return ret;
+ 	}
+ 
++	/*
++	 * In Nokia GPON HGU / VEIP mode, the OLT assigns Alloc-ID 256 and 257
++	 * along with GEM ports 256 and 257 via PLOAM without OMCI Create messages.
++	 * Seed the standard VEIP datapath bridge for both GEM 256 and GEM 257.
++	 */
++	if (agent->config.onu_type == 2) {
++		/* T-CONT 0x8000 -> Alloc-ID 256 */
++		memset(data, 0, sizeof(data));
++		put_unaligned_be16(256, data);
++		ret = omci_mib_add_default_profile_mask(agent, profile,
++				OMCI_CLASS_TCONT, 0x8000,
++				BIT(15), data, sizeof(data));
++		if (ret)
++			return ret;
++
++		/* GEM Port Network CTP 256 -> port 256, T-CONT 0x8000, bidir(3) */
++		memset(data, 0, sizeof(data));
++		put_unaligned_be16(256, data);
++		put_unaligned_be16(0x8000, data + 2);
++		data[4] = 3;
++		put_unaligned_be16(0x8000, data + 5);
++		ret = omci_mib_add_default_profile_mask(agent, profile,
++				OMCI_CLASS_GEM_PORT_CTP, 256,
++				GENMASK(15, 6), data, sizeof(data));
++		if (ret)
++			return ret;
++
++		/*
++		 * GEM IWTP 256 -> GEM CTP 256. Interworking option 5 is
++		 * "802.1p mapper", so the service profile pointer at offset 3
++		 * has to name a real class 130 instance; leaving it zero
++		 * advertises mapper interworking with no mapper behind it.
++		 */
++		memset(data, 0, sizeof(data));
++		put_unaligned_be16(256, data);
++		data[2] = 5;
++		put_unaligned_be16(OMCI_NOKIA_MAPPER_MGMT, data + 3);
++		put_unaligned_be16(0x0a01, data + 5);
++		ret = omci_mib_add_default_profile_mask(agent, profile,
++				OMCI_CLASS_GEM_IWTP, 256,
++				GENMASK(15, 8), data, sizeof(data));
++		if (ret)
++			return ret;
++
++		/* T-CONT 0x8001 -> Alloc-ID 257 */
++		memset(data, 0, sizeof(data));
++		put_unaligned_be16(257, data);
++		ret = omci_mib_add_default_profile_mask(agent, profile,
++				OMCI_CLASS_TCONT, 0x8001,
++				BIT(15), data, sizeof(data));
++		if (ret)
++			return ret;
++
++		/* GEM Port Network CTP 257 -> port 257, T-CONT 0x8001, bidir(3) */
++		memset(data, 0, sizeof(data));
++		put_unaligned_be16(257, data);
++		put_unaligned_be16(0x8001, data + 2);
++		data[4] = 3;
++		put_unaligned_be16(0x8001, data + 5);
++		ret = omci_mib_add_default_profile_mask(agent, profile,
++				OMCI_CLASS_GEM_PORT_CTP, 257,
++				GENMASK(15, 6), data, sizeof(data));
++		if (ret)
++			return ret;
++
++		/* GEM IWTP 257 -> GEM CTP 257, via 802.1p mapper 2. */
++		memset(data, 0, sizeof(data));
++		put_unaligned_be16(257, data);
++		data[2] = 5;
++		put_unaligned_be16(OMCI_NOKIA_MAPPER_HSI, data + 3);
++		put_unaligned_be16(0x0a01, data + 5);
++		ret = omci_mib_add_default_profile_mask(agent, profile,
++				OMCI_CLASS_GEM_IWTP, 257,
++				GENMASK(15, 8), data, sizeof(data));
++		if (ret)
++			return ret;
++
++		/*
++		 * 802.1p mappers, one per GEM interworking TP. A reference ONU
++		 * carrying service on this OLT points every P-bit at the same
++		 * interworking TP, so do the same rather than invent a
++		 * priority split the OLT never asked for.
++		 *
++		 * Layout (G.988 9.3.10): TP pointer at 0, then the eight P-bit
++		 * interworking TP pointers, unmarked frame option at 18, DSCP
++		 * map at 19, default P-bit marking at 43, TP type at 44.
++		 */
++		for (i = 0; i < 2; i++) {
++			u16 mapper = i ? OMCI_NOKIA_MAPPER_HSI :
++					 OMCI_NOKIA_MAPPER_MGMT;
++			u16 iwtp = i ? 257 : 256;
++			unsigned int pbit;
++
++			memset(data, 0, sizeof(data));
++			put_unaligned_be16(0xffff, data);
++			for (pbit = 0; pbit < 8; pbit++)
++				put_unaligned_be16(iwtp, data + 2 + pbit * 2);
++			ret = omci_mib_add_default_profile_mask(agent, profile,
++					OMCI_CLASS_8021P_MAPPER, mapper,
++					GENMASK(15, 3), data, sizeof(data));
++			if (ret)
++				return ret;
++		}
++
++		/* MAC Bridge Service Profile 1 */
++		memset(data, 0, sizeof(data));
++		data[0] = 1;
++		data[1] = 1;
++		data[2] = 1;
++		ret = omci_mib_add_default_profile_mask(agent, profile,
++				OMCI_CLASS_MAC_BRIDGE_SERVICE_PROFILE, 1,
++				GENMASK(15, 6), data, sizeof(data));
++		if (ret)
++			return ret;
++
++		/* MAC Bridge Port Config 1 -> VEIP (TP type 11, slot 6) */
++		memset(data, 0, sizeof(data));
++		put_unaligned_be16(1, data);
++		data[2] = 1;
++		data[3] = 11;
++		put_unaligned_be16(OMCI_UNI_ENTITY_ID(6, 1), data + 4);
++		ret = omci_mib_add_default_profile_mask(agent, profile,
++				OMCI_CLASS_MAC_BRIDGE_PORT_CONFIG_DATA, 1,
++				GENMASK(15, 12), data, sizeof(data));
++		if (ret)
++			return ret;
++
++		/*
++		 * MAC Bridge Port 2 -> 802.1p mapper 2 (Internet / HSI).
++		 * TP type 3 is "802.1p mapper"; binding the port straight to
++		 * the GEM interworking TP with type 5 skips the mapper layer a
++		 * working reference ONU on this OLT uses.
++		 */
++		memset(data, 0, sizeof(data));
++		put_unaligned_be16(1, data);
++		data[2] = 2;
++		data[3] = 3;
++		put_unaligned_be16(OMCI_NOKIA_MAPPER_HSI, data + 4);
++		ret = omci_mib_add_default_profile_mask(agent, profile,
++				OMCI_CLASS_MAC_BRIDGE_PORT_CONFIG_DATA, 2,
++				GENMASK(15, 12), data, sizeof(data));
++		if (ret)
++			return ret;
++
++		/* MAC Bridge Port 3 -> 802.1p mapper 1 (management / VoIP). */
++		memset(data, 0, sizeof(data));
++		put_unaligned_be16(1, data);
++		data[2] = 3;
++		data[3] = 3;
++		put_unaligned_be16(OMCI_NOKIA_MAPPER_MGMT, data + 4);
++		ret = omci_mib_add_default_profile_mask(agent, profile,
++				OMCI_CLASS_MAC_BRIDGE_PORT_CONFIG_DATA, 3,
++				GENMASK(15, 12), data, sizeof(data));
++		if (ret)
++			return ret;
++
++		/*
++		 * Class 84 (VLAN tagging filter data), one per mapper: VID 100
++		 * for high speed internet and VID 660 for management and VoIP.
++		 * data[24] is the forward operation, data[25] the number of
++		 * valid entries in the filter list.
++		 */
++		memset(data, 0, sizeof(data));
++		put_unaligned_be16(100, data);
++		data[24] = 0x10;
++		data[25] = 1;
++		ret = omci_mib_add_default_profile_mask(agent, profile,
++				OMCI_CLASS_VLAN_TAGGING_FILTER_DATA,
++				OMCI_NOKIA_MAPPER_HSI,
++				GENMASK(15, 13), data, sizeof(data));
++		if (ret)
++			return ret;
++
++		memset(data, 0, sizeof(data));
++		put_unaligned_be16(660, data);
++		data[24] = 0x10;
++		data[25] = 1;
++		ret = omci_mib_add_default_profile_mask(agent, profile,
++				OMCI_CLASS_VLAN_TAGGING_FILTER_DATA,
++				OMCI_NOKIA_MAPPER_MGMT,
++				GENMASK(15, 13), data, sizeof(data));
++		if (ret)
++			return ret;
++
++		/*
++		 * Class 171 (extended VLAN tagging operation configuration
++		 * data) on both VEIP instances, association type 10 (VEIP).
++		 * G.988 9.3.13 layout: association type at 0, table size at 1,
++		 * input and output TPID at 3 and 5, downstream mode at 7 and
++		 * the associated ME pointer at 24.
++		 */
++		memset(data, 0, sizeof(data));
++		data[0] = 10;
++		put_unaligned_be16(OMCI_EXT_VLAN_MAX_RULES, data + 1);
++		put_unaligned_be16(ETH_P_8021Q, data + 3);
++		put_unaligned_be16(ETH_P_8021Q, data + 5);
++		data[7] = 0;
++		put_unaligned_be16(OMCI_UNI_ENTITY_ID(6, 1), data + 24);
++		ret = omci_mib_add_default_profile_mask(agent, profile,
++				OMCI_CLASS_EXTENDED_VLAN,
++				OMCI_UNI_ENTITY_ID(6, 1),
++				GENMASK(15, 10), data, sizeof(data));
++		if (ret)
++			return ret;
++
++		put_unaligned_be16(OMCI_UNI_ENTITY_ID(OMCI_VEIP_SLOT, 1),
++				   data + 24);
++		ret = omci_mib_add_default_profile_mask(agent, profile,
++				OMCI_CLASS_EXTENDED_VLAN,
++				OMCI_UNI_ENTITY_ID(OMCI_VEIP_SLOT, 1),
++				GENMASK(15, 10), data, sizeof(data));
++		if (ret)
++			return ret;
++
++		/* Class 131 (OLT-G): pre-seed the Nokia/ALCL OLT identity. */
++		memset(data, 0, sizeof(data));
++		memcpy(data, "ALCL", 4);
++		memcpy(data + 4, "ISAM                ", 20);
++		ret = omci_mib_add_default_profile_mask(agent, profile,
++				OMCI_CLASS_OLT_G, 0,
++				GENMASK(15, 14), data, sizeof(data));
++		if (ret)
++			return ret;
++	}
++
+ 	return 0;
+ }
+ 
+@@ -1245,6 +1469,18 @@ static void omci_agent_refresh_identity_locked(struct omci_agent *agent)
+ 						  OMCI_CLASS_TRAFFIC_SCHEDULER);
+ 		object->data[27] = min_t(u16, schedulers, U8_MAX);
+ 		put_unaligned_be16(32, object->data + 29);
++		/*
++		 * G.988 9.1.3. The OLT reads these to decide what it may
++		 * provision. Left at zero they say the ONU supports no
++		 * security and no connectivity model at all, and an OLT that
++		 * honours that identifies the ONU and then has nothing it can
++		 * legally create.
++		 */
++		object->data[23] = OMCI_ONU2G_SECURITY_AES128;
++		object->data[24] = OMCI_ONU2G_SECURITY_AES128;
++		put_unaligned_be16(OMCI_ONU2G_CONNECTIVITY_CAPABILITY,
++				   object->data + 35);
++		put_unaligned_be16(1, object->data + 40);
+ 	}
+ 
+ 	object = omci_mib_lookup(agent, OMCI_CLASS_HUAWEI_SW_IMAGE_EXT, 0);
+@@ -1569,6 +1805,21 @@ static int omci_agent_populate_defaults(struct omci_device *odev)
+ 	if (ret)
+ 		return ret;
+ 
++	/* Also seed Slot 6 VEIP (0x0601) for compatibility with Alcatel-Lucent / EcoNet OLT profiles */
++	memset(data, 0, sizeof(data));
++	data[0] = 0;
++	ret = omci_mib_add_default(agent, OMCI_CLASS_VEIP,
++				   OMCI_UNI_ENTITY_ID(6, 1), data,
++				   sizeof(data));
++	if (ret)
++		return ret;
++	omci_uni_g_default_data(data);
++	ret = omci_mib_add_default_mask(agent, OMCI_CLASS_UNI_G,
++					OMCI_UNI_ENTITY_ID(6, 1),
++					GENMASK(15, 12), data, sizeof(data));
++	if (ret)
++		return ret;
++
+ 	for (i = 0; i < topology.tcont_count; i++) {
+ 		u16 scheduler_id = topology.scheduler_base + i;
+ 
+@@ -2643,6 +2894,8 @@ omci_agent_stage_service_rule_locked(struct omci_device *odev,
+ 				 service.tcont_entity_id);
+ 	if (!tcont || get_unaligned_be16(tcont->data) == 0xffff)
+ 		return -ENOENT;
++	/* Carry the Alloc-ID: the backend may need it to rebuild the channel. */
++	service.alloc_id = get_unaligned_be16(tcont->data);
+ 	service.direction = gem->data[4];
+ 	service.multicast = multicast;
+ 	service.multicast_ani_entity_id = ani_entity_id;
+@@ -4516,7 +4769,6 @@ __omci_agent_config_set_source(struct omci_device *odev, u16 key,
+ 		omci_agent_reset_duplicate_locked(agent);
+ 		omci_agent_reset_table_snapshot_locked(agent);
+ 		agent->upload_index = 0;
+-		omci_agent_increment_mib_sync_locked(agent);
+ 	}
+ 	if (!ret && notify && changed)
+ 		omci_agent_identity_state_locked(agent, &identity);
+@@ -4662,8 +4914,7 @@ int omci_agent_mib_set(struct omci_device *odev,
+ 	} else if (local->class_id == OMCI_CLASS_VLAN_TAGGING_FILTER_DATA) {
+ 		omci_vlan_filter_parse_create(local, local->data);
+ 	} else if (local->class_id == OMCI_CLASS_EXTENDED_VLAN) {
+-		local->extended_vlan.max_table_size = OMCI_EXT_VLAN_MAX_RULES;
+-		local->extended_vlan.valid = true;
++		omci_ext_vlan_parse_create(local, local->data);
+ 		if (local->attr_mask & OMCI_EXT_VLAN_TABLE_MASK)
+ 			omci_ext_vlan_update_rule(&local->extended_vlan,
+ 						  local->data);
+@@ -4679,10 +4930,8 @@ int omci_agent_mib_set(struct omci_device *odev,
+ 	datapath = omci_agent_datapath_class(agent, local->class_id);
+ 	if (!ret && datapath)
+ 		ret = omci_agent_reconcile_services_locked(odev);
+-	if (!ret) {
+-		omci_agent_increment_mib_sync_locked(agent);
++	if (!ret)
+ 		omci_agent_reset_duplicate_locked(agent);
+-	}
+ 
+ unlock:
+ 	mutex_unlock(&agent->lock);
+@@ -4709,10 +4958,8 @@ int omci_agent_mib_delete(struct omci_device *odev, u16 class_id,
+ 	datapath = omci_agent_datapath_class(agent, class_id);
+ 	if (!ret && datapath)
+ 		ret = omci_agent_reconcile_services_locked(odev);
+-	if (!ret) {
+-		omci_agent_increment_mib_sync_locked(agent);
++	if (!ret)
+ 		omci_agent_reset_duplicate_locked(agent);
+-	}
+ 
+ unlock:
+ 	mutex_unlock(&agent->lock);
+@@ -4757,3 +5004,20 @@ int omci_agent_mib_next(struct omci_device *odev, u32 index,
+ 	mutex_unlock(&agent->lock);
+ 	return ret;
+ }
++
++int omci_device_reconcile_services(struct omci_device *odev)
++{
++	struct omci_agent *agent;
++	int ret;
++
++	if (!odev)
++		return -EINVAL;
++
++	agent = &odev->agent;
++	mutex_lock(&agent->lock);
++	ret = omci_agent_reconcile_services_locked(odev);
++	mutex_unlock(&agent->lock);
++
++	return ret;
++}
++EXPORT_SYMBOL_GPL(omci_device_reconcile_services);
+diff --git a/net/omci/me.h b/net/omci/me.h
+index 06f7b249c863..7953efcb9eef 100644
+--- a/net/omci/me.h
++++ b/net/omci/me.h
+@@ -20,12 +20,36 @@ struct omci_mib_object;
+ #define OMCI_CLASS_MAC_BRIDGE_PORT_CONFIG_DATA	47
+ #define OMCI_CLASS_VLAN_TAGGING_FILTER_DATA	84
+ #define OMCI_CLASS_8021P_MAPPER		130
++
++/*
++ * 802.1p mapper instances seeded for the Nokia/ALCL profile. One per GEM
++ * interworking termination point: mapper 1 fronts GEM 256 (management and
++ * VoIP), mapper 2 fronts GEM 257 (high speed internet).
++ */
++#define OMCI_NOKIA_MAPPER_MGMT		1
++#define OMCI_NOKIA_MAPPER_HSI		2
+ #define OMCI_CLASS_OLT_G		131
+ #define OMCI_CLASS_NETWORK_ADDRESS	137
+ #define OMCI_CLASS_AUTH_METHOD		148
+ #define OMCI_CLASS_EXTENDED_VLAN	171
+ #define OMCI_CLASS_ONU_G		256
+ #define OMCI_CLASS_ONU2_G		257
++
++/*
++ * ONU2-G security capability and security mode, G.988 9.1.3: 1 selects
++ * AES-128, the only cipher GPON defines.
++ */
++#define OMCI_ONU2G_SECURITY_AES128	1
++
++/*
++ * ONU2-G connectivity capability, G.988 Table 9.1.3-1. One bit per forwarding
++ * model: N:1 bridging, 1:M mapping, 1:P filtering, N:M bridge-mapping,
++ * 1:MP map-filtering, N:P bridge-filtering and N:MP bridge-map-filtering.
++ * The agent builds its datapath out of MAC bridges, GEM interworking TPs and
++ * a VEIP, so advertise the full set the way a stock ONU does and let the OLT
++ * pick.
++ */
++#define OMCI_ONU2G_CONNECTIVITY_CAPABILITY	0x007f
+ #define OMCI_CLASS_TCONT		262
+ #define OMCI_CLASS_ANI_G		263
+ #define OMCI_CLASS_UNI_G		264
+-- 
+2.55.0
+

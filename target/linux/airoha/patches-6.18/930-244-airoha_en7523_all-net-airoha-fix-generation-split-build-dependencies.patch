@@ -1,0 +1,280 @@
+From 4cf64b7f84dff98a23adccca2b76296a3207fe21 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Tue, 11 Aug 2026 14:04:45 -0300
+Subject: [PATCH] net: airoha: fix generation split build dependencies
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth.h      |  1 +
+ drivers/net/ethernet/airoha/airoha_eth_gen1.c | 44 +++++++++++++++--
+ drivers/net/ethernet/airoha/airoha_eth_gen2.c | 16 +++++--
+ drivers/net/ethernet/airoha/airoha_ppe.c      |  3 ++
+ drivers/net/ethernet/airoha/airoha_qdma.c     | 47 ++-----------------
+ drivers/net/ethernet/airoha/airoha_regs.h     |  2 +
+ 6 files changed, 63 insertions(+), 50 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.h b/drivers/net/ethernet/airoha/airoha_eth.h
+index bd04b838da6a..13db0664e501 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.h
++++ b/drivers/net/ethernet/airoha/airoha_eth.h
+@@ -574,6 +574,7 @@ struct airoha_qdma_common {
+ 	struct airoha_eth *eth;
+ 	void __iomem *regs;
+ 	u8 id;
++	u8 num_channels;
+ };
+ 
+ struct airoha_qdma {
+diff --git a/drivers/net/ethernet/airoha/airoha_eth_gen1.c b/drivers/net/ethernet/airoha/airoha_eth_gen1.c
+index a16e7c6822e7..dde0032a5ec5 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth_gen1.c
++++ b/drivers/net/ethernet/airoha/airoha_eth_gen1.c
+@@ -24,8 +24,41 @@
+ 
+ #include "airoha_eth.h"
+ #include "airoha_eth_gen1.h"
++#include "airoha_regs.h"
+ 
+ /* Generation-1 GDM/netdev backend. */
++struct econet_hw_stats {
++	/* protect concurrent hw_stats accesses */
++	spinlock_t lock;
++	struct u64_stats_sync syncp;
++
++	/* EN751221 gdm1 has only limited stats, gdm2 has all */
++	bool g2_stats;
++
++	/* get_stats64 */
++	u64 rx_ok_pkts;
++	u64 tx_ok_pkts;
++	u64 rx_ok_bytes;
++	u64 tx_ok_bytes;
++	u64 rx_errors;
++	u64 rx_drops;
++	u64 tx_drops;
++	u64 rx_over_errors;
++
++	/* get_stats64 (requires gdm2 extended stats) */
++	u64 rx_crc_error;
++	u64 rx_multicast;
++
++	/* ethtool stats (all require gdm2 extended stats) */
++	u64 tx_broadcast;
++	u64 tx_multicast;
++	u64 tx_len[7];
++	u64 rx_broadcast;
++	u64 rx_fragment;
++	u64 rx_jabber;
++	u64 rx_len[7];
++};
++
+ struct econet_gdm_port {
+ 	/* Must stay first for common GDM/phylink and PPE metadata. */
+ 	struct airoha_gdm_common common;
+@@ -591,8 +624,10 @@ struct net_device *econet_alloc_gdm_port(struct airoha_eth *eth,
+ 	int err;
+ 
+ 	ndev = devm_alloc_etherdev_mqs(eth->dev, sizeof(*port),
+-				       qdma->cfg.num_channels * ECONET_NUM_QUEUES,
+-				       qdma->cfg.num_channels * ECONET_NUM_QUEUES);
++				       airoha_qdma_gen1_common(qdma)->num_channels *
++				       ECONET_NUM_QUEUES,
++				       airoha_qdma_gen1_common(qdma)->num_channels *
++				       ECONET_NUM_QUEUES);
+ 	if (!ndev) {
+ 		dev_err(eth->dev, "alloc_etherdev failed\n");
+ 		return ERR_PTR(-ENOMEM);
+@@ -841,7 +876,7 @@ static void econet_prepare_qdma_cfg(struct econet_qdma_cfg *cfg,
+ 	}
+ }
+ 
+-void airoha_eth_gen1_remove(struct platform_device *pdev,
++static void airoha_eth_gen1_remove(struct platform_device *pdev,
+ 			    struct airoha_eth *eth)
+ {
+ 	struct airoha_eth_gen1 *priv = airoha_eth_gen1_priv(eth);
+@@ -872,7 +907,8 @@ void airoha_eth_gen1_remove(struct platform_device *pdev,
+ 	eth->priv = NULL;
+ }
+ 
+-int airoha_eth_gen1_probe(struct platform_device *pdev, struct airoha_eth *eth)
++static int airoha_eth_gen1_probe(struct platform_device *pdev,
++				 struct airoha_eth *eth)
+ {
+ 	static const char * const qdma_names[ECONET_NUM_QDMA] = {
+ 		"qdma0", "qdma1",
+diff --git a/drivers/net/ethernet/airoha/airoha_eth_gen2.c b/drivers/net/ethernet/airoha/airoha_eth_gen2.c
+index 0cc22c84b041..1f0c69a6962b 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth_gen2.c
++++ b/drivers/net/ethernet/airoha/airoha_eth_gen2.c
+@@ -985,6 +985,9 @@ static void airoha_fe_lro_rxq_enable(struct airoha_eth *eth, int qdma_id,
+ 				 AIROHA_RXQ_LRO_MAX_AGG_TIME));
+ 
+ 	switch (eth->soc->version) {
++	case econet_en751221:
++	case econet_en7528:
++		break;
+ 	case airoha_en7523: /* airoha_en7523 stores the map in LRO_EN itself: enable (24-27) and qid (0-15) */
+ 		airoha_fe_rmw(eth, REG_CDM_LRO_EN(id),
+ 			      EN7523_LRO_EN_MASK(lro_queue_index) |
+@@ -1007,6 +1010,9 @@ static void airoha_fe_lro_disable(struct airoha_eth *eth, int qdma_id)
+ 	int i, id = qdma_id + 1;
+ 
+ 	switch (eth->soc->version) {
++	case econet_en751221:
++	case econet_en7528:
++		break;
+ 	case airoha_en7523:
+ 		airoha_fe_clear(eth, REG_CDM_LRO_EN(id),
+ 			EN7523_LRO_RXQ_EN_MASK | EN7523_LRO_ALL_RXQ_MASK);
+@@ -1350,7 +1356,10 @@ static struct sk_buff *airoha_qdma_lro_rx_skb(struct airoha_queue *q,
+ 	struct page *page;
+ 	bool ipv4, ipv6;
+ 
+-	switch(q->qdma->common.eth->soc->version) {
++	switch (q->qdma->common.eth->soc->version) {
++	case econet_en751221:
++	case econet_en7528:
++		return NULL;
+ 	case airoha_en7523:
+ 		ipv4 = FIELD_GET(EN7523_QDMA_ETH_RXMSG_IP4_MASK, msg1);
+ 		ipv6 = FIELD_GET(EN7523_QDMA_ETH_RXMSG_IP6_MASK, msg1);
+@@ -5452,7 +5461,8 @@ static const struct airoha_ppe_host_ops airoha_ppe_host_ops = {
+ 	.npu_stats_clear = airoha_eth_ppe_npu_stats_clear,
+ };
+ 
+-int airoha_eth_gen2_probe(struct platform_device *pdev, struct airoha_eth *eth)
++static int airoha_eth_gen2_probe(struct platform_device *pdev,
++				 struct airoha_eth *eth)
+ {
+ 	struct reset_control_bulk_data *xsi_rsts;
+ 	struct device_node *np;
+@@ -5606,7 +5616,7 @@ int airoha_eth_gen2_probe(struct platform_device *pdev, struct airoha_eth *eth)
+ 	return err;
+ }
+ 
+-void airoha_eth_gen2_remove(struct platform_device *pdev,
++static void airoha_eth_gen2_remove(struct platform_device *pdev,
+ 			    struct airoha_eth *eth)
+ {
+ 	int i;
+diff --git a/drivers/net/ethernet/airoha/airoha_ppe.c b/drivers/net/ethernet/airoha/airoha_ppe.c
+index d480aa515492..af5cedd2726d 100644
+--- a/drivers/net/ethernet/airoha/airoha_ppe.c
++++ b/drivers/net/ethernet/airoha/airoha_ppe.c
+@@ -258,6 +258,9 @@ static void airoha_ppe_hw_init(struct airoha_ppe *ppe)
+ 			      FIELD_PREP(PPE_BIND_AGE1_DELTA_TCP, 60));
+ 
+ 		switch (eth->soc->version) {
++		case econet_en751221:
++		case econet_en7528:
++			break;
+ 		case airoha_en7523:
+ 			/**
+ 			 * the airoha_en7523 support for 64 and 80 bytes, current use 80 bytes for ppe
+diff --git a/drivers/net/ethernet/airoha/airoha_qdma.c b/drivers/net/ethernet/airoha/airoha_qdma.c
+index 4948b64e38e5..7b39319c5ffa 100644
+--- a/drivers/net/ethernet/airoha/airoha_qdma.c
++++ b/drivers/net/ethernet/airoha/airoha_qdma.c
+@@ -16,6 +16,7 @@
+ 
+ #include "airoha_eth.h"
+ #include "airoha_eth_gen1.h"
++#include "airoha_regs.h"
+ 
+ void airoha_qdma_common_init(struct airoha_qdma_common *qdma,
+ 			     struct airoha_eth *eth, void __iomem *regs, u8 id)
+@@ -525,9 +526,6 @@ static irqreturn_t econet_irq_handler(int irq_num, void *dev_instance)
+ 	return IRQ_HANDLED;
+ }
+ 
+-#define IRQ_RING_IDX_MASK		BIT(16)
+-#define IRQ_DESC_IDX_MASK		GENMASK(11, 0)
+-
+ static int econet_poll_tx_complete(struct napi_struct *napi, int budget)
+ {
+ 	struct qregs_doneq_state state;
+@@ -562,7 +560,7 @@ static int econet_poll_tx_complete(struct napi_struct *napi, int budget)
+ 		irq_queued--;
+ 		done++;
+ 
+-		qid = FIELD_GET(IRQ_RING_IDX_MASK, val);
++		qid = FIELD_GET(EN751221_QDMA_IRQ_RING_IDX_MASK, val);
+ 		if (WARN_ON_ONCE(qid >= ARRAY_SIZE(qdma->q_tx)))
+ 			continue;
+ 
+@@ -570,7 +568,7 @@ static int econet_poll_tx_complete(struct napi_struct *napi, int budget)
+ 		if (WARN_ON_ONCE(!q->ndesc))
+ 			continue;
+ 
+-		index = FIELD_GET(IRQ_DESC_IDX_MASK, val);
++		index = FIELD_GET(EN751221_QDMA_IRQ_DESC_IDX_MASK, val);
+ 		if (WARN_ON_ONCE(index >= q->ndesc))
+ 			continue;
+ 
+@@ -1462,6 +1460,7 @@ struct econet_qdma *airoha_qdma_gen1_new(struct airoha_eth *eth,
+ 
+ 	qdma->dev = eth->dev;
+ 	airoha_qdma_common_init(&qdma->common, eth, qdma_regs, id);
++	qdma->common.num_channels = cfg->num_channels;
+ 	mutex_init(&qdma->lock);
+ 	qdma->regs = qdma_regs;
+ 	memcpy(&qdma->cfg, cfg, sizeof(*cfg));
+@@ -1484,41 +1483,3 @@ struct econet_qdma *airoha_qdma_gen1_new(struct airoha_eth *eth,
+ 
+ 	return qdma;
+ }
+-
+-/*
+- * EcoNet EN751221 has 2 GDM ports, one for LAN and one for WAN.
+- * Each port has it's own registers and MAC address, and it's own
+- * net_device instance.
+- */
+-
+-struct econet_hw_stats {
+-	/* protect concurrent hw_stats accesses */
+-	spinlock_t lock;
+-	struct u64_stats_sync syncp;
+-
+-	/* EN751221 gdm1 has only limited stats, gdm1 has all */
+-	bool g2_stats;
+-
+-	/* get_stats64 */
+-	u64 rx_ok_pkts;
+-	u64 tx_ok_pkts;
+-	u64 rx_ok_bytes;
+-	u64 tx_ok_bytes;
+-	u64 rx_errors;
+-	u64 rx_drops;
+-	u64 tx_drops;
+-	u64 rx_over_errors;
+-
+-	/* get_stats64 (requires gdm2 extended stats) */
+-	u64 rx_crc_error;
+-	u64 rx_multicast;
+-
+-	/* ethtool stats (all requires gdm2 extended stats) */
+-	u64 tx_broadcast;
+-	u64 tx_multicast;
+-	u64 tx_len[7];
+-	u64 rx_broadcast;
+-	u64 rx_fragment;
+-	u64 rx_jabber;
+-	u64 rx_len[7];
+-};
+diff --git a/drivers/net/ethernet/airoha/airoha_regs.h b/drivers/net/ethernet/airoha/airoha_regs.h
+index 4da88c0272d5..19daed5a6a5d 100644
+--- a/drivers/net/ethernet/airoha/airoha_regs.h
++++ b/drivers/net/ethernet/airoha/airoha_regs.h
+@@ -63,6 +63,8 @@
+ #define EN751221_TX_RATE_METER_SLICE_MASK GENMASK(15, 0)
+ #define EN751221_TXQ_MAX_THR_MASK	GENMASK(31, 16)
+ #define EN751221_TXQ_MIN_THR_MASK	GENMASK(15, 0)
++#define EN751221_QDMA_IRQ_RING_IDX_MASK	BIT(16)
++#define EN751221_QDMA_IRQ_DESC_IDX_MASK	GENMASK(11, 0)
+ 
+ #define EN751221_PPE_ENTRIES		16384
+ #define EN751221_FOE_ENTRY_SIZE		80
+-- 
+2.55.0
+

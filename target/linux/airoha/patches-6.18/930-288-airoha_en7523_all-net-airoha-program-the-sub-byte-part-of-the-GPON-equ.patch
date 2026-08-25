@@ -1,0 +1,167 @@
+From ff283c43187076a61c8d85a57ebbaf1967e1a6b4 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Thu, 20 Aug 2026 16:56:58 -0300
+Subject: [PATCH] net: airoha: program the sub-byte part of the GPON
+ equalisation delay
+
+Ranging_Time carries an equalisation delay whose byte-aligned part goes to
+the GPON MAC in G_EQD and whose remaining 0-7 bits are a transmitter delay
+in the xPON PHY. Only the first half was ever programmed:
+
+	priv->bit_delay  = bit_delay;
+	/* Write byte delay to G_EQD; bit delay goes to PHY (not abstracted) */
+	gpon_write(priv, GPON_EQD, byte_delay);
+
+so the value was computed, stored and dropped -- in O4 and again on every
+O5 adjustment, where the recomputed remainder met the same fate. Every
+upstream burst then sits up to 7 bit times away from the position the OLT
+ranged. That is inside the guard band of a generous OLT and marginal on one
+that runs a tight guard time, which is the kind of difference that shows up
+as an ONU that reaches O5 on one line and keeps getting re-ranged on
+another.
+
+Add airoha_xpon_phy_set_gpon_bit_delay() for the transmitter delay register
+at PHY offset 0x433c and call it wherever G_EQD is written. Clear it on the
+way back to O2 as well, so a stale delay from the previous session does not
+offset the serial-number burst of the next ranging cycle -- the vendor
+driver does the same in its O2 transition.
+
+The register and its 0-7 range are taken from the EN7523 branch of the
+vendor PHY code (phy_bit_delay(), xpon_phy/src/phy.c).
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_xpon.c | 27 +++++++++++++++++++-
+ drivers/phy/airoha/phy-airoha-xpon.c      | 30 +++++++++++++++++++++++
+ include/linux/phy/phy-airoha-xpon.h       |  1 +
+ 3 files changed, 57 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_xpon.c b/drivers/net/ethernet/airoha/airoha_xpon.c
+index 1284e9287010..25e8c1fe5f0b 100644
+--- a/drivers/net/ethernet/airoha/airoha_xpon.c
++++ b/drivers/net/ethernet/airoha/airoha_xpon.c
+@@ -1642,6 +1642,23 @@ static void gpon_cb_set_onu_id(void *hw_priv, u8 onu_id)
+ 	gpon_dump_activation_regs(priv, "ONU-ID assigned");
+ }
+ 
++/*
++ * EqD is split across the two blocks: the byte-aligned part goes to the MAC
++ * in G_EQD and the remaining 0-7 bits are a transmitter delay in the PHY.
++ * Program both, or every upstream burst sits up to 7 bit times away from the
++ * position the OLT ranged.
++ */
++static void gpon_set_bit_delay(struct xpon_priv *priv, u32 bit_delay)
++{
++	int ret;
++
++	ret = airoha_xpon_phy_set_gpon_bit_delay(priv->phy, bit_delay & 7);
++	if (ret)
++		dev_warn(priv->dev,
++			 "failed to program GPON PHY bit delay %u: %d\n",
++			 bit_delay & 7, ret);
++}
++
+ static void gpon_cb_set_eqd_o4(void *hw_priv, u32 byte_delay, u32 bit_delay)
+ {
+ 	struct xpon_priv *priv = hw_priv;
+@@ -1650,8 +1667,8 @@ static void gpon_cb_set_eqd_o4(void *hw_priv, u32 byte_delay, u32 bit_delay)
+ 		 byte_delay, bit_delay);
+ 	priv->byte_delay = byte_delay;
+ 	priv->bit_delay  = bit_delay;
+-	/* Write byte delay to G_EQD; bit delay goes to PHY (not abstracted) */
+ 	gpon_write(priv, GPON_EQD, byte_delay);
++	gpon_set_bit_delay(priv, bit_delay);
+ 	gpon_dump_activation_regs(priv, "O4 EqD programmed");
+ }
+ 
+@@ -1696,6 +1713,7 @@ static void gpon_cb_adjust_eqd_o5(void *hw_priv, u32 new_eqd)
+ 	}
+ 
+ 	gpon_write(priv, GPON_EQD, priv->byte_delay);
++	gpon_set_bit_delay(priv, priv->bit_delay);
+ 	dev_info(priv->dev,
+ 		 "GPON O5 EqD programmed: byte_delay=%u bit_delay=%u sync=%#08x\n",
+ 		 priv->byte_delay, priv->bit_delay, sync_raw);
+@@ -2349,6 +2367,13 @@ static void gpon_cb_state_changed(void *hw_priv, enum gpon_state state)
+ 		dev_info(priv->dev,
+ 			 "GPON O2 activation response time=%#06x\n",
+ 			 gpon_read(priv, GPON_RSP_TIME));
++		/*
++		 * A stale bit delay from the previous session would offset the
++		 * serial-number burst of the next ranging cycle.
++		 */
++		priv->byte_delay = 0;
++		priv->bit_delay = 0;
++		gpon_set_bit_delay(priv, 0);
+ 		fallthrough;
+ 	case GPON_O3_SERIAL_NUMBER:
+ 	case GPON_O4_RANGING:
+diff --git a/drivers/phy/airoha/phy-airoha-xpon.c b/drivers/phy/airoha/phy-airoha-xpon.c
+index d1e80ebeea80..9976f1d70069 100644
+--- a/drivers/phy/airoha/phy-airoha-xpon.c
++++ b/drivers/phy/airoha/phy-airoha-xpon.c
+@@ -71,6 +71,7 @@
+ #define XPON_SERDES_BEN_CTRL		0x4244
+ #define XPON_SERDES_CTRL18		0x4248
+ #define XPON_SERDES_CTRL19		0x424c
++#define XPON_GPON_TX_BIT_DELAY		0x433c
+ #define XPON_RX_MODE_CTRL		0x4344
+ #define XPON_CDR_CTRL			0x4530
+ #define XPON_FREQ_CTRL			0x4608
+@@ -100,6 +101,7 @@
+ #define XPON_GPON_EXT_O5_MASK		GENMASK(15, 8)
+ #define XPON_GPON_EXT_MODE		BIT(16)
+ #define XPON_GPON_EXT_OPER_MASK	GENMASK(18, 17)
++#define XPON_GPON_TX_BIT_DELAY_MASK	GENMASK(7, 0)
+ 
+ #define XPON_GPON_TX_ENABLE_PATTERN	0xaa
+ #define XPON_GPON_TX_COUNTER_ENABLE	BIT(3)
+@@ -384,6 +386,34 @@ int airoha_xpon_phy_set_gpon_extended_preamble(struct phy *phy,
+ }
+ EXPORT_SYMBOL_GPL(airoha_xpon_phy_set_gpon_extended_preamble);
+ 
++/*
++ * Sub-byte part of the ranging equalisation delay.  The GPON MAC only takes
++ * the byte-aligned part of EqD in G_EQD; the remaining 0-7 bits are a
++ * transmitter delay applied here.  Leaving it at zero shifts every upstream
++ * burst by up to 7 bit times against the position the OLT ranged, which eats
++ * into the guard band and makes bursts marginal on OLTs with a tight one.
++ */
++int airoha_xpon_phy_set_gpon_bit_delay(struct phy *phy, u8 delay)
++{
++	struct airoha_xpon_phy *priv;
++	int ret;
++
++	if (delay > 7)
++		return -EINVAL;
++
++	ret = airoha_xpon_phy_get_active_gpon(phy, &priv);
++	if (ret)
++		return ret;
++
++	airoha_xpon_phy_rmw(priv, XPON_GPON_TX_BIT_DELAY,
++			    XPON_GPON_TX_BIT_DELAY_MASK,
++			    FIELD_PREP(XPON_GPON_TX_BIT_DELAY_MASK, delay));
++	dev_dbg(priv->dev, "GPON PHY TX bit delay=%u reg=%#010x\n", delay,
++		airoha_xpon_phy_read(priv, XPON_GPON_TX_BIT_DELAY));
++	return 0;
++}
++EXPORT_SYMBOL_GPL(airoha_xpon_phy_set_gpon_bit_delay);
++
+ int airoha_xpon_phy_set_gpon_oper_state(
+ 	struct phy *phy, enum airoha_xpon_phy_gpon_oper_state state)
+ {
+diff --git a/include/linux/phy/phy-airoha-xpon.h b/include/linux/phy/phy-airoha-xpon.h
+index 551b6a7eac47..6f1a2ea70bfb 100644
+--- a/include/linux/phy/phy-airoha-xpon.h
++++ b/include/linux/phy/phy-airoha-xpon.h
+@@ -39,5 +39,6 @@ int airoha_xpon_phy_set_gpon_extended_preamble(struct phy *phy,
+ 					       u8 o5_preamble);
+ int airoha_xpon_phy_set_gpon_oper_state(
+ 	struct phy *phy, enum airoha_xpon_phy_gpon_oper_state state);
++int airoha_xpon_phy_set_gpon_bit_delay(struct phy *phy, u8 delay);
+ 
+ #endif /* __LINUX_PHY_AIROHA_XPON_H */
+-- 
+2.55.0
+
