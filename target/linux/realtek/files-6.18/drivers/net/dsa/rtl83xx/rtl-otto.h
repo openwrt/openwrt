@@ -1415,6 +1415,8 @@ struct rtldsa_config {
 	void (*packet_cntr_clear)(int counter);
 	void (*set_receive_management_action)(int port, rma_ctrl_t type, action_type_t action);
 	void (*led_init)(struct rtl838x_switch_priv *priv);
+	u32 (*get_egress_rate)(struct rtl838x_switch_priv *priv, int port);
+	int (*set_egress_rate)(struct rtl838x_switch_priv *priv, int port, u32 rate);
 	void (*qos_init)(struct rtl838x_switch_priv *priv);
 	int (*trk_mbr_ctr)(int group);
 	void (*lag_switch_init)(struct rtl838x_switch_priv *priv);
@@ -1628,20 +1630,20 @@ int rtl83xx_setup_tc(struct net_device *dev, enum tc_setup_type type, void *type
 
 /* Port register accessor functions for the RTL839x and RTL931X SoCs */
 void rtl839x_mask_port_reg_be(u64 clear, u64 set, int reg);
-u32 rtl839x_get_egress_rate(struct rtl838x_switch_priv *priv, int port);
+u32 rtldsa_839x_get_egress_rate(struct rtl838x_switch_priv *priv, int port);
 u64 rtl839x_get_port_reg_be(int reg);
 void rtl839x_set_port_reg_be(u64 set, int reg);
 void rtl839x_mask_port_reg_le(u64 clear, u64 set, int reg);
-int rtl839x_set_egress_rate(struct rtl838x_switch_priv *priv, int port, u32 rate);
+int rtldsa_839x_set_egress_rate(struct rtl838x_switch_priv *priv, int port, u32 rate);
 void rtl839x_set_port_reg_le(u64 set, int reg);
 u64 rtl839x_get_port_reg_le(int reg);
 
 /* Port register accessor functions for the RTL838x and RTL930X SoCs */
 void rtl838x_mask_port_reg(u64 clear, u64 set, int reg);
 void rtl838x_set_port_reg(u64 set, int reg);
-u32 rtl838x_get_egress_rate(struct rtl838x_switch_priv *priv, int port);
+u32 rtldsa_838x_get_egress_rate(struct rtl838x_switch_priv *priv, int port);
 u64 rtl838x_get_port_reg(int reg);
-int rtl838x_set_egress_rate(struct rtl838x_switch_priv *priv, int port, u32 rate);
+int rtldsa_838x_set_egress_rate(struct rtl838x_switch_priv *priv, int port, u32 rate);
 
 /* RTL838x-specific */
 u32 rtl838x_hash(struct rtl838x_switch_priv *priv, u64 seed);
