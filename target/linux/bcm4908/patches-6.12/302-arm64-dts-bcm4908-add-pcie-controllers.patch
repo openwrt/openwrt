@@ -1,0 +1,188 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Anatoliy Shulika <shulikaa@icloud.com>
+Date: Thu, 6 Aug 2026 12:00:00 +0200
+Subject: [PATCH] arm64: dts: broadcom: bcm4908: add PCIe controllers
+
+BCM4908 has three PCIe controllers. Describe all three (PCIE0 at
+0x80040000, PCIE1 at 0x80050000 and PCIE2 at 0x80060000), each with its
+own memory window, MSI controller, power domain and reset line. They are
+left disabled here; boards enable the ones they populate.
+
+PCIE0 and PCIE1 are tested on a TP-Link Archer C2300 v1. PCIE2 is
+unpopulated on that board - the vendor bootlog reports "failed to bring
+up core [2] link" - so its node is derived from the vendor SDK headers
+and the kernel's own BCM4908 tables but is not runtime-tested. It is
+described anyway because it is part of the SoC and other BCM4908 boards
+do wire it up.
+
+Signed-off-by: Anatoliy Shulika <shulikaa@icloud.com>
+---
+--- a/arch/arm64/boot/dts/broadcom/bcmbca/bcm4908.dtsi
++++ b/arch/arm64/boot/dts/broadcom/bcmbca/bcm4908.dtsi
+@@ -313,6 +313,157 @@
+ 		};
+ 	};
+ 
++	/*
++	 * PCIE0 and PCIE1 are confirmed real, populated PCIe links on the
++	 * TP-Link Archer C2300 v1: booting stock firmware shows both
++	 * controllers linking up and enumerating real endpoint devices with
++	 * real BAR assignments (PCIE0 gets an 8MB BAR, consistent with a
++	 * WiFi chip's register/buffer space). PCIE2 is unpopulated on that
++	 * board ("failed to bring up core [2] link" in the stock boot log),
++	 * so its node is described from the vendor headers but has not been
++	 * exercised; boards that populate it enable it themselves.
++	 *
++	 * Register bases/sizes and outbound MMIO windows are from the
++	 * vendor GPL SDK's 4908_map_part.h (PERF_PHYS_BASE-relative
++	 * PCIE0_PHYS_BASE/PCIE0_MEM_PHYS_BASE etc). Interrupt numbers are
++	 * from the same SDK's 4908_intr.h (INTERRUPT_PCIE_0/1_CPU_INTR,
++	 * SPI_TABLE_OFFSET-relative) and were cross-checked against the
++	 * NAND controller's already-known-correct interrupt (SPI 37 here
++	 * matches this DTS's existing nand-controller node exactly),
++	 * confirming the SPI_TABLE_OFFSET+N convention translates directly
++	 * to DTS GIC_SPI N.
++	 *
++	 * No separate MSI interrupt line exists per controller in the
++	 * vendor header (4908_intr.h only defines one _CPU_INTR per PCIE
++	 * core), unlike richer brcmstb SoCs (e.g. bcm2711/RPi4, which wires
++	 * "pcie" and "msi" to two distinct physical GIC lines). The root
++	 * complex decodes MSI writes internally and re-asserts them on its
++	 * own existing interrupt line rather than driving a dedicated pin,
++	 * so one line serves both roles - matching the vendor header
++	 * exactly. A first attempt at enabling this (self-referencing
++	 * msi-parent with no second interrupts entry at all) failed probe
++	 * outright on real hardware ("cannot map MSI interrupt", "probe of
++	 * internal MSI failed") because irq_of_parse_and_map(.., 1) had
++	 * nothing to resolve. Fixed by giving index 1 a real entry that
++	 * reuses the same GIC_SPI line as index 0 under the name "msi",
++	 * since both roles are serviced by the one physical interrupt this
++	 * SoC actually has.
++	 *
++	 * Without a working MSI (or any other) interrupt path, brcmfmac's
++	 * PCIe msgbuf/doorbell completion notification has nothing to wake
++	 * it: confirmed on real hardware by /proc/interrupts showing zero
++	 * entries for GIC_SPI 59/60 at all (compare brcmnand/switch/enet,
++	 * which do show up), while the WiFi chip's firmware was confirmed
++	 * alive (actively producing new console output) but brcmfmac timed
++	 * out on every query and reported "dongle is not responding" -
++	 * consistent with the host never being notified a response was
++	 * ready, regardless of nvram/calibration content (verified by
++	 * testing two very different nvram files with identical failure).
++	 *
++	 * power-domains is not optional in practice, even though the binding
++	 * does not require it: the vendor driver explicitly powers each core
++	 * up via pmc_pcie_power_up() before touching any registers, and the
++	 * mainline pcie-brcmstb.c driver has no equivalent power-domain code
++	 * of its own - it relies entirely on the generic power-domain
++	 * framework powering the device on before probe() runs. Without this
++	 * property the very first register access in brcm_pcie_probe()
++	 * (RGR1_SW_INIT_1, offset 0x9210, well within this node's own reg
++	 * range) takes a synchronous external abort and panics, confirmed by
++	 * testing on real hardware. BCM_PMB_PCIE0/1/2 indices are from
++	 * drivers/pmdomain/bcm/bcm-pmb.c's own bcm4908_pmb_domains table.
++	 *
++	 * reset-names = "perst" is required, not cosmetic: the driver
++	 * looks the reset up by that exact name
++	 * (devm_reset_control_get_optional_exclusive(dev, "perst")).
++	 * Without it, pcie->perst_reset stays NULL, PERST# to the
++	 * downstream device is never deasserted, and the device stays
++	 * held in reset - confirmed on real hardware: the root port
++	 * itself comes up fine, but bus 01 shows no device at all, and
++	 * brcm_pcie_perst_set_4908's WARN_ONCE(!pcie->perst_reset, ...)
++	 * fires during brcm_pcie_start_link.
++	 *
++	 * The reset index is the PCIe core number: it selects a bit in the
++	 * misc block's miscPCIECtrl register (offset 0x44, the
++	 * reset-controller node below), which the vendor driver drives as
++	 * "misc_regs->miscPCIECtrl &= ~(1 << core)" to assert and
++	 * "|= (1 << core)" to release - clear-to-assert, which is why the
++	 * mainline compatible is registered active-low in reset-simple.c.
++	 */
++	pcie0: pcie@80040000 {
++		compatible = "brcm,bcm4908-pcie";
++		reg = <0x0 0x80040000 0x0 0xa000>;
++		device_type = "pci";
++		#address-cells = <3>;
++		#size-cells = <2>;
++		#interrupt-cells = <1>;
++		interrupts = <GIC_SPI 59 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 59 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "pcie", "msi";
++		interrupt-map-mask = <0x0 0x0 0x0 0x7>;
++		interrupt-map = <0 0 0 1 &gic GIC_SPI 59 IRQ_TYPE_LEVEL_HIGH>,
++				<0 0 0 2 &gic GIC_SPI 59 IRQ_TYPE_LEVEL_HIGH>,
++				<0 0 0 3 &gic GIC_SPI 59 IRQ_TYPE_LEVEL_HIGH>,
++				<0 0 0 4 &gic GIC_SPI 59 IRQ_TYPE_LEVEL_HIGH>;
++		msi-controller;
++		msi-parent = <&pcie0>;
++		power-domains = <&pmb BCM_PMB_PCIE0>;
++		ranges = <0x02000000 0x0 0xc0000000  0x0 0xc0000000  0x0 0x10000000>;
++		dma-ranges = <0x42000000 0x0 0x00000000  0x0 0x00000000  0x0 0x20000000>;
++		resets = <&pcie_reset 0>;
++		reset-names = "perst";
++		status = "disabled";
++	};
++
++	pcie1: pcie@80050000 {
++		compatible = "brcm,bcm4908-pcie";
++		reg = <0x0 0x80050000 0x0 0xa000>;
++		device_type = "pci";
++		#address-cells = <3>;
++		#size-cells = <2>;
++		#interrupt-cells = <1>;
++		interrupts = <GIC_SPI 60 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 60 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "pcie", "msi";
++		interrupt-map-mask = <0x0 0x0 0x0 0x7>;
++		interrupt-map = <0 0 0 1 &gic GIC_SPI 60 IRQ_TYPE_LEVEL_HIGH>,
++				<0 0 0 2 &gic GIC_SPI 60 IRQ_TYPE_LEVEL_HIGH>,
++				<0 0 0 3 &gic GIC_SPI 60 IRQ_TYPE_LEVEL_HIGH>,
++				<0 0 0 4 &gic GIC_SPI 60 IRQ_TYPE_LEVEL_HIGH>;
++		msi-controller;
++		msi-parent = <&pcie1>;
++		power-domains = <&pmb BCM_PMB_PCIE1>;
++		ranges = <0x02000000 0x0 0xd0000000  0x0 0xd0000000  0x0 0x10000000>;
++		dma-ranges = <0x42000000 0x0 0x00000000  0x0 0x00000000  0x0 0x20000000>;
++		resets = <&pcie_reset 1>;
++		reset-names = "perst";
++		status = "disabled";
++	};
++
++	pcie2: pcie@80060000 {
++		compatible = "brcm,bcm4908-pcie";
++		reg = <0x0 0x80060000 0x0 0xa000>;
++		device_type = "pci";
++		#address-cells = <3>;
++		#size-cells = <2>;
++		#interrupt-cells = <1>;
++		interrupts = <GIC_SPI 61 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 61 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "pcie", "msi";
++		interrupt-map-mask = <0x0 0x0 0x0 0x7>;
++		interrupt-map = <0 0 0 1 &gic GIC_SPI 61 IRQ_TYPE_LEVEL_HIGH>,
++				<0 0 0 2 &gic GIC_SPI 61 IRQ_TYPE_LEVEL_HIGH>,
++				<0 0 0 3 &gic GIC_SPI 61 IRQ_TYPE_LEVEL_HIGH>,
++				<0 0 0 4 &gic GIC_SPI 61 IRQ_TYPE_LEVEL_HIGH>;
++		msi-controller;
++		msi-parent = <&pcie2>;
++		power-domains = <&pmb BCM_PMB_PCIE2>;
++		ranges = <0x02000000 0x0 0xe0000000  0x0 0xe0000000  0x0 0x10000000>;
++		dma-ranges = <0x42000000 0x0 0x00000000  0x0 0x00000000  0x0 0x20000000>;
++		resets = <&pcie_reset 2>;
++		reset-names = "perst";
++		status = "disabled";
++	};
++
+ 	bus@ff800000 {
+ 		compatible = "simple-bus";
+ 		#address-cells = <1>;
+@@ -620,7 +771,7 @@
+ 			#size-cells = <1>;
+ 			ranges = <0x00 0x2600 0xe4>;
+ 
+-			reset-controller@2644 {
++			pcie_reset: reset-controller@2644 {
+ 				compatible = "brcm,bcm4908-misc-pcie-reset";
+ 				reg = <0x44 0x04>;
+ 				#reset-cells = <1>;
