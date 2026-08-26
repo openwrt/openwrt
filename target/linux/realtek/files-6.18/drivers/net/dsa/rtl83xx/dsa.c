@@ -1740,9 +1740,11 @@ void rtldsa_port_fast_age(struct dsa_switch *ds, int port)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 
-	mutex_lock(&priv->reg_mutex);
 	if (!priv->r->fast_age)
-		priv->r->fast_age(priv, port, -1);
+		return;
+
+	mutex_lock(&priv->reg_mutex);
+	priv->r->fast_age(priv, port, -1);
 	mutex_unlock(&priv->reg_mutex);
 }
 
