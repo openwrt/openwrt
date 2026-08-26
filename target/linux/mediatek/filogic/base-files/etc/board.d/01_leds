@@ -40,18 +40,6 @@ asus,tuf-ax6000)
 	ucidef_set_led_netdev "lan5" "LAN5" "mdio-bus:05:white:lan" "lan5" "link tx rx"
 	ucidef_set_led_netdev "wan" "WAN" "mdio-bus:06:white:wan" "eth1" "link tx rx"
 	;;
-comfast,cf-wa933|\
-comfast,cf-wa933-128m)
-	ucidef_set_led_netdev "lan1" "lan1" "blue:lan-1" "lan1" "link tx rx"
-	ucidef_set_led_netdev "lan2" "lan2" "blue:lan-2" "lan2" "link tx rx"
-	ucidef_set_led_netdev "wan" "wan" "blue:wan" "eth1" "link tx rx"
-	;;
-confiabits,mt7981)
-	ucidef_set_led_netdev "lan1" "lan1" "blue:lan-1" "lan1" "link tx rx"
-	ucidef_set_led_netdev "lan2" "lan2" "blue:lan-2" "lan2" "link tx rx"
-	ucidef_set_led_netdev "lan3" "lan3" "blue:lan-3" "lan3" "link tx rx"
-	ucidef_set_led_netdev "wan" "wan" "blue:wan" "wan" "link tx rx"
-	;;
 bananapi,bpi-r3-mini)
 	ucidef_set_led_netdev "lan1" "LAN" "mdio-bus:0e:green:lan" "eth0" "link_2500 link_1000 tx rx"
 	ucidef_set_led_netdev "lan2" "LAN" "mdio-bus:0e:yellow:lan" "eth0" "link_2500 link_100 tx rx"
@@ -84,6 +72,18 @@ comfast,cf-xr186)
 	ucidef_set_led_netdev "lan" "LAN" "blue:lan" "eth0" "link tx rx"
 	ucidef_set_led_netdev "wlan2g" "WLAN2G" "green:wlan" "phy0-ap0" "link tx rx"
 	ucidef_set_led_netdev "wlan5g" "WLAN5G" "blue:wlan" "phy1-ap0" "link tx rx"
+	;;
+comfast,cf-wa933|\
+comfast,cf-wa933-128m)
+	ucidef_set_led_netdev "lan1" "lan1" "blue:lan-1" "lan1" "link tx rx"
+	ucidef_set_led_netdev "lan2" "lan2" "blue:lan-2" "lan2" "link tx rx"
+	ucidef_set_led_netdev "wan" "wan" "blue:wan" "eth1" "link tx rx"
+	;;
+confiabits,mt7981)
+	ucidef_set_led_netdev "lan1" "lan1" "blue:lan-1" "lan1" "link tx rx"
+	ucidef_set_led_netdev "lan2" "lan2" "blue:lan-2" "lan2" "link tx rx"
+	ucidef_set_led_netdev "lan3" "lan3" "blue:lan-3" "lan3" "link tx rx"
+	ucidef_set_led_netdev "wan" "wan" "blue:wan" "wan" "link tx rx"
 	;;
 cudy,re3000-v1|\
 kebidumei,ax3000-u22|\
@@ -137,8 +137,21 @@ hiveton,h5000m)
 	ucidef_set_led_netdev "wlan2g" "wlan-2ghz" "amber:wlan-2ghz" "phy0.0-ap0" "link tx rx"
 	ucidef_set_led_netdev "wlan5g" "wlan-5ghz" "blue:wlan-5ghz" "phy0.1-ap0" "link tx rx"
 	;;
-huasifei,wh3000)
-	ucidef_set_led_netdev "wan" "WAN" "red:wan" "eth1" "link tx rx"
+huasifei,wh3000-emmc)
+	ucidef_set_led_netdev "wan" "WAN" "red:wan" "eth1"
+	ucidef_set_led_netdev "wlan" "WLAN" "white:wlan" "phy1-ap0"
+	;;
+imou,hx21|\
+nokia,ea0326gmp)
+	ucidef_set_led_netdev "wan" "WAN" "green:wan" "eth1" "link"
+	ucidef_set_led_netdev "lan" "LAN" "green:lan" "br-lan" "link"
+	ucidef_set_led_netdev "wlan" "WLAN" "green:wlan" "phy1-ap0" "link"
+	;;
+livinet,zr-3020|\
+livinet,zr-3020-ubootmod)
+	ucidef_set_led_netdev "internet" "INTERNET" "blue:internet" "wan"
+	ucidef_set_led_netdev "wlan2g" "WLAN2G" "blue:wlan2g" "phy0-ap0"
+	ucidef_set_led_netdev "wlan5g" "WLAN5G" "blue:wlan5g" "phy1-ap0"
 	;;
 huasifei,wh3000r-nand)
 	ucidef_set_led_netdev "wan" "WAN" "blue:wan-online" "wan" "link"
@@ -220,12 +233,6 @@ netis,nx31)
 	;;
 netis,nx32u)
 	ucidef_set_led_netdev "internet" "internet" "green:wan-online" "wan" "link"
-	;;
-imou,hx21|\
-nokia,ea0326gmp)
-	ucidef_set_led_netdev "wan" "WAN" "green:wan" "eth1" "link"
-	ucidef_set_led_netdev "lan" "LAN" "green:lan" "br-lan" "link"
-	ucidef_set_led_netdev "wlan" "WLAN" "green:wlan" "phy1-ap0" "link"
 	;;
 nradio,c8-668gl)
 	ucidef_set_led_netdev "wifi" "WIFI" "blue:wlan" "phy1-ap0" "link"
@@ -345,6 +352,25 @@ tplink,re6000xd)
 	ucidef_set_led_netdev "lan-2" "lan-2" "blue:lan-1" "lan2" "link tx rx"
 	ucidef_set_led_netdev "eth1" "lan-3" "blue:lan-2" "eth1" "link tx rx"
 	;;
+tplink,tl-7dr7230-v1|\
+tplink,tl-7dr7230-v2)
+	ucidef_set_led_netdev "lan1" "LAN1" "mt7530-0:03:green:lan" "lan1"
+	ucidef_set_led_netdev "lan2" "LAN2" "mt7530-0:02:green:lan" "lan2"
+	ucidef_set_led_netdev "lan3" "LAN3" "mt7530-0:01:green:lan" "lan3"
+	ucidef_set_led_netdev "lan4" "LAN4" "mt7530-0:00:green:lan" "lan4"
+	ucidef_set_led_netdev "wan" "WAN" "mdio-bus:0f:green:wan" "wan"
+	;;
+tplink,tl-7dr7250-v1)
+	ucidef_set_led_netdev "lan1" "LAN1" "mt7530-0:01:green:lan" "lan1"
+	ucidef_set_led_netdev "lan2" "LAN2" "mt7530-0:00:green:lan" "lan2"
+	ucidef_set_led_netdev "lan3" "LAN3" "mdio-bus:0f:green:lan" "lan3"
+	;;
+tplink,tl-7dr7299-v1)
+	ucidef_set_led_netdev "lan1" "LAN1" "mt7530-0:02:green:lan" "lan1"
+	ucidef_set_led_netdev "lan2" "LAN2" "mt7530-0:03:green:lan" "lan2"
+	ucidef_set_led_netdev "wan" "WAN" "mdio-bus:01:green:wan" "eth1"
+	ucidef_set_led_netdev "sfp" "SFP" "green:sfp" "sfp"
+	;;
 wavlink,wl-wn536ax6-a)
 	ucidef_set_led_netdev "wan" "wan" "blue:wan" "eth1" "link tx rx"
 	;;
@@ -365,7 +391,7 @@ xiaomi,mi-router-wr30u-ubootmod)
 	;;
 xiaomi,redmi-router-ax6000-stock|\
 xiaomi,redmi-router-ax6000-ubootmod)
-	ucidef_set_led_netdev "wan" "wan" "rgb:network" "wan"
+	ucidef_set_led_netdev "wan" "wan" "rgb:network" "wan" "link"
 	;;
 zbtlink,zbt-z8103ax|\
 zbtlink,zbt-z8103ax-c|\
