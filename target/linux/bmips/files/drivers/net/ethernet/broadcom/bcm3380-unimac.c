@@ -994,7 +994,17 @@ static s32 unimac_dqm_poll_rx(struct napi_struct *napi, struct sk_buff **skb)
 		if (!msp_dqm_queue_not_empty(unimac->msp, queue))
 			continue;
 
-		u32 token = msp_dqm_read_word(unimac->msp, queue, 0);
+		unsigned int rx_token_words = msp_dqm_queue_token_words(unimac->msp, queue);
+		u32 token;
+
+		if (rx_token_words > 1) {
+			// LanRxMsg, msgHdr + token
+			msp_dqm_read_word(unimac->msp, queue, 0);
+			token = msp_dqm_read_word(unimac->msp, queue, 1);
+		} else {
+			// token only
+			token = msp_dqm_read_word(unimac->msp, queue, 0);
+		}
 		size_t frame_len = fpm_token_size(token);
 		const void *packet = fpm_token_to_virt(fpm_pool, token);
 		if (!packet) {

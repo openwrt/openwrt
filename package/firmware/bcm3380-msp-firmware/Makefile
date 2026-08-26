@@ -6,6 +6,8 @@ PKG_NAME:=bcm3380-msp-firmware
 PKG_RELEASE:=1
 PKG_FLAGS:=nonshared
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
+PKG_FILE_DEPENDS:=$(CURDIR)/bcm3380-msp-fw.c $(CURDIR)/bcm3380-msp-fw.lds \
+	$(TOPDIR)/target/linux/bmips/files/include/soc/bcm/bcm3380-msp-fw.h
 
 include $(INCLUDE_DIR)/package.mk
 

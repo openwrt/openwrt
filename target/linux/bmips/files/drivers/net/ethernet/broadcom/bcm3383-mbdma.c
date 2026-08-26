@@ -136,22 +136,18 @@
 #define MBDMA_TX_CHAN_CONTROL04				0x0180
 #define MBDMA_TX_CHAN_CONTROL05				0x01a0
 #define MBDMA_TX_CHAN_CONTROL_MAX_BURST_SHIFT		20
-#define MBDMA_TX_CHAN_CONTROL_MAX_BURST_16 \
-	(16 << MBDMA_TX_CHAN_CONTROL_MAX_BURST_SHIFT)
+#define MBDMA_TX_CHAN_CONTROL_MAX_BURST_MASK		GENMASK(28, 20)
 #define MBDMA_TX_CHAN_CONTROL_MSG_ID_SHIFT		8
 #define MBDMA_TX_CHAN_CONTROL_MSG_ID_3 \
 	(3 << MBDMA_TX_CHAN_CONTROL_MSG_ID_SHIFT)
 #define MBDMA_TX_CHAN_CONTROL_MAC_ID_SHIFT		4
-#define MBDMA_TX_CHAN_CONTROL_MAX_REQS_1		1
+#define MBDMA_TX_CHAN_CONTROL_MAX_REQS_MASK		GENMASK(3, 0)
 /*
  * GPL MbdmaTxChanControl fields:
- * StartStopFlush=0, EavMode=0, MaxBurst=16, BackpressureSel=0,
- * TxStatOnError=0, MsgId=3, MacId=<DTS mac-id>, MaxReqs=1.
+ * StartStopFlush=0, EavMode=0, MaxBurst=<DTS brcm,tx-max-burst>,
+ * BackpressureSel=0, TxStatOnError=0, MsgId=3, MacId=<DTS mac-id>,
+ * MaxReqs=<DTS brcm,tx-max-reqs>.
  */
-#define MBDMA_TX_CHAN_CONTROL_ENET_TX \
-	(MBDMA_TX_CHAN_CONTROL_MAX_BURST_16 | \
-	 MBDMA_TX_CHAN_CONTROL_MSG_ID_3 | \
-	 MBDMA_TX_CHAN_CONTROL_MAX_REQS_1)
 
 // MbdmaRegisters.Lanmsgaddress02..05
 #define MBDMA_LAN_MSG_ADDRESS02			0x0144
@@ -175,6 +171,7 @@ struct bcm3383_mbdma {
 	void __iomem *base;
 	struct bcm3380_fpm_pool *fpm_pool;
 	resource_size_t phys;
+	u32 tx_chan_control;
 	struct mutex lock;
 	struct clk_bulk_data *clocks;
 	int num_clocks;
@@ -277,7 +274,7 @@ static void mbdma_write_tx_channel(struct bcm3383_mbdma *mbdma, u32 control,
 				   u32 address, u32 mac_id,
 				   u32 in_msg_data_bus_addr)
 {
-	writel_be(MBDMA_TX_CHAN_CONTROL_ENET_TX |
+	writel_be(mbdma->tx_chan_control |
 		  (mac_id << MBDMA_TX_CHAN_CONTROL_MAC_ID_SHIFT),
 		  mbdma->base + control);
 	writel_be(in_msg_data_bus_addr, mbdma->base + address);
@@ -323,7 +320,8 @@ static u32 bcm3383_mbdma_prepare(struct unimac_mbdma *api,
 		  mbdma->base + MBDMA_TOKEN_CACHE_CTL2);
 	writel_be(MBDMA_TOKEN_CACHE_CTL3_ALLOC_ENABLE_ALL,
 		  mbdma->base + MBDMA_TOKEN_CACHE_CTL3);
-	writel_be(MBDMA_GLOBAL_CTL_LAN_TX_MSG_ID_CFG, mbdma->base + MBDMA_GLOBAL_CTL);
+	writel_be(MBDMA_GLOBAL_CTL_LAN_TX_MSG_ID_CFG,
+		  mbdma->base + MBDMA_GLOBAL_CTL);
 
 	if (mac_id == 0) {
 		writel_be(MBDMA_RX_CHAN_CONTROL_ENET_RX |
@@ -398,11 +396,38 @@ static int mbdma_probe(struct platform_device *pdev)
 	if (IS_ERR(mbdma->base))
 		return PTR_ERR(mbdma->base);
 
+	u32 tx_max_burst;
+	int ret = of_property_read_u32(dev->of_node, "brcm,tx-max-burst",
+				       &tx_max_burst);
+	if (ret)
+		return dev_err_probe(dev, ret, "missing brcm,tx-max-burst\n");
+	if (!tx_max_burst ||
+	    tx_max_burst >
+	    (MBDMA_TX_CHAN_CONTROL_MAX_BURST_MASK >>
+	     MBDMA_TX_CHAN_CONTROL_MAX_BURST_SHIFT))
+		return dev_err_probe(dev, -EINVAL,
+				     "invalid brcm,tx-max-burst %u\n",
+				     tx_max_burst);
+
+	u32 tx_max_reqs;
+	ret = of_property_read_u32(dev->of_node, "brcm,tx-max-reqs",
+				   &tx_max_reqs);
+	if (ret)
+		return dev_err_probe(dev, ret, "missing brcm,tx-max-reqs\n");
+	if (!tx_max_reqs || tx_max_reqs > MBDMA_TX_CHAN_CONTROL_MAX_REQS_MASK)
+		return dev_err_probe(dev, -EINVAL,
+				     "invalid brcm,tx-max-reqs %u\n",
+				     tx_max_reqs);
+
+	mbdma->tx_chan_control =
+		(tx_max_burst << MBDMA_TX_CHAN_CONTROL_MAX_BURST_SHIFT) |
+		MBDMA_TX_CHAN_CONTROL_MSG_ID_3 | tx_max_reqs;
+
 	mbdma->num_clocks = devm_clk_bulk_get_all(dev, &mbdma->clocks);
 	if (mbdma->num_clocks < 0)
 		return mbdma->num_clocks;
 
-	int ret = clk_bulk_prepare_enable(mbdma->num_clocks, mbdma->clocks);
+	ret = clk_bulk_prepare_enable(mbdma->num_clocks, mbdma->clocks);
 	if (ret)
 		return dev_err_probe(dev, ret, "failed to enable shared UniMAC clocks\n");
 

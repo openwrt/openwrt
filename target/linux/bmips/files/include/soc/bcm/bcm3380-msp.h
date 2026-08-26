@@ -42,6 +42,8 @@ bool msp_dqm_queue_has_space(struct bcm3380_msp *msp,
 u32 msp_dqm_not_empty_status(struct bcm3380_msp *msp);
 u32 msp_dqm_queue_status(struct bcm3380_msp *msp,
 				 unsigned int queue);
+unsigned int msp_dqm_queue_token_words(struct bcm3380_msp *msp,
+				       unsigned int queue);
 u32 msp_dqm_read_word(struct bcm3380_msp *msp, unsigned int queue,
 			      unsigned int word);
 void msp_dqm_write_word(struct bcm3380_msp *msp, unsigned int queue,

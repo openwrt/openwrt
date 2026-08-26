@@ -208,7 +208,7 @@
 		};
 
 		msp: msp@13600000 {
-			compatible = "brcm,bcm3383-msp";
+			compatible = "brcm,bcm3384-msp";
 			reg = <0x13600000 0x8000>;
 			reg-names = "msp";
 
@@ -219,6 +219,9 @@
 			brcm,in-low-water-mark = <6>;
 			firmware-name = "bcm3380-msp-fw.bin";
 			brcm,4ke-memory-size = <0x800>;
+			brcm,rx-drain-budget = <15>;
+			brcm,high-tx-drain-budget = <2>;
+			brcm,normal-tx-drain-budget = <2>;
 
 			status = "disabled";
 
@@ -232,7 +235,7 @@
 				dqm_queue0: queue@0 {
 					reg = <0>;
 					status = "okay";
-					brcm,capacity = <0x80>;
+					brcm,capacity = <0x200>;
 					brcm,token_words = <1>;
 					brcm,low_water_mark = <0>;
 				};
@@ -264,7 +267,7 @@
 				dqm_queue4: queue@4 {
 					reg = <4>;
 					status = "okay";
-					brcm,capacity = <0x80>;
+					brcm,capacity = <0x200>;
 					brcm,token_words = <1>;
 					brcm,low_water_mark = <0>;
 				};
@@ -280,7 +283,7 @@
 				dqm_queue6: queue@6 {
 					reg = <6>;
 					status = "okay";
-					brcm,capacity = <0x80>;
+					brcm,capacity = <0x100>;
 					brcm,token_words = <1>;
 					brcm,low_water_mark = <0>;
 				};
@@ -299,6 +302,8 @@
 			compatible = "brcm,bcm3383-mbdma";
 			reg = <0x12c00000 0x600>;
 			brcm,fpm_pool = <&fpm_pool1>;
+			brcm,tx-max-burst = <32>;
+			brcm,tx-max-reqs = <4>;
 
 			status = "disabled";
 		};

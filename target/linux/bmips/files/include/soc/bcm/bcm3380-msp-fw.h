@@ -4,10 +4,13 @@
 
 #define MSP_4KE_CONFIG_OFFSET		0x0700
 #define MSP_4KE_CONFIG_MAGIC		0x4d535046
-#define MSP_4KE_CONFIG_VERSION		2
+#define MSP_4KE_CONFIG_VERSION		1
 #define MSP_4KE_ALIVE_MAGIC		0x4b454f4b
 #define MSP_4KE_DQM_CFG_VALUE		0x10000000
 #define MSP_4KE_MAX_ENET_PORTS		2
+
+#define MSP_4KE_TX_MSG_ORDER_FIFO_HEADER_TOKEN	0
+#define MSP_4KE_TX_MSG_ORDER_HEADER_TOKEN_FIFO	1
 
 #ifndef __ASSEMBLER__
 struct msp_4ke_port_config {
@@ -17,6 +20,7 @@ struct msp_4ke_port_config {
 	u32 rx_high_queue;
 	u32 rx_queue_status_offset;
 	u32 rx_queue_data_offset;
+	u32 rx_queue_token_words;
 	u32 tx_high_queue;
 	u32 tx_normal_queue;
 	u32 tx_fifo_addr;
@@ -36,7 +40,10 @@ struct msp_4ke_config {
 	u32 enet_port_count;
 	struct msp_4ke_port_config enet_ports[MSP_4KE_MAX_ENET_PORTS];
 	u32 out_msg_status_offset;
-	u32 reserved[20];
+	u32 tx_msg_order;
+	u32 rx_drain_budget;
+	u32 high_tx_drain_budget;
+	u32 normal_tx_drain_budget;
 };
 #endif
 

@@ -370,6 +370,9 @@
 			brcm,in-low-water-mark = <6>;
 			firmware-name = "bcm3380-msp-fw.bin";
 			brcm,4ke-memory-size = <0x800>;
+			brcm,rx-drain-budget = <14>;
+			brcm,high-tx-drain-budget = <4>;
+			brcm,normal-tx-drain-budget = <1>;
 
 			status = "disabled";
 
@@ -416,7 +419,8 @@
 					reg = <4>;
 					status = "okay";
 					brcm,capacity = <0x80>;
-					brcm,token_words = <1>;
+					/* eCos uses two-word LAN RX DQM entries for UniMAC1. */
+					brcm,token_words = <2>;
 					brcm,low_water_mark = <0>;
 				};
 
@@ -451,6 +455,8 @@
 			compatible = "brcm,bcm3383-mbdma";
 			reg = <0x12c00000 0x600>;
 			brcm,fpm_pool = <&fpm_pool1>;
+			brcm,tx-max-burst = <8>;
+			brcm,tx-max-reqs = <1>;
 
 			clocks = <&periph_clk0 BCM3383_CLK0_UNIMAC>,
 				 <&periph_clk1 BCM3383_CLK1_SSB_UNIMAC>,

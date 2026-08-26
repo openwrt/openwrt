@@ -12,18 +12,13 @@ typedef signed int s32;
 
 #define MSP_FW_DQM_QUEUE_AVAIL_MASK	0x00003fff
 #define MSP_FW_TOKEN_MSG_TYPE_SHIFT	26
-#define MSP_FW_LAN_RX_LENGTH_MASK	0x00000fff
 #define MSP_FW_LAN_RX_MAC_ID_MASK	0x03c00000
 #define MSP_FW_LAN_RX_MAC_ID_SHIFT	22
 #define MSP_FW_CP0_STATUS_CU2		0x40000000
 /*
- * Keep RX and TX service balanced.  Draining too many RX messages before TX
- * starves BCM3384 full-duplex target-to-host traffic under host-to-target
- * load, while over-serving TX drops RX throughput.
+ * RX/TX drain budgets are supplied by the host through msp_4ke_config so
+ * each SoC can tune full-duplex fairness from device tree.
  */
-#define MSP_FW_RX_DRAIN_BUDGET		2
-#define MSP_FW_HIGH_TX_DRAIN_BUDGET	2
-#define MSP_FW_NORMAL_TX_DRAIN_BUDGET	3
 #define MSP_FW_LAN_TX_OUT_MSG_WORDS	3
 #define MSP_FW_OG_MSG_STS_AVAIL_FIFO_SPC_MASK	0x1f
 #define MSP_FW_LAN_TX_OUT_MSG_MIN_SPACE	0x10
@@ -89,21 +84,6 @@ static inline u32 dqm_pop_token(u32 queue)
 	return token;
 }
 
-static inline void send_lan_tx_msg(u32 header, u32 token, u32 fifo_addr)
-{
-	/*
-	 * eCos writes the outgoing CP2 message as:
-	 *   MBDMA LAN TX FIFO bus address, LAN TX header, FPM token.
-	 */
-	__asm__ volatile(
-		"mtc2 %0, $31, 1\n"
-		"mtc2 %1, $31, 1\n"
-		"mtc2 %2, $31, 1\n"
-		:
-		: "r"(fifo_addr), "r"(header), "r"(token)
-		: "memory");
-}
-
 static u32 tx_from_dqm_queue(const volatile struct msp_4ke_config *cfg,
 			     u32 queue, u32 fifo_addr, u32 header)
 {
@@ -126,7 +106,23 @@ static u32 tx_from_dqm_queue(const volatile struct msp_4ke_config *cfg,
 	if (!token)
 		return 0;
 
-	send_lan_tx_msg(header, token, fifo_addr);
+	if (cfg->tx_msg_order == MSP_4KE_TX_MSG_ORDER_HEADER_TOKEN_FIFO) {
+		__asm__ volatile(
+			"mtc2 %0, $31, 1\n"
+			"mtc2 %1, $31, 1\n"
+			"mtc2 %2, $31, 1\n"
+			:
+			: "r"(header), "r"(token), "r"(fifo_addr)
+			: "memory");
+	} else {
+		__asm__ volatile(
+			"mtc2 %0, $31, 1\n"
+			"mtc2 %1, $31, 1\n"
+			"mtc2 %2, $31, 1\n"
+			:
+			: "r"(fifo_addr), "r"(header), "r"(token)
+			: "memory");
+	}
 
 	return 1;
 }
@@ -154,27 +150,24 @@ static u32 rx_to_dqm_queue(const volatile struct msp_4ke_config *cfg)
 	u32 base = cfg->ioproc_base;
 	u32 status_addr = base + cfg->in_msg_status_offset;
 	u32 data_addr = base + cfg->in_msg_data_offset;
-	u32 msg_header;
-	u32 token;
-	const volatile struct msp_4ke_port_config *port;
 
 	if (!cfg->enet_port_count)
 		return 0;
 
 	if ((s32)mmio_read(status_addr) >= 0)
 		return 0;
-	msg_header = mmio_read(data_addr);
+	u32 msg_header = mmio_read(data_addr);
 
 	do {
 		if ((s32)mmio_read(status_addr) < 0)
 			break;
 	} while (1);
-	token = mmio_read(data_addr);
+	u32 token = mmio_read(data_addr);
 
 	if (msg_header >> MSP_FW_TOKEN_MSG_TYPE_SHIFT)
 		return 1;
 
-	port = find_rx_port(cfg, msg_header);
+	const volatile struct msp_4ke_port_config *port = find_rx_port(cfg, msg_header);
 	/*
 	 * Unknown MAC IDs are intentionally not returned to FPM.  The leaked
 	 * token makes bad MBDMA RX routing visible through host-side FPM
@@ -194,9 +187,13 @@ static u32 rx_to_dqm_queue(const volatile struct msp_4ke_config *cfg)
 		} while (1);
 	}
 
-	token = (token & ~MSP_FW_LAN_RX_LENGTH_MASK) |
-		(msg_header & MSP_FW_LAN_RX_LENGTH_MASK);
-	mmio_write(base + port->rx_queue_data_offset, token);
+	/* BCM3383 internal-PHY RX queues are configured as {LANRx header, token}. */
+	if (port->rx_queue_token_words > 1) {
+		mmio_write(base + port->rx_queue_data_offset, msg_header);
+		mmio_write(base + port->rx_queue_data_offset + 4, token);
+	} else {
+		mmio_write(base + port->rx_queue_data_offset, token);
+	}
 
 	return 1;
 }
@@ -264,25 +261,25 @@ void main(void)
 	for (;;) {
 		u32 not_empty;
 
-		for (u32 i = 0; i < MSP_FW_RX_DRAIN_BUDGET; i++) {
+		for (u32 i = 0; i < cfg->rx_drain_budget; i++) {
 			if (!rx_to_dqm_queue(cfg))
 				break;
 		}
 
 		not_empty = mmio_read(base + cfg->dqm_not_empty_status_offset);
-		for (u32 i = 0; i < MSP_FW_HIGH_TX_DRAIN_BUDGET; i++) {
+		for (u32 i = 0; i < cfg->high_tx_drain_budget; i++) {
 			if (!tx_high_from_enet_ports(cfg, not_empty))
 				break;
 			not_empty = mmio_read(base + cfg->dqm_not_empty_status_offset);
 		}
 
-		for (u32 i = 0; i < MSP_FW_NORMAL_TX_DRAIN_BUDGET; i++) {
+		for (u32 i = 0; i < cfg->normal_tx_drain_budget; i++) {
 			if (!tx_normal_from_enet_ports(cfg, not_empty))
 				break;
 			not_empty = mmio_read(base + cfg->dqm_not_empty_status_offset);
 		}
 
-		for (u32 i = 0; i < MSP_FW_RX_DRAIN_BUDGET; i++) {
+		for (u32 i = 0; i < cfg->rx_drain_budget; i++) {
 			if (!rx_to_dqm_queue(cfg))
 				break;
 		}

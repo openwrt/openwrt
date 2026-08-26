@@ -142,6 +142,9 @@ struct bcm3380_msp {
 
 	const struct firmware *firmware_4ke;
 	u32 memory_4ke_size;
+	u32 rx_drain_budget;
+	u32 high_tx_drain_budget;
+	u32 normal_tx_drain_budget;
 	void *firmware_4ke_mem;
 	dma_addr_t firmware_4ke_dma;
 
@@ -153,6 +156,7 @@ struct bcm3380_msp {
 	struct device_node *dqm_node;
 	u32 dqm_memory_words;
 	u32 dqm_enabled_queues;
+	u8 dqm_queue_token_words[32];
 	spinlock_t dqm_host_not_empty_irq_lock;
 	struct msp_dqm_host_not_empty_irq_slot dqm_host_not_empty_irq_slots[MSP_DQM_HOST_NOT_EMPTY_IRQ_SLOTS];
 
@@ -163,6 +167,7 @@ struct variant_data {
 	u32 (*dqm_queue_status)(struct bcm3380_msp *msp, unsigned int queue);
 	u32 (*dqm_queue_status_offset)(unsigned int queue);
 	u32 ioproc_base_4ke;
+	u32 tx_msg_order;
 };
 
 static bool msp_ready(struct bcm3380_msp *msp)
@@ -339,6 +344,10 @@ static int msp_start_4ke_firmware(struct bcm3380_msp *msp)
 		.dqm_not_empty_status_offset = MSP_DQM_OFFSET +
 					       MSP_DQM_NOT_EMPTY_STS,
 		.out_msg_status_offset = MSP_OG_OFFSET + MSP_OG_MSG_STS,
+		.tx_msg_order = msp->variant->tx_msg_order,
+		.rx_drain_budget = msp->rx_drain_budget,
+		.high_tx_drain_budget = msp->high_tx_drain_budget,
+		.normal_tx_drain_budget = msp->normal_tx_drain_budget,
 	};
 
 	dev_dbg(msp->dev,
@@ -610,6 +619,7 @@ int msp_4ke_register_enet_port(struct bcm3380_msp *msp, u32 mac_id,
 	port->rx_high_queue = rx_high_queue;
 	port->rx_queue_status_offset = msp->variant->dqm_queue_status_offset(rx_normal_queue);
 	port->rx_queue_data_offset = MSP_DQM_QDATA_OFFSET + rx_normal_queue * MSP_DQM_QDATA_STRIDE;
+	port->rx_queue_token_words = msp->dqm_queue_token_words[rx_normal_queue];
 	port->tx_high_queue = tx_high_queue;
 	port->tx_normal_queue = tx_normal_queue;
 	port->tx_fifo_addr = tx_fifo_addr;
@@ -760,6 +770,7 @@ static int msp_dqm_config_queue_node(struct bcm3380_msp *msp,
 		return ret;
 
 	msp->dqm_enabled_queues |= BIT(queue);
+	msp->dqm_queue_token_words[queue] = token_words;
 	*next_start_words += mem_words;
 
 	return 0;
@@ -843,6 +854,17 @@ u32 msp_dqm_queue_status(struct bcm3380_msp *msp,
 	return msp->variant->dqm_queue_status(msp, queue);
 }
 EXPORT_SYMBOL_GPL(msp_dqm_queue_status);
+
+unsigned int msp_dqm_queue_token_words(struct bcm3380_msp *msp,
+				       unsigned int queue)
+{
+	if (!msp_ready(msp) || queue >= 32 ||
+	    !(msp->dqm_enabled_queues & BIT(queue)))
+		return 0;
+
+	return msp->dqm_queue_token_words[queue];
+}
+EXPORT_SYMBOL_GPL(msp_dqm_queue_token_words);
 
 u32 msp_dqm_read_word(struct bcm3380_msp *msp, unsigned int queue,
 			      unsigned int word)
@@ -1058,6 +1080,36 @@ static int msp_probe(struct platform_device *pdev)
 		return -EINVAL;
 	}
 
+	ret = of_property_read_u32(dev->of_node, "brcm,rx-drain-budget",
+				   &msp->rx_drain_budget);
+	if (ret) {
+		dev_err(dev, "missing or invalid brcm,rx-drain-budget\n");
+		return ret;
+	}
+
+	ret = of_property_read_u32(dev->of_node, "brcm,high-tx-drain-budget",
+				   &msp->high_tx_drain_budget);
+	if (ret) {
+		dev_err(dev, "missing or invalid brcm,high-tx-drain-budget\n");
+		return ret;
+	}
+
+	ret = of_property_read_u32(dev->of_node, "brcm,normal-tx-drain-budget",
+				   &msp->normal_tx_drain_budget);
+	if (ret) {
+		dev_err(dev, "missing or invalid brcm,normal-tx-drain-budget\n");
+		return ret;
+	}
+
+	if (!msp->rx_drain_budget || !msp->high_tx_drain_budget ||
+	    !msp->normal_tx_drain_budget) {
+		dev_err(dev,
+			"invalid 4KE budgets: rx=%u high_tx=%u normal_tx=%u\n",
+			msp->rx_drain_budget, msp->high_tx_drain_budget,
+			msp->normal_tx_drain_budget);
+		return -EINVAL;
+	}
+
 	msp->dqm_node = of_get_child_by_name(dev->of_node, "dqm");
 	if (!msp->dqm_node) {
 		dev_err(dev, "missing dqm child node\n");
@@ -1243,6 +1295,7 @@ static const struct variant_data bcm3380_msp_data = {
 	.dqm_queue_status = bcm3380_dqm_queue_status,
 	.dqm_queue_status_offset = bcm3380_dqm_queue_status_offset,
 	.ioproc_base_4ke = 0xe0000000,
+	.tx_msg_order = MSP_4KE_TX_MSG_ORDER_HEADER_TOKEN_FIFO,
 };
 
 static u32 bcm3383_dqm_queue_status(struct bcm3380_msp *msp,
@@ -1262,9 +1315,18 @@ static const struct variant_data bcm3383_msp_data = {
 	.dqm_queue_status = bcm3383_dqm_queue_status,
 	.dqm_queue_status_offset = bcm3383_dqm_queue_status_offset,
 	.ioproc_base_4ke = 0xb6000000,
+	.tx_msg_order = MSP_4KE_TX_MSG_ORDER_HEADER_TOKEN_FIFO,
+};
+
+static const struct variant_data bcm3384_msp_data = {
+	.dqm_queue_status = bcm3383_dqm_queue_status,
+	.dqm_queue_status_offset = bcm3383_dqm_queue_status_offset,
+	.ioproc_base_4ke = 0xb6000000,
+	.tx_msg_order = MSP_4KE_TX_MSG_ORDER_FIFO_HEADER_TOKEN,
 };
 
 static const struct of_device_id msp_of_match[] = {
+	{ .compatible = "brcm,bcm3384-msp", .data = &bcm3384_msp_data },
 	{ .compatible = "brcm,bcm3383-msp", .data = &bcm3383_msp_data },
 	{ .compatible = "brcm,bcm3380-msp", .data = &bcm3380_msp_data },
 	{ }
