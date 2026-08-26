@@ -1,0 +1,24 @@
+#!/bin/sh
+
+. /lib/functions/uci-defaults.sh
+
+board=$(board_name)
+
+board_config_update
+
+case $board in
+tplink,archer-c2300-v1)
+	# Regulatory domain only - the radio is left disabled on first boot.
+	#
+	# Setting a country is still required: wifi-scripts discards the
+	# generated defaults for any non-2g band when no country is set, so
+	# without it the 5GHz radio ends up with no regulatory information at
+	# all. Setting only the country, and no wlan.defaults.ssids, keeps
+	# 'disabled' at 1 while still emitting radio0.country.
+	ucidef_set_country "00"
+	;;
+esac
+
+board_config_flush
+
+exit 0
