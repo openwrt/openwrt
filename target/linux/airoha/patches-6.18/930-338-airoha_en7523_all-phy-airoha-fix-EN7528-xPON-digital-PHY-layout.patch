@@ -1,0 +1,348 @@
+From 8ab5c14ee7a3a8a244de35084edc44d434af6cc7 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Wed, 26 Aug 2026 13:03:51 -0300
+Subject: [PATCH] phy: airoha: fix EN7528 xPON digital PHY layout
+
+The EN7528 xPON PHY exposes the legacy 0x600-byte digital GPON/EPON
+register window used by the XC220 vendor driver. The initial EN7528 match
+data incorrectly reused the EN7523 integrated-PMA setup, requiring a
+0x480c resource and accessing PMA/SerDes registers above 0x3000.
+
+Use the EcoNet 1G digital-PHY sequence for EN7528: release the SCU PHY
+disables, initialize and clear counters, program the TDC and EN7571
+transceiver setting, select GPON/EPON through PHYSET10, pulse the PHYSET3
+PLL/counter reset and assert FW_READY. Keep PON pad muxing in pinctrl.
+
+Also describe the GPON sub-byte equalisation-delay register per SoC.
+EN751221 and EN7528 use PHYSET5[21:19] with bit 23 enable, while EN7523
+keeps the integrated-PMA delay register at 0x433c.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/phy/airoha/phy-airoha-xpon.c | 201 +++++++++++++++++++--------
+ 1 file changed, 142 insertions(+), 59 deletions(-)
+
+diff --git a/drivers/phy/airoha/phy-airoha-xpon.c b/drivers/phy/airoha/phy-airoha-xpon.c
+index bef6954746c3..089cb5781030 100644
+--- a/drivers/phy/airoha/phy-airoha-xpon.c
++++ b/drivers/phy/airoha/phy-airoha-xpon.c
+@@ -21,15 +21,15 @@
+ #include <linux/reset.h>
+ #include <linux/workqueue.h>
+ 
+-#define EN751221_XPON_PHY_MIN_SIZE	0x0600
++#define ECONET_XPON_PHY_MIN_SIZE		0x0600
+ #define EN7523_XPON_PHY_MIN_SIZE		0x480c
+ 
+ #define EN751221_CHIP_SCU_IOMUX_CTRL	0x104
+ #define EN751221_CHIP_SCU_IOMUX_PON_EN	BIT(15)
+-#define EN751221_SCU_PHY_CTRL0		0x860
+-#define EN751221_SCU_PHY_CTRL0_DIS	BIT(10)
+-#define EN751221_SCU_PHY_CTRL1		0x92c
+-#define EN751221_SCU_PHY_CTRL1_DIS	BIT(2)
++#define ECONET_SCU_PHY_CTRL0		0x860
++#define ECONET_SCU_PHY_CTRL0_DIS	BIT(10)
++#define ECONET_SCU_PHY_CTRL1		0x92c
++#define ECONET_SCU_PHY_CTRL1_DIS	BIT(2)
+ 
+ #define EN7523_SCU_WAN_CONF		0x070
+ #define EN7523_SCU_WAN_MODE_MASK	GENMASK(7, 0)
+@@ -38,9 +38,12 @@
+ #define EN7523_SCU_WAN_MODE_EPON	0x01
+ #define EN7523_SCU_IOMUX_CTRL_3		0x218
+ #define EN7523_SCU_IOMUX_PON_EN		BIT(0)
++#define EN7528_XPON_TDCSET2		0x2d
++#define EN7528_XPON_SETTING_EN7571	0x10f
+ 
+ #define XPON_PHYFWREADY			0x0104
+ #define XPON_PHYSET3			0x0108
++#define XPON_PHYSET5			0x0110
+ #define XPON_PHYSET10			0x0124
+ #define XPON_PHYSTA1			0x0130
+ #define XPON_SETTING			0x0138
+@@ -103,17 +106,19 @@
+ #define XPON_GPON_EXT_MODE		BIT(16)
+ #define XPON_GPON_EXT_OPER_MASK	GENMASK(18, 17)
+ #define XPON_GPON_TX_BIT_DELAY_MASK	GENMASK(7, 0)
++#define XPON_PHYSET5_BIT_DELAY_MASK	GENMASK(21, 19)
++#define XPON_PHYSET5_BIT_DELAY_EN	BIT(23)
+ 
+ #define XPON_GPON_TX_ENABLE_PATTERN	0xaa
+ #define XPON_GPON_TX_COUNTER_ENABLE	BIT(3)
+ 
+-#define EN751221_COUNTER_ENABLE_MASK	GENMASK(2, 0)
+-#define EN751221_COUNTER_CLEAR_RX0	BIT(0)
+-#define EN751221_COUNTER_CLEAR_RX1	BIT(1)
+-#define EN751221_COUNTER_CLEAR_RX2	BIT(2)
+-#define EN751221_COUNTER_CLEAR_GPON_TX	BIT(3)
+-#define EN751221_COUNTER_CLEAR_RX3	BIT(4)
+-#define EN751221_COUNTER_CLEAR_ALL	GENMASK(4, 0)
++#define ECONET_XPON_COUNTER_ENABLE_MASK	GENMASK(2, 0)
++#define ECONET_XPON_COUNTER_CLEAR_RX0	BIT(0)
++#define ECONET_XPON_COUNTER_CLEAR_RX1	BIT(1)
++#define ECONET_XPON_COUNTER_CLEAR_RX2	BIT(2)
++#define ECONET_XPON_COUNTER_CLEAR_GPON_TX	BIT(3)
++#define ECONET_XPON_COUNTER_CLEAR_RX3	BIT(4)
++#define ECONET_XPON_COUNTER_CLEAR_ALL	GENMASK(4, 0)
+ #define XPON_FEC_STATUS_ACTIVE	BIT(15)
+ 
+ #define XPON_SETTING_EN7571		0x0000014f
+@@ -141,6 +146,9 @@ struct airoha_xpon_phy;
+ struct airoha_xpon_phy_soc_data {
+ 	const char *name;
+ 	u32 min_size;
++	u32 gpon_bit_delay_reg;
++	u32 gpon_bit_delay_mask;
++	u32 gpon_bit_delay_enable;
+ 	bool has_integrated_pma;
+ 	bool needs_chip_scu;
+ 	bool manages_fw_ready;
+@@ -406,11 +414,13 @@ int airoha_xpon_phy_set_gpon_bit_delay(struct phy *phy, u8 delay)
+ 	if (ret)
+ 		return ret;
+ 
+-	airoha_xpon_phy_rmw(priv, XPON_GPON_TX_BIT_DELAY,
+-			    XPON_GPON_TX_BIT_DELAY_MASK,
+-			    FIELD_PREP(XPON_GPON_TX_BIT_DELAY_MASK, delay));
++	airoha_xpon_phy_rmw(priv, priv->soc->gpon_bit_delay_reg,
++			    priv->soc->gpon_bit_delay_mask |
++			     priv->soc->gpon_bit_delay_enable,
++			    field_prep(priv->soc->gpon_bit_delay_mask, delay) |
++			     priv->soc->gpon_bit_delay_enable);
+ 	dev_dbg(priv->dev, "GPON PHY TX bit delay=%u reg=%#010x\n", delay,
+-		airoha_xpon_phy_read(priv, XPON_GPON_TX_BIT_DELAY));
++		airoha_xpon_phy_read(priv, priv->soc->gpon_bit_delay_reg));
+ 	return 0;
+ }
+ EXPORT_SYMBOL_GPL(airoha_xpon_phy_set_gpon_bit_delay);
+@@ -667,61 +677,126 @@ static int airoha_en7523_xpon_phy_configure(struct airoha_xpon_phy *priv)
+ 	return airoha_xpon_phy_configure_integrated_pma(priv);
+ }
+ 
+-static int airoha_en7528_xpon_phy_configure(struct airoha_xpon_phy *priv)
+-{
+-	u32 mode;
+-	int ret;
+-
+-	mode = priv->submode == AIROHA_XPON_PHY_SUBMODE_GPON ?
+-		EN7523_SCU_WAN_MODE_GPON : EN7523_SCU_WAN_MODE_EPON;
+-
+-	ret = regmap_update_bits(priv->scu, EN7523_SCU_WAN_CONF,
+-				 EN7528_SCU_WAN_MODE_MASK, mode);
+-	if (ret)
+-		return dev_err_probe(priv->dev, ret,
+-				     "failed to select EN7528 xPON WAN mode\n");
+-
+-	/*
+-	 * The EN7528 PON pads are selected by the node's pinctrl state in
+-	 * CHIP-SCU. Do not write the EN7523 NP-SCU IOMUX register here.
+-	 */
+-	return airoha_xpon_phy_configure_integrated_pma(priv);
+-}
+-
+ static void
+-econet_en751221_xpon_phy_counter_clear(struct airoha_xpon_phy *priv, u32 mask)
++econet_xpon_phy_counter_clear(struct airoha_xpon_phy *priv, u32 mask)
+ {
+ 	/*
+-	 * EN751221 phy_counter_clear().  The RX counter clear register is a
++	 * EcoNet 1G phy_counter_clear().  The RX counter clear register is a
+ 	 * command register: the vendor writes one command at a time rather than
+ 	 * ORing them together.
+ 	 */
+-	if (mask & EN751221_COUNTER_CLEAR_RX0)
++	if (mask & ECONET_XPON_COUNTER_CLEAR_RX0)
+ 		airoha_xpon_phy_write(priv, XPON_RX_COUNTER_CTRL, BIT(1));
+-	if (mask & EN751221_COUNTER_CLEAR_RX1)
++	if (mask & ECONET_XPON_COUNTER_CLEAR_RX1)
+ 		airoha_xpon_phy_write(priv, XPON_RX_COUNTER_CTRL, BIT(3));
+-	if (mask & EN751221_COUNTER_CLEAR_RX2)
++	if (mask & ECONET_XPON_COUNTER_CLEAR_RX2)
+ 		airoha_xpon_phy_write(priv, XPON_RX_COUNTER_CTRL, BIT(5));
+-	if (mask & EN751221_COUNTER_CLEAR_GPON_TX)
++	if (mask & ECONET_XPON_COUNTER_CLEAR_GPON_TX)
+ 		airoha_xpon_phy_rmw(priv, XPON_GPON_TX_COUNTER_CTRL, BIT(2),
+ 				    BIT(2));
+-	if (mask & EN751221_COUNTER_CLEAR_RX3)
++	if (mask & ECONET_XPON_COUNTER_CLEAR_RX3)
+ 		airoha_xpon_phy_write(priv, XPON_RX_COUNTER_CTRL2, BIT(4));
+ }
+ 
+ static void
+-econet_en751221_xpon_phy_counter_init(struct airoha_xpon_phy *priv)
++econet_xpon_phy_counter_init(struct airoha_xpon_phy *priv)
+ {
+ 	u32 val;
+ 
+ 	/* Match phy_cnt_enable(1, 1, 1), including its initial clear. */
+ 	val = airoha_xpon_phy_read(priv, XPON_RX_COUNTER_ENABLE);
+-	val &= ~EN751221_COUNTER_ENABLE_MASK;
+-	val |= EN751221_COUNTER_ENABLE_MASK;
++	val &= ~ECONET_XPON_COUNTER_ENABLE_MASK;
++	val |= ECONET_XPON_COUNTER_ENABLE_MASK;
+ 	udelay(1);
+ 	airoha_xpon_phy_write(priv, XPON_RX_COUNTER_ENABLE, val);
+-	econet_en751221_xpon_phy_counter_clear(priv,
+-					       EN751221_COUNTER_ENABLE_MASK);
++	econet_xpon_phy_counter_clear(priv,
++				      ECONET_XPON_COUNTER_ENABLE_MASK);
++}
++
++static int airoha_en7528_xpon_phy_configure(struct airoha_xpon_phy *priv)
++{
++	u32 mode, val;
++	int ret;
++
++	mode = priv->submode == AIROHA_XPON_PHY_SUBMODE_GPON ?
++		EN7523_SCU_WAN_MODE_GPON : EN7523_SCU_WAN_MODE_EPON;
++
++	ret = regmap_update_bits(priv->scu, EN7523_SCU_WAN_CONF,
++				 EN7528_SCU_WAN_MODE_MASK, mode);
++	if (ret)
++		return dev_err_probe(priv->dev, ret,
++				     "failed to select EN7528 xPON WAN mode\n");
++
++	/*
++	 * The XC220 EN7528 vendor PHY is a 0x600-byte digital GPON/EPON
++	 * block.  Unlike EN7523, it does not program the PMA/SerDes window at
++	 * 0x3000-0x4808.  Its bring-up matches the older EcoNet digital PHY:
++	 * release the SCU disables, initialize counters, select PHYSET10 and
++	 * pulse the PHYSET3 PLL/counter reset.
++	 *
++	 * The PON pads themselves are owned by the EN7528 pinctrl default
++	 * state, so do not write the EN7523 NP-SCU IOMUX register here.
++	 */
++	airoha_xpon_phy_rmw(priv, XPON_PHYFWREADY, XPON_PHYFWREADY_READY, 0);
++	airoha_xpon_phy_rmw(priv, XPON_PHYSET3, BIT(2), 0);
++
++	ret = regmap_clear_bits(priv->scu, ECONET_SCU_PHY_CTRL1,
++				ECONET_SCU_PHY_CTRL1_DIS);
++	if (ret)
++		return dev_err_probe(priv->dev, ret,
++				     "failed to enable EN7528 xPON PHY control 1\n");
++
++	ret = regmap_clear_bits(priv->scu, ECONET_SCU_PHY_CTRL0,
++				ECONET_SCU_PHY_CTRL0_DIS);
++	if (ret)
++		return dev_err_probe(priv->dev, ret,
++				     "failed to enable EN7528 xPON PHY control 0\n");
++
++	econet_xpon_phy_counter_init(priv);
++	airoha_xpon_phy_write(priv, XPON_GPON_DELIMITER_GUARD,
++			      XPON_GPON_DELIMITER_DEFAULT);
++	econet_xpon_phy_counter_clear(priv, ECONET_XPON_COUNTER_CLEAR_ALL);
++	airoha_xpon_phy_write(priv, XPON_TDCSET2, EN7528_XPON_TDCSET2);
++
++	/*
++	 * The XC220 uses an EN7571.  Its vendor transceiver model programs
++	 * XPON_SETTING to 0x10f.  Preserve board-described polarity bits on
++	 * top of that value so another EN7528 board can override them in DT.
++	 */
++	val = EN7528_XPON_SETTING_EN7571;
++	val &= ~XPON_SETTING_INV_MASK;
++	val |= priv->trans_invert;
++	airoha_xpon_phy_write(priv, XPON_SETTING, val);
++
++	/* phy_mode_config(): quiesce EPON, pulse PLL/counter reset, then switch. */
++	airoha_xpon_phy_rmw(priv, XPON_PHYSET3, BIT(5), 0);
++	val = airoha_xpon_phy_read(priv, XPON_PHYSET3);
++	airoha_xpon_phy_write(priv, XPON_PHYSET3,
++			      val | XPON_PHYSET3_PLL_RST |
++			       XPON_PHYSET3_COUNTER_RST);
++	mdelay(1);
++
++	airoha_xpon_phy_rmw(priv, XPON_PHYSET10, XPON_PHYSET10_GPON,
++			    priv->submode == AIROHA_XPON_PHY_SUBMODE_GPON ?
++			     XPON_PHYSET10_GPON : 0);
++	mdelay(1);
++
++	airoha_xpon_phy_write(priv, XPON_PHYSET3,
++			      val & ~(XPON_PHYSET3_PLL_RST |
++				      XPON_PHYSET3_COUNTER_RST));
++	mdelay(1);
++
++	if (priv->submode == AIROHA_XPON_PHY_SUBMODE_EPON)
++		airoha_xpon_phy_rmw(priv, XPON_PHYSET3, BIT(5), BIT(5));
++
++	val = airoha_xpon_phy_read(priv, XPON_INT_STATUS);
++	airoha_xpon_phy_write(priv, XPON_INT_STATUS_CLR, val);
++	airoha_xpon_phy_write(priv, XPON_INT_ENABLE, 0);
++
++	airoha_xpon_phy_rmw(priv, XPON_PHYFWREADY, XPON_PHYFWREADY_READY,
++			    XPON_PHYFWREADY_READY);
++
++	return 0;
+ }
+ 
+ static int econet_en751221_xpon_phy_configure(struct airoha_xpon_phy *priv)
+@@ -753,14 +828,14 @@ static int econet_en751221_xpon_phy_configure(struct airoha_xpon_phy *priv)
+ 	/* Preserve the vendor phy_dev_init() ordering around PHYSET3[2]. */
+ 	airoha_xpon_phy_rmw(priv, XPON_PHYSET3, BIT(2), 0);
+ 
+-	ret = regmap_clear_bits(priv->scu, EN751221_SCU_PHY_CTRL1,
+-				EN751221_SCU_PHY_CTRL1_DIS);
++	ret = regmap_clear_bits(priv->scu, ECONET_SCU_PHY_CTRL1,
++				ECONET_SCU_PHY_CTRL1_DIS);
+ 	if (ret)
+ 		return dev_err_probe(priv->dev, ret,
+ 				     "failed to enable EN751221 xPON PHY control 1\n");
+ 
+-	ret = regmap_clear_bits(priv->scu, EN751221_SCU_PHY_CTRL0,
+-				EN751221_SCU_PHY_CTRL0_DIS);
++	ret = regmap_clear_bits(priv->scu, ECONET_SCU_PHY_CTRL0,
++				ECONET_SCU_PHY_CTRL0_DIS);
+ 	if (ret)
+ 		return dev_err_probe(priv->dev, ret,
+ 				     "failed to enable EN751221 xPON PHY control 0\n");
+@@ -769,11 +844,11 @@ static int econet_en751221_xpon_phy_configure(struct airoha_xpon_phy *priv)
+ 	 * Complete the counter side of vendor phy_dev_init().  This was missing
+ 	 * from the initial EN751221 port and left 0x0230 disabled.
+ 	 */
+-	econet_en751221_xpon_phy_counter_init(priv);
++	econet_xpon_phy_counter_init(priv);
+ 	airoha_xpon_phy_write(priv, XPON_GPON_DELIMITER_GUARD,
+ 			      XPON_GPON_DELIMITER_DEFAULT);
+-	econet_en751221_xpon_phy_counter_clear(priv,
+-					       EN751221_COUNTER_CLEAR_ALL);
++	econet_xpon_phy_counter_clear(priv,
++				      ECONET_XPON_COUNTER_CLEAR_ALL);
+ 
+ 	/*
+ 	 * EN751221 phy_mode_config(): bit 5 is cleared while switching mode,
+@@ -1065,7 +1140,10 @@ static int airoha_xpon_phy_probe(struct platform_device *pdev)
+ 
+ static const struct airoha_xpon_phy_soc_data econet_en751221_xpon_phy_data = {
+ 	.name = "EN751221",
+-	.min_size = EN751221_XPON_PHY_MIN_SIZE,
++	.min_size = ECONET_XPON_PHY_MIN_SIZE,
++	.gpon_bit_delay_reg = XPON_PHYSET5,
++	.gpon_bit_delay_mask = XPON_PHYSET5_BIT_DELAY_MASK,
++	.gpon_bit_delay_enable = XPON_PHYSET5_BIT_DELAY_EN,
+ 	.needs_chip_scu = true,
+ 	.manages_fw_ready = true,
+ 	.configure = econet_en751221_xpon_phy_configure,
+@@ -1074,14 +1152,19 @@ static const struct airoha_xpon_phy_soc_data econet_en751221_xpon_phy_data = {
+ static const struct airoha_xpon_phy_soc_data airoha_en7523_xpon_phy_data = {
+ 	.name = "EN7523",
+ 	.min_size = EN7523_XPON_PHY_MIN_SIZE,
++	.gpon_bit_delay_reg = XPON_GPON_TX_BIT_DELAY,
++	.gpon_bit_delay_mask = XPON_GPON_TX_BIT_DELAY_MASK,
+ 	.has_integrated_pma = true,
+ 	.configure = airoha_en7523_xpon_phy_configure,
+ };
+ 
+ static const struct airoha_xpon_phy_soc_data airoha_en7528_xpon_phy_data = {
+ 	.name = "EN7528",
+-	.min_size = EN7523_XPON_PHY_MIN_SIZE,
+-	.has_integrated_pma = true,
++	.min_size = ECONET_XPON_PHY_MIN_SIZE,
++	.gpon_bit_delay_reg = XPON_PHYSET5,
++	.gpon_bit_delay_mask = XPON_PHYSET5_BIT_DELAY_MASK,
++	.gpon_bit_delay_enable = XPON_PHYSET5_BIT_DELAY_EN,
++	.manages_fw_ready = true,
+ 	.configure = airoha_en7528_xpon_phy_configure,
+ };
+ 
+-- 
+2.55.0
+

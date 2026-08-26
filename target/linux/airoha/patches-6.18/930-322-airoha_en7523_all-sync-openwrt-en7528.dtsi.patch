@@ -1,4 +1,4 @@
-From 578d9c2f9d4080cf5bbacf73dd663ef28e3398d9 Mon Sep 17 00:00:00 2001
+From 2f87dbf8905a2e7d942dba46fb24fd0fd9c41009 Mon Sep 17 00:00:00 2001
 From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 Date: Tue, 25 Aug 2026 13:35:50 -0300
 Subject: [PATCH] sync openwrt en7528.dtsi
@@ -9,7 +9,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  1 file changed, 34 insertions(+), 21 deletions(-)
 
 diff --git a/arch/mips/boot/dts/econet/en7528.dtsi b/arch/mips/boot/dts/econet/en7528.dtsi
-index 3eff3712ac4e..21d9d861261b 100644
+index 3eff3712ac4e..499e4e619a43 100644
 --- a/arch/mips/boot/dts/econet/en7528.dtsi
 +++ b/arch/mips/boot/dts/econet/en7528.dtsi
 @@ -225,7 +225,6 @@ timer_hpt: timer@1fbf0400 {
@@ -73,12 +73,12 @@ index 3eff3712ac4e..21d9d861261b 100644
  			status = "disabled";
  		};
  
-+		/* <GIC_SHARED 53 IRQ_TYPE_LEVEL_HIGH> => WIFI DMA 0 port 0 */
-+		/* <GIC_SHARED 54 IRQ_TYPE_LEVEL_HIGH> => WIFI DMA 0 port 1 */
-+		/* <GIC_SHARED 55 IRQ_TYPE_LEVEL_HIGH> => WIFI DMA 0 for WOE */
-+		/* <GIC_SHARED 56 IRQ_TYPE_LEVEL_HIGH> => WIFI DMA 1 port 0 */
-+		/* <GIC_SHARED 56 IRQ_TYPE_LEVEL_HIGH> => WIFI DMA 1 port 1 */
-+		/* <GIC_SHARED 58 IRQ_TYPE_LEVEL_HIGH> => WIFI DMA 1 for WOE */
++	  /* <GIC_SHARED 53 IRQ_TYPE_LEVEL_HIGH> => WIFI DMA 0 port 0 */
++	  /* <GIC_SHARED 54 IRQ_TYPE_LEVEL_HIGH> => WIFI DMA 0 port 1 */
++	  /* <GIC_SHARED 55 IRQ_TYPE_LEVEL_HIGH> => WIFI DMA 0 for WOE */
++	  /* <GIC_SHARED 56 IRQ_TYPE_LEVEL_HIGH> => WIFI DMA 1 port 0 */
++	  /* <GIC_SHARED 56 IRQ_TYPE_LEVEL_HIGH> => WIFI DMA 1 port 1 */
++	  /* <GIC_SHARED 58 IRQ_TYPE_LEVEL_HIGH> => WIFI DMA 1 for WOE */
 +		wed0: wed@1fa02000 {
 +			compatible = "airoha,en7523-wed", "syscon";
 +			reg = <0x1fa02000 0xb00>,
@@ -86,7 +86,7 @@ index 3eff3712ac4e..21d9d861261b 100644
 +			reg-names = "wed", "wdma";
 +			interrupts = <GIC_SHARED 51 IRQ_TYPE_LEVEL_HIGH>;
 +		};
-+
++	
 +		wed1: wed@1fa03000 {
 +			compatible = "airoha,en7523-wed", "syscon";
 +			reg = <0x1fa03000 0xb00>,
