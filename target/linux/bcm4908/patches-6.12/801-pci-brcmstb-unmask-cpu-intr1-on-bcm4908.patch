@@ -1,0 +1,84 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Anatoliy Shulika <shulikaa@icloud.com>
+Date: Thu, 6 Aug 2026 12:00:00 +0200
+Subject: [PATCH] PCI: brcmstb: unmask CPU_INTR1 on BCM4908
+
+BCM4908 gates PCIe interrupts behind a second, SoC-level interrupt
+controller (CPU_INTR1) at core offset 0x9400, which comes out of reset
+with everything masked. MSIs are raised by the controller but never
+reach the CPU, so drivers time out waiting for completions.
+
+Clear the mask bits for INTx, the legacy PCIe interrupt and - via the
+undocumented BIT(9) aggregate - MSI. Determined by register inspection
+on a TP-Link Archer C2300 v1: with BIT(9) still set the interrupt count
+for the brcmfmac device stays at 0, and clearing it is what makes it
+advance.
+
+Signed-off-by: Anatoliy Shulika <shulikaa@icloud.com>
+---
+--- a/drivers/pci/controller/pcie-brcmstb.c
++++ b/drivers/pci/controller/pcie-brcmstb.c
+@@ -143,6 +143,16 @@
+ 
+ #define PCIE_MSI_INTR2_BASE		0x4500
+ 
++/*
++ * CPU L1 interrupt controller (bcm4908 / bcmbca).  Every PCIe interrupt
++ * source is masked out of reset here, so nothing the core raises reaches the
++ * GIC until the relevant bit is cleared in the mask-clear register.
++ */
++#define PCIE_CPU_INTR1_MASK_CLR			0x940c
++#define  PCIE_CPU_INTR1_PCIE_INTX_MASK		GENMASK(4, 1)
++#define  PCIE_CPU_INTR1_PCIE_INTR_MASK		BIT(5)
++#define  PCIE_CPU_INTR1_PCIE_MSI_MASK		BIT(9)
++
+ /* Offsets from INTR2_CPU and MSI_INTR2 BASE offsets */
+ #define  MSI_INT_STATUS			0x0
+ #define  MSI_INT_CLR			0x8
+@@ -1050,6 +1060,37 @@ static void set_inbound_win_registers(st
+ 	}
+ }
+ 
++/*
++ * On bcm4908 the PCIe core sits behind a CPU L1 interrupt controller whose
++ * mask register comes up with every source masked.  Broadcom's own bcm963xx
++ * host driver clears the legacy INTA-INTD bits here during core init; the
++ * MSI aggregate has its own bit which must be cleared too, or the MSI stays
++ * latched in the core forever and the chained handler is never entered.
++ *
++ * Confirmed on real hardware (TP-Link Archer C2300 v1, BCM4906): with the
++ * mask left at its reset value the endpoint's MSI reached the root complex -
++ * MSI_INT_STATUS read 0x1 - while /proc/interrupts showed zero interrupts and
++ * the endpoint's own mailbox stayed latched.  Clearing the core's MSI status
++ * made CPU_INTR1 status drop from 0x200 to 0, identifying BIT(9) as the MSI
++ * aggregate.  Unmasking it made interrupts flow and the device work.
++ *
++ * Only the mask is touched here.  Stale status does not need clearing at this
++ * point: brcm_pcie_setup() runs before brcm_pcie_enable_msi(), and
++ * brcm_msi_set_regs() clears MSI_INT_CLR at whichever intr_base applies to
++ * this core before it enables the MSI BAR, so no MSI can have been latched
++ * yet.
++ */
++static void brcm_pcie_unmask_cpu_intr1(struct brcm_pcie *pcie)
++{
++	if (pcie->cfg->soc_base != BCM4908)
++		return;
++
++	writel(PCIE_CPU_INTR1_PCIE_INTX_MASK |
++	       PCIE_CPU_INTR1_PCIE_INTR_MASK |
++	       PCIE_CPU_INTR1_PCIE_MSI_MASK,
++	       pcie->base + PCIE_CPU_INTR1_MASK_CLR);
++}
++
+ static int brcm_pcie_setup(struct brcm_pcie *pcie)
+ {
+ 	struct inbound_win inbound_wins[PCIE_BRCM_MAX_INBOUND_WINS];
+@@ -1228,6 +1269,8 @@ static int brcm_pcie_setup(struct brcm_p
+ 		PCIE_RC_CFG_VENDOR_VENDOR_SPECIFIC_REG1_ENDIAN_MODE_BAR2_MASK);
+ 	writel(tmp, base + PCIE_RC_CFG_VENDOR_VENDOR_SPECIFIC_REG1);
+ 
++	brcm_pcie_unmask_cpu_intr1(pcie);
++
+ 	return 0;
+ }
+ 
