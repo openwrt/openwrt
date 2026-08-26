@@ -1,0 +1,288 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/gpio/gpio.h>
+
+#include "mt7622.dtsi"
+#include "mt6380.dtsi"
+
+/ {
+	aliases {
+		led-boot = &red_status_led;
+		led-failsafe = &red_status_led;
+		led-running = &green_status_led;
+		led-upgrade = &green_status_led;
+		label-mac-device = &gmac0;
+		serial0 = &uart0;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		bootargs = "earlycon=uart8250,mmio32,0x11002000 swiotlb=512 root=/dev/fit0 rootwait";
+		rootdisk = <&nor_rootdisk>;
+	};
+
+	memory@40000000 {
+		reg = <0 0x40000000 0 0x10000000>;
+		device_type = "memory";
+	};
+
+	cpus {
+		cpu@0 {
+			proc-supply = <&mt6380_vcpu_reg>;
+			sram-supply = <&mt6380_vm_reg>;
+		};
+
+		cpu@1 {
+			proc-supply = <&mt6380_vcpu_reg>;
+			sram-supply = <&mt6380_vm_reg>;
+		};
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		/* It seems that reset isn't connected to any MT7622 GPIO. Here's the WPS button. */
+		button-reset {
+			label = "reset";
+			gpios = <&pio 102 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		green_status_led: led-0 {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&pio 89 GPIO_ACTIVE_HIGH>;
+		};
+
+		red_status_led: led-1 {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&pio 90 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	rtkgsw: rtkgsw@0 {
+		compatible = "mediatek,rtk-gsw";
+		mediatek,ethsys = <&ethsys>;
+		mediatek,mdio = <&mdio>;
+		reset-gpios = <&pio 54 GPIO_ACTIVE_LOW>;
+		status = "okay";
+	};
+};
+
+&eth {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&eth_pins>;
+
+	gmac0: mac@0 {
+		compatible = "mediatek,eth-mac";
+		reg = <0>;
+
+		nvmem-cells = <&macaddr_factory_d81c 0>;
+		nvmem-cell-names = "mac-address";
+		phy-connection-type = "2500base-x";
+
+		fixed-link {
+			speed = <2500>;
+			full-duplex;
+			pause;
+		};
+	};
+
+	gmac1: mac@1 {
+		compatible = "mediatek,eth-mac";
+		reg = <1>;
+
+		nvmem-cells = <&macaddr_factory_d81c 1>;
+		nvmem-cell-names = "mac-address";
+		phy-mode = "rgmii";
+
+		fixed-link {
+			speed = <1000>;
+			full-duplex;
+			pause;
+		};
+	};
+
+	mdio: mdio-bus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+};
+
+&nor_flash {
+	pinctrl-names = "default";
+	pinctrl-0 = <&spi_nor_pins>;
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+
+		spi-tx-bus-width = <4>;
+		spi-rx-bus-width = <4>;
+		spi-max-frequency = <50000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "bl2";
+				reg = <0x0 0x20000>;
+				read-only;
+			};
+
+			partition@20000 {
+				label = "fip";
+				reg = <0x20000 0x40000>;
+				read-only;
+			};
+
+			partition@60000 {
+				label = "factory";
+				reg = <0x60000 0x20000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_e000: eeprom@e000 {
+						/* actual length 0x400 */
+						reg = <0xe000 0x4da8>;
+					};
+
+					eeprom_factory_f000: eeprom@f000 {
+						reg = <0xf000 0xe00>;
+					};
+
+					macaddr_factory_d81c: macaddr@d81c {
+						compatible = "mac-base";
+						reg = <0xd81c 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
+
+			nor_rootdisk: partition@80000 {
+				compatible = "denx,fit";
+				label = "firmware";
+				reg = <0x80000 0xf80000>;
+			};
+		};
+	};
+};
+
+&pcie0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie0_pins>;
+	status = "okay";
+};
+
+&pio {
+	epa_elna_pins: epa-elna-pins {
+		mux {
+			function = "antsel";
+			groups = "antsel0", "antsel1", "antsel2", "antsel3",
+				 "antsel4", "antsel5", "antsel6", "antsel7",
+				 "antsel8", "antsel9", "antsel12", "antsel13",
+				 "antsel14", "antsel15", "antsel16", "antsel17";
+		};
+	};
+
+	eth_pins: eth-pins {
+		mux {
+			function = "eth";
+			groups = "mdc_mdio", "rgmii_via_gmac2";
+		};
+	};
+
+	pcie0_pins: pcie0-pins {
+		mux {
+			function = "pcie";
+			groups = "pcie0_pad_perst",
+				 "pcie0_0_waken",
+				 "pcie0_0_clkreq";
+		};
+	};
+
+	pmic_bus_pins: pmic-bus-pins {
+		mux {
+			function = "pmic";
+			groups = "pmic_bus";
+		};
+	};
+
+	spi_nor_pins: spi-nor-pins {
+		mux {
+			function = "flash";
+			groups = "spi_nor";
+		};
+	};
+
+	uart0_pins: uart0-pins {
+		mux {
+			function = "uart";
+			groups = "uart0_0_tx_rx";
+		};
+	};
+
+	watchdog_pins: watchdog-pins {
+		mux {
+			function = "watchdog";
+			groups = "watchdog";
+		};
+	};
+};
+
+&pwrap {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pmic_bus_pins>;
+	status = "okay";
+};
+
+&rtc {
+	status = "disabled";
+};
+
+&slot0 {
+	mt7915@0,0 {
+		reg = <0x0000 0 0 0 0>;
+		ieee80211-freq-limit = <5000000 6000000>;
+		nvmem-cells = <&eeprom_factory_f000>, <&macaddr_factory_d81c 2>;
+		nvmem-cell-names = "eeprom", "mac-address";
+	};
+};
+
+&uart0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart0_pins>;
+	status = "okay";
+};
+
+&watchdog {
+	pinctrl-names = "default";
+	pinctrl-0 = <&watchdog_pins>;
+	status = "okay";
+};
+
+&wmac {
+	nvmem-cells = <&eeprom_factory_e000>, <&macaddr_factory_d81c 0>;
+	nvmem-cell-names = "eeprom", "mac-address";
+	pinctrl-names = "default";
+	pinctrl-0 = <&epa_elna_pins>;
+	status = "okay";
+};
