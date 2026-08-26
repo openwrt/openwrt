@@ -1,0 +1,35 @@
+#!/bin/sh
+# TP-Link/Mercusys boards keep their factory data (including the 6-byte
+# "default-mac") in a UBIFS volume the OpenWrt rootfs does not own. Attach
+# and mount it read-only during preinit, so board.d/02_network and the
+# ath11k caldata hotplug can read it without attaching the volume
+# themselves. Same approach as mediatek/filogic 09_mount_cfg_part and
+# qualcommax/ipq807x 09_mount_factory_data.
+
+. /lib/functions.sh
+
+mount_ubi_part() {
+	local mtd_name="$1"
+	local vol_name="$2"
+	local mtd_num ubi_num
+
+	mtd_num=$(find_mtd_index "$mtd_name")
+	[ -n "$mtd_num" ] || return
+
+	ubi_num=$(ubiattach -m "$mtd_num" 2>/dev/null | \
+		sed -n 's/.*UBI device number \([0-9]*\).*/\1/p')
+	[ -n "$ubi_num" ] || return
+
+	mkdir -p "/tmp/$mtd_name"
+	mount -o ro,noatime -t ubifs "ubi${ubi_num}:${vol_name}" "/tmp/$mtd_name"
+}
+
+preinit_mount_tp_data() {
+	case $(board_name) in
+	mercusys,mr80x-v2)
+		mount_ubi_part "tp_data" "tp_data"
+		;;
+	esac
+}
+
+boot_hook_add preinit_main preinit_mount_tp_data

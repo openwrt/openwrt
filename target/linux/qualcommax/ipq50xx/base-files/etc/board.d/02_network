@@ -21,6 +21,7 @@ ipq50xx_setup_interfaces()
 	linksys,mx2000|\
 	linksys,mx5500|\
 	linksys,spnmx56|\
+	mercusys,mr80x-v2|\
 	xiaomi,ax6000)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
 		;;
@@ -40,9 +41,31 @@ ipq50xx_setup_interfaces()
 	esac
 }
 
+ipq50xx_setup_macs()
+{
+	local board="$1"
+	local lan_mac=""
+	local wan_mac=""
+	local label_mac=""
+
+	case $board in
+	mercusys,mr80x-v2)
+		label_mac=$(get_mac_binary /tmp/tp_data/default-mac 0)
+		lan_mac=$label_mac
+		wan_mac=$(macaddr_add "$lan_mac" 1)
+		;;
+	esac
+
+	[ -n "$lan_mac" ] && ucidef_set_interface_macaddr "lan" $lan_mac
+	[ -n "$wan_mac" ] && ucidef_set_interface_macaddr "wan" $wan_mac
+	[ -n "$label_mac" ] && ucidef_set_label_macaddr $label_mac
+	[ -n "$label_mac" ] && ucidef_set_network_device_mac eth0 $label_mac
+}
+
 board_config_update
 board=$(board_name)
 ipq50xx_setup_interfaces $board
+ipq50xx_setup_macs $board
 board_config_flush
 
 exit 0
