@@ -1,0 +1,20 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/*
+ * Copyright (C) 2025 Tianling Shen <cnsztl@immortalwrt.org>
+ */
+
+/dts-v1/;
+#include "mt7988d-tplink-tl-7dr7230-v1.dts"
+
+/ {
+	model = "TP-Link TL-7DR7230 v2";
+	compatible = "tplink,tl-7dr7230-v2", "mediatek,mt7988d";
+};
+
+&led_status_green {
+	gpios = <&pio 54 GPIO_ACTIVE_LOW>;
+};
+
+&led_status_red {
+	gpios = <&pio 28 GPIO_ACTIVE_LOW>;
+};

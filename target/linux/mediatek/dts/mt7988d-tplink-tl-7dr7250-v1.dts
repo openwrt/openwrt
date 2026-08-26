@@ -1,0 +1,65 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/*
+ * Copyright (C) 2025 Tianling Shen <cnsztl@immortalwrt.org>
+ */
+
+/dts-v1/;
+#include "mt7988d-tplink-tl-7dr-common.dtsi"
+
+/ {
+	model = "TP-Link TL-7DR7250 v1";
+	compatible = "tplink,tl-7dr7250-v1", "mediatek,mt7988d";
+};
+
+&gmac1 {
+	nvmem-cells = <&macaddr_factory_1e001c 0>;
+	nvmem-cell-names = "mac-address";
+	openwrt,netdev-name = "lan3";
+};
+
+&gmac2 {
+	phy-mode = "2500base-x";
+	phy = <&phy13>;
+	nvmem-cells = <&macaddr_factory_1e001c 1>;
+	nvmem-cell-names = "mac-address";
+	openwrt,netdev-name = "wan";
+	status = "okay";
+};
+
+&gsw_phy2 {
+	status = "disabled";
+};
+
+&gsw_phy3 {
+	status = "disabled";
+};
+
+&gsw_port0 {
+	label = "lan2";
+};
+
+&gsw_port1 {
+	label = "lan1";
+};
+
+&gsw_port2 {
+	status = "disabled";
+};
+
+&gsw_port3 {
+	status = "disabled";
+};
+
+&i2p5gbe_led0 {
+	function = LED_FUNCTION_LAN;
+};
+
+&mdio_bus {
+	phy13: ethernet-phy@d {
+		reg = <0xd>;
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reset-gpios = <&pio 66 GPIO_ACTIVE_LOW>;
+		reset-assert-us = <10000>;
+		reset-deassert-us = <20000>;
+	};
+};
