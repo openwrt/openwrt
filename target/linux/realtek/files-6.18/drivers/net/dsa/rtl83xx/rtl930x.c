@@ -508,6 +508,15 @@ static void rtldsa_930x_enable_learning(int port, bool enable)
 		    RTL930X_L2_LRN_PORT_CONSTRT_CTRL + port * 4);
 }
 
+static void rtldsa_930x_l2_port_new_sa_fwd(int port, enum rtldsa_flood_type mode)
+{
+	u32 new_sa_fwd_shift = (port % 10) * 3;
+
+	sw_w32_mask(GENMASK(new_sa_fwd_shift + 2, new_sa_fwd_shift),
+		    mode << new_sa_fwd_shift,
+		    rtl930x_l2_port_new_sa_fwd(port));
+}
+
 static void rtldsa_930x_enable_flood(int port, enum rtldsa_flood_type mode)
 {
 	u32 port_mask = BIT(port);
@@ -2271,6 +2280,7 @@ const struct rtldsa_config rtldsa_930x_cfg = {
 	.packet_cntr_clear = rtl930x_packet_cntr_clear,
 	.led_init = rtl930x_led_init,
 	.enable_learning = rtldsa_930x_enable_learning,
+	.enable_l2_new_sa_fwd = rtldsa_930x_l2_port_new_sa_fwd,
 	.enable_flood = rtldsa_930x_enable_flood,
 	.set_receive_management_action = rtldsa_930x_set_receive_management_action,
 	.qos_init = rtldsa_930x_qos_init,

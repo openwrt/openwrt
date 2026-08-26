@@ -908,6 +908,15 @@ static void rtldsa_931x_enable_learning(int port, bool enable)
 		    RTL931X_L2_LRN_PORT_CONSTRT_CTRL + port * 4);
 }
 
+static void rtldsa_931x_l2_port_new_sa_fwd(int port, enum rtldsa_flood_type mode)
+{
+	u32 new_sa_fwd_shift = (port % 10) * 3;
+
+	sw_w32_mask(GENMASK(new_sa_fwd_shift + 2, new_sa_fwd_shift),
+		    mode << new_sa_fwd_shift,
+		    rtl931x_l2_port_new_sa_fwd(port));
+}
+
 static void rtldsa_931x_enable_flood(int port, enum rtldsa_flood_type mode)
 {
 	/* RTL931X_L2_UNKN_UC_FLD_PMSK is big-endian */
@@ -2033,6 +2042,7 @@ const struct rtldsa_config rtldsa_931x_cfg = {
 	.l2_learning_setup = rtl931x_l2_learning_setup,
 	.led_init = rtldsa_931x_led_init,
 	.enable_learning = rtldsa_931x_enable_learning,
+	.enable_l2_new_sa_fwd = rtldsa_931x_l2_port_new_sa_fwd,
 	.enable_flood = rtldsa_931x_enable_flood,
 	.set_receive_management_action = rtldsa_931x_set_receive_management_action,
 	.qos_init = rtldsa_931x_qos_init,

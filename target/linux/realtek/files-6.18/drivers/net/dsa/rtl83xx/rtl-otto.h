@@ -1370,6 +1370,7 @@ struct rtldsa_config {
 	void (*set_vlan_igr_filter)(int port, enum igr_filter state);
 	void (*set_vlan_egr_filter)(int port, enum egr_filter state);
 	void (*enable_learning)(int port, bool enable);
+	void (*enable_l2_new_sa_fwd)(int port, enum rtldsa_flood_type flood_type);
 	void (*enable_flood)(int port, enum rtldsa_flood_type flood_type);
 	void (*enable_mcast_flood)(int port, bool enable);
 	void (*enable_bcast_flood)(int port, bool enable);
