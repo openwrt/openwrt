@@ -138,6 +138,7 @@ struct rteth_ctrl {
 	spinlock_t		rx_lock;
 	struct rteth_rx_info	rx_info[RTETH_RX_RINGS];
 	struct rteth_rx_data	*rx_data;
+	bool			napi_enabled;
 	/* transmit handling */
 	dma_addr_t		tx_dma;
 	spinlock_t		tx_lock;
@@ -951,6 +952,7 @@ static int rteth_open(struct net_device *dev)
 
 	for (int i = 0; i < RTETH_RX_RINGS; i++)
 		napi_enable(&ctrl->rx_info[i].napi);
+	ctrl->napi_enabled = true;
 
 	ctrl->r->hw_init(ctrl);
 	ctrl->r->hw_en_rxtx(ctrl);
@@ -1041,8 +1043,11 @@ static int rteth_stop(struct net_device *dev)
 	phylink_stop(ctrl->phylink);
 	rteth_hw_stop(ctrl);
 
-	for (int i = 0; i < RTETH_RX_RINGS; i++)
-		napi_disable(&ctrl->rx_info[i].napi);
+	if (ctrl->napi_enabled) {
+		ctrl->napi_enabled = false;
+		for (int i = 0; i < RTETH_RX_RINGS; i++)
+			napi_disable(&ctrl->rx_info[i].napi);
+	}
 
 	rteth_free_tx_buffers(ctrl);
 	rteth_free_rx_buffers(ctrl);
