@@ -219,10 +219,7 @@ static int rtldsa_83xx_setup(struct dsa_switch *ds)
 	/* Make sure all frames sent to the switch's MAC are trapped to the CPU-port
 	 *  0: FWD, 1: DROP, 2: TRAP2CPU
 	 */
-	if (priv->family_id == RTL8380_FAMILY_ID)
-		sw_w32(0x2, RTL838X_SPCL_TRAP_SWITCH_MAC_CTRL);
-	else
-		sw_w32(0x2, RTL839X_SPCL_TRAP_SWITCH_MAC_CTRL);
+	sw_w32(0x2, priv->r->self_mac_trap_ctrl);
 
 	/* Enable MAC Polling PHY again */
 	rtldsa_enable_phy_polling(priv);

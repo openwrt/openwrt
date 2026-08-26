@@ -1673,6 +1673,7 @@ const struct rtldsa_config rtldsa_839x_cfg = {
 	.port_iso_ctrl = rtl839x_port_iso_ctrl,
 	.l2_ctrl_0 = RTL839X_L2_CTRL_0,
 	.l2_ctrl_1 = RTL839X_L2_CTRL_1,
+	.self_mac_trap_ctrl = RTL839X_SPCL_TRAP_SWITCH_MAC_CTRL,
 	.l2_port_aging_out = RTL839X_L2_PORT_AGING_OUT,
 	.set_ageing_time = rtl839x_set_ageing_time,
 	.smi_poll_ctrl = RTL839X_SMI_PORT_POLLING_CTRL,

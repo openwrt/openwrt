@@ -1341,6 +1341,7 @@ struct rtldsa_config {
 	int l2_ctrl_0;
 	int l2_ctrl_1;
 	bool high_res_l2_age;
+	u32 self_mac_trap_ctrl;
 	int smi_poll_ctrl;
 	u32 l2_port_aging_out;
 	int l2_tbl_flush_ctrl;
