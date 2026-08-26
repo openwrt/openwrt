@@ -1214,8 +1214,12 @@ static void rteth_tx_timeout(struct net_device *dev, unsigned int txqueue)
 static int rteth_get_dsa_port(struct sk_buff *skb, struct net_device *dev)
 {
 	struct rteth_ctrl *ctrl = netdev_priv(dev);
-	u8 *trailer = &skb->data[skb->len - 4];
+	u8 *trailer;
 
+	if (skb->len < 4)
+		return -ENOENT;
+
+	trailer = &skb->data[skb->len - 4];
 	if (netdev_uses_dsa(dev) &&
 	    dev->dsa_ptr->tag_ops->proto == DSA_TAG_PROTO_RTL_OTTO &&
 	    trailer[0] < ctrl->r->cpu_port &&
@@ -1224,7 +1228,7 @@ static int rteth_get_dsa_port(struct sk_buff *skb, struct net_device *dev)
 	    trailer[3] == 0xef)
 		return trailer[0];
 
-	return -1;
+	return -ENOENT;
 }
 
 static int rteth_start_xmit(struct sk_buff *skb, struct net_device *dev)
