@@ -1,0 +1,56 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Anatoliy Shulika <shulikaa@icloud.com>
+Date: Thu, 6 Aug 2026 12:00:00 +0200
+Subject: [PATCH] PCI: brcmstb: enable UBUS inbound access on BCM4908
+
+On BCM4908 the inbound (device-to-host) windows stay closed unless the
+UBUS remap register has ACCESS_EN set, so an endpoint cannot reach host
+memory even though the link trains and config space is readable.
+
+Verified by reverting this change on a TP-Link Archer C2300 v1
+(BCM4906): brcmfmac immediately regresses to "Timeout on response for
+query command" / "dongle is not responding", because the dongle can no
+longer read the host-memory msgbuf rings it is pointed at.
+
+Signed-off-by: Anatoliy Shulika <shulikaa@icloud.com>
+---
+--- a/drivers/pci/controller/pcie-brcmstb.c
++++ b/drivers/pci/controller/pcie-brcmstb.c
+@@ -1009,8 +1009,36 @@ static void set_inbound_win_registers(st
+ 		 *     Do nothing.
+ 		 * 7712:
+ 		 *     All of their BARs need to be set.
++		 * 4908:
++		 *     The UBUS bridge gates inbound (device to host) access
++		 *     separately from the RC BAR itself, so the BAR alone is
++		 *     not enough: without ACCESS_EN set on the corresponding
++		 *     UBUS remap register, endpoint DMA into system memory
++		 *     never reaches DRAM.  Broadcom's own bcm963xx PCIe host
++		 *     driver does this on this SoC family, writing
++		 *     MISC_UBUS_BAR1_CONFIG_REMAP (PCIE_MISC_REGS_OFFSET +
++		 *     0x00ac, i.e. the same 0x40ac register used here) with
++		 *     MISC_UBUS_BAR_CONFIG_ACCESS_EN (BIT(0)) right after
++		 *     programming the inbound DDR BAR.
++		 *
++		 *     This went unnoticed upstream because no in-tree bcm4908
++		 *     board has a working driver for a PCIe endpoint, so only
++		 *     MMIO paths (link training, enumeration, config space)
++		 *     were ever exercised - all of which work fine with the
++		 *     gate shut.
++		 *
++		 *     Verified by reverting this change on a TP-Link Archer
++		 *     C2300 v1 (BCM4906): brcmfmac immediately regresses to
++		 *     "Timeout on response for query command" / "dongle is not
++		 *     responding", because the dongle can no longer read the
++		 *     host-memory msgbuf rings it is pointed at.
++		 *
++		 *     Only windows that are actually enabled are touched;
++		 *     brcm_pcie_get_inbound_wins() leaves BAR1 and BAR3 with a
++		 *     size of zero on this SoC and only BAR2 maps DRAM.
+ 		 */
+-		if (pcie->cfg->soc_base == BCM7712) {
++		if (pcie->cfg->soc_base == BCM7712 ||
++		    (pcie->cfg->soc_base == BCM4908 && size)) {
+ 			/* BUS remap register settings */
+ 			reg_offset = brcm_ubus_reg_offset(i);
+ 			tmp = lower_32_bits(cpu_addr) & ~0xfff;
