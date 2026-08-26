@@ -1041,8 +1041,7 @@ static int rteth_stop(struct net_device *dev)
 {
 	struct rteth_ctrl *ctrl = netdev_priv(dev);
 
-	pr_info("in %s\n", __func__);
-
+	netif_tx_stop_all_queues(dev);
 	phylink_stop(ctrl->phylink);
 	rteth_hw_stop(ctrl);
 
@@ -1054,7 +1053,6 @@ static int rteth_stop(struct net_device *dev)
 
 	rteth_free_tx_buffers(ctrl);
 	rteth_free_rx_buffers(ctrl);
-	netif_tx_stop_all_queues(dev);
 
 	return 0;
 }
