@@ -7,7 +7,7 @@
 #
 # The PA calibration here is therefore reference data, not this board's own.
 # Every unit's real calibration is per-unit and lives in the "radio_bk" file
-# of its "tp_data" partition; the boot scripts read it at
+# of its "tp_data" partition; /lib/preinit/05_tp_data_factory reads it at
 # boot and overrides the values below. These are only the fallback used if
 # that partition cannot be read. The same applies to the MAC addresses.
 #
