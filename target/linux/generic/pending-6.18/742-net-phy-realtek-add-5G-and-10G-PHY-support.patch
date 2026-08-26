@@ -64,7 +64,7 @@ Signed-off-by: Balázs Triszka <info@balika011.hu>
  #include <linux/string_choices.h>
  #include <net/phy/realtek_phy.h>
  
-@@ -205,10 +207,27 @@
+@@ -217,10 +219,27 @@
  #define RTL_8221B_VM_CG				0x001cc84a
  #define RTL_8251B				0x001cc862
  #define RTL_8261C				0x001cc890
@@ -92,7 +92,7 @@ Signed-off-by: Balázs Triszka <info@balika011.hu>
  MODULE_DESCRIPTION("Realtek PHY driver");
  MODULE_AUTHOR("Johnson Leung");
  MODULE_LICENSE("GPL");
-@@ -1994,6 +2013,125 @@ static int rtl8251b_c45_match_phy_device
+@@ -2151,6 +2170,125 @@ static int rtl8251b_c45_match_phy_device
  	return rtlgen_is_c45_match(phydev, RTL_8251B, true);
  }
  
@@ -218,7 +218,7 @@ Signed-off-by: Balázs Triszka <info@balika011.hu>
  static int rtlgen_resume(struct phy_device *phydev)
  {
  	int ret = genphy_resume(phydev);
-@@ -2215,6 +2353,482 @@ static int rtlgen_sfp_config_aneg(struct
+@@ -2372,6 +2510,482 @@ static int rtlgen_sfp_config_aneg(struct
  	return 0;
  }
  
@@ -701,7 +701,7 @@ Signed-off-by: Balázs Triszka <info@balika011.hu>
  static struct phy_driver realtek_drvs[] = {
  	{
  		PHY_ID_MATCH_EXACT(0x00008201),
-@@ -2521,6 +3135,108 @@ static struct phy_driver realtek_drvs[]
+@@ -2686,6 +3300,108 @@ static struct phy_driver realtek_drvs[]
  		.resume		= genphy_resume,
  		.read_mmd	= genphy_read_mmd_unsupported,
  		.write_mmd	= genphy_write_mmd_unsupported,
