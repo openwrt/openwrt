@@ -1315,6 +1315,7 @@ struct rtldsa_config {
 	u64 (*get_port_reg_le)(int reg);
 	int stat_port_rst;
 	int stat_rst;
+	void (*stat_init)(struct rtl838x_switch_priv *priv);
 	int stat_port_std_mib;
 	int stat_port_prv_mib;
 	const struct rtldsa_mib_desc *mib_desc;

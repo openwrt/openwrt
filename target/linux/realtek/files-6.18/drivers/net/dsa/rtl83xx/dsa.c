@@ -28,15 +28,12 @@ static void rtldsa_init_counters(struct rtl838x_switch_priv *priv);
 static void rtldsa_port_xstp_state_set(struct rtl838x_switch_priv *priv, int port,
 				       u8 state, u16 mst_slot);
 
-static void rtldsa_83xx_init_stats(struct rtl838x_switch_priv *priv)
+static void rtldsa_init_stats(struct rtl838x_switch_priv *priv)
 {
 	mutex_lock(&priv->reg_mutex);
 
-	/* Enable statistics module: all counters plus debug.
-	 * On RTL839x all counters are enabled by default
-	 */
-	if (priv->family_id == RTL8380_FAMILY_ID)
-		sw_w32_mask(0, 3, RTL838X_STAT_CTRL);
+	if (priv->r->stat_init)
+		priv->r->stat_init(priv);
 
 	/* Reset statistics counters */
 	sw_w32_mask(0, 1, priv->r->stat_rst);
@@ -203,7 +200,7 @@ static int rtldsa_83xx_setup(struct dsa_switch *ds)
 	}
 
 	priv->r->print_matrix();
-	rtldsa_83xx_init_stats(priv);
+	rtldsa_init_stats(priv);
 	rtldsa_init_counters(priv);
 
 	rtldsa_83xx_mc_pmasks_setup(priv);
@@ -268,7 +265,7 @@ static int rtldsa_93xx_setup(struct dsa_switch *ds)
 	priv->r->traffic_set(priv->r->cpu_port, BIT_ULL(priv->r->cpu_port));
 	priv->r->print_matrix();
 
-	/* TODO: Initialize statistics */
+	rtldsa_init_stats(priv);
 	rtldsa_init_counters(priv);
 
 	rtldsa_vlan_setup(priv);

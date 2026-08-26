@@ -1753,6 +1753,12 @@ static int rtldsa_838x_lag_set_port_members(struct rtl838x_switch_priv *priv, in
 int rtldsa_83xx_lag_setup_algomask(struct rtl838x_switch_priv *priv, int group,
 				   struct netdev_lag_upper_info *info);
 
+static void rtldsa_838x_stat_init(struct rtl838x_switch_priv *priv)
+{
+	/* Enable statistics module: all counters plus debug */
+	sw_w32_mask(0, 3, RTL838X_STAT_CTRL);
+}
+
 const struct rtldsa_config rtldsa_838x_cfg = {
 	.switch_ops = &rtldsa_83xx_switch_ops,
 	.phylink_mac_ops = &rtldsa_83xx_phylink_mac_ops,
@@ -1770,6 +1776,7 @@ const struct rtldsa_config rtldsa_838x_cfg = {
 	.get_port_reg_le = rtl838x_get_port_reg,
 	.stat_port_rst = RTL838X_STAT_PORT_RST,
 	.stat_rst = RTL838X_STAT_RST,
+	.stat_init = rtldsa_838x_stat_init,
 	.stat_port_std_mib = RTL838X_STAT_PORT_STD_MIB,
 	.mib_desc = &rtldsa_838x_mib_desc,
 	.stat_counters_lock = rtldsa_counters_lock_register,
