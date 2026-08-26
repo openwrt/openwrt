@@ -2348,7 +2348,9 @@ static int rtldsa_port_bridge_flags(struct dsa_switch *ds, int port,
 		priv->r->enable_learning(port, !!(flags.val & BR_LEARNING));
 
 	if (priv->r->enable_flood && (flags.mask & BR_FLOOD))
-		priv->r->enable_flood(port, !!(flags.val & BR_FLOOD));
+		priv->r->enable_flood(port, (flags.val & BR_FLOOD) ?
+					    RTLDSA_FLOOD_TYPE_FORWARD :
+					    RTLDSA_FLOOD_TYPE_DROP);
 
 	if (priv->r->enable_mcast_flood && (flags.mask & BR_MCAST_FLOOD))
 		priv->r->enable_mcast_flood(port, !!(flags.val & BR_MCAST_FLOOD));

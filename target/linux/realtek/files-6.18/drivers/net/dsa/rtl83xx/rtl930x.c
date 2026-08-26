@@ -508,17 +508,19 @@ static void rtldsa_930x_enable_learning(int port, bool enable)
 		    RTL930X_L2_LRN_PORT_CONSTRT_CTRL + port * 4);
 }
 
-static void rtldsa_930x_enable_flood(int port, bool enable)
+static void rtldsa_930x_enable_flood(int port, enum rtldsa_flood_type mode)
 {
-	/* 0: forward
-	 * 1: drop
-	 * 2: trap to local CPU
-	 * 3: copy to local CPU
-	 * 4: trap to master CPU
-	 * 5: copy to master CPU
-	 */
-	sw_w32_mask(GENMASK(2, 0), enable ? 0 : 1,
+	u32 port_mask = BIT(port);
+	u32 val;
+
+	val = (mode == RTLDSA_FLOOD_TYPE_FORWARD) ? port_mask : 0;
+
+	sw_w32_mask(GENMASK(2, 0), mode,
 		    RTL930X_L2_LRN_PORT_CONSTRT_CTRL + port * 4);
+
+	sw_w32_mask(port_mask,
+		    val,
+		    RTL930X_L2_UNKN_UC_FLD_PMSK);
 }
 
 static void rtldsa_930x_lag_set_port2group(int group, int port, bool valid)
