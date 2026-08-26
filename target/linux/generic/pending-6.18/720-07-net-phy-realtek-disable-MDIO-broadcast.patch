@@ -13,7 +13,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 ---
 --- a/drivers/net/phy/realtek/realtek_main.c
 +++ b/drivers/net/phy/realtek/realtek_main.c
-@@ -173,6 +173,7 @@
+@@ -179,6 +179,7 @@
  #define RTL8221B_PHYCR1				0xa430
  #define RTL8221B_PHYCR1_ALDPS_EN		BIT(2)
  #define RTL8221B_PHYCR1_ALDPS_XTAL_OFF_EN	BIT(12)
@@ -21,7 +21,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  #define RTL8366RB_POWER_SAVE			0x15
  #define RTL8366RB_POWER_SAVE_ON			BIT(12)
-@@ -1351,14 +1352,21 @@ static int rtl822xb_write_mmd(struct phy
+@@ -1749,14 +1750,21 @@ static int rtl822xb_write_mmd(struct phy
  static int rtl822x_init_phycr1(struct phy_device *phydev, bool no_aldps)
  {
  	struct rtl822x_priv *priv = phydev->priv;
