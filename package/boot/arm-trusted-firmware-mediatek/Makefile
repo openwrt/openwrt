@@ -595,6 +595,17 @@ define Trusted-Firmware-A/mt7988-ram-comb
   DEFAULT:=TARGET_mediatek_filogic
 endef
 
+define Trusted-Firmware-A/mt7988-ram-ddr3
+  NAME:=MediaTek MT7988 (RAM/ddr3)
+  BOOT_DEVICE:=ram
+  BUILD_SUBTARGET:=filogic
+  PLAT:=mt7988
+  RAM_BOOT_UART_DL:=1
+  HIDDEN:=
+  DEFAULT:=TARGET_mediatek_filogic
+  DDR_TYPE:=ddr3
+endef
+
 define Trusted-Firmware-A/mt7988-ram-ddr4
   NAME:=MediaTek MT7988 (RAM/ddr4)
   BOOT_DEVICE:=ram
@@ -701,6 +712,16 @@ define Trusted-Firmware-A/mt7988-spim-nand-ubi-comb-4bg
   USE_UBI:=1
 endef
 
+define Trusted-Firmware-A/mt7988-tplink-tl-7dr7299-comb
+  NAME:=MediaTek MT7988 (SPI-NAND via SPIM)
+  BOOT_DEVICE:=spim-nand
+  BUILD_SUBTARGET:=filogic
+  PLAT:=mt7988
+  DRAM_USE_COMB:=1
+  FIP_OFFSET:=0x580000
+  FIP_SIZE:=0x100000
+endef
+
 TFA_TARGETS:= \
 	mt7622-nor-1ddr \
 	mt7622-nor-2ddr \
@@ -767,6 +788,7 @@ TFA_TARGETS:= \
 	mt7988-snand-ddr4 \
 	mt7988-spim-nand-ddr4 \
 	mt7988-ram-comb \
+	mt7988-ram-ddr3 \
 	mt7988-ram-ddr4 \
 	mt7988-emmc-comb \
 	mt7988-nor-comb \
@@ -778,7 +800,8 @@ TFA_TARGETS:= \
 	mt7988-spim-nand-ubi-ddr4 \
 	mt7988-emmc-comb-4bg \
 	mt7988-sdmmc-comb-4bg \
-	mt7988-spim-nand-ubi-comb-4bg
+	mt7988-spim-nand-ubi-comb-4bg \
+	mt7988-tplink-tl-7dr7299-comb
 
 TFA_MAKE_FLAGS += \
 	BOOT_DEVICE=$(BOOT_DEVICE) \
@@ -812,6 +835,7 @@ Package/trusted-firmware-a-mt7986-ram-ddr3/install = $(Package/trusted-firmware-
 Package/trusted-firmware-a-mt7986-ram-ddr4/install = $(Package/trusted-firmware-a-ram/install)
 Package/trusted-firmware-a-mt7987-ram-comb/install = $(Package/trusted-firmware-a-ram/install)
 Package/trusted-firmware-a-mt7988-ram-comb/install = $(Package/trusted-firmware-a-ram/install)
+Package/trusted-firmware-a-mt7988-ram-ddr3/install = $(Package/trusted-firmware-a-ram/install)
 Package/trusted-firmware-a-mt7988-ram-ddr4/install = $(Package/trusted-firmware-a-ram/install)
 
 define Package/trusted-firmware-a/install
