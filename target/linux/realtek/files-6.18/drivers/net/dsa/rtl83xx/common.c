@@ -330,12 +330,17 @@ static int rtl83xx_get_l2aging(struct rtl838x_switch_priv *priv)
 {
 	int t = sw_r32(priv->r->l2_ctrl_1);
 
-	t &= priv->family_id == RTL8380_FAMILY_ID ? 0x7fffff : 0x1FFFFF;
-
-	if (priv->family_id == RTL8380_FAMILY_ID)
-		t = t * 128 / 625; /* Aging time in seconds. 0: L2 aging disabled */
-	else
-		t = (t * 3) / 5;
+	/* RTL838x uses a high-resolution 23-bit AGE_UNIT where one unit is
+	 * 204.8 ms. RTL839x and RTL93xx use a 21-bit AGE_UNIT where one unit
+	 * is 600 ms. An AGE_UNIT value of 0 disables dynamic address aging.
+	 */
+	if (priv->r->high_res_l2_age) {
+		t &= GENMASK(22, 0);
+		t = t * 128 / 625;
+	} else {
+		t &= GENMASK(20, 0);
+		t = t * 3 / 5;
+	}
 
 	pr_debug("L2 AGING time: %d sec\n", t);
 	pr_debug("Dynamic aging for ports: %x\n", sw_r32(priv->r->l2_port_aging_out));

@@ -1789,6 +1789,7 @@ const struct rtldsa_config rtldsa_838x_cfg = {
 	.traffic_set = rtl838x_traffic_set,
 	.l2_ctrl_0 = RTL838X_L2_CTRL_0,
 	.l2_ctrl_1 = RTL838X_L2_CTRL_1,
+	.high_res_l2_age = true,
 	.l2_port_aging_out = RTL838X_L2_PORT_AGING_OUT,
 	.set_ageing_time = rtl838x_set_ageing_time,
 	.smi_poll_ctrl = RTL838X_SMI_POLL_CTRL,

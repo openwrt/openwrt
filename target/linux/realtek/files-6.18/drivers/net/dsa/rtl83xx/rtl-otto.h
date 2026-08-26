@@ -1340,6 +1340,7 @@ struct rtldsa_config {
 	void (*traffic_set)(int source, u64 dest_matrix);
 	int l2_ctrl_0;
 	int l2_ctrl_1;
+	bool high_res_l2_age;
 	int smi_poll_ctrl;
 	u32 l2_port_aging_out;
 	int l2_tbl_flush_ctrl;
