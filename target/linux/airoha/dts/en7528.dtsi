@@ -457,12 +457,12 @@
 			status = "disabled";
 		};
 
-	  /* <GIC_SHARED 53 IRQ_TYPE_LEVEL_HIGH> => WIFI DMA 0 port 0 */
-	  /* <GIC_SHARED 54 IRQ_TYPE_LEVEL_HIGH> => WIFI DMA 0 port 1 */
-	  /* <GIC_SHARED 55 IRQ_TYPE_LEVEL_HIGH> => WIFI DMA 0 for WOE */
-	  /* <GIC_SHARED 56 IRQ_TYPE_LEVEL_HIGH> => WIFI DMA 1 port 0 */
-	  /* <GIC_SHARED 56 IRQ_TYPE_LEVEL_HIGH> => WIFI DMA 1 port 1 */
-	  /* <GIC_SHARED 58 IRQ_TYPE_LEVEL_HIGH> => WIFI DMA 1 for WOE */
+		/* <GIC_SHARED 53 IRQ_TYPE_LEVEL_HIGH> => WIFI DMA 0 port 0 */
+		/* <GIC_SHARED 54 IRQ_TYPE_LEVEL_HIGH> => WIFI DMA 0 port 1 */
+		/* <GIC_SHARED 55 IRQ_TYPE_LEVEL_HIGH> => WIFI DMA 0 for WOE */
+		/* <GIC_SHARED 56 IRQ_TYPE_LEVEL_HIGH> => WIFI DMA 1 port 0 */
+		/* <GIC_SHARED 56 IRQ_TYPE_LEVEL_HIGH> => WIFI DMA 1 port 1 */
+		/* <GIC_SHARED 58 IRQ_TYPE_LEVEL_HIGH> => WIFI DMA 1 for WOE */
 		wed0: wed@1fa02000 {
 			compatible = "airoha,en7523-wed", "syscon";
 			reg = <0x1fa02000 0xb00>,
@@ -492,7 +492,7 @@
 			         <&scuclk EN7528_FE_QDMA1_RST>,
 			         <&scuclk EN7528_FE_QDMA2_RST>,
 			         <&scuclk EN7528_GDMP_RST>;
-			reset-names = "fe", "qdma0", "qdma1", "gdmp";
+			reset-names = "fe", "pdma", "qdma", "gdmp";
 
 			airoha,wed = <&wed0>, <&wed1>;
 			interrupts = <GIC_SHARED 21 IRQ_TYPE_LEVEL_HIGH>,  /* QDMA LAN0 */
@@ -600,7 +600,7 @@
 					status = "disabled";
 
 					pinctrl-names = "gbe-led";
-					pinctrl-0 = <&swp1_led0 swp1_led1>;
+					pinctrl-0 = <&swp1_led0 &swp1_led1>;
 					airoha,scu = <&scuclk>;
 
 					leds {
@@ -630,7 +630,7 @@
 					status = "disabled";
 
 					pinctrl-names = "gbe-led";
-					pinctrl-0 = <&swp2_led0 swp2_led1>;
+					pinctrl-0 = <&swp2_led0 &swp2_led1>;
 					airoha,scu = <&scuclk>;
 
 					leds {
@@ -660,7 +660,7 @@
 					status = "disabled";
 
 					pinctrl-names = "gbe-led";
-					pinctrl-0 = <&swp3_led0 swp3_led1>;
+					pinctrl-0 = <&swp3_led0 &swp3_led1>;
 					airoha,scu = <&scuclk>;
 
 					leds {
@@ -690,7 +690,7 @@
 					status = "disabled";
 
 					pinctrl-names = "gbe-led";
-					pinctrl-0 = <&swp4_led0 swp4_led1>;
+					pinctrl-0 = <&swp4_led0 &swp4_led1>;
 					airoha,scu = <&scuclk>;
 
 					leds {

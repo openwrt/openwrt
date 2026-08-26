@@ -1,0 +1,210 @@
+From 9f2576402515816c60e315d86b370afdb5d82f63 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Wed, 26 Aug 2026 00:22:26 -0300
+Subject: [PATCH] mips: econet: fall back to PDIDR for SoC name
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ arch/mips/econet/init.c           |   9 +-
+ include/linux/soc/airoha/pkgids.h | 141 ++++++++++++++++++++++++++++--
+ 2 files changed, 142 insertions(+), 8 deletions(-)
+
+diff --git a/arch/mips/econet/init.c b/arch/mips/econet/init.c
+index 3e813081036b..ef89d1f4c390 100644
+--- a/arch/mips/econet/init.c
++++ b/arch/mips/econet/init.c
+@@ -22,7 +22,7 @@
+ 
+ #define CR_AHB_RSTCR		((void __iomem *)CKSEG1ADDR(0x1fb00040))
+ #define RESET			BIT(31)
+-#define NP_SCU_BASE		((void __iomem *)CKSEG1ADDR(0x1fa20000))
++#define NP_SCU_BASE		((void __iomem *)CKSEG1ADDR(0x1fb00000))
+ 
+ #ifdef CONFIG_CPU_LITTLE_ENDIAN
+ #define UART_BASE		CKSEG1ADDR(0x1fbf0000)	/* LE: byte at offset 0 */
+@@ -81,10 +81,13 @@ void __init device_tree_init(void)
+ const char *get_system_type(void)
+ {
+ 	static char system_type[64];
++	u32 hir, pkgid, pdidr;
+ 	const char *soc;
+ 
+-	soc = airoha_soc_name(get_pkg_mem(NP_SCU_BASE),
+-			      get_pkgid_mem(NP_SCU_BASE));
++	hir = get_pkg_mem(NP_SCU_BASE);
++	pkgid = get_pkgid_mem(NP_SCU_BASE);
++	pdidr = get_pdidr_mem(NP_SCU_BASE);
++	soc = airoha_soc_name_from_regs(hir, pkgid, pdidr);
+ 
+ 	snprintf(system_type, sizeof(system_type), "EcoNet %s", soc);
+ 	return system_type;
+diff --git a/include/linux/soc/airoha/pkgids.h b/include/linux/soc/airoha/pkgids.h
+index ecee6bff6325..0ea20abb811d 100644
+--- a/include/linux/soc/airoha/pkgids.h
++++ b/include/linux/soc/airoha/pkgids.h
+@@ -306,15 +306,105 @@ static inline const char *
+ airoha_pkg_id_range_name(u32 pkgid, enum airoha_pkg_ids first,
+ 			 enum airoha_pkg_ids last)
+ {
++	u32 id;
++
+ 	if (pkgid > (u32)(last - first))
+-		return "unknown";
++		return NULL;
++
++	id = first + pkgid;
++	if (id >= ARRAY_SIZE(airoha_pkg_id_names) ||
++	    !airoha_pkg_id_names[id])
++		return NULL;
+ 
+-	return airoha_pkg_id_name((enum airoha_pkg_ids)(first + pkgid));
++	return airoha_pkg_id_names[id];
+ }
+ 
+-static inline const char *airoha_soc_name(enum airoha_pkg pkg, u32 pkgid)
++static inline enum airoha_pkg airoha_pkg_from_id(u32 id)
++{
++	switch (id) {
++	case AN7583_PKG:
++	case 0x7583:
++	case 0x9510:
++	case 0x7553:
++	case 0x7567:
++		return AN7583_PKG;
++	case AN7552_PKG:
++	case 0x7552:
++	case 0x7563:
++		return AN7552_PKG;
++	case EN7581_PKG:
++	case 0x7581:
++	case 0x7566:
++	case 0x7551:
++		return EN7581_PKG;
++	case EN7523_PKG:
++	case 0x7523:
++	case 0x7529:
++	case 0x7562:
++		return EN7523_PKG;
++	case EN7528_PKG:
++	case 0x7528:
++	case 0x7561:
++		return EN7528_PKG;
++	case EN7580_PKG:
++	case 0x7580:
++	case 0x7565:
++		return EN7580_PKG;
++	case EN751627_PKG:
++	case 0x7516:
++	case 0x7527:
++		return EN751627_PKG;
++	case EN7526C_PKG:
++	case 0x7522:
++		return EN7526C_PKG;
++	case EN751221_PKG:
++	case 0x7512:
++	case 0x7513:
++	case 0x7521:
++	case 0x7526:
++		return EN751221_PKG;
++	case MT751020_PKG:
++	case 0x7510:
++	case 0x7520:
++	case 0x7525:
++		return MT751020_PKG;
++	default:
++		return 0;
++	}
++}
++
++static inline const char *airoha_pkg_family_name(enum airoha_pkg pkg)
+ {
+-	switch (pkg) {
++	switch (airoha_pkg_from_id(pkg)) {
++	case AN7583_PKG:
++		return "AN7583";
++	case AN7552_PKG:
++		return "AN7552";
++	case EN7581_PKG:
++		return "EN7581";
++	case EN7523_PKG:
++		return "EN7523";
++	case EN7528_PKG:
++		return "EN7528";
++	case EN7580_PKG:
++		return "EN7580";
++	case EN751627_PKG:
++		return "EN7516/EN7527";
++	case EN7526C_PKG:
++		return "EN7526C/EN7522";
++	case EN751221_PKG:
++		return "EN7512/EN7521";
++	case MT751020_PKG:
++		return "MT7510/MT7520";
++	default:
++		return NULL;
++	}
++}
++
++static inline const char *
++airoha_soc_variant_name(enum airoha_pkg pkg, u32 pkgid)
++{
++	switch (airoha_pkg_from_id(pkg)) {
+ 	case AN7583_PKG:
+ 		return airoha_pkg_id_range_name(pkgid, AN7583GT, AN7583FF);
+ 	case AN7552_PKG:
+@@ -337,10 +427,51 @@ static inline const char *airoha_soc_name(enum airoha_pkg pkg, u32 pkgid)
+ 	case MT751020_PKG:
+ 		return airoha_pkg_id_range_name(pkgid, MT7520S, MT7525G);
+ 	default:
+-		return "unknown";
++		return NULL;
+ 	}
+ }
+ 
++static inline const char *airoha_soc_name(enum airoha_pkg pkg, u32 pkgid)
++{
++	const char *name;
++
++	name = airoha_soc_variant_name(pkg, pkgid);
++	if (name)
++		return name;
++
++	name = airoha_pkg_family_name(pkg);
++	if (name)
++		return name;
++
++	return "unknown";
++}
++
++static inline const char *
++airoha_soc_name_from_regs(u32 hir, u32 pkgid, u32 pdidr)
++{
++	enum airoha_pkg hir_pkg = airoha_pkg_from_id(hir);
++	enum airoha_pkg pdidr_pkg = airoha_pkg_from_id(pdidr);
++	const char *name;
++
++	name = airoha_soc_variant_name(hir_pkg, pkgid);
++	if (name)
++		return name;
++
++	name = airoha_soc_variant_name(pdidr_pkg, pkgid);
++	if (name)
++		return name;
++
++	name = airoha_pkg_family_name(hir_pkg);
++	if (name)
++		return name;
++
++	name = airoha_pkg_family_name(pdidr_pkg);
++	if (name)
++		return name;
++
++	return "unknown";
++}
++
+ static inline u32 airoha_pkgid_from_screg(u32 value)
+ {
+ 	u32 pkgid = FIELD_GET(AIROHA_NP_SCU_PACKAGE_ID_MASK, value);
+-- 
+2.55.0
+

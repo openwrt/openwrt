@@ -1,0 +1,33 @@
+From 0a5c90c7db6b04fb1a6bd006624cf79152694dad Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Wed, 26 Aug 2026 00:23:05 -0300
+Subject: [PATCH] en7528: reduce sport log
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
+index e72f709f77c6..dcde96cb7396 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -9228,7 +9228,6 @@ static int airoha_en7528_get_dev_from_sport(struct airoha_eth *eth, u32 sport,
+ 					    u16 *port, u16 *dev)
+ {
+ 	*dev = 0;
+-	dev_info_ratelimited(eth->dev, "EN7528 RX sport %#x\n", sport);
+ 
+ 	if (sport == ETX_FPORT_GDM2 || sport == ETX_FPORT_QDMA1_CPU) {
+ 		*port = AIROHA_GDM2_IDX - 1;
+@@ -9243,6 +9242,7 @@ static int airoha_en7528_get_dev_from_sport(struct airoha_eth *eth, u32 sport,
+ 		return 0;
+ 	}
+ 
++	dev_info_ratelimited(eth->dev, "EN7528 RX sport %#x\n", sport);
+ 	return -EINVAL;
+ }
+ 
+-- 
+2.55.0
+
