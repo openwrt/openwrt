@@ -22,6 +22,7 @@ ipq50xx_setup_interfaces()
 	linksys,mx2000|\
 	linksys,mx5500|\
 	linksys,spnmx56|\
+	mercusys,mr80x-v2|\
 	xiaomi,ax6000)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
 		;;
@@ -47,6 +48,7 @@ ipq50xx_setup_macs()
 	local label_mac=""
 
 	case $board in
+	mercusys,mr80x-v2|\
 	tplink,archer-ax55-v1)
 		# factory MAC is 6 raw bytes in tp_data/default-mac, mounted
 		# read-only during preinit (see lib/preinit/09_mount_tp_data)
