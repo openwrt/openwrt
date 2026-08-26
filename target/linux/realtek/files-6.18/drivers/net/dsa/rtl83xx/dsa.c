@@ -1436,6 +1436,7 @@ static int rtldsa_port_bridge_join(struct dsa_switch *ds, int port, struct dsa_b
 
 	/* reset to default flags for new net_bridge_port */
 	priv->ports[port].isolated = false;
+	priv->ports[port].cached_flags = 0;
 
 	mutex_lock(&priv->reg_mutex);
 
@@ -2342,27 +2343,34 @@ static int rtldsa_port_bridge_flags(struct dsa_switch *ds, int port,
 				    struct netlink_ext_ack *extack)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
+	unsigned long cached_flags;
 
 	pr_debug("%s: %d %lX\n", __func__, port, flags.val);
-	if (priv->r->enable_learning && (flags.mask & BR_LEARNING))
-		priv->r->enable_learning(port, !!(flags.val & BR_LEARNING));
 
-	if (priv->r->enable_flood && (flags.mask & BR_FLOOD))
-		priv->r->enable_flood(port, (flags.val & BR_FLOOD) ?
+	priv->ports[port].cached_flags &= ~flags.mask;
+	priv->ports[port].cached_flags |= flags.val & flags.mask;
+
+	cached_flags = priv->ports[port].cached_flags;
+
+	if (priv->r->enable_flood)
+		priv->r->enable_flood(port, (cached_flags & BR_FLOOD) ?
 					    RTLDSA_FLOOD_TYPE_FORWARD :
 					    RTLDSA_FLOOD_TYPE_DROP);
 
-	if (priv->r->enable_mcast_flood && (flags.mask & BR_MCAST_FLOOD))
-		priv->r->enable_mcast_flood(port, !!(flags.val & BR_MCAST_FLOOD));
+	if (priv->r->enable_learning)
+		priv->r->enable_learning(port, !!(cached_flags & BR_LEARNING));
 
-	if (priv->r->enable_bcast_flood && (flags.mask & BR_BCAST_FLOOD))
-		priv->r->enable_bcast_flood(port, !!(flags.val & BR_BCAST_FLOOD));
+	if (priv->r->enable_mcast_flood)
+		priv->r->enable_mcast_flood(port, !!(cached_flags & BR_MCAST_FLOOD));
+
+	if (priv->r->enable_bcast_flood)
+		priv->r->enable_bcast_flood(port, !!(cached_flags & BR_BCAST_FLOOD));
 
 	if (flags.mask & BR_ISOLATED) {
 		struct dsa_port *dp = dsa_to_port(ds, port);
 		struct net_device *bridge_dev = dsa_port_bridge_dev_get(dp);
 
-		priv->ports[port].isolated = !!(flags.val & BR_ISOLATED);
+		priv->ports[port].isolated = !!(cached_flags & BR_ISOLATED);
 
 		mutex_lock(&priv->reg_mutex);
 		rtldsa_update_port_member(priv, port, bridge_dev, true);
