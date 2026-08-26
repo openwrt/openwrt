@@ -1,0 +1,65 @@
+From b4e04002f018ee435ea157b1ab25af91aa791a2d Mon Sep 17 00:00:00 2001
+From: AK Sharma <maskachoska@yahoo.com>
+Date: Wed, 26 Aug 2026 21:29:59 +0530
+Subject: [PATCH] mips: skip CP0 Count clear on GIC/CM-backed timers
+
+On the EN7528 (MIPS1004Kc) the CP0 Count register is backed by the
+Coherence Manager / GIC.  The unconditional 'mtc0 zero, CP0_COUNT' issued
+at 'reset:' in arch/mips/cpu/start.S stalls the CPU on this part, which
+shows up as an early hang before the console comes up.
+
+Add a MIPS_SKIP_CP0_COUNT_CLEAR Kconfig symbol that guards that single
+write, and select it for the EN7528 target.  Other MIPS platforms keep
+the generic behaviour unchanged.
+
+Signed-off-by: AK Sharma <maskachoska@yahoo.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ arch/mips/Kconfig     | 9 +++++++++
+ arch/mips/cpu/start.S | 2 ++
+ 2 files changed, 11 insertions(+)
+
+diff --git a/arch/mips/Kconfig b/arch/mips/Kconfig
+index cc4af3c47da..15b9f0effcf 100644
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -80,6 +80,7 @@ config ARCH_EN75XX
+ 	select SYS_CACHE_SHIFT_5
+ 	select MIPS_TUNE_34KC if BOARD_EN7512_REFERENCE
+ 	select MIPS_TUNE_1004KC if BOARD_EN7528_TPLINK_XC220_G3V
++	select MIPS_SKIP_CP0_COUNT_CLEAR if BOARD_EN7528_TPLINK_XC220_G3V
+ 	help
+ 	  Support EcoNet/Airoha EN75xx MIPS platforms. EN7512/EN7521 are
+ 	  big-endian MIPS34K devices, while EN7528 is a little-endian MIPS1004Kc
+@@ -346,6 +347,14 @@ config MIPS_MACH_EARLY_INIT
+ 	  and at this stage the PC might not match the linking address
+ 	  (CONFIG_TEXT_BASE) - no absolute jump done until this call.
+ 
++config MIPS_SKIP_CP0_COUNT_CLEAR
++	bool
++	help
++	  Do not clear the CP0 Count register (mtc0 zero, CP0_COUNT) at reset
++	  in arch/mips/cpu/start.S. On some SoCs the Count register is GIC/CM
++	  backed and that write stalls the CPU; such targets select this.
++	  Other MIPS targets keep the generic clear.
++
+ config MIPS_CACHE_SETUP
+ 	bool "Allow generic start code to initialize and setup caches"
+ 	default n if SKIP_LOWLEVEL_INIT
+diff --git a/arch/mips/cpu/start.S b/arch/mips/cpu/start.S
+index a95c95bc783..48eb69b10e1 100644
+--- a/arch/mips/cpu/start.S
++++ b/arch/mips/cpu/start.S
+@@ -124,7 +124,9 @@ ENTRY(_start)
+ #endif
+ 
+ reset:
++#ifndef CONFIG_MIPS_SKIP_CP0_COUNT_CLEAR
+ 	mtc0	zero, CP0_COUNT	# clear cp0 count for most accurate boot timing
++#endif
+ #if __mips_isa_rev >= 6
+ 	mfc0	t0, CP0_CONFIG, 5
+ 	and	t0, t0, MIPS_CONF5_VP
+-- 
+2.55.0
+
