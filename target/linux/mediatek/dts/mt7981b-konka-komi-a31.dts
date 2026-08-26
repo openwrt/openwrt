@@ -21,7 +21,7 @@
 		serial0 = &uart0;
 	};
 
-	chosen {
+	chosen: chosen {
 		bootargs = "root=/dev/fit0 rootwait";
 		rootdisk = <&ubi_rootdisk>;
 		stdout-path = "serial0:115200n8";
@@ -263,13 +263,13 @@
 	nvmem-cell-names = "eeprom";
 	status = "okay";
 
-	band@0 {
+	band0: band@0 {
 		reg = <0>;
 		nvmem-cells = <&macaddr_factory_2a 1>;
 		nvmem-cell-names = "mac-address";
 	};
 
-	band@1 {
+	band1: band@1 {
 		reg = <1>;
 		nvmem-cells = <&macaddr_factory_2a 2>;
 		nvmem-cell-names = "mac-address";
