@@ -1,0 +1,46 @@
+From f0667918d5fcaf13c9016a94442726832ff29dd0 Mon Sep 17 00:00:00 2001
+From: Javen Xu <javen_xu@realsil.com.cn>
+Date: Tue, 28 Jul 2026 15:31:06 +0800
+Subject: [PATCH] net: phy: realtek: add support for RTL8261D
+
+RTL8261D is also 10g phy. It's sub_phy_id is 0x81. And it does not need
+any firmware.
+
+Reviewed-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
+Signed-off-by: Javen Xu <javen_xu@realsil.com.cn>
+Link: https://patch.msgid.link/20260728073106.1515-6-javen_xu@realsil.com.cn
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/phy/realtek/realtek_main.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/phy/realtek/realtek_main.c
++++ b/drivers/net/phy/realtek/realtek_main.c
+@@ -174,6 +174,7 @@
+ #define RTL_8261C_CG				0x001cc898
+ 
+ #define RTL8261C_CE_MODEL		0x00
++#define RTL8261D_MODEL			0x81
+ #define RTL8261X_INT_AUTONEG_ERROR	BIT(0)
+ #define RTL8261X_INT_PAGE_RECV		BIT(2)
+ #define RTL8261X_INT_AUTONEG_DONE	BIT(3)
+@@ -324,6 +325,10 @@ static int rtl8261x_probe(struct phy_dev
+ 		phydev_info(phydev, "RTL8261C detected (sub_id 0x%02x)\n", sub_phy_id);
+ 		break;
+ 
++	case RTL8261D_MODEL:
++		phydev_info(phydev, "RTL8261D detected (sub_id 0x%02x)\n", sub_phy_id);
++		break;
++
+ 	default:
+ 		phydev_warn(phydev, "Unknown sub_id 0x%02x, default behavior\n", sub_phy_id);
+ 		return -ENODEV;
+@@ -2413,7 +2418,7 @@ static struct phy_driver realtek_drvs[]
+ 		.write_mmd	= genphy_write_mmd_unsupported,
+ 	}, {
+ 		PHY_ID_MATCH_EXACT(RTL_8261C_CG),
+-		.name			= "Realtek RTL8261C 10Gbps PHY",
++		.name			= "Realtek RTL8261C/D 10Gbps PHY",
+ 		.probe			= rtl8261x_probe,
+ 		.config_init		= rtl8261x_config_init,
+ 		.get_features		= rtl8261x_get_features,

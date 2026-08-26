@@ -36,7 +36,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  F:	include/uapi/linux/mii.h
 --- a/drivers/net/phy/realtek/realtek_main.c
 +++ b/drivers/net/phy/realtek/realtek_main.c
-@@ -17,6 +17,7 @@
+@@ -19,6 +19,7 @@
  #include <linux/delay.h>
  #include <linux/clk.h>
  #include <linux/string_choices.h>
@@ -44,7 +44,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  #include "realtek.h"
  
-@@ -2100,6 +2101,45 @@ static irqreturn_t rtl8221b_handle_inter
+@@ -2498,6 +2499,45 @@ static irqreturn_t rtl8221b_handle_inter
  	return IRQ_HANDLED;
  }
  
@@ -90,7 +90,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  static struct phy_driver realtek_drvs[] = {
  	{
  		PHY_ID_MATCH_EXACT(0x00008201),
-@@ -2358,6 +2398,20 @@ static struct phy_driver realtek_drvs[]
+@@ -2756,6 +2796,20 @@ static struct phy_driver realtek_drvs[]
  		.suspend	= genphy_suspend,
  		.resume		= rtlgen_resume,
  		.read_page	= rtl821x_read_page,

@@ -16,7 +16,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 
 --- a/drivers/net/phy/realtek/realtek_main.c
 +++ b/drivers/net/phy/realtek/realtek_main.c
-@@ -131,6 +131,15 @@
+@@ -137,6 +137,15 @@
  #define RTL822X_VND1_SERDES_CTRL3_MODE_SGMII			0x02
  #define RTL822X_VND1_SERDES_CTRL3_MODE_2500BASEX		0x16
  
@@ -32,7 +32,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  /* RTL822X_VND2_XXXXX registers are only accessible when phydev->is_c45
   * is set, they cannot be accessed by C45-over-C22.
   */
-@@ -1308,6 +1317,50 @@ static int rtl822xb_config_init(struct p
+@@ -1706,6 +1715,50 @@ static int rtl822xb_config_init(struct p
  	return rtl822x_set_serdes_option_mode(phydev, false);
  }
  
@@ -83,7 +83,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  static int rtl822xb_get_rate_matching(struct phy_device *phydev,
  				      phy_interface_t iface)
  {
-@@ -2104,6 +2157,8 @@ static struct phy_driver realtek_drvs[]
+@@ -2502,6 +2555,8 @@ static struct phy_driver realtek_drvs[]
  		.get_features	= rtl822x_get_features,
  		.config_aneg	= rtl822x_config_aneg,
  		.config_init	= rtl822xb_config_init,
@@ -92,7 +92,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		.get_rate_matching = rtl822xb_get_rate_matching,
  		.read_status	= rtl822xb_read_status,
  		.suspend	= genphy_suspend,
-@@ -2117,6 +2172,8 @@ static struct phy_driver realtek_drvs[]
+@@ -2515,6 +2570,8 @@ static struct phy_driver realtek_drvs[]
  		.get_features	= rtl822x_c45_get_features,
  		.config_aneg	= rtl822x_c45_config_aneg,
  		.config_init	= rtl822x_config_init,
@@ -101,7 +101,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		.read_status	= rtl822xb_c45_read_status,
  		.suspend	= genphy_c45_pma_suspend,
  		.resume		= rtlgen_c45_resume,
-@@ -2126,6 +2183,8 @@ static struct phy_driver realtek_drvs[]
+@@ -2524,6 +2581,8 @@ static struct phy_driver realtek_drvs[]
  		.get_features	= rtl822x_get_features,
  		.config_aneg	= rtl822x_config_aneg,
  		.config_init	= rtl822xb_config_init,
@@ -110,7 +110,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		.get_rate_matching = rtl822xb_get_rate_matching,
  		.read_status	= rtl822xb_read_status,
  		.suspend	= genphy_suspend,
-@@ -2139,6 +2198,8 @@ static struct phy_driver realtek_drvs[]
+@@ -2537,6 +2596,8 @@ static struct phy_driver realtek_drvs[]
  		.get_features	= rtl822x_get_features,
  		.config_aneg	= rtl822x_config_aneg,
  		.config_init	= rtl822xb_config_init,
@@ -119,7 +119,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		.get_rate_matching = rtl822xb_get_rate_matching,
  		.read_status	= rtl822xb_read_status,
  		.suspend	= genphy_suspend,
-@@ -2152,6 +2213,8 @@ static struct phy_driver realtek_drvs[]
+@@ -2550,6 +2611,8 @@ static struct phy_driver realtek_drvs[]
  		.handle_interrupt = rtl8221b_handle_interrupt,
  		.probe		= rtl822x_probe,
  		.config_init	= rtl822xb_config_init,
@@ -128,7 +128,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		.get_rate_matching = rtl822xb_get_rate_matching,
  		.get_features	= rtl822x_c45_get_features,
  		.config_aneg	= rtl822x_c45_config_aneg,
-@@ -2165,6 +2228,8 @@ static struct phy_driver realtek_drvs[]
+@@ -2563,6 +2626,8 @@ static struct phy_driver realtek_drvs[]
  		.get_features	= rtl822x_get_features,
  		.config_aneg	= rtl822x_config_aneg,
  		.config_init	= rtl822xb_config_init,
@@ -137,7 +137,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		.get_rate_matching = rtl822xb_get_rate_matching,
  		.read_status	= rtl822xb_read_status,
  		.suspend	= genphy_suspend,
-@@ -2178,6 +2243,8 @@ static struct phy_driver realtek_drvs[]
+@@ -2576,6 +2641,8 @@ static struct phy_driver realtek_drvs[]
  		.handle_interrupt = rtl8221b_handle_interrupt,
  		.probe		= rtl822x_probe,
  		.config_init	= rtl822xb_config_init,

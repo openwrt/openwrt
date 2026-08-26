@@ -24,7 +24,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 
 --- a/drivers/net/phy/realtek/realtek_main.c
 +++ b/drivers/net/phy/realtek/realtek_main.c
-@@ -140,9 +140,8 @@
+@@ -146,9 +146,8 @@
  #define   RTL822X_VND1_SERDES_INBAND_ENABLE	0x70d0
  #define RTL822X_VND1_SERDES_DATA		0x7589
  
@@ -36,7 +36,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  #define RTL822X_VND2_C22_REG(reg)		(0xa400 + 2 * (reg))
  
  #define RTL8221B_VND2_INER			0xa4d2
-@@ -1247,6 +1246,79 @@ static int rtl822x_probe(struct phy_devi
+@@ -1645,6 +1644,79 @@ static int rtl822x_probe(struct phy_devi
  	return 0;
  }
  
@@ -116,7 +116,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  static int rtl822x_set_serdes_option_mode(struct phy_device *phydev, bool gen1)
  {
  	bool has_2500, has_sgmii;
-@@ -2151,6 +2223,8 @@ static struct phy_driver realtek_drvs[]
+@@ -2549,6 +2621,8 @@ static struct phy_driver realtek_drvs[]
  		.resume		= rtlgen_resume,
  		.read_page	= rtl821x_read_page,
  		.write_page	= rtl821x_write_page,
@@ -125,7 +125,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	}, {
  		.match_phy_device = rtl8221b_match_phy_device,
  		.name		= "RTL8226B_RTL8221B 2.5Gbps PHY",
-@@ -2165,6 +2239,8 @@ static struct phy_driver realtek_drvs[]
+@@ -2563,6 +2637,8 @@ static struct phy_driver realtek_drvs[]
  		.resume		= rtlgen_resume,
  		.read_page	= rtl821x_read_page,
  		.write_page	= rtl821x_write_page,
@@ -134,7 +134,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	}, {
  		PHY_ID_MATCH_EXACT(0x001cc838),
  		.name		= "RTL8226-CG 2.5Gbps PHY",
-@@ -2177,6 +2253,8 @@ static struct phy_driver realtek_drvs[]
+@@ -2575,6 +2651,8 @@ static struct phy_driver realtek_drvs[]
  		.read_status	= rtl822xb_c45_read_status,
  		.suspend	= genphy_c45_pma_suspend,
  		.resume		= rtlgen_c45_resume,
@@ -143,7 +143,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	}, {
  		PHY_ID_MATCH_EXACT(0x001cc848),
  		.name		= "RTL8226B-CG_RTL8221B-CG 2.5Gbps PHY",
-@@ -2191,6 +2269,8 @@ static struct phy_driver realtek_drvs[]
+@@ -2589,6 +2667,8 @@ static struct phy_driver realtek_drvs[]
  		.resume		= rtlgen_resume,
  		.read_page	= rtl821x_read_page,
  		.write_page	= rtl821x_write_page,
@@ -152,7 +152,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	}, {
  		.match_phy_device = rtl8221b_vb_cg_c22_match_phy_device,
  		.name		= "RTL8221B-VB-CG 2.5Gbps PHY (C22)",
-@@ -2206,6 +2286,8 @@ static struct phy_driver realtek_drvs[]
+@@ -2604,6 +2684,8 @@ static struct phy_driver realtek_drvs[]
  		.resume		= rtlgen_resume,
  		.read_page	= rtl821x_read_page,
  		.write_page	= rtl821x_write_page,
@@ -161,7 +161,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	}, {
  		.match_phy_device = rtl8221b_vb_cg_c45_match_phy_device,
  		.name		= "RTL8221B-VB-CG 2.5Gbps PHY (C45)",
-@@ -2236,6 +2318,8 @@ static struct phy_driver realtek_drvs[]
+@@ -2634,6 +2716,8 @@ static struct phy_driver realtek_drvs[]
  		.resume		= rtlgen_resume,
  		.read_page	= rtl821x_read_page,
  		.write_page	= rtl821x_write_page,
