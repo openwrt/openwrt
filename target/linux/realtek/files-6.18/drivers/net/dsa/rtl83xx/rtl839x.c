@@ -1703,6 +1703,7 @@ const struct rtldsa_config rtldsa_839x_cfg = {
 	.set_static_move_action = rtl839x_set_static_move_action,
 	.stp_get = rtldsa_839x_stp_get,
 	.stp_set = rtl839x_stp_set,
+	.mac_force_mode_mask = RTL83XX_FORCE_EN | RTL83XX_FORCE_LINK_EN,
 	.mac_force_mode_ctrl = rtl839x_mac_force_mode_ctrl,
 	.mac_link_sts = RTL839X_MAC_LINK_STS,
 	.mac_port_ctrl = rtl839x_mac_port_ctrl,

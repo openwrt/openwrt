@@ -1804,6 +1804,7 @@ const struct rtldsa_config rtldsa_838x_cfg = {
 	.vlan_tables_read = rtl838x_vlan_tables_read,
 	.vlan_set_tagged = rtl838x_vlan_set_tagged,
 	.vlan_set_untagged = rtl838x_vlan_set_untagged,
+	.mac_force_mode_mask = RTL83XX_FORCE_EN | RTL83XX_FORCE_LINK_EN,
 	.mac_force_mode_ctrl = rtl838x_mac_force_mode_ctrl,
 	.mac_link_sts = RTL838X_MAC_LINK_STS,
 	.vlan_profile_get = rtldsa_838x_vlan_profile_get,
