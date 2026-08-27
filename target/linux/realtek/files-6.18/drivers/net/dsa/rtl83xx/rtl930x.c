@@ -532,6 +532,15 @@ static void rtldsa_930x_enable_flood(int port, enum rtldsa_flood_type mode)
 		    RTL930X_L2_UNKN_UC_FLD_PMSK);
 }
 
+static void rtldsa_930x_enable_bcast_flood(int port, bool enable)
+{
+	u32 port_mask = BIT(port);
+
+	sw_w32_mask(port_mask,
+		    enable ? port_mask : 0,
+		    RTL930X_L2_BC_FLD_PMSK);
+}
+
 static void rtldsa_930x_lag_set_port2group(int group, int port, bool valid)
 {
 	struct table_reg *r = rtl_table_get(RTL9300_TBL_0, 8);
@@ -2282,6 +2291,7 @@ const struct rtldsa_config rtldsa_930x_cfg = {
 	.enable_learning = rtldsa_930x_enable_learning,
 	.enable_l2_new_sa_fwd = rtldsa_930x_l2_port_new_sa_fwd,
 	.enable_flood = rtldsa_930x_enable_flood,
+	.enable_bcast_flood = rtldsa_930x_enable_bcast_flood,
 	.set_receive_management_action = rtldsa_930x_set_receive_management_action,
 	.qos_init = rtldsa_930x_qos_init,
 	.trk_ctrl = RTL930X_TRK_CTRL,
