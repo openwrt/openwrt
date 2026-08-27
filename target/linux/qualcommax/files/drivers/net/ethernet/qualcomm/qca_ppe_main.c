@@ -202,6 +202,8 @@ int ppe_vsi_alloc(struct qca_ppe_priv *priv)
 {
 	int vsi;
 
+	lockdep_assert_held(&priv->vlan_lock);
+
 	vsi = find_first_zero_bit(priv->vsi_bitmap, PPE_VSI_MAX);
 	if (vsi >= PPE_VSI_MAX)
 		return -ENOSPC;
@@ -218,6 +220,8 @@ int ppe_vsi_alloc(struct qca_ppe_priv *priv)
 
 void ppe_vsi_free(struct qca_ppe_priv *priv, u32 vsi)
 {
+	lockdep_assert_held(&priv->vlan_lock);
+
 	regmap_write(priv->regmap, PPE_VSI_TBL(vsi), 0);
 	regmap_write(priv->regmap, PPE_VSI_TBL(vsi) + 4, 0);
 	priv->vsi_member[vsi] = 0;
@@ -868,6 +872,7 @@ static void bridge_vsi_put(struct qca_ppe_priv *priv,
 	if (bvsi->refcount > 0)
 		return;
 
+	ppe_flow_purge_vsi(priv, bvsi->vsi);
 	ppe_vsi_free(priv, bvsi->vsi);
 	bvsi->br_dev = NULL;
 	bvsi->vsi = 0;
@@ -897,6 +902,9 @@ static int qca_ppe_port_bridge_join(struct dsa_switch *ds, int port,
 	struct qca_ppe_priv *priv = ds_to_priv(ds);
 	struct qca_ppe_bridge_vsi *bvsi;
 
+	guard(mutex)(&priv->flow_lock);
+	guard(mutex)(&priv->vlan_lock);
+
 	bvsi = bridge_vsi_find(priv, bridge.dev);
 	if (!bvsi) {
 		bvsi = bridge_vsi_alloc(priv, bridge.dev);
@@ -919,6 +927,9 @@ static void qca_ppe_port_bridge_leave(struct dsa_switch *ds, int port,
 {
 	struct qca_ppe_priv *priv = ds_to_priv(ds);
 	struct qca_ppe_bridge_vsi *bvsi;
+
+	guard(mutex)(&priv->flow_lock);
+	guard(mutex)(&priv->vlan_lock);
 
 	bvsi = bridge_vsi_find(priv, bridge.dev);
 	if (!bvsi)
@@ -2810,15 +2821,19 @@ static int qca_ppe_probe(struct platform_device *pdev)
 	ppe_flow_init(priv);
 	ppe_acl_init(priv);
 
+	ret = ppe_flow_offload_init(priv);
+	if (ret)
+		goto err_acl;
+
 	if (data->type == PPE_TYPE_IPQ6018) {
 		ret = ppe_ipq6018_mux_setup(priv);
 		if (ret)
-			goto err_acl;
+			goto err_flow;
 	}
 
 	ret = dsa_register_switch(ds);
 	if (ret)
-		goto err_acl;
+		goto err_flow;
 
 	ppe_scheduler_ready(priv);
 	ppe_debugfs_init(priv);
@@ -2828,6 +2843,8 @@ static int qca_ppe_probe(struct platform_device *pdev)
 
 	return 0;
 
+err_flow:
+	ppe_flow_offload_exit(priv);
 err_acl:
 	ppe_acl_exit(priv);
 	ppe_scheduler_exit(priv);
@@ -2843,6 +2860,10 @@ static void qca_ppe_remove(struct platform_device *pdev)
 	ppe_debugfs_exit(priv);
 	ppe_scheduler_unready();
 	dsa_unregister_switch(&priv->ds);
+	/* After the switch is gone: unregistration flushes the flowtables, and
+	 * their FLOW_CLS_DESTROY commands have to find the table still alive.
+	 */
+	ppe_flow_offload_exit(priv);
 	ppe_acl_exit(priv);
 	ppe_scheduler_exit(priv);
 	clk_bulk_disable_unprepare(priv->num_clks, priv->clks);
