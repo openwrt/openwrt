@@ -36,6 +36,8 @@ define Build/Compile
 		CONFIG_RTL8372N_DSA=m \
 		CONFIG_RTL837X_PHY_PATCH=y \
 		CONFIG_RTL8372N_DSA_DEBUG=n \
+		EXTRA_CFLAGS="-Wno-error -Wno-missing-prototypes -Wno-missing-declarations" \
+		KCFLAGS="-Wno-error -Wno-missing-prototypes -Wno-missing-declarations" \
 		modules
 endef
 
