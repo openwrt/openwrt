@@ -15,12 +15,12 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
 
 --- a/drivers/tty/serial/sc16is7xx.c
 +++ b/drivers/tty/serial/sc16is7xx.c
-@@ -814,6 +814,8 @@ static bool sc16is7xx_port_irq(struct sc
+@@ -812,6 +812,8 @@ static bool sc16is7xx_port_irq(struct sc
  
  		if (rxlen)
  			sc16is7xx_handle_rx(port, rxlen, iir);
 +		else
-+			rc = false;
++			return false;
  		break;
  		/* CTSRTS interrupt comes only when CTS goes inactive */
  	case SC16IS7XX_IIR_CTSRTS_SRC:
