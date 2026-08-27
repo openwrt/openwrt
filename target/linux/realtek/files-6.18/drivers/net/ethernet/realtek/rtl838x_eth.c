@@ -20,6 +20,8 @@
 #include <linux/phylink.h>
 #include <linux/pkt_sched.h>
 #include <linux/regmap.h>
+#include <linux/rtnetlink.h>
+#include <linux/workqueue.h>
 #include <net/dsa.h>
 #include <net/dst_metadata.h>
 #include <net/page_pool/helpers.h>
@@ -138,11 +140,13 @@ struct rteth_ctrl {
 	spinlock_t		rx_lock;
 	struct rteth_rx_info	rx_info[RTETH_RX_RINGS];
 	struct rteth_rx_data	*rx_data;
+	bool			napi_enabled;
 	/* transmit handling */
 	dma_addr_t		tx_dma;
 	spinlock_t		tx_lock;
 	struct rteth_tx_info	tx_info[RTETH_TX_RINGS];
 	struct rteth_tx_data	*tx_data;
+	struct work_struct	reset_work;
 };
 
 static void rteth_838x_create_tx_header(struct rteth_frag *frag, unsigned int port, int prio)
@@ -951,6 +955,7 @@ static int rteth_open(struct net_device *dev)
 
 	for (int i = 0; i < RTETH_RX_RINGS; i++)
 		napi_enable(&ctrl->rx_info[i].napi);
+	ctrl->napi_enabled = true;
 
 	ctrl->r->hw_init(ctrl);
 	ctrl->r->hw_en_rxtx(ctrl);
@@ -1036,17 +1041,18 @@ static int rteth_stop(struct net_device *dev)
 {
 	struct rteth_ctrl *ctrl = netdev_priv(dev);
 
-	pr_info("in %s\n", __func__);
-
+	netif_tx_stop_all_queues(dev);
 	phylink_stop(ctrl->phylink);
 	rteth_hw_stop(ctrl);
 
-	for (int i = 0; i < RTETH_RX_RINGS; i++)
-		napi_disable(&ctrl->rx_info[i].napi);
+	if (ctrl->napi_enabled) {
+		ctrl->napi_enabled = false;
+		for (int i = 0; i < RTETH_RX_RINGS; i++)
+			napi_disable(&ctrl->rx_info[i].napi);
+	}
 
 	rteth_free_tx_buffers(ctrl);
 	rteth_free_rx_buffers(ctrl);
-	netif_tx_stop_all_queues(dev);
 
 	return 0;
 }
@@ -1071,17 +1077,14 @@ static int rteth_change_mtu(struct net_device *dev, int mtu)
 	/*
 	 * A larger MTU buys a smaller budget, so hand the rings their new limit before the
 	 * switch may deliver larger frames, and the other way around when the MTU shrinks.
-	 * Hold the lock, so rteth_tx_timeout() cannot reprogram the same registers in between.
 	 */
-	scoped_guard(spinlock_irqsave, &ctrl->lock) {
-		if (grow)
-			ctrl->r->set_hol(ctrl);
+	if (grow)
+		ctrl->r->set_hol(ctrl);
 
-		rteth_set_max_packet_length(ctrl);
+	rteth_set_max_packet_length(ctrl);
 
-		if (!grow)
-			ctrl->r->set_hol(ctrl);
-	}
+	if (!grow)
+		ctrl->r->set_hol(ctrl);
 
 	return 0;
 }
@@ -1173,32 +1176,48 @@ static void rteth_931x_set_rx_mode(struct net_device *dev)
 	}
 }
 
+static void rteth_reset_work(struct work_struct *work)
+{
+	struct rteth_ctrl *ctrl = container_of(work, struct rteth_ctrl, reset_work);
+	struct net_device *dev = ctrl->dev;
+	int ret;
+
+	rtnl_lock();
+
+	if (!netif_running(dev))
+		goto out;
+
+	rteth_stop(dev);
+	ret = rteth_open(dev);
+	if (ret) {
+		netdev_err(dev, "tx timeout recovery failed: %d\n", ret);
+		netif_device_detach(dev);
+		goto out;
+	}
+
+	netif_trans_update(dev);
+
+out:
+	rtnl_unlock();
+}
+
 static void rteth_tx_timeout(struct net_device *dev, unsigned int txqueue)
 {
 	struct rteth_ctrl *ctrl = netdev_priv(dev);
 
-	pr_warn("%s\n", __func__);
-	scoped_guard(spinlock_irqsave, &ctrl->lock) {
-		rteth_hw_stop(ctrl);
-		rteth_free_tx_buffers(ctrl);
-		rteth_free_rx_buffers(ctrl);
-		if (rteth_setup_ring_buffer(ctrl)) {
-			netdev_err(dev, "tx_timeout recovery failed, bringing interface down\n");
-			netif_device_detach(dev);
-			return;
-		}
-		rteth_hw_ring_setup(ctrl);
-		ctrl->r->hw_en_rxtx(ctrl);
-		netif_trans_update(dev);
-		netif_start_queue(dev);
-	}
+	netif_tx_stop_all_queues(dev);
+	schedule_work(&ctrl->reset_work);
 }
 
 static int rteth_get_dsa_port(struct sk_buff *skb, struct net_device *dev)
 {
 	struct rteth_ctrl *ctrl = netdev_priv(dev);
-	u8 *trailer = &skb->data[skb->len - 4];
+	u8 *trailer;
 
+	if (skb->len < 4)
+		return -ENOENT;
+
+	trailer = &skb->data[skb->len - 4];
 	if (netdev_uses_dsa(dev) &&
 	    dev->dsa_ptr->tag_ops->proto == DSA_TAG_PROTO_RTL_OTTO &&
 	    trailer[0] < ctrl->r->cpu_port &&
@@ -1207,7 +1226,7 @@ static int rteth_get_dsa_port(struct sk_buff *skb, struct net_device *dev)
 	    trailer[3] == 0xef)
 		return trailer[0];
 
-	return -1;
+	return -ENOENT;
 }
 
 static int rteth_start_xmit(struct sk_buff *skb, struct net_device *dev)
@@ -1349,6 +1368,7 @@ static int rteth_hw_receive(struct net_device *dev, int ring, int budget)
 {
 	int slot, work_done = 0, rx_packets = 0, rx_bytes = 0, rx_dropped = 0, rx_errors = 0;
 	struct rteth_ctrl *ctrl = netdev_priv(dev);
+	struct rteth_rx_info *rx_info = &ctrl->rx_info[ring];
 	unsigned int len, new_offset;
 	struct rteth_frag *frag;
 	struct page_pool *pool;
@@ -1357,12 +1377,12 @@ static int rteth_hw_receive(struct net_device *dev, int ring, int budget)
 	bool is_head, is_tail;
 	struct sk_buff *skb;
 
-	pool = ctrl->rx_info[ring].pool;
-	skb = ctrl->rx_info[ring].skb;
+	pool = rx_info->pool;
+	skb = rx_info->skb;
 	is_tail = !skb;
 
 	while (work_done < budget) {
-		slot = ctrl->rx_info[ring].slot;
+		slot = rx_info->slot;
 		packet_dma = ctrl->rx_data[ring].ring[slot];
 		rmb();
 
@@ -1417,19 +1437,19 @@ static int rteth_hw_receive(struct net_device *dev, int ring, int budget)
 				rx_bytes += skb->len;
 				rx_packets++;
 				skb->protocol = eth_type_trans(skb, dev);
-				napi_gro_receive(&ctrl->rx_info[ring].napi, skb);
+				napi_gro_receive(&rx_info->napi, skb);
 				skb = NULL;
 			}
 		}
 
-		ctrl->rx_info[ring].page[slot] = new_page;
-		ctrl->rx_info[ring].offset[slot] = new_offset;
+		rx_info->page[slot] = new_page;
+		rx_info->offset[slot] = new_offset;
 		frag->dma = page_pool_get_dma_addr(new_page) +
 			    new_offset + ctrl->r->skb_headroom;
 recycle:
 		dma_wmb();
 		ctrl->rx_data[ring].ring[slot] = packet_dma | RING_OWN_HW;
-		ctrl->rx_info[ring].slot = (slot + 1) % RTETH_RX_RING_SIZE;
+		rx_info->slot = (slot + 1) % RTETH_RX_RING_SIZE;
 	}
 
 	spin_lock(&ctrl->rx_lock);
@@ -1440,7 +1460,7 @@ recycle:
 	dev->stats.rx_bytes += rx_bytes;
 	spin_unlock(&ctrl->rx_lock);
 
-	ctrl->rx_info[ring].skb = skb;
+	rx_info->skb = skb;
 
 	return work_done;
 }
@@ -1501,18 +1521,14 @@ static void rteth_set_mac_hw(struct net_device *dev, u8 *mac)
 	u32 mac_lo = (mac[2] << 24) | (mac[3] << 16) | (mac[4] << 8) | mac[5];
 	u32 mac_hi = (mac[0] << 8) | mac[1];
 	struct rteth_ctrl *ctrl;
-	unsigned long flags;
 
 	ctrl = netdev_priv(dev);
-	spin_lock_irqsave(&ctrl->lock, flags);
 
 	for (int i = 0; i < RTETH_MAX_MAC_REGS; i++)
 		if (ctrl->r->mac_reg[i]) {
 			regmap_write(ctrl->map, ctrl->r->mac_reg[i], mac_hi);
 			regmap_write(ctrl->map, ctrl->r->mac_reg[i] + 4, mac_lo);
 		}
-
-	spin_unlock_irqrestore(&ctrl->lock, flags);
 }
 
 static int rteth_set_mac_address(struct net_device *dev, void *p)
@@ -1963,12 +1979,18 @@ static int rteth_probe(struct platform_device *pdev)
 
 	ctrl->rx_data = dmam_alloc_coherent(&pdev->dev, sizeof(struct rteth_rx_data) * RTETH_RX_RINGS,
 					    &ctrl->rx_dma, GFP_KERNEL);
+	if (!ctrl->rx_data)
+		return dev_err_probe(&pdev->dev, -ENOMEM, "failed to allocate RX ring memory\n");
+
 	ctrl->tx_data = dmam_alloc_coherent(&pdev->dev, sizeof(struct rteth_tx_data) * RTETH_TX_RINGS,
 					    &ctrl->tx_dma, GFP_KERNEL);
+	if (!ctrl->tx_data)
+		return dev_err_probe(&pdev->dev, -ENOMEM, "failed to allocate TX ring memory\n");
 
 	spin_lock_init(&ctrl->lock);
 	spin_lock_init(&ctrl->rx_lock);
 	spin_lock_init(&ctrl->tx_lock);
+	INIT_WORK(&ctrl->reset_work, rteth_reset_work);
 
 	dev->ethtool_ops = &rteth_ethtool_ops;
 	dev->min_mtu = ETH_ZLEN;
@@ -2100,6 +2122,7 @@ static void rteth_remove(struct platform_device *pdev)
 
 	pr_info("Removing platform driver for rtl838x-eth\n");
 	unregister_netdev(dev);
+	cancel_work_sync(&ctrl->reset_work);
 	rteth_metadata_dst_free(ctrl);
 
 	if (ctrl->phylink)
@@ -2113,22 +2136,10 @@ static void rteth_remove(struct platform_device *pdev)
 }
 
 static const struct of_device_id rteth_of_ids[] = {
-	{
-		.compatible = "realtek,rtl8380-eth",
-		.data = &rteth_838x_cfg,
-	},
-	{
-		.compatible = "realtek,rtl8392-eth",
-		.data = &rteth_839x_cfg,
-	},
-	{
-		.compatible = "realtek,rtl9301-eth",
-		.data = &rteth_930x_cfg,
-	},
-	{
-		.compatible = "realtek,rtl9311-eth",
-		.data = &rteth_931x_cfg,
-	},
+	{ .compatible = "realtek,rtl8380-eth", .data = &rteth_838x_cfg, },
+	{ .compatible = "realtek,rtl8392-eth", .data = &rteth_839x_cfg, },
+	{ .compatible = "realtek,rtl9301-eth", .data = &rteth_930x_cfg, },
+	{ .compatible = "realtek,rtl9311-eth", .data = &rteth_931x_cfg, },
 	{ /* sentinel */ }
 };
 MODULE_DEVICE_TABLE(of, rteth_of_ids);

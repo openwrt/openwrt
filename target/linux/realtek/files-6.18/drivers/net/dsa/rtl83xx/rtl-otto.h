@@ -642,6 +642,15 @@ typedef enum {
 	COPY2CPU,
 } action_type_t;
 
+enum rtldsa_flood_type {
+	RTLDSA_FLOOD_TYPE_FORWARD = 0,
+	RTLDSA_FLOOD_TYPE_DROP,
+	RTLDSA_FLOOD_TYPE_TRAP2CPU,
+	RTLDSA_FLOOD_TYPE_COPY2CPU,
+	RTLDSA_FLOOD_TYPE_TRAP2MASTER,
+	RTLDSA_FLOOD_TYPE_COPY2MASTER,
+};
+
 #define RTL838X_RMA_BPDU_CTRL			(0x4330)
 #define RTL839X_RMA_BPDU_CTRL			(0x122C)
 #define RTL930X_RMA_BPDU_CTRL			(0x9E7C)
@@ -997,11 +1006,13 @@ struct rtldsa_port {
 	bool isolated:1;
 	bool rate_police_egress:1;
 	bool rate_police_ingress:1;
+	unsigned long cached_flags;
 	u64 pm;
 	u16 pvid;
 	bool eee_enabled;
 	bool has_pcs;
 	int led_set;
+	enum rtldsa_flood_type flood_type;
 	int leds_on_this_port;
 	struct rtldsa_counter_state counters;
 	const struct dsa_port *dp;
@@ -1359,7 +1370,8 @@ struct rtldsa_config {
 	void (*set_vlan_igr_filter)(int port, enum igr_filter state);
 	void (*set_vlan_egr_filter)(int port, enum egr_filter state);
 	void (*enable_learning)(int port, bool enable);
-	void (*enable_flood)(int port, bool enable);
+	void (*enable_l2_new_sa_fwd)(int port, enum rtldsa_flood_type flood_type);
+	void (*enable_flood)(int port, enum rtldsa_flood_type flood_type);
 	void (*enable_mcast_flood)(int port, bool enable);
 	void (*enable_bcast_flood)(int port, bool enable);
 	void (*set_static_move_action)(int port, bool forward);

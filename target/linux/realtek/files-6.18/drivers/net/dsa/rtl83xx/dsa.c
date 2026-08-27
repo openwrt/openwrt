@@ -154,6 +154,12 @@ static void rtldsa_setup_lldp_traps(struct rtl838x_switch_priv *priv)
 		priv->r->set_receive_management_action(i, LLDP, TRAP2CPU);
 }
 
+static void rtldsa_setup_eapol_traps(struct rtl838x_switch_priv *priv)
+{
+	for (int i = 0; i < priv->r->cpu_port; i++)
+		priv->r->set_receive_management_action(i, EAPOL, TRAP2CPU);
+}
+
 static void rtldsa_port_set_salrn(struct rtl838x_switch_priv *priv,
 				  int port, bool enable)
 {
@@ -269,6 +275,7 @@ static int rtldsa_93xx_setup(struct dsa_switch *ds)
 
 	rtldsa_setup_bpdu_traps(priv);
 	rtldsa_setup_lldp_traps(priv);
+	rtldsa_setup_eapol_traps(priv);
 
 	ds->configure_vlan_while_not_filtering = true;
 
@@ -1436,6 +1443,7 @@ static int rtldsa_port_bridge_join(struct dsa_switch *ds, int port, struct dsa_b
 
 	/* reset to default flags for new net_bridge_port */
 	priv->ports[port].isolated = false;
+	priv->ports[port].cached_flags = 0;
 
 	mutex_lock(&priv->reg_mutex);
 
@@ -1740,9 +1748,11 @@ void rtldsa_port_fast_age(struct dsa_switch *ds, int port)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 
-	mutex_lock(&priv->reg_mutex);
 	if (!priv->r->fast_age)
-		priv->r->fast_age(priv, port, -1);
+		return;
+
+	mutex_lock(&priv->reg_mutex);
+	priv->r->fast_age(priv, port, -1);
 	mutex_unlock(&priv->reg_mutex);
 }
 
@@ -2323,8 +2333,13 @@ static int rtldsa_port_pre_bridge_flags(struct dsa_switch *ds, int port,
 	pr_debug("%s: %d %lX\n", __func__, port, flags.val);
 	if (priv->r->enable_learning)
 		features |= BR_LEARNING;
+
 	if (priv->r->enable_flood)
 		features |= BR_FLOOD;
+
+	if (priv->r->enable_l2_new_sa_fwd)
+		features |= BR_PORT_LOCKED;
+
 	if (priv->r->enable_mcast_flood)
 		features |= BR_MCAST_FLOOD;
 	if (priv->r->enable_bcast_flood)
@@ -2335,30 +2350,80 @@ static int rtldsa_port_pre_bridge_flags(struct dsa_switch *ds, int port,
 	return 0;
 }
 
+/* dsa_port_fast_age() is DSA internal, repeat its bridge notification here. */
+static void rtldsa_port_fast_age_notify(struct dsa_port *dp)
+{
+	struct net_device *brport_dev = dsa_port_to_bridge_port(dp);
+	struct switchdev_notifier_fdb_info info = {
+		.vid = 0, /* all VLANs */
+	};
+
+	rtldsa_port_fast_age(dp->ds, dp->index);
+
+	if (!brport_dev)
+		return;
+
+	call_switchdev_notifiers(SWITCHDEV_FDB_FLUSH_TO_BRIDGE, brport_dev,
+				 &info.info, NULL);
+}
+
 static int rtldsa_port_bridge_flags(struct dsa_switch *ds, int port,
 				    struct switchdev_brport_flags flags,
 				    struct netlink_ext_ack *extack)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
+	struct dsa_port *dp = dsa_to_port(ds, port);
+	enum rtldsa_flood_type new_sa_fwd;
+	unsigned long cached_flags;
 
 	pr_debug("%s: %d %lX\n", __func__, port, flags.val);
-	if (priv->r->enable_learning && (flags.mask & BR_LEARNING))
-		priv->r->enable_learning(port, !!(flags.val & BR_LEARNING));
 
-	if (priv->r->enable_flood && (flags.mask & BR_FLOOD))
-		priv->r->enable_flood(port, !!(flags.val & BR_FLOOD));
+	priv->ports[port].cached_flags &= ~flags.mask;
+	priv->ports[port].cached_flags |= flags.val & flags.mask;
 
-	if (priv->r->enable_mcast_flood && (flags.mask & BR_MCAST_FLOOD))
-		priv->r->enable_mcast_flood(port, !!(flags.val & BR_MCAST_FLOOD));
+	cached_flags = priv->ports[port].cached_flags;
 
-	if (priv->r->enable_bcast_flood && (flags.mask & BR_BCAST_FLOOD))
-		priv->r->enable_bcast_flood(port, !!(flags.val & BR_BCAST_FLOOD));
+	if (cached_flags & BR_PORT_LOCKED) {
+		/* A locked port must not learn addresses on its own, and the
+		 * entries it learned before are no longer authorized.
+		 */
+		rtldsa_port_set_salrn(priv, port, false);
+
+		if (flags.mask & BR_PORT_LOCKED)
+			rtldsa_port_fast_age_notify(dp);
+	} else {
+		rtldsa_port_set_salrn(priv, port, !!(cached_flags & BR_LEARNING));
+	}
+
+	priv->ports[port].flood_type = (cached_flags & BR_FLOOD) ?
+				       RTLDSA_FLOOD_TYPE_FORWARD :
+				       RTLDSA_FLOOD_TYPE_DROP;
+
+	if (priv->r->enable_flood)
+		priv->r->enable_flood(port, priv->ports[port].flood_type);
+
+	/* Trap frames with an unknown source address on a locked port to the
+	 * CPU, so that an authenticator can inspect them and add an FDB entry.
+	 */
+	new_sa_fwd = (cached_flags & BR_PORT_LOCKED) ? RTLDSA_FLOOD_TYPE_TRAP2CPU :
+						       RTLDSA_FLOOD_TYPE_FORWARD;
+
+	if (priv->r->enable_l2_new_sa_fwd)
+		priv->r->enable_l2_new_sa_fwd(port, new_sa_fwd);
+
+	if (priv->r->enable_learning)
+		priv->r->enable_learning(port, !!(cached_flags & BR_LEARNING));
+
+	if (priv->r->enable_mcast_flood)
+		priv->r->enable_mcast_flood(port, !!(cached_flags & BR_MCAST_FLOOD));
+
+	if (priv->r->enable_bcast_flood)
+		priv->r->enable_bcast_flood(port, !!(cached_flags & BR_BCAST_FLOOD));
 
 	if (flags.mask & BR_ISOLATED) {
-		struct dsa_port *dp = dsa_to_port(ds, port);
 		struct net_device *bridge_dev = dsa_port_bridge_dev_get(dp);
 
-		priv->ports[port].isolated = !!(flags.val & BR_ISOLATED);
+		priv->ports[port].isolated = !!(cached_flags & BR_ISOLATED);
 
 		mutex_lock(&priv->reg_mutex);
 		rtldsa_update_port_member(priv, port, bridge_dev, true);
