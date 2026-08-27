@@ -20,6 +20,7 @@
 #include <linux/property.h>
 #include <linux/regmap.h>
 #include <linux/reset.h>
+#include <net/dsa.h>
 #include <net/netdev_queues.h>
 
 #include "qca_edma.h"
@@ -1909,6 +1910,21 @@ drop:
 	return NETDEV_TX_OK;
 }
 
+/* The flow engine is the switch's, so a flowtable bound to one of its user
+ * ports, which DSA hands to the conduit, goes on to the switch.
+ */
+static int edma_ndo_setup_tc(struct net_device *netdev,
+			     enum tc_setup_type type, void *type_data)
+{
+	struct dsa_port *cpu_dp = netdev->dsa_ptr;
+
+	if (type != TC_SETUP_FT || !cpu_dp || !cpu_dp->ds->ops->port_setup_tc)
+		return -EOPNOTSUPP;
+
+	return cpu_dp->ds->ops->port_setup_tc(cpu_dp->ds, cpu_dp->index, type,
+					      type_data);
+}
+
 static const struct net_device_ops edma_netdev_ops = {
 	.ndo_open = edma_ndo_open,
 	.ndo_stop = edma_ndo_stop,
@@ -1919,6 +1935,7 @@ static const struct net_device_ops edma_netdev_ops = {
 	.ndo_set_mac_address = eth_mac_addr,
 	.ndo_validate_addr = eth_validate_addr,
 	.ndo_get_stats64 = dev_get_tstats64,
+	.ndo_setup_tc = edma_ndo_setup_tc,
 };
 
 /* The first ring set's three interrupts come before the misc one, and every
