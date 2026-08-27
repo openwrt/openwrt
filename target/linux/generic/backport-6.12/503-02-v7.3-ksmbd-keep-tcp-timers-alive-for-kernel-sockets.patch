@@ -1,0 +1,42 @@
+From 80b6367ec37faf61fbd11aae6fae64c51faa5bba Mon Sep 17 00:00:00 2001
+From: Namjae Jeon <linkinjeon@kernel.org>
+Date: Thu, 20 Aug 2026 08:26:03 +0900
+Subject: [PATCH] ksmbd: keep TCP timers alive for kernel sockets
+
+ksmbd creates its listening socket with sock_create_kern(). Kernel
+sockets do not hold a network namespace reference by default. Accepted
+sockets inherit this state.
+
+When an accepted socket is released, tcp_close() clears its pending TCP
+timers for a kernel socket after the socket enters an orphaned state. If
+the peer is unreachable while ksmbd sends a FIN, this can leave a
+FIN-WAIT-1 orphan without a retransmission timer.
+
+Upgrade the listening socket's network namespace reference before
+kernel_listen(). Accepted sockets inherit the reference, so the TCP
+stack can keep the retransmission timer active and apply its normal
+orphan retry policy.
+
+Preserve the existing graceful shutdown behavior.
+
+Link: https://github.com/openwrt/openwrt/issues/24744
+Signed-off-by: Namjae Jeon <linkinjeon@kernel.org>
+---
+ fs/smb/server/transport_tcp.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+--- a/fs/smb/server/transport_tcp.c
++++ b/fs/smb/server/transport_tcp.c
+@@ -557,6 +557,12 @@ static int create_socket(struct interfac
+ 	ksmbd_socket->sk->sk_rcvtimeo = KSMBD_TCP_RECV_TIMEOUT;
+ 	ksmbd_socket->sk->sk_sndtimeo = KSMBD_TCP_SEND_TIMEOUT;
+ 
++	/*
++	 * Accepted sockets inherit the listener's net reference. Keep TCP
++	 * timers alive after a kernel socket is released.
++	 */
++	sk_net_refcnt_upgrade(ksmbd_socket->sk);
++
+ 	ret = kernel_listen(ksmbd_socket, KSMBD_SOCKET_BACKLOG);
+ 	if (ret) {
+ 		pr_err("Port listen() error: %d\n", ret);
