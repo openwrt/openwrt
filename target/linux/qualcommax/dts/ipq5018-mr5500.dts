@@ -82,6 +82,31 @@
 	pinctrl-names = "default";
 	reset-gpios = <&tlmm 39 GPIO_ACTIVE_LOW>;
 
+	// QCA8337 Phy0 -> LAN1
+	qca8337_0: ethernet-phy@0 {
+		reg = <0>;
+	};
+
+	// QCA8337 Phy1 -> LAN2
+	qca8337_1: ethernet-phy@1 {
+		reg = <1>;
+	};
+
+	// QCA8337 Phy2 -> LAN3
+	qca8337_2: ethernet-phy@2 {
+		reg = <2>;
+	};
+
+	// QCA8337 Phy3 -> LAN4
+	qca8337_3: ethernet-phy@3 {
+		reg = <3>;
+	};
+
+	// QCA8337 Phy4 -> WAN
+	qca8337_4: ethernet-phy@4 {
+		reg = <4>;
+	};
+
 	switch1: ethernet-switch@17 {
 		compatible = "qca,qca8337";
 		reg = <17>;
@@ -96,7 +121,6 @@
 				reg = <1>;
 				label = "lan1";
 				phy-handle = <&qca8337_0>;
-				phy-mode = "internal";
 
 				leds {
 					#address-cells = <1>;
@@ -122,7 +146,6 @@
 				reg = <2>;
 				label = "lan2";
 				phy-handle = <&qca8337_1>;
-				phy-mode = "internal";
 
 				leds {
 					#address-cells = <1>;
@@ -148,7 +171,6 @@
 				reg = <3>;
 				label = "lan3";
 				phy-handle = <&qca8337_2>;
-				phy-mode = "internal";
 
 				leds {
 					#address-cells = <1>;
@@ -174,7 +196,6 @@
 				reg = <4>;
 				label = "lan4";
 				phy-handle = <&qca8337_3>;
-				phy-mode = "internal";
 
 				leds {
 					#address-cells = <1>;
@@ -200,7 +221,6 @@
 				reg = <5>;
 				label = "wan";
 				phy-handle = <&qca8337_4>;
-				phy-mode = "internal";
 
 				leds {
 					#address-cells = <1>;
@@ -233,36 +253,6 @@
 					speed = <1000>;
 					full-duplex;
 				};
-			};
-		};
-
-		mdio {
-			#address-cells = <1>;
-			#size-cells = <0>;
-
-			// QCA8337 Phy0 -> LAN1
-			qca8337_0: ethernet-phy@0 {
-				reg = <0>;
-			};
-
-			// QCA8337 Phy1 -> LAN2
-			qca8337_1: ethernet-phy@1 {
-				reg = <1>;
-			};
-
-			// QCA8337 Phy2 -> LAN3
-			qca8337_2: ethernet-phy@2 {
-				reg = <2>;
-			};
-
-			// QCA8337 Phy3 -> LAN4
-			qca8337_3: ethernet-phy@3 {
-				reg = <3>;
-			};
-
-			// QCA8337 Phy4 -> WAN
-			qca8337_4: ethernet-phy@4 {
-				reg = <4>;
 			};
 		};
 	};
