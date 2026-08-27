@@ -2025,6 +2025,8 @@ int qca_ppe_setup_tc(struct dsa_switch *ds, int port, enum tc_setup_type type,
 	struct qca_ppe_priv *priv = ds_to_priv(ds);
 
 	switch (type) {
+	case TC_SETUP_FT:
+		return ppe_setup_ft_block(priv, type_data);
 	case TC_SETUP_QDISC_TBF:
 		return qca_ppe_setup_tc_tbf(priv, port, type_data);
 	case TC_SETUP_QDISC_ETS:
