@@ -1,0 +1,515 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+#include "ipq5018.dtsi"
+#include "ipq5018-ess.dtsi"
+#include "ipq5018-qcn6122.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	model = "TP-Link Archer AX55 v1";
+	compatible = "tplink,archer-ax55-v1", "qcom,ipq5018";
+
+	aliases {
+		serial0 = &blsp1_uart1;
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		bootargs-append = " root=/dev/ubiblock0_1 coherent_pool=2M";
+	};
+
+	keys {
+		compatible = "gpio-keys";
+		pinctrl-0 = <&button_pins>;
+		pinctrl-names = "default";
+
+		button-reset {
+			label = "reset";
+			gpios = <&tlmm 25 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+			debounce-interval = <60>;
+		};
+
+		/* the case labels this "WPS/Wi-Fi"; stock treats it as a
+		 * wifi toggle (KEY_WLAN) - use rfkill, the OpenWrt idiom */
+		button-wifi {
+			label = "wifi";
+			gpios = <&tlmm 31 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RFKILL>;
+			debounce-interval = <60>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-0 = <&led_pins>;
+		pinctrl-names = "default";
+
+		/*
+		 * LED GPIOs confirmed against the stock device tree. GPIO39 is
+		 * the 5 GHz WLAN LED (the OEM "reset_gpio 39" in the switch
+		 * node is bogus - the real RTL8367S reset is GPIO33).
+		 */
+		led_power: led-power {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&tlmm 18 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-lan {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			gpios = <&tlmm 10 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-wan-green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WAN_ONLINE;
+			gpios = <&tlmm 11 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-wan-orange {
+			color = <LED_COLOR_ID_ORANGE>;
+			function = LED_FUNCTION_WAN;
+			gpios = <&tlmm 22 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-wlan2g {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN_2GHZ;
+			gpios = <&tlmm 13 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-wlan5g {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN_5GHZ;
+			gpios = <&tlmm 39 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-usb {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_USB;
+			gpios = <&tlmm 38 GPIO_ACTIVE_HIGH>;
+			trigger-sources = <&usb_port1>;
+			linux,default-trigger = "usbport";
+		};
+	};
+
+	/* vendor "usb_enabled" GPIO - switches the USB port's VBUS rail */
+	reg_usb_vbus: regulator-usb-vbus {
+		compatible = "regulator-fixed";
+		regulator-name = "usb_vbus";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpios = <&tlmm 27 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+	};
+};
+
+&sleep_clk {
+	clock-frequency = <32000>;
+};
+
+&xo_board_clk {
+	clock-div = <4>;
+	clock-mult = <1>;
+};
+
+&blsp1_uart1 {
+	pinctrl-0 = <&serial_0_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&prng {
+	status = "okay";
+};
+
+&qfprom {
+	status = "okay";
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&qpic_nand {
+	pinctrl-0 = <&qpic_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	nand@0 {
+		compatible = "spi-nand";
+		reg = <0>;
+
+		nand-ecc-engine = <&qpic_nand>;
+		nand-ecc-strength = <4>;
+		nand-ecc-step-size = <512>;
+		nand-bus-width = <8>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "0:SBL1";
+				reg = <0x0 0x80000>;
+				read-only;
+			};
+
+			partition@80000 {
+				label = "0:MIBIB";
+				reg = <0x80000 0x80000>;
+				read-only;
+			};
+
+			partition@100000 {
+				label = "0:BOOTCONFIG";
+				reg = <0x100000 0x40000>;
+				read-only;
+			};
+
+			partition@140000 {
+				label = "0:BOOTCONFIG1";
+				reg = <0x140000 0x40000>;
+				read-only;
+			};
+
+			partition@180000 {
+				label = "0:QSEE";
+				reg = <0x180000 0x100000>;
+				read-only;
+			};
+
+			partition@280000 {
+				label = "0:DEVCFG";
+				reg = <0x280000 0x40000>;
+				read-only;
+			};
+
+			partition@2c0000 {
+				label = "0:CDT";
+				reg = <0x2c0000 0x40000>;
+				read-only;
+			};
+
+			partition@300000 {
+				label = "0:APPSBLENV";
+				reg = <0x300000 0x80000>;
+			};
+
+			partition@380000 {
+				label = "0:APPSBL";
+				reg = <0x380000 0x140000>;
+				read-only;
+			};
+
+			partition@4c0000 {
+				label = "0:ART";
+				reg = <0x4c0000 0x100000>;
+				read-only;
+			};
+
+			partition@5c0000 {
+				label = "0:TRAINING";
+				reg = <0x5c0000 0x80000>;
+				read-only;
+			};
+
+			partition@640000 {
+				label = "rootfs";
+				reg = <0x640000 0x2a00000>;
+			};
+
+			partition@3040000 {
+				label = "rootfs_1";
+				reg = <0x3040000 0x2a00000>;
+			};
+
+			partition@5a40000 {
+				label = "tp_data";
+				reg = <0x5a40000 0x840000>;
+				read-only;
+			};
+
+			partition@6280000 {
+				label = "radio";
+				reg = <0x6280000 0x440000>;
+				read-only;
+			};
+
+			partition@66c0000 {
+				label = "data";
+				reg = <0x66c0000 0x80000>;
+			};
+		};
+	};
+};
+
+/*
+ * ===========================================================================
+ * Ethernet:
+ *
+ *   IPQ5018 gmac1 -> uniphy0 PCS -> 2.5G HSGMII trunk -> RTL8367S DSA switch
+ *   All FIVE front jacks are RTL8367S internal PHYs:
+ *     blue WAN = phy0 ("wan"), LAN1-4 = phy1-4 ("lan1".."lan4")
+ *   The SoC's internal GE PHY (mdio0:7/gmac0) is NOT bonded out, so gmac0
+ *   stays at its default disabled state.
+ *
+ *   RTL8367S: MDIO addr 29 on mdio1, reset GPIO 33 (the OEM DTS's "GPIO39"
+ *   is wrong/unused). The 2.5G HSGMII trunk needs the rtl8365mb SGMII/HSGMII
+ *   patch; no 8051 SerDes firmware is required.
+ * ===========================================================================
+ */
+
+/*
+ * mdio0 must stay enabled even though the GE PHY behind it is unused:
+ * registering the ge_phy deasserts GCC_GEPHY_MISC_ARES, and that reset also
+ * gates the MDC/MDIO path shared with mdio1. With mdio0 disabled the
+ * RTL8367S on mdio1 stops responding to SMI entirely (chip id read
+ * -ETIMEDOUT, measured 2026-07-30).
+ */
+&mdio0 {
+	status = "okay";
+};
+
+&uniphy0 {
+	status = "okay";
+
+	assigned-clocks = <&uniphy0 UNIPHY_CLK_REF>;
+	assigned-clock-rates = <UNIPHY_REFCLK_50MHZ>;
+};
+
+&gmac1 {
+	status = "okay";
+
+	phy-mode = "2500base-x";
+
+	fixed-link {
+		speed = <2500>;
+		full-duplex;
+	};
+};
+
+&mdio1 {
+	status = "okay";
+
+	pinctrl-0 = <&mdio1_pins>;
+	pinctrl-names = "default";
+	reset-gpios = <&tlmm 33 GPIO_ACTIVE_LOW>;
+
+	/*
+	 * RTL8367S (OEM labels it "qca83xx"), MDIO-connected (realtek-mdio) at
+	 * address 29. The switch RESET is GPIO33, not the OEM-labelled GPIO39 -
+	 * holding 39 leaves the chip in reset and MDIO reads back 0xffff.
+	 */
+	switch@29 {
+		compatible = "realtek,rtl8365mb";
+		reg = <29>;
+
+		/*
+		 * The RTL8367S internal user-side MDIO bus. The DSA realtek
+		 * driver (rtl83xx_setup_user_mdio) requires this child node -
+		 * without it probe fails with "no MDIO bus node". LAN1-4 hang
+		 * off the switch's internal PHYs 0-3.
+		 */
+		mdio {
+			compatible = "realtek,smi-mdio";
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			switchphy0: ethernet-phy@0 {
+				reg = <0>;
+			};
+
+			switchphy1: ethernet-phy@1 {
+				reg = <1>;
+			};
+
+			switchphy2: ethernet-phy@2 {
+				reg = <2>;
+			};
+
+			switchphy3: ethernet-phy@3 {
+				reg = <3>;
+			};
+
+			switchphy4: ethernet-phy@4 {
+				reg = <4>;
+			};
+		};
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				label = "wan";
+				phy-handle = <&switchphy0>;
+			};
+
+			port@1 {
+				reg = <1>;
+				label = "lan1";
+				phy-handle = <&switchphy1>;
+			};
+
+			port@2 {
+				reg = <2>;
+				label = "lan2";
+				phy-handle = <&switchphy2>;
+			};
+
+			port@3 {
+				reg = <3>;
+				label = "lan3";
+				phy-handle = <&switchphy3>;
+			};
+
+			port@4 {
+				reg = <4>;
+				label = "lan4";
+				phy-handle = <&switchphy4>;
+			};
+
+			port@6 {
+				reg = <6>;
+				label = "cpu";
+				ethernet = <&gmac1>;
+				phy-mode = "2500base-x";
+
+				fixed-link {
+					speed = <2500>;
+					full-duplex;
+				};
+			};
+		};
+	};
+};
+
+&usbphy0 {
+	status = "okay";
+};
+
+&usbphy1 {
+	status = "okay";
+
+	vdd-supply = <&reg_usb_vbus>;
+};
+
+&usb {
+	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+	dr_mode = "host";
+
+	usb_port1: port@1 {
+		reg = <1>;
+		#trigger-source-cells = <0>;
+	};
+};
+
+/*
+ * WiFi: IPQ5018 2.4 GHz + QCN6122/QCN6102 5 GHz, the 5 GHz radio on
+ * userpd 3 (q6_wcss_pd3) with no boot-args - same layout as the
+ * GL.iNet GL-B3000 - so the board-specific, unexposed QCN6122 reset
+ * GPIO is not needed. Per-device pre-cal comes from 0:ART via the
+ * 11-ath11k-caldata hotplug.
+ */
+&q6v5_wcss {
+	status = "okay";
+};
+
+&wifi {
+	status = "okay";
+
+	qcom,rproc = <&q6_wcss_pd1>;
+	qcom,ath11k-fw-memory-mode = <1>;
+	qcom,ath11k-calibration-variant = "TP-Link-Archer-AX55-v1";
+	qcom,bdf-addr = <0x4c400000>;
+};
+
+&wifi1 {
+	status = "okay";
+
+	qcom,rproc = <&q6_wcss_pd3>;
+	qcom,userpd-subsys-name = "q6v5_wcss_userpd3";
+	qcom,ath11k-fw-memory-mode = <1>;
+	qcom,ath11k-calibration-variant = "TP-Link-Archer-AX55-v1";
+	qcom,bdf-addr = <0x4d100000>;
+	qcom,m3-dump-addr = <0x4df00000>;
+};
+
+&tlmm {
+	button_pins: button-state {
+		pins = "gpio25", "gpio31";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-pull-up;
+	};
+
+	led_pins: led-state {
+		pins = "gpio10", "gpio11", "gpio13", "gpio18", "gpio22",
+		       "gpio38", "gpio39";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	mdio1_pins: mdio1-state {
+		mdc-pins {
+			pins = "gpio36";
+			function = "mdc";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		mdio-pins {
+			pins = "gpio37";
+			function = "mdio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+
+	qpic_pins: qpic-state {
+		clock-pins {
+			pins = "gpio9";
+			function = "qspi_clk";
+			drive-strength = <8>;
+			bias-disable;
+		};
+
+		cs-pins {
+			pins = "gpio8";
+			function = "qspi_cs";
+			drive-strength = <8>;
+			bias-disable;
+		};
+
+		data-pins {
+			pins = "gpio4", "gpio5", "gpio6", "gpio7";
+			function = "qspi_data";
+			drive-strength = <8>;
+			bias-disable;
+		};
+	};
+
+	serial_0_pins: uart0-state {
+		pins = "gpio20", "gpio21";
+		function = "blsp0_uart0";
+		bias-disable;
+	};
+};
