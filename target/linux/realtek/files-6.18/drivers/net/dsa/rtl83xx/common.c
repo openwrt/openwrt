@@ -251,12 +251,11 @@ static bool rtldsa_phys_load_deferred(void)
 	return false;
 }
 
-static int rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
+static int rtldsa_mdio_loaded(void)
 {
-	struct device_node *dn, *phy_node, *led_node;
-	u32 pn;
+	struct device_node *dn;
 
-	/* Check if all busses of Realtek mdio controller are registered */
+	/* Check if all buses of the Realtek MDIO controller are registered. */
 	dn = of_find_compatible_node(NULL, NULL, "realtek,otto-mdio");
 	if (!of_device_is_available(dn)) {
 		of_node_put(dn);
@@ -265,6 +264,7 @@ static int rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 
 	for_each_child_of_node_scoped(dn, bn) {
 		struct mii_bus *bus = of_mdio_find_bus(bn);
+
 		if (!bus) {
 			of_node_put(dn);
 			return -EPROBE_DEFER;
@@ -272,6 +272,14 @@ static int rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 		put_device(&bus->dev);
 	}
 	of_node_put(dn);
+
+	return 0;
+}
+
+static int rtldsa_ports_probe(struct rtl838x_switch_priv *priv)
+{
+	struct device_node *dn, *phy_node, *led_node;
+	u32 pn;
 
 	dn = of_find_compatible_node(NULL, NULL, "realtek,otto-switch");
 	if (!dn) {
@@ -315,13 +323,6 @@ static int rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 
 		priv->ports[pn].phy = !!phy_node;
 	}
-
-	/* Disable MAC polling the PHY so that we can start configuration */
-	priv->r->set_port_reg_le(0ULL, priv->r->smi_poll_ctrl);
-
-	/* Disable PHY polling via SoC */
-	if (priv->family_id == RTL8390_FAMILY_ID)
-		sw_w32_mask(BIT(7), 0, RTL839X_SMI_GLB_CTRL);
 
 	return 0;
 }
@@ -926,13 +927,13 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 	sw_w32(0, priv->r->spanning_tree_ctrl);
 	priv->irq_mask = GENMASK_ULL(priv->r->cpu_port - 1, 0);
 
-	err = rtl83xx_mdio_probe(priv);
-	if (err) {
-		/* Probing fails the 1st time because of missing ethernet driver
-		 * initialization. Use this to disable traffic in case the bootloader left if on
-		 */
+	err = rtldsa_mdio_loaded();
+	if (err)
 		return err;
-	}
+
+	err = rtldsa_ports_probe(priv);
+	if (err)
+		return err;
 
 	priv->wq = create_singlethread_workqueue("rtl83xx");
 	if (!priv->wq) {

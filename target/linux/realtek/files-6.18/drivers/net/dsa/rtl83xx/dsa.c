@@ -41,25 +41,6 @@ static void rtldsa_init_stats(struct rtl838x_switch_priv *priv)
 	mutex_unlock(&priv->reg_mutex);
 }
 
-static void rtldsa_enable_phy_polling(struct rtl838x_switch_priv *priv)
-{
-	u64 v = 0;
-
-	msleep(1000);
-	/* Enable all ports with a PHY, including the SFP-ports */
-	for (int i = 0; i < priv->r->cpu_port; i++) {
-		if (priv->ports[i].phy || priv->ports[i].has_pcs)
-			v |= BIT_ULL(i);
-	}
-
-	pr_info("%s: %16llx\n", __func__, v);
-	priv->r->set_port_reg_le(v, priv->r->smi_poll_ctrl);
-
-	/* PHY update complete, there is no global PHY polling enable bit on the 93xx */
-	if (priv->family_id == RTL8390_FAMILY_ID)
-		sw_w32_mask(0, BIT(7), RTL839X_SMI_GLB_CTRL);
-}
-
 /* DSA callbacks */
 
 static enum dsa_tag_protocol rtldsa_get_tag_protocol(struct dsa_switch *ds,
@@ -173,9 +154,6 @@ static int rtldsa_83xx_setup(struct dsa_switch *ds)
 
 	pr_debug("%s called\n", __func__);
 
-	/* Disable MAC polling the PHY so that we can start configuration */
-	priv->r->set_port_reg_le(0ULL, priv->r->smi_poll_ctrl);
-
 	for (int i = 0; i < ds->num_ports; i++)
 		priv->ports[i].enable = false;
 	priv->ports[priv->r->cpu_port].enable = true;
@@ -221,10 +199,6 @@ static int rtldsa_83xx_setup(struct dsa_switch *ds)
 	 */
 	sw_w32(0x2, priv->r->self_mac_trap_ctrl);
 
-	/* Enable MAC Polling PHY again */
-	rtldsa_enable_phy_polling(priv);
-	pr_debug("Please wait until PHY is settled\n");
-	msleep(1000);
 	priv->r->pie_init(priv);
 
 	return 0;
@@ -235,15 +209,6 @@ static int rtldsa_93xx_setup(struct dsa_switch *ds)
 	struct rtl838x_switch_priv *priv = ds->priv;
 
 	pr_info("%s called\n", __func__);
-
-	/* Disable MAC polling the PHY so that we can start configuration */
-	if (priv->family_id == RTL9300_FAMILY_ID)
-		sw_w32(0, RTL930X_SMI_POLL_CTRL);
-
-	if (priv->family_id == RTL9310_FAMILY_ID) {
-		sw_w32(0, RTL931X_SMI_PORT_POLLING_CTRL);
-		sw_w32(0, RTL931X_SMI_PORT_POLLING_CTRL + 4);
-	}
 
 	/* Disable all ports except CPU port */
 	for (int i = 0; i < ds->num_ports; i++)
@@ -278,10 +243,7 @@ static int rtldsa_93xx_setup(struct dsa_switch *ds)
 	rtldsa_port_set_salrn(priv, priv->r->cpu_port, false);
 	ds->assisted_learning_on_cpu_port = true;
 
-	rtldsa_enable_phy_polling(priv);
-
 	priv->r->pie_init(priv);
-
 	priv->r->led_init(priv);
 
 	return 0;

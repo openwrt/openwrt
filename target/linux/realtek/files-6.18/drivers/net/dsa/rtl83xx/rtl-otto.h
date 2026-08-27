@@ -570,17 +570,7 @@
 #define RTL931X_ISR_GLB_SRC			(0x12B4)
 #define RTL931X_ISR_PORT_LINK_STS_CHG		(0x12B8)
 
-/*
- * MDIO via Realtek's SMI interface
- */
-#define RTL838X_SMI_GLB_CTRL			(0xa100)
-#define RTL838X_SMI_POLL_CTRL			(0xa17c)
-
-#define RTL839X_SMI_GLB_CTRL			(0x03f8)
-#define RTL839X_SMI_PORT_POLLING_CTRL		(0x03fc)
-
-#define RTL930X_SMI_POLL_CTRL			(0xca90)
-#define RTL931X_SMI_PORT_POLLING_CTRL		(0x0CCC)
+#define RTL838X_SMI_GLB_CTRL			(0xa100) /* used by RTL838x EEE setup */
 
 #define RTL838X_LED_GLB_CTRL			(0xA000)
 #define RTL839X_LED_GLB_CTRL			(0x00E4)
@@ -1342,7 +1332,6 @@ struct rtldsa_config {
 	int l2_ctrl_1;
 	bool high_res_l2_age;
 	u32 self_mac_trap_ctrl;
-	int smi_poll_ctrl;
 	u32 l2_port_aging_out;
 	int l2_tbl_flush_ctrl;
 	int isr_glb_src;
