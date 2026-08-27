@@ -1,13 +1,16 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/* Copyright (c) 2026 Julius Bairaktaris <julius@bairaktaris.de> */
 /* Routed and NAT flow offload for the Qualcomm PPE.
  *
  * The PPE matches a packet's 5-tuple against a hashed flow table and, on a hit,
  * forwards it in hardware. The key is split across two tables: the flow entry
  * carries the destination address, the L4 ports and the protocol, while the
  * source address lives in the host table and the flow entry only references its
- * index. Which of the two addresses goes where is a per-direction hardware
- * choice (PPE_FLOW_KEY_SEL); both directions are programmed the same way here,
- * so the driver never has to agree with the hardware's direction classifier.
+ * index. Which of the two addresses goes where when a packet is looked up is
+ * a per-direction hardware choice (PPE_FLOW_KEY_SEL); every entry is staged
+ * the same way here, and the one direction group that looks up with the
+ * opposite orientation - WAN-to-LAN, where tunnel-terminated ingress lands -
+ * gets its KEY_SEL flipped to match in ppe_flow_init().
  *
  * Entries are placed by the hardware hash rather than by the driver: an add
  * stages the entry in the op registers, and the hardware picks the slot, writes
@@ -94,9 +97,15 @@ int ppe_flow_op(struct qca_ppe_priv *priv, u32 op_type,
 	if (index)
 		*index = FIELD_GET(PPE_FLOW_RSLT_ENTRY_IDX, rslt);
 
-	if (host_index) {
-		regmap_read(priv->regmap, PPE_FLOW_HOST_TBL_OP_RSLT, &val);
-		*host_index = FIELD_GET(PPE_FLOW_HOST_RSLT_ENTRY_IDX, val);
+	/* The host result register is a queue that fills on its own schedule,
+	 * so it may not yet - or no longer - hold this command's result. What
+	 * binds the flow to its host entry is the host index the hardware
+	 * wrote into the flow entry itself; read it from there.
+	 */
+	if (index && host_index) {
+		regmap_read(priv->regmap, PPE_IN_FLOW_TBL(*index), &val);
+		*host_index = ppe_entry_get(&val, PPE_FLOW_E_HOST_IDX_OFF,
+					    PPE_FLOW_E_HOST_IDX_LEN);
 	}
 
 	return 0;
@@ -194,16 +203,20 @@ int ppe_host_del(struct qca_ppe_priv *priv, u32 index)
 void ppe_flow_counter_read(struct qca_ppe_priv *priv, u32 index, u64 *packets,
 			   u64 *bytes)
 {
-	u32 lo, hi;
+	u32 lo, hi, hi2;
 
 	regmap_read(priv->regmap, PPE_IN_FLOW_CNT_TBL(index), &lo);
 	*packets = lo;
 
-	/* 40-bit byte counter. The halves are read in separate statements
-	 * because the order of evaluation within one is unspecified.
+	/* 40-bit byte counter. Re-read on a carry between the two halves so a
+	 * count crossing the low word's boundary is not torn by 1 << 32.
 	 */
-	regmap_read(priv->regmap, PPE_IN_FLOW_CNT_TBL(index) + 4, &lo);
 	regmap_read(priv->regmap, PPE_IN_FLOW_CNT_TBL(index) + 8, &hi);
+	do {
+		hi2 = hi;
+		regmap_read(priv->regmap, PPE_IN_FLOW_CNT_TBL(index) + 4, &lo);
+		regmap_read(priv->regmap, PPE_IN_FLOW_CNT_TBL(index) + 8, &hi);
+	} while (hi != hi2);
 	*bytes = lo | ((u64)FIELD_GET(PPE_FLOW_CNT_BYTES_HI, hi) << 32);
 }
 
@@ -264,6 +277,7 @@ DEFINE_SHOW_ATTRIBUTE(ppe_flows);
 
 static const char * const ppe_flow_reject_name[] = {
 	[PPE_REJECT_INGRESS_PORT]	= "ingress_not_switch_port",
+	[PPE_REJECT_INGRESS_VLAN]	= "ingress_vlan_domain",
 	[PPE_REJECT_KEY]		= "unsupported_match",
 	[PPE_REJECT_PROTO]		= "unsupported_protocol",
 	[PPE_REJECT_ACTION]		= "unsupported_action",
@@ -284,6 +298,11 @@ static int ppe_offload_show(struct seq_file *s, void *data)
 	guard(mutex)(&priv->flow_lock);
 
 	seq_printf(s, "%-24s %u\n", "offloaded", priv->flow_offloaded);
+	seq_printf(s, "%-24s %u\n", "reinstalled", priv->flow_reinstalled);
+	seq_printf(s, "%-24s %u\n", "destroy_miss", priv->flow_destroy_miss);
+	seq_printf(s, "%-24s %u\n", "stale", priv->flow_stale);
+	seq_printf(s, "%-24s %u\n", "live_entries",
+		   atomic_read(&priv->flow_table.nelems));
 	for (i = 0; i < PPE_REJECT_MAX; i++)
 		seq_printf(s, "%-24s %u\n", ppe_flow_reject_name[i],
 			   priv->flow_reject[i]);
@@ -334,17 +353,39 @@ void ppe_flow_init(struct qca_ppe_priv *priv)
 	int type, dir;
 
 	mutex_init(&priv->flow_lock);
+	mutex_init(&priv->vlan_lock);
 
 	/* A miss has to forward: with the lookup enabled and no entry matching,
 	 * any other action would black-hole traffic the driver never saw.
+	 *
+	 * Fragments bypass the lookup: only the first fragment carries the L4
+	 * ports, so matching it in hardware while the rest miss to the CPU
+	 * would leave conntrack's reassembly waiting forever.
+	 *
+	 * The neighbouring TCP_SPECIAL bypass stays off: on this generation it
+	 * takes every TCP packet out of the lookup, not just the flagged ones.
+	 * A connection's FIN and RST are therefore forwarded in hardware and its
+	 * entry goes on the flowtable's idle timeout, as it does on every driver
+	 * whose hardware never shows it the teardown.
 	 */
 	for (type = 0; type < PPE_FLOW_PKT_TYPES; type++) {
 		u32 val = 0;
 
 		for (dir = 0; dir < PPE_FLOW_CTRL1_DIRS; dir++)
-			val |= FIELD_PREP(PPE_FLOW_MISS_ACTION,
-					  PPE_FLOW_MISS_FORWARD)
+			val |= (FIELD_PREP(PPE_FLOW_MISS_ACTION,
+					   PPE_FLOW_MISS_FORWARD) |
+				PPE_FLOW_FRAG_BYPASS)
 			       << (dir * PPE_FLOW_CTRL1_DIR_BITS);
+
+		/* Tunnel-terminated ingress (a de-encapsulated PPPoE frame)
+		 * classifies as WAN-to-LAN regardless of the host entries,
+		 * and that direction group builds its lookup key with the
+		 * opposite orientation: without its KEY_SEL flipped, such
+		 * frames never find the entries this driver installs. All
+		 * other groups match the orientation entries are staged in.
+		 */
+		val |= PPE_FLOW_KEY_SEL
+		       << (PPE_FLOW_DIR_WAN_TO_LAN * PPE_FLOW_CTRL1_DIR_BITS);
 
 		regmap_write(priv->regmap, PPE_FLOW_CTRL1(type), val);
 	}

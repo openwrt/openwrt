@@ -17,6 +17,7 @@
 #include <linux/regmap.h>
 #include <linux/reset.h>
 #include <linux/version.h>
+
 #include "qca_edma.h"
 
 static void edma_irq_disable_all(struct edma_priv *priv)
