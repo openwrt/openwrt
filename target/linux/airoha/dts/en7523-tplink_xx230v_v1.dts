@@ -55,7 +55,7 @@
 		};
 
 		// xPON
-		led@1 {
+		xpon_status: led@1 {
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_STATUS;
 			function-enumerator = <1>;
@@ -87,7 +87,7 @@
 		};
 
 		// LOS
-		led@2 {
+		los: led@2 {
 			color = <LED_COLOR_ID_RED>;
 			function = LED_FUNCTION_STATUS;
 			function-enumerator = <2>;
@@ -266,6 +266,9 @@ New Maping:
 
 	optical-frontends = <&en7571>;
 	optical-frontend-names = "pon";
+
+	leds = <&xpon_status>, <&los>;
+	led-names = "pon", "los";
 };
 
 &gdm2 {

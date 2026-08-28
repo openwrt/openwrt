@@ -41,13 +41,33 @@
 		#interrupt-cells = <1>;
 	};
 
-	spi_ctrl: spi_controller@1fa10000 {
-		compatible = "airoha,en7523-spi";
-		reg = <0x1fa10000 0x140>;
+	chip_scu: syscon@1fa20000 {
+		compatible = "airoha,scuclk", "econet,en751221-chip-scu", "syscon";
+		reg = <0x1fa20000 0x400>;
+	};
+
+	scuclk: system-controller@1fb00000 {
+		compatible = "econet,en751221-scu", "syscon";
+		reg = <0x1fb00000 0x1000>;
+
+		airoha,chip-scu = <&chip_scu>;
+		#clock-cells = <1>;
+		#reset-cells = <1>;
+	};
+
+	spi0: spi_controller@1fa10000 {
+		compatible = "econet,en751221-spi";
+		reg = <0x1fa10000 0x140>,
+		      <0x1fa11000 0x160>;
+
+		clocks = <&scuclk EN751221_CLK_SPI>;
+		clock-names = "spi";
+
+		airoha,scu = <&scuclk>, <&chip_scu>;
+		airoha,scu-names = "scuclk", "chip-scu";
+
 		#address-cells = <1>;
 		#size-cells = <0>;
-		spi-rx-bus-width = <2>;
-		spi-tx-bus-width = <2>;
 
 		nand: nand@0 {
 			compatible = "spi-nand";
@@ -88,20 +108,6 @@
 		clocks = <&hpt_clock>;
 	};
 
-	chip_scu: syscon@1fa20000 {
-		compatible = "airoha,chip-scu", "syscon";
-		reg = <0x1fa20000 0x400>;
-	};
-
-	scuclk: system-controller@1fb00000 {
-		compatible = "econet,en751221-scu", "syscon";
-		reg = <0x1fb00000 0x1000>;
-		airoha,chip-scu = <&chip_scu>;
-
-		#clock-cells = <1>;
-		#reset-cells = <1>;
-	};
-
 	watchdog: watchdog@1fbf0100 {
 		compatible = "econet,en751221-wdt";
 		reg = <0x1fbf0100 0x3c>;
@@ -113,7 +119,7 @@
 	crypto@1e004000 {
 		compatible = "inside-secure,safexcel-eip93ies";
 		reg = <0x1fb70000 0x1000>;
-		
+
 		interrupt-parent = <&intc>;
 		interrupts = <28>;
 	};
@@ -273,7 +279,7 @@
 
 			gpio-controller;
 			#gpio-cells = <2>;
-			gpio-ranges = <&pinctrl 0 13 29>;
+			gpio-ranges = <&pinctrl 0 13 31>;
 
 			interrupt-controller;
 			#interrupt-cells = <2>;
