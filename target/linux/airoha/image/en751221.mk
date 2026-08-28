@@ -87,7 +87,7 @@ endef
 TARGET_DEVICES += mitrarstar_gpt-2741gnac-n1
 
 define Device/nokia_g240g-e
-  $(Device/tcboot_trx)
+  $(Device/FitImageVmlinuz)
   DEVICE_VENDOR := Nokia
   DEVICE_MODEL := G-240G-E
   DEVICE_DTS := en751221_nokia_g240g-e

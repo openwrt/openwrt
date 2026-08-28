@@ -1,0 +1,233 @@
+From 396ea03de23b9911fe00bb9ce712aa468aaca8b7 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Thu, 27 Aug 2026 21:01:46 -0300
+Subject: [PATCH] airoha: fix u-boot build
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ arch/mips/Kconfig                           | 11 +++++------
+ arch/mips/dts/econet,en751221-reference.dts | 12 +++++++++++
+ arch/mips/dts/econet,en751221.dtsi          | 22 ++++-----------------
+ arch/mips/mach-econet/Kconfig               |  3 +++
+ configs/en7512_reference_defconfig          |  6 ++----
+ drivers/net/Kconfig                         |  6 +++---
+ drivers/net/airoha_eth.c                    |  2 +-
+ drivers/serial/Makefile                     |  2 +-
+ drivers/serial/serial_econet.c              |  4 +++-
+ 9 files changed, 34 insertions(+), 34 deletions(-)
+
+diff --git a/arch/mips/Kconfig b/arch/mips/Kconfig
+index 452d9db4d16..265a6e6c3be 100644
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -68,7 +68,8 @@ config ARCH_ECONET
+ 	select HAS_FIXED_TIMER_FREQUENCY
+ 	select DM
+ 	select DM_SERIAL
+-	select ECONET_SERIAL
++	select AIROHA_SERIAL
++	select AIROHA_ETH
+ 	select OF_CONTROL
+ 	select ROM_EXCEPTION_VECTORS
+ 	select SUPPORT_BIG_ENDIAN
+@@ -78,11 +79,9 @@ config ARCH_ECONET
+ 	select SPL_SKIP_LOWLEVEL_INIT if SPL
+ 	select SUPPORT_TPL
+ 	select SYS_CACHE_SHIFT_5
+-	select MIPS_TUNE_34KC if BOARD_EN7512_REFERENCE
+-	select MIPS_TUNE_1004KC if BOARD_EN7528_TPLINK_XC220_G3V
+-	select MIPS_TUNE_1004KC if BOARD_EN7528_REFERENCE
+-	select MIPS_SKIP_CP0_COUNT_CLEAR if BOARD_EN7528_TPLINK_XC220_G3V
+-	select MIPS_SKIP_CP0_COUNT_CLEAR if BOARD_EN7528_REFERENCE
++	select MIPS_TUNE_34KC if TARGET_EN751221
++	select MIPS_TUNE_1004KC if TARGET_EN7528
++	select MIPS_SKIP_CP0_COUNT_CLEAR if TARGET_EN7528
+ 	help
+ 	  Support Airoha MIPS platforms. EN7512/EN7521 are
+ 	  big-endian MIPS34K devices, while EN7528 is a little-endian MIPS1004Kc
+diff --git a/arch/mips/dts/econet,en751221-reference.dts b/arch/mips/dts/econet,en751221-reference.dts
+index 49b0f492237..293796179d1 100644
+--- a/arch/mips/dts/econet,en751221-reference.dts
++++ b/arch/mips/dts/econet,en751221-reference.dts
+@@ -19,3 +19,15 @@
+ &spi0 {
+ 	status = "okay";
+ };
++
++&eth {
++	status = "okay";
++};
++
++&gdm1 {
++	status = "okay";
++};
++
++&switch0 {
++	status = "okay";
++};
+diff --git a/arch/mips/dts/econet,en751221.dtsi b/arch/mips/dts/econet,en751221.dtsi
+index bbcb4e41384..881b830d939 100644
+--- a/arch/mips/dts/econet,en751221.dtsi
++++ b/arch/mips/dts/econet,en751221.dtsi
+@@ -62,25 +62,11 @@
+ 
+ 				interrupt-controller;
+ 				#interrupt-cells = <2>;
+-
+-				i2c_pins: i2c-pins {
+-					mux {
+-						function = "pon_i2c";
+-						groups = "pon_i2c";
+-					};
+-				};
+-
+-				pon_pinctrl: pon {
+-					mux {
+-						function = "pon";
+-						groups = "pon";
+-					};
+-				};
+ 			};
+ 		};
+ 
+ 		uart0: serial@1fbf0000 {
+-			compatible = "econet,en7512-uart";
++			compatible = "econet,en751221-uart";
+ 			reg = <0x1fbf0000 0x30>;
+ 			clock-frequency = <20000000>;
+ 			current-speed = <115200>;
+@@ -118,7 +104,7 @@
+ 
+ 			gdm1: ethernet@1 {
+ 				compatible = "econet,eth-mac";
+-				reg = <1>;
++				reg = <0>;
+ 				phy-mode = "internal";
+ 				status = "disabled";
+ 
+@@ -141,10 +127,10 @@
+ 			#size-cells = <0>;
+ 			dsa,member = <0 0>;
+ 
+-			mdio: mdio {
++			mdio {
+ 				#address-cells = <1>;
+ 				#size-cells = <0>;
+-				};
+ 			};
+ 		};
+ 	};
++};
+\ No newline at end of file
+diff --git a/arch/mips/mach-econet/Kconfig b/arch/mips/mach-econet/Kconfig
+index 06b305f0611..6c23635a972 100644
+--- a/arch/mips/mach-econet/Kconfig
++++ b/arch/mips/mach-econet/Kconfig
+@@ -4,10 +4,13 @@ menu "Airoha MIPS platforms"
+ config TARGET_EN751221
+ 	bool "Airoha EN751221 SoC"
+ 	select SYSCON
++	select MIPS_TUNE_34KC
+ 
+ config TARGET_EN7528
+ 	bool "Airoha EN7528 SoC"
+ 	select SYSCON
++	select MIPS_TUNE_1004KC
++	select MIPS_SKIP_CP0_COUNT_CLEAR
+ 
+ config SYS_VENDOR
+ 	default "econet"
+diff --git a/configs/en7512_reference_defconfig b/configs/en7512_reference_defconfig
+index d57a1ff281b..9f52cef6658 100644
+--- a/configs/en7512_reference_defconfig
++++ b/configs/en7512_reference_defconfig
+@@ -12,10 +12,9 @@ CONFIG_SPL_SERIAL=y
+ CONFIG_TPL_SYS_MALLOC_F_LEN=0x1000
+ CONFIG_SPL_BSS_START_ADDR=0x80080000
+ CONFIG_SPL_BSS_MAX_SIZE=0x10000
+-CONFIG_SYS_LOAD_ADDR=0x81800000
++CONFIG_SYS_LOAD_ADDR=0x82000000
+ CONFIG_SPL=y
+ CONFIG_ARCH_ECONET=y
+-CONFIG_BUILD_TARGET="u-boot.bin"
+ CONFIG_BOARD_EN7512_REFERENCE=y
+ CONFIG_SYS_MIPS_TIMER_FREQ=150000000
+ CONFIG_MIPS_CACHE_SETUP=y
+@@ -71,7 +70,7 @@ CONFIG_ENV_USE_DEFAULT_ENV_TEXT_FILE=y
+ CONFIG_ENV_DEFAULT_ENV_TEXT_FILE="defenvs/en751221_ref_env"
+ CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
+ CONFIG_NET_RANDOM_ETHADDR=y
+-CONFIG_SYS_RX_ETH_BUFFER=8
++CONFIG_SYS_RX_ETH_BUFFER=16
+ CONFIG_SPL_DM=y
+ CONFIG_CLK=y
+ CONFIG_DMA=y
+@@ -85,7 +84,6 @@ CONFIG_AIROHA_ETH=y
+ CONFIG_PHY=y
+ CONFIG_PINCTRL=y
+ CONFIG_RAM=y
+-CONFIG_SYS_NS16550=y
+ CONFIG_SPI=y
+ CONFIG_DM_SPI=y
+ CONFIG_AIROHA_SNFI_SPI=y
+diff --git a/drivers/net/Kconfig b/drivers/net/Kconfig
+index f027e47b040..8e05606ce56 100644
+--- a/drivers/net/Kconfig
++++ b/drivers/net/Kconfig
+@@ -133,9 +133,9 @@ config AIROHA_ETH
+ 	select MISC
+ 	select PHYLIB
+ 	select DEVRES
+-	select DM_ETH_PHY if ARCH_AIROHA
+-	select DM_RESET if ARCH_AIROHA
+-	select MDIO_MT7531_MMIO if ARCH_AIROHA
++	select DM_ETH_PHY
++	select DM_RESET
++	select MDIO_MT7531_MMIO
+ 	help
+ 	  This driver supports the Airoha and EcoNet Ethernet QDMA blocks.
+ 	  Say Y to enable support for the Airoha/Econet Ethernet QDMA.
+diff --git a/drivers/net/airoha_eth.c b/drivers/net/airoha_eth.c
+index dbb375d138a..cfd9ac0e92b 100644
+--- a/drivers/net/airoha_eth.c
++++ b/drivers/net/airoha_eth.c
+@@ -3131,7 +3131,7 @@ static const struct airoha_eth_soc_data en751221_data = {
+ 	.direct_reset = true,
+ 	.late_probe = true,
+ 	.dscp_byte_swap = true,
+-	.switch_compatible = "mediatek,mt7530",
++	.switch_compatible = "econet,en751221-switch",
+ };
+ 
+ static const struct airoha_eth_soc_data en7528_data = {
+diff --git a/drivers/serial/Makefile b/drivers/serial/Makefile
+index 691c1719e34..3fb0e9fa1af 100644
+--- a/drivers/serial/Makefile
++++ b/drivers/serial/Makefile
+@@ -21,7 +21,7 @@ obj-$(CONFIG_BCM6345_SERIAL) += serial_bcm6345.o
+ obj-$(CONFIG_COREBOOT_SERIAL) += serial_coreboot.o
+ obj-$(CONFIG_CORTINA_UART) += serial_cortina.o
+ obj-$(CONFIG_DEBUG_SBI_CONSOLE) += serial_sbi.o
+-obj-$(CONFIG_ECONET_SERIAL) += serial_econet.o
++obj-$(CONFIG_AIROHA_SERIAL) += serial_econet.o
+ obj-$(CONFIG_EFI_APP) += serial_efi.o
+ obj-$(CONFIG_MCFUART) += serial_mcf.o
+ obj-$(CONFIG_SYS_NS16550) += ns16550.o
+diff --git a/drivers/serial/serial_econet.c b/drivers/serial/serial_econet.c
+index 815a2a87b96..cb867eeecf6 100644
+--- a/drivers/serial/serial_econet.c
++++ b/drivers/serial/serial_econet.c
+@@ -121,7 +121,9 @@ static const struct dm_serial_ops en75xx_serial_ops = {
+ };
+ 
+ static const struct udevice_id en75xx_serial_ids[] = {
+-	{ .compatible = "econet,en7512-uart" },
++	{ .compatible = "econet,en751221-uart" },
++	{ .compatible = "econet,en7528-uart" },
++	{ .compatible = "airoha,en7523-uart" },
+ 	{ }
+ };
+ 
+-- 
+2.55.0
+

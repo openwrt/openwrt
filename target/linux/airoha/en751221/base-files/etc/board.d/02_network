@@ -11,16 +11,15 @@ setup_interfaces()
   local board="$1"
 
   case "$board" in
-  jiuzhou,en7526gt)
-    ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
-    ucidef_set_interface_wan "pon0" "dhcp"
-    ;;
   genexis,platinum-4410)
     ucidef_set_interface_lan "lan1 lan2"
     ucidef_set_interface_wan "pon0" "dhcp"
     ;;
-  mitrastar,gpt-2741gnac-n1)
+  jiuzhou,en7526gt |\
+  mitrastar,gpt-2741gnac-n1 |\
+  nokia,g240g-e)
     ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
+    ucidef_set_interface_wan "pon0" "dhcp"
     ;;
   *)
     echo "Unsupported hardware. Network interfaces not initialized"
