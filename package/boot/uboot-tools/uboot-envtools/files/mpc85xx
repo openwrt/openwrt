@@ -8,6 +8,9 @@ touch /etc/config/ubootenv
 board=$(board_name)
 
 case "$board" in
+aerohive,hiveap-330)
+	ubootenv_add_uci_config "$(find_mtd_part 'u-boot-env')" "0x0" "0x20000" "0x10000"
+	;;
 enterasys,ws-ap3715i)
 	ubootenv_add_uci_config "/dev/mtd$(find_mtd_index 'cfg1')" "0x0" "0x1000" "0x10000"
 	ubootenv_add_uci_config "/dev/mtd$(find_mtd_index 'cfg2')" "0x0" "0x1000" "0x10000"
@@ -20,15 +23,15 @@ ocedo,panda)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x20000" "0x20000"
 	ubootenv_add_uci_config "/dev/mtd2" "0x0" "0x20000" "0x20000"
 	;;
+sophos,red-15w-rev1)
+	ubootenv_add_uci_config "/dev/mtd$(find_mtd_index 'u-boot-env')" "0x0" "0x4000" "0x20000"
+	;;
 watchguard,firebox-t10|\
 watchguard,firebox-t15)
 	ubootenv_add_uci_config "$(find_mtd_part 'u-boot-env')" "0x0" "0x2000" "0x10000"
 	;;
 watchguard,xtm330)
 	ubootenv_add_uci_config "/dev/mtd4" "0x0" "0x10000" "0x10000"
-	;;
-aerohive,hiveap-330)
-	ubootenv_add_uci_config "$(find_mtd_part 'u-boot-env')" "0x0" "0x20000" "0x10000"
 	;;
 esac
 
