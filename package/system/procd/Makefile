@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=procd
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/procd.git
@@ -66,6 +66,7 @@ define Package/procd-ujail
   CATEGORY:=Base system
   DEPENDS:=@KERNEL_NAMESPACES +@KERNEL_UTS_NS +@KERNEL_IPC_NS +@KERNEL_PID_NS \
 	  +libubox +libubus +libuci +libblobmsg-json
+  PKGFLAGS+=nonshared
   TITLE:=OpenWrt process jail helper
 endef
 
