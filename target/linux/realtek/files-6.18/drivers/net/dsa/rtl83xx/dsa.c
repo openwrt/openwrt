@@ -80,7 +80,7 @@ static void rtldsa_83xx_mc_pmasks_setup(struct rtl838x_switch_priv *priv)
 /* Initialize all VLANS */
 static void rtldsa_vlan_setup(struct rtl838x_switch_priv *priv)
 {
-	struct rtl838x_vlan_info info = {
+	struct rtldsa_vlan_info info = {
 		.l2_tunnel_list_id = -1,
 	};
 
@@ -1522,7 +1522,7 @@ static int rtldsa_vlan_filtering(struct dsa_switch *ds, int port,
 static int rtldsa_vlan_prepare(struct dsa_switch *ds, int port,
 			       const struct switchdev_obj_port_vlan *vlan)
 {
-	struct rtl838x_vlan_info info;
+	struct rtldsa_vlan_info info;
 	struct rtl838x_switch_priv *priv = ds->priv;
 
 	priv->r->vlan_tables_read(0, &info);
@@ -1548,7 +1548,7 @@ static int rtldsa_vlan_add(struct dsa_switch *ds, int port,
 			   const struct switchdev_obj_port_vlan *vlan,
 			   struct netlink_ext_ack *extack)
 {
-	struct rtl838x_vlan_info info;
+	struct rtldsa_vlan_info info;
 	struct rtl838x_switch_priv *priv = ds->priv;
 	int err;
 
@@ -1620,7 +1620,7 @@ static int rtldsa_vlan_add(struct dsa_switch *ds, int port,
 static int rtldsa_vlan_del(struct dsa_switch *ds, int port,
 			   const struct switchdev_obj_port_vlan *vlan)
 {
-	struct rtl838x_vlan_info info;
+	struct rtldsa_vlan_info info;
 	struct rtl838x_switch_priv *priv = ds->priv;
 	u16 pvid;
 
@@ -1701,7 +1701,7 @@ static int rtldsa_vlan_msti_set(struct dsa_switch *ds, struct dsa_bridge bridge,
 				const struct switchdev_vlan_msti *msti)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
-	struct rtl838x_vlan_info info;
+	struct rtldsa_vlan_info info;
 	u16 mst_slot_old;
 	int mst_slot;
 

@@ -345,7 +345,7 @@ static inline int rtl930x_trk_mbr_ctr(int group)
 	return RTL930X_TRK_MBR_CTRL + (group << 2);
 }
 
-static void rtl930x_vlan_tables_read(u32 vlan, struct rtl838x_vlan_info *info)
+static void rtl930x_vlan_tables_read(u32 vlan, struct rtldsa_vlan_info *info)
 {
 	u32 v, w;
 	/* Read VLAN table (1) via register 0 */
@@ -372,7 +372,7 @@ static void rtl930x_vlan_tables_read(u32 vlan, struct rtl838x_vlan_info *info)
 	info->untagged_ports = v >> 3;
 }
 
-static void rtl930x_vlan_set_tagged(u32 vlan, struct rtl838x_vlan_info *info)
+static void rtl930x_vlan_set_tagged(u32 vlan, struct rtldsa_vlan_info *info)
 {
 	u32 v, w;
 	/* Access VLAN table (1) via register 0 */

@@ -224,7 +224,7 @@ inline void rtl839x_exec_tbl2_cmd(u32 cmd)
 	do { } while (sw_r32(RTL839X_TBL_ACCESS_CTRL_2) & (1 << 9));
 }
 
-static void rtl839x_vlan_tables_read(u32 vlan, struct rtl838x_vlan_info *info)
+static void rtl839x_vlan_tables_read(u32 vlan, struct rtldsa_vlan_info *info)
 {
 	u32 u, v, w;
 	/* Read VLAN table (0) via register 0 */
@@ -254,7 +254,7 @@ static void rtl839x_vlan_tables_read(u32 vlan, struct rtl838x_vlan_info *info)
 	info->untagged_ports = (info->untagged_ports << 21) | ((v >> 11) & 0x1fffff);
 }
 
-static void rtl839x_vlan_set_tagged(u32 vlan, struct rtl838x_vlan_info *info)
+static void rtl839x_vlan_set_tagged(u32 vlan, struct rtldsa_vlan_info *info)
 {
 	u32 u, v, w;
 	/* Access VLAN table (0) via register 0 */

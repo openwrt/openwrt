@@ -206,7 +206,7 @@ static inline int rtl838x_port_iso_ctrl(int p)
 	return RTL838X_PORT_ISO_CTRL(p);
 }
 
-static void rtl838x_vlan_tables_read(u32 vlan, struct rtl838x_vlan_info *info)
+static void rtl838x_vlan_tables_read(u32 vlan, struct rtldsa_vlan_info *info)
 {
 	u32 v;
 	/* Read VLAN table (0) via register 0 */
@@ -230,7 +230,7 @@ static void rtl838x_vlan_tables_read(u32 vlan, struct rtl838x_vlan_info *info)
 	rtl_table_release(r);
 }
 
-static void rtl838x_vlan_set_tagged(u32 vlan, struct rtl838x_vlan_info *info)
+static void rtl838x_vlan_set_tagged(u32 vlan, struct rtldsa_vlan_info *info)
 {
 	u32 v;
 	/* Access VLAN table (0) via register 0 */

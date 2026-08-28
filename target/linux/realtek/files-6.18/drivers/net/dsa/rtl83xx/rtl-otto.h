@@ -1008,7 +1008,7 @@ struct rtldsa_port {
 	const struct dsa_port *dp;
 };
 
-struct rtl838x_vlan_info {
+struct rtldsa_vlan_info {
 	u64 untagged_ports;
 	u64 member_ports;
 	u8 profile_id;
@@ -1349,8 +1349,8 @@ struct rtldsa_config {
 	int trk_ctrl;
 	int trk_hash_ctrl;
 	int spanning_tree_ctrl;
-	void (*vlan_tables_read)(u32 vlan, struct rtl838x_vlan_info *info);
-	void (*vlan_set_tagged)(u32 vlan, struct rtl838x_vlan_info *info);
+	void (*vlan_tables_read)(u32 vlan, struct rtldsa_vlan_info *info);
+	void (*vlan_set_tagged)(u32 vlan, struct rtldsa_vlan_info *info);
 	void (*vlan_set_untagged)(u32 vlan, u64 portmask);
 	int (*vlan_profile_get)(int index, struct rtldsa_vlan_profile *profile);
 	void (*vlan_profile_dump)(struct rtl838x_switch_priv *priv, int index);

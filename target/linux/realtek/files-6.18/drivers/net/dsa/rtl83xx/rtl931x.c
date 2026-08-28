@@ -287,7 +287,7 @@ static inline int rtldsa_931x_trk_mbr_ctr(int group)
 	return RTL931X_TRK_MBR_CTRL + (group << 3);
 }
 
-static void rtl931x_vlan_tables_read(u32 vlan, struct rtl838x_vlan_info *info)
+static void rtl931x_vlan_tables_read(u32 vlan, struct rtldsa_vlan_info *info)
 {
 	u32 v, w, x, y;
 	/* Read VLAN table (3) via register 0 */
@@ -325,7 +325,7 @@ static void rtl931x_vlan_tables_read(u32 vlan, struct rtl838x_vlan_info *info)
 	rtl_table_release(r);
 }
 
-static void rtl931x_vlan_set_tagged(u32 vlan, struct rtl838x_vlan_info *info)
+static void rtl931x_vlan_set_tagged(u32 vlan, struct rtldsa_vlan_info *info)
 {
 	struct table_reg *r;
 	u32 v, w, x, y;
