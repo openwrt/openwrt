@@ -1,0 +1,29 @@
+From 265bfc98118791daeb6cbc1e1e83ac30b3df7e99 Mon Sep 17 00:00:00 2001
+From: Chukun Pan <amadeus@jmu.edu.cn>
+Date: Fri, 28 Aug 2026 16:00:00 +0800
+Subject: clk: qcom: gcc-ipq6018: enable NSS crypto parent during rate change
+
+The only parent clock for nss_crypto_clk_src is nss_crypto_pll_main.
+This parent PLL does not run until the PPE driver enables its clock.
+This results in a warning when clk_set_rate(nss_crypto_clk_src):
+
+  nss_crypto_clk_src: rcg didn't update its configuration.
+
+Enable the new parent by adding CLK_OPS_PARENT_ENABLE.
+
+Assisted-by: deepseek-harness:deepseek-v4-flash
+Signed-off-by: Chukun Pan <amadeus@jmu.edu.cn>
+---
+ drivers/clk/qcom/gcc-ipq6018.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/clk/qcom/gcc-ipq6018.c
++++ b/drivers/clk/qcom/gcc-ipq6018.c
+@@ -971,6 +971,7 @@ static struct clk_rcg2 nss_crypto_clk_sr
+ 		.name = "nss_crypto_clk_src",
+ 		.parent_data = gcc_xo_nss_crypto_pll_gpll0,
+ 		.num_parents = 3,
++		.flags = CLK_OPS_PARENT_ENABLE,
+ 		.ops = &clk_rcg2_ops,
+ 	},
+ };
