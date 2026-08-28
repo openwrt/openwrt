@@ -42,6 +42,19 @@ define Device/jiuzhou_en7526gt
 endef
 TARGET_DEVICES += jiuzhou_en7526gt
 
+define Device/nokia_g140w-f
+  $(Device/tcboot_trx)
+  DEVICE_VENDOR := Nokia
+  DEVICE_MODEL := G-140W-F
+  DEVICE_DTS := en751221_nokia_g140w-f
+  # Free bootbase jump 80020000 runs the raw kernel; no uImage header.
+  KERNEL_INITRAMFS := kernel-bin | append-dtb
+  IMAGES := tclinux.trx
+  IMAGE/tclinux.trx := append-kernel | lzma | tclinux-trx
+  DEVICE_PACKAGES := tcpdump ethtool ip-full i2c-tools
+endef
+TARGET_DEVICES += nokia_g140w-f
+
 define Device/genexis_platinum-4410
   $(Device/tcboot_trx)
   DEVICE_VENDOR := Genexis
