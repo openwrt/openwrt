@@ -334,16 +334,27 @@ Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
  static __init int realtek_add_initrd(void *fdt)
  {
  	int node, err;
-@@ -55,6 +361,8 @@ static __init const void *realtek_fixup_
+@@ -55,6 +361,19 @@ static __init const void *realtek_fixup_
  	static unsigned char fdt_buf[16 << 10] __initdata;
  	int err;
  
++	/*
++	 * The RTL9607C PCIe controller has 2 io regions, with the 2nd one
++	 * being at an offset from the 1st one. This does not work with
++	 * MIPS specific pci_remap_iospace() as it expects the region start
++	 * address to be 0, which is not the case for 2nd io region of
++	 * RTL9607C PCIe controller. Thus set the io port base to KSEG1,
++	 * a common base for majority of MIPS platforms, for the generic
++	 * pci_remap_iospace() to work here.
++	 */
++	set_io_port_base(KSEG1);
++
 +	realtek_prom_init(match_data);
 +
  	if (fdt_check_header(fdt))
  		panic("Corrupt DT");
  
-@@ -68,12 +376,76 @@ static __init const void *realtek_fixup_
+@@ -68,12 +387,76 @@ static __init const void *realtek_fixup_
  
  }
  
