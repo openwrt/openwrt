@@ -1,0 +1,142 @@
+#!/bin/sh
+
+set -eu
+
+usage() {
+cat <<'USAGE'
+Usage: er12-netmode stock|safe|all [--no-reload]
+
+Modes:
+  stock - stock-like split: LAN on br-lan (switch0), WAN on lan8, WANB on lan9
+  safe  - same as stock, explicit management-safe baseline
+  all   - bridge all front paths: switch0 + lan8 + lan9 + lan10 + lan11
+USAGE
+}
+
+board_id() {
+	jsonfilter -i /etc/board.json -e '@.model.id' 2>/dev/null || true
+}
+
+ensure_er12() {
+	[ "$(board_id)" = "ubnt,edgerouter-12" ] || {
+		echo "er12-netmode: unsupported board ($(board_id))" >&2
+		exit 1
+	}
+}
+
+ensure_iface() {
+	local ifname="$1"
+	local proto="$2"
+	local dev="$3"
+
+	if ! uci -q get "network.${ifname}" >/dev/null 2>&1; then
+		uci set "network.${ifname}=interface"
+	fi
+
+	uci set "network.${ifname}.proto=${proto}"
+	uci set "network.${ifname}.device=${dev}"
+}
+
+set_bridge_dev() {
+	local name="$1"
+	shift
+
+	uci -q delete "network.${name}" || true
+	uci set "network.${name}=device"
+	uci set "network.${name}.name=${name}"
+	uci set "network.${name}.type=bridge"
+
+	while [ "$#" -gt 0 ]; do
+		uci add_list "network.${name}.ports=$1"
+		shift
+	done
+}
+
+mode_stock_like() {
+	# Stock behavior keeps switch0 as the underlying LAN port via br-lan.
+	uci -q delete network.switch0dev || true
+	uci -q delete network.lan_all || true
+
+	set_bridge_dev br-lan switch0
+	ensure_iface lan static br-lan
+	uci -q delete network.lan.type || true
+	ensure_iface wan dhcp lan8
+	ensure_iface wanb dhcp lan9
+	ensure_iface sfp0 none lan10
+	ensure_iface sfp1 none lan11
+
+	uci -q delete network.wan.auto || true
+	uci -q delete network.wanb.auto || true
+	uci set network.wanb.metric='20'
+	uci set network.sfp0.auto='0'
+	uci set network.sfp1.auto='0'
+
+	# Keep LAN IPv6 enabled in stock mode.
+	uci -q delete network.lan.ipv6 || true
+	uci set network.lan.ip6assign='60'
+	uci -q delete network.lan.delegate || true
+
+	if uci -q get network.br-lan >/dev/null 2>&1; then
+		uci -q delete network.br-lan.ipv6
+	fi
+	if uci -q get network.switch0 >/dev/null 2>&1; then
+		uci -q delete network.switch0.ipv6
+	fi
+
+	if uci -q get dhcp.lan >/dev/null 2>&1; then
+		uci set dhcp.lan.dhcpv6='server'
+		uci set dhcp.lan.ra='server'
+		uci set dhcp.lan.ndp='disabled'
+	fi
+	if uci -q get dhcp.odhcpd >/dev/null 2>&1; then
+		uci -q delete dhcp.odhcpd.disabled || true
+	fi
+}
+
+mode_all() {
+	set_bridge_dev lan_all switch0 lan8 lan9 lan10 lan11
+
+	ensure_iface lan static lan_all
+	ensure_iface wan none lan8
+	ensure_iface wanb none lan9
+	ensure_iface sfp0 none lan10
+	ensure_iface sfp1 none lan11
+
+	uci set network.wan.auto='0'
+	uci set network.wanb.auto='0'
+	uci set network.sfp0.auto='0'
+	uci set network.sfp1.auto='0'
+}
+
+[ "$#" -ge 1 ] || {
+	usage
+	exit 1
+}
+
+mode="$1"
+shift
+
+reload_network=1
+if [ "${1:-}" = "--no-reload" ]; then
+	reload_network=0
+fi
+
+ensure_er12
+
+case "$mode" in
+	stock|safe) mode_stock_like ;;
+	all) mode_all ;;
+	*)
+		usage
+		exit 1
+		;;
+esac
+
+uci commit network
+uci commit dhcp
+
+if [ "$reload_network" -eq 1 ]; then
+	/etc/init.d/network reload || /etc/init.d/network restart
+fi
+
+exit 0
