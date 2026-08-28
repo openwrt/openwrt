@@ -1,0 +1,45 @@
+From: Giuliano <giuliano@stilotecnica.it>
+Subject: [PATCH] ipq806x: qca8k: add poll timeout after software reset
+
+During a warm restart of the network stack (e.g., /etc/init.d/network restart),
+the qca8k driver triggers a software reset on the QCA8337 switch via MDIO.
+Currently, the driver issues the reset bit without waiting for the hardware 
+to finish the internal reset procedure. 
+
+This causes a race condition where netifd/DSA attempts to re-initialize 
+the bridge (br-lan) before the switch registers are ready, resulting in 
+failed IP netmask setup (falling back to /32) and link-flapping loops.
+
+Fix this by adding a polling loop using read_poll_timeout() to wait until
+the QCA8K_CTRL_RESET bit is cleared by hardware before proceeding.
+
+Signed-off-by: Giuliano <giuliano@stilotecnica.it>
+---
+
+--- a/drivers/net/dsa/qca/qca8k-common.c
++++ b/drivers/net/dsa/qca/qca8k-common.c
+@@ -9,6 +9,7 @@
+ #include <linux/module.h>
+ #include <linux/regmap.h>
+ #include <linux/phy.h>
++#include <linux/iopoll.h>
+ #include <net/dsa.h>
+
+ #include "qca8k.h"
+@@ -21,6 +22,19 @@ int qca8k_sw_reset(struct qca8k_priv *pr
+ 	/* disable switch reset by reg */
+ 	qca8k_rmw(priv, QCA8K_REG_MASK_CTRL, QCA8K_CTRL_RESET, QCA8K_CTRL_RESET);
+
++	/* Wait for software reset to complete (bit cleared by hardware)
++	 * Poll every 1000us (1ms) up to 100000us (100ms)
++	 */
++	ret = read_poll_timeout(qca8k_read, val,
++				!(val & QCA8K_CTRL_RESET),
++				1000, 100000, false, priv, QCA8K_REG_MASK_CTRL);
++	if (ret) {
++		pr_err("qca8k: software reset timeout\n");
++		return ret;
++	}
+
+ 	return 0;
+ }
