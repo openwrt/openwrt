@@ -189,6 +189,16 @@
 		partition@6d80000 {
 			label = "bosa";
 			reg = <0x6d80000 0x40000>;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				cal_l98: cal@800 {
+					reg = <0x0 0x800>
+				};
+			};
 		};
 
 		partition@6dc0000 {
@@ -232,6 +242,8 @@
 		compatible = "semtech,gn25l98";
 		reg = <0x51>;
 
+		nvmem-cells = <&cal_l98>;
+		nvmem-cell-names = "calibration";
 		tx-disable-gpios = <&pinctrl 16 GPIO_ACTIVE_HIGH>;
 
 		#optical-frontend-cells = <0>;
