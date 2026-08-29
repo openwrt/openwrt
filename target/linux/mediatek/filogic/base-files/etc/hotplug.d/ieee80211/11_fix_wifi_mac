@@ -243,6 +243,9 @@ case "$board" in
 		addr=$(mtd_get_mac_binary "Factory" 0x4)
 		[ "$PHYNBR" = "1" ] && macaddr_add $addr 1 > /sys${DEVPATH}/macaddress
 		;;
+	ruijie,rg-ew6000gx-pro)
+		[ "$PHYNBR" = "1" ] && macaddr_setbit_la $(macaddr_add $(get_mac_label) 0xb00002) > /sys${DEVPATH}/macaddress
+		;;
 	ruijie,rg-x60-pro)
 		addr=$(mtd_get_mac_ascii product_info ethaddr)
 		[ "$PHYNBR" = "0" ] && macaddr_add $addr 2 > /sys${DEVPATH}/macaddress
