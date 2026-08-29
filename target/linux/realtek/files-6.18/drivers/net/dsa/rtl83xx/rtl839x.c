@@ -224,7 +224,7 @@ inline void rtl839x_exec_tbl2_cmd(u32 cmd)
 	do { } while (sw_r32(RTL839X_TBL_ACCESS_CTRL_2) & (1 << 9));
 }
 
-static void rtl839x_vlan_tables_read(u32 vlan, struct rtl838x_vlan_info *info)
+static void rtl839x_vlan_tables_read(u32 vlan, struct rtldsa_vlan_info *info)
 {
 	u32 u, v, w;
 	/* Read VLAN table (0) via register 0 */
@@ -254,7 +254,7 @@ static void rtl839x_vlan_tables_read(u32 vlan, struct rtl838x_vlan_info *info)
 	info->untagged_ports = (info->untagged_ports << 21) | ((v >> 11) & 0x1fffff);
 }
 
-static void rtl839x_vlan_set_tagged(u32 vlan, struct rtl838x_vlan_info *info)
+static void rtl839x_vlan_set_tagged(u32 vlan, struct rtldsa_vlan_info *info)
 {
 	u32 u, v, w;
 	/* Access VLAN table (0) via register 0 */
@@ -1673,9 +1673,9 @@ const struct rtldsa_config rtldsa_839x_cfg = {
 	.port_iso_ctrl = rtl839x_port_iso_ctrl,
 	.l2_ctrl_0 = RTL839X_L2_CTRL_0,
 	.l2_ctrl_1 = RTL839X_L2_CTRL_1,
+	.self_mac_trap_ctrl = RTL839X_SPCL_TRAP_SWITCH_MAC_CTRL,
 	.l2_port_aging_out = RTL839X_L2_PORT_AGING_OUT,
 	.set_ageing_time = rtl839x_set_ageing_time,
-	.smi_poll_ctrl = RTL839X_SMI_PORT_POLLING_CTRL,
 	.l2_tbl_flush_ctrl = RTL839X_L2_TBL_FLUSH_CTRL,
 	.isr_glb_src = RTL839X_ISR_GLB_SRC,
 	.isr_port_link_sts_chg = RTL839X_ISR_PORT_LINK_STS_CHG,
@@ -1703,6 +1703,7 @@ const struct rtldsa_config rtldsa_839x_cfg = {
 	.set_static_move_action = rtl839x_set_static_move_action,
 	.stp_get = rtldsa_839x_stp_get,
 	.stp_set = rtl839x_stp_set,
+	.mac_force_mode_mask = RTL83XX_FORCE_EN | RTL83XX_FORCE_LINK_EN,
 	.mac_force_mode_ctrl = rtl839x_mac_force_mode_ctrl,
 	.mac_link_sts = RTL839X_MAC_LINK_STS,
 	.mac_port_ctrl = rtl839x_mac_port_ctrl,
@@ -1733,6 +1734,8 @@ const struct rtldsa_config rtldsa_839x_cfg = {
 	.packet_cntr_read = rtl839x_packet_cntr_read,
 	.packet_cntr_clear = rtl839x_packet_cntr_clear,
 	.set_receive_management_action = rtl839x_set_receive_management_action,
+	.get_egress_rate = rtldsa_839x_get_egress_rate,
+	.set_egress_rate = rtldsa_839x_set_egress_rate,
 	.qos_init = rtldsa_839x_qos_init,
 	.lag_set_distribution_algorithm = rtldsa_839x_set_distribution_algorithm,
 	.lag_set_port_members = rtldsa_839x_lag_set_port_members,

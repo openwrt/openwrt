@@ -141,6 +141,7 @@
 #define RTMD_839X_PHYREG_PORT_CTRL(x)		(0x03e4 + (x) * 4)
 #define RTMD_839X_SMI_PORT_POLLING_CTRL		0x03fc
 #define RTMD_839X_SMI_GLB_CTRL			0x03f8
+#define   RTMD_839X_SMI_GLB_MDX_POLLING_EN	BIT(7)
 
 #define RTMD_930X_SMI_GLB_CTRL			0xca00
 #define   RTMD_930X_SMI_GLB_INTF_SEL(bus)	BIT(16 + (bus))
@@ -788,6 +789,13 @@ static int rtmd_838x_setup_polling(struct rtmd_ctrl *ctrl)
 				  test_bit(24, ctrl->phy_ports));
 }
 
+static int rtmd_839x_setup_polling(struct rtmd_ctrl *ctrl)
+{
+	/* This is the only device that has a global polling enable bit */
+	return regmap_set_bits(ctrl->map, RTMD_839X_SMI_GLB_CTRL,
+			       RTMD_839X_SMI_GLB_MDX_POLLING_EN);
+}
+
 static int rtmd_930x_setup_ctrl(struct rtmd_ctrl *ctrl)
 {
 	int ret;
@@ -1180,6 +1188,7 @@ static const struct rtmd_config rtmd_839x_cfg = {
 	.poll_ctrl	= RTMD_839X_SMI_PORT_POLLING_CTRL,
 	.read_c22	= rtmd_839x_read_c22,
 	.read_c45	= rtmd_839x_read_c45,
+	.setup_polling	= rtmd_839x_setup_polling,
 	.write_c22	= rtmd_839x_write_c22,
 	.write_c45	= rtmd_839x_write_c45,
 };

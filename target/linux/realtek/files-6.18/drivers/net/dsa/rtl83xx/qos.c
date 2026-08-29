@@ -42,7 +42,7 @@ static void rtl839x_read_out_q_table(int port)
 	rtl839x_exec_tbl2_cmd(cmd);
 }
 
-u32 rtl838x_get_egress_rate(struct rtl838x_switch_priv *priv, int port)
+u32 rtldsa_838x_get_egress_rate(struct rtl838x_switch_priv *priv, int port)
 {
 	if (port > priv->r->cpu_port)
 		return 0;
@@ -51,7 +51,7 @@ u32 rtl838x_get_egress_rate(struct rtl838x_switch_priv *priv, int port)
 }
 
 /* Sets the rate limit, 10MBit/s is equal to a rate value of 625 */
-int rtl838x_set_egress_rate(struct rtl838x_switch_priv *priv, int port, u32 rate)
+int rtldsa_838x_set_egress_rate(struct rtl838x_switch_priv *priv, int port, u32 rate)
 {
 	u32 old_rate;
 
@@ -65,11 +65,10 @@ int rtl838x_set_egress_rate(struct rtl838x_switch_priv *priv, int port, u32 rate
 }
 
 /* Sets the rate limit, 10MBit/s is equal to a rate value of 625 */
-u32 rtl839x_get_egress_rate(struct rtl838x_switch_priv *priv, int port)
+u32 rtldsa_839x_get_egress_rate(struct rtl838x_switch_priv *priv, int port)
 {
 	u32 rate;
 
-	pr_debug("%s: Getting egress rate on port %d to %d\n", __func__, port, rate);
 	if (port >= priv->r->cpu_port)
 		return 0;
 
@@ -82,12 +81,13 @@ u32 rtl839x_get_egress_rate(struct rtl838x_switch_priv *priv, int port)
 	rate |= sw_r32(RTL839X_TBL_ACCESS_DATA_2(8)) >> 20;
 
 	mutex_unlock(&priv->reg_mutex);
+	pr_debug("%s: Getting egress rate on port %d is %d\n", __func__, port, rate);
 
 	return rate;
 }
 
 /* Sets the rate limit, 10MBit/s is equal to a rate value of 625, returns previous rate */
-int rtl839x_set_egress_rate(struct rtl838x_switch_priv *priv, int port, u32 rate)
+int rtldsa_839x_set_egress_rate(struct rtl838x_switch_priv *priv, int port, u32 rate)
 {
 	u32 old_rate;
 
@@ -212,7 +212,7 @@ static void rtl839x_set_scheduling_algorithm(struct rtl838x_switch_priv *priv, i
 		sw_w32(0x2, RTL839X_OAM_PORT_ACT_CTRL(port));
 
 		/* Set port egress rate to unlimited */
-		egress_rate = rtl839x_set_egress_rate(priv, port, 0xFFFFF);
+		egress_rate = rtldsa_839x_set_egress_rate(priv, port, 0xFFFFF);
 
 		/* Wait until the egress used page count of that port is 0 */
 		i = 0;
@@ -238,7 +238,7 @@ static void rtl839x_set_scheduling_algorithm(struct rtl838x_switch_priv *priv, i
 		sw_w32(oam_port_state, RTL839X_OAM_PORT_ACT_CTRL(port));
 
 		/* Restore port egress rate */
-		rtl839x_set_egress_rate(priv, port, egress_rate);
+		rtldsa_839x_set_egress_rate(priv, port, egress_rate);
 	}
 
 	mutex_unlock(&priv->reg_mutex);

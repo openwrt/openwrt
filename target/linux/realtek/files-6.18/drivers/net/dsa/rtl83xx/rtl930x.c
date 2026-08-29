@@ -345,7 +345,7 @@ static inline int rtl930x_trk_mbr_ctr(int group)
 	return RTL930X_TRK_MBR_CTRL + (group << 2);
 }
 
-static void rtl930x_vlan_tables_read(u32 vlan, struct rtl838x_vlan_info *info)
+static void rtl930x_vlan_tables_read(u32 vlan, struct rtldsa_vlan_info *info)
 {
 	u32 v, w;
 	/* Read VLAN table (1) via register 0 */
@@ -372,7 +372,7 @@ static void rtl930x_vlan_tables_read(u32 vlan, struct rtl838x_vlan_info *info)
 	info->untagged_ports = v >> 3;
 }
 
-static void rtl930x_vlan_set_tagged(u32 vlan, struct rtl838x_vlan_info *info)
+static void rtl930x_vlan_set_tagged(u32 vlan, struct rtldsa_vlan_info *info)
 {
 	u32 v, w;
 	/* Access VLAN table (1) via register 0 */
@@ -2235,7 +2235,6 @@ const struct rtldsa_config rtldsa_930x_cfg = {
 	.l2_ctrl_1 = RTL930X_L2_AGE_CTRL,
 	.l2_port_aging_out = RTL930X_L2_PORT_AGE_CTRL,
 	.set_ageing_time = rtl930x_set_ageing_time,
-	.smi_poll_ctrl = RTL930X_SMI_POLL_CTRL, /* TODO: Difference to RTL9300_SMI_PRVTE_POLLING_CTRL */
 	.l2_tbl_flush_ctrl = RTL930X_L2_TBL_FLUSH_CTRL,
 	.isr_glb_src = RTL930X_ISR_GLB,
 	.isr_port_link_sts_chg = RTL930X_ISR_PORT_LINK_STS_CHG,
@@ -2256,6 +2255,7 @@ const struct rtldsa_config rtldsa_930x_cfg = {
 	.stp_get = rtldsa_930x_stp_get,
 	.stp_set = rtl930x_stp_set,
 	.mac_link_sts = RTL930X_MAC_LINK_STS,
+	.mac_force_mode_mask = RTL930X_FORCE_EN | RTL930X_FORCE_LINK_EN,
 	.mac_force_mode_ctrl = rtl930x_mac_force_mode_ctrl,
 	.mac_port_ctrl = rtl930x_mac_port_ctrl,
 	.l2_port_new_salrn = rtl930x_l2_port_new_salrn,

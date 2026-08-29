@@ -287,7 +287,7 @@ static inline int rtldsa_931x_trk_mbr_ctr(int group)
 	return RTL931X_TRK_MBR_CTRL + (group << 3);
 }
 
-static void rtl931x_vlan_tables_read(u32 vlan, struct rtl838x_vlan_info *info)
+static void rtl931x_vlan_tables_read(u32 vlan, struct rtldsa_vlan_info *info)
 {
 	u32 v, w, x, y;
 	/* Read VLAN table (3) via register 0 */
@@ -325,7 +325,7 @@ static void rtl931x_vlan_tables_read(u32 vlan, struct rtl838x_vlan_info *info)
 	rtl_table_release(r);
 }
 
-static void rtl931x_vlan_set_tagged(u32 vlan, struct rtl838x_vlan_info *info)
+static void rtl931x_vlan_set_tagged(u32 vlan, struct rtldsa_vlan_info *info)
 {
 	struct table_reg *r;
 	u32 v, w, x, y;
@@ -2003,7 +2003,6 @@ const struct rtldsa_config rtldsa_931x_cfg = {
 	.l2_ctrl_1 = RTL931X_L2_AGE_CTRL,
 	.l2_port_aging_out = RTL931X_L2_PORT_AGE_CTRL,
 	.set_ageing_time = rtl931x_set_ageing_time,
-	.smi_poll_ctrl = RTL931X_SMI_PORT_POLLING_CTRL,
 	.l2_tbl_flush_ctrl = RTL931X_L2_TBL_FLUSH_CTRL,
 	.isr_glb_src = RTL931X_ISR_GLB_SRC,
 	.isr_port_link_sts_chg = RTL931X_ISR_PORT_LINK_STS_CHG,
@@ -2021,6 +2020,7 @@ const struct rtldsa_config rtldsa_931x_cfg = {
 	.vlan_fwd_on_inner = rtl931x_vlan_fwd_on_inner,
 	.stp_get = rtldsa_931x_stp_get,
 	.stp_set = rtl931x_stp_set,
+	.mac_force_mode_mask = RTL931X_FORCE_EN | RTL931X_FORCE_LINK_EN,
 	.mac_force_mode_ctrl = rtl931x_mac_force_mode_ctrl,
 	.mac_link_sts = RTL931X_MAC_LINK_STS,
 	.mac_port_ctrl = rtl931x_mac_port_ctrl,

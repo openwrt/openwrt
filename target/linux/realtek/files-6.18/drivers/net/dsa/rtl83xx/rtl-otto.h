@@ -570,17 +570,7 @@
 #define RTL931X_ISR_GLB_SRC			(0x12B4)
 #define RTL931X_ISR_PORT_LINK_STS_CHG		(0x12B8)
 
-/*
- * MDIO via Realtek's SMI interface
- */
-#define RTL838X_SMI_GLB_CTRL			(0xa100)
-#define RTL838X_SMI_POLL_CTRL			(0xa17c)
-
-#define RTL839X_SMI_GLB_CTRL			(0x03f8)
-#define RTL839X_SMI_PORT_POLLING_CTRL		(0x03fc)
-
-#define RTL930X_SMI_POLL_CTRL			(0xca90)
-#define RTL931X_SMI_PORT_POLLING_CTRL		(0x0CCC)
+#define RTL838X_SMI_GLB_CTRL			(0xa100) /* used by RTL838x EEE setup */
 
 #define RTL838X_LED_GLB_CTRL			(0xA000)
 #define RTL839X_LED_GLB_CTRL			(0x00E4)
@@ -1018,7 +1008,7 @@ struct rtldsa_port {
 	const struct dsa_port *dp;
 };
 
-struct rtl838x_vlan_info {
+struct rtldsa_vlan_info {
 	u64 untagged_ports;
 	u64 member_ports;
 	u8 profile_id;
@@ -1315,6 +1305,7 @@ struct rtldsa_config {
 	u64 (*get_port_reg_le)(int reg);
 	int stat_port_rst;
 	int stat_rst;
+	void (*stat_init)(struct rtl838x_switch_priv *priv);
 	int stat_port_std_mib;
 	int stat_port_prv_mib;
 	const struct rtldsa_mib_desc *mib_desc;
@@ -1339,7 +1330,8 @@ struct rtldsa_config {
 	void (*traffic_set)(int source, u64 dest_matrix);
 	int l2_ctrl_0;
 	int l2_ctrl_1;
-	int smi_poll_ctrl;
+	bool high_res_l2_age;
+	u32 self_mac_trap_ctrl;
 	u32 l2_port_aging_out;
 	int l2_tbl_flush_ctrl;
 	int isr_glb_src;
@@ -1357,8 +1349,8 @@ struct rtldsa_config {
 	int trk_ctrl;
 	int trk_hash_ctrl;
 	int spanning_tree_ctrl;
-	void (*vlan_tables_read)(u32 vlan, struct rtl838x_vlan_info *info);
-	void (*vlan_set_tagged)(u32 vlan, struct rtl838x_vlan_info *info);
+	void (*vlan_tables_read)(u32 vlan, struct rtldsa_vlan_info *info);
+	void (*vlan_set_tagged)(u32 vlan, struct rtldsa_vlan_info *info);
 	void (*vlan_set_untagged)(u32 vlan, u64 portmask);
 	int (*vlan_profile_get)(int index, struct rtldsa_vlan_profile *profile);
 	void (*vlan_profile_dump)(struct rtl838x_switch_priv *priv, int index);
@@ -1378,6 +1370,7 @@ struct rtldsa_config {
 	int (*stp_get)(struct rtl838x_switch_priv *priv, u16 msti, int port);
 	void (*stp_set)(struct rtl838x_switch_priv *priv, u16 msti, int port, int state);
 	int mac_link_sts;
+	u32 mac_force_mode_mask;
 	int  (*mac_force_mode_ctrl)(int port);
 	int  (*mac_port_ctrl)(int port);
 	int  (*l2_port_new_salrn)(int port);
@@ -1412,6 +1405,8 @@ struct rtldsa_config {
 	void (*packet_cntr_clear)(int counter);
 	void (*set_receive_management_action)(int port, rma_ctrl_t type, action_type_t action);
 	void (*led_init)(struct rtl838x_switch_priv *priv);
+	u32 (*get_egress_rate)(struct rtl838x_switch_priv *priv, int port);
+	int (*set_egress_rate)(struct rtl838x_switch_priv *priv, int port, u32 rate);
 	void (*qos_init)(struct rtl838x_switch_priv *priv);
 	int (*trk_mbr_ctr)(int group);
 	void (*lag_switch_init)(struct rtl838x_switch_priv *priv);
@@ -1625,20 +1620,20 @@ int rtl83xx_setup_tc(struct net_device *dev, enum tc_setup_type type, void *type
 
 /* Port register accessor functions for the RTL839x and RTL931X SoCs */
 void rtl839x_mask_port_reg_be(u64 clear, u64 set, int reg);
-u32 rtl839x_get_egress_rate(struct rtl838x_switch_priv *priv, int port);
+u32 rtldsa_839x_get_egress_rate(struct rtl838x_switch_priv *priv, int port);
 u64 rtl839x_get_port_reg_be(int reg);
 void rtl839x_set_port_reg_be(u64 set, int reg);
 void rtl839x_mask_port_reg_le(u64 clear, u64 set, int reg);
-int rtl839x_set_egress_rate(struct rtl838x_switch_priv *priv, int port, u32 rate);
+int rtldsa_839x_set_egress_rate(struct rtl838x_switch_priv *priv, int port, u32 rate);
 void rtl839x_set_port_reg_le(u64 set, int reg);
 u64 rtl839x_get_port_reg_le(int reg);
 
 /* Port register accessor functions for the RTL838x and RTL930X SoCs */
 void rtl838x_mask_port_reg(u64 clear, u64 set, int reg);
 void rtl838x_set_port_reg(u64 set, int reg);
-u32 rtl838x_get_egress_rate(struct rtl838x_switch_priv *priv, int port);
+u32 rtldsa_838x_get_egress_rate(struct rtl838x_switch_priv *priv, int port);
 u64 rtl838x_get_port_reg(int reg);
-int rtl838x_set_egress_rate(struct rtl838x_switch_priv *priv, int port, u32 rate);
+int rtldsa_838x_set_egress_rate(struct rtl838x_switch_priv *priv, int port, u32 rate);
 
 /* RTL838x-specific */
 u32 rtl838x_hash(struct rtl838x_switch_priv *priv, u64 seed);

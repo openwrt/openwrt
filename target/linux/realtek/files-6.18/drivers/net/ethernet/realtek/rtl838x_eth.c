@@ -52,8 +52,7 @@
 #define RTETH_839X_MAX_FRAME		12288
 #define RTETH_930X_MAX_FRAME		12288
 #define RTETH_931X_MAX_FRAME		12288
-/* TODO: change this to 1568 after fragment handling has been tested in the wild */
-#define SKB_FRAG_SIZE			400
+#define SKB_FRAG_SIZE			1568
 #define SKB_PAD				MAX(32, L1_CACHE_BYTES)
 #define SKB_HEADROOM_FAST		(SKB_PAD + NET_IP_ALIGN)
 #define SKB_HEADROOM_SLOW		SKB_PAD

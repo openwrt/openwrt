@@ -508,7 +508,7 @@ static const struct file_operations rtldsa_vlan_profiles_fops = {
 static int rtldsa_vlan_table_raw_show(struct seq_file *m, void *v)
 {
 	struct rtl838x_switch_priv *priv = m->private;
-	struct rtl838x_vlan_info info;
+	struct rtldsa_vlan_info info;
 
 	if (!priv->r->vlan_tables_read)
 		return -ENOTSUPP;
@@ -551,7 +551,7 @@ static const struct file_operations rtldsa_vlan_table_raw_fops = {
 static int rtldsa_vlan_table_show(struct seq_file *m, void *v)
 {
 	struct rtl838x_switch_priv *priv = m->private;
-	struct rtl838x_vlan_info info;
+	struct rtldsa_vlan_info info;
 
 	if (!priv->r->vlan_tables_read)
 		return -ENOTSUPP;
@@ -632,17 +632,11 @@ static ssize_t port_egress_rate_read(struct file *filp, char __user *buffer, siz
 	struct rtldsa_port *p = filp->private_data;
 	struct dsa_switch *ds = p->dp->ds;
 	struct rtl838x_switch_priv *priv = ds->priv;
-	int value;
+	u32 value;
 
-	if (priv->family_id == RTL8380_FAMILY_ID)
-		value = rtl838x_get_egress_rate(priv, p->dp->index);
-	else
-		value = rtl839x_get_egress_rate(priv, p->dp->index);
+	value = priv->r->get_egress_rate(priv, p->dp->index);
 
-	if (value < 0)
-		return -EINVAL;
-
-	return rtl838x_common_read(buffer, count, ppos, (u32)value);
+	return rtl838x_common_read(buffer, count, ppos, value);
 }
 
 static ssize_t port_egress_rate_write(struct file *filp, const char __user *buffer,
@@ -652,15 +646,13 @@ static ssize_t port_egress_rate_write(struct file *filp, const char __user *buff
 	struct dsa_switch *ds = p->dp->ds;
 	struct rtl838x_switch_priv *priv = ds->priv;
 	u32 value;
-	size_t res = rtl838x_common_write(buffer, count, ppos, &value);
+	ssize_t res;
 
+	res = rtl838x_common_write(buffer, count, ppos, &value);
 	if (res < 0)
 		return res;
 
-	if (priv->family_id == RTL8380_FAMILY_ID)
-		rtl838x_set_egress_rate(priv, p->dp->index, value);
-	else
-		rtl839x_set_egress_rate(priv, p->dp->index, value);
+	priv->r->set_egress_rate(priv, p->dp->index, value);
 
 	return res;
 }
