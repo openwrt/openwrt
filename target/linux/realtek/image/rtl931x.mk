@@ -19,7 +19,7 @@ define Device/hasivo_s1300wp-8xgt-4s-plus
   IMAGE_SIZE := 29696k
   DEVICE_PACKAGES := kmod-phy-realtek kmod-rtc-pcf8563 rtl826x-firmware \
 		     kmod-hasivo-mcu-wdt kmod-hasivo-mcu-sensor kmod-pse-hasivo-hs104 \
-		     kmod-mfd-hasivo-stc8
+		     kmod-mfd-hasivo-stc8 kmod-usb2 kmod-usb-storage
   $(Device/kernel-lzma)
 endef
 TARGET_DEVICES += hasivo_s1300wp-8xgt-4s-plus
