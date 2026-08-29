@@ -1,0 +1,351 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Carlo Szelinsky <github@szelinsky.de>
+Date: Tue, 7 Jul 2026 22:00:00 +0200
+Subject: [PATCH] phy: realtek: usb2: add RTL930X/RTL931X support
+
+Add the RTL930X and RTL931X USB2 PHY compatibles to phy-rtk-usb2, on top
+of the pending phy_reg_desc rework.
+
+The switch SoCs do not use the GUSB2PHYACC protocol of the RTD and
+RTL9607C wrappers. Their EHCI wrapper takes the data byte in bits 7:0 of
+the USB PHY control register, with bits 31:8 preserved, and clocks the
+two address nibbles in on the wrapper command register with VCLM toggled
+high, low, high; the busy flag is bit 9 and the read-back value sits in
+bits 31:24. Both registers are native order. This is added as optional
+read_reg/write_reg hooks on the per variant reg_desc, so the RTD and
+RTL9607C paths are untouched.
+
+The bring-up follows the vendor rtk_gen1_hcd_cs_init(): clear the force
+disconnect bypass in the PHY FM register, set the EHCI wrapper LED blink
+speed bit, run the RTL9310 family calibration flow, and load the per
+family parameter table. The tables are the vendor ones: two writes for
+RTL9300, the 26 entry table for RTL9310, expressed as page0/page1 data so
+the common init path applies them. The RTD specific efuse and toggle
+handling is left off, as the vendor code has none.
+
+Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
+---
+--- a/drivers/phy/realtek/phy-rtk-usb2.c
++++ b/drivers/phy/realtek/phy-rtk-usb2.c
+@@ -17,6 +17,7 @@
+ #include <linux/sys_soc.h>
+ #include <linux/mfd/syscon.h>
+ #include <linux/phy/phy.h>
++#include <linux/iopoll.h>
+ #include <linux/reset.h>
+ #include <linux/usb.h>
+ 
+@@ -67,12 +68,20 @@
+ #define DEFAULT_DC_DISCONNECTION_VALUE (0x6)
+ #define HS_CLK_SELECT BIT(6)
+ 
++struct phy_reg;
++
+ struct phy_reg_desc {
+ 	int vstatus_offset;
+ 	u32 vstatus_busy;
+ 	u32 new_reg_req;
+ 	u32 (*read)(void __iomem *reg);
+ 	void (*write)(u32 val, void __iomem *reg);
++	/*
++	 * Optional replacement for the GUSB2PHYACC based PHY register
++	 * access, for SoCs whose USB wrapper speaks a different protocol.
++	 */
++	int (*read_reg)(struct phy_reg *phy_reg, u8 addr);
++	int (*write_reg)(struct phy_reg *phy_reg, u8 addr, u8 data);
+ };
+ 
+ struct phy_reg {
+@@ -114,6 +123,9 @@ struct phy_cfg {
+ 	bool is_double_sensitivity_mode;
+ 	const struct phy_reg_desc *reg_desc;
+ 	bool force_host_disconnect;
++	bool rtl93xx_bringup;
++	const struct phy_data *bringup_init;
++	int bringup_init_size;
+ };
+ 
+ struct phy_parameter {
+@@ -151,6 +163,16 @@ static void rtk_usb2phy_write(u32 val, v
+ 	writel(val, reg);
+ }
+ 
++static u32 rtk_usb2phy_read_raw(void __iomem *reg)
++{
++	return __raw_readl(reg);
++}
++
++static void rtk_usb2phy_write_raw(u32 val, void __iomem *reg)
++{
++	__raw_writel(val, reg);
++}
++
+ static u32 rtk_usb2phy_read_be(void __iomem *reg)
+ {
+ 	return ioread32be(reg);
+@@ -201,6 +223,9 @@ static char rtk_phy_read(struct phy_reg
+ 
+ 	addr -= OFFEST_PHY_READ;
+ 
++	if (reg_desc->read_reg)
++		return (char)reg_desc->read_reg(phy_reg, addr);
++
+ 	/* polling until VBusy == 0 */
+ 	ret = utmi_wait_register(reg_gusb2phyacc0, reg_desc->vstatus_busy, 0);
+ 	if (ret)
+@@ -234,6 +259,9 @@ static int rtk_phy_write(struct phy_reg
+ 	int shift_bits = phy_reg->vstatus_index * 8;
+ 	int ret = 0;
+ 
++	if (reg_desc->write_reg)
++		return reg_desc->write_reg(phy_reg, addr, data);
++
+ 	/* write data to VStatusOut2 (data output to phy) */
+ 	reg_desc->write((u32)data << shift_bits,
+ 		       reg_wrap_vstatus + reg_desc->vstatus_offset);
+@@ -1023,6 +1051,126 @@ out:
+ 	return 0;
+ }
+ 
++/*
++ * RTL930x/RTL931x USB wrapper.
++ *
++ * The PHY registers are reached through the EHCI wrapper's indirect port,
++ * following the vendor rtk_gen1-res.c: the data byte is merged into bits
++ * 7:0 of the USB PHY control register (bits 31:8 are kept), then the low
++ * and the high address nibble are clocked in on the wrapper command
++ * register with VCLM high, low, high. Both registers are native order.
++ *
++ * The two wrapper registers below sit outside the soc bus range in DT and
++ * are ioremap'd by physical address. TODO: make them reg entries of the
++ * PHY node.
++ */
++#define RTL93XX_EHCI_EXT_CFG1		0x18140200
++#define RTL93XX_EHCI_EXT_CFG1_BS_LED	BIT(8)
++#define RTL93XX_USB_PHY_FM		0x18140210
++#define RTL93XX_USB_PHY_FM_R_FDISCON	BIT(5)
++
++#define RTL93XX_PHY_CMD_PORT0		BIT(21)
++#define RTL93XX_PHY_CMD_VCLM		BIT(20)
++#define RTL93XX_PHY_CMD_VCTL_SHIFT	16
++#define RTL93XX_PHY_CMD_VBUSY		BIT(9)
++#define RTL93XX_PHY_CMD_VSTATUS_SHIFT	24
++
++/* Clock one address nibble into the PHY: VCLM high, low, high. */
++static void rtl93xx_phy_strobe(void __iomem *cmd_reg, u8 nibble)
++{
++	u32 val = RTL93XX_PHY_CMD_PORT0 |
++		  ((u32)nibble << RTL93XX_PHY_CMD_VCTL_SHIFT);
++
++	__raw_writel(val | RTL93XX_PHY_CMD_VCLM, cmd_reg);
++	udelay(1);
++	__raw_writel(val, cmd_reg);
++	udelay(1);
++	__raw_writel(val | RTL93XX_PHY_CMD_VCLM, cmd_reg);
++	udelay(1);
++}
++
++static int rtl93xx_phy_wait(void __iomem *cmd_reg)
++{
++	u32 val;
++
++	return read_poll_timeout(__raw_readl, val,
++				 !(val & RTL93XX_PHY_CMD_VBUSY),
++				 PHY_IO_DELAY_US, PHY_IO_TIMEOUT_USEC, false,
++				 cmd_reg);
++}
++
++static int rtl93xx_phy_write_reg(struct phy_reg *phy_reg, u8 addr, u8 data)
++{
++	void __iomem *data_reg = phy_reg->reg_wrap_vstatus;
++	void __iomem *cmd_reg = phy_reg->reg_gusb2phyacc0;
++	u32 val;
++
++	val = __raw_readl(data_reg);
++	val = (val & ~(u32)PHY_REG_DATA_MASK) | data;
++	__raw_writel(val, data_reg);
++
++	rtl93xx_phy_strobe(cmd_reg, GET_LOW_NIBBLE(addr));
++	rtl93xx_phy_strobe(cmd_reg, GET_HIGH_NIBBLE(addr));
++
++	return rtl93xx_phy_wait(cmd_reg);
++}
++
++static int rtl93xx_phy_read_reg(struct phy_reg *phy_reg, u8 addr)
++{
++	void __iomem *cmd_reg = phy_reg->reg_gusb2phyacc0;
++	int ret;
++
++	rtl93xx_phy_strobe(cmd_reg, GET_LOW_NIBBLE(addr));
++	rtl93xx_phy_strobe(cmd_reg, GET_HIGH_NIBBLE(addr));
++
++	ret = rtl93xx_phy_wait(cmd_reg);
++	if (ret)
++		return ret;
++
++	return (__raw_readl(cmd_reg) >> RTL93XX_PHY_CMD_VSTATUS_SHIFT) &
++	       PHY_REG_DATA_MASK;
++}
++
++/* RTL9310 family calibration flow from the vendor rtk_gen1-res.c */
++static const struct phy_data rtl931x_phy_cali[] = {
++	{ 0xf4, 0x9b }, { 0xe4, 0x6c }, { 0xe7, 0x81 },
++	{ 0xf4, 0xbb }, { 0xe0, 0x21 }, { 0xe0, 0x25 },
++};
++
++static void rtl93xx_phy_bringup(struct rtk_phy *rtk_phy, struct phy_reg *phy_reg)
++{
++	const struct phy_cfg *phy_cfg = rtk_phy->phy_cfg;
++	void __iomem *ext_cfg1, *fm;
++	int i;
++
++	fm = ioremap(RTL93XX_USB_PHY_FM, 4);
++	ext_cfg1 = ioremap(RTL93XX_EHCI_EXT_CFG1, 4);
++	if (!fm || !ext_cfg1) {
++		dev_err(rtk_phy->dev, "failed to map USB wrapper registers\n");
++		goto out;
++	}
++
++	/* Do not bypass the PHY disconnect detection */
++	__raw_writel(__raw_readl(fm) & ~RTL93XX_USB_PHY_FM_R_FDISCON, fm);
++	/* USB LED blink speed, set unconditionally by the vendor */
++	__raw_writel(__raw_readl(ext_cfg1) | RTL93XX_EHCI_EXT_CFG1_BS_LED,
++		     ext_cfg1);
++
++	for (i = 0; i < phy_cfg->bringup_init_size; i++) {
++		const struct phy_data *pd = &phy_cfg->bringup_init[i];
++
++		if (rtl93xx_phy_write_reg(phy_reg, pd->addr, pd->data))
++			dev_err(rtk_phy->dev, "PHY init write 0x%02x failed\n",
++				pd->addr);
++	}
++
++out:
++	if (fm)
++		iounmap(fm);
++	if (ext_cfg1)
++		iounmap(ext_cfg1);
++}
++
+ static int parse_phy_data(struct rtk_phy *rtk_phy)
+ {
+ 	struct phy_cfg *phy_cfg = rtk_phy->phy_cfg;
+@@ -1045,6 +1193,9 @@ static int parse_phy_data(struct rtk_phy
+ 		phy_parameter->phy_reg.vstatus_index = index;
+ 		phy_parameter->phy_reg.desc = phy_cfg->reg_desc;
+ 
++		if (phy_cfg->rtl93xx_bringup)
++			rtl93xx_phy_bringup(rtk_phy, &phy_parameter->phy_reg);
++
+ 		if (of_property_read_bool(np, "realtek,inverse-hstx-sync-clock"))
+ 			phy_parameter->inverse_hstx_sync_clock = true;
+ 		else
+@@ -1151,6 +1302,14 @@ static const struct phy_reg_desc rtl9607
+ 	.write = rtk_usb2phy_write_be,
+ };
+ 
++static const struct phy_reg_desc rtl93xx_phy_reg_desc = {
++	.vstatus_offset = 0,
++	.read = rtk_usb2phy_read_raw,
++	.write = rtk_usb2phy_write_raw,
++	.read_reg = rtl93xx_phy_read_reg,
++	.write_reg = rtl93xx_phy_write_reg,
++};
++
+ static const struct phy_cfg rtd1295_phy_cfg = {
+ 	.page0_size = MAX_USB_PHY_PAGE0_DATA_SIZE,
+ 	.page0 = { [0] = {0xe0, 0x90},
+@@ -1407,6 +1566,49 @@ static const struct phy_cfg rtl9607_phy_
+ 	.force_host_disconnect = true,
+ };
+ 
++/* Parameter tables from the vendor rtk_gen1-res.c, per SoC family */
++static const struct phy_cfg rtl930x_phy_cfg = {
++	.page0_size = MAX_USB_PHY_PAGE0_DATA_SIZE,
++	.page0 = { [5] = {0xe5, 0xf2}, },
++	.page1_size = 8,
++	.num_phy = 1,
++	.reg_desc = &rtl93xx_phy_reg_desc,
++	.rtl93xx_bringup = true,
++};
++
++static const struct phy_cfg rtl931x_phy_cfg = {
++	.page0_size = MAX_USB_PHY_PAGE0_DATA_SIZE,
++	.page0 = { [0] = {0xe0, 0x92},
++		   [1] = {0xe1, 0x30},
++		   [2] = {0xe2, 0xda},
++		   [3] = {0xe3, 0x4d},
++		   [4] = {0xe4, 0x84},
++		   [5] = {0xe5, 0x65},
++		   [6] = {0xe6, 0x01},
++		   [7] = {0xe7, 0xa1},
++		   [8] = {0xf0, 0xfc},
++		   [9] = {0xf1, 0x8c},
++		   [10] = {0xf2, 0x00},
++		   [11] = {0xf3, 0x11},
++		   [13] = {0xf5, 0x95},
++		   [14] = {0xf6, 0x00},
++		   [15] = {0xf7, 0x0a}, },
++	.page1_size = 8,
++	.page1 = { [0] = {0xe0, 0x25},
++		   [1] = {0xe1, 0xef},
++		   [2] = {0xe2, 0x60},
++		   [3] = {0xe3, 0x00},
++		   [4] = {0xe4, 0x00},
++		   [5] = {0xe5, 0x11},
++		   [6] = {0xe6, 0x06},
++		   [7] = {0xe7, 0x66}, },
++	.num_phy = 1,
++	.reg_desc = &rtl93xx_phy_reg_desc,
++	.rtl93xx_bringup = true,
++	.bringup_init = rtl931x_phy_cali,
++	.bringup_init_size = ARRAY_SIZE(rtl931x_phy_cali),
++};
++
+ static const struct of_device_id usbphy_rtk_dt_match[] = {
+ 	{ .compatible = "realtek,rtd1295-usb2phy", .data = &rtd1295_phy_cfg },
+ 	{ .compatible = "realtek,rtd1312c-usb2phy", .data = &rtd1312c_phy_cfg },
+@@ -1418,6 +1620,8 @@ static const struct of_device_id usbphy_
+ 	{ .compatible = "realtek,rtd1619-usb2phy", .data = &rtd1619_phy_cfg },
+ 	{ .compatible = "realtek,rtd1619b-usb2phy", .data = &rtd1619b_phy_cfg },
+ 	{ .compatible = "realtek,rtl9607-usb2phy", .data = &rtl9607_phy_cfg },
++	{ .compatible = "realtek,rtl930x-usb2phy", .data = &rtl930x_phy_cfg },
++	{ .compatible = "realtek,rtl931x-usb2phy", .data = &rtl931x_phy_cfg },
+ 	{},
+ };
+ MODULE_DEVICE_TABLE(of, usbphy_rtk_dt_match);
+--- a/Documentation/devicetree/bindings/phy/realtek,usb2phy.yaml
++++ b/Documentation/devicetree/bindings/phy/realtek,usb2phy.yaml
+@@ -64,6 +64,12 @@ description: |
+   OHCI controller#0 -- usb2phy -- phy#0
+   EHCI controller#0 -- usb2phy -- phy#0
+ 
++  RTL930x/RTL931x SoCs USB
++  The USB architecture includes one OHCI and one EHCI controller.
++  Both of them map to one USB2.0 PHY.
++  OHCI controller#0 -- usb2phy -- phy#0
++  EHCI controller#0 -- usb2phy -- phy#0
++
+ properties:
+   compatible:
+     enum:
+@@ -77,6 +83,8 @@ properties:
+       - realtek,rtd1619-usb2phy
+       - realtek,rtd1619b-usb2phy
+       - realtek,rtl9607-usb2phy
++      - realtek,rtl930x-usb2phy
++      - realtek,rtl931x-usb2phy
+ 
+   reg:
+     items:
+--- a/drivers/phy/realtek/Kconfig
++++ b/drivers/phy/realtek/Kconfig
+@@ -3,7 +3,7 @@
+ # Phy drivers for Realtek platforms
+ #
+ 
+-if ARCH_REALTEK || (MACH_REALTEK_RTL && RTL960X) || COMPILE_TEST
++if ARCH_REALTEK || (MACH_REALTEK_RTL && (RTL930X || RTL931X || RTL960X)) || COMPILE_TEST
+ 
+ config PHY_RTK_RTD_USB2PHY
+ 	tristate "Realtek RTD USB2 PHY Transceiver Driver"
