@@ -1,0 +1,51 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Carlo Szelinsky <github@szelinsky.de>
+Date: Thu, 10 Jul 2026 22:00:00 +0200
+Subject: [PATCH] mips: generic: realtek: provide plat_swiotlb_setup()
+
+On RTL931X the second RAM bank at 0x90000000 (HIGHMEM) is not reachable
+for the on-chip DMA masters; writes into it are silently lost. Provide
+the platform SWIOTLB hook so the kernel can bounce such transfers
+through a 1 MB lowmem pool. Boards without the second bank skip the
+pool; swiotlb= on the kernel command line still overrides the size.
+
+Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
+---
+--- a/arch/mips/generic/board-realtek.c
++++ b/arch/mips/generic/board-realtek.c
+@@ -5,7 +5,10 @@
+ 
+ #include <linux/errno.h>
+ #include <linux/libfdt.h>
++#include <linux/memblock.h>
+ #include <linux/printk.h>
++#include <linux/sizes.h>
++#include <linux/swiotlb.h>
+ #include <linux/types.h>
+ 
+ #include <asm/fw/fw.h>
+@@ -308,6 +311,24 @@ static void __init realtek_prom_init(con
+ }
+ 
+ 
++#ifdef CONFIG_SWIOTLB
++/*
++ * The on-chip DMA masters cannot reach the second RAM bank at 0x90000000
++ * (HIGHMEM); writes into it are silently lost. dma-ranges on the soc bus
++ * caps device DMA to lowmem and SWIOTLB bounces anything above it. Boards
++ * without that bank need no pool. 1 MB covers the observed peak; swiotlb=
++ * on the command line still overrides it.
++ */
++void __init plat_swiotlb_setup(void)
++{
++	if (max_pfn <= max_low_pfn)
++		return;
++
++	swiotlb_adjust_size(SZ_1M);
++	swiotlb_init(true, SWIOTLB_VERBOSE);
++}
++#endif
++
+ static __init int realtek_add_initrd(void *fdt)
+ {
+ 	int node, err;
