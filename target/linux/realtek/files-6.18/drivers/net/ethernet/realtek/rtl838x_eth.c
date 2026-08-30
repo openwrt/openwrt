@@ -522,10 +522,6 @@ static void rteth_838x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 	/* Pad TX */
 	regmap_write(ctrl->map, ctrl->cfg->dma_if_ctrl, RTETH_TX_PAD_EN_838X);
 
-	rteth_set_max_packet_length(ctrl);
-
-	rteth_enable_all_rx_irqs(ctrl);
-
 	/* Enable DMA, engine expects empty FCS field */
 	regmap_update_bits(ctrl->map, ctrl->cfg->dma_if_ctrl,
 			   ctrl->cfg->tx_rx_enable, ctrl->cfg->tx_rx_enable);
@@ -545,10 +541,6 @@ static void rteth_838x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 
 static void rteth_839x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 {
-	rteth_set_max_packet_length(ctrl);
-
-	rteth_enable_all_rx_irqs(ctrl);
-
 	/* Enable DMA */
 	regmap_update_bits(ctrl->map, ctrl->cfg->dma_if_ctrl,
 			   ctrl->cfg->tx_rx_enable, ctrl->cfg->tx_rx_enable);
@@ -568,10 +560,6 @@ static void rteth_839x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 
 static void rteth_930x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 {
-	rteth_set_max_packet_length(ctrl);
-
-	rteth_enable_all_rx_irqs(ctrl);
-
 	/* Enable DMA */
 	regmap_set_bits(ctrl->map, ctrl->cfg->dma_if_ctrl, ctrl->cfg->tx_rx_enable);
 
@@ -584,10 +572,6 @@ static void rteth_930x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 
 static void rteth_931x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 {
-	rteth_set_max_packet_length(ctrl);
-
-	rteth_enable_all_rx_irqs(ctrl);
-
 	/* Enable DMA */
 	regmap_set_bits(ctrl->map, ctrl->cfg->dma_if_ctrl, ctrl->cfg->tx_rx_enable);
 
@@ -829,6 +813,8 @@ static int rteth_open(struct net_device *dev)
 	ctrl->napi_enabled = true;
 
 	ctrl->cfg->hw_init(ctrl);
+	rteth_set_max_packet_length(ctrl);
+	rteth_enable_all_rx_irqs(ctrl);
 	ctrl->cfg->hw_en_rxtx(ctrl);
 	netif_tx_start_all_queues(dev);
 
