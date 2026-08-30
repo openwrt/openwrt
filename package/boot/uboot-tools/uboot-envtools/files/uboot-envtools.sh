@@ -140,3 +140,21 @@ ubootenv_fix_crc_mtd_le() {
 		sleep 1
 	done
 }
+
+ubootenv_try_ranges_mtd() {
+	. /lib/functions/system.sh
+	local dev="/dev/mtd$(find_mtd_index $1)"
+	local offset="0x$(printf '%x' $2)"
+	local var=$3
+	local envsize=$(mtd_get_part_size $1)
+	local secsize=$(mtd_get_part_erasesize $1)
+
+	while [ "$envsize" -gt 256 ]; do
+		echo "trying offset: $offset size: 0x$(printf '%x' $envsize)"
+		ubootenv_add_tmp_config "$dev" "$offset" "0x$(printf '%x' $envsize)" "0x$(printf '%x' $secsize)"
+		fw_printenv -c "/tmp/fw_env.config" "$var" >/dev/null 2>/dev/null && break
+		envsize=$((envsize - 256))
+	done
+	fw_printenv -c "/tmp/fw_env.config" "$var" && \
+		echo "CRC good with offset: $offset size: 0x$(printf '%x' $envsize)"
+}
