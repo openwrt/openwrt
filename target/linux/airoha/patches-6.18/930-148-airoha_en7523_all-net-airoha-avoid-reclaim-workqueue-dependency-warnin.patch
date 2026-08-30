@@ -1,0 +1,42 @@
+From 02547b7260a5635ac114e0cbfe5a15954400c632 Mon Sep 17 00:00:00 2001
+From: OpenAI <noreply@openai.com>
+Date: Fri, 31 Jul 2026 00:17:56 +0000
+Subject: [PATCH] net: airoha: avoid reclaim workqueue dependency warning
+
+The ordered GPON FSM workqueue synchronously drains OMCI receive work
+queued on system_wq when a session is reset. Marking the FSM
+WQ_MEM_RECLAIM makes this dependency invalid because a reclaim worker
+must not flush a non-reclaim workqueue.
+
+The GPON FSM is not required for memory reclaim, so allocate it without
+WQ_MEM_RECLAIM.
+
+Signed-off-by: OpenAI <noreply@openai.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_xpon.c | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_xpon.c b/drivers/net/ethernet/airoha/airoha_xpon.c
+index 7a106f6b4c71..dcd2bac65b09 100644
+--- a/drivers/net/ethernet/airoha/airoha_xpon.c
++++ b/drivers/net/ethernet/airoha/airoha_xpon.c
+@@ -3901,8 +3901,13 @@ static int airoha_xpon_init_gpon(struct platform_device *pdev,
+ 		return dev_err_probe(dev, -EINVAL,
+ 				     "missing GPON register window\n");
+ 
+-	priv->fsm_wq = alloc_ordered_workqueue("%s-gpon-fsm",
+-					       WQ_MEM_RECLAIM, dev_name(dev));
++	/* The FSM synchronously drains OMCI work queued on system_wq during
++	 * session teardown. It is not part of the memory-reclaim path, so do
++	 * not mark it WQ_MEM_RECLAIM: a reclaim worker must not flush a
++	 * non-reclaim workqueue.
++	 */
++	priv->fsm_wq = alloc_ordered_workqueue("%s-gpon-fsm", 0,
++					       dev_name(dev));
+ 	if (!priv->fsm_wq)
+ 		return -ENOMEM;
+ 
+-- 
+2.55.0
+

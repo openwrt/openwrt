@@ -1,0 +1,700 @@
+From 52b6565c1ca01bbe899abbfa86ced81d10f9b211 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Tue, 28 Jul 2026 20:06:16 -0300
+Subject: [PATCH] net: omci: expose managed entity capability metadata
+
+The Nokia OLT reads the OMCI ME type table and stops after the last
+fragment when the advertised classes cannot be described further.
+Add the G.988 Managed entity and Attribute capability MEs so every
+native descriptor can be discovered consistently.
+
+Generate stable attribute IDs from the active profile, expose class
+names, access, action and support metadata, and serve attribute, alarm,
+AVC, instance and code-point tables through the existing Get Next
+snapshot path.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ net/omci/agent.c | 467 ++++++++++++++++++++++++++++++++++++++++++++++-
+ net/omci/me.c    | 118 ++++++++++++
+ net/omci/me.h    |   9 +
+ 3 files changed, 587 insertions(+), 7 deletions(-)
+
+diff --git a/net/omci/agent.c b/net/omci/agent.c
+index 239cec259c18..a33dcebe85f1 100644
+--- a/net/omci/agent.c
++++ b/net/omci/agent.c
+@@ -111,6 +111,37 @@ static bool omci_agent_result_can_be_faked(u8 result)
+ #define OMCI_TABLE_SNAPSHOT_TIMEOUT		(60 * HZ)
+ #define OMCI_BASELINE_TABLE_FRAGMENT_LEN	29
+ 
++#define OMCI_MANAGED_ENTITY_NAME_MASK		BIT(15)
++#define OMCI_MANAGED_ENTITY_ATTR_TABLE_MASK	BIT(14)
++#define OMCI_MANAGED_ENTITY_ACCESS_MASK		BIT(13)
++#define OMCI_MANAGED_ENTITY_ALARMS_MASK		BIT(12)
++#define OMCI_MANAGED_ENTITY_AVCS_MASK		BIT(11)
++#define OMCI_MANAGED_ENTITY_ACTIONS_MASK	BIT(10)
++#define OMCI_MANAGED_ENTITY_INSTANCES_MASK	BIT(9)
++#define OMCI_MANAGED_ENTITY_SUPPORT_MASK	BIT(8)
++#define OMCI_MANAGED_ENTITY_TABLE_MASKS \
++	(OMCI_MANAGED_ENTITY_ATTR_TABLE_MASK | \
++	 OMCI_MANAGED_ENTITY_ALARMS_MASK | \
++	 OMCI_MANAGED_ENTITY_AVCS_MASK | \
++	 OMCI_MANAGED_ENTITY_INSTANCES_MASK)
++
++#define OMCI_ATTRIBUTE_NAME_MASK		BIT(15)
++#define OMCI_ATTRIBUTE_SIZE_MASK		BIT(14)
++#define OMCI_ATTRIBUTE_ACCESS_MASK		BIT(13)
++#define OMCI_ATTRIBUTE_FORMAT_MASK		BIT(12)
++#define OMCI_ATTRIBUTE_LOWER_LIMIT_MASK	BIT(11)
++#define OMCI_ATTRIBUTE_UPPER_LIMIT_MASK	BIT(10)
++#define OMCI_ATTRIBUTE_BIT_FIELD_MASK		BIT(9)
++#define OMCI_ATTRIBUTE_CODE_POINTS_MASK	BIT(8)
++#define OMCI_ATTRIBUTE_SUPPORT_MASK		BIT(7)
++#define OMCI_ATTRIBUTE_TABLE_MASKS		OMCI_ATTRIBUTE_CODE_POINTS_MASK
++
++#define OMCI_CAPABILITY_NAME_LEN		25
++#define OMCI_ATTRIBUTE_FORMAT_BIT_FIELD	2
++#define OMCI_ATTRIBUTE_FORMAT_UNSIGNED		4
++#define OMCI_ATTRIBUTE_FORMAT_STRING		5
++#define OMCI_ATTRIBUTE_FORMAT_TABLE		7
++
+ #define OMCI_ONU_G_DYING_GASP_ALARM	7
+ #define OMCI_ALARM_BITMAP_LEN		28
+ #define OMCI_ALARM_SEQUENCE_OFFSET	(8 + OMCI_ALARM_BITMAP_LEN)
+@@ -1466,6 +1497,20 @@ static void omci_agent_reset_table_snapshot_locked(struct omci_agent *agent)
+ 	agent->table_snapshot_mask = 0;
+ }
+ 
++static void
++omci_set_table_snapshot_locked(struct omci_agent *agent, u16 class_id,
++			       u16 entity_id, u16 mask, u8 *table,
++			       size_t table_len)
++{
++	omci_agent_reset_table_snapshot_locked(agent);
++	agent->table_snapshot = table;
++	agent->table_snapshot_len = table_len;
++	agent->table_snapshot_jiffies = jiffies;
++	agent->table_snapshot_class_id = class_id;
++	agent->table_snapshot_entity_id = entity_id;
++	agent->table_snapshot_mask = mask;
++}
++
+ static int omci_agent_build_me_type_table_locked(struct omci_device *odev,
+ 						 u8 **table,
+ 						 size_t *table_len)
+@@ -1581,13 +1626,8 @@ static u8 omci_agent_get_omci_table_locked(struct omci_device *odev,
+ 	if (ret)
+ 		return OMCI_RESULT_PROCESSING_ERROR;
+ 
+-	omci_agent_reset_table_snapshot_locked(agent);
+-	agent->table_snapshot = table;
+-	agent->table_snapshot_len = table_len;
+-	agent->table_snapshot_jiffies = jiffies;
+-	agent->table_snapshot_class_id = OMCI_CLASS_OMCI;
+-	agent->table_snapshot_entity_id = entity_id;
+-	agent->table_snapshot_mask = mask;
++	omci_set_table_snapshot_locked(agent, OMCI_CLASS_OMCI, entity_id,
++				       mask, table, table_len);
+ 
+ 	memset(response_content, 0, response_capacity);
+ 	response_content[0] = OMCI_RESULT_SUCCESS;
+@@ -1597,6 +1637,413 @@ static u8 omci_agent_get_omci_table_locked(struct omci_device *odev,
+ 	return OMCI_RESULT_SUCCESS;
+ }
+ 
++static bool
++omci_agent_me_type_supported_locked(struct omci_device *odev, u16 class_id)
++{
++	u8 *table;
++	size_t table_len;
++	size_t offset;
++	bool found = false;
++
++	if (omci_agent_build_me_type_table_locked(odev, &table, &table_len))
++		return false;
++	for (offset = 0; offset + sizeof(u16) <= table_len;
++	     offset += sizeof(u16)) {
++		if (get_unaligned_be16(table + offset) == class_id) {
++			found = true;
++			break;
++		}
++	}
++	kfree(table);
++
++	return found;
++}
++
++static u8 omci_agent_me_support(const struct omci_me_desc *desc)
++{
++	if (!desc)
++		return 3;
++
++	switch (desc->support) {
++	case OMCI_CLASS_SUPPORT_NATIVE:
++	case OMCI_CLASS_SUPPORT_PROVISIONED:
++		return 1;
++	case OMCI_CLASS_SUPPORT_PARSED:
++	case OMCI_CLASS_SUPPORT_SHADOW:
++		return 3;
++	default:
++		return 2;
++	}
++}
++
++static u8 omci_agent_me_access(const struct omci_me_desc *desc)
++{
++	bool onu_created = desc && (desc->flags & OMCI_ME_F_ONU_CREATED);
++	bool olt_created = desc && (desc->actions & OMCI_ME_ACTION_CREATE);
++
++	if (onu_created && olt_created)
++		return 3;
++	if (olt_created)
++		return 2;
++	if (onu_created)
++		return 1;
++
++	return 3;
++}
++
++static u32 omci_agent_me_actions(const struct omci_me_desc *desc,
++				 u16 class_id)
++{
++	if (desc)
++		return desc->actions;
++
++	switch (class_id) {
++	case OMCI_CLASS_MAC_BRIDGE_SERVICE_PROFILE:
++	case OMCI_CLASS_MAC_BRIDGE_CONFIG_DATA:
++	case OMCI_CLASS_GAL_ETHERNET_PROFILE:
++		return OMCI_ME_ACTION_CREATE | OMCI_ME_ACTION_DELETE |
++		       OMCI_ME_ACTION_GET | OMCI_ME_ACTION_SET;
++	default:
++		return OMCI_ME_ACTION_GET | OMCI_ME_ACTION_SET;
++	}
++}
++
++static int
++omci_build_attr_ids_locked(struct omci_device *odev, u16 class_id,
++			   u8 **table, size_t *table_len)
++{
++	const struct omci_me_desc *desc = omci_me_lookup(&odev->agent, class_id);
++	u8 *data;
++	unsigned int i;
++	int ret;
++
++	if (!desc || !desc->num_attrs) {
++		data = kmalloc(1, GFP_KERNEL);
++		if (!data)
++			return -ENOMEM;
++		*table = data;
++		*table_len = 0;
++		return 0;
++	}
++
++	data = kmalloc_array(desc->num_attrs, sizeof(u16), GFP_KERNEL);
++	if (!data)
++		return -ENOMEM;
++	for (i = 0; i < desc->num_attrs; i++) {
++		u16 attr_id;
++
++		ret = omci_me_attr_id(&odev->agent, class_id, i, &attr_id);
++		if (ret) {
++			kfree(data);
++			return ret;
++		}
++		put_unaligned_be16(attr_id, data + i * sizeof(u16));
++	}
++	*table = data;
++	*table_len = desc->num_attrs * sizeof(u16);
++	return 0;
++}
++
++static int
++omci_build_instances_locked(struct omci_device *odev, u16 class_id,
++			    u8 **table, size_t *table_len)
++{
++	struct omci_agent *agent = &odev->agent;
++	struct omci_mib_object *object;
++	unsigned long index;
++	unsigned int count = 0;
++	u8 *data;
++
++	if (class_id == OMCI_CLASS_MANAGED_ENTITY) {
++		return omci_agent_build_me_type_table_locked(odev, table,
++						     table_len);
++	}
++	if (class_id == OMCI_CLASS_ATTRIBUTE) {
++		unsigned int attr_count = omci_me_attr_count(agent);
++		unsigned int i;
++
++		data = kmalloc_array(max(attr_count, 1U), sizeof(u16),
++				     GFP_KERNEL);
++		if (!data)
++			return -ENOMEM;
++		for (i = 0; i < attr_count; i++)
++			put_unaligned_be16(i + 1, data + i * sizeof(u16));
++		*table = data;
++		*table_len = attr_count * sizeof(u16);
++		return 0;
++	}
++	if (class_id == OMCI_CLASS_OMCI) {
++		data = kmalloc(sizeof(u16), GFP_KERNEL);
++		if (!data)
++			return -ENOMEM;
++		put_unaligned_be16(0, data);
++		*table = data;
++		*table_len = sizeof(u16);
++		return 0;
++	}
++
++	xa_for_each(&agent->mib, index, object)
++		if (object->class_id == class_id &&
++		    omci_mib_object_active(agent, object))
++			count++;
++	data = kmalloc_array(max(count, 1U), sizeof(u16), GFP_KERNEL);
++	if (!data)
++		return -ENOMEM;
++	count = 0;
++	xa_for_each(&agent->mib, index, object) {
++		if (object->class_id != class_id ||
++		    !omci_mib_object_active(agent, object))
++			continue;
++		put_unaligned_be16(object->entity_id,
++				   data + count * sizeof(u16));
++		count++;
++	}
++	*table = data;
++	*table_len = count * sizeof(u16);
++	return 0;
++}
++
++static int omci_agent_empty_table(u8 **table, size_t *table_len)
++{
++	*table = kmalloc(1, GFP_KERNEL);
++	if (!*table)
++		return -ENOMEM;
++	*table_len = 0;
++	return 0;
++}
++
++static u8 omci_agent_get_managed_entity_locked(struct omci_device *odev,
++					       u16 entity_id, u16 mask,
++					       u8 *response_content,
++					       size_t response_capacity,
++					       size_t *response_len)
++{
++	struct omci_agent *agent = &odev->agent;
++	const struct omci_me_desc *desc;
++	size_t used = 3;
++	u16 encoded = 0;
++	u8 *table = NULL;
++	size_t table_len = 0;
++	unsigned int bit;
++	int ret;
++
++	if (!mask || mask & ~GENMASK(15, 8))
++		return OMCI_RESULT_PARAMETER_ERROR;
++	if (!omci_agent_me_type_supported_locked(odev, entity_id))
++		return OMCI_RESULT_UNKNOWN_INSTANCE;
++	desc = omci_me_lookup(agent, entity_id);
++
++	if (mask & OMCI_MANAGED_ENTITY_TABLE_MASKS) {
++		if (hweight16(mask) != 1 || response_capacity < 7)
++			return OMCI_RESULT_PARAMETER_ERROR;
++		switch (mask) {
++		case OMCI_MANAGED_ENTITY_ATTR_TABLE_MASK:
++			ret = omci_build_attr_ids_locked(odev, entity_id, &table,
++							 &table_len);
++			break;
++		case OMCI_MANAGED_ENTITY_INSTANCES_MASK:
++			ret = omci_build_instances_locked(odev, entity_id,
++							  &table, &table_len);
++			break;
++		default:
++			ret = omci_agent_empty_table(&table, &table_len);
++			break;
++		}
++		if (ret)
++			return OMCI_RESULT_PROCESSING_ERROR;
++		omci_set_table_snapshot_locked(agent, OMCI_CLASS_MANAGED_ENTITY,
++					       entity_id, mask, table, table_len);
++		memset(response_content, 0, response_capacity);
++		response_content[0] = OMCI_RESULT_SUCCESS;
++		put_unaligned_be16(mask, response_content + 1);
++		put_unaligned_be32(table_len, response_content + 3);
++		*response_len = 7;
++		return OMCI_RESULT_SUCCESS;
++	}
++
++	memset(response_content, 0, response_capacity);
++	response_content[0] = OMCI_RESULT_SUCCESS;
++	for (bit = 0; bit < 16; bit++) {
++		u16 attr_mask = BIT(15 - bit);
++
++		if (!(mask & attr_mask))
++			continue;
++		switch (attr_mask) {
++		case OMCI_MANAGED_ENTITY_NAME_MASK: {
++			const char *name = omci_me_class_name(entity_id);
++			size_t len = strnlen(name, OMCI_CAPABILITY_NAME_LEN);
++
++			if (used + OMCI_CAPABILITY_NAME_LEN > response_capacity)
++				return OMCI_RESULT_PARAMETER_ERROR;
++			memcpy(response_content + used, name, len);
++			used += OMCI_CAPABILITY_NAME_LEN;
++			break;
++		}
++		case OMCI_MANAGED_ENTITY_ACCESS_MASK:
++			if (used + 1 > response_capacity)
++				return OMCI_RESULT_PARAMETER_ERROR;
++			response_content[used++] = omci_agent_me_access(desc);
++			break;
++		case OMCI_MANAGED_ENTITY_ACTIONS_MASK:
++			if (used + 4 > response_capacity)
++				return OMCI_RESULT_PARAMETER_ERROR;
++			put_unaligned_be32(omci_agent_me_actions(desc, entity_id),
++					   response_content + used);
++			used += 4;
++			break;
++		case OMCI_MANAGED_ENTITY_SUPPORT_MASK:
++			if (used + 1 > response_capacity)
++				return OMCI_RESULT_PARAMETER_ERROR;
++			response_content[used++] = omci_agent_me_support(desc);
++			break;
++		default:
++			return OMCI_RESULT_PARAMETER_ERROR;
++		}
++		encoded |= attr_mask;
++	}
++	put_unaligned_be16(encoded, response_content + 1);
++	*response_len = used;
++	return OMCI_RESULT_SUCCESS;
++}
++
++static bool omci_agent_attr_is_table(u16 class_id, u16 mask)
++{
++	if (class_id == OMCI_CLASS_OMCI)
++		return mask & (OMCI_OMCI_ME_TYPE_TABLE_MASK |
++			       OMCI_OMCI_MESSAGE_TYPE_TABLE_MASK);
++	if (class_id == OMCI_CLASS_MANAGED_ENTITY)
++		return mask & OMCI_MANAGED_ENTITY_TABLE_MASKS;
++	if (class_id == OMCI_CLASS_ATTRIBUTE)
++		return mask & OMCI_ATTRIBUTE_CODE_POINTS_MASK;
++	if (class_id == OMCI_CLASS_EXTENDED_VLAN)
++		return mask == BIT(8);
++
++	return false;
++}
++
++static u8 omci_agent_attr_format(u16 class_id,
++				 const struct omci_attr_desc *attr)
++{
++	if (omci_agent_attr_is_table(class_id, attr->mask))
++		return OMCI_ATTRIBUTE_FORMAT_TABLE;
++	if (attr->len > 4)
++		return OMCI_ATTRIBUTE_FORMAT_STRING;
++	if (attr->len == 4 && attr->mask == GENMASK(15, 0))
++		return OMCI_ATTRIBUTE_FORMAT_BIT_FIELD;
++
++	return OMCI_ATTRIBUTE_FORMAT_UNSIGNED;
++}
++
++static u8 omci_agent_get_attribute_locked(struct omci_device *odev,
++					  u16 entity_id, u16 mask,
++					  u8 *response_content,
++					  size_t response_capacity,
++					  size_t *response_len)
++{
++	struct omci_agent *agent = &odev->agent;
++	const struct omci_me_desc *desc;
++	const struct omci_attr_desc *attr;
++	unsigned int attr_index;
++	size_t used = 3;
++	u16 class_id;
++	u16 encoded = 0;
++	unsigned int bit;
++	u32 upper;
++	int ret;
++
++	if (!mask || mask & ~GENMASK(15, 7))
++		return OMCI_RESULT_PARAMETER_ERROR;
++	ret = omci_me_attr_get(agent, entity_id, &class_id, &attr_index,
++			       &desc, &attr);
++	if (ret)
++		return OMCI_RESULT_UNKNOWN_INSTANCE;
++
++	if (mask & OMCI_ATTRIBUTE_TABLE_MASKS) {
++		u8 *table;
++		size_t table_len;
++
++		if (hweight16(mask) != 1 || response_capacity < 7)
++			return OMCI_RESULT_PARAMETER_ERROR;
++		ret = omci_agent_empty_table(&table, &table_len);
++		if (ret)
++			return OMCI_RESULT_PROCESSING_ERROR;
++		omci_set_table_snapshot_locked(agent, OMCI_CLASS_ATTRIBUTE,
++					       entity_id, mask, table, table_len);
++		memset(response_content, 0, response_capacity);
++		response_content[0] = OMCI_RESULT_SUCCESS;
++		put_unaligned_be16(mask, response_content + 1);
++		put_unaligned_be32(table_len, response_content + 3);
++		*response_len = 7;
++		return OMCI_RESULT_SUCCESS;
++	}
++
++	memset(response_content, 0, response_capacity);
++	response_content[0] = OMCI_RESULT_SUCCESS;
++	for (bit = 0; bit < 16; bit++) {
++		u16 attr_mask = BIT(15 - bit);
++
++		if (!(mask & attr_mask))
++			continue;
++		switch (attr_mask) {
++		case OMCI_ATTRIBUTE_NAME_MASK: {
++			char name[OMCI_CAPABILITY_NAME_LEN + 1];
++
++			if (used + OMCI_CAPABILITY_NAME_LEN > response_capacity)
++				return OMCI_RESULT_PARAMETER_ERROR;
++			snprintf(name, sizeof(name), "%u attribute %u",
++				 class_id, attr_index + 1);
++			memcpy(response_content + used, name,
++			       strnlen(name, OMCI_CAPABILITY_NAME_LEN));
++			used += OMCI_CAPABILITY_NAME_LEN;
++			break;
++		}
++		case OMCI_ATTRIBUTE_SIZE_MASK:
++			if (used + 2 > response_capacity)
++				return OMCI_RESULT_PARAMETER_ERROR;
++			put_unaligned_be16(attr->len, response_content + used);
++			used += 2;
++			break;
++		case OMCI_ATTRIBUTE_ACCESS_MASK:
++			if (used + 1 > response_capacity)
++				return OMCI_RESULT_PARAMETER_ERROR;
++			response_content[used++] = attr->access & 0x7;
++			break;
++		case OMCI_ATTRIBUTE_FORMAT_MASK:
++			if (used + 1 > response_capacity)
++				return OMCI_RESULT_PARAMETER_ERROR;
++			response_content[used++] =
++				omci_agent_attr_format(class_id, attr);
++			break;
++		case OMCI_ATTRIBUTE_LOWER_LIMIT_MASK:
++		case OMCI_ATTRIBUTE_BIT_FIELD_MASK:
++			if (used + 4 > response_capacity)
++				return OMCI_RESULT_PARAMETER_ERROR;
++			put_unaligned_be32(0, response_content + used);
++			used += 4;
++			break;
++		case OMCI_ATTRIBUTE_UPPER_LIMIT_MASK:
++			if (used + 4 > response_capacity)
++				return OMCI_RESULT_PARAMETER_ERROR;
++			upper = attr->len >= sizeof(u32) ? U32_MAX :
++				GENMASK(attr->len * 8 - 1, 0);
++			put_unaligned_be32(upper, response_content + used);
++			used += 4;
++			break;
++		case OMCI_ATTRIBUTE_SUPPORT_MASK:
++			if (used + 1 > response_capacity)
++				return OMCI_RESULT_PARAMETER_ERROR;
++			response_content[used++] = 3;
++			break;
++		default:
++			return OMCI_RESULT_PARAMETER_ERROR;
++		}
++		encoded |= attr_mask;
++	}
++	put_unaligned_be16(encoded, response_content + 1);
++	*response_len = used;
++	return OMCI_RESULT_SUCCESS;
++}
++
+ static u8 omci_agent_get_next_locked(struct omci_device *odev,
+ 				     u16 class_id, u16 entity_id,
+ 				     u8 device_id, const u8 *content,
+@@ -2713,6 +3160,12 @@ static u8 omci_agent_get_locked(struct omci_device *odev, u16 class_id,
+ 							response_content,
+ 							response_capacity,
+ 							response_len);
++	if (class_id == OMCI_CLASS_MANAGED_ENTITY)
++		return omci_agent_get_managed_entity_locked(odev, entity_id,
++			mask, response_content, response_capacity, response_len);
++	if (class_id == OMCI_CLASS_ATTRIBUTE)
++		return omci_agent_get_attribute_locked(odev, entity_id, mask,
++			response_content, response_capacity, response_len);
+ 
+ 	if (omci_agent_get_uses_ani_g_telemetry(class_id, entity_id, mask) &&
+ 	    odev->ops && odev->ops->get_telemetry)
+diff --git a/net/omci/me.c b/net/omci/me.c
+index 13ac8cd06138..d1025d4939ee 100644
+--- a/net/omci/me.c
++++ b/net/omci/me.c
+@@ -539,6 +539,29 @@ static const struct omci_attr_desc omci_omci_attrs[] = {
+ 	OMCI_ATTR(14, 4, 4, OMCI_R),
+ };
+ 
++static const struct omci_attr_desc omci_managed_entity_attrs[] = {
++	OMCI_ATTR(15, 0, 25, OMCI_R),
++	OMCI_ATTR(14, 25, 4, OMCI_R),
++	OMCI_ATTR(13, 29, 1, OMCI_R),
++	OMCI_ATTR(12, 30, 4, OMCI_R),
++	OMCI_ATTR(11, 34, 4, OMCI_R),
++	OMCI_ATTR(10, 38, 4, OMCI_R),
++	OMCI_ATTR(9, 42, 4, OMCI_R),
++	OMCI_ATTR(8, 46, 1, OMCI_R),
++};
++
++static const struct omci_attr_desc omci_attribute_attrs[] = {
++	OMCI_ATTR(15, 0, 25, OMCI_R),
++	OMCI_ATTR(14, 25, 2, OMCI_R),
++	OMCI_ATTR(13, 27, 1, OMCI_R),
++	OMCI_ATTR(12, 28, 1, OMCI_R),
++	OMCI_ATTR(11, 29, 4, OMCI_R),
++	OMCI_ATTR(10, 33, 4, OMCI_R),
++	OMCI_ATTR(9, 37, 4, OMCI_R),
++	OMCI_ATTR(8, 41, 4, OMCI_R),
++	OMCI_ATTR(7, 45, 1, OMCI_R),
++};
++
+ #define STANDARD_ACTIONS (OMCI_ME_ACTION_GET | OMCI_ME_ACTION_SET)
+ #define OLT_CREATED_ACTIONS (OMCI_ME_ACTION_CREATE | OMCI_ME_ACTION_DELETE | \
+ 			     OMCI_ME_ACTION_GET | OMCI_ME_ACTION_SET)
+@@ -608,6 +631,18 @@ static const struct omci_me_desc omci_me_descs[] = {
+ 		      GENMASK(15, 14), 0, 8,
+ 		      OMCI_CLASS_CATEGORY_MANAGEMENT, OMCI_CLASS_SUPPORT_NATIVE,
+ 		      omci_omci_attrs),
++	STANDARD_DESC(OMCI_CLASS_MANAGED_ENTITY, "Managed entity",
++		      OMCI_ME_ACTION_GET | OMCI_ME_ACTION_GET_NEXT,
++		      OMCI_ME_F_ONU_CREATED | OMCI_ME_F_NO_MIB_UPLOAD,
++		      GENMASK(15, 8), 0, 47,
++		      OMCI_CLASS_CATEGORY_MANAGEMENT, OMCI_CLASS_SUPPORT_NATIVE,
++		      omci_managed_entity_attrs),
++	STANDARD_DESC(OMCI_CLASS_ATTRIBUTE, "Attribute",
++		      OMCI_ME_ACTION_GET | OMCI_ME_ACTION_GET_NEXT,
++		      OMCI_ME_F_ONU_CREATED | OMCI_ME_F_NO_MIB_UPLOAD,
++		      GENMASK(15, 7), 0, 46,
++		      OMCI_CLASS_CATEGORY_MANAGEMENT, OMCI_CLASS_SUPPORT_NATIVE,
++		      omci_attribute_attrs),
+ 	STANDARD_DESC(OMCI_CLASS_VEIP, "Virtual Ethernet interface point",
+ 		      STANDARD_ACTIONS, OMCI_ME_F_ONU_CREATED | OMCI_ME_F_DATAPATH,
+ 		      GENMASK(15, 11), GENMASK(15, 11), 31,
+@@ -940,6 +975,89 @@ int omci_me_encode_attributes(const struct omci_me_desc *desc,
+ 	return encoded ? 0 : -ENOSPC;
+ }
+ 
++unsigned int omci_me_attr_count(const struct omci_agent *agent)
++{
++	unsigned int count = 0;
++	unsigned int i;
++
++	for (i = 0; i < ARRAY_SIZE(omci_me_descs); i++) {
++		const struct omci_me_desc *desc = &omci_me_descs[i];
++
++		if (omci_me_lookup(agent, desc->class_id) != desc)
++			continue;
++		count += desc->num_attrs;
++	}
++
++	return count;
++}
++
++int omci_me_attr_id(const struct omci_agent *agent, u16 class_id,
++		    unsigned int attr_index, u16 *attr_id)
++{
++	unsigned int next_id = 1;
++	unsigned int i;
++
++	if (!agent || !attr_id)
++		return -EINVAL;
++
++	for (i = 0; i < ARRAY_SIZE(omci_me_descs); i++) {
++		const struct omci_me_desc *desc = &omci_me_descs[i];
++
++		if (omci_me_lookup(agent, desc->class_id) != desc)
++			continue;
++		if (desc->class_id == class_id) {
++			if (attr_index >= desc->num_attrs)
++				return -ENOENT;
++			if (next_id + attr_index > U16_MAX)
++				return -EOVERFLOW;
++			*attr_id = next_id + attr_index;
++			return 0;
++		}
++		if (next_id + desc->num_attrs > U16_MAX)
++			return -EOVERFLOW;
++		next_id += desc->num_attrs;
++	}
++
++	return -ENOENT;
++}
++
++int omci_me_attr_get(const struct omci_agent *agent, u16 attr_id,
++		     u16 *class_id, unsigned int *attr_index,
++		     const struct omci_me_desc **me_desc,
++		     const struct omci_attr_desc **me_attr)
++{
++	unsigned int next_id = 1;
++	unsigned int i;
++
++	if (!agent || !attr_id)
++		return -EINVAL;
++
++	for (i = 0; i < ARRAY_SIZE(omci_me_descs); i++) {
++		const struct omci_me_desc *desc = &omci_me_descs[i];
++		unsigned int index;
++
++		if (omci_me_lookup(agent, desc->class_id) != desc)
++			continue;
++		if (attr_id < next_id || attr_id >= next_id + desc->num_attrs) {
++			next_id += desc->num_attrs;
++			continue;
++		}
++
++		index = attr_id - next_id;
++		if (class_id)
++			*class_id = desc->class_id;
++		if (attr_index)
++			*attr_index = index;
++		if (me_desc)
++			*me_desc = desc;
++		if (me_attr)
++			*me_attr = &desc->attrs[index];
++		return 0;
++	}
++
++	return -ENOENT;
++}
++
+ const char *omci_me_class_name(u16 class_id)
+ {
+ 	unsigned int i;
+diff --git a/net/omci/me.h b/net/omci/me.h
+index f97bd86f2027..bf5dd593d164 100644
+--- a/net/omci/me.h
++++ b/net/omci/me.h
+@@ -32,6 +32,8 @@ struct omci_mib_object;
+ #define OMCI_CLASS_PRIORITY_QUEUE	277
+ #define OMCI_CLASS_TRAFFIC_SCHEDULER	278
+ #define OMCI_CLASS_OMCI		287
++#define OMCI_CLASS_MANAGED_ENTITY	288
++#define OMCI_CLASS_ATTRIBUTE		289
+ #define OMCI_CLASS_VEIP		329
+ 
+ #define OMCI_CLASS_HUAWEI_FLOW_MAPPING	350
+@@ -121,5 +123,12 @@ int omci_me_class_get(struct omci_device *odev, u16 class_id,
+ 		      struct omci_me_class *class);
+ int omci_me_class_next(struct omci_device *odev, u32 index,
+ 		       struct omci_me_class *class, u32 *next_index);
++int omci_me_attr_id(const struct omci_agent *agent, u16 class_id,
++		    unsigned int attr_index, u16 *attr_id);
++int omci_me_attr_get(const struct omci_agent *agent, u16 attr_id,
++		     u16 *class_id, unsigned int *attr_index,
++		     const struct omci_me_desc **desc,
++		     const struct omci_attr_desc **attr);
++unsigned int omci_me_attr_count(const struct omci_agent *agent);
+ 
+ #endif /* _NET_OMCI_ME_H */
+-- 
+2.55.0
+

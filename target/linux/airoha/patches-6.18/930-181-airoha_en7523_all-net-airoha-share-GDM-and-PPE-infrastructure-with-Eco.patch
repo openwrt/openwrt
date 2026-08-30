@@ -1,0 +1,2771 @@
+From a9d1bded589e740f193913205e82c96c3376c98c Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Thu, 6 Aug 2026 22:50:13 -0300
+Subject: [PATCH] net: airoha: share GDM and PPE infrastructure with EcoNet
+
+Keep the EN7523/EN7581 and EN751221 QDMA datapaths in separate
+airoha-eth and econet-eth modules, while moving their common GDM,
+phylink and flow-offload interfaces into airoha-common.
+
+Add an EN751221 backend to the common PPE frontend.  The newer Airoha
+backend accesses NPU services only through optional host callbacks, so
+the common module and the EcoNet driver do not depend on airoha-npu.
+
+Model both EcoNet GDM ports as child netdevs using the common phylink
+infrastructure.  This allows GDM1 to act as the DSA conduit for an
+MT7530 switch through ethernet = <&gdm1>, while GDM2 remains available
+for a direct PHY, WAN or xPON datapath.
+
+Signed-off-by: OpenAI <openai@example.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ MAINTAINERS                                 |    1 +
+ drivers/net/ethernet/airoha/Kconfig         |   82 +-
+ drivers/net/ethernet/airoha/Makefile        |   26 +-
+ drivers/net/ethernet/airoha/airoha_common.c |  124 +++
+ drivers/net/ethernet/airoha/airoha_common.h |   81 +-
+ drivers/net/ethernet/airoha/airoha_eth.c    |  149 ++-
+ drivers/net/ethernet/airoha/airoha_eth.h    |   27 +-
+ drivers/net/ethernet/airoha/airoha_ppe.c    | 1049 ++++++++++++++++++-
+ drivers/net/ethernet/airoha/airoha_wed.h    |    4 +
+ drivers/net/ethernet/airoha/econet_eth.c    |  368 +++----
+ drivers/net/ethernet/airoha/econet_eth.h    |    6 +-
+ include/linux/soc/airoha/airoha_offload.h   |   64 +-
+ 12 files changed, 1687 insertions(+), 294 deletions(-)
+
+diff --git a/MAINTAINERS b/MAINTAINERS
+index 06790488a318..851df88bf9bc 100644
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -747,6 +747,7 @@ F:	Documentation/devicetree/bindings/net/airoha,en7523-wed.yaml
+ F:	Documentation/devicetree/bindings/net/airoha,en7581-eth.yaml
+ F:	Documentation/devicetree/bindings/net/econet,en751221-eth.yaml
+ F:	drivers/net/ethernet/airoha/
++F:	include/linux/soc/airoha/airoha_offload.h
+ 
+ AIROHA ETHERNET PHY DRIVER
+ M:	Christian Marangi <ansuelsmth@gmail.com>
+diff --git a/drivers/net/ethernet/airoha/Kconfig b/drivers/net/ethernet/airoha/Kconfig
+index 4cb5043766a7..fd2fed549ad2 100644
+--- a/drivers/net/ethernet/airoha/Kconfig
++++ b/drivers/net/ethernet/airoha/Kconfig
+@@ -3,46 +3,71 @@ config NET_VENDOR_AIROHA
+ 	bool "Airoha/EcoNet devices"
+ 	depends on ARCH_AIROHA || ECONET || COMPILE_TEST
+ 	help
+-	  If you have a Airoha/EcoNet SoC with ethernet, say Y.
++	  Enable Ethernet drivers for the Airoha ARM and EcoNet MIPS frame
++	  engines.
+ 
+ if NET_VENDOR_AIROHA
+ 
+ config NET_AIROHA_COMMON
+ 	tristate
++	select PHYLINK
+ 	help
+-	  Shared helpers used by the Airoha ARM and EcoNet MIPS frame-engine
+-	  Ethernet drivers.
++	  Common GDM, phylink and PPE infrastructure shared by the Airoha ARM
++	  and EcoNet MIPS Ethernet datapaths.
++
++config NET_AIROHA_NPU
++	tristate "Airoha NPU support"
++	depends on ARCH_AIROHA || COMPILE_TEST
++	select WANT_DEV_COREDUMP
++	select REGMAP_MMIO
++	help
++	  Support the Network Processor Unit available on newer Airoha SoCs.
++	  The Ethernet and PPE drivers also work without this module by using
++	  the CPU-direct PPE path. Enable this option when NPU firmware is
++	  available and PPE statistics or firmware-assisted commits are needed.
+ 
+ config NET_AIROHA
+ 	tristate "Airoha SoC Gigabit Ethernet support"
+-	depends on NET_DSA || !NET_DSA
+ 	select NET_AIROHA_COMMON
+-	select NET_AIROHA_NPU
+ 	select PAGE_POOL
+-	select PHYLINK
++	imply NET_AIROHA_NPU if ARCH_AIROHA
+ 	help
+-	  This driver supports the gigabit ethernet MACs in the
+-	  Airoha SoC family.
++	  Support the EN7523/EN7581-family Ethernet datapath. GDM/phylink and
++	  PPE infrastructure are provided by the shared Airoha common module.
+ 
+ config NET_ECONET
+ 	tristate "EcoNet SoC Gigabit Ethernet support"
+-	depends on NET_DSA || !NET_DSA
++	depends on ECONET || COMPILE_TEST
+ 	depends on OF
+ 	select NET_AIROHA_COMMON
+ 	select PAGE_POOL
+-	select PHYLINK
+ 	help
+-	  This driver supports the gigabit ethernet MACs in the
+-	  EcoNet SoC family.
++	  Support the dual-QDMA, dual-GDM frame engine found in EcoNet EN7512,
++	  EN7521, EN7526 and related EN751221-family MIPS SoCs.
+ 
+-config NET_AIROHA_NPU
+-	tristate "Airoha NPU support"
+-	depends on ARCH_AIROHA
+-	select WANT_DEV_COREDUMP
+-	select REGMAP_MMIO
++	  The QDMA datapath stays separate from the newer Airoha datapath, while
++	  GDM/phylink and PPE infrastructure are shared.
++
++config NET_ECONET_PPE
++	bool "EcoNet EN751221 PPE hardware flow offload"
++	depends on NET_ECONET != n
++	depends on NET_CLS_ACT != n
++	depends on NF_FLOW_TABLE != n
++	default y
++	help
++	  Enable IPv4 TCP/UDP hardware NAT offload through the EN751221 FoE
++	  table and expose TC_SETUP_FT to the netfilter flowtable infrastructure.
++	  The Ethernet device-tree node must reference a reserved-memory region
++	  of at least 0x140000 bytes through memory-region. Without that region,
++	  the Ethernet driver remains functional but does not advertise HW TC.
++
++config NET_AIROHA_PPE_DEBUGFS
++	bool
++	default y
++	depends on NET_AIROHA && DEBUG_FS
+ 	help
+-	  This driver supports Airoha Network Processor (NPU) available
+-	  on the Airoha Soc family.
++	  Build the EN7523/EN7581 PPE debugfs interface. EcoNet uses the
++	  shared PPE module without registering or building this interface.
+ 
+ config NET_AIROHA_FLOW_STATS
+ 	default y
+@@ -52,21 +77,20 @@ config NET_AIROHA_FLOW_STATS
+ 	  Enable Airoha flowtable statistic counters.
+ 
+ config NET_AIROHA_SOC_WED
+-	bool "Airoha/EcoNet WED support"
+-	depends on PCI
++	bool "Airoha EN7523 WED support"
++	depends on NET_AIROHA && PCI
+ 	select NET_MEDIATEK_WED_COMMON
+ 	help
+-	  Enable WiFi Ethernet Datapath (WED) hardware offload for the
+-	  SoC. When enabled, mt76 WiFi drivers can offload wireless
+-	  transmit processing through the WED engine rather than taking
+-	  the slow path through the CPU.
++	  Enable WiFi Ethernet Datapath (WED) hardware offload for the EN7523
++	  SoC. When enabled, mt76 WiFi drivers can offload wireless transmit
++	  processing through the WED engine rather than taking the CPU path.
+ 
+ 	  If unsure, say N.
+ 
+ config AIROHA_XPON_V1
+ 	tristate "Airoha/EcoNet xPON MAC driver"
+ 	depends on ARCH_AIROHA || ECONET || COMPILE_TEST
+-	depends on NET_AIROHA
++	depends on NET_AIROHA || NET_ECONET
+ 	depends on OF
+ 	depends on SFP
+ 	depends on AIROHA_LDDLA_PHY || AIROHA_LDDLA_PHY=n
+@@ -77,7 +101,7 @@ config AIROHA_XPON_V1
+ 	  Driver for the shared xPON MAC complex found in Airoha/EcoNet SoCs.
+ 	  GPON and EPON are implemented by one platform driver and selected by
+ 	  the airoha,pon-mode device-tree property. GPON includes ITU-T G.984.3
+-	  activation/PLOAM and uses the in-kernel OMCI agent; EPON
+-	  includes IEEE 802.3 MPCP LLID registration and security support.
++	  activation/PLOAM and uses the in-kernel OMCI agent; EPON includes
++	  IEEE 802.3 MPCP LLID registration and security support.
+ 
+-endif #NET_VENDOR_AIROHA
++endif # NET_VENDOR_AIROHA
+diff --git a/drivers/net/ethernet/airoha/Makefile b/drivers/net/ethernet/airoha/Makefile
+index 333871aa95d6..66b591619a63 100644
+--- a/drivers/net/ethernet/airoha/Makefile
++++ b/drivers/net/ethernet/airoha/Makefile
+@@ -1,14 +1,24 @@
+ # SPDX-License-Identifier: GPL-2.0-only
+ #
+-# Airoha for the Mediatek SoCs built-in ethernet macs
++# Airoha and EcoNet frame-engine Ethernet drivers
+ #
+ 
++# Shared GDM/phylink helpers and the common PPE frontend/backends.
++obj-$(CONFIG_NET_AIROHA_COMMON) += airoha-common.o
++airoha-common-y := airoha_common.o airoha_ppe.o
++airoha-common-$(CONFIG_NET_AIROHA_PPE_DEBUGFS) += airoha_ppe_debugfs.o
++
++# EN7523/EN7581 datapath.
++obj-$(CONFIG_NET_AIROHA) += airoha-eth.o
++airoha-eth-y := airoha_eth.o
++airoha-eth-$(CONFIG_NET_AIROHA_SOC_WED) += airoha_wed.o airoha_wed_debugfs.o
++
++# EN7512/EN7521/EN7526 datapath.
++obj-$(CONFIG_NET_ECONET) += econet-eth.o
++econet-eth-y := econet_eth.o
++
+ obj-$(CONFIG_NET_AIROHA_NPU) += airoha_npu.o
+-obj-$(CONFIG_NET_AIROHA_COMMON) += airoha-eth.o
+-airoha-eth-y := airoha_ppe.o airoha-common.o
+-airoha-eth-$(CONFIG_NET_AIROHA) += airoha_eth.o
+-airoha-eth-$(CONFIG_NET_ECONET) += econet_eth.o
+-airoha-eth-$(CONFIG_AIROHA_XPON_V1) := airoha_xpon.o airoha_ploam.o airoha_gpon_omci.o
+-airoha-eth-$(CONFIG_NET_AIROHA_SOC_WED) += airoha_wed.o
+-airoha-eth-$(CONFIG_DEBUG_FS) += airoha_ppe_debugfs.o airoha_wed_debugfs.o
+ 
++# Airoha/EcoNet shared GPON + EPON MAC complex.
++obj-$(CONFIG_AIROHA_XPON_V1) += airoha-xpon.o
++airoha-xpon-y := airoha_xpon.o airoha_ploam.o airoha_gpon_omci.o
+diff --git a/drivers/net/ethernet/airoha/airoha_common.c b/drivers/net/ethernet/airoha/airoha_common.c
+index 10e1b821a141..81e21ecd54a4 100644
+--- a/drivers/net/ethernet/airoha/airoha_common.c
++++ b/drivers/net/ethernet/airoha/airoha_common.c
+@@ -10,6 +10,7 @@
+ #include <linux/netdevice.h>
+ #include <linux/of.h>
+ #include <linux/of_net.h>
++#include <linux/phylink.h>
+ 
+ #include "airoha_common.h"
+ 
+@@ -111,5 +112,128 @@ void airoha_eth_get_drvinfo(struct net_device *netdev,
+ }
+ EXPORT_SYMBOL_GPL(airoha_eth_get_drvinfo);
+ 
++static void airoha_gdm_mac_config(struct phylink_config *config,
++				  unsigned int mode,
++				  const struct phylink_link_state *state)
++{
++	struct airoha_gdm_common *gdm;
++
++	gdm = container_of(config, struct airoha_gdm_common, phylink_config);
++	if (gdm->mac_ops && gdm->mac_ops->mac_config)
++		gdm->mac_ops->mac_config(gdm->priv, mode, state);
++}
++
++static void airoha_gdm_mac_link_up(struct phylink_config *config,
++				   struct phy_device *phy,
++				   unsigned int mode,
++				   phy_interface_t interface,
++				   int speed, int duplex,
++				   bool tx_pause, bool rx_pause)
++{
++	struct airoha_gdm_common *gdm;
++
++	gdm = container_of(config, struct airoha_gdm_common, phylink_config);
++	if (gdm->mac_ops && gdm->mac_ops->mac_link_up)
++		gdm->mac_ops->mac_link_up(gdm->priv, phy, mode, interface,
++					  speed, duplex, tx_pause, rx_pause);
++}
++
++static void airoha_gdm_mac_link_down(struct phylink_config *config,
++				     unsigned int mode,
++				     phy_interface_t interface)
++{
++	struct airoha_gdm_common *gdm;
++
++	gdm = container_of(config, struct airoha_gdm_common, phylink_config);
++	if (gdm->mac_ops && gdm->mac_ops->mac_link_down)
++		gdm->mac_ops->mac_link_down(gdm->priv, mode, interface);
++}
++
++static const struct phylink_mac_ops airoha_gdm_phylink_ops = {
++	.mac_config = airoha_gdm_mac_config,
++	.mac_link_up = airoha_gdm_mac_link_up,
++	.mac_link_down = airoha_gdm_mac_link_down,
++};
++
++void airoha_gdm_common_init(struct airoha_gdm_common *gdm,
++			    struct net_device *netdev,
++			    enum airoha_eth_family family, u8 id,
++			    u8 pse_port, void *priv,
++			    const struct airoha_gdm_mac_ops *mac_ops)
++{
++	memset(gdm, 0, sizeof(*gdm));
++	gdm->magic = AIROHA_GDM_COMMON_MAGIC;
++	gdm->family = family;
++	gdm->id = id;
++	gdm->pse_port = pse_port;
++	gdm->netdev = netdev;
++	gdm->priv = priv;
++	gdm->mac_ops = mac_ops;
++	gdm->phylink_config.dev = &netdev->dev;
++	gdm->phylink_config.type = PHYLINK_NETDEV;
++}
++EXPORT_SYMBOL_GPL(airoha_gdm_common_init);
++
++int airoha_gdm_phylink_create(struct airoha_gdm_common *gdm,
++			      struct device_node *np,
++			      phy_interface_t phy_mode)
++{
++	struct phylink *phylink;
++
++	phylink = phylink_create(&gdm->phylink_config,
++				 of_fwnode_handle(np), phy_mode,
++				 &airoha_gdm_phylink_ops);
++	if (IS_ERR(phylink))
++		return PTR_ERR(phylink);
++
++	gdm->phylink = phylink;
++	return 0;
++}
++EXPORT_SYMBOL_GPL(airoha_gdm_phylink_create);
++
++int airoha_gdm_phylink_connect(struct airoha_gdm_common *gdm,
++			       bool allow_no_phy)
++{
++	int err;
++
++	if (!gdm->phylink)
++		return -ENODEV;
++
++	err = phylink_of_phy_connect(gdm->phylink,
++				     gdm->netdev->dev.of_node, 0);
++	if (err) {
++		if (allow_no_phy && err == -ENODEV)
++			return 0;
++		return err;
++	}
++
++	phylink_start(gdm->phylink);
++	gdm->phylink_started = true;
++	return 0;
++}
++EXPORT_SYMBOL_GPL(airoha_gdm_phylink_connect);
++
++void airoha_gdm_phylink_disconnect(struct airoha_gdm_common *gdm)
++{
++	if (!gdm->phylink_started)
++		return;
++
++	phylink_stop(gdm->phylink);
++	phylink_disconnect_phy(gdm->phylink);
++	gdm->phylink_started = false;
++}
++EXPORT_SYMBOL_GPL(airoha_gdm_phylink_disconnect);
++
++void airoha_gdm_phylink_destroy(struct airoha_gdm_common *gdm)
++{
++	airoha_gdm_phylink_disconnect(gdm);
++	if (!gdm->phylink)
++		return;
++
++	phylink_destroy(gdm->phylink);
++	gdm->phylink = NULL;
++}
++EXPORT_SYMBOL_GPL(airoha_gdm_phylink_destroy);
++
+ MODULE_LICENSE("GPL");
+ MODULE_DESCRIPTION("Shared helpers for Airoha and EcoNet Ethernet drivers");
+diff --git a/drivers/net/ethernet/airoha/airoha_common.h b/drivers/net/ethernet/airoha/airoha_common.h
+index 2ae602176fd1..d931be606b61 100644
+--- a/drivers/net/ethernet/airoha/airoha_common.h
++++ b/drivers/net/ethernet/airoha/airoha_common.h
+@@ -3,12 +3,70 @@
+ #define AIROHA_COMMON_H
+ 
+ #include <linux/io.h>
++#include <linux/netdevice.h>
++#include <linux/phylink.h>
+ #include <linux/types.h>
+ 
+ struct device;
+ struct device_node;
+ struct ethtool_drvinfo;
+-struct net_device;
++struct airoha_ppe_dev;
++
++enum airoha_eth_family {
++	AIROHA_ETH_FAMILY_AIROHA,
++	AIROHA_ETH_FAMILY_ECONET,
++};
++
++/**
++ * struct airoha_gdm_mac_ops - SoC-specific MAC callbacks
++ * @mac_config: optional phylink MAC configuration callback
++ * @mac_link_up: optional phylink link-up callback
++ * @mac_link_down: optional phylink link-down callback
++ *
++ * GDM1 and GDM2 are functionally equivalent on the EcoNet and Airoha frame
++ * engines.  The common object owns phylink and dispatches only the hardware
++ * differences to the Ethernet backend.
++ */
++struct airoha_gdm_mac_ops {
++	void (*mac_config)(void *priv, unsigned int mode,
++			   const struct phylink_link_state *state);
++	void (*mac_link_up)(void *priv, struct phy_device *phy,
++			    unsigned int mode, phy_interface_t interface,
++			    int speed, int duplex, bool tx_pause,
++			    bool rx_pause);
++	void (*mac_link_down)(void *priv, unsigned int mode,
++			      phy_interface_t interface);
++};
++
++#define AIROHA_GDM_COMMON_MAGIC	0x47444d43 /* "GDMC" */
++
++/**
++ * struct airoha_gdm_common - common GDM netdev/phylink state
++ * @magic: identifies a common GDM private object
++ * @family: frame-engine generation
++ * @id: one-based GDM identifier
++ * @pse_port: PPE/PSE destination port used by the backend
++ * @netdev: associated Linux network device
++ * @ppe: optional common PPE frontend
++ * @priv: backend GDM object passed to @mac_ops
++ * @mac_ops: optional SoC-specific MAC callbacks
++ * @phylink: phylink instance
++ * @phylink_config: phylink configuration owned by this GDM
++ * @phylink_started: whether phylink_start() has been issued
++ */
++struct airoha_gdm_common {
++	u32 magic;
++	enum airoha_eth_family family;
++	u8 id;
++	u8 pse_port;
++	struct net_device *netdev;
++	struct airoha_ppe_dev *ppe;
++	void *priv;
++	const struct airoha_gdm_mac_ops *mac_ops;
++	struct phylink *phylink;
++	struct phylink_config phylink_config;
++	bool phylink_started;
++};
+ 
+ u32 airoha_rr(void __iomem *base, u32 offset);
+ void airoha_wr(void __iomem *base, u32 offset, u32 val);
+@@ -23,4 +81,25 @@ int airoha_eth_init_mac_address(struct device *dev, struct device_node *np,
+ void airoha_eth_get_drvinfo(struct net_device *netdev,
+ 			    struct ethtool_drvinfo *info);
+ 
++void airoha_gdm_common_init(struct airoha_gdm_common *gdm,
++			    struct net_device *netdev,
++			    enum airoha_eth_family family, u8 id,
++			    u8 pse_port, void *priv,
++			    const struct airoha_gdm_mac_ops *mac_ops);
++int airoha_gdm_phylink_create(struct airoha_gdm_common *gdm,
++			      struct device_node *np,
++			      phy_interface_t phy_mode);
++int airoha_gdm_phylink_connect(struct airoha_gdm_common *gdm,
++			       bool allow_no_phy);
++void airoha_gdm_phylink_disconnect(struct airoha_gdm_common *gdm);
++void airoha_gdm_phylink_destroy(struct airoha_gdm_common *gdm);
++
++static inline struct airoha_gdm_common *
++airoha_gdm_common_from_netdev(struct net_device *netdev)
++{
++	struct airoha_gdm_common *gdm = netdev_priv(netdev);
++
++	return gdm->magic == AIROHA_GDM_COMMON_MAGIC ? gdm : NULL;
++}
++
+ #endif /* AIROHA_COMMON_H */
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
+index 243354ff5cd3..bccc17b24a13 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -3142,20 +3142,16 @@ static int airoha_dev_open(struct net_device *netdev)
+ 	 * xPON-managed GDM2 to run without either. In the latter case the xPON
+ 	 * provider owns carrier, speed and duplex.
+ 	 */
+-	err = phylink_of_phy_connect(dev->phylink, netdev->dev.of_node, 0);
++	err = airoha_gdm_phylink_connect(&dev->common,
++					 dev->flags & AIROHA_PRIV_F_XPON_MANAGED);
+ 	if (err) {
+-		if (!(dev->flags & AIROHA_PRIV_F_XPON_MANAGED) ||
+-		    err != -ENODEV) {
+-			netdev_err(netdev, "could not attach PHY: %d\n", err);
+-			return err;
+-		}
+-
++		netdev_err(netdev, "could not attach PHY: %d\n", err);
++		return err;
++	}
++	if (!dev->common.phylink_started &&
++	    (dev->flags & AIROHA_PRIV_F_XPON_MANAGED))
+ 		netdev_dbg(netdev,
+ 			   "no PHY or fixed-link, using xPON link state\n");
+-	} else {
+-		phylink_start(dev->phylink);
+-		dev->phylink_started = true;
+-	}
+ 
+ 	if (dev->flags & AIROHA_PRIV_F_XPON_MANAGED)
+ 		netif_carrier_off(netdev);
+@@ -3226,11 +3222,7 @@ static int airoha_dev_stop(struct net_device *netdev)
+ 	airoha_qdma_stop(qdma);
+ 	airoha_update_netdev_features(dev);
+ 
+-	if (dev->phylink_started) {
+-		phylink_stop(dev->phylink);
+-		phylink_disconnect_phy(dev->phylink);
+-		dev->phylink_started = false;
+-	}
++	airoha_gdm_phylink_disconnect(&dev->common);
+ 
+ 	return 0;
+ }
+@@ -4142,7 +4134,7 @@ airoha_ethtool_get_link_ksettings(struct net_device *netdev,
+ 	unsigned long flags;
+ 
+ 	if (!(dev->flags & AIROHA_PRIV_F_XPON_MANAGED))
+-		return phylink_ethtool_ksettings_get(dev->phylink, cmd);
++		return phylink_ethtool_ksettings_get(dev->common.phylink, cmd);
+ 
+ 	spin_lock_irqsave(&dev->xpon_state_lock, flags);
+ 	state = dev->xpon_link;
+@@ -4153,8 +4145,8 @@ airoha_ethtool_get_link_ksettings(struct net_device *netdev,
+ 	 * provider publishes its first state. PHY-less ports are reported
+ 	 * directly from the provider and do not depend on phylink.
+ 	 */
+-	if (!state.valid && dev->phylink_started)
+-		return phylink_ethtool_ksettings_get(dev->phylink, cmd);
++	if (!state.valid && dev->common.phylink_started)
++		return phylink_ethtool_ksettings_get(dev->common.phylink, cmd);
+ 
+ 	ethtool_link_ksettings_zero_link_mode(cmd, supported);
+ 	ethtool_link_ksettings_zero_link_mode(cmd, advertising);
+@@ -4182,7 +4174,7 @@ airoha_ethtool_set_link_ksettings(struct net_device *netdev,
+ 	if (dev->flags & AIROHA_PRIV_F_XPON_MANAGED)
+ 		return -EOPNOTSUPP;
+ 
+-	return phylink_ethtool_ksettings_set(dev->phylink, cmd);
++	return phylink_ethtool_ksettings_set(dev->common.phylink, cmd);
+ }
+ 
+ static int airoha_qdma_set_chan_tx_sched(struct net_device *netdev,
+@@ -5127,18 +5119,17 @@ bool airoha_is_valid_gdm_dev(struct airoha_eth *eth,
+ 	return false;
+ }
+ 
+-/* Nothing to do in MAC, everything is handled in PCS */
+-static void airoha_mac_config(struct phylink_config *config, unsigned int mode,
++/* Nothing to do in MAC, everything is handled in PCS. */
++static void airoha_mac_config(void *priv, unsigned int mode,
+ 			      const struct phylink_link_state *state)
+ {
+ }
+ 
+-static void airoha_mac_link_up(struct phylink_config *config, struct phy_device *phy,
++static void airoha_mac_link_up(void *priv, struct phy_device *phy,
+ 			       unsigned int mode, phy_interface_t interface,
+ 			       int speed, int duplex, bool tx_pause, bool rx_pause)
+ {
+-	struct airoha_gdm_dev *dev = container_of(config, struct airoha_gdm_dev,
+-						  phylink_config);
++	struct airoha_gdm_dev *dev = priv;
+ 	struct airoha_gdm_port *port = dev->port;
+ 	struct airoha_eth *eth = dev->eth;
+ 	u32 frag_size_tx, frag_size_rx;
+@@ -5170,7 +5161,7 @@ static void airoha_mac_link_up(struct phylink_config *config, struct phy_device
+ 		mask = GDM4_SGMII1_TX_FRAG_SIZE_MASK;
+ 		val = FIELD_PREP(GDM4_SGMII1_TX_FRAG_SIZE_MASK,
+ 				 frag_size_tx);
+-	}  else {
++	} else {
+ 		mask = GDM4_SGMII0_TX_FRAG_SIZE_MASK;
+ 		val = FIELD_PREP(GDM4_SGMII0_TX_FRAG_SIZE_MASK,
+ 				 frag_size_tx);
+@@ -5191,13 +5182,13 @@ static void airoha_mac_link_up(struct phylink_config *config, struct phy_device
+ 	spin_unlock(&port->lock);
+ }
+ 
+-/* Nothing to do in MAC, everything is handled in PCS */
+-static void airoha_mac_link_down(struct phylink_config *config, unsigned int mode,
++/* Nothing to do in MAC, everything is handled in PCS. */
++static void airoha_mac_link_down(void *priv, unsigned int mode,
+ 				 phy_interface_t interface)
+ {
+ }
+ 
+-static const struct phylink_mac_ops airoha_phylink_ops = {
++static const struct airoha_gdm_mac_ops airoha_gdm_mac_ops = {
+ 	.mac_config = airoha_mac_config,
+ 	.mac_link_up = airoha_mac_link_up,
+ 	.mac_link_down = airoha_mac_link_down,
+@@ -5220,7 +5211,6 @@ static int airoha_setup_phylink(struct net_device *netdev)
+ 	struct airoha_gdm_port *port = dev->port;
+ 	struct phylink_config *config;
+ 	phy_interface_t phy_mode;
+-	struct phylink *phylink;
+ 	int err;
+ 
+ 	err = of_get_phy_mode(np, &phy_mode);
+@@ -5229,9 +5219,7 @@ static int airoha_setup_phylink(struct net_device *netdev)
+ 		return err;
+ 	}
+ 
+-	config = &dev->phylink_config;
+-	config->dev = &netdev->dev;
+-	config->type = PHYLINK_NETDEV;
++	config = &dev->common.phylink_config;
+ 
+ 	/*
+ 	 * GDM{1,2} only supports internal for Embedded Switch
+@@ -5253,7 +5241,7 @@ static int airoha_setup_phylink(struct net_device *netdev)
+ 					   MAC_2500FD | MAC_5000FD | MAC_10000FD;
+ 
+ 		err = fwnode_phylink_pcs_parse(dev_fwnode(config->dev), NULL,
+-					       &dev->phylink_config.num_available_pcs);
++					       &dev->common.phylink_config.num_available_pcs);
+ 		if (err)
+ 			return err;
+ 
+@@ -5272,25 +5260,18 @@ static int airoha_setup_phylink(struct net_device *netdev)
+ 		if (phy_mode != PHY_INTERFACE_MODE_SGMII &&
+ 		    phy_mode != PHY_INTERFACE_MODE_1000BASEX) {
+ 			__set_bit(PHY_INTERFACE_MODE_2500BASEX,
+-				  dev->phylink_config.supported_interfaces);
++				  dev->common.phylink_config.supported_interfaces);
+ 			__set_bit(PHY_INTERFACE_MODE_10GBASER,
+-				  dev->phylink_config.supported_interfaces);
++				  dev->common.phylink_config.supported_interfaces);
+ 			__set_bit(PHY_INTERFACE_MODE_USXGMII,
+-				  dev->phylink_config.supported_interfaces);
++				  dev->common.phylink_config.supported_interfaces);
+ 		}
+ 
+ 		phy_interface_copy(config->pcs_interfaces,
+ 				   config->supported_interfaces);
+ 	}
+ 
+-	phylink = phylink_create(config, of_fwnode_handle(np),
+-				 phy_mode, &airoha_phylink_ops);
+-	if (IS_ERR(phylink))
+-		return PTR_ERR(phylink);
+-
+-	dev->phylink = phylink;
+-
+-	return 0;
++	return airoha_gdm_phylink_create(&dev->common, np, phy_mode);
+ }
+ 
+ static int airoha_alloc_gdm_device(struct airoha_eth *eth,
+@@ -5342,6 +5323,9 @@ static int airoha_alloc_gdm_device(struct airoha_eth *eth,
+ 
+ 	netdev->dev.of_node = of_node_get(np);
+ 	dev = netdev_priv(netdev);
++	airoha_gdm_common_init(&dev->common, netdev,
++			       AIROHA_ETH_FAMILY_AIROHA, port->id, 0,
++			       dev, &airoha_gdm_mac_ops);
+ 	u64_stats_init(&dev->stats.syncp);
+ 	dev->port = port;
+ 	dev->eth = eth;
+@@ -5470,6 +5454,75 @@ static int airoha_register_gdm_devices(struct airoha_eth *eth)
+ 	return 0;
+ }
+ 
++static struct airoha_npu *airoha_eth_ppe_npu_get(struct airoha_eth *eth)
++{
++	struct airoha_npu *npu = airoha_npu_get(eth->dev);
++
++	return npu ? npu : ERR_PTR(-EOPNOTSUPP);
++}
++
++static void airoha_eth_ppe_npu_put(struct airoha_npu *npu)
++{
++	airoha_npu_put(npu);
++}
++
++static int airoha_eth_ppe_npu_init(struct airoha_npu *npu)
++{
++#if IS_ENABLED(CONFIG_NET_AIROHA_NPU)
++	return npu->ops.ppe_init(npu);
++#else
++	return -EOPNOTSUPP;
++#endif
++}
++
++static int airoha_eth_ppe_npu_deinit(struct airoha_npu *npu)
++{
++#if IS_ENABLED(CONFIG_NET_AIROHA_NPU)
++	return npu->ops.ppe_deinit(npu);
++#else
++	return -EOPNOTSUPP;
++#endif
++}
++
++static int airoha_eth_ppe_npu_init_stats(struct airoha_npu *npu,
++					 dma_addr_t addr, u32 entries)
++{
++#if IS_ENABLED(CONFIG_NET_AIROHA_NPU)
++	return npu->ops.ppe_init_stats(npu, addr, entries);
++#else
++	return -EOPNOTSUPP;
++#endif
++}
++
++static void airoha_eth_ppe_npu_stats_read(struct airoha_npu *npu,
++					  u32 index,
++					   struct airoha_foe_stats *stats)
++{
++#if IS_ENABLED(CONFIG_NET_AIROHA_NPU)
++	memcpy_fromio(stats, &npu->stats[index], sizeof(*stats));
++#endif
++}
++
++static void airoha_eth_ppe_npu_stats_clear(struct airoha_npu *npu, u32 index)
++{
++#if IS_ENABLED(CONFIG_NET_AIROHA_NPU)
++	memset_io(&npu->stats[index], 0, sizeof(*npu->stats));
++#endif
++}
++
++static const struct airoha_ppe_host_ops airoha_ppe_host_ops = {
++	.get_fe_port = airoha_get_fe_port,
++	.is_valid_gdm_dev = airoha_is_valid_gdm_dev,
++	.xpon_get_tx_info = airoha_eth_xpon_get_tx_info,
++	.npu_get = airoha_eth_ppe_npu_get,
++	.npu_put = airoha_eth_ppe_npu_put,
++	.npu_ppe_init = airoha_eth_ppe_npu_init,
++	.npu_ppe_deinit = airoha_eth_ppe_npu_deinit,
++	.npu_ppe_init_stats = airoha_eth_ppe_npu_init_stats,
++	.npu_stats_read = airoha_eth_ppe_npu_stats_read,
++	.npu_stats_clear = airoha_eth_ppe_npu_stats_clear,
++};
++
+ static int airoha_eth_probe(struct platform_device *pdev)
+ {
+ 	struct reset_control_bulk_data *xsi_rsts;
+@@ -5484,6 +5537,7 @@ static int airoha_eth_probe(struct platform_device *pdev)
+ 	eth->soc = of_device_get_match_data(&pdev->dev);
+ 	if (!eth->soc)
+ 		return -EINVAL;
++	eth->ppe_host_ops = &airoha_ppe_host_ops;
+ 
+ 	eth->dev = &pdev->dev;
+ 
+@@ -5624,8 +5678,7 @@ static int airoha_eth_probe(struct platform_device *pdev)
+ 			netdev = netdev_from_priv(dev);
+ 			if (netdev->reg_state == NETREG_REGISTERED)
+ 				unregister_netdev(netdev);
+-			if (dev->phylink)
+-				phylink_destroy(dev->phylink);
++			airoha_gdm_phylink_destroy(&dev->common);
+ 			of_node_put(netdev->dev.of_node);
+ 		}
+ 		airoha_metadata_dst_free(port);
+@@ -5661,7 +5714,7 @@ static void airoha_eth_remove(struct platform_device *pdev)
+ 
+ 			netdev = netdev_from_priv(dev);
+ 			unregister_netdev(netdev);
+-			phylink_destroy(dev->phylink);
++			airoha_gdm_phylink_destroy(&dev->common);
+ 			of_node_put(netdev->dev.of_node);
+ 		}
+ 		airoha_metadata_dst_free(port);
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.h b/drivers/net/ethernet/airoha/airoha_eth.h
+index 95a56390dc3f..68068cb77b03 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.h
++++ b/drivers/net/ethernet/airoha/airoha_eth.h
+@@ -668,6 +668,9 @@ struct airoha_xpon_tx_info {
+ };
+ 
+ struct airoha_gdm_dev {
++	/* Must stay first: shared GDM/phylink and PPE port metadata. */
++	struct airoha_gdm_common common;
++
+ 	struct airoha_qdma __rcu *qdma;
+ 	struct airoha_gdm_port *port;
+ 	struct airoha_eth *eth;
+@@ -705,9 +708,6 @@ struct airoha_gdm_dev {
+ 	struct airoha_xpon_service_cfg
+ 		xpon_services[AIROHA_XPON_MAX_SERVICES];
+ 
+-	struct phylink *phylink;
+-	struct phylink_config phylink_config;
+-	bool phylink_started;
+ };
+ 
+ struct airoha_gdm_port {
+@@ -730,6 +730,24 @@ struct airoha_gdm_port {
+ #define AIROHA_PPE_CPU_REASON_HIT_UNBIND		0x0e
+ #define AIROHA_PPE_CPU_REASON_HIT_UNBIND_RATE_REACHED	0x0f
+ 
++struct airoha_ppe_host_ops {
++	int (*get_fe_port)(struct airoha_gdm_dev *dev);
++	bool (*is_valid_gdm_dev)(struct airoha_eth *eth,
++				 struct airoha_gdm_dev *dev);
++	int (*xpon_get_tx_info)(struct net_device *netdev, bool vlan_valid,
++				u16 vlan_id, bool pcp_valid, u8 pcp,
++				struct airoha_xpon_tx_info *info);
++	struct airoha_npu *(*npu_get)(struct airoha_eth *eth);
++	void (*npu_put)(struct airoha_npu *npu);
++	int (*npu_ppe_init)(struct airoha_npu *npu);
++	int (*npu_ppe_deinit)(struct airoha_npu *npu);
++	int (*npu_ppe_init_stats)(struct airoha_npu *npu, dma_addr_t addr,
++				  u32 num_stats_entries);
++	void (*npu_stats_read)(struct airoha_npu *npu, u32 index,
++			       struct airoha_foe_stats *stats);
++	void (*npu_stats_clear)(struct airoha_npu *npu, u32 index);
++};
++
+ struct airoha_ppe {
+ 	struct airoha_ppe_dev dev;
+ 	struct airoha_eth *eth;
+@@ -786,6 +804,7 @@ struct airoha_eth {
+ 	struct airoha_npu __rcu *npu;
+ 
+ 	struct airoha_ppe *ppe;
++	const struct airoha_ppe_host_ops *ppe_host_ops;
+ 	struct rhashtable flow_table;
+ 
+ 	struct reset_control_bulk_data rsts[AIROHA_MAX_NUM_RSTS];
+@@ -939,7 +958,7 @@ struct airoha_foe_entry *airoha_ppe_foe_get_entry(struct airoha_ppe *ppe,
+ void airoha_ppe_foe_entry_get_stats(struct airoha_ppe *ppe, u32 hash,
+ 				    struct airoha_foe_stats64 *stats);
+ 
+-#ifdef CONFIG_DEBUG_FS
++#if IS_ENABLED(CONFIG_NET_AIROHA_PPE_DEBUGFS)
+ int airoha_ppe_debugfs_init(struct airoha_ppe *ppe);
+ #else
+ static inline int airoha_ppe_debugfs_init(struct airoha_ppe *ppe)
+diff --git a/drivers/net/ethernet/airoha/airoha_ppe.c b/drivers/net/ethernet/airoha/airoha_ppe.c
+index a399e68a5f60..2e19343e3a04 100644
+--- a/drivers/net/ethernet/airoha/airoha_ppe.c
++++ b/drivers/net/ethernet/airoha/airoha_ppe.c
+@@ -8,12 +8,15 @@
+ #include <linux/if_vlan.h>
+ #include <linux/ipv6.h>
+ #include <linux/of_platform.h>
++#include <linux/of_reserved_mem.h>
+ #include <linux/platform_device.h>
+ #include <linux/rhashtable.h>
+ #include <net/ipv6.h>
+-#include <linux/if_vlan.h>
++#include <net/flow_offload.h>
++#include <net/netlink.h>
+ #include <net/pkt_cls.h>
+ #include <net/route.h>
++#include <uapi/linux/ppp_defs.h>
+ 
+ #include "airoha_regs.h"
+ #include "airoha_eth.h"
+@@ -138,6 +141,7 @@ bool airoha_ppe_is_enabled(struct airoha_eth *eth, int index)
+ 
+ 	return airoha_fe_rr(eth, REG_PPE_GLO_CFG(index)) & PPE_GLO_CFG_EN_MASK;
+ }
++EXPORT_SYMBOL_GPL(airoha_ppe_is_enabled);
+ 
+ static u32 airoha_ppe_get_timestamp(struct airoha_ppe *ppe)
+ {
+@@ -159,6 +163,7 @@ void airoha_ppe_set_cpu_port(struct airoha_gdm_dev *dev, u8 ppe_id, u8 fport)
+ 		      DFT_CPORT_MASK(fport),
+ 		      __field_prep(DFT_CPORT_MASK(fport), fe_cpu_port));
+ }
++EXPORT_SYMBOL_GPL(airoha_ppe_set_cpu_port);
+ 
+ void airoha_ppe_set_mtu(struct airoha_gdm_dev *dev)
+ {
+@@ -211,6 +216,7 @@ void airoha_ppe_set_mtu(struct airoha_gdm_dev *dev)
+ 		      FP_EGRESS_MTU_MASK(index),
+ 		      __field_prep(FP_EGRESS_MTU_MASK(index), len));
+ }
++EXPORT_SYMBOL_GPL(airoha_ppe_set_mtu);
+ 
+ static void airoha_ppe_hw_init(struct airoha_ppe *ppe)
+ {
+@@ -421,7 +427,7 @@ static void airoha_ppe_hw_init(struct airoha_ppe *ppe)
+ 
+ 			ppe_id = !airoha_is_lan_gdm_dev(dev) &&
+ 				 airoha_ppe_is_enabled(eth, 1);
+-			fport = airoha_get_fe_port(dev);
++			fport = eth->ppe_host_ops->get_fe_port(dev);
+ 			airoha_ppe_set_cpu_port(dev, ppe_id, fport);
+ 			airoha_ppe_set_mtu(dev);
+ 		}
+@@ -539,7 +545,8 @@ static void airoha_ppe_foe_set_bridge_addrs(struct airoha_foe_bridge *br,
+ }
+ 
+ static int
+-airoha_ppe_xpon_get_tx_info(struct net_device *netdev,
++airoha_ppe_xpon_get_tx_info(struct airoha_eth *eth,
++			    struct net_device *netdev,
+ 			    const struct airoha_flow_data *data,
+ 			    struct airoha_xpon_tx_info *info)
+ {
+@@ -548,12 +555,12 @@ airoha_ppe_xpon_get_tx_info(struct net_device *netdev,
+ 	for (i = data->vlan.num - 1; i >= 0; i--) {
+ 		const typeof(data->vlan.hdr[0]) *vlan = &data->vlan.hdr[i];
+ 
+-		if (!airoha_eth_xpon_get_tx_info(netdev, true, vlan->id, true,
+-						 vlan->prio, info))
++		if (!eth->ppe_host_ops->xpon_get_tx_info(netdev, true, vlan->id,
++							 true, vlan->prio, info))
+ 			return 0;
+ 	}
+ 
+-	return airoha_eth_xpon_get_tx_info(netdev, false, 0, false, 0, info);
++	return eth->ppe_host_ops->xpon_get_tx_info(netdev, false, 0, false, 0, info);
+ }
+ 
+ static int airoha_ppe_foe_entry_prepare(struct airoha_eth *eth,
+@@ -607,7 +614,7 @@ static int airoha_ppe_foe_entry_prepare(struct airoha_eth *eth,
+ 			struct airoha_gdm_port *port;
+ 			u8 pse_port, channel, priority;
+ 
+-			if (!airoha_is_valid_gdm_dev(eth, dev))
++			if (!eth->ppe_host_ops->is_valid_gdm_dev(eth, dev))
+ 				return -EINVAL;
+ 
+ 			port = dev->port;
+@@ -621,7 +628,7 @@ static int airoha_ppe_foe_entry_prepare(struct airoha_eth *eth,
+ 			    dev->xpon_mode == AIROHA_XPON_MODE_GPON) {
+ 				int ret;
+ 
+-				ret = airoha_ppe_xpon_get_tx_info(netdev, data,
++				ret = airoha_ppe_xpon_get_tx_info(eth, netdev, data,
+ 								  &xpon);
+ 				if (ret)
+ 					return ret;
+@@ -921,12 +928,14 @@ void airoha_ppe_foe_entry_get_stats(struct airoha_ppe *ppe, u32 sw_idx,
+ 		u64 bytes = ppe->foe_stats[index].bytes;
+ 		struct airoha_foe_stats npu_stats;
+ 
+-		memcpy_fromio(&npu_stats, &npu->stats[index],
+-			      sizeof(*npu->stats));
++		if (!eth->ppe_host_ops || !eth->ppe_host_ops->npu_stats_read)
++			goto unlock;
++		eth->ppe_host_ops->npu_stats_read(npu, index, &npu_stats);
+ 		stats->packets = packets << 32 | npu_stats.packets;
+ 		stats->bytes = bytes << 32 | npu_stats.bytes;
+ 	}
+ 
++unlock:
+ 	rcu_read_unlock();
+ }
+ 
+@@ -934,7 +943,8 @@ static void airoha_ppe_foe_flow_stat_entry_reset(struct airoha_ppe *ppe,
+ 						 struct airoha_npu *npu,
+ 						 int index)
+ {
+-	memset_io(&npu->stats[index], 0, sizeof(*npu->stats));
++	if (ppe->eth->ppe_host_ops && ppe->eth->ppe_host_ops->npu_stats_clear)
++		ppe->eth->ppe_host_ops->npu_stats_clear(npu, index);
+ 	memset(&ppe->foe_stats[index], 0, sizeof(*ppe->foe_stats));
+ }
+ 
+@@ -2085,12 +2095,21 @@ static int airoha_ppe_flush_sram_entries(struct airoha_ppe *ppe)
+ 
+ static struct airoha_npu *airoha_ppe_npu_get(struct airoha_eth *eth)
+ {
+-	struct airoha_npu *npu = airoha_npu_get(eth->dev);
++	struct airoha_npu *npu;
+ 
+-	if (IS_ERR(npu)) {
++	if (!eth->ppe_host_ops || !eth->ppe_host_ops->npu_get)
++		return ERR_PTR(-EOPNOTSUPP);
++
++	npu = eth->ppe_host_ops->npu_get(eth);
++	if (!npu)
++		npu = ERR_PTR(-EOPNOTSUPP);
++
++	if (IS_ERR(npu) && PTR_ERR(npu) != -EOPNOTSUPP) {
+ 		dev_info(eth->dev, "Requesting airoha-npu module\n");
+ 		request_module("airoha-npu");
+-		npu = airoha_npu_get(eth->dev);
++		npu = eth->ppe_host_ops->npu_get(eth);
++		if (!npu)
++			npu = ERR_PTR(-EOPNOTSUPP);
+ 	}
+ 
+ 	if (IS_ERR(npu))
+@@ -2151,7 +2170,7 @@ static int airoha_ppe_offload_setup(struct airoha_eth *eth)
+ 		return 0;
+ 	}
+ 
+-	err = npu->ops.ppe_init(npu);
++	err = eth->ppe_host_ops->npu_ppe_init(npu);
+ 	if (err && err != -EOPNOTSUPP) {
+ 		dev_err(eth->dev, "NPU PPE init failed (err: %d)\n", err);
+ 		goto error_npu_put;
+@@ -2164,7 +2183,8 @@ static int airoha_ppe_offload_setup(struct airoha_eth *eth)
+ 
+ 		ppe_num_stats_entries = airoha_ppe_get_total_num_stats_entries(ppe);
+ 		if (ppe_num_stats_entries > 0) {
+-			err = npu->ops.ppe_init_stats(npu, ppe->foe_stats_dma,
++			err = eth->ppe_host_ops->npu_ppe_init_stats(npu,
++						      ppe->foe_stats_dma,
+ 						      ppe_num_stats_entries);
+ 			if (err) {
+ 				dev_err(eth->dev, "NPU PPE stats init failed (err: %d)\n", err);
+@@ -2183,7 +2203,7 @@ static int airoha_ppe_offload_setup(struct airoha_eth *eth)
+ 	return 0;
+ 
+ error_npu_put:
+-	airoha_npu_put(npu);
++	eth->ppe_host_ops->npu_put(npu);
+ 
+ 	return err;
+ }
+@@ -2214,6 +2234,7 @@ int airoha_ppe_setup_tc_block_cb(struct airoha_ppe_dev *dev, void *type_data)
+ 
+ 	return err;
+ }
++EXPORT_SYMBOL_GPL(airoha_ppe_setup_tc_block_cb);
+ 
+ void airoha_ppe_check_skb(struct airoha_ppe_dev *dev, struct sk_buff *skb,
+ 			  u16 hash, bool rx_wlan)
+@@ -2233,6 +2254,7 @@ void airoha_ppe_check_skb(struct airoha_ppe_dev *dev, struct sk_buff *skb,
+ 	ppe->foe_check_time[sw_idx] = now;
+ 	airoha_ppe_foe_insert_entry(ppe, skb, sw_idx, rx_wlan);
+ }
++EXPORT_SYMBOL_GPL(airoha_ppe_check_skb);
+ 
+ void airoha_ppe_init_upd_mem(struct airoha_gdm_dev *dev, const u8 *addr)
+ {
+@@ -2255,6 +2277,7 @@ void airoha_ppe_init_upd_mem(struct airoha_gdm_dev *dev, const u8 *addr)
+ 		     FIELD_PREP(PPE_UPDMEM_OFFSET_MASK, 1) |
+ 		     PPE_UPDMEM_WR_MASK | PPE_UPDMEM_REQ_MASK);
+ }
++EXPORT_SYMBOL_GPL(airoha_ppe_init_upd_mem);
+ 
+ struct airoha_ppe_dev *airoha_ppe_get_dev(struct device *dev)
+ {
+@@ -2330,6 +2353,7 @@ int airoha_ppe_init(struct airoha_eth *eth)
+ 	ppe->dev.ops.setup_tc_block_cb = airoha_ppe_setup_tc_block_cb;
+ 	ppe->dev.ops.check_skb = airoha_ppe_check_skb;
+ 	ppe->dev.priv = ppe;
++	ppe->dev.enabled = true;
+ 	ppe->eth = eth;
+ 	INIT_HLIST_HEAD(&ppe->pending_flows);
+ 	eth->ppe = ppe;
+@@ -2404,6 +2428,7 @@ int airoha_ppe_init(struct airoha_eth *eth)
+ 
+ 	return err;
+ }
++EXPORT_SYMBOL_GPL(airoha_ppe_init);
+ 
+ void airoha_ppe_deinit(struct airoha_eth *eth)
+ {
+@@ -2415,8 +2440,9 @@ void airoha_ppe_deinit(struct airoha_eth *eth)
+ 				  lockdep_is_held(&flow_offload_mutex));
+ 	if (npu) {
+ 		synchronize_rcu();
+-		npu->ops.ppe_deinit(npu);
+-		airoha_npu_put(npu);
++		if (eth->ppe_host_ops && eth->ppe_host_ops->npu_ppe_deinit)
++			eth->ppe_host_ops->npu_ppe_deinit(npu);
++		eth->ppe_host_ops->npu_put(npu);
+ 	}
+ 
+ 	mutex_unlock(&flow_offload_mutex);
+@@ -2425,3 +2451,988 @@ void airoha_ppe_deinit(struct airoha_eth *eth)
+ 	rhashtable_destroy(&eth->flow_table);
+ 	debugfs_remove(eth->ppe->debugfs_dir);
+ }
++EXPORT_SYMBOL_GPL(airoha_ppe_deinit);
++
++/* EcoNet EN751221 backend. */
++#if IS_ENABLED(CONFIG_NET_ECONET_PPE)
++
++#define EN75_PPE_ENTRIES		16384
++#define EN75_FOE_ENTRY_SIZE		80
++#define EN75_PPE_TABLE_SIZE		(EN75_PPE_ENTRIES * EN75_FOE_ENTRY_SIZE)
++#define EN75_PPE_INVALID_HASH		0xffff
++#define EN75_DPORT_GDMA1		1
++#define EN75_DPORT_QDMA_HW		6
++
++#define EN75_PPE_GLO_CFG		0x200
++#define EN75_PPE_FLOW_CFG		0x204
++#define EN75_PPE_IP_PROTO_CHK		0x208
++#define EN75_PPE_TB_CFG			0x21c
++#define EN75_PPE_TB_BASE		0x220
++#define EN75_PPE_TB_USED		0x224
++#define EN75_PPE_BIND_RATE		0x228
++#define EN75_PPE_BIND_LIMIT0		0x22c
++#define EN75_PPE_BIND_LIMIT1		0x230
++#define EN75_PPE_UNBIND_AGE		0x238
++#define EN75_PPE_BIND_AGE0		0x23c
++#define EN75_PPE_BIND_AGE1		0x240
++#define EN75_PPE_HASH_SEED		0x244
++#define EN75_PPE_DEFAULT_CPU_PORT	0x248
++#define EN75_PPE_CACHE_CTL		0x320
++#define EN75_PPE_CAH_GATE		0x334
++
++#define EN75_PPE_GLO_CFG_EN		BIT(0)
++#define EN75_PPE_GLO_CFG_BUSY		BIT(31)
++#define EN75_PPE_GLO_CFG_ON		(EN75_PPE_GLO_CFG_EN | BIT(2) | BIT(3) | BIT(9))
++
++#define EN75_FE_TIMESTAMP		0x10
++#define EN75_FE_CDMA1_VLAN_CTRL		0x400
++#define EN75_FE_GDM1_FWD_CFG		0x500
++#define EN75_FE_GDM1_VLAN_CHECK		0x510
++
++#define EN75_FOE_IB1_BIND_TIMESTAMP	GENMASK(14, 0)
++#define EN75_FOE_IB1_BIND_KEEPALIVE	BIT(15)
++#define EN75_FOE_IB1_BIND_VLAN_LAYER	GENMASK(18, 16)
++#define EN75_FOE_IB1_BIND_PPPOE	BIT(19)
++#define EN75_FOE_IB1_BIND_VLAN_TAG	BIT(20)
++#define EN75_FOE_IB1_BIND_CACHE	BIT(22)
++#define EN75_FOE_IB1_BIND_TTL		BIT(24)
++#define EN75_FOE_IB1_PACKET_TYPE	GENMASK(27, 25)
++#define EN75_FOE_IB1_STATE		GENMASK(29, 28)
++#define EN75_FOE_IB1_UDP		BIT(30)
++
++#define EN75_FOE_IB2_QID		GENMASK(3, 0)
++#define EN75_FOE_IB2_PSE_QOS		BIT(4)
++#define EN75_FOE_IB2_DEST_PORT		GENMASK(7, 5)
++#define EN75_FOE_IB2_MULTICAST		BIT(8)
++#define EN75_FOE_IB2_PORT_MG		GENMASK(17, 12)
++#define EN75_FOE_IB2_PORT_AG		GENMASK(23, 18)
++
++#define EN75_PPE_CPU_REASON_NO_FLOW	0x07
++#define EN75_PPE_CPU_REASON_HIT_UNBIND	0x0e
++#define EN75_PPE_CPU_REASON_BIND_RATE	0x0f
++
++#define EN75_PPE_PKT_TYPE_IPV4_HNAPT	0
++#define EN75_FOE_STATE_INVALID		0
++#define EN75_FOE_STATE_BIND		2
++
++struct en75_foe_mac_info {
++	u16 vlan1;
++	u16 etype;
++	u32 dest_mac_hi;
++	u16 vlan2;
++	u16 dest_mac_lo;
++	u32 src_mac_hi;
++	u16 pppoe_id;
++	u16 src_mac_lo;
++	u16 minfo;
++	u16 winfo;
++	u32 w3info;
++	u32 amsdu;
++};
++
++struct en75_ipv4_tuple {
++	u32 src_ip;
++	u32 dest_ip;
++	union {
++		struct {
++			u16 dest_port;
++			u16 src_port;
++		};
++		u32 ports;
++	};
++};
++
++struct en75_foe_ipv4 {
++	struct en75_ipv4_tuple orig;
++	u32 ib2;
++	struct en75_ipv4_tuple new;
++	u16 timestamp;
++	u16 reserved[3];
++	u32 udf_tsid;
++	struct en75_foe_mac_info l2;
++};
++
++struct en75_foe_entry {
++	u32 ib1;
++	union {
++		struct en75_foe_ipv4 ipv4;
++		u32 data[19];
++	};
++};
++
++static_assert(sizeof(struct en75_foe_entry) == EN75_FOE_ENTRY_SIZE);
++
++struct en75_flow_entry {
++	struct list_head list;
++	struct en75_foe_entry data;
++	unsigned long cookie;
++	u32 src_ip;
++	u32 dest_ip;
++	u16 src_port;
++	u16 dest_port;
++	u16 hash;
++};
++
++struct en75_ppe {
++	struct airoha_ppe_dev dev;
++	struct device *parent;
++	void __iomem *base;
++	void __iomem *fe_base;
++	void __iomem *foe_table;
++	phys_addr_t foe_phys;
++	/* Protects flows and FoE slot ownership in RX and TC paths. */
++	spinlock_t lock;
++	struct list_head flows;
++	struct list_head block_cb_list;
++	bool armed;
++};
++
++static void __iomem *en75_ppe_slot(struct en75_ppe *ppe, u16 hash)
++{
++	return ppe->foe_table + (size_t)hash * EN75_FOE_ENTRY_SIZE;
++}
++
++static void en75_ppe_read_entry(struct en75_ppe *ppe, u16 hash,
++				struct en75_foe_entry *entry)
++{
++	void __iomem *slot = en75_ppe_slot(ppe, hash);
++	int i;
++
++	for (i = 0; i < ARRAY_SIZE(entry->data) + 1; i++)
++		((u32 *)entry)[i] = readl(slot + i * sizeof(u32));
++}
++
++static bool en75_ppe_cache_cmd(struct en75_ppe *ppe, u32 cmd)
++{
++	u32 val;
++
++	writel((cmd << 12) | BIT(8), ppe->base + EN75_PPE_CACHE_CTL);
++	return !readl_poll_timeout_atomic(ppe->base + EN75_PPE_CACHE_CTL,
++					 val, !(val & BIT(8)), 1, 100000);
++}
++
++static void en75_ppe_cache_clean(struct en75_ppe *ppe)
++{
++	u32 gate = readl(ppe->base + EN75_PPE_CAH_GATE);
++
++	if (!(gate & BIT(0))) {
++		writel(0x33, ppe->base + EN75_PPE_CAH_GATE);
++		gate = readl(ppe->base + EN75_PPE_CAH_GATE);
++	}
++
++	writel(gate & ~BIT(0), ppe->base + EN75_PPE_CAH_GATE);
++	en75_ppe_cache_cmd(ppe, 4);
++	writel(gate | BIT(0), ppe->base + EN75_PPE_CAH_GATE);
++}
++
++static void en75_foe_entry_prepare(struct en75_foe_entry *entry, u8 l4proto,
++				   u8 pse_port, const u8 *src_mac,
++				   const u8 *dest_mac)
++{
++	u32 ib2;
++
++	memset(entry, 0, sizeof(*entry));
++	entry->ib1 = FIELD_PREP(EN75_FOE_IB1_STATE, EN75_FOE_STATE_BIND) |
++		FIELD_PREP(EN75_FOE_IB1_PACKET_TYPE,
++			   EN75_PPE_PKT_TYPE_IPV4_HNAPT) |
++		FIELD_PREP(EN75_FOE_IB1_UDP, l4proto == IPPROTO_UDP) |
++		EN75_FOE_IB1_BIND_CACHE | EN75_FOE_IB1_BIND_TTL;
++
++	ib2 = FIELD_PREP(EN75_FOE_IB2_DEST_PORT, pse_port) |
++		FIELD_PREP(EN75_FOE_IB2_PORT_MG, 0x3f) |
++		FIELD_PREP(EN75_FOE_IB2_PORT_AG, 0x3f);
++	if (is_multicast_ether_addr(dest_mac))
++		ib2 |= EN75_FOE_IB2_MULTICAST;
++	entry->ipv4.ib2 = ib2;
++
++	entry->ipv4.l2.dest_mac_hi = get_unaligned_be32(dest_mac);
++	entry->ipv4.l2.dest_mac_lo = get_unaligned_be16(dest_mac + 4);
++	entry->ipv4.l2.src_mac_hi = get_unaligned_be32(src_mac);
++	entry->ipv4.l2.src_mac_lo = get_unaligned_be16(src_mac + 4);
++	entry->ipv4.l2.etype = ETH_P_IP;
++}
++
++static void en75_foe_entry_set_ipv4_tuple(struct en75_foe_entry *entry,
++					  bool egress, __be32 src_addr,
++					  __be16 src_port, __be32 dest_addr,
++					  __be16 dest_port)
++{
++	struct en75_ipv4_tuple *tuple = egress ? &entry->ipv4.new :
++						      &entry->ipv4.orig;
++
++	tuple->src_ip = be32_to_cpu(src_addr);
++	tuple->dest_ip = be32_to_cpu(dest_addr);
++	tuple->src_port = be16_to_cpu(src_port);
++	tuple->dest_port = be16_to_cpu(dest_port);
++}
++
++static void en75_foe_entry_set_pse_port(struct en75_foe_entry *entry, u8 port)
++{
++	entry->ipv4.ib2 &= ~(EN75_FOE_IB2_DEST_PORT | EN75_FOE_IB2_PSE_QOS);
++	entry->ipv4.ib2 |= FIELD_PREP(EN75_FOE_IB2_DEST_PORT, port);
++	if (port == EN75_DPORT_QDMA_HW)
++		entry->ipv4.ib2 |= EN75_FOE_IB2_PSE_QOS;
++}
++
++static void en75_foe_entry_set_queue(struct en75_foe_entry *entry, u8 queue)
++{
++	entry->ipv4.ib2 &= ~EN75_FOE_IB2_QID;
++	entry->ipv4.ib2 |= FIELD_PREP(EN75_FOE_IB2_QID, queue);
++}
++
++static void en75_foe_entry_set_dsa(struct en75_foe_entry *entry, int port,
++				   bool passthrough)
++{
++	struct en75_foe_mac_info *l2 = &entry->ipv4.l2;
++
++	l2->etype = BIT(port) & GENMASK(5, 0);
++	if (passthrough)
++		l2->etype |= BIT(7);
++	if (!(entry->ib1 & EN75_FOE_IB1_BIND_VLAN_LAYER))
++		entry->ib1 |= FIELD_PREP(EN75_FOE_IB1_BIND_VLAN_LAYER, 1);
++	else
++		l2->etype |= BIT(8);
++	l2->vlan1 = 0;
++	entry->ib1 &= ~EN75_FOE_IB1_BIND_VLAN_TAG;
++}
++
++static void en75_foe_entry_set_pppoe(struct en75_foe_entry *entry, u16 sid)
++{
++	struct en75_foe_mac_info *l2 = &entry->ipv4.l2;
++
++	if (!(entry->ib1 & EN75_FOE_IB1_BIND_VLAN_LAYER) ||
++	    (entry->ib1 & EN75_FOE_IB1_BIND_VLAN_TAG))
++		l2->etype = ETH_P_PPP_SES;
++	entry->ib1 |= EN75_FOE_IB1_BIND_PPPOE;
++	l2->pppoe_id = sid;
++}
++
++static void en75_foe_entry_set_bind_metadata(struct en75_foe_entry *entry)
++{
++	u8 port = FIELD_GET(EN75_FOE_IB2_DEST_PORT, entry->ipv4.ib2);
++
++	entry->ib1 &= ~EN75_FOE_IB1_BIND_VLAN_LAYER;
++	entry->ib1 |= FIELD_PREP(EN75_FOE_IB1_BIND_VLAN_LAYER, 1);
++	entry->ipv4.udf_tsid &= ~0xff;
++	entry->ipv4.udf_tsid |= port + 6;
++}
++
++static void en75_ppe_commit_entry(struct en75_ppe *ppe,
++				  struct en75_foe_entry *entry, u16 hash)
++{
++	void __iomem *slot = en75_ppe_slot(ppe, hash);
++	u16 timestamp = readl(ppe->fe_base + EN75_FE_TIMESTAMP) &
++			EN75_FOE_IB1_BIND_TIMESTAMP;
++	const u32 *src;
++	int i;
++
++	entry->ib1 &= ~EN75_FOE_IB1_BIND_TIMESTAMP;
++	entry->ib1 |= FIELD_PREP(EN75_FOE_IB1_BIND_TIMESTAMP, timestamp) |
++		EN75_FOE_IB1_BIND_CACHE | EN75_FOE_IB1_BIND_TTL |
++		EN75_FOE_IB1_BIND_KEEPALIVE;
++	en75_foe_entry_set_bind_metadata(entry);
++
++	/*
++	 * EN751221 is normally used by a big-endian MIPS CPU while the PPE
++	 * consumes little-endian words. Mixed-u16 words need an additional
++	 * half-word exchange to preserve the vendor FoE V1 layout.
++	 */
++	src = entry->data;
++	for (i = 0; i < ARRAY_SIZE(entry->data); i++) {
++		u32 val = src[i];
++
++		if (i == 6 || i == 10 || i == 12 || i == 14)
++			val = rol32(val, 16);
++		writel(swab32(val), slot + sizeof(u32) * (i + 1));
++	}
++	/* Publish the rewrite payload before marking the entry bound. */
++	wmb();
++	writel(swab32(entry->ib1), slot);
++	/* Publish the complete entry before invalidating the lookup cache. */
++	wmb();
++	en75_ppe_cache_clean(ppe);
++}
++
++static void en75_ppe_invalidate_entry(struct en75_ppe *ppe, u16 hash)
++{
++	if (hash == EN75_PPE_INVALID_HASH || hash >= EN75_PPE_ENTRIES)
++		return;
++	writel(0, en75_ppe_slot(ppe, hash));
++	/* Publish the invalid state before the caller clears the cache. */
++	wmb();
++}
++
++static bool en75_ppe_parse_ipv4_tuple(struct sk_buff *skb, u32 *src_ip,
++				      u32 *dest_ip, u16 *src_port,
++				      u16 *dest_port)
++{
++	const u8 *data = skb->data;
++	unsigned int len = skb->len;
++	const u8 *iph, *l4;
++	unsigned int proto_off = 12, off;
++	u16 proto;
++	u8 ihl;
++
++	if (len < ETH_HLEN)
++		return false;
++
++	proto = get_unaligned_be16(data + proto_off);
++	if (proto == ETH_P_8021Q || proto == ETH_P_8021AD) {
++		if (len < ETH_HLEN + VLAN_HLEN)
++			return false;
++		proto_off += VLAN_HLEN;
++		proto = get_unaligned_be16(data + proto_off);
++	} else if (proto != ETH_P_IP && proto != ETH_P_PPP_SES) {
++		/* MTK special tag occupies the ethertype/TCI position. */
++		if (len < ETH_HLEN + 4)
++			return false;
++		proto_off += 4;
++		proto = get_unaligned_be16(data + proto_off);
++	}
++	off = proto_off + sizeof(__be16);
++
++	if (proto == ETH_P_PPP_SES) {
++		if (len < proto_off + 10 ||
++		    get_unaligned_be16(data + proto_off + 8) != PPP_IP)
++			return false;
++		off = proto_off + 10;
++		proto = ETH_P_IP;
++	}
++	if (proto != ETH_P_IP || len < off + sizeof(struct iphdr))
++		return false;
++
++	iph = data + off;
++	if ((iph[0] >> 4) != 4 ||
++	    (iph[9] != IPPROTO_TCP && iph[9] != IPPROTO_UDP))
++		return false;
++	ihl = (iph[0] & 0x0f) * 4;
++	if (ihl < sizeof(struct iphdr) || len < off + ihl + 4)
++		return false;
++
++	l4 = iph + ihl;
++	*src_ip = get_unaligned_be32(iph + offsetof(struct iphdr, saddr));
++	*dest_ip = get_unaligned_be32(iph + offsetof(struct iphdr, daddr));
++	*src_port = get_unaligned_be16(l4);
++	*dest_port = get_unaligned_be16(l4 + 2);
++	return true;
++}
++
++static void en75_ppe_rx_check(struct en75_ppe *ppe, struct sk_buff *skb,
++			      u16 hash, u8 reason)
++{
++	struct en75_flow_entry *flow;
++	struct en75_foe_entry entry, hardware;
++	u32 src_ip, dest_ip;
++	u16 src_port, dest_port;
++
++	if (!ppe || !READ_ONCE(ppe->armed) || hash >= EN75_PPE_ENTRIES)
++		return;
++	if (reason != EN75_PPE_CPU_REASON_NO_FLOW &&
++	    reason != EN75_PPE_CPU_REASON_HIT_UNBIND &&
++	    reason != EN75_PPE_CPU_REASON_BIND_RATE)
++		return;
++	if (!en75_ppe_parse_ipv4_tuple(skb, &src_ip, &dest_ip,
++				       &src_port, &dest_port))
++		return;
++
++	spin_lock_bh(&ppe->lock);
++	list_for_each_entry(flow, &ppe->flows, list) {
++		if (flow->src_ip != src_ip || flow->dest_ip != dest_ip ||
++		    flow->src_port != src_port || flow->dest_port != dest_port)
++			continue;
++		if (flow->hash == hash)
++			break;
++
++		entry = flow->data;
++		en75_ppe_read_entry(ppe, hash, &hardware);
++		if (hardware.ib1) {
++			/*
++			 * Preserve the exact key generated by the hardware. The commit
++			 * path byte-swaps every word, therefore pre-swap these raw words
++			 * so they round-trip unchanged.
++			 */
++			entry.ipv4.orig.src_ip = swab32(hardware.ipv4.orig.src_ip);
++			entry.ipv4.orig.dest_ip = swab32(hardware.ipv4.orig.dest_ip);
++			entry.ipv4.orig.ports = swab32(hardware.ipv4.orig.ports);
++		}
++		if (flow->hash != EN75_PPE_INVALID_HASH)
++			en75_ppe_invalidate_entry(ppe, flow->hash);
++		flow->hash = hash;
++		en75_ppe_commit_entry(ppe, &entry, hash);
++		break;
++	}
++	spin_unlock_bh(&ppe->lock);
++}
++
++static void en75_ppe_check_skb_reason(struct airoha_ppe_dev *ppe_dev,
++				      struct sk_buff *skb, u16 hash, u8 reason)
++{
++	struct en75_ppe *ppe = ppe_dev->priv;
++
++	en75_ppe_rx_check(ppe, skb, hash, reason);
++}
++
++static void en75_ppe_flush(struct en75_ppe *ppe)
++{
++	struct en75_flow_entry *flow, *tmp;
++	LIST_HEAD(free_list);
++
++	spin_lock_bh(&ppe->lock);
++	list_for_each_entry(flow, &ppe->flows, list)
++		en75_ppe_invalidate_entry(ppe, flow->hash);
++	list_splice_init(&ppe->flows, &free_list);
++	spin_unlock_bh(&ppe->lock);
++
++	list_for_each_entry_safe(flow, tmp, &free_list, list) {
++		list_del(&flow->list);
++		kfree(flow);
++	}
++	memset_io(ppe->foe_table, 0, EN75_PPE_TABLE_SIZE);
++	/* Publish the cleared table before invalidating the lookup cache. */
++	wmb();
++	en75_ppe_cache_clean(ppe);
++}
++
++static int en75_ppe_engine_set(struct en75_ppe *ppe, bool enable)
++{
++	u32 val;
++
++	if (enable) {
++		if (readl_poll_timeout_atomic(ppe->base + EN75_PPE_GLO_CFG, val,
++					      !(val & EN75_PPE_GLO_CFG_BUSY),
++					      10, 10000))
++			return -EBUSY;
++		writel(EN75_PPE_GLO_CFG_ON, ppe->base + EN75_PPE_GLO_CFG);
++	} else {
++		val = readl(ppe->base + EN75_PPE_GLO_CFG);
++		writel(val & ~EN75_PPE_GLO_CFG_EN,
++		       ppe->base + EN75_PPE_GLO_CFG);
++	}
++	return 0;
++}
++
++static int en75_ppe_engine_arm(struct en75_ppe *ppe)
++{
++	int err;
++
++	if (!ppe)
++		return -ENODEV;
++	if (READ_ONCE(ppe->armed))
++		return 0;
++
++	writel(0x0000ffbc, ppe->fe_base + 0xe1c);
++	writel(0x01010001, ppe->fe_base + 0xe34);
++	err = en75_ppe_engine_set(ppe, true);
++	if (err)
++		return err;
++	writel(0x33, ppe->base + EN75_PPE_CAH_GATE);
++	writel(0x0600f700, ppe->fe_base + 0xe04);
++	writel(0x00008100, ppe->fe_base + 0xf18);
++	writel(0x81000001, ppe->fe_base + EN75_FE_CDMA1_VLAN_CTRL);
++	writel(0x00000001, ppe->fe_base + EN75_FE_GDM1_VLAN_CHECK);
++	writel(0x03f04004, ppe->fe_base + EN75_FE_GDM1_FWD_CFG);
++	writel(0x00000500, ppe->fe_base + 0xe48);
++	WRITE_ONCE(ppe->armed, true);
++	dev_info(ppe->parent, "PPE hardware flow offload enabled\n");
++	return 0;
++}
++
++static void en75_ppe_engine_disarm(struct en75_ppe *ppe)
++{
++	if (!ppe || !READ_ONCE(ppe->armed))
++		return;
++
++	writel(0x03f00000, ppe->fe_base + EN75_FE_GDM1_FWD_CFG);
++	WRITE_ONCE(ppe->armed, false);
++	en75_ppe_flush(ppe);
++	en75_ppe_engine_set(ppe, false);
++	dev_info(ppe->parent, "PPE hardware flow offload disabled\n");
++}
++
++static void en75_flow_mangle_eth(const struct flow_action_entry *act,
++				 void *header)
++{
++	u8 *dest = header + act->mangle.offset;
++	const u8 *src = (const u8 *)&act->mangle.val;
++
++	if (act->mangle.offset > 8)
++		return;
++	if (!act->mangle.mask)
++		memcpy(dest, src, sizeof(u32));
++	else if (act->mangle.mask == 0xffff0000)
++		memcpy(dest, src + 2, sizeof(u16));
++	else if (act->mangle.mask == 0x0000ffff)
++		memcpy(dest + 2, src, sizeof(u16));
++}
++
++static int en75_flow_mangle_ports(const struct flow_action_entry *act,
++				  __be16 *src_port, __be16 *dest_port)
++{
++	u32 val = ntohl(act->mangle.val);
++
++	switch (act->mangle.offset) {
++	case 0:
++		if (act->mangle.mask == ~htonl(0xffff))
++			*dest_port = cpu_to_be16(val);
++		else
++			*src_port = cpu_to_be16(val >> 16);
++		return 0;
++	case 2:
++		*dest_port = cpu_to_be16(val);
++		return 0;
++	default:
++		return -EINVAL;
++	}
++}
++
++static int en75_flow_mangle_ipv4(const struct flow_action_entry *act,
++				 __be32 *src_addr, __be32 *dest_addr)
++{
++	__be32 *dest;
++
++	switch (act->mangle.offset) {
++	case offsetof(struct iphdr, saddr):
++		dest = src_addr;
++		break;
++	case offsetof(struct iphdr, daddr):
++		dest = dest_addr;
++		break;
++	default:
++		return -EINVAL;
++	}
++	memcpy(dest, &act->mangle.val, sizeof(*dest));
++	return 0;
++}
++
++static struct en75_ppe *en75_ppe_from_netdev(struct net_device *netdev)
++{
++	struct airoha_gdm_common *gdm;
++
++	gdm = airoha_gdm_common_from_netdev(netdev);
++	if (!gdm || gdm->family != AIROHA_ETH_FAMILY_ECONET || !gdm->ppe)
++		return NULL;
++
++	return gdm->ppe->priv;
++}
++
++static int en75_flow_set_output(struct en75_foe_entry *entry,
++				struct net_device *odev)
++{
++	struct airoha_gdm_common *gdm;
++	struct dsa_port *dp;
++	int dsa_port = -1;
++
++	if (!odev)
++		return -EOPNOTSUPP;
++
++	if (dsa_user_dev_check(odev)) {
++		dp = dsa_port_from_netdev(odev);
++		if (IS_ERR(dp))
++			return PTR_ERR(dp);
++		dsa_port = dp->index;
++		odev = dsa_port_to_conduit(dp);
++		en75_foe_entry_set_dsa(entry, dsa_port, dp->ds->index != 0);
++	}
++
++	if (!odev)
++		return -EOPNOTSUPP;
++
++	gdm = airoha_gdm_common_from_netdev(odev);
++	if (!gdm || gdm->family != AIROHA_ETH_FAMILY_ECONET)
++		return -EOPNOTSUPP;
++
++	en75_foe_entry_set_pse_port(entry, gdm->pse_port);
++	if (dsa_port >= 0)
++		en75_foe_entry_set_queue(entry, 3 + dsa_port);
++
++	return 0;
++}
++
++static struct en75_flow_entry *
++en75_ppe_find_flow(struct en75_ppe *ppe, unsigned long cookie)
++{
++	struct en75_flow_entry *flow;
++
++	list_for_each_entry(flow, &ppe->flows, list)
++		if (flow->cookie == cookie)
++			return flow;
++	return NULL;
++}
++
++static int en75_flow_offload_replace(struct net_device *dev,
++				     struct flow_cls_offload *cls)
++{
++	struct en75_ppe *ppe = en75_ppe_from_netdev(dev);
++	struct flow_rule *rule = flow_cls_offload_flow_rule(cls);
++	struct flow_match_basic basic;
++	struct flow_match_ipv4_addrs addrs;
++	struct flow_match_ports ports;
++	struct flow_action_entry *act;
++	struct en75_flow_entry *flow;
++	struct en75_foe_entry entry;
++	struct ethhdr eth = {};
++	struct net_device *odev = NULL;
++	__be32 src_addr, dest_addr, new_src_addr, new_dest_addr;
++	__be16 src_port, dest_port, new_src_port, new_dest_port;
++	u16 pppoe_sid = 0;
++	u8 l4proto;
++	int i, err;
++
++	if (!ppe)
++		return -EOPNOTSUPP;
++	if (!flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_BASIC) ||
++	    !flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_IPV4_ADDRS) ||
++	    !flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_PORTS)) {
++		NL_SET_ERR_MSG_MOD(cls->common.extack,
++				   "EcoNet PPE supports IPv4 TCP/UDP flows only");
++		return -EOPNOTSUPP;
++	}
++
++	flow_rule_match_basic(rule, &basic);
++	l4proto = basic.key->ip_proto;
++	if (basic.key->n_proto != htons(ETH_P_IP) ||
++	    (l4proto != IPPROTO_TCP && l4proto != IPPROTO_UDP))
++		return -EOPNOTSUPP;
++
++	flow_rule_match_ipv4_addrs(rule, &addrs);
++	flow_rule_match_ports(rule, &ports);
++	if (basic.mask->n_proto != htons(0xffff) ||
++	    basic.mask->ip_proto != 0xff ||
++	    addrs.mask->src != htonl(0xffffffff) ||
++	    addrs.mask->dst != htonl(0xffffffff) ||
++	    ports.mask->src != htons(0xffff) ||
++	    ports.mask->dst != htons(0xffff)) {
++		NL_SET_ERR_MSG_MOD(cls->common.extack,
++				   "EcoNet PPE requires exact IPv4 5-tuple matches");
++		return -EOPNOTSUPP;
++	}
++	if (!flow_action_basic_hw_stats_check(&rule->action,
++					      cls->common.extack))
++		return -EOPNOTSUPP;
++
++	src_addr = addrs.key->src;
++	dest_addr = addrs.key->dst;
++	src_port = ports.key->src;
++	dest_port = ports.key->dst;
++	new_src_addr = src_addr;
++	new_dest_addr = dest_addr;
++	new_src_port = src_port;
++	new_dest_port = dest_port;
++
++	flow_action_for_each(i, act, &rule->action) {
++		switch (act->id) {
++		case FLOW_ACTION_MANGLE:
++			switch (act->mangle.htype) {
++			case FLOW_ACT_MANGLE_HDR_TYPE_ETH:
++				en75_flow_mangle_eth(act, &eth);
++				break;
++			case FLOW_ACT_MANGLE_HDR_TYPE_IP4:
++				err = en75_flow_mangle_ipv4(act, &new_src_addr,
++							    &new_dest_addr);
++				if (err)
++					return err;
++				break;
++			case FLOW_ACT_MANGLE_HDR_TYPE_TCP:
++			case FLOW_ACT_MANGLE_HDR_TYPE_UDP:
++				err = en75_flow_mangle_ports(act, &new_src_port,
++							     &new_dest_port);
++				if (err)
++					return err;
++				break;
++			default:
++				return -EOPNOTSUPP;
++			}
++			break;
++		case FLOW_ACTION_PPPOE_PUSH:
++			pppoe_sid = act->pppoe.sid;
++			break;
++		case FLOW_ACTION_REDIRECT:
++			odev = act->dev;
++			break;
++		case FLOW_ACTION_CSUM:
++			break;
++		default:
++			NL_SET_ERR_MSG_MOD(cls->common.extack,
++					   "unsupported action for EcoNet PPE");
++			return -EOPNOTSUPP;
++		}
++	}
++
++	if (!is_valid_ether_addr(eth.h_source) ||
++	    !is_valid_ether_addr(eth.h_dest)) {
++		NL_SET_ERR_MSG_MOD(cls->common.extack,
++				   "missing Ethernet rewrite addresses");
++		return -EOPNOTSUPP;
++	}
++
++	en75_foe_entry_prepare(&entry, l4proto, EN75_DPORT_GDMA1,
++			       eth.h_source, eth.h_dest);
++	en75_foe_entry_set_ipv4_tuple(&entry, false, src_addr, src_port,
++				      dest_addr, dest_port);
++	en75_foe_entry_set_ipv4_tuple(&entry, true, new_src_addr, new_src_port,
++				      new_dest_addr, new_dest_port);
++	err = en75_flow_set_output(&entry, odev);
++	if (err)
++		return err;
++	if (pppoe_sid)
++		en75_foe_entry_set_pppoe(&entry, pppoe_sid);
++
++	/*
++	 * The engine's lookup key uses the opposite word lane order on the
++	 * big-endian EN751221 CPU. The RX bind path will replace it with the
++	 * hardware-generated key when that key is visible in DRAM.
++	 */
++	entry.ipv4.orig.src_ip = swab32(entry.ipv4.orig.src_ip);
++	entry.ipv4.orig.dest_ip = swab32(entry.ipv4.orig.dest_ip);
++	entry.ipv4.orig.ports = swab32(entry.ipv4.orig.ports);
++
++	flow = kzalloc(sizeof(*flow), GFP_KERNEL);
++	if (!flow)
++		return -ENOMEM;
++	flow->data = entry;
++	flow->cookie = cls->cookie;
++	flow->src_ip = ntohl(src_addr);
++	flow->dest_ip = ntohl(dest_addr);
++	flow->src_port = ntohs(src_port);
++	flow->dest_port = ntohs(dest_port);
++	flow->hash = EN75_PPE_INVALID_HASH;
++
++	spin_lock_bh(&ppe->lock);
++	if (en75_ppe_find_flow(ppe, cls->cookie)) {
++		spin_unlock_bh(&ppe->lock);
++		kfree(flow);
++		return -EEXIST;
++	}
++	list_add_tail(&flow->list, &ppe->flows);
++	spin_unlock_bh(&ppe->lock);
++	return 0;
++}
++
++static int en75_flow_offload_destroy(struct net_device *dev,
++				     struct flow_cls_offload *cls)
++{
++	struct en75_ppe *ppe = en75_ppe_from_netdev(dev);
++	struct en75_flow_entry *flow;
++
++	if (!ppe)
++		return -EOPNOTSUPP;
++	spin_lock_bh(&ppe->lock);
++	flow = en75_ppe_find_flow(ppe, cls->cookie);
++	if (flow) {
++		en75_ppe_invalidate_entry(ppe, flow->hash);
++		en75_ppe_cache_clean(ppe);
++		list_del(&flow->list);
++	}
++	spin_unlock_bh(&ppe->lock);
++	kfree(flow);
++	return 0;
++}
++
++static int en75_flow_offload_stats(struct flow_cls_offload *cls)
++{
++	flow_stats_update(&cls->stats, 0, 0, 0, jiffies,
++			  FLOW_ACTION_HW_STATS_DELAYED);
++	return 0;
++}
++
++static int en75_flow_offload_cmd(struct net_device *dev,
++				 struct flow_cls_offload *cls)
++{
++	switch (cls->command) {
++	case FLOW_CLS_REPLACE:
++		return en75_flow_offload_replace(dev, cls);
++	case FLOW_CLS_DESTROY:
++		return en75_flow_offload_destroy(dev, cls);
++	case FLOW_CLS_STATS:
++		return en75_flow_offload_stats(cls);
++	default:
++		return -EOPNOTSUPP;
++	}
++}
++
++static int en75_setup_tc_block_cb(enum tc_setup_type type, void *type_data,
++				  void *cb_priv)
++{
++	struct net_device *dev = cb_priv;
++
++	if (type != TC_SETUP_CLSFLOWER)
++		return -EOPNOTSUPP;
++	return en75_flow_offload_cmd(dev, type_data);
++}
++
++static int en75_setup_tc_block(struct net_device *dev,
++			       struct flow_block_offload *offload)
++{
++	struct en75_ppe *ppe = en75_ppe_from_netdev(dev);
++	flow_setup_cb_t *cb = en75_setup_tc_block_cb;
++	struct flow_block_cb *block_cb;
++	int err;
++
++	if (!ppe || offload->binder_type != FLOW_BLOCK_BINDER_TYPE_CLSACT_INGRESS)
++		return -EOPNOTSUPP;
++
++	offload->driver_block_list = &ppe->block_cb_list;
++	switch (offload->command) {
++	case FLOW_BLOCK_BIND:
++		block_cb = flow_block_cb_lookup(offload->block, cb, dev);
++		if (block_cb) {
++			flow_block_cb_incref(block_cb);
++			return 0;
++		}
++		err = en75_ppe_engine_arm(ppe);
++		if (err)
++			return err;
++		block_cb = flow_block_cb_alloc(cb, dev, dev, NULL);
++		if (IS_ERR(block_cb)) {
++			if (list_empty(&ppe->block_cb_list))
++				en75_ppe_engine_disarm(ppe);
++			return PTR_ERR(block_cb);
++		}
++		flow_block_cb_incref(block_cb);
++		flow_block_cb_add(block_cb, offload);
++		list_add_tail(&block_cb->driver_list, &ppe->block_cb_list);
++		return 0;
++	case FLOW_BLOCK_UNBIND:
++		block_cb = flow_block_cb_lookup(offload->block, cb, dev);
++		if (!block_cb)
++			return -ENOENT;
++		if (!flow_block_cb_decref(block_cb)) {
++			flow_block_cb_remove(block_cb, offload);
++			list_del(&block_cb->driver_list);
++		}
++		if (list_empty(&ppe->block_cb_list))
++			en75_ppe_engine_disarm(ppe);
++		return 0;
++	default:
++		return -EOPNOTSUPP;
++	}
++}
++
++static int en75_ppe_setup_tc(struct airoha_ppe_dev *ppe_dev,
++			     struct net_device *dev,
++			      enum tc_setup_type type, void *type_data)
++{
++	if (en75_ppe_from_netdev(dev) != ppe_dev->priv)
++		return -EOPNOTSUPP;
++
++	switch (type) {
++	case TC_SETUP_BLOCK:
++	case TC_SETUP_FT:
++		return en75_setup_tc_block(dev, type_data);
++	default:
++		return -EOPNOTSUPP;
++	}
++}
++
++struct airoha_ppe_dev *
++airoha_ppe_econet_init(struct device *dev, struct device_node *np,
++		       void __iomem *fe_base, void __iomem *ppe_base)
++{
++	struct device_node *mem_np;
++	struct reserved_mem *rmem;
++	struct en75_ppe *ppe;
++	int mem_index;
++	u32 tb_cfg;
++
++	mem_index = of_property_match_string(np, "memory-region-names",
++					     "ppe-foe");
++	if (mem_index < 0) {
++		/* Keep compatibility with the original single-region binding, but
++		 * never mistake named QDMA buffers for the FoE table.
++		 */
++		if (of_find_property(np, "memory-region-names", NULL)) {
++			dev_info(dev, "PPE disabled: no ppe-foe memory-region\n");
++			return NULL;
++		}
++		mem_index = 0;
++	}
++
++	mem_np = of_parse_phandle(np, "memory-region", mem_index);
++	if (!mem_np) {
++		dev_info(dev, "PPE disabled: no memory-region for the FoE table\n");
++		return NULL;
++	}
++	rmem = of_reserved_mem_lookup(mem_np);
++	of_node_put(mem_np);
++	if (!rmem)
++		return ERR_PTR(dev_err_probe(dev, -EINVAL,
++					     "invalid PPE memory-region\n"));
++	if (rmem->size < EN75_PPE_TABLE_SIZE)
++		return ERR_PTR(dev_err_probe(dev, -EINVAL,
++					     "PPE FoE region is too small (%pa bytes)\n",
++					     &rmem->size));
++	if (upper_32_bits(rmem->base))
++		return ERR_PTR(dev_err_probe(dev, -ERANGE,
++					     "PPE FoE table must be below 4 GiB\n"));
++
++	ppe = devm_kzalloc(dev, sizeof(*ppe), GFP_KERNEL);
++	if (!ppe)
++		return ERR_PTR(-ENOMEM);
++	ppe->foe_table = devm_ioremap(dev, rmem->base, EN75_PPE_TABLE_SIZE);
++	if (!ppe->foe_table)
++		return ERR_PTR(dev_err_probe(dev, -ENOMEM,
++					     "failed to map PPE FoE table\n"));
++
++	ppe->parent = dev;
++	ppe->base = ppe_base;
++	ppe->fe_base = fe_base;
++	ppe->foe_phys = rmem->base;
++	spin_lock_init(&ppe->lock);
++	INIT_LIST_HEAD(&ppe->flows);
++	INIT_LIST_HEAD(&ppe->block_cb_list);
++	memset_io(ppe->foe_table, 0, EN75_PPE_TABLE_SIZE);
++
++	writel(lower_32_bits(ppe->foe_phys), ppe->base + EN75_PPE_TB_BASE);
++	tb_cfg = GENMASK(11, 7) |
++		 FIELD_PREP(GENMASK(5, 4), 3) |
++		 FIELD_PREP(GENMASK(15, 14), 3) |
++		 BIT(16) | FIELD_PREP(GENMASK(2, 0), 4) | BIT(3);
++	writel(tb_cfg, ppe->base + EN75_PPE_TB_CFG);
++	writel(0xffffffff, ppe->base + EN75_PPE_IP_PROTO_CHK);
++	writel(BIT(0), ppe->base + EN75_PPE_CACHE_CTL);
++	writel(BIT(8) | BIT(9) | BIT(10) | BIT(12) | BIT(13) | BIT(17),
++	       ppe->base + EN75_PPE_FLOW_CFG);
++	writel((1000 << 16) | 3, ppe->base + EN75_PPE_UNBIND_AGE);
++	writel(12 | BIT(16), ppe->base + EN75_PPE_BIND_AGE0);
++	writel(7 | BIT(16), ppe->base + EN75_PPE_BIND_AGE1);
++	writel(GENMASK(13, 0) | GENMASK(29, 16),
++	       ppe->base + EN75_PPE_BIND_LIMIT0);
++	writel(GENMASK(13, 0) | BIT(16),
++	       ppe->base + EN75_PPE_BIND_LIMIT1);
++	writel(30 | BIT(16), ppe->base + EN75_PPE_BIND_RATE);
++	writel(0x12345678, ppe->base + EN75_PPE_HASH_SEED);
++	writel(0, ppe->base + EN75_PPE_DEFAULT_CPU_PORT);
++	writel(readl(ppe->base + EN75_PPE_GLO_CFG) & ~EN75_PPE_GLO_CFG_EN,
++	       ppe->base + EN75_PPE_GLO_CFG);
++
++	ppe->dev.priv = ppe;
++	ppe->dev.enabled = true;
++	ppe->dev.ops.check_skb_reason = en75_ppe_check_skb_reason;
++	ppe->dev.ops.setup_tc = en75_ppe_setup_tc;
++
++	dev_info(dev, "PPE FoE table at %pa, %u entries\n",
++		 &rmem->base, EN75_PPE_ENTRIES);
++	return &ppe->dev;
++}
++EXPORT_SYMBOL_GPL(airoha_ppe_econet_init);
++
++void airoha_ppe_econet_deinit(struct airoha_ppe_dev *ppe_dev)
++{
++	struct en75_ppe *ppe;
++
++	if (!ppe_dev)
++		return;
++
++	ppe = ppe_dev->priv;
++	if (READ_ONCE(ppe->armed))
++		en75_ppe_engine_disarm(ppe);
++	else
++		en75_ppe_flush(ppe);
++	ppe_dev->enabled = false;
++}
++EXPORT_SYMBOL_GPL(airoha_ppe_econet_deinit);
++
++#endif /* CONFIG_NET_ECONET_PPE */
++
++MODULE_LICENSE("GPL");
++MODULE_DESCRIPTION("Airoha and EcoNet PPE flow offload");
+diff --git a/drivers/net/ethernet/airoha/airoha_wed.h b/drivers/net/ethernet/airoha/airoha_wed.h
+index d04183b7a9da..1cba161f2af6 100644
+--- a/drivers/net/ethernet/airoha/airoha_wed.h
++++ b/drivers/net/ethernet/airoha/airoha_wed.h
+@@ -6,7 +6,11 @@
+ #ifndef __AIROHA_WED_PRIV_H
+ #define __AIROHA_WED_PRIV_H
+ 
++#if IS_ENABLED(CONFIG_NET_AIROHA_SOC_WED)
+ #include "../mtk_wed_private.h"
++#else
++struct mtk_wed_hw;
++#endif
+ 
+ /* EN7523 PCIe controller bases (PCIe0 = domain 0, PCIe1 = domain 1). */
+ #define EN7523_PCIE_BASE(n)	(0x1fa91000 + (n) * 0x1000)
+diff --git a/drivers/net/ethernet/airoha/econet_eth.c b/drivers/net/ethernet/airoha/econet_eth.c
+index 0804d5d96553..ec3bdc50bce2 100644
+--- a/drivers/net/ethernet/airoha/econet_eth.c
++++ b/drivers/net/ethernet/airoha/econet_eth.c
+@@ -197,9 +197,8 @@ static void econet_qdma_rx_process_one(struct econet_q_rx *q, u32 cpu_i,
+ 	hash = get_erx_ppe_entry(&desc.msg.erx);
+ 	skb_set_hash(skb, jhash_1word(hash, 0),
+ 		     PKT_HASH_TYPE_L4);
+-
+-	/* TODO: When we begin supporting the PPE, we will handle
+-	 *       PPE_CPU_REASON_HIT_UNBIND_RATE_REACHED here. */
++	airoha_ppe_dev_check_skb_reason(q->qdma->eth->ppe, skb, hash,
++					get_erx_crsn(&desc.msg.erx));
+ 
+ 	sport = get_erx_sport(&desc.msg.erx);
+ 	if (econet_rx_before_recv(q->qdma->eth, skb, sport))
+@@ -806,11 +805,23 @@ static int econet_init_hw_fwd(struct econet_qdma *qdma)
+ 
+ 		rmem = of_reserved_mem_lookup(np);
+ 		of_node_put(np);
++		if (!rmem)
++			return dev_err_probe(qdma->dev, -EINVAL,
++					     "invalid %s memory-region\n", name);
++		if (!rmem->size || upper_32_bits(rmem->base) ||
++		    upper_32_bits(rmem->base + rmem->size - 1))
++			return dev_err_probe(qdma->dev, -ERANGE,
++					     "%s memory-region must be below 4 GiB\n",
++					     name);
++
+ 		dma_addr = rmem->base;
+ 		/* Compute the number of hw descriptors according to the
+ 		 * reserved memory size and the payload buffer size
+ 		 */
+ 		num_desc = div_u64(rmem->size, buf_size);
++		if (!num_desc)
++			return dev_err_probe(qdma->dev, -EINVAL,
++					     "%s memory-region is too small\n", name);
+ 
+ 		if (num_desc < qdma->cfg.num_fwd_descs)
+ 			dev_warn(qdma->dev,
+@@ -1211,6 +1222,9 @@ struct econet_hw_stats {
+ };
+ 
+ struct econet_gdm_port {
++	/* Must stay first for common GDM/phylink and PPE metadata. */
++	struct airoha_gdm_common common;
++
+ 	struct net_device *dev;
+ 
+ 	struct gdm __iomem *regs;
+@@ -1255,7 +1269,6 @@ static void econet_set_macaddr(struct econet_gdm_port *port, const u8 *addr)
+ 		econet_wreg(msb, &port->regs->mymac_msb);
+ 	}
+ 
+-	econet_port_set_macaddr(port->eth, port->fport, addr);
+ }
+ 
+ static int econet_dev_set_macaddr(struct net_device *dev, void *p)
+@@ -1306,15 +1319,18 @@ static int econet_dev_open(struct net_device *dev)
+ 	struct gdm_len_th rlt;
+ 	int err;
+ 
+-	// TODO DSA
+-	// if (netdev_uses_dsa(dev))
+-	// 	airoha_fe_set(qdma->eth, REG_GDM_INGRESS_CFG(port->id),
+-	// 		      GDM_STAG_EN_MASK);
+-	// else
+-	// 	airoha_fe_clear(qdma->eth, REG_GDM_INGRESS_CFG(port->id),
+-	// 			GDM_STAG_EN_MASK);
++	err = airoha_gdm_phylink_connect(&port->common, false);
++	if (err) {
++		netdev_err(dev, "could not attach PHY: %d\n", err);
++		return err;
++	}
+ 
++	/* The MT7530 CPU port is represented by ethernet = <&gdm1>. Keep
++	 * the MTK special tag on the DSA conduit and disable it on a direct
++	 * PHY/WAN GDM, mirroring the newer Airoha datapath.
++	 */
+ 	scoped_guard(spinlock, &port->reg_lock) {
++		econet_wreg((u32)netdev_uses_dsa(dev), &port->regs->stag_en);
+ 		rlt = econet_rreg(&port->regs->rx_len_threshold);
+ 		set_gdm_len_th_runt_len(&rlt, 60);
+ 		set_gdm_len_th_oversize_len(&rlt,
+@@ -1323,8 +1339,12 @@ static int econet_dev_open(struct net_device *dev)
+ 	}
+ 
+ 	err = econet_qdma_use(port->qdma);
+-	if (err)
++	if (err) {
++		scoped_guard(spinlock, &port->reg_lock)
++			econet_wreg(0U, &port->regs->stag_en);
++		airoha_gdm_phylink_disconnect(&port->common);
+ 		return err;
++	}
+ 
+ 	netif_tx_start_all_queues(dev);
+ 
+@@ -1336,6 +1356,10 @@ static int econet_dev_stop(struct net_device *dev)
+ 	struct econet_gdm_port *port = netdev_priv(dev);
+ 
+ 	netif_tx_disable(dev);
++	airoha_gdm_phylink_disconnect(&port->common);
++
++	scoped_guard(spinlock, &port->reg_lock)
++		econet_wreg(0U, &port->regs->stag_en);
+ 
+ 	return econet_qdma_unuse(port->qdma);
+ }
+@@ -1550,6 +1574,15 @@ econet_ethtool_get_rmon_stats(struct net_device *dev,
+ 	} while (u64_stats_fetch_retry(&port->stats.syncp, start));
+ }
+ 
++static int econet_dev_setup_tc(struct net_device *dev,
++			       enum tc_setup_type type, void *type_data)
++{
++	struct econet_gdm_port *port = netdev_priv(dev);
++
++	return airoha_ppe_dev_setup_tc(port->common.ppe, dev, type,
++				       type_data);
++}
++
+ static const struct net_device_ops econet_netdev_ops = {
+ 	.ndo_init		= econet_dev_init,
+ 	.ndo_open		= econet_dev_open,
+@@ -1558,14 +1591,69 @@ static const struct net_device_ops econet_netdev_ops = {
+ 	.ndo_start_xmit		= econet_dev_xmit,
+ 	.ndo_get_stats64        = econet_dev_get_stats64,
+ 	.ndo_set_mac_address	= econet_dev_set_macaddr,
++	.ndo_setup_tc		= econet_dev_setup_tc,
+ };
+ 
++static int econet_ethtool_get_link_ksettings(struct net_device *dev,
++					     struct ethtool_link_ksettings *cmd)
++{
++	struct econet_gdm_port *port = netdev_priv(dev);
++
++	return phylink_ethtool_ksettings_get(port->common.phylink, cmd);
++}
++
++static int econet_ethtool_set_link_ksettings(struct net_device *dev,
++					     const struct ethtool_link_ksettings *cmd)
++{
++	struct econet_gdm_port *port = netdev_priv(dev);
++
++	return phylink_ethtool_ksettings_set(port->common.phylink, cmd);
++}
++
++static int econet_ethtool_nway_reset(struct net_device *dev)
++{
++	struct econet_gdm_port *port = netdev_priv(dev);
++
++	return phylink_ethtool_nway_reset(port->common.phylink);
++}
++
+ static const struct ethtool_ops econet_ethtool_ops = {
+ 	.get_drvinfo		= airoha_eth_get_drvinfo,
++	.get_link		= ethtool_op_get_link,
++	.get_link_ksettings	= econet_ethtool_get_link_ksettings,
++	.set_link_ksettings	= econet_ethtool_set_link_ksettings,
++	.nway_reset		= econet_ethtool_nway_reset,
+ 	.get_eth_mac_stats      = econet_ethtool_get_mac_stats,
+ 	.get_rmon_stats		= econet_ethtool_get_rmon_stats,
+ };
+ 
++static int econet_setup_phylink(struct econet_gdm_port *port,
++				struct device_node *np)
++{
++	struct phylink_config *config = &port->common.phylink_config;
++	phy_interface_t phy_mode;
++	int err;
++
++	err = of_get_phy_mode(np, &phy_mode);
++	if (err)
++		return dev_err_probe(port->eth->dev, err,
++				     "GDM%u has no valid phy-mode\n",
++				     port->common.id);
++
++	config->mac_capabilities = MAC_ASYM_PAUSE | MAC_SYM_PAUSE |
++				   MAC_10 | MAC_100 | MAC_1000 |
++				   MAC_2500FD | MAC_5000FD | MAC_10000FD;
++	__set_bit(PHY_INTERFACE_MODE_INTERNAL, config->supported_interfaces);
++	__set_bit(PHY_INTERFACE_MODE_MII, config->supported_interfaces);
++	__set_bit(PHY_INTERFACE_MODE_GMII, config->supported_interfaces);
++	__set_bit(PHY_INTERFACE_MODE_RGMII, config->supported_interfaces);
++	__set_bit(PHY_INTERFACE_MODE_RGMII_ID, config->supported_interfaces);
++	__set_bit(PHY_INTERFACE_MODE_RGMII_RXID, config->supported_interfaces);
++	__set_bit(PHY_INTERFACE_MODE_RGMII_TXID, config->supported_interfaces);
++
++	return airoha_gdm_phylink_create(&port->common, np, phy_mode);
++}
++
+ struct net_device *econet_alloc_gdm_port(struct econet_eth *eth,
+ 				       struct device_node *np,
+ 				       struct gdm __iomem *regs,
+@@ -1606,10 +1694,12 @@ struct net_device *econet_alloc_gdm_port(struct econet_eth *eth,
+ 	 *           TC_SETUP_BLOCK / TC_SETUP_FT for NAT flow-table offloading.
+ 	 */
+ 	ndev->hw_features = 0;
++	if (eth->ppe && eth->ppe->enabled)
++		ndev->hw_features |= NETIF_F_HW_TC;
+ 
+ 	ndev->features |= ndev->hw_features;
+ 	ndev->vlan_features = ndev->hw_features;
+-	ndev->dev.of_node = np;
++	ndev->dev.of_node = of_node_get(np);
+ 	SET_NETDEV_DEV(ndev, eth->dev);
+ 
+ 	err = airoha_eth_init_mac_address(eth->dev, np, ndev);
+@@ -1617,6 +1707,12 @@ struct net_device *econet_alloc_gdm_port(struct econet_eth *eth,
+ 		return ERR_PTR(err);
+ 
+ 	port = netdev_priv(ndev);
++	airoha_gdm_common_init(&port->common, ndev,
++			       AIROHA_ETH_FAMILY_ECONET, fport,
++			       fport == ETX_FPORT_GDM2 ? DPORT_GDMA2 :
++						      DPORT_GDMA1,
++			       port, NULL);
++	port->common.ppe = eth->ppe;
+ 	u64_stats_init(&port->stats.syncp);
+ 	spin_lock_init(&port->stats.lock);
+ 	spin_lock_init(&port->reg_lock);
+@@ -1627,6 +1723,10 @@ struct net_device *econet_alloc_gdm_port(struct econet_eth *eth,
+ 	port->qdma = qdma;
+ 	port->eth = eth;
+ 
++	err = econet_setup_phylink(port, np);
++	if (err)
++		goto free_of_node;
++
+ 	// TODO: This is pretty easy to enable
+ // 	err = airoha_metadata_dst_alloc(port);
+ // 	if (err)
+@@ -1646,103 +1746,32 @@ struct net_device *econet_alloc_gdm_port(struct econet_eth *eth,
+ 
+ free_metadata_dst:
+ // 	airoha_metadata_dst_free(port);
++	airoha_gdm_phylink_destroy(&port->common);
++free_of_node:
++	of_node_put(ndev->dev.of_node);
++	ndev->dev.of_node = NULL;
+ 	return ERR_PTR(err);
+ }
+ 
+ /* Frame-engine platform driver. */
+-/* MT7530 switch configuration */
+-#define  PMCR_FORCE_FDX			BIT(1)
+-#define  PMCR_FORCE_LNK			BIT(0)
+-#define  PMCR_FORCE_SPEED_1000		BIT(3)
+-#define  PMCR_BACKOFF_EN		BIT(9)
+-#define  PMCR_BACKPR_EN			BIT(8)
+-#define  PMCR_MAC_MODE			BIT(16)
+-#define  MT7530_FORCE_MODE		BIT(15)
+-#define  PMCR_MAC_TX_EN			BIT(14)
+-#define  PMCR_MAC_RX_EN			BIT(13)
+-#define  PMCR_IFG_XMIT_MASK		GENMASK(19, 18)
+-#define  PMCR_IFG_XMIT(x)		FIELD_PREP(PMCR_IFG_XMIT_MASK, x)
+-#define    IFG_64BIT 2
+-/* Match bootloader value, 0x9e30b */
+-#define ECONET_PMCR_CONFIG ((u32)( \
+-		PMCR_FORCE_FDX | PMCR_FORCE_LNK | PMCR_FORCE_SPEED_1000 | \
+-		PMCR_BACKOFF_EN | PMCR_BACKPR_EN | PMCR_MAC_MODE | \
+-		MT7530_FORCE_MODE | PMCR_MAC_TX_EN | PMCR_MAC_RX_EN | \
+-		PMCR_IFG_XMIT(IFG_64BIT) \
+-	))
+-#define MT753X_PMCR_P(x)		(0x3000 + ((x) * 0x100))
+-
+-#define MT753X_MFC			0x10
+-#define  BC_FFP_MASK			GENMASK(31, 24)
+-#define  BC_FFP(x)			FIELD_PREP(BC_FFP_MASK, x)
+-#define  UNM_FFP_MASK			GENMASK(23, 16)
+-#define  UNM_FFP(x)			FIELD_PREP(UNM_FFP_MASK, x)
+-#define  UNU_FFP_MASK			GENMASK(15, 8)
+-#define  UNU_FFP(x)			FIELD_PREP(UNU_FFP_MASK, x)
+-#define  MT7530_CPU_EN			BIT(7)
+-#define  MT7530_CPU_PORT_MASK		GENMASK(6, 4)
+-#define  MT7530_CPU_PORT(x)		FIELD_PREP(MT7530_CPU_PORT_MASK, x)
+-
+-#define ECONET_MFC_CONFIG ((u32)( \
+-		BC_FFP(0xff) | UNM_FFP(0xff) | UNU_FFP(0xff) | \
+-		MT7530_CPU_EN | MT7530_CPU_PORT(6) \
+-	))
+-
+-#define SWITCH_MAC_HI			0x30e8
+-#define SWITCH_MAC_LO			0x30e4
+ 
+ struct econet_eth_pvt {
+ 	struct econet_eth			pub;
+ 	const struct econet_soc_data	*soc;
+ 	struct net_device		*ports[ECONET_NUM_GDM_PORTS];
+-	struct en751221_regs __iomem	*regs;
++	void __iomem			*fe_base;
++	struct gdm __iomem		*gdm[ECONET_NUM_GDM_PORTS];
++	void __iomem			*ppe_base;
++	struct qregs __iomem		*qdma_regs[ECONET_NUM_QDMA];
+ 	struct reset_control		*reset;
+ 	int				qdma_irq[ECONET_NUM_QDMA * QDMA_NUM_IRQS];
+ 	struct econet_qdma		*qdma[ECONET_NUM_QDMA];
+-	/* Whether our register window covers the on-die switch, see probe. */
+-	bool				has_switch_regs;
+-};
+-
+-union gdm_regs {
+-	struct gdm	regs;
+-	u32		words[0x800 / sizeof(u32)];
+ };
+ 
+-struct en751221_regs {
+-	/* BFB50000 - BFB50400 */
+-	u32		fe[0x400 / sizeof(u32)];
+-
+-	/* BFB50400 - BFB50C00 */
+-	union gdm_regs	port0;
+-
+-	/* BFB50C00 - BFB51000 */
+-	u32		ppe[0x400 / sizeof(u32)];
+-
+-	/* BFB51000 - BFB51400 */
+-	u32		unknown_deadbeef[0x400 / sizeof(u32)];
+-
+-	/* BFB51400 - BFB51C00 */
+-	union gdm_regs	port1;
+-
+-	/* BFB51C00 - BFB52000 */
+-	u32		unknown_deadbeef2[0x400 / sizeof(u32)];
+-
+-	/* BFB52000 - BFB52400 */
+-	u32		ppe_accounting[0x400 / sizeof(u32)];
+-
+-	/* BFB52400 - BFB54000 */
+-	u32		ppe_unused[0x1c00 / sizeof(u32)];
+-
+-	/* BFB54000 - BFB56000 */
+-	struct qregs	qdma_regs[ECONET_NUM_QDMA];
+-
+-	/* BFB56000 - BFB58000 */
+-	u32		unknown_zeroed[0x2000 / sizeof(u32)];
+-
+-	/* BFB58000 - BFB60000 */
+-	u32		switch_regs[0x8000 / sizeof(u32)];
+-};
+-_Static_assert(sizeof(struct en751221_regs) == 0x10000, "en751221_regs size incorrect");
++#define ECONET_FE_GDM1_OFFSET	0x0400
++#define ECONET_FE_PPE_OFFSET	0x0c00
++#define ECONET_FE_GDM2_OFFSET	0x1400
++#define ECONET_FE_MIN_SIZE	0x2600
+ 
+ static struct net_device *econet_get_sport_dev(struct econet_eth_pvt *eth,
+ 					     enum etx_fport sport)
+@@ -1794,49 +1823,17 @@ int econet_rx_before_recv(struct econet_eth *eth, struct sk_buff *skb,
+ 	return 0;
+ }
+ 
+-int econet_port_set_macaddr(struct econet_eth *eth, enum etx_fport portn, const u8 *addr)
+-{
+-	struct econet_eth_pvt *ep = (struct econet_eth_pvt *) eth;
+-	u32 __iomem *reg = ep->regs->switch_regs;
+-	struct gdm_mymac_msb msb = { .word = 0 };
+-	struct gdm_mymac_lsb lsb = { .word = 0 };
+-
+-	/*
+-	 * This programs the switch source MAC address (SMACCR). Those
+-	 * registers live in the switch register block, so when the switch is
+-	 * managed by the mt7530 DSA driver they are not ours to write.
+-	 */
+-	if (!ep->has_switch_regs)
+-		return 0;
+-
+-	if (portn != ETX_FPORT_GDM1)
+-		return 0;
+-
+-	set_gdm_mymac_msb_a(&msb, addr[0]);
+-	set_gdm_mymac_msb_b(&msb, addr[1]);
+-	set_gdm_mymac_lsb_c(&lsb, addr[2]);
+-	set_gdm_mymac_lsb_d(&lsb, addr[3]);
+-	set_gdm_mymac_lsb_e(&lsb, addr[4]);
+-	set_gdm_mymac_lsb_f(&lsb, addr[5]);
+-
+-	econet_wreg(lsb, (struct gdm_mymac_lsb *)&reg[SWITCH_MAC_LO / 4]);
+-	econet_wreg(msb, (struct gdm_mymac_msb *)&reg[SWITCH_MAC_HI / 4]);
+-
+-	return 0;
+-}
+-
+ static int econet_init_port(struct econet_eth_pvt *eth, struct device_node *np)
+ {
+ 	struct net_device *dev;
+-	u32 index, id, max_index = ARRAY_SIZE(eth->ports) - 1;
++	u32 id;
+ 	int err;
+ 
+-	err = airoha_eth_get_port_id(eth->pub.dev, np, 0, max_index, &index);
++	err = airoha_eth_get_port_id(eth->pub.dev, np, 1,
++				     ARRAY_SIZE(eth->ports), &id);
+ 	if (err)
+ 		return err;
+ 
+-	id = index + 1;
+-
+ 	if (eth->ports[id - 1]) {
+ 		dev_err(eth->pub.dev, "duplicate gdm port id: %d\n", id);
+ 		return -EINVAL;
+@@ -1844,13 +1841,13 @@ static int econet_init_port(struct econet_eth_pvt *eth, struct device_node *np)
+ 
+ 	if (id == 1)
+ 		dev = econet_alloc_gdm_port(&eth->pub, np,
+-					  &eth->regs->port0.regs,
++					  eth->gdm[0],
+ 					  eth->qdma[0],
+ 					  ETX_FPORT_GDM1,
+ 					  false);
+ 	else if (id == 2)
+ 		dev = econet_alloc_gdm_port(&eth->pub, np,
+-					  &eth->regs->port1.regs,
++					  eth->gdm[1],
+ 					  eth->qdma[1],
+ 					  ETX_FPORT_GDM2,
+ 					  true);
+@@ -1894,8 +1891,15 @@ static void econet_eth_remove(struct platform_device *pdev)
+ 			continue;
+ 
+ 		unregister_netdev(eth->ports[i]);
++		airoha_gdm_phylink_destroy(&((struct econet_gdm_port *)
++					netdev_priv(eth->ports[i]))->common);
++		of_node_put(eth->ports[i]->dev.of_node);
++		eth->ports[i]->dev.of_node = NULL;
+ 	}
+ 
++	airoha_ppe_econet_deinit(eth->pub.ppe);
++	eth->pub.ppe = NULL;
++
+ 	for (i = 0; i < ARRAY_SIZE(eth->qdma); i++)
+ 		if (eth->qdma[i])
+ 			econet_qdma_destroy(eth->qdma[i]);
+@@ -1905,11 +1909,14 @@ static void econet_eth_remove(struct platform_device *pdev)
+ 
+ static int econet_eth_probe(struct platform_device *pdev)
+ {
+-	struct en751221_regs __iomem *regs;
+-	struct resource *regs_res;
++	static const char * const qdma_names[ECONET_NUM_QDMA] = {
++		"qdma0", "qdma1",
++	};
++	struct resource *fe_res;
+ 	struct econet_eth_pvt *eth;
+ 	struct econet_qdma_cfg cfg;
+ 	struct device_node *np;
++	void __iomem *fe_base;
+ 	int i, err, irq;
+ 
+ 	eth = devm_kzalloc(&pdev->dev, sizeof(*eth), GFP_KERNEL);
+@@ -1927,38 +1934,41 @@ static int econet_eth_probe(struct platform_device *pdev)
+ 	if (err)
+ 		return err;
+ 
+-	regs = devm_platform_get_and_ioremap_resource(pdev, 0, &regs_res);
+-	if (IS_ERR(regs))
+-		return dev_err_probe(&pdev->dev, PTR_ERR(regs),
+-				     "failed to map registers\n");
+-
+-	if (resource_size(regs_res) <
+-	    offsetof(struct en751221_regs, switch_regs)) {
++	fe_res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "fe");
++	if (!fe_res)
+ 		return dev_err_probe(&pdev->dev, -EINVAL,
+-				     "insufficient register space\n");
++				     "missing fe register resource\n");
++	if (resource_size(fe_res) < ECONET_FE_MIN_SIZE)
++		return dev_err_probe(&pdev->dev, -EINVAL,
++				     "fe register resource is too small\n");
++
++	fe_base = devm_ioremap_resource(&pdev->dev, fe_res);
++	if (IS_ERR(fe_base))
++		return dev_err_probe(&pdev->dev, PTR_ERR(fe_base),
++				     "failed to map fe registers\n");
++
++	eth->fe_base = fe_base;
++	eth->gdm[0] = fe_base + ECONET_FE_GDM1_OFFSET;
++	eth->ppe_base = fe_base + ECONET_FE_PPE_OFFSET;
++	eth->gdm[1] = fe_base + ECONET_FE_GDM2_OFFSET;
++
++	for (i = 0; i < ARRAY_SIZE(eth->qdma_regs); i++) {
++		eth->qdma_regs[i] =
++			devm_platform_ioremap_resource_byname(pdev, qdma_names[i]);
++		if (IS_ERR(eth->qdma_regs[i]))
++			return dev_err_probe(&pdev->dev,
++					     PTR_ERR(eth->qdma_regs[i]),
++					     "failed to map %s registers\n",
++					     qdma_names[i]);
+ 	}
+ 
+-	/*
+-	 * The on-die switch sits right above the frame engine in the register
+-	 * space. When it is managed by the mt7530 DSA driver it is described
+-	 * by its own device tree node and claims those registers itself, so
+-	 * the window handed to us stops short of them. In that case we are
+-	 * purely the DSA conduit and must leave the switch alone.
+-	 */
+-	eth->has_switch_regs =
+-		resource_size(regs_res) >= sizeof(struct en751221_regs);
++	eth->reset =
++		devm_reset_control_array_get_optional_exclusive(&pdev->dev);
++	if (IS_ERR(eth->reset))
++		return dev_err_probe(&pdev->dev, PTR_ERR(eth->reset),
++				     "failed to get resets\n");
+ 
+-	eth->regs = regs;
+-
+-	eth->reset = devm_reset_control_array_get_exclusive(&pdev->dev);
+-	if (IS_ERR(eth->reset)) {
+-		err = PTR_ERR(eth->reset);
+-		if (err == -EPROBE_DEFER)
+-			return err;
+-
+-		dev_warn(&pdev->dev, "failed to get resets %pe\n", eth->reset);
+-		eth->reset = NULL;
+-	} else {
++	if (eth->reset) {
+ 		err = reset_control_assert(eth->reset);
+ 		if (err)
+ 			return err;
+@@ -1977,14 +1987,13 @@ static int econet_eth_probe(struct platform_device *pdev)
+ 		eth->qdma_irq[i] = irq;
+ 	}
+ 
+-	BUILD_BUG_ON(ARRAY_SIZE(eth->qdma) != ARRAY_SIZE(regs->qdma_regs));
+-	BUILD_BUG_ON(ARRAY_SIZE(eth->qdma) != ARRAY_SIZE(eth->qdma_irq) * QDMA_NUM_IRQS);
++	BUILD_BUG_ON(ARRAY_SIZE(eth->qdma_irq) !=
++		     ECONET_NUM_QDMA * QDMA_NUM_IRQS);
+ 	for (i = 0; i < ARRAY_SIZE(eth->qdma); i++) {
+ 		econet_prepare_qdma_cfg(&cfg, eth->soc);
+-		eth->qdma[i] = econet_qdma_new(&eth->pub, &regs->qdma_regs[i], i,
+-					     &eth->qdma_irq[i * QDMA_NUM_IRQS],
++		eth->qdma[i] = econet_qdma_new(&eth->pub, eth->qdma_regs[i], i,
++					       &eth->qdma_irq[i * QDMA_NUM_IRQS],
+ 					     QDMA_NUM_IRQS, &cfg);
+-
+ 		if (IS_ERR(eth->qdma[i])) {
+ 			err = PTR_ERR(eth->qdma[i]);
+ 			eth->qdma[i] = NULL;
+@@ -1992,11 +2001,18 @@ static int econet_eth_probe(struct platform_device *pdev)
+ 		}
+ 	}
+ 
+-	for_each_child_of_node(pdev->dev.of_node, np) {
+-		if (!of_device_is_compatible(np, "econet,eth-mac"))
+-			continue;
++	eth->pub.ppe = airoha_ppe_econet_init(&pdev->dev,
++					      pdev->dev.of_node,
++					      eth->fe_base,
++					      eth->ppe_base);
++	if (IS_ERR(eth->pub.ppe)) {
++		err = PTR_ERR(eth->pub.ppe);
++		eth->pub.ppe = NULL;
++		goto error;
++	}
+ 
+-		if (!of_device_is_available(np))
++	for_each_available_child_of_node(pdev->dev.of_node, np) {
++		if (!of_device_is_compatible(np, "econet,eth-mac"))
+ 			continue;
+ 
+ 		err = econet_init_port(eth, np);
+@@ -2006,14 +2022,6 @@ static int econet_eth_probe(struct platform_device *pdev)
+ 		}
+ 	}
+ 
+-
+-	/* Configure the MT7530 as a dumb switch, unless it is managed by DSA */
+-	if (eth->has_switch_regs) {
+-		econet_wreg(ECONET_PMCR_CONFIG, &regs->switch_regs[MT753X_PMCR_P(5) / 4]);
+-		econet_wreg(ECONET_PMCR_CONFIG, &regs->switch_regs[MT753X_PMCR_P(6) / 4]);
+-		econet_wreg(ECONET_MFC_CONFIG, &regs->switch_regs[MT753X_MFC / 4]);
+-	}
+-
+ 	return 0;
+ 
+ error:
+diff --git a/drivers/net/ethernet/airoha/econet_eth.h b/drivers/net/ethernet/airoha/econet_eth.h
+index ebbaef15d01d..6579eb2fca87 100644
+--- a/drivers/net/ethernet/airoha/econet_eth.h
++++ b/drivers/net/ethernet/airoha/econet_eth.h
+@@ -8,6 +8,7 @@
+ #include <linux/platform_device.h>
+ #include <linux/skbuff.h>
+ #include <linux/types.h>
++#include <linux/soc/airoha/airoha_offload.h>
+ 
+ #include "airoha_common.h"
+ 
+@@ -3329,16 +3330,13 @@ enum econet_fport {
+ 
+ struct econet_eth {
+ 	struct device *dev;
++	struct airoha_ppe_dev *ppe;
+ };
+ 
+ /* Called in softirq context */
+ int econet_rx_before_recv(struct econet_eth *eth, struct sk_buff *skb,
+ 			enum etx_fport sport);
+ 
+-/* Called from the port driver to the main eth to notify the switch */
+-int econet_port_set_macaddr(struct econet_eth *eth, enum etx_fport portn,
+-			  const u8 *addr);
+-
+ struct econet_qdma_cfg {
+ 	int num_rx_descs[QDMA_NUM_CHAINS];
+ 	int num_tx_descs[QDMA_NUM_CHAINS];
+diff --git a/include/linux/soc/airoha/airoha_offload.h b/include/linux/soc/airoha/airoha_offload.h
+index 216a963c2210..7332674ddc25 100644
+--- a/include/linux/soc/airoha/airoha_offload.h
++++ b/include/linux/soc/airoha/airoha_offload.h
+@@ -6,9 +6,15 @@
+ #ifndef AIROHA_OFFLOAD_H
+ #define AIROHA_OFFLOAD_H
+ 
++#include <linux/io.h>
+ #include <linux/skbuff.h>
+ #include <linux/spinlock.h>
+ #include <linux/workqueue.h>
++#include <net/pkt_cls.h>
++
++struct device;
++struct device_node;
++struct net_device;
+ 
+ enum {
+ 	PPE_CPU_REASON_HIT_UNBIND_RATE_REACHED = 0x0f,
+@@ -21,12 +27,19 @@ struct airoha_ppe_dev {
+ 		void (*check_skb)(struct airoha_ppe_dev *dev,
+ 				  struct sk_buff *skb, u16 hash,
+ 				  bool rx_wlan);
++		void (*check_skb_reason)(struct airoha_ppe_dev *dev,
++					 struct sk_buff *skb, u16 hash,
++					 u8 reason);
++		int (*setup_tc)(struct airoha_ppe_dev *dev,
++				struct net_device *netdev,
++				enum tc_setup_type type, void *type_data);
+ 	} ops;
+ 
+ 	void *priv;
++	bool enabled;
+ };
+ 
+-#if (IS_BUILTIN(CONFIG_NET_AIROHA) || IS_MODULE(CONFIG_NET_AIROHA))
++#if (IS_BUILTIN(CONFIG_NET_AIROHA_COMMON) || IS_MODULE(CONFIG_NET_AIROHA_COMMON))
+ struct airoha_ppe_dev *airoha_ppe_get_dev(struct device *dev);
+ void airoha_ppe_put_dev(struct airoha_ppe_dev *dev);
+ 
+@@ -42,6 +55,30 @@ static inline void airoha_ppe_dev_check_skb(struct airoha_ppe_dev *dev,
+ {
+ 	dev->ops.check_skb(dev, skb, hash, rx_wlan);
+ }
++
++static inline void
++airoha_ppe_dev_check_skb_reason(struct airoha_ppe_dev *dev,
++				struct sk_buff *skb, u16 hash, u8 reason)
++{
++	if (dev && dev->ops.check_skb_reason)
++		dev->ops.check_skb_reason(dev, skb, hash, reason);
++}
++
++static inline int airoha_ppe_dev_setup_tc(struct airoha_ppe_dev *dev,
++					  struct net_device *netdev,
++					 enum tc_setup_type type,
++					 void *type_data)
++{
++	if (!dev || !dev->ops.setup_tc)
++		return -EOPNOTSUPP;
++
++	return dev->ops.setup_tc(dev, netdev, type, type_data);
++}
++
++struct airoha_ppe_dev *
++airoha_ppe_econet_init(struct device *dev, struct device_node *np,
++		       void __iomem *fe_base, void __iomem *ppe_base);
++void airoha_ppe_econet_deinit(struct airoha_ppe_dev *dev);
+ #else
+ static inline struct airoha_ppe_dev *airoha_ppe_get_dev(struct device *dev)
+ {
+@@ -63,6 +100,31 @@ static inline void airoha_ppe_dev_check_skb(struct airoha_ppe_dev *dev,
+ 					    bool rx_wlan)
+ {
+ }
++
++static inline void
++airoha_ppe_dev_check_skb_reason(struct airoha_ppe_dev *dev,
++				struct sk_buff *skb, u16 hash, u8 reason)
++{
++}
++
++static inline int airoha_ppe_dev_setup_tc(struct airoha_ppe_dev *dev,
++					  struct net_device *netdev,
++					 enum tc_setup_type type,
++					 void *type_data)
++{
++	return -EOPNOTSUPP;
++}
++
++static inline struct airoha_ppe_dev *
++airoha_ppe_econet_init(struct device *dev, struct device_node *np,
++		       void __iomem *fe_base, void __iomem *ppe_base)
++{
++	return NULL;
++}
++
++static inline void airoha_ppe_econet_deinit(struct airoha_ppe_dev *dev)
++{
++}
+ #endif
+ 
+ #define NPU_NUM_IRQ		6
+-- 
+2.55.0
+
