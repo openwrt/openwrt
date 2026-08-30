@@ -790,6 +790,23 @@ static void rteth_931x_hw_init(struct rteth_ctrl *ctrl)
 	regmap_set_bits(ctrl->map, RTETH_931X_PS_SOC_CTRL, BIT(1));
 }
 
+static void rteth_enable_napi(struct rteth_ctrl *ctrl)
+{
+	for (int i = 0; i < RTETH_RX_RINGS; i++)
+		napi_enable(&ctrl->rx_info[i].napi);
+	ctrl->napi_enabled = true;
+}
+
+static void rteth_disable_napi(struct rteth_ctrl *ctrl)
+{
+	if (!ctrl->napi_enabled)
+		return;
+
+	ctrl->napi_enabled = false;
+	for (int i = 0; i < RTETH_RX_RINGS; i++)
+		napi_disable(&ctrl->rx_info[i].napi);
+}
+
 static int rteth_open(struct net_device *dev)
 {
 	struct rteth_ctrl *ctrl = netdev_priv(dev);
@@ -807,11 +824,7 @@ static int rteth_open(struct net_device *dev)
 
 	rteth_hw_ring_setup(ctrl);
 	phylink_start(ctrl->phylink);
-
-	for (int i = 0; i < RTETH_RX_RINGS; i++)
-		napi_enable(&ctrl->rx_info[i].napi);
-	ctrl->napi_enabled = true;
-
+	rteth_enable_napi(ctrl);
 	ctrl->cfg->hw_init(ctrl);
 	rteth_set_max_packet_length(ctrl);
 	rteth_enable_all_rx_irqs(ctrl);
@@ -901,13 +914,7 @@ static int rteth_stop(struct net_device *dev)
 	netif_tx_stop_all_queues(dev);
 	phylink_stop(ctrl->phylink);
 	rteth_hw_stop(ctrl);
-
-	if (ctrl->napi_enabled) {
-		ctrl->napi_enabled = false;
-		for (int i = 0; i < RTETH_RX_RINGS; i++)
-			napi_disable(&ctrl->rx_info[i].napi);
-	}
-
+	rteth_disable_napi(ctrl);
 	rteth_free_tx_buffers(ctrl);
 	rteth_free_rx_buffers(ctrl);
 
