@@ -42,7 +42,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 
 --- a/drivers/usb/host/xhci-ring.c
 +++ b/drivers/usb/host/xhci-ring.c
-@@ -2026,7 +2026,7 @@ static void handle_port_status(struct xh
+@@ -2043,7 +2043,7 @@ static void handle_port_status(struct xh
  		vdev = xhci->devs[port->slot_id];
  
  	/* We might get interrupts after shared_hcd is removed */
