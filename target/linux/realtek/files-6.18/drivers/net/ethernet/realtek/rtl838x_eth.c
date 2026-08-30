@@ -1540,19 +1540,19 @@ static int rteth_93xx_set_features(struct net_device *dev, netdev_features_t fea
 
 static int rteth_setup_tc(struct net_device *dev, enum tc_setup_type type, void *type_data)
 {
-    struct dsa_switch *ds;
-    struct dsa_port *dp;
+	struct dsa_switch *ds;
+	struct dsa_port *dp;
 
-    if (!netdev_uses_dsa(dev))
-        return -EOPNOTSUPP;
+	if (!netdev_uses_dsa(dev))
+		return -EOPNOTSUPP;
 
-    dp = dev->dsa_ptr;
-    ds = dp->ds;
+	dp = dev->dsa_ptr;
+	ds = dp->ds;
 
-    if (!ds->ops->port_setup_tc)
-        return -EOPNOTSUPP;
+	if (!ds->ops->port_setup_tc)
+		return -EOPNOTSUPP;
 
-    return ds->ops->port_setup_tc(ds, dp->index, type, type_data);
+	return ds->ops->port_setup_tc(ds, dp->index, type, type_data);
 }
 
 static const struct net_device_ops rteth_838x_netdev_ops = {
