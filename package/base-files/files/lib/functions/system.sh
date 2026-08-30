@@ -228,6 +228,18 @@ mtd_get_part_size() {
 	done < /proc/mtd
 }
 
+mtd_get_part_erasesize() {
+	local part_name=$1
+	local first dev size erasesize name
+	while read dev size erasesize name; do
+		name=${name#'"'}; name=${name%'"'}
+		if [ "$name" = "$part_name" ]; then
+			echo $((0x$erasesize))
+			break
+		fi
+	done < /proc/mtd
+}
+
 mmc_get_mac_ascii() {
 	local part_name="$1"
 	local key="$2"
