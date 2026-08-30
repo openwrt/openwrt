@@ -1505,12 +1505,6 @@ static int rteth_set_link_ksettings(struct net_device *dev,
 	return phylink_ethtool_ksettings_set(ctrl->phylink, cmd);
 }
 
-static netdev_features_t rteth_fix_features(struct net_device *dev,
-					      netdev_features_t features)
-{
-	return features;
-}
-
 static int rteth_83xx_set_features(struct net_device *dev, netdev_features_t features)
 {
 	struct rteth_ctrl *ctrl = netdev_priv(dev);
@@ -1558,7 +1552,6 @@ static const struct net_device_ops rteth_838x_netdev_ops = {
 	.ndo_set_rx_mode	= rteth_838x_set_rx_mode,
 	.ndo_tx_timeout		= rteth_tx_timeout,
 	.ndo_set_features	= rteth_83xx_set_features,
-	.ndo_fix_features	= rteth_fix_features,
 	.ndo_setup_tc		= rteth_setup_tc,
 };
 
@@ -1611,7 +1604,6 @@ static const struct net_device_ops rteth_839x_netdev_ops = {
 	.ndo_set_rx_mode	= rteth_839x_set_rx_mode,
 	.ndo_tx_timeout		= rteth_tx_timeout,
 	.ndo_set_features	= rteth_83xx_set_features,
-	.ndo_fix_features	= rteth_fix_features,
 	.ndo_setup_tc		= rteth_setup_tc,
 };
 
@@ -1663,7 +1655,6 @@ static const struct net_device_ops rteth_930x_netdev_ops = {
 	.ndo_set_rx_mode	= rteth_930x_set_rx_mode,
 	.ndo_tx_timeout		= rteth_tx_timeout,
 	.ndo_set_features	= rteth_93xx_set_features,
-	.ndo_fix_features	= rteth_fix_features,
 	.ndo_setup_tc		= rteth_setup_tc,
 };
 
@@ -1715,7 +1706,6 @@ static const struct net_device_ops rteth_931x_netdev_ops = {
 	.ndo_set_rx_mode	= rteth_931x_set_rx_mode,
 	.ndo_tx_timeout		= rteth_tx_timeout,
 	.ndo_set_features	= rteth_93xx_set_features,
-	.ndo_fix_features	= rteth_fix_features,
 	.ndo_setup_tc		= rteth_setup_tc,
 };
 
