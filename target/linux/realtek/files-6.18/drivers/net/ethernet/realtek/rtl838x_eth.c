@@ -188,16 +188,7 @@ static void rteth_93xx_update_counter(struct rteth_ctrl *ctrl, int ring, int rel
 	regmap_write(ctrl->map, ctrl->cfg->dma_if_rx_ring_cntr + reg, released << shift);
 }
 
-struct dsa_tag {
-	u8	reason;
-	u8	queue;
-	u16	port;
-	u8	l2_offloaded;
-	u8	prio;
-	bool	crc_error;
-};
-
-static bool rteth_838x_decode_tag(struct rteth_frag *frag, struct dsa_tag *t)
+static bool rteth_838x_decode_tag(struct rteth_frag *frag, struct rteth_dsa_tag *t)
 {
 	/* cpu_tag[0] is reserved. Fields are off-by-one */
 	t->reason = frag->cpu_tag[4] & 0xf;
@@ -214,7 +205,7 @@ static bool rteth_838x_decode_tag(struct rteth_frag *frag, struct dsa_tag *t)
 	return t->l2_offloaded;
 }
 
-static bool rteth_839x_decode_tag(struct rteth_frag *frag, struct dsa_tag *t)
+static bool rteth_839x_decode_tag(struct rteth_frag *frag, struct rteth_dsa_tag *t)
 {
 	/* cpu_tag[0] is reserved. Fields are off-by-one */
 	t->reason = frag->cpu_tag[5] & 0x1f;
@@ -232,7 +223,7 @@ static bool rteth_839x_decode_tag(struct rteth_frag *frag, struct dsa_tag *t)
 	return t->l2_offloaded;
 }
 
-static bool rteth_93xx_decode_tag(struct rteth_frag *frag, struct dsa_tag *t)
+static bool rteth_93xx_decode_tag(struct rteth_frag *frag, struct rteth_dsa_tag *t)
 {
 	t->port = (frag->cpu_tag[0] >> 8) & 0x3f;
 	t->queue = (frag->cpu_tag[2] >> 11) & 0x1f;
@@ -1191,8 +1182,8 @@ static struct sk_buff *rteth_create_skb(struct rteth_ctrl *ctrl, int ring, int s
 	struct page_pool *pool = ctrl->rx_info[ring].pool;
 	struct net_device *dev = ctrl->dev;
 	unsigned int len = frag->len;
+	struct rteth_dsa_tag tag;
 	struct sk_buff *skb;
-	struct dsa_tag tag;
 
 	page_pool_dma_sync_for_cpu(pool, page, offset + ctrl->cfg->skb_headroom, len);
 	skb = napi_build_skb(page_address(page) + offset, RTETH_PPOOL_FRAG_SIZE);

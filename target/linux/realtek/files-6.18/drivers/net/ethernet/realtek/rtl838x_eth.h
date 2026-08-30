@@ -219,49 +219,13 @@
 #define RTETH_PPOOL_SIZE			(DIV_ROUND_UP(RTETH_RX_RING_SIZE, \
 						 PAGE_SIZE / RTETH_PPOOL_FRAG_SIZE) + 8)
 
-struct p_hdr;
-struct dsa_tag;
-struct rteth_ctrl;
-struct rteth_frag;
-
-struct rteth_cfg {
-	int cpu_port;
-	int max_mtu;
-	int rx_rings;
-	int tx_rx_enable;
-	int tx_trigger_mask;
-	int mac_l2_port_ctrl;
-	int qm_pkt2cpu_intpri_map;
-	int qm_rsn2cpuqid_ctrl;
-	int qm_rsn2cpuqid_cnt;
-	int dma_if_intr_sts;
-	int dma_if_intr_msk;
-	int dma_if_rx_ring_cntr;
-	int dma_if_rx_ring_size;
-	int l2_ntfy_if_intr_sts;
-	int l2_ntfy_if_intr_msk;
-	int dma_if_ctrl;
-	int mac_force_mode_ctrl;
-	int dma_rx_base;
-	int dma_tx_base;
-	int rst_glb_ctrl;
-	int skb_headroom;
-	u32 mac_reg[RTETH_MAX_MAC_REGS];
-	int l2_tbl_flush_ctrl;
-	void (*confirm_and_disable_irqs)(struct rteth_ctrl *ctrl, unsigned long *rings, bool *l2);
-	void (*enable_rx_irq)(struct rteth_ctrl *ctrl, int ring);
-	void (*create_tx_header)(struct rteth_frag *frag, unsigned int dest_port, int prio);
-	bool (*decode_tag)(struct rteth_frag *frag, struct dsa_tag *tag);
-	void (*hw_en_rxtx)(struct rteth_ctrl *ctrl);
-	void (*hw_init)(struct rteth_ctrl *ctrl);
-	void (*hw_stop)(struct rteth_ctrl *ctrl);
-	void (*hw_reset)(struct rteth_ctrl *ctrl);
-	int (*init_mac)(struct rteth_ctrl *ctrl);
-	void (*set_hol)(struct rteth_ctrl *ctrl);
-	void (*set_max_packet_length)(struct rteth_ctrl *ctrl, int len);
-	void (*setup_notify_ring_buffer)(struct rteth_ctrl *ctrl);
-	void (*update_counter)(struct rteth_ctrl *ctrl, int ring, int released);
-	const struct net_device_ops *netdev_ops;
+struct rteth_dsa_tag {
+	u8			reason;
+	u8			queue;
+	u16			port;
+	u8			l2_offloaded;
+	u8			prio;
+	bool			crc_error;
 };
 
 struct rteth_frag {
@@ -348,6 +312,46 @@ struct rteth_ctrl {
 	struct rteth_tx_info	tx_info[RTETH_TX_RINGS];
 	struct rteth_tx_data	*tx_data;
 	struct work_struct	reset_work;
+};
+
+struct rteth_cfg {
+	int cpu_port;
+	int max_mtu;
+	int rx_rings;
+	int tx_rx_enable;
+	int tx_trigger_mask;
+	int mac_l2_port_ctrl;
+	int qm_pkt2cpu_intpri_map;
+	int qm_rsn2cpuqid_ctrl;
+	int qm_rsn2cpuqid_cnt;
+	int dma_if_intr_sts;
+	int dma_if_intr_msk;
+	int dma_if_rx_ring_cntr;
+	int dma_if_rx_ring_size;
+	int l2_ntfy_if_intr_sts;
+	int l2_ntfy_if_intr_msk;
+	int dma_if_ctrl;
+	int mac_force_mode_ctrl;
+	int dma_rx_base;
+	int dma_tx_base;
+	int rst_glb_ctrl;
+	int skb_headroom;
+	u32 mac_reg[RTETH_MAX_MAC_REGS];
+	int l2_tbl_flush_ctrl;
+	void (*confirm_and_disable_irqs)(struct rteth_ctrl *ctrl, unsigned long *rings, bool *l2);
+	void (*enable_rx_irq)(struct rteth_ctrl *ctrl, int ring);
+	void (*create_tx_header)(struct rteth_frag *frag, unsigned int dest_port, int prio);
+	bool (*decode_tag)(struct rteth_frag *frag, struct rteth_dsa_tag *tag);
+	void (*hw_en_rxtx)(struct rteth_ctrl *ctrl);
+	void (*hw_init)(struct rteth_ctrl *ctrl);
+	void (*hw_stop)(struct rteth_ctrl *ctrl);
+	void (*hw_reset)(struct rteth_ctrl *ctrl);
+	int (*init_mac)(struct rteth_ctrl *ctrl);
+	void (*set_hol)(struct rteth_ctrl *ctrl);
+	void (*set_max_packet_length)(struct rteth_ctrl *ctrl, int len);
+	void (*setup_notify_ring_buffer)(struct rteth_ctrl *ctrl);
+	void (*update_counter)(struct rteth_ctrl *ctrl, int ring, int released);
+	const struct net_device_ops *netdev_ops;
 };
 
 
