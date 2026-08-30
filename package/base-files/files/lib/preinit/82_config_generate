@@ -1,14 +1,15 @@
 do_config_generate() {
 	[ -f /etc/board.json ] || {
+		export JSON_PREFIX=board_
+
 		# This allows /etc/board.d/* scripts to use values from the uboot environment
 		mkdir -p /tmp/.uci
 		[ -f /etc/uci-defaults/30_uboot-envtools ] && (. /etc/uci-defaults/30_uboot-envtools)
 
 		echo "- generating board file -"
-		/bin/board_detect /tmp/board.json
-		mv /tmp/board.json /etc/board.json
-
+		/bin/board_detect /etc/board.json
 		/bin/config_generate > /dev/null
+		unset JSON_PREFIX
 	}
 }
 
