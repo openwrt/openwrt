@@ -47,7 +47,7 @@ Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
  #include <linux/notifier.h>
  #include <linux/of.h>
  #include <linux/phy.h>
-@@ -748,6 +749,168 @@ static int _pse_pi_delivery_power_sw_pw_
+@@ -750,6 +751,168 @@ static int _pse_pi_delivery_power_sw_pw_
  	return 0;
  }
  
@@ -216,7 +216,7 @@ Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
  static int pse_pi_enable(struct regulator_dev *rdev)
  {
  	struct pse_controller_dev *pcdev = rdev_get_drvdata(rdev);
-@@ -773,6 +936,7 @@ static int pse_pi_enable(struct regulato
+@@ -775,6 +938,7 @@ static int pse_pi_enable(struct regulato
  			pcdev->pi[id].admin_state_enabled = 1;
  			ret = 0;
  		}
@@ -224,7 +224,7 @@ Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
  		mutex_unlock(&pcdev->lock);
  		return ret;
  	}
-@@ -780,6 +944,7 @@ static int pse_pi_enable(struct regulato
+@@ -782,6 +946,7 @@ static int pse_pi_enable(struct regulato
  	ret = ops->pi_enable(pcdev, id);
  	if (!ret)
  		pcdev->pi[id].admin_state_enabled = 1;
@@ -232,7 +232,7 @@ Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
  	mutex_unlock(&pcdev->lock);
  
  	return ret;
-@@ -803,6 +968,7 @@ static int pse_pi_disable(struct regulat
+@@ -805,6 +970,7 @@ static int pse_pi_disable(struct regulat
  	ret = _pse_pi_disable(pcdev, id);
  	if (!ret)
  		pcdev->pi[id].admin_state_enabled = 0;
@@ -240,7 +240,7 @@ Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
  
  	mutex_unlock(&pcdev->lock);
  	return 0;
-@@ -1163,6 +1329,17 @@ int pse_controller_register(struct pse_c
+@@ -1165,6 +1331,17 @@ int pse_controller_register(struct pse_c
  			return ret;
  	}
  
@@ -258,7 +258,7 @@ Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
  	/* Each regulator name len is pcdev dev name + 7 char +
  	 * int max digit number (10) + 1
  	 */
-@@ -1192,6 +1369,19 @@ int pse_controller_register(struct pse_c
+@@ -1194,6 +1371,19 @@ int pse_controller_register(struct pse_c
  	if (ret)
  		return ret;
  
@@ -278,7 +278,7 @@ Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
  	mutex_lock(&pse_list_mutex);
  	list_add(&pcdev->list, &pse_controller_list);
  	mutex_unlock(&pse_list_mutex);
-@@ -1227,6 +1417,12 @@ void pse_controller_unregister(struct ps
+@@ -1229,6 +1419,12 @@ void pse_controller_unregister(struct ps
  	if (pcdev->polling)
  		cancel_delayed_work_sync(&pcdev->poll_work);
  	pse_release_pis(pcdev);
@@ -291,7 +291,7 @@ Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
  	cancel_work_sync(&pcdev->ntf_work);
  	kfifo_free(&pcdev->ntf_fifo);
  	mutex_lock(&pse_list_mutex);
-@@ -1362,12 +1558,21 @@ static void pse_handle_events(struct pse
+@@ -1364,12 +1560,21 @@ static void pse_handle_events(struct pse
  {
  	int i;
  

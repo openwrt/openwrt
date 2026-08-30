@@ -9,17 +9,23 @@ chain and manages psec attach/detach in response to PSE controller
 lifecycle events, while fwnode_mdio loses its PSE awareness entirely.
 
 phydev->psec is attached after device_add() has made the phy visible on
-mdio_bus_type. A dedicated phy_pse_lock mutex serialises the attach
-against the PSE controller notifier walk and against the ethtool PSE
-paths that dereference phydev->psec.
+mdio_bus_type. A dedicated pse_phy_mutex in pse_core.c, taken through
+pse_phy_lock(), serialises the attach against the PSE controller notifier
+walk and against the ethtool PSE paths that dereference phydev->psec.
+
+The lock lives in pse_core rather than in phylib because PSE_CONTROLLER
+is bool while phylib is tristate: net/ethtool is always built into
+vmlinux, so with CONFIG_PHYLIB=m it cannot call a phylib export. pse_core
+is either in vmlinux or absent, so every config can reach it, and
+!PSE_CONTROLLER gets no-op stubs in pse.h.
 
 A dedicated mutex is used instead of rtnl on purpose: an MDIO bus
 registered from ndo_init() (e.g. lantiq_etop) calls phy_device_register()
 with rtnl already held, so taking rtnl for the attach would deadlock.
 The ethtool PSE reads in net/ethtool/pse-pd.c take the same lock so the
 PSE_UNREGISTERED detach cannot free phydev->psec underneath them. The
-lock order is phy_pse_lock -> pse_list_mutex -> pcdev->lock, and the
-notifier walks enter at phy_pse_lock and never take rtnl.
+lock order is rtnl -> pse_phy_mutex -> pse_list_mutex -> pcdev->lock, and
+the notifier walks enter at pse_phy_lock() and never take rtnl.
 
   - On PSE_REGISTERED: a bus walk retries the attach for every registered
     phy whose psec is still NULL (the "phy enumerated before the PSE
@@ -288,14 +294,13 @@ Tested-by: Aleksander Jan Bajkowski <olek2@wp.pl>
  	rtnl_lock();
 --- a/drivers/net/pse-pd/pse_core.c
 +++ b/drivers/net/pse-pd/pse_core.c
-@@ -20,6 +20,50 @@
- #define PSE_PW_D_LIMIT INT_MAX
+@@ -24,9 +24,55 @@ static LIST_HEAD(pse_controller_list);
+ static DEFINE_XARRAY_ALLOC(pse_pw_d_map);
+ static DEFINE_MUTEX(pse_pw_d_mutex);
  
- static DEFINE_MUTEX(pse_list_mutex);
-+
 +/* Serialises phydev->psec against the PSE controller lifecycle notifier and
-+ * the ethtool PSE paths, in place of rtnl. of_pse_control_get() must not run
-+ * under rtnl: an MDIO bus registered from ndo_init (e.g. lantiq_etop) calls
++ * the ethtool PSE paths, in place of rtnl. The attach must not take rtnl: an
++ * MDIO bus registered from ndo_init (e.g. lantiq_etop) calls
 + * phy_device_register() with rtnl already held, so taking rtnl for the attach
 + * would deadlock. It lives here rather than in phylib because PSE_CONTROLLER
 + * is bool, so pse_core is always built into vmlinux and net/ethtool can call
@@ -305,7 +310,9 @@ Tested-by: Aleksander Jan Bajkowski <olek2@wp.pl>
 + */
 +static DEFINE_MUTEX(pse_phy_mutex);
 +
-+/**
+ static BLOCKING_NOTIFIER_HEAD(pse_controller_notifier);
+ 
+ /**
 + * pse_phy_lock - hold phydev->psec stable against PSE controller teardown
 + *
 + * The PSE_UNREGISTERED notifier clears phydev->psec and drops the last
@@ -328,6 +335,7 @@ Tested-by: Aleksander Jan Bajkowski <olek2@wp.pl>
 +}
 +EXPORT_SYMBOL_GPL(pse_phy_unlock);
 +
++#ifdef CONFIG_LOCKDEP
 +/**
 + * pse_phy_lock_assert_held - assert that pse_phy_lock() is held
 + */
@@ -336,10 +344,13 @@ Tested-by: Aleksander Jan Bajkowski <olek2@wp.pl>
 +	lockdep_assert_held(&pse_phy_mutex);
 +}
 +EXPORT_SYMBOL_GPL(pse_phy_lock_assert_held);
- static LIST_HEAD(pse_controller_list);
- static DEFINE_XARRAY_ALLOC(pse_pw_d_map);
- static DEFINE_MUTEX(pse_pw_d_mutex);
-@@ -2028,3 +2072,17 @@ bool pse_has_c33(struct pse_control *pse
++#endif
++
++/**
+  * pse_register_notifier - register a callback for PSE controller events
+  * @nb: notifier block to register
+  *
+@@ -2028,3 +2074,17 @@ bool pse_has_c33(struct pse_control *pse
  	return psec->pcdev->types & ETHTOOL_PSE_C33;
  }
  EXPORT_SYMBOL_GPL(pse_has_c33);
@@ -359,7 +370,7 @@ Tested-by: Aleksander Jan Bajkowski <olek2@wp.pl>
 +EXPORT_SYMBOL_GPL(pse_control_matches_pcdev);
 --- a/include/linux/pse-pd/pse.h
 +++ b/include/linux/pse-pd/pse.h
-@@ -385,9 +385,16 @@ int pse_ethtool_set_prio(struct pse_cont
+@@ -385,9 +385,23 @@ int pse_ethtool_set_prio(struct pse_cont
  bool pse_has_podl(struct pse_control *psec);
  bool pse_has_c33(struct pse_control *psec);
  
@@ -371,12 +382,19 @@ Tested-by: Aleksander Jan Bajkowski <olek2@wp.pl>
  
 +void pse_phy_lock(void);
 +void pse_phy_unlock(void);
++
++#ifdef CONFIG_LOCKDEP
 +void pse_phy_lock_assert_held(void);
++#else
++static inline void pse_phy_lock_assert_held(void)
++{
++}
++#endif
 +
  #else
  
  static inline struct pse_control *of_pse_control_get(struct device_node *node,
-@@ -438,6 +445,12 @@ static inline bool pse_has_c33(struct ps
+@@ -438,6 +452,12 @@ static inline bool pse_has_c33(struct ps
  	return false;
  }
  
@@ -389,7 +407,7 @@ Tested-by: Aleksander Jan Bajkowski <olek2@wp.pl>
  static inline int pse_register_notifier(struct notifier_block *nb)
  {
  	return 0;
-@@ -448,6 +461,18 @@ static inline int pse_unregister_notifie
+@@ -448,6 +468,18 @@ static inline int pse_unregister_notifie
  	return 0;
  }
  
