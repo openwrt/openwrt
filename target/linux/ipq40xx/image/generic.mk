@@ -1316,20 +1316,35 @@ endef
 # Missing DSA Setup
 #TARGET_DEVICES += tel_x1pro
 
-define Device/ubnt_utr
+define Device/ubnt_utr-common
 	$(call Device/FitImageLzma)
 	$(call Device/UbiFit)
 	DEVICE_VENDOR := Ubiquiti
 	DEVICE_MODEL := UniFi Travel Router
 	SOC := qcom-ipq4018
-	DEVICE_DTS_CONFIG := config@ea06
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	KERNEL_IN_UBI :=
 	UBINIZE_PARTS = vol=$$(KDIR_KERNEL_IMAGE)
-	DEVICE_PACKAGES := ipq-wifi-ubnt_utr kmod-i2c-gpio kmod-iio-st_accel-i2c kmod-backlight-pwm kmod-gpio-pwm kmod-btusb mipi-dbi-ubnt-utr video-support
+	DEVICE_PACKAGES := kmod-i2c-gpio kmod-iio-st_accel-i2c kmod-backlight-pwm kmod-gpio-pwm kmod-btusb video-support
+endef
+
+define Device/ubnt_utr
+	$(call Device/ubnt_utr-common)
+	DEVICE_DTS := qcom-ipq4018-utr
+	DEVICE_DTS_CONFIG := config@ea06
+	DEVICE_PACKAGES += ipq-wifi-ubnt_utr mipi-dbi-ubnt-utr
 endef
 TARGET_DEVICES += ubnt_utr
+
+define Device/ubnt_utr-lr
+	$(call Device/ubnt_utr-common)
+	DEVICE_VARIANT := LR
+	DEVICE_DTS := qcom-ipq4018-utr-lr
+	DEVICE_DTS_CONFIG := config@ea08
+	DEVICE_PACKAGES += ipq-wifi-ubnt_utr-lr mipi-dbi-ubnt-utr-lr
+endef
+TARGET_DEVICES += ubnt_utr-lr
 
 define Device/unielec_u4019-32m
 	$(call Device/FitImage)
