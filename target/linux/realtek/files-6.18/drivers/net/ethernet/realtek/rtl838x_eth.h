@@ -193,7 +193,7 @@
 #define RTETH_RX_RINGS				2
 #define RTETH_TX_RING_SIZE			16
 #define RTETH_TX_RINGS				2
-#define RTETH_TX_TRIGGER(ctrl, ring)		((0x16 >> ring) & ctrl->r->tx_trigger_mask)
+#define RTETH_TX_TRIGGER(ctrl, ring)		((0x16 >> ring) & ctrl->cfg->tx_trigger_mask)
 
 #define RTETH_NOTIFY_EVENTS			10
 #define RTETH_NOTIFY_BLOCKS			10
@@ -224,7 +224,7 @@ struct dsa_tag;
 struct rteth_ctrl;
 struct rteth_frag;
 
-struct rteth_config {
+struct rteth_cfg {
 	int cpu_port;
 	int max_mtu;
 	int rx_rings;
@@ -325,6 +325,7 @@ struct notify_b {
 };
 
 struct rteth_ctrl {
+	const struct rteth_cfg	*cfg;
 	struct regmap		*map;
 	struct net_device	*dev;
 	struct platform_device	*pdev;
@@ -333,7 +334,6 @@ struct rteth_ctrl {
 	struct mii_bus		*mii_bus;
 	struct phylink		*phylink;
 	struct phylink_config	phylink_config;
-	const struct rteth_config *r;
 	u32			lastEvent;
 	struct metadata_dst	*dsa_meta[RTETH_931X_CPU_PORT];
 	/* receive handling */
