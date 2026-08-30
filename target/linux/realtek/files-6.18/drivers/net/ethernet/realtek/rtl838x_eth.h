@@ -338,7 +338,7 @@ struct rteth_cfg {
 	int skb_headroom;
 	u32 mac_reg[RTETH_MAX_MAC_REGS];
 	int l2_tbl_flush_ctrl;
-	void (*confirm_and_disable_irqs)(struct rteth_ctrl *ctrl, unsigned long *rings, bool *l2);
+	void (*confirm_disable_irqs)(struct rteth_ctrl *ctrl, unsigned long *rings, bool *l2);
 	void (*enable_rx_irq)(struct rteth_ctrl *ctrl, int ring);
 	void (*create_tx_header)(struct rteth_frag *frag, unsigned int dest_port, int prio);
 	bool (*decode_tag)(struct rteth_frag *frag, struct rteth_dsa_tag *tag);
@@ -349,7 +349,7 @@ struct rteth_cfg {
 	int (*init_mac)(struct rteth_ctrl *ctrl);
 	void (*set_hol)(struct rteth_ctrl *ctrl);
 	void (*set_max_packet_length)(struct rteth_ctrl *ctrl, int len);
-	void (*setup_notify_ring_buffer)(struct rteth_ctrl *ctrl);
+	void (*setup_notify_buffer)(struct rteth_ctrl *ctrl);
 	void (*update_counter)(struct rteth_ctrl *ctrl, int ring, int released);
 	const struct net_device_ops *netdev_ops;
 };
