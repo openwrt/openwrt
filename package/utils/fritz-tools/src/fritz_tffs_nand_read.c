@@ -391,7 +391,7 @@ static int check_sector(off_t pos)
 	return 1;
 }
 
-static int check_block(off_t pos, uint32_t sector)
+static int check_block(off_t pos)
 {
 	if (!check_sector(pos)) {
 		return 0;
@@ -406,12 +406,6 @@ static int check_block(off_t pos, uint32_t sector)
 	if (read_uint32(readbuf, 0x0c) != TFFS_SECTORS_PER_PAGE) {
 		fprintf(stderr, "Warning: block with wrong number of sectors per page. Skipping block\n");
 		return 0;
-	}
-
-	uint32_t num_hdr_bad = read_uint32(readbuf, 0x0c);
-	for (uint32_t i = 0; i < num_hdr_bad; i++) {
-		uint32_t bad = sector + read_uint64(readbuf, 0x1c + sizeof(uint64_t)*i);
-		sector_mark_bad(bad);
 	}
 
 	return 1;
@@ -440,7 +434,7 @@ static int scan_mtd(void)
 	uint8_t block_ok = 0;
 	for (off_t pos = 0; pos < info.size; sector++, pos += TFFS_SECTOR_SIZE) {
 		if (pos % info.erasesize == 0) {
-			block_ok = check_block(pos, sector);
+			block_ok = check_block(pos);
 			/* first sector of the block contains metadata
 			   => handle it like a bad sector */
 			sector_mark_bad(sector);
