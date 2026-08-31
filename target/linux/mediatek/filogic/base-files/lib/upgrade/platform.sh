@@ -130,6 +130,88 @@ update_oem_ubi_volume() {
 	ubiupdatevol "/dev/$ubidev" -s "$oem_volume_size" "$oem_volume_data"
 }
 
+wx3400_write_le16() {
+	local output="$1"
+	local offset="$2"
+	local value="$3"
+	local low high
+
+	low="$(printf '%03o' $((value & 255)))"
+	high="$(printf '%03o' $((value >> 8)))"
+	printf '%b' "\\0$low\\0$high" | \
+		dd of="$output" bs=1 seek="$offset" conv=notrunc 2>/dev/null
+}
+
+wx3400_prepare_zyfwinfo() {
+	local output="$1"
+	local bank mtdnum ubidev volume model stored calculated sequence checksum
+
+	bank="$(cmdline_get_var rootubi)"
+	case "$bank" in
+	ubi|ubi2) ;;
+	*)
+		echo "invalid or missing rootubi kernel parameter: $bank"
+		return 1
+		;;
+	esac
+
+	mtdnum="$(find_mtd_index "$bank")"
+	[ -n "$mtdnum" ] || return 1
+	ubidev="$(nand_find_ubi "$bank")"
+	if [ -z "$ubidev" ]; then
+		ubiattach -m "$mtdnum" >/dev/null 2>&1 || return 1
+		ubidev="$(nand_find_ubi "$bank")"
+	fi
+	volume="$(nand_find_volume "$ubidev" zyfwinfo)"
+	[ -n "$volume" ] || return 1
+	dd if="/dev/$volume" of="$output" bs=256 count=1 2>/dev/null || return 1
+
+	[ "$(wc -c < "$output")" -eq 256 ] || return 1
+	[ "$(dd if="$output" bs=4 count=1 2>/dev/null)" = "EXYZ" ] || return 1
+	model="$(hexdump -v -s 116 -n 4 -e '1/1 "%02x"' "$output")"
+	[ "$model" = "040a000d" ] || return 1
+	stored="$(hexdump -v -s 254 -n 2 -e '1/2 "%u"' "$output")"
+	calculated="$(hexdump -v -n 254 -e '1/1 "%u\n"' "$output" | awk '
+		{ sum += $1 }
+		END { sum += int(sum / 65536); print sum % 65536 }
+	')"
+	[ "$stored" = "$calculated" ] || return 1
+
+	sequence="$(hexdump -v -s 6 -n 2 -e '1/2 "%u"' "$output")"
+	echo "WX3400-T0: booted from $bank with zyfwinfo sequence $sequence"
+	[ "$sequence" -lt 65535 ] || {
+		echo "WX3400-T0 zyfwinfo sequence overflow"
+		return 1
+	}
+
+	sequence=$((sequence + 1))
+	wx3400_write_le16 "$output" 6 "$sequence"
+	dd if=/dev/zero of="$output" bs=1 seek=254 count=2 conv=notrunc 2>/dev/null
+	checksum="$(hexdump -v -n 254 -e '1/1 "%u\n"' "$output" | awk '
+		{ sum += $1 }
+		END {
+			sum += int(sum / 65536)
+			print sum % 65536
+		}
+	')"
+	wx3400_write_le16 "$output" 254 "$checksum"
+
+	echo "WX3400-T0: new ubi zyfwinfo sequence $sequence"
+}
+
+wx3400_ensure_zyfwinfo_volume() {
+	local ubidev="$1"
+	local volume
+
+	volume="$(nand_find_volume "$ubidev" zyfwinfo)"
+	[ -n "$volume" ] && return 0
+
+	# Make room before rootfs_data is recreated with all remaining LEBs.
+	volume="$(nand_find_volume "$ubidev" rootfs_data)"
+	[ -z "$volume" ] || ubirmvol "/dev/$ubidev" -N rootfs_data
+	ubimkvol "/dev/$ubidev" -N zyfwinfo -s 256 -t dynamic
+}
+
 platform_do_upgrade() {
 	local board=$(board_name)
 
@@ -351,6 +433,32 @@ platform_do_upgrade() {
 		CI_KERNPART="kernel0"
 		EMMC_ROOT_DEV="$(cmdline_get_var root)"
 		emmc_do_upgrade "$1"
+		;;
+	zyxel,wx3400-t0)
+		local header="/tmp/wx3400-zyfwinfo.bin"
+		local ubidev volume
+
+		wx3400_prepare_zyfwinfo "$header" || nand_do_upgrade_failed
+
+		CI_UBIPART="ubi"
+		CI_KERN_UBIPART="ubi"
+		CI_ROOT_UBIPART="ubi"
+		CI_DATA_UBIPART="ubi"
+
+		ubidev="$(nand_attach_ubi ubi)"
+		[ -n "$ubidev" ] || nand_do_upgrade_failed
+		wx3400_ensure_zyfwinfo_volume "$ubidev" || nand_do_upgrade_failed
+
+		echo "WX3400-T0: installing OpenWrt to fixed bank ubi"
+		if nand_do_flash_file "$1"; then
+			ubidev="$(nand_find_ubi ubi)"
+			volume="$(nand_find_volume "$ubidev" zyfwinfo)"
+			[ -n "$volume" ] || nand_do_upgrade_failed
+			ubiupdatevol "/dev/$volume" -s 256 "$header" || nand_do_upgrade_failed
+			nand_do_upgrade_success
+		fi
+
+		nand_do_upgrade_failed
 		;;
 	unielec,u7981-01*)
 		local rootdev="$(cmdline_get_var root)"
