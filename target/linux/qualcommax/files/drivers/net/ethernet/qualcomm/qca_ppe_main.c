@@ -754,8 +754,20 @@ static int qca_ppe_port_mdb_del(struct dsa_switch *ds, int port,
 	int ret;
 
 	ret = ppe_fdb_lookup(priv, mdb->addr, mdb->vid, &portmap);
+
+	/* The bridge drops a port's multicast entries on every leave, STP
+	 * transition and membership expiry, without tracking which of them
+	 * this switch programmed, so a delete arrives for entries that were
+	 * never added and for entries an earlier delete already emptied.
+	 * Either way the requested state already holds.
+	 */
+	if (ret == -ENOENT)
+		return 0;
 	if (ret)
 		return ret;
+
+	if (!(portmap & BIT(port)))
+		return 0;
 
 	portmap &= ~BIT(port);
 
