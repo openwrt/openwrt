@@ -15,10 +15,25 @@
 		#size-cells = <0>;
 		frequency = <800000000>;
 
-		cpu@0 {
+		cpu0: cpu@0 {
+			device_type = "cpu";
 			compatible = "mips,mips34Kc";
 			reg = <0>;
+			clocks = <&cpu_clk>;
 		};
+
+		cpu1: cpu@1 {
+			device_type = "cpu";
+			compatible = "mips,mips34Kc";
+			reg = <1>;
+			clocks = <&cpu_clk>;
+		};
+	};
+
+	cpu_clk: cpu-clock {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <800000000>;
 	};
 
 	memory@0 {
@@ -69,7 +84,7 @@
 			#interrupt-cells = <2>;
 
 			interrupt-parent = <&cpuintc>;
-			interrupts = <2>, <3>, <4>, <5>, <6>, <7>;
+			interrupts = <2>, <3>, <4>, <5>, <6>;
 		};
 
 		snand: spi@1a400 {
