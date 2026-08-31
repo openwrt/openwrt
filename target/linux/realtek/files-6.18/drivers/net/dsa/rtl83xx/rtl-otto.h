@@ -34,6 +34,13 @@
  * the word that would follow the array is MAC_DBG_SEL_CTRL.
  */
 #define RTL931X_MAC_L2_PORT_MAX_LEN_CTRL	(0x5554)
+/* RTL838x and RTL839x hold one limit for the whole switch instead, bounding
+ * the CPU port with it. RTL838x mirrors it in a second register, and the
+ * vendor SDK writes both (dal_maple_switch_maxPktLenLinkSpeed_set()).
+ */
+#define RTL838X_MAC_MAX_LEN_CTRL		(0xa9e0)
+#define RTL838X_MAC_MAX_LEN_CTRL_DUP		(0x6b00)
+#define RTL839X_MAC_MAX_LEN_CTRL		(0x02b0)
 
 /* Both length fields are 14 bits wide (hardware maximum 16383 bytes). */
 #define RTLDSA_MAC_MAX_LEN_FIELD		GENMASK(13, 0)
@@ -47,6 +54,9 @@
 /* Largest frame each family switches; the length field would allow 16383 */
 #define RTL930X_MAX_FRAME			12288
 #define RTL931X_MAX_FRAME			12288
+/* RTL838x stops at what its datasheet gives, below the vendor SDK value */
+#define RTL838X_MAX_FRAME			10000
+#define RTL839X_MAX_FRAME			12288
 
 #define RTL838X_RST_GLB_CTRL_0			(0x003c)
 
