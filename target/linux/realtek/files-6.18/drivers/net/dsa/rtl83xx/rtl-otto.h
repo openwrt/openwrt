@@ -30,6 +30,10 @@
  * reverse-engineered Realtek register maps at https://svanheule.net/realtek/
  */
 #define RTL930X_MAC_L2_PORT_MAX_LEN_CTRL(port)	(0x326C + (((port) << 6)))
+/* RTL931x covers ports 0 to 55 only, one word each. The CPU port has no row:
+ * the word that would follow the array is MAC_DBG_SEL_CTRL.
+ */
+#define RTL931X_MAC_L2_PORT_MAX_LEN_CTRL	(0x5554)
 
 /* Both length fields are 14 bits wide (hardware maximum 16383 bytes). */
 #define RTLDSA_MAC_MAX_LEN_FIELD		GENMASK(13, 0)
@@ -42,6 +46,7 @@
 
 /* Largest frame each family switches; the length field would allow 16383 */
 #define RTL930X_MAX_FRAME			12288
+#define RTL931X_MAX_FRAME			12288
 
 #define RTL838X_RST_GLB_CTRL_0			(0x003c)
 

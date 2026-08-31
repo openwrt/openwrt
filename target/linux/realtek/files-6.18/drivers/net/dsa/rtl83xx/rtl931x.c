@@ -374,6 +374,11 @@ static inline int rtl931x_mac_port_ctrl(int p)
 	return RTL931X_MAC_L2_PORT_CTRL + (p << 7);
 }
 
+static inline int rtl931x_mac_max_len_reg(int p)
+{
+	return RTL931X_MAC_L2_PORT_MAX_LEN_CTRL + (p << 2);
+}
+
 static inline int rtl931x_l2_port_new_salrn(int p)
 {
 	return RTL931X_L2_PORT_NEW_SALRN(p);
@@ -2024,6 +2029,8 @@ const struct rtldsa_config rtldsa_931x_cfg = {
 	.mac_force_mode_ctrl = rtl931x_mac_force_mode_ctrl,
 	.mac_link_sts = RTL931X_MAC_LINK_STS,
 	.mac_port_ctrl = rtl931x_mac_port_ctrl,
+	.mac_max_len_reg = rtl931x_mac_max_len_reg,
+	.max_frame = RTL931X_MAX_FRAME,
 	.l2_port_new_salrn = rtl931x_l2_port_new_salrn,
 	.l2_port_new_sa_fwd = rtl931x_l2_port_new_sa_fwd,
 	.get_mirror_config = rtldsa_931x_get_mirror_config,
