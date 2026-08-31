@@ -80,6 +80,9 @@ bazis,ax3000wm)
 	ucidef_set_led_netdev "lanlink" "LANLINK" "green:lan" "eth1" "link"
 	ucidef_set_led_netdev "internet" "internet" "blue:wan-online" "wan" "link"
 	;;
+bo,rt622-g31-g2)
+	ucidef_set_led_netdev "wan" "wan" "green:wan" "wan"
+	;;
 comfast,cf-xr186)
 	ucidef_set_led_netdev "lan" "LAN" "blue:lan" "eth0" "link tx rx"
 	ucidef_set_led_netdev "wlan2g" "WLAN2G" "green:wlan" "phy0-ap0" "link tx rx"
@@ -314,6 +317,11 @@ smartrg,sdg-8733a)
 	ucidef_set_led_netdev "wan-green" "WAN" "mdio-bus:08:green:wan" "wan" "link_2500 link_5000"
 	ucidef_set_led_netdev "wan-orange" "WAN" "mdio-bus:08:orange:wan" "wan" "link_100 link_1000"
 	ucidef_set_led_netdev "wan-white" "WAN" "mdio-bus:08:white:wan" "wan" "link_10000"
+	;;
+snr,advance-ax2)
+	ucidef_set_led_netdev "wan" "wan" "blue:wan" "wan" "link tx rx"
+	ucidef_set_led_netdev "wlan2g" "WLAN2G" "blue:wlan-2ghz" "phy0-ap0" "link tx rx"
+	ucidef_set_led_netdev "wlan5g" "WLAN5G" "blue:wlan-5ghz" "phy1-ap0" "link tx rx"
 	;;
 teltonika,rutc50)
 	ucidef_set_led_netdev "wan-green" "WAN" "mdio-bus:00:green:wan" "wan" "link_1000 tx rx"
