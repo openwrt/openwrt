@@ -24,6 +24,13 @@
  * whether VLAN tag bytes count towards the limit.
  */
 
+/* RTL930x holds one register per user port, inside the 64-byte MAC block of
+ * the port. The CPU port has a row of its own, which the ethernet driver owns
+ * and programs from the conduit MTU. Register offsets taken from the
+ * reverse-engineered Realtek register maps at https://svanheule.net/realtek/
+ */
+#define RTL930X_MAC_L2_PORT_MAX_LEN_CTRL(port)	(0x326C + (((port) << 6)))
+
 /* Both length fields are 14 bits wide (hardware maximum 16383 bytes). */
 #define RTLDSA_MAC_MAX_LEN_FIELD		GENMASK(13, 0)
 /* Mask of both length fields, leaving the tag-inclusion bit (28) untouched. */
@@ -32,6 +39,9 @@
 /* Encode @len into both the high-speed and the 10/100M length field. */
 #define RTLDSA_MAC_MAX_LEN_VAL(len) \
 	(((len) & RTLDSA_MAC_MAX_LEN_FIELD) | (((len) & RTLDSA_MAC_MAX_LEN_FIELD) << 14))
+
+/* Largest frame each family switches; the length field would allow 16383 */
+#define RTL930X_MAX_FRAME			12288
 
 #define RTL838X_RST_GLB_CTRL_0			(0x003c)
 

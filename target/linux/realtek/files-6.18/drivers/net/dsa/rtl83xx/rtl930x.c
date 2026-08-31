@@ -689,6 +689,11 @@ static inline int rtl930x_mac_port_ctrl(int p)
 	return RTL930X_MAC_L2_PORT_CTRL(p);
 }
 
+static inline int rtl930x_mac_max_len_reg(int p)
+{
+	return RTL930X_MAC_L2_PORT_MAX_LEN_CTRL(p);
+}
+
 static u64 rtl930x_l2_hash_seed(u64 mac, u32 vid)
 {
 	u64 v = vid;
@@ -2258,6 +2263,8 @@ const struct rtldsa_config rtldsa_930x_cfg = {
 	.mac_force_mode_mask = RTL930X_FORCE_EN | RTL930X_FORCE_LINK_EN,
 	.mac_force_mode_ctrl = rtl930x_mac_force_mode_ctrl,
 	.mac_port_ctrl = rtl930x_mac_port_ctrl,
+	.mac_max_len_reg = rtl930x_mac_max_len_reg,
+	.max_frame = RTL930X_MAX_FRAME,
 	.l2_port_new_salrn = rtl930x_l2_port_new_salrn,
 	.l2_port_new_sa_fwd = rtl930x_l2_port_new_sa_fwd,
 	.get_mirror_config = rtldsa_930x_get_mirror_config,
