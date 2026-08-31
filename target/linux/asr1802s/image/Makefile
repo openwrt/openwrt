@@ -10,14 +10,22 @@ define Device/notion_r291
   SOC := asr1802s
   DEVICE_DTS_DIR := $(DTS_DIR)/asr
   DEVICE_DTS := asr1826s-r291
+
+  # Raw zImage + appended DTB — mrvlboot uses bootz, no uImage/FIT
   KERNEL := kernel-bin | append-dtb
   KERNEL_NAME := zImage
   KERNEL_LOADADDR := 0x00008000
+  KERNEL_SIZE := 5120k
+
+  IMAGES := kernel.bin rootfs.bin
+  IMAGE/kernel.bin := append-kernel | check-size $$(KERNEL_SIZE)
+  IMAGE/rootfs.bin := append-rootfs | check-size $$(IMAGE_SIZE)
+
+  IMAGE_SIZE := 20480k
+  FILESYSTEMS := squashfs
+
   SUPPORTED_DEVICES := notion,r291
 endef
 TARGET_DEVICES += notion_r291
-
-# FIXME: needs U-Boot "mrvlboot" compatible image (bootdelay=1, loadaddr=0x8000)
-#        expects: tftp 0x8000 <itb> ; bootm
 
 $(eval $(call BuildImage))
