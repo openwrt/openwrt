@@ -348,6 +348,23 @@ tplink,re6000xd)
 	ucidef_set_led_netdev "lan-2" "lan-2" "blue:lan-1" "lan2" "link tx rx"
 	ucidef_set_led_netdev "eth1" "lan-3" "blue:lan-2" "eth1" "link tx rx"
 	;;
+tplink,vx830v)
+	# Front LEDs
+	ucidef_set_led_default "power"			"POWER"	"green:power"		"1"
+	ucidef_set_led_default "sfp"			"SFP"	"green:sfp"			"0"
+	ucidef_set_led_default "los"			"LOS"	"red:los"			"0"
+	ucidef_set_led_default "dsl"			"DSL"   "green:dsl"   		"0"
+	ucidef_set_led_network "internet"		"NET" 	"green:internet" 	"wan"
+	ucidef_set_led_default "internet-fault"	"NONET" "red:internet"   	"0"
+	ucidef_set_led_network "lan"   			"LAN"   "green:lan"   		"lan"
+	ucidef_set_led_network "wifi" 			"WIFI"	"green:wlan" 		"wlan"
+	ucidef_set_led_usbport "usb" 			"USB"	"green:usb" 		"usb1-port2" "usb2-port1"
+	# Rear ports LEDs
+	ucidef_set_led_netdev  "lan1"  "LAN1"  "green:lan-1" "lan1"   "link tx rx"
+	ucidef_set_led_netdev  "lan2"  "LAN2"  "green:lan-2" "lan2"   "link tx rx"
+	ucidef_set_led_netdev  "lan3"  "LAN3"  "green:lan-3" "lan3"   "link tx rx"
+	ucidef_set_led_netdev  "wan"   "WAN"   "green:wan"   "wan"    "link tx rx"
+	;;
 wavlink,wl-wn536ax6-a)
 	ucidef_set_led_netdev "wan" "wan" "blue:wan" "eth1" "link tx rx"
 	;;
