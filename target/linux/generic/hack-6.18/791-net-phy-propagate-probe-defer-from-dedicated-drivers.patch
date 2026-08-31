@@ -1,0 +1,64 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Mon, 31 Aug 2026 00:00:00 +0200
+Subject: [PATCH] net: phy: Propagate probe deferral from dedicated drivers
+
+When a dedicated PHY driver matches a PHY device but its probe returns
+-EPROBE_DEFER (e.g. firmware not yet available), phylib must NOT fall
+back to the generic genphy driver.  Doing so would permanently cripple
+the PHY: the genphy driver binds, and when the real driver module loads
+later it cannot take over (the device already has a driver).
+
+Add a probe_deferred bit to struct phy_device that records whether the
+last dedicated-driver probe returned -EPROBE_DEFER.  In
+phy_attach_direct(), if no driver is bound and probe_deferred is set,
+return -EPROBE_DEFER instead of falling back to genphy.
+
+--- a/drivers/net/phy/phy_device.c
++++ b/drivers/net/phy/phy_device.c
+@@ -1797,6 +1797,16 @@ int phy_attach_direct(struct net_device
+ 	 * exist, and we should use the genphy driver.
+ 	 */
+ 	if (!d->driver) {
++		/* Unless a dedicated driver did match this PHY, but asked to
++		 * be probed again later, e.g. because its firmware is not
++		 * available yet. Papering over that with the generic driver
++		 * would permanently cripple the PHY, so tell the caller to
++		 * come back later as well.
++		 */
++		if (phydev->probe_deferred) {
++			err = -EPROBE_DEFER;
++			goto error_put_device;
++		}
+ 		if (phydev->is_c45)
+ 			d->driver = &genphy_c45_driver.mdiodrv.driver;
+ 		else
+@@ -3547,6 +3557,7 @@ static int phy_probe(struct device *dev)
+ 	int err = 0;
+ 
+ 	phydev->drv = phydrv;
++	phydev->probe_deferred = 0;
+ 
+ 	/* Disable the interrupt if the PHY doesn't support it
+ 	 * but the interrupt is still a valid one
+@@ -3664,6 +3675,10 @@ static int phy_probe(struct device *dev)
+ 	return 0;
+ 
+ out:
++	/* Remember that a dedicated driver wants to be probed again later, so
++	 * that phy_attach_direct() does not bind the generic driver instead.
++	 */
++	phydev->probe_deferred = (err == -EPROBE_DEFER);
+ 	sfp_bus_del_upstream(phydev->sfp_bus);
+ 	phydev->sfp_bus = NULL;
+ 
+--- a/include/linux/phy.h
++++ b/include/linux/phy.h
+@@ -661,6 +661,7 @@ struct phy_device {
+ 	unsigned mac_managed_pm:1;
+ 	unsigned wol_enabled:1;
+ 	unsigned is_genphy_driven:1;
++	unsigned probe_deferred:1;
+ 
+ 	unsigned autoneg:1;
+ 	/* The most recently read link state */
