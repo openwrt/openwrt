@@ -1,0 +1,69 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Mon, 31 Aug 2026 00:00:00 +0200
+Subject: [PATCH] net: phy: air_en8811h: Defer probe when firmware unavailable
+
+The EN8811H firmware lives in the root file system which is not mounted
+when built-in MDIO drivers register PHYs.  request_firmware_direct()
+fails with -ENOENT until procd is ready, leaving the PHY permanently
+crippled under the generic genphy driver.
+
+Convert -ENOENT to -EPROBE_DEFER while system_state < SYSTEM_RUNNING so
+the PHY stays on the deferred-probe list and is retried once the
+firmware becomes accessible.
+
+Patches 790 + 791 ensure the DSA switch that references this PHY is
+also deferred without a feedback loop.
+
+--- a/drivers/net/phy/air_en8811h.c
++++ b/drivers/net/phy/air_en8811h.c
+@@ -16,6 +16,7 @@
+ #include <linux/phy.h>
+ #include <linux/phy/phy-common-props.h>
+ #include <linux/firmware.h>
++#include <linux/kernel.h>
+ #include <linux/property.h>
+ #include <linux/wordpart.h>
+ #include <linux/unaligned.h>
+@@ -461,18 +462,29 @@ static int en8811h_wait_mcu_ready(struct
+ 	return 0;
+ }
+ 
++static int air_request_firmware(struct phy_device *phydev,
++				const struct firmware **fw, const char *name)
++{
++	int ret;
++
++	ret = request_firmware_direct(fw, name, &phydev->mdio.dev);
++	if (ret == -ENOENT && system_state < SYSTEM_RUNNING)
++		return -EPROBE_DEFER;
++
++	return ret;
++}
++
+ static int en8811h_load_firmware(struct phy_device *phydev)
+ {
+ 	struct en8811h_priv *priv = phydev->priv;
+-	struct device *dev = &phydev->mdio.dev;
+ 	const struct firmware *fw1, *fw2;
+ 	int ret;
+ 
+-	ret = request_firmware_direct(&fw1, EN8811H_MD32_DM, dev);
++	ret = air_request_firmware(phydev, &fw1, EN8811H_MD32_DM);
+ 	if (ret < 0)
+ 		return ret;
+ 
+-	ret = request_firmware_direct(&fw2, EN8811H_MD32_DSP, dev);
++	ret = air_request_firmware(phydev, &fw2, EN8811H_MD32_DSP);
+ 	if (ret < 0)
+ 		goto en8811h_load_firmware_rel1;
+ 
+@@ -518,7 +530,7 @@ en8811h_load_firmware_out:
+ en8811h_load_firmware_rel1:
+ 	release_firmware(fw1);
+ 
+-	if (ret < 0)
++	if (ret < 0 && ret != -EPROBE_DEFER)
+ 		phydev_err(phydev, "Load firmware failed: %d\n", ret);
+ 
+ 	return ret;
