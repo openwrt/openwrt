@@ -344,7 +344,7 @@ Tested-by: Jonas Jelonek <jelonek.jonas@gmail.com>
  	device_del(&phydev->mdio.dev);
  
  	/* Assert the reset signal */
-@@ -3701,8 +3846,14 @@ static int __init phy_init(void)
+@@ -3715,8 +3860,14 @@ static int __init phy_init(void)
  	if (rc)
  		goto err_c45;
  
@@ -359,7 +359,7 @@ Tested-by: Jonas Jelonek <jelonek.jonas@gmail.com>
  err_c45:
  	phy_driver_unregister(&genphy_c45_driver);
  err_ethtool_phy_ops:
-@@ -3716,6 +3867,7 @@ err_ethtool_phy_ops:
+@@ -3730,6 +3881,7 @@ err_ethtool_phy_ops:
  
  static void __exit phy_exit(void)
  {
