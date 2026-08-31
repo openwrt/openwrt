@@ -46,6 +46,7 @@ platform_do_upgrade() {
 	linksys,lgs352c)
 		nand_do_upgrade "$1"
 		;;
+	zyxel,gs1920-24hp-v2|\
 	zyxel,xgs1930-28hp|\
 	zyxel,xmg1915-10e|\
 	zyxel,xmg1915-10ep|\

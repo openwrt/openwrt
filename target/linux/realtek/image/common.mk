@@ -136,7 +136,7 @@ endef
 define Device/zyxel_zynos
   $(Device/rt-loader-bootbase)
   DEVICE_VENDOR := Zyxel
-  ZYNFW_BOARD := $$(DEVICE_MODEL)
+  ZYNFW_BOARD := $$(DEVICE_MODEL)$$(if $$(DEVICE_VARIANT),-$$(DEVICE_VARIANT))
   COMPILE := loader-$(1).bin
   COMPILE/loader-$(1).bin := rt-loader-standalone
   IMAGES += factory.bin

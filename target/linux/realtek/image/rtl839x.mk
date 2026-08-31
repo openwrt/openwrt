@@ -127,16 +127,9 @@ endef
 TARGET_DEVICES += zyxel_gs1900-48hp-a1
 
 define Device/zyxel_gs1920-24hp
-ifeq ($(IB),)
-  ARTIFACTS := loader.bin
-  ARTIFACT/loader.bin := \
-    rt-loader-standalone | \
-    zynsig
-endif
   DEVICE_VENDOR := Zyxel
   DEVICE_MODEL := GS1920-24HP
   DEVICE_PACKAGES := kmod-hwmon-lm85 kmod-pse-realtek-mcu-i2c
-  $(Device/rt-loader-bootbase)
 endef
 
 define Device/zyxel_gs1920-24hp-v1
@@ -145,6 +138,13 @@ define Device/zyxel_gs1920-24hp-v1
   FLASH_ADDR := 0xb40c0000
   IMAGE_SIZE := 12144k
   DEVICE_VARIANT := v1
+ifeq ($(IB),)
+  ARTIFACTS := loader.bin
+  ARTIFACT/loader.bin := \
+    rt-loader-standalone | \
+    zynsig
+endif
+  $(Device/rt-loader-bootbase)
 endef
 TARGET_DEVICES += zyxel_gs1920-24hp-v1
 
@@ -154,5 +154,9 @@ define Device/zyxel_gs1920-24hp-v2
   FLASH_ADDR := 0xb4210000
   IMAGE_SIZE := 30720k
   DEVICE_VARIANT := v2
+  DEVICE_COMPAT_VERSION := 2.0
+  DEVICE_COMPAT_MESSAGE := Upgrade target partition has changed, needs manual intervention.
+  ZYNFW_ALIGN := 0x10000
+  $(Device/zyxel_zynos)
 endef
 TARGET_DEVICES += zyxel_gs1920-24hp-v2
