@@ -771,8 +771,8 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	.port_vlan_filtering = mxl862xx_port_vlan_filtering,
  	.port_vlan_add = mxl862xx_port_vlan_add,
  	.port_vlan_del = mxl862xx_port_vlan_del,
-@@ -3790,6 +4335,7 @@ static int mxl862xx_probe(struct mdio_de
- 	ds->num_ports = MXL862XX_MAX_PORTS;
+@@ -3791,6 +4336,7 @@ static int mxl862xx_probe(struct mdio_de
+ 	ds->assisted_learning_on_cpu_port = true;
  	ds->fdb_isolation = true;
  	ds->max_num_bridges = MXL862XX_MAX_BRIDGES;
 +	ds->num_lag_ids = MXL862XX_MAX_LAG_IDS;

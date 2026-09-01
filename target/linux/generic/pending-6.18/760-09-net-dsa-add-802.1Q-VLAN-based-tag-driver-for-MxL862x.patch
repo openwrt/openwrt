@@ -2272,7 +2272,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	.get_strings = mxl862xx_get_strings,
  	.get_sset_count = mxl862xx_get_sset_count,
  	.get_ethtool_stats = mxl862xx_get_ethtool_stats,
-@@ -2502,6 +3802,8 @@ static int mxl862xx_probe(struct mdio_de
+@@ -2503,6 +3803,8 @@ static int mxl862xx_probe(struct mdio_de
  
  	INIT_DELAYED_WORK(&priv->stats_work, mxl862xx_stats_work_fn);
  
@@ -2281,7 +2281,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	dev_set_drvdata(dev, ds);
  
  	err = dsa_register_switch(ds);
-@@ -2532,6 +3834,19 @@ static void mxl862xx_remove(struct mdio_
+@@ -2533,6 +3835,19 @@ static void mxl862xx_remove(struct mdio_
  	set_bit(MXL862XX_FLAG_WORK_STOPPED, &priv->flags);
  	cancel_delayed_work_sync(&priv->stats_work);
  

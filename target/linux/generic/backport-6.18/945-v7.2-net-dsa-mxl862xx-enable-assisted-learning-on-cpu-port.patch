@@ -36,11 +36,9 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  drivers/net/dsa/mxl862xx/mxl862xx.c | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/drivers/net/dsa/mxl862xx/mxl862xx.c b/drivers/net/dsa/mxl862xx/mxl862xx.c
-index 45d237b3a..cfa7e3e26 100644
 --- a/drivers/net/dsa/mxl862xx/mxl862xx.c
 +++ b/drivers/net/dsa/mxl862xx/mxl862xx.c
-@@ -2111,6 +2111,7 @@ static int mxl862xx_probe(struct mdio_device *mdiodev)
+@@ -2111,6 +2111,7 @@ static int mxl862xx_probe(struct mdio_de
  	ds->ops = &mxl862xx_switch_ops;
  	ds->phylink_mac_ops = &mxl862xx_phylink_mac_ops;
  	ds->num_ports = MXL862XX_MAX_PORTS;
@@ -48,5 +46,3 @@ index 45d237b3a..cfa7e3e26 100644
  	ds->fdb_isolation = true;
  	ds->max_num_bridges = MXL862XX_MAX_BRIDGES;
  
--- 
-2.47.3

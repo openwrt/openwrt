@@ -1036,7 +1036,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	if (!ds)
  		return -ENOMEM;
  
-@@ -2156,6 +2228,8 @@ static int mxl862xx_probe(struct mdio_de
+@@ -2157,6 +2229,8 @@ static int mxl862xx_probe(struct mdio_de
  		mxl862xx_host_shutdown(priv);
  		for (i = 0; i < MXL862XX_MAX_PORTS; i++)
  			cancel_work_sync(&priv->ports[i].host_flood_work);
@@ -1045,7 +1045,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	}
  
  	return err;
-@@ -2186,6 +2260,9 @@ static void mxl862xx_remove(struct mdio_
+@@ -2187,6 +2261,9 @@ static void mxl862xx_remove(struct mdio_
  	 */
  	for (i = 0; i < MXL862XX_MAX_PORTS; i++)
  		cancel_work_sync(&priv->ports[i].host_flood_work);
