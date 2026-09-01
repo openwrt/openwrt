@@ -1,0 +1,63 @@
+From: Yalei Zang <yalei.zang@airoha.com>
+Date: Thu, 17 Sep 2026 14:00:00 +0800
+Subject: [PATCH] net: pcs: airoha: adapt to Linux 6.12 phylink API
+
+The Airoha PCS driver uses the newer phylink pcs_get_state callback and
+Clause 22 state decode helper which receive the PCS negotiation mode.
+Linux 6.12 does not pass this argument, resulting in incompatible callback
+and helper function signatures.
+
+Adapt the state handling to the Linux 6.12 interfaces. Set neg_mode on the
+PCS so phylink passes PHYLINK_PCS_NEG_* values to the configuration and
+link-up callbacks as expected by the driver.
+
+Signed-off-by: Yalei Zang <yalei.zang@airoha.com>
+---
+ drivers/net/pcs/airoha/pcs-airoha-common.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+--- a/drivers/net/pcs/airoha/pcs-airoha-common.c
++++ b/drivers/net/pcs/airoha/pcs-airoha-common.c
+@@ -358,7 +358,7 @@ static void airoha_pcs_interrupt_init(st
+ }
+ 
+ static void airoha_pcs_get_state_sgmii(struct airoha_pcs_priv *priv,
+-				       int index, unsigned int neg_mode,
++				       int index,
+ 				       struct phylink_link_state *state)
+ {
+ 	struct airoha_pcs_maps *maps = &priv->maps[index];
+@@ -375,7 +375,7 @@ static void airoha_pcs_get_state_sgmii(s
+ 		AIROHA_PCS_HSGMII_AN_SGMII_LINK_STATUS) & bmsr;
+ 	lpa = AIROHA_PCS_HSGMII_AN_SGMII_PARTNER_ABILITY & lpa;
+ 
+-	phylink_mii_c22_pcs_decode_state(state, neg_mode, bmsr, lpa);
++	phylink_mii_c22_pcs_decode_state(state, bmsr, lpa);
+ }
+ 
+ static void airoha_pcs_get_state_hsgmii(struct airoha_pcs_priv *priv, int index,
+@@ -465,7 +465,6 @@ static void airoha_pcs_get_state_10gbase
+ }
+ 
+ static void airoha_pcs_get_state(struct phylink_pcs *pcs,
+-				 unsigned int neg_mode,
+ 				 struct phylink_link_state *state)
+ {
+ 	struct airoha_pcs_port *port = to_airoha_pcs_port(pcs);
+@@ -474,7 +473,7 @@ static void airoha_pcs_get_state(struct
+ 	switch (state->interface) {
+ 	case PHY_INTERFACE_MODE_SGMII:
+ 	case PHY_INTERFACE_MODE_1000BASEX:
+-		airoha_pcs_get_state_sgmii(priv, port->index, neg_mode, state);
++		airoha_pcs_get_state_sgmii(priv, port->index, state);
+ 		break;
+ 	case PHY_INTERFACE_MODE_2500BASEX:
+ 		airoha_pcs_get_state_hsgmii(priv, port->index, state);
+@@ -1337,6 +1336,7 @@ static int airoha_pcs_probe(struct platf
+ 		port->priv = priv;
+ 		port->index = index;
+ 		port->pcs.poll = true;
++		port->pcs.neg_mode = true;
+ 		port->pcs.ops = &airoha_pcs_ops;
+ 
+ 		switch (data->port_type) {

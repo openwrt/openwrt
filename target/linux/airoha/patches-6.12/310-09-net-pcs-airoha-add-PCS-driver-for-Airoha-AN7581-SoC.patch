@@ -28,7 +28,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 
 --- a/drivers/net/pcs/Kconfig
 +++ b/drivers/net/pcs/Kconfig
-@@ -51,4 +51,6 @@ config PCS_RZN1_MIIC
+@@ -50,4 +50,6 @@ config PCS_RZN1_MIIC
  	  on RZ/N1 SoCs. This PCS converts MII to RMII/RGMII or can be set in
  	  pass-through mode for MII.
  
@@ -37,12 +37,12 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  endmenu
 --- a/drivers/net/pcs/Makefile
 +++ b/drivers/net/pcs/Makefile
-@@ -10,3 +10,5 @@ obj-$(CONFIG_PCS_LYNX)		+= pcs-lynx.o
+@@ -9,4 +9,5 @@ obj-$(CONFIG_PCS_XPCS)		+= pcs_xpcs.o
+ obj-$(CONFIG_PCS_LYNX)		+= pcs-lynx.o
  obj-$(CONFIG_PCS_MTK_LYNXI)	+= pcs-mtk-lynxi.o
  obj-$(CONFIG_PCS_RZN1_MIIC)	+= pcs-rzn1-miic.o
- obj-$(CONFIG_PCS_MTK_USXGMII)	+= pcs-mtk-usxgmii.o
-+
 +obj-$(CONFIG_PCS_AIROHA)	+= airoha/
+ obj-$(CONFIG_PCS_MTK_USXGMII)	+= pcs-mtk-usxgmii.o
 --- /dev/null
 +++ b/drivers/net/pcs/airoha/Kconfig
 @@ -0,0 +1,12 @@
@@ -70,7 +70,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +endif
 --- /dev/null
 +++ b/drivers/net/pcs/airoha/pcs-airoha-common.c
-@@ -0,0 +1,1312 @@
+@@ -0,0 +1,1297 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (c) 2024 AIROHA Inc
@@ -87,7 +87,6 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +#include <linux/platform_device.h>
 +#include <linux/regmap.h>
 +#include <linux/reset.h>
-+#include <linux/rtnetlink.h>
 +
 +#include "pcs-airoha.h"
 +
@@ -387,7 +386,8 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +}
 +
 +static void airoha_pcs_get_state_sgmii(struct airoha_pcs_priv *priv,
-+				       int index, struct phylink_link_state *state)
++				       int index, unsigned int neg_mode,
++				       struct phylink_link_state *state)
 +{
 +	struct airoha_pcs_maps *maps = &priv->maps[index];
 +	u32 bmsr, lpa;
@@ -403,7 +403,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +		AIROHA_PCS_HSGMII_AN_SGMII_LINK_STATUS) & bmsr;
 +	lpa = AIROHA_PCS_HSGMII_AN_SGMII_PARTNER_ABILITY & lpa;
 +
-+	phylink_mii_c22_pcs_decode_state(state, bmsr, lpa);
++	phylink_mii_c22_pcs_decode_state(state, neg_mode, bmsr, lpa);
 +}
 +
 +static void airoha_pcs_get_state_hsgmii(struct airoha_pcs_priv *priv, int index,
@@ -493,6 +493,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +}
 +
 +static void airoha_pcs_get_state(struct phylink_pcs *pcs,
++				 unsigned int neg_mode,
 +				 struct phylink_link_state *state)
 +{
 +	struct airoha_pcs_port *port = to_airoha_pcs_port(pcs);
@@ -501,7 +502,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +	switch (state->interface) {
 +	case PHY_INTERFACE_MODE_SGMII:
 +	case PHY_INTERFACE_MODE_1000BASEX:
-+		airoha_pcs_get_state_sgmii(priv, port->index, state);
++		airoha_pcs_get_state_sgmii(priv, port->index, neg_mode, state);
 +		break;
 +	case PHY_INTERFACE_MODE_2500BASEX:
 +		airoha_pcs_get_state_hsgmii(priv, port->index, state);
@@ -1191,6 +1192,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +static int airoha_pcs_probe(struct platform_device *pdev)
 +{
 +	const struct airoha_pcs_match_data *data;
++	struct fwnode_pcs_provider *provider;
 +	struct device *dev = &pdev->dev;
 +	struct airoha_pcs_priv *priv;
 +	int index, ret;
@@ -1282,7 +1284,6 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +		port->priv = priv;
 +		port->index = index;
 +		port->pcs.poll = true;
-+		port->pcs.neg_mode = true;
 +		port->pcs.ops = &airoha_pcs_ops;
 +
 +		switch (data->port_type) {
@@ -1307,27 +1308,12 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +
 +	platform_set_drvdata(pdev, priv);
 +
-+	return fwnode_pcs_add_provider(dev_fwnode(dev), airoha_pcs_get,
-+				       priv);
-+}
++	provider = devm_fwnode_pcs_add_provider(dev, dev_fwnode(dev),
++						airoha_pcs_get, priv);
++	if (IS_ERR(provider))
++		return dev_err_probe(dev, PTR_ERR(provider), "Failed to add PCS provider\n");
 +
-+static void airoha_pcs_remove(struct platform_device *pdev)
-+{
-+	struct airoha_pcs_priv *priv = platform_get_drvdata(pdev);
-+	const struct airoha_pcs_match_data *data = priv->data;
-+	int i;
-+
-+	fwnode_pcs_del_provider(dev_fwnode(&pdev->dev));
-+
-+	rtnl_lock();
-+
-+	for (i = 0; i < data->num_port; i++) {
-+		struct airoha_pcs_port *port = &priv->ports[i];
-+
-+		phylink_release_pcs(&port->pcs);
-+	}
-+
-+	rtnl_unlock();
++	return 0;
 +}
 +
 +static const struct airoha_pcs_match_data an7581_pcs_eth = {
@@ -1376,7 +1362,6 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +		.of_match_table = airoha_pcs_of_table,
 +	},
 +	.probe = airoha_pcs_probe,
-+	.remove = airoha_pcs_remove,
 +};
 +module_platform_driver(airoha_pcs_driver);
 +
@@ -2717,8 +2702,8 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +	AN7581_PCS_JCPLL_SPARE_L,
 +	AN7581_PCS_JCPLL_RST_DLY,
 +	AN7581_PCS_JCPLL_PLL_RSTB,
-+	AN7581_PCS_JCPLL_SDM_DI_LS,
 +	AN7581_PCS_JCPLL_SDM_DI_EN,
++	AN7581_PCS_JCPLL_SDM_DI_LS,
 +
 +	AN7581_PCS_JCPLL_SDM_OUT,
 +	AN7581_PCS_JCPLL_SDM_ORD,
@@ -2879,8 +2864,8 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +
 +	[AN7581_PCS_JCPLL_RST_DLY] = REG_FIELD(AIROHA_PCS_ANA_PXP_JCPLL_RST_DLY, 0, 2),
 +	[AN7581_PCS_JCPLL_PLL_RSTB] = REG_FIELD(AIROHA_PCS_ANA_PXP_JCPLL_RST_DLY, 8, 8),
-+	[AN7581_PCS_JCPLL_SDM_DI_LS] = REG_FIELD(AIROHA_PCS_ANA_PXP_JCPLL_RST_DLY, 16, 16),
-+	[AN7581_PCS_JCPLL_SDM_DI_EN] = REG_FIELD(AIROHA_PCS_ANA_PXP_JCPLL_RST_DLY, 24, 25),
++	[AN7581_PCS_JCPLL_SDM_DI_EN] = REG_FIELD(AIROHA_PCS_ANA_PXP_JCPLL_RST_DLY, 16, 16),
++	[AN7581_PCS_JCPLL_SDM_DI_LS] = REG_FIELD(AIROHA_PCS_ANA_PXP_JCPLL_RST_DLY, 24, 25),
 +
 +	[AN7581_PCS_JCPLL_SDM_OUT] = REG_FIELD(AIROHA_PCS_ANA_PXP_JCPLL_SDM_IFM, 24, 24),
 +	[AN7581_PCS_JCPLL_SDM_ORD] = REG_FIELD(AIROHA_PCS_ANA_PXP_JCPLL_SDM_IFM, 16, 17),
@@ -3045,8 +3030,8 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +
 +	[AN7581_PCS_JCPLL_RST_DLY] = REG_FIELD(AIROHA_PCS_ANA_PXP_2L_JCPLL_RST_DLY, 0, 2),
 +	[AN7581_PCS_JCPLL_PLL_RSTB] = REG_FIELD(AIROHA_PCS_ANA_PXP_2L_JCPLL_RST_DLY, 8, 8),
-+	[AN7581_PCS_JCPLL_SDM_DI_LS] = REG_FIELD(AIROHA_PCS_ANA_PXP_2L_JCPLL_RST_DLY, 16, 16),
-+	[AN7581_PCS_JCPLL_SDM_DI_EN] = REG_FIELD(AIROHA_PCS_ANA_PXP_2L_JCPLL_RST_DLY, 24, 25),
++	[AN7581_PCS_JCPLL_SDM_DI_EN] = REG_FIELD(AIROHA_PCS_ANA_PXP_2L_JCPLL_RST_DLY, 16, 16),
++	[AN7581_PCS_JCPLL_SDM_DI_LS] = REG_FIELD(AIROHA_PCS_ANA_PXP_2L_JCPLL_RST_DLY, 24, 25),
 +
 +	[AN7581_PCS_JCPLL_SDM_OUT] = REG_FIELD(AIROHA_PCS_ANA_PXP_2L_JCPLL_SDM_IFM, 24, 24),
 +	[AN7581_PCS_JCPLL_SDM_ORD] = REG_FIELD(AIROHA_PCS_ANA_PXP_2L_JCPLL_SDM_IFM, 16, 17),
@@ -3211,8 +3196,8 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +
 +	[AN7581_PCS_JCPLL_RST_DLY] = REG_FIELD(AIROHA_PCS_ANA_PXP_2L_JCPLL_RST_DLY, 0, 2),
 +	[AN7581_PCS_JCPLL_PLL_RSTB] = REG_FIELD(AIROHA_PCS_ANA_PXP_2L_JCPLL_RST_DLY, 8, 8),
-+	[AN7581_PCS_JCPLL_SDM_DI_LS] = REG_FIELD(AIROHA_PCS_ANA_PXP_2L_JCPLL_RST_DLY, 16, 16),
-+	[AN7581_PCS_JCPLL_SDM_DI_EN] = REG_FIELD(AIROHA_PCS_ANA_PXP_2L_JCPLL_RST_DLY, 24, 25),
++	[AN7581_PCS_JCPLL_SDM_DI_EN] = REG_FIELD(AIROHA_PCS_ANA_PXP_2L_JCPLL_RST_DLY, 16, 16),
++	[AN7581_PCS_JCPLL_SDM_DI_LS] = REG_FIELD(AIROHA_PCS_ANA_PXP_2L_JCPLL_RST_DLY, 24, 25),
 +
 +	[AN7581_PCS_JCPLL_SDM_OUT] = REG_FIELD(AIROHA_PCS_ANA_PXP_2L_JCPLL_SDM_IFM, 24, 24),
 +	[AN7581_PCS_JCPLL_SDM_ORD] = REG_FIELD(AIROHA_PCS_ANA_PXP_2L_JCPLL_SDM_IFM, 16, 17),
