@@ -281,7 +281,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
 +static int mtk_fill_available_pcs(struct phylink_config *config,
 +				  struct phylink_pcs **available_pcs,
-+				  unsigned int num_available_pcs)
++				  unsigned int num_possible_pcs)
 +{
 +	struct mtk_mac *mac = container_of(config, struct mtk_mac,
 +					   phylink_config);
@@ -291,7 +291,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	if (mtk_is_netsys_v3_or_greater(eth)) {
 +		return fwnode_phylink_pcs_parse(of_fwnode_handle(mac->of_node),
 +						available_pcs,
-+						&num_available_pcs);
++						num_possible_pcs);
 +	} else {
 +		if (MTK_HAS_CAPS(eth->soc->caps, MTK_SHARED_SGMII))
 +			sid = 0;
@@ -319,12 +319,12 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	mac->phylink_config.lpi_capabilities = MAC_100FD | MAC_1000FD |
  		MAC_2500FD;
  	mac->phylink_config.lpi_timer_default = 1000;
-+	mac->phylink_config.num_available_pcs = 0;
++	mac->phylink_config.num_possible_pcs = 0;
 +	mac->phylink_config.fill_available_pcs = mtk_fill_available_pcs;
  
  	/* MT7623 gmac0 is now missing its speed-specific PLL configuration
  	 * in its .mac_config method (since state->speed is not valid there.
-@@ -5092,13 +5152,53 @@ static int mtk_add_mac(struct mtk_eth *e
+@@ -5092,13 +5152,52 @@ static int mtk_add_mac(struct mtk_eth *e
  
  	if (MTK_HAS_CAPS(mac->hw->soc->caps, MTK_SGMII)) {
  		__set_bit(PHY_INTERFACE_MODE_SGMII,
@@ -345,19 +345,18 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +			__set_bit(PHY_INTERFACE_MODE_USXGMII,
 +				mac->phylink_config.pcs_interfaces);
 +
-+			err = fwnode_phylink_pcs_parse(of_fwnode_handle(np), NULL, &count);
-+			if (err == -ENODEV) {
++			count = fwnode_phylink_pcs_count(of_fwnode_handle(np));
++			if (!count) {
 +				err = 0;
 +				goto no_pcs;
 +			}
 +
-+			if (count > 2)
++			if (count > 2) {
 +				err = -ENOMEM;
-+
-+			if (err)
 +				goto free_netdev;
++			}
 +
-+			mac->phylink_config.num_available_pcs = count;
++			mac->phylink_config.num_possible_pcs = count;
 +		} else {
 +			if (MTK_HAS_CAPS(eth->soc->caps, MTK_SHARED_SGMII)) {
 +				/* single LynxI PCS used by either GMAC */
@@ -369,7 +368,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +				}
 +				eth->shared_sgmii_used = true;
 +			}
-+			mac->phylink_config.num_available_pcs = 1;
++			mac->phylink_config.num_possible_pcs = 1;
 +		}
 +
 +		phy_interface_or(mac->phylink_config.supported_interfaces,
@@ -381,7 +380,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	if (mtk_is_netsys_v3_or_greater(mac->hw) &&
  	    MTK_HAS_CAPS(mac->hw->soc->caps, MTK_ESW) &&
  	    id == MTK_GMAC1_ID) {
-@@ -5108,18 +5208,16 @@ static int mtk_add_mac(struct mtk_eth *e
+@@ -5108,18 +5207,16 @@ static int mtk_add_mac(struct mtk_eth *e
  		phy_interface_zero(mac->phylink_config.supported_interfaces);
  		__set_bit(PHY_INTERFACE_MODE_INTERNAL,
  			  mac->phylink_config.supported_interfaces);
@@ -408,7 +407,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	if (MTK_HAS_CAPS(mac->hw->soc->caps, MTK_2P5GPHY) &&
  	    id == MTK_GMAC2_ID)
  		__set_bit(PHY_INTERFACE_MODE_INTERNAL,
-@@ -5142,6 +5240,16 @@ static int mtk_add_mac(struct mtk_eth *e
+@@ -5142,6 +5239,16 @@ static int mtk_add_mac(struct mtk_eth *e
  	eth->netdev[id]->irq = eth->irq[MTK_FE_IRQ_SHARED];
  	eth->netdev[id]->dev.of_node = np;
  
@@ -425,7 +424,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7628))
  		eth->netdev[id]->max_mtu = MTK_MAX_RX_LENGTH - MTK_RX_ETH_HLEN;
  	else
-@@ -5335,7 +5443,8 @@ static int mtk_probe(struct platform_dev
+@@ -5335,7 +5442,8 @@ static int mtk_probe(struct platform_dev
  			regmap_write(cci, 0, 3);
  	}
  

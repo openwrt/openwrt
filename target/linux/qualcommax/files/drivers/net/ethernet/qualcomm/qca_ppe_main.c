@@ -907,26 +907,21 @@ static int qca_ppe_port_mdb_del(struct dsa_switch *ds, int port,
 
 static int qca_ppe_fill_available_pcs(struct phylink_config *config,
 				      struct phylink_pcs **available_pcs,
-				      unsigned int num_available_pcs)
+				      unsigned int num_possible_pcs)
 {
 	struct dsa_port *dp = dsa_phylink_to_port(config);
 
 	return fwnode_phylink_pcs_parse(of_fwnode_handle(dp->dn), available_pcs,
-					&num_available_pcs);
+					num_possible_pcs);
 }
 
 static void qca_ppe_phylink_get_caps(struct dsa_switch *ds, int port,
 				     struct phylink_config *config)
 {
 	struct dsa_port *dp = dsa_to_port(ds, port);
-	int ret;
 
 	if (port != 0) {
-		ret = fwnode_phylink_pcs_parse(of_fwnode_handle(dp->dn), NULL,
-					       &config->num_available_pcs);
-		if (ret)
-			return;
-
+		config->num_possible_pcs = fwnode_phylink_pcs_count(of_fwnode_handle(dp->dn));
 		config->fill_available_pcs = qca_ppe_fill_available_pcs;
 	}
 

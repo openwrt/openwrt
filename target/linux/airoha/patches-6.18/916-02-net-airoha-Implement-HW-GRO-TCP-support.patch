@@ -544,7 +544,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  	.ndo_start_xmit		= airoha_dev_xmit,
  	.ndo_get_stats64        = airoha_dev_get_stats64,
  	.ndo_set_mac_address	= airoha_dev_set_macaddr,
-@@ -3386,11 +3698,9 @@ static int airoha_alloc_gdm_device(struc
+@@ -3382,11 +3694,9 @@ static int airoha_alloc_gdm_device(struc
  	netdev->ethtool_ops = &airoha_ethtool_ops;
  	netdev->max_mtu = AIROHA_MAX_MTU;
  	netdev->watchdog_timeo = 5 * HZ;

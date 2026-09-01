@@ -1,0 +1,36 @@
+From f2849b1fd059ec9b3281b771e6ac5aad9feee851 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Mon, 17 Aug 2026 23:30:03 +0200
+Subject: [PATCH] net: phylink: correctly validate returned PCS in
+ phylink_inband_caps
+
+In phylink_inband_caps(), the PCS returned by mac_select_pcs is only
+checked if NULL but mac_select_pcs can also return an error pointer.
+
+This can cause a kernel panic as phylink_pcs_inband_caps() only checks
+if passed PCS is not NULL and directly dereference ops from the phylink_pcs
+struct.
+
+Use the IS_ERR_OR_NULL macro to address both case where the returned
+PCS can be NULL or an error pointer and prevent a kernel panic.
+
+Cc: stable@vger.kernel.org
+Fixes: df874f9e52c3 ("net: phylink: add pcs_inband_caps() method")
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Link: https://patch.msgid.link/20260817213009.13924-1-ansuelsmth@gmail.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/phy/phylink.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/phy/phylink.c
++++ b/drivers/net/phy/phylink.c
+@@ -961,7 +961,7 @@ static unsigned int phylink_inband_caps(
+ 		return 0;
+ 
+ 	pcs = pl->mac_ops->mac_select_pcs(pl->config, interface);
+-	if (!pcs)
++	if (IS_ERR_OR_NULL(pcs))
+ 		return 0;
+ 
+ 	return phylink_pcs_inband_caps(pcs, interface);

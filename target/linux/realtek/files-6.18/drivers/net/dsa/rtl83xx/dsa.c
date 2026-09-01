@@ -254,12 +254,12 @@ static int rtldsa_93xx_setup(struct dsa_switch *ds)
 
 static int rtldsa_phylink_fill_available_pcs(struct phylink_config *config,
 					     struct phylink_pcs **available_pcs,
-					     unsigned int num_available_pcs)
+					     unsigned int num_possible_pcs)
 {
 	struct dsa_port *dp = dsa_phylink_to_port(config);
 
 	return fwnode_phylink_pcs_parse(of_fwnode_handle(dp->dn),
-					available_pcs, &num_available_pcs);
+					available_pcs, num_possible_pcs);
 }
 
 static void rtldsa_phylink_get_caps(struct dsa_switch *ds, int port,
@@ -284,8 +284,8 @@ static void rtldsa_phylink_get_caps(struct dsa_switch *ds, int port,
 		__set_bit(PHY_INTERFACE_MODE_10G_QXGMII, config->supported_interfaces);
 	}
 
-	if (!fwnode_phylink_pcs_parse(of_fwnode_handle(dp->dn), NULL,
-				      &config->num_available_pcs)) {
+	config->num_possible_pcs = fwnode_phylink_pcs_count(of_fwnode_handle(dp->dn));
+	if (config->num_possible_pcs) {
 		config->fill_available_pcs = rtldsa_phylink_fill_available_pcs;
 		bitmap_copy(config->pcs_interfaces, config->supported_interfaces,
 			    PHY_INTERFACE_MODE_MAX);

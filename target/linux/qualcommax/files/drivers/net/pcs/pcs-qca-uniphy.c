@@ -24,7 +24,6 @@
 #include <linux/phylink.h>
 #include <linux/platform_device.h>
 #include <linux/regmap.h>
-#include <linux/version.h>
 
 #include <dt-bindings/net/qca-uniphy.h>
 
@@ -1047,6 +1046,7 @@ static const struct regmap_config uniphy_regmap_cfg = {
 
 static int qca_uniphy_probe(struct platform_device *pdev)
 {
+	struct fwnode_pcs_provider *provider;
 	struct device *dev = &pdev->dev;
 	struct clk_bulk_data *clks;
 	struct qca_uniphy *uniphy;
@@ -1111,8 +1111,12 @@ static int qca_uniphy_probe(struct platform_device *pdev)
 
 	platform_set_drvdata(pdev, uniphy);
 
-	return fwnode_pcs_add_provider(dev_fwnode(dev), qca_uniphy_get,
-				       uniphy);
+	provider = devm_fwnode_pcs_add_provider(dev, dev_fwnode(dev),
+						qca_uniphy_get, uniphy);
+	if (IS_ERR(provider))
+		return dev_err_probe(dev, PTR_ERR(provider), "Failed to add PCS provider\n");
+
+	return 0;
 }
 
 static struct platform_driver qca_uniphy_driver = {
