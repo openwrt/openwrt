@@ -174,6 +174,12 @@ livinet,li320)
 	ucidef_set_led_netdev "wan-off" "wan-off" "red:wan" "wan" "link"
 	ucidef_set_led_netdev "wan" "wan" "green:wan" "wan" "link"
 	;;
+mercusys,h90x-v1|\
+mercusys,h90x-v1-ubi)
+	ucidef_set_led_netdev "lan-1" "lan-1" "green:lan-1" "lan1" "link tx rx"
+	ucidef_set_led_netdev "lan-2" "lan-2" "green:lan-2" "lan2" "link tx rx"
+	ucidef_set_led_netdev "wan" "wan" "green:wan" "eth1" "link tx rx"
+	;;
 mercusys,mr80x-v3|\
 mercusys,mr85x|\
 mercusys,mr85x-ubi)
