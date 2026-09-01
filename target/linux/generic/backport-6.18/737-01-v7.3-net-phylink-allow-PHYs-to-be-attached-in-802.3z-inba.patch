@@ -1,0 +1,54 @@
+From e5db987f5d7f314892f03ad526003f7703885f4d Mon Sep 17 00:00:00 2001
+From: "Russell King (Oracle)" <rmk+kernel@armlinux.org.uk>
+Date: Wed, 29 Jul 2026 15:42:37 +0800
+Subject: [PATCH] net: phylink: allow PHYs to be attached in 802.3z inband mode
+
+Now that we have proper decision making for inband mode support which
+makes it a "best efforts" feature based on the capabilities of the PHY
+and PCS, we can relax whether we expect and permit a PHY to be
+attached. This is especially true for the 2500BASE-X case which some
+PHYs use without inband on their host side interface for 2.5G speeds,
+but use inband for slower speeds switching to SGMII on their host side
+interface.
+
+We already have such a case for some qcom-ethqos setups, although
+qcom-ethqos overrides phylink's inband settings by accessing the PCS
+directly at the moment. This should allow qcom-ethqos to transition to
+defaulting to inband when 2500BASE-X or SGMII is specified in its DTS.
+
+Allow PHYs to be attached when inband mode has been specified, which
+will be necessary to allow inband mode to be used on qcom-ethqos.
+
+Signed-off-by: Russell King (Oracle) <rmk+kernel@armlinux.org.uk>
+Signed-off-by: Zxyan Zhu <zxyan0222@gmail.com>
+Reviewed-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
+Link: https://patch.msgid.link/20260729074237.2624940-3-zxyan0222@gmail.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/phy/phylink.c | 8 ++------
+ 1 file changed, 2 insertions(+), 6 deletions(-)
+
+--- a/drivers/net/phy/phylink.c
++++ b/drivers/net/phy/phylink.c
+@@ -1955,9 +1955,7 @@ EXPORT_SYMBOL_GPL(phylink_destroy);
+  */
+ bool phylink_expects_phy(struct phylink *pl)
+ {
+-	if (pl->cfg_link_an_mode == MLO_AN_FIXED ||
+-	    (pl->cfg_link_an_mode == MLO_AN_INBAND &&
+-	     phy_interface_mode_is_8023z(pl->link_interface)))
++	if (pl->cfg_link_an_mode == MLO_AN_FIXED)
+ 		return false;
+ 	return true;
+ }
+@@ -2196,9 +2194,7 @@ static int phylink_attach_phy(struct phy
+ {
+ 	u32 flags = 0;
+ 
+-	if (WARN_ON(pl->cfg_link_an_mode == MLO_AN_FIXED ||
+-		    (pl->cfg_link_an_mode == MLO_AN_INBAND &&
+-		     phy_interface_mode_is_8023z(interface) && !pl->sfp_bus)))
++	if (WARN_ON(pl->cfg_link_an_mode == MLO_AN_FIXED))
+ 		return -EINVAL;
+ 
+ 	if (pl->phydev)
