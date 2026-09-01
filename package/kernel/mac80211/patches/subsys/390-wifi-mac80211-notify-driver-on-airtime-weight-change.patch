@@ -12,7 +12,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/include/net/mac80211.h
 +++ b/include/net/mac80211.h
-@@ -4484,6 +4484,8 @@ struct ieee80211_prep_tx_info {
+@@ -4673,6 +4673,8 @@ struct ieee80211_prep_tx_info {
   * @set_sar_specs: Update the SAR (TX power) settings.
   * @sta_set_decap_offload: Called to notify the driver when a station is allowed
   *	to use rx decapsulation offload
@@ -21,7 +21,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
   * @add_twt_setup: Update hw with TWT agreement parameters received from the peer.
   *	This callback allows the hw to check if requested parameters
   *	are supported and if there is enough room for a new agreement.
-@@ -4896,6 +4898,9 @@ struct ieee80211_ops {
+@@ -5087,6 +5089,9 @@ struct ieee80211_ops {
  	void (*sta_set_decap_offload)(struct ieee80211_hw *hw,
  				      struct ieee80211_vif *vif,
  				      struct ieee80211_sta *sta, bool enabled);
@@ -33,7 +33,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			      struct ieee80211_twt_setup *twt);
 --- a/net/mac80211/cfg.c
 +++ b/net/mac80211/cfg.c
-@@ -2298,8 +2298,12 @@ static int sta_apply_parameters(struct i
+@@ -2578,8 +2578,12 @@ static int sta_apply_parameters(struct i
  	if (ieee80211_vif_is_mesh(&sdata->vif))
  		sta_apply_mesh_params(local, sta, params);
  
@@ -45,8 +45,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +						   sta->airtime_weight);
 +	}
  
- 	/* set the STA state after all sta info from usermode has been set */
- 	if (test_sta_flag(sta, WLAN_STA_TDLS_PEER) ||
+ 	if (params->nmi_mac) {
+ 		struct ieee80211_sub_if_data *nmi =
 --- a/net/mac80211/driver-ops.c
 +++ b/net/mac80211/driver-ops.c
 @@ -157,6 +157,10 @@ int drv_sta_state(struct ieee80211_local
@@ -90,7 +90,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  				     struct ieee80211_sta *sta,
 --- a/net/mac80211/sta_info.c
 +++ b/net/mac80211/sta_info.c
-@@ -832,8 +832,13 @@ static int sta_info_insert_drv_state(str
+@@ -873,8 +873,13 @@ static int sta_info_insert_drv_state(str
  		 * Drivers using legacy sta_add/sta_remove callbacks only
  		 * get uploaded set to true after sta_add is called.
  		 */
@@ -107,7 +107,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/mac80211/trace.h
 +++ b/net/mac80211/trace.h
-@@ -2481,6 +2481,33 @@ DEFINE_EVENT(sta_flag_evt, drv_sta_set_d
+@@ -2468,6 +2468,33 @@ DEFINE_EVENT(sta_flag_evt, drv_sta_set_d
  	TP_ARGS(local, sdata, sta, enabled)
  );
  

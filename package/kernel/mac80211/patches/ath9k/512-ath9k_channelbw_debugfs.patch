@@ -166,7 +166,7 @@
  	common->ops = &ah->reg_ops;
  	common->ps_ops = &ath9k_htc_ps_ops;
  	common->bus_ops = &ath9k_usb_bus_ops;
-@@ -746,9 +747,9 @@ static void ath9k_set_hw_capab(struct at
+@@ -746,9 +747,8 @@ static void ath9k_set_hw_capab(struct at
  
  	hw->wiphy->flags |= WIPHY_FLAG_IBSS_RSN |
  			    WIPHY_FLAG_HAS_REMAIN_ON_CHANNEL |
@@ -174,14 +174,13 @@
 -
 -	hw->wiphy->flags |= WIPHY_FLAG_SUPPORTS_TDLS;
 +			    WIPHY_FLAG_HAS_CHANNEL_SWITCH |
-+			    WIPHY_FLAG_SUPPORTS_5_10_MHZ |
 +			    WIPHY_FLAG_SUPPORTS_TDLS;
  
  	hw->queues = 4;
  	hw->max_listen_interval = 1;
 --- a/drivers/net/wireless/ath/ath9k/init.c
 +++ b/drivers/net/wireless/ath/ath9k/init.c
-@@ -691,6 +691,7 @@ static int ath9k_init_softc(u16 devid, s
+@@ -690,6 +690,7 @@ static int ath9k_init_softc(u16 devid, s
  	if (!ath9k_is_chanctx_enabled())
  		sc->cur_chan->hw_queue_base = 0;
  

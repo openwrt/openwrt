@@ -124,7 +124,7 @@
  struct b43_debugfs_fops {
  	ssize_t (*read)(struct b43_wldev *dev, char *buf, size_t bufsize);
  	int (*write)(struct b43_wldev *dev, const char *buf, size_t count);
-+#if LINUX_VERSION_IS_GEQ(6,14,0)
++#if LINUX_VERSION_IS_LESS(6,14,0)
 +	struct file_operations fops;
 +#endif
  	/* Offset of struct b43_dfs_file in struct b43_dfsentry */
@@ -218,7 +218,7 @@
  
  B43_DEBUGFS_FOPS(shm16read, shm16read__read_file, shm16read__write_file);
  B43_DEBUGFS_FOPS(shm16write, NULL, shm16write__write_file);
-@@ -698,12 +737,21 @@ void b43_debugfs_add_device(struct b43_w
+@@ -697,12 +736,21 @@ void b43_debugfs_add_device(struct b43_w
  	e->shm32read_routing_next = 0xFFFFFFFF; /* invalid routing */
  	e->shm32read_addr_next = 0xFFFFFFFF; /* invalid address */
  
