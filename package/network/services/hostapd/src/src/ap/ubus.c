@@ -464,6 +464,39 @@ enum {
 	__DEL_CLIENT_MAX
 };
 
+/* A station associates over one link of an AP MLD and its entry lives on that
+ * link's BSS. A ubus method arrives on the object of the BSS that registered
+ * the shared interface name, which is not the link the station is on, so walk
+ * the affiliated links before reporting the station as unknown. Returns the
+ * BSS holding the station, or `hapd` when no link has it. */
+static struct hostapd_data *hostapd_ubus_sta_bss(struct hostapd_data *hapd,
+						 const u8 *addr,
+						 struct sta_info **sta)
+{
+#ifdef CONFIG_IEEE80211BE
+	struct hostapd_data *link_bss;
+#endif
+
+	*sta = ap_get_sta(hapd, addr);
+	if (*sta)
+		return hapd;
+
+#ifdef CONFIG_IEEE80211BE
+	if (!hapd->conf->mld_ap || !hapd->mld)
+		return hapd;
+
+	for_each_mld_link(link_bss, hapd) {
+		if (link_bss == hapd)
+			continue;
+
+		*sta = ap_get_sta(link_bss, addr);
+		if (*sta)
+			return link_bss;
+	}
+#endif /* CONFIG_IEEE80211BE */
+	return hapd;
+}
+
 static const struct blobmsg_policy del_policy[__DEL_CLIENT_MAX] = {
 	[DEL_CLIENT_ADDR] = { "addr", BLOBMSG_TYPE_STRING },
 	[DEL_CLIENT_REASON] = { "reason", BLOBMSG_TYPE_INT32 },
@@ -479,6 +512,7 @@ hostapd_bss_del_client(struct ubus_context *ctx, struct ubus_object *obj,
 	struct blob_attr *tb[__DEL_CLIENT_MAX];
 	const u8 bcast[ETH_ALEN] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 	struct hostapd_data *hapd = container_of(obj, struct hostapd_data, ubus.obj);
+	struct hostapd_data *sta_bss;
 	struct sta_info *sta;
 	bool deauth = false;
 	int reason;
@@ -503,12 +537,12 @@ hostapd_bss_del_client(struct ubus_context *ctx, struct ubus_object *obj,
 	else
 		hostapd_drv_sta_disassoc(hapd, addr, reason);
 
-	sta = ap_get_sta(hapd, addr);
+	sta_bss = hostapd_ubus_sta_bss(hapd, addr, &sta);
 	if (sta) {
 		if (deauth)
-			ap_sta_deauthenticate(hapd, sta, reason);
+			ap_sta_deauthenticate(sta_bss, sta, reason);
 		else
-			ap_sta_disassociate(hapd, sta, reason);
+			ap_sta_disassociate(sta_bss, sta, reason);
 	} else if (memcmp(addr, bcast, ETH_ALEN) == 0) {
 		hostapd_free_stas(hapd);
 	}
@@ -1393,7 +1427,7 @@ hostapd_bss_tr_send(struct hostapd_data *hapd, u8 *addr, bool disassoc_imminent,
 	u8 mbo[10];
 	size_t mbo_len = 0;
 
-	sta = ap_get_sta(hapd, addr);
+	hapd = hostapd_ubus_sta_bss(hapd, addr, &sta);
 	if (!sta)
 		return UBUS_STATUS_NOT_FOUND;
 
