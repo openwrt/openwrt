@@ -1326,8 +1326,31 @@ hostapd_rrm_lm_req(struct ubus_context *ctx, struct ubus_object *obj,
 }
 
 
+/* The BSSes of an AP MLD share one interface name. Only the first BSS owns an
+ * object with that name, and that object holds the subscribers. An event from
+ * a different link must go out through that object. */
+static struct ubus_object *hostapd_ubus_notify_obj(struct hostapd_data *hapd)
+{
+	struct ubus_object *obj = &hapd->ubus.obj;
+#ifdef CONFIG_IEEE80211BE
+	struct hostapd_data *link_bss;
+
+	if (obj->has_subscribers || !hapd->conf->mld_ap || !hapd->mld)
+		return obj;
+
+	for_each_mld_link(link_bss, hapd) {
+		if (link_bss == hapd)
+			continue;
+		if (link_bss->ubus.obj.has_subscribers)
+			return &link_bss->ubus.obj;
+	}
+#endif /* CONFIG_IEEE80211BE */
+	return obj;
+}
+
 void hostapd_ubus_handle_link_measurement(struct hostapd_data *hapd, const u8 *data, size_t len)
 {
+	struct ubus_object *obj = hostapd_ubus_notify_obj(hapd);
 	const struct ieee80211_mgmt *mgmt = (const struct ieee80211_mgmt *) data;
 	const u8 *pos, *end;
 	u8 token;
@@ -1339,7 +1362,7 @@ void hostapd_ubus_handle_link_measurement(struct hostapd_data *hapd, const u8 *d
 	if (end - pos < 8)
 		return;
 
-	if (!hapd->ubus.obj.has_subscribers)
+	if (!obj->has_subscribers)
 		return;
 
 	blob_buf_init(&b, 0);
@@ -1350,7 +1373,7 @@ void hostapd_ubus_handle_link_measurement(struct hostapd_data *hapd, const u8 *d
 	blobmsg_add_u16(&b, "rcpi", pos[6]);
 	blobmsg_add_u16(&b, "rsni", pos[7]);
 
-	ubus_notify(ctx, &hapd->ubus.obj, "link-measurement-report", b.head, -1);
+	ubus_notify(ctx, obj, "link-measurement-report", b.head, -1);
 }
 
 
@@ -1859,11 +1882,12 @@ static void
 hostapd_ubus_vlan_action(struct hostapd_data *hapd, struct hostapd_vlan *vlan,
 			 const char *action)
 {
+	struct ubus_object *obj = hostapd_ubus_notify_obj(hapd);
 	struct vlan_description *desc = &vlan->vlan_desc;
 	void *c;
 	int i;
 
-	if (!hapd->ubus.obj.has_subscribers)
+	if (!obj->has_subscribers)
 		return;
 
 	blob_buf_init(&b, 0);
@@ -1879,7 +1903,7 @@ hostapd_ubus_vlan_action(struct hostapd_data *hapd, struct hostapd_vlan *vlan,
 		blobmsg_close_array(&b, c);
 	}
 
-	ubus_notify(ctx, &hapd->ubus.obj, action, b.head, -1);
+	ubus_notify(ctx, obj, action, b.head, -1);
 }
 
 void hostapd_ubus_add_vlan(struct hostapd_data *hapd, struct hostapd_vlan *vlan)
@@ -1916,6 +1940,7 @@ int hostapd_ubus_handle_event(struct hostapd_data *hapd, struct hostapd_ubus_req
 	};
 	const char *type = "mgmt";
 	struct ubus_event_req ureq = {};
+	struct ubus_object *obj = hostapd_ubus_notify_obj(hapd);
 	const u8 *addr;
 
 	if (req->mgmt_frame)
@@ -1931,7 +1956,7 @@ int hostapd_ubus_handle_event(struct hostapd_data *hapd, struct hostapd_ubus_req
 	if (ban)
 		return WLAN_STATUS_AP_UNABLE_TO_HANDLE_NEW_STA;
 
-	if (!hapd->ubus.obj.has_subscribers)
+	if (!obj->has_subscribers)
 		return WLAN_STATUS_SUCCESS;
 
 	if (req->type < ARRAY_SIZE(types))
@@ -1988,11 +2013,11 @@ int hostapd_ubus_handle_event(struct hostapd_data *hapd, struct hostapd_ubus_req
 	}
 
 	if (!hapd->ubus.notify_response) {
-		ubus_notify(ctx, &hapd->ubus.obj, type, b.head, -1);
+		ubus_notify(ctx, obj, type, b.head, -1);
 		return WLAN_STATUS_SUCCESS;
 	}
 
-	if (ubus_notify_async(ctx, &hapd->ubus.obj, type, b.head, &ureq.nreq))
+	if (ubus_notify_async(ctx, obj, type, b.head, &ureq.nreq))
 		return WLAN_STATUS_SUCCESS;
 
 	ureq.nreq.status_cb = ubus_event_cb;
@@ -2002,28 +2027,6 @@ int hostapd_ubus_handle_event(struct hostapd_data *hapd, struct hostapd_ubus_req
 		return ureq.resp;
 
 	return WLAN_STATUS_SUCCESS;
-}
-
-/* The BSSes of an AP MLD share one interface name. Only the first BSS owns an
- * object with that name, and that object holds the subscribers. An event from
- * a different link must go out through that object. */
-static struct ubus_object *hostapd_ubus_notify_obj(struct hostapd_data *hapd)
-{
-	struct ubus_object *obj = &hapd->ubus.obj;
-#ifdef CONFIG_IEEE80211BE
-	struct hostapd_data *link_bss;
-
-	if (obj->has_subscribers || !hapd->conf->mld_ap || !hapd->mld)
-		return obj;
-
-	for_each_mld_link(link_bss, hapd) {
-		if (link_bss == hapd)
-			continue;
-		if (link_bss->ubus.obj.has_subscribers)
-			return &link_bss->ubus.obj;
-	}
-#endif /* CONFIG_IEEE80211BE */
-	return obj;
 }
 
 void hostapd_ubus_notify(struct hostapd_data *hapd, const char *type, const u8 *addr)
@@ -2061,7 +2064,9 @@ static const u8 *hostapd_ubus_sta_addr(struct hostapd_data *hapd,
 void hostapd_ubus_notify_authorized(struct hostapd_data *hapd, struct sta_info *sta,
 				    const char *auth_alg)
 {
-	if (!hapd->ubus.obj.has_subscribers)
+	struct ubus_object *obj = hostapd_ubus_notify_obj(hapd);
+
+	if (!obj->has_subscribers)
 		return;
 
 	blob_buf_init(&b, 0);
@@ -2079,16 +2084,17 @@ void hostapd_ubus_notify_authorized(struct hostapd_data *hapd, struct sta_info *
 		blobmsg_close_array(&b, r);
 	}
 
-	ubus_notify(ctx, &hapd->ubus.obj, "sta-authorized", b.head, -1);
+	ubus_notify(ctx, obj, "sta-authorized", b.head, -1);
 }
 
 void hostapd_ubus_notify_beacon_report(
 	struct hostapd_data *hapd, const u8 *addr, u8 token, u8 rep_mode,
 	struct rrm_measurement_beacon_report *rep, size_t len)
 {
+	struct ubus_object *obj = hostapd_ubus_notify_obj(hapd);
 	char *encoded;
 
-	if (!hapd->ubus.obj.has_subscribers)
+	if (!obj->has_subscribers)
 		return;
 
 	if (!addr || !rep)
@@ -2113,7 +2119,7 @@ void hostapd_ubus_notify_beacon_report(
 		blobmsg_add_string(&b, "report", encoded);
 		os_free(encoded);
 	}
-	ubus_notify(ctx, &hapd->ubus.obj, "beacon-report", b.head, -1);
+	ubus_notify(ctx, obj, "beacon-report", b.head, -1);
 }
 
 void hostapd_ubus_notify_radar_detected(struct hostapd_iface *iface, int frequency,
@@ -2133,7 +2139,7 @@ void hostapd_ubus_notify_radar_detected(struct hostapd_iface *iface, int frequen
 
 	for (i = 0; i < iface->num_bss; i++) {
 		hapd = iface->bss[i];
-		ubus_notify(ctx, &hapd->ubus.obj, "radar-detected", b.head, -1);
+		ubus_notify(ctx, hostapd_ubus_notify_obj(hapd), "radar-detected", b.head, -1);
 	}
 }
 
@@ -2161,9 +2167,10 @@ void hostapd_ubus_notify_bss_transition_response(
 	const u8 *candidate_list, u16 candidate_list_len)
 {
 #ifdef CONFIG_WNM_AP
+	struct ubus_object *obj = hostapd_ubus_notify_obj(hapd);
 	u16 i;
 
-	if (!hapd->ubus.obj.has_subscribers)
+	if (!obj->has_subscribers)
 		return;
 
 	if (!addr)
@@ -2179,7 +2186,7 @@ void hostapd_ubus_notify_bss_transition_response(
 
 	hostapd_ubus_notify_bss_transition_add_candidate_list(candidate_list, candidate_list_len);
 
-	ubus_notify(ctx, &hapd->ubus.obj, "bss-transition-response", b.head, -1);
+	ubus_notify(ctx, obj, "bss-transition-response", b.head, -1);
 #endif
 }
 
@@ -2188,11 +2195,12 @@ int hostapd_ubus_notify_bss_transition_query(
 	const u8 *candidate_list, u16 candidate_list_len)
 {
 #ifdef CONFIG_WNM_AP
+	struct ubus_object *obj = hostapd_ubus_notify_obj(hapd);
 	struct ubus_event_req ureq = {};
 	char *cl_str;
 	u16 i;
 
-	if (!hapd->ubus.obj.has_subscribers)
+	if (!obj->has_subscribers)
 		return 0;
 
 	if (!addr)
@@ -2205,11 +2213,11 @@ int hostapd_ubus_notify_bss_transition_query(
 	hostapd_ubus_notify_bss_transition_add_candidate_list(candidate_list, candidate_list_len);
 
 	if (!hapd->ubus.notify_response) {
-		ubus_notify(ctx, &hapd->ubus.obj, "bss-transition-query", b.head, -1);
+		ubus_notify(ctx, obj, "bss-transition-query", b.head, -1);
 		return 0;
 	}
 
-	if (ubus_notify_async(ctx, &hapd->ubus.obj, "bss-transition-query", b.head, &ureq.nreq))
+	if (ubus_notify_async(ctx, obj, "bss-transition-query", b.head, &ureq.nreq))
 		return 0;
 
 	ureq.nreq.status_cb = ubus_event_cb;
@@ -2223,20 +2231,24 @@ int hostapd_ubus_notify_bss_transition_query(
 void hostapd_ubus_notify_apup_newpeer(
 	struct hostapd_data *hapd, const u8 *addr, const char *ifname)
 {
-	if (!hapd->ubus.obj.has_subscribers)
+	struct ubus_object *obj = hostapd_ubus_notify_obj(hapd);
+
+	if (!obj->has_subscribers)
 		return;
 
 	blob_buf_init(&b, 0);
 	blobmsg_add_macaddr(&b, "address", addr);
 	blobmsg_add_string(&b, "ifname", ifname);
 
-	ubus_notify(ctx, &hapd->ubus.obj, "apup-newpeer", b.head, -1);
+	ubus_notify(ctx, obj, "apup-newpeer", b.head, -1);
 }
 #endif // def CONFIG_APUP
 
 void hostapd_ubus_notify_csa(struct hostapd_data *hapd, int freq)
 {
-	if (!hapd->ubus.obj.has_subscribers)
+	struct ubus_object *obj = hostapd_ubus_notify_obj(hapd);
+
+	if (!obj->has_subscribers)
 		return;
 
 	blob_buf_init(&b, 0);
@@ -2244,5 +2256,5 @@ void hostapd_ubus_notify_csa(struct hostapd_data *hapd, int freq)
 	blobmsg_add_u32(&b, "freq", freq);
 	blobmsg_printf(&b, "bssid", MACSTR, MAC2STR(hapd->conf->bssid));
 
-	ubus_notify(ctx, &hapd->ubus.obj, "channel-switch", b.head, -1);
+	ubus_notify(ctx, obj, "channel-switch", b.head, -1);
 }
