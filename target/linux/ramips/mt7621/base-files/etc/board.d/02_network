@@ -42,6 +42,11 @@ ramips_setup_interfaces()
 	arcadyan,we420223-99)
 		ucidef_set_interface_lan "swp0 swp1"
 		;;
+	asus,4g-ax56)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
+		ucidef_set_interface "wwan" device "/dev/ttyUSB0" protocol "ncm"
+		uci add_list firewall.@zone[1].network='wwan'
+		;;
 	ampedwireless,ally-00x19k|\
 	arcadyan,we410443|\
 	asus,rp-ac56|\
