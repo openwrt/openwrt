@@ -1,0 +1,28 @@
+--- a/drivers/pci/controller/Kconfig
++++ b/drivers/pci/controller/Kconfig
+@@ -223,6 +223,15 @@ config PCIE_MT7621
+ 	help
+ 	  This selects a driver for the MediaTek MT7621 PCIe Controller.
+ 
++config PCIE_REALTEK
++	tristate "Realtek PCIe controller"
++	depends on (MACH_REALTEK_RTL && RTL960X) || COMPILE_TEST
++	select PHY_RTK_PCIEPHY
++	default MACH_REALTEK_RTL && RTL960X
++	help
++	  Say Y here to enable PCIe controller support for the Realtek SoCs
++	  like RTL9607C.
++
+ config PCI_HYPERV_INTERFACE
+ 	tristate "Microsoft Hyper-V PCI Interface"
+ 	depends on ((X86 && X86_64) || ARM64) && HYPERV && PCI_MSI
+--- a/drivers/pci/controller/Makefile
++++ b/drivers/pci/controller/Makefile
+@@ -39,6 +39,7 @@ obj-$(CONFIG_PCI_LOONGSON) += pci-loongs
+ obj-$(CONFIG_PCIE_HISI_ERR) += pcie-hisi-error.o
+ obj-$(CONFIG_PCIE_APPLE) += pcie-apple.o
+ obj-$(CONFIG_PCIE_MT7621) += pcie-mt7621.o
++obj-$(CONFIG_PCIE_REALTEK) += pcie-realtek.o
+ 
+ # pcie-hisi.o quirks are needed even without CONFIG_PCIE_DW
+ obj-y				+= dwc/
