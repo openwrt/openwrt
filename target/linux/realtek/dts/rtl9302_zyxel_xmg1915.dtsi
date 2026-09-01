@@ -16,6 +16,11 @@
 		led-upgrade = &led_pwr_sys_green;
 	};
 
+	memory@0 {
+		device_type = "memory";
+		reg = <0x00000000 0x10000000>;
+	};
+
 	leds {
 		compatible = "gpio-leds";
 
