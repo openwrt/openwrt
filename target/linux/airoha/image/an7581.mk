@@ -188,3 +188,26 @@ define Device/nokia_xg-040g-md-ubi
   ARTIFACTS := bl31-uboot.fip preloader.bin
 endef
 TARGET_DEVICES += nokia_xg-040g-md-ubi
+define Device/tplink_xb432v
+  $(call Device/FitImageLzma)
+  DEVICE_VENDOR := TP-Link
+  DEVICE_MODEL := XB432v
+  DEVICE_VARIANT := ITWIND3
+  DEVICE_DTS := an7581-tplink-xb432v
+  DEVICE_DTS_CONFIG := config@1
+  DEVICE_PACKAGES := kmod-leds-gpio kmod-usb3 \
+	airoha-en7581-npu-firmware kmod-mt7992-firmware wpad-basic-mbedtls \
+	kmod-phy-airoha-en8811h
+  # Stock U-Boot loads FIT at 0x81800200; vendor load/entry below initramfs.
+  KERNEL_LOADADDR := 0x80088000
+  BLOCKSIZE := 256k
+  PAGESIZE := 2048
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 256k
+  KERNEL_INITRAMFS_SUFFIX := -initramfs.itb
+  KERNEL_SIZE := 10240k
+  IMAGE_SIZE := 71424k
+  IMAGES := sysupgrade.bin
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-rootfs | pad-rootfs | check-size | append-metadata
+endef
+TARGET_DEVICES += tplink_xb432v
