@@ -1,0 +1,33 @@
+From a31723627e4851bc9966eca601c8bc8f364aac4f Mon Sep 17 00:00:00 2001
+From: Michael Pratt <mcpratt@pm.me>
+Date: Sun, 30 Aug 2026 01:46:11 -0400
+Subject: [PATCH 1/9] jshn.sh: fix invocation of jshn in JSON script
+
+Based on the way jshn is written, during parsing
+when the program encounters a parameter that
+selects a certain mode of execution,
+the program immediately executes that mode and exits.
+
+If json_dump() has parameters that select the mode,
+they have to be placed after any optional parameters that
+change the input or output behavior,
+otherwise those options will be completely ignored.
+
+Fixes: e16fa068a ("jshn: add support for namespaces")
+Fixes: 6fc29d1c4 ("jshn.sh: Add pretty-printing to json_dump")
+Signed-off-by: Michael Pratt <mcpratt@pm.me>
+---
+ sh/jshn.sh | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/sh/jshn.sh
++++ b/sh/jshn.sh
+@@ -287,7 +287,7 @@ json_load_file() {
+ }
+ 
+ json_dump() {
+-	jshn "$@" ${JSON_PREFIX:+-p "$JSON_PREFIX"} ${JSON_NONEWLINE:+-n} ${JSON_INDENT:+-i} -w
++	jshn ${JSON_PREFIX:+-p "$JSON_PREFIX"} ${JSON_NONEWLINE:+-n} ${JSON_INDENT:+-i} "$@" -w
+ }
+ 
+ json_get_type() {
