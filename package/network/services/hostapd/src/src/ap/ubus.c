@@ -1416,7 +1416,8 @@ void hostapd_ubus_handle_link_measurement(struct hostapd_data *hapd, const u8 *d
 static int
 hostapd_bss_tr_send(struct hostapd_data *hapd, u8 *addr, bool disassoc_imminent, bool abridged,
 		    u16 disassoc_timer, u8 validity_period, u8 dialog_token,
-		    struct blob_attr *neighbors, u8 mbo_reason, u8 cell_pref, u8 reassoc_delay)
+		    struct blob_attr *neighbors, bool mbo, u8 mbo_reason, u8 cell_pref,
+		    u8 reassoc_delay)
 {
 	struct blob_attr *cur;
 	struct sta_info *sta;
@@ -1424,7 +1425,7 @@ hostapd_bss_tr_send(struct hostapd_data *hapd, u8 *addr, bool disassoc_imminent,
 	int rem;
 	u8 *nr = NULL;
 	u8 req_mode = 0;
-	u8 mbo[10];
+	u8 mbo_buf[10];
 	size_t mbo_len = 0;
 
 	hapd = hostapd_ubus_sta_bss(hapd, addr, &sta);
@@ -1478,36 +1479,43 @@ hostapd_bss_tr_send(struct hostapd_data *hapd, u8 *addr, bool disassoc_imminent,
 		req_mode |= WNM_BSS_TM_REQ_DISASSOC_IMMINENT;
 
 #ifdef CONFIG_MBO
-	u8 *mbo_pos = mbo;
+	/* Only describe the transition in MBO terms when the caller asked for
+	 * it. Building the attributes unconditionally put whatever the caller
+	 * left unset into the frame. */
+	if (mbo) {
+		u8 *mbo_pos = mbo_buf;
 
-	if (mbo_reason > MBO_TRANSITION_REASON_PREMIUM_AP)
-		return UBUS_STATUS_INVALID_ARGUMENT;
+		if (mbo_reason > MBO_TRANSITION_REASON_PREMIUM_AP)
+			return UBUS_STATUS_INVALID_ARGUMENT;
 
-	if (cell_pref != 0 && cell_pref != 1 && cell_pref != 255)
-		return UBUS_STATUS_INVALID_ARGUMENT;
+		if (cell_pref != MBO_CELL_PREF_EXCLUDED &&
+		    cell_pref != MBO_CELL_PREF_NO_USE &&
+		    cell_pref != MBO_CELL_PREF_USE)
+			return UBUS_STATUS_INVALID_ARGUMENT;
 
-	if (reassoc_delay > 65535 || (reassoc_delay && !disassoc_imminent))
-		return UBUS_STATUS_INVALID_ARGUMENT;
+		if (reassoc_delay > 65535 || (reassoc_delay && !disassoc_imminent))
+			return UBUS_STATUS_INVALID_ARGUMENT;
 
-	*mbo_pos++ = MBO_ATTR_ID_TRANSITION_REASON;
-	*mbo_pos++ = 1;
-	*mbo_pos++ = mbo_reason;
-	*mbo_pos++ = MBO_ATTR_ID_CELL_DATA_PREF;
-	*mbo_pos++ = 1;
-	*mbo_pos++ = cell_pref;
+		*mbo_pos++ = MBO_ATTR_ID_TRANSITION_REASON;
+		*mbo_pos++ = 1;
+		*mbo_pos++ = mbo_reason;
+		*mbo_pos++ = MBO_ATTR_ID_CELL_DATA_PREF;
+		*mbo_pos++ = 1;
+		*mbo_pos++ = cell_pref;
 
-	if (reassoc_delay) {
-		*mbo_pos++ = MBO_ATTR_ID_ASSOC_RETRY_DELAY;
-		*mbo_pos++ = 2;
-		WPA_PUT_LE16(mbo_pos, reassoc_delay);
-		mbo_pos += 2;
+		if (reassoc_delay) {
+			*mbo_pos++ = MBO_ATTR_ID_ASSOC_RETRY_DELAY;
+			*mbo_pos++ = 2;
+			WPA_PUT_LE16(mbo_pos, reassoc_delay);
+			mbo_pos += 2;
+		}
+
+		mbo_len = mbo_pos - mbo_buf;
 	}
-
-	mbo_len = mbo_pos - mbo;
 #endif
 
 	if (wnm_send_bss_tm_req(hapd, sta, req_mode, disassoc_timer, validity_period, NULL,
-				dialog_token, NULL, nr, nr_len, mbo_len ? mbo : NULL, mbo_len))
+				dialog_token, NULL, nr, nr_len, mbo_len ? mbo_buf : NULL, mbo_len))
 		return UBUS_STATUS_UNKNOWN_ERROR;
 
 	return 0;
@@ -1558,9 +1566,10 @@ hostapd_bss_transition_request(struct ubus_context *ctx, struct ubus_object *obj
 	u32 dialog_token = 1;
 	bool abridged;
 	bool da_imminent;
-	u8 mbo_reason;
-	u8 cell_pref;
-	u8 reassoc_delay;
+	bool mbo = false;
+	u8 mbo_reason = MBO_TRANSITION_REASON_UNSPECIFIED;
+	u8 cell_pref = MBO_CELL_PREF_NO_USE;
+	u8 reassoc_delay = 0;
 
 	blobmsg_parse(bss_tr_policy, __BSS_TR_DISASSOC_MAX, tb, blob_data(msg), blob_len(msg));
 
@@ -1583,18 +1592,25 @@ hostapd_bss_transition_request(struct ubus_context *ctx, struct ubus_object *obj
 	abridged = !!(tb[BSS_TR_ABRIDGED] && blobmsg_get_bool(tb[BSS_TR_ABRIDGED]));
 
 #ifdef CONFIG_MBO
-	if (tb[BSS_TR_MBO_REASON])
+	if (tb[BSS_TR_MBO_REASON]) {
 		mbo_reason = blobmsg_get_u32(tb[BSS_TR_MBO_REASON]);
+		mbo = true;
+	}
 
-	if (tb[BSS_TR_CELL_PREF])
+	if (tb[BSS_TR_CELL_PREF]) {
 		cell_pref = blobmsg_get_u32(tb[BSS_TR_CELL_PREF]);
+		mbo = true;
+	}
 
-	if (tb[BSS_TR_REASSOC_DELAY])
+	if (tb[BSS_TR_REASSOC_DELAY]) {
 		reassoc_delay = blobmsg_get_u32(tb[BSS_TR_REASSOC_DELAY]);
+		mbo = true;
+	}
 #endif
 
 	return hostapd_bss_tr_send(hapd, addr, da_imminent, abridged, da_timer, valid_period,
-				   dialog_token, tb[BSS_TR_NEIGHBORS], mbo_reason, cell_pref, reassoc_delay);
+				   dialog_token, tb[BSS_TR_NEIGHBORS], mbo, mbo_reason, cell_pref,
+				   reassoc_delay);
 }
 #endif
 
