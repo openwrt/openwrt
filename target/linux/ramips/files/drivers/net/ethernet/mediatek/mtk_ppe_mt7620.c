@@ -140,6 +140,10 @@
 #define MT7620_GSW_PMCR(port)		(0x3000 + ((port) * 0x100))
 #define MT7620_GSW_PSC_SA_DISABLE	BIT(4)
 #define MT7620_GSW_PPE_PMCR		0x0005e33b
+#define MT7620_GSW_GPC2			0x701c
+#define MT7620_GSW_GPC2_PPE_IPG		GENMASK(31, 24)
+/* The Programming Guide defines the gap as (field + 2) * 8 ns. */
+#define MT7620_GSW_GPC2_PPE_IPG_96NS	0x0a
 
 struct mt7620_foe_entry {
 	u32 data[20];
@@ -207,6 +211,7 @@ struct mt7620_ppe {
 	u32 saved_tpf[MT7620_GSW_LAST_USER_PORT + 1];
 	u32 saved_psc7;
 	u32 saved_pmcr7;
+	u32 saved_gpc2;
 };
 
 static const struct rhashtable_params mt7620_ppe_flow_ht_params = {
@@ -1331,6 +1336,7 @@ static void mt7620_ppe_switch_start(struct mt7620_ppe *ppe)
 	ppe->saved_pmcr7 =
 		mt7620_gsw_reg_read(gsw,
 				    MT7620_GSW_PMCR(MT7620_GSW_PPE_PORT));
+	ppe->saved_gpc2 = mt7620_gsw_reg_read(gsw, MT7620_GSW_GPC2);
 
 	val = ppe->saved_pfc &
 	      ~(MT7620_GSW_PFC_PPE_PORT | MT7620_GSW_PFC_PPE_ENABLE);
@@ -1343,6 +1349,11 @@ static void mt7620_ppe_switch_start(struct mt7620_ppe *ppe)
 			     MT7620_GSW_PSC(MT7620_GSW_PPE_PORT));
 	mt7620_gsw_reg_write(gsw, MT7620_GSW_PPE_PMCR,
 			     MT7620_GSW_PMCR(MT7620_GSW_PPE_PORT));
+	/* Keep back-to-back PPE returns from timing out in port 7's ARL stage. */
+	val = ppe->saved_gpc2 & ~MT7620_GSW_GPC2_PPE_IPG;
+	val |= FIELD_PREP(MT7620_GSW_GPC2_PPE_IPG,
+			  MT7620_GSW_GPC2_PPE_IPG_96NS);
+	mt7620_gsw_reg_write(gsw, val, MT7620_GSW_GPC2);
 	mt7620_gsw_reg_unlock(gsw);
 
 	for (port = 0; port < ARRAY_SIZE(ppe->saved_tpf); port++)
@@ -1362,6 +1373,7 @@ static void mt7620_ppe_switch_stop(struct mt7620_ppe *ppe)
 			     MT7620_GSW_PSC(MT7620_GSW_PPE_PORT));
 	mt7620_gsw_reg_write(gsw, ppe->saved_pmcr7,
 			     MT7620_GSW_PMCR(MT7620_GSW_PPE_PORT));
+	mt7620_gsw_reg_write(gsw, ppe->saved_gpc2, MT7620_GSW_GPC2);
 	mt7620_gsw_reg_unlock(gsw);
 }
 
