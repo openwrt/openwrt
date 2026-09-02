@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_DISTNAME:=u-boot
 PKG_VERSION:=2026.07
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_DISTNAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:= \
@@ -123,6 +123,14 @@ define Package/uboot-envtools/install
 		$(if $(wildcard ./uboot-envtools/files/$(BOARD)), \
 			$(INSTALL_DATA) ./uboot-envtools/files/$(BOARD) \
 			$(1)/etc/uci-defaults/30_uboot-envtools \
+		) \
+	)
+	$(if $(wildcard ./uboot-envtools/files/$(BOARD)_$(SUBTARGET)-cleanup), \
+		$(INSTALL_DATA) ./uboot-envtools/files/$(BOARD)_$(SUBTARGET)-cleanup \
+		$(1)/etc/uci-defaults/31_uboot-envtools-cleanup, \
+		$(if $(wildcard ./uboot-envtools/files/$(BOARD)-cleanup), \
+			$(INSTALL_DATA) ./uboot-envtools/files/$(BOARD)-cleanup \
+			$(1)/etc/uci-defaults/31_uboot-envtools-cleanup \
 		) \
 	)
 endef
