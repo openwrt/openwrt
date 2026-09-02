@@ -316,7 +316,7 @@ endef
 define Device/smartrg_sdg-8612
 $(call Device/adtran_smartrg)
   DEVICE_MODEL := SDG-8612
-  DEVICE_DTS := mt7986a-smartrg-SDG-8612
+  DEVICE_DTS := mt7986a-smartrg-sdg-8612
   DEVICE_PACKAGES += kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware
 endef
 TARGET_DEVICES += smartrg_sdg-8612
@@ -324,7 +324,7 @@ TARGET_DEVICES += smartrg_sdg-8612
 define Device/smartrg_sdg-8614
 $(call Device/adtran_smartrg)
   DEVICE_MODEL := SDG-8614
-  DEVICE_DTS := mt7986a-smartrg-SDG-8614
+  DEVICE_DTS := mt7986a-smartrg-sdg-8614
   DEVICE_PACKAGES += kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware
 endef
 TARGET_DEVICES += smartrg_sdg-8614
@@ -332,7 +332,7 @@ TARGET_DEVICES += smartrg_sdg-8614
 define Device/smartrg_sdg-8622
 $(call Device/adtran_smartrg)
   DEVICE_MODEL := SDG-8622
-  DEVICE_DTS := mt7986a-smartrg-SDG-8622
+  DEVICE_DTS := mt7986a-smartrg-sdg-8622
   DEVICE_PACKAGES += kmod-mt7915e kmod-mt7915-firmware kmod-mt7986-firmware mt7986-wo-firmware
 endef
 TARGET_DEVICES += smartrg_sdg-8622
@@ -340,7 +340,7 @@ TARGET_DEVICES += smartrg_sdg-8622
 define Device/smartrg_sdg-8632
 $(call Device/adtran_smartrg)
   DEVICE_MODEL := SDG-8632
-  DEVICE_DTS := mt7986a-smartrg-SDG-8632
+  DEVICE_DTS := mt7986a-smartrg-sdg-8632
   DEVICE_PACKAGES += kmod-mt7915e kmod-mt7915-firmware kmod-mt7986-firmware mt7986-wo-firmware
 endef
 TARGET_DEVICES += smartrg_sdg-8632
@@ -366,7 +366,7 @@ TARGET_DEVICES += smartrg_sdg-8732
 define Device/smartrg_sdg-8733
 $(call Device/adtran_smartrg)
   DEVICE_MODEL := SDG-8733
-  DEVICE_DTS := mt7988a-smartrg-SDG-8733
+  DEVICE_DTS := mt7988a-smartrg-sdg-8733
   DEVICE_PACKAGES += kmod-mt7996-firmware kmod-phy-aquantia kmod-usb3 mt7988-wo-firmware
 endef
 TARGET_DEVICES += smartrg_sdg-8733
@@ -374,7 +374,7 @@ TARGET_DEVICES += smartrg_sdg-8733
 define Device/smartrg_sdg-8733a
 $(call Device/adtran_smartrg)
   DEVICE_MODEL := SDG-8733A
-  DEVICE_DTS := mt7988d-smartrg-SDG-8733A
+  DEVICE_DTS := mt7988d-smartrg-sdg-8733a
   DEVICE_PACKAGES += mt7988-2p5g-phy-firmware kmod-mt7996-233-firmware kmod-phy-aquantia mt7988-wo-firmware
 endef
 TARGET_DEVICES += smartrg_sdg-8733a
@@ -382,7 +382,7 @@ TARGET_DEVICES += smartrg_sdg-8733a
 define Device/smartrg_sdg-8734
 $(call Device/adtran_smartrg)
   DEVICE_MODEL := SDG-8734
-  DEVICE_DTS := mt7988a-smartrg-SDG-8734
+  DEVICE_DTS := mt7988a-smartrg-sdg-8734
   DEVICE_PACKAGES += kmod-mt7996-firmware kmod-phy-aquantia kmod-sfp kmod-usb3 mt7988-wo-firmware
 endef
 TARGET_DEVICES += smartrg_sdg-8734
