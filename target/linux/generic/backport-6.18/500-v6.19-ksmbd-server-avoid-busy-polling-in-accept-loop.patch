@@ -1,0 +1,128 @@
+From 3316a8fc840d82fad5efcf76ad0ea3f76fdca209 Mon Sep 17 00:00:00 2001
+From: Qingfang Deng <dqfext@gmail.com>
+Date: Mon, 17 Nov 2025 16:59:00 +0800
+Subject: [PATCH] ksmbd: server: avoid busy polling in accept loop
+
+The ksmbd listener thread was using busy waiting on a listening socket by
+calling kernel_accept() with SOCK_NONBLOCK and retrying every 100ms on
+-EAGAIN. Since this thread is dedicated to accepting new connections,
+there is no need for non-blocking mode.
+
+Switch to a blocking accept() call instead, allowing the thread to sleep
+until a new connection arrives. This avoids unnecessary wakeups and CPU
+usage. During teardown, call shutdown() on the listening socket so that
+accept() returns -EINVAL and the thread exits cleanly.
+
+The socket release mutex is redundant because kthread_stop() blocks until
+the listener thread returns, guaranteeing safe teardown ordering.
+
+Also remove sk_rcvtimeo and sk_sndtimeo assignments, which only caused
+accept() to return -EAGAIN prematurely.
+
+Signed-off-by: Qingfang Deng <dqfext@gmail.com>
+Reviewed-by: Stefan Metzmacher <metze@samba.org>
+Acked-by: Namjae Jeon <linkinjeon@kernel.org>
+Signed-off-by: Steve French <stfrench@microsoft.com>
+---
+ fs/smb/server/transport_tcp.c | 41 +++++------------------------------
+ 1 file changed, 6 insertions(+), 35 deletions(-)
+
+--- a/fs/smb/server/transport_tcp.c
++++ b/fs/smb/server/transport_tcp.c
+@@ -22,7 +22,6 @@ struct interface {
+ 	struct socket		*ksmbd_socket;
+ 	struct list_head	entry;
+ 	char			*name;
+-	struct mutex		sock_release_lock;
+ 	int			state;
+ };
+ 
+@@ -57,19 +56,6 @@ static inline void ksmbd_tcp_reuseaddr(s
+ 	sock_set_reuseaddr(sock->sk);
+ }
+ 
+-static inline void ksmbd_tcp_rcv_timeout(struct socket *sock, s64 secs)
+-{
+-	if (secs && secs < MAX_SCHEDULE_TIMEOUT / HZ - 1)
+-		WRITE_ONCE(sock->sk->sk_rcvtimeo, secs * HZ);
+-	else
+-		WRITE_ONCE(sock->sk->sk_rcvtimeo, MAX_SCHEDULE_TIMEOUT);
+-}
+-
+-static inline void ksmbd_tcp_snd_timeout(struct socket *sock, s64 secs)
+-{
+-	sock_set_sndtimeo(sock->sk, secs);
+-}
+-
+ static struct tcp_transport *alloc_transport(struct socket *client_sk)
+ {
+ 	struct tcp_transport *t;
+@@ -239,20 +225,14 @@ static int ksmbd_kthread_fn(void *p)
+ 	unsigned int max_ip_conns;
+ 
+ 	while (!kthread_should_stop()) {
+-		mutex_lock(&iface->sock_release_lock);
+ 		if (!iface->ksmbd_socket) {
+-			mutex_unlock(&iface->sock_release_lock);
+ 			break;
+ 		}
+-		ret = kernel_accept(iface->ksmbd_socket, &client_sk,
+-				    SOCK_NONBLOCK);
+-		mutex_unlock(&iface->sock_release_lock);
+-		if (ret) {
+-			if (ret == -EAGAIN)
+-				/* check for new connections every 100 msecs */
+-				schedule_timeout_interruptible(HZ / 10);
++		ret = kernel_accept(iface->ksmbd_socket, &client_sk, 0);
++		if (ret == -EINVAL)
++			break;
++		if (ret)
+ 			continue;
+-		}
+ 
+ 		if (!server_conf.max_ip_connections)
+ 			goto skip_max_ip_conns_limit;
+@@ -461,10 +441,6 @@ static void tcp_destroy_socket(struct so
+ 	if (!ksmbd_socket)
+ 		return;
+ 
+-	/* set zero to timeout */
+-	ksmbd_tcp_rcv_timeout(ksmbd_socket, 0);
+-	ksmbd_tcp_snd_timeout(ksmbd_socket, 0);
+-
+ 	ret = kernel_sock_shutdown(ksmbd_socket, SHUT_RDWR);
+ 	if (ret)
+ 		pr_err("Failed to shutdown socket: %d\n", ret);
+@@ -535,9 +511,6 @@ static int create_socket(struct interfac
+ 		goto out_error;
+ 	}
+ 
+-	ksmbd_socket->sk->sk_rcvtimeo = KSMBD_TCP_RECV_TIMEOUT;
+-	ksmbd_socket->sk->sk_sndtimeo = KSMBD_TCP_SEND_TIMEOUT;
+-
+ 	ret = kernel_listen(ksmbd_socket, KSMBD_SOCKET_BACKLOG);
+ 	if (ret) {
+ 		pr_err("Port listen() error: %d\n", ret);
+@@ -607,12 +580,11 @@ static int ksmbd_netdev_event(struct not
+ 		if (iface && iface->state == IFACE_STATE_CONFIGURED) {
+ 			ksmbd_debug(CONN, "netdev-down event: netdev(%s) is going down\n",
+ 					iface->name);
++			kernel_sock_shutdown(iface->ksmbd_socket, SHUT_RDWR);
+ 			tcp_stop_kthread(iface->ksmbd_kthread);
+ 			iface->ksmbd_kthread = NULL;
+-			mutex_lock(&iface->sock_release_lock);
+-			tcp_destroy_socket(iface->ksmbd_socket);
++			sock_release(iface->ksmbd_socket);
+ 			iface->ksmbd_socket = NULL;
+-			mutex_unlock(&iface->sock_release_lock);
+ 
+ 			iface->state = IFACE_STATE_DOWN;
+ 			break;
+@@ -675,7 +647,6 @@ static struct interface *alloc_iface(cha
+ 	iface->name = ifname;
+ 	iface->state = IFACE_STATE_DOWN;
+ 	list_add(&iface->entry, &iface_list);
+-	mutex_init(&iface->sock_release_lock);
+ 	return iface;
+ }
+ 

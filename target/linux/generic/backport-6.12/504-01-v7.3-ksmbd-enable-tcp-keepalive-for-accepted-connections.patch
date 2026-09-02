@@ -20,7 +20,7 @@ Signed-off-by: Namjae Jeon <linkinjeon@kernel.org>
 
 --- a/fs/smb/server/transport_tcp.c
 +++ b/fs/smb/server/transport_tcp.c
-@@ -325,6 +325,12 @@ skip_max_ip_conns_limit:
+@@ -303,6 +303,12 @@ skip_max_ip_conns_limit:
  		ksmbd_debug(CONN, "connect success: accepted new connection\n");
  		client_sk->sk->sk_rcvtimeo = KSMBD_TCP_RECV_TIMEOUT;
  		client_sk->sk->sk_sndtimeo = KSMBD_TCP_SEND_TIMEOUT;
