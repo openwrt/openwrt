@@ -68,6 +68,15 @@ endif
 SCAN_COOKIE?=$(shell echo $$$$)
 export SCAN_COOKIE
 
+# rules.mk is not included at this level, so NPROC is out of reach here.
+SCAN_JOBS?=$(eval SCAN_JOBS:=$$(shell sysctl -n hw.ncpu 2>/dev/null || nproc))$(SCAN_JOBS)
+export SCAN_JOBS
+
+# A value that is not a positive number gives a serial scan, so that a bare
+# -j cannot start the scan without a job limit.
+scan_jobs_nondigits=$(strip $(subst 0,,$(subst 1,,$(subst 2,,$(subst 3,,$(subst 4,,$(subst 5,,$(subst 6,,$(subst 7,,$(subst 8,,$(subst 9,,$(1))))))))))))
+scan_jobs=$(if $(and $(filter 1,$(words $(SCAN_JOBS))),$(filter-out 0%,$(SCAN_JOBS)),$(if $(call scan_jobs_nondigits,$(SCAN_JOBS)),,1)),$(SCAN_JOBS),1)
+
 SUBMAKE:=umask 022; $(SUBMAKE)
 
 ULIMIT_FIX=_limit=`ulimit -n`; [ "$$_limit" = "unlimited" -o "$$_limit" -ge 1024 ] || ulimit -n 1024;
@@ -103,10 +112,10 @@ prepare-tmpinfo: FORCE
 	mkdir -p tmp/info feeds
 	[ -e $(TOPDIR)/feeds/base ] || ln -sf ../package $(TOPDIR)/feeds/base
 	+$(call scan_unchanged,packageinfo,package,5) || { \
-		$(_SINGLE)$(NO_TRACE_MAKE) -j1 -r -s -f include/scan.mk SCAN_TARGET="packageinfo" SCAN_DIR="package" SCAN_NAME="package" SCAN_DEPTH=5 SCAN_EXTRA="" && \
+		$(_SINGLE)$(NO_TRACE_MAKE) -j$(scan_jobs) -r -s -f include/scan.mk SCAN_TARGET="packageinfo" SCAN_DIR="package" SCAN_NAME="package" SCAN_DEPTH=5 SCAN_EXTRA="" && \
 		touch $(call SCAN_STAMP,packageinfo); }
 	+$(call scan_unchanged,targetinfo,target/linux,3) || { \
-		$(_SINGLE)$(NO_TRACE_MAKE) -j1 -r -s -f include/scan.mk SCAN_TARGET="targetinfo" SCAN_DIR="target/linux" SCAN_NAME="target" SCAN_DEPTH=3 SCAN_EXTRA="" SCAN_MAKEOPTS="TARGET_BUILD=1" && \
+		$(_SINGLE)$(NO_TRACE_MAKE) -j$(scan_jobs) -r -s -f include/scan.mk SCAN_TARGET="targetinfo" SCAN_DIR="target/linux" SCAN_NAME="target" SCAN_DEPTH=3 SCAN_EXTRA="" SCAN_MAKEOPTS="TARGET_BUILD=1" && \
 		touch $(call SCAN_STAMP,targetinfo); }
 	for type in package target; do \
 		f=tmp/.$${type}info; t=tmp/.config-$${type}.in; \
