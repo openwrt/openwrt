@@ -464,37 +464,62 @@ enum {
 	__DEL_CLIENT_MAX
 };
 
-/* A station associates over one link of an AP MLD and its entry lives on that
- * link's BSS. A ubus method arrives on the object of the BSS that registered
- * the shared interface name, which is not the link the station is on, so walk
- * the affiliated links before reporting the station as unknown. Returns the
- * BSS holding the station, or `hapd` when no link has it. */
+/* A station associates over one link of an AP MLD, and every affiliated link
+ * can hold an entry for it while only the association link says where it is
+ * listening. A ubus method arrives on the object of the BSS that registered
+ * the shared interface name, which is not necessarily that link, so prefer
+ * the link the station associated over: a frame sent from any other link is
+ * transmitted on a channel the station is not on. Returns the BSS holding the
+ * station, or `hapd` when no link has it. */
 static struct hostapd_data *hostapd_ubus_sta_bss(struct hostapd_data *hapd,
 						 const u8 *addr,
 						 struct sta_info **sta)
 {
 #ifdef CONFIG_IEEE80211BE
-	struct hostapd_data *link_bss;
+	struct hostapd_data *link_bss, *any_bss = NULL;
+	struct sta_info *any_sta = NULL;
 #endif
 
 	*sta = ap_get_sta(hapd, addr);
-	if (*sta)
-		return hapd;
 
 #ifdef CONFIG_IEEE80211BE
 	if (!hapd->conf->mld_ap || !hapd->mld)
 		return hapd;
 
+	if (*sta) {
+		if ((*sta)->mld_assoc_link_id == hapd->mld_link_id)
+			return hapd;
+
+		any_bss = hapd;
+		any_sta = *sta;
+	}
+
 	for_each_mld_link(link_bss, hapd) {
+		struct sta_info *link_sta;
+
 		if (link_bss == hapd)
 			continue;
 
-		*sta = ap_get_sta(link_bss, addr);
-		if (*sta)
+		link_sta = ap_get_sta(link_bss, addr);
+		if (!link_sta)
+			continue;
+
+		if (link_sta->mld_assoc_link_id == link_bss->mld_link_id) {
+			*sta = link_sta;
 			return link_bss;
+		}
+
+		if (!any_sta) {
+			any_bss = link_bss;
+			any_sta = link_sta;
+		}
 	}
-#endif /* CONFIG_IEEE80211BE */
+
+	*sta = any_sta;
+	return any_bss ? any_bss : hapd;
+#else /* CONFIG_IEEE80211BE */
 	return hapd;
+#endif /* CONFIG_IEEE80211BE */
 }
 
 static const struct blobmsg_policy del_policy[__DEL_CLIENT_MAX] = {
