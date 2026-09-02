@@ -340,12 +340,31 @@ int rtldsa_tc_init(struct rtl838x_switch_priv *priv)
 	return 0;
 }
 
+/* Zero the hardware LOG counter and hand its allocator slot back. Done
+ * together so a slot is never returned to rtldsa_packet_cntr_alloc() while
+ * the hardware entry still holds the previous flow's count.
+ */
+static void rtldsa_packet_cntr_release(struct rtl838x_switch_priv *priv, int counter)
+{
+	if (counter < 0)
+		return;
+
+	if (priv->r->packet_cntr_clear) {
+		mutex_lock(&priv->reg_mutex);
+		priv->r->packet_cntr_clear(priv, counter);
+		mutex_unlock(&priv->reg_mutex);
+	}
+
+	rtldsa_packet_cntr_free(priv, counter);
+}
+
 static void rtldsa_tc_flow_free(void *ptr, void *arg)
 {
 	struct rtl83xx_flow *flow = ptr;
 	struct rtl838x_switch_priv *priv = arg;
 
 	priv->r->pie_rule_rm(priv, &flow->rule);
+	rtldsa_packet_cntr_release(priv, flow->rule.packet_cntr);
 
 	/* Readers may still hold an RCU-protected reference after the
 	 * object has been removed from the hash table.
@@ -424,7 +443,7 @@ static int rtldsa_configure_flower(struct rtl838x_switch_priv *priv,
 
 out_remove:
 	rhashtable_remove_fast(&priv->tc_ht, &flow->node, tc_ht_params);
-	rtldsa_packet_cntr_free(priv, flow->rule.packet_cntr);
+	rtldsa_packet_cntr_release(priv, flow->rule.packet_cntr);
 	/* published in tc_ht above; a concurrent reader may still hold a ref */
 	kfree_rcu(flow, rcu_head);
 	goto out_err;
@@ -462,6 +481,7 @@ static int rtldsa_delete_flower(struct rtl838x_switch_priv *priv,
 		goto out_unlock;
 
 	priv->r->pie_rule_rm(priv, &flow->rule);
+	rtldsa_packet_cntr_release(priv, flow->rule.packet_cntr);
 
 	kfree_rcu(flow, rcu_head);
 
