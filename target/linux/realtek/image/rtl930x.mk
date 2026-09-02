@@ -23,6 +23,16 @@ define Device/sirivision_sr-st3408f
 endef
 TARGET_DEVICES += sirivision_sr-st3408f
 
+define Device/sirivision_sr-st3808f
+  SOC := rtl9303
+  UIMAGE_MAGIC := 0x93000000
+  DEVICE_VENDOR := Sirivision
+  DEVICE_MODEL := SR-ST3808F
+  IMAGE_SIZE := 13312k
+  $(Device/kernel-lzma)
+endef
+TARGET_DEVICES += sirivision_sr-st3808f
+
 define Device/hasivo_f1100w-4sx-4xgt-common
   SOC := rtl9303
   DEVICE_VENDOR := Hasivo
