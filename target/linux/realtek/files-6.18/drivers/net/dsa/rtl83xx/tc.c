@@ -326,10 +326,13 @@ int rtldsa_tc_init(struct rtl838x_switch_priv *priv)
 		return 0;
 
 	err = rhashtable_init(&priv->tc_ht, &tc_ht_params);
-	if (!err)
-		priv->tc_initialized = true;
+	if (err)
+		return err;
 
-	return err;
+	mutex_init(&priv->tc_flow_lock);
+	priv->tc_initialized = true;
+
+	return 0;
 }
 
 static void rtldsa_tc_flow_free(void *ptr, void *arg)
@@ -353,16 +356,19 @@ void rtldsa_tc_cleanup(struct rtl838x_switch_priv *priv)
 	rhashtable_free_and_destroy(&priv->tc_ht, rtldsa_tc_flow_free, priv);
 	rcu_barrier();
 
+	mutex_destroy(&priv->tc_flow_lock);
 	priv->tc_initialized = false;
 }
 
-static int rtl83xx_configure_flower(struct rtl838x_switch_priv *priv,
-				    struct flow_cls_offload *f)
+static int rtldsa_configure_flower(struct rtl838x_switch_priv *priv,
+				   struct flow_cls_offload *f)
 {
 	struct rtl83xx_flow *flow;
 	int err = 0;
 
 	pr_debug("In %s\n", __func__);
+
+	mutex_lock(&priv->tc_flow_lock);
 
 	rcu_read_lock();
 	pr_debug("Cookie %08lx\n", f->cookie);
@@ -370,13 +376,16 @@ static int rtl83xx_configure_flower(struct rtl838x_switch_priv *priv,
 	rcu_read_unlock();
 	if (flow) {
 		pr_info("%s: Got flow\n", __func__);
-		return -EEXIST;
+		err = -EEXIST;
+		goto out_unlock;
 	}
 	pr_debug("%s: New flow\n", __func__);
 
 	flow = kzalloc(sizeof(*flow), GFP_KERNEL);
-	if (!flow)
-		return -ENOMEM;
+	if (!flow) {
+		err = -ENOMEM;
+		goto out_unlock;
+	}
 
 	flow->cookie = f->cookie;
 	flow->priv = priv;
@@ -403,6 +412,7 @@ static int rtl83xx_configure_flower(struct rtl838x_switch_priv *priv,
 	if (err)
 		goto out_remove;
 
+	mutex_unlock(&priv->tc_flow_lock);
 	return 0;
 
 out_remove:
@@ -414,47 +424,60 @@ out_free:
 	kfree(flow);
 out_err:
 	pr_err("%s: error %d\n", __func__, err);
+out_unlock:
+	mutex_unlock(&priv->tc_flow_lock);
 
 	return err;
 }
 
-static int rtl83xx_delete_flower(struct rtl838x_switch_priv *priv,
-				 struct flow_cls_offload *cls_flower)
+static int rtldsa_delete_flower(struct rtl838x_switch_priv *priv,
+				struct flow_cls_offload *cls_flower)
 {
 	struct rtl83xx_flow *flow;
 	int err;
 
 	pr_debug("In %s\n", __func__);
+
+	mutex_lock(&priv->tc_flow_lock);
+
 	rcu_read_lock();
 	flow = rhashtable_lookup_fast(&priv->tc_ht, &cls_flower->cookie, tc_ht_params);
 	if (!flow) {
 		rcu_read_unlock();
-		return -ENOENT;
+		err = -ENOENT;
+		goto out_unlock;
 	}
 
 	err = rhashtable_remove_fast(&priv->tc_ht, &flow->node, tc_ht_params);
 	rcu_read_unlock();
 	if (err)
-		return err;
+		goto out_unlock;
 
 	priv->r->pie_rule_rm(priv, &flow->rule);
 
 	kfree_rcu(flow, rcu_head);
 
-	return 0;
+out_unlock:
+	mutex_unlock(&priv->tc_flow_lock);
+
+	return err;
 }
 
-static int rtl83xx_stats_flower(struct rtl838x_switch_priv *priv,
-				struct flow_cls_offload *cls_flower)
+static int rtldsa_stats_flower(struct rtl838x_switch_priv *priv,
+			       struct flow_cls_offload *cls_flower)
 {
 	struct rtl83xx_flow *flow;
 	unsigned long lastused = 0;
 	int total_packets, new_packets;
 
 	pr_debug("%s:\n", __func__);
+
+	mutex_lock(&priv->tc_flow_lock);
 	flow = rhashtable_lookup_fast(&priv->tc_ht, &cls_flower->cookie, tc_ht_params);
-	if (!flow)
+	if (!flow) {
+		mutex_unlock(&priv->tc_flow_lock);
 		return -1;
+	}
 
 	if (flow->rule.packet_cntr >= 0) {
 		total_packets = priv->r->packet_cntr_read(flow->rule.packet_cntr);
@@ -467,6 +490,7 @@ static int rtl83xx_stats_flower(struct rtl838x_switch_priv *priv,
 	flow_stats_update(&cls_flower->stats, 100 * new_packets, new_packets, 0, lastused,
 			  FLOW_ACTION_HW_STATS_IMMEDIATE);
 
+	mutex_unlock(&priv->tc_flow_lock);
 	return 0;
 }
 
@@ -476,11 +500,11 @@ static int rtl83xx_setup_tc_cls_flower(struct rtl838x_switch_priv *priv,
 	pr_debug("%s: %d\n", __func__, cls_flower->command);
 	switch (cls_flower->command) {
 	case FLOW_CLS_REPLACE:
-		return rtl83xx_configure_flower(priv, cls_flower);
+		return rtldsa_configure_flower(priv, cls_flower);
 	case FLOW_CLS_DESTROY:
-		return rtl83xx_delete_flower(priv, cls_flower);
+		return rtldsa_delete_flower(priv, cls_flower);
 	case FLOW_CLS_STATS:
-		return rtl83xx_stats_flower(priv, cls_flower);
+		return rtldsa_stats_flower(priv, cls_flower);
 	default:
 		return -EOPNOTSUPP;
 	}

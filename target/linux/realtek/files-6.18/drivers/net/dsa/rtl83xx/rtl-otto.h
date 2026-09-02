@@ -1541,6 +1541,7 @@ struct rtl838x_switch_priv {
 	unsigned long mc_group_bm[MAX_MC_GROUPS >> 5];
 	struct rhashtable tc_ht;
 	bool tc_initialized;
+	struct mutex tc_flow_lock;	/* Serializes tc flower add/del/stats */
 	unsigned long pie_use_bm[MAX_PIE_ENTRIES >> 5];
 	unsigned long octet_cntr_use_bm[MAX_COUNTERS >> 5];
 	unsigned long packet_cntr_use_bm[MAX_COUNTERS >> 4];
