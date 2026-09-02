@@ -45,7 +45,10 @@ boot() {
 
 	# update wifi config before additional ieee80211 hotplug events
 	# get executed because of '/sbin/kmodloader' kmod loading.
+	# Use stamp file to prevent incomplete file on power-cut.
+	rm -f /etc/.board.json.stamp
 	[ -f /etc/board.json ] && /sbin/wifi config
+	[ -f /etc/board.json ] && touch /etc/.board.json.stamp
 
 	/sbin/kmodloader
 

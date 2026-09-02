@@ -1,6 +1,8 @@
 #!/bin/sh
 
 [ "${ACTION}" = "add" ] && [ -f /etc/board.json ] && {
+	rm -f /etc/.board.json.stamp
 	/sbin/wifi config
+	touch /etc/.board.json.stamp
 	ubus call network.wireless retry
 }
