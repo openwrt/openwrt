@@ -15,6 +15,7 @@ static int rtl83xx_parse_flow_rule(struct rtl838x_switch_priv *priv,
 				   struct flow_rule *rule, struct rtl83xx_flow *flow)
 {
 	struct flow_dissector *dissector = rule->match.dissector;
+	u64 supported_keys;
 
 	pr_debug("In %s\n", __func__);
 	/* KEY_CONTROL and KEY_BASIC are needed for forming a meaningful key */
@@ -24,30 +25,65 @@ static int rtl83xx_parse_flow_rule(struct rtl838x_switch_priv *priv,
 		return -EOPNOTSUPP;
 	}
 
+	supported_keys = BIT_ULL(FLOW_DISSECTOR_KEY_CONTROL) |
+			 BIT_ULL(FLOW_DISSECTOR_KEY_BASIC) |
+			 BIT_ULL(FLOW_DISSECTOR_KEY_ETH_ADDRS) |
+			 BIT_ULL(FLOW_DISSECTOR_KEY_VLAN) |
+			 BIT_ULL(FLOW_DISSECTOR_KEY_IPV4_ADDRS) |
+			 BIT_ULL(FLOW_DISSECTOR_KEY_IPV6_ADDRS) |
+			 BIT_ULL(FLOW_DISSECTOR_KEY_PORTS);
+	if (dissector->used_keys & ~supported_keys) {
+		dev_err(priv->dev, "unsupported TC keys: used_keys = 0x%llx\n",
+			dissector->used_keys & ~supported_keys);
+		return -EOPNOTSUPP;
+	}
+
+	if ((dissector->used_keys & BIT_ULL(FLOW_DISSECTOR_KEY_IPV4_ADDRS)) &&
+	    (dissector->used_keys & BIT_ULL(FLOW_DISSECTOR_KEY_IPV6_ADDRS)))
+		return -EOPNOTSUPP;
+
 	if (flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_BASIC)) {
 		struct flow_match_basic match;
 
 		pr_debug("%s: BASIC\n", __func__);
 		flow_rule_match_basic(rule, &match);
-		if (match.key->n_proto == htons(ETH_P_ARP))
-			flow->rule.frame_type = 0;
-		if (match.key->n_proto == htons(ETH_P_IP))
-			flow->rule.frame_type = 2;
-		if (match.key->n_proto == htons(ETH_P_IPV6))
-			flow->rule.frame_type = 3;
-		if ((match.key->n_proto == htons(ETH_P_ARP)) || flow->rule.frame_type)
+		if (match.mask->n_proto) {
+			if (match.mask->n_proto != htons(0xffff))
+				return -EOPNOTSUPP;
+
+			if (match.key->n_proto == htons(ETH_P_ARP)) {
+				flow->rule.frame_type = 0;
+			} else if (match.key->n_proto == htons(ETH_P_IP)) {
+				flow->rule.frame_type = 2;
+			} else if (match.key->n_proto == htons(ETH_P_IPV6)) {
+				flow->rule.frame_type = 3;
+			} else {
+				return -EOPNOTSUPP;
+			}
 			flow->rule.frame_type_m = 3;
-		if (flow->rule.frame_type >= 2) {
-			if (match.key->ip_proto == IPPROTO_UDP)
+		}
+		if (match.mask->ip_proto) {
+			if (flow->rule.frame_type < 2 || match.mask->ip_proto != 0xff)
+				return -EOPNOTSUPP;
+
+			switch (match.key->ip_proto) {
+			case IPPROTO_UDP:
 				flow->rule.frame_type_l4 = 0;
-			if (match.key->ip_proto == IPPROTO_TCP)
+				break;
+			case IPPROTO_TCP:
 				flow->rule.frame_type_l4 = 1;
-			if (match.key->ip_proto == IPPROTO_ICMP || match.key->ip_proto == IPPROTO_ICMPV6)
+				break;
+			case IPPROTO_ICMP:
+			case IPPROTO_ICMPV6:
 				flow->rule.frame_type_l4 = 2;
-			if (match.key->ip_proto == IPPROTO_TCP)
+				break;
+			case IPPROTO_IGMP:
 				flow->rule.frame_type_l4 = 3;
-			if ((match.key->ip_proto == IPPROTO_UDP) || flow->rule.frame_type_l4)
-				flow->rule.frame_type_l4_m = 7;
+				break;
+			default:
+				return -EOPNOTSUPP;
+			}
+			flow->rule.frame_type_l4_m = 7;
 		}
 	}
 
@@ -67,9 +103,11 @@ static int rtl83xx_parse_flow_rule(struct rtl838x_switch_priv *priv,
 
 		pr_debug("%s: VLAN\n", __func__);
 		flow_rule_match_vlan(rule, &match);
+		if (match.mask->vlan_priority || match.mask->vlan_dei ||
+		    match.mask->vlan_tpid || match.mask->vlan_eth_type)
+			return -EOPNOTSUPP;
 		flow->rule.itag = match.key->vlan_id;
 		flow->rule.itag_m = match.mask->vlan_id;
-		/* TODO: What about match.key->vlan_priority? */
 	}
 
 	if (flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_IPV4_ADDRS)) {
@@ -117,6 +155,42 @@ static void rtl83xx_flow_bypass_all(struct rtl83xx_flow *flow)
 	flow->rule.bypass_ibc_sc = true;
 }
 
+static int rtldsa_validate_flow_actions(struct flow_rule *rule)
+{
+	const struct flow_action_entry *act;
+	bool drop = false, fwd = false, vlan = false;
+	int i, count = 0;
+
+	flow_action_for_each(i, act, &rule->action) {
+		count++;
+		switch (act->id) {
+		case FLOW_ACTION_DROP:
+			drop = true;
+			break;
+		case FLOW_ACTION_TRAP:
+		case FLOW_ACTION_REDIRECT:
+		case FLOW_ACTION_MIRRED:
+			if (fwd)
+				return -EOPNOTSUPP;
+			fwd = true;
+			break;
+		case FLOW_ACTION_VLAN_PUSH:
+		case FLOW_ACTION_VLAN_POP:
+			if (vlan)
+				return -EOPNOTSUPP;
+			vlan = true;
+			break;
+		default:
+			return -EOPNOTSUPP;
+		}
+	}
+
+	if (!count || (drop && count != 1))
+		return -EOPNOTSUPP;
+
+	return 0;
+}
+
 static int rtl83xx_parse_fwd(struct rtl838x_switch_priv *priv,
 			     const struct flow_action_entry *act, struct rtl83xx_flow *flow)
 {
@@ -146,7 +220,20 @@ static int rtl83xx_add_flow(struct rtl838x_switch_priv *priv, struct flow_cls_of
 
 	pr_debug("%s\n", __func__);
 
-	rtl83xx_parse_flow_rule(priv, rule, flow);
+	if (flow_rule_match_has_control_flags(rule, f->common.extack))
+		return -EOPNOTSUPP;
+
+	if (!flow_action_hw_stats_check(&rule->action, f->common.extack,
+				       FLOW_ACTION_HW_STATS_IMMEDIATE_BIT))
+		return -EOPNOTSUPP;
+
+	err = rtldsa_validate_flow_actions(rule);
+	if (err)
+		return err;
+
+	err = rtl83xx_parse_flow_rule(priv, rule, flow);
+	if (err)
+		return err;
 
 	flow_action_for_each(i, act, &rule->action) {
 		switch (act->id) {
