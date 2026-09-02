@@ -1417,7 +1417,7 @@ static int rtl839x_pie_rule_add(struct rtl838x_switch_priv *priv, struct pie_rul
 			break;
 	}
 
-	if (block >= priv->r->n_pie_blocks) {
+	if (block >= max_block) {
 		mutex_unlock(&priv->pie_mutex);
 		return -EOPNOTSUPP;
 	}
