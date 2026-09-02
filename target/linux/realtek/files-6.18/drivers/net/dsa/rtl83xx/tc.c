@@ -422,22 +422,24 @@ static int rtl83xx_delete_flower(struct rtl838x_switch_priv *priv,
 				 struct flow_cls_offload *cls_flower)
 {
 	struct rtl83xx_flow *flow;
+	int err;
 
 	pr_debug("In %s\n", __func__);
 	rcu_read_lock();
 	flow = rhashtable_lookup_fast(&priv->tc_ht, &cls_flower->cookie, tc_ht_params);
 	if (!flow) {
 		rcu_read_unlock();
-		return -EINVAL;
+		return -ENOENT;
 	}
+
+	err = rhashtable_remove_fast(&priv->tc_ht, &flow->node, tc_ht_params);
+	rcu_read_unlock();
+	if (err)
+		return err;
 
 	priv->r->pie_rule_rm(priv, &flow->rule);
 
-	rhashtable_remove_fast(&priv->tc_ht, &flow->node, tc_ht_params);
-
 	kfree_rcu(flow, rcu_head);
-
-	rcu_read_unlock();
 
 	return 0;
 }
