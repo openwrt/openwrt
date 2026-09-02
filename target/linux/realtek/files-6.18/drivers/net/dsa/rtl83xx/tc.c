@@ -323,6 +323,44 @@ static const struct rhashtable_params tc_ht_params = {
 	.automatic_shrinking = true,
 };
 
+int rtldsa_tc_init(struct rtl838x_switch_priv *priv)
+{
+	int err;
+
+	if (priv->tc_initialized)
+		return 0;
+
+	err = rhashtable_init(&priv->tc_ht, &tc_ht_params);
+	if (!err)
+		priv->tc_initialized = true;
+
+	return err;
+}
+
+static void rtldsa_tc_flow_free(void *ptr, void *arg)
+{
+	struct rtl83xx_flow *flow = ptr;
+	struct rtl838x_switch_priv *priv = arg;
+
+	priv->r->pie_rule_rm(priv, &flow->rule);
+
+	/* Readers may still hold an RCU-protected reference after the
+	 * object has been removed from the hash table.
+	 */
+	kfree_rcu(flow, rcu_head);
+}
+
+void rtldsa_tc_cleanup(struct rtl838x_switch_priv *priv)
+{
+	if (!priv->tc_initialized)
+		return;
+
+	rhashtable_free_and_destroy(&priv->tc_ht, rtldsa_tc_flow_free, priv);
+	rcu_barrier();
+
+	priv->tc_initialized = false;
+}
+
 static int rtl83xx_configure_flower(struct rtl838x_switch_priv *priv,
 				    struct flow_cls_offload *f)
 {
@@ -476,8 +514,6 @@ int rtl83xx_setup_tc(struct net_device *dev, enum tc_setup_type type, void *type
 {
 	struct rtl838x_switch_priv *priv;
 	struct flow_block_offload *f = type_data;
-	static bool first_time = true;
-	int err;
 
 	pr_debug("%s: %d\n", __func__, type);
 
@@ -489,13 +525,9 @@ int rtl83xx_setup_tc(struct net_device *dev, enum tc_setup_type type, void *type
 
 	switch (type) {
 	case TC_SETUP_BLOCK:
-		if (first_time) {
-			first_time = false;
-			err = rhashtable_init(&priv->tc_ht, &tc_ht_params);
-			if (err)
-				pr_err("%s: Could not initialize hash table\n", __func__);
-		}
-
+		/* tc_ht is set up for the switch's lifetime in
+		 * rtldsa_93xx_setup(); nothing to do here.
+		 */
 		f->unlocked_driver_cb = true;
 		return flow_block_cb_setup_simple(type_data,
 						  &rtl83xx_block_cb_list,
