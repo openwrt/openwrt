@@ -367,34 +367,29 @@ static int rtl83xx_configure_flower(struct rtl838x_switch_priv *priv,
 	rcu_read_lock();
 	pr_debug("Cookie %08lx\n", f->cookie);
 	flow = rhashtable_lookup(&priv->tc_ht, &f->cookie, tc_ht_params);
+	rcu_read_unlock();
 	if (flow) {
 		pr_info("%s: Got flow\n", __func__);
-		err = -EEXIST;
-		goto rcu_unlock;
+		return -EEXIST;
 	}
-
-rcu_unlock:
-	rcu_read_unlock();
-	if (flow)
-		goto out;
 	pr_debug("%s: New flow\n", __func__);
 
 	flow = kzalloc(sizeof(*flow), GFP_KERNEL);
-	if (!flow) {
-		err = -ENOMEM;
-		goto out;
-	}
+	if (!flow)
+		return -ENOMEM;
 
 	flow->cookie = f->cookie;
 	flow->priv = priv;
 
 	err = rhashtable_insert_fast(&priv->tc_ht, &flow->node, tc_ht_params);
 	if (err) {
-		pr_err("Could not insert add new rule\n");
+		dev_err(priv->dev, "could not insert new rule\n");
 		goto out_free;
 	}
 
-	rtl83xx_add_flow(priv, f, flow); /* TODO: check error */
+	err = rtl83xx_add_flow(priv, f, flow);
+	if (err)
+		goto out_remove;
 
 	/* Add log action to flow */
 	flow->rule.packet_cntr = rtl83xx_packet_cntr_alloc(priv);
@@ -405,11 +400,19 @@ rcu_unlock:
 	}
 
 	err = priv->r->pie_rule_add(priv, &flow->rule);
-	return err;
+	if (err)
+		goto out_remove;
 
+	return 0;
+
+out_remove:
+	rhashtable_remove_fast(&priv->tc_ht, &flow->node, tc_ht_params);
+	/* published in tc_ht above; a concurrent reader may still hold a ref */
+	kfree_rcu(flow, rcu_head);
+	goto out_err;
 out_free:
 	kfree(flow);
-out:
+out_err:
 	pr_err("%s: error %d\n", __func__, err);
 
 	return err;
