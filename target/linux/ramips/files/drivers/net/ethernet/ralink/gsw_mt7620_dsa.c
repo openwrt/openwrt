@@ -19,7 +19,8 @@
 
 #define MT7620_DSA_NUM_PORTS		7
 #define MT7620_DSA_CPU_PORT		6
-#define MT7620_DSA_USER_PORTS		GENMASK(4, 0)
+#define MT7620_DSA_EXTERNAL_PORT		MT7620_GSW_EXTERNAL_PORT
+#define MT7620_DSA_INTERNAL_PORTS	GENMASK(4, 0)
 #define MT7620_DSA_ALL_PORTS		GENMASK(6, 0)
 
 #define MT7620_GSW_SSC(p)		(0x2000 + ((p) * 0x100))
@@ -132,9 +133,10 @@
 
 /*
  * At minimum-sized line-rate traffic, the 16-bit packet counters wrap in
- * about 440 ms on the 100BASE-T user ports and 44 ms on the 1000BASE-T CPU
- * port. Sample the CPU port every 20 ms and the full port set every tenth
- * tick (200 ms), keeping both well inside their wrap intervals.
+ * about 440 ms on the 100BASE-T user ports and 44 ms on 1000BASE-T ports.
+ * Sample the CPU port and any active external 1000BASE-T port every 20 ms,
+ * and the full port set every tenth tick (200 ms), keeping all counters well
+ * inside their wrap intervals.
  */
 #define MT7620_MIB_CPU_INTERVAL		msecs_to_jiffies(20)
 #define MT7620_MIB_PORT_INTERVALS	10
@@ -248,10 +250,12 @@ static void mt7620_gsw_mib_work(struct work_struct *work)
 {
 	struct mt7620_gsw *gsw =
 		container_of(to_delayed_work(work), struct mt7620_gsw, mib_work);
-	unsigned long ports = BIT(MT7620_DSA_CPU_PORT);
+	unsigned long ports = BIT(MT7620_DSA_CPU_PORT) |
+			      (READ_ONCE(gsw->mib_gige_ports) &
+			       BIT(MT7620_DSA_EXTERNAL_PORT));
 
 	if (++gsw->mib_port_intervals == MT7620_MIB_PORT_INTERVALS) {
-		ports = MT7620_DSA_ALL_PORTS;
+		ports |= MT7620_DSA_ALL_PORTS;
 		gsw->mib_port_intervals = 0;
 	}
 
@@ -521,7 +525,7 @@ static int mt7620_gsw_setup(struct dsa_switch *ds)
 	}
 
 	mt7620_gsw_set_port_matrix(gsw, MT7620_DSA_CPU_PORT,
-				   MT7620_DSA_USER_PORTS);
+				   dsa_user_ports(ds));
 	mt7620_gsw_rmw(gsw, MT7620_GSW_PSC(MT7620_DSA_CPU_PORT),
 		       MT7620_PSC_SA_DIS, 0);
 	mt7620_gsw_rmw(gsw, MT7620_GSW_MFC,
@@ -554,6 +558,7 @@ static int mt7620_gsw_setup(struct dsa_switch *ds)
 	memset(gsw->mib_stats, 0, sizeof(gsw->mib_stats));
 	gsw->mib_initialized = false;
 	gsw->mib_active_ports = 0;
+	gsw->mib_gige_ports = 0;
 	gsw->mib_port_intervals = 0;
 	mt7620_gsw_mib_update(gsw, MT7620_DSA_ALL_PORTS);
 
@@ -585,9 +590,11 @@ static int mt7620_gsw_port_enable(struct dsa_switch *ds, int port,
 					   BIT(MT7620_DSA_CPU_PORT));
 		start_mib = !READ_ONCE(gsw->mib_active_ports);
 		set_bit(port, &gsw->mib_active_ports);
-		if (start_mib)
+		if (start_mib) {
+			gsw->mib_port_intervals = 0;
 			schedule_delayed_work(&gsw->mib_work,
 					      MT7620_MIB_CPU_INTERVAL);
+		}
 	}
 
 	return 0;
@@ -600,9 +607,11 @@ static void mt7620_gsw_port_disable(struct dsa_switch *ds, int port)
 	if (dsa_is_user_port(ds, port)) {
 		mt7620_gsw_set_port_matrix(gsw, port, 0);
 		clear_bit(port, &gsw->mib_active_ports);
+		clear_bit(port, &gsw->mib_gige_ports);
 		if (!READ_ONCE(gsw->mib_active_ports)) {
 			cancel_delayed_work_sync(&gsw->mib_work);
 			mt7620_gsw_mib_update(gsw, MT7620_DSA_ALL_PORTS);
+			gsw->mib_port_intervals = 0;
 		}
 	}
 }
@@ -1203,6 +1212,17 @@ static void mt7620_gsw_mac_config(struct phylink_config *config,
 				  unsigned int mode,
 				  const struct phylink_link_state *state)
 {
+	struct dsa_port *dp = dsa_phylink_to_port(config);
+	struct mt7620_gsw *gsw = dp->ds->priv;
+	int ret;
+
+	if (dp->index != MT7620_DSA_EXTERNAL_PORT)
+		return;
+
+	ret = mt7620_gsw_config_rgmii1(gsw, state->interface);
+	if (ret)
+		dev_err(gsw->dev, "port %d: unsupported PHY interface %d\n",
+			dp->index, state->interface);
 }
 
 static void mt7620_gsw_mac_link_down(struct phylink_config *config,
@@ -1214,6 +1234,8 @@ static void mt7620_gsw_mac_link_down(struct phylink_config *config,
 
 	if (dsa_is_cpu_port(dp->ds, dp->index))
 		return;
+
+	clear_bit(dp->index, &gsw->mib_gige_ports);
 
 	mt7620_gsw_rmw(gsw, GSW_REG_PORT_PMCR(dp->index),
 		       PMCR_FORCE | PMCR_LINK, PMCR_FORCE);
@@ -1237,6 +1259,11 @@ static void mt7620_gsw_mac_link_up(struct phylink_config *config,
 	hw_speed = mt7620_gsw_pmcr_speed(speed);
 	if (hw_speed < 0)
 		return;
+
+	if (speed == SPEED_1000)
+		set_bit(dp->index, &gsw->mib_gige_ports);
+	else
+		clear_bit(dp->index, &gsw->mib_gige_ports);
 
 	val = PMCR_IPG | PMCR_MAC_MODE | PMCR_FORCE | PMCR_TX_EN |
 	      PMCR_RX_EN | PMCR_BACKOFF | PMCR_BACKPRES | PMCR_LINK |
@@ -1264,17 +1291,20 @@ static void mt7620_gsw_phylink_get_caps(struct dsa_switch *ds, int port,
 	bitmap_zero(config->supported_interfaces, PHY_INTERFACE_MODE_MAX);
 	config->mac_capabilities = MAC_SYM_PAUSE | MAC_ASYM_PAUSE;
 
-	/*
-	 * Port 5 is an external MAC whose pinmux and PHY mode are
-	 * board-specific. It matches neither case below and is therefore
-	 * left without a supported interface until a DSA device tree
-	 * describes it.
-	 */
-	if (port >= 0 && BIT(port) & MT7620_DSA_USER_PORTS) {
+	if (port >= 0 && BIT(port) & MT7620_DSA_INTERNAL_PORTS) {
 		__set_bit(PHY_INTERFACE_MODE_MII,
 			  config->supported_interfaces);
 		config->mac_capabilities |= MAC_10HD | MAC_10FD |
 					    MAC_100HD | MAC_100FD;
+	} else if (port == MT7620_DSA_EXTERNAL_PORT) {
+		phy_interface_set_rgmii(config->supported_interfaces);
+		__set_bit(PHY_INTERFACE_MODE_MII,
+			  config->supported_interfaces);
+		__set_bit(PHY_INTERFACE_MODE_RMII,
+			  config->supported_interfaces);
+		config->mac_capabilities |= MAC_10HD | MAC_10FD |
+					    MAC_100HD | MAC_100FD |
+					    MAC_1000FD;
 	} else if (port == MT7620_DSA_CPU_PORT) {
 		phy_interface_set_rgmii(config->supported_interfaces);
 		config->mac_capabilities |= MAC_10HD | MAC_10FD |
