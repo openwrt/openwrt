@@ -293,7 +293,7 @@ apply() {
 
 	config_load ppe-qos
 	config_get_bool ENABLED global enabled 1
-	config_get len global small_pkt_len 256
+	config_get len global small_pkt_len 1000
 	config_get prio global small_pkt_prio 5
 
 	# Everything below arms a classifier, so an off config takes the same
@@ -406,7 +406,7 @@ wifi_dev() {
 	[ -n "$dev" ] || return 1
 	config_load ppe-qos
 	config_get_bool ENABLED global enabled 1
-	config_get len global small_pkt_len 256
+	config_get len global small_pkt_len 1000
 	config_get prio global small_pkt_prio 5
 	[ "$ENABLED" = 1 ] && [ "$len" -gt 0 ] || return 0
 	wifi_small_pkt "$dev" "$prio"
