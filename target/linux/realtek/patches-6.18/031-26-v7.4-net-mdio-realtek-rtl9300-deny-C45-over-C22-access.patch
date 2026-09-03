@@ -1,0 +1,62 @@
+From 3383b50c1695f7a7f0895b235706a3f2acf4ab11 Mon Sep 17 00:00:00 2001
+From: Markus Stockhausen <markus.stockhausen@gmx.de>
+Date: Mon, 31 Aug 2026 16:34:29 +0200
+Subject: net: mdio: realtek-rtl9300: deny C45 over C22 access
+
+Hardware polling breaks C45 over C22 PHY access. Currently this
+is accepted by the driver but it silently fails with undefined
+results. Make the situation clear to the caller by adding checks,
+returning an error and giving a one-time warning message.
+
+Suggested-by: Andrew Lunn <andrew@lunn.ch>
+Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Link: https://patch.msgid.link/20260831143439.2404484-4-markus.stockhausen@gmx.de
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/mdio/mdio-realtek-rtl9300.c | 16 +++++++++++++++-
+ 1 file changed, 15 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/mdio/mdio-realtek-rtl9300.c
++++ b/drivers/net/mdio/mdio-realtek-rtl9300.c
+@@ -115,6 +115,7 @@
+ #include <linux/bitfield.h>
+ #include <linux/bitmap.h>
+ #include <linux/bits.h>
++#include <linux/device.h>
+ #include <linux/find.h>
+ #include <linux/mdio.h>
+ #include <linux/mfd/syscon.h>
+@@ -454,6 +455,12 @@ static int otto_emdio_read_c22(struct mi
+ 	int ret, port;
+ 	u32 value;
+ 
++	if (regnum == MII_MMD_CTRL || regnum == MII_MMD_DATA) {
++		dev_warn_once(&bus->dev,
++			      "C45 over C22 read access broken due to polling\n");
++		return -EOPNOTSUPP;
++	}
++
+ 	port = otto_emdio_phy_to_port(bus, phy_id);
+ 	if (port < 0)
+ 		return port;
+@@ -464,11 +471,18 @@ static int otto_emdio_read_c22(struct mi
+ 	return ret ? ret : value;
+ }
+ 
+-static int otto_emdio_write_c22(struct mii_bus *bus, int phy_id, int regnum, u16 value)
++static int otto_emdio_write_c22(struct mii_bus *bus, int phy_id, int regnum,
++				u16 value)
+ {
+ 	struct otto_emdio_priv *priv = otto_emdio_bus_to_priv(bus);
+ 	int ret, port;
+ 
++	if (regnum == MII_MMD_CTRL || regnum == MII_MMD_DATA) {
++		dev_warn_once(&bus->dev,
++			      "C45 over C22 write access broken due to polling\n");
++		return -EOPNOTSUPP;
++	}
++
+ 	port = otto_emdio_phy_to_port(bus, phy_id);
+ 	if (port < 0)
+ 		return port;

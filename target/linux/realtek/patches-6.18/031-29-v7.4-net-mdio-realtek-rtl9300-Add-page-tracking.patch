@@ -1,0 +1,183 @@
+From cc3cb8db1eef9fbe6f2c520312cf6384cf2c2ce7 Mon Sep 17 00:00:00 2001
+From: Markus Stockhausen <markus.stockhausen@gmx.de>
+Date: Mon, 31 Aug 2026 16:34:34 +0200
+Subject: net: mdio: realtek-rtl9300: Add page tracking
+
+The hardware polling unit of the Realtek switches has a very special
+handling for c22 PHY register 31 (aka Realtek page register) in place.
+
+- On the RTL838x it is permanently reset to zero.
+- On other devices there is some magic saving/restoring (aka parking)
+  in the background in place.
+
+This makes access to PHYs a gamble.
+
+It is vital to keep the polling alive so the MAC layer can rely on
+consistent data. Intercept access to c22 register 31 and handle it
+internally. Store the desired value for each port in the driver. When
+issuing hardware access to other registers add the page to the command
+towards the controller. Given this, the hardware will run two c22
+commands that are not interrupted by polling.
+
+  ... hardware poll ...
+  phy_write(phy, 31, page)
+  phy_write(phy, reg, value)
+  ... hardware poll ...
+
+Looking at this implementation one might argue that disabling/enabling
+polling might be a cleaner solution. But one must remember that
+
+- This driver differentiates clearly between C22 and C45 buses. During
+  probing it enables only one of the protocols for a bus.
+- All known devices run RTL8218 (B/D/E) or RTL8214FC on 1G
+- RTL839x gives link flapping when deactivating polling for a port
+
+So a solution for a Realtek-only ecosystem is required. This commit
+copies the downstream-proven driver-only page handling patch without
+any new MDIO callbacks and is the lowest common denominator. If a
+non-Realtek PHY is identified on a c22 bus the attachment aborts. It
+should be noted that bus scan runs with the page handling already in
+place before the check in notify_phy_attach(). This is accepted for
+now.
+
+Remark: To keep this simple, writes to register 31 are only accepted
+if they are lower than the device specific raw page - 0..4094/8190.
+Otherwise -EINVAL is returned. Under the above assumption (Only 1G
+Realtek PHYs on a c22 bus) this is no limitation.
+
+Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Link: https://patch.msgid.link/20260831143439.2404484-9-markus.stockhausen@gmx.de
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/mdio/mdio-realtek-rtl9300.c | 46 ++++++++++++++++++++++++++++-----
+ 1 file changed, 39 insertions(+), 7 deletions(-)
+
+--- a/drivers/net/mdio/mdio-realtek-rtl9300.c
++++ b/drivers/net/mdio/mdio-realtek-rtl9300.c
+@@ -180,6 +180,9 @@
+ #define PHY_CTRL_MMD_DEVAD			GENMASK(20, 16)
+ #define PHY_CTRL_MMD_REG			GENMASK(15, 0)
+ 
++#define RTL_VENDOR_ID				0x001cc800
++#define RTL_PAGE_SELECT				31
++
+ #define MAP_ADDRS_PER_REG			6
+ #define MAP_BITS_PER_ADDR			5
+ #define MAP_BITS_PER_BUS			2
+@@ -205,6 +208,7 @@ struct otto_emdio_priv {
+ 	struct regmap *regmap;
+ 	struct mutex lock; /* protect HW access */
+ 	DECLARE_BITMAP(valid_ports, MAX_PORTS);
++	u16 page[MAX_PORTS];
+ 	u8 smi_bus[MAX_PORTS];
+ 	u8 smi_addr[MAX_PORTS];
+ 	bool smi_bus_is_c45[MAX_SMI_BUSSES];
+@@ -356,7 +360,7 @@ static int otto_emdio_9300_read_c22(stru
+ 	struct otto_emdio_cmd_regs cmd_data = {
+ 		.c22_data	= FIELD_PREP(RTL9300_PHY_CTRL_REG_ADDR, regnum) |
+ 				  FIELD_PREP(RTL9300_PHY_CTRL_PARK_PAGE, 0x1f) |
+-				  FIELD_PREP(RTL9300_PHY_CTRL_MAIN_PAGE, RAW_PAGE(priv)),
++				  FIELD_PREP(RTL9300_PHY_CTRL_MAIN_PAGE, priv->page[port]),
+ 		.io_data	= FIELD_PREP(RTL9300_PHY_CTRL_INDATA, port),
+ 	};
+ 
+@@ -370,7 +374,7 @@ static int otto_emdio_9300_write_c22(str
+ 	struct otto_emdio_cmd_regs cmd_data = {
+ 		.c22_data	= FIELD_PREP(RTL9300_PHY_CTRL_REG_ADDR, regnum) |
+ 				  FIELD_PREP(RTL9300_PHY_CTRL_PARK_PAGE, 0x1f) |
+-				  FIELD_PREP(RTL9300_PHY_CTRL_MAIN_PAGE, RAW_PAGE(priv)),
++				  FIELD_PREP(RTL9300_PHY_CTRL_MAIN_PAGE, priv->page[port]),
+ 		.io_data	= FIELD_PREP(RTL9300_PHY_CTRL_INDATA, value),
+ 		.port_mask_low	= BIT(port),
+ 	};
+@@ -410,7 +414,7 @@ static int otto_emdio_9310_read_c22(stru
+ 	struct otto_emdio_cmd_regs cmd_data = {
+ 		.broadcast	= FIELD_PREP(RTL9310_BC_PORT_ID, port),
+ 		.c22_data	= FIELD_PREP(RTL9310_PHY_CTRL_REG_ADDR, regnum) |
+-				  FIELD_PREP(RTL9310_PHY_CTRL_MAIN_PAGE, RAW_PAGE(priv)),
++				  FIELD_PREP(RTL9310_PHY_CTRL_MAIN_PAGE, priv->page[port]),
+ 	};
+ 
+ 	return otto_emdio_read_cmd(bus, RTL9310_PHY_CTRL_TYPE_C22, &cmd_data,
+@@ -422,7 +426,7 @@ static int otto_emdio_9310_write_c22(str
+ 	struct otto_emdio_priv *priv = otto_emdio_bus_to_priv(bus);
+ 	struct otto_emdio_cmd_regs cmd_data = {
+ 		.c22_data	= FIELD_PREP(RTL9310_PHY_CTRL_REG_ADDR, regnum) |
+-				  FIELD_PREP(RTL9310_PHY_CTRL_MAIN_PAGE, RAW_PAGE(priv)),
++				  FIELD_PREP(RTL9310_PHY_CTRL_MAIN_PAGE, priv->page[port]),
+ 		.io_data	= FIELD_PREP(RTL9310_PHY_CTRL_INDATA, value),
+ 		.port_mask_high	= (u32)(BIT_ULL(port) >> 32),
+ 		.port_mask_low	= (u32)(BIT_ULL(port)),
+@@ -474,8 +478,12 @@ static int otto_emdio_read_c22(struct mi
+ 	if (port < 0)
+ 		return port;
+ 
+-	scoped_guard(mutex, &priv->lock)
++	scoped_guard(mutex, &priv->lock) {
++		if (regnum == RTL_PAGE_SELECT)
++			return priv->page[port];
++
+ 		ret = priv->info->read_c22(bus, port, regnum, &value);
++	}
+ 
+ 	return ret ? ret : value;
+ }
+@@ -496,8 +504,17 @@ static int otto_emdio_write_c22(struct m
+ 	if (port < 0)
+ 		return port;
+ 
+-	scoped_guard(mutex, &priv->lock)
++	scoped_guard(mutex, &priv->lock) {
++		if (regnum == RTL_PAGE_SELECT) {
++			if (value >= RAW_PAGE(priv))
++				return -EINVAL;
++
++			priv->page[port] = value;
++			return 0;
++		}
++
+ 		ret = priv->info->write_c22(bus, port, regnum, value);
++	}
+ 
+ 	return ret;
+ }
+@@ -608,8 +625,9 @@ static int otto_emdio_9310_setup_control
+ 
+ static int otto_emdio_notify_phy_attach(struct phy_device *phydev)
+ {
+-	struct otto_emdio_priv *priv = otto_emdio_bus_to_priv(phydev->mdio.bus);
+ 	int port = otto_emdio_phy_to_port(phydev->mdio.bus, phydev->mdio.addr);
++	struct otto_emdio_chan *chan = phydev->mdio.bus->priv;
++	struct otto_emdio_priv *priv = chan->priv;
+ 
+ 	if (port < 0) {
+ 		/* All subsequent bus operations will fail */
+@@ -617,6 +635,16 @@ static int otto_emdio_notify_phy_attach(
+ 		return port;
+ 	}
+ 
++	/* "sync" page in case of previously failed attachment */
++	scoped_guard(mutex, &priv->lock)
++		priv->page[port] = 0;
++
++	if (!priv->smi_bus_is_c45[chan->mdio_bus] &&
++	    !phy_id_compare_vendor(phydev->phy_id, RTL_VENDOR_ID)) {
++		phydev_err(phydev, "Only Realtek PHYs allowed on C22 bus\n");
++		return -EOPNOTSUPP;
++	}
++
+ 	return otto_emdio_set_port_polling(priv, port, true);
+ }
+ 
+@@ -632,6 +660,10 @@ static void otto_emdio_notify_phy_detach
+ 	if (port < 0)
+ 		return;
+ 
++	/* "sync" page for next attachment */
++	scoped_guard(mutex, &priv->lock)
++		priv->page[port] = 0;
++
+ 	if (otto_emdio_set_port_polling(priv, port, false))
+ 		dev_err(bus->parent, "failed to disable polling for port %d\n", port);
+ }

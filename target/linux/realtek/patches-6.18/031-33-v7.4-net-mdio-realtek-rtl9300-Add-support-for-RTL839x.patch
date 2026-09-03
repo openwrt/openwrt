@@ -1,0 +1,169 @@
+From 11b8be84ccafc946c5b3124ad41988e9243309a0 Mon Sep 17 00:00:00 2001
+From: Markus Stockhausen <markus.stockhausen@gmx.de>
+Date: Mon, 31 Aug 2026 16:34:38 +0200
+Subject: net: mdio: realtek-rtl9300: Add support for RTL839x
+
+The MDIO driver has been prepared for multiple device support. Add all
+required bits for the RTL839x (aka cypress) series. This is straightforward
+but some things are worth mentioning.
+
+- The device has a lot in common with the RTL931x series. It has 8192
+  (Realtek) pages and 7 MMIO registers.
+- There are two SMI buses for 1G PHYs. Neither the bus nor address map
+  registers exist.
+- The hardware has not much to configure. So the setup_controller()
+  function is not needed.
+- The bit specific registers (polling & port_mask) are 2x32 bit wide. The
+  ports 0..31 got to <reg> and the ports 32..51 go to <reg+4>.
+- C22 read/write functions must be called with PARK_PAGE = 0. Keep code
+  clean and avoid setting it to zero, matching the behavior of the RTL9310
+  logic.
+- As per SDK the broadcast register allows to write to multiple ports
+  at the same time. Unlike RTL9310 where this is filled with a bit mask
+  for the current port RTL8390 does not use it for normal reads/writes.
+  It is simply set to 0 like the SDK does.
+- The SDK fills the EXT_PAGE register with 0x1ff for C22 access and with
+  0x0 for C45 access. The reason for this is currently unknown and a
+  meaningful name can not be given. Align the driver coding with the
+  RTL9300_PHY_CTRL_PARK_PAGE settings and simply fill the hardcoded value.
+
+Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Link: https://patch.msgid.link/20260831143439.2404484-13-markus.stockhausen@gmx.de
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/mdio/mdio-realtek-rtl9300.c | 102 ++++++++++++++++++++++++++++++++
+ 1 file changed, 102 insertions(+)
+
+--- a/drivers/net/mdio/mdio-realtek-rtl9300.c
++++ b/drivers/net/mdio/mdio-realtek-rtl9300.c
+@@ -149,6 +149,28 @@
+ #define RTL8380_SMI_POLL_CTRL			0xa17c
+ #define RTL8380_SMI_PORT0_5_ADDR_CTRL		0xa1c8
+ 
++#define RTL8390_NUM_BUSES			2
++#define RTL8390_NUM_PAGES			8192
++#define RTL8390_NUM_PORTS			52
++#define RTL8390_BCAST_PHYID_CTRL		0x03ec
++#define RTL8390_PHYREG_ACCESS_CTRL		0x03dc
++#define   RTL8390_PHY_CTRL_REG_ADDR		GENMASK(9, 5)
++#define   RTL8390_PHY_CTRL_MAIN_PAGE		GENMASK(22, 10)
++#define   RTL8390_PHY_CTRL_FAIL			BIT(1)
++#define   RTL8390_PHY_CTRL_WRITE		BIT(3)
++#define   RTL8390_PHY_CTRL_READ			0
++#define   RTL8390_PHY_CTRL_TYPE_C45		BIT(2)
++#define   RTL8390_PHY_CTRL_TYPE_C22		0
++#define RTL8390_PHYREG_CTRL			0x03e0
++#define   RTL8390_PHY_CTRL_EXT_PAGE		GENMASK(8, 0)
++#define RTL8390_PHYREG_DATA_CTRL		0x03f0
++#define   RTL8390_PHY_CTRL_INDATA		GENMASK(31, 16)
++#define   RTL8390_PHY_CTRL_DATA			GENMASK(15, 0)
++#define RTL8390_PHYREG_MMD_CTRL			0x03f4
++#define RTL8390_PHYREG_PORT_CTRL_LOW		0x03e4
++#define RTL8390_PHYREG_PORT_CTRL_HIGH		0x03e8
++#define RTL8390_SMI_PORT_POLLING_CTRL		0x03fc
++
+ #define RTL9300_NUM_BUSES			4
+ #define RTL9300_NUM_PAGES			4096
+ #define RTL9300_NUM_PORTS			28
+@@ -430,6 +452,62 @@ static int otto_emdio_8380_write_c45(str
+ 	return otto_emdio_write_cmd(bus, RTL8380_PHY_CTRL_TYPE_C45, &cmd_data);
+ }
+ 
++static int otto_emdio_8390_read_c22(struct mii_bus *bus, int port, int regnum, u32 *value)
++{
++	struct otto_emdio_priv *priv = otto_emdio_bus_to_priv(bus);
++	struct otto_emdio_cmd_regs cmd_data = {
++		.c22_data	= FIELD_PREP(RTL8390_PHY_CTRL_REG_ADDR, regnum) |
++				  FIELD_PREP(RTL8390_PHY_CTRL_MAIN_PAGE, priv->page[port]),
++		.ext_page	= FIELD_PREP(RTL8390_PHY_CTRL_EXT_PAGE, 0x1ff),
++		.io_data	= FIELD_PREP(RTL8390_PHY_CTRL_INDATA, port),
++	};
++
++	return otto_emdio_read_cmd(bus, RTL8390_PHY_CTRL_TYPE_C22, &cmd_data,
++				   RTL8390_PHY_CTRL_DATA, value);
++}
++
++static int otto_emdio_8390_write_c22(struct mii_bus *bus, int port, int regnum, u16 value)
++{
++	struct otto_emdio_priv *priv = otto_emdio_bus_to_priv(bus);
++	struct otto_emdio_cmd_regs cmd_data = {
++		.c22_data	= FIELD_PREP(RTL8390_PHY_CTRL_REG_ADDR, regnum) |
++				  FIELD_PREP(RTL8390_PHY_CTRL_MAIN_PAGE, priv->page[port]),
++		.ext_page	= FIELD_PREP(RTL8390_PHY_CTRL_EXT_PAGE, 0x1ff),
++		.io_data	= FIELD_PREP(RTL8390_PHY_CTRL_INDATA, value),
++		.port_mask_high	= (u32)(BIT_ULL(port) >> 32),
++		.port_mask_low	= (u32)(BIT_ULL(port)),
++	};
++
++	return otto_emdio_write_cmd(bus, RTL8390_PHY_CTRL_TYPE_C22, &cmd_data);
++}
++
++static int otto_emdio_8390_read_c45(struct mii_bus *bus, int port,
++				    int dev_addr, int regnum, u32 *value)
++{
++	struct otto_emdio_cmd_regs cmd_data = {
++		.c45_data	= FIELD_PREP(PHY_CTRL_MMD_DEVAD, dev_addr) |
++				  FIELD_PREP(PHY_CTRL_MMD_REG, regnum),
++		.io_data	= FIELD_PREP(RTL8390_PHY_CTRL_INDATA, port),
++	};
++
++	return otto_emdio_read_cmd(bus, RTL8390_PHY_CTRL_TYPE_C45, &cmd_data,
++				   RTL8390_PHY_CTRL_DATA, value);
++}
++
++static int otto_emdio_8390_write_c45(struct mii_bus *bus, int port,
++				     int dev_addr, int regnum, u16 value)
++{
++	struct otto_emdio_cmd_regs cmd_data = {
++		.c45_data	= FIELD_PREP(PHY_CTRL_MMD_DEVAD, dev_addr) |
++				  FIELD_PREP(PHY_CTRL_MMD_REG, regnum),
++		.io_data	= FIELD_PREP(RTL8390_PHY_CTRL_INDATA, value),
++		.port_mask_high	= (u32)(BIT_ULL(port) >> 32),
++		.port_mask_low	= (u32)(BIT_ULL(port)),
++	};
++
++	return otto_emdio_write_cmd(bus, RTL8390_PHY_CTRL_TYPE_C45, &cmd_data);
++}
++
+ static int otto_emdio_9300_read_c22(struct mii_bus *bus, int port, int regnum, u32 *value)
+ {
+ 	struct otto_emdio_priv *priv = otto_emdio_bus_to_priv(bus);
+@@ -981,6 +1059,29 @@ static const struct otto_emdio_info otto
+ 	.write_c45 = otto_emdio_8380_write_c45,
+ };
+ 
++static const struct otto_emdio_info otto_emdio_8390_info = {
++	.cmd_fail = RTL8390_PHY_CTRL_FAIL,
++	.cmd_read = RTL8390_PHY_CTRL_READ,
++	.cmd_write = RTL8390_PHY_CTRL_WRITE,
++	.cmd_regs = {
++		.broadcast = RTL8390_BCAST_PHYID_CTRL,
++		.c22_data = RTL8390_PHYREG_ACCESS_CTRL,
++		.c45_data = RTL8390_PHYREG_MMD_CTRL,
++		.ext_page = RTL8390_PHYREG_CTRL,
++		.io_data = RTL8390_PHYREG_DATA_CTRL,
++		.port_mask_low = RTL8390_PHYREG_PORT_CTRL_LOW,
++		.port_mask_high = RTL8390_PHYREG_PORT_CTRL_HIGH,
++	},
++	.num_buses = RTL8390_NUM_BUSES,
++	.num_pages = RTL8390_NUM_PAGES,
++	.num_ports = RTL8390_NUM_PORTS,
++	.poll_ctrl = RTL8390_SMI_PORT_POLLING_CTRL,
++	.read_c22 = otto_emdio_8390_read_c22,
++	.read_c45 = otto_emdio_8390_read_c45,
++	.write_c22 = otto_emdio_8390_write_c22,
++	.write_c45 = otto_emdio_8390_write_c45,
++};
++
+ static const struct otto_emdio_info otto_emdio_9300_info = {
+ 	.addr_map_base = RTL9300_SMI_PORT0_5_ADDR_CTRL,
+ 	.bus_map_base = RTL9300_SMI_PORT0_15_POLLING_SEL,
+@@ -1032,6 +1133,7 @@ static const struct otto_emdio_info otto
+ 
+ static const struct of_device_id otto_emdio_ids[] = {
+ 	{ .compatible = "realtek,rtl8380-mdio", .data = &otto_emdio_8380_info },
++	{ .compatible = "realtek,rtl8391-mdio", .data = &otto_emdio_8390_info },
+ 	{ .compatible = "realtek,rtl9301-mdio", .data = &otto_emdio_9300_info },
+ 	{ .compatible = "realtek,rtl9311-mdio", .data = &otto_emdio_9310_info },
+ 	{}

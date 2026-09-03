@@ -1,0 +1,47 @@
+From cc7a5bfaea142ebaa84bbcd8ddd14a3b21cc5bd5 Mon Sep 17 00:00:00 2001
+From: Markus Stockhausen <markus.stockhausen@gmx.de>
+Date: Mon, 31 Aug 2026 16:34:36 +0200
+Subject: net: mdio: realtek-rtl9300: Open up C22 and C45 space in parallel
+
+Until now the MDIO driver supports either access to the C22 or to
+the C45 address space of the PHYs. This is due to the fact that
+the polling configuration favours one of the address spaces and
+limits access to the other space. E.g. when polling is set to
+C22 most of the C45 space can not be accessed.
+
+There are however some exceptions from that. EEE register access
+is allowed independently from the polling mode [1]. As the
+downstream driver already allows parallel C22/C45 access [2] do
+this in upstream too.
+
+[1] https://github.com/openwrt/openwrt/blob/main/target/linux/realtek/files-6.18/drivers/net/phy/realtek/realtek_multiport.c#L349
+[2] https://github.com/openwrt/openwrt/blob/main/target/linux/realtek/files-6.18/drivers/net/mdio/mdio-realtek-otto.c#L1072
+
+Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Link: https://patch.msgid.link/20260831143439.2404484-11-markus.stockhausen@gmx.de
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/mdio/mdio-realtek-rtl9300.c | 11 ++++-------
+ 1 file changed, 4 insertions(+), 7 deletions(-)
+
+--- a/drivers/net/mdio/mdio-realtek-rtl9300.c
++++ b/drivers/net/mdio/mdio-realtek-rtl9300.c
+@@ -689,13 +689,10 @@ static int otto_emdio_probe_one(struct d
+ 		return -ENOMEM;
+ 
+ 	bus->name = "Realtek Switch MDIO Bus";
+-	if (priv->smi_bus_is_c45[mdio_bus]) {
+-		bus->read_c45 = otto_emdio_read_c45;
+-		bus->write_c45 = otto_emdio_write_c45;
+-	} else {
+-		bus->read = otto_emdio_read_c22;
+-		bus->write = otto_emdio_write_c22;
+-	}
++	bus->read_c45 = otto_emdio_read_c45;
++	bus->write_c45 = otto_emdio_write_c45;
++	bus->read = otto_emdio_read_c22;
++	bus->write = otto_emdio_write_c22;
+ 	bus->parent = dev;
+ 	bus->notify_phy_attach = otto_emdio_notify_phy_attach;
+ 	bus->notify_phy_detach = otto_emdio_notify_phy_detach;

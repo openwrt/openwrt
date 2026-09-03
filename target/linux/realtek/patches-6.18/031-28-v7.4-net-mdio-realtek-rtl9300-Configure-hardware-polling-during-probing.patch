@@ -1,0 +1,190 @@
+From ee18e22c63424ed9eddacaa3b4480413e29862bc Mon Sep 17 00:00:00 2001
+From: Markus Stockhausen <markus.stockhausen@gmx.de>
+Date: Mon, 31 Aug 2026 16:34:33 +0200
+Subject: net: mdio: realtek-rtl9300: Configure hardware polling during probing
+
+During PHY probing and configuration complex configuration sequences
+might be issued and firmware might be loaded. Hardware polling can
+interfere badly with that. E.g. a hardware polling MMD c45 over c22
+request might break an ongoing firmware loading sequence.
+
+To avoid such issues the polling of the Realtek Otto switches can be
+(de)activated with one or two 32 bit mask registers. Each bit enables
+(=1) or disables (=0) the polling of the corresponding port. Make use
+of this as follows:
+
+- Disable polling for all ports when the MDIO driver starts.
+- Reenable polling just after the PHY has been attached.
+- Disable polling just before the PHY is being detached.
+
+This synchronizes the kernel and hardware polling to some extent. It
+gracefully handles deferred probing of PHYs in case the driver is
+loaded asynchronously during boot. Additionally it brings the hardware
+polling into a consistent operation mode for devices where U-Boot does
+not take care.
+
+Important notes about the implementation:
+
+Realtek is very inconsistent about its register naming. RTL930x uses
+SMI_POLL_CTRL for polling control while it is SMI_PORT_POLLING_CTRL
+on RTL931x. Keep these vendor names.
+
+These devices do not support power management for the whole system.
+So mdio_bus_phy_resume() is not used and it is not required to
+disable/enable hardware polling for that usecase.
+
+These devices have no CPU MAC to PHY design. Thus abort phy_attach()
+in case PHYs are not mapped to valid switch ports. All MDIO bus
+commands will fail afterwards, leaving it in an unusable state.
+
+Enabling/disabling hardware polling is a simple regmap bit access.
+For this it is enough to rely on the regmap internal lock.
+
+This polling enabling/disabling does not solve the current inability
+of the driver to handle C45-over-C22 access during normal operation.
+For all existing designs this is not needed.
+
+[1] https://github.com/openwrt/openwrt/blob/main/target/linux/realtek/files-6.18/drivers/net/mdio/mdio-realtek-otto.c#L818
+[2] https://lore.kernel.org/netdev/680696024a8648535ce6dee771fe4de67802e0e8.1769053496.git.daniel@makrotopia.org/
+
+Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Link: https://patch.msgid.link/20260831143439.2404484-8-markus.stockhausen@gmx.de
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/mdio/mdio-realtek-rtl9300.c | 61 +++++++++++++++++++++++++++++++++
+ 1 file changed, 61 insertions(+)
+
+--- a/drivers/net/mdio/mdio-realtek-rtl9300.c
++++ b/drivers/net/mdio/mdio-realtek-rtl9300.c
+@@ -147,6 +147,7 @@
+ #define   RTL9300_PHY_CTRL_INDATA		GENMASK(31, 16)
+ #define   RTL9300_PHY_CTRL_DATA			GENMASK(15, 0)
+ #define RTL9300_SMI_ACCESS_PHY_CTRL_3		0xcb7c
++#define RTL9300_SMI_POLL_CTRL			0xca90
+ #define RTL9300_SMI_PORT0_5_ADDR_CTRL		0xcb80
+ 
+ #define RTL9310_NUM_BUSES			4
+@@ -172,6 +173,7 @@
+ #define   RTL9310_PHY_CTRL_INDATA		GENMASK(15, 0)
+ #define RTL9310_SMI_INDRT_ACCESS_MMD_CTRL	0x0c18
+ #define RTL9310_SMI_PORT_ADDR_CTRL		0x0c74
++#define RTL9310_SMI_PORT_POLLING_CTRL		0x0ccc
+ #define RTL9310_SMI_PORT_POLLING_SEL		0x0c9c
+ 
+ #define PHY_CTRL_CMD				BIT(0)
+@@ -219,6 +221,7 @@ struct otto_emdio_info {
+ 	u8 num_buses;
+ 	u8 num_ports;
+ 	u16 num_pages;
++	u32 poll_ctrl;
+ 	int (*setup_controller)(struct otto_emdio_priv *priv);
+ 	int (*read_c22)(struct mii_bus *bus, int port, int regnum, u32 *value);
+ 	int (*read_c45)(struct mii_bus *bus, int port, int dev_addr, int regnum, u32 *value);
+@@ -254,6 +257,12 @@ static struct otto_emdio_priv *otto_emdi
+ 	return chan->priv;
+ }
+ 
++static int otto_emdio_set_port_polling(struct otto_emdio_priv *priv, int port, bool active)
++{
++	return regmap_assign_bits(priv->regmap, priv->info->poll_ctrl + (port / 32) * 4,
++				  BIT(port % 32), active);
++}
++
+ static int otto_emdio_run_cmd(struct mii_bus *bus, u32 cmd,
+ 			      struct otto_emdio_cmd_regs *cmd_data)
+ {
+@@ -597,6 +606,36 @@ static int otto_emdio_9310_setup_control
+ 	return 0;
+ }
+ 
++static int otto_emdio_notify_phy_attach(struct phy_device *phydev)
++{
++	struct otto_emdio_priv *priv = otto_emdio_bus_to_priv(phydev->mdio.bus);
++	int port = otto_emdio_phy_to_port(phydev->mdio.bus, phydev->mdio.addr);
++
++	if (port < 0) {
++		/* All subsequent bus operations will fail */
++		phydev_err(phydev, "PHY is not mapped to a valid switch port\n");
++		return port;
++	}
++
++	return otto_emdio_set_port_polling(priv, port, true);
++}
++
++static void otto_emdio_notify_phy_detach(struct phy_device *phydev)
++{
++	struct mii_bus *bus = phydev->mdio.bus;
++	struct otto_emdio_priv *priv;
++	int port;
++
++	priv = otto_emdio_bus_to_priv(phydev->mdio.bus);
++	port = otto_emdio_phy_to_port(phydev->mdio.bus, phydev->mdio.addr);
++
++	if (port < 0)
++		return;
++
++	if (otto_emdio_set_port_polling(priv, port, false))
++		dev_err(bus->parent, "failed to disable polling for port %d\n", port);
++}
++
+ static int otto_emdio_probe_one(struct device *dev, struct otto_emdio_priv *priv,
+ 				 struct fwnode_handle *node)
+ {
+@@ -626,6 +665,9 @@ static int otto_emdio_probe_one(struct d
+ 		bus->write = otto_emdio_write_c22;
+ 	}
+ 	bus->parent = dev;
++	bus->notify_phy_attach = otto_emdio_notify_phy_attach;
++	bus->notify_phy_detach = otto_emdio_notify_phy_detach;
++
+ 	chan = bus->priv;
+ 	chan->mdio_bus = mdio_bus;
+ 	chan->priv = priv;
+@@ -742,6 +784,19 @@ put_nodes:
+ 	return err;
+ }
+ 
++static int otto_emdio_init_polling(struct otto_emdio_priv *priv)
++{
++	int err;
++
++	for (int port = 0; port < priv->info->num_ports; port++) {
++		err = otto_emdio_set_port_polling(priv, port, false);
++		if (err)
++			return err;
++	}
++
++	return 0;
++}
++
+ static int otto_emdio_probe(struct platform_device *pdev)
+ {
+ 	struct device *dev = &pdev->dev;
+@@ -761,6 +816,10 @@ static int otto_emdio_probe(struct platf
+ 	if (IS_ERR(priv->regmap))
+ 		return PTR_ERR(priv->regmap);
+ 
++	err = otto_emdio_init_polling(priv);
++	if (err)
++		return err;
++
+ 	platform_set_drvdata(pdev, priv);
+ 
+ 	err = otto_emdio_map_ports(dev);
+@@ -801,6 +860,7 @@ static const struct otto_emdio_info otto
+ 	.num_buses = RTL9300_NUM_BUSES,
+ 	.num_ports = RTL9300_NUM_PORTS,
+ 	.num_pages = RTL9300_NUM_PAGES,
++	.poll_ctrl = RTL9300_SMI_POLL_CTRL,
+ 	.setup_controller = otto_emdio_9300_setup_controller,
+ 	.read_c22 = otto_emdio_9300_read_c22,
+ 	.read_c45 = otto_emdio_9300_read_c45,
+@@ -826,6 +886,7 @@ static const struct otto_emdio_info otto
+ 	.num_buses = RTL9310_NUM_BUSES,
+ 	.num_pages = RTL9310_NUM_PAGES,
+ 	.num_ports = RTL9310_NUM_PORTS,
++	.poll_ctrl = RTL9310_SMI_PORT_POLLING_CTRL,
+ 	.setup_controller = otto_emdio_9310_setup_controller,
+ 	.read_c22 = otto_emdio_9310_read_c22,
+ 	.read_c45 = otto_emdio_9310_read_c45,
