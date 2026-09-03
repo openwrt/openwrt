@@ -1708,6 +1708,9 @@ static int rtl930x_pie_verify_template(struct rtl838x_switch_priv *priv,
 	if (ether_addr_to_u64(pr->dmac_m) && !rtl930x_pie_templ_has(t, TEMPLATE_FIELD_DMAC0))
 		return -1;
 
+	if (pr->ethertype_m && !rtl930x_pie_templ_has(t, TEMPLATE_FIELD_ETHERTYPE))
+		return -1;
+
 	if (pr->itag_m && !rtl930x_pie_templ_has(t, TEMPLATE_FIELD_VLAN))
 		return -1;
 
@@ -2213,6 +2216,7 @@ const struct rtldsa_config rtldsa_930x_cfg = {
 	.imr_glb = RTL930X_IMR_GLB,
 	.n_counters = 2048,
 	.n_pie_blocks = 16,
+	.pie_rule_id_is_log_counter = true,
 	.port_ignore = 0x3f,
 	.vlan_tables_read = rtl930x_vlan_tables_read,
 	.vlan_set_tagged = rtl930x_vlan_set_tagged,

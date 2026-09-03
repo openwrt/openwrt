@@ -565,12 +565,28 @@ int rtldsa_93xx_lag_set_port_members(struct rtl838x_switch_priv *priv, int group
  */
 int rtldsa_packet_cntr_alloc(struct rtl838x_switch_priv *priv)
 {
-	int idx, j;
+	int idx, j, base = 0;
+
+	/* On SoCs where a PIE rule implicitly logs into the LOG table entry
+	 * with its own rule ID (RTL930x), the tc cls_flower offload consumes
+	 * one LOG counter per PIE rule and does not pass through this
+	 * allocator. Keep that range reserved so a route counter handed out
+	 * here cannot alias a flow's LOG entry.
+	 *
+	 * The offload is ingress-only, so PIE rule IDs currently populate
+	 * only the lower half of that range, and a route counter's LOG entry
+	 * (idx / 2) never dips below the upper half either. If egress PIE
+	 * rules are ever wired up, this reservation needs to grow so their
+	 * LOG entries stay clear of route counters too.
+	 */
+	if (priv->r->pie_rule_id_is_log_counter)
+		base = priv->r->n_pie_blocks * PIE_BLOCK_SIZE;
 
 	scoped_guard(mutex, &priv->reg_mutex) {
-		idx = find_first_bit(priv->packet_cntr_use_bm, priv->r->n_counters * 2);
+		idx = find_next_bit(priv->packet_cntr_use_bm, priv->r->n_counters * 2, base);
 		if (idx >= priv->r->n_counters * 2) {
-			j = find_first_zero_bit(priv->octet_cntr_use_bm, priv->r->n_counters);
+			j = find_next_zero_bit(priv->octet_cntr_use_bm, priv->r->n_counters,
+					       base / 2);
 			if (j >= priv->r->n_counters)
 				return -1;
 
