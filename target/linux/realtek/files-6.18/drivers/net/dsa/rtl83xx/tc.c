@@ -384,12 +384,11 @@ static int rtldsa_configure_flower(struct rtl838x_switch_priv *priv,
 	if (!priv->r->packet_cntr_read || !priv->r->packet_cntr_clear)
 		return -EOPNOTSUPP;
 
+	pr_debug("Cookie %08lx\n", f->cookie);
+
 	mutex_lock(&priv->tc_flow_lock);
 
-	rcu_read_lock();
-	pr_debug("Cookie %08lx\n", f->cookie);
-	flow = rhashtable_lookup(&priv->tc_ht, &f->cookie, tc_ht_params);
-	rcu_read_unlock();
+	flow = rhashtable_lookup_fast(&priv->tc_ht, &f->cookie, tc_ht_params);
 	if (flow) {
 		pr_info("%s: Got flow\n", __func__);
 		err = -EEXIST;
@@ -482,16 +481,13 @@ static int rtldsa_delete_flower(struct rtl838x_switch_priv *priv,
 
 	mutex_lock(&priv->tc_flow_lock);
 
-	rcu_read_lock();
 	flow = rhashtable_lookup_fast(&priv->tc_ht, &cls_flower->cookie, tc_ht_params);
 	if (!flow) {
-		rcu_read_unlock();
 		err = -ENOENT;
 		goto out_unlock;
 	}
 
 	err = rhashtable_remove_fast(&priv->tc_ht, &flow->node, tc_ht_params);
-	rcu_read_unlock();
 	if (err)
 		goto out_unlock;
 
@@ -518,16 +514,14 @@ static int rtldsa_stats_flower(struct rtl838x_switch_priv *priv,
 
 	mutex_lock(&priv->tc_flow_lock);
 
-	rcu_read_lock();
 	flow = rhashtable_lookup_fast(&priv->tc_ht, &cls_flower->cookie, tc_ht_params);
-	rcu_read_unlock();
 	if (!flow) {
 		err = -ENOENT;
 		goto out_unlock;
 	}
 
 	/* tc_flow_lock keeps the flow alive for the duration of the sleeping
-	 * counter read, so it is safe to dereference it after the RCU lock.
+	 * counter read, so it is safe to dereference it here.
 	 */
 	if (flow->rule.packet_cntr >= 0) {
 		mutex_lock(&priv->reg_mutex);
