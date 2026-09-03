@@ -54,6 +54,12 @@ struct ppe_flow_entry {
 	u32 index;
 	u32 words[PPE_FLOW_ENTRY_WORDS_V6];
 	u8 nwords;
+	u32 hwords[PPE_HOST_ENTRY_WORDS_V6];
+	u8 nhwords;
+	u8 profile;
+	u32 pkts_seen;
+	u8 quiet;
+	bool sparse;
 	u8 src_if;
 	u32 host_index;
 	int nexthop;
@@ -1352,6 +1358,9 @@ static int ppe_flow_offload_replace(struct ppe_flow_block *fb,
 	 */
 	memcpy(entry->words, fw, nfw * sizeof(*fw));
 	entry->nwords = nfw;
+	memcpy(entry->hwords, hw, nhw * sizeof(*hw));
+	entry->nhwords = nhw;
+	entry->profile = data.priority;
 	entry->words[0] = (fw[0] | entry->host_index << PPE_FLOW_E_HOST_IDX_OFF) &
 			  ~PPE_FLOW_E_AGE_MASK;
 
@@ -1589,6 +1598,128 @@ int qca_ppe_setup_tc(struct dsa_switch *ds, int port, enum tc_setup_type type,
 	}
 }
 
+/* A shared queue gives a sparse flow the loss rate the bulk imposes on it,
+ * and a flow that sends a few packets a second recovers a lost one by a
+ * retransmission timer, not by the next packet: a speed test's latency
+ * probe stalls for hundreds of milliseconds while the download it measures
+ * is unharmed. The hardware has no queue per flow, but a flow entry names a
+ * priority profile the classifier ranks above every other source, so a flow
+ * the counters show to be sparse is moved to the list the scheduler serves
+ * ahead of the band, inside the band's shaper, and back the moment it is
+ * not. A flow is sparse after ten periods under the packet count, one
+ * second, which a TCP flow that is ramping never spends; a promoted flow
+ * that bursts is demoted at the end of the period it burst in.
+ */
+#define PPE_SPARSE_PERIOD_MS	100
+#define PPE_SPARSE_PKTS		8
+#define PPE_SPARSE_QUIET	10
+
+static bool ppe_sparse_flows = true;
+module_param_named(sparse_flows, ppe_sparse_flows, bool, 0644);
+MODULE_PARM_DESC(sparse_flows,
+		 "Serve flows of under 80 packets a second ahead of a shaped port's bulk queue");
+
+/* The entry is replaced rather than rewritten in place: an IPv6 entry's
+ * words are spread over two slots in a layout only the op engine holds. The
+ * host entry is the same one, found again by its key; the counter starts
+ * over with the new slot, and so does everything derived from it.
+ */
+static int ppe_flow_profile_set(struct qca_ppe_priv *priv,
+				struct ppe_flow_entry *entry, u8 profile)
+{
+	u32 w[PPE_FLOW_ENTRY_WORDS_V6];
+	u32 index, host_index;
+	int ret;
+
+	lockdep_assert_held(&priv->flow_lock);
+
+	/* The hardware ages an idle entry out and hands its slot on, and a
+	 * flow under the count is the likeliest to have been; a delete by
+	 * index would then take the sibling's entry.
+	 */
+	ret = ppe_flow_entry_age(priv, entry);
+	if (ret < 0)
+		return ret;
+
+	/* The stored image carries the host index and no age; an add is
+	 * staged the way the encoder stages it, at full age and with no host
+	 * index, for the hardware to write the one it resolves.
+	 */
+	memcpy(w, entry->words, entry->nwords * sizeof(*w));
+	w[0] = (w[0] & ~PPE_FLOW_E_HOST_IDX_MASK) |
+	       FIELD_PREP(PPE_FLOW_E_AGE_MASK, PPE_FLOW_AGE_MAX);
+	w[1] &= ~BIT(PPE_FLOW_E_PRI_PROFILE_OFF % 32);
+	w[2] &= ~GENMASK(PPE_FLOW_E_PRI_PROFILE_LEN - 2, 0);
+	ppe_entry_set(w, PPE_FLOW_E_PRI_PROFILE_OFF, PPE_FLOW_E_PRI_PROFILE_LEN,
+		      profile);
+
+	ret = ppe_flow_entry_delete(priv, entry->index);
+	if (ret)
+		return ret;
+
+	ret = ppe_flow_op(priv, PPE_TBL_OP_ADD, w, entry->nwords,
+			  entry->hwords, entry->nhwords, &index, &host_index);
+	if (ret)
+		return ret;
+
+	if (host_index != entry->host_index) {
+		ppe_host_ref_get(priv, host_index);
+		ppe_host_ref_put(priv, entry->host_index);
+		entry->host_index = host_index;
+	}
+	memcpy(entry->words, w, entry->nwords * sizeof(*w));
+	entry->words[0] = (w[0] | host_index << PPE_FLOW_E_HOST_IDX_OFF) &
+			  ~PPE_FLOW_E_AGE_MASK;
+	entry->index = index;
+	ppe_flow_counter_clear(priv, index);
+	entry->packets = 0;
+	entry->bytes = 0;
+	entry->pkts_seen = 0;
+
+	return 0;
+}
+
+static void ppe_sparse_work(struct work_struct *work)
+{
+	struct qca_ppe_priv *priv = container_of(work, struct qca_ppe_priv,
+						 sparse_work.work);
+	struct ppe_flow_entry *entry;
+	u32 pkts, delta;
+
+	mutex_lock(&priv->flow_lock);
+	list_for_each_entry(entry, &priv->flow_list, list) {
+		regmap_read(priv->regmap, PPE_IN_FLOW_CNT_TBL(entry->index),
+			    &pkts);
+		delta = pkts - entry->pkts_seen;
+		entry->pkts_seen = pkts;
+
+		if (delta > PPE_SPARSE_PKTS || !ppe_sparse_flows) {
+			entry->quiet = 0;
+			if (entry->sparse &&
+			    !ppe_flow_profile_set(priv, entry, entry->profile)) {
+				entry->sparse = false;
+				priv->flow_sparse_demoted++;
+			}
+			continue;
+		}
+
+		if (entry->sparse)
+			continue;
+		if (entry->quiet < PPE_SPARSE_QUIET) {
+			entry->quiet++;
+			continue;
+		}
+		if (!ppe_flow_profile_set(priv, entry, PPE_QOS_SPARSE_PRI)) {
+			entry->sparse = true;
+			priv->flow_sparse_promoted++;
+		}
+	}
+	mutex_unlock(&priv->flow_lock);
+
+	schedule_delayed_work(&priv->sparse_work,
+			      msecs_to_jiffies(PPE_SPARSE_PERIOD_MS));
+}
+
 int ppe_flow_offload_init(struct qca_ppe_priv *priv)
 {
 	struct device *dev = priv->ds.dev;
@@ -1622,10 +1753,16 @@ int ppe_flow_offload_init(struct qca_ppe_priv *priv)
 
 	priv->netdev_nb.notifier_call = ppe_flow_netdev_event;
 	ret = register_netdevice_notifier(&priv->netdev_nb);
-	if (ret)
+	if (ret) {
 		rhashtable_destroy(&priv->flow_table);
+		return ret;
+	}
 
-	return ret;
+	INIT_DELAYED_WORK(&priv->sparse_work, ppe_sparse_work);
+	schedule_delayed_work(&priv->sparse_work,
+			      msecs_to_jiffies(PPE_SPARSE_PERIOD_MS));
+
+	return 0;
 }
 
 void ppe_flow_offload_exit(struct qca_ppe_priv *priv)
@@ -1633,6 +1770,7 @@ void ppe_flow_offload_exit(struct qca_ppe_priv *priv)
 	struct ppe_flow_entry *entry, *tmp;
 
 	unregister_netdevice_notifier(&priv->netdev_nb);
+	cancel_delayed_work_sync(&priv->sparse_work);
 
 	mutex_lock(&priv->flow_lock);
 	mutex_lock(&priv->vlan_lock);
