@@ -364,7 +364,7 @@ dhcp_host_add() {
 
 	config_get_bool dns "$cfg" dns 0
 	[ "$dns" = "1" ] && [ -n "$ip" ] && [ -n "$name" ] && {
-		echo "$ip $name${DOMAIN:+.$DOMAIN}" >> "$HOSTFILE_TMP"
+		echo "$ip $name${DOMAIN:+.$DOMAIN $name}" >> "$HOSTFILE_TMP"
 	}
 
 	config_get mac "$cfg" mac
