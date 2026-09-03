@@ -12,7 +12,7 @@
 		led-running = &led_user;
 	};
 
-	leds {
+	leds: leds {
 		compatible = "gpio-leds";
 
 		led_user: user {
@@ -70,31 +70,31 @@
 		spi-max-frequency = <25000000>;
 
 		partitions {
-			compatible = "mikrotik,routerboot-partitions";
+			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
 
 			partition@0 {
-				label = "routerboot1";
-				reg = <0x0 0x0>;
+				label = "routerboot";
+				reg = <0x0000000 0x000b000>;
 				read-only;
 			};
 
-			hard_config {
+			hard_config: partition@b000 {
+				label = "hard_config";
+				reg = <0x0000b000 0x00001000>;
 				read-only;
 			};
 
-			bios {
-				size = <0x1000>;
+			partition@d000 {
+				label = "bios";
+				reg = <0x0000d000 0x00002000>;
 				read-only;
 			};
 
-			routerboot2 {
-				label = "routerboot2";
-				read-only;
-			};
-
-			soft_config {
+			partition@f000 {
+				label = "soft_config";
+				reg = <0x0000f000 0x00001000>;
 			};
 		};
 	};
@@ -118,7 +118,7 @@
 				"LED5";
 		};
 
-		nand {
+		nand: nand {
 			compatible = "mikrotik,rb4xx-nand";
 
 			gpios = <&cpld_gpio 5 GPIO_ACTIVE_HIGH>, // ALE
@@ -137,12 +137,12 @@
 					read-only;
 				};
 
-				partition@40000 {
+				kernel_part: partition@40000 {
 					label = "kernel";
 					reg = <0x0040000 0x0800000>;
 				};
 
-				partition@840000 {
+				ubi: partition@840000 {
 					label = "ubi";
 					reg = <0x0840000 0x77c0000>;
 				};
