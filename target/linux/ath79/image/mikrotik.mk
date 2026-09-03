@@ -11,6 +11,15 @@ define Device/mikrotik_routerboard-2011uias-2hnd
 endef
 TARGET_DEVICES += mikrotik_routerboard-2011uias-2hnd
 
+define Device/mikrotik_routerboard-450g
+  $(Device/mikrotik_nand)
+  SOC := ar7161
+  DEVICE_MODEL := RouterBOARD 450G
+  DEVICE_PACKAGES += -kmod-ath9k -wpad-basic-mbedtls
+  SUPPORTED_DEVICES += rb-450g
+endef
+TARGET_DEVICES += mikrotik_routerboard-450g
+
 define Device/mikrotik_routerboard-493g
   $(Device/mikrotik_nand)
   SOC := ar7161
