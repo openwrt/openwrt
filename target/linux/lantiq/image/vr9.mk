@@ -334,6 +334,17 @@ define Device/buffalo_wbmr-300hpd
 endef
 TARGET_DEVICES += buffalo_wbmr-300hpd
 
+define Device/huawei_b2268s
+  $(Device/NAND)
+  DEVICE_VENDOR := Huawei
+  DEVICE_MODEL := B2268S
+  SUPPORTED_DEVICES += B2268S
+  KERNEL_SIZE := 5120k
+  DEVICE_PACKAGES := kmod-rt2800-pci wpad-basic-mbedtls kmod-usb-dwc2 \
+	xrx200-rev1.2-phy11g-firmware
+endef
+TARGET_DEVICES += huawei_b2268s
+
 define Device/lantiq_easy80920-nand
   $(Device/dsa-migration)
   $(Device/lantiqFullImage)

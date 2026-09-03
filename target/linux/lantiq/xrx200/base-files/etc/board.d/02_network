@@ -47,6 +47,9 @@ lantiq_setup_interfaces()
 	avm,fritz7412)
 		ucidef_set_interface_lan "lan"
 		;;
+	huawei,b2268s)
+		ucidef_set_interfaces_lan_wan "lan1 lan2"
+		;;
 	*)
 		ucidef_set_interface_lan 'eth0'
 		;;
@@ -75,7 +78,8 @@ lantiq_setup_dsl()
 		annex="b"
 		;;
 	avm,fritz5490|\
-	avm,fritz5490-micron)
+	avm,fritz5490-micron|\
+	huawei,b2268s)
 		return
 		;;
 	esac
@@ -135,6 +139,9 @@ lantiq_setup_macs()
 		;;
 	buffalo,wbmr-300hpd)
 		wan_mac="$(mtd_get_mac_ascii u-boot-env ethaddr)"
+		;;
+	huawei,b2268s)
+		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
 		;;
 	tplink,vr200|\
 	tplink,vr200v)

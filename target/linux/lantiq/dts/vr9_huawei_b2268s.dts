@@ -1,0 +1,198 @@
+/dts-v1/;
+#include "vr9.dtsi"
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/mips/lantiq_rcu_gphy.h>
+/ {
+	compatible = "huawei,b2268s", "lantiq,xway", "lantiq,vr9";
+	model = "Huawei B2268S";
+	chosen {
+		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit";
+	};
+	memory@0 {
+		device_type = "memory";
+		reg = <0x0 0x8000000>;
+	};
+	keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <100>;
+		reset {
+			label = "reset";
+			gpios = <&gpio 39 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+	leds {
+		compatible = "gpio-leds";
+
+		green_lan1 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <1>;
+			gpios = <&stp 18 GPIO_ACTIVE_HIGH>;
+		};
+		orange_lan1 {
+			color = <LED_COLOR_ID_ORANGE>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <1>;
+			gpios = <&stp 19 GPIO_ACTIVE_HIGH>;
+		};
+		green_lan2 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <2>;
+			gpios = <&stp 21 GPIO_ACTIVE_HIGH>;
+		};
+		orange_lan2 {
+			color = <LED_COLOR_ID_ORANGE>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <2>;
+			gpios = <&stp 22 GPIO_ACTIVE_HIGH>;
+		};
+		lte {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_MOBILE;
+			gpios = <&gpio 45 GPIO_ACTIVE_LOW>;
+		};
+		rssi1 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_INDICATOR;
+			function-enumerator = <1>;
+			gpios = <&gpio 20 GPIO_ACTIVE_LOW>;
+		};
+		rssi2 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_INDICATOR;
+			function-enumerator = <2>;
+			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
+		};
+		rssi3 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_INDICATOR;
+			function-enumerator = <3>;
+			gpios = <&gpio 44 GPIO_ACTIVE_LOW>;
+		};
+		rssi4 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_INDICATOR;
+			function-enumerator = <4>;
+			gpios = <&gpio 47 GPIO_ACTIVE_LOW>;
+		};
+		rssi5 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_INDICATOR;
+			function-enumerator = <5>;
+			gpios = <&gpio 46 GPIO_ACTIVE_LOW>;
+		};
+		wlan_orange {
+			color = <LED_COLOR_ID_ORANGE>;
+			function = LED_FUNCTION_WLAN;
+			gpios = <&stp 23 GPIO_ACTIVE_LOW>;
+		};
+		wlan_green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN;
+			gpios = <&stp 20 GPIO_ACTIVE_LOW>;
+		};
+		usb0 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_USB;
+			gpios = <&gpio 32 GPIO_ACTIVE_LOW>;
+			trigger-sources = <&ehci_port1>;
+			linux,default-trigger = "usbport";
+		};
+	};
+};
+&gphy0 {
+	lantiq,gphy-mode = <GPHY_MODE_GE>;
+	status = "okay";
+};
+&gphy1 {
+	lantiq,gphy-mode = <GPHY_MODE_GE>;
+	status = "okay";
+};
+&localbus {
+	flash@0 {
+		compatible = "lantiq,nand-xway";
+		lantiq,cs = <1>;
+		bank-width = <1>;
+		reg = <1 0x0 0x2000000>;
+		pinctrl-0 = <&nand_pins>, <&nand_cs1_pins>;
+		pinctrl-names = "default";
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			partition@0 {
+				label = "uboot";
+				reg = <0x00000 0x40000>;
+				read-only;
+			};
+			partition@40000 {
+				label = "u-boot-env";
+				reg = <0x40000 0x20000>;
+			};
+			partition@60000 {
+				label = "kernel";
+				reg = <0x60000 0x500000>;
+			};
+			partition@560000 {
+				label = "ubi";
+				reg = <0x560000 0x7aa0000>;
+			};
+		};
+	};
+};
+&gswip {
+	pinctrl-0 = <&mdio_pins>,
+		    <&gphy0_led1_pins>, <&gphy0_led2_pins>,
+		    <&gphy1_led1_pins>, <&gphy1_led2_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+&gswip_mdio {
+	status = "okay";
+	phy11: ethernet-phy@11 {
+		reg = <0x11>;
+		compatible = "ethernet-phy-ieee802.3-c22";
+	};
+	phy13: ethernet-phy@13 {
+		reg = <0x13>;
+		compatible = "ethernet-phy-ieee802.3-c22";
+	};
+};
+&gswip_ports {
+	status = "okay";
+	port@2 {
+		reg = <2>;
+		label = "lan2";
+		phy-mode = "internal";
+		phy-handle = <&phy11>;
+		status = "okay";
+	};
+	port@4 {
+		reg = <4>;
+		label = "lan1";
+		phy-mode = "internal";
+		phy-handle = <&phy13>;
+		status = "okay";
+	};
+	port@0 { status = "disabled"; };
+	port@1 { status = "disabled"; };
+	port@3 { status = "disabled"; };
+};
+&pci0 {
+	status = "okay";
+	reset-gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
+	wifi@e,0 {
+		compatible = "pci1814,5392";
+		reg = <0x7000 0 0 0 0>;
+		ralink,eeprom = "RT5392.eeprom";
+	};
+};
+&stp { status = "okay"; };
+&gpio { status = "okay"; };
+&usb_phy0 { status = "okay"; };
+&usb_phy1 { status = "okay"; };
+&usb0 { status = "okay"; };
+&usb1 { status = "okay"; };
