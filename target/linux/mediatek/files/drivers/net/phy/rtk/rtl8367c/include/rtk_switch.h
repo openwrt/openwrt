@@ -18,10 +18,12 @@
 #ifndef __RTK_SWITCH_H__
 #define __RTK_SWITCH_H__
 
+#include <linux/of.h>
 #include <rtk_types.h>
 
 #define UNDEFINE_PHY_PORT   (0xFF)
 #define RTK_SWITCH_PORT_NUM (32)
+#define RTK_SWITCH_EXT_PORT_NUM (3)
 
 #define MAXPKTLEN_CFG_ID_MAX (1)
 
@@ -736,6 +738,6 @@ rtk_uint32 rtk_switch_isValidTrunkGrpId(rtk_uint32 grpId);
 
 int gsw_debug_proc_init(void);
 void gsw_debug_proc_exit(void);
-int rtl8367s_swconfig_init(void (*reset_func)(void));
+int rtl8367s_swconfig_init(void (*reset_func)(void), struct device_node *of_node);
 
 #endif

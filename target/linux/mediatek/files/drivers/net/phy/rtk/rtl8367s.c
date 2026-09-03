@@ -21,14 +21,11 @@
 
 //include from rtl8367c dir
 #include  "./rtl8367c/include/rtk_switch.h"
+#include  "./rtl8367c/include/rtk_error.h"
 #include  "./rtl8367c/include/vlan.h"
 #include  "./rtl8367c/include/stat.h"
 #include  "./rtl8367c/include/port.h"
 
-#define RTL8367C_SW_CPU_PORT    6
-
- //RTL8367C_PHY_PORT_NUM + ext0 + ext1
-#define RTL8367C_NUM_PORTS 7
 #define RTL8367C_NUM_VIDS  4096
 
 struct rtl8367_priv {
@@ -48,8 +45,13 @@ struct rtl8367_vlan_info {
 };
 
 struct rtl8367_priv  rtl8367_priv_data;
-
-unsigned int rtl8367c_port_id[RTL8367C_NUM_PORTS]={0,1,2,3,4,EXT_PORT1,EXT_PORT0};
+/*
+* Use the original hard-coded values as the defaults to preserve backward compatibility.
+* It seems that these default values only work for RTL8367C?
+*/
+unsigned int rtk_sw_port_id[RTK_SWITCH_PORT_NUM] = {0,1,2,3,4,EXT_PORT1,EXT_PORT0};
+unsigned int rtk_sw_num_ports = 7;
+unsigned int rtk_sw_cpu_port = 6;
 
 void (*rtl8367_switch_reset_func)(void)=NULL;
 
@@ -121,13 +123,13 @@ static  struct rtl8367_mib_counter  rtl8367c_mib_counters[] = {
 /*rtl8367c  proprietary switch API wrapper */
 static inline unsigned int rtl8367c_sw_to_phy_port(int port)
 {
-	return rtl8367c_port_id[port];
+	return rtk_sw_port_id[port];
 }
 
 static inline unsigned int rtl8367c_portmask_phy_to_sw(rtk_portmask_t phy_portmask)
 {
 	int i;
-	for (i = 0; i < RTL8367C_NUM_PORTS; i++) {
+	for (i = 0; i < rtk_sw_num_ports; i++) {
 		if(RTK_PORTMASK_IS_PORT_SET(phy_portmask,rtl8367c_sw_to_phy_port(i))) {
 			RTK_PORTMASK_PORT_CLEAR(phy_portmask,rtl8367c_sw_to_phy_port(i));
 			RTK_PORTMASK_PORT_SET(phy_portmask,i);
@@ -201,7 +203,7 @@ static int rtl8367c_set_vlan( unsigned short vid, u32 mbr, u32 untag, u8 fid)
 
 	memset(&vlan_cfg, 0x00, sizeof(rtk_vlan_cfg_t));
 
-	for (i = 0; i < RTL8367C_NUM_PORTS; i++) {
+	for (i = 0; i < rtk_sw_num_ports; i++) {
 		if (mbr & (1 << i)) {
 			RTK_PORTMASK_PORT_SET(vlan_cfg.mbr, rtl8367c_sw_to_phy_port(i));
 			if(untag & (1 << i))
@@ -218,7 +220,7 @@ static int rtl8367c_get_pvid( int port, int *pvid)
 {
 	u32 prio=0;
 
-	if (port >= RTL8367C_NUM_PORTS)
+	if (port >= rtk_sw_num_ports)
 		return -EINVAL;
 
 	return rtk_vlan_portPvid_get(rtl8367c_sw_to_phy_port(port),pvid,&prio);
@@ -229,7 +231,7 @@ static int rtl8367c_set_pvid( int port, int pvid)
 {
 	u32 prio=0;
 
-	if (port >= RTL8367C_NUM_PORTS)
+	if (port >= rtk_sw_num_ports)
 		return -EINVAL;
 
 	return rtk_vlan_portPvid_set(rtl8367c_sw_to_phy_port(port),pvid,prio);
@@ -286,7 +288,7 @@ static int rtl8367_sw_reset_port_mibs(struct switch_dev *dev,
 	int port;
 
 	port = val->port_vlan;
-	if (port >= RTL8367C_NUM_PORTS)
+	if (port >= rtk_sw_num_ports)
 		return -EINVAL;
 
 	return rtl8367c_reset_port_mibs(port);
@@ -300,7 +302,7 @@ static int rtl8367_sw_get_port_mib(struct switch_dev *dev,
 	unsigned long long counter = 0;
 	static char mib_buf[4096];
 
-	if (val->port_vlan >= RTL8367C_NUM_PORTS)
+	if (val->port_vlan >= rtk_sw_num_ports)
 		return -EINVAL;
 
 	len += snprintf(mib_buf + len, sizeof(mib_buf) - len,
@@ -347,7 +349,7 @@ static int rtl8367_sw_get_vlan_info(struct switch_dev *dev,
 	len += snprintf(vlan_buf + len, sizeof(vlan_buf) - len,
 			"VLAN %d: Ports: '", vlan.vid);
 
-	for (i = 0; i <RTL8367C_NUM_PORTS; i++) {
+	for (i = 0; i <rtk_sw_num_ports; i++) {
 		if (!(vlan.member & (1 << i)))
 			continue;
 
@@ -380,7 +382,7 @@ static int rtl8367_sw_get_vlan_ports(struct switch_dev *dev, struct switch_val *
 
 	port = &val->value.ports[0];
 	val->len = 0;
-	for (i = 0; i <RTL8367C_NUM_PORTS ; i++) {
+	for (i = 0; i <rtk_sw_num_ports ; i++) {
 		if (!(vlan.member & BIT(i)))
 			continue;
 
@@ -462,7 +464,7 @@ static int rtl8367_sw_get_port_link(struct switch_dev *dev, int port,
 {
 	int speed;
 
-	if (port >= RTL8367C_NUM_PORTS)
+	if (port >= rtk_sw_num_ports)
 		return -EINVAL;
 
 	if(rtl8367c_get_port_link(port,(int *)&link->link,(int *)&speed,(int *)&link->duplex))
@@ -555,11 +557,45 @@ static const struct switch_dev_ops rtl8367_sw_ops = {
 	.get_port_link = rtl8367_sw_get_port_link,
 };
 
-int rtl8367s_swconfig_init(void (*reset_func)(void))
+static void rtk_sw_build_port_map(struct device_node *of_ports)
+{
+	u32 reg;
+	int cpuport = -1;
+	rtk_portmask_t pmask;
+	unsigned int i, idx = 0;
+	struct device_node *pp;
+
+	if (rtk_switch_logPortMask_get(&pmask) != RT_ERR_OK)
+		return;
+
+	for_each_available_child_of_node(of_ports, pp) {
+		if (!of_property_read_u32(pp, "reg", &reg) && of_property_read_bool(pp, "cpuport"))
+			cpuport = reg;
+	}
+
+	RTK_PORTMASK_SCAN(pmask, i){
+		if ( rtk_switch_isUtpPort(i) == RT_ERR_OK || rtk_switch_isExtPort(i) == RT_ERR_OK ){
+			if(i == cpuport)
+				rtk_sw_cpu_port = idx;
+			rtk_sw_port_id[idx++] = i;
+		}
+	}
+	rtk_sw_num_ports = idx;
+}
+
+int rtl8367s_swconfig_init(void (*reset_func)(void), struct device_node *of_node)
 {
 	struct rtl8367_priv  *priv = &rtl8367_priv_data;
 	struct switch_dev *dev=&priv->swdev;
 	int err=0;
+	struct device_node *of_ports;
+
+	// for backward compatibility, call rtk_sw_build_port_map only if "ports" exists.
+	of_ports = of_get_child_by_name(of_node, "ports");
+	if(of_ports){
+		rtk_sw_build_port_map(of_ports);
+		of_node_put(of_ports);
+	}
 
 	rtl8367_switch_reset_func = reset_func ;
 
@@ -567,11 +603,12 @@ int rtl8367s_swconfig_init(void (*reset_func)(void))
 	priv->global_vlan_enable =0;
 
 	dev->name = "RTL8367C";
-	dev->cpu_port = RTL8367C_SW_CPU_PORT;
-	dev->ports = RTL8367C_NUM_PORTS;
+	dev->cpu_port = rtk_sw_cpu_port;
+	dev->ports = rtk_sw_num_ports;
 	dev->vlans = RTL8367C_NUM_VIDS;
 	dev->ops = &rtl8367_sw_ops;
 	dev->alias = "RTL8367C";
+	dev->of_node = of_node;
 	err = register_switch(dev, NULL);
 
 	pr_info("[%s]\n",__func__);
