@@ -1383,6 +1383,10 @@ struct rtldsa_config {
 	int imr_glb;
 	int n_counters;
 	int n_pie_blocks;
+	/* PIE rule ID doubles as the LOG-table counter ID (RTL930x); also
+	 * gates ingress cls_flower offload, which relies on that property.
+	 */
+	bool pie_rule_id_is_log_counter;
 	u8 num_lag_ids;
 	u8 cpu_port;
 	u8 port_ignore;
@@ -1699,6 +1703,12 @@ void rtldsa_port_stp_state_set(struct dsa_switch *ds, int port, u8 state);
 int rtl83xx_setup_tc(struct net_device *dev, enum tc_setup_type type, void *type_data);
 int rtldsa_tc_init(struct rtl838x_switch_priv *priv);
 void rtldsa_tc_cleanup(struct rtl838x_switch_priv *priv);
+int rtldsa_pie_cls_flower_add(struct rtl838x_switch_priv *priv, int port,
+			       struct flow_cls_offload *cls, bool ingress);
+int rtldsa_pie_cls_flower_del(struct rtl838x_switch_priv *priv,
+			       struct flow_cls_offload *cls, bool ingress);
+int rtldsa_pie_cls_flower_stats(struct rtl838x_switch_priv *priv,
+				 struct flow_cls_offload *cls, bool ingress);
 
 /* Port register accessor functions for the RTL839x and RTL931X SoCs */
 void rtl839x_mask_port_reg_be(u64 clear, u64 set, int reg);
