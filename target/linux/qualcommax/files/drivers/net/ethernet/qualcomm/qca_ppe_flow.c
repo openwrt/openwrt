@@ -239,7 +239,7 @@ static int ppe_flows_show(struct seq_file *s, void *data)
 	u64 packets, bytes;
 	u32 i;
 
-	seq_puts(s, "index type proto fwd age host  packets bytes\n");
+	seq_puts(s, "index type proto fwd age host  pri packets bytes\n");
 
 	guard(mutex)(&priv->flow_lock);
 
@@ -252,7 +252,7 @@ static int ppe_flows_show(struct seq_file *s, void *data)
 
 		ppe_flow_counter_read(priv, i, &packets, &bytes);
 
-		seq_printf(s, "%-5u %-4s %-5llu %-3llu %-3llu %-5llu %llu %llu\n",
+		seq_printf(s, "%-5u %-4s %-5llu %-3llu %-3llu %-5llu %-3llu %llu %llu\n",
 			   i, (w[0] & PPE_FLOW_E_TYPE_IPV6) ? "ipv6" : "ipv4",
 			   ppe_entry_get(w, PPE_FLOW_E_PROTO_OFF,
 					 PPE_FLOW_E_PROTO_LEN),
@@ -262,6 +262,8 @@ static int ppe_flows_show(struct seq_file *s, void *data)
 					 PPE_FLOW_E_AGE_LEN),
 			   ppe_entry_get(w, PPE_FLOW_E_HOST_IDX_OFF,
 					 PPE_FLOW_E_HOST_IDX_LEN),
+			   ppe_entry_get(w, PPE_FLOW_E_PRI_PROFILE_OFF,
+					 PPE_FLOW_E_PRI_PROFILE_LEN),
 			   packets, bytes);
 
 		/* An IPv6 entry occupies two slots and reads back identically
@@ -301,6 +303,10 @@ static int ppe_offload_show(struct seq_file *s, void *data)
 	seq_printf(s, "%-24s %u\n", "reinstalled", priv->flow_reinstalled);
 	seq_printf(s, "%-24s %u\n", "destroy_miss", priv->flow_destroy_miss);
 	seq_printf(s, "%-24s %u\n", "stale", priv->flow_stale);
+	seq_printf(s, "%-24s %u\n", "sparse_promoted",
+		   priv->flow_sparse_promoted);
+	seq_printf(s, "%-24s %u\n", "sparse_demoted",
+		   priv->flow_sparse_demoted);
 	seq_printf(s, "%-24s %u\n", "live_entries",
 		   atomic_read(&priv->flow_table.nelems));
 	for (i = 0; i < PPE_REJECT_MAX; i++)

@@ -564,6 +564,10 @@
  * scheduler cannot be told to rotate credit for two queues on one node.
  */
 #define PPE_QOS_MAX_PRI			11
+/* The internal priority of a flow the driver has found sparse: the list a
+ * port's scheduler serves ahead of its download band, on the band's node.
+ */
+#define PPE_QOS_SPARSE_PRI		12
 
 #define PPE_VSI_TBL(vsi)		(PPE_L2_BASE + 0x1800 + (vsi) * 0x10)
 #define   PPE_VSI_TBL_MEMBER		GENMASK(7, 0)
@@ -719,6 +723,7 @@
 #define   PPE_FLOW_E_TYPE_LEN		1
 #define   PPE_FLOW_E_HOST_IDX_OFF	3
 #define   PPE_FLOW_E_HOST_IDX_LEN	13
+#define   PPE_FLOW_E_HOST_IDX_MASK	GENMASK(15, 3)
 #define   PPE_FLOW_E_PROTO_OFF		16
 #define   PPE_FLOW_E_PROTO_LEN		2
 #define   PPE_FLOW_E_AGE_OFF		18
@@ -1281,6 +1286,8 @@ struct qca_ppe_priv {
 	u32 flow_reinstalled;
 	u32 flow_destroy_miss;
 	u32 flow_stale;
+	u32 flow_sparse_promoted;
+	u32 flow_sparse_demoted;
 	/* Guards the VSI, translation-index and bridge-VLAN state, and the
 	 * read-modify-write an MDB update makes of an FDB entry. The switchdev
 	 * ops reach it under rtnl, the FDB and MDB work from a workqueue that
@@ -1335,6 +1342,7 @@ struct qca_ppe_priv {
 	 */
 	spinlock_t mib_lock;
 	struct delayed_work mib_work;
+	struct delayed_work sparse_work;
 };
 
 extern const struct psch_tdm_data cppe_psch_tdm_data;
