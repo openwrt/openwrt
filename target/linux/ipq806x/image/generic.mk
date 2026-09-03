@@ -413,6 +413,9 @@ define Device/netgear_r7500
 	BOARD_NAME := r7500
 	SUPPORTED_DEVICES += r7500
 	DEVICE_PACKAGES := ath10k-firmware-qca988x-ct
+	DEVICE_COMPAT_VERSION := 2.0
+	DEVICE_COMPAT_MESSAGE := Sysupgrade does not work due to rootfs ubi partition size change. \
+		Use factory image with the TFTP recovery flash routine.
 endef
 TARGET_DEVICES += netgear_r7500
 
