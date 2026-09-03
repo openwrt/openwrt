@@ -12,7 +12,7 @@
 		led-running = &led_user;
 	};
 
-	leds {
+	leds: leds {
 		compatible = "gpio-leds";
 
 		led_user: user {
@@ -63,7 +63,7 @@
 
 	compatible = "mikrotik,rb4xx-spi";
 
-	flash@0 {
+	spi_flash: flash@0 {
 		compatible = "pm25lv512", "jedec,spi-nor";
 
 		reg = <0>;
@@ -137,7 +137,7 @@
 				<&cpld_gpio 7 GPIO_ACTIVE_HIGH>, // nCE
 				<&gpio      5 GPIO_ACTIVE_HIGH>; // RDY
 
-			partitions {
+			nand_partitions: partitions {
 				compatible = "fixed-partitions";
 				#address-cells = <1>;
 				#size-cells = <1>;
@@ -148,7 +148,7 @@
 					read-only;
 				};
 
-				partition@40000 {
+				kernel_part: partition@40000 {
 					label = "kernel";
 					reg = <0x0040000 0x0800000>;
 				};
