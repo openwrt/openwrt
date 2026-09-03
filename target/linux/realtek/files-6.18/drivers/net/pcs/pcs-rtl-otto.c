@@ -690,9 +690,9 @@ static int rtpcs_generic_sds_set_autoneg(struct rtpcs_serdes *sds, unsigned int 
 		}
 	}
 
-	bmcr = neg_mode == PHYLINK_PCS_NEG_INBAND_ENABLED ? 1 : 0;
+	bmcr = neg_mode == PHYLINK_PCS_NEG_INBAND_ENABLED ? BMCR_ANENABLE : 0;
 
-	ret = rtpcs_sds_write_bits(sds, phy_page, MII_BMCR, 12, 12, bmcr);
+	ret = rtpcs_sds_write_mask(sds, phy_page, MII_BMCR, BMCR_ANENABLE, bmcr);
 	if (ret < 0)
 		return ret;
 
@@ -701,7 +701,8 @@ static int rtpcs_generic_sds_set_autoneg(struct rtpcs_serdes *sds, unsigned int 
 
 static void rtpcs_generic_sds_restart_autoneg(struct rtpcs_serdes *sds)
 {
-	rtpcs_sds_write_bits(sds, sds->ctrl->cfg->phy_page, MII_BMCR, 9, 9, 0x1);
+	rtpcs_sds_write_mask(sds, sds->ctrl->cfg->phy_page, MII_BMCR,
+			     BMCR_ANRESTART, BMCR_ANRESTART);
 }
 
 static int rtpcs_sds_select_pll_speed(enum rtpcs_sds_mode hw_mode, enum rtpcs_sds_pll_speed *speed)
@@ -894,8 +895,7 @@ static int rtpcs_838x_sds_deactivate(struct rtpcs_serdes *sds)
 	if (ret)
 		return ret;
 
-	/* CFG_FIB_PDOWN / BMCR_PDOWN */
-	return rtpcs_sds_write_bits(sds, PAGE_FIB, MII_BMCR, 11, 11, 0x1);
+	return rtpcs_sds_write_mask(sds, PAGE_FIB, MII_BMCR, BMCR_PDOWN, BMCR_PDOWN);
 }
 
 static int rtpcs_838x_sds_activate(struct rtpcs_serdes *sds)
@@ -904,8 +904,7 @@ static int rtpcs_838x_sds_activate(struct rtpcs_serdes *sds)
 
 	rtpcs_838x_sds_reset(sds);
 
-	/* CFG_FIB_PDOWN / BMCR_PDOWN */
-	ret = rtpcs_sds_write_bits(sds, PAGE_FIB, MII_BMCR, 11, 11, 0x0);
+	ret = rtpcs_sds_write_mask(sds, PAGE_FIB, MII_BMCR, BMCR_PDOWN, 0);
 	if (ret)
 		return ret;
 
@@ -2071,12 +2070,12 @@ static int rtpcs_930x_sds_deactivate(struct rtpcs_serdes *sds)
 		return ret;
 
 	/* Power down the 1G PHY block. */
-	ret = rtpcs_sds_write_bits(sds, PAGE_FIB, MII_BMCR, 11, 11, 1); /* BMCR_PDOWN */
+	ret = rtpcs_sds_write_mask(sds, PAGE_FIB, MII_BMCR, BMCR_PDOWN, BMCR_PDOWN);
 	if (ret)
 		return ret;
 
 	/* Power down the 10G PHY block. */
-	return rtpcs_sds_write_bits(sds, PAGE_TGR_STD_0, MII_BMCR, 11, 11, 1); /* BMCR_PDOWN */
+	return rtpcs_sds_write_mask(sds, PAGE_TGR_STD_0, MII_BMCR, BMCR_PDOWN, BMCR_PDOWN);
 }
 
 static int rtpcs_930x_sds_activate(struct rtpcs_serdes *sds)
@@ -2093,12 +2092,12 @@ static int rtpcs_930x_sds_activate(struct rtpcs_serdes *sds)
 		return ret;
 
 	/* Power up the 1G PHY block. */
-	ret = rtpcs_sds_write_bits(sds, PAGE_FIB, MII_BMCR, 11, 11, 0); /* BMCR_PDOWN */
+	ret = rtpcs_sds_write_mask(sds, PAGE_FIB, MII_BMCR, BMCR_PDOWN, 0);
 	if (ret)
 		return ret;
 
 	/* Power up the 10G PHY block. */
-	return rtpcs_sds_write_bits(sds, PAGE_TGR_STD_0, MII_BMCR, 11, 11, 0); /* BMCR_PDOWN */
+	return rtpcs_sds_write_mask(sds, PAGE_TGR_STD_0, MII_BMCR, BMCR_PDOWN, 0);
 }
 
 static int rtpcs_930x_sds_tx_config(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode,
@@ -3927,10 +3926,8 @@ static int rtpcs_931x_sds_config_hw_mode(struct rtpcs_serdes *sds,
 	case RTPCS_SDS_MODE_1000BASEX:
 		rtpcs_sds_write_bits(sds, DIGI_1(PAGE_FIB_EXT), 0x13, 15, 14, 0);
 
-		/* BMCR_SPEED1000 */
-		rtpcs_sds_write_bits(sds, DIGI_1(PAGE_FIB), MII_BMCR, 6, 6, 1);
-		/* BMCR_SPEED100 */
-		rtpcs_sds_write_bits(sds, DIGI_1(PAGE_FIB), MII_BMCR, 13, 13, 0);
+		rtpcs_sds_write_mask(sds, DIGI_1(PAGE_FIB), MII_BMCR,
+				     BMCR_SPEED1000 | BMCR_SPEED100, BMCR_SPEED1000);
 		/* EN_LINK_FIB1G */
 		rtpcs_sds_write_bits(sds, DIGI_1(PAGE_SDS), 0x4, 2, 2, 1);
 		break;
