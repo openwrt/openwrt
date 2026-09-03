@@ -24,15 +24,34 @@ an7581_setup_interfaces()
 	nokia,xg-040g-md-ubi)
 		ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
 		;;
+	vsol,v2902a)
+		ucidef_set_interface_lan "lan1 eth1"
+		;;
 	*)
 		echo "Unsupported hardware. Network interfaces not initialized"
 		;;
 	esac
 }
 
+an7581_setup_macs()
+{
+	local board="$1" label_mac lan_mac
+
+	case "$board" in
+	vsol,v2902a)
+		label_mac=$(mtd_get_mac_text factory 0x2 12)
+		lan_mac=$label_mac
+		;;
+	esac
+
+	[ -n "$label_mac" ] && ucidef_set_label_macaddr "$label_mac"
+	[ -n "$lan_mac" ] && ucidef_set_interface_macaddr "lan" "$lan_mac"
+}
+
 board_config_update
 board=$(board_name)
 an7581_setup_interfaces $board
+an7581_setup_macs $board
 board_config_flush
 
 exit 0

@@ -188,3 +188,25 @@ define Device/nokia_xg-040g-md-ubi
   ARTIFACTS := bl31-uboot.fip preloader.bin
 endef
 TARGET_DEVICES += nokia_xg-040g-md-ubi
+
+define Device/vsol_v2902a
+  DEVICE_VENDOR := VSOL
+  DEVICE_MODEL := V2902A
+  DEVICE_DTS := an7581-vsol-v2902a
+  DEVICE_DTS_CONFIG := config@1
+  DEVICE_PACKAGES := fitblk kmod-phy-realtek rtl826x-firmware
+  KERNEL_SUFFIX := -kernel.bin
+  KERNEL := kernel-bin | lzma
+  KERNEL_NAME := Image
+  KERNEL_INITRAMFS = kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(DEVICE_DTS).dtb
+  KERNEL_INITRAMFS_SUFFIX := -uImage.itb
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGE_SIZE := 32768k
+  IMAGE/sysupgrade.bin = append-kernel | fit lzma $$(KDIR)/image-$$(DEVICE_DTS).dtb \
+	external-static-with-rootfs | airoha-image-tclinux an7581 an7581_vsol | check-size | append-metadata
+  ARTIFACT/tcboot.bin := airoha-image-tcboot an7581 an7581_vsol | check-size 512k
+  ARTIFACT/tclinux.bin := append-image squashfs-sysupgrade.bin
+  ARTIFACTS := tcboot.bin tclinux.bin
+endef
+TARGET_DEVICES += vsol_v2902a

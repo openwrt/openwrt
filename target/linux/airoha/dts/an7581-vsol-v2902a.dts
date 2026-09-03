@@ -1,0 +1,214 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/dts-v1/;
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+#include "an7581.dtsi"
+
+/ {
+	model = "VSOL V2902A";
+	compatible = "vsol,v2902a", "airoha,an7581", "airoha,en7581";
+
+	aliases {
+		led-boot = &led_system;
+		led-failsafe = &led_system;
+		led-running = &led_system;
+		led-upgrade = &led_system;
+		serial0 = &uart1;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,115200 earlycon ubi.mtd=tclinux,0,0,0 ubi.mtd=rootfs_data,0,0,1 root=/dev/fit0 rootwait";
+		rootdisk = <&tclinux_fit>;
+		rootdisk-slave = <&tclinux_slave_fit>;
+		stdout-path = "serial0:115200n8";
+	};
+
+	memory@80000000 {
+		device_type = "memory";
+		reg = <0x0 0x80000000 0x0 0x20000000>;
+	};
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		poll-interval = <100>;
+
+		btn-reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&en7581_pinctrl 0 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_system: led-system {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&en7581_pinctrl 20 GPIO_ACTIVE_LOW>;
+		};
+
+		led-pon {
+			color = <LED_COLOR_ID_GREEN>;
+			function = "pon";
+			gpios = <&en7581_pinctrl 19 GPIO_ACTIVE_LOW>;
+		};
+
+		led-los {
+			color = <LED_COLOR_ID_RED>;
+			function = "los";
+			gpios = <&en7581_pinctrl 18 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&en7581_pinctrl {
+	gpio-ranges = <&en7581_pinctrl 0 13 50>;
+
+	mdio_pins: mdio-pins {
+		mux {
+			function = "mdio";
+			groups = "mdio";
+		};
+
+		conf {
+			pins = "gpio2";
+			output-high;
+		};
+	};
+
+	gswp1_led0_pins: gswp1-led0-pins {
+		mux {
+			function = "phy1_led0";
+			pins = "gpio33";
+		};
+	};
+};
+
+&snfi {
+	status = "okay";
+};
+
+&spi_nand {
+	/*
+	 * The auto adaption of 64M/128M/256M nand flash like stock rom is not implemented.
+	 * 64M: 21m[tclinux],21m[tclinux_slave],4m[rootfs_data],4m[framework],4m[framework_slave]
+	 * 256M: 64m[tclinux],64m[tclinux_slave],25m[rootfs_data],30m[framework],30m[framework_slave]
+	 */
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		bootloader@0 {
+			label = "bootloader";
+			reg = <0x00000000 0x00080000>;
+		};
+
+		tclinux@80000 {
+			label = "tclinux";
+			reg = <0x00080000 0x02000000>;
+
+			volumes {
+				tclinux_fit: ubi-volume-fit {
+					volname = "fit";
+				};
+			};
+		};
+
+		tclinux_slave@2080000 {
+			label = "tclinux_slave";
+			reg = <0x02080000 0x02000000>;
+
+			volumes {
+				tclinux_slave_fit: ubi-volume-fit {
+					volname = "fit";
+				};
+			};
+		};
+
+		rootfs_data@4080000 {
+			label = "rootfs_data";
+			reg = <0x04080000 0x02800000>;
+		};
+
+		factory@6880000 {
+			label = "factory";
+			reg = <0x06880000 0x00100000>;
+		};
+
+		art@6c80000 {
+			label = "art";
+			reg = <0x06c80000 0x00380000>;
+		};
+	};
+};
+
+&i2c0 {
+	status = "okay";
+};
+
+&i2c1 {
+	status = "okay";
+};
+
+&npu {
+	status = "okay";
+};
+
+&eth {
+	status = "okay";
+};
+
+&gdm1 {
+	status = "okay";
+};
+
+&eth_pcs {
+	status = "okay";
+};
+
+&gdm4 {
+	status = "okay";
+	managed = "in-band-status";
+	phy-handle = <&rtl8261be>;
+	phy-mode = "usxgmii";
+};
+
+&switch {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&mdio_pins>;
+};
+
+&mdio {
+	rtl8261be: ethernet-phy@0 {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <0>;
+		reset-gpios = <&en7581_pinctrl 31 GPIO_ACTIVE_LOW>;
+		reset-assert-us = <1000000>;
+		reset-deassert-us = <1000000>;
+	};
+};
+
+&gsw_port1 {
+	status = "okay";
+	label = "lan1";
+};
+
+&gsw_phy1 {
+	status = "okay";
+	interrupts = <1>;
+	pinctrl-names = "gbe-led";
+	pinctrl-0 = <&gswp1_led0_pins>;
+};
+
+&gsw_phy1_led0 {
+	status = "okay";
+	function = LED_FUNCTION_LAN;
+	color = <LED_COLOR_ID_GREEN>;
+	active-low;
+};
