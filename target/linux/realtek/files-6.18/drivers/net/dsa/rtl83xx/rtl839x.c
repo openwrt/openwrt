@@ -1522,6 +1522,13 @@ static void rtl839x_packet_cntr_clear(int counter)
 	struct table_reg *r = rtl_table_get(RTL8390_TBL_0, 4);
 
 	pr_debug("In %s, id %d\n", __func__, counter);
+
+	/*
+	 * Two counters share one LOG table entry. Read the current entry
+	 * first so clearing one half preserves the adjacent counter.
+	 */
+	rtl_table_read(r, counter / 2);
+
 	/* The table has a size of 2 registers */
 	if (counter % 2)
 		sw_w32(0, rtl_table_data(r, 0));
