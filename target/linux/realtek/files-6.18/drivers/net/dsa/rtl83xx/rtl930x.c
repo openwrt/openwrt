@@ -1887,6 +1887,13 @@ static void rtl930x_pie_init(struct rtl838x_switch_priv *priv)
 		sw_w32(template_selectors, RTL930X_PIE_BLK_TMPLTE_CTRL(i));
 }
 
+/* A PIE rule logs its matched packets into the LOG table entry that carries
+ * its own rule ID, in data word 1 - one entry per rule. Counters handed out
+ * by rtl83xx_packet_cntr_alloc() for L3 route statistics start above the PIE
+ * rule ID range and pack two 32-bit counters into one 64-bit LOG entry.
+ */
+#define RTL930X_PIE_RULE_IDS	(rtldsa_930x_cfg.n_pie_blocks * PIE_BLOCK_SIZE)
+
 static u32 rtl930x_packet_cntr_read(int counter)
 {
 	u32 v;
@@ -1895,15 +1902,18 @@ static u32 rtl930x_packet_cntr_read(int counter)
 	struct table_reg *r = rtl_table_get(RTL9300_TBL_0, 3);
 
 	pr_debug("In %s, id %d\n", __func__, counter);
-	rtl_table_read(r, counter / 2);
 
-	pr_debug("Registers: %08x %08x\n",
-		 sw_r32(rtl_table_data(r, 0)), sw_r32(rtl_table_data(r, 1)));
-	/* The table has a size of 2 registers */
-	if (counter % 2)
-		v = sw_r32(rtl_table_data(r, 0));
-	else
+	if (counter < RTL930X_PIE_RULE_IDS) {
+		rtl_table_read(r, counter);
 		v = sw_r32(rtl_table_data(r, 1));
+	} else {
+		rtl_table_read(r, counter / 2);
+		/* Two counters share one LOG table entry */
+		if (counter % 2)
+			v = sw_r32(rtl_table_data(r, 0));
+		else
+			v = sw_r32(rtl_table_data(r, 1));
+	}
 
 	rtl_table_release(r);
 
@@ -1917,19 +1927,22 @@ static void rtl930x_packet_cntr_clear(int counter)
 
 	pr_debug("In %s, id %d\n", __func__, counter);
 
-	/*
-	 * Two counters share one LOG table entry. Read the current entry
-	 * first so clearing one half preserves the adjacent counter.
+	/* Read-modify-write: for a route counter the other 32-bit counter in
+	 * the same 64-bit entry must be preserved; for a PIE rule ID the entry
+	 * is ours alone but the RMW is harmless.
 	 */
-	rtl_table_read(r, counter / 2);
-
-	/* The table has a size of 2 registers */
-	if (counter % 2)
-		sw_w32(0, rtl_table_data(r, 0));
-	else
+	if (counter < RTL930X_PIE_RULE_IDS) {
+		rtl_table_read(r, counter);
 		sw_w32(0, rtl_table_data(r, 1));
-
-	rtl_table_write(r, counter / 2);
+		rtl_table_write(r, counter);
+	} else {
+		rtl_table_read(r, counter / 2);
+		if (counter % 2)
+			sw_w32(0, rtl_table_data(r, 0));
+		else
+			sw_w32(0, rtl_table_data(r, 1));
+		rtl_table_write(r, counter / 2);
+	}
 
 	rtl_table_release(r);
 }
