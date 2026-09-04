@@ -1,0 +1,25 @@
+--- a/arch/arm64/boot/dts/freescale/imx8mp-olimex-som-evb.dts
++++ b/arch/arm64/boot/dts/freescale/imx8mp-olimex-som-evb.dts
+@@ -15,6 +15,13 @@
+ 	model = "Olimex i.MX8MP-SOM-EVB";
+ 	compatible = "olimex,imx8mp-som-evb", "fsl,imx8mp";
+ 
++	aliases {
++		led-boot = &led_status;
++		led-failsafe = &led_status;
++		led-running = &led_status;
++		led-upgrade = &led_status;
++	};
++
+ 	chosen {
+ 		stdout-path = &uart2;
+ 	};
+@@ -24,7 +31,7 @@
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&pinctrl_gpio_led>;
+ 
+-		status {
++		led_status: status {
+ 			color = <LED_COLOR_ID_YELLOW>;
+ 			gpios = <&gpio3 16 GPIO_ACTIVE_HIGH>;
+ 			default-state = "on";
