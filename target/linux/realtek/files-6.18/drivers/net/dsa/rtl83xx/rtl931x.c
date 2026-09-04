@@ -1411,6 +1411,15 @@ static int rtl931x_pie_verify_template(struct rtl838x_switch_priv *priv,
 	if (ether_addr_to_u64(pr->dmac) && !rtl931x_pie_templ_has(t, TEMPLATE_FIELD_DMAC0))
 		return -1;
 
+	if (pr->itag_m && !rtl931x_pie_templ_has(t, TEMPLATE_FIELD_VLAN))
+		return -1;
+
+	if (pr->sport_m && !rtl931x_pie_templ_has(t, TEMPLATE_FIELD_L4_SPORT))
+		return -1;
+
+	if (pr->dport_m && !rtl931x_pie_templ_has(t, TEMPLATE_FIELD_L4_DPORT))
+		return -1;
+
 	/* TODO: Check more */
 
 	i = find_first_zero_bit(&priv->pie_use_bm[block * 4], PIE_BLOCK_SIZE);
