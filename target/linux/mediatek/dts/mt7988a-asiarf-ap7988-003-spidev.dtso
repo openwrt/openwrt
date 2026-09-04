@@ -1,0 +1,66 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+/*
+ * Copyright (C) 2025 AsiaRF Co., Ltd.
+ * Author: Elwin Huang <elwin@asiarf.com>
+ */
+
+/dts-v1/;
+/plugin/;
+#include <dt-bindings/gpio/gpio.h>
+
+/ {
+	compatible = "asiarf,ap7988-003", "mediatek,mt7988a";
+
+	fragment@1 {
+		target = <&spi1>;
+		__overlay__ {
+			pinctrl-names = "default";
+			pinctrl-0 = <&spi1_pins>;
+			status = "okay";
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			mm6108: mm6108@0 {
+				compatible = "morse,mm610x-spi";
+				reg = <0>; // CE0
+				reset-gpios = <&pio 3 GPIO_ACTIVE_HIGH>; // Reset
+				power-gpios = <&pio 83 GPIO_ACTIVE_HIGH>,
+							<&pio 82 GPIO_ACTIVE_HIGH>; // Wake & Busy
+				spi-irq-gpios = <&pio 52 GPIO_ACTIVE_HIGH>; // Spi_IRQ
+				spi-max-frequency = <48000000>;
+				status = "okay";
+			};
+
+			spidev0: spidev@0 {
+				compatible = "spidev";
+				reg = <0>; /* CE0 */
+				status = "disabled";
+			};
+		};
+	};
+
+	fragment@2 {
+		target = <&pio>;
+		__overlay__ {
+			gpio-line-names = "",
+				"", "", "MM_RESET", "", "", // 3
+				"", "", "", "", "",
+				"", "", "", "", "",
+				"", "", "", "", "",
+				"", "", "", "", "",
+				"", "", "", "", "",
+				"", "", "", "", "",
+				"", "", "", "", "",
+				"", "", "", "", "",
+				"", "", "", "", "",
+				"", "", "", "", "",
+				"", "", "", "", "",
+				"", "", "", "", "",
+				"", "", "", "", "",
+				"", "", "", "", "",
+				"", "", "", "", "",
+				"", "MM_WAKE", "MM_BUSY", "", ""; // 82, 83
+		};
+	};
+};
