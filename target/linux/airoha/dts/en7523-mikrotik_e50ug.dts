@@ -38,6 +38,9 @@
 		reg = <0x0>;
 		phy-mode = "sgmii";
 
+		/* ether1 has its serdes receive pair swapped on this board. */
+		airoha,rx-polarity-reverse;
+
 		leds {
 			#address-cells = <1>;
 			#size-cells = <0>;
