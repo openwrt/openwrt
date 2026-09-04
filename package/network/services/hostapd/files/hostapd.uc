@@ -822,11 +822,14 @@ function iface_reload_config(name, phydev, config, old_config)
 			return false;
 
 		// try to preserve MAC address of this BSS by reassigning another
-		// BSS if necessary
+		// BSS if necessary. iface_config_macaddr_list() marks addresses of
+		// the running config with -1, so only a claim by a different BSS
+		// blocks reuse here.
+		let held = macaddr_list[prev_config.bssid];
 		if ((cur_config.default_macaddr || cur_config.random_macaddr) &&
 		    cur_config.random_macaddr == prev_config.random_macaddr &&
 		    cur_config.default_macaddr == prev_config.default_macaddr &&
-		    !macaddr_list[prev_config.bssid]) {
+		    (held == null || held == -1 || held == i)) {
 			macaddr_list[prev_config.bssid] = i;
 			cur_config.bssid = prev_config.bssid;
 		}
