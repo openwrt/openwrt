@@ -1,0 +1,2368 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Devon Openheim <devopenm@proton.me>
+Date: Sun, 31 Aug 2026 14:00:00 +0100
+Subject: [PATCH 12/12] net: wireless: rtl8xxxu: add PCIe bus support for RTL8192FR
+
+Add PCIe transport layer to rtl8xxxu driver to support RTL8192FR
+(10ec:818c) and RTL8812FR (10ec:f812) in the Notion R291 for
+2.4GHz and 5GHz WiFi respectively.
+
+Key changes to existing code:
+- Add struct device *dev and bus_ops to rtl8xxxu_priv for bus-agnostic
+  register access
+- Replace &priv->udev->dev with priv->dev for logging (bus-agnostic)
+- Make mac80211 callbacks non-static and export for PCIe reuse
+- Register access functions (read8/16/32, write8/16/32) dispatch through
+  bus_ops when set, falling back to USB control messages
+
+New files:
+- rtl8xxxu_pcie.c: PCIe transport (MMIO bus_ops, DMA rings, NAPI RX,
+  MSI interrupt, PCI probe/remove, mac80211 ops for tx/start/stop)
+- rtl8xxxu_pcie.h: PCIe ring descriptors and MMIO register definitions
+
+Signed-off-by: Devon Openheim <devopenm@proton.me>
+---
+
+--- a/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu.h
++++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu.h
+@@ -1789,9 +1789,25 @@
+ #define RTL8XXXU_BC_MC_MACID1	1
+ #define RTL8XXXU_MAX_SEC_CAM_NUM	64
+ 
++struct rtl8xxxu_priv;
++
++struct rtl8xxxu_bus_ops {
++	u8 (*read8)(struct rtl8xxxu_priv *priv, u16 addr);
++	u16 (*read16)(struct rtl8xxxu_priv *priv, u16 addr);
++	u32 (*read32)(struct rtl8xxxu_priv *priv, u16 addr);
++	int (*write8)(struct rtl8xxxu_priv *priv, u16 addr, u8 val);
++	int (*write16)(struct rtl8xxxu_priv *priv, u16 addr, u16 val);
++	int (*write32)(struct rtl8xxxu_priv *priv, u16 addr, u32 val);
++	int (*writeN)(struct rtl8xxxu_priv *priv, u16 addr, u32 len,
++		      const u8 *buf);
++};
++
+ struct rtl8xxxu_priv {
+ 	struct ieee80211_hw *hw;
+ 	struct usb_device *udev;
++	struct device *dev;	/* bus-agnostic: &udev->dev or &pdev->dev */
++	const struct rtl8xxxu_bus_ops *bus_ops;
++	void *bus_priv;		/* bus-specific data (e.g. struct rtl8xxxu_pcie_priv) */
+ 	struct rtl8xxxu_fileops *fops;
+ 
+ 	spinlock_t tx_urb_lock;
+@@ -2173,3 +2189,51 @@
+ extern struct rtl8xxxu_fileops rtl8192eu_fops;
+ extern struct rtl8xxxu_fileops rtl8723au_fops;
+ extern struct rtl8xxxu_fileops rtl8723bu_fops;
++
++/* Exported for PCIe transport (rtl8xxxu_pcie.c) */
++struct ieee80211_sta;
++
++int rtl8xxxu_init_device(struct ieee80211_hw *hw);
++void rtl8xxxu_update_beacon_work_callback(struct work_struct *work);
++void rtl8xxxu_c2hcmd_callback(struct work_struct *work);
++void rtl8xxxu_watchdog_callback(struct work_struct *work);
++int rtl8xxxu_get_antenna(struct ieee80211_hw *hw, u32 *tx_ant, u32 *rx_ant);
++int rtl8xxxu_set_tim(struct ieee80211_hw *hw, struct ieee80211_sta *sta,
++		      bool set);
++void rtl8xxxu_sw_scan_start(struct ieee80211_hw *hw,
++			    struct ieee80211_vif *vif, const u8 *mac);
++void rtl8xxxu_sw_scan_complete(struct ieee80211_hw *hw,
++			       struct ieee80211_vif *vif);
++void rtl8xxxu_bss_info_changed(struct ieee80211_hw *hw,
++			       struct ieee80211_vif *vif,
++			       struct ieee80211_bss_conf *bss_conf, u64 changed);
++int rtl8xxxu_start_ap(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
++		      struct ieee80211_bss_conf *link_conf);
++int rtl8xxxu_add_interface(struct ieee80211_hw *hw,
++			   struct ieee80211_vif *vif);
++void rtl8xxxu_remove_interface(struct ieee80211_hw *hw,
++			       struct ieee80211_vif *vif);
++int rtl8xxxu_config(struct ieee80211_hw *hw, u32 changed);
++int rtl8xxxu_conf_tx(struct ieee80211_hw *hw,
++		      struct ieee80211_vif *vif,
++		      unsigned int link_id, u16 queue,
++		      const struct ieee80211_tx_queue_params *params);
++void rtl8xxxu_configure_filter(struct ieee80211_hw *hw,
++			       unsigned int changed_flags,
++			       unsigned int *total_flags, u64 multicast);
++int rtl8xxxu_set_rts_threshold(struct ieee80211_hw *hw, u32 rts);
++int rtl8xxxu_set_key(struct ieee80211_hw *hw, enum set_key_cmd cmd,
++		      struct ieee80211_vif *vif, struct ieee80211_sta *sta,
++		      struct ieee80211_key_conf *key);
++int rtl8xxxu_ampdu_action(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
++			  struct ieee80211_ampdu_params *params);
++void rtl8xxxu_sta_statistics(struct ieee80211_hw *hw,
++			     struct ieee80211_vif *vif,
++			     struct ieee80211_sta *sta,
++			     struct station_info *sinfo);
++int rtl8xxxu_sta_add(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
++		      struct ieee80211_sta *sta);
++int rtl8xxxu_sta_remove(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
++			 struct ieee80211_sta *sta);
++
++extern struct ieee80211_supported_band rtl8xxxu_supported_band;
+
+--- a/drivers/net/wireless/realtek/rtl8xxxu/core.c
++++ b/drivers/net/wireless/realtek/rtl8xxxu/core.c
+@@ -110,7 +110,7 @@
+ 	  .hw_value = 14, .max_power = 30 }
+ };
+ 
+-static struct ieee80211_supported_band rtl8xxxu_supported_band = {
++struct ieee80211_supported_band rtl8xxxu_supported_band = {
+ 	.channels = rtl8xxxu_channels_2g,
+ 	.n_channels = ARRAY_SIZE(rtl8xxxu_channels_2g),
+ 	.bitrates = rtl8xxxu_rates,
+@@ -617,6 +617,9 @@
+ 	int len;
+ 	u8 data;
+ 
++	if (priv->bus_ops)
++		return priv->bus_ops->read8(priv, addr);
++
+ 	if (priv->rtl_chip == RTL8710B && addr <= 0xff)
+ 		addr |= 0x8000;
+ 
+@@ -640,6 +643,9 @@
+ 	int len;
+ 	u16 data;
+ 
++	if (priv->bus_ops)
++		return priv->bus_ops->read16(priv, addr);
++
+ 	if (priv->rtl_chip == RTL8710B && addr <= 0xff)
+ 		addr |= 0x8000;
+ 
+@@ -663,6 +669,9 @@
+ 	int len;
+ 	u32 data;
+ 
++	if (priv->bus_ops)
++		return priv->bus_ops->read32(priv, addr);
++
+ 	if (priv->rtl_chip == RTL8710B && addr <= 0xff)
+ 		addr |= 0x8000;
+ 
+@@ -685,6 +694,9 @@
+ 	struct usb_device *udev = priv->udev;
+ 	int ret;
+ 
++	if (priv->bus_ops)
++		return priv->bus_ops->write8(priv, addr, val);
++
+ 	if (priv->rtl_chip == RTL8710B && addr <= 0xff)
+ 		addr |= 0x8000;
+ 
+@@ -708,6 +720,9 @@
+ 	struct usb_device *udev = priv->udev;
+ 	int ret;
+ 
++	if (priv->bus_ops)
++		return priv->bus_ops->write16(priv, addr, val);
++
+ 	if (priv->rtl_chip == RTL8710B && addr <= 0xff)
+ 		addr |= 0x8000;
+ 
+@@ -730,6 +745,9 @@
+ 	struct usb_device *udev = priv->udev;
+ 	int ret;
+ 
++	if (priv->bus_ops)
++		return priv->bus_ops->write32(priv, addr, val);
++
+ 	if (priv->rtl_chip == RTL8710B && addr <= 0xff)
+ 		addr |= 0x8000;
+ 
+@@ -902,7 +920,7 @@
+ 	retval &= 0xfffff;
+ 
+ 	if (rtl8xxxu_debug & RTL8XXXU_DEBUG_RFREG_READ)
+-		dev_info(&priv->udev->dev, "%s(%02x) = 0x%06x\n",
++		dev_info(priv->dev, "%s(%02x) = 0x%06x\n",
+ 			 __func__, reg, retval);
+ 	return retval;
+ }
+@@ -919,7 +937,7 @@
+ 	u32 dataaddr, val32;
+ 
+ 	if (rtl8xxxu_debug & RTL8XXXU_DEBUG_RFREG_WRITE)
+-		dev_info(&priv->udev->dev, "%s(%02x) = 0x%06x\n",
++		dev_info(priv->dev, "%s(%02x) = 0x%06x\n",
+ 			 __func__, reg, data);
+ 
+ 	data &= FPGA0_LSSI_PARM_DATA_MASK;
+@@ -952,7 +970,7 @@
+ static int
+ rtl8xxxu_gen1_h2c_cmd(struct rtl8xxxu_priv *priv, struct h2c_cmd *h2c, int len)
+ {
+-	struct device *dev = &priv->udev->dev;
++	struct device *dev = priv->dev;
+ 	int mbox_nr, retry, retval = 0;
+ 	int mbox_reg, mbox_ext_reg;
+ 	u8 val8;
+@@ -1002,7 +1020,7 @@
+ int
+ rtl8xxxu_gen2_h2c_cmd(struct rtl8xxxu_priv *priv, struct h2c_cmd *h2c, int len)
+ {
+-	struct device *dev = &priv->udev->dev;
++	struct device *dev = priv->dev;
+ 	int mbox_nr, retry, retval = 0;
+ 	int mbox_reg, mbox_ext_reg;
+ 	u8 val8;
+@@ -1501,7 +1519,7 @@
+ 	}
+ 
+ 	if (rtl8xxxu_debug & RTL8XXXU_DEBUG_CHANNEL)
+-		dev_info(&priv->udev->dev,
++		dev_info(priv->dev,
+ 			 "%s: Setting TX power CCK A: %02x, "
+ 			 "CCK B: %02x, OFDM A: %02x, OFDM B: %02x\n",
+ 			 __func__, cck[0], cck[1], ofdm[0], ofdm[1]);
+@@ -1651,7 +1669,7 @@
+ 
+ static void rtl8xxxu_print_chipinfo(struct rtl8xxxu_priv *priv)
+ {
+-	struct device *dev = &priv->udev->dev;
++	struct device *dev = priv->dev;
+ 	char cut = 'A' + priv->chip_cut;
+ 
+ 	dev_info(dev,
+@@ -1717,7 +1735,7 @@
+ 
+ int rtl8xxxu_config_endpoints_no_sie(struct rtl8xxxu_priv *priv)
+ {
+-	struct device *dev = &priv->udev->dev;
++	struct device *dev = priv->dev;
+ 
+ 	switch (priv->nr_out_eps) {
+ 	case 6:
+@@ -1780,7 +1798,7 @@
+ 
+ int rtl8xxxu_read_efuse(struct rtl8xxxu_priv *priv)
+ {
+-	struct device *dev = &priv->udev->dev;
++	struct device *dev = priv->dev;
+ 	int i, ret = 0;
+ 	u8 val8, word_mask, header, extheader;
+ 	u16 val16, efuse_addr, offset;
+@@ -1892,7 +1910,7 @@
+ 
+ static void rtl8xxxu_dump_efuse(struct rtl8xxxu_priv *priv)
+ {
+-	dev_info(&priv->udev->dev,
++	dev_info(priv->dev,
+ 		 "Dumping efuse for RTL%s (0x%02x bytes):\n",
+ 		 priv->chip_name, EFUSE_MAP_LEN);
+ 
+@@ -1923,7 +1941,7 @@
+ 
+ static int rtl8xxxu_start_firmware(struct rtl8xxxu_priv *priv)
+ {
+-	struct device *dev = &priv->udev->dev;
++	struct device *dev = priv->dev;
+ 	u16 reg_mcu_fw_dl;
+ 	int ret = 0, i;
+ 	u32 val32;
+@@ -2013,7 +2031,7 @@
+ 
+ 	val8 = rtl8xxxu_read8(priv, reg_mcu_fw_dl);
+ 	if (val8 & MCU_FW_RAM_SEL) {
+-		dev_info(&priv->udev->dev,
++		dev_info(priv->dev,
+ 			 "Firmware is already running, resetting the MCU.\n");
+ 		rtl8xxxu_write8(priv, reg_mcu_fw_dl, 0x00);
+ 		priv->fops->reset_8051(priv);
+@@ -2085,13 +2103,13 @@
+ 
+ int rtl8xxxu_load_firmware(struct rtl8xxxu_priv *priv, const char *fw_name)
+ {
+-	struct device *dev = &priv->udev->dev;
++	struct device *dev = priv->dev;
+ 	const struct firmware *fw;
+ 	int ret = 0;
+ 	u16 signature;
+ 
+ 	dev_info(dev, "%s: Loading firmware %s\n", DRIVER_NAME, fw_name);
+-	if (request_firmware(&fw, fw_name, &priv->udev->dev)) {
++	if (request_firmware(&fw, fw_name, priv->dev)) {
+ 		dev_warn(dev, "request_firmware(%s) failed\n", fw_name);
+ 		ret = -EAGAIN;
+ 		goto exit;
+@@ -2148,7 +2166,7 @@
+ 		val16 = rtl8xxxu_read16(priv, REG_SYS_FUNC);
+ 
+ 		if (!(val16 & SYS_FUNC_CPU_ENABLE)) {
+-			dev_dbg(&priv->udev->dev,
++			dev_dbg(priv->dev,
+ 				"%s: Firmware self reset success!\n", __func__);
+ 			break;
+ 		}
+@@ -2180,7 +2198,7 @@
+ 
+ 		ret = rtl8xxxu_write8(priv, reg, val);
+ 		if (ret != 1) {
+-			dev_warn(&priv->udev->dev,
++			dev_warn(priv->dev,
+ 				 "Failed to initialize MAC "
+ 				 "(reg: %04x, val %02x)\n", reg, val);
+ 			return -EAGAIN;
+@@ -2221,7 +2239,7 @@
+ 
+ 		ret = rtl8xxxu_write32(priv, reg, val);
+ 		if (ret != sizeof(val)) {
+-			dev_warn(&priv->udev->dev,
++			dev_warn(priv->dev,
+ 				 "Failed to initialize PHY\n");
+ 			return -EAGAIN;
+ 		}
+@@ -2400,7 +2418,7 @@
+ 
+ 		ret = rtl8xxxu_write_rfreg(priv, path, reg, val);
+ 		if (ret) {
+-			dev_warn(&priv->udev->dev,
++			dev_warn(priv->dev,
+ 				 "Failed to initialize RF\n");
+ 			return -EAGAIN;
+ 		}
+@@ -2430,7 +2448,7 @@
+ 		reg_hssi_parm2 = REG_FPGA0_XB_HSSI_PARM2;
+ 		break;
+ 	default:
+-		dev_err(&priv->udev->dev, "%s:Unsupported RF path %c\n",
++		dev_err(priv->dev, "%s:Unsupported RF path %c\n",
+ 			__func__, path + 'A');
+ 		return -EINVAL;
+ 	}
+@@ -2554,7 +2572,7 @@
+ 
+ 	if (!i) {
+ 		ret = -EBUSY;
+-		dev_warn(&priv->udev->dev, "LLT table init failed\n");
++		dev_warn(priv->dev, "LLT table init failed\n");
+ 	}
+ 
+ 	return ret;
+@@ -2744,7 +2762,7 @@
+ 	rtl8xxxu_write32(priv, REG_OFDM0_ENERGY_CCA_THRES, val32);
+ 
+ 	if (tx_only) {
+-		dev_dbg(&priv->udev->dev, "%s: only TX\n", __func__);
++		dev_dbg(priv->dev, "%s: only TX\n", __func__);
+ 		return;
+ 	}
+ 
+@@ -2821,7 +2839,7 @@
+ 	rtl8xxxu_write32(priv, REG_OFDM0_ENERGY_CCA_THRES, val32);
+ 
+ 	if (tx_only) {
+-		dev_dbg(&priv->udev->dev, "%s: only TX\n", __func__);
++		dev_dbg(priv->dev, "%s: only TX\n", __func__);
+ 		return;
+ 	}
+ 
+@@ -3117,7 +3135,7 @@
+ 	    ((reg_eac & 0x03ff0000) != 0x00360000))
+ 		result |= 0x02;
+ 	else
+-		dev_warn(&priv->udev->dev, "%s: Path A RX IQK failed!\n",
++		dev_warn(priv->dev, "%s: Path A RX IQK failed!\n",
+ 			 __func__);
+ out:
+ 	return result;
+@@ -3153,7 +3171,7 @@
+ 	    (((reg_ecc & 0x03ff0000) >> 16) != 0x36))
+ 		result |= 0x02;
+ 	else
+-		dev_warn(&priv->udev->dev, "%s: Path B RX IQK failed!\n",
++		dev_warn(priv->dev, "%s: Path B RX IQK failed!\n",
+ 			 __func__);
+ out:
+ 	return result;
+@@ -3162,7 +3180,7 @@
+ static void rtl8xxxu_phy_iqcalibrate(struct rtl8xxxu_priv *priv,
+ 				     int result[][8], int t)
+ {
+-	struct device *dev = &priv->udev->dev;
++	struct device *dev = priv->dev;
+ 	u32 i, val32;
+ 	int path_a_ok, path_b_ok;
+ 	int retry = 2;
+@@ -3377,7 +3395,7 @@
+ 
+ void rtl8xxxu_gen1_phy_iq_calibrate(struct rtl8xxxu_priv *priv)
+ {
+-	struct device *dev = &priv->udev->dev;
++	struct device *dev = priv->dev;
+ 	int result[4][8];	/* last is final result */
+ 	int i, candidate;
+ 	bool path_a_ok, path_b_ok;
+@@ -3563,7 +3581,7 @@
+ 	int i;
+ 	u16 reg;
+ 
+-	dev_dbg(&priv->udev->dev, "%s: (%pM)\n", __func__, bssid);
++	dev_dbg(priv->dev, "%s: (%pM)\n", __func__, bssid);
+ 
+ 	switch (port_num) {
+ 	case 0:
+@@ -3643,7 +3661,7 @@
+ 	}
+ 
+ 	if (!count) {
+-		dev_warn(&priv->udev->dev, "%s: Disabling MAC timed out\n",
++		dev_warn(priv->dev, "%s: Disabling MAC timed out\n",
+ 			 __func__);
+ 		ret = -EBUSY;
+ 		goto exit;
+@@ -3682,7 +3700,7 @@
+ 	}
+ 
+ 	if (!count) {
+-		dev_warn(&priv->udev->dev,
++		dev_warn(priv->dev,
+ 			 "%s: RX poll timed out (0x05f8)\n", __func__);
+ 		ret = -EBUSY;
+ 		goto exit;
+@@ -3766,7 +3784,7 @@
+ 
+ int rtl8xxxu_flush_fifo(struct rtl8xxxu_priv *priv)
+ {
+-	struct device *dev = &priv->udev->dev;
++	struct device *dev = priv->dev;
+ 	u32 val32;
+ 	int retry, retval;
+ 
+@@ -4018,10 +4036,10 @@
+ 	return sta_info->macid;
+ }
+ 
+-static int rtl8xxxu_init_device(struct ieee80211_hw *hw)
++int rtl8xxxu_init_device(struct ieee80211_hw *hw)
+ {
+ 	struct rtl8xxxu_priv *priv = hw->priv;
+-	struct device *dev = &priv->udev->dev;
++	struct device *dev = priv->dev;
+ 	struct rtl8xxxu_fileops *fops = priv->fops;
+ 	bool macpower;
+ 	int ret;
+@@ -4550,7 +4568,6 @@
+ 	rtl8xxxu_debug = tmp_debug;
+ }
+ 
+-static
+ int rtl8xxxu_get_antenna(struct ieee80211_hw *hw, u32 *tx_ant, u32 *rx_ant)
+ {
+ 	struct rtl8xxxu_priv *priv = hw->priv;
+@@ -4561,7 +4578,7 @@
+ 	return 0;
+ }
+ 
+-static int rtl8xxxu_set_tim(struct ieee80211_hw *hw, struct ieee80211_sta *sta,
++int rtl8xxxu_set_tim(struct ieee80211_hw *hw, struct ieee80211_sta *sta,
+ 			    bool set)
+ {
+ 	struct rtl8xxxu_priv *priv = hw->priv;
+@@ -4571,7 +4588,7 @@
+ 	return 0;
+ }
+ 
+-static void rtl8xxxu_sw_scan_start(struct ieee80211_hw *hw,
++void rtl8xxxu_sw_scan_start(struct ieee80211_hw *hw,
+ 				   struct ieee80211_vif *vif, const u8 *mac)
+ {
+ 	struct rtl8xxxu_priv *priv = hw->priv;
+@@ -4582,7 +4599,7 @@
+ 	rtl8xxxu_write8(priv, REG_BEACON_CTRL, val8);
+ }
+ 
+-static void rtl8xxxu_sw_scan_complete(struct ieee80211_hw *hw,
++void rtl8xxxu_sw_scan_complete(struct ieee80211_hw *hw,
+ 				      struct ieee80211_vif *vif)
+ {
+ 	struct rtl8xxxu_priv *priv = hw->priv;
+@@ -4609,7 +4626,7 @@
+ 	if (sgi)
+ 		h2c.ramask.arg |= 0x20;
+ 
+-	dev_dbg(&priv->udev->dev, "%s: rate mask %08x, arg %02x, size %zi\n",
++	dev_dbg(priv->dev, "%s: rate mask %08x, arg %02x, size %zi\n",
+ 		__func__, ramask, h2c.ramask.arg, sizeof(h2c.ramask));
+ 	rtl8xxxu_gen1_h2c_cmd(priv, &h2c, sizeof(h2c.ramask));
+ }
+@@ -4641,7 +4658,7 @@
+ 
+ 	h2c.b_macid_cfg.data2 = bw;
+ 
+-	dev_dbg(&priv->udev->dev, "%s: rate mask %08x, rateid %02x, sgi %d, size %zi\n",
++	dev_dbg(priv->dev, "%s: rate mask %08x, rateid %02x, sgi %d, size %zi\n",
+ 		__func__, ramask, rateid, sgi, sizeof(h2c.b_macid_cfg));
+ 	rtl8xxxu_gen2_h2c_cmd(priv, &h2c, sizeof(h2c.b_macid_cfg));
+ }
+@@ -4754,11 +4771,11 @@
+ 		if (rtl8xxxu_dma_agg_pages <= page_thresh)
+ 			timeout = page_thresh;
+ 		else if (rtl8xxxu_dma_agg_pages <= 6)
+-			dev_err(&priv->udev->dev,
++			dev_err(priv->dev,
+ 				"%s: dma_agg_pages=%i too small, minimum is 6\n",
+ 				__func__, rtl8xxxu_dma_agg_pages);
+ 		else
+-			dev_err(&priv->udev->dev,
++			dev_err(priv->dev,
+ 				"%s: dma_agg_pages=%i larger than limit %i\n",
+ 				__func__, rtl8xxxu_dma_agg_pages, page_thresh);
+ 	}
+@@ -4774,7 +4791,7 @@
+ 		if (rtl8xxxu_dma_agg_timeout <= 127)
+ 			timeout = rtl8xxxu_dma_agg_timeout;
+ 		else
+-			dev_err(&priv->udev->dev,
++			dev_err(priv->dev,
+ 				"%s: Invalid dma_agg_timeout: %i\n",
+ 				__func__, rtl8xxxu_dma_agg_timeout);
+ 	}
+@@ -4815,7 +4832,7 @@
+ 	val32 |= rate_cfg;
+ 	rtl8xxxu_write32(priv, REG_RESPONSE_RATE_SET, val32);
+ 
+-	dev_dbg(&priv->udev->dev, "%s: rates %08x\n", __func__,	rate_cfg);
++	dev_dbg(priv->dev, "%s: rates %08x\n", __func__,	rate_cfg);
+ 
+ 	if (rate_cfg)
+ 		rate_idx = __fls(rate_cfg);
+@@ -4933,13 +4950,13 @@
+ 	rarpt->desc_rate = rate;
+ }
+ 
+-static void
++void
+ rtl8xxxu_bss_info_changed(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
+ 			  struct ieee80211_bss_conf *bss_conf, u64 changed)
+ {
+ 	struct rtl8xxxu_vif *rtlvif = (struct rtl8xxxu_vif *)vif->drv_priv;
+ 	struct rtl8xxxu_priv *priv = hw->priv;
+-	struct device *dev = &priv->udev->dev;
++	struct device *dev = priv->dev;
+ 	struct rtl8xxxu_sta_info *sta_info;
+ 	struct ieee80211_sta *sta;
+ 	struct rtl8xxxu_ra_report *rarpt;
+@@ -5067,12 +5084,12 @@
+ 	return;
+ }
+ 
+-static int rtl8xxxu_start_ap(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
++int rtl8xxxu_start_ap(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
+ 			     struct ieee80211_bss_conf *link_conf)
+ {
+ 	struct rtl8xxxu_vif *rtlvif = (struct rtl8xxxu_vif *)vif->drv_priv;
+ 	struct rtl8xxxu_priv *priv = hw->priv;
+-	struct device *dev = &priv->udev->dev;
++	struct device *dev = priv->dev;
+ 
+ 	dev_dbg(dev, "Start AP mode\n");
+ 	rtl8xxxu_set_bssid(priv, vif->bss_conf.bssid, rtlvif->port_num);
+@@ -5279,7 +5296,7 @@
+ 			u8 macid)
+ {
+ 	struct rtl8xxxu_priv *priv = hw->priv;
+-	struct device *dev = &priv->udev->dev;
++	struct device *dev = priv->dev;
+ 	u8 *qc = ieee80211_get_qos_ctl(hdr);
+ 	u8 tid = qc[0] & IEEE80211_QOS_CTL_TID_MASK;
+ 	u32 rate = 0;
+@@ -5344,7 +5361,7 @@
+ 			u8 macid)
+ {
+ 	struct rtl8xxxu_priv *priv = hw->priv;
+-	struct device *dev = &priv->udev->dev;
++	struct device *dev = priv->dev;
+ 	struct rtl8xxxu_txdesc40 *tx_desc40;
+ 	u8 *qc = ieee80211_get_qos_ctl(hdr);
+ 	u8 tid = qc[0] & IEEE80211_QOS_CTL_TID_MASK;
+@@ -5418,7 +5435,7 @@
+ 			u8 macid)
+ {
+ 	struct rtl8xxxu_priv *priv = hw->priv;
+-	struct device *dev = &priv->udev->dev;
++	struct device *dev = priv->dev;
+ 	struct rtl8xxxu_ra_info *ra = &priv->ra_info;
+ 	u8 *qc = ieee80211_get_qos_ctl(hdr);
+ 	u8 tid = qc[0] & IEEE80211_QOS_CTL_TID_MASK;
+@@ -5502,7 +5519,7 @@
+ 	struct ieee80211_sta *sta = NULL;
+ 	struct ieee80211_vif *vif = tx_info->control.vif;
+ 	struct rtl8xxxu_vif *rtlvif = vif ? (struct rtl8xxxu_vif *)vif->drv_priv : NULL;
+-	struct device *dev = &priv->udev->dev;
++	struct device *dev = priv->dev;
+ 	u32 queue, rts_rate;
+ 	u16 pktlen = skb->len;
+ 	int tx_desc_size = priv->fops->tx_desc_size;
+@@ -5648,7 +5665,7 @@
+ {
+ 	struct rtl8xxxu_priv *priv = hw->priv;
+ 	struct sk_buff *skb = ieee80211_beacon_get(hw, vif, 0);
+-	struct device *dev = &priv->udev->dev;
++	struct device *dev = priv->dev;
+ 	int retry;
+ 	u8 val8;
+ 
+@@ -5677,7 +5694,7 @@
+ 		dev_err(dev, "%s: Failed to read beacon valid bit\n", __func__);
+ }
+ 
+-static void rtl8xxxu_update_beacon_work_callback(struct work_struct *work)
++void rtl8xxxu_update_beacon_work_callback(struct work_struct *work)
+ {
+ 	struct rtl8xxxu_priv *priv =
+ 		container_of(work, struct rtl8xxxu_priv, update_beacon_work.work);
+@@ -5918,7 +5935,7 @@
+ 			rtl8xxxu_queue_rx_urb(priv, rx_urb);
+ 			break;
+ 		default:
+-			dev_warn(&priv->udev->dev,
++			dev_warn(priv->dev,
+ 				 "failed to requeue urb with error %i\n", ret);
+ 			skb = (struct sk_buff *)rx_urb->urb.context;
+ 			dev_kfree_skb(skb);
+@@ -6133,7 +6150,7 @@
+ 	}
+ }
+ 
+-static void rtl8xxxu_c2hcmd_callback(struct work_struct *work)
++void rtl8xxxu_c2hcmd_callback(struct work_struct *work)
+ {
+ 	struct rtl8xxxu_priv *priv;
+ 	struct rtl8723bu_c2h *c2h;
+@@ -6188,7 +6205,7 @@
+ 				 struct sk_buff *skb)
+ {
+ 	struct rtl8723bu_c2h *c2h = (struct rtl8723bu_c2h *)skb->data;
+-	struct device *dev = &priv->udev->dev;
++	struct device *dev = priv->dev;
+ 	int len;
+ 
+ 	len = skb->len - 2;
+@@ -6236,7 +6253,7 @@
+ static void rtl8188e_c2hcmd_callback(struct work_struct *work)
+ {
+ 	struct rtl8xxxu_priv *priv = container_of(work, struct rtl8xxxu_priv, c2hcmd_work);
+-	struct device *dev = &priv->udev->dev;
++	struct device *dev = priv->dev;
+ 	struct sk_buff *skb = NULL;
+ 	struct rtl8xxxu_rxdesc16 *rx_desc;
+ 
+@@ -6511,7 +6528,7 @@
+ 		skb_trim(skb, pkt_len);
+ 
+ 		if (rx_desc->rpt_sel) {
+-			struct device *dev = &priv->udev->dev;
++			struct device *dev = priv->dev;
+ 			dev_dbg(dev, "%s: C2H packet\n", __func__);
+ 			rtl8723bu_handle_c2h(priv, skb);
+ 		} else {
+@@ -6569,7 +6586,7 @@
+ 	struct ieee80211_hw *hw = rx_urb->hw;
+ 	struct rtl8xxxu_priv *priv = hw->priv;
+ 	struct sk_buff *skb = (struct sk_buff *)urb->context;
+-	struct device *dev = &priv->udev->dev;
++	struct device *dev = priv->dev;
+ 
+ 	skb_put(skb, urb->actual_length);
+ 
+@@ -6624,7 +6641,7 @@
+ static void rtl8xxxu_int_complete(struct urb *urb)
+ {
+ 	struct rtl8xxxu_priv *priv = (struct rtl8xxxu_priv *)urb->context;
+-	struct device *dev = &priv->udev->dev;
++	struct device *dev = priv->dev;
+ 	int ret;
+ 
+ 	if (rtl8xxxu_debug & RTL8XXXU_DEBUG_INTERRUPT)
+@@ -6751,7 +6768,7 @@
+ 	rtlvif->port_num = 1;
+ }
+ 
+-static int rtl8xxxu_add_interface(struct ieee80211_hw *hw,
++int rtl8xxxu_add_interface(struct ieee80211_hw *hw,
+ 				  struct ieee80211_vif *vif)
+ {
+ 	struct rtl8xxxu_vif *rtlvif = (struct rtl8xxxu_vif *)vif->drv_priv;
+@@ -6815,21 +6832,21 @@
+ 	return 0;
+ }
+ 
+-static void rtl8xxxu_remove_interface(struct ieee80211_hw *hw,
++void rtl8xxxu_remove_interface(struct ieee80211_hw *hw,
+ 				      struct ieee80211_vif *vif)
+ {
+ 	struct rtl8xxxu_vif *rtlvif = (struct rtl8xxxu_vif *)vif->drv_priv;
+ 	struct rtl8xxxu_priv *priv = hw->priv;
+ 
+-	dev_dbg(&priv->udev->dev, "%s\n", __func__);
++	dev_dbg(priv->dev, "%s\n", __func__);
+ 
+ 	priv->vifs[rtlvif->port_num] = NULL;
+ }
+ 
+-static int rtl8xxxu_config(struct ieee80211_hw *hw, u32 changed)
++int rtl8xxxu_config(struct ieee80211_hw *hw, u32 changed)
+ {
+ 	struct rtl8xxxu_priv *priv = hw->priv;
+-	struct device *dev = &priv->udev->dev;
++	struct device *dev = priv->dev;
+ 	int ret = 0, channel;
+ 	bool ht40;
+ 
+@@ -6864,13 +6881,13 @@
+ 	return ret;
+ }
+ 
+-static int rtl8xxxu_conf_tx(struct ieee80211_hw *hw,
++int rtl8xxxu_conf_tx(struct ieee80211_hw *hw,
+ 			    struct ieee80211_vif *vif,
+ 			    unsigned int link_id, u16 queue,
+ 			    const struct ieee80211_tx_queue_params *param)
+ {
+ 	struct rtl8xxxu_priv *priv = hw->priv;
+-	struct device *dev = &priv->udev->dev;
++	struct device *dev = priv->dev;
+ 	u32 val32;
+ 	u8 aifs, acm_ctrl, acm_bit;
+ 
+@@ -6917,14 +6934,14 @@
+ 	return 0;
+ }
+ 
+-static void rtl8xxxu_configure_filter(struct ieee80211_hw *hw,
++void rtl8xxxu_configure_filter(struct ieee80211_hw *hw,
+ 				      unsigned int changed_flags,
+ 				      unsigned int *total_flags, u64 multicast)
+ {
+ 	struct rtl8xxxu_priv *priv = hw->priv;
+ 	u32 rcr = priv->regrcr;
+ 
+-	dev_dbg(&priv->udev->dev, "%s: changed_flags %08x, total_flags %08x\n",
++	dev_dbg(priv->dev, "%s: changed_flags %08x, total_flags %08x\n",
+ 		__func__, changed_flags, *total_flags);
+ 
+ 	/*
+@@ -6975,7 +6992,7 @@
+ 			 FIF_PROBE_REQ);
+ }
+ 
+-static int rtl8xxxu_set_rts_threshold(struct ieee80211_hw *hw, u32 rts)
++int rtl8xxxu_set_rts_threshold(struct ieee80211_hw *hw, u32 rts)
+ {
+ 	if (rts > 2347 && rts != (u32)-1)
+ 		return -EINVAL;
+@@ -6990,14 +7007,14 @@
+ 	return find_first_zero_bit(priv->cam_map, priv->fops->max_sec_cam_num);
+ }
+ 
+-static int rtl8xxxu_set_key(struct ieee80211_hw *hw, enum set_key_cmd cmd,
++int rtl8xxxu_set_key(struct ieee80211_hw *hw, enum set_key_cmd cmd,
+ 			    struct ieee80211_vif *vif,
+ 			    struct ieee80211_sta *sta,
+ 			    struct ieee80211_key_conf *key)
+ {
+ 	struct rtl8xxxu_vif *rtlvif = (struct rtl8xxxu_vif *)vif->drv_priv;
+ 	struct rtl8xxxu_priv *priv = hw->priv;
+-	struct device *dev = &priv->udev->dev;
++	struct device *dev = priv->dev;
+ 	u8 mac_addr[ETH_ALEN];
+ 	u8 val8;
+ 	u16 val16;
+@@ -7075,12 +7092,12 @@
+ 	return retval;
+ }
+ 
+-static int
++int
+ rtl8xxxu_ampdu_action(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
+ 		      struct ieee80211_ampdu_params *params)
+ {
+ 	struct rtl8xxxu_priv *priv = hw->priv;
+-	struct device *dev = &priv->udev->dev;
++	struct device *dev = priv->dev;
+ 	u8 ampdu_factor, ampdu_density;
+ 	struct ieee80211_sta *sta = params->sta;
+ 	u16 tid = params->tid;
+@@ -7123,7 +7140,7 @@
+ 	return 0;
+ }
+ 
+-static void
++void
+ rtl8xxxu_sta_statistics(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
+ 			struct ieee80211_sta *sta, struct station_info *sinfo)
+ {
+@@ -7329,7 +7346,7 @@
+ 	else
+ 		cfo_average = (cfo_khz_a + cfo_khz_b) / 2;
+ 
+-	dev_dbg(&priv->udev->dev, "cfo_average: %d\n", cfo_average);
++	dev_dbg(priv->dev, "cfo_average: %d\n", cfo_average);
+ 
+ 	if (cfo->adjust) {
+ 		if (abs(cfo_average) < CFO_TH_XTAL_LOW)
+@@ -7397,7 +7414,7 @@
+ 	list_add_tail(&stas_entry->list, &iter_stas->list);
+ }
+ 
+-static void rtl8xxxu_watchdog_callback(struct work_struct *work)
++void rtl8xxxu_watchdog_callback(struct work_struct *work)
+ {
+ 
+ 	struct rtl8xxxu_iter_stas_data iter_data;
+@@ -7550,7 +7567,7 @@
+ 	rtl8xxxu_free_tx_resources(priv);
+ }
+ 
+-static int rtl8xxxu_sta_add(struct ieee80211_hw *hw,
++int rtl8xxxu_sta_add(struct ieee80211_hw *hw,
+ 			    struct ieee80211_vif *vif,
+ 			    struct ieee80211_sta *sta)
+ {
+@@ -7587,7 +7604,7 @@
+ 	return 0;
+ }
+ 
+-static int rtl8xxxu_sta_remove(struct ieee80211_hw *hw,
++int rtl8xxxu_sta_remove(struct ieee80211_hw *hw,
+ 			       struct ieee80211_vif *vif,
+ 			       struct ieee80211_sta *sta)
+ {
+@@ -7636,7 +7653,7 @@
+ 	struct usb_interface_descriptor *interface_desc;
+ 	struct usb_host_interface *host_interface;
+ 	struct usb_endpoint_descriptor *endpoint;
+-	struct device *dev = &priv->udev->dev;
++	struct device *dev = priv->dev;
+ 	int i, j = 0, endpoints;
+ 	u8 dir, xtype, num;
+ 	int ret = 0;
+@@ -7716,11 +7733,11 @@
+ 	led->brightness_set_blocking = priv->fops->led_classdev_brightness_set;
+ 
+ 	snprintf(priv->led_name, sizeof(priv->led_name),
+-		 "rtl8xxxu-usb%s", dev_name(&priv->udev->dev));
++		 "rtl8xxxu-usb%s", dev_name(priv->dev));
+ 	led->name = priv->led_name;
+ 	led->max_brightness = RTL8XXXU_HW_LED_CONTROL;
+ 
+-	if (led_classdev_register(&priv->udev->dev, led))
++	if (led_classdev_register(priv->dev, led))
+ 		return;
+ 
+ 	priv->led_registered = true;
+@@ -7829,6 +7846,7 @@
+ 	priv = hw->priv;
+ 	priv->hw = hw;
+ 	priv->udev = udev;
++	priv->dev = &udev->dev;
+ 	priv->fops = (struct rtl8xxxu_fileops *)id->driver_info;
+ 	mutex_init(&priv->usb_buf_mutex);
+ 	mutex_init(&priv->syson_indirect_access_mutex);
+@@ -7994,7 +8012,7 @@
+ 
+ 	usb_set_intfdata(interface, NULL);
+ 
+-	dev_info(&priv->udev->dev, "disconnecting\n");
++	dev_info(priv->dev, "disconnecting\n");
+ 
+ 	kfree(priv->fw_data);
+ 	mutex_destroy(&priv->usb_buf_mutex);
+@@ -8002,7 +8020,7 @@
+ 	mutex_destroy(&priv->h2c_mutex);
+ 
+ 	if (priv->udev->state != USB_STATE_NOTATTACHED) {
+-		dev_info(&priv->udev->dev,
++		dev_info(priv->dev,
+ 			 "Device still attached, trying to reset\n");
+ 		usb_reset_device(priv->udev);
+ 	}
+@@ -8306,6 +8324,30 @@
+ 	.disable_hub_initiated_lpm = 1,
+ };
+ 
++/* Exported for PCIe transport (rtl8xxxu_pcie.c) */
++EXPORT_SYMBOL_GPL(rtl8xxxu_init_device);
++EXPORT_SYMBOL_GPL(rtl8xxxu_update_beacon_work_callback);
++EXPORT_SYMBOL_GPL(rtl8xxxu_c2hcmd_callback);
++EXPORT_SYMBOL_GPL(rtl8xxxu_watchdog_callback);
++EXPORT_SYMBOL_GPL(rtl8xxxu_get_antenna);
++EXPORT_SYMBOL_GPL(rtl8xxxu_set_tim);
++EXPORT_SYMBOL_GPL(rtl8xxxu_sw_scan_start);
++EXPORT_SYMBOL_GPL(rtl8xxxu_sw_scan_complete);
++EXPORT_SYMBOL_GPL(rtl8xxxu_bss_info_changed);
++EXPORT_SYMBOL_GPL(rtl8xxxu_start_ap);
++EXPORT_SYMBOL_GPL(rtl8xxxu_add_interface);
++EXPORT_SYMBOL_GPL(rtl8xxxu_remove_interface);
++EXPORT_SYMBOL_GPL(rtl8xxxu_config);
++EXPORT_SYMBOL_GPL(rtl8xxxu_conf_tx);
++EXPORT_SYMBOL_GPL(rtl8xxxu_configure_filter);
++EXPORT_SYMBOL_GPL(rtl8xxxu_set_rts_threshold);
++EXPORT_SYMBOL_GPL(rtl8xxxu_set_key);
++EXPORT_SYMBOL_GPL(rtl8xxxu_ampdu_action);
++EXPORT_SYMBOL_GPL(rtl8xxxu_sta_statistics);
++EXPORT_SYMBOL_GPL(rtl8xxxu_sta_add);
++EXPORT_SYMBOL_GPL(rtl8xxxu_sta_remove);
++EXPORT_SYMBOL_GPL(rtl8xxxu_supported_band);
++
+ MODULE_DEVICE_TABLE(usb, dev_table);
+ 
+ module_usb_driver(rtl8xxxu_driver);
+
+--- a/drivers/net/wireless/realtek/rtl8xxxu/Kconfig
++++ b/drivers/net/wireless/realtek/rtl8xxxu/Kconfig
+@@ -4,7 +4,7 @@
+ #
+ config RTL8XXXU
+ 	tristate "Realtek 802.11n USB wireless chips support"
+-	depends on MAC80211 && USB
++	depends on MAC80211 && (USB || PCI)
+ 	depends on LEDS_CLASS
+ 	help
+ 	  This is an alternative driver for various Realtek RTL8XXX
+
+--- a/drivers/net/wireless/realtek/rtl8xxxu/Makefile
++++ b/drivers/net/wireless/realtek/rtl8xxxu/Makefile
+@@ -4,3 +4,4 @@
+ rtl8xxxu-y	:= core.o 8192e.o 8723b.o \
+ 		   8723a.o 8192c.o 8188f.o \
+ 		   8188e.o 8710b.o 8192f.o
++rtl8xxxu-$(CONFIG_PCI)	+= rtl8xxxu_pcie.o
+
+--- a/drivers/net/wireless/realtek/rtl8xxxu/8188e.c
++++ b/drivers/net/wireless/realtek/rtl8xxxu/8188e.c
+@@ -383,7 +383,7 @@
+ 
+ static int rtl8188eu_identify_chip(struct rtl8xxxu_priv *priv)
+ {
+-	struct device *dev = &priv->udev->dev;
++	struct device *dev = priv->dev;
+ 	u32 sys_cfg, vendor;
+ 	int ret = 0;
+ 
+@@ -740,7 +740,7 @@
+ 	    ((reg_eac & 0x03ff0000) != 0x00360000))
+ 		result |= 0x02;
+ 	else
+-		dev_warn(&priv->udev->dev, "%s: Path A RX IQK failed!\n",
++		dev_warn(priv->dev, "%s: Path A RX IQK failed!\n",
+ 			 __func__);
+ 
+ out:
+@@ -750,7 +750,7 @@
+ static void rtl8188eu_phy_iqcalibrate(struct rtl8xxxu_priv *priv,
+ 				      int result[][8], int t)
+ {
+-	struct device *dev = &priv->udev->dev;
++	struct device *dev = priv->dev;
+ 	u32 i, val32;
+ 	int path_a_ok;
+ 	int retry = 2;
+@@ -905,7 +905,7 @@
+ 
+ static void rtl8188eu_phy_iq_calibrate(struct rtl8xxxu_priv *priv)
+ {
+-	struct device *dev = &priv->udev->dev;
++	struct device *dev = priv->dev;
+ 	int result[4][8];	/* last is final result */
+ 	int i, candidate;
+ 	bool path_a_ok;
+@@ -1116,7 +1116,7 @@
+ 
+ static int rtl8188eu_active_to_lps(struct rtl8xxxu_priv *priv)
+ {
+-	struct device *dev = &priv->udev->dev;
++	struct device *dev = priv->dev;
+ 	u8 val8;
+ 	u16 val16;
+ 	u32 val32;
+@@ -1668,7 +1668,7 @@
+ {
+ 	u32 *_rx_desc = (u32 *)(skb->data - sizeof(struct rtl8xxxu_rxdesc16));
+ 	struct rtl8xxxu_rxdesc16 *rx_desc = (struct rtl8xxxu_rxdesc16 *)_rx_desc;
+-	struct device *dev = &priv->udev->dev;
++	struct device *dev = priv->dev;
+ 	struct rtl8xxxu_ra_info *ra = &priv->ra_info;
+ 	u32 tx_rpt_len = rx_desc->pktlen & 0x3ff;
+ 	u32 items = tx_rpt_len / TX_RPT2_ITEM_SIZE;
+
+--- a/drivers/net/wireless/realtek/rtl8xxxu/8188f.c
++++ b/drivers/net/wireless/realtek/rtl8xxxu/8188f.c
+@@ -307,7 +307,7 @@
+ 
+ static int rtl8188fu_identify_chip(struct rtl8xxxu_priv *priv)
+ {
+-	struct device *dev = &priv->udev->dev;
++	struct device *dev = priv->dev;
+ 	u32 sys_cfg, vendor;
+ 	int ret = 0;
+ 
+@@ -819,7 +819,7 @@
+ 	}
+ 
+ 	if (i == 100)
+-		dev_warn(&priv->udev->dev, "LC calibration timed out.\n");
++		dev_warn(priv->dev, "LC calibration timed out.\n");
+ 
+ 	rtl8xxxu_write_rfreg(priv, RF_A, RF6052_REG_MODE_AG, rf_amode);
+ 
+@@ -1061,7 +1061,7 @@
+ static void rtl8188fu_phy_iqcalibrate(struct rtl8xxxu_priv *priv,
+ 				      int result[][8], int t)
+ {
+-	struct device *dev = &priv->udev->dev;
++	struct device *dev = priv->dev;
+ 	u32 i, val32, rx_initial_gain, lok_result;
+ 	u32 path_sel_bb, path_sel_rf;
+ 	int path_a_ok;
+@@ -1217,7 +1217,7 @@
+ 
+ static void rtl8188fu_phy_iq_calibrate(struct rtl8xxxu_priv *priv)
+ {
+-	struct device *dev = &priv->udev->dev;
++	struct device *dev = priv->dev;
+ 	int result[4][8]; /* last is final result */
+ 	int i, candidate;
+ 	bool path_a_ok;
+@@ -1450,7 +1450,7 @@
+ 
+ static int rtl8188fu_active_to_lps(struct rtl8xxxu_priv *priv)
+ {
+-	struct device *dev = &priv->udev->dev;
++	struct device *dev = priv->dev;
+ 	u8 val8;
+ 	u16 val16;
+ 	u32 val32;
+@@ -1657,7 +1657,7 @@
+ 
+ 	val32 = rtl8xxxu_read32(priv, REG_AFE_XTAL_CTRL);
+ 
+-	dev_dbg(&priv->udev->dev,
++	dev_dbg(priv->dev,
+ 	        "%s: Adjusting crystal cap from 0x%x (actually 0x%lx 0x%lx) to 0x%x\n",
+ 	        __func__,
+ 	        cfo->crystal_cap,
+
+--- a/drivers/net/wireless/realtek/rtl8xxxu/8192c.c
++++ b/drivers/net/wireless/realtek/rtl8xxxu/8192c.c
+@@ -338,7 +338,7 @@
+ 
+ static int rtl8192cu_identify_chip(struct rtl8xxxu_priv *priv)
+ {
+-	struct device *dev = &priv->udev->dev;
++	struct device *dev = priv->dev;
+ 	u32 val32, bonding, sys_cfg, vendor;
+ 	int ret = 0;
+ 
+
+--- a/drivers/net/wireless/realtek/rtl8xxxu/8192e.c
++++ b/drivers/net/wireless/realtek/rtl8xxxu/8192e.c
+@@ -464,7 +464,7 @@
+ 
+ static int rtl8192eu_identify_chip(struct rtl8xxxu_priv *priv)
+ {
+-	struct device *dev = &priv->udev->dev;
++	struct device *dev = priv->dev;
+ 	u32 val32, bonding, sys_cfg, vendor;
+ 	int ret = 0;
+ 
+@@ -860,7 +860,7 @@
+ 	    ((reg_eac & 0x03ff0000) != 0x00360000))
+ 		result |= 0x02;
+ 	else
+-		dev_warn(&priv->udev->dev, "%s: Path A RX IQK failed!\n",
++		dev_warn(priv->dev, "%s: Path A RX IQK failed!\n",
+ 			 __func__);
+ 
+ out:
+@@ -910,7 +910,7 @@
+ 	    ((reg_ebc & 0x03ff0000) != 0x00420000))
+ 		result |= 0x01;
+ 	else
+-		dev_warn(&priv->udev->dev, "%s: Path B IQK failed!\n",
++		dev_warn(priv->dev, "%s: Path B IQK failed!\n",
+ 			 __func__);
+ 
+ 	return result;
+@@ -1040,7 +1040,7 @@
+ 	    ((reg_ecc & 0x03ff0000) != 0x00360000))
+ 		result |= 0x02;
+ 	else
+-		dev_warn(&priv->udev->dev, "%s: Path B RX IQK failed!\n",
++		dev_warn(priv->dev, "%s: Path B RX IQK failed!\n",
+ 			 __func__);
+ 
+ out:
+@@ -1050,7 +1050,7 @@
+ static void rtl8192eu_phy_iqcalibrate(struct rtl8xxxu_priv *priv,
+ 				      int result[][8], int t)
+ {
+-	struct device *dev = &priv->udev->dev;
++	struct device *dev = priv->dev;
+ 	u32 i, val32;
+ 	int path_a_ok, path_b_ok;
+ 	int retry = 2;
+@@ -1235,7 +1235,7 @@
+ 
+ static void rtl8192eu_phy_iq_calibrate(struct rtl8xxxu_priv *priv)
+ {
+-	struct device *dev = &priv->udev->dev;
++	struct device *dev = priv->dev;
+ 	int result[4][8];	/* last is final result */
+ 	int i, candidate;
+ 	bool path_a_ok, path_b_ok;
+@@ -1436,7 +1436,7 @@
+ 
+ static int rtl8192eu_active_to_lps(struct rtl8xxxu_priv *priv)
+ {
+-	struct device *dev = &priv->udev->dev;
++	struct device *dev = priv->dev;
+ 	u8 val8;
+ 	u16 val16;
+ 	u32 val32;
+@@ -1521,7 +1521,7 @@
+ 	}
+ 
+ 	if (!count) {
+-		dev_warn(&priv->udev->dev, "%s: Disabling MAC timed out\n",
++		dev_warn(priv->dev, "%s: Disabling MAC timed out\n",
+ 			 __func__);
+ 		ret = -EBUSY;
+ 		goto exit;
+
+--- a/drivers/net/wireless/realtek/rtl8xxxu/8192f.c
++++ b/drivers/net/wireless/realtek/rtl8xxxu/8192f.c
+@@ -391,7 +391,7 @@
+ 
+ static int rtl8192fu_identify_chip(struct rtl8xxxu_priv *priv)
+ {
+-	struct device *dev = &priv->udev->dev;
++	struct device *dev = priv->dev;
+ 	u32 sys_cfg, vendor, val32;
+ 
+ 	strscpy(priv->chip_name, "8192FU", sizeof(priv->chip_name));
+@@ -731,7 +731,7 @@
+ 	priv->rfe_type = efuse->rfe_option & 0x1f;
+ 
+ 	if (priv->rfe_type != 5 && priv->rfe_type != 1)
+-		dev_warn(&priv->udev->dev,
++		dev_warn(priv->dev,
+ 			 "%s: RFE type %d was not tested. Please send an email to linux-wireless@vger.kernel.org about this.\n",
+ 			 __func__, priv->rfe_type);
+ 
+@@ -1109,7 +1109,7 @@
+ 	    ((reg_ebc & 0x03ff0000) != 0x00420000))
+ 		result |= 0x01;
+ 	else
+-		dev_warn(&priv->udev->dev, "%s: Path B IQK failed!\n",
++		dev_warn(priv->dev, "%s: Path B IQK failed!\n",
+ 			 __func__);
+ 
+ 	return result;
+@@ -1246,7 +1246,7 @@
+ 	    ((reg_ecc & 0x03ff0000) != 0x00360000))
+ 		result |= 0x02;
+ 	else
+-		dev_warn(&priv->udev->dev, "%s: Path B RX IQK failed!\n",
++		dev_warn(priv->dev, "%s: Path B RX IQK failed!\n",
+ 			 __func__);
+ 
+ 	return result;
+@@ -1269,7 +1269,7 @@
+ 		REG_RFE_CTRL_ANT_SRC2, REG_CCK0_AFE_SETTING
+ 	};
+ 	u32 rx_initial_gain_a, rx_initial_gain_b;
+-	struct device *dev = &priv->udev->dev;
++	struct device *dev = priv->dev;
+ 	int path_a_ok, path_b_ok;
+ 	u8 rfe = priv->rfe_type;
+ 	int retry = 2;
+@@ -1442,7 +1442,7 @@
+ {
+ 	s32 reg_e94, reg_e9c, reg_ea4, reg_eac;
+ 	s32 reg_eb4, reg_ebc, reg_ec4, reg_ecc;
+-	struct device *dev = &priv->udev->dev;
++	struct device *dev = priv->dev;
+ 	u32 path_a_0xdf, path_a_0x35;
+ 	u32 path_b_0xdf, path_b_0x35;
+ 	bool path_a_ok, path_b_ok;
+@@ -1783,7 +1783,7 @@
+ 
+ static int rtl8192fu_active_to_lps(struct rtl8xxxu_priv *priv)
+ {
+-	struct device *dev = &priv->udev->dev;
++	struct device *dev = priv->dev;
+ 	u16 val16;
+ 	u32 val32;
+ 	int retry;
+@@ -1948,7 +1948,7 @@
+ 	xtal1 = rtl8xxxu_read32(priv, REG_AFE_PLL_CTRL);
+ 	xtal0 = rtl8xxxu_read32(priv, REG_AFE_XTAL_CTRL);
+ 
+-	dev_dbg(&priv->udev->dev,
++	dev_dbg(priv->dev,
+ 		"%s: Adjusting crystal cap from 0x%x (actually 0x%x 0x%x) to 0x%x\n",
+ 		__func__,
+ 		cfo->crystal_cap,
+
+--- a/drivers/net/wireless/realtek/rtl8xxxu/8710b.c
++++ b/drivers/net/wireless/realtek/rtl8xxxu/8710b.c
+@@ -462,7 +462,7 @@
+ 
+ static u32 rtl8710b_indirect_read32(struct rtl8xxxu_priv *priv, u32 addr)
+ {
+-	struct device *dev = &priv->udev->dev;
++	struct device *dev = priv->dev;
+ 	u32 val32, value = 0xffffffff;
+ 	u8 polling_count = 0xff;
+ 
+@@ -497,7 +497,7 @@
+ 
+ static void rtl8710b_indirect_write32(struct rtl8xxxu_priv *priv, u32 addr, u32 val)
+ {
+-	struct device *dev = &priv->udev->dev;
++	struct device *dev = priv->dev;
+ 	u8 polling_count = 0xff;
+ 	u32 val32;
+ 
+@@ -570,7 +570,7 @@
+ 
+ static int rtl8710bu_identify_chip(struct rtl8xxxu_priv *priv)
+ {
+-	struct device *dev = &priv->udev->dev;
++	struct device *dev = priv->dev;
+ 	u32 cfg0, cfg2, vendor;
+ 	u8 package_type = 0x7; /* a nonsense value */
+ 
+@@ -847,7 +847,7 @@
+ 
+ static int rtl8710b_read_efuse(struct rtl8xxxu_priv *priv)
+ {
+-	struct device *dev = &priv->udev->dev;
++	struct device *dev = priv->dev;
+ 	u8 val8, word_mask, header, extheader;
+ 	u16 efuse_addr, offset;
+ 	int i, ret = 0;
+@@ -951,7 +951,7 @@
+ 	} else if (priv->vendor_umc) {
+ 		return rtl8xxxu_load_firmware(priv, "rtlwifi/rtl8710bufw_UMC.bin");
+ 	} else {
+-		dev_err(&priv->udev->dev, "We have no suitable firmware for this chip.\n");
++		dev_err(priv->dev, "We have no suitable firmware for this chip.\n");
+ 		return -1;
+ 	}
+ }
+@@ -1254,7 +1254,7 @@
+ static void rtl8710bu_phy_iqcalibrate(struct rtl8xxxu_priv *priv,
+ 				      int result[][8], int t)
+ {
+-	struct device *dev = &priv->udev->dev;
++	struct device *dev = priv->dev;
+ 	u32 i, val32, rx_initial_gain, lok_result;
+ 	u32 path_sel_bb, path_sel_rf;
+ 	int path_a_ok;
+@@ -1405,7 +1405,7 @@
+ 
+ static void rtl8710bu_phy_iq_calibrate(struct rtl8xxxu_priv *priv)
+ {
+-	struct device *dev = &priv->udev->dev;
++	struct device *dev = priv->dev;
+ 	int result[4][8]; /* last is final result */
+ 	int i, candidate;
+ 	bool path_a_ok;
+@@ -1550,7 +1550,7 @@
+ 
+ static int rtl8710bu_active_to_lps(struct rtl8xxxu_priv *priv)
+ {
+-	struct device *dev = &priv->udev->dev;
++	struct device *dev = priv->dev;
+ 	u8 val8;
+ 	u16 val16;
+ 	u32 val32;
+@@ -1768,7 +1768,7 @@
+ 
+ 	val32 = rtl8710b_read_syson_reg(priv, REG_SYS_XTAL_CTRL0_8710B);
+ 
+-	dev_dbg(&priv->udev->dev,
++	dev_dbg(priv->dev,
+ 		"%s: Adjusting crystal cap from 0x%x (actually 0x%x 0x%x) to 0x%x\n",
+ 		__func__,
+ 		cfo->crystal_cap,
+
+--- a/drivers/net/wireless/realtek/rtl8xxxu/8723a.c
++++ b/drivers/net/wireless/realtek/rtl8xxxu/8723a.c
+@@ -140,7 +140,7 @@
+ 
+ static int rtl8723au_identify_chip(struct rtl8xxxu_priv *priv)
+ {
+-	struct device *dev = &priv->udev->dev;
++	struct device *dev = priv->dev;
+ 	u32 val32, sys_cfg, vendor;
+ 	int ret = 0;
+ 
+@@ -424,7 +424,7 @@
+ 
+ 	val32 = rtl8xxxu_read32(priv, REG_MAC_PHY_CTRL);
+ 
+-	dev_dbg(&priv->udev->dev,
++	dev_dbg(priv->dev,
+ 	        "%s: Adjusting crystal cap from 0x%x (actually 0x%lx 0x%lx) to 0x%x\n",
+ 	        __func__,
+ 	        cfo->crystal_cap,
+
+--- a/drivers/net/wireless/realtek/rtl8xxxu/8723b.c
++++ b/drivers/net/wireless/realtek/rtl8xxxu/8723b.c
+@@ -290,7 +290,7 @@
+ 
+ static int rtl8723bu_identify_chip(struct rtl8xxxu_priv *priv)
+ {
+-	struct device *dev = &priv->udev->dev;
++	struct device *dev = priv->dev;
+ 	u32 val32, sys_cfg, vendor;
+ 	int ret = 0;
+ 
+@@ -894,7 +894,7 @@
+ static void rtl8723bu_phy_iqcalibrate(struct rtl8xxxu_priv *priv,
+ 				      int result[][8], int t)
+ {
+-	struct device *dev = &priv->udev->dev;
++	struct device *dev = priv->dev;
+ 	u32 i, val32;
+ 	int path_a_ok /*, path_b_ok */;
+ 	int retry = 2;
+@@ -1101,7 +1101,7 @@
+ 
+ static void rtl8723bu_phy_iq_calibrate(struct rtl8xxxu_priv *priv)
+ {
+-	struct device *dev = &priv->udev->dev;
++	struct device *dev = priv->dev;
+ 	int result[4][8];	/* last is final result */
+ 	int i, candidate;
+ 	bool path_a_ok, path_b_ok;
+@@ -1256,7 +1256,7 @@
+ 	}
+ 
+ 	if (!count) {
+-		dev_warn(&priv->udev->dev, "%s: Disabling MAC timed out\n",
++		dev_warn(priv->dev, "%s: Disabling MAC timed out\n",
+ 			 __func__);
+ 		ret = -EBUSY;
+ 		goto exit;
+
+--- /dev/null	2026-08-27 10:13:16.895771030 +0100
++++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_pcie.h
+@@ -0,0 +1,97 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++/*
++ * RTL8XXXU PCIe transport definitions
++ * Provides DMA ring management and MMIO register access for PCIe variants
++ * of the RTL8XXX family (e.g. RTL8192FR, RTL8812FR).
++ *
++ * TX ring descriptors are separate from the txdesc40 in the skb headroom.
++ * The DMA ring descriptor tells the hardware where to find the skb.
++ * The txdesc40 (built in skb headroom by rtl8xxxu_pcie_tx) tells the
++ * hardware how to transmit the frame (rate, AMPDU, etc.).
++ *
++ * RX ring descriptors: hardware writes rxdesc24 + payload into our
++ * pre-allocated DMA buffers. parse_rxdesc24() handles the rest.
++ */
++
++#ifndef __RTL8XXXU_PCIE_H
++#define __RTL8XXXU_PCIE_H
++
++/* PCIe register offsets (BAR2 MMIO — verified from live R291 devmem probe)
++ * RTL8192FR (0xe0100000) and RTL8812FR (0xd8200000):
++ *   0x0000: MAC ID / HW ID (0xFDC3B286 on both)
++ *   0x0004: Version register (0x14030012 = RTL8192FR, 0x00030002 = RTL8812FR)
++ *   0x0008: MAC/BB config (0x00207C23 / 0x00207C21)
++ *   0x0080: FIFO pointer (0x006705C6 / 0x0060C078)
++ *   0x0100: DMA config (0x000304FF / 0x00030CFF)
++ *   0x0200-0x0FFF: TX/RX descriptor rings (DMA)
++ *   0x0800-0x0FFF: MAC/BB registers
++ */
++
++/* Ring sizes */
++#define RTL8XXXU_PCIE_TX_RING_ENTRIES	256
++#define RTL8XXXU_PCIE_RX_RING_ENTRIES	256
++
++/* MMIO register offsets (need hardware verification from devmem probe) */
++#define RTL8XXXU_PCIE_TX_DMA_idx	0x0200
++#define RTL8XXXU_PCIE_INT_STATUS	0x0300
++#define RTL8XXXU_PCIE_INT_MASK		0x0304
++
++/* RX buffer size: must hold rxdesc24 + drvinfo + max 802.11 frame */
++#define RTL8XXXU_PCIE_RX_BUF_SIZE	2048
++
++/* DMA ring descriptor — tells hardware where to find/put data */
++struct rtl8xxxu_pcie_tx_desc {
++	__le32 addr;
++	__le32 addr_hi;
++	__le16 pkt_size;
++	__le16 flags;
++#define RTL8XXXU_PCIE_TX_DESC_FLAG_OWN	BIT(15)
++#define RTL8XXXU_PCIE_TX_DESC_FLAG_FIRST	BIT(14)
++#define RTL8XXXU_PCIE_TX_DESC_FLAG_LAST	BIT(13)
++};
++
++struct rtl8xxxu_pcie_rx_desc {
++	__le32 addr;
++	__le32 addr_hi;
++	__le16 pkt_size;
++	__le16 flags;
++#define RTL8XXXU_PCIE_RX_DESC_FLAG_OWN	BIT(15)
++};
++
++/* Per-queue TX ring */
++struct rtl8xxxu_pcie_tx_ring {
++	struct rtl8xxxu_pcie_tx_desc *desc;
++	dma_addr_t desc_dma;
++	struct sk_buff **skbs;
++	unsigned int idx;
++	unsigned int cnt;	/* total frames submitted (for debugging) */
++	unsigned int queue;
++};
++
++/* RX ring */
++struct rtl8xxxu_pcie_rx_ring {
++	struct rtl8xxxu_pcie_rx_desc *desc;
++	dma_addr_t desc_dma;
++	struct sk_buff **skbs;
++	unsigned int idx;
++};
++
++/* PCIe-specific private data */
++struct rtl8xxxu_pcie_priv {
++	struct rtl8xxxu_priv *priv;
++	void __iomem *mmio;
++	struct pci_dev *pdev;
++
++	struct rtl8xxxu_pcie_tx_ring tx_ring[TXDESC_QUEUE_MAX];
++	struct rtl8xxxu_pcie_rx_ring rx_ring;
++
++	int tx_ring_size;
++	int rx_ring_size;
++	int num_tx_queues;
++
++	/* NAPI */
++	struct napi_struct napi;
++	bool napi_enabled;
++};
++
++#endif /* __RTL8XXXU_PCIE_H */
+
+--- /dev/null	2026-08-27 10:13:16.895771030 +0100
++++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_pcie.c
+@@ -0,0 +1,904 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * RTL8XXXU PCIe transport
++ * Provides MMIO register access, DMA TX/RX rings, and NAPI for PCIe
++ * variants of the RTL8XXX family (e.g. RTL8192FR, RTL8812FR).
++ *
++ * TX: builds RTL8192F-native txdesc40 in skb headroom, DMA-maps the skb,
++ *     and submits via the PCIe DMA ring. Rate/AMPDU fill uses the shared
++ *     fill_txdesc_v2 helper from core.c.
++ *
++ * RX: hardware writes rxdesc24 + payload into our pre-allocated DMA buffers.
++ *     The NAPI poll calls parse_rxdesc24() which handles descriptor parsing
++ *     and ieee80211_rx delivery.
++ */
++
++#include <linux/module.h>
++#include <linux/pci.h>
++#include <linux/dma-mapping.h>
++#include <linux/interrupt.h>
++#include "rtl8xxxu.h"
++#include "rtl8xxxu_pcie.h"
++
++/* ------------------------------------------------------------------ */
++/*  MMIO register access (bus_ops implementations)                     */
++/* ------------------------------------------------------------------ */
++
++static u8 rtl8xxxu_pcie_read8(struct rtl8xxxu_priv *priv, u16 addr)
++{
++	struct rtl8xxxu_pcie_priv *pcie = priv->bus_priv;
++
++	return readb(pcie->mmio + addr);
++}
++
++static u16 rtl8xxxu_pcie_read16(struct rtl8xxxu_priv *priv, u16 addr)
++{
++	struct rtl8xxxu_pcie_priv *pcie = priv->bus_priv;
++
++	return readw(pcie->mmio + addr);
++}
++
++static u32 rtl8xxxu_pcie_read32(struct rtl8xxxu_priv *priv, u16 addr)
++{
++	struct rtl8xxxu_pcie_priv *pcie = priv->bus_priv;
++
++	return readl(pcie->mmio + addr);
++}
++
++static int rtl8xxxu_pcie_write8(struct rtl8xxxu_priv *priv, u16 addr, u8 val)
++{
++	struct rtl8xxxu_pcie_priv *pcie = priv->bus_priv;
++
++	writeb(val, pcie->mmio + addr);
++	return 0;
++}
++
++static int rtl8xxxu_pcie_write16(struct rtl8xxxu_priv *priv, u16 addr, u16 val)
++{
++	struct rtl8xxxu_pcie_priv *pcie = priv->bus_priv;
++
++	writew(val, pcie->mmio + addr);
++	return 0;
++}
++
++static int rtl8xxxu_pcie_write32(struct rtl8xxxu_priv *priv, u16 addr, u32 val)
++{
++	struct rtl8xxxu_pcie_priv *pcie = priv->bus_priv;
++
++	writel(val, pcie->mmio + addr);
++	return 0;
++}
++
++static int rtl8xxxu_pcie_writeN(struct rtl8xxxu_priv *priv, u16 addr,
++				u8 *buf, u16 len)
++{
++	struct rtl8xxxu_pcie_priv *pcie = priv->bus_priv;
++
++	memcpy_toio(pcie->mmio + addr, buf, len);
++	return 0;
++}
++
++static const struct rtl8xxxu_bus_ops rtl8xxxu_pcie_bus_ops = {
++	.read8 = rtl8xxxu_pcie_read8,
++	.read16 = rtl8xxxu_pcie_read16,
++	.read32 = rtl8xxxu_pcie_read32,
++	.write8 = rtl8xxxu_pcie_write8,
++	.write16 = rtl8xxxu_pcie_write16,
++	.write32 = rtl8xxxu_pcie_write32,
++	.writeN = rtl8xxxu_pcie_writeN,
++};
++
++/* ------------------------------------------------------------------ */
++/*  DMA ring management                                                */
++/* ------------------------------------------------------------------ */
++
++static int rtl8xxxu_pcie_alloc_tx_ring(struct rtl8xxxu_pcie_priv *pcie,
++				       int queue)
++{
++	struct rtl8xxxu_pcie_tx_ring *ring = &pcie->tx_ring[queue];
++	struct device *dev = &pcie->pdev->dev;
++	int size;
++
++	ring->queue = queue;
++	ring->idx = 0;
++	ring->cnt = 0;
++
++	size = RTL8XXXU_PCIE_TX_RING_ENTRIES * sizeof(struct rtl8xxxu_pcie_tx_desc);
++	ring->desc = dma_alloc_coherent(dev, size, &ring->desc_dma, GFP_KERNEL);
++	if (!ring->desc)
++		return -ENOMEM;
++
++	ring->skbs = kcalloc(RTL8XXXU_PCIE_TX_RING_ENTRIES, sizeof(struct sk_buff *),
++			     GFP_KERNEL);
++	if (!ring->skbs) {
++		dma_free_coherent(dev, size, ring->desc, ring->desc_dma);
++		return -ENOMEM;
++	}
++
++	memset(ring->desc, 0, size);
++	return 0;
++}
++
++static void rtl8xxxu_pcie_free_tx_ring(struct rtl8xxxu_pcie_priv *pcie,
++				       int queue)
++{
++	struct rtl8xxxu_pcie_tx_ring *ring = &pcie->tx_ring[queue];
++	struct device *dev = &pcie->pdev->dev;
++	int size, i;
++
++	if (!ring->desc)
++		return;
++
++	for (i = 0; i < RTL8XXXU_PCIE_TX_RING_ENTRIES; i++) {
++		if (ring->skbs[i]) {
++			dma_unmap_single(dev, ring->skbs[i]->dma,
++					 ring->skbs[i]->len, DMA_TO_DEVICE);
++			dev_kfree_skb_any(ring->skbs[i]);
++			ring->skbs[i] = NULL;
++		}
++	}
++
++	size = RTL8XXXU_PCIE_TX_RING_ENTRIES * sizeof(struct rtl8xxxu_pcie_tx_desc);
++	dma_free_coherent(dev, size, ring->desc, ring->desc_dma);
++	kfree(ring->skbs);
++	memset(ring, 0, sizeof(*ring));
++}
++
++static int rtl8xxxu_pcie_alloc_rx_ring(struct rtl8xxxu_pcie_priv *pcie)
++{
++	struct rtl8xxxu_pcie_rx_ring *ring = &pcie->rx_ring;
++	struct device *dev = &pcie->pdev->dev;
++	int size, i;
++
++	ring->idx = 0;
++
++	size = RTL8XXXU_PCIE_RX_RING_ENTRIES * sizeof(struct rtl8xxxu_pcie_rx_desc);
++	ring->desc = dma_alloc_coherent(dev, size, &ring->desc_dma, GFP_KERNEL);
++	if (!ring->desc)
++		return -ENOMEM;
++
++	ring->skbs = kcalloc(RTL8XXXU_PCIE_RX_RING_ENTRIES, sizeof(struct sk_buff *),
++			     GFP_KERNEL);
++	if (!ring->skbs) {
++		dma_free_coherent(dev, size, ring->desc, ring->desc_dma);
++		return -ENOMEM;
++	}
++
++	memset(ring->desc, 0, size);
++
++	/*
++	 * Pre-fill RX ring with skbs.
++	 * Each DMA buffer must be large enough to hold:
++	 *   rxdesc24 (24 bytes) + drvinfo +802.11 payload
++	 * Hardware writes into this buffer, then sets OWN bit.
++	 */
++	for (i = 0; i < RTL8XXXU_PCIE_RX_RING_ENTRIES; i++) {
++		struct sk_buff *skb;
++		dma_addr_t dma;
++
++		skb = __netdev_alloc_skb(NULL, RTL8XXXU_PCIE_RX_BUF_SIZE,
++					 GFP_KERNEL);
++		if (!skb)
++			break;
++
++		dma = dma_map_single(dev, skb->data, RTL8XXXU_PCIE_RX_BUF_SIZE,
++				     DMA_FROM_DEVICE);
++		if (dma_mapping_error(dev, dma)) {
++			dev_kfree_skb_any(skb);
++			break;
++		}
++
++		skb->dma = dma;
++		ring->skbs[i] = skb;
++		ring->desc[i].addr = cpu_to_le32(dma & 0xFFFFFFFF);
++		ring->desc[i].addr_hi = cpu_to_le32(dma >> 32);
++		ring->desc[i].pkt_size = cpu_to_le16(0);
++		ring->desc[i].flags = cpu_to_le16(RTL8XXXU_PCIE_RX_DESC_FLAG_OWN);
++	}
++
++	return 0;
++}
++
++static void rtl8xxxu_pcie_free_rx_ring(struct rtl8xxxu_pcie_priv *pcie)
++{
++	struct rtl8xxxu_pcie_rx_ring *ring = &pcie->rx_ring;
++	struct device *dev = &pcie->pdev->dev;
++	int size, i;
++
++	if (!ring->desc)
++		return;
++
++	for (i = 0; i < RTL8XXXU_PCIE_RX_RING_ENTRIES; i++) {
++		if (ring->skbs[i]) {
++			dma_unmap_single(dev, ring->skbs[i]->dma,
++					 RTL8XXXU_PCIE_RX_BUF_SIZE, DMA_FROM_DEVICE);
++			dev_kfree_skb_any(ring->skbs[i]);
++			ring->skbs[i] = NULL;
++		}
++	}
++
++	size = RTL8XXXU_PCIE_RX_RING_ENTRIES * sizeof(struct rtl8xxxu_pcie_rx_desc);
++	dma_free_coherent(dev, size, ring->desc, ring->desc_dma);
++	kfree(ring->skbs);
++	memset(ring, 0, sizeof(*ring));
++}
++
++static int rtl8xxxu_pcie_init_rings(struct rtl8xxxu_pcie_priv *pcie)
++{
++	int ret, i;
++
++	for (i = 0; i < pcie->num_tx_queues; i++) {
++		ret = rtl8xxxu_pcie_alloc_tx_ring(pcie, i);
++		if (ret)
++			goto err_free;
++	}
++
++	ret = rtl8xxxu_pcie_alloc_rx_ring(pcie);
++	if (ret)
++		goto err_free;
++
++	return 0;
++
++err_free:
++	while (--i >= 0)
++		rtl8xxxu_pcie_free_tx_ring(pcie, i);
++	return ret;
++}
++
++static void rtl8xxxu_pcie_free_rings(struct rtl8xxxu_pcie_priv *pcie)
++{
++	int i;
++
++	for (i = 0; i < pcie->num_tx_queues; i++)
++		rtl8xxxu_pcie_free_tx_ring(pcie, i);
++	rtl8xxxu_pcie_free_rx_ring(pcie);
++}
++
++/* ------------------------------------------------------------------ */
++/*  TX path — builds txdesc40 and submits to DMA ring                  */
++/* ------------------------------------------------------------------ */
++
++static void rtl8xxxu_pcie_tx(struct ieee80211_hw *hw,
++			     struct ieee80211_tx_control *control,
++			     struct sk_buff *skb)
++{
++	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
++	struct ieee80211_tx_info *tx_info = IEEE80211_SKB_CB(skb);
++	struct rtl8xxxu_priv *priv = hw->priv;
++	struct rtl8xxxu_pcie_priv *pcie = priv->bus_priv;
++	struct rtl8xxxu_txdesc40 *tx_desc;
++	struct ieee80211_sta *sta = NULL;
++	struct ieee80211_vif *vif = tx_info->control.vif;
++	struct rtl8xxxu_vif *rtlvif = vif ? (struct rtl8xxxu_vif *)vif->drv_priv : NULL;
++	struct rtl8xxxu_pcie_tx_ring *ring;
++	struct rtl8xxxu_pcie_tx_desc *dma_desc;
++	unsigned int queue, idx, rts_rate;
++	u16 pktlen = skb->len;
++	int tx_desc_size = priv->fops->tx_desc_size;
++	u8 macid;
++	dma_addr_t dma;
++	bool ampdu_enable, sgi = false, short_preamble = false, bmc = false;
++
++	if (skb_headroom(skb) < tx_desc_size) {
++		dev_warn(priv->dev, "%s: Not enough headroom (%i) for tx descriptor\n",
++			 __func__, skb_headroom(skb));
++		goto error;
++	}
++
++	if (control && control->sta)
++		sta = control->sta;
++
++	queue = rtl8xxxu_queue_select(hdr, skb);
++	if (queue >= pcie->num_tx_queues)
++		queue = 0;
++	ring = &pcie->tx_ring[queue];
++
++	/*
++	 * Build the txdesc40 in skb headroom — same as rtl8xxxu_tx() in core.c.
++	 * This is the descriptor format the RTL8192F hardware expects.
++	 */
++	tx_desc = skb_push(skb, tx_desc_size);
++	memset(tx_desc, 0, tx_desc_size);
++	tx_desc->pkt_size = cpu_to_le16(pktlen);
++	tx_desc->pkt_offset = tx_desc_size;
++
++	/* RTL8192F: OWN/FIRST/LAST bits set by hardware or in txdw0 differently */
++	if (priv->rtl_chip != RTL8192F)
++		tx_desc->txdw0 =
++			TXDESC_OWN | TXDESC_FIRST_SEGMENT | TXDESC_LAST_SEGMENT;
++
++	if (is_multicast_ether_addr(ieee80211_get_DA(hdr)) ||
++	    is_broadcast_ether_addr(ieee80211_get_DA(hdr))) {
++		tx_desc->txdw0 |= TXDESC_BROADMULTICAST;
++		bmc = true;
++	}
++
++	tx_desc->txdw1 = cpu_to_le32(queue << TXDESC_QUEUE_SHIFT);
++	macid = rtl8xxxu_get_macid(priv, sta);
++
++	if (tx_info->control.hw_key) {
++		switch (tx_info->control.hw_key->cipher) {
++		case WLAN_CIPHER_SUITE_WEP40:
++		case WLAN_CIPHER_SUITE_WEP104:
++		case WLAN_CIPHER_SUITE_TKIP:
++			tx_desc->txdw1 |= cpu_to_le32(TXDESC_SEC_RC4);
++			break;
++		case WLAN_CIPHER_SUITE_CCMP:
++			tx_desc->txdw1 |= cpu_to_le32(TXDESC_SEC_AES);
++			break;
++		default:
++			break;
++		}
++		if (bmc && rtlvif && rtlvif->hw_key_idx != 0xff) {
++			tx_desc->txdw1 |= cpu_to_le32(TXDESC_EN_DESC_ID);
++			macid = rtlvif->hw_key_idx;
++		}
++	}
++
++	ampdu_enable = false;
++	if (ieee80211_is_data_qos(hdr->frame_control) && sta) {
++		if (sta->deflink.ht_cap.ht_supported) {
++			u32 ampdu, val32;
++			u8 *qc = ieee80211_get_qos_ctl(hdr);
++			u8 tid = qc[0] & IEEE80211_QOS_CTL_TID_MASK;
++
++			ampdu = (u32)sta->deflink.ht_cap.ampdu_density;
++			val32 = ampdu << TXDESC_AMPDU_DENSITY_SHIFT;
++			tx_desc->txdw2 |= cpu_to_le32(val32);
++
++			ampdu_enable = true;
++
++			if (!test_bit(tid, priv->tx_aggr_started) &&
++			    !(skb->protocol == cpu_to_be16(ETH_P_PAE)))
++				if (!ieee80211_start_tx_ba_session(sta, tid, 0))
++					set_bit(tid, priv->tx_aggr_started);
++		}
++	}
++
++	if (ieee80211_is_data_qos(hdr->frame_control) &&
++	    sta && sta->deflink.ht_cap.cap &
++	    (IEEE80211_HT_CAP_SGI_40 | IEEE80211_HT_CAP_SGI_20))
++		sgi = true;
++
++	if (sta && vif && vif->bss_conf.use_short_preamble)
++		short_preamble = true;
++
++	if (skb->len > hw->wiphy->rts_threshold)
++		tx_info->control.use_rts = true;
++
++	if (sta && vif && vif->bss_conf.use_cts_prot)
++		tx_info->control.use_cts_prot = true;
++
++	if (ampdu_enable || tx_info->control.use_rts ||
++	    tx_info->control.use_cts_prot)
++		rts_rate = DESC_RATE_24M;
++	else
++		rts_rate = 0;
++
++	priv->fops->fill_txdesc(hw, hdr, tx_info, tx_desc, sgi, short_preamble,
++				ampdu_enable, rts_rate, macid);
++
++	rtl8xxxu_calc_tx_desc_csum(tx_desc);
++
++	/* avoid zero checksum make tx hang */
++	if (priv->rtl_chip == RTL8710B || priv->rtl_chip == RTL8192F)
++		tx_desc->csum = ~tx_desc->csum;
++
++	/*
++	 * Now submit to the PCIe DMA ring — this replaces the USB URB path.
++	 * Map the entire skb (txdesc40 + 802.11 payload) for DMA.
++	 */
++	dma = dma_map_single(&pcie->pdev->dev, skb->data, skb->len,
++			     DMA_TO_DEVICE);
++	if (dma_mapping_error(&pcie->pdev->dev, dma)) {
++		skb_pull(skb, tx_desc_size);
++		goto error;
++	}
++
++	skb->dma = dma;
++
++	idx = ring->idx % RTL8XXXU_PCIE_TX_RING_ENTRIES;
++	dma_desc = &ring->desc[idx];
++
++	/* If slot occupied, try next slot (wrap-around) */
++	if (le16_to_cpu(dma_desc->flags) & RTL8XXXU_PCIE_TX_DESC_FLAG_OWN) {
++		/* Ring is full — drop for now */
++		dma_unmap_single(&pcie->pdev->dev, dma, skb->len, DMA_TO_DEVICE);
++		skb_pull(skb, tx_desc_size);
++		goto error;
++	}
++
++	/* Free previous skb in this slot */
++	if (ring->skbs[idx]) {
++		dma_unmap_single(&pcie->pdev->dev, ring->skbs[idx]->dma,
++				 ring->skbs[idx]->len, DMA_TO_DEVICE);
++		dev_kfree_skb_any(ring->skbs[idx]);
++		ring->skbs[idx] = NULL;
++	}
++
++	ring->skbs[idx] = skb;
++
++	/* Fill DMA ring descriptor */
++	dma_desc->addr = cpu_to_le32(dma & 0xFFFFFFFF);
++	dma_desc->addr_hi = cpu_to_le32(dma >> 32);
++	dma_desc->pkt_size = cpu_to_le16(skb->len);
++	dma_desc->flags = cpu_to_le16(RTL8XXXU_PCIE_TX_DESC_FLAG_OWN |
++				      RTL8XXXU_PCIE_TX_DESC_FLAG_FIRST |
++				      RTL8XXXU_PCIE_TX_DESC_FLAG_LAST);
++
++	/* Ring doorbell — advance TX DMA index */
++	rtl8xxxu_write32(priv, RTL8XXXU_PCIE_TX_DMA_idx, idx);
++	ring->idx++;
++	ring->cnt++;
++	return;
++
++error:
++	dev_kfree_skb_any(skb);
++}
++
++/* ------------------------------------------------------------------ */
++/*  RX path (NAPI poll)                                                */
++/* ------------------------------------------------------------------ */
++
++static int rtl8xxxu_pcie_napi_poll(struct napi_struct *napi, int budget)
++{
++	struct rtl8xxxu_pcie_priv *pcie = container_of(napi,
++						       struct rtl8xxxu_pcie_priv,
++						       napi);
++	struct rtl8xxxu_priv *priv = pcie->priv;
++	struct rtl8xxxu_pcie_rx_ring *ring = &pcie->rx_ring;
++	struct device *dev = &pcie->pdev->dev;
++	int work_done = 0;
++	unsigned int idx;
++
++	idx = ring->idx % RTL8XXXU_PCIE_RX_RING_ENTRIES;
++
++	while (work_done < budget) {
++		struct rtl8xxxu_pcie_rx_desc *dma_desc = &ring->desc[idx];
++		struct sk_buff *skb, *new_skb;
++		u16 flags;
++		dma_addr_t dma;
++		int pkt_len;
++
++		flags = le16_to_cpu(dma_desc->flags);
++		if (!(flags & RTL8XXXU_PCIE_RX_DESC_FLAG_OWN))
++			break; /* HW still owns this descriptor */
++
++		skb = ring->skbs[idx];
++		if (!skb)
++			break;
++
++		pkt_len = le16_to_cpu(dma_desc->pkt_size);
++		if (pkt_len == 0 || pkt_len > RTL8XXXU_PCIE_RX_BUF_SIZE) {
++			dev_kfree_skb_any(skb);
++			goto refill;
++		}
++
++		dma_unmap_single(dev, skb->dma, RTL8XXXU_PCIE_RX_BUF_SIZE,
++				 DMA_FROM_DEVICE);
++
++		/*
++		 * Set skb->len to what the hardware wrote. The buffer contains:
++		 *   rxdesc24 (24 bytes) + drvinfo +802.11 payload
++		 * parse_rxdesc24() handles the rest.
++		 */
++		skb_put(skb, pkt_len);
++
++		/*
++		 * Hand to the shared rx descriptor parser from core.c.
++		 * This calls ieee80211_rx_irqsafe() internally.
++		 */
++		priv->fops->parse_rx_desc(priv, skb);
++		work_done++;
++
++		/* Allocate new skb and refill ring entry */
++refill:
++		new_skb = __netdev_alloc_skb(NULL, RTL8XXXU_PCIE_RX_BUF_SIZE,
++					     GFP_KERNEL);
++		if (new_skb) {
++			dma = dma_map_single(dev, new_skb->data,
++					     RTL8XXXU_PCIE_RX_BUF_SIZE,
++					     DMA_FROM_DEVICE);
++			if (!dma_mapping_error(dev, dma)) {
++				new_skb->dma = dma;
++				ring->skbs[idx] = new_skb;
++				dma_desc->addr = cpu_to_le32(dma & 0xFFFFFFFF);
++				dma_desc->addr_hi = cpu_to_le32(dma >> 32);
++				dma_desc->pkt_size = cpu_to_le16(0);
++				dma_desc->flags = cpu_to_le16(RTL8XXXU_PCIE_RX_DESC_FLAG_OWN);
++			} else {
++				dev_kfree_skb_any(new_skb);
++				ring->skbs[idx] = NULL;
++			}
++		} else {
++			ring->skbs[idx] = NULL;
++		}
++
++		idx = (idx + 1) % RTL8XXXU_PCIE_RX_RING_ENTRIES;
++	}
++
++	ring->idx = idx;
++
++	if (work_done < budget)
++		napi_complete_done(napi, work_done);
++
++	return work_done;
++}
++
++/* ------------------------------------------------------------------ */
++/*  Interrupt handler                                                  */
++/* ------------------------------------------------------------------ */
++
++static irqreturn_t rtl8xxxu_pcie_irq_handler(int irq, void *dev_id)
++{
++	struct ieee80211_hw *hw = dev_id;
++	struct rtl8xxxu_priv *priv = hw->priv;
++	struct rtl8xxxu_pcie_priv *pcie = priv->bus_priv;
++	u32 int_status;
++
++	int_status = rtl8xxxu_read32(priv, RTL8XXXU_PCIE_INT_STATUS);
++
++	if (!int_status)
++		return IRQ_NONE;
++
++	rtl8xxxu_write32(priv, RTL8XXXU_PCIE_INT_STATUS, int_status);
++
++	if (int_status & BIT(0)) {
++		if (!napi_schedule_prep(&pcie->napi))
++			return IRQ_HANDLED;
++		__napi_schedule(&pcie->napi);
++	}
++
++	if (int_status & BIT(1)) {
++		int i;
++		for (i = 0; i < pcie->num_tx_queues; i++)
++			ieee80211_wake_queue(hw, i);
++	}
++
++	return IRQ_HANDLED;
++}
++
++/* ------------------------------------------------------------------ */
++/*  mac80211 callbacks for PCIe — start/stop/channel config            */
++/* ------------------------------------------------------------------ */
++
++static int rtl8xxxu_pcie_start(struct ieee80211_hw *hw)
++{
++	struct rtl8xxxu_priv *priv = hw->priv;
++	struct rtl8xxxu_pcie_priv *pcie = priv->bus_priv;
++	int ret;
++
++	ret = priv->fops->enable_rf(priv);
++	if (ret)
++		return ret;
++
++	/* Accept all data and mgmt frames */
++	rtl8xxxu_write16(priv, REG_RXFLTMAP2, 0xffff);
++	rtl8xxxu_write16(priv, REG_RXFLTMAP0, 0xffff);
++
++	/* Schedule rate control watchdog */
++	schedule_delayed_work(&priv->ra_watchdog, 2 * HZ);
++
++	/* Enable NAPI */
++	napi_enable(&pcie->napi);
++
++	return 0;
++}
++
++static void rtl8xxxu_pcie_stop(struct ieee80211_hw *hw)
++{
++	struct rtl8xxxu_priv *priv = hw->priv;
++	struct rtl8xxxu_pcie_priv *pcie = priv->bus_priv;
++
++	cancel_delayed_work_sync(&priv->ra_watchdog);
++
++	napi_disable(&pcie->napi);
++
++	if (priv->fops->disable_rf)
++		priv->fops->disable_rf(priv);
++}
++
++static const struct ieee80211_ops rtl8xxxu_pcie_ops = {
++	.add_chanctx = ieee80211_emulate_add_chanctx,
++	.remove_chanctx = ieee80211_emulate_remove_chanctx,
++	.change_chanctx = ieee80211_emulate_change_chanctx,
++	.switch_vif_chanctx = ieee80211_emulate_switch_vif_chanctx,
++	.tx = rtl8xxxu_pcie_tx,
++	.wake_tx_queue = ieee80211_handle_wake_tx_queue,
++	.add_interface = rtl8xxxu_add_interface,
++	.remove_interface = rtl8xxxu_remove_interface,
++	.config = rtl8xxxu_config,
++	.conf_tx = rtl8xxxu_conf_tx,
++	.bss_info_changed = rtl8xxxu_bss_info_changed,
++	.start_ap = rtl8xxxu_start_ap,
++	.configure_filter = rtl8xxxu_configure_filter,
++	.set_rts_threshold = rtl8xxxu_set_rts_threshold,
++	.start = rtl8xxxu_pcie_start,
++	.stop = rtl8xxxu_pcie_stop,
++	.sw_scan_start = rtl8xxxu_sw_scan_start,
++	.sw_scan_complete = rtl8xxxu_sw_scan_complete,
++	.set_key = rtl8xxxu_set_key,
++	.ampdu_action = rtl8xxxu_ampdu_action,
++	.sta_statistics = rtl8xxxu_sta_statistics,
++	.get_antenna = rtl8xxxu_get_antenna,
++	.set_tim = rtl8xxxu_set_tim,
++	.sta_add = rtl8xxxu_sta_add,
++	.sta_remove = rtl8xxxu_sta_remove,
++};
++
++/* ------------------------------------------------------------------ */
++/*  Probe / Remove                                                     */
++/* ------------------------------------------------------------------ */
++
++static int rtl8xxxu_pcie_probe(struct pci_dev *pdev,
++				const struct pci_device_id *id)
++{
++	struct rtl8xxxu_priv *priv;
++	struct ieee80211_hw *hw;
++	struct rtl8xxxu_pcie_priv *pcie;
++	struct ieee80211_supported_band *sband;
++	int ret;
++
++	ret = pci_enable_device(pdev);
++	if (ret) {
++		dev_err(&pdev->dev, "Failed to enable PCI device\n");
++		return ret;
++	}
++
++	ret = pci_set_dma_mask(pdev, DMA_BIT_MASK(32));
++	if (ret) {
++		dev_err(&pdev->dev, "Failed to set DMA mask\n");
++		goto err_disable;
++	}
++
++	/* Allocate ieee80211_hw + rtl8xxxu_priv + rtl8xxxu_pcie_priv */
++	hw = ieee80211_alloc_hw(sizeof(*priv) + sizeof(*pcie),
++				&rtl8xxxu_pcie_ops);
++	if (!hw) {
++		ret = -ENOMEM;
++		goto err_disable;
++	}
++
++	priv = hw->priv;
++	memset(priv, 0, sizeof(*priv));
++	pcie = (struct rtl8xxxu_pcie_priv *)(priv + 1);
++	memset(pcie, 0, sizeof(*pcie));
++
++	priv->hw = hw;
++	priv->dev = &pdev->dev;
++	
++	priv->bus_priv = pcie;
++	pcie->priv = priv;
++	pcie->pdev = pdev;
++
++	/* Map BAR2 (MMIO registers — verified from live R291 probe) */
++	pcie->mmio = pci_iomap(pdev, 2, 0);
++	if (!pcie->mmio) {
++		dev_err(&pdev->dev, "Failed to map BAR2\n");
++		ret = -ENOMEM;
++		goto err_free_hw;
++	}
++
++	/* Set bus ops for MMIO register access */
++	priv->bus_ops = &rtl8xxxu_pcie_bus_ops;
++
++	/* Initialize mutexes and work items */
++	mutex_init(&priv->h2c_mutex);
++	mutex_init(&priv->sta_mutex);
++	INIT_LIST_HEAD(&priv->tx_urb_free_list);
++	spin_lock_init(&priv->tx_urb_lock);
++	INIT_LIST_HEAD(&priv->rx_urb_pending_list);
++	spin_lock_init(&priv->rx_urb_lock);
++	INIT_WORK(&priv->rx_urb_wq, rtl8xxxu_rx_urb_work);
++	INIT_DELAYED_WORK(&priv->ra_watchdog, rtl8xxxu_watchdog_callback);
++	INIT_DELAYED_WORK(&priv->update_beacon_work,
++			  rtl8xxxu_update_beacon_work_callback);
++	INIT_WORK(&priv->c2hcmd_work, rtl8xxxu_c2hcmd_callback);
++	skb_queue_head_init(&priv->c2hcmd_queue);
++
++	/* Identify chip via MMIO register reads */
++	ret = priv->fops->identify_chip(priv);
++	if (ret) {
++		dev_err(&pdev->dev, "Failed to identify chip\n");
++		goto err_iounmap;
++	}
++
++	hw->wiphy->available_antennas_tx = BIT(priv->tx_paths) - 1;
++	hw->wiphy->available_antennas_rx = BIT(priv->rx_paths) - 1;
++
++	/* Read EFUSE and parse */
++	ret = priv->fops->read_efuse(priv);
++	if (ret) {
++		dev_err(&pdev->dev, "Failed to read EFUSE\n");
++		goto err_iounmap;
++	}
++
++	ret = priv->fops->parse_efuse(priv);
++	if (ret) {
++		dev_err(&pdev->dev, "Failed to parse EFUSE\n");
++		goto err_iounmap;
++	}
++
++	ret = priv->fops->load_firmware(priv);
++	if (ret) {
++		dev_err(&pdev->dev, "Failed to load firmware\n");
++		goto err_iounmap;
++	}
++
++	/* Setup TX queues */
++	pcie->num_tx_queues = 4;
++	pcie->tx_ring_size = RTL8XXXU_PCIE_TX_RING_ENTRIES;
++
++	/* Initialize DMA rings */
++	ret = rtl8xxxu_pcie_init_rings(pcie);
++	if (ret) {
++		dev_err(&pdev->dev, "Failed to init rings\n");
++		goto err_iounmap;
++	}
++
++	/* Setup mac80211 bands and capabilities */
++	hw->vif_data_size = sizeof(struct rtl8xxxu_vif);
++	hw->sta_data_size = sizeof(struct rtl8xxxu_sta_info);
++
++	hw->wiphy->max_scan_ssids = 1;
++	hw->wiphy->max_scan_ie_len = IEEE80211_MAX_DATA_LEN;
++	if (priv->fops->max_macid_num)
++		hw->wiphy->max_ap_assoc_sta = priv->fops->max_macid_num - 1;
++	hw->wiphy->interface_modes = BIT(NL80211_IFTYPE_STATION);
++	if (priv->fops->supports_ap)
++		hw->wiphy->interface_modes |= BIT(NL80211_IFTYPE_AP);
++	hw->queues = 4;
++
++	hw->wiphy->flags |= WIPHY_FLAG_HAS_CHANNEL_SWITCH;
++
++	/* 2.4GHz band */
++	sband = &rtl8xxxu_supported_band;
++	sband->ht_cap.ht_supported = true;
++	sband->ht_cap.ampdu_factor = IEEE80211_HT_MAX_AMPDU_64K;
++	sband->ht_cap.ampdu_density = IEEE80211_HT_MPDU_DENSITY_16;
++	sband->ht_cap.cap = IEEE80211_HT_CAP_SGI_20 | IEEE80211_HT_CAP_SGI_40;
++	memset(&sband->ht_cap.mcs, 0, sizeof(sband->ht_cap.mcs));
++	sband->ht_cap.mcs.rx_mask[0] = 0xff;
++	sband->ht_cap.mcs.rx_mask[4] = 0x01;
++	if (priv->rf_paths > 1) {
++		sband->ht_cap.mcs.rx_mask[1] = 0xff;
++		sband->ht_cap.cap |= IEEE80211_HT_CAP_SGI_40;
++	}
++	sband->ht_cap.mcs.tx_params = IEEE80211_HT_MCS_TX_DEFINED;
++	hw->wiphy->bands[NL80211_BAND_2GHZ] = sband;
++
++	hw->wiphy->rts_threshold = 2347;
++
++	SET_IEEE80211_DEV(hw, &pdev->dev);
++	SET_IEEE80211_PERM_ADDR(hw, priv->mac_addr);
++
++	hw->extra_tx_headroom = priv->fops->tx_desc_size;
++	ieee80211_hw_set(hw, SIGNAL_DBM);
++	ieee80211_hw_set(hw, HAS_RATE_CONTROL);
++	ieee80211_hw_set(hw, SUPPORT_FAST_XMIT);
++	ieee80211_hw_set(hw, AMPDU_AGGREGATION);
++	ieee80211_hw_set(hw, MFP_CAPABLE);
++
++	wiphy_ext_feature_set(hw->wiphy, NL80211_EXT_FEATURE_CQM_RSSI_LIST);
++
++	/* Setup NAPI — must be after ieee80211_alloc_hw */
++	netif_napi_add(&pdev->dev, &pcie->napi, rtl8xxxu_pcie_napi_poll);
++
++	/* Register MSI interrupt */
++	ret = pci_alloc_irq_vectors(pdev, 1, 1, PCI_IRQ_MSI | PCI_IRQ_LEGACY);
++	if (ret < 0) {
++		dev_err(&pdev->dev, "Failed to allocate IRQ vectors\n");
++		goto err_napi;
++	}
++
++	ret = request_irq(pci_irq_vector(pdev, 0), rtl8xxxu_pcie_irq_handler,
++			  IRQF_SHARED, "rtl8xxxu_pcie", hw);
++	if (ret) {
++		dev_err(&pdev->dev, "Failed to request IRQ\n");
++		goto err_free_irq_vectors;
++	}
++
++	pci_set_master(pdev);
++
++	ret = ieee80211_register_hw(hw);
++	if (ret) {
++		dev_err(&pdev->dev, "Failed to register hw: %d\n", ret);
++		goto err_free_irq;
++	}
++
++	pci_set_drvdata(pdev, priv);
++
++	dev_info(&pdev->dev, "RTL8XXXU PCIe: registered %04x:%04x as phy%d\n",
++		 pdev->vendor, pdev->device,
++		 hw->wiphy->iphy);
++
++	return 0;
++
++err_free_irq:
++	free_irq(pci_irq_vector(pdev, 0), hw);
++err_free_irq_vectors:
++	pci_free_irq_vectors(pdev);
++err_napi:
++	netif_napi_del(&pcie->napi);
++err_iounmap:
++	rtl8xxxu_pcie_free_rings(pcie);
++	pci_iounmap(pdev, pcie->mmio);
++err_free_hw:
++	ieee80211_free_hw(hw);
++err_disable:
++	pci_disable_device(pdev);
++	return ret;
++}
++
++static void rtl8xxxu_pcie_remove(struct pci_dev *pdev)
++{
++	struct rtl8xxxu_priv *priv = pci_get_drvdata(pdev);
++	struct rtl8xxxu_pcie_priv *pcie;
++
++	if (!priv)
++		return;
++
++	pcie = priv->bus_priv;
++
++	ieee80211_unregister_hw(priv->hw);
++
++	rtl8xxxu_write32(priv, RTL8XXXU_PCIE_INT_MASK, 0);
++
++	free_irq(pci_irq_vector(pdev, 0), priv->hw);
++	pci_free_irq_vectors(pdev);
++
++	napi_disable(&pcie->napi);
++	netif_napi_del(&pcie->napi);
++
++	cancel_delayed_work_sync(&priv->ra_watchdog);
++	cancel_delayed_work_sync(&priv->update_beacon_work);
++	cancel_work_sync(&priv->c2hcmd_work);
++	cancel_work_sync(&priv->rx_urb_wq);
++
++	rtl8xxxu_pcie_free_rings(pcie);
++	pci_iounmap(pdev, pcie->mmio);
++
++	kfree(priv->fw_data);
++
++	pci_clear_master(pdev);
++	pci_disable_device(pdev);
++	ieee80211_free_hw(priv->hw);
++}
++
++/* ------------------------------------------------------------------ */
++/*  PCI device table                                                   */
++/* ------------------------------------------------------------------ */
++
++#define RTL8XXXU_PCI_DEVICE(vend, dev, chip) \
++	{ PCI_DEVICE(vend, dev), .driver_data = (unsigned long)&rtl8xxxu_##chip##_fops }
++
++static const struct pci_device_id rtl8xxxu_pcie_id_table[] = {
++	RTL8XXXU_PCI_DEVICE(0x10ec, 0x818c, 8192fu),
++	RTL8XXXU_PCI_DEVICE(0x10ec, 0xf812, 8192fu),
++	{ }
++};
++MODULE_DEVICE_TABLE(pci, rtl8xxxu_pcie_id_table);
++
++static struct pci_driver rtl8xxxu_pcie_driver = {
++	.name = "rtl8xxxu_pcie",
++	.id_table = rtl8xxxu_pcie_id_table,
++	.probe = rtl8xxxu_pcie_probe,
++	.remove = rtl8xxxu_pcie_remove,
++};
++
++static int __init rtl8xxxu_pcie_init(void)
++{
++	return pci_register_driver(&rtl8xxxu_pcie_driver);
++}
++
++static void __exit rtl8xxxu_pcie_exit(void)
++{
++	pci_unregister_driver(&rtl8xxxu_pcie_driver);
++}
++
++module_init(rtl8xxxu_pcie_init);
++module_exit(rtl8xxxu_pcie_exit);
++
++MODULE_LICENSE("GPL");
++MODULE_AUTHOR("OpenWrt R291 Project");
++MODULE_DESCRIPTION("RTL8XXXU PCIe transport for RTL8192FR and similar chips");
+
+-- 
+2.43.0
