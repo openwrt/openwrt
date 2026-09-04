@@ -92,7 +92,7 @@
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
-	
+
 			partition@1 {
 				// We don't know how big the flash is
 				// Put 1GB and let it truncate
@@ -100,7 +100,7 @@
 				reg = <0x0 0x40000000>;
 				read-only;
 			};
-	
+
 			partition@2 {
 				// We don't know how big the bootloader
 				// is, but when we're doing testing, lets
@@ -109,7 +109,7 @@
 				reg = <0x0 0x00400000>;
 				read-only;
 			};
-	
+
 			partition@3 {
 				label = "rest_of_flash";
 				reg = <0x00400000 0x40000000>;

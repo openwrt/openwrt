@@ -5,6 +5,13 @@ platform_do_upgrade() {
   local board=$(board_name)
 
   case "$board" in
+  dasan,h660gm-a-airtel|\
+  dasan,h660gm-a-generic|\
+  jiofiber,jcow407|\
+  jiofiber,jcow414)
+    CI_KERNPART="tclinux_kernel"
+    nand_do_upgrade "$1"
+    ;;
   *)
     nand_do_upgrade "$1"
     ;;
@@ -13,15 +20,5 @@ platform_do_upgrade() {
 }
 
 platform_check_image() {
-  # local board=$(board_name)
-  # [ "$#" -gt 1 ] && return 1
-
-  # case "$board" in
-  # *)
-  #   fit_check_image "$1"
-  #   return $?
-  #   ;;
-  # esac
-
   return 0
 }

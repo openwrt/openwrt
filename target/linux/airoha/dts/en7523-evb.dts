@@ -52,63 +52,63 @@
 			function = LED_FUNCTION_WAN_ONLINE;
 			function-enumerator = <1>;
 		};
-		
+
 		// phy_tx_power_disable
 		led@16le {
 			gpios = <&pinctrl 16 GPIO_ACTIVE_HIGH>;
 			function = LED_FUNCTION_STATUS;
 			function-enumerator = <16>;
 		};
-		
+
 		// power
 		power_led: led@11 {
 			gpios = <&pinctrl 11 GPIO_ACTIVE_LOW>;
 			function = LED_FUNCTION_STATUS;
 			function-enumerator = <11>;
 		};
-		
+
 		// usb_0
 		led@4 {
 			gpios = <&pinctrl 4 GPIO_ACTIVE_HIGH>;
 			function = LED_FUNCTION_USB;
 			function-enumerator = <4>;
 		};
-		
+
 		// voip_hook
 		led@5 {
 			gpios = <&pinctrl 5 GPIO_ACTIVE_HIGH>;
 			function = LED_FUNCTION_STATUS;
 			function-enumerator = <5>;
 		};
-		
+
 		// voip_hook2
 		led@27 {
 			gpios = <&pinctrl 27 GPIO_ACTIVE_LOW>;
 			function = LED_FUNCTION_STATUS;
 			function-enumerator = <27>;
 		};
-		
+
 		// wlan
 		led@6 {
 			gpios = <&pinctrl 6 GPIO_ACTIVE_LOW>;
 			function = LED_FUNCTION_WLAN;
 			function-enumerator = <6>;
 		};
-		
+
 		// wps
 		led@26 {
 			gpios = <&pinctrl 26 GPIO_ACTIVE_LOW>;
 			function = LED_FUNCTION_WPS;
 			function-enumerator = <26>;
 		};
-		
+
 		// xponLos
 		led@3 {
 			gpios = <&pinctrl 3 GPIO_ACTIVE_HIGH>;
 			function = LED_FUNCTION_STATUS;
 			function-enumerator = <3>;
 		};
-		
+
 		// xponStatus
 		led@10 {
 			gpios = <&pinctrl 10 GPIO_ACTIVE_LOW>;

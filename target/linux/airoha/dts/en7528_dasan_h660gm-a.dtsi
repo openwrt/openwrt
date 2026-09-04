@@ -217,18 +217,18 @@
 		spi-rx-bus-width = <2>;
 		econet,bmt;
 		econet,bbt-table-size = <250>;
-	
+
 		partitions: partitions {
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
-	
+
 			partition@0 {
 				label = "bootloader";
 				reg = <0x0 0x40000>;
 				read-only;
 			};
-	
+
 			partition@40000 {
 				label = "dzs";
 				reg = <0x40000 0x40000>;
@@ -236,7 +236,7 @@
 					compatible = "fixed-layout";
 					#address-cells = <1>;
 					#size-cells = <1>;
-	
+
 					macaddr_dzs: macaddr@a {
 						compatible = "mac-base";
 						reg = <0xa 0x6>;
@@ -244,36 +244,36 @@
 					};
 				};
 			};
-	
+
 			partition@80000 {
 				label = "tclinux";
 				reg = <0x80000 0x2000000>;
 				econet,enable-remap;
 			};
-	
+
 			/* Nested inside of tclinux */
 			partition1@80000 {
 				label = "tclinux_kernel";
 				reg = <0x80000 0x400000>;
 				econet,enable-remap;
 			};
-	
+
 			/* Concatenated with "unknown" to form the UBI volume */
 			rootA: partition1@480000 {
 				label = "tclinux_rootfs";
 				reg = <0x480000 0x1c00000>;
 			};
-	
+
 			partition@2080000 {
 				label = "tclinux_slave";
 				reg = <0x2080000 0x2000000>;
 			};
-	
+
 			partition@4080000 {
 				label = "romfile";
 				reg = <0x4080000 0x40000>;
 			};
-	
+
 			partition@40c0000 {
 				label = "rwfs";
 				reg = <0x40c0000 0x2000000>;

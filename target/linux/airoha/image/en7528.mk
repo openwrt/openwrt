@@ -40,3 +40,31 @@ define Device/tplink_xc220-g3v
                      kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap kmod-mt7663-firmware-sta
 endef
 TARGET_DEVICES += tplink_xc220-g3v
+
+define Device/jiofiber_en7528
+  $(call Device/tclinux-ubi)
+  DEVICE_VENDOR := JioFiber
+  FACTORY_SIZE := 40m
+  TRX_LOADADDR := 0x80002000
+  KERNEL := kernel-bin | append-dtb | tclinux-free-bootbase-jump | lzma | \
+    kernel-trx
+  DEVICE_PACKAGES := kmod-usb3 kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap
+endef
+
+define Device/jiofiber_jcow414
+  $(Device/jiofiber_en7528)
+  DEVICE_MODEL := JCOW414
+  DEVICE_ALT0_VENDOR := JioFiber
+  DEVICE_ALT0_MODEL := JCO4032
+  DEVICE_DTS := en7528_jiofiber_jcow414
+endef
+TARGET_DEVICES += jiofiber_jcow414
+
+define Device/jiofiber_jcow407
+  $(Device/jiofiber_en7528)
+  DEVICE_MODEL := JCOW407
+  DEVICE_ALT0_VENDOR := JioFiber
+  DEVICE_ALT0_MODEL := JCOW407-IN
+  DEVICE_DTS := en7528_jiofiber_jcow407
+endef
+TARGET_DEVICES += jiofiber_jcow407

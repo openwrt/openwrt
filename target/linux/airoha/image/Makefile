@@ -1,6 +1,8 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
+DEVICE_VARS += TRX_MODEL TRX_LOADADDR
+
 loadaddr-$(CONFIG_TARGET_airoha_an7581) := 0x80200000
 loadaddr-$(CONFIG_TARGET_airoha_an7583) := 0x80200000
 loadaddr-$(CONFIG_TARGET_airoha_en7523) := 0x80208000
@@ -15,6 +17,11 @@ define Device/Default
   FILESYSTEMS := squashfs
   DEVICE_DTS = $$(SUBTARGET)-$(subst -,_,$(1))
   DEVICE_DTS_DIR := ../dts
+  KERNEL_NAME := Image
+  KERNEL = kernel-bin | lzma | \
+    fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  KERNEL_INITRAMFS = kernel-bin | lzma | \
+    fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
   IMAGES := sysupgrade.bin
   IMAGE/sysupgrade.bin := append-kernel | pad-to 128k | append-rootfs | \
     pad-rootfs | append-metadata
@@ -24,7 +31,8 @@ endef
 define Build/tclinux-trx
 	./tclinux-trx.sh --kernel $@ --rootfs $(IMAGE_ROOTFS) \
 		--version $(VERSION_DIST)-$(REVISION) --endian $(TRX_ENDIAN) \
-		$(if $(TRX_MODEL),--model $(TRX_MODEL)) > $@.new
+		$(if $(TRX_MODEL),--model $(TRX_MODEL)) \
+		$(if $(TRX_LOADADDR),--loadaddr $(TRX_LOADADDR)) > $@.new
 	mv $@.new $@
 endef
 
@@ -32,7 +40,8 @@ endef
 define Build/kernel-trx
 	./tclinux-trx.sh --kernel $@ \
 		--version $(VERSION_DIST)-$(REVISION) --endian $(TRX_ENDIAN) \
-		$(if $(TRX_MODEL),--model $(TRX_MODEL)) > $@.new
+		$(if $(TRX_MODEL),--model $(TRX_MODEL)) \
+		$(if $(TRX_LOADADDR),--loadaddr $(TRX_LOADADDR)) > $@.new
 	mv $@.new $@
 endef
 
@@ -43,7 +52,7 @@ define Build/tclinux-free-bootbase-jump
 		$(call ERROR_MESSAGE,WARNING: KERNEL_LOADADDR changed); \
 		rm -f $@; \
 	}
-	printf '\010\000\200\000' > $@.new
+	printf '$(if $(CONFIG_BIG_ENDIAN),\010\000\200\000,\000\200\000\010)' > $@.new
 	dd if=/dev/zero bs=122876 count=1 >> $@.new
 	cat $@ >> $@.new
 	mv $@.new $@
@@ -176,8 +185,8 @@ endef
 
 define Build/uboot-chainloader
   $(INSTALL_DIR) $(KDIR)/chainload-fit-$(notdir $@)
-  @if [ -f "$(STAGING_DIR_IMAGE)/$(SUBTARGET)_$1-u-boot.bin.lzma" ]; then \
-    KERNEL="$(STAGING_DIR_IMAGE)/$(SUBTARGET)_$1-u-boot.bin.lzma"; \
+  @if [ -f "$(STAGING_DIR_IMAGE)/$(SUBTARGET)_$1-u-boot.lzma" ]; then \
+    KERNEL="$(STAGING_DIR_IMAGE)/$(SUBTARGET)_$1-u-boot.lzma"; \
     COMP="lzma"; \
   else \
     KERNEL="$(STAGING_DIR_IMAGE)/$(SUBTARGET)_$1-u-boot.bin"; \

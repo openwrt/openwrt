@@ -30,6 +30,8 @@ Options:
   --version  Version string, max 31 chars (required)
   --endian   Endianness: 'be' for big endian, 'le' for little endian (default: be)
   --model    Model/platform name, max 31 chars (default: empty)
+  --loadaddr Address the bootloader decompresses the kernel to
+             (default: 0x80020000)
 EOF
     exit 1
 }
@@ -40,6 +42,7 @@ rootfs=""
 version=""
 endian="be"
 model=""
+loadaddr="0x80020000"
 
 # Parse named arguments
 while [ $# -gt 0 ]; do
@@ -62,6 +65,10 @@ while [ $# -gt 0 ]; do
             ;;
         --model)
             model="$2"
+            shift 2
+            ;;
+        --loadaddr)
+            loadaddr="$2"
             shift 2
             ;;
         -h|--help)
@@ -196,8 +203,10 @@ tclinux_trx_hdr() {
         head -c 32 /dev/zero | to_hex
     fi
 
-    # Load address (CONFIG_ZBOOT_LOAD_ADDRESS)
-    hex32 0x80020000
+    # Address the bootloader decompresses to. Note that some bootloaders
+    # read this field from the image in slot A even when booting slot B,
+    # so both slots need the same value.
+    hex32 "$loadaddr"
 
     # "reserved" 128 bytes of zeros
     head -c 128 /dev/zero | to_hex
