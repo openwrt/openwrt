@@ -483,6 +483,52 @@ uc_wpas_iface_dpp_send_gas_req(uc_vm_t *vm, size_t nargs)
 
 	return ucv_boolean_new(ret == 0);
 }
+
+/*
+ * hostapd defers a DPP config response above gas_frag_limit to a GAS comeback
+ * exchange. dpp_send_action() cannot request it, as it rebuilds the frame as a
+ * DPP message instead of a plain public action frame.
+ */
+static uc_value_t *
+uc_wpas_iface_dpp_send_gas_comeback_req(uc_vm_t *vm, size_t nargs)
+{
+	struct wpa_supplicant *wpa_s = uc_fn_thisval("wpas.iface");
+	uc_value_t *dst_arg = uc_fn_arg(0);
+	uc_value_t *freq_arg = uc_fn_arg(1);
+	uc_value_t *token_arg = uc_fn_arg(2);
+	const char *dst_str;
+	u8 dst[ETH_ALEN];
+	unsigned int freq;
+	u8 dialog_token;
+	struct wpabuf *buf;
+	int ret;
+
+	if (!wpa_s || ucv_type(dst_arg) != UC_STRING)
+		return NULL;
+
+	dst_str = ucv_string_get(dst_arg);
+	if (hwaddr_aton(dst_str, dst))
+		return NULL;
+
+	freq = ucv_int64_get(freq_arg);
+	if (!freq)
+		freq = wpa_s->assoc_freq;
+
+	dialog_token = ucv_int64_get(token_arg);
+	if (!dialog_token)
+		return NULL;
+
+	buf = gas_build_comeback_req(dialog_token);
+	if (!buf)
+		return NULL;
+
+	ret = offchannel_send_action(wpa_s, freq, dst, wpa_s->own_addr,
+				     broadcast_ether_addr, wpabuf_head(buf),
+				     wpabuf_len(buf), 500, NULL, 0);
+	wpabuf_free(buf);
+
+	return ucv_boolean_new(ret == 0);
+}
 #endif /* CONFIG_DPP */
 
 static const char *obj_stringval(uc_value_t *obj, const char *name)
@@ -755,6 +801,7 @@ int wpas_ucode_init(struct wpa_global *gl)
 #ifdef CONFIG_DPP
 		{ "dpp_send_action", uc_wpas_iface_dpp_send_action },
 		{ "dpp_send_gas_req", uc_wpas_iface_dpp_send_gas_req },
+		{ "dpp_send_gas_comeback_req", uc_wpas_iface_dpp_send_gas_comeback_req },
 #endif /* CONFIG_DPP */
 	};
 	uc_value_t *data, *proto;

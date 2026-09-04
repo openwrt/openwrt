@@ -465,6 +465,14 @@ function dpp_channel_handle_request(channel, req)
 			return libubus.STATUS_UNKNOWN_ERROR;
 		return 0;
 
+	case "tx_gas_comeback_req":
+		iface = dpp_find_iface(data.ifname);
+		if (!iface)
+			return libubus.STATUS_NOT_FOUND;
+		if (!iface.dpp_send_gas_comeback_req(data.dst, data.freq ?? 0, data.dialog_token ?? 0))
+			return libubus.STATUS_UNKNOWN_ERROR;
+		return 0;
+
 	case "dpp_bootstrap_gen":
 		iface = dpp_find_iface(data.ifname);
 		if (!iface)
