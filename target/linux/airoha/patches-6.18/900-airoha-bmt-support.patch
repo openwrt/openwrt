@@ -15,8 +15,8 @@
 +
 +#define MAX_BMT_SIZE        	(250) 
 +#define MAX_RAW_BAD_BLOCK_SIZE  (250)
-+#define POOL_GOOD_BLOCK_PERCENT 8/100
-+#define MAX_BMT_PERCENT         1/8
++#define POOL_GOOD_BLOCK_PERCENT 8
++#define MAX_BMT_PERCENT         1
 +
 +typedef struct {
 +    char signature[3];
@@ -228,7 +228,7 @@
 +
 +	total_blks = bmtd.total_blks;
 +	last_blk = total_blks - 1;
-+	need_valid_block_num = total_blks * POOL_GOOD_BLOCK_PERCENT;
++	need_valid_block_num = total_blks * POOL_GOOD_BLOCK_PERCENT / 100;
 +
 +	for (; last_blk > 0 ;last_blk--) { 
 +		if (is_bad_raw(last_blk)) { 
@@ -241,7 +241,7 @@
 +	}
 +	bmt_blks = total_blks - last_blk; 
 +	system_blks = total_blks - bmt_blks;
-+	bmtd.mtd->size = (total_blks -  total_blks * MAX_BMT_PERCENT) * bmtd.mtd->erasesize;
++	bmtd.mtd->size = (total_blks -  total_blks * MAX_BMT_PERCENT / 8) * bmtd.mtd->erasesize;
 +}
 +
 +
