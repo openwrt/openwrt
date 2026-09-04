@@ -1,0 +1,333 @@
+Linux driver for Annapurna Labs Cryptographic Accelerator (Crypto)
+
+Architecture:
+=============
+
+This driver implements standard Linux Crypto API algorithms:
+ablkcipher - aes-cbc, aes-ecb, aes-ctr, dec-cbc, des-ecb,
+des3-ede-cbc, des3-ede-ecb.
+aead - aes-cbc+sha256
+ahash - sha256 (with and without hmac), crc32c
+
+The Crypto device is implemented as an integrated PCI-E end point, hence the
+driver uses the PCI interface for probing the device and other management
+functions.
+
+The driver communicates with the hardware using the Annapurna Labs
+Cryptographic Acceleration Engine and GDMA HAL drivers.
+
+Internal Data Structures:
+=========================
+
+al_crypto_device:
+--------------
+  This structure holds all the information needed to operate the adapter.
+  Fields:
+  - pdev: pointer to Linux PCI device structure
+  - crypto_dma_params: data structure used to pass various parameters to the HAL
+  - gdma_regs_base: GDMA registers base address
+  - hal_crypto: the HAL structure used by HAL to manage the adapter
+  - msix_entries: pointer to linux data structure used to communicate with the
+    kernel which entries to use for msix, and which irqs the kernel assigned
+    for those interrupts.
+  - irq_tbl: array of al_eth_irq, each interrupt used by the driver has entry
+    in this array.
+  - channels: an array of channel information
+  - max_channels: the maximum number of channels to use
+  - crc_channels: channels reserved for crc
+  - channels_kset: kset used to store channel kobjs, used for sysfs
+  - cleanup_task: cleanup task structure, used during completion interrupts
+  - int_moderation: when not 0, interrupt frequency (in counter ticks)
+  - cache: kmem cache for allocating ring entries
+  - tfm_count: encryption, hash and combined active tfm count
+  - crc_tfm_count: crc active tfm count
+  - alg_list: list of registered encryption and combined algorithms
+  - hash_list: list of registered hash algorithms
+  - crc_list: list of registed crc algorithms
+
+al_crypto_chan:
+------------
+  This structure is used for saving the context of a single channel (queue).
+  Fields:
+  - hal_crypto: the HAL structure used by HAL to manage the adapter
+  - idx: channel index
+  - type: channel type - ecryption/hash/combined or crc/checksum
+  - tx_descs_num: number of descriptors in TX queue
+  - tx_dma_desc_virt: TX descriptor ring
+  - tx_dma_desc: TX descriptor ring physical base address
+  - rx_descs_num: number of descriptors in RX queue
+  - rx_dma_desc_virt: RX descriptor ring
+  - rx_dma_desc: RX descriptor ring physical base address
+  - rx_dma_cdesc_virt: RX completion descriptors ring
+  - rx_dma_cdesc: RX completion descriptors ring physical address
+  - alloc_order: channel allocation order (log2 of the size)
+  - sw_ring: SW descriptor ring
+  - stats_gen: general channel statistics
+  - stats_gen_lock: general channel statistics lock
+  - prep_lock: channel transaction preparation lock
+  - head: SW ring head
+  - sw_desc_num_locked: number of SW descriptors locked
+  - tx_desc_produced: number of tx descriptors produced and not issued
+  - sw_queue: backlog queue, used to queue one last entry when HW queue is full
+  - stats_prep: preparation statistics
+  - cache_entries_num: max number of LRU cache entries used by the channel
+  - cache_lru_list: entries list used for LRU, represents current state
+  - cache_lru_count: number of entries in LRU list
+  - cache_lru_entries: LRU entries
+  - cleanup_lock: operation completion cleanup lock
+  - tail: SW ring tail
+  - stats_comp: operation completion statistics
+  - device: the parent device
+  - cleanup_task: operation completion cleanup tasklet
+  - kobj: sysfs kobj
+
+al_crypto_ctx:
+--------------
+  This structure is used for saving a context of a single
+  encryption/hash/combined tfm (SA).
+  Fields:
+  - chan: channel that is used for processing the tfm
+  - cache_state: cache state of current tfm
+  - sa: the HAL structure that represents the context of current tfm
+  - hw_sa: HW representation of sa structure
+  - hw_sa_dma_addr: DMA address of hw_Sa
+  - sw_hash: sw hash tfm, used for hmac
+  - iv: IV used for the tfm
+  - iv_dma_addr: DMA address of the IV used for the tfm
+
+al_crypto_hash_req_ctx:
+-----------------------
+  This structure is used for saving a context of a single hash request.
+  Fields:
+  - buf_0: first buffer used for keeping the data that was not hashed during
+    current update
+  - buflen_0: length of buf_0
+  - buf_1: second buffer used for keeping the data that was not hashed during
+    current update
+  - buflen_1: length of buf_1
+  - current_buf: active buffer for keeping the data that was not hashed during
+    current update
+  - buf_dma_addr: DMA address of current_buf
+  - buf_dma_len: length of current_buf
+  - interm: intermediate state stored between updates
+  - interm_dma_addr: DMA address of interm
+  - first: the request is first request after init
+  - last: the request is last request (final or finup)
+  - hashed_len: length of data that was hashed
+
+al_crc_ctx:
+-----------
+  This structure is used for saving a context of a single
+  crc/checksum tfm (SA).
+  Fields:
+  - chan: channel that is used for processing the tfm
+  - crcsum_type: crc/checksum algorithm type
+  - key: initial key
+
+al_crc_req_ctx:
+---------------
+  This structure is used for saving a context of a single crc/checksum request.
+  Fields:
+  - last: the request is last request (final or finup)
+  - cache_state: cache state of current tfm
+  - crc_dma_addr: DMA address for crc result
+
+al_crypto_chan_stats_gen:
+-------------------------
+  DMA channel statistics - general
+  Fields:
+  - ablkcipher_tfms: active ablkcipher tfms
+  - aead_tfms: active aead tfms
+  - ahash_tfms: active ahash (hash algrorithms) tfms
+  - crc_tfms: active crc/checksum tfms
+
+al_crypto_chan_stats_prep:
+--------------------------
+  DMA channel statistics - preparation
+  Fields:
+  - ablkcipher_encrypt_reqs: ablkcipher encrypt requests counter
+  - ablkcipher_encrypt_bytes: ablkcipher encrypted bytes counter
+  - ablkcipher_decrypt_reqs: ablkcipher decrypt request counter
+  - ablkcipher_decrypt_bytes: ablkcipher decrypted bytes counter
+  - aead_encrypt_hash_reqs: aead (combined) encrypt+hash requests counter
+  - aead_encrypt_bytes: aead (combined) encrypted bytes counter
+  - aead_hash_bytes: aead (combined) hashed bytes counter
+  - aead_decrypt_validate_reqs: aead (combined) decrypt+validate requests
+    counter
+  - aead_decrypt_bytes: aead (combined) decrypted bytes counter
+  - aead_validate_bytes: aead (combined) validated bytes counter
+  - ahash_reqs: ahash (hash algorithms) requests counter
+  - ahash_bytes: ahash (hash algorithms) hashed bytes counter
+  - crc_reqs: crc/checksum requests counter
+  - crc_bytes: crc/checksum bytes counter
+  - cache_misses: SA cache misses
+  - ablkcipher_reqs_le512: ablkcipher requests <= 512 bytes counter
+  - ablkcipher_reqs_512_2048: ablkcipher requests >512 && <=2048 bytes counter
+  - ablkcipher_reqs_2048_4096: ablkcipher requests >2048 && <=4096 bytes counter
+  - ablkcipher_reqs_gt4096: ablkcipher requests >4096 bytes counter
+  - aead_reqs_le512: aead requests <= 512 bytes counter
+  - aead_reqs_512_2048: aead requests >512 && <=2048 bytes counter
+  - aead_reqs_2048_4096: aead requests >2048 && <=4096 bytes counter
+  - aead_reqs_gt4096: aead requests >4096 bytes counter
+  - ahash_reqs_le512: ahash (hash algorithms) requests <= 512 bytes counter
+  - ahash_reqs_512_2048: ahash (hash algorithms) requests >512 && <=2048 bytes
+    counter
+  - ahash_reqs_2048_4096: ahash (hash algorithms) requests >2048 && <=4096 bytes
+    counter
+  - ahash_reqs_gt4096: ahash (hash algorithms) requests >4096 bytes counter
+  - crc_reqs_le512: crc/checksum requests <= 512 bytes counter
+  - crc_reqs_512_2048: crc/checksum requests >512 && <=2048 bytes counter
+  - crc_reqs_2048_4096: crc/checksum requests >2048 && <=4096 bytes counter
+  - crc_reqs_gt4096:  crc/checksum requests >4096 bytes counter
+
+al_crypto_chan_stats_comp:
+-----------------------
+  DMA channel statistics - completion
+  Fields:
+  - redundant_int_cnt: Total number of redundant interrupts (interrupts for
+    which there was no completions
+  - max_active_descs: Maximum number of descriptors that were active
+    simultaneously
+
+Interrupts mode:
+================
+The Annapurna Labs Crypto Acceleration Engine supports the TrueMultiCore(TM)
+technology and is based on Annapurna Labs Unified DMA (aka GDMA), thus it has
+an interrupt controller that can generate legacy level sensitive interrupt,
+or alternatively, MSI-X interrupt for each cause bit.
+
+The driver tries first to work in per-queue MSI-X mode for optimal performance,
+with MSI-X interrupt for each channel.
+If it fails to enable the per-queue MSI-X mode, it tries to use single MSI-X
+interrupt for all the events. If it fails, it falls back to single legacy level
+sensitive interrupt wire for all the events.
+
+The systems interrupts status can be viewed in /proc/interrupts.
+when legacy mode used, the registered interrupt name will be:
+al-crypto-intx-all@pci:<pci device name of the adapter>
+when single MSI-X interrupt mode is used, the registered interrupt name will be:
+al-crypto-msix-all@pci:<pci device name of the adapter>
+and when per-queue MSI-X mode is used, for each channel an interrupt will be
+registered with the following name:
+al-crypto-comp-<queue index><pci:<pci device name of the adapter>.
+
+Memory allocations:
+===================
+Cache coherent buffers for following DMA rings:
+- TX submission ring
+- RX submission ring
+- RX completion ring
+kmem cache buffers for the SW rings.
+All these buffers allocated upon channel creation and freed upon channel
+destruction.
+
+MULTIQUEUE:
+===========
+As part of the TrueMultiCore(TM) technology, the driver support multiqueue mode.
+This mode have various benefits when channels are allocated to different CPU
+cores/threads:
+1. Reduced CPU/thread/process contention on a given channel
+2. Cache miss rate on transaction completion is reduced
+3. In hardware interrupt re-direction
+
+Currently every tfm is assigned to a queue in a round-robin manner.
+Thus, transactions related to a certain tfm will be always serviced using the
+same queue.
+
+crc/checksum algorithms have to use different queue(s) than
+encryption/hash/combined algorithms. crc_channels is used to define the number
+of channels used for crc/checksum. The queue per tfm assignment described above
+is implemented separately for encryption/hash/combined queues and crc queues.
+
+Locks and atomic variables:
+===========================
+
+The following locks and atomic variables are used in the driver:
+- Atomic counters for ring allocation per tfm (one for encryption/hash/combined
+  and one for crc)
+- Prep lock for locking sw ring (al_crypto_dma_chan->prep_lock),
+  used also to protect cache management info
+- Cleanup lock for completion ring in each channel
+  (al_crypto_dma_chan->cleanup_lock)
+
+SR-IOV
+======
+- The driver supports SR-IOV capability.
+  The PF enables SR-IOV depending on modules params: use_virtual_function.
+- By default SR-IOV is enabled, in this mode:
+  The 4 Queues of the VF are dedicated to CRC.
+  The 4 Queues of the PF are dedicated to Crypto/Hash.
+
+SA and IV caches:
+=================
+
+Encryption/hash/combined
+------------------------
+- SA cache of 16 entries is available in Crypto Accelerator HW.
+- The cache is equally divided between active channels used for
+  encryption/hash/combined algorithms.
+- The cache for every channel is managed using LRU.
+- We don’t use the data stored by the Crypto HW inside the SA entry.
+  Thus, if the entry inside the cache has to be replaced, there’s no need to
+  fetch the cached entry.
+
+CRC/checksum
+------------
+- CRC/checksum don't use SA's/SA cache, there is a separate CRC IV cache for
+  those algorithms.
+- CRC IV cache of 8 entries is available in Crypto HW
+- The cache is equally divided between active channels used for crc/checksum
+  algorithms.
+- The cache for every channel will be managed using LRU.
+- Cached result stored in IV cache will be used, if available.
+
+TODO list
+=========
+- Add support for the rest of the algorithms supported by Annapurna Labs
+  Cryptographic Acceleration Engine.
+- Add other SA cache management algorithms besides LRU.
+- insmod/rmmod support.
+
+File structure
+==============
+
+Module init and PCI registration
+--------------------------------
+./al_crypto_main.c
+
+Driver core
+-----------
+./al_crypto_core.c
+./al_crypto.h
+
+crypto driver modules params
+----------------------------
+./al_crypto_module_params.h
+./al_crypto_module_parmas.c
+
+ablkcipher and aead algorithms
+------------------------------
+./al_crypto_alg.c
+
+hash algorithms
+---------------
+./al_crypto_hash.c
+
+crc/checksum algorithms
+-----------------------
+./al_crypto_crc.c
+
+/sys FS registration
+--------------------
+./al_crypto_sysfs.c
+./al_crypto_sysfs.h
+
+Hardware abstraction layer
+--------------------------
+./al_hal_crypto.c
+./al_hal_ssm_crypto.h
+
+Misc
+----
+./README
+./Makefile
