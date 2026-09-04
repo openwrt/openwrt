@@ -1,5 +1,5 @@
 DTS_DIR := $(DTS_DIR)/qcom
-DEVICE_VARS += BOOT_SCRIPT
+DEVICE_VARS += BOOT_SCRIPT MERCUSYS_SUPPORT_STRING
 
 define Build/mstc-header
 	$(eval version=$(word 1,$(1)))
@@ -17,6 +17,17 @@ define Build/mstc-header
 	) > $@.new
 	mv $@.new $@
 	rm -f $@.crclen
+endef
+
+# Wrap the OpenWrt UBI in a Mercusys fwup container the stock web UI accepts.
+# Keyless: the stock loader (nvrammanager) only RSA-checks fw-type "Cloud";
+# any other fw-type falls back to a salt-seeded MD5 integrity check.
+define Build/mercusys-fwup
+	$(TOPDIR)/scripts/mercusys-fwup.py $@ \
+		--fw-type $(if $(1),$(1),MR80X) \
+		--support "$(MERCUSYS_SUPPORT_STRING)" \
+		-o $@.new
+	mv $@.new $@
 endef
 
 define Device/cmcc_mr3000d-ci
@@ -200,6 +211,27 @@ define Device/linksys_spnmx56
 		ipq-wifi-linksys_spnmx56
 endef
 TARGET_DEVICES += linksys_spnmx56
+
+define Device/mercusys_mr80x-v2
+	$(call Device/FitImageLzma)
+	DEVICE_VENDOR := MERCUSYS
+	DEVICE_MODEL := MR80X
+	DEVICE_VARIANT := v2
+	SOC := ipq5018
+	DEVICE_DTS_CONFIG := config@mp02.1
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	NAND_SIZE := 128m
+	KERNEL_IN_UBI := 1
+	IMAGE_SIZE := 43008k
+	DEVICE_PACKAGES := kmod-dsa-rtl8365mb
+	IMAGES += factory.bin
+	IMAGE/factory.bin := append-ubi | check-size | mercusys-fwup MR80X
+	MERCUSYS_SUPPORT_STRING := SupportList:\n \
+		{product_name:MR80X,product_ver:2.0.0,special_id:45550000}\n \
+		{product_name:MR80X,product_ver:2.0.0,special_id:55530000}\n
+endef
+TARGET_DEVICES += mercusys_mr80x-v2
 
 define Device/xiaomi_ipq50xx_ax_base
 	$(call Device/FitImage)

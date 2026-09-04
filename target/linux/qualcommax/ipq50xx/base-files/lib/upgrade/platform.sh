@@ -213,6 +213,45 @@ platform_do_upgrade() {
 		remove_oem_ubi_volume ubi_rootfs
 		nand_do_upgrade "$1"
 		;;
+	mercusys,mr80x-v2)
+		# A/B: write the inactive slot, then point tp_boot_idx at it.
+		# tp_boot_idx=0 boots "rootfs", 1 boots "rootfs_1". primaryboot
+		# must stay 0, the stock loader and the button recovery pick the
+		# slot by name from tp_boot_idx alone.
+		local tp active target newtp primaryboot bcidx bcfile
+
+		# Warn only, flipping primaryboot here would desync the running
+		# and the next-boot slot names.
+		bcidx=$(find_mtd_index "0:bootconfig")
+		if [ -n "$bcidx" ]; then
+			bcfile=/tmp/mtd"$bcidx".bin
+			dd if=/dev/mtd"$bcidx" of="$bcfile" bs=1 count=336 2>/dev/null
+			primaryboot=$(get_bootconfig_primaryboot "$bcfile" "rootfs")
+			[ "$primaryboot" = "0" ] || \
+				echo "WARNING: primaryboot=$primaryboot (expected 0); slot selection may be inverted"
+		fi
+
+		tp=$(fw_printenv -n tp_boot_idx 2>/dev/null)
+		case "$tp" in
+			1) active="rootfs_1"; target="rootfs";   newtp=0 ;;
+			*) active="rootfs";   target="rootfs_1"; newtp=1 ;;
+		esac
+
+		if [ -n "$UPGRADE_OPT_USE_CURR_PART" ]; then
+			CI_UBIPART="$active"
+		else
+			CI_UBIPART="$target"
+			fw_setenv tp_boot_idx "$newtp" || {
+				echo "failed to set tp_boot_idx"
+				return 1
+			}
+		fi
+
+		remove_oem_ubi_volume ubi_rootfs
+		remove_oem_ubi_volume wifi_fw
+		remove_oem_ubi_volume bt_fw
+		nand_do_upgrade "$1"
+		;;
 	xiaomi,ax6000|\
 	xiaomi,redmi-ax5400)
 		# Make sure that UART is enabled

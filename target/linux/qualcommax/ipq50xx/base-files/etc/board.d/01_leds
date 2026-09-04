@@ -27,6 +27,12 @@ linksys,mr5500)
 	ucidef_set_led_netdev "wan-port-link" "WAN-PORT-LINK" "90000.mdio-1:04:green:wan" "wan" "link_10 link_100 link_1000"
 	ucidef_set_led_netdev "wan-port-activity" "WAN-PORT-ACTIVITY" "90000.mdio-1:04:amber:wan" "wan" "tx rx"
 	;;
+mercusys,mr80x-v2)
+	ucidef_set_led_netdev "wan" "WAN" "green:wan" "wan" "tx rx link"
+	ucidef_set_led_netdev "lan1" "LAN1" "green:lan-1" "lan1" "tx rx link"
+	ucidef_set_led_netdev "lan2" "LAN2" "green:lan-2" "lan2" "tx rx link"
+	ucidef_set_led_netdev "lan3" "LAN3" "green:lan-3" "lan3" "tx rx link"
+	;;
 xiaomi,redmi-ax5400)
 	ucidef_set_led_netdev "wan-port-link-top-blue" "WAN-PORT-LINK-TOP-BLUE" "blue:wan" "wan" "link_1000"
 	ucidef_set_led_netdev "wan-port-link-top-yellow" "WAN-PORT-LINK-TOP-YELLOW" "yellow:wan" "wan" "link_10 link_100"
