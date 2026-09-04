@@ -2263,6 +2263,8 @@ const struct rtldsa_config rtldsa_930x_cfg = {
 	.mac_force_mode_mask = RTL930X_FORCE_EN | RTL930X_FORCE_LINK_EN,
 	.mac_force_mode_ctrl = rtl930x_mac_force_mode_ctrl,
 	.mac_port_ctrl = rtl930x_mac_port_ctrl,
+	.mac_capabilities = MAC_ASYM_PAUSE | MAC_SYM_PAUSE | MAC_10 | MAC_100 |
+			    MAC_1000FD | MAC_2500FD | MAC_5000FD | MAC_10000FD,
 	.mac_max_len_reg = rtl930x_mac_max_len_reg,
 	.max_frame = RTL930X_MAX_FRAME,
 	.l2_port_new_salrn = rtl930x_l2_port_new_salrn,

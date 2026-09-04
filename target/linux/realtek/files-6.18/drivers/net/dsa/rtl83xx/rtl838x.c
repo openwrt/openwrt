@@ -1828,6 +1828,7 @@ const struct rtldsa_config rtldsa_838x_cfg = {
 	.stp_get = rtldsa_838x_stp_get,
 	.stp_set = rtl838x_stp_set,
 	.mac_port_ctrl = rtl838x_mac_port_ctrl,
+	.mac_capabilities = MAC_ASYM_PAUSE | MAC_SYM_PAUSE | MAC_10 | MAC_100 | MAC_1000FD,
 	.mac_max_len_ctrl = RTL838X_MAC_MAX_LEN_CTRL,
 	.mac_max_len_ctrl_dup = RTL838X_MAC_MAX_LEN_CTRL_DUP,
 	.max_frame = RTL838X_MAX_FRAME,

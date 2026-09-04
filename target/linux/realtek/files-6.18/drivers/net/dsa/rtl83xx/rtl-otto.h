@@ -1418,6 +1418,11 @@ struct rtldsa_config {
 	int  (*mac_port_ctrl)(int port);
 
 	/**
+	 * @mac_capabilities: supported MAC capabilities
+	 */
+	unsigned long mac_capabilities;
+
+	/**
 	 * @mac_max_len_reg: Return the switch register holding the MAC maximum
 	 * accepted L2 frame length of user port @p. Families whose limit is one
 	 * register for the whole switch leave this unset and set

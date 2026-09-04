@@ -256,70 +256,36 @@ static int rtldsa_phylink_fill_available_pcs(struct phylink_config *config,
 					available_pcs, &num_available_pcs);
 }
 
-static void rtldsa_83xx_phylink_get_caps(struct dsa_switch *ds, int port,
-					 struct phylink_config *config)
+static void rtldsa_phylink_get_caps(struct dsa_switch *ds, int port,
+				    struct phylink_config *config)
 {
 	struct dsa_port *dp = dsa_to_port(ds, port);
+	struct rtl838x_switch_priv *priv = ds->priv;
+	unsigned long caps = priv->r->mac_capabilities;
 
-	/*
-	 * TODO: This needs to take into account the MAC to SERDES mapping and the
-	 * specific SoC capabilities. Right now we just assume all RTL83xx ports
-	 * support up to 1G standalone and QSGMII as that covers most real-world
-	 * use cases.
-	 */
-	config->mac_capabilities = MAC_ASYM_PAUSE | MAC_SYM_PAUSE | MAC_10 | MAC_100 |
-				   MAC_1000FD;
-
-	__set_bit(PHY_INTERFACE_MODE_1000BASEX, config->supported_interfaces);
-	__set_bit(PHY_INTERFACE_MODE_GMII, config->supported_interfaces);
-	__set_bit(PHY_INTERFACE_MODE_INTERNAL, config->supported_interfaces);
-	__set_bit(PHY_INTERFACE_MODE_SGMII, config->supported_interfaces);
-	__set_bit(PHY_INTERFACE_MODE_QSGMII, config->supported_interfaces);
+	/* TODO: This needs to take into account the MAC to SERDES mapping */
+	config->mac_capabilities = caps;
+	if (caps & MAC_1000FD) {
+		__set_bit(PHY_INTERFACE_MODE_1000BASEX, config->supported_interfaces);
+		__set_bit(PHY_INTERFACE_MODE_SGMII, config->supported_interfaces);
+		__set_bit(PHY_INTERFACE_MODE_QSGMII, config->supported_interfaces);
+	}
+	if (caps & MAC_2500FD)
+		__set_bit(PHY_INTERFACE_MODE_2500BASEX, config->supported_interfaces);
+	if (caps & MAC_10000FD) {
+		__set_bit(PHY_INTERFACE_MODE_10GBASER, config->supported_interfaces);
+		__set_bit(PHY_INTERFACE_MODE_USXGMII, config->supported_interfaces);
+		__set_bit(PHY_INTERFACE_MODE_10G_QXGMII, config->supported_interfaces);
+	}
 
 	if (!fwnode_phylink_pcs_parse(of_fwnode_handle(dp->dn), NULL,
 				      &config->num_available_pcs)) {
 		config->fill_available_pcs = rtldsa_phylink_fill_available_pcs;
-		__set_bit(PHY_INTERFACE_MODE_SGMII, config->pcs_interfaces);
-		__set_bit(PHY_INTERFACE_MODE_QSGMII, config->pcs_interfaces);
-		__set_bit(PHY_INTERFACE_MODE_1000BASEX, config->pcs_interfaces);
+		bitmap_copy(config->pcs_interfaces, config->supported_interfaces,
+			    PHY_INTERFACE_MODE_MAX);
 	}
-}
 
-static void rtldsa_93xx_phylink_get_caps(struct dsa_switch *ds, int port,
-					 struct phylink_config *config)
-{
-	struct dsa_port *dp = dsa_to_port(ds, port);
-
-	/*
-	 * TODO: This needs to take into account the MAC to SERDES mapping and the
-	 * specific SoC capabilities. Right now we just assume all RTL93xx ports
-	 * support up to 10G standalone and up to USXGMII as that covers most
-	 * real-world use cases.
-	 */
-	config->mac_capabilities = MAC_ASYM_PAUSE | MAC_SYM_PAUSE | MAC_10 | MAC_100 |
-				   MAC_1000FD | MAC_2500FD | MAC_5000FD | MAC_10000FD;
-
-	__set_bit(PHY_INTERFACE_MODE_1000BASEX, config->supported_interfaces);
-	__set_bit(PHY_INTERFACE_MODE_GMII, config->supported_interfaces);
 	__set_bit(PHY_INTERFACE_MODE_INTERNAL, config->supported_interfaces);
-	__set_bit(PHY_INTERFACE_MODE_SGMII, config->supported_interfaces);
-	__set_bit(PHY_INTERFACE_MODE_QSGMII, config->supported_interfaces);
-	__set_bit(PHY_INTERFACE_MODE_10GBASER, config->supported_interfaces);
-	__set_bit(PHY_INTERFACE_MODE_2500BASEX, config->supported_interfaces);
-	__set_bit(PHY_INTERFACE_MODE_USXGMII, config->supported_interfaces);
-	__set_bit(PHY_INTERFACE_MODE_10G_QXGMII, config->supported_interfaces);
-
-	if (!fwnode_phylink_pcs_parse(of_fwnode_handle(dp->dn), NULL,
-				      &config->num_available_pcs)) {
-		config->fill_available_pcs = rtldsa_phylink_fill_available_pcs;
-		__set_bit(PHY_INTERFACE_MODE_SGMII, config->pcs_interfaces);
-		__set_bit(PHY_INTERFACE_MODE_QSGMII, config->pcs_interfaces);
-		__set_bit(PHY_INTERFACE_MODE_1000BASEX, config->pcs_interfaces);
-		__set_bit(PHY_INTERFACE_MODE_2500BASEX, config->pcs_interfaces);
-		__set_bit(PHY_INTERFACE_MODE_USXGMII, config->pcs_interfaces);
-		__set_bit(PHY_INTERFACE_MODE_10GBASER, config->pcs_interfaces);
-		__set_bit(PHY_INTERFACE_MODE_10G_QXGMII, config->pcs_interfaces);
-	}
 }
 
 static void rtldsa_83xx_phylink_mac_config(struct phylink_config *config,
@@ -2698,7 +2664,7 @@ const struct dsa_switch_ops rtldsa_83xx_switch_ops = {
 	.get_tag_protocol	= rtldsa_get_tag_protocol,
 	.setup			= rtldsa_83xx_setup,
 
-	.phylink_get_caps	= rtldsa_83xx_phylink_get_caps,
+	.phylink_get_caps	= rtldsa_phylink_get_caps,
 
 	.get_strings		= rtldsa_get_strings,
 	.get_ethtool_stats	= rtldsa_get_ethtool_stats,
@@ -2760,7 +2726,7 @@ const struct dsa_switch_ops rtldsa_93xx_switch_ops = {
 	.get_tag_protocol	= rtldsa_get_tag_protocol,
 	.setup			= rtldsa_93xx_setup,
 
-	.phylink_get_caps	= rtldsa_93xx_phylink_get_caps,
+	.phylink_get_caps	= rtldsa_phylink_get_caps,
 
 	.get_strings		= rtldsa_get_strings,
 	.get_ethtool_stats	= rtldsa_get_ethtool_stats,

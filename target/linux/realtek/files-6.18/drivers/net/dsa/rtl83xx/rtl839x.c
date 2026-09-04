@@ -1714,6 +1714,7 @@ const struct rtldsa_config rtldsa_839x_cfg = {
 	.mac_force_mode_ctrl = rtl839x_mac_force_mode_ctrl,
 	.mac_link_sts = RTL839X_MAC_LINK_STS,
 	.mac_port_ctrl = rtl839x_mac_port_ctrl,
+	.mac_capabilities = MAC_ASYM_PAUSE | MAC_SYM_PAUSE | MAC_10 | MAC_100 | MAC_1000FD,
 	.mac_max_len_ctrl = RTL839X_MAC_MAX_LEN_CTRL,
 	.max_frame = RTL839X_MAX_FRAME,
 	.l2_port_new_salrn = rtl839x_l2_port_new_salrn,
