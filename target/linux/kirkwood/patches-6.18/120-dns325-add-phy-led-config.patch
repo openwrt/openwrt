@@ -1,0 +1,66 @@
+From 755fec58873781b57f90deb3e3b6d30e19d803bb Mon Sep 17 00:00:00 2001
+From: Konstantin Meshkov <skyline@mail.ru>
+Date: Thu, 27 Aug 2026 10:48:36 +0300
+Subject: [PATCH] ARM: dts: kirkwood: dns325: configure Marvell PHY LEDs via LED trigger API
+
+The D-Link DNS-325 exposes two LEDs on the single rear LAN port that are
+driven by the Marvell 88E1116R PHY rather than a GPIO/LED controller:
+
+	- LED0: 1G link status indicator (left LED)
+	- LED2: RX/TX activity (right LED)
+
+Describe both PHY LEDs as child nodes of the ethernet PHY (ethphy0)
+using the standard PHY LED binding together with the LED trigger API
+support added to the Marvell PHY driver in the preceding change.  The
+netdev default trigger lets the LEDs be driven out of the box with
+hardware offload.
+
+The 88E1116R needs a LED polarity/function baseline programmed in page 3,
+reg 0x11 (0x4411) for the function codes to behave as documented; this is
+board-specific wiring, so it is applied here through the marvell,reg-init
+property rather than in the shared PHY driver.
+
+Signed-off-by: Konstantin Meshkov <skyline@mail.ru>
+
+---
+ arch/arm/boot/dts/marvell/kirkwood-dns325.dts | 26 ++
+ 1 file changed, 26 insertions(+)
+--- a/arch/arm/boot/dts/marvell/kirkwood-dns325.dts
++++ b/arch/arm/boot/dts/marvell/kirkwood-dns325.dts
+@@ -2,6 +2,7 @@
+ /dts-v1/;
+ 
+ #include "kirkwood-dnskw.dtsi"
++#include <dt-bindings/leds/common.h>
+ #include <dt-bindings/thermal/thermal.h>
+ 
+ / {
+@@ -113,3 +114,28 @@
+ &fan0 {
+ 	#cooling-cells = <2>;
+ };
++
++&ethphy0 {
++	marvell,reg-init = <3 0x11 0 0x4411>;
++
++	leds {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		/* left PHY LED: LED0 link status indicator (stock behavior) */
++		led@0 {
++			reg = <0>;
++			color = <LED_COLOR_ID_GREEN>;
++			function = LED_FUNCTION_STATUS;
++			linux,default-trigger = "netdev";
++		};
++
++		/* right PHY LED: LED2 activity blink (stock behavior) */
++		led@2 {
++			reg = <2>;
++			color = <LED_COLOR_ID_GREEN>;
++			function = LED_FUNCTION_ACTIVITY;
++			linux,default-trigger = "netdev";
++		};
++	};
++};
