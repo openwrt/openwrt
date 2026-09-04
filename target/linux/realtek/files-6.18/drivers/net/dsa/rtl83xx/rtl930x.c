@@ -1846,22 +1846,32 @@ static void rtl930x_pie_init(struct rtl838x_switch_priv *priv)
 		sw_w32(template_selectors, RTL930X_PIE_BLK_TMPLTE_CTRL(i));
 }
 
+/* A PIE rule logs its matched packets into the LOG table entry that carries
+ * its own rule ID, in data word 1 - one entry per rule. Counters handed out
+ * by rtldsa_packet_cntr_alloc() for L3 route statistics start above the PIE
+ * rule ID range and pack two 32-bit counters into one 64-bit LOG entry.
+ */
+#define RTL930X_PIE_RULE_IDS	(rtldsa_930x_cfg.n_pie_blocks * PIE_BLOCK_SIZE)
+
 static u32 rtl930x_packet_cntr_read(struct rtl838x_switch_priv *priv, int counter)
 {
 	u32 buf[2];
 	u32 v;
 
 	dev_dbg(priv->dev, "reading LOG packet counter %d\n", counter);
-	/* Two counters share one entry, so the parity of counter picks which
-	 * half of it to return.
-	 */
-	otto_table_read(RTL9300_TBL_LOG, counter / 2, &buf);
+
+	if (counter < RTL930X_PIE_RULE_IDS) {
+		otto_table_read(RTL9300_TBL_LOG, counter, &buf);
+		v = buf[1];
+	} else {
+		/* Two counters share one entry, so the parity of counter picks
+		 * which half of it to return.
+		 */
+		otto_table_read(RTL9300_TBL_LOG, counter / 2, &buf);
+		v = counter % 2 ? buf[0] : buf[1];
+	}
 
 	dev_dbg(priv->dev, "LOG entry: %08x %08x\n", buf[0], buf[1]);
-	if (counter % 2)
-		v = buf[0];
-	else
-		v = buf[1];
 
 	return v;
 }
@@ -1874,12 +1884,19 @@ static void rtl930x_packet_cntr_clear(struct rtl838x_switch_priv *priv, int coun
 
 	dev_dbg(priv->dev, "clearing LOG packet counter %d\n", counter);
 
-	/* Two counters share one LOG table entry. Read the current entry
-	 * first so clearing one half preserves the adjacent counter.
+	/* Read-modify-write: for a route counter the other 32-bit counter in
+	 * the same 64-bit entry must be preserved; for a PIE rule ID the entry
+	 * is ours alone but the RMW is harmless.
 	 */
-	__otto_table_read(tbl, counter / 2, &v);
-	v[counter % 2 ? 0 : 1] = 0;
-	__otto_table_write(tbl, counter / 2, &v);
+	if (counter < RTL930X_PIE_RULE_IDS) {
+		__otto_table_read(tbl, counter, &v);
+		v[1] = 0;
+		__otto_table_write(tbl, counter, &v);
+	} else {
+		__otto_table_read(tbl, counter / 2, &v);
+		v[counter % 2 ? 0 : 1] = 0;
+		__otto_table_write(tbl, counter / 2, &v);
+	}
 
 	otto_table_release(tbl);
 }
