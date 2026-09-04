@@ -1,0 +1,491 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Fil Dunsky <filipp.dunsky@gmail.com>
+Date: Mon, 12 Oct 2026 19:20:00 +0300
+Subject: [PATCH] ARM: dts: cortina: almondplus: add the peripherals not yet upstream
+
+Describe the parts of the CS7542 and the Almond+ for which there are no
+upstream drivers yet: RTC, TRNG, MDIO and QCA8337 switch, network
+engine, the three PCIe ports with the ath10k and ath9k radios, NAND
+with the stock partition layout, the SX8650 touchscreen, and UART1-3
+(Zigbee and Z-Wave are on UART2 and UART3).
+
+U-Boot passes console=ttyS0, the upstream driver names its ports
+ttyCS, so put the right console on the command line as well.
+
+Signed-off-by: Fil Dunsky <filipp.dunsky@gmail.com>
+---
+--- a/arch/arm/boot/dts/cortina/cs7542.dtsi
++++ b/arch/arm/boot/dts/cortina/cs7542.dtsi
+@@ -155,6 +155,156 @@
+ 			#interrupt-cells = <2>;
+ 		};
+ 
++		rtc0: rtc@f4920000 {
++			compatible = "cortina,cs75xx-rtc";
++			reg = <0xf4920000 0x50>;
++			interrupt-parent = <&gic>;
++			interrupts = <GIC_SPI 10 IRQ_TYPE_LEVEL_HIGH>,
++					<GIC_SPI 11 IRQ_TYPE_LEVEL_HIGH>;
++			status = "disabled";
++		};
++
++		trng: rng@f0600000 {
++			compatible = "cortina,cs75xx-trng";
++			reg = <0xf0600000 0x20>, <0xf00000c0 0x04>;
++			status = "disabled";
++		};
++
++		mdio0: mdio@f00700a0 {
++			compatible = "cortina,cs75xx-mdio";
++			#address-cells = <1>;
++			#size-cells = <0>;
++			reg = <0xf00700a0 0x14>;
++			status = "disabled";
++		};
++
++		ethernet: ethernet@f0000000 {
++			compatible = "cortina,cs752x-eth";
++			#address-cells = <1>;
++			#size-cells = <0>;
++			reg = <0xf0000000 0x100>, <0xf0010000 0x500>,
++			      <0xf0090000 0x400>, <0xf0020000 0x4000>,
++			      <0xf0030000 0x400>, <0xf0040000 0x800>,
++			      <0xf0060000 0x100>, <0xf0400000 0x100000>;
++			reg-names = "global", "ni", "dma", "fe", "qm", "tm",
++				    "sch", "xram";
++			interrupts = <GIC_SPI 37 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 38 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 39 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-names = "eth0", "eth1", "eth2";
++			status = "disabled";
++
++			gmac0: ethernet-port@0 {
++				reg = <0>;
++				status = "disabled";
++			};
++
++			gmac1: ethernet-port@1 {
++				reg = <1>;
++				status = "disabled";
++			};
++
++			gmac2: ethernet-port@2 {
++				reg = <2>;
++				status = "disabled";
++			};
++		};
++
++		pcie0: pcie@80000000 {
++			compatible = "cortina,cs75xx-pcie";
++			reg = <0x80000000 0x1000>, <0x80001000 0x1000>,
++			      <0xf00a0000 0x100>, <0xf0000000 0x20>,
++			      <0xf00a1000 0x400>;
++			reg-names = "dbi", "config", "app", "global", "phy";
++			#address-cells = <3>;
++			#size-cells = <2>;
++			device_type = "pci";
++			bus-range = <0x00 0xff>;
++			num-lanes = <1>;
++			ranges = <0x82000000 0 0x80200000 0x80200000 0 0x1fe00000>;
++			interrupt-parent = <&gic>;
++			interrupts = <GIC_SPI 33 IRQ_TYPE_LEVEL_HIGH>;
++			#interrupt-cells = <1>;
++			interrupt-map-mask = <0 0 0 7>;
++			interrupt-map = <0 0 0 1 &pcie0_intc 1>,
++					<0 0 0 2 &pcie0_intc 2>,
++					<0 0 0 3 &pcie0_intc 3>,
++					<0 0 0 4 &pcie0_intc 4>;
++			status = "disabled";
++
++			pcie0_intc: interrupt-controller {
++				interrupt-controller;
++				#address-cells = <0>;
++				#interrupt-cells = <1>;
++			};
++		};
++
++		pcie1: pcie@a0000000 {
++			compatible = "cortina,cs75xx-pcie";
++			reg = <0xa0000000 0x1000>, <0xa0001000 0x1000>,
++			      <0xf00a0400 0x100>, <0xf0000000 0x20>,
++			      <0xf00a5000 0x400>;
++			reg-names = "dbi", "config", "app", "global", "phy";
++			#address-cells = <3>;
++			#size-cells = <2>;
++			device_type = "pci";
++			bus-range = <0x00 0xff>;
++			num-lanes = <1>;
++			ranges = <0x82000000 0 0xa0200000 0xa0200000 0 0x1fe00000>;
++			interrupt-parent = <&gic>;
++			interrupts = <GIC_SPI 34 IRQ_TYPE_LEVEL_HIGH>;
++			#interrupt-cells = <1>;
++			interrupt-map-mask = <0 0 0 7>;
++			interrupt-map = <0 0 0 1 &pcie1_intc 1>,
++					<0 0 0 2 &pcie1_intc 2>,
++					<0 0 0 3 &pcie1_intc 3>,
++					<0 0 0 4 &pcie1_intc 4>;
++			status = "disabled";
++
++			pcie1_intc: interrupt-controller {
++				interrupt-controller;
++				#address-cells = <0>;
++				#interrupt-cells = <1>;
++			};
++		};
++
++		pcie2: pcie@c0000000 {
++			compatible = "cortina,cs75xx-pcie";
++			reg = <0xc0000000 0x1000>, <0xc0001000 0x1000>,
++			      <0xf00a0800 0x100>, <0xf0000000 0x20>,
++			      <0xf00a9000 0x400>;
++			reg-names = "dbi", "config", "app", "global", "phy";
++			#address-cells = <3>;
++			#size-cells = <2>;
++			device_type = "pci";
++			bus-range = <0x00 0xff>;
++			num-lanes = <1>;
++			ranges = <0x82000000 0 0xc0200000 0xc0200000 0 0x1fe00000>;
++			interrupt-parent = <&gic>;
++			interrupts = <GIC_SPI 35 IRQ_TYPE_LEVEL_HIGH>;
++			#interrupt-cells = <1>;
++			interrupt-map-mask = <0 0 0 7>;
++			interrupt-map = <0 0 0 1 &pcie2_intc 1>,
++					<0 0 0 2 &pcie2_intc 2>,
++					<0 0 0 3 &pcie2_intc 3>,
++					<0 0 0 4 &pcie2_intc 4>;
++			status = "disabled";
++
++			pcie2_intc: interrupt-controller {
++				interrupt-controller;
++				#address-cells = <0>;
++				#interrupt-cells = <1>;
++			};
++		};
++
++		nandc: nand@e0000000 {
++			compatible = "cortina,cs752x-nand";
++			reg = <0xe0000000 0x08000000>,
++				<0xf0050000 0x300>,
++				<0xf0090400 0x300>;
++			status = "disabled";
++		};
++
+ 		l2: cache-controller@f5010000 {
+ 			compatible = "arm,pl310-cache";
+ 			reg = <0xf5010000 0x1000>;
+--- a/arch/arm/boot/dts/cortina/cs7542-securifi-almondplus.dts
++++ b/arch/arm/boot/dts/cortina/cs7542-securifi-almondplus.dts
+@@ -7,6 +7,7 @@
+ 
+ #include <dt-bindings/gpio/gpio.h>
+ #include <dt-bindings/input/input.h>
++#include <dt-bindings/interrupt-controller/irq.h>
+ 
+ #include "cs7542.dtsi"
+ 
+@@ -15,10 +16,15 @@
+ 	compatible = "securifi,almondplus", "cortina,cs7542";
+ 
+ 	aliases {
++		label-mac-device = &gmac0;
+ 		serial0 = &uart0;
++		serial1 = &uart1;
++		serial2 = &uart2;
++		serial3 = &uart3;
+ 	};
+ 
+ 	chosen {
++		bootargs = "console=ttyCS0,115200";
+ 		stdout-path = "serial0:115200n8";
+ 	};
+ 
+@@ -67,8 +73,289 @@
+ 	clock-frequency = <400000>;
+ 
+ 	status = "okay";
++
++	touchscreen@48 {
++		compatible = "semtech,sx8650";
++		reg = <0x48>;
++		interrupt-parent = <&gpio4>;
++		interrupts = <28 IRQ_TYPE_LEVEL_LOW>;
++	};
+ };
+ 
+ &uart0 {
+ 	status = "okay";
+ };
++
++&uart1 {
++	status = "okay";
++};
++
++&uart2 {
++	status = "okay";
++};
++
++&uart3 {
++	status = "okay";
++};
++
++&rtc0 {
++	status = "okay";
++};
++
++&trng {
++	status = "okay";
++};
++
++&nandc {
++	status = "okay";
++	nand-ecc-mode = "hw";
++
++	partitions {
++		compatible = "fixed-partitions";
++		#address-cells = <1>;
++		#size-cells = <1>;
++
++		partition@20000 {
++			label = "uboot0";
++			reg = <0x0020000 0x00e0000>;
++			read-only;
++		};
++
++		partition@100000 {
++			label = "uboot-env0";
++			reg = <0x0100000 0x0020000>;
++			read-only;
++
++			nvmem-layout {
++				compatible = "u-boot,env";
++
++				ethaddr: ethaddr {
++					#nvmem-cell-cells = <1>;
++				};
++			};
++		};
++
++		partition@200000 {
++			label = "uboot1";
++			reg = <0x0200000 0x0100000>;
++			read-only;
++		};
++
++		partition@300000 {
++			label = "uboot-env1";
++			reg = <0x0300000 0x0100000>;
++		};
++
++		partition@400000 {
++			label = "sb0";
++			reg = <0x0400000 0x0100000>;
++		};
++
++		partition@500000 {
++			label = "sb1";
++			reg = <0x0500000 0x0100000>;
++		};
++
++		partition@600000 {
++			label = "kernel_standby";
++			reg = <0x0600000 0x0600000>;
++		};
++
++		partition@c00000 {
++			label = "rootfs_standby";
++			reg = <0x0c00000 0x2e00000>;
++		};
++
++		partition@3a00000 {
++			label = "kernel";
++			reg = <0x3a00000 0x0600000>;
++		};
++
++		partition@4000000 {
++			label = "rootfs_stock";
++			reg = <0x4000000 0x2e00000>;
++		};
++
++		partition@6e00000 {
++			label = "stock_data";
++			reg = <0x6e00000 0x1000000>;
++		};
++
++		partition@7e00000 {
++			label = "log";
++			reg = <0x7e00000 0x0100000>;
++		};
++
++		partition@7f00000 {
++			label = "cal";
++			reg = <0x7f00000 0x0100000>;
++			read-only;
++
++			nvmem-layout {
++				compatible = "fixed-layout";
++				#address-cells = <1>;
++				#size-cells = <1>;
++
++				cal_ath9k: cal@1000 {
++					reg = <0x1000 0x440>;
++				};
++
++				cal_ath10k: cal@5000 {
++					reg = <0x5000 0x844>;
++				};
++			};
++		};
++
++		partition@8000000 {
++			label = "man";
++			reg = <0x8000000 0x0100000>;
++			read-only;
++		};
++
++		partition@8100000 {
++			label = "almond_data";
++			reg = <0x8100000 0x0500000>;
++		};
++
++		partition@8600000 {
++			label = "ubi";
++			reg = <0x8600000 0x17a00000>;
++		};
++	};
++};
++
++&pcie0 {
++	status = "okay";
++	reset-gpios = <&gpio2 28 GPIO_ACTIVE_LOW>;
++
++	bridge@0,0 {
++		reg = <0x0000 0 0 0 0>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++		ranges;
++
++		wifi@0,0 {
++			compatible = "qcom,ath10k";
++			reg = <0x10000 0 0 0 0>;
++			nvmem-cells = <&cal_ath10k>;
++			nvmem-cell-names = "calibration";
++		};
++	};
++};
++
++&pcie1 {
++	status = "okay";
++
++	bridge@0,0 {
++		reg = <0x0000 0 0 0 0>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++		ranges;
++
++		wifi@0,0 {
++			compatible = "pci168c,0033";
++			reg = <0x10000 0 0 0 0>;
++			nvmem-cells = <&cal_ath9k>;
++			nvmem-cell-names = "calibration";
++		};
++	};
++};
++
++&pcie2 {
++	status = "okay";
++};
++
++&mdio0 {
++	status = "okay";
++
++	switch@10 {
++		compatible = "qca,qca8337";
++		reg = <0x10>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++				label = "cpu";
++				ethernet = <&gmac1>;
++				phy-mode = "rgmii-id";
++
++				fixed-link {
++					speed = <1000>;
++					full-duplex;
++				};
++			};
++
++			port@1 {
++				reg = <1>;
++				label = "wan";
++				nvmem-cells = <&ethaddr 0>;
++				nvmem-cell-names = "mac-address";
++			};
++
++			port@2 {
++				reg = <2>;
++				label = "lan4";
++			};
++
++			port@3 {
++				reg = <3>;
++				label = "lan3";
++			};
++
++			port@4 {
++				reg = <4>;
++				label = "lan2";
++			};
++
++			port@5 {
++				reg = <5>;
++				label = "lan1";
++			};
++
++			port@6 {
++				reg = <6>;
++				label = "cpu";
++				ethernet = <&gmac0>;
++				phy-mode = "rgmii-id";
++
++				fixed-link {
++					speed = <1000>;
++					full-duplex;
++				};
++			};
++		};
++	};
++};
++
++&ethernet {
++	status = "okay";
++};
++
++&gmac0 {
++	status = "okay";
++	phy-mode = "rgmii";
++	nvmem-cells = <&ethaddr 0>;
++	nvmem-cell-names = "mac-address";
++
++	fixed-link {
++		speed = <1000>;
++		full-duplex;
++	};
++};
++
++&gmac1 {
++	status = "okay";
++	phy-mode = "rgmii";
++	nvmem-cells = <&ethaddr (-1)>;
++	nvmem-cell-names = "mac-address";
++
++	fixed-link {
++		speed = <1000>;
++		full-duplex;
++	};
++};

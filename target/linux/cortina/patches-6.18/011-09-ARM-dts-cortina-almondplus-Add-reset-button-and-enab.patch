@@ -1,0 +1,61 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Fil Dunsky <filipp.dunsky@gmail.com>
+Date: Wed, 30 Sep 2026 08:16:20 +0300
+Subject: [PATCH] ARM: dts: cortina: almondplus: Add reset button and enable
+ I2C
+
+The pinhole button on the back of the Almond+ is connected to GPIO 37
+(bank 1, line 5), active low. The stock firmware uses it for restart
+and factory reset.
+
+Enable the I2C bus, which has the touchscreen controller on it; the
+touchscreen itself will be added together with its driver changes.
+
+Signed-off-by: Fil Dunsky <filipp.dunsky@gmail.com>
+Link: https://lore.kernel.org/r/20261013-b4-cs75xx-s2-v3-9-181bb0d23f4c@gmail.com
+---
+ .../cortina/cs7542-securifi-almondplus.dts    | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+
+--- a/arch/arm/boot/dts/cortina/cs7542-securifi-almondplus.dts
++++ b/arch/arm/boot/dts/cortina/cs7542-securifi-almondplus.dts
+@@ -5,6 +5,9 @@
+ 
+ /dts-v1/;
+ 
++#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/input/input.h>
++
+ #include "cs7542.dtsi"
+ 
+ / {
+@@ -19,6 +22,16 @@
+ 		stdout-path = "serial0:115200n8";
+ 	};
+ 
++	keys {
++		compatible = "gpio-keys";
++
++		button-reset {
++			label = "reset";
++			gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_RESTART>;
++		};
++	};
++
+ 	memory@0 {
+ 		device_type = "memory";
+ 		reg = <0x00000000 0x20000000>;
+@@ -50,6 +63,12 @@
+ 	clock-frequency = <150000000>;
+ };
+ 
++&i2c {
++	clock-frequency = <400000>;
++
++	status = "okay";
++};
++
+ &uart0 {
+ 	status = "okay";
+ };
