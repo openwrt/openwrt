@@ -1,0 +1,48 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Josef Schlehofer <pepe.schlehofer@gmail.com>
+Date: Wed, 26 Aug 2026 12:00:00 +0200
+Subject: [PATCH] powerpc: dts: turris1x: rename the NAND partition to "ubi"
+
+The NAND partition holds a UBI container whose rootfs volume carries the
+root filesystem. With the partition itself called "rootfs",
+CONFIG_MTD_ROOTFS_ROOT_DEV picks its mtdblock as the root device before
+the ubiblock of the volume exists, and the kernel then looks for the
+filesystem in the raw UBI container:
+
+  ubi0: attached mtd7 (name "rootfs", size 256 MiB)
+  block ubiblock0_1: created from ubi0:1(rootfs)
+  No filesystem could mount root, tried: squashfs
+  Kernel panic - not syncing: VFS: Unable to mount root fs on unknown-block(31,7)
+
+Name the partition after what it contains, which is what the other NAND
+boards in this target do, so that the volume can be selected by name and
+the kernel command line does not have to spell out a volume number.
+
+The name also opts the partition into the OpenWrt UBI auto-attach, which
+runs on any boot that does not pass ubi.mtd= and uses the default VID
+header offset. This UBI is written with 2048, the offset the factory
+bootloader expects, so the attach fails and logs an error.
+
+That failure is load-bearing rather than cosmetic. The boot it happens on
+is the microSD one, which must not attach the NAND: mount_root prefers a
+UBI rootfs_data over the one on the card, so a card system would store its
+configuration in the NAND. The two media are therefore kept apart by the
+offset mismatch, which is worth knowing before anyone reformats this NAND
+with the default offset.
+
+Signed-off-by: Josef Schlehofer <pepe.schlehofer@gmail.com>
+---
+ arch/powerpc/boot/dts/turris1x.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/powerpc/boot/dts/turris1x.dts
++++ b/arch/powerpc/boot/dts/turris1x.dts
+@@ -332,7 +332,7 @@
+ 				partition@0 {
+ 					/* 256 MB for UBI with one volume: UBIFS Root File System */
+ 					reg = <0x00000000 0x10000000>;
+-					label = "rootfs";
++					label = "ubi";
+ 				};
+ 			};
+ 		};
