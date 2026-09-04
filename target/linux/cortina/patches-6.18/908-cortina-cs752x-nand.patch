@@ -1,0 +1,53 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Fil Dunsky <filipp.dunsky@gmail.com>
+Date: Sat, 05 Sep 2026 07:30:20 +0300
+Subject: [PATCH] mtd: rawnand: add Kconfig and Makefile entries for the CS752x NAND controller
+
+Add MTD_NAND_CS752X for the Cortina CS752x NAND flash controller driver
+together with a choice of hardware ECC mode: Hamming with 3 bytes per
+256 or 512 bytes, or BCH with 8 or 12 bits per 512 bytes. The default
+matches the ECC layout used by the stock Securifi Almond+ firmware.
+
+Signed-off-by: Fil Dunsky <filipp.dunsky@gmail.com>
+---
+--- a/drivers/mtd/nand/raw/Kconfig
++++ b/drivers/mtd/nand/raw/Kconfig
+@@ -537,4 +537,31 @@ config MTD_NAND_DISKONCHIP_BBTWRITE
+ 	  load time (assuming you build diskonchip as a module) with the module
+ 	  parameter "inftl_bbt_write=1".
+ 
++config MTD_NAND_CS752X
++	bool "Cortina CS752x NAND flash controller"
++	depends on ARCH_CORTINA_CS75XX || COMPILE_TEST
++	depends on HAS_DMA
++	help
++	  NAND flash controller of Cortina CS752x (Goldengate) SoCs, with
++	  hardware Hamming/BCH ECC and SSP DMA page transfers.
++
++choice
++	prompt "Cortina CS752x NAND ECC mode"
++	depends on MTD_NAND_CS752X
++	default CS752X_NAND_ECC_HW_HAMMING_256
++
++config CS752X_NAND_ECC_HW_HAMMING_256
++	bool "Hamming, 3 bytes per 256 bytes (stock Securifi Almond+)"
++
++config CS752X_NAND_ECC_HW_HAMMING_512
++	bool "Hamming, 3 bytes per 512 bytes"
++
++config CS752X_NAND_ECC_HW_BCH_8_512
++	bool "BCH, 8 bits per 512 bytes"
++
++config CS752X_NAND_ECC_HW_BCH_12_512
++	bool "BCH, 12 bits per 512 bytes"
++
++endchoice
++
+ endif # MTD_RAW_NAND
+--- a/drivers/mtd/nand/raw/Makefile
++++ b/drivers/mtd/nand/raw/Makefile
+@@ -71,3 +71,4 @@ nand-objs += nand_micron.o
+ nand-objs += nand_sandisk.o
+ nand-objs += nand_samsung.o
+ nand-objs += nand_toshiba.o
++obj-$(CONFIG_MTD_NAND_CS752X)		+= cs752x_nand.o
