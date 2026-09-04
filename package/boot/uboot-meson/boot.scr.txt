@@ -1,0 +1,8 @@
+part uuid mmc 0:2 uuid
+
+setenv bootargs "console=ttyAML0,115200 root=PARTUUID=${uuid} rw rootwait usbcore.autosuspend=-1"
+
+fatload mmc 0:1 ${kernel_addr_r} Image
+fatload mmc 0:1 ${fdt_addr_r} dtb
+
+booti ${kernel_addr_r} - ${fdt_addr_r}
