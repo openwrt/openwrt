@@ -85,6 +85,11 @@ comfast,cf-xr186)
 	ucidef_set_led_netdev "wlan2g" "WLAN2G" "green:wlan" "phy0-ap0" "link tx rx"
 	ucidef_set_led_netdev "wlan5g" "WLAN5G" "blue:wlan" "phy1-ap0" "link tx rx"
 	;;
+cudy,ap3000d-v1)
+	ucidef_set_led_netdev "lan" "LAN" "blue:lan" "eth0" "link tx rx"
+	ucidef_set_led_netdev "wlan2g" "WLAN2G" "blue:wlan-2ghz" "phy0-ap0" "link tx rx"
+	ucidef_set_led_netdev "wlan5g" "WLAN5G" "blue:wlan-5ghz" "phy1-ap0" "link tx rx"
+	;;
 cudy,re3000-v1|\
 kebidumei,ax3000-u22|\
 wavlink,wl-wn573hx3)
