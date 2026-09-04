@@ -27,9 +27,9 @@ Signed-off-by: Namjae Jeon <linkinjeon@kernel.org>
 
 --- a/fs/smb/server/transport_tcp.c
 +++ b/fs/smb/server/transport_tcp.c
-@@ -557,6 +557,12 @@ static int create_socket(struct interfac
- 	ksmbd_socket->sk->sk_rcvtimeo = KSMBD_TCP_RECV_TIMEOUT;
- 	ksmbd_socket->sk->sk_sndtimeo = KSMBD_TCP_SEND_TIMEOUT;
+@@ -528,6 +528,12 @@ static int create_socket(struct interfac
+ 		goto out_error;
+ 	}
  
 +	/*
 +	 * Accepted sockets inherit the listener's net reference. Keep TCP
