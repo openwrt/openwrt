@@ -1,0 +1,54 @@
+From ae0304934ea8bc413ff9762aad9ff6d0d6604a1b Mon Sep 17 00:00:00 2001
+From: Josua Mayer <josua@solid-run.com>
+Date: Tue, 1 Oct 2024 14:47:54 +0200
+Subject: [PATCH] libfstools: enable build-time configuration of overlay-part
+ alignment
+
+Different storage media have different alignment requirements for
+filesystems, some to otpimise performance - others to reduce wear.
+
+The current default of 64k is in particular not suitable for eMMC which
+often have erase block size of 512k or larger.
+
+Add new cmake configuration option "CMAKE_ROOTDEV_OVERLAY_ALIGN" for
+defining alignment size at build-time.
+If not set keep using the default.
+
+Signed-off-by: Josua Mayer <josua@solid-run.com>
+---
+ CMakeLists.txt        | 4 ++++
+ libfstools/rootdisk.c | 2 ++
+ 2 files changed, 6 insertions(+)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index ce321c8..44df889 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -67,6 +67,10 @@ IF(DEFINED CMAKE_OVL_MOUNT_FULL_ACCESS_TIME)
+ 	ADD_DEFINITIONS(-DOVL_MOUNT_FULL_ACCESS_TIME)
+ ENDIF(DEFINED CMAKE_OVL_MOUNT_FULL_ACCESS_TIME)
+ 
++IF(DEFINED CMAKE_ROOTDEV_OVERLAY_ALIGN)
++	ADD_DEFINITIONS(-DROOTDEV_OVERLAY_ALIGN=${CMAKE_ROOTDEV_OVERLAY_ALIGN})
++ENDIF(DEFINED CMAKE_ROOTDEV_OVERLAY_ALIGN)
++
+ ADD_EXECUTABLE(mount_root mount_root.c)
+ TARGET_LINK_LIBRARIES(mount_root fstools)
+ INSTALL(TARGETS mount_root RUNTIME DESTINATION sbin)
+diff --git a/libfstools/rootdisk.c b/libfstools/rootdisk.c
+index 910899a..007fa61 100644
+--- a/libfstools/rootdisk.c
++++ b/libfstools/rootdisk.c
+@@ -15,7 +15,9 @@
+ 
+ #include <linux/loop.h>
+ 
++#ifndef ROOTDEV_OVERLAY_ALIGN
+ #define ROOTDEV_OVERLAY_ALIGN	(64ULL * 1024ULL)
++#endif
+ 
+ struct squashfs_super_block {
+ 	uint32_t s_magic;
+-- 
+2.43.0
+
