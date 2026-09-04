@@ -296,6 +296,7 @@ platform_do_upgrade() {
 	cudy,re3000-v1|\
 	cudy,wr3000-v1|\
 	kebidumei,ax3000-u22|\
+	tenda,ax12l-pro|\
 	totolink,x6000r|\
 	wavlink,wl-wn573hx3|\
 	widelantech,wap430x|\
