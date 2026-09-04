@@ -1,0 +1,26 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Stanislav Gabenov <gabenovstan@gmail.com>
+Date: Fri, 4 Sep 2026 08:00:00 +0300
+Subject: [PATCH] MIPS: Octeon: add DAP-2690 PCI interrupt routing
+
+The DAP-2690 A1 wires slot 2 INTA to PCI INT1 and slot 3 INTA to
+PCI INT0.  The CN3005_EVB_HS5 fallback maps those two slots in the
+opposite order, causing ath9k to receive only unhandled interrupts and
+the kernel to disable both IRQs.
+
+The vendor kernel confirms the board routing as slot 2 -> CVMX IRQ 45
+(PCI INT1) and slot 3 -> CVMX IRQ 44 (PCI INT0).
+
+Signed-off-by: Stanislav Gabenov <gabenovstan@gmail.com>
+
+--- a/arch/mips/pci/pci-octeon.c
++++ b/arch/mips/pci/pci-octeon.c
+@@ -195,6 +195,8 @@ const char *octeon_get_pci_interrupts(vo
+ 	 */
+ 	if (of_machine_is_compatible("dlink,dsr-500n"))
+ 		return "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC";
++	if (of_machine_is_compatible("dlink,dap-2690-a1"))
++		return "AABAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+ 	switch (octeon_bootinfo->board_type) {
+ 	case CVMX_BOARD_TYPE_NAO38:
+ 		/* This is really the NAC38 */

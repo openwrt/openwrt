@@ -14,6 +14,14 @@ define Build/strip-kernel
 	$(TARGET_CROSS)strip -R .notes $@ -o $@.stripped && mv $@.stripped $@
 endef
 
+define Build/dlink-dap2690-image
+	$(TOPDIR)/scripts/dlink-dap2690-image.py \
+		--kernel $@ \
+		--rootfs $(IMAGE_ROOTFS) \
+		--output $@.new
+	mv $@.new $@
+endef
+
 DTS_DIR := $(DTS_DIR)/cavium-octeon
 
 define Device/Default
@@ -32,6 +40,25 @@ define Device/generic
   FILESYSTEMS := ext4
 endef
 TARGET_DEVICES += generic
+
+define Device/dlink_dap-2690-a1
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DAP-2690
+  DEVICE_VARIANT := A1
+  BOARD_NAME := dlink,dap-2690-a1
+  DEVICE_DTS := cn5010_dlink_dap-2690-a1
+  DEVICE_PACKAGES += kmod-ath9k kmod-gpio-button-hotplug kmod-leds-gpio \
+	wpad-basic-mbedtls -kmod-usb-dwc3-octeon
+  KERNEL := kernel-bin | strip-kernel | patch-cmdline | append-dtb-to-elf
+  KERNEL_DEPENDS := $$(wildcard $(DTS_DIR)/$(DEVICE_DTS).dts)
+  CMDLINE := console=ttyS0,115200 root=/dev/mtdblock5 rootfstype=squashfs
+  IMAGES := factory.bin sysupgrade.bin
+  IMAGE_SIZE := 15616k
+  IMAGE/factory.bin := append-kernel | dlink-dap2690-image | check-size
+  IMAGE/sysupgrade.bin := append-kernel | dlink-dap2690-image | \
+	append-metadata | check-size
+endef
+TARGET_DEVICES += dlink_dap-2690-a1
 
 ITUSROUTER_CMDLINE:=console=ttyS0,115200 root=/dev/mmcblk1p2 rootfstype=squashfs,ext4,f2fs rootwait
 define Device/itus_shield-router
