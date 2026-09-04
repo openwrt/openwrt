@@ -175,6 +175,11 @@ $(eval $(call SetupHostCommand,unzip,Please install 'unzip', \
 $(eval $(call SetupHostCommand,bzip2,Please install 'bzip2', \
 	bzip2 --version </dev/null))
 
+ifeq ($(CONFIG_TARGET_IMAGES_PIGZ),y)
+  $(eval $(call SetupHostCommand,pigz,Please install 'pigz', \
+    pigz --version 2>&1 | grep pigz))
+endif
+
 $(eval $(call SetupHostCommand,wget,Please install GNU 'wget', \
 	wget --version | grep GNU))
 
