@@ -1597,6 +1597,16 @@ define Device/genexis_pulse-ex400
 endef
 TARGET_DEVICES += genexis_pulse-ex400
 
+define Device/glinet_gl-mg1300
+  $(Device/nand)
+  DEVICE_VENDOR := GL.iNet
+  DEVICE_MODEL := GL-MG1300
+  DEVICE_PACKAGES := kmod-mt7615-firmware kmod-usb3 -uboot-envtools
+  IMAGE_SIZE := 129024k
+  KERNEL_IN_UBI := 1
+endef
+TARGET_DEVICES += glinet_gl-mg1300
+
 define Device/glinet_gl-mt1300
   $(Device/dsa-migration)
   IMAGE_SIZE := 32448k
