@@ -13,11 +13,17 @@ GCC_CONFIGURE += \
 	--disable-threads
 
 define Host/Compile
-	+$(GCC_MAKE) $(HOST_JOBS) -C $(GCC_BUILD_DIR) all-gcc all-target-libgcc
+	+$(GCC_MAKE) $(HOST_JOBS) -C $(GCC_BUILD_DIR) \
+		$(GCC_CONFIGURE_VARS) \
+		all-gcc \
+		all-target-libgcc
 endef
 
 define Host/Install
-	$(GCC_MAKE) -C $(GCC_BUILD_DIR) install-gcc install-target-libgcc
+	$(GCC_MAKE) -C $(GCC_BUILD_DIR) \
+		$(GCC_CONFIGURE_VARS) \
+		install-gcc \
+		install-target-libgcc
 endef
 
 define Host/Clean
