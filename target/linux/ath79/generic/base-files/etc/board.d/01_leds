@@ -202,6 +202,14 @@ comfast,cf-e560ac)
 	ucidef_set_led_switch "lan3" "LAN3" "blue:lan3" "switch0" "0x08"
 	ucidef_set_led_switch "lan4" "LAN4" "blue:lan4" "switch0" "0x10"
 	;;
+	comfast,cf-wa350)
+	ucidef_set_led_switch "wan" "WAN" "red:wan" "switch0" "0x02"
+	ucidef_set_led_switch "lan" "LAN" "green:lan" "switch0" "0x04"
+	ucidef_set_led_wlan "wlan5g" "WLAN5G" "blue:wlan5g" "phy0tpt"
+	ucidef_set_led_switch "ext_wan" "EXT_WAN" "blue:ext_wan" "switch0" "0x02"
+	ucidef_set_led_switch "ext_lan" "EXT_LAN" "blue:ext_lan" "switch0" "0x04"
+	ucidef_set_led_wlan "ext_wlan2g" "EXT_WLAN2G" "blue:ext_wlan2g" "phy1tpt"
+	;;
 comfast,cf-ew71-v2|\
 comfast,cf-ew72|\
 openmesh,om2p-v2|\
