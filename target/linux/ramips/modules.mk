@@ -119,12 +119,17 @@ define KernelPackage/dsa-mt7620
   DEPENDS:=@TARGET_ramips_mt7620 +kmod-dsa
   CONFLICTS:=swconfig
   KCONFIG:= \
+	CONFIG_NET_MEDIATEK_SOC \
+	CONFIG_PCS_MTK_LYNXI \
+	CONFIG_NET_MEDIATEK_MT7620_PPE=y \
 	CONFIG_NET_DSA_MT7620 \
 	CONFIG_NET_DSA_TAG_RALINK
   FILES:= \
+	$(LINUX_DIR)/drivers/net/ethernet/mediatek/mtk_eth.ko \
+	$(LINUX_DIR)/drivers/net/pcs/pcs-mtk-lynxi.ko \
 	$(LINUX_DIR)/drivers/net/ethernet/ralink/gsw_mt7620_dsa.ko \
 	$(LINUX_DIR)/net/dsa/tag_ralink.ko
-  AUTOLOAD:=$(call AutoProbe,tag_ralink gsw_mt7620_dsa)
+  AUTOLOAD:=$(call AutoProbe,tag_ralink mtk_eth gsw_mt7620_dsa)
 endef
 
 define KernelPackage/dsa-mt7620/description
