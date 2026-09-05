@@ -118,8 +118,16 @@ case "$board" in
 		[ "$PHYNBR" = "0" ] && echo "$addr" > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" = "1" ] && macaddr_setbit_la $(macaddr_add $addr 1) > /sys${DEVPATH}/macaddress
 		;;
-	dlink,aquila-pro-ai-m30-a1)
-		addr=$(mtd_get_mac_binary "Odm" 0x81)
+	dlink,aquila-pro-ai-m30-a1|\
+	dlink,aquila-pro-ai-m60-a1)
+		part=$(find_mtd_part "Odm")
+		# locate the MAC record header, the MAC follows it
+		hex=$(hexdump -ve '1/1 "%.2x"' -n 256 "$part")
+		pos=$(echo "$hex" | awk -v RS='304200800600' '{print length($0); exit}')
+		[ -n "$pos" ] && [ "$pos" -lt "${#hex}" ] || return
+		offset=$((pos / 2 + 6))
+		addr=$(mtd_get_mac_binary "Odm" $offset)
+		[ "$PHYNBR" = "0" ] && macaddr_add $addr 2 > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" = "1" ] && macaddr_add $addr 3 > /sys${DEVPATH}/macaddress
 		;;
 	glinet,gl-mt6000|\
