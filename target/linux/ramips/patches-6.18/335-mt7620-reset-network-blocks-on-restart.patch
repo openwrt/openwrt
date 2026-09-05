@@ -1,0 +1,58 @@
+From: Gleb Pesin <dormancygrace@gmail.com>
+Date: Thu, 30 Jul 2026 16:00:00 +0000
+Subject: [PATCH] MIPS: ralink: reset MT7620 network blocks on restart
+
+The MT7620 system reset does not reliably return the frame engine to a
+usable state when it is asserted on its own.  After a warm restart PDMA can
+accept the first TX producer index update but never consume the descriptor,
+leaving TX_CTX_IDX0 at 1 and TX_DTX_IDX0 at 0.
+
+Assert the FE, ESW and PPE resets together with the system reset.  This
+matches the state produced by a cold reset and prevents the stale network
+blocks from surviving into the next kernel.
+
+This was reproduced on an MT7620N rev 2 eco 6.  Repeated boots with the
+existing system-only reset hit a NETDEV watchdog on the first packet, while
+the combined reset restored both PDMA RX and TX.
+
+MT7628 and MT7688 expose the same FE and ESW reset bits, but the failure
+has not been reproduced or tested on those SoCs and their reset set does
+not include the MT7620 PPE block.  Keep this recovery scoped to MT7620 until
+the same failure and required reset mask are verified there.
+
+Signed-off-by: Gleb Pesin <dormancygrace@gmail.com>
+---
+ arch/mips/ralink/reset.c | 11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
+
+--- a/arch/mips/ralink/reset.c
++++ b/arch/mips/ralink/reset.c
+@@ -18,18 +18,27 @@
+ /* Reset Control */
+ #define SYSC_REG_RESET_CTRL	0x034
+ 
++#define RSTCTL_RESET_PPE	BIT(31)
+ #define RSTCTL_RESET_PCI	BIT(26)
++#define RSTCTL_RESET_ESW	BIT(23)
++#define RSTCTL_RESET_FE		BIT(21)
+ #define RSTCTL_RESET_SYSTEM	BIT(0)
+ 
+ static void ralink_restart(char *command)
+ {
++	u32 reset = RSTCTL_RESET_SYSTEM;
++
+ 	if (IS_ENABLED(CONFIG_PCI)) {
+ 		rt_sysc_m32(0, RSTCTL_RESET_PCI, SYSC_REG_RESET_CTRL);
+ 		mdelay(50);
+ 	}
+ 
+ 	local_irq_disable();
+-	rt_sysc_w32(RSTCTL_RESET_SYSTEM, SYSC_REG_RESET_CTRL);
++	if (ralink_soc == MT762X_SOC_MT7620A ||
++	    ralink_soc == MT762X_SOC_MT7620N)
++		reset |= RSTCTL_RESET_PPE | RSTCTL_RESET_ESW | RSTCTL_RESET_FE;
++
++	rt_sysc_w32(reset, SYSC_REG_RESET_CTRL);
+ 	unreachable();
+ }
+ 
