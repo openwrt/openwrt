@@ -1,0 +1,269 @@
+// SPDX-License-Identifier: GPL-2.0-only OR MIT
+
+#include "qcom-ipq4029-aruba-glenmorangie.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/soc/qcom,tcsr.h>
+
+/ {
+	model = "Aruba AP-305";
+	compatible = "aruba,ap-305";
+
+	aliases {
+		led-boot = &led_status_green;
+		led-failsafe = &led_status_red;
+		led-running = &led_status_green;
+		led-upgrade = &led_status_amber;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_status_green: led-0 {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&tlmm 37 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_status_red: led-1 {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&tlmm 52 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_status_amber: led-2 {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_AMBER>;
+			gpios = <&tlmm 42 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-3 {
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&tlmm 51 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy1tpt";
+		};
+
+		led-4 {
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&tlmm 68 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-5 {
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_AMBER>;
+			gpios = <&tlmm 61 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy0tpt";
+		};
+	};
+
+	watchdog {
+		compatible = "linux,wdt-gpio";
+		gpios = <&tlmm 3 GPIO_ACTIVE_LOW>;
+		hw_algo = "toggle";
+		hw_margin_ms = <1000>;
+		always-running;
+	};
+};
+
+&tlmm {
+	phy-reset {
+		line-name = "PHY-reset";
+		gpios = <47 GPIO_ACTIVE_HIGH>;
+		gpio-hog;
+		output-high;
+	};
+
+	usb-power {
+		line-name = "USB-power";
+		gpios = <18 GPIO_ACTIVE_HIGH>;
+		gpio-hog;
+		output-high;
+	};
+};
+
+&blsp1_spi1 {
+	pinctrl-0 = <&spi_0_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+	cs-gpios = <&tlmm 12 GPIO_ACTIVE_HIGH>;
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <24000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "sbl1";
+				reg = <0x0 0x40000>;
+				read-only;
+			};
+
+			partition@40000 {
+				label = "mibib";
+				reg = <0x40000 0x20000>;
+				read-only;
+			};
+
+			partition@60000 {
+				label = "qsee";
+				reg = <0x60000 0x60000>;
+				read-only;
+			};
+
+			partition@c0000 {
+				label = "cdt";
+				reg = <0xc0000 0x10000>;
+				read-only;
+			};
+
+			partition@d0000 {
+				label = "ddrparams";
+				reg = <0xd0000 0x10000>;
+				read-only;
+			};
+
+			partition@e0000 {
+				label = "u-boot-env";
+				reg = <0xe0000 0x10000>;
+			};
+
+			partition@f0000 {
+				label = "appsbl";
+				reg = <0xf0000 0x100000>;
+				read-only;
+			};
+
+			partition@1f0000 {
+				label = "ART";
+				reg = <0x1f0000 0x10000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					precal_art_1000: precal@1000 {
+						reg = <0x1000 0x2f20>;
+					};
+
+					precal_art_5000: precal@5000 {
+						reg = <0x5000 0x2f20>;
+					};
+
+					precal_art_9000: precal@9000 {
+						reg = <0x9000 0x2f20>;
+					};
+				};
+			};
+
+			partition@200000 {
+				label = "osss";
+				reg = <0x200000 0x170000>;
+				read-only;
+			};
+
+			partition@370000 {
+				label = "pds";
+				reg = <0x370000 0x10000>;
+				read-only;
+			};
+
+			partition@380000 {
+				label = "apcd";
+				reg = <0x380000 0x10000>;
+				read-only;
+			};
+
+			partition@390000 {
+				label = "mfginfo";
+				reg = <0x390000 0x10000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_mfginfo_1d: macaddr@1d {
+						compatible = "mac-base";
+						reg = <0x1d 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
+
+			partition@3a0000 {
+				label = "fcache";
+				reg = <0x3a0000 0x10000>;
+				read-only;
+			};
+
+			partition@3b0000 {
+				label = "osss1";
+				reg = <0x3b0000 0x50000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&wifi0 {
+	qcom,ath10k-calibration-variant = "Aruba-AP-305";
+};
+
+&wifi1 {
+	status = "disabled";
+};
+
+&pcie0 {
+	status = "okay";
+	perst-gpio = <&tlmm 38 GPIO_ACTIVE_LOW>;
+	wake-gpio = <&tlmm 50 GPIO_ACTIVE_LOW>;
+
+	bridge@0,0 {
+		reg = <0x00000000 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+		ranges;
+
+		wifi2: wifi@1,0 {
+			compatible = "qcom,ath10k";
+			status = "okay";
+			reg = <0x00010000 0 0 0 0>;
+
+			nvmem-cell-names = "pre-calibration", "mac-address";
+			nvmem-cells = <&precal_art_9000>, <&macaddr_mfginfo_1d 2>;
+			qcom,ath10k-calibration-variant = "Aruba-AP-305";
+		};
+	};
+};
+
+/ {
+	soc {
+		tcsr@194b000 {
+			compatible = "qcom,tcsr";
+			reg = <0x194b000 0x100>;
+			qcom,usb-hsphy-mode-select = <TCSR_USB_HSPHY_HOST_MODE>;
+		};
+	};
+};
+
+&usb3 {
+	status = "okay";
+};
+
+&usb3_hs_phy {
+	status = "okay";
+};
+
+&usb3_ss_phy {
+	status = "okay";
+};

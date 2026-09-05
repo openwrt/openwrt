@@ -189,6 +189,14 @@ define Device/aruba_ap-365
 endef
 TARGET_DEVICES += aruba_ap-365
 
+define Device/aruba_ap-305
+	$(call Device/aruba_glenmorangie)
+	DEVICE_MODEL := AP-305
+	DEVICE_PACKAGES := ath10k-firmware-qca99x0-ct
+	DEVICE_DTS_CONFIG := Glenmorangie@1
+endef
+TARGET_DEVICES += aruba_ap-305
+
 define Device/asus_map-ac1300
 	$(call Device/FitImageLzma)
 	DEVICE_VENDOR := ASUS
