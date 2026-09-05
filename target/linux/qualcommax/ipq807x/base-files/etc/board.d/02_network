@@ -15,6 +15,7 @@ ipq807x_setup_interfaces()
 	edgecore,eap102|\
 	tcl,linkhub-hh500v|\
 	tplink,deco-x80-5g|\
+	tplink,deco-x60-v2|\
 	yuncore,ax880|\
 	zte,mf269)
 		ucidef_set_interfaces_lan_wan "lan" "wan"
@@ -103,7 +104,8 @@ ipq807x_setup_macs()
 		wan_mac=$(mtd_get_mac_binary "0:ART" 0x5e290)
 		lan_mac=$(mtd_get_mac_binary "0:ART" 0x5e296)
 		;;
-	tplink,deco-x80-5g)
+	tplink,deco-x80-5g|\
+	tplink,deco-x60-v2)
 		label_mac=$(get_mac_binary /tmp/factory_data/default-mac 0)
 		lan_mac=$(macaddr_add $label_mac 1)
 		wan_mac=$label_mac
