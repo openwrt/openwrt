@@ -1,0 +1,242 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Gleb Pesin <dormancygrace@gmail.com>
+Date: Sat, 8 Aug 2026 19:10:24 +0300
+Subject: [PATCH] net: ethernet: mediatek: enable MT7620 VLAN TX offload
+
+The MT7620 CDMA VLAN map has 16 entries. Program it through the VLAN
+callbacks. Track all active VIDs and fall back to software insertion per
+packet when multiple active VIDs alias the same hardware slot. Reassign or
+clear the hardware slot when its current VID is removed, and restore the map
+after frame-engine resets. Keep the active-VID bitmap MT7620-local and expose
+the offload only when the DSA alias fallback is available.
+
+Signed-off-by: Gleb Pesin <dormancygrace@gmail.com>
+---
+
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -1598,8 +1598,14 @@ static void mtk_tx_set_dma_desc_v1(struc
+ 		if (info->csum)
+ 			data |= TX_DMA_CHKSUM;
+ 		/* vlan header offload */
+-		if (info->vlan)
+-			data |= TX_DMA_INS_VLAN | info->vlan_tci;
++		if (info->vlan) {
++			if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7620))
++				data |= MT7620_TX_DMA_INS_VLAN |
++					((info->vlan_tci >> VLAN_PRIO_SHIFT) << 4) |
++					(info->vlan_tci & 0xf);
++			else
++				data |= TX_DMA_INS_VLAN | info->vlan_tci;
++		}
+ 	}
+ 	WRITE_ONCE(desc->txd4, data);
+ }
+@@ -4605,6 +4611,28 @@ out:
+ 			      MTK_DMA_MONITOR_TIMEOUT);
+ }
+ 
++static void mtk_mt7620_vlan_write(struct mtk_eth *eth, u32 idx, u16 vid)
++{
++	u32 reg = MT7620_CDMA_VLAN_BASE + (idx / 2) * sizeof(u32);
++	u32 val;
++
++	val = mtk_r32(eth, reg);
++	if (idx & 1)
++		val = (val & GENMASK(15, 0)) | (vid << 16);
++	else
++		val = (val & GENMASK(31, 16)) | vid;
++	mtk_w32(eth, val, reg);
++}
++
++static void mtk_mt7620_vlan_restore(struct mtk_eth *eth)
++{
++	u32 idx;
++
++	for (idx = 0; idx < MT7620_CDMA_VLAN_SLOTS; idx++)
++		mtk_mt7620_vlan_write(eth, idx,
++				      READ_ONCE(eth->mt7620_vlan_vid[idx]));
++}
++
+ static int mtk_hw_init(struct mtk_eth *eth, bool reset)
+ {
+ 	u32 dma_mask = ETHSYS_DMA_AG_MAP_PDMA | ETHSYS_DMA_AG_MAP_QDMA |
+@@ -4652,6 +4680,7 @@ static int mtk_hw_init(struct mtk_eth *e
+ 		val = mtk_r32(eth, MT7620_CDMA_CSG_CFG);
+ 		mtk_w32(eth, val | MT7620_CDMA_CSUM_EN,
+ 			MT7620_CDMA_CSG_CFG);
++		mtk_mt7620_vlan_restore(eth);
+ 
+ 		mtk_dim_rx(&eth->rx_dim.work);
+ 		mtk_dim_tx(&eth->tx_dim.work);
+@@ -5303,6 +5332,20 @@ static netdev_features_t mtk_features_ch
+ 					   struct net_device *dev,
+ 					   netdev_features_t features)
+ {
++	struct mtk_mac *mac = netdev_priv(dev);
++	struct mtk_eth *eth = mac->hw;
++	u32 idx;
++	u16 vid;
++
++	if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7620) &&
++	    (features & NETIF_F_HW_VLAN_CTAG_TX) &&
++	    skb_vlan_tag_present(skb)) {
++		vid = skb_vlan_tag_get_id(skb);
++		idx = vid & (MT7620_CDMA_VLAN_SLOTS - 1);
++		if (READ_ONCE(eth->mt7620_vlan_vid[idx]) != vid)
++			features &= ~NETIF_F_HW_VLAN_CTAG_TX;
++	}
++
+ 	/* No point in doing any of this if neither checksum nor GSO are
+ 	 * being requested for this frame. We can rule out both by just
+ 	 * checking for CHECKSUM_PARTIAL
+@@ -5346,6 +5389,75 @@ static const struct ethtool_ops mtk_etht
+ 	.set_eee		= mtk_set_eee,
+ };
+ 
++static int mtk_mt7620_vlan_rx_add_vid(struct net_device *dev, __be16 proto,
++				      u16 vid)
++{
++	struct mtk_mac *mac = netdev_priv(dev);
++	struct mtk_eth *eth = mac->hw;
++	u32 idx = vid & (MT7620_CDMA_VLAN_SLOTS - 1);
++
++	/* VLAN core installs VID 0 for 802.1p; it needs no table entry. */
++	if (!vid)
++		return 0;
++
++	if (!MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7620) ||
++	    !IS_ENABLED(CONFIG_NET_DSA))
++		return 0;
++
++	set_bit(vid, eth->mt7620_vlan_active);
++
++	/* Keep the current entry. ndo_features_check() falls back to software
++	 * insertion for packets carrying an aliasing VID.
++	 */
++	if (test_bit(idx, &eth->mt7620_vlan_map))
++		return 0;
++
++	mtk_mt7620_vlan_write(eth, idx, vid);
++	WRITE_ONCE(eth->mt7620_vlan_vid[idx], vid);
++	set_bit(idx, &eth->mt7620_vlan_map);
++
++	return 0;
++}
++
++static int mtk_mt7620_vlan_rx_kill_vid(struct net_device *dev, __be16 proto,
++				       u16 vid)
++{
++	struct mtk_mac *mac = netdev_priv(dev);
++	struct mtk_eth *eth = mac->hw;
++	u32 idx = vid & (MT7620_CDMA_VLAN_SLOTS - 1);
++	u16 replacement = 0;
++	u16 candidate;
++
++	if (!vid)
++		return 0;
++
++	if (!MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7620) ||
++	    !IS_ENABLED(CONFIG_NET_DSA))
++		return 0;
++
++	clear_bit(vid, eth->mt7620_vlan_active);
++	if (READ_ONCE(eth->mt7620_vlan_vid[idx]) != vid)
++		return 0;
++
++	for (candidate = idx; candidate < VLAN_N_VID;
++	     candidate += MT7620_CDMA_VLAN_SLOTS)
++		if (candidate &&
++		    test_bit(candidate, eth->mt7620_vlan_active)) {
++			replacement = candidate;
++			break;
++		}
++
++	WRITE_ONCE(eth->mt7620_vlan_vid[idx], VLAN_N_VID);
++	mtk_mt7620_vlan_write(eth, idx, replacement);
++	WRITE_ONCE(eth->mt7620_vlan_vid[idx], replacement);
++	if (replacement)
++		set_bit(idx, &eth->mt7620_vlan_map);
++	else
++		clear_bit(idx, &eth->mt7620_vlan_map);
++
++	return 0;
++}
++
+ static const struct net_device_ops mtk_netdev_ops = {
+ 	.ndo_uninit		= mtk_uninit,
+ 	.ndo_open		= mtk_open,
+@@ -5359,6 +5471,8 @@ static const struct net_device_ops mtk_n
+ 	.ndo_get_stats64        = mtk_get_stats64,
+ 	.ndo_fix_features	= mtk_fix_features,
+ 	.ndo_set_features	= mtk_set_features,
++	.ndo_vlan_rx_add_vid	= mtk_mt7620_vlan_rx_add_vid,
++	.ndo_vlan_rx_kill_vid	= mtk_mt7620_vlan_rx_kill_vid,
+ #ifdef CONFIG_NET_POLL_CONTROLLER
+ 	.ndo_poll_controller	= mtk_poll_controller,
+ #endif
+@@ -5594,6 +5708,8 @@ no_pcs:
+ 
+ 	if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7620)) {
+ 		hw_features |= NETIF_F_IP_CSUM | NETIF_F_RXCSUM;
++		if (IS_ENABLED(CONFIG_NET_DSA))
++			hw_features |= NETIF_F_HW_VLAN_CTAG_TX;
+ 		if (mt7620_get_eco() >= 5)
+ 			hw_features |= NETIF_F_SG | NETIF_F_TSO |
+ 				       NETIF_F_TSO6 | NETIF_F_IPV6_CSUM;
+@@ -5606,6 +5722,11 @@ no_pcs:
+ 	eth->netdev[id]->vlan_features = hw_features &
+ 		~NETIF_F_HW_VLAN_CTAG_TX;
+ 	eth->netdev[id]->features |= hw_features;
++	/* MT7620 programs its TX VLAN map through the VLAN RX callbacks. */
++	if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7620) &&
++	    IS_ENABLED(CONFIG_NET_DSA))
++		eth->netdev[id]->features |=
++			NETIF_F_HW_VLAN_CTAG_FILTER;
+ 	eth->netdev[id]->ethtool_ops = &mtk_ethtool_ops;
+ 
+ 	eth->netdev[id]->irq = eth->irq[MTK_FE_IRQ_SHARED];
+@@ -5765,6 +5886,11 @@ static int mtk_probe(struct platform_dev
+ 		eth->ip_align = NET_IP_ALIGN;
+ 
+ 	if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7620)) {
++		eth->mt7620_vlan_active =
++			devm_bitmap_zalloc(&pdev->dev, VLAN_N_VID, GFP_KERNEL);
++		if (!eth->mt7620_vlan_active)
++			return -ENOMEM;
++
+ 		eth->rst_fe =
+ 			devm_reset_control_get_optional_exclusive(&pdev->dev, "fe");
+ 		if (IS_ERR(eth->rst_fe))
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
+@@ -9,7 +9,9 @@
+ #ifndef MTK_ETH_H
+ #define MTK_ETH_H
+ 
++#include <linux/bitmap.h>
+ #include <linux/dma-mapping.h>
++#include <linux/if_vlan.h>
+ #include <linux/netdevice.h>
+ #include <linux/of_net.h>
+ #include <linux/u64_stats_sync.h>
+@@ -346,6 +348,9 @@
+ #define TX_DMA_FPORT_SHIFT	25
+ #define TX_DMA_FPORT_MASK	0x7
+ #define TX_DMA_INS_VLAN		BIT(16)
++#define MT7620_TX_DMA_INS_VLAN	BIT(7)
++#define MT7620_CDMA_VLAN_BASE	0x430
++#define MT7620_CDMA_VLAN_SLOTS	16
+ 
+ /* QDMA descriptor txd3 */
+ #define TX_DMA_OWNER_CPU	BIT(31)
+@@ -1389,6 +1394,9 @@ struct mtk_eth {
+ 	struct dim			tx_dim;
+ 
+ 	int				ip_align;
++	unsigned long			mt7620_vlan_map;
++	u16				mt7620_vlan_vid[MT7620_CDMA_VLAN_SLOTS];
++	unsigned long			*mt7620_vlan_active;
+ 
+ 	struct metadata_dst		*dsa_meta[MTK_MAX_DSA_PORTS];
+ 
