@@ -13,15 +13,19 @@ exposing a common helper.
 Such helper will change the nvmem_info_cell and apply the correct post
 process function to correctly parse the mac address.
 
+OpenWrt also normalizes hyphen-separated ASCII MAC addresses before
+parsing them, as used by some TP-Link devices.
+
 Since the API requires OF and is only related to layout, move the
 function in layouts.c to correctly handle non-OF NVMEM.
 
 Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Signed-off-by: Gleb Pesin <dormancygrace@gmail.com>
 ---
  drivers/nvmem/core.c           | 79 +--------------------------------
- drivers/nvmem/layouts.c        | 80 ++++++++++++++++++++++++++++++++++
+ drivers/nvmem/layouts.c        | 87 ++++++++++++++++++++++++++++++++++
  include/linux/nvmem-provider.h |  4 ++
- 3 files changed, 86 insertions(+), 77 deletions(-)
+ 3 files changed, 93 insertions(+), 77 deletions(-)
 
 --- a/drivers/nvmem/core.c
 +++ b/drivers/nvmem/core.c
@@ -142,7 +146,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  #include <linux/nvmem-consumer.h>
  #include <linux/nvmem-provider.h>
  #include <linux/of.h>
-@@ -21,6 +24,83 @@
+@@ -21,6 +24,90 @@
  #define to_nvmem_layout_device(_dev) \
  	container_of((_dev), struct nvmem_layout, dev)
  
@@ -162,11 +166,18 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +				     void *buf, size_t bytes)
 +{
 +	u8 mac[ETH_ALEN];
++	char macstr[3 * ETH_ALEN] = {};
++	int i;
 +
 +	if (WARN_ON(bytes != 3 * ETH_ALEN - 1))
 +		return -EINVAL;
 +
-+	if (!mac_pton(buf, mac))
++	memcpy(macstr, buf, sizeof(macstr) - 1);
++	for (i = 2; i < sizeof(macstr) - 1; i += 3)
++		if (macstr[i] == '-')
++			macstr[i] = ':';
++
++	if (!mac_pton(macstr, mac))
 +		return -EINVAL;
 +
 +	if (index)
