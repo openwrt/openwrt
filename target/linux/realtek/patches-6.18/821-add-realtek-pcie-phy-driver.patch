@@ -1,0 +1,33 @@
+--- a/drivers/phy/realtek/Kconfig
++++ b/drivers/phy/realtek/Kconfig
+@@ -3,7 +3,7 @@
+ # Phy drivers for Realtek platforms
+ #
+ 
+-if ARCH_REALTEK || COMPILE_TEST
++if ARCH_REALTEK || (MACH_REALTEK_RTL && RTL960X) || COMPILE_TEST
+ 
+ config PHY_RTK_RTD_USB2PHY
+ 	tristate "Realtek RTD USB2 PHY Transceiver Driver"
+@@ -29,4 +29,13 @@ config PHY_RTK_RTD_USB3PHY
+ 	  DWC3 USB IP. This driver will do the PHY initialization
+ 	  of the parameters.
+ 
+-endif # ARCH_REALTEK || COMPILE_TEST
++config PHY_RTK_PCIEPHY
++	tristate "Realtek PCIE PHY Transceiver Driver"
++	depends on OF
++	select GENERIC_PHY
++	help
++	  Say 'Y' here to add support for Realtek PCIE PHY driver.
++	  This driver create the basic PHY instance and provides initialize
++	  callback for PCIe port.
++
++endif # ARCH_REALTEK || (MACH_REALTEK_RTL && RTL960X) || COMPILE_TEST
+--- a/drivers/phy/realtek/Makefile
++++ b/drivers/phy/realtek/Makefile
+@@ -1,3 +1,4 @@
+ # SPDX-License-Identifier: GPL-2.0
+ obj-$(CONFIG_PHY_RTK_RTD_USB2PHY)	+= phy-rtk-usb2.o
+ obj-$(CONFIG_PHY_RTK_RTD_USB3PHY)	+= phy-rtk-usb3.o
++obj-$(CONFIG_PHY_RTK_PCIEPHY)		+= phy-rtk-pcie.o
