@@ -105,9 +105,8 @@
 					read-only;
 				};
 
-				hard_config: partition@7c000 {
-					label = "hard_config";
-					reg = <0x07c000 0x004000>;
+				/* Located and sized on flash by the RouterBOOT parser. */
+				hard_config: hard_config {
 					read-only;
 
 					nvmem-layout {
@@ -125,9 +124,11 @@
 					read-only;
 				};
 
-				soft_config: partition@90000 {
-					label = "soft_config";
-					reg = <0x090000 0x070000>;
+				soft_config: soft_config {
+				};
+
+				dtb_config {
+					read-only;
 				};
 			};
 		};
