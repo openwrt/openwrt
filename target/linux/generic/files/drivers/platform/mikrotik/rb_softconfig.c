@@ -49,6 +49,7 @@
 #include <linux/capability.h>
 #include <linux/spinlock.h>
 #include <linux/crc32.h>
+#include <linux/inet.h>
 
 #ifdef CONFIG_ATH79
  #include <asm/mach-ath79/ath79.h>
@@ -74,6 +75,8 @@
 #define RB_SCID_CPU_FREQ_IDX		0x0C	// u32*1
 #define RB_SCID_BOOTER			0x0D	// u32*1
 #define RB_SCID_SILENT_BOOT		0x0F	// u32*1
+#define RB_SCID_PREBOOT_ETHERBOOT	0x24	// u32*1
+#define RB_SCID_PREBOOT_ETHERBOOT_SERVER	0x25	// __be32*1
 /*
  * protected_routerboot seems to use tag 0x1F. It only works in combination with
  * RouterOS, resulting in a wiped board otherwise, so it's not implemented here.
@@ -100,6 +103,25 @@
 /* valid boot delay: 1 - 9s in 1s increment */
 #define RB_BOOT_DELAY_MIN		1
 #define RB_BOOT_DELAY_MAX		9
+
+/*
+ * RouterBOOT waits this many seconds for a netboot server before falling
+ * through to the configured boot device.  RouterOS accepts "disabled" or a
+ * timeout of 1..30s, and stores "disabled" as zero.
+ */
+#define RB_PREBOOT_ETHERBOOT_OFF	0
+#define RB_PREBOOT_ETHERBOOT_MIN	1
+#define RB_PREBOOT_ETHERBOOT_MAX	30
+#define RB_PREBOOT_ETHERBOOT_OFF_STR	"disabled"
+
+/*
+ * Restricts preboot etherboot to a single Netinstall server. Zero means any.
+ * Unlike the other tags in this record, which are little-endian u32, this one
+ * holds the IPv4 address in network byte order: 192.168.1.142 is stored as
+ * c0 a8 01 8e. Reading it as a u32 would silently yield a different host.
+ */
+#define RB_PREBOOT_ETHERBOOT_SERVER_ANY		0
+#define RB_PREBOOT_ETHERBOOT_SERVER_ANY_STR	"any"
 
 #define RB_BOOT_DEVICE_ETHER		0	// "boot over Ethernet"
 #define RB_BOOT_DEVICE_NANDETH		1	// "boot from NAND, if fail then Ethernet"
@@ -389,6 +411,102 @@ static ssize_t sc_tag_store_bootdelays(const u8 *pld, u16 pld_len, const char *b
 	return count;
 }
 
+static ssize_t sc_tag_show_preboot_etherboot_server(const u8 *pld, u16 pld_len, char *buf)
+{
+	__be32 data;	// network order, unlike every other tag here
+
+	if (sizeof(data) != pld_len)
+		return -EINVAL;
+
+	read_lock(&sc_bufrwl);
+	memcpy(&data, pld, sizeof(data));	// pld aliases sc_buf
+	read_unlock(&sc_bufrwl);
+
+	if (RB_PREBOOT_ETHERBOOT_SERVER_ANY == data)
+		return sprintf(buf, "%s\n", RB_PREBOOT_ETHERBOOT_SERVER_ANY_STR);
+
+	return sprintf(buf, "%pI4\n", &data);
+}
+
+static ssize_t sc_tag_store_preboot_etherboot_server(const u8 *pld, u16 pld_len, const char *buf, size_t count)
+{
+	__be32 data;
+	u8 addr[4];
+
+	if (sizeof(data) != pld_len)
+		return -EINVAL;
+
+	if (sysfs_streq(buf, RB_PREBOOT_ETHERBOOT_SERVER_ANY_STR)) {
+		data = RB_PREBOOT_ETHERBOOT_SERVER_ANY;
+	} else {
+		if (!in4_pton(buf, count, addr, -1, NULL))
+			return -EINVAL;
+
+		memcpy(&data, addr, sizeof(data));
+	}
+
+	write_lock(&sc_bufrwl);
+	memcpy((u8 *)pld, &data, sizeof(data));	// pld aliases sc_buf
+	RB_SC_CLRCRC();
+	write_unlock(&sc_bufrwl);
+
+	return count;
+}
+
+static ssize_t sc_tag_show_preboot_etherboot(const u8 *pld, u16 pld_len, char *buf)
+{
+	const char *fmt;
+	char *out = buf;
+	u32 data;	// cpu-endian
+	int i;
+
+	if (sizeof(data) != pld_len)
+		return -EINVAL;
+
+	read_lock(&sc_bufrwl);
+	data = *(u32 *)pld;		// pld aliases sc_buf
+	read_unlock(&sc_bufrwl);
+
+	fmt = (RB_PREBOOT_ETHERBOOT_OFF == data) ? "[%s] " : "%s ";
+	out += sprintf(out, fmt, RB_PREBOOT_ETHERBOOT_OFF_STR);
+
+	for (i = RB_PREBOOT_ETHERBOOT_MIN; i <= RB_PREBOOT_ETHERBOOT_MAX; i++) {
+		fmt = (i == data) ? "[%d] " : "%d ";
+		out += sprintf(out, fmt, i);
+	}
+
+	out += sprintf(out, "\n");
+	return out - buf;
+}
+
+static ssize_t sc_tag_store_preboot_etherboot(const u8 *pld, u16 pld_len, const char *buf, size_t count)
+{
+	u32 data;	// cpu-endian
+	int ret;
+
+	if (sizeof(data) != pld_len)
+		return -EINVAL;
+
+	if (sysfs_streq(buf, RB_PREBOOT_ETHERBOOT_OFF_STR)) {
+		data = RB_PREBOOT_ETHERBOOT_OFF;
+	} else {
+		ret = kstrtou32(buf, 10, &data);
+		if (ret)
+			return ret;
+
+		if ((data < RB_PREBOOT_ETHERBOOT_MIN) ||
+		    (RB_PREBOOT_ETHERBOOT_MAX < data))
+			return -EINVAL;
+	}
+
+	write_lock(&sc_bufrwl);
+	*(u32 *)pld = data;		// pld aliases sc_buf
+	RB_SC_CLRCRC();
+	write_unlock(&sc_bufrwl);
+
+	return count;
+}
+
 /* Support CPU frequency accessors only when the tag format has been asserted */
 #if defined(CONFIG_ATH79)
 /* Use the same letter-based nomenclature as RouterBOOT */
@@ -529,6 +647,16 @@ static struct sc_attr {
 		.tshow = sc_tag_show_silent_boot,
 		.tstore = sc_tag_store_silent_boot,
 		.kattr = __ATTR(silent_boot, RB_SC_RMODE|RB_SC_WMODE, sc_attr_show, sc_attr_store),
+	}, {
+		.tag_id = RB_SCID_PREBOOT_ETHERBOOT,
+		.tshow = sc_tag_show_preboot_etherboot,
+		.tstore = sc_tag_store_preboot_etherboot,
+		.kattr = __ATTR(preboot_etherboot, RB_SC_RMODE|RB_SC_WMODE, sc_attr_show, sc_attr_store),
+	}, {
+		.tag_id = RB_SCID_PREBOOT_ETHERBOOT_SERVER,
+		.tshow = sc_tag_show_preboot_etherboot_server,
+		.tstore = sc_tag_store_preboot_etherboot_server,
+		.kattr = __ATTR(preboot_etherboot_server, RB_SC_RMODE|RB_SC_WMODE, sc_attr_show, sc_attr_store),
 	},
 };
 
