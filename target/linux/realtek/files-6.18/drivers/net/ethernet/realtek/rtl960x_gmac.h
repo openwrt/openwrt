@@ -31,7 +31,7 @@
 
 #define GMAC_TRSR		0x34
 
-#define GMAC_CMD		0x3b
+#define GMAC_CMD		0x38
 #define CMD_RXJUMBO		BIT(3)
 #define CMD_RX_VLAN_DETAG	BIT(2)
 #define CMD_RXCHKSUM		BIT(1)

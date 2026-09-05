@@ -70,7 +70,6 @@ static_assert(sizeof(struct rtl960x_tx_desc) == 20);
 struct rtl960x_gmac {
 	struct net_device *dev;
 	struct device *dma_dev;
-	struct regmap *map8;
 	struct regmap *map16;
 	struct regmap *map32;
 	int irq;
@@ -99,13 +98,6 @@ struct rtl960x_gmac {
  * Standard MMIO accessors do not swap values on this target, so keep the
  * regmap-MMIO default to preserve the previous raw access semantics.
  */
-static const struct regmap_config rtl960x_gmac_regmap8_config = {
-	.name = "8-bit",
-	.reg_bits = 32,
-	.val_bits = 8,
-	.reg_stride = 1,
-};
-
 static const struct regmap_config rtl960x_gmac_regmap16_config = {
 	.name = "16-bit",
 	.reg_bits = 32,
@@ -246,7 +238,7 @@ static void rtl960x_gmac_init_hw(struct rtl960x_gmac *priv)
 	 * oversize frames are dropped by the FS|LS + length check in the
 	 * RX path anyway.
 	 */
-	regmap_write(priv->map8, GMAC_CMD, CMD_RXCHKSUM | CMD_RXJUMBO);
+	regmap_write(priv->map32, GMAC_CMD, CMD_RXCHKSUM | CMD_RXJUMBO);
 	regmap_write(priv->map32, GMAC_TCR, TCR_CONFIG);
 	regmap_update_bits(priv->map32, GMAC_CFG, CFG_RFIFO_SIZE,
 			   FIELD_PREP(CFG_RFIFO_SIZE, CFG_RFIFO_SIZE_2KB));
@@ -758,11 +750,6 @@ static int rtl960x_gmac_probe(struct platform_device *pdev)
 	base = devm_platform_get_and_ioremap_resource(pdev, 0, &res);
 	if (IS_ERR(base))
 		return PTR_ERR(base);
-	priv->map8 = devm_regmap_init_mmio(&pdev->dev, base,
-					   &rtl960x_gmac_regmap8_config);
-	if (IS_ERR(priv->map8))
-		return dev_err_probe(&pdev->dev, PTR_ERR(priv->map8),
-				     "failed to initialize 8-bit regmap\n");
 	priv->map16 = devm_regmap_init_mmio(&pdev->dev, base,
 					    &rtl960x_gmac_regmap16_config);
 	if (IS_ERR(priv->map16))
