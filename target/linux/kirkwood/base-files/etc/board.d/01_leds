@@ -9,6 +9,10 @@ board_config_update
 board=$(board_name)
 
 case "$board" in
+dlink,dns-325-a1)
+	ucidef_set_led_netdev "status" "status" "f1072004.mdio-bus-mii:08:green:status" "eth0" "link_1000"
+	ucidef_set_led_netdev "activity" "activity" "f1072004.mdio-bus-mii:08:green:activity" "eth0" "link rx tx"
+	;;
 iom,ix2-200)
 	ucidef_set_led_timer "health" "health" "status:white:rebuild_led" "200" "800"
 	;;
