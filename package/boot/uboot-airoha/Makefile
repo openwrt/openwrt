@@ -52,6 +52,14 @@ define U-Boot/an7581_rfb
   DEPENDS:=+trusted-firmware-a-an7581-bl31
 endef
 
+define U-Boot/an7581_vsol
+  NAME:=VSOL V2902A
+  UBOOT_CONFIG:=an7581_vsol
+  BUILD_DEVICES:=vsol_v2902a
+  BUILD_SUBTARGET:=an7581
+  DEPENDS:=+trusted-firmware-a-an7581-bl31
+endef
+
 define U-Boot/an7583_nokia_xg-040g-mf
   NAME:=Nokia XG-040G-MF
   UBOOT_CONFIG:=an7583_nokia_xg-040g-mf
@@ -86,6 +94,7 @@ UBOOT_TARGETS := \
 	an7581_nokia_valyrian \
 	an7581_nokia_xg-040g-md \
 	an7581_rfb \
+	an7581_vsol \
 	an7583_nokia_xg-040g-mf \
 	an7583_rfb \
 	en7523_rfb
