@@ -845,7 +845,7 @@ define Device/totolink_lr1200
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := TOTOLINK
   DEVICE_MODEL := LR1200
-  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 uqmi
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 uqmi modemsignal-leds
 endef
 TARGET_DEVICES += totolink_lr1200
 
@@ -932,7 +932,7 @@ define Device/tplink_archer-mr200-v5
   TPLINK_HWID := 0x20000005
   TPLINK_HWREV := 0x5
   TPLINK_HWREVADD := 0x5
-  DEVICE_PACKAGES := kmod-mt76x0e uqmi kmod-usb2 kmod-usb-serial-option
+  DEVICE_PACKAGES := kmod-mt76x0e uqmi kmod-usb2 kmod-usb-serial-option modemsignal-leds
   IMAGES := sysupgrade.bin tftp-recovery.bin
   IMAGE/tftp-recovery.bin := pad-extra 128k | $$(IMAGE/factory.bin)
 endef
@@ -948,7 +948,7 @@ define Device/tplink_archer-mr200-v6
   TPLINK_HWREV := 0x6
   TPLINK_HWREVADD := 0x6
   DEVICE_PACKAGES := kmod-mt7615e kmod-mt7663-firmware-ap \
-	kmod-usb2 kmod-usb-serial-option uqmi
+	kmod-usb2 kmod-usb-serial-option uqmi modemsignal-leds
   KERNEL := kernel-bin | append-dtb | lzma -d22
   KERNEL_INITRAMFS := kernel-bin | append-dtb
   IMAGES := sysupgrade.bin
@@ -1083,7 +1083,7 @@ define Device/tplink_tl-mr6400-v4
   TPLINK_HWREV := 0x4
   TPLINK_HWREVADD := 0x4
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport \
-	kmod-usb-serial-option kmod-usb-net-qmi-wwan uqmi
+	kmod-usb-serial-option kmod-usb-net-qmi-wwan uqmi modemsignal-leds
   IMAGES := sysupgrade.bin tftp-recovery.bin
   IMAGE/tftp-recovery.bin := pad-extra 128k | $$(IMAGE/factory.bin)
 endef
@@ -1099,7 +1099,7 @@ define Device/tplink_tl-mr6400-v5
   TPLINK_HWREV := 0x5
   TPLINK_HWREVADD := 0x5
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport \
-	kmod-usb-serial-option kmod-usb-net-qmi-wwan uqmi
+	kmod-usb-serial-option kmod-usb-net-qmi-wwan uqmi modemsignal-leds
   IMAGES := sysupgrade.bin tftp-recovery.bin
   IMAGE/tftp-recovery.bin := pad-extra 128k | $$(IMAGE/factory.bin)
 endef
@@ -1115,7 +1115,7 @@ define Device/tplink_tl-mr6400-v7
   TPLINK_HWREV := 0x7
   TPLINK_HWREVADD := 0x7
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport \
-	kmod-usb-serial-option kmod-usb-net-qmi-wwan uqmi
+	kmod-usb-serial-option kmod-usb-net-qmi-wwan uqmi modemsignal-leds
   IMAGES := sysupgrade.bin tftp-recovery.bin
   IMAGE/tftp-recovery.bin := pad-extra 128k | $$(IMAGE/factory.bin)
 endef
