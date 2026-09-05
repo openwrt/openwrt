@@ -19,6 +19,13 @@ ipq60xx_setup_interfaces()
 	alfa-network,ap120c-ax)
 		ucidef_set_interfaces_lan_wan "lan" "wan"
 		;;
+	mikrotik,chateau-5g-r17-ax)
+		# No dedicated WAN port, the uplink is the RG650E modem.
+		ucidef_set_interface_lan "lan1 lan2 lan3 lan4 lan5"
+		;;
+	mikrotik,hap-ax3)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
+		;;
 	cambiumnetworks,xe3-4|\
 	netgear,rbs350)
 		ucidef_set_interface_lan "lan1 lan2" "dhcp"

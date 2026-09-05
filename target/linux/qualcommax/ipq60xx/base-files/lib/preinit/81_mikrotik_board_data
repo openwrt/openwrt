@@ -1,0 +1,52 @@
+#!/bin/sh
+
+# On the MikroTik Chateau 5G R17 ax and hAP ax3, RouterBOOT keeps the unit's
+# board data file in hard_config tag 0x16 (LZ77 compressed). rb_hardconfig
+# decompresses it and exports it as a 64 KiB blob. It is a complete BDF - same
+# 01 00 04 04 magic as the files in ipq-wifi, a valid header checksum, factory
+# MAC addresses and the chainmasks of the two 2x2 radios - and it is what
+# RouterOS hands to the firmware as board data ("Bdwlan: bdwlan found in
+# hrdcfg"), falling back to a generic file only when hard_config has none.
+#
+# Install it as board.bin: once the three board-2.bin lookups fail, ath11k
+# falls back to ath11k_core_fetch_board_data_api_1() with ATH11K_DEFAULT_BOARD_
+# FILE, which takes a bare BDF - no container, no name element, no length
+# arithmetic that has to be kept in sync with the calibration variant.
+#
+# This runs in preinit because ath11k requests the board file with
+# firmware_request_nowarn(), which does not reach the firmware hotplug helper -
+# the file has to exist before the module loads. The number puts it after
+# 80_mount_root on purpose: until the overlay is up the rootfs is the read-only
+# squashfs and /lib/firmware cannot be written.
+#
+# Pass the blob through unmodified. The firmware validates it beyond the header
+# checksum and aborts on any change with
+#   phyrf_bdf.c:472 Assertion 0 failed
+#   qcom-q6v5-wcss-pil: fatal error received
+# even when the checksum at offset 0xa is corrected accordingly.
+
+mikrotik_board_data() {
+	local blob="/sys/firmware/mikrotik/hard_config/wlan_data/data_0"
+	local dir="/lib/firmware/ath11k/IPQ6018/hw1.0"
+	local target="$dir/board.bin"
+
+	grep -qa "mikrotik,chateau-5g-r17-ax" /proc/device-tree/compatible ||
+		grep -qa "mikrotik,hap-ax3" /proc/device-tree/compatible || return 0
+
+	[ -r "$blob" ] || return 0
+	[ -e "$target" ] && return 0
+
+	mkdir -p "$dir"
+	# fullblock because sysfs hands out one page per read(): without it a short
+	# read still consumes a block and the copy ends up truncated.
+	dd if="$blob" of="$target.new" iflag=fullblock bs=65536 count=1 2>/dev/null
+
+	if [ "$(wc -c < "$target.new")" = "65536" ]; then
+		mv "$target.new" "$target"
+	else
+		rm -f "$target.new"
+		echo "mikrotik: failed to read board data from hard_config"
+	fi
+}
+
+boot_hook_add preinit_main mikrotik_board_data

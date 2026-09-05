@@ -1,0 +1,192 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+#include "ipq6010-mikrotik-c53-s53.dtsi"
+
+/ {
+	model = "MikroTik S53UG+5HaxD2HaxD&RG650E-EU (Chateau 5G R17 ax)";
+	compatible = "mikrotik,chateau-5g-r17-ax", "qcom,ipq6018";
+
+	aliases {
+		label-mac-device = &switch_port4;
+	};
+
+	/*
+	 * Modem power and reset, exported to userspace.
+	 *
+	 * These were a regulator-fixed with regulator-always-on before, which
+	 * kept the modem powered but made it impossible to switch off. The
+	 * RG650E does get wedged occasionally, and a power cycle is the only
+	 * way back, so the lines are exported instead:
+	 *
+	 *   /sys/class/gpio/modem-power  1 = powered (default), 0 = off
+	 *   /sys/class/gpio/modem-reset  pulse to reset without cutting power
+	 *
+	 * GPIO numbers come from MikroTik's own device tree, where GPIO 35 is
+	 * named "mpcie-power-off" and GPIO 52 "lte-reset". Driving GPIO 35 low
+	 * removes power, so the export is declared active high and named for
+	 * what it enables rather than for what it cuts: 1 powers the modem.
+	 * The RG650E sits on usb2; usb3 drives the external port.
+	 */
+	gpio-export {
+		compatible = "gpio-export";
+		#size-cells = <0>;
+
+		modem-power {
+			gpio-export,name = "modem-power";
+			gpio-export,output = <1>;
+			gpios = <&tlmm 35 GPIO_ACTIVE_HIGH>;
+		};
+
+		modem-reset {
+			gpio-export,name = "modem-reset";
+			gpio-export,output = <0>;
+			gpios = <&tlmm 52 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&mdio {
+	reset-gpios = <&tlmm 75 GPIO_ACTIVE_LOW>;
+
+	/*
+	 * The QCA8075 has to be described as a package; that is what sets up
+	 * the shared PSGMII mode. Declared as plain PHY nodes the probe fails
+	 * with -EINVAL.
+	 */
+	ethernet-phy-package@18 {
+		compatible = "qcom,qca8075-package";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x18>;
+		qcom,package-mode = "psgmii";
+
+		/*
+		 * Qualcomm's SSDK drives the PSGMII SerDes at 300 mV, while
+		 * qca807x.c defaults to 600 mV without this property.
+		 */
+		qcom,tx-drive-strength-milliwatt = <300>;
+
+		qca8075_0: ethernet-phy@18 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <0x18>;
+		};
+
+		qca8075_1: ethernet-phy@19 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <0x19>;
+		};
+
+		qca8075_2: ethernet-phy@1a {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <0x1a>;
+		};
+
+		qca8075_3: ethernet-phy@1b {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <0x1b>;
+		};
+	};
+};
+
+&board_leds {
+	/*
+	 * Signal strength bar. RouterOS drives these from the modem via its
+	 * "modem-signal" trigger; under OpenWrt they are plain LEDs for
+	 * userspace to drive.
+	 */
+	lte1 {
+		color = <LED_COLOR_ID_GREEN>;
+		function = LED_FUNCTION_MOBILE;
+		function-enumerator = <1>;
+		gpios = <&tlmm 27 GPIO_ACTIVE_HIGH>;
+	};
+
+	lte2 {
+		color = <LED_COLOR_ID_GREEN>;
+		function = LED_FUNCTION_MOBILE;
+		function-enumerator = <2>;
+		gpios = <&tlmm 26 GPIO_ACTIVE_HIGH>;
+	};
+
+	lte3 {
+		color = <LED_COLOR_ID_GREEN>;
+		function = LED_FUNCTION_MOBILE;
+		function-enumerator = <3>;
+		gpios = <&tlmm 25 GPIO_ACTIVE_HIGH>;
+	};
+
+	lte4 {
+		color = <LED_COLOR_ID_GREEN>;
+		function = LED_FUNCTION_MOBILE;
+		function-enumerator = <4>;
+		gpios = <&tlmm 24 GPIO_ACTIVE_HIGH>;
+	};
+
+	lte5 {
+		color = <LED_COLOR_ID_GREEN>;
+		function = LED_FUNCTION_MOBILE;
+		function-enumerator = <5>;
+		gpios = <&tlmm 23 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&blsp1_i2c3 {
+	status = "okay";
+};
+
+/*
+ * MikroTik attaches a board sensor here (compatible "rb-spi-ts": board
+ * temperature and PSU voltage). No driver exists for it, but the bus is
+ * enabled so the sensor can be wired up later without a DTS change.
+ */
+&blsp1_spi5 {
+	status = "okay";
+};
+
+/*
+ * The socket labels run opposite to the PSGMII lane order: switch port 1 is
+ * the socket labelled LAN4 and switch port 4 is LAN1. Verified socket by
+ * socket on the device.
+ *
+ * MAC addresses come from RouterBOOT's hard_config, one per port as the
+ * factory allocates them: hard_config reports mac_count 7 for this board,
+ * base + 0..4 for lan1..lan5 and base + 5..6 for the two radios. Without
+ * these cells the ports inherit the EDMA conduit's address, which qca_edma.c
+ * falls back to setting with eth_hw_addr_random() when no port describes one,
+ * so every port would get a fresh random address on each boot.
+ */
+&switch_port1 {
+	label = "lan4";
+	nvmem-cells = <&macaddr_hard 3>;
+	nvmem-cell-names = "mac-address";
+};
+
+&switch_port2 {
+	label = "lan3";
+	nvmem-cells = <&macaddr_hard 2>;
+	nvmem-cell-names = "mac-address";
+};
+
+&switch_port3 {
+	label = "lan2";
+	nvmem-cells = <&macaddr_hard 1>;
+	nvmem-cell-names = "mac-address";
+};
+
+&switch_port4 {
+	label = "lan1";
+	nvmem-cells = <&macaddr_hard 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&switch_port5 {
+	label = "lan5";
+	nvmem-cells = <&macaddr_hard 4>;
+	nvmem-cell-names = "mac-address";
+};
+
+&wifi {
+	qcom,ath11k-calibration-variant = "MikroTik-Chateau-5G-R17";
+};
