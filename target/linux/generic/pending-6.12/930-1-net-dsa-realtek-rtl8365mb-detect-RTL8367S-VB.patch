@@ -1,0 +1,130 @@
+From 18cdfcbf83b9455fe8936fae7b0e1365517649a0 Mon Sep 17 00:00:00 2001
+From: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+Date: Sat, 13 Jun 2026 00:19:37 +0200
+Subject: [PATCH 1/7] net: dsa: realtek: rtl8365mb: detect RTL8367S-VB
+
+Detect RTL8367S-VB and set family.
+
+Signed-off-by: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+---
+ drivers/net/dsa/realtek/rtl8365mb.h      | 14 ++++++++++++++
+ drivers/net/dsa/realtek/rtl8365mb_main.c | 28 ++++++++++++++++++++++++
+ 2 files changed, 42 insertions(+)
+
+--- /dev/null
++++ b/drivers/net/dsa/realtek/rtl8365mb.h
+@@ -0,0 +1,14 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++#ifndef _RTL8365MB_H
++#define _RTL8365MB_H
++
++#include "realtek.h"
++
++enum rtl8365mb_family {
++	RTL8365MB_FAMILY_C,
++	RTL8365MB_FAMILY_D,
++};
++
++enum rtl8365mb_family rtl8365mb_get_family(struct realtek_priv *priv);
++
++#endif /* _RTL8365MB_H */
+--- a/drivers/net/dsa/realtek/rtl8365mb_main.c
++++ b/drivers/net/dsa/realtek/rtl8365mb_main.c
+@@ -81,6 +81,7 @@
+  *  - RTL8367RB-VB
+  *  - RTL8367SB
+  *  - RTL8367S
++ *  - RTL8367S-VB
+  *  - RTL8370MB
+  *  - RTL8310SR
+  *
+@@ -109,6 +110,7 @@
+ #include "rtl83xx.h"
+ #include "rtl8365mb_l2.h"
+ #include "rtl8365mb_vlan.h"
++#include "rtl8365mb.h"
+ 
+ /* Family-specific data and limits */
+ #define RTL8365MB_PHYADDRMAX		7
+@@ -692,6 +694,7 @@ struct rtl8365mb_extint {
+  * @name: human-readable chip name
+  * @chip_id: chip identifier
+  * @chip_ver: chip silicon revision
++ * @family: chip family
+  * @extints: available external interfaces
+  * @jam_table: chip-specific initialization jam table
+  * @jam_size: size of the chip's jam table
+@@ -704,6 +707,7 @@ struct rtl8365mb_chip_info {
+ 	const char *name;
+ 	u32 chip_id;
+ 	u32 chip_ver;
++	enum rtl8365mb_family family;
+ 	const struct rtl8365mb_extint extints[RTL8365MB_MAX_NUM_EXTINTS];
+ 	const struct rtl8365mb_jam_tbl_entry *jam_table;
+ 	size_t jam_size;
+@@ -716,6 +720,7 @@ static const struct rtl8365mb_chip_info
+ 		.name = "RTL8365MB-VC",
+ 		.chip_id = 0x6367,
+ 		.chip_ver = 0x0040,
++		.family = RTL8365MB_FAMILY_C,
+ 		.extints = {
+ 			{ 6, 1, PHY_INTF(MII) | PHY_INTF(TMII) |
+ 				PHY_INTF(RMII) | PHY_INTF(RGMII) },
+@@ -727,6 +732,7 @@ static const struct rtl8365mb_chip_info
+ 		.name = "RTL8367S",
+ 		.chip_id = 0x6367,
+ 		.chip_ver = 0x00A0,
++		.family = RTL8365MB_FAMILY_C,
+ 		.extints = {
+ 			{ 6, 1, PHY_INTF(SGMII) | PHY_INTF(HSGMII) },
+ 			{ 7, 2, PHY_INTF(MII) | PHY_INTF(TMII) |
+@@ -739,6 +745,7 @@ static const struct rtl8365mb_chip_info
+ 		.name = "RTL8367SB",
+ 		.chip_id = 0x6367,
+ 		.chip_ver = 0x0010,
++		.family = RTL8365MB_FAMILY_C,
+ 		.extints = {
+ 			{ 6, 1, PHY_INTF(MII) | PHY_INTF(TMII) |
+ 				PHY_INTF(RMII) | PHY_INTF(RGMII) |
+@@ -753,6 +760,7 @@ static const struct rtl8365mb_chip_info
+ 		.name = "RTL8367RB-VB",
+ 		.chip_id = 0x6367,
+ 		.chip_ver = 0x0020,
++		.family = RTL8365MB_FAMILY_C,
+ 		.extints = {
+ 			{ 6, 1, PHY_INTF(MII) | PHY_INTF(TMII) |
+ 				PHY_INTF(RMII) | PHY_INTF(RGMII) },
+@@ -762,6 +770,19 @@ static const struct rtl8365mb_chip_info
+ 		.jam_table = rtl8365mb_init_jam_8365mb_vc,
+ 		.jam_size = ARRAY_SIZE(rtl8365mb_init_jam_8365mb_vc),
+ 	},
++	{
++		.name = "RTL8367S-VB",
++		.chip_id = 0x6642,
++		.chip_ver = 0x0010,
++		.family = RTL8365MB_FAMILY_D,
++		.extints = {
++			{ 6, 0, PHY_INTF(SGMII) | PHY_INTF(HSGMII) },
++			{ 7, 1, PHY_INTF(MII) | PHY_INTF(TMII) |
++				PHY_INTF(RMII) | PHY_INTF(RGMII) },
++		},
++		.jam_table = rtl8365mb_init_jam_8365mb_vc,
++		.jam_size = ARRAY_SIZE(rtl8365mb_init_jam_8365mb_vc),
++	},
+ };
+ 
+ enum rtl8365mb_stp_state {
+@@ -859,6 +880,13 @@ struct rtl8365mb {
+ 
+ #define pcs_to_rtl8365mb(_pcs) container_of((_pcs), struct rtl8365mb, pcs)
+ 
++enum rtl8365mb_family rtl8365mb_get_family(struct realtek_priv *priv)
++{
++	struct rtl8365mb *mb = priv->chip_data;
++
++	return mb->chip_info->family;
++}
++
+ static int rtl8365mb_phy_poll_busy(struct realtek_priv *priv)
+ {
+ 	u32 val;
