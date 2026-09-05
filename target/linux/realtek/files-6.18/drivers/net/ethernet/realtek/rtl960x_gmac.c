@@ -52,9 +52,9 @@
 #define DSA_TRAILER_LEN		4
 
 /* Datapath sizing */
-#define RX_RING_SIZE		128	/* must be a power of two, 16..256 */
-#define TX_RING_SIZE		128
-#define RX_BUF_SIZE		1536	/* 0x600, per U-Boot RX_DESC_BUFFER_SIZE */
+#define RX_RING_SIZE		1024	/* must be a power of two, from 16 to 4096 */
+#define TX_RING_SIZE		2048
+#define RX_BUF_SIZE		1600
 #define RX_SHIFT		2	/* HW writes the frame at buf + 2 bytes */
 #define RX_MAX_FRAME_LEN	(RX_BUF_SIZE - RX_SHIFT)
 #define TX_MIN_LEN		ETH_ZLEN
@@ -63,14 +63,9 @@
 
 #define RTL960X_GMAC_REGS_DUMP_LEN	0x100
 
-/* The ring strides are the HW descriptor sizes; guard the layout. */
-static_assert(sizeof(struct rtl960x_rx_desc) == 16);
-static_assert(sizeof(struct rtl960x_tx_desc) == 20);
-
 struct rtl960x_gmac {
 	struct net_device *dev;
 	struct device *dma_dev;
-	struct regmap *map8;
 	struct regmap *map16;
 	struct regmap *map32;
 	int irq;
@@ -99,13 +94,6 @@ struct rtl960x_gmac {
  * Standard MMIO accessors do not swap values on this target, so keep the
  * regmap-MMIO default to preserve the previous raw access semantics.
  */
-static const struct regmap_config rtl960x_gmac_regmap8_config = {
-	.name = "8-bit",
-	.reg_bits = 32,
-	.val_bits = 8,
-	.reg_stride = 1,
-};
-
 static const struct regmap_config rtl960x_gmac_regmap16_config = {
 	.name = "16-bit",
 	.reg_bits = 32,
@@ -234,6 +222,10 @@ err_free_rx_bufs:
 
 static void rtl960x_gmac_init_hw(struct rtl960x_gmac *priv)
 {
+	u32 rx_size_mask = RX_RING_SIZE - 1;
+	u16 rx_size_l, threshold_on_l, threshold_off_l;
+	u8 rx_size_h, threshold_on_h, threshold_off_h;
+
 	rtl960x_gmac_stop_hw(priv);
 
 	/*
@@ -242,7 +234,7 @@ static void rtl960x_gmac_init_hw(struct rtl960x_gmac *priv)
 	 * oversize frames are dropped by the FS|LS + length check in the
 	 * RX path anyway.
 	 */
-	regmap_write(priv->map8, GMAC_CMD, CMD_RXCHKSUM | CMD_RXJUMBO);
+	regmap_write(priv->map32, GMAC_CMD, CMD_RXCHKSUM | CMD_RXJUMBO);
 	regmap_write(priv->map32, GMAC_TCR, TCR_CONFIG);
 	regmap_update_bits(priv->map32, GMAC_CFG, CFG_RFIFO_SIZE,
 			   FIELD_PREP(CFG_RFIFO_SIZE, CFG_RFIFO_SIZE_2KB));
@@ -254,13 +246,27 @@ static void rtl960x_gmac_init_hw(struct rtl960x_gmac *priv)
 
 	/* Program the RX/TX ring bases. */
 	regmap_write(priv->map32, GMAC_RXFDP, priv->rx_ring_dma);
-	regmap_write(priv->map16, GMAC_RXCDO, 0);
-	regmap_write(priv->map8, GMAC_RXRINGSIZE, RX_RING_SIZE - 1);
-	regmap_write(priv->map8, GMAC_RXCPU_DES_NUM, RX_RING_SIZE - 1);
-	regmap_write(priv->map8, GMAC_RX_FC_ASSERT_THRES,
-		     RX_FC_ASSERT_THRES_VAL);
-	regmap_write(priv->map8, GMAC_RX_FC_DEASSERT_THRES,
-		     RX_FC_DEASSERT_THRES_VAL);
+
+	/* Very cursed but it is how register is layed out for the 1st rx ring */
+	rx_size_h = (rx_size_mask & 0xf00) >> 8;
+	rx_size_l = rx_size_mask & 0xff;
+	regmap_write(priv->map32, GMAC_RXCDO_AND_SIZE_REG,
+		     FIELD_PREP(GMAC_RX_SIZE_L_MASK, rx_size_l) |
+		     FIELD_PREP(GMAC_RX_SIZE_H_MASK, rx_size_h));
+
+	threshold_on_h = (RX_FC_ASSERT_THRES_VAL & 0xf00) >> 8;
+	threshold_on_l = RX_FC_ASSERT_THRES_VAL & 0xff;
+	threshold_off_h = (RX_FC_DEASSERT_THRES_VAL & 0xf00) >> 8;
+	threshold_off_l = RX_FC_DEASSERT_THRES_VAL & 0xff;
+	regmap_write(priv->map32, GMAC_RXCPU_DES_NUM_REG,
+		     FIELD_PREP(GMAC_RX_DESC_NUM_L_MASK, rx_size_l) |
+		     FIELD_PREP(GMAC_FC_ASSERT_THRES_L_MASK, threshold_on_l) |
+		     FIELD_PREP(GMAC_FC_DEASSERT_THRES_L_MASK, threshold_off_l) |
+		     FIELD_PREP(GMAC_RX_DESC_NUM_H_MASK, rx_size_h) |
+		     FIELD_PREP(GMAC_FC_ASSERT_THRES_H_MASK, threshold_on_h));
+
+	regmap_update_bits(priv->map32, GMAC_RX_PSE_DES_THRES_H_REG,
+			   FIELD_PREP(GMAC_FC_DEASSERT_THRES_H_MASK, threshold_off_h));
 
 	regmap_write(priv->map32, GMAC_TXFDP1, priv->tx_ring_dma);
 	regmap_write(priv->map16, GMAC_TXCDO1, 0);
@@ -740,11 +746,6 @@ static int rtl960x_gmac_probe(struct platform_device *pdev)
 	base = devm_platform_get_and_ioremap_resource(pdev, 0, &res);
 	if (IS_ERR(base))
 		return PTR_ERR(base);
-	priv->map8 = devm_regmap_init_mmio(&pdev->dev, base,
-					   &rtl960x_gmac_regmap8_config);
-	if (IS_ERR(priv->map8))
-		return dev_err_probe(&pdev->dev, PTR_ERR(priv->map8),
-				     "failed to initialize 8-bit regmap\n");
 	priv->map16 = devm_regmap_init_mmio(&pdev->dev, base,
 					    &rtl960x_gmac_regmap16_config);
 	if (IS_ERR(priv->map16))
