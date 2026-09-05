@@ -94,6 +94,14 @@ ppp_generic_setup() {
 
 	json_get_vars ip6table demand keepalive keepalive_adaptive username password pppd_options pppname unnumbered reqprefix persist maxfail holdoff peerdns sourcefilter delegate norelease
 
+	local dns dns6
+	json_get_values dns dns
+	for d in $dns; do
+		case "$d" in
+			*:*) dns6="${dns6:+$dns6,}$d" ;;
+		esac
+	done
+
 	[ ! -e /proc/sys/net/ipv6 ] && ipv6=0 || json_get_var ipv6 ipv6
 
 	if [ "$ipv6" = 0 ]; then
@@ -157,6 +165,7 @@ ppp_generic_setup() {
 		${norelease:+set NORELEASE=1} \
 		${ip6table:+set IP6TABLE=$ip6table} \
 		${peerdns:+set PEERDNS=$peerdns} \
+		${dns6:+set DNS6=$dns6} \
 		${sourcefilter:+set NOSOURCEFILTER=1} \
 		${delegate:+set DELEGATE=0} \
 		nodefaultroute \
