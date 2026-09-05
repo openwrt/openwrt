@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=u-boot
 PKG_VERSION:=2013.10
-PKG_RELEASE:=67
+PKG_RELEASE:=68
 
 PKG_HASH:=0d71e62beb952b41ebafb20a7ee4df2f960db64c31b054721ceb79ff14014c55
 
@@ -201,6 +201,21 @@ define U-Boot/acmp252_nor
   BUILD_DEVICES:=audiocodes_mp-252
 endef
 
+define U-Boot/b2268s_ram
+  NAME:=Huawei B2268S (RAM)
+  BUILD_SUBTARGET:=xrx200
+  BUILD_DEVICES:=huawei_b2268s
+  DDR_SETTINGS:=board/huawei/b2268s/ddr_settings.h
+endef
+
+define U-Boot/b2268s_nandspl
+  NAME:=Huawei B2268S (NAND SPL)
+  BUILD_SUBTARGET:=xrx200
+  BUILD_DEVICES:=huawei_b2268s
+  UBOOT_IMAGE:=u-boot.ltq.lzo.nandspl
+  DEPENDS+=@BROKEN
+endef
+
 define U-Boot/bthomehubv5a_ram
   NAME:=BT Home Hub 5A (RAM)
   BUILD_SUBTARGET:=xrx200
@@ -341,6 +356,7 @@ UBOOT_TARGETS:= \
 	arv752dpw_ram arv752dpw_nor arv752dpw_brn \
 	arv752dpw22_ram arv752dpw22_nor arv752dpw22_brn \
 	arv8539pw22_brn arv8539pw22_nor arv8539pw22_ram \
+	b2268s_ram b2268s_nandspl \
 	bthomehubv5a_ram \
 	gigasx76x_ram gigasx76x_nor \
 	acmp252_ram acmp252_nor \
