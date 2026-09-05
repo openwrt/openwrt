@@ -17,6 +17,12 @@
 	aliases {
 		serial0 = &blsp1_uart5;
 		mdio-gpio0 = &mdio1;
+		ethernet0 = &port_switch;
+		ethernet1 = &port_lan2;
+		ethernet2 = &port_lan1;
+		ethernet3 = &port_wan;
+		ethernet4 = &port_10g_sfp;
+		ethernet5 = &port_10g_copper;
 		led-boot = &led_pwr;
 		led-failsafe = &led_pwr;
 		led-running = &led_pwr;
@@ -684,7 +690,7 @@
 			nvmem-cell-names = "mac-address";
 		};
 
-		port@2 {
+		port_lan2: port@2 {
 			reg = <2>;
 			label = "lan2";
 			phy-handle = <&qca8075_9>;
@@ -694,7 +700,7 @@
 			nvmem-cell-names = "mac-address";
 		};
 
-		port@3 {
+		port_lan1: port@3 {
 			reg = <3>;
 			label = "lan1";
 			phy-handle = <&qca8075_a>;
@@ -704,7 +710,7 @@
 			nvmem-cell-names = "mac-address";
 		};
 
-		port@4 {
+		port_wan: port@4 {
 			reg = <4>;
 			label = "wan";
 			phy-handle = <&qca8075_b>;
@@ -714,7 +720,7 @@
 			nvmem-cell-names = "mac-address";
 		};
 
-		port@5 {
+		port_10g_sfp: port@5 {
 			reg = <5>;
 			label = "10g-sfp";
 			sfp = <&sfp>;
@@ -725,7 +731,7 @@
 			nvmem-cell-names = "mac-address";
 		};
 
-		port@6 {
+		port_10g_copper: port@6 {
 			reg = <6>;
 			label = "10g-copper";
 			phy-handle = <&aqr113c>;
