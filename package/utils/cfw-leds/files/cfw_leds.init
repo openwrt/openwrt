@@ -1,0 +1,38 @@
+#!/bin/sh /etc/rc.common
+#===============================================================================
+# /etc/init.d/cfw_leds — Comfast external LED simulation service (final version)
+# Automatically starts with the router via procd and restarts itself if stopped
+#===============================================================================
+
+START=97
+STOP=15
+USE_PROCD=1
+
+PROG=/usr/bin/cfw_led_ctrl
+BOARD="comfast,cf-wa350"
+
+# Board guard: the service runs only on the CF-WA350, even if the file is
+# included in shared build files for all ath79 devices
+board_match() {
+	grep -qs "$BOARD" /sys/firmware/devicetree/base/compatible && return 0
+	[ "$(cat /tmp/sysinfo/board_name 2>/dev/null)" = "$BOARD" ]
+}
+
+start_service() {
+	board_match || return 0
+	[ -x "$PROG" ] || {
+		logger -t cfw_leds "ERROR: $PROG not found"
+		return 1
+	}
+	procd_open_instance
+	procd_set_param command "$PROG"
+	procd_set_param respawn 3600 5 0
+	procd_close_instance
+}
+
+service_stopped() {
+	# When the service is manually stopped: restore the original system triggers
+	board_match || return 0
+	[ -x /etc/init.d/led ] && /etc/init.d/led start 2>/dev/null
+}
+
