@@ -500,6 +500,7 @@ static int gpio_keys_button_probe(struct platform_device *pdev,
 			/* legacy platform data... but is it the lookup table? */
 			bdata->gpiod = devm_gpiod_get_index(dev, desc, i,
 							    GPIOD_IN);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 18, 0) || IS_ENABLED(CONFIG_GPIOLIB_LEGACY)
 			if (IS_ERR(bdata->gpiod)) {
 				/* or the legacy (button->gpio is good) way? */
 				error = devm_gpio_request_one(dev,
@@ -515,6 +516,7 @@ static int gpio_keys_button_probe(struct platform_device *pdev,
 				if (button->active_low ^ gpiod_is_active_low(bdata->gpiod))
 					gpiod_toggle_active_low(bdata->gpiod);
 			}
+#endif
 		} else {
 			/* Device-tree */
 			struct fwnode_handle *child =
