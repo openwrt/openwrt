@@ -10,7 +10,7 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=ppp
 PKG_VERSION:=2.5.3
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://download.samba.org/pub/ppp
@@ -55,6 +55,7 @@ define Package/ppp
 $(call Package/ppp/Default)
   DEPENDS:= +USE_GLIBC:libcrypt-compat +kmod-ppp
   TITLE:=PPP daemon
+  USERID:=ppp=454:ppp=454
   VARIANT:=default
 endef
 
@@ -62,6 +63,7 @@ define Package/ppp-multilink
 $(call Package/ppp/Default)
   DEPENDS:= +USE_GLIBC:libcrypt-compat +kmod-ppp
   TITLE:=PPP daemon (with multilink support)
+  USERID:=ppp=454:ppp=454
   VARIANT:=multilink
 endef
 
@@ -211,11 +213,17 @@ define Package/ppp/install
 	$(INSTALL_DATA) ./files/etc/ppp/filter $(1)/etc/ppp/
 	$(INSTALL_DATA) ./files/etc/ppp/options $(1)/etc/ppp/
 	$(LN) /tmp/resolv.conf.ppp $(1)/etc/ppp/resolv.conf
+	$(INSTALL_DIR) $(1)/etc/capabilities
+	$(INSTALL_DATA) ./files/pppd.capabilities $(1)/etc/capabilities/pppd.json
+	$(INSTALL_DIR) $(1)/usr/share/acl.d
+	$(INSTALL_DATA) ./files/pppd_acl.json $(1)/usr/share/acl.d/pppd.json
 	$(INSTALL_DIR) $(1)/lib/netifd/proto
 	$(INSTALL_BIN) ./files/ppp.sh $(1)/lib/netifd/proto/
 	$(INSTALL_BIN) ./files/lib/netifd/ppp-up $(1)/lib/netifd/
 	$(INSTALL_BIN) ./files/lib/netifd/ppp6-up $(1)/lib/netifd/
 	$(INSTALL_BIN) ./files/lib/netifd/ppp-down $(1)/lib/netifd/
+	$(INSTALL_DIR) $(1)/etc/uci-defaults
+	$(INSTALL_BIN) ./files/50-ppp-secrets-mode.sh $(1)/etc/uci-defaults
 endef
 Package/ppp-multilink/install=$(Package/ppp/install)
 
@@ -242,6 +250,8 @@ define Package/ppp-mod-radius/install
 		$(1)/etc/ppp/radius/
 	$(INSTALL_CONF) ./files/etc/ppp/radius/servers \
 		$(1)/etc/ppp/radius/
+	$(INSTALL_DIR) $(1)/etc/uci-defaults
+	$(INSTALL_BIN) ./files/50-ppp-radius-servers-mode.sh $(1)/etc/uci-defaults
 endef
 
 define Package/ppp-mod-pppol2tp/install
