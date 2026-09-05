@@ -1,0 +1,152 @@
+From 1d4a1b8b4244cc6b3f001f2782ccf77bcc9408a8 Mon Sep 17 00:00:00 2001
+From: Semih Baskan <strst.gs@gmail.com>
+Date: Wed, 5 Aug 2026 14:25:00 +0300
+Subject: [PATCH net v3 1/2] net: dsa: let drivers offload 8021q uppers on
+ standalone ports
+
+Before v5.15, DSA delivered the VIDs of 8021q uppers to switch
+drivers unconditionally: user ports advertised
+NETIF_F_HW_VLAN_CTAG_FILTER, the 8021q layer reported upper VIDs to
+.ndo_vlan_rx_add_vid, and .port_vlan_add programmed them whether or
+not a bridge had enabled VLAN filtering. Commit 06cfb2df7eb0 ("net:
+dsa: don't advertise 'rx-vlan-filter' when not needed") stopped the
+delivery for standalone ports and commit f089652b6b16 ("net: dsa: b53:
+do not program vlans when vlan filtering is off") stopped the
+programming, on the model that a standalone port is VLAN-unaware and
+any 8021q upper is a software VLAN.
+
+That model does not fit hardware whose VID lookup cannot be turned off.
+b53 keeps its lookup enabled at all times, because disabling it moves
+the ARL to shared VLAN learning: the hash that selects the ARL slot then
+treats every VID as 0, entries keyed by a real VID become unreachable,
+and the hardware table drifts away from the bridge fdb. With the lookup
+active, a tagged frame whose VID is absent from the table is discarded
+before it reaches the CPU, measured on bcm5301x. Such a port is never
+VLAN-unaware, whatever the bridge asked for. Commit 06cfb2df7eb0 ("net:
+dsa: don't advertise 'rx-vlan-filter' when not needed") lists the
+reasons a driver may keep it on, and this is its first case, standalone
+ports that would otherwise drop VLAN-tagged traffic, except that here
+the VLAN awareness is held on by the silicon itself rather than by a
+VLAN-aware bridge elsewhere on the switch.
+
+The existing opt-in, ds->needs_standalone_vlan_filtering, is not a
+fit. It exists for hellcreek, whose traffic separation depends on
+per-port VLANs, so standalone operation there needs the
+vlan_filtering state itself forced on:
+dsa_port_reset_vlan_filtering() forces vlan_filtering=1 when a port
+leaves a VLAN-unaware bridge, and with vlan_filtering_is_global that
+lands the whole switch in the state hellcreek wants. On b53 the same
+flip is a user-visible mode change for every port on the switch:
+bridge VLANs that were committed while inactive become enforced, and
+the unknown-VID ingress drop modes turn on chip-wide.
+b53 needs the VIDs, not the state.
+
+Add ds->needs_standalone_vlan_offload for that narrower need. It
+advertises NETIF_F_HW_VLAN_CTAG_FILTER on user ports permanently, so
+upper VIDs reach .port_vlan_add again, and it leaves the
+vlan_filtering state alone. This restores the pre-v5.15 delivery
+pipeline for drivers that opt in and changes nothing for drivers
+that do not.
+
+A permanent feature bit also means dsa_user_manage_vlan_filtering()
+must not run on vlan_filtering toggles of such a switch. The
+ds->ops->port_vlan_filtering call is unchanged and the driver still
+sees every toggle; what is skipped only toggles the feature bit and
+replays or clears the VID list, and both halves are wrong when the
+bit never goes away. The replay re-adds VIDs that were never cleared,
+so vlan_vid_add() refcounts every upper VID twice. The clear strips
+the feature bit and the VIDs from a port that happens to be bridged
+at toggle time, and its uppers then stay dead even after it leaves
+the bridge, because nothing re-offloads them once the feature bit is
+gone. Both effects were measured on bcm5301x hardware. The conduit
+change path keeps its explicit teardown and restore of the 8021q
+upper VLANs, and now runs it for every port of such a switch,
+bridged or not, because with the permanent feature bit every port
+with uppers has VLANs on the CPU port.
+
+Fixes: 06cfb2df7eb0 ("net: dsa: don't advertise 'rx-vlan-filter' when not needed")
+Signed-off-by: Semih Baskan <strst.gs@gmail.com>
+---
+ include/net/dsa.h |  3 +++
+ net/dsa/port.c    | 22 +++++++++++++++-------
+ net/dsa/user.c    |  4 +++-
+ 3 files changed, 21 insertions(+), 8 deletions(-)
+
+--- a/include/net/dsa.h
++++ b/include/net/dsa.h
+@@ -403,6 +403,9 @@ struct dsa_switch {
+ 	/* Keep VLAN filtering enabled on ports not offloading any upper */
+ 	u32			needs_standalone_vlan_filtering:1;
+ 
++	/* Offload 8021q uppers of standalone ports even when not filtering */
++	u32			needs_standalone_vlan_offload:1;
++
+ 	/* Pass .port_vlan_add and .port_vlan_del to drivers even for bridges
+ 	 * that have vlan_filtering=0. All drivers should ideally set this (and
+ 	 * then the option would get removed), but it is unknown whether this
+--- a/net/dsa/port.c
++++ b/net/dsa/port.c
+@@ -831,6 +831,9 @@ int dsa_port_vlan_filtering(struct dsa_p
+ 			if (!user)
+ 				continue;
+ 
++			if (ds->needs_standalone_vlan_offload)
++				continue;
++
+ 			err = dsa_user_manage_vlan_filtering(user,
+ 							     vlan_filtering);
+ 			if (err)
+@@ -839,10 +842,12 @@ int dsa_port_vlan_filtering(struct dsa_p
+ 	} else {
+ 		dp->vlan_filtering = vlan_filtering;
+ 
+-		err = dsa_user_manage_vlan_filtering(dp->user,
+-						     vlan_filtering);
+-		if (err)
+-			goto restore;
++		if (!ds->needs_standalone_vlan_offload) {
++			err = dsa_user_manage_vlan_filtering(dp->user,
++							     vlan_filtering);
++			if (err)
++				goto restore;
++		}
+ 	}
+ 
+ 	return 0;
+@@ -1445,10 +1450,13 @@ int dsa_port_change_conduit(struct dsa_p
+ 
+ 	/* The port might still be VLAN filtering even if it's no longer
+ 	 * under a bridge, either due to ds->vlan_filtering_is_global or
+-	 * ds->needs_standalone_vlan_filtering. In turn this means VLANs
+-	 * on the CPU port.
++	 * ds->needs_standalone_vlan_filtering, and every port of a
++	 * ds->needs_standalone_vlan_offload switch keeps its 8021q upper
++	 * VLANs whether bridged or not. In turn this means VLANs on the
++	 * CPU port.
+ 	 */
+-	vlan_filtering = dsa_port_is_vlan_filtering(dp);
++	vlan_filtering = dsa_port_is_vlan_filtering(dp) ||
++			 ds->needs_standalone_vlan_offload;
+ 	if (vlan_filtering) {
+ 		err = dsa_user_manage_vlan_filtering(dev, false);
+ 		if (err) {
+--- a/net/dsa/user.c
++++ b/net/dsa/user.c
+@@ -1947,6 +1947,7 @@ static int dsa_user_clear_vlan(struct ne
+  *
+  * - If standalone (this includes software bridge, software LAG):
+  *     - if ds->needs_standalone_vlan_filtering = true, OR if
++ *       ds->needs_standalone_vlan_offload = true, OR if
+  *       (ds->vlan_filtering_is_global = true AND there are bridges spanning
+  *       this switch chip which have vlan_filtering=1)
+  *         - the 8021q upper VLANs
+@@ -2719,7 +2720,8 @@ void dsa_user_setup_tagger(struct net_de
+ 	user->hw_features |= NETIF_F_HW_TC;
+ 	if (user->needed_tailroom)
+ 		user->features &= ~(NETIF_F_SG | NETIF_F_FRAGLIST);
+-	if (ds->needs_standalone_vlan_filtering)
++	if (ds->needs_standalone_vlan_filtering ||
++	    ds->needs_standalone_vlan_offload)
+ 		user->features |= NETIF_F_HW_VLAN_CTAG_FILTER;
+ 
+ 	user->lltx = true;
