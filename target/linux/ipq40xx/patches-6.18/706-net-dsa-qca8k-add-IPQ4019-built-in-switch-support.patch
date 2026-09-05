@@ -78,7 +78,7 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
  		if (dsa_is_cpu_port(priv->ds, i))
 --- /dev/null
 +++ b/drivers/net/dsa/qca/qca8k-ipq4019.c
-@@ -0,0 +1,961 @@
+@@ -0,0 +1,964 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (C) 2009 Felix Fietkau <nbd@nbd.name>
@@ -626,6 +626,9 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
 +
 +	for (a = 0; a <= QCA8K_PSGMII_CALB_NUM; a++) {
 +		ret = psgmii_vco_calibrate(priv);
++		if (ret)
++			return ret;
++		ret = phy_init_hw(priv->psgmii_ethphy);
 +		if (ret)
 +			return ret;
 +		/* first we run serial test */
