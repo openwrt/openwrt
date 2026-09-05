@@ -1,0 +1,167 @@
+From: Kenneth Kasilag <kenneth@kasilag.me>
+Date: Sun, 05 Jul 2026 00:00:00 +0000
+Subject: [PATCH] net: ethernet: qualcomm: ppe: expire flows of link-down ports
+
+Hardware-forwarded packets never revalidate their route in software,
+and the per-flow hit counter counts at ingress lookup whether or not
+egress delivery still works. A flow whose egress link went down would
+therefore keep refreshing its conntrack timeout through the statistics
+reports while black-holing every packet, wedged until the conntrack
+entry is removed by hand: the software revalidation which tears down
+flows over a stale route only runs on packets taking the software
+path, which a fully offloaded flow never produces.
+
+Track the link state of the PPE ports from the phylink handlers and
+stop reporting activity for flows egressing a link-down port. The
+flowtable then expires them within its timeout, tears the hardware
+entries down, and re-offloads the connections when traffic resumes.
+Keep the carrier bitmap in the PPE device rather than the later-created
+flowtable, so a link-up during probe cannot be lost before flowtable
+setup.
+
+A route or neighbor that changes behind a link that stays up remains
+a blind spot, bounded only by the conntrack lifetime; the unused
+hardware flow aging engine is a candidate periodic revalidation net,
+noted in the design document.
+
+Signed-off-by: Kenneth Kasilag <kenneth@kasilag.me>
+---
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe.h
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe.h
+@@ -18,6 +18,11 @@ struct ppe_ports;
+ struct ppe_bridge;
+ struct ppe_flowtable;
+ 
++/* Hardware port identifiers are eight bits wide; carrier state must
++ * survive from physical-port setup through later virtual-port use.
++ */
++#define PPE_PORT_ID_COUNT	256
++
+ /* Per-SoC PPE parameters. The PPE register layer is shared between the
+  * HPPE (IPQ807x) and APPE (IPQ9574) generations; this collects the few
+  * things that actually differ so the shared code stays chip-agnostic.
+@@ -60,6 +65,7 @@ struct ppe_variant {
+  * @ports: PPE MAC ports.
+  * @bridge: PPE bridge offload private data.
+  * @flowtable: PPE flowtable offload private data.
++ * @carrier_ok: Bitmap of hardware port identifiers with link up.
+  * @fdb_lock: Lock to serialize the hardware FDB operation registers.
+  * @fdb_cmd_id: Rolling command ID of the last issued FDB operation.
+  * @flow_lock: Lock to serialize the L3 flow operation registers.
+@@ -81,6 +87,7 @@ struct ppe_device {
+ 	struct ppe_ports *ports;
+ 	struct ppe_bridge *bridge;
+ 	struct ppe_flowtable *flowtable;
++	DECLARE_BITMAP(carrier_ok, PPE_PORT_ID_COUNT);
+ 	struct mutex fdb_lock;
+ 	u8 fdb_cmd_id;
+ 	/* Serialize the L3 flow operation registers. */
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_flowtable.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_flowtable.c
+@@ -86,6 +86,7 @@ static_assert(offsetof(struct ppe_ft_pub
+  * @nexthop: Next hop index of the flow.
+  * @my_mac: Router MAC slot held by the flow, negative when none.
+  * @pub_ip: Public IP slot held by the flow, negative when none.
++ * @eport: Egress PPE port of the flow.
+  * @packets: Hit packet count at the last stats read.
+  * @bytes: Hit byte count at the last stats read.
+  */
+@@ -99,6 +100,7 @@ struct ppe_ft_flow {
+ 	u16 nexthop;
+ 	int my_mac;
+ 	int pub_ip;
++	u8 eport;
+ 	u32 packets;
+ 	u64 bytes;
+ };
+@@ -696,6 +698,7 @@ static int ppe_ft_flow_replace(struct pp
+ 	port_priv = netdev_priv(odev);
+ 	nh.port = port_priv->ppe_port->port_id;
+ 	nh.l3_if = nh.port;
++	flow->eport = nh.port;
+ 	ether_addr_copy(nh.mac, data.eth.dst);
+ 
+ 	/* The hardware rewrites one direction per flow: the translated
+@@ -907,6 +910,19 @@ static int ppe_ft_flow_stats(struct ppe_
+ 		return -ENOENT;
+ 	}
+ 
++	/* Hardware-forwarded packets never revalidate the route in
++	 * software, and the hit counter of a flow counts at ingress
++	 * lookup whether or not egress delivery still works: a flow
++	 * whose egress link is down must not be reported as active, or
++	 * it would refresh its conntrack timeout forever while
++	 * black-holing. Going quiet instead lets the flowtable expire
++	 * and re-offload it.
++	 */
++	if (!test_bit(flow->eport, ft->ppe_dev->carrier_ok)) {
++		rcu_read_unlock();
++		return 0;
++	}
++
+ 	ret = ppe_flow_stats_get(ft->ppe_dev, flow->index, &packets, &bytes);
+ 	if (!ret && (packets != flow->packets || bytes != flow->bytes)) {
+ 		/* The hardware byte counter is 40 bits wide and wraps. */
+@@ -1435,6 +1451,26 @@ static int ppe_ft_block_cb(enum tc_setup
+ }
+ 
+ /**
++ * ppe_flowtable_port_carrier - Report the link state of a PPE port
++ * @ppe_dev: PPE device
++ * @port: PPE port whose link changed
++ * @up: Link state
++ *
++ * Flows egressing a link-down port stop reporting activity, so the
++ * flowtable expires them instead of trusting their hit counters.
++ */
++void ppe_flowtable_port_carrier(struct ppe_device *ppe_dev, int port, bool up)
++{
++	if (WARN_ON_ONCE(port < 0 || port >= PPE_PORT_ID_COUNT))
++		return;
++
++	if (up)
++		set_bit(port, ppe_dev->carrier_ok);
++	else
++		clear_bit(port, ppe_dev->carrier_ok);
++}
++
++/**
+  * ppe_flowtable_setup_tc - Bind a flow block to a PPE port
+  * @dev: PPE port net device
+  * @type_data: Flow block offload request
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_flowtable.h
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_flowtable.h
+@@ -13,4 +13,5 @@ int ppe_flowtable_setup(struct ppe_devic
+ void ppe_flowtable_destroy(struct ppe_device *ppe_dev);
+ int ppe_flowtable_setup_tc(struct net_device *dev, void *type_data);
+ void ppe_flowtable_debugfs_init(struct ppe_device *ppe_dev);
++void ppe_flowtable_port_carrier(struct ppe_device *ppe_dev, int port, bool up);
+ #endif
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_port.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_port.c
+@@ -16,6 +16,7 @@
+ 
+ #include "edma_port.h"
+ #include "ppe.h"
++#include "ppe_flowtable.h"
+ #include "ppe_port.h"
+ #include "ppe_regs.h"
+ 
+@@ -1020,6 +1021,8 @@ static void ppe_port_mac_link_up(struct
+ 	if (ret)
+ 		goto err_port_mac_link_up;
+ 
++	ppe_flowtable_port_carrier(ppe_dev, port, true);
++
+ 	return;
+ 
+ err_port_mac_link_up:
+@@ -1071,6 +1074,8 @@ static void ppe_port_mac_link_down(struc
+ 	int ret, port = ppe_port->port_id;
+ 	u32 reg;
+ 
++	ppe_flowtable_port_carrier(ppe_dev, port, false);
++
+ 	/* Disable PPE port TX */
+ 	reg = PPE_PORT_BRIDGE_CTRL_ADDR + PPE_PORT_BRIDGE_CTRL_INC * port;
+ 	ret = regmap_clear_bits(ppe_dev->regmap, reg, PPE_PORT_BRIDGE_TXMAC_EN);
