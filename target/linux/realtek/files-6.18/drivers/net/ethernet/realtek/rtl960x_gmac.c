@@ -52,9 +52,9 @@
 #define DSA_TRAILER_LEN		4
 
 /* Datapath sizing */
-#define RX_RING_SIZE		128	/* must be a power of two, 16..256 */
-#define TX_RING_SIZE		128
-#define RX_BUF_SIZE		1536	/* 0x600, per U-Boot RX_DESC_BUFFER_SIZE */
+#define RX_RING_SIZE		1024	/* must be a power of two, from 16 to 4096 */
+#define TX_RING_SIZE		2048
+#define RX_BUF_SIZE		1600
 #define RX_SHIFT		2	/* HW writes the frame at buf + 2 bytes */
 #define RX_MAX_FRAME_LEN	(RX_BUF_SIZE - RX_SHIFT)
 #define TX_MIN_LEN		ETH_ZLEN
