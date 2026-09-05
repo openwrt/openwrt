@@ -113,6 +113,12 @@ ramips_setup_interfaces()
 		uci add_list firewall.@zone[1].network='wwan'
 		uci add_list firewall.@zone[1].network='wwan6'
 		;;
+	cudy,lt500-v2)
+		ucidef_add_switch "switch0" \
+			"0:lan" "1:lan" "2:lan" "3:wan" "6@eth0"
+		uci add_list firewall.@zone[1].network='wwan'
+		uci add_list firewall.@zone[1].network='wwan6'
+		;;
 	cudy,m1200-v1|\
 	cudy,tr1200-v1)
 		ucidef_add_switch "switch0" \
