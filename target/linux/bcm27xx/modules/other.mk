@@ -55,30 +55,13 @@ endef
 $(eval $(call KernelPackage,smi-bcm2835-dev))
 
 
-define KernelPackage/rp1
-  SUBMENU:=$(OTHER_MENU)
-  TITLE:=RP1 firmware
-  KCONFIG:=CONFIG_FIRMWARE_RP1
-  FILES:=$(LINUX_DIR)/drivers/firmware/rp1.ko
-  AUTOLOAD:=$(call AutoLoad,21,rp1)
-  DEPENDS:=@(TARGET_bcm27xx_bcm2712&&LINUX_6_12)
-endef
-
-define KernelPackage/rp1/description
-  This driver provides a firmware interface to the RP1 processor using shared
-  memory and a mailbox.
-endef
-
-$(eval $(call KernelPackage,rp1))
-
-
 define KernelPackage/rp1-pio
   SUBMENU:=$(OTHER_MENU)
   TITLE:=RP1 PIO block support
   KCONFIG:=CONFIG_RP1_PIO
   FILES:=$(LINUX_DIR)/drivers/misc/rp1-pio.ko
   AUTOLOAD:=$(call AutoLoad,21,rp1-pio)
-  DEPENDS:=@TARGET_bcm27xx_bcm2712 +LINUX_6_12:kmod-rp1
+  DEPENDS:=@TARGET_bcm27xx_bcm2712
 endef
 
 define KernelPackage/rp1-pio/description
@@ -131,7 +114,7 @@ define KernelPackage/rp1-pio-uart
   KCONFIG:=CONFIG_SERIAL_RP1_PIO_UART
   FILES:=$(LINUX_DIR)/drivers/tty/serial/rp1-pio-uart.ko
   AUTOLOAD:=$(call AutoLoad,21,rp1-pio-uart)
-  DEPENDS:=@TARGET_bcm27xx_bcm2712 @LINUX_6_18 +kmod-rp1-pio
+  DEPENDS:=@TARGET_bcm27xx_bcm2712 +kmod-rp1-pio
 endef
 
 define KernelPackage/rp1-pio-uart/description
@@ -141,22 +124,6 @@ define KernelPackage/rp1-pio-uart/description
 endef
 
 $(eval $(call KernelPackage,rp1-pio-uart))
-
-
-define KernelPackage/rp1-mailbox
-  SUBMENU:=$(OTHER_MENU)
-  TITLE:=RP1 mailbox IPC driver
-  KCONFIG:=CONFIG_MBOX_RP1
-  FILES:=$(LINUX_DIR)/drivers/mailbox/rp1-mailbox.ko
-  AUTOLOAD:=$(call AutoLoad,21,rp1-mailbox)
-  DEPENDS:=@(TARGET_bcm27xx_bcm2712&&LINUX_6_12)
-endef
-
-define KernelPackage/rp1-mailbox/description
-  This is a RP1 mailbox IPC driver.
-endef
-
-$(eval $(call KernelPackage,rp1-mailbox))
 
 
 define KernelPackage/bcm27xx-hid
