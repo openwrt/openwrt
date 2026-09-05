@@ -1,5 +1,5 @@
 BOARDNAME:=Devices with NAND flash (Routers)
-FEATURES += nand pcie
+FEATURES += nand pcie ubifs
 
 DEFAULT_PACKAGES += kmod-ath9k wpad-basic-mbedtls
 
