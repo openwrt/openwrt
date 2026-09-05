@@ -6,9 +6,9 @@ PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/firmware/qca-wireless.git
-PKG_SOURCE_DATE:=2026-08-23
-PKG_SOURCE_VERSION:=0c67bbcca45f7fc00255dbb078754cac89d3f40e
-PKG_MIRROR_HASH:=5d9512363e5fc588f5861c116e889b4910e36bf89782aabd334ceb3e42806d66
+PKG_SOURCE_DATE:=2026-08-26
+PKG_SOURCE_VERSION:=c9c7cd8142ac7655d6ff88af9f91200a472de01e
+PKG_MIRROR_HASH:=29bb3bd7aa2988cd4998a05e41d39a29f8776fc2f28685f95330932245555b34
 PKG_FLAGS:=nonshared
 
 include $(INCLUDE_DIR)/package.mk
@@ -75,6 +75,7 @@ ALLWIFIBOARDS:= \
 	netgear_rbk350 \
 	netgear_rbk40 \
 	netgear_rbk750 \
+	netgear_rbk850 \
 	netgear_sxk80 \
 	netgear_wax214 \
 	netgear_wax218 \
@@ -275,6 +276,7 @@ $(eval $(call generate-ipq-wifi-package,netgear_rbk20,Netgear RBK20))
 $(eval $(call generate-ipq-wifi-package,netgear_rbk350,Netgear RBK350))
 $(eval $(call generate-ipq-wifi-package,netgear_rbk40,Netgear RBK40))
 $(eval $(call generate-ipq-wifi-package,netgear_rbk750,Netgear RBK750))
+$(eval $(call generate-ipq-wifi-package,netgear_rbk850,Netgear RBK850))
 $(eval $(call generate-ipq-wifi-package,netgear_sxk80,Netgear SXK80))
 $(eval $(call generate-ipq-wifi-package,netgear_wax214,Netgear WAX214))
 $(eval $(call generate-ipq-wifi-package,netgear_wax218,Netgear WAX218))

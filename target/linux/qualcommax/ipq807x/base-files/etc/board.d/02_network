@@ -27,6 +27,7 @@ ipq807x_setup_interfaces()
 	dynalink,dl-wrx36|\
 	linksys,mx5300|\
 	linksys,mx8500|\
+	netgear,rbr850|\
 	xiaomi,ax9000|\
 	zbtlink,zbt-z800ax)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
@@ -51,6 +52,9 @@ ipq807x_setup_interfaces()
 		;;
 	netgear,rax120v2)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 lan5" "wan"
+		;;
+	netgear,rbs850)
+		ucidef_set_interface_lan "lan1 lan2 lan3 lan4" "dhcp"
 		;;
 	netgear,sxr80|\
 	netgear,sxs80)
