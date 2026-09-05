@@ -25,7 +25,7 @@ define Package/arptables-legacy
   TITLE:=ARP firewalling software
   DEPENDS:=+kmod-arptables
   URL:=https://git.netfilter.org/arptables/
-  PROVIDES:=arptables
+  PROVIDES:=@arptables
   ALTERNATIVES:=\
     200:/usr/sbin/arptables:/usr/sbin/arptables-legacy
 endef
