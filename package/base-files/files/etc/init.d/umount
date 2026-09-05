@@ -1,13 +1,119 @@
 #!/bin/sh /etc/rc.common
 # Copyright (C) 2006 OpenWrt.org
 
-STOP=90
+# after every other shutdown script has stopped writing, but before
+# mdadm (STOP=98) stops the arrays
+STOP=97
 
 restart() {
 	:
 }
 
+# syslog is usually gone by the time this script runs, so report straight
+# to the console
+console_print() {
+	echo "$@" > /dev/console 2> /dev/null || echo "$@"
+}
+
+# Succeeds when / does not sit on a block device (nothing to do) or when
+# it is already/successfully remounted read-only.
+root_remount_ro() {
+	set -- $(awk '$2 == "/" { dev = $1; opts = $4 } END { print dev, opts }' /proc/mounts)
+
+	case "$1" in
+	/dev/*) ;;
+	*) return 0 ;;
+	esac
+	case "$2" in
+	ro | ro,*) return 0 ;;
+	esac
+
+	mount -o remount,ro / 2> /dev/null
+}
+
+# List "pid comm path" for every process, pid 1 and ourselves included,
+# holding a file on the root superblock open for writing. Only such
+# descriptors make the read-only remount of / fail, leaving a dirty
+# journal for the next boot's fsck; writers on other filesystems cannot
+# block it. Membership is decided by the descriptor's mnt_id, not its
+# path, so files deleted while open are accounted for as well.
+disk_writers() {
+	local root_dev fd pid target flags mnt_id
+
+	root_dev="$(awk '$5 == "/" { dev = $3 } END { print dev }' \
+		/proc/self/mountinfo)"
+
+	for fd in /proc/[0-9]*/fd/*; do
+		pid="${fd#/proc/}"
+		pid="${pid%%/*}"
+
+		target="$(readlink "$fd" 2> /dev/null)"
+		case "$target" in
+		/*) ;;
+		*) continue ;;
+		esac
+
+		set -- $(awk '/^flags:/ { f = $2 } /^mnt_id:/ { m = $2 }
+			END { print f, m }' \
+			"/proc/$pid/fdinfo/${fd##*/}" 2> /dev/null)
+		flags="$1" mnt_id="$2"
+
+		# the last octal digit of the flags carries O_ACCMODE
+		case "${flags#"${flags%?}"}" in
+		1 | 2) ;;
+		*) continue ;;
+		esac
+
+		[ "$(awk -v id="$mnt_id" '$1 == id { print $3; exit }' \
+			/proc/self/mountinfo)" = "$root_dev" ] || continue
+
+		echo "$pid $(cat "/proc/$pid/comm" 2> /dev/null) $target"
+	done
+}
+
 stop() {
+	local sig writers pinned
+
 	sync
+
+	# an active swap file on / holds it open for writing from within
+	# the kernel, where no process listing can show it
+	swapoff -a 2> /dev/null
+
+	# The root filesystem can never be unmounted; when it sits on a
+	# block device it must be remounted read-only instead so the
+	# journal is cleanly closed, otherwise the next fsck will find a
+	# dirty journal and stale free block/inode counts. Processes still
+	# holding files open for writing block the remount, so report and
+	# remove them before retrying.
+	if ! root_remount_ro; then
+		for sig in TERM KILL; do
+			writers="$(disk_writers)"
+			[ -n "$writers" ] || break
+
+			# pid 1 and this script must survive, but their
+			# descriptors explain a remount failure just as well
+			pinned="$(echo "$writers" | awk -v self="$$" \
+				'$1 == 1 || $1 == self')"
+			if [ -n "$pinned" ]; then
+				console_print "shutdown: files on / open for writing by init or the shutdown script:"
+				console_print "$pinned"
+			fi
+
+			writers="$(echo "$writers" | awk -v self="$$" \
+				'$1 != 1 && $1 != self')"
+			[ -n "$writers" ] || break
+
+			console_print "shutdown: processes still writing to /, sending SIG$sig:"
+			console_print "$writers"
+			kill -$sig $(echo "$writers" | awk '{ print $1 }' | sort -u) 2> /dev/null
+			sleep 1
+			root_remount_ro && break
+		done
+
+		root_remount_ro || console_print \
+			"shutdown: unable to remount / read-only, next boot will recover the journal"
+	fi
+
 	/bin/umount -a -d -r
 }
