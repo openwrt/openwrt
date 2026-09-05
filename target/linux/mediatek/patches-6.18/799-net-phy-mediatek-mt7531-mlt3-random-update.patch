@@ -1,0 +1,73 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Murad Rabadanov <the21.21@mail.ru>
+Date: Fri, 4 Sep 2026 21:40:00 +0300
+Subject: [PATCH] net: phy: mediatek: restore MT7531 MLT3 and random-update
+ tuning
+
+The BT-RB300 connects MT7531 PHY 0 to the Allwinner AC300 PHY of its
+integrated TV-box over a board-internal 100BASE-T link. With the upstream
+Linux 6.18 MT7531 initialization, both peers observe repeated one-to-three
+second link windows and 12 to 16 carrier changes during the first minute.
+
+The device's stock ImmortalWrt 6.6 build carries MediaTek's MT7531 internal
+PHY fine-tuning patch. That patch programs a broad set of analog, timing,
+EEE, MLT3 and token-ring settings and states that they originate from the
+Linux 5.4 drivers/net/dsa/mt7531_phy.c implementation.
+
+A/B testing isolated the required settings. The complete SDK block remained
+stable, while analog line-driving alone and the random-update bit alone did
+not. The MLT3 table alone greatly improved the link but still produced a
+drop after about 203 seconds. Combining the MLT3 table with the
+random-update bit remained stable across warm and cold boots, with one
+carrier event, no RX/TX errors, and simultaneous gigabit links on external
+MT7531 ports.
+
+An overnight soak test then ran for 38,615 seconds without a link change.
+The link carried 163,319 RX and 122,691 TX packets with no errors or drops.
+
+Restore only those two settings for MT7531 PHYs.
+
+Link: https://github.com/mediatek/mtk-openwrt-feeds/blob/main/24.10/files/target/linux/mediatek/patches-6.6/999-2746-mt7531-dsa-iphy-fine-tuning.patch
+Signed-off-by: Murad Rabadanov <the21.21@mail.ru>
+
+---
+ drivers/net/phy/mediatek/mtk-ge.c | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+
+--- a/drivers/net/phy/mediatek/mtk-ge.c
++++ b/drivers/net/phy/mediatek/mtk-ge.c
+@@ -19,6 +19,9 @@
+ /* ch_addr = 0x1, node_addr = 0xf, data_addr = 0x17 */
+ #define SLAVE_DSP_READY_TIME_MASK		GENMASK(22, 15)
+ 
++/* ch_addr = 0x1, node_addr = 0xf, data_addr = 0x18 */
++#define ENABLE_RANDOM_UPDOWN_COUNTER_TRIGGER	BIT(8)
++
+ /* Registers on MDIO_MMD_VEND1 */
+ #define MTK_PHY_GBE_MODE_TX_DELAY_SEL		0x13
+ #define MTK_PHY_TEST_MODE_TX_DELAY_SEL		0x14
+@@ -106,8 +109,24 @@ static int mt7530_led_config_of(struct p
+ 
+ static int mt7531_phy_config_init(struct phy_device *phydev)
+ {
++	static const u16 mlt3_shaper[12] = {
++		0x0187, 0x01c9, 0x01c6, 0x0182,
++		0x0208, 0x0205, 0x0384, 0x03cb,
++		0x03c4, 0x030a, 0x000b, 0x0002,
++	};
++	int i;
++
++	for (i = 0; i < ARRAY_SIZE(mlt3_shaper); i++)
++		phy_write_mmd(phydev, MDIO_MMD_VEND1, i, mlt3_shaper[i]);
++
+ 	mtk_gephy_config_init(phydev);
+ 
++	/* Enable the random update mechanism. */
++	phy_select_page(phydev, MTK_PHY_PAGE_EXTENDED_52B5);
++	__mtk_tr_set_bits(phydev, 0x1, 0xf, 0x18,
++			  ENABLE_RANDOM_UPDOWN_COUNTER_TRIGGER);
++	phy_restore_page(phydev, MTK_PHY_PAGE_STANDARD, 0);
++
+ 	/* PHY link down power saving enable */
+ 	phy_set_bits(phydev, 0x17, BIT(4));
+ 	phy_modify_mmd(phydev, MDIO_MMD_VEND1, MTK_PHY_RXADC_CTRL_RG7,
