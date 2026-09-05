@@ -159,10 +159,6 @@
 	status = "okay";
 };
 
-&dwc_0 {
-	dr_mode = "host";
-};
-
 &prng {
 	status = "okay";
 };
@@ -348,9 +344,11 @@
 };
 
 &usb_0 {
-	status = "okay";
+	dr_mode = "host";
 
 	vbus-supply = <&reg_usb_vbus>;
+
+	status = "okay";
 };
 
 &wifi {
