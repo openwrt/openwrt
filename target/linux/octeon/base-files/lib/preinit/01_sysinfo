@@ -8,9 +8,16 @@ do_sysinfo_octeon() {
 	# Sadly for whatever reason the N821 (Cisco Viptela vEdge 1000) uses the
 	# same supposedly unique board ID as the EdgeRouter. This is bad, so
 	# we override what cpuinfo gives us using the device tree as a hint.
+	# Also, UniFi Security Gateway Pro (USG-Pro-4) and EdgeRouter Pro use the same board ID (UBNT_E220),
+	# so we need to override that as well.
 	case "$of_machine" in
 	"cisco,vedge1000"*)
 		return 0
+		;;
+
+	"ubnt,usg-pro-4"*)
+		return 0
+		;;
 	esac
 
 	case "$machine" in

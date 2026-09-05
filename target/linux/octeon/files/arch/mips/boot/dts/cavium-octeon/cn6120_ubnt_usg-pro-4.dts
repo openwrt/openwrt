@@ -1,0 +1,297 @@
+// SPDX-License-Identifier: GPL-2.0-only
+/*
+ * Device tree source for Ubiquiti UniFi Security Gateway Pro (USG-Pro-4).
+ *
+ * Written by: Niko Huuskonen <niko.huuskonen.00@gmail.com>
+ */
+
+/include/ "octeon_3xxx.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/* octeon,6120 is an Octeon II (CN61xx-class) part, which exposes USB via
+ * EHCI/OHCI behind UCTL (defined below) - not the older 5750-generation
+ * USBN/USBC OTG block the dtsi provides for CN5xxx-class chips. That block
+ * doesn't correspond to real hardware on this SoC, so drop it rather than
+ * leaving a dead node in the compiled tree.
+ */
+
+/delete-node/ &usbn;
+
+/ {
+	compatible = "ubnt,usg-pro-4", "cavium,octeon-6120";
+	model = "Ubiquiti UniFi Security Gateway Pro (USG-Pro-4)";
+
+	soc@0 {
+		smi0: mdio@1180000001800 {
+			phy_eth0: ethernet-phy@4 {
+				compatible = "ethernet-phy-ieee802.3-c22";
+				reg = <4>;
+				interrupt-parent = <&gpio>;
+			};
+
+			phy_eth1: ethernet-phy@5 {
+				compatible = "ethernet-phy-ieee802.3-c22";
+				reg = <5>;
+				interrupt-parent = <&gpio>;
+			};
+		};
+
+		smi1: mdio@1180000001900 {
+			compatible = "cavium,octeon-3860-mdio";
+			reg = <0x11800 0x1900 0x00 0x40>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			phy_eth2: ethernet-phy@0 {
+				compatible = "ethernet-phy-ieee802.3-c22";
+				reg = <0>;
+				interrupt-parent = <&gpio>;
+			};
+
+			phy_eth3: ethernet-phy@1 {
+				compatible = "ethernet-phy-ieee802.3-c22";
+				reg = <1>;
+				interrupt-parent = <&gpio>;
+			};
+		};
+
+		pip: pip@11800a0000000 {
+			interface@0 {
+				ethernet@0 {
+					phy-handle = <&phy_eth0>;
+					rx-delay = <0>;
+					tx-delay = <0x10>;
+				};
+
+				ethernet@1 {
+					phy-handle = <&phy_eth1>;
+					rx-delay = <0>;
+					tx-delay = <0x10>;
+				};
+
+				ethernet@2 {
+					phy-handle = <&phy_eth2>;
+					rx-delay = <0>;
+					tx-delay = <0x10>;
+				};
+
+				/* Port 3 does not exist in the dtsi - new port */
+				ethernet@3 {
+					compatible = "cavium,octeon-3860-pip-port";
+					reg = <3>;
+					phy-handle = <&phy_eth3>;
+					rx-delay = <0>;
+					tx-delay = <0x10>;
+				};
+			};
+		};
+
+		uart0: serial@1180000000800 {
+			clock-frequency = <600000000>;
+		};
+
+		uart1: serial@1180000000c00 {
+			compatible = "cavium,octeon-3860-uart", "ns16550";
+			reg = <0x11800 0xc00 0x00 0x400>;
+			reg-shift = <3>;
+			clock-frequency = <600000000>;
+			current-speed = <115200>;
+			interrupts = <0 35>;
+		};
+
+		twsi1: i2c@1180000001200 {
+			compatible = "cavium,octeon-3860-twsi";
+			reg = <0x11800 0x1200 0x00 0x200>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-frequency = <100000>;
+			interrupts = <0 59>;
+		};
+
+		spi: spi@1070000001000 {
+			compatible = "cavium,octeon-3010-spi";
+			reg = <0x10700 0x1000 0x00 0x100>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <0 58>;
+		};
+
+		mmc0: mmc@1180000002000 {
+			compatible = "cavium,octeon-6130-mmc";
+			reg = <0x11800 0x2000 0x00 0x100 0x11800 0x168 0x00 0x20>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <1 19 0 0x3f>;
+
+			mmc_slot0: mmc-slot@0 {
+				compatible = "cavium,octeon-6130-mmc-slot";
+				reg = <0>;
+				spi-max-frequency = <26000000>;
+				voltage-ranges = <3300 3300>;
+				cavium,bus-max-width = <8>;
+			};
+		};
+
+		uctl: uctl@118006f000000 {
+			compatible = "cavium,octeon-6335-uctl";
+			reg = <0x11800 0x6f000000 0x00 0x100>;
+			#address-cells = <2>;
+			#size-cells = <2>;
+			ranges;
+			refclk-frequency = <12000000>;
+			refclk-type = "crystal";
+
+			ehci0: ehci@16f0000000000 {
+				compatible = "cavium,octeon-6335-ehci", "usb-ehci";
+				reg = <0x16f00 0x00 0x00 0x100>;
+				interrupts = <0 56>;
+				big-endian-regs;
+			};
+
+			ohci0: ohci@16f0000000400 {
+				compatible = "cavium,octeon-6335-ohci", "usb-ohci";
+				reg = <0x16f00 0x400 0x00 0x100>;
+				interrupts = <0 56>;
+				big-endian-regs;
+			};
+		};
+
+		bootbus: bootbus@1180000000000 {
+			/* Values sourced from a live devicetree dump on this
+			 * board's EdgeRouter Pro-based OpenWrt install, so
+			 * kept verbatim even though several entries differ
+			 * from the dtsi's generic ones. A DT property is
+			 * replaced as a whole (not merged entry-by-entry), so
+			 * the full list has to stay here rather than being
+			 * trimmed to just the differing lines.
+			 */
+
+			ranges = <0 0 0x00 0x1f400000 0xc00000>,
+				 <1 0 0x10000 0x30000000 0x00>,
+				 <2 0 0x00 0x1d040000 0x10000>,
+				 <3 0 0x00 0x1d050000 0x10000>,
+				 <4 0 0x00 0x1d020000 0x10000>,
+				 <5 0 0x10000 0x40000000 0x00>,
+				 <6 0 0x10000 0x50000000 0x00>,
+				 <7 0 0x10000 0x90000000 0x00>;
+
+			cavium,cs-config@0 {
+				cavium,t-adr = <10>;
+				cavium,t-ce = <50>;
+				cavium,t-oe = <50>;
+				cavium,t-we = <35>;
+				cavium,t-rd-hld = <25>;
+				cavium,t-wr-hld = <35>;
+				cavium,t-wait = <300>;
+				cavium,t-page = <25>;
+			};
+
+			cavium,cs-config@2 {
+				compatible = "cavium,octeon-3860-bootbus-config";
+				cavium,cs-index = <2>;
+				cavium,bus-width = <16>;
+				cavium,t-adr = <0>;
+				cavium,t-ce = <300>;
+				cavium,t-oe = <125>;
+				cavium,t-we = <150>;
+				cavium,t-rd-hld = <100>;
+				cavium,t-wr-hld = <300>;
+				cavium,t-pause = <0>;
+				cavium,t-wait = <300>;
+				cavium,t-page = <300>;
+				cavium,pages = <0>;
+				cavium,t-rd-dly = <0>;
+			};
+
+			cavium,cs-config@3 {
+				compatible = "cavium,octeon-3860-bootbus-config";
+				cavium,cs-index = <3>;
+				cavium,bus-width = <16>;
+				cavium,t-adr = <0>;
+				cavium,t-ce = <30>;
+				cavium,t-oe = <125>;
+				cavium,t-we = <150>;
+				cavium,t-rd-hld = <100>;
+				cavium,t-wr-hld = <30>;
+				cavium,t-pause = <0>;
+				cavium,t-wait = <30>;
+				cavium,wait-mode;
+				cavium,t-page = <300>;
+				cavium,pages = <0>;
+				cavium,t-rd-dly = <0>;
+			};
+
+			cavium,cs-config@4 {
+				cavium,t-adr = <10>;
+				cavium,t-ce = <10>;
+				cavium,t-oe = <160>;
+				cavium,t-we = <100>;
+				cavium,t-rd-hld = <0>;
+				cavium,t-wr-hld = <0>;
+				cavium,t-pause = <50>;
+				cavium,t-wait = <300>;
+				cavium,t-page = <300>;
+				cavium,t-rd-dly = <10>;
+			};
+
+			/delete-node/ cavium,cs-config@5;
+
+			/delete-node/ cavium,cs-config@6;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_blue: logo_blue {
+			color = <LED_COLOR_ID_BLUE>;
+			function = "logo";
+			gpios = <&gpio 14 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
+		};
+
+		led_white: logo_white {
+			color = <LED_COLOR_ID_WHITE>;
+			function = "logo";
+			gpios = <&gpio 15 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <20>;
+
+		button-reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+	};
+
+	aliases {
+		flash0 = &flash0;
+		gpio-controller = &gpio;
+		led-boot = &led_white;
+		led-failsafe = &led_white;
+		led-running = &led_blue;
+		led-upgrade = &led_blue;
+		mmc0 = &mmc_slot0;
+		pip = &pip;
+		smi0 = &smi0;
+		smi1 = &smi1;
+		spi = &spi;
+		twsi0 = &twsi0;
+		twsi1 = &twsi1;
+		uart0 = &uart0;
+		uart1 = &uart1;
+	};
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x00 0x00 0x00 0x10000000 0x00 0x20000000 0x00 0x70000000>;
+	};
+};
