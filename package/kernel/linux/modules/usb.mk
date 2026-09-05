@@ -1512,7 +1512,7 @@ define KernelPackage/usb-net-rtl8152
   DEPENDS:=+r8152-firmware +kmod-crypto-sha256 +kmod-mii +kmod-libphy
   KCONFIG:=CONFIG_USB_RTL8152
   FILES:=$(LINUX_DIR)/drivers/$(USBNET_DIR)/r8152.ko
-  AUTOLOAD:=$(call AutoProbe,r8152)
+  AUTOLOAD:=$(call AutoProbe,r8152,1)
   $(call AddDepends/usb)
 endef
 
