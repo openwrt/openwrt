@@ -165,117 +165,187 @@
 
 &mdio0 {
 	status = "okay";
-	switch@1f {
-		compatible = "qca,ar8327";
-		reg = <0x1f>;
 
-		qca,ar8327-initvals = <
-			0x04 0x07c00000 /* PORT0 PAD MODE CTRL: Mac0_rgmii_en | Mac0_rgmii_txclk_delay_en | Mac0_rgmii_rxclk_delay_en | Mac0_rgmii_txclk_delay_sel3 | Mac0_rgmii_rxclk_delay_sel0 */
-			0x0c 0x00000080 /* PORT6 PAD MODE CTRL: Mac6_sgmii_en */
-			0x10 0x81000000 /* PWS_REG: POWER_ON_STRAP | LED_OPEN_EN_CSR */
-			0x50 0xc731c731 /* LED_CTRL0 */
-			0x54 0x00000000 /* LED_CTRL1 */
-			0x5c 0x0230c300 /* LED_CTRL3: 5C: enable SFP power */
-			0x7c 0x0000007e /* PORT0_STATUS: DUPLEX_MODE_0 | RX_FLOW_EN_0 | TX_FLOW_EN_0 | RXMAC_EN_0 | TXMAC_EN_0 | SPEED_0 1000M */
-			0x94 0x0000007e /* PORT6_STATUS: DUPLEX_MODE_0 | RX_FLOW_EN_0 | TX_FLOW_EN_0 | RXMAC_EN_0 | TXMAC_EN_0 | SPEED_0 1000M */
-			0xe0 0xc701e7d0 /* SGMII_CTRL */
-			>;
+	phy_port1: ethernet-phy@0 {
+		reg = <0>;
+	};
 
-		leds {
-			led@0 {
+	phy_port2: ethernet-phy@1 {
+		reg = <1>;
+	};
+
+	phy_port3: ethernet-phy@2 {
+		reg = <2>;
+	};
+
+	phy_port4: ethernet-phy@3 {
+		reg = <3>;
+	};
+
+	phy_port5: ethernet-phy@4 {
+		reg = <4>;
+	};
+
+	ethernet-switch@10 {
+		compatible = "qca,qca8327";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		reg = <16>;
+
+		ethernet-ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			ethernet-port@0 {
 				reg = <0>;
-				color = <LED_COLOR_ID_GREEN>;
-				function = "eth";
-				function-enumerator = <1>;
-				qca,led-mode = <0>;
+				ethernet = <&eth0>;
+				phy-mode = "rgmii-id";
+				tx-internal-delay-ps = <3000>;
+				rx-internal-delay-ps = <0>;
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
 			};
 
-			led@1 {
+			ethernet-port@1 {
 				reg = <1>;
-				color = <LED_COLOR_ID_GREEN>;
-				function = "eth";
-				function-enumerator = <6>;
-				qca,led-mode = <1>;
+				label = "wan";
+				phy-handle = <&phy_port1>;
+
+				leds {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					led@0 {
+						reg = <0>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = LED_FUNCTION_WAN;
+						default-state = "keep";
+					};
+
+					led@1 {
+						reg = <1>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = "eth";
+						function-enumerator = <6>;
+					};
+
+					lcd_backlight: led@2 {
+						reg = <2>;
+						color = <LED_COLOR_ID_WHITE>;
+						function = LED_FUNCTION_BACKLIGHT;
+						linux,default-trigger = "backlight";
+					};
+				};
 			};
 
-			lcd_backlight: led@2 {
+			ethernet-port@2 {
 				reg = <2>;
-				color = <LED_COLOR_ID_WHITE>;
-				function = LED_FUNCTION_BACKLIGHT;
-				linux,default-trigger = "backlight";
-				active-low;
-				qca,led-mode = <1>;
+				label = "lan1";
+				phy-handle = <&phy_port2>;
+
+				leds {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					led@0 {
+						reg = <0>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = LED_FUNCTION_LAN;
+						default-state = "keep";
+					};
+
+					led@1 {
+						reg = <1>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = "eth";
+						function-enumerator = <7>;
+					};
+				};
 			};
 
-			led@3 {
+			ethernet-port@3 {
 				reg = <3>;
-				color = <LED_COLOR_ID_GREEN>;
-				function = "eth";
-				function-enumerator = <2>;
-				qca,led-mode = <0>;
+				label = "lan2";
+				phy-handle = <&phy_port3>;
+
+				leds {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					led@0 {
+						reg = <0>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = LED_FUNCTION_LAN;
+						default-state = "keep";
+					};
+
+					led@1 {
+						reg = <1>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = "eth";
+						function-enumerator = <8>;
+					};
+				};
 			};
 
-			led@4 {
+			ethernet-port@4 {
 				reg = <4>;
-				color = <LED_COLOR_ID_GREEN>;
-				function = "eth";
-				function-enumerator = <7>;
-				qca,led-mode = <1>;
+				label = "lan3";
+				phy-handle = <&phy_port4>;
+
+				leds {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					led@0 {
+						reg = <0>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = LED_FUNCTION_LAN;
+						default-state = "keep";
+					};
+
+					led@1 {
+						reg = <1>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = "eth";
+						function-enumerator = <9>;
+					};
+				};
 			};
 
-			led@6 {
-				reg = <6>;
-				color = <LED_COLOR_ID_GREEN>;
-				function = "eth";
-				function-enumerator = <3>;
-				qca,led-mode = <0>;
-			};
+			ethernet-port@5 {
+				reg = <5>;
+				label = "lan4";
+				phy-handle = <&phy_port5>;
 
-			led@7 {
-				reg = <7>;
-				color = <LED_COLOR_ID_GREEN>;
-				function = "eth";
-				function-enumerator = <8>;
-				qca,led-mode = <1>;
-			};
+				leds {
+					#address-cells = <1>;
+					#size-cells = <0>;
 
-			led@9 {
-				reg = <9>;
-				color = <LED_COLOR_ID_GREEN>;
-				function = "eth";
-				function-enumerator = <4>;
-				qca,led-mode = <0>;
-			};
+					led@0 {
+						reg = <0>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = LED_FUNCTION_LAN;
+						default-state = "keep";
+					};
 
-			led@10 {
-				reg = <10>;
-				color = <LED_COLOR_ID_GREEN>;
-				function = "eth";
-				function-enumerator = <9>;
-				qca,led-mode = <1>;
-			};
+					led@1 {
+						reg = <1>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = "eth";
+						function-enumerator = <10>;
+					};
 
-			led@12 {
-				reg = <12>;
-				color = <LED_COLOR_ID_GREEN>;
-				function = "eth";
-				function-enumerator = <5>;
-				qca,led-mode = <0>;
-			};
-
-			led@13 {
-				reg = <13>;
-				color = <LED_COLOR_ID_GREEN>;
-				function = "eth";
-				function-enumerator = <10>;
-				qca,led-mode = <1>;
-			};
-
-			led_user: led@14 {
-				reg = <14>;
-				color = <LED_COLOR_ID_GREEN>;
-				function = "user";
-				qca,led-mode = <1>;
+					led_user: led@2 {
+						reg = <2>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = "user";
+					};
+				};
 			};
 		};
 	};
