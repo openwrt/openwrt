@@ -30,6 +30,7 @@ platform_check_image() {
 
 	case "$board" in
 	mikrotik,routerboard-2011uias-2hnd|\
+	mikrotik,routerboard-450g|\
 	mikrotik,routerboard-493g|\
 	mikrotik,routerboard-911g-5hpacd|\
 	mikrotik,routerboard-911g-xhpnd|\
@@ -73,6 +74,7 @@ platform_do_upgrade() {
 
 	case "$board" in
 	mikrotik,routerboard-2011uias-2hnd|\
+	mikrotik,routerboard-450g|\
 	mikrotik,routerboard-493g|\
 	mikrotik,routerboard-911g-5hpacd|\
 	mikrotik,routerboard-911g-xhpnd|\
