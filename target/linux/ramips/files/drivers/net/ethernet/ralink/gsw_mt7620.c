@@ -37,6 +37,60 @@ u32 mtk_switch_r32(struct mt7620_gsw *gsw, unsigned reg)
 }
 EXPORT_SYMBOL_GPL(mtk_switch_r32);
 
+int mt7620_gsw_config_rgmii1(struct mt7620_gsw *gsw, phy_interface_t interface)
+{
+	u32 mode, val;
+	u32 delay_mask = GSW_REG_GPCx_TXDELAY | GSW_REG_GPCx_RXDELAY;
+	u32 delay_val = 0;
+
+	switch (interface) {
+	case PHY_INTERFACE_MODE_RGMII:
+		mode = 0;
+		/*
+		 * Preserve the legacy behaviour: plain RGMII must not touch
+		 * the existing RX/TX delay bits.
+		 */
+		delay_mask = 0;
+		break;
+	case PHY_INTERFACE_MODE_RGMII_ID:
+	case PHY_INTERFACE_MODE_RGMII_RXID:
+	case PHY_INTERFACE_MODE_RGMII_TXID:
+		mode = 0;
+		/*
+		 * For RGMII *ID modes the PHY provides the requested internal
+		 * delay. Disable both MT7620 MAC-side delays to avoid doubling
+		 * the delay. The RX delay control is active-low on MT7620.
+		 */
+		delay_val = GSW_REG_GPCx_RXDELAY;
+		break;
+	case PHY_INTERFACE_MODE_MII:
+		mode = 1;
+		break;
+	case PHY_INTERFACE_MODE_RMII:
+		mode = 2;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	val = rt_sysc_r32(SYSC_REG_CFG1);
+	val &= ~(3 << 12);
+	val |= mode << 12;
+	rt_sysc_w32(val, SYSC_REG_CFG1);
+
+	if (delay_mask) {
+		mutex_lock(&gsw->reg_mutex);
+		val = mtk_switch_r32(gsw, GSW_REG_GPC1);
+		val &= ~delay_mask;
+		val |= delay_val & delay_mask;
+		mtk_switch_w32(gsw, val, GSW_REG_GPC1);
+		mutex_unlock(&gsw->reg_mutex);
+	}
+
+	return 0;
+}
+EXPORT_SYMBOL_GPL(mt7620_gsw_config_rgmii1);
+
 static irqreturn_t gsw_interrupt_mt7620(int irq, void *_priv)
 {
 	struct fe_priv *priv = (struct fe_priv *)_priv;
