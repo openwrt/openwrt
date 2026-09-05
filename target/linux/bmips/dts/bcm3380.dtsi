@@ -1,0 +1,573 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+/dts-v1/;
+
+#include <dt-bindings/clock/bcm3380-clock.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/interrupt-controller/bcm3380-interrupt-controller.h>
+#include <dt-bindings/interrupt-controller/irq.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/reset/bcm3380-reset.h>
+
+// We may not need this for bcm3380
+// #include <dt-bindings/soc/bcm6362-pm.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+	compatible = "brcm,bcm3380";
+
+	aliases {
+		serial0 = &uart0;
+		serial1 = &uart1;
+		spi0 = &lsspi;
+	};
+
+	chosen {
+		bootargs = "earlycon";
+		stdout-path = "serial0:115200n8";
+	};
+
+	clocks {
+		periph_osc: periph-osc {
+			compatible = "fixed-clock";
+
+			#clock-cells = <0>;
+
+			clock-frequency = <50000000>;
+			clock-output-names = "periph";
+		};
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		/* 1/2 of the CPU core clock (standard MIPS behavior) */
+		mips-hpt-frequency = <166500000>;
+
+		cpu@0 {
+			compatible = "brcm,bmips4350", "mips,mips4Kc";
+			device_type = "cpu";
+			reg = <0>;
+		};
+
+		cpu@1 {
+			compatible = "brcm,bmips4350", "mips,mips4Kc";
+			device_type = "cpu";
+			reg = <1>;
+		};
+	};
+
+	cpu_intc: interrupt-controller {
+		#address-cells = <0>;
+		compatible = "mti,cpu-interrupt-controller";
+
+		interrupt-controller;
+		#interrupt-cells = <1>;
+	};
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0 0>;
+	};
+
+	ubus {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		compatible = "simple-bus";
+		ranges;
+
+		periph_clk0: clock-controller@14e00004 {
+			compatible = "brcm,bcm3380-clocks-low";
+			reg = <0x14e00004 0x4>;
+			#clock-cells = <1>;
+		};
+
+		periph_clk1: clock-controller@14e00008 {
+			compatible = "brcm,bcm3380-clocks-high";
+			reg = <0x14e00008 0x4>;
+			#clock-cells = <1>;
+		};
+
+		periph_uclk: clock-controller@14e0000c {
+			compatible = "brcm,bcm3380-ubus-clocks";
+			reg = <0x14e0000c 0x4>;
+			#clock-cells = <1>;
+		};
+
+		pll_cntl: syscon@14e00010 {
+			compatible = "syscon", "simple-mfd";
+			reg = <0x14e00010 0x4>;
+			native-endian;
+
+			syscon-reboot {
+				compatible = "syscon-reboot";
+				offset = <0x0>;
+				mask = <0x1>;
+			};
+		};
+
+		periph_rst0: reset-controller@14e0008c {
+			compatible = "brcm,bcm6345-reset";
+			reg = <0x14e0008c 0x4>;
+			#reset-cells = <1>;
+		};
+
+		periph_rst1: reset-controller@14e00090 {
+			compatible = "brcm,bcm6345-reset";
+			reg = <0x14e00090 0x4>;
+			#reset-cells = <1>;
+		};
+
+		gphy: gphy@14c21000 {
+			compatible = "brcm,bcm3380-gphy";
+			/*
+			 * DsRelTunerRef REF00..REF03.  This shared reference
+			 * block is needed before the internal UniMAC1 Ethernet
+			 * PHY and PCIe PHY are brought up from a cold reset.
+			 */
+			reg = <0x14c21000 0x10>;
+
+			clocks = <&periph_clk0 BCM3380_CLK0_D3DSMAC>,
+				 <&periph_clk1 BCM3380_CLK1_USTOP>,
+				 <&periph_clk1 BCM3380_CLK1_DSTUNNER>,
+				 <&periph_clk1 BCM3380_CLK1_GPHYPLL>,
+				 <&periph_clk1 BCM3380_CLK1_GPHY>;
+			clock-names = "d3dsmac", "ustop", "dstunner",
+				      "gphypll", "gphy";
+
+			resets = <&periph_rst0 BCM3380_RST0_GPHY>;
+			reset-names = "gphy";
+
+			status = "okay";
+		};
+
+		// Peripheral interrupts
+		periph_intc: interrupt-controller@14e00048 {
+			#address-cells = <1>;
+			compatible = "brcm,bcm6345-l1-intc";
+			reg = <0x14e00040 0x08>,
+				  <0x14e00048 0x08>;
+
+			interrupt-controller;
+			#interrupt-cells = <1>;
+
+			interrupt-parent = <&cpu_intc>;
+			interrupts = <3>, <4>;
+		};
+
+		// IO processor (IOP) interrupts
+		iop_intc: interrupt-controller@14e00058 {
+			#address-cells = <1>;
+			compatible = "brcm,bcm6345-l1-intc";
+			reg = <0x14e00050 0x08>,
+				  <0x14e00058 0x08>;
+
+			interrupt-controller;
+			#interrupt-cells = <1>;
+
+			interrupt-parent = <&cpu_intc>;
+			interrupts = <5>, <6>;
+		};
+
+		// Not in U-Boot DTS
+		/*
+		ext_intc: interrupt-controller@10000018 {
+			#address-cells = <1>;
+			compatible = "brcm,bcm6345-ext-intc";
+			reg = <0x10000018 0x4>;
+
+			interrupt-controller;
+			#interrupt-cells = <2>;
+
+			interrupt-parent = <&periph_intc>;
+			interrupts = <BCM6362_IRQ_EXT0>,
+				     <BCM6362_IRQ_EXT1>,
+				     <BCM6362_IRQ_EXT2>,
+				     <BCM6362_IRQ_EXT3>;
+		};
+		*/
+
+		wdt: watchdog@14e000dc {
+			// Same as brcm,bcm7038-wdt
+			compatible = "brcm,bcm6345-wdt";
+			reg = <0x14e000dc 0xc>;
+
+			clocks = <&periph_osc>;
+			clock-names = "periph";
+
+			timeout-sec = <30>;
+		};
+
+		gpio_cntl: syscon@14e00100 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			// TODO: add documentation like this:
+			// https://github.com/torvalds/linux/blob/master/Documentation/devicetree/bindings/mfd/brcm%2Cbcm63268-gpio-sysctl.yaml
+			compatible = "brcm,bcm3380-gpio-sysctl",
+				     "syscon", "simple-mfd";
+			reg = <0x14e00100 0x8c>;
+			ranges = <0 0x14e00100 0x8c>;
+			native-endian;
+
+			gpio: gpio@0 {
+				compatible = "brcm,bcm3380-gpio";
+				reg-names = "dirout", "dat";
+				reg = <0x0 0x8>, <0x8 0x8>;
+
+				gpio-controller;
+				gpio-ranges = <&pinctrl 0 0 52>;
+				#gpio-cells = <2>;
+				ngpios = <52>;
+			};
+
+			pinctrl: pinctrl@80 {
+				compatible = "brcm,bcm3380-pinctrl";
+				reg = <0x80 0xc>;
+
+				// Set SpimModeOverride and clear HsSpimEn to use lsspi
+				brcm,use-lsspi = <1>;
+
+				pinctrl_lsspi_cs3: lsspi_cs3-pins {
+					function = "lsspi_cs3";
+					pins = "gpio15";
+				};
+			};
+		};
+
+		uart0: serial@14e00200 {
+			compatible = "brcm,bcm6345-uart";
+			reg = <0x14e00200 0x18>;
+
+			// This was not in U-boot DTS, but OpenWrt DTS has them
+			interrupt-parent = <&periph_intc>;
+			interrupts = <BCM3380_IRQ_UART>;
+
+			clocks = <&periph_osc>;
+			clock-names = "periph";
+
+			status = "disabled";
+		};
+
+		uart1: serial@14e00220 {
+			compatible = "brcm,bcm6345-uart";
+			reg = <0x14e00220 0x18>;
+
+			// This was not in U-boot DTS, but OpenWrt DTS has them
+			interrupt-parent = <&periph_intc>;
+			interrupts = <BCM3380_IRQ_UART1>;
+
+			clocks = <&periph_osc>;
+			clock-names = "periph";
+
+			status = "disabled";
+		};
+
+		leds: led-controller@14e00f00 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "brcm,bcm6328-leds";
+			reg = <0x14e00f00 0x1c>;
+
+			status = "disabled";
+		};
+
+		lsspi: spi@14e02000 {
+			compatible = "brcm,bcm6358-spi";
+			reg = <0x14e02000 0x70c>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			// This was not in U-boot DTS, but OpenWrt DTS has them
+			interrupt-parent = <&periph_intc>;
+			interrupts = <BCM3380_IRQ_SPI>;
+
+			clocks = <&periph_clk0 BCM3380_CLK0_SPI>;
+			clock-names = "spi";
+
+			resets = <&periph_rst0 BCM3380_RST0_SPI>;
+
+			// These were in U-boot DTS, but not sure if they are necessary
+			spi-max-frequency = <25000000>;
+			num-cs = <6>;
+
+			status = "disabled";
+		};
+
+		pcie: pcie@12050000 {
+			compatible = "brcm,bcm3380-pcie";
+			reg = <0x12050000 0x10000>,
+			      /* TimerRegs.SerdesCntrl and TimerRegs.SerdesStatus */
+			      <(0x14e000c0 + 0x30) 0x8>;
+			reg-names = "pcie", "serdes";
+			device_type = "pci";
+			#address-cells = <3>;
+			#size-cells = <2>;
+			bus-range = <0x00 0x01>;
+			ranges = <0x2000000 0 0xa0000000 0xa0000000 0 0x01000000>;
+			linux,pci-probe-only = <1>;
+
+			interrupt-parent = <&periph_intc>;
+			interrupts = <BCM3380_IRQ_PCIE_RC>;
+
+			clocks = <&periph_clk0 BCM3380_CLK0_PCIE>,
+				 <&periph_clk1 BCM3380_CLK1_PCIEPLL>,
+				 <&periph_uclk BCM3380_UCLK_PCIE>;
+			clock-names = "pcie", "pciepll", "pcie-ubus";
+
+			resets = <&periph_rst0 BCM3380_RST0_PCIE>,
+				 <&periph_rst0 BCM3380_RST0_PCIECORE>,
+				 <&periph_rst1 BCM3380_RST1_PERST>;
+			reset-names = "pcie", "pcie-core", "perst";
+
+			brcm,gphy = <&gphy>;
+
+			status = "disabled";
+		};
+
+		fpm: fpm@12010000 {
+			compatible = "brcm,bcm3380-fpm";
+			reg = <0x12010000 0x8000>;
+
+			clocks = <&periph_clk0 BCM3380_CLK0_FPM>;
+			clock-names = "fpm";
+
+			resets = <&periph_rst0 BCM3380_RST0_FPM>;
+			reset-names = "fpm";
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			brcm,pool-buffer-size = <2048>;
+			brcm,pool-token-limit = <512>;
+			brcm,pool-xon = <384>;
+			brcm,pool-xoff = <128>;
+
+			status = "disabled";
+
+			fpm_pool1: pool@1 {
+				reg = <1>;
+				status = "okay";
+				brcm,cache-bypass = <0>;
+				brcm,search-mode = <0>;
+			};
+
+			fpm_pool2: pool@2 {
+				reg = <2>;
+				status = "disabled";
+				brcm,cache-bypass = <1>;
+				brcm,search-mode = <1>;
+			};
+
+			fpm_pool3: pool@3 {
+				reg = <3>;
+				status = "disabled";
+				brcm,cache-bypass = <1>;
+				brcm,search-mode = <1>;
+			};
+
+			fpm_pool4: pool@4 {
+				reg = <4>;
+				status = "disabled";
+				brcm,cache-bypass = <1>;
+				brcm,search-mode = <1>;
+			};
+		};
+
+		msp: msp@18800000 {
+			compatible = "brcm,bcm3380-msp";
+			/*
+			 * Host-visible SMISB MMIO physical window.
+			 *
+			 * Bare-metal/eCos code may use the uncached KSEG1 alias
+			 * 0xb8800000 for the same aperture.  Do not put the
+			 * producer/MBDMA view here.
+			 */
+			reg = <0x18800000 0x8000>,
+			      <0xff400030 0x4>;
+			reg-names = "msp", "smisb-ctrl";
+
+			interrupt-parent = <&iop_intc>;
+			interrupts = <BCM3380_IRQ_IOP_MSP>;
+
+			brcm,smisb-ctrl-value = <0x18000007>;
+
+			/*
+			 * GMAC/USB MBDMA message-address registers need the
+			 * hardware producer bus view, not this host SMISB MMIO
+			 * view.  The MSP driver derives that producer base from
+			 * the reg address when no brcm,producer-base override is
+			 * present.
+			 */
+
+			firmware-name = "bcm3380-msp-fw.bin";
+			brcm,4ke-memory-size = <0x800>;
+			brcm,in-low-water-mark = <6>;
+
+			clocks = <&periph_clk0 BCM3380_CLK0_MSP>;
+			clock-names = "msp";
+
+			resets = <&periph_rst0 BCM3380_RST0_MSP>;
+			reset-names = "msp";
+
+			status = "disabled";
+
+			/* DQM queues not listed here are left disabled. */
+			dqm: dqm {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				brcm,dqm-memory-words = <0x1000>;
+
+				dqm_queue0: queue@0 {
+					reg = <0>;
+					status = "okay";
+					brcm,capacity = <0x80>;
+					brcm,token_words = <1>;
+					brcm,low_water_mark = <0>;
+				};
+
+				dqm_queue1: queue@1 {
+					reg = <1>;
+					status = "okay";
+					brcm,capacity = <0x40>;
+					brcm,token_words = <1>;
+					brcm,low_water_mark = <0>;
+				};
+
+				dqm_queue2: queue@2 {
+					reg = <2>;
+					status = "okay";
+					brcm,capacity = <0x80>;
+					brcm,token_words = <1>;
+					brcm,low_water_mark = <0>;
+				};
+
+				dqm_queue3: queue@3 {
+					reg = <3>;
+					status = "okay";
+					brcm,capacity = <0x80>;
+					brcm,token_words = <1>;
+					brcm,low_water_mark = <0>;
+				};
+			};
+		};
+
+		usb0: usb@15000000 {
+			compatible = "brcm,bcm3380-usb";
+			reg = <0x15000000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+
+			clocks = <&periph_clk1 BCM3380_CLK1_USB0>,
+				 <&periph_uclk BCM3380_UCLK_USBOTG>;
+			clock-names = "usb", "usbotg-ubus";
+
+			resets = <&periph_rst0 BCM3380_RST0_USB>;
+			reset-names = "usb";
+
+			status = "disabled";
+
+			usb0_dwc2: usb@15040000 {
+				compatible = "brcm,bcm3380-dwc2", "snps,dwc2";
+				reg = <0x15040000 0x10000>;
+
+				interrupt-parent = <&periph_intc>;
+				interrupts = <BCM3380_IRQ_USB0>;
+
+				clocks = <&periph_clk1 BCM3380_CLK1_USB0>;
+				clock-names = "otg";
+
+				dr_mode = "host";
+				status = "okay";
+			};
+		};
+
+		usb1: usb@15200000 {
+			compatible = "brcm,bcm3380-usb";
+			reg = <0x15200000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+
+			clocks = <&periph_clk1 BCM3380_CLK1_USB1>,
+				 <&periph_uclk BCM3380_UCLK_USBOTG>;
+			clock-names = "usb", "usbotg-ubus";
+
+			resets = <&periph_rst0 BCM3380_RST0_USB>;
+			reset-names = "usb";
+
+			status = "disabled";
+
+			usb1_dwc2: usb@15240000 {
+				compatible = "brcm,bcm3380-dwc2", "snps,dwc2";
+				reg = <0x15240000 0x10000>;
+
+				interrupt-parent = <&periph_intc>;
+				interrupts = <BCM3380_IRQ_USB1>;
+
+				clocks = <&periph_clk1 BCM3380_CLK1_USB1>;
+				clock-names = "otg";
+
+				dr_mode = "host";
+				status = "okay";
+			};
+		};
+
+		unimac1_mbdma: mbdma@12110000 {
+			compatible = "brcm,bcm3380-mbdma";
+			reg = <0x12110000 0x600>;
+			brcm,fpm_pool = <&fpm_pool1>;
+			status = "disabled";
+		};
+
+		unimac1: ethernet@12110600 {
+			compatible = "brcm,bcm3380-unimac";
+			reg = <0x12110600 0x400>;
+			brcm,mac-id = <0>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+
+			clocks = <&periph_clk0 BCM3380_CLK0_UNIMAC1>,
+				 <&periph_uclk BCM3380_UCLK_UNIMAC1>;
+			clock-names = "unimac1", "unimac1-ubus";
+
+			resets = <&periph_rst0 BCM3380_RST0_UNIMAC1>;
+
+			brcm,gphy = <&gphy>;
+			brcm,mbdma = <&unimac1_mbdma>;
+			msp = <&msp>;
+			brcm,rx_normal_queue = <&dqm_queue0>;
+			brcm,rx_high_queue = <&dqm_queue3>;
+			brcm,tx_high_queue = <&dqm_queue1>;
+			brcm,tx_normal_queue = <&dqm_queue2>;
+
+			phy-handle = <&unimac1_phy_internal>;
+			phy-mode = "gmii";
+
+			status = "disabled";
+
+			unimac1_mdio: mdio@1211062c {
+				compatible = "brcm,unimac-mdio";
+				reg = <0x1211062c 0x8>;
+				reg-names = "mdio";
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				status = "okay";
+
+				unimac1_phy_internal: ethernet-phy@0 {
+					compatible = "ethernet-phy-ieee802.3-c22";
+					reg = <0>;
+					status = "okay";
+				};
+			};
+		};
+	};
+};
