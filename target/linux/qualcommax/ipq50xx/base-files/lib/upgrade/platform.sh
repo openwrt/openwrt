@@ -232,6 +232,14 @@ platform_do_upgrade() {
 		CI_DATA_UBIPART="rootfs"
 		nand_do_upgrade "$1"
 		;;
+	wallys,dr5018s)
+		CI_UBIPART="rootfs"
+		remove_oem_ubi_volume debug
+		remove_oem_ubi_volume ubi_rootfs
+		remove_oem_ubi_volume bt_fw
+		remove_oem_ubi_volume wifi_fw
+		nand_do_upgrade "$1"
+		;;
 	yuncore,ax830|\
 	yuncore,ax850|\
 	zyxel,scr50axe)
