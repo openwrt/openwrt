@@ -158,6 +158,7 @@ static int rtl83xx_add_flow(struct rtl838x_switch_priv *priv, struct flow_cls_of
 
 		case FLOW_ACTION_TRAP:
 			pr_debug("%s: TRAP\n", __func__);
+			flow->rule.fwd_sel = true;
 			flow->rule.fwd_data = priv->r->cpu_port;
 			flow->rule.fwd_act = PIE_ACT_REDIRECT_TO_PORT;
 			rtl83xx_flow_bypass_all(flow);
