@@ -447,6 +447,8 @@ sub gen_package_mk() {
 		my $src = $srcpackage{$srcname};
 		my $variant_default;
 		my %deplines = ('' => {});
+		my %all_pkgnames = map { $_->{name} => 1 }
+			grep { !$_->{buildonly} } @{$src->{packages}};
 
 		foreach my $pkg (@{$src->{packages}}) {
 			foreach my $dep (@{$pkg->{depends}}) {
@@ -471,13 +473,15 @@ sub gen_package_mk() {
 				my @vdeps = grep { $srcname ne $_->{src}{name} } @{$vpkg_dep};
 
 				foreach my $vdep (@vdeps) {
-					my $depstr = sprintf '$(curdir)/%s/compile', $vdep->{src}{path};
+					my $dep_path = sprintf '$(curdir)/%s/compile', $vdep->{src}{path};
+					my $cond_key = defined($condition) ? $condition : '';
+					my $entry = ($deplines{''}{$dep_path}{$cond_key} //= {});
 					if (@vdeps > 1) {
-						$depstr = sprintf '$(if $(CONFIG_PACKAGE_%s),%s)', $vdep->{name}, $depstr;
-					}
-					my $depline = get_conditional_dep($condition, $depstr);
-					if ($depline) {
-						$deplines{''}{$depline}++;
+						$entry->{pkgs}{$vdep->{name}} = 1;
+					} elsif ($pkg->{variant}) {
+						$entry->{pkgs}{$pkg->{name}} = 1;
+					} else {
+						$entry->{uncond} = 1;
 					}
 				}
 			}
@@ -544,18 +548,41 @@ sub gen_package_mk() {
 					next;
 				}
 
-				my $depstr = sprintf '$(curdir)/%s/compile', $src_dep->{path}.$depsuffix;
-				my $depline = get_conditional_dep($condition, $depstr);
-				if ($depline) {
-					$deplines{$suffix}{$depline}++;
-				}
+				my $dep_path = sprintf '$(curdir)/%s/compile', $src_dep->{path}.$depsuffix;
+				my $cond_key = defined($condition) ? $condition : '';
+				$deplines{$suffix}{$dep_path}{$cond_key}{uncond} = 1;
 			}
 		}
 
 		foreach my $suffix (sort keys %deplines) {
-			my $depline = join(" ", sort keys %{$deplines{$suffix}});
-			if ($depline) {
-				$line .= sprintf "\$(curdir)/%s/compile += %s\n", $src->{path}.$suffix, $depline;
+			my @parts;
+			foreach my $dep_path (sort keys %{$deplines{$suffix}}) {
+				foreach my $cond_key (sort keys %{$deplines{$suffix}{$dep_path}}) {
+					my $entry = $deplines{$suffix}{$dep_path}{$cond_key};
+					my @req_pkgs = sort keys %{$entry->{pkgs} // {}};
+					my @src_pkgs = grep { $all_pkgnames{$_} } @req_pkgs;
+					my $all_covered = (%all_pkgnames) &&
+						(scalar @src_pkgs == scalar keys %all_pkgnames);
+					my $inner;
+					if ($entry->{uncond} || $all_covered) {
+						$inner = $dep_path;
+					} elsif (@req_pkgs == 1) {
+						$inner = sprintf '$(if $(CONFIG_PACKAGE_%s),%s)',
+							$req_pkgs[0], $dep_path;
+					} elsif (@req_pkgs > 1) {
+						my $or_str = join(',',
+							map { "\$(CONFIG_PACKAGE_$_)" } @req_pkgs);
+						$inner = sprintf '$(if $(or %s),%s)', $or_str, $dep_path;
+					} else {
+						next;
+					}
+					my $depline = get_conditional_dep($cond_key, $inner);
+					push @parts, $depline if $depline;
+				}
+			}
+			if (@parts) {
+				$line .= sprintf "\$(curdir)/%s/compile += %s\n",
+					$src->{path}.$suffix, join(' ', @parts);
 			}
 		}
 	}
