@@ -1,0 +1,469 @@
+From 1caa11d05b87698569662db7577ae824c39d8df5 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Sat, 18 Jul 2026 10:52:37 +0000
+Subject: [PATCH] net: omci: expose managed entity class descriptors
+
+Describe every known ITU managed entity with a category, local support
+level and flags, and export the catalog through Generic Netlink.
+
+Remove the stale GENERIC_NETLINK Kconfig selection because Generic
+Netlink is part of the networking core rather than a selectable symbol.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ include/net/omci.h        |  16 ++++
+ include/uapi/linux/omci.h |  48 +++++++++-
+ net/omci/Kconfig          |   1 -
+ net/omci/agent.c          | 184 +++++++++++++++++++++++++++++++++++---
+ net/omci/core.c           |  75 ++++++++++++++++
+ net/omci/internal.h       |   3 +
+ 6 files changed, 312 insertions(+), 15 deletions(-)
+
+diff --git a/include/net/omci.h b/include/net/omci.h
+index 5f3e4648a9e5..4c85294822e3 100644
+--- a/include/net/omci.h
++++ b/include/net/omci.h
+@@ -9,6 +9,22 @@ struct device;
+ struct omci_device;
+ struct sk_buff;
+ 
++/**
++ * struct omci_me_class - managed entity class descriptor
++ * @class_id: ITU managed entity class identifier
++ * @category: enum omci_class_category
++ * @support: enum omci_class_support
++ * @flags: OMCI_CLASS_F_* bitmap
++ * @name: stable human-readable managed entity name
++ */
++struct omci_me_class {
++	u16 class_id;
++	u8 category;
++	u8 support;
++	u32 flags;
++	const char *name;
++};
++
+ enum omci_gem_port_direction {
+ 	OMCI_GEM_PORT_DIRECTION_UNI_TO_ANI = 1,
+ 	OMCI_GEM_PORT_DIRECTION_ANI_TO_UNI = 2,
+diff --git a/include/uapi/linux/omci.h b/include/uapi/linux/omci.h
+index c3b1d3627d73..116833965c3d 100644
+--- a/include/uapi/linux/omci.h
++++ b/include/uapi/linux/omci.h
+@@ -3,7 +3,7 @@
+ #define _UAPI_LINUX_OMCI_H
+ 
+ #define OMCI_GENL_NAME		"omci"
+-#define OMCI_GENL_VERSION	6
++#define OMCI_GENL_VERSION	7
+ #define OMCI_MAX_PDU_LEN	1980
+ #define OMCI_MAX_ATTR_DATA	32
+ #define OMCI_MAX_CONFIG_VALUE	64
+@@ -37,6 +37,8 @@ enum omci_cmd {
+ 	OMCI_CMD_MIB_DELETE,
+ 	OMCI_CMD_MIB_RESET,
+ 	OMCI_CMD_MIB_NEXT,
++	OMCI_CMD_CLASS_GET,
++	OMCI_CMD_CLASS_NEXT,
+ 
+ 	__OMCI_CMD_MAX,
+ };
+@@ -97,6 +99,9 @@ enum omci_attr {
+ 	OMCI_ATTR_OLT_G,
+ 	OMCI_ATTR_AGENT_FAKE_OMCI,
+ 	OMCI_ATTR_AGENT_FAKE_RESPONSES,
++	OMCI_ATTR_CLASS_CATEGORY,
++	OMCI_ATTR_CLASS_SUPPORT,
++	OMCI_ATTR_CLASS_FLAGS,
+ 
+ 	__OMCI_ATTR_MAX,
+ };
+@@ -196,6 +201,47 @@ enum omci_olt_g_attr {
+ 
+ #define OMCI_OLT_G_ATTR_MAX (__OMCI_OLT_G_ATTR_MAX - 1)
+ 
++/**
++ * enum omci_class_category - functional managed entity category
++ */
++enum omci_class_category {
++	OMCI_CLASS_CATEGORY_UNSPEC,
++	OMCI_CLASS_CATEGORY_EQUIPMENT,
++	OMCI_CLASS_CATEGORY_ANI,
++	OMCI_CLASS_CATEGORY_UNI,
++	OMCI_CLASS_CATEGORY_LAYER2,
++	OMCI_CLASS_CATEGORY_LAYER3,
++	OMCI_CLASS_CATEGORY_MULTICAST,
++	OMCI_CLASS_CATEGORY_VOICE,
++	OMCI_CLASS_CATEGORY_SECURITY,
++	OMCI_CLASS_CATEGORY_MANAGEMENT,
++	OMCI_CLASS_CATEGORY_PERFORMANCE,
++	OMCI_CLASS_CATEGORY_XDSL,
++	OMCI_CLASS_CATEGORY_LEGACY,
++	OMCI_CLASS_CATEGORY_VENDOR,
++	OMCI_CLASS_CATEGORY_RESERVED,
++	OMCI_CLASS_CATEGORY_OTHER,
++};
++
++/**
++ * enum omci_class_support - local implementation level
++ */
++enum omci_class_support {
++	OMCI_CLASS_SUPPORT_CATALOG,
++	OMCI_CLASS_SUPPORT_SHADOW,
++	OMCI_CLASS_SUPPORT_PARSED,
++	OMCI_CLASS_SUPPORT_PROVISIONED,
++	OMCI_CLASS_SUPPORT_NATIVE,
++};
++
++#define OMCI_CLASS_F_STANDARD		(1U << 0)
++#define OMCI_CLASS_F_DEPRECATED	(1U << 1)
++#define OMCI_CLASS_F_RESERVED		(1U << 2)
++#define OMCI_CLASS_F_VENDOR_SPECIFIC	(1U << 3)
++#define OMCI_CLASS_F_PERFORMANCE	(1U << 4)
++#define OMCI_CLASS_F_TABLE		(1U << 5)
++#define OMCI_CLASS_F_DATAPATH		(1U << 6)
++
+ enum omci_event {
+ 	OMCI_EVENT_UNSPEC,
+ 	OMCI_EVENT_CHANNEL_UP,
+diff --git a/net/omci/Kconfig b/net/omci/Kconfig
+index 8e4e85fd2a42..002743904e67 100644
+--- a/net/omci/Kconfig
++++ b/net/omci/Kconfig
+@@ -2,7 +2,6 @@
+ config OMCI
+ 	tristate "ONU Management and Control Interface agent"
+ 	depends on NET
+-	select GENERIC_NETLINK
+ 	help
+ 	  Provides an in-kernel baseline OMCI agent for GPON devices. The
+ 	  subsystem parses OMCI requests, maintains the operational managed-
+diff --git a/net/omci/agent.c b/net/omci/agent.c
+index f5fd63b7cc7f..98bde954bc81 100644
+--- a/net/omci/agent.c
++++ b/net/omci/agent.c
+@@ -425,12 +425,12 @@ static int omci_mib_parse_set(struct omci_mib_object *object, u16 mask,
+ 	}
+ }
+ 
+-struct omci_class_info {
++struct omci_class_name {
+ 	u16 class_id;
+ 	const char *name;
+ };
+ 
+-static const struct omci_class_info omci_classes[] = {
++static const struct omci_class_name omci_classes[] = {
+ 	{ 1, "ONT" },
+ 	{ 2, "ONU data" },
+ 	{ 3, "PON IF line cardholder" },
+@@ -750,6 +750,175 @@ static const struct omci_class_info omci_classes[] = {
+ 	{ 452, "TWDM channel OMCI performance monitoring history data" },
+ };
+ 
++static bool omci_class_name_contains(const char *name, const char *needle)
++{
++	return strnstr(name, needle, strlen(name));
++}
++
++static u8 omci_class_category(u16 class_id, const char *name)
++{
++	if ((class_id >= 240 && class_id <= 255) ||
++	    (class_id >= 350 && class_id <= 399) || class_id >= 65280)
++		return OMCI_CLASS_CATEGORY_VENDOR;
++	if ((class_id >= 172 && class_id <= 239) ||
++	    (class_id >= 453 && class_id <= 65279) ||
++	    omci_class_name_contains(name, "Reserved") ||
++	    omci_class_name_contains(name, "Intentionally left blank"))
++		return OMCI_CLASS_CATEGORY_RESERVED;
++	if (omci_class_name_contains(name, "performance monitoring") ||
++	    omci_class_name_contains(name, "PM history") ||
++	    omci_class_name_contains(name, "monitoring history"))
++		return OMCI_CLASS_CATEGORY_PERFORMANCE;
++	if (omci_class_name_contains(name, "xDSL") ||
++	    omci_class_name_contains(name, "VDSL") ||
++	    omci_class_name_contains(name, "FAST") ||
++	    omci_class_name_contains(name, "EFM bonding"))
++		return OMCI_CLASS_CATEGORY_XDSL;
++	if (omci_class_name_contains(name, "VoIP") ||
++	    omci_class_name_contains(name, "SIP") ||
++	    omci_class_name_contains(name, "MGC") ||
++	    omci_class_name_contains(name, "RTP") ||
++	    omci_class_name_contains(name, "Voice") ||
++	    omci_class_name_contains(name, "POTS"))
++		return OMCI_CLASS_CATEGORY_VOICE;
++	if (omci_class_name_contains(name, "Multicast"))
++		return OMCI_CLASS_CATEGORY_MULTICAST;
++	if (omci_class_name_contains(name, "security") ||
++	    omci_class_name_contains(name, "Authentication") ||
++	    omci_class_name_contains(name, "Dot1X") ||
++	    omci_class_name_contains(name, "Radius"))
++		return OMCI_CLASS_CATEGORY_SECURITY;
++	if (omci_class_name_contains(name, "IP ") ||
++	    omci_class_name_contains(name, "TCP/UDP") ||
++	    omci_class_name_contains(name, "ARP") ||
++	    omci_class_name_contains(name, "ICMP") ||
++	    omci_class_name_contains(name, "TR-069") ||
++	    omci_class_name_contains(name, "SNMP") ||
++	    omci_class_name_contains(name, "Network address"))
++		return OMCI_CLASS_CATEGORY_LAYER3;
++	if (omci_class_name_contains(name, "VLAN") ||
++	    omci_class_name_contains(name, "MAC bridge") ||
++	    omci_class_name_contains(name, "Ethernet") ||
++	    omci_class_name_contains(name, "802.1p") ||
++	    omci_class_name_contains(name, "Dot1ag") ||
++	    omci_class_name_contains(name, "OpenFlow"))
++		return OMCI_CLASS_CATEGORY_LAYER2;
++	if (omci_class_name_contains(name, "UNI"))
++		return OMCI_CLASS_CATEGORY_UNI;
++	if (omci_class_name_contains(name, "ANI") ||
++	    omci_class_name_contains(name, "GEM") ||
++	    omci_class_name_contains(name, "T-CONT") ||
++	    omci_class_name_contains(name, "PON") ||
++	    omci_class_name_contains(name, "Traffic scheduler") ||
++	    omci_class_name_contains(name, "Priority queue"))
++		return OMCI_CLASS_CATEGORY_ANI;
++	if (class_id <= 7 || class_id == 133 || class_id == 159 ||
++	    class_id == 160 || class_id == 256 || class_id == 257 ||
++	    class_id == 297 || class_id == 331 || class_id == 336 ||
++	    class_id == 441)
++		return OMCI_CLASS_CATEGORY_EQUIPMENT;
++	if (class_id == 137 || class_id == 157 || class_id == 158 ||
++	    class_id == 287 || class_id == 288 || class_id == 289 ||
++	    class_id == 307 || class_id == 308 || class_id == 318 ||
++	    class_id == 330 || class_id == 440)
++		return OMCI_CLASS_CATEGORY_MANAGEMENT;
++	if (class_id < 256)
++		return OMCI_CLASS_CATEGORY_LEGACY;
++
++	return OMCI_CLASS_CATEGORY_OTHER;
++}
++
++static u8 omci_class_support(u16 class_id)
++{
++	switch (class_id) {
++	case OMCI_CLASS_VLAN_TAGGING_FILTER_DATA:
++	case OMCI_CLASS_OLT_G:
++	case OMCI_CLASS_EXTENDED_VLAN:
++		return OMCI_CLASS_SUPPORT_PARSED;
++	case OMCI_CLASS_PPTP_ETHERNET_UNI:
++	case OMCI_CLASS_TCONT:
++	case OMCI_CLASS_GEM_PORT_CTP:
++	case OMCI_CLASS_VEIP:
++		return OMCI_CLASS_SUPPORT_PROVISIONED;
++	case OMCI_CLASS_ONU_DATA:
++	case OMCI_CLASS_SOFTWARE_IMAGE:
++	case OMCI_CLASS_ONU_G:
++	case OMCI_CLASS_ONU2_G:
++	case OMCI_CLASS_ANI_G:
++	case OMCI_CLASS_PRIORITY_QUEUE:
++	case OMCI_CLASS_TRAFFIC_SCHEDULER:
++		return OMCI_CLASS_SUPPORT_NATIVE;
++	default:
++		return OMCI_CLASS_SUPPORT_SHADOW;
++	}
++}
++
++static u32 omci_class_flags(u16 class_id, const char *name)
++{
++	u32 flags = OMCI_CLASS_F_STANDARD;
++
++	if (omci_class_name_contains(name, "deprecated") ||
++	    omci_class_name_contains(name, "obsolete"))
++		flags |= OMCI_CLASS_F_DEPRECATED;
++	if (omci_class_category(class_id, name) == OMCI_CLASS_CATEGORY_RESERVED)
++		flags |= OMCI_CLASS_F_RESERVED;
++	if (omci_class_category(class_id, name) == OMCI_CLASS_CATEGORY_VENDOR)
++		flags |= OMCI_CLASS_F_VENDOR_SPECIFIC;
++	if (omci_class_category(class_id, name) == OMCI_CLASS_CATEGORY_PERFORMANCE)
++		flags |= OMCI_CLASS_F_PERFORMANCE;
++	if (omci_class_name_contains(name, "table") || class_id == 84 ||
++	    class_id == 145 || class_id == 171)
++		flags |= OMCI_CLASS_F_TABLE;
++	switch (class_id) {
++	case OMCI_CLASS_PPTP_ETHERNET_UNI:
++	case OMCI_CLASS_MAC_BRIDGE_SERVICE_PROFILE:
++	case OMCI_CLASS_MAC_BRIDGE_CONFIG_DATA:
++	case OMCI_CLASS_MAC_BRIDGE_PORT_CONFIG_DATA:
++	case OMCI_CLASS_VLAN_TAGGING_FILTER_DATA:
++	case 130:
++	case OMCI_CLASS_EXTENDED_VLAN:
++	case OMCI_CLASS_TCONT:
++	case OMCI_CLASS_GEM_IWTP:
++	case OMCI_CLASS_GEM_PORT_CTP:
++	case OMCI_CLASS_VEIP:
++		flags |= OMCI_CLASS_F_DATAPATH;
++		break;
++	default:
++		break;
++	}
++
++	return flags;
++}
++
++int omci_agent_class_get(u16 class_id, struct omci_me_class *class)
++{
++	const char *name;
++
++	if (!class)
++		return -EINVAL;
++	name = omci_agent_class_name(class_id);
++	class->class_id = class_id;
++	class->category = omci_class_category(class_id, name);
++	class->support = omci_class_support(class_id);
++	class->flags = omci_class_flags(class_id, name);
++	class->name = name;
++
++	return 0;
++}
++
++int omci_agent_class_next(u32 index, struct omci_me_class *class,
++			  u32 *next_index)
++{
++	if (!class || !next_index)
++		return -EINVAL;
++	if (index >= ARRAY_SIZE(omci_classes))
++		return -ENOENT;
++
++	omci_agent_class_get(omci_classes[index].class_id, class);
++	*next_index = index + 1;
++	return 0;
++}
++
+ const char *omci_agent_class_name(u16 class_id)
+ {
+ 	unsigned int i;
+@@ -777,17 +946,6 @@ static unsigned long omci_mib_key(u16 class_id, u16 entity_id)
+ 	return ((unsigned long)class_id << 16) | entity_id;
+ }
+ 
+-const char *omci_agent_class_name(u16 class_id)
+-{
+-	unsigned int i;
+-
+-	for (i = 0; i < ARRAY_SIZE(omci_classes); i++)
+-		if (omci_classes[i].class_id == class_id)
+-			return omci_classes[i].name;
+-
+-	return "Dynamic managed entity";
+-}
+-
+ static struct omci_mib_object *
+ omci_mib_lookup(struct omci_agent *agent, u16 class_id, u16 entity_id)
+ {
+diff --git a/net/omci/core.c b/net/omci/core.c
+index 3f61b896fc8e..d62c09e75413 100644
+--- a/net/omci/core.c
++++ b/net/omci/core.c
+@@ -51,6 +51,9 @@ static const struct nla_policy omci_policy[OMCI_ATTR_MAX + 1] = {
+ 	},
+ 	[OMCI_ATTR_VLAN_TAGGING_FILTER] = { .type = NLA_NESTED },
+ 	[OMCI_ATTR_EXTENDED_VLAN] = { .type = NLA_NESTED },
++	[OMCI_ATTR_CLASS_CATEGORY] = { .type = NLA_U8 },
++	[OMCI_ATTR_CLASS_SUPPORT] = { .type = NLA_U8 },
++	[OMCI_ATTR_CLASS_FLAGS] = { .type = NLA_U32 },
+ };
+ 
+ static struct omci_device *omci_find_locked(u32 id)
+@@ -648,6 +651,68 @@ static int omci_reply_mib(struct genl_info *info, u8 command,
+ 	return ret;
+ }
+ 
++static int omci_reply_class(struct genl_info *info, u8 command,
++			    const struct omci_me_class *class, u32 next_index)
++{
++	struct sk_buff *msg;
++	void *hdr;
++
++	msg = genlmsg_new(NLMSG_DEFAULT_SIZE, GFP_KERNEL);
++	if (!msg)
++		return -ENOMEM;
++	hdr = genlmsg_put_reply(msg, info, &omci_genl_family, 0, command);
++	if (!hdr)
++		goto message_too_large;
++	if (nla_put_u16(msg, OMCI_ATTR_CLASS_ID, class->class_id) ||
++	    nla_put_string(msg, OMCI_ATTR_NAME, class->name) ||
++	    nla_put_u8(msg, OMCI_ATTR_CLASS_CATEGORY, class->category) ||
++	    nla_put_u8(msg, OMCI_ATTR_CLASS_SUPPORT, class->support) ||
++	    nla_put_u32(msg, OMCI_ATTR_CLASS_FLAGS, class->flags) ||
++	    nla_put_u32(msg, OMCI_ATTR_INDEX, next_index))
++		goto cancel;
++
++	genlmsg_end(msg, hdr);
++	return genlmsg_reply(msg, info);
++
++cancel:
++	genlmsg_cancel(msg, hdr);
++message_too_large:
++	nlmsg_free(msg);
++	return -EMSGSIZE;
++}
++
++static int omci_cmd_class_get(struct sk_buff *skb, struct genl_info *info)
++{
++	struct omci_me_class class;
++	u16 class_id;
++	int ret;
++
++	if (!info->attrs[OMCI_ATTR_CLASS_ID])
++		return -EINVAL;
++	class_id = nla_get_u16(info->attrs[OMCI_ATTR_CLASS_ID]);
++	ret = omci_agent_class_get(class_id, &class);
++	if (ret)
++		return ret;
++
++	return omci_reply_class(info, OMCI_CMD_CLASS_GET, &class, 0);
++}
++
++static int omci_cmd_class_next(struct sk_buff *skb, struct genl_info *info)
++{
++	struct omci_me_class class;
++	u32 index = 0;
++	u32 next_index;
++	int ret;
++
++	if (info->attrs[OMCI_ATTR_INDEX])
++		index = nla_get_u32(info->attrs[OMCI_ATTR_INDEX]);
++	ret = omci_agent_class_next(index, &class, &next_index);
++	if (ret)
++		return ret;
++
++	return omci_reply_class(info, OMCI_CMD_CLASS_NEXT, &class, next_index);
++}
++
+ static int omci_cmd_agent_set(struct sk_buff *skb, struct genl_info *info)
+ {
+ 	struct omci_device *odev;
+@@ -963,6 +1028,16 @@ static const struct genl_ops omci_genl_ops[] = {
+ 		.policy = omci_policy,
+ 		.doit = omci_cmd_mib_next,
+ 	},
++	{
++		.cmd = OMCI_CMD_CLASS_GET,
++		.policy = omci_policy,
++		.doit = omci_cmd_class_get,
++	},
++	{
++		.cmd = OMCI_CMD_CLASS_NEXT,
++		.policy = omci_policy,
++		.doit = omci_cmd_class_next,
++	},
+ };
+ 
+ static struct genl_family omci_genl_family __ro_after_init = {
+diff --git a/net/omci/internal.h b/net/omci/internal.h
+index 52abe6b14c72..07e3b14fc43f 100644
+--- a/net/omci/internal.h
++++ b/net/omci/internal.h
+@@ -139,5 +139,8 @@ int omci_agent_mib_next(struct omci_device *odev, u32 index,
+ 			struct omci_mib_object *object, u32 *next_index,
+ 			const char **name);
+ const char *omci_agent_class_name(u16 class_id);
++int omci_agent_class_get(u16 class_id, struct omci_me_class *class);
++int omci_agent_class_next(u32 index, struct omci_me_class *class,
++			  u32 *next_index);
+ 
+ #endif /* _NET_OMCI_INTERNAL_H */
+-- 
+2.55.0
+

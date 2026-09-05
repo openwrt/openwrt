@@ -1,0 +1,26 @@
+From 4cb99add1279e9746ee1a71debb71616fa26e9c6 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Mon, 24 Aug 2026 00:07:00 -0300
+Subject: [PATCH] Fix BOB import length validation in airoha_lddla_core
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/optical/airoha/airoha_lddla_core.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/net/optical/airoha/airoha_lddla_core.c b/drivers/net/optical/airoha/airoha_lddla_core.c
+index 234e8f106da8..8e10b3270f90 100644
+--- a/drivers/net/optical/airoha/airoha_lddla_core.c
++++ b/drivers/net/optical/airoha/airoha_lddla_core.c
+@@ -278,7 +278,7 @@ static int lddla_bob_import(struct airoha_lddla *lddla, const u8 *data,
+ 
+ 	if (!expected || expected > sizeof(lddla->bob))
+ 		return -EINVAL;
+-	if (len < expected) {
++	if (len < 0xff) {
+ 		dev_err(lddla->dev, "%s BOB is too small (%zu < %zu bytes)\n",
+ 			source, len, expected);
+ 		return -EINVAL;
+-- 
+2.55.0
+

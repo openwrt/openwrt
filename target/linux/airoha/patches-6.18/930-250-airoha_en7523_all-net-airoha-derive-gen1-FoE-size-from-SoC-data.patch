@@ -1,0 +1,131 @@
+From 1be1e67a5c7f56ec71f81f8338f642ce378bfab1 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Tue, 11 Aug 2026 14:04:50 -0300
+Subject: [PATCH] net: airoha: derive gen1 FoE size from SoC data
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_ppe.c  | 30 +++++++++++++++--------
+ drivers/net/ethernet/airoha/airoha_regs.h |  4 ---
+ 2 files changed, 20 insertions(+), 14 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_ppe.c b/drivers/net/ethernet/airoha/airoha_ppe.c
+index 849c6db0d6b9..b1019e67636f 100644
+--- a/drivers/net/ethernet/airoha/airoha_ppe.c
++++ b/drivers/net/ethernet/airoha/airoha_ppe.c
+@@ -2468,12 +2468,16 @@ static void airoha_ppe_gen2_deinit(struct airoha_eth *eth)
+ 
+ /* EcoNet EN751221 backend. */
+ 
+-static_assert(sizeof(struct econet_foe_entry) == EN751221_FOE_ENTRY_SIZE);
++static size_t econet_ppe_foe_size(struct airoha_eth *eth)
++{
++	return (size_t)eth->soc->ppe_dram_entries *
++	       sizeof(struct econet_foe_entry);
++}
+ 
+ static __le32 *econet_ppe_slot(struct econet_ppe *ppe, u16 hash)
+ {
+ 	return (__le32 *)((u8 *)ppe->foe_table +
+-			 (size_t)hash * EN751221_FOE_ENTRY_SIZE);
++			 (size_t)hash * sizeof(struct econet_foe_entry));
+ }
+ 
+ static void econet_ppe_read_entry(struct econet_ppe *ppe, u16 hash,
+@@ -2640,7 +2644,8 @@ static void econet_ppe_commit_entry(struct econet_ppe *ppe,
+ 
+ static void econet_ppe_invalidate_entry(struct econet_ppe *ppe, u16 hash)
+ {
+-	if (hash == EN751221_PPE_INVALID_HASH || hash >= EN751221_PPE_ENTRIES)
++	if (hash == EN751221_PPE_INVALID_HASH ||
++	    hash >= ppe->eth->soc->ppe_dram_entries)
+ 		return;
+ 	WRITE_ONCE(econet_ppe_slot(ppe, hash)[0], 0);
+ 	/* Publish the invalid state before the caller clears the cache. */
+@@ -2710,7 +2715,8 @@ static void econet_ppe_rx_check(struct econet_ppe *ppe, struct sk_buff *skb,
+ 	u32 src_ip, dest_ip;
+ 	u16 src_port, dest_port;
+ 
+-	if (!ppe || !READ_ONCE(ppe->armed) || hash >= EN751221_PPE_ENTRIES)
++	if (!ppe || !READ_ONCE(ppe->armed) ||
++	    hash >= ppe->eth->soc->ppe_dram_entries)
+ 		return;
+ 	if (reason != EN751221_PPE_CPU_REASON_NO_FLOW &&
+ 	    reason != AIROHA_PPE_CPU_REASON_HIT_UNBIND &&
+@@ -2772,7 +2778,7 @@ static void econet_ppe_flush(struct econet_ppe *ppe)
+ 		list_del(&flow->list);
+ 		kfree(flow);
+ 	}
+-	memset(ppe->foe_table, 0, EN751221_PPE_TABLE_SIZE);
++	memset(ppe->foe_table, 0, econet_ppe_foe_size(ppe->eth));
+ 	/* Publish the cleared table before invalidating the lookup cache. */
+ 	dma_wmb();
+ 	econet_ppe_cache_clean(ppe);
+@@ -3248,6 +3254,9 @@ static int econet_ppe_setup_tc(struct airoha_ppe_dev *ppe_dev,
+ 
+ static int airoha_ppe_gen1_init(struct airoha_eth *eth)
+ {
++	u32 dram_entries = eth->soc->ppe_dram_entries;
++	size_t foe_size = econet_ppe_foe_size(eth);
++	u32 dram_num_entries;
+ 	struct device *dev = eth->dev;
+ 	struct econet_ppe *ppe;
+ 	u32 tb_cfg;
+@@ -3256,17 +3265,18 @@ static int airoha_ppe_gen1_init(struct airoha_eth *eth)
+ 	if (!ppe)
+ 		return -ENOMEM;
+ 
+-	ppe->foe_table = dmam_alloc_coherent(dev, EN751221_PPE_TABLE_SIZE,
+-					     &ppe->foe_dma, GFP_KERNEL);
++	ppe->foe_table = dmam_alloc_coherent(dev, foe_size, &ppe->foe_dma,
++					     GFP_KERNEL);
+ 	if (!ppe->foe_table)
+ 		return dev_err_probe(dev, -ENOMEM,
+ 				     "failed to allocate PPE FoE table\n");
+ 
+ 	ppe->eth = eth;
++	dram_num_entries = airoha_ppe_get_num_entries_shift(dram_entries);
+ 	spin_lock_init(&ppe->lock);
+ 	INIT_LIST_HEAD(&ppe->flows);
+ 	INIT_LIST_HEAD(&ppe->block_cb_list);
+-	memset(ppe->foe_table, 0, EN751221_PPE_TABLE_SIZE);
++	memset(ppe->foe_table, 0, foe_size);
+ 	dma_wmb();
+ 
+ 	airoha_fe_wr(eth, REG_PPE_TB_BASE(0), lower_32_bits(ppe->foe_dma));
+@@ -3276,7 +3286,7 @@ static int airoha_ppe_gen1_init(struct airoha_eth *eth)
+ 		 FIELD_PREP(PPE_TB_CFG_SEARCH_MISS_MASK, 3) |
+ 		 FIELD_PREP(PPE_TB_CFG_HASH_MODE_MASK, 3) |
+ 		 FIELD_PREP(PPE_TB_CFG_SCAN_MODE_MASK, 1) |
+-		 FIELD_PREP(PPE_DRAM_TB_NUM_ENTRY_MASK, 4) |
++		 FIELD_PREP(PPE_DRAM_TB_NUM_ENTRY_MASK, dram_num_entries) |
+ 		 PPE_TB_ENTRY_SIZE_MASK;
+ 	airoha_fe_wr(eth, REG_PPE_TB_CFG(0), tb_cfg);
+ 	airoha_fe_wr(eth, REG_PPE_IP_PROTO_CHK(0),
+@@ -3317,7 +3327,7 @@ static int airoha_ppe_gen1_init(struct airoha_eth *eth)
+ 
+ 	eth->ppe_dev = &ppe->dev;
+ 	dev_info(dev, "PPE FoE table at %pad, %u entries\n",
+-		 &ppe->foe_dma, EN751221_PPE_ENTRIES);
++		 &ppe->foe_dma, dram_entries);
+ 	return 0;
+ }
+ 
+diff --git a/drivers/net/ethernet/airoha/airoha_regs.h b/drivers/net/ethernet/airoha/airoha_regs.h
+index c435047592f6..b440999cbdce 100644
+--- a/drivers/net/ethernet/airoha/airoha_regs.h
++++ b/drivers/net/ethernet/airoha/airoha_regs.h
+@@ -65,10 +65,6 @@
+ #define EN751221_QDMA_IRQ_RING_IDX_MASK	BIT(16)
+ #define EN751221_QDMA_IRQ_DESC_IDX_MASK	GENMASK(11, 0)
+ 
+-#define EN751221_PPE_ENTRIES		16384
+-#define EN751221_FOE_ENTRY_SIZE		80
+-#define EN751221_PPE_TABLE_SIZE		(EN751221_PPE_ENTRIES * \
+-					 EN751221_FOE_ENTRY_SIZE)
+ #define EN751221_PPE_INVALID_HASH	0xffff
+ #define EN751221_DPORT_QDMA_HW		6
+ 
+-- 
+2.55.0
+

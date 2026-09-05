@@ -1,0 +1,26 @@
+From 60fc28ea74bc59a38ae03326e083b82e3706851b Mon Sep 17 00:00:00 2001
+From: Ahmed Naseef <naseefkm@gmail.com>
+Date: Thu, 6 Aug 2026 15:48:59 -0300
+Subject: [PATCH] spi: airoha-snfi: enable for EcoNet EN7528
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/spi/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/spi/Kconfig b/drivers/spi/Kconfig
+index 7d2a633a2850..e62c1be2cd36 100644
+--- a/drivers/spi/Kconfig
++++ b/drivers/spi/Kconfig
+@@ -62,7 +62,7 @@ comment "SPI Master Controller Drivers"
+ 
+ config SPI_AIROHA_SNFI
+ 	tristate "Airoha SPI Flash Interface"
+-	depends on ARCH_AIROHA || COMPILE_TEST
++	depends on ARCH_AIROHA || ECONET || COMPILE_TEST
+ 	depends on SPI_MASTER
+ 	select REGMAP_MMIO
+ 	help
+-- 
+2.55.0
+

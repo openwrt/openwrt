@@ -1,0 +1,435 @@
+From 2c6282fb6fc6b7fb42fab95ad8f3e6876988f6f7 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Sun, 26 Jul 2026 20:24:02 -0300
+Subject: [PATCH] Update env to add u-boot replace/update
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ configs/en7523-askey-rtf8225vw_defconfig      |  1 +
+ configs/en7523-genexis_pixly_r1_defconfig     |  1 +
+ ...en7523-mitrastar_gpt_2742gx4x5v6_defconfig |  1 +
+ configs/en7523-tplink_ex530v_v1_defconfig     |  1 +
+ configs/en7523-tplink_xx230v_v1_defconfig     |  1 +
+ configs/en7523_evb_defconfig                  |  1 +
+ defenvs/en7523-askey-rtf8225vw_env            | 26 ++++---
+ defenvs/en7523-mitrastar_gpt_2742gx4x5v6_env  | 27 +++++---
+ defenvs/en7523-tplink-ex530v_v1_env           | 12 +++-
+ defenvs/en7523-tplink-xx230v_v1_env           | 17 +++--
+ .../src/arm/airoha/en7523-askey-rtf8225vw.dts | 67 ++++++++++++++++++-
+ .../en7523-mitrastar_gpt_2742gx4x5v6.dts      |  5 +-
+ .../arm/airoha/en7523-tplink-ex530v_v1.dts    |  4 +-
+ .../arm/airoha/en7523-tplink-xx230v_v1.dts    |  4 +-
+ 14 files changed, 132 insertions(+), 36 deletions(-)
+
+diff --git a/configs/en7523-askey-rtf8225vw_defconfig b/configs/en7523-askey-rtf8225vw_defconfig
+index afe392255c4..3879e38baa8 100644
+--- a/configs/en7523-askey-rtf8225vw_defconfig
++++ b/configs/en7523-askey-rtf8225vw_defconfig
+@@ -26,6 +26,7 @@ CONFIG_CMD_BOOTMENU=y
+ # CONFIG_CMD_ELF is not set
+ # CONFIG_CMD_XIMG is not set
+ CONFIG_CMD_BIND=y
++CONFIG_CMD_BIN2MAC=y
+ CONFIG_CMD_GPIO=y
+ CONFIG_CMD_MTD=y
+ CONFIG_CMD_PART=y
+diff --git a/configs/en7523-genexis_pixly_r1_defconfig b/configs/en7523-genexis_pixly_r1_defconfig
+index d0422190899..ea614e57585 100644
+--- a/configs/en7523-genexis_pixly_r1_defconfig
++++ b/configs/en7523-genexis_pixly_r1_defconfig
+@@ -26,6 +26,7 @@ CONFIG_CMD_BOOTMENU=y
+ # CONFIG_CMD_ELF is not set
+ # CONFIG_CMD_XIMG is not set
+ CONFIG_CMD_BIND=y
++CONFIG_CMD_BIN2MAC=y
+ CONFIG_CMD_GPIO=y
+ CONFIG_CMD_MTD=y
+ CONFIG_CMD_PART=y
+diff --git a/configs/en7523-mitrastar_gpt_2742gx4x5v6_defconfig b/configs/en7523-mitrastar_gpt_2742gx4x5v6_defconfig
+index 87340b202fa..34829720d05 100644
+--- a/configs/en7523-mitrastar_gpt_2742gx4x5v6_defconfig
++++ b/configs/en7523-mitrastar_gpt_2742gx4x5v6_defconfig
+@@ -26,6 +26,7 @@ CONFIG_CMD_BOOTMENU=y
+ # CONFIG_CMD_ELF is not set
+ # CONFIG_CMD_XIMG is not set
+ CONFIG_CMD_BIND=y
++CONFIG_CMD_BIN2MAC=y
+ CONFIG_CMD_GPIO=y
+ CONFIG_CMD_MTD=y
+ CONFIG_CMD_PART=y
+diff --git a/configs/en7523-tplink_ex530v_v1_defconfig b/configs/en7523-tplink_ex530v_v1_defconfig
+index dd4825ede77..3b78def1166 100644
+--- a/configs/en7523-tplink_ex530v_v1_defconfig
++++ b/configs/en7523-tplink_ex530v_v1_defconfig
+@@ -26,6 +26,7 @@ CONFIG_CMD_BOOTMENU=y
+ # CONFIG_CMD_ELF is not set
+ # CONFIG_CMD_XIMG is not set
+ CONFIG_CMD_BIND=y
++CONFIG_CMD_BIN2MAC=y
+ CONFIG_CMD_GPIO=y
+ CONFIG_CMD_MTD=y
+ CONFIG_CMD_PART=y
+diff --git a/configs/en7523-tplink_xx230v_v1_defconfig b/configs/en7523-tplink_xx230v_v1_defconfig
+index 53a640b548e..83ec440d177 100644
+--- a/configs/en7523-tplink_xx230v_v1_defconfig
++++ b/configs/en7523-tplink_xx230v_v1_defconfig
+@@ -26,6 +26,7 @@ CONFIG_CMD_BOOTMENU=y
+ # CONFIG_CMD_ELF is not set
+ # CONFIG_CMD_XIMG is not set
+ CONFIG_CMD_BIND=y
++CONFIG_CMD_BIN2MAC=y
+ CONFIG_CMD_GPIO=y
+ CONFIG_CMD_MTD=y
+ CONFIG_CMD_PART=y
+diff --git a/configs/en7523_evb_defconfig b/configs/en7523_evb_defconfig
+index c85c12d438d..15cd2b1240c 100644
+--- a/configs/en7523_evb_defconfig
++++ b/configs/en7523_evb_defconfig
+@@ -25,6 +25,7 @@ CONFIG_CMD_BOOTMENU=y
+ # CONFIG_CMD_ELF is not set
+ # CONFIG_CMD_XIMG is not set
+ CONFIG_CMD_BIND=y
++CONFIG_CMD_BIN2MAC=y
+ CONFIG_CMD_GPIO=y
+ CONFIG_CMD_MTD=y
+ # CONFIG_CMD_SETEXPR is not set
+diff --git a/defenvs/en7523-askey-rtf8225vw_env b/defenvs/en7523-askey-rtf8225vw_env
+index aa27c061724..162acad3341 100644
+--- a/defenvs/en7523-askey-rtf8225vw_env
++++ b/defenvs/en7523-askey-rtf8225vw_env
+@@ -1,26 +1,33 @@
+ loadaddr=0x89400000
+ ipaddr=192.168.1.1
+ serverip=192.168.1.10
+-bootled_pwr=green:power
++bootled_pwr=blue:wan-online-8
+ 
+ bootconf=config-1
+ bootfile=openwrt-airoha-en7523-askey_rtf8225vw-initramfs-kernel.bin
++bootloaderfile=openwrt-airoha-en7523-askey_rtf8225vw-uboot-bootloader.bin
+ 
+ boot_tftp=tftpboot $loadaddr $bootfile && bootm $loadaddr#$bootconf
+ ubi_read_openwrt=ubi read $loadaddr fit && iminfo $loadaddr
+ 
+-boot_openwrt=led $bootled_pwr blink 155; run ubi_read_openwrt && bootm $loadaddr#$bootconf ; led $bootled_pwr off
++boot_openwrt=led $bootled_pwr blink 255; ( run ubi_read_openwrt || echo Install openwrt ; run boot_tftp ) && bootm $loadaddr#$bootconf ; led $bootled_pwr on
+ boot_ubi=ubi part ubi && run boot_openwrt
+ 
++upgrade_uboot=\
++  mw.b 0x896C0000 0xff 0x100000 && tftpboot 0x896C0000 ${bootloaderfile} && \
++  mtd erase u-boot && mtd write u-boot 0x896C0000
++
+ format_ubi_part=\
+-  mtd read spi-nand0 0x89400000 0x50c0000 0x40000 && \  # bootenv0
+-  mtd read spi-nand0 0x89440000 0x5100000 0x40000 && \  # bootenv1
+-  mtd read spi-nand0 0x89480000 0x6dc0000 0x240000 && \ # ART/reservearea
++  mtd read spi-nand0 0x89400000 0x50c0000 0x040000 && \
++  mtd read spi-nand0 0x89440000 0x5100000 0x040000 && \
++  mtd read spi-nand0 0x89480000 0x6dc0000 0x240000 && \
+   \
+   mtd erase ubi && ubi part ubi && \
+-  ubi create ubootenv 0x40000 && ubi write 0x89400000 ubootenv 0x400000 && \
+-  ubi create ubootenv2 0x40000 && ubi write 0x89440000 ubootenv2 0x400000 && \
+-  ubi create art 0x400000 && ubi write 0x89480000 art 0x400000
++  ubi create ubootenv 0x40000 && \
++  ubi create ubootenv2 0x40000 && \
++  ubi create art 0x400000 && ubi write 0x89480000 art 0x400000 && \
++  (env import -b 0x89400000 0x040000 ethaddr asp_gpon_sn asp_gpon_pw || env import -b 0x89440000 0x040000 ethaddr asp_gpon_sn asp_gpon_pw) && \
++  saveenv && saveenv && run upgrade_uboot
+ 
+ bootcmd=run boot_ubi
+ bootdelay=3
+@@ -30,5 +37,6 @@ bootmenu_delay=3
+ bootmenu_title=      34m( ( ( mOpenWrt34m ) ) )
+ bootmenu_0=Run default boot command.=run boot_openwrt
+ bootmenu_1=Boot system via TFTP.=run boot_tftp ; run bootmenu_confirm_return
+-bootmenu_3=Format UBI partition.=ubi info ubi && (echo not require format again) || (run format_ubi_part && echo now install openwrt with initramfs)
++bootmenu_2=Format UBI partition and install openwrt u-boot.=ubi info ubi && (echo not require format again) || (run format_ubi_part && echo now install openwrt with initramfs)
++bootmenu_3=Upgrade u-boot.=run upgrade_uboot
+ bootmenu_5=Reboot.=reset
+diff --git a/defenvs/en7523-mitrastar_gpt_2742gx4x5v6_env b/defenvs/en7523-mitrastar_gpt_2742gx4x5v6_env
+index 89f438a0b69..5465dd6b87c 100644
+--- a/defenvs/en7523-mitrastar_gpt_2742gx4x5v6_env
++++ b/defenvs/en7523-mitrastar_gpt_2742gx4x5v6_env
+@@ -1,26 +1,32 @@
+ loadaddr=0x89400000
+ ipaddr=192.168.1.1
+ serverip=192.168.1.10
+-bootled_pwr=blue:power
++bootled_pwr=blue:wan-online-10
+ 
+ bootconf=config-1
+-bootfile=openwrt-airoha-en7523-mitrastar-gpt-2742gx4x5v6-initramfs-kernel.bin
++bootfile=openwrt-airoha-en7523-mitrastar_gpt-2742gx4x5v6-initramfs-kernel.bin
++bootloaderfile=openwrt-airoha-en7523-mitrastar_gpt-2742gx4x5v6-uboot-bootloader.bin
+ 
+ boot_tftp=tftpboot $loadaddr $bootfile && bootm $loadaddr#$bootconf
+ ubi_read_openwrt=ubi read $loadaddr fit && iminfo $loadaddr
+ 
+-boot_openwrt=led $bootled_pwr blink 155; run ubi_read_openwrt && bootm $loadaddr#$bootconf ; led $bootled_pwr off
++boot_openwrt=led $bootled_pwr blink 255; ( run ubi_read_openwrt || echo Install openwrt ; run boot_tftp ) && bootm $loadaddr#$bootconf ; led $bootled_pwr on
+ boot_ubi=ubi part ubi && run boot_openwrt
+ 
++upgrade_uboot=\
++  mw.b 0x8964044e 0xff 0x100000 && tftpboot 0x8964044e ${bootloaderfile} && \
++  mtd erase u-boot && mtd write u-boot 0x8964044e
++
+ format_ubi_part=\
+-  mtd read spi-nand0 0x89400000 0x50c0000 0x40000 && \  # bootenv0
+-  mtd read spi-nand0 0x89440000 0x5100000 0x40000 && \  # bootenv1
+-  mtd read spi-nand0 0x89480000 0x6dc0000 0x240000 && \ # ART/reservearea
++  mtd read spi-nand0 0x89400000 0xeb80000 0x240000 && \
++  mtd read spi-nand0 0x89640000 0x005f800 0x00044e && \
+   \
+   mtd erase ubi && ubi part ubi && \
+-  ubi create ubootenv 0x40000 && ubi write 0x89400000 ubootenv 0x400000 && \
+-  ubi create ubootenv2 0x40000 && ubi write 0x89440000 ubootenv2 0x400000 && \
+-  ubi create art 0x400000 && ubi write 0x89480000 art 0x400000
++  ubi create ubootenv 0x40000 && \
++  ubi create ubootenv2 0x40000 && \
++  ubi create art 0x240000 && ubi write 0x89400000 art 0x240000 && \
++  setenv ethaddr && bin2mac ethaddr 0x89640448 0x6 && \
++  saveenv && saveenv && run upgrade_uboot
+ 
+ bootcmd=run boot_ubi
+ bootdelay=3
+@@ -30,5 +36,6 @@ bootmenu_delay=3
+ bootmenu_title=      34m( ( ( mOpenWrt34m ) ) )
+ bootmenu_0=Run default boot command.=run boot_openwrt
+ bootmenu_1=Boot system via TFTP.=run boot_tftp ; run bootmenu_confirm_return
+-bootmenu_3=Format UBI partition.=ubi info ubi && (echo not require format again) || (run format_ubi_part && echo now install openwrt with initramfs)
++bootmenu_2=Format UBI partition and install openwrt u-boot.=ubi info ubi && (echo not require format again) || (run format_ubi_part && echo now install openwrt with initramfs)
++bootmenu_3=Upgrade u-boot.=run upgrade_uboot
+ bootmenu_5=Reboot.=reset
+diff --git a/defenvs/en7523-tplink-ex530v_v1_env b/defenvs/en7523-tplink-ex530v_v1_env
+index 647015df956..7103993efd3 100644
+--- a/defenvs/en7523-tplink-ex530v_v1_env
++++ b/defenvs/en7523-tplink-ex530v_v1_env
+@@ -5,17 +5,23 @@ bootled_pwr=green:power
+ 
+ bootconf=config-1
+ bootfile=openwrt-airoha-en7523-tplink_ex530v-v1-initramfs-kernel.bin
++bootloaderfile=openwrt-airoha-en7523-tplink_ex530v-v1-uboot-bootloader.bin
+ 
+ boot_tftp=tftpboot $loadaddr $bootfile && bootm $loadaddr#$bootconf
+ ubi_read_openwrt=ubi read $loadaddr fit && iminfo $loadaddr
+ 
+-boot_openwrt=led $bootled_pwr blink 155; run ubi_read_openwrt && bootm $loadaddr#$bootconf ; led $bootled_pwr off
++boot_openwrt=led $bootled_pwr blink 255; ( run ubi_read_openwrt || echo Install openwrt ; run boot_tftp ) && bootm $loadaddr#$bootconf ; led $bootled_pwr on
+ boot_ubi=ubi part ubi && run boot_openwrt
+ 
+-format_ubi_part=mtd read spi-nand0 $loadaddr 0xa0000 0x400000 && \
++upgrade_uboot=\
++  mw.b 0x89800000 0xff 0x100000 && tftpboot 0x89800000 ${bootloaderfile} && \
++  mtd erase u-boot && mtd write u-boot 0x89800000
++
++format_ubi_part=\
++  mtd read spi-nand0 0x89400000 0xa0000 0x400000 && \
+   mtd erase ubi && ubi part ubi && \
+   ubi create ubootenv 0x1f000 && ubi create ubootenv2 0x1f000 && \
+-  ubi create art 0x400000 && ubi write $loadaddr art 0x400000
++  ubi create art 0x400000 && ubi write 0x89400000 art 0x400000
+ 
+ bootcmd=run boot_ubi
+ bootdelay=3
+diff --git a/defenvs/en7523-tplink-xx230v_v1_env b/defenvs/en7523-tplink-xx230v_v1_env
+index cb1124672cc..ec45c70f876 100644
+--- a/defenvs/en7523-tplink-xx230v_v1_env
++++ b/defenvs/en7523-tplink-xx230v_v1_env
+@@ -5,17 +5,25 @@ bootled_pwr=green:power
+ 
+ bootconf=config-1
+ bootfile=openwrt-airoha-en7523-tplink_xx230v-v1-initramfs-kernel.bin
++bootloaderfile=openwrt-airoha-en7523-tplink_xx230v-v1-uboot-bootloader.bin
+ 
+ boot_tftp=tftpboot $loadaddr $bootfile && bootm $loadaddr#$bootconf
+ ubi_read_openwrt=ubi read $loadaddr fit && iminfo $loadaddr
+ 
+-boot_openwrt=led $bootled_pwr blink 155; run ubi_read_openwrt && bootm $loadaddr#$bootconf ; led $bootled_pwr off
++boot_openwrt=led $bootled_pwr blink 255; ( run ubi_read_openwrt || echo Install openwrt ; run boot_tftp ) && bootm $loadaddr#$bootconf ; led $bootled_pwr on
+ boot_ubi=ubi part ubi && run boot_openwrt
+ 
+-format_ubi_part=mtd read spi-nand0 $loadaddr 0xa0000 $art_size && \
++upgrade_uboot=\
++  mw.b 0x89600000 0xff 0x100000 && tftpboot 0x89600000 ${bootloaderfile} && \
++  mtd erase u-boot && mtd write u-boot 0x89600000
++
++format_ubi_part=\
++  mtd read spi-nand0 0x89400000 0xa0000 $art_size && \
+   mtd erase ubi && ubi part ubi && \
+-  ubi create ubootenv 0x1f000 && ubi create ubootenv2 0x1f000 && \
+-  ubi create art $art_size && ubi write $loadaddr art $art_size
++  ubi create ubootenv 0x1f000 && \
++  ubi create ubootenv2 0x1f000 && \
++  ubi create art $art_size && ubi write 0x89400000 art $art_size && \
++  run upgrade_uboot
+ 
+ xx230_ubi_part=setenv art_size 0x100000 && run format_ubi_part
+ xx530_ubi_part=setenv art_size 0x200000 && run format_ubi_part
+@@ -30,4 +38,5 @@ bootmenu_0=Run default boot command.=run boot_openwrt
+ bootmenu_1=Boot system via TFTP.=run boot_tftp ; run bootmenu_confirm_return
+ bootmenu_2=Format UBI partition for xx230v.=run xx230_ubi_part
+ bootmenu_3=Format UBI partition for xx530v.=run xx530_ubi_part
++bootmenu_4=Upgrade u-boot.=run upgrade_uboot
+ bootmenu_5=Reboot.=reset
+diff --git a/dts/upstream/src/arm/airoha/en7523-askey-rtf8225vw.dts b/dts/upstream/src/arm/airoha/en7523-askey-rtf8225vw.dts
+index 76ba13b8c9f..88ded6962d1 100644
+--- a/dts/upstream/src/arm/airoha/en7523-askey-rtf8225vw.dts
++++ b/dts/upstream/src/arm/airoha/en7523-askey-rtf8225vw.dts
+@@ -2,6 +2,7 @@
+ /dts-v1/;
+ 
+ #include <dt-bindings/input/linux-event-codes.h>
++#include <dt-bindings/leds/common.h>
+ #include <dt-bindings/gpio/gpio.h>
+ #include "en7523.dtsi"
+ 
+@@ -18,6 +19,67 @@
+ 		stdout-path = "serial0:115200n8";
+ 		linux,usable-memory-range = <0x80200000 0x1fe00000>;
+ 	};
++
++	keys {
++		compatible = "gpio-keys";
++
++		reset {
++			label = "reset";
++			linux,code = <KEY_RESTART>;
++			gpios = <&pinctrl 0 GPIO_ACTIVE_LOW>;
++			debounce-interval = <60>;
++		};
++
++		wps5 {
++			label = "wps5";
++			linux,code = <KEY_WPS_BUTTON>;
++			gpios = <&pinctrl 21 GPIO_ACTIVE_LOW>;
++			debounce-interval = <60>;
++		};
++
++		wps2 {
++			label = "wps2";
++			linux,code = <KEY_WPS_BUTTON>;
++			gpios = <&pinctrl 26 GPIO_ACTIVE_LOW>;
++			debounce-interval = <60>;
++		};
++	};
++
++	leds {
++		compatible = "gpio-leds";
++
++		/* 2.4Ghz */
++		led@10 {
++			color = <LED_COLOR_ID_BLUE>;
++			function = LED_FUNCTION_WLAN_2GHZ;
++			function-enumerator = <10>;
++			gpios = <&pinctrl 10 GPIO_ACTIVE_LOW>;
++		};
++
++		/* 5Ghz */
++		led@11 {
++			color = <LED_COLOR_ID_BLUE>;
++			function = LED_FUNCTION_WLAN_5GHZ;
++			function-enumerator = <11>;
++			gpios = <&pinctrl 11 GPIO_ACTIVE_LOW>;
++		};
++
++		/* Power */
++		led_power: led@8 {
++			color = <LED_COLOR_ID_BLUE>;
++			function = LED_FUNCTION_WAN_ONLINE;
++			function-enumerator = <8>;
++			gpios = <&pinctrl 8 GPIO_ACTIVE_LOW>;
++		};
++
++		/* xPON */
++		led_pon: led@9 {
++			color = <LED_COLOR_ID_RED>;
++			function = LED_FUNCTION_WAN_ONLINE;
++			function-enumerator = <9>;
++			gpios = <&pinctrl 9 GPIO_ACTIVE_LOW>;
++		};
++	};
+ };
+ 
+ &pcie0 {
+@@ -48,14 +110,13 @@
+ 
+ 		partition@0 {
+ 			label = "u-boot";
+-			reg = <0x00000000 0x00100000>;
+-			read-only;
++			reg = <0x000000 0x100000>;
+ 		};
+ 
+ 		partition@100000 {
+ 			label = "ubi";
+ 			compatible = "linux,ubi";
+-			reg = <0x00100000 0x10000000>;
++			reg = <0x100000 0x000000>;
+ 		};
+ 	};
+ };
+diff --git a/dts/upstream/src/arm/airoha/en7523-mitrastar_gpt_2742gx4x5v6.dts b/dts/upstream/src/arm/airoha/en7523-mitrastar_gpt_2742gx4x5v6.dts
+index cb48e18636a..1cddbc0dcc7 100644
+--- a/dts/upstream/src/arm/airoha/en7523-mitrastar_gpt_2742gx4x5v6.dts
++++ b/dts/upstream/src/arm/airoha/en7523-mitrastar_gpt_2742gx4x5v6.dts
+@@ -133,14 +133,13 @@
+ 
+ 		partition@0 {
+ 			label = "u-boot";
+-			reg = <0x00000000 0x00100000>;
+-			read-only;
++			reg = <0x000000 0x100000>;
+ 		};
+ 
+ 		partition@100000 {
+ 			label = "ubi";
+ 			compatible = "linux,ubi";
+-			reg = <0x00100000 0x10000000>;
++			reg = <0x100000 0x000000>;
+ 		};
+ 	};
+ };
+diff --git a/dts/upstream/src/arm/airoha/en7523-tplink-ex530v_v1.dts b/dts/upstream/src/arm/airoha/en7523-tplink-ex530v_v1.dts
+index e0c6704ca7f..9286bdb5a70 100644
+--- a/dts/upstream/src/arm/airoha/en7523-tplink-ex530v_v1.dts
++++ b/dts/upstream/src/arm/airoha/en7523-tplink-ex530v_v1.dts
+@@ -110,14 +110,14 @@
+ 
+ 		partition@0 {
+ 			label = "u-boot";
+-			reg = <0x00000000 0x00100000>;
++			reg = <0x000000 0x100000>;
+ 			read-only;
+ 		};
+ 
+ 		partition@100000 {
+ 			label = "ubi";
+ 			compatible = "linux,ubi";
+-			reg = <0x00100000 0x00080000>;
++			reg = <0x100000 0x000000>;
+ 		};
+ 	};
+ };
+diff --git a/dts/upstream/src/arm/airoha/en7523-tplink-xx230v_v1.dts b/dts/upstream/src/arm/airoha/en7523-tplink-xx230v_v1.dts
+index f1b942c3e44..e005b890612 100644
+--- a/dts/upstream/src/arm/airoha/en7523-tplink-xx230v_v1.dts
++++ b/dts/upstream/src/arm/airoha/en7523-tplink-xx230v_v1.dts
+@@ -109,12 +109,12 @@
+ 
+ 		partition@0 {
+ 			label = "u-boot";
+-			reg = <0x00000000 0x00100000>;
++			reg = <0x000000 0x100000>;
+ 		};
+ 
+ 		partition@100000 {
+ 			label = "ubi";
+-			reg = <0x00100000 0x08000000>;
++			reg = <0x100000 0x000000>;
+ 		};
+ 	};
+ };
+-- 
+2.55.0
+

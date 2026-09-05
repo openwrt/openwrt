@@ -1,0 +1,672 @@
+From 82d9075952670229defb6e6e54d5003d58f28d34 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Tue, 11 Aug 2026 14:04:36 -0300
+Subject: [PATCH] net: airoha: use airoha_eth as the common host object
+
+Allocate struct airoha_eth in the shared platform driver and pass it to both generation backends. Remove the tiny EcoNet host wrapper, keep EN751221 state in generation-private storage, map the common FE/GDMP resources into the shared host, and expose the common PPE device through ppe_dev. This makes GDM, xPON and offload code able to retain one host type across both generations.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c      |  28 +-
+ drivers/net/ethernet/airoha/airoha_eth.h      |  10 +-
+ drivers/net/ethernet/airoha/airoha_eth_gen1.c | 241 ++++++++----------
+ drivers/net/ethernet/airoha/airoha_eth_gen1.h |  12 +-
+ drivers/net/ethernet/airoha/airoha_eth_gen2.c |  20 +-
+ 5 files changed, 149 insertions(+), 162 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
+index f1e9ef733933..b30f5347d7aa 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -2,28 +2,46 @@
+ #include <linux/module.h>
+ #include <linux/of.h>
+ #include <linux/platform_device.h>
++#include <linux/slab.h>
+ 
+ #include "airoha_eth.h"
+ 
+ static int airoha_eth_probe(struct platform_device *pdev)
+ {
+ 	const struct airoha_eth_soc_data *soc;
++	struct airoha_eth *eth;
++	int err;
+ 
+ 	soc = of_device_get_match_data(&pdev->dev);
+ 	if (!soc || !soc->eth_ops || !soc->eth_ops->probe)
+ 		return dev_err_probe(&pdev->dev, -EINVAL,
+ 				     "missing Ethernet backend data\n");
+ 
+-	return soc->eth_ops->probe(pdev);
++	eth = devm_kzalloc(&pdev->dev, sizeof(*eth), GFP_KERNEL);
++	if (!eth)
++		return -ENOMEM;
++
++	eth->dev = &pdev->dev;
++	eth->soc = soc;
++	platform_set_drvdata(pdev, eth);
++
++	err = soc->eth_ops->probe(pdev, eth);
++	if (err)
++		platform_set_drvdata(pdev, NULL);
++
++	return err;
+ }
+ 
+ static void airoha_eth_remove(struct platform_device *pdev)
+ {
+-	const struct airoha_eth_soc_data *soc;
++	struct airoha_eth *eth = platform_get_drvdata(pdev);
+ 
+-	soc = of_device_get_match_data(&pdev->dev);
+-	if (soc && soc->eth_ops && soc->eth_ops->remove)
+-		soc->eth_ops->remove(pdev);
++	if (!eth || !eth->soc || !eth->soc->eth_ops ||
++	    !eth->soc->eth_ops->remove)
++		return;
++
++	eth->soc->eth_ops->remove(pdev, eth);
++	platform_set_drvdata(pdev, NULL);
+ }
+ 
+ static const struct of_device_id airoha_eth_of_match[] = {
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.h b/drivers/net/ethernet/airoha/airoha_eth.h
+index 4be989f37d56..4ae2fd2829f8 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.h
++++ b/drivers/net/ethernet/airoha/airoha_eth.h
+@@ -779,9 +779,11 @@ enum airoha_ids {
+ 
+ struct platform_device;
+ 
++struct airoha_eth;
++
+ struct airoha_eth_ops {
+-	int (*probe)(struct platform_device *pdev);
+-	void (*remove)(struct platform_device *pdev);
++	int (*probe)(struct platform_device *pdev, struct airoha_eth *eth);
++	void (*remove)(struct platform_device *pdev, struct airoha_eth *eth);
+ };
+ 
+ struct airoha_eth_soc_data {
+@@ -818,6 +820,7 @@ struct airoha_eth {
+ 	struct airoha_npu __rcu *npu;
+ 
+ 	struct airoha_ppe *ppe;
++	struct airoha_ppe_dev *ppe_dev;
+ 	const struct airoha_ppe_host_ops *ppe_host_ops;
+ 	struct rhashtable flow_table;
+ 
+@@ -828,6 +831,9 @@ struct airoha_eth {
+ 
+ 	struct airoha_qdma qdma[AIROHA_MAX_NUM_QDMA];
+ 	struct airoha_gdm_port **ports;
++
++	/* Generation-private host state. */
++	void *priv;
+ };
+ 
+ #define airoha_fe_rr(eth, offset)				\
+diff --git a/drivers/net/ethernet/airoha/airoha_eth_gen1.c b/drivers/net/ethernet/airoha/airoha_eth_gen1.c
+index 80372b91bab5..2e11de9fd639 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth_gen1.c
++++ b/drivers/net/ethernet/airoha/airoha_eth_gen1.c
+@@ -112,7 +112,7 @@ struct econet_qdma {
+ 	struct econet_q_rx 		q_rx[QDMA_NUM_CHAINS];
+ 
+ 	/* Not modified after init */
+-	struct econet_eth 		*eth;
++	struct airoha_eth 		*eth;
+ 	struct device 			*dev;
+ 	int 				id;
+ 	struct fwdesc 			*hwf_desc;
+@@ -207,7 +207,7 @@ static void econet_qdma_rx_process_one(struct econet_q_rx *q, u32 cpu_i,
+ 	hash = get_erx_ppe_entry(&desc.msg.erx);
+ 	skb_set_hash(skb, jhash_1word(hash, 0),
+ 		     PKT_HASH_TYPE_L4);
+-	airoha_ppe_dev_check_skb_reason(q->qdma->eth->ppe, skb, hash,
++	airoha_ppe_dev_check_skb_reason(q->qdma->eth->ppe_dev, skb, hash,
+ 					get_erx_crsn(&desc.msg.erx));
+ 
+ 	sport = get_erx_sport(&desc.msg.erx);
+@@ -1380,7 +1380,7 @@ int econet_qdma_unuse(struct econet_qdma *qdma)
+ 	return 0;
+ }
+ 
+-struct econet_qdma *econet_qdma_new(struct econet_eth *eth,
++struct econet_qdma *econet_qdma_new(struct airoha_eth *eth,
+ 				void __iomem *qdma_regs,
+ 				int id,
+ 				int *irqs,
+@@ -1481,7 +1481,7 @@ struct econet_gdm_port {
+ 
+ 	struct econet_qdma *qdma;
+ 
+-	struct econet_eth *eth;
++	struct airoha_eth *eth;
+ 
+ 	enum etx_fport fport;
+ 
+@@ -2015,7 +2015,7 @@ static int econet_setup_phylink(struct econet_gdm_port *port,
+ 	return airoha_gdm_phylink_create(&port->common, np, phy_mode);
+ }
+ 
+-struct net_device *econet_alloc_gdm_port(struct econet_eth *eth,
++struct net_device *econet_alloc_gdm_port(struct airoha_eth *eth,
+ 				       struct device_node *np,
+ 				       struct gdm __iomem *regs,
+ 				       struct econet_qdma *qdma,
+@@ -2047,7 +2047,7 @@ struct net_device *econet_alloc_gdm_port(struct econet_eth *eth,
+ 	 */
+ 	ndev->hw_features = NETIF_F_IP_CSUM | NETIF_F_RXCSUM |
+ 			      NETIF_F_IPV6_CSUM;
+-	if (eth->ppe && eth->ppe->enabled)
++	if (eth->ppe_dev && eth->ppe_dev->enabled)
+ 		ndev->hw_features |= NETIF_F_HW_TC;
+ 
+ 	ndev->features |= ndev->hw_features;
+@@ -2065,7 +2065,7 @@ struct net_device *econet_alloc_gdm_port(struct econet_eth *eth,
+ 			       fport == ETX_FPORT_GDM2 ? DPORT_GDMA2 :
+ 						      DPORT_GDMA1,
+ 			       port, NULL);
+-	port->common.ppe = eth->ppe;
++	port->common.ppe = eth->ppe_dev;
+ 	u64_stats_init(&port->stats.syncp);
+ 	spin_lock_init(&port->stats.lock);
+ 	spin_lock_init(&port->reg_lock);
+@@ -2108,11 +2108,8 @@ struct net_device *econet_alloc_gdm_port(struct econet_eth *eth,
+ 
+ /* Frame-engine platform driver. */
+ 
+-struct econet_eth_pvt {
+-	struct econet_eth			pub;
+-	const struct airoha_eth_soc_data	*soc;
++struct airoha_eth_gen1 {
+ 	struct net_device		*ports[ECONET_NUM_GDM_PORTS];
+-	void __iomem			*fe_base;
+ 	struct gdm __iomem		*gdm[ECONET_NUM_GDM_PORTS];
+ 	void __iomem			*ppe_base;
+ 	struct qregs __iomem		*qdma_regs[ECONET_NUM_QDMA];
+@@ -2121,6 +2118,11 @@ struct econet_eth_pvt {
+ 	struct econet_qdma		*qdma[ECONET_NUM_QDMA];
+ };
+ 
++static inline struct airoha_eth_gen1 *airoha_eth_gen1_priv(struct airoha_eth *eth)
++{
++	return eth->priv;
++}
++
+ #define ECONET_FE_GDM1_OFFSET	0x0400
+ #define ECONET_FE_PPE_OFFSET	0x0c00
+ #define ECONET_FE_GDM2_OFFSET	0x1400
+@@ -2135,33 +2137,34 @@ static bool econet_en751221_dsa_sport(u8 sport)
+ 	       sport < EN751221_DSA_SPORT_BASE + EN751221_DSA_NUM_PORTS;
+ }
+ 
+-static struct net_device *econet_get_sport_dev(struct econet_eth_pvt *eth,
++static struct net_device *econet_get_sport_dev(struct airoha_eth *eth,
+ 					     u8 sport)
+ {
++	struct airoha_eth_gen1 *priv = airoha_eth_gen1_priv(eth);
++
+ 	/*
+ 	 * EN7512/EN7521 vendor RX metadata uses SPORT_QDMA_LAN (0) for packets
+ 	 * delivered to the CPU by QDMA0 and SPORT_QDMA_WAN (5) for QDMA1.
+ 	 * These are valid source-port values, not malformed descriptors.
+ 	 */
+ 	if (sport == ETX_FPORT_GDM2 || sport == ETX_FPORT_QDMA1_CPU)
+-		return eth->ports[1];
++		return priv->ports[1];
+ 
+ 	if (sport == ETX_FPORT_GDM1 || sport == ETX_FPORT_QDMA0_CPU ||
+ 	    (eth->soc->en751221_special_tag &&
+ 	     econet_en751221_dsa_sport(sport)))
+-		return eth->ports[0];
++		return priv->ports[0];
+ 
+-	dev_info_ratelimited(eth->pub.dev, "rx: on unexpected sport %u\n", sport);
+-	return eth->ports[0];
++	dev_info_ratelimited(eth->dev, "rx: on unexpected sport %u\n", sport);
++	return priv->ports[0];
+ }
+ 
+-int econet_rx_before_recv(struct econet_eth *eth, struct sk_buff *skb,
+-			u8 sport)
++int econet_rx_before_recv(struct airoha_eth *eth, struct sk_buff *skb,
++			  u8 sport)
+ {
+-	struct econet_eth_pvt *ep = (struct econet_eth_pvt *) eth;
+ 	struct net_device *port;
+ 
+-	port = econet_get_sport_dev(ep, sport);
++	port = econet_get_sport_dev(eth, sport);
+ 	if (!port)
+ 		return -ENODEV;
+ 
+@@ -2175,78 +2178,60 @@ int econet_rx_before_recv(struct econet_eth *eth, struct sk_buff *skb,
+ 	skb->dev = port;
+ 	skb->protocol = eth_type_trans(skb, port);
+ 
+-	if (netdev_uses_dsa(port)) {
+-		/* PPE module requires untagged packets to work
+-		 * properly and it provides DSA port index via the
+-		 * DMA descriptor. Report DSA tag to the DSA stack
+-		 * via skb dst info.
+-		 */
+-
+-		// On EN751221 generally, this is not done, but the
+-		// EN7526C is special cased and it does do this for
+-		// that one. If we need it, we'll want to do one
+-		// codepath for everything. For now we'll do nothing
+-		// and hope that the tag-basd DSA works.
+-		//port_num = (sp_tag & 0x7); /*switch port id*/
+-		#if 0
+-		u32 sptag = get_erx_sp_tag(&desc.t.erx);
+-		if (sptag < ARRAY_SIZE(port->dsa_meta) &&
+-			port->dsa_meta[sptag])
+-			skb_dst_set_noref(q->skb,
+-						&port->dsa_meta[sptag]->dst);
+-		#endif
+-	}
+-
+ 	return 0;
+ }
+ 
+-static int econet_init_port(struct econet_eth_pvt *eth, struct device_node *np)
++static int econet_init_port(struct airoha_eth *eth, struct device_node *np)
+ {
++	struct airoha_eth_gen1 *priv = airoha_eth_gen1_priv(eth);
+ 	struct net_device *dev;
+ 	u32 id;
+ 	int err;
+ 
+-	err = airoha_eth_get_port_id(eth->pub.dev, np, 1,
+-				     ARRAY_SIZE(eth->ports), &id);
++	err = airoha_eth_get_port_id(eth->dev, np, 1,
++				     ARRAY_SIZE(priv->ports), &id);
+ 	if (err)
+ 		return err;
+ 
+-	if (eth->ports[id - 1]) {
+-		dev_err(eth->pub.dev, "duplicate gdm port id: %d\n", id);
++	if (priv->ports[id - 1]) {
++		dev_err(eth->dev, "duplicate gdm port id: %d\n", id);
+ 		return -EINVAL;
+ 	}
+ 
+ 	if (id == 1)
+-		dev = econet_alloc_gdm_port(&eth->pub, np,
+-					  eth->gdm[0],
+-					  eth->qdma[0],
+-					  ETX_FPORT_GDM1,
+-					  false);
++		dev = econet_alloc_gdm_port(eth, np,
++					    priv->gdm[0],
++					    priv->qdma[0],
++					    ETX_FPORT_GDM1,
++					    false);
+ 	else if (id == 2)
+-		dev = econet_alloc_gdm_port(&eth->pub, np,
+-					  eth->gdm[1],
+-					  eth->qdma[1],
+-					  ETX_FPORT_GDM2,
+-					  true);
++		dev = econet_alloc_gdm_port(eth, np,
++					    priv->gdm[1],
++					    priv->qdma[1],
++					    ETX_FPORT_GDM2,
++					    true);
+ 	else
+ 		return -EINVAL;
+ 
+ 	if (IS_ERR(dev))
+ 		return PTR_ERR(dev);
+ 
+-	eth->ports[id - 1] = dev;
++	priv->ports[id - 1] = dev;
+ 	return 0;
+ }
+ 
+ static void econet_prepare_qdma_cfg(struct econet_qdma_cfg *cfg,
+-				  const struct airoha_eth_soc_data *soc, int id)
++				    const struct airoha_eth_soc_data *soc,
++				    int id)
+ {
++	int i;
++
+ 	memset(cfg, 0, sizeof(*cfg));
+-	for (int i = 0; i < QDMA_NUM_CHAINS; i++)
++	for (i = 0; i < QDMA_NUM_CHAINS; i++)
+ 		cfg->num_rx_descs[i] = 128;
+-	for (int i = 0; i < QDMA_NUM_CHAINS; i++)
++	for (i = 0; i < QDMA_NUM_CHAINS; i++)
+ 		cfg->num_tx_descs[i] = 128;
+-	for (int i = 0; i < QDMA_NUM_TX_DONE; i++) {
++	for (i = 0; i < QDMA_NUM_TX_DONE; i++) {
+ 		cfg->done_list_size[i] = 256;
+ 		cfg->done_list_irq_threshold[i] = 1;
+ 	}
+@@ -2296,141 +2281,137 @@ static void econet_prepare_qdma_cfg(struct econet_qdma_cfg *cfg,
+ 	}
+ }
+ 
+-void airoha_eth_gen1_remove(struct platform_device *pdev)
++void airoha_eth_gen1_remove(struct platform_device *pdev,
++			    struct airoha_eth *eth)
+ {
+-	struct econet_eth_pvt *eth = platform_get_drvdata(pdev);
++	struct airoha_eth_gen1 *priv = airoha_eth_gen1_priv(eth);
+ 	int i;
+ 
+-	if (!eth)
++	if (!priv)
+ 		return;
+ 
+-
+-	for (i = 0; i < ARRAY_SIZE(eth->ports); i++) {
+-		if (!eth->ports[i])
++	for (i = 0; i < ARRAY_SIZE(priv->ports); i++) {
++		if (!priv->ports[i])
+ 			continue;
+ 
+-		unregister_netdev(eth->ports[i]);
++		unregister_netdev(priv->ports[i]);
+ 		airoha_gdm_phylink_destroy(&((struct econet_gdm_port *)
+-					netdev_priv(eth->ports[i]))->common);
+-		of_node_put(eth->ports[i]->dev.of_node);
+-		eth->ports[i]->dev.of_node = NULL;
++					netdev_priv(priv->ports[i]))->common);
++		of_node_put(priv->ports[i]->dev.of_node);
++		priv->ports[i]->dev.of_node = NULL;
+ 	}
+ 
+-	airoha_ppe_econet_deinit(eth->pub.ppe);
+-	eth->pub.ppe = NULL;
++	airoha_ppe_econet_deinit(eth->ppe_dev);
++	eth->ppe_dev = NULL;
+ 
+-	for (i = 0; i < ARRAY_SIZE(eth->qdma); i++)
+-		if (eth->qdma[i])
+-			econet_qdma_destroy(eth->qdma[i]);
++	for (i = 0; i < ARRAY_SIZE(priv->qdma); i++)
++		if (priv->qdma[i])
++			econet_qdma_destroy(priv->qdma[i]);
+ 
+-	platform_set_drvdata(pdev, NULL);
++	eth->priv = NULL;
+ }
+ 
+-int airoha_eth_gen1_probe(struct platform_device *pdev)
++int airoha_eth_gen1_probe(struct platform_device *pdev, struct airoha_eth *eth)
+ {
+ 	static const char * const qdma_names[ECONET_NUM_QDMA] = {
+ 		"qdma0", "qdma1",
+ 	};
++	struct airoha_eth_gen1 *priv;
+ 	struct resource *fe_res;
+-	struct econet_eth_pvt *eth;
+ 	struct econet_qdma_cfg cfg;
+ 	struct device_node *np;
+ 	void __iomem *fe_base;
+ 	int i, err, irq;
+ 
+-	eth = devm_kzalloc(&pdev->dev, sizeof(*eth), GFP_KERNEL);
+-	if (!eth)
++	priv = devm_kzalloc(eth->dev, sizeof(*priv), GFP_KERNEL);
++	if (!priv)
+ 		return -ENOMEM;
++	eth->priv = priv;
+ 
+-	eth->soc = of_device_get_match_data(&pdev->dev);
+-	if (!eth->soc)
+-		return dev_err_probe(&pdev->dev, -EINVAL, "No matching SoC data\n");
+-
+-	eth->pub.dev = &pdev->dev;
+-	platform_set_drvdata(pdev, eth);
+-
+-	err = airoha_eth_set_dma_mask(&pdev->dev);
++	err = airoha_eth_set_dma_mask(eth->dev);
+ 	if (err)
+ 		return err;
+ 
+ 	fe_res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "fe");
+ 	if (!fe_res)
+-		return dev_err_probe(&pdev->dev, -EINVAL,
++		return dev_err_probe(eth->dev, -EINVAL,
+ 				     "missing fe register resource\n");
+ 	if (resource_size(fe_res) < ECONET_FE_MIN_SIZE)
+-		return dev_err_probe(&pdev->dev, -EINVAL,
++		return dev_err_probe(eth->dev, -EINVAL,
+ 				     "fe register resource is too small\n");
+ 
+-	fe_base = devm_ioremap_resource(&pdev->dev, fe_res);
++	fe_base = devm_ioremap_resource(eth->dev, fe_res);
+ 	if (IS_ERR(fe_base))
+-		return dev_err_probe(&pdev->dev, PTR_ERR(fe_base),
++		return dev_err_probe(eth->dev, PTR_ERR(fe_base),
+ 				     "failed to map fe registers\n");
+ 
+-	eth->fe_base = fe_base;
+-	eth->gdm[0] = fe_base + ECONET_FE_GDM1_OFFSET;
+-	eth->ppe_base = fe_base + ECONET_FE_PPE_OFFSET;
+-	eth->gdm[1] = fe_base + ECONET_FE_GDM2_OFFSET;
++	eth->fe_regs = fe_base;
++	priv->gdm[0] = fe_base + ECONET_FE_GDM1_OFFSET;
++	priv->ppe_base = fe_base + ECONET_FE_PPE_OFFSET;
++	priv->gdm[1] = fe_base + ECONET_FE_GDM2_OFFSET;
++
++	eth->gdmp_regs = devm_platform_ioremap_resource_byname(pdev, "gdmp");
++	if (IS_ERR(eth->gdmp_regs))
++		return dev_err_probe(eth->dev, PTR_ERR(eth->gdmp_regs),
++				     "failed to map gdmp registers\n");
+ 
+-	for (i = 0; i < ARRAY_SIZE(eth->qdma_regs); i++) {
+-		eth->qdma_regs[i] =
++	for (i = 0; i < ARRAY_SIZE(priv->qdma_regs); i++) {
++		priv->qdma_regs[i] =
+ 			devm_platform_ioremap_resource_byname(pdev, qdma_names[i]);
+-		if (IS_ERR(eth->qdma_regs[i]))
+-			return dev_err_probe(&pdev->dev,
+-					     PTR_ERR(eth->qdma_regs[i]),
++		if (IS_ERR(priv->qdma_regs[i]))
++			return dev_err_probe(eth->dev,
++					     PTR_ERR(priv->qdma_regs[i]),
+ 					     "failed to map %s registers\n",
+ 					     qdma_names[i]);
+ 	}
+ 
+-	eth->reset =
+-		devm_reset_control_array_get_optional_exclusive(&pdev->dev);
+-	if (IS_ERR(eth->reset))
+-		return dev_err_probe(&pdev->dev, PTR_ERR(eth->reset),
++	priv->reset = devm_reset_control_array_get_optional_exclusive(eth->dev);
++	if (IS_ERR(priv->reset))
++		return dev_err_probe(eth->dev, PTR_ERR(priv->reset),
+ 				     "failed to get resets\n");
+ 
+-	if (eth->reset) {
+-		err = reset_control_assert(eth->reset);
++	if (priv->reset) {
++		err = reset_control_assert(priv->reset);
+ 		if (err)
+ 			return err;
+ 
+ 		msleep(20);
+-		err = reset_control_deassert(eth->reset);
++		err = reset_control_deassert(priv->reset);
+ 		if (err)
+ 			return err;
+ 	}
+ 
+-	for (i = 0; i < ARRAY_SIZE(eth->qdma_irq); i++) {
++	for (i = 0; i < ARRAY_SIZE(priv->qdma_irq); i++) {
+ 		irq = platform_get_irq(pdev, i);
+ 		if (irq < 0)
+-			return dev_err_probe(&pdev->dev, irq,
++			return dev_err_probe(eth->dev, irq,
+ 					     "failed to get IRQ %d\n", i);
+-		eth->qdma_irq[i] = irq;
++		priv->qdma_irq[i] = irq;
+ 	}
+ 
+-	BUILD_BUG_ON(ARRAY_SIZE(eth->qdma_irq) !=
++	BUILD_BUG_ON(ARRAY_SIZE(priv->qdma_irq) !=
+ 		     ECONET_NUM_QDMA * QDMA_NUM_IRQS);
+-	for (i = 0; i < ARRAY_SIZE(eth->qdma); i++) {
++	for (i = 0; i < ARRAY_SIZE(priv->qdma); i++) {
+ 		econet_prepare_qdma_cfg(&cfg, eth->soc, i);
+-		eth->qdma[i] = econet_qdma_new(&eth->pub, eth->qdma_regs[i], i,
+-					       &eth->qdma_irq[i * QDMA_NUM_IRQS],
+-					     QDMA_NUM_IRQS, &cfg);
+-		if (IS_ERR(eth->qdma[i])) {
+-			err = PTR_ERR(eth->qdma[i]);
+-			eth->qdma[i] = NULL;
++		priv->qdma[i] = econet_qdma_new(eth, priv->qdma_regs[i], i,
++					       &priv->qdma_irq[i * QDMA_NUM_IRQS],
++					       QDMA_NUM_IRQS, &cfg);
++		if (IS_ERR(priv->qdma[i])) {
++			err = PTR_ERR(priv->qdma[i]);
++			priv->qdma[i] = NULL;
+ 			goto error;
+ 		}
+ 	}
+ 
+-	eth->pub.ppe = airoha_ppe_econet_init(&pdev->dev,
+-					      pdev->dev.of_node,
+-					      eth->fe_base,
+-					      eth->ppe_base);
+-	if (IS_ERR(eth->pub.ppe)) {
+-		err = PTR_ERR(eth->pub.ppe);
+-		eth->pub.ppe = NULL;
++	eth->ppe_dev = airoha_ppe_econet_init(eth->dev, eth->dev->of_node,
++					      eth->fe_regs, priv->ppe_base);
++	if (IS_ERR(eth->ppe_dev)) {
++		err = PTR_ERR(eth->ppe_dev);
++		eth->ppe_dev = NULL;
+ 		goto error;
+ 	}
+ 
+-	for_each_available_child_of_node(pdev->dev.of_node, np) {
++	for_each_available_child_of_node(eth->dev->of_node, np) {
+ 		if (!of_device_is_compatible(np, "econet,eth-mac"))
+ 			continue;
+ 
+@@ -2444,7 +2425,7 @@ int airoha_eth_gen1_probe(struct platform_device *pdev)
+ 	return 0;
+ 
+ error:
+-	airoha_eth_gen1_remove(pdev);
++	airoha_eth_gen1_remove(pdev, eth);
+ 	return err;
+ }
+ 
+diff --git a/drivers/net/ethernet/airoha/airoha_eth_gen1.h b/drivers/net/ethernet/airoha/airoha_eth_gen1.h
+index 00d4f1be2d8f..43698f2c8247 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth_gen1.h
++++ b/drivers/net/ethernet/airoha/airoha_eth_gen1.h
+@@ -12,6 +12,7 @@
+ 
+ #include "airoha_common.h"
+ 
++struct airoha_eth;
+ struct airoha_eth_soc_data;
+ 
+ /* QDMA packet descriptors and descriptor messages. */
+@@ -3326,13 +3327,8 @@ enum econet_fport {
+ 	DPORT_DISCARD		= 7,
+ };
+ 
+-struct econet_eth {
+-	struct device *dev;
+-	struct airoha_ppe_dev *ppe;
+-};
+-
+ /* Called in softirq context */
+-int econet_rx_before_recv(struct econet_eth *eth, struct sk_buff *skb,
++int econet_rx_before_recv(struct airoha_eth *eth, struct sk_buff *skb,
+ 			u8 sport);
+ 
+ struct econet_qdma_cfg {
+@@ -3350,7 +3346,7 @@ struct econet_qdma_cfg {
+ 
+ struct econet_qdma;
+ 
+-struct econet_qdma *econet_qdma_new(struct econet_eth *eth,
++struct econet_qdma *econet_qdma_new(struct airoha_eth *eth,
+ 				void __iomem *qdma_regs,
+ 				int id,
+ 				int *irqs,
+@@ -3364,7 +3360,7 @@ int econet_qdma_xmit(struct econet_qdma *qdma, struct sk_buff *skb,
+ 		   union desc_msg *msg, int qid);
+ 
+ 
+-struct net_device *econet_alloc_gdm_port(struct econet_eth *eth,
++struct net_device *econet_alloc_gdm_port(struct airoha_eth *eth,
+ 				       struct device_node *np,
+ 				       struct gdm __iomem *regs,
+ 				       struct econet_qdma *qdma,
+diff --git a/drivers/net/ethernet/airoha/airoha_eth_gen2.c b/drivers/net/ethernet/airoha/airoha_eth_gen2.c
+index 7c4a4fedb104..f690d790be8f 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth_gen2.c
++++ b/drivers/net/ethernet/airoha/airoha_eth_gen2.c
+@@ -5481,24 +5481,14 @@ static const struct airoha_ppe_host_ops airoha_ppe_host_ops = {
+ 	.npu_stats_clear = airoha_eth_ppe_npu_stats_clear,
+ };
+ 
+-int airoha_eth_gen2_probe(struct platform_device *pdev)
++int airoha_eth_gen2_probe(struct platform_device *pdev, struct airoha_eth *eth)
+ {
+ 	struct reset_control_bulk_data *xsi_rsts;
+ 	struct device_node *np;
+-	struct airoha_eth *eth;
+ 	int i, err;
+ 
+-	eth = devm_kzalloc(&pdev->dev, sizeof(*eth), GFP_KERNEL);
+-	if (!eth)
+-		return -ENOMEM;
+-
+-	eth->soc = of_device_get_match_data(&pdev->dev);
+-	if (!eth->soc)
+-		return -EINVAL;
+ 	eth->ppe_host_ops = &airoha_ppe_host_ops;
+ 
+-	eth->dev = &pdev->dev;
+-
+ 	err = airoha_eth_set_dma_mask(eth->dev);
+ 	if (err)
+ 		return err;
+@@ -5550,7 +5540,6 @@ int airoha_eth_gen2_probe(struct platform_device *pdev)
+ 	eth->napi_dev = airoha_eth_alloc_napi_dev("qdma_eth");
+ 	if (!eth->napi_dev)
+ 		return -ENOMEM;
+-	platform_set_drvdata(pdev, eth);
+ 
+ 	/* Allocate the GDM ports before bringing up the QDMA hardware. This
+ 	 * reads the port MAC address, which may be supplied by a late nvmem
+@@ -5642,14 +5631,12 @@ int airoha_eth_gen2_probe(struct platform_device *pdev)
+ 		airoha_metadata_dst_free(port);
+ 	}
+ 	free_netdev(eth->napi_dev);
+-	platform_set_drvdata(pdev, NULL);
+-
+ 	return err;
+ }
+ 
+-void airoha_eth_gen2_remove(struct platform_device *pdev)
++void airoha_eth_gen2_remove(struct platform_device *pdev,
++			    struct airoha_eth *eth)
+ {
+-	struct airoha_eth *eth = platform_get_drvdata(pdev);
+ 	int i;
+ 
+ 	airoha_wed_exit();
+@@ -5680,7 +5667,6 @@ void airoha_eth_gen2_remove(struct platform_device *pdev)
+ 	airoha_hw_cleanup(eth);
+ 
+ 	free_netdev(eth->napi_dev);
+-	platform_set_drvdata(pdev, NULL);
+ }
+ 
+ static const char * const en7523_xsi_rsts_names[] = {
+-- 
+2.55.0
+

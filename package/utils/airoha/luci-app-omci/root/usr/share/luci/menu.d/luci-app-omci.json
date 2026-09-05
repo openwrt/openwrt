@@ -1,0 +1,58 @@
+{
+	"admin/network/omci": {
+		"title": "OMCI",
+		"order": 65,
+		"action": { "type": "firstchild" },
+		"depends": { "acl": [ "luci-app-omci" ] }
+	},
+	"admin/network/omci/status": {
+		"title": "Status",
+		"order": 10,
+		"action": { "type": "view", "path": "omci/status" }
+	},
+	"admin/network/omci/config": {
+		"title": "Configuration",
+		"order": 20,
+		"action": { "type": "firstchild" }
+	},
+	"admin/network/omci/config/general": {
+		"title": "General settings",
+		"order": 10,
+		"action": { "type": "view", "path": "omci/config" }
+	},
+	"admin/network/omci/config/profiles": {
+		"title": "Profiles",
+		"order": 20,
+		"action": { "type": "view", "path": "omci/profiles" }
+	},
+	"admin/network/omci/mib": {
+		"title": "MIB",
+		"order": 30,
+		"action": { "type": "firstchild" }
+	},
+	"admin/network/omci/mib/inventory": {
+		"title": "Inventory",
+		"order": 10,
+		"action": { "type": "view", "path": "omci/mib/inventory" }
+	},
+	"admin/network/omci/mib/gpon": {
+		"title": "GPON",
+		"order": 20,
+		"action": { "type": "view", "path": "omci/mib/gpon" }
+	},
+	"admin/network/omci/mib/bridge": {
+		"title": "Bridge / UNI",
+		"order": 30,
+		"action": { "type": "view", "path": "omci/mib/bridge" }
+	},
+	"admin/network/omci/mib/multicast": {
+		"title": "Multicast",
+		"order": 40,
+		"action": { "type": "view", "path": "omci/mib/multicast" }
+	},
+	"admin/network/omci/mib/other": {
+		"title": "Other",
+		"order": 50,
+		"action": { "type": "view", "path": "omci/mib/other" }
+	}
+}

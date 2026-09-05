@@ -177,7 +177,14 @@ define BuildKernel
 	+$(MAKE) -C image compile install TARGET_BUILD=
 
   clean: FORCE
+ifeq ($(strip $(CONFIG_EXTERNAL_KERNEL_TREE)),"")
 	rm -rf $(KERNEL_BUILD_DIR)
+else
+	rm -f $(CONFIG_EXTERNAL_KERNEL_TREE)/.configured
+	rm -f $(LINUX_KERNEL)
+	$(MAKE) -C $(CONFIG_EXTERNAL_KERNEL_TREE) $(KERNEL_MAKE_FLAGS) clean
+	rm -rf $(KERNEL_BUILD_DIR)
+endif
 
   image-prereq:
 	@+$(NO_TRACE_MAKE) -s -C image prereq TARGET_BUILD=

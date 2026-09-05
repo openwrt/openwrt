@@ -1,0 +1,35 @@
+#
+# Copyright (c) 2015 The Linux Foundation. All rights reserved.
+# Copyright (c) 2011-2015 OpenWrt.org
+#
+
+. /lib/functions/uci-defaults.sh
+. /lib/functions/system.sh
+
+setup_interfaces()
+{
+  local board="$1"
+
+  case "$board" in
+  genexis,platinum-4410)
+    ucidef_set_interface_lan "lan1 lan2"
+    ucidef_set_interface_wan "pon0" "dhcp"
+    ;;
+  jiuzhou,en7526gt |\
+  mitrastar,gpt-2741gnac-n1 |\
+  nokia,g240g-e)
+    ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
+    ucidef_set_interface_wan "pon0" "dhcp"
+    ;;
+  *)
+    echo "Unsupported hardware. Network interfaces not initialized"
+    ;;
+  esac
+}
+
+board_config_update
+board=$(board_name)
+setup_interfaces $board
+board_config_flush
+
+exit 0

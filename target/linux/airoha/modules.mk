@@ -5,8 +5,8 @@ OTHER_MENU:=Other modules
 
 define KernelPackage/pwm-airoha
   SUBMENU:=$(OTHER_MENU)
-  TITLE:=Airoha AN7581 and AN7583 PWM
-  DEPENDS:=@TARGET_airoha_an7581||TARGET_airoha_an7583
+  TITLE:=Airoha PWM
+  DEPENDS:=@TARGET_airoha
   KCONFIG:= \
         CONFIG_PWM=y \
         CONFIG_PWM_AIROHA=y \
@@ -17,7 +17,7 @@ define KernelPackage/pwm-airoha
 endef
 
 define KernelPackage/pwm-airoha/description
- Kernel module to use the PWM channel on Airoha SoC
+  Kernel module to use the PWM channel on Airoha SoC
 endef
 
 $(eval $(call KernelPackage,pwm-airoha))

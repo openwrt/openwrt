@@ -1,0 +1,463 @@
+From 75697f3b7b15b8a80e38343621e6a0b0fdf6dc3c Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Thu, 13 Aug 2026 23:30:33 -0300
+Subject: [PATCH] draft: net: airoha: Add xPON flow offload support
+
+Implement xPON flow offload support in the EcoNet PPE engine. This
+allows
+GPON flows to be offloaded to hardware by utilizing QDMA descriptors for
+GEM/T-CONT metadata, preventing bypass of the CPU PWAN path. Ensure GPON
+data frames meet minimum Ethernet payload size requirements by adding
+padding for small packets. Cleanup debug prints and redundant register
+writes to avoid interfering with DSA special-tagging.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth_gen1.c | 168 +++++-------------
+ drivers/net/ethernet/airoha/airoha_ppe.c      | 136 ++++++++++++--
+ 2 files changed, 162 insertions(+), 142 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_eth_gen1.c b/drivers/net/ethernet/airoha/airoha_eth_gen1.c
+index 8b550963df72..6049b693b310 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth_gen1.c
++++ b/drivers/net/ethernet/airoha/airoha_eth_gen1.c
+@@ -29,8 +29,6 @@
+ #include "airoha_eth_gen1.h"
+ #include "airoha_regs.h"
+ 
+-static bool xpon_tx_debug = true;
+-
+ /* Generation-1 GDM/netdev backend. */
+ struct econet_hw_stats {
+ 	/* protect concurrent hw_stats accesses */
+@@ -401,61 +399,38 @@ static int econet_xpon_lookup_service(struct econet_gdm_port *port,
+ 	return fallback ? 0 : -ENOENT;
+ }
+ 
+-static void econet_xpon_get_vlan_meta(struct sk_buff *skb, bool *vlan_valid, u16 *vlan_id, u8 *pcp)
++static int econet_xpon_classify(struct econet_gdm_port *port,
++				struct sk_buff *skb,
++				struct airoha_xpon_tx_info *info)
+ {
+ 	struct vlan_ethhdr vlan_hdr_buf;
+ 	const struct vlan_ethhdr *vlan_hdr;
++	u16 vlan_id = 0;
++	u8 pcp = 0;
++	bool vlan_valid;
+ 
+-	*vlan_valid = skb_vlan_tag_present(skb);
+-	*vlan_id = 0;
+-	*pcp = 0;
+-
+-	if (*vlan_valid) {
++	vlan_valid = skb_vlan_tag_present(skb);
++	if (vlan_valid) {
+ 		u16 tci = skb_vlan_tag_get(skb);
+ 
+-		*vlan_id = tci & VLAN_VID_MASK;
+-		*pcp = (tci & VLAN_PRIO_MASK) >> VLAN_PRIO_SHIFT;
+-		return;
+-	}
+-
+-	vlan_hdr = skb_header_pointer(skb, 0, sizeof(vlan_hdr_buf),
+-				      &vlan_hdr_buf);
+-	if (vlan_hdr && eth_type_vlan(vlan_hdr->h_vlan_proto)) {
+-		u16 tci = ntohs(vlan_hdr->h_vlan_TCI);
+-
+-		*vlan_id = tci & VLAN_VID_MASK;
+-		*pcp = (tci & VLAN_PRIO_MASK) >> VLAN_PRIO_SHIFT;
+-		*vlan_valid = true;
++		vlan_id = tci & VLAN_VID_MASK;
++		pcp = (tci & VLAN_PRIO_MASK) >> VLAN_PRIO_SHIFT;
++	} else {
++		vlan_hdr = skb_header_pointer(skb, 0, sizeof(vlan_hdr_buf),
++					      &vlan_hdr_buf);
++		if (vlan_hdr && eth_type_vlan(vlan_hdr->h_vlan_proto)) {
++			u16 tci = ntohs(vlan_hdr->h_vlan_TCI);
++
++			vlan_id = tci & VLAN_VID_MASK;
++			pcp = (tci & VLAN_PRIO_MASK) >> VLAN_PRIO_SHIFT;
++			vlan_valid = true;
++		}
+ 	}
+-}
+-
+-static int econet_xpon_classify(struct econet_gdm_port *port,
+-				struct sk_buff *skb,
+-				struct airoha_xpon_tx_info *info)
+-{
+-	u16 vlan_id;
+-	u8 pcp;
+-	bool vlan_valid;
+-
+-	econet_xpon_get_vlan_meta(skb, &vlan_valid, &vlan_id, &pcp);
+ 
+ 	return econet_xpon_lookup_service(port, vlan_valid, vlan_id,
+ 					  vlan_valid, pcp, info);
+ }
+ 
+-static u32 econet_xpon_en7523_route_msg0(const struct airoha_xpon_tx_info *info)
+-{
+-	u32 msg0;
+-
+-	msg0 = FIELD_PREP(QDMA_ETH_TXMSG_QUEUE_MASK, info->queue) |
+-	       FIELD_PREP(QDMA_ETH_TXMSG_CHAN_MASK, info->tcont) |
+-	       FIELD_PREP(QDMA_ETH_TXMSG_SP_TAG_MASK, info->gem_port_id);
+-	if (info->oam)
+-		msg0 |= QDMA_ETH_TXMSG_OAM_MASK;
+-
+-	return msg0;
+-}
+-
+ static netdev_tx_t econet_dev_xmit(struct sk_buff *skb, struct net_device *dev)
+ {
+ 	struct econet_gdm_port *port = netdev_priv(dev);
+@@ -470,22 +445,8 @@ static netdev_tx_t econet_dev_xmit(struct sk_buff *skb, struct net_device *dev)
+ 	if (READ_ONCE(port->xpon_managed)) {
+ 		switch (READ_ONCE(port->xpon_mode)) {
+ 		case AIROHA_XPON_MODE_GPON:
+-			ret = econet_xpon_classify(port, skb, &xpon_info);
+-			if (ret) {
+-				if (READ_ONCE(xpon_tx_debug)) {
+-					u16 vlan_id;
+-					u8 pcp;
+-					bool vlan_valid;
+-
+-					econet_xpon_get_vlan_meta(skb, &vlan_valid, &vlan_id, &pcp);
+-					netdev_info(dev,
+-						    "EN751221 xPON TX no service: len=%u proto=%#06x vlan=%s%u pcp=%u ret=%d\n",
+-						    skb->len, ntohs(skb->protocol),
+-						    vlan_valid ? "" : "none/", vlan_id,
+-						    pcp, ret);
+-				}
++			if (econet_xpon_classify(port, skb, &xpon_info))
+ 				goto drop;
+-			}
+ 			xpon = true;
+ 			break;
+ 		case AIROHA_XPON_MODE_EPON:
+@@ -538,6 +499,25 @@ static netdev_tx_t econet_dev_xmit(struct sk_buff *skb, struct net_device *dev)
+ 	if (skb_linearize(skb))
+ 		goto drop;
+ 
++	/*
++	 * Keep the EN751221 PWAN descriptor layout unchanged, but make sure
++	 * short GPON Ethernet data frames meet the minimum Ethernet payload
++	 * size before they enter QDMA/GDM2.  The control/OAM path has its own
++	 * framing and must not be padded here.
++	 *
++	 * skb_put_padto() consumes the skb on allocation failure, so do not
++	 * jump to the common drop label in that case.
++	 */
++	if (xpon && READ_ONCE(port->xpon_mode) == AIROHA_XPON_MODE_GPON &&
++	    !xpon_info.oam && skb->len < ETH_ZLEN) {
++		if (skb_put_padto(skb, ETH_ZLEN)) {
++			dev->stats.tx_dropped++;
++			return NETDEV_TX_OK;
++		}
++
++		len = skb->len;
++	}
++
+ 	/*
+ 	 * EN751221 keeps the MediaTek DSA special tag in-band, unlike newer
+ 	 * Airoha QDMA which can move it to descriptor metadata. The logical
+@@ -567,47 +547,7 @@ static netdev_tx_t econet_dev_xmit(struct sk_buff *skb, struct net_device *dev)
+ 
+ 	netdev_tx_sent_queue(txq, len);
+ 
+-	if (xpon && READ_ONCE(xpon_tx_debug)) {
+-		struct ethhdr eth_buf;
+-		const struct ethhdr *eth;
+-		u32 en7523_msg0;
+-		u32 txchn, hwf;
+-		u16 vlan_id;
+-		u8 pcp;
+-		bool vlan_valid;
+-
+-		eth = skb_header_pointer(skb, 0, sizeof(eth_buf), &eth_buf);
+-		econet_xpon_get_vlan_meta(skb, &vlan_valid, &vlan_id, &pcp);
+-		en7523_msg0 = econet_xpon_en7523_route_msg0(&xpon_info);
+-		txchn = airoha_fe_rr(port->eth, REG_GDM_TXCHN_EN(AIROHA_GDM2_IDX));
+-		hwf = airoha_fe_rr(port->eth, REG_CDM_HWF_CHN_EN(2));
+-
+-		if (eth)
+-			netdev_info(dev,
+-				    "EN751221 xPON TX: len=%u dst=%pM src=%pM proto=%#06x vlan=%s%u pcp=%u qdma=%u qid=%d queue=%u channel=%u gem=%u oam=%u fport=%u msg=%#010x/%#010x en7523-route=%#010x txchn=%#010x hwf=%#010x\n",
+-				    skb->len, eth->h_dest, eth->h_source,
+-				    ntohs(skb->protocol), vlan_valid ? "" : "none/",
+-				    vlan_id, pcp, airoha_qdma_gen1_common(port->qdma)->id, qid,
+-				    get_etx_queue(&msg.etx), get_etx_channel(&msg.etx),
+-				    get_etx_xpon_gem(&msg.etx), is_etx_oam(&msg.etx),
+-				    get_etx_fport(&msg.etx), msg.raw[0], msg.raw[1],
+-				    en7523_msg0, txchn, hwf);
+-		else
+-			netdev_info(dev,
+-				    "EN751221 xPON TX: len=%u proto=%#06x vlan=%s%u pcp=%u qdma=%u qid=%d queue=%u channel=%u gem=%u oam=%u fport=%u msg=%#010x/%#010x en7523-route=%#010x txchn=%#010x hwf=%#010x\n",
+-				    skb->len, ntohs(skb->protocol),
+-				    vlan_valid ? "" : "none/", vlan_id, pcp,
+-				    airoha_qdma_gen1_common(port->qdma)->id, qid,
+-				    get_etx_queue(&msg.etx),
+-				    get_etx_channel(&msg.etx), get_etx_xpon_gem(&msg.etx),
+-				    is_etx_oam(&msg.etx),
+-				    get_etx_fport(&msg.etx), msg.raw[0], msg.raw[1],
+-				    en7523_msg0, txchn, hwf);
+-	}
+-
+ 	ret = airoha_qdma_gen1_xmit(port->qdma, skb, &msg, 0);
+-	if (xpon && READ_ONCE(xpon_tx_debug))
+-		netdev_info(dev, "EN751221 xPON TX submit ret=%d\n", ret);
+ 	if (ret == -EBUSY) {
+ 		netdev_tx_completed_queue(txq, 1, len);
+ 		netif_tx_stop_queue(txq);
+@@ -1405,28 +1345,7 @@ static int econet_xmit_xpon_oam(struct net_device *netdev, struct sk_buff *skb,
+ 	txq = netdev_get_tx_queue(netdev, 0);
+ 	netdev_tx_sent_queue(txq, len);
+ 
+-	if (READ_ONCE(xpon_tx_debug)) {
+-		struct airoha_xpon_tx_info info = {
+-			.gem_port_id = gem_port_id,
+-			.tcont = 0,
+-			.queue = 0,
+-			.oam = true,
+-		};
+-
+-		netdev_info(netdev,
+-			    "EN751221 xPON OAM TX: len=%u qdma=%u queue=%u channel=%u gem=%u oam=%u fport=%u msg=%#010x/%#010x en7523-route=%#010x txchn=%#010x hwf=%#010x\n",
+-			    skb->len, airoha_qdma_gen1_common(port->qdma)->id,
+-			    get_etx_queue(&msg.etx), get_etx_channel(&msg.etx),
+-			    get_etx_xpon_gem(&msg.etx), is_etx_oam(&msg.etx),
+-			    get_etx_fport(&msg.etx), msg.raw[0], msg.raw[1],
+-			    econet_xpon_en7523_route_msg0(&info),
+-			    airoha_fe_rr(port->eth, REG_GDM_TXCHN_EN(AIROHA_GDM2_IDX)),
+-			    airoha_fe_rr(port->eth, REG_CDM_HWF_CHN_EN(2)));
+-	}
+-
+ 	ret = airoha_qdma_gen1_xmit(port->qdma, skb, &msg, 0);
+-	if (READ_ONCE(xpon_tx_debug))
+-		netdev_info(netdev, "EN751221 xPON OAM TX submit ret=%d\n", ret);
+ 	if (ret < 0) {
+ 		netdev_tx_completed_queue(txq, 1, len);
+ 		return ret;
+@@ -1489,13 +1408,6 @@ static int econet_xpon_add_service(struct net_device *netdev,
+ 	port->xpon_services[empty].valid = true;
+ 	spin_unlock_bh(&port->xpon_service_lock);
+ 
+-	netdev_info(netdev,
+-		    "EN751221 xPON service[%d]: cookie=%#x gem=%u channel=%u queue=%u vlan=%s%u pcp=%s%u default=%u\n",
+-		    empty, cfg->cookie, cfg->gem_port_id, cfg->tcont, cfg->queue,
+-		    cfg->vlan_valid ? "" : "any/", cfg->vlan_id,
+-		    cfg->pcp_valid ? "" : "any/", cfg->pcp,
+-		    cfg->default_service);
+-
+ 	return 0;
+ }
+ 
+diff --git a/drivers/net/ethernet/airoha/airoha_ppe.c b/drivers/net/ethernet/airoha/airoha_ppe.c
+index c299f913adb1..c17b47ccee6a 100644
+--- a/drivers/net/ethernet/airoha/airoha_ppe.c
++++ b/drivers/net/ethernet/airoha/airoha_ppe.c
+@@ -2607,6 +2607,70 @@ static void econet_foe_entry_set_pse_port(struct econet_foe_entry *entry, u8 por
+ 		entry->ipv4.ib2 |= EN751221_FOE_IB2_PSE_QOS;
+ }
+ 
++static void econet_foe_entry_set_queue(struct econet_foe_entry *entry, u8 queue)
++{
++	entry->ipv4.ib2 &= ~EN751221_FOE_IB2_QID;
++	entry->ipv4.ib2 |= FIELD_PREP(EN751221_FOE_IB2_QID, queue);
++}
++
++static int econet_foe_entry_set_xpon(struct econet_foe_entry *entry,
++				     struct net_device *odev, bool vlan_valid,
++				     u16 vlan_id, bool pcp_valid, u8 pcp)
++{
++	struct airoha_xpon_tx_info info = {};
++	int err;
++
++	err = airoha_eth_xpon_get_tx_info(odev, vlan_valid, vlan_id,
++					  pcp_valid, pcp, &info);
++	if (err)
++		return err;
++	if (info.oam || info.gem_port_id > 0xfff || info.tcont > 0xf ||
++	    info.queue > FIELD_MAX(EN751221_FOE_IB2_QID))
++		return -EOPNOTSUPP;
++
++	/*
++	 * The EN7512/EN7521 vendor PpeSetPortInfo() path sends GPON flows
++	 * through PSE port 6 (QDMA hardware forwarding), not directly to
++	 * GDM2.  The QDMA metadata is multiplexed into the IPv4 HNAPT FoE
++	 * entry: txq goes in IB2, TSE/TSID and T-CONT use the two middle
++	 * bytes of udf_tsid, and the 12-bit GEM ID occupies the first L2
++	 * half-word.  TSE/TSID are zero for normal data flows.
++	 *
++	 * econet_ppe_commit_entry() byte-swaps udf_tsid before publishing
++	 * it, so logical bits 15:8 and 23:16 become the vendor ts_id and
++	 * channel bytes respectively.
++	 */
++	econet_foe_entry_set_pse_port(entry, EN751221_DPORT_QDMA_HW);
++	econet_foe_entry_set_queue(entry, info.queue);
++	entry->ipv4.udf_tsid &= ~GENMASK(23, 8);
++	entry->ipv4.udf_tsid |= FIELD_PREP(GENMASK(23, 16), info.tcont);
++	entry->ipv4.l2.vlan1 = info.gem_port_id;
++
++	return 0;
++}
++
++static int econet_foe_entry_set_vlan(struct econet_foe_entry *entry, u16 vid,
++				     u8 prio, __be16 proto)
++{
++	if (proto != htons(ETH_P_8021Q) || vid > VLAN_VID_MASK || prio > 7)
++		return -EOPNOTSUPP;
++
++	/*
++	 * For the EN751221 GPON FoE format PpeSetPortInfo() repurposes the
++	 * first L2 half-word for GEM metadata while retaining VLAN1 in the
++	 * following half-word.  In the logical EcoNet structure that second
++	 * half-word is l2.etype because commit_entry() rotates mixed-u16
++	 * words before writing the little-endian FoE table.
++	 */
++	entry->ib1 &= ~(EN751221_FOE_IB1_BIND_VLAN_LAYER |
++			AIROHA_FOE_IB1_BIND_VPM);
++	entry->ib1 |= FIELD_PREP(EN751221_FOE_IB1_BIND_VLAN_LAYER, 1) |
++		      FIELD_PREP(AIROHA_FOE_IB1_BIND_VPM, 1);
++	entry->ipv4.l2.etype = FIELD_PREP(VLAN_PRIO_MASK, prio) | vid;
++
++	return 0;
++}
++
+ static void econet_foe_entry_set_dsa(struct econet_foe_entry *entry, int port,
+ 				     bool passthrough)
+ {
+@@ -2885,12 +2949,13 @@ static int econet_ppe_engine_arm(struct econet_ppe *ppe)
+ 	airoha_fe_wr(ppe->common.eth, REG_PPE_VPM_TPID(0), ETH_P_8021Q);
+ 	airoha_fe_wr(ppe->common.eth, REG_CDM_VLAN_CTRL(1),
+ 		     FIELD_PREP(CDM_VLAN_MASK, ETH_P_8021Q) | STAG_EN);
+-	airoha_fe_wr(ppe->common.eth, REG_GDM_INGRESS_CFG(1), GDM_STAG_EN_MASK);
+-	airoha_fe_wr(ppe->common.eth, REG_GDM_FWD_CFG(1),
+-		     GDM_DROP_OVERSIZE_MASK | GDM_DROP_RUNT_MASK |
+-		     GDM_DROP_CRC_ERR_MASK | GDM_IP4_CKSUM_MASK |
+-		     GDM_TCP_CKSUM_MASK | GDM_UDP_CKSUM_MASK |
+-		     FIELD_PREP(GDM_UCFQ_MASK, 4) | FIELD_PREP(GDM_OCFQ_MASK, 4));
++	/*
++	 * GDM1 is owned by the EcoNet netdev/DSA path.  In particular bit 25
++	 * of FWD_CFG is UNTAG_EN on EN751221, while the common Airoha mask
++	 * names the same bit DROP_OVERSIZE.  Rewriting GDM1 here used to
++	 * destroy the MT7530 special-tag state whenever flow offload armed.
++	 * PPE only needs its own engine/VPM/CPU-port programming here.
++	 */
+ 	airoha_fe_wr(ppe->common.eth, REG_PPE_DFT_CPORT_BASE(0),
+ 		     FIELD_PREP(DFT_CPORT_MASK(2), 5));
+ 	WRITE_ONCE(ppe->armed, true);
+@@ -2902,10 +2967,7 @@ static void econet_ppe_engine_disarm(struct econet_ppe *ppe)
+ 	if (!ppe || !READ_ONCE(ppe->armed))
+ 		return;
+ 
+-	airoha_fe_wr(ppe->common.eth, REG_GDM_FWD_CFG(1),
+-		     GDM_DROP_OVERSIZE_MASK | GDM_DROP_RUNT_MASK |
+-		     GDM_DROP_CRC_ERR_MASK | GDM_IP4_CKSUM_MASK |
+-		     GDM_TCP_CKSUM_MASK | GDM_UDP_CKSUM_MASK);
++	/* Leave GDM1 forwarding and DSA special-tag state to the netdev. */
+ 	WRITE_ONCE(ppe->armed, false);
+ 	econet_ppe_flush(ppe);
+ 	econet_ppe_engine_set(ppe, false);
+@@ -2978,12 +3040,15 @@ static struct econet_ppe *econet_ppe_from_netdev(struct net_device *netdev)
+ }
+ 
+ static int econet_flow_set_output(struct econet_foe_entry *entry,
+-				  struct net_device *odev)
++				  struct net_device *odev, bool vlan_valid,
++				  u16 vlan_id, u8 vlan_prio, bool *xpon)
+ {
+ 	struct airoha_gdm_common *gdm;
+ 	struct dsa_port *dp;
+ 	int dsa_port = -1;
++	int err;
+ 
++	*xpon = false;
+ 	if (!odev)
+ 		return -EOPNOTSUPP;
+ 
+@@ -3003,6 +3068,27 @@ static int econet_flow_set_output(struct econet_foe_entry *entry,
+ 	if (!gdm || gdm->family != AIROHA_ETH_FAMILY_ECONET)
+ 		return -EOPNOTSUPP;
+ 
++	/*
++	 * Probe the xPON service API before using direct GDM2 egress. A managed
++	 * GPON port needs QDMA_HW plus GEM/T-CONT metadata; sending a FoE flow
++	 * straight to GDM2 bypasses exactly the metadata which the CPU PWAN
++	 * descriptor normally supplies.
++	 */
++	if (dsa_port < 0) {
++		err = econet_foe_entry_set_xpon(entry, odev, vlan_valid, vlan_id,
++						vlan_valid, vlan_prio);
++		if (!err) {
++			*xpon = true;
++			return 0;
++		}
++		if (err != -EOPNOTSUPP)
++			return err;
++	}
++
++	/* VLAN insertion is only implemented for the GPON/QDMA FoE format. */
++	if (vlan_valid)
++		return -EOPNOTSUPP;
++
+ 	/*
+ 	 * Keep direct GDM egress on the default queue. The EN751221 PPE
+ 	 * flow path does not enable PSE_QOS for GDM1/GDM2 destinations,
+@@ -3044,8 +3130,10 @@ static int econet_flow_offload_replace(struct net_device *dev,
+ 	struct net_device *odev = NULL;
+ 	__be32 src_addr, dest_addr, new_src_addr, new_dest_addr;
+ 	__be16 src_port, dest_port, new_src_port, new_dest_port;
+-	u16 pppoe_sid = 0;
+-	u8 l4proto;
++	__be16 vlan_proto = 0;
++	u16 pppoe_sid = 0, vlan_id = 0;
++	u8 l4proto, vlan_prio = 0;
++	bool vlan_push = false, xpon = false;
+ 	int i, err;
+ 
+ 	if (!ppe)
+@@ -3113,6 +3201,17 @@ static int econet_flow_offload_replace(struct net_device *dev,
+ 				return -EOPNOTSUPP;
+ 			}
+ 			break;
++		case FLOW_ACTION_VLAN_PUSH:
++			if (vlan_push)
++				return -EOPNOTSUPP;
++			vlan_push = true;
++			vlan_id = act->vlan.vid;
++			vlan_prio = act->vlan.prio;
++			vlan_proto = act->vlan.proto;
++			break;
++		case FLOW_ACTION_VLAN_POP:
++			/* No output VLAN is encoded for this direction. */
++			break;
+ 		case FLOW_ACTION_PPPOE_PUSH:
+ 			pppoe_sid = act->pppoe.sid;
+ 			break;
+@@ -3141,11 +3240,20 @@ static int econet_flow_offload_replace(struct net_device *dev,
+ 					dest_addr, dest_port);
+ 	econet_foe_entry_set_ipv4_tuple(&entry, true, new_src_addr, new_src_port,
+ 					new_dest_addr, new_dest_port);
+-	err = econet_flow_set_output(&entry, odev);
++	err = econet_flow_set_output(&entry, odev, vlan_push, vlan_id,
++				     vlan_prio, &xpon);
+ 	if (err)
+ 		return err;
+ 	if (pppoe_sid)
+ 		econet_foe_entry_set_pppoe(&entry, pppoe_sid);
++	if (vlan_push) {
++		if (!xpon)
++			return -EOPNOTSUPP;
++		err = econet_foe_entry_set_vlan(&entry, vlan_id, vlan_prio,
++						vlan_proto);
++		if (err)
++			return err;
++	}
+ 
+ 	/*
+ 	 * The engine's lookup key uses the opposite word lane order on the
+-- 
+2.55.0
+

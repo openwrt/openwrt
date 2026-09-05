@@ -1,0 +1,52 @@
+From b53f3b3ccba030de627f4ff6418d74ff0bc11dea Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Tue, 11 Aug 2026 14:04:33 -0300
+Subject: [PATCH] net: dsa: mt7530: match EN751221 stock MCM RX tap
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/dsa/mt7530.c | 20 +++++++++++++++++++-
+ 1 file changed, 19 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/dsa/mt7530.c b/drivers/net/dsa/mt7530.c
+index 08149cc2f09f..a5867a7a732a 100644
+--- a/drivers/net/dsa/mt7530.c
++++ b/drivers/net/dsa/mt7530.c
+@@ -459,6 +459,7 @@ mt7530_setup_port6(struct dsa_switch *ds, phy_interface_t interface)
+ #define EN751221_TRGMII_ONDIE_TCK_ODT	0x77
+ #define EN751221_TRGMII_MCM_TD_ODT	0xbb
+ #define EN751221_TRGMII_MCM_TCK_ODT	0xff
++#define EN751221_TRGMII_MCM_TO_SOC_RX_TAP	4
+ #define EN751221_TRGMII_RX_VALUE_MASK	GENMASK(23, 16)
+ #define EN751221_TRGMII_RX_ERR_MASK	GENMASK(11, 8)
+ #define EN751221_AGC_L2LEN_CHK		BIT(4)
+@@ -604,8 +605,25 @@ en751221_trgmii_calibrate_direction(struct mt7530_priv *tx,
+ static void en751221_trgmii_calibrate(struct mt7530_priv *ext,
+ 				      struct mt7530_priv *ondie)
+ {
++	int channel;
++
++	/*
++	 * Keep automatic training for the SoC -> companion direction.  The
++	 * production EN7512 firmware does not leave the reverse direction at
++	 * the midpoint found by P6 training: its final runtime state programs
++	 * RX tap 4 on all five on-die lanes.  Match that profile exactly; the
++	 * midpoint chosen here previously produced CRC errors on internal P5
++	 * under sustained MCM -> SoC traffic.
++	 */
+ 	en751221_trgmii_calibrate_direction(ondie, ext, "SoC->MCM");
+-	en751221_trgmii_calibrate_direction(ext, ondie, "MCM->SoC");
++
++	for (channel = 0; channel < NUM_TRGMII_CTRL; channel++)
++		mt7530_rmw(ondie, MT7530_TRGMII_RD(channel), RD_TAP_MASK,
++			   RD_TAP(EN751221_TRGMII_MCM_TO_SOC_RX_TAP));
++
++	dev_info(ondie->dev,
++		 "EN751221 TRGMII MCM->SoC using stock RX tap %u on all lanes\n",
++		 EN751221_TRGMII_MCM_TO_SOC_RX_TAP);
+ }
+ 
+ static void en751221_trgmii_set_drive_strength(struct mt7530_priv *priv)
+-- 
+2.55.0
+

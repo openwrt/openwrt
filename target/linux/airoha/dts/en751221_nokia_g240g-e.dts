@@ -1,0 +1,336 @@
+// SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+/dts-v1/;
+
+#include "en751221.dtsi"
+
+/ {
+	model = "Nokia G-240G-E";
+	compatible = "nokia,g240g-e", "econet,en751221";
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x00000000 0x10000000>;
+	};
+
+	chosen {
+		stdout-path = "/serial@1fbf0000:115200";
+		linux,usable-memory-range = <0x00020000 0x0ffe0000>;
+	};
+
+	aliases {
+		led-boot = &power_green;
+		led-failsafe = &power_red;
+		led-upgrade = &power_red;
+		led-running = &power_green;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&pinctrl 0 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+
+		wps5 {
+			label = "led";
+			linux,code = <BTN_0>;
+			gpios = <&pinctrl 5 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		/* Power Green */
+		power_green: led@6 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <6>;
+			gpios = <&pinctrl 6 GPIO_ACTIVE_LOW>;
+		};
+
+		/* Power Red */
+		power_red: led@9 {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <9>;
+			gpios = <&pinctrl 9 GPIO_ACTIVE_LOW>;
+		};
+
+		/* xPON/Internet */
+		pon_led: led@2 {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <2>;
+			gpios = <&pinctrl 2 GPIO_ACTIVE_LOW>;
+		};
+
+		/* USB */
+		led@11 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_USB;
+			function-enumerator = <11>;
+			gpios = <&pinctrl 11 GPIO_ACTIVE_LOW>;
+		};
+
+		/* AUTH */
+		pon_los: led@24 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <24>;
+			gpios = <&pinctrl 24 GPIO_ACTIVE_LOW>;
+		};
+
+		/* FXS1 */
+		led@25 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <25>;
+			gpios = <&pinctrl 25 GPIO_ACTIVE_LOW>;
+		};
+
+		/* FXS2 */
+		led@26 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <26>;
+			gpios = <&pinctrl 26 GPIO_ACTIVE_LOW>;
+		};
+
+		/* Internet */
+		led@28 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <28>;
+			gpios = <&pinctrl 28 GPIO_ACTIVE_LOW>;
+		};
+
+		/* VoIP */
+		led@29 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <29>;
+			gpios = <&pinctrl 29 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&nand {
+	status = "okay";
+	econet,bmt;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "bootloader";
+			reg = <0x0 0x40000>;
+			read-only;
+		};
+
+		partition@40000 {
+			label = "romfile";
+			reg = <0x40000 0x40000>;
+		};
+
+		partition@80000 {
+			label = "tclinux";
+			reg = <0x80000 0x2200000>;
+			econet,enable-remap;
+		};
+
+		partition@480000 {
+			label = "rootfs";
+			reg = <0x480000 0x1e00000>;
+			linux,rootfs;
+		};
+
+		partition@2280000 {
+			label = "kernel_slave";
+			reg = <0x2280000 0x300000>;
+		};
+
+		partition@2580000 {
+			label = "rootfs_slave";
+			reg = <0x2580000 0x1f00000>;
+		};
+
+		partition@4480000 {
+			label = "kernel_oflt";
+			reg = <0x4480000 0x300000>;
+		};
+
+		partition@4780000 {
+			label = "rootfs_oflt";
+			reg = <0x4780000 0xc00000>;
+		};
+
+		partition@5380000 {
+			label = "config";
+			reg = <0x5380000 0x800000>;
+		};
+
+		partition@5b80000 {
+			label = "log";
+			reg = <0x5b80000 0xc00000>;
+		};
+
+		partition@6780000 {
+			label = "extfs";
+			reg = <0x6780000 0x600000>;
+		};
+
+		partition@6d80000 {
+			label = "bosa";
+			reg = <0x6d80000 0x40000>;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				cal_l98: cal@800 {
+					reg = <0x0 0x800>
+				};
+			};
+		};
+
+		partition@6dc0000 {
+			label = "flag";
+			reg = <0x6dc0000 0x40000>;
+		};
+
+		partition@6e00000 {
+			label = "flagback";
+			reg = <0x6e00000 0x40000>;
+		};
+
+		partition@6e40000 {
+			label = "ri";
+			reg = <0x6e40000 0x40000>;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				macaddr_ri_3e: macaddr@3e {
+					compatible = "mac-base";
+					reg = <0x3e 0x6>;
+					#nvmem-cell-cells = <1>;
+				};
+			};
+		};
+
+		partition@6e80000 {
+			label = "riback";
+			reg = <0x6e80000 0x40000>;
+		};
+	};
+};
+
+&i2c0 {
+	status = "okay";
+
+	gn25l98: optical-frontend@51 {
+		compatible = "semtech,gn25l98";
+		reg = <0x51>;
+
+		nvmem-cells = <&cal_l98>;
+		nvmem-cell-names = "calibration";
+		tx-disable-gpios = <&pinctrl 16 GPIO_ACTIVE_HIGH>;
+
+		#optical-frontend-cells = <0>;
+	};
+};
+
+&xpon_phy {
+	status = "okay";
+
+	airoha,rx-sd-inverted;
+};
+
+&xpon {
+	status = "okay";
+
+	airoha,gpon-serial-from-mac;
+	omci-vendor-id = "MSTC";
+
+	optical-frontends = <&gn25l98>;
+	optical-frontend-names = "pon";
+
+	leds = <&pon_led>, <&pon_los>;
+	led-names = "pon", "los";
+};
+
+&eth {
+	status = "okay";
+	nvmem-cells = <&macaddr_ri_3e 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&gdm2 {
+	status = "okay";
+	phy-mode = "internal";
+
+	nvmem-cells = <&macaddr_ri_3e 0>;
+	nvmem-cell-names = "mac-address";
+
+	airoha,xpon-managed;
+	openwrt,netdev-name = "pon0";
+};
+
+&switch0 {
+	status = "okay";
+};
+
+&switch1 {
+	status = "okay";
+};
+
+&gsw_port0 {
+	label = "lan0";
+	status = "okay";
+};
+
+&gsw_port1 {
+	label = "lan1";
+	status = "okay";
+};
+
+&gsw_port2 {
+	label = "lan2";
+	status = "okay";
+};
+
+&gsw_port3 {
+	label = "lan3";
+	status = "okay";
+};
+
+&gsw_port4 {
+	label = "lan4";
+	status = "okay";
+};
+
+&gsw_phy1 {
+	status = "okay";
+};
+
+&gsw_phy2 {
+	status = "okay";
+};
+
+&gsw_phy3 {
+	status = "okay";
+};
+
+&gsw_phy4 {
+	status = "okay";
+};

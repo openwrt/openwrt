@@ -1,0 +1,173 @@
+From 4934243c5190e8235a1bf5f7d9d5a9ac6eb39855 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Mon, 24 Aug 2026 13:52:58 -0300
+Subject: [PATCH] net: airoha: Support variable length BOB firmware
+
+Replace the fixed-size BOB buffer with a dynamic allocation and
+introduce
+min/max size constraints to accommodate varying firmware requirements.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/optical/airoha/airoha_lddla.h     |  4 ++-
+ .../net/optical/airoha/airoha_lddla_core.c    | 35 +++++++++++--------
+ drivers/net/optical/airoha/en7570_main.c      |  3 +-
+ drivers/net/optical/airoha/en7571_main.c      |  3 +-
+ drivers/net/optical/airoha/en7572_main.c      |  9 +++--
+ 5 files changed, 34 insertions(+), 20 deletions(-)
+
+diff --git a/drivers/net/optical/airoha/airoha_lddla.h b/drivers/net/optical/airoha/airoha_lddla.h
+index d33d1b78d20b..d9144982fb31 100644
+--- a/drivers/net/optical/airoha/airoha_lddla.h
++++ b/drivers/net/optical/airoha/airoha_lddla.h
+@@ -42,6 +42,7 @@ struct airoha_lddla;
+ #define AIROHA_LDDLA_FLASH_ERASED	0xffffffff
+ #define AIROHA_LDDLA_BOB_MAGIC_OFFSET		0x094
+ #define AIROHA_LDDLA_BOB_MAX_SIZE		512
++#define AIROHA_LDDLA_BOB_MIN_SIZE		161
+ 
+ /*
+  * Every known Airoha LDD/LA BOB magic has the form 0xPP0507CC:
+@@ -128,7 +129,8 @@ struct airoha_lddla_ops {
+ 	const char *date_code;
+ 	u32 protocols;
+ 	const struct optical_frontend_thresholds *thresholds;
+-	size_t bob_size;
++	size_t bob_size_min;
++	size_t bob_size_max;
+ 
+ 	s32 (*temp_refresh)(struct airoha_lddla *lddla);
+ 	s32 (*bosa_temp_refresh)(struct airoha_lddla *lddla);
+diff --git a/drivers/net/optical/airoha/airoha_lddla_core.c b/drivers/net/optical/airoha/airoha_lddla_core.c
+index 8e10b3270f90..a5972e139ce4 100644
+--- a/drivers/net/optical/airoha/airoha_lddla_core.c
++++ b/drivers/net/optical/airoha/airoha_lddla_core.c
+@@ -271,40 +271,45 @@ static int lddla_bob_import(struct airoha_lddla *lddla, const u8 *data,
+ 			    size_t len, const char *source)
+ {
+ 	enum airoha_lddla_bob_endian endian;
++	size_t min_bob = lddla->ops->bob_size_min;
++	size_t max_bob = lddla->ops->bob_size_max;
++	size_t copy_len, i;
+ 	u32 magic;
+-	size_t expected = lddla->ops->bob_size;
+-	size_t i;
+ 	int ret;
+ 
+-	if (!expected || expected > sizeof(lddla->bob))
++	if (!min_bob || !max_bob || min_bob > max_bob ||
++	    max_bob > sizeof(lddla->bob))
+ 		return -EINVAL;
+-	if (len < 0xff) {
++
++	if (len < min_bob) {
+ 		dev_err(lddla->dev, "%s BOB is too small (%zu < %zu bytes)\n",
+-			source, len, expected);
++			source, len, min_bob);
+ 		return -EINVAL;
+ 	}
+-	if (len > expected)
++
++	copy_len = min(len, max_bob);
++	if (len > max_bob)
+ 		dev_warn(lddla->dev,
+ 			 "%s BOB has %zu extra bytes; ignoring them\n",
+-			 source, len - expected);
++			 source, len - max_bob);
+ 
+-	ret = lddla_bob_check(lddla, data, expected, &endian, &magic);
++	ret = lddla_bob_check(lddla, data, copy_len, &endian, &magic);
+ 	if (ret)
+ 		return ret;
+ 
+ 	memset(lddla->bob, 0xff, sizeof(lddla->bob));
+ 	if (endian == AIROHA_LDDLA_BOB_ENDIAN_LITTLE) {
+-		memcpy(lddla->bob, data, expected);
++		memcpy(lddla->bob, data, copy_len);
+ 	} else {
+ 		/* Normalize every 32-bit factory word to little-endian bytes. */
+-		for (i = 0; i + sizeof(u32) <= expected; i += sizeof(u32))
++		for (i = 0; i + sizeof(u32) <= copy_len; i += sizeof(u32))
+ 			put_unaligned_le32(get_unaligned_be32(data + i),
+ 					   lddla->bob + i);
+-		if (i < expected)
+-			memcpy(lddla->bob + i, data + i, expected - i);
++		if (i < copy_len)
++			memcpy(lddla->bob + i, data + i, copy_len - i);
+ 	}
+ 
+-	lddla->bob_len = expected;
++	lddla->bob_len = copy_len;
+ 	lddla->bob_valid = true;
+ 	lddla->bob_source_endian = endian;
+ 	lddla->bob_magic = magic;
+@@ -313,7 +318,7 @@ static int lddla_bob_import(struct airoha_lddla *lddla, const u8 *data,
+ 
+ 	dev_info(lddla->dev,
+ 		 "loaded %zu-byte %s-endian BOB from %s: magic 0x%08x, chip-id 0x%02x, profile 0x%02x\n",
+-		 expected,
++		 copy_len,
+ 		 endian == AIROHA_LDDLA_BOB_ENDIAN_BIG ? "big" : "little",
+ 		 source, magic, lddla->bob_chip_id, lddla->bob_profile);
+ 	return 0;
+@@ -433,7 +438,7 @@ u32 lddla_flash_read(struct airoha_lddla *lddla, u32 off)
+ 
+ void lddla_flash_defaults(struct airoha_lddla *lddla)
+ {
+-	size_t size = lddla->ops ? lddla->ops->bob_size : 0;
++	size_t size = lddla->ops ? lddla->ops->bob_size_min : 0;
+ 
+ 	memset(lddla->bob, 0xff, sizeof(lddla->bob));
+ 	lddla->bob_len = min_t(size_t, size, sizeof(lddla->bob));
+diff --git a/drivers/net/optical/airoha/en7570_main.c b/drivers/net/optical/airoha/en7570_main.c
+index 0d6468c649c4..f811a60994a2 100644
+--- a/drivers/net/optical/airoha/en7570_main.c
++++ b/drivers/net/optical/airoha/en7570_main.c
+@@ -361,7 +361,8 @@ static const struct airoha_lddla_ops en7570_ops = {
+ 	.protocols = BIT(OPTICAL_FRONTEND_PROTO_EPON) |
+ 		     BIT(OPTICAL_FRONTEND_PROTO_GPON),
+ 	.thresholds = &airoha_lddla_default_thresholds,
+-	.bob_size = AIROHA_LDDLA_FLASH_WORDS * sizeof(u32),
++	.bob_size_min = AIROHA_LDDLA_BOB_MIN_SIZE,
++	.bob_size_max = AIROHA_LDDLA_BOB_MAX_SIZE,
+ 	.temp_refresh = en7570_op_temp,
+ 	.bosa_temp_refresh = en7570_op_bosa_temp,
+ 	.vcc_refresh = en7570_op_vcc,
+diff --git a/drivers/net/optical/airoha/en7571_main.c b/drivers/net/optical/airoha/en7571_main.c
+index aa6dc814afa8..b25ebc6ea656 100644
+--- a/drivers/net/optical/airoha/en7571_main.c
++++ b/drivers/net/optical/airoha/en7571_main.c
+@@ -392,7 +392,8 @@ static const struct airoha_lddla_ops en7571_ops = {
+ 	.protocols = BIT(OPTICAL_FRONTEND_PROTO_EPON) |
+ 		     BIT(OPTICAL_FRONTEND_PROTO_GPON),
+ 	.thresholds = &airoha_lddla_default_thresholds,
+-	.bob_size = AIROHA_LDDLA_FLASH_WORDS * sizeof(u32),
++	.bob_size_min = AIROHA_LDDLA_BOB_MIN_SIZE,
++	.bob_size_max = AIROHA_LDDLA_BOB_MAX_SIZE,
+ 	.temp_refresh = en7571_op_temp,
+ 	.bosa_temp_refresh = en7571_op_bosa_temp,
+ 	.vcc_refresh = en7571_op_vcc,
+diff --git a/drivers/net/optical/airoha/en7572_main.c b/drivers/net/optical/airoha/en7572_main.c
+index 3c0fd75d4f6b..3a1035d64555 100644
+--- a/drivers/net/optical/airoha/en7572_main.c
++++ b/drivers/net/optical/airoha/en7572_main.c
+@@ -410,9 +410,14 @@ static const struct airoha_lddla_ops en7572_ops = {
+ 	.part_number	= "EN7572",
+ 	.serial		= "0000000000000000",
+ 	.date_code	= "000000",
+-	.protocols	= BIT(OPTICAL_FRONTEND_PROTO_GPON),
++	.protocols	= BIT(OPTICAL_FRONTEND_PROTO_EPON) |
++			  BIT(OPTICAL_FRONTEND_PROTO_GPON) |
++			  BIT(OPTICAL_FRONTEND_PROTO_XGPON) |
++			  BIT(OPTICAL_FRONTEND_PROTO_XGSPON) |
++			  BIT(OPTICAL_FRONTEND_PROTO_NGPON2),
+ 	.thresholds	= &en7572_thresholds,
+-	.bob_size	= EN7572_BOB_SIZE,
++	.bob_size_min	= EN7572_BOB_SIZE,
++	.bob_size_max	= EN7572_BOB_SIZE,
+ 	.temp_refresh	= en7572_temp_refresh,
+ 	.vcc_refresh	= en7572_vcc_refresh,
+ 	.bias_refresh	= en7572_bias_refresh,
+-- 
+2.55.0
+

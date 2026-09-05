@@ -1,0 +1,461 @@
+From d090f308bbc41e7814048dac520b6b9b749968db Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Tue, 28 Jul 2026 20:06:04 -0300
+Subject: [PATCH] net: omci: implement OMCI capability tables
+
+Implement the class 287 ME type and message type tables, including
+the baseline get-next snapshot semantics required to transfer table
+attributes. Advertise only provisioned/native descriptors, active MIB
+classes, and the partial bridge/GAL profiles handled by the shadow MIB.
+
+Also make wire tracing action-aware so MIB upload counts and upload-next
+class IDs are no longer reported as result codes.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ net/omci/agent.c    | 272 ++++++++++++++++++++++++++++++++++++++++++--
+ net/omci/internal.h |   6 +
+ net/omci/me.c       |  11 ++
+ net/omci/me.h       |   2 +
+ 4 files changed, 282 insertions(+), 9 deletions(-)
+
+diff --git a/net/omci/agent.c b/net/omci/agent.c
+index 95521431a4b0..239cec259c18 100644
+--- a/net/omci/agent.c
++++ b/net/omci/agent.c
+@@ -8,9 +8,11 @@
+  * persist and amend them through Generic Netlink.
+  */
+ 
++#include <linux/bitmap.h>
+ #include <linux/errno.h>
+ #include <linux/int_log.h>
+ #include <linux/jhash.h>
++#include <linux/jiffies.h>
+ #include <linux/if_vlan.h>
+ #include <linux/kernel.h>
+ #include <linux/math.h>
+@@ -63,6 +65,8 @@
+ #define OMCI_BRIDGE_TP_MULTICAST_GEM_IWTP	6
+ #define OMCI_BRIDGE_TP_VEIP		11
+ 
++static void omci_agent_reset_table_snapshot_locked(struct omci_agent *agent);
++
+ static bool omci_agent_result_can_be_faked(u8 result)
+ {
+ 	switch (result) {
+@@ -102,6 +106,11 @@ static bool omci_agent_result_can_be_faked(u8 result)
+ #define OMCI_MAX_TCONT_RESOURCES		32
+ #define OMCI_MAX_QUEUES_PER_TCONT		8
+ 
++#define OMCI_OMCI_ME_TYPE_TABLE_MASK		BIT(15)
++#define OMCI_OMCI_MESSAGE_TYPE_TABLE_MASK	BIT(14)
++#define OMCI_TABLE_SNAPSHOT_TIMEOUT		(60 * HZ)
++#define OMCI_BASELINE_TABLE_FRAGMENT_LEN	29
++
+ #define OMCI_ONU_G_DYING_GASP_ALARM	7
+ #define OMCI_ALARM_BITMAP_LEN		28
+ #define OMCI_ALARM_SEQUENCE_OFFSET	(8 + OMCI_ALARM_BITMAP_LEN)
+@@ -818,6 +827,7 @@ omci_agent_profile_refresh_locked(struct omci_device *odev,
+ 		*profile_changed = changed;
+ 
+ 	if (changed) {
++		omci_agent_reset_table_snapshot_locked(agent);
+ 		agent->upload_index = 0;
+ 		agent->mib_sync++;
+ 		omci_agent_free_object_array(&snapshot);
+@@ -1422,6 +1432,7 @@ void omci_agent_cleanup(struct omci_device *odev)
+ 
+ 	mutex_lock(&agent->lock);
+ 	omci_agent_reset_duplicate_locked(agent);
++	omci_agent_reset_table_snapshot_locked(agent);
+ 	omci_agent_clear_services_locked(odev);
+ 	xa_for_each(&agent->mib, index, object) {
+ 		xa_erase(&agent->mib, index);
+@@ -1444,6 +1455,198 @@ static bool omci_mib_object_active(const struct omci_agent *agent,
+ 	return omci_me_active(agent, object->class_id);
+ }
+ 
++static void omci_agent_reset_table_snapshot_locked(struct omci_agent *agent)
++{
++	kfree(agent->table_snapshot);
++	agent->table_snapshot = NULL;
++	agent->table_snapshot_len = 0;
++	agent->table_snapshot_jiffies = 0;
++	agent->table_snapshot_class_id = 0;
++	agent->table_snapshot_entity_id = 0;
++	agent->table_snapshot_mask = 0;
++}
++
++static int omci_agent_build_me_type_table_locked(struct omci_device *odev,
++						 u8 **table,
++						 size_t *table_len)
++{
++	struct omci_agent *agent = &odev->agent;
++	struct omci_mib_object *object;
++	struct omci_me_class class;
++	unsigned long *classes;
++	unsigned long class_id;
++	unsigned long index;
++	u32 next = 0;
++	size_t count;
++	u8 *data;
++	int ret;
++
++	classes = bitmap_zalloc(U16_MAX + 1, GFP_KERNEL);
++	if (!classes)
++		return -ENOMEM;
++
++	for (;;) {
++		ret = omci_me_class_next(odev, next, &class, &next);
++		if (ret)
++			break;
++		if (class.support >= OMCI_CLASS_SUPPORT_PARSED)
++			set_bit(class.class_id, classes);
++	}
++	if (ret != -ENOENT)
++		goto out_free_bitmap;
++
++	xa_for_each(&agent->mib, index, object) {
++		if (omci_mib_object_active(agent, object))
++			set_bit(object->class_id, classes);
++	}
++	/* Stored bridge/GAL profiles are supported as partial shadow MEs. */
++	set_bit(OMCI_CLASS_MAC_BRIDGE_SERVICE_PROFILE, classes);
++	set_bit(OMCI_CLASS_MAC_BRIDGE_CONFIG_DATA, classes);
++	set_bit(OMCI_CLASS_GAL_ETHERNET_PROFILE, classes);
++	set_bit(OMCI_CLASS_OMCI, classes);
++
++	count = bitmap_weight(classes, U16_MAX + 1);
++	data = kmalloc_array(count, sizeof(u16), GFP_KERNEL);
++	if (!data) {
++		ret = -ENOMEM;
++		goto out_free_bitmap;
++	}
++
++	count = 0;
++	for_each_set_bit(class_id, classes, U16_MAX + 1) {
++		put_unaligned_be16(class_id, data + count * sizeof(u16));
++		count++;
++	}
++	*table = data;
++	*table_len = count * sizeof(u16);
++	ret = 0;
++
++out_free_bitmap:
++	bitmap_free(classes);
++	return ret;
++}
++
++static int omci_agent_build_message_type_table(u8 **table, size_t *table_len)
++{
++	static const u8 message_types[] = {
++		OMCI_MSG_TYPE_CREATE,
++		OMCI_MSG_TYPE_DELETE,
++		OMCI_MSG_TYPE_SET,
++		OMCI_MSG_TYPE_GET,
++		OMCI_MSG_TYPE_GET_ALL_ALARMS,
++		OMCI_MSG_TYPE_GET_ALL_ALARMS_NEXT,
++		OMCI_MSG_TYPE_MIB_UPLOAD,
++		OMCI_MSG_TYPE_MIB_UPLOAD_NEXT,
++		OMCI_MSG_TYPE_MIB_RESET,
++		OMCI_MSG_TYPE_ALARM_NOTIFICATION,
++		OMCI_MSG_TYPE_TEST,
++		OMCI_MSG_TYPE_SYNC_TIME,
++		OMCI_MSG_TYPE_REBOOT,
++		OMCI_MSG_TYPE_GET_NEXT,
++		OMCI_MSG_TYPE_TEST_RESULT,
++		OMCI_MSG_TYPE_GET_CURRENT_DATA,
++		OMCI_MSG_TYPE_SET_TABLE,
++	};
++
++	*table = kmemdup(message_types, sizeof(message_types), GFP_KERNEL);
++	if (!*table)
++		return -ENOMEM;
++	*table_len = sizeof(message_types);
++	return 0;
++}
++
++static u8 omci_agent_get_omci_table_locked(struct omci_device *odev,
++					   u16 entity_id, u16 mask,
++					   u8 *response_content,
++					   size_t response_capacity,
++					   size_t *response_len)
++{
++	struct omci_agent *agent = &odev->agent;
++	u8 *table = NULL;
++	size_t table_len = 0;
++	int ret;
++
++	if (entity_id || hweight16(mask) != 1 ||
++	    !(mask & (OMCI_OMCI_ME_TYPE_TABLE_MASK |
++		      OMCI_OMCI_MESSAGE_TYPE_TABLE_MASK)))
++		return OMCI_RESULT_PARAMETER_ERROR;
++	if (response_capacity < 7)
++		return OMCI_RESULT_PARAMETER_ERROR;
++
++	if (mask == OMCI_OMCI_ME_TYPE_TABLE_MASK)
++		ret = omci_agent_build_me_type_table_locked(odev, &table,
++							    &table_len);
++	else
++		ret = omci_agent_build_message_type_table(&table, &table_len);
++	if (ret)
++		return OMCI_RESULT_PROCESSING_ERROR;
++
++	omci_agent_reset_table_snapshot_locked(agent);
++	agent->table_snapshot = table;
++	agent->table_snapshot_len = table_len;
++	agent->table_snapshot_jiffies = jiffies;
++	agent->table_snapshot_class_id = OMCI_CLASS_OMCI;
++	agent->table_snapshot_entity_id = entity_id;
++	agent->table_snapshot_mask = mask;
++
++	memset(response_content, 0, response_capacity);
++	response_content[0] = OMCI_RESULT_SUCCESS;
++	put_unaligned_be16(mask, response_content + 1);
++	put_unaligned_be32(table_len, response_content + 3);
++	*response_len = 7;
++	return OMCI_RESULT_SUCCESS;
++}
++
++static u8 omci_agent_get_next_locked(struct omci_device *odev,
++				     u16 class_id, u16 entity_id,
++				     u8 device_id, const u8 *content,
++				     size_t content_len, u8 *response_content,
++				     size_t response_capacity,
++				     size_t *response_len)
++{
++	struct omci_agent *agent = &odev->agent;
++	size_t fragment_len;
++	size_t copy_len;
++	size_t offset;
++	u16 sequence;
++	u16 mask;
++
++	if (content_len < 4 || response_capacity < 3)
++		return OMCI_RESULT_PARAMETER_ERROR;
++	if (!omci_me_active(agent, class_id))
++		return OMCI_RESULT_UNKNOWN_ME;
++	if (!omci_me_action_allowed(agent, class_id, OMCI_MSG_TYPE_GET_NEXT))
++		return OMCI_RESULT_NOT_SUPPORTED;
++	mask = get_unaligned_be16(content);
++	sequence = get_unaligned_be16(content + 2);
++	if (hweight16(mask) != 1)
++		return OMCI_RESULT_PARAMETER_ERROR;
++	if (!agent->table_snapshot ||
++	    time_after(jiffies, agent->table_snapshot_jiffies +
++		       OMCI_TABLE_SNAPSHOT_TIMEOUT) ||
++	    agent->table_snapshot_class_id != class_id ||
++	    agent->table_snapshot_entity_id != entity_id ||
++	    agent->table_snapshot_mask != mask)
++		return OMCI_RESULT_PARAMETER_ERROR;
++
++	fragment_len = device_id == OMCI_BASELINE_DEV_ID ?
++		OMCI_BASELINE_TABLE_FRAGMENT_LEN : response_capacity - 3;
++	if (sequence > SIZE_MAX / fragment_len)
++		return OMCI_RESULT_PARAMETER_ERROR;
++	offset = (size_t)sequence * fragment_len;
++	if (offset >= agent->table_snapshot_len)
++		return OMCI_RESULT_PARAMETER_ERROR;
++
++	copy_len = min(fragment_len, agent->table_snapshot_len - offset);
++	memset(response_content, 0, response_capacity);
++	response_content[0] = OMCI_RESULT_SUCCESS;
++	put_unaligned_be16(mask, response_content + 1);
++	memcpy(response_content + 3, agent->table_snapshot + offset, copy_len);
++	*response_len = 3 + copy_len;
++	agent->table_snapshot_jiffies = jiffies;
++	return OMCI_RESULT_SUCCESS;
++}
++
+ static bool omci_mib_object_uploadable(const struct omci_agent *agent,
+ 				       const struct omci_mib_object *object)
+ {
+@@ -2505,6 +2708,11 @@ static u8 omci_agent_get_locked(struct omci_device *odev, u16 class_id,
+ 		return OMCI_RESULT_UNKNOWN_ME;
+ 	if (!omci_me_action_allowed(agent, class_id, OMCI_MSG_TYPE_GET))
+ 		return OMCI_RESULT_NOT_SUPPORTED;
++	if (class_id == OMCI_CLASS_OMCI)
++		return omci_agent_get_omci_table_locked(odev, entity_id, mask,
++							response_content,
++							response_capacity,
++							response_len);
+ 
+ 	if (omci_agent_get_uses_ani_g_telemetry(class_id, entity_id, mask) &&
+ 	    odev->ops && odev->ops->get_telemetry)
+@@ -2606,8 +2814,8 @@ static void omci_agent_log_wire(struct omci_device *odev,
+ 				size_t len)
+ {
+ 	struct omci_wire_request request;
++	bool response;
+ 	u8 action;
+-	u8 result = 0;
+ 
+ 	if (omci_wire_decode(data, len, &request)) {
+ 		dev_info(odev->parent, "OMCI %s invalid PDU: %*phN\n",
+@@ -2616,13 +2824,46 @@ static void omci_agent_log_wire(struct omci_device *odev,
+ 	}
+ 
+ 	action = request.message_type & 0x1f;
+-	if (request.payload_len)
+-		result = request.payload[0];
+-	dev_info(odev->parent,
+-		 "OMCI %s: tci=%#06x type=%#04x action=%u device=%#04x class=%u entity=%#06x payload=%u result=%u\n",
+-		 direction, request.transaction_id, request.message_type, action,
+-		 request.device_id, request.class_id, request.entity_id,
+-		 request.payload_len, result);
++	response = request.message_type & 0x20;
++	if (action == OMCI_MSG_TYPE_MIB_UPLOAD && response &&
++	    request.payload_len >= 2) {
++		dev_info(odev->parent,
++			 "OMCI %s: tci=%#06x type=%#04x action=%u device=%#04x class=%u entity=%#06x payload=%u command-count=%u\n",
++			 direction, request.transaction_id, request.message_type,
++			 action, request.device_id, request.class_id,
++			 request.entity_id, request.payload_len,
++			 get_unaligned_be16(request.payload));
++	} else if (action == OMCI_MSG_TYPE_MIB_UPLOAD_NEXT &&
++		   request.payload_len >= 2) {
++		dev_info(odev->parent,
++			 "OMCI %s: tci=%#06x type=%#04x action=%u device=%#04x class=%u entity=%#06x payload=%u %s=%u\n",
++			 direction, request.transaction_id, request.message_type,
++			 action, request.device_id, request.class_id,
++			 request.entity_id, request.payload_len,
++			 response ? "returned-class" : "sequence",
++			 get_unaligned_be16(request.payload));
++	} else if (action == OMCI_MSG_TYPE_GET_NEXT &&
++		   request.payload_len >= (response ? 3 : 4)) {
++		u16 mask = response ? get_unaligned_be16(request.payload + 1) :
++				      get_unaligned_be16(request.payload);
++		u16 sequence = response ? 0 :
++				  get_unaligned_be16(request.payload + 2);
++
++		dev_info(odev->parent,
++			 "OMCI %s: tci=%#06x type=%#04x action=%u device=%#04x class=%u entity=%#06x payload=%u result=%u mask=%#06x sequence=%u\n",
++			 direction, request.transaction_id, request.message_type,
++			 action, request.device_id, request.class_id,
++			 request.entity_id, request.payload_len,
++			 response ? request.payload[0] : 0, mask, sequence);
++	} else {
++		u8 result = request.payload_len ? request.payload[0] : 0;
++
++		dev_info(odev->parent,
++			 "OMCI %s: tci=%#06x type=%#04x action=%u device=%#04x class=%u entity=%#06x payload=%u result=%u\n",
++			 direction, request.transaction_id, request.message_type,
++			 action, request.device_id, request.class_id,
++			 request.entity_id, request.payload_len, result);
++	}
+ 	dev_info(odev->parent, "OMCI %s PDU: %*phN\n",
+ 		 direction, (int)len, data);
+ }
+@@ -2815,7 +3056,6 @@ omci_agent_build_response_locked(struct omci_device *odev,
+ 		*content_len = 5;
+ 		break;
+ 	case OMCI_MSG_TYPE_GET:
+-	case OMCI_MSG_TYPE_GET_NEXT:
+ 	case OMCI_MSG_TYPE_GET_CURRENT_DATA:
+ 		result = omci_agent_get_locked(odev, class_id, entity_id,
+ 					      request->payload,
+@@ -2834,6 +3074,18 @@ omci_agent_build_response_locked(struct omci_device *odev,
+ 			*content_len = 1;
+ 		}
+ 		break;
++	case OMCI_MSG_TYPE_GET_NEXT:
++		result = omci_agent_get_next_locked(odev, class_id, entity_id,
++						    request->device_id,
++						    request->payload,
++						    request->payload_len,
++						    content, capacity,
++						    content_len);
++		if (result) {
++			content[0] = result;
++			*content_len = 1;
++		}
++		break;
+ 	case OMCI_MSG_TYPE_GET_ALL_ALARMS:
+ 		if (capacity < 3)
+ 			return -EMSGSIZE;
+@@ -2861,6 +3113,7 @@ omci_agent_build_response_locked(struct omci_device *odev,
+ 		*content_len = 32;
+ 		break;
+ 	case OMCI_MSG_TYPE_MIB_RESET:
++		omci_agent_reset_table_snapshot_locked(agent);
+ 		omci_agent_reset_olt_objects_locked(agent);
+ 		if (omci_agent_profile_refresh_locked(odev, NULL,
+ 						      profile_changed))
+@@ -3091,6 +3344,7 @@ void omci_agent_channel_changed(struct omci_device *odev, bool valid)
+ 	operational_changed = agent->operational;
+ 	agent->operational = false;
+ 	omci_agent_reset_duplicate_locked(agent);
++	omci_agent_reset_table_snapshot_locked(agent);
+ 	agent->upload_index = 0;
+ 	if (!valid) {
+ 		agent->alarm_sequence = 0;
+diff --git a/net/omci/internal.h b/net/omci/internal.h
+index 567e71f4957c..2bce5dab4f83 100644
+--- a/net/omci/internal.h
++++ b/net/omci/internal.h
+@@ -93,6 +93,12 @@ struct omci_agent {
+ 	struct sk_buff *last_response;
+ 	u32 last_request_hash;
+ 	bool last_response_fake;
++	u8 *table_snapshot;
++	size_t table_snapshot_len;
++	unsigned long table_snapshot_jiffies;
++	u16 table_snapshot_class_id;
++	u16 table_snapshot_entity_id;
++	u16 table_snapshot_mask;
+ 
+ 	atomic64_t responses;
+ 	atomic64_t duplicates;
+diff --git a/net/omci/me.c b/net/omci/me.c
+index 402977b1ede7..13ac8cd06138 100644
+--- a/net/omci/me.c
++++ b/net/omci/me.c
+@@ -534,6 +534,11 @@ static const struct omci_attr_desc omci_nokia_65306_attrs[] = {
+ 	OMCI_ATTR(15, 0, 19, OMCI_RW),
+ };
+ 
++static const struct omci_attr_desc omci_omci_attrs[] = {
++	OMCI_ATTR(15, 0, 4, OMCI_R),
++	OMCI_ATTR(14, 4, 4, OMCI_R),
++};
++
+ #define STANDARD_ACTIONS (OMCI_ME_ACTION_GET | OMCI_ME_ACTION_SET)
+ #define OLT_CREATED_ACTIONS (OMCI_ME_ACTION_CREATE | OMCI_ME_ACTION_DELETE | \
+ 			     OMCI_ME_ACTION_GET | OMCI_ME_ACTION_SET)
+@@ -597,6 +602,12 @@ static const struct omci_me_desc omci_me_descs[] = {
+ 		      GENMASK(15, 6), GENMASK(15, 6), 17,
+ 		      OMCI_CLASS_CATEGORY_ANI, OMCI_CLASS_SUPPORT_PROVISIONED,
+ 		      omci_gem_port_ctp_attrs),
++	STANDARD_DESC(OMCI_CLASS_OMCI, "OMCI",
++		      OMCI_ME_ACTION_GET | OMCI_ME_ACTION_GET_NEXT,
++		      OMCI_ME_F_ONU_CREATED | OMCI_ME_F_NO_MIB_UPLOAD,
++		      GENMASK(15, 14), 0, 8,
++		      OMCI_CLASS_CATEGORY_MANAGEMENT, OMCI_CLASS_SUPPORT_NATIVE,
++		      omci_omci_attrs),
+ 	STANDARD_DESC(OMCI_CLASS_VEIP, "Virtual Ethernet interface point",
+ 		      STANDARD_ACTIONS, OMCI_ME_F_ONU_CREATED | OMCI_ME_F_DATAPATH,
+ 		      GENMASK(15, 11), GENMASK(15, 11), 31,
+diff --git a/net/omci/me.h b/net/omci/me.h
+index b938dbdcc20b..f97bd86f2027 100644
+--- a/net/omci/me.h
++++ b/net/omci/me.h
+@@ -31,6 +31,7 @@ struct omci_mib_object;
+ #define OMCI_CLASS_GAL_ETHERNET_PROFILE	272
+ #define OMCI_CLASS_PRIORITY_QUEUE	277
+ #define OMCI_CLASS_TRAFFIC_SCHEDULER	278
++#define OMCI_CLASS_OMCI		287
+ #define OMCI_CLASS_VEIP		329
+ 
+ #define OMCI_CLASS_HUAWEI_FLOW_MAPPING	350
+@@ -54,6 +55,7 @@ struct omci_mib_object;
+ #define OMCI_ME_ACTION_DELETE		BIT(6)
+ #define OMCI_ME_ACTION_SET		BIT(8)
+ #define OMCI_ME_ACTION_GET		BIT(9)
++#define OMCI_ME_ACTION_GET_NEXT		BIT(26)
+ #define OMCI_ME_ACTION_MIB_UPLOAD	BIT(13)
+ #define OMCI_ME_ACTION_MIB_UPLOAD_NEXT	BIT(14)
+ #define OMCI_ME_ACTION_MIB_RESET	BIT(15)
+-- 
+2.55.0
+

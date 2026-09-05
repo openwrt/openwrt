@@ -1,0 +1,126 @@
+// SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+/dts-v1/;
+
+#include "en7528_dasan_h660gm-a.dtsi"
+
+/ {
+	model = "DASAN H660GM-A (Generic)";
+	compatible = "dasan,h660gm-a-generic", "econet,en7528";
+
+	keys {
+		key-wlan {
+			label = "wlan";
+			gpios = <&pinctrl 22 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RFKILL>;
+		};
+	};
+
+	leds {
+		led_usb: usb {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_USB;
+			gpios = <&pinctrl 8 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "usbport";
+			trigger-sources = <&usb>;
+		};
+
+		led-lan1-green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <1>;
+			gpios = <&pinctrl 31 GPIO_ACTIVE_LOW>;
+		};
+
+		led-lan1-amber {
+			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <1>;
+			gpios = <&pinctrl 23 GPIO_ACTIVE_LOW>;
+		};
+
+		led-lan2-green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <2>;
+			gpios = <&pinctrl 1 GPIO_ACTIVE_LOW>;
+		};
+
+		led-lan2-amber {
+			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <2>;
+			gpios = <&pinctrl 24 GPIO_ACTIVE_LOW>;
+		};
+
+		led-lan3-green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <3>;
+			gpios = <&pinctrl 3 GPIO_ACTIVE_LOW>;
+		};
+
+		led-lan3-amber {
+			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <3>;
+			gpios = <&pinctrl 25 GPIO_ACTIVE_LOW>;
+		};
+
+		led-lan4-green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <4>;
+			gpios = <&pinctrl 5 GPIO_ACTIVE_LOW>;
+		};
+
+		led-lan4-amber {
+			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <4>;
+			gpios = <&pinctrl 26 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&partitions {
+	/* Concatenated with tclinux_rootfs to form the UBI volume */
+	root1: partition@60c0000 {
+		label = "unknown";
+		reg = <0x60c0000 0xd00000>;
+	};
+
+	partition@6dc0000 {
+		label = "reservearea";
+		reg = <0x6dc0000 0x240000>;
+		nvmem-layout {
+			compatible = "fixed-layout";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			eeprom_reservearea_40000: eeprom@40000 {
+				reg = <0x40000 0x4da8>;
+			};
+
+			eeprom_reservearea_1c0000: eeprom@1c0000 {
+				reg = <0x1c0000 0x400>;
+			};
+		};
+	};
+};
+
+/* Sockets are numbered in reverse switch port order: LAN1 is port 4. */
+&gsw_port1 {
+	label = "lan4";
+};
+
+&gsw_port2 {
+	label = "lan3";
+};
+
+&gsw_port3 {
+	label = "lan2";
+};
+
+&gsw_port4 {
+	label = "lan1";
+};
