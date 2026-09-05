@@ -35,6 +35,7 @@ function wireless_config_done()
 			data: {},
 		},
 	});
+	ubus.event('wifi-scripts', { action: "config_done" });
 }
 
 function delete_wdev(name)
