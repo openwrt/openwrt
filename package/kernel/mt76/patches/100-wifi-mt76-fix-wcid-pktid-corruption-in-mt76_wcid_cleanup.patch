@@ -1,0 +1,50 @@
+From: Ryan Leung <untilscour@protonmail.com>
+Date: Thu, 20 Aug 2026 12:45:01 +0000
+Subject: [PATCH mt76] wifi: mt76: fix wcid->pktid corruption in mt76_wcid_cleanup()
+
+mt76_wcid_cleanup() releases dev->status_lock before calling
+idr_destroy(&wcid->pktid) to tear down the pktid idr. Meanwhile,
+mt76_tx_status_skb_add() from tx.c can concurrently insert into
+that same idr during tx completion handling:
+
+	spin_lock_bh(&dev->status_lock);
+
+	pid = idr_alloc(&wcid->pktid, skb, MT_PACKET_ID_FIRST,
+			MT_PACKET_ID_MASK, GFP_ATOMIC);
+
+Since idr_destroy() runs outside the lock, it can execute concurrently
+with idr_alloc() on the same idr, corrupting its internal data
+structures. Because idr nodes are freed through the generic slab
+allocator, this corruption can resurface later as an unrelated-looking
+crash anywhere in the kernel that happens to reuse the same freed
+memory.
+
+Fix this by calling idr_destroy() before releasing dev->status_lock,
+so that the table teardown and any concurrent insertion are mutually
+exclusive.
+
+Closes: https://github.com/openwrt/openwrt/issues/24594
+Fixes: bd1e3e7b693c ("mt76: introduce packet_id idr")
+Link: https://patch.msgid.link/20260820-mt76-pktid-idr-race-v1-1-451f176a6495@protonmail.com
+Signed-off-by: Ryan Leung <untilscour@protonmail.com>
+---
+ mac80211.c | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+--- a/mac80211.c
++++ b/mac80211.c
+@@ -1728,9 +1728,12 @@ void mt76_wcid_cleanup(struct mt76_dev *dev, struct mt76_wcid *wcid)
+ 
+ 	mt76_tx_status_lock(dev, &list);
+ 	mt76_tx_status_skb_get(dev, wcid, -1, &list);
+-	mt76_tx_status_unlock(dev, &list);
+-
++	/*
++	 * must run under status_lock to avoid racing mt76_tx_status_skb_add()
++	 * in tx.c, which allocates pktid entries via idr_alloc() concurrently.
++	 */
+ 	idr_destroy(&wcid->pktid);
++	mt76_tx_status_unlock(dev, &list);
+ 
+ 	/* Remove from sta_poll_list to prevent list corruption after reset.
+ 	 * Without this, mt76_reset_device() reinitializes sta_poll_list but
