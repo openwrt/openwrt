@@ -356,6 +356,13 @@ define U-Boot/rock-4d-rk3576
     radxa_rock-4d
 endef
 
+define U-Boot/sige5-rk3576
+  $(U-Boot/rk3576/Default)
+  NAME:=Sige5
+  BUILD_DEVICES:= \
+    armsom_sige5
+endef
+
 
 # RK358x boards
 
@@ -476,6 +483,7 @@ UBOOT_TARGETS := \
   generic-rk3576 \
   nanopi-m5-rk3576 \
   rock-4d-rk3576 \
+  sige5-rk3576 \
   generic-rk3588 \
   nanopc-t6-rk3588 \
   rock-5-itx-rk3588 \
