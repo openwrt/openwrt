@@ -8,6 +8,7 @@
 #include <linux/ethtool.h>
 #include <linux/if_vlan.h>
 #include <linux/interrupt.h>
+#include <linux/log2.h>
 #include <linux/module.h>
 #include <linux/of.h>
 #include <linux/of_address.h>
@@ -17,6 +18,8 @@
 #include <linux/regmap.h>
 #include <linux/reset.h>
 #include <linux/version.h>
+#include <net/netdev_queues.h>
+
 #include "qca_edma.h"
 
 static void edma_irq_disable_all(struct edma_priv *priv)
@@ -310,8 +313,31 @@ static bool edma_rx_page_take(struct edma_priv *priv, struct page *page,
 	return false;
 }
 
+/* Descriptors the transmit ring has left, taken from the hardware rather than
+ * from a cached index: the stop and its recheck have to see what the engine
+ * has consumed by now, not what it had consumed when the frame arrived.
+ */
+static u16 edma_txdesc_free(struct edma_priv *priv)
+{
+	const struct edma_soc_data *soc = priv->soc;
+	u32 prod, cons;
+
+	regmap_read(priv->regmap, EDMA_REG_TXDESC_PROD_IDX(soc->txdesc_ring),
+		    &prod);
+	regmap_read(priv->regmap, EDMA_REG_TXDESC_CONS_IDX(soc->txdesc_ring),
+		    &cons);
+
+	return ((cons & EDMA_TXDESC_CONS_IDX_MASK) -
+		(prod & EDMA_TXDESC_PROD_IDX_MASK) - 1) &
+	       (priv->txdesc_ring.count - 1);
+}
+
+/* @napi_budget is the NAPI budget the poll was given, or zero when the caller
+ * is not a poll: the skb cache napi_consume_skb() recycles into is per-CPU and
+ * is only safe to touch from softirq context.
+ */
 static u32 edma_clean_tx(struct edma_priv *priv, struct edma_ring *txcmpl_ring,
-			 int budget)
+			 int budget, int napi_budget)
 {
 	const struct edma_soc_data *soc = priv->soc;
 	struct platform_device *pdev = priv->pdev;
@@ -356,7 +382,7 @@ static u32 edma_clean_tx(struct edma_priv *priv, struct edma_ring *txcmpl_ring,
 				 le32_to_cpu(txdesc->buffer_addr),
 				 len, DMA_TO_DEVICE);
 		bytes += len - EDMA_TX_PREHDR_SIZE;
-		napi_consume_skb(skb, budget);
+		napi_consume_skb(skb, napi_budget);
 
 next:
 		if (++cons == txcmpl_ring->count)
@@ -368,8 +394,12 @@ next:
 	if (cleaned == 0)
 		return 0;
 
-	netdev_tx_completed_queue(netdev_get_tx_queue(priv->netdev, 0), cleaned,
-				  bytes);
+	/* A drain runs with the queue deliberately stopped and the rings about
+	 * to be freed, so only a poll may wake it.
+	 */
+	__netif_txq_completed_wake(netdev_get_tx_queue(priv->netdev, 0),
+				   cleaned, bytes, edma_txdesc_free(priv),
+				   EDMA_TX_RING_THRESH, !napi_budget);
 
 	/* Ensure all TX completions are processed before updating cons idx */
 	wmb();
@@ -477,25 +507,9 @@ next:
 static int edma_tx_napi(struct napi_struct *napi, int budget)
 {
 	struct edma_priv *priv = container_of(napi, struct edma_priv, tx_napi);
-	int work = edma_clean_tx(priv, &priv->txcmpl_ring, budget);
+	int work = edma_clean_tx(priv, &priv->txcmpl_ring, budget, budget);
 	const struct edma_soc_data *soc = priv->soc;
 	u32 val;
-
-	if (priv->netdev && netif_queue_stopped(priv->netdev) &&
-	    netif_carrier_ok(priv->netdev)) {
-		u16 prod, cons, free;
-
-		regmap_read(priv->regmap,
-			    EDMA_REG_TXDESC_PROD_IDX(soc->txdesc_ring), &val);
-		prod = val & EDMA_TXDESC_PROD_IDX_MASK;
-		regmap_read(priv->regmap,
-			    EDMA_REG_TXDESC_CONS_IDX(soc->txdesc_ring), &val);
-		cons = val & EDMA_TXDESC_CONS_IDX_MASK;
-		free = (cons - prod - 1) & (priv->txdesc_ring.count - 1);
-
-		if (free > EDMA_TX_RING_THRESH)
-			netif_wake_queue(priv->netdev);
-	}
 
 	if (work < budget) {
 		regmap_read(priv->regmap,
@@ -583,11 +597,17 @@ static netdev_tx_t edma_ring_xmit(struct edma_priv *priv, struct net_device *net
 	cons = val & EDMA_TXDESC_CONS_IDX_MASK;
 
 	next = (prod + 1) & (txdesc_ring->count - 1);
+	idx = prod & (txdesc_ring->count - 1);
 
-	if (next == cons) {
-		spin_unlock_bh(&priv->tx_lock);
-		return NETDEV_TX_BUSY;
-	}
+	if (next == cons)
+		goto busy;
+
+	/* Both refusals come before the preheader is pushed: the qdisc requeues
+	 * the frame as it was handed over, and a second push would prefix it
+	 * twice and hand the hardware a length that no longer describes it.
+	 */
+	if (unlikely(txdesc_ring->skb_store[idx] != NULL))
+		goto busy;
 
 	buf_len = skb_headlen(skb);
 
@@ -602,12 +622,6 @@ static netdev_tx_t edma_ring_xmit(struct edma_priv *priv, struct net_device *net
 	memset((void *)txph, 0, EDMA_TX_PREHDR_SIZE);
 
 	txph->dst_info = dst_info;
-
-	idx = prod & (txdesc_ring->count - 1);
-	if (unlikely(txdesc_ring->skb_store[idx] != NULL)) {
-		spin_unlock_bh(&priv->tx_lock);
-		return NETDEV_TX_BUSY;
-	}
 
 	txdesc_ring->skb_store[idx] = skb;
 	txph->opaque = idx;
@@ -640,12 +654,34 @@ static netdev_tx_t edma_ring_xmit(struct edma_priv *priv, struct net_device *net
 		     EDMA_REG_TXDESC_PROD_IDX(soc->txdesc_ring),
 		     prod & EDMA_TXDESC_PROD_IDX_MASK);
 
-	if (((cons - prod - 1) & (txdesc_ring->count - 1)) <
-	    EDMA_TX_RING_THRESH)
-		netif_stop_queue(netdev);
+	/* The queue is rechecked against the hardware once it is stopped: a
+	 * completion that drains the ring between the descriptor going out and
+	 * the stop landing would otherwise find the queue still running and
+	 * leave nothing behind to start it again.
+	 */
+	netif_txq_maybe_stop(netdev_get_tx_queue(netdev, 0),
+			     edma_txdesc_free(priv), EDMA_TX_RING_THRESH,
+			     EDMA_TX_RING_THRESH);
 
 	spin_unlock_bh(&priv->tx_lock);
 	return NETDEV_TX_OK;
+
+busy:
+	/* A refusal stops the queue here rather than in the caller, so that the
+	 * recheck happens against the state this refusal was decided on: a
+	 * completion that drains the ring once the lock is dropped would
+	 * otherwise find the queue still running and leave nothing behind to
+	 * start it again. A taken store slot outlives the descriptor that named
+	 * it, because the engine releases the descriptor as soon as it reads it
+	 * and only the completion clears the slot, so a free descriptor count
+	 * would restart the queue on a resource the refused frame still lacks.
+	 */
+	netif_txq_try_stop(netdev_get_tx_queue(netdev, 0),
+			   txdesc_ring->skb_store[idx] ? 0 :
+			   edma_txdesc_free(priv), EDMA_TX_RING_THRESH);
+
+	spin_unlock_bh(&priv->tx_lock);
+	return NETDEV_TX_BUSY;
 }
 
 static void edma_rx_ring_free(struct edma_priv *priv, struct edma_ring *ring,
@@ -717,22 +753,22 @@ static int edma_rings_alloc(struct edma_priv *priv)
 {
 	int ret;
 
-	ret = edma_tx_ring_alloc(priv, &priv->txdesc_ring, EDMA_TX_RING_SIZE,
+	ret = edma_tx_ring_alloc(priv, &priv->txdesc_ring, priv->tx_ring_size,
 				 sizeof(struct edma_txdesc));
 	if (ret)
 		return ret;
 
-	ret = edma_ring_alloc(priv, &priv->txcmpl_ring, EDMA_TX_RING_SIZE,
+	ret = edma_ring_alloc(priv, &priv->txcmpl_ring, priv->tx_ring_size,
 			      sizeof(struct edma_txcmpl));
 	if (ret)
 		goto err_txcmpl;
 
-	ret = edma_rx_ring_alloc(priv, &priv->rxfill_ring, EDMA_RX_RING_SIZE,
+	ret = edma_rx_ring_alloc(priv, &priv->rxfill_ring, priv->rx_ring_size,
 				 sizeof(struct edma_rxfill_desc));
 	if (ret)
 		goto err_rxfill;
 
-	ret = edma_ring_alloc(priv, &priv->rxdesc_ring, EDMA_RX_RING_SIZE,
+	ret = edma_ring_alloc(priv, &priv->rxdesc_ring, priv->rx_ring_size,
 			      sizeof(struct edma_rxdesc));
 	if (ret)
 		goto err_rxdesc;
@@ -752,7 +788,7 @@ err_txcmpl:
 static void edma_rings_drain(struct edma_priv *priv)
 {
 	edma_txdesc_drain(priv, &priv->txdesc_ring);
-	edma_clean_tx(priv, &priv->txcmpl_ring, INT_MAX);
+	edma_clean_tx(priv, &priv->txcmpl_ring, INT_MAX, 0);
 
 	edma_tx_ring_free(priv, &priv->txdesc_ring, sizeof(struct edma_txdesc));
 	edma_ring_free(priv, &priv->txcmpl_ring, sizeof(struct edma_txcmpl));
@@ -915,14 +951,20 @@ static void edma_hw_reset(struct edma_priv *priv)
 static int edma_hw_init(struct edma_priv *priv)
 {
 	const struct edma_soc_data *soc = priv->soc;
-	int ret;
+	int i, ret;
 	u32 val;
 
 	edma_hw_reset(priv);
 	edma_hw_stop(priv);
 
-	regmap_write(priv->regmap, EDMA_QID2RID_TABLE_MEM(0),
-		     soc->rxdesc_ring & 0xF);
+	/* Every queue names the one receive ring this driver enables. The
+	 * vendor writes the first queue alone and leaves the rest pointing at
+	 * ring 0 for its firmware to claim; here that ring stays disabled, so
+	 * a queue other than the first would deliver nowhere.
+	 */
+	val = (soc->rxdesc_ring & EDMA_QID2RID_RING_MASK) * 0x11111111u;
+	for (i = 0; i < EDMA_QID2RID_DEPTH; i++)
+		regmap_write(priv->regmap, EDMA_QID2RID_TABLE_MEM(i), val);
 
 	ret = edma_rings_alloc(priv);
 	if (ret)
@@ -937,7 +979,6 @@ static int edma_hw_init(struct edma_priv *priv)
 
 	if (soc->txcmpl_ring != soc->txdesc_ring) {
 		int map_idx, bit_pos;
-		int i;
 
 		for (i = 0; i < 3; i++)
 			regmap_write(priv->regmap, EDMA_REG_TXDESC2CMPL_MAP(i), 0);
@@ -980,16 +1021,69 @@ static void edma_get_ringparam(struct net_device *netdev,
 			       struct kernel_ethtool_ringparam *kernel_ring,
 			       struct netlink_ext_ack *extack)
 {
-	ring->tx_max_pending = EDMA_TX_RING_SIZE;
-	ring->rx_max_pending = EDMA_RX_RING_SIZE;
-	ring->tx_pending = EDMA_TX_RING_SIZE;
-	ring->rx_pending = EDMA_RX_RING_SIZE;
+	struct edma_priv *priv = netdev_priv(netdev);
+
+	ring->tx_max_pending = EDMA_MAX_RING_SIZE;
+	ring->rx_max_pending = EDMA_MAX_RING_SIZE;
+	ring->tx_pending = priv->tx_ring_size;
+	ring->rx_pending = priv->rx_ring_size;
+}
+
+static int edma_reconfigure(struct edma_priv *priv, u8 order, u16 tx_size,
+			    u16 rx_size);
+
+/* The core has already held the request to what get_ringparam calls the
+ * maximum; the floor and the power of two are this driver's, and a transmit
+ * ring shorter than the threshold it stops the queue at would never start it
+ * again.
+ */
+static int edma_set_ringparam(struct net_device *netdev,
+			      struct ethtool_ringparam *ring,
+			      struct kernel_ethtool_ringparam *kernel_ring,
+			      struct netlink_ext_ack *extack)
+{
+	struct edma_priv *priv = netdev_priv(netdev);
+
+	if (!is_power_of_2(ring->tx_pending) ||
+	    !is_power_of_2(ring->rx_pending)) {
+		NL_SET_ERR_MSG_MOD(extack, "a ring index wraps by a mask, so a ring is a power of two");
+		return -EINVAL;
+	}
+
+	if (ring->tx_pending < EDMA_MIN_RING_SIZE ||
+	    ring->rx_pending < EDMA_MIN_RING_SIZE) {
+		NL_SET_ERR_MSG_MOD(extack, "ring shorter than this driver's floor");
+		return -EINVAL;
+	}
+
+	if (ring->tx_pending == priv->tx_ring_size &&
+	    ring->rx_pending == priv->rx_ring_size)
+		return 0;
+
+	return edma_reconfigure(priv, priv->rx_page_order, ring->tx_pending,
+				ring->rx_pending);
+}
+
+/* One ring in each direction with an interrupt and a NAPI of its own, and
+ * which ring of the engine each one is comes from the per-SoC data. Nothing
+ * here can be handed out differently, which is why no set_channels sits
+ * beside this.
+ */
+static void edma_get_channels(struct net_device *netdev,
+			      struct ethtool_channels *ch)
+{
+	ch->max_rx = 1;
+	ch->max_tx = 1;
+	ch->rx_count = 1;
+	ch->tx_count = 1;
 }
 
 static const struct ethtool_ops edma_ethtool_ops = {
 	.get_drvinfo = edma_get_drvinfo,
 	.get_link = ethtool_op_get_link,
 	.get_ringparam = edma_get_ringparam,
+	.set_ringparam = edma_set_ringparam,
+	.get_channels = edma_get_channels,
 };
 
 static int edma_ndo_open(struct net_device *netdev)
@@ -1025,7 +1119,6 @@ static netdev_tx_t edma_ndo_xmit(struct sk_buff *skb, struct net_device *netdev)
 {
 	struct edma_priv *priv = netdev_priv(netdev);
 	const struct edma_soc_data *soc = priv->soc;
-	netdev_tx_t ret;
 	u32 nhead, ntail;
 
 	if (skb->len < ETH_HLEN)
@@ -1034,12 +1127,14 @@ static netdev_tx_t edma_ndo_xmit(struct sk_buff *skb, struct net_device *netdev)
 	if (skb_is_nonlinear(skb) && skb_linearize(skb))
 		goto drop;
 
-	if (soc->tx_min_size && skb->len < soc->tx_min_size) {
-		if (skb_padto(skb, soc->tx_min_size)) {
-			netdev->stats.tx_dropped++;
-			return NETDEV_TX_OK;
-		}
-		skb->len = soc->tx_min_size;
+	/* skb_padto() zero-fills the tailroom but leaves the tail where it
+	 * was, so advancing the length by hand puts skb->len past the data a
+	 * later head reallocation copies: the pad would be reallocated
+	 * uninitialised and transmitted.
+	 */
+	if (soc->tx_min_size && skb_put_padto(skb, soc->tx_min_size)) {
+		netdev->stats.tx_dropped++;
+		return NETDEV_TX_OK;
 	}
 
 	nhead = netdev->needed_headroom;
@@ -1050,11 +1145,7 @@ static netdev_tx_t edma_ndo_xmit(struct sk_buff *skb, struct net_device *netdev)
 	    pskb_expand_head(skb, nhead, ntail, GFP_ATOMIC))
 		goto drop;
 
-	ret = edma_ring_xmit(priv, netdev, skb, &priv->txdesc_ring);
-	if (ret == NETDEV_TX_BUSY)
-		netif_stop_queue(netdev);
-
-	return ret;
+	return edma_ring_xmit(priv, netdev, skb, &priv->txdesc_ring);
 
 drop:
 	dev_kfree_skb_any(skb);
@@ -1134,11 +1225,11 @@ static u32 edma_rx_buffer_size(u8 order)
 }
 
 static struct page_pool *edma_page_pool_create(struct edma_priv *priv,
-					       u8 order)
+					       u8 order, u16 size)
 {
 	struct page_pool_params pp = {
 		.order     = order,
-		.pool_size = EDMA_RX_RING_SIZE,
+		.pool_size = size,
 		.nid       = NUMA_NO_NODE,
 		.dev       = &priv->pdev->dev,
 		.dma_dir   = DMA_FROM_DEVICE,
@@ -1150,38 +1241,46 @@ static struct page_pool *edma_page_pool_create(struct edma_priv *priv,
 	return page_pool_create(&pp);
 }
 
-static int edma_ndo_change_mtu(struct net_device *netdev, int new_mtu)
+/* The receive buffer size and the ring counts are both fixed at the moment the
+ * rings are allocated, so either one changing means taking them down and
+ * bringing them back - and putting the old ones back if that fails, rather
+ * than leaving the conduit without a datapath.
+ */
+static int edma_reconfigure(struct edma_priv *priv, u8 order, u16 tx_size,
+			    u16 rx_size)
 {
-	struct edma_priv *priv = netdev_priv(netdev);
+	struct net_device *netdev = priv->netdev;
 	struct page_pool *old_pool, *new_pool;
-	u8 old_order, new_order;
+	u16 old_tx = priv->tx_ring_size;
+	u16 old_rx = priv->rx_ring_size;
+	u8 old_order = priv->rx_page_order;
 	bool running;
 	int ret;
 
-	new_order = edma_rx_page_order(new_mtu);
-	if (new_order == priv->rx_page_order) {
-		WRITE_ONCE(netdev->mtu, new_mtu);
-		return 0;
-	}
-
-	new_pool = edma_page_pool_create(priv, new_order);
+	new_pool = edma_page_pool_create(priv, order, rx_size);
 	if (IS_ERR(new_pool))
 		return PTR_ERR(new_pool);
 
 	running = netif_running(netdev);
 	if (running) {
-		netif_tx_disable(netdev);
+		/* The poll is the other writer of the queue state and it wakes
+		 * a stopped queue whenever it completes a frame, so it is put
+		 * down first: a wake landing after netif_tx_disable() leaves
+		 * the transmit path running into the rings freed below.
+		 */
 		edma_ndo_stop(netdev);
+		netif_tx_disable(netdev);
 	}
 
 	edma_hw_stop(priv);
 	edma_rings_drain(priv);
 
 	old_pool = priv->page_pool;
-	old_order = priv->rx_page_order;
 	priv->page_pool = new_pool;
-	priv->rx_page_order = new_order;
-	priv->rx_buffer_size = edma_rx_buffer_size(new_order);
+	priv->rx_page_order = order;
+	priv->rx_buffer_size = edma_rx_buffer_size(order);
+	priv->tx_ring_size = tx_size;
+	priv->rx_ring_size = rx_size;
 
 	ret = edma_hw_init(priv);
 	if (ret) {
@@ -1190,12 +1289,14 @@ static int edma_ndo_change_mtu(struct net_device *netdev, int new_mtu)
 		priv->page_pool = old_pool;
 		priv->rx_page_order = old_order;
 		priv->rx_buffer_size = edma_rx_buffer_size(old_order);
+		priv->tx_ring_size = old_tx;
+		priv->rx_ring_size = old_rx;
 		page_pool_destroy(new_pool);
 
 		restore_ret = edma_hw_init(priv);
 		if (restore_ret) {
 			netdev_err(netdev,
-				   "failed to restore receive buffers after MTU change: %d\n",
+				   "failed to restore the receive rings: %d\n",
 				   restore_ret);
 			if (running) {
 				napi_enable(&priv->tx_napi);
@@ -1206,13 +1307,30 @@ static int edma_ndo_change_mtu(struct net_device *netdev, int new_mtu)
 		}
 	} else {
 		page_pool_destroy(old_pool);
-		WRITE_ONCE(netdev->mtu, new_mtu);
 	}
 
 	if (running)
 		edma_ndo_open(netdev);
 
 	return ret;
+}
+
+static int edma_ndo_change_mtu(struct net_device *netdev, int new_mtu)
+{
+	struct edma_priv *priv = netdev_priv(netdev);
+	u8 order = edma_rx_page_order(new_mtu);
+	int ret;
+
+	if (order != priv->rx_page_order) {
+		ret = edma_reconfigure(priv, order, priv->tx_ring_size,
+				       priv->rx_ring_size);
+		if (ret)
+			return ret;
+	}
+
+	WRITE_ONCE(netdev->mtu, new_mtu);
+
+	return 0;
 }
 
 static const struct regmap_config edma_regmap_cfg = {
@@ -1305,9 +1423,12 @@ static int edma_probe(struct platform_device *pdev)
 	if (ret)
 		eth_hw_addr_random(netdev);
 
+	priv->tx_ring_size = EDMA_TX_RING_SIZE;
+	priv->rx_ring_size = EDMA_RX_RING_SIZE;
 	priv->rx_page_order = edma_rx_page_order(netdev->mtu);
 	priv->rx_buffer_size = edma_rx_buffer_size(priv->rx_page_order);
-	priv->page_pool = edma_page_pool_create(priv, priv->rx_page_order);
+	priv->page_pool = edma_page_pool_create(priv, priv->rx_page_order,
+						priv->rx_ring_size);
 	if (IS_ERR(priv->page_pool))
 		return PTR_ERR(priv->page_pool);
 
