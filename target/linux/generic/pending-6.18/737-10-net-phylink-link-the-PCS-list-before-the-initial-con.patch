@@ -1,0 +1,72 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sat, 23 Aug 2026 18:30:00 +0200
+Subject: [PATCH] net: phylink: link the PCS list before the initial config
+
+A PCS taken from the phylink PCS list is attached to its phylink
+instance in phylink_start() after phylink_mac_initial_config() has
+already run .pcs_config() on it, so that first call sees a NULL
+pcs->phylink. The .mac_select_pcs() route has no such window:
+phylink_major_config() sets pcs->phylink before it configures the PCS,
+which is what phylink did for every PCS before the list existed.
+
+DSA has no .mac_select_pcs, so every DSA port whose PCS comes from a
+pcs-handle takes the list route. pcs-qca-uniphy reads the
+back-reference in .pcs_config(), through phylink_expects_phy(), to tell
+a fixed link from a PHY that simply does not negotiate in band, and a
+Zyxel NBG7815 panics on the wan port as netifd brings it up:
+
+  qca-ppe 3a000000.ppe wan: configuring for phy/2500base-x link mode
+  Unable to handle kernel access to user memory outside uaccess routines
+    at virtual address 0000000000000044
+  pc : phylink_expects_phy+0x0/0x38
+  lr : qca_uniphy_pcs_config_mode.isra.0+0x398/0x45c
+  Call trace:
+   phylink_expects_phy+0x0/0x38 (P)
+   qca_uniphy_pcs_config+0xec/0x13c
+   phylink_major_config+0x1e8/0x670
+   phylink_mac_initial_config+0xb8/0x14c
+   phylink_start+0x4c/0x280
+   dsa_port_enable_rt+0x48/0xb0
+
+Link the list where pl->pcs_state has just become PCS_STATE_STARTING,
+so the guarantee holds on both routes. A .pcs_change() from a PCS that
+is now linked earlier still resolves to nothing: phylink_run_resolve()
+does nothing while phylink_disable_state holds PHYLINK_DISABLE_STOPPED,
+which only the phylink_enable_and_run_resolve() below clears. The other
+two phylink_mac_initial_config() callers are unaffected, both running
+with the list already linked - phylink_resume() only takes that path
+when it did not stop, and phylink_sfp_set_config() is gated on not
+being stopped.
+
+Fixes: 18cbd83a1443 ("generic: 6.18: import updated standalone PCS handling")
+Link: https://github.com/JuliusBairaktaris/openwrt-nss-edma/issues/23
+Assisted-by: Claude:claude-opus-5
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+--- a/drivers/net/phy/phylink.c
++++ b/drivers/net/phy/phylink.c
+@@ -2713,6 +2713,12 @@ void phylink_start(struct phylink *pl)
+ 
+ 	pl->pcs_state = PCS_STATE_STARTING;
+ 
++	/* Link the available PCS to the phylink instance before the initial
++	 * config below runs .pcs_config() on the one it selects.
++	 */
++	list_for_each_entry(pcs, &pl->pcs_list, list)
++		pcs->phylink = pl;
++
+ 	/* Apply the link configuration to the MAC when starting. This allows
+ 	 * a fixed-link to start with the correct parameters, and also
+ 	 * ensures that we set the appropriate advertisement for Serdes links.
+@@ -2725,10 +2731,6 @@ void phylink_start(struct phylink *pl)
+ 
+ 	pl->pcs_state = PCS_STATE_STARTED;
+ 
+-	/* link available PCS to phylink struct */
+-	list_for_each_entry(pcs, &pl->pcs_list, list)
+-		pcs->phylink = pl;
+-
+ 	phylink_enable_and_run_resolve(pl, PHYLINK_DISABLE_STOPPED);
+ 
+ 	if (pl->cfg_link_an_mode == MLO_AN_FIXED && pl->link_gpio) {
