@@ -20,28 +20,15 @@ endef
 $(eval $(call KernelPackage,camera-bcm2835))
 
 
-RP1_CFE_KCONFIG:=CONFIG_VIDEO_RP1_CFE
-RP1_CFE_FILES:=
-RP1_CFE_DEPENDS:=@TARGET_bcm27xx_bcm2712 +kmod-video-core +kmod-video-fwnode +kmod-video-dma-contig +kmod-video-async
-
-ifeq ($(CONFIG_LINUX_6_12),y)
-  RP1_CFE_KCONFIG += CONFIG_VIDEO_BCM2835
-  RP1_CFE_FILES += $(LINUX_DIR)/drivers/media/platform/raspberrypi/rp1_cfe/rp1-cfe.ko
-endif
-
-ifeq ($(CONFIG_LINUX_6_18),y)
-  RP1_CFE_KCONFIG += CONFIG_VIDEO_V4L2_SUBDEV_API=y
-  RP1_CFE_FILES += $(LINUX_DIR)/drivers/media/platform/raspberrypi/rp1-cfe/rp1-cfe.ko
-  RP1_CFE_DEPENDS += +kmod-video-videobuf2
-endif
-
 define KernelPackage/rp1-cfe
   TITLE:=RP1 Camera Front-End
   SUBMENU:=$(VIDEO_MENU)
-  KCONFIG:=$(RP1_CFE_KCONFIG)
-  FILES:=$(RP1_CFE_FILES)
+  KCONFIG:= \
+    CONFIG_VIDEO_RP1_CFE \
+    CONFIG_VIDEO_V4L2_SUBDEV_API=y
+  FILES:=$(LINUX_DIR)/drivers/media/platform/raspberrypi/rp1-cfe/rp1-cfe.ko
   AUTOLOAD:=$(call AutoLoad,67,rp1-cfe)
-  DEPENDS:=$(RP1_CFE_DEPENDS)
+  DEPENDS:=@TARGET_bcm27xx_bcm2712 +kmod-video-core +kmod-video-fwnode +kmod-video-dma-contig +kmod-video-async +kmod-video-videobuf2
 endef
 
 define KernelPackage/rp1-cfe/description
@@ -60,7 +47,7 @@ define KernelPackage/rp1-cfe-downstream
     CONFIG_VIDEO_V4L2_SUBDEV_API=y
   FILES:=$(LINUX_DIR)/drivers/media/platform/raspberrypi/rp1_cfe/rp1-cfe-downstream.ko
   AUTOLOAD:=$(call AutoLoad,67,rp1-cfe-downstream)
-  DEPENDS:=@TARGET_bcm27xx_bcm2712 @LINUX_6_18 +kmod-video-core +kmod-video-fwnode +kmod-video-dma-contig +kmod-video-async +kmod-video-videobuf2
+  DEPENDS:=@TARGET_bcm27xx_bcm2712 +kmod-video-core +kmod-video-fwnode +kmod-video-dma-contig +kmod-video-async +kmod-video-videobuf2
 endef
 
 define KernelPackage/rp1-cfe-downstream/description
@@ -77,7 +64,7 @@ define KernelPackage/rp1-hevc-dec
     CONFIG_VIDEO_RPI_HEVC_DEC
   FILES:=$(LINUX_DIR)/drivers/media/platform/raspberrypi/hevc_dec/rpi-hevc-dec.ko
   AUTOLOAD:=$(call AutoLoad,67,rp1-hevc-dec)
-  DEPENDS:=@TARGET_bcm27xx_bcm2712 @LINUX_6_18 +kmod-video-core +kmod-video-dma-contig +kmod-video-videobuf2 +kmod-video-mem2mem
+  DEPENDS:=@TARGET_bcm27xx_bcm2712 +kmod-video-core +kmod-video-dma-contig +kmod-video-videobuf2 +kmod-video-mem2mem
 endef
 
 define KernelPackage/rp1-hevc-dec/description
@@ -165,7 +152,7 @@ define KernelPackage/drm-vc4
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Broadcom VC4 Graphics
   DEPENDS:= \
-    @TARGET_bcm27xx +kmod-drm +LINUX_6_18:kmod-drm-exec \
+    @TARGET_bcm27xx +kmod-drm +kmod-drm-exec \
     +kmod-drm-display-helper +kmod-drm-dma-helper \
     +kmod-cec-core +kmod-sound-core +kmod-sound-soc-core
   KCONFIG:= \
