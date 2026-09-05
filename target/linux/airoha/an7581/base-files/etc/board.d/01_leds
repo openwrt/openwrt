@@ -25,6 +25,19 @@ nokia,xg-040g-md-ubi)
 	ucidef_set_led_netdev "lan3" "lan3" "mt7530-0:0b:green:lan-3" "lan3" "link tx rx"
 	ucidef_set_led_netdev "lan4" "lan4" "mt7530-0:0c:green:lan-4" "lan4" "link tx rx"
 	;;
+tplink,xb432v)
+	# GSW jack LEDs (active-low PHY LEDs; sysfs brightness 0 = lit without trigger).
+	ucidef_set_led_netdev "lan1" "LAN1" "mt7530-0:09::lan" "lan1" "link"
+	ucidef_set_led_netdev "lan2" "LAN2" "mt7530-0:0a::lan" "lan2" "link"
+	ucidef_set_led_netdev "lan3" "LAN3" "mt7530-0:0b::lan" "lan3" "link"
+	ucidef_set_led_netdev "wan_jack" "WAN jack" "mt7530-0:0c::lan" "lan4" "link"
+	# Front-panel status LEDs (stock led.conf GPIOs in DTS).
+	ucidef_set_led_netdev "wan" "Internet" "green:internet" "lan4" "link tx rx"
+	ucidef_set_led_usbdev "usb" "USB" "green:usb" "1-1"
+	ucidef_set_led_netdev "wifi_2g" "2.4 GHz" "green:pon" "phy0-ap0" "link tx rx"
+	ucidef_set_led_netdev "wifi_5g" "5 GHz" "green:los" "phy1-ap0" "link tx rx"
+	ucidef_set_led_heartbeat "power" "Power" "red:power"
+	;;
 esac
 
 board_config_flush
