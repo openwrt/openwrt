@@ -1,0 +1,29 @@
+From 71843f059516ea19284efb497bbb85e516b51c93 Mon Sep 17 00:00:00 2001
+From: Vitaliy Sochnev <sochnev.v.74@gmail.com>
+Date: Sat, 22 Aug 2026 12:27:43 +0100
+Subject: [PATCH] net: airoha: grow RX ring 4 to 128 descriptors
+
+Ring 4 is the shared "force to CPU" ring for a wide set of protocols
+(BOOTP, PPPoE Discovery, PPP LCP/IPCP/CHAP/IPv6CP/PAP, ISAKMP, DHCPv6,
+SIP, LLDP, ...) and currently falls into the 16-descriptor default in
+RX_DSCP_NUM(), same as most other non-hashed rings. The hw completion
+race recovered by airoha_qdma_rx_check_stall()/rx_recover_work()
+appears strongly correlated with a ring going from idle to receiving
+its first frame(s) - exactly the access pattern this shared ring sees
+under protocol negotiation bursts. Give it the same 128-descriptor
+allowance already used for rings 2/11/15, matching the other rings
+that see bursty, non-hashed traffic, to reduce how often that
+condition is hit in the first place.
+
+Signed-off-by: Vitaliy Sochnev <sochnev.v.74@gmail.com>
+---
+--- a/drivers/net/ethernet/airoha/airoha_eth.h
++++ b/drivers/net/ethernet/airoha/airoha_eth.h
+@@ -41,6 +41,7 @@
+ #define TX_DSCP_NUM			1024
+ #define RX_DSCP_NUM(_n)			\
+ 	((_n) ==  2 ? 128 :		\
++	 (_n) ==  4 ? 128 :		\
+ 	 (_n) == 11 ? 128 :		\
+ 	 (_n) == 15 ? 128 :		\
+ 	 (_n) ==  0 ? 1024 : 16)
