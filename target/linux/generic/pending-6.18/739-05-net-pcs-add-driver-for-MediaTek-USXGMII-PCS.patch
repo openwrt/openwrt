@@ -31,7 +31,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  M:	Daniel Golle <daniel@makrotopia.org>
 --- a/drivers/net/pcs/Kconfig
 +++ b/drivers/net/pcs/Kconfig
-@@ -33,6 +33,19 @@ config PCS_MTK_LYNXI
+@@ -32,6 +32,19 @@ config PCS_MTK_LYNXI
  	  This module provides helpers to phylink for managing the LynxI PCS
  	  which is part of MediaTek's SoC and Ethernet switch ICs.
  
@@ -119,7 +119,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  obj-$(CONFIG_PCS_RZN1_MIIC)	+= pcs-rzn1-miic.o
 --- /dev/null
 +++ b/drivers/net/pcs/pcs-mtk-usxgmii.c
-@@ -0,0 +1,490 @@
+@@ -0,0 +1,482 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (c) 2023 MediaTek Inc.
@@ -537,6 +537,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +
 +static int mtk_usxgmii_probe(struct platform_device *pdev)
 +{
++	struct fwnode_pcs_provider *provider;
 +	struct device *dev = &pdev->dev;
 +	struct mtk_usxgmii_pcs *mpcs;
 +
@@ -575,21 +576,13 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +
 +	platform_set_drvdata(pdev, mpcs);
 +
-+	return fwnode_pcs_add_provider(dev_fwnode(dev), fwnode_pcs_simple_get, &mpcs->pcs);
++	provider = devm_fwnode_pcs_add_provider(dev, dev_fwnode(dev),
++						fwnode_pcs_simple_get, &mpcs->pcs);
++	if (IS_ERR(provider))
++		return dev_err_probe(dev, PTR_ERR(provider), "Failed to add PCS provider\n");
++
++	return 0;
 +}
-+
-+static void mtk_usxgmii_remove(struct platform_device *pdev)
-+{
-+	struct mtk_usxgmii_pcs *mpcs = platform_get_drvdata(pdev);
-+
-+	fwnode_pcs_del_provider(dev_fwnode(&pdev->dev));
-+
-+	rtnl_lock();
-+	phylink_release_pcs(&mpcs->pcs);
-+	rtnl_unlock();
-+
-+	fwnode_handle_put(mpcs->fwnode);
-+};
 +
 +static const struct of_device_id mtk_usxgmii_of_mtable[] = {
 +	{ .compatible = "mediatek,mt7988-usxgmiisys" },
@@ -603,7 +596,6 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +		.of_match_table		= mtk_usxgmii_of_mtable,
 +	},
 +	.probe = mtk_usxgmii_probe,
-+	.remove = mtk_usxgmii_remove,
 +};
 +module_platform_driver(mtk_usxgmii_driver);
 +

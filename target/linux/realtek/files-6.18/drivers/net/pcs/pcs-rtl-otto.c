@@ -4328,22 +4328,6 @@ static void rtpcs_sds_put_fwnode(void *data)
 	fwnode_handle_put(sds->fwnode);
 }
 
-static void rtpcs_del_provider_action(void *data)
-{
-	struct rtpcs_serdes *sds = data;
-
-	fwnode_pcs_del_provider(sds->fwnode);
-
-	rtnl_lock();
-	for (int i = 0; i < RTPCS_MAX_LINKS_PER_SDS; i++) {
-		if (!sds->link[i])
-			continue;
-
-		phylink_release_pcs(&sds->link[i]->pcs);
-	}
-	rtnl_unlock();
-}
-
 static struct rtpcs_serdes *rtpcs_find_serdes(struct rtpcs_ctrl *ctrl,
 					      struct fwnode_handle *fwnode)
 {
@@ -4531,17 +4515,16 @@ static int rtpcs_probe(struct platform_device *pdev)
 	platform_set_drvdata(pdev, ctrl);
 
 	for (i = 0; i < ctrl->cfg->serdes_count; i++) {
+		struct fwnode_pcs_provider *provider;
+
 		sds = &ctrl->serdes[i];
 		if (!sds->fwnode)
 			continue;
 
-		ret = fwnode_pcs_add_provider(sds->fwnode, rtpcs_pcs_get, sds);
-		if (ret)
-			return ret;
-		ret = devm_add_action_or_reset(dev, rtpcs_del_provider_action,
-					       sds);
-		if (ret)
-			return ret;
+		provider = devm_fwnode_pcs_add_provider(dev, sds->fwnode,
+							rtpcs_pcs_get, sds);
+		if (IS_ERR(provider))
+			return dev_err_probe(dev, PTR_ERR(provider), "Failed to add PCS provider\n");
 	}
 
 	dev_info(dev, "Realtek PCS driver initialized\n");

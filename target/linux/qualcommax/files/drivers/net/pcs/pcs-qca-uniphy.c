@@ -425,9 +425,7 @@ static void qca_uniphy_pcs_get_state_10base_r(struct qca_uniphy *uniphy,
 }
 
 static void qca_uniphy_pcs_get_state(struct phylink_pcs *pcs,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 18, 0)
 				     unsigned int neg_mode,
-#endif
 				     struct phylink_link_state *state)
 {
 	struct qca_uniphy_pcs *upcs = to_qca_uniphy_pcs(pcs);
@@ -1003,6 +1001,7 @@ static const struct regmap_config uniphy_regmap_cfg = {
 
 static int qca_uniphy_probe(struct platform_device *pdev)
 {
+	struct fwnode_pcs_provider *provider;
 	struct device *dev = &pdev->dev;
 	struct clk_bulk_data *clks;
 	struct qca_uniphy *uniphy;
@@ -1055,9 +1054,6 @@ static int qca_uniphy_probe(struct platform_device *pdev)
 
 	for (i = 0; i < QCA_UNIPHY_CHANNELS; i++) {
 		uniphy->port_pcs[i].pcs.ops = &qca_uniphy_pcs_ops;
-#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 18, 0)
-		uniphy->port_pcs[i].pcs.neg_mode = true;
-#endif
 		uniphy->port_pcs[i].pcs.poll = true;
 		uniphy->port_pcs[i].uniphy = uniphy;
 		uniphy->port_pcs[i].channel = i;
@@ -1067,8 +1063,12 @@ static int qca_uniphy_probe(struct platform_device *pdev)
 
 	platform_set_drvdata(pdev, uniphy);
 
-	return fwnode_pcs_add_provider(dev_fwnode(dev), qca_uniphy_get,
-				       uniphy);
+	provider = devm_fwnode_pcs_add_provider(dev, dev_fwnode(dev),
+						qca_uniphy_get, uniphy);
+	if (IS_ERR(provider))
+		return dev_err_probe(dev, PTR_ERR(provider), "Failed to add PCS provider\n");
+
+	return 0;
 }
 
 static struct platform_driver qca_uniphy_driver = {

@@ -1,28 +1,29 @@
-From 4b1dde131a237455e41985fdc95306cd2f1b8a0a Mon Sep 17 00:00:00 2001
+From deaf67561f6da66deb8dac96d35468d2b57c7d96 Mon Sep 17 00:00:00 2001
 From: Christian Marangi <ansuelsmth@gmail.com>
-Date: Fri, 9 May 2025 16:36:22 +0200
-Subject: [PATCH 7/7] net: phylink: add .pcs_link_down PCS OP
+Date: Thu, 13 Aug 2026 10:35:14 +0200
+Subject: [PATCH 09/12] net: phylink: add .pcs_link_down PCS OP
 
-Permit for PCS driver to define specific operation to torn down the link
+Permit for PCS driver to define specific operation to tear down the link
 between the MAC and the PCS.
 
 This might be needed for some PCS that reset counter or require special
 reset to correctly work if the link needs to be restored later.
 
 On phylink_link_down() call, the additional phylink_pcs_link_down() will
-be called before .mac_link_down to torn down the link.
+be called after .mac_link_down to tear down the link.
 
 PCS driver will need to define .pcs_link_down to make use of this.
 
 Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Reviewed-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
 ---
- drivers/net/phy/phylink.c | 8 ++++++++
- include/linux/phylink.h   | 2 ++
- 2 files changed, 10 insertions(+)
+ drivers/net/phy/phylink.c |  9 +++++++++
+ include/linux/phylink.h   | 12 ++++++++++++
+ 2 files changed, 21 insertions(+)
 
 --- a/drivers/net/phy/phylink.c
 +++ b/drivers/net/phy/phylink.c
-@@ -1033,6 +1033,12 @@ static void phylink_pcs_link_up(struct p
+@@ -987,6 +987,12 @@ static void phylink_pcs_link_up(struct p
  		pcs->ops->pcs_link_up(pcs, neg_mode, interface, speed, duplex);
  }
  
@@ -35,22 +36,23 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  static void phylink_pcs_disable_eee(struct phylink_pcs *pcs)
  {
  	if (pcs && pcs->ops->pcs_disable_eee)
-@@ -1725,6 +1731,8 @@ static void phylink_link_down(struct phy
+@@ -1691,6 +1697,9 @@ static void phylink_link_down(struct phy
  
- 	phylink_deactivate_lpi(pl);
- 
-+	phylink_pcs_link_down(pl->pcs);
-+
  	pl->mac_ops->mac_link_down(pl->config, pl->act_link_an_mode,
  				   pl->cur_interface);
++
++	phylink_pcs_link_down(pl->pcs);
++
  	phylink_info(pl, "Link is Down\n");
+ }
+ 
 --- a/include/linux/phylink.h
 +++ b/include/linux/phylink.h
 @@ -499,6 +499,7 @@ struct phylink_pcs {
   * @pcs_an_restart: restart 802.3z BaseX autonegotiation.
   * @pcs_link_up: program the PCS for the resolved link configuration
   *               (where necessary).
-+ * @pcs_link_down: torn down link between MAC and PCS.
++ * @pcs_link_down: tear down link between MAC and PCS.
   * @pcs_disable_eee: optional notification to PCS that EEE has been disabled
   *		     at the MAC.
   * @pcs_enable_eee: optional notification to PCS that EEE will be enabled at
@@ -62,3 +64,20 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	void (*pcs_disable_eee)(struct phylink_pcs *pcs);
  	void (*pcs_enable_eee)(struct phylink_pcs *pcs);
  	int (*pcs_pre_init)(struct phylink_pcs *pcs);
+@@ -662,6 +664,16 @@ void pcs_link_up(struct phylink_pcs *pcs
+ 		 phy_interface_t interface, int speed, int duplex);
+ 
+ /**
++ * pcs_link_down() - tear down link between MAC and PCS
++ * @pcs: a pointer to a &struct phylink_pcs.
++ *
++ * This call will be made just after mac_link_down() to inform the PCS the
++ * link has gone down. PCS should be configured to stop processing packets
++ * for transmission and reception.
++ */
++void pcs_link_down(struct phylink_pcs *pcs);
++
++/**
+  * pcs_disable_eee() - Disable EEE at the PCS
+  * @pcs: a pointer to a &struct phylink_pcs
+  *
