@@ -1,0 +1,189 @@
+From 3d60cd7fef8541a4fcd3a7c2d61f29b09aeaf46c Mon Sep 17 00:00:00 2001
+From: George Moussalem <george.moussalem@outlook.com>
+Date: Thu, 3 Sep 2026 18:08:37 +0400
+Subject: [PATCH v2 09/10] arm64: dts: qcom: ipq8074: Flatten usb controller
+ nodes
+
+Flatten usb controller nodes and update to using latest bindings and
+flattened driver approach.
+
+In addition, fix indentation of properties in both nodes.
+
+Signed-off-by: George Moussalem <george.moussalem@outlook.com>
+---
+ arch/arm64/boot/dts/qcom/ipq8074-hk01.dts |   8 --
+ arch/arm64/boot/dts/qcom/ipq8074.dtsi     | 108 ++++++++++------------
+ 2 files changed, 50 insertions(+), 66 deletions(-)
+
+--- a/arch/arm64/boot/dts/qcom/ipq8074-hk01.dts
++++ b/arch/arm64/boot/dts/qcom/ipq8074-hk01.dts
+@@ -52,14 +52,6 @@
+ 	status = "okay";
+ };
+ 
+-&dwc_0 {
+-	dr_mode = "host";
+-};
+-
+-&dwc_1 {
+-	dr_mode = "host";
+-};
+-
+ &pcie0 {
+ 	status = "okay";
+ 	perst-gpios = <&tlmm 61 GPIO_ACTIVE_LOW>;
+--- a/arch/arm64/boot/dts/qcom/ipq8074.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq8074.dtsi
+@@ -846,102 +846,94 @@
+ 			status = "disabled";
+ 		};
+ 
+-		usb_0: usb@8af8800 {
+-			compatible = "qcom,ipq8074-dwc3", "qcom,dwc3";
+-			reg = <0x08af8800 0x400>;
+-			#address-cells = <1>;
+-			#size-cells = <1>;
+-			ranges;
++		usb_0: usb@8a00000 {
++			compatible = "qcom,ipq8074-dwc3", "qcom,snps-dwc3";
++			reg = <0x08a00000 0xfc100>;
+ 
+ 			clocks = <&gcc GCC_SYS_NOC_USB0_AXI_CLK>,
+-				<&gcc GCC_USB0_MASTER_CLK>,
+-				<&gcc GCC_USB0_SLEEP_CLK>,
+-				<&gcc GCC_USB0_MOCK_UTMI_CLK>;
++				 <&gcc GCC_USB0_MASTER_CLK>,
++				 <&gcc GCC_USB0_SLEEP_CLK>,
++				 <&gcc GCC_USB0_MOCK_UTMI_CLK>;
+ 			clock-names = "cfg_noc",
+-				"core",
+-				"sleep",
+-				"mock_utmi";
++				      "core",
++				      "sleep",
++				      "mock_utmi";
+ 
+ 			assigned-clocks = <&gcc GCC_SYS_NOC_USB0_AXI_CLK>,
+ 					  <&gcc GCC_USB0_MASTER_CLK>,
+ 					  <&gcc GCC_USB0_MOCK_UTMI_CLK>;
+ 			assigned-clock-rates = <133330000>,
+-						<133330000>,
+-						<19200000>;
++					       <133330000>,
++					       <19200000>;
+ 
+-			interrupts = <GIC_SPI 134 IRQ_TYPE_LEVEL_HIGH>,
++			interrupts = <GIC_SPI 140 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 134 IRQ_TYPE_LEVEL_HIGH>,
+ 				     <GIC_SPI 130 IRQ_TYPE_LEVEL_HIGH>,
+ 				     <GIC_SPI 220 IRQ_TYPE_LEVEL_HIGH>;
+-			interrupt-names = "pwr_event",
++			interrupt-names = "dwc_usb3",
++					  "pwr_event",
+ 					  "qusb2_phy",
+ 					  "ss_phy_irq";
+ 
+ 			power-domains = <&gcc USB0_GDSC>;
+ 
++			phys = <&qusb_phy_0>, <&ssphy_0>;
++			phy-names = "usb2-phy", "usb3-phy";
++
++			snps,parkmode-disable-ss-quirk;
++			snps,is-utmi-l1-suspend;
++			snps,hird-threshold = /bits/ 8 <0x0>;
++			snps,dis_u2_susphy_quirk;
++			snps,dis_u3_susphy_quirk;
++
+ 			resets = <&gcc GCC_USB0_BCR>;
+-			status = "disabled";
+ 
+-			dwc_0: usb@8a00000 {
+-				compatible = "snps,dwc3";
+-				reg = <0x8a00000 0xcd00>;
+-				interrupts = <GIC_SPI 140 IRQ_TYPE_LEVEL_HIGH>;
+-				phys = <&qusb_phy_0>, <&ssphy_0>;
+-				phy-names = "usb2-phy", "usb3-phy";
+-				snps,parkmode-disable-ss-quirk;
+-				snps,is-utmi-l1-suspend;
+-				snps,hird-threshold = /bits/ 8 <0x0>;
+-				snps,dis_u2_susphy_quirk;
+-				snps,dis_u3_susphy_quirk;
+-			};
++			status = "disabled";
+ 		};
+ 
+-		usb_1: usb@8cf8800 {
+-			compatible = "qcom,ipq8074-dwc3", "qcom,dwc3";
+-			reg = <0x08cf8800 0x400>;
+-			#address-cells = <1>;
+-			#size-cells = <1>;
+-			ranges;
++		usb_1: usb@8c00000 {
++			compatible = "qcom,ipq8074-dwc3", "qcom,snps-dwc3";
++			reg = <0x08c00000 0xfc100>;
+ 
+ 			clocks = <&gcc GCC_SYS_NOC_USB1_AXI_CLK>,
+-				<&gcc GCC_USB1_MASTER_CLK>,
+-				<&gcc GCC_USB1_SLEEP_CLK>,
+-				<&gcc GCC_USB1_MOCK_UTMI_CLK>;
++				 <&gcc GCC_USB1_MASTER_CLK>,
++				 <&gcc GCC_USB1_SLEEP_CLK>,
++				 <&gcc GCC_USB1_MOCK_UTMI_CLK>;
+ 			clock-names = "cfg_noc",
+-				"core",
+-				"sleep",
+-				"mock_utmi";
++				      "core",
++				      "sleep",
++				      "mock_utmi";
+ 
+ 			assigned-clocks = <&gcc GCC_SYS_NOC_USB1_AXI_CLK>,
+ 					  <&gcc GCC_USB1_MASTER_CLK>,
+ 					  <&gcc GCC_USB1_MOCK_UTMI_CLK>;
+ 			assigned-clock-rates = <133330000>,
+-						<133330000>,
+-						<19200000>;
++					       <133330000>,
++					       <19200000>;
+ 
+-			interrupts = <GIC_SPI 128 IRQ_TYPE_LEVEL_HIGH>,
++			interrupts = <GIC_SPI 99 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 128 IRQ_TYPE_LEVEL_HIGH>,
+ 				     <GIC_SPI 136 IRQ_TYPE_LEVEL_HIGH>,
+ 				     <GIC_SPI 225 IRQ_TYPE_LEVEL_HIGH>;
+-			interrupt-names = "pwr_event",
++			interrupt-names = "dwc_usb3",
++					  "pwr_event",
+ 					  "qusb2_phy",
+ 					  "ss_phy_irq";
+ 
+ 			power-domains = <&gcc USB1_GDSC>;
+ 
++			phys = <&qusb_phy_1>, <&ssphy_1>;
++			phy-names = "usb2-phy", "usb3-phy";
++
++			snps,parkmode-disable-ss-quirk;
++			snps,is-utmi-l1-suspend;
++			snps,hird-threshold = /bits/ 8 <0x0>;
++			snps,dis_u2_susphy_quirk;
++			snps,dis_u3_susphy_quirk;
++
+ 			resets = <&gcc GCC_USB1_BCR>;
+-			status = "disabled";
+ 
+-			dwc_1: usb@8c00000 {
+-				compatible = "snps,dwc3";
+-				reg = <0x8c00000 0xcd00>;
+-				interrupts = <GIC_SPI 99 IRQ_TYPE_LEVEL_HIGH>;
+-				phys = <&qusb_phy_1>, <&ssphy_1>;
+-				phy-names = "usb2-phy", "usb3-phy";
+-				snps,parkmode-disable-ss-quirk;
+-				snps,is-utmi-l1-suspend;
+-				snps,hird-threshold = /bits/ 8 <0x0>;
+-				snps,dis_u2_susphy_quirk;
+-				snps,dis_u3_susphy_quirk;
+-			};
++			status = "disabled";
+ 		};
+ 
+ 		intc: interrupt-controller@b000000 {

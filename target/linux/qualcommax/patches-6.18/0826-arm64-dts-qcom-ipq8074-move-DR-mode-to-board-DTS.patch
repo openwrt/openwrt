@@ -1,0 +1,50 @@
+From 09a7c9f208f6a1b672431fde307afd0cfa7f6904 Mon Sep 17 00:00:00 2001
+From: George Moussalem <george.moussalem@outlook.com>
+Date: Thu, 3 Sep 2026 18:05:34 +0400
+Subject: [PATCH v2 08/10] arm64: dts: qcom: ipq8074: move DR mode to board DTS
+
+Both controllers are DRD capable, but DR mode currently set to host mode
+in the SoC dtsi. Unset it in the SoC dtsi and set it as host mode in the
+hk01 board DTS file.
+
+Signed-off-by: George Moussalem <george.moussalem@outlook.com>
+---
+ arch/arm64/boot/dts/qcom/ipq8074-hk01.dts | 8 ++++++++
+ arch/arm64/boot/dts/qcom/ipq8074.dtsi     | 2 --
+ 2 files changed, 8 insertions(+), 2 deletions(-)
+
+--- a/arch/arm64/boot/dts/qcom/ipq8074-hk01.dts
++++ b/arch/arm64/boot/dts/qcom/ipq8074-hk01.dts
+@@ -52,6 +52,14 @@
+ 	status = "okay";
+ };
+ 
++&dwc_0 {
++	dr_mode = "host";
++};
++
++&dwc_1 {
++	dr_mode = "host";
++};
++
+ &pcie0 {
+ 	status = "okay";
+ 	perst-gpios = <&tlmm 61 GPIO_ACTIVE_LOW>;
+--- a/arch/arm64/boot/dts/qcom/ipq8074.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq8074.dtsi
+@@ -892,7 +892,6 @@
+ 				snps,hird-threshold = /bits/ 8 <0x0>;
+ 				snps,dis_u2_susphy_quirk;
+ 				snps,dis_u3_susphy_quirk;
+-				dr_mode = "host";
+ 			};
+ 		};
+ 
+@@ -942,7 +941,6 @@
+ 				snps,hird-threshold = /bits/ 8 <0x0>;
+ 				snps,dis_u2_susphy_quirk;
+ 				snps,dis_u3_susphy_quirk;
+-				dr_mode = "host";
+ 			};
+ 		};
+ 
