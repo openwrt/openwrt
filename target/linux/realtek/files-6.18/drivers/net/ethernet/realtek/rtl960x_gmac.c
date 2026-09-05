@@ -234,6 +234,10 @@ err_free_rx_bufs:
 
 static void rtl960x_gmac_init_hw(struct rtl960x_gmac *priv)
 {
+	u32 rx_size_mask = RX_RING_SIZE - 1;
+	u16 rx_size_l, threshold_on_l, threshold_off_l;
+	u8 rx_size_h, threshold_on_h, threshold_off_h;
+
 	rtl960x_gmac_stop_hw(priv);
 
 	/*
@@ -254,13 +258,27 @@ static void rtl960x_gmac_init_hw(struct rtl960x_gmac *priv)
 
 	/* Program the RX/TX ring bases. */
 	regmap_write(priv->map32, GMAC_RXFDP, priv->rx_ring_dma);
-	regmap_write(priv->map16, GMAC_RXCDO, 0);
-	regmap_write(priv->map8, GMAC_RXRINGSIZE, RX_RING_SIZE - 1);
-	regmap_write(priv->map8, GMAC_RXCPU_DES_NUM, RX_RING_SIZE - 1);
-	regmap_write(priv->map8, GMAC_RX_FC_ASSERT_THRES,
-		     RX_FC_ASSERT_THRES_VAL);
-	regmap_write(priv->map8, GMAC_RX_FC_DEASSERT_THRES,
-		     RX_FC_DEASSERT_THRES_VAL);
+
+	/* Very cursed but it is how register is layed out for the 1st rx ring */
+	rx_size_h = (rx_size_mask & 0xf00) >> 8;
+	rx_size_l = rx_size_mask & 0xff;
+	regmap_write(priv->map32, GMAC_RXCDO_AND_SIZE_REG,
+		     FIELD_PREP(GMAC_RX_SIZE_L_MASK, rx_size_l) |
+		     FIELD_PREP(GMAC_RX_SIZE_H_MASK, rx_size_h));
+
+	threshold_on_h = (RX_FC_ASSERT_THRES_VAL & 0xf00) >> 8;
+	threshold_on_l = RX_FC_ASSERT_THRES_VAL & 0xff;
+	threshold_off_h = (RX_FC_DEASSERT_THRES_VAL & 0xf00) >> 8;
+	threshold_off_l = RX_FC_DEASSERT_THRES_VAL & 0xff;
+	regmap_write(priv->map32, GMAC_RXCPU_DES_NUM_REG,
+		     FIELD_PREP(GMAC_RX_DESC_NUM_L_MASK, rx_size_l) |
+		     FIELD_PREP(GMAC_FC_ASSERT_THRES_L_MASK, threshold_on_l) |
+		     FIELD_PREP(GMAC_FC_DEASSERT_THRES_L_MASK, threshold_off_l) |
+		     FIELD_PREP(GMAC_RX_DESC_NUM_H_MASK, rx_size_h) |
+		     FIELD_PREP(GMAC_FC_ASSERT_THRES_H_MASK, threshold_on_h));
+
+	regmap_update_bits(priv->map32, GMAC_RX_PSE_DES_THRES_H_REG,
+			   FIELD_PREP(GMAC_FC_DEASSERT_THRES_H_MASK, threshold_off_h));
 
 	regmap_write(priv->map32, GMAC_TXFDP1, priv->tx_ring_dma);
 	regmap_write(priv->map16, GMAC_TXCDO1, 0);
