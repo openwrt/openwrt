@@ -1,0 +1,23 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Fil Dunsky <filipp.dunsky@gmail.com>
+Date: Sat, 05 Sep 2026 07:30:20 +0300
+Subject: [PATCH] arm: allow DEBUG_UNCOMPRESS on multiplatform kernels
+
+DEBUG_UNCOMPRESS is excluded on ARCH_MULTIPLATFORM because the
+decompressor can only use a single per-platform DEBUG_LL include. The
+Cortina target builds a kernel for one SoC only, so the restriction has
+no benefit there; drop it so that decompressor output is available on
+the CS75xx UART.
+
+Signed-off-by: Fil Dunsky <filipp.dunsky@gmail.com>
+---
+--- a/arch/arm/Kconfig.debug
++++ b/arch/arm/Kconfig.debug
+@@ -1813,7 +1813,6 @@ config DEBUG_UART_8250_PALMCHIP
+ 
+ config DEBUG_UNCOMPRESS
+ 	bool "Enable decompressor debugging via DEBUG_LL output"
+-	depends on !ARCH_MULTIPLATFORM
+ 	depends on !(ARCH_FOOTBRIDGE || ARCH_RPC || ARCH_SA1100)
+ 	depends on DEBUG_LL && !DEBUG_OMAP2PLUS_UART && \
+ 		     (!DEBUG_TEGRA_UART || !ZBOOT_ROM) && \

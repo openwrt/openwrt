@@ -1,0 +1,119 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Fil Dunsky <filipp.dunsky@gmail.com>
+Date: Sat, 05 Sep 2026 09:45:48 +0300
+Subject: [PATCH] Input: sx8654 - recover a stuck SX8650 and use its own reset register
+
+The SX8650 has its soft reset register at 0x1f, not 0x3f like the SX8654,
+so the soft reset never worked for it. Its NIRQ line is level driven and
+is released only by reading the conversion result; when the host falls
+behind a 5000 conversions per second stream the line stays low forever
+and an edge triggered interrupt is never seen again (the controller on
+the Securifi Almond+ ends up like this and only a power cycle helps).
+Run the SX8650 at 200 conversions per second, which is plenty for a
+touchscreen, and when the interrupt fires without a pending conversion
+or with a short read, reset and reconfigure the chip instead of ignoring
+the event.
+
+Signed-off-by: Fil Dunsky <filipp.dunsky@gmail.com>
+---
+--- a/drivers/input/touchscreen/sx8654.c
++++ b/drivers/input/touchscreen/sx8654.c
+@@ -42,6 +42,7 @@
+ #define I2C_REG_IRQMASK			0x22
+ #define I2C_REG_IRQSRC			0x23
+ #define I2C_REG_SOFTRESET		0x3f
++#define I2C_REG_SX8650_SOFTRESET	0x1f
+ 
+ #define I2C_REG_SX8650_STAT		0x05
+ #define SX8650_STAT_CONVIRQ		BIT(7)
+@@ -69,6 +70,7 @@
+ /* coordinates rate: higher nibble of CTRL0 register */
+ #define RATE_MANUAL			0x00
+ #define RATE_5000CPS			0xf0
++#define RATE_200CPS			0x70
+ 
+ /* power delay: lower nibble of CTRL0 register */
+ #define POWDLY_1_1MS			0x0b
+@@ -86,6 +88,8 @@
+ #define CH_Y				0x01
+ 
+ struct sx865x_data {
++	u8 reg_softreset;
++	u8 rate;
+ 	u8 cmd_manual;
+ 	u8 chan_mask;
+ 	bool has_irq_penrelease;
+@@ -125,6 +129,21 @@ static void sx865x_penrelease_timer_hand
+ 	dev_dbg(&ts->client->dev, "penrelease by timer\n");
+ }
+ 
++static void sx8650_recover(struct sx8654 *ts)
++{
++	struct i2c_client *client = ts->client;
++
++	dev_warn_ratelimited(&client->dev, "controller stuck, resetting\n");
++	i2c_smbus_write_byte_data(client, ts->data->reg_softreset, SOFTRESET_VALUE);
++	usleep_range(1000, 2000);
++	i2c_smbus_write_byte_data(client, I2C_REG_CHANMASK, ts->data->chan_mask);
++	i2c_smbus_write_byte_data(client, I2C_REG_TOUCH1,
++				  CONDIRQ | RPDNT_100K | FILT_7SA);
++	i2c_smbus_write_byte_data(client, I2C_REG_TOUCH0,
++				  ts->data->rate | POWDLY_1_1MS);
++	i2c_smbus_write_byte(client, CMD_PENTRG);
++}
++
+ static irqreturn_t sx8650_irq(int irq, void *handle)
+ {
+ 	struct sx8654 *ts = handle;
+@@ -144,12 +163,14 @@ static irqreturn_t sx8650_irq(int irq, v
+ 
+ 	if (!(stat & SX8650_STAT_CONVIRQ)) {
+ 		dev_dbg(dev, "%s ignore stat [0x%02x]", __func__, stat);
++		sx8650_recover(ts);
+ 		return IRQ_HANDLED;
+ 	}
+ 
+ 	len = i2c_master_recv(ts->client, (u8 *)data, readlen);
+ 	if (len != readlen) {
+ 		dev_dbg(dev, "ignore short recv (%d)\n", len);
++		sx8650_recover(ts);
+ 		return IRQ_HANDLED;
+ 	}
+ 
+@@ -247,7 +268,8 @@ static int sx8654_reset(struct sx8654 *t
+ 		gpiod_set_value_cansleep(ts->gpio_reset, 0);
+ 	} else {
+ 		dev_dbg(&ts->client->dev, "NRST unavailable, try softreset\n");
+-		err = i2c_smbus_write_byte_data(ts->client, I2C_REG_SOFTRESET,
++		err = i2c_smbus_write_byte_data(ts->client,
++						ts->data->reg_softreset,
+ 						SOFTRESET_VALUE);
+ 		if (err)
+ 			return err;
+@@ -264,7 +286,7 @@ static int sx8654_open(struct input_dev
+ 
+ 	/* enable pen trigger mode */
+ 	error = i2c_smbus_write_byte_data(client, I2C_REG_TOUCH0,
+-					  RATE_5000CPS | POWDLY_1_1MS);
++					  sx8654->data->rate | POWDLY_1_1MS);
+ 	if (error) {
+ 		dev_err(&client->dev, "writing to I2C_REG_TOUCH0 failed");
+ 		return error;
+@@ -416,6 +438,8 @@ static int sx8654_probe(struct i2c_clien
+ }
+ 
+ static const struct sx865x_data sx8650_data = {
++	.reg_softreset		= I2C_REG_SX8650_SOFTRESET,
++	.rate			= RATE_200CPS,
+ 	.cmd_manual		= 0xb0,
+ 	.has_irq_penrelease	= false,
+ 	.has_reg_irqmask	= false,
+@@ -424,6 +448,8 @@ static const struct sx865x_data sx8650_d
+ };
+ 
+ static const struct sx865x_data sx8654_data = {
++	.reg_softreset		= I2C_REG_SOFTRESET,
++	.rate			= RATE_5000CPS,
+ 	.cmd_manual		= 0xc0,
+ 	.has_irq_penrelease	= true,
+ 	.has_reg_irqmask	= true,

@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: GPL-2.0
+config ARCH_CORTINA_CS75XX
+	bool "Cortina CS75xx (Goldengate G2)"
+	depends on ARCH_MULTI_V7
+	select ARM_AMBA
+	select ARM_GIC
+	select ARM_GLOBAL_TIMER
+	select CLKSRC_ARM_GLOBAL_TIMER_SCHED_CLOCK
+	select HAVE_ARM_SCU if SMP
+	select HAVE_ARM_TWD if SMP
+	select GOLDENGATE_CLK
+	select GOLDENGATE_IRQ
+	select PCI
+	help
+	  Cortina CS752x (Goldengate G2) dual Cortex-A9 SoCs (Securifi Almond+).
