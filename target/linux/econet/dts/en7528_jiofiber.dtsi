@@ -22,7 +22,7 @@
 		regulator-name = "usb1-vbus";
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
-		gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
+		gpios = <&pinctrl 9 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 	};
 
@@ -32,7 +32,7 @@
 		regulator-name = "usb2-vbus";
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
-		gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
+		gpios = <&pinctrl 11 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 		regulator-boot-on;
 		regulator-always-on;
