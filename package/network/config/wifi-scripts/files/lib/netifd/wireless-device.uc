@@ -1,6 +1,7 @@
 'use strict';
 import * as ubus from "ubus";
 import * as uloop from "uloop";
+import * as nl80211 from "nl80211";
 import { is_equal } from "./utils.uc";
 import { access } from "fs";
 
@@ -559,12 +560,73 @@ function hotplug(name, add)
 	if (m)
 		name = m[1];
 
+	let suspect_more_ifaces = false;
+	let handled = false;
+	let known_phys = {};
 	for (let section, data in this.handler_data) {
+		if (data.type == "vif" && data?.config?.dynamic_vlan)
+			suspect_more_ifaces = true;
+		// remember all phy we see and assume this handler is responsible for those (and no others)
+		if (data.type == "device" && data.phy)
+			// remember both phy and radio(s), to be able to match those also on multi-radio phys
+			known_phys[data.phy] = { section, radio: +(data.radio ?? -1) };
 		if (data.ifname != name ||
 		    data.type != "vif" && data.type != "vlan")
 			continue;
 
 		handle_link(dev, data, add);
+		if (!add && "dynamic_vlan_iface" in data)
+			delete this.handler_data[dev];
+		handled = true;
+	}
+	// Return if the device was found, if it is not about to be added, and also if there is no indication for more devices
+	if (handled || !add || !suspect_more_ifaces)
+		return;
+
+	// We got a wireless device we don't know about yet: find it
+
+	// Get all radios on this device
+	let phys = nl80211.request(nl80211.const.NL80211_CMD_GET_WIPHY, nl80211.const.NLM_F_DUMP, { split_wiphy_dump: true });
+	// Get all known interfaces on this device: this should contain the one about to be added
+	let nl80211interfaces = nl80211.request(nl80211.const.NL80211_CMD_GET_INTERFACE, nl80211.const.NLM_F_DUMP);
+
+	// Loop through all radios found
+	for (let phy in phys) {
+		let phys_data = known_phys[phy.wiphy_name];
+		// skip if this radio is not part of this handlers'
+		if (!phys_data)
+			continue;
+		// loop through all interfaces found
+		for (let k, v in nl80211interfaces) {
+			// check if this interface has the requested name, skip otherwise
+			if (v.ifname != name)
+				continue;
+			// check if this wiphy is this handler's, skip otherwise
+			if (v.wiphy != phy.wiphy)
+				continue;
+			// in a multi-radio setup, check radios and skip if they do not participate
+			if (phys_data.radio >= 0 && !(v.vif_radio_mask & (1 << phys_data.radio)))
+				continue;
+			// Only handle vlans here
+			if (v.iftype != nl80211.const.NL80211_IFTYPE_AP_VLAN)
+				continue;
+			// Add this interface to our known list
+			let ifdata = {
+				"config": {
+					"device": [ phys_data.section ],
+					"mode": "ap",
+				},
+				"dynamic_vlan_iface": true,
+				"ifname": dev,
+				"name" : dev,
+				"sta" : [],
+				"type" : "vif",
+				"vlan" : [],
+			};
+
+			handle_link(dev, ifdata, add);
+			this.handler_data[dev] = ifdata;
+		}
 	}
 }
 
@@ -603,7 +665,7 @@ function get_status_stations(wdev, vif)
 function status()
 {
 	let interfaces = [];
-	for (let vif in this.data.vif) {
+	for (let vif in [...this.data.vif, ...filter(values(this.handler_data), (vif) => "dynamic_vlan_iface" in vif)]) {
 		let vlans = get_status_vlans(this, vif);
 		let stations = get_status_stations(this, vif);
 		let data = get_status_data(this, vif);
