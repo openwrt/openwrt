@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=cmake
 PKG_VERSION:=4.4.0
 PKG_VERSION_MAJOR:=$(word 1,$(subst ., ,$(PKG_VERSION))).$(word 2,$(subst ., ,$(PKG_VERSION)))
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_CPE_ID:=cpe:/a:kitware:cmake
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
@@ -37,7 +37,8 @@ HOST_CONFIGURE_ARGS := \
 	--system-liblzma \
 	--system-zlib \
 	--system-zstd \
-	--generator=Ninja
+	--generator=Ninja \
+	-- -DBUILD_TESTING=OFF
 
 define Host/Compile/Default
 	+$(NINJA) -C $(HOST_BUILD_DIR) $(1)
