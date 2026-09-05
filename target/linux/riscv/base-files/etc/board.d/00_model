@@ -1,0 +1,10 @@
+. /lib/functions/uci-defaults.sh
+
+board_config_update
+
+ucidef_set_board_id "riscv"
+ucidef_set_model_name "RISC-V QEMU"
+
+board_config_flush
+
+exit 0
