@@ -1,0 +1,46 @@
+From 14cad45249c4c73b3fcd1b756a865396919fe7ff Mon Sep 17 00:00:00 2001
+From: Aurelien Jarno <aurelien@aurel32.net>
+Date: Wed, 29 Jul 2026 17:02:20 +0200
+Subject: [PATCH] riscv: dts: spacemit: k1-orangepi-rv2: fix maximum CPU core
+ voltage
+
+On the OrangePi RV2 board, the buck1 and buck2 voltage regulators, which
+supply the CPU core voltage, are configured with a maximum output
+voltage of 3.45V, while the highest operating point requires only
+1.050V. This means that a kernel bug, OPP misconfiguration, or
+privileged userspace could request a voltage above the safe operating
+limit, causing possible permanent CPU damage.
+
+Set the maximum regulator voltage to 1.050V instead.
+
+Fixes: c02c047b925c ("riscv: dts: spacemit: Define the P1 PMIC regulators for OrangePi RV2")
+Link: https://sashiko.dev/#/message/20260728211020.1248676-2-aurelien%40aurel32.net
+Cc: stable@vger.kernel.org
+Signed-off-by: Aurelien Jarno <aurelien@aurel32.net>
+Reviewed-by: Yixun Lan <dlan@kernel.org>
+Link: https://patch.msgid.link/20260729150722.1598630-4-aurelien@aurel32.net
+Signed-off-by: Yixun Lan <dlan@kernel.org>
+(cherry picked from commit ae0c38f0a24f95c8759b6b0eaaa5a0d36a7c6af2)
+---
+ arch/riscv/boot/dts/spacemit/k1-orangepi-rv2.dts | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/arch/riscv/boot/dts/spacemit/k1-orangepi-rv2.dts
++++ b/arch/riscv/boot/dts/spacemit/k1-orangepi-rv2.dts
+@@ -164,14 +164,14 @@
+ 		regulators {
+ 			buck1 {
+ 				regulator-min-microvolt = <500000>;
+-				regulator-max-microvolt = <3450000>;
++				regulator-max-microvolt = <1050000>;
+ 				regulator-ramp-delay = <5000>;
+ 				regulator-always-on;
+ 			};
+ 
+ 			buck2 {
+ 				regulator-min-microvolt = <500000>;
+-				regulator-max-microvolt = <3450000>;
++				regulator-max-microvolt = <1050000>;
+ 				regulator-ramp-delay = <5000>;
+ 				regulator-always-on;
+ 			};
