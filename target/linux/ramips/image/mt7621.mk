@@ -2800,6 +2800,18 @@ define Device/samknows_whitebox-v8
 endef
 TARGET_DEVICES += samknows_whitebox-v8
 
+define Device/securifi_almond-3
+  $(Device/uimage-lzma-loader)
+  DEVICE_VENDOR := Securifi
+  DEVICE_MODEL := Almond
+  DEVICE_VARIANT := 3
+  IMAGE_SIZE := 65216k
+  IMAGE/sysupgrade.bin := append-kernel | pad-to 64k | append-rootfs | \
+	pad-rootfs | check-size | append-metadata
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb3 -uboot-envtools
+endef
+TARGET_DEVICES += securifi_almond-3
+
 define Device/securifi_almond-3s
   $(Device/uimage-lzma-loader)
   DEVICE_VENDOR := Securifi
