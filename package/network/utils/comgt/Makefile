@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=comgt
 PKG_VERSION:=0.32
-PKG_RELEASE:=36
+PKG_RELEASE:=39
 
 PKG_SOURCE:=$(PKG_NAME).$(PKG_VERSION).tgz
 PKG_SOURCE_URL:=@SF/comgt
@@ -75,6 +75,7 @@ define Package/comgt/install
 	$(INSTALL_DATA) ./files/setpin.gcom $(1)/etc/gcom/setpin.gcom
 	$(INSTALL_DATA) ./files/setmode.gcom $(1)/etc/gcom/setmode.gcom
 	$(INSTALL_DATA) ./files/getcardinfo.gcom $(1)/etc/gcom/getcardinfo.gcom
+	$(INSTALL_DATA) ./files/getmodel.gcom $(1)/etc/gcom/getmodel.gcom
 	$(INSTALL_DATA) ./files/getstrength.gcom $(1)/etc/gcom/getstrength.gcom
 	$(INSTALL_DATA) ./files/getcarrier.gcom $(1)/etc/gcom/getcarrier.gcom
 	$(INSTALL_DATA) ./files/getcnum.gcom $(1)/etc/gcom/getcnum.gcom

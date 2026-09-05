@@ -1,0 +1,57 @@
+From d88de38ea3d41a5b22e93bfcab2bf42ceaf34931 Mon Sep 17 00:00:00 2001
+From: Carlo Szelinsky <github@szelinsky.de>
+Date: Wed, 12 Aug 2026 13:24:00 +0300
+Subject: [PATCH] USB: serial: option: add Quectel EG060W
+
+Add Quectel EG060W with product ID 0x6004.
+The three vendor-specific interfaces are DIAG, NMEA and AT; the CDC-NCM
+data interfaces are handled by the cdc_ncm driver.
+
+T:  Bus=01 Lev=01 Prnt=01 Port=01 Cnt=01 Dev#=  2 Spd=480  MxCh= 0
+D:  Ver= 2.10 Cls=ef(misc ) Sub=02 Prot=01 MxPS=64 #Cfgs=  1
+P:  Vendor=2c7c ProdID=6004 Rev= 3.18
+S:  Manufacturer=Quectel
+S:  Product=EG060W-EAAA
+S:  SerialNumber=123456789ABCD
+C:* #Ifs= 5 Cfg#= 1 Atr=e0 MxPwr=  2mA
+A:  FirstIf#= 0 IfCount= 2 Cls=02(comm.) Sub=0d Prot=00
+I:* If#= 0 Alt= 0 #EPs= 1 Cls=02(comm.) Sub=0d Prot=00 Driver=cdc_ncm
+E:  Ad=82(I) Atr=03(Int.) MxPS=  16 Ivl=32ms
+I:  If#= 1 Alt= 0 #EPs= 0 Cls=0a(data ) Sub=00 Prot=01 Driver=cdc_ncm
+I:* If#= 1 Alt= 1 #EPs= 2 Cls=0a(data ) Sub=00 Prot=01 Driver=cdc_ncm
+E:  Ad=81(I) Atr=02(Bulk) MxPS= 512 Ivl=0ms
+E:  Ad=01(O) Atr=02(Bulk) MxPS= 512 Ivl=0ms
+I:* If#= 2 Alt= 0 #EPs= 2 Cls=ff(vend.) Sub=00 Prot=00 Driver=option
+E:  Ad=83(I) Atr=02(Bulk) MxPS= 512 Ivl=0ms
+E:  Ad=02(O) Atr=02(Bulk) MxPS= 512 Ivl=0ms
+I:* If#= 3 Alt= 0 #EPs= 2 Cls=ff(vend.) Sub=00 Prot=00 Driver=option
+E:  Ad=84(I) Atr=02(Bulk) MxPS= 512 Ivl=0ms
+E:  Ad=03(O) Atr=02(Bulk) MxPS= 512 Ivl=0ms
+I:* If#= 4 Alt= 0 #EPs= 2 Cls=ff(vend.) Sub=00 Prot=00 Driver=option
+E:  Ad=85(I) Atr=02(Bulk) MxPS= 512 Ivl=0ms
+E:  Ad=04(O) Atr=02(Bulk) MxPS= 512 Ivl=0ms
+
+Cc: stable@vger.kernel.org
+Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
+---
+ drivers/usb/serial/option.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/usb/serial/option.c
++++ b/drivers/usb/serial/option.c
+@@ -281,6 +281,7 @@ static void option_instat_callback(struc
+ #define QUECTEL_PRODUCT_EC200U			0x0901
+ #define QUECTEL_PRODUCT_EG912Y			0x6001
+ #define QUECTEL_PRODUCT_EC200S_CN		0x6002
++#define QUECTEL_PRODUCT_EG060W			0x6004
+ #define QUECTEL_PRODUCT_EC200A			0x6005
+ #define QUECTEL_PRODUCT_EG916Q			0x6007
+ #define QUECTEL_PRODUCT_EM061K_LWW		0x6008
+@@ -1270,6 +1271,7 @@ static const struct usb_device_id option
+ 	{ USB_DEVICE_AND_INTERFACE_INFO(QUECTEL_VENDOR_ID, QUECTEL_PRODUCT_EC200U, 0xff, 0, 0) },
+ 	{ USB_DEVICE_AND_INTERFACE_INFO(QUECTEL_VENDOR_ID, QUECTEL_PRODUCT_EC200S_CN, 0xff, 0, 0) },
+ 	{ USB_DEVICE_AND_INTERFACE_INFO(QUECTEL_VENDOR_ID, QUECTEL_PRODUCT_EC200T, 0xff, 0, 0) },
++	{ USB_DEVICE_AND_INTERFACE_INFO(QUECTEL_VENDOR_ID, QUECTEL_PRODUCT_EG060W, 0xff, 0, 0) },
+ 	{ USB_DEVICE_AND_INTERFACE_INFO(QUECTEL_VENDOR_ID, QUECTEL_PRODUCT_EG912Y, 0xff, 0, 0) },
+ 	{ USB_DEVICE_AND_INTERFACE_INFO(QUECTEL_VENDOR_ID, QUECTEL_PRODUCT_EG916Q, 0xff, 0x00, 0x00) },
+ 	{ USB_DEVICE_AND_INTERFACE_INFO(QUECTEL_VENDOR_ID, QUECTEL_PRODUCT_RM500K, 0xff, 0x00, 0x00) },
