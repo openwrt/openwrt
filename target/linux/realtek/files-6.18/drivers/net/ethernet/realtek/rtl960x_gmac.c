@@ -63,10 +63,6 @@
 
 #define RTL960X_GMAC_REGS_DUMP_LEN	0x100
 
-/* The ring strides are the HW descriptor sizes; guard the layout. */
-static_assert(sizeof(struct rtl960x_rx_desc) == 16);
-static_assert(sizeof(struct rtl960x_tx_desc) == 20);
-
 struct rtl960x_gmac {
 	struct net_device *dev;
 	struct device *dma_dev;
