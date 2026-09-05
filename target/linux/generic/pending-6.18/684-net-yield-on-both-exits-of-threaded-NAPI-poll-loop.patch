@@ -1,0 +1,74 @@
+From 72bc090b453fbc425a2f107eb22b24947fa56042 Mon Sep 17 00:00:00 2001
+From: Vitaliy Sochnev <sochnev.v.74@gmail.com>
+Date: Fri, 14 Aug 2026 23:04:27 +0100
+Subject: [PATCH] net: yield the CPU on every exit of the threaded NAPI poll loop
+
+napi_threaded_poll_loop() only reaches cond_resched() when it is about to
+iterate again. When __napi_poll() clears repoll the loop breaks first, so
+the last iteration returns without any voluntary preemption point.
+
+Control then goes back to napi_threaded_poll(), which calls
+napi_thread_wait(). If work is already pending that helper returns without
+ever calling schedule(). Under a receive load that keeps arriving at least
+as fast as it is drained, this repeats indefinitely and the kthread holds
+its CPU without a single reschedule. On CONFIG_PREEMPT_NONE - which every
+affected OpenWrt target uses - nothing else on that CPU gets to run.
+
+Everything that waits for deferred work on that CPU then blocks: RCU grace
+periods, per-CPU work items and RCU callbacks. Deleting a network device
+hits all three - synchronize_net(), flush_all_backlogs() -> flush_work()
+and rcu_barrier() from netdev_run_todo(). In practice this shows up as
+"ip link" and network reconfiguration hanging for tens of seconds while
+the board forwards or terminates traffic at line rate.
+
+rcu_softirq_qs_periodic() does not help here. It reports a quiescent state
+but does not schedule, so the work items and the callbacks still wait, and
+it is skipped on the exit path anyway.
+
+Measured on a Nokia XG-040G-MF (Airoha AN7583) terminating a 985 Mbit/s
+TCP receive load, 60 minute runs, timing "ip link del":
+
+                    before        after
+  mean               1.22 s       0.10 s
+  worst             60.32 s       0.19 s
+  over 1 s        7 of 172      0 of 179
+  RCU stalls             2            0
+  packet rate   82094 p/s    82073 p/s
+
+The packet rate is the control: the same work is done in both runs. A
+separate pair of 60 minute runs on an AN7581 board took the worst case
+from 241.55 s to 0.41 s.
+
+Reproducing it needs the loop to be re-entered tens of thousands of times
+a second, so it depends on the driver and on the shape of the load. It
+did not reproduce on mtk_eth_soc, whose net_dim moderation coalesces the
+same packet rate into far fewer interrupts.
+
+This is against the 6.18 code, where the loop breaks before reaching
+rcu_softirq_qs_periodic() and cond_resched(). Upstream has since gained a
+busy-poll parameter and reordered the tail, so the version sent to netdev
+looks different while making the same change - the yield happens on both
+exits instead of only on the iterating one. That version was run on the
+same board for an hour against the same baseline and came out equally
+clean (worst 0.16 s). Drop this patch once it lands in net.
+
+Link: https://lore.kernel.org/netdev/20260814220427.623427-1-sochnev.v.74@gmail.com/
+Fixes: 29863d41bb6e ("net: implement threaded-able napi poll loop support")
+Signed-off-by: Vitaliy Sochnev <sochnev.v.74@gmail.com>
+
+--- a/net/core/dev.c
++++ b/net/core/dev.c
+@@ -7775,11 +7775,12 @@ static void napi_threaded_poll_loop(stru
+ 		bpf_net_ctx_clear(bpf_net_ctx);
+ 		local_bh_enable();
+ 
++		cond_resched();
++
+ 		if (!repoll)
+ 			break;
+ 
+ 		rcu_softirq_qs_periodic(last_qs);
+-		cond_resched();
+ 	}
+ }
+ 
