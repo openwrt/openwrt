@@ -390,6 +390,7 @@ generate_rssimon() {
 generate_led() {
 	local key="$1"
 	local cfg="led_$key"
+	local led_keys led_key led_value
 
 	json_select led
 	json_select "$key"
@@ -403,6 +404,19 @@ generate_led() {
 		set system.$cfg.trigger='$trigger'
 		set system.$cfg.default='$default'
 	EOF
+
+	# A multicolor LED carries one intensity per entry of its multi_index,
+	# which the led init script applies through multi_intensity.
+	json_get_keys led_keys
+	for led_key in $led_keys; do
+		case "$led_key" in
+			color_*) ;;
+			*) continue ;;
+		esac
+
+		json_get_var led_value "$led_key"
+		uci -q set "system.$cfg.$led_key=$led_value"
+	done
 
 	case "$type" in
 		gpio)

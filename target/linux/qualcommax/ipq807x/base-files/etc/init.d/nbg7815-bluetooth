@@ -1,0 +1,70 @@
+#!/bin/sh /etc/rc.common
+
+USE_PROCD=1
+START=96
+
+EXTRA_COMMANDS="attach"
+
+BLE_SERIAL=/dev/ttyMSM1
+
+gen_mac_psr() {
+	local lan_mac ble_mac
+
+	lan_mac=$(cat /sys/class/net/lan1/address 2>/dev/null) || return 0
+	ble_mac=$(macaddr_add "$lan_mac" 5) || return 0
+
+	mkdir -p /etc/bluetooth
+	echo "&0001 = 00${ble_mac:9:2} ${ble_mac:12:2}${ble_mac:15:2} 00${ble_mac:6:2} ${ble_mac:0:2}${ble_mac:3:2}" \
+		> /etc/bluetooth/csr8x11-mac.psr
+}
+
+load_psr() {
+	local file
+
+	for file in csr8x11-a12-bt4.2-patch.psr csr8x11-coex.psr csr8x11-mac.psr; do
+		[ -r /etc/bluetooth/$file ] || continue
+		# through logger, so that it is visible whether the keys made it
+		nbg7815-bt-pskey $BLE_SERIAL /etc/bluetooth/$file 2>&1 |
+			logger -t nbg7815-bluetooth
+	done
+}
+
+# procd runs this on every (re)start of the instance. The PSKEYs have to be
+# loaded again each time: a fresh attach resets the controller, and without
+# them it comes back with the CSR default address 00:02:5b:00:a5:a5 instead
+# of the one derived from the LAN MAC.
+attach() {
+	. /lib/functions/system.sh
+
+	gen_mac_psr
+
+	# PSKEYs before attach, following the stock order: the chip answers
+	# cleanly to the BCSP load and the attach follows, while loading over
+	# HCI after attach proved unreliable - the chip acks and keeps its
+	# defaults.
+	load_psr
+
+	# rc.common holds a lock on fd 1000 for as long as this script runs.
+	# hciattach must not inherit it, or every later call of the init script
+	# would block in procd_lock while the attach is up.
+	exec 1000>&-
+
+	# Powering the controller on is left to the bluetooth stack; bluetoothd
+	# enables what it finds. -n keeps hciattach in the foreground so that
+	# procd supervises it.
+	exec /usr/bin/hciattach -n -s 115200 $BLE_SERIAL bcsp 115200
+}
+
+start_service() {
+	[ "$(board_name)" = "zyxel,nbg7815" ] || return 0
+
+	[ -c $BLE_SERIAL ] || {
+		echo "nbg7815-bluetooth: $BLE_SERIAL not found" >&2
+		return 1
+	}
+
+	procd_open_instance
+	procd_set_param command "$initscript" attach
+	procd_set_param respawn
+	procd_close_instance
+}
