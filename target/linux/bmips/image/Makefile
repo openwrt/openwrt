@@ -357,7 +357,7 @@ define Device/sercomm-nand
   $(Device/bcm63xx-nand)
   IMAGES := factory.img sysupgrade.bin
   IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi |\
-    cfe-sercomm-part | gzip | cfe-sercomm-load | cfe-sercomm-crypto
+    cfe-sercomm-part | libdeflate-gzip | cfe-sercomm-load | cfe-sercomm-crypto
   SERCOMM_FSVER :=
   SERCOMM_HWVER :=
   SERCOMM_SWVER :=
