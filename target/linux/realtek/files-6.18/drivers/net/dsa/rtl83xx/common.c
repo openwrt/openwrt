@@ -527,6 +527,7 @@ static int rtldsa_93xx_lag_set_group2ports(struct rtl838x_switch_priv *priv, int
 		pr_err("%s: Number of LAG ports too high: %u", __func__,
 		       num_of_lag_ports);
 
+		rtl_table_release(r);
 		return -ENOSPC;
 	}
 
@@ -574,6 +575,7 @@ static int rtldsa_93xx_lag_set_group2ports(struct rtl838x_switch_priv *priv, int
 			e.ip4_hash_mask_idx = RTL93XX_HASH_MASK_INDEX_L23;
 			e.ip6_hash_mask_idx = RTL93XX_HASH_MASK_INDEX_L23;
 		} else {
+			rtl_table_release(r);
 			return -EOPNOTSUPP;
 		}
 	}
