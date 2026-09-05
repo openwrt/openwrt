@@ -159,6 +159,7 @@ platform_do_upgrade() {
 	bananapi,bpi-r4-lite|\
 	bananapi,bpi-r4-pro-8x|\
 	bazis,ax3000wm|\
+	bt,rb300|\
 	cmcc,a10-ubootmod|\
 	cmcc,rax3000m|\
 	comfast,cf-wr632ax-ubi|\
@@ -410,6 +411,7 @@ platform_check_image() {
 	bananapi,bpi-r4-lite|\
 	bananapi,bpi-r4-pro-8x|\
 	bazis,ax3000wm|\
+	bt,rb300|\
 	cmcc,a10-ubootmod|\
 	cmcc,rax3000m|\
 	comfast,cf-wr632ax-ubi|\

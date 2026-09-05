@@ -162,6 +162,9 @@ mediatek_setup_interfaces()
 	wavlink,wl-wnt100x3-ubootmod)
 		ucidef_set_interfaces_lan_wan eth0 eth1
 		;;
+	bt,rb300)
+		ucidef_set_interfaces_lan_wan "lan0 lan1 lan2 lan3" wan
+		;;
 	bazis,ax3000wm|\
 	cudy,m3000-v1|\
 	cudy,m3000-v1-ubootmod|\
