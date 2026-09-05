@@ -1,6 +1,7 @@
 'use strict';
 
 import * as ubus from "ubus";
+import * as uci from "uci";
 import { realpath } from "fs";
 import {
 	handler_load, handler_attributes,
@@ -361,6 +362,12 @@ function config_start()
 
 }
 
+function config_reload()
+{
+	config_init(uci.cursor());
+	config_start();
+}
+
 function check_interfaces()
 {
 	for (let name, dev in wireless.devices)
@@ -493,6 +500,13 @@ const ubus_obj = {
 				dev.retry_setup();
 				return 0;
 			});
+		}
+	},
+	config_reload: {
+		args: {},
+		call: function(req) {
+			config_reload();
+			return 0;
 		}
 	},
 	reconf: {
