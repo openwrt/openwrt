@@ -709,9 +709,9 @@ define Device/bananapi_bpi-r4-common
   DEVICE_VENDOR := Bananapi
   DEVICE_DTS_DIR := $(DTS_DIR)/
   DEVICE_DTS_LOADADDR := 0x45f00000
-  DEVICE_DTS_OVERLAY:= mt7988a-bananapi-bpi-r4-emmc mt7988a-bananapi-bpi-r4-rtc mt7988a-bananapi-bpi-r4-sd mt7988a-bananapi-bpi-r4-wifi-be14
+  DEVICE_DTS_OVERLAY:= mt7988a-bananapi-bpi-r4-emmc mt7988a-bananapi-bpi-r4-rtc mt7988a-bananapi-bpi-r4-sd 
   DEVICE_DTC_FLAGS := --pad 4096
-  DEVICE_PACKAGES := kmod-hwmon-pwmfan kmod-i2c-mux-pca954x kmod-eeprom-at24 kmod-mt7996-firmware kmod-mt7996-233-firmware \
+  DEVICE_PACKAGES := kmod-hwmon-pwmfan kmod-i2c-mux-pca954x kmod-eeprom-at24 kmod-mt7927 \
 		     kmod-rtc-pcf8563 kmod-sfp kmod-phy-aquantia kmod-usb3 e2fsprogs f2fsck mkf2fs mt7988-wo-firmware
   DEVICE_COMPAT_VERSION := 1.1
   DEVICE_COMPAT_MESSAGE := The non-switch ports were renamed to match the board/case labels
