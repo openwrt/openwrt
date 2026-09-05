@@ -31,7 +31,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 
 --- a/arch/arm/dts/Makefile
 +++ b/arch/arm/dts/Makefile
-@@ -177,6 +177,7 @@ dtb-$(CONFIG_ARCH_MVEBU) +=			\
+@@ -153,6 +153,7 @@ dtb-$(CONFIG_ARCH_MVEBU) +=			\
  	armada-3720-uDPU.dtb			\
  	armada-7040-db-nand.dtb			\
  	armada-7040-db.dtb			\
@@ -419,7 +419,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +CONFIG_EFI_PARTITION=y
 +CONFIG_ENV_OVERWRITE=y
 +CONFIG_ENV_IS_IN_SPI_FLASH=y
-+CONFIG_SYS_RELOC_GD_ENV_ADDR=y
++CONFIG_ENV_RELOC_GD_ENV_ADDR=y
 +CONFIG_NET_RANDOM_ETHADDR=y
 +CONFIG_BUTTON=y
 +CONFIG_BUTTON_GPIO=y
