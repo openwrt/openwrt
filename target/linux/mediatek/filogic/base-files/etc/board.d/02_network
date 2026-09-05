@@ -89,6 +89,7 @@ mediatek_setup_interfaces()
 	netcore,n60-pro|\
 	nradio,c8-668gl|\
 	ruijie,rg-x60-pro|\
+	tplink,tl-7dr7230*|\
 	unielec,u7981-01*|\
 	wavlink,wl-wn536ax6-a|\
 	zbtlink,zbt-z8102ax|\
@@ -228,6 +229,9 @@ mediatek_setup_interfaces()
 		;;
 	tplink,fr365-v1)
 		ucidef_set_interfaces_lan_wan "port1 port3 port4 port5 port6" "port2"
+		;;
+	tplink,tl-7dr7250*)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 eth1" eth2
 		;;
 	tplink,tl-xdr6086|\
 	wavlink,wl-wn551x3|\
