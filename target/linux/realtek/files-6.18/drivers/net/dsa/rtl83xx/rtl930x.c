@@ -1749,6 +1749,18 @@ static int rtl930x_pie_verify_template(struct rtl838x_switch_priv *priv,
 	if (ether_addr_to_u64(pr->dmac) && !rtl930x_pie_templ_has(t, TEMPLATE_FIELD_DMAC0))
 		return -1;
 
+	if (pr->ethertype_m && !rtl930x_pie_templ_has(t, TEMPLATE_FIELD_ETHERTYPE))
+		return -1;
+
+	if (pr->itag_m && !rtl930x_pie_templ_has(t, TEMPLATE_FIELD_VLAN))
+		return -1;
+
+	if (pr->sport_m && !rtl930x_pie_templ_has(t, TEMPLATE_FIELD_L4_SPORT))
+		return -1;
+
+	if (pr->dport_m && !rtl930x_pie_templ_has(t, TEMPLATE_FIELD_L4_DPORT))
+		return -1;
+
 	/* TODO: Check more */
 
 	i = find_first_zero_bit(&priv->pie_use_bm[block * 4], PIE_BLOCK_SIZE);
@@ -1787,7 +1799,7 @@ static int rtl930x_pie_rule_add(struct rtl838x_switch_priv *priv, struct pie_rul
 			break;
 	}
 
-	if (block >= priv->r->n_pie_blocks) {
+	if (block >= max_block) {
 		mutex_unlock(&priv->pie_mutex);
 		return -EOPNOTSUPP;
 	}
@@ -1875,6 +1887,13 @@ static void rtl930x_pie_init(struct rtl838x_switch_priv *priv)
 		sw_w32(template_selectors, RTL930X_PIE_BLK_TMPLTE_CTRL(i));
 }
 
+/* A PIE rule logs its matched packets into the LOG table entry that carries
+ * its own rule ID, in data word 1 - one entry per rule. Counters handed out
+ * by rtl83xx_packet_cntr_alloc() for L3 route statistics start above the PIE
+ * rule ID range and pack two 32-bit counters into one 64-bit LOG entry.
+ */
+#define RTL930X_PIE_RULE_IDS	(rtldsa_930x_cfg.n_pie_blocks * PIE_BLOCK_SIZE)
+
 static u32 rtl930x_packet_cntr_read(int counter)
 {
 	u32 v;
@@ -1883,15 +1902,18 @@ static u32 rtl930x_packet_cntr_read(int counter)
 	struct table_reg *r = rtl_table_get(RTL9300_TBL_0, 3);
 
 	pr_debug("In %s, id %d\n", __func__, counter);
-	rtl_table_read(r, counter / 2);
 
-	pr_debug("Registers: %08x %08x\n",
-		 sw_r32(rtl_table_data(r, 0)), sw_r32(rtl_table_data(r, 1)));
-	/* The table has a size of 2 registers */
-	if (counter % 2)
-		v = sw_r32(rtl_table_data(r, 0));
-	else
+	if (counter < RTL930X_PIE_RULE_IDS) {
+		rtl_table_read(r, counter);
 		v = sw_r32(rtl_table_data(r, 1));
+	} else {
+		rtl_table_read(r, counter / 2);
+		/* Two counters share one LOG table entry */
+		if (counter % 2)
+			v = sw_r32(rtl_table_data(r, 0));
+		else
+			v = sw_r32(rtl_table_data(r, 1));
+	}
 
 	rtl_table_release(r);
 
@@ -1904,13 +1926,23 @@ static void rtl930x_packet_cntr_clear(int counter)
 	struct table_reg *r = rtl_table_get(RTL9300_TBL_0, 3);
 
 	pr_debug("In %s, id %d\n", __func__, counter);
-	/* The table has a size of 2 registers */
-	if (counter % 2)
-		sw_w32(0, rtl_table_data(r, 0));
-	else
-		sw_w32(0, rtl_table_data(r, 1));
 
-	rtl_table_write(r, counter / 2);
+	/* Read-modify-write: for a route counter the other 32-bit counter in
+	 * the same 64-bit entry must be preserved; for a PIE rule ID the entry
+	 * is ours alone but the RMW is harmless.
+	 */
+	if (counter < RTL930X_PIE_RULE_IDS) {
+		rtl_table_read(r, counter);
+		sw_w32(0, rtl_table_data(r, 1));
+		rtl_table_write(r, counter);
+	} else {
+		rtl_table_read(r, counter / 2);
+		if (counter % 2)
+			sw_w32(0, rtl_table_data(r, 0));
+		else
+			sw_w32(0, rtl_table_data(r, 1));
+		rtl_table_write(r, counter / 2);
+	}
 
 	rtl_table_release(r);
 }
@@ -2247,6 +2279,7 @@ const struct rtldsa_config rtldsa_930x_cfg = {
 	.imr_glb = RTL930X_IMR_GLB,
 	.n_counters = 2048,
 	.n_pie_blocks = 16,
+	.pie_rule_id_is_log_counter = true,
 	.port_ignore = 0x3f,
 	.vlan_tables_read = rtl930x_vlan_tables_read,
 	.vlan_set_tagged = rtl930x_vlan_set_tagged,

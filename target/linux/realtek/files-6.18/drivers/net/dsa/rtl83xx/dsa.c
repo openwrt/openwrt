@@ -204,6 +204,7 @@ static int rtldsa_83xx_setup(struct dsa_switch *ds)
 static int rtldsa_93xx_setup(struct dsa_switch *ds)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
+	int err;
 
 	pr_info("%s called\n", __func__);
 
@@ -241,6 +242,13 @@ static int rtldsa_93xx_setup(struct dsa_switch *ds)
 	ds->assisted_learning_on_cpu_port = true;
 
 	priv->r->pie_init(priv);
+
+	if (priv->r->pie_rule_id_is_log_counter) {
+		err = rtldsa_tc_init(priv);
+		if (err)
+			return err;
+	}
+
 	priv->r->led_init(priv);
 
 	return 0;
@@ -2589,13 +2597,14 @@ static int rtldsa_cls_flower_add(struct dsa_switch *ds, int port,
 	const struct flow_action_entry *act;
 	int ret;
 
-	if (!priv->r->port_rate_police_add)
-		return -EOPNOTSUPP;
-
-	/* the single action must be a rate/bandwidth limiter */
+	/* a single rate/bandwidth limiter action is handled as port policing */
 	act = rtldsa_rate_policy_extract(cls);
 
+	/* everything else is offloaded to the PIE engine */
 	if (!rtldsa_port_rate_police_validate(act))
+		return rtldsa_pie_cls_flower_add(priv, port, cls, ingress);
+
+	if (!priv->r->port_rate_police_add)
 		return -EOPNOTSUPP;
 
 	mutex_lock(&priv->reg_mutex);
@@ -2634,6 +2643,15 @@ static int rtldsa_cls_flower_del(struct dsa_switch *ds, int port,
 	struct rtldsa_port *p = &priv->ports[port];
 	int ret;
 
+	/* PIE flower rules are ingress only. Try to remove a PIE rule first;
+	 * if none exists for this cookie, fall back to port rate policing.
+	 */
+	if (ingress) {
+		ret = rtldsa_pie_cls_flower_del(priv, cls, ingress);
+		if (ret != -ENOENT)
+			return ret;
+	}
+
 	if (!priv->r->port_rate_police_del)
 		return -EOPNOTSUPP;
 
@@ -2650,6 +2668,23 @@ static int rtldsa_cls_flower_del(struct dsa_switch *ds, int port,
 
 unlock:
 	mutex_unlock(&priv->reg_mutex);
+
+	return ret;
+}
+
+static int rtldsa_cls_flower_stats(struct dsa_switch *ds, int port,
+				   struct flow_cls_offload *cls, bool ingress)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+	int ret;
+
+	/* only PIE flower rules provide per-rule statistics, and only ingress */
+	if (!ingress)
+		return 0;
+
+	ret = rtldsa_pie_cls_flower_stats(priv, cls, ingress);
+	if (ret == -ENOENT)
+		return 0;
 
 	return ret;
 }
@@ -2779,4 +2814,5 @@ const struct dsa_switch_ops rtldsa_93xx_switch_ops = {
 
 	.cls_flower_add		= rtldsa_cls_flower_add,
 	.cls_flower_del		= rtldsa_cls_flower_del,
+	.cls_flower_stats	= rtldsa_cls_flower_stats,
 };
