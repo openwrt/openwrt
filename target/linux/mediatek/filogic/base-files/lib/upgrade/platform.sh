@@ -24,6 +24,21 @@ buffalo_initial_setup()
 	ubiformat /dev/mtd$mtdnum -y
 }
 
+dlink_initial_setup()
+{
+	# setup uboot-env if it's running on initramfs
+	[ "$(rootfs_type)" = "tmpfs" ] || return 0
+
+	local board=$(board_name)
+	case "$board" in
+	dlink,aquila-pro-ai-m30-a1-ubootmod|\
+	dlink,aquila-pro-ai-m60-a1-ubootmod)
+		fw_setenv mtdparts "nmbm0:1024k(bl2),512k(u-boot-env),2048k(factory),2048k(fip),102400k(ubi),256k(Odm),512k(Config1),512k(Config2),5120k(Storage)"
+		fw_setenv mupgrade_en 0
+		;;
+	esac
+}
+
 jiorouter_initial_setup()
 {
 	[ "$(rootfs_type)" = "tmpfs" ] || return 0
@@ -304,7 +319,9 @@ platform_do_upgrade() {
 		;;
 	dlink,aquila-pro-ai-e30-a1|\
 	dlink,aquila-pro-ai-m30-a1|\
-	dlink,aquila-pro-ai-m60-a1)
+	dlink,aquila-pro-ai-m30-a1-ubootmod|\
+	dlink,aquila-pro-ai-m60-a1|\
+	dlink,aquila-pro-ai-m60-a1-ubootmod)
 		fw_setenv sw_tryactive 0
 		nand_do_upgrade "$1"
 		;;
@@ -546,6 +563,10 @@ platform_pre_upgrade() {
 		;;
 	buffalo,wsr-6000ax8)
 		buffalo_initial_setup
+		;;
+	dlink,aquila-pro-ai-m30-a1-ubootmod|\
+	dlink,aquila-pro-ai-m60-a1-ubootmod)
+		dlink_initial_setup
 		;;
 	elecom,wrc-x6000gsd|\
 	elecom,wrc-x6000qs)
