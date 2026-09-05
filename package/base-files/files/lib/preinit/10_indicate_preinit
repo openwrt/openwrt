@@ -2,7 +2,7 @@
 # Copyright (C) 2010 Vertical Communications
 
 preinit_ip_config() {
-	local netdev vid
+	local netdev vid i
 
 	netdev=${1%\.*}
 	vid=${1#*\.}
@@ -11,6 +11,13 @@ preinit_ip_config() {
 		vid=
 	fi
 
+	# DSA interfaces may be registered after preinit starts.  Give the
+	# network device a short window to appear before abandoning failsafe
+	# network setup.
+	for i in 1 2 3 4 5; do
+		grep -q "$netdev" /proc/net/dev && break
+		[ "$i" -eq 5 ] || sleep 1
+	done
 	grep -q "$netdev" /proc/net/dev || return
 
 	if [ -n "$vid" ]; then
