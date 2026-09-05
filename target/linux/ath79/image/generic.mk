@@ -869,7 +869,7 @@ define Device/comfast_cf-wa350
   DEVICE_VENDOR := COMFAST
   DEVICE_MODEL := CF-WA350
   DEVICE_PACKAGES := kmod-ath10k-ct \
-        ath10k-firmware-qca9888-ct -uboot-envtools cfw-leds
+        ath10k-firmware-qca9888-ct -uboot-envtools utils/cfw-leds
   IMAGE_SIZE := 16000k
 endef
 TARGET_DEVICES += comfast_cf-wa350

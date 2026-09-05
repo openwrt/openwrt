@@ -1,0 +1,306 @@
+#!/bin/sh
+#===============================================================================
+# cfw_led_ctrl v4 — External LED simulation daemon for the Comfast CF-WA350 (ath79)
+#-------------------------------------------------------------------------------
+# Simulates the behavior of the original firmware (switch0-triggered with
+# masks 0x02 and 0x04):
+#   WAN LED: linked to switch port 1 — cable disconnected = off
+#            cable connected with no traffic = solid
+#            data traffic = blinking (blink rate increases with traffic speed)
+#   LAN LED: same logic on switch port 2
+#   Wi-Fi LED: linked to the 2.4GHz interface (phy1-ap0) — same logic
+#
+# New in v4 — "Activity Afterglow":
+#   When data traffic stops, the LED does not immediately become solid.
+#   Instead, it continues blinking at a progressively slower rate for the
+#   duration of the afterglow period (HOLDOVER seconds), then becomes solid.
+#   This prevents annoying flicker with intermittent traffic (video playback,
+#   YouTube buffering, etc.) and reduces the number of LED state transitions —
+#   exactly like the original routers.
+#
+# Measurement source: per-port switch MIB counters (RxGoodByte + TxByte) via swconfig
+#===============================================================================
+LEDS_ROOT="${LEDS_ROOT:-/sys/class/leds}"
+NET_ROOT="${NET_ROOT:-/sys/class/net}"
+SWCONFIG_BIN="${SWCONFIG_BIN:-swconfig}"
+
+
+#========================== Device settings ====================================
+WAN_LED="${WAN_LED:-blue:ext_wan}"
+LAN_LED="${LAN_LED:-blue:ext_lan}"
+WLAN_LED="${WLAN_LED:-blue:ext_wlan2g}"
+
+# Switch ports (0x02 = port 1 = WAN, 0x04 = port 2 = LAN)
+WAN_PORT="${WAN_PORT-1}"
+LAN_PORT="${LAN_PORT-2}"
+SWITCH_DEV="${SWITCH_DEV:-switch0}"
+
+# 2.4GHz Wi-Fi interface (linked to phy1)
+WLAN_IF_LIST="${WLAN_IF_LIST-phy1-ap0}"
+
+# Fallback: if swconfig is unavailable, measure traffic from these interfaces
+WAN_IF_LIST="${WAN_IF_LIST-eth0.2 br-lan}"
+LAN_IF_LIST="${LAN_IF_LIST-eth0.1 br-lan}"
+
+IDLE_KBPS="${IDLE_KBPS:-16}"   # Below this speed (KB/s) = idle
+HOLDOVER="${HOLDOVER:-20}"     # Afterglow duration in seconds (10-30)
+#===============================================================================
+
+#------------------------- Helper functions ----------------------------------------
+
+pick_if() { # Pick the first existing interface from the list
+	for _i in $1; do
+		[ -e "$NET_ROOT/$_i/statistics/rx_bytes" ] && { echo "$_i"; return 0; }
+	done
+	echo ""
+	return 1
+}
+
+iface_bytes() { # Interface byte counter -> output in IB (-1 if not found)
+	if read _r < "$NET_ROOT/$1/statistics/rx_bytes" 2>/dev/null \
+	   && read _t < "$NET_ROOT/$1/statistics/tx_bytes" 2>/dev/null; then
+		IB=$(( _r + _t ))
+	else
+		IB=-1
+	fi
+}
+
+# Read switch port status + counters -> output in PSTAT: "link rx tx"
+port_stats() { # $1=port number
+	PSTAT=""
+	_o=$($SWCONFIG_BIN dev "$SWITCH_DEV" port "$1" show 2>/dev/null) || return 1
+	[ -n "$_o" ] || return 1
+	if printf '%s\n' "$_o" | grep -Eq 'link:[ ]?up'; then _l=1; else _l=0; fi
+	_rx=$(printf '%s\n' "$_o" | grep 'RxGoodByte' | head -1 | awk '{print $3}')
+	_tx=$(printf '%s\n' "$_o" | grep 'TxByte' | head -1 | awk '{print $3}')
+	[ -n "$_rx" ] || _rx=0
+	[ -n "$_tx" ] || _tx=0
+	PSTAT="$_l $_rx $_tx"
+}
+
+if_carrier_up() {
+	[ -e "$NET_ROOT/$1/carrier" ] || return 1
+	read _c < "$NET_ROOT/$1/carrier" 2>/dev/null || _c=0
+	[ "$_c" = "1" ]
+}
+
+# Apply LED state: off / on / blink duration (in milliseconds)
+set_led_mode() { # $1=LED $2=mode
+	_l=$1; _m=$2
+	case "$_m" in
+	off)
+		echo none > "$LEDS_ROOT/$_l/trigger" 2>/dev/null
+		echo 0 > "$LEDS_ROOT/$_l/brightness" 2>/dev/null
+	;;
+	on)
+		echo none > "$LEDS_ROOT/$_l/trigger" 2>/dev/null
+		echo 1 > "$LEDS_ROOT/$_l/brightness" 2>/dev/null
+	;;
+	*)
+		echo timer > "$LEDS_ROOT/$_l/trigger" 2>/dev/null
+		echo "$_m" > "$LEDS_ROOT/$_l/delay_on" 2>/dev/null
+		echo "$_m" > "$LEDS_ROOT/$_l/delay_off" 2>/dev/null
+	;;
+	esac
+}
+
+# Speed (KB/s) -> blink half-cycle duration (tuned for user experience)
+rate_delay() { # $1=speed -> output in RD
+	if   [ "$1" -ge 4096 ]; then RD=50     # >= 4MB/s : fastest blink
+	elif [ "$1" -ge 1024 ]; then RD=60     # >= 1MB/s
+	elif [ "$1" -ge  256 ]; then RD=80     # >= 256KB/s
+	elif [ "$1" -ge   32 ]; then RD=100    # >= 32KB/s
+	else                         RD=150    # light traffic
+	fi
+}
+
+#-------------------------------------------------------------------------------
+
+# Decision engine for each group (WAN/LAN/Wi-Fi)
+# Inputs   : G_LINK connection status, G_RATE current traffic rate,
+#            G_PEAK peak traffic rate in the session, G_AG afterglow counter,
+#            G_LASTRD last used blink duration
+# Outputs  : M = off / on / blink duration (while updating G_PEAK, G_AG, G_LASTRD)
+#-------------------------------------------------------------------------------
+group_mode() {
+	# No cable/radio down -> off immediately, reset session
+	if [ "$G_LINK" = "0" ]; then
+		M=off; G_PEAK=0; G_AG=0; G_LASTRD=0
+		return
+	fi
+
+	# Actual data traffic -> blink according to speed, record peak for afterglow
+	if [ "$G_RATE" -ge "$IDLE_KBPS" ]; then
+		[ "$G_RATE" -gt "$G_PEAK" ] && G_PEAK=$G_RATE
+		G_AG=0
+		rate_delay "$G_RATE"
+		M=$RD; G_LASTRD=$RD
+		return
+	fi
+
+	# No actual traffic but still in afterglow phase
+	if [ "$G_PEAK" -ge "$IDLE_KBPS" ] && [ "$G_AG" -lt "$HOLDOVER" ]; then
+		G_AG=$(( G_AG + 1 ))
+		# Artificial decreasing speed with natural quadratic decay:
+		# starts from peak and falls to zero at the end of afterglow
+		_RM=$(( HOLDOVER - G_AG ))
+		_SY=$(( G_PEAK * _RM * _RM / (HOLDOVER * HOLDOVER) ))
+		if [ "$_SY" -ge "$IDLE_KBPS" ]; then
+			rate_delay "$_SY"
+			# Afterglow only slows down — never speeds up beyond the last real blink
+			[ "$RD" -lt "$G_LASTRD" ] && RD=$G_LASTRD
+			M=$RD; G_LASTRD=$RD
+		else
+			M=on
+		fi
+		return
+	fi
+
+	# Full idle after afterglow -> solid
+	M=on; G_PEAK=0; G_AG=0; G_LASTRD=0
+}
+
+leds_disabled() { # Check if LEDs are globally disabled (same as original firmware)
+	[ -e /etc/led_off ] && return 0
+	_v=$(uci -q get led.led_off 2>/dev/null)
+	[ "$_v" = "1" ] && return 0
+	return 1
+}
+
+#------------------------- Initialization -------------------------------------
+
+WAN_IF=$(pick_if "$WAN_IF_LIST")
+LAN_IF=$(pick_if "$LAN_IF_LIST")
+WLAN_IF=$(pick_if "$WLAN_IF_LIST")
+
+SRC="switch MIB counters"
+port_stats "$WAN_PORT"
+if [ -z "$PSTAT" ]; then
+	SRC="network interfaces (fallback)"
+	echo "Warning: Cannot read switch — measuring from interfaces: WAN=$WAN_IF LAN=$LAN_IF"
+fi
+for _l in "$WAN_LED" "$LAN_LED" "$WLAN_LED"; do
+	grep -qw timer "$LEDS_ROOT/$_l/trigger" 2>/dev/null || \
+		echo "Warning: timer trigger not available for $_l — blinking will not work" >&2
+	[ -e "$LEDS_ROOT/$_l/trigger" ] && echo none > "$LEDS_ROOT/$_l/trigger" 2>/dev/null
+done
+
+logger -t cfw_leds "v4 started: WAN='$WAN_LED'(port:$WAN_PORT) LAN='$LAN_LED'(port:$LAN_PORT) WLAN='$WLAN_LED'(if:$WLAN_IF) src=$SRC holdover=${HOLDOVER}s idle=${IDLE_KBPS}KB/s"
+echo "cfw_leds v4: WAN='$WAN_LED' (switch port:$WAN_PORT)"
+echo "cfw_leds v4: LAN='$LAN_LED' (switch port:$LAN_PORT)"
+echo "cfw_leds v4: WLAN='$WLAN_LED' (interface:$WLAN_IF)"
+echo "cfw_leds v4: Measurement source: $SRC — Afterglow duration: ${HOLDOVER}s"
+echo "cfw_leds v4: Running... press Ctrl+C to stop"
+
+cleanup() { # Clean shutdown
+	for _l in "$WAN_LED" "$LAN_LED" "$WLAN_LED"; do
+		set_led_mode "$_l" off
+	done
+	logger -t cfw_leds "v4 stopped"
+	exit 0
+}
+trap cleanup INT TERM
+
+#------------------------- Main loop ------------------------------------------
+
+FIRST=1
+P_WAN=0; P_LAN=0; P_WL=0
+R_WAN=0; R_LAN=0; R_WL=0
+WAN_STATE="INIT"; LAN_STATE="INIT"; WLAN_STATE="INIT"
+WAN_PEAK=0; WAN_AG=0; WAN_LASTRD=0
+LAN_PEAK=0; LAN_AG=0; LAN_LASTRD=0
+WLAN_PEAK=0; WLAN_AG=0; WLAN_LASTRD=0
+DC=0
+
+while :; do
+	# Check global LED disable (every 5 seconds)
+	DC=$(( DC + 1 ))
+	if [ $(( DC % 5 )) -eq 1 ] && leds_disabled; then
+		for _l in "$WAN_LED" "$LAN_LED" "$WLAN_LED"; do
+			set_led_mode "$_l" off
+		done
+		WAN_STATE="OFFD"; LAN_STATE="OFFD"; WLAN_STATE="OFFD"
+		WAN_PEAK=0; WAN_AG=0; LAN_PEAK=0; LAN_AG=0; WLAN_PEAK=0; WLAN_AG=0
+		sleep 5
+		FIRST=1
+		continue
+	fi
+
+	# ---- Sample counters ----
+	# WAN: directly from switch port (link status + byte counters)
+	CW=0
+	port_stats "$WAN_PORT"
+	if [ -n "$PSTAT" ]; then
+		set -- $PSTAT
+		WAN_LINK=$1
+		CW=$(( $2 + $3 ))
+	else
+		WAN_IF=$(pick_if "$WAN_IF_LIST")
+		if if_carrier_up "$WAN_IF"; then WAN_LINK=1; else WAN_LINK=0; fi
+		iface_bytes "$WAN_IF"; CW=$IB; [ $CW -lt 0 ] && CW=0
+	fi
+
+	# LAN: directly from switch port
+	CL=0
+	port_stats "$LAN_PORT"
+	if [ -n "$PSTAT" ]; then
+		set -- $PSTAT
+		LAN_LINK=$1
+		CL=$(( $2 + $3 ))
+	else
+		LAN_IF=$(pick_if "$LAN_IF_LIST")
+		if if_carrier_up "$LAN_IF"; then LAN_LINK=1; else LAN_LINK=0; fi
+		iface_bytes "$LAN_IF"; CL=$IB; [ $CL -lt 0 ] && CL=0
+	fi
+
+	# Wi-Fi: from interface counters
+	WLAN_IF=$(pick_if "$WLAN_IF_LIST")
+	if [ -n "$WLAN_IF" ] && if_carrier_up "$WLAN_IF"; then WLAN_LINK=1; else WLAN_LINK=0; fi
+	iface_bytes "$WLAN_IF"; C1=$IB; [ $C1 -lt 0 ] && C1=0
+
+	if [ $FIRST = 1 ]; then
+		P_WAN=$CW; P_LAN=$CL; P_WL=$C1
+		FIRST=0
+		sleep 1
+		continue
+	fi
+
+	# Delta per second = bytes/s (with protection against counter reset)
+	D_WAN=$(( CW - P_WAN )); [ $D_WAN -lt 0 ] && D_WAN=0
+	D_LAN=$(( CL - P_LAN )); [ $D_LAN -lt 0 ] && D_LAN=0
+	D_WL=$(( C1 - P_WL ));   [ $D_WL -lt 0 ] && D_WL=0
+	P_WAN=$CW; P_LAN=$CL; P_WL=$C1
+
+	# KB/s with asymmetric smoothing (fast rise, slow fall)
+	I_WAN=$(( D_WAN / 1024 ))
+	I_LAN=$(( D_LAN / 1024 ))
+	I_WL=$(( D_WL / 1024 ))
+	if [ $I_WAN -lt $R_WAN ]; then R_WAN=$(( (R_WAN + 3 * I_WAN) / 4 )); else R_WAN=$(( (3 * R_WAN + I_WAN) / 4 )); fi
+	if [ $I_LAN -lt $R_LAN ]; then R_LAN=$(( (R_LAN + 3 * I_LAN) / 4 )); else R_LAN=$(( (3 * R_LAN + I_LAN) / 4 )); fi
+	if [ $I_WL -lt $R_WL ];   then R_WL=$(( (R_WL + 3 * I_WL) / 4 ));   else R_WL=$(( (3 * R_WL + I_WL) / 4 )); fi
+
+	# ---- Apply states (with afterglow logic) ----
+	G_LINK=$WAN_LINK; G_RATE=$R_WAN; G_PEAK=$WAN_PEAK; G_AG=$WAN_AG; G_LASTRD=$WAN_LASTRD
+	group_mode
+	WAN_PEAK=$G_PEAK; WAN_AG=$G_AG; WAN_LASTRD=$G_LASTRD; NWS=$M
+
+	G_LINK=$LAN_LINK; G_RATE=$R_LAN; G_PEAK=$LAN_PEAK; G_AG=$LAN_AG; G_LASTRD=$LAN_LASTRD
+	group_mode
+	LAN_PEAK=$G_PEAK; LAN_AG=$G_AG; LAN_LASTRD=$G_LASTRD; NLS=$M
+
+	G_LINK=$WLAN_LINK; G_RATE=$R_WL; G_PEAK=$WLAN_PEAK; G_AG=$WLAN_AG; G_LASTRD=$WLAN_LASTRD
+	group_mode
+	WLAN_PEAK=$G_PEAK; WLAN_AG=$G_AG; WLAN_LASTRD=$G_LASTRD; NWLS=$M
+
+	if [ "$NWS" != "$WAN_STATE" ]; then
+		set_led_mode "$WAN_LED" "$NWS"; WAN_STATE=$NWS
+	fi
+	if [ "$NLS" != "$LAN_STATE" ]; then
+		set_led_mode "$LAN_LED" "$NLS"; LAN_STATE=$NLS
+	fi
+	if [ "$NWLS" != "$WLAN_STATE" ]; then
+		set_led_mode "$WLAN_LED" "$NWLS"; WLAN_STATE=$NWLS
+	fi
+
+	sleep 1
+done
