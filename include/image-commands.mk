@@ -310,6 +310,41 @@ define Build/buffalo-trx
 	mv $@.new $@
 endef
 
+# WEX header: "BUFFALO Ver:" at offset 32, verified length at 56, and CRC32 at 60.
+# Limit the bootloader's rootfs CRC to four bytes to avoid a long boot delay.
+define Build/buffalo-wex-image
+	$(eval version=$(word 1,$(1)))
+	( \
+		set -e; \
+		be32() { \
+			printf '%b' \
+				"\\$$(printf '%03o' $$((($$1 >> 24) & 255)))" \
+				"\\$$(printf '%03o' $$((($$1 >> 16) & 255)))" \
+				"\\$$(printf '%03o' $$((($$1 >> 8) & 255)))" \
+				"\\$$(printf '%03o' $$(( $$1 & 255)))"; \
+		}; \
+		img="$@"; \
+		tmp="$$img.tmp"; \
+		hdr="$$img.hdr"; \
+		cp "$$img" "$$tmp"; \
+		kernel_len="$$(dd if="$$tmp" bs=1 skip=12 count=4 2>/dev/null | od -An -N4 -tu4 --endian big | tr -d ' \n')"; \
+		rootfs_off="$$((64 + kernel_len))"; \
+		crc_len="$$((0x4))"; \
+		[ "$$(stat -c%s "$$tmp")" -ge "$$((rootfs_off + crc_len))" ]; \
+		rootfs_crc="$$(dd if="$$tmp" bs=1 skip="$$rootfs_off" count="$$crc_len" 2>/dev/null | gzip -1 -c | tail -c8 | od -An -N4 -tu4 --endian little | tr -d ' \n')"; \
+		dd if=/dev/zero bs=1 count=32 2>/dev/null | dd of="$$tmp" bs=1 seek=32 conv=notrunc 2>/dev/null; \
+		printf 'BUFFALO Ver:$(version)' | dd of="$$tmp" bs=1 seek=32 conv=notrunc 2>/dev/null; \
+		be32 "$$crc_len" | dd of="$$tmp" bs=1 seek=56 conv=notrunc 2>/dev/null; \
+		be32 "$$rootfs_crc" | dd of="$$tmp" bs=1 seek=60 conv=notrunc 2>/dev/null; \
+		dd if="$$tmp" bs=1 count=64 2>/dev/null > "$$hdr"; \
+		be32 0 | dd of="$$hdr" bs=1 seek=4 conv=notrunc 2>/dev/null; \
+		hcrc="$$(gzip -1 -c < "$$hdr" | tail -c8 | od -An -N4 -tu4 --endian little | tr -d ' \n')"; \
+		be32 "$$hcrc" | dd of="$$tmp" bs=1 seek=4 conv=notrunc 2>/dev/null; \
+		mv "$$tmp" "$$img"; \
+		rm -f "$$hdr"; \
+	)
+endef
+
 define Build/check-size
 	@imagesize="$$(stat -c%s $@)"; \
 	limitsize="$$(($(call exp_units,$(if $(1),$(1),$(IMAGE_SIZE)))))"; \
