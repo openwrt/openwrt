@@ -374,10 +374,6 @@
 	};
 };
 
-&dwc_0 {
-	dr_mode = "host";
-};
-
 /*
  * QCA4024 is not currently supported, keep for documentation purposes
  *&blsp1_spi4 {
@@ -521,6 +517,8 @@
 };
 
 &usb_0 {
+	dr_mode = "host";
+
 	status = "okay";
 };
 

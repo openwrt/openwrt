@@ -236,10 +236,6 @@
 	status = "okay";
 };
 
-&dwc_0 {
-	dr_mode = "host";
-};
-
 &prng {
 	status = "okay";
 };
@@ -257,6 +253,8 @@
 };
 
 &usb_0 {
+	dr_mode = "host";
+
 	status = "okay";
 };
 
