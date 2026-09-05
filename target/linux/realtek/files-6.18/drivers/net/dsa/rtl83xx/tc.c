@@ -377,11 +377,18 @@ void rtldsa_tc_cleanup(struct rtl838x_switch_priv *priv)
 	if (!priv->tc_initialized)
 		return;
 
+	/* Hold tc_flow_lock like the add/del/stats callbacks do: any
+	 * callback that slipped in before teardown must finish before the
+	 * table and rules are torn down, otherwise it can walk a half-freed
+	 * flow or run pie_rule_rm() against a rule this path already removed.
+	 */
+	mutex_lock(&priv->tc_flow_lock);
 	rhashtable_free_and_destroy(&priv->tc_ht, rtldsa_tc_flow_free, priv);
-	rcu_barrier();
-
-	mutex_destroy(&priv->tc_flow_lock);
 	priv->tc_initialized = false;
+	mutex_unlock(&priv->tc_flow_lock);
+
+	rcu_barrier();
+	mutex_destroy(&priv->tc_flow_lock);
 }
 
 static int rtldsa_configure_flower(struct rtl838x_switch_priv *priv,
@@ -393,6 +400,15 @@ static int rtldsa_configure_flower(struct rtl838x_switch_priv *priv,
 	pr_debug("In %s\n", __func__);
 
 	mutex_lock(&priv->tc_flow_lock);
+
+	/* rtldsa_tc_cleanup() clears this under the lock before it destroys
+	 * tc_ht; a callback that was parked on the lock must bail rather than
+	 * walk the freed table.
+	 */
+	if (!priv->tc_initialized) {
+		err = -ENODEV;
+		goto out_unlock;
+	}
 
 	rcu_read_lock();
 	pr_debug("Cookie %08lx\n", f->cookie);
@@ -467,6 +483,12 @@ static int rtldsa_delete_flower(struct rtl838x_switch_priv *priv,
 
 	mutex_lock(&priv->tc_flow_lock);
 
+	/* see rtldsa_configure_flower(): bail if teardown already ran */
+	if (!priv->tc_initialized) {
+		err = -ENODEV;
+		goto out_unlock;
+	}
+
 	rcu_read_lock();
 	flow = rhashtable_lookup_fast(&priv->tc_ht, &cls_flower->cookie, tc_ht_params);
 	if (!flow) {
@@ -502,6 +524,12 @@ static int rtldsa_stats_flower(struct rtl838x_switch_priv *priv,
 	pr_debug("%s:\n", __func__);
 
 	mutex_lock(&priv->tc_flow_lock);
+
+	/* see rtldsa_configure_flower(): bail if teardown already ran */
+	if (!priv->tc_initialized) {
+		err = -ENODEV;
+		goto out_unlock;
+	}
 
 	rcu_read_lock();
 	flow = rhashtable_lookup_fast(&priv->tc_ht, &cls_flower->cookie, tc_ht_params);
