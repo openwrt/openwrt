@@ -177,10 +177,12 @@ case "$board" in
 		[ "$PHYNBR" = "1" ] && macaddr_add $addr 3 > /sys${DEVPATH}/macaddress
 		;;
 	keenetic,kap-630|\
+	keenetic,kn-1012|\
 	keenetic,kn-3711|\
 	keenetic,kn-3811|\
 	keenetic,kn-3911|\
-	netcraze,nap-630)
+	netcraze,nap-630|\
+	netcraze,nc-1012)
 		[ "$PHYNBR" = "1" ] && \
 			macaddr_setbit_la "$(mtd_get_mac_binary rf-eeprom 0x4)" > /sys${DEVPATH}/macaddress
 		;;

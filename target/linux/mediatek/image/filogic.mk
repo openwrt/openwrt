@@ -2339,6 +2339,153 @@ define Device/keenetic_kap-630
 endef
 TARGET_DEVICES += keenetic_kap-630
 
+# FIT with one kernel and both media DTBs (copper on port 5 vs SFP on
+# port 5); the chainloaded U-Boot picks config-copper or config-sfp per
+# boot from the SFP mod-def0 state.
+# mediatek sets separate_ramdisk, so an initramfs kernel is built with an
+# empty CONFIG_INITRAMFS_SOURCE and carries no rootfs of its own: the FIT
+# has to supply the cpio. The guard keeps it out of the flash kernel,
+# which takes its rootfs from UBI.
+kn1012_initrd = $(and $(findstring with-initrd,$(1)),$(CONFIG_TARGET_ROOTFS_INITRAMFS_SEPARATE))
+kn1012_initrd_data = $(KERNEL_BUILD_DIR)/initrd$(if $(TARGET_PER_DEVICE_ROOTFS),.$(ROOTFS_ID/$(DEVICE_NAME))).cpio$(strip $(call Build/initrd_compression))
+
+define Build/kn1012-fit
+	( \
+		printf '/dts-v1/;\n/ {\n'; \
+		printf '\tdescription = "OpenWrt FIT (dual media)";\n'; \
+		printf '\t#address-cells = <1>;\n\timages {\n'; \
+		printf '\t\tkernel-1 {\n'; \
+		printf '\t\t\tdescription = "ARM64 OpenWrt Linux";\n'; \
+		printf '\t\t\tdata = /incbin/("$@");\n'; \
+		printf '\t\t\ttype = "kernel";\n\t\t\tarch = "arm64";\n'; \
+		printf '\t\t\tos = "linux";\n\t\t\tcompression = "lzma";\n'; \
+		printf '\t\t\tload = <$(KERNEL_LOADADDR)>;\n'; \
+		printf '\t\t\tentry = <$(KERNEL_LOADADDR)>;\n'; \
+		printf '\t\t\thash-1 { algo = "crc32"; };\n'; \
+		printf '\t\t\thash-2 { algo = "sha1"; };\n\t\t};\n'; \
+		printf '\t\tfdt-copper {\n'; \
+		printf '\t\t\tdescription = "copper media on switch port 5";\n'; \
+		printf '\t\t\tdata = /incbin/("$(KDIR)/image-$(word 1,$(DEVICE_DTS)).dtb");\n'; \
+		printf '\t\t\ttype = "flat_dt";\n\t\t\tarch = "arm64";\n'; \
+		printf '\t\t\tcompression = "none";\n'; \
+		printf '\t\t\thash-1 { algo = "crc32"; };\n'; \
+		printf '\t\t\thash-2 { algo = "sha1"; };\n\t\t};\n'; \
+		printf '\t\tfdt-sfp {\n'; \
+		printf '\t\t\tdescription = "SFP media on switch port 5";\n'; \
+		printf '\t\t\tdata = /incbin/("$(KDIR)/image-$(word 2,$(DEVICE_DTS)).dtb");\n'; \
+		printf '\t\t\ttype = "flat_dt";\n\t\t\tarch = "arm64";\n'; \
+		printf '\t\t\tcompression = "none";\n'; \
+		printf '\t\t\thash-1 { algo = "crc32"; };\n'; \
+		printf '\t\t\thash-2 { algo = "sha1"; };\n\t\t};\n'; \
+		$(if $(call kn1012_initrd,$(1)),\
+		printf '\t\tinitrd-1 {\n'; \
+		printf '\t\t\tdescription = "ARM64 OpenWrt initrd";\n'; \
+		printf '\t\t\tdata = /incbin/("$(kn1012_initrd_data)");\n'; \
+		printf '\t\t\ttype = "ramdisk";\n\t\t\tarch = "arm64";\n'; \
+		printf '\t\t\tos = "linux";\n'; \
+		printf '\t\t\thash-1 { algo = "crc32"; };\n'; \
+		printf '\t\t\thash-2 { algo = "sha1"; };\n\t\t};\n'; ) \
+		printf '\t};\n\tconfigurations {\n'; \
+		printf '\t\tdefault = "config-copper";\n'; \
+		printf '\t\tconfig-copper {\n'; \
+		printf '\t\t\tdescription = "copper media";\n'; \
+		printf '\t\t\tkernel = "kernel-1";\n\t\t\tfdt = "fdt-copper";\n'; \
+		$(if $(call kn1012_initrd,$(1)),printf '\t\t\tramdisk = "initrd-1";\n'; ) \
+		printf '\t\t};\n'; \
+		printf '\t\tconfig-sfp {\n'; \
+		printf '\t\t\tdescription = "SFP media";\n'; \
+		printf '\t\t\tkernel = "kernel-1";\n\t\t\tfdt = "fdt-sfp";\n'; \
+		$(if $(call kn1012_initrd,$(1)),printf '\t\t\tramdisk = "initrd-1";\n'; ) \
+		printf '\t\t};\n'; \
+		printf '\t};\n};\n'; \
+	) > $@.its
+	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $@.its $@.new
+	@mv $@.new $@
+endef
+
+# Wrap the chainloaded U-Boot into a FIT the vendor bootloader accepts as
+# a kernel, append a fake squashfs the way the stock layout expects, pad
+# the whole thing to 1 MiB and put the real dual-media FIT behind it.
+# The load address is the one the stock kernel FIT uses, so the stock
+# bootloader already stages an image there.
+# A payload carrying mkits.sh's default node names (kernel-1 / config-uboot,
+# no fdt node) was accepted by the stock loader but never executed; this
+# hand-written ITS mirrors the vendor image instead, kernel@1 / fdt@1 /
+# config@1 with description "FIT", an fdt node present and lzma, and that
+# boots. Which of those the loader actually checks is untested. mkits.sh can
+# emit @-style names via -l, but its root and kernel description strings are
+# hardcoded, so it cannot produce this shape.
+define Build/kn1012-prepend-uboot
+	$(STAGING_DIR_HOST)/bin/lzma e \
+		$(STAGING_DIR_IMAGE)/mt7981_keenetic_kn-1012-u-boot.bin $@.uboot.lzma
+	( \
+		printf '/dts-v1/;\n\n/ {\n'; \
+		printf '\tdescription = "FIT";\n'; \
+		printf '\t#address-cells = <1>;\n\n\timages {\n'; \
+		printf '\t\tkernel@1 {\n'; \
+		printf '\t\t\tdescription = "Linux 4.9";\n'; \
+		printf '\t\t\tdata = /incbin/("$@.uboot.lzma");\n'; \
+		printf '\t\t\ttype = "kernel";\n\t\t\tarch = "arm64";\n'; \
+		printf '\t\t\tos = "linux";\n\t\t\tcompression = "lzma";\n'; \
+		printf '\t\t\tload = <0x48080000>;\n'; \
+		printf '\t\t\tentry = <0x48080000>;\n'; \
+		printf '\t\t\thash@1 { algo = "crc32"; };\n'; \
+		printf '\t\t\thash@2 { algo = "sha1"; };\n\t\t};\n'; \
+		printf '\t\tfdt@1 {\n'; \
+		printf '\t\t\tdescription = "$(DEVICE_MODEL) DTB";\n'; \
+		printf '\t\t\tdata = /incbin/("$(KDIR)/image-$(word 1,$(DEVICE_DTS)).dtb");\n'; \
+		printf '\t\t\ttype = "flat_dt";\n\t\t\tarch = "arm64";\n'; \
+		printf '\t\t\tcompression = "none";\n'; \
+		printf '\t\t\thash@1 { algo = "crc32"; };\n'; \
+		printf '\t\t\thash@2 { algo = "sha1"; };\n\t\t};\n'; \
+		printf '\t};\n\n\tconfigurations {\n'; \
+		printf '\t\tdefault = "config@1";\n'; \
+		printf '\t\tconfig@1 {\n'; \
+		printf '\t\t\tdescription = "NDMS";\n'; \
+		printf '\t\t\tkernel = "kernel@1";\n'; \
+		printf '\t\t\tfdt = "fdt@1";\n\t\t};\n'; \
+		printf '\t};\n};\n'; \
+	) > $@.uboot.its
+	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $@.uboot.its $@.uboot.itb
+	mv $@ $@.payload
+	mv $@.uboot.itb $@
+	$(call Build/append-squashfs4-fakeroot)
+	test $$(wc -c < $@) -le 1048576 || { \
+		echo "chainloader does not fit in the 1 MiB it is padded to"; \
+		false; \
+	}
+	$(call Build/pad-to,1024k)
+	cat $@ $@.payload > $@.new
+	@mv $@.new $@
+	@rm -rf $@.payload $@.uboot.lzma $@.uboot.its $@.its $@.fakefs $@.fakesquashfs
+endef
+
+define Device/keenetic_kn-1012-common
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware \
+		kmod-usb3 kmod-phy-airoha-en8811h kmod-sfp
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_SIZE := 8192k
+  IMAGE_SIZE := 233984k
+  KERNEL := kernel-bin | lzma | kn1012-fit | kn1012-prepend-uboot
+  KERNEL_INITRAMFS := kernel-bin | lzma | kn1012-fit with-initrd
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | \
+	append-ubi | check-size | zyimage -d $$(ZYIMAGE_ID) -v "$$(DEVICE_MODEL)"
+endef
+
+define Device/keenetic_kn-1012
+  DEVICE_VENDOR := Keenetic
+  DEVICE_MODEL := KN-1012
+  DEVICE_DTS := mt7981b-keenetic-kn-1012 mt7981b-keenetic-kn-1012-sfp
+  ZYIMAGE_ID := 0x801012
+  $(call Device/keenetic_kn-1012-common)
+endef
+TARGET_DEVICES += keenetic_kn-1012
+
 define Device/keenetic_kn-1812-common
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7992-firmware kmod-usb3 \
@@ -2843,6 +2990,15 @@ define Device/netcraze_nap-630
   $(call Device/keenetic_kap-630-common)
 endef
 TARGET_DEVICES += netcraze_nap-630
+
+define Device/netcraze_nc-1012
+  DEVICE_VENDOR := Netcraze
+  DEVICE_MODEL := NC-1012
+  DEVICE_DTS := mt7981b-netcraze-nc-1012 mt7981b-netcraze-nc-1012-sfp
+  ZYIMAGE_ID := 0xC01012
+  $(call Device/keenetic_kn-1012-common)
+endef
+TARGET_DEVICES += netcraze_nc-1012
 
 define Device/netcraze_nc-1812
   DEVICE_VENDOR := Netcraze
