@@ -7,6 +7,9 @@
 board_config_update
 
 case "$(board_name)" in
+dlink,dap-2690-a1)
+	ucidef_set_interface_lan "lan"
+	;;
 itus,shield-router|\
 ubnt,erlite|\
 ubnt,usg)

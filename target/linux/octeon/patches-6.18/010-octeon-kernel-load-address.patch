@@ -1,0 +1,23 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Stanislav Gabenov <gabenovstan@gmail.com>
+Date: Fri, 4 Sep 2026 08:00:00 +0300
+Subject: [PATCH] MIPS: octeon: move kernel load address to 64 MiB
+
+The D-Link DAP-2690 A1 bootloader reserves physical addresses 0x00a00000
+through 0x01900000.  The current kernel address, 0x01100000, falls inside
+that range and U-Boot cannot allocate the ELF PT_LOAD segment.
+
+The bootloader also uses 0x02000000 as the temporary ELF buffer.  Link the
+kernel at 0x04000000, which was tested with initramfs and flash images on
+the DAP-2690 A1.
+
+Signed-off-by: Stanislav Gabenov <gabenovstan@gmail.com>
+
+--- a/arch/mips/cavium-octeon/Platform
++++ b/arch/mips/cavium-octeon/Platform
+@@ -4,4 +4,4 @@
+ #
+ cflags-$(CONFIG_CAVIUM_OCTEON_SOC)	+=				\
+ 		-I$(srctree)/arch/mips/include/asm/mach-cavium-octeon
+-load-$(CONFIG_CAVIUM_OCTEON_SOC)	+= 0xffffffff81100000
++load-$(CONFIG_CAVIUM_OCTEON_SOC)	+= 0xffffffff84000000
