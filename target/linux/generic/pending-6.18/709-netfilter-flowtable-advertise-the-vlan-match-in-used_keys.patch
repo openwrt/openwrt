@@ -1,0 +1,47 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sun, 13 Sep 2026 12:32:09 +0200
+Subject: [PATCH] netfilter: flowtable: advertise the vlan match in
+ used_keys
+
+nf_flow_rule_match() fills the vlan and cvlan keys but does not set
+their bits in used_keys, so flow_rule_match_key() reports neither key
+to a driver. mlx5e then finds no vlan match in a flowtable rule and,
+unless the filter device is a vlan device, installs an untagged-only
+match that the tagged frames of the flow never hit.
+
+Set the used_keys bits where the keys are filled.
+
+Fixes: 3e1b0c168f6c ("netfilter: flowtable: add vlan match offload support")
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+ net/netfilter/nf_flow_table_offload.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/net/netfilter/nf_flow_table_offload.c
++++ b/net/netfilter/nf_flow_table_offload.c
+@@ -124,6 +124,7 @@ static int nf_flow_rule_match(struct nf_
+ 		nf_flow_rule_vlan_match(&key->vlan, &mask->vlan,
+ 					tuple->encap[0].id,
+ 					tuple->encap[0].proto);
++		match->dissector.used_keys |= BIT_ULL(FLOW_DISSECTOR_KEY_VLAN);
+ 		vlan_encap = true;
+ 	}
+ 
+@@ -135,12 +136,16 @@ static int nf_flow_rule_match(struct nf_
+ 			nf_flow_rule_vlan_match(&key->cvlan, &mask->cvlan,
+ 						tuple->encap[1].id,
+ 						tuple->encap[1].proto);
++			match->dissector.used_keys |=
++				BIT_ULL(FLOW_DISSECTOR_KEY_CVLAN);
+ 		} else {
+ 			NF_FLOW_DISSECTOR(match, FLOW_DISSECTOR_KEY_VLAN,
+ 					  vlan);
+ 			nf_flow_rule_vlan_match(&key->vlan, &mask->vlan,
+ 						tuple->encap[1].id,
+ 						tuple->encap[1].proto);
++			match->dissector.used_keys |=
++				BIT_ULL(FLOW_DISSECTOR_KEY_VLAN);
+ 		}
+ 	}
+ 
