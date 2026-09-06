@@ -168,7 +168,7 @@ if __name__ == "__main__":
         "bomFormat": "CycloneDX",
         "specVersion": "1.4",
         "serialNumber": "urn:uuid:" + str(uuid.uuid4()),
-        "version": "1",
+        "version": 1,
         "metadata": {
             "timestamp": timestamp,
         },
