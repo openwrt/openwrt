@@ -16,7 +16,6 @@
 
 	aliases {
 		serial0 = &blsp1_uart5;
-		serial1 = &blsp1_uart3;
 		led-boot = &led_system_green;
 		led-failsafe = &led_system_green;
 		led-running = &led_system_green;
@@ -244,10 +243,6 @@
 			};
 		};
 	};
-};
-
-&blsp1_uart3 {
-	status = "okay";
 };
 
 &blsp1_uart5 {
