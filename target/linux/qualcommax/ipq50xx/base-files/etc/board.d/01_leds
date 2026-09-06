@@ -27,6 +27,12 @@ linksys,mr5500)
 	ucidef_set_led_netdev "wan-port-link" "WAN-PORT-LINK" "90000.mdio-1:04:green:wan" "wan" "link_10 link_100 link_1000"
 	ucidef_set_led_netdev "wan-port-activity" "WAN-PORT-ACTIVITY" "90000.mdio-1:04:amber:wan" "wan" "tx rx"
 	;;
+tplink,archer-ax55-v1)
+	ucidef_set_led_netdev "lan" "LAN" "green:lan" "br-lan"
+	ucidef_set_led_netdev "wan" "WAN" "green:wan-online" "wan"
+	ucidef_set_led_netdev "wlan2g" "WLAN2G" "green:wlan-2ghz" "phy0-ap0" "link tx rx"
+	ucidef_set_led_netdev "wlan5g" "WLAN5G" "green:wlan-5ghz" "phy1-ap0" "link tx rx"
+	;;
 xiaomi,redmi-ax5400)
 	ucidef_set_led_netdev "wan-port-link-top-blue" "WAN-PORT-LINK-TOP-BLUE" "blue:wan" "wan" "link_1000"
 	ucidef_set_led_netdev "wan-port-link-top-yellow" "WAN-PORT-LINK-TOP-YELLOW" "yellow:wan" "wan" "link_10 link_100"
