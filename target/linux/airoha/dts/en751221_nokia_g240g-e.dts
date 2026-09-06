@@ -260,13 +260,13 @@
 	status = "okay";
 
 	airoha,gpon-serial-from-mac;
-	omci-vendor-id = "MSTC";
+	omci-vendor-id = "ALCL";
 
 	optical-frontends = <&gn25l98>;
 	optical-frontend-names = "pon";
 
-	leds = <&pon_led>, <&pon_los>;
-	led-names = "pon", "los";
+	leds = <&pon_led>, <&pon_los>, <&pon_los>;
+	led-names = "fiber", "los", "pon";
 };
 
 &eth {
