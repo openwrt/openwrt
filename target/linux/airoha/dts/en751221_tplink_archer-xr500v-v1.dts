@@ -1,0 +1,151 @@
+// SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+/dts-v1/;
+
+#include "en751221.dtsi"
+
+/ {
+	model = "TP-Link Archer XR500v v1";
+	compatible = "tplink,archer-xr500v-v1", "econet,en751221";
+
+	/* The sampled board identifies as EN7526G within the EN751221 family. */
+	memory@0 {
+		device_type = "memory";
+		reg = <0x00000000 0x10000000>;
+	};
+
+	chosen {
+		stdout-path = "/serial@1fbf0000:115200";
+		bootargs = "console=ttyS0,115200 loglevel=4";
+		linux,usable-memory-range = <0x00020000 0x0ffe0000>;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led-pon {
+			label = "green:pon";
+			gpios = <&pinctrl 2 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		led-wps {
+			label = "green:wps";
+			gpios = <&pinctrl 7 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		led-usb {
+			label = "green:usb";
+			gpios = <&pinctrl 11 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		led-los {
+			label = "red:los";
+			gpios = <&pinctrl 24 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		led-phone1 {
+			label = "green:phone1";
+			gpios = <&pinctrl 25 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		led-phone2 {
+			label = "green:phone2";
+			gpios = <&pinctrl 26 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		led-internet {
+			label = "green:internet";
+			gpios = <&pinctrl 28 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <20>;
+
+		key-reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&pinctrl 0 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+
+		key-wifi {
+			label = "wifi";
+			linux,code = <KEY_RFKILL>;
+			gpios = <&pinctrl 4 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+
+		key-wps {
+			label = "wps";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&pinctrl 9 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+	};
+};
+
+/* Keep the laser disabled until the optical support is added separately.
+ * That change must transfer GPIO16 ownership to the SFP/optical driver.
+ */
+&pinctrl {
+	pon-tx-disable-hog {
+		gpio-hog;
+		gpios = <16 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "pon-tx-disable";
+	};
+};
+
+/* Physical LAN labels run opposite to the external switch port indices.
+ * The Ethernet/switch controllers remain disabled in the base dtsi.
+ */
+&gsw_port1 {
+	label = "lan4";
+};
+
+&gsw_port2 {
+	label = "lan3";
+};
+
+&gsw_port3 {
+	label = "lan2";
+};
+
+&gsw_port4 {
+	label = "lan1";
+};
+
+/* Do not expose flash before the OEM NAND/BMT layout is supported. */
+&spi0 {
+	status = "disabled";
+};
+
+&nand {
+	status = "disabled";
+};
+
+&xpon {
+	status = "disabled";
+};
+
+&xpon_phy {
+	status = "disabled";
+};
+
+&gdm2 {
+	status = "disabled";
+};
+
+&usb {
+	/* The populated connector uses USB2; there is no USB3 PHY lane. */
+	mediatek,u3p-dis-msk = <0x1>;
+	status = "okay";
+};
