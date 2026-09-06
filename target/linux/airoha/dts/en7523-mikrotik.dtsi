@@ -242,3 +242,23 @@
 	status = "okay";
 	color = <LED_COLOR_ID_GREEN>;
 };
+
+&mdio {
+	en8801s: ethernet-phy@0 {
+		compatible = "ethernet-phy-id03a2.9471";
+		reg = <0x0>;
+		phy-mode = "sgmii";
+
+		leds {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			led@1 {
+				reg = <1>;
+
+				color = <LED_COLOR_ID_GREEN>;
+				function = LED_FUNCTION_WAN;
+			};
+		};
+	};
+};

@@ -29,28 +29,11 @@
 
 	phy-mode = "sgmii";
 	managed = "in-band-status";
-	phy-handle = <&en8801sc>;
+	phy-handle = <&en8801s>;
 };
 
-&mdio {
-	en8801sc: ethernet-phy@0 {
-		compatible = "ethernet-phy-id03a2.9461";
-		reg = <0x0>;
-		phy-mode = "sgmii";
-
-		/* ether1 has its serdes receive pair swapped on this board. */
-		airoha,rx-polarity-reverse;
-
-		leds {
-			#address-cells = <1>;
-			#size-cells = <0>;
-
-			led@1 {
-				reg = <1>;
-
-				function = LED_FUNCTION_WAN;
-				color = <LED_COLOR_ID_GREEN>;
-			};
-		};
-	};
+&en8801s {
+	compatible = "ethernet-phy-id03a2.9461";
+	/* ether1 has its serdes receive pair swapped on this board. */
+	airoha,rx-polarity-reverse;
 };

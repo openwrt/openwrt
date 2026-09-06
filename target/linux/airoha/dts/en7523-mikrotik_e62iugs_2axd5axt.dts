@@ -140,47 +140,7 @@
 
 	phy-mode = "sgmii";
 	managed = "in-band-status";
-	phy-handle = <&en8801sn>;
-};
-
-&mdio {
-	en8801sn: ethernet-phy@0 {
-		compatible = "ethernet-phy-id03a2.9471";
-		reg = <0x0>;
-		phy-mode = "sgmii";
-
-		leds {
-			#address-cells = <1>;
-			#size-cells = <0>;
-
-			led@1 {
-				reg = <1>;
-
-				color = <LED_COLOR_ID_GREEN>;
-				function = LED_FUNCTION_WAN;
-			};
-		};
-	};
-};
-
-&gsw_port1 {
-	label = "lan5";
-	nvmem-cells = <&macaddr_hard 4>;
-};
-
-&gsw_port2 {
-	label = "lan4";
-	nvmem-cells = <&macaddr_hard 3>;
-};
-
-&gsw_port3 {
-	label = "lan3";
-	nvmem-cells = <&macaddr_hard 2>;
-};
-
-&gsw_port4 {
-	label = "lan2";
-	nvmem-cells = <&macaddr_hard 1>;
+	phy-handle = <&en8801s>;
 };
 
 &gsw_phy1 {
