@@ -1,0 +1,51 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sun, 6 Sep 2026 15:41:31 +0200
+Subject: [PATCH] netfilter: flowtable: advertise the vlan match in used_keys
+
+nf_flow_rule_match() fills the vlan and cvlan keys and sets their
+dissector offsets, but does not set their bits in used_keys. That bit
+is how a driver learns that a rule has the key: flow_rule_match_key()
+reads used_keys, and a key the rule does not declare cannot be read.
+So no driver sees the vlan match, although the rule carries the vlan
+pop action built from the same encapsulation. mtk_ppe_offload.c reads
+the ingress vlan through flow_rule_match_key() and so never gets it,
+and a driver that checks used_keys against the keys it supports
+installs an entry that ignores the tag.
+
+Set the bits where the keys are filled, like the other keys in this
+function.
+
+Fixes: 3e1b0c168f6c ("netfilter: flowtable: add vlan match offload support")
+Assisted-by: Claude:claude-fable-5-1
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+ net/netfilter/nf_flow_table_offload.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/net/netfilter/nf_flow_table_offload.c
++++ b/net/netfilter/nf_flow_table_offload.c
+@@ -124,6 +124,7 @@ static int nf_flow_rule_match(struct nf_
+ 		nf_flow_rule_vlan_match(&key->vlan, &mask->vlan,
+ 					tuple->encap[0].id,
+ 					tuple->encap[0].proto);
++		match->dissector.used_keys |= BIT_ULL(FLOW_DISSECTOR_KEY_VLAN);
+ 		vlan_encap = true;
+ 	}
+ 
+@@ -135,12 +136,16 @@ static int nf_flow_rule_match(struct nf_
+ 			nf_flow_rule_vlan_match(&key->cvlan, &mask->cvlan,
+ 						tuple->encap[1].id,
+ 						tuple->encap[1].proto);
++			match->dissector.used_keys |=
++				BIT_ULL(FLOW_DISSECTOR_KEY_CVLAN);
+ 		} else {
+ 			NF_FLOW_DISSECTOR(match, FLOW_DISSECTOR_KEY_VLAN,
+ 					  vlan);
+ 			nf_flow_rule_vlan_match(&key->vlan, &mask->vlan,
+ 						tuple->encap[1].id,
+ 						tuple->encap[1].proto);
++			match->dissector.used_keys |=
++				BIT_ULL(FLOW_DISSECTOR_KEY_VLAN);
+ 		}
+ 	}
+ 
