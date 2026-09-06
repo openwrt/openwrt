@@ -39,6 +39,7 @@ struct ppe_flow_data {
 
 	u16 vlan_id;
 	bool vlan_valid;
+	u16 ivid;
 	u16 pppoe_sid;
 	bool pppoe_valid;
 
@@ -549,7 +550,7 @@ static u16 ppe_port_pvid(struct qca_ppe_priv *priv, int port)
  * can carry. A domain that cannot be named is declined rather than encoded as
  * the bare tuple, which would let the flow forward traffic from another VLAN.
  */
-static int ppe_flow_ingress_vsi(struct qca_ppe_priv *priv, int iport)
+static int ppe_flow_ingress_vsi(struct qca_ppe_priv *priv, int iport, u16 vid)
 {
 	struct qca_ppe_vlan_entry *vlan;
 
@@ -559,18 +560,35 @@ static int ppe_flow_ingress_vsi(struct qca_ppe_priv *priv, int iport)
 	 * VLAN and session id that classification names reach it.
 	 */
 	if (priv->wan_ref[iport])
-		return priv->wan_vsi[iport];
+		return vid && vid != priv->wan_vid[iport] ? -EOPNOTSUPP :
+							    priv->wan_vsi[iport];
 
-	/* A VLAN-filtering bridge reclassifies an untagged frame into the VSI
-	 * of the port's PVID, so the port's own VSI answers only without one.
+	/* A VLAN-filtering bridge classifies a tagged frame into its VLAN's
+	 * VSI and an untagged one into the PVID's, so the port's own VSI
+	 * answers only without either.
 	 */
-	if (!ppe_port_pvid(priv, iport))
+	if (!vid)
+		vid = ppe_port_pvid(priv, iport);
+	if (!vid)
 		return priv->port_vsi[iport];
+	if (!priv->port_br_dev[iport])
+		return -EOPNOTSUPP;
 
-	vlan = ppe_vlan_find(priv, priv->port_br_dev[iport],
-			     ppe_port_pvid(priv, iport));
+	vlan = ppe_vlan_find(priv, priv->port_br_dev[iport], vid);
 
-	return vlan ? (int)vlan->vsi : -EOPNOTSUPP;
+	return vlan && (vlan->ports & priv->vlan_filtering & BIT(iport)) ?
+	       (int)vlan->vsi : -EOPNOTSUPP;
+}
+
+/* The VSI a flow from this port and tag is keyed on: the uplink's, or the one
+ * the port classifies into.
+ */
+static int ppe_flow_src_if(struct qca_ppe_priv *priv, int iport, u16 vid)
+{
+	int up = ppe_uplink_find(priv, iport, vid);
+
+	return up >= 0 ? priv->uplink[up].vsi :
+			 ppe_flow_ingress_vsi(priv, iport, vid);
 }
 
 /* The flow lookup only runs on packets the L3 stage accepted, and nothing in
@@ -583,7 +601,7 @@ static int ppe_flow_ingress_vsi(struct qca_ppe_priv *priv, int iport)
  * index keeps the two in step without a second allocator.
  */
 static int ppe_flow_alloc_ingress(struct qca_ppe_priv *priv, int iport,
-				  struct ppe_flow_entry *entry)
+				  u16 vid, struct ppe_flow_entry *entry)
 {
 	struct dsa_port *dp = dsa_to_port(&priv->ds, iport);
 	u32 words[PPE_MY_MAC_WORDS] = {};
@@ -593,13 +611,13 @@ static int ppe_flow_alloc_ingress(struct qca_ppe_priv *priv, int iport,
 
 	lockdep_assert_held(&priv->vlan_lock);
 
-	vsi = ppe_flow_ingress_vsi(priv, iport);
+	vsi = ppe_flow_ingress_vsi(priv, iport, vid);
 	if (vsi < 0)
 		return vsi;
 
 	entry->src_if = vsi;
 	entry->ivid = priv->wan_ref[iport] ? priv->wan_vid[iport] :
-					     ppe_port_pvid(priv, iport);
+		      vid ? vid : ppe_port_pvid(priv, iport);
 
 	/* A PPPoE uplink's ingress interface belongs to the uplink, so take a
 	 * reference rather than programming anything: a sibling flow going away
@@ -1219,22 +1237,6 @@ static int ppe_flow_offload_replace(struct ppe_flow_block *fb,
 	guard(mutex)(&priv->flow_lock);
 	guard(mutex)(&priv->vlan_lock);
 
-	/* A replace for a cookie already held is the kernel refreshing a flow
-	 * whose packets it saw in the software path. If the hardware entry is
-	 * intact the refresh is a no-op; if the hardware has lost it - however
-	 * that happened - this is the moment to reinstall, or the flow would
-	 * stay in software for the rest of its life.
-	 */
-	entry = rhashtable_lookup_fast(&priv->flow_table, &f->cookie,
-				       ppe_flow_ht_params);
-	if (entry) {
-		if (ppe_flow_entry_age(priv, entry) >= 0)
-			return 0;
-
-		priv->flow_reinstalled++;
-		ppe_flow_free(priv, entry);
-	}
-
 	if (!flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_META) ||
 	    !flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_CONTROL) ||
 	    !flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_BASIC))
@@ -1255,16 +1257,41 @@ static int ppe_flow_offload_replace(struct ppe_flow_block *fb,
 			return ppe_flow_reject(priv, PPE_REJECT_INGRESS_PORT);
 	}
 
-	/* An ingress VLAN cannot be part of the hardware key. Where a bridge
-	 * classifies the tag in hardware the kernel marks it as such and does
-	 * not offer it as a match at all, so a tag that does arrive here is one
-	 * this driver has no classification for and no L3 interface to stand in
-	 * for it; the flow stays in software. A second tag has no expression
-	 * either.
+	/* An ingress tag is matched by the VSI it is classified into - the
+	 * uplink's tag on a PPPoE port, a bridge VLAN the port is a member
+	 * of - never by the tag itself, which the hardware key cannot hold.
+	 * A tag this driver has no classification for, and a second tag,
+	 * stay in software.
 	 */
-	if (flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_VLAN) ||
-	    flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_CVLAN))
+	if (flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_CVLAN))
 		return ppe_flow_reject(priv, PPE_REJECT_INGRESS_VLAN);
+	if (flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_VLAN)) {
+		struct flow_match_vlan match;
+
+		flow_rule_match_vlan(rule, &match);
+		if (match.key->vlan_tpid != htons(ETH_P_8021Q))
+			return ppe_flow_reject(priv, PPE_REJECT_INGRESS_VLAN);
+		data.ivid = match.key->vlan_id;
+	}
+
+	/* A replace for a cookie already held is the kernel refreshing a flow
+	 * whose packets it saw in the software path. If the hardware entry is
+	 * intact and its port still classifies into the VSI it is keyed on, the
+	 * refresh is a no-op. Otherwise the hardware has lost it or no longer
+	 * matches it - a bridge join or a PVID change moves the port - and this
+	 * is the moment to reinstall, or the flow would stay in software until
+	 * the entry ages out.
+	 */
+	entry = rhashtable_lookup_fast(&priv->flow_table, &f->cookie,
+				       ppe_flow_ht_params);
+	if (entry) {
+		if (entry->src_if == ppe_flow_src_if(priv, iport, data.ivid) &&
+		    ppe_flow_entry_age(priv, entry) >= 0)
+			return 0;
+
+		priv->flow_reinstalled++;
+		ppe_flow_free(priv, entry);
+	}
 
 	{
 		struct flow_match_control match;
@@ -1430,7 +1457,7 @@ static int ppe_flow_offload_replace(struct ppe_flow_block *fb,
 	entry->wan_iport = -1;
 	entry->iport = iport;
 
-	ret = ppe_flow_alloc_ingress(priv, iport, entry);
+	ret = ppe_flow_alloc_ingress(priv, iport, data.ivid, entry);
 	if (ret) {
 		priv->flow_reject[ret == -EOPNOTSUPP ? PPE_REJECT_INGRESS_VLAN :
 				  PPE_REJECT_RESOURCE]++;
