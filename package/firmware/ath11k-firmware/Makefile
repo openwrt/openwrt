@@ -8,15 +8,15 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ath11k-firmware
-PKG_SOURCE_DATE:=2024-10-14
-PKG_SOURCE_VERSION:=15f050122da5ef5bef2cc8c7c19dfb7f98060a49
-PKG_MIRROR_HASH:=e7a89d1570f32552ade539376181494724b5eafb31d00451ff2dcf5a2922a0cb
+PKG_SOURCE_DATE:=2026-02-27
+PKG_SOURCE_VERSION:=c6e9f96890bc70efe97e536db23c97ee18460369
+PKG_MIRROR_HASH:=6caaefb6d8f16ea356986cdc5b8128daca30262543e19b4604e1e6f15b54beca
 PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL:=https://git.codelinaro.org/clo/ath-firmware/ath11k-firmware.git
+PKG_SOURCE_URL:=https://github.com/quic/upstream-wifi-fw.git
 
-PKG_LICENSE_FILES:=LICENSE.qca_firmware
+PKG_LICENSE_FILES:=ath11k-firmware/LICENSE.md
 
 PKG_MAINTAINER:=Robert Marko <robimarko@gmail.com>
 
@@ -24,22 +24,6 @@ include $(INCLUDE_DIR)/package.mk
 
 RSTRIP:=:
 STRIP:=:
-
-ATH11K_LEGACY_FW_NAME:=ath11k-legacy-firmware
-ATH11K_LEGACY_FW_DATE:=2024-03-14
-ATH11K_LEGACY_FW_RELEASE:=795809c7
-ATH11K_LEGACY_FW_SUBDIR:=$(ATH11K_LEGACY_FW_NAME)-$(ATH11K_LEGACY_FW_DATE)~$(ATH11K_LEGACY_FW_RELEASE)
-ATH11K_LEGACY_FW_SOURCE=$(ATH11K_LEGACY_FW_SUBDIR).tar.zst
-
-define Download/$(ATH11K_LEGACY_FW_NAME)
-	FILE:=$(ATH11K_LEGACY_FW_SOURCE)
-	PROTO:=git
-	URL:=https://github.com/quic/upstream-wifi-fw.git
-	SOURCE_VERSION:=795809c7041582bd51bdfaa1f548b916ae8d4382
-	MIRROR_HASH:=b55bf7204543c7ba87876e84788239b0e47ad62434c5b0d1169526cde36a9daa
-	SUBDIR:=$(ATH11K_LEGACY_FW_SUBDIR)
-endef
-$(eval $(call Download,$(ATH11K_LEGACY_FW_NAME)))
 
 define Package/ath11k-firmware-default
   SECTION:=firmware
@@ -58,19 +42,6 @@ $(Package/ath11k-firmware-default)
   TITLE:=IPQ6018 ath11k firmware
 endef
 
-define Build/Clean
-	$(call Build/Clean/Default,)
-
-	rm -rf \
-		$(BUILD_DIR)/$(ATH11K_LEGACY_FW_SUBDIR)
-endef
-
-define Build/Prepare
-	$(call Build/Prepare/Default,)
-
-	$(TAR) -C $(BUILD_DIR) -xf $(DL_DIR)/$(ATH11K_LEGACY_FW_SOURCE)
-endef
-
 define Build/Compile
 
 endef
@@ -78,18 +49,18 @@ endef
 define Package/ath11k-firmware-ipq5018-qcn6122/install
 	$(INSTALL_DIR) $(1)/lib/firmware/ath11k/IPQ5018/hw1.0
 	$(INSTALL_DATA) \
-		$(BUILD_DIR)/$(ATH11K_LEGACY_FW_SUBDIR)/ath11k-firmware/IPQ5018_QCN6122_QCN6122/hw1.0/2.7.0.1/WLAN.HK.2.7.0.1-01744-QCAHKSWPL_SILICONZ-1/*.* \
+		(PKG_BUILD_DIR)/ath11k-firmware/IPQ5018_QCN6122_QCN6122/hw1.0/2.7.0.1/WLAN.HK.2.7.0.1-01744-QCAHKSWPL_SILICONZ-1/*.* \
 		$(1)/lib/firmware/ath11k/IPQ5018/hw1.0/
 	$(INSTALL_DIR) $(1)/lib/firmware/ath11k/QCN6122/hw1.0
 	$(INSTALL_DATA) \
-		$(BUILD_DIR)/$(ATH11K_LEGACY_FW_SUBDIR)/ath11k-firmware/IPQ5018_QCN6122_QCN6122/hw1.0/2.7.0.1/WLAN.HK.2.7.0.1-01744-QCAHKSWPL_SILICONZ-1/qcn6122/*.* \
+		(PKG_BUILD_DIR)/ath11k-firmware/IPQ5018_QCN6122_QCN6122/hw1.0/2.7.0.1/WLAN.HK.2.7.0.1-01744-QCAHKSWPL_SILICONZ-1/qcn6122/*.* \
 		$(1)/lib/firmware/ath11k/QCN6122/hw1.0/
 endef
 
 define Package/ath11k-firmware-ipq6018/install
 	$(INSTALL_DIR) $(1)/lib/firmware/IPQ6018
 	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/IPQ6018/hw1.0/2.5.0.1/WLAN.HK.2.5.0.1-03982-QCAHKSWPL_SILICONZ-3/* \
+		$(PKG_BUILD_DIR)/ath11k-firmware/IPQ6018/hw1.0/2.5.0.1/WLAN.HK.2.5.0.1-03982-QCAHKSWPL_SILICONZ-3/* \
 		$(1)/lib/firmware/IPQ6018/
 endef
 
