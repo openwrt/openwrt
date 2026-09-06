@@ -89,7 +89,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  	NF_FLOW_DISSECTOR(match, FLOW_DISSECTOR_KEY_TCP, tcp);
  	NF_FLOW_DISSECTOR(match, FLOW_DISSECTOR_KEY_PORTS, tp);
  
-@@ -168,6 +169,10 @@ static int nf_flow_rule_match(struct nf_
+@@ -173,6 +174,10 @@ static int nf_flow_rule_match(struct nf_
  	match->dissector.used_keys |= BIT_ULL(key->control.addr_type);
  	mask->basic.n_proto = 0xffff;
  
