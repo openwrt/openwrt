@@ -21,7 +21,7 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
 
 --- a/arch/arm64/boot/dts/qcom/ipq5018.dtsi
 +++ b/arch/arm64/boot/dts/qcom/ipq5018.dtsi
-@@ -614,11 +614,17 @@
+@@ -614,11 +614,15 @@
  			clocks = <&gcc GCC_USB0_MASTER_CLK>,
  				 <&gcc GCC_SYS_NOC_USB0_AXI_CLK>,
  				 <&gcc GCC_USB0_SLEEP_CLK>,
@@ -36,8 +36,6 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
 +				      "mock_utmi",
 +				      "aux",
 +				      "lfps";
-+			assigned-clocks = <&gcc GCC_USB0_MOCK_UTMI_CLK>;
-+			assigned-clock-rates = <60000000>;
+ 			assigned-clocks = <&gcc GCC_USB0_MOCK_UTMI_CLK>;
+ 			assigned-clock-rates = <60000000>;
  
- 			interrupts = <GIC_SPI 140 IRQ_TYPE_LEVEL_HIGH>,
- 				     <GIC_SPI 134 IRQ_TYPE_LEVEL_HIGH>,
