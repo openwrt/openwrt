@@ -88,10 +88,6 @@
 	pinctrl-names = "default";
 };
 
-&dwc_0 {
-	dr_mode = "host";
-};
-
 &qusb_phy_0 {
 	status = "okay";
 };
@@ -101,6 +97,8 @@
 };
 
 &usb3 {
+	dr_mode = "host";
+
 	status = "okay";
 };
 

@@ -301,14 +301,6 @@
 	};
 };
 
-&dwc_0 {
-	dr_mode = "host";
-};
-
-&dwc_1 {
-	dr_mode = "host";
-};
-
 &qpic_nand {
 	status = "okay";
 
@@ -357,9 +349,13 @@
 };
 
 &usb3 {
+	dr_mode = "host";
+
 	status = "okay";
 };
 
 &usb2 {
+	dr_mode = "host";
+
 	status = "okay";
 };
