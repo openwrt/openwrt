@@ -200,3 +200,17 @@ define Device/yuncore_ax850
 		ipq-wifi-yuncore_ax850
 endef
 TARGET_DEVICES += yuncore_ax850
+
+define Device/xiaomi_ra82
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Xiaomi
+	DEVICE_MODEL := AX3000 Mesh (RA82)
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_DTS_CONFIG := config@mp03.3
+	SOC := ipq5018
+	DEVICE_PACKAGES := ath11k-firmware-ipq5018-qcn6122
+endef
+TARGET_DEVICES += xiaomi_ra82
+
