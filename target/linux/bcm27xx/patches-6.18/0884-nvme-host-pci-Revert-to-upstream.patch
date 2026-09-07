@@ -32,7 +32,7 @@ Subject: [PATCH] nvme/host/pci: Revert to upstream
  		else
  			nvme_free_prps(req);
  	}
-@@ -2308,13 +2306,6 @@ static int nvme_set_host_mem(struct nvme
+@@ -2309,13 +2307,6 @@ static int nvme_set_host_mem(struct nvme
  	return ret;
  }
  
@@ -46,7 +46,7 @@ Subject: [PATCH] nvme/host/pci: Revert to upstream
  static void nvme_free_host_mem_multi(struct nvme_dev *dev)
  {
  	int i;
-@@ -2331,7 +2322,6 @@ static void nvme_free_host_mem_multi(str
+@@ -2332,7 +2323,6 @@ static void nvme_free_host_mem_multi(str
  	kfree(dev->host_mem_desc_bufs);
  	dev->host_mem_desc_bufs = NULL;
  }
@@ -54,7 +54,7 @@ Subject: [PATCH] nvme/host/pci: Revert to upstream
  
  static void nvme_free_host_mem(struct nvme_dev *dev)
  {
-@@ -2376,93 +2366,6 @@ static int nvme_alloc_host_mem_single(st
+@@ -2377,93 +2367,6 @@ static int nvme_alloc_host_mem_single(st
  	return 0;
  }
  
@@ -148,7 +148,7 @@ Subject: [PATCH] nvme/host/pci: Revert to upstream
  static int nvme_alloc_host_mem_multi(struct nvme_dev *dev, u64 preferred,
  		u32 chunk_size)
  {
-@@ -2523,7 +2426,6 @@ out:
+@@ -2524,7 +2427,6 @@ out:
  	dev->host_mem_descs = NULL;
  	return -ENOMEM;
  }
