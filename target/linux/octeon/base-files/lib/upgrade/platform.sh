@@ -2,6 +2,12 @@
 # Copyright (C) 2021 OpenWrt.org
 #
 
+case "$(board_name)" in
+dlink,dap-2690-a1)
+	REQUIRE_IMAGE_METADATA=1
+	;;
+esac
+
 if [ -x /usr/sbin/blkid ]; then
   RAMFS_COPY_BIN="/usr/sbin/blkid"
 fi
@@ -121,6 +127,14 @@ platform_do_upgrade() {
 	local rootfs="$(platform_get_rootfs)"
 	local kernel=
 
+	case "$board" in
+	dlink,dap-2690-a1)
+		PART_NAME=firmware
+		default_do_upgrade "$1"
+		return 0
+		;;
+	esac
+
 	if [ ! -b "${rootfs}" ] && [ "${board}" = "cisco,vedge1000" ]; then
 		# Default to the built-in USB disk for N821
 		rootfs="$(platform_get_n821_disk 2)"
@@ -154,6 +168,23 @@ platform_do_upgrade() {
 platform_check_image() {
 	local board=$(board_name)
 	local tar_file="$1"
+	local magic
+	local signature
+
+	case "$board" in
+	dlink,dap-2690-a1)
+		signature=$(get_image "$tar_file" 2>/dev/null | \
+			dd bs=1 count=20 2>/dev/null)
+		magic=$(get_image "$tar_file" 2>/dev/null | \
+			dd bs=1 skip=32 count=8 2>/dev/null | \
+			hexdump -v -e '1/1 "%02x"')
+		[ "$signature" = "wapnd06_dkbs_dap2690" ] && \
+			[ "$magic" = "2103082021030820" ] && return 0
+
+		echo "Invalid D-Link DAP-2690 firmware image."
+		return 1
+		;;
+	esac
 
 	local board_dir=$(tar tf "$tar_file" | grep -m 1 '^sysupgrade-.*/$')
 	board_dir=${board_dir%/}
