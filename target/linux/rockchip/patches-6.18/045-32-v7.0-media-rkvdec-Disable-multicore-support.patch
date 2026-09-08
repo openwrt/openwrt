@@ -1,0 +1,87 @@
+From e570307ac987482dfdd8950e7cce96048b047b10 Mon Sep 17 00:00:00 2001
+From: Detlev Casanova <detlev.casanova@collabora.com>
+Date: Fri, 9 Jan 2026 11:15:29 -0500
+Subject: [PATCH] media: rkvdec: Disable multicore support
+
+Similarly to what is done in Hantro, avoid exposing equal video codecs to
+userspace. Equal video codecs allow scheduling work between the cores.
+For that kernel support is required, which does not yet exist.
+Until that is implemented, avoid exposing each core separately to
+userspace so that multicore can be added in the future without breaking
+userspace ABI.
+
+This currently applies only to RK3588 which has 2 equal VDPU381 decoders,
+but will be applied for all SoC supported by rkvdec that has multiple DTS
+nodes with the same compatible.
+
+Reviewed-by: Nicolas Dufresne <nicolas.dufresne@collabora.com>
+Signed-off-by: Detlev Casanova <detlev.casanova@collabora.com>
+Signed-off-by: Nicolas Dufresne <nicolas.dufresne@collabora.com>
+Signed-off-by: Hans Verkuil <hverkuil+cisco@kernel.org>
+---
+ .../media/platform/rockchip/rkvdec/rkvdec.c   | 47 +++++++++++++++++++
+ 1 file changed, 47 insertions(+)
+
+--- a/drivers/media/platform/rockchip/rkvdec/rkvdec.c
++++ b/drivers/media/platform/rockchip/rkvdec/rkvdec.c
+@@ -1269,6 +1269,49 @@ static void rkvdec_watchdog_func(struct
+ 	}
+ }
+ 
++/*
++ * Some SoCs, like RK3588 have multiple identical VDPU cores, but the
++ * kernel is currently missing support for multi-core handling. Exposing
++ * separate devices for each core to userspace is bad, since that does
++ * not allow scheduling tasks properly (and creates ABI). With this workaround
++ * the driver will only probe for the first core and early exit for the other
++ * cores. Once the driver gains multi-core support, the same technique
++ * for detecting the first core can be used to cluster all cores together.
++ */
++static int rkvdec_disable_multicore(struct rkvdec_dev *rkvdec)
++{
++	struct device_node *node = NULL;
++	const char *compatible;
++	bool is_first_core;
++	int ret;
++
++	/* Intentionally ignores the fallback strings */
++	ret = of_property_read_string(rkvdec->dev->of_node, "compatible", &compatible);
++	if (ret)
++		return ret;
++
++	/* The first compatible and available node found is considered the main core */
++	do {
++		node = of_find_compatible_node(node, NULL, compatible);
++		if (of_device_is_available(node))
++			break;
++	} while (node);
++
++	if (!node)
++		return -EINVAL;
++
++	is_first_core = (rkvdec->dev->of_node == node);
++
++	of_node_put(node);
++
++	if (!is_first_core) {
++		dev_info(rkvdec->dev, "missing multi-core support, ignoring this instance\n");
++		return -ENODEV;
++	}
++
++	return 0;
++}
++
+ static const struct rkvdec_variant_ops rk3399_variant_ops = {
+ 	.irq_handler = rk3399_irq_handler,
+ };
+@@ -1332,6 +1375,10 @@ static int rkvdec_probe(struct platform_
+ 	mutex_init(&rkvdec->vdev_lock);
+ 	INIT_DELAYED_WORK(&rkvdec->watchdog_work, rkvdec_watchdog_func);
+ 
++	ret = rkvdec_disable_multicore(rkvdec);
++	if (ret)
++		return ret;
++
+ 	ret = devm_clk_bulk_get_all_enabled(&pdev->dev, &rkvdec->clocks);
+ 	if (ret < 0)
+ 		return ret;

@@ -1,0 +1,71 @@
+From 3662b54c16924b03197ec80f9764aabdf2c90231 Mon Sep 17 00:00:00 2001
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 15 Oct 2025 10:53:24 +0300
+Subject: [PATCH] media: v4l2-mem2mem: Document that v4l2_m2m_get_vq() never
+ returns NULL
+
+The v4l2_m2m_get_vq() never returns a NULL pointer, as the internal
+get_queue_ctx() helper always returns a non-NULL pointer. Many drivers
+check the return value against NULL, due to a combination of old code
+and cargo-cult programming. Even v4l2-mem2mem.c contains unneeded NULL
+checks.
+
+Clarify the API by documenting explicitly that a NULL check is not
+needed, and simplify the code by removing the unneeded NULL checks from
+v4l2-mem2mem.c.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Reviewed-by: Stefan Klug <stefan.klug@ideasonboard.com>
+Signed-off-by: Hans Verkuil <hverkuil+cisco@kernel.org>
+---
+ drivers/media/v4l2-core/v4l2-mem2mem.c | 12 +-----------
+ include/media/v4l2-mem2mem.h           |  3 +++
+ 2 files changed, 4 insertions(+), 11 deletions(-)
+
+--- a/drivers/media/v4l2-core/v4l2-mem2mem.c
++++ b/drivers/media/v4l2-core/v4l2-mem2mem.c
+@@ -123,13 +123,7 @@ static struct v4l2_m2m_queue_ctx *get_qu
+ struct vb2_queue *v4l2_m2m_get_vq(struct v4l2_m2m_ctx *m2m_ctx,
+ 				       enum v4l2_buf_type type)
+ {
+-	struct v4l2_m2m_queue_ctx *q_ctx;
+-
+-	q_ctx = get_queue_ctx(m2m_ctx, type);
+-	if (!q_ctx)
+-		return NULL;
+-
+-	return &q_ctx->q;
++	return &get_queue_ctx(m2m_ctx, type)->q;
+ }
+ EXPORT_SYMBOL(v4l2_m2m_get_vq);
+ 
+@@ -1285,8 +1279,6 @@ void v4l2_m2m_buf_queue(struct v4l2_m2m_
+ 	unsigned long flags;
+ 
+ 	q_ctx = get_queue_ctx(m2m_ctx, vbuf->vb2_buf.vb2_queue->type);
+-	if (!q_ctx)
+-		return;
+ 
+ 	spin_lock_irqsave(&q_ctx->rdy_spinlock, flags);
+ 	list_add_tail(&b->list, &q_ctx->rdy_queue);
+@@ -1388,8 +1380,6 @@ int v4l2_m2m_ioctl_remove_bufs(struct fi
+ 	struct v4l2_fh *fh = file_to_v4l2_fh(file);
+ 	struct vb2_queue *q = v4l2_m2m_get_vq(fh->m2m_ctx, remove->type);
+ 
+-	if (!q)
+-		return -EINVAL;
+ 	if (q->type != remove->type)
+ 		return -EINVAL;
+ 
+--- a/include/media/v4l2-mem2mem.h
++++ b/include/media/v4l2-mem2mem.h
+@@ -153,6 +153,9 @@ void *v4l2_m2m_get_curr_priv(struct v4l2
+  *
+  * @m2m_ctx: m2m context assigned to the instance given by struct &v4l2_m2m_ctx
+  * @type: type of the V4L2 buffer, as defined by enum &v4l2_buf_type
++ *
++ * This function returns the capture queue when @type is a capture type, and the
++ * output queue otherwise. It never returns a NULL pointer.
+  */
+ struct vb2_queue *v4l2_m2m_get_vq(struct v4l2_m2m_ctx *m2m_ctx,
+ 				       enum v4l2_buf_type type);
