@@ -343,6 +343,10 @@ int rtldsa_tc_init(struct rtl838x_switch_priv *priv)
 	return 0;
 }
 
+/* Zero a PIE rule's LOG-table packet counter. On RTL930x the counter id is
+ * the PIE rule id itself: the rule owns it and pie_rule_rm() releases it,
+ * so there is nothing to hand back to an allocator here.
+ */
 static void rtldsa_packet_cntr_clear(struct rtl838x_switch_priv *priv, int counter)
 {
 	if (counter < 0 || !priv->r->packet_cntr_clear)
@@ -353,31 +357,13 @@ static void rtldsa_packet_cntr_clear(struct rtl838x_switch_priv *priv, int count
 	mutex_unlock(&priv->reg_mutex);
 }
 
-/* Zero the hardware LOG counter and, for a counter that came from
- * rtldsa_packet_cntr_alloc(), hand its slot back - in that order, so a slot
- * is never returned to the allocator while the hardware entry still holds
- * the previous flow's count. On RTL930x the id is the PIE rule id itself:
- * the rule owns it and pie_rule_rm() releases it, so there is nothing to
- * hand back here.
- */
-static void rtldsa_packet_cntr_release(struct rtl838x_switch_priv *priv, int counter)
-{
-	if (counter < 0)
-		return;
-
-	rtldsa_packet_cntr_clear(priv, counter);
-
-	if (!priv->r->pie_rule_id_is_log_counter)
-		rtldsa_packet_cntr_free(priv, counter);
-}
-
 static void rtldsa_tc_flow_free(void *ptr, void *arg)
 {
 	struct rtl83xx_flow *flow = ptr;
 	struct rtl838x_switch_priv *priv = arg;
 
 	priv->r->pie_rule_rm(priv, &flow->rule);
-	rtldsa_packet_cntr_release(priv, flow->rule.packet_cntr);
+	rtldsa_packet_cntr_clear(priv, flow->rule.packet_cntr);
 
 	/* Readers may still hold an RCU-protected reference after the
 	 * object has been removed from the hash table.
@@ -457,37 +443,23 @@ static int rtldsa_configure_flower(struct rtl838x_switch_priv *priv,
 	if (err)
 		goto out_remove;
 
-	if (ingress_port >= 0) {
-		flow->rule.spn = ingress_port;
-		flow->rule.spn_m = 0x7f;
-	}
+	flow->rule.spn = ingress_port;
+	flow->rule.spn_m = 0x7f;
 
-	if (priv->r->pie_rule_id_is_log_counter) {
-		/* On RTL930x the PIE rule ID is also the LOG table counter ID,
-		 * so the counter is implied by the rule and is only known once
-		 * pie_rule_add() has assigned the ID. The PIE rule ID range is
-		 * kept out of rtldsa_packet_cntr_alloc() on these SoCs, so this
-		 * implied LOG entry cannot alias a counter allocated for an L3
-		 * route PIE rule.
-		 */
-		flow->rule.log_sel = true;
-	} else {
-		flow->rule.packet_cntr = rtldsa_packet_cntr_alloc(priv);
-		if (flow->rule.packet_cntr >= 0) {
-			flow->rule.log_sel = true;
-			flow->rule.log_data = flow->rule.packet_cntr;
-		}
-	}
+	/* The only caller, rtldsa_pie_cls_flower_add(), is RTL930x-only, where
+	 * the PIE rule ID is also the LOG table counter ID: the counter is
+	 * implied by the rule and only known once pie_rule_add() has assigned
+	 * the ID. That range is kept out of rtldsa_packet_cntr_alloc(), so the
+	 * implied LOG entry cannot alias an L3 route PIE rule's counter.
+	 */
+	flow->rule.log_sel = true;
 
 	err = priv->r->pie_rule_add(priv, &flow->rule);
 	if (err)
 		goto out_remove;
 
-	if (priv->r->pie_rule_id_is_log_counter) {
-		flow->rule.packet_cntr = flow->rule.id;
-		dev_dbg(priv->dev, "using PIE rule counter %d\n",
-			flow->rule.packet_cntr);
-	}
+	flow->rule.packet_cntr = flow->rule.id;
+	dev_dbg(priv->dev, "using PIE rule counter %d\n", flow->rule.packet_cntr);
 	rtldsa_packet_cntr_clear(priv, flow->rule.packet_cntr);
 
 	mutex_unlock(&priv->tc_flow_lock);
@@ -495,7 +467,7 @@ static int rtldsa_configure_flower(struct rtl838x_switch_priv *priv,
 
 out_remove:
 	rhashtable_remove_fast(&priv->tc_ht, &flow->node, tc_ht_params);
-	rtldsa_packet_cntr_release(priv, flow->rule.packet_cntr);
+	rtldsa_packet_cntr_clear(priv, flow->rule.packet_cntr);
 	/* published in tc_ht above; a concurrent reader may still hold a ref */
 	kfree_rcu(flow, rcu_head);
 	goto out_err;
@@ -536,7 +508,7 @@ static int rtldsa_delete_flower(struct rtl838x_switch_priv *priv,
 		goto out_unlock;
 
 	priv->r->pie_rule_rm(priv, &flow->rule);
-	rtldsa_packet_cntr_release(priv, flow->rule.packet_cntr);
+	rtldsa_packet_cntr_clear(priv, flow->rule.packet_cntr);
 
 	kfree_rcu(flow, rcu_head);
 
@@ -618,66 +590,4 @@ int rtldsa_pie_cls_flower_stats(struct rtl838x_switch_priv *priv,
 		return -ENOENT;
 
 	return rtldsa_stats_flower(priv, cls);
-}
-
-static int rtl83xx_setup_tc_cls_flower(struct rtl838x_switch_priv *priv,
-				       struct flow_cls_offload *cls_flower)
-{
-	pr_debug("%s: %d\n", __func__, cls_flower->command);
-	switch (cls_flower->command) {
-	case FLOW_CLS_REPLACE:
-		return rtldsa_configure_flower(priv, cls_flower, -1);
-	case FLOW_CLS_DESTROY:
-		return rtldsa_delete_flower(priv, cls_flower);
-	case FLOW_CLS_STATS:
-		return rtldsa_stats_flower(priv, cls_flower);
-	default:
-		return -EOPNOTSUPP;
-	}
-}
-
-static int rtl83xx_setup_tc_block_cb(enum tc_setup_type type, void *type_data,
-				     void *cb_priv)
-{
-	struct rtl838x_switch_priv *priv = cb_priv;
-
-	switch (type) {
-	case TC_SETUP_CLSFLOWER:
-		pr_debug("%s: TC_SETUP_CLSFLOWER\n", __func__);
-		return rtl83xx_setup_tc_cls_flower(priv, type_data);
-	default:
-		return -EOPNOTSUPP;
-	}
-}
-
-static LIST_HEAD(rtl83xx_block_cb_list);
-
-int rtl83xx_setup_tc(struct net_device *dev, enum tc_setup_type type, void *type_data)
-{
-	struct rtl838x_switch_priv *priv;
-	struct flow_block_offload *f = type_data;
-
-	pr_debug("%s: %d\n", __func__, type);
-
-	if (!netdev_uses_dsa(dev)) {
-		pr_err("%s: no DSA\n", __func__);
-		return 0;
-	}
-	priv = dev->dsa_ptr->ds->priv;
-
-	switch (type) {
-	case TC_SETUP_BLOCK:
-		/* tc_ht is set up for the switch's lifetime in
-		 * rtldsa_93xx_setup(); nothing to do here.
-		 */
-		f->unlocked_driver_cb = true;
-		return flow_block_cb_setup_simple(type_data,
-						  &rtl83xx_block_cb_list,
-						  rtl83xx_setup_tc_block_cb,
-						  priv, priv, true);
-	default:
-		return -EOPNOTSUPP;
-	}
-
-	return 0;
 }
