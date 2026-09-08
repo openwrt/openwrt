@@ -51,6 +51,9 @@ preinit_config_switch() {
 
 			if [ "$device" = "$lan_if" ]; then
 				swconfig dev $name vlan $role set ports "$ports"
+				for p in $ports; do
+					swconfig dev $name port ${p%%[a-z]*} set disable 0
+				done
 			fi
 		done
 
