@@ -6,7 +6,7 @@
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 #include <net/dsa.h>
 
-#include "table.h"
+#include <linux/soc/realtek/otto_table.h>
 
 /* Register definition */
 #define RTL838X_MAC_PORT_CTRL(port)		(0xd560 + (((port) << 7)))

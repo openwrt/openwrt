@@ -811,8 +811,9 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 	if (err)
 		return err;
 
-	/* Initialize access to RTL switch tables */
-	otto_table_init();
+	err = otto_table_loaded();
+	if (err)
+		return dev_err_probe(dev, err, "no switch table access\n");
 
 	r = device_get_match_data(&pdev->dev);
 	priv = devm_kzalloc(dev, struct_size(priv, msts, r->n_mst - 1), GFP_KERNEL);

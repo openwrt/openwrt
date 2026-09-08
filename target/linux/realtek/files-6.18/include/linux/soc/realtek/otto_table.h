@@ -148,8 +148,6 @@ enum otto_table_id {
 
 #define OTTO_TBL_COUNT		OTTO_TBL_HANDLE(OTTO_TBL_END)
 
-void otto_table_init(void);
-
 /* Size of the object p points at. A bare array is refused: the whole-entry
  * forms take the transfer size from the caller's buffer, which only holds
  * when p addresses the whole object rather than its first element.
@@ -170,6 +168,7 @@ void otto_table_init(void);
 /* Hold a table across more than one access. The __ variants expect the caller
  * to hold it.
  */
+int otto_table_loaded(void);
 int otto_table_acquire(enum otto_table_id id);
 void otto_table_release(int handle);
 
