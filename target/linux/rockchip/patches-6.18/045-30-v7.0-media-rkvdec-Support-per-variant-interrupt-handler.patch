@@ -1,0 +1,103 @@
+From f9c7b7deeffd9e1fa2d9ed0c7a84c21226b24b0a Mon Sep 17 00:00:00 2001
+From: Detlev Casanova <detlev.casanova@collabora.com>
+Date: Fri, 9 Jan 2026 11:15:27 -0500
+Subject: [PATCH] media: rkvdec: Support per-variant interrupt handler
+
+Prepare for supporting different variants with different interrupt
+managers.
+
+To support other variants specific function type later, introduce the
+rkvdec_variant_ops struct.
+
+Tested-by: Diederik de Haas <didi.debian@cknow.org>  # Rock 5B
+Reviewed-by: Nicolas Dufresne <nicolas.dufresne@collabora.com>
+Signed-off-by: Detlev Casanova <detlev.casanova@collabora.com>
+Signed-off-by: Nicolas Dufresne <nicolas.dufresne@collabora.com>
+Signed-off-by: Hans Verkuil <hverkuil+cisco@kernel.org>
+---
+ .../media/platform/rockchip/rkvdec/rkvdec.c   | 21 ++++++++++++++++---
+ .../media/platform/rockchip/rkvdec/rkvdec.h   |  5 +++++
+ 2 files changed, 23 insertions(+), 3 deletions(-)
+
+--- a/drivers/media/platform/rockchip/rkvdec/rkvdec.c
++++ b/drivers/media/platform/rockchip/rkvdec/rkvdec.c
+@@ -1222,10 +1222,9 @@ static void rkvdec_iommu_restore(struct
+ 	}
+ }
+ 
+-static irqreturn_t rkvdec_irq_handler(int irq, void *priv)
++static irqreturn_t rk3399_irq_handler(struct rkvdec_ctx *ctx)
+ {
+-	struct rkvdec_dev *rkvdec = priv;
+-	struct rkvdec_ctx *ctx = v4l2_m2m_get_curr_priv(rkvdec->m2m_dev);
++	struct rkvdec_dev *rkvdec = ctx->dev;
+ 	enum vb2_buffer_state state;
+ 	u32 status;
+ 
+@@ -1246,6 +1245,15 @@ static irqreturn_t rkvdec_irq_handler(in
+ 	return IRQ_HANDLED;
+ }
+ 
++static irqreturn_t rkvdec_irq_handler(int irq, void *priv)
++{
++	struct rkvdec_dev *rkvdec = priv;
++	struct rkvdec_ctx *ctx = v4l2_m2m_get_curr_priv(rkvdec->m2m_dev);
++	const struct rkvdec_variant *variant = rkvdec->variant;
++
++	return variant->ops->irq_handler(ctx);
++}
++
+ static void rkvdec_watchdog_func(struct work_struct *work)
+ {
+ 	struct rkvdec_dev *rkvdec;
+@@ -1261,16 +1269,22 @@ static void rkvdec_watchdog_func(struct
+ 	}
+ }
+ 
++static const struct rkvdec_variant_ops rk3399_variant_ops = {
++	.irq_handler = rk3399_irq_handler,
++};
++
+ static const struct rkvdec_variant rk3288_rkvdec_variant = {
+ 	.num_regs = 68,
+ 	.coded_fmts = rk3288_coded_fmts,
+ 	.num_coded_fmts = ARRAY_SIZE(rk3288_coded_fmts),
++	.ops = &rk3399_variant_ops,
+ };
+ 
+ static const struct rkvdec_variant rk3328_rkvdec_variant = {
+ 	.num_regs = 109,
+ 	.coded_fmts = rkvdec_coded_fmts,
+ 	.num_coded_fmts = ARRAY_SIZE(rkvdec_coded_fmts),
++	.ops = &rk3399_variant_ops,
+ 	.quirks = RKVDEC_QUIRK_DISABLE_QOS,
+ };
+ 
+@@ -1278,6 +1292,7 @@ static const struct rkvdec_variant rk339
+ 	.num_regs = 78,
+ 	.coded_fmts = rkvdec_coded_fmts,
+ 	.num_coded_fmts = ARRAY_SIZE(rkvdec_coded_fmts),
++	.ops = &rk3399_variant_ops,
+ };
+ 
+ static const struct of_device_id of_rkvdec_match[] = {
+--- a/drivers/media/platform/rockchip/rkvdec/rkvdec.h
++++ b/drivers/media/platform/rockchip/rkvdec/rkvdec.h
+@@ -67,12 +67,17 @@ vb2_to_rkvdec_decoded_buf(struct vb2_buf
+ 			    base.vb.vb2_buf);
+ }
+ 
++struct rkvdec_variant_ops {
++	irqreturn_t (*irq_handler)(struct rkvdec_ctx *ctx);
++};
++
+ struct rkvdec_variant {
+ 	unsigned int num_regs;
+ 	const struct rkvdec_coded_fmt_desc *coded_fmts;
+ 	size_t num_coded_fmts;
+ 	const struct rcb_size_info *rcb_sizes;
+ 	size_t num_rcb_sizes;
++	const struct rkvdec_variant_ops *ops;
+ 	unsigned int quirks;
+ };
+ 
