@@ -814,8 +814,9 @@ define KernelPackage/video-core
 	CONFIG_V4L_PLATFORM_DRIVERS=y \
 	CONFIG_MEDIA_PLATFORM_DRIVERS=y
   FILES:= \
-	$(LINUX_DIR)/drivers/media/v4l2-core/videodev.ko
-  AUTOLOAD:=$(call AutoLoad,60,videodev)
+	$(LINUX_DIR)/drivers/media/v4l2-core/videodev.ko \
+	$(LINUX_DIR)/drivers/media/v4l2-core/v4l2-dv-timings.ko
+  AUTOLOAD:=$(call AutoLoad,60,videodev v4l2-dv-timings)
 endef
 
 define KernelPackage/video-core/description
