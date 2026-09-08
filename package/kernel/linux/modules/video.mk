@@ -544,6 +544,112 @@ endef
 
 $(eval $(call KernelPackage,drm-vram-helper))
 
+
+define KernelPackage/drm-gpuvm
+  SUBMENU:=$(VIDEO_MENU)
+  HIDDEN:=1
+  TITLE:=GPU virtual address space manager
+  DEPENDS:=@DISPLAY_SUPPORT +kmod-drm-exec
+  KCONFIG:=CONFIG_DRM_GPUVM
+  FILES:=$(LINUX_DIR)/drivers/gpu/drm/drm_gpuvm.ko
+  AUTOLOAD:=$(call AutoProbe,drm_gpuvm)
+endef
+
+define KernelPackage/drm-gpuvm/description
+  GPU virtual address space manager used by drivers with a GPU MMU.
+endef
+
+$(eval $(call KernelPackage,drm-gpuvm))
+
+
+define KernelPackage/drm-dp-aux-bus
+  SUBMENU:=$(VIDEO_MENU)
+  HIDDEN:=1
+  TITLE:=DisplayPort AUX bus support
+  DEPENDS:=@DISPLAY_SUPPORT +kmod-drm
+  KCONFIG:=CONFIG_DRM_DISPLAY_DP_AUX_BUS
+  FILES:=$(LINUX_DIR)/drivers/gpu/drm/display/drm_dp_aux_bus.ko
+  AUTOLOAD:=$(call AutoProbe,drm_dp_aux_bus)
+endef
+
+$(eval $(call KernelPackage,drm-dp-aux-bus))
+
+
+define KernelPackage/drm-analogix-dp
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=Analogix DisplayPort bridge support
+  DEPENDS:=@DISPLAY_SUPPORT +kmod-drm-display-helper +kmod-drm-dp-aux-bus
+  KCONFIG:=CONFIG_DRM_ANALOGIX_DP
+  FILES:=$(LINUX_DIR)/drivers/gpu/drm/bridge/analogix/analogix_dp.ko
+  AUTOLOAD:=$(call AutoProbe,analogix_dp)
+endef
+
+define KernelPackage/drm-analogix-dp/description
+  Core driver for the Analogix DisplayPort and eDP transmitters found
+  in Rockchip and Samsung SoCs.
+endef
+
+$(eval $(call KernelPackage,drm-analogix-dp))
+
+
+define KernelPackage/drm-dw-dp
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=Synopsys DesignWare DisplayPort bridge support
+  DEPENDS:=@DISPLAY_SUPPORT +kmod-drm-display-helper
+  KCONFIG:=CONFIG_DRM_DW_DP
+  FILES:=$(LINUX_DIR)/drivers/gpu/drm/bridge/synopsys/dw-dp.ko
+  AUTOLOAD:=$(call AutoProbe,dw-dp)
+endef
+
+$(eval $(call KernelPackage,drm-dw-dp))
+
+
+define KernelPackage/drm-dw-hdmi-qp
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=Synopsys DesignWare HDMI QP bridge support
+  DEPENDS:=@DISPLAY_SUPPORT +kmod-drm-display-helper +kmod-sound-soc-hdmi-codec
+  KCONFIG:=CONFIG_DRM_DW_HDMI_QP
+  FILES:=$(LINUX_DIR)/drivers/gpu/drm/bridge/synopsys/dw-hdmi-qp.ko
+  AUTOLOAD:=$(call AutoProbe,dw-hdmi-qp)
+endef
+
+define KernelPackage/drm-dw-hdmi-qp/description
+  Synopsys DesignWare HDMI 2.1 Quad-Pixel transmitter bridge with audio
+  through the HDMI codec.
+endef
+
+$(eval $(call KernelPackage,drm-dw-hdmi-qp))
+
+
+define KernelPackage/drm-dw-mipi-dsi2
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=Synopsys DesignWare MIPI DSI2 bridge support
+  DEPENDS:=@DISPLAY_SUPPORT +kmod-drm-kms-helper
+  KCONFIG:=CONFIG_DRM_DW_MIPI_DSI2
+  FILES:=$(LINUX_DIR)/drivers/gpu/drm/bridge/synopsys/dw-mipi-dsi2.ko
+  AUTOLOAD:=$(call AutoProbe,dw-mipi-dsi2)
+endef
+
+$(eval $(call KernelPackage,drm-dw-mipi-dsi2))
+
+
+define KernelPackage/drm-panthor
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=Panthor (ARM Mali CSF GPU) DRM support
+  DEPENDS:=@DISPLAY_SUPPORT @(aarch64||arm) +kmod-drm-sched +kmod-drm-exec \
+	+kmod-drm-gpuvm +kmod-drm-shmem-helper +panthor-firmware
+  KCONFIG:=CONFIG_DRM_PANTHOR
+  FILES:=$(LINUX_DIR)/drivers/gpu/drm/panthor/panthor.ko
+  AUTOLOAD:=$(call AutoProbe,panthor)
+endef
+
+define KernelPackage/drm-panthor/description
+  Direct Rendering Manager (DRM) support for ARM Mali GPUs with a
+  command stream front end (Mali-G310, G510, G610, G710 and later).
+endef
+
+$(eval $(call KernelPackage,drm-panthor))
+
 define KernelPackage/drm-amdgpu
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=AMDGPU DRM support
