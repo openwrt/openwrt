@@ -807,15 +807,16 @@ $(eval $(call KernelPackage,drm-radeon))
 define KernelPackage/video-core
   SUBMENU:=$(VIDEO_MENU)
   TITLE=Video4Linux support
-  DEPENDS:=+PACKAGE_kmod-i2c-core:kmod-i2c-core +kmod-media-controller
+  DEPENDS:=+PACKAGE_kmod-i2c-core:kmod-i2c-core +kmod-media-controller +kmod-lib-rational
   KCONFIG:= \
 	CONFIG_MEDIA_CAMERA_SUPPORT=y \
 	CONFIG_VIDEO_DEV \
 	CONFIG_V4L_PLATFORM_DRIVERS=y \
 	CONFIG_MEDIA_PLATFORM_DRIVERS=y
   FILES:= \
-	$(LINUX_DIR)/drivers/media/v4l2-core/videodev.ko
-  AUTOLOAD:=$(call AutoLoad,60,videodev)
+	$(LINUX_DIR)/drivers/media/v4l2-core/videodev.ko \
+	$(LINUX_DIR)/drivers/media/v4l2-core/v4l2-dv-timings.ko
+  AUTOLOAD:=$(call AutoLoad,60,videodev v4l2-dv-timings)
 endef
 
 define KernelPackage/video-core/description

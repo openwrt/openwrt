@@ -330,6 +330,22 @@ endef
 $(eval $(call KernelPackage,lib-cordic))
 
 
+define KernelPackage/lib-rational
+  SUBMENU:=$(LIB_MENU)
+  TITLE:=Rational fraction approximation
+  HIDDEN:=1
+  KCONFIG:=CONFIG_RATIONAL
+  FILES:=$(LINUX_DIR)/lib/math/rational.ko
+  AUTOLOAD:=$(call AutoProbe,rational)
+endef
+
+define KernelPackage/lib-rational/description
+ Kernel module for the best rational approximation helper
+endef
+
+$(eval $(call KernelPackage,lib-rational))
+
+
 define KernelPackage/asn1-decoder
   SUBMENU:=$(LIB_MENU)
   TITLE:=Simple ASN1 decoder
