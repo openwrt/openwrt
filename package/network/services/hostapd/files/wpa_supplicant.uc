@@ -501,8 +501,8 @@ function dpp_channel_handle_request(channel, req)
 		let chirp_cmd = "DPP_CHIRP own=" + data.id;
 		if (data.iter)
 			chirp_cmd += " iter=" + data.iter;
-		if (data.scan_interval)
-			chirp_cmd += " listen=" + data.scan_interval;
+		if (data.listen_freq)
+			chirp_cmd += " listen=" + data.listen_freq;
 		let chirp_result = iface.ctrl(chirp_cmd);
 		return (chirp_result == "OK") ? 0 : libubus.STATUS_UNKNOWN_ERROR;
 
