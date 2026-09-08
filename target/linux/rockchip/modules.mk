@@ -4,10 +4,13 @@ define KernelPackage/drm-rockchip
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Rockchip DRM support
   DEPENDS:=@TARGET_rockchip +kmod-drm-kms-helper +kmod-drm-dma-helper \
-	+kmod-drm-display-helper +kmod-drm-analogix-dp +kmod-drm-dw-dp \
-	+kmod-drm-dw-hdmi-qp +kmod-drm-dw-mipi-dsi2
+	+kmod-drm-display-helper +kmod-drm-client-lib +kmod-drm-analogix-dp \
+	+kmod-drm-dw-dp +kmod-drm-dw-hdmi-qp +kmod-drm-dw-mipi-dsi2
   KCONFIG:= \
 	CONFIG_DRM_ROCKCHIP \
+	CONFIG_DRM_FBDEV_EMULATION=y \
+	CONFIG_DRM_FBDEV_OVERALLOC=100 \
+	CONFIG_DRM_CLIENT_DEFAULT_FBDEV=y \
 	CONFIG_ROCKCHIP_VOP=y \
 	CONFIG_ROCKCHIP_VOP2=y \
 	CONFIG_ROCKCHIP_ANALOGIX_DP=y \
