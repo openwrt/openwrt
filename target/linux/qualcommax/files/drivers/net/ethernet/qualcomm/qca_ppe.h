@@ -843,6 +843,7 @@
 #define   PPE_AC_FORCE_AC_EN		BIT(2)
 #define   PPE_AC_COLOR_AWARE		BIT(3)
 #define   PPE_AC_GRP_ID			GENMASK(5, 4)
+#define PPE_AC_GROUPS			4
 #define   PPE_AC_SHARED_DYNAMIC		BIT(17)
 #define   PPE_AC_SHARED_WEIGHT		GENMASK(20, 18)
 #define   PPE_AC_SHARED_CEILING		GENMASK(31, 21)
@@ -1122,6 +1123,14 @@ struct qca_ppe_priv {
 	struct ppe_port_shaper shaper[QCA_PPE_MAX_PORTS];
 	/* the pause each port's link resolved, which shaping overrides */
 	bool port_tx_pause[PPE_NUM_PORTS];
+	/* Each egress admission group's kind, depth in buffers and ports; a
+	 * group with no port is free.
+	 */
+	struct ppe_ac_grp {
+		u8 kind;
+		u8 ports;
+		u32 bufs;
+	} ac_grp[PPE_AC_GROUPS];
 	struct ppe_sb_occ sb_occ_ing[PPE_NUM_PORTS];
 	struct ppe_sb_occ sb_occ_eg[PPE_NUM_PORTS][PPE_SB_EGRESS_TCS];
 	/* A red's static limit and early drop gap per unicast queue, in
