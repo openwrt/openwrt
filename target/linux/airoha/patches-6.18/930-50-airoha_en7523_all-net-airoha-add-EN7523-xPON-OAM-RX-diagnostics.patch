@@ -1,0 +1,134 @@
+From ff812ffc08f15cbea373d2fcd5d0d454b5960715 Mon Sep 17 00:00:00 2001
+From: OpenAI <noreply@example.com>
+Date: Fri, 17 Jul 2026 15:28:42 +0000
+Subject: [PATCH] net: airoha: add EN7523 xPON OAM RX diagnostics
+
+Add rate-limited descriptor dumps and transport counters around the xPON
+OAM receive callback. The diagnostics report the QDMA ring, all message
+words, source port, channel, GEM Port-ID, MIC/error flags and whether the
+OMCI backend consumed the frame.
+
+This distinguishes missing ring delivery, missing backend registration and
+OMCI agent rejection during initial GPON bring-up.
+
+Signed-off-by: OpenAI <noreply@example.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c | 49 +++++++++++++++++++++---
+ drivers/net/ethernet/airoha/airoha_eth.h |  6 +++
+ 2 files changed, 50 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
+index dc7415870b67..a6c27c722859 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -1333,8 +1333,14 @@ static int airoha_qdma_rx_process(struct airoha_queue *q, int budget)
+ 		 */
+ 		dev = xpon_oam ? airoha_qdma_get_xpon_dev(eth) :
+ 				 airoha_qdma_get_gdm_dev(eth, desc);
+-		if (IS_ERR(dev))
++		if (IS_ERR(dev)) {
++			if (xpon_oam)
++				dev_warn_ratelimited(eth->dev,
++						     "xPON OAM RX dropped: no managed GDM2 ring=%td len=%d msg0=%#010x msg1=%#010x\n",
++					q - &q->qdma->q_rx[0], len, msg0,
++					le32_to_cpu(READ_ONCE(desc->msg1)));
+ 			goto free_frag;
++		}
+ 
+ 		netdev = netdev_from_priv(dev);
+ 		if (!q->skb) { /* first buffer */
+@@ -1360,11 +1366,19 @@ static int airoha_qdma_rx_process(struct airoha_queue *q, int budget)
+ 			struct airoha_xpon_oam_handler *handler;
+ 
+ 			if (xpon_oam) {
+-				u16 gem_port_id;
+-				u32 flags = 0;
++				u32 msg2 = le32_to_cpu(READ_ONCE(desc->msg2));
++				u32 msg3 = le32_to_cpu(READ_ONCE(desc->msg3));
++				u16 gem_port_id, channel, sport;
++				u32 flags = 0, skb_len;
+ 				bool consumed = false;
+ 
+-				gem_port_id = FIELD_GET(EN7523_QDMA_ETH_RXMSG_GEM_MASK, msg0);
++				gem_port_id = FIELD_GET(EN7523_QDMA_ETH_RXMSG_GEM_MASK,
++							msg0);
++				channel = FIELD_GET(EN7523_QDMA_ETH_RXMSG_CHAN_MASK,
++						    msg0);
++				msg1 = le32_to_cpu(READ_ONCE(desc->msg1));
++				sport = FIELD_GET(EN7523_QDMA_ETH_RXMSG_SPORT_MASK,
++						  msg1);
+ 				if (!(msg0 & EN7523_QDMA_ETH_RXMSG_NO_MIC_MASK))
+ 					flags |= AIROHA_XPON_OAM_RX_F_MIC_PRESENT;
+ 				if (!(msg0 & EN7523_QDMA_ETH_RXMSG_CRC_ERR_MASK))
+@@ -1372,6 +1386,10 @@ static int airoha_qdma_rx_process(struct airoha_queue *q, int budget)
+ 				else
+ 					flags |= AIROHA_XPON_OAM_RX_F_CRC_ERROR;
+ 
++				skb_len = q->skb->len;
++				atomic64_inc(&dev->xpon_oam_rx_packets);
++				atomic64_add(skb_len, &dev->xpon_oam_rx_bytes);
++
+ 				rcu_read_lock();
+ 				handler = rcu_dereference(dev->xpon_oam);
+ 				if (handler && handler->rx)
+@@ -1379,10 +1397,31 @@ static int airoha_qdma_rx_process(struct airoha_queue *q, int budget)
+ 							       q->skb,
+ 							       gem_port_id,
+ 							       flags);
++				else
++					atomic64_inc(&dev->xpon_oam_rx_no_handler);
+ 				rcu_read_unlock();
+ 
+-				if (!consumed)
++				if (consumed) {
++					atomic64_inc(&dev->xpon_oam_rx_delivered);
++				} else {
++					atomic64_inc(&dev->xpon_oam_rx_dropped);
+ 					dev_kfree_skb_any(q->skb);
++				}
++
++				netdev_info_ratelimited(netdev,
++							"xPON OAM RX: ring=%td len=%u msg=%#010x/%#010x/%#010x/%#010x sport=%u channel=%u gem=%u no-mic=%u crc=%u runt=%u long=%u consumed=%u totals=%lld/%lld/%lld\n",
++					q - &q->qdma->q_rx[0], skb_len,
++					msg0, msg1, msg2, msg3, sport, channel,
++					gem_port_id,
++					!!(msg0 & EN7523_QDMA_ETH_RXMSG_NO_MIC_MASK),
++					!!(msg0 & EN7523_QDMA_ETH_RXMSG_CRC_ERR_MASK),
++					!!(msg0 & EN7523_QDMA_ETH_RXMSG_RUNT_MASK),
++					!!(msg0 & EN7523_QDMA_ETH_RXMSG_LONG_MASK),
++					consumed,
++					(long long)atomic64_read(&dev->xpon_oam_rx_packets),
++					(long long)atomic64_read(&dev->xpon_oam_rx_delivered),
++					(long long)atomic64_read(&dev->xpon_oam_rx_dropped));
++
+ 				q->skb = NULL;
+ 				done++;
+ 				continue;
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.h b/drivers/net/ethernet/airoha/airoha_eth.h
+index c2e1d05661aa..6090e776ff3a 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.h
++++ b/drivers/net/ethernet/airoha/airoha_eth.h
+@@ -7,6 +7,7 @@
+ #ifndef AIROHA_ETH_H
+ #define AIROHA_ETH_H
+ 
++#include <linux/atomic.h>
+ #include <linux/debugfs.h>
+ #include <linux/etherdevice.h>
+ #include <linux/iopoll.h>
+@@ -642,6 +643,11 @@ struct airoha_gdm_dev {
+ 	struct airoha_hw_stats stats;
+ 
+ 	struct airoha_xpon_oam_handler __rcu *xpon_oam;
++	atomic64_t xpon_oam_rx_packets;
++	atomic64_t xpon_oam_rx_bytes;
++	atomic64_t xpon_oam_rx_delivered;
++	atomic64_t xpon_oam_rx_dropped;
++	atomic64_t xpon_oam_rx_no_handler;
+ 
+ 	/* Serializes xPON provider registration and netdev lifecycle calls. */
+ 	struct mutex xpon_lock;
+-- 
+2.55.0
+

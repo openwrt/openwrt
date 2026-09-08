@@ -79,6 +79,7 @@ define U-Boot/en7523_rfb
   BUILD_SUBTARGET:=en7523
   BL2_IMAGE:=en7523-bl2.bin
   BL31_IMAGE:=en7523-bl31.bin
+  DEPENDS:=+trusted-firmware-a-en7523-bl31
 endef
 
 UBOOT_TARGETS := \
@@ -89,6 +90,61 @@ UBOOT_TARGETS := \
 	an7583_nokia_xg-040g-mf \
 	an7583_rfb \
 	en7523_rfb
+
+define U-Boot/en7523_askey_rtf8225vw
+  NAME:=Askey RTF8225VW
+  BUILD_DEVICES:=askey_rtf8225vw
+  UBOOT_IMAGE:=u-boot.bin
+  UBOOT_CONFIG:=en7523-askey_rtf8225vw
+  BUILD_SUBTARGET:=en7523
+  BL2_IMAGE:=en7523-bl2.bin
+  BL31_IMAGE:=en7523-bl31.bin
+endef
+UBOOT_TARGETS += en7523_askey_rtf8225vw
+
+define U-Boot/en7523_genexis_pixly_r1
+  NAME:=Heimgard pixly_r1
+  BUILD_DEVICES:=genexis_pixly_r1
+  UBOOT_IMAGE:=u-boot.bin
+  UBOOT_CONFIG:=en7523-genexis_pixly_r1
+  BUILD_SUBTARGET:=en7523
+  BL2_IMAGE:=en7523-bl2.bin
+  BL31_IMAGE:=en7523-bl31.bin
+endef
+UBOOT_TARGETS += en7523_genexis_pixly_r1
+
+define U-Boot/en7523_mitrastar_gpt-2742gx4x5v6
+  NAME:=MitraStar GPT-2742GX4X5v6
+  BUILD_DEVICES:=mitrastar_gpt-2742gx4x5v6
+  UBOOT_IMAGE:=u-boot.bin
+  UBOOT_CONFIG:=en7523-mitrastar_gpt-2742gx4x5v6
+  BUILD_SUBTARGET:=en7523
+  BL2_IMAGE:=en7523-bl2.bin
+  BL31_IMAGE:=en7523-bl31.bin
+endef
+UBOOT_TARGETS += en7523_mitrastar_gpt-2742gx4x5v6
+
+define U-Boot/en7523_tplink_ex530v-v1
+  NAME:=TP-Link ex530v v1
+  UBOOT_IMAGE:=u-boot.bin
+  UBOOT_CONFIG:=en7523-tplink_ex530v_v1
+  BUILD_SUBTARGET:=en7523
+  BUILD_DEVICES:=tplink_ex530v-v1
+  BL2_IMAGE:=en7523-bl2.bin
+  BL31_IMAGE:=en7523-bl31.bin
+endef
+UBOOT_TARGETS += en7523_tplink_ex530v-v1
+
+define U-Boot/en7523_tplink_xx230v-v1
+  NAME:=TP-Link xx230v v1
+  UBOOT_IMAGE:=u-boot.bin
+  UBOOT_CONFIG:=en7523-tplink_xx230v_v1
+  BUILD_SUBTARGET:=en7523
+  BUILD_DEVICES:=tplink_xx230v-v1
+  BL2_IMAGE:=en7523-bl2.bin
+  BL31_IMAGE:=en7523-bl31.bin
+endef
+UBOOT_TARGETS += en7523_tplink_xx230v-v1
 
 UBOOT_CUSTOMIZE_CONFIG := \
 	--disable TOOLS_KWBIMAGE \

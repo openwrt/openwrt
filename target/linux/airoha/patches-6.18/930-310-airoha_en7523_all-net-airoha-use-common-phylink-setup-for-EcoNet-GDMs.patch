@@ -1,0 +1,120 @@
+From 8d72d784d0ec0960cd261bac86ea53333a6e96f7 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Wed, 26 Aug 2026 00:22:37 -0300
+Subject: [PATCH] net: airoha: use common phylink setup for EcoNet GDMs
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c | 60 ++++++++++--------------
+ 1 file changed, 25 insertions(+), 35 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
+index 48faa6f8bf3a..cf77818125e9 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -4315,33 +4315,6 @@ static const struct ethtool_ops econet_ethtool_ops = {
+ 	.get_rmon_stats		= econet_ethtool_get_rmon_stats,
+ };
+ 
+-static int econet_setup_phylink(struct airoha_gdm_dev *port,
+-				struct device_node *np)
+-{
+-	struct phylink_config *config = &port->common.phylink_config;
+-	phy_interface_t phy_mode;
+-	int err;
+-
+-	err = of_get_phy_mode(np, &phy_mode);
+-	if (err)
+-		return dev_err_probe(port->eth->dev, err,
+-				     "GDM%u has no valid phy-mode\n",
+-				     port->common.id);
+-
+-	config->mac_capabilities = MAC_ASYM_PAUSE | MAC_SYM_PAUSE |
+-				   MAC_10 | MAC_100 | MAC_1000 |
+-				   MAC_2500FD | MAC_5000FD | MAC_10000FD;
+-	__set_bit(PHY_INTERFACE_MODE_INTERNAL, config->supported_interfaces);
+-	__set_bit(PHY_INTERFACE_MODE_MII, config->supported_interfaces);
+-	__set_bit(PHY_INTERFACE_MODE_GMII, config->supported_interfaces);
+-	__set_bit(PHY_INTERFACE_MODE_RGMII, config->supported_interfaces);
+-	__set_bit(PHY_INTERFACE_MODE_RGMII_ID, config->supported_interfaces);
+-	__set_bit(PHY_INTERFACE_MODE_RGMII_RXID, config->supported_interfaces);
+-	__set_bit(PHY_INTERFACE_MODE_RGMII_TXID, config->supported_interfaces);
+-
+-	return airoha_gdm_phylink_create(&port->common, np, phy_mode);
+-}
+-
+ /* Frame-engine platform state is shared by all supported SoCs. */
+ 
+ static struct airoha_gdm_dev *
+@@ -8791,6 +8764,7 @@ static int airoha_setup_phylink(struct net_device *netdev)
+ 	struct device_node *np = netdev->dev.of_node;
+ 	struct airoha_gdm_port *port = dev->port;
+ 	struct phylink_config *config;
++	bool econet = airoha_is_econet(dev->eth);
+ 	phy_interface_t phy_mode;
+ 	int err;
+ 
+@@ -8803,19 +8777,34 @@ static int airoha_setup_phylink(struct net_device *netdev)
+ 	config = &dev->common.phylink_config;
+ 
+ 	/*
+-	 * GDM{1,2} only supports internal for Embedded Switch
+-	 * and doesn't require a PCS.
++	 * An internal GDM link does not have a PHY or PCS to attach.  This is
++	 * also how the xPON MAC is represented: the provider owns carrier and
++	 * link state while phylink only describes the MAC-facing interface.
++	 * EN7523-class GDM1 is internal-only, while EcoNet GDM1/GDM2 may also
++	 * be wired to MII/GMII/RGMII interfaces.
+ 	 */
+-	if (port->id == AIROHA_GDM1_IDX || (port->id == AIROHA_GDM2_IDX && phy_mode == PHY_INTERFACE_MODE_INTERNAL)) {
++	if (phy_mode == PHY_INTERFACE_MODE_INTERNAL ||
++	    (!econet && port->id == AIROHA_GDM1_IDX)) {
+ 		config->mac_capabilities = MAC_ASYM_PAUSE | MAC_SYM_PAUSE |
+ 					   MAC_10000FD;
+-		if (port->id == AIROHA_GDM2_IDX)
++		if (port->id == AIROHA_GDM2_IDX || econet)
+ 			config->mac_capabilities = MAC_ASYM_PAUSE | MAC_SYM_PAUSE |
+-						   MAC_1000FD | MAC_2500FD |
++						   MAC_10 | MAC_100 | MAC_1000 |
++						   MAC_2500FD | MAC_5000FD |
+ 						   MAC_10000FD;
+ 
+ 		__set_bit(PHY_INTERFACE_MODE_INTERNAL,
+ 			  config->supported_interfaces);
++	} else if (econet) {
++		config->mac_capabilities = MAC_ASYM_PAUSE | MAC_SYM_PAUSE |
++					   MAC_10 | MAC_100 | MAC_1000 |
++					   MAC_2500FD | MAC_5000FD | MAC_10000FD;
++		__set_bit(PHY_INTERFACE_MODE_MII, config->supported_interfaces);
++		__set_bit(PHY_INTERFACE_MODE_GMII, config->supported_interfaces);
++		__set_bit(PHY_INTERFACE_MODE_RGMII, config->supported_interfaces);
++		__set_bit(PHY_INTERFACE_MODE_RGMII_ID, config->supported_interfaces);
++		__set_bit(PHY_INTERFACE_MODE_RGMII_RXID, config->supported_interfaces);
++		__set_bit(PHY_INTERFACE_MODE_RGMII_TXID, config->supported_interfaces);
+ 	} else {
+ 		config->mac_capabilities = MAC_ASYM_PAUSE | MAC_SYM_PAUSE |
+ 					   MAC_10 | MAC_100 | MAC_1000 |
+@@ -8958,7 +8947,9 @@ static int airoha_alloc_gdm_device(struct airoha_eth *eth,
+ 		rcu_assign_pointer(dev->qdma, &eth->qdma[port->id - 1]);
+ 		if (port->id == AIROHA_GDM2_IDX)
+ 			dev->flags |= AIROHA_PRIV_F_WAN;
+-	} else if (of_property_read_bool(np, "airoha,xpon-managed")) {
++	}
++
++	if (of_property_read_bool(np, "airoha,xpon-managed")) {
+ 		dev->flags |= AIROHA_PRIV_F_XPON_MANAGED;
+ 		netdev->features |= NETIF_F_GRO_HW;
+ 
+@@ -8969,8 +8960,7 @@ static int airoha_alloc_gdm_device(struct airoha_eth *eth,
+ 	}
+ 	port->devs[index] = dev;
+ 
+-	return econet ? econet_setup_phylink(dev, np) :
+-			airoha_setup_phylink(netdev);
++	return airoha_setup_phylink(netdev);
+ }
+ 
+ static int airoha_alloc_gdm_port(struct airoha_eth *eth,
+-- 
+2.55.0
+

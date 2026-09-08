@@ -1,0 +1,33 @@
+From 7863f38a69bcb1ca3bfc578424213e4adc496109 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Tue, 25 Aug 2026 11:02:29 -0300
+Subject: [PATCH] leds: add xPON and voip for common
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ include/dt-bindings/leds/common.h | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/include/dt-bindings/leds/common.h b/include/dt-bindings/leds/common.h
+index 4f017bea0123..da6143c706c7 100644
+--- a/include/dt-bindings/leds/common.h
++++ b/include/dt-bindings/leds/common.h
+@@ -103,6 +103,7 @@
+ #define LED_FUNCTION_TORCH "torch"
+ #define LED_FUNCTION_TX "tx"
+ #define LED_FUNCTION_USB "usb"
++#define LED_FUNCTION_VOIP "voip"
+ #define LED_FUNCTION_WAN "wan"
+ #define LED_FUNCTION_WAN_ONLINE "wan-online"
+ #define LED_FUNCTION_WLAN "wlan"
+@@ -110,5 +111,7 @@
+ #define LED_FUNCTION_WLAN_5GHZ "wlan-5ghz"
+ #define LED_FUNCTION_WLAN_6GHZ "wlan-6ghz"
+ #define LED_FUNCTION_WPS "wps"
++#define LED_FUNCTION_XPON "xpon"
++#define LED_FUNCTION_XPON_LOS "xpon-los"
+ 
+ #endif /* __DT_BINDINGS_LEDS_H */
+-- 
+2.55.0
+

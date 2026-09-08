@@ -1,0 +1,213 @@
+// SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+/dts-v1/;
+
+#include "en751221.dtsi"
+
+/ {
+	model = "Nokia G-140W-F";
+	compatible = "nokia,g140w-f", "econet,en751221";
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x00000000 0x10000000>;	/* 256 MiB */
+	};
+
+	chosen {
+		stdout-path = "/serial@1fbf0000:115200";
+		bootargs = "console=ttyS0,115200 loglevel=7";
+		linux,usable-memory-range = <0x00020000 0x0ffe0000>;
+	};
+};
+
+/*
+ * dtsi tags this controller airoha,en7523-spi (en7523_spi_data has_nfi=true),
+ * so the driver tries to map a non-existent NFI reg region and fails
+ * (-EINVAL invalid resource). EN751221 has no NFI (SFC/NOR path), so use
+ * the correct compatible -> en751221_spi_data (has_nfi=false).
+ */
+&spi_ctrl {
+	compatible = "econet,en751221-spi";
+	clocks = <&scuclk EN751221_CLK_SPI>;
+	clock-names = "spi";
+};
+
+&nand {
+	status = "okay";
+	econet,bmt;
+	econet,bbt-table-size = <250>;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "bootloader";
+			reg = <0x0 0x40000>;
+			read-only;
+		};
+
+		partition@40000 {
+			label = "romfile";
+			reg = <0x40000 0x40000>;
+		};
+
+		partition@80000 {
+			label = "tclinux";
+			reg = <0x80000 0x2200000>;
+			econet,enable-remap;
+		};
+
+		partition@480000 {
+			label = "rootfs";
+			reg = <0x480000 0x1e00000>;
+			linux,rootfs;
+		};
+
+		partition@2280000 {
+			label = "kernel_slave";
+			reg = <0x2280000 0x300000>;
+		};
+
+		partition@2580000 {
+			label = "rootfs_slave";
+			reg = <0x2580000 0x1f00000>;
+		};
+
+		partition@4480000 {
+			label = "kernel_oflt";
+			reg = <0x4480000 0x300000>;
+		};
+
+		partition@4780000 {
+			label = "rootfs_oflt";
+			reg = <0x4780000 0xc00000>;
+		};
+
+		partition@5380000 {
+			label = "config";
+			reg = <0x5380000 0x800000>;
+		};
+
+		partition@5b80000 {
+			label = "log";
+			reg = <0x5b80000 0xc00000>;
+		};
+
+		partition@6780000 {
+			label = "extfs";
+			reg = <0x6780000 0x600000>;
+		};
+
+		/*
+		 * 256 KiB optical/laser calibration for the JiuZhou/GN25L98
+		 * BOSA. The airoha en7570 driver reads its factory cal as 100
+		 * big-endian 32-bit words; the exact offset within this
+		 * partition must be confirmed from a live dump before wiring
+		 * the nvmem cell (see en7526gt: magic at cell offset 0x94).
+		 */
+		partition@6d80000 {
+			label = "bosa";
+			reg = <0x6d80000 0x40000>;
+		};
+
+		partition@6dc0000 {
+			label = "flag";
+			reg = <0x6dc0000 0x40000>;
+		};
+
+		partition@6e00000 {
+			label = "flagback";
+			reg = <0x6e00000 0x40000>;
+		};
+
+		partition@6e40000 {
+			label = "ri";
+			reg = <0x6e40000 0x40000>;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				macaddr_ri_3e: macaddr@3e {
+					compatible = "mac-base";
+					reg = <0x3e 0x6>;
+					#nvmem-cell-cells = <1>;
+				};
+			};
+		};
+
+		partition@6e80000 {
+			label = "riback";
+			reg = <0x6e80000 0x40000>;
+		};
+	};
+};
+
+&eth {
+	status = "okay";
+};
+
+&gdm1 {
+	status = "okay";
+	mac-address = [78 17 35 c2 80 30];
+};
+
+&i2c0 {
+	status = "okay";
+
+	/*
+	 * G-140W-F BOSA = Semtech GN25L98 (external-MCU mode, only the A2 page
+	 * at 0x51 is exposed). Driver loads semtech/gn25l98-hwconfig.bin.
+	 */
+	gn25l98: optical-frontend@51 {
+		compatible = "semtech,gn25l98";
+		reg = <0x51>;
+
+		tx-disable-gpios = <&pinctrl 16 GPIO_ACTIVE_HIGH>;
+
+		#optical-frontend-cells = <0>;
+	};
+};
+
+&xpon_phy {
+	status = "okay";
+
+	/*
+	 * The G-140W-F JiuZhou/Semtech GN25L98 BOSA drives RX signal-detect
+	 * INVERTED (proven on the econet port: rx_sd_inv=1 was the CDR-lock
+	 * breakthrough). Set XPON_SETTING bit6 via this property.
+	 */
+	airoha,rx-sd-inverted;
+};
+
+&xpon {
+	status = "okay";
+
+	gpon-serial-number = "ALCLFBCA775E";
+	omci-vendor-id = "ALCL";
+	gpon-password = "00000001";
+	omci-uni-count = /bits/ 8 <4>;
+
+	optical-frontends = <&gn25l98>;
+	optical-frontend-names = "pon";
+};
+
+&gdm2 {
+	status = "okay";
+	phy-mode = "internal";
+	airoha,xpon-managed;
+	openwrt,netdev-name = "pon0";
+	mac-address = [78 17 35 c2 80 31];
+};
+
+/* LAN switch disabled for the GPON bring-up test (MDIO probe suspected hang). */
+&switch0 { status = "disabled"; };
+&switch1 { status = "disabled"; };
+
+&pcie0 {
+	status = "disabled";
+};
+
+

@@ -1,0 +1,1686 @@
+From b33f0a68aba43ecb3a349db12ca867172ea74723 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Tue, 11 Aug 2026 22:11:28 -0300
+Subject: [PATCH] pinctrl: airoha: Update EN7512/21 pinctrl and GPIO mapping
+
+Update the EN7512/21 pin controller and GPIO mapping to follow the
+correct
+hardware pad layout, adjusting `gpio-ranges` and pin definitions
+accordingly.
+Additionally, improve drive strength calculations and refactor the
+muxing
+logic to distinguish between different system controller registers.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ .../mfd/econet,en751221-gpio-sysctl.yaml      |   2 +-
+ .../pinctrl/econet,en751221-pinctrl.yaml      | 272 ++++-
+ arch/mips/boot/dts/econet/en751221.dtsi       |   2 +-
+ drivers/pinctrl/airoha/airoha-common.h        |   3 +
+ drivers/pinctrl/airoha/pinctrl-airoha.c       |  40 +-
+ drivers/pinctrl/airoha/pinctrl-en751221.c     | 994 +++++++++++++-----
+ 6 files changed, 956 insertions(+), 357 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/mfd/econet,en751221-gpio-sysctl.yaml b/Documentation/devicetree/bindings/mfd/econet,en751221-gpio-sysctl.yaml
+index e0a873e18d79..24814c1c321d 100644
+--- a/Documentation/devicetree/bindings/mfd/econet,en751221-gpio-sysctl.yaml
++++ b/Documentation/devicetree/bindings/mfd/econet,en751221-gpio-sysctl.yaml
+@@ -49,7 +49,7 @@ examples:
+ 
+         gpio-controller;
+         #gpio-cells = <2>;
+-        gpio-ranges = <&pinctrl 0 0 64>;
++        gpio-ranges = <&pinctrl 0 13 29>;
+ 
+         interrupt-controller;
+         #interrupt-cells = <2>;
+diff --git a/Documentation/devicetree/bindings/pinctrl/econet,en751221-pinctrl.yaml b/Documentation/devicetree/bindings/pinctrl/econet,en751221-pinctrl.yaml
+index 2685e9ac5aa6..a63f9f2d633b 100644
+--- a/Documentation/devicetree/bindings/pinctrl/econet,en751221-pinctrl.yaml
++++ b/Documentation/devicetree/bindings/pinctrl/econet,en751221-pinctrl.yaml
+@@ -9,11 +9,12 @@ title: EcoNet EN7512/EN7521 Pin Controller
+ maintainers:
+   - Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+ 
+-description:
+-  The pin controller and GPIO block used by the EcoNet EN7512, EN7513,
+-  EN7521 and EN7526 SoC families. The first 16 GPIO lines can generate
+-  interrupts. GPIOs 2 through 31 also provide a set of SoC-specific muxed
+-  functions.
++description: |
++  Pin controller and GPIO block used by the EcoNet EN7512, EN7513, EN7521
++  and EN7526 SoC families. The pin numbering follows the hardware pad map:
++  GPIO0 starts at pinctrl pin 13. GPIO0 through GPIO28 are exposed by the
++  GPIO controller through gpio-ranges, while additional pads can still be
++  selected by pinmux functions.
+ 
+ properties:
+   compatible:
+@@ -22,7 +23,7 @@ properties:
+   airoha,chip-scu:
+     $ref: /schemas/types.yaml#/definitions/phandle
+     description:
+-      Phandle to the chip system controller containing the I/O mux register.
++      Phandle to the chip system controller containing the I/O mux registers.
+ 
+   interrupts:
+     maxItems: 1
+@@ -64,9 +65,24 @@ patternProperties:
+ 
+         properties:
+           function:
+-            enum: [sipo, tod_1pps, pcie_reset, spi, uart, pon, pcm,
+-                   pcm_spi, gpio, phy1_led0, phy2_led0, phy3_led0,
+-                   phy4_led0, gsw_port4_led0]
++            enum:
++              - pon
++              - tod_1pps
++              - sipo
++              - uart
++              - pon_i2c
++              - dmt_i2c
++              - ejtag
++              - pcm
++              - spi
++              - pcm_spi
++              - pcie_reset
++              - pwm
++              - phy0_led
++              - phy1_led
++              - phy2_led
++              - phy3_led
++              - phy4_led
+ 
+           groups: true
+ 
+@@ -78,11 +94,11 @@ patternProperties:
+           - if:
+               properties:
+                 function:
+-                  const: sipo
++                  const: pon
+             then:
+               properties:
+                 groups:
+-                  enum: [sipo, sipo_rclk]
++                  enum: [pon]
+           - if:
+               properties:
+                 function:
+@@ -90,39 +106,56 @@ patternProperties:
+             then:
+               properties:
+                 groups:
+-                  enum: [dmt_tod_1pps, pon_tod_1pps, gsw_tod_1pps]
++                  items:
++                    enum:
++                      - pon_tod_1pps
++                      - gsw_tod_1pps
++                      - dmt_tod_1pps
++                  maxItems: 3
+           - if:
+               properties:
+                 function:
+-                  const: pcie_reset
++                  const: sipo
+             then:
+               properties:
+                 groups:
+-                  enum: [pcie_reset0, pcie_reset1]
++                  items:
++                    enum:
++                      - sipo
++                      - sipo_rclk
++                  maxItems: 2
+           - if:
+               properties:
+                 function:
+-                  const: spi
++                  const: uart
+             then:
+               properties:
+                 groups:
+-                  enum: [spi_quad]
++                  enum: [uart2]
+           - if:
+               properties:
+                 function:
+-                  const: uart
++                  const: pon_i2c
+             then:
+               properties:
+                 groups:
+-                  enum: [uart2]
++                  enum: [pon_i2c]
+           - if:
+               properties:
+                 function:
+-                  const: pon
++                  const: dmt_i2c
+             then:
+               properties:
+                 groups:
+-                  enum: [pon]
++                  enum: [dmt_i2c]
++          - if:
++              properties:
++                function:
++                  const: ejtag
++            then:
++              properties:
++                groups:
++                  enum: [ejtag]
+           - if:
+               properties:
+                 function:
+@@ -130,7 +163,25 @@ patternProperties:
+             then:
+               properties:
+                 groups:
+-                  enum: [pcm1, pcm2]
++                  items:
++                    enum:
++                      - pcm1
++                      - pcm2
++                  maxItems: 2
++          - if:
++              properties:
++                function:
++                  const: spi
++            then:
++              properties:
++                groups:
++                  items:
++                    enum:
++                      - spi_quad
++                      - spi2
++                      - spi_cs3
++                      - spi_cs4
++                  maxItems: 4
+           - if:
+               properties:
+                 function:
+@@ -139,62 +190,142 @@ patternProperties:
+               properties:
+                 groups:
+                   items:
+-                    enum: [pcm_spi, pcm_spi_int, pcm_spi_rst, pcm_spi_cs3,
+-                           pcm_spi_cs4]
++                    enum:
++                      - pcm_spi
++                      - pcm_spi_int
++                      - pcm_spi_rst
++                      - pcm_spi_cs3
++                      - pcm_spi_cs4
+                   maxItems: 5
+           - if:
+               properties:
+                 function:
+-                  const: phy1_led0
++                  const: pcie_reset
+             then:
+               properties:
+                 groups:
+-                  enum: [gpio10]
++                  items:
++                    enum:
++                      - pcie_reset0
++                      - pcie_reset1
++                  maxItems: 2
+           - if:
+               properties:
+                 function:
+-                  const: phy2_led0
++                  const: pwm
+             then:
+               properties:
+                 groups:
+-                  enum: [gpio9]
++                  items:
++                    enum:
++                      - gpio0
++                      - gpio1
++                      - gpio2
++                      - gpio3
++                      - gpio4
++                      - gpio5
++                      - gpio6
++                      - gpio7
++                      - gpio8
++                      - gpio9
++                      - gpio10
++                      - gpio11
++                      - gpio12
++                      - gpio13
++                      - gpio14
++                      - gpio15
++                      - gpio16
++                      - gpio17
++                      - gpio18
++                      - gpio19
++                      - gpio20
++                      - gpio21
++                      - gpio22
++                      - gpio23
++                      - gpio24
++                      - gpio25
++                      - gpio26
++                      - gpio27
++                      - gpio28
++                      - gpio29
++                      - gpio30
++                      - gpio31
++                  maxItems: 32
+           - if:
+               properties:
+                 function:
+-                  const: phy3_led0
++                  const: phy0_led
+             then:
+               properties:
+                 groups:
+-                  enum: [gpio8]
++                  items:
++                    enum:
++                      - gpio3
++                      - gpio7
++                      - gpio8
++                      - gpio9
++                      - gpio10
++                  maxItems: 5
+           - if:
+               properties:
+                 function:
+-                  const: phy4_led0
++                  const: phy1_led
+             then:
+               properties:
+                 groups:
+-                  enum: [gpio7]
++                  items:
++                    enum:
++                      - gpio3
++                      - gpio7
++                      - gpio8
++                      - gpio9
++                      - gpio10
++                  maxItems: 5
+           - if:
+               properties:
+                 function:
+-                  const: gsw_port4_led0
++                  const: phy2_led
+             then:
+               properties:
+                 groups:
+-                  enum: [gpio3]
++                  items:
++                    enum:
++                      - gpio3
++                      - gpio7
++                      - gpio8
++                      - gpio9
++                      - gpio10
++                  maxItems: 5
+           - if:
+               properties:
+                 function:
+-                  const: gpio
++                  const: phy3_led
+             then:
+               properties:
+                 groups:
+                   items:
+-                    enum: [gpio2, gpio3, gpio4, gpio5, gpio6, gpio7,
+-                           gpio8, gpio9, gpio10, gpio11, gpio12, gpio13,
+-                           gpio14, gpio15, gpio16, gpio17, gpio18, gpio19,
+-                           gpio20, gpio22, gpio30, gpio31]
+-                  maxItems: 22
++                    enum:
++                      - gpio3
++                      - gpio7
++                      - gpio8
++                      - gpio9
++                      - gpio10
++                  maxItems: 5
++          - if:
++              properties:
++                function:
++                  const: phy4_led
++            then:
++              properties:
++                groups:
++                  items:
++                    enum:
++                      - gpio3
++                      - gpio7
++                      - gpio8
++                      - gpio9
++                      - gpio10
++                  maxItems: 5
+ 
+         additionalProperties: false
+ 
+@@ -205,20 +336,57 @@ patternProperties:
+         properties:
+           pins:
+             items:
+-              enum: [gpio0, gpio1, gpio2, gpio3, gpio4, gpio5, gpio6,
+-                     gpio7, gpio8, gpio9, gpio10, gpio11, gpio12, gpio13,
+-                     gpio14, gpio15, gpio16, gpio17, gpio18, gpio19,
+-                     gpio20, gpio21, gpio22, gpio23, gpio24, gpio25,
+-                     gpio26, gpio27, gpio28, gpio29, gpio30, gpio31,
+-                     gpio32, gpio33, gpio34, gpio35, gpio36, gpio37,
+-                     gpio38, gpio39, gpio40, gpio41, gpio42, gpio43,
+-                     gpio44, gpio45, gpio46, gpio47, gpio48, gpio49,
+-                     gpio50, gpio51, gpio52, gpio53, gpio54, gpio55,
+-                     gpio56, gpio57, gpio58, gpio59, gpio60, gpio61,
+-                     gpio62, gpio63]
++              enum:
++                - uart1_txd
++                - uart1_rxd
++                - i2c_scl
++                - i2c_sda
++                - spi_cs
++                - spi_clk
++                - spi_mosi
++                - spi_miso
++                - mdio
++                - mdc
++                - gpio0
++                - gpio1
++                - gpio2
++                - gpio3
++                - gpio4
++                - gpio5
++                - gpio6
++                - gpio7
++                - gpio8
++                - gpio9
++                - gpio10
++                - gpio11
++                - gpio12
++                - gpio13
++                - gpio14
++                - gpio15
++                - gpio16
++                - gpio17
++                - gpio18
++                - gpio19
++                - gpio20
++                - gpio21
++                - gpio22
++                - gpio23
++                - gpio24
++                - gpio25
++                - gpio26
++                - gpio27
++                - gpio28
++                - gpio29
++                - pcie_reset0
++                - pcie_reset1
+             minItems: 1
+-            maxItems: 64
++            maxItems: 42
+ 
++          bias-disable: true
++          bias-pull-down: true
++          bias-pull-up: true
++          drive-strength:
++            enum: [4, 8, 12, 16]
+           input-enable: true
+           output-enable: true
+           output-low: true
+@@ -244,7 +412,7 @@ examples:
+ 
+       gpio-controller;
+       #gpio-cells = <2>;
+-      gpio-ranges = <&pinctrl 0 0 64>;
++      gpio-ranges = <&pinctrl 0 13 29>;
+ 
+       interrupt-controller;
+       #interrupt-cells = <2>;
+diff --git a/arch/mips/boot/dts/econet/en751221.dtsi b/arch/mips/boot/dts/econet/en751221.dtsi
+index 5769b0222920..e07445120b4e 100644
+--- a/arch/mips/boot/dts/econet/en751221.dtsi
++++ b/arch/mips/boot/dts/econet/en751221.dtsi
+@@ -85,7 +85,7 @@ pinctrl: pinctrl {
+ 
+ 			gpio-controller;
+ 			#gpio-cells = <2>;
+-			gpio-ranges = <&pinctrl 0 0 64>;
++			gpio-ranges = <&pinctrl 0 13 29>;
+ 
+ 			interrupt-controller;
+ 			#interrupt-cells = <2>;
+diff --git a/drivers/pinctrl/airoha/airoha-common.h b/drivers/pinctrl/airoha/airoha-common.h
+index 2d5efdd5d915..9dfe1c612de4 100644
+--- a/drivers/pinctrl/airoha/airoha-common.h
++++ b/drivers/pinctrl/airoha/airoha-common.h
+@@ -109,6 +109,7 @@ struct airoha_pinctrl_confs_info {
+ 
+ struct airoha_pinctrl_gpio_mux {
+ 	u32 pin;
++	enum airoha_pinctrl_mux_func mux;
+ 	struct airoha_pinctrl_reg reg;
+ };
+ 
+@@ -139,6 +140,7 @@ struct airoha_pinctrl {
+ 	unsigned int num_irq;
+ 	const struct airoha_pinctrl_gpio_mux *gpio_muxes;
+ 	unsigned int num_gpio_muxes;
++	unsigned int drive_strength_step_ma;
+ };
+ 
+ struct airoha_pinctrl_hwinit_regs {
+@@ -161,6 +163,7 @@ struct airoha_pinctrl_match_data {
+ 	unsigned int num_irq;
+ 	const struct airoha_pinctrl_gpio_mux *gpio_muxes;
+ 	unsigned int num_gpio_muxes;
++	unsigned int drive_strength_step_ma;
+ 
+ 	u32 force_gpio_reg;
+ 	const struct airoha_pinctrl_confs_info confs_info[AIROHA_PINCTRL_CONFS_MAX];
+diff --git a/drivers/pinctrl/airoha/pinctrl-airoha.c b/drivers/pinctrl/airoha/pinctrl-airoha.c
+index 291c563c804a..60e1b894f709 100644
+--- a/drivers/pinctrl/airoha/pinctrl-airoha.c
++++ b/drivers/pinctrl/airoha/pinctrl-airoha.c
+@@ -480,8 +480,12 @@ airoha_pinmux_gpio_request_enable(struct pinctrl_dev *pctrl_dev,
+ 		if (mux->pin != gpio)
+ 			continue;
+ 
+-		err = regmap_clear_bits(pinctrl->chip_scu, mux->reg.offset,
+-					mux->reg.mask);
++		if (mux->mux == AIROHA_FUNC_MUX)
++			err = regmap_clear_bits(pinctrl->chip_scu, mux->reg.offset,
++						mux->reg.mask);
++		else
++			err = regmap_clear_bits(pinctrl->regmap, mux->reg.offset,
++						mux->reg.mask);
+ 		if (err)
+ 			return err;
+ 	}
+@@ -631,13 +635,14 @@ static int airoha_pinconf_get(struct pinctrl_dev *pctrl_dev,
+ 		break;
+ 	}
+ 	case PIN_CONFIG_DRIVE_STRENGTH: {
+-		u32 e2, e4;
++		u32 e2, e4, level;
+ 
+ 		if (airoha_pinctrl_get_drive_e2_conf(pinctrl, pin, &e2) ||
+ 		    airoha_pinctrl_get_drive_e4_conf(pinctrl, pin, &e4))
+ 			return -EINVAL;
+ 
+-		arg = e4 << 1 | e2;
++		level = e4 << 1 | e2;
++		arg = (level + 1) * pinctrl->drive_strength_step_ma;
+ 		break;
+ 	}
+ 	case PIN_CONFIG_DRIVE_OPEN_DRAIN:
+@@ -718,24 +723,18 @@ static int airoha_pinconf_set(struct pinctrl_dev *pctrl_dev,
+ 
+ 			break;
+ 		case PIN_CONFIG_DRIVE_STRENGTH: {
+-			u32 e2 = 0, e4 = 0;
++			u32 e2, e4, level;
+ 
+-			switch (arg) {
+-			case MTK_DRIVE_2mA:
+-				break;
+-			case MTK_DRIVE_4mA:
+-				e2 = 1;
+-				break;
+-			case MTK_DRIVE_6mA:
+-				e4 = 1;
+-				break;
+-			case MTK_DRIVE_8mA:
+-				e2 = 1;
+-				e4 = 1;
+-				break;
+-			default:
++			if (!arg || arg % pinctrl->drive_strength_step_ma)
+ 				return -EINVAL;
+-			}
++
++			level = arg / pinctrl->drive_strength_step_ma;
++			if (level < 1 || level > 4)
++				return -EINVAL;
++
++			level--;
++			e2 = level & 1;
++			e4 = (level >> 1) & 1;
+ 
+ 			err = airoha_pinctrl_set_drive_e2_conf(pinctrl,
+ 							       pin, e2);
+@@ -872,6 +871,7 @@ int airoha_pinctrl_probe(struct platform_device *pdev)
+ 	pinctrl->force_gpio_reg = data->force_gpio_reg;
+ 	pinctrl->gpio_muxes = data->gpio_muxes;
+ 	pinctrl->num_gpio_muxes = data->num_gpio_muxes;
++	pinctrl->drive_strength_step_ma = data->drive_strength_step_ma ?: 2;
+ 	pinctrl->gpiochip.ngpio = data->num_gpio ?: AIROHA_NUM_PINS;
+ 	pinctrl->num_irq = data->num_irq ?: AIROHA_NUM_PINS;
+ 	if (pinctrl->gpiochip.ngpio > AIROHA_NUM_PINS ||
+diff --git a/drivers/pinctrl/airoha/pinctrl-en751221.c b/drivers/pinctrl/airoha/pinctrl-en751221.c
+index c2b5cc85e2fd..8197073240fe 100644
+--- a/drivers/pinctrl/airoha/pinctrl-en751221.c
++++ b/drivers/pinctrl/airoha/pinctrl-en751221.c
+@@ -1,196 +1,290 @@
+ // SPDX-License-Identifier: GPL-2.0-only
+ /*
+- * EcoNet EN7512/EN7521 family pinctrl data for the Airoha pinctrl core.
++ * EcoNet EN7512/EN7521 family pinctrl data for the shared Airoha pinctrl core.
+  *
+- * The EN7512, EN7513, EN7521 and EN7526 share the same GPIO controller.
+- * DSL and xPON variants differ mostly in which muxed signals are bonded out.
++ * Pin numbering and GPIO range follow the EN751221 pinctrl implementation
++ * provided by Merbanan: GPIO0 starts at pin 13 and GPIO28 ends at pin 41.
+  */
+ 
+ #include "airoha-common.h"
+ 
++/* Chip SCU mux */
+ #define REG_IOMUX_CONTROL1			0x0104
+-
+-#define SIPO_RCLK_MODE_MASK			BIT(23)
+-#define DMT_TOD_1PPS_MODE_MASK			BIT(22)
+-#define PCIE_RESET1_MODE_MASK			BIT(21)
+-#define PCIE_RESET0_MODE_MASK			BIT(20)
+-#define SPI_QUAD_MODE_MASK			BIT(19)
++#define DMT_I2C_MODE_MASK		BIT(24)
++#define SIPO_RCLK_MODE_MASK		BIT(23)
++#define DMT_TOD_1PPS_MODE_MASK		BIT(22)
++#define PCIE_RESET1_MODE_MASK		BIT(21)
++#define PCIE_RESET0_MODE_MASK		BIT(20)
++#define SPI_QUAD_MODE_MASK		BIT(19)
+ #define UART2_MODE_MASK			BIT(18)
+-#define SIPO_MODE_MASK				BIT(17)
+-#define PON_MODE_MASK				BIT(15)
+-#define PCM2_MODE_MASK				BIT(14)
+-#define PCM1_MODE_MASK				BIT(13)
+-#define PCM_SPI_MODE_MASK			BIT(12)
+-#define PCM_SPI_INT_MODE_MASK			BIT(11)
++#define SIPO_MODE_MASK			BIT(17)
++#define DGASP_OUT_MODE_MASK		BIT(16)
++#define PON_MODE_MASK			BIT(15)
++#define PCM2_MODE_MASK			BIT(14)
++#define PCM1_MODE_MASK			BIT(13)
++#define SPI2_MODE_MASK			BIT(12)
++#define PCM_SPI_INT_MODE_MASK		BIT(11)
+ #define PCM_SPI_RESET_MODE_MASK		BIT(10)
+-#define PCM_SPI_CS4_MODE_MASK			BIT(9)
+-#define PCM_SPI_CS3_MODE_MASK			BIT(8)
++#define PCM_SPI_CS4_MODE_MASK		BIT(9)
++#define PCM_SPI_CS3_MODE_MASK		BIT(8)
+ #define GSW_PORT4_LED0_MODE_MASK		BIT(7)
+-#define PHY4_LED0_MODE_MASK			BIT(6)
+-#define PHY3_LED0_MODE_MASK			BIT(5)
+-#define PHY2_LED0_MODE_MASK			BIT(4)
+-#define PHY1_LED0_MODE_MASK			BIT(3)
+-#define PON_TOD_1PPS_MODE_MASK			BIT(2)
+-#define GSW_TOD_1PPS_MODE_MASK			BIT(1)
+-#define PON_I2C_MODE_MASK			BIT(0)
+-
+-#define GPIO3_MUX_MASK		(SPI_QUAD_MODE_MASK | UART2_MODE_MASK | \
+-				 PCM_SPI_INT_MODE_MASK | PCM_SPI_CS3_MODE_MASK | \
+-				 GSW_PORT4_LED0_MODE_MASK)
+-#define GPIO4_6_MUX_MASK	(PCM2_MODE_MASK | PCM_SPI_MODE_MASK)
+-#define GPIO7_MUX_MASK		(GPIO4_6_MUX_MASK | PHY4_LED0_MODE_MASK)
+-#define GPIO8_MUX_MASK		(SIPO_MODE_MASK | PHY3_LED0_MODE_MASK)
+-#define GPIO9_MUX_MASK		(SIPO_RCLK_MODE_MASK | PCM_SPI_CS4_MODE_MASK | \
+-				 PHY2_LED0_MODE_MASK)
+-#define GPIO10_MUX_MASK		(SPI_QUAD_MODE_MASK | UART2_MODE_MASK | \
+-				 PHY1_LED0_MODE_MASK)
+-#define GPIO22_MUX_MASK		(DMT_TOD_1PPS_MODE_MASK | \
+-				 PON_TOD_1PPS_MODE_MASK | \
+-				 GSW_TOD_1PPS_MODE_MASK)
+-
+-#define ECONET_MUX_GROUP(_name, _mask, _val)			\
++#define PHY4_LED0_MODE_MASK		BIT(6)
++#define PHY3_LED0_MODE_MASK		BIT(5)
++#define PHY2_LED0_MODE_MASK		BIT(4)
++#define PHY1_LED0_MODE_MASK		BIT(3)
++#define PON_TOD_1PPS_MODE_MASK		BIT(2)
++#define GSW_TOD_1PPS_MODE_MASK		BIT(1)
++#define PON_I2C_MODE_MASK		BIT(0)
++
++#define REG_CPU_EJTAG_EN			0x0150
++#define CPU_EJTAG_EN_MASK			BIT(1)
++
++/* LED routing */
++#define REG_LAN_LED0_MAPPING			0x0154
++#define LAN4_LED_MAPPING_MASK			GENMASK(18, 16)
++#define LAN3_LED_MAPPING_MASK			GENMASK(14, 12)
++#define LAN2_LED_MAPPING_MASK			GENMASK(10, 8)
++#define LAN1_LED_MAPPING_MASK			GENMASK(6, 4)
++#define LAN0_LED_MAPPING_MASK			GENMASK(2, 0)
++
++/* Pin configuration in chip SCU. */
++#define REG_I2C_SDA_E4			0x0010
++#define REG_I2C_SDA_E8			0x0014
++#define REG_GPIO_E4			0x0018
++#define REG_GPIO_E8			0x001c
++#define REG_I2C_SDA_PU			0x002c
++#define REG_I2C_SDA_PD			0x0030
++#define REG_GPIO_PU			0x0034
++#define REG_GPIO_PD			0x0038
++
++#define UART1_TXD_E4_MASK               BIT(2)
++#define UART1_RXD_E4_MASK               BIT(3)
++#define I2C_SCL_E4_MASK                 BIT(1)
++#define I2C_SDA_E4_MASK                 BIT(0)
++#define SPI_CS_E4_MASK                  BIT(8)
++#define SPI_CLK_E4_MASK                 BIT(9)
++#define SPI_MOSI_E4_MASK                BIT(10)
++#define SPI_MISO_E4_MASK                BIT(11)
++#define MDIO_E4_MASK                    BIT(5)
++#define MDC_E4_MASK                     BIT(4)
++
++#define UART1_TXD_E8_MASK               BIT(2)
++#define UART1_RXD_E8_MASK               BIT(3)
++#define I2C_SCL_E8_MASK                 BIT(1)
++#define I2C_SDA_E8_MASK                 BIT(0)
++#define SPI_CS_E8_MASK                  BIT(8)
++#define SPI_CLK_E8_MASK                 BIT(9)
++#define SPI_MOSI_E8_MASK                BIT(10)
++#define SPI_MISO_E8_MASK                BIT(11)
++#define MDIO_E8_MASK                    BIT(5)
++#define MDC_E8_MASK                     BIT(4)
++
++#define UART1_TXD_PU_MASK               BIT(2)
++#define UART1_RXD_PU_MASK               BIT(3)
++#define I2C_SCL_PU_MASK                 BIT(1)
++#define I2C_SDA_PU_MASK                 BIT(0)
++#define SPI_CS_PU_MASK                  BIT(8)
++#define SPI_CLK_PU_MASK                 BIT(9)
++#define SPI_MOSI_PU_MASK                BIT(10)
++#define SPI_MISO_PU_MASK                BIT(11)
++#define MDIO_PU_MASK                    BIT(5)
++#define MDC_PU_MASK                     BIT(4)
++
++#define UART1_TXD_PD_MASK               BIT(2)
++#define UART1_RXD_PD_MASK               BIT(3)
++#define I2C_SCL_PD_MASK                 BIT(1)
++#define I2C_SDA_PD_MASK                 BIT(0)
++#define SPI_CS_PD_MASK                  BIT(8)
++#define SPI_CLK_PD_MASK                 BIT(9)
++#define SPI_MOSI_PD_MASK                BIT(10)
++#define SPI_MISO_PD_MASK                BIT(11)
++#define MDIO_PD_MASK                    BIT(5)
++#define MDC_PD_MASK                     BIT(4)
++
++/* PWM/flash mode lives in the GPIO system-controller block. */
++#define REG_GPIO_FLASH_MODE_CFG		0x0034
++#define REG_GPIO_FLASH_MODE_CFG_EXT		0x0068
++
++#define ECONET_MUX_GROUP(_name, _reg, _mask, _val)		\
+ 	{							\
+ 		.name = (_name),				\
+ 		.regmap[0] = {					\
+ 			AIROHA_FUNC_MUX,			\
+-			REG_IOMUX_CONTROL1,			\
+-			(_mask),				\
+-			(_val),				\
++			(_reg), (_mask), (_val),			\
++		},						\
++		.regmap_size = 1,				\
++	}
++
++#define ECONET_IOMUX_GROUP(_name, _mask, _val)		\
++	ECONET_MUX_GROUP((_name), REG_IOMUX_CONTROL1, (_mask), (_val))
++
++#define ECONET_PWM_GROUP(_name, _mux, _reg, _mask)		\
++	{							\
++		.name = (_name),				\
++		.regmap[0] = {					\
++			(_mux), (_reg), (_mask), (_mask),		\
+ 		},						\
+ 		.regmap_size = 1,				\
+ 	}
+ 
+-#define ECONET_GPIO_MUX(_pin, _mask)				\
++#define ECONET_LED_GROUP(_name, _mode, _mapping, _phy)	\
++	{							\
++		.name = (_name),				\
++		.regmap[0] = {					\
++			AIROHA_FUNC_MUX, REG_IOMUX_CONTROL1,	\
++			(_mode), (_mode),			\
++		},						\
++		.regmap[1] = {					\
++			AIROHA_FUNC_MUX, REG_LAN_LED0_MAPPING,	\
++			(_mapping), FIELD_PREP_CONST((_mapping), (_phy)),	\
++		},						\
++		.regmap_size = 2,				\
++	}
++
++#define ECONET_GPIO_MUX(_gpio, _reg, _mask)			\
++	{							\
++		.pin = (_gpio),				\
++		.mux = AIROHA_FUNC_MUX,			\
++		.reg = { (_reg), (_mask) },			\
++	}
++
++#define ECONET_GPIO_PWM_MUX(_gpio, _mux, _reg, _mask)	\
+ 	{							\
+-		.pin = (_pin),					\
+-		.reg = { REG_IOMUX_CONTROL1, (_mask) },		\
++		.pin = (_gpio),				\
++		.mux = (_mux),				\
++		.reg = { (_reg), (_mask) },			\
+ 	}
+ 
++#define ECONET_GPIO_CONF(_gpio, _reg)			\
++	PINCTRL_CONF_DESC(13 + (_gpio), (_reg), BIT(_gpio))
++
+ static const struct pinctrl_pin_desc pinctrl_pins[] = {
+-	PINCTRL_PIN(0, "gpio0"),
+-	PINCTRL_PIN(1, "gpio1"),
+-	PINCTRL_PIN(2, "gpio2"),
+-	PINCTRL_PIN(3, "gpio3"),
+-	PINCTRL_PIN(4, "gpio4"),
+-	PINCTRL_PIN(5, "gpio5"),
+-	PINCTRL_PIN(6, "gpio6"),
+-	PINCTRL_PIN(7, "gpio7"),
+-	PINCTRL_PIN(8, "gpio8"),
+-	PINCTRL_PIN(9, "gpio9"),
+-	PINCTRL_PIN(10, "gpio10"),
+-	PINCTRL_PIN(11, "gpio11"),
+-	PINCTRL_PIN(12, "gpio12"),
+-	PINCTRL_PIN(13, "gpio13"),
+-	PINCTRL_PIN(14, "gpio14"),
+-	PINCTRL_PIN(15, "gpio15"),
+-	PINCTRL_PIN(16, "gpio16"),
+-	PINCTRL_PIN(17, "gpio17"),
+-	PINCTRL_PIN(18, "gpio18"),
+-	PINCTRL_PIN(19, "gpio19"),
+-	PINCTRL_PIN(20, "gpio20"),
+-	PINCTRL_PIN(21, "gpio21"),
+-	PINCTRL_PIN(22, "gpio22"),
+-	PINCTRL_PIN(23, "gpio23"),
+-	PINCTRL_PIN(24, "gpio24"),
+-	PINCTRL_PIN(25, "gpio25"),
+-	PINCTRL_PIN(26, "gpio26"),
+-	PINCTRL_PIN(27, "gpio27"),
+-	PINCTRL_PIN(28, "gpio28"),
+-	PINCTRL_PIN(29, "gpio29"),
+-	PINCTRL_PIN(30, "gpio30"),
+-	PINCTRL_PIN(31, "gpio31"),
+-	PINCTRL_PIN(32, "gpio32"),
+-	PINCTRL_PIN(33, "gpio33"),
+-	PINCTRL_PIN(34, "gpio34"),
+-	PINCTRL_PIN(35, "gpio35"),
+-	PINCTRL_PIN(36, "gpio36"),
+-	PINCTRL_PIN(37, "gpio37"),
+-	PINCTRL_PIN(38, "gpio38"),
+-	PINCTRL_PIN(39, "gpio39"),
+-	PINCTRL_PIN(40, "gpio40"),
+-	PINCTRL_PIN(41, "gpio41"),
+-	PINCTRL_PIN(42, "gpio42"),
+-	PINCTRL_PIN(43, "gpio43"),
+-	PINCTRL_PIN(44, "gpio44"),
+-	PINCTRL_PIN(45, "gpio45"),
+-	PINCTRL_PIN(46, "gpio46"),
+-	PINCTRL_PIN(47, "gpio47"),
+-	PINCTRL_PIN(48, "gpio48"),
+-	PINCTRL_PIN(49, "gpio49"),
+-	PINCTRL_PIN(50, "gpio50"),
+-	PINCTRL_PIN(51, "gpio51"),
+-	PINCTRL_PIN(52, "gpio52"),
+-	PINCTRL_PIN(53, "gpio53"),
+-	PINCTRL_PIN(54, "gpio54"),
+-	PINCTRL_PIN(55, "gpio55"),
+-	PINCTRL_PIN(56, "gpio56"),
+-	PINCTRL_PIN(57, "gpio57"),
+-	PINCTRL_PIN(58, "gpio58"),
+-	PINCTRL_PIN(59, "gpio59"),
+-	PINCTRL_PIN(60, "gpio60"),
+-	PINCTRL_PIN(61, "gpio61"),
+-	PINCTRL_PIN(62, "gpio62"),
+-	PINCTRL_PIN(63, "gpio63"),
+-};
+-
+-static const int sipo_pins[] = { 8, 11 };
+-static const int sipo_rclk_pins[] = { 8, 9, 11 };
+-static const int dmt_tod_1pps_pins[] = { 22 };
+-static const int pon_tod_1pps_pins[] = { 22 };
+-static const int gsw_tod_1pps_pins[] = { 22 };
+-static const int pcie_reset0_pins[] = { 30 };
+-static const int pcie_reset1_pins[] = { 31 };
+-static const int spi_quad_pins[] = { 3, 10 };
+-static const int uart2_pins[] = { 3, 10 };
+-static const int pon_pins[] = { 16, 17, 18, 19, 20 };
+-static const int pcm1_pins[] = { 12, 13, 14, 15 };
+-static const int pcm2_pins[] = { 4, 5, 6, 7 };
+-static const int pcm_spi_pins[] = { 4, 5, 6, 7 };
+-static const int pcm_spi_int_pins[] = { 3 };
+-static const int pcm_spi_rst_pins[] = { 2 };
+-static const int pcm_spi_cs3_pins[] = { 3 };
+-static const int pcm_spi_cs4_pins[] = { 9 };
+-static const int gpio2_pins[] = { 2 };
+-static const int gpio3_pins[] = { 3 };
+-static const int gpio4_pins[] = { 4 };
+-static const int gpio5_pins[] = { 5 };
+-static const int gpio6_pins[] = { 6 };
+-static const int gpio7_pins[] = { 7 };
+-static const int gpio8_pins[] = { 8 };
+-static const int gpio9_pins[] = { 9 };
+-static const int gpio10_pins[] = { 10 };
+-static const int gpio11_pins[] = { 11 };
+-static const int gpio12_pins[] = { 12 };
+-static const int gpio13_pins[] = { 13 };
+-static const int gpio14_pins[] = { 14 };
+-static const int gpio15_pins[] = { 15 };
+-static const int gpio16_pins[] = { 16 };
+-static const int gpio17_pins[] = { 17 };
+-static const int gpio18_pins[] = { 18 };
+-static const int gpio19_pins[] = { 19 };
+-static const int gpio20_pins[] = { 20 };
+-static const int gpio22_pins[] = { 22 };
+-static const int gpio30_pins[] = { 30 };
+-static const int gpio31_pins[] = { 31 };
++	PINCTRL_PIN(0, "uart1_txd"),
++	PINCTRL_PIN(1, "uart1_rxd"),
++	PINCTRL_PIN(2, "i2c_scl"),
++	PINCTRL_PIN(3, "i2c_sda"),
++	PINCTRL_PIN(4, "spi_cs"),
++	PINCTRL_PIN(5, "spi_clk"),
++	PINCTRL_PIN(6, "spi_mosi"),
++	PINCTRL_PIN(7, "spi_miso"),
++	PINCTRL_PIN(8, "mdio"),
++	PINCTRL_PIN(9, "mdc"),
++	PINCTRL_PIN(13, "gpio0"),
++	PINCTRL_PIN(14, "gpio1"),
++	PINCTRL_PIN(15, "gpio2"),
++	PINCTRL_PIN(16, "gpio3"),
++	PINCTRL_PIN(17, "gpio4"),
++	PINCTRL_PIN(18, "gpio5"),
++	PINCTRL_PIN(19, "gpio6"),
++	PINCTRL_PIN(20, "gpio7"),
++	PINCTRL_PIN(21, "gpio8"),
++	PINCTRL_PIN(22, "gpio9"),
++	PINCTRL_PIN(23, "gpio10"),
++	PINCTRL_PIN(24, "gpio11"),
++	PINCTRL_PIN(25, "gpio12"),
++	PINCTRL_PIN(26, "gpio13"),
++	PINCTRL_PIN(27, "gpio14"),
++	PINCTRL_PIN(28, "gpio15"),
++	PINCTRL_PIN(29, "gpio16"),
++	PINCTRL_PIN(30, "gpio17"),
++	PINCTRL_PIN(31, "gpio18"),
++	PINCTRL_PIN(32, "gpio19"),
++	PINCTRL_PIN(33, "gpio20"),
++	PINCTRL_PIN(34, "gpio21"),
++	PINCTRL_PIN(35, "gpio22"),
++	PINCTRL_PIN(36, "gpio23"),
++	PINCTRL_PIN(37, "gpio24"),
++	PINCTRL_PIN(38, "gpio25"),
++	PINCTRL_PIN(39, "gpio26"),
++	PINCTRL_PIN(40, "gpio27"),
++	PINCTRL_PIN(41, "gpio28"),
++	PINCTRL_PIN(42, "gpio29"),
++	PINCTRL_PIN(43, "pcie_reset0"),
++	PINCTRL_PIN(44, "pcie_reset1"),
++};
++
++static const int pon_pins[] = { 29, 30, 31, 32, 33 };
++static const int pon_i2c_pins[] = { 2, 3 };
++static const int dmt_i2c_pins[] = { 27, 28 };
++static const int pon_tod_1pps_pins[] = { 35 };
++static const int gsw_tod_1pps_pins[] = { 35 };
++static const int dmt_tod_1pps_pins[] = { 35 };
++static const int sipo_pins[] = { 21, 24 };
++static const int sipo_rclk_pins[] = { 21, 24, 22 };
++static const int uart2_pins[] = { 16, 23 };
++static const int ejtag_pins[] = { 16, 21, 23, 24, 34 };
++static const int pcm1_pins[] = { 25, 26, 27, 28 };
++static const int pcm2_pins[] = { 17, 18, 19, 20 };
++static const int spi2_pins[] = { 17, 18, 19, 20 };
++static const int spi_quad_pins[] = { 16, 23 };
++static const int spi_cs3_pins[] = { 16 };
++static const int spi_cs4_pins[] = { 22 };
++static const int pcm_spi_pins[] = { 17, 18, 19, 20 };
++static const int pcm_spi_int_pins[] = { 16 };
++static const int pcm_spi_rst_pins[] = { 15 };
++static const int pcm_spi_cs3_pins[] = { 16 };
++static const int pcm_spi_cs4_pins[] = { 22 };
++static const int pcie_reset0_pins[] = { 43 };
++static const int pcie_reset1_pins[] = { 44 };
++static const int gpio0_pins[] = { 13 };
++static const int gpio1_pins[] = { 14 };
++static const int gpio2_pins[] = { 15 };
++static const int gpio3_pins[] = { 16 };
++static const int gpio4_pins[] = { 17 };
++static const int gpio5_pins[] = { 18 };
++static const int gpio6_pins[] = { 19 };
++static const int gpio7_pins[] = { 20 };
++static const int gpio8_pins[] = { 21 };
++static const int gpio9_pins[] = { 22 };
++static const int gpio10_pins[] = { 23 };
++static const int gpio11_pins[] = { 24 };
++static const int gpio12_pins[] = { 25 };
++static const int gpio13_pins[] = { 26 };
++static const int gpio14_pins[] = { 27 };
++static const int gpio15_pins[] = { 28 };
++static const int gpio16_pins[] = { 29 };
++static const int gpio17_pins[] = { 30 };
++static const int gpio18_pins[] = { 31 };
++static const int gpio19_pins[] = { 32 };
++static const int gpio20_pins[] = { 33 };
++static const int gpio21_pins[] = { 34 };
++static const int gpio22_pins[] = { 35 };
++static const int gpio23_pins[] = { 36 };
++static const int gpio24_pins[] = { 37 };
++static const int gpio25_pins[] = { 38 };
++static const int gpio26_pins[] = { 39 };
++static const int gpio27_pins[] = { 40 };
++static const int gpio28_pins[] = { 41 };
++static const int gpio29_pins[] = { 42 };
++static const int gpio30_pins[] = { 43 };
++static const int gpio31_pins[] = { 44 };
+ 
+ static const struct pingroup pinctrl_groups[] = {
+-	PINCTRL_PIN_GROUP("sipo", sipo),
+-	PINCTRL_PIN_GROUP("sipo_rclk", sipo_rclk),
+-	PINCTRL_PIN_GROUP("dmt_tod_1pps", dmt_tod_1pps),
++	PINCTRL_PIN_GROUP("pon", pon),
++	PINCTRL_PIN_GROUP("pon_i2c", pon_i2c),
++	PINCTRL_PIN_GROUP("dmt_i2c", dmt_i2c),
+ 	PINCTRL_PIN_GROUP("pon_tod_1pps", pon_tod_1pps),
+ 	PINCTRL_PIN_GROUP("gsw_tod_1pps", gsw_tod_1pps),
+-	PINCTRL_PIN_GROUP("pcie_reset0", pcie_reset0),
+-	PINCTRL_PIN_GROUP("pcie_reset1", pcie_reset1),
+-	PINCTRL_PIN_GROUP("spi_quad", spi_quad),
++	PINCTRL_PIN_GROUP("dmt_tod_1pps", dmt_tod_1pps),
++	PINCTRL_PIN_GROUP("sipo", sipo),
++	PINCTRL_PIN_GROUP("sipo_rclk", sipo_rclk),
+ 	PINCTRL_PIN_GROUP("uart2", uart2),
+-	PINCTRL_PIN_GROUP("pon", pon),
++	PINCTRL_PIN_GROUP("ejtag", ejtag),
+ 	PINCTRL_PIN_GROUP("pcm1", pcm1),
+ 	PINCTRL_PIN_GROUP("pcm2", pcm2),
++	PINCTRL_PIN_GROUP("spi2", spi2),
++	PINCTRL_PIN_GROUP("spi_quad", spi_quad),
++	PINCTRL_PIN_GROUP("spi_cs3", spi_cs3),
++	PINCTRL_PIN_GROUP("spi_cs4", spi_cs4),
+ 	PINCTRL_PIN_GROUP("pcm_spi", pcm_spi),
+ 	PINCTRL_PIN_GROUP("pcm_spi_int", pcm_spi_int),
+ 	PINCTRL_PIN_GROUP("pcm_spi_rst", pcm_spi_rst),
+ 	PINCTRL_PIN_GROUP("pcm_spi_cs3", pcm_spi_cs3),
+ 	PINCTRL_PIN_GROUP("pcm_spi_cs4", pcm_spi_cs4),
++	PINCTRL_PIN_GROUP("pcie_reset0", pcie_reset0),
++	PINCTRL_PIN_GROUP("pcie_reset1", pcie_reset1),
++	PINCTRL_PIN_GROUP("gpio0", gpio0),
++	PINCTRL_PIN_GROUP("gpio1", gpio1),
+ 	PINCTRL_PIN_GROUP("gpio2", gpio2),
+ 	PINCTRL_PIN_GROUP("gpio3", gpio3),
+ 	PINCTRL_PIN_GROUP("gpio4", gpio4),
+@@ -210,184 +304,499 @@ static const struct pingroup pinctrl_groups[] = {
+ 	PINCTRL_PIN_GROUP("gpio18", gpio18),
+ 	PINCTRL_PIN_GROUP("gpio19", gpio19),
+ 	PINCTRL_PIN_GROUP("gpio20", gpio20),
++	PINCTRL_PIN_GROUP("gpio21", gpio21),
+ 	PINCTRL_PIN_GROUP("gpio22", gpio22),
++	PINCTRL_PIN_GROUP("gpio23", gpio23),
++	PINCTRL_PIN_GROUP("gpio24", gpio24),
++	PINCTRL_PIN_GROUP("gpio25", gpio25),
++	PINCTRL_PIN_GROUP("gpio26", gpio26),
++	PINCTRL_PIN_GROUP("gpio27", gpio27),
++	PINCTRL_PIN_GROUP("gpio28", gpio28),
++	PINCTRL_PIN_GROUP("gpio29", gpio29),
+ 	PINCTRL_PIN_GROUP("gpio30", gpio30),
+ 	PINCTRL_PIN_GROUP("gpio31", gpio31),
+ };
+ 
+-static const char *const sipo_groups[] = { "sipo", "sipo_rclk" };
++static const char *const pon_groups[] = {
++	"pon",
++};
+ static const char *const tod_1pps_groups[] = {
+-	"dmt_tod_1pps", "pon_tod_1pps", "gsw_tod_1pps"
++	"pon_tod_1pps", "gsw_tod_1pps", "dmt_tod_1pps",
+ };
+-
+-static const char *const pcie_reset_groups[] = {
+-	"pcie_reset0", "pcie_reset1"
++static const char *const sipo_groups[] = {
++	"sipo", "sipo_rclk",
++};
++static const char *const uart_groups[] = {
++	"uart2",
++};
++static const char *const pon_i2c_groups[] = {
++	"pon_i2c",
++};
++static const char *const dmt_i2c_groups[] = {
++	"dmt_i2c",
++};
++static const char *const ejtag_groups[] = {
++	"ejtag",
++};
++static const char *const pcm_groups[] = {
++	"pcm1", "pcm2",
++};
++static const char *const spi_groups[] = {
++	"spi_quad", "spi2", "spi_cs3", "spi_cs4",
+ };
+-
+-static const char *const spi_groups[] = { "spi_quad" };
+-static const char *const uart_groups[] = { "uart2" };
+-static const char *const pon_groups[] = { "pon" };
+-static const char *const pcm_groups[] = { "pcm1", "pcm2" };
+ static const char *const pcm_spi_groups[] = {
+ 	"pcm_spi", "pcm_spi_int", "pcm_spi_rst", "pcm_spi_cs3",
+-	"pcm_spi_cs4"
++	"pcm_spi_cs4",
++};
++static const char *const pcie_reset_groups[] = {
++	"pcie_reset0", "pcie_reset1",
++};
++static const char *const pwm_groups[] = {
++	"gpio0", "gpio1", "gpio2", "gpio3",
++	"gpio4", "gpio5", "gpio6", "gpio7",
++	"gpio8", "gpio9", "gpio10", "gpio11",
++	"gpio12", "gpio13", "gpio14", "gpio15",
++	"gpio16", "gpio17", "gpio18", "gpio19",
++	"gpio20", "gpio21", "gpio22", "gpio23",
++	"gpio24", "gpio25", "gpio26", "gpio27",
++	"gpio28", "gpio29", "gpio30", "gpio31",
++};
++static const char *const phy0_led_groups[] = {
++	"gpio3", "gpio7", "gpio8", "gpio9",
++	"gpio10",
++};
++static const char *const phy1_led_groups[] = {
++	"gpio3", "gpio7", "gpio8", "gpio9",
++	"gpio10",
++};
++static const char *const phy2_led_groups[] = {
++	"gpio3", "gpio7", "gpio8", "gpio9",
++	"gpio10",
++};
++static const char *const phy3_led_groups[] = {
++	"gpio3", "gpio7", "gpio8", "gpio9",
++	"gpio10",
+ };
++static const char *const phy4_led_groups[] = {
++	"gpio3", "gpio7", "gpio8", "gpio9",
++	"gpio10",
++};
++
++#define GPIO3_MUX_MASK	(SPI_QUAD_MODE_MASK | UART2_MODE_MASK | \
++			 PCM_SPI_INT_MODE_MASK | PCM_SPI_CS3_MODE_MASK | \
++			 PHY1_LED0_MODE_MASK)
++#define GPIO4_6_MUX_MASK	(PCM2_MODE_MASK | SPI2_MODE_MASK)
++#define GPIO7_MUX_MASK	(GPIO4_6_MUX_MASK | PHY2_LED0_MODE_MASK)
++#define GPIO8_MUX_MASK	(SIPO_MODE_MASK | PHY3_LED0_MODE_MASK)
++#define GPIO9_MUX_MASK	(SIPO_RCLK_MODE_MASK | PCM_SPI_CS4_MODE_MASK | \
++			 PHY4_LED0_MODE_MASK)
++#define GPIO10_MUX_MASK	(SPI_QUAD_MODE_MASK | UART2_MODE_MASK | \
++			 GSW_PORT4_LED0_MODE_MASK)
++#define GPIO14_15_MUX_MASK	(PCM1_MODE_MASK | DMT_I2C_MODE_MASK)
++#define GPIO22_MUX_MASK	(DMT_TOD_1PPS_MODE_MASK | PON_TOD_1PPS_MODE_MASK | \
++			 GSW_TOD_1PPS_MODE_MASK)
+ 
+-static const char *const phy1_led0_groups[] = { "gpio10" };
+-static const char *const phy2_led0_groups[] = { "gpio9" };
+-static const char *const phy3_led0_groups[] = { "gpio8" };
+-static const char *const phy4_led0_groups[] = { "gpio7" };
+-static const char *const gsw_port4_led0_groups[] = { "gpio3" };
++static const struct airoha_pinctrl_func_group pon_func_group[] = {
++	ECONET_MUX_GROUP("pon", REG_IOMUX_CONTROL1, PON_MODE_MASK, PON_MODE_MASK),
++};
+ 
+-static const char *const gpio_groups[] = {
+-	"gpio2", "gpio3", "gpio4", "gpio5", "gpio6", "gpio7",
+-	"gpio8", "gpio9", "gpio10", "gpio11", "gpio12", "gpio13",
+-	"gpio14", "gpio15", "gpio16", "gpio17", "gpio18", "gpio19",
+-	"gpio20", "gpio22", "gpio30", "gpio31"
++static const struct airoha_pinctrl_func_group tod_1pps_func_group[] = {
++	ECONET_MUX_GROUP("pon_tod_1pps", REG_IOMUX_CONTROL1,
++				 PON_TOD_1PPS_MODE_MASK, PON_TOD_1PPS_MODE_MASK),
++	ECONET_MUX_GROUP("gsw_tod_1pps", REG_IOMUX_CONTROL1,
++				 GSW_TOD_1PPS_MODE_MASK, GSW_TOD_1PPS_MODE_MASK),
++	ECONET_MUX_GROUP("dmt_tod_1pps", REG_IOMUX_CONTROL1,
++				 DMT_TOD_1PPS_MODE_MASK, DMT_TOD_1PPS_MODE_MASK),
+ };
+ 
+ static const struct airoha_pinctrl_func_group sipo_func_group[] = {
+-	ECONET_MUX_GROUP("sipo", GPIO8_MUX_MASK | SIPO_RCLK_MODE_MASK,
++	ECONET_MUX_GROUP("sipo", REG_IOMUX_CONTROL1,
++			 SIPO_MODE_MASK | SIPO_RCLK_MODE_MASK,
+ 			 SIPO_MODE_MASK),
+-	ECONET_MUX_GROUP("sipo_rclk", GPIO8_MUX_MASK | GPIO9_MUX_MASK,
++	ECONET_MUX_GROUP("sipo_rclk", REG_IOMUX_CONTROL1,
++			 SIPO_MODE_MASK | SIPO_RCLK_MODE_MASK,
+ 			 SIPO_MODE_MASK | SIPO_RCLK_MODE_MASK),
+ };
+ 
+-static const struct airoha_pinctrl_func_group tod_1pps_func_group[] = {
+-	ECONET_MUX_GROUP("dmt_tod_1pps", GPIO22_MUX_MASK,
+-			 DMT_TOD_1PPS_MODE_MASK),
+-	ECONET_MUX_GROUP("pon_tod_1pps", GPIO22_MUX_MASK,
+-			 PON_TOD_1PPS_MODE_MASK),
+-	ECONET_MUX_GROUP("gsw_tod_1pps", GPIO22_MUX_MASK,
+-			 GSW_TOD_1PPS_MODE_MASK),
++static const struct airoha_pinctrl_func_group uart_func_group[] = {
++	ECONET_MUX_GROUP("uart2", REG_IOMUX_CONTROL1, UART2_MODE_MASK, UART2_MODE_MASK),
+ };
+ 
+-static const struct airoha_pinctrl_func_group pcie_reset_func_group[] = {
+-	ECONET_MUX_GROUP("pcie_reset0", PCIE_RESET0_MODE_MASK,
+-			 PCIE_RESET0_MODE_MASK),
+-	ECONET_MUX_GROUP("pcie_reset1", PCIE_RESET1_MODE_MASK,
+-			 PCIE_RESET1_MODE_MASK),
++static const struct airoha_pinctrl_func_group pon_i2c_func_group[] = {
++	ECONET_MUX_GROUP("pon_i2c", REG_IOMUX_CONTROL1, PON_I2C_MODE_MASK, PON_I2C_MODE_MASK),
+ };
+ 
+-static const struct airoha_pinctrl_func_group spi_func_group[] = {
+-	ECONET_MUX_GROUP("spi_quad", GPIO3_MUX_MASK | GPIO10_MUX_MASK,
+-			 SPI_QUAD_MODE_MASK),
++static const struct airoha_pinctrl_func_group dmt_i2c_func_group[] = {
++	ECONET_MUX_GROUP("dmt_i2c", REG_IOMUX_CONTROL1, DMT_I2C_MODE_MASK, DMT_I2C_MODE_MASK),
+ };
+ 
+-static const struct airoha_pinctrl_func_group uart_func_group[] = {
+-	ECONET_MUX_GROUP("uart2", GPIO3_MUX_MASK | GPIO10_MUX_MASK,
+-			 UART2_MODE_MASK),
++static const struct airoha_pinctrl_func_group ejtag_func_group[] = {
++	ECONET_MUX_GROUP("ejtag", REG_CPU_EJTAG_EN, CPU_EJTAG_EN_MASK, CPU_EJTAG_EN_MASK),
+ };
+ 
+-static const struct airoha_pinctrl_func_group pon_func_group[] = {
+-	ECONET_MUX_GROUP("pon", PON_MODE_MASK | PON_I2C_MODE_MASK,
+-			 PON_MODE_MASK | PON_I2C_MODE_MASK),
++static const struct airoha_pinctrl_func_group pcm_func_group[] = {
++	ECONET_MUX_GROUP("pcm1", REG_IOMUX_CONTROL1, PCM1_MODE_MASK, PCM1_MODE_MASK),
++	ECONET_MUX_GROUP("pcm2", REG_IOMUX_CONTROL1, PCM2_MODE_MASK, PCM2_MODE_MASK),
+ };
+ 
+-static const struct airoha_pinctrl_func_group pcm_func_group[] = {
+-	ECONET_MUX_GROUP("pcm1", PCM1_MODE_MASK, PCM1_MODE_MASK),
+-	ECONET_MUX_GROUP("pcm2", PCM2_MODE_MASK | PHY4_LED0_MODE_MASK,
+-			 PCM2_MODE_MASK),
++static const struct airoha_pinctrl_func_group spi_func_group[] = {
++	ECONET_MUX_GROUP("spi_quad", REG_IOMUX_CONTROL1, SPI_QUAD_MODE_MASK, SPI_QUAD_MODE_MASK),
++	ECONET_MUX_GROUP("spi2", REG_IOMUX_CONTROL1, SPI2_MODE_MASK, SPI2_MODE_MASK),
++	ECONET_MUX_GROUP("spi_cs3", REG_IOMUX_CONTROL1, PCM_SPI_CS3_MODE_MASK,
++			 PCM_SPI_CS3_MODE_MASK),
++	ECONET_MUX_GROUP("spi_cs4", REG_IOMUX_CONTROL1, PCM_SPI_CS4_MODE_MASK,
++			 PCM_SPI_CS4_MODE_MASK),
+ };
+ 
+ static const struct airoha_pinctrl_func_group pcm_spi_func_group[] = {
+-	ECONET_MUX_GROUP("pcm_spi", PCM_SPI_MODE_MASK | PHY4_LED0_MODE_MASK,
+-			 PCM_SPI_MODE_MASK),
+-	ECONET_MUX_GROUP("pcm_spi_int", GPIO3_MUX_MASK,
++	ECONET_MUX_GROUP("pcm_spi", REG_IOMUX_CONTROL1, SPI2_MODE_MASK, SPI2_MODE_MASK),
++	ECONET_MUX_GROUP("pcm_spi_int", REG_IOMUX_CONTROL1, PCM_SPI_INT_MODE_MASK,
+ 			 PCM_SPI_INT_MODE_MASK),
+-	ECONET_MUX_GROUP("pcm_spi_rst", PCM_SPI_RESET_MODE_MASK,
+-			 PCM_SPI_RESET_MODE_MASK),
+-	ECONET_MUX_GROUP("pcm_spi_cs3", GPIO3_MUX_MASK,
++	ECONET_MUX_GROUP("pcm_spi_rst", REG_IOMUX_CONTROL1,
++				 PCM_SPI_RESET_MODE_MASK, PCM_SPI_RESET_MODE_MASK),
++	ECONET_MUX_GROUP("pcm_spi_cs3", REG_IOMUX_CONTROL1, PCM_SPI_CS3_MODE_MASK,
+ 			 PCM_SPI_CS3_MODE_MASK),
+-	ECONET_MUX_GROUP("pcm_spi_cs4", GPIO9_MUX_MASK,
++	ECONET_MUX_GROUP("pcm_spi_cs4", REG_IOMUX_CONTROL1, PCM_SPI_CS4_MODE_MASK,
+ 			 PCM_SPI_CS4_MODE_MASK),
+ };
+ 
+-static const struct airoha_pinctrl_func_group phy1_led0_func_group[] = {
+-	ECONET_MUX_GROUP("gpio10", GPIO10_MUX_MASK, PHY1_LED0_MODE_MASK),
++static const struct airoha_pinctrl_func_group pcie_reset_func_group[] = {
++	ECONET_MUX_GROUP("pcie_reset0", REG_IOMUX_CONTROL1, PCIE_RESET0_MODE_MASK,
++			 PCIE_RESET0_MODE_MASK),
++	ECONET_MUX_GROUP("pcie_reset1", REG_IOMUX_CONTROL1, PCIE_RESET1_MODE_MASK,
++			 PCIE_RESET1_MODE_MASK),
+ };
+ 
+-static const struct airoha_pinctrl_func_group phy2_led0_func_group[] = {
+-	ECONET_MUX_GROUP("gpio9", GPIO9_MUX_MASK, PHY2_LED0_MODE_MASK),
++static const struct airoha_pinctrl_func_group pwm_func_group[] = {
++	ECONET_PWM_GROUP("gpio0", AIROHA_FUNC_PWM_MUX, REG_GPIO_FLASH_MODE_CFG, BIT(0)),
++	ECONET_PWM_GROUP("gpio1", AIROHA_FUNC_PWM_MUX, REG_GPIO_FLASH_MODE_CFG, BIT(1)),
++	ECONET_PWM_GROUP("gpio2", AIROHA_FUNC_PWM_MUX, REG_GPIO_FLASH_MODE_CFG, BIT(2)),
++	ECONET_PWM_GROUP("gpio3", AIROHA_FUNC_PWM_MUX, REG_GPIO_FLASH_MODE_CFG, BIT(3)),
++	ECONET_PWM_GROUP("gpio4", AIROHA_FUNC_PWM_MUX, REG_GPIO_FLASH_MODE_CFG, BIT(4)),
++	ECONET_PWM_GROUP("gpio5", AIROHA_FUNC_PWM_MUX, REG_GPIO_FLASH_MODE_CFG, BIT(5)),
++	ECONET_PWM_GROUP("gpio6", AIROHA_FUNC_PWM_MUX, REG_GPIO_FLASH_MODE_CFG, BIT(6)),
++	ECONET_PWM_GROUP("gpio7", AIROHA_FUNC_PWM_MUX, REG_GPIO_FLASH_MODE_CFG, BIT(7)),
++	ECONET_PWM_GROUP("gpio8", AIROHA_FUNC_PWM_MUX, REG_GPIO_FLASH_MODE_CFG, BIT(8)),
++	ECONET_PWM_GROUP("gpio9", AIROHA_FUNC_PWM_MUX, REG_GPIO_FLASH_MODE_CFG, BIT(9)),
++	ECONET_PWM_GROUP("gpio10", AIROHA_FUNC_PWM_MUX, REG_GPIO_FLASH_MODE_CFG, BIT(10)),
++	ECONET_PWM_GROUP("gpio11", AIROHA_FUNC_PWM_MUX, REG_GPIO_FLASH_MODE_CFG, BIT(11)),
++	ECONET_PWM_GROUP("gpio12", AIROHA_FUNC_PWM_MUX, REG_GPIO_FLASH_MODE_CFG, BIT(12)),
++	ECONET_PWM_GROUP("gpio13", AIROHA_FUNC_PWM_MUX, REG_GPIO_FLASH_MODE_CFG, BIT(13)),
++	ECONET_PWM_GROUP("gpio14", AIROHA_FUNC_PWM_MUX, REG_GPIO_FLASH_MODE_CFG, BIT(14)),
++	ECONET_PWM_GROUP("gpio15", AIROHA_FUNC_PWM_MUX, REG_GPIO_FLASH_MODE_CFG, BIT(15)),
++	ECONET_PWM_GROUP("gpio16", AIROHA_FUNC_PWM_EXT_MUX, REG_GPIO_FLASH_MODE_CFG_EXT, BIT(0)),
++	ECONET_PWM_GROUP("gpio17", AIROHA_FUNC_PWM_EXT_MUX, REG_GPIO_FLASH_MODE_CFG_EXT, BIT(1)),
++	ECONET_PWM_GROUP("gpio18", AIROHA_FUNC_PWM_EXT_MUX, REG_GPIO_FLASH_MODE_CFG_EXT, BIT(2)),
++	ECONET_PWM_GROUP("gpio19", AIROHA_FUNC_PWM_EXT_MUX, REG_GPIO_FLASH_MODE_CFG_EXT, BIT(3)),
++	ECONET_PWM_GROUP("gpio20", AIROHA_FUNC_PWM_EXT_MUX, REG_GPIO_FLASH_MODE_CFG_EXT, BIT(4)),
++	ECONET_PWM_GROUP("gpio21", AIROHA_FUNC_PWM_EXT_MUX, REG_GPIO_FLASH_MODE_CFG_EXT, BIT(5)),
++	ECONET_PWM_GROUP("gpio22", AIROHA_FUNC_PWM_EXT_MUX, REG_GPIO_FLASH_MODE_CFG_EXT, BIT(6)),
++	ECONET_PWM_GROUP("gpio23", AIROHA_FUNC_PWM_EXT_MUX, REG_GPIO_FLASH_MODE_CFG_EXT, BIT(7)),
++	ECONET_PWM_GROUP("gpio24", AIROHA_FUNC_PWM_EXT_MUX, REG_GPIO_FLASH_MODE_CFG_EXT, BIT(8)),
++	ECONET_PWM_GROUP("gpio25", AIROHA_FUNC_PWM_EXT_MUX, REG_GPIO_FLASH_MODE_CFG_EXT, BIT(9)),
++	ECONET_PWM_GROUP("gpio26", AIROHA_FUNC_PWM_EXT_MUX, REG_GPIO_FLASH_MODE_CFG_EXT, BIT(10)),
++	ECONET_PWM_GROUP("gpio27", AIROHA_FUNC_PWM_EXT_MUX, REG_GPIO_FLASH_MODE_CFG_EXT, BIT(11)),
++	ECONET_PWM_GROUP("gpio28", AIROHA_FUNC_PWM_EXT_MUX, REG_GPIO_FLASH_MODE_CFG_EXT, BIT(12)),
++	ECONET_PWM_GROUP("gpio29", AIROHA_FUNC_PWM_EXT_MUX, REG_GPIO_FLASH_MODE_CFG_EXT, BIT(13)),
++	ECONET_PWM_GROUP("gpio30", AIROHA_FUNC_PWM_EXT_MUX, REG_GPIO_FLASH_MODE_CFG_EXT, BIT(14)),
++	ECONET_PWM_GROUP("gpio31", AIROHA_FUNC_PWM_EXT_MUX, REG_GPIO_FLASH_MODE_CFG_EXT, BIT(15)),
+ };
+ 
+-static const struct airoha_pinctrl_func_group phy3_led0_func_group[] = {
+-	ECONET_MUX_GROUP("gpio8", GPIO8_MUX_MASK, PHY3_LED0_MODE_MASK),
++static const struct airoha_pinctrl_func_group phy0_led_func_group[] = {
++	ECONET_LED_GROUP("gpio3", PHY1_LED0_MODE_MASK, LAN1_LED_MAPPING_MASK, 0),
++	ECONET_LED_GROUP("gpio7", PHY2_LED0_MODE_MASK, LAN2_LED_MAPPING_MASK, 0),
++	ECONET_LED_GROUP("gpio8", PHY3_LED0_MODE_MASK, LAN3_LED_MAPPING_MASK, 0),
++	ECONET_LED_GROUP("gpio9", PHY4_LED0_MODE_MASK, LAN4_LED_MAPPING_MASK, 0),
++	ECONET_LED_GROUP("gpio10", GSW_PORT4_LED0_MODE_MASK, LAN0_LED_MAPPING_MASK, 0),
+ };
+ 
+-static const struct airoha_pinctrl_func_group phy4_led0_func_group[] = {
+-	ECONET_MUX_GROUP("gpio7", GPIO7_MUX_MASK, PHY4_LED0_MODE_MASK),
++static const struct airoha_pinctrl_func_group phy1_led_func_group[] = {
++	ECONET_LED_GROUP("gpio3", PHY1_LED0_MODE_MASK, LAN1_LED_MAPPING_MASK, 1),
++	ECONET_LED_GROUP("gpio7", PHY2_LED0_MODE_MASK, LAN2_LED_MAPPING_MASK, 1),
++	ECONET_LED_GROUP("gpio8", PHY3_LED0_MODE_MASK, LAN3_LED_MAPPING_MASK, 1),
++	ECONET_LED_GROUP("gpio9", PHY4_LED0_MODE_MASK, LAN4_LED_MAPPING_MASK, 1),
++	ECONET_LED_GROUP("gpio10", GSW_PORT4_LED0_MODE_MASK, LAN0_LED_MAPPING_MASK, 1),
+ };
+ 
+-static const struct airoha_pinctrl_func_group gsw_port4_led0_func_group[] = {
+-	ECONET_MUX_GROUP("gpio3", GPIO3_MUX_MASK, GSW_PORT4_LED0_MODE_MASK),
++static const struct airoha_pinctrl_func_group phy2_led_func_group[] = {
++	ECONET_LED_GROUP("gpio3", PHY1_LED0_MODE_MASK, LAN1_LED_MAPPING_MASK, 2),
++	ECONET_LED_GROUP("gpio7", PHY2_LED0_MODE_MASK, LAN2_LED_MAPPING_MASK, 2),
++	ECONET_LED_GROUP("gpio8", PHY3_LED0_MODE_MASK, LAN3_LED_MAPPING_MASK, 2),
++	ECONET_LED_GROUP("gpio9", PHY4_LED0_MODE_MASK, LAN4_LED_MAPPING_MASK, 2),
++	ECONET_LED_GROUP("gpio10", GSW_PORT4_LED0_MODE_MASK, LAN0_LED_MAPPING_MASK, 2),
+ };
+ 
+-static const struct airoha_pinctrl_func_group gpio_func_group[] = {
+-	ECONET_MUX_GROUP("gpio2", PCM_SPI_RESET_MODE_MASK, 0),
+-	ECONET_MUX_GROUP("gpio3", GPIO3_MUX_MASK, 0),
+-	ECONET_MUX_GROUP("gpio4", GPIO4_6_MUX_MASK, 0),
+-	ECONET_MUX_GROUP("gpio5", GPIO4_6_MUX_MASK, 0),
+-	ECONET_MUX_GROUP("gpio6", GPIO4_6_MUX_MASK, 0),
+-	ECONET_MUX_GROUP("gpio7", GPIO7_MUX_MASK, 0),
+-	ECONET_MUX_GROUP("gpio8", GPIO8_MUX_MASK, 0),
+-	ECONET_MUX_GROUP("gpio9", GPIO9_MUX_MASK, 0),
+-	ECONET_MUX_GROUP("gpio10", GPIO10_MUX_MASK, 0),
+-	ECONET_MUX_GROUP("gpio11", SIPO_MODE_MASK, 0),
+-	ECONET_MUX_GROUP("gpio12", PCM1_MODE_MASK, 0),
+-	ECONET_MUX_GROUP("gpio13", PCM1_MODE_MASK, 0),
+-	ECONET_MUX_GROUP("gpio14", PCM1_MODE_MASK, 0),
+-	ECONET_MUX_GROUP("gpio15", PCM1_MODE_MASK, 0),
+-	ECONET_MUX_GROUP("gpio16", PON_MODE_MASK, 0),
+-	ECONET_MUX_GROUP("gpio17", PON_MODE_MASK, 0),
+-	ECONET_MUX_GROUP("gpio18", PON_MODE_MASK, 0),
+-	ECONET_MUX_GROUP("gpio19", PON_MODE_MASK, 0),
+-	ECONET_MUX_GROUP("gpio20", PON_MODE_MASK, 0),
+-	ECONET_MUX_GROUP("gpio22", GPIO22_MUX_MASK, 0),
+-	ECONET_MUX_GROUP("gpio30", PCIE_RESET0_MODE_MASK, 0),
+-	ECONET_MUX_GROUP("gpio31", PCIE_RESET1_MODE_MASK, 0),
++static const struct airoha_pinctrl_func_group phy3_led_func_group[] = {
++	ECONET_LED_GROUP("gpio3", PHY1_LED0_MODE_MASK, LAN1_LED_MAPPING_MASK, 3),
++	ECONET_LED_GROUP("gpio7", PHY2_LED0_MODE_MASK, LAN2_LED_MAPPING_MASK, 3),
++	ECONET_LED_GROUP("gpio8", PHY3_LED0_MODE_MASK, LAN3_LED_MAPPING_MASK, 3),
++	ECONET_LED_GROUP("gpio9", PHY4_LED0_MODE_MASK, LAN4_LED_MAPPING_MASK, 3),
++	ECONET_LED_GROUP("gpio10", GSW_PORT4_LED0_MODE_MASK, LAN0_LED_MAPPING_MASK, 3),
++};
++
++static const struct airoha_pinctrl_func_group phy4_led_func_group[] = {
++	ECONET_LED_GROUP("gpio3", PHY1_LED0_MODE_MASK, LAN1_LED_MAPPING_MASK, 4),
++	ECONET_LED_GROUP("gpio7", PHY2_LED0_MODE_MASK, LAN2_LED_MAPPING_MASK, 4),
++	ECONET_LED_GROUP("gpio8", PHY3_LED0_MODE_MASK, LAN3_LED_MAPPING_MASK, 4),
++	ECONET_LED_GROUP("gpio9", PHY4_LED0_MODE_MASK, LAN4_LED_MAPPING_MASK, 4),
++	ECONET_LED_GROUP("gpio10", GSW_PORT4_LED0_MODE_MASK, LAN0_LED_MAPPING_MASK, 4),
+ };
+ 
+ static const struct airoha_pinctrl_func pinctrl_funcs[] = {
+-	PINCTRL_FUNC_DESC("sipo", sipo),
++	PINCTRL_FUNC_DESC("pon", pon),
+ 	PINCTRL_FUNC_DESC("tod_1pps", tod_1pps),
+-	PINCTRL_FUNC_DESC("pcie_reset", pcie_reset),
+-	PINCTRL_FUNC_DESC("spi", spi),
++	PINCTRL_FUNC_DESC("sipo", sipo),
+ 	PINCTRL_FUNC_DESC("uart", uart),
+-	PINCTRL_FUNC_DESC("pon", pon),
++	PINCTRL_FUNC_DESC("pon_i2c", pon_i2c),
++	PINCTRL_FUNC_DESC("dmt_i2c", dmt_i2c),
++	PINCTRL_FUNC_DESC("ejtag", ejtag),
+ 	PINCTRL_FUNC_DESC("pcm", pcm),
++	PINCTRL_FUNC_DESC("spi", spi),
+ 	PINCTRL_FUNC_DESC("pcm_spi", pcm_spi),
+-	PINCTRL_FUNC_DESC("phy1_led0", phy1_led0),
+-	PINCTRL_FUNC_DESC("phy2_led0", phy2_led0),
+-	PINCTRL_FUNC_DESC("phy3_led0", phy3_led0),
+-	PINCTRL_FUNC_DESC("phy4_led0", phy4_led0),
+-	PINCTRL_FUNC_DESC("gsw_port4_led0", gsw_port4_led0),
+-	PINCTRL_FUNC_DESC("gpio", gpio),
++	PINCTRL_FUNC_DESC("pcie_reset", pcie_reset),
++	PINCTRL_FUNC_DESC("pwm", pwm),
++	PINCTRL_FUNC_DESC("phy0_led", phy0_led),
++	PINCTRL_FUNC_DESC("phy1_led", phy1_led),
++	PINCTRL_FUNC_DESC("phy2_led", phy2_led),
++	PINCTRL_FUNC_DESC("phy3_led", phy3_led),
++	PINCTRL_FUNC_DESC("phy4_led", phy4_led),
+ };
+ 
+ static const struct airoha_pinctrl_gpio_mux pinctrl_gpio_muxes[] = {
+-	ECONET_GPIO_MUX(2, PCM_SPI_RESET_MODE_MASK),
+-	ECONET_GPIO_MUX(3, GPIO3_MUX_MASK),
+-	ECONET_GPIO_MUX(4, GPIO4_6_MUX_MASK),
+-	ECONET_GPIO_MUX(5, GPIO4_6_MUX_MASK),
+-	ECONET_GPIO_MUX(6, GPIO4_6_MUX_MASK),
+-	ECONET_GPIO_MUX(7, GPIO7_MUX_MASK),
+-	ECONET_GPIO_MUX(8, GPIO8_MUX_MASK),
+-	ECONET_GPIO_MUX(9, GPIO9_MUX_MASK),
+-	ECONET_GPIO_MUX(10, GPIO10_MUX_MASK),
+-	ECONET_GPIO_MUX(11, SIPO_MODE_MASK),
+-	ECONET_GPIO_MUX(12, PCM1_MODE_MASK),
+-	ECONET_GPIO_MUX(13, PCM1_MODE_MASK),
+-	ECONET_GPIO_MUX(14, PCM1_MODE_MASK),
+-	ECONET_GPIO_MUX(15, PCM1_MODE_MASK),
+-	ECONET_GPIO_MUX(16, PON_MODE_MASK),
+-	ECONET_GPIO_MUX(17, PON_MODE_MASK),
+-	ECONET_GPIO_MUX(18, PON_MODE_MASK),
+-	ECONET_GPIO_MUX(19, PON_MODE_MASK),
+-	ECONET_GPIO_MUX(20, PON_MODE_MASK),
+-	ECONET_GPIO_MUX(22, GPIO22_MUX_MASK),
+-	ECONET_GPIO_MUX(30, PCIE_RESET0_MODE_MASK),
+-	ECONET_GPIO_MUX(31, PCIE_RESET1_MODE_MASK),
++	ECONET_GPIO_PWM_MUX(0, AIROHA_FUNC_PWM_MUX, REG_GPIO_FLASH_MODE_CFG, BIT(0)),
++	ECONET_GPIO_PWM_MUX(1, AIROHA_FUNC_PWM_MUX, REG_GPIO_FLASH_MODE_CFG, BIT(1)),
++	ECONET_GPIO_PWM_MUX(2, AIROHA_FUNC_PWM_MUX, REG_GPIO_FLASH_MODE_CFG, BIT(2)),
++	ECONET_GPIO_PWM_MUX(3, AIROHA_FUNC_PWM_MUX, REG_GPIO_FLASH_MODE_CFG, BIT(3)),
++	ECONET_GPIO_PWM_MUX(4, AIROHA_FUNC_PWM_MUX, REG_GPIO_FLASH_MODE_CFG, BIT(4)),
++	ECONET_GPIO_PWM_MUX(5, AIROHA_FUNC_PWM_MUX, REG_GPIO_FLASH_MODE_CFG, BIT(5)),
++	ECONET_GPIO_PWM_MUX(6, AIROHA_FUNC_PWM_MUX, REG_GPIO_FLASH_MODE_CFG, BIT(6)),
++	ECONET_GPIO_PWM_MUX(7, AIROHA_FUNC_PWM_MUX, REG_GPIO_FLASH_MODE_CFG, BIT(7)),
++	ECONET_GPIO_PWM_MUX(8, AIROHA_FUNC_PWM_MUX, REG_GPIO_FLASH_MODE_CFG, BIT(8)),
++	ECONET_GPIO_PWM_MUX(9, AIROHA_FUNC_PWM_MUX, REG_GPIO_FLASH_MODE_CFG, BIT(9)),
++	ECONET_GPIO_PWM_MUX(10, AIROHA_FUNC_PWM_MUX, REG_GPIO_FLASH_MODE_CFG, BIT(10)),
++	ECONET_GPIO_PWM_MUX(11, AIROHA_FUNC_PWM_MUX, REG_GPIO_FLASH_MODE_CFG, BIT(11)),
++	ECONET_GPIO_PWM_MUX(12, AIROHA_FUNC_PWM_MUX, REG_GPIO_FLASH_MODE_CFG, BIT(12)),
++	ECONET_GPIO_PWM_MUX(13, AIROHA_FUNC_PWM_MUX, REG_GPIO_FLASH_MODE_CFG, BIT(13)),
++	ECONET_GPIO_PWM_MUX(14, AIROHA_FUNC_PWM_MUX, REG_GPIO_FLASH_MODE_CFG, BIT(14)),
++	ECONET_GPIO_PWM_MUX(15, AIROHA_FUNC_PWM_MUX, REG_GPIO_FLASH_MODE_CFG, BIT(15)),
++	ECONET_GPIO_PWM_MUX(16, AIROHA_FUNC_PWM_EXT_MUX, REG_GPIO_FLASH_MODE_CFG_EXT, BIT(0)),
++	ECONET_GPIO_PWM_MUX(17, AIROHA_FUNC_PWM_EXT_MUX, REG_GPIO_FLASH_MODE_CFG_EXT, BIT(1)),
++	ECONET_GPIO_PWM_MUX(18, AIROHA_FUNC_PWM_EXT_MUX, REG_GPIO_FLASH_MODE_CFG_EXT, BIT(2)),
++	ECONET_GPIO_PWM_MUX(19, AIROHA_FUNC_PWM_EXT_MUX, REG_GPIO_FLASH_MODE_CFG_EXT, BIT(3)),
++	ECONET_GPIO_PWM_MUX(20, AIROHA_FUNC_PWM_EXT_MUX, REG_GPIO_FLASH_MODE_CFG_EXT, BIT(4)),
++	ECONET_GPIO_PWM_MUX(21, AIROHA_FUNC_PWM_EXT_MUX, REG_GPIO_FLASH_MODE_CFG_EXT, BIT(5)),
++	ECONET_GPIO_PWM_MUX(22, AIROHA_FUNC_PWM_EXT_MUX, REG_GPIO_FLASH_MODE_CFG_EXT, BIT(6)),
++	ECONET_GPIO_PWM_MUX(23, AIROHA_FUNC_PWM_EXT_MUX, REG_GPIO_FLASH_MODE_CFG_EXT, BIT(7)),
++	ECONET_GPIO_PWM_MUX(24, AIROHA_FUNC_PWM_EXT_MUX, REG_GPIO_FLASH_MODE_CFG_EXT, BIT(8)),
++	ECONET_GPIO_PWM_MUX(25, AIROHA_FUNC_PWM_EXT_MUX, REG_GPIO_FLASH_MODE_CFG_EXT, BIT(9)),
++	ECONET_GPIO_PWM_MUX(26, AIROHA_FUNC_PWM_EXT_MUX, REG_GPIO_FLASH_MODE_CFG_EXT, BIT(10)),
++	ECONET_GPIO_PWM_MUX(27, AIROHA_FUNC_PWM_EXT_MUX, REG_GPIO_FLASH_MODE_CFG_EXT, BIT(11)),
++	ECONET_GPIO_PWM_MUX(28, AIROHA_FUNC_PWM_EXT_MUX, REG_GPIO_FLASH_MODE_CFG_EXT, BIT(12)),
++	ECONET_GPIO_MUX(2, REG_IOMUX_CONTROL1, PCM_SPI_RESET_MODE_MASK),
++	ECONET_GPIO_MUX(3, REG_IOMUX_CONTROL1, GPIO3_MUX_MASK),
++	ECONET_GPIO_MUX(4, REG_IOMUX_CONTROL1, GPIO4_6_MUX_MASK),
++	ECONET_GPIO_MUX(5, REG_IOMUX_CONTROL1, GPIO4_6_MUX_MASK),
++	ECONET_GPIO_MUX(6, REG_IOMUX_CONTROL1, GPIO4_6_MUX_MASK),
++	ECONET_GPIO_MUX(7, REG_IOMUX_CONTROL1, GPIO7_MUX_MASK),
++	ECONET_GPIO_MUX(8, REG_IOMUX_CONTROL1, GPIO8_MUX_MASK),
++	ECONET_GPIO_MUX(9, REG_IOMUX_CONTROL1, GPIO9_MUX_MASK),
++	ECONET_GPIO_MUX(10, REG_IOMUX_CONTROL1, GPIO10_MUX_MASK),
++	ECONET_GPIO_MUX(11, REG_IOMUX_CONTROL1, SIPO_MODE_MASK),
++	ECONET_GPIO_MUX(12, REG_IOMUX_CONTROL1, PCM1_MODE_MASK),
++	ECONET_GPIO_MUX(13, REG_IOMUX_CONTROL1, PCM1_MODE_MASK),
++	ECONET_GPIO_MUX(14, REG_IOMUX_CONTROL1, GPIO14_15_MUX_MASK),
++	ECONET_GPIO_MUX(15, REG_IOMUX_CONTROL1, GPIO14_15_MUX_MASK),
++	ECONET_GPIO_MUX(16, REG_IOMUX_CONTROL1, PON_MODE_MASK),
++	ECONET_GPIO_MUX(17, REG_IOMUX_CONTROL1, PON_MODE_MASK),
++	ECONET_GPIO_MUX(18, REG_IOMUX_CONTROL1, PON_MODE_MASK),
++	ECONET_GPIO_MUX(19, REG_IOMUX_CONTROL1, PON_MODE_MASK),
++	ECONET_GPIO_MUX(20, REG_IOMUX_CONTROL1, PON_MODE_MASK),
++	ECONET_GPIO_MUX(22, REG_IOMUX_CONTROL1, GPIO22_MUX_MASK),
++	ECONET_GPIO_MUX(3, REG_CPU_EJTAG_EN, CPU_EJTAG_EN_MASK),
++	ECONET_GPIO_MUX(8, REG_CPU_EJTAG_EN, CPU_EJTAG_EN_MASK),
++	ECONET_GPIO_MUX(10, REG_CPU_EJTAG_EN, CPU_EJTAG_EN_MASK),
++	ECONET_GPIO_MUX(11, REG_CPU_EJTAG_EN, CPU_EJTAG_EN_MASK),
++	ECONET_GPIO_MUX(21, REG_CPU_EJTAG_EN, CPU_EJTAG_EN_MASK),
++};
++
++static const struct airoha_pinctrl_conf pinctrl_pullup_conf[] = {
++	PINCTRL_CONF_DESC(0, REG_I2C_SDA_PU, UART1_TXD_PU_MASK),
++	PINCTRL_CONF_DESC(1, REG_I2C_SDA_PU, UART1_RXD_PU_MASK),
++	PINCTRL_CONF_DESC(2, REG_I2C_SDA_PU, I2C_SCL_PU_MASK),
++	PINCTRL_CONF_DESC(3, REG_I2C_SDA_PU, I2C_SDA_PU_MASK),
++	PINCTRL_CONF_DESC(4, REG_I2C_SDA_PU, SPI_CS_PU_MASK),
++	PINCTRL_CONF_DESC(5, REG_I2C_SDA_PU, SPI_CLK_PU_MASK),
++	PINCTRL_CONF_DESC(6, REG_I2C_SDA_PU, SPI_MOSI_PU_MASK),
++	PINCTRL_CONF_DESC(7, REG_I2C_SDA_PU, SPI_MISO_PU_MASK),
++	PINCTRL_CONF_DESC(8, REG_I2C_SDA_PU, MDIO_PU_MASK),
++	PINCTRL_CONF_DESC(9, REG_I2C_SDA_PU, MDC_PU_MASK),
++	ECONET_GPIO_CONF(0, REG_GPIO_PU),
++	ECONET_GPIO_CONF(1, REG_GPIO_PU),
++	ECONET_GPIO_CONF(2, REG_GPIO_PU),
++	ECONET_GPIO_CONF(3, REG_GPIO_PU),
++	ECONET_GPIO_CONF(4, REG_GPIO_PU),
++	ECONET_GPIO_CONF(5, REG_GPIO_PU),
++	ECONET_GPIO_CONF(6, REG_GPIO_PU),
++	ECONET_GPIO_CONF(7, REG_GPIO_PU),
++	ECONET_GPIO_CONF(8, REG_GPIO_PU),
++	ECONET_GPIO_CONF(9, REG_GPIO_PU),
++	ECONET_GPIO_CONF(10, REG_GPIO_PU),
++	ECONET_GPIO_CONF(11, REG_GPIO_PU),
++	ECONET_GPIO_CONF(12, REG_GPIO_PU),
++	ECONET_GPIO_CONF(13, REG_GPIO_PU),
++	ECONET_GPIO_CONF(14, REG_GPIO_PU),
++	ECONET_GPIO_CONF(15, REG_GPIO_PU),
++	ECONET_GPIO_CONF(16, REG_GPIO_PU),
++	ECONET_GPIO_CONF(17, REG_GPIO_PU),
++	ECONET_GPIO_CONF(18, REG_GPIO_PU),
++	ECONET_GPIO_CONF(19, REG_GPIO_PU),
++	ECONET_GPIO_CONF(20, REG_GPIO_PU),
++	ECONET_GPIO_CONF(21, REG_GPIO_PU),
++	ECONET_GPIO_CONF(22, REG_GPIO_PU),
++	ECONET_GPIO_CONF(23, REG_GPIO_PU),
++	ECONET_GPIO_CONF(24, REG_GPIO_PU),
++	ECONET_GPIO_CONF(25, REG_GPIO_PU),
++	ECONET_GPIO_CONF(26, REG_GPIO_PU),
++	ECONET_GPIO_CONF(27, REG_GPIO_PU),
++	ECONET_GPIO_CONF(28, REG_GPIO_PU),
++	ECONET_GPIO_CONF(29, REG_GPIO_PU),
++	ECONET_GPIO_CONF(30, REG_GPIO_PU),
++	ECONET_GPIO_CONF(31, REG_GPIO_PU),
++};
++
++static const struct airoha_pinctrl_conf pinctrl_pulldown_conf[] = {
++	PINCTRL_CONF_DESC(0, REG_I2C_SDA_PD, UART1_TXD_PD_MASK),
++	PINCTRL_CONF_DESC(1, REG_I2C_SDA_PD, UART1_RXD_PD_MASK),
++	PINCTRL_CONF_DESC(2, REG_I2C_SDA_PD, I2C_SCL_PD_MASK),
++	PINCTRL_CONF_DESC(3, REG_I2C_SDA_PD, I2C_SDA_PD_MASK),
++	PINCTRL_CONF_DESC(4, REG_I2C_SDA_PD, SPI_CS_PD_MASK),
++	PINCTRL_CONF_DESC(5, REG_I2C_SDA_PD, SPI_CLK_PD_MASK),
++	PINCTRL_CONF_DESC(6, REG_I2C_SDA_PD, SPI_MOSI_PD_MASK),
++	PINCTRL_CONF_DESC(7, REG_I2C_SDA_PD, SPI_MISO_PD_MASK),
++	PINCTRL_CONF_DESC(8, REG_I2C_SDA_PD, MDIO_PD_MASK),
++	PINCTRL_CONF_DESC(9, REG_I2C_SDA_PD, MDC_PD_MASK),
++	ECONET_GPIO_CONF(0, REG_GPIO_PD),
++	ECONET_GPIO_CONF(1, REG_GPIO_PD),
++	ECONET_GPIO_CONF(2, REG_GPIO_PD),
++	ECONET_GPIO_CONF(3, REG_GPIO_PD),
++	ECONET_GPIO_CONF(4, REG_GPIO_PD),
++	ECONET_GPIO_CONF(5, REG_GPIO_PD),
++	ECONET_GPIO_CONF(6, REG_GPIO_PD),
++	ECONET_GPIO_CONF(7, REG_GPIO_PD),
++	ECONET_GPIO_CONF(8, REG_GPIO_PD),
++	ECONET_GPIO_CONF(9, REG_GPIO_PD),
++	ECONET_GPIO_CONF(10, REG_GPIO_PD),
++	ECONET_GPIO_CONF(11, REG_GPIO_PD),
++	ECONET_GPIO_CONF(12, REG_GPIO_PD),
++	ECONET_GPIO_CONF(13, REG_GPIO_PD),
++	ECONET_GPIO_CONF(14, REG_GPIO_PD),
++	ECONET_GPIO_CONF(15, REG_GPIO_PD),
++	ECONET_GPIO_CONF(16, REG_GPIO_PD),
++	ECONET_GPIO_CONF(17, REG_GPIO_PD),
++	ECONET_GPIO_CONF(18, REG_GPIO_PD),
++	ECONET_GPIO_CONF(19, REG_GPIO_PD),
++	ECONET_GPIO_CONF(20, REG_GPIO_PD),
++	ECONET_GPIO_CONF(21, REG_GPIO_PD),
++	ECONET_GPIO_CONF(22, REG_GPIO_PD),
++	ECONET_GPIO_CONF(23, REG_GPIO_PD),
++	ECONET_GPIO_CONF(24, REG_GPIO_PD),
++	ECONET_GPIO_CONF(25, REG_GPIO_PD),
++	ECONET_GPIO_CONF(26, REG_GPIO_PD),
++	ECONET_GPIO_CONF(27, REG_GPIO_PD),
++	ECONET_GPIO_CONF(28, REG_GPIO_PD),
++	ECONET_GPIO_CONF(29, REG_GPIO_PD),
++	ECONET_GPIO_CONF(30, REG_GPIO_PD),
++	ECONET_GPIO_CONF(31, REG_GPIO_PD),
++};
++
++static const struct airoha_pinctrl_conf pinctrl_drive_e4_conf[] = {
++	PINCTRL_CONF_DESC(0, REG_I2C_SDA_E4, UART1_TXD_E4_MASK),
++	PINCTRL_CONF_DESC(1, REG_I2C_SDA_E4, UART1_RXD_E4_MASK),
++	PINCTRL_CONF_DESC(2, REG_I2C_SDA_E4, I2C_SCL_E4_MASK),
++	PINCTRL_CONF_DESC(3, REG_I2C_SDA_E4, I2C_SDA_E4_MASK),
++	PINCTRL_CONF_DESC(4, REG_I2C_SDA_E4, SPI_CS_E4_MASK),
++	PINCTRL_CONF_DESC(5, REG_I2C_SDA_E4, SPI_CLK_E4_MASK),
++	PINCTRL_CONF_DESC(6, REG_I2C_SDA_E4, SPI_MOSI_E4_MASK),
++	PINCTRL_CONF_DESC(7, REG_I2C_SDA_E4, SPI_MISO_E4_MASK),
++	PINCTRL_CONF_DESC(8, REG_I2C_SDA_E4, MDIO_E4_MASK),
++	PINCTRL_CONF_DESC(9, REG_I2C_SDA_E4, MDC_E4_MASK),
++	ECONET_GPIO_CONF(0, REG_GPIO_E4),
++	ECONET_GPIO_CONF(1, REG_GPIO_E4),
++	ECONET_GPIO_CONF(2, REG_GPIO_E4),
++	ECONET_GPIO_CONF(3, REG_GPIO_E4),
++	ECONET_GPIO_CONF(4, REG_GPIO_E4),
++	ECONET_GPIO_CONF(5, REG_GPIO_E4),
++	ECONET_GPIO_CONF(6, REG_GPIO_E4),
++	ECONET_GPIO_CONF(7, REG_GPIO_E4),
++	ECONET_GPIO_CONF(8, REG_GPIO_E4),
++	ECONET_GPIO_CONF(9, REG_GPIO_E4),
++	ECONET_GPIO_CONF(10, REG_GPIO_E4),
++	ECONET_GPIO_CONF(11, REG_GPIO_E4),
++	ECONET_GPIO_CONF(12, REG_GPIO_E4),
++	ECONET_GPIO_CONF(13, REG_GPIO_E4),
++	ECONET_GPIO_CONF(14, REG_GPIO_E4),
++	ECONET_GPIO_CONF(15, REG_GPIO_E4),
++	ECONET_GPIO_CONF(16, REG_GPIO_E4),
++	ECONET_GPIO_CONF(17, REG_GPIO_E4),
++	ECONET_GPIO_CONF(18, REG_GPIO_E4),
++	ECONET_GPIO_CONF(19, REG_GPIO_E4),
++	ECONET_GPIO_CONF(20, REG_GPIO_E4),
++	ECONET_GPIO_CONF(21, REG_GPIO_E4),
++	ECONET_GPIO_CONF(22, REG_GPIO_E4),
++	ECONET_GPIO_CONF(23, REG_GPIO_E4),
++	ECONET_GPIO_CONF(24, REG_GPIO_E4),
++	ECONET_GPIO_CONF(25, REG_GPIO_E4),
++	ECONET_GPIO_CONF(26, REG_GPIO_E4),
++	ECONET_GPIO_CONF(27, REG_GPIO_E4),
++	ECONET_GPIO_CONF(28, REG_GPIO_E4),
++	ECONET_GPIO_CONF(29, REG_GPIO_E4),
++	ECONET_GPIO_CONF(30, REG_GPIO_E4),
++	ECONET_GPIO_CONF(31, REG_GPIO_E4),
++};
++
++static const struct airoha_pinctrl_conf pinctrl_drive_e8_conf[] = {
++	PINCTRL_CONF_DESC(0, REG_I2C_SDA_E8, UART1_TXD_E8_MASK),
++	PINCTRL_CONF_DESC(1, REG_I2C_SDA_E8, UART1_RXD_E8_MASK),
++	PINCTRL_CONF_DESC(2, REG_I2C_SDA_E8, I2C_SCL_E8_MASK),
++	PINCTRL_CONF_DESC(3, REG_I2C_SDA_E8, I2C_SDA_E8_MASK),
++	PINCTRL_CONF_DESC(4, REG_I2C_SDA_E8, SPI_CS_E8_MASK),
++	PINCTRL_CONF_DESC(5, REG_I2C_SDA_E8, SPI_CLK_E8_MASK),
++	PINCTRL_CONF_DESC(6, REG_I2C_SDA_E8, SPI_MOSI_E8_MASK),
++	PINCTRL_CONF_DESC(7, REG_I2C_SDA_E8, SPI_MISO_E8_MASK),
++	PINCTRL_CONF_DESC(8, REG_I2C_SDA_E8, MDIO_E8_MASK),
++	PINCTRL_CONF_DESC(9, REG_I2C_SDA_E8, MDC_E8_MASK),
++	ECONET_GPIO_CONF(0, REG_GPIO_E8),
++	ECONET_GPIO_CONF(1, REG_GPIO_E8),
++	ECONET_GPIO_CONF(2, REG_GPIO_E8),
++	ECONET_GPIO_CONF(3, REG_GPIO_E8),
++	ECONET_GPIO_CONF(4, REG_GPIO_E8),
++	ECONET_GPIO_CONF(5, REG_GPIO_E8),
++	ECONET_GPIO_CONF(6, REG_GPIO_E8),
++	ECONET_GPIO_CONF(7, REG_GPIO_E8),
++	ECONET_GPIO_CONF(8, REG_GPIO_E8),
++	ECONET_GPIO_CONF(9, REG_GPIO_E8),
++	ECONET_GPIO_CONF(10, REG_GPIO_E8),
++	ECONET_GPIO_CONF(11, REG_GPIO_E8),
++	ECONET_GPIO_CONF(12, REG_GPIO_E8),
++	ECONET_GPIO_CONF(13, REG_GPIO_E8),
++	ECONET_GPIO_CONF(14, REG_GPIO_E8),
++	ECONET_GPIO_CONF(15, REG_GPIO_E8),
++	ECONET_GPIO_CONF(16, REG_GPIO_E8),
++	ECONET_GPIO_CONF(17, REG_GPIO_E8),
++	ECONET_GPIO_CONF(18, REG_GPIO_E8),
++	ECONET_GPIO_CONF(19, REG_GPIO_E8),
++	ECONET_GPIO_CONF(20, REG_GPIO_E8),
++	ECONET_GPIO_CONF(21, REG_GPIO_E8),
++	ECONET_GPIO_CONF(22, REG_GPIO_E8),
++	ECONET_GPIO_CONF(23, REG_GPIO_E8),
++	ECONET_GPIO_CONF(24, REG_GPIO_E8),
++	ECONET_GPIO_CONF(25, REG_GPIO_E8),
++	ECONET_GPIO_CONF(26, REG_GPIO_E8),
++	ECONET_GPIO_CONF(27, REG_GPIO_E8),
++	ECONET_GPIO_CONF(28, REG_GPIO_E8),
++	ECONET_GPIO_CONF(29, REG_GPIO_E8),
++	ECONET_GPIO_CONF(30, REG_GPIO_E8),
++	ECONET_GPIO_CONF(31, REG_GPIO_E8),
+ };
+ 
+ static const struct airoha_pinctrl_match_data pinctrl_match_data = {
+@@ -400,17 +809,33 @@ static const struct airoha_pinctrl_match_data pinctrl_match_data = {
+ 	.num_grps = ARRAY_SIZE(pinctrl_groups),
+ 	.funcs = pinctrl_funcs,
+ 	.num_funcs = ARRAY_SIZE(pinctrl_funcs),
+-	.num_gpio = 64,
++	.num_gpio = AIROHA_NUM_PINS,
+ 	.num_irq = 16,
+ 	.gpio_muxes = pinctrl_gpio_muxes,
+ 	.num_gpio_muxes = ARRAY_SIZE(pinctrl_gpio_muxes),
++	.drive_strength_step_ma = 4,
++	.confs_info = {
++		[AIROHA_PINCTRL_CONFS_PULLUP] = {
++			.confs = pinctrl_pullup_conf,
++			.num_confs = ARRAY_SIZE(pinctrl_pullup_conf),
++		},
++		[AIROHA_PINCTRL_CONFS_PULLDOWN] = {
++			.confs = pinctrl_pulldown_conf,
++			.num_confs = ARRAY_SIZE(pinctrl_pulldown_conf),
++		},
++		[AIROHA_PINCTRL_CONFS_DRIVE_E2] = {
++			.confs = pinctrl_drive_e4_conf,
++			.num_confs = ARRAY_SIZE(pinctrl_drive_e4_conf),
++		},
++		[AIROHA_PINCTRL_CONFS_DRIVE_E4] = {
++			.confs = pinctrl_drive_e8_conf,
++			.num_confs = ARRAY_SIZE(pinctrl_drive_e8_conf),
++		},
++	},
+ };
+ 
+ static const struct of_device_id econet_pinctrl_of_match[] = {
+-	{
+-		.compatible = "econet,en751221-pinctrl",
+-		.data = &pinctrl_match_data,
+-	},
++	{ .compatible = "econet,en751221-pinctrl", .data = &pinctrl_match_data },
+ 	{ /* sentinel */ }
+ };
+ MODULE_DEVICE_TABLE(of, econet_pinctrl_of_match);
+@@ -425,5 +850,8 @@ static struct platform_driver econet_pinctrl_driver = {
+ module_platform_driver(econet_pinctrl_driver);
+ 
+ MODULE_LICENSE("GPL");
++MODULE_AUTHOR("Lorenzo Bianconi <lorenzo@kernel.org>");
++MODULE_AUTHOR("Benjamin Larsson <benjamin.larsson@genexis.eu>");
++MODULE_AUTHOR("Markus Gothe <markus.gothe@genexis.eu>");
+ MODULE_AUTHOR("Matheus Sampaio Queiroga <srherobrine20@gmail.com>");
+ MODULE_DESCRIPTION("Pinctrl driver for EcoNet EN7512/EN7521 SoCs");
+-- 
+2.55.0
+

@@ -1,0 +1,259 @@
+From a654da5bf7c2ef97e54eaebcdcce402011008628 Mon Sep 17 00:00:00 2001
+From: AK Sharma <maskachoska@yahoo.com>
+Date: Wed, 26 Aug 2026 21:30:33 +0530
+Subject: [PATCH] mips: dts: add EcoNet EN7528 reference board (DASAN H660GM-A)
+
+Add a board target for the EcoNet EN7528 reference board as found on the
+DASAN H660GM-A.  It reuses the existing EN7528 SoC support (the
+econet,en7528.dtsi and mach-en75xx port by Matheus Sampaio Queiroga) and,
+like the TP-Link XC220-G3V, is chainloaded after a prior stage has trained
+DDR.  The only board difference is that it boots from SPI-NAND rather than
+SPI-NOR; only the read-only boot region is described in the partition map.
+
+Signed-off-by: AK Sharma <maskachoska@yahoo.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ arch/mips/Kconfig                         |  2 +
+ arch/mips/dts/Makefile                    |  1 +
+ arch/mips/dts/econet,en7528-reference.dts | 78 +++++++++++++++++++++++
+ arch/mips/mach-en75xx/Kconfig             | 15 +++--
+ configs/en7528_reference_defconfig        | 72 +++++++++++++++++++++
+ 5 files changed, 164 insertions(+), 4 deletions(-)
+ create mode 100644 arch/mips/dts/econet,en7528-reference.dts
+ create mode 100644 configs/en7528_reference_defconfig
+
+diff --git a/arch/mips/Kconfig b/arch/mips/Kconfig
+index 15b9f0effcf..5cccf897591 100644
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -80,7 +80,9 @@ config ARCH_EN75XX
+ 	select SYS_CACHE_SHIFT_5
+ 	select MIPS_TUNE_34KC if BOARD_EN7512_REFERENCE
+ 	select MIPS_TUNE_1004KC if BOARD_EN7528_TPLINK_XC220_G3V
++	select MIPS_TUNE_1004KC if BOARD_EN7528_REFERENCE
+ 	select MIPS_SKIP_CP0_COUNT_CLEAR if BOARD_EN7528_TPLINK_XC220_G3V
++	select MIPS_SKIP_CP0_COUNT_CLEAR if BOARD_EN7528_REFERENCE
+ 	help
+ 	  Support EcoNet/Airoha EN75xx MIPS platforms. EN7512/EN7521 are
+ 	  big-endian MIPS34K devices, while EN7528 is a little-endian MIPS1004Kc
+diff --git a/arch/mips/dts/Makefile b/arch/mips/dts/Makefile
+index 5aac48b1cba..65737c03cb9 100644
+--- a/arch/mips/dts/Makefile
++++ b/arch/mips/dts/Makefile
+@@ -8,6 +8,7 @@ dtb-$(CONFIG_TARGET_PIC32MZDASK) += pic32mzda_sk.dtb
+ dtb-$(CONFIG_TARGET_XILFPGA) += nexys4ddr.dtb
+ dtb-$(CONFIG_BOARD_EN7512_REFERENCE) += econet,en7512-reference.dtb
+ dtb-$(CONFIG_BOARD_EN7528_TPLINK_XC220_G3V) += econet,en7528-tplink-xc220-g3v.dtb
++dtb-$(CONFIG_BOARD_EN7528_REFERENCE) += econet,en7528-reference.dtb
+ dtb-$(CONFIG_BOARD_BROADCOM_BCM968380GERG) += brcm,bcm968380gerg.dtb
+ dtb-$(CONFIG_BOARD_COMTREND_AR5315U) += comtrend,ar-5315u.dtb
+ dtb-$(CONFIG_BOARD_COMTREND_AR5387UN) += comtrend,ar-5387un.dtb
+diff --git a/arch/mips/dts/econet,en7528-reference.dts b/arch/mips/dts/econet,en7528-reference.dts
+new file mode 100644
+index 00000000000..9843626eabe
+--- /dev/null
++++ b/arch/mips/dts/econet,en7528-reference.dts
+@@ -0,0 +1,78 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * EcoNet EN7528 reference board (DASAN H660GM-A).
++ *
++ * This board reuses the EN7528 SoC support - econet,en7528.dtsi and the
++ * mach-en75xx port - originally written by
++ * Matheus Sampaio Queiroga <srherobrine20@gmail.com> in the en7523_u-boot
++ * tree.  Like the TP-Link XC220-G3V target it is chainloaded after a prior
++ * stage has trained DDR; it differs only in the flash (SPI-NAND) wiring.
++ */
++/dts-v1/;
++
++#include "econet,en7528.dtsi"
++
++/ {
++	model = "EcoNet EN7528 reference board (DASAN H660GM-A)";
++	compatible = "econet,en7528-reference", "econet,en7528";
++
++	memory@0 {
++		device_type = "memory";
++		reg = <0x00000000 0x10000000>;
++	};
++
++	aliases {
++		serial0 = &uart1;
++		ethernet0 = &gdm1;
++		spi0 = &spi;
++	};
++
++	chosen {
++		stdout-path = "serial0:115200n8";
++	};
++};
++
++&uart1 {
++	status = "okay";
++};
++
++&spi {
++	status = "okay";
++
++	flash@0 {
++		compatible = "spi-nand";
++		reg = <0>;
++		spi-max-frequency = <25000000>;
++		spi-tx-bus-width = <1>;
++		spi-rx-bus-width = <1>;
++
++		partitions {
++			compatible = "fixed-partitions";
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			/*
++			 * Only the boot region is described here.  The vendor
++			 * tclinux dual-image layout (kernel/rootfs slots and the
++			 * user UBI) starts at 0x40000 and can be added as needed.
++			 */
++			partition@0 {
++				label = "bootloader";
++				reg = <0x00000000 0x00040000>;
++				read-only;
++			};
++		};
++	};
++};
++
++&eth {
++	status = "okay";
++};
++
++&gdm1 {
++	status = "okay";
++};
++
++&switch {
++	status = "okay";
++};
+diff --git a/arch/mips/mach-en75xx/Kconfig b/arch/mips/mach-en75xx/Kconfig
+index c1e984261d7..1c122d0b82b 100644
+--- a/arch/mips/mach-en75xx/Kconfig
++++ b/arch/mips/mach-en75xx/Kconfig
+@@ -5,15 +5,15 @@ config SYS_VENDOR
+ 	default "econet"
+ 
+ config SYS_SOC
+-	default "en7528" if BOARD_EN7528_TPLINK_XC220_G3V
++	default "en7528" if BOARD_EN7528_TPLINK_XC220_G3V || BOARD_EN7528_REFERENCE
+ 	default "en7512"
+ 
+ config SYS_BOARD
+-	default "en7528" if BOARD_EN7528_TPLINK_XC220_G3V
++	default "en7528" if BOARD_EN7528_TPLINK_XC220_G3V || BOARD_EN7528_REFERENCE
+ 	default "en7512"
+ 
+ config SYS_CONFIG_NAME
+-	default "en7528" if BOARD_EN7528_TPLINK_XC220_G3V
++	default "en7528" if BOARD_EN7528_TPLINK_XC220_G3V || BOARD_EN7528_REFERENCE
+ 	default "en7512"
+ 
+ config SYS_MALLOC_F_LEN
+@@ -21,7 +21,7 @@ config SYS_MALLOC_F_LEN
+ 
+ config EN75XX_SCU
+ 	bool "EcoNet/Airoha EN75xx SCU clock/reset controller"
+-	default y if BOARD_EN7528_TPLINK_XC220_G3V
++	default y if BOARD_EN7528_TPLINK_XC220_G3V || BOARD_EN7528_REFERENCE
+ 	select CLK
+ 	select DM_RESET
+ 	select REGMAP
+@@ -79,4 +79,11 @@ config BOARD_EN7528_TPLINK_XC220_G3V
+ 	  It intentionally produces a plain u-boot.bin for one-time serial loading,
+ 	  after which Ethernet/TFTP and the 16 MiB SPI-NOR can be used.
+ 
++config BOARD_EN7528_REFERENCE
++	bool "EcoNet EN7528 reference board (DASAN H660GM-A)"
++	help
++	  Build U-Boot proper for the EcoNet EN7528 reference board, as found
++	  on the DASAN H660GM-A.  Like the XC220-G3V it is chainloaded after a
++	  previous stage has trained DDR, but boots from SPI-NAND.
++
+ endmenu
+diff --git a/configs/en7528_reference_defconfig b/configs/en7528_reference_defconfig
+new file mode 100644
+index 00000000000..3e7766eed63
+--- /dev/null
++++ b/configs/en7528_reference_defconfig
+@@ -0,0 +1,72 @@
++CONFIG_MIPS=y
++CONFIG_SYS_LITTLE_ENDIAN=y
++CONFIG_SKIP_LOWLEVEL_INIT=y
++CONFIG_SYS_MALLOC_LEN=0x400000
++CONFIG_NR_DRAM_BANKS=1
++CONFIG_ENV_SIZE=0x1000
++CONFIG_DEFAULT_DEVICE_TREE="econet,en7528-reference"
++CONFIG_SYS_LOAD_ADDR=0x82000000
++CONFIG_SYS_BOOTM_LEN=0x08000000
++CONFIG_ARCH_EN75XX=y
++CONFIG_BUILD_TARGET="u-boot.bin"
++CONFIG_BOARD_EN7528_REFERENCE=y
++CONFIG_SYS_MIPS_TIMER_FREQ=200000000
++# CONFIG_MIPS_CACHE_SETUP is not set
++CONFIG_RESTORE_EXCEPTION_VECTOR_BASE=y
++CONFIG_MIPS_BOOT_FDT=y
++CONFIG_FIT=y
++CONFIG_FIT_VERBOSE=y
++CONFIG_BOOTDELAY=3
++CONFIG_OF_STDOUT_VIA_ALIAS=y
++CONFIG_DEFAULT_FDT_FILE="econet,en7528-reference.dtb"
++CONFIG_SYS_PBSIZE=1049
++CONFIG_SYS_CONSOLE_IS_IN_ENV=y
++CONFIG_DISPLAY_CPUINFO=y
++# CONFIG_DISPLAY_BOARDINFO is not set
++CONFIG_BOARD_LATE_INIT=y
++CONFIG_HUSH_PARSER=y
++CONFIG_SYS_PROMPT="EN7528 U-Boot> "
++CONFIG_SYS_MAXARGS=16
++CONFIG_CMD_BOOTZ=y
++CONFIG_CMD_BOOTMENU=y
++CONFIG_CMD_MEMINFO=y
++CONFIG_CMD_BIND=y
++CONFIG_CMD_MTD=y
++CONFIG_CMD_SF=y
++CONFIG_CMD_DHCP=y
++CONFIG_CMD_MII=y
++CONFIG_CMD_PING=y
++CONFIG_CMD_TFTPBOOT=y
++CONFIG_CMD_MTDPARTS=y
++CONFIG_CMD_LOG=y
++CONFIG_ENV_OVERWRITE=y
++CONFIG_ENV_IS_NOWHERE=y
++CONFIG_ENV_RELOC_GD_ENV_ADDR=y
++CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
++CONFIG_NET_RANDOM_ETHADDR=y
++CONFIG_SYS_RX_ETH_BUFFER=16
++CONFIG_REGMAP=y
++CONFIG_MTD=y
++CONFIG_DM_MTD=y
++CONFIG_DM_MDIO=y
++CONFIG_AIROHA_ETH=y
++CONFIG_HEXDUMP=y
++CONFIG_PHY=y
++CONFIG_SYS_NS16550=y
++CONFIG_SYS_NS16550_MEM32=y
++CONFIG_DEBUG_UART=y
++CONFIG_DEBUG_UART_NS16550=y
++CONFIG_DEBUG_UART_BASE=0xbfbf0000
++CONFIG_DEBUG_UART_CLOCK=1843200
++CONFIG_DEBUG_UART_SHIFT=2
++CONFIG_DEBUG_UART_SKIP_INIT=y
++CONFIG_SPI=y
++CONFIG_DM_SPI=y
++CONFIG_AIROHA_SNFI_SPI=y
++CONFIG_DM_SPI_FLASH=y
++CONFIG_SPI_FLASH=y
++CONFIG_MTD_SPI_NAND=y
++CONFIG_SPI_FLASH_WINBOND=y
++CONFIG_SPI_FLASH_XMC=y
++CONFIG_SPI_FLASH_MTD=y
++CONFIG_LZMA=y
+-- 
+2.55.0
+

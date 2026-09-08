@@ -1,0 +1,200 @@
+From 2ca47f3a9556913d0656e52e976eae1ed5cdd0bb Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Tue, 11 Aug 2026 14:04:23 -0300
+Subject: [PATCH] net: airoha: complete EN751221 QDMA runtime profile
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/econet_eth.c | 89 ++++++++++++++++++------
+ 1 file changed, 66 insertions(+), 23 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/econet_eth.c b/drivers/net/ethernet/airoha/econet_eth.c
+index 02d77c9af240..9494ac3ff8a2 100644
+--- a/drivers/net/ethernet/airoha/econet_eth.c
++++ b/drivers/net/ethernet/airoha/econet_eth.c
+@@ -137,15 +137,15 @@ static void econet_fill_rx_queue(struct econet_q_rx *q, u32 end_i)
+ 		int i;
+ 
+ 		page = page_pool_dev_alloc_frag(q->page_pool, &offset,
+-						q->buf_size + rx_offset);
++						q->buf_size);
+ 
+ 		if (!page)
+ 			break;
+ 
+ 		WARN_ON_ONCE(e->dma_addr);
+-		e->buf = page_address(page) + offset + rx_offset;
++		e->buf = page_address(page) + offset;
+ 		e->dma_addr = page_pool_get_dma_addr(page) + offset;
+-		pkt_len = SKB_WITH_OVERHEAD(q->buf_size);
++		pkt_len = SKB_WITH_OVERHEAD(q->buf_size) - rx_offset;
+ 		e->dma_len = pkt_len + rx_offset;
+ 
+ 		WRITE_ONCE(pdesc->info, ((struct desc_info) {
+@@ -186,7 +186,8 @@ static void econet_qdma_rx_process_one(struct econet_q_rx *q, u32 cpu_i,
+ 	WRITE_ONCE(q->desc[cpu_i].pkt_addr, 0);
+ 
+ 	len = get_desc_info_pkt_len(&desc.info);
+-	if (!len || len > SKB_WITH_OVERHEAD(q->buf_size))
++	if (!len || len > SKB_WITH_OVERHEAD(q->buf_size) -
++				(q->qdma->cfg.rx_2b_offset ? NET_IP_ALIGN : 0))
+ 		goto return_page;
+ 
+ 	if (WARN_ON_ONCE(is_desc_info_nls(&desc.info)))
+@@ -196,6 +197,8 @@ static void econet_qdma_rx_process_one(struct econet_q_rx *q, u32 cpu_i,
+ 	if (!skb)
+ 		goto return_page;
+ 
++	if (q->qdma->cfg.rx_2b_offset)
++		skb_reserve(skb, NET_IP_ALIGN);
+ 	__skb_put(skb, len);
+ 	skb_mark_for_recycle(skb);
+ 	skb->ip_summed = CHECKSUM_NONE;
+@@ -455,12 +458,11 @@ static int econet_poll_tx_complete(struct napi_struct *napi, int budget)
+ 	struct qregs_doneq_state state;
+ 	struct econet_tx_doneq *done_q;
+ 	struct econet_qdma *qdma;
+-	int id, irq_queued;
++	int irq_queued;
+ 	u32 done = 0, head;
+ 
+ 	done_q = container_of(napi, struct econet_tx_doneq, napi);
+ 	qdma = done_q->qdma;
+-	id = done_q - &qdma->q_tx_done[0];
+ 
+ 	state = econet_rreg(&done_q->regs->state);
+ 	head = get_qregs_doneq_state_head_index(&state);
+@@ -542,10 +544,22 @@ static int econet_poll_tx_complete(struct napi_struct *napi, int budget)
+ 	}
+ 
+ 	if (done < budget && napi_complete(napi)) {
+-		union econet_irq_purpose purpose = IRQ_PURPOSE(DONE, TX, id);
+-		union irq_bit b = en751221_irq_bit(purpose);
++		int chain;
+ 
+-		econet_qdma_set_irqmask(qdma, b, true);
++		/*
++		 * EN751221 has a single completion list shared by TX0 and TX1.
++		 * Either DONE source can therefore schedule this NAPI instance.
++		 * Re-arm both sources after draining it; re-arming only TX0 leaves
++		 * TX1 permanently masked after its first interrupt.
++		 */
++		for (chain = 0; chain < QDMA_NUM_CHAINS; chain++) {
++			union econet_irq_purpose purpose;
++			union irq_bit b;
++
++			purpose = IRQ_PURPOSE(DONE, TX, chain);
++			b = en751221_irq_bit(purpose);
++			econet_qdma_set_irqmask(qdma, b, true);
++		}
+ 	}
+ 
+ 	return done;
+@@ -621,8 +635,7 @@ static int econet_init_rx_queue(struct econet_q_rx *q,
+ 		.dev = qdma->dev,
+ 		.napi = &q->napi,
+ 	};
+-	int threshold = qdma->soc->en751221_special_tag && qdma->id == 0 ?
+-			32 : clamp(ndesc >> 3, 1, 32);
++	int threshold;
+ 	struct qregs_rxring_size rrs;
+ 	struct qregs_rxring_low rrl;
+ 	dma_addr_t dma_addr;
+@@ -630,6 +643,12 @@ static int econet_init_rx_queue(struct econet_q_rx *q,
+ 	q->buf_size = ECONET_MAX_PACKET_SIZE;
+ 	q->ndesc = ndesc;
+ 	q->qdma = qdma;
++
++	if (qdma->soc->en751221_special_tag)
++		/* QDMA_LAN uses 32 for both rings; QDMA_WAN uses ring_size / 4. */
++		threshold = qdma->id == 0 ? 32 : ndesc >> 2;
++	else
++		threshold = clamp(ndesc >> 3, 1, 32);
+ 	q->qchain_regs = (q == &qdma->q_rx[0]) ?
+ 			 &qdma->regs->qchain0 :
+ 			 &qdma->regs->qchain1;
+@@ -868,6 +887,17 @@ static int econet_init_hw_fwd(struct econet_qdma *qdma)
+ 				 &rmem->size, qdma->cfg.num_fwd_descs,
+ 				 buf_size, num_desc);
+ 	} else {
++		/*
++		 * The vendor QDMA_WAN reserves 8 MiB for 4096 x 2 KiB HWF
++		 * buffers. Do not require such a large contiguous coherent
++		 * allocation on boards that omit the reserved qdma1-buf region;
++		 * keep the exact 4096-entry profile whenever the region exists,
++		 * otherwise use a conservative fallback pool.
++		 */
++		if (qdma->soc->en751221_special_tag && qdma->id == 1 &&
++		    num_desc > 256)
++			num_desc = 256;
++
+ 		size = buf_size * num_desc;
+ 		if (!dmam_alloc_coherent(qdma->dev, size, &dma_addr,
+ 					 GFP_KERNEL))
+@@ -930,22 +960,24 @@ static int econet_init_hw_fwd(struct econet_qdma *qdma)
+ #define EN751221_TXQ_MAX_THR_MASK	GENMASK(31, 16)
+ #define EN751221_TXQ_MIN_THR_MASK	GENMASK(15, 0)
+ 
+-static void econet_init_en751221_lan_qdma(struct econet_qdma *qdma)
++static void econet_init_en751221_qdma(struct econet_qdma *qdma)
+ {
+ 	struct wrr_mode wrr = { 0 };
+ 	u32 total_min, channel_min, queue_min;
+ 	u32 total_max, channel_max, queue_max;
+ 	u32 physical_size, val;
+ 
+-	/* Vendor qdma_reg_init(): PSE buffer accounting for QDMA_LAN. */
+-	val = econet_rreg(&qdma->regs->buf_usage_cfg);
+-	val &= ~(EN751221_PSE_BUF_ESTIMATE_EN |
+-		 EN751221_PSE_BUF_CH_THR_MASK |
+-		 EN751221_PSE_BUF_TOTAL_THR_MASK);
+-	val |= EN751221_PSE_BUF_CTRL_EN |
+-	       FIELD_PREP(EN751221_PSE_BUF_CH_THR_MASK, 6) |
+-	       FIELD_PREP(EN751221_PSE_BUF_TOTAL_THR_MASK, 24);
+-	econet_wreg(val, &qdma->regs->buf_usage_cfg);
++	/* Vendor eth_lan qdma_reg_init(): QDMA_LAN-only PSE accounting. */
++	if (qdma->id == 0) {
++		val = econet_rreg(&qdma->regs->buf_usage_cfg);
++		val &= ~(EN751221_PSE_BUF_ESTIMATE_EN |
++			 EN751221_PSE_BUF_CH_THR_MASK |
++			 EN751221_PSE_BUF_TOTAL_THR_MASK);
++		val |= EN751221_PSE_BUF_CTRL_EN |
++		       FIELD_PREP(EN751221_PSE_BUF_CH_THR_MASK, 6) |
++		       FIELD_PREP(EN751221_PSE_BUF_TOTAL_THR_MASK, 24);
++		econet_wreg(val, &qdma->regs->buf_usage_cfg);
++	}
+ 
+ 	/* Match qdma_dev.c: 16-byte WRR scale, accounting weights by byte. */
+ 	set_qregs_wrr_mode_use_16b(&wrr, true);
+@@ -1093,8 +1125,8 @@ static int econet_init_final(struct econet_qdma *qdma)
+ 
+ 	econet_wreg(0U, &qdma->regs->rx_int_delay);
+ 
+-	if (qdma->soc->en751221_special_tag && qdma->id == 0) {
+-		econet_init_en751221_lan_qdma(qdma);
++	if (qdma->soc->en751221_special_tag) {
++		econet_init_en751221_qdma(qdma);
+ 	} else {
+ 		struct qregs_tx_congest_cfg cngst_cfg = { 0 };
+ 
+@@ -2206,6 +2238,17 @@ static void econet_prepare_qdma_cfg(struct econet_qdma_cfg *cfg,
+ 		cfg->num_fwd_descs = 1024;
+ 		cfg->fwd_low_threshold = 128;
+ 		cfg->num_channels = 8;
++	} else if (soc->en751221_special_tag && id == 1) {
++		/* Vendor QDMA_WAN profile. */
++		cfg->num_rx_descs[0] = 256;
++		cfg->num_rx_descs[1] = 256;
++		cfg->num_tx_descs[0] = 1024;
++		cfg->num_tx_descs[1] = 128;
++		cfg->done_list_size[0] = 512;
++		cfg->done_list_irq_threshold[0] = 16;
++		cfg->num_fwd_descs = 4096;
++		cfg->fwd_low_threshold = 256;
++		cfg->num_channels = 32;
+ 	}
+ }
+ 
+-- 
+2.55.0
+

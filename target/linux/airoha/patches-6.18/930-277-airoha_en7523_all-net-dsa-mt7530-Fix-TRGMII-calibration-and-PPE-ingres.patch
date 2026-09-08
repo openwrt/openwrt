@@ -1,0 +1,152 @@
+From 2cf5ae033ad2eea2963a77d43d8b2499d7db8c7b Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Mon, 17 Aug 2026 13:42:45 -0300
+Subject: [PATCH] net: dsa: mt7530: Fix TRGMII calibration and PPE ingress
+ routing
+
+Preserve existing TRGMII tap settings if calibration fails.
+Additionally,
+update the PPE engine to perform partial updates on GDM_FWD_CFG
+registers
+to avoid corrupting legacy special-tag/UNTAG configurations on the
+EN751221 SoC.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/dsa/mt7530.c                      |  9 +++--
+ drivers/net/ethernet/airoha/airoha_ppe.c      | 35 +++++++++++++++----
+ .../net/ethernet/airoha/airoha_ppe_debugfs.c  |  2 ++
+ drivers/net/ethernet/airoha/airoha_regs.h     |  5 +++
+ 4 files changed, 41 insertions(+), 10 deletions(-)
+
+diff --git a/drivers/net/dsa/mt7530.c b/drivers/net/dsa/mt7530.c
+index a5867a7a732a..40d17681ecd4 100644
+--- a/drivers/net/dsa/mt7530.c
++++ b/drivers/net/dsa/mt7530.c
+@@ -566,9 +566,12 @@ en751221_trgmii_calibrate_direction(struct mt7530_priv *tx,
+ 	for (channel = 0; channel < NUM_TRGMII_CTRL; channel++) {
+ 		u32 rx_reg = MT7530_TRGMII_RD(channel);
+ 		u32 tx_reg = EN751221_TRGMII_TD(channel);
++		u32 old_tap;
+ 		int first = -1, last = -1;
+ 		int dac, tap;
+ 
++		old_tap = FIELD_GET(RD_TAP_MASK, mt7530_read(rx, rx_reg));
++
+ 		for (dac = 1; dac <= 127; dac++) {
+ 			mt7530_rmw(tx, tx_reg, GENMASK(7, 0), 0x55);
+ 			mt7530_rmw(rx, rx_reg, RD_TAP_MASK, RD_TAP(dac));
+@@ -585,7 +588,7 @@ en751221_trgmii_calibrate_direction(struct mt7530_priv *tx,
+ 		if (first >= 0 && last > first)
+ 			tap = (first + last) / 2;
+ 		else
+-			tap = 0;
++			tap = old_tap;
+ 
+ 		mt7530_rmw(rx, rx_reg, RD_TAP_MASK, RD_TAP(tap));
+ 
+@@ -595,8 +598,8 @@ en751221_trgmii_calibrate_direction(struct mt7530_priv *tx,
+ 				 name, channel, first, last, tap);
+ 		else
+ 			dev_warn(rx->dev,
+-				 "EN751221 TRGMII %s lane %d calibration failed, tap 0\n",
+-				 name, channel);
++				 "EN751221 TRGMII %s lane %d calibration failed, preserving tap %u\n",
++				 name, channel, old_tap);
+ 	}
+ 
+ 	mt7530_clear(tx, MT7530_TRGMII_TXCTRL, TRAIN_TXEN);
+diff --git a/drivers/net/ethernet/airoha/airoha_ppe.c b/drivers/net/ethernet/airoha/airoha_ppe.c
+index c17b47ccee6a..537551d21108 100644
+--- a/drivers/net/ethernet/airoha/airoha_ppe.c
++++ b/drivers/net/ethernet/airoha/airoha_ppe.c
+@@ -2913,6 +2913,23 @@ static int econet_ppe_engine_set(struct econet_ppe *ppe, bool enable)
+ 	return 0;
+ }
+ 
++static void econet_ppe_set_gdm_ingress(struct econet_ppe *ppe, int gdm,
++				       u8 fport)
++{
++	u32 mask = GDM_UCFQ_MASK | GDM_OCFQ_MASK;
++	u32 val = FIELD_PREP(GDM_UCFQ_MASK, fport) |
++		  FIELD_PREP(GDM_OCFQ_MASK, fport);
++
++	/*
++	 * Do not rewrite the complete FWD_CFG register here. EN751221 shares
++	 * some of these bits with its legacy special-tag/UNTAG controls, and
++	 * replacing the whole word breaks the DSA conduit. Only redirect the
++	 * unicast/my-MAC and default paths; broadcast/multicast stay on the
++	 * CPU path configured by the netdev.
++	 */
++	airoha_fe_rmw(ppe->common.eth, REG_GDM_FWD_CFG(gdm), mask, val);
++}
++
+ static int econet_ppe_engine_arm(struct econet_ppe *ppe)
+ {
+ 	int err;
+@@ -2950,14 +2967,16 @@ static int econet_ppe_engine_arm(struct econet_ppe *ppe)
+ 	airoha_fe_wr(ppe->common.eth, REG_CDM_VLAN_CTRL(1),
+ 		     FIELD_PREP(CDM_VLAN_MASK, ETH_P_8021Q) | STAG_EN);
+ 	/*
+-	 * GDM1 is owned by the EcoNet netdev/DSA path.  In particular bit 25
+-	 * of FWD_CFG is UNTAG_EN on EN751221, while the common Airoha mask
+-	 * names the same bit DROP_OVERSIZE.  Rewriting GDM1 here used to
+-	 * destroy the MT7530 special-tag state whenever flow offload armed.
+-	 * PPE only needs its own engine/VPM/CPU-port programming here.
++	 * Route normal unicast ingress through the PPE without touching the
++	 * EN751221 special-tag state. GDM1 covers LAN/DSA -> WAN and GDM2
++	 * covers WAN/xPON -> LAN. PPE misses are returned to each GDM's CPU
++	 * QDMA through the default CPU-port map below.
+ 	 */
+ 	airoha_fe_wr(ppe->common.eth, REG_PPE_DFT_CPORT_BASE(0),
+-		     FIELD_PREP(DFT_CPORT_MASK(2), 5));
++		     FIELD_PREP(DFT_CPORT_MASK(2),
++				EN751221_GDM_FPORT_QDMA1_CPU));
++	econet_ppe_set_gdm_ingress(ppe, 1, EN751221_GDM_FPORT_PPE);
++	econet_ppe_set_gdm_ingress(ppe, 2, EN751221_GDM_FPORT_PPE);
+ 	WRITE_ONCE(ppe->armed, true);
+ 	return 0;
+ }
+@@ -2967,7 +2986,9 @@ static void econet_ppe_engine_disarm(struct econet_ppe *ppe)
+ 	if (!ppe || !READ_ONCE(ppe->armed))
+ 		return;
+ 
+-	/* Leave GDM1 forwarding and DSA special-tag state to the netdev. */
++	/* Restore the CPU ingress paths while preserving STAG/UNTAG state. */
++	econet_ppe_set_gdm_ingress(ppe, 1, EN751221_GDM_FPORT_QDMA0_CPU);
++	econet_ppe_set_gdm_ingress(ppe, 2, EN751221_GDM_FPORT_QDMA1_CPU);
+ 	WRITE_ONCE(ppe->armed, false);
+ 	econet_ppe_flush(ppe);
+ 	econet_ppe_engine_set(ppe, false);
+diff --git a/drivers/net/ethernet/airoha/airoha_ppe_debugfs.c b/drivers/net/ethernet/airoha/airoha_ppe_debugfs.c
+index 6b7bb9c4b1ff..8f54255d723f 100644
+--- a/drivers/net/ethernet/airoha/airoha_ppe_debugfs.c
++++ b/drivers/net/ethernet/airoha/airoha_ppe_debugfs.c
+@@ -581,6 +581,8 @@ static int econet_ppe_debugfs_regs_show(struct seq_file *m, void *private)
+ 	seq_printf(m, "BND_AGE1=%08x\n", airoha_fe_rr(eth, REG_PPE_BND_AGE1(0)));
+ 	seq_printf(m, "HASH_SEED=%08x\n", airoha_fe_rr(eth, REG_PPE_HASH_SEED(0)));
+ 	seq_printf(m, "DFT_CPORT=%08x\n", airoha_fe_rr(eth, REG_PPE_DFT_CPORT_BASE(0)));
++	seq_printf(m, "GDM1_FWD_CFG=%08x\n", airoha_fe_rr(eth, REG_GDM_FWD_CFG(1)));
++	seq_printf(m, "GDM2_FWD_CFG=%08x\n", airoha_fe_rr(eth, REG_GDM_FWD_CFG(2)));
+ 	seq_printf(m, "VPM_TPID=%08x\n", airoha_fe_rr(eth, REG_PPE_VPM_TPID(0)));
+ 	seq_printf(m, "CACHE_CTL=%08x\n", airoha_fe_rr(eth, REG_EN751221_PPE_CACHE_CTL));
+ 	seq_printf(m, "CACHE_GATE=%08x\n", airoha_fe_rr(eth, REG_EN751221_PPE_CAH_GATE));
+diff --git a/drivers/net/ethernet/airoha/airoha_regs.h b/drivers/net/ethernet/airoha/airoha_regs.h
+index f9039e0ee398..8bdf6dd4d2da 100644
+--- a/drivers/net/ethernet/airoha/airoha_regs.h
++++ b/drivers/net/ethernet/airoha/airoha_regs.h
+@@ -66,6 +66,11 @@
+ #define EN751221_QDMA_IRQ_DESC_IDX_MASK	GENMASK(11, 0)
+ 
+ #define EN751221_PPE_INVALID_HASH	0xffff
++
++/* EN751221 GDM FWD_CFG destination-port coding. */
++#define EN751221_GDM_FPORT_QDMA0_CPU	0
++#define EN751221_GDM_FPORT_PPE		4
++#define EN751221_GDM_FPORT_QDMA1_CPU	5
+ #define EN751221_DPORT_QDMA_HW		6
+ 
+ /* Legacy PPE cache control retained by the generation-1 engine. */
+-- 
+2.55.0
+

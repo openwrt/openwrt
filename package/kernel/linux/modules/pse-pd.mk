@@ -42,6 +42,23 @@ endef
 
 $(eval $(call KernelPackage,pse-regulator))
 
+define KernelPackage/pse-gpio
+  SUBMENU:=$(PSE_MENU)
+  TITLE:=Generic GPIO-controlled PoE PSE controller
+  KCONFIG:= \
+        CONFIG_PSE_GENERIC_GPIO=y \
+        CONFIG_GPIOLIB=y
+  FILES:=$(LINUX_DIR)/drivers/net/pse-pd/generic_gpio_pse.ko
+  AUTOLOAD:=$(call AutoProbe,generic_gpio_pse)
+  $(call AddDepends/pse-pd)
+endef
+
+define KernelPackage/pse-gpio/description
+ This module provides support GPIO-controlled PoE PSE.
+endef
+
+$(eval $(call KernelPackage,pse-gpio))
+
 define KernelPackage/pse-pd692x0
   SUBMENU:=$(PSE_MENU)
   TITLE:=PD692X0 PSE controller support

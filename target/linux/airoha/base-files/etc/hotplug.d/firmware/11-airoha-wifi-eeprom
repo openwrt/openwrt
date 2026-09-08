@@ -1,0 +1,59 @@
+#!/bin/sh
+#
+# Live-extract the MediaTek mt7915 WiFi EEPROM (calibration data) for Genexis
+# EN7523 boards from the read-only "boarddata" UBI volume. The calibration is
+# never stored in the OpenWrt image; it is read straight from the device's own
+# boarddata volume at firmware-request time and fed to the driver through the
+# kernel firmware fallback (sysfs) interface.
+#
+# boarddata is a UBIFS volume on ubi0 holding ready-to-use 3584-byte mt7915
+# EEPROM images:
+#   /airoha/wifi_24G  - 2.4 GHz radio (first PCIe controller, domain 0000)
+#   /airoha/wifi_5G   - 5 GHz radio   (second PCIe controller, domain 0001)
+# The per-radio MAC address is supplied separately via the DT nvmem
+# "mac-address" cells, so it is not patched into the EEPROM here.
+
+[ -e /lib/firmware/$FIRMWARE ] && exit 0
+
+. /lib/functions.sh
+. /lib/functions/caldata.sh
+
+board=$(board_name)
+
+airoha_mount_boarddata() {
+	local mnt=/tmp/boarddata
+
+	mkdir -p "$mnt"
+	grep -qs " $mnt ubifs " /proc/mounts && return 0
+	mount -t ubifs -o ro ubi0:boarddata "$mnt" 2>/dev/null || \
+		caldata_die "failed to mount ubi0:boarddata"
+}
+
+airoha_wifi_eeprom() {
+	local band_file="$1"
+	local src="/tmp/boarddata/airoha/$band_file"
+
+	airoha_mount_boarddata
+	[ -f "$src" ] || caldata_die "missing calibration file $src"
+
+	# wifi_24G/wifi_5G are complete 3584-byte (0xe00) mt7915 EEPROM images.
+	caldata_sysfsload_from_file "$src" 0x0 0xe00
+}
+
+case "$FIRMWARE" in
+"mediatek/mt7915_eeprom.bin")
+	case "$board" in
+	genexis,zephyr | \
+	genexis,rodimus_r1)
+		case "$DEVPATH" in
+		*0000:0*)
+		  airoha_wifi_eeprom wifi_24G
+			;;
+		*)
+		  airoha_wifi_eeprom wifi_5G
+			;;
+		esac
+		;;
+	esac
+	;;
+esac

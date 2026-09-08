@@ -1,0 +1,178 @@
+From fe365406ddc8ee66ffeea5de1794d13db7f905fd Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Thu, 30 Jul 2026 16:58:15 +0000
+Subject: [PATCH] net: airoha: reset xPON MAC between OMCI sessions
+
+Acquire the named xPON MAC reset and pulse it before every GPON or EPON
+session start. This makes initial activation, LOS recovery, OLT
+deactivation recovery and net/omci runtime configuration changes start
+from clean MAC register and table state.
+
+Keep the net/omci MIB as the control-plane source of truth. The existing
+channel-down and channel-up reconciliation clears the active hardware
+services and reapplies the desired T-CONT, GEM and service graph after
+the reset.
+
+Also restart GPON for every accepted runtime net/omci configuration
+change instead of limiting restarts to registration credentials.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/Kconfig       |  1 +
+ drivers/net/ethernet/airoha/airoha_xpon.c | 71 +++++++++++++++++++----
+ 2 files changed, 60 insertions(+), 12 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/Kconfig b/drivers/net/ethernet/airoha/Kconfig
+index d7c4ce3fb3e1..2c274000785c 100644
+--- a/drivers/net/ethernet/airoha/Kconfig
++++ b/drivers/net/ethernet/airoha/Kconfig
+@@ -54,6 +54,7 @@ config AIROHA_XPON
+ 	depends on MFD_SYSCON
+ 	select PHY_AIROHA_XPON
+ 	select OMCI
++	select RESET_CONTROLLER
+ 	help
+ 	  Driver for the shared xPON MAC complex found in Airoha/EcoNet SoCs.
+ 	  GPON and EPON are implemented by one platform driver and selected by
+diff --git a/drivers/net/ethernet/airoha/airoha_xpon.c b/drivers/net/ethernet/airoha/airoha_xpon.c
+index 029a45de7f1a..65f0ee4405cd 100644
+--- a/drivers/net/ethernet/airoha/airoha_xpon.c
++++ b/drivers/net/ethernet/airoha/airoha_xpon.c
+@@ -37,6 +37,7 @@
+ #include <linux/phy/phy-airoha-xpon.h>
+ #include <linux/random.h>
+ #include <linux/regmap.h>
++#include <linux/reset.h>
+ #include <linux/sched.h>
+ #include <linux/sfp.h>
+ #include <linux/timer.h>
+@@ -611,6 +612,7 @@ struct xpon_priv {
+ 	void __iomem		*epon_reset_reg;
+ 	struct device		*dev;
+ 	struct regmap		*scu;
++	struct reset_control	*mac_reset;
+ 	struct phy		*phy;
+ 	enum airoha_xpon_mode	mode;
+ 	bool			phy_initialized;
+@@ -696,6 +698,31 @@ struct xpon_priv {
+ 
+ };
+ 
++static int airoha_xpon_reset_mac(struct xpon_priv *priv)
++{
++	int ret;
++
++	if (!priv->mac_reset)
++		return 0;
++
++	dev_info(priv->dev, "resetting %s MAC before session start\n",
++		 airoha_xpon_mode_name(priv->mode));
++	ret = reset_control_reset(priv->mac_reset);
++	if (ret) {
++		dev_err(priv->dev, "failed to reset xPON MAC: %d\n", ret);
++		return ret;
++	}
++
++	/*
++	 * The reset controller supplies the required reset pulse. Give the MAC
++	 * register and indirect table engines time to leave reset before any
++	 * GPON/EPON register is accessed.
++	 */
++	usleep_range(1000, 2000);
++
++	return 0;
++}
++
+ static void gpon_refresh_netdev_link(struct xpon_priv *priv, bool force)
+ {
+ 	bool started, o5, omci, service, link, changed;
+@@ -1855,15 +1882,12 @@ void airoha_gpon_omci_hw_config_changed(void *hw_priv, u16 key,
+ 	if (!identity)
+ 		return;
+ 
+-	switch (key) {
+-	case OMCI_CONFIG_SERIAL_NUMBER:
+-	case OMCI_CONFIG_VENDOR_ID:
+-	case OMCI_CONFIG_PASSWORD:
+-		break;
+-	default:
+-		return;
+-	}
+-
++	/*
++	 * This callback is issued for runtime net/omci configuration changes,
++	 * not for OLT managed-entity transactions. Restart the optical session
++	 * for every accepted update so the MAC reset discards all state derived
++	 * from the previous configuration before the new OMCI view is exposed.
++	 */
+ 	mutex_lock(&priv->omci_config_lock);
+ 	priv->pending_identity = *identity;
+ 	priv->config_restart_key = key;
+@@ -1871,7 +1895,7 @@ void airoha_gpon_omci_hw_config_changed(void *hw_priv, u16 key,
+ 	mutex_unlock(&priv->omci_config_lock);
+ 
+ 	dev_info(priv->dev,
+-		 "OMCI registration configuration changed (key %u), scheduling GPON restart\n",
++		 "OMCI configuration changed (key %u), scheduling GPON MAC reset\n",
+ 		 key);
+ 	mod_delayed_work(priv->fsm_wq, &priv->restart_work, 0);
+ }
+@@ -2236,6 +2260,15 @@ static int gpon_enable(struct xpon_priv *priv)
+ 	dev_info(priv->dev, "starting GPON MAC from state %s\n",
+ 		 gpon_state_name(ploam_get_state(priv->ploam)));
+ 
++	/*
++	 * Every GPON session starts from a hardware reset. This covers initial
++	 * activation, OLT deactivation recovery, LOS recovery and all runtime
++	 * configuration changes requested through net/omci.
++	 */
++	ret = airoha_xpon_reset_mac(priv);
++	if (ret)
++		return ret;
++
+ 	ret = airoha_xpon_phy_start(priv->dev, priv->phy,
+ 				    AIROHA_XPON_MODE_GPON,
+ 				    &priv->phy_initialized,
+@@ -3518,6 +3551,10 @@ static int epon_enable(struct xpon_priv *priv)
+ 		return 0;
+ 
+ 	dev_info(priv->dev, "starting EPON MAC\n");
++	ret = airoha_xpon_reset_mac(priv);
++	if (ret)
++		return ret;
++
+ 	ret = airoha_xpon_phy_start(priv->dev, priv->phy,
+ 				     AIROHA_XPON_MODE_EPON,
+ 				     &priv->phy_initialized,
+@@ -3999,6 +4036,16 @@ static int airoha_xpon_probe(struct platform_device *pdev)
+ 		goto err_put_gdm;
+ 	}
+ 
++	priv->mac_reset = devm_reset_control_get_optional_exclusive(dev, "mac");
++	if (IS_ERR(priv->mac_reset)) {
++		ret = dev_err_probe(dev, PTR_ERR(priv->mac_reset),
++				    "failed to get xPON MAC reset\n");
++		goto err_put_gdm;
++	}
++	if (!priv->mac_reset)
++		dev_warn(dev,
++			 "missing xPON MAC reset; session restarts cannot clear all hardware state\n");
++
+ 	priv->phy = devm_phy_get(dev, "xpon");
+ 	if (IS_ERR(priv->phy)) {
+ 		ret = dev_err_probe(dev, PTR_ERR(priv->phy),
+@@ -4125,9 +4172,9 @@ static int airoha_xpon_probe(struct platform_device *pdev)
+ 	platform_set_drvdata(pdev, priv);
+ 	if (airoha_xpon_is_gpon(priv))
+ 		dev_info(dev,
+-			 "GPON probe complete: datapath=%s omci-genl=%u irq=%d dying-gasp-irq=%d default_state=%s\n",
++			 "GPON probe complete: datapath=%s omci-genl=%u irq=%d dying-gasp-irq=%d mac-reset=%u default_state=%s\n",
+ 			 priv->gdm_dev->name, omci_device_id(priv->omci.odev),
+-			 priv->irq, priv->dying_gasp_irq,
++			 priv->irq, priv->dying_gasp_irq, !!priv->mac_reset,
+ 			 gpon_state_name(ploam_get_state(priv->ploam)));
+ 	else
+ 		dev_info(dev, "EPON probe complete: datapath=%s irq=%d\n",
+-- 
+2.55.0
+

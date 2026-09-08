@@ -1,0 +1,122 @@
+From e4b961cb8323b91c13b2095b8995b240330cd7d8 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Thu, 27 Aug 2026 16:37:55 -0300
+Subject: [PATCH] xpon: Add LED support for device status
+
+Implement LED registration during xPON device setup and trigger optical
+status reports in the airoha driver to update indicators.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_xpon.c |  2 ++
+ net/xpon/core.c                           |  7 +++++
+ net/xpon/internal.h                       |  1 +
+ net/xpon/leds.c                           | 36 +++++++++++++++++++++++
+ 4 files changed, 46 insertions(+)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_xpon.c b/drivers/net/ethernet/airoha/airoha_xpon.c
+index 3e20a42da217..e45ab1b355f7 100644
+--- a/drivers/net/ethernet/airoha/airoha_xpon.c
++++ b/drivers/net/ethernet/airoha/airoha_xpon.c
+@@ -2349,6 +2349,8 @@ static void airoha_xpon_phy_link_work_fn(struct work_struct *work)
+ 		  READ_ONCE(priv->phy_link_up) != link;
+ 	WRITE_ONCE(priv->phy_link_known, true);
+ 	WRITE_ONCE(priv->phy_link_up, link);
++	if (priv->xpon)
++		xpon_device_report_optical(priv->xpon, ready, los);
+ 
+ 	if (changed)
+ 		dev_info(priv->dev,
+diff --git a/net/xpon/core.c b/net/xpon/core.c
+index c3d3ad0cb378..8a0e0999429f 100644
+--- a/net/xpon/core.c
++++ b/net/xpon/core.c
+@@ -95,6 +95,12 @@ xpon_device_register(struct device *parent,
+ 	xpon->state.valid = 0;
+ 	xpon->notify_old = xpon->state;
+ 
++	ret = xpon_leds_register(xpon);
++	if (ret) {
++		kfree(xpon);
++		return ERR_PTR(ret);
++	}
++	
+ 	ret = xpon_sysfs_register(xpon);
+ 	if (ret) {
+ 		kfree(xpon);
+@@ -105,6 +111,7 @@ xpon_device_register(struct device *parent,
+ 	list_add_tail(&xpon->list, &xpon_devices);
+ 	mutex_unlock(&xpon_devices_lock);
+ 
++	xpon_leds_update(xpon, &xpon->state);
+ 	dev_info(parent, "registered xPON device for %s\n", desc->netdev->name);
+ 	return xpon;
+ }
+diff --git a/net/xpon/internal.h b/net/xpon/internal.h
+index 8ca207f48d16..bb9002a07c21 100644
+--- a/net/xpon/internal.h
++++ b/net/xpon/internal.h
+@@ -46,6 +46,7 @@ int xpon_sysfs_register(struct xpon_device *xpon);
+ void xpon_sysfs_unregister(struct xpon_device *xpon);
+ void xpon_sysfs_notify(struct xpon_device *xpon, unsigned long changed);
+ 
++int xpon_leds_register(struct xpon_device *xpon);
+ void xpon_leds_update(struct xpon_device *xpon,
+ 		      const struct xpon_state *state);
+ 
+diff --git a/net/xpon/leds.c b/net/xpon/leds.c
+index 57059e108690..304edcfebe7e 100644
+--- a/net/xpon/leds.c
++++ b/net/xpon/leds.c
+@@ -1,5 +1,6 @@
+ // SPDX-License-Identifier: GPL-2.0-only
+ 
++#include <linux/err.h>
+ #include <linux/leds.h>
+ 
+ #include "internal.h"
+@@ -10,6 +11,41 @@ static void xpon_led_set(struct led_classdev *led, enum led_brightness value)
+ 		led_set_brightness(led, value);
+ }
+ 
++static struct led_classdev *
++xpon_led_get_optional(struct xpon_device *xpon, char *name)
++{
++	struct led_classdev *led;
++
++	led = devm_led_get(xpon->parent, name);
++	if (IS_ERR(led) && PTR_ERR(led) == -ENOENT)
++		return NULL;
++
++	return led;
++}
++
++int xpon_leds_register(struct xpon_device *xpon)
++{
++	if (!xpon->pon_led) {
++		xpon->pon_led = xpon_led_get_optional(xpon, "pon");
++		if (IS_ERR(xpon->pon_led))
++			return PTR_ERR(xpon->pon_led);
++	}
++
++	if (!xpon->los_led) {
++		xpon->los_led = xpon_led_get_optional(xpon, "los");
++		if (IS_ERR(xpon->los_led))
++			return PTR_ERR(xpon->los_led);
++	}
++
++	if (!xpon->fiber_led) {
++		xpon->fiber_led = xpon_led_get_optional(xpon, "fiber");
++		if (IS_ERR(xpon->fiber_led))
++			return PTR_ERR(xpon->fiber_led);
++	}
++
++	return 0;
++}
++
+ void xpon_leds_update(struct xpon_device *xpon,
+ 		      const struct xpon_state *state)
+ {
+-- 
+2.55.0
+

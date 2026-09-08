@@ -1,0 +1,3859 @@
+From 81116d14fa47f79dfe5fa76f9073c222f59ecf28 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Wed, 26 Aug 2026 00:22:29 -0300
+Subject: [PATCH] net: airoha: unify EcoNet and Airoha Ethernet core state
+
+Consolidate the EcoNet/MIPS Ethernet state into the common Airoha driver core. Keep PPE/FOE consolidation for a follow-up change.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c  | 1816 +++++++++------------
+ drivers/net/ethernet/airoha/airoha_eth.h  |  202 ++-
+ drivers/net/ethernet/airoha/airoha_regs.h |    9 +-
+ 3 files changed, 868 insertions(+), 1159 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
+index a529d10403ad..70d833a01c36 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -289,18 +289,15 @@ EXPORT_SYMBOL_GPL(airoha_gdm_phylink_destroy);
+ /* ------------------------------------------------------------------------- */
+ /* QDMA common helpers and hardware-specific implementations. */
+ 
+-void airoha_qdma_common_init(struct airoha_qdma_common *qdma,
+-			     struct airoha_eth *eth, void __iomem *regs, u8 id)
++void airoha_qdma_setup(struct airoha_qdma *qdma, struct airoha_eth *eth,
++		       void __iomem *regs, u8 id, u8 num_channels)
+ {
+ 	qdma->eth = eth;
+ 	qdma->regs = regs;
+ 	qdma->id = id;
++	qdma->num_channels = num_channels;
+ }
+ 
+-#define AIROHA_MTK_HDR_LEN			4
+-#define AIROHA_MTK_STAG_PORT_MASK		GENMASK(5, 0)
+-#define AIROHA_MTK_HDR_XMIT_TAGGED_TPID_8100	1
+-#define AIROHA_MTK_HDR_XMIT_TAGGED_TPID_88A8	2
+ 
+ static void airoha_qdma_skb_meta_init(struct airoha_qdma_skb_meta *meta)
+ {
+@@ -386,7 +383,7 @@ struct econet_q_rx {
+ 	u16				cpu_i;
+ 
+ 	/* Not modified after init */
+-	struct econet_qdma		*qdma;
++	struct airoha_qdma_mips		*qdma;
+ 	struct qchain_regs __iomem	*qchain_regs;
+ 	int				ndesc;
+ 	int				buf_size;
+@@ -414,7 +411,7 @@ struct econet_q_tx {
+ 	u16				freelist_tail;
+ 
+ 	/* Not modified after init */
+-	struct econet_qdma		*qdma;
++	struct airoha_qdma_mips		*qdma;
+ 	struct qchain_regs __iomem	*qchain_regs;
+ 	int				ndesc;
+ 	struct napi_struct		napi;
+@@ -429,7 +426,7 @@ struct econet_irq {
+ 	u32 __iomem 			*status_reg[ECONET_QDMA_IRQ_REGS];
+ 
+ 	/* Not modified after init */
+-	struct econet_qdma 		*qdma;
++	struct airoha_qdma_mips 		*qdma;
+ 	int 				irq;
+ };
+ 
+@@ -439,77 +436,27 @@ struct econet_tx_doneq {
+ 	struct qregs_doneq __iomem	*regs;
+ 
+ 	/* Not modified after init */
+-	struct econet_qdma 		*qdma;
++	struct airoha_qdma_mips 		*qdma;
+ 	int 				size;
+ 	struct napi_struct 		napi;
+ };
+ 
+-#define EN751221_SLM_BASE			0x1fa60000
+-#define EN751221_SLM_REG_SIZE			SZ_256
+-#define EN751221_SLM_HWF_VIRT_BASE		0x1b800000
+-#define EN751221_SLM_PHYS_SIZE			SZ_4M
+-#define EN751221_SLM_MAX_DRAM_SIZE		SZ_256M
+-#define EN751221_SLM_SECTOR_SIZE		SZ_256
+ 
+-#define EN751221_SLM_GLO_CFG_BYPASS		BIT(0)
+-#define EN751221_SLM_EN_ENABLE			BIT(0)
+-#define EN751221_SLM_EN_ACTIVE			BIT(1)
+-
+-struct en751221_slm_regs {
+-	u32 glo_cfg;
+-	u32 enable;
+-	u32 reserved_08[2];
+-	u32 virt_base;
+-	u32 virt_size;
+-	u32 phys_base;
+-	u32 phys_size;
+-	u32 free_min_cnt;
+-	u32 free_cur_cnt;
+-	u32 free_threshold;
+-	u32 reserved_2c;
+-	u32 api_cmd;
+-	u32 api_base;
+-	u32 api_rd_addr;
+-	u32 reserved_3c;
+-	u32 int_status;
+-	u32 int_mask;
+-	u32 bus_rd_null_addr;
+-	u32 reserved_4c;
+-	u32 drop_cmd;
+-	u32 drop_addr;
+-	u32 drop_cnt;
+-};
+-
+-struct econet_qdma {
+-	struct airoha_qdma_common	common;
+-
+-	/* Protects register programming and users. */
+-	struct mutex			lock;
+-	/* Typed EcoNet view of common.regs. */
+-	struct qregs __iomem		*regs;
+-	int				users;
+-	int				num_irqs;
+-
+-	/* Synchronized inside of the structure */
+-	struct econet_irq 		irqs[ECONET_MAX_QDMA_IRQS];
+-	struct econet_tx_doneq 		q_tx_done[QDMA_NUM_TX_DONE];
+-	struct econet_q_tx 		q_tx[QDMA_NUM_CHAINS];
+-	struct econet_q_rx 		q_rx[QDMA_NUM_CHAINS];
+-
+-	/* Not modified after init */
+-	struct device 			*dev;
+-	struct fwdesc 			*hwf_desc;
+-	int				num_fwd_descs;
+-	u32				fwd_buf_size;
+-	struct en751221_slm_regs __iomem *slm_regs;
+-	void				*slm_buf;
+-	dma_addr_t			slm_dma_addr;
+-	size_t				slm_buf_size;
+-	bool				slm_enabled;
+-	struct dentry			*slm_debugfs_dir;
+-	struct net_device 		*napi_dev;
+-	struct econet_qdma_cfg 		cfg;
+-	const struct airoha_eth_soc_data	*soc;
++struct airoha_qdma_mips {
++	struct airoha_qdma *qdma;
++	struct mutex lock;
++	struct qregs __iomem *regs;
++
++	struct econet_irq irqs[ECONET_MAX_QDMA_IRQS];
++	struct econet_tx_doneq q_tx_done[QDMA_NUM_TX_DONE];
++	struct econet_q_tx q_tx[QDMA_NUM_CHAINS];
++	struct econet_q_rx q_rx[QDMA_NUM_CHAINS];
++
++	struct fwdesc *hwf_desc;
++	int num_fwd_descs;
++	u32 fwd_buf_size;
++	struct airoha_qdma_slm slm;
++	struct airoha_qdma_mips_cfg cfg;
+ };
+ 
+ static void econet_fill_rx_queue(struct econet_q_rx *q, u32 end_i)
+@@ -567,7 +514,7 @@ static void econet_qdma_rx_process_one(struct econet_q_rx *q, u32 cpu_i,
+ 
+ 	memcpy(&desc, &q->desc[cpu_i], sizeof(desc));
+ 
+-	dma_sync_single_for_cpu(q->qdma->dev, e->dma_addr, e->dma_len, dir);
++	dma_sync_single_for_cpu(q->qdma->qdma->eth->dev, e->dma_addr, e->dma_len, dir);
+ 
+ 	/* Not needed but a couple of WARN_ON_ONCE() check this later */
+ 	e->dma_addr = 0;
+@@ -598,18 +545,18 @@ static void econet_qdma_rx_process_one(struct econet_q_rx *q, u32 cpu_i,
+ 	 * FE RX layout.  Divert management frames before interpreting them as
+ 	 * Ethernet/PPE traffic.
+ 	 */
+-	if (econet_rx_xpon_oam(q->qdma->common.eth,
+-					q->qdma->common.id, skb, &desc.msg))
++	if (econet_rx_xpon_oam(q->qdma->qdma->eth,
++					q->qdma->qdma->id, skb, &desc.msg))
+ 		return;
+ 
+ 	hash = get_erx_ppe_entry(&desc.msg.erx);
+ 	skb_set_hash(skb, jhash_1word(hash, 0),
+ 		     PKT_HASH_TYPE_L4);
+-	airoha_ppe_dev_check_skb_reason(q->qdma->common.eth->ppe_dev, skb, hash,
++	airoha_ppe_dev_check_skb_reason(q->qdma->qdma->eth->ppe_dev, skb, hash,
+ 					get_erx_crsn(&desc.msg.erx));
+ 
+ 	sport = get_erx_sport(&desc.msg.erx);
+-	if (econet_rx_before_recv(q->qdma->common.eth, skb, sport)) {
++	if (econet_rx_before_recv(q->qdma->qdma->eth, skb, sport)) {
+ 		dev_kfree_skb(skb);
+ 	} else {
+ 		if ((skb->dev->features & NETIF_F_RXCSUM) &&
+@@ -726,39 +673,35 @@ static union irq_bit econet_irq_bit(union econet_irq_purpose purpose)
+ 	return bit;
+ }
+ 
+-#define EN7516_QDMA_INT_STATUS1_OFFSET		0x700
+-#define EN7516_QDMA_INT_STATUS2_OFFSET		0x704
+-#define EN7516_QDMA_INT_ENABLE_BASE		0x704
+-#define EN7516_QDMA_INT_ENABLE_STRIDE		0x0c
+ 
+-static u32 __iomem *econet_irq_status_reg(struct econet_qdma *qdma,
++static u32 __iomem *econet_irq_status_reg(struct airoha_qdma_mips *qdma,
+ 					 int bank, int reg)
+ {
+-	void __iomem *base = qdma->common.regs;
++	u8 __iomem *base = qdma->qdma->regs;
+ 
+-	if (bank >= qdma->num_irqs || reg >= ECONET_QDMA_IRQ_REGS)
++	if (bank >= qdma->qdma->eth->soc->irq_banks || reg >= ECONET_QDMA_IRQ_REGS)
+ 		return NULL;
+ 
+ 	if (reg == 0)
+ 		return &qdma->regs->int_status;
+ 
+-	if (!airoha_is(qdma->common.eth, econet_en7528))
++	if (!airoha_is(qdma->qdma->eth, econet_en7528))
+ 		return NULL;
+ 
+-	return (u32 __iomem *)((u8 __iomem *)base +
++	return (u32 __iomem *)(base +
+ 	       (reg == 1 ? EN7516_QDMA_INT_STATUS1_OFFSET :
+ 			   EN7516_QDMA_INT_STATUS2_OFFSET));
+ }
+ 
+-static u32 __iomem *econet_irq_enable_reg(struct econet_qdma *qdma,
++static u32 __iomem *econet_irq_enable_reg(struct airoha_qdma_mips *qdma,
+ 					 int bank, int reg)
+ {
+-	void __iomem *base = qdma->common.regs;
++	u8 __iomem *base = qdma->qdma->regs;
+ 
+-	if (bank >= qdma->num_irqs || reg >= ECONET_QDMA_IRQ_REGS)
++	if (bank >= qdma->qdma->eth->soc->irq_banks || reg >= ECONET_QDMA_IRQ_REGS)
+ 		return NULL;
+ 
+-	if (!airoha_is(qdma->common.eth, econet_en7528))
++	if (!airoha_is(qdma->qdma->eth, econet_en7528))
+ 		return bank == 0 && reg == 0 ? &qdma->regs->int_enable : NULL;
+ 
+ 	/* EN7516/EN7527 INT1 keeps ENABLE0 at 0x54. The remaining
+@@ -767,18 +710,17 @@ static u32 __iomem *econet_irq_enable_reg(struct econet_qdma *qdma,
+ 	if (bank == 0 && reg == 0)
+ 		return &qdma->regs->int_enable;
+ 
+-	return (u32 __iomem *)((u8 __iomem *)base +
+-	       EN7516_QDMA_INT_ENABLE_BASE +
++	return (u32 __iomem *)(base + EN7516_QDMA_INT_ENABLE_BASE +
+ 	       bank * EN7516_QDMA_INT_ENABLE_STRIDE + reg * sizeof(u32));
+ }
+ 
+ /* End EcoNet QDMA IRQ layout helpers */
+ 
+-static void econet_qdma_set_irqmask(struct econet_qdma *qdma, union irq_bit b, bool enable)
++static void econet_qdma_set_irqmask(struct airoha_qdma_mips *qdma, union irq_bit b, bool enable)
+ {
+ 	struct econet_irq *irq;
+ 
+-	if (WARN_ON_ONCE(b.irq_idx >= qdma->num_irqs))
++	if (WARN_ON_ONCE(b.irq_idx >= qdma->qdma->eth->soc->irq_banks))
+ 		return;
+ 
+ 	irq = &qdma->irqs[b.irq_idx];
+@@ -807,13 +749,13 @@ static void econet_qdma_set_irqmask(struct econet_qdma *qdma, union irq_bit b, b
+ 	econet_rreg(irq->mask_reg[b.reg_idx]);
+ }
+ 
+-int econet_qdma_set_xpon_irq(struct econet_qdma *qdma,
++static int econet_qdma_set_xpon_irq_mips(struct airoha_qdma_mips *qdma,
+ 				  enum airoha_xpon_mode mode, bool enable)
+ {
+ 	union econet_irq_purpose purpose;
+ 	union irq_bit bit;
+ 
+-	if (!qdma || qdma->common.id != 1)
++	if (!qdma || qdma->qdma->id != 1)
+ 		return -EINVAL;
+ 
+ 	switch (mode) {
+@@ -841,7 +783,7 @@ int econet_qdma_set_xpon_irq(struct econet_qdma *qdma,
+ static int econet_qdma_rx_napi_poll(struct napi_struct *napi, int budget)
+ {
+ 	struct econet_q_rx *q = container_of(napi, struct econet_q_rx, napi);
+-	struct econet_qdma *qdma = q->qdma;
++	struct airoha_qdma_mips *qdma = q->qdma;
+ 	int cur, done = 0;
+ 
+ 	do {
+@@ -864,7 +806,7 @@ static int econet_qdma_rx_napi_poll(struct napi_struct *napi, int budget)
+ static irqreturn_t econet_irq_handler(int irq_num, void *dev_instance)
+ {
+ 	struct econet_irq *irq = dev_instance;
+-	struct econet_qdma *qdma = irq->qdma;
++	struct airoha_qdma_mips *qdma = irq->qdma;
+ 	unsigned long xpon_pending = 0;
+ 	int i;
+ 
+@@ -914,7 +856,7 @@ static irqreturn_t econet_irq_handler(int irq_num, void *dev_instance)
+ 					xpon_pending |= BIT(AIROHA_XPON_MODE_EPON);
+ 					continue;
+ 				}
+-				dev_dbg_ratelimited(qdma->dev,
++				dev_dbg_ratelimited(qdma->qdma->eth->dev,
+ 						    "%s IRQ from %s[%d]\n",
+ 						    econet_irq_purpose_type_str(p.type),
+ 						    econet_irq_purpose_source_str(p.source),
+@@ -932,10 +874,10 @@ static irqreturn_t econet_irq_handler(int irq_num, void *dev_instance)
+ 	 * drain operations.
+ 	 */
+ 	if (xpon_pending & BIT(AIROHA_XPON_MODE_GPON))
+-		econet_xpon_irq(qdma->common.eth, qdma->common.id,
++		econet_xpon_irq(qdma->qdma->eth, qdma->qdma->id,
+ 					 AIROHA_XPON_MODE_GPON);
+ 	if (xpon_pending & BIT(AIROHA_XPON_MODE_EPON))
+-		econet_xpon_irq(qdma->common.eth, qdma->common.id,
++		econet_xpon_irq(qdma->qdma->eth, qdma->qdma->id,
+ 					 AIROHA_XPON_MODE_EPON);
+ 
+ 	return IRQ_HANDLED;
+@@ -945,7 +887,7 @@ static int econet_poll_tx_complete(struct napi_struct *napi, int budget)
+ {
+ 	struct qregs_doneq_state state;
+ 	struct econet_tx_doneq *done_q;
+-	struct econet_qdma *qdma;
++	struct airoha_qdma_mips *qdma;
+ 	int irq_queued;
+ 	u32 done = 0, head;
+ 
+@@ -998,7 +940,7 @@ static int econet_poll_tx_complete(struct napi_struct *napi, int budget)
+ 		e = &q->entry[index];
+ 		skb = e->skb;
+ 
+-		dma_unmap_single(qdma->dev, e->dma_addr, e->dma_len,
++		dma_unmap_single(qdma->qdma->eth->dev, e->dma_addr, e->dma_len,
+ 				 DMA_TO_DEVICE);
+ 		memset(e, 0, sizeof(*e));
+ 
+@@ -1053,7 +995,7 @@ static int econet_poll_tx_complete(struct napi_struct *napi, int budget)
+ 	return done;
+ }
+ 
+-int econet_qdma_xmit(struct econet_qdma *qdma, struct sk_buff *skb,
++static int econet_qdma_xmit_mips(struct airoha_qdma_mips *qdma, struct sk_buff *skb,
+ 		   union desc_msg *msg, int qid)
+ {
+ 	struct econet_q_tx *q = &qdma->q_tx[qid];
+@@ -1075,8 +1017,8 @@ int econet_qdma_xmit(struct econet_qdma *qdma, struct sk_buff *skb,
+ 	if (next_index == 0xffff)
+ 		return -EBUSY;
+ 
+-	addr = dma_map_single(qdma->dev, skb->data, len, DMA_TO_DEVICE);
+-	ret = dma_mapping_error(qdma->dev, addr);
++	addr = dma_map_single(qdma->qdma->eth->dev, skb->data, len, DMA_TO_DEVICE);
++	ret = dma_mapping_error(qdma->qdma->eth->dev, addr);
+ 	if (unlikely(ret))
+ 		return ret;
+ 
+@@ -1111,7 +1053,7 @@ int econet_qdma_xmit(struct econet_qdma *qdma, struct sk_buff *skb,
+ /* Init functions, no locks, assumed non-concurrent */
+ 
+ static int econet_init_rx_queue(struct econet_q_rx *q,
+-			      struct econet_qdma *qdma, int ndesc)
++			      struct airoha_qdma_mips *qdma, int ndesc)
+ {
+ 	const struct page_pool_params pp_params = {
+ 		.order = 0,
+@@ -1120,7 +1062,7 @@ static int econet_init_rx_queue(struct econet_q_rx *q,
+ 		.dma_dir = DMA_FROM_DEVICE,
+ 		.max_len = PAGE_SIZE,
+ 		.nid = NUMA_NO_NODE,
+-		.dev = qdma->dev,
++		.dev = qdma->qdma->eth->dev,
+ 		.napi = &q->napi,
+ 	};
+ 	int threshold;
+@@ -1128,20 +1070,20 @@ static int econet_init_rx_queue(struct econet_q_rx *q,
+ 	struct qregs_rxring_low rrl;
+ 	dma_addr_t dma_addr;
+ 
+-	q->buf_size = ECONET_MAX_PACKET_SIZE;
++	q->buf_size = AIROHA_MAX_PACKET_SIZE;
+ 	q->ndesc = ndesc;
+ 	q->qdma = qdma;
+ 
+-	if (airoha_is(qdma->common.eth, econet_en751221))
++	if (airoha_is(qdma->qdma->eth, econet_en751221))
+ 		/* QDMA_LAN uses 32 for both rings; QDMA_WAN uses ring_size / 4. */
+-		threshold = qdma->common.id == 0 ? 32 : ndesc >> 2;
++		threshold = qdma->qdma->id == 0 ? 32 : ndesc >> 2;
+ 	else
+ 		threshold = clamp(ndesc >> 3, 1, 32);
+ 	q->qchain_regs = (q == &qdma->q_rx[0]) ?
+ 			 &qdma->regs->qchain0 :
+ 			 &qdma->regs->qchain1;
+ 
+-	q->entry = devm_kzalloc(qdma->dev, q->ndesc * sizeof(*q->entry),
++	q->entry = devm_kzalloc(qdma->qdma->eth->dev, q->ndesc * sizeof(*q->entry),
+ 				GFP_KERNEL);
+ 	if (!q->entry)
+ 		return -ENOMEM;
+@@ -1154,14 +1096,14 @@ static int econet_init_rx_queue(struct econet_q_rx *q,
+ 		return err;
+ 	}
+ 
+-	q->desc = dmam_alloc_coherent(qdma->dev, q->ndesc * sizeof(*q->desc),
++	q->desc = dmam_alloc_coherent(qdma->qdma->eth->dev, q->ndesc * sizeof(*q->desc),
+ 				      &dma_addr, GFP_KERNEL);
+ 	if (!q->desc)
+ 		return -ENOMEM;
+ 
+ 	memset(q->desc, 0, q->ndesc * sizeof(*q->desc));
+ 
+-	netif_napi_add(qdma->napi_dev, &q->napi, econet_qdma_rx_napi_poll);
++	netif_napi_add(qdma->qdma->eth->napi_dev, &q->napi, econet_qdma_rx_napi_poll);
+ 
+ 	econet_wreg(lower_32_bits(dma_addr), &q->qchain_regs->rxbase);
+ 
+@@ -1195,17 +1137,15 @@ static int econet_init_rx_queue(struct econet_q_rx *q,
+ 	return 0;
+ }
+ 
+-static int econet_init_irqs(struct device *dev, struct econet_qdma *qdma,
+-			    int *irqs, int num_irqs)
++static int econet_init_irqs(struct device *dev, struct airoha_qdma_mips *qdma,
++			    int *irqs)
+ {
+ 	int i;
+ 
+-	if (num_irqs <= 0 || num_irqs > ARRAY_SIZE(qdma->irqs))
++	if (qdma->qdma->eth->soc->irq_banks > ARRAY_SIZE(qdma->irqs))
+ 		return -EINVAL;
+ 
+-	qdma->num_irqs = num_irqs;
+-
+-	for (i = 0; i < qdma->num_irqs; i++) {
++	for (i = 0; i < qdma->qdma->eth->soc->irq_banks; i++) {
+ 		struct econet_irq *irq = &qdma->irqs[i];
+ 		const char *name;
+ 		int err;
+@@ -1224,7 +1164,7 @@ static int econet_init_irqs(struct device *dev, struct econet_qdma *qdma,
+ 		}
+ 
+ 		name = devm_kasprintf(dev, GFP_KERNEL,
+-				      KBUILD_MODNAME "-%d.%d", qdma->common.id, i);
++				      KBUILD_MODNAME "-%d.%d", qdma->qdma->id, i);
+ 		if (!name)
+ 			return -ENOMEM;
+ 
+@@ -1239,14 +1179,14 @@ static int econet_init_irqs(struct device *dev, struct econet_qdma *qdma,
+ }
+ 
+ static int econet_init_tx_doneq(struct econet_tx_doneq *done_q,
+-			      struct econet_qdma *qdma, int size,
++			      struct airoha_qdma_mips *qdma, int size,
+ 			      int irq_threshold)
+ {
+ 	dma_addr_t dma_addr;
+ 
+-	netif_napi_add_tx(qdma->napi_dev, &done_q->napi,
++	netif_napi_add_tx(qdma->qdma->eth->napi_dev, &done_q->napi,
+ 			  econet_poll_tx_complete);
+-	done_q->q = dmam_alloc_coherent(qdma->dev, size * sizeof(u32),
++	done_q->q = dmam_alloc_coherent(qdma->qdma->eth->dev, size * sizeof(u32),
+ 				       &dma_addr, GFP_KERNEL);
+ 	if (!done_q->q)
+ 		return -ENOMEM;
+@@ -1266,7 +1206,7 @@ static int econet_init_tx_doneq(struct econet_tx_doneq *done_q,
+ }
+ 
+ static int econet_init_tx_queue(struct econet_q_tx *q,
+-			      struct econet_qdma *qdma, int size)
++			      struct airoha_qdma_mips *qdma, int size)
+ {
+ 	int i, qid = q - &qdma->q_tx[0];
+ 	dma_addr_t dma_addr;
+@@ -1278,12 +1218,12 @@ static int econet_init_tx_queue(struct econet_q_tx *q,
+ 			 &qdma->regs->qchain0 :
+ 			 &qdma->regs->qchain1;
+ 
+-	q->entry = devm_kzalloc(qdma->dev, q->ndesc * sizeof(*q->entry),
++	q->entry = devm_kzalloc(qdma->qdma->eth->dev, q->ndesc * sizeof(*q->entry),
+ 				GFP_KERNEL);
+ 	if (!q->entry)
+ 		return -ENOMEM;
+ 
+-	q->desc = dmam_alloc_coherent(qdma->dev, q->ndesc * sizeof(*q->desc),
++	q->desc = dmam_alloc_coherent(qdma->qdma->eth->dev, q->ndesc * sizeof(*q->desc),
+ 				      &dma_addr, GFP_KERNEL);
+ 	if (!q->desc)
+ 		return -ENOMEM;
+@@ -1306,10 +1246,10 @@ static int econet_init_tx_queue(struct econet_q_tx *q,
+ 	return 0;
+ }
+ 
+-static bool econet_en751221_use_slm(struct econet_qdma *qdma)
++static bool econet_en751221_use_slm(struct airoha_qdma_mips *qdma)
+ {
+-	if (!airoha_is(qdma->common.eth, econet_en751221) ||
+-	    qdma->common.id != 1)
++	if (!airoha_is(qdma->qdma->eth, econet_en751221) ||
++	    qdma->qdma->id != 1)
+ 		return false;
+ 
+ 	/*
+@@ -1321,7 +1261,7 @@ static bool econet_en751221_use_slm(struct econet_qdma *qdma)
+ 	return (totalram_pages() << PAGE_SHIFT) <= EN751221_SLM_MAX_DRAM_SIZE;
+ }
+ 
+-static int econet_en751221_slm_wait_idle(struct econet_qdma *qdma)
++static int econet_en751221_slm_wait_idle(struct airoha_qdma_mips *qdma)
+ {
+ 	u32 val;
+ 	int ret;
+@@ -1332,16 +1272,16 @@ static int econet_en751221_slm_wait_idle(struct econet_qdma *qdma)
+ 				(EN751221_SLM_EN_ENABLE |
+ 				 EN751221_SLM_EN_ACTIVE),
+ 				USEC_PER_MSEC, 20 * USEC_PER_MSEC, true,
+-				&qdma->slm_regs->enable);
++				&qdma->slm.regs->enable);
+ 	if (ret)
+-		dev_err(qdma->dev, "SLM is still active after 20 ms\n");
++		dev_err(qdma->qdma->eth->dev, "SLM is still active after 20 ms\n");
+ 
+ 	return ret;
+ }
+ 
+-static void econet_en751221_slm_disable(struct econet_qdma *qdma)
++static void econet_en751221_slm_disable(struct airoha_qdma_mips *qdma)
+ {
+-	if (!qdma->slm_regs || !qdma->slm_enabled)
++	if (!qdma->slm.regs || !qdma->slm.enabled)
+ 		return;
+ 
+ 	/*
+@@ -1351,26 +1291,24 @@ static void econet_en751221_slm_disable(struct econet_qdma *qdma)
+ 	 * worse than reproducing the vendor's forced-disable behaviour here.
+ 	 */
+ 	econet_en751221_slm_wait_idle(qdma);
+-	writel(0, &qdma->slm_regs->enable);
+-	writel(0, &qdma->slm_regs->virt_size);
+-	writel(0, &qdma->slm_regs->phys_size);
+-	writel(0, &qdma->slm_regs->virt_base);
+-	writel(0, &qdma->slm_regs->phys_base);
+-	qdma->slm_enabled = false;
++	writel(0, &qdma->slm.regs->enable);
++	writel(0, &qdma->slm.regs->virt_size);
++	writel(0, &qdma->slm.regs->phys_size);
++	writel(0, &qdma->slm.regs->virt_base);
++	writel(0, &qdma->slm.regs->phys_base);
++	qdma->slm.enabled = false;
+ 
+-	debugfs_remove_recursive(qdma->slm_debugfs_dir);
+-	qdma->slm_debugfs_dir = NULL;
+ 
+-	if (qdma->slm_buf) {
+-		dmam_free_coherent(qdma->dev, qdma->slm_buf_size,
+-				   qdma->slm_buf, qdma->slm_dma_addr);
+-		qdma->slm_buf = NULL;
+-		qdma->slm_buf_size = 0;
+-		qdma->slm_dma_addr = 0;
++	if (qdma->slm.buf) {
++		dmam_free_coherent(qdma->qdma->eth->dev, qdma->slm.buf_size,
++				   qdma->slm.buf, qdma->slm.dma_addr);
++		qdma->slm.buf = NULL;
++		qdma->slm.buf_size = 0;
++		qdma->slm.dma_addr = 0;
+ 	}
+ }
+ 
+-static int econet_en751221_slm_init(struct econet_qdma *qdma,
++static int econet_en751221_slm_init(struct airoha_qdma_mips *qdma,
+ 				    size_t virtual_size, u32 *hwf_data_addr)
+ {
+ 	size_t physical_size = min_t(size_t, virtual_size,
+@@ -1384,10 +1322,10 @@ static int econet_en751221_slm_init(struct econet_qdma *qdma,
+ 	    !IS_ALIGNED(physical_size, EN751221_SLM_SECTOR_SIZE))
+ 		return -EINVAL;
+ 
+-	qdma->slm_regs = devm_ioremap(qdma->dev, EN751221_SLM_BASE,
++	qdma->slm.regs = devm_ioremap(qdma->qdma->eth->dev, EN751221_SLM_BASE,
+ 				      EN751221_SLM_REG_SIZE);
+-	if (!qdma->slm_regs)
+-		return dev_err_probe(qdma->dev, -ENOMEM,
++	if (!qdma->slm.regs)
++		return dev_err_probe(qdma->qdma->eth->dev, -ENOMEM,
+ 				     "failed to map EN751221 SLM registers\n");
+ 
+ 	/*
+@@ -1395,9 +1333,9 @@ static int econet_en751221_slm_init(struct econet_qdma *qdma,
+ 	 * Do not clear it from Linux: the remaining GLO_CFG bits are undocumented
+ 	 * and the board has already completed DRAM/arbiter initialisation.
+ 	 */
+-	glo_cfg = readl(&qdma->slm_regs->glo_cfg);
++	glo_cfg = readl(&qdma->slm.regs->glo_cfg);
+ 	if (glo_cfg & EN751221_SLM_GLO_CFG_BYPASS)
+-		return dev_err_probe(qdma->dev, -EOPNOTSUPP,
++		return dev_err_probe(qdma->qdma->eth->dev, -EOPNOTSUPP,
+ 				     "EN751221 SLM is bypassed by firmware (GLO_CFG=%08x)\n",
+ 				     glo_cfg);
+ 
+@@ -1405,48 +1343,48 @@ static int econet_en751221_slm_init(struct econet_qdma *qdma,
+ 	if (ret)
+ 		return ret;
+ 
+-	writel(0, &qdma->slm_regs->enable);
++	writel(0, &qdma->slm.regs->enable);
+ 
+-	buf = dmam_alloc_coherent(qdma->dev, physical_size, &dma_addr,
++	buf = dmam_alloc_coherent(qdma->qdma->eth->dev, physical_size, &dma_addr,
+ 				  GFP_KERNEL);
+ 	if (!buf)
+-		return dev_err_probe(qdma->dev, -ENOMEM,
++		return dev_err_probe(qdma->qdma->eth->dev, -ENOMEM,
+ 				     "failed to allocate SLM backing memory\n");
+ 	if (upper_32_bits(dma_addr)) {
+-		dmam_free_coherent(qdma->dev, physical_size, buf, dma_addr);
+-		return dev_err_probe(qdma->dev, -ERANGE,
++		dmam_free_coherent(qdma->qdma->eth->dev, physical_size, buf, dma_addr);
++		return dev_err_probe(qdma->qdma->eth->dev, -ERANGE,
+ 				     "SLM backing DMA address must be below 4 GiB\n");
+ 	}
+ 
+-	qdma->slm_buf = buf;
+-	qdma->slm_dma_addr = dma_addr;
+-	qdma->slm_buf_size = physical_size;
++	qdma->slm.buf = buf;
++	qdma->slm.dma_addr = dma_addr;
++	qdma->slm.buf_size = physical_size;
+ 
+ 	writel(virtual_size / EN751221_SLM_SECTOR_SIZE,
+-	       &qdma->slm_regs->virt_size);
++	       &qdma->slm.regs->virt_size);
+ 	writel(physical_size / EN751221_SLM_SECTOR_SIZE,
+-	       &qdma->slm_regs->phys_size);
+-	writel(EN751221_SLM_HWF_VIRT_BASE, &qdma->slm_regs->virt_base);
+-	writel(lower_32_bits(dma_addr), &qdma->slm_regs->phys_base);
+-	qdma->slm_enabled = true;
+-	writel(1, &qdma->slm_regs->enable);
++	       &qdma->slm.regs->phys_size);
++	writel(EN751221_SLM_HWF_VIRT_BASE, &qdma->slm.regs->virt_base);
++	writel(lower_32_bits(dma_addr), &qdma->slm.regs->phys_base);
++	qdma->slm.enabled = true;
++	writel(1, &qdma->slm.regs->enable);
+ 
+-	if (!(readl(&qdma->slm_regs->enable) & BIT(0))) {
++	if (!(readl(&qdma->slm.regs->enable) & BIT(0))) {
+ 		econet_en751221_slm_disable(qdma);
+-		return dev_err_probe(qdma->dev, -EIO,
++		return dev_err_probe(qdma->qdma->eth->dev, -EIO,
+ 				     "failed to enable EN751221 SLM\n");
+ 	}
+ 
+ 	*hwf_data_addr = EN751221_SLM_HWF_VIRT_BASE;
+-	dev_info(qdma->dev,
++	dev_info(qdma->qdma->eth->dev,
+ 		 "QDMA1 SLM enabled: HWF 0x%08x+%zu KiB -> DMA %pad+%zu KiB\n",
+ 		 EN751221_SLM_HWF_VIRT_BASE, virtual_size / SZ_1K,
+-		 &qdma->slm_dma_addr, physical_size / SZ_1K);
++		 &qdma->slm.dma_addr, physical_size / SZ_1K);
+ 
+ 	return 0;
+ }
+ 
+-static int econet_init_hw_fwd(struct econet_qdma *qdma)
++static int econet_init_hw_fwd(struct airoha_qdma_mips *qdma)
+ {
+ 	enum qregs_hwf_cfg_pkt_sz buf_size_cfg = QREGS_HWF_CFG_PKT_SZ_2048;
+ 	int ret, size, index, num_desc = qdma->cfg.num_fwd_descs;
+@@ -1456,7 +1394,7 @@ static int econet_init_hw_fwd(struct econet_qdma *qdma)
+ 	struct hwf_cfg cfg;
+ 	const char *name;
+ 
+-	name = devm_kasprintf(qdma->dev, GFP_KERNEL, "qdma%d-buf", qdma->common.id);
++	name = devm_kasprintf(qdma->qdma->eth->dev, GFP_KERNEL, "qdma%d-buf", qdma->qdma->id);
+ 	if (!name)
+ 		return -ENOMEM;
+ 
+@@ -1464,7 +1402,7 @@ static int econet_init_hw_fwd(struct econet_qdma *qdma)
+ 		buf_size_cfg++;
+ 		buf_size = 2048 << buf_size_cfg;
+ 		if (buf_size > 16384) {
+-			dev_err(qdma->dev, "Unsupported hw forwarding max packet size %d\n",
++			dev_err(qdma->qdma->eth->dev, "Unsupported hw forwarding max packet size %d\n",
+ 				qdma->cfg.fwd_max_packet_size);
+ 			return -EINVAL;
+ 		}
+@@ -1478,7 +1416,7 @@ static int econet_init_hw_fwd(struct econet_qdma *qdma)
+ 		goto hwf_data_ready;
+ 	}
+ 
+-	index = of_property_match_string(qdma->dev->of_node,
++	index = of_property_match_string(qdma->qdma->eth->dev->of_node,
+ 					 "memory-region-names", name);
+ 	if (index >= 0) {
+ 		struct reserved_mem *rmem;
+@@ -1487,7 +1425,7 @@ static int econet_init_hw_fwd(struct econet_qdma *qdma)
+ 		/* Consume reserved memory for hw forwarding buffers queue if
+ 		 * available in the DTS
+ 		 */
+-		np = of_parse_phandle(qdma->dev->of_node, "memory-region",
++		np = of_parse_phandle(qdma->qdma->eth->dev->of_node, "memory-region",
+ 				      index);
+ 		if (!np)
+ 			return -ENODEV;
+@@ -1495,11 +1433,11 @@ static int econet_init_hw_fwd(struct econet_qdma *qdma)
+ 		rmem = of_reserved_mem_lookup(np);
+ 		of_node_put(np);
+ 		if (!rmem)
+-			return dev_err_probe(qdma->dev, -EINVAL,
++			return dev_err_probe(qdma->qdma->eth->dev, -EINVAL,
+ 					     "invalid %s memory-region\n", name);
+ 		if (!rmem->size || upper_32_bits(rmem->base) ||
+ 		    upper_32_bits(rmem->base + rmem->size - 1))
+-			return dev_err_probe(qdma->dev, -ERANGE,
++			return dev_err_probe(qdma->qdma->eth->dev, -ERANGE,
+ 					     "%s memory-region must be below 4 GiB\n",
+ 					     name);
+ 
+@@ -1509,11 +1447,11 @@ static int econet_init_hw_fwd(struct econet_qdma *qdma)
+ 		 */
+ 		num_desc = div_u64(rmem->size, buf_size);
+ 		if (!num_desc)
+-			return dev_err_probe(qdma->dev, -EINVAL,
++			return dev_err_probe(qdma->qdma->eth->dev, -EINVAL,
+ 					     "%s memory-region is too small\n", name);
+ 
+ 		if (num_desc < qdma->cfg.num_fwd_descs)
+-			dev_warn(qdma->dev,
++			dev_warn(qdma->qdma->eth->dev,
+ 				 "Reserved memory %pa too small for %d "
+ 				 "hw forwarding descriptors with %d bytes"
+ 				 "payload, reducing to %d descriptors.\n",
+@@ -1526,12 +1464,12 @@ static int econet_init_hw_fwd(struct econet_qdma *qdma)
+ 		 * coherent allocation; keep the exact 4096-entry profile when a
+ 		 * qdma1-buf region exists, otherwise use a conservative fallback.
+ 		 */
+-		if (airoha_is(qdma->common.eth, econet_en751221) && qdma->common.id == 1 &&
++		if (airoha_is(qdma->qdma->eth, econet_en751221) && qdma->qdma->id == 1 &&
+ 		    num_desc > 256)
+ 			num_desc = 256;
+ 
+ 		size = buf_size * num_desc;
+-		if (!dmam_alloc_coherent(qdma->dev, size, &dma_addr,
++		if (!dmam_alloc_coherent(qdma->qdma->eth->dev, size, &dma_addr,
+ 					 GFP_KERNEL))
+ 			return -ENOMEM;
+ 	}
+@@ -1542,7 +1480,7 @@ static int econet_init_hw_fwd(struct econet_qdma *qdma)
+ 	econet_wreg(hwf_data_addr, &qdma->regs->hwf_data_addr);
+ 
+ 	size = num_desc * sizeof(*qdma->hwf_desc);
+-	qdma->hwf_desc = dmam_alloc_coherent(qdma->dev, size, &dma_addr, GFP_KERNEL);
++	qdma->hwf_desc = dmam_alloc_coherent(qdma->qdma->eth->dev, size, &dma_addr, GFP_KERNEL);
+ 	if (!qdma->hwf_desc)
+ 		return -ENOMEM;
+ 
+@@ -1561,7 +1499,7 @@ static int econet_init_hw_fwd(struct econet_qdma *qdma)
+ 	cfg1 = econet_rreg(&qdma->regs->hwf_cfg1);
+ 	set_qregs_hwf_cfg1_fwd_desc_n(&cfg1, num_desc);
+ 	set_qregs_hwf_cfg1_overhead_en(&cfg1, true);
+-	set_qregs_hwf_cfg1_overhead(&cfg1, qdma->common.id == 0 ? 0x14 : 0x18);
++	set_qregs_hwf_cfg1_overhead(&cfg1, qdma->qdma->id == 0 ? 0x14 : 0x18);
+ 	set_qregs_hwf_cfg1_start(&cfg1, true);
+ 	econet_wreg(cfg1, &qdma->regs->hwf_cfg1);
+ 
+@@ -1570,13 +1508,13 @@ static int econet_init_hw_fwd(struct econet_qdma *qdma)
+ 				30 * USEC_PER_MSEC, true,
+ 				&qdma->regs->hwf_cfg1);
+ 	if (ret)
+-		dev_err(qdma->dev,
++		dev_err(qdma->qdma->eth->dev,
+ 			"Error %pe waiting for HW forwarding engine to start",
+ 			ERR_PTR(ret));
+ 	return ret;
+ }
+ 
+-static void econet_init_en751221_qdma(struct econet_qdma *qdma)
++static void econet_init_en751221_qdma(struct airoha_qdma_mips *qdma)
+ {
+ 	struct qregs_tx_congest_cfg cngst_cfg;
+ 	struct wrr_mode wrr = { 0 };
+@@ -1597,7 +1535,7 @@ static void econet_init_en751221_qdma(struct econet_qdma *qdma)
+ 		 EN751221_PSE_BUF_CH_THR_MASK |
+ 		 EN751221_PSE_BUF_TOTAL_THR_MASK);
+ 	val |= EN751221_PSE_BUF_CTRL_EN | EN751221_PSE_BUF_ESTIMATE_EN;
+-	if (qdma->common.id == 0) {
++	if (qdma->qdma->id == 0) {
+ 		val |= FIELD_PREP(EN751221_PSE_BUF_CH_THR_MASK, 16) |
+ 		       FIELD_PREP(EN751221_PSE_BUF_TOTAL_THR_MASK, 128);
+ 	} else {
+@@ -1607,7 +1545,7 @@ static void econet_init_en751221_qdma(struct econet_qdma *qdma)
+ 	econet_wreg(val, &qdma->regs->buf_usage_cfg);
+ 
+ 	/* Match qdma_dev.c: 16-byte WRR scale, accounting weights by byte. */
+-	if (airoha_is(qdma->common.eth, econet_en7528))
++	if (airoha_is(qdma->qdma->eth, econet_en7528))
+ 		set_qregs_wrr_mode_use_16b(&wrr, false);
+ 	else
+ 		set_qregs_wrr_mode_use_16b(&wrr, true);
+@@ -1645,13 +1583,13 @@ static void econet_init_en751221_qdma(struct econet_qdma *qdma)
+ 	 * firmware.  Keep the auto profile for reduced/no-reserved-memory
+ 	 * fallback pools, where these full-size thresholds would be invalid.
+ 	 */
+-	if (qdma->fwd_buf_size == 2048 && qdma->common.id == 0 &&
++	if (qdma->fwd_buf_size == 2048 && qdma->qdma->id == 0 &&
+ 	    qdma->num_fwd_descs == 1024) {
+ 		total_min = 5120;
+ 		total_max = 7680;
+ 		channel_max = 7680;
+ 		queue_max = 204;
+-	} else if (qdma->fwd_buf_size == 2048 && qdma->common.id == 1 &&
++	} else if (qdma->fwd_buf_size == 2048 && qdma->qdma->id == 1 &&
+ 		   qdma->num_fwd_descs == 4096) {
+ 		total_min = 2048;
+ 		total_max = 15360;
+@@ -1691,12 +1629,12 @@ static void econet_init_en751221_qdma(struct econet_qdma *qdma)
+ 	econet_wreg(cngst_cfg, &qdma->regs->tx_congest_cfg);
+ }
+ 
+-static int econet_init_final(struct econet_qdma *qdma)
++static int econet_init_final(struct airoha_qdma_mips *qdma)
+ {
+ 	struct qregs_qcfg qcfg;
+ 	int i;
+ 
+-	for (i = 0; i < qdma->num_irqs; i++) {
++	for (i = 0; i < qdma->qdma->eth->soc->irq_banks; i++) {
+ 		int j;
+ 
+ 		/* Clear only status registers implemented by this QDMA. */
+@@ -1726,7 +1664,7 @@ static int econet_init_final(struct econet_qdma *qdma)
+ 
+ 				p = econet_irq_purpose(bit);
+ 
+-				if (airoha_is(qdma->common.eth, econet_en751221)) {
++				if (airoha_is(qdma->qdma->eth, econet_en751221)) {
+ 					/*
+ 					 * Match qdma_dev.c's production mask. HWF
+ 					 * EMPTY/LOW are status/debug conditions, not
+@@ -1771,22 +1709,22 @@ static int econet_init_final(struct econet_qdma *qdma)
+ 
+ 	qcfg = (struct qregs_qcfg) { 0 };
+ 	set_qregs_qcfg_msg_word_swap(&qcfg, true);
+-	set_qregs_qcfg_dscp_byte_swap(&qcfg, airoha_is(qdma->common.eth, econet_en751221));
++	set_qregs_qcfg_dscp_byte_swap(&qcfg, airoha_is(qdma->qdma->eth, econet_en751221));
+ 	set_qregs_qcfg_payload_byte_sw(&qcfg, true);
+-	if (airoha_is_econet(qdma->common.eth))
++	if (airoha_is_econet(qdma->qdma->eth))
+ 		set_qregs_qcfg_dma_pref(&qcfg, QREGS_QCFG_DMA_PREF_ROUND_ROBIN);
+ 	else
+ 		set_qregs_qcfg_dma_pref(&qcfg, QREGS_QCFG_DMA_PREF_TX1_FRX_TX0);
+ 	set_qregs_qcfg_rx_2b_offset(&qcfg, qdma->cfg.rx_2b_offset);
+ 	set_qregs_qcfg_irq_en(&qcfg, true);
+-	set_qregs_qcfg_check_done(&qcfg, !airoha_is_econet(qdma->common.eth));
++	set_qregs_qcfg_check_done(&qcfg, !airoha_is_econet(qdma->qdma->eth));
+ 	set_qregs_qcfg_tx_wb_done(&qcfg, true);
+ 
+-	if (airoha_is(qdma->common.eth, econet_en7528) &&
+-	    qdma->common.id == 0)
++	if (airoha_is(qdma->qdma->eth, econet_en7528) &&
++	    qdma->qdma->id == 0)
+ 		set_qregs_qcfg_tx_immediate_done(&qcfg, true);
+ 
+-	if (airoha_is(qdma->common.eth, econet_en751221)) {
++	if (airoha_is(qdma->qdma->eth, econet_en751221)) {
+ 		/*
+ 		 * Stock QDMA_LAN uses TX_IMMEDIATE_DONE (0x9c180075), while
+ 		 * QDMA_WAN uses SLM_RELEASE_EN (0x9c280075). RX_2B_OFFSET is
+@@ -1795,7 +1733,7 @@ static int econet_init_final(struct econet_qdma *qdma)
+ 		 * offset yet. Without that bit the expected values are
+ 		 * 0x1c180075 and 0x1c280075 once DMA is enabled.
+ 		 */
+-		if (qdma->common.id == 0)
++		if (qdma->qdma->id == 0)
+ 			set_qregs_qcfg_tx_immediate_done(&qcfg, true);
+ 		else
+ 			set_qregs_qcfg_slm_release_en(&qcfg, true);
+@@ -1805,7 +1743,7 @@ static int econet_init_final(struct econet_qdma *qdma)
+ 
+ 	econet_wreg(0U, &qdma->regs->rx_int_delay);
+ 
+-	if (airoha_is(qdma->common.eth, econet_en751221)) {
++	if (airoha_is(qdma->qdma->eth, econet_en751221)) {
+ 		econet_init_en751221_qdma(qdma);
+ 	} else {
+ 		struct qregs_tx_congest_cfg cngst_cfg = { 0 };
+@@ -1832,9 +1770,8 @@ static int econet_init_final(struct econet_qdma *qdma)
+ }
+ 
+ static int econet_init(struct device *dev,
+-		     struct econet_qdma *qdma,
+-		     int *irqs,
+-		     int num_irqs)
++		     struct airoha_qdma_mips *qdma,
++		     int *irqs)
+ {
+ 	int err;
+ 	int i;
+@@ -1842,7 +1779,7 @@ static int econet_init(struct device *dev,
+ 	/* Make sure RX and TX are shutdown */
+ 	econet_wreg((struct qregs_qcfg) { 0 }, &qdma->regs->qdma_cfg);
+ 
+-	err = econet_init_irqs(dev, qdma, irqs, num_irqs);
++	err = econet_init_irqs(dev, qdma, irqs);
+ 	if (err)
+ 		return err;
+ 
+@@ -1892,7 +1829,7 @@ static void econet_qdma_destroy_rxq_locked(struct econet_q_rx *q)
+ 			continue;
+ 
+ 		page = virt_to_head_page(e->buf);
+-		dma_sync_single_for_cpu(q->qdma->dev, e->dma_addr, e->dma_len,
++		dma_sync_single_for_cpu(q->qdma->qdma->eth->dev, e->dma_addr, e->dma_len,
+ 					page_pool_get_dma_dir(q->page_pool));
+ 		page_pool_put_full_page(q->page_pool, page, false);
+ 		e->dma_addr = 0;
+@@ -1903,12 +1840,12 @@ static void econet_qdma_destroy_rxq_locked(struct econet_q_rx *q)
+ 	q->page_pool = NULL;
+ }
+ 
+-static int econet_qdma_destroy_locked(struct econet_qdma *qdma)
++static int econet_qdma_destroy_locked(struct airoha_qdma_mips *qdma)
+ {
+ 	struct qregs_qcfg qcfg;
+ 	int i;
+ 
+-	if (WARN_ON_ONCE(qdma->users))
++	if (WARN_ON_ONCE(qdma->qdma->users))
+ 		return -EBUSY;
+ 
+ 	qcfg = econet_rreg(&qdma->regs->qdma_cfg);
+@@ -1919,7 +1856,7 @@ static int econet_qdma_destroy_locked(struct econet_qdma *qdma)
+ 
+ 	econet_en751221_slm_disable(qdma);
+ 
+-	for (i = 0; i < qdma->num_irqs; i++) {
++	for (i = 0; i < qdma->qdma->eth->soc->irq_banks; i++) {
+ 		struct econet_irq *irq = &qdma->irqs[i];
+ 		int j;
+ 
+@@ -1948,29 +1885,25 @@ static int econet_qdma_destroy_locked(struct econet_qdma *qdma)
+ 			netif_napi_del(&q->napi);
+ 	}
+ 
+-	if (qdma->napi_dev) {
+-		free_netdev(qdma->napi_dev);
+-		qdma->napi_dev = NULL;
+-	}
+ 
+ 	return 0;
+ }
+ 
+-int econet_qdma_destroy(struct econet_qdma *qdma)
++int econet_qdma_destroy(struct airoha_qdma_mips *qdma)
+ {
+ 	guard(mutex)(&qdma->lock);
+ 
+ 	return econet_qdma_destroy_locked(qdma);
+ }
+ 
+-int econet_qdma_use(struct econet_qdma *qdma)
++static int econet_qdma_use_mips(struct airoha_qdma_mips *qdma)
+ {
+ 	struct qregs_qcfg qcfg;
+ 	int i;
+ 
+ 	guard(mutex)(&qdma->lock);
+ 
+-	if (qdma->users++ > 0)
++	if (qdma->qdma->users++ > 0)
+ 		return 0;
+ 
+ 	for (i = 0; i < ARRAY_SIZE(qdma->q_rx); i++)
+@@ -1988,16 +1921,16 @@ int econet_qdma_use(struct econet_qdma *qdma)
+ 	return 0;
+ }
+ 
+-int econet_qdma_unuse(struct econet_qdma *qdma)
++static int econet_qdma_unuse_mips(struct airoha_qdma_mips *qdma)
+ {
+ 	struct qregs_qcfg qcfg;
+ 	int i, j;
+ 
+ 	guard(mutex)(&qdma->lock);
+ 
+-	if (WARN_ON_ONCE(qdma->users <= 0))
++	if (WARN_ON_ONCE(qdma->qdma->users <= 0))
+ 		return -EINVAL;
+-	if (--qdma->users > 0)
++	if (--qdma->qdma->users > 0)
+ 		return 0;
+ 
+ 	qcfg = econet_rreg(&qdma->regs->qdma_cfg);
+@@ -2022,7 +1955,7 @@ int econet_qdma_unuse(struct econet_qdma *qdma)
+ 			if (!e->dma_addr)
+ 				continue;
+ 
+-			dma_unmap_single(qdma->dev, e->dma_addr, e->dma_len,
++			dma_unmap_single(qdma->qdma->eth->dev, e->dma_addr, e->dma_len,
+ 					DMA_TO_DEVICE);
+ 			dev_kfree_skb_any(e->skb);
+ 			memset(e, 0, sizeof(*e));
+@@ -2036,49 +1969,94 @@ int econet_qdma_unuse(struct econet_qdma *qdma)
+ 	return 0;
+ }
+ 
+-struct airoha_qdma_common *econet_qdma_common(struct econet_qdma *qdma)
++static int airoha_qdma_mips_use(struct airoha_qdma *qdma)
+ {
+-	return &qdma->common;
++	return qdma->mips ? econet_qdma_use_mips(qdma->mips) : -ENODEV;
+ }
+ 
+-struct econet_qdma *econet_qdma_new(struct airoha_eth *eth,
+-				void __iomem *qdma_regs,
+-				int id,
+-				int *irqs,
+-				int num_irqs,
+-				struct econet_qdma_cfg *cfg)
++static int airoha_qdma_mips_unuse(struct airoha_qdma *qdma)
+ {
+-	struct econet_qdma *qdma;
++	return qdma->mips ? econet_qdma_unuse_mips(qdma->mips) : -ENODEV;
++}
++
++static int airoha_qdma_mips_xmit(struct airoha_qdma *qdma,
++				 struct sk_buff *skb, union desc_msg *msg, int qid)
++{
++	return qdma->mips ? econet_qdma_xmit_mips(qdma->mips, skb, msg, qid) :
++			     -ENODEV;
++}
++
++static int airoha_qdma_mips_set_xpon_irq(struct airoha_qdma *qdma,
++					 enum airoha_xpon_mode mode, bool enable)
++{
++	return qdma->mips ? econet_qdma_set_xpon_irq_mips(qdma->mips, mode, enable) :
++			     -ENODEV;
++}
++
++static int airoha_qdma_init_mips(struct platform_device *pdev,
++			 struct airoha_eth *eth, struct airoha_qdma *qdma,
++			 int *irqs, struct airoha_qdma_mips_cfg *cfg)
++{
++	struct airoha_qdma_mips *mips;
++	int id = qdma - &eth->qdma[0];
++	const char *res;
+ 	int err;
+ 
+-	qdma = devm_kzalloc(eth->dev, sizeof(*qdma), GFP_KERNEL);
+-	if (!qdma)
+-		return ERR_PTR(-ENOMEM);
++	res = devm_kasprintf(eth->dev, GFP_KERNEL, "qdma%d", id);
++	if (!res)
++		return -ENOMEM;
+ 
+-	qdma->dev = eth->dev;
+-	airoha_qdma_common_init(&qdma->common, eth, qdma_regs, id);
+-	qdma->common.num_channels = cfg->num_channels;
+-	mutex_init(&qdma->lock);
+-	qdma->regs = qdma_regs;
+-	memcpy(&qdma->cfg, cfg, sizeof(*cfg));
+-	qdma->soc = cfg->soc;
++	qdma->regs = devm_platform_ioremap_resource_byname(pdev, res);
++	if (IS_ERR(qdma->regs))
++		return dev_err_probe(eth->dev, PTR_ERR(qdma->regs),
++				     "failed to iomap qdma%d regs\n", id);
+ 
+-	{
+-		char name[IFNAMSIZ];
++	mips = devm_kzalloc(eth->dev, sizeof(*mips), GFP_KERNEL);
++	if (!mips)
++		return -ENOMEM;
+ 
+-		snprintf(name, sizeof(name), "qdma%d_eth", id);
+-		qdma->napi_dev = airoha_eth_alloc_napi_dev(name);
+-	}
+-	if (!qdma->napi_dev)
+-		return ERR_PTR(-ENOMEM);
++	airoha_qdma_setup(qdma, eth, qdma->regs, id, cfg->num_channels);
++	qdma->mips = mips;
++	mips->qdma = qdma;
++	mips->regs = qdma->regs;
++	mutex_init(&mips->lock);
++	memcpy(&mips->cfg, cfg, sizeof(*cfg));
+ 
+-	err = econet_init(eth->dev, qdma, irqs, num_irqs);
++	err = econet_init(eth->dev, mips, irqs);
+ 	if (err) {
+-		econet_qdma_destroy(qdma);
+-		return ERR_PTR(err);
++		econet_qdma_destroy(mips);
++		qdma->mips = NULL;
++		return err;
++	}
++
++	return 0;
++}
++
++static int airoha_qdma_get_mips_irqs(struct platform_device *pdev,
++				      struct airoha_qdma *qdma, int *irqs)
++{
++	struct airoha_eth *eth = qdma->eth;
++	int bank;
++
++	for (bank = 0; bank < eth->soc->irq_banks; bank++) {
++		int irq_idx;
++
++		/* EN751221 exposes only LAN0/WAN0. EN7516/EN7527/EN7528
++		 * expose LAN0/WAN0 first and then LAN1..3/WAN1..3.
++		 */
++		if (!bank)
++			irq_idx = qdma->id;
++		else
++			irq_idx = qdma->id ? bank + 4 : bank + 1;
++
++		irqs[bank] = platform_get_irq(pdev, irq_idx);
++		if (irqs[bank] < 0)
++			return dev_err_probe(eth->dev, irqs[bank],
++					     "failed to get QDMA%u IRQ bank %d\n",
++					     qdma->id, bank);
+ 	}
+ 
+-	return qdma;
++	return 0;
+ }
+ 
+ /* Airoha QDMA backend. */
+@@ -2145,7 +2123,7 @@ static int airoha_qdma_fill_rx_queue(struct airoha_queue *q)
+ 		e->dma_len = SKB_WITH_OVERHEAD(q->buf_size);
+ 
+ 		WRITE_ONCE(desc->tcp_ts_reply, 0);
+-		val = airoha_is(qdma->common.eth, airoha_en7523) ?
++		val = airoha_is(qdma->eth, airoha_en7523) ?
+ 			FIELD_PREP(EN7523_QDMA_DESC_LEN_MASK, e->dma_len) :
+ 			FIELD_PREP(QDMA_DESC_LEN_MASK, e->dma_len);
+ 		WRITE_ONCE(desc->ctrl, cpu_to_le32(val));
+@@ -2230,7 +2208,7 @@ static struct sk_buff *airoha_qdma_lro_rx_skb(struct airoha_queue *q,
+ 	struct page *page;
+ 	bool ipv4, ipv6;
+ 
+-	switch (q->qdma->common.eth->soc->version) {
++	switch (q->qdma->eth->soc->version) {
+ 	case econet_en751221:
+ 	case econet_en7528:
+ 		return NULL;
+@@ -2398,7 +2376,7 @@ static struct sk_buff *airoha_qdma_build_rx_skb(struct airoha_queue *q,
+ 
+ 		__skb_put(skb, len);
+ 		if ((netdev->features & NETIF_F_RXCSUM) &&
+-		    airoha_qdma_rx_checksum_ok(q->qdma->common.eth, desc))
++		    airoha_qdma_rx_checksum_ok(q->qdma->eth, desc))
+ 			skb->ip_summed = CHECKSUM_UNNECESSARY;
+ 		else
+ 			skb->ip_summed = CHECKSUM_NONE;
+@@ -2417,7 +2395,6 @@ static struct sk_buff *airoha_qdma_build_rx_skb(struct airoha_queue *q,
+ 	return skb;
+ }
+ 
+-#define AIROHA_XPON_DATA_DUMP_LEN	128
+ 
+ static bool airoha_qdma_foe_entry_is_valid(struct airoha_eth *eth, u32 hash)
+ {
+@@ -2442,7 +2419,7 @@ static bool airoha_qdma_should_check_ppe_skb(struct airoha_eth *eth,
+ static int airoha_qdma_rx_process(struct airoha_queue *q, int budget)
+ {
+ 	enum dma_data_direction dir = page_pool_get_dma_dir(q->page_pool);
+-	struct airoha_eth *eth = q->qdma->common.eth;
++	struct airoha_eth *eth = q->qdma->eth;
+ 	int done = 0;
+ 
+ 	while (done < budget) {
+@@ -2661,7 +2638,7 @@ static int airoha_qdma_rx_napi_poll(struct napi_struct *napi, int budget)
+ 		int intr_reg = qid < RX_DONE_HIGH_OFFSET ? QDMA_INT_REG_IDX1
+ 							 : QDMA_INT_REG_IDX2;
+ 
+-		for (i = 0; i < qdma->common.eth->soc->irq_banks; i++) {
++		for (i = 0; i < qdma->eth->soc->irq_banks; i++) {
+ 			if (!(BIT(qid) & RX_IRQ_BANK_PIN_MASK(i)))
+ 				continue;
+ 
+@@ -2681,10 +2658,10 @@ static int airoha_qdma_init_rx_queue(struct airoha_queue *q,
+ 		.flags = PP_FLAG_DMA_MAP | PP_FLAG_DMA_SYNC_DEV,
+ 		.dma_dir = DMA_FROM_DEVICE,
+ 		.nid = NUMA_NO_NODE,
+-		.dev = qdma->common.eth->dev,
++		.dev = qdma->eth->dev,
+ 		.napi = &q->napi,
+ 	};
+-	struct airoha_eth *eth = qdma->common.eth;
++	struct airoha_eth *eth = qdma->eth;
+ 	int qid = q - &qdma->q_rx[0], thr;
+ 	dma_addr_t dma_addr;
+ 	bool lro_q;
+@@ -2747,7 +2724,7 @@ static int airoha_qdma_init_rx_queue(struct airoha_queue *q,
+ static void airoha_qdma_cleanup_rx_queue(struct airoha_queue *q)
+ {
+ 	struct airoha_qdma *qdma = q->qdma;
+-	struct airoha_eth *eth = qdma->common.eth;
++	struct airoha_eth *eth = qdma->eth;
+ 	int qid = q - &qdma->q_rx[0];
+ 
+ 	while (q->queued) {
+@@ -2786,7 +2763,7 @@ static int airoha_qdma_init_rx(struct airoha_qdma *qdma)
+ {
+ 	int i;
+ 
+-	for (i = 0; i < qdma->common.eth->soc->rx_ring; i++) {
++	for (i = 0; i < qdma->eth->soc->rx_ring; i++) {
+ 		int err;
+ 
+ 		if (!(RX_DONE_INT_MASK & BIT(i))) {
+@@ -2806,7 +2783,7 @@ static int airoha_qdma_init_rx(struct airoha_qdma *qdma)
+ static void airoha_qdma_wake_netdev_txqs(struct airoha_queue *q)
+ {
+ 	struct airoha_qdma *qdma = q->qdma;
+-	struct airoha_eth *eth = qdma->common.eth;
++	struct airoha_eth *eth = qdma->eth;
+ 	int i, qid = q - &qdma->q_tx[0];
+ 
+ 	for (i = 0; i < eth->soc->max_gdm_ports; i++) {
+@@ -2866,7 +2843,7 @@ static int airoha_qdma_tx_napi_poll(struct napi_struct *napi, int budget)
+ 	irq_q = container_of(napi, struct airoha_tx_irq_queue, napi);
+ 	qdma = irq_q->qdma;
+ 	id = irq_q - &qdma->q_tx_irq[0];
+-	eth = qdma->common.eth;
++	eth = qdma->eth;
+ 
+ 	status = airoha_qdma_rr(qdma, REG_IRQ_STATUS(id));
+ 	head = FIELD_GET(IRQ_HEAD_IDX_MASK, status);
+@@ -2998,7 +2975,7 @@ static int airoha_qdma_tx_napi_poll(struct napi_struct *napi, int budget)
+ static int airoha_qdma_init_tx_queue(struct airoha_queue *q,
+ 				     struct airoha_qdma *qdma, int size)
+ {
+-	struct airoha_eth *eth = qdma->common.eth;
++	struct airoha_eth *eth = qdma->eth;
+ 	int i, qid = q - &qdma->q_tx[0];
+ 	dma_addr_t dma_addr;
+ 
+@@ -3043,7 +3020,7 @@ static int airoha_qdma_tx_irq_init(struct airoha_tx_irq_queue *irq_q,
+ 				   struct airoha_qdma *qdma, int size)
+ {
+ 	int id = irq_q - &qdma->q_tx_irq[0];
+-	struct airoha_eth *eth = qdma->common.eth;
++	struct airoha_eth *eth = qdma->eth;
+ 	dma_addr_t dma_addr;
+ 
+ 	irq_q->q = dmam_alloc_coherent(eth->dev, size * sizeof(u32),
+@@ -3078,7 +3055,7 @@ static int airoha_qdma_init_tx(struct airoha_qdma *qdma)
+ 			return err;
+ 	}
+ 
+-	for (i = 0; i < qdma->common.eth->soc->tx_ring; i++) {
++	for (i = 0; i < qdma->eth->soc->tx_ring; i++) {
+ 		err = airoha_qdma_init_tx_queue(&qdma->q_tx[i], qdma,
+ 						TX_DSCP_NUM(i));
+ 		if (err)
+@@ -3091,7 +3068,7 @@ static int airoha_qdma_init_tx(struct airoha_qdma *qdma)
+ void airoha_qdma_cleanup_tx_queue(struct airoha_queue *q)
+ {
+ 	struct airoha_qdma *qdma = q->qdma;
+-	struct airoha_eth *eth = qdma->common.eth;
++	struct airoha_eth *eth = qdma->eth;
+ 	int i, qid = q - &qdma->q_tx[0];
+ 	u16 index = 0;
+ 
+@@ -3140,7 +3117,7 @@ void airoha_qdma_cleanup_tx_queue(struct airoha_queue *q)
+ static int airoha_qdma_init_hfwd_queues(struct airoha_qdma *qdma)
+ {
+ 	int size, index, num_desc = HW_DSCP_NUM;
+-	struct airoha_eth *eth = qdma->common.eth;
++	struct airoha_eth *eth = qdma->eth;
+ 	int id = qdma - &eth->qdma[0];
+ 	u32 status, buf_size;
+ 	dma_addr_t dma_addr;
+@@ -3217,7 +3194,7 @@ static int airoha_qdma_init_hfwd_queues(struct airoha_qdma *qdma)
+ 
+ static void airoha_qdma_init_qos(struct airoha_qdma *qdma)
+ {
+-	struct airoha_eth *eth = qdma->common.eth;
++	struct airoha_eth *eth = qdma->eth;
+ 	u32 meter_cfg, meter_window, meter_timeslice;
+ 	int id = qdma - &eth->qdma[0];
+ 
+@@ -3317,7 +3294,7 @@ static int airoha_qdma_hw_init(struct airoha_qdma *qdma)
+ {
+ 	int i;
+ 
+-	for (i = 0; i < qdma->common.eth->soc->irq_banks; i++) {
++	for (i = 0; i < qdma->eth->soc->irq_banks; i++) {
+ 		/* clear pending irqs */
+ 		airoha_qdma_wr(qdma, REG_INT_STATUS(i), 0xffffffff);
+ 		/* setup rx irqs */
+@@ -3336,7 +3313,7 @@ static int airoha_qdma_hw_init(struct airoha_qdma *qdma)
+ 	airoha_qdma_irq_enable(&qdma->irq_banks[0], QDMA_INT_REG_IDX4,
+ 			       TX_COHERENT_HIGH_INT_MASK);
+ 
+-	if (airoha_is(qdma->common.eth, airoha_en7523)) {
++	if (airoha_is(qdma->eth, airoha_en7523)) {
+ 		airoha_qdma_wr(qdma, 0x30, 0x7C000000);
+ 		airoha_qdma_wr(qdma, 0x34, 0x7C007C00);
+ 		airoha_qdma_wr(qdma, 0x38, 0x00200000);
+@@ -3346,7 +3323,7 @@ static int airoha_qdma_hw_init(struct airoha_qdma *qdma)
+ 	}
+ 
+ 	/* setup irq binding */
+-	for (i = 0; i < qdma->common.eth->soc->tx_ring; i++) {
++	for (i = 0; i < qdma->eth->soc->tx_ring; i++) {
+ 		if (!qdma->q_tx[i].ndesc)
+ 			continue;
+ 
+@@ -3357,7 +3334,7 @@ static int airoha_qdma_hw_init(struct airoha_qdma *qdma)
+ 			airoha_qdma_clear(qdma, REG_TX_RING_BLOCKING(i),
+ 					  TX_RING_IRQ_BLOCKING_CFG_MASK);
+ 
+-		if (airoha_is(qdma->common.eth, airoha_en7523)) {
++		if (airoha_is(qdma->eth, airoha_en7523)) {
+ 			if (i == 0)
+ 				airoha_qdma_set(qdma, REG_TX_RING_BLOCKING(i),
+ 						TX_RING_IRQ_BLOCKING_TX_DROP_EN_MASK);
+@@ -3380,7 +3357,7 @@ static int airoha_qdma_hw_init(struct airoha_qdma *qdma)
+ 	airoha_qdma_init_qos(qdma);
+ 
+ 	/* disable qdma rx delay interrupt */
+-	for (i = 0; i < qdma->common.eth->soc->rx_ring; i++) {
++	for (i = 0; i < qdma->eth->soc->rx_ring; i++) {
+ 		if (!qdma->q_rx[i].ndesc)
+ 			continue;
+ 
+@@ -3409,7 +3386,7 @@ static irqreturn_t airoha_irq_handler(int irq, void *dev_instance)
+ 		airoha_qdma_wr(qdma, REG_INT_STATUS(i), intr[i]);
+ 	}
+ 
+-	if (!test_bit(DEV_STATE_INITIALIZED, &qdma->common.eth->state))
++	if (!test_bit(DEV_STATE_INITIALIZED, &qdma->eth->state))
+ 		return IRQ_NONE;
+ 
+ 	rx_intr1 = intr[1] & RX_DONE_LOW_INT_MASK;
+@@ -3424,7 +3401,7 @@ static irqreturn_t airoha_irq_handler(int irq, void *dev_instance)
+ 		rx_intr_mask |= (rx_intr2 << 16);
+ 	}
+ 
+-	for (i = 0; rx_intr_mask && i < qdma->common.eth->soc->rx_ring; i++) {
++	for (i = 0; rx_intr_mask && i < qdma->eth->soc->rx_ring; i++) {
+ 		if (!qdma->q_rx[i].ndesc)
+ 			continue;
+ 
+@@ -3449,7 +3426,7 @@ static irqreturn_t airoha_irq_handler(int irq, void *dev_instance)
+ static int airoha_qdma_init_irq_banks(struct platform_device *pdev,
+ 				      struct airoha_qdma *qdma)
+ {
+-	struct airoha_eth *eth = qdma->common.eth;
++	struct airoha_eth *eth = qdma->eth;
+ 	int i, id = qdma - &eth->qdma[0];
+ 	qdma->irq_banks = devm_kzalloc(&pdev->dev,
+ 		sizeof(*qdma->irq_banks) * eth->soc->irq_banks, GFP_KERNEL);
+@@ -3494,13 +3471,12 @@ int airoha_qdma_init(struct platform_device *pdev,
+ 	if (!res)
+ 		return -ENOMEM;
+ 
+-	qdma->common.regs = devm_platform_ioremap_resource_byname(pdev, res);
+-	if (IS_ERR(qdma->common.regs))
+-		return dev_err_probe(eth->dev, PTR_ERR(qdma->common.regs),
++	qdma->regs = devm_platform_ioremap_resource_byname(pdev, res);
++	if (IS_ERR(qdma->regs))
++		return dev_err_probe(eth->dev, PTR_ERR(qdma->regs),
+ 				     "failed to iomap qdma%d regs\n", id);
+ 
+-	airoha_qdma_common_init(&qdma->common, eth, qdma->common.regs, id);
+-	eth->qdma_common[id] = &qdma->common;
++	airoha_qdma_setup(qdma, eth, qdma->regs, id, AIROHA_NUM_QOS_CHANNELS);
+ 
+ 	err = airoha_qdma_init_irq_banks(pdev, qdma);
+ 	if (err)
+@@ -3523,10 +3499,16 @@ int airoha_qdma_init(struct platform_device *pdev,
+ 
+ void airoha_qdma_cleanup(struct airoha_qdma *qdma)
+ {
+-	struct airoha_eth *eth = qdma->common.eth;
++	struct airoha_eth *eth = qdma->eth;
+ 	int i;
+ 
+-	for (i = 0; i < qdma->common.eth->soc->rx_ring; i++) {
++	if (qdma->mips) {
++		econet_qdma_destroy(qdma->mips);
++		qdma->mips = NULL;
++		return;
++	}
++
++	for (i = 0; i < qdma->eth->soc->rx_ring; i++) {
+ 		if (!qdma->q_rx[i].ndesc)
+ 			continue;
+ 
+@@ -3545,15 +3527,13 @@ void airoha_qdma_cleanup(struct airoha_qdma *qdma)
+ 		netif_napi_del(&qdma->q_tx_irq[i].napi);
+ 	}
+ 
+-	for (i = 0; i < qdma->common.eth->soc->tx_ring; i++) {
++	for (i = 0; i < qdma->eth->soc->tx_ring; i++) {
+ 		if (!qdma->q_tx[i].ndesc)
+ 			continue;
+ 
+ 		airoha_qdma_cleanup_tx_queue(&qdma->q_tx[i]);
+ 	}
+ 
+-	if (eth && qdma->common.id < ARRAY_SIZE(eth->qdma_common))
+-		eth->qdma_common[qdma->common.id] = NULL;
+ }
+ 
+ /* Airoha QDMA runtime lifecycle. */
+@@ -3561,10 +3541,13 @@ void airoha_qdma_start_napi(struct airoha_qdma *qdma)
+ {
+ 	int i;
+ 
++	if (qdma->mips)
++		return;
++
+ 	for (i = 0; i < ARRAY_SIZE(qdma->q_tx_irq); i++)
+ 		napi_enable(&qdma->q_tx_irq[i].napi);
+ 
+-	for (i = 0; i < qdma->common.eth->soc->rx_ring; i++) {
++	for (i = 0; i < qdma->eth->soc->rx_ring; i++) {
+ 		if (!qdma->q_rx[i].ndesc)
+ 			continue;
+ 
+@@ -3576,10 +3559,13 @@ void airoha_qdma_stop_napi(struct airoha_qdma *qdma)
+ {
+ 	int i;
+ 
++	if (qdma->mips)
++		return;
++
+ 	for (i = 0; i < ARRAY_SIZE(qdma->q_tx_irq); i++)
+ 		napi_disable(&qdma->q_tx_irq[i].napi);
+ 
+-	for (i = 0; i < qdma->common.eth->soc->rx_ring; i++) {
++	for (i = 0; i < qdma->eth->soc->rx_ring; i++) {
+ 		if (!qdma->q_rx[i].ndesc)
+ 			continue;
+ 
+@@ -3611,9 +3597,9 @@ void airoha_qdma_stop(struct airoha_qdma *qdma)
+ 					  GLOBAL_CFG_RX_DMA_BUSY_MASK)),
+ 			      USEC_PER_MSEC, 50 * USEC_PER_MSEC, true,
+ 			      qdma, REG_QDMA_GLOBAL_CFG))
+-		dev_warn(qdma->common.eth->dev, "QDMA DMA engine busy timeout\n");
++		dev_warn(qdma->eth->dev, "QDMA DMA engine busy timeout\n");
+ 
+-	for (int i = 0; i < qdma->common.eth->soc->tx_ring; i++) {
++	for (int i = 0; i < qdma->eth->soc->tx_ring; i++) {
+ 		if (!qdma->q_tx[i].ndesc)
+ 			continue;
+ 
+@@ -3624,108 +3610,12 @@ void airoha_qdma_stop(struct airoha_qdma *qdma)
+ /* ------------------------------------------------------------------------- */
+ /* EcoNet GDM/netdev datapath. */
+ 
+-struct econet_hw_stats {
+-	/* protect concurrent hw_stats accesses */
+-	spinlock_t lock;
+-	struct u64_stats_sync syncp;
+-
+-	/* EN751221 gdm1 has only limited stats, gdm2 has all */
+-	bool g2_stats;
+-
+-	/* get_stats64 */
+-	u64 rx_ok_pkts;
+-	u64 tx_ok_pkts;
+-	u64 rx_ok_bytes;
+-	u64 tx_ok_bytes;
+-	u64 rx_errors;
+-	u64 rx_drops;
+-	u64 tx_drops;
+-	u64 rx_over_errors;
+-
+-	/* get_stats64 (requires gdm2 extended stats) */
+-	u64 rx_crc_error;
+-	u64 rx_multicast;
+-
+-	/* ethtool stats (all require gdm2 extended stats) */
+-	u64 tx_broadcast;
+-	u64 tx_multicast;
+-	u64 tx_len[7];
+-	u64 rx_broadcast;
+-	u64 rx_fragment;
+-	u64 rx_jabber;
+-	u64 rx_len[7];
+-};
+-
+-/*
+- * How many OMCI services may share one data-plane rule.  The OMCI agent
+- * stages one service per UNI, so a single (GEM, VLAN, PCP, T-CONT, queue)
+- * rule arrives once per LAN port plus the VEIP.  They are the same rule for
+- * the classifier, so they share a slot and each contributes a cookie.
+- */
+-#define ECONET_XPON_SVC_MAX_COOKIES	8
+-
+-struct econet_gdm_port {
+-	/* Must stay first for common GDM/phylink and PPE metadata. */
+-	struct airoha_gdm_common common;
+-
+-	struct net_device *dev;
+-
+-	struct gdm __iomem *regs;
+-
+-	/* Protects accesses to hardware regs */
+-	spinlock_t reg_lock;
++/* OMCI rules may be referenced by more than one UNI/VEIP cookie. */
+ 
+-	struct econet_hw_stats stats;
++static int econet_xpon_start(struct airoha_gdm_dev *port);
++static void econet_xpon_stop(struct airoha_gdm_dev *port);
+ 
+-	// DECLARE_BITMAP(qos_sq_bmap, AIROHA_NUM_QOS_CHANNELS);
+-
+-	/* qos stats counters */
+-	u64 cpu_tx_packets;
+-	u64 fwd_tx_packets;
+-
+-	// struct metadata_dst *dsa_meta[AIROHA_MAX_DSA_PORTS];
+-
+-	/* EN751221 GDM2 xPON host state.  The MAC protocol remains in
+-	 * airoha_xpon.c; this block only owns FE/QDMA transport state.
+-	 */
+-	struct mutex xpon_lock;
+-	const struct airoha_xpon_link_ops *xpon_ops;
+-	void *xpon_priv;
+-	enum airoha_xpon_mode xpon_mode;
+-	bool xpon_managed;
+-	bool xpon_started;
+-	bool xpon_control_started;
+-	/* Protects xpon_link. */
+-	spinlock_t xpon_state_lock;
+-	struct airoha_xpon_link_state xpon_link;
+-	struct airoha_xpon_oam_handler __rcu *xpon_oam;
+-	atomic64_t xpon_oam_rx_packets;
+-	atomic64_t xpon_oam_rx_bytes;
+-	atomic64_t xpon_oam_rx_delivered;
+-	atomic64_t xpon_oam_rx_dropped;
+-	atomic64_t xpon_oam_rx_no_handler;
+-	/* Protects xpon_services. */
+-	spinlock_t xpon_service_lock;
+-	struct airoha_xpon_service_cfg
+-		xpon_services[AIROHA_XPON_MAX_SERVICES];
+-	/* Cookies referencing each rule; the slot lives until the last one goes. */
+-	u32	xpon_service_cookies[AIROHA_XPON_MAX_SERVICES]
+-				    [ECONET_XPON_SVC_MAX_COOKIES];
+-	u8	xpon_service_ncookies[AIROHA_XPON_MAX_SERVICES];
+-
+-	struct econet_qdma *qdma;
+-
+-	struct airoha_eth *eth;
+-
+-	enum etx_fport fport;
+-
+-	int qid;
+-};
+-
+-static int econet_xpon_start(struct econet_gdm_port *port);
+-static void econet_xpon_stop(struct econet_gdm_port *port);
+-
+-static void econet_set_macaddr(struct econet_gdm_port *port, const u8 *addr)
++static void econet_set_macaddr(struct airoha_gdm_dev *port, const u8 *addr)
+ {
+ 	struct gdm_mymac_msb msb;
+ 	struct gdm_mymac_lsb lsb;
+@@ -3747,7 +3637,7 @@ static void econet_set_macaddr(struct econet_gdm_port *port, const u8 *addr)
+ 
+ static int econet_dev_set_macaddr(struct net_device *dev, void *p)
+ {
+-	struct econet_gdm_port *port = netdev_priv(dev);
++	struct airoha_gdm_dev *port = netdev_priv(dev);
+ 	int err;
+ 
+ 	err = eth_mac_addr(dev, p);
+@@ -3760,7 +3650,7 @@ static int econet_dev_set_macaddr(struct net_device *dev, void *p)
+ }
+ 
+ 
+-static u16 econet_gdm_oversize_len(struct econet_gdm_port *port, int mtu)
++static u16 econet_gdm_oversize_len(struct airoha_gdm_dev *port, int mtu)
+ {
+ 	u16 len = ETH_HLEN + mtu + ETH_FCS_LEN;
+ 
+@@ -3778,7 +3668,7 @@ static u16 econet_gdm_oversize_len(struct econet_gdm_port *port, int mtu)
+ 	return len;
+ }
+ 
+-static void econet_set_gdm_port_fwd_cfg(struct econet_gdm_port *port,
++static void econet_set_gdm_port_fwd_cfg(struct airoha_gdm_dev *port,
+ 				      enum etx_fport val)
+ {
+ 	struct fwd_cfg fc;
+@@ -3804,7 +3694,7 @@ static void econet_set_gdm_port_fwd_cfg(struct econet_gdm_port *port,
+ 
+ static int econet_dev_init(struct net_device *dev)
+ {
+-	struct econet_gdm_port *port = netdev_priv(dev);
++	struct airoha_gdm_dev *port = netdev_priv(dev);
+ 
+ 	econet_set_macaddr(port, dev->dev_addr);
+ 	/* Route each GDM port to the CPU side of its matching QDMA. */
+@@ -3839,18 +3729,18 @@ static int econet_dev_init(struct net_device *dev)
+ 
+ static int econet_dev_open(struct net_device *dev)
+ {
+-	struct econet_gdm_port *port = netdev_priv(dev);
++	struct airoha_gdm_dev *port = netdev_priv(dev);
+ 	bool dsa = netdev_uses_dsa(dev);
+ 	struct gdm_len_th rlt;
+ 	int err;
+ 
+ 	err = airoha_gdm_phylink_connect(&port->common,
+-					 port->xpon_managed);
++					 (port->flags & AIROHA_PRIV_F_XPON_MANAGED));
+ 	if (err) {
+ 		netdev_err(dev, "could not attach PHY: %d\n", err);
+ 		return err;
+ 	}
+-	if (port->xpon_managed)
++	if ((port->flags & AIROHA_PRIV_F_XPON_MANAGED))
+ 		netif_carrier_off(dev);
+ 
+ 	/* The MT7530 CPU port is represented by ethernet = <&gdm1>. Keep
+@@ -3884,7 +3774,7 @@ static int econet_dev_open(struct net_device *dev)
+ 		econet_wreg(rlt, &port->regs->rx_len_threshold);
+ 	}
+ 
+-	err = econet_qdma_use(port->qdma);
++	err = airoha_qdma_mips_use(port->qdma);
+ 	if (err) {
+ 		scoped_guard(spinlock, &port->reg_lock)
+ 			econet_wreg(0U, &port->regs->stag_en);
+@@ -3897,7 +3787,7 @@ static int econet_dev_open(struct net_device *dev)
+ 	err = econet_xpon_start(port);
+ 	if (err) {
+ 		netif_tx_disable(dev);
+-		econet_qdma_unuse(port->qdma);
++		airoha_qdma_mips_unuse(port->qdma);
+ 		airoha_gdm_phylink_disconnect(&port->common);
+ 		return err;
+ 	}
+@@ -3907,7 +3797,7 @@ static int econet_dev_open(struct net_device *dev)
+ 
+ static int econet_dev_stop(struct net_device *dev)
+ {
+-	struct econet_gdm_port *port = netdev_priv(dev);
++	struct airoha_gdm_dev *port = netdev_priv(dev);
+ 
+ 	netif_tx_disable(dev);
+ 	econet_xpon_stop(port);
+@@ -3925,12 +3815,12 @@ static int econet_dev_stop(struct net_device *dev)
+ 		}
+ 	}
+ 
+-	return econet_qdma_unuse(port->qdma);
++	return airoha_qdma_mips_unuse(port->qdma);
+ }
+ 
+ static int econet_dev_change_mtu(struct net_device *dev, int mtu)
+ {
+-	struct econet_gdm_port *port = netdev_priv(dev);
++	struct airoha_gdm_dev *port = netdev_priv(dev);
+ 	struct gdm_len_th rlt;
+ 
+ 	guard(spinlock)(&port->reg_lock);
+@@ -3943,15 +3833,11 @@ static int econet_dev_change_mtu(struct net_device *dev, int mtu)
+ 	return 0;
+ }
+ 
+-#define EN751221_GPON_RX_CHN_MASK	GENMASK(1, 0)
+-#define EN751221_EPON_RX_CHN_MASK	GENMASK(7, 0)
+-#define EN751221_EPON_TX_CHN_MASK	(GENMASK(7, 0) | GENMASK(23, 16))
+-#define EN751221_EPON_HWF_CHN_MASK	GENMASK(7, 0)
+ 
+ static int econet_validate_xpon_gdm2(struct net_device *netdev,
+-				     struct econet_gdm_port **gdm)
++				     struct airoha_gdm_dev **gdm)
+ {
+-	struct econet_gdm_port *port;
++	struct airoha_gdm_dev *port;
+ 
+ 	if (!netdev)
+ 		return -EINVAL;
+@@ -3965,7 +3851,7 @@ static int econet_validate_xpon_gdm2(struct net_device *netdev,
+ 	return 0;
+ }
+ 
+-static int econet_xpon_lookup_service(struct econet_gdm_port *port,
++static int econet_xpon_lookup_service(struct airoha_gdm_dev *port,
+ 				      bool vlan_valid, u16 vlan_id,
+ 				      bool pcp_valid, u8 pcp,
+ 				      struct airoha_xpon_tx_info *info)
+@@ -4005,7 +3891,7 @@ static int econet_xpon_lookup_service(struct econet_gdm_port *port,
+ 	return fallback ? 0 : -ENOENT;
+ }
+ 
+-static int econet_xpon_classify(struct econet_gdm_port *port,
++static int econet_xpon_classify(struct airoha_gdm_dev *port,
+ 				struct sk_buff *skb,
+ 				struct airoha_xpon_tx_info *info)
+ {
+@@ -4047,7 +3933,7 @@ static int econet_xpon_classify(struct econet_gdm_port *port,
+ 
+ static netdev_tx_t econet_dev_xmit(struct sk_buff *skb, struct net_device *dev)
+ {
+-	struct econet_gdm_port *port = netdev_priv(dev);
++	struct airoha_gdm_dev *port = netdev_priv(dev);
+ 	struct airoha_qdma_skb_meta skb_meta;
+ 	int qid, ret = 0, len = skb->len;
+ 	struct netdev_queue *txq;
+@@ -4056,7 +3942,7 @@ static netdev_tx_t econet_dev_xmit(struct sk_buff *skb, struct net_device *dev)
+ 	bool xpon = false;
+ 	u8 channel;
+ 
+-	if (READ_ONCE(port->xpon_managed)) {
++	if ((READ_ONCE(port->flags) & AIROHA_PRIV_F_XPON_MANAGED)) {
+ 		switch (READ_ONCE(port->xpon_mode)) {
+ 		case AIROHA_XPON_MODE_GPON:
+ 			if (econet_xpon_classify(port, skb, &xpon_info))
+@@ -4161,7 +4047,7 @@ static netdev_tx_t econet_dev_xmit(struct sk_buff *skb, struct net_device *dev)
+ 
+ 	netdev_tx_sent_queue(txq, len);
+ 
+-	ret = econet_qdma_xmit(port->qdma, skb, &msg, 0);
++	ret = airoha_qdma_mips_xmit(port->qdma, skb, &msg, 0);
+ 	if (ret == -EBUSY) {
+ 		netdev_tx_completed_queue(txq, 1, len);
+ 		netif_tx_stop_queue(txq);
+@@ -4184,19 +4070,19 @@ static netdev_tx_t econet_dev_xmit(struct sk_buff *skb, struct net_device *dev)
+ 	return NETDEV_TX_OK;
+ }
+ 
+-static void econet_update_hw_stats(struct econet_gdm_port *port)
++static void econet_update_hw_stats(struct airoha_gdm_dev *port)
+ {
+ 	struct gdm_counters __iomem *c = &port->regs->counters;
+ 	struct clear_counters cc = {0};
+ 	u32 i = 0;
+ 
+-	guard(spinlock)(&port->stats.lock);
++	guard(spinlock)(&port->port->lock);
+ 	u64_stats_update_begin(&port->stats.syncp);
+ 
+ 	port->stats.tx_ok_pkts += econet_rreg(&c->tx.tx_pkts);
+ 	port->stats.tx_ok_bytes += econet_rreg(&c->tx.bytes);
+ 	port->stats.tx_drops += econet_rreg(&c->tx.drops);
+-	if (port->stats.g2_stats) {
++	if (port->g2_stats) {
+ 		port->stats.tx_broadcast += econet_rreg(&c->tx.g2.tx_bcast);
+ 		port->stats.tx_multicast += econet_rreg(&c->tx.g2.tx_mcast);
+ 
+@@ -4215,7 +4101,7 @@ static void econet_update_hw_stats(struct econet_gdm_port *port)
+ 	port->stats.rx_ok_bytes += econet_rreg(&c->rx.bytes);
+ 	port->stats.rx_errors += econet_rreg(&c->rx.drops_err);
+ 	port->stats.rx_over_errors += econet_rreg(&c->rx.drops_overflow);
+-	if (port->stats.g2_stats) {
++	if (port->g2_stats) {
+ 		port->stats.rx_drops += econet_rreg(&c->rx.g2.edrops);
+ 		port->stats.rx_broadcast += econet_rreg(&c->rx.g2.bcast);
+ 		port->stats.rx_multicast += econet_rreg(&c->rx.g2.mcast);
+@@ -4250,7 +4136,7 @@ static void econet_update_hw_stats(struct econet_gdm_port *port)
+ static void econet_dev_get_stats64(struct net_device *dev,
+ 				 struct rtnl_link_stats64 *storage)
+ {
+-	struct econet_gdm_port *port = netdev_priv(dev);
++	struct airoha_gdm_dev *port = netdev_priv(dev);
+ 	unsigned int start;
+ 
+ 	econet_update_hw_stats(port);
+@@ -4264,7 +4150,7 @@ static void econet_dev_get_stats64(struct net_device *dev,
+ 		storage->rx_dropped = port->stats.rx_drops;
+ 		storage->tx_dropped = port->stats.tx_drops;
+ 		storage->rx_over_errors = port->stats.rx_over_errors;
+-		if (port->stats.g2_stats) {
++		if (port->g2_stats) {
+ 			storage->multicast = port->stats.rx_multicast;
+ 			storage->rx_crc_errors = port->stats.rx_crc_error;
+ 		}
+@@ -4274,12 +4160,12 @@ static void econet_dev_get_stats64(struct net_device *dev,
+ static void econet_ethtool_get_mac_stats(struct net_device *dev,
+ 				       struct ethtool_eth_mac_stats *stats)
+ {
+-	struct econet_gdm_port *port = netdev_priv(dev);
++	struct airoha_gdm_dev *port = netdev_priv(dev);
+ 	unsigned int start;
+ 
+ 	econet_update_hw_stats(port);
+ 
+-	if (!port->stats.g2_stats)
++	if (!port->g2_stats)
+ 		return;
+ 
+ 	do {
+@@ -4306,8 +4192,8 @@ econet_ethtool_get_rmon_stats(struct net_device *dev,
+ 			    struct ethtool_rmon_stats *stats,
+ 			    const struct ethtool_rmon_hist_range **ranges)
+ {
+-	struct econet_gdm_port *port = netdev_priv(dev);
+-	struct econet_hw_stats *hw_stats = &port->stats;
++	struct airoha_gdm_dev *port = netdev_priv(dev);
++	struct airoha_hw_stats *hw_stats = &port->stats;
+ 	unsigned int start;
+ 
+ 	BUILD_BUG_ON(ARRAY_SIZE(econet_ethtool_rmon_ranges) !=
+@@ -4318,7 +4204,7 @@ econet_ethtool_get_rmon_stats(struct net_device *dev,
+ 	*ranges = econet_ethtool_rmon_ranges;
+ 	econet_update_hw_stats(port);
+ 
+-	if (!port->stats.g2_stats)
++	if (!port->g2_stats)
+ 		return;
+ 
+ 	do {
+@@ -4338,7 +4224,7 @@ econet_ethtool_get_rmon_stats(struct net_device *dev,
+ static int econet_dev_setup_tc(struct net_device *dev,
+ 			       enum tc_setup_type type, void *type_data)
+ {
+-	struct econet_gdm_port *port = netdev_priv(dev);
++	struct airoha_gdm_dev *port = netdev_priv(dev);
+ 
+ 	return airoha_ppe_dev_setup_tc(port->common.ppe, dev, type,
+ 				       type_data);
+@@ -4358,11 +4244,11 @@ static const struct net_device_ops econet_netdev_ops = {
+ static int econet_ethtool_get_link_ksettings(struct net_device *dev,
+ 					     struct ethtool_link_ksettings *cmd)
+ {
+-	struct econet_gdm_port *port = netdev_priv(dev);
++	struct airoha_gdm_dev *port = netdev_priv(dev);
+ 	struct airoha_xpon_link_state state;
+ 	unsigned long flags;
+ 
+-	if (!READ_ONCE(port->xpon_managed))
++	if (!(READ_ONCE(port->flags) & AIROHA_PRIV_F_XPON_MANAGED))
+ 		return phylink_ethtool_ksettings_get(port->common.phylink, cmd);
+ 
+ 	spin_lock_irqsave(&port->xpon_state_lock, flags);
+@@ -4392,9 +4278,9 @@ static int econet_ethtool_get_link_ksettings(struct net_device *dev,
+ static int econet_ethtool_set_link_ksettings(struct net_device *dev,
+ 					     const struct ethtool_link_ksettings *cmd)
+ {
+-	struct econet_gdm_port *port = netdev_priv(dev);
++	struct airoha_gdm_dev *port = netdev_priv(dev);
+ 
+-	if (READ_ONCE(port->xpon_managed))
++	if ((READ_ONCE(port->flags) & AIROHA_PRIV_F_XPON_MANAGED))
+ 		return -EOPNOTSUPP;
+ 
+ 	return phylink_ethtool_ksettings_set(port->common.phylink, cmd);
+@@ -4402,9 +4288,9 @@ static int econet_ethtool_set_link_ksettings(struct net_device *dev,
+ 
+ static int econet_ethtool_nway_reset(struct net_device *dev)
+ {
+-	struct econet_gdm_port *port = netdev_priv(dev);
++	struct airoha_gdm_dev *port = netdev_priv(dev);
+ 
+-	if (READ_ONCE(port->xpon_managed))
++	if ((READ_ONCE(port->flags) & AIROHA_PRIV_F_XPON_MANAGED))
+ 		return -EOPNOTSUPP;
+ 
+ 	return phylink_ethtool_nway_reset(port->common.phylink);
+@@ -4420,7 +4306,7 @@ static const struct ethtool_ops econet_ethtool_ops = {
+ 	.get_rmon_stats		= econet_ethtool_get_rmon_stats,
+ };
+ 
+-static int econet_setup_phylink(struct econet_gdm_port *port,
++static int econet_setup_phylink(struct airoha_gdm_dev *port,
+ 				struct device_node *np)
+ {
+ 	struct phylink_config *config = &port->common.phylink_config;
+@@ -4447,122 +4333,21 @@ static int econet_setup_phylink(struct econet_gdm_port *port,
+ 	return airoha_gdm_phylink_create(&port->common, np, phy_mode);
+ }
+ 
+-struct net_device *econet_alloc_gdm_port(struct airoha_eth *eth,
+-				       struct device_node *np,
+-				       struct gdm __iomem *regs,
+-				       struct econet_qdma *qdma,
+-				       enum etx_fport fport,
+-				       bool has_g2_stats)
+-{
+-	struct econet_gdm_port *port;
+-	struct net_device *ndev;
+-	int err;
++/* Frame-engine platform state is shared by all supported SoCs. */
+ 
+-	ndev = devm_alloc_etherdev_mqs(eth->dev, sizeof(*port),
+-				       econet_qdma_common(qdma)->num_channels *
+-				       ECONET_NUM_QUEUES,
+-				       econet_qdma_common(qdma)->num_channels *
+-				       ECONET_NUM_QUEUES);
+-	if (!ndev) {
+-		dev_err(eth->dev, "alloc_etherdev failed\n");
+-		return ERR_PTR(-ENOMEM);
+-	}
+-
+-	ndev->netdev_ops = &econet_netdev_ops;
+-	ndev->ethtool_ops = &econet_ethtool_ops;
+-	ndev->max_mtu = SKB_WITH_OVERHEAD(ECONET_MAX_PACKET_SIZE) -
+-			ETH_HLEN - ETH_FCS_LEN;
+-	ndev->watchdog_timeo = 5 * HZ;
+-
+-	/*
+-	 * EN751221 supports IPv4/IPv6 TCP/UDP checksum offload, but unlike
+-	 * EN751627 it does not provide TSO/TSO6. Scatter-gather also remains
+-	 * disabled until the QDMA TX path can submit fragmented skbs directly.
+-	 */
+-	ndev->hw_features = NETIF_F_IP_CSUM | NETIF_F_RXCSUM |
+-			      NETIF_F_IPV6_CSUM;
+-	if (eth->ppe_dev && eth->ppe_dev->enabled)
+-		ndev->hw_features |= NETIF_F_HW_TC;
+-
+-	ndev->features |= ndev->hw_features;
+-	ndev->vlan_features = ndev->hw_features;
+-	ndev->dev.of_node = of_node_get(np);
+-	SET_NETDEV_DEV(ndev, eth->dev);
+-
+-	err = airoha_eth_init_mac_address(eth->dev, np, ndev);
+-	if (err)
+-		return ERR_PTR(err);
+-
+-	port = netdev_priv(ndev);
+-	airoha_gdm_common_init(&port->common, eth, ndev,
+-			       AIROHA_ETH_FAMILY_ECONET, fport,
+-			       fport == ETX_FPORT_GDM2 ? DPORT_GDMA2 :
+-						      DPORT_GDMA1,
+-			       port, NULL);
+-	port->common.ppe = eth->ppe_dev;
+-	u64_stats_init(&port->stats.syncp);
+-	spin_lock_init(&port->stats.lock);
+-	spin_lock_init(&port->reg_lock);
+-	mutex_init(&port->xpon_lock);
+-	spin_lock_init(&port->xpon_state_lock);
+-	spin_lock_init(&port->xpon_service_lock);
+-	port->stats.g2_stats = has_g2_stats;
+-	port->dev = ndev;
+-	port->regs = regs;
+-	port->fport = fport;
+-	port->qdma = qdma;
+-	port->eth = eth;
+-
+-	err = econet_setup_phylink(port, np);
+-	if (err)
+-		goto free_of_node;
+-
+-	// TODO: This is pretty easy to enable
+-// 	err = airoha_metadata_dst_alloc(port);
+-// 	if (err)
+-// 		return err;
++static struct airoha_gdm_dev *
++airoha_eth_get_gdm_dev(struct airoha_eth *eth, unsigned int id)
++{
++	struct airoha_gdm_port *port;
+ 
+-	err = register_netdev(ndev);
+-	if (err)
+-		goto free_metadata_dst;
+-
+-	dev_info(eth->dev, "port %d%s registered with %pM\n",
+-		fport,
+-		(fport == ETX_FPORT_GDM1) ? " (LAN)" :
+-		(fport == ETX_FPORT_GDM2) ? " (WAN)" : "",
+-		ndev->dev_addr);
+-
+-	return ndev;
+-
+-free_metadata_dst:
+-// 	airoha_metadata_dst_free(port);
+-	airoha_gdm_phylink_destroy(&port->common);
+-free_of_node:
+-	of_node_put(ndev->dev.of_node);
+-	ndev->dev.of_node = NULL;
+-	return ERR_PTR(err);
+-}
+-
+-/* Frame-engine platform driver. */
+-
+-struct econet_eth {
+-	struct net_device		*ports[ECONET_NUM_GDM_PORTS];
+-	struct gdm __iomem		*gdm[ECONET_NUM_GDM_PORTS];
+-	struct qregs __iomem		*qdma_regs[ECONET_NUM_QDMA];
+-	struct reset_control		*reset;
+-	int				qdma_irq[ECONET_NUM_QDMA][ECONET_MAX_QDMA_IRQS];
+-	struct econet_qdma		*qdma[ECONET_NUM_QDMA];
+-};
++	if (!id || id > eth->soc->max_gdm_ports)
++		return NULL;
+ 
+-static inline struct econet_eth *econet_eth_priv(struct airoha_eth *eth)
+-{
+-	return eth->priv;
++	port = eth->ports[id - 1];
++	return port ? port->devs[0] : NULL;
+ }
+ 
+ 
+-#define EN751221_DSA_SPORT_BASE		8
+-#define EN751221_DSA_NUM_PORTS		5
+-
+ static bool econet_en751221_dsa_sport(u8 sport)
+ {
+ 	return sport >= EN751221_DSA_SPORT_BASE &&
+@@ -4572,7 +4357,7 @@ static bool econet_en751221_dsa_sport(u8 sport)
+ static struct net_device *econet_get_sport_dev(struct airoha_eth *eth,
+ 					     u8 sport)
+ {
+-	struct econet_eth *priv = econet_eth_priv(eth);
++	struct airoha_gdm_dev *dev;
+ 
+ 	/*
+ 	 * EN7512/EN7521 vendor RX metadata uses SPORT_QDMA_LAN (0) for packets
+@@ -4580,15 +4365,18 @@ static struct net_device *econet_get_sport_dev(struct airoha_eth *eth,
+ 	 * These are valid source-port values, not malformed descriptors.
+ 	 */
+ 	if (sport == ETX_FPORT_GDM2 || sport == ETX_FPORT_QDMA1_CPU)
+-		return priv->ports[1];
+-
+-	if (sport == ETX_FPORT_GDM1 || sport == ETX_FPORT_QDMA0_CPU ||
+-	    (airoha_is(eth, econet_en751221) &&
+-	     econet_en751221_dsa_sport(sport)))
+-		return priv->ports[0];
++		dev = airoha_eth_get_gdm_dev(eth, AIROHA_GDM2_IDX);
++	else if (sport == ETX_FPORT_GDM1 || sport == ETX_FPORT_QDMA0_CPU ||
++		 (airoha_is(eth, econet_en751221) &&
++		  econet_en751221_dsa_sport(sport)))
++		dev = airoha_eth_get_gdm_dev(eth, AIROHA_GDM1_IDX);
++	else {
++		dev_info_ratelimited(eth->dev, "rx: on unexpected sport %u\n",
++				     sport);
++		dev = airoha_eth_get_gdm_dev(eth, AIROHA_GDM1_IDX);
++	}
+ 
+-	dev_info_ratelimited(eth->dev, "rx: on unexpected sport %u\n", sport);
+-	return priv->ports[0];
++	return dev ? dev->common.netdev : NULL;
+ }
+ 
+ int econet_rx_before_recv(struct airoha_eth *eth, struct sk_buff *skb,
+@@ -4613,7 +4401,7 @@ int econet_rx_before_recv(struct airoha_eth *eth, struct sk_buff *skb,
+ 	return 0;
+ }
+ 
+-static int econet_xpon_start(struct econet_gdm_port *port)
++static int econet_xpon_start(struct airoha_gdm_dev *port)
+ {
+ 	int ret = 0;
+ 
+@@ -4628,7 +4416,7 @@ static int econet_xpon_start(struct econet_gdm_port *port)
+ 	return ret;
+ }
+ 
+-static void econet_xpon_stop(struct econet_gdm_port *port)
++static void econet_xpon_stop(struct airoha_gdm_dev *port)
+ {
+ 	mutex_lock(&port->xpon_lock);
+ 	if (port->xpon_ops && port->xpon_started) {
+@@ -4641,7 +4429,7 @@ static void econet_xpon_stop(struct econet_gdm_port *port)
+ static int econet_set_xpon_mode(struct net_device *netdev,
+ 				enum airoha_xpon_mode mode)
+ {
+-	struct econet_gdm_port *port;
++	struct airoha_gdm_dev *port;
+ 	int ret;
+ 
+ 	ret = econet_validate_xpon_gdm2(netdev, &port);
+@@ -4665,7 +4453,7 @@ static int econet_set_xpon_mode(struct net_device *netdev,
+ static int econet_set_xpon_datapath(struct net_device *netdev,
+ 				    enum airoha_xpon_mode mode, bool enable)
+ {
+-	struct econet_gdm_port *port;
++	struct airoha_gdm_dev *port;
+ 	int ret;
+ 
+ 	ret = econet_validate_xpon_gdm2(netdev, &port);
+@@ -4706,7 +4494,7 @@ static int econet_set_xpon_datapath(struct net_device *netdev,
+ static int econet_set_xpon_tcont_channel(struct net_device *netdev,
+ 					 unsigned int channel, bool enable)
+ {
+-	struct econet_gdm_port *port;
++	struct airoha_gdm_dev *port;
+ 	u32 mask;
+ 	int ret;
+ 
+@@ -4730,7 +4518,7 @@ static int econet_register_xpon(struct net_device *netdev,
+ 				const struct airoha_xpon_link_ops *ops,
+ 				void *priv)
+ {
+-	struct econet_gdm_port *port;
++	struct airoha_gdm_dev *port;
+ 	unsigned long flags;
+ 	int ret;
+ 
+@@ -4750,7 +4538,7 @@ static int econet_register_xpon(struct net_device *netdev,
+ 	port->xpon_ops = ops;
+ 	port->xpon_priv = priv;
+ 	port->xpon_mode = mode;
+-	port->xpon_managed = true;
++	port->flags |= AIROHA_PRIV_F_XPON_MANAGED;
+ 	spin_lock_irqsave(&port->xpon_state_lock, flags);
+ 	memset(&port->xpon_link, 0, sizeof(port->xpon_link));
+ 	port->xpon_link.mode = mode;
+@@ -4761,9 +4549,9 @@ static int econet_register_xpon(struct net_device *netdev,
+ 	 * aggregated into QDMA_WAN bits 16/17 and is enabled only after the
+ 	 * provider callback is fully published.
+ 	 */
+-	ret = econet_qdma_set_xpon_irq(port->qdma, mode, true);
++	ret = airoha_qdma_mips_set_xpon_irq(port->qdma, mode, true);
+ 	if (ret) {
+-		port->xpon_managed = false;
++		port->flags &= ~AIROHA_PRIV_F_XPON_MANAGED;
+ 		port->xpon_ops = NULL;
+ 		port->xpon_priv = NULL;
+ 		goto out_unlock;
+@@ -4784,7 +4572,7 @@ static void econet_unregister_xpon(struct net_device *netdev,
+ 				   const struct airoha_xpon_link_ops *ops,
+ 				   void *priv)
+ {
+-	struct econet_gdm_port *port;
++	struct airoha_gdm_dev *port;
+ 	unsigned long flags;
+ 
+ 	if (econet_validate_xpon_gdm2(netdev, &port))
+@@ -4795,14 +4583,14 @@ static void econet_unregister_xpon(struct net_device *netdev,
+ 	/* Mask the QDMA aggregator first and wait out an in-flight hard IRQ
+ 	 * before the provider private pointer can disappear.
+ 	 */
+-	econet_qdma_set_xpon_irq(port->qdma, port->xpon_mode, false);
++	airoha_qdma_mips_set_xpon_irq(port->qdma, port->xpon_mode, false);
+ 	econet_xpon_stop(port);
+ 
+ 	mutex_lock(&port->xpon_lock);
+ 	if (port->xpon_ops == ops && port->xpon_priv == priv) {
+ 		port->xpon_ops = NULL;
+ 		port->xpon_priv = NULL;
+-		port->xpon_managed = false;
++		port->flags &= ~AIROHA_PRIV_F_XPON_MANAGED;
+ 	}
+ 	mutex_unlock(&port->xpon_lock);
+ 
+@@ -4816,12 +4604,12 @@ static void econet_xpon_update_link(struct net_device *netdev,
+ 				    const struct airoha_xpon_link_state *state)
+ {
+ 	struct airoha_xpon_link_state new_state;
+-	struct econet_gdm_port *port;
++	struct airoha_gdm_dev *port;
+ 	unsigned long flags;
+ 
+ 	if (!state || econet_validate_xpon_gdm2(netdev, &port))
+ 		return;
+-	if (!READ_ONCE(port->xpon_managed) ||
++	if (!(READ_ONCE(port->flags) & AIROHA_PRIV_F_XPON_MANAGED) ||
+ 	    state->mode != READ_ONCE(port->xpon_mode))
+ 		return;
+ 
+@@ -4839,7 +4627,7 @@ static void econet_xpon_update_link(struct net_device *netdev,
+ 
+ static int econet_xpon_control_start(struct net_device *netdev)
+ {
+-	struct econet_gdm_port *port;
++	struct airoha_gdm_dev *port;
+ 	int ret;
+ 
+ 	ret = econet_validate_xpon_gdm2(netdev, &port);
+@@ -4856,7 +4644,7 @@ static int econet_xpon_control_start(struct net_device *netdev)
+ 	 * QDMA1 alive independently from ndo_open(), mirroring the vendor WAN
+ 	 * QDMA control-plane ownership.
+ 	 */
+-	ret = econet_qdma_use(port->qdma);
++	ret = airoha_qdma_mips_use(port->qdma);
+ 	if (!ret)
+ 		port->xpon_control_started = true;
+ out:
+@@ -4866,7 +4654,7 @@ static int econet_xpon_control_start(struct net_device *netdev)
+ 
+ static void econet_xpon_control_stop(struct net_device *netdev)
+ {
+-	struct econet_gdm_port *port;
++	struct airoha_gdm_dev *port;
+ 
+ 	if (econet_validate_xpon_gdm2(netdev, &port))
+ 		return;
+@@ -4874,14 +4662,14 @@ static void econet_xpon_control_stop(struct net_device *netdev)
+ 	mutex_lock(&port->xpon_lock);
+ 	if (port->xpon_control_started) {
+ 		port->xpon_control_started = false;
+-		econet_qdma_unuse(port->qdma);
++		airoha_qdma_mips_unuse(port->qdma);
+ 	}
+ 	mutex_unlock(&port->xpon_lock);
+ }
+ 
+ static void econet_xpon_dump_oam_rx_state(struct net_device *netdev)
+ {
+-	struct econet_gdm_port *port;
++	struct airoha_gdm_dev *port;
+ 
+ 	if (econet_validate_xpon_gdm2(netdev, &port))
+ 		return;
+@@ -4901,7 +4689,7 @@ static void econet_xpon_dump_oam_rx_state(struct net_device *netdev)
+ static int econet_register_xpon_oam(struct net_device *netdev,
+ 				    struct airoha_xpon_oam_handler *handler)
+ {
+-	struct econet_gdm_port *port;
++	struct airoha_gdm_dev *port;
+ 	int ret;
+ 
+ 	if (!handler || !handler->rx)
+@@ -4919,7 +4707,7 @@ static int econet_register_xpon_oam(struct net_device *netdev,
+ static void econet_unregister_xpon_oam(struct net_device *netdev,
+ 				       struct airoha_xpon_oam_handler *handler)
+ {
+-	struct econet_gdm_port *port;
++	struct airoha_gdm_dev *port;
+ 
+ 	if (econet_validate_xpon_gdm2(netdev, &port))
+ 		return;
+@@ -4933,7 +4721,7 @@ static void econet_unregister_xpon_oam(struct net_device *netdev,
+ static int econet_xmit_xpon_oam(struct net_device *netdev, struct sk_buff *skb,
+ 				u16 gem_port_id)
+ {
+-	struct econet_gdm_port *port;
++	struct airoha_gdm_dev *port;
+ 	struct netdev_queue *txq;
+ 	union desc_msg msg = {};
+ 	int len, ret;
+@@ -4959,7 +4747,7 @@ static int econet_xmit_xpon_oam(struct net_device *netdev, struct sk_buff *skb,
+ 	txq = netdev_get_tx_queue(netdev, 0);
+ 	netdev_tx_sent_queue(txq, len);
+ 
+-	ret = econet_qdma_xmit(port->qdma, skb, &msg, 0);
++	ret = airoha_qdma_mips_xmit(port->qdma, skb, &msg, 0);
+ 	if (ret < 0) {
+ 		netdev_tx_completed_queue(txq, 1, len);
+ 		return ret;
+@@ -4972,7 +4760,7 @@ static int econet_xpon_get_tx_info(struct net_device *netdev, bool vlan_valid,
+ 				   u16 vlan_id, bool pcp_valid, u8 pcp,
+ 				   struct airoha_xpon_tx_info *info)
+ {
+-	struct econet_gdm_port *port;
++	struct airoha_gdm_dev *port;
+ 	int ret;
+ 
+ 	if (!info)
+@@ -4980,7 +4768,7 @@ static int econet_xpon_get_tx_info(struct net_device *netdev, bool vlan_valid,
+ 	ret = econet_validate_xpon_gdm2(netdev, &port);
+ 	if (ret)
+ 		return ret;
+-	if (!READ_ONCE(port->xpon_managed) ||
++	if (!(READ_ONCE(port->flags) & AIROHA_PRIV_F_XPON_MANAGED) ||
+ 	    READ_ONCE(port->xpon_mode) != AIROHA_XPON_MODE_GPON)
+ 		return -EOPNOTSUPP;
+ 
+@@ -5000,7 +4788,7 @@ static bool econet_xpon_rule_eq(const struct airoha_xpon_service_cfg *a,
+ }
+ 
+ /* Slot currently referenced by @cookie, or -1. Caller holds the lock. */
+-static int econet_xpon_find_cookie(struct econet_gdm_port *port, u32 cookie)
++static int econet_xpon_find_cookie(struct airoha_gdm_dev *port, u32 cookie)
+ {
+ 	int i, j;
+ 
+@@ -5018,7 +4806,7 @@ static int econet_xpon_find_cookie(struct econet_gdm_port *port, u32 cookie)
+  * Drop @cookie from whichever rule holds it, freeing the slot once no cookie
+  * references it any more.  Caller holds the lock.
+  */
+-static void econet_xpon_forget_cookie(struct econet_gdm_port *port, u32 cookie)
++static void econet_xpon_forget_cookie(struct airoha_gdm_dev *port, u32 cookie)
+ {
+ 	int i, j;
+ 
+@@ -5041,7 +4829,7 @@ static void econet_xpon_forget_cookie(struct econet_gdm_port *port, u32 cookie)
+ static int econet_xpon_add_service(struct net_device *netdev,
+ 				   const struct airoha_xpon_service_cfg *cfg)
+ {
+-	struct econet_gdm_port *port;
++	struct airoha_gdm_dev *port;
+ 	int empty = -1, i, ret;
+ 
+ 	if (!cfg || cfg->gem_port_id > FIELD_MAX(ETX_XPON_GEM_MASK) ||
+@@ -5068,7 +4856,7 @@ static int econet_xpon_add_service(struct net_device *netdev,
+ 	for (i = 0; i < AIROHA_XPON_MAX_SERVICES; i++) {
+ 		if (!port->xpon_services[i].valid ||
+ 		    !econet_xpon_rule_eq(&port->xpon_services[i], cfg) ||
+-		    port->xpon_service_ncookies[i] >= ECONET_XPON_SVC_MAX_COOKIES)
++		    port->xpon_service_ncookies[i] >= AIROHA_XPON_SVC_MAX_COOKIES)
+ 			continue;
+ 		port->xpon_service_cookies[i][port->xpon_service_ncookies[i]++] =
+ 			cfg->cookie;
+@@ -5101,7 +4889,7 @@ static int econet_xpon_add_service(struct net_device *netdev,
+ static bool econet_xpon_del_service(struct net_device *netdev, u32 cookie,
+ 				    u16 *gem_port_id)
+ {
+-	struct econet_gdm_port *port;
++	struct airoha_gdm_dev *port;
+ 	bool found = false;
+ 	int i;
+ 
+@@ -5125,7 +4913,7 @@ static bool econet_xpon_del_service(struct net_device *netdev, u32 cookie,
+ static bool econet_xpon_has_gem_service(struct net_device *netdev,
+ 					u16 gem_port_id)
+ {
+-	struct econet_gdm_port *port;
++	struct airoha_gdm_dev *port;
+ 	bool found = false;
+ 	int i;
+ 
+@@ -5146,7 +4934,7 @@ static bool econet_xpon_has_gem_service(struct net_device *netdev,
+ 
+ static void econet_xpon_flush_services(struct net_device *netdev)
+ {
+-	struct econet_gdm_port *port;
++	struct airoha_gdm_dev *port;
+ 
+ 	if (econet_validate_xpon_gdm2(netdev, &port))
+ 		return;
+@@ -5161,30 +4949,32 @@ static void econet_xpon_flush_services(struct net_device *netdev)
+ bool econet_rx_xpon_oam(struct airoha_eth *eth, u8 qdma_id,
+ 				 struct sk_buff *skb, union desc_msg *msg)
+ {
+-	struct econet_eth *priv = econet_eth_priv(eth);
+ 	struct airoha_xpon_oam_handler *handler;
+-	struct econet_gdm_port *port;
++	struct airoha_gdm_dev *port;
+ 	u32 raw0, flags = 0;
+ 	u16 gem_port_id;
+ 	u32 skb_len;
+ 	bool consumed = false;
+ 
+-	if (!airoha_is(eth, econet_en751221) || qdma_id != 1 || !priv->ports[1])
++	if (!airoha_is(eth, econet_en751221) || qdma_id != 1)
++		return false;
++
++	port = airoha_eth_get_gdm_dev(eth, AIROHA_GDM2_IDX);
++	if (!port)
+ 		return false;
+ 
+ 	raw0 = READ_ONCE(msg->raw[0]);
+ 	if (!(raw0 & ERX_XPON_OAM))
+ 		return false;
+ 
+-	port = netdev_priv(priv->ports[1]);
+-	if (!READ_ONCE(port->xpon_managed))
++	if (!(READ_ONCE(port->flags) & AIROHA_PRIV_F_XPON_MANAGED))
+ 		return false;
+ 
+ 	gem_port_id = FIELD_GET(ERX_XPON_GEM_MASK, raw0);
+ 	if (raw0 & ERX_XPON_CRC_ERROR)
+ 		flags |= AIROHA_XPON_OAM_RX_F_CRC_ERROR;
+ 
+-	skb->dev = port->dev;
++	skb->dev = port->common.netdev;
+ 	skb_len = skb->len;
+ 	atomic64_inc(&port->xpon_oam_rx_packets);
+ 	atomic64_add(skb_len, &port->xpon_oam_rx_bytes);
+@@ -5218,16 +5008,17 @@ bool econet_rx_xpon_oam(struct airoha_eth *eth, u8 qdma_id,
+ void econet_xpon_irq(struct airoha_eth *eth, u8 qdma_id,
+ 			      enum airoha_xpon_mode mode)
+ {
+-	struct econet_eth *priv = econet_eth_priv(eth);
+ 	const struct airoha_xpon_link_ops *ops;
+-	struct econet_gdm_port *port;
++	struct airoha_gdm_dev *port;
+ 	void *xpon_priv;
+ 
+-	if (!airoha_is(eth, econet_en751221) || qdma_id != 1 || !priv->ports[1])
++	if (!airoha_is(eth, econet_en751221) || qdma_id != 1)
+ 		return;
+ 
+-	port = netdev_priv(priv->ports[1]);
+-	if (!READ_ONCE(port->xpon_managed) || READ_ONCE(port->xpon_mode) != mode)
++	port = airoha_eth_get_gdm_dev(eth, AIROHA_GDM2_IDX);
++	if (!port)
++		return;
++	if (!(READ_ONCE(port->flags) & AIROHA_PRIV_F_XPON_MANAGED) || READ_ONCE(port->xpon_mode) != mode)
+ 		return;
+ 
+ 	ops = READ_ONCE(port->xpon_ops);
+@@ -5256,48 +5047,9 @@ static const struct airoha_eth_xpon_ops econet_xpon_ops = {
+ 	.flush_services = econet_xpon_flush_services,
+ };
+ 
+-static int econet_init_port(struct airoha_eth *eth, struct device_node *np)
+-{
+-	struct econet_eth *priv = econet_eth_priv(eth);
+-	struct net_device *dev;
+-	u32 id;
+-	int err;
+-
+-	err = airoha_eth_get_port_id(eth->dev, np, 1,
+-				     ARRAY_SIZE(priv->ports), &id);
+-	if (err)
+-		return err;
+-
+-	if (priv->ports[id - 1]) {
+-		dev_err(eth->dev, "duplicate gdm port id: %d\n", id);
+-		return -EINVAL;
+-	}
+-
+-	if (id == 1)
+-		dev = econet_alloc_gdm_port(eth, np,
+-					    priv->gdm[0],
+-					    priv->qdma[0],
+-					    ETX_FPORT_GDM1,
+-					    false);
+-	else if (id == 2)
+-		dev = econet_alloc_gdm_port(eth, np,
+-					    priv->gdm[1],
+-					    priv->qdma[1],
+-					    ETX_FPORT_GDM2,
+-					    true);
+-	else
+-		return -EINVAL;
+-
+-	if (IS_ERR(dev))
+-		return PTR_ERR(dev);
+-
+-	priv->ports[id - 1] = dev;
+-	return 0;
+-}
+-
+ static int airoha_fe_init(struct airoha_eth *eth);
+ 
+-static void econet_prepare_qdma_cfg(struct econet_qdma_cfg *cfg,
++static void econet_prepare_qdma_cfg(struct airoha_qdma_mips_cfg *cfg,
+ 				    const struct airoha_eth_soc_data *soc,
+ 				    int id)
+ {
+@@ -5312,7 +5064,7 @@ static void econet_prepare_qdma_cfg(struct econet_qdma_cfg *cfg,
+ 		cfg->done_list_size[i] = 256;
+ 		cfg->done_list_irq_threshold[i] = 1;
+ 	}
+-	cfg->fwd_max_packet_size = ECONET_MAX_PACKET_SIZE;
++	cfg->fwd_max_packet_size = AIROHA_MAX_PACKET_SIZE;
+ 	cfg->fwd_low_threshold = 32;
+ 	cfg->num_fwd_descs = 256;
+ 	cfg->num_channels = ECONET_NUM_CHANNELS;
+@@ -5358,170 +5110,6 @@ static void econet_prepare_qdma_cfg(struct econet_qdma_cfg *cfg,
+ 	}
+ }
+ 
+-static void econet_eth_remove(struct platform_device *pdev,
+-			    struct airoha_eth *eth)
+-{
+-	struct econet_eth *priv = econet_eth_priv(eth);
+-	int i;
+-
+-	if (!priv)
+-		return;
+-
+-	for (i = 0; i < ARRAY_SIZE(priv->ports); i++) {
+-		if (!priv->ports[i])
+-			continue;
+-
+-		unregister_netdev(priv->ports[i]);
+-		airoha_gdm_phylink_destroy(&((struct econet_gdm_port *)
+-					netdev_priv(priv->ports[i]))->common);
+-		of_node_put(priv->ports[i]->dev.of_node);
+-		priv->ports[i]->dev.of_node = NULL;
+-	}
+-
+-	airoha_ppe_deinit(eth);
+-
+-	for (i = 0; i < ARRAY_SIZE(priv->qdma); i++) {
+-		eth->qdma_common[i] = NULL;
+-		if (priv->qdma[i])
+-			econet_qdma_destroy(priv->qdma[i]);
+-	}
+-
+-	eth->priv = NULL;
+-}
+-
+-static int econet_eth_probe(struct platform_device *pdev,
+-				 struct airoha_eth *eth)
+-{
+-	static const char * const qdma_names[ECONET_NUM_QDMA] = {
+-		"qdma0", "qdma1",
+-	};
+-	struct econet_eth *priv;
+-	struct resource *fe_res;
+-	struct econet_qdma_cfg cfg;
+-	struct device_node *np;
+-	void __iomem *fe_base;
+-	int i, err, irq;
+-
+-	priv = devm_kzalloc(eth->dev, sizeof(*priv), GFP_KERNEL);
+-	if (!priv)
+-		return -ENOMEM;
+-	eth->priv = priv;
+-
+-	err = airoha_eth_set_dma_mask(eth->dev);
+-	if (err)
+-		return err;
+-
+-	fe_res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "fe");
+-	if (!fe_res)
+-		return dev_err_probe(eth->dev, -EINVAL,
+-				     "missing fe register resource\n");
+-	if (resource_size(fe_res) < EN751221_FE_MIN_SIZE)
+-		return dev_err_probe(eth->dev, -EINVAL,
+-				     "fe register resource is too small\n");
+-
+-	fe_base = devm_ioremap_resource(eth->dev, fe_res);
+-	if (IS_ERR(fe_base))
+-		return dev_err_probe(eth->dev, PTR_ERR(fe_base),
+-				     "failed to map fe registers\n");
+-
+-	eth->fe_regs = fe_base;
+-	priv->gdm[0] = fe_base + EN751221_FE_GDM1_OFFSET;
+-	priv->gdm[1] = fe_base + EN751221_FE_GDM2_OFFSET;
+-
+-	eth->gdmp_regs = devm_platform_ioremap_resource_byname(pdev, "gdmp");
+-	if (IS_ERR(eth->gdmp_regs))
+-		return dev_err_probe(eth->dev, PTR_ERR(eth->gdmp_regs),
+-				     "failed to map gdmp registers\n");
+-
+-	for (i = 0; i < ARRAY_SIZE(priv->qdma_regs); i++) {
+-		priv->qdma_regs[i] =
+-			devm_platform_ioremap_resource_byname(pdev, qdma_names[i]);
+-		if (IS_ERR(priv->qdma_regs[i]))
+-			return dev_err_probe(eth->dev,
+-					     PTR_ERR(priv->qdma_regs[i]),
+-					     "failed to map %s registers\n",
+-					     qdma_names[i]);
+-	}
+-
+-	priv->reset = devm_reset_control_array_get_optional_exclusive(eth->dev);
+-	if (IS_ERR(priv->reset))
+-		return dev_err_probe(eth->dev, PTR_ERR(priv->reset),
+-				     "failed to get resets\n");
+-
+-	if (priv->reset) {
+-		err = reset_control_assert(priv->reset);
+-		if (err)
+-			return err;
+-
+-		msleep(20);
+-		err = reset_control_deassert(priv->reset);
+-		if (err)
+-			return err;
+-	}
+-
+-	err = airoha_fe_init(eth);
+-	if (err)
+-		return err;
+-
+-	for (i = 0; i < ECONET_NUM_QDMA; i++) {
+-		int bank;
+-
+-		for (bank = 0; bank < eth->soc->irq_banks; bank++) {
+-			int irq_idx;
+-
+-			/* EN751221 exposes LAN/WAN as IRQ 0/1. EN7516/
+-			 * EN7527/EN7528 keep LAN0/WAN0 first, followed by
+-			 * LAN1..3 and WAN1..3.
+-			 */
+-			if (bank == 0)
+-				irq_idx = i;
+-			else
+-				irq_idx = i ? bank + 4 : bank + 1;
+-
+-			irq = platform_get_irq(pdev, irq_idx);
+-			if (irq < 0)
+-				return dev_err_probe(eth->dev, irq,
+-						     "failed to get QDMA%d IRQ bank %d\n",
+-						     i, bank);
+-			priv->qdma_irq[i][bank] = irq;
+-		}
+-	}
+-
+-	for (i = 0; i < ARRAY_SIZE(priv->qdma); i++) {
+-		econet_prepare_qdma_cfg(&cfg, eth->soc, i);
+-		priv->qdma[i] = econet_qdma_new(eth, priv->qdma_regs[i], i,
+-					       priv->qdma_irq[i],
+-					       eth->soc->irq_banks, &cfg);
+-		if (IS_ERR(priv->qdma[i])) {
+-			err = PTR_ERR(priv->qdma[i]);
+-			priv->qdma[i] = NULL;
+-			goto error;
+-		}
+-		eth->qdma_common[i] = econet_qdma_common(priv->qdma[i]);
+-	}
+-
+-	err = airoha_ppe_init(eth);
+-	if (err)
+-		goto error;
+-
+-	for_each_available_child_of_node(eth->dev->of_node, np) {
+-		if (!of_device_is_compatible(np, "econet,eth-mac"))
+-			continue;
+-
+-		err = econet_init_port(eth, np);
+-		if (err) {
+-			of_node_put(np);
+-			goto error;
+-		}
+-	}
+-
+-	return 0;
+-
+-error:
+-	econet_eth_remove(pdev, eth);
+-	return err;
+-}
+-
+ /*
+  * EN751221/EN7528 source-port decoding is intentionally kept on the
+  * EN7523 mapping while the EcoNet/EN7516 RX metadata is being validated.
+@@ -5537,7 +5125,8 @@ const struct airoha_eth_soc_data econet_en751221_soc_data = {
+ 	.xpon_ops = &econet_xpon_ops,
+ 	.num_ppe = 1,
+ 	.irq_banks = 1,
+-	.max_gdm_ports = ECONET_NUM_GDM_PORTS,
++	.max_gdm_ports = 2,
++	.pse_fq_cfg = PSE_FQ_CFG,
+ 	.ppe_dram_entries = 16 * 1024,
+ 	.ops = {
+ 		.get_sport = airoha_en7523_get_sport,
+@@ -5549,7 +5138,8 @@ const struct airoha_eth_soc_data econet_en7528_soc_data = {
+ 	.version = econet_en7528,
+ 	.num_ppe = 1,
+ 	.irq_banks = 4,
+-	.max_gdm_ports = ECONET_NUM_GDM_PORTS,
++	.max_gdm_ports = 2,
++	.pse_fq_cfg = PSE_FQ_CFG,
+ 	.ppe_dram_entries = 16 * 1024,
+ 	.ops = {
+ 		.get_sport = airoha_en7523_get_sport,
+@@ -5565,16 +5155,6 @@ static const struct net_device_ops airoha_netdev_ops;
+ static int airoha_qdma_set_gpon_dba_report(struct net_device *netdev,
+ 					   int channel, bool enable);
+ 
+-#define EN7523_GPON_MAX_FRAME_LEN		2000
+-#define EN7523_GPON_PSE_BUF_INIT_CHAN_THR	4
+-#define EN7523_GPON_PSE_BUF_INIT_TOTAL_THR	0xe0
+-#define EN7523_GPON_PSE_BUF_FEW_CHAN_THR	0x20
+-#define EN7523_GPON_PSE_BUF_MANY_CHAN_THR	0x08
+-#define EN7523_GPON_PSE_BUF_CHAN_OVERHEAD	0x10
+-#define EN7523_GPON_PSE_BUF_FEW_CHAN_MAX	8
+-#define EN7523_GPON_DBA_RATE_KBPS		0xa00000
+-#define EN7523_GPON_DBA_CBS_BYTES		0x8000
+-#define EN7523_GPON_DBA_PBS_BYTES		0xffff
+ 
+ #define AIROHA_XPON_TX_OFFLOAD_FEATURES		\
+ 	(NETIF_F_IP_CSUM | NETIF_F_IPV6_CSUM | \
+@@ -6325,7 +5905,7 @@ static int airoha_fe_set_pse_oq_rsv(struct airoha_eth *eth,
+ 	}
+ 
+ 	/* modify hthd */
+-	fq_limit = airoha_fe_get(eth, PSE_FQ_CFG, PSE_FQ_LIMIT_MASK);
++	fq_limit = airoha_fe_get(eth, eth->soc->pse_fq_cfg, PSE_FQ_LIMIT_MASK);
+ 	tmp = fq_limit - all_rsv - 0x20;
+ 	airoha_fe_rmw(eth, REG_PSE_SHARE_USED_THD,
+ 		      PSE_SHARE_USED_HTHD_MASK,
+@@ -6601,11 +6181,11 @@ static bool airoha_fe_lro_is_enabled(struct airoha_eth *eth, int qdma_id)
+ static void airoha_dev_lro_enable(struct airoha_gdm_dev *dev)
+ {
+ 	struct airoha_qdma *qdma = airoha_qdma_deref(dev);
+-	struct airoha_eth *eth = qdma->common.eth;
++	struct airoha_eth *eth = qdma->eth;
+ 	int qdma_id = qdma - &eth->qdma[0];
+ 	int i, lro_queue_index = 0;
+ 
+-	for (i = 0; i < qdma->common.eth->soc->rx_ring; i++) {
++	for (i = 0; i < qdma->eth->soc->rx_ring; i++) {
+ 		struct airoha_queue *q = &qdma->q_rx[i];
+ 		u32 size;
+ 
+@@ -6706,7 +6286,7 @@ static int airoha_fe_init(struct airoha_eth *eth)
+ 	/* map GDMP sram to fe */
+ 	airoha_wr(eth->gdmp_regs, 0x74, 3);
+ 	/* set PSE buffer to 0x500 = 0x400(pse itself) + 0x100(GDMP buffer) */
+-	airoha_fe_wr(eth, PSE_FQ_CFG, 0x500);
++	airoha_fe_wr(eth, eth->soc->pse_fq_cfg, 0x500);
+ 
+ 	airoha_fe_wr(eth, REG_FE_RST_GLO_CFG,
+ 		     FE_RST_CORE_MASK | FE_RST_GDM3_MBI_ARB_MASK |
+@@ -6841,21 +6421,26 @@ static int airoha_hw_init(struct platform_device *pdev,
+ {
+ 	int err, i;
+ 
+-	/* disable xsi */
+-	err = reset_control_bulk_assert(eth->soc->num_xsi_rsts, eth->xsi_rsts);
+-	if (err)
+-		return err;
++	if (eth->soc->num_xsi_rsts) {
++		err = reset_control_bulk_assert(eth->soc->num_xsi_rsts,
++						eth->xsi_rsts);
++		if (err)
++			return err;
++	}
+ 
+-	err = reset_control_bulk_assert(ARRAY_SIZE(eth->rsts), eth->rsts);
++	err = reset_control_bulk_assert(AIROHA_MAX_NUM_RSTS, eth->rsts);
+ 	if (err)
+ 		return err;
+ 
+-	err = reset_control_bulk_deassert(eth->soc->num_xsi_rsts, eth->xsi_rsts);
+-	if (err)
+-		return err;
++	if (eth->soc->num_xsi_rsts) {
++		err = reset_control_bulk_deassert(eth->soc->num_xsi_rsts,
++						  eth->xsi_rsts);
++		if (err)
++			return err;
++	}
+ 
+ 	msleep(20);
+-	err = reset_control_bulk_deassert(ARRAY_SIZE(eth->rsts), eth->rsts);
++	err = reset_control_bulk_deassert(AIROHA_MAX_NUM_RSTS, eth->rsts);
+ 	if (err)
+ 		return err;
+ 
+@@ -6864,24 +6449,37 @@ static int airoha_hw_init(struct platform_device *pdev,
+ 	if (err)
+ 		return err;
+ 
+-	for (i = 0; i < ARRAY_SIZE(eth->qdma); i++) {
+-		eth->qdma[i].q_tx = devm_kzalloc(&pdev->dev,
+-			sizeof(*eth->qdma[i].q_tx) * eth->soc->tx_ring,
+-			GFP_KERNEL);
+-		if (!eth->qdma[i].q_tx) {
+-			err = -ENOMEM;
+-			goto error;
+-		}
++	for (i = 0; i < AIROHA_MAX_NUM_QDMA; i++) {
++		struct airoha_qdma *qdma = &eth->qdma[i];
+ 
+-		eth->qdma[i].q_rx = devm_kzalloc(&pdev->dev,
+-			sizeof(*eth->qdma[i].q_rx) * eth->soc->rx_ring,
+-			GFP_KERNEL);
+-		if (!eth->qdma[i].q_rx) {
+-			err = -ENOMEM;
+-			goto error;
+-		}
++		if (airoha_is_econet(eth)) {
++			struct airoha_qdma_mips_cfg cfg;
++			int irqs[ECONET_MAX_QDMA_IRQS] = {};
++
++			econet_prepare_qdma_cfg(&cfg, eth->soc, i);
++			airoha_qdma_setup(qdma, eth, NULL, i, cfg.num_channels);
++			err = airoha_qdma_get_mips_irqs(pdev, qdma, irqs);
++			if (err)
++				goto error;
++
++			err = airoha_qdma_init_mips(pdev, eth, qdma, irqs, &cfg);
++		} else {
++			qdma->q_tx = devm_kcalloc(&pdev->dev, eth->soc->tx_ring,
++						 sizeof(*qdma->q_tx), GFP_KERNEL);
++			if (!qdma->q_tx) {
++				err = -ENOMEM;
++				goto error;
++			}
++
++			qdma->q_rx = devm_kcalloc(&pdev->dev, eth->soc->rx_ring,
++						 sizeof(*qdma->q_rx), GFP_KERNEL);
++			if (!qdma->q_rx) {
++				err = -ENOMEM;
++				goto error;
++			}
+ 
+-		err = airoha_qdma_init(pdev, eth, &eth->qdma[i]);
++			err = airoha_qdma_init(pdev, eth, qdma);
++		}
+ 		if (err)
+ 			goto error;
+ 	}
+@@ -6890,12 +6488,29 @@ static int airoha_hw_init(struct platform_device *pdev,
+ 	if (err)
+ 		goto error;
+ 
+-	set_bit(DEV_STATE_INITIALIZED, &eth->state);
++	/* GDM netdevs on the Airoha path are allocated before PPE so an
++	 * nvmem -EPROBE_DEFER cannot leave DMA running. Bind the shared PPE
++	 * frontend once hardware initialization has completed.
++	 */
++	for (i = 0; i < eth->soc->max_gdm_ports; i++) {
++		struct airoha_gdm_port *port = eth->ports ? eth->ports[i] : NULL;
++		int j;
++
++		if (!port)
++			continue;
++		for (j = 0; j < ARRAY_SIZE(port->devs); j++)
++			if (port->devs[j])
++				port->devs[j]->common.ppe = eth->ppe_dev;
++	}
+ 
++	set_bit(DEV_STATE_INITIALIZED, &eth->state);
+ 	return 0;
++
+ error:
+-	for (i = 0; i < ARRAY_SIZE(eth->qdma); i++)
+-		airoha_qdma_cleanup(&eth->qdma[i]);
++	for (i = 0; i < AIROHA_MAX_NUM_QDMA; i++) {
++		if (eth->qdma[i].eth)
++			airoha_qdma_cleanup(&eth->qdma[i]);
++	}
+ 
+ 	return err;
+ }
+@@ -7313,7 +6928,7 @@ static int airoha_dev_stop(struct net_device *netdev)
+ 	if (--port->users)
+ 		airoha_ppe_set_mtu(dev);
+ 	else if (!xpon_control)
+-		airoha_set_gdm_port_fwd_cfg(qdma->common.eth,
++		airoha_set_gdm_port_fwd_cfg(qdma->eth,
+ 					    REG_GDM_FWD_CFG(port->id),
+ 					    FE_PSE_PORT_DROP);
+ 	airoha_qdma_stop(qdma);
+@@ -7488,7 +7103,7 @@ static void airoha_dev_set_qdma(struct airoha_gdm_dev *dev)
+ 	netdev->irq = qdma->irq_banks[0].irq;
+ 
+ 	/* Set GSW P0 as WAN1 */
+-	if (airoha_is(dev->qdma->common.eth, airoha_en7523)) {
++	if (airoha_is(dev->qdma->eth, airoha_en7523)) {
+ 		airoha_fe_rmw(eth, REG_FE_WAN_PORT, WAN1_MASK,
+ 				FIELD_PREP(WAN1_MASK, 0x10));
+ 		airoha_fe_rmw(eth, REG_FE_WAN_PORT, WAN1_EN_MASK,
+@@ -7905,7 +7520,7 @@ static netdev_tx_t __airoha_dev_xmit(struct sk_buff *skb,
+ 	qid = airoha_qdma_get_txq(qdma, xpon ? xpon->queue :
+ 				    skb_get_queue_mapping(skb));
+ 	if (xpon) {
+-		if (!airoha_is(qdma->common.eth, airoha_en7523))
++		if (!airoha_is(qdma->eth, airoha_en7523))
+ 			goto error;
+ 
+ 		msg0 = FIELD_PREP(QDMA_ETH_TXMSG_QUEUE_MASK, xpon->queue) |
+@@ -7914,7 +7529,7 @@ static netdev_tx_t __airoha_dev_xmit(struct sk_buff *skb,
+ 				  xpon->gem_port_id);
+ 		if (xpon->oam)
+ 			msg0 |= QDMA_ETH_TXMSG_OAM_MASK;
+-	} else if (airoha_is(qdma->common.eth, airoha_en7523)) {
++	} else if (airoha_is(qdma->eth, airoha_en7523)) {
+ 		airoha_qdma_skb_get_mtk_meta(skb, netdev,
+ 					     AIROHA_MTK_TAG_TO_DESC,
+ 					     &skb_meta);
+@@ -8015,7 +7630,7 @@ static netdev_tx_t __airoha_dev_xmit(struct sk_buff *skb,
+ 				     list);
+ 		index = e - q->entry;
+ 
+-		val = airoha_is(qdma->common.eth, airoha_en7523) ?
++		val = airoha_is(qdma->eth, airoha_en7523) ?
+ 			FIELD_PREP(EN7523_QDMA_DESC_LEN_MASK, len) :
+ 			FIELD_PREP(QDMA_DESC_LEN_MASK, len);
+ 		if (i < nr_frags - 1)
+@@ -8026,7 +7641,7 @@ static netdev_tx_t __airoha_dev_xmit(struct sk_buff *skb,
+ 		WRITE_ONCE(desc->data, cpu_to_le32(val));
+ 		WRITE_ONCE(desc->msg0, cpu_to_le32(msg0));
+ 		WRITE_ONCE(desc->msg1, cpu_to_le32(msg1));
+-		if (!airoha_is(qdma->common.eth, airoha_en7523))
++		if (!airoha_is(qdma->eth, airoha_en7523))
+ 			WRITE_ONCE(desc->msg2, cpu_to_le32(0xffff));
+ 
+ 		i++;
+@@ -8054,7 +7669,7 @@ static netdev_tx_t __airoha_dev_xmit(struct sk_buff *skb,
+ 	list_for_each_entry(e, &tx_list, list) {
+ 		struct airoha_qdma_desc *desc = &q->desc[e - q->entry];
+ 
+-		airoha_qdma_unmap_tx_entry(qdma->common.eth, e);
++		airoha_qdma_unmap_tx_entry(qdma->eth, e);
+ 		e->skb = NULL;
+ 		WRITE_ONCE(desc->ctrl, 0);
+ 		WRITE_ONCE(desc->addr, 0);
+@@ -8724,7 +8339,7 @@ static int airoha_qdma_set_rx_meter(struct airoha_gdm_dev *dev,
+ 	struct airoha_qdma *qdma = airoha_qdma_deref(dev);
+ 	int i;
+ 
+-	for (i = 0; i < qdma->common.eth->soc->rx_ring; i++) {
++	for (i = 0; i < qdma->eth->soc->rx_ring; i++) {
+ 		int err;
+ 
+ 		if (!qdma->q_rx[i].ndesc)
+@@ -9331,40 +8946,69 @@ static int airoha_alloc_gdm_device(struct airoha_eth *eth,
+ {
+ 	struct net_device *netdev;
+ 	struct airoha_gdm_dev *dev;
++	bool econet = airoha_is_econet(eth);
++	unsigned int txqs, rxqs;
+ 	u8 index;
+ 	int err;
+ 
+-	netdev = devm_alloc_etherdev_mqs(eth->dev, sizeof(*dev),
+-					 AIROHA_NUM_NETDEV_TX_RINGS(eth->soc),
+-					 eth->soc->rx_ring);
++	if (econet) {
++		struct airoha_qdma *qdma;
++
++		if (port->id > AIROHA_MAX_NUM_QDMA)
++			return -EINVAL;
++
++		qdma = &eth->qdma[port->id - 1];
++		txqs = qdma->num_channels * ECONET_NUM_QUEUES;
++		rxqs = txqs;
++	} else {
++		txqs = AIROHA_NUM_NETDEV_TX_RINGS(eth->soc);
++		rxqs = eth->soc->rx_ring;
++	}
++
++	netdev = devm_alloc_etherdev_mqs(eth->dev, sizeof(*dev), txqs, rxqs);
+ 	if (!netdev) {
+ 		dev_err(eth->dev, "alloc_etherdev failed\n");
+ 		return -ENOMEM;
+ 	}
+ 
+-	netdev->netdev_ops = &airoha_netdev_ops;
+-	netdev->ethtool_ops = &airoha_ethtool_ops;
+-	netdev->max_mtu = AIROHA_MAX_MTU;
++	if (econet) {
++		netdev->netdev_ops = &econet_netdev_ops;
++		netdev->ethtool_ops = &econet_ethtool_ops;
++		netdev->max_mtu = SKB_WITH_OVERHEAD(AIROHA_MAX_PACKET_SIZE) -
++				  ETH_HLEN - ETH_FCS_LEN;
++		netdev->hw_features = NETIF_F_IP_CSUM | NETIF_F_RXCSUM |
++				      NETIF_F_IPV6_CSUM;
++		if (eth->ppe_dev && eth->ppe_dev->enabled)
++			netdev->hw_features |= NETIF_F_HW_TC;
++		netdev->features |= netdev->hw_features;
++		netdev->vlan_features = netdev->hw_features;
++	} else {
++		netdev->netdev_ops = &airoha_netdev_ops;
++		netdev->ethtool_ops = &airoha_ethtool_ops;
++		netdev->max_mtu = AIROHA_MAX_MTU;
++		netdev->hw_features = AIROHA_HW_FEATURES | NETIF_F_GRO_HW;
++		netdev->features |= AIROHA_HW_FEATURES;
++		netdev->vlan_features = AIROHA_HW_FEATURES;
++	}
++
+ 	netdev->watchdog_timeo = 5 * HZ;
+-	netdev->hw_features = AIROHA_HW_FEATURES | NETIF_F_GRO_HW;
+-	netdev->features |= AIROHA_HW_FEATURES;
+-	netdev->vlan_features = AIROHA_HW_FEATURES;
+ 	SET_NETDEV_DEV(netdev, eth->dev);
+ 
+-	/* reserve hw queues for HTB offloading */
+-	err = netif_set_real_num_tx_queues(netdev, eth->soc->tx_ring);
+-	if (err)
+-		return err;
++	if (!econet) {
++		/* reserve hw queues for HTB offloading */
++		err = netif_set_real_num_tx_queues(netdev, eth->soc->tx_ring);
++		if (err)
++			return err;
++	}
+ 
+ 	err = airoha_eth_init_mac_address(eth->dev, np, netdev);
+ 	if (err)
+ 		return err;
+ 
+-	/* Allowed nbq for EN7581 on GDM3 port are 4 and 5 for PCIE0
+-	 * and PCIE1 respectively.
+-	 */
++	/* Allowed nbq for EN7581/EN7523 on GDM3 are 4 and 5. */
+ 	index = nbq;
+-	if (index && airoha_is(eth, airoha_en7581, airoha_en7523) && port->id == AIROHA_GDM3_IDX)
++	if (index && airoha_is(eth, airoha_en7581, airoha_en7523) &&
++	    port->id == AIROHA_GDM3_IDX)
+ 		index -= 4;
+ 
+ 	if (index >= ARRAY_SIZE(port->devs) || port->devs[index]) {
+@@ -9375,8 +9019,13 @@ static int airoha_alloc_gdm_device(struct airoha_eth *eth,
+ 	netdev->dev.of_node = of_node_get(np);
+ 	dev = netdev_priv(netdev);
+ 	airoha_gdm_common_init(&dev->common, eth, netdev,
+-			       AIROHA_ETH_FAMILY_AIROHA, port->id, 0,
+-			       dev, &airoha_gdm_mac_ops);
++			       econet ? AIROHA_ETH_FAMILY_ECONET :
++					AIROHA_ETH_FAMILY_AIROHA,
++			       port->id,
++			       econet ? (port->id == AIROHA_GDM2_IDX ?
++					 DPORT_GDMA2 : DPORT_GDMA1) : 0,
++			       dev, econet ? NULL : &airoha_gdm_mac_ops);
++	dev->common.ppe = eth->ppe_dev;
+ 	u64_stats_init(&dev->stats.syncp);
+ 	dev->port = port;
+ 	dev->eth = eth;
+@@ -9384,24 +9033,29 @@ static int airoha_alloc_gdm_device(struct airoha_eth *eth,
+ 	mutex_init(&dev->xpon_lock);
+ 	spin_lock_init(&dev->xpon_state_lock);
+ 	spin_lock_init(&dev->xpon_service_lock);
+-	if (of_property_read_bool(np, "airoha,xpon-managed")) {
++
++	if (econet) {
++		dev->regs = eth->fe_regs + CDM_BASE(port->id);
++		spin_lock_init(&dev->reg_lock);
++		dev->g2_stats = port->id == AIROHA_GDM2_IDX;
++		dev->fport = port->id == AIROHA_GDM2_IDX ?
++			     ETX_FPORT_GDM2 : ETX_FPORT_GDM1;
++		rcu_assign_pointer(dev->qdma, &eth->qdma[port->id - 1]);
++		if (port->id == AIROHA_GDM2_IDX)
++			dev->flags |= AIROHA_PRIV_F_WAN;
++	} else if (of_property_read_bool(np, "airoha,xpon-managed")) {
+ 		dev->flags |= AIROHA_PRIV_F_XPON_MANAGED;
+ 		netdev->features |= NETIF_F_GRO_HW;
+ 
+-		/* The EN7523 vendor SDK handles checksum, scatter-gather and
+-		 * TSO through a private descriptor-chain engine.  Advertising
+-		 * those features through the generic Linux netdev path stalls
+-		 * GPON TX after the first few MiB.  Keep the validated hardware
+-		 * GRO receive path, but force TX checksum, segmentation and
+-		 * linearisation into the networking stack.
+-		 */
++		/* Keep the validated xPON RX GRO path but do TX segmentation in SW. */
+ 		netdev->hw_features &= ~AIROHA_XPON_TX_OFFLOAD_FEATURES;
+ 		netdev->features &= ~AIROHA_XPON_TX_OFFLOAD_FEATURES;
+ 		netdev->vlan_features &= ~AIROHA_XPON_TX_OFFLOAD_FEATURES;
+ 	}
+ 	port->devs[index] = dev;
+ 
+-	return airoha_setup_phylink(netdev);
++	return econet ? econet_setup_phylink(dev, np) :
++			airoha_setup_phylink(netdev);
+ }
+ 
+ static int airoha_alloc_gdm_port(struct airoha_eth *eth,
+@@ -9409,6 +9063,7 @@ static int airoha_alloc_gdm_port(struct airoha_eth *eth,
+ {
+ 	struct airoha_gdm_port *port;
+ 	struct device_node *node;
++	bool econet = airoha_is_econet(eth);
+ 	int err, nbq, p, d = 0;
+ 	u32 id, max_ports = eth->soc->max_gdm_ports;
+ 
+@@ -9417,7 +9072,6 @@ static int airoha_alloc_gdm_port(struct airoha_eth *eth,
+ 		return err;
+ 
+ 	p = id - 1;
+-
+ 	if (eth->ports[p]) {
+ 		dev_err(eth->dev, "duplicate gdm port id: %d\n", id);
+ 		return -EINVAL;
+@@ -9431,17 +9085,25 @@ static int airoha_alloc_gdm_port(struct airoha_eth *eth,
+ 	spin_lock_init(&port->lock);
+ 	eth->ports[p] = port;
+ 
+-	err = airoha_metadata_dst_alloc(port);
+-	if (err)
+-		return err;
++	/* Metadata mux destinations are used by the Airoha descriptor path.
++	 * EcoNet keeps the MT7530 special tag in-band and does not need them.
++	 */
++	if (!econet) {
++		err = airoha_metadata_dst_alloc(port);
++		if (err)
++			return err;
++	}
+ 
+-	/* Default nbq value to ensure backward compatibility */
+-	nbq = id == AIROHA_GDM3_IDX && airoha_is(eth, airoha_en7581, airoha_en7523) ? 4 : 0;
++	/* Default nbq value to ensure backward compatibility. EcoNet has one
++	 * logical device per GDM and therefore always uses nbq 0.
++	 */
++	nbq = !econet && id == AIROHA_GDM3_IDX &&
++	      airoha_is(eth, airoha_en7581, airoha_en7523) ? 4 : 0;
++
++	if (econet)
++		return airoha_alloc_gdm_device(eth, port, 0, np);
+ 
+ 	for_each_child_of_node(np, node) {
+-		/* Multiple external serdes connected to the FE GDM port via an
+-		 * external arbiter.
+-		 */
+ 		const __be32 *nbq_ptr;
+ 
+ 		if (!of_device_is_compatible(node, "airoha,eth-port"))
+@@ -9458,7 +9120,6 @@ static int airoha_alloc_gdm_port(struct airoha_eth *eth,
+ 			return -EINVAL;
+ 		}
+ 
+-		/* Verify the provided nbq parameter is valid */
+ 		nbq = be32_to_cpup(nbq_ptr);
+ 		err = eth->soc->ops.get_sport(port, nbq);
+ 		if (err < 0) {
+@@ -9574,193 +9235,51 @@ static const struct airoha_ppe_host_ops airoha_ppe_host_ops = {
+ 	.npu_stats_clear = airoha_eth_ppe_npu_stats_clear,
+ };
+ 
+-static int airoha_datapath_probe(struct platform_device *pdev,
+-				 struct airoha_eth *eth)
++static void airoha_eth_cleanup(struct airoha_eth *eth)
+ {
+-	struct reset_control_bulk_data *xsi_rsts;
+-	struct device_node *np;
+-	int i, err;
+-
+-	eth->ppe_host_ops = &airoha_ppe_host_ops;
+-
+-	err = airoha_eth_set_dma_mask(eth->dev);
+-	if (err)
+-		return err;
+-
+-	eth->fe_regs = devm_platform_ioremap_resource_byname(pdev, "fe");
+-	if (IS_ERR(eth->fe_regs))
+-		return dev_err_probe(eth->dev, PTR_ERR(eth->fe_regs),
+-				     "failed to iomap fe regs\n");
+-
+-	eth->gdmp_regs = devm_platform_ioremap_resource_byname(pdev, "gdmp");
+-	if (IS_ERR(eth->gdmp_regs))
+-		return dev_err_probe(eth->dev, PTR_ERR(eth->gdmp_regs),
+-				     "failed to iomap gdmp regs\n");
+-
+-	eth->rsts[0].id = "fe";
+-	eth->rsts[1].id = "pdma";
+-	eth->rsts[2].id = "qdma";
+-	err = devm_reset_control_bulk_get_exclusive(eth->dev,
+-						    ARRAY_SIZE(eth->rsts),
+-						    eth->rsts);
+-	if (err) {
+-		dev_err(eth->dev, "failed to get bulk reset lines\n");
+-		return err;
+-	}
+-
+-	xsi_rsts = devm_kcalloc(eth->dev,
+-				eth->soc->num_xsi_rsts, sizeof(*xsi_rsts),
+-				GFP_KERNEL);
+-	if (!xsi_rsts)
+-		return -ENOMEM;
+-
+-	eth->xsi_rsts = xsi_rsts;
+-	for (i = 0; i < eth->soc->num_xsi_rsts; i++)
+-		eth->xsi_rsts[i].id = eth->soc->xsi_rsts_names[i];
+-
+-	err = devm_reset_control_bulk_get_exclusive(eth->dev,
+-						    eth->soc->num_xsi_rsts,
+-						    eth->xsi_rsts);
+-	if (err) {
+-		dev_err(eth->dev, "failed to get bulk xsi reset lines\n");
+-		return err;
+-	}
+-
+-	eth->ports = devm_kcalloc(eth->dev, eth->soc->max_gdm_ports,
+-				  sizeof(eth->ports[0]), GFP_KERNEL);
+-	if (!eth->ports)
+-		return -ENOMEM;
+-
+-	eth->napi_dev = airoha_eth_alloc_napi_dev("qdma_eth");
+-	if (!eth->napi_dev)
+-		return -ENOMEM;
+-
+-	/* Allocate the GDM ports before bringing up the QDMA hardware. This
+-	 * reads the port MAC address, which may be supplied by a late nvmem
+-	 * provider (e.g. a U-Boot env or fixed-layout cell on a UBI volume)
+-	 * and can therefore return -EPROBE_DEFER. Doing it before
+-	 * airoha_hw_init() guarantees such a defer unwinds before any RX ring
+-	 * or page pool exists; otherwise the error path would call
+-	 * page_pool_destroy() while RX DMA is still running, which live-locks
+-	 * against the RX softirq and hangs the CPU before the probe is retried.
+-	 */
+-	for_each_child_of_node(pdev->dev.of_node, np) {
+-		if (!of_device_is_compatible(np, "airoha,eth-mac"))
+-			continue;
+-
+-		if (!of_device_is_available(np))
+-			continue;
+-
+-		err = airoha_alloc_gdm_port(eth, np);
+-		if (err) {
+-			of_node_put(np);
+-			goto error_ports_free;
+-		}
+-	}
+-
+-	err = airoha_hw_init(pdev, eth);
+-	if (err)
+-		goto error_ports_free;
++	int i;
+ 
+-	/* Register WED instances.  The DT eth node lists WED device nodes via
+-	 * the "airoha,wed" phandle array (one entry per PCIe domain / WED hw).
+-	 * Ownership of the node reference is transferred to the WED driver.
+-	 */
+-	for (i = 0; ; i++) {
+-		struct device_node *wed_np =
+-			of_parse_phandle(pdev->dev.of_node, "airoha,wed", i);
+-		if (!wed_np)
+-			break;
+-		err = airoha_wed_add_hw(wed_np, i);
+-		if (err)
+-			goto error_wed_exit;
++	airoha_wed_exit();
++	for (i = 0; i < AIROHA_MAX_NUM_QDMA; i++) {
++		if (eth->qdma[i].eth)
++			airoha_qdma_stop_napi(&eth->qdma[i]);
+ 	}
+ 
+-	for (i = 0; i < ARRAY_SIZE(eth->qdma); i++)
+-		airoha_qdma_start_napi(&eth->qdma[i]);
+-
+-	err = airoha_register_gdm_devices(eth);
+-	if (err)
+-		goto error_napi_stop;
+-
+-	/* The EN7523 NPU firmware accesses the FE/QDMA datapath as soon as its
+-	 * cores are released. Start it only after every GDM netdev has been
+-	 * registered successfully, otherwise a partial Ethernet probe can leave
+-	 * the NPU faulting and rebooting its cores indefinitely.
+-	 */
+-	err = airoha_npu_start(eth->dev);
+-	if (err && err != -ENODEV && err != -EPROBE_DEFER &&
+-	    err != -EOPNOTSUPP)
+-		dev_warn(eth->dev, "failed to start NPU: %d\n", err);
+-
+-	return 0;
++	if (eth->ports) {
++		for (i = 0; i < eth->soc->max_gdm_ports; i++) {
++			struct airoha_gdm_port *port = eth->ports[i];
++			int j;
+ 
+-error_napi_stop:
+-	for (i = 0; i < ARRAY_SIZE(eth->qdma); i++)
+-		airoha_qdma_stop_napi(&eth->qdma[i]);
+-error_wed_exit:
+-	airoha_wed_exit();
+-	airoha_hw_cleanup(eth);
+-error_ports_free:
+-	for (i = 0; i < eth->soc->max_gdm_ports; i++) {
+-		struct airoha_gdm_port *port = eth->ports[i];
+-		int j;
++			if (!port)
++				continue;
+ 
+-		if (!port)
+-			continue;
++			for (j = 0; j < ARRAY_SIZE(port->devs); j++) {
++				struct airoha_gdm_dev *dev = port->devs[j];
++				struct net_device *netdev;
+ 
+-		for (j = 0; j < ARRAY_SIZE(port->devs); j++) {
+-			struct airoha_gdm_dev *dev = port->devs[j];
+-			struct net_device *netdev;
++				if (!dev)
++					continue;
+ 
+-			if (!dev)
+-				continue;
++				netdev = netdev_from_priv(dev);
++				if (netdev->reg_state == NETREG_REGISTERED)
++					unregister_netdev(netdev);
++				airoha_gdm_phylink_destroy(&dev->common);
++				of_node_put(netdev->dev.of_node);
++				netdev->dev.of_node = NULL;
++			}
+ 
+-			netdev = netdev_from_priv(dev);
+-			if (netdev->reg_state == NETREG_REGISTERED)
+-				unregister_netdev(netdev);
+-			airoha_gdm_phylink_destroy(&dev->common);
+-			of_node_put(netdev->dev.of_node);
++			if (!airoha_is_econet(eth))
++				airoha_metadata_dst_free(port);
+ 		}
+-		airoha_metadata_dst_free(port);
+ 	}
+-	free_netdev(eth->napi_dev);
+-	return err;
+-}
+-
+-static void airoha_datapath_remove(struct platform_device *pdev,
+-			    struct airoha_eth *eth)
+-{
+-	int i;
+-
+-	airoha_wed_exit();
+-	for (i = 0; i < ARRAY_SIZE(eth->qdma); i++)
+-		airoha_qdma_stop_napi(&eth->qdma[i]);
+ 
+-	for (i = 0; i < eth->soc->max_gdm_ports; i++) {
+-		struct airoha_gdm_port *port = eth->ports[i];
+-		int j;
+-
+-		if (!port)
+-			continue;
+-
+-		for (j = 0; j < ARRAY_SIZE(port->devs); j++) {
+-			struct airoha_gdm_dev *dev = port->devs[j];
+-			struct net_device *netdev;
++	if (test_bit(DEV_STATE_INITIALIZED, &eth->state))
++		airoha_hw_cleanup(eth);
+ 
+-			if (!dev)
+-				continue;
+-
+-			netdev = netdev_from_priv(dev);
+-			unregister_netdev(netdev);
+-			airoha_gdm_phylink_destroy(&dev->common);
+-			of_node_put(netdev->dev.of_node);
+-		}
+-		airoha_metadata_dst_free(port);
++	if (eth->napi_dev) {
++		free_netdev(eth->napi_dev);
++		eth->napi_dev = NULL;
+ 	}
+-	airoha_hw_cleanup(eth);
+-
+-	free_netdev(eth->napi_dev);
+ }
+ 
+ static const char * const en7523_xsi_rsts_names[] = {
+@@ -10037,6 +9556,7 @@ const struct airoha_eth_soc_data airoha_en7581_soc_data = {
+ 	.tx_ring = 32,
+ 	.irq_banks = 4,
+ 	.max_gdm_ports = 4,
++	.pse_fq_cfg = PSE_FQ_CFG,
+ 	.ppe_stats_entries = 4 * 1024,
+ 	.ppe_sram_entries = 8 * 1024,
+ 	.ppe_dram_entries = 16 * 1024,
+@@ -10056,6 +9576,7 @@ const struct airoha_eth_soc_data airoha_an7583_soc_data = {
+ 	.tx_ring = 32,
+ 	.irq_banks = 4,
+ 	.max_gdm_ports = 4,
++	.pse_fq_cfg = PSE_FQ_CFG,
+ 	.ppe_stats_entries = 4 * 1024,
+ 	.ppe_sram_entries = 8 * 1024,
+ 	.ppe_dram_entries = 16 * 1024,
+@@ -10076,6 +9597,7 @@ const struct airoha_eth_soc_data airoha_en7523_soc_data = {
+ 	.num_ppe = 1,
+ 	.irq_banks = 2,
+ 	.max_gdm_ports = 3,
++	.pse_fq_cfg = PSE_FQ_CFG_EN7523,
+ 	.ppe_stats_entries = 0,
+ 	/* 64-byte entry mode: 512 on-chip SRAM FOE entries (EN7523 hw default,
+ 	 * "512 at 64byte"), 16K DRAM entries.
+@@ -10095,8 +9617,11 @@ const struct airoha_eth_soc_data airoha_en7523_soc_data = {
+ static int airoha_eth_probe(struct platform_device *pdev)
+ {
+ 	const struct airoha_eth_soc_data *soc;
++	struct reset_control_bulk_data *xsi_rsts;
++	struct device_node *np;
+ 	struct airoha_eth *eth;
+-	int err;
++	bool econet;
++	int i, err;
+ 
+ 	soc = of_device_get_match_data(&pdev->dev);
+ 	if (!soc)
+@@ -10109,15 +9634,155 @@ static int airoha_eth_probe(struct platform_device *pdev)
+ 
+ 	eth->dev = &pdev->dev;
+ 	eth->soc = soc;
++	eth->ppe_host_ops = &airoha_ppe_host_ops;
++	econet = airoha_is_econet(eth);
+ 	platform_set_drvdata(pdev, eth);
+ 
+-	if (airoha_is_econet(eth))
+-		err = econet_eth_probe(pdev, eth);
+-	else
+-		err = airoha_datapath_probe(pdev, eth);
++	err = airoha_eth_set_dma_mask(eth->dev);
+ 	if (err)
+-		platform_set_drvdata(pdev, NULL);
++		goto error;
+ 
++	eth->fe_regs = devm_platform_ioremap_resource_byname(pdev, "fe");
++	if (IS_ERR(eth->fe_regs)) {
++		err = dev_err_probe(eth->dev, PTR_ERR(eth->fe_regs),
++				    "failed to iomap fe regs\n");
++		goto error;
++	}
++
++	eth->gdmp_regs = devm_platform_ioremap_resource_byname(pdev, "gdmp");
++	if (IS_ERR(eth->gdmp_regs)) {
++		err = dev_err_probe(eth->dev, PTR_ERR(eth->gdmp_regs),
++				    "failed to iomap gdmp regs\n");
++		goto error;
++	}
++
++	/* These are global FE reset domains on every supported generation.
++	 * The DT binding keeps the functional names stable even when a vendor
++	 * tree used QDMA-instance-specific labels for the same reset lines.
++	 */
++	eth->rsts[0].id = "fe";
++	eth->rsts[1].id = "pdma";
++	eth->rsts[2].id = "qdma";
++	err = devm_reset_control_bulk_get_exclusive(eth->dev,
++					    AIROHA_MAX_NUM_RSTS, eth->rsts);
++	if (err) {
++		err = dev_err_probe(eth->dev, err,
++				    "failed to get FE reset lines\n");
++		goto error;
++	}
++
++	/* XSI reset storage is not needed on the MIPS FE or on SoCs without
++	 * an external-serdes block.
++	 */
++	if (eth->soc->num_xsi_rsts) {
++		xsi_rsts = devm_kcalloc(eth->dev, eth->soc->num_xsi_rsts,
++					 sizeof(*xsi_rsts), GFP_KERNEL);
++		if (!xsi_rsts) {
++			err = -ENOMEM;
++			goto error;
++		}
++
++		eth->xsi_rsts = xsi_rsts;
++		for (i = 0; i < eth->soc->num_xsi_rsts; i++)
++			eth->xsi_rsts[i].id = eth->soc->xsi_rsts_names[i];
++
++		err = devm_reset_control_bulk_get_exclusive(eth->dev,
++						    eth->soc->num_xsi_rsts,
++						    eth->xsi_rsts);
++		if (err) {
++			err = dev_err_probe(eth->dev, err,
++					    "failed to get XSI reset lines\n");
++			goto error;
++		}
++	}
++
++	eth->ports = devm_kcalloc(eth->dev, eth->soc->max_gdm_ports,
++				  sizeof(*eth->ports), GFP_KERNEL);
++	if (!eth->ports) {
++		err = -ENOMEM;
++		goto error;
++	}
++
++	eth->napi_dev = airoha_eth_alloc_napi_dev("qdma_eth");
++	if (!eth->napi_dev) {
++		err = -ENOMEM;
++		goto error;
++	}
++
++	/* Airoha GDMs are allocated before DMA is started so an nvmem backed
++	 * MAC address can defer probe safely. EcoNet queue counts are described
++	 * by the MIPS QDMA profile, therefore those two GDMs are allocated after
++	 * airoha_hw_init() has instantiated QDMA0/QDMA1.
++	 */
++	if (!econet) {
++		for_each_available_child_of_node(pdev->dev.of_node, np) {
++			if (!of_device_is_compatible(np, "airoha,eth-mac"))
++				continue;
++
++			err = airoha_alloc_gdm_port(eth, np);
++			if (err) {
++				of_node_put(np);
++				goto error;
++			}
++		}
++	}
++
++	err = airoha_hw_init(pdev, eth);
++	if (err)
++		goto error;
++
++	if (econet) {
++		for_each_available_child_of_node(pdev->dev.of_node, np) {
++			if (!of_device_is_compatible(np, "econet,eth-mac"))
++				continue;
++
++			err = airoha_alloc_gdm_port(eth, np);
++			if (err) {
++				of_node_put(np);
++				goto error;
++			}
++		}
++	}
++
++	/* FE error is a distinct interrupt on EN7516/EN7527/EN7528 and the
++	 * newer Airoha FE. Do not depend on its positional index in the IRQ
++	 * array; EN751221 legitimately has no separate FE-error line.
++	 */
++	eth->fe_irq = platform_get_irq_byname_optional(pdev, "fe-error");
++	if (eth->fe_irq < 0 && eth->fe_irq != -ENXIO) {
++		err = dev_err_probe(eth->dev, eth->fe_irq,
++				    "failed to get FE error IRQ\n");
++		goto error;
++	}
++
++	for (i = 0; ; i++) {
++		struct device_node *wed_np;
++
++		wed_np = of_parse_phandle(pdev->dev.of_node, "airoha,wed", i);
++		if (!wed_np)
++			break;
++		err = airoha_wed_add_hw(wed_np, i);
++		if (err)
++			goto error;
++	}
++
++	for (i = 0; i < AIROHA_MAX_NUM_QDMA; i++)
++		airoha_qdma_start_napi(&eth->qdma[i]);
++
++	err = airoha_register_gdm_devices(eth);
++	if (err)
++		goto error;
++
++	err = airoha_npu_start(eth->dev);
++	if (err && err != -ENODEV && err != -EPROBE_DEFER &&
++	    err != -EOPNOTSUPP)
++		dev_warn(eth->dev, "failed to start NPU: %d\n", err);
++
++	return 0;
++
++error:
++	airoha_eth_cleanup(eth);
++	platform_set_drvdata(pdev, NULL);
+ 	return err;
+ }
+ 
+@@ -10128,10 +9793,7 @@ static void airoha_eth_remove(struct platform_device *pdev)
+ 	if (!eth || !eth->soc)
+ 		return;
+ 
+-	if (airoha_is_econet(eth))
+-		econet_eth_remove(pdev, eth);
+-	else
+-		airoha_datapath_remove(pdev, eth);
++	airoha_eth_cleanup(eth);
+ 	platform_set_drvdata(pdev, NULL);
+ }
+ 
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.h b/drivers/net/ethernet/airoha/airoha_eth.h
+index f6e3640b1ae0..4b8a5c58f0d8 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.h
++++ b/drivers/net/ethernet/airoha/airoha_eth.h
+@@ -33,6 +33,36 @@ struct airoha_ppe_dev;
+ struct airoha_eth;
+ 
+ #define AIROHA_MTK_INVALID_CHANNEL		7
++#define AIROHA_MTK_HDR_LEN			4
++#define AIROHA_MTK_STAG_PORT_MASK		GENMASK(5, 0)
++#define AIROHA_MTK_HDR_XMIT_TAGGED_TPID_8100	1
++#define AIROHA_MTK_HDR_XMIT_TAGGED_TPID_88A8	2
++
++#define AIROHA_XPON_DATA_DUMP_LEN		128
++
++#define EN751221_GPON_RX_CHN_MASK		GENMASK(1, 0)
++#define EN751221_EPON_RX_CHN_MASK		GENMASK(7, 0)
++#define EN751221_EPON_TX_CHN_MASK		(GENMASK(7, 0) | GENMASK(23, 16))
++#define EN751221_EPON_HWF_CHN_MASK		GENMASK(7, 0)
++
++#define EN751221_DSA_SPORT_BASE		8
++#define EN751221_DSA_NUM_PORTS		5
++
++#define EN7523_GPON_MAX_FRAME_LEN		2000
++#define EN7523_GPON_PSE_BUF_INIT_CHAN_THR	4
++#define EN7523_GPON_PSE_BUF_INIT_TOTAL_THR	0xe0
++#define EN7523_GPON_PSE_BUF_FEW_CHAN_THR	0x20
++#define EN7523_GPON_PSE_BUF_MANY_CHAN_THR	0x08
++#define EN7523_GPON_PSE_BUF_CHAN_OVERHEAD	0x10
++#define EN7523_GPON_PSE_BUF_FEW_CHAN_MAX	8
++#define EN7523_GPON_DBA_RATE_KBPS		0xa00000
++#define EN7523_GPON_DBA_CBS_BYTES		0x8000
++#define EN7523_GPON_DBA_PBS_BYTES		0xffff
++
++#define AIROHA_XPON_TX_OFFLOAD_FEATURES		\
++	(NETIF_F_IP_CSUM | NETIF_F_IPV6_CSUM | NETIF_F_RXCSUM | \
++	 NETIF_F_SG | NETIF_F_TSO | NETIF_F_TSO6 | NETIF_F_GSO | \
++	 NETIF_F_GRO | NETIF_F_HW_TC)
+ 
+ enum airoha_mtk_tag_mode {
+ 	AIROHA_MTK_TAG_IN_SKB,
+@@ -175,6 +205,7 @@ airoha_gdm_common_from_netdev(struct net_device *netdev)
+  * Ethernet interface point, needs far more than the thirty-two this started with.
+  */
+ #define AIROHA_XPON_MAX_SERVICES	256
++#define AIROHA_XPON_SVC_MAX_COOKIES	8
+ #define HW_DSCP_NUM			2048
+ #define IRQ_QUEUE_LEN(_n)		((_n) ? 1024 : 2048)
+ #define TX_DSCP_NUM(_n) 	\
+@@ -710,15 +741,72 @@ struct airoha_irq_bank {
+ 	int irq;
+ };
+ 
+-struct airoha_qdma_common {
++#define EN751221_SLM_BASE			0x1fa60000
++#define EN751221_SLM_REG_SIZE			SZ_256
++#define EN751221_SLM_HWF_VIRT_BASE		0x1b800000
++#define EN751221_SLM_PHYS_SIZE			SZ_4M
++#define EN751221_SLM_MAX_DRAM_SIZE		SZ_256M
++#define EN751221_SLM_SECTOR_SIZE		SZ_256
++#define EN751221_SLM_GLO_CFG_BYPASS		BIT(0)
++#define EN751221_SLM_EN_ENABLE			BIT(0)
++#define EN751221_SLM_EN_ACTIVE			BIT(1)
++
++#define EN7516_QDMA_INT_STATUS1_OFFSET		0x700
++#define EN7516_QDMA_INT_STATUS2_OFFSET		0x704
++#define EN7516_QDMA_INT_ENABLE_BASE		0x704
++#define EN7516_QDMA_INT_ENABLE_STRIDE		0x0c
++
++struct en751221_slm_regs {
++	u32 glo_cfg;
++	u32 enable;
++	u32 reserved_08[2];
++	u32 virt_base;
++	u32 virt_size;
++	u32 phys_base;
++	u32 phys_size;
++	u32 free_min_cnt;
++	u32 free_cur_cnt;
++	u32 free_threshold;
++	u32 reserved_2c;
++	u32 api_cmd;
++	u32 api_base;
++	u32 api_rd_addr;
++	u32 reserved_3c;
++	u32 int_status;
++	u32 int_mask;
++	u32 bus_rd_null_addr;
++	u32 reserved_4c;
++	u32 drop_cmd;
++	u32 drop_addr;
++	u32 drop_cnt;
++};
++
++/**
++ * struct airoha_qdma_slm - EN751221-family SLM state
++ * @regs: SLM control-register window
++ * @buf: CPU address of the backing memory
++ * @dma_addr: DMA address of @buf
++ * @buf_size: size of the backing memory
++ * @enabled: SLM translation is active
++ *
++ * SLM only exists on the MIPS EcoNet QDMA generations.  Keep it attached to
++ * the common QDMA object rather than exposing a second QDMA implementation.
++ */
++struct airoha_qdma_slm {
++	struct en751221_slm_regs __iomem *regs;
++	void *buf;
++	dma_addr_t dma_addr;
++	size_t buf_size;
++	bool enabled;
++};
++
++struct airoha_qdma_mips;
++
++struct airoha_qdma {
+ 	struct airoha_eth *eth;
+ 	void __iomem *regs;
+ 	u8 id;
+ 	u8 num_channels;
+-};
+-
+-struct airoha_qdma {
+-	struct airoha_qdma_common common;
+ 
+ 	int users;
+ 
+@@ -730,6 +818,9 @@ struct airoha_qdma {
+ 	struct airoha_queue *q_rx;
+ 
+ 	DECLARE_BITMAP(qos_channel_map, AIROHA_NUM_QOS_CHANNELS);
++
++	/* Private queue/ring state for the MIPS QDMA layout. */
++	struct airoha_qdma_mips *mips;
+ };
+ 
+ enum airoha_priv_flags {
+@@ -822,6 +913,12 @@ struct airoha_gdm_dev {
+ 	struct airoha_gdm_port *port;
+ 	struct airoha_eth *eth;
+ 
++	/* MIPS GDM registers share the same logical GDM device object. */
++	void __iomem *regs;
++	spinlock_t reg_lock;
++	bool g2_stats;
++	u8 fport;
++
+ 	DECLARE_BITMAP(qos_sq_bmap, AIROHA_NUM_QOS_CHANNELS);
+ 	/* qos stats counters */
+ 	u64 cpu_tx_packets;
+@@ -854,6 +951,9 @@ struct airoha_gdm_dev {
+ 	spinlock_t xpon_service_lock;
+ 	struct airoha_xpon_service_cfg
+ 		xpon_services[AIROHA_XPON_MAX_SERVICES];
++	u32 xpon_service_cookies[AIROHA_XPON_MAX_SERVICES]
++				 [AIROHA_XPON_SVC_MAX_COOKIES];
++	u8 xpon_service_ncookies[AIROHA_XPON_MAX_SERVICES];
+ 
+ };
+ 
+@@ -992,27 +1092,6 @@ struct econet_foe_entry {
+ 	};
+ };
+ 
+-static_assert(sizeof(struct econet_foe_entry) == 80);
+-static_assert(offsetof(struct econet_foe_entry, ipv4.orig.src_port) == 12);
+-static_assert(offsetof(struct econet_foe_entry, ipv4.orig.dest_port) == 14);
+-static_assert(offsetof(struct econet_foe_entry, ipv4.ib2) == 16);
+-static_assert(offsetof(struct econet_foe_entry, ipv4.new.src_port) == 28);
+-static_assert(offsetof(struct econet_foe_entry, ipv4.new.dest_port) == 30);
+-static_assert(offsetof(struct econet_foe_entry, ipv4.udf_tsid) == 40);
+-static_assert(offsetof(struct econet_foe_entry, ipv4.l2.etype) == 44);
+-static_assert(offsetof(struct econet_foe_entry, ipv4.l2.vlan1) == 46);
+-static_assert(offsetof(struct econet_foe_entry, ipv4.l2.dest_mac_lo) == 52);
+-static_assert(offsetof(struct econet_foe_entry, ipv4.l2.vlan2) == 54);
+-static_assert(offsetof(struct econet_foe_entry, ipv4.l2.src_mac_lo) == 60);
+-static_assert(offsetof(struct econet_foe_entry, ipv4.l2.pppoe_id) == 62);
+-static_assert(offsetof(struct econet_foe_entry, ipv6.src_ip) == 4);
+-static_assert(offsetof(struct econet_foe_entry, ipv6.dest_ip) == 20);
+-static_assert(offsetof(struct econet_foe_entry, ipv6.src_port) == 36);
+-static_assert(offsetof(struct econet_foe_entry, ipv6.dest_port) == 38);
+-static_assert(offsetof(struct econet_foe_entry, ipv6.udf_tsid) == 52);
+-static_assert(offsetof(struct econet_foe_entry, ipv6.ib2) == 56);
+-static_assert(offsetof(struct econet_foe_entry, ipv6.l2.etype) == 60);
+-static_assert(offsetof(struct econet_foe_entry, ipv6.l2.pppoe_id) == 78);
+ 
+ struct econet_flow_entry {
+ 	struct list_head list;
+@@ -1091,6 +1170,7 @@ struct airoha_eth_soc_data {
+ 	int tx_ring, rx_ring;
+ 	int irq_banks;
+ 	int max_gdm_ports;
++	u32 pse_fq_cfg;
+ 	u32 ppe_stats_entries;
+ 	u32 ppe_sram_entries;
+ 	u32 ppe_dram_entries;
+@@ -1122,14 +1202,11 @@ struct airoha_eth {
+ 	struct reset_control_bulk_data *xsi_rsts;
+ 
+ 	struct net_device *napi_dev;
++	int fe_irq;
+ 
+-	/* Common QDMA handles; each QDMA implementation owns its storage. */
+-	struct airoha_qdma_common *qdma_common[AIROHA_MAX_NUM_QDMA];
+ 	struct airoha_qdma qdma[AIROHA_MAX_NUM_QDMA];
+ 	struct airoha_gdm_port **ports;
+ 
+-	/* EcoNet-specific host state. */
+-	void *priv;
+ };
+ 
+ #define airoha_fe_rr(eth, offset)				\
+@@ -1146,20 +1223,20 @@ struct airoha_eth {
+ 	FIELD_GET((mask), airoha_fe_rr((eth), (offset)))
+ 
+ #define airoha_qdma_rr(qdma, offset)				\
+-	airoha_rr((qdma)->common.regs, (offset))
++	airoha_rr((qdma)->regs, (offset))
+ #define airoha_qdma_wr(qdma, offset, val)			\
+-	airoha_wr((qdma)->common.regs, (offset), (val))
++	airoha_wr((qdma)->regs, (offset), (val))
+ #define airoha_qdma_rmw(qdma, offset, mask, val)		\
+-	airoha_rmw((qdma)->common.regs, (offset), (mask), (val))
++	airoha_rmw((qdma)->regs, (offset), (mask), (val))
+ #define airoha_qdma_set(qdma, offset, val)			\
+-	airoha_rmw((qdma)->common.regs, (offset), 0, (val))
++	airoha_rmw((qdma)->regs, (offset), 0, (val))
+ #define airoha_qdma_clear(qdma, offset, val)			\
+-	airoha_rmw((qdma)->common.regs, (offset), (val), 0)
++	airoha_rmw((qdma)->regs, (offset), (val), 0)
+ #define airoha_qdma_get(qdma, offset, mask)			\
+ 	FIELD_GET((mask), airoha_qdma_rr((qdma), (offset)))
+ 
+-void airoha_qdma_common_init(struct airoha_qdma_common *qdma,
+-			     struct airoha_eth *eth, void __iomem *regs, u8 id);
++void airoha_qdma_setup(struct airoha_qdma *qdma, struct airoha_eth *eth,
++		       void __iomem *regs, u8 id, u8 num_channels);
+ int airoha_qdma_init(struct platform_device *pdev, struct airoha_eth *eth,
+ 		     struct airoha_qdma *qdma);
+ void airoha_qdma_cleanup(struct airoha_qdma *qdma);
+@@ -1173,7 +1250,7 @@ void airoha_qdma_stop(struct airoha_qdma *qdma);
+ 
+ static inline u16 airoha_qdma_get_txq(struct airoha_qdma *qdma, u16 qid)
+ {
+-	return qid % qdma->common.eth->soc->tx_ring;
++	return qid % qdma->eth->soc->tx_ring;
+ }
+ 
+ static inline bool airoha_is_lan_gdm_dev(struct airoha_gdm_dev *dev)
+@@ -4533,19 +4610,9 @@ static inline void set_gdm_len_th_runt_len(struct gdm_len_th *x, u16 v)
+ 	x->word = FIELD_SET(x->word, GDM_LEN_TH_RUNT_LEN_MASK, v);
+ }
+ 
+-/* EcoNet Ethernet driver-private data and interfaces. */
+-/* Number of QDMA engines in this ethernet device. */
+-#define ECONET_NUM_QDMA		2
+-
+-/* Number of GDM ports. */
+-#define ECONET_NUM_GDM_PORTS	2
+-
+-/* The hardware MTU limit is 16128 (see: rx_len_threshold.oversize_len).
+- * This limit is set to save memory in the page pool. In the future we
+- * may restart the QDMA engines on MTU change which crosses a page size
+- * boundary. */
+-#define ECONET_MAX_PACKET_SIZE	2048
+-
++/* EcoNet MIPS QDMA layout. The Ethernet block still exposes the same
++ * two QDMA engines and uses AIROHA_MAX_PACKET_SIZE for page-pool sizing.
++ */
+ /* Internally these are properties of the QDMA engine, but they are important
+  * to the GDM port driver because they define how QoS can be done. */
+ #define ECONET_NUM_QUEUES		8
+@@ -4653,7 +4720,7 @@ enum econet_fport {
+ int econet_rx_before_recv(struct airoha_eth *eth, struct sk_buff *skb,
+ 			u8 sport);
+ 
+-struct econet_qdma_cfg {
++struct airoha_qdma_mips_cfg {
+ 	int num_rx_descs[QDMA_NUM_CHAINS];
+ 	int num_tx_descs[QDMA_NUM_CHAINS];
+ 	int done_list_size[QDMA_NUM_TX_DONE];
+@@ -4666,35 +4733,18 @@ struct econet_qdma_cfg {
+ 	const struct airoha_eth_soc_data *soc;
+ };
+ 
+-struct econet_qdma;
+-
+-struct airoha_qdma_common *econet_qdma_common(struct econet_qdma *qdma);
+-int econet_qdma_set_xpon_irq(struct econet_qdma *qdma,
++int econet_qdma_set_xpon_irq(struct airoha_qdma *qdma,
+ 				  enum airoha_xpon_mode mode, bool enable);
+ bool econet_rx_xpon_oam(struct airoha_eth *eth, u8 qdma_id,
+ 				 struct sk_buff *skb, union desc_msg *msg);
+ void econet_xpon_irq(struct airoha_eth *eth, u8 qdma_id,
+ 			      enum airoha_xpon_mode mode);
+-struct econet_qdma *econet_qdma_new(struct airoha_eth *eth,
+-				void __iomem *qdma_regs,
+-				int id,
+-				int *irqs,
+-				int num_irqs,
+-				struct econet_qdma_cfg *cfg);
+-
+-int econet_qdma_use(struct econet_qdma *qdma);
+-int econet_qdma_unuse(struct econet_qdma *qdma);
+-int econet_qdma_destroy(struct econet_qdma *qdma);
+-int econet_qdma_xmit(struct econet_qdma *qdma, struct sk_buff *skb,
+-		   union desc_msg *msg, int qid);
+-
+-
+-struct net_device *econet_alloc_gdm_port(struct airoha_eth *eth,
+-				       struct device_node *np,
+-				       struct gdm __iomem *regs,
+-				       struct econet_qdma *qdma,
+-				       enum etx_fport fport,
+-				       bool has_g2_stats);
++
++
++#define IRQ_PURPOSE(t, s, c) \
++	((union econet_irq_purpose){ \
++		.type = (t), .source = (s), .channel = (c) \
++	})
+ 
+ #define econet_rreg(reg) __extension__({ \
+ 		BUILD_BUG_ON(sizeof(*(reg)) != sizeof(u32)); \
+diff --git a/drivers/net/ethernet/airoha/airoha_regs.h b/drivers/net/ethernet/airoha/airoha_regs.h
+index e42202d0eea6..6520e025c891 100644
+--- a/drivers/net/ethernet/airoha/airoha_regs.h
++++ b/drivers/net/ethernet/airoha/airoha_regs.h
+@@ -40,11 +40,7 @@
+ #define FE_RST_CORE_MASK		BIT(0)
+ 
+ 
+-/* EN751221/EN7528 generation-1 frame-engine layout. */
+-#define EN751221_FE_GDM1_OFFSET		0x0400
+-#define EN751221_FE_GDM2_OFFSET		0x1400
+-#define EN751221_FE_MIN_SIZE		0x2600
+-
++/* EN751221/EN7528 frame-engine layout uses the shared CDM/GDM bases. */
+ #define EN751221_CDM_STAG_EN		BIT(0)
+ #define EN751221_GDM_STAG_EN		BIT(24)
+ #define EN751221_GDM_UNTAG_EN		BIT(25)
+@@ -148,7 +144,8 @@
+ #define REG_FE_PSE_QUEUE_CFG_VAL	0x0084
+ #define PSE_CFG_OQ_RSV_MASK		GENMASK(13, 0)
+ 
+-#define PSE_FQ_CFG			0x008c
++#define PSE_FQ_CFG			0x014c
++#define PSE_FQ_CFG_EN7523		0x008c
+ #define PSE_FQ_LIMIT_MASK		GENMASK(14, 0)
+ 
+ #define REG_FE_PSE_BUF_SET		0x0090
+-- 
+2.55.0
+

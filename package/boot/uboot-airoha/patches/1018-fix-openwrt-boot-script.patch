@@ -1,0 +1,68 @@
+From ea92583ed176616acd38d15c70addb80a2841871 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Sat, 1 Aug 2026 17:04:37 -0300
+Subject: [PATCH 1018/1018] fix openwrt boot script
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ defenvs/en7523-askey_rtf8225vw_env           | 2 +-
+ defenvs/en7523-mitrastar_gpt-2742gx4x5v6_env | 2 +-
+ defenvs/en7523-tplink-ex530v_v1_env          | 2 +-
+ defenvs/en7523-tplink-xx230v_v1_env          | 2 +-
+ 4 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/defenvs/en7523-askey_rtf8225vw_env b/defenvs/en7523-askey_rtf8225vw_env
+index 5c69ecbf030..b13c72fecb0 100644
+--- a/defenvs/en7523-askey_rtf8225vw_env
++++ b/defenvs/en7523-askey_rtf8225vw_env
+@@ -10,7 +10,7 @@ bootloaderfile=openwrt-airoha-en7523-askey_rtf8225vw-uboot-bootloader.bin
+ boot_tftp=tftpboot $loadaddr $bootfile && bootm $loadaddr#$bootconf
+ ubi_read_openwrt=ubi read $loadaddr fit && iminfo $loadaddr
+ 
+-boot_openwrt=led $bootled_pwr blink 255; ( run ubi_read_openwrt || echo Install openwrt ; run boot_tftp ) && bootm $loadaddr#$bootconf ; led $bootled_pwr on
++boot_openwrt=led $bootled_pwr blink 255; run ubi_read_openwrt && bootm $loadaddr#$bootconf ; led $bootled_pwr on ; echo Install openwrt ; run boot_tftp
+ boot_ubi=ubi part ubi && run boot_openwrt
+ 
+ upgrade_uboot=\
+diff --git a/defenvs/en7523-mitrastar_gpt-2742gx4x5v6_env b/defenvs/en7523-mitrastar_gpt-2742gx4x5v6_env
+index cc024549300..7a7d6e72ed3 100644
+--- a/defenvs/en7523-mitrastar_gpt-2742gx4x5v6_env
++++ b/defenvs/en7523-mitrastar_gpt-2742gx4x5v6_env
+@@ -10,7 +10,7 @@ bootloaderfile=openwrt-airoha-en7523-mitrastar_gpt-2742gx4x5v6-uboot-bootloader.
+ boot_tftp=tftpboot $loadaddr $bootfile && bootm $loadaddr#$bootconf
+ ubi_read_openwrt=ubi read $loadaddr fit && iminfo $loadaddr
+ 
+-boot_openwrt=led $bootled_pwr blink 255; ( run ubi_read_openwrt || echo Install openwrt ; run boot_tftp ) && bootm $loadaddr#$bootconf ; led $bootled_pwr on
++boot_openwrt=led $bootled_pwr blink 255; run ubi_read_openwrt && bootm $loadaddr#$bootconf ; led $bootled_pwr on ; echo Install openwrt ; run boot_tftp
+ boot_ubi=ubi part ubi && run boot_openwrt
+ 
+ upgrade_uboot=\
+diff --git a/defenvs/en7523-tplink-ex530v_v1_env b/defenvs/en7523-tplink-ex530v_v1_env
+index 016ddfdc3f0..072ada903d4 100644
+--- a/defenvs/en7523-tplink-ex530v_v1_env
++++ b/defenvs/en7523-tplink-ex530v_v1_env
+@@ -10,7 +10,7 @@ bootloaderfile=openwrt-airoha-en7523-tplink_ex530v-v1-uboot-bootloader.bin
+ boot_tftp=tftpboot $loadaddr $bootfile && bootm $loadaddr#$bootconf
+ ubi_read_openwrt=ubi read $loadaddr fit && iminfo $loadaddr
+ 
+-boot_openwrt=led $bootled_pwr blink 255; ( run ubi_read_openwrt || echo Install openwrt ; run boot_tftp ) && bootm $loadaddr#$bootconf ; led $bootled_pwr on
++boot_openwrt=led $bootled_pwr blink 255; run ubi_read_openwrt && bootm $loadaddr#$bootconf ; led $bootled_pwr on ; echo Install openwrt ; run boot_tftp
+ boot_ubi=ubi part ubi && run boot_openwrt
+ 
+ upgrade_uboot=\
+diff --git a/defenvs/en7523-tplink-xx230v_v1_env b/defenvs/en7523-tplink-xx230v_v1_env
+index 693d3740e1b..b29ae0a9322 100644
+--- a/defenvs/en7523-tplink-xx230v_v1_env
++++ b/defenvs/en7523-tplink-xx230v_v1_env
+@@ -10,7 +10,7 @@ bootloaderfile=openwrt-airoha-en7523-tplink_xx230v-v1-uboot-bootloader.bin
+ boot_tftp=tftpboot $loadaddr $bootfile && bootm $loadaddr#$bootconf
+ ubi_read_openwrt=ubi read $loadaddr fit && iminfo $loadaddr
+ 
+-boot_openwrt=led $bootled_pwr blink 255; ( run ubi_read_openwrt || echo Install openwrt ; run boot_tftp ) && bootm $loadaddr#$bootconf ; led $bootled_pwr on
++boot_openwrt=led $bootled_pwr blink 255; run ubi_read_openwrt && bootm $loadaddr#$bootconf ; led $bootled_pwr on ; echo Install openwrt ; run boot_tftp
+ boot_ubi=ubi part ubi && run boot_openwrt
+ 
+ upgrade_uboot=\
+-- 
+2.55.0
+

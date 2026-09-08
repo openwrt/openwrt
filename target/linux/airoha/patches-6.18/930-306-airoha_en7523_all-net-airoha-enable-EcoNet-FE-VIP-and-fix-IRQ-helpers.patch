@@ -1,0 +1,269 @@
+From 310978d8321867c59f18ff3273bb1c897b5dfbf7 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Wed, 26 Aug 2026 00:22:23 -0300
+Subject: [PATCH] net: airoha: enable EcoNet FE VIP and fix IRQ helpers
+
+Enable the shared FE VIP classifier on EN751221 and EN7528, and configure the EN7516-style CRSN selector on EN7528.
+
+Keep the EN7528 BOOTP entries disabled as done by the newer vendor SDK and fix the EN7516/EN7527/EN7528/EN7523 4-bit CRSN layout.
+
+Also fix the QDMA IRQ register helpers to return the declared u32 __iomem pointer type.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c  | 169 ++++++++++++++--------
+ drivers/net/ethernet/airoha/airoha_regs.h |   9 --
+ 2 files changed, 107 insertions(+), 71 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
+index b10e94e4b214..a529d10403ad 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -16,6 +16,7 @@
+ #include <linux/ethtool.h>
+ #include <linux/export.h>
+ #include <linux/if_vlan.h>
++#include <linux/in.h>
+ #include <linux/interrupt.h>
+ #include <linux/io.h>
+ #include <linux/ioport.h>
+@@ -744,9 +745,9 @@ static u32 __iomem *econet_irq_status_reg(struct econet_qdma *qdma,
+ 	if (!airoha_is(qdma->common.eth, econet_en7528))
+ 		return NULL;
+ 
+-	return (u8 __iomem *)base +
++	return (u32 __iomem *)((u8 __iomem *)base +
+ 	       (reg == 1 ? EN7516_QDMA_INT_STATUS1_OFFSET :
+-			   EN7516_QDMA_INT_STATUS2_OFFSET);
++			   EN7516_QDMA_INT_STATUS2_OFFSET));
+ }
+ 
+ static u32 __iomem *econet_irq_enable_reg(struct econet_qdma *qdma,
+@@ -766,8 +767,9 @@ static u32 __iomem *econet_irq_enable_reg(struct econet_qdma *qdma,
+ 	if (bank == 0 && reg == 0)
+ 		return &qdma->regs->int_enable;
+ 
+-	return (u8 __iomem *)base + EN7516_QDMA_INT_ENABLE_BASE +
+-	       bank * EN7516_QDMA_INT_ENABLE_STRIDE + reg * sizeof(u32);
++	return (u32 __iomem *)((u8 __iomem *)base +
++	       EN7516_QDMA_INT_ENABLE_BASE +
++	       bank * EN7516_QDMA_INT_ENABLE_STRIDE + reg * sizeof(u32));
+ }
+ 
+ /* End EcoNet QDMA IRQ layout helpers */
+@@ -6167,6 +6169,42 @@ static void airoha_fe_maccr_init(struct airoha_eth *eth)
+ 
+ static void airoha_fe_vip_setup(struct airoha_eth *eth)
+ {
++	bool full_l3_vip = airoha_is(eth, econet_en751221,
++				     airoha_en7581, airoha_an7583);
++
++	/* EN751221 and EN7581-class FEs keep the L3 protocol VIP entries.
++	 * EN7516/EN7527/EN7528 omit them, while EN7523 handles these paths
++	 * through its newer classifier setup.
++	 */
++	if (full_l3_vip) {
++		/* IPv4 -> ICMP */
++		airoha_fe_wr(eth, REG_FE_VIP_PATN(0), IPPROTO_ICMP);
++		airoha_fe_wr(eth, REG_FE_VIP_EN(0),
++			     PATN_FCPU_EN_MASK |
++			     FIELD_PREP(PATN_TYPE_MASK, 2) | PATN_EN_MASK);
++
++		/* IPv4 -> IGMP */
++		airoha_fe_wr(eth, REG_FE_VIP_PATN(2), IPPROTO_IGMP);
++		airoha_fe_wr(eth, REG_FE_VIP_EN(2),
++			     PATN_FCPU_EN_MASK |
++			     FIELD_PREP(PATN_TYPE_MASK, 2) | PATN_EN_MASK);
++
++		/* IPv6 -> ICMPv6 */
++		airoha_fe_wr(eth, REG_FE_VIP_PATN(5), IPPROTO_ICMPV6);
++		airoha_fe_wr(eth, REG_FE_VIP_EN(5),
++			     PATN_FCPU_EN_MASK |
++			     FIELD_PREP(PATN_TYPE_MASK, 2) | PATN_EN_MASK);
++	}
++
++	/* ARP remains a FE VIP entry on EcoNet and EN7581-class parts.
++	 * EN7523 routes ARP through IFC instead.
++	 */
++	if (!airoha_is(eth, airoha_en7523)) {
++		airoha_fe_wr(eth, REG_FE_VIP_PATN(1), ETH_P_ARP);
++		airoha_fe_wr(eth, REG_FE_VIP_EN(1),
++			     PATN_FCPU_EN_MASK | PATN_EN_MASK);
++	}
++
+ 	airoha_fe_wr(eth, REG_FE_VIP_PATN(3), ETH_P_PPP_DISC);
+ 	airoha_fe_wr(eth, REG_FE_VIP_EN(3), PATN_FCPU_EN_MASK | PATN_EN_MASK);
+ 
+@@ -6185,17 +6223,22 @@ static void airoha_fe_vip_setup(struct airoha_eth *eth)
+ 		     PATN_FCPU_EN_MASK | FIELD_PREP(PATN_TYPE_MASK, 1) |
+ 		     PATN_EN_MASK);
+ 
+-	/* BOOTP (0x43) */
+-	airoha_fe_wr(eth, REG_FE_VIP_PATN(8), 0x43);
+-	airoha_fe_wr(eth, REG_FE_VIP_EN(8),
+-		     PATN_FCPU_EN_MASK | PATN_SP_EN_MASK |
+-		     FIELD_PREP(PATN_TYPE_MASK, 4) | PATN_EN_MASK);
++	/* The newer EN7528 SDK deliberately leaves BOOTP/DHCPv4 out of
++	 * the VIP table. Keep the legacy EN751221 and Airoha behaviour.
++	 */
++	if (!airoha_is(eth, econet_en7528)) {
++		/* BOOTP (0x43) */
++		airoha_fe_wr(eth, REG_FE_VIP_PATN(8), 0x43);
++		airoha_fe_wr(eth, REG_FE_VIP_EN(8),
++			     PATN_FCPU_EN_MASK | PATN_SP_EN_MASK |
++			     FIELD_PREP(PATN_TYPE_MASK, 4) | PATN_EN_MASK);
+ 
+-	/* BOOTP (0x44) */
+-	airoha_fe_wr(eth, REG_FE_VIP_PATN(9), 0x44);
+-	airoha_fe_wr(eth, REG_FE_VIP_EN(9),
+-		     PATN_FCPU_EN_MASK | PATN_SP_EN_MASK |
+-		     FIELD_PREP(PATN_TYPE_MASK, 4) | PATN_EN_MASK);
++		/* BOOTP (0x44) */
++		airoha_fe_wr(eth, REG_FE_VIP_PATN(9), 0x44);
++		airoha_fe_wr(eth, REG_FE_VIP_EN(9),
++			     PATN_FCPU_EN_MASK | PATN_SP_EN_MASK |
++			     FIELD_PREP(PATN_TYPE_MASK, 4) | PATN_EN_MASK);
++	}
+ 
+ 	/* ISAKMP */
+ 	airoha_fe_wr(eth, REG_FE_VIP_PATN(10), 0x1f401f4);
+@@ -6424,51 +6467,51 @@ static int airoha_fe_mc_vlan_clear(struct airoha_eth *eth)
+ 	return 0;
+ }
+ 
++/* EN7516/EN7527/EN7528/EN7580/EN7523 use a 4-bit queue selector
++ * with eight CPU reasons per register. EN7581/AN7583 use a 5-bit
++ * selector with four reasons per register.
++ */
++static bool airoha_fe_crsn_qsel_is_4bit(struct airoha_eth *eth)
++{
++	return airoha_is(eth, airoha_en7523, econet_en7528);
++}
++
++static void airoha_fe_set_crsn_qsel(struct airoha_eth *eth, int cdm,
++				    u8 crsn, u8 qsel)
++{
++	bool four_bit = airoha_fe_crsn_qsel_is_4bit(eth);
++	u32 reasons_per_reg = four_bit ? 8 : 4;
++	u32 width = four_bit ? 4 : 5;
++	u32 shift = (crsn % reasons_per_reg) * (four_bit ? 4 : 8);
++	u32 mask = GENMASK(shift + width - 1, shift);
++	u32 reg = crsn / reasons_per_reg;
++
++	airoha_fe_rmw(eth, REG_CDM_CRSN_QSEL(cdm, reg), mask,
++		      (u32)qsel << shift);
++}
++
+ /* set rx queue for lan->wifi traffic to Q1 */
+ static void airoha_fe_crsn_qsel_init(struct airoha_eth *eth)
+ {
+-	/* CDM1_CRSN_QSEL */
+-	airoha_fe_rmw(eth, REG_CDM_CRSN_QSEL(1, CRSN_22 >> 2),
+-		      CDM_CRSN_QSEL_REASON_MASK_TARGET(eth, CRSN_22),
+-		      CDM_CRSN_QSEL_REASON_MASK_FIELD_PREP(eth, CRSN_22,
+-				 CDM_CRSN_QSEL_Q1));
+-	airoha_fe_rmw(eth, REG_CDM_CRSN_QSEL(1, CRSN_08 >> 2),
+-		      CDM_CRSN_QSEL_REASON_MASK_TARGET(eth, CRSN_08),
+-		      CDM_CRSN_QSEL_REASON_MASK_FIELD_PREP(eth, CRSN_08,
+-				 CDM_CRSN_QSEL_Q1));
+-	airoha_fe_rmw(eth, REG_CDM_CRSN_QSEL(1, CRSN_21 >> 2),
+-		      CDM_CRSN_QSEL_REASON_MASK_TARGET(eth, CRSN_21),
+-		      CDM_CRSN_QSEL_REASON_MASK_FIELD_PREP(eth, CRSN_21,
+-				 CDM_CRSN_QSEL_Q1));
+-	airoha_fe_rmw(eth, REG_CDM_CRSN_QSEL(1, CRSN_24 >> 2),
+-		      CDM_CRSN_QSEL_REASON_MASK_TARGET(eth, CRSN_24),
+-		      CDM_CRSN_QSEL_REASON_MASK_FIELD_PREP(eth, CRSN_24,
+-				 CDM_CRSN_QSEL_Q6));
+-	airoha_fe_rmw(eth, REG_CDM_CRSN_QSEL(1, CRSN_25 >> 2),
+-		      CDM_CRSN_QSEL_REASON_MASK_TARGET(eth, CRSN_25),
+-		      CDM_CRSN_QSEL_REASON_MASK_FIELD_PREP(eth, CRSN_25,
+-				 CDM_CRSN_QSEL_Q1));
+-	/* CDM2_CRSN_QSEL */
+-	airoha_fe_rmw(eth, REG_CDM_CRSN_QSEL(2, CRSN_08 >> 2),
+-		      CDM_CRSN_QSEL_REASON_MASK_TARGET(eth, CRSN_08),
+-		      CDM_CRSN_QSEL_REASON_MASK_FIELD_PREP(eth, CRSN_08,
+-				 CDM_CRSN_QSEL_Q1));
+-	airoha_fe_rmw(eth, REG_CDM_CRSN_QSEL(2, CRSN_21 >> 2),
+-		      CDM_CRSN_QSEL_REASON_MASK_TARGET(eth, CRSN_21),
+-		      CDM_CRSN_QSEL_REASON_MASK_FIELD_PREP(eth, CRSN_21,
+-				 CDM_CRSN_QSEL_Q1));
+-	airoha_fe_rmw(eth, REG_CDM_CRSN_QSEL(2, CRSN_22 >> 2),
+-		      CDM_CRSN_QSEL_REASON_MASK_TARGET(eth, CRSN_22),
+-		      CDM_CRSN_QSEL_REASON_MASK_FIELD_PREP(eth, CRSN_22,
+-				 CDM_CRSN_QSEL_Q1));
+-	airoha_fe_rmw(eth, REG_CDM_CRSN_QSEL(2, CRSN_24 >> 2),
+-		      CDM_CRSN_QSEL_REASON_MASK_TARGET(eth, CRSN_24),
+-		      CDM_CRSN_QSEL_REASON_MASK_FIELD_PREP(eth, CRSN_24,
+-				 CDM_CRSN_QSEL_Q6));
+-	airoha_fe_rmw(eth, REG_CDM_CRSN_QSEL(2, CRSN_25 >> 2),
+-		      CDM_CRSN_QSEL_REASON_MASK_TARGET(eth, CRSN_25),
+-		      CDM_CRSN_QSEL_REASON_MASK_FIELD_PREP(eth, CRSN_25,
+-				 CDM_CRSN_QSEL_Q1));
++	static const struct {
++		u8 crsn;
++		u8 cdm1_qsel;
++		u8 cdm2_qsel;
++	} qsel[] = {
++		{ CRSN_22, CDM_CRSN_QSEL_Q1, CDM_CRSN_QSEL_Q1 },
++		{ CRSN_08, CDM_CRSN_QSEL_Q1, CDM_CRSN_QSEL_Q1 },
++		{ CRSN_21, CDM_CRSN_QSEL_Q1, CDM_CRSN_QSEL_Q1 },
++		{ CRSN_24, CDM_CRSN_QSEL_Q6, CDM_CRSN_QSEL_Q6 },
++		{ CRSN_25, CDM_CRSN_QSEL_Q1, CDM_CRSN_QSEL_Q1 },
++	};
++	int i;
++
++	for (i = 0; i < ARRAY_SIZE(qsel); i++) {
++		airoha_fe_set_crsn_qsel(eth, 1, qsel[i].crsn,
++					qsel[i].cdm1_qsel);
++		airoha_fe_set_crsn_qsel(eth, 2, qsel[i].crsn,
++					qsel[i].cdm2_qsel);
++	}
+ }
+ 
+ static void airoha_fe_lro_rxq_enable(struct airoha_eth *eth, int qdma_id,
+@@ -6616,14 +6659,16 @@ static int airoha_fe_init(struct airoha_eth *eth)
+ {
+ 	airoha_fe_pse_iq_init(eth);
+ 
+-	/*
+-	 * The EcoNet FE exposes the same PSE/CDM/GDM layout, but the newer
+-	 * copy-engine, 128-byte PSE page, GDM3/GDM4 and IFC setup below does
+-	 * not apply to EN751221/EN7528. Keep the common FE initialization
+-	 * above and let their GDM/QDMA code configure the two-port datapath.
++	/* VIP classification is shared by the EcoNet and Airoha FEs.
++	 * EN7516/EN7527/EN7528 additionally use the same 4-bit CRSN layout
++	 * as EN7523. EN751221 keeps its older CRSN programming.
+ 	 */
+-	if (airoha_is_econet(eth))
++	if (airoha_is_econet(eth)) {
++		airoha_fe_vip_setup(eth);
++		if (airoha_is(eth, econet_en7528))
++			airoha_fe_crsn_qsel_init(eth);
+ 		return 0;
++	}
+ 
+ 	airoha_fe_maccr_init(eth);
+ 
+diff --git a/drivers/net/ethernet/airoha/airoha_regs.h b/drivers/net/ethernet/airoha/airoha_regs.h
+index f745d30bd4e9..e42202d0eea6 100644
+--- a/drivers/net/ethernet/airoha/airoha_regs.h
++++ b/drivers/net/ethernet/airoha/airoha_regs.h
+@@ -206,15 +206,6 @@
+ #define EN7523_CDM_VIP_QSEL_MASK	GENMASK(27, 24)
+ 
+ #define REG_CDM_CRSN_QSEL(_n, _m)	(CDM_BASE(_n) + 0x10 + ((_m) << 2))
+-#define CDM_CRSN_QSEL_REASON_MASK(_n)	\
+-	GENMASK(4 + (((_n) % 4) << 3),	(((_n) % 4) << 3))
+-#define EN7523_CDM_CRSN_QSEL_REASON_MASK(_n)	\
+-	GENMASK(4 + (((_n) % 4) << 2),	(((_n) % 4) << 2))
+-#define CDM_CRSN_QSEL_REASON_MASK_TARGET(_eth, _n) airoha_is(_eth, airoha_en7523) ? \
+-	EN7523_CDM_CRSN_QSEL_REASON_MASK(_n) : CDM_CRSN_QSEL_REASON_MASK(_n)
+-#define CDM_CRSN_QSEL_REASON_MASK_FIELD_PREP(_eth, _n1, _n2) airoha_is(_eth, airoha_en7523) ? \
+-	FIELD_PREP(EN7523_CDM_CRSN_QSEL_REASON_MASK(_n1), _n2) : \
+-	FIELD_PREP(CDM_CRSN_QSEL_REASON_MASK(_n1), _n2)
+ 	
+ #define REG_CDM_LRO_RXQ(_n, _m)		(CDM_BASE(_n) + 0x78 + ((_m) & 0x4))
+ #define LRO_RXQ_MASK(_n)		GENMASK(4 + (((_n) & 0x3) << 3), ((_n) & 0x3) << 3)
+-- 
+2.55.0
+

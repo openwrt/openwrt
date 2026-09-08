@@ -1,0 +1,325 @@
+// SPDX-License-Identifier: GPL-2.0
+/dts-v1/;
+
+#include "en751221.dtsi"
+
+/ {
+	model = "Mitrastar GPT-2741GNAC-N1";
+	compatible = "mitrastar,gpt-2741gnac-n1", "econet,en751221";
+
+	chosen {
+		stdout-path = "/serial@1fbf0000:115200";
+		linux,usable-memory-range = <0x00020000 0x0ffe0000>;
+	};
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x00000000 0x10000000>;
+	};
+
+	/*
+	on-off:
+	113     7       1       0       0
+	112     9       1       0       0
+	43      69      1       0       0
+
+	42      16      1       0       1 => xPON LDD/LE
+
+	blink:
+	44      69      2       0       1
+
+	NOACT:
+	45      69      3       0       0
+	*/
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&pinctrl 0 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+
+		wps5 {
+			label = "wps5";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&pinctrl 5 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+
+		wps2 {
+			label = "wps2";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&pinctrl 6 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+	};
+
+	/*
+	leds for Wireless 2.4ghz and 5ghz is in another gpio
+	and for switch is in mdio/gpio
+	*/
+	leds {
+		compatible = "gpio-leds";
+
+		/* Power/Internet */
+		led_power: led@2 {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <2>;
+			gpios = <&pinctrl 2 GPIO_ACTIVE_LOW>;
+		};
+
+		/* xPON/Internet */
+		led_pon: led@11 {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <11>;
+			gpios = <&pinctrl 11 GPIO_ACTIVE_LOW>;
+		};
+
+		/* FXS Blue */
+		led@24 {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <24>;
+			gpios = <&pinctrl 24 GPIO_ACTIVE_LOW>;
+		};
+
+		/* FXS Red */
+		led@25 {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <25>;
+			gpios = <&pinctrl 25 GPIO_ACTIVE_LOW>;
+		};
+
+		/* FXS Green */
+		led@26 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <26>;
+			gpios = <&pinctrl 26 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+/*
+
+0x000000000000-0x000000020000 : "bootloader"
+0x000000020000-0x000000040000 : "romfile"
+0x000000040000-0x000003220000 : "Tclinux_main"
+0x000001c60c19-0x000001c6804e : "Defcfg_main"
+0x000004e3e16f-0x000004e455a4 : "defcfg"
+0x000003220000-0x000006400000 : "tclinux"
+0x000007520000-0x0000075a0000 : "reservearea"
+0x0000075a0000-0x0000075c0000 : "romd"
+0x0000075c0000-0x0000075e0000 : "second_romfile"
+0x000006420000-0x000006820000 : "data"
+0x000006820000-0x000006a20000 : "bosa_main"
+0x000006a20000-0x000006c20000 : "bosa_backup"
+0x000006c20000-0x000007520000 : "app"
+*/
+
+&nand {
+	status = "okay";
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* MAC Address: 0x06D2BB18 */
+		partition@0 {
+			label = "bootloader";
+			reg = <0x000000000000 0x000000020000>;
+			read-only;
+		};
+
+		partition@20000 {
+			label = "romfile";
+			reg = <0x000000020000 0x000000020000>;
+			read-only;
+		};
+
+		partition@40000 {
+			label = "Tclinux_main";
+			reg = <0x000000040000 0x0000031e0000>;
+			read-only;
+		};
+
+		partition@1c60c19 {
+			label = "Defcfg_main";
+			reg = <0x000001c60c19 0x000000007435>;
+			read-only;
+		};
+
+		partition@4e3e16f {
+			label = "defcfg";
+			reg = <0x000004e3e16f 0x000000007435>;
+			read-only;
+		};
+
+		partition@3220000 {
+			label = "tclinux";
+			reg = <0x000003220000 0x0000031e0000>;
+			read-only;
+		};
+
+		partition@7520000 {
+			label = "reservearea";
+			reg = <0x000007520000 0x000000080000>;
+			read-only;
+		};
+
+		partition@75a0000 {
+			label = "romd";
+			reg = <0x0000075a0000 0x000000020000>;
+			read-only;
+		};
+
+		partition@75c0000 {
+			label = "second_romfile";
+			reg = <0x0000075c0000 0x000000020000>;
+			read-only;
+		};
+
+		partition@6420000 {
+			label = "data";
+			reg = <0x000006420000 0x000000400000>;
+			read-only;
+		};
+
+		partition@6820000 {
+			label = "bosa_main";
+			reg = <0x000006820000 0x000000200000>;
+			read-only;
+
+			// nvmem-layout {
+			// 	compatible = "airoha,yaffs2-nvmem";
+
+			// 	bosa_hwconfig: hwconfig {
+			// 		file = "hwconfig";
+			// 		#nvmem-cell-cells = <1>;
+			// 	};
+
+			// 	config {
+			// 		file = "config";
+			// 		#nvmem-cell-cells = <1>;
+			// 	};
+			// };
+		};
+
+		partition@6a20000 {
+			label = "bosa_backup";
+			reg = <0x000006a20000 0x000000200000>;
+			read-only;
+		};
+
+		partition@6c20000 {
+			label = "app";
+			reg = <0x000006c20000 0x000000900000>;
+			read-only;
+		};
+
+		partition@75E0000 {
+			label = "rest";
+			reg = <0x0000075E0000 0x000000000000>;
+			read-only;
+		};
+	};
+};
+
+&eth {
+	status = "okay";
+};
+
+&gdm1 {
+	status = "okay";
+};
+
+&i2c0 {
+	status = "okay";
+
+	gn25l95: optical-frontend@51 {
+		compatible = "semtech,gn25l95";
+		reg = <0x51>;
+
+		tx-disable-gpios = <&pinctrl 16 GPIO_ACTIVE_HIGH>;
+
+		#optical-frontend-cells = <0>;
+	};
+};
+
+&xpon_phy {
+	status = "okay";
+
+	airoha,rx-sd-inverted;
+};
+
+&xpon {
+	status = "okay";
+
+	airoha,gpon-serial-from-mac;
+	omci-vendor-id = "MSTC";
+
+	optical-frontends = <&gn25l95>;
+	optical-frontend-names = "pon";
+};
+
+&gdm2 {
+	status = "okay";
+	phy-mode = "internal";
+
+	// nvmem-cells = <&macaddr 0>;
+	// nvmem-cell-names = "mac-address";
+
+	airoha,xpon-managed;
+	openwrt,netdev-name = "pon0";
+};
+
+&switch0 {
+	status = "okay";
+};
+
+&switch1 {
+	status = "okay";
+};
+
+&gsw_port1 {
+	label = "lan1";
+	status = "okay";
+};
+
+&gsw_port2 {
+	label = "lan2";
+	status = "okay";
+};
+
+&gsw_port3 {
+	label = "lan3";
+	status = "okay";
+};
+
+&gsw_port4 {
+	label = "lan4";
+	status = "okay";
+};
+
+&gsw_phy1 {
+	status = "okay";
+};
+
+&gsw_phy2 {
+	status = "okay";
+};
+
+&gsw_phy3 {
+	status = "okay";
+};
+
+&gsw_phy4 {
+	status = "okay";
+};

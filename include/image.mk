@@ -839,7 +839,7 @@ define Device/Build/artifact
 	  $(BUILD_DIR)/json_info_files/$(DEVICE_IMG_PREFIX)-$(1).json, \
 	  $(BIN_DIR)/$(DEVICE_IMG_PREFIX)-$(1))
   $(eval $(call Device/Export,$(KDIR)/tmp/$(DEVICE_IMG_PREFIX)-$(1)))
-  $(KDIR)/tmp/$(DEVICE_IMG_PREFIX)-$(1): $$(KDIR_KERNEL_IMAGE) $(if $(CONFIG_TARGET_ROOTFS_INITRAMFS),$(if $(IB),,$(2)-initramfs-images)) $(2)-images
+  $(KDIR)/tmp/$(DEVICE_IMG_PREFIX)-$(1): $$(KDIR_KERNEL_IMAGE) $(if $(CONFIG_TARGET_ROOTFS_INITRAMFS),$(if $(IB),,$(2)-initramfs-images)) $(if $(or $(filter $(filter-out targz,$(TARGET_FILESYSTEMS)),$(FILESYSTEMS)),$(CONFIG_TARGET_ROOTFS_TARGZ)),$(2)-images)
 	@rm -f $$@
 	$$(call concat_cmd,$(ARTIFACT/$(1)))
 

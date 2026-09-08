@@ -1,0 +1,35 @@
+From daec215fd8b53f89bbf82010bd195cade63b931a Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Sun, 23 Aug 2026 15:30:29 -0300
+Subject: [PATCH] update xc220-g3v env
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ defenvs/en7528_xc220_g3v_env | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
+
+diff --git a/defenvs/en7528_xc220_g3v_env b/defenvs/en7528_xc220_g3v_env
+index 12ce17669fa..ee0efde8af1 100644
+--- a/defenvs/en7528_xc220_g3v_env
++++ b/defenvs/en7528_xc220_g3v_env
+@@ -1,11 +1,12 @@
+-bootfile=openwrt-airoha-en7528-tplink_xc220_g3v-initramfs-kernel.bin
++loadaddr=0x89400000
+ ipaddr=192.168.1.1
+-serverip=192.168.1.2
+-loadaddr=0x82000000
++serverip=192.168.1.10
++bootfile=openwrt-airoha-en7528-tplink_xc220-g3v-initramfs-kernel.bin
++bootconf=config-1
+ load_initramfs=tftpboot ${loadaddr} ${bootfile}
+ netboot=run load_initramfs; bootm ${loadaddr}
+ sfprobe=sf probe 0:0 25000000
+ stockboot=run sfprobe; sf read ${loadaddr} 0x50000 0x220000; bootm ${loadaddr}
+ mtdids=nor0=spi0.0
+ mtdparts=mtdparts=spi0.0:0x40000(boot)ro,0x10000(romfile),0x220000(kernel),0xcd0000(rootfs),0xc0000(misc)
+-bootcmd=run netboot
++bootcmd=run netboot
+\ No newline at end of file
+-- 
+2.55.0
+

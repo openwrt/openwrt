@@ -1,0 +1,52 @@
+From bd51a5c2423d82a1d97703b62c9fce7b83032636 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Thu, 6 Aug 2026 22:50:25 -0300
+Subject: [PATCH] enable MFD_SYSCON and RESET_CONTROLLER for econet devices
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/clk/Kconfig            | 2 ++
+ drivers/net/dsa/Kconfig        | 1 +
+ drivers/pinctrl/airoha/Kconfig | 1 +
+ 3 files changed, 4 insertions(+)
+
+diff --git a/drivers/clk/Kconfig b/drivers/clk/Kconfig
+index 9ec83f4bdbdc..126efef761d8 100644
+--- a/drivers/clk/Kconfig
++++ b/drivers/clk/Kconfig
+@@ -221,6 +221,8 @@ config COMMON_CLK_EN7523
+ 	bool "Clock driver for Airoha/EcoNet SoC system clocks"
+ 	depends on OF
+ 	depends on ARCH_AIROHA || ECONET || COMPILE_TEST
++	select MFD_SYSCON
++	select RESET_CONTROLLER
+ 	default ARCH_AIROHA
+ 	help
+ 	  This driver provides the fixed clocks and gates present on Airoha
+diff --git a/drivers/net/dsa/Kconfig b/drivers/net/dsa/Kconfig
+index e6f18edb86b0..a4b5ad161dfc 100644
+--- a/drivers/net/dsa/Kconfig
++++ b/drivers/net/dsa/Kconfig
+@@ -55,6 +55,7 @@ config NET_DSA_MT7530_MMIO
+ 	tristate "MediaTek MT7530 MMIO interface driver"
+ 	depends on NET_DSA_MT7530
+ 	depends on HAS_IOMEM
++	select RESET_CONTROLLER
+ 	imply MEDIATEK_GE_SOC_PHY
+ 	help
+ 	  This enables support for the built-in Ethernet switch found
+diff --git a/drivers/pinctrl/airoha/Kconfig b/drivers/pinctrl/airoha/Kconfig
+index eaae27de64c7..91b58fc5908e 100644
+--- a/drivers/pinctrl/airoha/Kconfig
++++ b/drivers/pinctrl/airoha/Kconfig
+@@ -6,6 +6,7 @@ config PINCTRL_AIROHA
+ 	tristate "Airoha pin control"
+ 	depends on OF
+ 	depends on ARCH_AIROHA || ECONET || COMPILE_TEST
++	select MFD_SYSCON
+ 	select PINMUX
+ 	select GENERIC_PINCONF
+ 	select GENERIC_PINCTRL_GROUPS
+-- 
+2.55.0
+

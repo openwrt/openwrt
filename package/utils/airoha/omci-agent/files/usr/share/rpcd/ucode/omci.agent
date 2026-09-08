@@ -1,0 +1,686 @@
+'use strict';
+
+/*
+ * rpcd backend for Linux net/omci.
+ *
+ * There is intentionally no process execution in this file. Every kernel
+ * operation goes through the native ucode module installed as omci.so.
+ */
+
+import * as omci from 'omci';
+import { connect } from 'ubus';
+import { cursor } from 'uci';
+import { interval } from 'uloop';
+
+const uci = cursor();
+const event_bus = connect();
+const DEVICE_DEFAULT = 0;
+const CONFIG_POLL_MS = 2000;
+const CONFIG_RETRY_POLLS = 15;
+
+let auto_apply_busy = false;
+let last_applied_signature = null;
+let last_config_signature = null;
+let retry_polls = 0;
+
+const config_specs = [
+	{ key: 1,  name: 'serial', option: 'serial', scalar: false },
+	{ key: 2,  name: 'vendor-id', option: 'vendor_id', scalar: false },
+	{ key: 3,  name: 'version', option: 'version', scalar: false, legacy: true },
+	{ key: 4,  name: 'equipment-id', option: 'equipment_id', scalar: false },
+	{ key: 5,  name: 'password', option: 'password', scalar: false, secret: true },
+	{ key: 6,  name: 'traffic-management-option', option: 'traffic_management_option', scalar: true },
+	{ key: 7,  name: 'onu-type', option: 'onu_type', scalar: true },
+	{ key: 8,  name: 'uni-count', option: 'uni_count', scalar: true },
+	{ key: 9,  name: 'agent-enabled', option: 'enabled', scalar: true },
+	{ key: 10, name: 'agent-permissive', option: 'permissive', scalar: true },
+	{ key: 11, name: 'agent-fake-omci', option: 'fake_omci', scalar: true },
+	{ key: 12, name: 'olt-profile', option: 'olt_profile', scalar: true },
+	{ key: 13, name: 'olt-profile-force', option: 'olt_profile_force', scalar: true },
+	{ key: 14, name: 'agent-dying-gasp', option: 'dying_gasp', scalar: true },
+	{ key: 15, name: 'omcc-version', option: 'omcc_version', scalar: true },
+	{ key: 16, name: 'hardware-version', option: 'hardware_version', scalar: false },
+	{ key: 17, name: 'software-version-0', option: 'software_version_0', scalar: false },
+	{ key: 18, name: 'software-version-1', option: 'software_version_1', scalar: false },
+];
+
+const profile_values = {
+	unspecified: 0,
+	none: 0,
+	generic: 1,
+	auto: 2,
+	'nokia-alcl': 3,
+	nokia: 3,
+	alcl: 3,
+	dasan: 4,
+	huawei: 5,
+	fiberhome: 6,
+	zte: 7,
+};
+
+const profile_names = [
+	'unspecified', 'generic', 'auto', 'nokia-alcl', 'dasan', 'huawei',
+	'fiberhome', 'zte'
+];
+
+const source_names = [
+	'unspecified', 'default', 'device-tree', 'nvmem', 'driver', 'netlink'
+];
+
+const category_names = [
+	'unspecified', 'equipment', 'ani', 'uni', 'layer2', 'layer3',
+	'multicast', 'voice', 'security', 'management', 'performance', 'xdsl',
+	'legacy', 'vendor', 'reserved', 'other'
+];
+
+const support_names = [ 'catalog', 'shadow', 'parsed', 'provisioned', 'native' ];
+const origin_names = [ 'default', 'local', 'olt', 'hardware' ];
+
+const quirk_bits = [
+	[ 1 << 0, 'allow-set-create' ],
+	[ 1 << 1, 'fake-unsupported-success' ],
+	[ 1 << 2, 'ignore-unsupported-uni' ],
+	[ 1 << 3, 'full-uni-entity-id' ],
+	[ 1 << 4, 'sanitize-version' ],
+	[ 1 << 5, 'zte-vlan-tag-mode' ],
+	[ 1 << 6, 'vendor-specific-mes' ],
+	[ 1 << 7, 'dasan-multicast-ani' ],
+];
+
+const class_flag_bits = [
+	[ 1 << 0, 'standard' ],
+	[ 1 << 1, 'deprecated' ],
+	[ 1 << 2, 'reserved' ],
+	[ 1 << 3, 'vendor-specific' ],
+	[ 1 << 4, 'performance' ],
+	[ 1 << 5, 'table' ],
+	[ 1 << 6, 'datapath' ],
+];
+
+/* Profiles are data, not executable scripts. */
+const profiles = [
+	{
+		id: 'vivo-sp1-mitrastar-gpt2741gnac-n1',
+		name: 'Vivo SP1 - Mitrastar GPT-2741GNAC-N1',
+		description: 'Vivo São Paulo capital profile using the MitraStar identity.',
+		inputs: [
+			{ name: 'serial', label: 'GPON SN', required: true },
+			{ name: 'password', label: 'SLID / GPON password', required: true }
+		],
+		values: {
+			enabled: '1', permissive: '1', fake_omci: '0', dying_gasp: '1',
+			vendor_id: 'MSTC', equipment_id: 'GPT-2741GNAC-N1-SV',
+			olt_profile: 'nokia-alcl', olt_profile_force: 'nokia-alcl'
+		}
+	},
+	{
+		id: 'vivo2-askey-rtf8225vw',
+		name: 'Vivo 2 - Askey RTF8225VW',
+		description: 'TLCM/RTF8225VW identity. Vivo 2 does not require a SLID.',
+		inputs: [
+			{ name: 'serial', label: 'GPON SN', required: true }
+		],
+		values: {
+			enabled: '1', permissive: '1', fake_omci: '0', dying_gasp: '1',
+			vendor_id: 'TLCM', hardware_version: 'RTF8225VW',
+			software_version_0: 'R8225VWTEF004',
+			software_version_1: 'P8225VWTEF004',
+			equipment_id: 'RTF8225VW-SV', password: '00000000000000000000',
+			traffic_management_option: '2', omcc_version: '161',
+			olt_profile: 'nokia-alcl', olt_profile_force: 'nokia-alcl'
+		}
+	}
+];
+
+function device_arg(request) {
+	let d = request?.args?.device;
+	return d == null ? DEVICE_DEFAULT : d;
+}
+
+function native_error(request, operation) {
+	return reply_native_error(request, native_failure(operation));
+}
+
+function native_failure(operation) {
+	let error = omci.error();
+
+	return {
+		success: false,
+		error: error?.message || 'OMCI native binding failed',
+		errno: error?.errno || 0,
+		operation: operation
+	};
+}
+
+function reply_native_error(request, failure) {
+	let status = (failure.errno == 22 || failure.errno == 34) ?
+		UBUS_STATUS_INVALID_ARGUMENT : UBUS_STATUS_UNKNOWN_ERROR;
+
+	request.reply(failure, status);
+	return null;
+}
+
+function profile_value(value) {
+	if (value == null || `${value}` == '')
+		return null;
+	if (profile_values[`${value}`] != null)
+		return profile_values[`${value}`];
+	return value;
+}
+
+function profile_name(value) {
+	return profile_names[value] || `unknown-${value}`;
+}
+
+function bits_to_names(value, table) {
+	let out = [];
+	value = value || 0;
+	for (let item in table)
+		if (value & item[0])
+			push(out, item[1]);
+	return out;
+}
+
+function find_spec_by_key(key) {
+	for (let spec in config_specs)
+		if (spec.key == key)
+			return spec;
+	return null;
+}
+
+function find_spec_by_name(name) {
+	for (let spec in config_specs)
+		if (spec.name == name || spec.option == name)
+			return spec;
+	return null;
+}
+
+function config_array_to_object(items) {
+	let out = {};
+	for (let item in (items || [])) {
+		let spec = find_spec_by_key(item.key);
+		if (spec)
+			out[spec.name] = item.value;
+	}
+	return out;
+}
+
+function decorate_config_item(item) {
+	let spec = find_spec_by_key(item.key);
+	if (!spec)
+		return item;
+	item.name = spec.name;
+	item.option = spec.option;
+	item.scalar = spec.scalar;
+	item.secret = spec.secret || false;
+	item.source_name = source_names[item.source] || `unknown-${item.source}`;
+	if (spec.name == 'olt-profile' || spec.name == 'olt-profile-force')
+		item.profile_name = profile_name(item.value);
+	return item;
+}
+
+function decorate_class(item) {
+	item.category_name = category_names[item.category] || `unknown-${item.category}`;
+	item.support_name = support_names[item.support] || `unknown-${item.support}`;
+	item.flag_names = bits_to_names(item.flags, class_flag_bits);
+	return item;
+}
+
+function decorate_mib(item) {
+	item.origin_name = origin_names[item.origin] || `unknown-${item.origin}`;
+	return item;
+}
+
+function load_config(device) {
+	let list = omci.config_list(device);
+	if (list == null)
+		return null;
+	let out = {};
+	for (let item in list) {
+		decorate_config_item(item);
+		out[item.name] = item.value;
+	}
+	return out;
+}
+
+function decorate_status(device, status) {
+	status.olt_profile_configured_name = profile_name(status.olt_profile_configured);
+	status.olt_profile_effective_name = profile_name(status.olt_profile_effective);
+	status.olt_profile_forced_name = profile_name(status.olt_profile_forced);
+	status.olt_profile_quirk_names = bits_to_names(status.olt_profile_quirks, quirk_bits);
+
+	let config = load_config(device);
+	if (config != null) {
+		status.serial = config.serial;
+		status.vendor_id = config['vendor-id'];
+		status.hardware_version = config['hardware-version'];
+		status.software_version_0 = config['software-version-0'];
+		status.software_version_1 = config['software-version-1'];
+		status.equipment_id = config['equipment-id'];
+		status.omcc_version = config['omcc-version'];
+		status.identity = {
+			serial: status.serial,
+			'vendor-id': status.vendor_id,
+			'hardware-version': status.hardware_version,
+			'software-version-0': status.software_version_0,
+			'software-version-1': status.software_version_1,
+			'equipment-id': status.equipment_id,
+			'omcc-version': status.omcc_version
+		};
+	}
+
+	/* OLT-G is class 131, entity 0. Its absence is not a status failure. */
+	let olt = omci.mib_get(device, 131, 0);
+	if (olt != null && olt.olt_g != null)
+		status.olt = olt.olt_g;
+
+	return status;
+}
+
+function uci_main(fresh) {
+	if (fresh)
+		uci.unload('omci');
+	return uci.get_all('omci', 'main') || {};
+}
+
+function device_from_section(section) {
+	let device = int(section.device || '0', 0);
+
+	if (device == null || device < 0 || device > 0xffffffff)
+		return DEVICE_DEFAULT;
+
+	return device;
+}
+
+function config_signature(section) {
+	let values = [
+		`device=${section.device ?? ''}`,
+		`reset_mib=${section.reset_mib ?? ''}`
+	];
+
+	for (let spec in config_specs)
+		push(values, `${spec.option}=${section[spec.option] ?? ''}`);
+
+	return join('\x1f', values);
+}
+
+function set_uci_options(values) {
+	for (let spec in config_specs) {
+		let value = values[spec.option];
+		if (value != null)
+			uci.set('omci', 'main', spec.option, `${value}`);
+	}
+	uci.commit('omci');
+}
+
+function apply_uci_section(section, device) {
+	let applied = [];
+
+	/* Legacy combined version first; explicit versions intentionally win. */
+	let ordered = [];
+	for (let spec in config_specs)
+		if (spec.legacy)
+			push(ordered, spec);
+	for (let spec in config_specs)
+		if (!spec.legacy)
+			push(ordered, spec);
+
+	for (let spec in ordered) {
+		let value = section[spec.option];
+		if (value == null || `${value}` == '')
+			continue;
+		if (spec.name == 'olt-profile' || spec.name == 'olt-profile-force')
+			value = profile_value(value);
+		if (omci.config_set(device, spec.key, value) == null)
+			return native_failure(`apply ${spec.name}`);
+		push(applied, spec.name);
+	}
+
+	if (`${section.reset_mib || '0'}` == '1') {
+		if (omci.mib_reset(device) == null)
+			return native_failure('apply MIB reset');
+		uci.set('omci', 'main', 'reset_mib', '0');
+		uci.commit('omci');
+		section.reset_mib = '0';
+		push(applied, 'mib-reset');
+	}
+
+	return { success: true, device: device, applied: applied };
+}
+
+function refresh_applied_signature(success) {
+	let section = uci_main(true);
+	let signature = config_signature(section);
+
+	last_config_signature = signature;
+	if (success)
+		last_applied_signature = signature;
+
+	return signature;
+}
+
+function apply_uci_values(request, device) {
+	let section = uci_main(true);
+	let result = apply_uci_section(section, device);
+
+	/* A debug apply to a device other than the configured one must not suppress
+	 * the automatic apply for the device selected in UCI. */
+	refresh_applied_signature(result.success && device == device_from_section(section));
+	if (!result.success)
+		return reply_native_error(request, result);
+
+	return result;
+}
+
+function auto_apply(trigger) {
+	if (auto_apply_busy)
+		return;
+
+	let section = uci_main(true);
+	let signature = config_signature(section);
+
+	if (signature == last_applied_signature) {
+		last_config_signature = signature;
+		retry_polls = 0;
+		return;
+	}
+
+	/* A failed signature is retried every 30 seconds, or immediately on a
+	 * fresh config.change event. This avoids a tight log loop if net/omci is
+	 * temporarily unavailable while still recovering without another commit. */
+	if (trigger == 'poll' && signature == last_config_signature &&
+	    ++retry_polls < CONFIG_RETRY_POLLS)
+		return;
+
+	last_config_signature = signature;
+	retry_polls = 0;
+	auto_apply_busy = true;
+
+	let result = apply_uci_section(section, device_from_section(section));
+	refresh_applied_signature(result.success);
+	auto_apply_busy = false;
+
+	if (!result.success)
+		warn(`omci.agent: automatic UCI apply failed during ${trigger}: ` +
+		     `${result.operation}: ${result.error}\n`);
+}
+
+function config_change(type, data) {
+	let package_name = data?.config || data?.package || data?.data?.config || data?.data?.package;
+
+	if (type == 'config.change' && package_name == 'omci')
+		auto_apply('config.change');
+}
+
+function profile_by_id(id) {
+	for (let p in profiles)
+		if (p.id == id)
+			return p;
+	return null;
+}
+
+const methods = {
+	family: {
+		call: function(request) {
+			let data = omci.family();
+			if (data == null)
+				return native_error(request, 'family');
+			return { family: data };
+		}
+	},
+
+	status: {
+		args: { device: 0 },
+		call: function(request) {
+			let device = device_arg(request);
+			let data = omci.status(device);
+			if (data == null)
+				return native_error(request, 'status');
+			return { status: decorate_status(device, data) };
+		}
+	},
+
+	agent_set: {
+		args: {
+			device: 0,
+			enabled: 0,
+			permissive: 0,
+			fake_omci: 0,
+			dying_gasp: 0,
+			olt_profile: 0,
+			olt_profile_force: 0
+		},
+		call: function(request) {
+			let opts = {};
+			for (let key in [ 'enabled', 'permissive', 'fake_omci', 'dying_gasp',
+					      'olt_profile', 'olt_profile_force' ])
+				if (request.args[key] != null)
+					opts[key] = request.args[key];
+			if (length(opts) == 0) {
+				request.reply({ error: 'no agent option supplied' }, UBUS_STATUS_INVALID_ARGUMENT);
+				return null;
+			}
+			if (omci.agent_set(device_arg(request), opts) == null)
+				return native_error(request, 'agent_set');
+			return { success: true };
+		}
+	},
+
+	config_list: {
+		args: { device: 0 },
+		call: function(request) {
+			let list = omci.config_list(device_arg(request));
+			if (list == null)
+				return native_error(request, 'config_list');
+			for (let item in list)
+				decorate_config_item(item);
+			return { config: config_array_to_object(list), details: list };
+		}
+	},
+
+	config_details: {
+		args: { device: 0 },
+		call: function(request) {
+			let list = omci.config_list(device_arg(request));
+			if (list == null)
+				return native_error(request, 'config_details');
+			for (let item in list)
+				decorate_config_item(item);
+			return { config: config_array_to_object(list), details: list };
+		}
+	},
+
+	config_get: {
+		args: { device: 0, key: '' },
+		call: function(request) {
+			let spec = find_spec_by_name(request.args.key);
+			if (!spec) {
+				request.reply({ error: 'unknown OMCI configuration key' }, UBUS_STATUS_INVALID_ARGUMENT);
+				return null;
+			}
+			let item = omci.config_get(device_arg(request), spec.key);
+			if (item == null)
+				return native_error(request, 'config_get');
+			return { config: decorate_config_item(item) };
+		}
+	},
+
+	config_inspect: {
+		args: { device: 0, key: '' },
+		call: function(request) {
+			let spec = find_spec_by_name(request.args.key);
+			if (!spec) {
+				request.reply({ error: 'unknown OMCI configuration key' }, UBUS_STATUS_INVALID_ARGUMENT);
+				return null;
+			}
+			let item = omci.config_get(device_arg(request), spec.key);
+			if (item == null)
+				return native_error(request, 'config_inspect');
+			return { config: decorate_config_item(item) };
+		}
+	},
+
+	config_set: {
+		args: { device: 0, key: '', value: '' },
+		call: function(request) {
+			let spec = find_spec_by_name(request.args.key);
+			if (!spec) {
+				request.reply({ error: 'unknown OMCI configuration key' }, UBUS_STATUS_INVALID_ARGUMENT);
+				return null;
+			}
+			let value = request.args.value;
+			if (spec.name == 'olt-profile' || spec.name == 'olt-profile-force')
+				value = profile_value(value);
+			if (omci.config_set(device_arg(request), spec.key, value) == null)
+				return native_error(request, 'config_set');
+			return { success: true, key: spec.name };
+		}
+	},
+
+	class_list: {
+		args: { device: 0 },
+		call: function(request) {
+			let list = omci.class_list(device_arg(request));
+			if (list == null)
+				return native_error(request, 'class_list');
+			for (let item in list)
+				decorate_class(item);
+			return { classes: list };
+		}
+	},
+
+	class_get: {
+		args: { device: 0, class_id: 0 },
+		call: function(request) {
+			let item = omci.class_get(device_arg(request), request.args.class_id);
+			if (item == null)
+				return native_error(request, 'class_get');
+			return { class: decorate_class(item) };
+		}
+	},
+
+	mib_list: {
+		args: { device: 0 },
+		call: function(request) {
+			let list = omci.mib_list(device_arg(request));
+			if (list == null)
+				return native_error(request, 'mib_list');
+			for (let item in list)
+				decorate_mib(item);
+			return { objects: list };
+		}
+	},
+
+	mib_get: {
+		args: { device: 0, class_id: 0, entity_id: 0 },
+		call: function(request) {
+			let item = omci.mib_get(device_arg(request), request.args.class_id, request.args.entity_id);
+			if (item == null)
+				return native_error(request, 'mib_get');
+			return { object: decorate_mib(item) };
+		}
+	},
+
+	mib_set: {
+		args: { device: 0, class_id: 0, entity_id: 0, attr_mask: 0, data: '' },
+		call: function(request) {
+			if (omci.mib_set(device_arg(request), request.args.class_id,
+					 request.args.entity_id, request.args.attr_mask,
+					 request.args.data) == null)
+				return native_error(request, 'mib_set');
+			return { success: true };
+		}
+	},
+
+	mib_delete: {
+		args: { device: 0, class_id: 0, entity_id: 0 },
+		call: function(request) {
+			if (omci.mib_delete(device_arg(request), request.args.class_id,
+					    request.args.entity_id) == null)
+				return native_error(request, 'mib_delete');
+			return { success: true };
+		}
+	},
+
+	mib_reset: {
+		args: { device: 0 },
+		call: function(request) {
+			if (omci.mib_reset(device_arg(request)) == null)
+				return native_error(request, 'mib_reset');
+			return { success: true };
+		}
+	},
+
+	raw_tx: {
+		args: { device: 0, pdu: '' },
+		call: function(request) {
+			if (omci.raw_tx(device_arg(request), request.args.pdu) == null)
+				return native_error(request, 'raw_tx');
+			return { success: true };
+		}
+	},
+
+	apply: {
+		args: { device: 0 },
+		call: function(request) {
+			return apply_uci_values(request, device_arg(request));
+		}
+	},
+
+	profile_list: {
+		call: function() {
+			return { profiles: profiles };
+		}
+	},
+
+	profile_apply: {
+		args: { device: 0, profile: '', serial: '', password: '' },
+		call: function(request) {
+			let p = profile_by_id(request.args.profile);
+			if (!p) {
+				request.reply({ error: 'unknown OMCI profile' }, UBUS_STATUS_INVALID_ARGUMENT);
+				return null;
+			}
+			let values = {};
+			for (let spec in config_specs)
+				if (p.values[spec.option] != null)
+					values[spec.option] = p.values[spec.option];
+			if (`${request.args.serial || ''}` != '')
+				values.serial = request.args.serial;
+			if (`${request.args.password || ''}` != '')
+				values.password = request.args.password;
+
+			for (let input in p.inputs) {
+				if (!input.required)
+					continue;
+				if (`${values[input.name] || ''}` == '') {
+					request.reply({ error: `missing profile input: ${input.name}` },
+						      UBUS_STATUS_INVALID_ARGUMENT);
+					return null;
+				}
+			}
+
+			set_uci_options(values);
+			uci.set('omci', 'main', 'profile', p.id);
+			uci.commit('omci');
+			let result = apply_uci_values(request, device_arg(request));
+			if (result == null)
+				return null;
+			return { success: true, profile: p.id, apply: result };
+		}
+	}
+};
+
+/*
+ * rpcd's UCI commit emits config.change through procd. The listener is the
+ * immediate path used by LuCI/ubus commits. The native uloop poll also detects
+ * direct `uci commit omci` writes, which do not emit a ubus event. Both paths
+ * call the same in-process ucode -> C binding -> Generic Netlink function.
+ */
+const config_listener = event_bus?.listener('config.change', config_change);
+const config_poll = interval(CONFIG_POLL_MS, () => auto_apply('poll'));
+
+/* Best-effort boot-time UCI application with no external execution. */
+auto_apply('startup');
+
+return { 'omci.agent': methods };

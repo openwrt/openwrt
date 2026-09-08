@@ -1,0 +1,49 @@
+From cfcefb06a56776bbb574fc4394a5e31ed82b96f8 Mon Sep 17 00:00:00 2001
+From: Benjamin Larsson <banan@ludd.ltu.se>
+Date: Sun, 16 Aug 2026 13:32:02 +0200
+Subject: [PATCH] net: phy: airoha: ignore erased EN7570 APD anchor voltages
+
+The APD voltage-to-code conversion picks its four-segment piecewise fit when
+both anchor words have a populated upper half. Erased flash reads as all
+ones, which satisfies that test and then decodes to four identical anchors of
+6553.5V, so the monotonic check that follows fails and the driver declines to
+write the DAC.
+
+A board whose factory data omits the anchors is therefore left with no APD
+bias programmed at all, costing receiver sensitivity, and reports an APD slope
+error that suggests corrupt calibration rather than absent calibration.
+
+Treat the erased pattern as absent, as the monitor-photodiode targets in this
+same file already do, so those boards fall back to the legacy single-slope
+conversion.
+
+Signed-off-by: OpenWrt Project <openwrt-devel@lists.openwrt.org>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/phy/airoha/en7570_txrx.c | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/phy/airoha/en7570_txrx.c b/drivers/net/phy/airoha/en7570_txrx.c
+index 21b2a5343613..f2dd97a434eb 100644
+--- a/drivers/net/phy/airoha/en7570_txrx.c
++++ b/drivers/net/phy/airoha/en7570_txrx.c
+@@ -354,7 +354,15 @@ static int en7570_apd_voltage_to_code(struct en7570_priv *priv, s32 v_mv)
+ 	u32 w2 = lddla_flash_read(&priv->lddla, EN7570_FL_APD_VOLTAGE_2);
+ 	s32 step, code;
+ 
+-	if ((w1 & 0xffff0000) && (w2 & 0xffff0000)) {
++	/*
++	 * Erased flash reads as all ones, which passes a test for the upper
++	 * half being populated and then decodes as four identical 6553.5V
++	 * anchors. Treat it as absent so a board whose factory data omits the
++	 * anchors falls back to the legacy slope instead of leaving the APD
++	 * bias unprogrammed.
++	 */
++	if (w1 != EN7570_FLASH_ERASED && w2 != EN7570_FLASH_ERASED &&
++	    (w1 & 0xffff0000) && (w2 & 0xffff0000)) {
+ 		/* Four-segment piecewise-linear over 64 codes per segment. */
+ 		s32 v00 = (s32)(w1 >> 16) * 100;
+ 		s32 v40 = (s32)(w1 & 0xffff) * 100;
+-- 
+2.55.0
+

@@ -1,0 +1,26 @@
+From 0cdbbaebf82df3f14258b69253666bbe46ad21d6 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Tue, 11 Aug 2026 14:04:52 -0300
+Subject: [PATCH] net: airoha: fix EN751221 PPE cache command field
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_regs.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_regs.h b/drivers/net/ethernet/airoha/airoha_regs.h
+index b440999cbdce..87192b9fbd1b 100644
+--- a/drivers/net/ethernet/airoha/airoha_regs.h
++++ b/drivers/net/ethernet/airoha/airoha_regs.h
+@@ -72,7 +72,7 @@
+ #define REG_EN751221_PPE_CACHE_CTL	(PPE1_BASE + 0x320)
+ #define EN751221_PPE_CACHE_CTL_EN	BIT(0)
+ #define EN751221_PPE_CACHE_CTL_REQ	BIT(8)
+-#define EN751221_PPE_CACHE_CTL_CMD	GENMASK(13, 12)
++#define EN751221_PPE_CACHE_CTL_CMD	GENMASK(14, 12)
+ 
+ #define REG_EN751221_PPE_CAH_GATE	(PPE1_BASE + 0x334)
+ #define EN751221_PPE_CAH_GATE_EN	BIT(0)
+-- 
+2.55.0
+

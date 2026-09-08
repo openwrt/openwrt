@@ -22,8 +22,8 @@
 	};
 };
 
-&en7581_pinctrl {
-	gpio-ranges = <&en7581_pinctrl 0 13 50>;
+&pinctrl {
+	gpio-ranges = <&pinctrl 0 13 47>;
 
 	mdio_pins: mdio-pins {
 		mux {
@@ -195,7 +195,7 @@
 
 		reset-deassert-us = <1000000>;
 		reset-assert-us = <1000000>;
-		reset-gpios = <&en7581_pinctrl 31 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&pinctrl 31 GPIO_ACTIVE_LOW>;
 
 		leds {
 			#address-cells = <1>;

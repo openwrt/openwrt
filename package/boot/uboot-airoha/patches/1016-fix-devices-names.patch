@@ -1,0 +1,128 @@
+From 23d126689d5df57fb4406f02228ba217f6f23862 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Fri, 31 Jul 2026 20:17:14 -0300
+Subject: [PATCH 1016/1018] fix devices names
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ ...rtf8225vw_defconfig => en7523-askey_rtf8225vw_defconfig} | 6 +++---
+ ...defconfig => en7523-mitrastar_gpt-2742gx4x5v6_defconfig} | 6 +++---
+ ...n7523-askey-rtf8225vw_env => en7523-askey_rtf8225vw_env} | 2 +-
+ ...2742gx4x5v6_env => en7523-mitrastar_gpt-2742gx4x5v6_env} | 2 +-
+ ...n7523-askey-rtf8225vw.dts => en7523-askey_rtf8225vw.dts} | 0
+ ...2742gx4x5v6.dts => en7523-mitrastar_gpt-2742gx4x5v6.dts} | 0
+ 6 files changed, 8 insertions(+), 8 deletions(-)
+ rename configs/{en7523-askey-rtf8225vw_defconfig => en7523-askey_rtf8225vw_defconfig} (91%)
+ rename configs/{en7523-mitrastar_gpt_2742gx4x5v6_defconfig => en7523-mitrastar_gpt-2742gx4x5v6_defconfig} (91%)
+ rename defenvs/{en7523-askey-rtf8225vw_env => en7523-askey_rtf8225vw_env} (93%)
+ rename defenvs/{en7523-mitrastar_gpt_2742gx4x5v6_env => en7523-mitrastar_gpt-2742gx4x5v6_env} (93%)
+ rename dts/upstream/src/arm/airoha/{en7523-askey-rtf8225vw.dts => en7523-askey_rtf8225vw.dts} (100%)
+ rename dts/upstream/src/arm/airoha/{en7523-mitrastar_gpt_2742gx4x5v6.dts => en7523-mitrastar_gpt-2742gx4x5v6.dts} (100%)
+
+diff --git a/configs/en7523-askey-rtf8225vw_defconfig b/configs/en7523-askey_rtf8225vw_defconfig
+similarity index 91%
+rename from configs/en7523-askey-rtf8225vw_defconfig
+rename to configs/en7523-askey_rtf8225vw_defconfig
+index 3879e38baa8..53424a976f8 100644
+--- a/configs/en7523-askey-rtf8225vw_defconfig
++++ b/configs/en7523-askey_rtf8225vw_defconfig
+@@ -8,14 +8,14 @@ CONFIG_SYS_MALLOC_F_LEN=0x4000
+ CONFIG_NR_DRAM_BANKS=1
+ CONFIG_ENV_SIZE=0x4000
+ CONFIG_DM_GPIO=y
+-CONFIG_DEFAULT_DEVICE_TREE="airoha/en7523-askey-rtf8225vw"
++CONFIG_DEFAULT_DEVICE_TREE="airoha/en7523-askey_rtf8225vw"
+ CONFIG_SYS_BOOTM_LEN=0x460000000
+ CONFIG_SYS_LOAD_ADDR=0x81800000
+ CONFIG_BUILD_TARGET="u-boot.bin"
+ CONFIG_FIT=y
+ CONFIG_FIT_VERBOSE=y
+ CONFIG_BOOTDELAY=3
+-CONFIG_DEFAULT_FDT_FILE="en7523-askey-rtf8225vw"
++CONFIG_DEFAULT_FDT_FILE="en7523-askey_rtf8225vw"
+ CONFIG_SYS_PBSIZE=1049
+ CONFIG_SYS_CONSOLE_IS_IN_ENV=y
+ CONFIG_HUSH_PARSER=y
+@@ -49,7 +49,7 @@ CONFIG_ENV_UBI_VOLUME="ubootenv"
+ CONFIG_ENV_UBI_VOLUME_REDUND="ubootenv2"
+ CONFIG_ENV_RELOC_GD_ENV_ADDR=y
+ CONFIG_ENV_USE_DEFAULT_ENV_TEXT_FILE=y
+-CONFIG_ENV_DEFAULT_ENV_TEXT_FILE="defenvs/en7523-askey-rtf8225vw_env"
++CONFIG_ENV_DEFAULT_ENV_TEXT_FILE="defenvs/en7523-askey_rtf8225vw_env"
+ CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
+ CONFIG_IPV6=y
+ CONFIG_NET_RANDOM_ETHADDR=y
+diff --git a/configs/en7523-mitrastar_gpt_2742gx4x5v6_defconfig b/configs/en7523-mitrastar_gpt-2742gx4x5v6_defconfig
+similarity index 91%
+rename from configs/en7523-mitrastar_gpt_2742gx4x5v6_defconfig
+rename to configs/en7523-mitrastar_gpt-2742gx4x5v6_defconfig
+index 34829720d05..bc5b3c43203 100644
+--- a/configs/en7523-mitrastar_gpt_2742gx4x5v6_defconfig
++++ b/configs/en7523-mitrastar_gpt-2742gx4x5v6_defconfig
+@@ -8,14 +8,14 @@ CONFIG_SYS_MALLOC_F_LEN=0x4000
+ CONFIG_NR_DRAM_BANKS=1
+ CONFIG_ENV_SIZE=0x4000
+ CONFIG_DM_GPIO=y
+-CONFIG_DEFAULT_DEVICE_TREE="airoha/en7523-mitrastar_gpt_2742gx4x5v6"
++CONFIG_DEFAULT_DEVICE_TREE="airoha/en7523-mitrastar_gpt-2742gx4x5v6"
+ CONFIG_SYS_BOOTM_LEN=0x460000000
+ CONFIG_SYS_LOAD_ADDR=0x81800000
+ CONFIG_BUILD_TARGET="u-boot.bin"
+ CONFIG_FIT=y
+ CONFIG_FIT_VERBOSE=y
+ CONFIG_BOOTDELAY=3
+-CONFIG_DEFAULT_FDT_FILE="en7523-mitrastar_gpt_2742gx4x5v6"
++CONFIG_DEFAULT_FDT_FILE="en7523-mitrastar_gpt-2742gx4x5v6"
+ CONFIG_SYS_PBSIZE=1049
+ CONFIG_SYS_CONSOLE_IS_IN_ENV=y
+ CONFIG_HUSH_PARSER=y
+@@ -49,7 +49,7 @@ CONFIG_ENV_UBI_VOLUME="ubootenv"
+ CONFIG_ENV_UBI_VOLUME_REDUND="ubootenv2"
+ CONFIG_ENV_RELOC_GD_ENV_ADDR=y
+ CONFIG_ENV_USE_DEFAULT_ENV_TEXT_FILE=y
+-CONFIG_ENV_DEFAULT_ENV_TEXT_FILE="defenvs/en7523-mitrastar_gpt_2742gx4x5v6_env"
++CONFIG_ENV_DEFAULT_ENV_TEXT_FILE="defenvs/en7523-mitrastar_gpt-2742gx4x5v6_env"
+ CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
+ CONFIG_IPV6=y
+ CONFIG_NET_RANDOM_ETHADDR=y
+diff --git a/defenvs/en7523-askey-rtf8225vw_env b/defenvs/en7523-askey_rtf8225vw_env
+similarity index 93%
+rename from defenvs/en7523-askey-rtf8225vw_env
+rename to defenvs/en7523-askey_rtf8225vw_env
+index 162acad3341..8500895a8d1 100644
+--- a/defenvs/en7523-askey-rtf8225vw_env
++++ b/defenvs/en7523-askey_rtf8225vw_env
+@@ -37,6 +37,6 @@ bootmenu_delay=3
+ bootmenu_title=      34m( ( ( mOpenWrt34m ) ) )
+ bootmenu_0=Run default boot command.=run boot_openwrt
+ bootmenu_1=Boot system via TFTP.=run boot_tftp ; run bootmenu_confirm_return
+-bootmenu_2=Format UBI partition and install openwrt u-boot.=ubi info ubi && (echo not require format again) || (run format_ubi_part && echo now install openwrt with initramfs)
++bootmenu_2=Format UBI partition and install openwrt u-boot.=ubi info ubi || run format_ubi_part && echo now install openwrt with initramfs
+ bootmenu_3=Upgrade u-boot.=run upgrade_uboot
+ bootmenu_5=Reboot.=reset
+diff --git a/defenvs/en7523-mitrastar_gpt_2742gx4x5v6_env b/defenvs/en7523-mitrastar_gpt-2742gx4x5v6_env
+similarity index 93%
+rename from defenvs/en7523-mitrastar_gpt_2742gx4x5v6_env
+rename to defenvs/en7523-mitrastar_gpt-2742gx4x5v6_env
+index 5465dd6b87c..a83d89b0b96 100644
+--- a/defenvs/en7523-mitrastar_gpt_2742gx4x5v6_env
++++ b/defenvs/en7523-mitrastar_gpt-2742gx4x5v6_env
+@@ -36,6 +36,6 @@ bootmenu_delay=3
+ bootmenu_title=      34m( ( ( mOpenWrt34m ) ) )
+ bootmenu_0=Run default boot command.=run boot_openwrt
+ bootmenu_1=Boot system via TFTP.=run boot_tftp ; run bootmenu_confirm_return
+-bootmenu_2=Format UBI partition and install openwrt u-boot.=ubi info ubi && (echo not require format again) || (run format_ubi_part && echo now install openwrt with initramfs)
++bootmenu_2=Format UBI partition and install openwrt u-boot.=ubi info ubi || run format_ubi_part && echo now install openwrt with initramfs
+ bootmenu_3=Upgrade u-boot.=run upgrade_uboot
+ bootmenu_5=Reboot.=reset
+diff --git a/dts/upstream/src/arm/airoha/en7523-askey-rtf8225vw.dts b/dts/upstream/src/arm/airoha/en7523-askey_rtf8225vw.dts
+similarity index 100%
+rename from dts/upstream/src/arm/airoha/en7523-askey-rtf8225vw.dts
+rename to dts/upstream/src/arm/airoha/en7523-askey_rtf8225vw.dts
+diff --git a/dts/upstream/src/arm/airoha/en7523-mitrastar_gpt_2742gx4x5v6.dts b/dts/upstream/src/arm/airoha/en7523-mitrastar_gpt-2742gx4x5v6.dts
+similarity index 100%
+rename from dts/upstream/src/arm/airoha/en7523-mitrastar_gpt_2742gx4x5v6.dts
+rename to dts/upstream/src/arm/airoha/en7523-mitrastar_gpt-2742gx4x5v6.dts
+-- 
+2.55.0
+

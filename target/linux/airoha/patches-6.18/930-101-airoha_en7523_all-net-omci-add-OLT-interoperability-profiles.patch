@@ -1,0 +1,1115 @@
+From 071918dfd278617167d2c36ba6c3da67dc74f6ad Mon Sep 17 00:00:00 2001
+From: Sirherobrine23 <srherobrine20@gmail.com>
+Date: Tue, 21 Jul 2026 12:38:54 +0000
+Subject: [PATCH] net: omci: add OLT interoperability profiles
+
+Add generic, automatic and vendor-specific OLT profiles to the OMCI
+agent. Keep the generic policy selected by default and allow userspace
+to configure or force a concrete profile through Generic Netlink.
+
+Resolve automatic profiles from OLT-G identification data, publish the
+effective policy and quirk bitmap, and notify the hardware backend when
+the policy changes. Extend the unified Airoha xPON backend with a
+profile callback and retain the resolved state for driver-specific
+handling.
+
+Signed-off-by: Sirherobrine23 <srherobrine20@gmail.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ .../net/ethernet/airoha/airoha_gpon_omci.c    |  10 +
+ .../net/ethernet/airoha/airoha_gpon_omci.h    |   3 +
+ drivers/net/ethernet/airoha/airoha_xpon.c     |  46 ++-
+ include/net/omci.h                            |  20 ++
+ include/uapi/linux/omci.h                     |  40 ++-
+ net/omci/Makefile                             |   2 +-
+ net/omci/agent.c                              | 272 ++++++++++++++++--
+ net/omci/core.c                               |  35 ++-
+ net/omci/internal.h                           |  12 +
+ net/omci/profiles.c                           | 179 ++++++++++++
+ 10 files changed, 589 insertions(+), 30 deletions(-)
+ create mode 100644 net/omci/profiles.c
+
+diff --git a/drivers/net/ethernet/airoha/airoha_gpon_omci.c b/drivers/net/ethernet/airoha/airoha_gpon_omci.c
+index 51935246ee07..d8d6910a958f 100644
+--- a/drivers/net/ethernet/airoha/airoha_gpon_omci.c
++++ b/drivers/net/ethernet/airoha/airoha_gpon_omci.c
+@@ -60,12 +60,22 @@ static int airoha_gpon_omci_get_telemetry(struct omci_device *odev,
+ 	return airoha_gpon_omci_hw_get_telemetry(omci->hw_priv, telemetry);
+ }
+ 
++static int
++airoha_gpon_omci_set_olt_profile(struct omci_device *odev,
++				 const struct omci_olt_profile_state *state)
++{
++	struct airoha_gpon_omci *omci = omci_device_priv(odev);
++
++	return airoha_gpon_omci_hw_set_olt_profile(omci->hw_priv, state);
++}
++
+ static const struct omci_device_ops airoha_gpon_omci_ops = {
+ 	.xmit = airoha_gpon_omci_xmit,
+ 	.set_tcont = airoha_gpon_omci_set_tcont,
+ 	.set_gem_port = airoha_gpon_omci_set_gem_port,
+ 	.set_uni = airoha_gpon_omci_set_uni,
+ 	.get_telemetry = airoha_gpon_omci_get_telemetry,
++	.set_olt_profile = airoha_gpon_omci_set_olt_profile,
+ };
+ 
+ int airoha_gpon_omci_register(struct airoha_gpon_omci *omci,
+diff --git a/drivers/net/ethernet/airoha/airoha_gpon_omci.h b/drivers/net/ethernet/airoha/airoha_gpon_omci.h
+index ad50486e547d..a268f340a80e 100644
+--- a/drivers/net/ethernet/airoha/airoha_gpon_omci.h
++++ b/drivers/net/ethernet/airoha/airoha_gpon_omci.h
+@@ -9,6 +9,7 @@ struct net_device;
+ struct omci_device;
+ struct omci_identity;
+ struct omci_telemetry;
++struct omci_olt_profile_state;
+ struct sk_buff;
+ 
+ struct airoha_gpon_omci {
+@@ -38,5 +39,7 @@ int airoha_gpon_omci_hw_set_gem_port(void *hw_priv, u16 entity_id,
+ int airoha_gpon_omci_hw_set_uni(void *hw_priv, u16 entity_id, bool enable);
+ int airoha_gpon_omci_hw_get_telemetry(void *hw_priv,
+ 				      struct omci_telemetry *telemetry);
++int airoha_gpon_omci_hw_set_olt_profile(void *hw_priv,
++					const struct omci_olt_profile_state *state);
+ 
+ #endif /* _AIROHA_GPON_OMCI_H */
+diff --git a/drivers/net/ethernet/airoha/airoha_xpon.c b/drivers/net/ethernet/airoha/airoha_xpon.c
+index 9e671571a9db..8a2cc165b399 100644
+--- a/drivers/net/ethernet/airoha/airoha_xpon.c
++++ b/drivers/net/ethernet/airoha/airoha_xpon.c
+@@ -689,6 +689,10 @@ struct xpon_priv {
+ 
+ 	/* Protects the hardware T-CONT table and its software allocation maps. */
+ 	struct mutex		tcont_lock;
++
++	/* Protects the active OMCI OLT interoperability policy. */
++	struct mutex		omci_profile_lock;
++	struct omci_olt_profile_state omci_profile;
+ 	u16			tcont_alloc_id[GPON_MAX_TCONT];
+ 	u16			tcont_entity_id[GPON_MAX_TCONT];
+ 
+@@ -1751,6 +1755,32 @@ static void gpon_cb_set_alloc_id(void *hw_priv, u16 alloc_id, bool allocate)
+ 			allocate ? "assign" : "remove", alloc_id, ret);
+ }
+ 
++int airoha_gpon_omci_hw_set_olt_profile(void *hw_priv,
++					const struct omci_olt_profile_state *state)
++{
++	struct xpon_priv *priv = hw_priv;
++
++	if (!state || state->effective == OMCI_OLT_PROFILE_UNSPEC ||
++	    state->effective == OMCI_OLT_PROFILE_AUTO)
++		return -EINVAL;
++
++	mutex_lock(&priv->omci_profile_lock);
++	priv->omci_profile = *state;
++	mutex_unlock(&priv->omci_profile_lock);
++
++	dev_info(priv->dev,
++		 "OMCI OLT profile applied: configured=%s effective=%s forced=%s quirks=%#x\n",
++		 omci_olt_profile_name(state->configured),
++		 omci_olt_profile_name(state->effective),
++		 omci_olt_profile_name(state->forced), state->quirks);
++	dev_info(priv->dev, "OMCI OLT identity: vendor=%s equipment=%s\n",
++		 state->olt.vendor_id_valid ? state->olt.vendor_id : "unknown",
++		 state->olt.equipment_id_valid ?
++		 state->olt.equipment_id : "unknown");
++
++	return 0;
++}
++
+ int airoha_gpon_omci_hw_set_tcont(void *hw_priv, u16 entity_id,
+ 				  u16 alloc_id, bool valid)
+ {
+@@ -1820,9 +1850,20 @@ int airoha_gpon_omci_hw_set_gem_port(void *hw_priv, u16 entity_id,
+ int airoha_gpon_omci_hw_set_uni(void *hw_priv, u16 entity_id, bool enable)
+ {
+ 	struct xpon_priv *priv = hw_priv;
++	u32 quirks;
++	u16 port_id;
++
++	mutex_lock(&priv->omci_profile_lock);
++	quirks = priv->omci_profile.quirks;
++	mutex_unlock(&priv->omci_profile_lock);
++
++	port_id = quirks & OMCI_OLT_QUIRK_FULL_UNI_ENTITY_ID ?
++		  entity_id : entity_id & 0xff;
++	dev_dbg(priv->dev,
++		"OMCI UNI %#x (port %#x) requested %s with quirks %#x\n",
++		entity_id, port_id, enable ? "enabled" : "disabled", quirks);
+ 
+-	dev_dbg(priv->dev, "OMCI UNI %#x requested %s\n", entity_id,
+-		enable ? "enabled" : "disabled");
++	/* The EN7523 switch UNI state is managed by DSA. */
+ 	return 0;
+ }
+ 
+@@ -3395,6 +3436,7 @@ static int airoha_xpon_init_gpon(struct platform_device *pdev,
+ 		return -ENOMEM;
+ 
+ 	mutex_init(&priv->tcont_lock);
++	mutex_init(&priv->omci_profile_lock);
+ 	memset(priv->tcont_alloc_id, 0xff, sizeof(priv->tcont_alloc_id));
+ 	memset(priv->tcont_entity_id, 0xff, sizeof(priv->tcont_entity_id));
+ 
+diff --git a/include/net/omci.h b/include/net/omci.h
+index 2046d81de18f..710d52909090 100644
+--- a/include/net/omci.h
++++ b/include/net/omci.h
+@@ -86,6 +86,22 @@ struct omci_olt_g {
+ 	bool valid;
+ };
+ 
++/**
++ * struct omci_olt_profile_state - resolved OLT interoperability policy
++ * @configured: user-selected profile, including auto
++ * @effective: active concrete profile
++ * @forced: forced concrete profile, or OMCI_OLT_PROFILE_UNSPEC
++ * @quirks: OMCI_OLT_QUIRK_* bitmap for @effective
++ * @olt: latest parsed OLT-G identity
++ */
++struct omci_olt_profile_state {
++	u8 configured;
++	u8 effective;
++	u8 forced;
++	u32 quirks;
++	struct omci_olt_g olt;
++};
++
+ /**
+  * struct omci_vlan_filter_entry - parsed VLAN tagging filter entry
+  * @tci: original VLAN tag control information value
+@@ -209,6 +225,7 @@ struct omci_telemetry {
+  * @set_gem_port: configure a GEM port
+  * @set_uni: enable or disable a UNI
+  * @get_telemetry: refresh PON FEC and optical telemetry
++ * @set_olt_profile: apply a resolved OLT interoperability profile
+  */
+ struct omci_device_ops {
+ 	int (*xmit)(struct omci_device *odev, struct sk_buff *skb,
+@@ -221,6 +238,8 @@ struct omci_device_ops {
+ 	int (*set_uni)(struct omci_device *odev, u16 entity_id, bool enable);
+ 	int (*get_telemetry)(struct omci_device *odev,
+ 			     struct omci_telemetry *telemetry);
++	int (*set_olt_profile)(struct omci_device *odev,
++			       const struct omci_olt_profile_state *state);
+ };
+ 
+ struct omci_device *
+@@ -230,6 +249,7 @@ void omci_device_unregister(struct omci_device *odev);
+ 
+ void *omci_device_priv(const struct omci_device *odev);
+ u32 omci_device_id(const struct omci_device *odev);
++const char *omci_olt_profile_name(u8 profile);
+ 
+ int omci_identity_load(struct device *dev, struct omci_identity *identity);
+ void gpon_random_serial_number(const u8 vendor[4], struct omci_identity *identity);
+diff --git a/include/uapi/linux/omci.h b/include/uapi/linux/omci.h
+index 4e69f0659ee5..ae56259b0b50 100644
+--- a/include/uapi/linux/omci.h
++++ b/include/uapi/linux/omci.h
+@@ -3,7 +3,7 @@
+ #define _UAPI_LINUX_OMCI_H
+ 
+ #define OMCI_GENL_NAME		"omci"
+-#define OMCI_GENL_VERSION	8
++#define OMCI_GENL_VERSION	9
+ #define OMCI_MAX_PDU_LEN	1980
+ #define OMCI_MAX_ATTR_DATA	32
+ #define OMCI_MAX_CONFIG_VALUE	64
+@@ -103,6 +103,10 @@ enum omci_attr {
+ 	OMCI_ATTR_CLASS_SUPPORT,
+ 	OMCI_ATTR_CLASS_FLAGS,
+ 	OMCI_ATTR_CONFIG_SOURCE,
++	OMCI_ATTR_OLT_PROFILE_CONFIGURED,
++	OMCI_ATTR_OLT_PROFILE_EFFECTIVE,
++	OMCI_ATTR_OLT_PROFILE_FORCED,
++	OMCI_ATTR_OLT_PROFILE_QUIRKS,
+ 
+ 	__OMCI_ATTR_MAX,
+ };
+@@ -251,6 +255,7 @@ enum omci_event {
+ 	OMCI_EVENT_MIB_CHANGE,
+ 	OMCI_EVENT_CONFIG_CHANGE,
+ 	OMCI_EVENT_UNSUPPORTED,
++	OMCI_EVENT_PROFILE_CHANGE,
+ };
+ 
+ enum omci_config_key {
+@@ -266,12 +271,45 @@ enum omci_config_key {
+ 	OMCI_CONFIG_AGENT_ENABLED,
+ 	OMCI_CONFIG_AGENT_PERMISSIVE,
+ 	OMCI_CONFIG_AGENT_FAKE_OMCI,
++	OMCI_CONFIG_OLT_PROFILE,
++	OMCI_CONFIG_OLT_PROFILE_FORCE,
+ 
+ 	__OMCI_CONFIG_MAX,
+ };
+ 
+ #define OMCI_CONFIG_MAX (__OMCI_CONFIG_MAX - 1)
+ 
++/**
++ * enum omci_olt_profile - OLT interoperability policy profile
++ * @OMCI_OLT_PROFILE_UNSPEC: no forced profile
++ * @OMCI_OLT_PROFILE_GENERIC: standards-oriented profile without vendor quirks
++ * @OMCI_OLT_PROFILE_AUTO: detect the effective profile from OLT-G
++ * @OMCI_OLT_PROFILE_NOKIA_ALCL: Nokia/Alcatel-Lucent interoperability
++ * @OMCI_OLT_PROFILE_DASAN: DASAN interoperability
++ * @OMCI_OLT_PROFILE_HUAWEI: Huawei interoperability
++ * @OMCI_OLT_PROFILE_FIBERHOME: FiberHome interoperability
++ * @OMCI_OLT_PROFILE_ZTE: ZTE interoperability
++ */
++enum omci_olt_profile {
++	OMCI_OLT_PROFILE_UNSPEC,
++	OMCI_OLT_PROFILE_GENERIC,
++	OMCI_OLT_PROFILE_AUTO,
++	OMCI_OLT_PROFILE_NOKIA_ALCL,
++	OMCI_OLT_PROFILE_DASAN,
++	OMCI_OLT_PROFILE_HUAWEI,
++	OMCI_OLT_PROFILE_FIBERHOME,
++	OMCI_OLT_PROFILE_ZTE,
++};
++
++#define OMCI_OLT_QUIRK_ALLOW_SET_CREATE		(1U << 0)
++#define OMCI_OLT_QUIRK_FAKE_UNSUPPORTED_SUCCESS	(1U << 1)
++#define OMCI_OLT_QUIRK_IGNORE_UNSUPPORTED_UNI	(1U << 2)
++#define OMCI_OLT_QUIRK_FULL_UNI_ENTITY_ID		(1U << 3)
++#define OMCI_OLT_QUIRK_SANITIZE_VERSION		(1U << 4)
++#define OMCI_OLT_QUIRK_ZTE_VLAN_TAG_MODE		(1U << 5)
++#define OMCI_OLT_QUIRK_VENDOR_SPECIFIC_MES		(1U << 6)
++#define OMCI_OLT_QUIRK_DASAN_MULTICAST_ANI		(1U << 7)
++
+ /**
+  * enum omci_config_source - source of a normalized configuration value
+  */
+diff --git a/net/omci/Makefile b/net/omci/Makefile
+index 29e8669e18e5..d5620bd711e9 100644
+--- a/net/omci/Makefile
++++ b/net/omci/Makefile
+@@ -1,3 +1,3 @@
+ # SPDX-License-Identifier: GPL-2.0-only
+ obj-$(CONFIG_OMCI) += omci.o
+-omci-y := core.o agent.o identity.o
++omci-y := core.o agent.o identity.o profiles.o
+diff --git a/net/omci/agent.c b/net/omci/agent.c
+index 772cb6974fef..607889d6a234 100644
+--- a/net/omci/agent.c
++++ b/net/omci/agent.c
+@@ -994,6 +994,105 @@ static int omci_mib_store_locked(struct omci_agent *agent,
+ 	return 0;
+ }
+ 
++static struct omci_olt_g *omci_agent_olt_g_locked(struct omci_agent *agent)
++{
++	struct omci_mib_object *object;
++
++	object = omci_mib_lookup(agent, OMCI_CLASS_OLT_G, 0);
++	if (!object || !object->olt_g.valid)
++		return NULL;
++
++	return &object->olt_g;
++}
++
++static void
++omci_agent_profile_state_locked(struct omci_agent *agent,
++				const struct omci_olt_g *olt,
++				struct omci_olt_profile_state *state)
++{
++	u8 effective;
++
++	memset(state, 0, sizeof(*state));
++	state->configured = agent->config.olt_profile;
++	state->forced = agent->config.olt_profile_force;
++
++	if (state->forced != OMCI_OLT_PROFILE_UNSPEC)
++		effective = state->forced;
++	else if (state->configured == OMCI_OLT_PROFILE_AUTO)
++		effective = omci_profile_detect(olt);
++	else
++		effective = state->configured;
++
++	if (effective == OMCI_OLT_PROFILE_UNSPEC ||
++	    effective == OMCI_OLT_PROFILE_AUTO)
++		effective = OMCI_OLT_PROFILE_GENERIC;
++
++	state->effective = effective;
++	state->quirks = omci_profile_quirks(effective);
++	if (olt)
++		state->olt = *olt;
++}
++
++static int
++omci_agent_profile_refresh_locked(struct omci_device *odev,
++				  struct omci_olt_g *olt,
++				  bool *profile_changed)
++{
++	struct omci_agent *agent = &odev->agent;
++	struct omci_olt_profile_state state;
++	bool changed;
++	int ret;
++
++	omci_agent_profile_state_locked(agent, olt, &state);
++	omci_profile_sanitize_olt_g(olt, state.quirks);
++	if (olt)
++		state.olt = *olt;
++
++	changed = agent->profile_effective != state.effective ||
++		  agent->profile_quirks != state.quirks;
++
++	if (odev->ops->set_olt_profile) {
++		ret = odev->ops->set_olt_profile(odev, &state);
++		if (ret)
++			return ret;
++	}
++
++	agent->profile_effective = state.effective;
++	agent->profile_quirks = state.quirks;
++	if (profile_changed)
++		*profile_changed = changed;
++
++	if (changed)
++		dev_info(odev->parent,
++			 "OMCI OLT profile: configured=%s effective=%s forced=%s quirks=%#x\n",
++			 omci_olt_profile_name(state.configured),
++			 omci_olt_profile_name(state.effective),
++			 omci_olt_profile_name(state.forced), state.quirks);
++
++	return 0;
++}
++
++static bool
++omci_agent_profile_has_quirk(const struct omci_agent *agent, u32 quirk)
++{
++	return agent->profile_quirks & quirk;
++}
++
++static bool
++omci_agent_fakes_unsupported(const struct omci_agent *agent)
++{
++	return agent->fake_omci ||
++	       omci_agent_profile_has_quirk(agent,
++					    OMCI_OLT_QUIRK_FAKE_UNSUPPORTED_SUCCESS);
++}
++
++static bool
++omci_agent_should_fake_result(const struct omci_agent *agent, u8 result)
++{
++	return omci_agent_fakes_unsupported(agent) &&
++	       omci_agent_result_can_be_faked(result);
++}
++
+ static int omci_mib_add_default(struct omci_agent *agent, u16 class_id,
+ 				u16 entity_id, const void *data, size_t len)
+ {
+@@ -1161,6 +1260,10 @@ int omci_agent_init(struct omci_device *odev)
+ 	agent->config.uni_count = 4;
+ 	agent->config.onu_type = 2;
+ 	agent->config.traffic_mgmt_option = 0;
++	agent->config.olt_profile = OMCI_OLT_PROFILE_GENERIC;
++	agent->config.olt_profile_force = OMCI_OLT_PROFILE_UNSPEC;
++	agent->config.olt_profile_source = OMCI_CONFIG_SOURCE_DEFAULT;
++	agent->config.olt_profile_force_source = OMCI_CONFIG_SOURCE_DEFAULT;
+ 	memcpy(agent->config.serial_number, "OPEN0001", 8);
+ 	memcpy(agent->config.vendor_id, "OPEN", 4);
+ 	strscpy(agent->config.version, "OpenWrt", sizeof(agent->config.version));
+@@ -1179,6 +1282,8 @@ int omci_agent_init(struct omci_device *odev)
+ 
+ 	mutex_lock(&agent->lock);
+ 	ret = omci_agent_populate_defaults(agent);
++	if (!ret)
++		ret = omci_agent_profile_refresh_locked(odev, NULL, NULL);
+ 	mutex_unlock(&agent->lock);
+ 	return ret;
+ }
+@@ -1229,7 +1334,9 @@ static int omci_agent_hw_update(struct omci_device *odev,
+ 				u8 action, const u8 *content)
+ {
+ 	const struct omci_device_ops *ops = odev->ops;
++	bool ignore_unsupported_uni;
+ 	u16 value;
++	int ret;
+ 
+ 	switch (object->class_id) {
+ 	case OMCI_CLASS_TCONT:
+@@ -1254,8 +1361,13 @@ static int omci_agent_hw_update(struct omci_device *odev,
+ 	case OMCI_CLASS_VEIP:
+ 		if (!ops->set_uni)
+ 			return 0;
+-		return ops->set_uni(odev, object->entity_id,
+-				    action != OMCI_MSG_TYPE_DELETE);
++		ret = ops->set_uni(odev, object->entity_id,
++				   action != OMCI_MSG_TYPE_DELETE);
++		ignore_unsupported_uni = odev->agent.profile_quirks &
++					 OMCI_OLT_QUIRK_IGNORE_UNSUPPORTED_UNI;
++		if (ret == -EOPNOTSUPP && ignore_unsupported_uni)
++			return 0;
++		return ret;
+ 	default:
+ 		return 0;
+ 	}
+@@ -1342,19 +1454,22 @@ static u8 omci_agent_create_locked(struct omci_device *odev,
+ }
+ 
+ static u8 omci_agent_set_locked(struct omci_device *odev, u16 class_id,
+-				u16 entity_id, const u8 *content)
++				u16 entity_id, const u8 *content,
++				bool *profile_changed)
+ {
+ 	struct omci_agent *agent = &odev->agent;
+ 	struct omci_mib_object *object;
+ 	u16 mask = get_unaligned_be16(content);
++	bool allow_create;
+ 	int ret;
+ 
++	allow_create = agent->permissive || agent->fake_omci ||
++		omci_agent_profile_has_quirk(agent, OMCI_OLT_QUIRK_ALLOW_SET_CREATE);
+ 	object = omci_get_or_create_locked(agent, class_id, entity_id,
+-					   agent->permissive ||
+-					   agent->fake_omci);
++					  allow_create);
+ 	if (!object)
+-		return agent->permissive || agent->fake_omci ?
+-			OMCI_RESULT_DEVICE_BUSY : OMCI_RESULT_UNKNOWN_INSTANCE;
++		return allow_create ? OMCI_RESULT_DEVICE_BUSY :
++				      OMCI_RESULT_UNKNOWN_INSTANCE;
+ 	object->attr_mask |= mask;
+ 	memcpy(object->data, content + 2, sizeof(object->data) - 2);
+ 	ret = omci_mib_parse_set(object, mask, content + 2,
+@@ -1363,6 +1478,11 @@ static u8 omci_agent_set_locked(struct omci_device *odev, u16 class_id,
+ 		return ret == -ENOSPC ? OMCI_RESULT_DEVICE_BUSY :
+ 					 OMCI_RESULT_PARAMETER_ERROR;
+ 	object->origin = OMCI_MIB_ORIGIN_OLT;
++	if (class_id == OMCI_CLASS_OLT_G) {
++		ret = omci_agent_profile_refresh_locked(odev, &object->olt_g, profile_changed);
++		if (ret)
++			return OMCI_RESULT_PROCESSING_ERROR;
++	}
+ 	ret = omci_agent_hw_update(odev, object, OMCI_MSG_TYPE_SET, content);
+ 	if (ret)
+ 		return OMCI_RESULT_PROCESSING_ERROR;
+@@ -1371,7 +1491,7 @@ static u8 omci_agent_set_locked(struct omci_device *odev, u16 class_id,
+ }
+ 
+ static u8 omci_agent_delete_locked(struct omci_device *odev, u16 class_id,
+-				   u16 entity_id)
++				   u16 entity_id, bool *profile_changed)
+ {
+ 	struct omci_agent *agent = &odev->agent;
+ 	struct omci_mib_object *object;
+@@ -1388,6 +1508,11 @@ static u8 omci_agent_delete_locked(struct omci_device *odev, u16 class_id,
+ 		return OMCI_RESULT_PROCESSING_ERROR;
+ 	xa_erase(&agent->mib, omci_mib_key(class_id, entity_id));
+ 	kfree(object);
++	if (class_id == OMCI_CLASS_OLT_G) {
++		ret = omci_agent_profile_refresh_locked(odev, NULL, profile_changed);
++		if (ret)
++			return OMCI_RESULT_PROCESSING_ERROR;
++	}
+ 	agent->mib_sync++;
+ 	return OMCI_RESULT_SUCCESS;
+ }
+@@ -1652,7 +1777,8 @@ static bool omci_agent_build_response_locked(struct omci_device *odev,
+ 					     const u8 *request,
+ 					     u8 *response,
+ 					     bool *unsupported,
+-					     bool *fake)
++					     bool *fake,
++					     bool *profile_changed)
+ {
+ 	struct omci_agent *agent = &odev->agent;
+ 	u8 *content = response + 8;
+@@ -1667,20 +1793,21 @@ static bool omci_agent_build_response_locked(struct omci_device *odev,
+ 	shadow_missing = !omci_mib_lookup(agent, class_id, entity_id);
+ 	*unsupported = false;
+ 	*fake = false;
++	*profile_changed = false;
+ 
+ 	switch (action) {
+ 	case OMCI_MSG_TYPE_CREATE:
+ 		result = omci_agent_create_locked(odev, class_id, entity_id,
+ 						  request + 8);
+-		if (agent->fake_omci && omci_agent_result_can_be_faked(result)) {
++		if (omci_agent_should_fake_result(agent, result)) {
+ 			result = OMCI_RESULT_SUCCESS;
+ 			*fake = true;
+ 		}
+ 		content[0] = result;
+ 		break;
+ 	case OMCI_MSG_TYPE_DELETE:
+-		result = omci_agent_delete_locked(odev, class_id, entity_id);
+-		if (agent->fake_omci && omci_agent_result_can_be_faked(result)) {
++		result = omci_agent_delete_locked(odev, class_id, entity_id, profile_changed);
++		if (omci_agent_should_fake_result(agent, result)) {
+ 			result = OMCI_RESULT_SUCCESS;
+ 			*fake = true;
+ 		}
+@@ -1689,12 +1816,12 @@ static bool omci_agent_build_response_locked(struct omci_device *odev,
+ 	case OMCI_MSG_TYPE_SET:
+ 	case OMCI_MSG_TYPE_SET_TABLE:
+ 		result = omci_agent_set_locked(odev, class_id, entity_id,
+-					       request + 8);
+-		if (agent->fake_omci && omci_agent_result_can_be_faked(result)) {
++					       request + 8, profile_changed);
++		if (omci_agent_should_fake_result(agent, result)) {
+ 			result = OMCI_RESULT_SUCCESS;
+ 			*fake = true;
+-		} else if (!result && agent->fake_omci && !agent->permissive &&
+-			   shadow_missing) {
++		} else if (!result && omci_agent_fakes_unsupported(agent) &&
++			   !agent->permissive && shadow_missing) {
+ 			*fake = true;
+ 		}
+ 		content[0] = result;
+@@ -1707,11 +1834,11 @@ static bool omci_agent_build_response_locked(struct omci_device *odev,
+ 	case OMCI_MSG_TYPE_GET_CURRENT_DATA:
+ 		result = omci_agent_get_locked(odev, class_id, entity_id,
+ 					       request + 8, content);
+-		if (agent->fake_omci && omci_agent_result_can_be_faked(result)) {
++		if (omci_agent_should_fake_result(agent, result)) {
+ 			result = OMCI_RESULT_SUCCESS;
+ 			*fake = true;
+-		} else if (!result && agent->fake_omci && !agent->permissive &&
+-			   shadow_missing) {
++		} else if (!result && omci_agent_fakes_unsupported(agent) &&
++			   !agent->permissive && shadow_missing) {
+ 			*fake = true;
+ 		}
+ 		if (result)
+@@ -1734,7 +1861,11 @@ static bool omci_agent_build_response_locked(struct omci_device *odev,
+ 		break;
+ 	case OMCI_MSG_TYPE_MIB_RESET:
+ 		omci_agent_reset_olt_objects_locked(agent);
+-		content[0] = OMCI_RESULT_SUCCESS;
++		if (omci_agent_profile_refresh_locked(odev, NULL,
++						      profile_changed))
++			content[0] = OMCI_RESULT_PROCESSING_ERROR;
++		else
++			content[0] = OMCI_RESULT_SUCCESS;
+ 		break;
+ 	case OMCI_MSG_TYPE_SYNC_TIME:
+ 	case OMCI_MSG_TYPE_REBOOT:
+@@ -1747,7 +1878,7 @@ static bool omci_agent_build_response_locked(struct omci_device *odev,
+ 	case OMCI_MSG_TYPE_ACTIVATE_SW:
+ 	case OMCI_MSG_TYPE_COMMIT_SW:
+ 	default:
+-		if (agent->fake_omci) {
++		if (omci_agent_fakes_unsupported(agent)) {
+ 			content[0] = OMCI_RESULT_SUCCESS;
+ 			*fake = true;
+ 		} else {
+@@ -1767,6 +1898,7 @@ void omci_agent_receive(struct omci_device *odev, const struct sk_buff *skb)
+ 	bool unsupported = false;
+ 	bool duplicate = false;
+ 	bool fake = false;
++	bool profile_changed = false;
+ 	bool ani_g_test;
+ 	int ret;
+ 
+@@ -1794,7 +1926,8 @@ void omci_agent_receive(struct omci_device *odev, const struct sk_buff *skb)
+ 		duplicate = true;
+ 	} else {
+ 		omci_agent_build_response_locked(odev, skb->data, response,
+-						 &unsupported, &fake);
++						 &unsupported, &fake,
++						 &profile_changed);
+ 		memcpy(agent->last_request, skb->data,
+ 		       OMCI_BASELINE_LEN_NO_MIC);
+ 		memcpy(agent->last_response, response, sizeof(response));
+@@ -1825,6 +1958,8 @@ void omci_agent_receive(struct omci_device *odev, const struct sk_buff *skb)
+ 	}
+ 	if (fake)
+ 		atomic64_inc(&agent->fake_responses);
++	if (profile_changed)
++		omci_device_notify(odev, OMCI_EVENT_PROFILE_CHANGE);
+ }
+ 
+ void omci_agent_channel_changed(struct omci_device *odev, bool valid)
+@@ -1843,7 +1978,11 @@ int omci_agent_put_status(struct sk_buff *msg, struct omci_device *odev)
+ {
+ 	struct omci_agent *agent = &odev->agent;
+ 	u32 count;
++	u32 profile_quirks;
+ 	u16 sync;
++	u8 profile_configured;
++	u8 profile_effective;
++	u8 profile_forced;
+ 	bool enabled;
+ 	bool permissive;
+ 	bool fake_omci;
+@@ -1854,11 +1993,21 @@ int omci_agent_put_status(struct sk_buff *msg, struct omci_device *odev)
+ 	enabled = agent->enabled;
+ 	permissive = agent->permissive;
+ 	fake_omci = agent->fake_omci;
++	profile_configured = agent->config.olt_profile;
++	profile_effective = agent->profile_effective;
++	profile_forced = agent->config.olt_profile_force;
++	profile_quirks = agent->profile_quirks;
+ 	mutex_unlock(&agent->lock);
+ 
+ 	if (nla_put_u8(msg, OMCI_ATTR_AGENT_ENABLED, enabled) ||
+ 	    nla_put_u8(msg, OMCI_ATTR_AGENT_PERMISSIVE, permissive) ||
+ 	    nla_put_u8(msg, OMCI_ATTR_AGENT_FAKE_OMCI, fake_omci) ||
++	    nla_put_u8(msg, OMCI_ATTR_OLT_PROFILE_CONFIGURED,
++		       profile_configured) ||
++	    nla_put_u8(msg, OMCI_ATTR_OLT_PROFILE_EFFECTIVE,
++		       profile_effective) ||
++	    nla_put_u8(msg, OMCI_ATTR_OLT_PROFILE_FORCED, profile_forced) ||
++	    nla_put_u32(msg, OMCI_ATTR_OLT_PROFILE_QUIRKS, profile_quirks) ||
+ 	    nla_put_u16(msg, OMCI_ATTR_MIB_SYNC, sync) ||
+ 	    nla_put_u32(msg, OMCI_ATTR_MIB_OBJECTS, count) ||
+ 	    nla_put_u64_64bit(msg, OMCI_ATTR_AGENT_RESPONSES,
+@@ -1935,6 +2084,16 @@ int omci_agent_config_get(struct omci_device *odev, u16 key,
+ 		source = &scalar;
+ 		source_len = sizeof(scalar);
+ 		break;
++	case OMCI_CONFIG_OLT_PROFILE:
++		scalar = agent->config.olt_profile;
++		source = &scalar;
++		source_len = sizeof(scalar);
++		break;
++	case OMCI_CONFIG_OLT_PROFILE_FORCE:
++		scalar = agent->config.olt_profile_force;
++		source = &scalar;
++		source_len = sizeof(scalar);
++		break;
+ 	default:
+ 		mutex_unlock(&agent->lock);
+ 		return -EINVAL;
+@@ -1955,9 +2114,15 @@ int omci_agent_config_set_source(struct omci_device *odev, u16 key,
+ 				 const void *value, size_t len, u8 source)
+ {
+ 	struct omci_agent *agent = &odev->agent;
++	struct omci_olt_g *olt;
+ 	u8 normalized[OMCI_MAX_CONFIG_VALUE];
+ 	size_t normalized_len = sizeof(normalized);
++	u8 old_profile_source;
++	u8 old_force_source;
++	u8 old_profile;
++	u8 old_force;
+ 	u8 scalar;
++	bool profile_key = false;
+ 	int ret = 0;
+ 
+ 	if (key >= OMCI_CONFIG_SERIAL_NUMBER &&
+@@ -1971,6 +2136,10 @@ int omci_agent_config_set_source(struct omci_device *odev, u16 key,
+ 	}
+ 
+ 	mutex_lock(&agent->lock);
++	old_profile = agent->config.olt_profile;
++	old_force = agent->config.olt_profile_force;
++	old_profile_source = agent->config.olt_profile_source;
++	old_force_source = agent->config.olt_profile_force_source;
+ 	switch (key) {
+ 	case OMCI_CONFIG_SERIAL_NUMBER:
+ 		if (len != sizeof(agent->config.serial_number)) {
+@@ -2022,6 +2191,34 @@ int omci_agent_config_set_source(struct omci_device *odev, u16 key,
+ 		memcpy(agent->config.password, value, len);
+ 		agent->config.password_source = source;
+ 		break;
++	case OMCI_CONFIG_OLT_PROFILE:
++		if (len != sizeof(scalar)) {
++			ret = -EINVAL;
++			break;
++		}
++		scalar = *(const u8 *)value;
++		if (!omci_profile_valid(scalar)) {
++			ret = -EINVAL;
++			break;
++		}
++		agent->config.olt_profile = scalar;
++		agent->config.olt_profile_source = source;
++		profile_key = true;
++		break;
++	case OMCI_CONFIG_OLT_PROFILE_FORCE:
++		if (len != sizeof(scalar)) {
++			ret = -EINVAL;
++			break;
++		}
++		scalar = *(const u8 *)value;
++		if (!omci_profile_forceable(scalar)) {
++			ret = -EINVAL;
++			break;
++		}
++		agent->config.olt_profile_force = scalar;
++		agent->config.olt_profile_force_source = source;
++		profile_key = true;
++		break;
+ 	case OMCI_CONFIG_TRAFFIC_MGMT_OPTION:
+ 	case OMCI_CONFIG_ONU_TYPE:
+ 	case OMCI_CONFIG_UNI_COUNT:
+@@ -2053,8 +2250,22 @@ int omci_agent_config_set_source(struct omci_device *odev, u16 key,
+ 		ret = -EINVAL;
+ 		break;
+ 	}
++	if (!ret && profile_key) {
++		olt = omci_agent_olt_g_locked(agent);
++		ret = omci_agent_profile_refresh_locked(odev, olt, NULL);
++		if (ret) {
++			agent->config.olt_profile = old_profile;
++			agent->config.olt_profile_force = old_force;
++			agent->config.olt_profile_source = old_profile_source;
++			agent->config.olt_profile_force_source = old_force_source;
++		}
++	}
+ 	if (!ret) {
+-		omci_agent_refresh_identity_locked(agent);
++		if (!profile_key)
++			omci_agent_refresh_identity_locked(agent);
++		agent->last_request_len = 0;
++		agent->last_response_len = 0;
++		agent->last_response_fake = false;
+ 		agent->mib_sync++;
+ 	}
+ 	mutex_unlock(&agent->lock);
+@@ -2092,6 +2303,12 @@ int omci_agent_config_source_get(struct omci_device *odev, u16 key, u8 *source)
+ 	case OMCI_CONFIG_PASSWORD:
+ 		*source = agent->config.password_source;
+ 		break;
++	case OMCI_CONFIG_OLT_PROFILE:
++		*source = agent->config.olt_profile_source;
++		break;
++	case OMCI_CONFIG_OLT_PROFILE_FORCE:
++		*source = agent->config.olt_profile_force_source;
++		break;
+ 	default:
+ 		*source = OMCI_CONFIG_SOURCE_UNSPEC;
+ 		ret = -ENOENT;
+@@ -2122,6 +2339,7 @@ int omci_agent_mib_set(struct omci_device *odev,
+ 		       const struct omci_mib_object *object)
+ {
+ 	struct omci_agent *agent = &odev->agent;
++	struct omci_mib_object *stored;
+ 	struct omci_mib_object *local;
+ 	int ret;
+ 
+@@ -2146,6 +2364,10 @@ int omci_agent_mib_set(struct omci_device *odev,
+ 	}
+ 	mutex_lock(&agent->lock);
+ 	ret = omci_mib_store_locked(agent, local);
++	if (!ret && local->class_id == OMCI_CLASS_OLT_G) {
++		stored = omci_mib_lookup(agent, local->class_id, local->entity_id);
++		ret = omci_agent_profile_refresh_locked(odev, &stored->olt_g, NULL);
++	}
+ 	if (!ret)
+ 		agent->mib_sync++;
+ 	mutex_unlock(&agent->lock);
+@@ -2162,6 +2384,8 @@ int omci_agent_mib_delete(struct omci_device *odev, u16 class_id,
+ 
+ 	mutex_lock(&agent->lock);
+ 	object = xa_erase(&agent->mib, omci_mib_key(class_id, entity_id));
++	if (object && class_id == OMCI_CLASS_OLT_G)
++		omci_agent_profile_refresh_locked(odev, NULL, NULL);
+ 	if (object)
+ 		agent->mib_sync++;
+ 	mutex_unlock(&agent->lock);
+@@ -2178,6 +2402,7 @@ void omci_agent_mib_reset(struct omci_device *odev, bool all)
+ 	mutex_lock(&agent->lock);
+ 	if (!all) {
+ 		omci_agent_reset_olt_objects_locked(agent);
++		omci_agent_profile_refresh_locked(odev, NULL, NULL);
+ 		mutex_unlock(&agent->lock);
+ 		return;
+ 	}
+@@ -2188,6 +2413,7 @@ void omci_agent_mib_reset(struct omci_device *odev, bool all)
+ 	agent->mib_sync = 0;
+ 	agent->upload_index = 0;
+ 	omci_agent_populate_defaults(agent);
++	omci_agent_profile_refresh_locked(odev, NULL, NULL);
+ 	mutex_unlock(&agent->lock);
+ }
+ 
+diff --git a/net/omci/core.c b/net/omci/core.c
+index 741e4e457259..4bb1ef5f7466 100644
+--- a/net/omci/core.c
++++ b/net/omci/core.c
+@@ -55,6 +55,8 @@ static const struct nla_policy omci_policy[OMCI_ATTR_MAX + 1] = {
+ 	[OMCI_ATTR_CLASS_SUPPORT] = { .type = NLA_U8 },
+ 	[OMCI_ATTR_CLASS_FLAGS] = { .type = NLA_U32 },
+ 	[OMCI_ATTR_CONFIG_SOURCE] = { .type = NLA_U8 },
++	[OMCI_ATTR_OLT_PROFILE_CONFIGURED] = { .type = NLA_U8 },
++	[OMCI_ATTR_OLT_PROFILE_FORCED] = { .type = NLA_U8 },
+ };
+ 
+ static struct omci_device *omci_find_locked(u32 id)
+@@ -717,6 +719,7 @@ static int omci_cmd_class_next(struct sk_buff *skb, struct genl_info *info)
+ static int omci_cmd_agent_set(struct sk_buff *skb, struct genl_info *info)
+ {
+ 	struct omci_device *odev;
++	bool profile_changed = false;
+ 	u8 value;
+ 	int ret = 0;
+ 
+@@ -744,9 +747,29 @@ static int omci_cmd_agent_set(struct sk_buff *skb, struct genl_info *info)
+ 		value = nla_get_u8(info->attrs[OMCI_ATTR_AGENT_FAKE_OMCI]);
+ 		ret = omci_agent_config_set(odev, OMCI_CONFIG_AGENT_FAKE_OMCI,
+ 					    &value, sizeof(value));
++		if (ret)
++			goto out;
++	}
++	if (info->attrs[OMCI_ATTR_OLT_PROFILE_CONFIGURED]) {
++		value = nla_get_u8(info->attrs[OMCI_ATTR_OLT_PROFILE_CONFIGURED]);
++		ret = omci_agent_config_set(odev, OMCI_CONFIG_OLT_PROFILE,
++					    &value, sizeof(value));
++		if (ret)
++			goto out;
++		profile_changed = true;
++	}
++	if (info->attrs[OMCI_ATTR_OLT_PROFILE_FORCED]) {
++		value = nla_get_u8(info->attrs[OMCI_ATTR_OLT_PROFILE_FORCED]);
++		ret = omci_agent_config_set(odev, OMCI_CONFIG_OLT_PROFILE_FORCE,
++					    &value, sizeof(value));
++		if (ret)
++			goto out;
++		profile_changed = true;
+ 	}
+ 	if (!ret)
+-		omci_device_notify(odev, OMCI_EVENT_CONFIG_CHANGE);
++		omci_device_notify(odev, profile_changed ?
++				   OMCI_EVENT_PROFILE_CHANGE :
++				   OMCI_EVENT_CONFIG_CHANGE);
+ out:
+ 	mutex_unlock(&omci_devices_lock);
+ 	return ret;
+@@ -821,8 +844,14 @@ static int omci_cmd_config_set(struct sk_buff *skb, struct genl_info *info)
+ 	}
+ 	ret = omci_agent_config_set(odev, key, nla_data(value),
+ 				    nla_len(value));
+-	if (!ret)
+-		omci_device_notify(odev, OMCI_EVENT_CONFIG_CHANGE);
++	if (!ret) {
++		u8 event = OMCI_EVENT_CONFIG_CHANGE;
++
++		if (key == OMCI_CONFIG_OLT_PROFILE ||
++		    key == OMCI_CONFIG_OLT_PROFILE_FORCE)
++			event = OMCI_EVENT_PROFILE_CHANGE;
++		omci_device_notify(odev, event);
++	}
+ out:
+ 	mutex_unlock(&omci_devices_lock);
+ 	return ret;
+diff --git a/net/omci/internal.h b/net/omci/internal.h
+index a6cafb71ad60..db254b7a0bec 100644
+--- a/net/omci/internal.h
++++ b/net/omci/internal.h
+@@ -60,6 +60,10 @@ struct omci_agent_config {
+ 	u8 traffic_mgmt_option;
+ 	u8 onu_type;
+ 	u8 uni_count;
++	u8 olt_profile;
++	u8 olt_profile_force;
++	u8 olt_profile_source;
++	u8 olt_profile_force_source;
+ };
+ 
+ struct omci_agent {
+@@ -72,6 +76,8 @@ struct omci_agent {
+ 	bool enabled;
+ 	bool permissive;
+ 	bool fake_omci;
++	u8 profile_effective;
++	u32 profile_quirks;
+ 
+ 	u8 last_request[OMCI_BASELINE_LEN_NO_MIC];
+ 	u8 last_response[OMCI_BASELINE_LEN_NO_MIC];
+@@ -153,4 +159,10 @@ int omci_agent_class_get(u16 class_id, struct omci_me_class *class);
+ int omci_agent_class_next(u32 index, struct omci_me_class *class,
+ 			  u32 *next_index);
+ 
++bool omci_profile_valid(u8 profile);
++bool omci_profile_forceable(u8 profile);
++u8 omci_profile_detect(const struct omci_olt_g *olt);
++u32 omci_profile_quirks(u8 profile);
++void omci_profile_sanitize_olt_g(struct omci_olt_g *olt, u32 quirks);
++
+ #endif /* _NET_OMCI_INTERNAL_H */
+diff --git a/net/omci/profiles.c b/net/omci/profiles.c
+new file mode 100644
+index 000000000000..264b2e4623fa
+--- /dev/null
++++ b/net/omci/profiles.c
+@@ -0,0 +1,179 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * OMCI OLT interoperability profiles
++ *
++ * Profiles describe policy deviations required by selected OLT families.
++ * The generic profile remains the default. Automatic detection is opt-in
++ * and uses OLT-G identification attributes only as a hint.
++ */
++
++#include <linux/export.h>
++#include <linux/kernel.h>
++#include <linux/string.h>
++
++#include "internal.h"
++
++struct omci_profile_desc {
++	u8 profile;
++	u32 quirks;
++	const char *name;
++};
++
++static const struct omci_profile_desc omci_profiles[] = {
++	{
++		.profile = OMCI_OLT_PROFILE_GENERIC,
++		.name = "generic",
++	}, {
++		.profile = OMCI_OLT_PROFILE_AUTO,
++		.name = "auto",
++	}, {
++		.profile = OMCI_OLT_PROFILE_NOKIA_ALCL,
++		.quirks = OMCI_OLT_QUIRK_SANITIZE_VERSION |
++			  OMCI_OLT_QUIRK_VENDOR_SPECIFIC_MES,
++		.name = "nokia-alcl",
++	}, {
++		.profile = OMCI_OLT_PROFILE_DASAN,
++		.quirks = OMCI_OLT_QUIRK_ALLOW_SET_CREATE |
++			  OMCI_OLT_QUIRK_FAKE_UNSUPPORTED_SUCCESS |
++			  OMCI_OLT_QUIRK_IGNORE_UNSUPPORTED_UNI |
++			  OMCI_OLT_QUIRK_DASAN_MULTICAST_ANI,
++		.name = "dasan",
++	}, {
++		.profile = OMCI_OLT_PROFILE_HUAWEI,
++		.quirks = OMCI_OLT_QUIRK_VENDOR_SPECIFIC_MES,
++		.name = "huawei",
++	}, {
++		.profile = OMCI_OLT_PROFILE_FIBERHOME,
++		.quirks = OMCI_OLT_QUIRK_ALLOW_SET_CREATE |
++			  OMCI_OLT_QUIRK_FULL_UNI_ENTITY_ID,
++		.name = "fiberhome",
++	}, {
++		.profile = OMCI_OLT_PROFILE_ZTE,
++		.quirks = OMCI_OLT_QUIRK_ALLOW_SET_CREATE |
++			  OMCI_OLT_QUIRK_ZTE_VLAN_TAG_MODE,
++		.name = "zte",
++	},
++};
++
++static const struct omci_profile_desc *omci_profile_find(u8 profile)
++{
++	unsigned int i;
++
++	for (i = 0; i < ARRAY_SIZE(omci_profiles); i++)
++		if (omci_profiles[i].profile == profile)
++			return &omci_profiles[i];
++
++	return NULL;
++}
++
++bool omci_profile_valid(u8 profile)
++{
++	return !!omci_profile_find(profile);
++}
++
++bool omci_profile_forceable(u8 profile)
++{
++	return profile == OMCI_OLT_PROFILE_UNSPEC ||
++	       (profile != OMCI_OLT_PROFILE_AUTO && omci_profile_valid(profile));
++}
++
++u32 omci_profile_quirks(u8 profile)
++{
++	const struct omci_profile_desc *desc = omci_profile_find(profile);
++
++	return desc ? desc->quirks : 0;
++}
++
++const char *omci_olt_profile_name(u8 profile)
++{
++	const struct omci_profile_desc *desc = omci_profile_find(profile);
++
++	return desc ? desc->name : "unspecified";
++}
++EXPORT_SYMBOL_GPL(omci_olt_profile_name);
++
++static bool omci_profile_vendor_is(const struct omci_olt_g *olt,
++				   const char vendor[OMCI_OLT_VENDOR_ID_LEN])
++{
++	return olt && olt->vendor_id_valid &&
++	       !strncasecmp(olt->vendor_id, vendor, OMCI_OLT_VENDOR_ID_LEN);
++}
++
++static bool omci_profile_field_contains(const char *field, size_t len,
++					const char *token)
++{
++	size_t token_len = strlen(token);
++	size_t i;
++
++	if (!token_len || token_len > len)
++		return false;
++
++	for (i = 0; i + token_len <= len && field[i]; i++)
++		if (!strncasecmp(field + i, token, token_len))
++			return true;
++
++	return false;
++}
++
++u8 omci_profile_detect(const struct omci_olt_g *olt)
++{
++	if (!olt || !olt->valid)
++		return OMCI_OLT_PROFILE_GENERIC;
++
++	if (omci_profile_vendor_is(olt, "ALCL") ||
++	    omci_profile_vendor_is(olt, "NOKI"))
++		return OMCI_OLT_PROFILE_NOKIA_ALCL;
++	if (omci_profile_vendor_is(olt, "DSNW") ||
++	    omci_profile_vendor_is(olt, "DASA"))
++		return OMCI_OLT_PROFILE_DASAN;
++	if (omci_profile_vendor_is(olt, "HWTC") ||
++	    omci_profile_vendor_is(olt, "HWTI"))
++		return OMCI_OLT_PROFILE_HUAWEI;
++	if (omci_profile_vendor_is(olt, "FHTT") ||
++	    omci_profile_vendor_is(olt, "FHTC"))
++		return OMCI_OLT_PROFILE_FIBERHOME;
++	if (omci_profile_vendor_is(olt, "ZTEG") ||
++	    omci_profile_vendor_is(olt, "ZTEC"))
++		return OMCI_OLT_PROFILE_ZTE;
++
++	if (olt->equipment_id_valid) {
++		if (omci_profile_field_contains(olt->equipment_id,
++						OMCI_OLT_EQUIPMENT_ID_LEN,
++						"NOKIA") ||
++		    omci_profile_field_contains(olt->equipment_id,
++						OMCI_OLT_EQUIPMENT_ID_LEN,
++						"ALCATEL"))
++			return OMCI_OLT_PROFILE_NOKIA_ALCL;
++		if (omci_profile_field_contains(olt->equipment_id,
++						OMCI_OLT_EQUIPMENT_ID_LEN,
++						"DASAN"))
++			return OMCI_OLT_PROFILE_DASAN;
++		if (omci_profile_field_contains(olt->equipment_id,
++						OMCI_OLT_EQUIPMENT_ID_LEN,
++						"HUAWEI"))
++			return OMCI_OLT_PROFILE_HUAWEI;
++		if (omci_profile_field_contains(olt->equipment_id,
++						OMCI_OLT_EQUIPMENT_ID_LEN,
++						"FIBERHOME"))
++			return OMCI_OLT_PROFILE_FIBERHOME;
++		if (omci_profile_field_contains(olt->equipment_id,
++						OMCI_OLT_EQUIPMENT_ID_LEN,
++						"ZTE"))
++			return OMCI_OLT_PROFILE_ZTE;
++	}
++
++	return OMCI_OLT_PROFILE_GENERIC;
++}
++
++void omci_profile_sanitize_olt_g(struct omci_olt_g *olt, u32 quirks)
++{
++	unsigned int i;
++
++	if (!olt || !(quirks & OMCI_OLT_QUIRK_SANITIZE_VERSION) ||
++	    !olt->version_valid)
++		return;
++
++	for (i = 0; i < OMCI_OLT_VERSION_LEN && olt->version[i]; i++)
++		if (olt->version[i] < ' ' || olt->version[i] > '~')
++			olt->version[i] = ' ';
++}
+-- 
+2.55.0
+

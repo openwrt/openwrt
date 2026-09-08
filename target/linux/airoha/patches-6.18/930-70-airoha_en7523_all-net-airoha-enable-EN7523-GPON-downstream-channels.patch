@@ -1,0 +1,73 @@
+From d2b2152fe7ec4bd17ecaa7060eb34d2f03ea9f68 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Fri, 17 Jul 2026 22:39:54 +0000
+Subject: [PATCH] net: airoha: enable EN7523 GPON downstream channels
+
+The EN7523 GPON receive path uses channels 0 and 1 in the regular GDM2
+receive-channel register. The previous implementation accessed the
+legacy combined register at offset 0x2c. This register reads back as
+0xdeadbeef on this SoC and leaves downstream OMCI traffic disabled.
+
+Enable the two GPON receive channels through REG_GDM_RXCHN_EN() and
+remove the unsupported legacy-register access.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c  | 13 +++++--------
+ drivers/net/ethernet/airoha/airoha_regs.h |  8 ++------
+ 2 files changed, 7 insertions(+), 14 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
+index 8a0cd9e1241e..05f9b2d01fbc 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -196,8 +196,6 @@ int airoha_eth_set_xpon_mode(struct net_device *netdev,
+ 	airoha_fe_clear(dev->eth, REG_GDM_TXCHN_EN(AIROHA_GDM2_IDX), ~0U);
+ 	airoha_fe_clear(dev->eth, REG_GDM_RXCHN_EN(AIROHA_GDM2_IDX), ~0U);
+ 	airoha_fe_clear(dev->eth, REG_CDM_HWF_CHN_EN(2), ~0U);
+-	airoha_fe_clear(dev->eth, REG_GDM_XPON_CHN_EN(AIROHA_GDM2_IDX),
+-		       EN7523_GDM2_XPON_RX_CHN_MASK);
+ 
+ 	return 0;
+ }
+@@ -215,13 +213,12 @@ int airoha_eth_set_xpon_datapath(struct net_device *netdev,
+ 
+ 	switch (mode) {
+ 	case AIROHA_XPON_MODE_GPON:
+-		/* The EN7523 GPON path uses the legacy combined channel
+-		 * register. Downstream channels are bits 16 and 17.
++		/* The vendor GPON path enables downstream channels 0 and 1
++		 * through the regular GDM2 receive channel register.
+ 		 */
+-		airoha_fe_rmw(dev->eth,
+-			      REG_GDM_XPON_CHN_EN(AIROHA_GDM2_IDX),
+-			      EN7523_GDM2_XPON_RX_CHN_MASK,
+-			      enable ? EN7523_GDM2_XPON_RX_CHN_MASK : 0);
++		airoha_fe_rmw(dev->eth, REG_GDM_RXCHN_EN(AIROHA_GDM2_IDX),
++			      EN7523_GDM2_GPON_RX_CHN_MASK,
++			      enable ? EN7523_GDM2_GPON_RX_CHN_MASK : 0);
+ 		break;
+ 	case AIROHA_XPON_MODE_EPON:
+ 		/* xpon_1g/eponFeChannelEnable(): LLID channels 0..7,
+diff --git a/drivers/net/ethernet/airoha/airoha_regs.h b/drivers/net/ethernet/airoha/airoha_regs.h
+index 2598b4866e55..c83ffde36408 100644
+--- a/drivers/net/ethernet/airoha/airoha_regs.h
++++ b/drivers/net/ethernet/airoha/airoha_regs.h
+@@ -207,12 +207,8 @@
+ #define REG_GDM_RXCHN_EN(_n)		(GDM_BASE(_n) + 0x28)
+ #define REG_CDM_HWF_CHN_EN(_n)		(CDM_BASE(_n) + 0x0c)
+ 
+-/* EN7523 xPON uses the legacy combined GDM2 channel-enable register.
+- * TX/T-CONT channels occupy bits 0..15 and the two downstream GPON
+- * receive channels occupy bits 16..17.
+- */
+-#define REG_GDM_XPON_CHN_EN(_n)		(GDM_BASE(_n) + 0x2c)
+-#define EN7523_GDM2_XPON_RX_CHN_MASK	GENMASK(17, 16)
++/* GPON downstream traffic uses GDM2 receive channels 0 and 1. */
++#define EN7523_GDM2_GPON_RX_CHN_MASK	GENMASK(1, 0)
+ #define EN7523_GDM2_EPON_TX_CHN_MASK	(GENMASK(7, 0) | GENMASK(23, 16))
+ #define EN7523_GDM2_EPON_RX_CHN_MASK	GENMASK(7, 0)
+ #define EN7523_CDM2_EPON_HWF_CHN_MASK	GENMASK(7, 0)
+-- 
+2.55.0
+

@@ -1,0 +1,87 @@
+From 6d481c906a15bfdb961019227ac9b4dbf92ef62f Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Mon, 20 Jul 2026 13:36:28 -0300
+Subject: [PATCH] xpon demp skb_buff
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c | 49 ++++++++++++++++++++++++
+ 1 file changed, 49 insertions(+)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
+index 41050fe89ed5..a4e3e8ca094c 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -8,6 +8,8 @@
+ #include <linux/of_net.h>
+ #include <linux/of_reserved_mem.h>
+ #include <linux/platform_device.h>
++#include <linux/printk.h>
++#include <linux/ratelimit.h>
+ #include <linux/tcp.h>
+ #include <linux/if_vlan.h>
+ #include <linux/pcs/pcs.h>
+@@ -1393,6 +1395,48 @@ static struct sk_buff *airoha_qdma_build_rx_skb(struct airoha_queue *q,
+ 	return skb;
+ }
+ 
++#define AIROHA_XPON_DATA_DUMP_LEN	128
++
++static DEFINE_RATELIMIT_STATE(airoha_xpon_data_dump_rs, HZ, 4);
++
++static void
++airoha_qdma_dump_xpon_data(struct airoha_queue *q,
++			    struct airoha_qdma_desc *desc,
++			    struct airoha_queue_entry *e,
++			    struct net_device *netdev, u32 desc_ctrl,
++			    u32 msg0, unsigned int len)
++{
++	u32 msg1 = le32_to_cpu(READ_ONCE(desc->msg1));
++	u32 msg2 = le32_to_cpu(READ_ONCE(desc->msg2));
++	u32 msg3 = le32_to_cpu(READ_ONCE(desc->msg3));
++	unsigned int channel, gem_port_id, sport;
++
++	if (!__ratelimit(&airoha_xpon_data_dump_rs))
++		return;
++
++	channel = FIELD_GET(EN7523_QDMA_ETH_RXMSG_CHAN_MASK, msg0);
++	gem_port_id = FIELD_GET(EN7523_QDMA_ETH_RXMSG_GEM_MASK, msg0);
++	sport = FIELD_GET(EN7523_QDMA_ETH_RXMSG_SPORT_MASK, msg1);
++
++	dev_warn(&netdev->dev,
++		 "xPON RX classified as data: ring=%td len=%u more=%u "
++		 "channel=%u gem=%u sport=%u no-mic=%u crc=%u "
++		 "runt=%u long=%u msg=%#010x/%#010x/%#010x/%#010x\n",
++		 q - &q->qdma->q_rx[0], len,
++		 !!FIELD_GET(QDMA_DESC_MORE_MASK, desc_ctrl), channel,
++		 gem_port_id, sport,
++		 !!(msg0 & EN7523_QDMA_ETH_RXMSG_NO_MIC_MASK),
++		 !!(msg0 & EN7523_QDMA_ETH_RXMSG_CRC_ERR_MASK),
++		 !!(msg0 & EN7523_QDMA_ETH_RXMSG_RUNT_MASK),
++		 !!(msg0 & EN7523_QDMA_ETH_RXMSG_LONG_MASK),
++		 msg0, msg1, msg2, msg3);
++
++	print_hex_dump(KERN_WARNING, "xPON DATA raw: ",
++		       DUMP_PREFIX_OFFSET, 16, 1, e->buf,
++		       min_t(unsigned int, len, AIROHA_XPON_DATA_DUMP_LEN),
++		       true);
++}
++
+ static bool airoha_qdma_foe_entry_is_valid(struct airoha_eth *eth, u32 hash)
+ {
+ 	return airoha_is(eth, en7523) ?
+@@ -1486,6 +1530,11 @@ static int airoha_qdma_rx_process(struct airoha_queue *q, int budget)
+ 		}
+ 
+ 		netdev = netdev_from_priv(dev);
++		if (airoha_is(eth, en7523) && !xpon_oam && !q->skb &&
++		    (dev->flags & AIROHA_PRIV_F_XPON_MANAGED))
++			airoha_qdma_dump_xpon_data(q, desc, e, netdev,
++						desc_ctrl, msg0, len);
++
+ 		if (!q->skb) { /* first buffer */
+ 			q->skb = airoha_qdma_build_rx_skb(q, desc, e, netdev, xpon_oam);
+ 			if (!q->skb)
+-- 
+2.55.0
+

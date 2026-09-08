@@ -1,0 +1,758 @@
+From 91c46d56cf028628a4ae771351c7d2f3f368dafb Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Tue, 18 Aug 2026 14:40:05 -0300
+Subject: [PATCH] fix foe ipv6 insert
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth.h      |  31 ++
+ drivers/net/ethernet/airoha/airoha_ppe.c      | 386 +++++++++++++-----
+ .../net/ethernet/airoha/airoha_ppe_debugfs.c  |  43 +-
+ 3 files changed, 356 insertions(+), 104 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.h b/drivers/net/ethernet/airoha/airoha_eth.h
+index d3ce500177c3..0a4c2e7b2ba2 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.h
++++ b/drivers/net/ethernet/airoha/airoha_eth.h
+@@ -830,10 +830,30 @@ struct econet_foe_ipv4 {
+ 	struct econet_foe_mac_info l2;
+ };
+ 
++/* EN7512 SDK _ipv6_5t_route layout. The hardware keeps the 5-tuple in
++ * words 1..9 and PpeClearEntryInfo() clears the entry starting at byte 40.
++ */
++struct econet_foe_ipv6 {
++	u32 src_ip[4];
++	u32 dest_ip[4];
++	union {
++		struct {
++			u16 src_port;
++			u16 dest_port;
++		};
++		u32 ports;
++	};
++	u32 reserved[3];
++	u32 udf_tsid;
++	u32 ib2;
++	struct econet_foe_mac_info l2;
++};
++
+ struct econet_foe_entry {
+ 	u32 ib1;
+ 	union {
+ 		struct econet_foe_ipv4 ipv4;
++		struct econet_foe_ipv6 ipv6;
+ 		u32 data[19];
+ 	};
+ };
+@@ -851,6 +871,14 @@ static_assert(offsetof(struct econet_foe_entry, ipv4.l2.dest_mac_lo) == 52);
+ static_assert(offsetof(struct econet_foe_entry, ipv4.l2.vlan2) == 54);
+ static_assert(offsetof(struct econet_foe_entry, ipv4.l2.src_mac_lo) == 60);
+ static_assert(offsetof(struct econet_foe_entry, ipv4.l2.pppoe_id) == 62);
++static_assert(offsetof(struct econet_foe_entry, ipv6.src_ip) == 4);
++static_assert(offsetof(struct econet_foe_entry, ipv6.dest_ip) == 20);
++static_assert(offsetof(struct econet_foe_entry, ipv6.src_port) == 36);
++static_assert(offsetof(struct econet_foe_entry, ipv6.dest_port) == 38);
++static_assert(offsetof(struct econet_foe_entry, ipv6.udf_tsid) == 52);
++static_assert(offsetof(struct econet_foe_entry, ipv6.ib2) == 56);
++static_assert(offsetof(struct econet_foe_entry, ipv6.l2.etype) == 60);
++static_assert(offsetof(struct econet_foe_entry, ipv6.l2.pppoe_id) == 78);
+ 
+ struct econet_flow_entry {
+ 	struct list_head list;
+@@ -858,9 +886,12 @@ struct econet_flow_entry {
+ 	unsigned long cookie;
+ 	u32 src_ip;
+ 	u32 dest_ip;
++	struct in6_addr src_ip6;
++	struct in6_addr dest_ip6;
+ 	u16 src_port;
+ 	u16 dest_port;
+ 	u16 hash;
++	u16 addr_type;
+ };
+ 
+ struct econet_ppe {
+diff --git a/drivers/net/ethernet/airoha/airoha_ppe.c b/drivers/net/ethernet/airoha/airoha_ppe.c
+index c8d42cc2eff3..f9a390c19a42 100644
+--- a/drivers/net/ethernet/airoha/airoha_ppe.c
++++ b/drivers/net/ethernet/airoha/airoha_ppe.c
+@@ -2588,31 +2588,58 @@ static void econet_ppe_cache_clean(struct econet_ppe *ppe)
+ 		     gate | EN751221_PPE_CAH_GATE_EN);
+ }
+ 
++static bool econet_foe_entry_is_ipv6(const struct econet_foe_entry *entry)
++{
++	return FIELD_GET(AIROHA_FOE_IB1_BIND_PACKET_TYPE, entry->ib1) ==
++	       PPE_PKT_TYPE_IPV6_ROUTE_5T;
++}
++
++static u32 *econet_foe_entry_ib2(struct econet_foe_entry *entry)
++{
++	return econet_foe_entry_is_ipv6(entry) ? &entry->ipv6.ib2 :
++						 &entry->ipv4.ib2;
++}
++
++static u32 *econet_foe_entry_udf(struct econet_foe_entry *entry)
++{
++	return econet_foe_entry_is_ipv6(entry) ? &entry->ipv6.udf_tsid :
++						 &entry->ipv4.udf_tsid;
++}
++
++static struct econet_foe_mac_info *
++econet_foe_entry_l2(struct econet_foe_entry *entry)
++{
++	return econet_foe_entry_is_ipv6(entry) ? &entry->ipv6.l2 :
++						 &entry->ipv4.l2;
++}
++
+ static void econet_foe_entry_prepare(struct econet_foe_entry *entry, u8 l4proto,
+-				     u8 pse_port, const u8 *src_mac,
+-				     const u8 *dest_mac)
++				     u8 pkt_type, u8 pse_port,
++				     const u8 *src_mac, const u8 *dest_mac)
+ {
+-	u32 ib2;
++	struct econet_foe_mac_info *l2;
++	u32 *ib2;
+ 
+ 	memset(entry, 0, sizeof(*entry));
+ 	entry->ib1 = FIELD_PREP(AIROHA_FOE_IB1_BIND_STATE, AIROHA_FOE_STATE_BIND) |
+-		FIELD_PREP(AIROHA_FOE_IB1_BIND_PACKET_TYPE,
+-			   PPE_PKT_TYPE_IPV4_HNAPT) |
++		FIELD_PREP(AIROHA_FOE_IB1_BIND_PACKET_TYPE, pkt_type) |
+ 		FIELD_PREP(AIROHA_FOE_IB1_BIND_UDP, l4proto == IPPROTO_UDP) |
+ 		EN751221_FOE_IB1_BIND_CACHE | AIROHA_FOE_IB1_BIND_TTL;
+ 
+-	ib2 = FIELD_PREP(EN751221_FOE_IB2_DEST_PORT, pse_port) |
+-		FIELD_PREP(EN751221_FOE_IB2_PORT_MG, 0x3f) |
+-		FIELD_PREP(EN751221_FOE_IB2_PORT_AG, 0x3f);
++	ib2 = econet_foe_entry_ib2(entry);
++	*ib2 = FIELD_PREP(EN751221_FOE_IB2_DEST_PORT, pse_port) |
++	       FIELD_PREP(EN751221_FOE_IB2_PORT_MG, 0x3f) |
++	       FIELD_PREP(EN751221_FOE_IB2_PORT_AG, 0x3f);
+ 	if (is_multicast_ether_addr(dest_mac))
+-		ib2 |= EN751221_FOE_IB2_MULTICAST;
+-	entry->ipv4.ib2 = ib2;
++		*ib2 |= EN751221_FOE_IB2_MULTICAST;
+ 
+-	entry->ipv4.l2.dest_mac_hi = get_unaligned_be32(dest_mac);
+-	entry->ipv4.l2.dest_mac_lo = get_unaligned_be16(dest_mac + 4);
+-	entry->ipv4.l2.src_mac_hi = get_unaligned_be32(src_mac);
+-	entry->ipv4.l2.src_mac_lo = get_unaligned_be16(src_mac + 4);
+-	entry->ipv4.l2.etype = ETH_P_IP;
++	l2 = econet_foe_entry_l2(entry);
++	l2->dest_mac_hi = get_unaligned_be32(dest_mac);
++	l2->dest_mac_lo = get_unaligned_be16(dest_mac + 4);
++	l2->src_mac_hi = get_unaligned_be32(src_mac);
++	l2->src_mac_lo = get_unaligned_be16(src_mac + 4);
++	l2->etype = pkt_type == PPE_PKT_TYPE_IPV6_ROUTE_5T ? ETH_P_IPV6 :
++							 ETH_P_IP;
+ }
+ 
+ static void econet_foe_entry_set_ipv4_tuple(struct econet_foe_entry *entry,
+@@ -2629,18 +2656,38 @@ static void econet_foe_entry_set_ipv4_tuple(struct econet_foe_entry *entry,
+ 	tuple->dest_port = be16_to_cpu(dest_port);
+ }
+ 
++static void econet_foe_entry_set_ipv6_tuple(struct econet_foe_entry *entry,
++					    const struct in6_addr *src_addr,
++					    __be16 src_port,
++					    const struct in6_addr *dest_addr,
++					    __be16 dest_port)
++{
++	int i;
++
++	for (i = 0; i < ARRAY_SIZE(entry->ipv6.src_ip); i++) {
++		entry->ipv6.src_ip[i] = be32_to_cpu(src_addr->s6_addr32[i]);
++		entry->ipv6.dest_ip[i] = be32_to_cpu(dest_addr->s6_addr32[i]);
++	}
++	entry->ipv6.src_port = be16_to_cpu(src_port);
++	entry->ipv6.dest_port = be16_to_cpu(dest_port);
++}
++
+ static void econet_foe_entry_set_pse_port(struct econet_foe_entry *entry, u8 port)
+ {
+-	entry->ipv4.ib2 &= ~(EN751221_FOE_IB2_DEST_PORT | EN751221_FOE_IB2_PSE_QOS);
+-	entry->ipv4.ib2 |= FIELD_PREP(EN751221_FOE_IB2_DEST_PORT, port);
++	u32 *ib2 = econet_foe_entry_ib2(entry);
++
++	*ib2 &= ~(EN751221_FOE_IB2_DEST_PORT | EN751221_FOE_IB2_PSE_QOS);
++	*ib2 |= FIELD_PREP(EN751221_FOE_IB2_DEST_PORT, port);
+ 	if (port == EN751221_DPORT_QDMA_HW)
+-		entry->ipv4.ib2 |= EN751221_FOE_IB2_PSE_QOS;
++		*ib2 |= EN751221_FOE_IB2_PSE_QOS;
+ }
+ 
+ static void econet_foe_entry_set_queue(struct econet_foe_entry *entry, u8 queue)
+ {
+-	entry->ipv4.ib2 &= ~EN751221_FOE_IB2_QID;
+-	entry->ipv4.ib2 |= FIELD_PREP(EN751221_FOE_IB2_QID, queue);
++	u32 *ib2 = econet_foe_entry_ib2(entry);
++
++	*ib2 &= ~EN751221_FOE_IB2_QID;
++	*ib2 |= FIELD_PREP(EN751221_FOE_IB2_QID, queue);
+ }
+ 
+ static int econet_foe_entry_set_xpon(struct econet_foe_entry *entry,
+@@ -2666,11 +2713,11 @@ static int econet_foe_entry_set_xpon(struct econet_foe_entry *entry,
+ 	 */
+ 	econet_foe_entry_set_pse_port(entry, EN751221_DPORT_QDMA_HW);
+ 	econet_foe_entry_set_queue(entry, info.queue);
+-	entry->ipv4.udf_tsid &= ~(EN751221_FOE_UDF_TSID |
+-				  EN751221_FOE_UDF_CHANNEL);
+-	entry->ipv4.udf_tsid |= FIELD_PREP(EN751221_FOE_UDF_CHANNEL,
+-				      info.tcont);
+-	entry->ipv4.l2.etype = info.gem_port_id;
++	*econet_foe_entry_udf(entry) &= ~(EN751221_FOE_UDF_TSID |
++					 EN751221_FOE_UDF_CHANNEL);
++	*econet_foe_entry_udf(entry) |= FIELD_PREP(EN751221_FOE_UDF_CHANNEL,
++					     info.tcont);
++	econet_foe_entry_l2(entry)->etype = info.gem_port_id;
+ 
+ 	return 0;
+ }
+@@ -2686,7 +2733,7 @@ static int econet_foe_entry_set_vlan(struct econet_foe_entry *entry, u16 vid,
+ 			AIROHA_FOE_IB1_BIND_VPM);
+ 	entry->ib1 |= FIELD_PREP(EN751221_FOE_IB1_BIND_VLAN_LAYER, 1) |
+ 		      FIELD_PREP(AIROHA_FOE_IB1_BIND_VPM, 1);
+-	entry->ipv4.l2.vlan1 = FIELD_PREP(VLAN_PRIO_MASK, prio) | vid;
++	econet_foe_entry_l2(entry)->vlan1 = FIELD_PREP(VLAN_PRIO_MASK, prio) | vid;
+ 
+ 	return 0;
+ }
+@@ -2694,7 +2741,7 @@ static int econet_foe_entry_set_vlan(struct econet_foe_entry *entry, u16 vid,
+ static void econet_foe_entry_set_dsa(struct econet_foe_entry *entry, int port,
+ 				     bool passthrough)
+ {
+-	struct econet_foe_mac_info *l2 = &entry->ipv4.l2;
++	struct econet_foe_mac_info *l2 = econet_foe_entry_l2(entry);
+ 
+ 	l2->etype = BIT(port) & GENMASK(5, 0);
+ 	if (passthrough)
+@@ -2709,7 +2756,7 @@ static void econet_foe_entry_set_dsa(struct econet_foe_entry *entry, int port,
+ 
+ static void econet_foe_entry_set_pppoe(struct econet_foe_entry *entry, u16 sid)
+ {
+-	struct econet_foe_mac_info *l2 = &entry->ipv4.l2;
++	struct econet_foe_mac_info *l2 = econet_foe_entry_l2(entry);
+ 
+ 	if (!(entry->ib1 & EN751221_FOE_IB1_BIND_VLAN_LAYER) ||
+ 	    (entry->ib1 & EN751221_FOE_IB1_BIND_VLAN_TAG))
+@@ -2720,16 +2767,17 @@ static void econet_foe_entry_set_pppoe(struct econet_foe_entry *entry, u16 sid)
+ 
+ static void econet_foe_entry_set_bind_metadata(struct econet_foe_entry *entry)
+ {
+-	u8 port = FIELD_GET(EN751221_FOE_IB2_DEST_PORT, entry->ipv4.ib2);
++	u32 *udf = econet_foe_entry_udf(entry);
++	u32 *ib2 = econet_foe_entry_ib2(entry);
++	u8 port = FIELD_GET(EN751221_FOE_IB2_DEST_PORT, *ib2);
+ 
+ 	entry->ib1 &= ~EN751221_FOE_IB1_BIND_VLAN_LAYER;
+ 	entry->ib1 |= FIELD_PREP(EN751221_FOE_IB1_BIND_VLAN_LAYER, 1);
+ 
+ 	/* act_dp is a pseudo-interface UDF, not the PSE destination. */
+-	entry->ipv4.udf_tsid &= ~EN751221_FOE_UDF_ACT_DP;
++	*udf &= ~EN751221_FOE_UDF_ACT_DP;
+ 	if (port != EN751221_DPORT_QDMA_HW)
+-		entry->ipv4.udf_tsid |= FIELD_PREP(EN751221_FOE_UDF_ACT_DP,
+-					     port + 6);
++		*udf |= FIELD_PREP(EN751221_FOE_UDF_ACT_DP, port + 6);
+ }
+ 
+ static u32 econet_ppe_raw_packet_type(const struct econet_foe_entry *raw)
+@@ -2759,22 +2807,28 @@ static void econet_ppe_commit_entry(struct econet_ppe *ppe,
+ 	econet_ppe_encode_entry(entry, &raw);
+ 
+ 	/*
+-	 * The EN7512 PPE creates the IPv4 lookup key itself in an UNB entry and
+-	 * PpeClearEntryInfo() only memsets from ib2 onwards, so keep the source
+-	 * and destination addresses the hardware hashed.
+-	 *
+-	 * The port word at offset 12 is only part of the key for IPV4_HNAPT.
+-	 * The PPE learns new IPv4 flows as IPV4_ROUTE, where that word is the
+-	 * reserved field of _ipv4_hnapt and holds no ports.  The vendor bind
+-	 * path guards the copy on the packet type the hardware assigned, so do
+-	 * the same and let the parsed tuple supply the ports otherwise.
++	 * Preserve the lookup key generated by the EN7512 PPE. The vendor
++	 * PpeClearEntryInfo() keeps bytes 0..11 for IPv4 and bytes 0..39 for
++	 * IPv6 3T/5T before filling the rewrite payload. For IPv4 HNAPT the
++	 * port word at offset 12 is also part of the key; IPv4 ROUTE leaves it
++	 * reserved. IPv6 5T keeps SIP, DIP and ports in words 1..9.
+ 	 */
+ 	if (lookup_raw) {
+-		raw_words[1] = lookup_words[1];
+-		raw_words[2] = lookup_words[2];
+-		if (econet_ppe_raw_packet_type(lookup_raw) ==
+-		    PPE_PKT_TYPE_IPV4_HNAPT)
++		switch (econet_ppe_raw_packet_type(lookup_raw)) {
++		case PPE_PKT_TYPE_IPV4_HNAPT:
+ 			raw_words[3] = lookup_words[3];
++			fallthrough;
++		case PPE_PKT_TYPE_IPV4_ROUTE:
++			raw_words[1] = lookup_words[1];
++			raw_words[2] = lookup_words[2];
++			break;
++		case PPE_PKT_TYPE_IPV6_ROUTE_5T:
++			for (i = 1; i <= 9; i++)
++				raw_words[i] = lookup_words[i];
++			break;
++		default:
++			break;
++		}
+ 	}
+ 	words = (const u32 *)&raw;
+ 
+@@ -2898,16 +2952,29 @@ static u16 econet_ppe_find_bind_way(struct econet_ppe *ppe,
+ 	return EN751221_PPE_INVALID_HASH;
+ }
+ 
+-static bool econet_ppe_parse_ipv4_tuple(struct sk_buff *skb, u32 *src_ip,
+-					u32 *dest_ip, u16 *src_port,
+-					u16 *dest_port)
++struct econet_ppe_tuple {
++	u16 addr_type;
++	union {
++		struct {
++			u32 src;
++			u32 dest;
++		} v4;
++		struct {
++			struct in6_addr src;
++			struct in6_addr dest;
++		} v6;
++	};
++	u16 src_port;
++	u16 dest_port;
++};
++
++static bool econet_ppe_parse_tuple(struct sk_buff *skb,
++				   struct econet_ppe_tuple *tuple)
+ {
+ 	const u8 *data = skb->data;
+ 	unsigned int len = skb->len;
+-	const u8 *iph, *l4;
+ 	unsigned int proto_off = 12, off;
+ 	u16 proto;
+-	u8 ihl;
+ 
+ 	if (len < ETH_HLEN)
+ 		return false;
+@@ -2918,7 +2985,8 @@ static bool econet_ppe_parse_ipv4_tuple(struct sk_buff *skb, u32 *src_ip,
+ 			return false;
+ 		proto_off += VLAN_HLEN;
+ 		proto = get_unaligned_be16(data + proto_off);
+-	} else if (proto != ETH_P_IP && proto != ETH_P_PPP_SES) {
++	} else if (proto != ETH_P_IP && proto != ETH_P_IPV6 &&
++		   proto != ETH_P_PPP_SES) {
+ 		/* MTK special tag occupies the ethertype/TCI position. */
+ 		if (len < ETH_HLEN + 4)
+ 			return false;
+@@ -2928,39 +2996,101 @@ static bool econet_ppe_parse_ipv4_tuple(struct sk_buff *skb, u32 *src_ip,
+ 	off = proto_off + sizeof(__be16);
+ 
+ 	if (proto == ETH_P_PPP_SES) {
+-		if (len < proto_off + 10 ||
+-		    get_unaligned_be16(data + proto_off + 8) != PPP_IP)
++		u16 ppp_proto;
++
++		if (len < proto_off + 10)
++			return false;
++		ppp_proto = get_unaligned_be16(data + proto_off + 8);
++		if (ppp_proto == PPP_IP)
++			proto = ETH_P_IP;
++		else if (ppp_proto == PPP_IPV6)
++			proto = ETH_P_IPV6;
++		else
+ 			return false;
+ 		off = proto_off + 10;
+-		proto = ETH_P_IP;
+ 	}
+-	if (proto != ETH_P_IP || len < off + sizeof(struct iphdr))
+-		return false;
+ 
+-	iph = data + off;
+-	if ((iph[0] >> 4) != 4 ||
+-	    (iph[9] != IPPROTO_TCP && iph[9] != IPPROTO_UDP))
+-		return false;
+-	ihl = (iph[0] & 0x0f) * 4;
+-	if (ihl < sizeof(struct iphdr) || len < off + ihl + 4)
++	memset(tuple, 0, sizeof(*tuple));
++	if (proto == ETH_P_IP) {
++		const u8 *iph, *l4;
++		u8 ihl;
++
++		if (len < off + sizeof(struct iphdr))
++			return false;
++		iph = data + off;
++		if ((iph[0] >> 4) != 4 ||
++		    (iph[9] != IPPROTO_TCP && iph[9] != IPPROTO_UDP))
++			return false;
++		ihl = (iph[0] & 0x0f) * 4;
++		if (ihl < sizeof(struct iphdr) || len < off + ihl + 4)
++			return false;
++
++		l4 = iph + ihl;
++		tuple->addr_type = FLOW_DISSECTOR_KEY_IPV4_ADDRS;
++		tuple->v4.src = get_unaligned_be32(iph + offsetof(struct iphdr, saddr));
++		tuple->v4.dest = get_unaligned_be32(iph + offsetof(struct iphdr, daddr));
++		tuple->src_port = get_unaligned_be16(l4);
++		tuple->dest_port = get_unaligned_be16(l4 + 2);
++		return true;
++	}
++
++	if (proto == ETH_P_IPV6) {
++		unsigned short fragoff = 0;
++		unsigned int l4off = off;
++		int flags = 0, nexthdr;
++
++		if (len < off + sizeof(struct ipv6hdr) ||
++		    (data[off] >> 4) != 6)
++			return false;
++
++		nexthdr = ipv6_find_hdr(skb, &l4off, -1, &fragoff, &flags);
++		if ((nexthdr != IPPROTO_TCP && nexthdr != IPPROTO_UDP) ||
++		    (flags & IP6_FH_F_FRAG) || len < l4off + 4)
++			return false;
++
++		tuple->addr_type = FLOW_DISSECTOR_KEY_IPV6_ADDRS;
++		memcpy(&tuple->v6.src,
++		       data + off + offsetof(struct ipv6hdr, saddr),
++		       sizeof(tuple->v6.src));
++		memcpy(&tuple->v6.dest,
++		       data + off + offsetof(struct ipv6hdr, daddr),
++		       sizeof(tuple->v6.dest));
++		tuple->src_port = get_unaligned_be16(data + l4off);
++		tuple->dest_port = get_unaligned_be16(data + l4off + 2);
++		return true;
++	}
++
++	return false;
++}
++
++static bool
++econet_ppe_flow_matches_tuple(const struct econet_flow_entry *flow,
++			      const struct econet_ppe_tuple *tuple)
++{
++	if (flow->addr_type != tuple->addr_type ||
++	    flow->src_port != tuple->src_port ||
++	    flow->dest_port != tuple->dest_port)
+ 		return false;
+ 
+-	l4 = iph + ihl;
+-	*src_ip = get_unaligned_be32(iph + offsetof(struct iphdr, saddr));
+-	*dest_ip = get_unaligned_be32(iph + offsetof(struct iphdr, daddr));
+-	*src_port = get_unaligned_be16(l4);
+-	*dest_port = get_unaligned_be16(l4 + 2);
+-	return true;
++	if (tuple->addr_type == FLOW_DISSECTOR_KEY_IPV4_ADDRS)
++		return flow->src_ip == tuple->v4.src &&
++		       flow->dest_ip == tuple->v4.dest;
++
++	if (tuple->addr_type == FLOW_DISSECTOR_KEY_IPV6_ADDRS)
++		return ipv6_addr_equal(&flow->src_ip6, &tuple->v6.src) &&
++		       ipv6_addr_equal(&flow->dest_ip6, &tuple->v6.dest);
++
++	return false;
+ }
+ 
+ static void econet_ppe_rx_check(struct econet_ppe *ppe, struct sk_buff *skb,
+ 				u16 hash, u8 reason)
+ {
++	struct econet_ppe_tuple tuple;
+ 	struct econet_flow_entry *flow;
+ 	struct econet_foe_entry entry, lookup_raw = {};
+-	u32 src_ip, dest_ip;
+ 	bool lookup_valid;
+-	u16 src_port, dest_port, bind_hash;
++	u16 bind_hash;
+ 
+ 	if (!ppe || !READ_ONCE(ppe->armed) ||
+ 	    hash >= ppe->common.eth->soc->ppe_dram_entries)
+@@ -2969,14 +3099,12 @@ static void econet_ppe_rx_check(struct econet_ppe *ppe, struct sk_buff *skb,
+ 	    reason != AIROHA_PPE_CPU_REASON_HIT_UNBIND &&
+ 	    reason != AIROHA_PPE_CPU_REASON_HIT_UNBIND_RATE_REACHED)
+ 		return;
+-	if (!econet_ppe_parse_ipv4_tuple(skb, &src_ip, &dest_ip,
+-					 &src_port, &dest_port))
++	if (!econet_ppe_parse_tuple(skb, &tuple))
+ 		return;
+ 
+ 	spin_lock_bh(&ppe->lock);
+ 	list_for_each_entry(flow, &ppe->flows, list) {
+-		if (flow->src_ip != src_ip || flow->dest_ip != dest_ip ||
+-		    flow->src_port != src_port || flow->dest_port != dest_port)
++		if (!econet_ppe_flow_matches_tuple(flow, &tuple))
+ 			continue;
+ 
+ 		bind_hash = econet_ppe_find_bind_way(ppe, flow, hash,
+@@ -3327,59 +3455,90 @@ static int econet_flow_offload_replace(struct net_device *dev,
+ 	struct econet_ppe *ppe = econet_ppe_from_netdev(dev);
+ 	struct flow_rule *rule = flow_cls_offload_flow_rule(cls);
+ 	struct flow_match_basic basic;
+-	struct flow_match_ipv4_addrs addrs;
+ 	struct flow_match_ports ports;
+ 	struct flow_action_entry *act;
+ 	struct econet_flow_entry *flow;
+ 	struct econet_foe_entry entry;
+ 	struct ethhdr eth = {};
+ 	struct net_device *odev = NULL;
+-	__be32 src_addr, dest_addr, new_src_addr, new_dest_addr;
++	struct in6_addr src_addr6 = {}, dest_addr6 = {};
++	__be32 src_addr = 0, dest_addr = 0;
++	__be32 new_src_addr = 0, new_dest_addr = 0;
+ 	__be16 src_port, dest_port, new_src_port, new_dest_port;
+ 	__be16 vlan_proto = 0;
+-	u16 pppoe_sid = 0, vlan_id = 0;
+-	u8 l4proto, vlan_prio = 0;
++	u16 pppoe_sid = 0, vlan_id = 0, addr_type;
++	u8 l4proto, vlan_prio = 0, pkt_type;
+ 	bool vlan_push = false, xpon = false;
+ 	int i, err;
+ 
+ 	if (!ppe)
+ 		return -EOPNOTSUPP;
+ 	if (!flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_BASIC) ||
+-	    !flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_IPV4_ADDRS) ||
+ 	    !flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_PORTS)) {
+ 		NL_SET_ERR_MSG_MOD(cls->common.extack,
+-				   "EcoNet PPE supports IPv4 TCP/UDP flows only");
++				   "EcoNet PPE requires TCP/UDP 5-tuple flows");
+ 		return -EOPNOTSUPP;
+ 	}
+ 
+ 	flow_rule_match_basic(rule, &basic);
+ 	l4proto = basic.key->ip_proto;
+-	if (basic.key->n_proto != htons(ETH_P_IP) ||
+-	    (l4proto != IPPROTO_TCP && l4proto != IPPROTO_UDP))
++	if (l4proto != IPPROTO_TCP && l4proto != IPPROTO_UDP)
++		return -EOPNOTSUPP;
++	if (basic.mask->n_proto != htons(0xffff) ||
++	    basic.mask->ip_proto != 0xff)
++		return -EOPNOTSUPP;
++
++	if (basic.key->n_proto == htons(ETH_P_IP)) {
++		struct flow_match_ipv4_addrs addrs;
++
++		if (!flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_IPV4_ADDRS))
++			return -EOPNOTSUPP;
++		flow_rule_match_ipv4_addrs(rule, &addrs);
++		if (addrs.mask->src != htonl(0xffffffff) ||
++		    addrs.mask->dst != htonl(0xffffffff)) {
++			NL_SET_ERR_MSG_MOD(cls->common.extack,
++					   "EcoNet PPE requires exact IPv4 addresses");
++			return -EOPNOTSUPP;
++		}
++		src_addr = addrs.key->src;
++		dest_addr = addrs.key->dst;
++		new_src_addr = src_addr;
++		new_dest_addr = dest_addr;
++		addr_type = FLOW_DISSECTOR_KEY_IPV4_ADDRS;
++		pkt_type = PPE_PKT_TYPE_IPV4_HNAPT;
++	} else if (basic.key->n_proto == htons(ETH_P_IPV6)) {
++		struct flow_match_ipv6_addrs addrs;
++
++		if (!flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_IPV6_ADDRS))
++			return -EOPNOTSUPP;
++		flow_rule_match_ipv6_addrs(rule, &addrs);
++		if (memchr_inv(&addrs.mask->src, 0xff, sizeof(addrs.mask->src)) ||
++		    memchr_inv(&addrs.mask->dst, 0xff, sizeof(addrs.mask->dst))) {
++			NL_SET_ERR_MSG_MOD(cls->common.extack,
++					   "EcoNet PPE requires exact IPv6 addresses");
++			return -EOPNOTSUPP;
++		}
++		src_addr6 = addrs.key->src;
++		dest_addr6 = addrs.key->dst;
++		addr_type = FLOW_DISSECTOR_KEY_IPV6_ADDRS;
++		pkt_type = PPE_PKT_TYPE_IPV6_ROUTE_5T;
++	} else {
+ 		return -EOPNOTSUPP;
++	}
+ 
+-	flow_rule_match_ipv4_addrs(rule, &addrs);
+ 	flow_rule_match_ports(rule, &ports);
+-	if (basic.mask->n_proto != htons(0xffff) ||
+-	    basic.mask->ip_proto != 0xff ||
+-	    addrs.mask->src != htonl(0xffffffff) ||
+-	    addrs.mask->dst != htonl(0xffffffff) ||
+-	    ports.mask->src != htons(0xffff) ||
++	if (ports.mask->src != htons(0xffff) ||
+ 	    ports.mask->dst != htons(0xffff)) {
+ 		NL_SET_ERR_MSG_MOD(cls->common.extack,
+-				   "EcoNet PPE requires exact IPv4 5-tuple matches");
++				   "EcoNet PPE requires exact TCP/UDP ports");
+ 		return -EOPNOTSUPP;
+ 	}
+ 	if (!flow_action_basic_hw_stats_check(&rule->action,
+ 					      cls->common.extack))
+ 		return -EOPNOTSUPP;
+ 
+-	src_addr = addrs.key->src;
+-	dest_addr = addrs.key->dst;
+ 	src_port = ports.key->src;
+ 	dest_port = ports.key->dst;
+-	new_src_addr = src_addr;
+-	new_dest_addr = dest_addr;
+ 	new_src_port = src_port;
+ 	new_dest_port = dest_port;
+ 
+@@ -3391,6 +3550,8 @@ static int econet_flow_offload_replace(struct net_device *dev,
+ 				econet_flow_mangle_eth(act, &eth);
+ 				break;
+ 			case FLOW_ACT_MANGLE_HDR_TYPE_IP4:
++				if (addr_type != FLOW_DISSECTOR_KEY_IPV4_ADDRS)
++					return -EOPNOTSUPP;
+ 				err = econet_flow_mangle_ipv4(act, &new_src_addr,
+ 							      &new_dest_addr);
+ 				if (err)
+@@ -3398,11 +3559,18 @@ static int econet_flow_offload_replace(struct net_device *dev,
+ 				break;
+ 			case FLOW_ACT_MANGLE_HDR_TYPE_TCP:
+ 			case FLOW_ACT_MANGLE_HDR_TYPE_UDP:
++				/* IPv6 5T is routing-only on FoE V1; NAT66/port
++				 * translation has no rewrite tuple in this format.
++				 */
++				if (addr_type == FLOW_DISSECTOR_KEY_IPV6_ADDRS)
++					return -EOPNOTSUPP;
+ 				err = econet_flow_mangle_ports(act, &new_src_port,
+ 							       &new_dest_port);
+ 				if (err)
+ 					return err;
+ 				break;
++			case FLOW_ACT_MANGLE_HDR_TYPE_IP6:
++				return -EOPNOTSUPP;
+ 			default:
+ 				return -EOPNOTSUPP;
+ 			}
+@@ -3440,20 +3608,26 @@ static int econet_flow_offload_replace(struct net_device *dev,
+ 		return -EOPNOTSUPP;
+ 	}
+ 
+-	econet_foe_entry_prepare(&entry, l4proto, FE_PSE_PORT_GDM1,
++	econet_foe_entry_prepare(&entry, l4proto, pkt_type, FE_PSE_PORT_GDM1,
+ 				 eth.h_source, eth.h_dest);
+-	econet_foe_entry_set_ipv4_tuple(&entry, false, src_addr, src_port,
+-					dest_addr, dest_port);
+-	econet_foe_entry_set_ipv4_tuple(&entry, true, new_src_addr, new_src_port,
+-					new_dest_addr, new_dest_port);
+-	/*
+-	 * Match the vendor ordering: PpeFillInL2Info() installs VLAN/PPPoE
++	if (addr_type == FLOW_DISSECTOR_KEY_IPV4_ADDRS) {
++		econet_foe_entry_set_ipv4_tuple(&entry, false, src_addr, src_port,
++						dest_addr, dest_port);
++		econet_foe_entry_set_ipv4_tuple(&entry, true, new_src_addr,
++						new_src_port, new_dest_addr,
++						new_dest_port);
++	} else {
++		econet_foe_entry_set_ipv6_tuple(&entry, &src_addr6, src_port,
++						&dest_addr6, dest_port);
++	}
++
++	/* Match the vendor ordering: PpeFillInL2Info() installs VLAN/PPPoE
+ 	 * first and PpeSetPortInfo(FOE_MAGIC_GPON) runs last, repurposing
+ 	 * etype for the GEM port ID.
+ 	 */
+ 	if (vlan_push) {
+ 		err = econet_foe_entry_set_vlan(&entry, vlan_id, vlan_prio,
+-					vlan_proto);
++						vlan_proto);
+ 		if (err)
+ 			return err;
+ 	}
+@@ -3472,8 +3646,14 @@ static int econet_flow_offload_replace(struct net_device *dev,
+ 		return -ENOMEM;
+ 	flow->data = entry;
+ 	flow->cookie = cls->cookie;
+-	flow->src_ip = ntohl(src_addr);
+-	flow->dest_ip = ntohl(dest_addr);
++	flow->addr_type = addr_type;
++	if (addr_type == FLOW_DISSECTOR_KEY_IPV4_ADDRS) {
++		flow->src_ip = ntohl(src_addr);
++		flow->dest_ip = ntohl(dest_addr);
++	} else {
++		flow->src_ip6 = src_addr6;
++		flow->dest_ip6 = dest_addr6;
++	}
+ 	flow->src_port = ntohs(src_port);
+ 	flow->dest_port = ntohs(dest_port);
+ 	flow->hash = EN751221_PPE_INVALID_HASH;
+diff --git a/drivers/net/ethernet/airoha/airoha_ppe_debugfs.c b/drivers/net/ethernet/airoha/airoha_ppe_debugfs.c
+index bff84b02058b..0454313666f6 100644
+--- a/drivers/net/ethernet/airoha/airoha_ppe_debugfs.c
++++ b/drivers/net/ethernet/airoha/airoha_ppe_debugfs.c
+@@ -399,6 +399,30 @@ static void econet_ppe_debugfs_print_ipv4(struct seq_file *m,
+ 	seq_printf(m, " ib1=%08x ib2=%08x", entry->ib1, ipv4->ib2);
+ }
+ 
++static void econet_ppe_debugfs_print_ipv6(struct seq_file *m,
++					  const struct econet_foe_entry *entry)
++{
++	const struct econet_foe_ipv6 *ipv6 = &entry->ipv6;
++	u8 src[ETH_ALEN], dest[ETH_ALEN];
++
++	econet_ppe_debugfs_mac(&ipv6->l2, src, dest);
++	seq_puts(m, " orig=");
++	airoha_debugfs_ppe_print_tuple(m, ipv6->src_ip, ipv6->dest_ip,
++				       &ipv6->src_port, &ipv6->dest_port, true);
++	seq_printf(m,
++		   " eth=%pM->%pM etype=%04x vlan=%u,%u pppoe=%u",
++		   src, dest, ipv6->l2.etype, ipv6->l2.vlan1, ipv6->l2.vlan2,
++		   ipv6->l2.pppoe_id);
++	seq_printf(m, " act_dp=%lu tsid=%lu ch=%lu fp=%lu fqos=%d qid=%lu",
++		   FIELD_GET(EN751221_FOE_UDF_ACT_DP, ipv6->udf_tsid),
++		   FIELD_GET(EN751221_FOE_UDF_TSID, ipv6->udf_tsid),
++		   FIELD_GET(EN751221_FOE_UDF_CHANNEL, ipv6->udf_tsid),
++		   FIELD_GET(EN751221_FOE_IB2_DEST_PORT, ipv6->ib2),
++		   !!(ipv6->ib2 & EN751221_FOE_IB2_PSE_QOS),
++		   FIELD_GET(EN751221_FOE_IB2_QID, ipv6->ib2));
++	seq_printf(m, " ib1=%08x ib2=%08x", entry->ib1, ipv6->ib2);
++}
++
+ static int econet_ppe_debugfs_foe_show(struct seq_file *m, bool bind_only)
+ {
+ 	struct econet_ppe *ppe = m->private;
+@@ -428,6 +452,8 @@ static int econet_ppe_debugfs_foe_show(struct seq_file *m, bool bind_only)
+ 		if (type == PPE_PKT_TYPE_IPV4_HNAPT ||
+ 		    type == PPE_PKT_TYPE_IPV4_ROUTE)
+ 			econet_ppe_debugfs_print_ipv4(m, &entry);
++		else if (type == PPE_PKT_TYPE_IPV6_ROUTE_5T)
++			econet_ppe_debugfs_print_ipv6(m, &entry);
+ 		else
+ 			seq_printf(m, " ib1=%08x", entry.ib1);
+ 
+@@ -514,9 +540,15 @@ static int econet_ppe_debugfs_flows_show(struct seq_file *m, void *private)
+ 	spin_unlock_bh(&ppe->lock);
+ 
+ 	for (i = 0; i < n; i++) {
++		u32 type = FIELD_GET(AIROHA_FOE_IB1_BIND_PACKET_TYPE,
++				     snapshot[i].data.ib1);
++
+ 		seq_printf(m, "cookie=%lx hash=%04x", snapshot[i].cookie,
+ 			   snapshot[i].hash);
+-		econet_ppe_debugfs_print_ipv4(m, &snapshot[i].data);
++		if (type == PPE_PKT_TYPE_IPV6_ROUTE_5T)
++			econet_ppe_debugfs_print_ipv6(m, &snapshot[i].data);
++		else
++			econet_ppe_debugfs_print_ipv4(m, &snapshot[i].data);
+ 		seq_putc(m, '\n');
+ 	}
+ 
+@@ -614,6 +646,15 @@ static int econet_ppe_debugfs_foe_json_show(struct seq_file *m, void *private)
+ 				&ipv4->new.src_port,
+ 				&ipv4->new.dest_port, false);
+ 			seq_printf(m, ",\"ib2\":\"0x%08x\"", ipv4->ib2);
++		} else if (type == PPE_PKT_TYPE_IPV6_ROUTE_5T) {
++			const struct econet_foe_ipv6 *ipv6 = &entry.ipv6;
++
++			seq_putc(m, ',');
++			airoha_debugfs_ppe_print_tuple_json(m, "orig", ipv6->src_ip,
++							    ipv6->dest_ip,
++							    &ipv6->src_port,
++							    &ipv6->dest_port, true);
++			seq_printf(m, ",\"ib2\":\"0x%08x\"", ipv6->ib2);
+ 		}
+ 
+ 		seq_putc(m, '}');
+-- 
+2.55.0
+

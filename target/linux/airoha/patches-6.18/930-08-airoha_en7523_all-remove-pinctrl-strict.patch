@@ -1,0 +1,178 @@
+From 81497f352570ffa7012db3ffeb8e463be462f8c6 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Thu, 16 Jul 2026 11:52:52 -0300
+Subject: [PATCH] remove pinctrl strict
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/pinctrl/airoha/airoha-common.h  |  5 +++
+ drivers/pinctrl/airoha/pinctrl-airoha.c | 46 ++++++++++++++++++++++++-
+ drivers/pinctrl/airoha/pinctrl-an7581.c |  2 +-
+ drivers/pinctrl/airoha/pinctrl-an7583.c |  3 +-
+ drivers/pinctrl/airoha/pinctrl-en7523.c |  2 +-
+ 5 files changed, 53 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/pinctrl/airoha/airoha-common.h b/drivers/pinctrl/airoha/airoha-common.h
+index 367763678d34..c5f9c3c6b383 100644
+--- a/drivers/pinctrl/airoha/airoha-common.h
++++ b/drivers/pinctrl/airoha/airoha-common.h
+@@ -38,6 +38,8 @@
+ #define AIROHA_PIN_BANK_SIZE			(AIROHA_NUM_PINS / 2)
+ #define AIROHA_REG_GPIOCTRL_NUM_PIN		(AIROHA_NUM_PINS / 4)
+ 
++#define FORCE_GPIO_EN(n)			BIT(n)
++
+ #define PINCTRL_PIN_GROUP(id, table)					\
+ 	PINCTRL_PINGROUP(id, table##_pins, ARRAY_SIZE(table##_pins))
+ 
+@@ -123,6 +125,7 @@ struct airoha_pinctrl {
+ 	const struct airoha_pinctrl_confs_info *confs_info;
+ 
+ 	struct regmap *chip_scu;
++	u32 force_gpio_reg;
+ 	struct regmap *regmap;
+ 
+ 	struct gpio_chip gpiochip;
+@@ -144,6 +147,8 @@ struct airoha_pinctrl_match_data {
+ 	const unsigned int num_grps;
+ 	const struct airoha_pinctrl_func *funcs;
+ 	const unsigned int num_funcs;
++
++	u32 force_gpio_reg;
+ 	const struct airoha_pinctrl_confs_info confs_info[AIROHA_PINCTRL_CONFS_MAX];
+ 	const struct airoha_pinctrl_hwinit_regs *hwinit_regs;
+ 	const unsigned int num_hwinit_regs;
+diff --git a/drivers/pinctrl/airoha/pinctrl-airoha.c b/drivers/pinctrl/airoha/pinctrl-airoha.c
+index 60f152611bde..e744c0ff2bc5 100644
+--- a/drivers/pinctrl/airoha/pinctrl-airoha.c
++++ b/drivers/pinctrl/airoha/pinctrl-airoha.c
+@@ -446,13 +446,56 @@ static int airoha_pinmux_set_direction(struct pinctrl_dev *pctrl_dev,
+ 	return airoha_gpio_set_direction(&pinctrl->gpiochip, pin, input);
+ }
+ 
++static int
++airoha_pinmux_gpio_request_enable(struct pinctrl_dev *pctrl_dev,
++				  struct pinctrl_gpio_range *range,
++				  unsigned int pin)
++{
++	struct airoha_pinctrl *pinctrl = pinctrl_dev_get_drvdata(pctrl_dev);
++	int gpio;
++
++	if (!pinctrl->force_gpio_reg)
++		return 0;
++
++	gpio = airoha_convert_pin_to_reg_offset(pctrl_dev, range, pin);
++	if (gpio < 0)
++		return gpio;
++
++	if (gpio >= BITS_PER_TYPE(u32))
++		return 0;
++
++	return regmap_set_bits(pinctrl->chip_scu, pinctrl->force_gpio_reg,
++			       FORCE_GPIO_EN(gpio));
++}
++
++static void
++airoha_pinmux_gpio_disable_free(struct pinctrl_dev *pctrl_dev,
++				struct pinctrl_gpio_range *range,
++				unsigned int pin)
++{
++	struct airoha_pinctrl *pinctrl = pinctrl_dev_get_drvdata(pctrl_dev);
++	int gpio;
++
++	if (!pinctrl->force_gpio_reg)
++		return;
++
++	gpio = airoha_convert_pin_to_reg_offset(pctrl_dev, range, pin);
++	if (gpio < 0 || gpio >= BITS_PER_TYPE(u32))
++		return;
++
++	regmap_clear_bits(pinctrl->chip_scu, pinctrl->force_gpio_reg,
++			  FORCE_GPIO_EN(gpio));
++}
++
+ static const struct pinmux_ops airoha_pmxops = {
+ 	.get_functions_count = pinmux_generic_get_function_count,
+ 	.get_function_name = pinmux_generic_get_function_name,
+ 	.get_function_groups = pinmux_generic_get_function_groups,
++	.gpio_request_enable = airoha_pinmux_gpio_request_enable,
++	.gpio_disable_free = airoha_pinmux_gpio_disable_free,
+ 	.gpio_set_direction = airoha_pinmux_set_direction,
+ 	.set_mux = airoha_pinmux_set_mux,
+-	.strict = true,
++	.strict = false,
+ };
+ 
+ /* pinconf callbacks */
+@@ -801,6 +844,7 @@ int airoha_pinctrl_probe(struct platform_device *pdev)
+ 	}
+ 
+ 	pinctrl->chip_scu = map;
++	pinctrl->force_gpio_reg = data->force_gpio_reg;
+ 
+ 	/*
+ 	 * Reset all SCU mux register to reset defaults to undo bootloader modifications.
+diff --git a/drivers/pinctrl/airoha/pinctrl-an7581.c b/drivers/pinctrl/airoha/pinctrl-an7581.c
+index 53138abf40c9..b9646a3af2dc 100644
+--- a/drivers/pinctrl/airoha/pinctrl-an7581.c
++++ b/drivers/pinctrl/airoha/pinctrl-an7581.c
+@@ -64,7 +64,6 @@
+ #define JTAG_DFD_EN_MASK			BIT(3)
+ 
+ #define REG_FORCE_GPIO_EN			0x0228
+-#define FORCE_GPIO_EN(n)			BIT(n)
+ 
+ /* LED MAP */
+ #define REG_LAN_LED0_MAPPING			0x027c
+@@ -1487,6 +1486,7 @@ static const struct airoha_pinctrl_match_data pinctrl_match_data = {
+ 	.num_funcs = ARRAY_SIZE(pinctrl_funcs),
+ 	.hwinit_regs = hwinit_regs,
+ 	.num_hwinit_regs = ARRAY_SIZE(hwinit_regs),
++	.force_gpio_reg = REG_FORCE_GPIO_EN,
+ 	.confs_info = {
+ 		[AIROHA_PINCTRL_CONFS_PULLUP] = {
+ 			.confs = pinctrl_pullup_conf,
+diff --git a/drivers/pinctrl/airoha/pinctrl-an7583.c b/drivers/pinctrl/airoha/pinctrl-an7583.c
+index c8c6bc8319d4..b058f8dea8ee 100644
+--- a/drivers/pinctrl/airoha/pinctrl-an7583.c
++++ b/drivers/pinctrl/airoha/pinctrl-an7583.c
+@@ -76,8 +76,6 @@
+ #define NPU_UART_EN_MASK			BIT(2)
+ 
+ #define REG_FORCE_GPIO_EN			0x0228
+-#define FORCE_GPIO_EN(n)			BIT(n)
+-
+ #define REG_FORCE_GPIO32_EN			0x022C
+ 
+ /* LED MAP */
+@@ -1496,6 +1494,7 @@ static const struct airoha_pinctrl_match_data pinctrl_match_data = {
+ 	.num_funcs = ARRAY_SIZE(pinctrl_funcs),
+ 	.hwinit_regs = hwinit_regs,
+ 	.num_hwinit_regs = ARRAY_SIZE(hwinit_regs),
++	.force_gpio_reg = REG_FORCE_GPIO_EN,
+ 	.confs_info = {
+ 		[AIROHA_PINCTRL_CONFS_PULLUP] = {
+ 			.confs = pinctrl_pullup_conf,
+diff --git a/drivers/pinctrl/airoha/pinctrl-en7523.c b/drivers/pinctrl/airoha/pinctrl-en7523.c
+index 3627a4290ce0..8ee0716bfac7 100644
+--- a/drivers/pinctrl/airoha/pinctrl-en7523.c
++++ b/drivers/pinctrl/airoha/pinctrl-en7523.c
+@@ -53,7 +53,6 @@
+ #define NPU_UART_EN_MASK			BIT(2)
+ 
+ #define REG_FORCE_GPIO_EN			0x0224
+-#define FORCE_GPIO_EN(n)			BIT(n)
+ 
+ /* LED MAP */
+ #define REG_LAN_LED0_MAPPING			0x0278
+@@ -1123,6 +1122,7 @@ static const struct airoha_pinctrl_match_data pinctrl_match_data = {
+ 	.num_funcs = ARRAY_SIZE(pinctrl_funcs),
+ 	.hwinit_regs = hwinit_regs,
+ 	.num_hwinit_regs = ARRAY_SIZE(hwinit_regs),
++	.force_gpio_reg = REG_FORCE_GPIO_EN,
+ 	.confs_info = {
+ 		[AIROHA_PINCTRL_CONFS_PULLUP] = {
+ 			.confs = pinctrl_pullup_conf,
+-- 
+2.55.0
+

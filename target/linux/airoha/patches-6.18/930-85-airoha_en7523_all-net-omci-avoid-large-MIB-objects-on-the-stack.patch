@@ -1,0 +1,347 @@
+From 4d8fb2b14f6929cbf49bdbdf9cb99639bc25f4b2 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Sat, 18 Jul 2026 13:30:43 +0000
+Subject: [PATCH] net: omci: avoid large MIB objects on the stack
+
+Parsed extended VLAN state makes struct omci_mib_object exceed the ARM
+kernel stack frame limit.
+
+Allocate temporary MIB objects from the heap in the agent and Generic
+Netlink handlers instead of placing complete objects on the stack.
+
+Also avoid the current macro collision in the identity source helper and
+include the internal declarations so the normalizer has a visible
+prototype.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ net/omci/agent.c    | 126 ++++++++++++++++++++++++++++----------------
+ net/omci/core.c     |  44 ++++++++++------
+ net/omci/identity.c |   6 +--
+ 3 files changed, 112 insertions(+), 64 deletions(-)
+
+diff --git a/net/omci/agent.c b/net/omci/agent.c
+index 0a4961cc4b91..294b2721e32c 100644
+--- a/net/omci/agent.c
++++ b/net/omci/agent.c
+@@ -976,16 +976,23 @@ static int omci_mib_store_locked(struct omci_agent *agent,
+ static int omci_mib_add_default(struct omci_agent *agent, u16 class_id,
+ 				u16 entity_id, const void *data, size_t len)
+ {
+-	struct omci_mib_object object = {
+-		.class_id = class_id,
+-		.entity_id = entity_id,
+-		.attr_mask = 0xffff,
+-		.origin = OMCI_MIB_ORIGIN_DEFAULT,
+-	};
++	struct omci_mib_object *object;
++	int ret;
++
++	object = kzalloc(sizeof(*object), GFP_KERNEL);
++	if (!object)
++		return -ENOMEM;
+ 
++	object->class_id = class_id;
++	object->entity_id = entity_id;
++	object->attr_mask = 0xffff;
++	object->origin = OMCI_MIB_ORIGIN_DEFAULT;
+ 	if (data)
+-		memcpy(object.data, data, min(len, sizeof(object.data)));
+-	return omci_mib_store_locked(agent, &object);
++		memcpy(object->data, data, min(len, sizeof(object->data)));
++
++	ret = omci_mib_store_locked(agent, object);
++	kfree(object);
++	return ret;
+ }
+ 
+ static void omci_agent_refresh_identity_locked(struct omci_agent *agent)
+@@ -1245,19 +1252,26 @@ static struct omci_mib_object *
+ omci_get_or_create_locked(struct omci_agent *agent, u16 class_id,
+ 			  u16 entity_id, bool create)
+ {
+-	struct omci_mib_object object = {
+-		.class_id = class_id,
+-		.entity_id = entity_id,
+-		.attr_mask = 0,
+-		.origin = OMCI_MIB_ORIGIN_OLT,
+-	};
++	struct omci_mib_object *object;
+ 	struct omci_mib_object *stored;
++	int ret;
+ 
+ 	stored = omci_mib_lookup(agent, class_id, entity_id);
+ 	if (stored || !create)
+ 		return stored;
+-	if (omci_mib_store_locked(agent, &object))
++
++	object = kzalloc(sizeof(*object), GFP_KERNEL);
++	if (!object)
+ 		return NULL;
++	object->class_id = class_id;
++	object->entity_id = entity_id;
++	object->origin = OMCI_MIB_ORIGIN_OLT;
++
++	ret = omci_mib_store_locked(agent, object);
++	kfree(object);
++	if (ret)
++		return NULL;
++
+ 	return omci_mib_lookup(agent, class_id, entity_id);
+ }
+ 
+@@ -1266,29 +1280,42 @@ static u8 omci_agent_create_locked(struct omci_device *odev,
+ 				   const u8 *content)
+ {
+ 	struct omci_agent *agent = &odev->agent;
+-	struct omci_mib_object object = {
+-		.class_id = class_id,
+-		.entity_id = entity_id,
+-		.attr_mask = 0xffff,
+-		.origin = OMCI_MIB_ORIGIN_OLT,
+-	};
++	struct omci_mib_object *object;
++	u8 result = OMCI_RESULT_SUCCESS;
+ 	int ret;
+ 
+ 	if (omci_mib_lookup(agent, class_id, entity_id))
+ 		return OMCI_RESULT_INSTANCE_EXISTS;
+-	memcpy(object.data, content, sizeof(object.data));
+-	ret = omci_mib_parse_create(&object, content);
+-	if (ret)
+-		return OMCI_RESULT_PARAMETER_ERROR;
+-	ret = omci_agent_hw_update(odev, &object, OMCI_MSG_TYPE_CREATE,
+-				   content);
+-	if (ret)
+-		return OMCI_RESULT_PROCESSING_ERROR;
+-	ret = omci_mib_store_locked(agent, &object);
+-	if (ret)
++
++	object = kzalloc(sizeof(*object), GFP_KERNEL);
++	if (!object)
+ 		return OMCI_RESULT_DEVICE_BUSY;
++	object->class_id = class_id;
++	object->entity_id = entity_id;
++	object->attr_mask = 0xffff;
++	object->origin = OMCI_MIB_ORIGIN_OLT;
++	memcpy(object->data, content, sizeof(object->data));
++
++	ret = omci_mib_parse_create(object, content);
++	if (ret) {
++		result = OMCI_RESULT_PARAMETER_ERROR;
++		goto out;
++	}
++	ret = omci_agent_hw_update(odev, object, OMCI_MSG_TYPE_CREATE,
++				   content);
++	if (ret) {
++		result = OMCI_RESULT_PROCESSING_ERROR;
++		goto out;
++	}
++	ret = omci_mib_store_locked(agent, object);
++	if (ret) {
++		result = OMCI_RESULT_DEVICE_BUSY;
++		goto out;
++	}
+ 	agent->mib_sync++;
+-	return OMCI_RESULT_SUCCESS;
++out:
++	kfree(object);
++	return result;
+ }
+ 
+ static u8 omci_agent_set_locked(struct omci_device *odev, u16 class_id,
+@@ -1862,28 +1889,35 @@ int omci_agent_mib_set(struct omci_device *odev,
+ 		       const struct omci_mib_object *object)
+ {
+ 	struct omci_agent *agent = &odev->agent;
+-	struct omci_mib_object local = *object;
++	struct omci_mib_object *local;
+ 	int ret;
+ 
+-	local.origin = OMCI_MIB_ORIGIN_LOCAL;
+-	if (local.class_id == OMCI_CLASS_OLT_G) {
+-		ret = omci_olt_g_parse_set(&local, local.attr_mask, local.data,
+-					   sizeof(local.data));
++	local = kmemdup(object, sizeof(*local), GFP_KERNEL);
++	if (!local)
++		return -ENOMEM;
++
++	local->origin = OMCI_MIB_ORIGIN_LOCAL;
++	if (local->class_id == OMCI_CLASS_OLT_G) {
++		ret = omci_olt_g_parse_set(local, local->attr_mask, local->data,
++					   sizeof(local->data));
+ 		if (ret)
+-			return ret;
+-	} else if (local.class_id == OMCI_CLASS_VLAN_TAGGING_FILTER_DATA) {
+-		omci_vlan_filter_parse_create(&local, local.data);
+-	} else if (local.class_id == OMCI_CLASS_EXTENDED_VLAN) {
+-		local.extended_vlan.max_table_size = OMCI_EXT_VLAN_MAX_RULES;
+-		local.extended_vlan.valid = true;
+-		if (local.attr_mask & OMCI_EXT_VLAN_TABLE_MASK)
+-			omci_ext_vlan_update_rule(&local.extended_vlan, local.data);
++			goto out;
++	} else if (local->class_id == OMCI_CLASS_VLAN_TAGGING_FILTER_DATA) {
++		omci_vlan_filter_parse_create(local, local->data);
++	} else if (local->class_id == OMCI_CLASS_EXTENDED_VLAN) {
++		local->extended_vlan.max_table_size = OMCI_EXT_VLAN_MAX_RULES;
++		local->extended_vlan.valid = true;
++		if (local->attr_mask & OMCI_EXT_VLAN_TABLE_MASK)
++			omci_ext_vlan_update_rule(&local->extended_vlan,
++						  local->data);
+ 	}
+ 	mutex_lock(&agent->lock);
+-	ret = omci_mib_store_locked(agent, &local);
++	ret = omci_mib_store_locked(agent, local);
+ 	if (!ret)
+ 		agent->mib_sync++;
+ 	mutex_unlock(&agent->lock);
++out:
++	kfree(local);
+ 	return ret;
+ }
+ 
+diff --git a/net/omci/core.c b/net/omci/core.c
+index 05de49db1049..741e4e457259 100644
+--- a/net/omci/core.c
++++ b/net/omci/core.c
+@@ -830,7 +830,7 @@ static int omci_cmd_config_set(struct sk_buff *skb, struct genl_info *info)
+ 
+ static int omci_cmd_mib_get(struct sk_buff *skb, struct genl_info *info)
+ {
+-	struct omci_mib_object object;
++	struct omci_mib_object *object;
+ 	struct omci_device *odev;
+ 	u16 class_id;
+ 	u16 entity_id;
+@@ -842,40 +842,48 @@ static int omci_cmd_mib_get(struct sk_buff *skb, struct genl_info *info)
+ 	class_id = nla_get_u16(info->attrs[OMCI_ATTR_CLASS_ID]);
+ 	entity_id = nla_get_u16(info->attrs[OMCI_ATTR_ENTITY_ID]);
+ 
++	object = kzalloc(sizeof(*object), GFP_KERNEL);
++	if (!object)
++		return -ENOMEM;
++
+ 	mutex_lock(&omci_devices_lock);
+ 	odev = omci_get_from_info(info);
+ 	if (!odev) {
+ 		ret = -ENODEV;
+ 		goto out;
+ 	}
+-	ret = omci_agent_mib_get(odev, class_id, entity_id, &object);
++	ret = omci_agent_mib_get(odev, class_id, entity_id, object);
+ 	if (!ret)
+-		ret = omci_reply_mib(info, OMCI_CMD_MIB_GET, odev, &object,
++		ret = omci_reply_mib(info, OMCI_CMD_MIB_GET, odev, object,
+ 				     0, omci_agent_class_name(class_id));
+ out:
+ 	mutex_unlock(&omci_devices_lock);
++	kfree(object);
+ 	return ret;
+ }
+ 
+ static int omci_cmd_mib_set(struct sk_buff *skb, struct genl_info *info)
+ {
+ 	struct nlattr *data = info->attrs[OMCI_ATTR_ATTR_DATA];
+-	struct omci_mib_object object = {
+-		.origin = OMCI_MIB_ORIGIN_LOCAL,
+-	};
++	struct omci_mib_object *object;
+ 	struct omci_device *odev;
+ 	int ret;
+ 
+ 	if (!info->attrs[OMCI_ATTR_CLASS_ID] ||
+ 	    !info->attrs[OMCI_ATTR_ENTITY_ID])
+ 		return -EINVAL;
+-	object.class_id = nla_get_u16(info->attrs[OMCI_ATTR_CLASS_ID]);
+-	object.entity_id = nla_get_u16(info->attrs[OMCI_ATTR_ENTITY_ID]);
+-	object.attr_mask = info->attrs[OMCI_ATTR_ATTR_MASK] ?
++
++	object = kzalloc(sizeof(*object), GFP_KERNEL);
++	if (!object)
++		return -ENOMEM;
++	object->origin = OMCI_MIB_ORIGIN_LOCAL;
++	object->class_id = nla_get_u16(info->attrs[OMCI_ATTR_CLASS_ID]);
++	object->entity_id = nla_get_u16(info->attrs[OMCI_ATTR_ENTITY_ID]);
++	object->attr_mask = info->attrs[OMCI_ATTR_ATTR_MASK] ?
+ 		nla_get_u16(info->attrs[OMCI_ATTR_ATTR_MASK]) : 0xffff;
+ 	if (data)
+-		memcpy(object.data, nla_data(data),
+-		       min_t(size_t, nla_len(data), sizeof(object.data)));
++		memcpy(object->data, nla_data(data),
++		       min_t(size_t, nla_len(data), sizeof(object->data)));
+ 
+ 	mutex_lock(&omci_devices_lock);
+ 	odev = omci_get_from_info(info);
+@@ -883,11 +891,12 @@ static int omci_cmd_mib_set(struct sk_buff *skb, struct genl_info *info)
+ 		ret = -ENODEV;
+ 		goto out;
+ 	}
+-	ret = omci_agent_mib_set(odev, &object);
++	ret = omci_agent_mib_set(odev, object);
+ 	if (!ret)
+ 		omci_device_notify(odev, OMCI_EVENT_MIB_CHANGE);
+ out:
+ 	mutex_unlock(&omci_devices_lock);
++	kfree(object);
+ 	return ret;
+ }
+ 
+@@ -938,7 +947,7 @@ static int omci_cmd_mib_reset(struct sk_buff *skb, struct genl_info *info)
+ 
+ static int omci_cmd_mib_next(struct sk_buff *skb, struct genl_info *info)
+ {
+-	struct omci_mib_object object;
++	struct omci_mib_object *object;
+ 	struct omci_device *odev;
+ 	const char *name = NULL;
+ 	u32 index = 0;
+@@ -948,18 +957,23 @@ static int omci_cmd_mib_next(struct sk_buff *skb, struct genl_info *info)
+ 	if (info->attrs[OMCI_ATTR_INDEX])
+ 		index = nla_get_u32(info->attrs[OMCI_ATTR_INDEX]);
+ 
++	object = kzalloc(sizeof(*object), GFP_KERNEL);
++	if (!object)
++		return -ENOMEM;
++
+ 	mutex_lock(&omci_devices_lock);
+ 	odev = omci_get_from_info(info);
+ 	if (!odev) {
+ 		ret = -ENODEV;
+ 		goto out;
+ 	}
+-	ret = omci_agent_mib_next(odev, index, &object, &next_index, &name);
++	ret = omci_agent_mib_next(odev, index, object, &next_index, &name);
+ 	if (!ret)
+-		ret = omci_reply_mib(info, OMCI_CMD_MIB_NEXT, odev, &object,
++		ret = omci_reply_mib(info, OMCI_CMD_MIB_NEXT, odev, object,
+ 				     next_index, name);
+ out:
+ 	mutex_unlock(&omci_devices_lock);
++	kfree(object);
+ 	return ret;
+ }
+ 
+diff --git a/net/omci/identity.c b/net/omci/identity.c
+index 7c60ba821e28..84ae69a62c03 100644
+--- a/net/omci/identity.c
++++ b/net/omci/identity.c
+@@ -13,13 +13,13 @@
+ #include <linux/slab.h>
+ #include <linux/string.h>
+ 
+-#include <net/omci.h>
++#include "internal.h"
+ 
+ #define OMCI_IDENTITY_MAX_INPUT_LEN	64
+ 
+-static bool omci_source_can_replace(u8 current, u8 source)
++static bool omci_source_can_replace(u8 current_source, u8 source)
+ {
+-	return source >= current;
++	return source >= current_source;
+ }
+ 
+ static size_t omci_trim_input(const u8 **data, size_t len)
+-- 
+2.55.0
+

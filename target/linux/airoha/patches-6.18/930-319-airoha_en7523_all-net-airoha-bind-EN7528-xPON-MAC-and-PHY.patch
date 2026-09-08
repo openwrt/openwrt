@@ -1,0 +1,194 @@
+From 84b883b4951ba095daa57e09b9d988eb51dfd695 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Wed, 26 Aug 2026 01:29:34 -0300
+Subject: [PATCH] net: airoha: bind EN7528 xPON MAC and PHY
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_xpon.c | 12 +++
+ drivers/phy/airoha/phy-airoha-xpon.c      | 89 +++++++++++++++++------
+ 2 files changed, 77 insertions(+), 24 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_xpon.c b/drivers/net/ethernet/airoha/airoha_xpon.c
+index a32f7c86a682..fe4d390f302d 100644
+--- a/drivers/net/ethernet/airoha/airoha_xpon.c
++++ b/drivers/net/ethernet/airoha/airoha_xpon.c
+@@ -65,6 +65,7 @@
+ 
+ #define XPON_SCU_WAN_CONF              0x070
+ #define EN7523_SCU_WAN_MODE_MASK       GENMASK(7, 0)
++#define EN7528_SCU_WAN_MODE_MASK       GENMASK(2, 0)
+ #define EN751221_SCU_WAN_MODE_MASK     GENMASK(2, 0)
+ #define XPON_SCU_WAN_MODE_GPON         0x00
+ #define XPON_SCU_WAN_MODE_EPON         0x01
+@@ -563,6 +564,7 @@ static void airoha_xpon_phy_stop(struct device *dev, struct phy *phy,
+  */
+ #define GPON_RSP_TIME_RESET		0x058b
+ #define GPON_RSP_TIME_ACT_EN7523	0x0577
++#define GPON_RSP_TIME_ACT_EN7528	0x0577
+ #define GPON_RSP_TIME_ACT_EN751221	0x058b
+ #define GPON_IDLE_GEM_THLD_DEFAULT	0x001A
+ 
+@@ -4134,6 +4136,15 @@ static const struct airoha_xpon_match_data en7523_epon_data = {
+ 	.en7523_gpon_defaults = true,
+ };
+ 
++static const struct airoha_xpon_match_data en7528_xpon_data = {
++	.mode = AIROHA_XPON_MODE_GPON,
++	.mode_from_dt = true,
++	.wan_mode_mask = EN7528_SCU_WAN_MODE_MASK,
++	.gpon_fine_delay = 0x1c,
++	.gpon_rsp_time_activation = GPON_RSP_TIME_ACT_EN7528,
++	.gpon_reset_on_start = true,
++};
++
+ static const struct airoha_xpon_match_data en751221_xpon_data = {
+ 	.mode = AIROHA_XPON_MODE_GPON,
+ 	.mode_from_dt = true,
+@@ -4662,6 +4673,7 @@ static void airoha_xpon_remove(struct platform_device *pdev)
+ 
+ static const struct of_device_id airoha_xpon_of_match[] = {
+ 	{ .compatible = "airoha,en7523-xpon", .data = &en7523_xpon_data },
++	{ .compatible = "airoha,en7528-xpon", .data = &en7528_xpon_data },
+ 	{ .compatible = "econet,en751221-xpon", .data = &en751221_xpon_data },
+ 	{}
+ };
+diff --git a/drivers/phy/airoha/phy-airoha-xpon.c b/drivers/phy/airoha/phy-airoha-xpon.c
+index 9976f1d70069..bef6954746c3 100644
+--- a/drivers/phy/airoha/phy-airoha-xpon.c
++++ b/drivers/phy/airoha/phy-airoha-xpon.c
+@@ -33,6 +33,7 @@
+ 
+ #define EN7523_SCU_WAN_CONF		0x070
+ #define EN7523_SCU_WAN_MODE_MASK	GENMASK(7, 0)
++#define EN7528_SCU_WAN_MODE_MASK	GENMASK(2, 0)
+ #define EN7523_SCU_WAN_MODE_GPON	0x00
+ #define EN7523_SCU_WAN_MODE_EPON	0x01
+ #define EN7523_SCU_IOMUX_CTRL_3		0x218
+@@ -565,26 +566,10 @@ static int airoha_xpon_phy_set_mode(struct phy *phy, enum phy_mode mode,
+ 	return 0;
+ }
+ 
+-static int airoha_en7523_xpon_phy_configure(struct airoha_xpon_phy *priv)
++static int
++airoha_xpon_phy_configure_integrated_pma(struct airoha_xpon_phy *priv)
+ {
+-	u32 mode, val;
+-	int ret;
+-
+-	mode = priv->submode == AIROHA_XPON_PHY_SUBMODE_GPON ?
+-		EN7523_SCU_WAN_MODE_GPON : EN7523_SCU_WAN_MODE_EPON;
+-
+-	ret = regmap_update_bits(priv->scu, EN7523_SCU_WAN_CONF,
+-				 EN7523_SCU_WAN_MODE_MASK, mode);
+-	if (ret)
+-		return dev_err_probe(priv->dev, ret,
+-				     "failed to select xPON WAN mode\n");
+-
+-	ret = regmap_update_bits(priv->scu, EN7523_SCU_IOMUX_CTRL_3,
+-				 EN7523_SCU_IOMUX_PON_EN,
+-				 EN7523_SCU_IOMUX_PON_EN);
+-	if (ret)
+-		return dev_err_probe(priv->dev, ret,
+-				     "failed to enable xPON I/O mux\n");
++	u32 val;
+ 
+ 	airoha_xpon_phy_write(priv, XPON_RX_CTRL0, 0x18001722);
+ 	airoha_xpon_phy_rmw(priv, XPON_PHYSET10, XPON_PHYSET10_GPON,
+@@ -618,11 +603,11 @@ static int airoha_en7523_xpon_phy_configure(struct airoha_xpon_phy *priv)
+ 			       ~XPON_SERDES_RESET_RX);
+ 	mdelay(1);
+ 
+-	/* Program the EN7571 mode-dependent values before resetting the xPON
+-	 * PLL and counters.  The vendor Mode_Config_7523() sequence relies on
+-	 * these values being present when the reset is released.  Resetting
+-	 * first makes the initial power-on miss PHY_READY, while a second
+-	 * down/up works only because the values survived the first attempt.
++	/*
++	 * Program the integrated-PMA EN7571 values before resetting the xPON
++	 * PLL and counters. The vendor EN7523/EN7528 sequence relies on these
++	 * values being present when the reset is released. Resetting first can
++	 * make the initial power-on miss PHY_READY.
+ 	 */
+ 	airoha_xpon_phy_write(priv, XPON_TDCSET2, XPON_TDCSET2_EN7571);
+ 	airoha_xpon_phy_write(priv, XPON_GPON_DELIMITER_GUARD,
+@@ -658,6 +643,51 @@ static int airoha_en7523_xpon_phy_configure(struct airoha_xpon_phy *priv)
+ 	return 0;
+ }
+ 
++static int airoha_en7523_xpon_phy_configure(struct airoha_xpon_phy *priv)
++{
++	u32 mode;
++	int ret;
++
++	mode = priv->submode == AIROHA_XPON_PHY_SUBMODE_GPON ?
++		EN7523_SCU_WAN_MODE_GPON : EN7523_SCU_WAN_MODE_EPON;
++
++	ret = regmap_update_bits(priv->scu, EN7523_SCU_WAN_CONF,
++				 EN7523_SCU_WAN_MODE_MASK, mode);
++	if (ret)
++		return dev_err_probe(priv->dev, ret,
++				     "failed to select xPON WAN mode\n");
++
++	ret = regmap_update_bits(priv->scu, EN7523_SCU_IOMUX_CTRL_3,
++				 EN7523_SCU_IOMUX_PON_EN,
++				 EN7523_SCU_IOMUX_PON_EN);
++	if (ret)
++		return dev_err_probe(priv->dev, ret,
++				     "failed to enable xPON I/O mux\n");
++
++	return airoha_xpon_phy_configure_integrated_pma(priv);
++}
++
++static int airoha_en7528_xpon_phy_configure(struct airoha_xpon_phy *priv)
++{
++	u32 mode;
++	int ret;
++
++	mode = priv->submode == AIROHA_XPON_PHY_SUBMODE_GPON ?
++		EN7523_SCU_WAN_MODE_GPON : EN7523_SCU_WAN_MODE_EPON;
++
++	ret = regmap_update_bits(priv->scu, EN7523_SCU_WAN_CONF,
++				 EN7528_SCU_WAN_MODE_MASK, mode);
++	if (ret)
++		return dev_err_probe(priv->dev, ret,
++				     "failed to select EN7528 xPON WAN mode\n");
++
++	/*
++	 * The EN7528 PON pads are selected by the node's pinctrl state in
++	 * CHIP-SCU. Do not write the EN7523 NP-SCU IOMUX register here.
++	 */
++	return airoha_xpon_phy_configure_integrated_pma(priv);
++}
++
+ static void
+ econet_en751221_xpon_phy_counter_clear(struct airoha_xpon_phy *priv, u32 mask)
+ {
+@@ -1048,6 +1078,13 @@ static const struct airoha_xpon_phy_soc_data airoha_en7523_xpon_phy_data = {
+ 	.configure = airoha_en7523_xpon_phy_configure,
+ };
+ 
++static const struct airoha_xpon_phy_soc_data airoha_en7528_xpon_phy_data = {
++	.name = "EN7528",
++	.min_size = EN7523_XPON_PHY_MIN_SIZE,
++	.has_integrated_pma = true,
++	.configure = airoha_en7528_xpon_phy_configure,
++};
++
+ static const struct of_device_id airoha_xpon_phy_of_match[] = {
+ 	{
+ 		.compatible = "econet,en751221-xpon-phy",
+@@ -1057,6 +1094,10 @@ static const struct of_device_id airoha_xpon_phy_of_match[] = {
+ 		.compatible = "airoha,en7523-xpon-phy",
+ 		.data = &airoha_en7523_xpon_phy_data,
+ 	},
++	{
++		.compatible = "airoha,en7528-xpon-phy",
++		.data = &airoha_en7528_xpon_phy_data,
++	},
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(of, airoha_xpon_phy_of_match);
+-- 
+2.55.0
+

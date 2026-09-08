@@ -1,0 +1,505 @@
+From 623968210324016db024f43af5bead50d7bd9b8e Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Wed, 12 Aug 2026 13:55:35 -0300
+Subject: [PATCH] net: phy: airoha: Add support for firmware-based calibration
+
+Add support for loading board-specific BOSA calibration images when no
+external EEPROM is detected on the GN25L95. This allows the driver to
+program the necessary LUTs and configuration tables at runtime using a
+provided firmware file.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ .../bindings/net/semtech,gn25l95.yaml         |   9 +
+ drivers/net/phy/airoha/Kconfig                |   1 +
+ drivers/net/phy/airoha/gn25l95.c              | 377 +++++++++++++++++-
+ 3 files changed, 385 insertions(+), 2 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/net/semtech,gn25l95.yaml b/Documentation/devicetree/bindings/net/semtech,gn25l95.yaml
+index 3c5c22b6a730..7611f3619c97 100644
+--- a/Documentation/devicetree/bindings/net/semtech,gn25l95.yaml
++++ b/Documentation/devicetree/bindings/net/semtech,gn25l95.yaml
+@@ -24,6 +24,14 @@ properties:
+     description:
+       I2C address of the GN25L95 A2 host page, normally 0x51.
+ 
++  firmware-name:
++    $ref: /schemas/types.yaml#/definitions/string
++    description: |
++      Name of the 2048-byte board-specific BOSA calibration image. The image
++      uses the MediaTek/EcoNet vendor /bosa/hwconfig layout and is required
++      when STATUS_0 reports that no external EEPROM is present. If omitted,
++      the driver requests semtech/gn25l95-hwconfig.bin.
++
+   i2c-sfp:
+     type: object
+     description:
+@@ -59,6 +67,7 @@ examples:
+         optical-frontend@51 {
+             compatible = "semtech,gn25l95";
+             reg = <0x51>;
++            firmware-name = "semtech/gpt2741-gn25l95-hwconfig.bin";
+ 
+             sfp_i2c: i2c-sfp {
+                 #address-cells = <1>;
+diff --git a/drivers/net/phy/airoha/Kconfig b/drivers/net/phy/airoha/Kconfig
+index c8a1992e5e5d..4f57c2d51886 100644
+--- a/drivers/net/phy/airoha/Kconfig
++++ b/drivers/net/phy/airoha/Kconfig
+@@ -28,6 +28,7 @@ config EN7572_PHY
+ config GN25L95_PHY
+ 	bool "Semtech GN25L95 xPON optical frontend"
+ 	depends on AIROHA_LDDLA_PHY
++	select FW_LOADER
+ 	select REGMAP_I2C
+ 	help
+ 	  Support the Semtech GN25L95 2.5 Gbit/s burst-mode laser driver
+diff --git a/drivers/net/phy/airoha/gn25l95.c b/drivers/net/phy/airoha/gn25l95.c
+index 7ac5d5402e0c..440f852f035a 100644
+--- a/drivers/net/phy/airoha/gn25l95.c
++++ b/drivers/net/phy/airoha/gn25l95.c
+@@ -15,10 +15,12 @@
+ 
+ #include <linux/bitops.h>
+ #include <linux/delay.h>
++#include <linux/firmware.h>
+ #include <linux/i2c.h>
+ #include <linux/jiffies.h>
+ #include <linux/mod_devicetable.h>
+ #include <linux/module.h>
++#include <linux/property.h>
+ #include <linux/regmap.h>
+ #include <linux/seq_file.h>
+ #include <linux/slab.h>
+@@ -57,6 +59,32 @@
+ #define GN25L95_ALARM_RX_POWER_HIGH	BIT(7)
+ #define GN25L95_ALARM_RX_POWER_LOW	BIT(6)
+ 
++#define GN25L95_TABLE_SELECT		0x7f
++#define GN25L95_TABLE_0		0x00
++#define GN25L95_TABLE_2		0x02
++#define GN25L95_TABLE_4		0x04
++#define GN25L95_TABLE_5		0x05
++#define GN25L95_TABLE_6		0x06
++
++#define GN25L95_TABLE2_SAFE_MODE_STARTUP	0xa0
++#define GN25L95_TABLE2_STATUS_0		0xc0
++#define GN25L95_TABLE2_EE_ACCESS		0xc4
++#define GN25L95_TABLE2_EEPROM_CTRL		0xc7
++
++#define GN25L95_STATUS0_DDMI_READY	BIT(1)
++#define GN25L95_STATUS0_EEPROM_PRESENT	BIT(0)
++#define GN25L95_SAFE_MODE_NORMAL	0x6a
++
++/* Vendor /bosa/hwconfig layout. */
++#define GN25L95_HWCONFIG_SIZE		0x800
++#define GN25L95_HWCONFIG_TABLE6		0x000
++#define GN25L95_HWCONFIG_TABLE5		0x080
++#define GN25L95_HWCONFIG_TABLE4		0x100
++#define GN25L95_HWCONFIG_TABLE2		0x180
++#define GN25L95_HWCONFIG_TABLE0		0x200
++#define GN25L95_DEFAULT_FW_NAME	"semtech/gn25l95-hwconfig.bin"
++#define GN25L95_VENDOR_WRITE_DELAY_MS	10
++#define GN25L95_RESET_DELAY_MS		150
+ #define GN25L95_READY_TIMEOUT_MS	250
+ #define GN25L95_READY_POLL_MS		20
+ #define GN25L95_SOFT_TX_DELAY_MS	110
+@@ -66,7 +94,10 @@ struct gn25l95_priv {
+ 	struct airoha_lddla lddla;
+ 	struct regmap *regmap;
+ 	struct delayed_work tick_work;
++	const char *fw_name;
+ 	bool native_a0;
++	bool eeprom_present;
++	bool calibrated;
+ };
+ 
+ static const struct regmap_config gn25l95_regmap_config = {
+@@ -76,6 +107,305 @@ static const struct regmap_config gn25l95_regmap_config = {
+ 	.cache_type = REGCACHE_NONE,
+ };
+ 
++static int gn25l95_select_table(struct gn25l95_priv *priv, u8 table)
++{
++	return regmap_write(priv->regmap, GN25L95_TABLE_SELECT, table);
++}
++
++/*
++ * The vendor driver never sends the calibration image as one long I2C write.
++ * It advances in naturally aligned 1/2/4-byte transactions and waits 10 ms
++ * after each transaction.  Keep that ordering here: apart from matching the
++ * known-good firmware, it also preserves the write-latch semantics of the
++ * adjacent APCSET/BIAS/MOD DAC registers in table 2.
++ */
++static int gn25l95_vendor_write_range(struct gn25l95_priv *priv, u8 reg,
++				      const u8 *buf, size_t len)
++{
++	size_t chunk;
++	int ret;
++
++	while (len) {
++		if (!(reg & 3) && len >= 4)
++			chunk = 4;
++		else if (!(reg & 1) && len >= 2)
++			chunk = 2;
++		else
++			chunk = 1;
++
++		ret = regmap_bulk_write(priv->regmap, reg, buf, chunk);
++		if (ret)
++			return ret;
++
++		/* The vendor repeats the A8/AA writes before advancing. */
++		if ((reg == 0xa8 && chunk == 4) ||
++		    (reg == 0xaa && chunk == 2)) {
++			msleep(GN25L95_VENDOR_WRITE_DELAY_MS);
++			ret = regmap_bulk_write(priv->regmap, reg, buf, chunk);
++			if (ret)
++				return ret;
++		}
++
++		msleep(GN25L95_VENDOR_WRITE_DELAY_MS);
++		reg += chunk;
++		buf += chunk;
++		len -= chunk;
++	}
++
++	return 0;
++}
++
++static int gn25l95_soft_reset(struct gn25l95_priv *priv)
++{
++	static const u8 reset_seq[] = { 0x5d, 0x2c, 0x6a, 0xc9, 0x0b };
++	int ret;
++
++	ret = gn25l95_select_table(priv, GN25L95_TABLE_0);
++	if (ret)
++		return ret;
++
++	ret = gn25l95_vendor_write_range(priv, 0x7b, reset_seq,
++					 sizeof(reset_seq));
++	if (ret)
++		return ret;
++
++	/* Stock pon_transceiver.ko waits 0x96 ms before probing the chip. */
++	msleep(GN25L95_RESET_DELAY_MS);
++	return 0;
++}
++
++static int gn25l95_read_eeprom_status(struct gn25l95_priv *priv, u8 *status)
++{
++	unsigned int val;
++	int ret;
++
++	ret = gn25l95_select_table(priv, GN25L95_TABLE_2);
++	if (ret)
++		return ret;
++
++	ret = regmap_read(priv->regmap, GN25L95_TABLE2_STATUS_0, &val);
++	if (ret)
++		return ret;
++
++	*status = val;
++	return 0;
++}
++
++static int gn25l95_program_hwconfig(struct gn25l95_priv *priv,
++				    const u8 *data, size_t size)
++{
++	struct device *dev = priv->lddla.dev;
++	int ret;
++
++	if (size != GN25L95_HWCONFIG_SIZE)
++		return -EINVAL;
++
++	/*
++	 * Reproduce bob_readfile_init() from the stock pon_transceiver.ko.
++	 * Only the ranges used by the stock boot path are written.  In
++	 * particular table 6 0x80..0xbf is not part of that start sequence;
++	 * the calibrated APD DAC LUT is table 6 0xc0..0xff (file + 0x40).
++	 */
++	ret = gn25l95_select_table(priv, GN25L95_TABLE_2);
++	if (ret) {
++		dev_err(dev, "cannot select table 2");
++		return ret;
++	}
++
++	ret = regmap_write(priv->regmap, GN25L95_TABLE2_EEPROM_CTRL, 0);
++	if (ret) {
++		dev_err(dev, "error on set 0 for eeprom controller");
++		return ret;
++	}
++
++	ret = regmap_write(priv->regmap, GN25L95_TABLE2_EE_ACCESS, 0);
++	if (ret) {
++		dev_err(dev, "error on set 0 for eeprom access");
++		return ret;
++	}
++
++	ret = regmap_write(priv->regmap, GN25L95_TABLE2_SAFE_MODE_STARTUP, 0);
++	if (ret) {
++		dev_err(dev, "error on set safe startup mode");
++		return ret;
++	}
++
++	ret = gn25l95_select_table(priv, GN25L95_TABLE_0);
++	if (ret) {
++		dev_err(dev, "error on select table 0");
++		return ret;
++	}
++	
++	ret = gn25l95_vendor_write_range(priv, 0x00,
++					 data + GN25L95_HWCONFIG_TABLE0, 0x7b);
++	if (ret) {
++		dev_err(dev, "error on write range for table 0");
++		return ret;
++	}
++
++	ret = gn25l95_select_table(priv, GN25L95_TABLE_2);
++	if (ret) {
++		dev_err(dev, "error on select table 2 for write range");
++		return ret;
++	}
++
++	ret = gn25l95_vendor_write_range(priv, 0x80,
++					 data + GN25L95_HWCONFIG_TABLE2, 0x80);
++	if (ret) {
++		dev_err(dev, "error on write range in table 2");
++		return ret;
++	}
++	
++	ret = regmap_write(priv->regmap, GN25L95_TABLE2_SAFE_MODE_STARTUP,
++			   GN25L95_SAFE_MODE_NORMAL);
++	if (ret) {
++		dev_err(dev, "error on back to normal startup");
++		return ret;
++	}
++
++	ret = gn25l95_select_table(priv, GN25L95_TABLE_4);
++	if (ret) {
++		dev_err(dev, "error on select table 4");
++		return ret;
++	}
++	
++	ret = gn25l95_vendor_write_range(priv, 0x80,
++					 data + GN25L95_HWCONFIG_TABLE4, 0x80);
++	if (ret) {
++		dev_err(dev, "error on write range for table 4");
++		return ret;
++	}
++
++	ret = gn25l95_select_table(priv, GN25L95_TABLE_5);
++	if (ret) {
++		dev_err(dev, "error on select table 5");
++		return ret;
++	}
++
++	ret = gn25l95_vendor_write_range(priv, 0x80,
++					 data + GN25L95_HWCONFIG_TABLE5, 0x80);
++	if (ret) {
++		dev_err(dev, "error on write range table 5");
++		return ret;
++	}
++
++	ret = gn25l95_select_table(priv, GN25L95_TABLE_6);
++	if (ret) {
++		dev_err(dev, "error on select table 6");
++		return ret;
++	}
++
++	ret = gn25l95_vendor_write_range(priv, 0xc0,
++					 data + GN25L95_HWCONFIG_TABLE6 + 0x40,
++					 0x40);
++	if (ret) {
++		dev_err(dev, "error on write to table 6");
++		return ret;
++	}
++
++	/* Lower A2/DDMI does not depend on the upper-page selector. */
++	return 0;
++}
++
++static int gn25l95_verify_hwconfig(struct gn25l95_priv *priv, const u8 *data)
++{
++	struct device *dev = priv->lddla.dev;
++	unsigned int lut_first, lut_last, safe_mode;
++	u8 apd[3];
++	int ret;
++
++	ret = gn25l95_select_table(priv, GN25L95_TABLE_2);
++	if (ret) {
++		dev_err(dev, "error on select table 2");
++		return ret;
++	}
++
++	ret = regmap_bulk_read(priv->regmap, 0xbc, apd, sizeof(apd));
++	if (ret) {
++		dev_err(dev, "error read apd");
++		return ret;
++	}
++
++	ret = regmap_read(priv->regmap, GN25L95_TABLE2_SAFE_MODE_STARTUP,
++			  &safe_mode);
++	if (ret) {
++		dev_err(dev, "error on read startup mode");
++		return ret;
++	}
++
++
++	if (apd[0] != data[GN25L95_HWCONFIG_TABLE2 + 0x3c] ||
++	    apd[1] != data[GN25L95_HWCONFIG_TABLE2 + 0x3d] ||
++	    apd[2] != data[GN25L95_HWCONFIG_TABLE2 + 0x3e] ||
++	    safe_mode != GN25L95_SAFE_MODE_NORMAL) {
++		dev_err(dev, "invalid config table 2: mode 0x%04x, [%d %d %d] != [%d %d %d]",
++			safe_mode, apd[0], apd[1], apd[2], data[GN25L95_HWCONFIG_TABLE2 + 0x3c],
++			data[GN25L95_HWCONFIG_TABLE2 + 0x3d], data[GN25L95_HWCONFIG_TABLE2 + 0x3e]);
++		return -EIO;
++	}
++
++	ret = gn25l95_select_table(priv, GN25L95_TABLE_6);
++	if (ret) {
++		dev_err(dev, "error on select table 6");
++		return ret;
++	}
++
++	ret = regmap_read(priv->regmap, 0xc0, &lut_first);
++	if (ret) {
++		dev_err(dev, "error on read first lut");
++		return ret;
++	}
++
++	ret = regmap_read(priv->regmap, 0xff, &lut_last);
++	if (ret) {
++		dev_err(dev, "error on read last lut");
++		return ret;
++	}
++
++
++	if (lut_first != data[GN25L95_HWCONFIG_TABLE6 + 0x40] ||
++	    lut_last != data[GN25L95_HWCONFIG_TABLE6 + 0x7f]) {
++		dev_err(dev, "invalid table 6: luts [%d %d] != [%d %d]",
++			lut_first, lut_last, data[GN25L95_HWCONFIG_TABLE6 + 0x40],
++			data[GN25L95_HWCONFIG_TABLE6 + 0x7f]);
++		return -EIO;
++	}
++
++	dev_info(priv->lddla.dev,
++		 "calibration verified: RX_LOS=0x%02x APD_CTRL=0x%02x APD=0x%02x APD_LUT=0x%02x..0x%02x\n",
++		 apd[0], apd[1], apd[2], lut_first, lut_last);
++	return 0;
++}
++
++static int gn25l95_load_hwconfig(struct gn25l95_priv *priv)
++{
++	const struct firmware *fw;
++	int ret;
++
++	ret = request_firmware(&fw, priv->fw_name, priv->lddla.dev);
++	if (ret)
++		return dev_err_probe(priv->lddla.dev, ret,
++				     "calibration '%s' not found\n", priv->fw_name);
++
++	if (fw->size != GN25L95_HWCONFIG_SIZE) {
++		dev_err(priv->lddla.dev,
++			"calibration '%s' has invalid size %zu (expected %u)\n",
++			priv->fw_name, fw->size, GN25L95_HWCONFIG_SIZE);
++		ret = -EINVAL;
++		goto out_release;
++	}
++
++	ret = gn25l95_program_hwconfig(priv, fw->data, fw->size);
++	if (!ret)
++		ret = gn25l95_verify_hwconfig(priv, fw->data);
++	if (!ret)
++		priv->calibrated = true;
++
++out_release:
++	release_firmware(fw);
++	return ret;
++}
++
+ static int gn25l95_read_a0(struct gn25l95_priv *priv, u8 reg, u8 *buf,
+ 			   size_t len)
+ {
+@@ -268,6 +598,10 @@ static void gn25l95_op_diag_show(struct airoha_lddla *lddla,
+ 		gn25l95_read_a0(priv, 0, &a0_id, 1);
+ 
+ 	seq_printf(s, "native A0:   %s\n", priv->native_a0 ? "yes" : "no");
++	seq_printf(s, "ext EEPROM:  %s\n", priv->eeprom_present ? "yes" : "no");
++	seq_printf(s, "calibrated:  %s\n", priv->calibrated ? "yes" : "no");
++	if (!priv->eeprom_present)
++		seq_printf(s, "hwconfig:    %s\n", priv->fw_name);
+ 	if (priv->native_a0)
+ 		seq_printf(s, "A0 id:       0x%02x\n", a0_id);
+ 	seq_printf(s, "status:      0x%02x\n", status & 0xff);
+@@ -337,7 +671,7 @@ static int gn25l95_probe(struct i2c_client *client)
+ {
+ 	struct device *dev = &client->dev;
+ 	struct gn25l95_priv *priv;
+-	u8 a0_id;
++	u8 a0_id, status0;
+ 	unsigned int status;
+ 	int ret;
+ 
+@@ -371,12 +705,50 @@ static int gn25l95_probe(struct i2c_client *client)
+ 		return dev_err_probe(dev, ret,
+ 				     "GN25L95 A2 interface did not respond\n");
+ 
++	ret = device_property_read_string(dev, "firmware-name", &priv->fw_name);
++	if (ret)
++		priv->fw_name = GN25L95_DEFAULT_FW_NAME;
++
++	ret = gn25l95_soft_reset(priv);
++	if (ret)
++		return dev_err_probe(dev, ret, "GN25L95 soft reset failed\n");
++
++	ret = gn25l95_wait_accessible(priv, &status);
++	if (ret)
++		return dev_err_probe(dev, ret,
++				     "GN25L95 did not return after soft reset\n");
++
++	ret = gn25l95_read_eeprom_status(priv, &status0);
++	if (ret)
++		return dev_err_probe(dev, ret,
++				     "failed to read EEPROM status\n");
++
++	priv->eeprom_present = !!(status0 & GN25L95_STATUS0_EEPROM_PRESENT);
++	dev_info(dev,
++		 "GN25L95 %s external EEPROM (STATUS_0=0x%02x, DDMI_READY=%u)\n",
++		 priv->eeprom_present ? "has" : "has no", status0,
++		 !!(status0 & GN25L95_STATUS0_DDMI_READY));
++
++	if (!priv->eeprom_present) {
++		dev_info(dev, "loading board BOSA calibration from %s\n",
++			 priv->fw_name);
++		ret = gn25l95_load_hwconfig(priv);
++		if (ret)
++			return dev_err_probe(dev, ret, "error on loading hwconfig error code %d",
++					     ret);
++		dev_info(dev, "board BOSA calibration programmed\n");
++	}
++
+ 	priv->native_a0 = !gn25l95_read_a0(priv, 0, &a0_id, 1);
+ 	if (priv->native_a0)
+ 		dev_info(dev, "native SFF A0/A2 interface detected (A0 id 0x%02x)\n",
+ 			 a0_id);
+ 	else
+-		dev_info(dev, "A2-only interface detected; possible external-MCU mode\n");
++		dev_info(dev, "A2-only interface detected; host-calibrated mode\n");
++
++	ret = regmap_read(priv->regmap, GN25L95_STATUS_CTRL, &status);
++	if (ret)
++		return dev_err_probe(dev, ret, "failed to read frontend status\n");
+ 
+ 	if (status & GN25L95_STATUS_DATA_READY_BAR) {
+ 		dev_warn(dev,
+@@ -439,5 +811,6 @@ struct i2c_driver gn25l95_i2c_driver = {
+ 	.id_table = gn25l95_i2c_ids,
+ };
+ 
++MODULE_FIRMWARE(GN25L95_DEFAULT_FW_NAME);
+ MODULE_DESCRIPTION("Semtech GN25L95 xPON optical frontend driver");
+ MODULE_LICENSE("GPL");
+-- 
+2.55.0
+

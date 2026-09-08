@@ -1,0 +1,180 @@
+From f2beaad9e9f1da0d376901a1bc6935f269ccbebb Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Tue, 11 Aug 2026 19:53:55 -0300
+Subject: [PATCH] clk: en7523: Enable xPON ToD clock and update xPON
+ initialization
+
+Enable the ToD clock and divider in the EN751221 SCU to ensure proper
+MAC operation. Additionally, update the airoha_xpon driver to remove
+an improper reset during probe and session start for EN751221 devices,
+aligning the initialization sequence with vendor requirements by
+selecting the WAN mode instead of resetting the MAC.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/clk/clk-en7523.c                  | 27 ++++++++++++
+ drivers/net/ethernet/airoha/airoha_xpon.c | 50 ++++++++++++++---------
+ 2 files changed, 58 insertions(+), 19 deletions(-)
+
+diff --git a/drivers/clk/clk-en7523.c b/drivers/clk/clk-en7523.c
+index 0718e89c9ec8..638e3a7b634c 100644
+--- a/drivers/clk/clk-en7523.c
++++ b/drivers/clk/clk-en7523.c
+@@ -104,6 +104,10 @@
+ #define EN751221_REG_BUS_MASK		GENMASK(21, 12)
+ #define EN751221_REG_SSR3		0x094
+ #define EN751221_REG_SSR3_GSW_MASK	GENMASK(9, 8)
++#define EN751221_REG_NP_PER_DOM_CLK_GAT_1	0x0e4
++#define   EN751221_XPON_TOD_CLK_EN	BIT(8)
++#define EN751221_REG_TOD_DIVIDER_ENABLE	0x0ec
++#define   EN751221_XPON_TOD_DIV_EN	BIT(1)
+ #define EN751221_MAX_CLKS		5
+ 
+ enum en_hir {
+@@ -1814,6 +1818,29 @@ static int en751221_clk_hw_init(struct platform_device *pdev,
+ 	if (err)
+ 		return err;
+ 
++	/*
++	 * The EN751221 xPON_1g SDK enables these CHIP-SCU gates during
++	 * gpon_init() before normal GPON MAC bring-up:
++	 *
++	 *   0x1fa200e4 |= BIT(8);
++	 *   0x1fa200ec |= BIT(1);
++	 *
++	 * Program them from the SCU provider so xPON consumers cannot reach
++	 * the MAC reset/register path with the vendor-required ToD clock path
++	 * still gated.
++	 */
++	err = regmap_set_bits(map, EN751221_REG_NP_PER_DOM_CLK_GAT_1,
++			      EN751221_XPON_TOD_CLK_EN);
++	if (err)
++		return dev_err_probe(&pdev->dev, err,
++				     "failed to enable EN751221 xPON ToD clock\n");
++
++	err = regmap_set_bits(map, EN751221_REG_TOD_DIVIDER_ENABLE,
++			      EN751221_XPON_TOD_DIV_EN);
++	if (err)
++		return dev_err_probe(&pdev->dev, err,
++				     "failed to enable EN751221 xPON ToD divider\n");
++
+ 	return register_resets(&pdev->dev, clk_map, soc_data);
+ }
+ 
+diff --git a/drivers/net/ethernet/airoha/airoha_xpon.c b/drivers/net/ethernet/airoha/airoha_xpon.c
+index 386d83380b28..2bb13a966e99 100644
+--- a/drivers/net/ethernet/airoha/airoha_xpon.c
++++ b/drivers/net/ethernet/airoha/airoha_xpon.c
+@@ -78,7 +78,8 @@ struct airoha_xpon_match_data {
+ 	u8 gpon_fine_delay;
+ 	bool en7523_gpon_defaults;
+ 	bool mac_irq_via_eth;
+-	bool reset_before_mmio;
++	bool prepare_before_mmio;
++	bool gpon_reset_on_start;
+ };
+ 
+ static struct device *airoha_xpon_find_lddla(struct device *dev)
+@@ -2351,13 +2352,17 @@ static int gpon_enable(struct xpon_priv *priv)
+ 		 gpon_state_name(ploam_get_state(priv->ploam)));
+ 
+ 	/*
+-	 * Every GPON session starts from a hardware reset. This covers initial
+-	 * activation, OLT deactivation recovery, LOS recovery and all runtime
+-	 * configuration changes requested through net/omci.
++	 * EN7523 starts each GPON session from a MAC reset.  The EN7521 SDK
++	 * initial-enable path instead calls gponDevResetCtrl(XPON_DISABLE),
++	 * which releases MBI without asserting RST_CTRL1[31].  A real gen1
++	 * recovery reset also stops MBI before asserting that bit, so do not
++	 * issue a bare reset here on EN751221.
+ 	 */
+-	ret = airoha_xpon_reset_mac(priv);
+-	if (ret)
+-		return ret;
++	if (priv->match_data->gpon_reset_on_start) {
++		ret = airoha_xpon_reset_mac(priv);
++		if (ret)
++			return ret;
++	}
+ 
+ 	ret = airoha_xpon_phy_start(priv->dev, priv->phy,
+ 				    AIROHA_XPON_MODE_GPON,
+@@ -3902,6 +3907,7 @@ static const struct airoha_xpon_match_data en7523_xpon_data = {
+ 	.wan_mode_mask = EN7523_SCU_WAN_MODE_MASK,
+ 	.gpon_fine_delay = DBG_DLY_FINE_INT_DEFAULT,
+ 	.en7523_gpon_defaults = true,
++	.gpon_reset_on_start = true,
+ };
+ 
+ static const struct airoha_xpon_match_data en7523_gpon_data = {
+@@ -3909,6 +3915,7 @@ static const struct airoha_xpon_match_data en7523_gpon_data = {
+ 	.wan_mode_mask = EN7523_SCU_WAN_MODE_MASK,
+ 	.gpon_fine_delay = DBG_DLY_FINE_INT_DEFAULT,
+ 	.en7523_gpon_defaults = true,
++	.gpon_reset_on_start = true,
+ };
+ 
+ static const struct airoha_xpon_match_data en7523_epon_data = {
+@@ -3924,7 +3931,7 @@ static const struct airoha_xpon_match_data en751221_xpon_data = {
+ 	.wan_mode_mask = EN751221_SCU_WAN_MODE_MASK,
+ 	.gpon_fine_delay = 0x1c,
+ 	.mac_irq_via_eth = true,
+-	.reset_before_mmio = true,
++	.prepare_before_mmio = true,
+ };
+ 
+ static const struct airoha_xpon_match_data en751221_gpon_data = {
+@@ -3932,7 +3939,7 @@ static const struct airoha_xpon_match_data en751221_gpon_data = {
+ 	.wan_mode_mask = EN751221_SCU_WAN_MODE_MASK,
+ 	.gpon_fine_delay = 0x1c,
+ 	.mac_irq_via_eth = true,
+-	.reset_before_mmio = true,
++	.prepare_before_mmio = true,
+ };
+ 
+ static const struct airoha_xpon_match_data en751221_epon_data = {
+@@ -3940,7 +3947,7 @@ static const struct airoha_xpon_match_data en751221_epon_data = {
+ 	.wan_mode_mask = EN751221_SCU_WAN_MODE_MASK,
+ 	.gpon_fine_delay = 0x1c,
+ 	.mac_irq_via_eth = true,
+-	.reset_before_mmio = true,
++	.prepare_before_mmio = true,
+ };
+ 
+ static bool airoha_xpon_is_gpon(struct xpon_priv *priv)
+@@ -4262,18 +4269,23 @@ static int airoha_xpon_probe(struct platform_device *pdev)
+ 	}
+ 
+ 	/*
+-	 * EN751221 can leave the xPON MAC reset domain in a state where the
+-	 * first access to the GPON/EPON register window stalls the MIPS bus.
+-	 * The vendor gpon_dev_init_reset() pulses RST_CTRL1[31] before normal
+-	 * MAC initialization. Do the same before airoha_xpon_init_*() touches
+-	 * GPON_INT_ENABLE/EPON_INT_EN for the first time.
++	 * The EN751221 xPON_1g SDK selects the shared WAN mux before the
++	 * first GPON/EPON MAC register initialization.  Keep that ordering:
++	 * RST_CTRL1[31] is a runtime MAC reset, not a prerequisite for mapping
++	 * or quiescing the interrupt registers during probe.
+ 	 */
+-	if (data->reset_before_mmio) {
+-		dev_info(dev, "resetting %s MAC before first register access\n",
++	if (data->prepare_before_mmio) {
++		dev_info(dev, "selecting %s WAN mode before first MAC access\n",
+ 			 airoha_xpon_mode_name(priv->mode));
+-		ret = airoha_xpon_reset_mac(priv);
+-		if (ret)
++		ret = airoha_xpon_select_wan(priv->scu, data, priv->mode);
++		if (ret) {
++			ret = dev_err_probe(dev, ret,
++					    "failed to prepare EN751221 xPON WAN mux\n");
+ 			goto err_put_gdm;
++		}
++
++		dev_info(dev, "%s WAN mode selected before first MAC access\n",
++			 airoha_xpon_mode_name(priv->mode));
+ 	}
+ 
+ 	switch (priv->mode) {
+-- 
+2.55.0
+
