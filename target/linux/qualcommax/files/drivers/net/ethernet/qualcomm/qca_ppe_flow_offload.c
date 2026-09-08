@@ -1165,6 +1165,8 @@ static void ppe_flow_encode(struct ppe_flow_data *data, bool v6, bool snat,
 		      ppe_flow_proto(data->l4proto));
 	ppe_entry_set(fw, PPE_FLOW_E_AGE_OFF, PPE_FLOW_E_AGE_LEN,
 		      PPE_FLOW_AGE_MAX);
+	ppe_entry_set(fw, PPE_FLOW_E_PRI_PROFILE_OFF,
+		      PPE_FLOW_E_PRI_PROFILE_LEN, data->priority);
 
 	fwd = snat ? PPE_FLOW_FWD_SNAT : dnat ? PPE_FLOW_FWD_DNAT :
 						PPE_FLOW_FWD_ROUTE;
@@ -1328,6 +1330,11 @@ static int ppe_flow_offload_replace(struct ppe_flow_block *fb,
 			 * nexthop, which sheds the ingress encapsulation on
 			 * its own.
 			 */
+			break;
+		case FLOW_ACTION_PRIORITY:
+			if (act->priority > PPE_QOS_MAX_PRI)
+				return ppe_flow_reject(priv, PPE_REJECT_ACTION);
+			data.priority = act->priority;
 			break;
 		case FLOW_ACTION_PPPOE_PUSH:
 			if (data.pppoe_valid)
