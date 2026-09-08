@@ -1066,8 +1066,9 @@ as adding/removing interfaces.
  struct wpabuf *
  hostapd_dpp_gas_req_handler(struct hostapd_data *hapd, const u8 *sa,
 -			    const u8 *query, size_t query_len,
+-			    const u8 *data, size_t data_len)
 +			    u8 dialog_token, const u8 *query, size_t query_len,
- 			    const u8 *data, size_t data_len)
++			    const u8 *data, size_t data_len, unsigned int freq)
  {
  	struct dpp_authentication *auth = hapd->dpp_auth;
  	struct wpabuf *resp;
@@ -1075,7 +1076,7 @@ as adding/removing interfaces.
  	wpa_printf(MSG_DEBUG, "DPP: GAS request from " MACSTR, MAC2STR(sa));
 +
 +	resp = hostapd_ucode_dpp_gas_req(hapd, sa, dialog_token,
-+					 query, query_len);
++					 query, query_len, freq);
 +	if (resp)
 +		return resp;
 +
@@ -1084,15 +1085,17 @@ as adding/removing interfaces.
  	    !ether_addr_equal(sa, auth->peer_mac_addr)) {
 --- a/src/ap/dpp_hostapd.h
 +++ b/src/ap/dpp_hostapd.h
-@@ -25,7 +25,7 @@ void hostapd_dpp_tx_status(struct hostap
+@@ -25,8 +25,8 @@ void hostapd_dpp_tx_status(struct hostap
  			   const u8 *data, size_t data_len, int ok);
  struct wpabuf *
  hostapd_dpp_gas_req_handler(struct hostapd_data *hapd, const u8 *sa,
 -			    const u8 *query, size_t query_len,
+-			    const u8 *data, size_t data_len);
 +			    u8 dialog_token, const u8 *query, size_t query_len,
- 			    const u8 *data, size_t data_len);
++			    const u8 *data, size_t data_len, unsigned int freq);
  void hostapd_dpp_gas_status_handler(struct hostapd_data *hapd, int ok);
  int hostapd_dpp_configurator_add(struct hostapd_data *hapd, const char *cmd);
+ int hostapd_dpp_configurator_remove(struct hostapd_data *hapd, const char *id);
 --- a/src/ap/gas_serv.c
 +++ b/src/ap/gas_serv.c
 @@ -1733,8 +1733,8 @@ static void gas_serv_rx_gas_initial_req(
@@ -1102,7 +1105,7 @@ as adding/removing interfaces.
 -		msg = hostapd_dpp_gas_req_handler(hapd, sa, pos, slen,
 -						  data, len);
 +		msg = hostapd_dpp_gas_req_handler(hapd, sa, dialog_token,
-+						  pos, slen, data, len);
++						  pos, slen, data, len, freq);
  		if (!msg)
  			return;
  		gas_serv_req_dpp_processing(hapd, sa, dialog_token, prot, msg,
