@@ -49,7 +49,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  int rtl822x_hwmon_init(struct phy_device *phydev);
 --- a/drivers/net/phy/realtek/realtek_main.c
 +++ b/drivers/net/phy/realtek/realtek_main.c
-@@ -230,6 +230,17 @@
+@@ -299,6 +299,17 @@ struct rtl8261x_fw_entry {
  #define   RTL826X_VEND1_SERDES_GLOBAL_CFG_HSI_INV	BIT(6)
  #define   RTL826X_VEND1_SERDES_GLOBAL_CFG_HSO_INV	BIT(7)
  
@@ -67,7 +67,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  #define RTL826X_VEND1_PKG_MODEL			0x103
  #define RTL826X_VEND1_VERSION_ID		0x104
  #define   RTL826X_VEND1_VERSION_ID_VARIANT	GENMASK(2, 0)
-@@ -2524,6 +2535,70 @@ static int rtl826x_patch_db_init(struct
+@@ -2921,6 +2932,70 @@ static int rtl826x_patch_db_init(struct
  		return rtl8264b_phy_patch_db_init(phydev);
  }
  
@@ -138,7 +138,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static int rtl826x_probe(struct phy_device *phydev)
  {
  	struct device *dev = &phydev->mdio.dev;
-@@ -2535,8 +2610,14 @@ static int rtl826x_probe(struct phy_devi
+@@ -2932,8 +3007,14 @@ static int rtl826x_probe(struct phy_devi
  		return -ENOMEM;
  
  	priv->enable_pma_low_power = device_property_read_bool(dev, "realtek,enable-pma-low-power");
@@ -153,7 +153,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	if (!priv->enable_pma_low_power)
  		phydev_warn(phydev, "PMA low-power suspend disabled\n");
  
-@@ -3337,6 +3418,7 @@ static struct phy_driver realtek_drvs[]
+@@ -3747,6 +3828,7 @@ static struct phy_driver realtek_drvs[]
  	}, {
  		.name           = "RTL8261BE 10Gbps PHY",
  		.config_init    = rtl826x_config_init,
@@ -161,7 +161,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		.probe          = rtl826x_probe,
  		.get_features   = rtl826x_get_features,
  		.suspend        = rtl826x_suspend,
-@@ -3354,6 +3436,7 @@ static struct phy_driver realtek_drvs[]
+@@ -3764,6 +3846,7 @@ static struct phy_driver realtek_drvs[]
  	}, {
  		.name           = "RTL8261N 10Gbps PHY",
  		.config_init    = rtl826x_config_init,
