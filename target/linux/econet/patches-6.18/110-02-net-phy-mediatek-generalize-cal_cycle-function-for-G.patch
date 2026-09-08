@@ -1,0 +1,78 @@
+From a9fd81f21d56702fd7d0bbea5bc19a0b2bafa685 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Fri, 24 Jul 2026 21:08:06 +0200
+Subject: [PATCH 04/10] net: phy: mediatek: generalize cal_cycle function for
+ GE SoC
+
+In preparation for support of special Software Calibration for Airoha PHY,
+it's needed to generalize the cal_cycle function as Airoha needs only
+part of its logic (the wait logic) to complete a calibration cycle.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ drivers/net/phy/mediatek/mtk-ge-soc.c | 32 ++++++++++++++++++---------
+ drivers/net/phy/mediatek/mtk-ge-soc.h |  3 +++
+ 2 files changed, 24 insertions(+), 11 deletions(-)
+
+--- a/drivers/net/phy/mediatek/mtk-ge-soc.c
++++ b/drivers/net/phy/mediatek/mtk-ge-soc.c
+@@ -38,20 +38,11 @@ struct mtk_socphy_shared {
+ 	struct mtk_socphy_priv	priv[4];
+ };
+ 
+-/* One calibration cycle consists of:
+- * 1.Set DA_CALIN_FLAG high to start calibration. Keep it high
+- *   until AD_CAL_COMP is ready to output calibration result.
+- * 2.Wait until DA_CAL_CLK is available.
+- * 3.Fetch AD_CAL_COMP_OUT.
+- */
+-static int cal_cycle(struct phy_device *phydev, int devad,
+-		     u32 regnum, u16 mask, u16 cal_val)
++int mtk_cal_cycle_wait(struct phy_device *phydev)
+ {
+ 	int reg_val;
+ 	int ret;
+ 
+-	phy_modify_mmd(phydev, devad, regnum,
+-		       mask, cal_val);
+ 	phy_set_bits_mmd(phydev, MDIO_MMD_VEND1, MTK_PHY_RG_AD_CALIN,
+ 			 MTK_PHY_DA_CALIN_FLAG);
+ 
+@@ -70,7 +61,26 @@ static int cal_cycle(struct phy_device *
+ 	ret = phy_read_mmd(phydev, MDIO_MMD_VEND1, MTK_PHY_RG_AD_CAL_COMP);
+ 	if (ret < 0)
+ 		return ret;
+-	ret = FIELD_GET(MTK_PHY_AD_CAL_COMP_OUT_MASK, ret);
++
++	return FIELD_GET(MTK_PHY_AD_CAL_COMP_OUT_MASK, ret);
++}
++EXPORT_SYMBOL_GPL(mtk_cal_cycle_wait);
++
++/* One calibration cycle consists of:
++ * 1.Set DA_CALIN_FLAG high to start calibration. Keep it high
++ *   until AD_CAL_COMP is ready to output calibration result.
++ * 2.Wait until DA_CAL_CLK is available.
++ * 3.Fetch AD_CAL_COMP_OUT.
++ */
++static int cal_cycle(struct phy_device *phydev, int devad,
++		     u32 regnum, u16 mask, u16 cal_val)
++{
++	int ret;
++
++	phy_modify_mmd(phydev, devad, regnum,
++		       mask, cal_val);
++
++	ret = mtk_cal_cycle_wait(phydev);
+ 	phydev_dbg(phydev, "cal_val: 0x%x, ret: %d\n", cal_val, ret);
+ 
+ 	return ret;
+--- a/drivers/net/phy/mediatek/mtk-ge-soc.h
++++ b/drivers/net/phy/mediatek/mtk-ge-soc.h
+@@ -354,4 +354,7 @@ enum CAL_MODE {
+ 	SW_M
+ };
+ 
++/* MTK GE SoC common functions */
++int mtk_cal_cycle_wait(struct phy_device *phydev);
++
+ #endif /* _MTK_GE_SOC_H_ */
