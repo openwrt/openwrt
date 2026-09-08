@@ -1716,8 +1716,8 @@ static u32 ppe_port_frame_len(struct qca_ppe_priv *priv, int port)
  */
 #define PPE_CPU_PORT_DL_QUEUE	2
 
-static u32 ppe_ac_uni_static(struct qca_ppe_priv *priv, int port, u64 rate_bps,
-			     u32 limit, u32 ceiling)
+static u32 ppe_ac_bufs(struct qca_ppe_priv *priv, int port, u64 rate_bps,
+		       u32 limit, u32 ceiling)
 {
 	u32 bufs, min_bufs;
 
@@ -1731,10 +1731,70 @@ static u32 ppe_ac_uni_static(struct qca_ppe_priv *priv, int port, u64 rate_bps,
 				 BITS_PER_BYTE * PPE_BM_BUF_SIZE *
 				 (u64)USEC_PER_SEC);
 
-	bufs = clamp_t(u32, bufs, min_bufs, ceiling);
+	return clamp_t(u32, bufs, min_bufs, ceiling);
+}
 
+static u32 ppe_ac_uni_static(struct qca_ppe_priv *priv, int port, u64 rate_bps,
+			     u32 limit, u32 ceiling)
+{
 	return PPE_AC_EN | PPE_AC_FORCE_AC_EN |
 	       FIELD_PREP(PPE_AC_SHARED_WEIGHT, 4) |
+	       FIELD_PREP(PPE_AC_SHARED_CEILING,
+			  ppe_ac_bufs(priv, port, rate_bps, limit, ceiling));
+}
+
+/* A static limit per queue gives a flow only the share of the depth its hash
+ * queue holds, and a single TCP flow at a long RTT needs the whole depth: at
+ * 50 Mbit/s and 92 ms a quarter of 50 ms of queue carries 26-31 Mbit/s of one
+ * flow, the same 50 ms shared by the four queues 43-44. A bottleneck's queues
+ * therefore share one admission group, sized to the depth asked for, and each
+ * may take the largest dynamic share of what is free in it: about two thirds
+ * when it holds the group alone, while together they stay within the group.
+ * Group 0 keeps the unshaped queues, so three bottlenecks get a group of their
+ * own; any further one splits its depth into static per-queue limits.
+ */
+#define PPE_AC_GRP_PORT		0
+#define PPE_AC_GRP_RATE		1
+
+static u8 ppe_ac_grp_get(struct qca_ppe_priv *priv, int port, int kind,
+			 u32 bufs)
+{
+	u8 owner = port * 2 + kind + 1, grp, free = 0;
+
+	for (grp = 1; grp < PPE_AC_GROUPS; grp++) {
+		if (priv->ac_grp_owner[grp] == owner)
+			break;
+		if (!free && !priv->ac_grp_owner[grp])
+			free = grp;
+	}
+	if (grp == PPE_AC_GROUPS)
+		grp = free;
+
+	if (grp)
+		priv->ac_grp_owner[grp] = bufs ? owner : 0;
+	if (!grp || !bufs)
+		return 0;
+
+	regmap_write(priv->regmap, PPE_QM_AC_GRP_W0(grp), 0);
+	regmap_write(priv->regmap, PPE_QM_AC_GRP_W1(grp),
+		     FIELD_PREP(PPE_AC_GRP_LIMIT, bufs));
+	regmap_write(priv->regmap, PPE_QM_AC_GRP_W2(grp), 0);
+
+	return grp;
+}
+
+static u32 ppe_ac_uni_bufs(u32 bufs)
+{
+	return PPE_AC_EN | PPE_AC_FORCE_AC_EN |
+	       FIELD_PREP(PPE_AC_SHARED_WEIGHT, 4) |
+	       FIELD_PREP(PPE_AC_SHARED_CEILING, bufs);
+}
+
+static u32 ppe_ac_uni_shared(struct qca_ppe_priv *priv, u8 grp, u32 bufs)
+{
+	return PPE_AC_EN | PPE_AC_FORCE_AC_EN | PPE_AC_SHARED_DYNAMIC |
+	       FIELD_PREP(PPE_AC_GRP_ID, grp) |
+	       FIELD_PREP(PPE_AC_SHARED_WEIGHT, FIELD_MAX(PPE_AC_SHARED_WEIGHT)) |
 	       FIELD_PREP(PPE_AC_SHARED_CEILING, bufs);
 }
 
@@ -1744,15 +1804,17 @@ static u32 ppe_ac_uni_static(struct qca_ppe_priv *priv, int port, u64 rate_bps,
  * dropping - the queue settles wherever the dynamic limit lands and the ceiling
  * has no effect at all: measured on IPQ8074 it holds around 250 buffers at any
  * ceiling from 400 down to 48. Enforcing the limit by dropping is what makes it
- * bind, and a limit worth binding at is one millisecond of the rate the shaper
- * was just given.
+ * bind, and the depth to bind at is the one tbf carries in its limit, falling
+ * back to one millisecond of the rate.
  */
 static void ppe_port_queue_limit_set(struct qca_ppe_priv *priv, int port)
 {
 	struct ppe_port_shaper *sh = &priv->shaper[port];
+	u32 qbufs[PPE_QOS_MAX_PRI + 1] = {}, rate_bufs = 0, port_bufs = 0;
 	const struct port_l0_params *p = NULL;
+	u8 rate_grp, port_grp;
+	int i, nport = 0;
 	u32 w0;
-	int i;
 
 	/* A user port's download band is four hash queues, each at the
 	 * ceiling; the CPU port's is one queue, so it takes the four's worth.
@@ -1789,30 +1851,45 @@ static void ppe_port_queue_limit_set(struct qca_ppe_priv *priv, int port)
 
 	for (i = 0; i < p->ucast_count; i++) {
 		u64 rate = i < ARRAY_SIZE(sh->queue_rate) ? sh->queue_rate[i] : 0;
-		u32 w = w0;
 
 		/* A queue given a ceiling of its own is a bottleneck the same
 		 * way a shaped port is, and a tighter one, so the standing
 		 * queue forms there and is sized from that rate instead: ten
-		 * milliseconds of it, as the port the host is behind is
-		 * given, because a millisecond is too shallow to hold one
-		 * flow at the rate.
+		 * milliseconds of it for each queue of the class, as the port
+		 * the host is behind is given.
 		 */
+		if (rate) {
+			qbufs[i] = ppe_ac_bufs(priv, port, rate,
+					       div_u64(rate * 10,
+						       BITS_PER_BYTE * 1000),
+					       priv->data->qm_ceiling);
+			rate_bufs += qbufs[i];
+		} else if (sh->rate_bps && i < 3 * PPE_FLOW_SPREAD_QUEUES) {
+			nport++;
+		}
+	}
+
+	if (sh->rate_bps && nport)
+		port_bufs = ppe_ac_bufs(priv, port, sh->rate_bps, sh->limit,
+					PPE_FLOW_SPREAD_QUEUES *
+					priv->data->qm_ceiling);
+
+	rate_grp = ppe_ac_grp_get(priv, port, PPE_AC_GRP_RATE, rate_bufs);
+	port_grp = ppe_ac_grp_get(priv, port, PPE_AC_GRP_PORT, port_bufs);
+
+	for (i = 0; i < p->ucast_count; i++) {
+		u64 rate = i < ARRAY_SIZE(sh->queue_rate) ? sh->queue_rate[i] : 0;
+		u32 w = w0;
+
 		if (rate)
-			w = ppe_ac_uni_static(priv, port, rate,
-					      div_u64(rate * 10,
-						      BITS_PER_BYTE * 1000),
-					      priv->data->qm_ceiling);
+			w = rate_grp ? ppe_ac_uni_shared(priv, rate_grp,
+							 rate_bufs) :
+				       ppe_ac_uni_bufs(qbufs[i]);
 		else if (sh->rate_bps && i < 3 * PPE_FLOW_SPREAD_QUEUES)
-			/* A band bucket holds a share of the flows and drains
-			 * at no less than its share of the port, so it takes
-			 * a share of the depth: what one bucket's flows wait
-			 * behind stays bounded whatever the other buckets do.
-			 */
-			w = ppe_ac_uni_static(priv, port, sh->rate_bps,
-					      sh->limit /
-					      PPE_FLOW_SPREAD_QUEUES,
-					      priv->data->qm_ceiling);
+			w = port_grp ? ppe_ac_uni_shared(priv, port_grp,
+							 port_bufs) :
+				       ppe_ac_uni_bufs(DIV_ROUND_UP(port_bufs,
+								    nport));
 
 		ppe_ac_uni_write(priv, p->ucast_base + i, w);
 	}
@@ -3013,13 +3090,23 @@ int qca_ppe_setup_tc_tbf(struct qca_ppe_priv *priv, int port,
 		return ppe_band_tbf(priv, port, qopt);
 
 	switch (qopt->command) {
-	case TC_TBF_REPLACE:
+	case TC_TBF_REPLACE: {
+		/* The qdisc's own limit is the depth it wants behind the
+		 * shaper, and the queue limit is taken from it, so it is in
+		 * place before the rate is programmed and put back if the
+		 * rate is refused.
+		 */
+		u32 limit = priv->shaper[port].limit;
+
+		priv->shaper[port].limit = qopt->replace_params.limit;
 		ret = ppe_port_shaper_set(priv, port,
 					  qopt->replace_params.rate.rate_bytes_ps *
 					  BITS_PER_BYTE,
 					  qopt->replace_params.max_size);
-		if (ret)
+		if (ret) {
+			priv->shaper[port].limit = limit;
 			return ret;
+		}
 
 		priv->shaper[port].tbf_handle = qopt->handle;
 		ppe_port_tx_counters(priv, port,
@@ -3028,6 +3115,7 @@ int qca_ppe_setup_tc_tbf(struct qca_ppe_priv *priv, int port,
 				     &priv->shaper[port].base_drops);
 		priv->shaper[port].base_backlog = 0;
 		return 0;
+	}
 	case TC_TBF_DESTROY:
 		/* A replacement's destroy arrives after the new qdisc has
 		 * already programmed the shaper, so only the qdisc that owns
