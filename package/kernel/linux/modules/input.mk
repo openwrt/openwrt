@@ -38,6 +38,23 @@ endef
 $(eval $(call KernelPackage,hid-generic))
 
 
+define KernelPackage/uhid
+  SUBMENU:=$(INPUT_MODULES_MENU)
+  TITLE:=User-space HID device support
+  DEPENDS:=+kmod-hid
+  KCONFIG:=CONFIG_UHID
+  FILES:=$(LINUX_DIR)/drivers/hid/uhid.ko
+  AUTOLOAD:=$(call AutoProbe,uhid)
+endef
+
+define KernelPackage/uhid/description
+ Kernel module that lets user space create HID devices, used by BlueZ
+ for Bluetooth Low Energy HID devices
+endef
+
+$(eval $(call KernelPackage,uhid))
+
+
 define KernelPackage/hid-alps
   SUBMENU:=$(INPUT_MODULES_MENU)
   TITLE:=Alps HID device support
