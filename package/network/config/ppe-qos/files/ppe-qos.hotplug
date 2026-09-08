@@ -1,0 +1,8 @@
+#!/bin/sh
+# The small-packet egress stamp has to follow the interface, not the service:
+# ppe-qos starts before hostapd creates the AP netdev, so applying it only at
+# start leaves every boot without it.
+[ "$ACTION" = add ] || exit 0
+[ -e "/sys/class/net/$DEVICENAME/phy80211" ] || exit 0
+[ -x /etc/init.d/ppe-qos ] || exit 0
+/etc/init.d/ppe-qos wifi_dev "$DEVICENAME"
