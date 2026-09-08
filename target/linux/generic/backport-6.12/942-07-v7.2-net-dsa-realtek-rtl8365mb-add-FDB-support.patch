@@ -810,7 +810,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	rc.lock_arg = priv;
  	priv->map = devm_regmap_init(dev, NULL, priv, &rc);
 @@ -326,6 +328,296 @@ void rtl83xx_reset_deassert(struct realt
- 	gpiod_set_value(priv->reset, false);
+ 	gpiod_set_value_cansleep(priv->reset, false);
  }
  
 +/**
