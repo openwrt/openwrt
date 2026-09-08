@@ -1,0 +1,126 @@
+From 1fdb55ed40fa5ebe6934bd6b93036c714ebb5ef8 Mon Sep 17 00:00:00 2001
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 15 Oct 2025 13:01:16 +0300
+Subject: [PATCH] media: v4l2-mem2mem: Don't copy frame flags in
+ v4l2_m2m_buf_copy_metadata()
+
+The v4l2_m2m_buf_copy_metadata() function takes a boolean
+copy_frame_flags argument. When true, it causes the function to copy the
+V4L2_BUF_FLAG_KEYFRAME, V4L2_BUF_FLAG_BFRAME and V4L2_BUF_FLAG_PFRAME
+flags from the output buffer to the capture buffer.
+
+There is no use cases in any upstream driver for copying the flags.
+KEY/P/B frames are properties of the bitstream buffer in some formats.
+Once decoded, this is no longer a property of the video frame and should
+be discarded.
+
+It was considered useful to know if an uncompressed frame was decoded
+from a KEY/P/B compressed frame, and to preserve that information if
+that same uncompressed frame was passed through another M2M device (e.g.
+a scaler). However, the V4L2 documentation makes it clear that the flags
+are meant for compressed frames only.
+
+Drop the copy_frame_flags argument from v4l2_m2m_buf_copy_metadata().
+The change to drivers was performed with the following Coccinelle
+semantic patch:
+
+@@
+expression src;
+expression dst;
+expression flag;
+@@
+-       v4l2_m2m_buf_copy_metadata(src, dst, flag);
++       v4l2_m2m_buf_copy_metadata(src, dst);
+
+include/media/v4l2-mem2mem.h and drivers/media/v4l2-core/v4l2-mem2mem.c
+have been updated manually.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Reviewed-by: Philipp Zabel <p.zabel@pengutronix.de>
+Reviewed-by: Benjamin Gaignard <benjamin.gaignard@collabora.com>
+Signed-off-by: Hans Verkuil <hverkuil+cisco@kernel.org>
+---
+ drivers/media/platform/rockchip/rga/rga.c       |  2 +-
+ drivers/media/platform/rockchip/rkvdec/rkvdec.c |  2 +-
+ drivers/media/platform/verisilicon/hantro_drv.c |  2 +-
+ drivers/media/v4l2-core/v4l2-mem2mem.c          |  9 ++-------
+ include/media/v4l2-mem2mem.h                    | 12 +++---------
+ 5 files changed, 8 insertions(+), 19 deletions(-)
+
+--- a/drivers/media/platform/rockchip/rga/rga.c
++++ b/drivers/media/platform/rockchip/rga/rga.c
+@@ -75,7 +75,7 @@ static irqreturn_t rga_isr(int irq, void
+ 		WARN_ON(!src);
+ 		WARN_ON(!dst);
+ 
+-		v4l2_m2m_buf_copy_metadata(src, dst, true);
++		v4l2_m2m_buf_copy_metadata(src, dst);
+ 
+ 		dst->sequence = ctx->csequence++;
+ 
+--- a/drivers/media/platform/rockchip/rkvdec/rkvdec.c
++++ b/drivers/media/platform/rockchip/rkvdec/rkvdec.c
+@@ -783,7 +783,7 @@ void rkvdec_run_preamble(struct rkvdec_c
+ 	if (src_req)
+ 		v4l2_ctrl_request_setup(src_req, &ctx->ctrl_hdl);
+ 
+-	v4l2_m2m_buf_copy_metadata(run->bufs.src, run->bufs.dst, true);
++	v4l2_m2m_buf_copy_metadata(run->bufs.src, run->bufs.dst);
+ }
+ 
+ void rkvdec_run_postamble(struct rkvdec_ctx *ctx, struct rkvdec_run *run)
+--- a/drivers/media/platform/verisilicon/hantro_drv.c
++++ b/drivers/media/platform/verisilicon/hantro_drv.c
+@@ -183,7 +183,7 @@ static void device_run(void *priv)
+ 	if (ret)
+ 		goto err_cancel_job;
+ 
+-	v4l2_m2m_buf_copy_metadata(src, dst, true);
++	v4l2_m2m_buf_copy_metadata(src, dst);
+ 
+ 	if (ctx->codec_ops->run(ctx))
+ 		goto err_cancel_job;
+--- a/drivers/media/v4l2-core/v4l2-mem2mem.c
++++ b/drivers/media/v4l2-core/v4l2-mem2mem.c
+@@ -1288,14 +1288,9 @@ void v4l2_m2m_buf_queue(struct v4l2_m2m_
+ EXPORT_SYMBOL_GPL(v4l2_m2m_buf_queue);
+ 
+ void v4l2_m2m_buf_copy_metadata(const struct vb2_v4l2_buffer *out_vb,
+-				struct vb2_v4l2_buffer *cap_vb,
+-				bool copy_frame_flags)
++				struct vb2_v4l2_buffer *cap_vb)
+ {
+-	u32 mask = V4L2_BUF_FLAG_TIMECODE | V4L2_BUF_FLAG_TSTAMP_SRC_MASK;
+-
+-	if (copy_frame_flags)
+-		mask |= V4L2_BUF_FLAG_KEYFRAME | V4L2_BUF_FLAG_PFRAME |
+-			V4L2_BUF_FLAG_BFRAME;
++	const u32 mask = V4L2_BUF_FLAG_TIMECODE | V4L2_BUF_FLAG_TSTAMP_SRC_MASK;
+ 
+ 	cap_vb->vb2_buf.timestamp = out_vb->vb2_buf.timestamp;
+ 
+--- a/include/media/v4l2-mem2mem.h
++++ b/include/media/v4l2-mem2mem.h
+@@ -845,19 +845,13 @@ v4l2_m2m_dst_buf_remove_by_idx(struct v4
+  *
+  * @out_vb: the output buffer that is the source of the metadata.
+  * @cap_vb: the capture buffer that will receive the metadata.
+- * @copy_frame_flags: copy the KEY/B/PFRAME flags as well.
+  *
+  * This helper function copies the timestamp, timecode (if the TIMECODE
+- * buffer flag was set), field and the TIMECODE, KEYFRAME, BFRAME, PFRAME
+- * and TSTAMP_SRC_MASK flags from @out_vb to @cap_vb.
+- *
+- * If @copy_frame_flags is false, then the KEYFRAME, BFRAME and PFRAME
+- * flags are not copied. This is typically needed for encoders that
+- * set this bits explicitly.
++ * buffer flag was set), field, and the TIMECODE and TSTAMP_SRC_MASK flags from
++ * @out_vb to @cap_vb.
+  */
+ void v4l2_m2m_buf_copy_metadata(const struct vb2_v4l2_buffer *out_vb,
+-				struct vb2_v4l2_buffer *cap_vb,
+-				bool copy_frame_flags);
++				struct vb2_v4l2_buffer *cap_vb);
+ 
+ /* v4l2 request helper */
+ 
