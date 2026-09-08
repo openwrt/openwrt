@@ -1689,19 +1689,80 @@ endef
 
 $(eval $(call KernelPackage,video-dma-sg))
 
+define KernelPackage/video-v4l2-h264
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=V4L2 H.264 helpers
+  HIDDEN:=1
+  KCONFIG:=CONFIG_V4L2_H264
+  FILES:=$(LINUX_DIR)/drivers/media/v4l2-core/v4l2-h264.ko
+  AUTOLOAD:=$(call AutoProbe,v4l2-h264)
+  $(call AddDepends/video)
+endef
+
+$(eval $(call KernelPackage,video-v4l2-h264))
+
+define KernelPackage/video-v4l2-vp9
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=V4L2 VP9 helpers
+  HIDDEN:=1
+  KCONFIG:=CONFIG_V4L2_VP9
+  FILES:=$(LINUX_DIR)/drivers/media/v4l2-core/v4l2-vp9.ko
+  AUTOLOAD:=$(call AutoProbe,v4l2-vp9)
+  $(call AddDepends/video)
+endef
+
+$(eval $(call KernelPackage,video-v4l2-vp9))
+
+define KernelPackage/video-v4l2-jpeg
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=V4L2 JPEG helpers
+  HIDDEN:=1
+  KCONFIG:=CONFIG_V4L2_JPEG_HELPER
+  FILES:=$(LINUX_DIR)/drivers/media/v4l2-core/v4l2-jpeg.ko
+  AUTOLOAD:=$(call AutoProbe,v4l2-jpeg)
+  $(call AddDepends/video)
+endef
+
+$(eval $(call KernelPackage,video-v4l2-jpeg))
+
 define KernelPackage/video-coda
   TITLE:=i.MX VPU support
-  DEPENDS:=@(TARGET_imx&&TARGET_imx_cortexa9) +kmod-video-mem2mem +kmod-video-dma-contig +kmod-video-vmalloc
+  DEPENDS:=@(TARGET_imx&&TARGET_imx_cortexa9) +kmod-video-mem2mem +kmod-video-dma-contig +kmod-video-vmalloc \
+	+kmod-video-v4l2-jpeg
   KCONFIG:= \
   	CONFIG_VIDEO_CODA \
   	CONFIG_VIDEO_IMX_VDOA
   FILES:= \
 	$(LINUX_DIR)/drivers/media/platform/chips-media/coda/coda-vpu.ko \
-	$(LINUX_DIR)/drivers/media/platform/chips-media/coda/imx-vdoa.ko \
-	$(LINUX_DIR)/drivers/media/v4l2-core/v4l2-jpeg.ko
-  AUTOLOAD:=$(call AutoProbe,coda-vpu imx-vdoa v4l2-jpeg)
+	$(LINUX_DIR)/drivers/media/platform/chips-media/coda/imx-vdoa.ko
+  AUTOLOAD:=$(call AutoProbe,coda-vpu imx-vdoa)
   $(call AddDepends/video)
 endef
+
+define KernelPackage/video-hantro
+  TITLE:=Hantro VPU support
+  DEPENDS:=@(TARGET_imx||TARGET_rockchip||TARGET_stm32||TARGET_sunxi) \
+	+kmod-video-mem2mem +kmod-video-dma-contig +kmod-video-vmalloc \
+	+kmod-video-v4l2-h264 +kmod-video-v4l2-vp9 +kmod-video-v4l2-jpeg
+  KCONFIG:= \
+	CONFIG_VIDEO_HANTRO \
+	CONFIG_VIDEO_HANTRO_HEVC_RFC=n \
+	CONFIG_VIDEO_HANTRO_IMX8M=y \
+	CONFIG_VIDEO_HANTRO_ROCKCHIP=y \
+	CONFIG_VIDEO_HANTRO_SAMA5D4=y \
+	CONFIG_VIDEO_HANTRO_STM32MP25=y \
+	CONFIG_VIDEO_HANTRO_SUNXI=y
+  FILES:=$(LINUX_DIR)/drivers/media/platform/verisilicon/hantro-vpu.ko
+  AUTOLOAD:=$(call AutoProbe,hantro-vpu)
+  $(call AddDepends/video)
+endef
+
+define KernelPackage/video-hantro/description
+  Stateless V4L2 driver for the Hantro (Verisilicon) video codecs found
+  in i.MX8M, Rockchip, Allwinner, Microchip and ST SoCs.
+endef
+
+$(eval $(call KernelPackage,video-hantro))
 
 define KernelPackage/video-coda/description
  The i.MX Video Processing Unit (VPU) kernel module
