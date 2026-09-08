@@ -1973,13 +1973,23 @@ int qca_ppe_setup_tc_tbf(struct qca_ppe_priv *priv, int port,
 		return -EOPNOTSUPP;
 
 	switch (qopt->command) {
-	case TC_TBF_REPLACE:
+	case TC_TBF_REPLACE: {
+		/* The qdisc's own limit is the depth it wants behind the
+		 * shaper, and the queue limit is taken from it, so it is in
+		 * place before the rate is programmed and put back if the
+		 * rate is refused.
+		 */
+		u32 limit = priv->shaper[port].limit;
+
+		priv->shaper[port].limit = qopt->replace_params.limit;
 		ret = ppe_port_shaper_set(priv, port,
 					  qopt->replace_params.rate.rate_bytes_ps *
 					  BITS_PER_BYTE,
 					  qopt->replace_params.max_size);
-		if (ret)
+		if (ret) {
+			priv->shaper[port].limit = limit;
 			return ret;
+		}
 
 		priv->shaper[port].tbf_handle = qopt->handle;
 		ppe_port_tx_counters(priv, port,
@@ -1987,6 +1997,7 @@ int qca_ppe_setup_tc_tbf(struct qca_ppe_priv *priv, int port,
 				     &priv->shaper[port].base_pkts,
 				     &priv->shaper[port].base_drops);
 		return 0;
+	}
 	case TC_TBF_DESTROY:
 		/* A replacement's destroy arrives after the new qdisc has
 		 * already programmed the shaper, so only the qdisc that owns
