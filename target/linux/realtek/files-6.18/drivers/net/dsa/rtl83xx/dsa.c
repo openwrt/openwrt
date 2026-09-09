@@ -349,9 +349,8 @@ static void rtldsa_93xx_phylink_mac_config(struct phylink_config *config,
 						  RTLDSA_MAC_LINK_STATE_SOURCE_PCS,
 						  state->interface);
 
-	if (priv->family_id == RTL9300_FAMILY_ID &&
-	    (mode == MLO_AN_FIXED ||
-	     (!priv->ports[port].phy && mode == MLO_AN_PHY)))
+	if (mode == MLO_AN_FIXED ||
+	    (!priv->ports[port].phy && mode == MLO_AN_PHY))
 		/* Keep links that require force mode forced down. */
 		sw_w32(cfg->force_en_mask, priv->r->mac_force_mode_ctrl(port));
 	else
@@ -395,9 +394,8 @@ static void rtldsa_93xx_phylink_mac_link_down(struct phylink_config *config,
 						  RTLDSA_MAC_LINK_STATE_SOURCE_PCS,
 						  interface);
 
-	if (priv->family_id == RTL9300_FAMILY_ID &&
-	    (dsa_port_is_cpu(dp) || mode == MLO_AN_FIXED ||
-	     (!priv->ports[port].phy && mode == MLO_AN_PHY)))
+	if (dsa_port_is_cpu(dp) || mode == MLO_AN_FIXED ||
+	    (!priv->ports[port].phy && mode == MLO_AN_PHY))
 		/* Preserve force mode while forcing the link down. */
 		sw_w32_mask(cfg->link_up_mask, 0,
 			    priv->r->mac_force_mode_ctrl(port));
@@ -464,9 +462,6 @@ static void rtldsa_93xx_phylink_mac_link_up(struct phylink_config *config,
 	int port = dp->index;
 	bool dynamic_phy, force_dynamic_phy, keep_forced;
 	u32 mcr, spdsel;
-
-	if (priv->family_id != RTL9300_FAMILY_ID)
-		goto restart;
 
 	/*
 	 * Direct links use PCS state, and statically described PHYs use
