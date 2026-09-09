@@ -1,0 +1,171 @@
+From beafcff845fcdbb46308ee54422661e80300079d Mon Sep 17 00:00:00 2001
+From: Til Kaiser <mail@tk154.de>
+Date: Tue, 10 Mar 2026 11:21:41 +0100
+Subject: [PATCH] compiler, lib, resolv: fix const string pointers
+
+Use separate const char * variables for pointers into
+const input strings instead of reusing writable char * locals.
+
+This avoids discarded-qualifier and incompatible-pointer-type
+warnings with newer toolchains, without changing behavior.
+
+Signed-off-by: Til Kaiser <mail@tk154.de>
+---
+ compiler.c   | 20 +++++++++++---------
+ lib.c        |  7 ++++---
+ lib/resolv.c | 30 ++++++++++++++++--------------
+ 3 files changed, 31 insertions(+), 26 deletions(-)
+
+--- a/compiler.c
++++ b/compiler.c
+@@ -3440,11 +3440,12 @@ static char *
+ uc_compiler_canonicalize_path(const char *path, const char *runpath)
+ {
+ 	char *p, *resolved;
++	const char *slash;
+ 
+ 	if (*path == '/')
+ 		xasprintf(&p, "%s", path);
+-	else if (runpath && (p = strrchr(runpath, '/')) != NULL)
+-		xasprintf(&p, "%.*s/%s", (int)(p - runpath), runpath, path);
++	else if (runpath && (slash = strrchr(runpath, '/')) != NULL)
++		xasprintf(&p, "%.*s/%s", (int)(slash - runpath), runpath, path);
+ 	else
+ 		xasprintf(&p, "./%s", path);
+ 
+@@ -3459,17 +3460,18 @@ static char *
+ uc_compiler_expand_module_path(const char *name, const char *runpath, const char *template)
+ {
+ 	int namelen, prefixlen;
++	const char *asterix;
+ 	char *path, *p;
+ 
+-	p = strchr(template, '*');
++	asterix = strchr(template, '*');
+ 
+-	if (!p)
++	if (!asterix)
+ 		return NULL;
+ 
+-	prefixlen = p - template;
++	prefixlen = asterix - template;
+ 	namelen = strlen(name);
+ 
+-	xasprintf(&path, "%.*s%.*s%s", prefixlen, template, namelen, name, p + 1);
++	xasprintf(&path, "%.*s%.*s%s", prefixlen, template, namelen, name, asterix + 1);
+ 
+ 	for (p = path + prefixlen; namelen > 0; namelen--, p++)
+ 		if (*p == '.')
+@@ -3558,8 +3560,8 @@ static bool
+ uc_compiler_is_dynlink_module(uc_compiler_t *compiler, const char *name, const char *path)
+ {
+ 	uc_search_path_t *dynlink_list = &compiler->parser->config->force_dynlink_list;
++	const char *dot;
+ 	size_t i;
+-	char *p;
+ 
+ 	for (i = 0; i < dynlink_list->count; i++)
+ 		if (!strcmp(dynlink_list->entries[i], name))
+@@ -3568,9 +3570,9 @@ uc_compiler_is_dynlink_module(uc_compile
+ 	if (!path)
+ 		return false;
+ 
+-	p = strrchr(path, '.');
++	dot = strrchr(path, '.');
+ 
+-	return (p && !strcmp(p, ".so"));
++	return (dot && !strcmp(dot, ".so"));
+ }
+ 
+ static bool
+--- a/lib.c
++++ b/lib.c
+@@ -3638,16 +3638,17 @@ out:
+ static char *
+ include_path(const char *curpath, const char *incpath)
+ {
++	const char *slash;
+ 	char *dup, *res;
+ 	int len;
+ 
+ 	if (*incpath == '/')
+ 		return realpath(incpath, NULL);
+ 
+-	dup = curpath ? strrchr(curpath, '/') : NULL;
++	slash = curpath ? strrchr(curpath, '/') : NULL;
+ 
+-	if (dup)
+-		len = asprintf(&res, "%.*s/%s", (int)(dup - curpath), curpath, incpath);
++	if (slash)
++		len = asprintf(&res, "%.*s/%s", (int)(slash - curpath), curpath, incpath);
+ 	else
+ 		len = asprintf(&res, "./%s", incpath);
+ 
+--- a/lib/resolv.c
++++ b/lib/resolv.c
+@@ -626,40 +626,41 @@ parse_reply(uc_vm_t *vm, uc_value_t *res
+ static int
+ parse_nsaddr(const char *addrstr, addr_t *lsa)
+ {
+-	char *eptr, *hash, ifname[IFNAMSIZ], ipaddr[INET6_ADDRSTRLEN] = { 0 };
++	char *eptr, ifname[IFNAMSIZ], ipaddr[INET6_ADDRSTRLEN] = { 0 };
+ 	unsigned int port = default_port;
+ 	unsigned int scope = 0;
++	const char *sep, *p;
+ 
+-	hash = strchr(addrstr, '#');
++	sep = strchr(addrstr, '#');
+ 
+-	if (hash) {
+-		port = strtoul(hash + 1, &eptr, 10);
++	if (sep) {
++		port = strtoul(sep + 1, &eptr, 10);
+ 
+-		if ((size_t)(hash - addrstr) >= sizeof(ipaddr) ||
+-		    eptr == hash + 1 || *eptr != '\0' || port > 65535) {
++		if ((size_t)(sep - addrstr) >= sizeof(ipaddr) ||
++		    eptr == sep + 1 || *eptr != '\0' || port > 65535) {
+ 			errno = EINVAL;
+ 			return -1;
+ 		}
+ 
+-		memcpy(ipaddr, addrstr, hash - addrstr);
++		memcpy(ipaddr, addrstr, sep - addrstr);
+ 	}
+ 	else {
+ 		strncpy(ipaddr, addrstr, sizeof(ipaddr) - 1);
+ 	}
+ 
+-	hash = strchr(addrstr, '%');
++	sep = strchr(addrstr, '%');
+ 
+-	if (hash) {
+-		for (eptr = ++hash; *eptr != '\0' && *eptr != '#'; eptr++) {
+-			if ((eptr - hash) >= IFNAMSIZ) {
++	if (sep) {
++		for (p = ++sep; *p != '\0' && *p != '#'; p++) {
++			if ((p - sep) >= IFNAMSIZ) {
+ 				errno = ENODEV;
+ 				return -1;
+ 			}
+ 
+-			ifname[eptr - hash] = *eptr;
++			ifname[p - sep] = *p;
+ 		}
+ 
+-		ifname[eptr - hash] = '\0';
++		ifname[p - sep] = '\0';
+ 		scope = if_nametoindex(ifname);
+ 
+ 		if (scope == 0) {
+@@ -974,8 +975,9 @@ out:
+ static ns_t *
+ add_ns(resolve_ctx_t *ctx, const char *addr)
+ {
+-	char portstr[sizeof("65535")], *p;
++	char portstr[sizeof("65535")];
+ 	addr_t a = { };
++	const char *p;
+ 	struct addrinfo *ai, *aip, hints = {
+ 		.ai_flags = AI_NUMERICSERV,
+ 		.ai_socktype = SOCK_DGRAM
