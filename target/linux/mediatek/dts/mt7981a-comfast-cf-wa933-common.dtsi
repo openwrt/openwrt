@@ -86,6 +86,7 @@
 		/* WAN */
 		compatible = "mediatek,eth-mac";
 		reg = <1>;
+		openwrt,netdev-name = "wan";
 		phy-mode = "gmii";
 		phy-handle = <&int_gbe_phy>;
 		nvmem-cells = <&macaddr_factory_e000 1>;
