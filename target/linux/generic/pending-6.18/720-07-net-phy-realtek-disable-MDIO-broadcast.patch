@@ -21,7 +21,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  #define RTL8366RB_POWER_SAVE			0x15
  #define RTL8366RB_POWER_SAVE_ON			BIT(12)
-@@ -1761,14 +1762,21 @@ static int rtl822xb_write_mmd(struct phy
+@@ -1762,14 +1763,21 @@ static int rtl822xb_write_mmd(struct phy
  static int rtl822x_init_phycr1(struct phy_device *phydev, bool no_aldps)
  {
  	struct rtl822x_priv *priv = phydev->priv;
