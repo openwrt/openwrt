@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
 /dts-v1/;
 
-#include "en751221.dtsi"
+#include "en751221g.dtsi"
 
 / {
 	model = "Zyxel PMG5617GA";
@@ -122,4 +122,25 @@
 		nvmem-cells = <&eeprom_reserve_60200>;
 		nvmem-cell-names = "eeprom";
 	};
+};
+
+&gmac0 {
+	status = "okay";
+};
+
+&gsw_port1 {
+	status = "okay";
+	label = "lan1";
+};
+&gsw_port2 {
+	status = "okay";
+	label = "lan2";
+};
+&gsw_port3 {
+	status = "okay";
+	label = "lan3";
+};
+&gsw_port4 {
+	status = "okay";
+	label = "lan4";
 };
