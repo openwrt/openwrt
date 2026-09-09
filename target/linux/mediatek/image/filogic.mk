@@ -1099,7 +1099,6 @@ define Device/comfast_cf-wa933-common
   DEVICE_DTC_FLAGS := --pad 4096
   DEVICE_DTS_LOADADDR := 0x43f00000
   DEVICE_PACKAGES := kmod-ledtrig-network kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
-  KERNEL_LOADADDR := 0x44000000
   UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
@@ -1109,9 +1108,9 @@ define Device/comfast_cf-wa933-common
 endef
 
 define Device/comfast_cf-wa933
-  DEVICE_VARIANT := 64M
   DEVICE_DTS := mt7981a-comfast-cf-wa933
   IMAGE_SIZE := 65536k
+  SUPPORTED_DEVICES += cf-wa933
   $(call Device/comfast_cf-wa933-common)
 endef
 TARGET_DEVICES += comfast_cf-wa933

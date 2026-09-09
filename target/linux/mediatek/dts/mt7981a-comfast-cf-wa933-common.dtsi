@@ -13,13 +13,7 @@
 	};
 
 	chosen {
-		bootargs-override = "console=ttyS0,115200n8";
 		stdout-path = "serial0:115200n8";
-	};
-
-	memory@40000000 {
-		reg = <0 0x40000000>, <0 0x10000000>; // 256MB
-		device_type = "memory";
 	};
 
 	gpio-keys {
@@ -116,7 +110,6 @@
 
 			port@6 {
 				reg = <6>;
-				label = "cpu";
 				ethernet = <&gmac0>;
 				phy-mode = "2500base-x";
 
@@ -128,10 +121,6 @@
 			};
 		};
 	};
-};
-
-&crypto {
-	status = "okay";
 };
 
 &pio {
