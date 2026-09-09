@@ -14,9 +14,6 @@ define Build/sdcard-img
         rm -fR $@.boot
         mkdir -p $@.boot
         $(CP) $(KDIR)/$(DEVICE_NAME)$(KERNEL_SUFFIX) $@.boot
-        $(if $(DEVICE_DTS),\
-                $(foreach dtb,$(DEVICE_DTS),$(CP) $(KDIR)/image-$(dtb).dtb $@.boot), \
-                $(CP) $(KDIR)/image-/*.dtb $@.boot)
 
         PADDING=1 $(SCRIPT_DIR)/gen_image_generic.sh \
                 $@ \
