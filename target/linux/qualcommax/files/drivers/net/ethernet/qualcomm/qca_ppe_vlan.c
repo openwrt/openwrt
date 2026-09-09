@@ -219,7 +219,7 @@ int qca_ppe_port_vlan_filtering(struct dsa_switch *ds, int port,
 	regmap_update_bits(priv->regmap, PPE_PORT_VLAN_CFG(port),
 			   PPE_VLAN_XLT_MISS_FWD,
 			   vlan_filtering ?
-			   FIELD_PREP(PPE_VLAN_XLT_MISS_FWD, PPE_XLT_MISS_FWD_DROP) : 0);
+			   FIELD_PREP(PPE_VLAN_XLT_MISS_FWD, PPE_XLT_MISS_RDT_TO_CPU) : 0);
 
 	if (vlan_filtering)
 		priv->vlan_filtering |= BIT(port);
