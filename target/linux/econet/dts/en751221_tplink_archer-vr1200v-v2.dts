@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
 /dts-v1/;
 
-#include "en751221.dtsi"
+#include "en751221g.dtsi"
 
 / {
 	model = "TP-Link Archer VR1200v (v2)";
@@ -101,6 +101,27 @@
 	status = "okay";
 	nvmem-cells = <&macaddr_misc_8f100 0>;
 	nvmem-cell-names = "mac-address";
+};
+
+&gsw_port0 {
+	status = "okay";
+	label = "lan1";
+};
+&gsw_port1 {
+	status = "okay";
+	label = "lan2";
+};
+&gsw_port2 {
+	status = "okay";
+	label = "lan3";
+};
+&gsw_port3 {
+	status = "okay";
+	label = "lan4";
+};
+&gsw_port4 {
+	status = "okay";
+	label = "wan";
 };
 
 &pcie0 {

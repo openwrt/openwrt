@@ -1,0 +1,38 @@
+// SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+/dts-v1/;
+
+#include "en751221.dtsi"
+
+/ {
+	compatible = "econet,en751221g", "econet,en751221";
+};
+
+/* MCM switch is present */
+&gport5 {
+	status = "okay";
+};
+&switch1 {
+	status = "okay";
+	dsa,member = <0 0>;
+};
+&switch0 {
+	/* Switch 1 is never matched by dsa_mtk  */
+	dsa,member = <0 1>;
+};
+
+/* MCM switch PHYs are present */
+&gsw_phy0 {
+	status = "okay";
+};
+&gsw_phy1 {
+	status = "okay";
+};
+&gsw_phy2 {
+	status = "okay";
+};
+&gsw_phy3 {
+	status = "okay";
+};
+&gsw_phy4 {
+	status = "okay";
+};
