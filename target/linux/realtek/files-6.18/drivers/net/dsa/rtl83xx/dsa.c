@@ -2285,7 +2285,8 @@ static void rtldsa_port_mirror_del(struct dsa_switch *ds, int port,
 		priv->r->mask_port_reg_be(1ULL << port, 0, config.dpm);
 	}
 
-	if (!(sw_r32(config.spm) || sw_r32(config.dpm))) {
+	if (!(priv->r->get_port_reg_be(config.spm) ||
+	      priv->r->get_port_reg_be(config.dpm))) {
 		priv->mirror_group_ports[group] = -1;
 		sw_w32(0, config.ctrl);
 	}
