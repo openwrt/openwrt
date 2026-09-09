@@ -143,11 +143,23 @@ static void ppe_vlan_free(struct qca_ppe_priv *priv,
 	entry->br_dev = NULL;
 }
 
+/* The ports a VLAN's rules and VSI name. A bridge that does not filter
+ * classifies by its own VSI, so a VLAN it does not enforce names none of its
+ * ports and none of the CPU port's injected frames; the entry stays, because
+ * the bridge VLANs are not offered again when filtering comes back on.
+ */
+static u32 ppe_vlan_ports(struct qca_ppe_priv *priv,
+			  struct qca_ppe_vlan_entry *entry)
+{
+	u32 ports = entry->ports & priv->vlan_filtering;
+
+	return ports ? ports | BIT(QCA_PPE_CPU_PORT) : 0;
+}
+
 static void ppe_vlan_members_update(struct qca_ppe_priv *priv,
 				    struct qca_ppe_vlan_entry *entry)
 {
-	ppe_vsi_member_set(priv, entry->vsi,
-			   entry->ports | BIT(QCA_PPE_CPU_PORT));
+	ppe_vsi_member_set(priv, entry->vsi, ppe_vlan_ports(priv, entry));
 }
 
 static void ppe_vlan_pvid_update(struct qca_ppe_priv *priv,
@@ -160,7 +172,8 @@ static void ppe_vlan_pvid_update(struct qca_ppe_priv *priv,
 
 	if (entry->pvid_ports)
 		ppe_xlt_rule_set(priv, entry->xlt_pvid_idx,
-				 entry->pvid_ports, 0, true);
+				 entry->pvid_ports & priv->vlan_filtering,
+				 0, true);
 }
 
 int qca_ppe_vlan_setup(struct dsa_switch *ds)
@@ -189,8 +202,6 @@ int qca_ppe_vlan_setup(struct dsa_switch *ds)
 	regmap_update_bits(priv->regmap, PPE_EG_BRIDGE_CONFIG,
 			   PPE_EG_L2_EDIT_EN, PPE_EG_L2_EDIT_EN);
 
-	ds->configure_vlan_while_not_filtering = false;
-
 	return 0;
 }
 
@@ -199,6 +210,7 @@ int qca_ppe_port_vlan_filtering(struct dsa_switch *ds, int port,
 				struct netlink_ext_ack *extack)
 {
 	struct qca_ppe_priv *priv = ds_to_priv(ds);
+	int i;
 
 	regmap_update_bits(priv->regmap, PPE_PORT_EG_VLAN(port),
 			   PPE_PORT_EG_VSI_TAG_EN,
@@ -209,7 +221,51 @@ int qca_ppe_port_vlan_filtering(struct dsa_switch *ds, int port,
 			   vlan_filtering ?
 			   FIELD_PREP(PPE_VLAN_XLT_MISS_FWD, PPE_XLT_MISS_FWD_DROP) : 0);
 
+	if (vlan_filtering)
+		priv->vlan_filtering |= BIT(port);
+	else
+		priv->vlan_filtering &= ~BIT(port);
+
+	ppe_port_def_cvid_set(priv, port, priv->port_pvid[port],
+			      vlan_filtering && priv->port_pvid[port]);
+
+	for (i = 0; i < PPE_VSI_MAX; i++) {
+		struct qca_ppe_vlan_entry *entry = &priv->vlans[i];
+
+		if (!entry->br_dev || !(entry->ports & BIT(port)))
+			continue;
+
+		ppe_xlt_rule_set(priv, entry->xlt_idx,
+				 ppe_vlan_ports(priv, entry), entry->vid,
+				 false);
+		ppe_vlan_pvid_update(priv, entry);
+		ppe_vlan_members_update(priv, entry);
+	}
+
 	return 0;
+}
+
+static void ppe_vlan_port_remove(struct qca_ppe_priv *priv,
+				 struct qca_ppe_vlan_entry *entry, int port)
+{
+	entry->ports &= ~BIT(port);
+	ppe_eg_vsi_tag_port_set(priv, entry->vsi, port, PPE_EG_UNMODIFIED);
+
+	if (priv->port_pvid[port] == entry->vid) {
+		ppe_port_def_cvid_set(priv, port, 0, false);
+		priv->port_pvid[port] = 0;
+		entry->pvid_ports &= ~BIT(port);
+	}
+
+	if (!entry->ports) {
+		ppe_vlan_free(priv, entry);
+		return;
+	}
+
+	ppe_xlt_rule_set(priv, entry->xlt_idx, ppe_vlan_ports(priv, entry),
+			 entry->vid, false);
+	ppe_vlan_pvid_update(priv, entry);
+	ppe_vlan_members_update(priv, entry);
 }
 
 int qca_ppe_port_vlan_add(struct dsa_switch *ds, int port,
@@ -250,20 +306,22 @@ int qca_ppe_port_vlan_add(struct dsa_switch *ds, int port,
 
 	entry->ports |= BIT(port);
 
-	ppe_xlt_rule_set(priv, entry->xlt_idx,
-			 entry->ports | BIT(QCA_PPE_CPU_PORT), vid, false);
+	ppe_xlt_rule_set(priv, entry->xlt_idx, ppe_vlan_ports(priv, entry), vid,
+			 false);
 	ppe_xlt_action_set(priv, entry->xlt_idx, entry->vsi);
 
 	ppe_eg_vsi_tag_port_set(priv, entry->vsi, port,
 				untagged ? PPE_EG_UNTAGGED : PPE_EG_TAGGED);
 
 	if (pvid) {
-		ppe_port_def_cvid_set(priv, port, vid, true);
+		ppe_port_def_cvid_set(priv, port, vid,
+				      priv->vlan_filtering & BIT(port));
 		priv->port_pvid[port] = vid;
 		entry->pvid_ports |= BIT(port);
 
 		ppe_xlt_rule_set(priv, entry->xlt_pvid_idx,
-				 entry->pvid_ports, 0, true);
+				 entry->pvid_ports & priv->vlan_filtering,
+				 0, true);
 		ppe_xlt_action_set(priv, entry->xlt_pvid_idx, entry->vsi);
 	} else if (priv->port_pvid[port] == vid) {
 		ppe_port_def_cvid_set(priv, port, 0, false);
@@ -298,26 +356,7 @@ int qca_ppe_port_vlan_del(struct dsa_switch *ds, int port,
 	if (!entry)
 		return 0;
 
-	entry->ports &= ~BIT(port);
-	ppe_eg_vsi_tag_port_set(priv, entry->vsi, port, PPE_EG_UNMODIFIED);
-
-	if (priv->port_pvid[port] == vid) {
-		ppe_port_def_cvid_set(priv, port, 0, false);
-		priv->port_pvid[port] = 0;
-		entry->pvid_ports &= ~BIT(port);
-	}
-
-	if (!entry->ports) {
-		ppe_vlan_free(priv, entry);
-		return 0;
-	}
-
-	ppe_xlt_rule_set(priv, entry->xlt_idx,
-			 entry->ports | BIT(QCA_PPE_CPU_PORT), vid, false);
-
-	ppe_vlan_pvid_update(priv, entry);
-
-	ppe_vlan_members_update(priv, entry);
+	ppe_vlan_port_remove(priv, entry, port);
 
 	return 0;
 }

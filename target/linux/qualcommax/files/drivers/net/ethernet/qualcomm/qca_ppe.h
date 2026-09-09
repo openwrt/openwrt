@@ -529,6 +529,7 @@ struct qca_ppe_priv {
 	struct qca_ppe_bridge_vsi bridges[QCA_PPE_MAX_BRIDGES];
 	struct qca_ppe_vlan_entry vlans[PPE_VSI_MAX];
 	struct net_device *port_br_dev[QCA_PPE_MAX_PORTS];
+	u32 vlan_filtering;
 	u16 port_pvid[QCA_PPE_MAX_PORTS];
 	struct clk *port_rx_clk[QCA_PPE_MAX_PORTS];
 	struct clk *port_tx_clk[QCA_PPE_MAX_PORTS];
