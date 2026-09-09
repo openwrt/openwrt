@@ -368,6 +368,15 @@ static int otto_table_exec(int handle, bool is_write, int idx)
 	cmd |= map->type << r->t_bit; /* Table type */
 	cmd |= idx & (BIT(r->t_bit) - 1); /* Index */
 
+	/* Defensive pre check in case an earlier command never completed */
+	ret = regmap_read_poll_timeout(otto_map, r->addr, val,
+				       !(val & BIT(r->c_bit + 1)), 20, 10000);
+	if (ret) {
+		pr_err_ratelimited("otto_table: table %d busy, command not sent\n",
+				   otto_table_handle_to_id(handle));
+		return ret;
+	}
+
 	ret = regmap_write(otto_map, r->addr, cmd);
 	if (ret)
 		return ret;
@@ -375,7 +384,8 @@ static int otto_table_exec(int handle, bool is_write, int idx)
 	ret = regmap_read_poll_timeout(otto_map, r->addr, val,
 				       !(val & BIT(r->c_bit + 1)), 20, 10000);
 	if (ret)
-		pr_err("%s: timeout\n", __func__);
+		pr_err_ratelimited("otto_table: table %d did not complete\n",
+				   otto_table_handle_to_id(handle));
 
 	return ret;
 }
