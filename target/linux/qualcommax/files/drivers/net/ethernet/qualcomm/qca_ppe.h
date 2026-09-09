@@ -531,8 +531,6 @@ struct qca_ppe_priv {
 	struct dsa_switch ds;
 	struct regmap *regmap;
 	const struct ppe_data *data;
-	struct clk_bulk_data *clks;
-	int num_clks;
 	spinlock_t fdb_lock;
 	u32 fdb_cmd_id;
 	u32 fdb_rd_cmd_id;

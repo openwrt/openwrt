@@ -1830,6 +1830,7 @@ static int ppe_ipq6018_mux_setup(struct qca_ppe_priv *priv)
 			continue;
 
 		port3_ch = pcs_args.args[0];
+		of_node_put(pcs_args.np);
 	}
 
 	of_node_put(ports_np);
@@ -1855,6 +1856,7 @@ static int qca_ppe_probe(struct platform_device *pdev)
 {
 	const struct ppe_data *data;
 	struct device_node *ports;
+	struct clk_bulk_data *clks;
 	struct qca_ppe_priv *priv;
 	struct reset_control *rst;
 	struct dsa_switch *ds;
@@ -1876,27 +1878,23 @@ static int qca_ppe_probe(struct platform_device *pdev)
 
 	priv->data = data;
 
-	priv->num_clks = devm_clk_bulk_get_all(&pdev->dev, &priv->clks);
-	if (priv->num_clks < 0)
-		return priv->num_clks;
-
-	ret = clk_bulk_prepare_enable(priv->num_clks, priv->clks);
-	if (ret)
+	ret = devm_clk_bulk_get_all_enabled(&pdev->dev, &clks);
+	if (ret < 0)
 		return ret;
 
 	base = devm_platform_ioremap_resource(pdev, 0);
 	if (IS_ERR(base))
-		return dev_err_probe(&pdev->dev, PTR_ERR(base), "failed to ioremap resource");
+		return dev_err_probe(&pdev->dev, PTR_ERR(base),
+				     "failed to ioremap resource");
 
 	priv->regmap = devm_regmap_init_mmio(&pdev->dev, base, &ppe_regmap_cfg);
 	if (IS_ERR(priv->regmap))
-		return dev_err_probe(&pdev->dev, PTR_ERR(priv->regmap), "failed to init regmap");
+		return dev_err_probe(&pdev->dev, PTR_ERR(priv->regmap),
+				     "failed to init regmap");
 
 	rst = devm_reset_control_get(&pdev->dev, "ppe_rst");
-	if (IS_ERR(rst)) {
-		ret = PTR_ERR(rst);
-		goto err_clk;
-	}
+	if (IS_ERR(rst))
+		return PTR_ERR(rst);
 	reset_control_assert(rst);
 	msleep(100);
 	reset_control_deassert(rst);
@@ -1910,10 +1908,8 @@ static int qca_ppe_probe(struct platform_device *pdev)
 	priv->port_mib = devm_kcalloc(&pdev->dev,
 				      data->num_ports * ARRAY_SIZE(qca_ppe_mib),
 				      sizeof(*priv->port_mib), GFP_KERNEL);
-	if (!priv->port_mib) {
-		ret = -ENOMEM;
-		goto err_clk;
-	}
+	if (!priv->port_mib)
+		return -ENOMEM;
 
 	ds = &priv->ds;
 	ds->dev = &pdev->dev;
@@ -1927,25 +1923,19 @@ static int qca_ppe_probe(struct platform_device *pdev)
 
 		snprintf(name, sizeof(name), "port%d_rx", i);
 		priv->port_rx_clk[i] = devm_clk_get_optional(&pdev->dev, name);
-		if (IS_ERR(priv->port_rx_clk[i])) {
-			ret = PTR_ERR(priv->port_rx_clk[i]);
-			goto err_clk;
-		}
+		if (IS_ERR(priv->port_rx_clk[i]))
+			return PTR_ERR(priv->port_rx_clk[i]);
 
 		snprintf(name, sizeof(name), "port%d_tx", i);
 		priv->port_tx_clk[i] = devm_clk_get_optional(&pdev->dev, name);
-		if (IS_ERR(priv->port_tx_clk[i])) {
-			ret = PTR_ERR(priv->port_tx_clk[i]);
-			goto err_clk;
-		}
+		if (IS_ERR(priv->port_tx_clk[i]))
+			return PTR_ERR(priv->port_tx_clk[i]);
 
 		snprintf(name, sizeof(name), "nss_port%d_rst", i);
 		priv->port_rst[i] = devm_reset_control_get_optional_exclusive(
 						&pdev->dev, name);
-		if (IS_ERR(priv->port_rst[i])) {
-			ret = PTR_ERR(priv->port_rst[i]);
-			goto err_clk;
-		}
+		if (IS_ERR(priv->port_rst[i]))
+			return PTR_ERR(priv->port_rst[i]);
 	}
 
 	ppe_scheduler_init(priv);
@@ -1957,20 +1947,16 @@ static int qca_ppe_probe(struct platform_device *pdev)
 	if (data->type == PPE_TYPE_IPQ6018) {
 		ret = ppe_ipq6018_mux_setup(priv);
 		if (ret)
-			goto err_clk;
+			return ret;
 	}
 
 	ret = dsa_register_switch(ds);
 	if (ret)
-		goto err_clk;
+		return ret;
 
 	platform_set_drvdata(pdev, priv);
 
 	return 0;
-
-err_clk:
-	clk_bulk_disable_unprepare(priv->num_clks, priv->clks);
-	return ret;
 }
 
 static void qca_ppe_remove(struct platform_device *pdev)
@@ -1978,7 +1964,6 @@ static void qca_ppe_remove(struct platform_device *pdev)
 	struct qca_ppe_priv *priv = platform_get_drvdata(pdev);
 
 	dsa_unregister_switch(&priv->ds);
-	clk_bulk_disable_unprepare(priv->num_clks, priv->clks);
 }
 
 static const struct ppe_data ipq6018_ppe_data = {
