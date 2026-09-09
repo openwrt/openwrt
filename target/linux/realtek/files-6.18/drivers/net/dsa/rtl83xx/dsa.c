@@ -313,20 +313,60 @@ static void rtldsa_83xx_phylink_mac_config(struct phylink_config *config,
 	regmap_write(priv->map, priv->r->mac_force_mode_ctrl(port), mcr);
 }
 
+static void
+rtldsa_mac_link_state_source_set(struct rtl838x_switch_priv *priv, int port,
+				 enum rtldsa_mac_link_state_source source,
+				 phy_interface_t interface)
+{
+	int err;
+
+	if (!priv->r->mac_link_state_source_set)
+		return;
+
+	err = priv->r->mac_link_state_source_set(priv, port, source, interface);
+	if (err)
+		dev_err(priv->dev,
+			"failed to set MAC link-state source for port %d: %d\n",
+			port, err);
+}
+
 static void rtldsa_93xx_phylink_mac_config(struct phylink_config *config,
 					   unsigned int mode,
 					   const struct phylink_link_state *state)
 {
 	struct dsa_port *dp = dsa_phylink_to_port(config);
 	struct rtl838x_switch_priv *priv = dp->ds->priv;
+	bool force_dynamic_phy;
 	int port = dp->index;
 
 	/* Nothing to be done for the CPU-port */
 	if (port == priv->r->cpu_port)
 		return;
 
-	/* Disable MAC completely */
-	regmap_write(priv->map, priv->r->mac_force_mode_ctrl(port), 0);
+	force_dynamic_phy = priv->family_id == RTL9300_FAMILY_ID &&
+		!priv->ports[port].phy &&
+		(mode == MLO_AN_PHY || state->interface == PHY_INTERFACE_MODE_SGMII);
+
+	/* Select PCS before dropping force mode to avoid a transient link down. */
+	if (!priv->ports[port].phy && phylink_autoneg_inband(mode) &&
+	    !force_dynamic_phy)
+		rtldsa_mac_link_state_source_set(priv, port,
+					 RTLDSA_MAC_LINK_STATE_SOURCE_PCS,
+					 state->interface);
+
+	if (priv->family_id == RTL9300_FAMILY_ID &&
+	    (mode == MLO_AN_FIXED || force_dynamic_phy)) {
+		/* Keep links that require force mode forced down. */
+		regmap_write(priv->map, priv->r->mac_force_mode_ctrl(port),
+			     RTL930X_FORCE_EN | RTL930X_MAC_FORCE_FC_EN);
+		if (force_dynamic_phy)
+			rtldsa_mac_link_state_source_set(priv, port,
+						 RTLDSA_MAC_LINK_STATE_SOURCE_PHY,
+						 state->interface);
+	} else {
+		/* Disable MAC completely */
+		regmap_write(priv->map, priv->r->mac_force_mode_ctrl(port), 0);
+	}
 }
 
 static void rtldsa_phylink_mac_link_down(struct phylink_config *config,
@@ -335,14 +375,42 @@ static void rtldsa_phylink_mac_link_down(struct phylink_config *config,
 {
 	struct dsa_port *dp = dsa_phylink_to_port(config);
 	struct rtl838x_switch_priv *priv = dp->ds->priv;
+	bool force_dynamic_phy;
 	int port = dp->index;
+	u32 mask;
+
+	force_dynamic_phy = priv->family_id == RTL9300_FAMILY_ID &&
+		!priv->ports[port].phy &&
+		(mode == MLO_AN_PHY || interface == PHY_INTERFACE_MODE_SGMII);
 
 	/* Stop TX/RX to port */
 	regmap_update_bits(priv->map, priv->r->mac_port_ctrl(port), 0x3, 0);
 
-	/* No longer force link */
-	regmap_update_bits(priv->map, priv->r->mac_force_mode_ctrl(port),
-			   priv->r->mac_force_mode_mask, 0);
+	if (!priv->ports[port].phy && phylink_autoneg_inband(mode) &&
+	    !force_dynamic_phy)
+		rtldsa_mac_link_state_source_set(priv, port,
+					 RTLDSA_MAC_LINK_STATE_SOURCE_PCS,
+					 interface);
+
+	if (priv->family_id == RTL9300_FAMILY_ID &&
+	    (dsa_port_is_cpu(dp) || mode == MLO_AN_FIXED || force_dynamic_phy)) {
+		/* Preserve force mode while forcing the link down. */
+		regmap_update_bits(priv->map, priv->r->mac_force_mode_ctrl(port),
+				   RTL930X_FORCE_LINK_EN, 0);
+		if (force_dynamic_phy)
+			rtldsa_mac_link_state_source_set(priv, port,
+						 RTLDSA_MAC_LINK_STATE_SOURCE_PHY,
+						 interface);
+	} else {
+		/* No longer force link */
+		mask = priv->r->mac_force_mode_mask;
+
+		if (priv->family_id == RTL9300_FAMILY_ID)
+			mask |= RTL930X_MAC_FORCE_FC_EN;
+
+		regmap_update_bits(priv->map, priv->r->mac_force_mode_ctrl(port),
+				   mask, 0);
+	}
 }
 
 static void rtldsa_83xx_phylink_mac_link_up(struct phylink_config *config,
@@ -419,7 +487,67 @@ static void rtldsa_93xx_phylink_mac_link_up(struct phylink_config *config,
 	struct dsa_port *dp = dsa_phylink_to_port(config);
 	struct rtl838x_switch_priv *priv = dp->ds->priv;
 	int port = dp->index;
-	u32 mcr, spdsel;
+	bool dynamic_phy, force_dynamic_phy, keep_forced;
+	u32 force_en, mcr, spdsel;
+
+	if (priv->family_id != RTL9300_FAMILY_ID)
+		goto restart;
+
+	/*
+	 * The RTL93xx polling machinery does more than issue MDIO
+	 * transactions. It collects resolved link state and distributes it
+	 * internally to the MAC, so polling must remain enabled for
+	 * SerDes-backed SFP ports even when there is no PHY to poll over MDIO.
+	 *
+	 * The MDIO driver owns the polling setup. It enables polling for PHY
+	 * and SerDes ports and initializes MAC_TYPE/PHY_ABLTY from the static,
+	 * firmware-described topology. That topology cannot describe a PHY
+	 * which appears later in a hot-plugged SFP module. Only DSA learns
+	 * about such a PHY through phylink, so the source selector is
+	 * deliberately shared: MDIO initializes it, while DSA updates it as
+	 * the active SFP link-state source changes. DSA does not disable
+	 * polling here; it only selects whether the polling machinery supplies
+	 * the MAC with state from the PCS or from the dynamic PHY.
+	 *
+	 * Accordingly, direct links use PCS state, while statically described
+	 * PHYs retain the MDIO driver's hardware-polling selection. Dynamic
+	 * SGMII and out-of-band PHYs select PHY state and remain forced.
+	 * Dynamic USXGMII PHYs use PCS state after a force pulse refreshes the
+	 * MAC parameters; fixed links and CPU ports also remain forced.
+	 */
+	dynamic_phy = !priv->ports[port].phy && phydev;
+	force_dynamic_phy = dynamic_phy &&
+		(!phylink_autoneg_inband(mode) ||
+		 interface == PHY_INTERFACE_MODE_SGMII);
+	keep_forced = dsa_port_is_cpu(dp) || mode == MLO_AN_FIXED ||
+		      force_dynamic_phy;
+	force_en = RTL930X_FORCE_EN;
+	if (dynamic_phy &&
+	    (interface == PHY_INTERFACE_MODE_SGMII ||
+	     interface == PHY_INTERFACE_MODE_USXGMII)) {
+		if (phydev->speed != SPEED_UNKNOWN)
+			speed = phydev->speed;
+		if (phydev->duplex != DUPLEX_UNKNOWN)
+			duplex = phydev->duplex;
+	}
+
+	regmap_read(priv->map, priv->r->mac_force_mode_ctrl(port), &mcr);
+	mcr &= ~(RTL930X_RX_PAUSE_EN | RTL930X_TX_PAUSE_EN);
+	mcr |= RTL930X_MAC_FORCE_FC_EN;
+	if (tx_pause)
+		mcr |= RTL930X_TX_PAUSE_EN;
+	if (rx_pause)
+		mcr |= RTL930X_RX_PAUSE_EN;
+
+	if (!keep_forced && !dynamic_phy) {
+		if (!priv->ports[port].phy)
+			rtldsa_mac_link_state_source_set(priv, port,
+							 RTLDSA_MAC_LINK_STATE_SOURCE_PCS,
+							 interface);
+		mcr &= ~force_en;
+		regmap_write(priv->map, priv->r->mac_force_mode_ctrl(port), mcr);
+		goto restart;
+	}
 
 	if (speed == SPEED_10000)
 		spdsel = RTL_SPEED_10000;
@@ -434,30 +562,32 @@ static void rtldsa_93xx_phylink_mac_link_up(struct phylink_config *config,
 	else
 		spdsel = RTL_SPEED_10;
 
-	regmap_read(priv->map, priv->r->mac_force_mode_ctrl(port), &mcr);
+	mcr &= ~RTL930X_DUPLEX_MODE;
+	mcr &= ~RTL930X_SPEED_MASK;
+	mcr |= force_en | RTL930X_MAC_FORCE_FC_EN | RTL930X_FORCE_LINK_EN;
+	mcr |= spdsel << RTL930X_SPEED_SHIFT;
+	if (dynamic_phy)
+		mcr &= ~RTL930X_MEDIA_SEL;
 
-	if (priv->family_id == RTL9300_FAMILY_ID) {
-		mcr &= ~RTL930X_RX_PAUSE_EN;
-		mcr &= ~RTL930X_TX_PAUSE_EN;
-		mcr &= ~RTL930X_DUPLEX_MODE;
-		mcr &= ~RTL930X_SPEED_MASK;
-		mcr |= RTL930X_FORCE_LINK_EN;
-		mcr |= spdsel << RTL930X_SPEED_SHIFT;
-
-		if (tx_pause)
-			mcr |= RTL930X_TX_PAUSE_EN;
-		if (rx_pause)
-			mcr |= RTL930X_RX_PAUSE_EN;
-		if (duplex == DUPLEX_FULL || priv->lagmembers & BIT_ULL(port))
-			mcr |= RTL930X_DUPLEX_MODE;
-		if (dsa_port_is_cpu(dp) || priv->ports[port].phy)
-			mcr |= RTL930X_FORCE_EN;
-	}
+	if (duplex == DUPLEX_FULL || priv->lagmembers & BIT_ULL(port))
+		mcr |= RTL930X_DUPLEX_MODE;
 
 	pr_debug("%s port %d, mode %x, speed %d, duplex %d, txpause %d, rxpause %d: set mcr=%08x\n",
 		 __func__, port, mode, speed, duplex, tx_pause, rx_pause, mcr);
 	regmap_write(priv->map, priv->r->mac_force_mode_ctrl(port), mcr);
+	/* Pulse state force enables so hardware latches the new parameters. */
+	regmap_write(priv->map, priv->r->mac_force_mode_ctrl(port),
+		     mcr & ~force_en);
+	if (keep_forced)
+		regmap_write(priv->map, priv->r->mac_force_mode_ctrl(port), mcr);
 
+	/* Keep force mode active while switching hardware link sources. */
+	if (force_dynamic_phy)
+		rtldsa_mac_link_state_source_set(priv, port,
+					 RTLDSA_MAC_LINK_STATE_SOURCE_PHY,
+					 interface);
+
+restart:
 	/* Restart TX/RX to port */
 	regmap_update_bits(priv->map, priv->r->mac_port_ctrl(port), 0x3, 0x3);
 }
