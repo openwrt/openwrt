@@ -1,0 +1,10 @@
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -391,6 +391,7 @@ config MACH_DECSTATION
+ 
+ config ECONET
+ 	bool "EcoNet MIPS family"
++	select REGMAP_IRQ
+ 	select BOOT_RAW
+ 	select DMA_NONCOHERENT
+ 	select DEBUG_ZBOOT if DEBUG_KERNEL
