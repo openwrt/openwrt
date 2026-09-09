@@ -1210,8 +1210,13 @@ static int edma_ndo_change_mtu(struct net_device *netdev, int new_mtu)
 
 	running = netif_running(netdev);
 	if (running) {
-		netif_tx_disable(netdev);
+		/* The poll is the other writer of the queue state and it wakes
+		 * a stopped queue whenever it completes a frame, so it is put
+		 * down first: a wake landing after netif_tx_disable() leaves
+		 * the transmit path running into the rings freed below.
+		 */
 		edma_ndo_stop(netdev);
+		netif_tx_disable(netdev);
 	}
 
 	edma_hw_stop(priv);
