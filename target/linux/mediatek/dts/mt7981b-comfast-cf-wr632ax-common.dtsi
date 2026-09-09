@@ -86,7 +86,7 @@
 	gmac0: mac@0 {
 		compatible = "mediatek,eth-mac";
 		reg = <0>;
-		label = "wan";
+		openwrt,netdev-name = "wan";
 		phy-mode = "2500base-x";
 		phy-handle = <&phy5>;
 
@@ -97,7 +97,7 @@
 	gmac1: mac@1 {
 		compatible = "mediatek,eth-mac";
 		reg = <1>;
-		label = "lan";
+		openwrt,netdev-name = "lan";
 		phy-mode = "gmii";
 		phy-handle = <&int_gbe_phy>;
 
