@@ -13,34 +13,6 @@
 			function = LED_FUNCTION_WPS;
 			gpios = <&pinctrl 7 GPIO_ACTIVE_LOW>;
 		};
-
-		led_lan1: lan1 {
-			color = <LED_COLOR_ID_GREEN>;
-			function = LED_FUNCTION_LAN;
-			function-enumerator = <1>;
-			gpios = <&pinctrl 37 GPIO_ACTIVE_LOW>;
-		};
-
-		led_lan2: lan2 {
-			color = <LED_COLOR_ID_GREEN>;
-			function = LED_FUNCTION_LAN;
-			function-enumerator = <2>;
-			gpios = <&pinctrl 35 GPIO_ACTIVE_LOW>;
-		};
-
-		led_lan3: lan3 {
-			color = <LED_COLOR_ID_GREEN>;
-			function = LED_FUNCTION_LAN;
-			function-enumerator = <3>;
-			gpios = <&pinctrl 33 GPIO_ACTIVE_LOW>;
-		};
-
-		led_lan4: lan4 {
-			color = <LED_COLOR_ID_GREEN>;
-			function = LED_FUNCTION_LAN;
-			function-enumerator = <4>;
-			gpios = <&pinctrl 31 GPIO_ACTIVE_LOW>;
-		};
 	};
 };
 
@@ -85,4 +57,36 @@
 
 &gsw_port4 {
 	label = "lan4";
+};
+
+&gsw_phy1_led1 {
+	color = <LED_COLOR_ID_GREEN>;
+	function = LED_FUNCTION_LAN;
+	function-enumerator = <1>;
+	active-low;
+	status = "okay";
+};
+
+&gsw_phy2_led1 {
+	color = <LED_COLOR_ID_GREEN>;
+	function = LED_FUNCTION_LAN;
+	function-enumerator = <2>;
+	active-low;
+	status = "okay";
+};
+
+&gsw_phy3_led1 {
+	color = <LED_COLOR_ID_GREEN>;
+	function = LED_FUNCTION_LAN;
+	function-enumerator = <3>;
+	active-low;
+	status = "okay";
+};
+
+&gsw_phy4_led1 {
+	color = <LED_COLOR_ID_GREEN>;
+	function = LED_FUNCTION_LAN;
+	function-enumerator = <4>;
+	active-low;
+	status = "okay";
 };

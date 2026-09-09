@@ -34,62 +34,6 @@
 			function = LED_FUNCTION_STATUS;
 			gpios = <&pinctrl 23 GPIO_ACTIVE_LOW>;
 		};
-
-		led-lan1-green {
-			color = <LED_COLOR_ID_GREEN>;
-			function = LED_FUNCTION_LAN;
-			function-enumerator = <1>;
-			gpios = <&pinctrl 30 GPIO_ACTIVE_LOW>;
-		};
-
-		led-lan1-amber {
-			color = <LED_COLOR_ID_AMBER>;
-			function = LED_FUNCTION_LAN;
-			function-enumerator = <1>;
-			gpios = <&pinctrl 31 GPIO_ACTIVE_LOW>;
-		};
-
-		led-lan2-green {
-			color = <LED_COLOR_ID_GREEN>;
-			function = LED_FUNCTION_LAN;
-			function-enumerator = <2>;
-			gpios = <&pinctrl 32 GPIO_ACTIVE_LOW>;
-		};
-
-		led-lan2-amber {
-			color = <LED_COLOR_ID_AMBER>;
-			function = LED_FUNCTION_LAN;
-			function-enumerator = <2>;
-			gpios = <&pinctrl 33 GPIO_ACTIVE_LOW>;
-		};
-
-		led-lan3-green {
-			color = <LED_COLOR_ID_GREEN>;
-			function = LED_FUNCTION_LAN;
-			function-enumerator = <3>;
-			gpios = <&pinctrl 34 GPIO_ACTIVE_LOW>;
-		};
-
-		led-lan3-amber {
-			color = <LED_COLOR_ID_AMBER>;
-			function = LED_FUNCTION_LAN;
-			function-enumerator = <3>;
-			gpios = <&pinctrl 35 GPIO_ACTIVE_LOW>;
-		};
-
-		led-lan4-green {
-			color = <LED_COLOR_ID_GREEN>;
-			function = LED_FUNCTION_LAN;
-			function-enumerator = <4>;
-			gpios = <&pinctrl 36 GPIO_ACTIVE_LOW>;
-		};
-
-		led-lan4-amber {
-			color = <LED_COLOR_ID_AMBER>;
-			function = LED_FUNCTION_LAN;
-			function-enumerator = <4>;
-			gpios = <&pinctrl 37 GPIO_ACTIVE_LOW>;
-		};
 	};
 
 	keys {
@@ -107,4 +51,68 @@
 			linux,code = <KEY_WPS_BUTTON>;
 		};
 	};
+};
+
+&gsw_phy1_led0 {
+	color = <LED_COLOR_ID_GREEN>;
+	function = LED_FUNCTION_LAN;
+	function-enumerator = <1>;
+	active-low;
+	status = "okay";
+};
+
+&gsw_phy1_led1 {
+	color = <LED_COLOR_ID_AMBER>;
+	function = LED_FUNCTION_LAN;
+	function-enumerator = <1>;
+	active-low;
+	status = "okay";
+};
+
+&gsw_phy2_led0 {
+	color = <LED_COLOR_ID_GREEN>;
+	function = LED_FUNCTION_LAN;
+	function-enumerator = <2>;
+	active-low;
+	status = "okay";
+};
+
+&gsw_phy2_led1 {
+	color = <LED_COLOR_ID_AMBER>;
+	function = LED_FUNCTION_LAN;
+	function-enumerator = <2>;
+	active-low;
+	status = "okay";
+};
+
+&gsw_phy3_led0 {
+	color = <LED_COLOR_ID_GREEN>;
+	function = LED_FUNCTION_LAN;
+	function-enumerator = <3>;
+	active-low;
+	status = "okay";
+};
+
+&gsw_phy3_led1 {
+	color = <LED_COLOR_ID_AMBER>;
+	function = LED_FUNCTION_LAN;
+	function-enumerator = <3>;
+	active-low;
+	status = "okay";
+};
+
+&gsw_phy4_led0 {
+	color = <LED_COLOR_ID_GREEN>;
+	function = LED_FUNCTION_LAN;
+	function-enumerator = <4>;
+	active-low;
+	status = "okay";
+};
+
+&gsw_phy4_led1 {
+	color = <LED_COLOR_ID_AMBER>;
+	function = LED_FUNCTION_LAN;
+	function-enumerator = <4>;
+	active-low;
+	status = "okay";
 };

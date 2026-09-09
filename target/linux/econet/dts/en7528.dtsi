@@ -358,21 +358,81 @@
 			gsw_phy1: ethernet-phy@9 {
 				compatible = "ethernet-phy-ieee802.3-c22";
 				reg = <9>;
+
+				leds {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					gsw_phy1_led0: led@0 {
+						reg = <0>;
+						status = "disabled";
+					};
+
+					gsw_phy1_led1: led@1 {
+						reg = <1>;
+						status = "disabled";
+					};
+				};
 			};
 
 			gsw_phy2: ethernet-phy@a {
 				compatible = "ethernet-phy-ieee802.3-c22";
 				reg = <10>;
+
+				leds {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					gsw_phy2_led0: led@0 {
+						reg = <0>;
+						status = "disabled";
+					};
+
+					gsw_phy2_led1: led@1 {
+						reg = <1>;
+						status = "disabled";
+					};
+				};
 			};
 
 			gsw_phy3: ethernet-phy@b {
 				compatible = "ethernet-phy-ieee802.3-c22";
 				reg = <11>;
+
+				leds {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					gsw_phy3_led0: led@0 {
+						reg = <0>;
+						status = "disabled";
+					};
+
+					gsw_phy3_led1: led@1 {
+						reg = <1>;
+						status = "disabled";
+					};
+				};
 			};
 
 			gsw_phy4: ethernet-phy@c {
 				compatible = "ethernet-phy-ieee802.3-c22";
 				reg = <12>;
+
+				leds {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					gsw_phy4_led0: led@0 {
+						reg = <0>;
+						status = "disabled";
+					};
+
+					gsw_phy4_led1: led@1 {
+						reg = <1>;
+						status = "disabled";
+					};
+				};
 			};
 		};
 	};
