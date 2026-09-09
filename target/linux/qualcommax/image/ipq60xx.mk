@@ -22,6 +22,25 @@ define Build/netgear-rbx350-qsdk-ipq-factory
 	@mv $@.new $@
 endef
 
+# RouterBOOT only loads bare ARM64 ELF images, not FIT, and the yaffs kernel
+# partition is just 8 MiB while the raw kernel is around 14 MiB. The kernel is
+# therefore wrapped in a self-extracting LZMA loader; see
+# image/mikrotik-lzma-loader.
+define Build/mikrotik-lzma-loader
+	# Compress $@ (the file currently travelling through the pipe) rather than
+	# $(IMAGE_KERNEL): the latter picks the wrong, larger image on squashfs
+	# builds. Write via a temporary file because $@ is both source and target.
+	$(MAKE) -C $(TOPDIR)/target/linux/qualcommax/image/mikrotik-lzma-loader \
+		KERNEL_IMAGE="$@" \
+		DTB="$(KERNEL_BUILD_DIR)/image-$(DEVICE_DTS).dtb" \
+		OUTPUT="$@.loader" \
+		BUILD="$@.build" \
+		TARGET_CC="$(TARGET_CC)" \
+		STAGING_DIR_HOST="$(STAGING_DIR_HOST)"
+	mv "$@.loader" "$@"
+	rm -rf "$@.build"
+endef
+
 define Device/8devices_mango-dvk
 	$(call Device/FitImageLzma)
 	DEVICE_VENDOR := 8devices
