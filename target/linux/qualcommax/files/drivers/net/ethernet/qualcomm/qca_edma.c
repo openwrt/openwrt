@@ -915,14 +915,19 @@ static void edma_hw_reset(struct edma_priv *priv)
 static int edma_hw_init(struct edma_priv *priv)
 {
 	const struct edma_soc_data *soc = priv->soc;
-	int ret;
+	int i, ret;
 	u32 val;
 
 	edma_hw_reset(priv);
 	edma_hw_stop(priv);
 
-	regmap_write(priv->regmap, EDMA_QID2RID_TABLE_MEM(0),
-		     soc->rxdesc_ring & 0xF);
+	/* Every queue names the one receive ring this driver enables. Ring 0 is
+	 * never given a base address here, so a queue left pointing at it would
+	 * deliver nowhere.
+	 */
+	val = (soc->rxdesc_ring & EDMA_QID2RID_RING_MASK) * 0x11111111u;
+	for (i = 0; i < EDMA_QID2RID_DEPTH; i++)
+		regmap_write(priv->regmap, EDMA_QID2RID_TABLE_MEM(i), val);
 
 	ret = edma_rings_alloc(priv);
 	if (ret)
@@ -937,7 +942,6 @@ static int edma_hw_init(struct edma_priv *priv)
 
 	if (soc->txcmpl_ring != soc->txdesc_ring) {
 		int map_idx, bit_pos;
-		int i;
 
 		for (i = 0; i < 3; i++)
 			regmap_write(priv->regmap, EDMA_REG_TXDESC2CMPL_MAP(i), 0);
