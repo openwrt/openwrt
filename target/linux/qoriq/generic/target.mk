@@ -1,3 +1,5 @@
+SUBTARGET:=generic
+BOARDNAME:=Generic (e6500)
 CPU_TYPE:=e6500
 
 define Target/Description

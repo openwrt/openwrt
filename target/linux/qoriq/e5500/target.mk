@@ -1,3 +1,5 @@
+SUBTARGET:=e5500
+BOARDNAME:=e5500
 CPU_TYPE:=e5500
 
 define Target/Description
