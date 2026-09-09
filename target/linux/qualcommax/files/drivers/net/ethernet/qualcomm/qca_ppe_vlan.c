@@ -314,6 +314,21 @@ int qca_ppe_port_vlan_add(struct dsa_switch *ds, int port,
 				untagged ? PPE_EG_UNTAGGED : PPE_EG_TAGGED);
 
 	if (pvid) {
+		/* The bridge notifies only the vid coming in, so the entry that
+		 * held this port's untagged rule gives it up here or keeps a
+		 * member it no longer has.
+		 */
+		if (priv->port_pvid[port] != vid) {
+			struct qca_ppe_vlan_entry *old;
+
+			old = ppe_vlan_find(priv, br_dev,
+					    priv->port_pvid[port]);
+			if (old) {
+				old->pvid_ports &= ~BIT(port);
+				ppe_vlan_pvid_update(priv, old);
+			}
+		}
+
 		ppe_port_def_cvid_set(priv, port, vid,
 				      priv->vlan_filtering & BIT(port));
 		priv->port_pvid[port] = vid;
