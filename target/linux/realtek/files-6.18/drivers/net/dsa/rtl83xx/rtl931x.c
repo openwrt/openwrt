@@ -36,9 +36,6 @@
 
 #define RTL931X_MAC_LINK_STS			(0x0EC0)
 
-#define RTL931X_FORCE_EN			BIT(9)
-#define RTL931X_FORCE_LINK_EN			BIT(0)
-
 #define RTL931X_TRK_HASH_CTRL			(0xBA70)
 #define RTL931X_TRK_CTRL			(0xBA78)
 
@@ -464,7 +461,10 @@ const struct rtldsa_config rtldsa_931x_cfg = {
 	.vlan_fwd_on_inner = otto_vlan_931x_port_forward_on_inner,
 	.stp_get = rtldsa_931x_stp_get,
 	.stp_set = rtl931x_stp_set,
-	.mac_force_mode_mask = RTL931X_FORCE_EN | RTL931X_FORCE_LINK_EN,
+	.mac_force_mode = {
+		.force_en_mask = RTL931X_FORCE_LINK_EN,
+		.link_up_mask = RTL931X_FORCE_LINK,
+	},
 	.mac_force_mode_ctrl = rtl931x_mac_force_mode_ctrl,
 	.mac_link_sts = RTL931X_MAC_LINK_STS,
 	.mac_port_ctrl = rtl931x_mac_port_ctrl,
