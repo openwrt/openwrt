@@ -404,6 +404,15 @@
 		pinmux_disable_sys_led: disable_sys_led {
 			pinctrl-single,bits = <0x0 0x0 0x1000>;
 		};
+
+		/*
+		 * Disable the LED IC page access and the LED stacking modes,
+		 * freeing GPIO 23. A non-zero stacking mode also inserts sync
+		 * data into the serial LED stream, shifting all port LEDs.
+		 */
+		pinmux_disable_led_stack: disable-led-stack {
+			pinctrl-single,bits = <0x0 0x0 0x7000000>;
+		};
 	};
 
 	thermal_zones: thermal-zones {
