@@ -51,6 +51,7 @@ case "$FIRMWARE" in
 	xiaomi,redmi-ax5400)
 		caldata_extract "0:art" 0x1000 0x20000
 		;;
+	wpx8324,ap-mp03-5-c1|\
 	yuncore,ax830|\
 	yuncore,ax850)
 		caldata_extract "0:ART" 0x1000 0x20000
@@ -98,6 +99,7 @@ case "$FIRMWARE" in
 		ath11k_remove_regdomain
 		ath11k_set_macflag
 		;;
+	wpx8324,ap-mp03-5-c1|\
 	yuncore,ax830)
 		caldata_extract "0:ART" 0x4c000 0x20000
 		label_mac=$(mtd_get_mac_binary 0:ART 0)
