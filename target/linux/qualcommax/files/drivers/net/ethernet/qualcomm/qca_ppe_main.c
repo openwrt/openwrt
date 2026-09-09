@@ -61,6 +61,13 @@ static void ppe_port_xgmac_set(struct qca_ppe_priv *priv, int port,
 static void ppe_port_bridge_txmac_set(struct qca_ppe_priv *priv, int port,
 				      bool enable)
 {
+	/* The loopback port is internal and has no link of its own: probe
+	 * opens its gate once and nothing that walks the ports may close it,
+	 * because nothing would open it again.
+	 */
+	if (!enable && port == priv->data->loopback_port)
+		return;
+
 	regmap_update_bits(priv->regmap, PPE_PORT_BRIDGE_CTRL(port),
 			   PPE_PORT_BRIDGE_CTRL_TXMAC_EN,
 			   enable ? PPE_PORT_BRIDGE_CTRL_TXMAC_EN : 0);
@@ -538,13 +545,10 @@ static int qca_ppe_setup(struct dsa_switch *ds)
 		val = PPE_BRIDGE_NEW_LRN_EN |
 		      PPE_BRIDGE_STA_MOVE_EN |
 		      FIELD_PREP(PPE_BRIDGE_PORT_ISOL, port_mask);
-		if (dsa_is_cpu_port(ds, i))
-			val |= PPE_PORT_BRIDGE_CTRL_TXMAC_EN;
 		regmap_update_bits(priv->regmap, PPE_PORT_BRIDGE_CTRL(i),
 				   PPE_BRIDGE_NEW_LRN_EN |
 				   PPE_BRIDGE_STA_MOVE_EN |
-				   PPE_BRIDGE_PORT_ISOL |
-				   PPE_PORT_BRIDGE_CTRL_TXMAC_EN,
+				   PPE_BRIDGE_PORT_ISOL,
 				   val);
 
 		ppe_port_cnt_enable(priv, i);
