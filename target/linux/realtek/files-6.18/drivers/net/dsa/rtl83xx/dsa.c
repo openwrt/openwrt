@@ -329,8 +329,7 @@ static void rtldsa_93xx_phylink_mac_config(struct phylink_config *config,
 		return;
 
 	cfg = &priv->r->mac_force_mode;
-	force_dynamic_phy = priv->family_id == RTL9300_FAMILY_ID &&
-		!priv->ports[port].phy &&
+	force_dynamic_phy = !priv->ports[port].phy &&
 		(mode == MLO_AN_PHY || state->interface == PHY_INTERFACE_MODE_SGMII);
 
 	/* Select PCS before dropping force mode to avoid a transient link down. */
@@ -340,8 +339,7 @@ static void rtldsa_93xx_phylink_mac_config(struct phylink_config *config,
 					 RTLDSA_MAC_LINK_STATE_SOURCE_PCS,
 					 state->interface);
 
-	if (priv->family_id == RTL9300_FAMILY_ID &&
-	    (mode == MLO_AN_FIXED || force_dynamic_phy)) {
+	if (mode == MLO_AN_FIXED || force_dynamic_phy) {
 		/* Keep links that require force mode forced down. */
 		regmap_write(priv->map, priv->r->mac_force_mode_ctrl(port),
 			     cfg->force_en_mask | cfg->fc_force_en_mask);
@@ -385,8 +383,7 @@ static void rtldsa_93xx_phylink_mac_link_down(struct phylink_config *config,
 	int port = dp->index;
 
 	cfg = &priv->r->mac_force_mode;
-	force_dynamic_phy = priv->family_id == RTL9300_FAMILY_ID &&
-		!priv->ports[port].phy &&
+	force_dynamic_phy = !priv->ports[port].phy &&
 		(mode == MLO_AN_PHY || interface == PHY_INTERFACE_MODE_SGMII);
 
 	/* Stop TX/RX to port */
@@ -398,8 +395,7 @@ static void rtldsa_93xx_phylink_mac_link_down(struct phylink_config *config,
 					 RTLDSA_MAC_LINK_STATE_SOURCE_PCS,
 					 interface);
 
-	if (priv->family_id == RTL9300_FAMILY_ID &&
-	    (dsa_port_is_cpu(dp) || mode == MLO_AN_FIXED || force_dynamic_phy)) {
+	if (dsa_port_is_cpu(dp) || mode == MLO_AN_FIXED || force_dynamic_phy) {
 		/* Preserve force mode while forcing the link down. */
 		regmap_update_bits(priv->map, priv->r->mac_force_mode_ctrl(port),
 				   cfg->link_up_mask, 0);
@@ -472,9 +468,6 @@ static void rtldsa_93xx_phylink_mac_link_up(struct phylink_config *config,
 	int port = dp->index;
 	bool dynamic_phy, force_dynamic_phy, keep_forced;
 	u32 mcr, spdsel;
-
-	if (priv->family_id != RTL9300_FAMILY_ID)
-		goto restart;
 
 	/*
 	 * The RTL93xx polling machinery does more than issue MDIO
