@@ -946,14 +946,6 @@ static void qca_ppe_phylink_get_caps(struct dsa_switch *ds, int port,
 			  config->supported_interfaces);
 		__set_bit(PHY_INTERFACE_MODE_SGMII,
 			  config->supported_interfaces);
-		__set_bit(PHY_INTERFACE_MODE_RGMII,
-			  config->supported_interfaces);
-		__set_bit(PHY_INTERFACE_MODE_RGMII_ID,
-			  config->supported_interfaces);
-		__set_bit(PHY_INTERFACE_MODE_RGMII_RXID,
-			  config->supported_interfaces);
-		__set_bit(PHY_INTERFACE_MODE_RGMII_TXID,
-			  config->supported_interfaces);
 		break;
 	case 5 ... 6:
 		config->mac_capabilities =
