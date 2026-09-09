@@ -1,0 +1,30 @@
+#!/bin/sh /etc/rc.common
+# Re-enable switch ports that may have been left disabled by the
+# hardware-level portdisable devicetree property, after both preinit
+# and netifd have finished applying their own switch/VLAN configuration.
+# Runs deliberately late (START=99) to win any race with a second
+# switch reset issued later in the boot sequence (e.g. by netifd).
+
+START=99
+
+reenable_switch_ports() {
+	local cfg="$1"
+	local device ports
+
+	config_get device "$cfg" device
+	config_get ports "$cfg" ports
+
+	[ -n "$device" ] || return
+
+	for p in $ports; do
+		swconfig dev "$device" port "${p%%[a-z]*}" set disable 0
+	done
+	swconfig dev "$device" set apply
+}
+
+boot() {
+	[ -x /sbin/swconfig ] || return
+	. /lib/functions.sh
+	config_load network
+	config_foreach reenable_switch_ports switch_vlan
+}
