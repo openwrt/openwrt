@@ -231,6 +231,7 @@
 #define RTL930X_TX_PAUSE_EN			BIT(7)
 #define RTL930X_RX_PAUSE_EN			BIT(8)
 #define RTL930X_MAC_FORCE_FC_EN			BIT(9)
+#define RTL930X_MEDIA_SEL			BIT(16)
 
 #define RTL931X_FORCE_EN			BIT(9)
 #define RTL931X_FORCE_LINK_EN			BIT(0)
@@ -1035,6 +1036,11 @@ struct rtldsa_93xx_lag_entry {
 	u32 num_tx_candi:4;
 };
 
+enum rtldsa_mac_link_state_source {
+	RTLDSA_MAC_LINK_STATE_SOURCE_PCS,
+	RTLDSA_MAC_LINK_STATE_SOURCE_PHY,
+};
+
 struct rtldsa_port {
 	bool enable:1;
 	bool phy:1;
@@ -1422,6 +1428,9 @@ struct rtldsa_config {
 	u32 mac_force_mode_mask;
 	int  (*mac_force_mode_ctrl)(int port);
 	int  (*mac_port_ctrl)(int port);
+	void (*mac_link_state_source_set)(int port,
+					  enum rtldsa_mac_link_state_source source,
+					  phy_interface_t interface);
 
 	/**
 	 * @mac_capabilities: supported MAC capabilities
