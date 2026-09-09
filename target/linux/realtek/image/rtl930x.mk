@@ -140,6 +140,17 @@ define Device/horaco_zx-swtgw2c8f
 endef
 TARGET_DEVICES += horaco_zx-swtgw2c8f
 
+define Device/keeplink_kp-9000-8xm
+  SOC := rtl9303
+  UIMAGE_MAGIC := 0x93000000
+  DEVICE_VENDOR := KeepLiNK
+  DEVICE_MODEL := KP-9000-8XM
+  # The bootloader and the OEM web interface write into a 14 MiB RUNTIME1
+  IMAGE_SIZE := 14336k
+  $(Device/kernel-lzma)
+endef
+TARGET_DEVICES += keeplink_kp-9000-8xm
+
 define Device/nicgiga_s100-0800s-m
   SOC := rtl9303
   UIMAGE_MAGIC := 0x93030000
