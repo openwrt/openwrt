@@ -525,6 +525,8 @@ struct qca_ppe_priv {
 	struct clk_bulk_data *clks;
 	int num_clks;
 	spinlock_t fdb_lock;
+	u32 fdb_cmd_id;
+	u32 fdb_rd_cmd_id;
 	/* Guards the VSI, translation-index and bridge-VLAN state, and the
 	 * read-modify-write an MDB update makes of an FDB entry. The switchdev
 	 * ops reach it under rtnl, the FDB and MDB work from a workqueue that
