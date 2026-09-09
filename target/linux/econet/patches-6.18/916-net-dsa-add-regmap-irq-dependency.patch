@@ -1,0 +1,14 @@
+--- a/drivers/net/dsa/Kconfig
++++ b/drivers/net/dsa/Kconfig
+@@ -28,6 +28,11 @@ source "drivers/net/dsa/hirschmann/Kconf
+ 
+ source "drivers/net/dsa/lantiq/Kconfig"
+ 
++config NET_DSA_MT7530_EXT
++	tristate "Dependencies for MT7530 out-of-tree module"
++	select REGMAP_IRQ
++	select PCS_MTK_LYNXI
++
+ config NET_DSA_MT7530
+ 	tristate "MediaTek MT7530 and MT7531 Ethernet switch support"
+ 	select NET_DSA_TAG_MTK
