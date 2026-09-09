@@ -233,10 +233,10 @@
 #define RTL930X_MAC_FORCE_FC_EN			BIT(9)
 #define RTL930X_MEDIA_SEL			BIT(16)
 
-#define RTL931X_FORCE_EN			BIT(9)
 #define RTL931X_FORCE_LINK_EN			BIT(0)
 #define RTL931X_DUPLEX_MODE			BIT(2)
 #define RTL931X_MAC_FORCE_FC_EN			BIT(4)
+#define RTL931X_FORCE_LINK			BIT(9)
 #define RTL931X_TX_PAUSE_EN			BIT(16)
 #define RTL931X_RX_PAUSE_EN			BIT(17)
 
@@ -1041,6 +1041,16 @@ enum rtldsa_mac_link_state_source {
 	RTLDSA_MAC_LINK_STATE_SOURCE_PHY,
 };
 
+struct rtldsa_mac_force_mode_cfg {
+	u32 force_en_mask;
+	u32 link_up_mask;
+	u32 duplex_mask;
+	u32 speed_mask;
+	u32 tx_pause_mask;
+	u32 rx_pause_mask;
+	u32 media_mask;
+};
+
 struct rtldsa_port {
 	bool enable:1;
 	bool phy:1;
@@ -1425,7 +1435,7 @@ struct rtldsa_config {
 	int (*stp_get)(struct rtl838x_switch_priv *priv, u16 msti, int port);
 	void (*stp_set)(struct rtl838x_switch_priv *priv, u16 msti, int port, int state);
 	int mac_link_sts;
-	u32 mac_force_mode_mask;
+	struct rtldsa_mac_force_mode_cfg mac_force_mode;
 	int  (*mac_force_mode_ctrl)(int port);
 	int  (*mac_port_ctrl)(int port);
 	void (*mac_link_state_source_set)(int port,

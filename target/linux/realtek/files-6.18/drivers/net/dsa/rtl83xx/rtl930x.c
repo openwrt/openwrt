@@ -2281,7 +2281,16 @@ const struct rtldsa_config rtldsa_930x_cfg = {
 	.stp_get = rtldsa_930x_stp_get,
 	.stp_set = rtl930x_stp_set,
 	.mac_link_sts = RTL930X_MAC_LINK_STS,
-	.mac_force_mode_mask = RTL930X_FORCE_EN | RTL930X_FORCE_LINK_EN,
+	.mac_force_mode = {
+		.force_en_mask = RTL930X_FORCE_EN |
+				 RTL930X_MAC_FORCE_FC_EN,
+		.link_up_mask = RTL930X_FORCE_LINK_EN,
+		.duplex_mask = RTL930X_DUPLEX_MODE,
+		.speed_mask = RTL930X_SPEED_MASK,
+		.tx_pause_mask = RTL930X_TX_PAUSE_EN,
+		.rx_pause_mask = RTL930X_RX_PAUSE_EN,
+		.media_mask = RTL930X_MEDIA_SEL,
+	},
 	.mac_force_mode_ctrl = rtl930x_mac_force_mode_ctrl,
 	.mac_link_state_source_set = rtldsa_930x_mac_link_state_source_set,
 	.mac_port_ctrl = rtl930x_mac_port_ctrl,
