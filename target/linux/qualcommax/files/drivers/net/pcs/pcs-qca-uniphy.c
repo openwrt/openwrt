@@ -374,7 +374,15 @@ static void qca_uniphy_pcs_get_state_usxgmii(struct qca_uniphy *uniphy,
 		return;
 	}
 
+	/* The speed field of this word only means anything once USXGMII
+	 * autonegotiation has resolved it, so reporting the link before then
+	 * would hand phylink whatever the field happens to hold.
+	 */
 	state->an_complete = !!(val & XPCS_USXG_AN_LINK_STS);
+	if (!state->an_complete) {
+		state->link = false;
+		return;
+	}
 
 	switch (FIELD_GET(XPCS_USXG_AN_SPEED_MASK, val)) {
 	case XPCS_USXG_AN_SPEED_10000:
