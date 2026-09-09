@@ -8,10 +8,6 @@ board=$(board_name)
 
 case "$board" in
 d-link,dgs-1210-28p-f|d-link,dgs-1210-28mp-f)
-	# Enable fan control
-	FAN_CTRL='/sys/class/hwmon/hwmon0'
-	echo 1 > "$FAN_CTRL/pwm1_enable"
-
 	# Set fan script execution in crontab
 	grep -s -q fan_ctrl.sh /etc/crontabs/root && exit 0
 
