@@ -1192,10 +1192,91 @@ static void edma_get_ringparam(struct net_device *netdev,
 	ring->rx_pending = EDMA_RX_RING_SIZE;
 }
 
+/* The registers the driver drives, in the order it configures them: the
+ * global block, then each ring it owns and the interrupt that serves it. The
+ * dump pairs every value with the offset it came from, so it reads without a
+ * table on the other side. The misc status is left out, so that a dump cannot
+ * take an error away from the handler.
+ */
+static int edma_regs_offsets(const struct edma_priv *priv, u32 *off)
+{
+	const struct edma_soc_data *soc = priv->soc;
+	int n = 0;
+
+	off[n++] = EDMA_REG_PORT_CTRL;
+	off[n++] = EDMA_REG_DMAR_CTRL;
+	off[n++] = EDMA_REG_AXIW_CTRL;
+	off[n++] = EDMA_REG_MISC_INT_MASK;
+
+	off[n++] = EDMA_REG_TXDESC_BA(soc->txdesc_ring);
+	off[n++] = EDMA_REG_TXDESC_PROD_IDX(soc->txdesc_ring);
+	off[n++] = EDMA_REG_TXDESC_CONS_IDX(soc->txdesc_ring);
+	off[n++] = EDMA_REG_TXDESC_RING_SIZE(soc->txdesc_ring);
+	off[n++] = EDMA_REG_TXDESC_CTRL(soc->txdesc_ring);
+
+	off[n++] = EDMA_REG_TXCMPL_BA(soc->txcmpl_base, soc->txcmpl_ring);
+	off[n++] = EDMA_REG_TXCMPL_PROD_IDX(soc->txcmpl_base, soc->txcmpl_ring);
+	off[n++] = EDMA_REG_TXCMPL_CONS_IDX(soc->txcmpl_base, soc->txcmpl_ring);
+	off[n++] = EDMA_REG_TXCMPL_RING_SIZE(soc->txcmpl_base, soc->txcmpl_ring);
+	off[n++] = EDMA_REG_TXCMPL_CTRL(soc->txcmpl_base, soc->txcmpl_ring);
+
+	off[n++] = EDMA_REG_TX_INT_STAT(soc->tx_int_base, soc->txcmpl_ring);
+	off[n++] = EDMA_REG_TX_INT_MASK(soc->tx_int_base, soc->txcmpl_ring);
+	off[n++] = EDMA_REG_TX_MOD_TIMER(soc->tx_int_base, soc->txcmpl_ring);
+	off[n++] = EDMA_REG_TX_INT_CTRL(soc->tx_int_base, soc->txcmpl_ring);
+
+	off[n++] = EDMA_REG_RXFILL_BA(soc->rxfill_ring);
+	off[n++] = EDMA_REG_RXFILL_PROD_IDX(soc->rxfill_ring);
+	off[n++] = EDMA_REG_RXFILL_CONS_IDX(soc->rxfill_ring);
+	off[n++] = EDMA_REG_RXFILL_RING_SIZE(soc->rxfill_ring);
+	off[n++] = EDMA_REG_RXFILL_RING_EN(soc->rxfill_ring);
+	off[n++] = EDMA_REG_RXFILL_INT_STAT(soc->rxfill_ring);
+	off[n++] = EDMA_REG_RXFILL_INT_MASK(soc->rxfill_ring);
+
+	off[n++] = EDMA_REG_RXDESC_BA(soc->rxdesc_ring);
+	off[n++] = EDMA_REG_RXDESC_PROD_IDX(soc->rxdesc_ring);
+	off[n++] = EDMA_REG_RXDESC_CONS_IDX(soc->rxdesc_ring);
+	off[n++] = EDMA_REG_RXDESC_RING_SIZE(soc->rxdesc_ring);
+	off[n++] = EDMA_REG_RXDESC_CTRL(soc->rxdesc_ring);
+	off[n++] = EDMA_REG_RXDESC_INT_STAT(soc->rxdesc_ring);
+	off[n++] = EDMA_REG_RXDESC_INT_MASK(soc->rxdesc_ring);
+	off[n++] = EDMA_REG_RX_MOD_TIMER(soc->rxdesc_ring);
+	off[n++] = EDMA_REG_RX_INT_CTRL(soc->rxdesc_ring);
+
+	return n;
+}
+
+static int edma_get_regs_len(struct net_device *netdev)
+{
+	return EDMA_REGS_COUNT * 2 * sizeof(u32);
+}
+
+static void edma_get_regs(struct net_device *netdev,
+			  struct ethtool_regs *regs, void *p)
+{
+	struct edma_priv *priv = netdev_priv(netdev);
+	u32 off[EDMA_REGS_COUNT];
+	u32 *out = p;
+	int n, i;
+
+	regs->version = 1;
+
+	n = edma_regs_offsets(priv, off);
+	for (i = 0; i < n; i++) {
+		u32 val;
+
+		regmap_read(priv->regmap, off[i], &val);
+		*out++ = off[i];
+		*out++ = val;
+	}
+}
+
 static const struct ethtool_ops edma_ethtool_ops = {
 	.get_drvinfo = edma_get_drvinfo,
 	.get_link = ethtool_op_get_link,
 	.get_ringparam = edma_get_ringparam,
+	.get_regs_len = edma_get_regs_len,
+	.get_regs = edma_get_regs,
 };
 
 static int edma_ndo_open(struct net_device *netdev)

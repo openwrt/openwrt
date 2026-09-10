@@ -151,6 +151,9 @@
 /* TXDESC to TXCMPL ring mapping */
 #define EDMA_REG_TXDESC2CMPL_MAP(n) (0x0c + 0x4 * (n))
 
+/* Registers the ethtool dump reports, as offset and value pairs. */
+#define EDMA_REGS_COUNT 34
+
 /* Sizes and ring configuration */
 #define EDMA_MAX_FRAME_SIZE 12288
 #define EDMA_RX_PREHDR_SIZE (sizeof(struct edma_rx_preheader))
