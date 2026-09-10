@@ -1,6 +1,14 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Sat, 22 Jul 2023 14:50:27 +0000
+Subject: [PATCH] arm: dts: mt7988: enable pstore
+
+Downstream OpenWrt patch from the MediaTek pstore/boot-recovery series.
+Git headers added retroactively for git-am compatibility.
+---
 --- a/arch/arm/dts/mt7988.dtsi
 +++ b/arch/arm/dts/mt7988.dtsi
-@@ -63,6 +63,30 @@
+@@ -63,6 +63,38 @@
  		#clock-cells = <0>;
  	};
  
@@ -14,11 +22,19 @@
 +		#size-cells = <2>;
 +		ranges;
 +
-+		/* 64 KiB reserved for ramoops/pstore */
-+		ramoops@42ff0000 {
++		/* 1 MiB reserved for ramoops/pstore. Keep in sync with the
++		 * kernel's mt7988a.dtsi node (197-dts-mt7988a-add-ramoops.patch)
++		 * so 'pstore check' and the kernel agree on the zone layout.
++		 */
++		ramoops@42f00000 {
 +			compatible = "ramoops";
-+			reg = <0 0x42ff0000 0 0x10000>;
-+			record-size = <0x1000>;
++			reg = <0 0x42f00000 0 0x100000>;
++			no-map;
++			record-size = <0x20000>;
++			console-size = <0x40000>;
++			ftrace-size = <0x10000>;
++			pmsg-size = <0x10000>;
++			ecc-size = <16>;
 +		};
 +
 +		/* 320 KiB reserved for ARM Trusted Firmware (BL31 + BL32) */

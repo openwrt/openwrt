@@ -10,7 +10,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 ---
 --- a/arch/arm64/boot/dts/mediatek/mt7988a.dtsi
 +++ b/arch/arm64/boot/dts/mediatek/mt7988a.dtsi
-@@ -144,6 +144,32 @@
+@@ -156,6 +156,32 @@
  			reg = <0 0x43000000 0 0x50000>;
  			no-map;
  		};
@@ -43,7 +43,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	};
  
  	soc {
-@@ -870,6 +896,50 @@
+@@ -882,6 +908,50 @@
  			reg = <0 0x15000000 0 0x1000>;
  			#clock-cells = <1>;
  			#reset-cells = <1>;
@@ -94,7 +94,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		};
  
  		switch: switch@15020000 {
-@@ -1091,6 +1161,7 @@
+@@ -1103,6 +1173,7 @@
  			#size-cells = <0>;
  			mediatek,ethsys = <&ethsys>;
  			mediatek,infracfg = <&topmisc>;
@@ -102,7 +102,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  			gmac0: mac@0 {
  				compatible = "mediatek,eth-mac";
-@@ -1154,6 +1225,72 @@
+@@ -1166,6 +1237,72 @@
  			ranges = <0 0x15400000 0 0x200000>;
  		};
  
