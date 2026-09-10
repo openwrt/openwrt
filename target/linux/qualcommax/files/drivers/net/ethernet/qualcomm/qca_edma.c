@@ -140,6 +140,7 @@ static irqreturn_t edma_misc_irq_handle(int irq, void *ctx)
 	if (!val)
 		return IRQ_NONE;
 
+	priv->stats.misc_error++;
 	dev_warn_ratelimited(&priv->pdev->dev, "misc error %#x\n", val);
 
 	return IRQ_HANDLED;
@@ -413,6 +414,7 @@ static u32 edma_clean_tx(struct edma_priv *priv, struct edma_ring *txcmpl_ring,
 		if (unlikely(txcmpl->status & EDMA_TXCMPL_ERROR)) {
 			dev_warn_ratelimited(&pdev->dev, "tx error %#x\n",
 					     txcmpl->status);
+			priv->stats.tx_desc_error++;
 			priv->netdev->stats.tx_errors++;
 		}
 
@@ -443,6 +445,7 @@ static u32 edma_clean_tx(struct edma_priv *priv, struct edma_ring *txcmpl_ring,
 				dev_warn(&pdev->dev,
 					 "invalid skb: cons:%u prod:%u status %x\n",
 					 cons, prod, txcmpl->status);
+				priv->stats.tx_unnamed_frame++;
 			} else {
 				bytes += edma_tx_release(priv,
 							 priv->txcmpl_idx, skb,
@@ -567,10 +570,14 @@ static u32 edma_clean_rx(struct edma_priv *priv, int budget,
 
 		pkt_len = desc_status & EDMA_RXDESC_PACKET_LEN_MASK;
 
+		if (unlikely(desc_status & EDMA_RXDESC_MORE))
+			priv->stats.rx_split_frame++;
+
 		page_pool_dma_sync_for_cpu(priv->page_pool, page, 0,
 					   EDMA_RX_PREHDR_SIZE + pkt_len);
 		store_idx = le32_to_cpu(rxph->opaque);
 		if (unlikely(!edma_rx_page_take(priv, page, store_idx))) {
+			priv->stats.rx_untracked_page++;
 			netdev->stats.rx_errors++;
 			goto next;
 		}
@@ -583,6 +590,7 @@ static u32 edma_clean_rx(struct edma_priv *priv, int budget,
 					     le16_to_cpu(rxph->src_info),
 					     le16_to_cpu(rxph->dst_info));
 			page_pool_put_full_page(priv->page_pool, page, true);
+			priv->stats.rx_bad_src_info++;
 			netdev->stats.rx_errors++;
 			goto next;
 		}
@@ -592,6 +600,7 @@ static u32 edma_clean_rx(struct edma_priv *priv, int budget,
 		skb = napi_build_skb(page_address(page), page_size(page));
 		if (unlikely(!skb)) {
 			page_pool_put_full_page(priv->page_pool, page, true);
+			priv->stats.rx_no_skb++;
 			netdev->stats.rx_dropped++;
 			goto next;
 		}
@@ -607,6 +616,7 @@ static u32 edma_clean_rx(struct edma_priv *priv, int budget,
 		tag_info = skb_ext_add(skb, SKB_EXT_DSA_OOB);
 		if (unlikely(!tag_info)) {
 			dev_kfree_skb_any(skb);
+			priv->stats.rx_no_tag++;
 			netdev->stats.rx_dropped++;
 			goto next;
 		}
@@ -687,6 +697,7 @@ static int edma_rx_napi(struct napi_struct *napi, int budget)
 		if (prod == cons) {
 			dev_warn_ratelimited(&priv->pdev->dev,
 					     "RXFILL ring starved\n");
+			priv->stats.rx_fill_starved++;
 			priv->netdev->stats.rx_missed_errors++;
 			edma_rx_fill(priv, &priv->rxfill_ring);
 			return budget;
@@ -1269,7 +1280,47 @@ static void edma_get_regs(struct net_device *netdev,
 	}
 }
 
+static const char edma_stat_names[][ETH_GSTRING_LEN] = {
+	"rx_untracked_page",
+	"rx_bad_src_info",
+	"rx_no_skb",
+	"rx_no_tag",
+	"rx_split_frame",
+	"rx_fill_starved",
+	"tx_desc_error",
+	"tx_unnamed_frame",
+	"misc_error",
+};
+
+static int edma_get_sset_count(struct net_device *netdev, int sset)
+{
+	if (sset != ETH_SS_STATS)
+		return -EOPNOTSUPP;
+
+	return ARRAY_SIZE(edma_stat_names);
+}
+
+static void edma_get_strings(struct net_device *netdev, u32 sset, u8 *data)
+{
+	if (sset == ETH_SS_STATS)
+		memcpy(data, edma_stat_names, sizeof(edma_stat_names));
+}
+
+static void edma_get_ethtool_stats(struct net_device *netdev,
+				   struct ethtool_stats *stats, u64 *data)
+{
+	struct edma_priv *priv = netdev_priv(netdev);
+
+	BUILD_BUG_ON(sizeof(priv->stats) !=
+		     ARRAY_SIZE(edma_stat_names) * sizeof(u64));
+
+	memcpy(data, &priv->stats, sizeof(priv->stats));
+}
+
 static const struct ethtool_ops edma_ethtool_ops = {
+	.get_sset_count = edma_get_sset_count,
+	.get_strings = edma_get_strings,
+	.get_ethtool_stats = edma_get_ethtool_stats,
 	.get_drvinfo = edma_get_drvinfo,
 	.get_link = ethtool_op_get_link,
 	.get_ringparam = edma_get_ringparam,

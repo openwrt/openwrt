@@ -121,6 +121,11 @@
 #define EDMA_RXDESC_PL_OFFSET_SHIFT 16
 #define EDMA_RXDESC_RX_EN 0x1
 #define EDMA_RXDESC_PACKET_LEN_MASK 0x3fff
+/* A frame the engine had to spread over several receive descriptors. The fill
+ * buffers are sized for the largest frame the conduit accepts, so it does not
+ * arise; a frame that carried it would be handed up in pieces.
+ */
+#define EDMA_RXDESC_MORE BIT(30)
 
 /* RX descriptor ring interrupt registers */
 #define EDMA_REG_RXDESC_INT_STAT(n) (0x49000 + (0x1000 * (n)))
@@ -251,6 +256,18 @@ struct edma_rx_preheader {
 	u32 rx_pre7;
 };
 
+struct edma_stats {
+	u64 rx_untracked_page;
+	u64 rx_bad_src_info;
+	u64 rx_no_skb;
+	u64 rx_no_tag;
+	u64 rx_split_frame;
+	u64 rx_fill_starved;
+	u64 tx_desc_error;
+	u64 tx_unnamed_frame;
+	u64 misc_error;
+};
+
 struct edma_soc_data {
 	u32 txcmpl_base;
 	u32 tx_int_base;
@@ -290,6 +307,11 @@ struct edma_priv {
 	struct sk_buff *txcmpl_skb;
 	u32 txcmpl_idx;
 	bool txcmpl_run;
+
+	/* Counted here rather than in netdev->stats, which cannot say which of
+	 * the reasons a frame went missing for.
+	 */
+	struct edma_stats stats;
 
 	struct edma_ring txdesc_ring;
 	struct edma_ring txcmpl_ring;
