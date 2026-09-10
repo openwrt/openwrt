@@ -438,11 +438,9 @@ int __otto_table_write_bytes(int handle, int idx, const void *buf, size_t size)
 		      size, otto_table_handle_to_id(handle), words))
 		return -EINVAL;
 
-	for (unsigned int i = 0; i < words; i++) {
-		ret = regmap_write(otto_map, r->data + i * 4, in[i]);
-		if (ret)
-			return ret;
-	}
+	ret = regmap_bulk_write(otto_map, r->data, in, words);
+	if (ret)
+		return ret;
 
 	return otto_table_exec(handle, true, idx);
 }
