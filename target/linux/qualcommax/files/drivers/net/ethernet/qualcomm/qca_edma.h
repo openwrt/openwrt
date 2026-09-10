@@ -74,6 +74,10 @@
 #define EDMA_TXCMPL_PROD_IDX_MASK 0xffff
 #define EDMA_TXCMPL_CONS_IDX_MASK 0xffff
 #define EDMA_TXCMPL_RETMODE_OPAQUE 0x0
+/* The engine returns one completion per descriptor: the more bit marks every
+ * completion of a frame but its last.
+ */
+#define EDMA_TXCMPL_MORE BIT(30)
 
 /* TX interrupt registers */
 #define EDMA_REG_TX_INT_STAT(b, n)  ((b) + (0x1000 * (n)))
@@ -164,7 +168,14 @@
 #define EDMA_TX_PREHDR_SIZE (sizeof(struct edma_tx_preheader))
 #define EDMA_TX_RING_SIZE 128
 #define EDMA_RX_RING_SIZE 2048
-#define EDMA_TX_RING_THRESH 16
+/* The bounds a frame is described to the engine within: at most this many
+ * buffers, and no buffer below this size before the last. The queue stops
+ * with room for a frame that takes every descriptor, or it would restart on
+ * space that the next frame still could not use.
+ */
+#define EDMA_TX_MAX_SEGS 32
+#define EDMA_TX_MIN_SEG 16
+#define EDMA_TX_RING_THRESH (EDMA_TX_MAX_SEGS + 1)
 
 /* Descriptor accessors */
 #define EDMA_GET_DESC(R, i, type) (&(((type *)((R)->desc))[i]))
@@ -174,7 +185,9 @@
 #define EDMA_TXCMPL_DESC(R, i) EDMA_GET_DESC(R, i, struct edma_txcmpl)
 
 /* TX descriptor fields */
+#define EDMA_TXDESC_MORE BIT(30)
 #define EDMA_TXDESC_PREHEADER_SHIFT 29
+#define EDMA_TXDESC_PREHEADER BIT(EDMA_TXDESC_PREHEADER_SHIFT)
 #define EDMA_TXDESC_DATA_OFFSET_SHIFT 16
 #define EDMA_TXDESC_DATA_OFFSET_MASK 0xff
 #define EDMA_TXDESC_DATA_LENGTH_MASK 0xffff
@@ -267,6 +280,13 @@ struct edma_priv {
 	struct page_pool *page_pool;
 	u32 rx_buffer_size;
 	u8 rx_page_order;
+
+	/* The frame a run of completions belongs to, named by the first of
+	 * them and released on the last.
+	 */
+	struct sk_buff *txcmpl_skb;
+	u32 txcmpl_idx;
+	bool txcmpl_run;
 
 	struct edma_ring txdesc_ring;
 	struct edma_ring txcmpl_ring;
