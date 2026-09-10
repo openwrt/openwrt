@@ -14,8 +14,9 @@
 #define PCIE_MDIO_CTRL_PHY_DATA_MASK	GENMASK(31, 16)
 #define PCIE_MDIO_CTRL_PHY_PAGE_MASK	GENMASK(15, 13)
 #define PCIE_MDIO_CTRL_PHY_ADDR_MASK	GENMASK(12, 8)
-#define PCIE_MDIO_CTRL_PHY_STATUS_MASK	GENMASK(6, 5)
-#define PCIE_MDIO_CTRL_PHY_STATUS_DONE	FIELD_PREP(PCIE_MDIO_CTRL_PHY_STATUS_MASK, 1)
+#define PCIE_MDIO_CTRL_PHY_RESERVED	BIT(7)
+#define PCIE_MDIO_CTRL_PHY_BUSY		BIT(6)
+#define PCIE_MDIO_CTRL_PHY_DONE		BIT(5)
 #define PCIE_MDIO_CTRL_PHY_READY	BIT(4)
 #define PCIE_MDIO_CTRL_PHY_WRITE	BIT(0)
 #define PCIE_MDIO_CTRL_PHY_READ		0
@@ -60,14 +61,43 @@ struct rtk_phy {
 	struct reset_control *phy_rst;
 };
 
-static int rtk_phy_wait_done_and_ready(struct regmap *regmap)
+/*
+ * Reads after successful poll starts some operation in HW again.
+ * Workaround it by passing read value up to caller.
+ */
+static int rtk_phy_read_poll(struct rtk_phy *rtk_phy, u32 *reg_val)
 {
-	u32 val, cond;
+	u32 val, mask, done;
+	int ret;
 
-	cond = PCIE_MDIO_CTRL_PHY_STATUS_DONE | PCIE_MDIO_CTRL_PHY_READY;
+	val = 0;
 
-	return regmap_read_poll_timeout(regmap, PCIE_MDIO_CTRL_PHY_REG, val,
-					(val & cond) == cond, 10, 2000);
+	/*
+	 * Ready bit is always set. Check it too to detect
+	 * deviations from known behavior.
+	 */
+	mask = PCIE_MDIO_CTRL_PHY_BUSY | PCIE_MDIO_CTRL_PHY_DONE |
+	       PCIE_MDIO_CTRL_PHY_READY;
+	done = PCIE_MDIO_CTRL_PHY_DONE | PCIE_MDIO_CTRL_PHY_READY;
+
+	ret = regmap_read_poll_timeout(rtk_phy->regmap, PCIE_MDIO_CTRL_PHY_REG, val,
+					(val & mask) == done, 10, 2000);
+
+	if (ret) {
+		dev_err(rtk_phy->dev, "polling error, ret: %d, value: 0x%x\n", ret, val);
+		return ret;
+	}
+
+	/*
+	 * Between MDIO operations must be a delay. Otherwise PHYs
+	 * may inconsistently fail. Place the delay here.
+	 */
+	fsleep(10);
+
+	if (reg_val)
+		*reg_val = val;
+
+	return 0;
 }
 
 static int rtk_phy_write(struct rtk_phy *rtk_phy, u8 page, u8 addr, u16 data)
@@ -82,7 +112,7 @@ static int rtk_phy_write(struct rtk_phy *rtk_phy, u8 page, u8 addr, u16 data)
 	if (ret)
 		return ret;
 
-	return rtk_phy_wait_done_and_ready(rtk_phy->regmap);
+	return rtk_phy_read_poll(rtk_phy, NULL);
 }
 
 static int rtk_phy_read(struct rtk_phy *rtk_phy, u8 page, u8 addr, u16 *data)
@@ -97,11 +127,7 @@ static int rtk_phy_read(struct rtk_phy *rtk_phy, u8 page, u8 addr, u16 *data)
 	if (ret)
 		return ret;
 
-	ret = rtk_phy_wait_done_and_ready(rtk_phy->regmap);
-	if (ret)
-		return ret;
-
-	ret = regmap_read(rtk_phy->regmap, PCIE_MDIO_CTRL_PHY_REG, &val);
+	ret = rtk_phy_read_poll(rtk_phy, &val);
 	if (ret)
 		return ret;
 
