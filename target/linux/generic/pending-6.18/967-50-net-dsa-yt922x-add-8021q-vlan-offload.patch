@@ -1,0 +1,671 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shi Jiayang <shi05275@163.com>
+Subject: [PATCH] net: dsa: yt922x: add single-bridge 802.1Q VLAN offload
+
+Program Whale VLAN membership, untagged egress, ingress PVID and port
+filters, with independent VID keys for unicast FDB and multicast MDB.
+Retain original tags on CPU copies and insert an access PVID on CPU TX:
+forced port destinations still pass hardware VLAN egress filtering.
+Preserve reserved link-local control frames on trunks without a PVID.
+
+Require an untagged egress VLAN to equal the port PVID. Set filtering
+before joining the bridge; reject live filtering/protocol changes that
+would desynchronize software and hardware. Refuse the protocol changes
+through the DSA port_vlan_protocol operation.
+
+Signed-off-by: Shi Jiayang <shi05275@163.com>
+
+---
+--- a/drivers/net/dsa/yt921x.c
++++ b/drivers/net/dsa/yt921x.c
+@@ -6280,14 +6280,24 @@ static int yt922x_dsa_change_tag_protoco
+ 					  enum dsa_tag_protocol proto)
+ {
+ 	struct yt921x_priv *priv = to_yt921x_priv(ds);
++	struct dsa_port *dp;
+ 	int res;
+ 
+ 	mutex_lock(&priv->reg_lock);
++	if (proto != DSA_TAG_PROTO_YT922X_4B) {
++		dsa_switch_for_each_user_port(dp, ds) {
++			if (priv->yt922x_vlan_filtering[dp->index]) {
++				res = -EBUSY;
++				goto out;
++			}
++		}
++	}
+ 	if (proto != DSA_TAG_PROTO_YT922X_4B &&
+ 	    !list_empty(&priv->yt922x_mdb_entries))
+ 		res = -EBUSY;
+ 	else
+ 		res = yt922x_cpu_tag_mode_set(priv, proto);
++out:
+ 	mutex_unlock(&priv->reg_lock);
+ 
+ 	return res;
+@@ -6329,6 +6339,8 @@ static int yt922x_dsa_setup(struct dsa_s
+ 	struct device_node *child;
+ 	int res;
+ 
++	ds->configure_vlan_while_not_filtering = false;
++
+ 	for (size_t i = 0; i < ARRAY_SIZE(priv->ports); i++) {
+ 		struct yt921x_port *pp = &priv->ports[i];
+ 
+@@ -6411,21 +6423,27 @@ static void yt922x_dsa_teardown(struct d
+ #define YT922X_FDB_PORT		GENMASK(15, 12)
+ #define YT922X_BRIDGE_VID		1
+ 
++struct yt922x_vlan {
++	u16 members;
++	u16 untagged;
++};
++
+ struct yt922x_fdb_entry {
+ 	struct list_head list;
+ 	struct net_device *bridge;
+ 	unsigned char addr[ETH_ALEN];
+ 	u8 port;
+ 	u8 vids;
++	u16 vid;
+ };
+ 
+ static struct yt922x_fdb_entry *
+-yt922x_fdb_find(struct yt921x_priv *priv, const unsigned char *addr)
++yt922x_fdb_find(struct yt921x_priv *priv, const unsigned char *addr, u16 vid)
+ {
+ 	struct yt922x_fdb_entry *entry;
+ 
+ 	list_for_each_entry(entry, &priv->yt922x_fdb_entries, list)
+-		if (ether_addr_equal(entry->addr, addr))
++		if (entry->vid == vid && ether_addr_equal(entry->addr, addr))
+ 			return entry;
+ 	return NULL;
+ }
+@@ -6435,6 +6453,7 @@ struct yt922x_mdb_entry {
+ 	struct net_device *bridge;
+ 	unsigned char addr[ETH_ALEN];
+ 	u8 vids[YT921X_PORT_NUM];
++	u16 vid;
+ };
+ 
+ static void yt922x_fdb_cleanup(void *data)
+@@ -6480,11 +6499,11 @@ static int yt922x_fdb_op(struct yt921x_p
+ 	return 0;
+ }
+ 
+-static void yt922x_fdb_key(const unsigned char *addr, u32 entry[4])
++static void yt922x_fdb_key(const unsigned char *addr, u16 vid, u32 entry[4])
+ {
+ 	entry[0] = get_unaligned_be32(addr);
+ 	/* Untagged learning uses the reset PVID, not Linux's VID 0. */
+-	entry[1] = FIELD_PREP(YT922X_FDB_VID, YT922X_BRIDGE_VID) |
++	entry[1] = FIELD_PREP(YT922X_FDB_VID, vid) |
+ 		   get_unaligned_be16(addr + 4);
+ 	entry[2] = 0;
+ 	entry[3] = 0;
+@@ -6495,8 +6514,8 @@ static bool yt922x_fdb_bridge_supported(
+ {
+ 	struct dsa_port *dp;
+ 
+-	if (vid > YT922X_BRIDGE_VID || db.type != DSA_DB_BRIDGE ||
+-	    br_vlan_enabled(db.bridge.dev))
++	if (db.type != DSA_DB_BRIDGE || vid >= VLAN_VID_MASK ||
++	    (br_vlan_enabled(db.bridge.dev) ? !vid : vid > YT922X_BRIDGE_VID))
+ 		return false;
+ 	if (dsa_is_user_port(&priv->ds, port))
+ 		return priv->ports[port].yt922x_bridge == db.bridge.dev;
+@@ -6515,11 +6534,15 @@ yt922x_dsa_port_fdb_add(struct dsa_switc
+ 	struct yt921x_priv *priv = to_yt921x_priv(ds);
+ 	struct yt922x_fdb_entry *fdb, *new = NULL;
+ 	u32 entry[4], result;
++	u16 hwvid;
++	u8 alias;
+ 	int ret;
+ 
+-	if (!is_valid_ether_addr(addr))
++	if (!is_valid_ether_addr(addr) || db.type != DSA_DB_BRIDGE)
+ 		return -EOPNOTSUPP;
+-	yt922x_fdb_key(addr, entry);
++	hwvid = br_vlan_enabled(db.bridge.dev) ? vid : YT922X_BRIDGE_VID;
++	alias = br_vlan_enabled(db.bridge.dev) ? 0 : vid;
++	yt922x_fdb_key(addr, hwvid, entry);
+ 	entry[1] |= FIELD_PREP(YT922X_FDB_STATUS, YT922X_FDB_STATIC);
+ 	entry[2] = YT922X_FDB_VALID | FIELD_PREP(YT922X_FDB_PORT, port);
+ 
+@@ -6529,9 +6552,9 @@ yt922x_dsa_port_fdb_add(struct dsa_switc
+ 	} else if (!yt922x_fdb_bridge_supported(priv, port, vid, db)) {
+ 		ret = -EOPNOTSUPP;
+ 	} else {
+-		fdb = yt922x_fdb_find(priv, addr);
++		fdb = yt922x_fdb_find(priv, addr, hwvid);
+ 		/* An inactive VLAN entry cannot redirect the untagged entry. */
+-		if (fdb && vid && (fdb->vids & BIT(0)) && fdb->port != port) {
++		if (fdb && alias && (fdb->vids & BIT(0)) && fdb->port != port) {
+ 			ret = -EOPNOTSUPP;
+ 			goto out;
+ 		}
+@@ -6549,6 +6572,7 @@ yt922x_dsa_port_fdb_add(struct dsa_switc
+ 		if (!ret) {
+ 			if (new) {
+ 				ether_addr_copy(fdb->addr, addr);
++				fdb->vid = hwvid;
+ 				list_add_tail(&fdb->list, &priv->yt922x_fdb_entries);
+ 				new = NULL;
+ 			}
+@@ -6557,7 +6581,7 @@ yt922x_dsa_port_fdb_add(struct dsa_switc
+ 				fdb->vids = 0;
+ 			fdb->port = port;
+ 			fdb->bridge = db.bridge.dev;
+-			fdb->vids |= BIT(vid);
++			fdb->vids |= BIT(alias);
+ 		}
+ 	}
+ out:
+@@ -6573,22 +6597,28 @@ yt922x_dsa_port_fdb_del(struct dsa_switc
+ 	struct yt921x_priv *priv = to_yt921x_priv(ds);
+ 	struct yt922x_fdb_entry *fdb;
+ 	u32 entry[4], out[4], result;
++	u16 hwvid;
++	u8 alias;
+ 	int ret = 0;
+ 
+-	if (vid > YT922X_BRIDGE_VID || db.type != DSA_DB_BRIDGE ||
++	if (vid >= VLAN_VID_MASK || db.type != DSA_DB_BRIDGE ||
+ 	    !is_valid_ether_addr(addr))
+ 		return -EOPNOTSUPP;
+-	yt922x_fdb_key(addr, entry);
++	if (!br_vlan_enabled(db.bridge.dev) && vid > YT922X_BRIDGE_VID)
++		return -EOPNOTSUPP;
++	hwvid = br_vlan_enabled(db.bridge.dev) ? vid : YT922X_BRIDGE_VID;
++	alias = br_vlan_enabled(db.bridge.dev) ? 0 : vid;
++	yt922x_fdb_key(addr, hwvid, entry);
+ 	mutex_lock(&priv->reg_lock);
+-	fdb = yt922x_fdb_find(priv, addr);
++	fdb = yt922x_fdb_find(priv, addr, hwvid);
+ 	if (!fdb || fdb->bridge != db.bridge.dev || fdb->port != port ||
+-	    !(fdb->vids & BIT(vid)))
++	    !(fdb->vids & BIT(alias)))
+ 		goto out;
+ 	/* The bridge also announces its default VLAN while filtering is off.
+ 	 * VID 0 and VID 1 share one hardware key, but have separate lifetimes.
+ 	 */
+-	if (fdb->vids & ~BIT(vid)) {
+-		fdb->vids &= ~BIT(vid);
++	if (fdb->vids & ~BIT(alias)) {
++		fdb->vids &= ~BIT(alias);
+ 		goto out;
+ 	}
+ 	ret = yt922x_fdb_op(priv, entry, YT922X_FDB_GET, out, &result);
+@@ -6618,12 +6648,12 @@ out:
+ static void yt922x_bridge_quarantine(struct yt921x_priv *priv, int error);
+ 
+ static int yt922x_mdb_write(struct yt921x_priv *priv,
+-			    const unsigned char *addr, u16 ports)
++			    const unsigned char *addr, u16 vid, u16 ports)
+ {
+ 	u32 entry[4], result;
+ 	int ret;
+ 
+-	yt922x_fdb_key(addr, entry);
++	yt922x_fdb_key(addr, vid, entry);
+ 	if (ports) {
+ 		/* Keep a CPU copy for local listeners and other bridge devices. */
+ 		ports |= priv->cpu_ports_mask;
+@@ -6646,14 +6676,19 @@ static int yt922x_mdb_update(struct dsa_
+ 	struct yt921x_priv *priv = to_yt921x_priv(ds);
+ 	struct yt922x_mdb_entry *entry, *found = NULL, *new = NULL;
+ 	u16 ports = 0;
+-	u8 vids;
++	u16 hwvid;
++	u8 vids, alias;
+ 	int p, ret = 0;
+ 
+ 	/* Only the four-byte receive reason has been verified on Whale. */
+ 	if (ds->dst->tag_ops->proto != DSA_TAG_PROTO_YT922X_4B ||
+ 	    !is_multicast_ether_addr(mdb->addr) || is_broadcast_ether_addr(mdb->addr) ||
+-	    mdb->vid > YT922X_BRIDGE_VID || db.type != DSA_DB_BRIDGE)
++	    mdb->vid >= VLAN_VID_MASK || db.type != DSA_DB_BRIDGE)
+ 		return -EOPNOTSUPP;
++	if (!br_vlan_enabled(db.bridge.dev) && mdb->vid > YT922X_BRIDGE_VID)
++		return -EOPNOTSUPP;
++	hwvid = br_vlan_enabled(db.bridge.dev) ? mdb->vid : YT922X_BRIDGE_VID;
++	alias = br_vlan_enabled(db.bridge.dev) ? 0 : mdb->vid;
+ 	mutex_lock(&priv->reg_lock);
+ 	if (priv->yt922x_bridge_broken) {
+ 		ret = -EIO;
+@@ -6664,7 +6699,8 @@ static int yt922x_mdb_update(struct dsa_
+ 		goto out;
+ 	}
+ 	list_for_each_entry(entry, &priv->yt922x_mdb_entries, list) {
+-		if (entry->bridge == db.bridge.dev && ether_addr_equal(entry->addr, mdb->addr)) {
++		if (entry->bridge == db.bridge.dev && entry->vid == hwvid &&
++		    ether_addr_equal(entry->addr, mdb->addr)) {
+ 			found = entry;
+ 			break;
+ 		}
+@@ -6679,17 +6715,18 @@ static int yt922x_mdb_update(struct dsa_
+ 		}
+ 		ether_addr_copy(new->addr, mdb->addr);
+ 		new->bridge = db.bridge.dev;
++		new->vid = hwvid;
+ 		found = new;
+ 	}
+ 	vids = found->vids[port];
+ 	if (add)
+-		vids |= BIT(mdb->vid);
++		vids |= BIT(alias);
+ 	else
+-		vids &= ~BIT(mdb->vid);
++		vids &= ~BIT(alias);
+ 	for (p = 0; p < ARRAY_SIZE(found->vids); p++)
+ 		if (p == port ? vids : found->vids[p])
+ 			ports |= BIT(p);
+-	ret = yt922x_mdb_write(priv, mdb->addr, ports);
++	ret = yt922x_mdb_write(priv, mdb->addr, hwvid, ports);
+ 	if (ret) {
+ 		if (ret != -ENOSPC)
+ 			yt922x_bridge_quarantine(priv, ret);
+@@ -6730,6 +6767,7 @@ static int yt922x_dsa_port_fdb_dump(stru
+ 	struct yt921x_priv *priv = to_yt921x_priv(ds);
+ 	u32 in[4] = {}, entry[4], command, result, index = 0, next;
+ 	unsigned char addr[ETH_ALEN];
++	bool filtering = priv->yt922x_vlan_filtering[port];
+ 	int i, ret;
+ 
+ 	/* NEXT excludes its starting index, so read slot zero explicitly. */
+@@ -6756,13 +6794,14 @@ static int yt922x_dsa_port_fdb_dump(stru
+ 				 YT922X_FDB_PENDING)) ||
+ 		    !FIELD_GET(YT922X_FDB_STATUS, entry[1]) ||
+ 		    FIELD_GET(YT922X_FDB_PORT, entry[2]) != port ||
+-		    FIELD_GET(YT922X_FDB_VID, entry[1]) != YT922X_BRIDGE_VID)
++		    (!filtering && FIELD_GET(YT922X_FDB_VID, entry[1]) != YT922X_BRIDGE_VID))
+ 			continue;
+ 		put_unaligned_be32(entry[0], addr);
+ 		put_unaligned_be16(entry[1] & 0xffff, addr + 4);
+ 		if (!is_valid_ether_addr(addr))
+ 			continue;
+-		ret = cb(addr, 0, FIELD_GET(YT922X_FDB_STATUS, entry[1]) ==
++		ret = cb(addr, filtering ? FIELD_GET(YT922X_FDB_VID, entry[1]) : 0,
++			 FIELD_GET(YT922X_FDB_STATUS, entry[1]) ==
+ 			 YT922X_FDB_STATIC, data);
+ 		if (ret)
+ 			return ret;
+@@ -6875,6 +6914,153 @@ static void yt922x_bridge_quarantine(str
+ 		error);
+ }
+ 
++#define YT922X_VLAN_MEMBERS(vid)	(0x188000 + 4 * (vid))
++#define YT922X_VLAN_UNTAGGED(vid)	(0x104000 + 4 * (vid))
++#define YT922X_VLAN_PVID(port)	(0x230000 + 4 * (port))
++#define YT922X_VLAN_PVID_C	GENMASK(17, 6)
++#define YT922X_VLAN_AFT(port)	(0x230080 + 4 * (port))
++#define YT922X_VLAN_EGRESS(port)	(0x100080 + 4 * (port))
++#define YT922X_VLAN_EGRESS_MODE	GENMASK(14, 12)
++#define YT922X_VLAN_IGR_FILTER	0x180180
++#define YT922X_VLAN_EGR_FILTER	0x180ed0
++#define YT922X_CPU_VLAN_KEEP	0x100400
++
++/* Caller holds reg_lock. CPU keeps original customer tags; the tagger
++ * inserts a PVID on untagged CPU transmissions to an access port.
++ */
++static int yt922x_vlan_pvid_set(struct yt921x_priv *priv, int port, u16 pvid)
++{
++	int ret;
++
++	ret = yt921x_reg_update_bits(priv, YT922X_VLAN_PVID(port),
++				     YT922X_VLAN_PVID_C,
++				     FIELD_PREP(YT922X_VLAN_PVID_C, pvid));
++	if (!ret)
++		/* A port without a PVID must reject untagged ingress. */
++		ret = yt921x_reg_update_bits(priv, YT922X_VLAN_AFT(port),
++					     GENMASK(1, 0), pvid ? 0 : 1);
++	if (!ret)
++		ret = yt922x_bridge_fast_age(priv, port);
++	if (!ret)
++		priv->yt922x_pvid[port] = pvid;
++	return ret;
++}
++
++static int yt922x_vlan_port_mode(struct yt921x_priv *priv, int port, bool enable)
++{
++	int ret;
++
++	ret = yt922x_vlan_pvid_set(priv, port, enable ? 0 : YT922X_BRIDGE_VID);
++	if (!ret)
++		ret = yt921x_reg_update_bits(priv, YT922X_VLAN_EGRESS(port),
++					     YT922X_VLAN_EGRESS_MODE | BIT(30),
++					     FIELD_PREP(YT922X_VLAN_EGRESS_MODE,
++							enable ? 5 : 4));
++	if (!ret)
++		ret = yt921x_reg_update_bits(priv, YT922X_VLAN_IGR_FILTER,
++					     BIT(port), enable ? BIT(port) : 0);
++	if (!ret)
++		ret = yt921x_reg_update_bits(priv, YT922X_VLAN_EGR_FILTER,
++					     BIT(port), enable ? BIT(port) : 0);
++	if (!ret)
++		priv->yt922x_vlan_filtering[port] = enable;
++	return ret;
++}
++
++static int yt922x_vlan_write(struct yt921x_priv *priv, u16 vid,
++			     const struct yt922x_vlan *vlan)
++{
++	u16 members = vlan->members;
++	int ret;
++
++	if (members)
++		members |= priv->cpu_ports_mask;
++	/* Leave SVL disabled: the FDB key must include the actual VID. */
++	ret = yt921x_reg_write(priv, YT922X_VLAN_MEMBERS(vid), members);
++	if (!ret)
++		ret = yt921x_reg_write(priv, YT922X_VLAN_UNTAGGED(vid),
++				       vlan->untagged & ~priv->cpu_ports_mask);
++	if (!ret)
++		priv->yt922x_vlans[vid] = *vlan;
++	return ret;
++}
++
++static int yt922x_dsa_port_vlan_add(struct dsa_switch *ds, int port,
++				    const struct switchdev_obj_port_vlan *vlan,
++				    struct netlink_ext_ack *extack)
++{
++	struct yt921x_priv *priv = to_yt921x_priv(ds);
++	bool user = dsa_is_user_port(ds, port);
++	bool pvid = vlan->flags & BRIDGE_VLAN_INFO_PVID;
++	bool untagged = vlan->flags & BRIDGE_VLAN_INFO_UNTAGGED;
++	struct yt922x_vlan next;
++	u16 vid = vlan->vid;
++	int other, ret = 0;
++
++	if (!vid || vid >= VLAN_VID_MASK)
++		return -EINVAL;
++	mutex_lock(&priv->reg_lock);
++	if (priv->yt922x_bridge_broken) {
++		ret = -EIO;
++		goto out;
++	}
++	if (user && !priv->yt922x_vlan_filtering[port])
++		goto out;
++	if (user && untagged && !pvid && priv->yt922x_pvid[port] != vid) {
++		NL_SET_ERR_MSG_MOD(extack, "YT9224 untagged egress VLAN must be the port PVID");
++		ret = -EINVAL;
++		goto out;
++	}
++	if (user && pvid) {
++		for (other = 1; other < VLAN_VID_MASK; other++) {
++			if (other != vid && (priv->yt922x_vlans[other].untagged & BIT(port))) {
++				NL_SET_ERR_MSG_MOD(extack,
++						   "Remove the previous untagged VLAN before changing PVID");
++				ret = -EINVAL;
++				goto out;
++			}
++		}
++	}
++	next = priv->yt922x_vlans[vid];
++	next.members |= BIT(port);
++	if (user && untagged)
++		next.untagged |= BIT(port);
++	else
++		next.untagged &= ~BIT(port);
++	ret = yt922x_vlan_write(priv, vid, &next);
++	if (!ret && user && pvid && priv->yt922x_pvid[port] != vid)
++		ret = yt922x_vlan_pvid_set(priv, port, vid);
++	if (ret)
++		yt922x_bridge_quarantine(priv, ret);
++out:
++	mutex_unlock(&priv->reg_lock);
++	return ret;
++}
++
++static int yt922x_dsa_port_vlan_del(struct dsa_switch *ds, int port,
++				    const struct switchdev_obj_port_vlan *vlan)
++{
++	struct yt921x_priv *priv = to_yt921x_priv(ds);
++	struct yt922x_vlan next;
++	u16 vid = vlan->vid;
++	int ret;
++
++	if (!vid || vid >= VLAN_VID_MASK)
++		return -EOPNOTSUPP;
++	mutex_lock(&priv->reg_lock);
++	next = priv->yt922x_vlans[vid];
++	next.members &= ~BIT(port);
++	next.untagged &= ~BIT(port);
++	ret = yt922x_vlan_write(priv, vid, &next);
++	if (!ret && priv->yt922x_vlan_filtering[port] &&
++	    priv->yt922x_pvid[port] == vid)
++		ret = yt922x_vlan_pvid_set(priv, port, 0);
++	if (ret)
++		yt922x_bridge_quarantine(priv, ret);
++	mutex_unlock(&priv->reg_lock);
++	return ret;
++}
++
+ static int
+ yt922x_dsa_port_bridge_join(struct dsa_switch *ds, int port,
+ 			    struct dsa_bridge bridge, bool *tx_fwd_offload,
+@@ -6883,10 +7069,18 @@ yt922x_dsa_port_bridge_join(struct dsa_s
+ 	struct yt921x_priv *priv = to_yt921x_priv(ds);
+ 	struct yt921x_port *p = &priv->ports[port];
+ 	struct dsa_port *dp;
++	u16 proto;
+ 	int ret = 0;
+ 
+-	if (br_vlan_enabled(bridge.dev) || br_mst_enabled(bridge.dev)) {
+-		NL_SET_ERR_MSG_MOD(extack, "YT9224 VLAN/MST bridge offload is not implemented yet");
++	if (br_mst_enabled(bridge.dev)) {
++		NL_SET_ERR_MSG_MOD(extack, "YT9224 MST offload is not implemented");
++		return -EOPNOTSUPP;
++	}
++	br_vlan_get_proto(bridge.dev, &proto);
++	if (br_vlan_enabled(bridge.dev) &&
++	    (proto != ETH_P_8021Q || ds->dst->tag_ops->proto != DSA_TAG_PROTO_YT922X_4B)) {
++		NL_SET_ERR_MSG_MOD(extack,
++				   "YT9224 VLAN filtering requires 802.1Q and four-byte CPU tags");
+ 		return -EOPNOTSUPP;
+ 	}
+ 	/* DSA does not inherit every bridge flag after joining. Validate the
+@@ -6915,6 +7109,30 @@ yt922x_dsa_port_bridge_join(struct dsa_s
+ 			goto out;
+ 		}
+ 	}
++	if (br_vlan_enabled(bridge.dev)) {
++		/* Preserve original tags on CPU copies, including access ingress. */
++		ret = yt921x_reg_set_bits(priv, YT922X_CPU_VLAN_KEEP, GENMASK(1, 0));
++		if (!ret) {
++			dsa_switch_for_each_cpu_port(dp, ds) {
++				u32 value = FIELD_PREP(YT922X_VLAN_EGRESS_MODE, 4);
++
++				ret = yt921x_reg_update_bits(priv, YT922X_VLAN_EGRESS(dp->index),
++							     YT922X_VLAN_EGRESS_MODE | BIT(30),
++							     value);
++				if (ret)
++					break;
++			}
++		}
++		if (ret) {
++			yt922x_bridge_quarantine(priv, ret);
++			goto out;
++		}
++		ret = yt922x_vlan_port_mode(priv, port, true);
++		if (ret) {
++			yt922x_bridge_quarantine(priv, ret);
++			goto out;
++		}
++	}
+ 	p->yt922x_bridge = bridge.dev;
+ 	p->yt922x_stp_state = BR_STATE_DISABLED;
+ 	p->yt922x_learning = false;
+@@ -6951,6 +7169,8 @@ yt922x_dsa_port_bridge_leave(struct dsa_
+ 		ret = yt922x_bridge_matrix(priv);
+ 	if (!ret)
+ 		ret = yt922x_bridge_fast_age(priv, port);
++	if (!ret && priv->yt922x_vlan_filtering[port])
++		ret = yt922x_vlan_port_mode(priv, port, false);
+ 	if (ret)
+ 		yt922x_bridge_quarantine(priv, ret);
+ 	mutex_unlock(&priv->reg_lock);
+@@ -7052,13 +7272,36 @@ yt922x_dsa_port_vlan_filtering(struct ds
+ 			       struct netlink_ext_ack *extack)
+ {
+ 	struct yt921x_priv *priv = to_yt921x_priv(ds);
++	int ret = 0;
+ 
+-	if (filtering && priv->ports[port].yt922x_bridge) {
++	mutex_lock(&priv->reg_lock);
++	if (filtering == priv->yt922x_vlan_filtering[port])
++		goto out;
++	if (priv->ports[port].yt922x_bridge) {
+ 		NL_SET_ERR_MSG_MOD(extack,
+-				   "Disable YT9224 bridge offload before enabling VLAN filtering");
++				   "Set VLAN filtering before attaching YT9224 ports to the bridge");
++		/* EOPNOTSUPP would let the bridge change its software policy. */
++		ret = -EBUSY;
++		goto out;
++	}
++	ret = yt922x_vlan_port_mode(priv, port, filtering);
++	if (ret)
++		yt922x_bridge_quarantine(priv, ret);
++out:
++	mutex_unlock(&priv->reg_lock);
++	return ret;
++}
++
++static int yt922x_dsa_port_vlan_protocol(struct dsa_switch *ds, int port,
++					 u16 proto, struct netlink_ext_ack *extack)
++{
++	struct yt921x_priv *priv = to_yt921x_priv(ds);
++
++	if (priv->yt922x_vlan_filtering[port] && proto != ETH_P_8021Q) {
++		NL_SET_ERR_MSG_MOD(extack, "YT9224 VLAN filtering supports only 802.1Q");
+ 		return -EINVAL;
+ 	}
+-	return filtering ? -EOPNOTSUPP : 0;
++	return 0;
+ }
+ 
+ static int yt922x_dsa_set_ageing_time(struct dsa_switch *ds, unsigned int msecs)
+@@ -7099,6 +7342,9 @@ static const struct dsa_switch_ops yt922
+ 	.port_pre_bridge_flags	= yt922x_dsa_port_pre_bridge_flags,
+ 	.port_bridge_flags	= yt922x_dsa_port_bridge_flags,
+ 	.port_vlan_filtering	= yt922x_dsa_port_vlan_filtering,
++	.port_vlan_protocol	= yt922x_dsa_port_vlan_protocol,
++	.port_vlan_add		= yt922x_dsa_port_vlan_add,
++	.port_vlan_del		= yt922x_dsa_port_vlan_del,
+ 	.set_ageing_time		= yt922x_dsa_set_ageing_time,
+ 	/* port */
+ 	.get_tag_protocol	= yt922x_dsa_get_tag_protocol,
+@@ -7214,6 +7460,12 @@ static int yt921x_mdio_probe(struct mdio
+ 		return ret;
+ 
+ 	priv->series_info = compat_info;
++	if (compat_info->mode == YT9224) {
++		priv->yt922x_vlans = devm_kcalloc(dev, VLAN_N_VID,
++						  sizeof(*priv->yt922x_vlans), GFP_KERNEL);
++		if (!priv->yt922x_vlans)
++			return -ENOMEM;
++	}
+ 	priv->reg_ops = &yt921x_reg_ops_mdio;
+ 	priv->reg_ctx = mdio;
+ 
+--- a/drivers/net/dsa/yt921x.h
++++ b/drivers/net/dsa/yt921x.h
+@@ -1096,6 +1096,9 @@ struct yt921x_priv {
+ 	/* Static VID 0/1 aliases, protected by reg_lock. */
+ 	struct list_head yt922x_fdb_entries;
+ 	struct list_head yt922x_mdb_entries;
++	struct yt922x_vlan *yt922x_vlans;
++	u16 yt922x_pvid[YT921X_PORT_NUM];
++	bool yt922x_vlan_filtering[YT921X_PORT_NUM];
+ };
+ 
+ #endif
+--- a/net/dsa/tag_yt922x.c
++++ b/net/dsa/tag_yt922x.c
+@@ -7,6 +7,7 @@
+  */
+ 
+ #include <linux/etherdevice.h>
++#include <linux/if_bridge.h>
+ #include <linux/dsa/yt922x.h>
+ #include <linux/slab.h>
+ 
+@@ -140,6 +141,56 @@ static const struct dsa_device_ops yt922
+ 	.needed_headroom = YT922X_TAG_LEN,
+ };
+ 
++static struct sk_buff *yt922x_vlan_xmit(struct sk_buff *skb, struct dsa_port *dp)
++{
++	struct vlan_ethhdr *hdr;
++	u16 pvid, tci;
++
++	if (!dsa_port_is_vlan_filtering(dp))
++		return skb;
++	if (skb_vlan_tag_present(skb)) {
++		/* DSA frees the original skb if xmit returns NULL. Use the
++		 * non-consuming insertion helper on every error path.
++		 */
++		if (__vlan_insert_tag(skb, skb->vlan_proto, skb_vlan_tag_get(skb)))
++			return NULL;
++		skb->protocol = skb->vlan_proto;
++		__vlan_hwaccel_clear_tag(skb);
++	}
++	/* Reserved link-local destinations bypass Whale VLAN egress filters.
++	 * Do not add a PVID to BPDUs/LLDP, including on tagged-only trunks.
++	 */
++	if (is_link_local_ether_addr(eth_hdr(skb)->h_dest))
++		return skb;
++	if (skb->protocol == htons(ETH_P_8021Q)) {
++		if (skb_ensure_writable(skb, VLAN_ETH_HLEN))
++			goto drop;
++		hdr = skb_vlan_eth_hdr(skb);
++		tci = ntohs(hdr->h_vlan_TCI);
++		if (tci & VLAN_VID_MASK)
++			return skb;
++	} else {
++		tci = (skb->priority & 7) << VLAN_PRIO_SHIFT;
++	}
++	/* Hardware egress filtering also applies to forced CPU destinations.
++	 * Access ports therefore need their PVID even after the software
++	 * bridge removed the customer tag. The driver rejects other untagged
++	 * egress VLANs because their VID cannot be recovered here.
++	 */
++	if (br_vlan_get_pvid_rcu(dp->user, &pvid) || !pvid)
++		goto drop;
++	if (skb->protocol == htons(ETH_P_8021Q)) {
++		hdr->h_vlan_TCI = htons(tci | pvid);
++		return skb;
++	}
++	if (__vlan_insert_tag(skb, htons(ETH_P_8021Q), tci | pvid))
++		return NULL;
++	skb->protocol = htons(ETH_P_8021Q);
++	return skb;
++drop:
++	return NULL;
++}
++
+ static struct sk_buff *
+ yt922x_4b_tag_xmit(struct sk_buff *skb, struct net_device *netdev)
+ {
+@@ -150,6 +201,10 @@ yt922x_4b_tag_xmit(struct sk_buff *skb,
+ 	if (unlikely(!ctrl))
+ 		return NULL;
+ 
++	skb = yt922x_vlan_xmit(skb, dp);
++	if (!skb)
++		return NULL;
++
+ 	skb_push(skb, VLAN_HLEN);
+ 	dsa_alloc_etype_header(skb, VLAN_HLEN);
+ 	tag = dsa_etype_header_pos_tx(skb);
+@@ -211,7 +266,8 @@ static const struct dsa_device_ops yt922
+ 	.rcv = yt922x_4b_tag_rcv,
+ 	.connect = yt922x_tag_connect,
+ 	.disconnect = yt922x_tag_disconnect,
+-	.needed_headroom = VLAN_HLEN,
++	/* Metadata S-tag, access PVID and the CPU port tag. */
++	.needed_headroom = 3 * VLAN_HLEN,
+ };
+ 
+ DSA_TAG_DRIVER(yt922x_netdev_ops);

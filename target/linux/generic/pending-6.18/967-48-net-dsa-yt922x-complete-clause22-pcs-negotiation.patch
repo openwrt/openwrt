@@ -1,0 +1,143 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shi Jiayang <shi05275@163.com>
+Subject: [PATCH] net: dsa: yt922x: implement Clause 22 PCS negotiation
+
+Read the SerDes BMSR and link partner ability for SGMII and Base-X links
+instead of the MAC status, which mac_link_up/down force in software.
+Configure Clause 37 advertisement and AN enable, wait for SerDes reset,
+and implement negotiation restart. Keep the fixed USXGMII CPU and
+10GBASE-R configuration paths intact.
+
+Signed-off-by: Shi Jiayang <shi05275@163.com>
+
+---
+--- a/drivers/net/dsa/yt921x.c
++++ b/drivers/net/dsa/yt921x.c
+@@ -5794,10 +5794,40 @@ yt922x_pcs_get_state(struct phylink_pcs
+ {
+ 	struct yt921x_port *pp = container_of(pcs, struct yt921x_port, pcs);
+ 	struct yt921x_priv *priv = pp->priv;
+-	u16 phy_status;
++	u16 phy_status, bmsr, lpa;
+ 	u32 status;
+ 	int res;
+ 
++	switch (state->interface) {
++	case PHY_INTERFACE_MODE_100BASEX:
++	case PHY_INTERFACE_MODE_1000BASEX:
++	case PHY_INTERFACE_MODE_2500BASEX:
++	case PHY_INTERFACE_MODE_SGMII:
++		mutex_lock(&priv->reg_lock);
++		/* BMSR link is latched low. Read twice before decoding. */
++		res = yt921x_intif_read(priv, pp->index, MII_BMSR, &bmsr);
++		if (!res)
++			res = yt921x_intif_read(priv, pp->index, MII_BMSR, &bmsr);
++		if (!res)
++			res = yt921x_intif_read(priv, pp->index, MII_LPA, &lpa);
++		mutex_unlock(&priv->reg_lock);
++		state->link = false;
++		state->an_complete = false;
++		state->pause = 0;
++		if (res)
++			return;
++		if (state->interface == PHY_INTERFACE_MODE_100BASEX) {
++			state->link = !!(bmsr & BMSR_LSTATUS);
++			state->speed = SPEED_100;
++			state->duplex = DUPLEX_FULL;
++		} else {
++			phylink_mii_c22_pcs_decode_state(state, neg_mode, bmsr, lpa);
++		}
++		return;
++	default:
++		break;
++	}
++
+ 	if (state->interface == PHY_INTERFACE_MODE_10GBASER) {
+ 		/* MAC status reflects software overrides, not the SerDes link. */
+ 		mutex_lock(&priv->reg_lock);
+@@ -5881,19 +5911,71 @@ static int yt922x_pcs_config(struct phyl
+ {
+ 	struct yt921x_port *pp = container_of(pcs, struct yt921x_port, pcs);
+ 	struct yt921x_priv *priv = pp->priv;
+-	int res;
++	u16 bmcr, old, value;
++	int res, err, adv;
++	bool changed = false;
+ 
+-	if (interface != PHY_INTERFACE_MODE_10GBASER)
+-		return 0;
+-
+-	/* 10GBASE-R uses the USXGMII SerDes with its rate forced and AN off. */
++	adv = phylink_mii_c22_pcs_encode_advertisement(interface, advertising);
+ 	mutex_lock(&priv->reg_lock);
+-	res = yt922x_fixed_usxgmii_config(priv, pp->index);
++	if (interface == PHY_INTERFACE_MODE_10GBASER) {
++		/* 10GBASE-R uses USXGMII with its rate forced and AN off. */
++		res = yt922x_fixed_usxgmii_config(priv, pp->index);
++		goto out;
++	}
++	if (interface == PHY_INTERFACE_MODE_USXGMII) {
++		/* The fixed CPU link is configured by mac_link_up. */
++		res = 0;
++		goto out;
++	}
++
++	res = read_poll_timeout(yt921x_intif_read, err,
++				err || !(bmcr & BMCR_RESET), 1000, 500000, false,
++				priv, pp->index, MII_BMCR, &bmcr);
++	if (err)
++		res = err;
++	if (res)
++		goto out;
++	if (adv >= 0) {
++		res = yt921x_intif_read(priv, pp->index, MII_ADVERTISE, &old);
++		if (res)
++			goto out;
++		if (old != adv) {
++			res = yt921x_intif_write(priv, pp->index, MII_ADVERTISE, adv);
++			if (res)
++				goto out;
++			changed = true;
++		}
++	}
++	value = bmcr & ~(BMCR_ANENABLE | BMCR_ISOLATE);
++	if (neg_mode == PHYLINK_PCS_NEG_INBAND_ENABLED)
++		value |= BMCR_ANENABLE;
++	res = yt921x_intif_write(priv, pp->index, MII_BMCR, value);
++	if (!res)
++		res = changed;
++out:
+ 	mutex_unlock(&priv->reg_lock);
+ 
+ 	return res;
+ }
+ 
++static void yt922x_pcs_an_restart(struct phylink_pcs *pcs)
++{
++	struct yt921x_port *pp = container_of(pcs, struct yt921x_port, pcs);
++	struct yt921x_priv *priv = pp->priv;
++	u16 bmcr;
++	int res;
++
++	mutex_lock(&priv->reg_lock);
++	res = yt921x_intif_read(priv, pp->index, MII_BMCR, &bmcr);
++	if (!res && (bmcr & BMCR_ANENABLE))
++		res = yt921x_intif_write(priv, pp->index, MII_BMCR,
++					 bmcr | BMCR_ANRESTART);
++	mutex_unlock(&priv->reg_lock);
++	if (res)
++		dev_err_ratelimited(to_device(priv), "Port %d PCS restart failed: %d\n",
++				    pp->index, res);
++}
++
+ static void yt922x_pcs_disable(struct phylink_pcs *pcs)
+ {
+ 	struct yt921x_port *pp = container_of(pcs, struct yt921x_port, pcs);
+@@ -5908,6 +5990,7 @@ static void yt922x_pcs_disable(struct ph
+ static const struct phylink_pcs_ops yt922x_pcs_ops = {
+ 	.pcs_enable	= yt922x_pcs_enable,
+ 	.pcs_config	= yt922x_pcs_config,
++	.pcs_an_restart	= yt922x_pcs_an_restart,
+ 	.pcs_disable	= yt922x_pcs_disable,
+ 	.pcs_get_state	= yt922x_pcs_get_state,
+ };

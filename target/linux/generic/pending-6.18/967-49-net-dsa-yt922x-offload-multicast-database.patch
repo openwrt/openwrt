@@ -1,0 +1,223 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shi Jiayang <shi05275@163.com>
+Subject: [PATCH] net: dsa: yt922x: offload multicast database entries
+
+Use Whale's static multicast FDB encoding, including the high destination
+bits for CPU port 8. Track per-port default-VID aliases and preserve a CPU
+copy for local listeners and bridge devices on other switches or Wi-Fi.
+
+Mark normal multicast forwarding copies in the four-byte tagger so the
+bridge does not replicate them back to hardware destinations. Unknown
+multicast and control traps continue through the software bridge. Refuse
+MDB offload with the unverified eight-byte receive reason format and
+prevent tag protocol changes while multicast entries are installed.
+
+Signed-off-by: Shi Jiayang <shi05275@163.com>
+
+---
+--- a/drivers/net/dsa/yt921x.c
++++ b/drivers/net/dsa/yt921x.c
+@@ -6283,7 +6283,11 @@ static int yt922x_dsa_change_tag_protoco
+ 	int res;
+ 
+ 	mutex_lock(&priv->reg_lock);
+-	res = yt922x_cpu_tag_mode_set(priv, proto);
++	if (proto != DSA_TAG_PROTO_YT922X_4B &&
++	    !list_empty(&priv->yt922x_mdb_entries))
++		res = -EBUSY;
++	else
++		res = yt922x_cpu_tag_mode_set(priv, proto);
+ 	mutex_unlock(&priv->reg_lock);
+ 
+ 	return res;
+@@ -6426,15 +6430,27 @@ yt922x_fdb_find(struct yt921x_priv *priv
+ 	return NULL;
+ }
+ 
++struct yt922x_mdb_entry {
++	struct list_head list;
++	struct net_device *bridge;
++	unsigned char addr[ETH_ALEN];
++	u8 vids[YT921X_PORT_NUM];
++};
++
+ static void yt922x_fdb_cleanup(void *data)
+ {
+ 	struct yt921x_priv *priv = data;
+ 	struct yt922x_fdb_entry *entry, *next;
++	struct yt922x_mdb_entry *mdb, *mdb_next;
+ 
+ 	list_for_each_entry_safe(entry, next, &priv->yt922x_fdb_entries, list) {
+ 		list_del(&entry->list);
+ 		kfree(entry);
+ 	}
++	list_for_each_entry_safe(mdb, mdb_next, &priv->yt922x_mdb_entries, list) {
++		list_del(&mdb->list);
++		kfree(mdb);
++	}
+ }
+ 
+ /* Caller holds reg_lock for the entire indirect-table transaction. */
+@@ -6599,6 +6615,115 @@ out:
+ 	return ret;
+ }
+ 
++static void yt922x_bridge_quarantine(struct yt921x_priv *priv, int error);
++
++static int yt922x_mdb_write(struct yt921x_priv *priv,
++			    const unsigned char *addr, u16 ports)
++{
++	u32 entry[4], result;
++	int ret;
++
++	yt922x_fdb_key(addr, entry);
++	if (ports) {
++		/* Keep a CPU copy for local listeners and other bridge devices. */
++		ports |= priv->cpu_ports_mask;
++		entry[1] |= FIELD_PREP(YT922X_FDB_STATUS, YT922X_FDB_STATIC);
++		entry[2] = YT922X_FDB_VALID | (u32)(ports & 0xff) << 24;
++		entry[3] = ports >> 8;
++	}
++	ret = yt922x_fdb_op(priv, entry,
++			    ports ? YT922X_FDB_ADD : YT922X_FDB_DELETE,
++			    NULL, &result);
++	if (!ret && ports && (result & (YT922X_FDB_FULL | YT922X_FDB_NOT_FOUND)))
++		ret = -ENOSPC;
++	return ret;
++}
++
++static int yt922x_mdb_update(struct dsa_switch *ds, int port,
++			     const struct switchdev_obj_port_mdb *mdb,
++			     struct dsa_db db, bool add)
++{
++	struct yt921x_priv *priv = to_yt921x_priv(ds);
++	struct yt922x_mdb_entry *entry, *found = NULL, *new = NULL;
++	u16 ports = 0;
++	u8 vids;
++	int p, ret = 0;
++
++	/* Only the four-byte receive reason has been verified on Whale. */
++	if (ds->dst->tag_ops->proto != DSA_TAG_PROTO_YT922X_4B ||
++	    !is_multicast_ether_addr(mdb->addr) || is_broadcast_ether_addr(mdb->addr) ||
++	    mdb->vid > YT922X_BRIDGE_VID || db.type != DSA_DB_BRIDGE)
++		return -EOPNOTSUPP;
++	mutex_lock(&priv->reg_lock);
++	if (priv->yt922x_bridge_broken) {
++		ret = -EIO;
++		goto out;
++	}
++	if (add && !yt922x_fdb_bridge_supported(priv, port, mdb->vid, db)) {
++		ret = -EOPNOTSUPP;
++		goto out;
++	}
++	list_for_each_entry(entry, &priv->yt922x_mdb_entries, list) {
++		if (entry->bridge == db.bridge.dev && ether_addr_equal(entry->addr, mdb->addr)) {
++			found = entry;
++			break;
++		}
++	}
++	if (!found) {
++		if (!add)
++			goto out;
++		new = kzalloc(sizeof(*new), GFP_KERNEL);
++		if (!new) {
++			ret = -ENOMEM;
++			goto out;
++		}
++		ether_addr_copy(new->addr, mdb->addr);
++		new->bridge = db.bridge.dev;
++		found = new;
++	}
++	vids = found->vids[port];
++	if (add)
++		vids |= BIT(mdb->vid);
++	else
++		vids &= ~BIT(mdb->vid);
++	for (p = 0; p < ARRAY_SIZE(found->vids); p++)
++		if (p == port ? vids : found->vids[p])
++			ports |= BIT(p);
++	ret = yt922x_mdb_write(priv, mdb->addr, ports);
++	if (ret) {
++		if (ret != -ENOSPC)
++			yt922x_bridge_quarantine(priv, ret);
++		goto out;
++	}
++	found->vids[port] = vids;
++	if (new) {
++		list_add_tail(&new->list, &priv->yt922x_mdb_entries);
++		new = NULL;
++	}
++	if (!ports) {
++		list_del(&found->list);
++		kfree(found);
++	}
++out:
++	mutex_unlock(&priv->reg_lock);
++	kfree(new);
++	return ret;
++}
++
++static int yt922x_dsa_port_mdb_add(struct dsa_switch *ds, int port,
++				   const struct switchdev_obj_port_mdb *mdb,
++				   struct dsa_db db)
++{
++	return yt922x_mdb_update(ds, port, mdb, db, true);
++}
++
++static int yt922x_dsa_port_mdb_del(struct dsa_switch *ds, int port,
++				   const struct switchdev_obj_port_mdb *mdb,
++				   struct dsa_db db)
++{
++	return yt922x_mdb_update(ds, port, mdb, db, false);
++}
++
+ static int yt922x_dsa_port_fdb_dump(struct dsa_switch *ds, int port,
+ 				    dsa_fdb_dump_cb_t *cb, void *data)
+ {
+@@ -6963,6 +7088,8 @@ static int yt922x_dsa_connect_tag_protoc
+ 
+ static const struct dsa_switch_ops yt922x_dsa_switch_ops = {
+ 	.port_bridge_join	= yt922x_dsa_port_bridge_join,
++	.port_mdb_add		= yt922x_dsa_port_mdb_add,
++	.port_mdb_del		= yt922x_dsa_port_mdb_del,
+ 	.port_fdb_add		= yt922x_dsa_port_fdb_add,
+ 	.port_fdb_del		= yt922x_dsa_port_fdb_del,
+ 	.port_fdb_dump		= yt922x_dsa_port_fdb_dump,
+@@ -7081,6 +7208,7 @@ static int yt921x_mdio_probe(struct mdio
+ 
+ 	mutex_init(&priv->reg_lock);
+ 	INIT_LIST_HEAD(&priv->yt922x_fdb_entries);
++	INIT_LIST_HEAD(&priv->yt922x_mdb_entries);
+ 	ret = devm_add_action_or_reset(dev, yt922x_fdb_cleanup, priv);
+ 	if (ret)
+ 		return ret;
+--- a/drivers/net/dsa/yt921x.h
++++ b/drivers/net/dsa/yt921x.h
+@@ -1095,6 +1095,7 @@ struct yt921x_priv {
+ 
+ 	/* Static VID 0/1 aliases, protected by reg_lock. */
+ 	struct list_head yt922x_fdb_entries;
++	struct list_head yt922x_mdb_entries;
+ };
+ 
+ #endif
+--- a/net/dsa/tag_yt922x.c
++++ b/net/dsa/tag_yt922x.c
+@@ -190,8 +190,15 @@ yt922x_4b_tag_rcv(struct sk_buff *skb, s
+ 		return NULL;
+ 	skb->dev = user;
+ 
+-	if (is_broadcast_ether_addr(eth_hdr(skb)->h_dest) &&
+-	    !yt922x_hw_fwd_disabled(user))
++	if (yt922x_hw_fwd_disabled(user))
++		return skb;
++
++	/* A zero reason is a normal forwarding copy. Unknown multicast has
++	 * reason 4 and still needs software replication; control traps must
++	 * not be mistaken for a hardware-forwarded MDB hit either.
++	 */
++	if (is_broadcast_ether_addr(eth_hdr(skb)->h_dest) ||
++	    (is_multicast_ether_addr(eth_hdr(skb)->h_dest) && !(ctrl & GENMASK(15, 8))))
+ 		dsa_default_offload_fwd_mark(skb);
+ 
+ 	return skb;
