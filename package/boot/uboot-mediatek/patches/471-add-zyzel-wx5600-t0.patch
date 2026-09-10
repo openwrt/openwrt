@@ -349,7 +349,7 @@
 --- /dev/null
 +++ b/defenvs/zyxel_wx5600-t0_env
 @@ -0,0 +1,55 @@
-+ethaddr_factory=mtd read Factory 0x40080000 0x0 0x20000 && env readmem -b ethaddr 0x4008002A 0x6 ; setenv ethaddr_factory
++ethaddr_factory=mtd read factory 0x40080000 0x0 0x20000 && env readmem -b ethaddr 0x4008002A 0x6 ; setenv ethaddr_factory
 +ipaddr=192.168.1.1
 +serverip=192.168.1.254
 +loadaddr=0x46000000
