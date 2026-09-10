@@ -1,0 +1,98 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shi Jiayang <shi05275@163.com>
+Subject: [PATCH] net: ethernet: mediatek: offload YT922x four-byte port tags
+
+Recognize the distinct YT922X_4B protocol in the PPE DSA device mapping.
+Use the shared port-tag encoder for the VLAN TCI inserted on egress and
+select the conduit PPE on ingress. The original eight-byte protocol
+continues to use the software forwarding path.
+
+Keep the full TCI, including DEI: physical port 7 is encoded as 0x1000.
+Reserve a VLAN layer for the CPU tag and reject flows that would exceed
+the PPE's two VLAN layers instead of silently omitting a customer tag.
+
+This enables hardware testing of PPE binding separately from the verified
+four-byte software forwarding path; sustained hardware-offloaded traffic
+still requires validation on the resulting firmware.
+
+Signed-off-by: Shi Jiayang <shi05275@163.com>
+---
+--- a/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
++++ b/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
+@@ -11,6 +11,7 @@
+ #include <net/pkt_cls.h>
+ #include <net/dsa.h>
+ #include <linux/dsa/8021q.h>
++#include <linux/dsa/yt922x.h>
+ #include "mtk_eth_soc.h"
+ #include "mtk_wed.h"
+ 
+@@ -179,7 +180,8 @@ mtk_flow_mangle_ipv4(const struct flow_a
+  * magic etype later via mtk_foe_entry_set_dsa()) or the outer 802.1Q
+  * VID the PPE should push on the egressing frame (tag_8021q taggers
+  * that use an outer Q-in-Q tag with a standalone per-port VID, i.e.
+- * the MxL862xx tag_8021q tagger).
++ * the MxL862xx tag_8021q tagger), or the full VLAN TCI for the
++ * VLAN-shaped YT922x four-byte port tag.
+  *
+  * push_vid may be NULL for callers that only want the idev->conduit
+  * substitution (e.g. ingress-side ppe_idx selection, where no VID
+@@ -208,6 +210,12 @@ mtk_flow_get_dsa_port(struct net_device
+ 		if (push_vid)
+ 			*push_vid = dsa_tag_8021q_standalone_vid(dp);
+ 		break;
++	case DSA_TAG_PROTO_YT922X_4B:
++		if (!yt922x_4b_port_tag(dp->index))
++			return -ENODEV;
++		if (push_vid)
++			*push_vid = yt922x_4b_port_tag(dp->index);
++		break;
+ 	default:
+ 		return -ENODEV;
+ 	}
+@@ -223,11 +231,11 @@ mtk_flow_get_dsa_port(struct net_device
+ static int
+ mtk_flow_set_output_device(struct mtk_eth *eth, struct mtk_foe_entry *foe,
+ 			   struct net_device *dev, const u8 *dest_mac,
+-			   int *wed_index)
++			   int *wed_index, unsigned int num_tags)
+ {
+ 	struct mtk_wdma_info info = {};
+ 	struct mtk_mac *mac;
+-	int pse_port, dsa_port, queue;
++	int pse_port, dsa_port, queue, err;
+ 	u16 push_vid = 0;
+ 
+ 	if (mtk_flow_get_wdma_info(dev, dest_mac, &info) == 0) {
+@@ -266,10 +274,18 @@ mtk_flow_set_output_device(struct mtk_et
+ 		return -EOPNOTSUPP;
+ 
+ 	if (dsa_port >= 0) {
+-		if (push_vid)
+-			mtk_foe_entry_set_vlan(eth, foe, push_vid);
+-		else
++		if (push_vid) {
++			/* Reserve one of the PPE's two VLAN slots for the CPU tag.
++			 * Preserve the full TCI: YT9224 port 7 uses bit 12 (DEI).
++			 */
++			if (num_tags >= 2)
++				return -EOPNOTSUPP;
++			err = mtk_foe_entry_set_vlan(eth, foe, push_vid);
++			if (err)
++				return err;
++		} else {
+ 			mtk_foe_entry_set_dsa(eth, foe, dsa_port);
++		}
+ 	}
+ 
+ 	if (dsa_port >= 0 && dsa_port < MTK_DSA_USER_PORT_MAX) {
+@@ -527,7 +543,8 @@ mtk_flow_offload_replace(struct mtk_eth
+ 	}
+ 
+ 	err = mtk_flow_set_output_device(eth, &foe, odev, data.eth.h_dest,
+-					 &wed_index);
++					 &wed_index,
++					 data.vlan.num + data.pppoe.num);
+ 	if (err)
+ 		return err;
+ 
