@@ -139,6 +139,8 @@ static irqreturn_t edma_misc_irq_handle(int irq, void *ctx)
 	if (!val)
 		return IRQ_NONE;
 
+	dev_warn_ratelimited(&priv->pdev->dev, "misc error %#x\n", val);
+
 	return IRQ_HANDLED;
 }
 
@@ -406,6 +408,12 @@ static u32 edma_clean_tx(struct edma_priv *priv, struct edma_ring *txcmpl_ring,
 
 	while (cons != prod && cleaned < budget) {
 		txcmpl = EDMA_TXCMPL_DESC(txcmpl_ring, cons);
+
+		if (unlikely(txcmpl->status & EDMA_TXCMPL_ERROR)) {
+			dev_warn_ratelimited(&pdev->dev, "tx error %#x\n",
+					     txcmpl->status);
+			priv->netdev->stats.tx_errors++;
+		}
 
 		/* A frame is named by the first completion of its run and
 		 * released on the one that clears the more bit; the opaque of

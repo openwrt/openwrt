@@ -75,8 +75,10 @@
 #define EDMA_TXCMPL_CONS_IDX_MASK 0xffff
 #define EDMA_TXCMPL_RETMODE_OPAQUE 0x0
 /* The engine returns one completion per descriptor: the more bit marks every
- * completion of a frame but its last.
+ * completion of a frame but its last, and the error field reports what the
+ * engine made of the descriptor, above the ring id it read it from.
  */
+#define EDMA_TXCMPL_ERROR GENMASK(29, 7)
 #define EDMA_TXCMPL_MORE BIT(30)
 
 /* TX interrupt registers */
