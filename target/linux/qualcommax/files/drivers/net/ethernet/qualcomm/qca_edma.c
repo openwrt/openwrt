@@ -673,6 +673,20 @@ static void edma_tx_csum(struct sk_buff *skb, struct edma_tx_preheader *txph,
 		txph->tx_pre6 |= EDMA_TX_PRE6_IP_CSUM_EN;
 }
 
+/* Segmentation is one bit in every descriptor of the frame and the segment
+ * size in the preheader. The engine writes the headers of each segment it
+ * cuts, so the checksums it is already asked for cover what it produced.
+ */
+static u32 edma_tx_tso(struct sk_buff *skb, struct edma_tx_preheader *txph)
+{
+	if (!skb_is_gso(skb))
+		return 0;
+
+	txph->tx_pre6 |= skb_shinfo(skb)->gso_size & EDMA_TX_PRE6_MSS_MASK;
+
+	return EDMA_TXDESC_TSO_EN;
+}
+
 static netdev_tx_t edma_ring_xmit(struct edma_priv *priv, struct net_device *netdev,
 				  struct sk_buff *skb,
 				  struct edma_ring *txdesc_ring)
@@ -686,7 +700,7 @@ static netdev_tx_t edma_ring_xmit(struct edma_priv *priv, struct net_device *net
 	u16 ndesc = shinfo->nr_frags + 1;
 	struct edma_txdesc *txdesc;
 	u16 prod, cons, dst_info;
-	u32 val, idx, i, len, bytes;
+	u32 val, idx, i, len, bytes, tso;
 	dma_addr_t head_dma;
 	bool taken = false;
 	__be16 proto;
@@ -739,6 +753,7 @@ static netdev_tx_t edma_ring_xmit(struct edma_priv *priv, struct net_device *net
 
 	txph->dst_info = dst_info;
 	edma_tx_csum(skb, txph, proto);
+	tso = edma_tx_tso(skb, txph);
 
 	txdesc_ring->skb_store[idx] = skb;
 	txph->opaque = idx;
@@ -752,7 +767,7 @@ static netdev_tx_t edma_ring_xmit(struct edma_priv *priv, struct net_device *net
 
 	txdesc = EDMA_TXDESC_DESC(txdesc_ring, idx);
 	txdesc->buffer_addr = cpu_to_le32(head_dma);
-	txdesc->word1 = (1 << EDMA_TXDESC_PREHEADER_SHIFT) |
+	txdesc->word1 = tso | (1 << EDMA_TXDESC_PREHEADER_SHIFT) |
 			(ndesc > 1 ? EDMA_TXDESC_MORE : 0) |
 			((EDMA_TX_PREHDR_SIZE & EDMA_TXDESC_DATA_OFFSET_MASK)
 			 << EDMA_TXDESC_DATA_OFFSET_SHIFT) |
@@ -771,8 +786,8 @@ static netdev_tx_t edma_ring_xmit(struct edma_priv *priv, struct net_device *net
 		txdesc_ring->skb_store[fidx] = skb;
 		txdesc = EDMA_TXDESC_DESC(txdesc_ring, fidx);
 		txdesc->buffer_addr = cpu_to_le32(dma);
-		txdesc->word1 = (i + 1 < shinfo->nr_frags ?
-				 EDMA_TXDESC_MORE : 0) |
+		txdesc->word1 = tso | (i + 1 < shinfo->nr_frags ?
+				       EDMA_TXDESC_MORE : 0) |
 				(len & EDMA_TXDESC_DATA_LENGTH_MASK);
 	}
 
@@ -1493,7 +1508,8 @@ static int edma_probe(struct platform_device *pdev)
 	netdev->dev.of_node = dev->of_node;
 	netdev->netdev_ops = &edma_netdev_ops;
 	netdev->hw_features = NETIF_F_RXCSUM | NETIF_F_IP_CSUM |
-			      NETIF_F_IPV6_CSUM | NETIF_F_SG;
+			      NETIF_F_IPV6_CSUM | NETIF_F_SG | NETIF_F_TSO |
+			      NETIF_F_TSO6;
 	netdev->features = NETIF_F_GRO | netdev->hw_features;
 	/* A DSA user port takes its features from the conduit's vlan_features. */
 	netdev->vlan_features = netdev->hw_features;
