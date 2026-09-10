@@ -597,6 +597,23 @@ static int edma_rx_napi(struct napi_struct *napi, int budget)
 	return done;
 }
 
+/* The engine generates the transport checksum of an outgoing TCP or UDP frame,
+ * and the IPv4 header checksum with it. It parses the frame for the offsets
+ * rather than being handed a start and an offset, so the offload is announced
+ * per protocol.
+ */
+static void edma_tx_csum(struct sk_buff *skb, struct edma_tx_preheader *txph)
+{
+	if (skb->ip_summed != CHECKSUM_PARTIAL)
+		return;
+
+	txph->tx_pre4 |= EDMA_TX_PRE4_ADV_OFFLOAD_EN;
+	txph->tx_pre6 |= EDMA_TX_PRE6_CSUM_MODE_L4;
+
+	if (vlan_get_protocol(skb) == htons(ETH_P_IP))
+		txph->tx_pre6 |= EDMA_TX_PRE6_IP_CSUM_EN;
+}
+
 static netdev_tx_t edma_ring_xmit(struct edma_priv *priv, struct net_device *netdev,
 				  struct sk_buff *skb,
 				  struct edma_ring *txdesc_ring)
@@ -648,6 +665,7 @@ static netdev_tx_t edma_ring_xmit(struct edma_priv *priv, struct net_device *net
 	memset((void *)txph, 0, EDMA_TX_PREHDR_SIZE);
 
 	txph->dst_info = dst_info;
+	edma_tx_csum(skb, txph);
 
 	txdesc_ring->skb_store[idx] = skb;
 	txph->opaque = idx;
@@ -1390,7 +1408,8 @@ static int edma_probe(struct platform_device *pdev)
 	SET_NETDEV_DEV(netdev, dev);
 	netdev->dev.of_node = dev->of_node;
 	netdev->netdev_ops = &edma_netdev_ops;
-	netdev->hw_features = NETIF_F_RXCSUM;
+	netdev->hw_features = NETIF_F_RXCSUM | NETIF_F_IP_CSUM |
+			      NETIF_F_IPV6_CSUM;
 	netdev->features = NETIF_F_GRO | netdev->hw_features;
 	/* A DSA user port takes its features from the conduit's vlan_features. */
 	netdev->vlan_features = netdev->hw_features;
