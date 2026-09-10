@@ -16,7 +16,6 @@
 #define EDMA_HW_RESET_ID "edma_rst"
 
 /* Global / control registers */
-#define EDMA_REG_MAS_CTRL 0x0
 #define EDMA_REG_PORT_CTRL 0x4
 #define EDMA_REG_RXDESC2FILL_MAP_0 0x18
 #define EDMA_REG_RXDESC2FILL_MAP_1 0x1c
@@ -151,16 +150,6 @@
 
 /* TXDESC to TXCMPL ring mapping */
 #define EDMA_REG_TXDESC2CMPL_MAP(n) (0x0c + 0x4 * (n))
-
-/* Misc error interrupt masks */
-#define EDMA_MISC_AXI_RD_ERR_MASK_EN 0x1
-#define EDMA_MISC_AXI_WR_ERR_MASK_EN 0x2
-#define EDMA_MISC_RX_DESC_FIFO_FULL_MASK_EN 0x4
-#define EDMA_MISC_RX_ERR_BUF_SIZE_MASK_EN 0x8
-#define EDMA_MISC_TX_SRAM_FULL_MASK_EN 0x10
-#define EDMA_MISC_TX_CMPL_BUF_FULL_MASK_EN 0x20
-#define EDMA_MISC_DATA_LEN_ERR_MASK_EN 0x40
-#define EDMA_MISC_TX_TIMEOUT_MASK_EN 0x80
 
 /* Sizes and ring configuration */
 #define EDMA_MAX_FRAME_SIZE 12288
