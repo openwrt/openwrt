@@ -95,6 +95,7 @@ ALLWIFIBOARDS:= \
 	tplink_archer-c6-v2 \
 	tplink_archer-c60-v1 \
 	tplink_archer-c60-v2 \
+	tplink_archer-c60-v3 \
 	tplink_deco-x80-5g \
 	tplink_eap225-wall-v2 \
 	tplink_eap610-outdoor \
@@ -297,6 +298,7 @@ $(eval $(call generate-ipq-wifi-package,tplink_archer-c59-v1,TP-Link Archer C59 
 $(eval $(call generate-ipq-wifi-package,tplink_archer-c6-v2,TP-Link Archer C6 V2))
 $(eval $(call generate-ipq-wifi-package,tplink_archer-c60-v1,TP-Link Archer C60 V1))
 $(eval $(call generate-ipq-wifi-package,tplink_archer-c60-v2,TP-Link Archer C60 V2))
+$(eval $(call generate-ipq-wifi-package,tplink_archer-c60-v3,TP-Link Archer C60 V3))
 $(eval $(call generate-ipq-wifi-package,tplink_deco-x80-5g,TP-Link Deco X80-5G))
 $(eval $(call generate-ipq-wifi-package,tplink_eap225-wall-v2,TP-Link EAP225-Wall v2))
 $(eval $(call generate-ipq-wifi-package,tplink_eap610-outdoor,TPLink EAP610-Outdoor))
