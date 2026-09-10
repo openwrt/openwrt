@@ -106,6 +106,14 @@ Once configured, the RTL931x hardware hashes traffic over the active members
 and removes a failed member from the trunk. The representors remain available
 while at least one member link stays up.
 
+Bootstrap retries leave already armed ports in place so PCS/DAC calibration
+can finish. A missing carrier or a peer-probe timeout does not disarm the
+fabric or reopen its ports. After a daemon restart or an interrupted setup,
+stackd reuses the complete or partial provisional set and arms missing ports.
+It replaces a disabled provisional set only if it contains ports that are no
+longer configured; an enabled stack still requires coordinated teardown to
+change its topology.
+
 The configured fabric-port set is immutable while either kernel stack is
 enabled. Adding or removing a UCI `interface` and restarting stackd does not
 expand or shrink the live topology; stackd reports that the active kernel
