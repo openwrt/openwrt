@@ -1203,6 +1203,13 @@ struct rtl931x_stack_bridge_port_registers {
 	u8 bpdu_action;
 };
 
+/* A follower mirrors leader-local LAGs while its front-panel ports are delegated. */
+struct rtl931x_stack_peer_lag {
+	u64 touched_ports;
+	u32 saved_entry[3];
+	bool saved;
+};
+
 struct rtl931x_stack_context {
 	struct list_head list;
 	struct list_head peer_port_vlans;
@@ -1213,6 +1220,9 @@ struct rtl931x_stack_context {
 	struct rtl838x_switch_priv *priv;
 	struct rtl931x_stack_cpu *cpu;
 	struct rtl931x_stack_reps *reps;
+	struct rtl931x_stack_peer_lag peer_lags[MAX_LAGS];
+	u64 peer_lag_saved_ports;
+	u32 peer_lag_saved_source[RTL931X_STACK_MAX_PORTS];
 	struct net_device *talk_conduit;
 	struct packet_type talk_packet_type;
 	struct sk_buff_head talk_rx_queue;
@@ -1644,6 +1654,12 @@ extern const struct rtldsa_config rtldsa_931x_cfg;
 int rtldsa_stack_port_guard(struct rtl838x_switch_priv *priv, int port,
 			   struct netlink_ext_ack *extack);
 int rtl931x_stack_init(void);
+u8 rtl931x_lag_device(struct rtl838x_switch_priv *priv);
+int rtl931x_stack_lag_set(struct rtl838x_switch_priv *priv, unsigned int group,
+			  u64 members, u64 tx_members, u8 hash);
+int rtl931x_stack_lags_cleanup(struct rtl838x_switch_priv *priv);
+int rtl931x_stack_peer_set_lag(struct rtl838x_switch_priv *priv, int group);
+void rtl931x_stack_reps_local_lag_change(struct rtl838x_switch_priv *priv, int group);
 void rtl931x_stack_exit(void);
 void rtl931x_stack_register(struct rtl838x_switch_priv *priv);
 void rtl931x_stack_unregister(struct rtl838x_switch_priv *priv);

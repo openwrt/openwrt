@@ -295,6 +295,52 @@ static u8 rtl931x_local_device(void)
 			 sw_r32(RTL931X_STK_GBL_CTRL));
 }
 
+u8 rtl931x_lag_device(struct rtl838x_switch_priv *priv)
+{
+	return priv->family_id == RTL9310_FAMILY_ID ? rtl931x_local_device() : 0;
+}
+
+/* LAG membership survives a change of MY_DEV_ID, in either direction. */
+static void rtl931x_lag_rebind(struct rtl838x_switch_priv *priv,
+			      u8 old_device, u8 new_device)
+{
+	struct rtldsa_93xx_lag_entry entry;
+	u32 data[3], source;
+	int group, port;
+
+	lockdep_assert_held(&priv->reg_mutex);
+	if (old_device == new_device)
+		return;
+
+	for (group = 0; group < priv->ds->num_lag_ids; group++) {
+		if (!priv->lags_port_members[group])
+			continue;
+		otto_table_read(RTL9310_TBL_LAG, group, &data);
+		priv->r->lag_fill_data(data, &entry);
+		entry.trk_dev0 = new_device;
+		entry.trk_dev1 = new_device;
+		entry.trk_dev2 = new_device;
+		entry.trk_dev3 = new_device;
+		entry.trk_dev4 = new_device;
+		entry.trk_dev5 = new_device;
+		entry.trk_dev6 = new_device;
+		entry.trk_dev7 = new_device;
+		priv->r->lag_write_data(data, &entry);
+		otto_table_write(RTL9310_TBL_LAG, group, &data);
+	}
+	for (port = 0; port < priv->r->cpu_port; port++) {
+		if (!(priv->lagmembers & BIT_ULL(port)))
+			continue;
+		otto_table_read(RTL9310_TBL_SRC_TRK_MAP,
+				old_device * 64 + port, &source);
+		otto_table_write(RTL9310_TBL_SRC_TRK_MAP,
+				 new_device * 64 + port, &source);
+		source = 0;
+		otto_table_write(RTL9310_TBL_SRC_TRK_MAP,
+				 old_device * 64 + port, &source);
+	}
+}
+
 static u64 rtl931x_port_matrix_get(u8 device, int port)
 {
 	u32 buf[2];
@@ -406,6 +452,131 @@ static int rtl931x_stack_replace_fdb_device(u8 old_id, u8 new_id)
 	return 0;
 }
 
+static int rtl931x_stack_lag_flush(u16 destination)
+{
+	u32 value = RTL931X_L2_FLUSH_PORT_CMP |
+		    FIELD_PREP(RTL931X_L2_FLUSH_ENTRY_TYPE, 1) |
+		    FIELD_PREP(RTL931X_L2_FLUSH_PORT_ID, destination);
+
+	/* Dynamic entries only: discard old physical-port or trunk learning. */
+	sw_w32(0, RTL931X_L2_TBL_FLUSH_CTRL + 4);
+	sw_w32(value | RTL931X_L2_FLUSH_STS, RTL931X_L2_TBL_FLUSH_CTRL);
+	return read_poll_timeout(sw_r32, value, !(value & RTL931X_L2_FLUSH_STS),
+				10, 10000, false, RTL931X_L2_TBL_FLUSH_CTRL);
+}
+
+int rtl931x_stack_lag_set(struct rtl838x_switch_priv *priv, unsigned int group,
+			  u64 members, u64 tx_members, u8 hash)
+{
+	struct rtl931x_stack_context *stack = &priv->stack;
+	struct rtldsa_93xx_lag_entry entry = {};
+	struct rtl931x_stack_peer_lag *lag;
+	u8 ports[8], device = stack->peer_id;
+	u32 data[3], value;
+	unsigned int i, count = 0;
+	int port, err;
+
+	lockdep_assert_held(&priv->reg_mutex);
+	if (group >= MAX_LAGS || hash > RTL93XX_HASH_MASK_INDEX_L23 ||
+	    tx_members & ~members || hweight64(members) > ARRAY_SIZE(ports) ||
+	    members & ~GENMASK_ULL(priv->r->cpu_port - 1, 0) ||
+	    members & stack->fabric_port_mask)
+		return -EINVAL;
+	/* These are leader-local groups, not cross-chassis bonds. */
+	if (members && (!stack->delegated_port_mask || priv->lagmembers))
+		return -EBUSY;
+	for (i = 0; i < MAX_LAGS; i++)
+		if (i != group && (stack->peer_lags[i].touched_ports & members))
+			return -EBUSY;
+	lag = &stack->peer_lags[group];
+	if (!lag->saved && !members)
+		return 0;
+	if (!lag->saved) {
+		otto_table_read(RTL9310_TBL_LAG, group, &lag->saved_entry);
+		lag->saved = true;
+	}
+	for (port = 0; port < priv->r->cpu_port; port++) {
+		u64 bit = BIT_ULL(port);
+
+		if (!(members & bit) || stack->peer_lag_saved_ports & bit)
+			continue;
+		otto_table_read(RTL9310_TBL_SRC_TRK_MAP, device * 64 + port,
+				&stack->peer_lag_saved_source[port]);
+		stack->peer_lag_saved_ports |= bit;
+	}
+	/* Keep ownership of all touched rows until a complete retry succeeds. */
+	lag->touched_ports |= members;
+	memset(ports, 0x3f, sizeof(ports));
+	for (port = 0; port < priv->r->cpu_port; port++)
+		if (tx_members & BIT_ULL(port))
+			ports[count++] = port;
+	entry.num_tx_candi = count;
+	entry.l2_hash_mask_idx = hash;
+	entry.ip4_hash_mask_idx = hash;
+	entry.ip6_hash_mask_idx = hash;
+	entry.trk_dev0 = device;
+	entry.trk_port0 = ports[0];
+	entry.trk_dev1 = device;
+	entry.trk_port1 = ports[1];
+	entry.trk_dev2 = device;
+	entry.trk_port2 = ports[2];
+	entry.trk_dev3 = device;
+	entry.trk_port3 = ports[3];
+	entry.trk_dev4 = device;
+	entry.trk_port4 = ports[4];
+	entry.trk_dev5 = device;
+	entry.trk_port5 = ports[5];
+	entry.trk_dev6 = device;
+	entry.trk_port6 = ports[6];
+	entry.trk_dev7 = device;
+	entry.trk_port7 = ports[7];
+	if (members)
+		priv->r->lag_write_data(data, &entry);
+	else
+		memcpy(data, lag->saved_entry, sizeof(data));
+	otto_table_write(RTL9310_TBL_LAG, group, &data);
+	for (port = 0; port < priv->r->cpu_port; port++) {
+		u64 bit = BIT_ULL(port);
+
+		if (!(lag->touched_ports & bit))
+			continue;
+		value = members & bit ? RTL931X_SRC_TRK_MAP_TRK_ID_VALID |
+			FIELD_PREP(RTL931X_SRC_TRK_MAP_TRK_ID, group) :
+			stack->peer_lag_saved_source[port];
+		otto_table_write(RTL9310_TBL_SRC_TRK_MAP, device * 64 + port,
+				 &value);
+		err = rtl931x_stack_lag_flush((device << 6) | port);
+		if (err)
+			return err;
+	}
+	err = rtl931x_stack_lag_flush(BIT(10) | group);
+	if (err)
+		return err;
+	err = rtl931x_stack_refresh();
+	if (err)
+		return err;
+	stack->peer_lag_saved_ports &= ~(lag->touched_ports & ~members);
+	lag->touched_ports = members;
+	if (!members)
+		memset(lag, 0, sizeof(*lag));
+	return 0;
+}
+
+int rtl931x_stack_lags_cleanup(struct rtl838x_switch_priv *priv)
+{
+	int group, err = 0;
+
+	ASSERT_RTNL();
+	mutex_lock(&priv->reg_mutex);
+	for (group = 0; group < MAX_LAGS; group++) {
+		err = rtl931x_stack_lag_set(priv, group, 0, 0, 0);
+		if (err)
+			break;
+	}
+	mutex_unlock(&priv->reg_mutex);
+	return err;
+}
+
 static void
 rtl931x_stack_save_registers(struct rtl931x_stack_context *stack,
 			     struct rtl931x_stack_registers *saved)
@@ -432,8 +603,10 @@ rtl931x_stack_save_registers(struct rtl931x_stack_context *stack,
 }
 
 static int
-rtl931x_stack_restore_registers(const struct rtl931x_stack_registers *saved)
+rtl931x_stack_restore_registers(struct rtl838x_switch_priv *priv,
+				const struct rtl931x_stack_registers *saved)
 {
+	u8 old_device = rtl931x_local_device();
 	unsigned int i;
 	int err;
 
@@ -454,6 +627,7 @@ rtl931x_stack_restore_registers(const struct rtl931x_stack_registers *saved)
 	/* The fabric no longer forwards; restoring identity and paths is safe. */
 	sw_w32_mask(RTL931X_STK_GBL_CTRL_STACK_MASK, saved->global,
 		    RTL931X_STK_GBL_CTRL);
+	rtl931x_lag_rebind(priv, old_device, rtl931x_local_device());
 
 	for (i = 0; i < ARRAY_SIZE(saved->port_id); i++)
 		sw_w32(saved->port_id[i], RTL931X_STK_PORT_ID_CTRL(i * 5));
@@ -467,7 +641,7 @@ rtl931x_stack_restore_registers(const struct rtl931x_stack_registers *saved)
 	sw_w32_mask(RTL931X_L2_CTRL_STK_AUTO_LRN, saved->l2,
 		    RTL931X_L2_CTRL);
 
-	return 0;
+	return rtl931x_stack_refresh();
 }
 
 int rtl931x_stack_device_talk_arm(struct rtl838x_switch_priv *priv, int port,
@@ -639,8 +813,9 @@ static void rtl931x_stack_program_routes(u8 peer_id, u64 port_mask)
 	}
 
 	trunk = sw_r32(RTL931X_TRK_CTRL);
-	trunk &= ~(RTL931X_TRK_CTRL_LINK_DOWN_AVOID |
-		   RTL931X_TRK_CTRL_STK_HASH_CAL);
+	/* LINK_DOWN_AVOID is shared with normal local-first LAGs. */
+	trunk |= RTL931X_TRK_CTRL_LINK_DOWN_AVOID;
+	trunk &= ~RTL931X_TRK_CTRL_STK_HASH_CAL;
 	if (hweight16(slot_mask) > 1) {
 		/* Group multiple stack-port slots into hardware stack trunk 0. */
 		sw_w32(slot_mask, RTL931X_TRK_STK_CTRL);
@@ -765,7 +940,7 @@ int rtl931x_stack_configure(struct rtl838x_switch_priv *priv, int port,
 			rtl931x_stack_port_matrices_copy(stack->member_id,
 							 old_member_id,
 							 priv->r->cpu_port);
-			err = rtl931x_stack_restore_registers(&stack->saved);
+			err = rtl931x_stack_restore_registers(priv, &stack->saved);
 			if (err) {
 				NL_SET_ERR_MSG_MOD(extack,
 						   "stacking trunk table restore timed out");
@@ -865,6 +1040,7 @@ int rtl931x_stack_configure(struct rtl838x_switch_priv *priv, int port,
 	rtl931x_stack_port_matrices_copy(old_member_id, member_id,
 					 priv->r->cpu_port);
 	rtl931x_stack_program_identity(member_id, master_id, flags);
+	rtl931x_lag_rebind(priv, old_member_id, member_id);
 
 	err = rtl931x_stack_replace_fdb_device(old_member_id, member_id);
 	if (err) {
@@ -892,7 +1068,7 @@ int rtl931x_stack_configure(struct rtl838x_switch_priv *priv, int port,
 	return 0;
 
 rollback:
-	restore_err = rtl931x_stack_restore_registers(&stack->saved);
+	restore_err = rtl931x_stack_restore_registers(priv, &stack->saved);
 	if (!restore_err)
 		restore_err = rtl931x_stack_replace_fdb_device(member_id,
 							 old_member_id);
@@ -1165,7 +1341,7 @@ static void rtldsa_931x_lag_set_port2group(int group, int port, bool valid)
 	/* Update TRK Field */
 	mask |= FIELD_PREP(RTL931X_SRC_TRK_MAP_TRK_ID, group);
 
-	__otto_table_write(tbl, port, &mask);
+	__otto_table_write(tbl, rtl931x_local_device() * 64 + port, &mask);
 	otto_table_release(tbl);
 }
 

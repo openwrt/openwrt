@@ -25,7 +25,7 @@ static DEFINE_MUTEX(rtl931x_stack_lock);
 static struct genl_family rtl931x_stack_family;
 
 #define RTL931X_TALK_MAGIC		0x4f53544b /* "OSTK" */
-#define RTL931X_TALK_VERSION		10
+#define RTL931X_TALK_VERSION		11
 #define RTL931X_TALK_PROBE_MESSAGE_LEN	37
 #define RTL931X_TALK_MAX_MESSAGE_LEN	112
 #define RTL931X_TALK_RX_QUEUE_LEN	64
@@ -58,6 +58,7 @@ enum rtl931x_talk_rpc_opcode {
 	RTL931X_TALK_RPC_SET_PORT_VLAN,
 	RTL931X_TALK_RPC_SET_BRIDGE_SOURCES,
 	RTL931X_TALK_RPC_SET_PORT_ADMIN,
+	RTL931X_TALK_RPC_SET_LOCAL_LAG,
 };
 
 struct rtl931x_stack_fabric_vlan {
@@ -198,6 +199,15 @@ struct rtl931x_talk_rpc_port_admin_request {
 	__be64 admin_up_mask;
 } __packed;
 
+struct rtl931x_talk_rpc_local_lag_request {
+	__be32 sequence;
+	u8 group;
+	u8 hash;
+	__be16 reserved;
+	__be64 members;
+	__be64 tx_members;
+} __packed;
+
 struct rtl931x_talk_port_status {
 	__be64 receiver_boot_nonce;
 	__be64 sequence;
@@ -227,6 +237,7 @@ static_assert(sizeof(struct rtl931x_talk_rpc_bridge_port_request) == 8);
 static_assert(sizeof(struct rtl931x_talk_rpc_port_vlan_request) == 12);
 static_assert(sizeof(struct rtl931x_talk_rpc_bridge_sources_request) == 16);
 static_assert(sizeof(struct rtl931x_talk_rpc_port_admin_request) == 16);
+static_assert(sizeof(struct rtl931x_talk_rpc_local_lag_request) == 24);
 static_assert(sizeof(struct rtl931x_talk_port_status) == 40);
 
 static const u8 rtl931x_talk_dest[ETH_ALEN] = {
@@ -1517,6 +1528,9 @@ rtl931x_stack_set_local_delegated(struct rtl931x_stack_context *stack,
 	int err;
 
 	ASSERT_RTNL();
+	err = rtl931x_stack_lags_cleanup(stack->priv);
+	if (err)
+		return err;
 	if (delegated) {
 		if (stack->delegated_port_mask &&
 		    stack->delegated_port_mask != user_port_mask)
@@ -1606,6 +1620,9 @@ rtl931x_stack_undelegate_local_ports(struct rtl931x_stack_context *stack,
 
 	ASSERT_RTNL();
 	rtl931x_stack_bridge_cleanup(stack->priv);
+	err = rtl931x_stack_lags_cleanup(stack->priv);
+	if (err)
+		return err;
 	if (!delegated_mask && !stack->delegated_opened_port_mask &&
 	    !stack->delegated_host_count &&
 	    !stack->delegated_matrix_mask)
@@ -2455,6 +2472,7 @@ rtl931x_stack_talk_rpc_get_switch_info(struct rtl931x_stack_context *stack,
 		RTL931X_STACK_PEER_CAP_GET_PORT_STATE |
 		RTL931X_STACK_PEER_CAP_SET_DELEGATED |
 		RTL931X_STACK_PEER_CAP_PORT_STATUS_EVENT |
+		RTL931X_STACK_PEER_CAP_LOCAL_LAG |
 		RTL931X_STACK_PEER_CAP_SET_PORT_ADMIN;
 	if (!READ_ONCE(stack->flags))
 		capabilities |= RTL931X_STACK_PEER_CAP_BRIDGE_VLAN;
@@ -2813,6 +2831,42 @@ out_unlock:
 	return result;
 }
 
+static u16
+rtl931x_stack_talk_rpc_set_local_lag(struct rtl931x_stack_context *stack,
+			const struct rtl931x_talk_rpc_request_context *request,
+			void *reply)
+{
+	const struct rtl931x_talk_rpc_local_lag_request *lag = request->body;
+	bool replay;
+	u16 result;
+	int err;
+
+	if (lag->reserved || lag->group >= MAX_LAGS)
+		return RTL931X_TALK_RPC_INVALID;
+	if (!rtnl_trylock())
+		return RTL931X_TALK_RPC_BUSY;
+	if (!rtl931x_stack_talk_rpc_session_validate(stack, request->header,
+						     request->rpc,
+						     request->metadata)) {
+		result = RTL931X_TALK_RPC_STALE_SESSION;
+		goto out_unlock;
+	}
+	result = rtl931x_stack_talk_mutation_begin(stack, request, sizeof(*lag), &replay);
+	if (result || replay)
+		goto out_unlock;
+	mutex_lock(&stack->priv->reg_mutex);
+	err = rtl931x_stack_lag_set(stack->priv, lag->group,
+				    be64_to_cpu(lag->members),
+				    be64_to_cpu(lag->tx_members), lag->hash);
+	mutex_unlock(&stack->priv->reg_mutex);
+	result = rtl931x_stack_talk_rpc_errno(err);
+	if (result == RTL931X_TALK_RPC_OK)
+		rtl931x_stack_talk_mutation_commit(stack, request, sizeof(*lag), result);
+out_unlock:
+	rtnl_unlock();
+	return result;
+}
+
 struct rtl931x_talk_rpc_operation {
 	u16 opcode;
 	u16 request_len;
@@ -2872,6 +2926,13 @@ static const struct rtl931x_talk_rpc_operation rtl931x_talk_rpc_operations[] = {
 		.reply_len = 0,
 		.master_only = true,
 		.handler = rtl931x_stack_talk_rpc_set_port_admin,
+	},
+	{
+		.opcode = RTL931X_TALK_RPC_SET_LOCAL_LAG,
+		.request_len = sizeof(struct rtl931x_talk_rpc_local_lag_request),
+		.reply_len = 0,
+		.master_only = true,
+		.handler = rtl931x_stack_talk_rpc_set_local_lag,
 	},
 };
 
@@ -3400,6 +3461,35 @@ rtl931x_stack_peer_mutation(struct rtl838x_switch_priv *priv, u16 opcode,
 	return err;
 }
 
+int rtl931x_stack_peer_set_lag(struct rtl838x_switch_priv *priv, int group)
+{
+	struct rtl931x_talk_rpc_local_lag_request request = {};
+	struct rtldsa_93xx_lag_entry entry;
+	u64 members, tx_members = 0;
+	u32 data[3];
+	int port;
+
+	ASSERT_RTNL();
+	if (group < 0 || group >= priv->ds->num_lag_ids)
+		return -EINVAL;
+	mutex_lock(&priv->reg_mutex);
+	members = priv->lags_port_members[group];
+	for (port = 0; port < priv->r->cpu_port; port++)
+		if ((members & BIT_ULL(port)) && priv->ports[port].dp->lag_tx_enabled)
+			tx_members |= BIT_ULL(port);
+	if (members) {
+		otto_table_read(RTL9310_TBL_LAG, group, &data);
+		priv->r->lag_fill_data(data, &entry);
+		request.hash = entry.ip4_hash_mask_idx;
+	}
+	mutex_unlock(&priv->reg_mutex);
+	request.group = group;
+	request.members = cpu_to_be64(members);
+	request.tx_members = cpu_to_be64(tx_members);
+	return rtl931x_stack_peer_mutation(priv, RTL931X_TALK_RPC_SET_LOCAL_LAG,
+					   &request, sizeof(request));
+}
+
 int rtl931x_stack_peer_set_delegated(struct rtl838x_switch_priv *priv,
 				     bool delegated)
 {
@@ -3558,6 +3648,9 @@ int rtl931x_stack_peer_get_switch_info(struct rtl838x_switch_priv *priv,
 	     (!(capabilities & RTL931X_STACK_PEER_CAP_SET_DELEGATED) ||
 	      max_body_len <
 		sizeof(struct rtl931x_talk_rpc_port_admin_request))) ||
+	    ((capabilities & RTL931X_STACK_PEER_CAP_LOCAL_LAG) &&
+	     (!(capabilities & RTL931X_STACK_PEER_CAP_SET_DELEGATED) ||
+	      max_body_len < sizeof(struct rtl931x_talk_rpc_local_lag_request))) ||
 	    max_body_len < sizeof(struct rtl931x_talk_rpc_port_request) ||
 	    max_body_len > RTL931X_STACK_RPC_MAX_BODY_LEN) {
 		NL_SET_ERR_MSG_MOD(extack,
@@ -4936,9 +5029,9 @@ static int rtl931x_stack_set_two_member(struct sk_buff *skb,
 	}
 	if (enabled) {
 		mutex_lock(&target.priv->reg_mutex);
-		if (target.priv->lagmembers) {
+		if (target.priv->lagmembers & stack->talk_armed_port_mask) {
 			NL_SET_ERR_MSG_MOD(info->extack,
-					   "remove all LAGs before enabling stacking");
+					   "a stack fabric port cannot be a LAG member");
 			err = -EBUSY;
 		}
 		mutex_unlock(&target.priv->reg_mutex);
@@ -4979,9 +5072,9 @@ static int rtl931x_stack_set_two_member(struct sk_buff *skb,
 	}
 	mutex_lock(&target.priv->reg_mutex);
 	/* Defend against any future LAG path which is not RTNL-serialized. */
-	if (enabled && target.priv->lagmembers) {
+	if (enabled && (target.priv->lagmembers & transition_port_mask)) {
 		NL_SET_ERR_MSG_MOD(info->extack,
-				   "remove all LAGs before enabling stacking");
+				   "a stack fabric port cannot be a LAG member");
 		err = -EBUSY;
 		goto out_reg_unlock;
 	}
@@ -5243,6 +5336,10 @@ void rtl931x_stack_register(struct rtl838x_switch_priv *priv)
 	stack->bridge_fabric_users = 0;
 	stack->cpu = NULL;
 	stack->reps = NULL;
+	memset(stack->peer_lags, 0, sizeof(stack->peer_lags));
+	stack->peer_lag_saved_ports = 0;
+	memset(stack->peer_lag_saved_source, 0,
+	       sizeof(stack->peer_lag_saved_source));
 	stack->fabric_link_up = false;
 	stack->reps_desired = false;
 	stack->reps_recovery_pending = false;

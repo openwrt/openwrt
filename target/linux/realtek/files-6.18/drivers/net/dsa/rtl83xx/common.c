@@ -392,6 +392,7 @@ static int rtldsa_93xx_lag_set_group2ports(struct rtl838x_switch_priv *priv, int
 	u8 num_of_lag_ports = 0;
 	u8 group_ports[8];
 	u32 data[3];
+	u8 device = rtl931x_lag_device(priv);
 	int i;
 
 	/* Read lag table using Table control register 2 */
@@ -428,21 +429,21 @@ static int rtldsa_93xx_lag_set_group2ports(struct rtl838x_switch_priv *priv, int
 	/* Remove tx disabled ports */
 	num_of_lag_ports = table_pos;
 
-	e.trk_dev0 = 0;
+	e.trk_dev0 = device;
 	e.trk_port0 = group_ports[0];
-	e.trk_dev1 = 0;
+	e.trk_dev1 = device;
 	e.trk_port1 = group_ports[1];
-	e.trk_dev2 = 0;
+	e.trk_dev2 = device;
 	e.trk_port2 = group_ports[2];
-	e.trk_dev3 = 0;
+	e.trk_dev3 = device;
 	e.trk_port3 = group_ports[3];
-	e.trk_dev4 = 0;
+	e.trk_dev4 = device;
 	e.trk_port4 = group_ports[4];
-	e.trk_dev5 = 0;
+	e.trk_dev5 = device;
 	e.trk_port5 = group_ports[5];
-	e.trk_dev6 = 0;
+	e.trk_dev6 = device;
 	e.trk_port6 = group_ports[6];
-	e.trk_dev7 = 0;
+	e.trk_dev7 = device;
 	e.trk_port7 = group_ports[7];
 
 	e.num_tx_candi = num_of_lag_ports;
@@ -500,8 +501,10 @@ int rtldsa_93xx_lag_set_port_members(struct rtl838x_switch_priv *priv, int group
 
 	/* apply global group and port settings */
 	ret = rtldsa_93xx_lag_set_group2ports(priv, group, info);
-	if (ret)
+	if (ret) {
+		priv->lags_port_members[group] = old_members;
 		return ret;
+	}
 
 	for_each_set_bit(port, affected_members, ARRAY_SIZE(priv->ports)) {
 		bool valid = priv->lags_port_members[group] & BIT_ULL(port);
