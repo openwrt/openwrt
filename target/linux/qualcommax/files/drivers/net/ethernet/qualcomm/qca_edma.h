@@ -126,6 +126,18 @@
 #define EDMA_RXDESC_INT_MASK_PKT_INT 0x1
 #define EDMA_RX_MOD_TIMER_INIT 1000
 
+/* RX descriptor status fields */
+#define EDMA_RXDESC_L4_CSUM_OK BIT(14)
+#define EDMA_RXDESC_L3_CSUM_OK BIT(15)
+#define EDMA_RXDESC_PID_SHIFT 24
+#define EDMA_RXDESC_PID_MASK 0xf
+/* The packet type the parser reports: the low two bits name the transport and
+ * the next one the address family, so the four values the engine checksums are
+ * TCP and UDP over either family.
+ */
+#define EDMA_RXDESC_PID_IPV6 0x4
+#define EDMA_RXDESC_PID_TCP_UDP (BIT(1) | BIT(2) | BIT(5) | BIT(6))
+
 /* PPE queue to receive ring mapping: a four-bit ring id per switch queue. */
 #define EDMA_QID2RID_TABLE_MEM(n) (0x5a000 + (0x4 * (n)))
 #define EDMA_QID2RID_DEPTH 0x40

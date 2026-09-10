@@ -410,6 +410,32 @@ next:
 	return cleaned;
 }
 
+/* The engine verifies the transport checksum of a TCP or UDP frame and
+ * reports the result per descriptor. It reports a header checksum too, which
+ * only IPv4 carries, and it names the packet type it parsed so that a verdict
+ * on a frame it does not checksum is never taken for one it does.
+ */
+static void edma_rx_csum(struct net_device *netdev, struct sk_buff *skb,
+			 u32 status)
+{
+	u8 pid;
+
+	if (!(netdev->features & NETIF_F_RXCSUM))
+		return;
+
+	pid = (status >> EDMA_RXDESC_PID_SHIFT) & EDMA_RXDESC_PID_MASK;
+	if (!(BIT(pid) & EDMA_RXDESC_PID_TCP_UDP))
+		return;
+
+	if (!(status & EDMA_RXDESC_L4_CSUM_OK))
+		return;
+
+	if (!(pid & EDMA_RXDESC_PID_IPV6) && !(status & EDMA_RXDESC_L3_CSUM_OK))
+		return;
+
+	skb->ip_summed = CHECKSUM_UNNECESSARY;
+}
+
 static u32 edma_clean_rx(struct edma_priv *priv, int budget,
 			 struct edma_ring *rxdesc_ring)
 {
@@ -476,6 +502,7 @@ static u32 edma_clean_rx(struct edma_priv *priv, int budget,
 		skb_put(skb, pkt_len);
 
 		skb->protocol = eth_type_trans(skb, priv->netdev);
+		edma_rx_csum(priv->netdev, skb, desc_status);
 
 		tag_info = skb_ext_add(skb, SKB_EXT_DSA_OOB);
 		if (unlikely(!tag_info)) {
@@ -1363,7 +1390,10 @@ static int edma_probe(struct platform_device *pdev)
 	SET_NETDEV_DEV(netdev, dev);
 	netdev->dev.of_node = dev->of_node;
 	netdev->netdev_ops = &edma_netdev_ops;
-	netdev->features = NETIF_F_GRO;
+	netdev->hw_features = NETIF_F_RXCSUM;
+	netdev->features = NETIF_F_GRO | netdev->hw_features;
+	/* A DSA user port takes its features from the conduit's vlan_features. */
+	netdev->vlan_features = netdev->hw_features;
 	netdev->pcpu_stat_type = NETDEV_PCPU_STAT_TSTATS;
 	netdev->watchdog_timeo = 5 * HZ;
 	netdev->max_mtu = EDMA_MAX_MTU;
