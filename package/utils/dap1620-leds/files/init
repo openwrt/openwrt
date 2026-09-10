@@ -1,0 +1,23 @@
+#!/bin/sh /etc/rc.common
+# SPDX-License-Identifier: GPL-2.0-only
+
+START=99
+STOP=01
+USE_PROCD=1
+
+start_service() {
+	[ "$(board_name)" = 'dlink,dap-1620-a2' ] || return 0
+	procd_open_instance
+	procd_set_param command /usr/libexec/dap1620-leds
+	procd_set_param respawn
+	procd_set_param stderr 1
+	procd_close_instance
+}
+
+reload_service() {
+	restart "$@"
+}
+
+service_triggers() {
+	procd_add_reload_trigger dap1620-leds wireless
+}
