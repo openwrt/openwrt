@@ -6,6 +6,7 @@
 
 #include <linux/clk.h>
 #include <linux/ethtool.h>
+#include <linux/hash.h>
 #include <linux/if_vlan.h>
 #include <linux/interrupt.h>
 #include <linux/module.h>
@@ -502,6 +503,33 @@ static void edma_rx_csum(struct net_device *netdev, struct sk_buff *skb,
 	skb->ip_summed = CHECKSUM_UNNECESSARY;
 }
 
+/* The parser hashes the tuple it matched and says which tuple that was. The
+ * same field takes other values that are not a tuple hash, so only the two
+ * tuple verdicts are taken.
+ *
+ * The value arrives in the low bits of the word while the stack scales a hash
+ * across the whole of it, so a hash left where the parser put it selects the
+ * same receive queue for every flow. Spreading it over the word is one to one,
+ * so the frames of a flow still land together.
+ */
+static void edma_rx_hash(struct net_device *netdev, struct sk_buff *skb,
+			 const struct edma_rx_preheader *rxph)
+{
+	u32 pre2 = le32_to_cpu(rxph->rx_pre2);
+	u8 flag;
+
+	if (!(netdev->features & NETIF_F_RXHASH))
+		return;
+
+	flag = (pre2 >> EDMA_RXPH_HASH_FLAG_SHIFT) & EDMA_RXPH_HASH_FLAG_MASK;
+	if (flag != EDMA_RXPH_HASH_5TUPLE && flag != EDMA_RXPH_HASH_3TUPLE)
+		return;
+
+	skb_set_hash(skb, hash_32(pre2 & EDMA_RXPH_HASH_MASK, 32),
+		     flag == EDMA_RXPH_HASH_5TUPLE ? PKT_HASH_TYPE_L4 :
+						     PKT_HASH_TYPE_L3);
+}
+
 static u32 edma_clean_rx(struct edma_priv *priv, int budget,
 			 struct edma_ring *rxdesc_ring)
 {
@@ -573,7 +601,8 @@ static u32 edma_clean_rx(struct edma_priv *priv, int budget,
 		skb_put(skb, pkt_len);
 
 		skb->protocol = eth_type_trans(skb, priv->netdev);
-		edma_rx_csum(priv->netdev, skb, desc_status);
+		edma_rx_csum(netdev, skb, desc_status);
+		edma_rx_hash(netdev, skb, rxph);
 
 		tag_info = skb_ext_add(skb, SKB_EXT_DSA_OOB);
 		if (unlikely(!tag_info)) {
@@ -1597,7 +1626,7 @@ static int edma_probe(struct platform_device *pdev)
 	netdev->netdev_ops = &edma_netdev_ops;
 	netdev->hw_features = NETIF_F_RXCSUM | NETIF_F_IP_CSUM |
 			      NETIF_F_IPV6_CSUM | NETIF_F_SG | NETIF_F_TSO |
-			      NETIF_F_TSO6;
+			      NETIF_F_TSO6 | NETIF_F_RXHASH;
 	netdev->features = NETIF_F_GRO | netdev->hw_features;
 	/* A DSA user port takes its features from the conduit's vlan_features. */
 	netdev->vlan_features = netdev->hw_features;
