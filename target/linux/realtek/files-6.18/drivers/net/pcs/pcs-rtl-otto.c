@@ -2,6 +2,7 @@
 
 #include <linux/bitfield.h>
 #include <linux/delay.h>
+#include <linux/jiffies.h>
 #include <linux/mdio.h>
 #include <linux/mfd/syscon.h>
 #include <linux/of.h>
@@ -320,6 +321,25 @@ enum rtpcs_sds_attachment {
 	RTPCS_SDS_ATTACH_PHY,
 };
 
+enum rtpcs_dac_cal_phase {
+	RTPCS_DAC_CAL_INIT,
+	RTPCS_DAC_CAL_RESET,
+	RTPCS_DAC_CAL_LEQ,
+	RTPCS_DAC_CAL_VERIFY,
+	RTPCS_DAC_CAL_READY,
+};
+
+/* RTL931x only, serialized by ctrl->lock and advanced by PCS polling. */
+struct rtpcs_dac_cal {
+	enum rtpcs_dac_cal_phase phase;
+	unsigned long next;
+	u8 checks;
+	u8 failures;
+	int leq;
+	int vth;
+	int symerr;
+};
+
 enum rtpcs_sds_pll_type {
 	RTPCS_SDS_PLL_TYPE_RING = 0,
 	RTPCS_SDS_PLL_TYPE_LC = 1,
@@ -404,6 +424,7 @@ struct rtpcs_serdes {
 	u8 id;
 	u8 num_of_links;
 	bool first_start;
+	struct rtpcs_dac_cal dac_cal;
 };
 
 struct rtpcs_ctrl {
@@ -423,6 +444,7 @@ struct rtpcs_link {
 	struct phylink_pcs pcs;
 	struct rtpcs_serdes *sds;
 	int port;
+	bool enabled;
 };
 
 struct rtpcs_config {
@@ -3404,6 +3426,27 @@ static int rtpcs_931x_sds_rxeq_vth_get(struct rtpcs_serdes *sds, unsigned int *v
 	return 0;
 }
 
+static int rtpcs_931x_sds_rxeq_tap0_get(struct rtpcs_serdes *sds, int *tap0)
+{
+	int ret, val;
+
+	ret = rtpcs_931x_sds_set_debug(sds, 0x2);
+	if (ret < 0)
+		return ret;
+	ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x14, 10, 5, 0x0);
+	if (ret < 0)
+		return ret;
+	usleep_range(1000, 2000);
+
+	val = rtpcs_sds_read_bits(sds, PAGE_WDIG, 0x14, 5, 0);
+	if (val < 0)
+		return val;
+
+	/* Keep signed coefficients separate from MDIO errors. */
+	*tap0 = rtpcs_sign_mag_decode(val, 5);
+	return 0;
+}
+
 /**
  * rtpcs_931x_sds_reset_leq_dfe() - Reset LEQ + DFE to a baseline.
  *
@@ -3420,30 +3463,43 @@ static int rtpcs_931x_sds_rxeq_vth_get(struct rtpcs_serdes *sds, unsigned int *v
  */
 static int rtpcs_931x_sds_reset_leq_dfe(struct rtpcs_serdes *sds)
 {
-	rtpcs_931x_sds_rxeq_leq_set_adapt(sds, false);
-	rtpcs_931x_sds_rxeq_leq_set_coef(sds, 0);
+	int i, ret;
+
+	ret = rtpcs_931x_sds_rxeq_leq_set_adapt(sds, false);
+	if (ret < 0)
+		return ret;
+	ret = rtpcs_931x_sds_rxeq_leq_set_coef(sds, 0);
+	if (ret < 0)
+		return ret;
 	/* bits [1:0] are undocumented but part of the known-good reset value */
-	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xd, 1, 0, 0x0);
+	ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xd, 1, 0, 0x0);
+	if (ret < 0)
+		return ret;
 
 	/*
 	 * Force manual mode before writing values - not after like the vendor
 	 * SDK does - to prevent the adapt engine from overwriting '0' in the
 	 * short timeframe.
 	 */
-	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xf, 12, 6, 0x7f);
+	ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xf, 12, 6, 0x7f);
+	if (ret < 0)
+		return ret;
 
-	rtpcs_931x_sds_rxeq_tap_set_value(sds, 0, 0x1e, 0);
-	rtpcs_931x_sds_rxeq_tap_set_value(sds, 1, 0, 0);
-	rtpcs_931x_sds_rxeq_tap_set_value(sds, 2, 0, 0);
-	rtpcs_931x_sds_rxeq_tap_set_value(sds, 3, 0, 0);
-	rtpcs_931x_sds_rxeq_tap_set_value(sds, 4, 0, 0);
+	for (i = 0; i <= 4; i++) {
+		ret = rtpcs_931x_sds_rxeq_tap_set_value(sds, i, i ? 0 : 0x1e, 0);
+		if (ret < 0)
+			return ret;
+	}
 
-	rtpcs_931x_sds_rxeq_vth_set_value(sds, 0xa, 0xa);
+	ret = rtpcs_931x_sds_rxeq_vth_set_value(sds, 0xa, 0xa);
+	if (ret < 0)
+		return ret;
 	/* bits [15:12] and [3:0] are undocumented but part of the known-good reset value */
-	rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x12, 15, 12, 0x0);
-	rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x12, 3, 0, 0xa);
+	ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x12, 15, 12, 0x0);
+	if (ret < 0)
+		return ret;
 
-	return 0;
+	return rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x12, 3, 0, 0xa);
 }
 
 /*
@@ -3542,18 +3598,48 @@ static int rtpcs_931x_sds_activate(struct rtpcs_serdes *sds)
 	return rtpcs_931x_sds_power(sds, true);
 }
 
-static void rtpcs_931x_sds_10g_ana_pre(struct rtpcs_serdes *sds)
+static int rtpcs_931x_sds_10g_ana_pre(struct rtpcs_serdes *sds)
 {
-	rtpcs_sds_write(sds, PAGE_ANA_10G, 0x12, 0x2740);
-	rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x0, 15, 12, 0x0);
-	rtpcs_sds_write(sds, PAGE_ANA_10G_EXT, 0x2, 0x2010);
+	int ret;
+
+	ret = rtpcs_sds_write(sds, PAGE_ANA_10G, 0x12, 0x2740);
+	if (ret < 0)
+		return ret;
+	ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x0, 15, 12, 0x0);
+	if (ret < 0)
+		return ret;
+	return rtpcs_sds_write(sds, PAGE_ANA_10G_EXT, 0x2, 0x2010);
 }
 
-static void rtpcs_931x_sds_10g_ana_post(struct rtpcs_serdes *sds)
+static int rtpcs_931x_sds_10g_ana_post(struct rtpcs_serdes *sds)
 {
-	rtpcs_sds_write(sds, PAGE_ANA_10G, 0x12, 0x27c0);
-	rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x0, 15, 12, 0xc);
-	rtpcs_sds_write(sds, PAGE_ANA_10G_EXT, 0x2, 0x6010);
+	int ret;
+
+	ret = rtpcs_sds_write(sds, PAGE_ANA_10G, 0x12, 0x27c0);
+	if (ret < 0)
+		return ret;
+	ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x0, 15, 12, 0xc);
+	if (ret < 0)
+		return ret;
+	return rtpcs_sds_write(sds, PAGE_ANA_10G_EXT, 0x2, 0x6010);
+}
+
+static int rtpcs_931x_sds_rx_reset_nowait(struct rtpcs_serdes *sds)
+{
+	int ret, restore;
+
+	ret = rtpcs_931x_sds_10g_ana_pre(sds);
+	if (ret < 0)
+		return ret;
+	ret = rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, ANA_MISC_REG00, RTL93XX_FRC_RX_EN,
+				   RTL93XX_FRC_RX_EN_FORCE_OFF);
+	if (!ret)
+		ret = rtpcs_931x_sds_10g_ana_post(sds);
+
+	/* Always attempt to release RX, even if a preceding register write failed. */
+	restore = rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, ANA_MISC_REG00, RTL93XX_FRC_RX_EN,
+				       RTL93XX_FRC_RX_EN_FORCE_ON);
+	return ret < 0 ? ret : restore;
 }
 
 static void rtpcs_931x_sds_rx_reset(struct rtpcs_serdes *sds)
@@ -3561,13 +3647,7 @@ static void rtpcs_931x_sds_rx_reset(struct rtpcs_serdes *sds)
 	if (sds->type != RTPCS_SDS_TYPE_10G)
 		return;
 
-	rtpcs_931x_sds_10g_ana_pre(sds);
-	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, ANA_MISC_REG00, RTL93XX_FRC_RX_EN,
-			     RTL93XX_FRC_RX_EN_FORCE_OFF);
-
-	rtpcs_931x_sds_10g_ana_post(sds);
-	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, ANA_MISC_REG00, RTL93XX_FRC_RX_EN,
-			     RTL93XX_FRC_RX_EN_FORCE_ON);
+	rtpcs_931x_sds_rx_reset_nowait(sds);
 	msleep(50);
 }
 
@@ -3691,6 +3771,202 @@ static void rtpcs_931x_sds_rxcal_fiber_adapt(struct rtpcs_serdes *sds)
 	else
 		dev_warn(dev, "SerDes %u fiber RX calibration failed after %d symErr checks\n",
 			 sds->id, i);
+}
+
+static bool rtpcs_931x_sds_is_dac(struct rtpcs_serdes *sds)
+{
+	return sds->type == RTPCS_SDS_TYPE_10G &&
+	       sds->hw_mode == RTPCS_SDS_MODE_10GBASER &&
+	       (sds->attachment == RTPCS_SDS_ATTACH_DAC_SHORT ||
+		sds->attachment == RTPCS_SDS_ATTACH_DAC_LONG);
+}
+
+static void rtpcs_931x_sds_dac_cal_init(struct rtpcs_serdes *sds)
+{
+	sds->dac_cal = (struct rtpcs_dac_cal) {
+		.phase = RTPCS_DAC_CAL_INIT,
+		.next = jiffies,
+		.leq = -1,
+		.vth = -1,
+		.symerr = -1,
+	};
+}
+
+/* SDK _phy_rtl9310_linkSts_get(): PCS status, not the forced MAC mirror. */
+static int rtpcs_931x_sds_dac_link(struct rtpcs_serdes *sds, bool latched)
+{
+	int ret;
+
+	ret = rtpcs_sds_read_bits(sds, PAGE_TGR_STD_1, 0x0, 12, 12);
+	if (ret <= 0 || !latched)
+		return ret;
+
+	return rtpcs_sds_read_bits(sds, PAGE_TGR_STD_0, MII_BMSR, 2, 2);
+}
+
+static int rtpcs_931x_sds_dac_vth(struct rtpcs_serdes *sds)
+{
+	struct rtpcs_dac_cal *cal = &sds->dac_cal;
+	int vth, tap0, ret;
+
+	for (vth = 5; vth <= 10; vth++) {
+		ret = rtpcs_931x_sds_rxeq_vth_set_value(sds, vth, vth);
+		if (ret < 0)
+			return ret;
+		ret = rtpcs_931x_sds_rxeq_tap_set_adapt(sds, 0, true);
+		if (ret < 0)
+			return ret;
+		ret = rtpcs_931x_sds_rxeq_tap0_get(sds, &tap0);
+		if (ret < 0)
+			return ret;
+		cal->vth = vth;
+		if (tap0 >= 15 && tap0 <= 31)
+			break;
+	}
+
+	/* Like the SDK, retain VTH=10 if the search exhausted all candidates. */
+	ret = rtpcs_931x_sds_rxeq_tap_set_adapt(sds, 0, false);
+	if (ret < 0)
+		return ret;
+	return rtpcs_931x_sds_rxeq_tap_set_value(sds, 0, 31, 0);
+}
+
+/*
+ * SDK _phy_rtl9310_dfe_leq_adapt(), with its default adaptive LEQ/TAP1-4.
+ * Advance from PCS polling instead of sleeping through calibration with
+ * the controller lock held. Each attempt is bounded; failed attempts back
+ * off and retry so a late peer or replacement DAC needs no manual restart.
+ * Only reset this lane's RX, never its shared PLL or the other trunk lanes.
+ * Caller holds ctrl->lock, including while using the shared debug mux.
+ */
+static int rtpcs_931x_sds_dac_cal_poll(struct rtpcs_serdes *sds)
+{
+	struct rtpcs_dac_cal *cal = &sds->dac_cal;
+	int ret, up, delay;
+
+	if (cal->phase == RTPCS_DAC_CAL_READY)
+		return rtpcs_931x_sds_dac_link(sds, false);
+	if (time_before(jiffies, cal->next))
+		return 0;
+
+	switch (cal->phase) {
+	case RTPCS_DAC_CAL_INIT:
+		cal->leq = -1;
+		cal->vth = -1;
+		cal->symerr = -1;
+		ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xe, 13, 11, 0x2);
+		if (ret < 0)
+			break;
+		ret = rtpcs_931x_sds_reset_leq_dfe(sds);
+		if (ret < 0)
+			break;
+		ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xd, 13, 13, 0x0);
+		if (ret < 0)
+			break;
+		ret = rtpcs_931x_sds_rx_reset_nowait(sds);
+		if (ret < 0)
+			break;
+		cal->phase = RTPCS_DAC_CAL_RESET;
+		cal->next = jiffies + msecs_to_jiffies(50);
+		return 0;
+
+	case RTPCS_DAC_CAL_RESET:
+		ret = rtpcs_931x_sds_rxeq_leq_set_adapt(sds, true);
+		if (ret < 0)
+			break;
+		cal->phase = RTPCS_DAC_CAL_LEQ;
+		cal->checks = 0;
+		cal->next = jiffies + msecs_to_jiffies(200);
+		return 0;
+
+	case RTPCS_DAC_CAL_LEQ:
+		ret = rtpcs_931x_sds_dac_link(sds, false);
+		if (ret < 0)
+			break;
+		if (!ret) {
+			ret = -ENOLINK;
+			if (++cal->checks == 5)
+				break;
+			cal->next = jiffies + msecs_to_jiffies(10);
+			return 0;
+		}
+		/* Clear the link latch before changing VTH. */
+		ret = rtpcs_931x_sds_dac_link(sds, true);
+		if (ret < 0)
+			break;
+		ret = rtpcs_931x_sds_rxeq_leq_get_coef(sds);
+		if (ret < 0)
+			break;
+		cal->leq = ret;
+		if (cal->leq >= 20) {
+			ret = -ERANGE;
+			break;
+		}
+		ret = rtpcs_931x_sds_dac_vth(sds);
+		if (ret < 0)
+			break;
+		ret = rtpcs_931x_sds_dac_link(sds, true);
+		if (ret <= 0) {
+			ret = ret < 0 ? ret : -ENOLINK;
+			break;
+		}
+		ret = rtpcs_931x_sds_rx_reset_nowait(sds);
+		if (ret < 0)
+			break;
+		/* Manual TAP0/VTH, adaptive LEQ and TAP1-4. */
+		ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xf, 10, 7, 0x0);
+		if (ret < 0)
+			break;
+		/* The 10G symbol error counter is cleared by reading it. */
+		ret = rtpcs_931x_sds_fiber_get_symerr(sds, RTPCS_SDS_MODE_10GBASER);
+		if (ret < 0)
+			break;
+		cal->phase = RTPCS_DAC_CAL_VERIFY;
+		cal->checks = 0;
+		cal->next = jiffies + msecs_to_jiffies(150);
+		return 0;
+
+	case RTPCS_DAC_CAL_VERIFY:
+		up = rtpcs_931x_sds_dac_link(sds, true);
+		if (up < 0) {
+			ret = up;
+			break;
+		}
+		ret = rtpcs_931x_sds_fiber_get_symerr(sds, RTPCS_SDS_MODE_10GBASER);
+		if (ret < 0)
+			break;
+		cal->symerr = ret;
+		/* No signal can also give zero errors. Require a stable PCS link. */
+		if (up && !cal->symerr) {
+			cal->phase = RTPCS_DAC_CAL_READY;
+			cal->failures = 0;
+			dev_info(sds->ctrl->dev,
+				 "SerDes %u DAC RX calibration ready: LEQ=%d VTH=%d\n",
+				 sds->id, cal->leq, cal->vth);
+			return 1;
+		}
+		ret = -ETIMEDOUT;
+		if (++cal->checks == 20)
+			break;
+		cal->next = jiffies + msecs_to_jiffies(150);
+		return 0;
+
+	default:
+		ret = -EINVAL;
+		break;
+	}
+
+	/* Log the first failure and escalation, not every poll of an empty cage. */
+	delay = cal->failures < 2 ? 5 : 30;
+	if (!cal->failures || cal->failures == 2)
+		dev_warn(sds->ctrl->dev,
+			 "SerDes %u DAC RX calibration failed: phase=%u error=%d LEQ=%d VTH=%d symerr=%d; retry in %ds\n",
+			 sds->id, cal->phase, ret, cal->leq, cal->vth, cal->symerr, delay);
+	if (cal->failures < 3)
+		cal->failures++;
+	cal->phase = RTPCS_DAC_CAL_INIT;
+	cal->next = jiffies + delay * HZ;
+	return 0;
 }
 
 static int rtpcs_931x_sds_get_pll_select(struct rtpcs_serdes *sds, enum rtpcs_sds_pll_type *pll)
@@ -3937,8 +4213,12 @@ static int rtpcs_931x_sds_post_config(struct rtpcs_serdes *sds, enum rtpcs_sds_m
 			rtpcs_931x_sds_rxcal_fiber_adapt(sds);
 		break;
 
+	case RTPCS_SDS_ATTACH_DAC_SHORT:
+	case RTPCS_SDS_ATTACH_DAC_LONG:
+		rtpcs_931x_sds_dac_cal_init(sds);
+		break;
+
 	default:
-		/* TODO: DAC RX calibration */
 		break;
 	}
 
@@ -4320,6 +4600,77 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 	return ret;
 }
 
+static int rtpcs_931x_pcs_enable(struct phylink_pcs *pcs)
+{
+	struct rtpcs_link *link = rtpcs_phylink_pcs_to_link(pcs);
+
+	mutex_lock(&link->ctrl->lock);
+	link->enabled = true;
+	rtpcs_931x_sds_dac_cal_init(link->sds);
+	mutex_unlock(&link->ctrl->lock);
+	return 0;
+}
+
+static void rtpcs_931x_pcs_disable(struct phylink_pcs *pcs)
+{
+	struct rtpcs_link *link = rtpcs_phylink_pcs_to_link(pcs);
+
+	mutex_lock(&link->ctrl->lock);
+	link->enabled = false;
+	rtpcs_931x_sds_dac_cal_init(link->sds);
+	mutex_unlock(&link->ctrl->lock);
+}
+
+static void rtpcs_931x_pcs_link_down(struct phylink_pcs *pcs)
+{
+	struct rtpcs_link *link = rtpcs_phylink_pcs_to_link(pcs);
+
+	mutex_lock(&link->ctrl->lock);
+	/* Also retrain a same-mode replacement module, without resetting its PLL. */
+	if (rtpcs_931x_sds_is_dac(link->sds) &&
+	    link->sds->dac_cal.phase == RTPCS_DAC_CAL_READY)
+		rtpcs_931x_sds_dac_cal_init(link->sds);
+	mutex_unlock(&link->ctrl->lock);
+}
+
+static int rtpcs_931x_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
+				 phy_interface_t interface, const unsigned long *advertising,
+				 bool permit_pause_to_mac)
+{
+	struct rtpcs_link *link = rtpcs_phylink_pcs_to_link(pcs);
+	int ret;
+
+	ret = rtpcs_pcs_config(pcs, neg_mode, interface, advertising, permit_pause_to_mac);
+	if (ret < 0)
+		return ret;
+
+	/* phylink starts PCS polling after pcs_config(), including on mode changes. */
+	mutex_lock(&link->ctrl->lock);
+	pcs->poll = rtpcs_931x_sds_is_dac(link->sds);
+	mutex_unlock(&link->ctrl->lock);
+	return ret;
+}
+
+static void rtpcs_931x_pcs_get_state(struct phylink_pcs *pcs, unsigned int neg_mode,
+				   struct phylink_link_state *state)
+{
+	struct rtpcs_link *link = rtpcs_phylink_pcs_to_link(pcs);
+	bool is_dac;
+
+	mutex_lock(&link->ctrl->lock);
+	is_dac = rtpcs_931x_sds_is_dac(link->sds);
+	if (is_dac) {
+		state->link = link->enabled && rtpcs_931x_sds_dac_cal_poll(link->sds) > 0;
+		state->speed = state->link ? SPEED_10000 : SPEED_UNKNOWN;
+		state->duplex = state->link ? DUPLEX_FULL : DUPLEX_UNKNOWN;
+		state->pause &= ~(MLO_PAUSE_RX | MLO_PAUSE_TX);
+	}
+	mutex_unlock(&link->ctrl->lock);
+
+	if (!is_dac)
+		rtpcs_pcs_get_state(pcs, neg_mode, state);
+}
+
 static void rtpcs_mdio_bus_put(void *data)
 {
 	struct mii_bus *mdio_bus = data;
@@ -4680,9 +5031,12 @@ static const struct rtpcs_config rtpcs_930x_cfg = {
 };
 
 static const struct phylink_pcs_ops rtpcs_931x_pcs_ops = {
+	.pcs_enable		= rtpcs_931x_pcs_enable,
+	.pcs_disable		= rtpcs_931x_pcs_disable,
 	.pcs_an_restart		= rtpcs_pcs_an_restart,
-	.pcs_config		= rtpcs_pcs_config,
-	.pcs_get_state		= rtpcs_pcs_get_state,
+	.pcs_config		= rtpcs_931x_pcs_config,
+	.pcs_get_state		= rtpcs_931x_pcs_get_state,
+	.pcs_link_down		= rtpcs_931x_pcs_link_down,
 };
 
 static const struct rtpcs_sds_ops rtpcs_931x_sds_ops = {
