@@ -1,0 +1,59 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shi Jiayang <shi05275@163.com>
+Subject: [PATCH] net: mediatek: match bridge flows behind the YT922x CPU tag
+
+The PPE receive hook runs before DSA removes the switch tag. L2 flow
+lookup currently accepts only the MediaTek tag and skips YT922x frames,
+even when tc flower has installed a bridge flow on the correct PPE.
+
+Recognize the YT922x four-byte format and skip its outer VLAN-shaped
+CPU tag before reading the optional bridge VLAN. The port control TCI
+must not become part of the bridge flow key. Leave unsupported taggers
+on the software path and validate header availability before access.
+
+This supplies the receive-side lookup for cross-switch bridge offload;
+a bridge flow manager such as bridger must still install and retire the
+tc flower rules. The existing output path supplies the destination
+switch tag. VLAN isolation and stacked VLAN offload are not validated
+by this change.
+
+Signed-off-by: Shi Jiayang <shi05275@163.com>
+
+---
+--- a/drivers/net/ethernet/mediatek/mtk_ppe.c
++++ b/drivers/net/ethernet/mediatek/mtk_ppe.c
+@@ -833,12 +833,30 @@ void __mtk_ppe_check_skb(struct mtk_ppe
+ 	switch (skb->protocol) {
+ #if IS_ENABLED(CONFIG_NET_DSA)
+ 	case htons(ETH_P_XDSA):
+-		if (!netdev_uses_dsa(skb->dev) ||
+-		    skb->dev->dsa_ptr->tag_ops->proto != DSA_TAG_PROTO_MTK)
++		if (!netdev_uses_dsa(skb->dev))
+ 			goto out;
+ 
+-		if (!skb_metadata_dst(skb))
+-			tag += 4;
++		switch (skb->dev->dsa_ptr->tag_ops->proto) {
++		case DSA_TAG_PROTO_MTK:
++			if (!skb_metadata_dst(skb))
++				tag += 4;
++			break;
++		case DSA_TAG_PROTO_YT922X_4B:
++			/* The outer 802.1Q-shaped header is a CPU port tag,
++			 * not the bridge VID. Skip it before looking for an
++			 * optional customer VLAN header, just as the tagger
++			 * does later in the receive path.
++			 */
++			if (!pskb_may_pull(skb, 2 * VLAN_HLEN))
++				goto out;
++			tag = skb->data - 2;
++			if (get_unaligned_be16(tag) != ETH_P_8021Q)
++				goto out;
++			tag += VLAN_HLEN;
++			break;
++		default:
++			goto out;
++		}
+ 
+ 		if (get_unaligned_be16(tag) != ETH_P_8021Q)
+ 			break;
