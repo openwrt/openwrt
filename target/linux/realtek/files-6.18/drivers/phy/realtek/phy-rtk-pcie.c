@@ -60,14 +60,28 @@ struct rtk_phy {
 	struct reset_control *phy_rst;
 };
 
-static int rtk_phy_wait_done_and_ready(struct regmap *regmap)
+static int rtk_phy_wait_done_and_ready(struct regmap *regmap, u32 *data)
 {
 	u32 val, cond;
+	int ret;
 
 	cond = PCIE_MDIO_CTRL_PHY_STATUS_DONE | PCIE_MDIO_CTRL_PHY_READY;
 
-	return regmap_read_poll_timeout(regmap, PCIE_MDIO_CTRL_PHY_REG, val,
+	ret = regmap_read_poll_timeout(regmap, PCIE_MDIO_CTRL_PHY_REG, val,
 					(val & cond) == cond, 10, 2000);
+	/*
+	 * Experiments show that:
+	 * 1. After a successful status read from the register,
+	 *    any read/write starts some operation (status returns busy)
+	 * 2. There must be a delay between MDIO operations. Otherwise PHYs
+	 *    may inconsistently fail. Place the delay here
+	 */
+	fsleep(10);
+
+	if (data)
+		*data = val;
+
+	return ret;
 }
 
 static int rtk_phy_write(struct rtk_phy *rtk_phy, u8 page, u8 addr, u16 data)
@@ -82,7 +96,7 @@ static int rtk_phy_write(struct rtk_phy *rtk_phy, u8 page, u8 addr, u16 data)
 	if (ret)
 		return ret;
 
-	return rtk_phy_wait_done_and_ready(rtk_phy->regmap);
+	return rtk_phy_wait_done_and_ready(rtk_phy->regmap, NULL);
 }
 
 static int rtk_phy_read(struct rtk_phy *rtk_phy, u8 page, u8 addr, u16 *data)
@@ -97,11 +111,7 @@ static int rtk_phy_read(struct rtk_phy *rtk_phy, u8 page, u8 addr, u16 *data)
 	if (ret)
 		return ret;
 
-	ret = rtk_phy_wait_done_and_ready(rtk_phy->regmap);
-	if (ret)
-		return ret;
-
-	ret = regmap_read(rtk_phy->regmap, PCIE_MDIO_CTRL_PHY_REG, &val);
+	ret = rtk_phy_wait_done_and_ready(rtk_phy->regmap, &val);
 	if (ret)
 		return ret;
 
