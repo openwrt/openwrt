@@ -598,6 +598,58 @@ static int stack_set_talk_port(struct stack_daemon *daemon, size_t index,
 	return stack_request(daemon, &request, &reply);
 }
 
+static int arm_fabric_interfaces(struct stack_daemon *daemon,
+				 const struct rtl931x_stack_status *status)
+{
+	struct rtl931x_stack_status member_status;
+	size_t armed_count = 0;
+	size_t i;
+	int err;
+
+	if (status->fabric_port_mask) {
+		/* GET accepts only ports in the kernel's current fabric set. */
+		for (i = 0; i < daemon->config.interface_count; i++) {
+			if (!if_nametoindex(daemon->config.interfaces[i]))
+				return -ENODEV;
+			err = stack_get_index(daemon, i, &member_status, false);
+			if (err == -ENODEV)
+				continue;
+			if (err)
+				return err;
+			if (member_status.state == RTL931X_STACK_STATE_ERROR)
+				return -EUCLEAN;
+			if (member_status.enabled ||
+			    member_status.fabric_port_mask != status->fabric_port_mask)
+				return -ESTALE;
+			armed_count++;
+		}
+
+		/*
+		 * Preserve complete and partial setups across retries/restarts.
+		 * Disarming reopens ports and restarts their PCS calibration.
+		 * Only discard a provisional set containing unwanted ports.
+		 */
+		if (armed_count !=
+		    (size_t)__builtin_popcountll(status->fabric_port_mask)) {
+			err = stack_set_talk_port(daemon, 0, false);
+			if (err)
+				return err;
+		}
+	}
+
+	for (i = 0; i < daemon->config.interface_count; i++) {
+		/*
+		 * Already armed ports are kernel-side no-ops, also after a
+		 * successful mutation whose netlink reply was lost.
+		 */
+		err = stack_set_talk_port(daemon, i, true);
+		if (err)
+			return err;
+	}
+
+	return 0;
+}
+
 static int stack_probe(struct stack_daemon *daemon, size_t index,
 		       struct rtl931x_stack_probe *probe)
 {
@@ -1118,15 +1170,9 @@ static int converge_stack(struct stack_daemon *daemon)
 		return publish_ready_object(daemon, PHASE_READY);
 	}
 
-	/* Replace any provisional topology left by an earlier attempt. */
-	err = stack_set_talk_port(daemon, 0, false);
+	err = arm_fabric_interfaces(daemon, &status);
 	if (err)
 		return err;
-	for (size_t i = 0; i < daemon->config.interface_count; i++) {
-		err = stack_set_talk_port(daemon, i, true);
-		if (err)
-			return err;
-	}
 	err = record_and_enable_fabric(daemon);
 	if (err)
 		return err;
