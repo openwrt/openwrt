@@ -486,24 +486,53 @@ static u32 edma_clean_tx(struct edma_priv *priv, struct edma_ring *txcmpl_ring,
  * on a frame it does not checksum is never taken for one it does.
  */
 static void edma_rx_csum(struct net_device *netdev, struct sk_buff *skb,
-			 u32 status)
+			 const struct edma_rx_preheader *rxph, u32 status,
+			 unsigned int l2_len)
 {
+	u32 pre4, sum, l4_off;
+	__sum16 hw;
 	u8 pid;
 
 	if (!(netdev->features & NETIF_F_RXCSUM))
 		return;
 
 	pid = (status >> EDMA_RXDESC_PID_SHIFT) & EDMA_RXDESC_PID_MASK;
-	if (!(BIT(pid) & EDMA_RXDESC_PID_TCP_UDP))
+
+	/* A transport the engine parses is answered with a verdict, which
+	 * settles the frame without the stack reading it at all.
+	 */
+	if (BIT(pid) & EDMA_RXDESC_PID_TCP_UDP) {
+		if (!(status & EDMA_RXDESC_L4_CSUM_OK))
+			return;
+
+		if (!(pid & EDMA_RXDESC_PID_IPV6) &&
+		    !(status & EDMA_RXDESC_L3_CSUM_OK))
+			return;
+
+		skb->ip_summed = CHECKSUM_UNNECESSARY;
+		return;
+	}
+
+	/* Every other transport over IP is summed rather than judged, and the
+	 * engine reports the complement of that sum in packet order, writing a
+	 * sum of zero as its other representation. Carrying it up spares the
+	 * stack the walk over the payload; only the headers ahead of the
+	 * transport are left to add.
+	 */
+	if (pid == EDMA_RXDESC_PID_NON_IP)
 		return;
 
-	if (!(status & EDMA_RXDESC_L4_CSUM_OK))
+	pre4 = le32_to_cpu(rxph->rx_pre4);
+	l4_off = (pre4 >> EDMA_RXPH_L4_OFFSET_SHIFT) & EDMA_RXPH_L4_OFFSET_MASK;
+	if (l4_off <= l2_len || l4_off > skb_headlen(skb) + l2_len)
 		return;
 
-	if (!(pid & EDMA_RXDESC_PID_IPV6) && !(status & EDMA_RXDESC_L3_CSUM_OK))
-		return;
+	sum = (le32_to_cpu(rxph->rx_pre6) >> EDMA_RXPH_CSUM_SHIFT) &
+	      EDMA_RXPH_CSUM_MASK;
+	hw = (__force __sum16)cpu_to_be16(sum);
 
-	skb->ip_summed = CHECKSUM_UNNECESSARY;
+	skb->csum = csum_partial(skb->data, l4_off - l2_len, csum_unfold(~hw));
+	skb->ip_summed = CHECKSUM_COMPLETE;
 }
 
 /* The parser hashes the tuple it matched and says which tuple that was. The
@@ -542,6 +571,7 @@ static u32 edma_clean_rx(struct edma_priv *priv, int budget,
 	struct dsa_oob_tag_info *tag_info;
 	struct edma_rx_preheader *rxph;
 	struct edma_rxdesc *rxdesc;
+	unsigned char *frame;
 	struct sk_buff *skb;
 	u16 prod, cons;
 	struct page *page;
@@ -609,8 +639,10 @@ static u32 edma_clean_rx(struct edma_priv *priv, int budget,
 		skb_reserve(skb, NET_SKB_PAD + EDMA_RX_PREHDR_SIZE);
 		skb_put(skb, pkt_len);
 
+		frame = skb->data;
 		skb->protocol = eth_type_trans(skb, priv->netdev);
-		edma_rx_csum(netdev, skb, desc_status);
+		edma_rx_csum(netdev, skb, rxph, desc_status,
+			     skb->data - frame);
 		edma_rx_hash(netdev, skb, rxph);
 
 		tag_info = skb_ext_add(skb, SKB_EXT_DSA_OOB);

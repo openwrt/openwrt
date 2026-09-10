@@ -146,6 +146,7 @@
  * TCP and UDP over either family.
  */
 #define EDMA_RXDESC_PID_IPV6 0x4
+#define EDMA_RXDESC_PID_NON_IP 0x8
 #define EDMA_RXDESC_PID_TCP_UDP (BIT(1) | BIT(2) | BIT(5) | BIT(6))
 
 /* RX preheader fields */
@@ -154,6 +155,10 @@
 #define EDMA_RXPH_HASH_FLAG_MASK 0x7
 #define EDMA_RXPH_HASH_5TUPLE 1
 #define EDMA_RXPH_HASH_3TUPLE 2
+#define EDMA_RXPH_L4_OFFSET_SHIFT 8
+#define EDMA_RXPH_L4_OFFSET_MASK 0xff
+#define EDMA_RXPH_CSUM_SHIFT 16
+#define EDMA_RXPH_CSUM_MASK 0xffff
 
 /* PPE queue to receive ring mapping: a four-bit ring id per switch queue. */
 #define EDMA_QID2RID_TABLE_MEM(n) (0x5a000 + (0x4 * (n)))
