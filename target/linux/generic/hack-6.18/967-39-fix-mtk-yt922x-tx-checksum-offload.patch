@@ -1,0 +1,26 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shi Jiayang <shi05275@163.com>
+Subject: [PATCH] net: ethernet: mediatek: disable TX offload for YT922x tags
+
+The MTK hardware parser cannot handle the eight-byte YT922x CPU tag when
+calculating transport checksums or performing TCP segmentation. Packets
+with partial checksums can therefore be transmitted with invalid checksums.
+
+Extend the existing per-skb DSA feature check so the networking core
+performs software segmentation and checksum completion for YT922x
+conduits. Retain hardware offload for all other conduit protocols.
+
+Signed-off-by: Shi Jiayang <shi05275@163.com>
+---
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -5139,7 +5139,8 @@ static netdev_features_t mtk_features_ch
+ 		 * software before appending the tag, so ip_summed is no longer
+ 		 * CHECKSUM_PARTIAL by the time this driver sees it.
+ 		 */
+-		if (tag_ops->proto == DSA_TAG_PROTO_RTL8_4)
++		if (tag_ops->proto == DSA_TAG_PROTO_RTL8_4 ||
++		    tag_ops->proto == DSA_TAG_PROTO_YT922X)
+ 			features &= ~(NETIF_F_CSUM_MASK | NETIF_F_GSO_MASK);
+ 	}
+ 
