@@ -506,6 +506,7 @@ static u32 edma_clean_rx(struct edma_priv *priv, int budget,
 			 struct edma_ring *rxdesc_ring)
 {
 	const struct edma_soc_data *soc = priv->soc;
+	struct net_device *netdev = priv->netdev;
 	struct platform_device *pdev = priv->pdev;
 	struct dsa_oob_tag_info *tag_info;
 	struct edma_rx_preheader *rxph;
@@ -541,8 +542,10 @@ static u32 edma_clean_rx(struct edma_priv *priv, int budget,
 		page_pool_dma_sync_for_cpu(priv->page_pool, page, 0,
 					   EDMA_RX_PREHDR_SIZE + pkt_len);
 		store_idx = le32_to_cpu(rxph->opaque);
-		if (unlikely(!edma_rx_page_take(priv, page, store_idx)))
+		if (unlikely(!edma_rx_page_take(priv, page, store_idx))) {
+			netdev->stats.rx_errors++;
 			goto next;
+		}
 
 		if (EDMA_RXPH_SRC_INFO_TYPE_GET(rxph) !=
 		    EDMA_PREHDR_DSTINFO_PORTID_IND) {
@@ -552,6 +555,7 @@ static u32 edma_clean_rx(struct edma_priv *priv, int budget,
 					     le16_to_cpu(rxph->src_info),
 					     le16_to_cpu(rxph->dst_info));
 			page_pool_put_full_page(priv->page_pool, page, true);
+			netdev->stats.rx_errors++;
 			goto next;
 		}
 
@@ -560,6 +564,7 @@ static u32 edma_clean_rx(struct edma_priv *priv, int budget,
 		skb = napi_build_skb(page_address(page), page_size(page));
 		if (unlikely(!skb)) {
 			page_pool_put_full_page(priv->page_pool, page, true);
+			netdev->stats.rx_dropped++;
 			goto next;
 		}
 
@@ -573,6 +578,7 @@ static u32 edma_clean_rx(struct edma_priv *priv, int budget,
 		tag_info = skb_ext_add(skb, SKB_EXT_DSA_OOB);
 		if (unlikely(!tag_info)) {
 			dev_kfree_skb_any(skb);
+			netdev->stats.rx_dropped++;
 			goto next;
 		}
 		tag_info->port = src_port;
@@ -652,6 +658,7 @@ static int edma_rx_napi(struct napi_struct *napi, int budget)
 		if (prod == cons) {
 			dev_warn_ratelimited(&priv->pdev->dev,
 					     "RXFILL ring starved\n");
+			priv->netdev->stats.rx_missed_errors++;
 			edma_rx_fill(priv, &priv->rxfill_ring);
 			return budget;
 		}
