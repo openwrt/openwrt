@@ -32,7 +32,13 @@ get_mac_label_json() {
 	local cfg="/etc/board.json"
 	local macaddr
 
-	[ -s "$cfg" ] || return
+	if ! [ -s "$cfg" ]; then
+		if [ -n "$CFG" ] && [ -s "$CFG" ]; then
+			cfg="$CFG"
+		else
+			return 1
+		fi
+	fi
 
 	json_init
 	json_load "$(cat $cfg)"
