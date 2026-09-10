@@ -98,6 +98,17 @@ fabric interface must be administratively usable and must not
 belong to a bridge or LAG before stacking starts. A single link may continue to
 use `option interface 'lan49'` for compatibility.
 
+Local LACP uplinks on non-fabric ports may be created before or after the stack.
+For example, `bond0` on `lan51`/`lan52` and a native stack trunk on
+`lan49`/`lan50` use separate hardware tables and need no netifd ordering hook.
+Local LAG membership follows the switch's device ID when stacking is enabled
+or disabled. The leader synchronizes its LAG membership and LACP-selected TX
+ports to the follower through session-checked, replayable Device Talk mutations;
+peer recovery replays the current state before restoring bridge forwarding.
+Loss of the peer does not prevent local uplink changes. A fabric port cannot
+also be a bond member. This does not implement bonds containing `sw1pN` ports
+or cross-chassis LACP; delegated follower ports remain owned by the leader.
+
 Before enabling a new trunk, connect at least one configured link. Stackd arms
 every configured port, enables the stack after one link verifies, and keeps
 unverified links out of the hardware trunk. It probes each additional live link
@@ -297,6 +308,9 @@ The hardware validation matrix should additionally cover:
 
 - unbridged ingress and egress;
 - port administrative and carrier transitions;
+- local LACP created before and after stacking, member selection changes,
+  and bond removal/recreation without disturbing the fabric;
+- local uplink traffic during peer loss and after peer LAG-state replay;
 - a fabric flap during every RPC phase;
 - leader and daemon loss at every mutation step; and
 - mirroring, ACL traps and other exceptional RX metadata.

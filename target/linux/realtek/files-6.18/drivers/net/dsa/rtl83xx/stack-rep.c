@@ -1050,6 +1050,28 @@ static void rtl931x_stack_reps_recover_later(struct rtl931x_stack_reps *reps,
 		mod_delayed_work(system_wq, &stack->reps_recovery_work, 0);
 }
 
+void rtl931x_stack_reps_local_lag_change(struct rtl838x_switch_priv *priv,
+				       int group)
+{
+	struct rtl931x_stack_reps *reps;
+	int err;
+
+	if (priv->family_id != RTL9310_FAMILY_ID)
+		return;
+	ASSERT_RTNL();
+	reps = priv->stack.reps;
+	/* Initial activation and recovery replay the current local LAG state. */
+	if (!reps || !READ_ONCE(reps->active) || READ_ONCE(reps->fenced))
+		return;
+
+	err = rtl931x_stack_peer_set_lag(priv, group);
+	if (err) {
+		/* Keep the local uplink working even when the peer is unavailable. */
+		rtl931x_stack_reps_fence(reps);
+		rtl931x_stack_reps_recover_later(reps, err);
+	}
+}
+
 static int
 rtl931x_stack_reps_activate(struct rtl931x_stack_reps *reps,
 			    const struct rtl931x_stack_peer_switch_info *info,
@@ -1190,10 +1212,18 @@ static bool rtl931x_stack_rpc_uncertain(int err)
 static int rtl931x_stack_reps_bridge_replay(struct rtl931x_stack_reps *reps)
 {
 	struct rtl931x_stack_rep_vlan *vlan;
-	int port, err;
+	int group, port, err;
 
 	/* SET_DELEGATED(true) cleared the complete follower bridge shadow. */
 	reps->bridge_cleanup_mask = 0;
+	/* Restore normal LAG lookup before any follower bridge port forwards. */
+	for (group = 0; group < reps->priv->ds->num_lag_ids; group++) {
+		if (!reps->priv->lags_port_members[group])
+			continue;
+		err = rtl931x_stack_peer_set_lag(reps->priv, group);
+		if (err)
+			return err;
+	}
 
 	for (port = 0; port < RTL931X_STACK_MAX_PORTS; port++) {
 		if (!(reps->bridge_port_mask & BIT_ULL(port)))
@@ -1322,6 +1352,10 @@ rtl931x_stack_reps_enable(struct rtl838x_switch_priv *priv,
 	if (!(info->capabilities & RTL931X_STACK_PEER_CAP_SET_PORT_ADMIN)) {
 		NL_SET_ERR_MSG_MOD(extack,
 				   "peer does not support port admin state");
+		return -EOPNOTSUPP;
+	}
+	if (!(info->capabilities & RTL931X_STACK_PEER_CAP_LOCAL_LAG)) {
+		NL_SET_ERR_MSG_MOD(extack, "peer does not support local LAG synchronization");
 		return -EOPNOTSUPP;
 	}
 	if (!reps) {

@@ -2349,9 +2349,12 @@ static int rtldsa_port_lag_change(struct dsa_switch *ds, int port)
 	if (!dp)
 		return -EINVAL;
 
+	mutex_lock(&priv->reg_mutex);
 	lag_group = rtldsa_find_lag_group_from_port(priv, port);
-	if (lag_group < 0)
+	if (lag_group < 0) {
+		mutex_unlock(&priv->reg_mutex);
 		return lag_group;
+	}
 
 	if (priv->r->lag_set_port_members) {
 		/* Set same port members again, the function should check against
@@ -2360,9 +2363,13 @@ static int rtldsa_port_lag_change(struct dsa_switch *ds, int port)
 		ret = priv->r->lag_set_port_members(priv, lag_group,
 						    priv->lags_port_members[lag_group],
 						    NULL);
-		if (ret)
+		if (ret) {
+			mutex_unlock(&priv->reg_mutex);
 			return ret;
+		}
 	}
+	mutex_unlock(&priv->reg_mutex);
+	rtl931x_stack_reps_local_lag_change(priv, lag_group);
 
 	return 0;
 }
@@ -2382,9 +2389,15 @@ static int rtldsa_port_lag_join(struct dsa_switch *ds,
 
 	mutex_lock(&priv->reg_mutex);
 
-	if (rtl931x_stack_active(priv)) {
+	if (rtl931x_stack_port_active(priv, port)) {
 		NL_SET_ERR_MSG_MOD(extack,
-				   "LAG offload is unavailable while stacking is active");
+				   "a stack fabric port cannot join a LAG");
+		err = -EBUSY;
+		goto out;
+	}
+	if (priv->family_id == RTL9310_FAMILY_ID &&
+	    (priv->stack.delegated_port_mask & BIT_ULL(port))) {
+		NL_SET_ERR_MSG_MOD(extack, "a delegated port cannot join a local LAG");
 		err = -EBUSY;
 		goto out;
 	}
@@ -2398,6 +2411,10 @@ static int rtldsa_port_lag_join(struct dsa_switch *ds,
 
 	pr_info("port_lag_join: group %d, port %d\n", group, port);
 
+	err = rtl83xx_lag_add(priv->ds, group, port, info);
+	if (err)
+		goto out;
+
 	if (priv->lag_primary[group] == -1)
 		priv->lag_primary[group] = port;
 	else
@@ -2406,14 +2423,10 @@ static int rtldsa_port_lag_join(struct dsa_switch *ds,
 	priv->lagmembers |= BIT_ULL(port);
 
 	pr_debug("lag_members = %llX\n", priv->lagmembers);
-	err = rtl83xx_lag_add(priv->ds, group, port, info);
-	if (err) {
-		err = -EINVAL;
-		goto out;
-	}
-
 out:
 	mutex_unlock(&priv->reg_mutex);
+	if (!err)
+		rtl931x_stack_reps_local_lag_change(priv, group);
 
 	return err;
 }
@@ -2438,21 +2451,21 @@ static int rtldsa_port_lag_leave(struct dsa_switch *ds, int port,
 		goto out;
 	}
 	pr_info("port_lag_del: group %d, port %d\n", group, port);
+	err = rtl83xx_lag_del(priv->ds, group, port);
+	if (err)
+		goto out;
 	priv->lagmembers &= ~BIT_ULL(port);
 	priv->lag_non_primary &= ~BIT_ULL(port);
-	pr_debug("lag_members = %llX\n", priv->lagmembers);
-	err = rtl83xx_lag_del(priv->ds, group, port);
-	if (err) {
-		err = -EINVAL;
-		goto out;
-	}
 
 	/* To re-elect primary interface, just remove the first interface in
 	 * this-group's interfaces from non-primary
 	 */
 	if (priv->lags_port_members[group]) {
-		priv->lag_primary[group] = fls64(priv->lags_port_members[group]);
+		priv->lag_non_primary |= priv->lags_port_members[group];
+		priv->lag_primary[group] = __ffs64(priv->lags_port_members[group]);
 		priv->lag_non_primary &= ~BIT_ULL(priv->lag_primary[group]);
+	} else {
+		priv->lag_primary[group] = -1;
 	}
 
 	/* No need to update fdb entries since they make use of trunk_id for entry.
@@ -2462,7 +2475,9 @@ static int rtldsa_port_lag_leave(struct dsa_switch *ds, int port,
 
 out:
 	mutex_unlock(&priv->reg_mutex);
-	return 0;
+	if (!err)
+		rtl931x_stack_reps_local_lag_change(priv, group);
+	return err;
 }
 
 const struct phylink_mac_ops rtldsa_83xx_phylink_mac_ops = {
