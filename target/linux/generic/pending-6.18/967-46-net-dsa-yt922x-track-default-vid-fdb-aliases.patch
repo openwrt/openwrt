@@ -1,0 +1,200 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shi Jiayang <shi05275@163.com>
+Subject: [PATCH] net: dsa: yt922x: track default VID aliases in the bridge FDB
+
+A VLAN-unaware Linux bridge still announces local and static FDB entries
+for its default VLAN 1 as well as VID 0. Rejecting VID 1 leaves host
+address replay and later deletes failing during normal interface setup.
+
+Accept the default VID alias in the existing single VLAN-unaware domain
+and track its lifetime separately from VID 0. Keep the hardware entry
+until both aliases are gone. A move resets ownership so late old-port
+deletes cannot remove the replacement, and conflicting VID 1 destinations
+cannot redirect an active VID 0 entry. Do not extend VLAN-aware support.
+
+Allocate ownership before programming hardware, retain it on hardware
+errors, and release remaining bookkeeping when the device is removed.
+The alias deletion orders, moves and rejection paths were exercised with
+an isolated MAC against real YT9224 hardware using the new callbacks.
+
+Signed-off-by: Shi Jiayang <shi05275@163.com>
+
+---
+--- a/drivers/net/dsa/yt921x.c
++++ b/drivers/net/dsa/yt921x.c
+@@ -6324,6 +6324,36 @@ static void yt922x_dsa_teardown(struct d
+ #define YT922X_FDB_PORT		GENMASK(15, 12)
+ #define YT922X_BRIDGE_VID		1
+ 
++struct yt922x_fdb_entry {
++	struct list_head list;
++	struct net_device *bridge;
++	unsigned char addr[ETH_ALEN];
++	u8 port;
++	u8 vids;
++};
++
++static struct yt922x_fdb_entry *
++yt922x_fdb_find(struct yt921x_priv *priv, const unsigned char *addr)
++{
++	struct yt922x_fdb_entry *entry;
++
++	list_for_each_entry(entry, &priv->yt922x_fdb_entries, list)
++		if (ether_addr_equal(entry->addr, addr))
++			return entry;
++	return NULL;
++}
++
++static void yt922x_fdb_cleanup(void *data)
++{
++	struct yt921x_priv *priv = data;
++	struct yt922x_fdb_entry *entry, *next;
++
++	list_for_each_entry_safe(entry, next, &priv->yt922x_fdb_entries, list) {
++		list_del(&entry->list);
++		kfree(entry);
++	}
++}
++
+ /* Caller holds reg_lock for the entire indirect-table transaction. */
+ static int yt922x_fdb_op(struct yt921x_priv *priv, const u32 in[4],
+ 			 u32 command, u32 out[4], u32 *result)
+@@ -6366,7 +6396,8 @@ static bool yt922x_fdb_bridge_supported(
+ {
+ 	struct dsa_port *dp;
+ 
+-	if (vid || db.type != DSA_DB_BRIDGE || br_vlan_enabled(db.bridge.dev))
++	if (vid > YT922X_BRIDGE_VID || db.type != DSA_DB_BRIDGE ||
++	    br_vlan_enabled(db.bridge.dev))
+ 		return false;
+ 	if (dsa_is_user_port(&priv->ds, port))
+ 		return priv->ports[port].yt922x_bridge == db.bridge.dev;
+@@ -6383,6 +6414,7 @@ yt922x_dsa_port_fdb_add(struct dsa_switc
+ 			const unsigned char *addr, u16 vid, struct dsa_db db)
+ {
+ 	struct yt921x_priv *priv = to_yt921x_priv(ds);
++	struct yt922x_fdb_entry *fdb, *new = NULL;
+ 	u32 entry[4], result;
+ 	int ret;
+ 
+@@ -6398,11 +6430,40 @@ yt922x_dsa_port_fdb_add(struct dsa_switc
+ 	} else if (!yt922x_fdb_bridge_supported(priv, port, vid, db)) {
+ 		ret = -EOPNOTSUPP;
+ 	} else {
++		fdb = yt922x_fdb_find(priv, addr);
++		/* An inactive VLAN entry cannot redirect the untagged entry. */
++		if (fdb && vid && (fdb->vids & BIT(0)) && fdb->port != port) {
++			ret = -EOPNOTSUPP;
++			goto out;
++		}
++		if (!fdb) {
++			new = kzalloc(sizeof(*new), GFP_KERNEL);
++			if (!new) {
++				ret = -ENOMEM;
++				goto out;
++			}
++			fdb = new;
++		}
+ 		ret = yt922x_fdb_op(priv, entry, YT922X_FDB_ADD, NULL, &result);
+ 		if (!ret && (result & (YT922X_FDB_FULL | YT922X_FDB_NOT_FOUND)))
+ 			ret = -ENOSPC;
++		if (!ret) {
++			if (new) {
++				ether_addr_copy(fdb->addr, addr);
++				list_add_tail(&fdb->list, &priv->yt922x_fdb_entries);
++				new = NULL;
++			}
++			/* A move supersedes aliases belonging to the old port. */
++			if (fdb->port != port || fdb->bridge != db.bridge.dev)
++				fdb->vids = 0;
++			fdb->port = port;
++			fdb->bridge = db.bridge.dev;
++			fdb->vids |= BIT(vid);
++		}
+ 	}
++out:
+ 	mutex_unlock(&priv->reg_lock);
++	kfree(new);
+ 	return ret;
+ }
+ 
+@@ -6411,16 +6472,31 @@ yt922x_dsa_port_fdb_del(struct dsa_switc
+ 			const unsigned char *addr, u16 vid, struct dsa_db db)
+ {
+ 	struct yt921x_priv *priv = to_yt921x_priv(ds);
++	struct yt922x_fdb_entry *fdb;
+ 	u32 entry[4], out[4], result;
+ 	int ret = 0;
+ 
+-	if (vid || db.type != DSA_DB_BRIDGE || !is_valid_ether_addr(addr))
++	if (vid > YT922X_BRIDGE_VID || db.type != DSA_DB_BRIDGE ||
++	    !is_valid_ether_addr(addr))
+ 		return -EOPNOTSUPP;
+ 	yt922x_fdb_key(addr, entry);
+ 	mutex_lock(&priv->reg_lock);
++	fdb = yt922x_fdb_find(priv, addr);
++	if (!fdb || fdb->bridge != db.bridge.dev || fdb->port != port ||
++	    !(fdb->vids & BIT(vid)))
++		goto out;
++	/* The bridge also announces its default VLAN while filtering is off.
++	 * VID 0 and VID 1 share one hardware key, but have separate lifetimes.
++	 */
++	if (fdb->vids & ~BIT(vid)) {
++		fdb->vids &= ~BIT(vid);
++		goto out;
++	}
+ 	ret = yt922x_fdb_op(priv, entry, YT922X_FDB_GET, out, &result);
+-	if (ret || (result & YT922X_FDB_NOT_FOUND))
++	if (ret)
+ 		goto out;
++	if (result & YT922X_FDB_NOT_FOUND)
++		goto forget;
+ 	/* A move can install the new destination before the old delete is
+ 	 * delivered. Never delete another port's entry or a learned entry.
+ 	 */
+@@ -6428,8 +6504,13 @@ yt922x_dsa_port_fdb_del(struct dsa_switc
+ 	    (out[2] & (YT922X_FDB_IPMC | YT922X_FDB_LAG)) ||
+ 	    FIELD_GET(YT922X_FDB_STATUS, out[1]) != YT922X_FDB_STATIC ||
+ 	    FIELD_GET(YT922X_FDB_PORT, out[2]) != port)
+-		goto out;
++		goto forget;
+ 	ret = yt922x_fdb_op(priv, entry, YT922X_FDB_DELETE, NULL, &result);
++	if (ret)
++		goto out;
++forget:
++	list_del(&fdb->list);
++	kfree(fdb);
+ out:
+ 	mutex_unlock(&priv->reg_lock);
+ 	return ret;
+@@ -6897,6 +6978,7 @@ static int yt921x_mdio_probe(struct mdio
+ 	struct yt921x_reg_mdio *mdio;
+ 	struct yt921x_priv *priv;
+ 	struct dsa_switch *ds;
++	int ret;
+ 
+ 	compat_info = of_device_get_match_data(dev);
+ 	if (!compat_info)
+@@ -6915,6 +6997,10 @@ static int yt921x_mdio_probe(struct mdio
+ 	mdio->switchid = 0;
+ 
+ 	mutex_init(&priv->reg_lock);
++	INIT_LIST_HEAD(&priv->yt922x_fdb_entries);
++	ret = devm_add_action_or_reset(dev, yt922x_fdb_cleanup, priv);
++	if (ret)
++		return ret;
+ 
+ 	priv->series_info = compat_info;
+ 	priv->reg_ops = &yt921x_reg_ops_mdio;
+--- a/drivers/net/dsa/yt921x.h
++++ b/drivers/net/dsa/yt921x.h
+@@ -1092,6 +1092,9 @@ struct yt921x_priv {
+ 
+ 	u8 acl_masks[YT921X_ACL_BLK_NUM];
+ 	struct yt921x_acl_blk *acl_blks[YT921X_ACL_BLK_NUM];
++
++	/* Static VID 0/1 aliases, protected by reg_lock. */
++	struct list_head yt922x_fdb_entries;
+ };
+ 
+ #endif

@@ -1,0 +1,227 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shi Jiayang <shi05275@163.com>
+Subject: [PATCH] net: dsa: yt922x: manage unicast bridge FDB entries
+
+Add the Whale indirect-table operations for static unicast entries and
+hardware FDB dumps. Map VLAN-unaware bridge VID 0 to the chip's reset
+PVID 1, and only accept the existing offloaded bridge. Use the Whale
+static status encoding and include slot zero when enumerating entries.
+
+Check the stored destination before deletion so a late delete from an
+old port cannot remove an entry already moved to another port. Leave
+dynamically learned entries untouched. CPU destinations allow DSA's
+assisted learning to install addresses learned on foreign bridge ports.
+
+VLAN-aware forwarding, multicast entries and independent forwarding
+domains remain unsupported. Register operations and callback-level
+add/move/dump/delete were verified with an isolated test MAC on YT9224;
+full DSA lifecycle acceptance remains separate.
+
+Signed-off-by: Shi Jiayang <shi05275@163.com>
+
+---
+--- a/drivers/net/dsa/yt921x.c
++++ b/drivers/net/dsa/yt921x.c
+@@ -22,6 +22,7 @@
+ #include <linux/of_mdio.h>
+ #include <linux/of_net.h>
+ #include <linux/sort.h>
++#include <linux/unaligned.h>
+ 
+ #include <net/dsa.h>
+ #include <net/dscp.h>
+@@ -6302,6 +6303,184 @@ static void yt922x_dsa_teardown(struct d
+ #define YT922X_FDB_START		BIT(0)
+ #define YT922X_AGEING_TIME	0x18043c
+ 
++#define YT922X_FDB_OUTPUT(n)	(0x180010 + 4 * (n))
++#define YT922X_FDB_NOT_FOUND	BIT(14)
++#define YT922X_FDB_FULL		BIT(12)
++#define YT922X_FDB_INDEX		GENMASK(11, 0)
++#define YT922X_FDB_CMD_INDEX	GENMASK(24, 13)
++#define YT922X_FDB_BY_INDEX	BIT(12)
++#define YT922X_FDB_NEXT_UC	(2 << 4)
++#define YT922X_FDB_ADD		(0 << 1)
++#define YT922X_FDB_DELETE		BIT(1)
++#define YT922X_FDB_GET		(2 << 1)
++#define YT922X_FDB_NEXT		(3 << 1)
++#define YT922X_FDB_VID		GENMASK(27, 16)
++#define YT922X_FDB_STATUS		GENMASK(30, 28)
++#define YT922X_FDB_STATIC		7
++#define YT922X_FDB_VALID		BIT(23)
++#define YT922X_FDB_IPMC		BIT(22)
++#define YT922X_FDB_LAG		BIT(20)
++#define YT922X_FDB_PENDING	BIT(19)
++#define YT922X_FDB_PORT		GENMASK(15, 12)
++#define YT922X_BRIDGE_VID		1
++
++/* Caller holds reg_lock for the entire indirect-table transaction. */
++static int yt922x_fdb_op(struct yt921x_priv *priv, const u32 in[4],
++			 u32 command, u32 out[4], u32 *result)
++{
++	int i, ret;
++
++	for (i = 0; i < 4; i++) {
++		ret = yt921x_reg_write(priv, YT922X_FDB_INPUT(i), in[i]);
++		if (ret)
++			return ret;
++	}
++	ret = yt921x_reg_write(priv, YT922X_FDB_COMMAND,
++			       command | YT922X_FDB_START);
++	if (ret)
++		return ret;
++	*result = YT922X_FDB_DONE;
++	ret = yt921x_reg_wait(priv, YT922X_FDB_RESULT, YT922X_FDB_DONE, result);
++	if (ret || !out)
++		return ret;
++	for (i = 0; i < 4; i++) {
++		ret = yt921x_reg_read(priv, YT922X_FDB_OUTPUT(i), &out[i]);
++		if (ret)
++			return ret;
++	}
++	return 0;
++}
++
++static void yt922x_fdb_key(const unsigned char *addr, u32 entry[4])
++{
++	entry[0] = get_unaligned_be32(addr);
++	/* Untagged learning uses the reset PVID, not Linux's VID 0. */
++	entry[1] = FIELD_PREP(YT922X_FDB_VID, YT922X_BRIDGE_VID) |
++		   get_unaligned_be16(addr + 4);
++	entry[2] = 0;
++	entry[3] = 0;
++}
++
++static bool yt922x_fdb_bridge_supported(struct yt921x_priv *priv, int port,
++					u16 vid, struct dsa_db db)
++{
++	struct dsa_port *dp;
++
++	if (vid || db.type != DSA_DB_BRIDGE || br_vlan_enabled(db.bridge.dev))
++		return false;
++	if (dsa_is_user_port(&priv->ds, port))
++		return priv->ports[port].yt922x_bridge == db.bridge.dev;
++	if (!dsa_is_cpu_port(&priv->ds, port))
++		return false;
++	dsa_switch_for_each_user_port(dp, &priv->ds)
++		if (priv->ports[dp->index].yt922x_bridge == db.bridge.dev)
++			return true;
++	return false;
++}
++
++static int
++yt922x_dsa_port_fdb_add(struct dsa_switch *ds, int port,
++			const unsigned char *addr, u16 vid, struct dsa_db db)
++{
++	struct yt921x_priv *priv = to_yt921x_priv(ds);
++	u32 entry[4], result;
++	int ret;
++
++	if (!is_valid_ether_addr(addr))
++		return -EOPNOTSUPP;
++	yt922x_fdb_key(addr, entry);
++	entry[1] |= FIELD_PREP(YT922X_FDB_STATUS, YT922X_FDB_STATIC);
++	entry[2] = YT922X_FDB_VALID | FIELD_PREP(YT922X_FDB_PORT, port);
++
++	mutex_lock(&priv->reg_lock);
++	if (priv->yt922x_bridge_broken) {
++		ret = -EIO;
++	} else if (!yt922x_fdb_bridge_supported(priv, port, vid, db)) {
++		ret = -EOPNOTSUPP;
++	} else {
++		ret = yt922x_fdb_op(priv, entry, YT922X_FDB_ADD, NULL, &result);
++		if (!ret && (result & (YT922X_FDB_FULL | YT922X_FDB_NOT_FOUND)))
++			ret = -ENOSPC;
++	}
++	mutex_unlock(&priv->reg_lock);
++	return ret;
++}
++
++static int
++yt922x_dsa_port_fdb_del(struct dsa_switch *ds, int port,
++			const unsigned char *addr, u16 vid, struct dsa_db db)
++{
++	struct yt921x_priv *priv = to_yt921x_priv(ds);
++	u32 entry[4], out[4], result;
++	int ret = 0;
++
++	if (vid || db.type != DSA_DB_BRIDGE || !is_valid_ether_addr(addr))
++		return -EOPNOTSUPP;
++	yt922x_fdb_key(addr, entry);
++	mutex_lock(&priv->reg_lock);
++	ret = yt922x_fdb_op(priv, entry, YT922X_FDB_GET, out, &result);
++	if (ret || (result & YT922X_FDB_NOT_FOUND))
++		goto out;
++	/* A move can install the new destination before the old delete is
++	 * delivered. Never delete another port's entry or a learned entry.
++	 */
++	if (!(out[2] & YT922X_FDB_VALID) ||
++	    (out[2] & (YT922X_FDB_IPMC | YT922X_FDB_LAG)) ||
++	    FIELD_GET(YT922X_FDB_STATUS, out[1]) != YT922X_FDB_STATIC ||
++	    FIELD_GET(YT922X_FDB_PORT, out[2]) != port)
++		goto out;
++	ret = yt922x_fdb_op(priv, entry, YT922X_FDB_DELETE, NULL, &result);
++out:
++	mutex_unlock(&priv->reg_lock);
++	return ret;
++}
++
++static int yt922x_dsa_port_fdb_dump(struct dsa_switch *ds, int port,
++				    dsa_fdb_dump_cb_t *cb, void *data)
++{
++	struct yt921x_priv *priv = to_yt921x_priv(ds);
++	u32 in[4] = {}, entry[4], command, result, index = 0, next;
++	unsigned char addr[ETH_ALEN];
++	int i, ret;
++
++	/* NEXT excludes its starting index, so read slot zero explicitly. */
++	for (i = 0; i <= FIELD_MAX(YT922X_FDB_INDEX); i++) {
++		command = YT922X_FDB_BY_INDEX |
++			  FIELD_PREP(YT922X_FDB_CMD_INDEX, index) |
++			  (i ? YT922X_FDB_NEXT_UC | YT922X_FDB_NEXT : YT922X_FDB_GET);
++		mutex_lock(&priv->reg_lock);
++		ret = yt922x_fdb_op(priv, in, command, entry, &result);
++		mutex_unlock(&priv->reg_lock);
++		if (ret)
++			return ret;
++		if (result & YT922X_FDB_NOT_FOUND) {
++			if (i)
++				break;
++			continue;
++		}
++		next = FIELD_GET(YT922X_FDB_INDEX, result);
++		if (i && next <= index)
++			return -EIO;
++		index = next;
++		if (!(entry[2] & YT922X_FDB_VALID) ||
++		    (entry[2] & (YT922X_FDB_IPMC | YT922X_FDB_LAG |
++				 YT922X_FDB_PENDING)) ||
++		    !FIELD_GET(YT922X_FDB_STATUS, entry[1]) ||
++		    FIELD_GET(YT922X_FDB_PORT, entry[2]) != port ||
++		    FIELD_GET(YT922X_FDB_VID, entry[1]) != YT922X_BRIDGE_VID)
++			continue;
++		put_unaligned_be32(entry[0], addr);
++		put_unaligned_be16(entry[1] & 0xffff, addr + 4);
++		if (!is_valid_ether_addr(addr))
++			continue;
++		ret = cb(addr, 0, FIELD_GET(YT922X_FDB_STATUS, entry[1]) ==
++			 YT922X_FDB_STATIC, data);
++		if (ret)
++			return ret;
++	}
++	return 0;
++}
++
+ /* Whale's indirect FDB engine is different from Tiger's. The command below
+  * removes dynamic unicast entries learned on one physical port. In
+  * particular, bit 7 (flush static entries) must remain clear.
+@@ -6620,6 +6799,9 @@ static int yt922x_dsa_connect_tag_protoc
+ 
+ static const struct dsa_switch_ops yt922x_dsa_switch_ops = {
+ 	.port_bridge_join	= yt922x_dsa_port_bridge_join,
++	.port_fdb_add		= yt922x_dsa_port_fdb_add,
++	.port_fdb_del		= yt922x_dsa_port_fdb_del,
++	.port_fdb_dump		= yt922x_dsa_port_fdb_dump,
+ 	.port_bridge_leave	= yt922x_dsa_port_bridge_leave,
+ 	.port_stp_state_set	= yt922x_dsa_port_stp_state_set,
+ 	.port_fast_age		= yt922x_dsa_port_fast_age,
