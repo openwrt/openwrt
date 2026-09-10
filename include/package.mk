@@ -71,6 +71,8 @@ else
   TARGET_LDFLAGS += -zmax-page-size=4096
 endif
 
+ATOMIC64_DEPENDS:=+!HAS_ATOMIC64:libatomic
+
 include $(INCLUDE_DIR)/hardening.mk
 include $(INCLUDE_DIR)/prereq.mk
 include $(INCLUDE_DIR)/unpack.mk
