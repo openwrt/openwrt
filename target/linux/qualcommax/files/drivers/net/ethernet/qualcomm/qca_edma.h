@@ -179,6 +179,11 @@
 #define EDMA_TXDESC_DATA_OFFSET_MASK 0xff
 #define EDMA_TXDESC_DATA_LENGTH_MASK 0xffff
 
+/* TX preheader fields */
+#define EDMA_TX_PRE4_ADV_OFFLOAD_EN BIT(28)
+#define EDMA_TX_PRE6_CSUM_MODE_L4 (0x1 << 29)
+#define EDMA_TX_PRE6_IP_CSUM_EN BIT(31)
+
 /* Preheader fields */
 #define EDMA_DST_PORT_TYPE 0x20
 #define EDMA_DST_PORT_ID_MASK 0x1f
