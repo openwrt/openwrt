@@ -290,6 +290,21 @@ endef
 
 $(eval $(call KernelPackage,fb-tft-ili9486))
 
+define KernelPackage/fb-tft-nv3007
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=FB driver for the NewVision NV3007 LCD Controller
+  DEPENDS:=@TARGET_mediatek_filogic +kmod-fb-tft
+  KCONFIG:=CONFIG_FB_TFT_NV3007
+  FILES:=$(LINUX_DIR)/drivers/staging/fbtft/fb_nv3007.ko
+  AUTOLOAD:=$(call AutoLoad,09,fb_nv3007)
+endef
+
+define KernelPackage/fb-tft-nv3007/description
+  FB driver for the NewVision NV3007 LCD Controller (EdgePi E87N)
+endef
+
+$(eval $(call KernelPackage,fb-tft-nv3007))
+
 
 define KernelPackage/cec-core
   SUBMENU:=$(VIDEO_MENU)
