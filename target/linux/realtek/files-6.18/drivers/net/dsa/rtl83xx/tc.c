@@ -17,11 +17,11 @@ static int rtl83xx_parse_flow_rule(struct rtl838x_switch_priv *priv,
 	struct flow_dissector *dissector = rule->match.dissector;
 	u64 supported_keys;
 
-	pr_debug("In %s\n", __func__);
+	dev_dbg(priv->dev, "parsing flower match keys\n");
 	/* KEY_CONTROL and KEY_BASIC are needed for forming a meaningful key */
 	if ((dissector->used_keys & BIT(FLOW_DISSECTOR_KEY_CONTROL)) == 0 ||
 	    (dissector->used_keys & BIT(FLOW_DISSECTOR_KEY_BASIC)) == 0) {
-		pr_err("Cannot form TC key: used_keys = 0x%llx\n", dissector->used_keys);
+		dev_err(priv->dev, "cannot form a TC key: used_keys = 0x%llx\n", dissector->used_keys);
 		return -EOPNOTSUPP;
 	}
 
@@ -45,7 +45,7 @@ static int rtl83xx_parse_flow_rule(struct rtl838x_switch_priv *priv,
 	if (flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_BASIC)) {
 		struct flow_match_basic match;
 
-		pr_debug("%s: BASIC\n", __func__);
+		dev_dbg(priv->dev, "match BASIC\n");
 		flow_rule_match_basic(rule, &match);
 		if (match.mask->n_proto) {
 			if (match.mask->n_proto != htons(0xffff))
@@ -92,7 +92,7 @@ static int rtl83xx_parse_flow_rule(struct rtl838x_switch_priv *priv,
 	if (flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_ETH_ADDRS)) {
 		struct flow_match_eth_addrs match;
 
-		pr_debug("%s: ETH_ADDR\n", __func__);
+		dev_dbg(priv->dev, "match ETH_ADDR\n");
 		flow_rule_match_eth_addrs(rule, &match);
 		ether_addr_copy(flow->rule.dmac, match.key->dst);
 		ether_addr_copy(flow->rule.dmac_m, match.mask->dst);
@@ -103,7 +103,7 @@ static int rtl83xx_parse_flow_rule(struct rtl838x_switch_priv *priv,
 	if (flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_VLAN)) {
 		struct flow_match_vlan match;
 
-		pr_debug("%s: VLAN\n", __func__);
+		dev_dbg(priv->dev, "match VLAN\n");
 		flow_rule_match_vlan(rule, &match);
 		if (match.mask->vlan_priority || match.mask->vlan_dei ||
 		    match.mask->vlan_eth_type)
@@ -121,7 +121,7 @@ static int rtl83xx_parse_flow_rule(struct rtl838x_switch_priv *priv,
 	if (flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_IPV4_ADDRS)) {
 		struct flow_match_ipv4_addrs match;
 
-		pr_debug("%s: IPV4\n", __func__);
+		dev_dbg(priv->dev, "match IPV4\n");
 		flow_rule_match_ipv4_addrs(rule, &match);
 		flow->rule.is_ipv6 = false;
 		flow->rule.dip = match.key->dst;
@@ -131,7 +131,7 @@ static int rtl83xx_parse_flow_rule(struct rtl838x_switch_priv *priv,
 	} else if (flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_IPV6_ADDRS)) {
 		struct flow_match_ipv6_addrs match;
 
-		pr_debug("%s: IPV6\n", __func__);
+		dev_dbg(priv->dev, "match IPV6\n");
 		flow->rule.is_ipv6 = true;
 		flow_rule_match_ipv6_addrs(rule, &match);
 		flow->rule.dip6 = match.key->dst;
@@ -143,7 +143,7 @@ static int rtl83xx_parse_flow_rule(struct rtl838x_switch_priv *priv,
 	if (flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_PORTS)) {
 		struct flow_match_ports match;
 
-		pr_debug("%s: PORTS\n", __func__);
+		dev_dbg(priv->dev, "match PORTS\n");
 		flow_rule_match_ports(rule, &match);
 		flow->rule.dport = match.key->dst;
 		flow->rule.dport_m = match.mask->dst;
@@ -207,13 +207,13 @@ static int rtl83xx_parse_fwd(struct rtl838x_switch_priv *priv,
 
 	port = rtl83xx_port_is_under(dev, priv);
 	if (port < 0) {
-		netdev_info(dev, "%s: not a DSA device.\n", __func__);
+		netdev_info(dev, "not a DSA port on this switch\n");
 		return -EINVAL;
 	}
 
 	flow->rule.fwd_sel = true;
 	flow->rule.fwd_data = port;
-	pr_debug("Using port index: %d\n", port);
+	dev_dbg(priv->dev, "redirect/mirror to port %d\n", port);
 	rtl83xx_flow_bypass_all(flow);
 
 	return 0;
@@ -226,7 +226,7 @@ static int rtl83xx_add_flow(struct rtl838x_switch_priv *priv, struct flow_cls_of
 	const struct flow_action_entry *act;
 	int i, err;
 
-	pr_debug("%s\n", __func__);
+	dev_dbg(priv->dev, "adding flower rule\n");
 
 	if (flow_rule_match_has_control_flags(rule, f->common.extack))
 		return -EOPNOTSUPP;
@@ -246,13 +246,13 @@ static int rtl83xx_add_flow(struct rtl838x_switch_priv *priv, struct flow_cls_of
 	flow_action_for_each(i, act, &rule->action) {
 		switch (act->id) {
 		case FLOW_ACTION_DROP:
-			pr_debug("%s: DROP\n", __func__);
+			dev_dbg(priv->dev, "action DROP\n");
 			flow->rule.drop = true;
 			rtl83xx_flow_bypass_all(flow);
 			return 0;
 
 		case FLOW_ACTION_TRAP:
-			pr_debug("%s: TRAP\n", __func__);
+			dev_dbg(priv->dev, "action TRAP\n");
 			flow->rule.fwd_sel = true;
 			flow->rule.fwd_data = priv->r->cpu_port;
 			flow->rule.fwd_act = PIE_ACT_REDIRECT_TO_PORT;
@@ -260,15 +260,15 @@ static int rtl83xx_add_flow(struct rtl838x_switch_priv *priv, struct flow_cls_of
 			break;
 
 		case FLOW_ACTION_MANGLE:
-			pr_err("%s: FLOW_ACTION_MANGLE not supported\n", __func__);
+			dev_err(priv->dev, "unsupported action: MANGLE\n");
 			return -EOPNOTSUPP;
 
 		case FLOW_ACTION_ADD:
-			pr_err("%s: FLOW_ACTION_ADD not supported\n", __func__);
+			dev_err(priv->dev, "unsupported action: ADD\n");
 			return -EOPNOTSUPP;
 
 		case FLOW_ACTION_VLAN_PUSH:
-			pr_debug("%s: VLAN_PUSH\n", __func__);
+			dev_dbg(priv->dev, "action VLAN_PUSH\n");
 /*			TODO: act->vlan.proto */
 			flow->rule.ivid_act = PIE_ACT_VID_ASSIGN;
 			flow->rule.ivid_sel = true;
@@ -280,7 +280,7 @@ static int rtl83xx_add_flow(struct rtl838x_switch_priv *priv, struct flow_cls_of
 			break;
 
 		case FLOW_ACTION_VLAN_POP:
-			pr_debug("%s: VLAN_POP\n", __func__);
+			dev_dbg(priv->dev, "action VLAN_POP\n");
 			flow->rule.ivid_act = PIE_ACT_VID_ASSIGN;
 			flow->rule.ivid_data = 0;
 			flow->rule.ivid_sel = true;
@@ -291,11 +291,11 @@ static int rtl83xx_add_flow(struct rtl838x_switch_priv *priv, struct flow_cls_of
 			break;
 
 		case FLOW_ACTION_CSUM:
-			pr_err("%s: FLOW_ACTION_CSUM not supported\n", __func__);
+			dev_err(priv->dev, "unsupported action: CSUM\n");
 			return -EOPNOTSUPP;
 
 		case FLOW_ACTION_REDIRECT:
-			pr_debug("%s: REDIRECT\n", __func__);
+			dev_dbg(priv->dev, "action REDIRECT\n");
 			err = rtl83xx_parse_fwd(priv, act, flow);
 			if (err)
 				return err;
@@ -303,7 +303,7 @@ static int rtl83xx_add_flow(struct rtl838x_switch_priv *priv, struct flow_cls_of
 			break;
 
 		case FLOW_ACTION_MIRRED:
-			pr_debug("%s: MIRRED\n", __func__);
+			dev_dbg(priv->dev, "action MIRRED\n");
 			err = rtl83xx_parse_fwd(priv, act, flow);
 			if (err)
 				return err;
@@ -311,7 +311,7 @@ static int rtl83xx_add_flow(struct rtl838x_switch_priv *priv, struct flow_cls_of
 			break;
 
 		default:
-			pr_err("%s: Flow action not supported: %d\n", __func__, act->id);
+			dev_err(priv->dev, "unsupported action: %d\n", act->id);
 			return -EOPNOTSUPP;
 		}
 	}
@@ -396,12 +396,12 @@ static int rtldsa_configure_flower(struct rtl838x_switch_priv *priv,
 	struct rtl83xx_flow *flow;
 	int err = 0;
 
-	pr_debug("In %s\n", __func__);
+	dev_dbg(priv->dev, "configuring flower rule\n");
 
 	if (!priv->r->packet_cntr_read || !priv->r->packet_cntr_clear)
 		return -EOPNOTSUPP;
 
-	pr_debug("Cookie %08lx\n", f->cookie);
+	dev_dbg(priv->dev, "cookie %08lx\n", f->cookie);
 
 	mutex_lock(&priv->tc_flow_lock);
 
@@ -416,11 +416,11 @@ static int rtldsa_configure_flower(struct rtl838x_switch_priv *priv,
 
 	flow = rhashtable_lookup_fast(&priv->tc_ht, &f->cookie, tc_ht_params);
 	if (flow) {
-		pr_info("%s: Got flow\n", __func__);
+		dev_dbg(priv->dev, "cookie already offloaded\n");
 		err = -EEXIST;
 		goto out_unlock;
 	}
-	pr_debug("%s: New flow\n", __func__);
+	dev_dbg(priv->dev, "new flow\n");
 
 	flow = kzalloc(sizeof(*flow), GFP_KERNEL);
 	if (!flow) {
@@ -474,7 +474,7 @@ out_remove:
 out_free:
 	kfree(flow);
 out_err:
-	pr_err("%s: error %d\n", __func__, err);
+	dev_err(priv->dev, "flower rule setup failed: %d\n", err);
 out_unlock:
 	mutex_unlock(&priv->tc_flow_lock);
 
@@ -487,7 +487,7 @@ static int rtldsa_delete_flower(struct rtl838x_switch_priv *priv,
 	struct rtl83xx_flow *flow;
 	int err;
 
-	pr_debug("In %s\n", __func__);
+	dev_dbg(priv->dev, "deleting flower rule\n");
 
 	mutex_lock(&priv->tc_flow_lock);
 
@@ -526,7 +526,7 @@ static int rtldsa_stats_flower(struct rtl838x_switch_priv *priv,
 	u32 total_packets, new_packets = 0;
 	int err = 0;
 
-	pr_debug("%s:\n", __func__);
+	dev_dbg(priv->dev, "reading flower rule stats\n");
 
 	mutex_lock(&priv->tc_flow_lock);
 
