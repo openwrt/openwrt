@@ -22,7 +22,6 @@ static struct regmap *otto_map;
 struct otto_table {
 	u16 addr;
 	u16 data;
-	u8  max_data;
 	u8 c_bit;
 	u8 t_bit;
 	u8 rmode;
@@ -72,7 +71,7 @@ enum otto_table_reg_max {
 
 #define OTTO_REG_DESC(name, addr_, data_, max_, cbit_, tbit_, rmode_)	\
 	[name] = {							\
-		.addr = addr_, .data = data_, .max_data = max_,		\
+		.addr = addr_, .data = data_,				\
 		.c_bit = cbit_, .t_bit = tbit_, .rmode = rmode_,	\
 	},
 
@@ -390,96 +389,36 @@ static int otto_table_exec(int handle, bool is_write, int idx)
 	return ret;
 }
 
-static u16 otto_table_word_addr(struct otto_table *r, int word)
-{
-	if (word < 0)
-		word = 0;
-	else if (word >= r->max_data)
-		word = r->max_data - 1;
-
-	return r->data + word * 4;
-}
-
-int __otto_table_fetch(int handle, int idx)
+int __otto_table_read_bytes(int handle, int idx, void *buf, int word_offset,
+			    size_t size)
 {
 	struct otto_table *r = otto_table_reg(handle);
-	int ret = 0;
-	int err;
-
-	if (!r)
-		return -EINVAL;
-
-	/* The data registers are what this call produces, and the word reader
-	 * takes them as they stand. Clear them first so that a refused or timed
-	 * out access does not hand out the previous transaction's row.
-	 */
-	for (unsigned int i = 0; i < otto_table_maps[handle].width; i++) {
-		err = regmap_write(otto_map, r->data + i * 4, 0);
-		if (err && !ret)
-			ret = err;
-	}
-
-	if (!otto_table_index_ok(handle, idx))
-		return -EINVAL;
-
-	err = otto_table_exec(handle, false, idx);
-
-	return err ? err : ret;
-}
-EXPORT_SYMBOL_GPL(__otto_table_fetch);
-
-u32 __otto_table_word_read(int handle, int word)
-{
-	struct otto_table *r = otto_table_reg(handle);
-	u32 val = 0;
-	int ret;
-
-	if (!r)
-		return 0;
-
-	ret = regmap_read(otto_map, otto_table_word_addr(r, word), &val);
-	if (ret)
-		pr_err_ratelimited("otto_table: read of table %d failed: %d\n",
-				   otto_table_handle_to_id(handle), ret);
-
-	return val;
-}
-EXPORT_SYMBOL_GPL(__otto_table_word_read);
-
-int __otto_table_read_bytes(int handle, int idx, void *buf, size_t size)
-{
-	struct otto_table *r = otto_table_reg(handle);
-	unsigned int words;
+	unsigned int words, width;
 	u32 *out = buf;
 	int ret;
 
 	/* The buffer is what this call produces. Clear it first so a refusal
 	 * hands back zeroes rather than the stack the caller arrived with: no
 	 * caller checks the return value, and every read-modify-write writes
-	 * this buffer back to the table. A timeout still copies the window, so
-	 * that such a write commits the row as the hardware left it.
+	 * this buffer back to the table.
 	 */
 	memset(buf, 0, size);
 
 	if (!r || !otto_table_index_ok(handle, idx))
 		return -EINVAL;
 
-	words = otto_table_maps[handle].width;
-	if (WARN_ONCE(size != words * sizeof(u32),
-		      "otto_table: %zu bytes for table %d, a %u word entry\n",
-		      size, otto_table_handle_to_id(handle), words))
+	words = size / sizeof(u32);
+	width = otto_table_maps[handle].width;
+	if (WARN_ONCE(size % sizeof(u32) || word_offset < 0 || word_offset + words > width,
+		      "otto_table: %zu bytes at word %d of table %d, a %u word entry\n",
+		      size, word_offset, otto_table_handle_to_id(handle), width))
 		return -EINVAL;
 
 	ret = otto_table_exec(handle, false, idx);
+	if (ret)
+		return ret;
 
-	for (unsigned int i = 0; i < words; i++) {
-		int err = regmap_read(otto_map, r->data + i * 4, &out[i]);
-
-		if (err && !ret)
-			ret = err;
-	}
-
-	return ret;
+	return regmap_bulk_read(otto_map, r->data + word_offset * 4, out, words);
 }
 EXPORT_SYMBOL_GPL(__otto_table_read_bytes);
 
@@ -509,7 +448,8 @@ int __otto_table_write_bytes(int handle, int idx, const void *buf, size_t size)
 }
 EXPORT_SYMBOL_GPL(__otto_table_write_bytes);
 
-int otto_table_read_bytes(enum otto_table_id id, int idx, void *buf, size_t size)
+int otto_table_read_bytes(enum otto_table_id id, int idx, void *buf,
+			  int word_offset, size_t size)
 {
 	int handle = otto_table_acquire(id);
 	int ret;
@@ -519,7 +459,7 @@ int otto_table_read_bytes(enum otto_table_id id, int idx, void *buf, size_t size
 		return handle;
 	}
 
-	ret = __otto_table_read_bytes(handle, idx, buf, size);
+	ret = __otto_table_read_bytes(handle, idx, buf, word_offset, size);
 	otto_table_release(handle);
 
 	return ret;

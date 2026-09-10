@@ -1852,33 +1852,34 @@ static int rtldsa_931x_lag_table(void)
 static u64 rtldsa_931x_stat_port_table_read(int port, unsigned int mib_size,
 					    unsigned int mib_offset, bool is_pvt)
 {
-	int tbl;
+	enum otto_table_id id;
 	int field_offset;
-	u64 ret = 0;
+	u32 val[2];
 
 	if (is_pvt) {
-		tbl = otto_table_acquire(RTL9310_TBL_STAT_PORT_PRVTE_CNTR);
+		id = RTL9310_TBL_STAT_PORT_PRVTE_CNTR;
 		field_offset = 27;
 	} else {
-		tbl = otto_table_acquire(RTL9310_TBL_STAT_PORT_MIB_CNTR);
+		id = RTL9310_TBL_STAT_PORT_MIB_CNTR;
 		field_offset = 52;
 	}
 
-	/* The word offset is computed per field, so the row is picked apart in
-	 * the data registers rather than copied into a buffer.
+	/* Counter fields are numbered down from the last data word of the
+	 * entry, so the high half of a 64 bit counter sits at the lower word
+	 * index.
 	 */
-	__otto_table_fetch(tbl, port);
-
 	if (mib_size == 2) {
-		ret = __otto_table_word_read(tbl, field_offset - (mib_offset + 1));
-		ret <<= 32;
+		otto_table_read_bytes(id, port, val,
+				      field_offset - (mib_offset + 1),
+				      sizeof(val));
+
+		return (u64)val[0] << 32 | val[1];
 	}
 
-	ret |= __otto_table_word_read(tbl, field_offset - mib_offset);
+	otto_table_read_bytes(id, port, val, field_offset - mib_offset,
+			      sizeof(val[0]));
 
-	otto_table_release(tbl);
-
-	return ret;
+	return val[0];
 }
 
 static void rtldsa_931x_qos_set_group_selector(int port, int group)
