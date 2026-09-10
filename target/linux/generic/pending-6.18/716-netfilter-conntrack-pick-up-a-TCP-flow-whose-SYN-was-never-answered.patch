@@ -1,0 +1,48 @@
+From: Gary Dotzler <geldot@protonmail.com>
+Date: Wed, 9 Sep 2026 23:09:27 +0200
+Subject: [PATCH] netfilter: conntrack: pick up a TCP flow whose SYN was never
+ answered
+
+When only one direction of a connection passes the host, conntrack sees
+the SYN but not the SYN/ACK. The client's next ACK is invalid in
+SYN_SENT, as is every packet after it.
+
+Had the SYN not been seen, the loose pickup in tcp_new() would have
+taken that ACK, with window checks off in both directions. Delete the
+SYN_SENT entry and look the packet up again so that tcp_new() picks it
+up. This applies only with nf_conntrack_tcp_loose, without synproxy,
+before any reply, and to an original direction ACK at the expected
+sequence number. No TCP state or transition is added.
+
+Signed-off-by: Gary Dotzler <geldot@protonmail.com>
+Assisted-by: Claude:claude-opus-5
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+ net/netfilter/nf_conntrack_proto_tcp.c | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+--- a/net/netfilter/nf_conntrack_proto_tcp.c
++++ b/net/netfilter/nf_conntrack_proto_tcp.c
+@@ -1173,6 +1173,22 @@ int nf_conntrack_tcp_packet(struct nf_co
+ 			return NF_ACCEPT;
+ 		}
+ 
++		/* No reply seen and the client continues after its SYN: the
++		 * reply takes another path. Recreate the entry through the
++		 * loose pickup in tcp_new().
++		 */
++		if (tn->tcp_loose && !nfct_synproxy(ct) &&
++		    old_state == TCP_CONNTRACK_SYN_SENT &&
++		    index == TCP_ACK_SET && dir == IP_CT_DIR_ORIGINAL &&
++		    !test_bit(IPS_SEEN_REPLY_BIT, &ct->status) &&
++		    ntohl(th->seq) == ct->proto.tcp.seen[dir].td_end) {
++			spin_unlock_bh(&ct->lock);
++
++			if (nf_ct_kill(ct))
++				return -NF_REPEAT;
++			return NF_DROP;
++		}
++
+ 		/* Invalid packet */
+ 		spin_unlock_bh(&ct->lock);
+ 		nf_ct_l4proto_log_invalid(skb, ct, state,
