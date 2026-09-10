@@ -186,6 +186,7 @@
 
 /* TX descriptor fields */
 #define EDMA_TXDESC_MORE BIT(30)
+#define EDMA_TXDESC_TSO_EN BIT(28)
 #define EDMA_TXDESC_PREHEADER_SHIFT 29
 #define EDMA_TXDESC_DATA_OFFSET_SHIFT 16
 #define EDMA_TXDESC_DATA_OFFSET_MASK 0xff
@@ -194,6 +195,7 @@
 /* TX preheader fields */
 #define EDMA_TX_PRE4_ADV_OFFLOAD_EN BIT(28)
 #define EDMA_TX_PRE6_CSUM_MODE_L4 (0x1 << 29)
+#define EDMA_TX_PRE6_MSS_MASK 0x3fff
 #define EDMA_TX_PRE6_IP_CSUM_EN BIT(31)
 
 /* Preheader fields */
