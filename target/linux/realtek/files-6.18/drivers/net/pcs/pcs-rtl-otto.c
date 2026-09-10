@@ -4273,6 +4273,15 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 				if (ret < 0)
 					return ret;
 
+				/* Temporary RTL931x experiment: applies to optics too. */
+				if (sds->ops->config_attachment == rtpcs_931x_sds_config_attachment &&
+				    hw_mode == RTPCS_SDS_MODE_10GBASER) {
+					attachment = RTPCS_SDS_ATTACH_DAC_LONG;
+					dev_warn(ctrl->dev,
+						 "SerDes %u: forcing DAC_LONG tuning for 10gbase-r (experimental)\n",
+						 sds->id);
+				}
+
 				ret = sds->ops->config_attachment(sds, attachment, hw_mode);
 				if (ret < 0)
 					return ret;
