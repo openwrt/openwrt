@@ -428,6 +428,23 @@ _ucidef_set_led_common() {
 	json_add_string sysfs "$sysfs"
 }
 
+ucidef_set_led_colors() {
+	local cfg="$1"
+
+	shift
+
+	json_select_object led
+	json_select_object "$cfg"
+
+	while [ "$#" -gt 1 ]; do
+		json_add_string "color_$1" "$2"
+		shift 2
+	done
+
+	json_select ..
+	json_select ..
+}
+
 ucidef_set_led_default() {
 	local default="$4"
 
