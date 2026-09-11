@@ -9,7 +9,11 @@
 	compatible = "linksys,homewrk", "qcom,ipq8074";
 
 	chosen {
-		bootargs-append = " root=/dev/ubiblock0_1";
+		bootargs-find-1 = "ubi.mtd=22,2048";
+		bootargs-replace-1 = "ubi.mtd=22,4096";
+		bootargs-find-2 = "ubi.mtd=24,2048";
+		bootargs-replace-2 = "ubi.mtd=24,4096";
+		bootargs-append = " root=/dev/ubiblock0_0";
 	};
 };
 
