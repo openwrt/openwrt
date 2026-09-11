@@ -6,6 +6,7 @@
 
 #include "l3.h"
 #include "rtl-otto.h"
+#include "tc.h"
 
 #define RTL930X_VLAN_PORT_TAG_STS_INTERNAL			0x0
 #define RTL930X_VLAN_PORT_TAG_STS_UNTAG				0x1
@@ -271,72 +272,6 @@ static int rtldsa_930x_get_mirror_config(struct rtldsa_mirror_config *config,
 	 * hits both SPM and DPM ports: prefer egress
 	 */
 	config->val |= BIT(4);
-
-	return 0;
-}
-
-static int rtldsa_930x_port_rate_police_add(struct dsa_switch *ds, int port,
-					    const struct flow_action_entry *act,
-					    bool ingress)
-{
-	u32 burst;
-	u64 rate;
-	u32 addr;
-
-	/* rate has unit 16000 bit */
-	rate = div_u64(act->police.rate_bytes_ps, 2000);
-	rate = min_t(u64, rate, RTL93XX_BANDWIDTH_CTRL_RATE_MAX);
-	rate |= RTL93XX_BANDWIDTH_CTRL_ENABLE;
-
-	if (ingress)
-		addr = RTL930X_BANDWIDTH_CTRL_INGRESS(port);
-	else
-		addr = RTL930X_BANDWIDTH_CTRL_EGRESS(port);
-
-	if (ingress) {
-		burst = min_t(u32, act->police.burst, RTL930X_BANDWIDTH_CTRL_INGRESS_BURST_MAX);
-
-		/* the linux kernel only provides a single burst value. But the
-		 * realtek HW needs two. And to get flow control correctly
-		 * working, the realtek default ratio of 1:2 seems to work
-		 * reasonable well
-		 */
-		sw_w32(burst, RTL930X_BANDWIDTH_CTRL_INGRESS_BURST_HIGH_ON(port));
-		sw_w32(burst / 2, RTL930X_BANDWIDTH_CTRL_INGRESS_BURST_HIGH_OFF(port));
-
-		/* Enable ingress bandwidth flow control to improve TCP throughput and avoid
-		 * the drops behavior of the RTL930x ingress rate limiter which seem to not
-		 * play well with any congestion control algorithm
-		 */
-		sw_w32_mask(0, RTL930X_INGRESS_FC_CTRL_EN(port),
-			    RTL930X_INGRESS_FC_CTRL(port));
-	} else {
-		burst = min_t(u32, act->police.burst, RTL930X_BANDWIDTH_CTRL_MAX_BURST);
-
-		sw_w32(burst, addr + 4);
-	}
-
-	sw_w32(rate, addr);
-
-	return 0;
-}
-
-static int rtldsa_930x_port_rate_police_del(struct dsa_switch *ds, int port,
-					    struct flow_cls_offload *cls,
-					    bool ingress)
-{
-	u32 addr;
-
-	if (ingress)
-		addr = RTL930X_BANDWIDTH_CTRL_INGRESS(port);
-	else
-		addr = RTL930X_BANDWIDTH_CTRL_EGRESS(port);
-
-	sw_w32_mask(RTL93XX_BANDWIDTH_CTRL_ENABLE, 0, addr);
-
-	if (ingress)
-		sw_w32_mask(RTL930X_INGRESS_FC_CTRL_EN(port), 0,
-			    RTL930X_INGRESS_FC_CTRL(port));
 
 	return 0;
 }

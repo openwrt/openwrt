@@ -3,12 +3,43 @@
 #include <net/dsa.h>
 #include <linux/delay.h>
 #include <linux/etherdevice.h>
+#include <linux/math64.h>
 #include <linux/netdevice.h>
 #include <net/flow_offload.h>
 #include <linux/rhashtable.h>
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 
 #include "rtl-otto.h"
+#include "tc.h"
+
+struct rtl83xx_flow {
+	unsigned long cookie;
+	struct rhash_head node;
+	struct rcu_head rcu_head;
+	struct rtl838x_switch_priv *priv;
+	struct pie_rule rule;
+	u32 flags;
+};
+
+#define RTL930X_BANDWIDTH_CTRL_EGRESS(port)	(0x7660 + (port * 16))
+#define RTL930X_BANDWIDTH_CTRL_INGRESS(port)	(0x8068 + (port * 4))
+#define RTL930X_BANDWIDTH_CTRL_MAX_BURST	(64 * 1000)
+#define RTL930X_BANDWIDTH_CTRL_INGRESS_BURST_HIGH_ON(port) \
+						(0x80DC + (port * 8))
+#define RTL930X_BANDWIDTH_CTRL_INGRESS_BURST_HIGH_OFF(port) \
+						(0x80E0 + (port * 8))
+#define RTL930X_BANDWIDTH_CTRL_INGRESS_BURST_MAX \
+						GENMASK(30, 0)
+
+#define RTL931X_BANDWIDTH_CTRL_EGRESS(port)	(0x2164 + (port * 8))
+#define RTL931X_BANDWIDTH_CTRL_INGRESS(port)	(0xe008 + (port * 8))
+
+#define RTL93XX_BANDWIDTH_CTRL_RATE_MAX		GENMASK(19, 0)
+#define RTL93XX_BANDWIDTH_CTRL_ENABLE		BIT(20)
+#define RTL931X_BANDWIDTH_CTRL_MAX_BURST	GENMASK(15, 0)
+
+#define RTL930X_INGRESS_FC_CTRL(port)		(0x81CC + ((port / 29) * 4))
+#define RTL930X_INGRESS_FC_CTRL_EN(port)	BIT(port % 29)
 
 /* Parse the flow rule for the matching conditions */
 static int rtl83xx_parse_flow_rule(struct rtl838x_switch_priv *priv,
@@ -565,8 +596,8 @@ out_unlock:
 	return err;
 }
 
-int rtldsa_pie_cls_flower_add(struct rtl838x_switch_priv *priv, int port,
-			       struct flow_cls_offload *cls, bool ingress)
+static int rtldsa_pie_cls_flower_add(struct rtl838x_switch_priv *priv, int port,
+				      struct flow_cls_offload *cls, bool ingress)
 {
 	if (!ingress || !priv->r->pie_rule_id_is_log_counter)
 		return -EOPNOTSUPP;
@@ -574,8 +605,8 @@ int rtldsa_pie_cls_flower_add(struct rtl838x_switch_priv *priv, int port,
 	return rtldsa_configure_flower(priv, cls, port);
 }
 
-int rtldsa_pie_cls_flower_del(struct rtl838x_switch_priv *priv,
-			       struct flow_cls_offload *cls, bool ingress)
+static int rtldsa_pie_cls_flower_del(struct rtl838x_switch_priv *priv,
+				      struct flow_cls_offload *cls, bool ingress)
 {
 	if (!ingress || !priv->r->pie_rule_id_is_log_counter)
 		return -ENOENT;
@@ -583,11 +614,261 @@ int rtldsa_pie_cls_flower_del(struct rtl838x_switch_priv *priv,
 	return rtldsa_delete_flower(priv, cls);
 }
 
-int rtldsa_pie_cls_flower_stats(struct rtl838x_switch_priv *priv,
-				 struct flow_cls_offload *cls, bool ingress)
+static int rtldsa_pie_cls_flower_stats(struct rtl838x_switch_priv *priv,
+					struct flow_cls_offload *cls, bool ingress)
 {
 	if (!ingress || !priv->r->pie_rule_id_is_log_counter)
 		return -ENOENT;
 
 	return rtldsa_stats_flower(priv, cls);
+}
+
+static const struct flow_action_entry *
+rtldsa_rate_policy_extract(struct flow_cls_offload *cls)
+{
+	struct flow_rule *rule = flow_cls_offload_flow_rule(cls);
+
+	/* only simple rules with a single action are supported */
+	if (!flow_offload_has_one_action(&rule->action))
+		return NULL;
+
+	/* Anything that is not a policer is offloaded to PIE. Bail out before
+	 * flow_action_basic_hw_stats_check() so it does not stamp a "HW stats
+	 * type unsupported" extack onto a rule the PIE path accepts.
+	 */
+	if (rule->action.entries[0].id != FLOW_ACTION_POLICE)
+		return NULL;
+
+	if (!flow_action_basic_hw_stats_check(&rule->action, cls->common.extack))
+		return NULL;
+
+	return &rule->action.entries[0];
+}
+
+static bool rtldsa_port_rate_police_validate(const struct flow_action_entry *act)
+{
+	if (!act)
+		return false;
+
+	/* only allow action which just limit rate with by dropping packets */
+	if (act->id != FLOW_ACTION_POLICE)
+		return false;
+
+	if (act->police.rate_pkt_ps > 0)
+		return false;
+
+	if (act->police.exceed.act_id != FLOW_ACTION_DROP)
+		return false;
+
+	if (act->police.notexceed.act_id != FLOW_ACTION_ACCEPT)
+		return false;
+
+	return true;
+}
+
+int rtldsa_930x_port_rate_police_add(struct dsa_switch *ds, int port,
+				     const struct flow_action_entry *act,
+				     bool ingress)
+{
+	u32 burst;
+	u64 rate;
+	u32 addr;
+
+	/* rate has unit 16000 bit */
+	rate = div_u64(act->police.rate_bytes_ps, 2000);
+	rate = min_t(u64, rate, RTL93XX_BANDWIDTH_CTRL_RATE_MAX);
+	rate |= RTL93XX_BANDWIDTH_CTRL_ENABLE;
+
+	if (ingress)
+		addr = RTL930X_BANDWIDTH_CTRL_INGRESS(port);
+	else
+		addr = RTL930X_BANDWIDTH_CTRL_EGRESS(port);
+
+	if (ingress) {
+		burst = min_t(u32, act->police.burst, RTL930X_BANDWIDTH_CTRL_INGRESS_BURST_MAX);
+
+		/* the linux kernel only provides a single burst value. But the
+		 * realtek HW needs two. And to get flow control correctly
+		 * working, the realtek default ratio of 1:2 seems to work
+		 * reasonable well
+		 */
+		sw_w32(burst, RTL930X_BANDWIDTH_CTRL_INGRESS_BURST_HIGH_ON(port));
+		sw_w32(burst / 2, RTL930X_BANDWIDTH_CTRL_INGRESS_BURST_HIGH_OFF(port));
+
+		/* Enable ingress bandwidth flow control to improve TCP throughput and avoid
+		 * the drops behavior of the RTL930x ingress rate limiter which seem to not
+		 * play well with any congestion control algorithm
+		 */
+		sw_w32_mask(0, RTL930X_INGRESS_FC_CTRL_EN(port),
+			    RTL930X_INGRESS_FC_CTRL(port));
+	} else {
+		burst = min_t(u32, act->police.burst, RTL930X_BANDWIDTH_CTRL_MAX_BURST);
+
+		sw_w32(burst, addr + 4);
+	}
+
+	sw_w32(rate, addr);
+
+	return 0;
+}
+
+int rtldsa_930x_port_rate_police_del(struct dsa_switch *ds, int port,
+				     struct flow_cls_offload *cls,
+				     bool ingress)
+{
+	u32 addr;
+
+	if (ingress)
+		addr = RTL930X_BANDWIDTH_CTRL_INGRESS(port);
+	else
+		addr = RTL930X_BANDWIDTH_CTRL_EGRESS(port);
+
+	sw_w32_mask(RTL93XX_BANDWIDTH_CTRL_ENABLE, 0, addr);
+
+	if (ingress)
+		sw_w32_mask(RTL930X_INGRESS_FC_CTRL_EN(port), 0,
+			    RTL930X_INGRESS_FC_CTRL(port));
+
+	return 0;
+}
+
+int rtldsa_931x_port_rate_police_add(struct dsa_switch *ds, int port,
+				     const struct flow_action_entry *act,
+				     bool ingress)
+{
+	u32 burst;
+	u64 rate;
+	u32 addr;
+
+	/* rate has unit 16000 bit */
+	rate = div_u64(act->police.rate_bytes_ps, 2000);
+	rate = min_t(u64, rate, RTL93XX_BANDWIDTH_CTRL_RATE_MAX);
+	rate |= RTL93XX_BANDWIDTH_CTRL_ENABLE;
+
+	burst = min_t(u32, act->police.burst, RTL931X_BANDWIDTH_CTRL_MAX_BURST);
+
+	if (ingress)
+		addr = RTL931X_BANDWIDTH_CTRL_INGRESS(port);
+	else
+		addr = RTL931X_BANDWIDTH_CTRL_EGRESS(port);
+
+	sw_w32(burst, addr + 4);
+	sw_w32(rate, addr);
+
+	return 0;
+}
+
+int rtldsa_931x_port_rate_police_del(struct dsa_switch *ds, int port,
+				     struct flow_cls_offload *cls,
+				     bool ingress)
+{
+	u32 addr;
+
+	if (ingress)
+		addr = RTL931X_BANDWIDTH_CTRL_INGRESS(port);
+	else
+		addr = RTL931X_BANDWIDTH_CTRL_EGRESS(port);
+
+	sw_w32_mask(RTL93XX_BANDWIDTH_CTRL_ENABLE, 0, addr);
+
+	return 0;
+}
+
+int rtldsa_cls_flower_add(struct dsa_switch *ds, int port,
+			  struct flow_cls_offload *cls, bool ingress)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+	struct rtldsa_port *p = &priv->ports[port];
+	const struct flow_action_entry *act;
+	int ret;
+
+	/* a single rate/bandwidth limiter action is handled as port policing */
+	act = rtldsa_rate_policy_extract(cls);
+
+	/* everything else is offloaded to the PIE engine */
+	if (!rtldsa_port_rate_police_validate(act))
+		return rtldsa_pie_cls_flower_add(priv, port, cls, ingress);
+
+	if (!priv->r->port_rate_police_add)
+		return -EOPNOTSUPP;
+
+	mutex_lock(&priv->reg_mutex);
+
+	/* only allow one offloaded police for ingress/egress */
+	if (ingress && p->rate_police_ingress) {
+		ret = -EOPNOTSUPP;
+		goto unlock;
+	}
+
+	if (!ingress && p->rate_police_egress) {
+		ret = -EOPNOTSUPP;
+		goto unlock;
+	}
+
+	ret = priv->r->port_rate_police_add(ds, port, act, ingress);
+	if (ret < 0)
+		goto unlock;
+
+	if (ingress)
+		p->rate_police_ingress = true;
+	else
+		p->rate_police_egress = true;
+
+unlock:
+	mutex_unlock(&priv->reg_mutex);
+
+	return ret;
+}
+
+int rtldsa_cls_flower_del(struct dsa_switch *ds, int port,
+			  struct flow_cls_offload *cls, bool ingress)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+	struct rtldsa_port *p = &priv->ports[port];
+	int ret;
+
+	/* PIE flower rules are ingress only. Try to remove a PIE rule first;
+	 * if none exists for this cookie, fall back to port rate policing.
+	 */
+	if (ingress) {
+		ret = rtldsa_pie_cls_flower_del(priv, cls, ingress);
+		if (ret != -ENOENT)
+			return ret;
+	}
+
+	if (!priv->r->port_rate_police_del)
+		return -EOPNOTSUPP;
+
+	mutex_lock(&priv->reg_mutex);
+
+	ret = priv->r->port_rate_police_del(ds, port, cls, ingress);
+	if (ret < 0)
+		goto unlock;
+
+	if (ingress)
+		p->rate_police_ingress = false;
+	else
+		p->rate_police_egress = false;
+
+unlock:
+	mutex_unlock(&priv->reg_mutex);
+
+	return ret;
+}
+
+int rtldsa_cls_flower_stats(struct dsa_switch *ds, int port,
+			    struct flow_cls_offload *cls, bool ingress)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+	int ret;
+
+	/* only PIE flower rules provide per-rule statistics, and only ingress */
+	if (!ingress)
+		return 0;
+
+	ret = rtldsa_pie_cls_flower_stats(priv, cls, ingress);
+	if (ret == -ENOENT)
+		return 0;
+
+	return ret;
 }
