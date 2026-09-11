@@ -39,15 +39,12 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 #  AIROHA SPI SNFI DRIVER
 #  M:	Lorenzo Bianconi <lorenzo@kernel.org>
 #  M:	Ray Liu <ray.liu@airoha.com>
-diff --git a/drivers/phy/airoha/Kconfig b/drivers/phy/airoha/Kconfig
-index 08cc1fe4a11c..5fbfc94fd4b7 100644
 --- a/drivers/phy/airoha/Kconfig
 +++ b/drivers/phy/airoha/Kconfig
-@@ -11,6 +11,16 @@ config PHY_AIROHA_EN7581_PCIE
- 	  Say Y here to add support for Airoha EN7581 PCIe PHY driver.
+@@ -12,6 +12,16 @@ config PHY_AIROHA_PCIE
  	  This driver create the basic PHY instance and provides initialize
  	  callback for PCIe GEN3 port.
-+
+ 
 +config PHY_AIROHA_AN7583_PCIE
 +	tristate "Airoha AN7583 PCIe-PHY Driver"
 +	depends on ARCH_AIROHA || COMPILE_TEST
@@ -57,20 +54,18 @@ index 08cc1fe4a11c..5fbfc94fd4b7 100644
 +	  Say Y here to add support for Airoha AN7583 PCIe PHY driver.
 +	  This driver create the basic PHY instance and provides initialize
 +	  callback for PCIe GEN3 port.
- 
++
  config PHY_AIROHA_USB
  	tristate "Airoha USB PHY Driver"
-diff --git a/drivers/phy/airoha/Makefile b/drivers/phy/airoha/Makefile
-index f8949a291486..3efb4438e8f2 100644
+ 	depends on ARCH_AIROHA || COMPILE_TEST
 --- a/drivers/phy/airoha/Makefile
 +++ b/drivers/phy/airoha/Makefile
-@@ -1,2 +1,3 @@
- # SPDX-License-Identifier: GPL-2.0-only
- obj-$(CONFIG_PHY_AIROHA_AN7581_PCIE)	+= phy-an7581-pcie.o
+@@ -1,4 +1,5 @@
+ # SPDX-License-Identifier: GPL-2.0
+ 
 +obj-$(CONFIG_PHY_AIROHA_AN7583_PCIE)	+= phy-an7583-pcie.o
-diff --git a/drivers/phy/airoha/phy-airoha-an7583-pcie-regs.h b/drivers/phy/airoha/phy-airoha-an7583-pcie-regs.h
-new file mode 100644
-index 000000000000..5a243fe4484c
+ obj-$(CONFIG_PHY_AIROHA_PCIE)		+= phy-airoha-pcie.o
+ obj-$(CONFIG_PHY_AIROHA_USB)		+= phy-airoha-usb.o
 --- /dev/null
 +++ b/drivers/phy/airoha/phy-an7583-pcie-regs.h
 @@ -0,0 +1,377 @@
@@ -451,9 +446,6 @@ index 000000000000..5a243fe4484c
 +#define PCIE_XTP_LN_RX_PDOWN_L1P2_EXIT_WAIT	GENMASK(7, 0)
 +
 +#endif /* _PHY_AN7583_PCIE_H */
-diff --git a/drivers/phy/airoha/phy-airoha-an7583-pcie.c b/drivers/phy/airoha/phy-airoha-an7583-pcie.c
-new file mode 100644
-index 000000000000..ebdab8db9262
 --- /dev/null
 +++ b/drivers/phy/airoha/phy-an7583-pcie.c
 @@ -0,0 +1,711 @@
@@ -1168,6 +1160,3 @@ index 000000000000..ebdab8db9262
 +MODULE_DESCRIPTION("Airoha AN7583 PCIe PHY driver");
 +MODULE_AUTHOR("Christian Marangi <ansuelsmth@gmail.com>");
 +MODULE_LICENSE("GPL");
--- 
-2.48.1
-
