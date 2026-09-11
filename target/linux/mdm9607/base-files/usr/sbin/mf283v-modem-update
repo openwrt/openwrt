@@ -1,0 +1,79 @@
+#!/bin/sh
+set -eu
+
+usage()
+{
+	echo "usage: mf283v-modem-update IMAGE SHA256 WRITE-MODEM-FIRMWARE" >&2
+	exit 2
+}
+
+fail()
+{
+	echo "ERROR: $*" >&2
+	exit 1
+}
+
+[ "$#" -eq 3 ] || usage
+image=$1
+expected_hash=$2
+[ "$3" = WRITE-MODEM-FIRMWARE ] || usage
+[ -f "$image" ] || fail "image is absent"
+
+grep -q 'ZTE MF283V' /proc/device-tree/model 2>/dev/null ||
+	fail "this command is enabled only on the ZTE MF283V"
+[ -r /sys/class/remoteproc/remoteproc0/state ] || fail "remoteproc0 is absent"
+[ "$(cat /sys/class/remoteproc/remoteproc0/state)" = offline ] ||
+	fail "MSS must be stopped before updating modem firmware"
+
+case "$expected_hash" in
+	????????????????????????????????????????????????????????????????) ;;
+	*) fail "SHA256 must contain exactly 64 hexadecimal characters" ;;
+esac
+case "$expected_hash" in *[!0-9a-fA-F]*) fail "SHA256 is not hexadecimal" ;; esac
+actual_hash=$(sha256sum "$image" | awk '{print $1}')
+[ "$actual_hash" = "$(printf '%s' "$expected_hash" | tr A-F a-f)" ] ||
+	fail "image SHA256 mismatch"
+[ "$(wc -c < "$image")" -eq 74317824 ] ||
+	fail "image must be a complete 0x046e0000-byte modem partition image"
+
+modem_mtd=
+for path in /sys/class/mtd/mtd[0-9]*; do
+	[ -e "$path" ] || continue
+	index=${path##*/mtd}
+	case "$index" in ''|*[!0-9]*) continue ;; esac
+	[ "$(cat "$path/name" 2>/dev/null)" = modem ] || continue
+	[ "$(cat "$path/size" 2>/dev/null)" = 74317824 ] ||
+		fail "modem MTD size is unexpected"
+	[ "$(cat "$path/flags" 2>/dev/null)" = 0x400 ] ||
+		fail "modem MTD is not writable"
+	modem_mtd=$index
+	break
+done
+[ -n "$modem_mtd" ] || fail "writable modem MTD is absent"
+
+if grep -q ' /mnt/modem ' /proc/mounts; then
+	umount /mnt/modem || fail "cannot unmount /mnt/modem"
+fi
+rm -f /tmp/mf283v-mss-firmware-ready
+for firmware in /lib/firmware/mba.mbn /lib/firmware/modem.mdt; do
+	case "$(readlink "$firmware" 2>/dev/null || :)" in
+	/mnt/modem/*) rm -f "$firmware" ;;
+	esac
+done
+
+for ubi_path in /sys/class/ubi/ubi[0-9]*; do
+	[ -e "$ubi_path" ] || continue
+	case "${ubi_path##*/}" in *_*) continue ;; esac
+	[ "$(cat "$ubi_path/mtd_num" 2>/dev/null)" = "$modem_mtd" ] || continue
+	/usr/sbin/ubidetach /dev/ubi_ctrl -m "$modem_mtd" ||
+		fail "cannot detach modem UBI"
+	break
+done
+
+echo "Writing verified full modem image to mtd$modem_mtd."
+/sbin/mtd -f write "$image" modem || fail "native modem write failed"
+/sbin/mtd verify "$image" modem || fail "native modem readback verification failed"
+sync
+
+echo "PASS: modem partition updated and verified; MSS remains offline."
+echo "Run mf283v-mss-prepare, inspect the detected firmware, then start MSS explicitly."

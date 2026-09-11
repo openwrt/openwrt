@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitry Sinyavin <sinyavin@gmail.com>
+Date: Fri, 14 Aug 2026 20:00:00 +0200
+Subject: [PATCH] usb: chipidea: qcom: treat MDM9607 as fixed peripheral
+
+MDM9607 advertises both host and device capabilities, so ChipIdea marks the
+controller as OTG even when the board DT fixes dr_mode to peripheral.  The
+forced-VBUS path is only consulted for a non-OTG controller.  Consequently
+vbus_active remains clear and binding a gadget never invokes either the
+controller-reset or pull-up notification.
+
+Mark MDM9607 as dual-role hardware without an OTG role. This makes the
+existing fixed-peripheral VBUS flag effective while retaining the
+peripheral-only DT and build configuration.
+
+Signed-off-by: Dmitry Sinyavin <sinyavin@gmail.com>
+---
+ drivers/usb/chipidea/ci_hdrc_msm.c | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+--- a/drivers/usb/chipidea/ci_hdrc_msm.c
++++ b/drivers/usb/chipidea/ci_hdrc_msm.c
+@@ -310,8 +310,15 @@ static int ci_hdrc_msm_probe(struct plat
+ 	ci->force_peripheral_session =
+ 		of_device_is_compatible(pdev->dev.of_node,
+ 					"qcom,mdm9607-ci-hdrc");
++	/*
++	 * The core advertises both host and device capabilities, but this
++	 * board path is wired and described as peripheral-only. Without
++	 * DUAL_ROLE_NOT_OTG, ci_handle_vbus_change() ignores the forced VBUS
++	 * state and waits for OTGSC.BSV forever.
++	 */
+ 	if (ci->force_peripheral_session)
+-		ci->pdata.flags |= CI_HDRC_FORCE_VBUS_ACTIVE_ALWAYS;
++		ci->pdata.flags |= CI_HDRC_DUAL_ROLE_NOT_OTG |
++				  CI_HDRC_FORCE_VBUS_ACTIVE_ALWAYS;
+ 
+ 	ci->pdata.notify_event = ci_hdrc_msm_notify_event;
+ 

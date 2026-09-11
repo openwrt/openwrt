@@ -1,0 +1,36 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitry Sinyavin <sinyavin@gmail.com>
+Date: Fri, 14 Aug 2026 20:00:00 +0200
+Subject: [PATCH] dt-bindings: serial: qcom,msm-uartdm: add LSUART v1.4
+
+MDM9607 uses the UARTDM programming model with a distinct LSUART v1.4
+register layout. Add its factory compatible as a single-string alternative
+to the existing two-string UARTDM compatibles.
+
+Signed-off-by: Dmitry Sinyavin <sinyavin@gmail.com>
+---
+--- a/Documentation/devicetree/bindings/serial/qcom,msm-uartdm.yaml
++++ b/Documentation/devicetree/bindings/serial/qcom,msm-uartdm.yaml
+@@ -24,13 +24,15 @@ description: |
+ 
+ properties:
+   compatible:
+-    items:
+-      - enum:
+-          - qcom,msm-uartdm-v1.1
+-          - qcom,msm-uartdm-v1.2
+-          - qcom,msm-uartdm-v1.3
+-          - qcom,msm-uartdm-v1.4
+-      - const: qcom,msm-uartdm
++    oneOf:
++      - const: qcom,msm-lsuart-v14
++      - items:
++          - enum:
++              - qcom,msm-uartdm-v1.1
++              - qcom,msm-uartdm-v1.2
++              - qcom,msm-uartdm-v1.3
++              - qcom,msm-uartdm-v1.4
++          - const: qcom,msm-uartdm
+ 
+   clocks:
+     maxItems: 2

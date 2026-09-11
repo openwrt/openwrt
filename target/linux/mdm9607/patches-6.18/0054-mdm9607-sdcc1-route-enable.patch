@@ -1,0 +1,54 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitry Sinyavin <sinyavin@gmail.com>
+Date: Fri, 14 Aug 2026 20:00:00 +0200
+Subject: [PATCH] mmc: sdhci-msm: restore the downstream SDCC1 route enable
+
+The MDM9607 downstream device tree provides a third SDHCI resource named
+tlmm_mem at 0x01111000.  Its downstream sdhci-msm driver sets bit 1 in
+that register before touching CORE_VENDOR_SPEC.  Without that write the
+mainline controller completes commands internally with the SDHCI clock
+enabled, but no clock is observable at the MF283V SDCC1 pin.
+
+Reproduce the resource-driven downstream operation when the optional
+resource is present.  Keep it separate from the other downstream difference
+in CORE_VENDOR_SPEC_POR_VAL.
+
+Signed-off-by: Dmitry Sinyavin <sinyavin@gmail.com>
+---
+ drivers/mmc/host/sdhci-msm.c | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+
+--- a/drivers/mmc/host/sdhci-msm.c
++++ b/drivers/mmc/host/sdhci-msm.c
+@@ -2539,6 +2539,8 @@ static int sdhci_msm_probe(struct platfo
+ 	struct sdhci_msm_host *msm_host;
+ 	struct clk *clk;
+ 	int ret;
++	struct resource *tlmm_memres;
++	void __iomem *tlmm_mem;
+ 	u16 host_version, core_minor;
+ 	u32 core_version, config;
+ 	u8 core_major;
+@@ -2666,6 +2668,22 @@ static int sdhci_msm_probe(struct platfo
+ 		}
+ 	}
+ 
++	/*
++	 * Older Qualcomm trees expose an optional TLMM route register as a
++	 * third SDHCI resource.  MDM9607 requires bit 1 before SDCC1 signals
++	 * reach the package pins.  Use devm_ioremap(), as the four-byte range
++	 * is inside the TLMM region already owned by the pinctrl driver.
++	 */
++	tlmm_memres = platform_get_resource_byname(pdev, IORESOURCE_MEM,
++					       "tlmm_mem");
++	if (tlmm_memres) {
++		tlmm_mem = devm_ioremap(&pdev->dev, tlmm_memres->start,
++					 resource_size(tlmm_memres));
++		if (!tlmm_mem)
++			return -ENOMEM;
++		writel_relaxed(readl_relaxed(tlmm_mem) | BIT(1), tlmm_mem);
++	}
++
+ 	/* Reset the vendor spec register to power on reset state */
+ 	writel_relaxed(CORE_VENDOR_SPEC_POR_VAL,
+ 			host->ioaddr + msm_offset->core_vendor_spec);

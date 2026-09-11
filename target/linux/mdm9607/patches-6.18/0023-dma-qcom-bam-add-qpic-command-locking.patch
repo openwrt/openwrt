@@ -1,0 +1,227 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitry Sinyavin <sinyavin@gmail.com>
+Date: Sun, 26 Jul 2026 00:00:00 +0000
+Subject: [PATCH] dmaengine: qcom: bam: add QPIC command transaction locking
+
+The MDM9607 downstream NAND driver assigns command pipe 2 to BAM lock
+group 1 and encloses every NAND command transaction in LOCK and UNLOCK
+descriptors. The shared QPIC reports flash access errors when mainline
+omits this protocol while the modem subsystem is running.
+
+Add a BAM-specific slave configuration for the pipe lock group and DMA
+preparation flags for LOCK and UNLOCK descriptors. Let qcom_nandc opt in
+through the command lock-group property so existing QPIC integrations
+remain unchanged.
+
+Signed-off-by: Dmitry Sinyavin <sinyavin@gmail.com>
+---
+ drivers/dma/qcom/bam_dma.c                     | 35 +++++++++++++++++++++++
+ drivers/mtd/nand/qpic_common.c                 | 35 +++++++++++++++++++++--
+ drivers/mtd/nand/raw/qcom_nandc.c              |  8 ++++++
+ include/linux/dma/qcom_bam_dma.h               | 12 ++++++++
+ include/linux/mtd/nand-qpic-common.h           |  4 +++
+ 5 files changed, 91 insertions(+), 3 deletions(-)
+
+--- a/drivers/dma/qcom/bam_dma.c
++++ b/drivers/dma/qcom/bam_dma.c
+@@ -40,6 +40,7 @@
+ #include <linux/circ_buf.h>
+ #include <linux/clk.h>
+ #include <linux/dmaengine.h>
++#include <linux/dma/qcom_bam_dma.h>
+ #include <linux/pm_runtime.h>
+ 
+ #include "../dmaengine.h"
+@@ -58,6 +59,8 @@ struct bam_desc_hw {
+ #define DESC_FLAG_EOB BIT(13)
+ #define DESC_FLAG_NWD BIT(12)
+ #define DESC_FLAG_CMD BIT(11)
++#define DESC_FLAG_LOCK BIT(10)
++#define DESC_FLAG_UNLOCK BIT(9)
+ 
+ struct bam_async_desc {
+ 	struct virt_dma_desc vd;
+@@ -351,6 +354,7 @@ struct bam_chan {
+ 
+ 	/* configuration from device tree */
+ 	u32 id;
++	u32 lock_group;
+ 
+ 	/* runtime configuration */
+ 	struct dma_slave_config slave;
+@@ -519,6 +523,8 @@ static void bam_chan_init_hw(struct bam_
+ 	val = P_EN | P_SYS_MODE;
+ 	if (dir == DMA_DEV_TO_MEM)
+ 		val |= P_DIRECTION;
++	val |= (bchan->lock_group & P_LOCK_GROUP_MASK) <<
++		P_LOCK_GROUP_SHIFT;
+ 
+ 	writel_relaxed(val, bam_addr(bdev, bchan->id, BAM_P_CTRL));
+ 
+@@ -624,10 +630,25 @@ static int bam_slave_config(struct dma_c
+ 			    struct dma_slave_config *cfg)
+ {
+ 	struct bam_chan *bchan = to_bam_chan(chan);
++	const struct qcom_bam_dma_config *bam_cfg;
+ 	unsigned long flag;
+ 
++	if (cfg->peripheral_size) {
++		if (cfg->peripheral_size != sizeof(*bam_cfg) ||
++		    !cfg->peripheral_config)
++			return -EINVAL;
++
++		bam_cfg = cfg->peripheral_config;
++		if (bam_cfg->lock_group > P_LOCK_GROUP_MASK)
++			return -EINVAL;
++	}
++
+ 	spin_lock_irqsave(&bchan->vc.lock, flag);
++	if (cfg->peripheral_size)
++		bchan->lock_group = bam_cfg->lock_group;
+ 	memcpy(&bchan->slave, cfg, sizeof(*cfg));
++	bchan->slave.peripheral_config = NULL;
++	bchan->slave.peripheral_size = 0;
+ 	bchan->reconfigure = 1;
+ 	spin_unlock_irqrestore(&bchan->vc.lock, flag);
+ 
+@@ -711,6 +732,13 @@ static struct dma_async_tx_descriptor *b
+ 		} while (remainder > 0);
+ 	}
+ 
++	if (flags & QCOM_BAM_PREP_LOCK)
++		async_desc->desc[0].flags |= cpu_to_le16(DESC_FLAG_LOCK);
++
++	if (flags & QCOM_BAM_PREP_UNLOCK)
++		async_desc->desc[num_alloc - 1].flags |=
++						cpu_to_le16(DESC_FLAG_UNLOCK);
++
+ 	return vchan_tx_prep(&bchan->vc, &async_desc->vd, flags);
+ }
+ 
+--- a/drivers/mtd/nand/qpic_common.c
++++ b/drivers/mtd/nand/qpic_common.c
+@@ -155,12 +155,14 @@ int qcom_prepare_bam_async_desc(struct q
+ 	struct bam_transaction *bam_txn = nandc->bam_txn;
+ 	enum dma_transfer_direction dir_eng;
+ 	struct dma_async_tx_descriptor *dma_desc;
++	bool first_cmd_desc = false;
+ 
+ 	desc = kzalloc(sizeof(*desc), GFP_KERNEL);
+ 	if (!desc)
+ 		return -ENOMEM;
+ 
+ 	if (chan == nandc->cmd_chan) {
++		first_cmd_desc = !bam_txn->cmd_sgl_start;
+ 		sgl = &bam_txn->cmd_sgl[bam_txn->cmd_sgl_start];
+ 		sgl_cnt = bam_txn->cmd_sgl_pos - bam_txn->cmd_sgl_start;
+ 		bam_txn->cmd_sgl_start = bam_txn->cmd_sgl_pos;
+@@ -180,6 +182,9 @@ int qcom_prepare_bam_async_desc(struct q
+ 		desc->dir = DMA_FROM_DEVICE;
+ 	}
+ 
++	if (first_cmd_desc && nandc->bam_cmd_lock)
++		flags |= QCOM_BAM_PREP_LOCK;
++
+ 	sg_mark_end(sgl + sgl_cnt - 1);
+ 	ret = dma_map_sg(nandc->dev, sgl, sgl_cnt, desc->dir);
+ 	if (ret == 0) {
+@@ -573,8 +578,13 @@ int qcom_submit_descs(struct qcom_nand_c
+ 		}
+ 
+ 		if (bam_txn->cmd_sgl_pos > bam_txn->cmd_sgl_start) {
++			unsigned long flags = DMA_PREP_CMD;
++
++			if (nandc->bam_cmd_lock)
++				flags |= QCOM_BAM_PREP_UNLOCK;
++
+ 			ret = qcom_prepare_bam_async_desc(nandc, nandc->cmd_chan,
+-							  DMA_PREP_CMD);
++							  flags);
+ 			if (ret)
+ 				goto err_unmap_free_desc;
+ 		}
+@@ -740,6 +750,24 @@ int qcom_nandc_alloc(struct qcom_nand_co
+ 			goto unalloc;
+ 		}
+ 
++		if (nandc->bam_cmd_lock) {
++			struct qcom_bam_dma_config bam_cfg = {
++				.lock_group = nandc->bam_cmd_lock_group,
++			};
++			struct dma_slave_config slave_cfg = {
++				.peripheral_config = &bam_cfg,
++				.peripheral_size = sizeof(bam_cfg),
++			};
++
++			ret = dmaengine_slave_config(nandc->cmd_chan,
++						     &slave_cfg);
++			if (ret) {
++				dev_err(nandc->dev,
++					"failed to set BAM command-pipe lock group\n");
++				goto unalloc;
++			}
++		}
++
+ 		/*
+ 		 * Initially allocate BAM transaction to read ONFI param page.
+ 		 * After detecting all the devices, this BAM transaction will
+--- a/drivers/mtd/nand/raw/qcom_nandc.c
++++ b/drivers/mtd/nand/raw/qcom_nandc.c
+@@ -2250,6 +2250,14 @@ static int qcom_nandc_parse_dt(struct pl
+ 			dev_err(nandc->dev, "data CRCI unspecified\n");
+ 			return ret;
+ 		}
++	} else if (!of_property_read_u32(np, "qcom,bam-command-lock-group",
++					 &nandc->bam_cmd_lock_group)) {
++		if (nandc->bam_cmd_lock_group > 31) {
++			dev_err(nandc->dev,
++				"invalid BAM command-pipe lock group\n");
++			return -EINVAL;
++		}
++		nandc->bam_cmd_lock = true;
+ 	}
+ 
+ 	return 0;
+--- a/include/linux/dma/qcom_bam_dma.h
++++ b/include/linux/dma/qcom_bam_dma.h
+@@ -6,8 +6,20 @@
+ #ifndef _QCOM_BAM_DMA_H
+ #define _QCOM_BAM_DMA_H
+ 
++#include <linux/bits.h>
+ #include <asm/byteorder.h>
+ 
++#define QCOM_BAM_PREP_LOCK	BIT(16)
++#define QCOM_BAM_PREP_UNLOCK	BIT(17)
++
++/**
++ * struct qcom_bam_dma_config - Qualcomm BAM pipe-specific configuration
++ * @lock_group: hardware lock group assigned to this pipe
++ */
++struct qcom_bam_dma_config {
++	u32 lock_group;
++};
++
+ /*
+  * This data type corresponds to the native Command Element
+  * supported by BAM DMA Engine.
+--- a/include/linux/mtd/nand-qpic-common.h
++++ b/include/linux/mtd/nand-qpic-common.h
+@@ -373,6 +373,8 @@ struct nandc_regs {
+  *				functions
+  * @max_cwperpage:		maximum QPIC codewords required. calculated
+  *				from all connected NAND devices pagesize
++ * @bam_cmd_lock_group:		BAM command-pipe lock group selected by DT
++ * @bam_cmd_lock:		whether command transactions use BAM locking
+  *
+  * @reg_read_pos:		marker for data read in reg_read_buf
+  *
+@@ -427,6 +429,8 @@ struct qcom_nand_controller {
+ 	int		buf_count;
+ 	int		buf_start;
+ 	unsigned int	max_cwperpage;
++	u32		bam_cmd_lock_group;
++	bool		bam_cmd_lock;
+ 
+ 	int reg_read_pos;
+ 

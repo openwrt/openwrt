@@ -1,0 +1,100 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitry Sinyavin <sinyavin@gmail.com>
+Date: Sat, 25 Jul 2026 00:00:00 +0000
+Subject: [PATCH] hwspinlock: qcom: add MDM9607 SFPB layout
+
+The MDM9607 vendor description exposes an 0x8000-byte SFPB mutex block
+with eight locks.  Its vendor driver derives a 0x1000-byte stride from
+those values, with lock 0 at offset zero.
+
+The generic SFPB layout instead starts at offset 0x4 and uses a 0x4-byte
+stride.  Using it makes an MDM9607 SMEM request for lock 3 access
+base + 0x10 rather than base + 0x3000, and the request times out.
+
+Add match data for the MDM9607 layout and allow match data to reduce the
+number of locks registered by an MMIO provider.
+
+Signed-off-by: Dmitry Sinyavin <sinyavin@gmail.com>
+---
+ drivers/hwspinlock/qcom_hwspinlock.c | 27 ++++++++++++++++++++++++---
+ 1 file changed, 24 insertions(+), 3 deletions(-)
+
+--- a/drivers/hwspinlock/qcom_hwspinlock.c
++++ b/drivers/hwspinlock/qcom_hwspinlock.c
+@@ -23,6 +23,7 @@ struct qcom_hwspinlock_of_data {
+ 	u32 offset;
+ 	u32 stride;
+ 	const struct regmap_config *regmap_config;
++	unsigned int num_locks;
+ };
+ 
+ static int qcom_hwspinlock_trylock(struct hwspinlock *lock)
+@@ -108,6 +109,21 @@ static const struct qcom_hwspinlock_of_d
+ 	.regmap_config = &sfpb_mutex_config,
+ };
+ 
++static const struct regmap_config mdm9607_sfpb_mutex_config = {
++	.reg_bits		= 32,
++	.reg_stride		= 4,
++	.val_bits		= 32,
++	.max_register		= 0x7000,
++	.fast_io		= true,
++};
++
++static const struct qcom_hwspinlock_of_data of_mdm9607_sfpb_mutex = {
++	.offset = 0,
++	.stride = 0x1000,
++	.regmap_config = &mdm9607_sfpb_mutex_config,
++	.num_locks = 8,
++};
++
+ static const struct regmap_config tcsr_msm8226_mutex_config = {
+ 	.reg_bits		= 32,
+ 	.reg_stride		= 4,
+@@ -137,6 +153,7 @@ static const struct qcom_hwspinlock_of_d
+ };
+ 
+ static const struct of_device_id qcom_hwspinlock_of_match[] = {
++	{ .compatible = "qcom,mdm9607-sfpb-mutex", .data = &of_mdm9607_sfpb_mutex },
+ 	{ .compatible = "qcom,sfpb-mutex", .data = &of_sfpb_mutex },
+ 	{ .compatible = "qcom,tcsr-mutex", .data = &of_tcsr_mutex },
+ 	{ .compatible = "qcom,apq8084-tcsr-mutex", .data = &of_msm8226_tcsr_mutex },
+@@ -202,8 +219,10 @@ static struct regmap *qcom_hwspinlock_pr
+ static int qcom_hwspinlock_probe(struct platform_device *pdev)
+ {
+ 	struct hwspinlock_device *bank;
++	const struct qcom_hwspinlock_of_data *data;
+ 	struct regmap *regmap;
+ 	size_t array_size;
++	unsigned int num_locks;
+ 	u32 stride;
+ 	u32 base;
+ 	int i;
+@@ -215,14 +234,16 @@ static int qcom_hwspinlock_probe(struct
+ 	if (IS_ERR(regmap))
+ 		return PTR_ERR(regmap);
+ 
+-	array_size = QCOM_MUTEX_NUM_LOCKS * sizeof(struct hwspinlock);
++	data = of_device_get_match_data(&pdev->dev);
++	num_locks = data && data->num_locks ? data->num_locks : QCOM_MUTEX_NUM_LOCKS;
++	array_size = num_locks * sizeof(struct hwspinlock);
+ 	bank = devm_kzalloc(&pdev->dev, sizeof(*bank) + array_size, GFP_KERNEL);
+ 	if (!bank)
+ 		return -ENOMEM;
+ 
+ 	platform_set_drvdata(pdev, bank);
+ 
+-	for (i = 0; i < QCOM_MUTEX_NUM_LOCKS; i++) {
++	for (i = 0; i < num_locks; i++) {
+ 		struct reg_field field = REG_FIELD(base + i * stride, 0, 31);
+ 
+ 		bank->lock[i].priv = devm_regmap_field_alloc(&pdev->dev,
+@@ -232,7 +253,7 @@ static int qcom_hwspinlock_probe(struct
+ 	}
+ 
+ 	return devm_hwspin_lock_register(&pdev->dev, bank, &qcom_hwspinlock_ops,
+-					 0, QCOM_MUTEX_NUM_LOCKS);
++					 0, num_locks);
+ }
+ 
+ static struct platform_driver qcom_hwspinlock_driver = {

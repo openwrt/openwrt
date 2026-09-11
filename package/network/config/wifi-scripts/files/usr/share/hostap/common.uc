@@ -1,6 +1,6 @@
 import * as nl80211 from "nl80211";
 import * as rtnl from "rtnl";
-import { readfile, glob, basename, readlink, open } from "fs";
+import { readfile, glob, open } from "fs";
 
 const iftypes = {
 	ap: nl80211.const.NL80211_IFTYPE_AP,
@@ -40,8 +40,31 @@ const mesh_params = {
 	mesh_nolearn: "nolearn"
 };
 
+function phy_persistent_wdev(phyidx)
+{
+	let name = readfile(`/sys/class/ieee80211/phy${phyidx}/persistent_primary_wdev`);
+
+	return name ? trim(name) : null;
+}
+
+function wdev_is_persistent(name)
+{
+	let persistent = readfile(`/sys/class/net/${name}/phy80211/persistent_primary_wdev`);
+
+	return persistent && trim(persistent) == name;
+}
+
 function wdev_remove(name)
 {
+	if (wdev_is_persistent(name)) {
+		rtnl.request(rtnl.const.RTM_SETLINK, 0, {
+			dev: name,
+			change: 1,
+			flags: 0
+		});
+		return;
+	}
+
 	nl80211.request(nl80211.const.NL80211_CMD_DEL_INTERFACE, 0, { dev: name });
 }
 
@@ -61,6 +84,11 @@ function phy_is_fullmac(phy)
 
 function find_reusable_wdev(phyidx)
 {
+	let persistent = phy_persistent_wdev(phyidx);
+	if (persistent)
+		return trim(readfile(`/sys/class/net/${persistent}/operstate`)) == "down" ?
+			persistent : null;
+
 	if (!__phy_is_fullmac(phyidx))
 		return null;
 
@@ -112,6 +140,16 @@ function wdev_create(phy, name, data)
 	if (reuse_ifname &&
 	    (reuse_ifname == name ||
 	     rtnl.request(rtnl.const.RTM_SETLINK, 0, { dev: reuse_ifname, ifname: name}) != false)) {
+		/*
+		 * macaddr_init() sees the persistent primary netdev and reserves its
+		 * current address.  Without this override a reload advances the
+		 * interface to a locally administered VIF address.
+		 * The primary netdev already owns the required factory address; omit
+		 * NL80211_ATTR_MAC entirely and only change the interface type.
+		 */
+		if (wdev_is_persistent(name))
+			delete req.mac;
+
 		req.dev = req.ifname;
 		delete req.ifname;
 		nl80211.request(nl80211.const.NL80211_CMD_SET_INTERFACE, 0, req);
@@ -193,6 +231,11 @@ const phy_proto = {
 
 		this.for_each_wdev((wdev) => {
 			let macaddr = wdev_macaddr(wdev);
+			/* The persistent primary netdev is the interface being reused. */
+			if (wdev_is_persistent(wdev)) {
+				delete this.macaddr_list[macaddr];
+				return;
+			}
 			this.macaddr_list[macaddr] ??= -1;
 		});
 

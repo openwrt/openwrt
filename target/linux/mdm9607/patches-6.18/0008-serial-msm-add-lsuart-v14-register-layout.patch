@@ -1,0 +1,178 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitry Sinyavin <sinyavin@gmail.com>
+Date: Fri, 14 Aug 2026 20:00:00 +0200
+Subject: [PATCH] serial: msm: add LSUART v1.4 register layout
+
+MDM9607 exposes its debug UART as qcom,msm-lsuart-v14.  It uses the UARTDM
+programming model, but several read and write registers are moved compared
+with the generic UARTDM v1.4 layout.  In particular, the status/control and
+RX/TX FIFO registers live at different offsets.
+
+Keep the existing logical register names and translate their offsets for an
+LSUART port.  The translation is direction-sensitive because several legacy
+read and write registers deliberately share an address. Direct FIFO and DMA
+addresses are translated as well.
+
+Signed-off-by: Dmitry Sinyavin <sinyavin@gmail.com>
+---
+--- a/drivers/tty/serial/msm_serial.c
++++ b/drivers/tty/serial/msm_serial.c
+@@ -181,6 +181,7 @@ struct msm_port {
+ 	struct clk		*pclk;
+ 	unsigned int		imr;
+ 	int			is_uartdm;
++	bool			is_lsuart;
+ 	unsigned int		old_snap_state;
+ 	bool			break_detected;
+ 	struct msm_dma		tx_dma;
+@@ -192,16 +193,61 @@ static inline struct msm_port *to_msm_po
+ 	return container_of(up, struct msm_port, uart);
+ }
+ 
++static unsigned int msm_reg_offset(struct uart_port *port, unsigned int off,
++				   bool write)
++{
++	struct msm_port *msm_port = port->private_data;
++
++	if (!msm_port || !msm_port->is_lsuart)
++		return off;
++
++	if (write) {
++		switch (off) {
++		case MSM_UART_CSR:
++			return 0xa0;
++		case MSM_UART_CR:
++			return 0xa8;
++		case MSM_UART_IMR:
++			return 0xb0;
++		case UARTDM_TF:
++			return 0x100;
++		default:
++			return off;
++		}
++	}
++
++	switch (off) {
++	case MSM_UART_SR:
++		return 0xa4;
++	case MSM_UART_MISR:
++		return 0xac;
++	case MSM_UART_ISR:
++		return 0xb4;
++	case UARTDM_RX_TOTAL_SNAP:
++		return 0xbc;
++	case UARTDM_RF:
++		return 0x140;
++	default:
++		return off;
++	}
++}
++
++static void __iomem *msm_reg_addr(struct uart_port *port, unsigned int off,
++				  bool write)
++{
++	return port->membase + msm_reg_offset(port, off, write);
++}
++
+ static
+ void msm_write(struct uart_port *port, unsigned int val, unsigned int off)
+ {
+-	writel_relaxed(val, port->membase + off);
++	writel_relaxed(val, msm_reg_addr(port, off, true));
+ }
+ 
+ static
+ unsigned int msm_read(struct uart_port *port, unsigned int off)
+ {
+-	return readl_relaxed(port->membase + off);
++	return readl_relaxed(msm_reg_addr(port, off, false));
+ }
+ 
+ /*
+@@ -326,7 +372,8 @@ static void msm_request_tx_dma(struct ms
+ 	memset(&conf, 0, sizeof(conf));
+ 	conf.direction = DMA_MEM_TO_DEV;
+ 	conf.device_fc = true;
+-	conf.dst_addr = base + UARTDM_TF;
++	conf.dst_addr = base +
++			msm_reg_offset(&msm_port->uart, UARTDM_TF, true);
+ 	conf.dst_maxburst = UARTDM_BURST_SIZE;
+ 	if (crci) {
+ 		conf.peripheral_config = &periph_conf;
+@@ -378,7 +425,8 @@ static void msm_request_rx_dma(struct ms
+ 	memset(&conf, 0, sizeof(conf));
+ 	conf.direction = DMA_DEV_TO_MEM;
+ 	conf.device_fc = true;
+-	conf.src_addr = base + UARTDM_RF;
++	conf.src_addr = base +
++			msm_reg_offset(&msm_port->uart, UARTDM_RF, false);
+ 	conf.src_maxburst = UARTDM_BURST_SIZE;
+ 	if (crci) {
+ 		conf.peripheral_config = &periph_conf;
+@@ -760,7 +808,7 @@ static void msm_handle_rx_dm(struct uart
+ 			break;
+ 		}
+ 
+-		ioread32_rep(port->membase + UARTDM_RF, buf, 1);
++		ioread32_rep(msm_reg_addr(port, UARTDM_RF, false), buf, 1);
+ 		r_count = min_t(int, count, sizeof(buf));
+ 
+ 		for (i = 0; i < r_count; i++) {
+@@ -854,7 +902,7 @@ static void msm_handle_tx_pio(struct uar
+ 	void __iomem *tf;
+ 
+ 	if (msm_port->is_uartdm)
+-		tf = port->membase + UARTDM_TF;
++		tf = msm_reg_addr(port, UARTDM_TF, true);
+ 	else
+ 		tf = port->membase + MSM_UART_TF;
+ 
+@@ -898,7 +946,7 @@ static void msm_handle_tx(struct uart_po
+ 
+ 	if (port->x_char) {
+ 		if (msm_port->is_uartdm)
+-			tf = port->membase + UARTDM_TF;
++			tf = msm_reg_addr(port, UARTDM_TF, true);
+ 		else
+ 			tf = port->membase + MSM_UART_TF;
+ 
+@@ -1617,7 +1665,7 @@ static void __msm_console_write(struct u
+ 	int locked = 1;
+ 
+ 	if (is_uartdm)
+-		tf = port->membase + UARTDM_TF;
++		tf = msm_reg_addr(port, UARTDM_TF, true);
+ 	else
+ 		tf = port->membase + MSM_UART_TF;
+ 
+@@ -1792,6 +1840,7 @@ static const struct of_device_id msm_uar
+ 	{ .compatible = "qcom,msm-uartdm-v1.2", .data = (void *)UARTDM_1P2 },
+ 	{ .compatible = "qcom,msm-uartdm-v1.3", .data = (void *)UARTDM_1P3 },
+ 	{ .compatible = "qcom,msm-uartdm-v1.4", .data = (void *)UARTDM_1P4 },
++	{ .compatible = "qcom,msm-lsuart-v14", .data = (void *)UARTDM_1P4 },
+ 	{ }
+ };
+ 
+@@ -1819,12 +1868,14 @@ static int msm_serial_probe(struct platf
+ 	port = msm_get_port_from_line(line);
+ 	port->dev = &pdev->dev;
+ 	msm_port = to_msm_port(port);
++	port->private_data = msm_port;
+ 
+ 	id = of_match_device(msm_uartdm_table, &pdev->dev);
+ 	if (id)
+ 		msm_port->is_uartdm = (unsigned long)id->data;
+ 	else
+ 		msm_port->is_uartdm = 0;
++	msm_port->is_lsuart = of_device_is_compatible(pdev->dev.of_node, "qcom,msm-lsuart-v14");
+ 
+ 	msm_port->clk = devm_clk_get(&pdev->dev, "core");
+ 	if (IS_ERR(msm_port->clk))
+@@ -1874,6 +1925,7 @@ static void msm_serial_remove(struct pla
+ static const struct of_device_id msm_match_table[] = {
+ 	{ .compatible = "qcom,msm-uart" },
+ 	{ .compatible = "qcom,msm-uartdm" },
++	{ .compatible = "qcom,msm-lsuart-v14" },
+ 	{}
+ };
+ MODULE_DEVICE_TABLE(of, msm_match_table);

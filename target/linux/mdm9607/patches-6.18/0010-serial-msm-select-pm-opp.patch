@@ -1,0 +1,23 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitry Sinyavin <sinyavin@gmail.com>
+Date: Fri, 14 Aug 2026 20:00:00 +0200
+Subject: [PATCH] serial: msm: select PM_OPP
+
+The MSM serial driver unconditionally calls devm_pm_opp_set_clkname()
+during probe. Without CONFIG_PM_OPP the stub returns -EOPNOTSUPP and every
+MSM serial port fails to probe.
+
+Select PM_OPP so minimal configurations can use the driver.
+
+Signed-off-by: Dmitry Sinyavin <sinyavin@gmail.com>
+---
+--- a/drivers/tty/serial/Kconfig
++++ b/drivers/tty/serial/Kconfig
+@@ -905,6 +905,7 @@ config SERIAL_JSM
+ config SERIAL_MSM
+ 	tristate "MSM on-chip serial port support"
+ 	depends on ARCH_QCOM || COMPILE_TEST
++	select PM_OPP
+ 	select SERIAL_CORE
+ 
+ config SERIAL_MSM_CONSOLE

@@ -1,0 +1,29 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
+. /lib/functions/system.sh
+. /lib/functions/uci-defaults.sh
+
+board_config_update
+
+case "$(board_name)" in
+zte,mf283v)
+	mac_file=/tmp/mf283v-factory-mac
+	efs2=$(find_mtd_chardev EFS2)
+	efsbak=$(find_mtd_chardev EFSBAK)
+	if [ -n "$efs2" ] && [ -n "$efsbak" ] &&
+		mf283v-wlan-data --mac-only "$efs2" "$efsbak" "$mac_file"
+	then
+		factory_mac=$(cat "$mac_file")
+		ucidef_set_network_device_mac "eth0" "$factory_mac"
+		ucidef_set_interface_macaddr "lan" "$factory_mac"
+		ucidef_set_interface_macaddr "wan" "$factory_mac"
+		ucidef_set_label_macaddr "$factory_mac"
+	fi
+	rm -f "$mac_file"
+	ucidef_set_interfaces_lan_wan "lan2 lan3 lan4" "wan"
+	;;
+esac
+
+board_config_flush
+
+exit 0

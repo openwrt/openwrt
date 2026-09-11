@@ -1,0 +1,30 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitry Sinyavin <sinyavin@gmail.com>
+Date: Sun, 26 Jul 2026 00:00:00 +0000
+Subject: [PATCH] dt-bindings: mtd: qcom,nandc: add BAM command lock group
+
+Some shared QPIC integrations require the command pipe to use a hardware
+lock group and surround NAND transactions with BAM LOCK and UNLOCK
+descriptors. Describe the command-pipe lock group.
+
+Signed-off-by: Dmitry Sinyavin <sinyavin@gmail.com>
+---
+ .../bindings/mtd/qcom,nandc.yaml               | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+--- a/Documentation/devicetree/bindings/mtd/qcom,nandc.yaml
++++ b/Documentation/devicetree/bindings/mtd/qcom,nandc.yaml
+@@ -52,6 +52,13 @@ properties:
+       Must contain the ADM data type CRCI block instance number specified for
+       the NAND controller on the given platform
+ 
++  qcom,bam-command-lock-group:
++    $ref: /schemas/types.yaml#/definitions/uint32
++    maximum: 31
++    description:
++      BAM hardware lock group assigned to the command pipe. When present, NAND
++      command transactions are enclosed by BAM LOCK and UNLOCK descriptors.
++
+ patternProperties:
+   "^nand@[a-f0-9]$":
+     type: object
