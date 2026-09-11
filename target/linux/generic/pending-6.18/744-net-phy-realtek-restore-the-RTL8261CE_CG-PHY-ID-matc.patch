@@ -1,0 +1,55 @@
+From 2852a5b08b4cf38467d2a70984a19e357e0fe313 Mon Sep 17 00:00:00 2001
+From: Simon Polack <spolack+git@mailbox.org>
+Date: Wed, 9 Sep 2026 09:37:50 +0000
+Subject: [PATCH] net: phy: realtek: restore the RTL8261CE_CG PHY ID match
+
+Pending upstream submission.
+
+The v1 posting of the RTL8261 series declared both PHY IDs of this part:
+
+	#define RTL_8261C_CG	0x001cc898
+	#define RTL_8261CE_CG	0x001cc899
+
+with a driver entry for each. When the series was split up for v2 the
+second entry was dropped, and neither the per-patch changelogs nor the
+review discussion mention it, so this looks unintentional rather than
+deliberate.
+
+The effect is that parts reporting 0x001cc899 fall through to the generic
+Clause 45 driver. On a Gemtek W1700K (Airoha AN7581), whose two RTL8261CE
+report exactly that ID with sub-model 0x00, the generic driver provides
+none of the callbacks phylink needs to resolve a USXGMII link and the
+interfaces never come up.
+
+Rather than restoring a second entry differing only in its name, match
+both IDs from the existing one: they differ only in bit 0, and the hardware version is
+distinguished by the sub-model id read in probe, not by the PHY ID. The
+RTL8261C firmware and the sub-model detection apply unchanged; 0x001cc899
+has been tested with the existing rtl8261c.bin.
+
+Link: https://lore.kernel.org/netdev/20260528075226.1054-2-javen_xu@realsil.com.cn/
+Signed-off-by: Simon Polack <spolack+git@mailbox.org>
+---
+
+--- a/drivers/net/phy/realtek/realtek_main.c
++++ b/drivers/net/phy/realtek/realtek_main.c
+@@ -225,6 +225,9 @@
+ #define RTL_8251B				0x001cc862
+ #define RTL_8261C				0x001cc890
+ #define RTL_8261C_CG				0x001cc898
++#define RTL_8261CE_CG				0x001cc899
++/* The two IDs above differ only in bit 0 and share one driver */
++#define RTL_8261C_CG_MASK			GENMASK(31, 1)
+ #define RTL_8261N				0x001ccaf3
+ #define RTL_8264				0x001ccaf2
+ #define RTL_8264B				0x001cc813
+@@ -3779,7 +3782,8 @@ static struct phy_driver realtek_drvs[]
+ 		.read_mmd	= genphy_read_mmd_unsupported,
+ 		.write_mmd	= genphy_write_mmd_unsupported,
+ 	}, {
+-		PHY_ID_MATCH_EXACT(RTL_8261C_CG),
++		.phy_id			= RTL_8261C_CG,
++		.phy_id_mask		= RTL_8261C_CG_MASK,
+ 		.name			= "Realtek RTL8261C/D 10Gbps PHY",
+ 		.probe			= rtl8261x_probe,
+ 		.config_init		= rtl8261x_config_init,
