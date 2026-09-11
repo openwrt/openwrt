@@ -1,0 +1,459 @@
+// SPDX-License-Identifier: GPL-2.0-only OR BSD-2-Clause
+
+/dts-v1/;
+
+/* Stock DTB also memreserves 16 KiB at 0xabff9000 (see /proc/iomem reserved). */
+/memreserve/ 0xabff9000 0x4000;
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+#include "an7581.dtsi"
+#include "an7581-npu-mt7992.dtsi"
+
+/ {
+	model = "TP-Link XB432v (ITWIND3)";
+	compatible = "tplink,xb432v", "econet,en7581", "airoha,an7581", "airoha,en7581";
+
+	aliases {
+		serial0 = &uart1;
+		led-boot = &led_power;
+		led-failsafe = &led_internet;
+		led-running = &led_power;
+		led-upgrade = &led_internet;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,115200n8 earlycon root=/dev/mtdblock5 rootfstype=squashfs,jffs2";
+		stdout-path = "serial0:115200n8";
+	};
+
+	/* Live cmdline: dram_limit=1024M */
+	memory@80000000 {
+		device_type = "memory";
+		reg = <0x0 0x80000000 0x0 0x40000000>;
+	};
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		poll-interval = <100>;
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			/* Stock led.conf LED_SYS_RESET: gpio 0, mode INPUT. */
+			gpios = <&en7581_pinctrl 0 GPIO_ACTIVE_LOW>;
+		};
+
+		/*
+		 * Do not bind WPS (stock gpio 1) or Wi-Fi radio (stock gpio 3).
+		 * One of those keys is physically broken. Mapping a damaged
+		 * switch can short a GPIO. pinctrl also rejects gpio 1 as pin-14.
+		 */
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_power: led-power {
+			label = "red:power";
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_POWER;
+			/* EVB uses gpio 17; XB432v mapping not confirmed on-device. */
+			gpios = <&en7581_pinctrl 17 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+
+		led_internet: led-internet {
+			label = "green:internet";
+			function = LED_FUNCTION_WAN;
+			/* Stock led.conf LED_INTERNET_STATUS gpio 9. */
+			gpios = <&en7581_pinctrl 9 GPIO_ACTIVE_LOW>;
+		};
+
+		led_pon: led-pon {
+			label = "green:pon";
+			function = LED_FUNCTION_WAN;
+			/* Stock led.conf LED_XPON_STATUS gpio 6. */
+			gpios = <&en7581_pinctrl 6 GPIO_ACTIVE_LOW>;
+		};
+
+		led_los: led-los {
+			label = "green:los";
+			function = LED_FUNCTION_FAULT;
+			/* Stock led.conf LED_XPON_LOS gpio 7. */
+			gpios = <&en7581_pinctrl 7 GPIO_ACTIVE_LOW>;
+		};
+
+		led_usb: led-usb {
+			label = "green:usb";
+			function = LED_FUNCTION_USB;
+			gpios = <&en7581_pinctrl 22 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "usb-host";
+		};
+
+		led_wps: led-wps {
+			label = "green:wps";
+			function = LED_FUNCTION_WPS;
+			gpios = <&en7581_pinctrl 32 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+/* Stock DTB: ATF 256 KiB, NPU binary 1 MiB. Override an7581.dtsi (2 MiB / 10 MiB). */
+&atf {
+	reg = <0x0 0x80000000 0x0 0x40000>;
+};
+
+&npu_binary {
+	reg = <0x0 0x84000000 0x0 0x100000>;
+};
+
+&npu {
+	status = "okay";
+};
+
+&en7581_pinctrl {
+	gpio-ranges = <&en7581_pinctrl 0 13 50>;
+
+	mdio_pins: mdio-pins {
+		mux {
+			function = "mdio";
+			groups = "mdio";
+		};
+
+		conf {
+			pins = "gpio2";
+			output-high;
+		};
+	};
+
+	pcie0_rst_pins: pcie0-rst-pins {
+		conf {
+			pins = "pcie_reset0";
+			drive-open-drain = <1>;
+		};
+	};
+
+	pcie1_rst_pins: pcie1-rst-pins {
+		conf {
+			pins = "pcie_reset1";
+			drive-open-drain = <1>;
+		};
+	};
+
+	gswp1_led0_pins: gswp1-led0-pins {
+		mux {
+			function = "phy1_led0";
+			pins = "gpio33";
+		};
+	};
+
+	gswp2_led0_pins: gswp2-led0-pins {
+		mux {
+			function = "phy2_led0";
+			pins = "gpio34";
+		};
+	};
+
+	gswp3_led0_pins: gswp3-led0-pins {
+		mux {
+			function = "phy3_led0";
+			pins = "gpio35";
+		};
+	};
+
+	gswp4_led0_pins: gswp4-led0-pins {
+		mux {
+			function = "phy4_led0";
+			pins = "gpio42";
+		};
+	};
+};
+
+&snfi {
+	status = "okay";
+};
+
+&spi_nand {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Stock /proc/mtd order. U-Boot still passes root=/dev/mtdblock5. */
+		partition-whole {
+			label = "whole";
+			reg = <0x00000000 0x09c00000>;
+			read-only;
+		};
+
+		partition-boot {
+			label = "boot";
+			reg = <0x00000000 0x000c0000>;
+			read-only;
+		};
+
+		partition-art {
+			label = "art";
+			reg = <0x000c0000 0x00380000>;
+			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				/* Stock l1profile.dat FLASH_offset=0x40000; mt76 EEPROM is 0x1e00. */
+				eeprom_art_40000: eeprom@40000 {
+					reg = <0x40000 0x1e00>;
+				};
+			};
+		};
+
+		partition-misc {
+			label = "misc";
+			reg = <0x00440000 0x00400000>;
+			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				macaddr_misc_8f100: macaddr@8f100 {
+					compatible = "mac-base";
+					reg = <0x8f100 0x6>;
+					#nvmem-cell-cells = <1>;
+				};
+			};
+		};
+
+		partition-kernel {
+			label = "kernel";
+			reg = <0x00840000 0x00a00000>;
+		};
+
+		partition-rootfs {
+			label = "rootfs";
+			reg = <0x01240000 0x03bc0000>;
+		};
+
+		/*
+		 * firmware spans kernel+rootfs (71424 KiB). U-Boot tpimg reads this
+		 * alias; Linux also exposes separate kernel/rootfs nodes at the same
+		 * offsets. sysupgrade writes kernel and rootfs MTDs independently.
+		 */
+		partition-firmware {
+			label = "firmware";
+			reg = <0x00840000 0x045c0000>;
+		};
+
+		partition-kernel-slave {
+			label = "kernel_slave";
+			reg = <0x04e00000 0x00a00000>;
+			read-only;
+		};
+
+		partition-rootfs-slave {
+			label = "rootfs_slave";
+			reg = <0x05800000 0x03bc0000>;
+			read-only;
+		};
+
+		partition-firmware-slave {
+			label = "firmware_slave";
+			reg = <0x04e00000 0x045c0000>;
+			read-only;
+		};
+
+		/* Live sysfs: mtd10 offset 0x09bc0000. 8 MiB before this is NAND BMT. */
+		partition-reserve {
+			label = "reserve";
+			reg = <0x09bc0000 0x00040000>;
+			read-only;
+		};
+	};
+};
+
+&i2c0 {
+	status = "okay";
+};
+
+&pcie0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie0_rst_pins>;
+	status = "okay";
+
+	pcie@0,0 {
+		reg = <0x0000 0 0 0 0>;
+
+		/* MT799A HIF companion; EEPROM lives on the MT7992 node. */
+		wifi0: wifi@0,0 {
+			compatible = "mediatek,mt76";
+			reg = <0x0000 0 0 0 0>;
+			airoha,npu = <&npu>;
+			airoha,eth = <&eth>;
+		};
+	};
+};
+
+&pcie1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie1_rst_pins>;
+	status = "okay";
+
+	pcie@1,0 {
+		reg = <0x0000 0 0 0 0>;
+
+		wifi1: wifi@0,0 {
+			compatible = "mediatek,mt76";
+			reg = <0x0000 0 0 0 0>;
+			nvmem-cells = <&eeprom_art_40000>;
+			nvmem-cell-names = "eeprom";
+			airoha,npu = <&npu>;
+			airoha,eth = <&eth>;
+
+			band@0 {
+				reg = <0>;
+				nvmem-cells = <&macaddr_misc_8f100 0>;
+				nvmem-cell-names = "mac-address";
+			};
+
+			band@1 {
+				reg = <1>;
+				nvmem-cells = <&macaddr_misc_8f100 2>;
+				nvmem-cell-names = "mac-address";
+			};
+		};
+	};
+};
+
+&eth {
+	status = "okay";
+};
+
+&gdm1 {
+	status = "okay";
+	nvmem-cells = <&macaddr_misc_8f100 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&switch {
+	pinctrl-names = "default";
+	pinctrl-0 = <&mdio_pins>;
+	status = "okay";
+};
+
+&gsw_port1 {
+	status = "okay";
+	label = "lan1";
+};
+
+&gsw_phy1 {
+	pinctrl-names = "gbe-led";
+	pinctrl-0 = <&gswp1_led0_pins>;
+	status = "okay";
+};
+
+&gsw_phy1_led0 {
+	status = "okay";
+	function = LED_FUNCTION_LAN;
+	color = <LED_COLOR_ID_GREEN>;
+	default-state = "off";
+};
+
+&gsw_port2 {
+	status = "okay";
+	label = "lan2";
+};
+
+&gsw_phy2 {
+	pinctrl-names = "gbe-led";
+	pinctrl-0 = <&gswp2_led0_pins>;
+	status = "okay";
+};
+
+&gsw_phy2_led0 {
+	status = "okay";
+	function = LED_FUNCTION_LAN;
+	color = <LED_COLOR_ID_GREEN>;
+	default-state = "off";
+};
+
+&gsw_port3 {
+	status = "okay";
+	label = "lan3";
+};
+
+&gsw_phy3 {
+	pinctrl-names = "gbe-led";
+	pinctrl-0 = <&gswp3_led0_pins>;
+	status = "okay";
+};
+
+&gsw_phy3_led0 {
+	status = "okay";
+	function = LED_FUNCTION_LAN;
+	color = <LED_COLOR_ID_GREEN>;
+	default-state = "off";
+};
+
+&gsw_port4 {
+	status = "okay";
+	label = "lan4";
+};
+
+&gsw_phy4 {
+	pinctrl-names = "gbe-led";
+	pinctrl-0 = <&gswp4_led0_pins>;
+	status = "okay";
+};
+
+&gsw_phy4_led0 {
+	status = "okay";
+	function = LED_FUNCTION_LAN;
+	color = <LED_COLOR_ID_GREEN>;
+	default-state = "off";
+};
+
+/*
+ * One USB 2.0 jack. Stock serdes_usb2=02 maps to usb1 PHY, but the
+ * jack may be on usb0 (SERDES_USB1). Enable both as USB2-only like
+ * other AN7581 boards; do not guess a VBUS GPIO.
+ */
+&usb0 {
+	status = "okay";
+	mediatek,u3p-dis-msk = <0x1>;
+	phys = <&usb0_phy PHY_TYPE_USB2>;
+};
+
+&usb1 {
+	status = "okay";
+	mediatek,u3p-dis-msk = <0x1>;
+	phys = <&usb1_phy PHY_TYPE_USB2>;
+};
+
+/* Live 8811phy_addr=E-F-0-0-0. One eth PCS (GDM4); probe 0xF first, no reset GPIO. */
+&mdio {
+	en8811: ethernet-phy@f {
+		compatible = "ethernet-phy-id03a2.a411";
+		reg = <0xf>;
+	};
+};
+
+&eth_pcs {
+	status = "okay";
+};
+
+&gdm4 {
+	status = "okay";
+	openwrt,netdev-name = "lan5";
+	phy-handle = <&en8811>;
+	phy-mode = "2500base-x";
+};
+
+/*
+ * GPON (en7571 / GDM2 / pon_pcs) has no usable OpenWrt driver on 6.18 yet.
+ * Do not enable gdm2 until an xPON MAC exists.
+ */
