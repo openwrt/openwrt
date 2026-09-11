@@ -1,0 +1,430 @@
+From 8daf4f7664fecfd1742be155bb5399d3b31e0bcc Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Fri, 7 Aug 2026 20:06:56 -0700
+Subject: [PATCH] net: dsa: mt7530: add LED controller support
+
+The LED controller of the MT7530 switch can drive up to 15 LEDs,
+3 for each of the 5 internal PHYs. The pins can run in GPIO mode,
+where they are driven as plain outputs, or in PHY mode, where the
+switch reflects the link state of the port.
+
+Add support for the LEDs of the switch through the LED class API
+with hardware control of the netdev trigger, mirroring the qca8k
+driver. The LEDs are described in the device tree with a leds node
+on the ports; each port can have up to 3 LEDs attached.
+
+This allows userspace to control the LEDs of devices using the
+MT7530 switch, such as MT7621 routers, and to offload the link
+state indication to the switch instead of driving the LEDs by
+software.
+
+Assisted-by: opencode:deepseek-v4-flash-free
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ drivers/net/dsa/Kconfig       |  12 ++
+ drivers/net/dsa/Makefile      |   3 +
+ drivers/net/dsa/mt7530-leds.c | 248 ++++++++++++++++++++++++++++++++++
+ drivers/net/dsa/mt7530.c      |   9 +-
+ drivers/net/dsa/mt7530.h      |   5 +
+ drivers/net/dsa/mt7530_leds.h |  45 ++++++
+ 6 files changed, 320 insertions(+), 2 deletions(-)
+ create mode 100644 drivers/net/dsa/mt7530-leds.c
+ create mode 100644 drivers/net/dsa/mt7530_leds.h
+
+--- a/drivers/net/dsa/Kconfig
++++ b/drivers/net/dsa/Kconfig
+@@ -68,6 +68,18 @@ config NET_DSA_MT7530_MMIO
+ 	  are directly mapped into the SoCs register space rather than being
+ 	  accessible via MDIO.
+ 
++config NET_DSA_MT7530_LEDS_SUPPORT
++	bool "MediaTek MT7530 switch LEDs support"
++	depends on NET_DSA_MT7530
++	depends on LEDS_CLASS=y || LEDS_CLASS=NET_DSA_MT7530
++	depends on LEDS_TRIGGERS
++	help
++	  This enables support for the LEDs present on the MediaTek MT7530
++	  switch. The LED controller of the switch can drive up to 15 LEDs,
++	  3 for each of the 5 internal PHYs. The LEDs can be controlled
++	  through the LED class API and offloaded to the switch to show the
++	  link state of the ports.
++
+ config NET_DSA_MV88E6060
+ 	tristate "Marvell 88E6060 ethernet switch chip support"
+ 	select NET_DSA_TAG_TRAILER
+--- a/drivers/net/dsa/Makefile
++++ b/drivers/net/dsa/Makefile
+@@ -8,6 +8,7 @@ endif
+ obj-$(CONFIG_NET_DSA_KS8995) 	+= ks8995.o
+ obj-$(CONFIG_NET_DSA_LANTIQ_GSWIP) += lantiq_gswip.o
+ obj-$(CONFIG_NET_DSA_MT7530)	+= mt7530.o
++obj-$(CONFIG_NET_DSA_MT7530_LEDS_SUPPORT) += mt7530-leds.o
+ obj-$(CONFIG_NET_DSA_MT7530_MDIO) += mt7530-mdio.o
+ obj-$(CONFIG_NET_DSA_MT7530_MMIO) += mt7530-mmio.o
+ obj-$(CONFIG_NET_DSA_MV88E6060) += mv88e6060.o
+--- /dev/null
++++ b/drivers/net/dsa/mt7530-leds.c
+@@ -0,0 +1,248 @@
++// SPDX-License-Identifier: GPL-2.0
++#include <linux/leds.h>
++#include <linux/property.h>
++#include <linux/slab.h>
++#include <net/dsa.h>
++
++#include "mt7530.h"
++#include "mt7530_leds.h"
++
++static void
++mt7530_led_set_brightness(struct mt7530_led *led,
++			  enum led_brightness brightness)
++{
++	u32 bit = MT7530_LED_BIT(led->port_num, led->led_num);
++
++	if (brightness) {
++		/* Drive the LED pin as a GPIO output. */
++		mt7530_rmw(led->priv, MT7530_LED_IO_MODE, bit, 0);
++		mt7530_rmw(led->priv, MT7530_LED_GPIO_DIR, bit, bit);
++		mt7530_rmw(led->priv, MT7530_LED_GPIO_DATA, bit, bit);
++		mt7530_rmw(led->priv, MT7530_LED_GPIO_OE, bit, bit);
++		mt7530_rmw(led->priv, MT7530_LED_EN, bit, bit);
++	} else {
++		mt7530_rmw(led->priv, MT7530_LED_EN, bit, 0);
++		mt7530_rmw(led->priv, MT7530_LED_GPIO_DATA, bit, 0);
++	}
++}
++
++static enum led_brightness
++mt7530_led_brightness_get(struct mt7530_led *led)
++{
++	u32 bit = MT7530_LED_BIT(led->port_num, led->led_num);
++
++	return !!(mt7530_read(led->priv, MT7530_LED_GPIO_DATA) & bit);
++}
++
++static int
++mt7530_cled_brightness_set_blocking(struct led_classdev *ldev,
++				    enum led_brightness brightness)
++{
++	struct mt7530_led *led = container_of(ldev, struct mt7530_led, cdev);
++
++	mt7530_led_set_brightness(led, brightness);
++
++	return 0;
++}
++
++static enum led_brightness
++mt7530_cled_brightness_get(struct led_classdev *ldev)
++{
++	struct mt7530_led *led = container_of(ldev, struct mt7530_led, cdev);
++
++	return mt7530_led_brightness_get(led);
++}
++
++static bool
++mt7530_cled_hw_control_status(struct led_classdev *ldev)
++{
++	struct mt7530_led *led = container_of(ldev, struct mt7530_led, cdev);
++	u32 bit = MT7530_LED_BIT(led->port_num, led->led_num);
++
++	/* The LED is driven by the switch when in PHY mode. */
++	return !!(mt7530_read(led->priv, MT7530_LED_IO_MODE) & bit);
++}
++
++static int
++mt7530_cled_hw_control_is_supported(struct led_classdev *ldev,
++				    unsigned long rules)
++{
++	/* The LED controller can only offload the link state of the port. */
++	if (rules & ~BIT(TRIGGER_NETDEV_LINK))
++		return -EOPNOTSUPP;
++
++	return 0;
++}
++
++static int
++mt7530_cled_hw_control_set(struct led_classdev *ldev, unsigned long rules)
++{
++	struct mt7530_led *led = container_of(ldev, struct mt7530_led, cdev);
++	u32 bit = MT7530_LED_BIT(led->port_num, led->led_num);
++	int ret;
++
++	ret = mt7530_cled_hw_control_is_supported(ldev, rules);
++	if (ret)
++		return ret;
++
++	/* Put the LED in PHY mode so the switch reflects the link state. */
++	mt7530_rmw(led->priv, MT7530_LED_IO_MODE, bit, bit);
++	mt7530_rmw(led->priv, MT7530_LED_EN, bit, bit);
++
++	led->rules = rules;
++
++	return 0;
++}
++
++static int
++mt7530_cled_hw_control_get(struct led_classdev *ldev, unsigned long *rules)
++{
++	struct mt7530_led *led = container_of(ldev, struct mt7530_led, cdev);
++
++	if (!mt7530_cled_hw_control_status(ldev))
++		return -EINVAL;
++
++	*rules = led->rules;
++
++	return 0;
++}
++
++static struct device *
++mt7530_cled_hw_control_get_device(struct led_classdev *ldev)
++{
++	struct mt7530_led *led = container_of(ldev, struct mt7530_led, cdev);
++	struct dsa_port *dp;
++
++	dp = dsa_to_port(led->priv->ds, led->port_num);
++	if (!dp || !dp->user)
++		return NULL;
++
++	return &dp->user->dev;
++}
++
++static int
++mt7530_parse_port_leds(struct mt7530_priv *priv, struct fwnode_handle *port, int port_num)
++{
++	struct fwnode_handle *led = NULL, *leds = NULL;
++	struct led_init_data init_data = { };
++	enum led_default_state state;
++	struct mt7530_led *port_led;
++	int led_num, led_index;
++	int ret;
++
++	leds = fwnode_get_named_child_node(port, "leds");
++	if (!leds) {
++		dev_dbg(priv->dev, "No Leds node specified in device tree for port %d!\n",
++			port_num);
++		return 0;
++	}
++
++	fwnode_for_each_child_node(leds, led) {
++		/* Reg represent the led number of the port.
++		 * Each port can have at most 3 leds attached:
++		 * 1. is gigabit led
++		 * 2. is mbit led
++		 * 3. additional status led
++		 */
++		if (fwnode_property_read_u32(led, "reg", &led_num))
++			continue;
++
++		if (led_num >= MT7530_LED_NUM) {
++			dev_warn(priv->dev,
++				 "Invalid LED reg %d defined for port %d\n",
++				 led_num, port_num);
++			continue;
++		}
++
++		led_index = MT7530_LED_PORT_INDEX(port_num, led_num);
++
++		port_led = &priv->leds->leds[led_index];
++		port_led->port_num = port_num;
++		port_led->led_num = led_num;
++		port_led->priv = priv;
++
++		state = led_init_default_state_get(led);
++		switch (state) {
++		case LEDS_DEFSTATE_ON:
++			port_led->cdev.brightness = 1;
++			mt7530_led_set_brightness(port_led, 1);
++			break;
++		case LEDS_DEFSTATE_KEEP:
++			port_led->cdev.brightness = mt7530_led_brightness_get(port_led);
++			break;
++		default:
++			port_led->cdev.brightness = 0;
++			mt7530_led_set_brightness(port_led, 0);
++		}
++
++		port_led->cdev.max_brightness = 1;
++		port_led->cdev.brightness_set_blocking = mt7530_cled_brightness_set_blocking;
++		port_led->cdev.brightness_get = mt7530_cled_brightness_get;
++		port_led->cdev.hw_control_is_supported = mt7530_cled_hw_control_is_supported;
++		port_led->cdev.hw_control_set = mt7530_cled_hw_control_set;
++		port_led->cdev.hw_control_get = mt7530_cled_hw_control_get;
++		port_led->cdev.hw_control_get_device = mt7530_cled_hw_control_get_device;
++		port_led->cdev.hw_control_trigger = "netdev";
++		init_data.default_label = ":port";
++		init_data.fwnode = led;
++		init_data.devname_mandatory = true;
++		init_data.devicename = kasprintf(GFP_KERNEL, "%s:0%d",
++						 priv->bus ? priv->bus->id : dev_name(priv->dev),
++						 port_num);
++		if (!init_data.devicename) {
++			fwnode_handle_put(led);
++			fwnode_handle_put(leds);
++			return -ENOMEM;
++		}
++
++		ret = devm_led_classdev_register_ext(priv->dev, &port_led->cdev, &init_data);
++		if (ret)
++			dev_warn(priv->dev, "Failed to init LED %d for port %d\n",
++				 led_num, port_num);
++
++		kfree(init_data.devicename);
++	}
++
++	fwnode_handle_put(leds);
++	return 0;
++}
++
++int
++mt7530_setup_led_ctrl(struct mt7530_priv *priv)
++{
++	struct fwnode_handle *ports, *port;
++	int port_num;
++	int ret;
++
++	priv->leds = devm_kzalloc(priv->dev, sizeof(*priv->leds), GFP_KERNEL);
++	if (!priv->leds)
++		return -ENOMEM;
++
++	ports = device_get_named_child_node(priv->dev, "ports");
++	if (!ports)
++		ports = device_get_named_child_node(priv->dev, "ethernet-ports");
++
++	if (!ports) {
++		dev_info(priv->dev, "No ports node specified in device tree!\n");
++		return 0;
++	}
++
++	fwnode_for_each_child_node(ports, port) {
++		if (fwnode_property_read_u32(port, "reg", &port_num))
++			continue;
++
++		/* Port 5 and 6 have no internal PHY, thus no LEDs. */
++		if (port_num >= MT7530_NUM_PHYS)
++			continue;
++
++		ret = mt7530_parse_port_leds(priv, port, port_num);
++		if (ret) {
++			fwnode_handle_put(port);
++			fwnode_handle_put(ports);
++			return ret;
++		}
++	}
++
++	fwnode_handle_put(ports);
++	return 0;
++}
+--- a/drivers/net/dsa/mt7530.c
++++ b/drivers/net/dsa/mt7530.c
+@@ -23,6 +23,7 @@
+ #include <net/dsa.h>
+ 
+ #include "mt7530.h"
++#include "mt7530_leds.h"
+ 
+ static struct mt753x_pcs *pcs_to_mt753x_pcs(struct phylink_pcs *pcs)
+ {
+@@ -239,7 +240,7 @@ _mt7530_read(struct mt7530_dummy_poll *p
+ 	return val;
+ }
+ 
+-static u32
++u32
+ mt7530_read(struct mt7530_priv *priv, u32 reg)
+ {
+ 	struct mt7530_dummy_poll p;
+@@ -248,7 +249,7 @@ mt7530_read(struct mt7530_priv *priv, u3
+ 	return _mt7530_read(&p);
+ }
+ 
+-static void
++void
+ mt7530_rmw(struct mt7530_priv *priv, u32 reg,
+ 	   u32 mask, u32 set)
+ {
+@@ -2535,6 +2536,10 @@ mt7530_setup(struct dsa_switch *ds)
+ 	}
+ #endif /* CONFIG_GPIOLIB */
+ 
++	ret = mt7530_setup_led_ctrl(priv);
++	if (ret)
++		return ret;
++
+ 	/* Flush the FDB table */
+ 	ret = mt7530_fdb_cmd(priv, MT7530_FDB_FLUSH, NULL);
+ 	if (ret < 0)
+--- a/drivers/net/dsa/mt7530.h
++++ b/drivers/net/dsa/mt7530.h
+@@ -14,6 +14,8 @@
+ #define MTK_HDR_LEN	4
+ #define MT7530_MAX_MTU	(15 * 1024 - ETH_HLEN - ETH_FCS_LEN - MTK_HDR_LEN)
+ 
++struct mt7530_leds;
++
+ enum mt753x_id {
+ 	ID_MT7530 = 0,
+ 	ID_MT7621 = 1,
+@@ -828,6 +830,7 @@ struct mt7530_priv {
+ 	u8			mirror_tx;
+ 	struct mt7530_port	ports[MT7530_NUM_PORTS];
+ 	struct mt753x_pcs	pcs[MT7530_NUM_PORTS];
++	struct mt7530_leds	*leds;
+ 	/* protect among processes for registers access*/
+ 	struct mutex reg_mutex;
+ 	int irq;
+@@ -874,6 +877,8 @@ static inline void INIT_MT7530_DUMMY_POL
+ 
+ int mt7530_probe_common(struct mt7530_priv *priv);
+ void mt7530_remove_common(struct mt7530_priv *priv);
++u32 mt7530_read(struct mt7530_priv *priv, u32 reg);
++void mt7530_rmw(struct mt7530_priv *priv, u32 reg, u32 mask, u32 set);
+ 
+ extern const struct dsa_switch_ops mt7530_switch_ops;
+ extern const struct mt753x_info mt753x_table[];
+--- /dev/null
++++ b/drivers/net/dsa/mt7530_leds.h
+@@ -0,0 +1,45 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++
++#ifndef __MT7530_LEDS_H
++#define __MT7530_LEDS_H
++
++#include <linux/leds.h>
++
++#include "mt7530.h"
++
++/* The LED controller of the MT7530 switch can drive up to 15 LEDs:
++ * 3 LEDs for each of the 5 internal PHYs.
++ */
++#define MT7530_LED_NUM			3
++#define MT7530_NUM_LEDS			(MT7530_NUM_PHYS * MT7530_LED_NUM)
++
++/* LED N of port M is controlled by bit (M * 4 + N) of the LED
++ * controller registers.
++ */
++#define MT7530_LED_BIT(port, led)	BIT((port) * 4 + (led))
++#define MT7530_LED_PORT_INDEX(port, led) ((port) * MT7530_LED_NUM + (led))
++
++struct mt7530_priv;
++
++struct mt7530_led {
++	struct led_classdev cdev;
++	struct mt7530_priv *priv;
++	unsigned int port_num;
++	unsigned int led_num;
++	unsigned long rules;
++};
++
++struct mt7530_leds {
++	struct mt7530_led leds[MT7530_NUM_LEDS];
++};
++
++#ifdef CONFIG_NET_DSA_MT7530_LEDS_SUPPORT
++int mt7530_setup_led_ctrl(struct mt7530_priv *priv);
++#else
++static inline int mt7530_setup_led_ctrl(struct mt7530_priv *priv)
++{
++	return 0;
++}
++#endif
++
++#endif /* __MT7530_LEDS_H */
