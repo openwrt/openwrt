@@ -21,17 +21,17 @@ Signed-off-by: Gokul Sriram Palanisamy <gokul.sriram.p@oss.qualcomm.com>
 
 --- a/drivers/firmware/qcom/qcom_scm.c
 +++ b/drivers/firmware/qcom/qcom_scm.c
-@@ -583,9 +583,6 @@ int qcom_scm_pas_init_image(u32 peripher
+@@ -583,9 +583,6 @@ int qcom_scm_pas_init_image(u32 pas_id,
  	int ret;
  	struct qcom_scm_desc desc = {
  		.svc = QCOM_SCM_SVC_PIL,
 -		.cmd = QCOM_SCM_PIL_PAS_INIT_IMAGE,
 -		.arginfo = QCOM_SCM_ARGS(2, QCOM_SCM_VAL, QCOM_SCM_RW),
--		.args[0] = peripheral,
+-		.args[0] = pas_id,
  		.owner = ARM_SMCCC_OWNER_SIP,
  	};
  	struct qcom_scm_res res;
-@@ -617,7 +614,19 @@ int qcom_scm_pas_init_image(u32 peripher
+@@ -617,7 +614,19 @@ int qcom_scm_pas_init_image(u32 pas_id,
  	if (ret)
  		goto disable_clk;
  
@@ -40,13 +40,13 @@ Signed-off-by: Gokul Sriram Palanisamy <gokul.sriram.p@oss.qualcomm.com>
 +					 QCOM_SCM_PIL_PAS_INIT_IMAGE_V2)) {
 +		desc.cmd = QCOM_SCM_PIL_PAS_INIT_IMAGE_V2;
 +		desc.arginfo = QCOM_SCM_ARGS(3, QCOM_SCM_VAL, QCOM_SCM_RW, QCOM_SCM_VAL);
-+		desc.args[0] = peripheral;
++		desc.args[0] = pas_id;
 +		desc.args[1] = mdata_phys;
 +		desc.args[2] = size;
 +	} else {
 +		desc.cmd = QCOM_SCM_PIL_PAS_INIT_IMAGE;
 +		desc.arginfo = QCOM_SCM_ARGS(2, QCOM_SCM_VAL, QCOM_SCM_RW);
-+		desc.args[0] = peripheral;
++		desc.args[0] = pas_id;
 +		desc.args[1] = mdata_phys;
 +	}
  
