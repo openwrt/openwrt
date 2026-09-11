@@ -74,7 +74,9 @@ realtek_setup_macs()
 	xikestor,sks8300-12x-v1|\
 	xikestor,sks8310-8x|\
 	zyxel,xgs1210-12-a1|\
-	zyxel,xgs1210-12-b1)
+	zyxel,xgs1210-12-b1|\
+	zyxel,xgs1250-12-a1|\
+	zyxel,xgs1250-12-b1)
 		lan_mac=$(get_mac_label)
 		lan_mac_start=$lan_mac
 		;;
@@ -164,9 +166,7 @@ realtek_setup_macs()
 	zyxel,gs1900-8hp-a1|\
 	zyxel,gs1900-8hp-b1|\
 	zyxel,gs1900-8hp-b2|\
-	zyxel,gs1920-24hp-v1|\
-	zyxel,xgs1250-12-a1|\
-	zyxel,xgs1250-12-b1)
+	zyxel,gs1920-24hp-v1)
 		lan_mac=$(mtd_get_mac_ascii u-boot-env2 mac_start)
 		lan_mac_end=$(mtd_get_mac_ascii u-boot-env2 mac_end)
 		label_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
