@@ -1,0 +1,44 @@
+vendor: FriendlyARM
+model: NanoPi R1
+bootloader: unknown
+cpu:
+  model: Allwinner H3
+  cores: 4
+  mhz: 1200
+memory_mb:
+  - 512
+  - 1024
+storage:
+  - type: microSD
+device_type: WiFi Router
+usb:
+  - plug: Type A
+    version: USB 2.0
+    port_count: 2
+ethernet:
+  - speed_mbit: 100
+    port_count: 1
+    function: lan
+power_supply:
+  type: DC
+  volt: 5
+  ampere: 2
+led:
+  - color: red
+    function: status
+  - color: green
+    function: wan
+  - color: green
+    function: lan
+keys:
+  - reset
+jtag: false
+serial: unknown
+outdoor: false
+target:
+  - sunxi/cortexa7
+vlan: true
+wifi:
+  - freq_ghz: 2.4
+    driver: unknown
+    hardware: unknown

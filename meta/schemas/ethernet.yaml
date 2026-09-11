@@ -1,0 +1,31 @@
+$id: https://openwrt.org/schema/ethernet.yaml
+title: Ethernet
+type: object
+
+required:
+  - speed_mbit
+  - port_count
+
+examples:
+  - port_count: 1
+    speed_mbit: 100
+    hardware: EtherCoop 1
+
+items:
+  anyOf:
+  - $id: '#/properties/ethernet/items/anyOf/0'
+    properties:
+      function:
+        $id: '#/properties/ethernet/items/anyOf/0/properties/function'
+        title: function
+        type: string
+
+      speed_mbit:
+        $id: '#/properties/ethernet/items/anyOf/0/properties/speed_mbit'
+        title: Speed in MBit
+        type: number
+
+      port_count:
+        $id: '#/properties/ethernet/items/anyOf/0/properties/port_count'
+        title: port_count
+        type: integer
