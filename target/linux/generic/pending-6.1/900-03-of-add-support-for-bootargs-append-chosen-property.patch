@@ -1,0 +1,34 @@
+From 3f43c19d38251226a6b46e5d88690b220212962a Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Fri, 10 May 2024 17:43:41 +0200
+Subject: [PATCH 3/4] of: add support for bootargs-append chosen property
+
+Add support for bootargs-append chosen property.
+
+The bootargs-append can be used to append additional kernel arguments
+to the bootargs property. This can be useful in the context of a
+bootargs overridden by the bootloader that contains correct that but
+the kernel require additional one to be correctly setup.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ drivers/of/fdt.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/drivers/of/fdt.c b/drivers/of/fdt.c
+index 253315421591..5d88f3fc2f35 100644
+--- a/drivers/of/fdt.c
++++ b/drivers/of/fdt.c
+@@ -1080,6 +1080,9 @@ int __init early_init_dt_scan_chosen(char *cmdline)
+ 		p = of_get_flat_dt_prop(node, "bootargs", &l);
+ 	if (p != NULL && l > 0)
+ 		strscpy(cmdline, p, min(l, COMMAND_LINE_SIZE));
++	p = of_get_flat_dt_prop(node, "bootargs-append", &l);
++	if (p != NULL && l > 0)
++		strlcat(cmdline, p, min_t(int, strlen(cmdline) + l, COMMAND_LINE_SIZE));
+ 
+ handle_cmdline:
+ 	/*
+-- 
+2.43.0
+
