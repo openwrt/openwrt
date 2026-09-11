@@ -41,7 +41,7 @@
 
 	sfp0: sfp-p12 {
 		compatible = "sff,sfp";
-		i2c-bus = <&i2c0>;
+		i2c-bus = <&sfp12_i2c>;
 		los-gpio = <&gpio0 17 GPIO_ACTIVE_HIGH>;
 		tx-fault-gpio = <&gpio0 20 GPIO_ACTIVE_HIGH>;
 		mod-def0-gpio = <&gpio0 16 GPIO_ACTIVE_LOW>;
@@ -180,10 +180,7 @@
 &i2c_mst1 {
 	status = "okay";
 
-	/* i2c of the SFP+ cage; port 12 */
-	i2c0: i2c@1 {
-		reg = <1>;
-	};
+	sfp12_i2c: i2c@1 { reg = <1>; };
 };
 
 &spi0 {
