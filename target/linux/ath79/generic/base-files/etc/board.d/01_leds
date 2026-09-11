@@ -214,6 +214,11 @@ telco,t1)
 	ucidef_set_led_switch "lan" "LAN" "blue:lan" "switch0" "0x02"
 	ucidef_set_led_netdev "wan" "WAN" "blue:wan" "eth1"
 	;;
+comfast,cf-wa350)
+	ucidef_set_led_switch "wan" "WAN" "red:wan" "switch0" "0x02"
+	ucidef_set_led_switch "lan" "LAN" "green:lan" "switch0" "0x04"
+	ucidef_set_led_wlan "wlan5g" "WLAN5G" "blue:wlan-5ghz" "phy0tpt"
+	;;
 comfast,cf-wr752ac-v1|\
 enterasys,ws-ap3705i|\
 openmesh,mr900-v1|\
