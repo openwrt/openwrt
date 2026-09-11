@@ -224,33 +224,73 @@
 };
 
 &mdio_bus0 {
-	PHY_C45(0, 0)
-	PHY_C45(1, 1)
-	PHY_C45(4, 2)
-	PHY_C45(5, 3)
-	PHY_C45(8, 4)
-	PHY_C45(9, 5)
-	PHY_C45(12, 6)
-	PHY_C45(13, 7)
-	PHY_C45(16, 8)
-	PHY_C45(17, 9)
-	PHY_C45(20, 10)
-	PHY_C45(21, 11)
+	ethernet-phy-package@0 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0>;
+
+		PHY_C45(0, 0)
+		PHY_C45(1, 1)
+		PHY_C45(4, 2)
+		PHY_C45(5, 3)
+	};
+
+	ethernet-phy-package@4 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <4>;
+
+		PHY_C45(8, 4)
+		PHY_C45(9, 5)
+		PHY_C45(12, 6)
+		PHY_C45(13, 7)
+	};
+
+	ethernet-phy-package@8 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <8>;
+
+		PHY_C45(16, 8)
+		PHY_C45(17, 9)
+		PHY_C45(20, 10)
+		PHY_C45(21, 11)
+	};
 };
 
 &mdio_bus1 {
-	PHY_C45(24, 12)
-	PHY_C45(25, 13)
-	PHY_C45(28, 14)
-	PHY_C45(29, 15)
-	PHY_C45(32, 16)
-	PHY_C45(33, 17)
-	PHY_C45(36, 18)
-	PHY_C45(37, 19)
-	PHY_C45(40, 20)
-	PHY_C45(41, 21)
-	PHY_C45(44, 22)
-	PHY_C45(45, 23)
+	ethernet-phy-package@12 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <12>;
+
+		PHY_C45(24, 12)
+		PHY_C45(25, 13)
+		PHY_C45(28, 14)
+		PHY_C45(29, 15)
+	};
+
+	ethernet-phy-package@16 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <16>;
+
+		PHY_C45(32, 16)
+		PHY_C45(33, 17)
+		PHY_C45(36, 18)
+		PHY_C45(37, 19)
+	};
+
+	ethernet-phy-package@20 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <20>;
+
+		PHY_C45(40, 20)
+		PHY_C45(41, 21)
+		PHY_C45(44, 22)
+		PHY_C45(45, 23)
+	};
 };
 
 &switch0 {
