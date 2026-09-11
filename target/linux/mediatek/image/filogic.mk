@@ -1124,6 +1124,26 @@ define Device/comfast_cf-wa933-128m
 endef
 TARGET_DEVICES += comfast_cf-wa933-128m
 
+define Device/comfast_cf-wr631ax-common
+  DEVICE_VENDOR := COMFAST
+  DEVICE_MODEL := CF-WR631AX
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_IN_UBI := 1
+endef
+
+define Device/comfast_cf-wr631ax
+  $(call Device/comfast_cf-wr631ax-common)
+  DEVICE_DTS := mt7981b-comfast-cf-wr631ax
+  IMAGE_SIZE := 65536k
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  SUPPORTED_DEVICES += cf-wr631ax
+endef
+TARGET_DEVICES += comfast_cf-wr631ax
+
 define Device/comfast_cf-wr632ax-common
   DEVICE_VENDOR := COMFAST
   DEVICE_MODEL := CF-WR632AX
