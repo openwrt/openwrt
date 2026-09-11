@@ -8,6 +8,8 @@
 
 #include <linux/soc/realtek/otto_table.h>
 
+#include "vlan.h"
+
 /* Register definition */
 #define RTL838X_MAC_PORT_CTRL(port)		(0xd560 + (((port) << 7)))
 #define RTL839X_MAC_PORT_CTRL(port)		(0x8004 + (((port) << 7)))
@@ -919,17 +921,6 @@ enum rtldsa_flood_type {
  */
 #define RTLDSA_COUNTERS_FAST_POLL_INTERVAL	(3 * HZ)
 
-enum pbvlan_type {
-	PBVLAN_TYPE_INNER = 0,
-	PBVLAN_TYPE_OUTER,
-};
-
-enum pbvlan_mode {
-	PBVLAN_MODE_UNTAG_AND_PRITAG = 0,
-	PBVLAN_MODE_UNTAG_ONLY,
-	PBVLAN_MODE_ALL_PKT,
-};
-
 struct rtldsa_counter {
 	u64 val;
 	u32 last;
@@ -1033,46 +1024,12 @@ struct rtldsa_port {
 	const struct dsa_port *dp;
 };
 
-struct rtldsa_vlan_info {
-	u64 untagged_ports;
-	u64 member_ports;
-	u8 profile_id;
-	bool hash_mc_fid;
-	bool hash_uc_fid;
-	u8 fid; /* AKA MSTI */
-
-	/* The following fields are used only by the RTL931X */
-	int if_id;		/* Interface (index in L3_EGR_INTF_IDX) */
-	u16 multicast_grp_mask;
-	int l2_tunnel_list_id;
-};
-
 struct rtldsa_mst {
 	/** @msti: MSTI mapped to this slot. 0 == unused */
 	u16 msti;
 
 	/** @refcount: number of vlans currently using this msti, undefined when unused */
 	struct kref refcount;
-};
-
-struct rtldsa_vlan_profile {
-	union {
-		struct {
-			u64 l2;
-			u64 ip;
-			u64 ip6;
-		} pmsks;
-		struct {
-			u16 l2;
-			u16 ip;
-			u16 ip6;
-		} pmsks_idx;
-	} unkn_mc_fld;
-
-	int l2_learn;
-
-	u8 pmsk_is_idx:1, routing_ipuc:1, routing_ip6uc:1,
-	   routing_ipmc:1, routing_ip6mc:1, bridge_ipmc:1, bridge_ip6mc:1;
 };
 
 enum l2_entry_type {

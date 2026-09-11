@@ -9,6 +9,7 @@
 
 #include "rtl-otto.h"
 #include "tc.h"
+#include "vlan.h"
 
 /* Ethernet header, two stacked VLAN tags (802.1ad QinQ) and FCS */
 #define RTLDSA_FRAME_OVERHEAD		(ETH_HLEN + 2 * VLAN_HLEN + ETH_FCS_LEN)
@@ -60,20 +61,6 @@ static enum dsa_tag_protocol rtldsa_get_tag_protocol(struct dsa_switch *ds,
 	return DSA_TAG_PROTO_RTL_OTTO;
 }
 
-static void rtldsa_vlan_set_pvid(struct rtl838x_switch_priv *priv,
-				  int port, int pvid)
-{
-	/* Set both inner and outer PVID of the port */
-	priv->r->vlan_port_pvid_set(port, PBVLAN_TYPE_INNER, pvid);
-	priv->r->vlan_port_pvid_set(port, PBVLAN_TYPE_OUTER, pvid);
-	priv->r->vlan_port_pvidmode_set(port, PBVLAN_TYPE_INNER,
-					PBVLAN_MODE_UNTAG_AND_PRITAG);
-	priv->r->vlan_port_pvidmode_set(port, PBVLAN_TYPE_OUTER,
-					PBVLAN_MODE_UNTAG_AND_PRITAG);
-
-	priv->ports[port].pvid = pvid;
-}
-
 static void rtldsa_83xx_mc_pmasks_setup(struct rtl838x_switch_priv *priv)
 {
 	/* RTL8380 and RTL8390 use an index into the portmask table to set the
@@ -82,40 +69,6 @@ static void rtldsa_83xx_mc_pmasks_setup(struct rtl838x_switch_priv *priv)
 	 * see e.g. rtl9300_vlan_profile_setup
 	 */
 	priv->r->write_mcast_pmask(MC_PMASK_ALL_PORTS_IDX, ~0);
-}
-
-/* Initialize all VLANS */
-static void rtldsa_vlan_setup(struct rtl838x_switch_priv *priv)
-{
-	struct rtldsa_vlan_info info = {
-		.l2_tunnel_list_id = -1,
-	};
-
-	pr_info("In %s\n", __func__);
-
-	priv->r->vlan_profile_setup(0);
-	priv->r->vlan_profile_dump(priv, 0);
-
-	/* Initialize normal VLANs 1-4095 */
-	for (int i = 1; i < MAX_VLANS; i++)
-		priv->r->vlan_set_tagged(i, &info);
-
-	/*
-	 * Initialize the special VLAN 0 and reset PVIDs. The CPU port PVID
-	 * is applied to packets from the CPU for untagged destinations,
-	 * regardless if the actual ingress VID. Any port with untagged
-	 * egress VLAN(s) must therefore be a member of VLAN 0 to support
-	 * CPU port as ingress when VLAN filtering is enabled.
-	 */
-	for (int i = 0; i <= priv->r->cpu_port; i++) {
-		rtldsa_vlan_set_pvid(priv, i, 0);
-		info.member_ports |= BIT_ULL(i);
-	}
-	priv->r->vlan_set_tagged(0, &info);
-
-	/* Set forwarding action based on inner VLAN tag */
-	for (int i = 0; i < priv->r->cpu_port; i++)
-		priv->r->vlan_fwd_on_inner(i, true);
 }
 
 static void rtldsa_setup_bpdu_traps(struct rtl838x_switch_priv *priv)
@@ -1324,7 +1277,7 @@ static void rtldsa_mst_release_slot(struct kref *ref)
  * Return: false when MST slot reference counter was only decreased or an invalid @mst_slot was
  * given, true when @mst_slot is now unused
  */
-static bool rtldsa_mst_put_slot(struct rtl838x_switch_priv *priv, u16 mst_slot)
+bool rtldsa_mst_put_slot(struct rtl838x_switch_priv *priv, u16 mst_slot)
 				__must_hold(&priv->reg_mutex)
 {
 	unsigned int index;
@@ -1353,7 +1306,7 @@ static bool rtldsa_mst_put_slot(struct rtl838x_switch_priv *priv, u16 mst_slot)
  *
  * Return: allocated slot (with increased reference count) or negative encoded error value
  */
-static int rtldsa_mst_replace(struct rtl838x_switch_priv *priv, u16 msti, u16 old_mst_slot)
+int rtldsa_mst_replace(struct rtl838x_switch_priv *priv, u16 msti, u16 old_mst_slot)
 			      __must_hold(&priv->reg_mutex)
 {
 	int mst_slot_new;
@@ -1533,197 +1486,6 @@ static int rtldsa_port_mst_state_set(struct dsa_switch *ds, int port,
 	return 0;
 }
 
-static int rtldsa_vlan_filtering(struct dsa_switch *ds, int port,
-				 bool vlan_filtering,
-				 struct netlink_ext_ack *extack)
-{
-	struct rtl838x_switch_priv *priv = ds->priv;
-
-	pr_debug("%s: port %d\n", __func__, port);
-	mutex_lock(&priv->reg_mutex);
-
-	if (vlan_filtering) {
-		/* Enable ingress and egress filtering
-		 * The VLAN_PORT_IGR_FILTER register uses 2 bits for each port to define
-		 * the filter action:
-		 * 0: Always Forward
-		 * 1: Drop packet
-		 * 2: Trap packet to CPU port
-		 * The Egress filter used 1 bit per state (0: DISABLED, 1: ENABLED)
-		 */
-		if (port != priv->r->cpu_port) {
-			priv->r->set_vlan_igr_filter(port, IGR_DROP);
-			priv->r->set_vlan_egr_filter(port, EGR_ENABLE);
-		} else {
-			priv->r->set_vlan_igr_filter(port, IGR_TRAP);
-			priv->r->set_vlan_egr_filter(port, EGR_DISABLE);
-		}
-
-	} else {
-		/* Disable ingress and egress filtering */
-		if (port != priv->r->cpu_port)
-			priv->r->set_vlan_igr_filter(port, IGR_FORWARD);
-
-		priv->r->set_vlan_egr_filter(port, EGR_DISABLE);
-	}
-
-	/* Do we need to do something to the CPU-Port, too? */
-	mutex_unlock(&priv->reg_mutex);
-
-	return 0;
-}
-
-static int rtldsa_vlan_prepare(struct dsa_switch *ds, int port,
-			       const struct switchdev_obj_port_vlan *vlan)
-{
-	struct rtldsa_vlan_info info;
-	struct rtl838x_switch_priv *priv = ds->priv;
-
-	priv->r->vlan_tables_read(0, &info);
-
-	pr_debug("VLAN 0: Member ports %llx, untag %llx, profile %d, MC# %d, UC# %d, FID %x\n",
-		 info.member_ports, info.untagged_ports, info.profile_id,
-		 info.hash_mc_fid, info.hash_uc_fid, info.fid);
-
-	priv->r->vlan_tables_read(1, &info);
-	pr_debug("VLAN 1: Member ports %llx, untag %llx, profile %d, MC# %d, UC# %d, FID %x\n",
-		 info.member_ports, info.untagged_ports, info.profile_id,
-		 info.hash_mc_fid, info.hash_uc_fid, info.fid);
-	priv->r->vlan_set_untagged(1, info.untagged_ports);
-	pr_debug("SET: Untagged ports, VLAN %d: %llx\n", 1, info.untagged_ports);
-
-	priv->r->vlan_set_tagged(1, &info);
-	pr_debug("SET: Member ports, VLAN %d: %llx\n", 1, info.member_ports);
-
-	return 0;
-}
-
-static int rtldsa_vlan_add(struct dsa_switch *ds, int port,
-			   const struct switchdev_obj_port_vlan *vlan,
-			   struct netlink_ext_ack *extack)
-{
-	struct rtldsa_vlan_info info;
-	struct rtl838x_switch_priv *priv = ds->priv;
-	int err;
-
-	pr_debug("%s port %d, vid %d, flags %x\n",
-		 __func__, port, vlan->vid, vlan->flags);
-
-	/* Let no one mess with our special VLAN 0 */
-	if (!vlan->vid)
-		return 0;
-
-	if (vlan->vid >= MAX_VLANS) {
-		dev_err(priv->dev, "VLAN out of range: %d", vlan->vid);
-		return -ENOTSUPP;
-	}
-
-	err = rtldsa_vlan_prepare(ds, port, vlan);
-	if (err)
-		return err;
-
-	mutex_lock(&priv->reg_mutex);
-
-	/*
-	 * Realtek switches copy frames as-is to/from the CPU. For a proper
-	 * VLAN handling the 12 bit RVID field (= VLAN id) for incoming traffic
-	 * and the 1 bit RVID_SEL field (0 = use inner tag, 1 = use outer tag)
-	 * for outgoing traffic of the CPU tag structure need to be handled. As
-	 * of now no such logic is in place. So for the CPU port keep the fixed
-	 * PVID=0 from initial setup in place and ignore all subsequent settings.
-	 */
-	if (port != priv->r->cpu_port) {
-		if (vlan->flags & BRIDGE_VLAN_INFO_PVID)
-			rtldsa_vlan_set_pvid(priv, port, vlan->vid);
-		else if (priv->ports[port].pvid == vlan->vid)
-			rtldsa_vlan_set_pvid(priv, port, 0);
-	}
-
-	/* Get port memberships of this vlan */
-	priv->r->vlan_tables_read(vlan->vid, &info);
-
-	/* new VLAN? */
-	if (!info.member_ports) {
-		info.fid = 0;
-		info.hash_mc_fid = false;
-		info.hash_uc_fid = false;
-		info.profile_id = 0;
-	}
-
-	/* sanitize untagged_ports - must be a subset */
-	if (info.untagged_ports & ~info.member_ports)
-		info.untagged_ports = 0;
-
-	info.member_ports |= BIT_ULL(port);
-	if (vlan->flags & BRIDGE_VLAN_INFO_UNTAGGED)
-		info.untagged_ports |= BIT_ULL(port);
-	else
-		info.untagged_ports &= ~BIT_ULL(port);
-
-	priv->r->vlan_set_untagged(vlan->vid, info.untagged_ports);
-	pr_debug("Untagged ports, VLAN %d: %llx\n", vlan->vid, info.untagged_ports);
-
-	priv->r->vlan_set_tagged(vlan->vid, &info);
-	pr_debug("Member ports, VLAN %d: %llx\n", vlan->vid, info.member_ports);
-
-	mutex_unlock(&priv->reg_mutex);
-
-	return 0;
-}
-
-static int rtldsa_vlan_del(struct dsa_switch *ds, int port,
-			   const struct switchdev_obj_port_vlan *vlan)
-{
-	struct rtldsa_vlan_info info;
-	struct rtl838x_switch_priv *priv = ds->priv;
-	u16 pvid;
-
-	pr_debug("%s: port %d, vid %d, flags %x\n",
-		 __func__, port, vlan->vid, vlan->flags);
-
-	/* Let no one mess with our special VLAN 0 */
-	if (!vlan->vid)
-		return 0;
-
-	if (vlan->vid >= MAX_VLANS) {
-		dev_err(priv->dev, "VLAN out of range: %d", vlan->vid);
-		return -ENOTSUPP;
-	}
-
-	mutex_lock(&priv->reg_mutex);
-	pvid = priv->ports[port].pvid;
-
-	/* Reset to default if removing the current PVID */
-	if (vlan->vid == pvid)
-		rtldsa_vlan_set_pvid(priv, port, 0);
-
-	/* Get port memberships of this vlan */
-	priv->r->vlan_tables_read(vlan->vid, &info);
-
-	/* remove port from both tables */
-	info.untagged_ports &= (~BIT_ULL(port));
-	info.member_ports &= (~BIT_ULL(port));
-
-	/* VLANs without members are set back (implicitly) to CIST by DSA */
-	if (!info.member_ports) {
-		u16 mst = info.fid;
-
-		info.fid = 0;
-
-		rtldsa_mst_put_slot(priv, mst);
-	}
-
-	priv->r->vlan_set_untagged(vlan->vid, info.untagged_ports);
-	pr_debug("Untagged ports, VLAN %d: %llx\n", vlan->vid, info.untagged_ports);
-
-	priv->r->vlan_set_tagged(vlan->vid, &info);
-	pr_debug("Member ports, VLAN %d: %llx\n", vlan->vid, info.member_ports);
-
-	mutex_unlock(&priv->reg_mutex);
-
-	return 0;
-}
-
 void rtldsa_port_fast_age(struct dsa_switch *ds, int port)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
@@ -1734,46 +1496,6 @@ void rtldsa_port_fast_age(struct dsa_switch *ds, int port)
 	mutex_lock(&priv->reg_mutex);
 	priv->r->fast_age(priv, port, -1);
 	mutex_unlock(&priv->reg_mutex);
-}
-
-static int rtldsa_port_vlan_fast_age(struct dsa_switch *ds, int port, u16 vid)
-{
-	struct rtl838x_switch_priv *priv = ds->priv;
-	int ret;
-
-	if (!priv->r->fast_age)
-		return -EOPNOTSUPP;
-
-	mutex_lock(&priv->reg_mutex);
-	ret = priv->r->fast_age(priv, port, vid);
-	mutex_unlock(&priv->reg_mutex);
-
-	return ret;
-}
-
-static int rtldsa_vlan_msti_set(struct dsa_switch *ds, struct dsa_bridge bridge,
-				const struct switchdev_vlan_msti *msti)
-{
-	struct rtl838x_switch_priv *priv = ds->priv;
-	struct rtldsa_vlan_info info;
-	u16 mst_slot_old;
-	int mst_slot;
-
-	priv->r->vlan_tables_read(msti->vid, &info);
-	mst_slot_old = info.fid;
-
-	/* find HW slot for MSTI */
-	mutex_lock(&priv->reg_mutex);
-	mst_slot = rtldsa_mst_replace(priv, msti->msti, mst_slot_old);
-	mutex_unlock(&priv->reg_mutex);
-
-	if (mst_slot < 0)
-		return mst_slot;
-
-	info.fid = mst_slot;
-	priv->r->vlan_set_tagged(msti->vid, &info);
-
-	return 0;
 }
 
 static void rtldsa_setup_l2_uc_entry(struct rtl838x_l2_entry *e, int port,

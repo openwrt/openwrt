@@ -7,22 +7,8 @@
 #include "l3.h"
 #include "rtl-otto.h"
 #include "tc.h"
+#include "vlan.h"
 
-#define RTL930X_VLAN_PORT_TAG_STS_INTERNAL			0x0
-#define RTL930X_VLAN_PORT_TAG_STS_UNTAG				0x1
-#define RTL930X_VLAN_PORT_TAG_STS_TAGGED			0x2
-#define RTL930X_VLAN_PORT_TAG_STS_PRIORITY_TAGGED		0x3
-
-#define RTL930X_VLAN_PORT_TAG_STS_CTRL_BASE			0xCE24
-/* port 0-28 */
-#define RTL930X_VLAN_PORT_TAG_STS_CTRL(port) \
-	(RTL930X_VLAN_PORT_TAG_STS_CTRL_BASE + (port << 2))
-#define RTL930X_VLAN_PORT_TAG_STS_CTRL_EGR_OTAG_STS_MASK	GENMASK(7, 6)
-#define RTL930X_VLAN_PORT_TAG_STS_CTRL_EGR_ITAG_STS_MASK	GENMASK(5, 4)
-#define RTL930X_VLAN_PORT_TAG_STS_CTRL_EGR_P_OTAG_KEEP_MASK	GENMASK(3, 3)
-#define RTL930X_VLAN_PORT_TAG_STS_CTRL_EGR_P_ITAG_KEEP_MASK	GENMASK(2, 2)
-#define RTL930X_VLAN_PORT_TAG_STS_CTRL_IGR_P_OTAG_KEEP_MASK	GENMASK(1, 1)
-#define RTL930X_VLAN_PORT_TAG_STS_CTRL_IGR_P_ITAG_KEEP_MASK	GENMASK(0, 0)
 
 #define RTL930X_LED_GLB_ACTIVE_LOW				BIT(22)
 #define RTL930X_LED_CLK_SEL_MASK				GENMASK(17, 16)
@@ -281,138 +267,13 @@ static inline int rtl930x_trk_mbr_ctr(int group)
 	return RTL930X_TRK_MBR_CTRL + (group << 2);
 }
 
-static void rtl930x_vlan_tables_read(u32 vlan, struct rtldsa_vlan_info *info)
-{
-	u32 buf[2];
-	u32 v, w;
 
-	otto_table_read(RTL9300_TBL_VLAN, vlan, &buf);
-	v = buf[0];
-	w = buf[1];
-	pr_debug("VLAN_READ %d: %08x %08x\n", vlan, v, w);
 
-	info->member_ports = v >> 3;
-	info->profile_id = (w >> 24) & 7;
-	info->hash_mc_fid = !!(w & BIT(27));
-	info->hash_uc_fid = !!(w & BIT(28));
-	info->fid = ((v & 0x7) << 3) | ((w >> 29) & 0x7);
 
-	otto_table_read(RTL9300_TBL_UNTAG, vlan, &v);
 
-	info->untagged_ports = v >> 3;
-}
-
-static void rtl930x_vlan_set_tagged(u32 vlan, struct rtldsa_vlan_info *info)
-{
-	u32 v, w;
-	u32 buf[2];
-
-	v = info->member_ports << 3;
-	v |= ((u32)info->fid) >> 3;
-
-	w = ((u32)info->fid) << 29;
-	w |= info->hash_mc_fid ? BIT(27) : 0;
-	w |= info->hash_uc_fid ? BIT(28) : 0;
-	w |= info->profile_id << 24;
-
-	buf[0] = v;
-	buf[1] = w;
-	otto_table_write(RTL9300_TBL_VLAN, vlan, &buf);
-}
-
-static int
-rtldsa_930x_vlan_profile_get(int idx, struct rtldsa_vlan_profile *profile)
-{
-	u32 p[5];
-
-	if (idx < 0 || idx > RTL930X_VLAN_PROFILE_MAX)
-		return -EINVAL;
-
-	for (int i = 0; i < 5; i++)
-		p[i] = sw_r32(RTL930X_VLAN_PROFILE_SET(idx) + i * 4);
-
-	*profile = (struct rtldsa_vlan_profile) {
-		.l2_learn = RTL930X_VLAN_L2_LEARN_EN_R(p),
-		.unkn_mc_fld.pmsks = {
-			.l2 = RTL930X_VLAN_L2_UNKN_MC_FLD_PMSK(p),
-			.ip = RTL930X_VLAN_IP4_UNKN_MC_FLD_PMSK(p),
-			.ip6 = RTL930X_VLAN_IP6_UNKN_MC_FLD_PMSK(p),
-		},
-		.pmsk_is_idx = 0,
-		.routing_ipuc = p[0] & BIT(17),
-		.routing_ip6uc = p[0] & BIT(16),
-		.routing_ipmc = p[0] & BIT(13),
-		.routing_ip6mc = p[0] & BIT(12),
-		.bridge_ipmc = p[0] & BIT(15),
-		.bridge_ip6mc = p[0] & BIT(14),
-	};
-
-	return 0;
-}
-
-static void
-rtldsa_930x_vlan_profile_dump(struct rtl838x_switch_priv *priv, int idx)
-{
-	struct rtldsa_vlan_profile p;
-
-	if (rtldsa_930x_vlan_profile_get(idx, &p) < 0)
-		return;
-
-	dev_dbg(priv->dev,
-		"VLAN %d: L2 learn: %d; Unknown MC PMasks: L2 %llx, IPv4 %llx, IPv6: %llx\n"
-		"  Routing enabled: IPv4 UC %c, IPv6 UC %c, IPv4 MC %c, IPv6 MC %c\n"
-		"  Bridge enabled: IPv4 MC %c, IPv6 MC %c\n"
-		"VLAN profile %d: raw %08x %08x %08x %08x %08x\n",
-		idx, p.l2_learn, p.unkn_mc_fld.pmsks.l2,
-		p.unkn_mc_fld.pmsks.ip, p.unkn_mc_fld.pmsks.ip6,
-		p.routing_ipuc ? 'y' : 'n', p.routing_ip6uc ? 'y' : 'n',
-		p.routing_ipmc ? 'y' : 'n', p.routing_ip6mc ? 'y' : 'n',
-		p.bridge_ipmc ? 'y' : 'n', p.bridge_ip6mc ? 'y' : 'n', idx,
-		sw_r32(RTL930X_VLAN_PROFILE_SET(idx)),
-		sw_r32(RTL930X_VLAN_PROFILE_SET(idx) + 4),
-		sw_r32(RTL930X_VLAN_PROFILE_SET(idx) + 8) & 0x1FFFFFFF,
-		sw_r32(RTL930X_VLAN_PROFILE_SET(idx) + 12) & 0x1FFFFFFF,
-		sw_r32(RTL930X_VLAN_PROFILE_SET(idx) + 16) & 0x1FFFFFFF);
-}
-
-static void rtl930x_vlan_set_untagged(u32 vlan, u64 portmask)
-{
-	u32 v = portmask << 3;
-
-	otto_table_write(RTL9300_TBL_UNTAG, vlan, &v);
-}
 
 /* Sets the L2 forwarding to be based on either the inner VLAN tag or the outer */
-static void rtl930x_vlan_fwd_on_inner(int port, bool is_set)
-{
-	/* Always set all tag modes to fwd based on either inner or outer tag */
-	if (is_set)
-		sw_w32_mask(0xf, 0, RTL930X_VLAN_PORT_FWD + (port << 2));
-	else
-		sw_w32_mask(0, 0xf, RTL930X_VLAN_PORT_FWD + (port << 2));
-}
 
-static void rtl930x_vlan_profile_setup(int profile)
-{
-	u32 p[5];
-
-	pr_debug("In %s\n", __func__);
-	p[0] = sw_r32(RTL930X_VLAN_PROFILE_SET(profile));
-	p[1] = sw_r32(RTL930X_VLAN_PROFILE_SET(profile) + 4);
-
-	/* Enable routing of Ipv4/6 Unicast and IPv4/6 Multicast traffic */
-	p[0] |= BIT(17) | BIT(16) | BIT(13) | BIT(12);
-
-	p[2] = RTL930X_VLAN_L2_UNKN_MC_FLD(RTL930X_MC_PMASK_ALL_PORTS);
-	p[3] = RTL930X_VLAN_IP4_UNKN_MC_FLD(RTL930X_MC_PMASK_ALL_PORTS);
-	p[4] = RTL930X_VLAN_IP6_UNKN_MC_FLD(RTL930X_MC_PMASK_ALL_PORTS);
-
-	sw_w32(p[0], RTL930X_VLAN_PROFILE_SET(profile));
-	sw_w32(p[1], RTL930X_VLAN_PROFILE_SET(profile) + 4);
-	sw_w32(p[2], RTL930X_VLAN_PROFILE_SET(profile) + 8);
-	sw_w32(p[3], RTL930X_VLAN_PROFILE_SET(profile) + 12);
-	sw_w32(p[4], RTL930X_VLAN_PROFILE_SET(profile) + 16);
-}
 
 static void rtl930x_l2_learning_setup(void)
 {
@@ -1836,30 +1697,8 @@ static void rtl930x_packet_cntr_clear(struct rtl838x_switch_priv *priv, int coun
 	otto_table_release(tbl);
 }
 
-static void rtl930x_vlan_port_keep_tag_set(int port, bool keep_outer, bool keep_inner)
-{
-	sw_w32(FIELD_PREP(RTL930X_VLAN_PORT_TAG_STS_CTRL_EGR_OTAG_STS_MASK,
-			  keep_outer ? RTL930X_VLAN_PORT_TAG_STS_TAGGED : RTL930X_VLAN_PORT_TAG_STS_UNTAG) |
-	       FIELD_PREP(RTL930X_VLAN_PORT_TAG_STS_CTRL_EGR_ITAG_STS_MASK,
-			  keep_inner ? RTL930X_VLAN_PORT_TAG_STS_TAGGED : RTL930X_VLAN_PORT_TAG_STS_UNTAG),
-	       RTL930X_VLAN_PORT_TAG_STS_CTRL(port));
-}
 
-static void rtl930x_vlan_port_pvidmode_set(int port, enum pbvlan_type type, enum pbvlan_mode mode)
-{
-	if (type == PBVLAN_TYPE_INNER)
-		sw_w32_mask(0x3, mode, RTL930X_VLAN_PORT_PB_VLAN + (port << 2));
-	else
-		sw_w32_mask(0x3 << 14, mode << 14, RTL930X_VLAN_PORT_PB_VLAN + (port << 2));
-}
 
-static void rtl930x_vlan_port_pvid_set(int port, enum pbvlan_type type, int pvid)
-{
-	if (type == PBVLAN_TYPE_INNER)
-		sw_w32_mask(0xfff << 2, pvid << 2, RTL930X_VLAN_PORT_PB_VLAN + (port << 2));
-	else
-		sw_w32_mask(0xfff << 16, pvid << 16, RTL930X_VLAN_PORT_PB_VLAN + (port << 2));
-}
 
 static int rtldsa_930x_fast_age(struct rtl838x_switch_priv *priv, int port, int vid)
 {

@@ -7,22 +7,8 @@
 
 #include "l3.h"
 #include "rtl-otto.h"
+#include "vlan.h"
 
-#define RTL838X_VLAN_PORT_TAG_STS_UNTAG				0x0
-#define RTL838X_VLAN_PORT_TAG_STS_TAGGED			0x1
-#define RTL838X_VLAN_PORT_TAG_STS_PRIORITY_TAGGED		0x2
-
-#define RTL838X_VLAN_PORT_TAG_STS_CTRL_BASE			0xA530
-/* port 0-28 */
-#define RTL838X_VLAN_PORT_TAG_STS_CTRL(port) \
-	(RTL838X_VLAN_PORT_TAG_STS_CTRL_BASE + (port << 2))
-
-#define RTL838X_VLAN_PORT_TAG_STS_CTRL_EGR_P_OTAG_KEEP_MASK	GENMASK(11, 10)
-#define RTL838X_VLAN_PORT_TAG_STS_CTRL_EGR_P_ITAG_KEEP_MASK	GENMASK(9, 8)
-#define RTL838X_VLAN_PORT_TAG_STS_CTRL_IGR_P_OTAG_KEEP_MASK	GENMASK(7, 6)
-#define RTL838X_VLAN_PORT_TAG_STS_CTRL_IGR_P_ITAG_KEEP_MASK	GENMASK(5, 4)
-#define RTL838X_VLAN_PORT_TAG_STS_CTRL_OTAG_STS_MASK		GENMASK(3, 2)
-#define RTL838X_VLAN_PORT_TAG_STS_CTRL_ITAG_STS_MASK		GENMASK(1, 0)
 
 /* see_dal_maple_acl_log2PhyTmplteField and src/app/diag_v2/src/diag_acl.c */
 /* Definition of the RTL838X-specific template field IDs as used in the PIE */
@@ -206,60 +192,11 @@ static inline int rtl838x_port_iso_ctrl(int p)
 	return RTL838X_PORT_ISO_CTRL(p);
 }
 
-static void rtl838x_vlan_tables_read(u32 vlan, struct rtldsa_vlan_info *info)
-{
-	u32 buf[2];
-	u32 untag;
-	u32 v;
 
-	otto_table_read(RTL8380_TBL_VLAN, vlan, &buf);
-	info->member_ports = buf[0];
-	v = buf[1];
-	pr_debug("VLAN_READ %d: %016llx %08x\n", vlan, info->member_ports, v);
 
-	info->profile_id = v & 0x7;
-	info->hash_mc_fid = !!(v & 0x8);
-	info->hash_uc_fid = !!(v & 0x10);
-	info->fid = (v >> 5) & 0x3f;
-
-	otto_table_read(RTL8380_TBL_UNTAG, vlan, &untag);
-	info->untagged_ports = untag;
-}
-
-static void rtl838x_vlan_set_tagged(u32 vlan, struct rtldsa_vlan_info *info)
-{
-	u32 buf[2];
-	u32 v;
-
-	buf[0] = info->member_ports;
-
-	v = info->profile_id;
-	v |= info->hash_mc_fid ? 0x8 : 0;
-	v |= info->hash_uc_fid ? 0x10 : 0;
-	v |= ((u32)info->fid) << 5;
-	buf[1] = v;
-
-	otto_table_write(RTL8380_TBL_VLAN, vlan, &buf);
-}
-
-static void rtl838x_vlan_set_untagged(u32 vlan, u64 portmask)
-{
-	u32 buf[1];
-
-	buf[0] = portmask & RTL838X_MC_PMASK_ALL_PORTS;
-
-	otto_table_write(RTL8380_TBL_UNTAG, vlan, &buf);
-}
 
 /* Sets the L2 forwarding to be based on either the inner VLAN tag or the outer
  */
-static void rtl838x_vlan_fwd_on_inner(int port, bool is_set)
-{
-	if (is_set)
-		sw_w32_mask(BIT(port), 0, RTL838X_VLAN_PORT_FWD);
-	else
-		sw_w32_mask(0, BIT(port), RTL838X_VLAN_PORT_FWD);
-}
 
 static u64 rtl838x_l2_hash_seed(u64 mac, u32 vid)
 {
@@ -520,38 +457,7 @@ static void rtl838x_write_mcast_pmask(int idx, u64 portmask)
 	otto_table_write(RTL8380_TBL_MC_PMSK, idx, &buf);
 }
 
-static int
-rtldsa_838x_vlan_profile_get(int idx, struct rtldsa_vlan_profile *profile)
-{
-	u32 p;
 
-	if (idx < 0 || idx > RTL838X_VLAN_PROFILE_MAX)
-		return -EINVAL;
-
-	p = sw_r32(RTL838X_VLAN_PROFILE(idx));
-
-	*profile = (struct rtldsa_vlan_profile) {
-		.l2_learn = RTL838X_VLAN_L2_LEARN_EN_R(p),
-		.unkn_mc_fld.pmsks_idx = {
-			.l2 = RTL838X_VLAN_L2_UNKN_MC_FLD_PMSK(p),
-			.ip = RTL838X_VLAN_IP4_UNKN_MC_FLD_PMSK(p),
-			.ip6 = RTL838X_VLAN_IP6_UNKN_MC_FLD_PMSK(p),
-		},
-		.pmsk_is_idx = 1,
-	};
-
-	return 0;
-}
-
-static void rtl838x_vlan_profile_setup(int profile)
-{
-	u32 p = RTL838X_VLAN_L2_LEARN_EN(1) |
-		RTL838X_VLAN_L2_UNKN_MC_FLD(MC_PMASK_ALL_PORTS_IDX) |
-		RTL838X_VLAN_IP4_UNKN_MC_FLD(MC_PMASK_ALL_PORTS_IDX) |
-		RTL838X_VLAN_IP6_UNKN_MC_FLD(MC_PMASK_ALL_PORTS_IDX);
-
-	sw_w32(p, RTL838X_VLAN_PROFILE(profile));
-}
 
 static void rtl838x_l2_learning_setup(void)
 {
@@ -1611,30 +1517,8 @@ static void rtl838x_packet_cntr_clear(struct rtl838x_switch_priv *priv, int coun
 	otto_table_release(tbl);
 }
 
-static void rtl838x_vlan_port_keep_tag_set(int port, bool keep_outer, bool keep_inner)
-{
-	sw_w32(FIELD_PREP(RTL838X_VLAN_PORT_TAG_STS_CTRL_OTAG_STS_MASK,
-			  keep_outer ? RTL838X_VLAN_PORT_TAG_STS_TAGGED : RTL838X_VLAN_PORT_TAG_STS_UNTAG) |
-	       FIELD_PREP(RTL838X_VLAN_PORT_TAG_STS_CTRL_ITAG_STS_MASK,
-			  keep_inner ? RTL838X_VLAN_PORT_TAG_STS_TAGGED : RTL838X_VLAN_PORT_TAG_STS_UNTAG),
-	       RTL838X_VLAN_PORT_TAG_STS_CTRL(port));
-}
 
-static void rtl838x_vlan_port_pvidmode_set(int port, enum pbvlan_type type, enum pbvlan_mode mode)
-{
-	if (type == PBVLAN_TYPE_INNER)
-		sw_w32_mask(0x3, mode, RTL838X_VLAN_PORT_PB_VLAN + (port << 2));
-	else
-		sw_w32_mask(0x3 << 14, mode << 14, RTL838X_VLAN_PORT_PB_VLAN + (port << 2));
-}
 
-static void rtl838x_vlan_port_pvid_set(int port, enum pbvlan_type type, int pvid)
-{
-	if (type == PBVLAN_TYPE_INNER)
-		sw_w32_mask(0xfff << 2, pvid << 2, RTL838X_VLAN_PORT_PB_VLAN + (port << 2));
-	else
-		sw_w32_mask(0xfff << 16, pvid << 16, RTL838X_VLAN_PORT_PB_VLAN + (port << 2));
-}
 
 static int rtldsa_838x_fast_age(struct rtl838x_switch_priv *priv, int port, int vid)
 {
@@ -1708,19 +1592,6 @@ static void rtl838x_set_receive_management_action(int port, rma_ctrl_t type, act
 	}
 }
 
-static void
-rtldsa_838x_vlan_profile_dump(struct rtl838x_switch_priv *priv, int idx)
-{
-	struct rtldsa_vlan_profile p;
-
-	if (rtldsa_838x_vlan_profile_get(idx, &p) < 0)
-		return;
-
-	dev_dbg(priv->dev,
-		"VLAN profile %d: L2 learning: %d, UNKN L2MC FLD PMSK %d, UNKN IPMC FLD PMSK %d, UNKN IPv6MC FLD PMSK: %d\n", idx,
-		p.l2_learn, p.unkn_mc_fld.pmsks_idx.l2,
-		p.unkn_mc_fld.pmsks_idx.ip, p.unkn_mc_fld.pmsks_idx.ip6);
-}
 
 static int rtldsa_838x_lag_set_port_members(struct rtl838x_switch_priv *priv, int group,
 					    u64 members, struct netdev_lag_upper_info *info)
