@@ -141,7 +141,9 @@ ifneq ($(CONFIG_USE_APK),)
 			--output packages.adb \
 			*.apk; \
 		$(STAGING_DIR_HOST)/bin/apk adbdump --format json packages.adb | \
-			$(SCRIPT_DIR)/make-index-json.py -f apk -a "$(ARCH_PACKAGES)" - > index.json; \
+			$(SCRIPT_DIR)/make-index-json.py -f apk -a "$(ARCH_PACKAGES)" \
+				-t "$(BOARD)$(if $(SUBTARGET),/$(SUBTARGET))" \
+				- > index.json; \
 	done
 ifdef CONFIG_JSON_CYCLONEDX_SBOM
 	@echo Creating CycloneDX package SBOMs...
@@ -163,7 +165,9 @@ else
 			$(call ERROR_MESSAGE,WARNING: Applying padding in $$d/Packages to workaround usign SHA-512 bug!); \
 			{ echo ""; echo ""; } >> Packages;; \
 		esac; \
-		$(SCRIPT_DIR)/make-index-json.py -f opkg -a "$(ARCH_PACKAGES)" Packages > index.json; \
+		$(SCRIPT_DIR)/make-index-json.py -f opkg -a "$(ARCH_PACKAGES)" \
+			-t "$(BOARD)$(if $(SUBTARGET),/$(SUBTARGET))" \
+			Packages > index.json; \
 		gzip -9nc Packages > Packages.gz; \
 	); done
 ifdef CONFIG_SIGNED_PACKAGES
