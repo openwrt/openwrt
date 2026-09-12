@@ -107,8 +107,8 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  module_phy_driver(as21xxx_drivers);
 --- a/drivers/net/phy/phy_device.c
 +++ b/drivers/net/phy/phy_device.c
-@@ -1680,7 +1680,8 @@ static void phy_detach_internal(struct p
- 	}
+@@ -1685,7 +1685,8 @@ static void phy_detach_internal(struct p
+ 	phydev->irq = phydev->mdio.bus->irq[phydev->mdio.addr];
  
  	/* Assert the reset signal */
 -	phy_device_reset(phydev, 1);

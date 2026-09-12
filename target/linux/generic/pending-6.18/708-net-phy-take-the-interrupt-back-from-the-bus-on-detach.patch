@@ -1,0 +1,46 @@
+From: Aleksei Sviridkin <f@lex.la>
+Subject: [PATCH] net: phy: take the interrupt back from the bus on detach
+
+A PHY whose own driver is a module on a filesystem that is not mounted
+when the MAC probes gets the generic driver first. phy_probe() replaces
+phydev->irq with PHY_POLL because that driver has no interrupt support,
+nothing puts it back, and the PHY polls for the rest of the uptime once
+its real driver takes over.
+
+Take the number back in phy_detach(), from mdiobus->irq[], which is
+where phy_device_create() seeded phydev->irq from and where the bus that
+described the interrupt still holds it. Detach is the end of every bind
+cycle, so this covers the two substitutions phy_attach_direct() makes as
+well as the one in phy_probe(), without any of them having to record
+anything.
+
+Doing it here rather than from phy_remove() keeps a single writer on the
+rtnl side. phy_attach_direct() is what reads the number back and decides
+whether to request an interrupt, and it holds no lock against the driver
+core, so a restore driven by an unbind would be racing that decision
+rather than ordered against it.
+
+A bus whose driver writes only phydev->irq and never the table is not
+covered, because the table then holds PHY_POLL and there is nothing to
+take back; lan78xx, smsc95xx and sxgbe are in that position today and
+registering the interrupt with the bus is theirs to do.
+
+Submitted upstream: https://lore.kernel.org/netdev/20260909204306.2374562-3-f@lex.la/
+
+Assisted-by: LLM
+Signed-off-by: Aleksei Sviridkin <f@lex.la>
+---
+--- a/drivers/net/phy/phy_device.c
++++ b/drivers/net/phy/phy_device.c
+@@ -1679,6 +1679,11 @@ static void phy_detach_internal(struct p
+ 		phydev->is_genphy_driven = 0;
+ 	}
+ 
++	/* Whatever this attachment did to the interrupt, the bus that
++	 * described it still knows the number. Take it back from there.
++	 */
++	phydev->irq = phydev->mdio.bus->irq[phydev->mdio.addr];
++
+ 	/* Assert the reset signal */
+ 	phy_device_reset(phydev, 1);
+ 
