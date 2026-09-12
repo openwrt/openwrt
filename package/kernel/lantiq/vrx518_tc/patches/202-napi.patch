@@ -358,13 +358,17 @@
  #ifdef CONFIG_SOC_TYPE_XWAY
      if (ppa_drv_datapath_mac_entry_setting)
          ppa_drv_datapath_mac_entry_setting(dev->dev_addr, 0, 6, 10, 1, 2);
-@@ -562,7 +570,7 @@ static void ptm_rx(struct net_device *de
- 	ptm_tc->stats64.rx_packets++;
- 	ptm_tc->stats64.rx_bytes += skb->len;
- 
+@@ -562,7 +570,9 @@ static void ptm_rx(struct net_device *de
+-	ptm_tc->stats64.rx_packets++;
+-	ptm_tc->stats64.rx_bytes += skb->len;
+-
 -	if (netif_rx(skb) == NET_RX_DROP)
-+	if (netif_receive_skb(skb) == NET_RX_DROP)
- 		ptm_tc->stats64.rx_dropped++;
++	LIST_HEAD(rx_list);
++
++	ptm_tc->stats64.rx_packets++;
++	ptm_tc->stats64.rx_bytes += skb->len;
++	list_add_tail(&skb->list, &rx_list);
++	netif_receive_skb_list(&rx_list);
  
  	return;
 @@ -662,6 +670,9 @@ static int ptm_dev_init(struct tc_priv *
