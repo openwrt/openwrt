@@ -1,0 +1,203 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sat, 12 Sep 2026 22:40:00 +0200
+Subject: [PATCH] netfilter: flowtable: count the fast path on the interfaces it skips
+
+The fast path receives a flow on the device under a bridge, VLAN, PPP
+or tunnel interface and transmits on the device under them with the
+encapsulation pushed by itself, so the statistics of the interfaces
+above stop moving for every offloaded flow: a router with the
+flowtable on its switch ports shows megabytes on br-lan for gigabytes
+on wan.
+
+Record the interfaces above the ingress device from the forward path
+and update their counters from the fast path: on receive with the
+packet as the interface would have delivered it, on transmit with the
+frame handed to the device it is sent on. The bridge, ppp and the
+tunnels keep their statistics in the per-cpu tstats, a VLAN interface
+in its own per-cpu block.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+Assisted-by: Claude:claude-fable-5-1
+--- a/include/net/netfilter/nf_flow_table.h
++++ b/include/net/netfilter/nf_flow_table.h
+@@ -106,6 +106,8 @@ enum flow_offload_xmit_type {
+ };
+ 
+ #define NF_FLOW_TABLE_ENCAP_MAX		2
++/* The forward path less the device the flow enters on. */
++#define NF_FLOW_TABLE_UPPER_MAX		(NET_DEVICE_PATH_STACK_MAX - 1)
+ 
+ struct flow_offload_tuple {
+ 	union {
+@@ -136,8 +138,10 @@ struct flow_offload_tuple {
+ 	u8				dir:2,
+ 					xmit_type:3,
+ 					encap_num:2,
+-					in_vlan_ingress:2;
++					in_vlan_ingress:2,
++					num_uppers:3;
+ 	u16				mtu;
++	u32				upper_ifidx[NF_FLOW_TABLE_UPPER_MAX];
+ 	union {
+ 		struct {
+ 			struct dst_entry *dst_cache;
+@@ -210,6 +214,8 @@ struct nf_flow_route {
+ 			} encap[NF_FLOW_TABLE_ENCAP_MAX];
+ 			u8			num_encaps:2,
+ 						ingress_vlans:2;
++			u32			upper_ifidx[NF_FLOW_TABLE_UPPER_MAX];
++			u8			num_uppers;
+ 		} in;
+ 		struct {
+ 			u32			ifindex;
+--- a/net/netfilter/nf_flow_table_core.c
++++ b/net/netfilter/nf_flow_table_core.c
+@@ -119,6 +119,9 @@ static int flow_offload_fill_route(struc
+ 		j++;
+ 	}
+ 	flow_tuple->encap_num = route->tuple[dir].in.num_encaps;
++	memcpy(flow_tuple->upper_ifidx, route->tuple[dir].in.upper_ifidx,
++	       sizeof(flow_tuple->upper_ifidx));
++	flow_tuple->num_uppers = route->tuple[dir].in.num_uppers;
+ 
+ 	switch (route->tuple[dir].xmit_type) {
+ 	case FLOW_OFFLOAD_XMIT_DIRECT:
+--- a/net/netfilter/nf_flow_table_ip.c
++++ b/net/netfilter/nf_flow_table_ip.c
+@@ -8,6 +8,7 @@
+ #include <linux/ipv6.h>
+ #include <linux/netdevice.h>
+ #include <linux/if_ether.h>
++#include <linux/if_vlan.h>
+ #include <net/gso.h>
+ #include <net/ip.h>
+ #include <net/ipv6.h>
+@@ -334,10 +335,51 @@ static void nf_flow_encap_pop(struct sk_
+ 	}
+ }
+ 
++/* The fast path takes a packet off the device under a bridge, VLAN or PPP
++ * interface and puts it back on the path below them, so those interfaces
++ * never see it. Their counters get it anyway: on the way in as the packet
++ * the interface would have delivered, on the way out as the frame handed
++ * to the device it is sent on. The devices below that one count for
++ * themselves.
++ */
++static void nf_flow_upper_stats_add(struct net *net,
++				    const struct flow_offload_tuple *tuple,
++				    u32 xmit_ifidx, unsigned int len)
++{
++	bool rx = !xmit_ifidx;
++	struct net_device *dev;
++	int i;
++
++	for (i = 0; i < tuple->num_uppers; i++) {
++		if (tuple->upper_ifidx[i] == xmit_ifidx)
++			break;
++
++		dev = dev_get_by_index_rcu(net, tuple->upper_ifidx[i]);
++		if (!dev)
++			continue;
++
++		if (is_vlan_dev(dev)) {
++			struct vlan_pcpu_stats *s;
++
++			s = this_cpu_ptr(vlan_dev_priv(dev)->vlan_pcpu_stats);
++			u64_stats_update_begin(&s->syncp);
++			u64_stats_inc(rx ? &s->rx_packets : &s->tx_packets);
++			u64_stats_add(rx ? &s->rx_bytes : &s->tx_bytes, len);
++			u64_stats_update_end(&s->syncp);
++		} else if (dev->pcpu_stat_type == NETDEV_PCPU_STAT_TSTATS) {
++			if (rx)
++				dev_sw_netstats_rx_add(dev, len);
++			else
++				dev_sw_netstats_tx_add(dev, 1, len);
++		}
++	}
++}
++
+ struct nf_flow_xmit {
+ 	const void		*dest;
+ 	const void		*source;
+ 	struct net_device	*outdev;
++	const struct flow_offload_tuple *in_tuple;
+ };
+ 
+ static unsigned int nf_flow_queue_xmit(struct net *net, struct sk_buff *skb,
+@@ -355,6 +397,8 @@ static unsigned int nf_flow_queue_xmit(s
+ 	skb->dev = dev;
+ 	dev_hard_header(skb, dev, ntohs(skb->protocol),
+ 			xmit->dest, xmit->source, skb->len);
++	if (xmit->in_tuple)
++		nf_flow_upper_stats_add(net, xmit->in_tuple, dev->ifindex, skb->len);
+ 	dev_queue_xmit(skb);
+ 
+ 	return NF_STOLEN;
+@@ -446,6 +490,9 @@ static int nf_flow_offload_forward(struc
+ 	if (flow_table->flags & NF_FLOWTABLE_COUNTER)
+ 		nf_ct_acct_update(flow->ct, tuplehash->tuple.dir, skb->len);
+ 
++	nf_flow_upper_stats_add(dev_net(ctx->in), &tuplehash->tuple, 0,
++				skb->len);
++
+ 	return 1;
+ }
+ 
+@@ -511,6 +558,7 @@ nf_flow_offload_ip_hook(void *priv, stru
+ 		}
+ 		xmit.dest = tuplehash->tuple.out.h_dest;
+ 		xmit.source = tuplehash->tuple.out.h_source;
++		xmit.in_tuple = &flow->tuplehash[!dir].tuple;
+ 		break;
+ 	default:
+ 		WARN_ON_ONCE(1);
+@@ -740,6 +788,9 @@ static int nf_flow_offload_ipv6_forward(
+ 	if (flow_table->flags & NF_FLOWTABLE_COUNTER)
+ 		nf_ct_acct_update(flow->ct, tuplehash->tuple.dir, skb->len);
+ 
++	nf_flow_upper_stats_add(dev_net(ctx->in), &tuplehash->tuple, 0,
++				skb->len);
++
+ 	return 1;
+ }
+ 
+@@ -822,6 +873,7 @@ nf_flow_offload_ipv6_hook(void *priv, st
+ 		}
+ 		xmit.dest = tuplehash->tuple.out.h_dest;
+ 		xmit.source = tuplehash->tuple.out.h_source;
++		xmit.in_tuple = &flow->tuplehash[!dir].tuple;
+ 		break;
+ 	default:
+ 		WARN_ON_ONCE(1);
+--- a/net/netfilter/nf_flow_table_path.c
++++ b/net/netfilter/nf_flow_table_path.c
+@@ -78,6 +78,8 @@ struct nft_forward_info {
+ 	const struct net_device *indev;
+ 	const struct net_device *outdev;
+ 	const struct net_device *hw_outdev;
++	const struct net_device *uppers[NF_FLOW_TABLE_UPPER_MAX];
++	u8 num_uppers;
+ 	struct id {
+ 		__u16	id;
+ 		__be16	proto;
+@@ -167,6 +169,10 @@ static void nft_dev_path_info(const stru
+ 
+ 	info->hw_outdev = info->indev;
+ 
++	for (i = 0; info->indev && stack->path[i].dev != info->indev; i++)
++		info->uppers[i] = stack->path[i].dev;
++	info->num_uppers = i;
++
+ 	if (nf_flowtable_hw_offload(flowtable) &&
+ 	    nft_is_valid_ether_device(info->indev))
+ 		info->xmit_type = FLOW_OFFLOAD_XMIT_DIRECT;
+@@ -218,6 +224,9 @@ static void nft_dev_forward_path(struct
+ 	}
+ 	route->tuple[!dir].in.num_encaps = info.num_encaps;
+ 	route->tuple[!dir].in.ingress_vlans = info.ingress_vlans;
++	for (i = 0; i < info.num_uppers; i++)
++		route->tuple[!dir].in.upper_ifidx[i] = info.uppers[i]->ifindex;
++	route->tuple[!dir].in.num_uppers = info.num_uppers;
+ 
+ 	if (info.xmit_type == FLOW_OFFLOAD_XMIT_DIRECT) {
+ 		memcpy(route->tuple[dir].out.h_source, info.h_source, ETH_ALEN);
