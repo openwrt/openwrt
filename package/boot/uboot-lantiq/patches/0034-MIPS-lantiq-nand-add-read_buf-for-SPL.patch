@@ -1,0 +1,49 @@
+From: bYHexadecimal <byhexadecimal@users.noreply.github.com>
+Date: Tue, 4 Feb 2026 00:00:00 +0000
+Subject: MIPS: lantiq: nand: add read_buf for SPL
+
+The SPL NAND driver (nand_spl_simple.c) calls nand->read_buf() to read
+page data and OOB during nand_read_page(). Unlike the full U-Boot which
+sets up default function pointers in nand_base.c:nand_set_defaults(),
+the SPL does not compile nand_base.c and relies on board_nand_init() to
+provide all required callbacks.
+
+The Lantiq NAND driver does not set nand->read_buf, leaving it as NULL.
+This causes a null pointer dereference crash when the SPL attempts to
+read from NAND, which manifests as a boot loop on devices using NAND SPL
+boot (e.g. ZyXEL P-2812HNU-F1).
+
+Add ltq_nand_read_buf() which performs byte-by-byte reads from the NAND
+I/O address, matching the default nand_read_buf() from nand_base.c.
+
+Signed-off-by: bYHexadecimal <byhexadecimal@users.noreply.github.com>
+---
+ drivers/mtd/nand/lantiq_nand.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+--- a/drivers/mtd/nand/lantiq_nand.c	2026-02-04 14:40:14.959275037 +0300
++++ b/drivers/mtd/nand/lantiq_nand.c	2026-02-04 14:40:34.675368423 +0300
+@@ -62,6 +62,15 @@
+ 	return data & NAND_WAIT_RDBY;
+ }
+ 
++static void ltq_nand_read_buf(struct mtd_info *mtd, uint8_t *buf, int len)
++{
++	struct nand_chip *chip = mtd->priv;
++	int i;
++
++	for (i = 0; i < len; i++)
++		buf[i] = readb(chip->IO_ADDR_R);
++}
++
+ static void ltq_nand_select_chip(struct mtd_info *mtd, int chip)
+ {
+ 	if (chip == 0) {
+@@ -108,6 +117,7 @@
+ 	nand->dev_ready = ltq_nand_dev_ready;
+ 	nand->select_chip = ltq_nand_select_chip;
+ 	nand->cmd_ctrl = ltq_nand_cmd_ctrl;
++	nand->read_buf = ltq_nand_read_buf;
+ 
+ 	nand->chip_delay = 30;
+ 	nand->options = 0;

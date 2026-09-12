@@ -290,8 +290,8 @@ define U-Boot/p2812hnufx_nandspl
   NAME:=Zyxel P-2812HNU-Fx (NAND SPL)
   BUILD_SUBTARGET:=xrx200
   BUILD_DEVICES:=zyxel_p-2812hnu-f1
-  UBOOT_IMAGE:=u-boot.ltq.lzo.nandspl
-  DEPENDS+=@BROKEN
+  UBOOT_IMAGE:=u-boot.ltq.nandtpl
+  NAND_BOOTSTRAP:=p2812hnufx_nand_bootstrap.bin
 endef
 
 define U-Boot/vgv7510kw22_brn
@@ -383,8 +383,16 @@ define Package/u-boot/install/uart
 		$(1)/u-boot.asc
 endef
 
+define Package/u-boot/install/nandtpl
+	$(TOPDIR)/package/boot/uboot-lantiq/files/create_nandtpl.sh \
+		$(TOPDIR)/package/boot/uboot-lantiq/files/$(NAND_BOOTSTRAP) \
+		$(PKG_BUILD_DIR)/spl/u-boot-spl.bin \
+		$(PKG_BUILD_DIR)/u-boot.lzo.img \
+		$(1)/u-boot.ltq.nandtpl
+endef
+
 define Package/u-boot/install
-	$(Package/u-boot/install/$(if $(DDR_SETTINGS),uart,default))
+	$(Package/u-boot/install/$(if $(DDR_SETTINGS),uart,$(if $(NAND_BOOTSTRAP),nandtpl,default)))
 endef
 
 $(eval $(call BuildPackage/U-Boot))
