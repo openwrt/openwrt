@@ -1,0 +1,295 @@
+From 88af859f94c01c24336337a37754620243c134e4 Mon Sep 17 00:00:00 2001
+From: Yubo Zhang <zyb_1998@outlook.com>
+Date: Tue, 14 Jul 2026 11:29:43 +0800
+Subject: [PATCH] an7583: add support for VSOL AN7583 ONUs
+
+Add a shared U-Boot config for the VSOL V2901Q-A and V2902A-S devices
+based on the Airoha AN7583 SoC. Both models use the same bootloader
+config and partition layout, and keep aligned with the stock firmware.
+
+Partition and image
+-------------------
+Partitions
+- bootloader (tcboot.bin): payload/crc needed by BL2 but not BL31
+- tclinux (tclinux.bin): UBI image containing the fip/fit volumes
+- tclinux_slave (tclinux.bin): Identical to tclinux and used for backup
+- rootfs_data: Independent UBI partition used for OpenWrt overlay
+
+tcboot.bin
+- 0x00000-0x007ff: padding with 0x0
+- 0x00800-0x1ffff: BL2 FIP, padding with 0xff
+- 0x20000-0x7bffb: BL31 + U-Boot FIP padding with 0xff, normally unused
+- 0x7bffc-0x7bfff: CRC checksum from 0x00000 to 0x7bffc
+- 0x7c000-0x7ffff: padding with 0xff
+
+tclinux.bin
+UBI volume 0 (fip):
+- BL31 + U-Boot FIP
+UBI volume 1 (fit):
+- Linux FIT
+  - LZMA Linux kernel
+  - AN7583 DTB
+  - squashfs rootfs
+
+Since the name and offset of partitions and images are designed to be the
+same as stock firmware, switching to OpenWrt or back to stock will be
+less difficult.
+
+Boot flow
+---------
+AN7583 Boot ROM -> BL2 -> FIP -> BL31 -> U-Boot -> FIT -> Linux
+|      tcboot.bin       |             tclinux.bin             |
+
+If booting from the tclinux partition fails, tclinux_slave will be used
+for backup. These A/B partitions could also be manually selected by
+command `run boot_tclinux` and `run boot_tclinux_slave` in U-Boot.
+
+The tcboot.bin is shared by both models. The initramfs and tclinux images
+contain model-specific DTBs and must not be mixed. Rename the images for
+the target model to these names before using tftpboot or upgrade commands:
+- initramfs-uImage.itb
+- tcboot.bin
+- tclinux.bin
+
+To upgrade bootloader and firmware in U-Boot, use the command:
+`run upgrade_tcboot` and `run upgrade_tclinux`.
+
+Known limits
+------------
+- U-Boot network access is available only through the internal switch.
+- Persistent U-Boot environment (saveenv) is not supported.
+- The automatic adaptation of 64/128/256 MiB flash like stock firmware is
+  not implemented. Only the fixed 128M partition layout is supported now.
+- The bootflag based A/B partition switch logic is not implemented.
+
+Signed-off-by: Yubo Zhang <zyb_1998@outlook.com>
+---
+ arch/arm/dts/an7583-vsol.dts  | 106 ++++++++++++++++++++++++++++++++++++++++++
+ configs/an7583_vsol_defconfig | 87 ++++++++++++++++++++++++++++++++++++
+ defenvs/an7583_vsol_env       | 16 +++++++
+ 3 files changed, 209 insertions(+)
+ create mode 100644 arch/arm/dts/an7583-vsol.dts
+ create mode 100644 configs/an7583_vsol_defconfig
+ create mode 100644 defenvs/an7583_vsol_env
+
+--- /dev/null
++++ b/arch/arm/dts/an7583-vsol.dts
+@@ -0,0 +1,106 @@
++// SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++/dts-v1/;
++
++/* Bootloader installs ATF here */
++/memreserve/ 0x80000000 0x200000;
++
++#include <dt-bindings/gpio/gpio.h>
++#include "an7583.dtsi"
++
++/ {
++	model = "VSOL V2901Q-A / V2902A-S";
++	compatible = "vsol,v2901q-a", "vsol,v2902a-s", "airoha,an7583", "airoha,en7583";
++
++	aliases {
++		serial0 = &uart1;
++	};
++
++	chosen {
++		bootargs = "console=ttyS0,115200 earlycon";
++		stdout-path = "serial0:115200n8";
++		linux,usable-memory-range = <0x0 0x80200000 0x0 0x1fe00000>;
++	};
++
++	memory@80000000 {
++		device_type = "memory";
++		reg = <0x0 0x80000000 0x0 0x20000000>;
++	};
++
++	gpio-leds {
++		compatible = "gpio-leds";
++
++		led-system {
++			label = "system";
++			gpios = <&an7583_pinctrl 7 GPIO_ACTIVE_LOW>;
++			default-state = "on";
++		};
++
++		led-los {
++			label = "los";
++			gpios = <&an7583_pinctrl 27 GPIO_ACTIVE_LOW>;
++			default-state = "on";
++		};
++	};
++};
++
++&snfi {
++	status = "okay";
++};
++
++&spi_nand {
++	partitions {
++		compatible = "fixed-partitions";
++		#address-cells = <1>;
++		#size-cells = <1>;
++
++		bootloader@0 {
++			label = "bootloader";
++			reg = <0x00000000 0x00080000>;
++		};
++
++		tclinux@80000 {
++			label = "tclinux";
++			reg = <0x00080000 0x02000000>;
++		};
++
++		tclinux_slave@2080000 {
++			label = "tclinux_slave";
++			reg = <0x02080000 0x02000000>;
++		};
++
++		rootfs_data@4080000 {
++			label = "rootfs_data";
++			reg = <0x04080000 0x02800000>;
++		};
++
++		factory@6880000 {
++			label = "factory";
++			reg = <0x06880000 0x00100000>;
++		};
++
++		art@6c80000 {
++			label = "art";
++			reg = <0x06c80000 0x00380000>;
++		};
++	};
++};
++
++&i2c0 {
++	status = "okay";
++};
++
++&i2c1 {
++	status = "okay";
++};
++
++&eth {
++	status = "okay";
++};
++
++&gdm1 {
++	status = "okay";
++};
++
++&switch {
++	status = "okay";
++};
+--- /dev/null
++++ b/configs/an7583_vsol_defconfig
+@@ -0,0 +1,87 @@
++CONFIG_ARM=y
++CONFIG_POSITION_INDEPENDENT=y
++CONFIG_ARCH_AIROHA=y
++CONFIG_TARGET_AN7583=y
++CONFIG_TEXT_BASE=0x81E00000
++CONFIG_SYS_MALLOC_F_LEN=0x4000
++CONFIG_NR_DRAM_BANKS=1
++CONFIG_ENV_SIZE=0x4000
++CONFIG_DM_GPIO=y
++CONFIG_DEFAULT_DEVICE_TREE="an7583-vsol"
++CONFIG_SYS_LOAD_ADDR=0x81800000
++CONFIG_BUILD_TARGET="u-boot.bin"
++# CONFIG_EFI_LOADER is not set
++CONFIG_FIT=y
++CONFIG_FIT_VERBOSE=y
++CONFIG_OF_ENV_SETUP=y
++CONFIG_BOOTDELAY=3
++CONFIG_DEFAULT_FDT_FILE="an7583-vsol"
++CONFIG_SYS_PBSIZE=1049
++CONFIG_SYS_CONSOLE_IS_IN_ENV=y
++# CONFIG_DISPLAY_BOARDINFO is not set
++CONFIG_HUSH_PARSER=y
++CONFIG_SYS_PROMPT="AN7583> "
++CONFIG_SYS_MAXARGS=8
++CONFIG_CMD_BOOTZ=y
++CONFIG_CMD_BOOTMENU=y
++# CONFIG_CMD_ELF is not set
++# CONFIG_CMD_XIMG is not set
++CONFIG_CMD_BIND=y
++CONFIG_CMD_GPIO=y
++CONFIG_CMD_MMC=y
++CONFIG_CMD_MTD=y
++CONFIG_CMD_SF_TEST=y
++CONFIG_CMD_SPI=y
++# CONFIG_CMD_SETEXPR is not set
++CONFIG_CMD_MII=y
++CONFIG_CMD_MDIO=y
++CONFIG_CMD_PING=y
++CONFIG_CMD_EXT4=y
++CONFIG_CMD_FAT=y
++CONFIG_CMD_FS_GENERIC=y
++CONFIG_CMD_MTDPARTS=y
++CONFIG_CMD_LOG=y
++CONFIG_CMD_UBI=y
++CONFIG_ENV_OVERWRITE=y
++# CONFIG_ENV_IS_IN_MTD is not set
++CONFIG_ENV_RELOC_GD_ENV_ADDR=y
++CONFIG_ENV_USE_DEFAULT_ENV_TEXT_FILE=y
++CONFIG_ENV_DEFAULT_ENV_TEXT_FILE="defenvs/an7583_vsol_env"
++CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
++CONFIG_NET_RANDOM_ETHADDR=y
++CONFIG_SYS_RX_ETH_BUFFER=8
++CONFIG_REGMAP=y
++CONFIG_SYSCON=y
++CONFIG_CLK=y
++CONFIG_DMA=y
++CONFIG_LED=y
++CONFIG_LED_GPIO=y
++CONFIG_MMC_HS200_SUPPORT=y
++CONFIG_MMC_MTK=y
++CONFIG_MTD=y
++CONFIG_DM_MTD=y
++CONFIG_MTD_SPI_NAND=y
++CONFIG_DM_SPI_FLASH=y
++CONFIG_SPI_FLASH_EON=y
++CONFIG_SPI_FLASH_GIGADEVICE=y
++CONFIG_SPI_FLASH_ISSI=y
++CONFIG_SPI_FLASH_MACRONIX=y
++CONFIG_SPI_FLASH_SPANSION=y
++CONFIG_SPI_FLASH_STMICRO=y
++CONFIG_SPI_FLASH_WINBOND=y
++CONFIG_SPI_FLASH_MTD=y
++CONFIG_DM_MDIO=y
++CONFIG_AIROHA_ETH=y
++CONFIG_PHY=y
++CONFIG_PINCTRL=y
++CONFIG_PINCTRL_AIROHA_AN7583=y
++CONFIG_PINCONF=y
++CONFIG_POWER_DOMAIN=y
++CONFIG_DM_REGULATOR=y
++CONFIG_DM_REGULATOR_FIXED=y
++CONFIG_RAM=y
++CONFIG_DM_SERIAL=y
++CONFIG_SYS_NS16550=y
++CONFIG_SPI=y
++CONFIG_DM_SPI=y
++CONFIG_AIROHA_SNFI_SPI=y
++CONFIG_SHA512=y
+--- /dev/null
++++ b/defenvs/an7583_vsol_env
+@@ -0,0 +1,16 @@
++loadaddr=0x81800000
++ipaddr=192.168.1.1
++serverip=192.168.1.10
++bootfile=initramfs-uImage.itb
++tcbootfile=tcboot.bin
++tclinuxfile=tclinux.bin
++bootconf=config@1
++rootdisk_prop=rootdisk
++fdt_fixup=fdt get value rootdisk_phandle /chosen ${rootdisk_prop}; fdt set /chosen rootdisk "<${rootdisk_phandle}>"
++bootargs=console=ttyS0,115200 earlycon ubi.mtd=tclinux,0,0,0 ubi.mtd=rootfs_data,0,0,1 root=/dev/fit0 rootwait
++boot_tclinux=setenv rootdisk_prop rootdisk; setenv bootargs "console=ttyS0,115200 earlycon ubi.mtd=tclinux,0,0,0 ubi.mtd=rootfs_data,0,0,1 root=/dev/fit0 rootwait"; ubi part tclinux && ubi read $loadaddr fit && bootm $loadaddr#$bootconf
++boot_tclinux_slave=setenv rootdisk_prop rootdisk-slave; setenv bootargs "console=ttyS0,115200 earlycon ubi.mtd=tclinux_slave,0,0,0 ubi.mtd=rootfs_data,0,0,1 root=/dev/fit0 rootwait"; ubi part tclinux_slave && ubi read $loadaddr fit && bootm $loadaddr#$bootconf
++boot_tftp=setenv bootargs "console=ttyS0,115200 earlycon"; tftpboot $loadaddr $bootfile && bootm $loadaddr#$bootconf
++upgrade_tcboot=tftpboot $loadaddr $tcbootfile && mtd erase bootloader && mtd write bootloader $loadaddr 0 $filesize
++upgrade_tclinux=tftpboot $loadaddr $tclinuxfile && mtd erase tclinux && mtd write tclinux $loadaddr 0 $filesize && mtd erase tclinux_slave && mtd write tclinux_slave $loadaddr 0 $filesize
++bootcmd=run boot_tclinux; run boot_tclinux_slave
+--
+2.51.0
