@@ -40,6 +40,17 @@ netgear,wax610y)
 	ucidef_set_led_netdev "lan-port-link" "LAN-PORT-LINK" "green:lan-0" "lan" "link_10 link_100 link_1000 link_2500"
 	ucidef_set_led_netdev "lan-port-traffic" "LAN-PORT-TRAFFIC" "orange:lan-1" "lan" "tx rx link_10 link_100 link_1000 link_2500"
 	;;
+mikrotik,chateau-5g-r17-ax)
+	ucidef_set_led_netdev "eth" "ETH" "green:lan" "br-lan" "tx rx link"
+	;;
+mikrotik,hap-ax3)
+	ucidef_set_led_netdev "eth" "ETH" "green:lan" "br-lan" "tx rx link"
+	ucidef_set_led_netdev "ether1" "Ether1" "green:wan" "wan" "tx rx link"
+	ucidef_set_led_netdev "ether2" "Ether2" "green:lan-1" "lan1" "tx rx link"
+	ucidef_set_led_netdev "ether3" "Ether3" "green:lan-2" "lan2" "tx rx link"
+	ucidef_set_led_netdev "ether4" "Ether4" "green:lan-3" "lan3" "tx rx link"
+	ucidef_set_led_netdev "ether5" "Ether5" "green:lan-4" "lan4" "tx rx link"
+	;;
 esac
 
 board_config_flush

@@ -1,0 +1,365 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "ipq6018.dtsi"
+#include "ipq6018-cp-cpu.dtsi"
+#include "ipq6018-ess.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	/*
+	 * Normally injected into the DTB by the QSDK U-Boot; RouterBOOT does
+	 * not do this. Without it the CPR driver hits BUG_ON() in
+	 * read_ipq_soc_version_major().
+	 */
+	soc_version_major = <1>;
+
+	aliases {
+		serial0 = &blsp1_uart3;
+		led-boot = &led_system_green;
+		led-running = &led_system_green;
+		led-failsafe = &led_system_red;
+		led-upgrade = &led_system_blue;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		/* RouterBOOT passes no command line, so provide a full one. */
+		bootargs = "earlycon console=ttyMSM0,115200n8";
+	};
+
+	/* RouterBOOT passes no memory node either. */
+	memory@40000000 {
+		device_type = "memory";
+		reg = <0x0 0x40000000 0x0 0x40000000>;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&tlmm 16 GPIO_ACTIVE_LOW>;
+		};
+
+		/*
+		 * BTN_0 rather than KEY_MODE, which gpio_button_hotplug does not
+		 * know; an unsupported code makes the whole node fail to probe,
+		 * taking the reset button with it.
+		 */
+		mode {
+			label = "mode";
+			linux,code = <BTN_0>;
+			gpios = <&tlmm 9 GPIO_ACTIVE_LOW>;
+		};
+
+		wps {
+			label = "wps";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&tlmm 0 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	board_leds: leds {
+		compatible = "gpio-leds";
+
+		led_system_blue: system-blue {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&tlmm 18 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_system_red: system-red {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&tlmm 19 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_system_green: system-green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&tlmm 20 GPIO_ACTIVE_HIGH>;
+		};
+
+		eth {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			gpios = <&tlmm 21 GPIO_ACTIVE_HIGH>;
+		};
+
+		wlan {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN;
+			gpios = <&tlmm 22 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy0radio";
+		};
+	};
+
+	reg_usb_power: regulator-usb-power {
+		compatible = "regulator-fixed";
+		regulator-name = "usb-power";
+		gpios = <&tlmm 37 GPIO_ACTIVE_LOW>;
+		enable-active-high;
+		regulator-boot-on;
+		regulator-always-on;
+	};
+};
+
+&blsp1_uart3 {
+	pinctrl-0 = <&serial_3_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&blsp1_spi1 {
+	pinctrl-names = "default";
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <50000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/*
+			 * Declared as a RouterBoot container so rb_hardconfig
+			 * exports /sys/firmware/mikrotik/hard_config/*, which
+			 * carries the ath11k calibration data and the base MAC.
+			 * Sub-partitions are sized by the driver at runtime.
+			 */
+			/*
+			 * Not read-only as a whole, so that soft_config can be
+			 * written: MTD only ever masks flags downwards, so a
+			 * read-only parent forces every child read-only too.
+			 *
+			 * soft_config carries RouterBOOT's boot settings, and being
+			 * able to write them is what allows etherboot to be triggered
+			 * over the network instead of with the reset button. It also
+			 * needs routerbootpart to grow the partition to a full erase
+			 * block, otherwise MTD refuses writes regardless.
+			 *
+			 * The trade-off is that the bootloader itself, which lives in
+			 * this partition and has no node of its own, is no longer
+			 * write protected at the MTD level. Nothing in OpenWrt writes
+			 * there, and MikroTik's own firmware keeps it writable for the
+			 * same reason, but a stray write to this mtd would take out
+			 * the recovery path. hard_config, with the MAC addresses and
+			 * the WLAN calibration data, stays protected.
+			 */
+			partition@2c0000 {
+				label = "RouterBoot";
+				reg = <0x2c0000 0x80000>;
+				compatible = "mikrotik,routerboot-partitions";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				hard_config {
+					read-only;
+
+					nvmem-layout {
+						compatible = "mikrotik,routerboot-nvmem";
+
+						macaddr_hard: base-mac-address {
+							#nvmem-cell-cells = <1>;
+						};
+					};
+				};
+
+				soft_config {
+				};
+			};
+		};
+	};
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&qpic_nand {
+	status = "okay";
+
+	nand@0 {
+		reg = <0>;
+		nand-ecc-strength = <4>;
+		nand-ecc-step-size = <512>;
+		nand-bus-width = <8>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "kernel";
+				reg = <0x0000000 0x0800000>;
+			};
+
+			partition@800000 {
+				label = "ubi";
+				reg = <0x0800000 0x7800000>;
+			};
+		};
+	};
+};
+
+&tlmm {
+	mdio_pins: mdio-pins {
+		mdc {
+			pins = "gpio64";
+			function = "mdc";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		mdio {
+			pins = "gpio65";
+			function = "mdio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+};
+
+&mdio {
+	status = "okay";
+	pinctrl-0 = <&mdio_pins>;
+	pinctrl-names = "default";
+	reset-delay-us = <10000>;
+	reset-post-delay-us = <50000>;
+
+	qca8081_0: ethernet-phy@0 {
+		compatible = "ethernet-phy-id004d.d101";
+		reg = <0>;
+	};
+};
+
+&uniphy0 {
+	status = "okay";
+};
+
+&uniphy1 {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port@0 {
+			reg = <0>;
+			ethernet = <&edma>;
+			phy-mode = "internal";
+
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
+		};
+
+		switch_port1: port@1 {
+			reg = <1>;
+			phy-handle = <&qca8075_0>;
+			phy-mode = "psgmii";
+			pcs-handle = <&uniphy0 0>;
+		};
+
+		switch_port2: port@2 {
+			reg = <2>;
+			phy-handle = <&qca8075_1>;
+			phy-mode = "psgmii";
+			pcs-handle = <&uniphy0 1>;
+		};
+
+		switch_port3: port@3 {
+			reg = <3>;
+			phy-handle = <&qca8075_2>;
+			phy-mode = "psgmii";
+			pcs-handle = <&uniphy0 2>;
+		};
+
+		switch_port4: port@4 {
+			reg = <4>;
+			phy-handle = <&qca8075_3>;
+			phy-mode = "psgmii";
+			pcs-handle = <&uniphy0 3>;
+		};
+
+		switch_port5: port@5 {
+			reg = <5>;
+			phy-handle = <&qca8081_0>;
+			phy-mode = "2500base-x";
+			pcs-handle = <&uniphy1 0>;
+		};
+	};
+};
+
+&edma {
+	status = "okay";
+};
+
+&qusb_phy_0 {
+	status = "okay";
+};
+
+&qusb_phy_1 {
+	status = "okay";
+};
+
+&ssphy_0 {
+	status = "okay";
+};
+
+&usb2 {
+	status = "okay";
+};
+
+&usb3 {
+	status = "okay";
+};
+
+/*
+ * Enabling PCIe appeared to stop the Ethernet transmit path on the Chateau:
+ * frames were counted by the switch port but never left the PHY.
+ *
+ * That observation rests on a single boot per variant, and the Chateau's
+ * PSGMII calibration fails intermittently in roughly one boot out of three
+ * with a very similar symptom, so the bisect does not actually carry. PCIe
+ * stays off because neither product uses it for supported hardware, but the
+ * question should be revisited once the calibration problem is understood.
+ */
+&pcie_phy {
+	status = "disabled";
+};
+
+&pcie0 {
+	status = "disabled";
+};
+
+/*
+ * The watchdog is armed but never fed during boot, which resets the board
+ * after roughly 30 seconds.
+ */
+&{/soc@0/watchdog@b017000} {
+	status = "disabled";
+};
+
+&wifi {
+	status = "okay";
+
+	/*
+	 * Without this the driver advertises a 6 GHz band the IPQ6018 does not
+	 * have. cfg80211 then finds no regulatory rules for it and the channel
+	 * list update fails for the whole PHY, taking 5 GHz down with it.
+	 */
+	ieee80211-freq-limit = <2402000 5835000>;
+};

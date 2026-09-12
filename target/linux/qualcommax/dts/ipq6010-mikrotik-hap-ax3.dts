@@ -1,0 +1,157 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+#include "ipq6010-mikrotik-c53-s53.dtsi"
+
+/ {
+	model = "MikroTik C53UiG+5HPaxD2HPaxD (hAP ax3)";
+	compatible = "mikrotik,hap-ax3", "qcom,ipq6018";
+
+	aliases {
+		label-mac-device = &switch_port5;
+	};
+};
+
+&mdio {
+	/*
+	 * Pulling GPIO77 low removes all PHYs from the MDIO bus and drops the
+	 * QCA8081 link. Pulse it as the shared PHY-domain reset.
+	 */
+	reset-gpios = <&tlmm 77 GPIO_ACTIVE_LOW>;
+
+	ethernet-phy-package@8 {
+		compatible = "qcom,qca8075-package";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x08>;
+		qcom,package-mode = "psgmii";
+		qcom,tx-drive-strength-milliwatt = <300>;
+
+		qca8075_0: ethernet-phy@8 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <0x08>;
+		};
+
+		qca8075_1: ethernet-phy@9 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <0x09>;
+		};
+
+		qca8075_2: ethernet-phy@a {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <0x0a>;
+		};
+
+		qca8075_3: ethernet-phy@b {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <0x0b>;
+		};
+	};
+};
+
+&tlmm {
+	/*
+	 * RouterOS declares GPIO75 as its PHY reset. Keep it deasserted so that
+	 * the QCA8075 remains available independently of the shared reset.
+	 */
+	qca8075-reset-deassert {
+		gpio-hog;
+		gpios = <75 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "qca8075-reset-deassert";
+	};
+
+	/*
+	 * RouterOS controls PoE-out through GPIO 66. Keep it off until a Linux
+	 * PSE driver describes the current-sense input and power sequencing.
+	 */
+	poe-power-hog {
+		gpio-hog;
+		gpios = <66 GPIO_ACTIVE_HIGH>;
+		output-low;
+		line-name = "poe-power";
+	};
+};
+
+&board_leds {
+	wan {
+		color = <LED_COLOR_ID_GREEN>;
+		function = LED_FUNCTION_WAN;
+		gpios = <&tlmm 23 GPIO_ACTIVE_HIGH>;
+	};
+
+	lan1 {
+		color = <LED_COLOR_ID_GREEN>;
+		function = LED_FUNCTION_LAN;
+		function-enumerator = <1>;
+		gpios = <&tlmm 24 GPIO_ACTIVE_HIGH>;
+	};
+
+	lan2 {
+		color = <LED_COLOR_ID_GREEN>;
+		function = LED_FUNCTION_LAN;
+		function-enumerator = <2>;
+		gpios = <&tlmm 25 GPIO_ACTIVE_HIGH>;
+	};
+
+	lan3 {
+		color = <LED_COLOR_ID_GREEN>;
+		function = LED_FUNCTION_LAN;
+		function-enumerator = <3>;
+		gpios = <&tlmm 26 GPIO_ACTIVE_HIGH>;
+	};
+
+	lan4 {
+		color = <LED_COLOR_ID_GREEN>;
+		function = LED_FUNCTION_LAN;
+		function-enumerator = <4>;
+		gpios = <&tlmm 27 GPIO_ACTIVE_HIGH>;
+	};
+
+	poe {
+		color = <LED_COLOR_ID_RED>;
+		function = "poe";
+		gpios = <&tlmm 29 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+/*
+ * The hAP ax3 has the same QCA8075 + QCA8081 topology as the Chateau.
+ * Its QCA8075 is strapped at MDIO addresses 0x08 through 0x0c, rather than
+ * the Chateau's 0x18 through 0x1c. The socket order and factory MAC address
+ * allocation below were verified on hardware. Ether1 is the 2.5G WAN port.
+ */
+&switch_port1 {
+	label = "lan4";
+	nvmem-cells = <&macaddr_hard 4>;
+	nvmem-cell-names = "mac-address";
+};
+
+&switch_port2 {
+	label = "lan3";
+	nvmem-cells = <&macaddr_hard 3>;
+	nvmem-cell-names = "mac-address";
+};
+
+&switch_port3 {
+	label = "lan2";
+	nvmem-cells = <&macaddr_hard 2>;
+	nvmem-cell-names = "mac-address";
+};
+
+&switch_port4 {
+	label = "lan1";
+	nvmem-cells = <&macaddr_hard 1>;
+	nvmem-cell-names = "mac-address";
+};
+
+&switch_port5 {
+	label = "wan";
+	nvmem-cells = <&macaddr_hard 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&wifi {
+	qcom,ath11k-calibration-variant = "MikroTik-hAP-ax3";
+};
