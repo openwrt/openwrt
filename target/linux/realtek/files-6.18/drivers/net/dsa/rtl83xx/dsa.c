@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 #include <net/dsa.h>
+#include <linux/bitfield.h>
 #include <linux/etherdevice.h>
 #include <linux/if_bridge.h>
 #include <linux/if_vlan.h>
@@ -334,30 +335,74 @@ static void rtldsa_93xx_phylink_mac_config(struct phylink_config *config,
 {
 	struct dsa_port *dp = dsa_phylink_to_port(config);
 	struct rtl838x_switch_priv *priv = dp->ds->priv;
+	const struct rtldsa_mac_force_mode_cfg *cfg = &priv->r->mac_force_mode;
 	int port = dp->index;
 
 	/* Nothing to be done for the CPU-port */
 	if (port == priv->r->cpu_port)
 		return;
 
-	/* Disable MAC completely */
-	sw_w32(0, priv->r->mac_force_mode_ctrl(port));
+	/* Select PCS before dropping force mode to avoid a transient link down. */
+	if (!priv->ports[port].phy && priv->r->mac_link_state_source_set &&
+	    phylink_autoneg_inband(mode))
+		priv->r->mac_link_state_source_set(port,
+						  RTLDSA_MAC_LINK_STATE_SOURCE_PCS,
+						  state->interface);
+
+	if (mode == MLO_AN_FIXED ||
+	    (!priv->ports[port].phy && mode == MLO_AN_PHY))
+		/* Keep links that require force mode forced down. */
+		sw_w32(cfg->force_en_mask, priv->r->mac_force_mode_ctrl(port));
+	else
+		/* Disable MAC completely */
+		sw_w32(0, priv->r->mac_force_mode_ctrl(port));
 }
 
-static void rtldsa_phylink_mac_link_down(struct phylink_config *config,
-					 unsigned int mode,
-					 phy_interface_t interface)
+static void rtldsa_83xx_phylink_mac_link_down(struct phylink_config *config,
+					      unsigned int mode,
+					      phy_interface_t interface)
 {
 	struct dsa_port *dp = dsa_phylink_to_port(config);
 	struct rtl838x_switch_priv *priv = dp->ds->priv;
+	const struct rtldsa_mac_force_mode_cfg *cfg;
 	int port = dp->index;
 
 	/* Stop TX/RX to port */
 	sw_w32_mask(0x3, 0, priv->r->mac_port_ctrl(port));
 
+	cfg = &priv->r->mac_force_mode;
 	/* No longer force link */
-	sw_w32_mask(priv->r->mac_force_mode_mask, 0,
+	sw_w32_mask(cfg->force_en_mask | cfg->link_up_mask, 0,
 		    priv->r->mac_force_mode_ctrl(port));
+}
+
+static void rtldsa_93xx_phylink_mac_link_down(struct phylink_config *config,
+					      unsigned int mode,
+					      phy_interface_t interface)
+{
+	struct dsa_port *dp = dsa_phylink_to_port(config);
+	struct rtl838x_switch_priv *priv = dp->ds->priv;
+	int port = dp->index;
+	const struct rtldsa_mac_force_mode_cfg *cfg = &priv->r->mac_force_mode;
+
+	/* Stop TX/RX to port */
+	sw_w32_mask(0x3, 0, priv->r->mac_port_ctrl(port));
+
+	if (!priv->ports[port].phy && priv->r->mac_link_state_source_set &&
+	    phylink_autoneg_inband(mode))
+		priv->r->mac_link_state_source_set(port,
+						  RTLDSA_MAC_LINK_STATE_SOURCE_PCS,
+						  interface);
+
+	if (dsa_port_is_cpu(dp) || mode == MLO_AN_FIXED ||
+	    (!priv->ports[port].phy && mode == MLO_AN_PHY))
+		/* Preserve force mode while forcing the link down. */
+		sw_w32_mask(cfg->link_up_mask, 0,
+			    priv->r->mac_force_mode_ctrl(port));
+	else
+		/* No longer force link */
+		sw_w32_mask(cfg->force_en_mask | cfg->link_up_mask, 0,
+			    priv->r->mac_force_mode_ctrl(port));
 }
 
 static void rtldsa_83xx_phylink_mac_link_up(struct phylink_config *config,
@@ -369,6 +414,7 @@ static void rtldsa_83xx_phylink_mac_link_up(struct phylink_config *config,
 {
 	struct dsa_port *dp = dsa_phylink_to_port(config);
 	struct rtl838x_switch_priv *priv = dp->ds->priv;
+	const struct rtldsa_mac_force_mode_cfg *cfg;
 	int port = dp->index;
 	u32 mcr, spdsel;
 
@@ -379,42 +425,21 @@ static void rtldsa_83xx_phylink_mac_link_up(struct phylink_config *config,
 	else
 		spdsel = RTL_SPEED_10;
 
+	cfg = &priv->r->mac_force_mode;
 	mcr = sw_r32(priv->r->mac_force_mode_ctrl(port));
+	mcr &= ~(cfg->rx_pause_mask | cfg->tx_pause_mask |
+		 cfg->duplex_mask | cfg->speed_mask);
+	mcr |= cfg->link_up_mask;
+	mcr |= field_prep(cfg->speed_mask, spdsel);
 
-	if (priv->family_id == RTL8380_FAMILY_ID) {
-		mcr &= ~RTL838X_RX_PAUSE_EN;
-		mcr &= ~RTL838X_TX_PAUSE_EN;
-		mcr &= ~RTL838X_DUPLEX_MODE;
-		mcr &= ~RTL838X_SPEED_MASK;
-		mcr |= RTL83XX_FORCE_LINK_EN;
-		mcr |= spdsel << RTL838X_SPEED_SHIFT;
-
-		if (tx_pause)
-			mcr |= RTL838X_TX_PAUSE_EN;
-		if (rx_pause)
-			mcr |= RTL838X_RX_PAUSE_EN;
-		if (duplex == DUPLEX_FULL || priv->lagmembers & BIT_ULL(port))
-			mcr |= RTL838X_DUPLEX_MODE;
-		if (dsa_port_is_cpu(dp))
-			mcr |= RTL83XX_FORCE_EN;
-
-	} else if (priv->family_id == RTL8390_FAMILY_ID) {
-		mcr &= ~RTL839X_RX_PAUSE_EN;
-		mcr &= ~RTL839X_TX_PAUSE_EN;
-		mcr &= ~RTL839X_DUPLEX_MODE;
-		mcr &= ~RTL839X_SPEED_MASK;
-		mcr |= RTL83XX_FORCE_LINK_EN;
-		mcr |= spdsel << RTL839X_SPEED_SHIFT;
-
-		if (tx_pause)
-			mcr |= RTL839X_TX_PAUSE_EN;
-		if (rx_pause)
-			mcr |= RTL839X_RX_PAUSE_EN;
-		if (duplex == DUPLEX_FULL || priv->lagmembers & BIT_ULL(port))
-			mcr |= RTL839X_DUPLEX_MODE;
-		if (dsa_port_is_cpu(dp))
-			mcr |= RTL83XX_FORCE_EN;
-	}
+	if (tx_pause)
+		mcr |= cfg->tx_pause_mask;
+	if (rx_pause)
+		mcr |= cfg->rx_pause_mask;
+	if (duplex == DUPLEX_FULL || priv->lagmembers & BIT_ULL(port))
+		mcr |= cfg->duplex_mask;
+	if (dsa_port_is_cpu(dp))
+		mcr |= cfg->force_en_mask;
 
 	pr_debug("%s port %d, mode %x, speed %d, duplex %d, txpause %d, rxpause %d: set mcr=%08x\n",
 		 __func__, port, mode, speed, duplex, tx_pause, rx_pause, mcr);
@@ -433,8 +458,27 @@ static void rtldsa_93xx_phylink_mac_link_up(struct phylink_config *config,
 {
 	struct dsa_port *dp = dsa_phylink_to_port(config);
 	struct rtl838x_switch_priv *priv = dp->ds->priv;
+	const struct rtldsa_mac_force_mode_cfg *cfg;
 	int port = dp->index;
+	bool dynamic_phy, force_dynamic_phy, keep_forced;
 	u32 mcr, spdsel;
+
+	/*
+	 * Direct links use PCS state, and statically described PHYs use
+	 * hardware PHY polling. Dynamic in-band PHYs use PCS state after a
+	 * force pulse refreshes the MAC parameters. Dynamic out-of-band PHYs,
+	 * fixed links and CPU ports remain forced.
+	 */
+	cfg = &priv->r->mac_force_mode;
+	dynamic_phy = !priv->ports[port].phy && phydev;
+	force_dynamic_phy = dynamic_phy && !phylink_autoneg_inband(mode);
+	keep_forced = dsa_port_is_cpu(dp) || mode == MLO_AN_FIXED ||
+		      force_dynamic_phy;
+	if (!keep_forced && !dynamic_phy) {
+		sw_w32_mask(cfg->force_en_mask, 0,
+			    priv->r->mac_force_mode_ctrl(port));
+		goto restart;
+	}
 
 	if (speed == SPEED_10000)
 		spdsel = RTL_SPEED_10000;
@@ -451,28 +495,35 @@ static void rtldsa_93xx_phylink_mac_link_up(struct phylink_config *config,
 
 	mcr = sw_r32(priv->r->mac_force_mode_ctrl(port));
 
-	if (priv->family_id == RTL9300_FAMILY_ID) {
-		mcr &= ~RTL930X_RX_PAUSE_EN;
-		mcr &= ~RTL930X_TX_PAUSE_EN;
-		mcr &= ~RTL930X_DUPLEX_MODE;
-		mcr &= ~RTL930X_SPEED_MASK;
-		mcr |= RTL930X_FORCE_LINK_EN;
-		mcr |= spdsel << RTL930X_SPEED_SHIFT;
+	mcr &= ~(cfg->rx_pause_mask | cfg->tx_pause_mask |
+		 cfg->duplex_mask | cfg->speed_mask);
+	mcr |= cfg->force_en_mask | cfg->link_up_mask;
+	mcr |= field_prep(cfg->speed_mask, spdsel);
+	if (dynamic_phy)
+		mcr &= ~cfg->media_mask;
 
-		if (tx_pause)
-			mcr |= RTL930X_TX_PAUSE_EN;
-		if (rx_pause)
-			mcr |= RTL930X_RX_PAUSE_EN;
-		if (duplex == DUPLEX_FULL || priv->lagmembers & BIT_ULL(port))
-			mcr |= RTL930X_DUPLEX_MODE;
-		if (dsa_port_is_cpu(dp) || priv->ports[port].phy)
-			mcr |= RTL930X_FORCE_EN;
-	}
+	if (tx_pause)
+		mcr |= cfg->tx_pause_mask;
+	if (rx_pause)
+		mcr |= cfg->rx_pause_mask;
+	if (duplex == DUPLEX_FULL || priv->lagmembers & BIT_ULL(port))
+		mcr |= cfg->duplex_mask;
 
 	pr_debug("%s port %d, mode %x, speed %d, duplex %d, txpause %d, rxpause %d: set mcr=%08x\n",
 		 __func__, port, mode, speed, duplex, tx_pause, rx_pause, mcr);
 	sw_w32(mcr, priv->r->mac_force_mode_ctrl(port));
+	/* Pulse the force enables so hardware latches the new parameters. */
+	sw_w32(mcr & ~cfg->force_en_mask, priv->r->mac_force_mode_ctrl(port));
+	if (keep_forced)
+		sw_w32(mcr, priv->r->mac_force_mode_ctrl(port));
 
+	/* Keep force mode active while switching hardware link sources. */
+	if (force_dynamic_phy && priv->r->mac_link_state_source_set)
+		priv->r->mac_link_state_source_set(port,
+						  RTLDSA_MAC_LINK_STATE_SOURCE_PHY,
+						  interface);
+
+restart:
 	/* Restart TX/RX to port */
 	sw_w32_mask(0, 0x3, priv->r->mac_port_ctrl(port));
 }
@@ -2696,7 +2747,7 @@ static int rtldsa_cls_flower_stats(struct dsa_switch *ds, int port,
 
 const struct phylink_mac_ops rtldsa_83xx_phylink_mac_ops = {
 	.mac_config		= rtldsa_83xx_phylink_mac_config,
-	.mac_link_down		= rtldsa_phylink_mac_link_down,
+	.mac_link_down		= rtldsa_83xx_phylink_mac_link_down,
 	.mac_link_up		= rtldsa_83xx_phylink_mac_link_up,
 };
 
@@ -2758,7 +2809,7 @@ const struct dsa_switch_ops rtldsa_83xx_switch_ops = {
 
 const struct phylink_mac_ops rtldsa_93xx_phylink_mac_ops = {
 	.mac_config		= rtldsa_93xx_phylink_mac_config,
-	.mac_link_down		= rtldsa_phylink_mac_link_down,
+	.mac_link_down		= rtldsa_93xx_phylink_mac_link_down,
 	.mac_link_up		= rtldsa_93xx_phylink_mac_link_up,
 };
 

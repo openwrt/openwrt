@@ -39,6 +39,13 @@
 /* get shift for given led in any set */
 #define RTL930X_LED_SET_LEDX_SHIFT(x) (16 * (x % 2))
 
+#define RTL930X_SMI_MAC_TYPE_CTRL		0xca04
+#define RTL930X_SMI_MAC_TYPE_P0_23(pn)		(GENMASK(1, 0) << (((pn) / 4) * 2))
+#define RTL930X_SMI_MAC_TYPE_P24_27(pn)		(GENMASK(2, 0) << (((pn) - 24) * 3 + 12))
+#define RTL930X_SMI_MAC_TYPE_PCS		0x0
+#define RTL930X_SMI_MAC_TYPE_MULTIGIG_PHY	0x1
+#define RTL930X_SMI_MAC_TYPE_1G_PHY		0x3
+
 /* Definition of the RTL930X-specific template field IDs as used in the PIE */
 enum template_field_id {
 	TEMPLATE_FIELD_SPM0 = 0,		/* Source portmask ports 0-15 */
@@ -2195,6 +2202,33 @@ static void rtldsa_930x_qos_init(struct rtl838x_switch_priv *priv)
 	rtldsa_930x_qos_set_scheduling_queue_weights(priv);
 }
 
+static void
+rtldsa_930x_mac_link_state_source_set(int port,
+				      enum rtldsa_mac_link_state_source source,
+				      phy_interface_t interface)
+{
+	u32 mask, src_val;
+
+	if (port < 24)
+		mask = RTL930X_SMI_MAC_TYPE_P0_23(port);
+	else if (port < 28)
+		mask = RTL930X_SMI_MAC_TYPE_P24_27(port);
+	else
+		return;
+
+	if (source == RTLDSA_MAC_LINK_STATE_SOURCE_PCS)
+		src_val = RTL930X_SMI_MAC_TYPE_PCS;
+	else if (interface == PHY_INTERFACE_MODE_2500BASEX ||
+		 interface == PHY_INTERFACE_MODE_10GBASER ||
+		 interface == PHY_INTERFACE_MODE_USXGMII ||
+		 interface == PHY_INTERFACE_MODE_10G_QXGMII)
+		src_val = RTL930X_SMI_MAC_TYPE_MULTIGIG_PHY;
+	else
+		src_val = RTL930X_SMI_MAC_TYPE_1G_PHY;
+
+	sw_w32_mask(mask, field_prep(mask, src_val), RTL930X_SMI_MAC_TYPE_CTRL);
+}
+
 const struct rtldsa_config rtldsa_930x_cfg = {
 	.switch_ops = &rtldsa_93xx_switch_ops,
 	.phylink_mac_ops = &rtldsa_93xx_phylink_mac_ops,
@@ -2247,8 +2281,18 @@ const struct rtldsa_config rtldsa_930x_cfg = {
 	.stp_get = rtldsa_930x_stp_get,
 	.stp_set = rtl930x_stp_set,
 	.mac_link_sts = RTL930X_MAC_LINK_STS,
-	.mac_force_mode_mask = RTL930X_FORCE_EN | RTL930X_FORCE_LINK_EN,
+	.mac_force_mode = {
+		.force_en_mask = RTL930X_FORCE_EN |
+				 RTL930X_MAC_FORCE_FC_EN,
+		.link_up_mask = RTL930X_FORCE_LINK_EN,
+		.duplex_mask = RTL930X_DUPLEX_MODE,
+		.speed_mask = RTL930X_SPEED_MASK,
+		.tx_pause_mask = RTL930X_TX_PAUSE_EN,
+		.rx_pause_mask = RTL930X_RX_PAUSE_EN,
+		.media_mask = RTL930X_MEDIA_SEL,
+	},
 	.mac_force_mode_ctrl = rtl930x_mac_force_mode_ctrl,
+	.mac_link_state_source_set = rtldsa_930x_mac_link_state_source_set,
 	.mac_port_ctrl = rtl930x_mac_port_ctrl,
 	.mac_capabilities = MAC_ASYM_PAUSE | MAC_SYM_PAUSE | MAC_10 | MAC_100 |
 			    MAC_1000FD | MAC_2500FD | MAC_5000FD | MAC_10000FD,

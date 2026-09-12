@@ -31,6 +31,11 @@
 #define RTL931X_LED_CLK_SEL_200NS				2
 #define RTL931X_LED_CLK_SEL_100NS				3
 
+#define RTL931X_SMI_PHY_ABLTY_GET_SEL(port)	(0x0cac + ((port) / 16) * 4)
+#define RTL931X_SMI_PHY_ABLTY_MDIO		0x0
+#define RTL931X_SMI_PHY_ABLTY_SDS		0x2
+#define RTL931X_SMI_PHY_ABLTY_MASK(port)	(GENMASK(1, 0) << (((port) % 16) * 2))
+
 /* Definition of the RTL931X-specific template field IDs as used in the PIE */
 enum template_field_id {
 	TEMPLATE_FIELD_SPM0 = 1,
@@ -1955,6 +1960,26 @@ static void rtldsa_931x_qos_init(struct rtl838x_switch_priv *priv)
 	rtldsa_931x_qos_set_scheduling_queue_weights(priv);
 }
 
+static void
+rtldsa_931x_mac_link_state_source_set(int port,
+				      enum rtldsa_mac_link_state_source source,
+				      phy_interface_t interface)
+{
+	u32 mask, src_val;
+
+	if (port >= RTL931X_CPU_PORT)
+		return;
+
+	mask = RTL931X_SMI_PHY_ABLTY_MASK(port);
+	if (source == RTLDSA_MAC_LINK_STATE_SOURCE_PCS)
+		src_val = RTL931X_SMI_PHY_ABLTY_SDS;
+	else
+		src_val = RTL931X_SMI_PHY_ABLTY_MDIO;
+
+	sw_w32_mask(mask, field_prep(mask, src_val),
+		    RTL931X_SMI_PHY_ABLTY_GET_SEL(port));
+}
+
 const struct rtldsa_config rtldsa_931x_cfg = {
 	.switch_ops = &rtldsa_93xx_switch_ops,
 	.phylink_mac_ops = &rtldsa_93xx_phylink_mac_ops,
@@ -2002,8 +2027,19 @@ const struct rtldsa_config rtldsa_931x_cfg = {
 	.vlan_fwd_on_inner = rtl931x_vlan_fwd_on_inner,
 	.stp_get = rtldsa_931x_stp_get,
 	.stp_set = rtl931x_stp_set,
-	.mac_force_mode_mask = RTL931X_FORCE_EN | RTL931X_FORCE_LINK_EN,
+	.mac_force_mode = {
+		.force_en_mask = RTL931X_FORCE_LINK_EN |
+				 RTL931X_FORCE_DUPLEX_EN |
+				 RTL931X_FORCE_SPEED_EN |
+				 RTL931X_MAC_FORCE_FC_EN,
+		.link_up_mask = RTL931X_FORCE_LINK,
+		.duplex_mask = RTL931X_DUPLEX_MODE,
+		.speed_mask = RTL931X_SPEED_MASK,
+		.tx_pause_mask = RTL931X_TX_PAUSE_EN,
+		.rx_pause_mask = RTL931X_RX_PAUSE_EN,
+	},
 	.mac_force_mode_ctrl = rtl931x_mac_force_mode_ctrl,
+	.mac_link_state_source_set = rtldsa_931x_mac_link_state_source_set,
 	.mac_link_sts = RTL931X_MAC_LINK_STS,
 	.mac_port_ctrl = rtl931x_mac_port_ctrl,
 	.mac_capabilities = MAC_ASYM_PAUSE | MAC_SYM_PAUSE | MAC_10 | MAC_100 |
