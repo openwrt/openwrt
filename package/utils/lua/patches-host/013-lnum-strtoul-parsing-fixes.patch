@@ -9,6 +9,15 @@
      }
    } else if ((v > LUA_INTEGER_MAX) || (*endptr && (!isspace(*endptr)))) {
      return TK_NUMBER;	/* not in signed range, or has '.', 'e' etc. trailing */
+@@ -147,7 +149,7 @@ int luaO_str2d (const char *s, lua_Numbe
+    */
+   if (res_i) {
+     ret= luaO_str2i(s,res_i,&endptr);
+-    if (ret==0) return 0;
++    if (ret==0) ret = TK_NUMBER;
+   }
+   if (ret==TK_NUMBER) {
+     lua_assert(res_n);
 @@ -310,3 +312,13 @@ int try_unmint( lua_Integer *r, lua_Inte
    return 0;
  }
