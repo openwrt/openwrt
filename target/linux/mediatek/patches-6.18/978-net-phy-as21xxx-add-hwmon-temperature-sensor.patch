@@ -1,0 +1,172 @@
+From: Pietro Ameruoso <p.ameruoso@live.it>
+Date: Wed, 2 Sep 2026 00:00:00 +0200
+Subject: [PATCH] net: phy: as21xxx: add hwmon temperature sensor
+
+AS21xxx firmware exposes the on-chip temperature monitor through the
+CFG_PARAM/DIRECT IPC command. The monitor needs to be configured and started
+before a temperature sample is available. Once started, the GET operation
+returns the current temperature as a signed 16.16 Celsius value in response
+words 1 and 2.
+
+Add optional hwmon support and expose the temperature as temp1_input in
+millidegrees Celsius. If the firmware rejects the temperature monitor setup,
+keep probing the PHY and simply skip hwmon registration.
+
+Signed-off-by: Pietro Ameruoso <p.ameruoso@live.it>
+---
+--- a/drivers/net/phy/Kconfig
++++ b/drivers/net/phy/Kconfig
+@@ -160,6 +160,7 @@ comment "MII PHY device drivers"
+ 
+ config AS21XXX_PHY
+ 	tristate "Aeonsemi AS21xxx PHYs"
++	depends on HWMON || HWMON=n
+ 	help
+ 	  Currently supports the Aeonsemi AS21xxx PHY.
+ 
+--- a/drivers/net/phy/as21xxx.c
++++ b/drivers/net/phy/as21xxx.c
+@@ -7,6 +7,7 @@
+ 
+ #include <linux/bitfield.h>
+ #include <linux/firmware.h>
++#include <linux/hwmon.h>
+ #include <linux/module.h>
+ #include <linux/of.h>
+ #include <linux/phy.h>
+@@ -113,7 +114,10 @@
+ #define IPC_CFG_PARAM_DIRECT_WOL	0x12
+ 
+ /* Sub command of CMD_TEMP_MON */
++#define IPC_CMD_TEMP_MON_START		0x1
++#define IPC_CMD_TEMP_MON_CFG		0x3
+ #define IPC_CMD_TEMP_MON_GET		0x4
++#define IPC_CMD_TEMP_MON_CONTINUOUS	0x1
+ 
+ #define AS21XXX_MDIO_AN_C22		0xffe0
+ #define AS21XXX_AN_STATES1		0x8005
+@@ -603,6 +607,113 @@ static int aeon_dpc_ra_enable(struct phy
+ 				 sizeof(data), NULL);
+ }
+ 
++#if IS_ENABLED(CONFIG_HWMON)
++static int aeon_temp_monitor_cmd(struct phy_device *phydev, u16 sub_cmd,
++				 u16 param, u16 *ret_data)
++{
++	u16 data[4];
++
++	data[0] = IPC_CFG_PARAM_DIRECT;
++	data[1] = IPC_CFG_PARAM_DIRECT_TEMP_MON;
++	data[2] = sub_cmd;
++	data[3] = param;
++
++	return aeon_ipc_send_msg(phydev, IPC_CMD_CFG_PARAM, data,
++				 sizeof(data), ret_data);
++}
++
++static int aeon_temp_monitor_enable(struct phy_device *phydev)
++{
++	int ret;
++
++	ret = aeon_temp_monitor_cmd(phydev, IPC_CMD_TEMP_MON_CFG,
++				    IPC_CMD_TEMP_MON_CONTINUOUS, NULL);
++	if (ret < 0)
++		return ret;
++
++	return aeon_temp_monitor_cmd(phydev, IPC_CMD_TEMP_MON_START, 0, NULL);
++}
++
++static int aeon_get_temperature(struct phy_device *phydev, long *temp)
++{
++	u16 ret_data[AEON_IPC_DATA_NUM_REGISTERS] = { 0 };
++	s32 temp_fixed;
++	int ret;
++
++	ret = aeon_temp_monitor_cmd(phydev, IPC_CMD_TEMP_MON_GET, 0, ret_data);
++	if (ret < 0)
++		return ret;
++	if (ret < 3 * sizeof(u16))
++		return -ENODATA;
++
++	temp_fixed = (s32)((u32)ret_data[1] | ((u32)ret_data[2] << 16));
++	*temp = ((s64)temp_fixed * 1000) / 65536;
++
++	return 0;
++}
++
++static int as21xxx_hwmon_read(struct device *dev,
++			      enum hwmon_sensor_types type,
++			      u32 attr, int channel, long *value)
++{
++	struct phy_device *phydev = dev_get_drvdata(dev);
++
++	if (type != hwmon_temp || attr != hwmon_temp_input)
++		return -EOPNOTSUPP;
++
++	return aeon_get_temperature(phydev, value);
++}
++
++static umode_t as21xxx_hwmon_is_visible(const void *data,
++					enum hwmon_sensor_types type,
++					u32 attr, int channel)
++{
++	if (type == hwmon_temp && attr == hwmon_temp_input)
++		return 0444;
++
++	return 0;
++}
++
++static const struct hwmon_channel_info * const as21xxx_hwmon_info[] = {
++	HWMON_CHANNEL_INFO(temp, HWMON_T_INPUT),
++	NULL
++};
++
++static const struct hwmon_ops as21xxx_hwmon_ops = {
++	.is_visible	= as21xxx_hwmon_is_visible,
++	.read		= as21xxx_hwmon_read,
++};
++
++static const struct hwmon_chip_info as21xxx_hwmon_chip_info = {
++	.ops		= &as21xxx_hwmon_ops,
++	.info		= as21xxx_hwmon_info,
++};
++
++static int as21xxx_hwmon_probe(struct phy_device *phydev)
++{
++	struct device *dev = &phydev->mdio.dev;
++	struct device *hwmon_dev;
++	int ret;
++
++	ret = aeon_temp_monitor_enable(phydev);
++	if (ret < 0) {
++		phydev_warn(phydev,
++			    "failed to enable temperature monitor: %d\n", ret);
++		return 0;
++	}
++
++	hwmon_dev = devm_hwmon_device_register_with_info(dev, NULL, phydev,
++							 &as21xxx_hwmon_chip_info, NULL);
++
++	return PTR_ERR_OR_ZERO(hwmon_dev);
++}
++#else
++static int as21xxx_hwmon_probe(struct phy_device *phydev)
++{
++	return 0;
++}
++#endif
++
+ static int as21xxx_probe(struct phy_device *phydev)
+ {
+ 	struct as21xxx_priv *priv;
+@@ -664,6 +775,10 @@ static int as21xxx_probe(struct phy_devi
+ 	if (ret)
+ 		return ret;
+ 
++	ret = as21xxx_hwmon_probe(phydev);
++	if (ret)
++		return ret;
++
+ 	/* Enable PTP clk if not already Enabled */
+ 	return phy_set_bits_mmd(phydev, MDIO_MMD_VEND1, VEND1_PTP_CLK,
+ 				VEND1_PTP_CLK_EN);
