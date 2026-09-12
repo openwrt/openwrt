@@ -1,0 +1,21 @@
+From 1a65c2b4ae841bea8abeadacad120766d6c777e1 Mon Sep 17 00:00:00 2001
+From: Aurelien Jarno <aurelien@aurel32.net>
+Date: Fri, 10 Apr 2026 23:41:18 +0200
+Subject: [PATCH] k1-x.dtsi: replace uart compatible property to match upstream
+ Linux and OpenSBI
+
+---
+ arch/riscv/dts/k1-x.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/riscv/dts/k1-x.dtsi
++++ b/arch/riscv/dts/k1-x.dtsi
+@@ -290,7 +290,7 @@
+                 };
+ 
+ 		uart0: uart@d4017000 {
+-			compatible = "ns16550";
++			compatible = "spacemit,k1-uart", "intel,xscale-uart";
+ 			reg = <0x00000000 0xD4017000 0x00000000 0x00000100>;
+ 			reg-shift = <2>;
+ 			reg-io-width = <4>;

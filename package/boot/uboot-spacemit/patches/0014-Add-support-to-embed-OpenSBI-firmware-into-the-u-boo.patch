@@ -1,0 +1,183 @@
+From 101885c7840c3d58dc1150fa5fcfb7e6ecbcd026 Mon Sep 17 00:00:00 2001
+From: Aurelien Jarno <aurelien@aurel32.net>
+Date: Sun, 19 Apr 2026 16:30:17 +0000
+Subject: [PATCH] Add support to embed OpenSBI firmware into the u-boot.itb
+ image
+
+This is how upstream u-boot is typically configured.
+
+On the Milk-V Jupiter board the dedicated "opensbi" NOR flash partition
+is too small to fit the upstream OpenSBI build. Embedding the firmware
+in u-boot.itb enables the use of the upstream OpenSBI version on this
+board.
+
+a.heider: orangepi rv2 and r2s too
+---
+ board/spacemit/k1-x/config.mk             |  1 +
+ board/spacemit/k1-x/configs/uboot_fdt.its | 33 +++++++++++++++++++++++
+ configs/k1_defconfig                      |  5 ++--
+ 3 files changed, 36 insertions(+), 3 deletions(-)
+
+--- a/board/spacemit/k1-x/config.mk
++++ b/board/spacemit/k1-x/config.mk
+@@ -33,6 +33,7 @@ cmd_build_itb = \
+ 		$(srctree)/board/$(CONFIG_SYS_VENDOR)/$(CONFIG_SYS_BOARD)/dtb/ && \
+ 	cp $(srctree)/u-boot-nodtb.bin \
+ 		$(srctree)/board/$(CONFIG_SYS_VENDOR)/$(CONFIG_SYS_BOARD)/ && \
++	cp $(OPENSBI) $(srctree)/board/$(CONFIG_SYS_VENDOR)/$(CONFIG_SYS_BOARD)/fw_dynamic.bin && \
+ 	$(srctree)/tools/mkimage -f \
+ 		$(srctree)/board/$(CONFIG_SYS_VENDOR)/$(CONFIG_SYS_BOARD)/configs/uboot_fdt.its \
+ 		-r $(srctree)/$2;\
+--- a/board/spacemit/k1-x/configs/uboot_fdt.its
++++ b/board/spacemit/k1-x/configs/uboot_fdt.its
+@@ -19,6 +19,20 @@
+ 			};
+ 		};
+ 
++		opensbi {
++			description = "OpenSBI fw_dynamic Firmware";
++			type = "firmware";
++			os = "opensbi";
++			arch = "riscv";
++			compression = "none";
++			load = <0x0 0x0>;
++			entry = <0x0 0x0>;
++			data = /incbin/("../fw_dynamic.bin");
++			hash-1 {
++				algo = "crc32";
++			};
++		};
++
+ 		fdt_1 {
+ 			description = "k1-x_deb1";
+ 			type = "flat_dt";
+@@ -197,96 +211,115 @@
+ 		conf_1 {
+ 			description = "k1-x_deb1";
+ 			loadables = "uboot";
++			firmware = "opensbi";
+ 			fdt = "fdt_1";
+ 		};
+ 		conf_2 {
+ 			description = "k1-x_MINI-PC";
+ 			loadables = "uboot";
++			firmware = "opensbi";
+ 			fdt = "fdt_2";
+ 		};
+ 		conf_3 {
+ 			description = "k1-x_MUSE-N1";
+ 			loadables = "uboot";
++			firmware = "opensbi";
+ 			fdt = "fdt_3";
+ 		};
+ 		conf_4 {
+ 			description = "k1-x_MUSE-Pi";
+ 			loadables = "uboot";
++			firmware = "opensbi";
+ 			fdt = "fdt_4";
+ 		};
+ 		conf_5 {
+ 			description = "k1-x_milkv-jupiter";
+ 			loadables = "uboot";
++			firmware = "opensbi";
+ 			fdt = "fdt_5";
+ 		};
+ 		conf_6 {
+ 			description = "k1-x_MUSE-Book";
+ 			loadables = "uboot";
++			firmware = "opensbi";
+ 			fdt = "fdt_6";
+ 		};
+ 		conf_7 {
+ 			description = "m1-x_milkv-jupiter";
+ 			loadables = "uboot";
++			firmware = "opensbi";
+ 			fdt = "fdt_7";
+ 		};
+ 		conf_8 {
+ 			description = "k1-x_lpi3a";
+ 			loadables = "uboot";
++			firmware = "opensbi";
+ 			fdt = "fdt_8";
+ 		};
+ 		conf_9 {
+ 			description = "k1-x_MUSE-Card";
+ 			loadables = "uboot";
++			firmware = "opensbi";
+ 			fdt = "fdt_9";
+ 		};
+ 		conf_10 {
+ 			description = "k1-x_MUSE-Paper-mini-4g";
+ 			loadables = "uboot";
++			firmware = "opensbi";
+ 			fdt = "fdt_10";
+ 		};
+ 		conf_11 {
+ 			description = "k1-x_ZT001H";
+ 			loadables = "uboot";
++			firmware = "opensbi";
+ 			fdt = "fdt_11";
+ 		};
+ 		conf_12 {
+ 			description = "k1-x_uav";
+ 			loadables = "uboot";
++			firmware = "opensbi";
+ 			fdt = "fdt_12";
+ 		};
+ 		conf_13 {
+ 			description = "k1-x_MUSE-Paper2";
+ 			loadables = "uboot";
++			firmware = "opensbi";
+ 			fdt = "fdt_13";
+ 		};
+ 		conf_14 {
+ 			description = "k1-x_MUSE-Pi-Pro";
+ 			loadables = "uboot";
++			firmware = "opensbi";
+ 			fdt = "fdt_14";
+ 		};
+ 		conf_15 {
+ 			description = "k1-x_LX-V10";
+ 			loadables = "uboot";
++			firmware = "opensbi";
+ 			fdt = "fdt_15";
+ 		};
+ 		conf_16 {
+ 			description = "k1-x_som";
+ 			loadables = "uboot";
++			firmware = "opensbi";
+ 			fdt = "fdt_16";
+ 		};
+ 		conf_17 {
+ 			description = "k1-x_ZT_RVOH007";
+ 			loadables = "uboot";
++			firmware = "opensbi";
+ 			fdt = "fdt_17";
+ 		};
+ 		conf_18 {
+ 			description = "x1_orangepi-rv2";
+ 			loadables = "uboot";
++			firmware = "opensbi";
+ 			fdt = "fdt_18";
+ 		};
+ 		conf_19 {
+ 			description = "x1_orangepi-r2s";
+ 			loadables = "uboot";
++			firmware = "opensbi";
+ 			fdt = "fdt_19";
+ 		};
+ 	};
+--- a/configs/k1_defconfig
++++ b/configs/k1_defconfig
+@@ -67,9 +67,8 @@ CONFIG_SPL_POWER=y
+ # CONFIG_SPL_SPI_FLASH_TINY is not set
+ CONFIG_SPL_SPI_FLASH_MTD=y
+ CONFIG_SPL_MTD_LOAD=y
+-CONFIG_SYS_LOAD_IMAGE_PARTITION_NAME="opensbi"
+-CONFIG_SYS_LOAD_IMAGE_SEC_PARTITION=y
+-CONFIG_SYS_LOAD_IMAGE_SEC_PARTITION_NAME="uboot"
++CONFIG_SYS_LOAD_IMAGE_PARTITION_NAME="uboot"
++CONFIG_SYS_LOAD_IMAGE_SEC_PARTITION=n
+ CONFIG_SPL_USB_GADGET=y
+ CONFIG_SPL_FASTBOOT_LOAD=y
+ CONFIG_SPL_USB_SDP_SUPPORT=y

@@ -1,0 +1,50 @@
+From f31fc0e84da0fede92a00a47aa09b8b5e8652f27 Mon Sep 17 00:00:00 2001
+From: Tejas Bhumkar <tejas.arvind.bhumkar@amd.com>
+Date: Fri, 7 Jun 2024 06:32:58 -0400
+Subject: [PATCH] efi_loader : Suppress error print message
+
+Currently, on certain Xilinx platforms, an issue has been
+identified, manifesting as follows:
+
+Starting kernel ...
+
+efi_free_pool: illegal free 0x0000000077830040
+efi_free_pool: illegal free 0x000000007782d040
+efi_free_pool: illegal free 0x000000007782c040
+
+The issue arises when the ramdisk image is relocated, placing
+it within the previously allocated EFI memory region( as EFI
+is established quite early in U-Boot). Consequently, when
+attempting to release memory in the EFI memory region during
+the handover process to the kernel,we encounter memory violations.
+
+Highlighting that EFI remains active primarily during the
+booting of an EFI application, and the lmb persists while
+configuring images for the boot process. Since we aren't
+utilizing the EFI memory region during the boot process,
+there is no adverse impact even in the event of a violation.
+
+Currently, there is an ongoing discussion regarding the handling
+strategies of three memory allocators: malloc, lmb, and EFI. This
+discussion is documented in the email chain
+titled "Proposal: U-Boot memory management."
+
+Therefore, it is advisable to suppress the print message during
+the boot process for now.
+
+Signed-off-by: Tejas Bhumkar <tejas.arvind.bhumkar@amd.com>
+---
+ lib/efi_loader/efi_memory.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/lib/efi_loader/efi_memory.c
++++ b/lib/efi_loader/efi_memory.c
+@@ -660,7 +660,7 @@ efi_status_t efi_free_pool(void *buffer)
+ 	/* Check that this memory was allocated by efi_allocate_pool() */
+ 	if (((uintptr_t)alloc & EFI_PAGE_MASK) ||
+ 	    alloc->checksum != checksum(alloc)) {
+-		printf("%s: illegal free 0x%p\n", __func__, buffer);
++		debug("%s: illegal free 0x%p\n", __func__, buffer);
+ 		return EFI_INVALID_PARAMETER;
+ 	}
+ 	/* Avoid double free */

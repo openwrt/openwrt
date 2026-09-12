@@ -1,0 +1,149 @@
+From 87dc947ce93c9f5ae8edf848bc2cba559d52ea80 Mon Sep 17 00:00:00 2001
+From: Junhui Liu <junhui.liu@pigmoral.tech>
+Date: Sun, 12 Jul 2026 12:00:02 +0800
+Subject: [PATCH] riscv: dts: spacemit: k1: Split gmac_clk_ref into independent
+ pinctrl groups
+
+The gmac_clk_ref signal is optional for the GMAC controller and is not
+strictly required for all hardware designs. The pins for gmac0_clk_ref
+(GPIO 45) and gmac1_clk_ref (GPIO 46) may also be used as GPIOs for
+other functions even when the Ethernet controller is active.
+
+Split the refclk pins into independent pinctrl groups so boards can
+request them only when the reference clock path is actually needed.
+
+Among the already mainlined boards, BPI-F3, Jupiter and MusePi Pro have
+optional hardware paths for the GMAC refclk pins. BPI-F3 and Jupiter
+route both GMAC refclk pins to the PHYs through NC/0R option resistors,
+while MusePi Pro only does so for GMAC0. Keep referencing the new
+clk-ref pinctrl groups on these boards so the optional hardware paths
+remain usable if the option resistors are populated.
+
+OrangePi R2S has no publicly available schematic, so also keep the
+clk-ref groups there to preserve the previous pinmux behavior.
+
+Fixes: 60775f28cfb7 ("riscv: dts: spacemit: Add Ethernet support for K1")
+Signed-off-by: Junhui Liu <junhui.liu@pigmoral.tech>
+Reviewed-by: Yixun Lan <dlan@kernel.org>
+Link: https://patch.msgid.link/20260712-bpi-cm6-v3-2-8d1e2045179d@pigmoral.tech
+Signed-off-by: Yixun Lan <dlan@kernel.org>
+(cherry picked from commit 8270311d70fdf36bc8aab1e52b554e654a8839ff)
+---
+ .../boot/dts/spacemit/k1-bananapi-f3.dts      |  4 ++--
+ .../boot/dts/spacemit/k1-milkv-jupiter.dts    |  4 ++--
+ .../riscv/boot/dts/spacemit/k1-musepi-pro.dts |  2 +-
+ .../boot/dts/spacemit/k1-orangepi-r2s.dts     |  4 ++--
+ arch/riscv/boot/dts/spacemit/k1-pinctrl.dtsi  | 24 +++++++++++++++----
+ 5 files changed, 27 insertions(+), 11 deletions(-)
+
+--- a/arch/riscv/boot/dts/spacemit/k1-bananapi-f3.dts
++++ b/arch/riscv/boot/dts/spacemit/k1-bananapi-f3.dts
+@@ -134,7 +134,7 @@
+ 	phy-handle = <&rgmii0>;
+ 	phy-mode = "rgmii-id";
+ 	pinctrl-names = "default";
+-	pinctrl-0 = <&gmac0_cfg>;
++	pinctrl-0 = <&gmac0_cfg>, <&gmac0_clk_ref_cfg>;
+ 	rx-internal-delay-ps = <0>;
+ 	tx-internal-delay-ps = <0>;
+ 	status = "okay";
+@@ -157,7 +157,7 @@
+ 	phy-handle = <&rgmii1>;
+ 	phy-mode = "rgmii-id";
+ 	pinctrl-names = "default";
+-	pinctrl-0 = <&gmac1_cfg>;
++	pinctrl-0 = <&gmac1_cfg>, <&gmac1_clk_ref_cfg>;
+ 	rx-internal-delay-ps = <0>;
+ 	tx-internal-delay-ps = <250>;
+ 	status = "okay";
+--- a/arch/riscv/boot/dts/spacemit/k1-milkv-jupiter.dts
++++ b/arch/riscv/boot/dts/spacemit/k1-milkv-jupiter.dts
+@@ -121,7 +121,7 @@
+ 	phy-handle = <&rgmii0>;
+ 	phy-mode = "rgmii-id";
+ 	pinctrl-names = "default";
+-	pinctrl-0 = <&gmac0_cfg>;
++	pinctrl-0 = <&gmac0_cfg>, <&gmac0_clk_ref_cfg>;
+ 	rx-internal-delay-ps = <0>;
+ 	tx-internal-delay-ps = <0>;
+ 	status = "okay";
+@@ -144,7 +144,7 @@
+ 	phy-handle = <&rgmii1>;
+ 	phy-mode = "rgmii-id";
+ 	pinctrl-names = "default";
+-	pinctrl-0 = <&gmac1_cfg>;
++	pinctrl-0 = <&gmac1_cfg>, <&gmac1_clk_ref_cfg>;
+ 	rx-internal-delay-ps = <0>;
+ 	tx-internal-delay-ps = <250>;
+ 	status = "okay";
+--- a/arch/riscv/boot/dts/spacemit/k1-musepi-pro.dts
++++ b/arch/riscv/boot/dts/spacemit/k1-musepi-pro.dts
+@@ -102,7 +102,7 @@
+ &eth0 {
+ 	phy-handle = <&rgmii0>;
+ 	phy-mode = "rgmii-id";
+-	pinctrl-0 = <&gmac0_cfg>;
++	pinctrl-0 = <&gmac0_cfg>, <&gmac0_clk_ref_cfg>;
+ 	pinctrl-names = "default";
+ 	rx-internal-delay-ps = <0>;
+ 	tx-internal-delay-ps = <0>;
+--- a/arch/riscv/boot/dts/spacemit/k1-orangepi-r2s.dts
++++ b/arch/riscv/boot/dts/spacemit/k1-orangepi-r2s.dts
+@@ -60,7 +60,7 @@
+ 	phy-handle = <&rgmii0>;
+ 	phy-mode = "rgmii-id";
+ 	pinctrl-names = "default";
+-	pinctrl-0 = <&gmac0_cfg>;
++	pinctrl-0 = <&gmac0_cfg>, <&gmac0_clk_ref_cfg>;
+ 	rx-internal-delay-ps = <0>;
+ 	tx-internal-delay-ps = <0>;
+ 	status = "okay";
+@@ -84,7 +84,7 @@
+ 	phy-handle = <&rgmii1>;
+ 	phy-mode = "rgmii-id";
+ 	pinctrl-names = "default";
+-	pinctrl-0 = <&gmac1_cfg>;
++	pinctrl-0 = <&gmac1_cfg>, <&gmac1_clk_ref_cfg>;
+ 	rx-internal-delay-ps = <0>;
+ 	tx-internal-delay-ps = <250>;
+ 	status = "okay";
+--- a/arch/riscv/boot/dts/spacemit/k1-pinctrl.dtsi
++++ b/arch/riscv/boot/dts/spacemit/k1-pinctrl.dtsi
+@@ -27,8 +27,16 @@
+ 				 <K1_PADCONF(11, 1)>,	/* gmac0_tx_en */
+ 				 <K1_PADCONF(12, 1)>,	/* gmac0_mdc */
+ 				 <K1_PADCONF(13, 1)>,	/* gmac0_mdio */
+-				 <K1_PADCONF(14, 1)>,	/* gmac0_int_n */
+-				 <K1_PADCONF(45, 1)>;	/* gmac0_clk_ref */
++				 <K1_PADCONF(14, 1)>;	/* gmac0_int_n */
++
++			bias-pull-up = <0>;
++			drive-strength = <21>;
++		};
++	};
++
++	gmac0_clk_ref_cfg: gmac0-clk-ref-cfg {
++		gmac0-clk-ref-pins {
++			pinmux = <K1_PADCONF(45, 1)>;	/* gmac0_clk_ref */
+ 
+ 			bias-pull-up = <0>;
+ 			drive-strength = <21>;
+@@ -51,8 +59,16 @@
+ 				 <K1_PADCONF(40, 1)>,	/* gmac1_tx_en */
+ 				 <K1_PADCONF(41, 1)>,	/* gmac1_mdc */
+ 				 <K1_PADCONF(42, 1)>,	/* gmac1_mdio */
+-				 <K1_PADCONF(43, 1)>,	/* gmac1_int_n */
+-				 <K1_PADCONF(46, 1)>;	/* gmac1_clk_ref */
++				 <K1_PADCONF(43, 1)>;	/* gmac1_int_n */
++
++			bias-pull-up = <0>;
++			drive-strength = <21>;
++		};
++	};
++
++	gmac1_clk_ref_cfg: gmac1-clk-ref-cfg {
++		gmac1-clk-ref-pins {
++			pinmux = <K1_PADCONF(46, 1)>;	/* gmac1_clk_ref */
+ 
+ 			bias-pull-up = <0>;
+ 			drive-strength = <21>;

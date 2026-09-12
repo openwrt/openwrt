@@ -1,0 +1,444 @@
+From 043aa6520c43a61227c9da962c0fb81695075e29 Mon Sep 17 00:00:00 2001
+From: Junhui Liu <junhui.liu@pigmoral.tech>
+Date: Sun, 12 Jul 2026 12:00:03 +0800
+Subject: [PATCH] riscv: dts: spacemit: k1: Add Banana Pi BPI-CM6 IO board
+
+The Banana Pi BPI-CM6 IO board combines the BPI-CM6 compute module with
+an IO carrier board. The core module integrates the SpacemiT K1 SoC,
+PMIC, DDR, eMMC, the eth0 PHY, and wireless connectivity. The companion
+IO carrier board extends it by providing the eth1 PHY and exposing
+standard interfaces, including dual Gigabit Ethernet, MicroSD, two USB-A
+ports, a USB Type-C port, two PCIe M.2 slots, and a serial console.
+
+The board also has two I2C EEPROMs. One is on the core module, which
+stores factory manufacturing data and is marked read-only. The other is
+on the carrier board, which is shipped unprogrammed and left writable
+for evaluation purposes.
+
+Add initial support for UART console, eMMC, SD card, I2C, EEPROMs,
+PCIe, USB, and dual Ethernet interfaces.
+
+Link: https://docs.banana-pi.org/en/BPI-CM6/BananaPi_BPI-CM6
+Reviewed-by: Michael Opdenacker <michael.opdenacker@rootcommit.com>
+Tested-by: Michael Opdenacker <michael.opdenacker@rootcommit.com>
+Signed-off-by: Junhui Liu <junhui.liu@pigmoral.tech>
+Reviewed-by: Yixun Lan <dlan@kernel.org>
+Link: https://patch.msgid.link/20260712-bpi-cm6-v3-3-8d1e2045179d@pigmoral.tech
+Signed-off-by: Yixun Lan <dlan@kernel.org>
+(cherry picked from commit 46a8c01700ac21e1b83385df00aa0baa5d287b44)
+---
+ arch/riscv/boot/dts/spacemit/Makefile         |   1 +
+ .../boot/dts/spacemit/k1-bananapi-cm6-io.dts  | 177 ++++++++++++++
+ .../boot/dts/spacemit/k1-bananapi-cm6.dtsi    | 217 ++++++++++++++++++
+ 3 files changed, 395 insertions(+)
+ create mode 100644 arch/riscv/boot/dts/spacemit/k1-bananapi-cm6-io.dts
+ create mode 100644 arch/riscv/boot/dts/spacemit/k1-bananapi-cm6.dtsi
+
+--- a/arch/riscv/boot/dts/spacemit/Makefile
++++ b/arch/riscv/boot/dts/spacemit/Makefile
+@@ -1,4 +1,5 @@
+ # SPDX-License-Identifier: GPL-2.0
++dtb-$(CONFIG_ARCH_SPACEMIT) += k1-bananapi-cm6-io.dtb
+ dtb-$(CONFIG_ARCH_SPACEMIT) += k1-bananapi-f3.dtb
+ dtb-$(CONFIG_ARCH_SPACEMIT) += k1-milkv-jupiter.dtb
+ dtb-$(CONFIG_ARCH_SPACEMIT) += k1-musepi-pro.dtb
+--- /dev/null
++++ b/arch/riscv/boot/dts/spacemit/k1-bananapi-cm6-io.dts
+@@ -0,0 +1,177 @@
++// SPDX-License-Identifier: GPL-2.0 OR MIT
++/*
++ * Copyright (C) 2026 Junhui Liu <junhui.liu@pigmoral.tech>
++ */
++
++#include "k1-bananapi-cm6.dtsi"
++
++#include <dt-bindings/leds/common.h>
++
++/ {
++	model = "Banana Pi BPI-CM6 IO Board";
++	compatible = "bananapi,bpi-cm6-io", "bananapi,bpi-cm6", "spacemit,k1";
++
++	aliases {
++		ethernet0 = &eth0;
++		ethernet1 = &eth1;
++		serial0 = &uart0;
++	};
++
++	chosen {
++		stdout-path = "serial0:115200n8";
++	};
++
++	leds {
++		compatible = "gpio-leds";
++
++		led0 {
++			color = <LED_COLOR_ID_RED>;
++			gpios = <&gpio K1_GPIO(96) GPIO_ACTIVE_LOW>;
++		};
++
++		led1 {
++			color = <LED_COLOR_ID_BLUE>;
++			gpios = <&gpio K1_GPIO(97) GPIO_ACTIVE_LOW>;
++		};
++	};
++
++	pcie_vcc_3v3: regulator-pcie-vcc-3v3 {
++		compatible = "regulator-fixed";
++		regulator-name = "NGFF_KEYM_VDD";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		regulator-boot-on;
++		regulator-always-on;
++	};
++
++	usb_vbus_5v: regulator-usb-vbus-5v {
++		compatible = "regulator-fixed";
++		regulator-name = "VBUS_A_B";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		gpio = <&gpio K1_GPIO(124) GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
++
++	sd_vcc_3v3: regulator-sd-vcc-3v3 {
++		compatible = "regulator-fixed";
++		regulator-name = "3.3VS_CARD";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		gpio = <&gpio K1_GPIO(127) GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
++};
++
++&combo_phy {
++	status = "okay";
++};
++
++&eth0 {
++	status = "okay";
++};
++
++&eth1 {
++	nvmem-cells = <&mac_address 1>;
++	nvmem-cell-names = "mac-address";
++	phy-handle = <&rgmii1>;
++	phy-mode = "rgmii-id";
++	pinctrl-names = "default";
++	pinctrl-0 = <&gmac1_cfg>;
++	rx-internal-delay-ps = <0>;
++	tx-internal-delay-ps = <250>;
++	status = "okay";
++
++	mdio-bus {
++		#address-cells = <0x1>;
++		#size-cells = <0x0>;
++
++		reset-gpios = <&gpio K1_GPIO(46) GPIO_ACTIVE_LOW>;
++		reset-delay-us = <10000>;
++		reset-post-delay-us = <100000>;
++
++		rgmii1: phy@1 {
++			reg = <0x1>;
++		};
++	};
++};
++
++&i2c2 {
++	eeprom@54 {
++		compatible = "atmel,24c08";
++		reg = <0x54>;
++		vcc-supply = <&buck3_1v8>;
++		pagesize = <16>;
++		size = <1024>;
++	};
++};
++
++&pcie1_phy {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pcie1_3_cfg>;
++	status = "okay";
++};
++
++&pcie1_port {
++	phys = <&pcie1_phy>;
++	vpcie3v3-supply = <&pcie_vcc_3v3>;
++};
++
++&pcie1 {
++	status = "okay";
++};
++
++&pcie2_phy {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pcie2_4_cfg>;
++	status = "okay";
++};
++
++&pcie2_port {
++	phys = <&pcie2_phy>;
++	vpcie3v3-supply = <&pcie_vcc_3v3>;
++};
++
++&pcie2 {
++	status = "okay";
++};
++
++&qspi {
++	pinctrl-names = "default";
++	pinctrl-0 = <&qspi_cfg>;
++	status = "okay";
++};
++
++&sdhci0 {
++	pinctrl-names = "default", "uhs";
++	pinctrl-0 = <&mmc1_cfg>;
++	pinctrl-1 = <&mmc1_uhs_cfg>;
++	bus-width = <4>;
++	cd-gpios = <&gpio K1_GPIO(80) (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
++	no-mmc;
++	no-sdio;
++	disable-wp;
++	cap-sd-highspeed;
++	vmmc-supply = <&sd_vcc_3v3>;
++	vqmmc-supply = <&aldo1>;
++	sd-uhs-sdr25;
++	sd-uhs-sdr50;
++	sd-uhs-sdr104;
++	status = "okay";
++};
++
++&uart0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&uart0_2_cfg>;
++	status = "okay";
++};
++
++&usbphy2 {
++	status = "okay";
++};
++
++&usb_dwc3 {
++	dr_mode = "host";
++	vbus-supply = <&usb_vbus_5v>;
++	status = "okay";
++};
+--- /dev/null
++++ b/arch/riscv/boot/dts/spacemit/k1-bananapi-cm6.dtsi
+@@ -0,0 +1,217 @@
++// SPDX-License-Identifier: GPL-2.0 OR MIT
++/*
++ * Copyright (C) 2026 Junhui Liu <junhui.liu@pigmoral.tech>
++ */
++
++#include "k1.dtsi"
++#include "k1-pinctrl.dtsi"
++
++/ {
++	model = "Banana Pi BPI-CM6 Module";
++	compatible = "bananapi,bpi-cm6", "spacemit,k1";
++
++	aliases {
++		i2c2 = &i2c2;
++		i2c8 = &i2c8;
++	};
++
++	reg_vcc_4v: regulator-vcc-4v {
++		compatible = "regulator-fixed";
++		regulator-name = "VCC4V0_SYS";
++		regulator-min-microvolt = <4000000>;
++		regulator-max-microvolt = <4000000>;
++		regulator-boot-on;
++		regulator-always-on;
++	};
++};
++
++&emmc {
++	bus-width = <8>;
++	mmc-hs400-1_8v;
++	mmc-hs400-enhanced-strobe;
++	non-removable;
++	no-sd;
++	no-sdio;
++	status = "okay";
++};
++
++&eth0 {
++	nvmem-cells = <&mac_address 0>;
++	nvmem-cell-names = "mac-address";
++	phy-handle = <&rgmii0>;
++	phy-mode = "rgmii-id";
++	pinctrl-names = "default";
++	pinctrl-0 = <&gmac0_cfg>;
++	rx-internal-delay-ps = <0>;
++	tx-internal-delay-ps = <0>;
++
++	mdio-bus {
++		#address-cells = <0x1>;
++		#size-cells = <0x0>;
++
++		reset-gpios = <&gpio K1_GPIO(45) GPIO_ACTIVE_LOW>;
++		reset-delay-us = <10000>;
++		reset-post-delay-us = <100000>;
++
++		rgmii0: phy@1 {
++			reg = <0x1>;
++		};
++	};
++};
++
++&pdma {
++	status = "okay";
++};
++
++&i2c2 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2c2_0_cfg>;
++	status = "okay";
++
++	eeprom@50 {
++		compatible = "atmel,24c02";
++		reg = <0x50>;
++		vcc-supply = <&buck3_1v8>;
++		pagesize = <16>;
++		read-only;
++		size = <256>;
++
++		nvmem-layout {
++			compatible = "onie,tlv-layout";
++
++			mac_address: mac-address {
++				#nvmem-cell-cells = <1>;
++			};
++
++			num-macs {
++			};
++
++			serial-number {
++			};
++		};
++	};
++};
++
++&i2c8 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2c8_cfg>;
++	status = "okay";
++
++	pmic@41 {
++		compatible = "spacemit,p1";
++		reg = <0x41>;
++		interrupts = <64>;
++		vin1-supply = <&reg_vcc_4v>;
++		vin2-supply = <&reg_vcc_4v>;
++		vin3-supply = <&reg_vcc_4v>;
++		vin4-supply = <&reg_vcc_4v>;
++		vin5-supply = <&reg_vcc_4v>;
++		vin6-supply = <&reg_vcc_4v>;
++		aldoin-supply = <&reg_vcc_4v>;
++		dldoin1-supply = <&buck5>;
++		dldoin2-supply = <&buck5>;
++
++		regulators {
++			buck1 {
++				regulator-min-microvolt = <500000>;
++				regulator-max-microvolt = <3450000>;
++				regulator-ramp-delay = <5000>;
++				regulator-always-on;
++			};
++
++			buck2 {
++				regulator-min-microvolt = <500000>;
++				regulator-max-microvolt = <3450000>;
++				regulator-ramp-delay = <5000>;
++				regulator-always-on;
++			};
++
++			buck3_1v8: buck3 {
++				regulator-min-microvolt = <500000>;
++				regulator-max-microvolt = <1800000>;
++				regulator-ramp-delay = <5000>;
++				regulator-always-on;
++			};
++
++			buck4 {
++				regulator-min-microvolt = <500000>;
++				regulator-max-microvolt = <3300000>;
++				regulator-ramp-delay = <5000>;
++				regulator-always-on;
++			};
++
++			buck5: buck5 {
++				regulator-min-microvolt = <500000>;
++				regulator-max-microvolt = <3450000>;
++				regulator-ramp-delay = <5000>;
++				regulator-always-on;
++			};
++
++			buck6 {
++				regulator-min-microvolt = <500000>;
++				regulator-max-microvolt = <3450000>;
++				regulator-ramp-delay = <5000>;
++				regulator-always-on;
++			};
++
++			aldo1: aldo1 {
++				regulator-min-microvolt = <500000>;
++				regulator-max-microvolt = <3400000>;
++				regulator-boot-on;
++			};
++
++			aldo2 {
++				regulator-min-microvolt = <500000>;
++				regulator-max-microvolt = <3400000>;
++			};
++
++			aldo3 {
++				regulator-min-microvolt = <500000>;
++				regulator-max-microvolt = <3400000>;
++			};
++
++			aldo4 {
++				regulator-min-microvolt = <500000>;
++				regulator-max-microvolt = <3400000>;
++			};
++
++			dldo1 {
++				regulator-min-microvolt = <500000>;
++				regulator-max-microvolt = <3400000>;
++				regulator-boot-on;
++			};
++
++			dldo2 {
++				regulator-min-microvolt = <500000>;
++				regulator-max-microvolt = <3400000>;
++			};
++
++			dldo3 {
++				regulator-min-microvolt = <500000>;
++				regulator-max-microvolt = <3400000>;
++			};
++
++			dldo4 {
++				regulator-min-microvolt = <500000>;
++				regulator-max-microvolt = <3400000>;
++				regulator-always-on;
++			};
++
++			dldo5 {
++				regulator-min-microvolt = <500000>;
++				regulator-max-microvolt = <3400000>;
++			};
++
++			dldo6 {
++				regulator-min-microvolt = <500000>;
++				regulator-max-microvolt = <3400000>;
++				regulator-always-on;
++			};
++
++			dldo7 {
++				regulator-min-microvolt = <500000>;
++				regulator-max-microvolt = <3400000>;
++			};
++		};
++	};
++};
