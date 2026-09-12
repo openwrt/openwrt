@@ -1101,6 +1101,8 @@ dnsmasq_start()
 	fi
 
 	config_get leasefile $cfg leasefile "/tmp/dhcp.leases"
+	local leasefiledir="$(dirname $leasefile)"
+	[ ! -e "$leasefiledir" ] && mkdir -p "$leasefiledir" && chown dnsmasq:dnsmasq "$leasefiledir"
 	[ -n "$leasefile" ] && [ ! -e "$leasefile" ] && touch "$leasefile"
 	config_get_bool cachelocal "$cfg" cachelocal 1
 
