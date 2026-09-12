@@ -2,6 +2,48 @@
 PPP_IPPARAM="$6"
 
 . /lib/netifd/netifd-proto.sh
+
+BW_DOWNLINK=
+BW_UPLINK=
+function parse_bandwidth() {
+	local ppp_auth_ack_msg="$(cat /var/run/pppd/${IFNAME}.authackmsg)"
+	local down up tmp
+
+	case "$ppp_auth_ack_msg" in
+	*UI-SBR:*)
+		# United Internet
+		# Example: [UI-SBR:<down_kbit>,<up_kbit>;UI-LINEID:...;]
+		tmp="${ppp_auth_ack_msg#*UI-SBR:}"
+		tmp="${tmp%%;*}"
+		down="${tmp%%,*}"
+		up="${tmp#*,}"
+		;;
+	*SRU=*SRD=*)
+		# Deutsche Telekom
+		# Example: SRU=<up_kbit>#SRD=<down_kbit>#
+		tmp="${ppp_auth_ack_msg#*SRU=}"
+		up="${tmp%%#*}"
+		tmp="${ppp_auth_ack_msg#*SRD=}"
+		down="${tmp%%#*}"
+		;;
+	esac
+
+	case "$down" in ''|*[!0-9]*) down="" ;; esac
+	case "$up" in ''|*[!0-9]*) up="" ;; esac
+
+	[ -n "$down" ] && [ -n "$up" ] || return 1
+
+	if [ "$down" -gt 0 ]; then
+		BW_UPLINK="$up"
+	fi
+
+	if [ "$up" -gt 0 ]; then
+		BW_DOWNLINK="$down"
+	fi
+}
+
+parse_bandwidth
+
 proto_init_update "$IFNAME" 1 1
 proto_set_keep 1
 [ -n "$PPP_IPPARAM" ] && {
@@ -10,6 +52,10 @@ proto_set_keep 1
 	[ -n "$DNS1" ] && proto_add_dns_server "$DNS1"
 	[ -n "$DNS2" -a "$DNS1" != "$DNS2" ] && proto_add_dns_server "$DNS2"
 }
+
+if [ -n "$BW_DOWNLINK" ] && [ -n "$BW_UPLINK" ]; then
+	proto_add_bandwidth "$BW_DOWNLINK/layer2/proto" "$BW_UPLINK/layer2/proto"
+fi
 proto_send_update "$PPP_IPPARAM"
 
 [ -d /etc/ppp/ip-up.d ] && {
