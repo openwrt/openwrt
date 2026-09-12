@@ -93,14 +93,15 @@ preinit_config_port() {
 }
 
 preinit_config_board() {
-	/bin/board_detect /tmp/board.json
+	export JSON_PREFIX=early_
+	/bin/board_detect /tmp/early.json
 
-	[ -f "/tmp/board.json" ] || return
+	[ -f "/tmp/early.json" ] || return
 
 	. /usr/share/libubox/jshn.sh
 
 	json_init
-	json_load "$(cat /tmp/board.json)"
+	json_load "$(cat /tmp/early.json)"
 
 	# Find the current highest eth*
 	max_eth=$(grep -o '^ *eth[0-9]*:' /proc/net/dev | tr -dc '[0-9]\n' | sort -n | tail -1)

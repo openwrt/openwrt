@@ -5,6 +5,7 @@ import { is_equal } from "/usr/share/hostap/common.uc";
 let nl = require("nl80211");
 
 let board_file = "/etc/board.json";
+let stamp_file = "/etc/.board.json.stamp";
 let prev_board_data = json(readfile(board_file));
 let board_data = json(readfile(board_file));
 
@@ -258,10 +259,15 @@ wiphy_detect();
 if (!is_equal(prev_board_data, board_data)) {
 	let new_file = board_file + ".new";
 	unlink(new_file);
+	unlink(stamp_file);
 	let f = open(new_file, "wx");
 	if (!f)
 		exit(1);
 	f.write(sprintf("%.J\n", board_data));
 	f.close();
 	rename(new_file, board_file);
+	let s = open(stamp_file, "w");
+	if (!s)
+		exit(1);
+	s.close();
 }
