@@ -72,5 +72,36 @@ netgear_orbi_do_flash() {
 
 	# Cleanup
 	losetup -d $loopdev >/dev/null 2>&1
+
+	# If /overlay has been migrated (by a board-specific uci-defaults
+	# script) onto a separate, dedicated partition labeled "overlay"
+	# instead of staying on the rootfs_data loop above, the post-upgrade
+	# config restore on next boot will look for $BACKUP_FILE on whichever
+	# partition mount_root actually selects. Stage a copy there too, so
+	# "keep settings" upgrades aren't silently dropped on boards where
+	# /overlay has been pointed at extra flash.
+	#
+	# The ext4 volume label is read directly from raw superblock bytes
+	# (offset 1024 + 0x78) rather than via "block info"/blkid-tiny, which
+	# has been observed to segfault unpredictably on these boards -- a
+	# crash here must never be misread as "no such partition".
+	[ -n "$UPGRADE_BACKUP" ] && [ -f "$UPGRADE_BACKUP" ] && {
+		local part overlay_dev=""
+		for part in /dev/mmcblk0p*; do
+			[ -b "$part" ] || continue
+			[ "$part" = "$rootfs" ] && continue
+			local label="$(dd if="$part" bs=1 skip=1144 count=16 2>/dev/null | tr -d '\0')"
+			[ "$label" = "overlay" ] && overlay_dev="$part" && break
+		done
+		if [ -n "$overlay_dev" ]; then
+			mkdir -p /tmp/new_overlay
+			mount -t ext4 "$overlay_dev" /tmp/new_overlay 2>/dev/null && {
+				echo "Saving config to separate overlay partition ${overlay_dev}."
+				cp -v "$UPGRADE_BACKUP" "/tmp/new_overlay/$BACKUP_FILE"
+				umount /tmp/new_overlay
+			}
+		fi
+	}
+
 	sync
 }
