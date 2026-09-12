@@ -31,7 +31,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 
 --- a/drivers/net/pcs/Kconfig
 +++ b/drivers/net/pcs/Kconfig
-@@ -44,4 +44,6 @@ config PCS_RZN1_MIIC
+@@ -51,4 +51,6 @@ config PCS_RZN1_MIIC
  	  on RZ/N1 SoCs. This PCS converts MII to RMII/RGMII or can be set in
  	  pass-through mode for MII.
  
@@ -40,7 +40,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  endmenu
 --- a/drivers/net/pcs/Makefile
 +++ b/drivers/net/pcs/Makefile
-@@ -9,3 +9,5 @@ obj-$(CONFIG_PCS_LYNX)		+= pcs-lynx.o
+@@ -10,3 +10,5 @@ obj-$(CONFIG_PCS_LYNX)		+= pcs-lynx.o
  obj-$(CONFIG_PCS_MTK_LYNXI)	+= pcs-mtk-lynxi.o
  obj-$(CONFIG_PCS_RZN1_MIIC)	+= pcs-rzn1-miic.o
  obj-$(CONFIG_PCS_MTK_USXGMII)	+= pcs-mtk-usxgmii.o
