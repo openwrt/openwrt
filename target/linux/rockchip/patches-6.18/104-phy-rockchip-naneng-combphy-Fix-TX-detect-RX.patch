@@ -1,0 +1,101 @@
+From git@z Thu Jan  1 00:00:00 1970
+Subject: [PATCH] phy: rockchip: naneng-combphy: Fix TX detect RX
+ termination errata
+From: Shawn Lin <shawn.lin@rock-chips.com>
+Date: Mon, 31 Aug 2026 14:36:44 +0800
+Message-Id: <1788158204-161347-1-git-send-email-shawn.lin@rock-chips.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+Some PHY revisions may fail to detect the peer RX's termination
+resistor (RTERM) under certain critical temperature conditions.
+This causes TX detection failures on PCIe links.
+
+Add a workaround to force the RTERM detection ready signal for
+affected PHY revisions. This ensures reliable TX-to-RX termination
+detection across all operating temperature ranges.
+
+The fix applies to RK3562, RK3568, RK3576 and RK3588 SoCs which share
+the same PHY IP with this hardware errata.
+
+Fixes: 7160820d742a ("phy: rockchip: add naneng combo phy for RK3568")
+Fixes: f13bff25161b ("phy: rockchip-naneng-combo: Support rk3562")
+Fixes: ba8ad7eece66 ("phy: rockchip-naneng-combo: add rk3576 support")
+Fixes: a03c44277253 ("phy: rockchip: Add naneng combo phy support for RK3588")
+Signed-off-by: Shawn Lin <shawn.lin@rock-chips.com>
+---
+
+ drivers/phy/rockchip/phy-rockchip-naneng-combphy.c | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+
+--- a/drivers/phy/rockchip/phy-rockchip-naneng-combphy.c
++++ b/drivers/phy/rockchip/phy-rockchip-naneng-combphy.c
+@@ -106,6 +106,9 @@
+ #define RK3568_PHYREG18				0x44
+ #define RK3568_PHYREG18_PLL_LOOP		0x32
+ 
++#define RK3568_PHYREG26				0x64
++#define RK3568_PHYREG26_FORCE_RTERM_DET_RDY	BIT(5)
++
+ #define RK3568_PHYREG30				0x74
+ #define RK3568_PHYREG30_GATE_TX_PCK_SEL         BIT(7)
+ #define RK3568_PHYREG30_GATE_TX_PCK_DLY_PLL_OFF BIT(7)
+@@ -193,6 +196,7 @@ struct rockchip_combphy_cfg {
+ 	unsigned int num_phys;
+ 	unsigned int phy_ids[3];
+ 	const struct rockchip_combphy_grfcfg *grfcfg;
++	bool force_rxterm_det_rdy;
+ 	int (*combphy_cfg)(struct rockchip_combphy_priv *priv);
+ };
+ 
+@@ -264,6 +268,17 @@ static int rockchip_combphy_init(struct
+ 
+ 	switch (priv->type) {
+ 	case PHY_TYPE_PCIE:
++		/*
++		 * Hardware Errata: TX fails to detect peer RX termination.
++		 * Some PHY revisions may fail to detect remote RX's RTERM
++		 * (receiver termination resistor) under certain critical
++		 * temperature conditions. Set force rterm detect ready to
++		 * fix it.
++		 */
++		if (priv->cfg->force_rxterm_det_rdy)
++			rockchip_combphy_updatel(priv, RK3568_PHYREG26_FORCE_RTERM_DET_RDY,
++					RK3568_PHYREG26_FORCE_RTERM_DET_RDY, RK3568_PHYREG26);
++		fallthrough;
+ 	case PHY_TYPE_USB3:
+ 	case PHY_TYPE_SATA:
+ 	case PHY_TYPE_SGMII:
+@@ -747,6 +762,7 @@ static const struct rockchip_combphy_cfg
+ 	},
+ 	.grfcfg		= &rk3562_combphy_grfcfgs,
+ 	.combphy_cfg	= rk3562_combphy_cfg,
++	.force_rxterm_det_rdy  = true,
+ };
+ 
+ static int rk3568_combphy_cfg(struct rockchip_combphy_priv *priv)
+@@ -964,6 +980,7 @@ static const struct rockchip_combphy_cfg
+ 	},
+ 	.grfcfg		= &rk3568_combphy_grfcfgs,
+ 	.combphy_cfg	= rk3568_combphy_cfg,
++	.force_rxterm_det_rdy  = true,
+ };
+ 
+ static int rk3576_combphy_cfg(struct rockchip_combphy_priv *priv)
+@@ -1233,6 +1250,7 @@ static const struct rockchip_combphy_cfg
+ 	},
+ 	.grfcfg		= &rk3576_combphy_grfcfgs,
+ 	.combphy_cfg	= rk3576_combphy_cfg,
++	.force_rxterm_det_rdy  = true,
+ };
+ 
+ static int rk3588_combphy_cfg(struct rockchip_combphy_priv *priv)
+@@ -1420,6 +1438,7 @@ static const struct rockchip_combphy_cfg
+ 	},
+ 	.grfcfg		= &rk3588_combphy_grfcfgs,
+ 	.combphy_cfg	= rk3588_combphy_cfg,
++	.force_rxterm_det_rdy  = true,
+ };
+ 
+ static const struct of_device_id rockchip_combphy_of_match[] = {
