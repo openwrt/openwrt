@@ -220,7 +220,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +
 +static struct platform_driver krait_cache_driver = {
 +	.probe		= krait_cache_probe,
-+	.remove_new	= krait_cache_remove,
++	.remove		= krait_cache_remove,
 +	.driver		= {
 +		.name   = "krait-cache-scaling",
 +		.of_match_table = krait_cache_match_table,

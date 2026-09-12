@@ -188,7 +188,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +
 +static struct platform_driver ipq806x_fab_driver = {
 +	.probe		= ipq806x_fab_probe,
-+	.remove_new	= ipq806x_fab_remove,
++	.remove		= ipq806x_fab_remove,
 +	.driver		= {
 +		.name   = "ipq806x-fab-scaling",
 +		.of_match_table = ipq806x_fab_match_table,
