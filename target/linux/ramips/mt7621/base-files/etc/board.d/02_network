@@ -27,6 +27,7 @@ ramips_setup_interfaces()
 	sim,simax1800t|\
 	sim,simax1800u|\
 	teltonika,rutm11|\
+	tplink,mr600-v1-eu|\
 	tplink,mr600-v2-eu|\
 	xiaomi,mi-router-3-pro|\
 	xiaomi,mi-router-ac2100|\
@@ -285,6 +286,7 @@ ramips_setup_macs()
 		lan_mac=$label_mac
 		wan_mac=$(macaddr_add "$label_mac" 1)
 		;;
+	tplink,mr600-v1-eu|\
 	tplink,mr600-v2-eu)
 		wwan_mac=$(macaddr_add $(cat /sys/class/net/eth0/address) 1)
 		ucidef_set_interface "wwan0" device "/dev/cdc-wdm0" protocol "qmi" macaddr "$wwan_mac"
