@@ -1,0 +1,114 @@
+From: Aleksei Sviridkin <f@lex.la>
+Subject: [PATCH] net: ethernet: mtk_eth_soc: populate lpi_interfaces to fix EEE support
+
+phylink_create() decides once and for all that a MAC supports managed
+EEE, and it requires the tx_lpi ops plus non-empty lpi_capabilities and
+lpi_interfaces. mtk_add_mac() leaves lpi_interfaces empty.
+
+So ever since EEE support was added, ethtool has answered "Not
+supported" on every MAC that uses mtk_phylink_ops, and
+phy_disable_eee() has locked userspace out of turning EEE on. Upstream
+notes MT7628 is unaffected because rt5350_phylink_ops has no tx_lpi
+methods; that split arrived after v6.18, so here MT7628 runs on
+mtk_phylink_ops like the rest and stays out because rt5350_data does
+not carry MTK_GMAC_EEE.
+
+Leave 2.5 Gbps out of both bitmaps, and the xGMII modes that
+mtk_mac_enable_tx_lpi() already refuses. MAC_MCR folds SPEED_2500 onto
+MAC_MCR_SPEED_1000, so MAC_MCR_EEE1G would govern LPI on such a link,
+and that is unvalidated rather than known unsupported: MediaTek's SDK
+driver sets the EEE force bits for 100 Mbps and 1 Gbps only, and the
+unit of the wakeup timers is undocumented with the port clock at
+2.5 times the rate.
+
+mtk_mac_enable_tx_lpi() programs wake-up times taken from MT7531's
+reset values, and the SoC's own field has no reset value to fall
+back on. Only MT7981 has been seen to exit LPI cleanly with them, so
+the LPI interfaces sit behind a new MTK_GMAC_EEE capability that only
+MT7981 sets; every other SoC keeps the current behaviour until it has
+been confirmed.
+
+LPI stays off until userspace enables it, but the EEE advertisement of
+a PHY that advertises it out of reset comes back, since phylink stops
+force-clearing it.
+
+Submitted upstream: https://lore.kernel.org/netdev/20260903123644.23800-3-f@lex.la/
+
+Fixes: 952d7325362f ("net: ethernet: mediatek: add EEE support")
+Signed-off-by: Aleksei Sviridkin <f@lex.la>
+---
+This one is in net (commit d876c9cb2d16) but stays here rather than in
+backport-6.18: its context needs the `no_pcs:` label from 737-10 and
+the `int id, err, count, i;` declaration from 795-05, both pending, and
+backport patches apply first.
+
+OpenWrt adaptations. The `for` loop needs `i`, which upstream declares
+in this same patch; the declaration hunk drops out because 795-05
+already widened mtk_add_mac(). The capability bit and its define sit
+next to MTK_RSTCTRL_PPE2 and the bit is set in mt7981_data rather than
+folded into MT7981_CAPS: upstream's placement, next to MTK_36BIT_DMA
+and inside MT7981_CAPS, makes the MT7987 platform patch (750) reject
+three of its mtk_eth_soc.h hunks, measured with quilt. Keeping it here
+moves two of 750's anchor lines, so 750 is refreshed with this patch
+rather than applying untouched. Same semantics either way: MT7981_CAPS
+has exactly one consumer.
+
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -5187,8 +5187,8 @@ static int mtk_add_mac(struct mtk_eth *e
+ 	mac->phylink_config.type = PHYLINK_NETDEV;
+ 	mac->phylink_config.mac_capabilities = MAC_ASYM_PAUSE | MAC_SYM_PAUSE |
+ 		MAC_10 | MAC_100 | MAC_1000 | MAC_2500FD;
+-	mac->phylink_config.lpi_capabilities = MAC_100FD | MAC_1000FD |
+-		MAC_2500FD;
++	/* LPI above 1 Gbps is not supported */
++	mac->phylink_config.lpi_capabilities = MAC_100FD | MAC_1000FD;
+ 	mac->phylink_config.lpi_timer_default = 1000;
+ 	mac->phylink_config.num_possible_pcs = 0;
+ 	mac->phylink_config.fill_available_pcs = mtk_fill_available_pcs;
+@@ -5309,6 +5309,18 @@ no_pcs:
+ 	eth->netdev[id]->irq = eth->irq[MTK_FE_IRQ_SHARED];
+ 	eth->netdev[id]->dev.of_node = np;
+ 
++	/* LPI wake-up timing is only verified on MTK_GMAC_EEE SoCs */
++	if (MTK_HAS_CAPS(eth->soc->caps, MTK_GMAC_EEE)) {
++		phy_interface_copy(mac->phylink_config.lpi_interfaces,
++				   mac->phylink_config.supported_interfaces);
++		__clear_bit(PHY_INTERFACE_MODE_2500BASEX,
++			    mac->phylink_config.lpi_interfaces);
++		for (i = 0; i < PHY_INTERFACE_MODE_MAX; i++)
++			if (mtk_interface_mode_is_xgmii(eth, i))
++				__clear_bit(i,
++					    mac->phylink_config.lpi_interfaces);
++	}
++
+ 	phylink = phylink_create(&mac->phylink_config,
+ 				 of_fwnode_handle(mac->of_node),
+ 				 phy_mode, &mtk_phylink_ops);
+@@ -5914,7 +5926,7 @@ static const struct mtk_soc_data mt7629_
+ static const struct mtk_soc_data mt7981_data = {
+ 	.reg_map = &mt7986_reg_map,
+ 	.ana_rgc3 = 0x128,
+-	.caps = MT7981_CAPS,
++	.caps = MT7981_CAPS | MTK_GMAC_EEE,
+ 	.hw_features = MTK_HW_FEATURES,
+ 	.required_clks = MT7981_CLKS_BITMAP,
+ 	.required_pctl = false,
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
+@@ -1003,6 +1003,7 @@ enum mkt_eth_capabilities {
+ 	MTK_SOC_MT7628_BIT,
+ 	MTK_RSTCTRL_PPE1_BIT,
+ 	MTK_RSTCTRL_PPE2_BIT,
++	MTK_GMAC_EEE_BIT,
+ 	MTK_U3_COPHY_V2_BIT,
+ 	MTK_SRAM_BIT,
+ 	MTK_36BIT_DMA_BIT,
+@@ -1050,6 +1051,7 @@ enum mkt_eth_capabilities {
+ #define MTK_SOC_MT7628		BIT_ULL(MTK_SOC_MT7628_BIT)
+ #define MTK_RSTCTRL_PPE1	BIT_ULL(MTK_RSTCTRL_PPE1_BIT)
+ #define MTK_RSTCTRL_PPE2	BIT_ULL(MTK_RSTCTRL_PPE2_BIT)
++#define MTK_GMAC_EEE		BIT_ULL(MTK_GMAC_EEE_BIT)
+ #define MTK_U3_COPHY_V2		BIT_ULL(MTK_U3_COPHY_V2_BIT)
+ #define MTK_SRAM		BIT_ULL(MTK_SRAM_BIT)
+ #define MTK_36BIT_DMA	BIT_ULL(MTK_36BIT_DMA_BIT)
