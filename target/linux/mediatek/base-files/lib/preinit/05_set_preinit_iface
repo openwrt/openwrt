@@ -22,6 +22,7 @@ set_preinit_iface() {
 		ip link set eth0 up
 		ifname=eth0
 		;;
+	huasifei,ws1610-ubi|\
 	smartrg,sdg-841-t6|\
 	smartrg,sdg-8622|\
 	smartrg,sdg-8632|\
@@ -49,4 +50,3 @@ set_preinit_iface() {
 }
 
 boot_hook_add preinit_main set_preinit_iface
-
