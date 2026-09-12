@@ -125,6 +125,14 @@ define Package/uboot-envtools/install
 			$(1)/etc/uci-defaults/30_uboot-envtools \
 		) \
 	)
+	$(if $(wildcard ./uboot-envtools/files/$(BOARD)_$(SUBTARGET)-cleanup), \
+		$(INSTALL_DATA) ./uboot-envtools/files/$(BOARD)_$(SUBTARGET)-cleanup \
+		$(1)/etc/uci-defaults/31_uboot-envtools-cleanup, \
+		$(if $(wildcard ./uboot-envtools/files/$(BOARD)-cleanup), \
+			$(INSTALL_DATA) ./uboot-envtools/files/$(BOARD)-cleanup \
+			$(1)/etc/uci-defaults/31_uboot-envtools-cleanup \
+		) \
+	)
 endef
 
 $(eval $(call BuildPackage,dumpimage))
