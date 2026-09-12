@@ -250,6 +250,7 @@ ifeq ($(DUMP),1)
   ifeq ($(ARCH),powerpc64)
     CPU_TYPE ?= powerpc64
     CPU_CFLAGS_e5500:=-mcpu=e5500
+    CPU_CFLAGS_e6500:=-mcpu=e6500
     CPU_CFLAGS_powerpc64:=-mcpu=powerpc64
   endif
   ifeq ($(ARCH),aarch64)

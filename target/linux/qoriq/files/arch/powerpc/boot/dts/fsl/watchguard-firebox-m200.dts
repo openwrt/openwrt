@@ -1,0 +1,310 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR BSD-3-Clause
+/*
+ * WatchGuard Firebox M200 Device Tree Source
+ * Based on T1042RDB_PI Device Tree Source
+ * Copyright 2014-2015 Freescale Semiconductor Inc.
+ * Copyright 2026 Pawel Dembicki <paweldembicki@gmail.com>
+ */
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/include/ "t104xsi-pre.dtsi"
+
+/ {
+	soc@ffe000000 {
+		/* Make proper interface order */
+		fman@400000 {
+			ethernet@e4000 {
+			};
+
+			ethernet@e0000 {
+			};
+
+			ethernet@e2000 {
+			};
+
+			ethernet@e6000 {
+			};
+
+			ethernet@e8000 {
+			};
+		};
+	};
+};
+
+/include/ "t104xrdb.dtsi"
+
+/ {
+	model = "WatchGuard Firebox M200";
+	compatible = "watchguard,firebox-m200", "fsl,T1042RDB_PI";
+
+	interrupt-parent = <&mpic>;
+
+	aliases {
+		/delete-property/ ethernet0;
+		/delete-property/ ethernet1;
+		/delete-property/ ethernet2;
+		/delete-property/ ethernet3;
+		/delete-property/ ethernet4;
+		/delete-property/ phy_rgmii_0;
+		/delete-property/ phy_rgmii_1;
+		/delete-property/ phy_sgmii_2;
+
+		ethernet0 = &enet2;
+		ethernet1 = &enet0;
+		ethernet2 = &enet1;
+		ethernet3 = &enet3;
+		ethernet4 = &enet4;
+	};
+};
+
+#include "t1042si-post.dtsi"
+
+#include "watchguard-firebox-mx00.dtsi"
+
+/* Remove peripherals present on the T104xRDB but not on the M200. */
+&ifc {
+	compatible = "fsl,ifc", "simple-bus";
+	/delete-node/ cpld@3,0;
+};
+
+&soc {
+	/delete-node/ ethernet-switch@800000;
+
+	i2c@118000 {
+		/delete-node/ adt7461@4c;
+	};
+
+	i2c@118100 {
+		status = "disabled";
+	};
+
+	sata@220000 {
+		status = "disabled";
+	};
+
+	sata@221000 {
+		status = "disabled";
+	};
+
+	spi@110000 {
+		/delete-node/ slic@3;
+	};
+};
+
+&pci0 {
+	status = "disabled";
+};
+
+&pci1 {
+	status = "disabled";
+};
+
+&pci2 {
+	status = "disabled";
+};
+
+&pci3 {
+	status = "disabled";
+};
+
+&si1 {
+	status = "disabled";
+};
+
+&siram1 {
+	status = "disabled";
+};
+
+&ucc_hdlc {
+	status = "disabled";
+};
+
+&ucc_serial {
+	status = "disabled";
+};
+
+/*
+ * The vendor U-Boot is expected to add the QMan portal LIODNs at boot.
+ * Its fixup creates qman-portal@0/crypto@0, saves that node's offset, then
+ * adds a phandle to the CAAM node.  Growing the FDT invalidates the saved
+ * offset, so the following dev-handle update aborts with FDT_ERR_BADOFFSET.
+ * Without the remaining properties PAMU cannot create IOMMU domains for
+ * the portals assigned to CPUs 1-3 or enable the FMan portal LIODNs.  These
+ * values come from the T1040 qp_info and liodn_bases tables used by U-Boot.
+ * The child nodes deliberately carry the FMan LIODNs: placing them on the
+ * FMan device itself attaches FMan to a translated DMA domain and breaks TX.
+ */
+&qportal0 {
+	fsl,liodn = <1 27>;
+	fsl,qman-channel-id = <0>;
+
+	fman0 {
+		fsl,liodn = <0x3ce>;
+		dev-handle = <&fman0>;
+	};
+};
+
+&qportal1 {
+	fsl,liodn = <2 28>;
+	fsl,qman-channel-id = <1>;
+
+	fman0 {
+		fsl,liodn = <0x3cf>;
+		dev-handle = <&fman0>;
+	};
+};
+
+&qportal2 {
+	fsl,liodn = <3 29>;
+	fsl,qman-channel-id = <2>;
+
+	fman0 {
+		fsl,liodn = <0x3d0>;
+		dev-handle = <&fman0>;
+	};
+};
+
+&qportal3 {
+	fsl,liodn = <4 30>;
+	fsl,qman-channel-id = <3>;
+
+	fman0 {
+		fsl,liodn = <0x3d1>;
+		dev-handle = <&fman0>;
+	};
+};
+
+&qportal4 {
+	fsl,liodn = <5 31>;
+	fsl,qman-channel-id = <4>;
+
+	fman0 {
+		fsl,liodn = <0x3d2>;
+		dev-handle = <&fman0>;
+	};
+};
+
+&qportal5 {
+	fsl,liodn = <6 32>;
+	fsl,qman-channel-id = <5>;
+
+	fman0 {
+		fsl,liodn = <0x3d3>;
+		dev-handle = <&fman0>;
+	};
+};
+
+&qportal6 {
+	fsl,liodn = <7 33>;
+	fsl,qman-channel-id = <6>;
+
+	fman0 {
+		fsl,liodn = <0x3d4>;
+		dev-handle = <&fman0>;
+	};
+};
+
+&qportal7 {
+	fsl,liodn = <8 34>;
+	fsl,qman-channel-id = <7>;
+
+	fman0 {
+		fsl,liodn = <0x3d5>;
+		dev-handle = <&fman0>;
+	};
+};
+
+&qportal8 {
+	fsl,liodn = <9 35>;
+	fsl,qman-channel-id = <8>;
+
+	fman0 {
+		fsl,liodn = <0x3d6>;
+		dev-handle = <&fman0>;
+	};
+};
+
+&qportal9 {
+	fsl,liodn = <10 36>;
+	fsl,qman-channel-id = <9>;
+
+	fman0 {
+		fsl,liodn = <0x3d7>;
+		dev-handle = <&fman0>;
+	};
+};
+
+/*
+ * U-Boot normally adds these effective LIODNs to the FMan RX ports.  Its
+ * broken portal fixup aborts before the FMan fixup runs, leaving PAMU with
+ * no identity mappings for received frames.
+ */
+&fman0_rx_0x08 {
+	fsl,liodn = <0x425>;
+};
+
+&fman0_rx_0x09 {
+	fsl,liodn = <0x426>;
+};
+
+&fman0_rx_0x0a {
+	fsl,liodn = <0x427>;
+};
+
+&fman0_rx_0x0b {
+	fsl,liodn = <0x428>;
+};
+
+&fman0_rx_0x0c {
+	fsl,liodn = <0x429>;
+};
+
+&enet0 {
+	phy-connection-type = "sgmii";
+	phy-handle = <&phy1>;
+};
+
+&enet1 {
+	phy-connection-type = "sgmii";
+	phy-handle = <&phy2>;
+};
+
+&enet2 {
+	phy-connection-type = "sgmii";
+	phy-handle = <&phy0>;
+};
+
+&enet3 {
+	/delete-property/ phy-handle;
+	phy-connection-type = "rgmii";
+	status = "disabled";
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
+};
+
+&enet4 {
+	/delete-property/ phy-handle;
+	phy-connection-type = "rgmii";
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
+};
+
+/* The OEM driver uses both CPU ports in split mode. Keep the
+ * second link disabled until multi-CPU-port operation is supported.
+ */
+&mv_port5 {
+	status = "disabled";
+	ethernet = <&enet3>;
+};
+
+&mv_port6 {
+	ethernet = <&enet4>;
+};

@@ -14,9 +14,6 @@ define Build/sdcard-img
         rm -fR $@.boot
         mkdir -p $@.boot
         $(CP) $(KDIR)/$(DEVICE_NAME)$(KERNEL_SUFFIX) $@.boot
-        $(if $(DEVICE_DTS),\
-                $(foreach dtb,$(DEVICE_DTS),$(CP) $(KDIR)/image-$(dtb).dtb $@.boot), \
-                $(CP) $(KDIR)/image-/*.dtb $@.boot)
 
         PADDING=1 $(SCRIPT_DIR)/gen_image_generic.sh \
                 $@ \
@@ -64,6 +61,18 @@ define Device/Default
   KERNEL_ENTRY := 0x00000000
   KERNEL_LOADADDR := 0x00000000
   KERNEL := kernel-bin
+endef
+
+define Device/watchguard_firebox-mX00
+  DEVICE_DTS_DIR := $(DTS_DIR)/fsl
+  DEVICE_PACKAGES := \
+	kmod-gpio-button-hotplug kmod-hwmon-w83793 kmod-leds-gpio kmod-ptp-qoriq \
+	kmod-rtc-rs5c372a kmod-tpm-i2c-atmel kmod-dsa-mv88e6xxx
+  KERNEL := kernel-bin | libdeflate-gzip | fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  KERNEL_SUFFIX := -fit-uImage.itb
+  IMAGES := sdcard.img.gz sysupgrade.img.gz
+  IMAGE/sysupgrade.img.gz :=  sdcard-img | libdeflate-gzip | append-metadata
+  IMAGE/sdcard.img.gz := sdcard-img | libdeflate-gzip
 endef
 
 include $(SUBTARGET).mk
