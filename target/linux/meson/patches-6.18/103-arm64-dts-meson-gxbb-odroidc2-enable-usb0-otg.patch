@@ -1,0 +1,33 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Fil Dunsky <filipp.dunsky@gmail.com>
+Date: Sun, 23 Aug 2026 08:00:00 +0000
+Subject: [PATCH] arm64: dts: meson-gxbb-odroidc2: enable USB0 in OTG mode
+
+The micro-USB port on the ODROID-C2 is wired to the first DWC2
+controller.  Enable the PHY and switch the controller to OTG mode so the
+port can be used as a USB gadget (RNDIS/ECM, mass-storage, serial) in
+addition to host mode.
+
+Signed-off-by: Fil Dunsky <filipp.dunsky@gmail.com>
+---
+--- a/arch/arm64/boot/dts/amlogic/meson-gxbb-odroidc2.dts
++++ b/arch/arm64/boot/dts/amlogic/meson-gxbb-odroidc2.dts
+@@ -435,7 +435,7 @@
+ };
+ 
+ &usb0_phy {
+-	status = "disabled";
++	status = "okay";
+ 	phy-supply = <&usb_otg_pwr>;
+ };
+ 
+@@ -445,7 +445,8 @@
+ };
+ 
+ &usb0 {
+-	status = "disabled";
++	status = "okay";
++	dr_mode = "otg";
+ };
+ 
+ &usb1 {

@@ -1,0 +1,25 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Fil Dunsky <filipp.dunsky@gmail.com>
+Date: Sun, 23 Aug 2026 01:16:41 +0300
+Subject: [PATCH] arm64: dts: meson-gxbb: add eth mac from efuse
+
+Use the on-chip eFuse to provide a stable MAC address for the
+Ethernet interface on GXBB boards.
+
+Signed-off-by: Fil Dunsky <filipp.dunsky@gmail.com>
+---
+ arch/arm64/boot/dts/amlogic/meson-gxbb.dtsi | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/arch/arm64/boot/dts/amlogic/meson-gxbb.dtsi
++++ b/arch/arm64/boot/dts/amlogic/meson-gxbb.dtsi
+@@ -297,6 +297,9 @@
+ 		 <&clkc CLKID_MPLL2>,
+ 		 <&clkc CLKID_FCLK_DIV2>;
+ 	clock-names = "stmmaceth", "clkin0", "clkin1", "timing-adjustment";
++
++	nvmem-cells = <&eth_mac>;
++	nvmem-cell-names = "mac-address";
+ };
+ 
+ &gpio_intc {
