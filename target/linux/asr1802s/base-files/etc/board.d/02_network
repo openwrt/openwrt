@@ -1,0 +1,19 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+# WIP Draft -- Network interface assignments for Notion R291 ASR (ASR1802S / KAGU)
+#
+# Ethernet: ASR SoC MAC (0xd4281800, irq 10/11) + YT9215 switch
+# MAC address handling from NVM (overlay/root/NVM/TTPCom_*) is a FIXME.
+
+. /lib/functions/uci-defaults.sh
+
+board_config_update
+
+case "$(board_name)" in
+notion,r291)
+	ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
+	;;
+esac
+
+board_config_flush
+exit 0
