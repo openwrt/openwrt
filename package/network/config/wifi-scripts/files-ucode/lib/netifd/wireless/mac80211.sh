@@ -230,6 +230,10 @@ function setup() {
 		}
 
 		switch (mode) {
+		case 'monitor':
+			validate('iface', v.config);
+			netifd.set_vif(k, v.config.ifname);
+			break;
 		case 'ap':
 			has_ap = true;
 			for (let _, sta in v.stas)
