@@ -1,0 +1,78 @@
+ malloc/arena.c          |  8 +++++++-
+ malloc/malloc.c         |  5 +++--
+ malloc/openwrt-malloc.h | 24 ++++++++++++++++++++++++
+ 3 files changed, 34 insertions(+), 3 deletions(-)
+
+--- a/malloc/arena.c
++++ b/malloc/arena.c
+@@ -813,6 +813,8 @@ out:
+   return result;
+ }
+ 
++#include "openwrt-malloc.h"
++
+ static mstate
+ arena_get2 (size_t size, mstate avoid_arena)
+ {
+@@ -832,8 +834,12 @@ arena_get2 (size_t size, mstate avoid_ar
+             {
+               int n = __get_nprocs ();
+ 
+-              if (n >= 1)
++              if (n >= 1) {
++            #if OPENWRT_TUNE_MALLOC_ARENA
++                if (n > OPENWRT_MALLOC_ARENA_CORE_LIMIT) n = OPENWRT_MALLOC_ARENA_CORE_LIMIT;
++            #endif
+                 narenas_limit = NARENAS_FROM_NCORES (n);
++              }
+               else
+                 /* We have no information about the system.  Assume two
+                    cores.  */
+--- a/malloc/malloc.c
++++ b/malloc/malloc.c
+@@ -1816,6 +1816,8 @@ static struct malloc_state main_arena =
+   .attached_threads = 1
+ };
+ 
++#include "openwrt-malloc.h"
++
+ /* There is only one instance of the malloc parameters.  */
+ 
+ static struct malloc_par mp_ =
+@@ -1824,8 +1826,7 @@ static struct malloc_par mp_ =
+   .n_mmaps_max = DEFAULT_MMAP_MAX,
+   .mmap_threshold = DEFAULT_MMAP_THRESHOLD,
+   .trim_threshold = DEFAULT_TRIM_THRESHOLD,
+-#define NARENAS_FROM_NCORES(n) ((n) * (sizeof (long) == 4 ? 2 : 8))
+-  .arena_test = NARENAS_FROM_NCORES (1),
++  .arena_test = 2,
+   .thp_mode = malloc_thp_mode_not_supported
+ #if USE_TCACHE
+   ,
+--- /dev/null
++++ b/malloc/openwrt-malloc.h
+@@ -0,0 +1,24 @@
++#ifndef OPENWRT_MALLOC_HEADER
++#define OPENWRT_MALLOC_HEADER 1
++
++#ifndef OPENWRT_TUNE_MALLOC_ARENA
++#define OPENWRT_TUNE_MALLOC_ARENA 0
++#endif
++
++#ifndef OPENWRT_MALLOC_ARENA_PERCORE_MULT
++#define OPENWRT_MALLOC_ARENA_PERCORE_MULT 2
++#endif
++
++#ifndef OPENWRT_MALLOC_ARENA_CORE_LIMIT
++#define OPENWRT_MALLOC_ARENA_CORE_LIMIT 4
++#endif
++
++#define OPENWRT_MALLOC_ARENA_DEFAULT_MULT (sizeof(long) == 4 ? 2 : 8)
++
++#if OPENWRT_TUNE_MALLOC_ARENA
++#define NARENAS_FROM_NCORES(n) ((n) * OPENWRT_MALLOC_ARENA_PERCORE_MULT)
++#else
++#define NARENAS_FROM_NCORES(n) ((n) * OPENWRT_MALLOC_ARENA_DEFAULT_MULT)
++#endif
++
++#endif /* OPENWRT_MALLOC_HEADER */
