@@ -63,6 +63,15 @@ menu "Target Images"
 			help
 			  Ignore the initramfs passed by the bootloader.
 
+		config TARGET_INITRAMFS_PRESERVE_MTIME
+			bool "Preserve cpio archive mtimes in initramfs"
+			depends on TARGET_ROOTFS_INITRAMFS
+			help
+			  Each entry in an initramfs cpio archive carries an
+			  mtime value. When enabled, extracted cpio items take
+			  this mtime, with directory mtime setting deferred
+			  until after creation of any child entries.
+
 		config TARGET_ROOTFS_INITRAMFS_SEPARATE
 			bool "separate ramdisk"
 			depends on USES_SEPARATE_INITRAMFS && TARGET_ROOTFS_INITRAMFS && !TARGET_INITRAMFS_FORCE
