@@ -34,12 +34,12 @@ define Device/Default
   KERNEL_NAME := Image
   KERNEL := kernel-bin
   IMAGES := sdcard.img.gz
-  IMAGE/sdcard.img.gz := riscv-sdcard | append-metadata | gzip
+  IMAGE/sdcard.img.gz := riscv-sdcard | append-metadata | libdeflate-gzip
 endef
 
 define Device/FitImageGzip
 	KERNEL_SUFFIX := -fit-uImage.itb
-	KERNEL = kernel-bin | gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb
+	KERNEL = kernel-bin | libdeflate-gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb
 	KERNEL_NAME := Image
 endef
 

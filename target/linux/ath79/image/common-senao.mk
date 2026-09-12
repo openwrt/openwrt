@@ -23,7 +23,7 @@ define Build/senao-tar-gz
 	$(CP) $@ $@.tmp/openwrt-$(word 1,$(1))-root.squashfs && \
 	$(TAR) -cp --numeric-owner --owner=0 --group=0 --mode=a-s --sort=name \
 		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") \
-		-C $@.tmp . | gzip -9n > $@ && \
+		-C $@.tmp . | libdeflate-gzip -12 -c > $@ && \
 	rm -rf $@.tmp $@.len $@.md5
 endef
 

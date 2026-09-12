@@ -216,7 +216,7 @@ package_index: FORCE
 	@mkdir -p $(TMP_DIR) $(TARGET_DIR)/tmp
 ifeq ($(CONFIG_USE_APK),)
 	(cd $(PACKAGE_DIR); $(SCRIPT_DIR)/ipkg-make-index.sh . > Packages && \
-		gzip -9nc Packages > Packages.gz; \
+		libdeflate-gzip -12 -c Packages > Packages.gz; \
 		$(if $(CONFIG_SIGNATURE_CHECK), \
 			$(STAGING_DIR_HOST)/bin/usign -S -m Packages -s $(BUILD_KEY)) \
 	) >/dev/null 2>/dev/null

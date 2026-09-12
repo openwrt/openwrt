@@ -227,7 +227,7 @@ define Device/dlink_dns-313
 	BLOCKSIZE := 1k
 	FILESYSTEMS := ext4
 	IMAGES := factory.bin.gz
-	IMAGE/factory.bin.gz := dns313-images | gzip
+	IMAGE/factory.bin.gz := dns313-images | libdeflate-gzip
 endef
 TARGET_DEVICES += dlink_dns-313
 
