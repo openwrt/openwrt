@@ -231,7 +231,7 @@ static void otto_l3_930x_host_route_write(struct otto_l3_ctrl *ctrl, int idx, st
 		rt->attr.dst_null);
 	dev_dbg(ctrl->dev, "GW: %pI4, prefix_len: %d\n", &rt->dst_ip, rt->prefix_len);
 
-	v = BIT(31); /* Entry is valid */
+	v = rt->attr.valid ? BIT(31) : 0;
 	v |= (rt->attr.type & 0x3) << 29;
 	v |= rt->attr.hit ? BIT(20) : 0;
 	v |= rt->attr.dst_null ? BIT(19) : 0;
