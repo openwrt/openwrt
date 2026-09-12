@@ -161,6 +161,25 @@ endef
 $(eval $(call KernelPackage,can-mcp251x))
 
 
+define KernelPackage/can-mcp251xfd
+  TITLE:=MCP251xFD SPI CAN FD controller
+  KCONFIG:=\
+	CONFIG_SPI=y \
+	CONFIG_CAN_MCP251XFD \
+	CONFIG_CAN_MCP251XFD_SANITY=n
+  FILES:=$(LINUX_DIR)/drivers/net/can/spi/mcp251xfd/mcp251xfd.ko
+  AUTOLOAD:=$(call AutoProbe,mcp251xfd)
+  DEPENDS:=+kmod-regmap-core
+  $(call AddDepends/can)
+endef
+
+define KernelPackage/can-mcp251xfd/description
+ Microchip MCP2517FD, MCP2518FD and MCP251863 SPI CAN FD controllers
+endef
+
+$(eval $(call KernelPackage,can-mcp251xfd))
+
+
 define KernelPackage/can-raw
   TITLE:=Raw CAN Protcol
   KCONFIG:=CONFIG_CAN_RAW
