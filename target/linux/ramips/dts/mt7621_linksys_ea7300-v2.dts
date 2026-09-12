@@ -7,6 +7,28 @@
 	model = "Linksys EA7300 v2";
 };
 
+&nand {
+	partitions {
+		partition@180000 {
+			label = "kernel1";
+		};
+
+		partition@580000 {
+			label = "rootfs1";
+		};
+
+		partition@2980000 {
+			label = "kernel2";
+			/delete-property/ read-only;
+		};
+
+		partition@2d80000 {
+			label = "rootfs2";
+			/delete-property/ read-only;
+		};
+	};
+};
+
 /* override EEPROM size to 0x400 for MT7603 */
 &eeprom_factory_0 {
 	reg = <0x0 0x400>;
