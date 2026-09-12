@@ -428,12 +428,29 @@ _ucidef_set_led_common() {
 	json_add_string sysfs "$sysfs"
 }
 
+ucidef_add_led_color() {
+	local cfg="led_$1"
+	local channel="$2"
+	local val="$3"
+
+	json_select_object led
+	json_select_object "$1"
+
+	json_add_string "color_${channel}" "$val"
+
+	json_select ..
+	json_select ..
+}
+
 ucidef_set_led_default() {
 	local default="$4"
 
 	_ucidef_set_led_common "$1" "$2" "$3"
 
 	json_add_string default "$default"
+	[ "$default" = 1 ] && {
+		json_add_string trigger default-on
+	}
 	json_select ..
 
 	json_select ..
