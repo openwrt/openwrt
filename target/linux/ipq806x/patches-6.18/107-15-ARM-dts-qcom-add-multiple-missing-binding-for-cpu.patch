@@ -16,7 +16,7 @@ Tested-by: Jonathan McDowell <noodles@earth.li>
 --- a/arch/arm/boot/dts/qcom/qcom-ipq8064.dtsi
 +++ b/arch/arm/boot/dts/qcom/qcom-ipq8064.dtsi
 @@ -30,6 +30,15 @@
- 			next-level-cache = <&L2>;
+ 			next-level-cache = <&l2>;
  			qcom,acc = <&acc0>;
  			qcom,saw = <&saw0>;
 +			clocks = <&kraitcc 0>, <&kraitcc 4>;
@@ -32,7 +32,7 @@ Tested-by: Jonathan McDowell <noodles@earth.li>
  
  		cpu1: cpu@1 {
 @@ -40,12 +49,36 @@
- 			next-level-cache = <&L2>;
+ 			next-level-cache = <&l2>;
  			qcom,acc = <&acc1>;
  			qcom,saw = <&saw1>;
 +			clocks = <&kraitcc 1>, <&kraitcc 4>;
@@ -56,7 +56,7 @@ Tested-by: Jonathan McDowell <noodles@earth.li>
 +			};
  		};
  
- 		L2: l2-cache {
+ 		l2: l2-cache {
  			compatible = "cache";
  			cache-level = <2>;
  			cache-unified;
@@ -82,7 +82,7 @@ Tested-by: Jonathan McDowell <noodles@earth.li>
 +	cpu-supply = <&smb208_s2b>;
 +};
 +
-+&L2 {
++&l2 {
 +	l2-supply = <&smb208_s1a>;
 +};
 +
@@ -103,7 +103,7 @@ Tested-by: Jonathan McDowell <noodles@earth.li>
 +	cpu-supply = <&smb208_s2b>;
 +};
 +
-+&L2 {
++&l2 {
 +	l2-supply = <&smb208_s1a>;
 +};
 +
@@ -124,7 +124,7 @@ Tested-by: Jonathan McDowell <noodles@earth.li>
 +	cpu-supply = <&smb208_s2b>;
 +};
 +
-+&L2 {
++&l2 {
 +	l2-supply = <&smb208_s1a>;
 +};
 +
@@ -145,7 +145,7 @@ Tested-by: Jonathan McDowell <noodles@earth.li>
 +	cpu-supply = <&smb208_s2b>;
 +};
 +
-+&L2 {
++&l2 {
 +	l2-supply = <&smb208_s1a>;
 +};
 +
