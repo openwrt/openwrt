@@ -783,6 +783,20 @@ define Device/cudy_c200p
 endef
 TARGET_DEVICES += cudy_c200p
 
+define Device/cudy_lt700-outdoor-v1
+  $(Device/dsa-migration)
+  DEVICE_VENDOR := Cudy
+  DEVICE_MODEL := LT700 Outdoor
+  DEVICE_VARIANT := v1
+  IMAGE_SIZE := 15872k
+  UIMAGE_NAME := R43
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap \
+	kmod-usb3 kmod-usb-net-cdc-ncm kmod-usb-serial-option comgt-ncm \
+	-uboot-envtools
+  SUPPORTED_DEVICES += R43
+endef
+TARGET_DEVICES += cudy_lt700-outdoor-v1
+
 define Device/cudy_m1300-v2
   $(Device/dsa-migration)
   IMAGE_SIZE := 15872k
