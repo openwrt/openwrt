@@ -1,0 +1,186 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7621.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	compatible = "comfast,cf-e455ac-v2", "mediatek,mt7621-soc";
+	model = "COMFAST CF-E455AC V2";
+
+	chosen {
+		bootargs = "console=ttyS0,115200";
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+			debounce-interval = <60>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		/*
+		 * Three GPIO LEDs, active-high (confirmed against the stock
+		 * firmware's live GPIO/LED state):
+		 *   red:wan   gpio 13
+		 *   green:lan gpio 15
+		 *   blue:wlan gpio 16
+		 * gpio 19 is driven high by the bootloader but is not exposed
+		 * as an LED by the vendor firmware; left unconfigured.
+		 */
+
+		led_wan: wan {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_WAN;
+			gpios = <&gpio 13 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_lan: lan {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			gpios = <&gpio 15 GPIO_ACTIVE_HIGH>;
+		};
+
+		wlan {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WLAN;
+			gpios = <&gpio 16 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	aliases {
+		label-mac-device = &gmac0;
+	};
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "w25q128";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+		m25p,fast-read;
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "Bootloader";
+				reg = <0x0 0x30000>;
+				read-only;
+			};
+
+			partition@30000 {
+				label = "Config";
+				reg = <0x30000 0x10000>;
+				read-only;
+			};
+
+			partition@40000  {
+				label = "factory";
+				reg = <0x40000 0x10000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x400>;
+					};
+
+					eeprom_factory_8000: eeprom@8000 {
+						reg = <0x8000 0x4da8>;
+					};
+
+					macaddr_factory_e000: macaddr@e000 {
+						compatible = "mac-base";
+						reg = <0xe000 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
+
+			partition@50000  {
+				label = "firmware";
+				compatible = "denx,uimage";
+				reg = <0x50000 0xfb0000>;
+			};
+		};
+	};
+};
+
+&gpio {
+	groups = "i2c", "uart2", "uart3", "sdhci", "jtag";
+	function = "gpio";
+};
+
+&gmac0 {
+	nvmem-cells = <&macaddr_factory_e000 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&pcie {
+	status = "okay";
+};
+
+&pcie0 {
+	wifi_2_4_ghz: wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&eeprom_factory_0>;
+		nvmem-cell-names = "eeprom";
+		/*
+		 * MT7603 (2.4 GHz). Reads its MAC from EEPROM (&factory + 4);
+		 * do not add mac-address here or a random MAC will be used.
+		 */
+	};
+};
+
+&pcie1 {
+	wifi_5_0_ghz: wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&eeprom_factory_8000>;
+		nvmem-cell-names = "eeprom";
+		/*
+		 * MT7663 (5 GHz). Reads its MAC from EEPROM (&factory + 0x8000 + 4);
+		 * do not add mac-address here or a random MAC will be used.
+		 */
+	};
+};
+
+&pcie2 {
+	status = "disabled";
+};
+
+&switch0 {
+	mediatek,mcm;
+	ports {
+		wan: port@0 {
+			status = "okay";
+			label = "wan";
+			nvmem-cells = <&macaddr_factory_e000 1>;
+			nvmem-cell-names = "mac-address";
+		};
+
+		lan: port@1 {
+			status = "okay";
+			label = "lan";
+			nvmem-cells = <&macaddr_factory_e000 0>;
+			nvmem-cell-names = "mac-address";
+		};
+	};
+};
