@@ -1,0 +1,245 @@
+From 52662b301cd37049134ca4362e394ea1d86bfdc0 Mon Sep 17 00:00:00 2001
+From: Til Kaiser <mail@tk154.de>
+Date: Sat, 19 Apr 2026 12:10:00 +0200
+Subject: [PATCH] arm64: dts: qcom: ipq5332: add PCIe2 UNIPHY and controller
+ nodes
+
+Add the missing IPQ5332 PCIe2 device tree pieces by introducing:
+- the pcie2 UNIPHY node
+- the pcie2 controller node
+- GCC external pipe clock wiring for all three PCIe pipe sources
+- interconnect wiring for the pcie2 controller
+
+The DTS wiring and resource layout are adapted from the downstream
+Qualcomm/QSDK device tree.
+
+Signed-off-by: Til Kaiser <mail@tk154.de>
+---
+
+--- a/arch/arm64/boot/dts/qcom/ipq5332.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq5332.dtsi
+@@ -315,6 +315,34 @@
+ 			status = "disabled";
+ 		};
+ 
++		pcie2_phy: phy@4b1800 {
++			compatible = "qcom,ipq5332-uniphy-pcie-phy";
++			reg = <0x004b1800 0x800>;
++
++			qti,phy-mux-regs = <&tcsr 0x10544>;
++			qti,multiplexed-phy;
++			phy-ahb-shared-reset;
++
++			clocks = <&gcc GCC_PCIE3X1_1_PIPE_CLK>,
++				 <&gcc GCC_PCIE3X2_PHY_AHB_CLK>;
++
++			resets = <&gcc GCC_PCIE3X1_1_PHY_BCR>,
++				 <&gcc GCC_PCIE3X2_PHY_AHB_CLK_ARES>,
++				 <&gcc GCC_PCIE3X1_1_PHY_PHY_BCR>;
++
++			reset-names = "phy",
++				      "phy_ahb",
++				      "phy_phy";
++
++			#clock-cells = <0>;
++
++			#phy-cells = <0>;
++
++			num-lanes = <1>;
++
++			status = "disabled";
++		};
++
+ 		tlmm: pinctrl@1000000 {
+ 			compatible = "qcom,ipq5332-tlmm";
+ 			reg = <0x01000000 0x300000>;
+@@ -374,8 +402,8 @@
+ 			clocks = <&xo_board>,
+ 				 <&sleep_clk>,
+ 				 <&pcie1_phy>,
+-				 <&pcie0_phy>,
+-				 <0>;
++				 <&pcie2_phy>,
++				 <&pcie0_phy>;
+ 		};
+ 
+ 		tcsr_mutex: hwlock@1905000 {
+@@ -773,6 +801,110 @@
+ 			};
+ 		};
+ 
++		pcie2: pcie@10000000 {
++			compatible = "qcom,pcie-ipq5332", "qcom,pcie-ipq9574";
++			reg = <0x10000000 0xf1c>,
++			      <0x10000f20 0xa8>,
++			      <0x10001000 0x1000>,
++			      <0x000f0000 0x3000>,
++			      <0x10100000 0x1000>,
++			      <0x000f3000 0x1000>;
++			reg-names = "dbi",
++				    "elbi",
++				    "atu",
++				    "parf",
++				    "config",
++				    "mhi";
++			device_type = "pci";
++			linux,pci-domain = <2>;
++			num-lanes = <1>;
++			#address-cells = <3>;
++			#size-cells = <2>;
++
++			ranges = <0x01000000 0x0 0x00000000 0x10200000 0x0 0x00100000>,
++				 <0x02000000 0x0 0x10300000 0x10300000 0x0 0x07d00000>;
++
++			msi-map = <0x0 &v2m0 0x0 0xffd>;
++
++			interrupts = <GIC_SPI 41 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 42 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 43 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 44 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 45 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 46 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 47 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 48 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 49 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-names = "msi0",
++					  "msi1",
++					  "msi2",
++					  "msi3",
++					  "msi4",
++					  "msi5",
++					  "msi6",
++					  "msi7",
++					  "global";
++
++			#interrupt-cells = <1>;
++			interrupt-map-mask = <0 0 0 0x7>;
++			interrupt-map = <0 0 0 1 &intc 0 GIC_SPI 399 IRQ_TYPE_LEVEL_HIGH>,
++					<0 0 0 2 &intc 0 GIC_SPI 400 IRQ_TYPE_LEVEL_HIGH>,
++					<0 0 0 3 &intc 0 GIC_SPI 401 IRQ_TYPE_LEVEL_HIGH>,
++					<0 0 0 4 &intc 0 GIC_SPI 402 IRQ_TYPE_LEVEL_HIGH>;
++
++			clocks = <&gcc GCC_PCIE3X1_1_AXI_M_CLK>,
++				 <&gcc GCC_PCIE3X1_1_AXI_S_CLK>,
++				 <&gcc GCC_PCIE3X1_1_AXI_S_BRIDGE_CLK>,
++				 <&gcc GCC_PCIE3X1_1_RCHG_CLK>,
++				 <&gcc GCC_PCIE3X1_1_AHB_CLK>,
++				 <&gcc GCC_PCIE3X1_1_AUX_CLK>;
++			clock-names = "axi_m",
++				      "axi_s",
++				      "axi_bridge",
++				      "rchng",
++				      "ahb",
++				      "aux";
++
++			assigned-clocks = <&gcc GCC_PCIE3X1_1_AUX_CLK>;
++
++			assigned-clock-rates = <2000000>;
++
++			resets = <&gcc GCC_PCIE3X1_1_PIPE_ARES>,
++				 <&gcc GCC_PCIE3X1_1_CORE_STICKY_ARES>,
++				 <&gcc GCC_PCIE3X1_1_AXI_S_STICKY_ARES>,
++				 <&gcc GCC_PCIE3X1_1_AXI_S_CLK_ARES>,
++				 <&gcc GCC_PCIE3X1_1_AXI_M_STICKY_ARES>,
++				 <&gcc GCC_PCIE3X1_1_AXI_M_CLK_ARES>,
++				 <&gcc GCC_PCIE3X1_1_AUX_CLK_ARES>,
++				 <&gcc GCC_PCIE3X1_1_AHB_CLK_ARES>;
++			reset-names = "pipe",
++				      "sticky",
++				      "axi_s_sticky",
++				      "axi_s",
++				      "axi_m_sticky",
++				      "axi_m",
++				      "aux",
++				      "ahb";
++
++			phys = <&pcie2_phy>;
++			phy-names = "pciephy";
++
++			interconnects = <&gcc MASTER_SNOC_PCIE3_3_M &gcc SLAVE_SNOC_PCIE3_3_M>,
++					<&gcc MASTER_ANOC_PCIE3_3_S &gcc SLAVE_ANOC_PCIE3_3_S>;
++			interconnect-names = "pcie-mem", "cpu-pcie";
++
++			status = "disabled";
++
++			pcie@0 {
++				device_type = "pci";
++				reg = <0x0 0x0 0x0 0x0 0x0>;
++
++				#address-cells = <3>;
++				#size-cells = <2>;
++				ranges;
++			};
++		};
++
+ 		pcie1: pcie@18000000 {
+ 			compatible = "qcom,pcie-ipq5332", "qcom,pcie-ipq9574";
+ 			reg = <0x18000000 0xf1c>,
+--- a/drivers/clk/qcom/gcc-ipq5332.c
++++ b/drivers/clk/qcom/gcc-ipq5332.c
+@@ -3261,6 +3261,8 @@ static const struct qcom_icc_hws_data ic
+ 	{ MASTER_ANOC_PCIE3_1_S, SLAVE_ANOC_PCIE3_1_S, GCC_SNOC_PCIE3_1LANE_S_CLK },
+ 	{ MASTER_SNOC_PCIE3_2_M, SLAVE_SNOC_PCIE3_2_M, GCC_SNOC_PCIE3_2LANE_M_CLK },
+ 	{ MASTER_ANOC_PCIE3_2_S, SLAVE_ANOC_PCIE3_2_S, GCC_SNOC_PCIE3_2LANE_S_CLK },
++	{ MASTER_SNOC_PCIE3_3_M, SLAVE_SNOC_PCIE3_3_M, GCC_SNOC_PCIE3_1LANE_1_M_CLK },
++	{ MASTER_ANOC_PCIE3_3_S, SLAVE_ANOC_PCIE3_3_S, GCC_SNOC_PCIE3_1LANE_1_S_CLK },
+ 	{ MASTER_SNOC_USB, SLAVE_SNOC_USB, GCC_SNOC_USB_CLK },
+ 	{ MASTER_NSSNOC_NSSCC, SLAVE_NSSNOC_NSSCC, GCC_NSSNOC_NSSCC_CLK },
+ 	{ MASTER_NSSNOC_SNOC_0, SLAVE_NSSNOC_SNOC_0, GCC_NSSNOC_SNOC_CLK },
+--- a/include/dt-bindings/interconnect/qcom,ipq5332.h
++++ b/include/dt-bindings/interconnect/qcom,ipq5332.h
+@@ -10,28 +10,32 @@
+ #define SLAVE_SNOC_PCIE3_2_M		5
+ #define MASTER_ANOC_PCIE3_2_S		6
+ #define SLAVE_ANOC_PCIE3_2_S		7
+-#define MASTER_SNOC_USB			8
+-#define SLAVE_SNOC_USB			9
+-#define MASTER_NSSNOC_NSSCC		10
+-#define SLAVE_NSSNOC_NSSCC		11
+-#define MASTER_NSSNOC_SNOC_0		12
+-#define SLAVE_NSSNOC_SNOC_0		13
+-#define MASTER_NSSNOC_SNOC_1		14
+-#define SLAVE_NSSNOC_SNOC_1		15
+-#define MASTER_NSSNOC_ATB		16
+-#define SLAVE_NSSNOC_ATB		17
+-#define MASTER_NSSNOC_PCNOC_1		18
+-#define SLAVE_NSSNOC_PCNOC_1		19
+-#define MASTER_NSSNOC_QOSGEN_REF	20
+-#define SLAVE_NSSNOC_QOSGEN_REF		21
+-#define MASTER_NSSNOC_TIMEOUT_REF	22
+-#define SLAVE_NSSNOC_TIMEOUT_REF	23
+-#define MASTER_NSSNOC_XO_DCD		24
+-#define SLAVE_NSSNOC_XO_DCD		25
+-#define MASTER_SNOC_NSSNOC_1_CLK	26
+-#define SLAVE_SNOC_NSSNOC_1_CLK		27
+-#define MASTER_SNOC_NSSNOC_CLK		28
+-#define SLAVE_SNOC_NSSNOC_CLK		29
++#define MASTER_SNOC_PCIE3_3_M		8
++#define SLAVE_SNOC_PCIE3_3_M		9
++#define MASTER_ANOC_PCIE3_3_S		10
++#define SLAVE_ANOC_PCIE3_3_S		11
++#define MASTER_SNOC_USB			12
++#define SLAVE_SNOC_USB			13
++#define MASTER_NSSNOC_NSSCC		14
++#define SLAVE_NSSNOC_NSSCC		15
++#define MASTER_NSSNOC_SNOC_0		16
++#define SLAVE_NSSNOC_SNOC_0		17
++#define MASTER_NSSNOC_SNOC_1		18
++#define SLAVE_NSSNOC_SNOC_1		19
++#define MASTER_NSSNOC_ATB		20
++#define SLAVE_NSSNOC_ATB		21
++#define MASTER_NSSNOC_PCNOC_1		22
++#define SLAVE_NSSNOC_PCNOC_1		23
++#define MASTER_NSSNOC_QOSGEN_REF	24
++#define SLAVE_NSSNOC_QOSGEN_REF		25
++#define MASTER_NSSNOC_TIMEOUT_REF	26
++#define SLAVE_NSSNOC_TIMEOUT_REF	27
++#define MASTER_NSSNOC_XO_DCD		28
++#define SLAVE_NSSNOC_XO_DCD		29
++#define MASTER_SNOC_NSSNOC_1_CLK	30
++#define SLAVE_SNOC_NSSNOC_1_CLK		31
++#define MASTER_SNOC_NSSNOC_CLK		32
++#define SLAVE_SNOC_NSSNOC_CLK		33
+ 
+ #define MASTER_NSSNOC_PPE		0
+ #define SLAVE_NSSNOC_PPE		1
