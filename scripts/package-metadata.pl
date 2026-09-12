@@ -180,6 +180,8 @@ sub mconf_depends {
 		}
 		if ($flags =~ /\+/) {
 			my $vdep = $vpackage{$depend};
+			my $rank;
+			my $negation;
 			if ($vdep) {
 				my @vdeps;
 
@@ -195,22 +197,35 @@ sub mconf_depends {
 				$depend = shift @vdeps;
 
 				if (@vdeps > 1) {
-					$condition = ($condition ? "$condition && " : '') . join("&&", map { "PACKAGE_$_<PACKAGE_$pkgname" } @vdeps);
+					$rank = join("&&", map { "PACKAGE_$_<PACKAGE_$pkgname" } @vdeps);
+					my @others = grep { $_ ne $pkgname } @vdeps;
+					$negation = '!('.join("||", map { "PACKAGE_$_" } @others).')' if @others;
 				} elsif (@vdeps > 0) {
-					$condition = ($condition ? "$condition && " : '') . "PACKAGE_${vdeps[0]}<PACKAGE_$pkgname";
+					$rank = "PACKAGE_${vdeps[0]}<PACKAGE_$pkgname";
+					$negation = '!PACKAGE_'.$vdeps[0] if $vdeps[0] ne $pkgname;
 				}
 			}
 
 			# Menuconfig will not treat 'select FOO' as a real dependency
 			# thus if FOO depends on other config options, these dependencies
 			# will not be checked. To fix this, we simply emit all of FOO's
-			# depends here as well.
-			$package{$depend} and push @t_depends, [ $package{$depend}->{depends}, $condition ];
+			# depends here as well. Re-emitted deps carry the pre-rank
+			# negation instead of the rank, so no depends-on gate can
+			# self-reference the stanza owner.
+			my $reemit = $condition;
+			$reemit = ($reemit ? "$reemit && " : '') . $negation if defined $negation;
+			$package{$depend} and push @t_depends, [ $package{$depend}->{depends}, $reemit ];
 
 			$m = "select";
 			next if $only_dep;
 
 			$flags =~ /@/ or $depend = "PACKAGE_$depend";
+
+			# arbitration gate for select emission only (1fd50531's charter);
+			# re-emission above carries the negation instead of the rank
+			if (defined $rank) {
+				$condition = ($condition ? "$condition && " : '') . $rank;
+			}
 		} else {
 			my $vdep = $vpackage{$depend};
 			if ($vdep && @$vdep > 0) {
