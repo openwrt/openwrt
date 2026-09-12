@@ -1,0 +1,43 @@
+From 6494fb3525408824cdf2355794f37afe35f8c0f6 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Sun, 14 Jun 2026 15:19:35 -0700
+Subject: [PATCH] MIPS: ath79: remove dead symbols
+
+Since the platform code removal for ath79, these SOC symbols have been
+unused by both up and downstream in favor of dts bindings. Remove them.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ arch/mips/ath79/Kconfig | 21 ---------------------
+ 1 file changed, 21 deletions(-)
+
+--- a/arch/mips/ath79/Kconfig
++++ b/arch/mips/ath79/Kconfig
+@@ -5,27 +5,6 @@ config SOC_AR71XX
+ 	select HAVE_PCI
+ 	def_bool n
+ 
+-config SOC_AR724X
+-	select HAVE_PCI
+-	select PCI_AR724X if PCI
+-	def_bool n
+-
+-config SOC_AR913X
+-	def_bool n
+-
+-config SOC_AR933X
+-	def_bool n
+-
+-config SOC_AR934X
+-	select HAVE_PCI
+-	select PCI_AR724X if PCI
+-	def_bool n
+-
+-config SOC_QCA955X
+-	select HAVE_PCI
+-	select PCI_AR724X if PCI
+-	def_bool n
+-
+ config PCI_AR724X
+ 	def_bool n
+ 

@@ -117,23 +117,14 @@
 				compatible = "qca,ar7100-pci";
 				#address-cells = <3>;
 				#size-cells = <2>;
-				bus-range = <0x0 0x0>;
 				reg = <0x17010000 0x100>;
 				reg-names = "cfg_base";
-				ranges = <0x2000000 0 0x10000000 0x10000000 0 0x07000000	/* pci memory */
-					  0x1000000 0 0x00000000 0x0000000 0 0x000001>;		/* io space */
+				ranges = <0x2000000 0 0x10000000 0x10000000 0 0x07000000>;	/* pci memory */
 
 				device_type = "pci";
 
 				interrupt-parent = <&pci_intc>;
 				interrupts = <4>;
-
-				#interrupt-cells = <1>;
-
-				interrupt-map-mask = <0xf800 0 0 0>;
-				interrupt-map = <0x8800 0 0 0 &pci_intc 0
-						 0x9000 0 0 0 &pci_intc 1
-						 0x9800 0 0 0 &pci_intc 2>;
 
 				status = "disabled";
 			};
