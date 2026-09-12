@@ -1,0 +1,20 @@
+--- a/drivers/net/ethernet/broadcom/b44.c
++++ b/drivers/net/ethernet/broadcom/b44.c
+@@ -2417,10 +2417,17 @@ static void b44_unregister_phy_one(struc
+ static int b44_init_one(struct ssb_device *sdev,
+ 			const struct ssb_device_id *ent)
+ {
++	struct device *phy;
+ 	struct net_device *dev;
+ 	struct b44 *bp;
+ 	int err;
+ 
++	phy = bus_find_device_by_name(&mdio_bus_type, NULL, "fixed-0:00");
++	if (!phy) {
++		dev_err(sdev->dev, "fixed phy is not ready, deferring\n");
++		return -EPROBE_DEFER;
++	}
++
+ 	instance++;
+ 
+ 	dev = alloc_etherdev(sizeof(*bp));
