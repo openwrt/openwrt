@@ -1,0 +1,74 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Mark Ruvald Pedersen <wabsie@gmail.com>
+Date: Wed, 15 Jul 2026 22:29:00 +0200
+Subject: [PATCH] wifi: ath11k: make external IRQ control idempotent
+
+ath11k tracks each external IRQ group's lifecycle state with
+napi_enabled, but calls the physical IRQ enable and disable helpers
+outside the state guards.  Repeating a lifecycle disable therefore
+increments Linux's IRQ disable depth on AHB and multi-MSI PCI even though
+NAPI is already disabled.  A single later enable leaves the IRQ masked.
+
+Make the physical group transitions part of the existing NAPI
+state transitions.  Preserve the required ordering: mask IRQs before
+synchronizing and disabling NAPI, then enable NAPI before unmasking IRQs.
+Keep the outer synchronize_irq() calls unchanged.
+
+This makes sequential lifecycle transitions idempotent without affecting
+the temporary interrupt-handler and NAPI-poll disable/enable pairing.
+
+Signed-off-by: Mark Ruvald Pedersen <wabsie@gmail.com>
+---
+ drivers/net/wireless/ath/ath11k/ahb.c  | 6 +++---
+ drivers/net/wireless/ath/ath11k/pcic.c | 6 +++---
+ 2 files changed, 6 insertions(+), 6 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/ahb.c
++++ b/drivers/net/wireless/ath/ath11k/ahb.c
+@@ -244,9 +244,9 @@ static void __ath11k_ahb_ext_irq_disable(struct ath11k_base *ab)
+ 	for (i = 0; i < ATH11K_EXT_IRQ_GRP_NUM_MAX; i++) {
+ 		struct ath11k_ext_irq_grp *irq_grp = &ab->ext_irq_grp[i];
+ 
+-		ath11k_ahb_ext_grp_disable(irq_grp);
+-
+ 		if (irq_grp->napi_enabled) {
++			ath11k_ahb_ext_grp_disable(irq_grp);
++
+ 			napi_synchronize(&irq_grp->napi);
+ 			napi_disable(&irq_grp->napi);
+ 			irq_grp->napi_enabled = false;
+@@ -389,8 +389,8 @@ static void ath11k_ahb_ext_irq_enable(struct ath11k_base *ab)
+ 		if (!irq_grp->napi_enabled) {
+ 			napi_enable(&irq_grp->napi);
+ 			irq_grp->napi_enabled = true;
++			ath11k_ahb_ext_grp_enable(irq_grp);
+ 		}
+-		ath11k_ahb_ext_grp_enable(irq_grp);
+ 	}
+ }
+ 
+
+--- a/drivers/net/wireless/ath/ath11k/pcic.c
++++ b/drivers/net/wireless/ath/ath11k/pcic.c
+@@ -465,9 +465,9 @@ static void __ath11k_pcic_ext_irq_disable(struct ath11k_base *ab)
+ 	for (i = 0; i < ATH11K_EXT_IRQ_GRP_NUM_MAX; i++) {
+ 		struct ath11k_ext_irq_grp *irq_grp = &ab->ext_irq_grp[i];
+ 
+-		ath11k_pcic_ext_grp_disable(irq_grp);
+-
+ 		if (irq_grp->napi_enabled) {
++			ath11k_pcic_ext_grp_disable(irq_grp);
++
+ 			napi_synchronize(&irq_grp->napi);
+ 			napi_disable(&irq_grp->napi);
+ 			irq_grp->napi_enabled = false;
+@@ -500,8 +500,8 @@ void ath11k_pcic_ext_irq_enable(struct ath11k_base *ab)
+ 		if (!irq_grp->napi_enabled) {
+ 			napi_enable(&irq_grp->napi);
+ 			irq_grp->napi_enabled = true;
++			ath11k_pcic_ext_grp_enable(irq_grp);
+ 		}
+-		ath11k_pcic_ext_grp_enable(irq_grp);
+ 	}
+ 
+ 	set_bit(ATH11K_FLAG_EXT_IRQ_ENABLED, &ab->dev_flags);
