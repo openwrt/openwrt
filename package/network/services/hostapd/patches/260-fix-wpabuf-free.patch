@@ -1,0 +1,10 @@
+--- a/src/utils/wpabuf.c
++++ b/src/utils/wpabuf.c
+@@ -128,6 +128,7 @@ struct wpabuf * wpabuf_alloc(size_t len)
+ 
+ 	buf->size = len;
+ 	buf->buf = (u8 *) (buf + 1);
++	buf->flags = 0;
+ 	return buf;
+ }
+ 
