@@ -1,0 +1,500 @@
+From: Kenneth Kasilag <kenneth@kasilag.me>
+Subject: generic: net: phy: realtek: add rtl8261(d-cg/ce) support
+
+Extend the RTL8261C-CG support to the other members of the same PHY
+family:
+
+RTL8261D-CG shares the C45 PHY ID 0x001cc898 and the firmware with
+RTL8261C-CG; vendor drivers handle both with a single driver entry and
+do not tell the two apart. Accept sub PHY IDs other than 0x00 instead
+of failing the probe, so the D variant (and future siblings) bind to
+the same driver entry and firmware.
+
+RTL8261CE is the same silicon family with the revision nibble of the
+PHY ID encoding rev A (0x001cc890) and rev C (0x001cc899); rev B is
+identical to the RTL8261C_CG ID and is already handled.
+
+On testing, all three chips accept similar patch tables, so entries
+reuse the RTL8261C-CG entry from upstream.
+
+In addition, based on a dump of the vendor driver from a Lumen W1700K2,
+the RTL8261CE init flow:
+1) waits for the internal loader
+2) triggers execution of a freshly downloaded patch
+3) programs the SerDes option slots in VEND1, the SerDes lane polarity
+settings, EEE defaults and the over-temperature downspeed bit.
+
+Since the user may want to configure those options, we configure them
+in the driver rather than statically configuring it in the patch flow.
+
+Signed-off-by: Kenneth Kasilag <kenneth@kasilag.me>
+---
+
+--- a/drivers/net/phy/realtek/realtek_main.c
++++ b/drivers/net/phy/realtek/realtek_main.c
+@@ -7,6 +7,7 @@
+  *
+  * Copyright (c) 2004 Freescale Semiconductor, Inc.
+  */
++#include <linux/bitfield.h>
+ #include <linux/bitops.h>
+ #include <linux/crc32.h>
+ #include <linux/ethtool_netlink.h>
+@@ -127,6 +128,7 @@
+ #define RTL8261X_EXT_ADDR_REG			0xa436
+ #define RTL8261X_EXT_DATA_REG			0xa438
+ #define RTL_8261X_SUB_PHY_ID_ADDR		0x801d
++#define RTL_8261X_PATCH_VER_ADDR		0x801e
+ 
+ #define RTL822X_VND1_SERDES_OPTION			0x697a
+ #define RTL822X_VND1_SERDES_OPTION_MODE_MASK		GENMASK(5, 0)
+@@ -214,6 +216,7 @@
+ #define RTL_8251B				0x001cc862
+ #define RTL_8261C				0x001cc890
+ #define RTL_8261C_CG				0x001cc898
++#define RTL_8261CE_REV_C			0x001cc899
+ 
+ #define RTL8261C_CE_MODEL		0x00
+ #define RTL8261X_IMR			0xa4d2
+@@ -249,6 +252,60 @@
+ #define RTL8261C_CE_FW_NAME	"rtl_nic/rtl8261c.bin"
+ MODULE_FIRMWARE(RTL8261C_CE_FW_NAME);
+ 
++/* PMA/PMD device ID 2 revision field: 0x0 = rev A, 0x8 = rev B, 0x9 = rev C */
++#define RTL8261X_PHYID2_REV_MASK		GENMASK(3, 0)
++#define RTL8261CE_PHYID2_REV_C			0x9
++
++/* Each VND1 SerDes option register holds two per-lane option slots with the
++ * mode in the low nibble and PHY/MAC selector bits above it; the second slot
++ * uses the same layout shifted up by 8 bits.
++ */
++#define RTL8261CE_VND1_SDS_OPT0			0x6977
++#define RTL8261CE_VND1_SDS_OPT1_3		0x6976
++#define RTL8261CE_VND1_SDS_OPT2			0x6975
++#define RTL8261CE_VND1_SDS_OPT4_9		0x6972
++#define RTL8261CE_VND1_SDS_OPT5_7		0x6974
++#define RTL8261CE_VND1_SDS_OPT6_8		0x6973
++#define RTL8261CE_SDS_OPT_MODE_MASK		GENMASK(3, 0)
++#define RTL8261CE_SDS_OPT_PHY_SEL		BIT(4)
++#define RTL8261CE_SDS_OPT_MAC_SEL		BIT(6)
++#define RTL8261CE_SDS_OPT_FIELD_MASK		(RTL8261CE_SDS_OPT_MODE_MASK | \
++						 RTL8261CE_SDS_OPT_PHY_SEL | \
++						 RTL8261CE_SDS_OPT_MAC_SEL)
++#define RTL8261CE_SDS_OPT_FIELD_VAL		(RTL8261CE_SDS_OPT_PHY_SEL | \
++						 RTL8261CE_SDS_OPT_MAC_SEL)
++
++/* Command window into the SerDes side register space */
++#define RTL8261CE_VND1_SDS_OCP_CMD		0x7587
++#define RTL8261CE_SDS_OCP_BUSY			BIT(0)
++#define RTL8261CE_SDS_OCP_CMD_READ		0x0001
++#define RTL8261CE_SDS_OCP_CMD_WRITE		0x0003
++#define RTL8261CE_VND1_SDS_OCP_ADDR		0x7588
++#define RTL8261CE_VND1_SDS_OCP_DATA		0x7589
++#define RTL8261CE_VND1_SDS_OCP_READ_DATA	0x758a
++
++/* SerDes side registers holding the two bit lane inversion code */
++#define RTL8261CE_SDS_POL_REG0			0x0000
++#define RTL8261CE_SDS_POL_REG0_MASK		GENMASK(9, 8)
++#define RTL8261CE_SDS_POL_REGC2			0x00c2
++#define RTL8261CE_SDS_POL_REGC2_MASK		GENMASK(14, 13)
++
++/* The RTL8261CE vendor init flow waits for the internal loader before the
++ * download and triggers execution of a freshly downloaded patch explicitly.
++ */
++#define RTL8261CE_VND2_PHY_STATE		0xa420
++#define RTL8261CE_VND2_PHY_STATE_READY		GENMASK(1, 0)
++#define RTL8261CE_VND2_PATCH_TRIGGER		0xa4a0
++#define RTL8261CE_PATCH_TRIGGER			BIT(10)
++#define RTL8261CE_VND2_PATCH_DONE		0xa600
++#define RTL8261CE_PATCH_DONE_MASK		GENMASK(7, 0)
++#define RTL8261CE_PATCH_DONE_LIVE		0x1
++
++#define RTL8261CE_VND2_EEE_CTRL0		0xd036
++#define RTL8261CE_VND2_EEE_CTRL1		0xd038
++#define RTL8261CE_VND2_THERMAL_SENSOR_CTRL	0xb54c
++#define RTL8261CE_THERMAL_OVERTEMP_DWNSPD_EN	BIT(3)
++
+ enum rtl8261x_fw_op {
+ 	OP_WRITE = 0x00,	/* Write */
+ 	OP_POLL  = 0x02,	/* Polling */
+@@ -356,6 +413,18 @@ static int rtl821x_modify_ext_page(struc
+ 	return phy_restore_page(phydev, oldpage, ret);
+ }
+ 
++static int rtl8261x_read_ext(struct phy_device *phydev, u16 addr)
++{
++	int ret;
++
++	ret = phy_write_mmd(phydev, MDIO_MMD_VEND2, RTL8261X_EXT_ADDR_REG,
++			    addr);
++	if (ret < 0)
++		return ret;
++
++	return phy_read_mmd(phydev, MDIO_MMD_VEND2, RTL8261X_EXT_DATA_REG);
++}
++
+ static int rtl8261x_probe(struct phy_device *phydev)
+ {
+ 	struct device *dev = &phydev->mdio.dev;
+@@ -368,12 +437,7 @@ static int rtl8261x_probe(struct phy_dev
+ 
+ 	phydev->priv = priv;
+ 
+-	ret = phy_write_mmd(phydev, MDIO_MMD_VEND2, RTL8261X_EXT_ADDR_REG,
+-			    RTL_8261X_SUB_PHY_ID_ADDR);
+-	if (ret < 0)
+-		return ret;
+-
+-	ret = phy_read_mmd(phydev, MDIO_MMD_VEND2, RTL8261X_EXT_DATA_REG);
++	ret = rtl8261x_read_ext(phydev, RTL_8261X_SUB_PHY_ID_ADDR);
+ 	if (ret < 0)
+ 		return ret;
+ 
+@@ -386,8 +450,13 @@ static int rtl8261x_probe(struct phy_dev
+ 		break;
+ 
+ 	default:
+-		phydev_err(phydev, "Unknown sub_id 0x%02x\n", sub_phy_id);
+-		return -ENODEV;
++		/* RTL8261D_CG shares the PHY ID and the firmware with
++		 * RTL8261C_CG and vendor drivers do not tell the two apart,
++		 * so accept other sub IDs instead of failing the probe.
++		 */
++		priv->fw_name = RTL8261C_CE_FW_NAME;
++		phydev_info(phydev, "RTL8261C/D detected (sub_id 0x%02x)\n", sub_phy_id);
++		break;
+ 	}
+ 
+ 	return 0;
+@@ -409,6 +478,14 @@ static int rtl8261x_get_features(struct
+ 	linkmode_set_bit(ETHTOOL_LINK_MODE_5000baseT_Full_BIT,
+ 			 phydev->supported);
+ 
++	/* 1000BASE-T and autoneg abilities are not reported reliably in the
++	 * standard C45 ability registers, both are handled through vendor
++	 * registers. Force them here.
++	 */
++	linkmode_set_bit(ETHTOOL_LINK_MODE_1000baseT_Full_BIT,
++			 phydev->supported);
++	linkmode_set_bit(ETHTOOL_LINK_MODE_Autoneg_BIT, phydev->supported);
++
+ 	return 0;
+ }
+ 
+@@ -677,6 +754,23 @@ static int rtl8261x_config_init(struct p
+ 	 * cycle or hard reset.
+ 	 */
+ 	if (priv->fw_name && !priv->fw_loaded) {
++		/* The patch loader leaves the firmware version in a scratch
++		 * register. Downloading the patch again on an already patched
++		 * PHY crashes it, so skip the download when a bootloader or
++		 * a previous boot already patched this PHY.
++		 */
++		ret = rtl8261x_read_ext(phydev, RTL_8261X_PATCH_VER_ADDR);
++		if (ret < 0)
++			return ret;
++
++		if (ret) {
++			phydev_dbg(phydev,
++				   "Firmware already patched (version 0x%04x)\n",
++				   ret);
++			priv->fw_loaded = true;
++			return 0;
++		}
++
+ 		ret = rtl8261x_fw_load(phydev);
+ 		if (ret) {
+ 			phydev_err(phydev, "Firmware loading failed: %d\n", ret);
+@@ -687,6 +781,265 @@ static int rtl8261x_config_init(struct p
+ 	return ret;
+ }
+ 
++/* The ten system-side SerDes option slots of the RTL8261CE in the order the
++ * vendor init flow programs them, every slot to MAC and PHY selector 1,
++ * mode 0.
++ */
++static const struct { u16 reg; bool high; } rtl8261ce_sds_opt[] = {
++	{ RTL8261CE_VND1_SDS_OPT0, false },
++	{ RTL8261CE_VND1_SDS_OPT1_3, false },
++	{ RTL8261CE_VND1_SDS_OPT2, false },
++	{ RTL8261CE_VND1_SDS_OPT1_3, true },
++	{ RTL8261CE_VND1_SDS_OPT4_9, false },
++	{ RTL8261CE_VND1_SDS_OPT5_7, false },
++	{ RTL8261CE_VND1_SDS_OPT6_8, false },
++	{ RTL8261CE_VND1_SDS_OPT5_7, true },
++	{ RTL8261CE_VND1_SDS_OPT6_8, true },
++	{ RTL8261CE_VND1_SDS_OPT4_9, true },
++};
++
++static int rtl8261ce_sds_ocp_wait(struct phy_device *phydev)
++{
++	int val;
++
++	return phy_read_mmd_poll_timeout(phydev, MDIO_MMD_VEND1,
++					 RTL8261CE_VND1_SDS_OCP_CMD, val,
++					 !(val & RTL8261CE_SDS_OCP_BUSY),
++					 1000, 400000, false);
++}
++
++static int rtl8261ce_sds_ocp_read(struct phy_device *phydev, u16 reg)
++{
++	int ret;
++
++	ret = phy_write_mmd(phydev, MDIO_MMD_VEND1,
++			    RTL8261CE_VND1_SDS_OCP_ADDR, reg);
++	if (ret < 0)
++		return ret;
++
++	ret = phy_write_mmd(phydev, MDIO_MMD_VEND1,
++			    RTL8261CE_VND1_SDS_OCP_CMD,
++			    RTL8261CE_SDS_OCP_CMD_READ);
++	if (ret < 0)
++		return ret;
++
++	ret = rtl8261ce_sds_ocp_wait(phydev);
++	if (ret < 0)
++		return ret;
++
++	return phy_read_mmd(phydev, MDIO_MMD_VEND1,
++			    RTL8261CE_VND1_SDS_OCP_READ_DATA);
++}
++
++static int rtl8261ce_sds_ocp_modify(struct phy_device *phydev, u16 reg,
++				    u16 mask, u16 set)
++{
++	int val, ret;
++
++	val = rtl8261ce_sds_ocp_read(phydev, reg);
++	if (val < 0)
++		return val;
++
++	ret = phy_write_mmd(phydev, MDIO_MMD_VEND1,
++			    RTL8261CE_VND1_SDS_OCP_ADDR, reg);
++	if (ret < 0)
++		return ret;
++
++	ret = phy_write_mmd(phydev, MDIO_MMD_VEND1,
++			    RTL8261CE_VND1_SDS_OCP_DATA, (val & ~mask) | set);
++	if (ret < 0)
++		return ret;
++
++	ret = phy_write_mmd(phydev, MDIO_MMD_VEND1,
++			    RTL8261CE_VND1_SDS_OCP_CMD,
++			    RTL8261CE_SDS_OCP_CMD_WRITE);
++	if (ret < 0)
++		return ret;
++
++	return rtl8261ce_sds_ocp_wait(phydev);
++}
++
++/* Apply the board level lane polarity from the firmware node. The two bit
++ * inversion code recovered from the vendor driver holds RX inversion in the
++ * upper and TX inversion in the lower bit, with the TX encoding inverted on
++ * revisions A and B. REG0 takes the code directly, REGC2 takes it with the
++ * two bits swapped.
++ */
++static int rtl8261ce_config_serdes_polarity(struct phy_device *phydev)
++{
++	struct device *dev = &phydev->mdio.dev;
++	unsigned int tx_pol, rx_pol;
++	u16 code;
++	int ret;
++
++	ret = phy_get_tx_polarity(dev_fwnode(dev), phy_modes(phydev->interface),
++				  BIT(PHY_POL_NORMAL) | BIT(PHY_POL_INVERT),
++				  PHY_POL_NORMAL, &tx_pol);
++	if (ret < 0)
++		return ret;
++
++	ret = phy_get_rx_polarity(dev_fwnode(dev), phy_modes(phydev->interface),
++				  BIT(PHY_POL_NORMAL) | BIT(PHY_POL_INVERT),
++				  PHY_POL_NORMAL, &rx_pol);
++	if (ret < 0)
++		return ret;
++
++	if (tx_pol == PHY_POL_NORMAL && rx_pol == PHY_POL_NORMAL)
++		return 0;
++
++	code = (rx_pol == PHY_POL_INVERT ? 2 : 0) |
++	       (tx_pol == PHY_POL_INVERT ? 1 : 0);
++
++	ret = phy_read_mmd(phydev, MDIO_MMD_PMAPMD, MDIO_DEVID2);
++	if (ret < 0)
++		return ret;
++
++	if (FIELD_GET(RTL8261X_PHYID2_REV_MASK, ret) != RTL8261CE_PHYID2_REV_C)
++		code ^= 1;
++
++	ret = rtl8261ce_sds_ocp_modify(phydev, RTL8261CE_SDS_POL_REG0,
++				       RTL8261CE_SDS_POL_REG0_MASK,
++				       FIELD_PREP(RTL8261CE_SDS_POL_REG0_MASK,
++						  code));
++	if (ret < 0)
++		return ret;
++
++	/* swap the two code bits for REGC2 */
++	code = ((code & 1) << 1) | (code >> 1);
++
++	return rtl8261ce_sds_ocp_modify(phydev, RTL8261CE_SDS_POL_REGC2,
++					RTL8261CE_SDS_POL_REGC2_MASK,
++					FIELD_PREP(RTL8261CE_SDS_POL_REGC2_MASK,
++						   code));
++}
++
++static int rtl8261ce_config_init(struct phy_device *phydev)
++{
++	struct rtl8261x_priv *priv = phydev->priv;
++	bool was_loaded = priv->fw_loaded;
++	unsigned int i;
++	int val, ret;
++
++	/* Wait for the internal loader before downloading the firmware. */
++	ret = phy_read_mmd_poll_timeout(phydev, MDIO_MMD_VEND2,
++					RTL8261CE_VND2_PHY_STATE, val,
++					(val & RTL8261CE_VND2_PHY_STATE_READY) ==
++					RTL8261CE_VND2_PHY_STATE_READY,
++					10000, 1000000, false);
++	if (ret)
++		return ret;
++
++	ret = rtl8261x_config_init(phydev);
++	if (ret)
++		return ret;
++
++	if (!was_loaded && priv->fw_loaded) {
++		/* The RTL8261C_CG firmware does not carry the explicit patch
++		 * execution trigger of the vendor CE init flow, issue it here
++		 * and restart the PHY again with the patch live.
++		 */
++		ret = phy_set_bits_mmd(phydev, MDIO_MMD_VEND2,
++				       RTL8261CE_VND2_PATCH_TRIGGER,
++				       RTL8261CE_PATCH_TRIGGER);
++		if (ret < 0)
++			return ret;
++
++		ret = phy_read_mmd_poll_timeout(phydev, MDIO_MMD_VEND2,
++						RTL8261CE_VND2_PATCH_DONE, val,
++						(val & RTL8261CE_PATCH_DONE_MASK) ==
++						RTL8261CE_PATCH_DONE_LIVE,
++						1000, 100000, false);
++		if (ret)
++			return ret;
++
++		ret = phy_clear_bits_mmd(phydev, MDIO_MMD_VEND2,
++					 RTL8261CE_VND2_PATCH_TRIGGER,
++					 RTL8261CE_PATCH_TRIGGER);
++		if (ret < 0)
++			return ret;
++
++		ret = phy_write_mmd(phydev, MDIO_MMD_VEND2,
++				    RTL822X_VND2_C22_REG(MII_BMCR),
++				    BMCR_RESET | BMCR_ANENABLE |
++				    BMCR_ANRESTART);
++		if (ret < 0)
++			return ret;
++	}
++
++	/* The vendor driver re-applies the SerDes option selection on every
++	 * init, also when the firmware patch is already loaded.
++	 */
++	for (i = 0; i < ARRAY_SIZE(rtl8261ce_sds_opt); i++) {
++		u16 mask = RTL8261CE_SDS_OPT_FIELD_MASK;
++		u16 set = RTL8261CE_SDS_OPT_FIELD_VAL;
++
++		if (rtl8261ce_sds_opt[i].high) {
++			mask <<= 8;
++			set <<= 8;
++		}
++
++		ret = phy_modify_mmd(phydev, MDIO_MMD_VEND1,
++				     rtl8261ce_sds_opt[i].reg, mask, set);
++		if (ret < 0)
++			return ret;
++	}
++
++	ret = rtl8261ce_config_serdes_polarity(phydev);
++	if (ret < 0)
++		return ret;
++
++	/* EEE defaults and over-temperature downspeed from the vendor driver */
++	ret = phy_write_mmd(phydev, MDIO_MMD_VEND2, RTL8261CE_VND2_EEE_CTRL0,
++			    0x0067);
++	if (ret < 0)
++		return ret;
++
++	ret = phy_write_mmd(phydev, MDIO_MMD_VEND2, RTL8261CE_VND2_EEE_CTRL1,
++			    0x0010);
++	if (ret < 0)
++		return ret;
++
++	return phy_set_bits_mmd(phydev, MDIO_MMD_VEND2,
++				RTL8261CE_VND2_THERMAL_SENSOR_CTRL,
++				RTL8261CE_THERMAL_OVERTEMP_DWNSPD_EN);
++}
++
++static int rtl8261ce_probe(struct phy_device *phydev)
++{
++	struct device *dev = &phydev->mdio.dev;
++	struct rtl8261x_priv *priv;
++	int ret;
++
++	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
++	if (!priv)
++		return -ENOMEM;
++
++	phydev->priv = priv;
++
++	/* The RTL8261C_CG firmware is a newer revision of the same patch
++	 * the vendor CE driver downloads, and the CE accepts it as well.
++	 */
++	priv->fw_name = RTL8261C_CE_FW_NAME;
++
++	ret = phy_read_mmd(phydev, MDIO_MMD_PMAPMD, MDIO_DEVID2);
++	if (ret < 0)
++		return ret;
++
++	phydev_info(phydev, "RTL8261CE rev 0x%lx detected\n",
++		    FIELD_GET(RTL8261X_PHYID2_REV_MASK, ret));
++
++	return 0;
++}
++
++static int rtl8261ce_match_phy_device(struct phy_device *phydev,
++				      const struct phy_driver *phydrv)
++{
++	u32 id = phydev->is_c45 ? phydev->c45_ids.device_ids[MDIO_MMD_PMAPMD] :
++				  phydev->phy_id;
++
++	return id == RTL_8261C || id == RTL_8261CE_REV_C;
++}
++
+ static int rtl821x_probe(struct phy_device *phydev)
+ {
+ 	struct device *dev = &phydev->mdio.dev;
+@@ -3601,12 +3954,25 @@ static struct phy_driver realtek_drvs[]
+ 		.set_tunable    = rtl826x_set_tunable,
+ 	}, {
+ 		PHY_ID_MATCH_EXACT(RTL_8261C_CG),
+-		.name           = "RTL8261C 10Gbps PHY",
++		.name           = "RTL8261C/D 10Gbps PHY",
+ 		.probe          = rtl8261x_probe,
+ 		.config_init    = rtl8261x_config_init,
+ 		.get_features   = rtl8261x_get_features,
+ 		.config_aneg    = rtl8261x_config_aneg,
+ 		.read_status    = rtl8261x_read_status,
++		.config_intr    = rtl8261x_config_intr,
++		.handle_interrupt = rtl8261x_handle_interrupt,
++		.soft_reset     = genphy_c45_soft_reset,
++		.suspend        = genphy_c45_pma_suspend,
++		.resume         = genphy_c45_pma_resume,
++	}, {
++		.match_phy_device = rtl8261ce_match_phy_device,
++		.name           = "RTL8261CE 10Gbps PHY",
++		.probe          = rtl8261ce_probe,
++		.config_init    = rtl8261ce_config_init,
++		.get_features   = rtl8261x_get_features,
++		.config_aneg    = rtl8261x_config_aneg,
++		.read_status    = rtl8261x_read_status,
+ 		.config_intr    = rtl8261x_config_intr,
+ 		.handle_interrupt = rtl8261x_handle_interrupt,
+ 		.soft_reset     = genphy_c45_soft_reset,
