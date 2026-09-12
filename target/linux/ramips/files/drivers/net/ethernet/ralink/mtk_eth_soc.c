@@ -27,6 +27,7 @@
 #include <linux/if_vlan.h>
 #include <linux/reset.h>
 #include <linux/tcp.h>
+#include <linux/iopoll.h>
 #include <linux/io.h>
 #include <linux/bug.h>
 #include <linux/netfilter.h>
@@ -57,6 +58,10 @@
 #define FE_RX_ETH_HLEN		(VLAN_ETH_HLEN + VLAN_HLEN + ETH_FCS_LEN)
 #define FE_RX_HLEN		(NET_SKB_PAD + FE_RX_ETH_HLEN + NET_IP_ALIGN)
 #define DMA_DUMMY_DESC		0xffffffff
+#define FE_DMA_STOP_POLL_US	20
+#define FE_DMA_STOP_TIMEOUT_US	1000000
+#define FE_DMA_STOP_MASK	(FE_TX_DMA_EN | FE_RX_DMA_EN | \
+				 FE_TX_DMA_BUSY | FE_RX_DMA_BUSY)
 #define FE_DEFAULT_MSG_ENABLE \
 		(NETIF_MSG_DRV | \
 		NETIF_MSG_PROBE | \
@@ -244,7 +249,7 @@ static int fe_set_mac_address(struct net_device *dev, void *p)
 		if (priv->soc->set_mac)
 			priv->soc->set_mac(priv, dev->dev_addr);
 		else
-			fe_hw_set_macaddr(priv, p);
+			fe_hw_set_macaddr(priv, dev->dev_addr);
 	}
 
 	return ret;
@@ -1398,6 +1403,29 @@ static int fe_hw_init(struct net_device *dev)
 	return 0;
 }
 
+static int fe_dma_disable_and_wait(struct fe_priv *priv)
+{
+	unsigned long flags;
+	u32 val;
+	int err;
+
+	spin_lock_irqsave(&priv->page_lock, flags);
+	val = fe_reg_r32(FE_REG_PDMA_GLO_CFG);
+	val &= ~(FE_TX_WB_DDONE | FE_RX_DMA_EN | FE_TX_DMA_EN);
+	fe_reg_w32(val, FE_REG_PDMA_GLO_CFG);
+	spin_unlock_irqrestore(&priv->page_lock, flags);
+
+	err = read_poll_timeout(fe_reg_r32, val,
+				!(val & FE_DMA_STOP_MASK),
+				FE_DMA_STOP_POLL_US, FE_DMA_STOP_TIMEOUT_US,
+				false, FE_REG_PDMA_GLO_CFG);
+	if (err)
+		netdev_err(priv->netdev,
+			   "DMA did not stop, cfg=%08x\n", val);
+
+	return err;
+}
+
 static int fe_open(struct net_device *dev)
 {
 	struct fe_priv *priv = netdev_priv(dev);
@@ -1408,6 +1436,15 @@ static int fe_open(struct net_device *dev)
 	if (priv->fe_needs_reinit) {
 		fe_hw_config(dev);
 		priv->fe_needs_reinit = false;
+	}
+
+	if (priv->flags & FE_FLAG_DMA_STOP_WAIT) {
+		err = fe_dma_disable_and_wait(priv);
+		if (err)
+			return err;
+
+		/* Release rings retained by a previous timed-out stop. */
+		fe_free_dma(priv);
 	}
 
 	err = fe_init_dma(priv);
@@ -1454,30 +1491,32 @@ static int fe_stop(struct net_device *dev)
 	if (priv->phy && !priv->dsa_switch)
 		priv->phy->stop(priv);
 
-	spin_lock_irqsave(&priv->page_lock, flags);
+	if (priv->flags & FE_FLAG_DMA_STOP_WAIT) {
+		/* Retain rings while DMA may still reference them. */
+		if (!fe_dma_disable_and_wait(priv))
+			fe_free_dma(priv);
+	} else {
+		spin_lock_irqsave(&priv->page_lock, flags);
+		fe_reg_w32(fe_reg_r32(FE_REG_PDMA_GLO_CFG) &
+			     ~(FE_TX_WB_DDONE | FE_RX_DMA_EN | FE_TX_DMA_EN),
+			     FE_REG_PDMA_GLO_CFG);
+		spin_unlock_irqrestore(&priv->page_lock, flags);
 
-	fe_reg_w32(fe_reg_r32(FE_REG_PDMA_GLO_CFG) &
-		     ~(FE_TX_WB_DDONE | FE_RX_DMA_EN | FE_TX_DMA_EN),
-		     FE_REG_PDMA_GLO_CFG);
-	spin_unlock_irqrestore(&priv->page_lock, flags);
-
-	/* wait dma stop */
-	for (i = 0; i < 10; i++) {
-		if (fe_reg_r32(FE_REG_PDMA_GLO_CFG) &
-				(FE_TX_DMA_BUSY | FE_RX_DMA_BUSY)) {
+		for (i = 0; i < 10; i++) {
+			if (!(fe_reg_r32(FE_REG_PDMA_GLO_CFG) &
+			      (FE_TX_DMA_BUSY | FE_RX_DMA_BUSY)))
+				break;
 			msleep(20);
-			continue;
 		}
-		break;
-	}
 
-	dma_cfg = fe_reg_r32(FE_REG_PDMA_GLO_CFG);
-	if (dma_cfg & (FE_TX_DMA_BUSY | FE_RX_DMA_BUSY)) {
-		netdev_warn(dev, "DMA did not stop, resetting frame engine\n");
-		fe_reset_dma(priv);
-	}
+		dma_cfg = fe_reg_r32(FE_REG_PDMA_GLO_CFG);
+		if (dma_cfg & (FE_TX_DMA_BUSY | FE_RX_DMA_BUSY)) {
+			netdev_warn(dev, "DMA did not stop, resetting frame engine\n");
+			fe_reset_dma(priv);
+		}
 
-	fe_free_dma(priv);
+		fe_free_dma(priv);
+	}
 
 	return 0;
 }
@@ -1515,6 +1554,12 @@ static int fe_init(struct net_device *dev)
 {
 	struct fe_priv *priv = netdev_priv(dev);
 	int err;
+
+	if (priv->flags & FE_FLAG_DMA_STOP_WAIT) {
+		err = fe_dma_disable_and_wait(priv);
+		if (err)
+			return err;
+	}
 
 	fe_reset_fe(priv);
 
@@ -1565,6 +1610,16 @@ err_phy_disconnect:
 static void fe_uninit(struct net_device *dev)
 {
 	struct fe_priv *priv = netdev_priv(dev);
+
+	if ((priv->flags & FE_FLAG_DMA_STOP_WAIT) &&
+	    (priv->tx_ring.tx_dma || priv->rx_ring.rx_dma)) {
+		/* ndo_stop cannot fail; never free rings still owned by DMA. */
+		if (!fe_dma_disable_and_wait(priv))
+			fe_free_dma(priv);
+		else
+			netdev_err(dev,
+				   "retaining DMA rings because DMA remains active\n");
+	}
 
 	if (priv->phy && !priv->dsa_switch)
 		priv->phy->disconnect(priv);
@@ -1657,15 +1712,31 @@ static void fe_reset_pending(struct fe_priv *priv)
 	struct net_device *dev = priv->netdev;
 	int err;
 
-	rtnl_lock();
-	fe_stop(dev);
-
-	err = fe_open(dev);
-	if (err) {
-		netif_alert(priv, ifup, dev,
-			    "Driver up/down cycle failed, closing device.\n");
-		dev_close(dev);
+	if (!(priv->flags & FE_FLAG_DMA_STOP_WAIT)) {
+		rtnl_lock();
+		fe_stop(dev);
+		err = fe_open(dev);
+		if (err) {
+			netif_alert(priv, ifup, dev,
+				    "Driver up/down cycle failed, closing device.\n");
+			dev_close(dev);
+		}
+		rtnl_unlock();
+		return;
 	}
+
+	rtnl_lock();
+	if (!netif_running(dev))
+		goto unlock;
+
+	dev_close(dev);
+
+	err = dev_open(dev, NULL);
+	if (err)
+		netif_alert(priv, ifup, dev,
+			    "Driver reset failed; device left closed.\n");
+
+unlock:
 	rtnl_unlock();
 }
 
@@ -1696,7 +1767,8 @@ static int fe_probe(struct platform_device *pdev)
 	struct clk *sysclk;
 	int err, napi_weight;
 
-	err = device_reset(&pdev->dev);
+	/* Some older Ralink SoCs have no reset-controller binding for the FE. */
+	err = device_reset_optional(&pdev->dev);
 	if (err)
 		dev_err(&pdev->dev, "failed to reset device\n");
 

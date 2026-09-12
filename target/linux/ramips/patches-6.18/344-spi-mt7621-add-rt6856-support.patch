@@ -1,0 +1,130 @@
+From b3396246604139dd55afd0c1fd4e2e14c23fcbd4 Mon Sep 17 00:00:00 2001
+From: Nickolay Savchenko <n.savchenko@axioma.lv>
+Date: Thu, 16 Jul 2026 03:35:29 +0300
+Subject: [PATCH] spi: mt7621: support RT6856 controller quirks
+
+Handle the RT6856 register layout and native chip-select polarity.
+
+Limit transfers to the maximum size supported by the controller.
+Keep the existing MT7621 pending-write and reset behaviour unchanged.
+
+Signed-off-by: Nickolay Savchenko <n.savchenko@axioma.lv>
+---
+ drivers/spi/spi-mt7621.c | 47 ++++++++++++++++++++++++++++++++++++----
+ 1 file changed, 43 insertions(+), 4 deletions(-)
+
+--- a/drivers/spi/spi-mt7621.c
++++ b/drivers/spi/spi-mt7621.c
+@@ -60,8 +60,11 @@ struct mt7621_spi {
+ 	unsigned int		sys_freq;
+ 	unsigned int		speed;
+ 	int			pending_write;
++	bool			rt6856;
+ };
+ 
++static void mt7621_spi_flush(struct mt7621_spi *rs);
++
+ static inline struct mt7621_spi *spidev_to_mt7621_spi(struct spi_device *spi)
+ {
+ 	return spi_controller_get_devdata(spi->controller);
+@@ -91,11 +94,16 @@ static void mt7621_spi_set_native_cs(str
+ 	 * reliably)
+ 	 */
+ 	host = mt7621_spi_read(rs, MT7621_SPI_MASTER);
+-	host |= MASTER_RS_SLAVE_SEL | MASTER_MORE_BUFMODE;
++	if (!rs->rt6856)
++		host |= MASTER_RS_SLAVE_SEL;
++	host |= MASTER_MORE_BUFMODE;
+ 	host &= ~MASTER_FULL_DUPLEX;
+ 	mt7621_spi_write(rs, MT7621_SPI_MASTER, host);
+ 
+-	rs->pending_write = 0;
++	if (rs->rt6856 && !active)
++		mt7621_spi_flush(rs);
++	else
++		rs->pending_write = 0;
+ 
+ 	if (active)
+ 		polar = BIT(cs);
+@@ -263,7 +271,9 @@ static void mt7621_spi_write_half_duplex
+ 	}
+ 
+ 	rs->pending_write = len;
+-	mt7621_spi_flush(rs);
++	/* RT6856 must combine a command write with the following read. */
++	if (!rs->rt6856)
++		mt7621_spi_flush(rs);
+ }
+ 
+ static int mt7621_spi_transfer_one(struct spi_controller *host,
+@@ -307,7 +317,25 @@ static int mt7621_spi_setup(struct spi_d
+ 	return 0;
+ }
+ 
++/*
++ * MOREBUF exposes eight 32-bit data registers.  A longer receive transfer
++ * must be submitted as a new SPI message so the NOR opcode and address are
++ * sent again; issuing another START while keeping the old message active
++ * returns zeroes on RT6856.
++ */
++static size_t mt7621_spi_max_transfer_size(struct spi_device *spi)
++{
++	return 32;
++}
++
++static size_t mt7621_spi_max_message_size(struct spi_device *spi)
++{
++	/* Four command/address bytes plus one full receive window. */
++	return 36;
++}
++
+ static const struct of_device_id mt7621_spi_match[] = {
++	{ .compatible = "ralink,rt6856-spi" },
+ 	{ .compatible = "ralink,mt7621-spi" },
+ 	{},
+ };
+@@ -319,6 +347,7 @@ static int mt7621_spi_probe(struct platf
+ 	struct spi_controller *host;
+ 	struct mt7621_spi *rs;
+ 	void __iomem *base;
++	bool rt6856;
+ 	struct clk *clk;
+ 	int ret;
+ 
+@@ -330,6 +359,8 @@ static int mt7621_spi_probe(struct platf
+ 	if (IS_ERR(base))
+ 		return PTR_ERR(base);
+ 
++	rt6856 = of_device_is_compatible(pdev->dev.of_node,
++					 "ralink,rt6856-spi");
+ 	clk = devm_clk_get_enabled(&pdev->dev, NULL);
+ 	if (IS_ERR(clk))
+ 		return dev_err_probe(&pdev->dev, PTR_ERR(clk),
+@@ -350,6 +381,10 @@ static int mt7621_spi_probe(struct platf
+ 	host->bits_per_word_mask = SPI_BPW_MASK(8);
+ 	host->dev.of_node = pdev->dev.of_node;
+ 	host->max_native_cs = MT7621_NATIVE_CS_COUNT;
++	if (rt6856) {
++		host->max_transfer_size = mt7621_spi_max_transfer_size;
++		host->max_message_size = mt7621_spi_max_message_size;
++	}
+ 	host->num_chipselect = MT7621_NATIVE_CS_COUNT;
+ 	host->use_gpio_descriptors = true;
+ 
+@@ -358,11 +393,15 @@ static int mt7621_spi_probe(struct platf
+ 	rs = spi_controller_get_devdata(host);
+ 	rs->base = base;
+ 	rs->host = host;
++	rs->rt6856 = rt6856;
+ 	rs->sys_freq = clk_get_rate(clk);
+ 	rs->pending_write = 0;
+ 	dev_info(&pdev->dev, "sys_freq: %u\n", rs->sys_freq);
+ 
+-	ret = device_reset(&pdev->dev);
++	if (rt6856)
++		ret = device_reset_optional(&pdev->dev);
++	else
++		ret = device_reset(&pdev->dev);
+ 	if (ret) {
+ 		dev_err(&pdev->dev, "SPI reset failed!\n");
+ 		return ret;
