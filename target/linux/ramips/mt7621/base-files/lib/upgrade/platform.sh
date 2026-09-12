@@ -65,6 +65,10 @@ platform_do_upgrade() {
 		dd if=/dev/mtd5 bs=1024 count=52224 >> /tmp/backup_firmware.bin
 		mtd -e firmware2 write /tmp/backup_firmware.bin firmware2
 		;;
+	ruijie,rg-eg105g-v3)
+		fw_setenv firmware_size || exit 1
+		fw_setenv firmware_crc32 || exit 1
+		;;
 	esac
 
 	case "$board" in
