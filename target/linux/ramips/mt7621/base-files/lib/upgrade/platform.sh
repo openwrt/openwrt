@@ -8,6 +8,33 @@ REQUIRE_IMAGE_METADATA=1
 RAMFS_COPY_BIN='fw_printenv fw_setenv'
 RAMFS_COPY_DATA='/etc/fw_env.config /var/lock/fw_printenv.lock'
 
+platform_check_image_mikrotik_nor() {
+	local bootfwver bootfwmajor
+	local bootentry="$(dd bs=10 skip=1 count=1 if="$1" 2>/dev/null | xargs)"
+
+	if grep -q "\[regular\]" /sys/firmware/mikrotik/soft_config/booter; then
+		read -r bootfwver < /sys/firmware/mikrotik/soft_config/bios_version
+	elif grep -q "\[backup\]" /sys/firmware/mikrotik/soft_config/booter; then
+		read -r bootfwver < /sys/firmware/mikrotik/hard_config/booter_version
+	else
+		return 1
+	fi
+	bootfwmajor="${bootfwver%%.*}"
+
+	if [ "$((bootfwmajor))" = 0 ]; then
+		v "invalid RouterBOOT version"
+		return 1
+	elif [ "$bootfwmajor" -le 6 ] && [ "$bootentry" != "kernel" ]; then
+		v "RouterBOOT 6 and earlier requires ELF-in-YAFFS image"
+		return 1
+	elif [ "$bootfwmajor" -ge 7 ] && [ "$bootentry" != "bootimage" ]; then
+		v "RouterBOOT 7 and later requires NPK-in-YAFFS image"
+		return 1
+	fi
+
+	return 0
+}
+
 platform_check_image() {
 	local board=$(board_name)
 	local magic="$(get_magic_long "$1")"
@@ -18,6 +45,14 @@ platform_check_image() {
 	buffalo,wsr-2533dhpl2|\
 	buffalo,wsr-2533dhpls)
 		buffalo_check_image "$board" "$magic" "$1" || return 1
+		;;
+	mikrotik,ltap-2hnd|\
+	mikrotik,routerboard-750gr3|\
+	mikrotik,routerboard-760igs|\
+	mikrotik,routerboard-m11g|\
+	mikrotik,routerboard-m33g)
+		platform_check_image_mikrotik_nor "$1"
+		return $?
 		;;
 	esac
 
