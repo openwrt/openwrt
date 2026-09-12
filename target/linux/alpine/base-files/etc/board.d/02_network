@@ -1,0 +1,45 @@
+#
+# Copyright (c) 2011-2026 OpenWrt.org
+#
+
+. /lib/functions/uci-defaults.sh
+. /lib/functions/system.sh
+
+alpine_setup_interfaces()
+{
+	local board="$1"
+
+	case "$board" in
+	checkpoint,l-71)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 lan5 lan6" "eth0"
+		ucidef_set_interface "dmz" device "eth2"
+		;;
+	*)
+		echo "Unsupported hardware. Network interfaces not initialized"
+		;;
+	esac
+}
+
+alpine_setup_macs()
+{
+	local board="$1"
+
+	case "$board" in
+	checkpoint,l-71)
+		wan_mac=$(mtd_get_mac_ascii u-boot-env hw_mac_addr)
+		lan_mac=$(mtd_get_mac_ascii u-boot-env lan1_mac_addr)
+		dmz_mac=$(mtd_get_mac_ascii u-boot-env dmz_mac_addr)
+		[ -n "$wan_mac" ] && ucidef_set_interface_macaddr "wan" "$wan_mac"
+		[ -n "$lan_mac" ] && ucidef_set_interface_macaddr "lan" "$lan_mac"
+		[ -n "$dmz_mac" ] && ucidef_set_interface_macaddr "dmz" "$dmz_mac"
+		;;
+	esac
+}
+
+board_config_update
+board=$(board_name)
+alpine_setup_interfaces $board
+alpine_setup_macs $board
+board_config_flush
+
+exit 0

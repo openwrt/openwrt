@@ -1,0 +1,20 @@
+config AL_DMA
+	tristate "Annapurna Labs DMA support"
+	depends on ARCH_ALPINE
+	select DMA_ENGINE
+	select ASYNC_TX_ENABLE_CHANNEL_SWITCH
+	help
+	  Enable support for the Annapurna Labs DMA and RAID acceleration
+	  engine.
+
+config AL_DMA_STATS
+	bool "Annapurna Labs DMA statistics enabled"
+	depends on AL_DMA
+	help
+	  Enable Annapurna Labs DMA and RAID acceleration engine statistics.
+
+config AL_DMA_PCI_IOV
+	bool "Annapurna Labs DMA Virtual Function enabled"
+	depends on AL_DMA
+	help
+	  Enable Annapurna Labs DMA Virtual Function.
