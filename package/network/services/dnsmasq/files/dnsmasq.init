@@ -1366,7 +1366,9 @@ start_service() {
 		DEFAULT_INSTANCE="$first_instance" # No unnamed config section was found.
 	fi
 
-	if [ -n "$instance" ]; then
+	if [ -n "$BOOT" ]; then
+    	dnsmasq_start "$DEFAULT_INSTANCE"
+	elif [ -n "$instance" ]; then
 		[ "$instance_found" -gt 0 ] || return
 		dnsmasq_start "$instance"
 	else
