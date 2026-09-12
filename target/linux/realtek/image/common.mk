@@ -41,8 +41,16 @@ endef
 # The "IMG-" uImage name allows flashing the iniramfs from the vendor Web UI.
 # Avoided for sysupgrade, as the vendor FW would do an incomplete flash.
 define Device/engenius_ews2910p
-  IMAGE_SIZE := 8192k
+  IMAGE_SIZE := 16384k
   DEVICE_VENDOR := EnGenius
+  DEVICE_COMPAT_VERSION := 2.0
+  DEVICE_COMPAT_MESSAGE := The secondary firmware partition has been cannibalized \
+	in this version. Do not upgrade if you want to preserve dual booting. \
+	Furthermore, check that the firmware you flash fits in the pre-existing \
+	8MiB firmware partition. On subsequent sysupgrades, this limitation \
+	will not apply. Any files you had previously in the overlayfs are \
+	available by manually mounting /dev/mtd3 with: \
+	mount -t jffs2 /dev/mtdblock3 /mnt
   KERNEL_INITRAMFS := \
 	kernel-bin | \
 	append-dtb | \
