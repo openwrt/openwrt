@@ -179,6 +179,19 @@ platform_pre_upgrade() {
 
 platform_do_upgrade() {
 	case "$(board_name)" in
+	avm,fritzbox-4050)
+		remove_oem_ubi_volume avm_filesys_0
+		remove_oem_ubi_volume avm_filesys_1
+		remove_oem_ubi_volume avm_config
+		remove_oem_ubi_volume avm_userdata
+
+		sync
+		CI_KERNPART="fit0"
+		nand_do_flash_file "$1" || nand_do_upgrade_failed
+		CI_KERNPART="fit1"
+		nand_do_flash_file "$1" || nand_do_upgrade_failed
+		nand_do_upgrade_success
+		;;
 	cmcc,mr3000d-ci|\
 	cmcc,pz-l8|\
 	elecom,wrc-x3000gs2|\
