@@ -147,6 +147,10 @@ hostapd_common_add_device_config() {
 	hostapd_add_log_config
 }
 
+append_hostapd_option() {
+	append base_cfg "$1" "$N"
+}
+
 hostapd_prepare_device_config() {
 	local config="$1"
 	local driver="$2"
@@ -268,10 +272,7 @@ hostapd_prepare_device_config() {
 	set_default stationary_ap 1
 	append base_cfg "stationary_ap=$stationary_ap" "$N"
 
-	json_get_values opts hostapd_options
-	for val in $opts; do
-		append base_cfg "$val" "$N"
-	done
+	json_for_each_item append_hostapd_option hostapd_options
 
 	cat > "$config" <<EOF
 driver=$driver
@@ -546,6 +547,10 @@ append_acct_server() {
 	append bss_conf "acct_server_addr=$1" "$N"
 	append bss_conf "acct_server_port=$acct_port" "$N"
 	[ -n "$acct_secret" ] && append bss_conf "acct_server_shared_secret=$acct_secret" "$N"
+}
+
+append_hostapd_bss_option() {
+	append bss_conf "$1" "$N"
 }
 
 hostapd_set_bss_options() {
@@ -1219,10 +1224,7 @@ hostapd_set_bss_options() {
 		[ -n "$dpp_netaccesskey" ] && append bss_conf "dpp_netaccesskey=$dpp_netaccesskey" "$N"
 	}
 
-	json_get_values opts hostapd_bss_options
-	for val in $opts; do
-		append bss_conf "$val" "$N"
-	done
+	json_for_each_item append_hostapd_bss_option hostapd_bss_options
 
 	append "$var" "$bss_conf" "$N"
 	return 0
