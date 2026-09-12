@@ -1,0 +1,57 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Andy Boxer <andyboxer@gmail.com>
+Date: Sat, 4 Jul 2026 13:48:14 +0300
+Subject: [PATCH] bcm47xx: flush BMIPS3300 RAC after DMA sync
+
+Legacy BCM47xx BMIPS3300 systems use the read-ahead cache. Flush the RAC
+after DMA synchronization so CPU reads do not observe stale DMA data.
+
+Signed-off-by: Andy Boxer <andyboxer@gmail.com>
+---
+--- a/arch/mips/bcm47xx/Kconfig
++++ b/arch/mips/bcm47xx/Kconfig
+@@ -5,6 +5,7 @@ config BCM47XX_SSB
+ 	bool "SSB Support for Broadcom BCM47XX"
+ 	select SYS_HAS_CPU_BMIPS32_3300
+ 	select MIPS_L1_CACHE_SHIFT_4 if !BCM47XX_BCMA
++	select ARCH_HAS_SYNC_DMA_FOR_CPU_ALL if !BCM47XX_BCMA
+ 	select SSB
+ 	select SSB_HOST_SOC
+ 	select SSB_DRIVER_MIPS
+--- /dev/null
++++ b/arch/mips/bcm47xx/dma.c
+@@ -0,0 +1,27 @@
++// SPDX-License-Identifier: GPL-2.0+
++
++#include <linux/bug.h>
++#include <linux/dma-map-ops.h>
++#include <linux/types.h>
++#include <asm/bmips.h>
++#include <asm/cpu.h>
++#include <asm/cpu-type.h>
++#include <asm/io.h>
++
++void arch_sync_dma_for_cpu_all(void)
++{
++	void __iomem *cbr = bmips_cbr_addr;
++	u32 cfg;
++
++	if (boot_cpu_type() != CPU_BMIPS3300)
++		return;
++
++	if (WARN_ON_ONCE(!cbr))
++		return;
++
++	cfg = __raw_readl(cbr + BMIPS_RAC_CONFIG);
++
++	/* Flush stale data out of the readahead cache. */
++	__raw_writel(cfg | 0x100, cbr + BMIPS_RAC_CONFIG);
++	__raw_readl(cbr + BMIPS_RAC_CONFIG);
++}
+--- a/arch/mips/bcm47xx/Makefile
++++ b/arch/mips/bcm47xx/Makefile
+@@ -6,3 +6,4 @@
+ 
+ obj-y				+= irq.o prom.o serial.o setup.o time.o
+ obj-y				+= board.o buttons.o leds.o workarounds.o
++obj-$(CONFIG_ARCH_HAS_SYNC_DMA_FOR_CPU_ALL) += dma.o
