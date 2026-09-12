@@ -1616,16 +1616,17 @@ static const struct regmap_config edma_regmap_cfg = {
  * whose ports carry the board's addresses either from DT or patched in by
  * the bootloader. DSA user ports without one of their own inherit whatever
  * ends up here.
+ *
+ * No lookup error is fatal here: a cell whose layout driver never binds
+ * defers forever, and the conduit carries every tree behind it.
  */
 static int edma_get_mac_address(struct net_device *netdev,
 				struct device_node *np)
 {
 	struct device_node *cpu_port;
-	int ret;
 
-	ret = of_get_ethdev_address(np, netdev);
-	if (!ret || ret == -EPROBE_DEFER)
-		return ret;
+	if (!of_get_ethdev_address(np, netdev))
+		return 0;
 
 	for_each_node_with_property(cpu_port, "ethernet") {
 		struct device_node *conduit __free(device_node) =
@@ -1635,10 +1636,9 @@ static int edma_get_mac_address(struct net_device *netdev,
 			continue;
 
 		for_each_available_child_of_node_scoped(cpu_port->parent, port) {
-			ret = of_get_ethdev_address(port, netdev);
-			if (!ret || ret == -EPROBE_DEFER) {
+			if (!of_get_ethdev_address(port, netdev)) {
 				of_node_put(cpu_port);
-				return ret;
+				return 0;
 			}
 		}
 	}
@@ -1688,11 +1688,10 @@ static int edma_probe(struct platform_device *pdev)
 	priv->pdev = pdev;
 	priv->soc = device_get_match_data(dev);
 
-	ret = edma_get_mac_address(netdev, dev->of_node);
-	if (ret == -EPROBE_DEFER)
-		return dev_err_probe(dev, ret, "failed to get MAC address\n");
-	if (ret)
+	if (edma_get_mac_address(netdev, dev->of_node)) {
+		dev_warn(dev, "failed to get MAC address from DT, using a random one\n");
 		eth_hw_addr_random(netdev);
+	}
 
 	priv->rx_page_order = edma_rx_page_order(netdev->mtu);
 	priv->rx_buffer_size = edma_rx_buffer_size(priv->rx_page_order);
