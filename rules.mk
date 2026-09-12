@@ -431,7 +431,7 @@ export $(call shvar,$(1))=$$(call $(1))
 endef
 
 ##@
-# @brief Support 64 bit tine in C code.
+# @brief Support 64 bit time in C code.
 #
 # Test support for 64-bit time with C code from largefile.m4 provided by GNU Gnulib
 # the value is `y` when successful and `` otherwise
