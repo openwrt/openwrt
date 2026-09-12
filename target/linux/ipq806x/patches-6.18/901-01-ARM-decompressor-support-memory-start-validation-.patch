@@ -1,0 +1,75 @@
+From 2f86b9b71a11f86e3d850214ab781ebb17d7260e Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Fri, 19 Jan 2024 19:48:30 +0100
+Subject: [PATCH v2 1/2] ARM: decompressor: support memory start validation for
+ appended DTB
+
+There is currently a problem with a very specific sets of kernel config
+and AUTO_ZRELADDR.
+
+For the most common case AUTO_ZRELADDR check the PC register and
+calculate the start of the physical memory. Then fdt_check_mem_start is
+called to make sure the detected value makes sense by comparing it with
+what is present in DTB in the memory nodes and if additional fixup are
+required with the use of linux,usable-memory-range in the chosen node to
+hardcode usable memory range in case some reserved space needs to be
+addressed. With the help of this function the right address is
+calculated and the kernel correctly decompress and loads.
+
+Things starts to become problematic when in the mix,
+CONFIG_ARM_APPENDED_DTB is used. This is a particular kernel config is
+used when legacy systems doesn't support passing a DTB directly and a
+DTB is appended at the end of the image.
+
+In such case, fdt_check_mem_start is skipped in AUTO_ZRELADDR iteration
+as the appended DTB can be augumented later with ATAGS passed from the
+bootloader (if CONFIG_ARM_ATAG_DTB_COMPAT is enabled).
+
+The main problem and what this patch address is the fact that
+fdt_check_mem_start is never called later when the appended DTB is
+augumented, hence any fixup and validation is not done making AUTO_ZRELADDR
+detection inconsistent and most of the time wrong.
+
+Add support in head.S for this by checking if AUTO_ZRELADDR is enabled
+and calling fdt_check_mem_start with the appended DTB and the augumented
+values permitting legacy device to provide info in DTB instead of
+disabling AUTO_ZRELADDR and hardcoding the physical address offsets.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Linus Walleij <linus.walleij@linaro.org>
+---
+ arch/arm/boot/compressed/head.S | 22 ++++++++++++++++++++++
+ 1 file changed, 22 insertions(+)
+
+--- a/arch/arm/boot/compressed/head.S
++++ b/arch/arm/boot/compressed/head.S
+@@ -443,6 +443,28 @@ restart:	adr	r0, LC1
+ 		add	r6, r6, r5
+ 		add	r10, r10, r5
+ 		add	sp, sp, r5
++
++#ifdef CONFIG_AUTO_ZRELADDR
++		/*
++		 * Validate calculated start of physical memory with appended DTB.
++		 * In the first iteration for physical memory start calculation,
++		 * we skipped validating it as it could have been augumented by
++		 * ATAGS stored at an offset from the same start of physical memory.
++		 *
++		 * We now have parsed them and augumented the appended DTB if asked
++		 * so we can finally validate the start of physical memory.
++		 *
++		 * This is needed to apply additional fixup with
++		 * linux,usable-memory-range or to make sure AUTO_ZRELADDR detected
++		 * the correct value.
++		 */
++		sub	r0, r4, #TEXT_OFFSET	@ revert to base address
++		mov	r1, r8			@ use appended DTB
++		bl	fdt_check_mem_start
++
++		/* Determine final kernel image address. */
++		add	r4, r0, #TEXT_OFFSET
++#endif
+ dtb_check_done:
+ #endif
+ 
