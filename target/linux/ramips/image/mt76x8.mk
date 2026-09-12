@@ -481,6 +481,19 @@ define Device/keenetic_kn-1112
 endef
 TARGET_DEVICES += keenetic_kn-1112
 
+define Device/keenetic_kn-1211
+  BLOCKSIZE := 64k
+  IMAGE_SIZE := 31488k
+  DEVICE_VENDOR := Keenetic
+  DEVICE_MODEL := KN-1211
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
+  IMAGES += factory.bin
+  IMAGE/factory.bin := $$(sysupgrade_bin) | pad-to $$$$(BLOCKSIZE) | \
+	check-size 15744k | zyimage -d 0x801211 -v "KN-1211"
+endef
+TARGET_DEVICES += keenetic_kn-1211
+
+
 define Device/keenetic_kn-1212
   BLOCKSIZE := 64k
   IMAGE_SIZE := 15073280
