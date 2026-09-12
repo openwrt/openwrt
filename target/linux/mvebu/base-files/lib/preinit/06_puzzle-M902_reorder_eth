@@ -1,0 +1,27 @@
+reorder_puzzlem902_interfaces() {
+	if [ ! -f /tmp/sysinfo/board_name ]; then
+		echo "No board name found, not doing reorder_puzzlem902_interfaces"
+		return 0
+	fi
+
+	board=$(cat /tmp/sysinfo/board_name)
+	case "$board" in
+	iei,puzzle-m902)
+
+		# Reorder ethernet interfaces to match the physical order
+		ip link set eth0 name eth10
+		ip link set eth2 name eth0
+		ip link set eth3 name eth11
+		ip link set eth4 name eth3
+		ip link set eth5 name eth2
+		ip link set eth6 name eth12
+		ip link set eth7 name eth5
+		ip link set eth8 name eth4
+		;;
+	default)
+		echo "board $board"
+		;;
+	esac
+}
+
+boot_hook_add preinit_main reorder_puzzlem902_interfaces
