@@ -1,0 +1,23 @@
+#!/bin/ash
+# SPDX-License-Identifier: GPL-2.0-only
+
+[ "$ACTION" = "add" ] || exit 0
+
+PHYNBR=${DEVPATH##*/phy}
+
+[ -n "$PHYNBR" ] || exit 0
+
+. /lib/functions/system.sh
+
+case "$(board_name)" in
+dlink,dap-2690-a1)
+	case "$PHYNBR" in
+	0)
+		mtd_get_mac_ascii bdcfg wlanmac > "/sys${DEVPATH}/macaddress"
+		;;
+	1)
+		mtd_get_mac_ascii bdcfg wlanmac_a > "/sys${DEVPATH}/macaddress"
+		;;
+	esac
+	;;
+esac
