@@ -8,11 +8,11 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libtool
 PKG_CPE_ID:=cpe:/a:gnu:libtool
-PKG_VERSION:=2.5.4
+PKG_VERSION:=2.6.2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@GNU/$(PKG_NAME)
-PKG_HASH:=da8ebb2ce4dcf46b90098daf962cffa68f4b4f62ea60f798d0ef12929ede6adf
+PKG_HASH:=24adb3aa9ae035c70faba344af57d73215eb89281045af6c7ccd307751f8b0bf
 
 include $(INCLUDE_DIR)/host-build.mk
 
