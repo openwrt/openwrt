@@ -839,6 +839,23 @@ define Device/luma_wrtq-329acn
 endef
 TARGET_DEVICES += luma_wrtq-329acn
 
+define Device/mbox_hsa-500
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Mbox
+	DEVICE_MODEL := HSA-500
+	SOC := qcom-ipq4019
+	DEVICE_DTS := qcom-ipq4019-mbox-hsa-500
+	DEVICE_DTS_CONFIG := config@ap.dk07.1-c1
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+	IMAGES := sysupgrade.bin factory.ubi
+	IMAGE/factory.ubi := append-ubi
+	DEVICE_PACKAGES := kmod-ath10k -kmod-ath10k-ct ath10k-firmware-qca4019
+endef
+TARGET_DEVICES += mbox_hsa-500
+
 define Device/meraki_common
 	$(call Device/FitImage)
 	DEVICE_VENDOR := Cisco Meraki
