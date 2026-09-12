@@ -1,0 +1,78 @@
+From f4ba49b2f4f1fe47be1aa0281db345007a4f70d1 Mon Sep 17 00:00:00 2001
+From: Cheng Ming Lin <chengminglin@mxic.com.tw>
+Date: Fri, 5 Jun 2026 16:48:36 +0800
+Subject: [PATCH 1/2] mtd: spi-nor: Add support for MX25L12833F and MX25L12845G
+
+Add support for Macronix MX25L12833F and MX25L12845G SPI NOR flashes.
+These parts share the same JEDEC ID (0xc2, 0x20, 0x18) as the legacy
+MX25L12805D.
+
+The newer flashes support SFDP and 1-4-4 Page Program in 3-byte address
+mode, but this 4PP capability is not defined in their SFDP tables.
+Conversely, the legacy MX25L12805D lacks SFDP support entirely and does
+not support 4PP.
+
+To safely enable 4PP for the newer flashes without breaking the legacy
+part, introduce a post_sfdp fixup. Since the legacy MX25L12805D does
+not support SFDP, it falls back to static parameters and will never
+execute the post_sfdp hook. The newer flashes will successfully parse
+the SFDP, trigger the hook, and safely append the SNOR_HWCAPS_PP_1_4_4
+capability.
+
+Signed-off-by: Cheng Ming Lin <chengminglin@mxic.com.tw>
+Reviewed-by: Michael Walle <mwalle@kernel.org>
+---
+ drivers/mtd/spi-nor/macronix.c | 26 +++++++++++++++++++++++++-
+ 1 file changed, 25 insertions(+), 1 deletion(-)
+
+--- a/drivers/mtd/spi-nor/macronix.c
++++ b/drivers/mtd/spi-nor/macronix.c
+@@ -83,6 +83,25 @@ mx25l3255e_late_init_fixups(struct spi_n
+ 	return 0;
+ }
+ 
++static int
++mx25l12805d_4pp3b_post_sfdp_fixups(struct spi_nor *nor)
++{
++	struct spi_nor_flash_parameter *params = nor->params;
++
++	/*
++	 * JEDEC ID 0xc22018 is shared by MX25L12805D (no SFDP, no 4PP) and
++	 * MX25L12833F/MX25L12845G (support SFDP and 4PP in 3-byte mode).
++	 * The legacy 05D lacks SFDP and will not execute this hook. For
++	 * the newer flashes, 3-byte 1-4-4 PP is not defined in SFDP, so
++	 * we safely enable it here.
++	 */
++	params->hwcaps.mask |= SNOR_HWCAPS_PP_1_4_4;
++	spi_nor_set_pp_settings(&params->page_programs[SNOR_CMD_PP_1_4_4],
++				SPINOR_OP_PP_1_4_4, SNOR_PROTO_1_4_4);
++
++	return 0;
++}
++
+ static const struct spi_nor_fixups mx25l25635_fixups = {
+ 	.post_bfpt = mx25l25635_post_bfpt_fixups,
+ 	.post_sfdp = macronix_qpp4b_post_sfdp_fixups,
+@@ -96,6 +115,10 @@ static const struct spi_nor_fixups mx25l
+ 	.late_init = mx25l3255e_late_init_fixups,
+ };
+ 
++static const struct spi_nor_fixups mx25l12805d_4pp3b_fixups = {
++	.post_sfdp = mx25l12805d_4pp3b_post_sfdp_fixups,
++};
++
+ static const struct flash_info macronix_nor_parts[] = {
+ 	{
+ 		.id = SNOR_ID(0xc2, 0x20, 0x10),
+@@ -130,9 +153,10 @@ static const struct flash_info macronix_
+ 		.size = SZ_8M,
+ 		.no_sfdp_flags = SECT_4K,
+ 	}, {
+-		/* MX25L12805D */
++		/* MX25L12805D, MX25L12833F, MX25L12845G */
+ 		.id = SNOR_ID(0xc2, 0x20, 0x18),
+ 		.flags = SPI_NOR_HAS_LOCK | SPI_NOR_4BIT_BP,
++		.fixups = &mx25l12805d_4pp3b_fixups,
+ 	}, {
+ 		/* MX25L25635E, MX25L25645G */
+ 		.id = SNOR_ID(0xc2, 0x20, 0x19),
