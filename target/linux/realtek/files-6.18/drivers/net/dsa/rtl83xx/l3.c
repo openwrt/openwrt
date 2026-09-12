@@ -552,8 +552,8 @@ static void otto_l3_930x_route_write(struct otto_l3_ctrl *ctrl, int idx, struct 
 	v |= (rt->nh.id & 0x7ff) << 7;
 	v |= rt->attr.ttl_dec ? BIT(6) : 0;
 	v |= rt->attr.ttl_check ? BIT(5) : 0;
-	v |= rt->attr.dst_null ? BIT(6) : 0;
-	v |= rt->attr.qos_as ? BIT(6) : 0;
+	v |= rt->attr.dst_null ? BIT(4) : 0;
+	v |= rt->attr.qos_as ? BIT(3) : 0;
 	v |= rt->attr.qos_prio & 0x7;
 	v |= rt->prefix_len == 0 ? BIT(20) : 0; /* set default route bit */
 
