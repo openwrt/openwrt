@@ -130,14 +130,45 @@ proto_qmi_setup() {
 	done
 
 	# Check if UIM application is stuck in illegal state
-	local uim_state_timeout=0
+	local uim_unavailable_timeout=0
+	local uim_recovery_timeout=0
+	local uim_state_json card_application_state
 	while true; do
-		json_load "$(uqmi -s -d "$device" -t 2000 --uim-get-sim-state)"
-		json_get_var card_application_state card_application_state
+		[ -e "$device" ] || return 1
+		card_application_state=""
+		uim_state_json="$(uqmi -s -d "$device" -t 2000 \
+			--uim-get-sim-state 2>/dev/null)"
+		[ -e "$device" ] || return 1
 
-		# SIM card is either completely absent or state is labeled as illegal
-		# Try to power-cycle the SIM card to recover from this state
-		if [ -z "$card_application_state" -o "$card_application_state" = "illegal" ]; then
+		# Let the existing PIN fallback handle modems without UIM support.
+		case "$uim_state_json" in
+			'"Not supported"'|'"Invalid QMI command"') break ;;
+		esac
+
+		if json_load "$uim_state_json" 2>/dev/null; then
+			json_get_var card_application_state card_application_state
+			json_cleanup
+		fi
+
+		# An empty or malformed response means that the UIM service is not
+		# ready.  It is not evidence of the explicit illegal state.  In
+		# particular, some modems return an empty object when no SIM is
+		# installed and reset the whole device when the SIM is powered off.
+		if [ -z "$card_application_state" ]; then
+			if [ "$uim_unavailable_timeout" -lt "$timeout" ] || [ "$timeout" = "0" ]; then
+				let uim_unavailable_timeout++
+				sleep 1
+				continue
+			fi
+
+			echo "Unable to obtain SIM state"
+			proto_notify_error "$interface" SIM_NOT_INITIALIZED
+			proto_block_restart "$interface"
+			return 1
+		fi
+
+		# Only an explicit illegal state warrants power-cycling the SIM.
+		if [ "$card_application_state" = "illegal" ]; then
 			echo "SIM in illegal state - Power-cycling SIM"
 
 			# Try to reset SIM application
@@ -145,8 +176,8 @@ proto_qmi_setup() {
 			sleep 3
 			uqmi -d "$device" -t 1000 --uim-power-on --uim-slot 1
 
-			if [ "$uim_state_timeout" -lt "$timeout" ] || [ "$timeout" = "0" ]; then
-				let uim_state_timeout++
+			if [ "$uim_recovery_timeout" -lt "$timeout" ] || [ "$timeout" = "0" ]; then
+				let uim_recovery_timeout++
 				sleep 5
 				continue
 			fi
