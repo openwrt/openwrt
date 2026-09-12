@@ -1,0 +1,19 @@
+#!/bin/sh
+# Fix MT7615 DBDC flag in factory eeprom (one-time, first boot only)
+# Changes byte 0x3e bit[5:4] from 00 (5GHz only) to 10 (DBDC)
+
+FACTORY_MTD=$(grep '"factory"' /proc/mtd | cut -d: -f1)
+if [ -z "$FACTORY_MTD" ]; then
+	exit 0
+fi
+
+dd if="/dev/$FACTORY_MTD" of=/tmp/factory.bin 2>/dev/null
+CURRENT=$(dd if=/tmp/factory.bin bs=1 skip=62 count=1 2>/dev/null | hexdump -e '1/1 "%02x"')
+
+if [ "$CURRENT" = "0a" ]; then
+	printf '\x2a' | dd of=/tmp/factory.bin bs=1 seek=62 conv=notrunc 2>/dev/null
+	mtd write /tmp/factory.bin factory
+fi
+
+rm -f /tmp/factory.bin
+exit 0
