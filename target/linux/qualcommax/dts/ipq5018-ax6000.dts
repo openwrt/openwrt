@@ -124,6 +124,8 @@
 		reg = <0>;
 		nand-ecc-engine = <&qpic_nand>;
 		nand-bus-width = <8>;
+		nand-ecc-strength = <8>;
+		nand-ecc-step-size = <512>;
 
 		partitions {
 			compatible = "fixed-partitions";
