@@ -1828,7 +1828,7 @@ static int rtldsa_find_l2_hash_entry(struct rtl838x_switch_priv *priv, u64 seed,
 		if (must_exist && !e->valid)
 			continue;
 		if (!e->valid || ((entry & 0x0fffffffffffffffULL) == seed)) {
-			idx = i > 3 ? ((key >> 14) & 0xffff) | i >> 1 : ((key << 2) | i) & 0xffff;
+			idx = i > 3 ? ((key >> 14) & 0xffff) | (i & 3) : ((key << 2) | i) & 0xffff;
 			break;
 		}
 	}
