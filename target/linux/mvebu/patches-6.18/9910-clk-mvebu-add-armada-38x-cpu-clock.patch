@@ -1,0 +1,238 @@
+From f6661c5a9aaf2676da7e446bbe27dcc504b6be41 Mon Sep 17 00:00:00 2001
+From: Gabriel Rodriguez <lifehacksback@gmail.com>
+Date: Thu, 10 Sep 2026 19:07:32 -0700
+Subject: [PATCH] clk: mvebu: add Armada 38x CPU clock support
+
+Add an Armada 38x CPU clock provider using the PMU DFS and DFX registers.
+
+Support the boot CPU frequency and the supported divide-by-two operating point, invoking the shared PMSU DFS transition when changing rate.
+
+Signed-off-by: Gabriel Rodriguez <lifehacksback@gmail.com>
+---
+ arch/arm/boot/dts/marvell/armada-38x.dtsi |   9 ++
+ drivers/clk/mvebu/clk-cpu.c               | 177 ++++++++++++++++++++++
+ 2 files changed, 186 insertions(+)
+
+--- a/arch/arm/boot/dts/marvell/armada-38x.dtsi
++++ b/arch/arm/boot/dts/marvell/armada-38x.dtsi
+@@ -398,6 +398,15 @@
+ 				#clock-cells = <1>;
+ 			};
+ 
++			cpuclk: clock-complex@18700 {
++				compatible = "marvell,armada-380-cpu-clock";
++				reg = <0x18700 0xa0>,
++				     <0x1c054 0x40>,
++				     <0xe4260 0x8>;
++				clocks = <&coreclk 1>;
++				#clock-cells = <1>;
++			};
++
+ 			mbusc: mbus-controller@20000 {
+ 				compatible = "marvell,mbus-controller";
+ 				reg = <0x20000 0x100>, <0x20180 0x20>,
+--- a/drivers/clk/mvebu/clk-cpu.c
++++ b/drivers/clk/mvebu/clk-cpu.c
+@@ -24,11 +24,27 @@
+ #define SYS_CTRL_CLK_DIVIDER_CTRL2_OFFSET              0x8
+ #define   SYS_CTRL_CLK_DIVIDER_CTRL2_NBCLK_RATIO_SHIFT 16
+ #define SYS_CTRL_CLK_DIVIDER_VALUE_OFFSET              0xC
++#define SYS_CTRL_CLK_DIVIDER_VALUE_A38X_OFFSET         0x4
+ #define SYS_CTRL_CLK_DIVIDER_MASK                      0x3F
+ 
+ #define PMU_DFS_RATIO_SHIFT 16
+ #define PMU_DFS_RATIO_MASK  0x3F
+ 
++#define PMU_DFS_ACTIVATE_OFFSET		0x3c
++#define PMU_DFS_OVERRIDE_MASK		0xff
++#define PMU_DFS_OVERRIDE_SHIFT		17
++#define PMU_DFS_OVERRIDE_ENABLE		0x1
++
++#define DFX_CPU_PLL_CTRL0_OFFSET		0x0
++#define DFX_CPU_PLL_CTRL0_RELOAD_MASK	0xff
++#define DFX_CPU_PLL_CTRL0_RELOAD_SHIFT	8
++#define DFX_CPU_PLL_CTRL0_RELOAD_PCLK	0x10
++
++#define DFX_CPU_PLL_CTRL1_OFFSET		0x4
++#define DFX_CPU_PLL_CTRL1_RESET_MASK	0xff
++#define DFX_CPU_PLL_CTRL1_RESET_SHIFT	0
++#define DFX_CPU_PLL_CTRL1_RESET_PCLK	0x10
++
+ #define MAX_CPU	    4
+ struct cpu_clk {
+ 	struct clk_hw hw;
+@@ -37,6 +53,7 @@ struct cpu_clk {
+ 	const char *parent_name;
+ 	void __iomem *reg_base;
+ 	void __iomem *pmu_dfs;
++	void __iomem *dfx_server_base;
+ };
+ 
+ static struct clk **clks;
+@@ -235,6 +252,166 @@ cpuclk_out:
+ 	iounmap(clock_complex_base);
+ }
+ 
++static unsigned long armada_38x_clk_cpu_recalc_rate(struct clk_hw *hwclk,
++						    unsigned long parent_rate)
++{
++	struct cpu_clk *cpuclk = to_cpu_clk(hwclk);
++	u32 reg, div;
++
++	if (!__clk_is_enabled(hwclk->clk))
++		return parent_rate;
++
++	reg = readl(cpuclk->reg_base +
++		    SYS_CTRL_CLK_DIVIDER_VALUE_A38X_OFFSET);
++
++	div = (reg >> (cpuclk->cpu * 8)) & SYS_CTRL_CLK_DIVIDER_MASK;
++	if (!div)
++		return parent_rate;
++
++	return parent_rate / div;
++}
++
++static int armada_38x_clk_cpu_set_rate(struct clk_hw *hwclk,
++				       unsigned long rate,
++				      unsigned long parent_rate)
++{
++	struct cpu_clk *cpuclk = to_cpu_clk(hwclk);
++	unsigned long cur_rate = clk_hw_get_rate(hwclk);
++	u32 target_div;
++	u32 reg;
++	int ret;
++
++	if (!cpuclk->pmu_dfs || !cpuclk->dfx_server_base)
++		return -ENODEV;
++
++	if (rate != parent_rate && rate != parent_rate / 2)
++		return -EINVAL;
++
++	if (rate == cur_rate)
++		return 0;
++
++	target_div = rate == parent_rate ? 1 : 2;
++
++	reg = readl(cpuclk->dfx_server_base + DFX_CPU_PLL_CTRL0_OFFSET);
++	reg &= ~(DFX_CPU_PLL_CTRL0_RELOAD_MASK <<
++		 DFX_CPU_PLL_CTRL0_RELOAD_SHIFT);
++	reg |= DFX_CPU_PLL_CTRL0_RELOAD_PCLK <<
++	       DFX_CPU_PLL_CTRL0_RELOAD_SHIFT;
++	writel(reg, cpuclk->dfx_server_base + DFX_CPU_PLL_CTRL0_OFFSET);
++
++	reg = readl(cpuclk->dfx_server_base + DFX_CPU_PLL_CTRL1_OFFSET);
++	reg &= ~(DFX_CPU_PLL_CTRL1_RESET_MASK <<
++		 DFX_CPU_PLL_CTRL1_RESET_SHIFT);
++	reg |= DFX_CPU_PLL_CTRL1_RESET_PCLK <<
++	       DFX_CPU_PLL_CTRL1_RESET_SHIFT;
++	writel(reg, cpuclk->dfx_server_base + DFX_CPU_PLL_CTRL1_OFFSET);
++
++	reg = readl(cpuclk->pmu_dfs);
++	reg &= ~(PMU_DFS_RATIO_MASK << PMU_DFS_RATIO_SHIFT);
++	reg |= target_div << PMU_DFS_RATIO_SHIFT;
++	writel(reg, cpuclk->pmu_dfs);
++
++	reg = readl(cpuclk->pmu_dfs + PMU_DFS_ACTIVATE_OFFSET);
++	reg &= ~(PMU_DFS_OVERRIDE_MASK << PMU_DFS_OVERRIDE_SHIFT);
++	reg |= PMU_DFS_OVERRIDE_ENABLE << PMU_DFS_OVERRIDE_SHIFT;
++	writel(reg, cpuclk->pmu_dfs + PMU_DFS_ACTIVATE_OFFSET);
++
++	readl(cpuclk->pmu_dfs + PMU_DFS_ACTIVATE_OFFSET);
++
++	ret = mvebu_pmsu_dfs_request_38x();
++	if (ret)
++		return ret;
++
++	return 0;
++}
++
++static const struct clk_ops armada_38x_cpu_ops = {
++	.recalc_rate = armada_38x_clk_cpu_recalc_rate,
++	.determine_rate = clk_cpu_determine_rate,
++	.set_rate = armada_38x_clk_cpu_set_rate,
++};
++
++static void __init of_armada_38x_cpu_clk_setup(struct device_node *node)
++{
++	struct cpu_clk *cpuclk;
++	struct clk_init_data init = {};
++	struct clk *clk;
++	void __iomem *clock_complex_base;
++	void __iomem *pmu_dfs_base;
++	void __iomem *dfx_server_base;
++	const char *parent_name;
++	int ret;
++
++	clock_complex_base = of_iomap(node, 0);
++	pmu_dfs_base = of_iomap(node, 1);
++	dfx_server_base = of_iomap(node, 2);
++
++	if (!clock_complex_base || !pmu_dfs_base || !dfx_server_base)
++		goto err_unmap;
++
++	cpuclk = kzalloc(sizeof(*cpuclk), GFP_KERNEL);
++	if (!cpuclk)
++		goto err_unmap;
++
++	clks = kcalloc(1, sizeof(*clks), GFP_KERNEL);
++	if (!clks)
++		goto err_cpuclk;
++
++	parent_name = of_clk_get_parent_name(node, 0);
++	if (!parent_name)
++		goto err_clks;
++
++	cpuclk->clk_name = kstrdup("cpu0", GFP_KERNEL);
++	if (!cpuclk->clk_name)
++		goto err_clks;
++
++	cpuclk->parent_name = parent_name;
++	cpuclk->cpu = 0;
++	cpuclk->reg_base = clock_complex_base;
++	cpuclk->pmu_dfs = pmu_dfs_base;
++	cpuclk->dfx_server_base = dfx_server_base;
++	cpuclk->hw.init = &init;
++
++	init.name = cpuclk->clk_name;
++	init.ops = &armada_38x_cpu_ops;
++	init.flags = CLK_IS_CRITICAL;
++	init.parent_names = &cpuclk->parent_name;
++	init.num_parents = 1;
++
++	clk = clk_register(NULL, &cpuclk->hw);
++	if (IS_ERR(clk))
++		goto err_name;
++
++	clks[0] = clk;
++	clk_data.clk_num = 1;
++	clk_data.clks = clks;
++
++	ret = of_clk_add_provider(node, of_clk_src_onecell_get, &clk_data);
++	if (ret) {
++		clk_unregister(clk);
++		goto err_name;
++	}
++
++	return;
++
++err_name:
++	kfree(cpuclk->clk_name);
++err_clks:
++	kfree(clks);
++err_cpuclk:
++	kfree(cpuclk);
++err_unmap:
++	if (clock_complex_base)
++		iounmap(clock_complex_base);
++	if (pmu_dfs_base)
++		iounmap(pmu_dfs_base);
++	if (dfx_server_base)
++		iounmap(dfx_server_base);
++}
++
++CLK_OF_DECLARE(armada_38x_cpu_clock, "marvell,armada-380-cpu-clock",
++	       of_armada_38x_cpu_clk_setup);
++
+ CLK_OF_DECLARE(armada_xp_cpu_clock, "marvell,armada-xp-cpu-clock",
+ 					 of_cpu_clk_setup);
+ 
