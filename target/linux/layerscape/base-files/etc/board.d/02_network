@@ -9,6 +9,9 @@ case "$(board_name)" in
 	fsl,ls1028a-rdb-sdboot)
 		ucidef_set_interfaces_lan_wan "swp0 swp1 swp2 swp3" "eth0"
 		;;
+	watchguard,firebox-t40)
+		ucidef_set_interfaces_lan_wan "eth0 eth1 eth3 eth4" "eth2"
+		;;
 	traverse,ten64)
 		ucidef_set_interface_lan "eth0 eth1 eth2 eth3"
 		ucidef_set_interface_wan "eth6"
