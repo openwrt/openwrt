@@ -1,0 +1,49 @@
+From 3c46c8a6dd54f215f335cb6dcef25cb8e936eed9 Mon Sep 17 00:00:00 2001
+From: Chen Minqiang <ptpt52@gmail.com>
+Date: Wed, 5 Aug 2026 02:21:17 +0800
+Subject: [PATCH] mtd: spi-nor: allow force unlocking via DT property
+
+Some SPI NOR flash chips (such as generic or unlisted chips used in vendor
+devices like Tenda AX12L Pro) have Block Protection (BP) bits set in the
+Status Register by bootloaders or factory settings, locking flash blocks.
+
+Because vendors frequently switch between various generic SPI NOR flash
+chips ("Flash Lottery"), it is impractical to upstream explicit chip ID
+flags (SNOR_F_HAS_LOCK) for every possible generic chip variant.
+
+This patch introduces support for the "linux,force-sr-unlock" Device Tree
+property:
+1. In spi_nor_init_flags(), set the SNOR_F_HAS_LOCK flag on the flash
+   instance if "linux,force-sr-unlock" is present in the flash DT node. This
+   allows spi_nor_late_init_params() to automatically populate default
+   locking_ops without altering swp.c.
+2. In spi_nor_init(), trigger spi_nor_try_unlock_all() if "linux,force-sr-unlock"
+   is set, invoking Linux kernel's native spi_nor_unlock() mechanism.
+
+Signed-off-by: Chen Minqiang <ptpt52@gmail.com>
+---
+ drivers/mtd/spi-nor/core.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+--- a/drivers/mtd/spi-nor/core.c
++++ b/drivers/mtd/spi-nor/core.c
+@@ -2912,6 +2912,9 @@ static void spi_nor_init_flags(struct sp
+ 	if (of_property_read_bool(np, "no-wp"))
+ 		nor->flags |= SNOR_F_NO_WP;
+ 
++	if (of_property_read_bool(np, "linux,force-sr-unlock"))
++		nor->flags |= SNOR_F_HAS_LOCK;
++
+ 	if (flags & SPI_NOR_SWP_IS_VOLATILE)
+ 		nor->flags |= SNOR_F_SWP_IS_VOLATILE;
+ 
+@@ -3284,7 +3287,8 @@ static int spi_nor_init(struct spi_nor *
+ 	 */
+ 	if (IS_ENABLED(CONFIG_MTD_SPI_NOR_SWP_DISABLE) ||
+ 	    (IS_ENABLED(CONFIG_MTD_SPI_NOR_SWP_DISABLE_ON_VOLATILE) &&
+-	     nor->flags & SNOR_F_SWP_IS_VOLATILE))
++	     nor->flags & SNOR_F_SWP_IS_VOLATILE) ||
++	    of_property_read_bool(spi_nor_get_flash_node(nor), "linux,force-sr-unlock"))
+ 		spi_nor_try_unlock_all(nor);
+ 
+ 	if (nor->addr_nbytes == 4 &&
