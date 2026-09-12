@@ -248,6 +248,11 @@ ifndef DUMP
   ifneq ($(TOOLCHAIN_LIB_DIRS),)
     TARGET_LDFLAGS+= $(patsubst %,-L%,$(TOOLCHAIN_LIB_DIRS))
   endif
+  ifeq ($(CONFIG_ARCH_64BIT),)
+    ifeq ($(CONFIG_USE_GLIBC),y)
+      TARGET_CPPFLAGS+= -D_TIME_BITS=64 -D_FILE_OFFSET_BITS=64
+    endif
+  endif
 endif
 
 TARGET_LINKER?=bfd
