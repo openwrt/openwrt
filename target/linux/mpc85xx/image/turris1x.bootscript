@@ -1,0 +1,10 @@
+# Mainline U-Boot distroboot script. The factory U-Boot ignores it and loads
+# /zImage with its own mmcboot, so one card image serves both bootloaders.
+# Nothing feeds the MAX6370 under Linux, unstopped it resets the board.
+wdt dev watchdog@2
+wdt stop
+# No ubi.mtd on purpose: with the NAND attached, mount_root would take its
+# rootfs_data instead of the one on the card.
+setenv bootargs "root=/dev/mmcblk0p2 rootfstype=squashfs rootwait console=ttyS0,115200"
+load ${devtype} ${devnum}:${distro_bootpart} ${kernel_addr_r} zImage
+bootm ${kernel_addr_r}
