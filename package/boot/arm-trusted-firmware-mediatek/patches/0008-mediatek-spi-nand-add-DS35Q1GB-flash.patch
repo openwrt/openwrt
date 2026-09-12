@@ -1,0 +1,49 @@
+From 198885960aa3a93477a0ff6d62ec9d0dc3e328b6 Mon Sep 17 00:00:00 2001
+From: Chukun Pan <amadeus@jmu.edu.cn>
+Date: Wed, 1 Jul 2026 16:01:25 +0800
+Subject: [PATCH] mediatek: spi-nand: add DS35Q1GB flash
+
+The DS35Q1GB is similar to the MX35LF1GE4AB, has issues accessing
+the parameter page. Add SPI-NAND ID for DS35Q1GB as a workaround.
+
+Signed-off-by: Chukun Pan <amadeus@jmu.edu.cn>
+---
+ plat/mediatek/apsoc_common/drivers/spi_nand/mtk_spi_nand.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+--- a/plat/mediatek/apsoc_common/drivers/spi_nand/mtk_spi_nand.c
++++ b/plat/mediatek/apsoc_common/drivers/spi_nand/mtk_spi_nand.c
+@@ -20,6 +20,7 @@
+ 
+ #define SPI_NAND_MAX_ID_LEN		4U
+ #define DELAY_US_400MS			400000U
++#define DOSILICON_ID			0xE5U
+ #define ETRON_ID			0xD5U
+ #define FUDAN_ID			0xA1U
+ #define GIGADEVICE_ID			0xC8U
+@@ -41,6 +42,7 @@
+ 
+ #define SPI_NAND_MEMORG_512M_2K_64		SPI_NAND_MEMORG(2048, 64, 64, 512, 1, 1)
+ #define SPI_NAND_MEMORG_1G_2K_64		SPI_NAND_MEMORG(2048, 64, 64, 1024, 1, 1)
++#define SPI_NAND_MEMORG_1G_2K_128		SPI_NAND_MEMORG(2048, 128, 64, 1024, 1, 1)
+ #define SPI_NAND_MEMORG_2G_2K_64		SPI_NAND_MEMORG(2048, 64, 64, 2048, 1, 1)
+ #define SPI_NAND_MEMORG_2G_2K_128		SPI_NAND_MEMORG(2048, 128, 64, 2048, 1, 1)
+ #define SPI_NAND_MEMORG_4G_4K_256		SPI_NAND_MEMORG(4096, 256, 64, 2048, 1, 1)
+@@ -61,6 +63,9 @@ int plat_get_spi_nand_data(struct spinan
+ 
+ /* Replace the following devices with those don't have parameter pages */
+ static const struct spi_nand_info spi_nand_flash[] = {
++	SPI_NAND_INFO("DS35Q1GB",
++		SPI_NAND_ID(true, 2, 0xe5, 0xf1, 0x00, 0x00),
++		SPI_NAND_MEMORG_1G_2K_128, true, true),
+ 	SPI_NAND_INFO("W25N01GV",
+ 		SPI_NAND_ID(true, 3, 0xef, 0xaa, 0x21, 0x00),
+ 		SPI_NAND_MEMORG_1G_2K_64, true, false),
+@@ -146,6 +151,7 @@ static int spi_nand_quad_enable(uint8_t
+ 
+ 	if (manufacturer_id != MACRONIX_ID &&
+ 	    manufacturer_id != GIGADEVICE_ID &&
++	    manufacturer_id != DOSILICON_ID &&
+ 	    manufacturer_id != ETRON_ID &&
+ 	    manufacturer_id != FORESEE_ID &&
+ 	    manufacturer_id != FUDAN_ID) {
