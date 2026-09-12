@@ -3152,7 +3152,7 @@ define Device/teltonika_rut955
   DEVICE_VENDOR := Teltonika
   DEVICE_MODEL := RUT955
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-acm kmod-usb-net-qmi-wwan \
-	kmod-usb-serial-option kmod-hwmon-mcp3021 uqmi -uboot-envtools
+	kmod-usb-serial-option kmod-hwmon-mcp3021 uqmi -uboot-envtools modemsignal-leds
   IMAGE_SIZE := 15552k
   TPLINK_HWID := 0x35000001
   TPLINK_HWREV := 0x1
