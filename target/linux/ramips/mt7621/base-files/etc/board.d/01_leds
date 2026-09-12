@@ -13,6 +13,10 @@ alfa-network,ax1800rm)
 	ucidef_set_led_netdev "lan3" "lan3" "green:lan3" "lan3"
 	ucidef_set_led_netdev "wan" "wan" "green:wan" "wan"
 	;;
+asus,4g-ax56)
+	ucidef_set_led_netdev "wan" "WAN" "white:wan" "wan" "link tx rx"
+	ucidef_set_led_netdev "mobile" "Mobile" "white:mobile" "usb0" "link tx rx"
+	;;
 asus,rp-ac87)
 	ucidef_set_rssimon "wlan0" "200000" "1"
 	ucidef_set_rssimon "wlan1" "200000" "1"
