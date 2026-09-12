@@ -1,0 +1,97 @@
+From 1c13e6ba3e7eecdcc5bb7a629ff47ffb1971cf34 Mon Sep 17 00:00:00 2001
+From: Chen-Yu Tsai <wens@kernel.org>
+Date: Mon, 27 Oct 2025 20:56:51 +0800
+Subject: [PATCH 5013/5039] arm64: dts: allwinner: a527-cubie-a5e: Enable I2S
+ and SPDIF output
+
+This is an example change.
+
+The Radxa Cubie A5E exposes I2S2 and SPDIF on the 40-pin header. Enable
+both.
+
+In this example, I2S2 is connected to adafruit speaker bonnet, which
+sports a pair of MAX98357A for speaker amplication. SPDIF is connected
+to a SPDIF interface card for PCs, which has both coaxial and optical
+outputs. The output was connected via optical cable to a dumb SPDIF to
+analog audio converter.
+
+Signed-off-by: Chen-Yu Tsai <wens@kernel.org>
+---
+ .../dts/allwinner/sun55i-a527-cubie-a5e.dts   | 52 +++++++++++++++++++
+ 1 file changed, 52 insertions(+)
+
+--- a/arch/arm64/boot/dts/allwinner/sun55i-a527-cubie-a5e.dts
++++ b/arch/arm64/boot/dts/allwinner/sun55i-a527-cubie-a5e.dts
+@@ -64,6 +64,46 @@
+ 		gpio = <&r_pio 0 8 GPIO_ACTIVE_HIGH>;	/* PL8 */
+ 		enable-active-high;
+ 	};
++
++	codec: audio-codec {
++		compatible = "maxim,max98360a";
++		#sound-dai-cells = <0>;
++	};
++
++	sound-i2s {
++		compatible = "simple-audio-card";
++		simple-audio-card,name = "I2S";
++		simple-audio-card,format = "left_j";
++		simple-audio-card,bitclock-master = <&dailink_cpu>;
++		simple-audio-card,frame-master = <&dailink_cpu>;
++		simple-audio-card,mclk-fs = <128>;
++
++		dailink_cpu: simple-audio-card,cpu {
++			sound-dai = <&i2s2>;
++		};
++
++		dailink0_master: simple-audio-card,codec {
++			sound-dai = <&codec>;
++		};
++	};
++
++	sound-spdif {
++		compatible = "simple-audio-card";
++		simple-audio-card,name = "spdif-out";
++
++		simple-audio-card,cpu {
++			sound-dai = <&spdif>;
++		};
++
++		simple-audio-card,codec {
++			sound-dai = <&spdif_out>;
++		};
++	};
++
++	spdif_out: spdif-out {
++		#sound-dai-cells = <0>;
++		compatible = "linux,spdif-dit";
++	};
+ };
+ 
+ &ehci0 {
+@@ -101,6 +141,12 @@
+ 	status = "okay";
+ };
+ 
++&i2s2 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2s2_pi_pins>;
++	status = "okay";
++};
++
+ &mdio0 {
+ 	ext_rgmii0_phy: ethernet-phy@1 {
+ 		compatible = "ethernet-phy-ieee802.3-c22";
+@@ -344,6 +390,12 @@
+ 	vcc-pm-supply = <&reg_aldo3>;
+ };
+ 
++&spdif {
++	pinctrl-names = "default";
++	pinctrl-0 = <&spdif_out_pi_pin>;
++	status = "okay";
++};
++
+ &uart0 {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&uart0_pb_pins>;

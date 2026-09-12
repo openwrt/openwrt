@@ -1,0 +1,35 @@
+From 58052e5387474749482edaa0324d0395ebc8ee9e Mon Sep 17 00:00:00 2001
+From: Juan Sanchez <juanesf91@gmail.com>
+Date: Tue, 5 Aug 2025 14:55:52 -0400
+Subject: [PATCH 5020/5039] Enable uart1 (bluetooth) on Radxa Cubie A5E
+
+Signed-off-by: Juan Sanchez <juanesf91@gmail.com>
+---
+ arch/arm64/boot/dts/allwinner/sun55i-a527-cubie-a5e.dts | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+--- a/arch/arm64/boot/dts/allwinner/sun55i-a527-cubie-a5e.dts
++++ b/arch/arm64/boot/dts/allwinner/sun55i-a527-cubie-a5e.dts
+@@ -17,6 +17,7 @@
+ 		ethernet1 = &gmac1;
+ 		ethernet2 = &sdio_wifi;
+ 		serial0 = &uart0;
++		serial1 = &uart1;
+ 	};
+ 
+ 	chosen {
+@@ -430,6 +431,14 @@
+ 	status = "okay";
+ };
+ 
++/* Bluetooth */
++&uart1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&uart1_pins>, <&uart1_rts_cts_pins>;
++	uart-has-rtscts;
++	status = "okay";
++};
++
+ &usb_otg {
+ 	/*
+ 	 * The USB-C port is the primary power supply, so in this configuration

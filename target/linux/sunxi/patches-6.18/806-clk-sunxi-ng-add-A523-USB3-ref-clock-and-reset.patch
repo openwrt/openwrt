@@ -1,0 +1,57 @@
+From 53d1cd94fcc039205f4be70a0c9e08febe2cd140 Mon Sep 17 00:00:00 2001
+From: Marvin Wewer <mwewer37@proton.me>
+Date: Tue, 9 Dec 2025 16:43:16 +0000
+Subject: [PATCH 5032/5039] clk: sunxi-ng: add A523 USB3 ref clock and reset
+
+Signed-off-by: Marvin Wewer <mwewer37@proton.me>
+---
+ drivers/clk/sunxi-ng/ccu-sun55i-a523.c      | 13 ++++++++++++-
+ include/dt-bindings/clock/sun55i-a523-ccu.h |  1 +
+ 2 files changed, 13 insertions(+), 1 deletion(-)
+
+--- a/drivers/clk/sunxi-ng/ccu-sun55i-a523.c
++++ b/drivers/clk/sunxi-ng/ccu-sun55i-a523.c
+@@ -1186,6 +1186,15 @@ static SUNXI_CCU_MUX_DATA_WITH_GATE(fano
+ 				    BIT(23),	/* gate */
+ 				    0);
+ 
++static const struct clk_parent_data usb3_ref_parents[] = { { .fw_name = "hosc" }, { .hw = &pll_periph0_200M_clk.hw }, { .hw = &pll_periph1_200M_clk.hw } };
++static SUNXI_CCU_M_DATA_WITH_MUX_GATE(usb3_ref_clk, "usb3-ref",
++		usb3_ref_parents, 0x0A84,
++		0, 5,	/* M */
++		24, 3,	/* mux */
++		BIT(31),	/* gate */
++		0);
++
++
+ /*
+  * Contains all clocks that are controlled by a hardware register. They
+  * have a (sunxi) .common member, which needs to be initialised by the common
+@@ -1354,6 +1363,7 @@ static struct ccu_common *sun55i_a523_cc
+ 	&fanout0_clk.common,
+ 	&fanout1_clk.common,
+ 	&fanout2_clk.common,
++	&usb3_ref_clk.common,
+ };
+ 
+ static struct clk_hw_onecell_data sun55i_a523_hw_clks = {
+@@ -1538,8 +1548,9 @@ static struct clk_hw_onecell_data sun55i
+ 		[CLK_FANOUT1]		= &fanout1_clk.common.hw,
+ 		[CLK_FANOUT2]		= &fanout2_clk.common.hw,
+ 		[CLK_NPU]		= &npu_clk.common.hw,
++		[CLK_USB3_REF]		= &usb3_ref_clk.common.hw,
+ 	},
+-	.num	= CLK_NPU + 1,
++	.num	= CLK_USB3_REF + 1,
+ };
+ 
+ static struct ccu_reset_map sun55i_a523_ccu_resets[] = {
+--- a/include/dt-bindings/clock/sun55i-a523-ccu.h
++++ b/include/dt-bindings/clock/sun55i-a523-ccu.h
+@@ -186,5 +186,6 @@
+ #define CLK_FANOUT1		177
+ #define CLK_FANOUT2		178
+ #define CLK_NPU			179
++#define CLK_USB3_REF		180
+ 
+ #endif /* _DT_BINDINGS_CLK_SUN55I_A523_CCU_H_ */

@@ -1,0 +1,42 @@
+From cd69f2aad5f14c53be857cf178c928d6958f6fa3 Mon Sep 17 00:00:00 2001
+From: Jernej Skrabec <jernej.skrabec@gmail.com>
+Date: Thu, 16 Jan 2025 22:12:42 +0100
+Subject: [PATCH 5/8] refactor(allwinner): allow max cpus to be overridden
+
+Some Allwinner SoCs, like A523, have more than 4 cores per cluster, so
+allow this macro to be overridden.
+
+Change-Id: I384d3907cc7cb5be0a4a76f9081b5164629ec49c
+Signed-off-by: Jernej Skrabec <jernej.skrabec@gmail.com>
+---
+ plat/allwinner/common/allwinner-common.mk    | 4 ++++
+ plat/allwinner/common/include/platform_def.h | 1 -
+ 2 files changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/plat/allwinner/common/allwinner-common.mk b/plat/allwinner/common/allwinner-common.mk
+index 379847c59..e8df0f04d 100644
+--- a/plat/allwinner/common/allwinner-common.mk
++++ b/plat/allwinner/common/allwinner-common.mk
+@@ -99,3 +99,7 @@ SEPARATE_CODE_AND_RODATA	:=	1
+ 
+ # BL31 gets loaded alongside BL33 (U-Boot) by U-Boot's SPL
+ RESET_TO_BL31			:=	1
++
++# Most Allwinner SoCs have 4 cores, but not all
++PLATFORM_MAX_CPUS_PER_CLUSTER	?=	4
++$(eval $(call add_define,PLATFORM_MAX_CPUS_PER_CLUSTER))
+diff --git a/plat/allwinner/common/include/platform_def.h b/plat/allwinner/common/include/platform_def.h
+index 24cc3e763..1131dd66a 100644
+--- a/plat/allwinner/common/include/platform_def.h
++++ b/plat/allwinner/common/include/platform_def.h
+@@ -72,7 +72,6 @@
+ #define PLATFORM_CLUSTER_COUNT		U(1)
+ #define PLATFORM_CORE_COUNT		(PLATFORM_CLUSTER_COUNT * \
+ 					 PLATFORM_MAX_CPUS_PER_CLUSTER)
+-#define PLATFORM_MAX_CPUS_PER_CLUSTER	U(4)
+ #define PLATFORM_STACK_SIZE		(0x1000 / PLATFORM_CORE_COUNT)
+ 
+ #ifndef SPD_none
+-- 
+2.39.5
+
