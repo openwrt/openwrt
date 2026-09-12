@@ -48,7 +48,7 @@ Signed-off-by: Bjorn Andersson <andersson@kernel.org>
  
  /* Timeout (ms) for the trylock of remote spinlocks */
  #define HWSPINLOCK_TIMEOUT	1000
-@@ -506,8 +510,8 @@ int qcom_smem_alloc(unsigned host, unsig
+@@ -508,8 +512,8 @@ int qcom_smem_alloc(unsigned host, unsig
  	unsigned long flags;
  	int ret;
  
@@ -59,7 +59,7 @@ Signed-off-by: Bjorn Andersson <andersson@kernel.org>
  
  	if (item < SMEM_ITEM_LAST_FIXED) {
  		dev_err(__smem->dev,
-@@ -681,10 +685,10 @@ invalid_canary:
+@@ -685,10 +689,10 @@ invalid_canary:
  void *qcom_smem_get(unsigned host, unsigned item, size_t *size)
  {
  	struct smem_partition *part;
@@ -73,7 +73,7 @@ Signed-off-by: Bjorn Andersson <andersson@kernel.org>
  
  	if (WARN_ON(item >= __smem->item_count))
  		return ERR_PTR(-EINVAL);
-@@ -717,8 +721,8 @@ int qcom_smem_get_free_space(unsigned ho
+@@ -723,8 +727,8 @@ int qcom_smem_get_free_space(unsigned ho
  	struct smem_header *header;
  	unsigned ret;
  
@@ -84,7 +84,7 @@ Signed-off-by: Bjorn Andersson <andersson@kernel.org>
  
  	if (host < SMEM_HOST_COUNT && __smem->partitions[host].virt_base) {
  		part = &__smem->partitions[host];
-@@ -1175,8 +1179,8 @@ static int qcom_smem_probe(struct platfo
+@@ -1181,8 +1185,8 @@ static int qcom_smem_probe(struct platfo
  	header = smem->regions[0].virt_base;
  	if (le32_to_cpu(header->initialized) != 1 ||
  	    le32_to_cpu(header->reserved)) {

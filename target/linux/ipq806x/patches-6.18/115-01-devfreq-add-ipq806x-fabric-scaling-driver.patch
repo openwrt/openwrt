@@ -15,7 +15,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 
 --- a/drivers/devfreq/Kconfig
 +++ b/drivers/devfreq/Kconfig
-@@ -161,6 +161,17 @@ config ARM_KRAIT_CACHE_DEVFREQ
+@@ -172,6 +172,17 @@ config ARM_KRAIT_CACHE_DEVFREQ
  	  based on the max frequency across all core and the range set in the device
  	  dts. If provided this scale also the regulator attached to the l2 cache.
  
@@ -35,7 +35,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  endif # PM_DEVFREQ
 --- a/drivers/devfreq/Makefile
 +++ b/drivers/devfreq/Makefile
-@@ -16,6 +16,7 @@ obj-$(CONFIG_ARM_RK3399_DMC_DEVFREQ)	+=
+@@ -17,6 +17,7 @@ obj-$(CONFIG_ARM_RK3399_DMC_DEVFREQ)	+=
  obj-$(CONFIG_ARM_SUN8I_A33_MBUS_DEVFREQ)	+= sun8i-a33-mbus.o
  obj-$(CONFIG_ARM_TEGRA_DEVFREQ)		+= tegra30-devfreq.o
  obj-$(CONFIG_ARM_KRAIT_CACHE_DEVFREQ)	+= krait-cache-devfreq.o
