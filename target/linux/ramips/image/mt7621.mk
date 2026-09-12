@@ -25,6 +25,33 @@ define Build/append-dlink-covr-metadata
 	rm $@metadata.tmp
 endef
 
+define Build/kn1010-install-image
+	rm -rf "$@.kn1010-install-root" "$(LINUX_DIR).kn1010-install"
+	mkdir -p "$@.kn1010-install-root"
+	cp -a "$(TARGET_DIR)/." "$@.kn1010-install-root/"
+	mkdir -p "$@.kn1010-install-root/usr/share/kn1010"
+	install -m 0644 "$(BIN_DIR)/$(DEVICE_IMG_PREFIX)-squashfs-sysupgrade.bin" \
+		"$@.kn1010-install-root/usr/share/kn1010/sysupgrade.bin"
+	printf '%s  %s\n' \
+		"$$($(MKHASH) sha256 "$(BIN_DIR)/$(DEVICE_IMG_PREFIX)-squashfs-sysupgrade.bin")" \
+		"sysupgrade.bin" \
+		> "$@.kn1010-install-root/usr/share/kn1010/sysupgrade.sha256"
+	install -m 0755 \
+		"$(TOPDIR)/target/linux/ramips/image/keenetic-kn1010-install/rc.local" \
+		"$@.kn1010-install-root/etc/rc.local"
+	test -x "$@.kn1010-install-root/sbin/init"
+	test -f "$@.kn1010-install-root/usr/share/kn1010/sysupgrade.bin"
+	test -f "$@.kn1010-install-root/usr/share/kn1010/sysupgrade.sha256"
+	(cd "$@.kn1010-install-root/usr/share/kn1010" && sha256sum -c sysupgrade.sha256)
+	$(call Kernel/CompileImage/Initramfs,$@.kn1010-install-root,.kn1010-install)
+	cp "$(KERNEL_BUILD_DIR)/vmlinux-initramfs.kn1010-install" "$@"
+	$(call Build/append-dtb)
+	$(call Build/lzma)
+	$(call Build/loader-kernel)
+	$(call Build/uImage,none)
+	rm -rf "$@.kn1010-install-root" "$(LINUX_DIR).kn1010-install"
+endef
+
 define Build/append-netis-n6-metadata
 	( echo -ne '{ \
 		"up_model": "Netis-N6R", \
@@ -2050,6 +2077,26 @@ define Device/jdcloud_re-sp-01b
 	kmod-mmc-mtk kmod-usb3
 endef
 TARGET_DEVICES += jdcloud_re-sp-01b
+
+define Device/keenetic_kn-1010
+  $(Device/nand)
+  $(Device/uimage-lzma-loader)
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGE_SIZE := 124160k
+  DEVICE_VENDOR := Keenetic
+  DEVICE_MODEL := KN-1010
+  DEVICE_PACKAGES := kmod-mt7615-firmware kmod-usb3 kmod-phy-realtek \
+	-uboot-envtools
+ifeq ($(IB),)
+ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
+  ARTIFACTS += initramfs-factory.bin
+  ARTIFACT/initramfs-factory.bin := kn1010-install-image | \
+	zyimage -d 0x801010 -v "KN-1010"
+endif
+endif
+endef
+TARGET_DEVICES += keenetic_kn-1010
 
 define Device/keenetic_kn-1910
   $(Device/nand)
