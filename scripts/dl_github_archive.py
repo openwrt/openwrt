@@ -22,6 +22,8 @@ import sys
 import time
 import urllib.request
 
+from contextlib import contextmanager
+
 TMPDIR = os.environ.get('TMP_DIR') or '/tmp'
 TMPDIR_DL = os.path.join(TMPDIR, 'dl')
 
@@ -162,50 +164,58 @@ class GitHubCommitTsCache(object):
         self.cachef = os.path.join(TMPDIR_DL, self.__cachef)
         self.cache = {}
 
+    @contextmanager
+    def _lock(self, exclusive):
+        fileno = os.open(self.cachef + '.lock', os.O_RDWR | os.O_CREAT)
+        try:
+            fcntl.flock(fileno, fcntl.LOCK_EX if exclusive else fcntl.LOCK_SH)
+            yield
+        finally:
+            os.close(fileno)
+
     def get(self, k):
         """Get timestamp with key ``k``."""
-        fileno = os.open(self.cachef, os.O_RDONLY | os.O_CREAT)
-        with os.fdopen(fileno) as fin:
-            try:
-                fcntl.lockf(fileno, fcntl.LOCK_SH)
-                self._cache_init(fin)
-                if k in self.cache:
-                    ts = self.cache[k][0]
-                    return ts
-            finally:
-                fcntl.lockf(fileno, fcntl.LOCK_UN)
-        return None
+        with self._lock(False):
+            self._cache_init()
+            return self.cache.get(k, (None, None))[0]
 
     def set(self, k, v):
         """Update timestamp with ``k``."""
-        fileno = os.open(self.cachef, os.O_RDWR | os.O_CREAT)
-        with os.fdopen(fileno, 'w+') as f:
-            try:
-                fcntl.lockf(fileno, fcntl.LOCK_EX)
-                self._cache_init(f)
-                self.cache[k] = (v, int(time.time()))
-                self._cache_flush(f)
-            finally:
-                fcntl.lockf(fileno, fcntl.LOCK_UN)
+        with self._lock(True):
+            self._cache_init()
+            self.cache[k] = (v, int(time.time()))
+            self._cache_flush()
 
-    def _cache_init(self, fin):
-        for line in fin:
-            k, ts, updated = line.split()
-            ts = int(ts)
-            updated = int(updated)
-            self.cache[k] = (ts, updated)
+    def _cache_init(self):
+        try:
+            with open(self.cachef, errors='replace') as fin:
+                for line in fin:
+                    try:
+                        if not line.endswith('\n'):
+                            continue
+                        k, ts, updated = line.split()
+                        ts = int(ts)
+                        updated = int(updated)
+                        self.cache[k] = (ts, updated)
+                    except ValueError:
+                        continue
+        except FileNotFoundError:
+            pass
 
-    def _cache_flush(self, fout):
+    def _cache_flush(self):
         cache = sorted(self.cache.items(), key=lambda a: a[1][1])
         cache = cache[:self.__cachen]
         self.cache = {}
-        os.ftruncate(fout.fileno(), 0)
-        fout.seek(0, os.SEEK_SET)
-        for k, ent in cache:
-            ts = ent[0]
-            updated = ent[1]
-            line = '{0} {1} {2}\n'.format(k, ts, updated)
-            fout.write(line)
+        tmpf = self.cachef + '.tmp'
+        with open(tmpf, 'w') as fout:
+            for k, ent in cache:
+                ts = ent[0]
+                updated = ent[1]
+                line = '{0} {1} {2}\n'.format(k, ts, updated)
+                fout.write(line)
+            fout.flush()
+            os.fsync(fout.fileno())
+        os.replace(tmpf, self.cachef)
 
 
 class DownloadGitHubTarball(object):
