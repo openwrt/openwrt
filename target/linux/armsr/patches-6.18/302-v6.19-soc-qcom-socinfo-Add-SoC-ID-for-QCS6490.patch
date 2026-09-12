@@ -1,0 +1,25 @@
+From c852c97d77173178b775db5d5b0aaa181b2ed43b Mon Sep 17 00:00:00 2001
+From: Komal Bajaj <komal.bajaj@oss.qualcomm.com>
+Date: Mon, 3 Nov 2025 16:53:11 +0530
+Subject: [PATCH] soc: qcom: socinfo: Add SoC ID for QCS6490
+
+Add SoC ID table entry for Qualcomm QCS6490.
+
+Signed-off-by: Komal Bajaj <komal.bajaj@oss.qualcomm.com>
+Link: https://lore.kernel.org/r/20251103-qcs6490_soc_id-v1-2-c139dd1e32c8@oss.qualcomm.com
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
+(cherry picked from commit 40360803622c180747096aa2f165a02fef3628a5)
+---
+ drivers/soc/qcom/socinfo.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/soc/qcom/socinfo.c
++++ b/drivers/soc/qcom/socinfo.c
+@@ -415,6 +415,7 @@ static const struct soc_id soc_id[] = {
+ 	{ qcom_board_id(SC7280) },
+ 	{ qcom_board_id(SC7180P) },
+ 	{ qcom_board_id(QCM6490) },
++	{ qcom_board_id(QCS6490) },
+ 	{ qcom_board_id(SM7325P) },
+ 	{ qcom_board_id(IPQ5000) },
+ 	{ qcom_board_id(IPQ0509) },
