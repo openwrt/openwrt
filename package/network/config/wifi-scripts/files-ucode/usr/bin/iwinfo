@@ -147,14 +147,16 @@ if (!length(ARGV)) {
 	return 0;
 }
 
+// The third element marks commands that query pure wiphy properties and
+// therefore accept a phy name as well as an interface name.
 const commands = {
 	assoclist: [ iwinfo.assoclist, print_assoclist ],
-	countrylist: [ iwinfo.countrylist, print_countrylist ],
-	freqlist: [ iwinfo.freqlist, print_freqlist ],
-	htmodelist: [ iwinfo.htmodelist, print_htmodelist ],
+	countrylist: [ iwinfo.countrylist, print_countrylist, true ],
+	freqlist: [ iwinfo.freqlist, print_freqlist, true ],
+	htmodelist: [ iwinfo.htmodelist, print_htmodelist, true ],
 	info: [ iwinfo.info, print_info ],
 	scan: [ iwinfo.scan, print_scan ],
-	txpowerlist: [ iwinfo.txpowerlist, print_txpowerlist ],
+	txpowerlist: [ iwinfo.txpowerlist, print_txpowerlist, true ],
 };
 
 if (ARGV[0] == 'nl80211' && ARGV[1] == 'phyname') {
@@ -175,11 +177,17 @@ if (ARGV[0] == 'nl80211' && ARGV[1] == 'phyname') {
 	return 0;
 }
 
-if (length(ARGV) == 2 && iwinfo.ifaces[ARGV[0]])
+let phy_only = !iwinfo.ifaces[ARGV[0]] && iwinfo.phy_by_name(ARGV[0]);
+if (length(ARGV) == 2 && (iwinfo.ifaces[ARGV[0]] || phy_only))
 	for (let cmd, cb in commands)
 		if (substr(cmd, 0, length(ARGV[1])) == ARGV[1]) {
+			if (phy_only && !cb[2]) {
+				warn(`iwinfo: command '${cmd}' requires an interface name\n`);
+				return 1;
+			}
+
 			let ret = cb[0](ARGV[0]);
-			
+
 			if (pretty)
 				cb[1](ret);
 			else
