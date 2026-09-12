@@ -1,21 +1,226 @@
-From 247147654fe5cd11cf15d8dff91440405ea57040 Mon Sep 17 00:00:00 2001
-From: Simon Hosie <simon.hosie@arm.com>
-Date: Wed, 12 Apr 2017 15:44:21 -0700
-Subject: [PATCH 2/2] Inflate using wider loads and stores
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sun, 3 Aug 2026 08:00:00 +0200
+Subject: [PATCH] build the NEON inflate path from the stock sources
 
-In inflate_fast() the output pointer always has plenty of room to write. This
-means that so long as the target is capable, wide un-aligned loads and stores
-can be used to transfer several bytes at once. When the reference distance is
-too short simply unroll the data a little to increase the distance.
+Put the ARM chunked-copy changes in the stock inflate.c, inffast.c and
+infback.c behind __ARM_NEON, so the build stops swapping in the vendored
+2017 fork of those files.
 
-Change-Id: I59854eb25d2b1e43561c8a2afaf9175bf10cf674
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
 ---
- contrib/arm/chunkcopy.h | 279 ++++++++++++++++++++++++++++++++++++++++++++++++
- contrib/arm/inffast.c   |  96 +++++++----------
- contrib/arm/inflate.c   |  22 ++--
- 3 files changed, 335 insertions(+), 62 deletions(-)
- create mode 100644 contrib/arm/chunkcopy.h
-
+--- a/inflate.h
++++ b/inflate.h
+@@ -16,6 +16,16 @@
+ #  define GUNZIP
+ #endif
+ 
++/* Wide NEON loads and stores for inflate_fast() and the MATCH state.  The
++   chunked reader may write and read up to CHUNKCOPY_CHUNK_SIZE - 1 bytes past
++   the length it is asked for, so every window it sees carries that much slack.
++   Elsewhere the size is 0, the padding folds away and the byte loops stand. */
++#ifdef __ARM_NEON
++#  include "contrib/arm/chunkcopy.h"
++#else
++#  define CHUNKCOPY_CHUNK_SIZE 0
++#endif
++
+ /* Possible inflate modes between inflate() calls */
+ typedef enum {
+     HEAD = 16180,   /* i: waiting for magic header */
+--- a/inflate.c
++++ b/inflate.c
+@@ -258,7 +258,7 @@
+     /* if it hasn't been done already, allocate space for the window */
+     if (state->window == Z_NULL) {
+         state->window = (unsigned char FAR *)
+-                        ZALLOC(strm, 1U << state->wbits,
++                        ZALLOC(strm, (1U << state->wbits) + CHUNKCOPY_CHUNK_SIZE,
+                                sizeof(unsigned char));
+         if (state->window == Z_NULL) return 1;
+     }
+@@ -1050,17 +1050,34 @@
+                 else
+                     from = state->window + (state->wnext - copy);
+                 if (copy > state->length) copy = state->length;
++                if (copy > left) copy = left;
++                left -= copy;
++                state->length -= copy;
++#ifdef __ARM_NEON
++                put = chunkcopy_safe(put, from, copy, put + copy + left);
++#else
++                do {
++                    *put++ = *from++;
++                } while (--copy);
++#endif
+             }
+             else {                              /* copy from output */
+-                from = put - state->offset;
+                 copy = state->length;
++                if (copy > left) copy = left;
++                left -= copy;
++                state->length -= copy;
++#ifdef __ARM_NEON
++                /* The match laps its own destination, so the wide stores can
++                   only start once the data is unrolled to the match distance. */
++                put = chunkcopy_lapped_safe(put, state->offset, copy,
++                                            put + copy + left);
++#else
++                from = put - state->offset;
++                do {
++                    *put++ = *from++;
++                } while (--copy);
++#endif
+             }
+-            if (copy > left) copy = left;
+-            left -= copy;
+-            state->length -= copy;
+-            do {
+-                *put++ = *from++;
+-            } while (--copy);
+             if (state->length == 0) state->mode = LEN;
+             break;
+         case LIT:
+@@ -1343,7 +1360,8 @@
+     window = Z_NULL;
+     if (state->window != Z_NULL) {
+         window = (unsigned char FAR *)
+-                 ZALLOC(source, 1U << state->wbits, sizeof(unsigned char));
++                 ZALLOC(source, (1U << state->wbits) + CHUNKCOPY_CHUNK_SIZE,
++                        sizeof(unsigned char));
+         if (window == Z_NULL) {
+             ZFREE(source, copy);
+             return Z_MEM_ERROR;
+--- a/inffast.c
++++ b/inffast.c
+@@ -54,6 +54,9 @@
+     unsigned char FAR *out;     /* local strm->next_out */
+     unsigned char FAR *beg;     /* inflate()'s initial strm->next_out */
+     unsigned char FAR *end;     /* while out < end, enough space available */
++#ifdef __ARM_NEON
++    unsigned char FAR *limit;   /* safety limit for chunked copies */
++#endif
+ #ifdef INFLATE_STRICT
+     unsigned dmax;              /* maximum distance from zlib header */
+ #endif
+@@ -81,12 +84,21 @@
+     out = strm->next_out;
+     beg = out - (start - strm->avail_out);
+     end = out + (strm->avail_out - 257);
++#ifdef __ARM_NEON
++    limit = out + strm->avail_out;
++#endif
+ #ifdef INFLATE_STRICT
+     dmax = state->dmax;
+ #endif
+     wsize = state->wsize;
+     whave = state->whave;
++#ifdef __ARM_NEON
++    /* A full, unwrapped window reads as one contiguous run ending at wsize,
++       which is what the chunked window copy below is written against. */
++    wnext = (state->wnext == 0 && whave >= wsize) ? wsize : state->wnext;
++#else
+     wnext = state->wnext;
++#endif
+     window = state->window;
+     hold = state->hold;
+     bits = state->bits;
+@@ -195,6 +207,44 @@
+ #endif
+                     }
+                     from = window;
++#ifdef __ARM_NEON
++                    if (wnext >= op) {          /* contiguous in window */
++                        from += wnext - op;
++                    }
++                    else {                      /* wrap around window */
++                        op -= wnext;
++                        from += wsize - op;
++                        if (op < len) {         /* some from end of window */
++                            len -= op;
++                            out = chunkcopy_safe(out, from, op, limit);
++                            from = window;      /* more from start of window */
++                            op = wnext;
++                            /* This (rare) case can create a situation where
++                               the first chunkcopy below must be checked.
++                             */
++                        }
++                    }
++                    if (op < len) {             /* still need some from output */
++                        out = chunkcopy_safe(out, from, op, limit);
++                        len -= op;
++                        /* When dist is small the amount of data that can be
++                           copied from the window is also small, and progress
++                           towards the dangerous end of the output buffer is
++                           also small.  This means that for trivial memsets and
++                           for chunkunroll_relaxed() a safety check is
++                           unnecessary.  However, these conditions may not be
++                           entered at all, and in that case it's possible that
++                           the main copy is near the end.
++                          */
++                        out = chunkunroll_relaxed(out, &dist, &len);
++                        out = chunkcopy_safe(out, out - dist, len, limit);
++                    } else {
++                        /* from points to window, so there is no risk of
++                           overlapping pointers requiring memset-like behaviour
++                         */
++                        out = chunkcopy_safe(out, from, len, limit);
++                    }
++#else
+                     if (wnext == 0) {           /* very common case */
+                         from += wsize - op;
+                         if (op < len) {         /* some from window */
+@@ -245,8 +295,18 @@
+                         if (len > 1)
+                             *out++ = *from++;
+                     }
++#endif
+                 }
+                 else {
++#ifdef __ARM_NEON
++                    /* Whole reference is in range of current output.  No
++                       range checks are necessary because we start with room
++                       for at least 258 bytes of output, so unroll and roundoff
++                       operations can write beyond `out+len` so long as they
++                       stay within 258 bytes of `out`.
++                     */
++                    out = chunkcopy_lapped_relaxed(out, dist, len);
++#else
+                     from = out - dist;          /* copy direct from output */
+                     do {                        /* minimum length is three */
+                         *out++ = *from++;
+@@ -259,6 +319,7 @@
+                         if (len > 1)
+                             *out++ = *from++;
+                     }
++#endif
+                 }
+             }
+             else if ((op & 64) == 0) {          /* 2nd level distance code */
+--- a/infback.c
++++ b/infback.c
+@@ -420,7 +420,12 @@
+                 /* fallthrough */
+ 
+         case LEN:
+-            /* use inflate_fast() if we have enough input and output */
++#ifndef __ARM_NEON
++            /* use inflate_fast() if we have enough input and output.
++               Skipped when it reads the window in CHUNKCOPY_CHUNK_SIZE units:
++               inflateBackInit_() takes the window from the caller at exactly
++               1 << windowBits, so there is nowhere to put the slack those
++               reads need.  The loop below handles the same input. */
+             if (have >= 6 && left >= 258) {
+                 RESTORE();
+                 if (state->whave < state->wsize)
+@@ -429,6 +434,7 @@
+                 LOAD();
+                 break;
+             }
++#endif
+ 
+             /* get a literal, length, or end-of-block code */
+             for (;;) {
 --- /dev/null
 +++ b/contrib/arm/chunkcopy.h
 @@ -0,0 +1,279 @@
@@ -298,199 +503,3 @@ Change-Id: I59854eb25d2b1e43561c8a2afaf9175bf10cf674
 +#undef Z_RESTRICT
 +
 +#endif /* CHUNKCOPY_H */
---- a/contrib/arm/inffast.c
-+++ b/contrib/arm/inffast.c
-@@ -7,6 +7,7 @@
- #include "inftrees.h"
- #include "inflate.h"
- #include "inffast.h"
-+#include "chunkcopy.h"
- 
- #ifdef ASMINF
- #  pragma message("Assembler code may have bugs -- use at your own risk")
-@@ -57,6 +58,7 @@ unsigned start;         /* inflate()'s s
-     unsigned char FAR *out;     /* local strm->next_out */
-     unsigned char FAR *beg;     /* inflate()'s initial strm->next_out */
-     unsigned char FAR *end;     /* while out < end, enough space available */
-+    unsigned char FAR *limit;   /* safety limit for chunky copies */
- #ifdef INFLATE_STRICT
-     unsigned dmax;              /* maximum distance from zlib header */
- #endif
-@@ -84,12 +86,13 @@ unsigned start;         /* inflate()'s s
-     out = strm->next_out;
-     beg = out - (start - strm->avail_out);
-     end = out + (strm->avail_out - 257);
-+    limit = out + strm->avail_out;
- #ifdef INFLATE_STRICT
-     dmax = state->dmax;
- #endif
-     wsize = state->wsize;
-     whave = state->whave;
--    wnext = state->wnext;
-+    wnext = (state->wnext == 0 && whave >= wsize) ? wsize : state->wnext;
-     window = state->window;
-     hold = state->hold;
-     bits = state->bits;
-@@ -197,70 +200,51 @@ unsigned start;         /* inflate()'s s
- #endif
-                     }
-                     from = window;
--                    if (wnext == 0) {           /* very common case */
--                        from += wsize - op;
--                        if (op < len) {         /* some from window */
--                            len -= op;
--                            do {
--                                *out++ = *from++;
--                            } while (--op);
--                            from = out - dist;  /* rest from output */
--                        }
-+                    if (wnext >= op) {          /* contiguous in window */
-+                        from += wnext - op;
-                     }
--                    else if (wnext < op) {      /* wrap around window */
--                        from += wsize + wnext - op;
-+                    else {                      /* wrap around window */
-                         op -= wnext;
-+                        from += wsize - op;
-                         if (op < len) {         /* some from end of window */
-                             len -= op;
--                            do {
--                                *out++ = *from++;
--                            } while (--op);
--                            from = window;
--                            if (wnext < len) {  /* some from start of window */
--                                op = wnext;
--                                len -= op;
--                                do {
--                                    *out++ = *from++;
--                                } while (--op);
--                                from = out - dist;      /* rest from output */
--                            }
--                        }
--                    }
--                    else {                      /* contiguous in window */
--                        from += wnext - op;
--                        if (op < len) {         /* some from window */
--                            len -= op;
--                            do {
--                                *out++ = *from++;
--                            } while (--op);
--                            from = out - dist;  /* rest from output */
--                        }
--                    }
--                    while (len > 2) {
--                        *out++ = *from++;
--                        *out++ = *from++;
--                        *out++ = *from++;
--                        len -= 3;
--                    }
--                    if (len) {
--                        *out++ = *from++;
--                        if (len > 1)
--                            *out++ = *from++;
-+                            out = chunkcopy_safe(out, from, op, limit);
-+                            from = window;      /* more from start of window */
-+                            op = wnext;
-+                            /* This (rare) case can create a situation where
-+                               the first chunkcopy below must be checked.
-+                             */
-+                        }
-+                    }
-+                    if (op < len) {             /* still need some from output */
-+                        out = chunkcopy_safe(out, from, op, limit);
-+                        len -= op;
-+                        /* When dist is small the amount of data that can be
-+                           copied from the window is also small, and progress
-+                           towards the dangerous end of the output buffer is
-+                           also small.  This means that for trivial memsets and
-+                           for chunkunroll_relaxed() a safety check is
-+                           unnecessary.  However, these conditions may not be
-+                           entered at all, and in that case it's possible that
-+                           the main copy is near the end.
-+                          */
-+                        out = chunkunroll_relaxed(out, &dist, &len);
-+                        out = chunkcopy_safe(out, out - dist, len, limit);
-+                    } else {
-+                        /* from points to window, so there is no risk of
-+                           overlapping pointers requiring memset-like behaviour
-+                         */
-+                        out = chunkcopy_safe(out, from, len, limit);
-                     }
-                 }
-                 else {
--                    from = out - dist;          /* copy direct from output */
--                    do {                        /* minimum length is three */
--                        *out++ = *from++;
--                        *out++ = *from++;
--                        *out++ = *from++;
--                        len -= 3;
--                    } while (len > 2);
--                    if (len) {
--                        *out++ = *from++;
--                        if (len > 1)
--                            *out++ = *from++;
--                    }
-+                    /* Whole reference is in range of current output.  No
-+                       range checks are necessary because we start with room
-+                       for at least 258 bytes of output, so unroll and roundoff
-+                       operations can write beyond `out+len` so long as they
-+                       stay within 258 bytes of `out`.
-+                     */
-+                    out = chunkcopy_lapped_relaxed(out, dist, len);
-                 }
-             }
-             else if ((op & 64) == 0) {          /* 2nd level distance code */
---- a/contrib/arm/inflate.c
-+++ b/contrib/arm/inflate.c
-@@ -84,6 +84,7 @@
- #include "inftrees.h"
- #include "inflate.h"
- #include "inffast.h"
-+#include "contrib/arm/chunkcopy.h"
- 
- #ifdef MAKEFIXED
- #  ifndef BUILDFIXED
-@@ -405,10 +406,20 @@ unsigned copy;
- 
-     /* if it hasn't been done already, allocate space for the window */
-     if (state->window == Z_NULL) {
-+        unsigned wsize = 1U << state->wbits;
-         state->window = (unsigned char FAR *)
--                        ZALLOC(strm, 1U << state->wbits,
-+                        ZALLOC(strm, wsize + CHUNKCOPY_CHUNK_SIZE,
-                                sizeof(unsigned char));
-         if (state->window == Z_NULL) return 1;
-+#ifdef INFLATE_CLEAR_UNUSED_UNDEFINED
-+        /* Copies from the overflow portion of this buffer are undefined and
-+           may cause analysis tools to raise a warning if we don't initialize
-+           it.  However, this undefined data overwrites other undefined data
-+           and is subsequently either overwritten or left deliberately
-+           undefined at the end of decode; so there's really no point.
-+         */
-+        memset(state->window + wsize, 0, CHUNKCOPY_CHUNK_SIZE);
-+#endif
-     }
- 
-     /* if window not in use yet, initialize */
-@@ -1175,17 +1186,16 @@ int flush;
-                 else
-                     from = state->window + (state->wnext - copy);
-                 if (copy > state->length) copy = state->length;
-+                if (copy > left) copy = left;
-+                put = chunkcopy_safe(put, from, copy, put + left);
-             }
-             else {                              /* copy from output */
--                from = put - state->offset;
-                 copy = state->length;
-+                if (copy > left) copy = left;
-+                put = chunkcopy_lapped_safe(put, state->offset, copy, put + left);
-             }
--            if (copy > left) copy = left;
-             left -= copy;
-             state->length -= copy;
--            do {
--                *put++ = *from++;
--            } while (--copy);
-             if (state->length == 0) state->mode = LEN;
-             break;
-         case LIT:
