@@ -49,10 +49,12 @@ wifi_updown() {
 		cmd=reconf
 	}
 	ubus_wifi_cmd "$cmd" "$2"
+	ubus send network '{ "action": "reload" }'
 }
 
 wifi_reload() {
 	ubus call network reload
+	ubus send network '{ "action": "reload" }'
 }
 
 wifi_detect_notice() {

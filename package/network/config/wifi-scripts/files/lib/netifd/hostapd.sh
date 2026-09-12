@@ -1056,6 +1056,7 @@ hostapd_set_bss_options() {
 			append bss_conf "deny_mac_file=$_macfile" "$N"
 		;;
 		*)
+			: > "$_macfile"
 			_macfile=""
 		;;
 	esac
@@ -1064,7 +1065,6 @@ hostapd_set_bss_options() {
 		json_get_vars macfile
 		json_get_values maclist maclist
 
-		rm -f "$_macfile"
 		(
 			for mac in $maclist; do
 				echo "$mac"
@@ -1362,6 +1362,7 @@ wpa_supplicant_add_network() {
 		mcast_rate \
 		ieee80211w ieee80211r fils ocv beacon_prot \
 		multi_ap \
+		macfilter \
 		default_disabled
 
 	json_get_values basic_rate_list basic_rate
@@ -1639,6 +1640,30 @@ wpa_supplicant_add_network() {
 
 	[ -n "$bssid_blacklist" ] && append network_data "bssid_blacklist=$bssid_blacklist" "$N$T"
 	[ -n "$bssid_whitelist" ] && append network_data "bssid_whitelist=$bssid_whitelist" "$N$T"
+
+	_macfile="/var/run/wpa-supplicant-$ifname.maclist"
+	case "$macfilter" in
+		block)
+		;;
+		open)
+		;;
+		*)
+			: > "$_macfile"
+			_macfile=""
+		;;
+	esac
+
+	[ -n "$_macfile" ] && {
+		json_get_vars macfile
+		json_get_values maclist maclist
+
+		(
+			for mac in $maclist; do
+				echo "$mac"
+			done
+			[ -n "$macfile" -a -f "$macfile" ] && cat "$macfile"
+		) > "$_macfile"
+	}
 
 	[ -n "$basic_rate_list" ] && {
 		local br rate rate_list=

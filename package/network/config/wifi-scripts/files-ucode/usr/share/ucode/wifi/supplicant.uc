@@ -60,6 +60,36 @@ export function ratelist(rates) {
 	return join(",", map(rates, (rate) => ratestr(rate)));
 };
 
+function set_macfilter(config) {
+	let path = `/var/run/wpa-supplicant-${config.ifname}.maclist`;
+
+	let file = fs.open(path, 'w');
+	if (!file) {
+		warn(`Failed to open ${path}`);
+		return;
+	}
+
+	switch(config.macfilter) {
+	case 'block':
+		break;
+
+	case 'open':
+		break;
+
+	default:
+		file.truncate();
+		return;
+	}
+
+	if (config.maclist)
+		file.write(join('\n', config.maclist));
+
+	let macfile = fs.readfile(config.macfile);
+	if (macfile)
+		file.write(macfile);
+	file.close();
+}
+
 function setup_sta(data, config) {
 	iface.parse_encryption(config, data);
 
@@ -200,6 +230,8 @@ function setup_sta(data, config) {
 	}
 
 	config.key_mgmt ??= 'NONE';
+
+	set_macfilter(config);
 
 	/*
 	 * Map UCI basic_rate to the correct wpa_supplicant network field:
@@ -343,6 +375,7 @@ export function setup(config, data) {
 		num_global_macaddr: data.config.num_global_macaddr,
 		macaddr_base: data.config.macaddr_base ?? "",
 	});
+	global.ubus.event('wpa_supplicant', { action: "config_set" });
 
 	if (ret)
 		netifd.add_process('/usr/sbin/wpa_supplicant', ret.pid, true, true);
@@ -358,4 +391,5 @@ export function start(data) {
 		num_global_macaddr: data.config.num_global_macaddr,
 		macaddr_base: data.config.macaddr_base ?? "",
 	});
+	global.ubus.event('wpa_supplicant', { action: "config_set" });
 };
