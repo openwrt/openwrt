@@ -65,6 +65,8 @@ struct otto_table {
 	_(OTTO_REG_9310_3,    0x0200,   0x0200,   0x0204,   0x0204,   9, 16, 15, 12, 0, 1,  0, 11, 16, 16)	\
 	_(OTTO_REG_9310_4,    0x20dc,   0x20dc,   0x20e0,   0x20e0,  29,  8,  7,  6, 0, 1,  0,  5,  8,  8)	\
 	_(OTTO_REG_9310_5,    0x7e1c,   0x7e1c,   0x7e20,   0x7e20,  53,  9,  8,  6, 0, 1,  0,  5,  9,  9)	\
+	_(OTTO_REG_9607C_0,   0x12000,  0x12004,  0x12008,  0x1201c,  5, 13,  3,  0, 0, 0, 12, 23,  0,  0)	\
+	_(OTTO_REG_9607C_NAT, 0x801100, 0x801100, 0x801180, 0x801110, 8,  0,  0, 16, 0, 1,  0, 15, 25, 24)	\
 
 #define OTTO_REG_ENUM(name, ctrl_addr, sts_addr, wr_data, rd_data, max,	\
 		      busy_bit, cbit, tbit, rmode, is_exec, addr_lsb,	\
@@ -248,6 +250,40 @@ static const struct otto_table_map otto_table_maps[OTTO_TBL_COUNT] = {
 
 	TBL_MAP(RTL9310_TBL_STAT_PORT_MIB_CNTR, OTTO_REG_9310_5, 0, 53, 57, 0),
 	TBL_MAP(RTL9310_TBL_STAT_PORT_PRVTE_CNTR, OTTO_REG_9310_5, 1, 28, 57, 0),
+
+	TBL_MAP(RTL9607C_TBL_L2_MC_DSL, OTTO_REG_9607C_0, 0, 3, 2112, 0),
+	TBL_MAP(RTL9607C_TBL_L2_UC, OTTO_REG_9607C_0, 0, 3, 2112, 0),
+	TBL_MAP(RTL9607C_TBL_L3_MC, OTTO_REG_9607C_0, 0, 3, 2112, 0),
+	TBL_MAP(RTL9607C_TBL_L3_MC_FID, OTTO_REG_9607C_0, 0, 3, 2112, 0),
+	TBL_MAP(RTL9607C_TBL_L3_MC_VID, OTTO_REG_9607C_0, 0, 3, 2112, 0),
+	TBL_MAP(RTL9607C_TBL_VLAN, OTTO_REG_9607C_0, 1, 1, 4096, 0),
+	TBL_MAP(RTL9607C_TBL_ACL_DATA, OTTO_REG_9607C_0, 2, 5, 128, 128),
+	TBL_MAP(RTL9607C_TBL_ACL_MASK, OTTO_REG_9607C_0, 2, 5, 128, 0),
+	TBL_MAP(RTL9607C_TBL_ACL_ACTION_TABLE, OTTO_REG_9607C_0, 3, 2, 128, 0),
+	TBL_MAP(RTL9607C_TBL_CF_MASK_T0, OTTO_REG_9607C_0, 4, 2, 256, 0),
+	TBL_MAP(RTL9607C_TBL_CF_MASK_T1, OTTO_REG_9607C_0, 4, 2, 256, 0),
+	TBL_MAP(RTL9607C_TBL_CF_MASK_T2, OTTO_REG_9607C_0, 4, 2, 256, 0),
+	TBL_MAP(RTL9607C_TBL_CF_RULE_T0, OTTO_REG_9607C_0, 4, 2, 256, 256),
+	TBL_MAP(RTL9607C_TBL_CF_RULE_T1, OTTO_REG_9607C_0, 4, 2, 256, 256),
+	TBL_MAP(RTL9607C_TBL_CF_RULE_T2, OTTO_REG_9607C_0, 4, 2, 256, 256),
+	TBL_MAP(RTL9607C_TBL_CF_ACTION_DS, OTTO_REG_9607C_0, 5, 2, 256, 0),
+	TBL_MAP(RTL9607C_TBL_CF_ACTION_US, OTTO_REG_9607C_0, 5, 2, 256, 0),
+
+	TBL_MAP(RTL9607C_TBL_INTERFACE, OTTO_REG_9607C_NAT, 0, 5, 16, 0),
+	TBL_MAP(RTL9607C_TBL_ETHER_TYPE, OTTO_REG_9607C_NAT, 1, 1, 8, 0),
+	TBL_MAP(RTL9607C_TBL_CAM_TAG, OTTO_REG_9607C_NAT, 2, 1, 64, 0),
+	TBL_MAP(RTL9607C_TBL_FB_EXT_PORT, OTTO_REG_9607C_NAT, 3, 1, 32, 0),
+	TBL_MAP(RTL9607C_TBL_WAN_ACCESS_LIMIT, OTTO_REG_9607C_NAT, 4, 1, 32, 0),
+	TBL_MAP(RTL9607C_TBL_FLOW_TABLE_PATH1_2, OTTO_REG_9607C_NAT, 8, 8, 4096, 0),
+	TBL_MAP(RTL9607C_TBL_FLOW_TABLE_PATH3_4, OTTO_REG_9607C_NAT, 8, 8, 4096, 0),
+	TBL_MAP(RTL9607C_TBL_FLOW_TABLE_PATH5, OTTO_REG_9607C_NAT, 8, 8, 4096, 0),
+	TBL_MAP(RTL9607C_TBL_FLOW_TABLE_PATH6, OTTO_REG_9607C_NAT, 8, 8, 4096, 0),
+	TBL_MAP(RTL9607C_TBL_CAM, OTTO_REG_9607C_NAT, 9, 8, 64, 0),
+	TBL_MAP(RTL9607C_TBL_MAC_IDX, OTTO_REG_9607C_NAT, 10, 1, 256, 0),
+	TBL_MAP(RTL9607C_TBL_FLOW_TABLE_TAG, OTTO_REG_9607C_NAT, 11, 1, 4096, 0),
+	TBL_MAP(RTL9607C_TBL_TCAM, OTTO_REG_9607C_NAT, 12, 8, 64, 0),
+	TBL_MAP(RTL9607C_TBL_TCAM_RAW_TABLE_PATH1_2, OTTO_REG_9607C_NAT, 13, 5, 64, 0),
+	TBL_MAP(RTL9607C_TBL_TCAM_RAW_TABLE_PATH3_5, OTTO_REG_9607C_NAT, 13, 5, 64, 0),
 };
 
 /* Whether the tables can be reached yet. A consumer that probes before this
@@ -335,8 +371,8 @@ static struct otto_table *otto_table_reg(int handle)
 }
 
 /* The command register masks the index to the width of its index field, which
- * cannot express the bound: it is wider than the table on 66 of the tables,
- * exactly as wide on the other 38, and six tables do not have a power-of-two
+ * cannot express the bound: it is wider than the table on 95 of the tables,
+ * exactly as wide on the other 41, and 11 tables do not have a power-of-two
  * row count at all.
  */
 static bool otto_table_index_ok(int handle, int idx)
