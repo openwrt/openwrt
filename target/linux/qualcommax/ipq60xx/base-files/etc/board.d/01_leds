@@ -7,6 +7,11 @@ board_config_update
 board=$(board_name)
 
 case "$board" in
+edgecore,eap101)
+	ucidef_set_led_netdev "wan" "WAN" "green:wanpoe" "wan"
+	ucidef_set_led_netdev "lan1" "LAN1" "green:lan1" "lan1"
+	ucidef_set_led_netdev "lan2" "LAN2" "green:lan2" "lan2"
+	;;
 linksys,mr7350)
 	ucidef_set_led_netdev "lan1-port-link" "LAN1-PORT-LINK" "90000.mdio-1:00:green:lan" "lan1" "link_10 link_100 link_1000"
 	ucidef_set_led_netdev "lan1-port-traffic" "LAN1-PORT-TRAFFIC" "90000.mdio-1:00:orange:lan" "lan1" "tx rx link_10 link_100 link_1000"
