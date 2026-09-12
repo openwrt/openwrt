@@ -24,6 +24,11 @@ spectrum,sax1v1k)
 edgecore,eap102)
 	ucidef_set_led_netdev "wan" "WAN" "green:wanpoe" "wan"
 	;;
+linksys,mx4200v2)
+	ucidef_set_led_default "blue" "blue" "blue:status" "1"
+	ucidef_set_led_default "green" "green" "green:status" "0"
+	ucidef_set_led_default "red" "red" "red:status" "0"
+	;;
 netgear,rax120v2)
 	ucidef_set_led_netdev "aqr" "AQR" "white:aqr" "lan5"
 	;;
