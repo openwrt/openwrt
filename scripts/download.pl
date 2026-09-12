@@ -28,6 +28,7 @@ my $ok;
 
 my $check_certificate = $ENV{DOWNLOAD_CHECK_CERTIFICATE} eq "y";
 my $custom_tool = $ENV{DOWNLOAD_TOOL_CUSTOM};
+my $spoofed_user_agent = $ENV{SPOOF_USER_AGENT} // '';
 my $download_tool;
 
 $url_filename or $url_filename = $filename;
@@ -126,11 +127,13 @@ sub download_cmd {
 	if ($download_tool eq "curl") {
 		return (qw(curl -f --connect-timeout 5 --retry 3 --location),
 			$check_certificate ? () : '--insecure',
+			$spoofed_user_agent ne '' ? ('--user-agent', $spoofed_user_agent) : (),
 			shellwords($ENV{CURL_OPTIONS} || ''),
 			$url);
 	} elsif ($download_tool eq "wget") {
 		return (qw(wget --tries=3 --timeout=5 --output-document=-),
 			$check_certificate ? () : '--no-check-certificate',
+			$spoofed_user_agent ne '' ? ("--user-agent=$spoofed_user_agent") : (),
 			shellwords($ENV{WGET_OPTIONS} || ''),
 			$url);
 	} elsif ($download_tool eq "aria2c") {
@@ -144,6 +147,7 @@ sub download_cmd {
 			"touch $ENV{'TMPDIR'}/aria2c/${rfn}_spp;",
 			qw(aria2c --stderr -c -x2 -s10 -j10 -k1M), $url, $additional_mirrors,
 			$check_certificate ? () : '--check-certificate=false',
+			$spoofed_user_agent ne '' ? ("--user-agent='$spoofed_user_agent'") : (),
 			"--server-stat-of=$ENV{'TMPDIR'}/aria2c/${rfn}_spp",
 			"--server-stat-if=$ENV{'TMPDIR'}/aria2c/${rfn}_spp",
 			"--daemon=false --no-conf", shellwords($ENV{ARIA2C_OPTIONS} || ''),
