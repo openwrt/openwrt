@@ -243,7 +243,6 @@ define KernelPackage/fs-ext4
     +kmod-crypto-crc32c
   KCONFIG:= \
 	CONFIG_EXT4_FS \
-	CONFIG_EXT4_ENCRYPTION=n \
 	CONFIG_JBD2
   FILES:= \
 	$(LINUX_DIR)/fs/ext4/ext4.ko \
