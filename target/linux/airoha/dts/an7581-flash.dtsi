@@ -1,0 +1,64 @@
+// SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+
+#include <dt-bindings/interrupt-controller/irq.h>
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+
+
+&spi_nand {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		bl2@0 {
+			label = "bl2";
+			reg = <0x0 0x20000>;
+		};
+
+		ubi@20000 {
+			label = "ubi";
+			reg = <0x20000 0x0>;
+		};
+	};
+};
+
+&mmc0 {
+	pinctrl-names = "default", "state_uhs";
+	pinctrl-0 = <&mmc_pins>;
+	pinctrl-1 = <&mmc_pins>;
+	status = "disabled";
+	
+	#address-cells = <1>;
+	#size-cells = <0>;
+	
+	card@0 {
+		compatible = "mmc-card";
+		reg = <0>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			bootloader@0 {
+				label = "bootloader";
+				reg = <0x00000000 0x00080000>;
+			};
+
+			tclinux@80000 {
+				label = "tclinux";
+				reg = <0x00080000 0x02800000>;
+			};
+
+			tclinux_slave@2880000 {
+				label = "tclinux_slave";
+				reg = <0x02880000 0x02800000>;
+			};
+
+			rootfs_data@5080000 {
+				label = "rootfs_data";
+				reg = <0x5080000 0x00800000>;
+			};
+		};
+	};
+};
