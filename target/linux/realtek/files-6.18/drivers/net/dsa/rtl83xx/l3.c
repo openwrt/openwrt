@@ -785,6 +785,7 @@ static int otto_l3_alloc_egress_intf(struct otto_l3_ctrl *ctrl, u64 mac, int vla
 
 	if (free_mac < 0) {
 		dev_err(ctrl->dev, "No free egress interface, cannot offload\n");
+		mutex_unlock(ctrl->lock);
 		return -1;
 	}
 
