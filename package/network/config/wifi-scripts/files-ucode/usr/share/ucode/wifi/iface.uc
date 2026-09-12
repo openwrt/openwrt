@@ -1,6 +1,7 @@
 'use strict';
 
 import { append_value, log } from 'wifi.common';
+import { macaddr_random } from 'wifi.utils';
 import * as fs from 'fs';
 
 export function parse_encryption(config, dev_config, phy_features) {
@@ -258,17 +259,6 @@ export function wpa_key_mgmt(config, band) {
 
 	config.key_mgmt = config.wpa_key_mgmt;
 };
-
-function macaddr_random() {
-	let f = fs.open("/dev/urandom", "r");
-	let addr = f.read(6);
-
-	addr = map(split(addr, ""), (v) => ord(v));
-	addr[0] &= ~1;
-	addr[0] |= 2;
-
-	return join(":", map(addr, (v) => sprintf("%02x", v)));
-}
 
 let mac_idx = 0;
 export function prepare(data, phy, num_global_macaddr, macaddr_base) {
