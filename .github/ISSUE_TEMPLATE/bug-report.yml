@@ -2,8 +2,7 @@ name: Bug report
 description: Create a bug report to help us improve
 labels:
   - bug
-  - bug-report
-  - to-triage
+  - bug:new
 body:
   - type: textarea
     id: description
@@ -13,21 +12,23 @@ body:
     validations:
       required: true
   - type: input
-    id: version
-    attributes:
-      label: OpenWrt version
-      description: |
-        The OpenWrt release or commit hash where this bug occurs (use command below).
-        ```. /etc/openwrt_release && echo $DISTRIB_REVISION```
-    validations:
-      required: true
-  - type: input
     id: release
     attributes:
       label: OpenWrt release
+      placeholder: e.g, SNAPSHOT or v12.34.0 or v12.34.0-rc2
       description: |
-        The OpenWrt release or commit hash where this bug occurs (use command below).
+        The OpenWrt release where this bug occurs. If unsure, use command below.
         ```. /etc/openwrt_release && echo $DISTRIB_RELEASE```
+    validations:
+      required: true
+  - type: input
+    id: revision
+    attributes:
+      label: OpenWrt revision
+      placeholder: e.g., r12345-6789abcdef
+      description: |
+        The OpenWrt revision or commit hash where this bug is observed. If unsure, use command below.
+        ```. /etc/openwrt_release && echo $DISTRIB_REVISION```
     validations:
       required: true
   - type: input
@@ -35,7 +36,7 @@ body:
     attributes:
       label: OpenWrt target/subtarget
       description: |
-        The OpenWrt target and subtarget where this bug is observed (use command below).
+        The OpenWrt target and subtarget where this bug is observed. If unsure, use command below.
         ```. /etc/openwrt_release && echo $DISTRIB_TARGET```
     validations:
       required: true
@@ -44,7 +45,7 @@ body:
     attributes:
       label: Device
       description: |
-        The device exhibiting this bug (if unsure, use command below).
+        The device exhibiting this bug. If unsure, use command below.
         ```cat /tmp/sysinfo/model```
     validations:
       required: true
