@@ -1,0 +1,34 @@
+From 213584a702492eef6e367ef991cbf453b8fb4e82 Mon Sep 17 00:00:00 2001
+From: Konstantin Meshkov <skyline@mail.ru>
+Date: Thu, 27 Aug 2026 10:46:01 +0300
+Subject: [PATCH] net: phy: marvell: add LED support for 88E1116R PHY
+
+The Marvell 88E1116R PHY (used e.g. on the D-Link DNS-325) exposes its
+LEDs through the same page 3 register 0x10 LED control layout as the
+88E1318S: four bits of function-select per LED for LED[0..2], with the
+same family function codes (OFF=0x8, ON=0x9, BLINK=0xb).  The stock
+value 0x1107 programs LED0 = 1G link (mode 0x7) and LED2 = link/activity
+(mode 0x1), leaving LED1 unused.
+
+Wire up the existing 88E1318S LED handlers in the 88E1116R driver entry
+so the PHY LEDs can be described in the device tree and driven through
+the LED trigger API with hardware offload.  The DNS-325 device tree
+change follows in a separate commit.
+
+Signed-off-by: Konstantin Meshkov <skyline@mail.ru>
+
+---
+--- a/drivers/net/phy/marvell.c
++++ b/drivers/net/phy/marvell.c
+@@ -3942,6 +3942,11 @@ static struct phy_driver marvell_drivers
+ 		.get_stats = marvell_get_stats,
+ 		.get_tunable = m88e1011_get_tunable,
+ 		.set_tunable = m88e1011_set_tunable,
++		.led_brightness_set = m88e1318_led_brightness_set,
++		.led_blink_set = m88e1318_led_blink_set,
++		.led_hw_is_supported = m88e1318_led_hw_is_supported,
++		.led_hw_control_set = m88e1318_led_hw_control_set,
++		.led_hw_control_get = m88e1318_led_hw_control_get,
+ 	},
+ 	{
+ 		.phy_id = MARVELL_PHY_ID_88E1510,
