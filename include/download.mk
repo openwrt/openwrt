@@ -18,7 +18,7 @@ endif
 
 DOWNLOAD_RDEP=$(STAMP_PREPARED) $(HOST_STAMP_PREPARED)
 
-# Export options for download.pl
+# Export options for download.py
 export DOWNLOAD_CHECK_CERTIFICATE:=$(CONFIG_DOWNLOAD_CHECK_CERTIFICATE)
 export DOWNLOAD_TOOL_CUSTOM:=$(CONFIG_DOWNLOAD_TOOL_CUSTOM)
 
@@ -65,7 +65,7 @@ gen_sha256sum = $(shell $(MKHASH) sha256 $(DL_DIR)/$(1))
 
 # Used in Build/CoreTargets and HostBuild/Core as an integrity check for
 # downloaded files.  It will add a FORCE rule if the sha256 hash does not
-# match, so that the download can be more thoroughly handled by download.pl.
+# match, so that the download can be more thoroughly handled by download.py.
 define check_download_integrity
   expected_hash:=$(strip $(if $(filter-out x,$(HASH)),$(HASH),$(MIRROR_HASH)))
   $$(if $$(and $(FILE),$$(wildcard $(DL_DIR)/$(FILE)), \
@@ -141,7 +141,7 @@ define DownloadMethod/unknown
 endef
 
 define DownloadMethod/default
-	$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(FILE)" "$(HASH)" "$(URL_FILE)" $(foreach url,$(URL),"$(url)") \
+	$(SCRIPT_DIR)/download.py "$(DL_DIR)" "$(FILE)" "$(HASH)" "$(URL_FILE)" $(foreach url,$(URL),"$(url)") \
 	$(if $(filter check,$(1)), \
 		$(call check_hash,$(FILE),$(HASH),$(2)$(call hash_var,$(MD5SUM))) \
 		$(call check_md5,$(MD5SUM),$(2)MD5SUM,$(2)HASH) \
@@ -153,7 +153,7 @@ endef
 # $(3): shell command sequence to do the download
 define wrap_mirror
 $(if $(if $(MIRROR), \
-	$(filter-out x,$(MIRROR_HASH))),$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(FILE)" "$(MIRROR_HASH)" "" || \
+	$(filter-out x,$(MIRROR_HASH))),$(SCRIPT_DIR)/download.py "$(DL_DIR)" "$(FILE)" "$(MIRROR_HASH)" "" || \
 		( $(3) ) \
 		$(if $(filter-out x,$(MIRROR_HASH)), && ( \
 			file_hash="$$$$($(MKHASH) sha256 "$(DL_DIR)/$(FILE)")"; \

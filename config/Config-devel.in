@@ -20,11 +20,12 @@ menuconfig DEVEL
 		default ""
 		help
 		  Use and force custom download tool instead of relying on autoselection
-		  between curl if available and wget as a fallback.
+		  between aria2c (preferred, downloads from all mirrors in parallel),
+		  curl and wget as a fallback.
 
-		  download.pl supports 3 tools officially aria2c, curl and wget.
-		  If one of the tool is used in this config, download.pl will use the
-		  default args to make use of them.
+		  download.py supports aria2c, curl and wget officially. If one of
+		  these tools is used in this config, download.py will use the default
+		  args to make use of them.
 
 		  If the provided string is different than aria2c, curl or wget, the command
 		  is used as is and the download url will be appended at the end of such command.
