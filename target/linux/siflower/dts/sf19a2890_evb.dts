@@ -43,24 +43,100 @@
 		};
 	};
 
-	rtl8367rb {
-		compatible = "realtek,rtl8367b";
-		realtek,extif = <6 0 0 1 1 1 1 1 1 2>;
-		mii-bus = <&mdio>;
-		phy-id = <0>;
-	};
 };
 
 &gmac {
 	status = "okay";
 	phy-mode = "rgmii-id";
 	snps,ps-speed = <1000>;
-	nvmem-cells = <&macaddr_factory_0>, <&rgmii_delay_factory_b2>;
+	nvmem-cells = <&macaddr_factory_0 0>, <&rgmii_delay_factory_b2>;
 	nvmem-cell-names = "mac-address", "rgmii-delay";
 	fixed-link {
 		speed = <1000>;
 		full-duplex;
 		pause;
+	};
+};
+
+&mdio {
+	switch@0 {
+		compatible = "realtek,rtl8365mb";
+		reg = <0>;
+
+		mdio {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			switch_phy0: ethernet-phy@0 {
+				reg = <0>;
+			};
+
+			switch_phy1: ethernet-phy@1 {
+				reg = <1>;
+			};
+
+			switch_phy2: ethernet-phy@2 {
+				reg = <2>;
+			};
+
+			switch_phy3: ethernet-phy@3 {
+				reg = <3>;
+			};
+
+			switch_phy4: ethernet-phy@4 {
+				reg = <4>;
+			};
+		};
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				label = "wan";
+				nvmem-cells = <&macaddr_factory_0 1>;
+				nvmem-cell-names = "mac-address";
+				phy-handle = <&switch_phy0>;
+			};
+
+			port@1 {
+				reg = <1>;
+				label = "lan1";
+				phy-handle = <&switch_phy1>;
+			};
+
+			port@2 {
+				reg = <2>;
+				label = "lan2";
+				phy-handle = <&switch_phy2>;
+			};
+
+			port@3 {
+				reg = <3>;
+				label = "lan3";
+				phy-handle = <&switch_phy3>;
+			};
+
+			port@4 {
+				reg = <4>;
+				label = "lan4";
+				phy-handle = <&switch_phy4>;
+			};
+
+			port@6 {
+				reg = <6>;
+				label = "cpu";
+				ethernet = <&gmac>;
+				phy-mode = "rgmii";
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+					pause;
+				};
+			};
+		};
 	};
 };
 
@@ -118,7 +194,9 @@
 					#size-cells = <1>;
 
 					macaddr_factory_0: macaddr@0 {
+						compatible = "mac-base";
 						reg = <0x0 0x6>;
+						#nvmem-cell-cells = <1>;
 					};
 
 					rgmii_delay_factory_b2: rgmii-delay@b2 {

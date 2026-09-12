@@ -104,6 +104,8 @@
 			compatible = "siflower,sf19a2890-gmac", "snps,dwmac";
 			reg = <0x10800000 0x200000>,
 				<0x19e04440 0x10>;
+			/* DWMAC3 does not report this; 2 KiB was verified on the EVB. */
+			tx-fifo-depth = <2048>;
 			interrupts = <GIC_SHARED 32 IRQ_TYPE_LEVEL_HIGH>,
 					<GIC_SHARED 34 IRQ_TYPE_LEVEL_HIGH>,
 					<GIC_SHARED 33 IRQ_TYPE_LEVEL_HIGH>;
