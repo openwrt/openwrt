@@ -290,7 +290,7 @@ static int otto_l3_930x_find_slot(struct otto_l3_ctrl *ctrl, struct otto_l3_rout
 			otto_l3_930x_host_route_read(ctrl, idx, &route_entry);
 			dev_dbg(ctrl->dev, "route valid %d, route dest: %pI4, hit %d\n",
 				rt->attr.valid, &rt->dst_ip, rt->attr.hit);
-			if (!must_exist && rt->attr.valid)
+			if (!must_exist && !route_entry.attr.valid)
 				return idx;
 			if (must_exist && route_entry.dst_ip == rt->dst_ip)
 				return idx;
