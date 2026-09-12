@@ -36,6 +36,9 @@
 #define DPRINTF(fmt, ...) do {} while (0)
 #endif
 
+#define SWITCH_MAX_PORTS 256
+#define SWITCH_MAX_VLANS 4096
+
 static struct nl_sock *handle;
 static struct nl_cache *cache;
 static struct genl_family *family;
@@ -59,6 +62,15 @@ static struct nla_policy link_policy[SWITCH_LINK_ATTR_MAX] = {
 	[SWITCH_LINK_SPEED] = { .type = NLA_U32 },
 	[SWITCH_LINK_FLAG_EEE_100BASET] = { .type = NLA_FLAG },
 	[SWITCH_LINK_FLAG_EEE_1000BASET] = { .type = NLA_FLAG },
+};
+
+static struct nla_policy switch_policy[SWITCH_ATTR_MAX + 1] = {
+	[SWITCH_ATTR_DEV_NAME] = { .type = NLA_STRING },
+	[SWITCH_ATTR_ALIAS] = { .type = NLA_STRING },
+	[SWITCH_ATTR_NAME] = { .type = NLA_STRING },
+	[SWITCH_ATTR_OP_NAME] = { .type = NLA_STRING },
+	[SWITCH_ATTR_OP_VALUE_STR] = { .type = NLA_STRING },
+	[SWITCH_ATTR_OP_DESCRIPTION] = { .type = NLA_STRING },
 };
 
 static inline void *
@@ -232,7 +244,7 @@ store_link_val(struct nl_msg *msg, struct nlattr *nla, struct switch_val *val)
 	link->aneg = !!tb[SWITCH_LINK_FLAG_ANEG];
 	link->tx_flow = !!tb[SWITCH_LINK_FLAG_TX_FLOW];
 	link->rx_flow = !!tb[SWITCH_LINK_FLAG_RX_FLOW];
-	link->speed = nla_get_u32(tb[SWITCH_LINK_SPEED]);
+	link->speed = tb[SWITCH_LINK_SPEED] ? nla_get_u32(tb[SWITCH_LINK_SPEED]) : 0;
 	link->eee = 0;
 	if (tb[SWITCH_LINK_FLAG_EEE_100BASET])
 		link->eee |= SWLIB_LINK_FLAG_EEE_100BASET;
@@ -253,7 +265,7 @@ store_val(struct nl_msg *msg, void *arg)
 		goto error;
 
 	if (nla_parse(tb, SWITCH_ATTR_MAX - 1, genlmsg_attrdata(gnlh, 0),
-			genlmsg_attrlen(gnlh, 0), NULL) < 0) {
+			genlmsg_attrlen(gnlh, 0), switch_policy) < 0) {
 		goto error;
 	}
 
@@ -563,7 +575,7 @@ add_attr(struct nl_msg *msg, void *ptr)
 	struct switch_attr *new;
 
 	if (nla_parse(tb, SWITCH_ATTR_MAX - 1, genlmsg_attrdata(gnlh, 0),
-			genlmsg_attrlen(gnlh, 0), NULL) < 0)
+			genlmsg_attrlen(gnlh, 0), switch_policy) < 0)
 		goto done;
 
 	new = swlib_alloc(sizeof(struct switch_attr));
@@ -747,10 +759,10 @@ add_switch(struct nl_msg *msg, void *arg)
 	const char *name;
 	const char *alias;
 
-	if (nla_parse(tb, SWITCH_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL) < 0)
+	if (nla_parse(tb, SWITCH_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), switch_policy) < 0)
 		goto done;
 
-	if (!tb[SWITCH_ATTR_DEV_NAME])
+	if (!tb[SWITCH_ATTR_DEV_NAME] || !tb[SWITCH_ATTR_ALIAS])
 		goto done;
 
 	name = nla_get_string(tb[SWITCH_ATTR_DEV_NAME]);
@@ -769,10 +781,14 @@ add_switch(struct nl_msg *msg, void *arg)
 		dev->id = nla_get_u32(tb[SWITCH_ATTR_ID]);
 	if (tb[SWITCH_ATTR_NAME])
 		dev->name = strdup(nla_get_string(tb[SWITCH_ATTR_NAME]));
-	if (tb[SWITCH_ATTR_PORTS])
-		dev->ports = nla_get_u32(tb[SWITCH_ATTR_PORTS]);
-	if (tb[SWITCH_ATTR_VLANS])
-		dev->vlans = nla_get_u32(tb[SWITCH_ATTR_VLANS]);
+	if (tb[SWITCH_ATTR_PORTS]) {
+		uint32_t ports = nla_get_u32(tb[SWITCH_ATTR_PORTS]);
+		dev->ports = ports > SWITCH_MAX_PORTS ? SWITCH_MAX_PORTS : (int)ports;
+	}
+	if (tb[SWITCH_ATTR_VLANS]) {
+		uint32_t vlans = nla_get_u32(tb[SWITCH_ATTR_VLANS]);
+		dev->vlans = vlans > SWITCH_MAX_VLANS ? SWITCH_MAX_VLANS : (int)vlans;
+	}
 	if (tb[SWITCH_ATTR_CPU_PORT])
 		dev->cpu_port = nla_get_u32(tb[SWITCH_ATTR_CPU_PORT]);
 	if (tb[SWITCH_ATTR_PORTMAP])
@@ -796,10 +812,11 @@ list_switch(struct nl_msg *msg, void *arg)
 {
 	struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
 
-	if (nla_parse(tb, SWITCH_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL) < 0)
+	if (nla_parse(tb, SWITCH_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), switch_policy) < 0)
 		goto done;
 
-	if (!tb[SWITCH_ATTR_DEV_NAME] || !tb[SWITCH_ATTR_NAME])
+	if (!tb[SWITCH_ATTR_DEV_NAME] || !tb[SWITCH_ATTR_NAME] ||
+			!tb[SWITCH_ATTR_ALIAS])
 		goto done;
 
 	printf("Found: %s - %s\n", nla_get_string(tb[SWITCH_ATTR_DEV_NAME]),
