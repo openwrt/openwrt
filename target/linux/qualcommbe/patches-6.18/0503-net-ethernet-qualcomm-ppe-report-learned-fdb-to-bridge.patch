@@ -1,0 +1,324 @@
+From: Kenneth Kasilag <kenneth@kasilag.me>
+Date: Fri, 03 Jul 2026 00:00:00 +0000
+Subject: [PATCH] net: ethernet: qualcomm: ppe: report learned FDB entries to the bridge
+
+The hardware learns and ages FDB entries on its own, so the bridge
+never sees the addresses behind its offloaded ports: they are missing
+from the bridge FDB listing, and a station moving from a PPE port to a
+software port of the bridge is only healed by assisted learning.
+
+Walk the hardware FDB periodically while any port is offloaded and
+diff it against a shadow of the previously reported entries: new
+dynamic entries are reported with SWITCHDEV_FDB_ADD_TO_BRIDGE, entries
+which the hardware aged out or deleted with SWITCHDEV_FDB_DEL_TO_BRIDGE,
+and a changed destination port is reported as a new add (station
+move). The entries are reported as offloaded, which leaves their aging
+to the hardware; the interval only bounds the staleness of the FDB
+listing, forwarding is not affected by it.
+
+Static entries mirror the software bridge already and stay out of the
+shadow, as do entries of a released VSI, which the leave path flushes.
+The walk runs on the ordered FDB workqueue under RTNL, so it cannot
+race the join, leave and FDB event paths.
+
+Signed-off-by: Kenneth Kasilag <kenneth@kasilag.me>
+---
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_bridge.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_bridge.c
+@@ -14,6 +14,7 @@
+  */
+ 
+ #include <linux/etherdevice.h>
++#include <linux/hashtable.h>
+ #include <linux/if_bridge.h>
+ #include <linux/netdevice.h>
+ #include <linux/notifier.h>
+@@ -42,10 +43,12 @@ struct ppe_bridge_vsi {
+  * struct ppe_bridge_port - Bridge state of a PPE port.
+  * @bridge: Bridge device the port is offloaded to, NULL when the port
+  * is not offloaded.
++ * @dev: Net device of the port, valid while the port is offloaded.
+  * @vsi: VSI ID the port is bound to, negative when not offloaded.
+  */
+ struct ppe_bridge_port {
+ 	struct net_device *bridge;
++	struct net_device *dev;
+ 	int vsi;
+ };
+ 
+@@ -56,12 +59,20 @@ struct ppe_bridge_port {
+  * @switchdev_nb: Notifier for atomic switchdev events (FDB).
+  * @switchdev_blocking_nb: Notifier for blocking switchdev events.
+  * @fdb_wq: Ordered workqueue processing the deferred FDB events.
++ * @fdb_sync: Delayed work synchronizing hardware-learned FDB entries
++ * to the bridge, running while any port is offloaded.
++ * @fdb_ht: Shadow of the dynamic hardware FDB entries reported to the
++ * bridge, to tell new and aged-out entries apart while walking the
++ * hardware table.
++ * @shutdown: Tear-down in progress, stops the FDB synchronization from
++ * rescheduling itself.
+  * @vsis: State of the PPE VSIs.
+  * @ports: Bridge state of the PPE ports, indexed by port ID.
+  *
+  * All state is protected by RTNL: bridge join and leave events run
+- * under RTNL, and both the deferred switchdev attribute events and
+- * the FDB work items are processed under RTNL as well.
++ * under RTNL, and the deferred switchdev attribute events, the FDB
++ * work items and the FDB synchronization are processed under RTNL
++ * as well.
+  */
+ struct ppe_bridge {
+ 	struct ppe_device *ppe_dev;
+@@ -69,10 +80,35 @@ struct ppe_bridge {
+ 	struct notifier_block switchdev_nb;
+ 	struct notifier_block switchdev_blocking_nb;
+ 	struct workqueue_struct *fdb_wq;
++	struct delayed_work fdb_sync;
++	DECLARE_HASHTABLE(fdb_ht, 8);
++	bool shutdown;
+ 	struct ppe_bridge_vsi vsis[PPE_VSI_TBL_ENTRIES];
+ 	struct ppe_bridge_port ports[];
+ };
+ 
++/* Interval of the synchronization of hardware-learned FDB entries to
++ * the bridge. It bounds only the staleness of the FDB listing of the
++ * bridge, the hardware forwards learned traffic on its own.
++ */
++#define PPE_BRIDGE_FDB_SYNC_INTERVAL	msecs_to_jiffies(5000)
++
++/**
++ * struct ppe_bridge_fdb - Shadow of a dynamic hardware FDB entry.
++ * @node: Hash table node, hashed by MAC address and VSI.
++ * @addr: MAC address of the entry.
++ * @vsi: VSI of the entry.
++ * @port: Destination PPE port of the entry.
++ * @seen: Entry was found in the current hardware table walk.
++ */
++struct ppe_bridge_fdb {
++	struct hlist_node node;
++	unsigned char addr[ETH_ALEN];
++	u8 vsi;
++	u8 port;
++	bool seen;
++};
++
+ /**
+  * struct ppe_bridge_fdb_work - Deferred FDB event of an offloaded port.
+  * @work: Work structure.
+@@ -156,6 +192,143 @@ static void ppe_bridge_port_offload_mark
+ 	WRITE_ONCE(port_priv->br_offload, offloaded);
+ }
+ 
++static u64 ppe_bridge_fdb_key(const unsigned char *addr, u8 vsi)
++{
++	return ether_addr_to_u64(addr) | (u64)vsi << 48;
++}
++
++static struct ppe_bridge_fdb *ppe_bridge_fdb_find(struct ppe_bridge *pb,
++						  const unsigned char *addr,
++						  u8 vsi)
++{
++	struct ppe_bridge_fdb *fdb;
++
++	hash_for_each_possible(pb->fdb_ht, fdb, node,
++			       ppe_bridge_fdb_key(addr, vsi))
++		if (fdb->vsi == vsi && ether_addr_equal(fdb->addr, addr))
++			return fdb;
++
++	return NULL;
++}
++
++static void ppe_bridge_fdb_notify(struct ppe_bridge *pb, unsigned long event,
++				  const unsigned char *addr, u8 port)
++{
++	struct switchdev_notifier_fdb_info info = {};
++	struct net_device *dev = pb->ports[port].dev;
++
++	if (!dev)
++		return;
++
++	info.addr = addr;
++	info.offloaded = true;
++	call_switchdev_notifiers(event, dev, &info.info, NULL);
++}
++
++/* Drop shadow entries of a port leaving its bridge, and of the VSI when
++ * it is released. No notifications: the bridge deletes the entries of a
++ * leaving port on its own.
++ */
++static void ppe_bridge_fdb_shadow_purge(struct ppe_bridge *pb, int port,
++					int vsi)
++{
++	struct ppe_bridge_fdb *fdb;
++	struct hlist_node *tmp;
++	int bkt;
++
++	hash_for_each_safe(pb->fdb_ht, bkt, tmp, fdb, node) {
++		if (fdb->port != port && (vsi < 0 || fdb->vsi != vsi))
++			continue;
++
++		hash_del(&fdb->node);
++		kfree(fdb);
++	}
++}
++
++/* Synchronize the dynamic entries the hardware has learned and aged to
++ * the bridge, so they show up in the bridge FDB and station moves reach
++ * the software ports. The entries are reported as offloaded, which
++ * leaves their aging to the hardware.
++ */
++static void ppe_bridge_fdb_sync_work(struct work_struct *work)
++{
++	struct ppe_bridge *pb = container_of(work, struct ppe_bridge,
++					     fdb_sync.work);
++	struct ppe_fdb_entry entry;
++	struct ppe_bridge_fdb *fdb;
++	struct hlist_node *tmp;
++	bool valid, active = false;
++	int i, bkt, ret;
++
++	rtnl_lock();
++
++	hash_for_each(pb->fdb_ht, bkt, fdb, node)
++		fdb->seen = false;
++
++	for (i = 0; i < PPE_FDB_TBL_ENTRIES; i++) {
++		ret = ppe_fdb_entry_read(pb->ppe_dev, i, &entry, &valid);
++		/* Do not treat unwalked entries as aged out. */
++		if (ret)
++			goto requeue;
++
++		/* Static entries mirror the software bridge already. */
++		if (!valid || entry.is_static)
++			continue;
++
++		if (!entry.port || entry.port >= pb->ppe_dev->num_ports)
++			continue;
++
++		/* Skip stale entries of a released VSI, they are about
++		 * to be flushed.
++		 */
++		if (pb->ports[entry.port].vsi != entry.vsi)
++			continue;
++
++		fdb = ppe_bridge_fdb_find(pb, entry.addr, entry.vsi);
++		if (!fdb) {
++			fdb = kzalloc(sizeof(*fdb), GFP_KERNEL);
++			if (!fdb)
++				continue;
++
++			ether_addr_copy(fdb->addr, entry.addr);
++			fdb->vsi = entry.vsi;
++			fdb->port = entry.port;
++			hash_add(pb->fdb_ht, &fdb->node,
++				 ppe_bridge_fdb_key(fdb->addr, fdb->vsi));
++			ppe_bridge_fdb_notify(pb, SWITCHDEV_FDB_ADD_TO_BRIDGE,
++					      fdb->addr, fdb->port);
++		} else if (fdb->port != entry.port) {
++			/* Station move within the hardware bridge. */
++			fdb->port = entry.port;
++			ppe_bridge_fdb_notify(pb, SWITCHDEV_FDB_ADD_TO_BRIDGE,
++					      fdb->addr, fdb->port);
++		}
++
++		fdb->seen = true;
++	}
++
++	hash_for_each_safe(pb->fdb_ht, bkt, tmp, fdb, node) {
++		if (fdb->seen)
++			continue;
++
++		ppe_bridge_fdb_notify(pb, SWITCHDEV_FDB_DEL_TO_BRIDGE,
++				      fdb->addr, fdb->port);
++		hash_del(&fdb->node);
++		kfree(fdb);
++	}
++
++requeue:
++	for (i = 1; i < pb->ppe_dev->num_ports; i++)
++		if (pb->ports[i].vsi >= 0)
++			active = true;
++
++	if (active && !pb->shutdown)
++		queue_delayed_work(pb->fdb_wq, &pb->fdb_sync,
++				   PPE_BRIDGE_FDB_SYNC_INTERVAL);
++
++	rtnl_unlock();
++}
++
+ static int ppe_bridge_port_join(struct ppe_bridge *pb,
+ 				struct net_device *dev,
+ 				struct net_device *br,
+@@ -216,8 +389,12 @@ static int ppe_bridge_port_join(struct p
+ 	pb->vsis[vsi].br = br;
+ 	pb->vsis[vsi].num_ports++;
+ 	pb->ports[port].bridge = br;
++	pb->ports[port].dev = dev;
+ 	pb->ports[port].vsi = vsi;
+ 
++	queue_delayed_work(pb->fdb_wq, &pb->fdb_sync,
++			   PPE_BRIDGE_FDB_SYNC_INTERVAL);
++
+ 	return 0;
+ 
+ err_txmac:
+@@ -250,6 +427,7 @@ static void ppe_bridge_port_leave(struct
+ 	ppe_port_vsi_set(ppe_dev, port, -1);
+ 
+ 	pb->ports[port].bridge = NULL;
++	pb->ports[port].dev = NULL;
+ 	pb->ports[port].vsi = -1;
+ 
+ 	ppe_vsi_members_set(ppe_dev, vsi,
+@@ -272,6 +450,9 @@ static void ppe_bridge_port_leave(struct
+ 	 */
+ 	if (!pb->vsis[vsi].num_ports)
+ 		ppe_fdb_vsi_flush(ppe_dev, vsi);
++
++	ppe_bridge_fdb_shadow_purge(pb, port,
++				    pb->vsis[vsi].num_ports ? -1 : vsi);
+ }
+ 
+ static int ppe_bridge_stp_state_set(struct ppe_bridge *pb,
+@@ -556,6 +737,9 @@ int ppe_bridge_setup(struct ppe_device *
+ 	for (i = 0; i < ppe_dev->num_ports; i++)
+ 		pb->ports[i].vsi = -1;
+ 
++	hash_init(pb->fdb_ht);
++	INIT_DELAYED_WORK(&pb->fdb_sync, ppe_bridge_fdb_sync_work);
++
+ 	pb->fdb_wq = alloc_ordered_workqueue("ppe_bridge_fdb", 0);
+ 	if (!pb->fdb_wq) {
+ 		ret = -ENOMEM;
+@@ -607,6 +791,9 @@ err_trap:
+ void ppe_bridge_destroy(struct ppe_device *ppe_dev)
+ {
+ 	struct ppe_bridge *pb = ppe_dev->bridge;
++	struct ppe_bridge_fdb *fdb;
++	struct hlist_node *tmp;
++	int bkt;
+ 
+ 	if (!pb)
+ 		return;
+@@ -614,7 +801,21 @@ void ppe_bridge_destroy(struct ppe_devic
+ 	unregister_switchdev_blocking_notifier(&pb->switchdev_blocking_nb);
+ 	unregister_switchdev_notifier(&pb->switchdev_nb);
+ 	unregister_netdevice_notifier(&pb->netdev_nb);
++
++	/* Stop the FDB synchronization from rescheduling itself before
++	 * cancelling it, the flag is checked under RTNL.
++	 */
++	rtnl_lock();
++	pb->shutdown = true;
++	rtnl_unlock();
++	cancel_delayed_work_sync(&pb->fdb_sync);
+ 	destroy_workqueue(pb->fdb_wq);
++
++	hash_for_each_safe(pb->fdb_ht, bkt, tmp, fdb, node) {
++		hash_del(&fdb->node);
++		kfree(fdb);
++	}
++
+ 	if (ppe_mac_trap_clear(ppe_dev, 0))
+ 		dev_err(ppe_dev->dev, "failed to clear BPDU trap\n");
+ 	ppe_dev->bridge = NULL;

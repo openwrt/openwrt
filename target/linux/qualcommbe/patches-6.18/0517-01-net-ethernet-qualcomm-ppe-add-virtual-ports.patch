@@ -1,0 +1,428 @@
+From: Kenneth Kasilag <kenneth@kasilag.me>
+Date: Sun, 05 Jul 2026 00:00:00 +0000
+Subject: [PATCH] net: ethernet: qualcomm: ppe: add virtual ports for non-PPE devices
+
+A virtual port is a PPE port number past the physical ones, bound to a
+net device the PPE cannot reach directly - a wireless VAP. It lets the
+L3 flow engine forward to such a device: the flow is forwarded to the
+virtual port, whose L2_VP_PORT_TBL entry points its physical port at
+the CPU and its unicast queue at the CPU port's queue, so the packet
+is delivered to the host on an EDMA ring already rewritten, to be
+transmitted out the device.
+
+Add the virtual port allocator, its hardware programming, and a
+registry mapping a virtual port back to its net device for the receive
+path. The L2_VP_PORT_TBL field set follows the vendor driver's
+programming of a wireless virtual port: routed rather than bridged, so
+it forwards on an invalid VSI, accepts any address, is backed by the
+CPU port and marked active, with learning left off because the
+software bridge owns the address of a wireless station.
+
+Program the VP queue mapping before marking the port-table entry active,
+so failed queue setup cannot expose a partially configured virtual port.
+
+Virtual ports are an APPE feature, gated on the SoC variant. Nothing
+allocates one yet; the device-event tracking, the flowtable and the
+receive path follow.
+
+Signed-off-by: Kenneth Kasilag <kenneth@kasilag.me>
+---
+--- a/drivers/net/ethernet/qualcomm/ppe/Makefile
++++ b/drivers/net/ethernet/qualcomm/ppe/Makefile
+@@ -4,7 +4,7 @@
+ #
+ 
+ obj-$(CONFIG_QCOM_PPE) += qcom-ppe.o
+-qcom-ppe-objs := ppe.o ppe_config.o ppe_debugfs.o ppe_port.o ppe_api.o ppe_bridge.o ppe_flow.o ppe_flowtable.o
++qcom-ppe-objs := ppe.o ppe_config.o ppe_debugfs.o ppe_port.o ppe_api.o ppe_bridge.o ppe_flow.o ppe_flowtable.o ppe_vp.o
+ qcom-ppe-objs += ppe_tunnel.o
+ 
+ #EDMA
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe.c
+@@ -23,6 +23,7 @@
+ #include "ppe_flow.h"
+ #include "ppe_tunnel.h"
+ #include "ppe_flowtable.h"
++#include "ppe_vp.h"
+ #include "ppe_port.h"
+ 
+ #define PPE_PORT_MAX		8
+@@ -250,6 +251,16 @@ static int qcom_ppe_probe(struct platfor
+ 				     "PPE flowtable offload setup failed\n");
+ 	}
+ 
++	ret = ppe_vp_setup(ppe_dev);
++	if (ret) {
++		ppe_port_mac_deinit(ppe_dev);
++		ppe_flowtable_destroy(ppe_dev);
++		ppe_bridge_destroy(ppe_dev);
++		edma_destroy(ppe_dev);
++		return dev_err_probe(dev, ret,
++				     "PPE virtual port setup failed\n");
++	}
++
+ 	ppe_debugfs_setup(ppe_dev);
+ 	platform_set_drvdata(pdev, ppe_dev);
+ 
+@@ -268,6 +279,7 @@ static void qcom_ppe_remove(struct platf
+ 	 * ports still exist.
+ 	 */
+ 	ppe_flowtable_destroy(ppe_dev);
++	ppe_vp_teardown(ppe_dev);
+ 	ppe_bridge_destroy(ppe_dev);
+ 	ppe_debugfs_teardown(ppe_dev);
+ 	edma_destroy(ppe_dev);
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe.h
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe.h
+@@ -18,6 +18,7 @@ struct dentry;
+ struct ppe_ports;
+ struct ppe_bridge;
+ struct ppe_flowtable;
++struct ppe_vp;
+ 
+ /* Hardware port identifiers are eight bits wide; carrier state must
+  * survive from physical-port setup through later virtual-port use.
+@@ -92,6 +93,7 @@ struct ppe_device {
+ 	struct ppe_ports *ports;
+ 	struct ppe_bridge *bridge;
+ 	struct ppe_flowtable *flowtable;
++	struct ppe_vp *vp;
+ 	DECLARE_BITMAP(carrier_ok, PPE_PORT_ID_COUNT);
+ 	struct mutex fdb_lock;
+ 	u8 fdb_cmd_id;
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_regs.h
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_regs.h
+@@ -454,6 +454,21 @@
+ #define PPE_FDB_DST_INFO_TYPE_PORT_BITMAP	3
+ #define PPE_FDB_DST_INFO_VALUE			GENMASK(11, 0)
+ 
++/* Per-port L2 configuration. Physical dataports and virtual ports share
++ * this table; an active normal context represents either a live physical
++ * port or a host-terminated VP.
++ */
++#define PPE_L2_VP_PORT_TBL_ADDR			0x98000
++#define PPE_L2_VP_PORT_TBL_ENTRIES		256
++#define PPE_L2_VP_PORT_TBL_INC			0x10
++#define PPE_L2_VP_PORT_W0_INVALID_VSI_FWD_EN	BIT(0)
++#define PPE_L2_VP_PORT_W0_PROMISC_EN		BIT(1)
++#define PPE_L2_VP_PORT_W0_PHYSICAL_PORT		GENMASK(12, 10)
++#define PPE_L2_VP_PORT_W1_STATE_CHECK_EN	BIT(28)
++#define PPE_L2_VP_PORT_W1_VP_TYPE		BIT(29)
++#define PPE_L2_VP_PORT_W1_CONTEXT_ACTIVE	BIT(30)
++#define PPE_L2_VP_PORT_W1_EG_DATA_VALID		BIT(31)
++
+ /* A static FDB entry has the maximum age value, which the aging process
+  * never decrements. Dynamic entries are learned with PPE_FDB_HIT_AGE_FRESH,
+  * to which a source address hit also refreshes them, so knocking an entry
+@@ -464,17 +479,8 @@
+ #define PPE_FDB_HIT_AGE_FRESH			2
+ #define PPE_FDB_HIT_AGE_STALE			1
+ 
+-/* L2 Port configurations */
+-#define PPE_L2_VP_PORT_TBL_ADDR			0x98000
+-#define PPE_L2_VP_PORT_TBL_ENTRIES		256
+-#define PPE_L2_VP_PORT_TBL_INC			0x10
+-#define PPE_L2_VP_PORT_W0_INVALID_VSI_FWD_EN	BIT(0)
++/* Remaining L2 port destination fields. */
+ #define PPE_L2_VP_PORT_W0_DST_INFO		GENMASK(9, 2)
+-#define PPE_L2_VP_PORT_W0_PHYSICAL_PORT		GENMASK(12, 10)
+-#define PPE_L2_VP_PORT_W1_STATE_CHECK_EN	BIT(28)
+-#define PPE_L2_VP_PORT_W1_VP_TYPE		BIT(29)
+-#define PPE_L2_VP_PORT_W1_CONTEXT_ACTIVE	BIT(30)
+-#define PPE_L2_VP_PORT_W1_EG_DATA_VALID		BIT(31)
+ 
+ #define PPE_L2_PORT_SET_INVALID_VSI_FWD_EN(tbl_cfg, value)	\
+ 	FIELD_MODIFY(PPE_L2_VP_PORT_W0_INVALID_VSI_FWD_EN, tbl_cfg, value)
+--- /dev/null
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_vp.c
+@@ -0,0 +1,254 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/* Copyright (c) 2026 Kenneth Kasilag <kenneth@kasilag.me> */
++
++/* Virtual port offload for non-PPE net devices (wireless VAPs).
++ *
++ * A virtual port (VP) is a PPE port number past the physical ones,
++ * bound to a net device the PPE cannot reach directly. The L3 flow
++ * engine forwards a matched flow to the VP; the VP's L2_VP_PORT_TBL
++ * entry points its physical port at the CPU and its unicast queue at
++ * the CPU port's queue, so the packet lands on an EDMA ring already
++ * NAT'd and rewritten, and the EDMA receive path transmits it out the
++ * bound device (edma_rx.c). Only the wired->wireless direction is
++ * offloaded; the reverse stays on the software path (see Documentation/networking/).
++ *
++ * The address of a wireless station is owned by the software bridge,
++ * so a VP does no learning of its own - the same assisted-learning
++ * split the rest of the series uses for foreign ports.
++ */
++
++#include <linux/bitfield.h>
++#include <linux/kernel.h>
++#include <linux/mutex.h>
++#include <linux/netdevice.h>
++#include <linux/rcupdate.h>
++#include <linux/regmap.h>
++
++#include "edma.h"
++#include "ppe.h"
++#include "ppe_config.h"
++#include "ppe_flowtable.h"
++#include "ppe_regs.h"
++#include "ppe_vp.h"
++
++/* The PPE CPU port, whose queue the EDMA rings drain. */
++#define PPE_VP_CPU_PORT		0
++
++struct ppe_vp_slot {
++	struct net_device __rcu *dev;
++	int refcnt;
++};
++
++struct ppe_vp {
++	struct ppe_device *ppe_dev;
++	struct mutex lock;		/* serialises slot allocation */
++	struct ppe_vp_slot slots[PPE_VP_SLOTS];
++};
++
++/* Program or tear down the L2_VP_PORT_TBL entry and unicast queue map
++ * of a virtual port. The field set mirrors the vendor driver's
++ * ppe_drv_port_alloc() for a wireless virtual port.
++ */
++static int ppe_vp_hw_set(struct ppe_device *ppe_dev, int vp, bool active)
++{
++	struct ppe_queue_ucast_dest queue_dst = {};
++	int ret, res_start, res_end;
++	u32 tbl[4] = {};
++	u32 reg;
++
++	if (active) {
++		/* A wireless virtual port is routed, not bridged, so it has
++		 * no VSI and must forward on an invalid one; it accepts any
++		 * address, is backed by the CPU port, and is marked an
++		 * active VP. Learning stays off (the zeroed learn fields) -
++		 * the software bridge owns station addresses.
++		 */
++		tbl[0] = PPE_L2_VP_PORT_W0_INVALID_VSI_FWD_EN |
++			 PPE_L2_VP_PORT_W0_PROMISC_EN |
++			 FIELD_PREP(PPE_L2_VP_PORT_W0_PHYSICAL_PORT,
++				    PPE_VP_CPU_PORT);
++		tbl[1] = PPE_L2_VP_PORT_W1_VP_TYPE |
++			 PPE_L2_VP_PORT_W1_CONTEXT_ACTIVE;
++	}
++
++	/* Resolve and program the queue before exposing an active VP. */
++	ret = ppe_port_resource_get(ppe_dev, PPE_VP_CPU_PORT, PPE_RES_UCAST,
++				    &res_start, &res_end);
++	if (ret)
++		return ret;
++
++	queue_dst.dest_port = vp;
++	reg = PPE_L2_VP_PORT_TBL_ADDR + PPE_L2_VP_PORT_TBL_INC * vp;
++
++	if (active) {
++		ret = ppe_queue_ucast_base_set(ppe_dev, queue_dst, res_start,
++					       EDMA_CPU_PORT_PROFILE_ID);
++		if (ret)
++			return ret;
++
++		ret = regmap_bulk_write(ppe_dev->regmap, reg, tbl,
++					ARRAY_SIZE(tbl));
++		if (ret)
++			ppe_queue_ucast_base_set(ppe_dev, queue_dst, 0,
++						 EDMA_CPU_PORT_PROFILE_ID);
++		return ret;
++	}
++
++	ret = regmap_bulk_write(ppe_dev->regmap, reg, tbl, ARRAY_SIZE(tbl));
++	if (ret)
++		return ret;
++
++	return ppe_queue_ucast_base_set(ppe_dev, queue_dst, 0,
++					EDMA_CPU_PORT_PROFILE_ID);
++}
++
++/**
++ * ppe_vp_get - Get a virtual port for a net device
++ * @ppe_dev: PPE device
++ * @dev: net device to bind
++ *
++ * Return the PPE port id of a virtual port bound to @dev, allocating
++ * and programming one on first use and refcounting shared use. Must be
++ * paired with ppe_vp_put().
++ *
++ * Return: PPE port id (>= PPE_VP_PORT_BASE) on success, negative error
++ * code on failure.
++ */
++int ppe_vp_get(struct ppe_device *ppe_dev, struct net_device *dev)
++{
++	struct ppe_vp *vp = ppe_dev->vp;
++	int free = -1, i, ret;
++
++	if (!vp)
++		return -EOPNOTSUPP;
++
++	mutex_lock(&vp->lock);
++
++	for (i = 0; i < PPE_VP_SLOTS; i++) {
++		if (rcu_access_pointer(vp->slots[i].dev) == dev) {
++			vp->slots[i].refcnt++;
++			mutex_unlock(&vp->lock);
++			return PPE_VP_PORT_BASE + i;
++		}
++		if (free < 0 && !rcu_access_pointer(vp->slots[i].dev) &&
++		    !vp->slots[i].refcnt)
++			free = i;
++	}
++
++	if (free < 0) {
++		mutex_unlock(&vp->lock);
++		return -ENOSPC;
++	}
++
++	ret = ppe_vp_hw_set(ppe_dev, PPE_VP_PORT_BASE + free, true);
++	if (ret) {
++		mutex_unlock(&vp->lock);
++		return ret;
++	}
++
++	vp->slots[free].refcnt = 1;
++	rcu_assign_pointer(vp->slots[free].dev, dev);
++	mutex_unlock(&vp->lock);
++
++	/* Seed the carrier state so a flow to a down VAP is not reported
++	 * as active by the flowtable's stuck-flow guard.
++	 */
++	ppe_flowtable_port_carrier(ppe_dev, PPE_VP_PORT_BASE + free,
++				   netif_carrier_ok(dev));
++
++	return PPE_VP_PORT_BASE + free;
++}
++
++/**
++ * ppe_vp_put - Release a virtual port
++ * @ppe_dev: PPE device
++ * @vp: PPE port id returned by ppe_vp_get()
++ *
++ * Drop a reference to a virtual port, tearing down its hardware entry
++ * on the last release.
++ */
++void ppe_vp_put(struct ppe_device *ppe_dev, int vp)
++{
++	struct ppe_vp *vpt = ppe_dev->vp;
++	int i = vp - PPE_VP_PORT_BASE;
++
++	if (!vpt || i < 0 || i >= PPE_VP_SLOTS)
++		return;
++
++	mutex_lock(&vpt->lock);
++
++	/* Drop a reference. The device may already have unregistered (dev NULL,
++	 * hardware already off); the slot stays reserved until its last flow
++	 * releases it, so its id is never reused underneath a flow that still
++	 * points at it.
++	 */
++	if (!vpt->slots[i].refcnt || --vpt->slots[i].refcnt) {
++		mutex_unlock(&vpt->lock);
++		return;
++	}
++
++	if (rcu_access_pointer(vpt->slots[i].dev)) {
++		ppe_vp_hw_set(ppe_dev, vp, false);
++		rcu_assign_pointer(vpt->slots[i].dev, NULL);
++	}
++	mutex_unlock(&vpt->lock);
++}
++
++/**
++ * ppe_vp_dev - Resolve a virtual port to its net device
++ * @ppe_dev: PPE device
++ * @vp: PPE port id of a virtual port
++ *
++ * Return: the bound net device, or NULL. Callers must be in an RCU
++ * read-side critical section and must not keep the pointer past it.
++ */
++struct net_device *ppe_vp_dev(struct ppe_device *ppe_dev, int vp)
++{
++	struct ppe_vp *vpt = ppe_dev->vp;
++	int i = vp - PPE_VP_PORT_BASE;
++
++	if (!vpt || i < 0 || i >= PPE_VP_SLOTS)
++		return NULL;
++
++	return rcu_dereference(vpt->slots[i].dev);
++}
++
++int ppe_vp_setup(struct ppe_device *ppe_dev)
++{
++	struct ppe_vp *vp;
++
++	/* Virtual ports are an APPE feature; nothing to do without them. */
++	if (!ppe_dev->variant->has_vports)
++		return 0;
++
++	vp = devm_kzalloc(ppe_dev->dev, sizeof(*vp), GFP_KERNEL);
++	if (!vp)
++		return -ENOMEM;
++
++	vp->ppe_dev = ppe_dev;
++	mutex_init(&vp->lock);
++	ppe_dev->vp = vp;
++
++	return 0;
++}
++
++void ppe_vp_teardown(struct ppe_device *ppe_dev)
++{
++	struct ppe_vp *vp = ppe_dev->vp;
++	int i;
++
++	if (!vp)
++		return;
++
++	ppe_dev->vp = NULL;
++
++	for (i = 0; i < PPE_VP_SLOTS; i++) {
++		if (rcu_access_pointer(vp->slots[i].dev)) {
++			ppe_vp_hw_set(ppe_dev, PPE_VP_PORT_BASE + i, false);
++			rcu_assign_pointer(vp->slots[i].dev, NULL);
++		}
++	}
++
++	synchronize_rcu();
++	mutex_destroy(&vp->lock);
++}
+--- /dev/null
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_vp.h
+@@ -0,0 +1,32 @@
++/* SPDX-License-Identifier: GPL-2.0-only
++ *
++ * Copyright (c) 2026 Kenneth Kasilag <kenneth@kasilag.me>
++ */
++
++#ifndef __PPE_VP_H__
++#define __PPE_VP_H__
++
++struct ppe_device;
++struct net_device;
++
++/* Virtual ports bind a non-PPE net device (a wireless VAP) to a PPE
++ * port number, so the L3 flow engine can forward to it and the packet
++ * is delivered to the host on an EDMA ring for transmit out the bound
++ * device. See ppe_vp.c and the PPE offload document under
++ * Documentation/networking/.
++ *
++ * The slots map one-to-one onto a contiguous range of PPE port ids
++ * starting at PPE_VP_PORT_BASE, and onto the egress L3 interfaces the
++ * flowtable reserves past the physical, PPPoE and VLAN-uplink ones.
++ */
++#define PPE_VP_PORT_BASE	64
++#define PPE_VP_SLOTS		8
++
++int ppe_vp_setup(struct ppe_device *ppe_dev);
++void ppe_vp_teardown(struct ppe_device *ppe_dev);
++
++int ppe_vp_get(struct ppe_device *ppe_dev, struct net_device *dev);
++void ppe_vp_put(struct ppe_device *ppe_dev, int vp);
++struct net_device *ppe_vp_dev(struct ppe_device *ppe_dev, int vp);
++
++#endif

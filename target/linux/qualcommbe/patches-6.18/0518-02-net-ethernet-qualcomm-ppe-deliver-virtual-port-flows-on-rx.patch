@@ -1,0 +1,155 @@
+From: Kenneth Kasilag <kenneth@kasilag.me>
+Date: Sun, 05 Jul 2026 00:00:00 +0000
+Subject: [PATCH] net: ethernet: qualcomm: ppe: deliver virtual port flows on receive
+
+A flow forwarded to a virtual port arrives on an EDMA receive ring with
+the virtual port in the descriptor's destination info. Recognize it,
+resolve the bound net device and transmit the already-rewritten frame
+out of it instead of receiving it up the stack. The frame is complete
+and NAT'd, so it only needs handing to the device's transmit path.
+
+Linear packets are handled, which is what the offloaded flows produce.
+Gated on the SoC variant.
+
+Signed-off-by: Kenneth Kasilag <kenneth@kasilag.me>
+---
+--- a/drivers/net/ethernet/qualcomm/ppe/edma.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma.c
+@@ -852,6 +852,7 @@ int edma_setup(struct ppe_device *ppe_de
+ 
+ 	edma_ctx->hw_info = &ipq9574_hw_info;
+ 	edma_ctx->ppe_dev = ppe_dev;
++	edma_ctx->has_vports = ppe_dev->variant->has_vports;
+ 	edma_ctx->rx_buf_size = rx_buff_size;
+ 
+ 	edma_ctx->tx_requeue_stop = false;
+--- a/drivers/net/ethernet/qualcomm/ppe/edma.h
++++ b/drivers/net/ethernet/qualcomm/ppe/edma.h
+@@ -126,6 +126,7 @@ struct edma_intr_info {
+  * @rx_page_mode: Page mode enabled or disabled
+  * @rx_buf_size: Rx buffer size for Jumbo MRU
+  * @tx_requeue_stop: Tx requeue stop enabled or disabled
++ * @has_vports: Virtual ports exist, cached from the PPE variant
+  */
+ struct edma_context {
+ 	struct net_device **netdev_arr;
+@@ -142,6 +143,7 @@ struct edma_context {
+ 	u32 rx_page_mode;
+ 	u32 rx_buf_size;
+ 	bool tx_requeue_stop;
++	bool has_vports;
+ };
+ 
+ /* Global EDMA context. */
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_rx.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_rx.c
+@@ -20,6 +20,13 @@
+ #include "edma_port.h"
+ #include "ppe.h"
+ #include "ppe_regs.h"
++#include "ppe_vp.h"
++
++/* Both the single- and multi-buffer receive paths deliver virtual-port
++ * frames; forward-declared as the multi-buffer path precedes the body.
++ */
++static bool edma_rx_deliver_vp(struct edma_rxdesc_pri *rxdesc_pri,
++			       struct sk_buff *skb);
+ 
+ static int edma_rx_alloc_buffer_list(struct edma_rxfill_ring *rxfill_ring, int alloc_count)
+ {
+@@ -215,6 +222,16 @@ static void edma_rx_process_last_segment
+ 	pr_debug("edma_context:%pK skb:%pK Jumbo pkt_length:%u\n",
+ 		 edma_ctx, skb_head, skb_head->len);
+ 
++	/* A packet forwarded to a virtual port is transmitted out its
++	 * bound device instead of being received up the stack.
++	 */
++	if (edma_rx_deliver_vp(rxdesc_ring->pdesc_head, skb_head)) {
++		rxdesc_ring->head = NULL;
++		rxdesc_ring->last = NULL;
++		rxdesc_ring->pdesc_head = NULL;
++		return;
++	}
++
+ 	skb_head->protocol = eth_type_trans(skb_head, dev);
+ 
+ 	/* Send packet up the stack. */
+@@ -314,6 +331,65 @@ static void edma_rx_handle_nr_frags(stru
+ 	edma_rx_process_last_segment(rxdesc_ring, rxdesc_pri);
+ }
+ 
++/* A flow forwarded to a virtual port is delivered here to be sent out
++ * its bound net device. The descriptor destination info carries the
++ * VP port id; the packet arrives already NAT'd and rewritten, so the
++ * complete L2 frame is simply handed to the device transmit path. The
++ * reverse direction is driven by source-tagged VP ingress.
++ *
++ * The vendor receive path dispatches a virtual port the same way: it
++ * reads the destination info of the descriptor and takes it when the
++ * type is a port id and the port is in the virtual range.
++ */
++/* Decode the virtual port a descriptor info field selects, or -1 if it
++ * selects none. The source and destination info fields share the same
++ * {type, port} layout, so an uplink punt (source) and a downlink or
++ * wireless-to-wireless delivery (destination) decode through the one
++ * predicate.
++ */
++static int edma_rx_info_vp(u32 info)
++{
++	if ((info & EDMA_RXDESC_SRCINFO_TYPE_MASK) !=
++	    EDMA_RXDESC_SRCINFO_TYPE_PORTID)
++		return -1;
++
++	if (EDMA_RXDESC_PORT_ID_GET(info) < PPE_VP_PORT_BASE)
++		return -1;
++
++	return EDMA_RXDESC_PORT_ID_GET(info);
++}
++
++static bool edma_rx_deliver_vp(struct edma_rxdesc_pri *rxdesc_pri,
++			       struct sk_buff *skb)
++{
++	struct ppe_device *ppe_dev = edma_ctx->ppe_dev;
++	struct net_device *dev;
++	int vp;
++
++	if (!edma_ctx->has_vports)
++		return false;
++
++	vp = edma_rx_info_vp(EDMA_RXDESC_DST_INFO_GET(rxdesc_pri));
++	if (vp < 0)
++		return false;
++
++	rcu_read_lock();
++	dev = ppe_vp_dev(ppe_dev, vp);
++	if (unlikely(!dev)) {
++		rcu_read_unlock();
++		dev_kfree_skb_any(skb);
++		return true;
++	}
++
++	skb->dev = dev;
++	skb_reset_mac_header(skb);
++	skb->protocol = eth_hdr(skb)->h_proto;
++	dev_queue_xmit(skb);
++	rcu_read_unlock();
++
++	return true;
++}
++
+ static bool edma_rx_handle_linear_packets(struct edma_rxdesc_ring *rxdesc_ring,
+ 					  struct edma_rxdesc_pri *rxdesc_pri,
+ 					  struct sk_buff *skb)
+@@ -366,6 +442,12 @@ send_to_stack:
+ 	netdev_dbg(skb->dev, "edma_context:%pK, skb:%pK pkt_length:%u\n",
+ 		   edma_ctx, skb, skb->len);
+ 
++	/* A packet forwarded to a virtual port is transmitted out its
++	 * bound device instead of being received up the stack.
++	 */
++	if (edma_rx_deliver_vp(rxdesc_pri, skb))
++		return true;
++
+ 	skb->protocol = eth_type_trans(skb, skb->dev);
+ 	if (skb->dev->features & NETIF_F_GRO)
+ 		napi_gro_receive(&rxdesc_ring->napi, skb);

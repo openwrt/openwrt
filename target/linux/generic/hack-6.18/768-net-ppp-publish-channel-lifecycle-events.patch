@@ -1,0 +1,200 @@
+From: Kenneth Kasilag <kenneth@kasilag.me>
+Date: Wed, 15 Jul 2026 00:00:00 +0000
+Subject: [PATCH] net: ppp: publish channel lifecycle events
+
+Hardware forwarding drivers need to create encapsulation interfaces when a
+PPP channel joins a PPP netdevice and remove them when it leaves. Inferring
+that lifetime from individual flow rules makes the two flow directions race
+and loses the session when one direction expires first.
+
+Publish first-channel connect and last-channel disconnect through a
+blocking PPP notifier API implemented in always-built networking core. The
+PPP netdevice identifies the affected topology. Events run after the
+association changes and outside the channel and unit spinlocks.
+Notifications do not veto the userspace operation.
+
+Serialize the first/last transitions and their blocking callbacks per PPP
+unit. The attached channel reference pins the unit across notification, and
+the namespace-wide PPP mutex is released before invoking consumers.
+
+This is transport-neutral. Consumers can use the existing forward-path API
+to recover PPPoE, VLAN and physical-device topology without exposing PPPoE
+socket internals from the generic layer. Keeping the notifier chain in core
+also lets a built-in hardware driver observe a modular PPP implementation
+without introducing a reverse symbol dependency.
+
+Signed-off-by: Kenneth Kasilag <kenneth@kasilag.me>
+---
+--- a/drivers/net/ppp/ppp_generic.c
++++ b/drivers/net/ppp/ppp_generic.c
+@@ -124,6 +124,7 @@ struct ppp {
+ 	struct file	*owner;		/* file that owns this unit 48 */
+ 	struct list_head channels;	/* list of attached channels 4c */
+ 	int		n_channels;	/* how many channels are attached 54 */
++	struct mutex	channel_event_mutex; /* serializes lifecycle events */
+ 	spinlock_t	rlock;		/* lock for receive side 58 */
+ 	spinlock_t	wlock;		/* lock for transmit side 5c */
+ 	struct ppp_xmit_recursion __percpu *xmit_recursion; /* xmit recursion detect */
+@@ -1255,6 +1256,7 @@ static int ppp_dev_configure(struct net
+ 	for (indx = 0; indx < NUM_NP; ++indx)
+ 		ppp->npmode[indx] = NPMODE_PASS;
+ 	INIT_LIST_HEAD(&ppp->channels);
++	mutex_init(&ppp->channel_event_mutex);
+ 	spin_lock_init(&ppp->rlock);
+ 	spin_lock_init(&ppp->wlock);
+ 
+@@ -3465,6 +3467,7 @@ static void ppp_destroy_interface(struct
+ 
+ 	kfree_skb(ppp->xmit_pending);
+ 	free_percpu(ppp->xmit_recursion);
++	mutex_destroy(&ppp->channel_event_mutex);
+ 
+ 	free_netdev(ppp->dev);
+ }
+@@ -3515,6 +3518,7 @@ ppp_connect_channel(struct channel *pch,
+ {
+ 	struct ppp *ppp;
+ 	struct ppp_net *pn;
++	bool first_channel = false;
+ 	int ret = -ENXIO;
+ 	int hdrlen;
+ 
+@@ -3524,12 +3528,15 @@ ppp_connect_channel(struct channel *pch,
+ 	ppp = ppp_find_unit(pn, unit);
+ 	if (!ppp)
+ 		goto out;
++	/* Keep the first-channel transition and its blocking notification
++	 * ordered against a racing last-channel disconnect.
++	 */
++	mutex_lock(&ppp->channel_event_mutex);
+ 	spin_lock(&pch->upl);
+ 	ret = -EINVAL;
+ 	if (rcu_dereference_protected(pch->ppp, lockdep_is_held(&pch->upl)) ||
+ 	    rcu_dereference_protected(pch->bridge, lockdep_is_held(&pch->upl)))
+ 		goto outl;
+-
+ 	ppp_lock(ppp);
+ 	spin_lock_bh(&pch->downl);
+ 	if (!pch->chan) {
+@@ -3551,6 +3558,7 @@ ppp_connect_channel(struct channel *pch,
+ 		ppp->dev->hard_header_len = hdrlen;
+ 	list_add_tail_rcu(&pch->clist, &ppp->channels);
+ 	++ppp->n_channels;
++	first_channel = ppp->n_channels == 1;
+ 	rcu_assign_pointer(pch->ppp, ppp);
+ 	refcount_inc(&ppp->file.refcnt);
+ 	ppp_unlock(ppp);
+@@ -3558,6 +3566,11 @@ ppp_connect_channel(struct channel *pch,
+ 
+  outl:
+ 	spin_unlock(&pch->upl);
++	mutex_unlock(&pn->all_ppp_mutex);
++	if (!ret && first_channel)
++		ppp_channel_notify(PPP_CHANNEL_CONNECT, ppp->dev);
++	mutex_unlock(&ppp->channel_event_mutex);
++	return ret;
+  out:
+ 	mutex_unlock(&pn->all_ppp_mutex);
+ 	return ret;
+@@ -3570,18 +3583,26 @@ static int
+ ppp_disconnect_channel(struct channel *pch)
+ {
+ 	struct ppp *ppp;
++	bool last_channel;
+ 	int err = -EINVAL;
+ 
+ 	spin_lock(&pch->upl);
+ 	ppp = rcu_replace_pointer(pch->ppp, NULL, lockdep_is_held(&pch->upl));
+ 	spin_unlock(&pch->upl);
+ 	if (ppp) {
+-		/* remove it from the ppp unit's list */
++		/* The channel reference keeps the unit alive while this mutex
++		 * orders removal and notification after a racing connect.
++		 */
++		mutex_lock(&ppp->channel_event_mutex);
+ 		ppp_lock(ppp);
+ 		list_del_rcu(&pch->clist);
+-		if (--ppp->n_channels == 0)
++		last_channel = --ppp->n_channels == 0;
++		if (last_channel)
+ 			wake_up_interruptible(&ppp->file.rwait);
+ 		ppp_unlock(ppp);
++		if (last_channel)
++			ppp_channel_notify(PPP_CHANNEL_DISCONNECT, ppp->dev);
++		mutex_unlock(&ppp->channel_event_mutex);
+ 		synchronize_net();
+ 		if (refcount_dec_and_test(&ppp->file.refcnt))
+ 			ppp_destroy_interface(ppp);
+--- a/include/linux/ppp_channel.h
++++ b/include/linux/ppp_channel.h
+@@ -20,10 +20,17 @@
+ #include <linux/poll.h>
+ #include <net/net_namespace.h>
+ 
++struct net_device;
+ struct net_device_path;
+ struct net_device_path_ctx;
++struct notifier_block;
+ struct ppp_channel;
+ 
++enum ppp_channel_event {
++	PPP_CHANNEL_CONNECT,
++	PPP_CHANNEL_DISCONNECT,
++};
++
+ struct ppp_channel_ops {
+ 	/* Send a packet (or multilink fragment) on this channel.
+ 	   Returns 1 if it was accepted, 0 if not. */
+@@ -75,6 +82,13 @@ extern int ppp_unit_number(struct ppp_ch
+ /* Get the device name associated with a channel, or NULL if none */
+ extern char *ppp_dev_name(struct ppp_channel *);
+ 
++/* First-channel connect and last-channel disconnect notifications.
++ * Callbacks may sleep and are serialized across transitions of one PPP unit.
++ */
++int ppp_register_channel_notifier(struct notifier_block *nb);
++int ppp_unregister_channel_notifier(struct notifier_block *nb);
++int ppp_channel_notify(unsigned long event, struct net_device *ppp_dev);
++
+ /*
+  * SMP locking notes:
+  * The channel code must ensure that when it calls ppp_unregister_channel,
+--- a/net/core/Makefile
++++ b/net/core/Makefile
+@@ -17,7 +17,7 @@ obj-y		     += dev.o dev_api.o dev_addr_
+ 
+ obj-$(CONFIG_NETDEV_ADDR_LIST_TEST) += dev_addr_lists_test.o
+ 
+-obj-y += net-sysfs.o
++obj-y += net-sysfs.o ppp_channel.o
+ obj-y += hotdata.o
+ obj-y += netdev_rx_queue.o
+ obj-y += netdev_queues.o
+--- /dev/null
++++ b/net/core/ppp_channel.c
+@@ -0,0 +1,25 @@
++// SPDX-License-Identifier: GPL-2.0-or-later
++#include <linux/export.h>
++#include <linux/notifier.h>
++#include <linux/ppp_channel.h>
++
++static BLOCKING_NOTIFIER_HEAD(ppp_channel_notifier_list);
++
++int ppp_register_channel_notifier(struct notifier_block *nb)
++{
++	return blocking_notifier_chain_register(&ppp_channel_notifier_list, nb);
++}
++EXPORT_SYMBOL_GPL(ppp_register_channel_notifier);
++
++int ppp_unregister_channel_notifier(struct notifier_block *nb)
++{
++	return blocking_notifier_chain_unregister(&ppp_channel_notifier_list, nb);
++}
++EXPORT_SYMBOL_GPL(ppp_unregister_channel_notifier);
++
++int ppp_channel_notify(unsigned long event, struct net_device *ppp_dev)
++{
++	return blocking_notifier_call_chain(&ppp_channel_notifier_list, event,
++					    ppp_dev);
++}
++EXPORT_SYMBOL_GPL(ppp_channel_notify);
