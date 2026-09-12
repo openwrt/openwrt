@@ -194,6 +194,7 @@ sub mconf_depends {
 
 				$depend = shift @vdeps;
 
+				@vdeps = grep { $_ ne $pkgname } @vdeps;
 				if (@vdeps > 1) {
 					$condition = ($condition ? "$condition && " : '') . join("&&", map { "PACKAGE_$_<PACKAGE_$pkgname" } @vdeps);
 				} elsif (@vdeps > 0) {
