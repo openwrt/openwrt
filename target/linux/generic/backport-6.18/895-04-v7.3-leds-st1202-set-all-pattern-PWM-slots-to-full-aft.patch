@@ -1,0 +1,45 @@
+From d2ca0e2b6d6430f9c60bb2e0ee0b2b3dc4e5d86a Mon Sep 17 00:00:00 2001
+From: Manuel Fombuena <fombuena@outlook.com>
+Date: Thu, 2 Jul 2026 23:30:50 +0100
+Subject: [PATCH] leds: st1202: Set all pattern PWM slots to full after
+ clearing pattern
+
+pattern_clear() sets all PWM registers for the channel to LED_OFF (0).
+In static mode (PATS=0), the LED output is ILED x Pattern0_PWM / 4095;
+with Pattern0 at zero the LED remains dark regardless of the ILED value.
+
+The LED1202 has a single global sequencer shared across all channels.
+If another channel starts the sequencer after this one has been cleared,
+the cleared channel runs through all 8 steps at zero duty cycle and
+stays dark regardless of ILED.
+
+Set all 8 PWM slots to ST1202_PATTERN_PWM_FULL so that ILED alone
+controls the channel brightness in both static and sequencer modes.
+
+Signed-off-by: Manuel Fombuena <fombuena@outlook.com>
+Assisted-by: Claude:claude-sonnet-4-6
+Link: https://patch.msgid.link/GV1PR08MB849732C162CFE9E2C525AC16C5F52@GV1PR08MB8497.eurprd08.prod.outlook.com
+Signed-off-by: Lee Jones <lee@kernel.org>
+---
+ drivers/leds/leds-st1202.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/drivers/leds/leds-st1202.c
++++ b/drivers/leds/leds-st1202.c
+@@ -35,6 +35,7 @@
+ #define ST1202_MILLIS_PATTERN_DUR_MIN      22
+ #define ST1202_PATTERN_DUR                 0x16
+ #define ST1202_PATTERN_PWM                 0x1E
++#define ST1202_PATTERN_PWM_FULL            0x0FFF
+ #define ST1202_PATTERN_REP                 0x15
+ 
+ struct st1202_led {
+@@ -205,7 +206,7 @@ static int st1202_led_pattern_clear(stru
+ 		return ret;
+ 
+ 	for (int patt = 0; patt < ST1202_MAX_PATTERNS; patt++) {
+-		ret = st1202_pwm_pattern_write(chip, led->led_num, patt, LED_OFF);
++		ret = st1202_pwm_pattern_write(chip, led->led_num, patt, ST1202_PATTERN_PWM_FULL);
+ 		if (ret != 0)
+ 			return ret;
+ 
