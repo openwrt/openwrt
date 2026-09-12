@@ -3640,6 +3640,24 @@ define Device/xiaomi_mi-router-cr6609
 endef
 TARGET_DEVICES += xiaomi_mi-router-cr6609
 
+define Device/xiaomi_mi-router-tr606
+  $(Device/xiaomi_mi-router-cr660x)
+  DEVICE_MODEL := Mi Router TR606
+endef
+TARGET_DEVICES += xiaomi_mi-router-tr606
+
+define Device/xiaomi_mi-router-tr608
+  $(Device/xiaomi_mi-router-cr660x)
+  DEVICE_MODEL := Mi Router TR608
+endef
+TARGET_DEVICES += xiaomi_mi-router-tr608
+
+define Device/xiaomi_mi-router-tr609
+  $(Device/xiaomi_mi-router-cr660x)
+  DEVICE_MODEL := Mi Router TR609
+endef
+TARGET_DEVICES += xiaomi_mi-router-tr609
+
 define Device/xiaomi_redmi-router-ac2100
   $(Device/xiaomi_nand_separate)
   DEVICE_MODEL := Redmi Router AC2100
