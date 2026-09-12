@@ -2066,6 +2066,20 @@ define Device/keenetic_kn-1910
 endef
 TARGET_DEVICES += keenetic_kn-1910
 
+define Device/keenetic_kn-1913
+  $(Device/nand)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 27525120
+  DEVICE_VENDOR := Keenetic
+  DEVICE_MODEL := KN-1913
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap \
+	kmod-usb3 kmod-usb-ledtrig-usbport kmod-ledtrig-network
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | \
+	append-ubi | check-size | zyimage -d 0x801913 -v "KN-1913"
+endef
+TARGET_DEVICES += keenetic_kn-1913
+
 define Device/keenetic_kn-3010
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
