@@ -1,0 +1,9 @@
+#!/bin/sh
+
+[ "$ACTION" = ifup ] || exit 0
+[ "$INTERFACE" = lan ] || exit 0
+
+(
+	sleep 2
+	/etc/init.d/cg3100d-rps reload
+) &

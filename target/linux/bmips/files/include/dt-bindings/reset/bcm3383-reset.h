@@ -1,0 +1,53 @@
+/* SPDX-License-Identifier: GPL-2.0+ */
+
+#ifndef __DT_BINDINGS_RESET_BCM3383_H
+#define __DT_BINDINGS_RESET_BCM3383_H
+
+/*
+ * See IntControlSoftResetBLo in the BCM3383 GPL IntControl.h.
+ * This register uses active-low reset bits via the bcm6345 reset controller.
+ */
+#define BCM3383_RST0_PCIE0		2
+#define BCM3383_RST0_PCIE1		3
+#define BCM3383_RST0_FPM		5
+#define BCM3383_RST0_GPHY		6
+#define BCM3383_RST0_UNIMAC		8
+#define BCM3383_RST0_PMC		9
+#define BCM3383_RST0_AUDIO		11
+#define BCM3383_RST0_APM		12
+#define BCM3383_RST0_PCM		13
+#define BCM3383_RST0_HVG		14
+#define BCM3383_RST0_BMU		15
+#define BCM3383_RST0_U3MAC		16
+#define BCM3383_RST0_U3REG		17
+#define BCM3383_RST0_U3LOG		18
+#define BCM3383_RST0_U2MAC		19
+#define BCM3383_RST0_UTP		20
+#define BCM3383_RST0_DTP		21
+#define BCM3383_RST0_FAP1		22
+#define BCM3383_RST0_MSP		23
+#define BCM3383_RST0_FAP2		BCM3383_RST0_MSP
+#define BCM3383_RST0_FAP3		24
+#define BCM3383_RST0_SEG		25
+#define BCM3383_RST0_HVGA		26
+#define BCM3383_RST0_HVGB		27
+#define BCM3383_RST0_DAV		28
+#define BCM3383_RST0_DAV_IUDMA		29
+#define BCM3383_RST0_USB		30
+#define BCM3383_RST0_CRYPTO		31
+
+/*
+ * See IntControlSoftResetBHi in the BCM3383 GPL IntControl.h.
+ */
+#define BCM3383_RST1_HSSPI		0
+#define BCM3383_RST1_HSSPI_PLL		1
+#define BCM3383_RST1_DSMAC		2
+#define BCM3383_RST1_APM200		3
+#define BCM3383_RST1_TC0		4
+#define BCM3383_RST1_TC1		5
+#define BCM3383_RST1_TC2		6
+#define BCM3383_RST1_TC3		7
+#define BCM3383_RST1_PCIE0_TOP		8
+#define BCM3383_RST1_PCIE1_TOP		9
+
+#endif /* __DT_BINDINGS_RESET_BCM3383_H */

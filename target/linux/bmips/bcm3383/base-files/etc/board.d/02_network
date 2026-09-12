@@ -1,0 +1,15 @@
+#!/bin/sh
+
+. /lib/functions/uci-defaults.sh
+
+board_config_update
+
+case "$(board_name)" in
+netgear,cg3000-2staus)
+	ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "eth1"
+	;;
+esac
+
+board_config_flush
+
+exit 0

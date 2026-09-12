@@ -1,0 +1,25 @@
+--- a/drivers/soc/bcm/Kconfig
++++ b/drivers/soc/bcm/Kconfig
+@@ -28,6 +28,15 @@ config BCM3380_USB
+ 	  This driver configures the BCM3380 USB OTG wrapper for host mode
+ 	  and instantiates the Synopsys DWC2 core child.
+ 
++config BCM3383_USB
++	tristate "Broadcom BCM3383 USB wrapper support"
++	depends on BMIPS_GENERIC || COMPILE_TEST
++	depends on HAS_IOMEM
++	default y if BMIPS_GENERIC
++	help
++	  This driver configures the BCM3383 USB wrapper for host mode and
++	  instantiates the EHCI/OHCI core children.
++
+ config SOC_BRCMSTB
+ 	bool "Broadcom STB SoC drivers"
+ 	depends on ARCH_BRCMSTB || BMIPS_GENERIC || COMPILE_TEST
+--- a/drivers/soc/bcm/Makefile
++++ b/drivers/soc/bcm/Makefile
+@@ -3,3 +3,4 @@ obj-$(CONFIG_BCM3380_FPM)	+= bcm3380-fp
+ obj-$(CONFIG_BCM3380_MSP)	+= bcm3380-msp.o
+ obj-$(CONFIG_BCM3380_USB)	+= bcm3380-usb.o
++obj-$(CONFIG_BCM3383_USB)	+= bcm3383-usb.o
+ obj-$(CONFIG_SOC_BRCMSTB)	+= brcmstb/

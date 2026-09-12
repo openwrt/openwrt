@@ -1,0 +1,47 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+#ifndef __DT_BINDINGS_INTERRUPT_CONTROLLER_BCM3383_H
+#define __DT_BINDINGS_INTERRUPT_CONTROLLER_BCM3383_H
+
+/*
+ * BCM3383 IntControlPeriphIrqMask/Status L1 bit numbers from GPL
+ * bcm3383/IntControl.h, listed in normal LSB-first interrupt-controller
+ * hwirq order.
+ */
+#define BCM3383_IRQ_TIMER		0
+#define BCM3383_IRQ_RESERVED_1		1
+#define BCM3383_IRQ_UART0		2
+#define BCM3383_IRQ_UART1		3
+#define BCM3383_IRQ_NAND_FLASH		4
+#define BCM3383_IRQ_XPT			5
+#define BCM3383_IRQ_I2C			6
+#define BCM3383_IRQ_HS_SPI		7
+#define BCM3383_IRQ_DAVIC		8
+#define BCM3383_IRQ_PERIPH_ERR		9
+#define BCM3383_IRQ_UBUS_STATA		10
+#define BCM3383_IRQ_UBUS_STATB		11
+#define BCM3383_IRQ_UBUS_STATC		12
+#define BCM3383_IRQ_UBUS_REQOUT_ERROR	13
+#define BCM3383_IRQ_FPM			14
+#define BCM3383_IRQ_UNI_DMA		15
+#define BCM3383_IRQ_UNI1		16
+#define BCM3383_IRQ_UNI0		17
+#define BCM3383_IRQ_GPHY		18
+#define BCM3383_IRQ_UNI0_MPD_WOL	19
+#define BCM3383_IRQ_UNI0_HFB_WOL	20
+#define BCM3383_IRQ_UNI1_MPD_WOL	21
+#define BCM3383_IRQ_UNI1_HFB_WOL	22
+#define BCM3383_IRQ_USB_OHCI		23
+#define BCM3383_IRQ_USB_EHCI		24
+#define BCM3383_IRQ_USB_DISCON		25
+#define BCM3383_IRQ_USB_CCS		26
+#define BCM3383_IRQ_PCIE0		27
+#define BCM3383_IRQ_PCIE1		28
+#define BCM3383_IRQ_APM			29
+#define BCM3383_IRQ_APM_IUDMA		30
+#define BCM3383_IRQ_EXT_IRQ		31
+
+/* IOP L2 hwirq used by the MSP DQM host-not-empty interrupt path. */
+#define BCM3383_IRQ_IOP_DQM		3
+
+#endif /* __DT_BINDINGS_INTERRUPT_CONTROLLER_BCM3383_H */

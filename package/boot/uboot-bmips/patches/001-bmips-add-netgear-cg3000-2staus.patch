@@ -1,0 +1,298 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Hang Zhou <929513338@qq.com>
+Date: Sat, 18 Jul 2026 00:00:00 +0000
+Subject: [PATCH] bmips: add Netgear CG3000-2STAUS RAM target
+
+Add a minimal RAM-loaded second-stage U-Boot target for the BCM3383-based
+Netgear CG3000-2STAUS.  The target reuses the existing BMIPS BCM6838 NAND
+controller support because the BCM3383 NAND register layout matches the
+same Broadcom NAND controller family closely enough for the boot path.
+
+The only required runtime devices are UART0 and NAND.  The default boot
+command attaches the image2-to-end-of-NAND partition as UBI, reads the
+kernel volume, and boots it as a legacy uImage.
+
+Signed-off-by: Hang Zhou <929513338@qq.com>
+---
+ arch/mips/dts/Makefile                        |  1 +
+ arch/mips/dts/netgear,cg3000-2staus.dts       | 69 ++++++++++++++++++
+ arch/mips/mach-bmips/Kconfig                  | 15 ++++
+ board/netgear/cg3000_2staus/Kconfig           | 12 ++++
+ board/netgear/cg3000_2staus/MAINTAINERS       |  6 ++
+ board/netgear/cg3000_2staus/Makefile          |  4 ++
+ board/netgear/cg3000_2staus/cg3000_2staus.c   |  6 ++
+ board/netgear/cg3000_2staus/lowlevel_init.S   | 24 +++++++
+ configs/netgear_cg3000_2staus_ram_defconfig   | 63 +++++++++++++++++
+ include/configs/netgear_cg3000_2staus.h       |  8 +++
+ 10 files changed, 208 insertions(+)
+ create mode 100644 arch/mips/dts/netgear,cg3000-2staus.dts
+ create mode 100644 board/netgear/cg3000_2staus/Kconfig
+create mode 100644 board/netgear/cg3000_2staus/MAINTAINERS
+create mode 100644 board/netgear/cg3000_2staus/Makefile
+create mode 100644 board/netgear/cg3000_2staus/cg3000_2staus.c
+create mode 100644 board/netgear/cg3000_2staus/lowlevel_init.S
+create mode 100644 configs/netgear_cg3000_2staus_ram_defconfig
+create mode 100644 include/configs/netgear_cg3000_2staus.h
+
+--- a/arch/mips/dts/Makefile
++++ b/arch/mips/dts/Makefile
+@@ -29,6 +29,7 @@ dtb-$(CONFIG_BOARD_VOCORE2) += vocore_vo
+ dtb-$(CONFIG_SOC_LUTON) += luton_pcb090.dtb luton_pcb091.dtb
+ dtb-$(CONFIG_SOC_OCELOT) += ocelot_pcb120.dtb ocelot_pcb123.dtb
+ dtb-$(CONFIG_SOC_JR2) += jr2_pcb110.dtb jr2_pcb111.dtb serval2_pcb112.dtb
++dtb-$(CONFIG_BOARD_NETGEAR_CG3000_2STAUS) += netgear,cg3000-2staus.dtb
+ dtb-$(CONFIG_SOC_SERVALT) += servalt_pcb116.dtb
+ dtb-$(CONFIG_SOC_SERVAL) += serval_pcb105.dtb serval_pcb106.dtb
+ 
+--- /dev/null
++++ b/arch/mips/dts/netgear,cg3000-2staus.dts
+@@ -0,0 +1,69 @@
++// SPDX-License-Identifier: GPL-2.0+
++
++/dts-v1/;
++
++#include "brcm,bcm6838.dtsi"
++
++/ {
++	model = "Netgear CG3000-2STAUS";
++	compatible = "netgear,cg3000-2staus", "brcm,bcm3383",
++		     "brcm,bcm6838";
++
++	aliases {
++		serial0 = &uart0;
++	};
++
++	chosen {
++		stdout-path = "serial0:115200n8";
++	};
++};
++
++&memory {
++	force-size = <0x08000000>;
++};
++
++&uart0 {
++	bootph-all;
++	status = "okay";
++};
++
++&nand {
++	/*
++	 * BCM3383 exposes the same Broadcom NAND controller block as the
++	 * BCM6838 U-Boot driver, but the NAND interrupt-base window is at
++	 * 0x14e00070 on BCM3383, matching the working Linux device tree.
++	 */
++	compatible = "brcm,nand-bcm6838", "brcm,brcmnand-v5.0",
++		     "brcm,brcmnand";
++	reg-names = "nand", "nand-int-base", "nand-cache";
++	reg = <0x14e02200 0x400>, <0x14e00070 0x10>, <0x14e02600 0x200>;
++	status = "okay";
++
++	nandcs@0 {
++		compatible = "brcm,nandcs";
++		reg = <0>;
++		brcm,nand-ecc-use-strap;
++
++		partitions {
++			compatible = "fixed-partitions";
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			partition@0 {
++				label = "linuxapps";
++				reg = <0x00000000 0x01f40000>;
++				read-only;
++			};
++
++			partition@1f40000 {
++				label = "image1";
++				reg = <0x01f40000 0x00900000>;
++			};
++
++			partition@2840000 {
++				label = "image2";
++				reg = <0x02840000 0x057c0000>;
++			};
++		};
++	};
++};
+--- a/arch/mips/mach-bmips/Kconfig
++++ b/arch/mips/mach-bmips/Kconfig
+@@ -110,6 +110,20 @@ config BOARD_BROADCOM_BCM968380GERG
+ 	  ethernet ports, 2 USB ports, 1 UART, GPIO buttons and LEDs, and
+ 	  a BCM43217 (PCIe).
+ 
++config BOARD_NETGEAR_CG3000_2STAUS
++	bool "Netgear CG3000-2STAUS"
++	depends on SOC_BMIPS_BCM6838
++	select BMIPS_SUPPORTS_BOOT_RAM
++	help
++	  Netgear CG3000-2STAUS boards have a BCM3383 SoC with 128 MB of
++	  RAM, SPI NOR for bootloader/nonvol storage, and NAND for the
++	  runtime firmware images.
++
++	  This target intentionally reuses the existing BCM6838 U-Boot SoC
++	  support for the minimal second-stage boot path.  It only needs UART0
++	  and the Broadcom NAND controller so it can load an OpenWrt kernel
++	  image from UBI.
++
+ config BOARD_COMTREND_AR5315U
+ 	bool "Comtrend AR-5315u"
+ 	depends on SOC_BMIPS_BCM6318
+@@ -254,6 +268,7 @@ config BMIPS_SUPPORTS_BOOT_RAM
+ 	bool
+ 
+ source "board/broadcom/bcm968380gerg/Kconfig"
++source "board/netgear/cg3000_2staus/Kconfig"
+ source "board/comtrend/ar5315u/Kconfig"
+ source "board/comtrend/ar5387un/Kconfig"
+ source "board/comtrend/ct5361/Kconfig"
+--- /dev/null
++++ b/board/netgear/cg3000_2staus/Kconfig
+@@ -0,0 +1,12 @@
++if BOARD_NETGEAR_CG3000_2STAUS
++
++config SYS_BOARD
++	default "cg3000_2staus"
++
++config SYS_VENDOR
++	default "netgear"
++
++config SYS_CONFIG_NAME
++	default "netgear_cg3000_2staus"
++
++endif
+--- /dev/null
++++ b/board/netgear/cg3000_2staus/MAINTAINERS
+@@ -0,0 +1,6 @@
++NETGEAR CG3000-2STAUS BOARD
++M:	OpenWrt Developers <openwrt-devel@lists.openwrt.org>
++S:	Maintained
++F:	board/netgear/cg3000_2staus/
++F:	include/configs/netgear_cg3000_2staus.h
++F:	configs/netgear_cg3000_2staus_ram_defconfig
+--- /dev/null
++++ b/board/netgear/cg3000_2staus/Makefile
+@@ -0,0 +1,4 @@
++# SPDX-License-Identifier: GPL-2.0+
++
++obj-y += cg3000_2staus.o
++obj-$(CONFIG_MIPS_MACH_EARLY_INIT) += lowlevel_init.o
+--- /dev/null
++++ b/board/netgear/cg3000_2staus/cg3000_2staus.c
+@@ -0,0 +1,6 @@
++// SPDX-License-Identifier: GPL-2.0+
++
++/*
++ * The CG3000 second-stage loader only needs the common BMIPS init path and
++ * device-tree described UART/NAND devices.
++ */
+--- /dev/null
++++ b/board/netgear/cg3000_2staus/lowlevel_init.S
+@@ -0,0 +1,24 @@
++/* SPDX-License-Identifier: GPL-2.0+ */
++
++#include <asm/asm.h>
++#include <asm/regdef.h>
++
++/* CP0 Broadcom Config ($22 select 0), matching Linux bcm3383_quirks(). */
++#define CP0_BRCM_CONFIG_ICSHEN	(1 << 31)
++#define CP0_BRCM_CONFIG_DCSHEN	(1 << 30)
++
++	.set noreorder
++
++LEAF(mips_mach_early_init)
++	/*
++	 * Generic MIPS cache setup updates Config.K0 later.  BMIPS also needs
++	 * these Broadcom-private shadow enable bits before cache initialization.
++	 */
++	mfc0	t0, $22, 0
++	li	t1, (CP0_BRCM_CONFIG_ICSHEN | CP0_BRCM_CONFIG_DCSHEN)
++	or	t0, t0, t1
++	mtc0	t0, $22, 0
++	ehb
++	jr	ra
++	 nop
++END(mips_mach_early_init)
+--- /dev/null
++++ b/configs/netgear_cg3000_2staus_ram_defconfig
+@@ -0,0 +1,68 @@
++CONFIG_MIPS=y
++CONFIG_SKIP_LOWLEVEL_INIT=y
++CONFIG_TEXT_BASE=0x81800000
++CONFIG_NR_DRAM_BANKS=1
++CONFIG_ENV_SIZE=0x2000
++CONFIG_ENV_IS_NOWHERE=y
++CONFIG_DEFAULT_DEVICE_TREE="netgear,cg3000-2staus"
++CONFIG_DM_RESET=y
++CONFIG_SYS_LOAD_ADDR=0x82000000
++CONFIG_SYS_BOOTM_LEN=0x02000000
++CONFIG_ARCH_BMIPS=y
++CONFIG_SOC_BMIPS_BCM6838=y
++CONFIG_BOARD_NETGEAR_CG3000_2STAUS=y
++CONFIG_SYS_MIPS_TIMER_FREQ=300000000
++CONFIG_MIPS_MACH_EARLY_INIT=y
++CONFIG_MIPS_CACHE_SETUP=y
++# CONFIG_MIPS_BOOT_CMDLINE_LEGACY is not set
++# CONFIG_MIPS_BOOT_ENV_LEGACY is not set
++CONFIG_MIPS_BOOT_FDT=y
++# CONFIG_SYS_MALLOC_CLEAR_ON_INIT is not set
++CONFIG_OF_STDOUT_VIA_ALIAS=y
++CONFIG_SYS_CBSIZE=512
++CONFIG_SYS_PBSIZE=543
++CONFIG_DISPLAY_CPUINFO=y
++CONFIG_SYS_MALLOC_BOOTPARAMS=y
++CONFIG_HUSH_PARSER=y
++CONFIG_SYS_PROMPT="CG3000 # "
++CONFIG_SYS_MAXARGS=32
++CONFIG_USE_BOOTARGS=y
++CONFIG_BOOTARGS="console=ttyS0,115200 earlycon ubi.mtd=image2 ubi.block=0,rootfs root=/dev/ubiblock0_1 rootfstype=squashfs"
++CONFIG_USE_BOOTCOMMAND=y
++CONFIG_BOOTCOMMAND="ubi part image2; ubi read 0x82000000 kernel; bootm 0x82000000"
++CONFIG_BOOTDELAY=3
++CONFIG_CMD_BOOTM=y
++CONFIG_LEGACY_IMAGE_FORMAT=y
++CONFIG_CMD_CPU=y
++CONFIG_CMD_LICENSE=y
++# CONFIG_CMD_BOOTD is not set
++# CONFIG_CMD_ELF is not set
++# CONFIG_CMD_XIMG is not set
++# CONFIG_CMD_EXPORTENV is not set
++# CONFIG_CMD_IMPORTENV is not set
++# CONFIG_CMD_EDITENV is not set
++# CONFIG_CMD_SAVEENV is not set
++# CONFIG_CMD_ENV_EXISTS is not set
++# CONFIG_CMD_CRC32 is not set
++CONFIG_CMD_MEMINFO=y
++# CONFIG_CMD_LOADS is not set
++CONFIG_CMD_NAND=y
++CONFIG_CMD_MTDPARTS=y
++CONFIG_CMD_UBI=y
++CONFIG_CMD_UBIFS=y
++# CONFIG_CMD_SLEEP is not set
++CONFIG_SYS_RELOC_GD_ENV_ADDR=y
++# CONFIG_NET is not set
++# CONFIG_DM_DEVICE_REMOVE is not set
++CONFIG_MTD=y
++CONFIG_DM_MTD=y
++CONFIG_MTD_RAW_NAND=y
++CONFIG_NAND_BRCMNAND=y
++CONFIG_NAND_BRCMNAND_6838=y
++CONFIG_SYS_NAND_ONFI_DETECTION=y
++CONFIG_DM_SERIAL=y
++CONFIG_BCM6345_SERIAL=y
++CONFIG_LZMA=y
++CONFIG_LZO=y
++CONFIG_GZIP=y
++CONFIG_ZLIB=y
+--- /dev/null
++++ b/include/configs/netgear_cg3000_2staus.h
+@@ -0,0 +1,8 @@
++/* SPDX-License-Identifier: GPL-2.0+ */
++
++#ifndef __CONFIG_NETGEAR_CG3000_2STAUS_H
++#define __CONFIG_NETGEAR_CG3000_2STAUS_H
++
++#include <configs/bmips_common.h>
++#include <configs/bmips_bcm6838.h>
++#endif
