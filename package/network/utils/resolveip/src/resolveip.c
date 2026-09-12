@@ -13,13 +13,20 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <stdlib.h>
+#include <time.h>
 #include <unistd.h>
 #include <signal.h>
 
+/* This application returns zero on success and any
+ * of the error codes below on error: */
+#define ERROR_TIMEOUT 1
+#define ERROR_IN_GETADDRINFO 2
+#define ERROR_IN_ADDRESS 3
+#define ERROR_IN_TIMER 4
 
 static void abort_query(int sig)
 {
-	exit(1);
+	exit(ERROR_TIMEOUT);
 }
 
 static void show_usage(void)
@@ -35,11 +42,15 @@ static void show_usage(void)
 int main(int argc, char **argv)
 {
 	int timeout = 3;
-	int opt;
+	int opt, gret;
 	char ipaddr[INET6_ADDRSTRLEN];
 	void *addr;
 	struct addrinfo *res, *rp;
 	struct sigaction sa = {	.sa_handler = &abort_query };
+	timer_t timerid;
+	struct itimerspec its;
+	struct timespec ts;
+	struct sigevent sev;
 	struct addrinfo hints = {
 		.ai_family   = AF_UNSPEC,
 		.ai_socktype = SOCK_STREAM,
@@ -75,10 +86,42 @@ int main(int argc, char **argv)
 		show_usage();
 
 	sigaction(SIGALRM, &sa, NULL);
-	alarm(timeout);
 
-	if (getaddrinfo(argv[optind], NULL, &hints, &res))
-		exit(2);
+	/* simulate alarm using the monotonic clock */
+	sev.sigev_notify = SIGEV_SIGNAL;
+	sev.sigev_signo = SIGALRM;
+	sev.sigev_value.sival_ptr = &timerid;
+	if (timer_create(CLOCK_MONOTONIC, &sev, &timerid) == -1)
+		exit(ERROR_IN_TIMER);
+
+	/* start the timer */
+	its.it_value.tv_sec = timeout;
+	its.it_value.tv_nsec = 0;
+	its.it_interval.tv_sec = 0;
+	its.it_interval.tv_nsec = 0;
+	if (timer_settime(timerid, 0, &its, NULL) == -1)
+		exit(ERROR_IN_TIMER);
+
+	/* retry getaddrinfo on temporary failures */
+	do
+	{
+		gret = getaddrinfo(argv[optind], NULL, &hints, &res);
+		if (gret == EAI_AGAIN) {
+			ts.tv_nsec = 0;
+			ts.tv_sec = 1;
+			nanosleep(&ts, NULL);
+		}
+	} while (gret == EAI_AGAIN);
+
+	if (gret)
+		exit(ERROR_IN_GETADDRINFO);
+
+	/* disarm timer */
+	its.it_value.tv_sec = 0;
+	its.it_value.tv_nsec = 0;
+	its.it_interval.tv_sec = 0;
+	its.it_interval.tv_nsec = 0;
+	timer_settime(timerid, 0, &its, NULL);
 
 	for (rp = res; rp != NULL; rp = rp->ai_next)
 	{
@@ -88,7 +131,7 @@ int main(int argc, char **argv)
 		;
 
 		if (!inet_ntop(rp->ai_family, addr, ipaddr, INET6_ADDRSTRLEN - 1))
-			exit(3);
+			exit(ERROR_IN_ADDRESS);
 
 		printf("%s\n", ipaddr);
 	}
