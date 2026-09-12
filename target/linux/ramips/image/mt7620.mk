@@ -1585,6 +1585,17 @@ define Device/zbtlink_zbt-we826-e
 endef
 TARGET_DEVICES += zbtlink_zbt-we826-e
 
+define Device/zbtlink_zbt-we826-t-32m
+  SOC := mt7620a
+  IMAGE_SIZE := 32448k
+  DEVICE_VENDOR := Zbtlink
+  DEVICE_MODEL := ZBT-WE826-T2
+  DEVICE_VARIANT := 32M
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci kmod-mmc-mtk
+  SUPPORTED_DEVICES += zbt-we826-t
+endef
+TARGET_DEVICES += zbtlink_zbt-we826-t-32m
+
 define Device/zbtlink_zbt-wr8305rt
   SOC := mt7620n
   IMAGE_SIZE := 7872k
