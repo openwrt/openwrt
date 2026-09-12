@@ -11,6 +11,7 @@ proto_dhcpv6_init_config() {
 
 	proto_config_add_string 'reqaddress:or("try","force","none")'
 	proto_config_add_string reqprefix
+	proto_config_add_boolean noraaddr
 	proto_config_add_string clientid
 	proto_config_add_string 'sendclientid:or("auto","global","hardware")'
 	proto_config_add_string 'reqopts:list(uinteger)'
@@ -73,7 +74,7 @@ proto_dhcpv6_setup() {
 	local config="$1"
 	local iface="$2"
 
-	local reqaddress reqprefix clientid sendclientid reqopts defaultreqopts
+	local reqaddress reqprefix noraaddr clientid sendclientid reqopts defaultreqopts
 	local noslaaconly forceprefix extendprefix norelease strict_rfc7550
 	local noserverunicast noclientfqdn noacceptreconfig iface_dslite
 	local iface_map iface_464xlat ip6ifaceid userclass vendorclass
@@ -83,7 +84,7 @@ proto_dhcpv6_setup() {
 
 	local ip6prefix ip6prefixes
 
-	json_get_vars reqaddress reqprefix clientid sendclientid reqopts defaultreqopts
+	json_get_vars reqaddress reqprefix noraaddr clientid sendclientid reqopts defaultreqopts
 	json_get_vars noslaaconly forceprefix extendprefix norelease strict_rfc7550
 	json_get_vars noserverunicast noclientfqdn noacceptreconfig iface_dslite
 	json_get_vars iface_map iface_464xlat ip6ifaceid userclass vendorclass
@@ -206,6 +207,7 @@ proto_dhcpv6_setup() {
 	[ "$fakeroutes" != "0" ] && proto_export "FAKE_ROUTES=1"
 	[ "$sourcefilter" = "0" ] && proto_export "NOSOURCEFILTER=1"
 	[ "$extendprefix" = "1" ] && proto_export "EXTENDPREFIX=1"
+	[ "$noraaddr" = "1" ] && proto_export "NORAADDR=1"
 
 	if [ "$dynamic" = 0 ]; then
 		proto_export "DYNAMIC=0"
