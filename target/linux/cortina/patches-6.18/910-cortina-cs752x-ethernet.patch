@@ -1,0 +1,63 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Fil Dunsky <filipp.dunsky@gmail.com>
+Date: Sat, 05 Sep 2026 07:30:20 +0300
+Subject: [PATCH] net: cortina: add Kconfig and Makefile entries for the CS752x network engine and MDIO
+
+Add CS752X_ETHERNET for the Cortina CS752x (Goldengate G2) network engine
+driver (cs752x_ne.c, cs752x_fe.c, cs752x_sch_tm.c) operating in CPU-only
+mode, and MDIO_CS75XX for the MDIO bus controller of the same SoCs.
+
+Signed-off-by: Fil Dunsky <filipp.dunsky@gmail.com>
+---
+--- a/drivers/net/ethernet/cortina/Kconfig
++++ b/drivers/net/ethernet/cortina/Kconfig
+@@ -20,4 +20,16 @@ config GEMINI_ETHERNET
+ 	help
+ 	  This driver supports StorLink SL351x (Gemini) dual Gigabit Ethernet.
+ 
++config CS752X_ETHERNET
++	bool "Cortina CS752x network engine support"
++	depends on ARCH_CORTINA_CS75XX || COMPILE_TEST
++	depends on OF
++	depends on HAS_IOMEM
++	select PHYLIB
++	select PHYLINK
++	select MDIO_CS75XX
++	help
++	  This driver supports the CS752x (Goldengate G2) network engine
++	  in CPU-only mode.
++
+ endif # NET_VENDOR_CORTINA
+--- a/drivers/net/ethernet/cortina/Makefile
++++ b/drivers/net/ethernet/cortina/Makefile
+@@ -2,3 +2,4 @@
+ # Makefile for the Cortina Gemini network device drivers.
+ 
+ obj-$(CONFIG_GEMINI_ETHERNET) += gemini.o
++obj-$(CONFIG_CS752X_ETHERNET) += cs752x_ne.o cs752x_fe.o cs752x_sch_tm.o
+--- a/drivers/net/mdio/Kconfig
++++ b/drivers/net/mdio/Kconfig
+@@ -97,6 +97,13 @@ config MDIO_GPIO
+ 	  To compile this driver as a module, choose M here: the module
+ 	  will be called mdio-gpio.
+ 
++config MDIO_CS75XX
++	tristate "Cortina CS75xx MDIO bus controller"
++	depends on HAS_IOMEM && OF_MDIO
++	help
++	  This module provides a driver for the MDIO bus controller found in
++	  the Cortina CS75xx (Goldengate) SoCs.
++
+ config MDIO_HISI_FEMAC
+ 	tristate "Hisilicon FEMAC MDIO bus controller"
+ 	depends on HAS_IOMEM && OF_MDIO
+--- a/drivers/net/mdio/Makefile
++++ b/drivers/net/mdio/Makefile
+@@ -11,6 +11,7 @@ obj-$(CONFIG_MDIO_BCM_IPROC)		+= mdio-bc
+ obj-$(CONFIG_MDIO_BCM_UNIMAC)		+= mdio-bcm-unimac.o
+ obj-$(CONFIG_MDIO_BITBANG)		+= mdio-bitbang.o
+ obj-$(CONFIG_MDIO_CAVIUM)		+= mdio-cavium.o
++obj-$(CONFIG_MDIO_CS75XX)		+= mdio-cs75xx.o
+ obj-$(CONFIG_MDIO_GPIO)			+= mdio-gpio.o
+ obj-$(CONFIG_MDIO_HISI_FEMAC)		+= mdio-hisi-femac.o
+ obj-$(CONFIG_MDIO_I2C)			+= mdio-i2c.o
