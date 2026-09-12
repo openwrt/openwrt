@@ -276,6 +276,7 @@ ifneq ($(PKG_NAME),toolchain)
 			export \
 				READELF=$(TARGET_CROSS)readelf \
 				OBJCOPY=$(TARGET_CROSS)objcopy \
+				KERNEL_MODULES_BUILTIN="$(LINUX_DIR)/modules.builtin" \
 				XARGS="$(XARGS)"; \
 			$(SCRIPT_DIR)/gen-dependencies.sh "$$(IDIR_$(1))"; \
 		) | while read FILE; do \
