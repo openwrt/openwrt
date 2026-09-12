@@ -114,6 +114,11 @@ mellanox-technologies-ltd-msn3700)
 	ucidef_set_interface_lan "mgmt "
 	ucidef_set_interface_netdev_range "lan" "swp" "1" "32"
 	;;
+mellanox-technologies-ltd-msn3800)
+	ucidef_set_network_device_path "mgmt" "pci0000:00/0000:00:1c.7/0000:09:00.0"
+	ucidef_set_interface_lan "mgmt "
+	ucidef_set_interface_netdev_range "lan" "swp" "1" "64"
+	;;
 pc-engines-apu1|pc-engines-apu2|pc-engines-apu3)
 	ucidef_set_interfaces_lan_wan "eth1 eth2" "eth0"
 	;;
