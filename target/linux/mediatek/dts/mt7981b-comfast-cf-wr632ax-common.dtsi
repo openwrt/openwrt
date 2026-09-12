@@ -80,7 +80,9 @@
 };
 
 &fan {
-	pwms = <&pwm 0 10000>;
+	interrupts-extended = <&pio 4 IRQ_TYPE_EDGE_FALLING>;
+	pulses-per-revolution = <2>;
+	pwms = <&pwm 0 40000>;
 	status = "okay";
 };
 
