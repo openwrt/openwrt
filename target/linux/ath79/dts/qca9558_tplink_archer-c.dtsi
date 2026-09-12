@@ -110,68 +110,163 @@
 &mdio0 {
 	status = "okay";
 
-	switch@1f {
-		compatible = "qca,ar8327";
-		reg = <0x1f>;
+	phy_port1: ethernet-phy@0 {
+		reg = <0>;
+	};
 
-		qca,ar8327-initvals = <
-			0x04 0x00080080 /* PORT0 PAD MODE CTRL */
-			0x0c 0x07600000 /* PORT6 PAD MODE CTRL */
-			0x50 0xc737c737 /* LED_CTRL0 */
-			0x54 0x00000000 /* LED_CTRL1 */
-			0x58 0x00000000 /* LED_CTRL2 */
-			0x5c 0x0030c300 /* LED_CTRL3 */
-			0x7c 0x0000007e /* PORT0_STATUS */
-			0x94 0x0000007e /* PORT6 STATUS */
-			>;
+	phy_port2: ethernet-phy@1 {
+		reg = <1>;
+	};
 
-		leds {
-			led@0 {
+	phy_port3: ethernet-phy@2 {
+		reg = <2>;
+	};
+
+	phy_port4: ethernet-phy@3 {
+		reg = <3>;
+	};
+
+	phy_port5: ethernet-phy@4 {
+		reg = <4>;
+	};
+
+	ethernet-switch@10 {
+		compatible = "qca,qca8327";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		reg = <16>;
+
+		ethernet-ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			ethernet-port@0 {
 				reg = <0>;
-				color = <LED_COLOR_ID_GREEN>;
-				function = LED_FUNCTION_WAN;
-				qca,led-mode = <0>;
+				ethernet = <&eth1>;
+				phy-mode = "sgmii";
+				qca,sgmii-rxclk-falling-edge;
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
 			};
 
-			led@3 {
+			ethernet-port@1 {
+				reg = <1>;
+				label = "wan";
+				phy-handle = <&phy_port1>;
+
+				leds {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					led@0 {
+						reg = <0>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = LED_FUNCTION_WAN;
+						default-state = "keep";
+					};
+				};
+			};
+
+			ethernet-port@2 {
+				reg = <2>;
+				label = "lan1";
+				phy-handle = <&phy_port2>;
+
+				leds {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					led@0 {
+						reg = <0>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = LED_FUNCTION_LAN;
+						default-state = "keep";
+					};
+				};
+			};
+
+			ethernet-port@3 {
 				reg = <3>;
-				color = <LED_COLOR_ID_GREEN>;
-				function = LED_FUNCTION_LAN;
-				function-enumerator = <1>;
-				qca,led-mode = <0>;
+				label = "lan2";
+				phy-handle = <&phy_port3>;
+
+				leds {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					led@0 {
+						reg = <0>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = LED_FUNCTION_LAN;
+						default-state = "keep";
+					};
+				};
 			};
 
-			led@6 {
+			ethernet-port@4 {
+				reg = <4>;
+				label = "lan3";
+				phy-handle = <&phy_port4>;
+
+				leds {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					led@0 {
+						reg = <0>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = LED_FUNCTION_LAN;
+						default-state = "keep";
+					};
+				};
+			};
+
+			ethernet-port@5 {
+				reg = <5>;
+				label = "lan4";
+				phy-handle = <&phy_port5>;
+
+				leds {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					led@0 {
+						reg = <0>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = LED_FUNCTION_LAN;
+						default-state = "keep";
+					};
+				};
+			};
+
+			ethernet-port@6 {
 				reg = <6>;
-				color = <LED_COLOR_ID_GREEN>;
-				function = LED_FUNCTION_LAN;
-				function-enumerator = <2>;
-				qca,led-mode = <0>;
-			};
+				ethernet = <&eth0>;
+				phy-mode = "rgmii-id";
 
-			led@9 {
-				reg = <9>;
-				color = <LED_COLOR_ID_GREEN>;
-				function = LED_FUNCTION_LAN;
-				function-enumerator = <3>;
-				qca,led-mode = <0>;
-			};
-
-			led@12 {
-				reg = <12>;
-				color = <LED_COLOR_ID_GREEN>;
-				function = LED_FUNCTION_LAN;
-				function-enumerator = <4>;
-				qca,led-mode = <0>;
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
 			};
 		};
 	};
+};
+
+&mdio1 {
+	status = "okay";
 };
 
 &eth0 {
 	status = "okay";
 
 	pll-data = <0x56000000 0x00000101 0x00001616>;
+
+	phy-mode = "rgmii";
 
 	fixed-link {
 		speed = <1000>;
@@ -188,6 +283,8 @@
 	status = "okay";
 
 	pll-data = <0x03000101 0x00000101 0x00001616>;
+
+	phy-mode = "sgmii";
 
 	fixed-link {
 		speed = <1000>;
