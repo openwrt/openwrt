@@ -2268,6 +2268,15 @@ define Device/mercusys_mr70x-v1
 endef
 TARGET_DEVICES += mercusys_mr70x-v1
 
+define Device/midea_morr-qr011
+  $(Device/dsa-migration)
+  IMAGE_SIZE := 32448k
+  DEVICE_VENDOR := Midea
+  DEVICE_MODEL := MORR-QR011
+  DEVICE_PACKAGES := kmod-usb3 -uboot-envtools -wpad-basic-mbedtls
+endef
+TARGET_DEVICES += midea_morr-qr011
+
 define Device/MikroTik
   $(Device/dsa-migration)
   DEVICE_VENDOR := MikroTik
