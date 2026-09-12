@@ -219,6 +219,9 @@ endef
 
 ifeq ($(DUMP),)
 ROOTFS_PARTSIZE=$(shell echo $$(($(CONFIG_TARGET_ROOTFS_PARTSIZE)*1024*1024)))
+# Deterministic ext4 filesystem UUID and directory hash seed, derived the same
+# way as IMG_PART_DISKGUID so that mke2fs output stays reproducible.
+EXT4_UUID=$(shell echo $(SOURCE_DATE_EPOCH)$(LINUX_VERMAGIC) | $(MKHASH) md5 | sed -E 's/(.{8})(.{4})(.{4})(.{4})(.{10})../\1-\2-\3-\4-\500/')
 endif
 
 define Image/pad-root-squashfs
@@ -319,12 +322,26 @@ define Image/mkfs/ubifs
 endef
 
 define Image/mkfs/ext4
-	$(STAGING_DIR_HOST)/bin/make_ext4fs -L rootfs \
-		-l $(ROOTFS_PARTSIZE) -b $(CONFIG_TARGET_EXT4_BLOCKSIZE) \
-		$(if $(CONFIG_TARGET_EXT4_RESERVED_PCT),-m $(CONFIG_TARGET_EXT4_RESERVED_PCT)) \
-		$(if $(CONFIG_TARGET_EXT4_JOURNAL),,-J) \
-		$(if $(SOURCE_DATE_EPOCH),-T $(SOURCE_DATE_EPOCH)) \
-		$@ $(call mkfs_target_dir,$(1))/
+	rm -f $@
+	# mke2fs -d copies uid/gid straight off the build host, so run it under
+	# fakeroot with the tree chowned to root:root. That keeps the image owned
+	# like the squashfs (-root-owned) and ubifs (--squash-uids) paths; the chown
+	# is faked, the real target dir is untouched.
+	$(FAKEROOT) $(SHELL) -c "chown -Rh 0:0 $(call mkfs_target_dir,$(1)) && \
+		$(if $(SOURCE_DATE_EPOCH),SOURCE_DATE_EPOCH=$(SOURCE_DATE_EPOCH)) \
+		MKE2FS_CONFIG=$(STAGING_DIR_HOST)/etc/mke2fs.conf \
+		$(STAGING_DIR_HOST)/bin/mke2fs -F -q -t ext4 -L rootfs \
+		-b $(CONFIG_TARGET_EXT4_BLOCKSIZE) \
+		-m $(if $(CONFIG_TARGET_EXT4_RESERVED_PCT),$(CONFIG_TARGET_EXT4_RESERVED_PCT),0) \
+		$(if $(CONFIG_TARGET_EXT4_JOURNAL),,-O ^has_journal) \
+		-U $(EXT4_UUID) -E hash_seed=$(EXT4_UUID) \
+		-d $(call mkfs_target_dir,$(1)) \
+		$@ $(shell echo $$(($(ROOTFS_PARTSIZE) / $(CONFIG_TARGET_EXT4_BLOCKSIZE))))"
+	# mke2fs accounts for all summary counts at creation time, so the image is
+	# consistent as written and needs no repair pass. Verify read-only as a
+	# build-log tripwire; keep it non-fatal so a cosmetic e2fsck opinion can
+	# never break the build for every ext4 target.
+	$(STAGING_DIR_HOST)/bin/e2fsck -fn $@ || true
 endef
 
 # Don't use the mkfs.erofs builtin $SOURCE_DATE_EPOCH behavior
