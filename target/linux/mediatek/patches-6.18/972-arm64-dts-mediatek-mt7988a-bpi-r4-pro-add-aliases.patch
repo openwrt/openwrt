@@ -1,0 +1,34 @@
+From a17eb4715dea15a968698ffdb8a12af963fb4c44 Mon Sep 17 00:00:00 2001
+From: Frank Wunderlich <frank-w@public-files.de>
+Date: Fri, 24 Jul 2026 20:39:25 +0200
+Subject: [PATCH] arm64: dts: mt7988-bpi-r4pro: add alias for serial0-2 and gmacs
+
+Sometimes it happens that Serial0 is not probed first and console
+does not work after switching from earlycon. Fix this with aliases.
+
+Add aliases for ethernet too to allow setting mac-adresses in uboot
+e.g. via tlv_eeprom.
+
+
+Signed-off-by: Frank Wunderlich <frank-w@public-files.de>
+--- a/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro.dtsi
++++ b/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro.dtsi
+@@ -16,6 +16,8 @@
+ / {
+ 	aliases {
+ 		ethernet0 = &gmac0;
++		ethernet1 = &gmac1;
++		ethernet2 = &gmac2;
+ 		i2c0 = &i2c0;
+ 		i2c1 = &i2c1;
+ 		i2c2 = &i2c2;
+@@ -24,6 +26,9 @@
+ 		i2c4 = &imux1_sfp1;
+ 		i2c5 = &imux2_sfp2;
+ 		i2c6 = &imux3_wifi;
++		serial0 = &serial0;
++		serial1 = &serial1;
++		serial2 = &serial2;
+ 	};
+ 
+ 	chosen {
