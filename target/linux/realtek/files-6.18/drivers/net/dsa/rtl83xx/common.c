@@ -17,6 +17,7 @@
 
 #include "l3.h"
 #include "rtl-otto.h"
+#include "tc.h"
 
 int rtldsa_port_get_stp_state(struct rtl838x_switch_priv *priv, int port)
 {

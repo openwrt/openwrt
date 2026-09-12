@@ -5,21 +5,8 @@
 
 #include "l3.h"
 #include "rtl-otto.h"
+#include "vlan.h"
 
-#define RTL839X_VLAN_PORT_TAG_STS_UNTAG				0x0
-#define RTL839X_VLAN_PORT_TAG_STS_TAGGED			0x1
-#define RTL839X_VLAN_PORT_TAG_STS_PRIORITY_TAGGED		0x2
-
-#define RTL839X_VLAN_PORT_TAG_STS_CTRL_BASE			0x6828
-/* port 0-52 */
-#define RTL839X_VLAN_PORT_TAG_STS_CTRL(port) \
-	(RTL839X_VLAN_PORT_TAG_STS_CTRL_BASE + (port << 2))
-#define RTL839X_VLAN_PORT_TAG_STS_CTRL_OTAG_STS_MASK		GENMASK(7, 6)
-#define RTL839X_VLAN_PORT_TAG_STS_CTRL_ITAG_STS_MASK		GENMASK(5, 4)
-#define RTL839X_VLAN_PORT_TAG_STS_CTRL_EGR_P_OTAG_KEEP_MASK	GENMASK(3, 3)
-#define RTL839X_VLAN_PORT_TAG_STS_CTRL_EGR_P_ITAG_KEEP_MASK	GENMASK(2, 2)
-#define RTL839X_VLAN_PORT_TAG_STS_CTRL_IGR_P_OTAG_KEEP_MASK	GENMASK(1, 1)
-#define RTL839X_VLAN_PORT_TAG_STS_CTRL_IGR_P_ITAG_KEEP_MASK	GENMASK(0, 0)
 
 /* Definition of the RTL839X-specific template field IDs as used in the PIE */
 enum template_field_id {
@@ -224,73 +211,10 @@ inline void rtl839x_exec_tbl2_cmd(u32 cmd)
 	do { } while (sw_r32(RTL839X_TBL_ACCESS_CTRL_2) & (1 << 9));
 }
 
-static void rtl839x_vlan_tables_read(u32 vlan, struct rtldsa_vlan_info *info)
-{
-	u32 buf[3], untag[2];
-	u32 u, v, w;
 
-	otto_table_read(RTL8390_TBL_VLAN, vlan, &buf);
-	u = buf[0];
-	v = buf[1];
-	w = buf[2];
 
-	info->member_ports = u;
-	info->member_ports = (info->member_ports << 21) | ((v >> 11) & 0x1fffff);
-	info->profile_id = w >> 30 | ((v & 1) << 2);
-	info->hash_mc_fid = !!(w & BIT(2));
-	info->hash_uc_fid = !!(w & BIT(3));
-	info->fid = (v >> 3) & 0xff;
-
-	otto_table_read(RTL8390_TBL_UNTAG, vlan, &untag);
-	u = untag[0];
-	v = untag[1];
-
-	info->untagged_ports = u;
-	info->untagged_ports = (info->untagged_ports << 21) | ((v >> 11) & 0x1fffff);
-}
-
-static void rtl839x_vlan_set_tagged(u32 vlan, struct rtldsa_vlan_info *info)
-{
-	u32 buf[3];
-	u32 u, v, w;
-
-	u = info->member_ports >> 21;
-	v = info->member_ports << 11;
-	v |= ((u32)info->fid) << 3;
-	v |= info->hash_uc_fid ? BIT(2) : 0;
-	v |= info->hash_mc_fid ? BIT(1) : 0;
-	v |= (info->profile_id & 0x4) ? 1 : 0;
-	w = ((u32)(info->profile_id & 3)) << 30;
-
-	buf[0] = u;
-	buf[1] = v;
-	buf[2] = w;
-
-	otto_table_write(RTL8390_TBL_VLAN, vlan, &buf);
-}
-
-static void rtl839x_vlan_set_untagged(u32 vlan, u64 portmask)
-{
-	u32 buf[2];
-	u32 u, v;
-
-	u = portmask >> 21;
-	v = portmask << 11;
-
-	buf[0] = u;
-	buf[1] = v;
-
-	otto_table_write(RTL8390_TBL_UNTAG, vlan, &buf);
-}
 
 /* Sets the L2 forwarding to be based on either the inner VLAN tag or the outer */
-static void rtl839x_vlan_fwd_on_inner(int port, bool is_set)
-{
-	if (is_set)
-		rtl839x_mask_port_reg_be(BIT_ULL(port), 0ULL, RTL839X_VLAN_PORT_FWD);
-	else
-		rtl839x_mask_port_reg_be(0ULL, BIT_ULL(port), RTL839X_VLAN_PORT_FWD);
-}
 
 /* Hash seed is vid (actually rvid) concatenated with the MAC address */
 static u64 rtl839x_l2_hash_seed(u64 mac, u32 vid)
@@ -555,42 +479,7 @@ static void rtl839x_write_mcast_pmask(int idx, u64 portmask)
 	otto_table_write(RTL8390_TBL_MC_PMSK, idx, &buf);
 }
 
-static int
-rtldsa_839x_vlan_profile_get(int idx, struct rtldsa_vlan_profile *profile)
-{
-	u32 p[2];
 
-	if (idx < 0 || idx > RTL839X_VLAN_PROFILE_MAX)
-		return -EINVAL;
-
-	p[0] = sw_r32(RTL839X_VLAN_PROFILE(idx));
-	p[1] = sw_r32(RTL839X_VLAN_PROFILE(idx) + 4);
-
-	*profile = (struct rtldsa_vlan_profile) {
-		.l2_learn = RTL839X_VLAN_L2_LEARN_EN_R(p),
-		.unkn_mc_fld.pmsks_idx = {
-			.l2 = RTL839X_VLAN_L2_UNKN_MC_FLD_PMSK(p),
-			.ip = RTL839X_VLAN_IP4_UNKN_MC_FLD_PMSK(p),
-			.ip6 = RTL839X_VLAN_IP6_UNKN_MC_FLD_PMSK(p),
-		},
-		.pmsk_is_idx = 1,
-	};
-
-	return 0;
-}
-
-static void rtl839x_vlan_profile_setup(int profile)
-{
-	u32 p[2] = { 0, 0 };
-
-	p[1] = RTL839X_VLAN_L2_LEARN_EN(1);
-	p[1] |= RTL839X_VLAN_L2_UNKN_MC_FLD(MC_PMASK_ALL_PORTS_IDX) |
-		RTL839X_VLAN_IP4_UNKN_MC_FLD(MC_PMASK_ALL_PORTS_IDX);
-	p[0] |= RTL839X_VLAN_IP6_UNKN_MC_FLD(MC_PMASK_ALL_PORTS_IDX);
-
-	sw_w32(p[0], RTL839X_VLAN_PROFILE(profile));
-	sw_w32(p[1], RTL839X_VLAN_PROFILE(profile) + 4);
-}
 
 static void rtl839x_traffic_set(int source, u64 dest_matrix)
 {
@@ -660,22 +549,6 @@ static void rtl839x_set_static_move_action(int port, bool forward)
 		    RTL839X_L2_PORT_STATIC_MV_ACT(port));
 }
 
-static void
-rtldsa_839x_vlan_profile_dump(struct rtl838x_switch_priv *priv, int idx)
-{
-	struct rtldsa_vlan_profile p;
-
-	if (rtldsa_839x_vlan_profile_get(idx, &p) < 0)
-		return;
-
-	dev_dbg(priv->dev,
-		"VLAN profile %d: L2 learning: %d, UNKN L2MC FLD PMSK %d, UNKN IPMC FLD PMSK %d, UNKN IPv6MC FLD PMSK: %d\n"
-		"VLAN profile %d: raw %08x, %08x\n", idx,
-		p.l2_learn, p.unkn_mc_fld.pmsks_idx.l2,
-		p.unkn_mc_fld.pmsks_idx.ip, p.unkn_mc_fld.pmsks_idx.ip6, idx,
-		sw_r32(RTL839X_VLAN_PROFILE(idx)),
-		sw_r32(RTL839X_VLAN_PROFILE(idx) + 4));
-}
 
 static int rtldsa_839x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, int port)
 {
@@ -1506,30 +1379,8 @@ static void rtl839x_packet_cntr_clear(struct rtl838x_switch_priv *priv, int coun
 	otto_table_release(tbl);
 }
 
-static void rtl839x_vlan_port_keep_tag_set(int port, bool keep_outer, bool keep_inner)
-{
-	sw_w32(FIELD_PREP(RTL839X_VLAN_PORT_TAG_STS_CTRL_OTAG_STS_MASK,
-			  keep_outer ? RTL839X_VLAN_PORT_TAG_STS_TAGGED : RTL839X_VLAN_PORT_TAG_STS_UNTAG) |
-	       FIELD_PREP(RTL839X_VLAN_PORT_TAG_STS_CTRL_ITAG_STS_MASK,
-			  keep_inner ? RTL839X_VLAN_PORT_TAG_STS_TAGGED : RTL839X_VLAN_PORT_TAG_STS_UNTAG),
-	       RTL839X_VLAN_PORT_TAG_STS_CTRL(port));
-}
 
-static void rtl839x_vlan_port_pvidmode_set(int port, enum pbvlan_type type, enum pbvlan_mode mode)
-{
-	if (type == PBVLAN_TYPE_INNER)
-		sw_w32_mask(0x3, mode, RTL839X_VLAN_PORT_PB_VLAN + (port << 2));
-	else
-		sw_w32_mask(0x3 << 14, mode << 14, RTL839X_VLAN_PORT_PB_VLAN + (port << 2));
-}
 
-static void rtl839x_vlan_port_pvid_set(int port, enum pbvlan_type type, int pvid)
-{
-	if (type == PBVLAN_TYPE_INNER)
-		sw_w32_mask(0xfff << 2, pvid << 2, RTL839X_VLAN_PORT_PB_VLAN + (port << 2));
-	else
-		sw_w32_mask(0xfff << 16, pvid << 16, RTL839X_VLAN_PORT_PB_VLAN + (port << 2));
-}
 
 static int rtldsa_839x_fast_age(struct rtl838x_switch_priv *priv, int port, int vid)
 {

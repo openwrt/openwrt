@@ -8,6 +8,8 @@
 
 #include <linux/soc/realtek/otto_table.h>
 
+#include "vlan.h"
+
 /* Register definition */
 #define RTL838X_MAC_PORT_CTRL(port)		(0xd560 + (((port) << 7)))
 #define RTL839X_MAC_PORT_CTRL(port)		(0x8004 + (((port) << 7)))
@@ -574,26 +576,6 @@
 #define RTL839X_SPCL_TRAP_SWITCH_IPV4_ADDR_CTRL	(0x106C)
 #define RTL839X_SPCL_TRAP_CRC_CTRL		(0x1070)
 
-#define RTL930X_BANDWIDTH_CTRL_EGRESS(port)	(0x7660 + (port * 16))
-#define RTL930X_BANDWIDTH_CTRL_INGRESS(port)	(0x8068 + (port * 4))
-#define RTL930X_BANDWIDTH_CTRL_MAX_BURST	(64 * 1000)
-#define RTL930X_BANDWIDTH_CTRL_INGRESS_BURST_HIGH_ON(port) \
-						(0x80DC + (port * 8))
-#define RTL930X_BANDWIDTH_CTRL_INGRESS_BURST_HIGH_OFF(port) \
-						(0x80E0 + (port * 8))
-#define RTL930X_BANDWIDTH_CTRL_INGRESS_BURST_MAX \
-						GENMASK(30, 0)
-
-#define RTL931X_BANDWIDTH_CTRL_EGRESS(port)	(0x2164 + (port * 8))
-#define RTL931X_BANDWIDTH_CTRL_INGRESS(port)	(0xe008 + (port * 8))
-
-#define RTL93XX_BANDWIDTH_CTRL_RATE_MAX		GENMASK(19, 0)
-#define RTL93XX_BANDWIDTH_CTRL_ENABLE		BIT(20)
-#define RTL931X_BANDWIDTH_CTRL_MAX_BURST	GENMASK(15, 0)
-
-#define RTL930X_INGRESS_FC_CTRL(port)		(0x81CC + ((port / 29) * 4))
-#define RTL930X_INGRESS_FC_CTRL_EN(port)	BIT(port % 29)
-
 /* Switch interrupts */
 #define RTL838X_IMR_GLB				(0x1100)
 #define RTL838X_IMR_PORT_LINK_STS_CHG		(0x1104)
@@ -939,17 +921,6 @@ enum rtldsa_flood_type {
  */
 #define RTLDSA_COUNTERS_FAST_POLL_INTERVAL	(3 * HZ)
 
-enum pbvlan_type {
-	PBVLAN_TYPE_INNER = 0,
-	PBVLAN_TYPE_OUTER,
-};
-
-enum pbvlan_mode {
-	PBVLAN_MODE_UNTAG_AND_PRITAG = 0,
-	PBVLAN_MODE_UNTAG_ONLY,
-	PBVLAN_MODE_ALL_PKT,
-};
-
 struct rtldsa_counter {
 	u64 val;
 	u32 last;
@@ -1053,46 +1024,12 @@ struct rtldsa_port {
 	const struct dsa_port *dp;
 };
 
-struct rtldsa_vlan_info {
-	u64 untagged_ports;
-	u64 member_ports;
-	u8 profile_id;
-	bool hash_mc_fid;
-	bool hash_uc_fid;
-	u8 fid; /* AKA MSTI */
-
-	/* The following fields are used only by the RTL931X */
-	int if_id;		/* Interface (index in L3_EGR_INTF_IDX) */
-	u16 multicast_grp_mask;
-	int l2_tunnel_list_id;
-};
-
 struct rtldsa_mst {
 	/** @msti: MSTI mapped to this slot. 0 == unused */
 	u16 msti;
 
 	/** @refcount: number of vlans currently using this msti, undefined when unused */
 	struct kref refcount;
-};
-
-struct rtldsa_vlan_profile {
-	union {
-		struct {
-			u64 l2;
-			u64 ip;
-			u64 ip6;
-		} pmsks;
-		struct {
-			u16 l2;
-			u16 ip;
-			u16 ip6;
-		} pmsks_idx;
-	} unkn_mc_fld;
-
-	int l2_learn;
-
-	u8 pmsk_is_idx:1, routing_ipuc:1, routing_ip6uc:1,
-	   routing_ipmc:1, routing_ip6mc:1, bridge_ipmc:1, bridge_ip6mc:1;
 };
 
 enum l2_entry_type {
@@ -1312,15 +1249,6 @@ struct pie_rule {
 };
 
 struct rtl838x_switch_priv;
-
-struct rtl83xx_flow {
-	unsigned long cookie;
-	struct rhash_head node;
-	struct rcu_head rcu_head;
-	struct rtl838x_switch_priv *priv;
-	struct pie_rule rule;
-	u32 flags;
-};
 
 /**
  * struct rtldsa_mirror_config - Mirror configuration for specific group and port
@@ -1654,15 +1582,6 @@ void rtldsa_packet_cntr_free(struct rtl838x_switch_priv *priv, int idx);
 int rtldsa_port_get_stp_state(struct rtl838x_switch_priv *priv, int port);
 int rtl83xx_port_is_under(const struct net_device *dev, struct rtl838x_switch_priv *priv);
 void rtldsa_port_stp_state_set(struct dsa_switch *ds, int port, u8 state);
-int rtldsa_tc_init(struct rtl838x_switch_priv *priv);
-void rtldsa_tc_cleanup(struct rtl838x_switch_priv *priv);
-int rtldsa_pie_cls_flower_add(struct rtl838x_switch_priv *priv, int port,
-			       struct flow_cls_offload *cls, bool ingress);
-int rtldsa_pie_cls_flower_del(struct rtl838x_switch_priv *priv,
-			       struct flow_cls_offload *cls, bool ingress);
-int rtldsa_pie_cls_flower_stats(struct rtl838x_switch_priv *priv,
-				 struct flow_cls_offload *cls, bool ingress);
-
 /* Port register accessor functions for the RTL839x and RTL931X SoCs */
 void rtl839x_mask_port_reg_be(u64 clear, u64 set, int reg);
 u32 rtldsa_839x_get_egress_rate(struct rtl838x_switch_priv *priv, int port);
