@@ -1,0 +1,51 @@
+From: Gary Dotzler <geldot@protonmail.com>
+Date: Wed, 9 Sep 2026 23:09:27 +0200
+Subject: [PATCH] netfilter: conntrack: pick up a TCP flow whose SYN was never answered
+
+When only one direction of a connection passes the host, the SYN is
+seen, the answer to it is not, and the next packet is an ACK continuing
+from where the SYN left off. The transition table has no entry for that,
+so that ACK and every packet after it are invalid and the entry sits in
+SYN_SENT [UNREPLIED] with one packet.
+
+Treat the connection as a mid-stream pickup. Delete the entry and look
+the packet up again, so it creates a new entry through the loose path.
+That path fills in the unseen direction from the packet and stops
+window checking in both directions.
+
+Signed-off-by: Gary Dotzler <geldot@protonmail.com>
+Tested-by: Julius Bairaktaris <julius@bairaktaris.de>
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+Assisted-by: Claude:claude-opus-5
+---
+ net/netfilter/nf_conntrack_proto_tcp.c | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+
+--- a/net/netfilter/nf_conntrack_proto_tcp.c
++++ b/net/netfilter/nf_conntrack_proto_tcp.c
+@@ -1133,6 +1133,25 @@ int nf_conntrack_tcp_packet(struct nf_co
+ 			return NF_ACCEPT;
+ 		}
+ 
++		/* The answer to the SYN never passed the host, as happens
++		 * when the reply direction takes another path, and the client
++		 * continues from where its SYN left off.  Take the connection
++		 * over as a mid-stream pickup: delete the entry so the packet
++		 * creates a new one that seeds the unseen direction from the
++		 * packet itself.
++		 */
++		if (tn->tcp_loose && !nfct_synproxy(ct) &&
++		    old_state == TCP_CONNTRACK_SYN_SENT &&
++		    index == TCP_ACK_SET && dir == IP_CT_DIR_ORIGINAL &&
++		    !test_bit(IPS_SEEN_REPLY_BIT, &ct->status) &&
++		    ntohl(th->seq) == ct->proto.tcp.seen[dir].td_end) {
++			spin_unlock_bh(&ct->lock);
++
++			if (nf_ct_kill(ct))
++				return -NF_REPEAT;
++			return NF_DROP;
++		}
++
+ 		/* Invalid packet */
+ 		spin_unlock_bh(&ct->lock);
+ 		nf_ct_l4proto_log_invalid(skb, ct, state,

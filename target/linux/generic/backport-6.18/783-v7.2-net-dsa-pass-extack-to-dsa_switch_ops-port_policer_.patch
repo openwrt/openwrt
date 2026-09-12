@@ -1,0 +1,69 @@
+From 09e4d1298b367051b60d9b0a13b22e7d78e61803 Mon Sep 17 00:00:00 2001
+From: David Yang <mmyangfl@gmail.com>
+Date: Thu, 30 Apr 2026 19:45:24 +0800
+Subject: [PATCH] net: dsa: pass extack to dsa_switch_ops :: port_policer_add()
+
+Drivers might have error messages to propagate to user space. Propagate
+the netlink extack so that they can inform user space in a verbal way of
+their limitations.
+
+Make the according transformations to the two users (sja1105 and felix).
+
+Signed-off-by: David Yang <mmyangfl@gmail.com>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Link: https://patch.msgid.link/20260430114529.3536911-2-mmyangfl@gmail.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/dsa/ocelot/felix.c         | 3 ++-
+ drivers/net/dsa/sja1105/sja1105_main.c | 3 ++-
+ include/net/dsa.h                      | 3 ++-
+ net/dsa/user.c                         | 2 +-
+ 4 files changed, 7 insertions(+), 4 deletions(-)
+
+--- a/drivers/net/dsa/ocelot/felix.c
++++ b/drivers/net/dsa/ocelot/felix.c
+@@ -1984,7 +1984,8 @@ static int felix_cls_flower_stats(struct
+ }
+ 
+ static int felix_port_policer_add(struct dsa_switch *ds, int port,
+-				  const struct flow_action_police *policer)
++				  const struct flow_action_police *policer,
++				  struct netlink_ext_ack *extack)
+ {
+ 	struct ocelot *ocelot = ds->priv;
+ 	struct ocelot_policer pol = {
+--- a/drivers/net/dsa/sja1105/sja1105_main.c
++++ b/drivers/net/dsa/sja1105/sja1105_main.c
+@@ -2903,7 +2903,8 @@ static void sja1105_mirror_del(struct ds
+ }
+ 
+ static int sja1105_port_policer_add(struct dsa_switch *ds, int port,
+-				    const struct flow_action_police *policer)
++				    const struct flow_action_police *policer,
++				    struct netlink_ext_ack *extack)
+ {
+ 	struct sja1105_l2_policing_entry *policing;
+ 	struct sja1105_private *priv = ds->priv;
+--- a/include/net/dsa.h
++++ b/include/net/dsa.h
+@@ -1118,7 +1118,8 @@ struct dsa_switch_ops {
+ 	void	(*port_mirror_del)(struct dsa_switch *ds, int port,
+ 				   struct dsa_mall_mirror_tc_entry *mirror);
+ 	int	(*port_policer_add)(struct dsa_switch *ds, int port,
+-				    const struct flow_action_police *policer);
++				    const struct flow_action_police *policer,
++				    struct netlink_ext_ack *extack);
+ 	void	(*port_policer_del)(struct dsa_switch *ds, int port);
+ 	int	(*port_setup_tc)(struct dsa_switch *ds, int port,
+ 				 enum tc_setup_type type, void *type_data);
+--- a/net/dsa/user.c
++++ b/net/dsa/user.c
+@@ -1499,7 +1499,7 @@ dsa_user_add_cls_matchall_police(struct
+ 	policer = &mall_tc_entry->policer;
+ 	*policer = act->police;
+ 
+-	err = ds->ops->port_policer_add(ds, dp->index, policer);
++	err = ds->ops->port_policer_add(ds, dp->index, policer, extack);
+ 	if (err) {
+ 		kfree(mall_tc_entry);
+ 		return err;

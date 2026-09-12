@@ -1,0 +1,59 @@
+From: Gary Dotzler <geldot@protonmail.com>
+Date: Wed, 9 Sep 2026 23:10:06 +0200
+Subject: [PATCH] netfilter: nft_flow_offload: offload a TCP flow that has no reply
+
+A connection whose reply never reaches the host cannot become assured,
+and only assured TCP connections are offered to the flowtable, so every
+packet of it stays on the classic path.
+
+Offer such a connection to the flowtable in the original direction. The
+reply direction follows once conntrack has seen a reply, so a flow that
+starts one-directional picks it up if the path turns symmetric.
+
+Signed-off-by: Gary Dotzler <geldot@protonmail.com>
+Co-developed-by: Julius Bairaktaris <julius@bairaktaris.de>
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+Assisted-by: Claude:claude-opus-5
+---
+ include/net/netfilter/nf_conntrack_l4proto.h | 7 +++++++
+ net/netfilter/nft_flow_offload.c             | 6 ++++--
+ 2 files changed, 11 insertions(+), 2 deletions(-)
+
+--- a/include/net/netfilter/nf_conntrack_l4proto.h
++++ b/include/net/netfilter/nf_conntrack_l4proto.h
+@@ -215,6 +215,13 @@ static inline bool nf_conntrack_tcp_esta
+ 	return ct->proto.tcp.state == TCP_CONNTRACK_ESTABLISHED &&
+ 	       test_bit(IPS_ASSURED_BIT, &ct->status);
+ }
++
++/* A flow picked up without its reply cannot become assured. */
++static inline bool nf_conntrack_tcp_unreplied(const struct nf_conn *ct)
++{
++	return ct->proto.tcp.state == TCP_CONNTRACK_ESTABLISHED &&
++	       !test_bit(IPS_SEEN_REPLY_BIT, &ct->status);
++}
+ #endif
+ 
+ #ifdef CONFIG_NF_CT_PROTO_SCTP
+--- a/net/netfilter/nft_flow_offload.c
++++ b/net/netfilter/nft_flow_offload.c
+@@ -72,7 +72,8 @@ static void nft_flow_offload_eval(const
+ 		tcph = skb_header_pointer(pkt->skb, nft_thoff(pkt),
+ 					  sizeof(_tcph), &_tcph);
+ 		if (unlikely(!tcph || tcph->fin || tcph->rst ||
+-			     !nf_conntrack_tcp_established(ct)))
++			     (!nf_conntrack_tcp_established(ct) &&
++			      !nf_conntrack_tcp_unreplied(ct))))
+ 			goto out;
+ 		break;
+ 	case IPPROTO_UDP:
+@@ -121,7 +122,8 @@ static void nft_flow_offload_eval(const
+ 	 */
+ 	flow->priority = pkt->skb->priority;
+ 
+-	__set_bit(NF_FLOW_HW_BIDIRECTIONAL, &flow->flags);
++	if (!tcph || !nf_conntrack_tcp_unreplied(ct))
++		__set_bit(NF_FLOW_HW_BIDIRECTIONAL, &flow->flags);
+ 	ret = flow_offload_add(flowtable, flow);
+ 	if (ret < 0)
+ 		goto err_flow_add;
