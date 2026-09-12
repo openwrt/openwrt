@@ -11,6 +11,10 @@ mediatek_setup_interfaces()
 	abt,asr3000|\
 	buffalo,wsr-6000ax8|\
 	h3c,magic-nx30-pro|\
+	huastlink,hc-g80|\
+	huastlink,hc-g80-ubootmod)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wwan"
+		;;
 	imou,hx21|\
 	konka,komi-a31|\
 	netis,nx30v2|\
