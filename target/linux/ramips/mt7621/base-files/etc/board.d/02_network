@@ -158,6 +158,9 @@ ramips_setup_interfaces()
 	mqmaker,witi)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan1 wan2"
 		;;
+	qihoo,360t5)
+		ucidef_set_interfaces_lan_wan "lan1 lan2" "wan"
+		;;
 	tozed,zlt-s12-pro)
 		ucidef_set_interface_lan "lan1 lan2 lan3 wan"
 		ucidef_set_interface "wwan" device "/dev/ttyUSB0" protocol "ncm"
@@ -312,6 +315,11 @@ ramips_setup_macs()
 	netgear,wax214v2)
 		lan_mac=$(mtd_get_mac_ascii Config ethaddr)
 		label_mac=$lan_mac
+		;;
+	qihoo,360t5)
+		wan_mac=$(mtd_get_mac_binary factory 0x1ffe8)
+		lan_mac=$(macaddr_add "$wan_mac" 1)
+		label_mac=$wan_mac
 		;;
 	esac
 
