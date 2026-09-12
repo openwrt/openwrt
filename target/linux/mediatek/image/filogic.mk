@@ -1810,6 +1810,19 @@ define Device/edgecore_eap111
 endef
 TARGET_DEVICES += edgecore_eap111
 
+define Device/edgepi_e87n
+  DEVICE_VENDOR := EdgePi
+  DEVICE_MODEL := E87N
+  DEVICE_DTS := mt7987a-edgepi-e87n
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-hwmon-pwmfan kmod-usb3 mt7987-2p5g-phy-firmware \
+	kmod-fb-tft kmod-fb-tft-nv3007 kmod-backlight-pwm kmod-nvme \
+	f2fsck mkf2fs
+  KERNEL_LOADADDR := 0x40000000
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += edgepi_e87n
+
 define Device/elecom_wrc-x3000gs3
   DEVICE_VENDOR := ELECOM
   DEVICE_MODEL := WRC-X3000GS3
