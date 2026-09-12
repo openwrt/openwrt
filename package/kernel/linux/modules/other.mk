@@ -642,6 +642,24 @@ endef
 $(eval $(call KernelPackage,serial-8250-exar))
 
 
+define KernelPackage/serial-sc16is7xx
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=NXP SC16IS7xx SPI UARTs
+  KCONFIG:=CONFIG_SERIAL_SC16IS7XX
+  FILES:= \
+	$(LINUX_DIR)/drivers/tty/serial/sc16is7xx.ko \
+	$(LINUX_DIR)/drivers/tty/serial/sc16is7xx_spi.ko
+  AUTOLOAD:=$(call AutoProbe,sc16is7xx sc16is7xx_spi)
+  DEPENDS:=+kmod-regmap-spi
+endef
+
+define KernelPackage/serial-sc16is7xx/description
+ Kernel module for the NXP SC16IS7xx single and dual UART bridges on SPI.
+endef
+
+$(eval $(call KernelPackage,serial-sc16is7xx))
+
+
 define KernelPackage/regmap-core
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Generic register map support
