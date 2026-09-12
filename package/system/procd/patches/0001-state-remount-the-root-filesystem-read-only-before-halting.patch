@@ -1,0 +1,72 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: John Audia <therealgraysky@proton.me>
+Date: Sat, 12 Sep 2026 14:22:40 +0000
+Subject: [PATCH] state: remount the root filesystem read-only before halting
+
+sync() writes dirty data back, but it does not leave the root
+filesystem clean: a journalling filesystem only commits its superblock
+on remount or unmount. On ext4 this means every boot replays the
+journal and e2fsck finds the free block and inode counts stale, even
+after an orderly reboot.
+
+The shutdown scripts cannot fix this. "umount -a -r" does attempt the
+read-only remount, but it runs while procd and everything it
+supervises are still alive, and the remount fails with EBUSY as long
+as any process holds a file open for writing. The only point at which
+the root is idle is after the final SIGKILL, so remount it read-only
+there, right before the kernel is asked to reboot.
+
+A remount of an overlay root only syncs its upper filesystem, and a
+swap file on the root filesystem still keeps it busy; both are left
+as they are. The root of a container belongs to the host and is
+skipped.
+
+logd is stopped long before this point, so anything logged from
+STATE_HALT went to a syslog socket nobody reads. Switch to the console
+that set_console() already prepared, so that a failed remount can be
+seen.
+
+Signed-off-by: John Audia <therealgraysky@proton.me>
+---
+ state.c | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+diff --git a/state.c b/state.c
+index 8464ba9..24465e6 100644
+--- a/state.c
++++ b/state.c
+@@ -14,6 +14,7 @@
+ 
+ #include <fcntl.h>
+ #include <pwd.h>
++#include <sys/mount.h>
+ #include <sys/reboot.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+@@ -184,6 +185,8 @@ static void state_enter(void)
+ 		break;
+ 
+ 	case STATE_HALT:
++		/* logd is gone by now, log to the console instead */
++		ulog_open(ULOG_STDIO, LOG_DAEMON, "procd");
+ 		// To prevent killed processes from interrupting the sleep
+ 		signal(SIGCHLD, SIG_IGN);
+ 		LOG("- SIGTERM processes -\n");
+@@ -195,6 +198,17 @@ static void state_enter(void)
+ 		sync();
+ 		sleep(1);
+ #ifndef DISABLE_INIT
++		/*
++		 * sync() writes the data back, but does not leave the root
++		 * filesystem clean: a journalling filesystem only commits its
++		 * superblock on remount or unmount, and the remount is only
++		 * possible now that no process is left to hold a file on it
++		 * open for writing. The root of a container is the host's.
++		 */
++		if (!is_container() &&
++		    mount(NULL, "/", NULL, MS_REMOUNT | MS_RDONLY, NULL))
++			ERROR("failed to remount / read-only: %m\n");
++
+ 		perform_halt();
+ #else
+ 		exit(EXIT_SUCCESS);
