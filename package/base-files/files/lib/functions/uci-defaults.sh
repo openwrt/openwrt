@@ -629,12 +629,14 @@ ucidef_add_gpio_switch() {
 	local name="$2"
 	local pin="$3"
 	local default="${4:-0}"
+	local shutdown="$5"
 
 	json_select_object gpioswitch
 		json_select_object "$cfg"
 			json_add_string name "$name"
 			json_add_string pin "$pin"
 			json_add_int default "$default"
+			[ -n "$shutdown" ] && json_add_int shutdown "$shutdown"
 		json_select ..
 	json_select ..
 }
