@@ -416,7 +416,7 @@ TARGET_DEVICES += meraki_mr26
 define Device/meraki_mr32
   DEVICE_VENDOR := Meraki
   DEVICE_MODEL := MR32
-  DEVICE_PACKAGES := $(B43) kmod-leds-pwm kmod-hwmon-ina2xx kmod-hci-uart
+  DEVICE_PACKAGES := $(B43) kmod-leds-pwm kmod-hwmon-ina2xx kmod-hci-uart pciutils kexec
   DEVICE_DTS := bcm53016-meraki-mr32
 # Meraki FW r23 tries to resize the part.safe partition before it will
 # flash the image. This is a bit of a problem, since resizing will fail
@@ -425,9 +425,10 @@ define Device/meraki_mr32
   KERNEL_INITRAMFS_SUFFIX := .bin
   DEVICE_DTS_DELIMITER := @
   DEVICE_DTS_CONFIG := config@1
-  KERNEL_INITRAMFS := kernel-bin | fit none $$(DTS_DIR)/$$(DEVICE_DTS).dtb | \
+# Append the DTB for Linux while retaining FIT fdt@2 for Meraki bootsh.
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | fit none $$(DTS_DIR)/$$(DEVICE_DTS).dtb | \
 	pad-to 10362880
-  KERNEL := kernel-bin | fit none $$(DTS_DIR)/$$(DEVICE_DTS).dtb
+  KERNEL := kernel-bin | append-dtb | fit none $$(DTS_DIR)/$$(DEVICE_DTS).dtb
   IMAGES += sysupgrade.bin
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 
