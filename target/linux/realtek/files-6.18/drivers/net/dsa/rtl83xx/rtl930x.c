@@ -26,93 +26,93 @@
 #define RTL930X_LED_SET_LEDX_SHIFT(x) (16 * (x % 2))
 
 /* Definition of the RTL930X-specific template field IDs as used in the PIE */
-enum template_field_id {
-	TEMPLATE_FIELD_SPM0 = 0,		/* Source portmask ports 0-15 */
-	TEMPLATE_FIELD_SPM1 = 1,		/* Source portmask ports 16-31 */
-	TEMPLATE_FIELD_DMAC0 = 2,		/* Destination MAC [15:0] */
-	TEMPLATE_FIELD_DMAC1 = 3,		/* Destination MAC [31:16] */
-	TEMPLATE_FIELD_DMAC2 = 4,		/* Destination MAC [47:32] */
-	TEMPLATE_FIELD_SMAC0 = 5,		/* Source MAC [15:0] */
-	TEMPLATE_FIELD_SMAC1 = 6,		/* Source MAC [31:16] */
-	TEMPLATE_FIELD_SMAC2 = 7,		/* Source MAC [47:32] */
-	TEMPLATE_FIELD_ETHERTYPE = 8,		/* Ethernet frame type field */
-	TEMPLATE_FIELD_OTAG = 9,
-	TEMPLATE_FIELD_ITAG = 10,
-	TEMPLATE_FIELD_SIP0 = 11,
-	TEMPLATE_FIELD_SIP1 = 12,
-	TEMPLATE_FIELD_DIP0 = 13,
-	TEMPLATE_FIELD_DIP1 = 14,
-	TEMPLATE_FIELD_IP_TOS_PROTO = 15,
-	TEMPLATE_FIELD_L4_SPORT = 16,
-	TEMPLATE_FIELD_L4_DPORT = 17,
-	TEMPLATE_FIELD_L34_HEADER = 18,
-	TEMPLATE_FIELD_TCP_INFO = 19,
-	TEMPLATE_FIELD_FIELD_SELECTOR_VALID = 20,
-	TEMPLATE_FIELD_FIELD_SELECTOR_0 = 21,
-	TEMPLATE_FIELD_FIELD_SELECTOR_1 = 22,
-	TEMPLATE_FIELD_FIELD_SELECTOR_2 = 23,
-	TEMPLATE_FIELD_FIELD_SELECTOR_3 = 24,
-	TEMPLATE_FIELD_FIELD_SELECTOR_4 = 25,
-	TEMPLATE_FIELD_FIELD_SELECTOR_5 = 26,
-	TEMPLATE_FIELD_SIP2 = 27,
-	TEMPLATE_FIELD_SIP3 = 28,
-	TEMPLATE_FIELD_SIP4 = 29,
-	TEMPLATE_FIELD_SIP5 = 30,
-	TEMPLATE_FIELD_SIP6 = 31,
-	TEMPLATE_FIELD_SIP7 = 32,
-	TEMPLATE_FIELD_DIP2 = 33,
-	TEMPLATE_FIELD_DIP3 = 34,
-	TEMPLATE_FIELD_DIP4 = 35,
-	TEMPLATE_FIELD_DIP5 = 36,
-	TEMPLATE_FIELD_DIP6 = 37,
-	TEMPLATE_FIELD_DIP7 = 38,
-	TEMPLATE_FIELD_PKT_INFO = 39,
-	TEMPLATE_FIELD_FLOW_LABEL = 40,
-	TEMPLATE_FIELD_DSAP_SSAP = 41,
-	TEMPLATE_FIELD_SNAP_OUI = 42,
-	TEMPLATE_FIELD_FWD_VID = 43,
-	TEMPLATE_FIELD_RANGE_CHK = 44,
-	TEMPLATE_FIELD_VLAN_GMSK = 45,		/* VLAN Group Mask/IP range check */
-	TEMPLATE_FIELD_DLP = 46,
-	TEMPLATE_FIELD_META_DATA = 47,
-	TEMPLATE_FIELD_SRC_FWD_VID = 48,
-	TEMPLATE_FIELD_SLP = 49,
+enum rtl930x_template_field_id {
+	RTL930X_TEMPLATE_FIELD_SPM0 = 0,		/* Source portmask ports 0-15 */
+	RTL930X_TEMPLATE_FIELD_SPM1 = 1,		/* Source portmask ports 16-31 */
+	RTL930X_TEMPLATE_FIELD_DMAC0 = 2,		/* Destination MAC [15:0] */
+	RTL930X_TEMPLATE_FIELD_DMAC1 = 3,		/* Destination MAC [31:16] */
+	RTL930X_TEMPLATE_FIELD_DMAC2 = 4,		/* Destination MAC [47:32] */
+	RTL930X_TEMPLATE_FIELD_SMAC0 = 5,		/* Source MAC [15:0] */
+	RTL930X_TEMPLATE_FIELD_SMAC1 = 6,		/* Source MAC [31:16] */
+	RTL930X_TEMPLATE_FIELD_SMAC2 = 7,		/* Source MAC [47:32] */
+	RTL930X_TEMPLATE_FIELD_ETHERTYPE = 8,		/* Ethernet frame type field */
+	RTL930X_TEMPLATE_FIELD_OTAG = 9,
+	RTL930X_TEMPLATE_FIELD_ITAG = 10,
+	RTL930X_TEMPLATE_FIELD_SIP0 = 11,
+	RTL930X_TEMPLATE_FIELD_SIP1 = 12,
+	RTL930X_TEMPLATE_FIELD_DIP0 = 13,
+	RTL930X_TEMPLATE_FIELD_DIP1 = 14,
+	RTL930X_TEMPLATE_FIELD_IP_TOS_PROTO = 15,
+	RTL930X_TEMPLATE_FIELD_L4_SPORT = 16,
+	RTL930X_TEMPLATE_FIELD_L4_DPORT = 17,
+	RTL930X_TEMPLATE_FIELD_L34_HEADER = 18,
+	RTL930X_TEMPLATE_FIELD_TCP_INFO = 19,
+	RTL930X_TEMPLATE_FIELD_FIELD_SELECTOR_VALID = 20,
+	RTL930X_TEMPLATE_FIELD_FIELD_SELECTOR_0 = 21,
+	RTL930X_TEMPLATE_FIELD_FIELD_SELECTOR_1 = 22,
+	RTL930X_TEMPLATE_FIELD_FIELD_SELECTOR_2 = 23,
+	RTL930X_TEMPLATE_FIELD_FIELD_SELECTOR_3 = 24,
+	RTL930X_TEMPLATE_FIELD_FIELD_SELECTOR_4 = 25,
+	RTL930X_TEMPLATE_FIELD_FIELD_SELECTOR_5 = 26,
+	RTL930X_TEMPLATE_FIELD_SIP2 = 27,
+	RTL930X_TEMPLATE_FIELD_SIP3 = 28,
+	RTL930X_TEMPLATE_FIELD_SIP4 = 29,
+	RTL930X_TEMPLATE_FIELD_SIP5 = 30,
+	RTL930X_TEMPLATE_FIELD_SIP6 = 31,
+	RTL930X_TEMPLATE_FIELD_SIP7 = 32,
+	RTL930X_TEMPLATE_FIELD_DIP2 = 33,
+	RTL930X_TEMPLATE_FIELD_DIP3 = 34,
+	RTL930X_TEMPLATE_FIELD_DIP4 = 35,
+	RTL930X_TEMPLATE_FIELD_DIP5 = 36,
+	RTL930X_TEMPLATE_FIELD_DIP6 = 37,
+	RTL930X_TEMPLATE_FIELD_DIP7 = 38,
+	RTL930X_TEMPLATE_FIELD_PKT_INFO = 39,
+	RTL930X_TEMPLATE_FIELD_FLOW_LABEL = 40,
+	RTL930X_TEMPLATE_FIELD_DSAP_SSAP = 41,
+	RTL930X_TEMPLATE_FIELD_SNAP_OUI = 42,
+	RTL930X_TEMPLATE_FIELD_FWD_VID = 43,
+	RTL930X_TEMPLATE_FIELD_RANGE_CHK = 44,
+	RTL930X_TEMPLATE_FIELD_VLAN_GMSK = 45,		/* VLAN Group Mask/IP range check */
+	RTL930X_TEMPLATE_FIELD_DLP = 46,
+	RTL930X_TEMPLATE_FIELD_META_DATA = 47,
+	RTL930X_TEMPLATE_FIELD_SRC_FWD_VID = 48,
+	RTL930X_TEMPLATE_FIELD_SLP = 49,
 };
 
-/* The meaning of TEMPLATE_FIELD_VLAN depends on phase and the configuration in
+/* The meaning of RTL930X_TEMPLATE_FIELD_VLAN depends on phase and the configuration in
  * RTL930X_PIE_CTRL. We use always the same definition and map to the inner VLAN tag:
  */
-#define TEMPLATE_FIELD_VLAN TEMPLATE_FIELD_ITAG
+#define RTL930X_TEMPLATE_FIELD_VLAN RTL930X_TEMPLATE_FIELD_ITAG
 
 /* Number of fixed templates predefined in the RTL9300 SoC */
-#define N_FIXED_TEMPLATES 5
+#define RTL930X_N_FIXED_TEMPLATES 5
 /* RTL9300 specific predefined templates */
-static enum template_field_id fixed_templates[N_FIXED_TEMPLATES][N_FIXED_FIELDS] = {
+static enum rtl930x_template_field_id rtl930x_fixed_templates[RTL930X_N_FIXED_TEMPLATES][N_FIXED_FIELDS] = {
 	{
-	  TEMPLATE_FIELD_DMAC0, TEMPLATE_FIELD_DMAC1, TEMPLATE_FIELD_DMAC2,
-	  TEMPLATE_FIELD_SMAC0, TEMPLATE_FIELD_SMAC1, TEMPLATE_FIELD_SMAC2,
-	  TEMPLATE_FIELD_VLAN, TEMPLATE_FIELD_IP_TOS_PROTO, TEMPLATE_FIELD_DSAP_SSAP,
-	  TEMPLATE_FIELD_ETHERTYPE, TEMPLATE_FIELD_SPM0, TEMPLATE_FIELD_SPM1
+	  RTL930X_TEMPLATE_FIELD_DMAC0, RTL930X_TEMPLATE_FIELD_DMAC1, RTL930X_TEMPLATE_FIELD_DMAC2,
+	  RTL930X_TEMPLATE_FIELD_SMAC0, RTL930X_TEMPLATE_FIELD_SMAC1, RTL930X_TEMPLATE_FIELD_SMAC2,
+	  RTL930X_TEMPLATE_FIELD_VLAN, RTL930X_TEMPLATE_FIELD_IP_TOS_PROTO, RTL930X_TEMPLATE_FIELD_DSAP_SSAP,
+	  RTL930X_TEMPLATE_FIELD_ETHERTYPE, RTL930X_TEMPLATE_FIELD_SPM0, RTL930X_TEMPLATE_FIELD_SPM1
 	}, {
-	  TEMPLATE_FIELD_SIP0, TEMPLATE_FIELD_SIP1, TEMPLATE_FIELD_DIP0,
-	  TEMPLATE_FIELD_DIP1, TEMPLATE_FIELD_IP_TOS_PROTO, TEMPLATE_FIELD_TCP_INFO,
-	  TEMPLATE_FIELD_L4_SPORT, TEMPLATE_FIELD_L4_DPORT, TEMPLATE_FIELD_VLAN,
-	  TEMPLATE_FIELD_RANGE_CHK, TEMPLATE_FIELD_SPM0, TEMPLATE_FIELD_SPM1
+	  RTL930X_TEMPLATE_FIELD_SIP0, RTL930X_TEMPLATE_FIELD_SIP1, RTL930X_TEMPLATE_FIELD_DIP0,
+	  RTL930X_TEMPLATE_FIELD_DIP1, RTL930X_TEMPLATE_FIELD_IP_TOS_PROTO, RTL930X_TEMPLATE_FIELD_TCP_INFO,
+	  RTL930X_TEMPLATE_FIELD_L4_SPORT, RTL930X_TEMPLATE_FIELD_L4_DPORT, RTL930X_TEMPLATE_FIELD_VLAN,
+	  RTL930X_TEMPLATE_FIELD_RANGE_CHK, RTL930X_TEMPLATE_FIELD_SPM0, RTL930X_TEMPLATE_FIELD_SPM1
 	}, {
-	  TEMPLATE_FIELD_DMAC0, TEMPLATE_FIELD_DMAC1, TEMPLATE_FIELD_DMAC2,
-	  TEMPLATE_FIELD_VLAN, TEMPLATE_FIELD_ETHERTYPE, TEMPLATE_FIELD_IP_TOS_PROTO,
-	  TEMPLATE_FIELD_SIP0, TEMPLATE_FIELD_SIP1, TEMPLATE_FIELD_DIP0,
-	  TEMPLATE_FIELD_DIP1, TEMPLATE_FIELD_L4_SPORT, TEMPLATE_FIELD_L4_DPORT
+	  RTL930X_TEMPLATE_FIELD_DMAC0, RTL930X_TEMPLATE_FIELD_DMAC1, RTL930X_TEMPLATE_FIELD_DMAC2,
+	  RTL930X_TEMPLATE_FIELD_VLAN, RTL930X_TEMPLATE_FIELD_ETHERTYPE, RTL930X_TEMPLATE_FIELD_IP_TOS_PROTO,
+	  RTL930X_TEMPLATE_FIELD_SIP0, RTL930X_TEMPLATE_FIELD_SIP1, RTL930X_TEMPLATE_FIELD_DIP0,
+	  RTL930X_TEMPLATE_FIELD_DIP1, RTL930X_TEMPLATE_FIELD_L4_SPORT, RTL930X_TEMPLATE_FIELD_L4_DPORT
 	}, {
-	  TEMPLATE_FIELD_DIP0, TEMPLATE_FIELD_DIP1, TEMPLATE_FIELD_DIP2,
-	  TEMPLATE_FIELD_DIP3, TEMPLATE_FIELD_DIP4, TEMPLATE_FIELD_DIP5,
-	  TEMPLATE_FIELD_DIP6, TEMPLATE_FIELD_DIP7, TEMPLATE_FIELD_IP_TOS_PROTO,
-	  TEMPLATE_FIELD_TCP_INFO, TEMPLATE_FIELD_L4_SPORT, TEMPLATE_FIELD_L4_DPORT
+	  RTL930X_TEMPLATE_FIELD_DIP0, RTL930X_TEMPLATE_FIELD_DIP1, RTL930X_TEMPLATE_FIELD_DIP2,
+	  RTL930X_TEMPLATE_FIELD_DIP3, RTL930X_TEMPLATE_FIELD_DIP4, RTL930X_TEMPLATE_FIELD_DIP5,
+	  RTL930X_TEMPLATE_FIELD_DIP6, RTL930X_TEMPLATE_FIELD_DIP7, RTL930X_TEMPLATE_FIELD_IP_TOS_PROTO,
+	  RTL930X_TEMPLATE_FIELD_TCP_INFO, RTL930X_TEMPLATE_FIELD_L4_SPORT, RTL930X_TEMPLATE_FIELD_L4_DPORT
 	}, {
-	  TEMPLATE_FIELD_SIP0, TEMPLATE_FIELD_SIP1, TEMPLATE_FIELD_SIP2,
-	  TEMPLATE_FIELD_SIP3, TEMPLATE_FIELD_SIP4, TEMPLATE_FIELD_SIP5,
-	  TEMPLATE_FIELD_SIP6, TEMPLATE_FIELD_SIP7, TEMPLATE_FIELD_VLAN,
-	  TEMPLATE_FIELD_RANGE_CHK, TEMPLATE_FIELD_SPM1, TEMPLATE_FIELD_SPM1
+	  RTL930X_TEMPLATE_FIELD_SIP0, RTL930X_TEMPLATE_FIELD_SIP1, RTL930X_TEMPLATE_FIELD_SIP2,
+	  RTL930X_TEMPLATE_FIELD_SIP3, RTL930X_TEMPLATE_FIELD_SIP4, RTL930X_TEMPLATE_FIELD_SIP5,
+	  RTL930X_TEMPLATE_FIELD_SIP6, RTL930X_TEMPLATE_FIELD_SIP7, RTL930X_TEMPLATE_FIELD_VLAN,
+	  RTL930X_TEMPLATE_FIELD_RANGE_CHK, RTL930X_TEMPLATE_FIELD_SPM1, RTL930X_TEMPLATE_FIELD_SPM1
 	},
 };
 
@@ -1112,70 +1112,70 @@ static void rtl930x_pie_lookup_enable(struct rtl838x_switch_priv *priv, int inde
  * on all SoCs
  * On the RTL9300 the mask fields are not word-aligend!
  */
-static void rtl930x_write_pie_templated(u32 r[], struct pie_rule *pr, enum template_field_id t[])
+static void rtl930x_write_pie_templated(u32 r[], struct pie_rule *pr, enum rtl930x_template_field_id t[])
 {
 	for (int i = 0; i < N_FIXED_FIELDS; i++) {
-		enum template_field_id field_type = t[i];
+		enum rtl930x_template_field_id field_type = t[i];
 		u16 data = 0, data_m = 0;
 
 		switch (field_type) {
-		case TEMPLATE_FIELD_SPM0:
+		case RTL930X_TEMPLATE_FIELD_SPM0:
 			data = pr->spm;
 			data_m = pr->spm_m;
 			break;
-		case TEMPLATE_FIELD_SPM1:
+		case RTL930X_TEMPLATE_FIELD_SPM1:
 			data = pr->spm >> 16;
 			data_m = pr->spm_m >> 16;
 			break;
-		case TEMPLATE_FIELD_OTAG:
+		case RTL930X_TEMPLATE_FIELD_OTAG:
 			data = pr->otag;
 			data_m = pr->otag_m;
 			break;
-		case TEMPLATE_FIELD_SMAC0:
+		case RTL930X_TEMPLATE_FIELD_SMAC0:
 			data = pr->smac[4];
 			data = (data << 8) | pr->smac[5];
 			data_m = pr->smac_m[4];
 			data_m = (data_m << 8) | pr->smac_m[5];
 			break;
-		case TEMPLATE_FIELD_SMAC1:
+		case RTL930X_TEMPLATE_FIELD_SMAC1:
 			data = pr->smac[2];
 			data = (data << 8) | pr->smac[3];
 			data_m = pr->smac_m[2];
 			data_m = (data_m << 8) | pr->smac_m[3];
 			break;
-		case TEMPLATE_FIELD_SMAC2:
+		case RTL930X_TEMPLATE_FIELD_SMAC2:
 			data = pr->smac[0];
 			data = (data << 8) | pr->smac[1];
 			data_m = pr->smac_m[0];
 			data_m = (data_m << 8) | pr->smac_m[1];
 			break;
-		case TEMPLATE_FIELD_DMAC0:
+		case RTL930X_TEMPLATE_FIELD_DMAC0:
 			data = pr->dmac[4];
 			data = (data << 8) | pr->dmac[5];
 			data_m = pr->dmac_m[4];
 			data_m = (data_m << 8) | pr->dmac_m[5];
 			break;
-		case TEMPLATE_FIELD_DMAC1:
+		case RTL930X_TEMPLATE_FIELD_DMAC1:
 			data = pr->dmac[2];
 			data = (data << 8) | pr->dmac[3];
 			data_m = pr->dmac_m[2];
 			data_m = (data_m << 8) | pr->dmac_m[3];
 			break;
-		case TEMPLATE_FIELD_DMAC2:
+		case RTL930X_TEMPLATE_FIELD_DMAC2:
 			data = pr->dmac[0];
 			data = (data << 8) | pr->dmac[1];
 			data_m = pr->dmac_m[0];
 			data_m = (data_m << 8) | pr->dmac_m[1];
 			break;
-		case TEMPLATE_FIELD_ETHERTYPE:
+		case RTL930X_TEMPLATE_FIELD_ETHERTYPE:
 			data = pr->ethertype;
 			data_m = pr->ethertype_m;
 			break;
-		case TEMPLATE_FIELD_ITAG:
+		case RTL930X_TEMPLATE_FIELD_ITAG:
 			data = pr->itag;
 			data_m = pr->itag_m;
 			break;
-		case TEMPLATE_FIELD_SIP0:
+		case RTL930X_TEMPLATE_FIELD_SIP0:
 			if (pr->is_ipv6) {
 				data = pr->sip6.s6_addr16[7];
 				data_m = pr->sip6_m.s6_addr16[7];
@@ -1184,7 +1184,7 @@ static void rtl930x_write_pie_templated(u32 r[], struct pie_rule *pr, enum templ
 				data_m = pr->sip_m;
 			}
 			break;
-		case TEMPLATE_FIELD_SIP1:
+		case RTL930X_TEMPLATE_FIELD_SIP1:
 			if (pr->is_ipv6) {
 				data = pr->sip6.s6_addr16[6];
 				data_m = pr->sip6_m.s6_addr16[6];
@@ -1193,16 +1193,16 @@ static void rtl930x_write_pie_templated(u32 r[], struct pie_rule *pr, enum templ
 				data_m = pr->sip_m >> 16;
 			}
 			break;
-		case TEMPLATE_FIELD_SIP2:
-		case TEMPLATE_FIELD_SIP3:
-		case TEMPLATE_FIELD_SIP4:
-		case TEMPLATE_FIELD_SIP5:
-		case TEMPLATE_FIELD_SIP6:
-		case TEMPLATE_FIELD_SIP7:
-			data = pr->sip6.s6_addr16[5 - (field_type - TEMPLATE_FIELD_SIP2)];
-			data_m = pr->sip6_m.s6_addr16[5 - (field_type - TEMPLATE_FIELD_SIP2)];
+		case RTL930X_TEMPLATE_FIELD_SIP2:
+		case RTL930X_TEMPLATE_FIELD_SIP3:
+		case RTL930X_TEMPLATE_FIELD_SIP4:
+		case RTL930X_TEMPLATE_FIELD_SIP5:
+		case RTL930X_TEMPLATE_FIELD_SIP6:
+		case RTL930X_TEMPLATE_FIELD_SIP7:
+			data = pr->sip6.s6_addr16[5 - (field_type - RTL930X_TEMPLATE_FIELD_SIP2)];
+			data_m = pr->sip6_m.s6_addr16[5 - (field_type - RTL930X_TEMPLATE_FIELD_SIP2)];
 			break;
-		case TEMPLATE_FIELD_DIP0:
+		case RTL930X_TEMPLATE_FIELD_DIP0:
 			if (pr->is_ipv6) {
 				data = pr->dip6.s6_addr16[7];
 				data_m = pr->dip6_m.s6_addr16[7];
@@ -1211,7 +1211,7 @@ static void rtl930x_write_pie_templated(u32 r[], struct pie_rule *pr, enum templ
 				data_m = pr->dip_m;
 			}
 			break;
-		case TEMPLATE_FIELD_DIP1:
+		case RTL930X_TEMPLATE_FIELD_DIP1:
 			if (pr->is_ipv6) {
 				data = pr->dip6.s6_addr16[6];
 				data_m = pr->dip6_m.s6_addr16[6];
@@ -1220,37 +1220,37 @@ static void rtl930x_write_pie_templated(u32 r[], struct pie_rule *pr, enum templ
 				data_m = pr->dip_m >> 16;
 			}
 			break;
-		case TEMPLATE_FIELD_DIP2:
-		case TEMPLATE_FIELD_DIP3:
-		case TEMPLATE_FIELD_DIP4:
-		case TEMPLATE_FIELD_DIP5:
-		case TEMPLATE_FIELD_DIP6:
-		case TEMPLATE_FIELD_DIP7:
-			data = pr->dip6.s6_addr16[5 - (field_type - TEMPLATE_FIELD_DIP2)];
-			data_m = pr->dip6_m.s6_addr16[5 - (field_type - TEMPLATE_FIELD_DIP2)];
+		case RTL930X_TEMPLATE_FIELD_DIP2:
+		case RTL930X_TEMPLATE_FIELD_DIP3:
+		case RTL930X_TEMPLATE_FIELD_DIP4:
+		case RTL930X_TEMPLATE_FIELD_DIP5:
+		case RTL930X_TEMPLATE_FIELD_DIP6:
+		case RTL930X_TEMPLATE_FIELD_DIP7:
+			data = pr->dip6.s6_addr16[5 - (field_type - RTL930X_TEMPLATE_FIELD_DIP2)];
+			data_m = pr->dip6_m.s6_addr16[5 - (field_type - RTL930X_TEMPLATE_FIELD_DIP2)];
 			break;
-		case TEMPLATE_FIELD_IP_TOS_PROTO:
+		case RTL930X_TEMPLATE_FIELD_IP_TOS_PROTO:
 			data = pr->tos_proto;
 			data_m = pr->tos_proto_m;
 			break;
-		case TEMPLATE_FIELD_L4_SPORT:
+		case RTL930X_TEMPLATE_FIELD_L4_SPORT:
 			data = pr->sport;
 			data_m = pr->sport_m;
 			break;
-		case TEMPLATE_FIELD_L4_DPORT:
+		case RTL930X_TEMPLATE_FIELD_L4_DPORT:
 			data = pr->dport;
 			data_m = pr->dport_m;
 			break;
-		case TEMPLATE_FIELD_DSAP_SSAP:
+		case RTL930X_TEMPLATE_FIELD_DSAP_SSAP:
 			data = pr->dsap_ssap;
 			data_m = pr->dsap_ssap_m;
 			break;
-		case TEMPLATE_FIELD_TCP_INFO:
+		case RTL930X_TEMPLATE_FIELD_TCP_INFO:
 			data = pr->tcp_info;
 			data_m = pr->tcp_info_m;
 			break;
-		case TEMPLATE_FIELD_RANGE_CHK:
-			pr_debug("TEMPLATE_FIELD_RANGE_CHK: not configured\n");
+		case RTL930X_TEMPLATE_FIELD_RANGE_CHK:
+			pr_debug("RTL930X_TEMPLATE_FIELD_RANGE_CHK: not configured\n");
 			break;
 		default:
 			pr_debug("%s: unknown field %d\n", __func__, field_type);
@@ -1434,7 +1434,7 @@ static int rtl930x_pie_rule_write(struct rtl838x_switch_priv *priv, int idx, str
 	rtl930x_write_pie_fixed_fields(r, pr);
 
 	pr_debug("%s: template %d\n", __func__, (t_select >> (pr->tid * 4)) & 0xf);
-	rtl930x_write_pie_templated(r, pr, fixed_templates[(t_select >> (pr->tid * 4)) & 0xf]);
+	rtl930x_write_pie_templated(r, pr, rtl930x_fixed_templates[(t_select >> (pr->tid * 4)) & 0xf]);
 
 	rtl930x_write_pie_action(r, pr);
 
@@ -1446,10 +1446,10 @@ static int rtl930x_pie_rule_write(struct rtl838x_switch_priv *priv, int idx, str
 	return 0;
 }
 
-static bool rtl930x_pie_templ_has(int t, enum template_field_id field_type)
+static bool rtl930x_pie_templ_has(int t, enum rtl930x_template_field_id field_type)
 {
 	for (int i = 0; i < N_FIXED_FIELDS; i++) {
-		enum template_field_id ft = fixed_templates[t][i];
+		enum rtl930x_template_field_id ft = rtl930x_fixed_templates[t][i];
 
 		if (field_type == ft)
 			return true;
@@ -1459,7 +1459,7 @@ static bool rtl930x_pie_templ_has(int t, enum template_field_id field_type)
 }
 
 /* Verify that the rule pr is compatible with a given template t in block
- * Note that this function is SoC specific since the values of e.g. TEMPLATE_FIELD_SIP0
+ * Note that this function is SoC specific since the values of e.g. RTL930X_TEMPLATE_FIELD_SIP0
  * depend on the SoC
  */
 static int rtl930x_pie_verify_template(struct rtl838x_switch_priv *priv,
@@ -1467,10 +1467,10 @@ static int rtl930x_pie_verify_template(struct rtl838x_switch_priv *priv,
 {
 	int i;
 
-	if (!pr->is_ipv6 && pr->sip_m && !rtl930x_pie_templ_has(t, TEMPLATE_FIELD_SIP0))
+	if (!pr->is_ipv6 && pr->sip_m && !rtl930x_pie_templ_has(t, RTL930X_TEMPLATE_FIELD_SIP0))
 		return -1;
 
-	if (!pr->is_ipv6 && pr->dip_m && !rtl930x_pie_templ_has(t, TEMPLATE_FIELD_DIP0))
+	if (!pr->is_ipv6 && pr->dip_m && !rtl930x_pie_templ_has(t, RTL930X_TEMPLATE_FIELD_DIP0))
 		return -1;
 
 	if (pr->is_ipv6) {
@@ -1478,32 +1478,32 @@ static int rtl930x_pie_verify_template(struct rtl838x_switch_priv *priv,
 		     pr->sip6_m.s6_addr32[1] ||
 		     pr->sip6_m.s6_addr32[2] ||
 		     pr->sip6_m.s6_addr32[3]) &&
-		    !rtl930x_pie_templ_has(t, TEMPLATE_FIELD_SIP2))
+		    !rtl930x_pie_templ_has(t, RTL930X_TEMPLATE_FIELD_SIP2))
 			return -1;
 		if ((pr->dip6_m.s6_addr32[0] ||
 		     pr->dip6_m.s6_addr32[1] ||
 		     pr->dip6_m.s6_addr32[2] ||
 		     pr->dip6_m.s6_addr32[3]) &&
-		    !rtl930x_pie_templ_has(t, TEMPLATE_FIELD_DIP2))
+		    !rtl930x_pie_templ_has(t, RTL930X_TEMPLATE_FIELD_DIP2))
 			return -1;
 	}
 
-	if (ether_addr_to_u64(pr->smac_m) && !rtl930x_pie_templ_has(t, TEMPLATE_FIELD_SMAC0))
+	if (ether_addr_to_u64(pr->smac_m) && !rtl930x_pie_templ_has(t, RTL930X_TEMPLATE_FIELD_SMAC0))
 		return -1;
 
-	if (ether_addr_to_u64(pr->dmac_m) && !rtl930x_pie_templ_has(t, TEMPLATE_FIELD_DMAC0))
+	if (ether_addr_to_u64(pr->dmac_m) && !rtl930x_pie_templ_has(t, RTL930X_TEMPLATE_FIELD_DMAC0))
 		return -1;
 
-	if (pr->ethertype_m && !rtl930x_pie_templ_has(t, TEMPLATE_FIELD_ETHERTYPE))
+	if (pr->ethertype_m && !rtl930x_pie_templ_has(t, RTL930X_TEMPLATE_FIELD_ETHERTYPE))
 		return -1;
 
-	if (pr->itag_m && !rtl930x_pie_templ_has(t, TEMPLATE_FIELD_VLAN))
+	if (pr->itag_m && !rtl930x_pie_templ_has(t, RTL930X_TEMPLATE_FIELD_VLAN))
 		return -1;
 
-	if (pr->sport_m && !rtl930x_pie_templ_has(t, TEMPLATE_FIELD_L4_SPORT))
+	if (pr->sport_m && !rtl930x_pie_templ_has(t, RTL930X_TEMPLATE_FIELD_L4_SPORT))
 		return -1;
 
-	if (pr->dport_m && !rtl930x_pie_templ_has(t, TEMPLATE_FIELD_L4_DPORT))
+	if (pr->dport_m && !rtl930x_pie_templ_has(t, RTL930X_TEMPLATE_FIELD_L4_DPORT))
 		return -1;
 
 	/* TODO: Check more */

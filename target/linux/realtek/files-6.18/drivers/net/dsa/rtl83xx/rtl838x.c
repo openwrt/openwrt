@@ -11,53 +11,53 @@
 
 /* see_dal_maple_acl_log2PhyTmplteField and src/app/diag_v2/src/diag_acl.c */
 /* Definition of the RTL838X-specific template field IDs as used in the PIE */
-enum template_field_id {
-	TEMPLATE_FIELD_SPMMASK = 0,
-	TEMPLATE_FIELD_SPM0 = 1,	/* Source portmask ports 0-15 */
-	TEMPLATE_FIELD_SPM1 = 2,	/* Source portmask ports 16-28 */
-	TEMPLATE_FIELD_RANGE_CHK = 3,
-	TEMPLATE_FIELD_DMAC0 = 4,	/* Destination MAC [15:0] */
-	TEMPLATE_FIELD_DMAC1 = 5,	/* Destination MAC [31:16] */
-	TEMPLATE_FIELD_DMAC2 = 6,	/* Destination MAC [47:32] */
-	TEMPLATE_FIELD_SMAC0 = 7,	/* Source MAC [15:0] */
-	TEMPLATE_FIELD_SMAC1 = 8,	/* Source MAC [31:16] */
-	TEMPLATE_FIELD_SMAC2 = 9,	/* Source MAC [47:32] */
-	TEMPLATE_FIELD_ETHERTYPE = 10,	/* Ethernet typ */
-	TEMPLATE_FIELD_OTAG = 11,	/* Outer VLAN tag */
-	TEMPLATE_FIELD_ITAG = 12,	/* Inner VLAN tag */
-	TEMPLATE_FIELD_SIP0 = 13,	/* IPv4 or IPv6 source IP[15:0] or ARP/RARP */
+enum rtl838x_template_field_id {
+	RTL838X_TEMPLATE_FIELD_SPMMASK = 0,
+	RTL838X_TEMPLATE_FIELD_SPM0 = 1,	/* Source portmask ports 0-15 */
+	RTL838X_TEMPLATE_FIELD_SPM1 = 2,	/* Source portmask ports 16-28 */
+	RTL838X_TEMPLATE_FIELD_RANGE_CHK = 3,
+	RTL838X_TEMPLATE_FIELD_DMAC0 = 4,	/* Destination MAC [15:0] */
+	RTL838X_TEMPLATE_FIELD_DMAC1 = 5,	/* Destination MAC [31:16] */
+	RTL838X_TEMPLATE_FIELD_DMAC2 = 6,	/* Destination MAC [47:32] */
+	RTL838X_TEMPLATE_FIELD_SMAC0 = 7,	/* Source MAC [15:0] */
+	RTL838X_TEMPLATE_FIELD_SMAC1 = 8,	/* Source MAC [31:16] */
+	RTL838X_TEMPLATE_FIELD_SMAC2 = 9,	/* Source MAC [47:32] */
+	RTL838X_TEMPLATE_FIELD_ETHERTYPE = 10,	/* Ethernet typ */
+	RTL838X_TEMPLATE_FIELD_OTAG = 11,	/* Outer VLAN tag */
+	RTL838X_TEMPLATE_FIELD_ITAG = 12,	/* Inner VLAN tag */
+	RTL838X_TEMPLATE_FIELD_SIP0 = 13,	/* IPv4 or IPv6 source IP[15:0] or ARP/RARP */
 					/* source protocol address in header */
-	TEMPLATE_FIELD_SIP1 = 14,	/* IPv4 or IPv6 source IP[31:16] or ARP/RARP */
-	TEMPLATE_FIELD_DIP0 = 15,	/* IPv4 or IPv6 destination IP[15:0] */
-	TEMPLATE_FIELD_DIP1 = 16,	/* IPv4 or IPv6 destination IP[31:16] */
-	TEMPLATE_FIELD_IP_TOS_PROTO = 17, /* IPv4 TOS/IPv6 traffic class and */
+	RTL838X_TEMPLATE_FIELD_SIP1 = 14,	/* IPv4 or IPv6 source IP[31:16] or ARP/RARP */
+	RTL838X_TEMPLATE_FIELD_DIP0 = 15,	/* IPv4 or IPv6 destination IP[15:0] */
+	RTL838X_TEMPLATE_FIELD_DIP1 = 16,	/* IPv4 or IPv6 destination IP[31:16] */
+	RTL838X_TEMPLATE_FIELD_IP_TOS_PROTO = 17, /* IPv4 TOS/IPv6 traffic class and */
 					  /* IPv4 proto/IPv6 next header fields */
-	TEMPLATE_FIELD_L34_HEADER = 18,	/* packet with extra tag and IPv6 with auth, dest, */
+	RTL838X_TEMPLATE_FIELD_L34_HEADER = 18,	/* packet with extra tag and IPv6 with auth, dest, */
 					/* frag, route, hop-by-hop option header, */
 					/* IGMP type, TCP flag */
-	TEMPLATE_FIELD_L4_SPORT = 19,	/* TCP/UDP source port */
-	TEMPLATE_FIELD_L4_DPORT = 20,	/* TCP/UDP destination port */
-	TEMPLATE_FIELD_ICMP_IGMP = 21,
-	TEMPLATE_FIELD_IP_RANGE = 22,
-	TEMPLATE_FIELD_FIELD_SELECTOR_VALID = 23, /* Field selector mask */
-	TEMPLATE_FIELD_FIELD_SELECTOR_0 = 24,
-	TEMPLATE_FIELD_FIELD_SELECTOR_1 = 25,
-	TEMPLATE_FIELD_FIELD_SELECTOR_2 = 26,
-	TEMPLATE_FIELD_FIELD_SELECTOR_3 = 27,
-	TEMPLATE_FIELD_SIP2 = 28,	/* IPv6 source IP[47:32] */
-	TEMPLATE_FIELD_SIP3 = 29,	/* IPv6 source IP[63:48] */
-	TEMPLATE_FIELD_SIP4 = 30,	/* IPv6 source IP[79:64] */
-	TEMPLATE_FIELD_SIP5 = 31,	/* IPv6 source IP[95:80] */
-	TEMPLATE_FIELD_SIP6 = 32,	/* IPv6 source IP[111:96] */
-	TEMPLATE_FIELD_SIP7 = 33,	/* IPv6 source IP[127:112] */
-	TEMPLATE_FIELD_DIP2 = 34,	/* IPv6 destination IP[47:32] */
-	TEMPLATE_FIELD_DIP3 = 35,	/* IPv6 destination IP[63:48] */
-	TEMPLATE_FIELD_DIP4 = 36,	/* IPv6 destination IP[79:64] */
-	TEMPLATE_FIELD_DIP5 = 37,	/* IPv6 destination IP[95:80] */
-	TEMPLATE_FIELD_DIP6 = 38,	/* IPv6 destination IP[111:96] */
-	TEMPLATE_FIELD_DIP7 = 39,	/* IPv6 destination IP[127:112] */
-	TEMPLATE_FIELD_FWD_VID = 40,	/* Forwarding VLAN-ID */
-	TEMPLATE_FIELD_FLOW_LABEL = 41,
+	RTL838X_TEMPLATE_FIELD_L4_SPORT = 19,	/* TCP/UDP source port */
+	RTL838X_TEMPLATE_FIELD_L4_DPORT = 20,	/* TCP/UDP destination port */
+	RTL838X_TEMPLATE_FIELD_ICMP_IGMP = 21,
+	RTL838X_TEMPLATE_FIELD_IP_RANGE = 22,
+	RTL838X_TEMPLATE_FIELD_FIELD_SELECTOR_VALID = 23, /* Field selector mask */
+	RTL838X_TEMPLATE_FIELD_FIELD_SELECTOR_0 = 24,
+	RTL838X_TEMPLATE_FIELD_FIELD_SELECTOR_1 = 25,
+	RTL838X_TEMPLATE_FIELD_FIELD_SELECTOR_2 = 26,
+	RTL838X_TEMPLATE_FIELD_FIELD_SELECTOR_3 = 27,
+	RTL838X_TEMPLATE_FIELD_SIP2 = 28,	/* IPv6 source IP[47:32] */
+	RTL838X_TEMPLATE_FIELD_SIP3 = 29,	/* IPv6 source IP[63:48] */
+	RTL838X_TEMPLATE_FIELD_SIP4 = 30,	/* IPv6 source IP[79:64] */
+	RTL838X_TEMPLATE_FIELD_SIP5 = 31,	/* IPv6 source IP[95:80] */
+	RTL838X_TEMPLATE_FIELD_SIP6 = 32,	/* IPv6 source IP[111:96] */
+	RTL838X_TEMPLATE_FIELD_SIP7 = 33,	/* IPv6 source IP[127:112] */
+	RTL838X_TEMPLATE_FIELD_DIP2 = 34,	/* IPv6 destination IP[47:32] */
+	RTL838X_TEMPLATE_FIELD_DIP3 = 35,	/* IPv6 destination IP[63:48] */
+	RTL838X_TEMPLATE_FIELD_DIP4 = 36,	/* IPv6 destination IP[79:64] */
+	RTL838X_TEMPLATE_FIELD_DIP5 = 37,	/* IPv6 destination IP[95:80] */
+	RTL838X_TEMPLATE_FIELD_DIP6 = 38,	/* IPv6 destination IP[111:96] */
+	RTL838X_TEMPLATE_FIELD_DIP7 = 39,	/* IPv6 destination IP[127:112] */
+	RTL838X_TEMPLATE_FIELD_FWD_VID = 40,	/* Forwarding VLAN-ID */
+	RTL838X_TEMPLATE_FIELD_FLOW_LABEL = 41,
 };
 
 /* The RTL838X SoCs use 5 fixed templates with definitions for which data fields are to
@@ -67,33 +67,33 @@ enum template_field_id {
  * in RTL838X_ACL_TMPLTE_CTRL control registers.
  * TODO: See all src/app/diag_v2/src/diag_pie.c
  */
-#define N_FIXED_TEMPLATES 5
-static enum template_field_id fixed_templates[N_FIXED_TEMPLATES][N_FIXED_FIELDS] = {
+#define RTL838X_N_FIXED_TEMPLATES 5
+static enum rtl838x_template_field_id rtl838x_fixed_templates[RTL838X_N_FIXED_TEMPLATES][N_FIXED_FIELDS] = {
 	{
-	  TEMPLATE_FIELD_SPM0, TEMPLATE_FIELD_SPM1, TEMPLATE_FIELD_OTAG,
-	  TEMPLATE_FIELD_SMAC0, TEMPLATE_FIELD_SMAC1, TEMPLATE_FIELD_SMAC2,
-	  TEMPLATE_FIELD_DMAC0, TEMPLATE_FIELD_DMAC1, TEMPLATE_FIELD_DMAC2,
-	  TEMPLATE_FIELD_ETHERTYPE, TEMPLATE_FIELD_ITAG, TEMPLATE_FIELD_RANGE_CHK
+	  RTL838X_TEMPLATE_FIELD_SPM0, RTL838X_TEMPLATE_FIELD_SPM1, RTL838X_TEMPLATE_FIELD_OTAG,
+	  RTL838X_TEMPLATE_FIELD_SMAC0, RTL838X_TEMPLATE_FIELD_SMAC1, RTL838X_TEMPLATE_FIELD_SMAC2,
+	  RTL838X_TEMPLATE_FIELD_DMAC0, RTL838X_TEMPLATE_FIELD_DMAC1, RTL838X_TEMPLATE_FIELD_DMAC2,
+	  RTL838X_TEMPLATE_FIELD_ETHERTYPE, RTL838X_TEMPLATE_FIELD_ITAG, RTL838X_TEMPLATE_FIELD_RANGE_CHK
 	}, {
-	  TEMPLATE_FIELD_SIP0, TEMPLATE_FIELD_SIP1, TEMPLATE_FIELD_DIP0,
-	  TEMPLATE_FIELD_DIP1, TEMPLATE_FIELD_IP_TOS_PROTO, TEMPLATE_FIELD_L4_SPORT,
-	  TEMPLATE_FIELD_L4_DPORT, TEMPLATE_FIELD_ICMP_IGMP, TEMPLATE_FIELD_ITAG,
-	  TEMPLATE_FIELD_RANGE_CHK, TEMPLATE_FIELD_SPM0, TEMPLATE_FIELD_SPM1
+	  RTL838X_TEMPLATE_FIELD_SIP0, RTL838X_TEMPLATE_FIELD_SIP1, RTL838X_TEMPLATE_FIELD_DIP0,
+	  RTL838X_TEMPLATE_FIELD_DIP1, RTL838X_TEMPLATE_FIELD_IP_TOS_PROTO, RTL838X_TEMPLATE_FIELD_L4_SPORT,
+	  RTL838X_TEMPLATE_FIELD_L4_DPORT, RTL838X_TEMPLATE_FIELD_ICMP_IGMP, RTL838X_TEMPLATE_FIELD_ITAG,
+	  RTL838X_TEMPLATE_FIELD_RANGE_CHK, RTL838X_TEMPLATE_FIELD_SPM0, RTL838X_TEMPLATE_FIELD_SPM1
 	}, {
-	  TEMPLATE_FIELD_DMAC0, TEMPLATE_FIELD_DMAC1, TEMPLATE_FIELD_DMAC2,
-	  TEMPLATE_FIELD_ITAG, TEMPLATE_FIELD_ETHERTYPE, TEMPLATE_FIELD_IP_TOS_PROTO,
-	  TEMPLATE_FIELD_L4_DPORT, TEMPLATE_FIELD_L4_SPORT, TEMPLATE_FIELD_SIP0,
-	  TEMPLATE_FIELD_SIP1, TEMPLATE_FIELD_DIP0, TEMPLATE_FIELD_DIP1
+	  RTL838X_TEMPLATE_FIELD_DMAC0, RTL838X_TEMPLATE_FIELD_DMAC1, RTL838X_TEMPLATE_FIELD_DMAC2,
+	  RTL838X_TEMPLATE_FIELD_ITAG, RTL838X_TEMPLATE_FIELD_ETHERTYPE, RTL838X_TEMPLATE_FIELD_IP_TOS_PROTO,
+	  RTL838X_TEMPLATE_FIELD_L4_DPORT, RTL838X_TEMPLATE_FIELD_L4_SPORT, RTL838X_TEMPLATE_FIELD_SIP0,
+	  RTL838X_TEMPLATE_FIELD_SIP1, RTL838X_TEMPLATE_FIELD_DIP0, RTL838X_TEMPLATE_FIELD_DIP1
 	}, {
-	  TEMPLATE_FIELD_DIP0, TEMPLATE_FIELD_DIP1, TEMPLATE_FIELD_DIP2,
-	  TEMPLATE_FIELD_DIP3, TEMPLATE_FIELD_DIP4, TEMPLATE_FIELD_DIP5,
-	  TEMPLATE_FIELD_DIP6, TEMPLATE_FIELD_DIP7, TEMPLATE_FIELD_L4_DPORT,
-	  TEMPLATE_FIELD_L4_SPORT, TEMPLATE_FIELD_ICMP_IGMP, TEMPLATE_FIELD_IP_TOS_PROTO
+	  RTL838X_TEMPLATE_FIELD_DIP0, RTL838X_TEMPLATE_FIELD_DIP1, RTL838X_TEMPLATE_FIELD_DIP2,
+	  RTL838X_TEMPLATE_FIELD_DIP3, RTL838X_TEMPLATE_FIELD_DIP4, RTL838X_TEMPLATE_FIELD_DIP5,
+	  RTL838X_TEMPLATE_FIELD_DIP6, RTL838X_TEMPLATE_FIELD_DIP7, RTL838X_TEMPLATE_FIELD_L4_DPORT,
+	  RTL838X_TEMPLATE_FIELD_L4_SPORT, RTL838X_TEMPLATE_FIELD_ICMP_IGMP, RTL838X_TEMPLATE_FIELD_IP_TOS_PROTO
 	}, {
-	  TEMPLATE_FIELD_SIP0, TEMPLATE_FIELD_SIP1, TEMPLATE_FIELD_SIP2,
-	  TEMPLATE_FIELD_SIP3, TEMPLATE_FIELD_SIP4, TEMPLATE_FIELD_SIP5,
-	  TEMPLATE_FIELD_SIP6, TEMPLATE_FIELD_SIP7, TEMPLATE_FIELD_ITAG,
-	  TEMPLATE_FIELD_RANGE_CHK, TEMPLATE_FIELD_SPM0, TEMPLATE_FIELD_SPM1
+	  RTL838X_TEMPLATE_FIELD_SIP0, RTL838X_TEMPLATE_FIELD_SIP1, RTL838X_TEMPLATE_FIELD_SIP2,
+	  RTL838X_TEMPLATE_FIELD_SIP3, RTL838X_TEMPLATE_FIELD_SIP4, RTL838X_TEMPLATE_FIELD_SIP5,
+	  RTL838X_TEMPLATE_FIELD_SIP6, RTL838X_TEMPLATE_FIELD_SIP7, RTL838X_TEMPLATE_FIELD_ITAG,
+	  RTL838X_TEMPLATE_FIELD_RANGE_CHK, RTL838X_TEMPLATE_FIELD_SPM0, RTL838X_TEMPLATE_FIELD_SPM1
 	},
 };
 
@@ -646,74 +646,74 @@ static void rtl838x_pie_rule_del(struct rtl838x_switch_priv *priv, int index_fro
  * however the RTL9310 has 2 more registers / fields and the physical field-ids
  * are specific to every platform.
  */
-static void rtl838x_write_pie_templated(u32 r[], struct pie_rule *pr, enum template_field_id t[])
+static void rtl838x_write_pie_templated(u32 r[], struct pie_rule *pr, enum rtl838x_template_field_id t[])
 {
 	for (int i = 0; i < N_FIXED_FIELDS; i++) {
-		enum template_field_id field_type = t[i];
+		enum rtl838x_template_field_id field_type = t[i];
 		u16 data = 0, data_m = 0;
 
 		switch (field_type) {
-		case TEMPLATE_FIELD_SPM0:
+		case RTL838X_TEMPLATE_FIELD_SPM0:
 			data = pr->spm;
 			data_m = pr->spm_m;
 			break;
-		case TEMPLATE_FIELD_SPM1:
+		case RTL838X_TEMPLATE_FIELD_SPM1:
 			data = pr->spm >> 16;
 			data_m = pr->spm_m >> 16;
 			break;
-		case TEMPLATE_FIELD_OTAG:
+		case RTL838X_TEMPLATE_FIELD_OTAG:
 			data = pr->otag;
 			data_m = pr->otag_m;
 			break;
-		case TEMPLATE_FIELD_SMAC0:
+		case RTL838X_TEMPLATE_FIELD_SMAC0:
 			data = pr->smac[4];
 			data = (data << 8) | pr->smac[5];
 			data_m = pr->smac_m[4];
 			data_m = (data_m << 8) | pr->smac_m[5];
 			break;
-		case TEMPLATE_FIELD_SMAC1:
+		case RTL838X_TEMPLATE_FIELD_SMAC1:
 			data = pr->smac[2];
 			data = (data << 8) | pr->smac[3];
 			data_m = pr->smac_m[2];
 			data_m = (data_m << 8) | pr->smac_m[3];
 			break;
-		case TEMPLATE_FIELD_SMAC2:
+		case RTL838X_TEMPLATE_FIELD_SMAC2:
 			data = pr->smac[0];
 			data = (data << 8) | pr->smac[1];
 			data_m = pr->smac_m[0];
 			data_m = (data_m << 8) | pr->smac_m[1];
 			break;
-		case TEMPLATE_FIELD_DMAC0:
+		case RTL838X_TEMPLATE_FIELD_DMAC0:
 			data = pr->dmac[4];
 			data = (data << 8) | pr->dmac[5];
 			data_m = pr->dmac_m[4];
 			data_m = (data_m << 8) | pr->dmac_m[5];
 			break;
-		case TEMPLATE_FIELD_DMAC1:
+		case RTL838X_TEMPLATE_FIELD_DMAC1:
 			data = pr->dmac[2];
 			data = (data << 8) | pr->dmac[3];
 			data_m = pr->dmac_m[2];
 			data_m = (data_m << 8) | pr->dmac_m[3];
 			break;
-		case TEMPLATE_FIELD_DMAC2:
+		case RTL838X_TEMPLATE_FIELD_DMAC2:
 			data = pr->dmac[0];
 			data = (data << 8) | pr->dmac[1];
 			data_m = pr->dmac_m[0];
 			data_m = (data_m << 8) | pr->dmac_m[1];
 			break;
-		case TEMPLATE_FIELD_ETHERTYPE:
+		case RTL838X_TEMPLATE_FIELD_ETHERTYPE:
 			data = pr->ethertype;
 			data_m = pr->ethertype_m;
 			break;
-		case TEMPLATE_FIELD_ITAG:
+		case RTL838X_TEMPLATE_FIELD_ITAG:
 			data = pr->itag;
 			data_m = pr->itag_m;
 			break;
-		case TEMPLATE_FIELD_RANGE_CHK:
+		case RTL838X_TEMPLATE_FIELD_RANGE_CHK:
 			data = pr->field_range_check;
 			data_m = pr->field_range_check_m;
 			break;
-		case TEMPLATE_FIELD_SIP0:
+		case RTL838X_TEMPLATE_FIELD_SIP0:
 			if (pr->is_ipv6) {
 				data = pr->sip6.s6_addr16[7];
 				data_m = pr->sip6_m.s6_addr16[7];
@@ -722,7 +722,7 @@ static void rtl838x_write_pie_templated(u32 r[], struct pie_rule *pr, enum templ
 				data_m = pr->sip_m;
 			}
 			break;
-		case TEMPLATE_FIELD_SIP1:
+		case RTL838X_TEMPLATE_FIELD_SIP1:
 			if (pr->is_ipv6) {
 				data = pr->sip6.s6_addr16[6];
 				data_m = pr->sip6_m.s6_addr16[6];
@@ -731,16 +731,16 @@ static void rtl838x_write_pie_templated(u32 r[], struct pie_rule *pr, enum templ
 				data_m = pr->sip_m >> 16;
 			}
 			break;
-		case TEMPLATE_FIELD_SIP2:
-		case TEMPLATE_FIELD_SIP3:
-		case TEMPLATE_FIELD_SIP4:
-		case TEMPLATE_FIELD_SIP5:
-		case TEMPLATE_FIELD_SIP6:
-		case TEMPLATE_FIELD_SIP7:
-			data = pr->sip6.s6_addr16[5 - (field_type - TEMPLATE_FIELD_SIP2)];
-			data_m = pr->sip6_m.s6_addr16[5 - (field_type - TEMPLATE_FIELD_SIP2)];
+		case RTL838X_TEMPLATE_FIELD_SIP2:
+		case RTL838X_TEMPLATE_FIELD_SIP3:
+		case RTL838X_TEMPLATE_FIELD_SIP4:
+		case RTL838X_TEMPLATE_FIELD_SIP5:
+		case RTL838X_TEMPLATE_FIELD_SIP6:
+		case RTL838X_TEMPLATE_FIELD_SIP7:
+			data = pr->sip6.s6_addr16[5 - (field_type - RTL838X_TEMPLATE_FIELD_SIP2)];
+			data_m = pr->sip6_m.s6_addr16[5 - (field_type - RTL838X_TEMPLATE_FIELD_SIP2)];
 			break;
-		case TEMPLATE_FIELD_DIP0:
+		case RTL838X_TEMPLATE_FIELD_DIP0:
 			if (pr->is_ipv6) {
 				data = pr->dip6.s6_addr16[7];
 				data_m = pr->dip6_m.s6_addr16[7];
@@ -749,7 +749,7 @@ static void rtl838x_write_pie_templated(u32 r[], struct pie_rule *pr, enum templ
 				data_m = pr->dip_m;
 			}
 			break;
-		case TEMPLATE_FIELD_DIP1:
+		case RTL838X_TEMPLATE_FIELD_DIP1:
 			if (pr->is_ipv6) {
 				data = pr->dip6.s6_addr16[6];
 				data_m = pr->dip6_m.s6_addr16[6];
@@ -758,28 +758,28 @@ static void rtl838x_write_pie_templated(u32 r[], struct pie_rule *pr, enum templ
 				data_m = pr->dip_m >> 16;
 			}
 			break;
-		case TEMPLATE_FIELD_DIP2:
-		case TEMPLATE_FIELD_DIP3:
-		case TEMPLATE_FIELD_DIP4:
-		case TEMPLATE_FIELD_DIP5:
-		case TEMPLATE_FIELD_DIP6:
-		case TEMPLATE_FIELD_DIP7:
-			data = pr->dip6.s6_addr16[5 - (field_type - TEMPLATE_FIELD_DIP2)];
-			data_m = pr->dip6_m.s6_addr16[5 - (field_type - TEMPLATE_FIELD_DIP2)];
+		case RTL838X_TEMPLATE_FIELD_DIP2:
+		case RTL838X_TEMPLATE_FIELD_DIP3:
+		case RTL838X_TEMPLATE_FIELD_DIP4:
+		case RTL838X_TEMPLATE_FIELD_DIP5:
+		case RTL838X_TEMPLATE_FIELD_DIP6:
+		case RTL838X_TEMPLATE_FIELD_DIP7:
+			data = pr->dip6.s6_addr16[5 - (field_type - RTL838X_TEMPLATE_FIELD_DIP2)];
+			data_m = pr->dip6_m.s6_addr16[5 - (field_type - RTL838X_TEMPLATE_FIELD_DIP2)];
 			break;
-		case TEMPLATE_FIELD_IP_TOS_PROTO:
+		case RTL838X_TEMPLATE_FIELD_IP_TOS_PROTO:
 			data = pr->tos_proto;
 			data_m = pr->tos_proto_m;
 			break;
-		case TEMPLATE_FIELD_L4_SPORT:
+		case RTL838X_TEMPLATE_FIELD_L4_SPORT:
 			data = pr->sport;
 			data_m = pr->sport_m;
 			break;
-		case TEMPLATE_FIELD_L4_DPORT:
+		case RTL838X_TEMPLATE_FIELD_L4_DPORT:
 			data = pr->dport;
 			data_m = pr->dport_m;
 			break;
-		case TEMPLATE_FIELD_ICMP_IGMP:
+		case RTL838X_TEMPLATE_FIELD_ICMP_IGMP:
 			data = pr->icmp_igmp;
 			data_m = pr->icmp_igmp_m;
 			break;
@@ -803,10 +803,10 @@ static void rtl838x_write_pie_templated(u32 r[], struct pie_rule *pr, enum templ
  * The register space configuration size is identical for the RTL8380/90 and RTL9300,
  * however the RTL9310 has 2 more registers / fields and the physical field-ids
  */
-static void rtl838x_read_pie_templated(u32 r[], struct pie_rule *pr, enum template_field_id t[])
+static void rtl838x_read_pie_templated(u32 r[], struct pie_rule *pr, enum rtl838x_template_field_id t[])
 {
 	for (int i = 0; i < N_FIXED_FIELDS; i++) {
-		enum template_field_id field_type = t[i];
+		enum rtl838x_template_field_id field_type = t[i];
 		u16 data, data_m;
 
 		field_type = t[i];
@@ -819,120 +819,120 @@ static void rtl838x_read_pie_templated(u32 r[], struct pie_rule *pr, enum templa
 		}
 
 		switch (field_type) {
-		case TEMPLATE_FIELD_SPM0:
+		case RTL838X_TEMPLATE_FIELD_SPM0:
 			pr->spm = (pr->spn << 16) | data;
 			pr->spm_m = (pr->spn << 16) | data_m;
 			break;
-		case TEMPLATE_FIELD_SPM1:
+		case RTL838X_TEMPLATE_FIELD_SPM1:
 			pr->spm = data;
 			pr->spm_m = data_m;
 			break;
-		case TEMPLATE_FIELD_OTAG:
+		case RTL838X_TEMPLATE_FIELD_OTAG:
 			pr->otag = data;
 			pr->otag_m = data_m;
 			break;
-		case TEMPLATE_FIELD_SMAC0:
+		case RTL838X_TEMPLATE_FIELD_SMAC0:
 			pr->smac[4] = data >> 8;
 			pr->smac[5] = data;
 			pr->smac_m[4] = data >> 8;
 			pr->smac_m[5] = data;
 			break;
-		case TEMPLATE_FIELD_SMAC1:
+		case RTL838X_TEMPLATE_FIELD_SMAC1:
 			pr->smac[2] = data >> 8;
 			pr->smac[3] = data;
 			pr->smac_m[2] = data >> 8;
 			pr->smac_m[3] = data;
 			break;
-		case TEMPLATE_FIELD_SMAC2:
+		case RTL838X_TEMPLATE_FIELD_SMAC2:
 			pr->smac[0] = data >> 8;
 			pr->smac[1] = data;
 			pr->smac_m[0] = data >> 8;
 			pr->smac_m[1] = data;
 			break;
-		case TEMPLATE_FIELD_DMAC0:
+		case RTL838X_TEMPLATE_FIELD_DMAC0:
 			pr->dmac[4] = data >> 8;
 			pr->dmac[5] = data;
 			pr->dmac_m[4] = data >> 8;
 			pr->dmac_m[5] = data;
 			break;
-		case TEMPLATE_FIELD_DMAC1:
+		case RTL838X_TEMPLATE_FIELD_DMAC1:
 			pr->dmac[2] = data >> 8;
 			pr->dmac[3] = data;
 			pr->dmac_m[2] = data >> 8;
 			pr->dmac_m[3] = data;
 			break;
-		case TEMPLATE_FIELD_DMAC2:
+		case RTL838X_TEMPLATE_FIELD_DMAC2:
 			pr->dmac[0] = data >> 8;
 			pr->dmac[1] = data;
 			pr->dmac_m[0] = data >> 8;
 			pr->dmac_m[1] = data;
 			break;
-		case TEMPLATE_FIELD_ETHERTYPE:
+		case RTL838X_TEMPLATE_FIELD_ETHERTYPE:
 			pr->ethertype = data;
 			pr->ethertype_m = data_m;
 			break;
-		case TEMPLATE_FIELD_ITAG:
+		case RTL838X_TEMPLATE_FIELD_ITAG:
 			pr->itag = data;
 			pr->itag_m = data_m;
 			break;
-		case TEMPLATE_FIELD_RANGE_CHK:
+		case RTL838X_TEMPLATE_FIELD_RANGE_CHK:
 			pr->field_range_check = data;
 			pr->field_range_check_m = data_m;
 			break;
-		case TEMPLATE_FIELD_SIP0:
+		case RTL838X_TEMPLATE_FIELD_SIP0:
 			pr->sip = data;
 			pr->sip_m = data_m;
 			break;
-		case TEMPLATE_FIELD_SIP1:
+		case RTL838X_TEMPLATE_FIELD_SIP1:
 			pr->sip = (pr->sip << 16) | data;
 			pr->sip_m = (pr->sip << 16) | data_m;
 			break;
-		case TEMPLATE_FIELD_SIP2:
+		case RTL838X_TEMPLATE_FIELD_SIP2:
 			pr->is_ipv6 = true;
 			/* Make use of limitiations on the position of the match values */
 			ipv6_addr_set(&pr->sip6, pr->sip, r[5 - i / 2],
 				      r[4 - i / 2], r[3 - i / 2]);
 			ipv6_addr_set(&pr->sip6_m, pr->sip_m, r[5 - i / 2],
 				      r[4 - i / 2], r[3 - i / 2]);
-		case TEMPLATE_FIELD_SIP3:
-		case TEMPLATE_FIELD_SIP4:
-		case TEMPLATE_FIELD_SIP5:
-		case TEMPLATE_FIELD_SIP6:
-		case TEMPLATE_FIELD_SIP7:
+		case RTL838X_TEMPLATE_FIELD_SIP3:
+		case RTL838X_TEMPLATE_FIELD_SIP4:
+		case RTL838X_TEMPLATE_FIELD_SIP5:
+		case RTL838X_TEMPLATE_FIELD_SIP6:
+		case RTL838X_TEMPLATE_FIELD_SIP7:
 			break;
-		case TEMPLATE_FIELD_DIP0:
+		case RTL838X_TEMPLATE_FIELD_DIP0:
 			pr->dip = data;
 			pr->dip_m = data_m;
 			break;
-		case TEMPLATE_FIELD_DIP1:
+		case RTL838X_TEMPLATE_FIELD_DIP1:
 			pr->dip = (pr->dip << 16) | data;
 			pr->dip_m = (pr->dip << 16) | data_m;
 			break;
-		case TEMPLATE_FIELD_DIP2:
+		case RTL838X_TEMPLATE_FIELD_DIP2:
 			pr->is_ipv6 = true;
 			ipv6_addr_set(&pr->dip6, pr->dip, r[5 - i / 2],
 				      r[4 - i / 2], r[3 - i / 2]);
 			ipv6_addr_set(&pr->dip6_m, pr->dip_m, r[5 - i / 2],
 				      r[4 - i / 2], r[3 - i / 2]);
-		case TEMPLATE_FIELD_DIP3:
-		case TEMPLATE_FIELD_DIP4:
-		case TEMPLATE_FIELD_DIP5:
-		case TEMPLATE_FIELD_DIP6:
-		case TEMPLATE_FIELD_DIP7:
+		case RTL838X_TEMPLATE_FIELD_DIP3:
+		case RTL838X_TEMPLATE_FIELD_DIP4:
+		case RTL838X_TEMPLATE_FIELD_DIP5:
+		case RTL838X_TEMPLATE_FIELD_DIP6:
+		case RTL838X_TEMPLATE_FIELD_DIP7:
 			break;
-		case TEMPLATE_FIELD_IP_TOS_PROTO:
+		case RTL838X_TEMPLATE_FIELD_IP_TOS_PROTO:
 			pr->tos_proto = data;
 			pr->tos_proto_m = data_m;
 			break;
-		case TEMPLATE_FIELD_L4_SPORT:
+		case RTL838X_TEMPLATE_FIELD_L4_SPORT:
 			pr->sport = data;
 			pr->sport_m = data_m;
 			break;
-		case TEMPLATE_FIELD_L4_DPORT:
+		case RTL838X_TEMPLATE_FIELD_L4_DPORT:
 			pr->dport = data;
 			pr->dport_m = data_m;
 			break;
-		case TEMPLATE_FIELD_ICMP_IGMP:
+		case RTL838X_TEMPLATE_FIELD_ICMP_IGMP:
 			pr->icmp_igmp = data;
 			pr->icmp_igmp_m = data_m;
 			break;
@@ -1257,7 +1257,7 @@ static int rtl838x_pie_rule_read(struct rtl838x_switch_priv *priv, int idx, stru
 	pr_debug("%s: template_selectors %08x, tid: %d\n", __func__, t_select, pr->tid);
 	rtl838x_pie_rule_dump_raw(r);
 
-	rtl838x_read_pie_templated(r, pr, fixed_templates[(t_select >> (pr->tid * 3)) & 0x7]);
+	rtl838x_read_pie_templated(r, pr, rtl838x_fixed_templates[(t_select >> (pr->tid * 3)) & 0x7]);
 
 	rtl838x_read_pie_action(r, pr);
 
@@ -1286,7 +1286,7 @@ static int rtl838x_pie_rule_write(struct rtl838x_switch_priv *priv, int idx, str
 	rtl838x_write_pie_fixed_fields(r, pr);
 
 	pr_debug("%s: template %d\n", __func__, (t_select >> (pr->tid * 3)) & 0x7);
-	rtl838x_write_pie_templated(r, pr, fixed_templates[(t_select >> (pr->tid * 3)) & 0x7]);
+	rtl838x_write_pie_templated(r, pr, rtl838x_fixed_templates[(t_select >> (pr->tid * 3)) & 0x7]);
 
 	err = rtl838x_write_pie_action(r, pr);
 	if (err) {
@@ -1313,12 +1313,12 @@ errout:
 	return err;
 }
 
-static bool rtl838x_pie_templ_has(int t, enum template_field_id field_type)
+static bool rtl838x_pie_templ_has(int t, enum rtl838x_template_field_id field_type)
 {
-	enum template_field_id ft;
+	enum rtl838x_template_field_id ft;
 
 	for (int i = 0; i < N_FIXED_FIELDS; i++) {
-		ft = fixed_templates[t][i];
+		ft = rtl838x_fixed_templates[t][i];
 		if (field_type == ft)
 			return true;
 	}
@@ -1331,10 +1331,10 @@ static int rtl838x_pie_verify_template(struct rtl838x_switch_priv *priv,
 {
 	int i;
 
-	if (!pr->is_ipv6 && pr->sip_m && !rtl838x_pie_templ_has(t, TEMPLATE_FIELD_SIP0))
+	if (!pr->is_ipv6 && pr->sip_m && !rtl838x_pie_templ_has(t, RTL838X_TEMPLATE_FIELD_SIP0))
 		return -1;
 
-	if (!pr->is_ipv6 && pr->dip_m && !rtl838x_pie_templ_has(t, TEMPLATE_FIELD_DIP0))
+	if (!pr->is_ipv6 && pr->dip_m && !rtl838x_pie_templ_has(t, RTL838X_TEMPLATE_FIELD_DIP0))
 		return -1;
 
 	if (pr->is_ipv6) {
@@ -1342,29 +1342,29 @@ static int rtl838x_pie_verify_template(struct rtl838x_switch_priv *priv,
 		     pr->sip6_m.s6_addr32[1] ||
 		     pr->sip6_m.s6_addr32[2] ||
 		     pr->sip6_m.s6_addr32[3]) &&
-		    !rtl838x_pie_templ_has(t, TEMPLATE_FIELD_SIP2))
+		    !rtl838x_pie_templ_has(t, RTL838X_TEMPLATE_FIELD_SIP2))
 			return -1;
 		if ((pr->dip6_m.s6_addr32[0] ||
 		     pr->dip6_m.s6_addr32[1] ||
 		     pr->dip6_m.s6_addr32[2] ||
 		     pr->dip6_m.s6_addr32[3]) &&
-		    !rtl838x_pie_templ_has(t, TEMPLATE_FIELD_DIP2))
+		    !rtl838x_pie_templ_has(t, RTL838X_TEMPLATE_FIELD_DIP2))
 			return -1;
 	}
 
-	if (ether_addr_to_u64(pr->smac_m) && !rtl838x_pie_templ_has(t, TEMPLATE_FIELD_SMAC0))
+	if (ether_addr_to_u64(pr->smac_m) && !rtl838x_pie_templ_has(t, RTL838X_TEMPLATE_FIELD_SMAC0))
 		return -1;
 
-	if (ether_addr_to_u64(pr->dmac_m) && !rtl838x_pie_templ_has(t, TEMPLATE_FIELD_DMAC0))
+	if (ether_addr_to_u64(pr->dmac_m) && !rtl838x_pie_templ_has(t, RTL838X_TEMPLATE_FIELD_DMAC0))
 		return -1;
 
-	if (pr->itag_m && !rtl838x_pie_templ_has(t, TEMPLATE_FIELD_ITAG))
+	if (pr->itag_m && !rtl838x_pie_templ_has(t, RTL838X_TEMPLATE_FIELD_ITAG))
 		return -1;
 
-	if (pr->sport_m && !rtl838x_pie_templ_has(t, TEMPLATE_FIELD_L4_SPORT))
+	if (pr->sport_m && !rtl838x_pie_templ_has(t, RTL838X_TEMPLATE_FIELD_L4_SPORT))
 		return -1;
 
-	if (pr->dport_m && !rtl838x_pie_templ_has(t, TEMPLATE_FIELD_L4_DPORT))
+	if (pr->dport_m && !rtl838x_pie_templ_has(t, RTL838X_TEMPLATE_FIELD_L4_DPORT))
 		return -1;
 
 	/* TODO: Check more */

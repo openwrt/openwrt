@@ -8,99 +8,99 @@
 #include "vlan.h"
 
 /* Definition of the RTL839X-specific template field IDs as used in the PIE */
-enum template_field_id {
-	TEMPLATE_FIELD_SPMMASK = 0,
-	TEMPLATE_FIELD_SPM0 = 1,		/* Source portmask ports 0-15 */
-	TEMPLATE_FIELD_SPM1 = 2,		/* Source portmask ports 16-31 */
-	TEMPLATE_FIELD_SPM2 = 3,		/* Source portmask ports 32-47 */
-	TEMPLATE_FIELD_SPM3 = 4,		/* Source portmask ports 48-56 */
-	TEMPLATE_FIELD_DMAC0 = 5,		/* Destination MAC [15:0] */
-	TEMPLATE_FIELD_DMAC1 = 6,		/* Destination MAC [31:16] */
-	TEMPLATE_FIELD_DMAC2 = 7,		/* Destination MAC [47:32] */
-	TEMPLATE_FIELD_SMAC0 = 8,		/* Source MAC [15:0] */
-	TEMPLATE_FIELD_SMAC1 = 9,		/* Source MAC [31:16] */
-	TEMPLATE_FIELD_SMAC2 = 10,		/* Source MAC [47:32] */
-	TEMPLATE_FIELD_ETHERTYPE = 11,		/* Ethernet frame type field */
+enum rtl839x_template_field_id {
+	RTL839X_TEMPLATE_FIELD_SPMMASK = 0,
+	RTL839X_TEMPLATE_FIELD_SPM0 = 1,		/* Source portmask ports 0-15 */
+	RTL839X_TEMPLATE_FIELD_SPM1 = 2,		/* Source portmask ports 16-31 */
+	RTL839X_TEMPLATE_FIELD_SPM2 = 3,		/* Source portmask ports 32-47 */
+	RTL839X_TEMPLATE_FIELD_SPM3 = 4,		/* Source portmask ports 48-56 */
+	RTL839X_TEMPLATE_FIELD_DMAC0 = 5,		/* Destination MAC [15:0] */
+	RTL839X_TEMPLATE_FIELD_DMAC1 = 6,		/* Destination MAC [31:16] */
+	RTL839X_TEMPLATE_FIELD_DMAC2 = 7,		/* Destination MAC [47:32] */
+	RTL839X_TEMPLATE_FIELD_SMAC0 = 8,		/* Source MAC [15:0] */
+	RTL839X_TEMPLATE_FIELD_SMAC1 = 9,		/* Source MAC [31:16] */
+	RTL839X_TEMPLATE_FIELD_SMAC2 = 10,		/* Source MAC [47:32] */
+	RTL839X_TEMPLATE_FIELD_ETHERTYPE = 11,		/* Ethernet frame type field */
 	/* Field-ID 12 is not used */
-	TEMPLATE_FIELD_OTAG = 13,
-	TEMPLATE_FIELD_ITAG = 14,
-	TEMPLATE_FIELD_SIP0 = 15,
-	TEMPLATE_FIELD_SIP1 = 16,
-	TEMPLATE_FIELD_DIP0 = 17,
-	TEMPLATE_FIELD_DIP1 = 18,
-	TEMPLATE_FIELD_IP_TOS_PROTO = 19,
-	TEMPLATE_FIELD_IP_FLAG = 20,
-	TEMPLATE_FIELD_L4_SPORT = 21,
-	TEMPLATE_FIELD_L4_DPORT = 22,
-	TEMPLATE_FIELD_L34_HEADER = 23,
-	TEMPLATE_FIELD_ICMP_IGMP = 24,
-	TEMPLATE_FIELD_VID_RANG0 = 25,
-	TEMPLATE_FIELD_VID_RANG1 = 26,
-	TEMPLATE_FIELD_L4_PORT_RANG = 27,
-	TEMPLATE_FIELD_FIELD_SELECTOR_VALID = 28,
-	TEMPLATE_FIELD_FIELD_SELECTOR_0 = 29,
-	TEMPLATE_FIELD_FIELD_SELECTOR_1 = 30,
-	TEMPLATE_FIELD_FIELD_SELECTOR_2 = 31,
-	TEMPLATE_FIELD_FIELD_SELECTOR_3 = 32,
-	TEMPLATE_FIELD_FIELD_SELECTOR_4 = 33,
-	TEMPLATE_FIELD_FIELD_SELECTOR_5 = 34,
-	TEMPLATE_FIELD_SIP2 = 35,
-	TEMPLATE_FIELD_SIP3 = 36,
-	TEMPLATE_FIELD_SIP4 = 37,
-	TEMPLATE_FIELD_SIP5 = 38,
-	TEMPLATE_FIELD_SIP6 = 39,
-	TEMPLATE_FIELD_SIP7 = 40,
-	TEMPLATE_FIELD_OLABEL = 41,
-	TEMPLATE_FIELD_ILABEL = 42,
-	TEMPLATE_FIELD_OILABEL = 43,
-	TEMPLATE_FIELD_DPMMASK = 44,
-	TEMPLATE_FIELD_DPM0 = 45,
-	TEMPLATE_FIELD_DPM1 = 46,
-	TEMPLATE_FIELD_DPM2 = 47,
-	TEMPLATE_FIELD_DPM3 = 48,
-	TEMPLATE_FIELD_L2DPM0 = 49,
-	TEMPLATE_FIELD_L2DPM1 = 50,
-	TEMPLATE_FIELD_L2DPM2 = 51,
-	TEMPLATE_FIELD_L2DPM3 = 52,
-	TEMPLATE_FIELD_IVLAN = 53,
-	TEMPLATE_FIELD_OVLAN = 54,
-	TEMPLATE_FIELD_FWD_VID = 55,
-	TEMPLATE_FIELD_DIP2 = 56,
-	TEMPLATE_FIELD_DIP3 = 57,
-	TEMPLATE_FIELD_DIP4 = 58,
-	TEMPLATE_FIELD_DIP5 = 59,
-	TEMPLATE_FIELD_DIP6 = 60,
-	TEMPLATE_FIELD_DIP7 = 61,
+	RTL839X_TEMPLATE_FIELD_OTAG = 13,
+	RTL839X_TEMPLATE_FIELD_ITAG = 14,
+	RTL839X_TEMPLATE_FIELD_SIP0 = 15,
+	RTL839X_TEMPLATE_FIELD_SIP1 = 16,
+	RTL839X_TEMPLATE_FIELD_DIP0 = 17,
+	RTL839X_TEMPLATE_FIELD_DIP1 = 18,
+	RTL839X_TEMPLATE_FIELD_IP_TOS_PROTO = 19,
+	RTL839X_TEMPLATE_FIELD_IP_FLAG = 20,
+	RTL839X_TEMPLATE_FIELD_L4_SPORT = 21,
+	RTL839X_TEMPLATE_FIELD_L4_DPORT = 22,
+	RTL839X_TEMPLATE_FIELD_L34_HEADER = 23,
+	RTL839X_TEMPLATE_FIELD_ICMP_IGMP = 24,
+	RTL839X_TEMPLATE_FIELD_VID_RANG0 = 25,
+	RTL839X_TEMPLATE_FIELD_VID_RANG1 = 26,
+	RTL839X_TEMPLATE_FIELD_L4_PORT_RANG = 27,
+	RTL839X_TEMPLATE_FIELD_FIELD_SELECTOR_VALID = 28,
+	RTL839X_TEMPLATE_FIELD_FIELD_SELECTOR_0 = 29,
+	RTL839X_TEMPLATE_FIELD_FIELD_SELECTOR_1 = 30,
+	RTL839X_TEMPLATE_FIELD_FIELD_SELECTOR_2 = 31,
+	RTL839X_TEMPLATE_FIELD_FIELD_SELECTOR_3 = 32,
+	RTL839X_TEMPLATE_FIELD_FIELD_SELECTOR_4 = 33,
+	RTL839X_TEMPLATE_FIELD_FIELD_SELECTOR_5 = 34,
+	RTL839X_TEMPLATE_FIELD_SIP2 = 35,
+	RTL839X_TEMPLATE_FIELD_SIP3 = 36,
+	RTL839X_TEMPLATE_FIELD_SIP4 = 37,
+	RTL839X_TEMPLATE_FIELD_SIP5 = 38,
+	RTL839X_TEMPLATE_FIELD_SIP6 = 39,
+	RTL839X_TEMPLATE_FIELD_SIP7 = 40,
+	RTL839X_TEMPLATE_FIELD_OLABEL = 41,
+	RTL839X_TEMPLATE_FIELD_ILABEL = 42,
+	RTL839X_TEMPLATE_FIELD_OILABEL = 43,
+	RTL839X_TEMPLATE_FIELD_DPMMASK = 44,
+	RTL839X_TEMPLATE_FIELD_DPM0 = 45,
+	RTL839X_TEMPLATE_FIELD_DPM1 = 46,
+	RTL839X_TEMPLATE_FIELD_DPM2 = 47,
+	RTL839X_TEMPLATE_FIELD_DPM3 = 48,
+	RTL839X_TEMPLATE_FIELD_L2DPM0 = 49,
+	RTL839X_TEMPLATE_FIELD_L2DPM1 = 50,
+	RTL839X_TEMPLATE_FIELD_L2DPM2 = 51,
+	RTL839X_TEMPLATE_FIELD_L2DPM3 = 52,
+	RTL839X_TEMPLATE_FIELD_IVLAN = 53,
+	RTL839X_TEMPLATE_FIELD_OVLAN = 54,
+	RTL839X_TEMPLATE_FIELD_FWD_VID = 55,
+	RTL839X_TEMPLATE_FIELD_DIP2 = 56,
+	RTL839X_TEMPLATE_FIELD_DIP3 = 57,
+	RTL839X_TEMPLATE_FIELD_DIP4 = 58,
+	RTL839X_TEMPLATE_FIELD_DIP5 = 59,
+	RTL839X_TEMPLATE_FIELD_DIP6 = 60,
+	RTL839X_TEMPLATE_FIELD_DIP7 = 61,
 };
 
 /* Number of fixed templates predefined in the SoC */
-#define N_FIXED_TEMPLATES 5
-static enum template_field_id fixed_templates[N_FIXED_TEMPLATES][N_FIXED_FIELDS] = {
+#define RTL839X_N_FIXED_TEMPLATES 5
+static enum rtl839x_template_field_id rtl839x_fixed_templates[RTL839X_N_FIXED_TEMPLATES][N_FIXED_FIELDS] = {
 	{
-	  TEMPLATE_FIELD_SPM0, TEMPLATE_FIELD_SPM1, TEMPLATE_FIELD_ITAG,
-	  TEMPLATE_FIELD_SMAC0, TEMPLATE_FIELD_SMAC1, TEMPLATE_FIELD_SMAC2,
-	  TEMPLATE_FIELD_DMAC0, TEMPLATE_FIELD_DMAC1, TEMPLATE_FIELD_DMAC2,
-	  TEMPLATE_FIELD_ETHERTYPE, TEMPLATE_FIELD_SPM2, TEMPLATE_FIELD_SPM3
+	  RTL839X_TEMPLATE_FIELD_SPM0, RTL839X_TEMPLATE_FIELD_SPM1, RTL839X_TEMPLATE_FIELD_ITAG,
+	  RTL839X_TEMPLATE_FIELD_SMAC0, RTL839X_TEMPLATE_FIELD_SMAC1, RTL839X_TEMPLATE_FIELD_SMAC2,
+	  RTL839X_TEMPLATE_FIELD_DMAC0, RTL839X_TEMPLATE_FIELD_DMAC1, RTL839X_TEMPLATE_FIELD_DMAC2,
+	  RTL839X_TEMPLATE_FIELD_ETHERTYPE, RTL839X_TEMPLATE_FIELD_SPM2, RTL839X_TEMPLATE_FIELD_SPM3
 	}, {
-	  TEMPLATE_FIELD_SIP0, TEMPLATE_FIELD_SIP1, TEMPLATE_FIELD_DIP0,
-	  TEMPLATE_FIELD_DIP1, TEMPLATE_FIELD_IP_TOS_PROTO, TEMPLATE_FIELD_L4_SPORT,
-	  TEMPLATE_FIELD_L4_DPORT, TEMPLATE_FIELD_ICMP_IGMP, TEMPLATE_FIELD_SPM0,
-	  TEMPLATE_FIELD_SPM1, TEMPLATE_FIELD_SPM2, TEMPLATE_FIELD_SPM3
+	  RTL839X_TEMPLATE_FIELD_SIP0, RTL839X_TEMPLATE_FIELD_SIP1, RTL839X_TEMPLATE_FIELD_DIP0,
+	  RTL839X_TEMPLATE_FIELD_DIP1, RTL839X_TEMPLATE_FIELD_IP_TOS_PROTO, RTL839X_TEMPLATE_FIELD_L4_SPORT,
+	  RTL839X_TEMPLATE_FIELD_L4_DPORT, RTL839X_TEMPLATE_FIELD_ICMP_IGMP, RTL839X_TEMPLATE_FIELD_SPM0,
+	  RTL839X_TEMPLATE_FIELD_SPM1, RTL839X_TEMPLATE_FIELD_SPM2, RTL839X_TEMPLATE_FIELD_SPM3
 	}, {
-	  TEMPLATE_FIELD_DMAC0, TEMPLATE_FIELD_DMAC1, TEMPLATE_FIELD_DMAC2,
-	  TEMPLATE_FIELD_ITAG, TEMPLATE_FIELD_ETHERTYPE, TEMPLATE_FIELD_IP_TOS_PROTO,
-	  TEMPLATE_FIELD_L4_DPORT, TEMPLATE_FIELD_L4_SPORT, TEMPLATE_FIELD_SIP0,
-	  TEMPLATE_FIELD_SIP1, TEMPLATE_FIELD_DIP0, TEMPLATE_FIELD_DIP1
+	  RTL839X_TEMPLATE_FIELD_DMAC0, RTL839X_TEMPLATE_FIELD_DMAC1, RTL839X_TEMPLATE_FIELD_DMAC2,
+	  RTL839X_TEMPLATE_FIELD_ITAG, RTL839X_TEMPLATE_FIELD_ETHERTYPE, RTL839X_TEMPLATE_FIELD_IP_TOS_PROTO,
+	  RTL839X_TEMPLATE_FIELD_L4_DPORT, RTL839X_TEMPLATE_FIELD_L4_SPORT, RTL839X_TEMPLATE_FIELD_SIP0,
+	  RTL839X_TEMPLATE_FIELD_SIP1, RTL839X_TEMPLATE_FIELD_DIP0, RTL839X_TEMPLATE_FIELD_DIP1
 	}, {
-	  TEMPLATE_FIELD_DIP0, TEMPLATE_FIELD_DIP1, TEMPLATE_FIELD_DIP2,
-	  TEMPLATE_FIELD_DIP3, TEMPLATE_FIELD_DIP4, TEMPLATE_FIELD_DIP5,
-	  TEMPLATE_FIELD_DIP6, TEMPLATE_FIELD_DIP7, TEMPLATE_FIELD_L4_DPORT,
-	  TEMPLATE_FIELD_L4_SPORT, TEMPLATE_FIELD_ICMP_IGMP, TEMPLATE_FIELD_IP_TOS_PROTO
+	  RTL839X_TEMPLATE_FIELD_DIP0, RTL839X_TEMPLATE_FIELD_DIP1, RTL839X_TEMPLATE_FIELD_DIP2,
+	  RTL839X_TEMPLATE_FIELD_DIP3, RTL839X_TEMPLATE_FIELD_DIP4, RTL839X_TEMPLATE_FIELD_DIP5,
+	  RTL839X_TEMPLATE_FIELD_DIP6, RTL839X_TEMPLATE_FIELD_DIP7, RTL839X_TEMPLATE_FIELD_L4_DPORT,
+	  RTL839X_TEMPLATE_FIELD_L4_SPORT, RTL839X_TEMPLATE_FIELD_ICMP_IGMP, RTL839X_TEMPLATE_FIELD_IP_TOS_PROTO
 	}, {
-	  TEMPLATE_FIELD_SIP0, TEMPLATE_FIELD_SIP1, TEMPLATE_FIELD_SIP2,
-	  TEMPLATE_FIELD_SIP3, TEMPLATE_FIELD_SIP4, TEMPLATE_FIELD_SIP5,
-	  TEMPLATE_FIELD_SIP6, TEMPLATE_FIELD_SIP7, TEMPLATE_FIELD_SPM0,
-	  TEMPLATE_FIELD_SPM1, TEMPLATE_FIELD_SPM2, TEMPLATE_FIELD_SPM3
+	  RTL839X_TEMPLATE_FIELD_SIP0, RTL839X_TEMPLATE_FIELD_SIP1, RTL839X_TEMPLATE_FIELD_SIP2,
+	  RTL839X_TEMPLATE_FIELD_SIP3, RTL839X_TEMPLATE_FIELD_SIP4, RTL839X_TEMPLATE_FIELD_SIP5,
+	  RTL839X_TEMPLATE_FIELD_SIP6, RTL839X_TEMPLATE_FIELD_SIP7, RTL839X_TEMPLATE_FIELD_SPM0,
+	  RTL839X_TEMPLATE_FIELD_SPM1, RTL839X_TEMPLATE_FIELD_SPM2, RTL839X_TEMPLATE_FIELD_SPM3
 	},
 };
 
@@ -646,78 +646,78 @@ static int rtl839x_pie_rule_del(struct rtl838x_switch_priv *priv, int index_from
  * on all SoCs
  * On the RTL8390 the template mask registers are not word-aligned!
  */
-static void rtl839x_write_pie_templated(u32 r[], struct pie_rule *pr, enum template_field_id t[])
+static void rtl839x_write_pie_templated(u32 r[], struct pie_rule *pr, enum rtl839x_template_field_id t[])
 {
 	for (int i = 0; i < N_FIXED_FIELDS; i++) {
-		enum template_field_id field_type = t[i];
+		enum rtl839x_template_field_id field_type = t[i];
 		u16 data = 0, data_m = 0;
 
 		switch (field_type) {
-		case TEMPLATE_FIELD_SPM0:
+		case RTL839X_TEMPLATE_FIELD_SPM0:
 			data = pr->spm;
 			data_m = pr->spm_m;
 			break;
-		case TEMPLATE_FIELD_SPM1:
+		case RTL839X_TEMPLATE_FIELD_SPM1:
 			data = pr->spm >> 16;
 			data_m = pr->spm_m >> 16;
 			break;
-		case TEMPLATE_FIELD_SPM2:
+		case RTL839X_TEMPLATE_FIELD_SPM2:
 			data = pr->spm >> 32;
 			data_m = pr->spm_m >> 32;
 			break;
-		case TEMPLATE_FIELD_SPM3:
+		case RTL839X_TEMPLATE_FIELD_SPM3:
 			data = pr->spm >> 48;
 			data_m = pr->spm_m >> 48;
 			break;
-		case TEMPLATE_FIELD_OTAG:
+		case RTL839X_TEMPLATE_FIELD_OTAG:
 			data = pr->otag;
 			data_m = pr->otag_m;
 			break;
-		case TEMPLATE_FIELD_SMAC0:
+		case RTL839X_TEMPLATE_FIELD_SMAC0:
 			data = pr->smac[4];
 			data = (data << 8) | pr->smac[5];
 			data_m = pr->smac_m[4];
 			data_m = (data_m << 8) | pr->smac_m[5];
 			break;
-		case TEMPLATE_FIELD_SMAC1:
+		case RTL839X_TEMPLATE_FIELD_SMAC1:
 			data = pr->smac[2];
 			data = (data << 8) | pr->smac[3];
 			data_m = pr->smac_m[2];
 			data_m = (data_m << 8) | pr->smac_m[3];
 			break;
-		case TEMPLATE_FIELD_SMAC2:
+		case RTL839X_TEMPLATE_FIELD_SMAC2:
 			data = pr->smac[0];
 			data = (data << 8) | pr->smac[1];
 			data_m = pr->smac_m[0];
 			data_m = (data_m << 8) | pr->smac_m[1];
 			break;
-		case TEMPLATE_FIELD_DMAC0:
+		case RTL839X_TEMPLATE_FIELD_DMAC0:
 			data = pr->dmac[4];
 			data = (data << 8) | pr->dmac[5];
 			data_m = pr->dmac_m[4];
 			data_m = (data_m << 8) | pr->dmac_m[5];
 			break;
-		case TEMPLATE_FIELD_DMAC1:
+		case RTL839X_TEMPLATE_FIELD_DMAC1:
 			data = pr->dmac[2];
 			data = (data << 8) | pr->dmac[3];
 			data_m = pr->dmac_m[2];
 			data_m = (data_m << 8) | pr->dmac_m[3];
 			break;
-		case TEMPLATE_FIELD_DMAC2:
+		case RTL839X_TEMPLATE_FIELD_DMAC2:
 			data = pr->dmac[0];
 			data = (data << 8) | pr->dmac[1];
 			data_m = pr->dmac_m[0];
 			data_m = (data_m << 8) | pr->dmac_m[1];
 			break;
-		case TEMPLATE_FIELD_ETHERTYPE:
+		case RTL839X_TEMPLATE_FIELD_ETHERTYPE:
 			data = pr->ethertype;
 			data_m = pr->ethertype_m;
 			break;
-		case TEMPLATE_FIELD_ITAG:
+		case RTL839X_TEMPLATE_FIELD_ITAG:
 			data = pr->itag;
 			data_m = pr->itag_m;
 			break;
-		case TEMPLATE_FIELD_SIP0:
+		case RTL839X_TEMPLATE_FIELD_SIP0:
 			if (pr->is_ipv6) {
 				data = pr->sip6.s6_addr16[7];
 				data_m = pr->sip6_m.s6_addr16[7];
@@ -726,7 +726,7 @@ static void rtl839x_write_pie_templated(u32 r[], struct pie_rule *pr, enum templ
 				data_m = pr->sip_m;
 			}
 			break;
-		case TEMPLATE_FIELD_SIP1:
+		case RTL839X_TEMPLATE_FIELD_SIP1:
 			if (pr->is_ipv6) {
 				data = pr->sip6.s6_addr16[6];
 				data_m = pr->sip6_m.s6_addr16[6];
@@ -735,16 +735,16 @@ static void rtl839x_write_pie_templated(u32 r[], struct pie_rule *pr, enum templ
 				data_m = pr->sip_m >> 16;
 			}
 			break;
-		case TEMPLATE_FIELD_SIP2:
-		case TEMPLATE_FIELD_SIP3:
-		case TEMPLATE_FIELD_SIP4:
-		case TEMPLATE_FIELD_SIP5:
-		case TEMPLATE_FIELD_SIP6:
-		case TEMPLATE_FIELD_SIP7:
-			data = pr->sip6.s6_addr16[5 - (field_type - TEMPLATE_FIELD_SIP2)];
-			data_m = pr->sip6_m.s6_addr16[5 - (field_type - TEMPLATE_FIELD_SIP2)];
+		case RTL839X_TEMPLATE_FIELD_SIP2:
+		case RTL839X_TEMPLATE_FIELD_SIP3:
+		case RTL839X_TEMPLATE_FIELD_SIP4:
+		case RTL839X_TEMPLATE_FIELD_SIP5:
+		case RTL839X_TEMPLATE_FIELD_SIP6:
+		case RTL839X_TEMPLATE_FIELD_SIP7:
+			data = pr->sip6.s6_addr16[5 - (field_type - RTL839X_TEMPLATE_FIELD_SIP2)];
+			data_m = pr->sip6_m.s6_addr16[5 - (field_type - RTL839X_TEMPLATE_FIELD_SIP2)];
 			break;
-		case TEMPLATE_FIELD_DIP0:
+		case RTL839X_TEMPLATE_FIELD_DIP0:
 			if (pr->is_ipv6) {
 				data = pr->dip6.s6_addr16[7];
 				data_m = pr->dip6_m.s6_addr16[7];
@@ -753,7 +753,7 @@ static void rtl839x_write_pie_templated(u32 r[], struct pie_rule *pr, enum templ
 				data_m = pr->dip_m;
 			}
 			break;
-		case TEMPLATE_FIELD_DIP1:
+		case RTL839X_TEMPLATE_FIELD_DIP1:
 			if (pr->is_ipv6) {
 				data = pr->dip6.s6_addr16[6];
 				data_m = pr->dip6_m.s6_addr16[6];
@@ -762,28 +762,28 @@ static void rtl839x_write_pie_templated(u32 r[], struct pie_rule *pr, enum templ
 				data_m = pr->dip_m >> 16;
 			}
 			break;
-		case TEMPLATE_FIELD_DIP2:
-		case TEMPLATE_FIELD_DIP3:
-		case TEMPLATE_FIELD_DIP4:
-		case TEMPLATE_FIELD_DIP5:
-		case TEMPLATE_FIELD_DIP6:
-		case TEMPLATE_FIELD_DIP7:
-			data = pr->dip6.s6_addr16[5 - (field_type - TEMPLATE_FIELD_DIP2)];
-			data_m = pr->dip6_m.s6_addr16[5 - (field_type - TEMPLATE_FIELD_DIP2)];
+		case RTL839X_TEMPLATE_FIELD_DIP2:
+		case RTL839X_TEMPLATE_FIELD_DIP3:
+		case RTL839X_TEMPLATE_FIELD_DIP4:
+		case RTL839X_TEMPLATE_FIELD_DIP5:
+		case RTL839X_TEMPLATE_FIELD_DIP6:
+		case RTL839X_TEMPLATE_FIELD_DIP7:
+			data = pr->dip6.s6_addr16[5 - (field_type - RTL839X_TEMPLATE_FIELD_DIP2)];
+			data_m = pr->dip6_m.s6_addr16[5 - (field_type - RTL839X_TEMPLATE_FIELD_DIP2)];
 			break;
-		case TEMPLATE_FIELD_IP_TOS_PROTO:
+		case RTL839X_TEMPLATE_FIELD_IP_TOS_PROTO:
 			data = pr->tos_proto;
 			data_m = pr->tos_proto_m;
 			break;
-		case TEMPLATE_FIELD_L4_SPORT:
+		case RTL839X_TEMPLATE_FIELD_L4_SPORT:
 			data = pr->sport;
 			data_m = pr->sport_m;
 			break;
-		case TEMPLATE_FIELD_L4_DPORT:
+		case RTL839X_TEMPLATE_FIELD_L4_DPORT:
 			data = pr->dport;
 			data_m = pr->dport_m;
 			break;
-		case TEMPLATE_FIELD_ICMP_IGMP:
+		case RTL839X_TEMPLATE_FIELD_ICMP_IGMP:
 			data = pr->icmp_igmp;
 			data_m = pr->icmp_igmp_m;
 			break;
@@ -810,10 +810,10 @@ static void rtl839x_write_pie_templated(u32 r[], struct pie_rule *pr, enum templ
  * however the RTL9310 has 2 more registers / fields and the physical field-ids
  * On the RTL8390 the template mask registers are not word-aligned!
  */
-static void rtl839x_read_pie_templated(u32 r[], struct pie_rule *pr, enum template_field_id t[])
+static void rtl839x_read_pie_templated(u32 r[], struct pie_rule *pr, enum rtl839x_template_field_id t[])
 {
 	for (int i = 0; i < N_FIXED_FIELDS; i++) {
-		enum template_field_id field_type = t[i];
+		enum rtl839x_template_field_id field_type = t[i];
 		u16 data, data_m;
 
 		if (!(i % 2)) {
@@ -825,119 +825,119 @@ static void rtl839x_read_pie_templated(u32 r[], struct pie_rule *pr, enum templa
 		}
 
 		switch (field_type) {
-		case TEMPLATE_FIELD_SPM0:
+		case RTL839X_TEMPLATE_FIELD_SPM0:
 			pr->spm = (pr->spn << 16) | data;
 			pr->spm_m = (pr->spn << 16) | data_m;
 			break;
-		case TEMPLATE_FIELD_SPM1:
+		case RTL839X_TEMPLATE_FIELD_SPM1:
 			pr->spm = data;
 			pr->spm_m = data_m;
 			break;
-		case TEMPLATE_FIELD_OTAG:
+		case RTL839X_TEMPLATE_FIELD_OTAG:
 			pr->otag = data;
 			pr->otag_m = data_m;
 			break;
-		case TEMPLATE_FIELD_SMAC0:
+		case RTL839X_TEMPLATE_FIELD_SMAC0:
 			pr->smac[4] = data >> 8;
 			pr->smac[5] = data;
 			pr->smac_m[4] = data >> 8;
 			pr->smac_m[5] = data;
 			break;
-		case TEMPLATE_FIELD_SMAC1:
+		case RTL839X_TEMPLATE_FIELD_SMAC1:
 			pr->smac[2] = data >> 8;
 			pr->smac[3] = data;
 			pr->smac_m[2] = data >> 8;
 			pr->smac_m[3] = data;
 			break;
-		case TEMPLATE_FIELD_SMAC2:
+		case RTL839X_TEMPLATE_FIELD_SMAC2:
 			pr->smac[0] = data >> 8;
 			pr->smac[1] = data;
 			pr->smac_m[0] = data >> 8;
 			pr->smac_m[1] = data;
 			break;
-		case TEMPLATE_FIELD_DMAC0:
+		case RTL839X_TEMPLATE_FIELD_DMAC0:
 			pr->dmac[4] = data >> 8;
 			pr->dmac[5] = data;
 			pr->dmac_m[4] = data >> 8;
 			pr->dmac_m[5] = data;
 			break;
-		case TEMPLATE_FIELD_DMAC1:
+		case RTL839X_TEMPLATE_FIELD_DMAC1:
 			pr->dmac[2] = data >> 8;
 			pr->dmac[3] = data;
 			pr->dmac_m[2] = data >> 8;
 			pr->dmac_m[3] = data;
 			break;
-		case TEMPLATE_FIELD_DMAC2:
+		case RTL839X_TEMPLATE_FIELD_DMAC2:
 			pr->dmac[0] = data >> 8;
 			pr->dmac[1] = data;
 			pr->dmac_m[0] = data >> 8;
 			pr->dmac_m[1] = data;
 			break;
-		case TEMPLATE_FIELD_ETHERTYPE:
+		case RTL839X_TEMPLATE_FIELD_ETHERTYPE:
 			pr->ethertype = data;
 			pr->ethertype_m = data_m;
 			break;
-		case TEMPLATE_FIELD_ITAG:
+		case RTL839X_TEMPLATE_FIELD_ITAG:
 			pr->itag = data;
 			pr->itag_m = data_m;
 			break;
-		case TEMPLATE_FIELD_SIP0:
+		case RTL839X_TEMPLATE_FIELD_SIP0:
 			pr->sip = data;
 			pr->sip_m = data_m;
 			break;
-		case TEMPLATE_FIELD_SIP1:
+		case RTL839X_TEMPLATE_FIELD_SIP1:
 			pr->sip = (pr->sip << 16) | data;
 			pr->sip_m = (pr->sip << 16) | data_m;
 			break;
-		case TEMPLATE_FIELD_SIP2:
+		case RTL839X_TEMPLATE_FIELD_SIP2:
 			pr->is_ipv6 = true;
 			/* Make use of limitiations on the position of the match values */
 			ipv6_addr_set(&pr->sip6, pr->sip, r[5 - i / 2],
 				      r[4 - i / 2], r[3 - i / 2]);
 			ipv6_addr_set(&pr->sip6_m, pr->sip_m, r[5 - i / 2],
 				      r[4 - i / 2], r[3 - i / 2]);
-		case TEMPLATE_FIELD_SIP3:
-		case TEMPLATE_FIELD_SIP4:
-		case TEMPLATE_FIELD_SIP5:
-		case TEMPLATE_FIELD_SIP6:
-		case TEMPLATE_FIELD_SIP7:
+		case RTL839X_TEMPLATE_FIELD_SIP3:
+		case RTL839X_TEMPLATE_FIELD_SIP4:
+		case RTL839X_TEMPLATE_FIELD_SIP5:
+		case RTL839X_TEMPLATE_FIELD_SIP6:
+		case RTL839X_TEMPLATE_FIELD_SIP7:
 			break;
 
-		case TEMPLATE_FIELD_DIP0:
+		case RTL839X_TEMPLATE_FIELD_DIP0:
 			pr->dip = data;
 			pr->dip_m = data_m;
 			break;
 
-		case TEMPLATE_FIELD_DIP1:
+		case RTL839X_TEMPLATE_FIELD_DIP1:
 			pr->dip = (pr->dip << 16) | data;
 			pr->dip_m = (pr->dip << 16) | data_m;
 			break;
 
-		case TEMPLATE_FIELD_DIP2:
+		case RTL839X_TEMPLATE_FIELD_DIP2:
 			pr->is_ipv6 = true;
 			ipv6_addr_set(&pr->dip6, pr->dip, r[5 - i / 2],
 				      r[4 - i / 2], r[3 - i / 2]);
 			ipv6_addr_set(&pr->dip6_m, pr->dip_m, r[5 - i / 2],
 				      r[4 - i / 2], r[3 - i / 2]);
-		case TEMPLATE_FIELD_DIP3:
-		case TEMPLATE_FIELD_DIP4:
-		case TEMPLATE_FIELD_DIP5:
-		case TEMPLATE_FIELD_DIP6:
-		case TEMPLATE_FIELD_DIP7:
+		case RTL839X_TEMPLATE_FIELD_DIP3:
+		case RTL839X_TEMPLATE_FIELD_DIP4:
+		case RTL839X_TEMPLATE_FIELD_DIP5:
+		case RTL839X_TEMPLATE_FIELD_DIP6:
+		case RTL839X_TEMPLATE_FIELD_DIP7:
 			break;
-		case TEMPLATE_FIELD_IP_TOS_PROTO:
+		case RTL839X_TEMPLATE_FIELD_IP_TOS_PROTO:
 			pr->tos_proto = data;
 			pr->tos_proto_m = data_m;
 			break;
-		case TEMPLATE_FIELD_L4_SPORT:
+		case RTL839X_TEMPLATE_FIELD_L4_SPORT:
 			pr->sport = data;
 			pr->sport_m = data_m;
 			break;
-		case TEMPLATE_FIELD_L4_DPORT:
+		case RTL839X_TEMPLATE_FIELD_L4_DPORT:
 			pr->dport = data;
 			pr->dport_m = data_m;
 			break;
-		case TEMPLATE_FIELD_ICMP_IGMP:
+		case RTL839X_TEMPLATE_FIELD_ICMP_IGMP:
 			pr->icmp_igmp = data;
 			pr->icmp_igmp_m = data_m;
 			break;
@@ -1127,7 +1127,7 @@ static int rtl839x_pie_rule_read(struct rtl838x_switch_priv *priv, int idx, stru
 	pr_debug("%s: template_selectors %08x, tid: %d\n", __func__, t_select, pr->tid);
 	rtl839x_pie_rule_dump_raw(r);
 
-	rtl839x_read_pie_templated(r, pr, fixed_templates[(t_select >> (pr->tid * 3)) & 0x7]);
+	rtl839x_read_pie_templated(r, pr, rtl839x_fixed_templates[(t_select >> (pr->tid * 3)) & 0x7]);
 
 	rtl839x_read_pie_action(r, pr);
 
@@ -1154,7 +1154,7 @@ static int rtl839x_pie_rule_write(struct rtl838x_switch_priv *priv, int idx, str
 	rtl839x_write_pie_fixed_fields(r, pr);
 
 	pr_debug("%s: template %d\n", __func__, (t_select >> (pr->tid * 3)) & 0x7);
-	rtl839x_write_pie_templated(r, pr, fixed_templates[(t_select >> (pr->tid * 3)) & 0x7]);
+	rtl839x_write_pie_templated(r, pr, rtl839x_fixed_templates[(t_select >> (pr->tid * 3)) & 0x7]);
 
 	rtl839x_write_pie_action(r, pr);
 
@@ -1166,10 +1166,10 @@ static int rtl839x_pie_rule_write(struct rtl838x_switch_priv *priv, int idx, str
 	return 0;
 }
 
-static bool rtl839x_pie_templ_has(int t, enum template_field_id field_type)
+static bool rtl839x_pie_templ_has(int t, enum rtl839x_template_field_id field_type)
 {
 	for (int i = 0; i < N_FIXED_FIELDS; i++) {
-		enum template_field_id ft = fixed_templates[t][i];
+		enum rtl839x_template_field_id ft = rtl839x_fixed_templates[t][i];
 
 		if (field_type == ft)
 			return true;
@@ -1183,10 +1183,10 @@ static int rtl839x_pie_verify_template(struct rtl838x_switch_priv *priv,
 {
 	int i;
 
-	if (!pr->is_ipv6 && pr->sip_m && !rtl839x_pie_templ_has(t, TEMPLATE_FIELD_SIP0))
+	if (!pr->is_ipv6 && pr->sip_m && !rtl839x_pie_templ_has(t, RTL839X_TEMPLATE_FIELD_SIP0))
 		return -1;
 
-	if (!pr->is_ipv6 && pr->dip_m && !rtl839x_pie_templ_has(t, TEMPLATE_FIELD_DIP0))
+	if (!pr->is_ipv6 && pr->dip_m && !rtl839x_pie_templ_has(t, RTL839X_TEMPLATE_FIELD_DIP0))
 		return -1;
 
 	if (pr->is_ipv6) {
@@ -1194,29 +1194,29 @@ static int rtl839x_pie_verify_template(struct rtl838x_switch_priv *priv,
 		     pr->sip6_m.s6_addr32[1] ||
 		     pr->sip6_m.s6_addr32[2] ||
 		     pr->sip6_m.s6_addr32[3]) &&
-		    !rtl839x_pie_templ_has(t, TEMPLATE_FIELD_SIP2))
+		    !rtl839x_pie_templ_has(t, RTL839X_TEMPLATE_FIELD_SIP2))
 			return -1;
 		if ((pr->dip6_m.s6_addr32[0] ||
 		     pr->dip6_m.s6_addr32[1] ||
 		     pr->dip6_m.s6_addr32[2] ||
 		     pr->dip6_m.s6_addr32[3]) &&
-		    !rtl839x_pie_templ_has(t, TEMPLATE_FIELD_DIP2))
+		    !rtl839x_pie_templ_has(t, RTL839X_TEMPLATE_FIELD_DIP2))
 			return -1;
 	}
 
-	if (ether_addr_to_u64(pr->smac_m) && !rtl839x_pie_templ_has(t, TEMPLATE_FIELD_SMAC0))
+	if (ether_addr_to_u64(pr->smac_m) && !rtl839x_pie_templ_has(t, RTL839X_TEMPLATE_FIELD_SMAC0))
 		return -1;
 
-	if (ether_addr_to_u64(pr->dmac_m) && !rtl839x_pie_templ_has(t, TEMPLATE_FIELD_DMAC0))
+	if (ether_addr_to_u64(pr->dmac_m) && !rtl839x_pie_templ_has(t, RTL839X_TEMPLATE_FIELD_DMAC0))
 		return -1;
 
-	if (pr->itag_m && !rtl839x_pie_templ_has(t, TEMPLATE_FIELD_ITAG))
+	if (pr->itag_m && !rtl839x_pie_templ_has(t, RTL839X_TEMPLATE_FIELD_ITAG))
 		return -1;
 
-	if (pr->sport_m && !rtl839x_pie_templ_has(t, TEMPLATE_FIELD_L4_SPORT))
+	if (pr->sport_m && !rtl839x_pie_templ_has(t, RTL839X_TEMPLATE_FIELD_L4_SPORT))
 		return -1;
 
-	if (pr->dport_m && !rtl839x_pie_templ_has(t, TEMPLATE_FIELD_L4_DPORT))
+	if (pr->dport_m && !rtl839x_pie_templ_has(t, RTL839X_TEMPLATE_FIELD_L4_DPORT))
 		return -1;
 
 	/* TODO: Check more */

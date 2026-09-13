@@ -14,92 +14,92 @@
 #define RTL931X_LED_CLK_SEL_100NS				3
 
 /* Definition of the RTL931X-specific template field IDs as used in the PIE */
-enum template_field_id {
-	TEMPLATE_FIELD_SPM0 = 1,
-	TEMPLATE_FIELD_SPM1 = 2,
-	TEMPLATE_FIELD_SPM2 = 3,
-	TEMPLATE_FIELD_SPM3 = 4,
-	TEMPLATE_FIELD_DMAC0 = 9,
-	TEMPLATE_FIELD_DMAC1 = 10,
-	TEMPLATE_FIELD_DMAC2 = 11,
-	TEMPLATE_FIELD_SMAC0 = 12,
-	TEMPLATE_FIELD_SMAC1 = 13,
-	TEMPLATE_FIELD_SMAC2 = 14,
-	TEMPLATE_FIELD_ETHERTYPE = 15,
-	TEMPLATE_FIELD_OTAG = 16,
-	TEMPLATE_FIELD_ITAG = 17,
-	TEMPLATE_FIELD_SIP0 = 18,
-	TEMPLATE_FIELD_SIP1 = 19,
-	TEMPLATE_FIELD_DIP0 = 20,
-	TEMPLATE_FIELD_DIP1 = 21,
-	TEMPLATE_FIELD_IP_TOS_PROTO = 22,
-	TEMPLATE_FIELD_L4_SPORT = 23,
-	TEMPLATE_FIELD_L4_DPORT = 24,
-	TEMPLATE_FIELD_L34_HEADER = 25,
-	TEMPLATE_FIELD_TCP_INFO = 26,
-	TEMPLATE_FIELD_SIP2 = 34,
-	TEMPLATE_FIELD_SIP3 = 35,
-	TEMPLATE_FIELD_SIP4 = 36,
-	TEMPLATE_FIELD_SIP5 = 37,
-	TEMPLATE_FIELD_SIP6 = 38,
-	TEMPLATE_FIELD_SIP7 = 39,
-	TEMPLATE_FIELD_DIP2 = 42,
-	TEMPLATE_FIELD_DIP3 = 43,
-	TEMPLATE_FIELD_DIP4 = 44,
-	TEMPLATE_FIELD_DIP5 = 45,
-	TEMPLATE_FIELD_DIP6 = 46,
-	TEMPLATE_FIELD_DIP7 = 47,
-	TEMPLATE_FIELD_FLOW_LABEL = 49,
-	TEMPLATE_FIELD_DSAP_SSAP = 50,
-	TEMPLATE_FIELD_FWD_VID = 52,
-	TEMPLATE_FIELD_RANGE_CHK = 53,
-	TEMPLATE_FIELD_SLP = 55,
-	TEMPLATE_FIELD_DLP = 56,
-	TEMPLATE_FIELD_META_DATA = 57,
-	TEMPLATE_FIELD_FIRST_MPLS1 = 60,
-	TEMPLATE_FIELD_FIRST_MPLS2 = 61,
-	TEMPLATE_FIELD_DPM3 = 8,
+enum rtl931x_template_field_id {
+	RTL931X_TEMPLATE_FIELD_SPM0 = 1,
+	RTL931X_TEMPLATE_FIELD_SPM1 = 2,
+	RTL931X_TEMPLATE_FIELD_SPM2 = 3,
+	RTL931X_TEMPLATE_FIELD_SPM3 = 4,
+	RTL931X_TEMPLATE_FIELD_DMAC0 = 9,
+	RTL931X_TEMPLATE_FIELD_DMAC1 = 10,
+	RTL931X_TEMPLATE_FIELD_DMAC2 = 11,
+	RTL931X_TEMPLATE_FIELD_SMAC0 = 12,
+	RTL931X_TEMPLATE_FIELD_SMAC1 = 13,
+	RTL931X_TEMPLATE_FIELD_SMAC2 = 14,
+	RTL931X_TEMPLATE_FIELD_ETHERTYPE = 15,
+	RTL931X_TEMPLATE_FIELD_OTAG = 16,
+	RTL931X_TEMPLATE_FIELD_ITAG = 17,
+	RTL931X_TEMPLATE_FIELD_SIP0 = 18,
+	RTL931X_TEMPLATE_FIELD_SIP1 = 19,
+	RTL931X_TEMPLATE_FIELD_DIP0 = 20,
+	RTL931X_TEMPLATE_FIELD_DIP1 = 21,
+	RTL931X_TEMPLATE_FIELD_IP_TOS_PROTO = 22,
+	RTL931X_TEMPLATE_FIELD_L4_SPORT = 23,
+	RTL931X_TEMPLATE_FIELD_L4_DPORT = 24,
+	RTL931X_TEMPLATE_FIELD_L34_HEADER = 25,
+	RTL931X_TEMPLATE_FIELD_TCP_INFO = 26,
+	RTL931X_TEMPLATE_FIELD_SIP2 = 34,
+	RTL931X_TEMPLATE_FIELD_SIP3 = 35,
+	RTL931X_TEMPLATE_FIELD_SIP4 = 36,
+	RTL931X_TEMPLATE_FIELD_SIP5 = 37,
+	RTL931X_TEMPLATE_FIELD_SIP6 = 38,
+	RTL931X_TEMPLATE_FIELD_SIP7 = 39,
+	RTL931X_TEMPLATE_FIELD_DIP2 = 42,
+	RTL931X_TEMPLATE_FIELD_DIP3 = 43,
+	RTL931X_TEMPLATE_FIELD_DIP4 = 44,
+	RTL931X_TEMPLATE_FIELD_DIP5 = 45,
+	RTL931X_TEMPLATE_FIELD_DIP6 = 46,
+	RTL931X_TEMPLATE_FIELD_DIP7 = 47,
+	RTL931X_TEMPLATE_FIELD_FLOW_LABEL = 49,
+	RTL931X_TEMPLATE_FIELD_DSAP_SSAP = 50,
+	RTL931X_TEMPLATE_FIELD_FWD_VID = 52,
+	RTL931X_TEMPLATE_FIELD_RANGE_CHK = 53,
+	RTL931X_TEMPLATE_FIELD_SLP = 55,
+	RTL931X_TEMPLATE_FIELD_DLP = 56,
+	RTL931X_TEMPLATE_FIELD_META_DATA = 57,
+	RTL931X_TEMPLATE_FIELD_FIRST_MPLS1 = 60,
+	RTL931X_TEMPLATE_FIELD_FIRST_MPLS2 = 61,
+	RTL931X_TEMPLATE_FIELD_DPM3 = 8,
 };
 
-/* The meaning of TEMPLATE_FIELD_VLAN depends on phase and the configuration in
+/* The meaning of RTL931X_TEMPLATE_FIELD_VLAN depends on phase and the configuration in
  * RTL931X_PIE_CTRL. We use always the same definition and map to the inner VLAN tag:
  */
-#define TEMPLATE_FIELD_VLAN TEMPLATE_FIELD_ITAG
+#define RTL931X_TEMPLATE_FIELD_VLAN RTL931X_TEMPLATE_FIELD_ITAG
 
 /* Number of fixed templates predefined in the RTL9300 SoC */
-#define N_FIXED_TEMPLATES 5
+#define RTL931X_N_FIXED_TEMPLATES 5
 /* RTL931x specific predefined templates */
-static enum template_field_id fixed_templates[N_FIXED_TEMPLATES][N_FIXED_FIELDS_RTL931X] = {
+static enum rtl931x_template_field_id rtl931x_fixed_templates[RTL931X_N_FIXED_TEMPLATES][N_FIXED_FIELDS_RTL931X] = {
 	{
-		TEMPLATE_FIELD_DMAC0, TEMPLATE_FIELD_DMAC1, TEMPLATE_FIELD_DMAC2,
-		TEMPLATE_FIELD_SMAC0, TEMPLATE_FIELD_SMAC1, TEMPLATE_FIELD_SMAC2,
-		TEMPLATE_FIELD_VLAN, TEMPLATE_FIELD_IP_TOS_PROTO, TEMPLATE_FIELD_DSAP_SSAP,
-		TEMPLATE_FIELD_ETHERTYPE, TEMPLATE_FIELD_SPM0, TEMPLATE_FIELD_SPM1,
-		TEMPLATE_FIELD_SPM2, TEMPLATE_FIELD_SPM3
+		RTL931X_TEMPLATE_FIELD_DMAC0, RTL931X_TEMPLATE_FIELD_DMAC1, RTL931X_TEMPLATE_FIELD_DMAC2,
+		RTL931X_TEMPLATE_FIELD_SMAC0, RTL931X_TEMPLATE_FIELD_SMAC1, RTL931X_TEMPLATE_FIELD_SMAC2,
+		RTL931X_TEMPLATE_FIELD_VLAN, RTL931X_TEMPLATE_FIELD_IP_TOS_PROTO, RTL931X_TEMPLATE_FIELD_DSAP_SSAP,
+		RTL931X_TEMPLATE_FIELD_ETHERTYPE, RTL931X_TEMPLATE_FIELD_SPM0, RTL931X_TEMPLATE_FIELD_SPM1,
+		RTL931X_TEMPLATE_FIELD_SPM2, RTL931X_TEMPLATE_FIELD_SPM3
 	}, {
-		TEMPLATE_FIELD_SIP0, TEMPLATE_FIELD_SIP1, TEMPLATE_FIELD_DIP0,
-		TEMPLATE_FIELD_DIP1, TEMPLATE_FIELD_IP_TOS_PROTO, TEMPLATE_FIELD_TCP_INFO,
-		TEMPLATE_FIELD_L4_SPORT, TEMPLATE_FIELD_L4_DPORT, TEMPLATE_FIELD_VLAN,
-		TEMPLATE_FIELD_RANGE_CHK, TEMPLATE_FIELD_SPM0, TEMPLATE_FIELD_SPM1,
-		TEMPLATE_FIELD_SPM2, TEMPLATE_FIELD_SPM3
+		RTL931X_TEMPLATE_FIELD_SIP0, RTL931X_TEMPLATE_FIELD_SIP1, RTL931X_TEMPLATE_FIELD_DIP0,
+		RTL931X_TEMPLATE_FIELD_DIP1, RTL931X_TEMPLATE_FIELD_IP_TOS_PROTO, RTL931X_TEMPLATE_FIELD_TCP_INFO,
+		RTL931X_TEMPLATE_FIELD_L4_SPORT, RTL931X_TEMPLATE_FIELD_L4_DPORT, RTL931X_TEMPLATE_FIELD_VLAN,
+		RTL931X_TEMPLATE_FIELD_RANGE_CHK, RTL931X_TEMPLATE_FIELD_SPM0, RTL931X_TEMPLATE_FIELD_SPM1,
+		RTL931X_TEMPLATE_FIELD_SPM2, RTL931X_TEMPLATE_FIELD_SPM3
 	}, {
-		TEMPLATE_FIELD_DMAC0, TEMPLATE_FIELD_DMAC1, TEMPLATE_FIELD_DMAC2,
-		TEMPLATE_FIELD_VLAN, TEMPLATE_FIELD_ETHERTYPE, TEMPLATE_FIELD_IP_TOS_PROTO,
-		TEMPLATE_FIELD_SIP0, TEMPLATE_FIELD_SIP1, TEMPLATE_FIELD_DIP0,
-		TEMPLATE_FIELD_DIP1, TEMPLATE_FIELD_L4_SPORT, TEMPLATE_FIELD_L4_DPORT,
-		TEMPLATE_FIELD_META_DATA, TEMPLATE_FIELD_SLP
+		RTL931X_TEMPLATE_FIELD_DMAC0, RTL931X_TEMPLATE_FIELD_DMAC1, RTL931X_TEMPLATE_FIELD_DMAC2,
+		RTL931X_TEMPLATE_FIELD_VLAN, RTL931X_TEMPLATE_FIELD_ETHERTYPE, RTL931X_TEMPLATE_FIELD_IP_TOS_PROTO,
+		RTL931X_TEMPLATE_FIELD_SIP0, RTL931X_TEMPLATE_FIELD_SIP1, RTL931X_TEMPLATE_FIELD_DIP0,
+		RTL931X_TEMPLATE_FIELD_DIP1, RTL931X_TEMPLATE_FIELD_L4_SPORT, RTL931X_TEMPLATE_FIELD_L4_DPORT,
+		RTL931X_TEMPLATE_FIELD_META_DATA, RTL931X_TEMPLATE_FIELD_SLP
 	}, {
-		TEMPLATE_FIELD_DIP0, TEMPLATE_FIELD_DIP1, TEMPLATE_FIELD_DIP2,
-		TEMPLATE_FIELD_DIP3, TEMPLATE_FIELD_DIP4, TEMPLATE_FIELD_DIP5,
-		TEMPLATE_FIELD_DIP6, TEMPLATE_FIELD_DIP7, TEMPLATE_FIELD_IP_TOS_PROTO,
-		TEMPLATE_FIELD_TCP_INFO, TEMPLATE_FIELD_L4_SPORT, TEMPLATE_FIELD_L4_DPORT,
-		TEMPLATE_FIELD_RANGE_CHK, TEMPLATE_FIELD_SLP
+		RTL931X_TEMPLATE_FIELD_DIP0, RTL931X_TEMPLATE_FIELD_DIP1, RTL931X_TEMPLATE_FIELD_DIP2,
+		RTL931X_TEMPLATE_FIELD_DIP3, RTL931X_TEMPLATE_FIELD_DIP4, RTL931X_TEMPLATE_FIELD_DIP5,
+		RTL931X_TEMPLATE_FIELD_DIP6, RTL931X_TEMPLATE_FIELD_DIP7, RTL931X_TEMPLATE_FIELD_IP_TOS_PROTO,
+		RTL931X_TEMPLATE_FIELD_TCP_INFO, RTL931X_TEMPLATE_FIELD_L4_SPORT, RTL931X_TEMPLATE_FIELD_L4_DPORT,
+		RTL931X_TEMPLATE_FIELD_RANGE_CHK, RTL931X_TEMPLATE_FIELD_SLP
 	}, {
-		TEMPLATE_FIELD_SIP0, TEMPLATE_FIELD_SIP1, TEMPLATE_FIELD_SIP2,
-		TEMPLATE_FIELD_SIP3, TEMPLATE_FIELD_SIP4, TEMPLATE_FIELD_SIP5,
-		TEMPLATE_FIELD_SIP6, TEMPLATE_FIELD_SIP7, TEMPLATE_FIELD_META_DATA,
-		TEMPLATE_FIELD_VLAN, TEMPLATE_FIELD_SPM0, TEMPLATE_FIELD_SPM1,
-		TEMPLATE_FIELD_SPM2, TEMPLATE_FIELD_SPM3
+		RTL931X_TEMPLATE_FIELD_SIP0, RTL931X_TEMPLATE_FIELD_SIP1, RTL931X_TEMPLATE_FIELD_SIP2,
+		RTL931X_TEMPLATE_FIELD_SIP3, RTL931X_TEMPLATE_FIELD_SIP4, RTL931X_TEMPLATE_FIELD_SIP5,
+		RTL931X_TEMPLATE_FIELD_SIP6, RTL931X_TEMPLATE_FIELD_SIP7, RTL931X_TEMPLATE_FIELD_META_DATA,
+		RTL931X_TEMPLATE_FIELD_VLAN, RTL931X_TEMPLATE_FIELD_SPM0, RTL931X_TEMPLATE_FIELD_SPM1,
+		RTL931X_TEMPLATE_FIELD_SPM2, RTL931X_TEMPLATE_FIELD_SPM3
 	},
 };
 
@@ -786,68 +786,68 @@ static void rtl931x_pie_lookup_enable(struct rtl838x_switch_priv *priv, int inde
  * pie_data_fill function for all SoCs, provided we have also for each SoC a
  * function to map between physical and intermediate field type
  */
-static int rtl931x_pie_data_fill(enum template_field_id field_type, struct pie_rule *pr, u16 *data, u16 *data_m)
+static int rtl931x_pie_data_fill(enum rtl931x_template_field_id field_type, struct pie_rule *pr, u16 *data, u16 *data_m)
 {
 	*data = *data_m = 0;
 
 	switch (field_type) {
-	case TEMPLATE_FIELD_SPM0:
+	case RTL931X_TEMPLATE_FIELD_SPM0:
 		*data = pr->spm;
 		*data_m = pr->spm_m;
 		break;
-	case TEMPLATE_FIELD_SPM1:
+	case RTL931X_TEMPLATE_FIELD_SPM1:
 		*data = pr->spm >> 16;
 		*data_m = pr->spm_m >> 16;
 		break;
-	case TEMPLATE_FIELD_OTAG:
+	case RTL931X_TEMPLATE_FIELD_OTAG:
 		*data = pr->otag;
 		*data_m = pr->otag_m;
 		break;
-	case TEMPLATE_FIELD_SMAC0:
+	case RTL931X_TEMPLATE_FIELD_SMAC0:
 		*data = pr->smac[4];
 		*data = (*data << 8) | pr->smac[5];
 		*data_m = pr->smac_m[4];
 		*data_m = (*data_m << 8) | pr->smac_m[5];
 		break;
-	case TEMPLATE_FIELD_SMAC1:
+	case RTL931X_TEMPLATE_FIELD_SMAC1:
 		*data = pr->smac[2];
 		*data = (*data << 8) | pr->smac[3];
 		*data_m = pr->smac_m[2];
 		*data_m = (*data_m << 8) | pr->smac_m[3];
 		break;
-	case TEMPLATE_FIELD_SMAC2:
+	case RTL931X_TEMPLATE_FIELD_SMAC2:
 		*data = pr->smac[0];
 		*data = (*data << 8) | pr->smac[1];
 		*data_m = pr->smac_m[0];
 		*data_m = (*data_m << 8) | pr->smac_m[1];
 		break;
-	case TEMPLATE_FIELD_DMAC0:
+	case RTL931X_TEMPLATE_FIELD_DMAC0:
 		*data = pr->dmac[4];
 		*data = (*data << 8) | pr->dmac[5];
 		*data_m = pr->dmac_m[4];
 		*data_m = (*data_m << 8) | pr->dmac_m[5];
 		break;
-	case TEMPLATE_FIELD_DMAC1:
+	case RTL931X_TEMPLATE_FIELD_DMAC1:
 		*data = pr->dmac[2];
 		*data = (*data << 8) | pr->dmac[3];
 		*data_m = pr->dmac_m[2];
 		*data_m = (*data_m << 8) | pr->dmac_m[3];
 		break;
-	case TEMPLATE_FIELD_DMAC2:
+	case RTL931X_TEMPLATE_FIELD_DMAC2:
 		*data = pr->dmac[0];
 		*data = (*data << 8) | pr->dmac[1];
 		*data_m = pr->dmac_m[0];
 		*data_m = (*data_m << 8) | pr->dmac_m[1];
 		break;
-	case TEMPLATE_FIELD_ETHERTYPE:
+	case RTL931X_TEMPLATE_FIELD_ETHERTYPE:
 		*data = pr->ethertype;
 		*data_m = pr->ethertype_m;
 		break;
-	case TEMPLATE_FIELD_ITAG:
+	case RTL931X_TEMPLATE_FIELD_ITAG:
 		*data = pr->itag;
 		*data_m = pr->itag_m;
 		break;
-	case TEMPLATE_FIELD_SIP0:
+	case RTL931X_TEMPLATE_FIELD_SIP0:
 		if (pr->is_ipv6) {
 			*data = pr->sip6.s6_addr16[7];
 			*data_m = pr->sip6_m.s6_addr16[7];
@@ -856,7 +856,7 @@ static int rtl931x_pie_data_fill(enum template_field_id field_type, struct pie_r
 			*data_m = pr->sip_m;
 		}
 		break;
-	case TEMPLATE_FIELD_SIP1:
+	case RTL931X_TEMPLATE_FIELD_SIP1:
 		if (pr->is_ipv6) {
 			*data = pr->sip6.s6_addr16[6];
 			*data_m = pr->sip6_m.s6_addr16[6];
@@ -865,16 +865,16 @@ static int rtl931x_pie_data_fill(enum template_field_id field_type, struct pie_r
 			*data_m = pr->sip_m >> 16;
 		}
 		break;
-	case TEMPLATE_FIELD_SIP2:
-	case TEMPLATE_FIELD_SIP3:
-	case TEMPLATE_FIELD_SIP4:
-	case TEMPLATE_FIELD_SIP5:
-	case TEMPLATE_FIELD_SIP6:
-	case TEMPLATE_FIELD_SIP7:
-		*data = pr->sip6.s6_addr16[5 - (field_type - TEMPLATE_FIELD_SIP2)];
-		*data_m = pr->sip6_m.s6_addr16[5 - (field_type - TEMPLATE_FIELD_SIP2)];
+	case RTL931X_TEMPLATE_FIELD_SIP2:
+	case RTL931X_TEMPLATE_FIELD_SIP3:
+	case RTL931X_TEMPLATE_FIELD_SIP4:
+	case RTL931X_TEMPLATE_FIELD_SIP5:
+	case RTL931X_TEMPLATE_FIELD_SIP6:
+	case RTL931X_TEMPLATE_FIELD_SIP7:
+		*data = pr->sip6.s6_addr16[5 - (field_type - RTL931X_TEMPLATE_FIELD_SIP2)];
+		*data_m = pr->sip6_m.s6_addr16[5 - (field_type - RTL931X_TEMPLATE_FIELD_SIP2)];
 		break;
-	case TEMPLATE_FIELD_DIP0:
+	case RTL931X_TEMPLATE_FIELD_DIP0:
 		if (pr->is_ipv6) {
 			*data = pr->dip6.s6_addr16[7];
 			*data_m = pr->dip6_m.s6_addr16[7];
@@ -883,7 +883,7 @@ static int rtl931x_pie_data_fill(enum template_field_id field_type, struct pie_r
 			*data_m = pr->dip_m;
 		}
 		break;
-	case TEMPLATE_FIELD_DIP1:
+	case RTL931X_TEMPLATE_FIELD_DIP1:
 		if (pr->is_ipv6) {
 			*data = pr->dip6.s6_addr16[6];
 			*data_m = pr->dip6_m.s6_addr16[6];
@@ -892,37 +892,37 @@ static int rtl931x_pie_data_fill(enum template_field_id field_type, struct pie_r
 			*data_m = pr->dip_m >> 16;
 		}
 		break;
-	case TEMPLATE_FIELD_DIP2:
-	case TEMPLATE_FIELD_DIP3:
-	case TEMPLATE_FIELD_DIP4:
-	case TEMPLATE_FIELD_DIP5:
-	case TEMPLATE_FIELD_DIP6:
-	case TEMPLATE_FIELD_DIP7:
-		*data = pr->dip6.s6_addr16[5 - (field_type - TEMPLATE_FIELD_DIP2)];
-		*data_m = pr->dip6_m.s6_addr16[5 - (field_type - TEMPLATE_FIELD_DIP2)];
+	case RTL931X_TEMPLATE_FIELD_DIP2:
+	case RTL931X_TEMPLATE_FIELD_DIP3:
+	case RTL931X_TEMPLATE_FIELD_DIP4:
+	case RTL931X_TEMPLATE_FIELD_DIP5:
+	case RTL931X_TEMPLATE_FIELD_DIP6:
+	case RTL931X_TEMPLATE_FIELD_DIP7:
+		*data = pr->dip6.s6_addr16[5 - (field_type - RTL931X_TEMPLATE_FIELD_DIP2)];
+		*data_m = pr->dip6_m.s6_addr16[5 - (field_type - RTL931X_TEMPLATE_FIELD_DIP2)];
 		break;
-	case TEMPLATE_FIELD_IP_TOS_PROTO:
+	case RTL931X_TEMPLATE_FIELD_IP_TOS_PROTO:
 		*data = pr->tos_proto;
 		*data_m = pr->tos_proto_m;
 		break;
-	case TEMPLATE_FIELD_L4_SPORT:
+	case RTL931X_TEMPLATE_FIELD_L4_SPORT:
 		*data = pr->sport;
 		*data_m = pr->sport_m;
 		break;
-	case TEMPLATE_FIELD_L4_DPORT:
+	case RTL931X_TEMPLATE_FIELD_L4_DPORT:
 		*data = pr->dport;
 		*data_m = pr->dport_m;
 		break;
-	case TEMPLATE_FIELD_DSAP_SSAP:
+	case RTL931X_TEMPLATE_FIELD_DSAP_SSAP:
 		*data = pr->dsap_ssap;
 		*data_m = pr->dsap_ssap_m;
 		break;
-	case TEMPLATE_FIELD_TCP_INFO:
+	case RTL931X_TEMPLATE_FIELD_TCP_INFO:
 		*data = pr->tcp_info;
 		*data_m = pr->tcp_info_m;
 		break;
-	case TEMPLATE_FIELD_RANGE_CHK:
-		pr_debug("TEMPLATE_FIELD_RANGE_CHK: not configured\n");
+	case RTL931X_TEMPLATE_FIELD_RANGE_CHK:
+		pr_debug("RTL931X_TEMPLATE_FIELD_RANGE_CHK: not configured\n");
 		break;
 	default:
 		pr_debug("%s: unknown field %d\n", __func__, field_type);
@@ -940,7 +940,7 @@ static int rtl931x_pie_data_fill(enum template_field_id field_type, struct pie_r
  * on all SoCs
  * On the RTL9300 the mask fields are not word-aligend!
  */
-static void rtl931x_write_pie_templated(u32 r[], struct pie_rule *pr, enum template_field_id t[])
+static void rtl931x_write_pie_templated(u32 r[], struct pie_rule *pr, enum rtl931x_template_field_id t[])
 {
 	for (int i = 0; i < N_FIXED_FIELDS; i++) {
 		u16 data, data_m;
@@ -1118,7 +1118,7 @@ static int rtl931x_pie_rule_write(struct rtl838x_switch_priv *priv, int idx, str
 	rtl931x_write_pie_fixed_fields(r, pr);
 
 	pr_debug("%s: template %d\n", __func__, (t_select >> (pr->tid * 4)) & 0xf);
-	rtl931x_write_pie_templated(r, pr, fixed_templates[(t_select >> (pr->tid * 4)) & 0xf]);
+	rtl931x_write_pie_templated(r, pr, rtl931x_fixed_templates[(t_select >> (pr->tid * 4)) & 0xf]);
 
 	rtl931x_write_pie_action(r, pr);
 
@@ -1130,10 +1130,10 @@ static int rtl931x_pie_rule_write(struct rtl838x_switch_priv *priv, int idx, str
 	return 0;
 }
 
-static bool rtl931x_pie_templ_has(int t, enum template_field_id field_type)
+static bool rtl931x_pie_templ_has(int t, enum rtl931x_template_field_id field_type)
 {
 	for (int i = 0; i < N_FIXED_FIELDS_RTL931X; i++) {
-		enum template_field_id ft = fixed_templates[t][i];
+		enum rtl931x_template_field_id ft = rtl931x_fixed_templates[t][i];
 
 		if (field_type == ft)
 			return true;
@@ -1143,7 +1143,7 @@ static bool rtl931x_pie_templ_has(int t, enum template_field_id field_type)
 }
 
 /* Verify that the rule pr is compatible with a given template t in block
- * Note that this function is SoC specific since the values of e.g. TEMPLATE_FIELD_SIP0
+ * Note that this function is SoC specific since the values of e.g. RTL931X_TEMPLATE_FIELD_SIP0
  * depend on the SoC
  */
 static int rtl931x_pie_verify_template(struct rtl838x_switch_priv *priv,
@@ -1151,10 +1151,10 @@ static int rtl931x_pie_verify_template(struct rtl838x_switch_priv *priv,
 {
 	int i;
 
-	if (!pr->is_ipv6 && pr->sip_m && !rtl931x_pie_templ_has(t, TEMPLATE_FIELD_SIP0))
+	if (!pr->is_ipv6 && pr->sip_m && !rtl931x_pie_templ_has(t, RTL931X_TEMPLATE_FIELD_SIP0))
 		return -1;
 
-	if (!pr->is_ipv6 && pr->dip_m && !rtl931x_pie_templ_has(t, TEMPLATE_FIELD_DIP0))
+	if (!pr->is_ipv6 && pr->dip_m && !rtl931x_pie_templ_has(t, RTL931X_TEMPLATE_FIELD_DIP0))
 		return -1;
 
 	if (pr->is_ipv6) {
@@ -1162,29 +1162,29 @@ static int rtl931x_pie_verify_template(struct rtl838x_switch_priv *priv,
 		     pr->sip6_m.s6_addr32[1] ||
 		     pr->sip6_m.s6_addr32[2] ||
 		     pr->sip6_m.s6_addr32[3]) &&
-		    !rtl931x_pie_templ_has(t, TEMPLATE_FIELD_SIP2))
+		    !rtl931x_pie_templ_has(t, RTL931X_TEMPLATE_FIELD_SIP2))
 			return -1;
 		if ((pr->dip6_m.s6_addr32[0] ||
 		     pr->dip6_m.s6_addr32[1] ||
 		     pr->dip6_m.s6_addr32[2] ||
 		     pr->dip6_m.s6_addr32[3]) &&
-		    !rtl931x_pie_templ_has(t, TEMPLATE_FIELD_DIP2))
+		    !rtl931x_pie_templ_has(t, RTL931X_TEMPLATE_FIELD_DIP2))
 			return -1;
 	}
 
-	if (ether_addr_to_u64(pr->smac_m) && !rtl931x_pie_templ_has(t, TEMPLATE_FIELD_SMAC0))
+	if (ether_addr_to_u64(pr->smac_m) && !rtl931x_pie_templ_has(t, RTL931X_TEMPLATE_FIELD_SMAC0))
 		return -1;
 
-	if (ether_addr_to_u64(pr->dmac_m) && !rtl931x_pie_templ_has(t, TEMPLATE_FIELD_DMAC0))
+	if (ether_addr_to_u64(pr->dmac_m) && !rtl931x_pie_templ_has(t, RTL931X_TEMPLATE_FIELD_DMAC0))
 		return -1;
 
-	if (pr->itag_m && !rtl931x_pie_templ_has(t, TEMPLATE_FIELD_VLAN))
+	if (pr->itag_m && !rtl931x_pie_templ_has(t, RTL931X_TEMPLATE_FIELD_VLAN))
 		return -1;
 
-	if (pr->sport_m && !rtl931x_pie_templ_has(t, TEMPLATE_FIELD_L4_SPORT))
+	if (pr->sport_m && !rtl931x_pie_templ_has(t, RTL931X_TEMPLATE_FIELD_L4_SPORT))
 		return -1;
 
-	if (pr->dport_m && !rtl931x_pie_templ_has(t, TEMPLATE_FIELD_L4_DPORT))
+	if (pr->dport_m && !rtl931x_pie_templ_has(t, RTL931X_TEMPLATE_FIELD_L4_DPORT))
 		return -1;
 
 	/* TODO: Check more */
