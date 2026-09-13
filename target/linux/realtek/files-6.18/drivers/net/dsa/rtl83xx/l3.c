@@ -268,12 +268,15 @@ static void otto_l3_930x_host_route_write(struct otto_l3_ctrl *ctrl, int idx, st
 __maybe_unused
 static int otto_l3_930x_find_slot(struct otto_l3_ctrl *ctrl, struct otto_l3_route *rt, bool must_exist)
 {
+	/* Slots one entry occupies, by type: IPv4 unicast, IPv4 multicast,
+	 * IPv6 unicast, IPv6 multicast.
+	 */
+	static const u8 slot_widths[] = { 1, 2, 3, 6 };
 	int slot_width, algorithm, addr, idx;
 	struct otto_l3_route route_entry;
 	u32 hash;
 
-	/* IPv6 entries take up 3 slots */
-	slot_width = (rt->attr.type == 0) || (rt->attr.type == 2) ? 1 : 3;
+	slot_width = slot_widths[rt->attr.type & 0x3];
 
 	for (int t = 0; t < 2; t++) {
 		algorithm = (sw_r32(RTL930X_L3_HOST_TBL_CTRL) >> (2 + t)) & 0x1;
