@@ -402,6 +402,26 @@ static void otto_l3_930x_set_nexthop(struct otto_l3_ctrl *ctrl,
 }
 
 
+/* Prefix length of an IPv6 mask, i.e. how many leading bits are set */
+__maybe_unused
+static int otto_l3_930x_mask6_len(const struct in6_addr *mask)
+{
+	int len = 0;
+
+	for (int i = 0; i < 4; i++) {
+		u32 word = ntohl(mask->s6_addr32[i]);
+
+		if (word == 0xffffffff) {
+			len += 32;
+			continue;
+		}
+
+		return len + 32 - fls(~word);
+	}
+
+	return len;
+}
+
 /* Read a prefix route entry from the L3_PREFIX_ROUTE_IPUC table
  * We currently only support IPv4 and IPv6 unicast route
  */
@@ -433,9 +453,11 @@ static void otto_l3_930x_route_read(struct otto_l3_ctrl *ctrl, int idx, struct o
 		rt->dst_ip = data[4];
 		ip4_m = data[9];
 		dev_dbg(ctrl->dev, "Read ip4 mask: %08x\n", ip4_m);
-		rt->prefix_len = host_route ? 32 : -1;
-		rt->prefix_len = (rt->prefix_len < 0 && default_route) ? 0 : -1;
-		if (rt->prefix_len < 0)
+		if (host_route)
+			rt->prefix_len = 32;
+		else if (default_route)
+			rt->prefix_len = 0;
+		else
 			rt->prefix_len = inet_mask_len(ip4_m);
 		break;
 	case 2: /* IPv6 Unicast route */
@@ -445,11 +467,12 @@ static void otto_l3_930x_route_read(struct otto_l3_ctrl *ctrl, int idx, struct o
 		ipv6_addr_set(&ip6_m,
 			      data[6], data[7],
 			      data[8], data[9]);
-		rt->prefix_len = host_route ? 128 : 0;
-		rt->prefix_len = (rt->prefix_len < 0 && default_route) ? 0 : -1;
-		if (rt->prefix_len < 0)
-			rt->prefix_len = find_last_bit((unsigned long *)&ip6_m.s6_addr32,
-						       128);
+		if (host_route)
+			rt->prefix_len = 128;
+		else if (default_route)
+			rt->prefix_len = 0;
+		else
+			rt->prefix_len = otto_l3_930x_mask6_len(&ip6_m);
 		break;
 	case 1: /* IPv4 Multicast route */
 	case 3: /* IPv6 Multicast route */
