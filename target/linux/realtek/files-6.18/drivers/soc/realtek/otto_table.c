@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
+#include <linux/bitfield.h>
 #include <linux/bug.h>
 #include <linux/errno.h>
 #include <linux/mfd/syscon.h>
@@ -28,39 +29,42 @@ struct otto_table {
 	u8 c_bit;
 	u8 t_bit;
 	u8 rmode;
+	u8 addr_lsb;
+	u8 addr_msb;
 	struct mutex lock;
 };
 
 /* One row per table access register: name, command register, status register,
  * write data window, read data window, how many data registers the window holds,
  * the busy status bit, the read/write bit, the shift the table type sits at,
- * whether the read/write bit is inverted.
+ * whether the read/write bit is inverted, LSB and MSB of the address bit field.
  * The enum, the descriptors and the per-register width limit are all generated
  * from here, so an entry cannot be described in one place and not in the others.
  */
-#define OTTO_REG_LIST(_)								\
-	_(OTTO_REG_8380_L2,   0x6900,   0x6900,   0x6908,   0x6908,   3, -1, 15, 13, 1)	\
-	_(OTTO_REG_8380_0,    0x6914,   0x6914,   0x6918,   0x6918,  18, -1, 14, 12, 1)	\
-	_(OTTO_REG_8380_1,    0xA4C8,   0xA4C8,   0xA4CC,   0xA4CC,   6, -1, 14, 12, 1)	\
-	_(OTTO_REG_8390_L2,   0x1180,   0x1180,   0x1184,   0x1184,   3, -1, 16, 14, 0)	\
-	_(OTTO_REG_8390_0,    0x1190,   0x1190,   0x1194,   0x1194,  17, -1, 15, 12, 0)	\
-	_(OTTO_REG_8390_1,    0x6B80,   0x6B80,   0x6B84,   0x6B84,   4, -1, 14, 12, 0)	\
-	_(OTTO_REG_8390_2,    0x611C,   0x611C,   0x6120,   0x6120,   9, -1,  8,  6, 0)	\
-	_(OTTO_REG_9300_L2,   0xB320,   0xB320,   0xB334,   0xB334,   3, -1, 18, 16, 0)	\
-	_(OTTO_REG_9300_0,    0xB340,   0xB340,   0xB344,   0xB344,  19, -1, 16, 12, 0)	\
-	_(OTTO_REG_9300_1,    0xB3A0,   0xB3A0,   0xB3A4,   0xB3A4,  20, -1, 16, 13, 0)	\
-	_(OTTO_REG_9300_2,    0xCE04,   0xCE04,   0xCE08,   0xCE08,   6, -1, 14, 12, 0)	\
-	_(OTTO_REG_9300_HSB,  0xD600,   0xD600,   0xD604,   0xD604,  30, -1,  7,  6, 0)	\
-	_(OTTO_REG_9300_HSA,  0x7880,   0x7880,   0x7884,   0x7884,  22, -1,  9,  8, 0)	\
-	_(OTTO_REG_9310_0,    0x8500,   0x8500,   0x8508,   0x8508,   8, -1, 19, 15, 0)	\
-	_(OTTO_REG_9310_1,    0x40C0,   0x40C0,   0x40C4,   0x40C4,  22, -1, 16, 14, 0)	\
-	_(OTTO_REG_9310_2,    0x8528,   0x8528,   0x852C,   0x852C,   6, -1, 18, 14, 0)	\
-	_(OTTO_REG_9310_3,    0x0200,   0x0200,   0x0204,   0x0204,   9, -1, 15, 12, 0)	\
-	_(OTTO_REG_9310_4,    0x20dc,   0x20dc,   0x20e0,   0x20e0,  29, -1,  7,  6, 0)	\
-	_(OTTO_REG_9310_5,    0x7e1c,   0x7e1c,   0x7e20,   0x7e20,  53, -1,  8,  6, 0)	\
+
+#define OTTO_REG_LIST(_)									\
+	_(OTTO_REG_8380_L2,   0x6900,   0x6900,   0x6908,   0x6908,   3, -1, 15, 13, 1,  0, 12)	\
+	_(OTTO_REG_8380_0,    0x6914,   0x6914,   0x6918,   0x6918,  18, -1, 14, 12, 1,  0, 11)	\
+	_(OTTO_REG_8380_1,    0xA4C8,   0xA4C8,   0xA4CC,   0xA4CC,   6, -1, 14, 12, 1,  0, 11)	\
+	_(OTTO_REG_8390_L2,   0x1180,   0x1180,   0x1184,   0x1184,   3, -1, 16, 14, 0,  0, 13)	\
+	_(OTTO_REG_8390_0,    0x1190,   0x1190,   0x1194,   0x1194,  17, -1, 15, 12, 0,  0, 11)	\
+	_(OTTO_REG_8390_1,    0x6B80,   0x6B80,   0x6B84,   0x6B84,   4, -1, 14, 12, 0,  0, 11)	\
+	_(OTTO_REG_8390_2,    0x611C,   0x611C,   0x6120,   0x6120,   9, -1,  8,  6, 0,  0,  5)	\
+	_(OTTO_REG_9300_L2,   0xB320,   0xB320,   0xB334,   0xB334,   3, -1, 18, 16, 0,  0, 13)	\
+	_(OTTO_REG_9300_0,    0xB340,   0xB340,   0xB344,   0xB344,  19, -1, 16, 12, 0,  0, 11)	\
+	_(OTTO_REG_9300_1,    0xB3A0,   0xB3A0,   0xB3A4,   0xB3A4,  20, -1, 16, 13, 0,  0, 12)	\
+	_(OTTO_REG_9300_2,    0xCE04,   0xCE04,   0xCE08,   0xCE08,   6, -1, 14, 12, 0,  0, 11)	\
+	_(OTTO_REG_9300_HSB,  0xD600,   0xD600,   0xD604,   0xD604,  30, -1,  7,  6, 0,  0,  5)	\
+	_(OTTO_REG_9300_HSA,  0x7880,   0x7880,   0x7884,   0x7884,  22, -1,  9,  8, 0,  0,  7)	\
+	_(OTTO_REG_9310_0,    0x8500,   0x8500,   0x8508,   0x8508,   8, -1, 19, 15, 0,  0, 14)	\
+	_(OTTO_REG_9310_1,    0x40C0,   0x40C0,   0x40C4,   0x40C4,  22, -1, 16, 14, 0,  0, 13)	\
+	_(OTTO_REG_9310_2,    0x8528,   0x8528,   0x852C,   0x852C,   6, -1, 18, 14, 0,  0, 13)	\
+	_(OTTO_REG_9310_3,    0x0200,   0x0200,   0x0204,   0x0204,   9, -1, 15, 12, 0,  0, 11)	\
+	_(OTTO_REG_9310_4,    0x20dc,   0x20dc,   0x20e0,   0x20e0,  29, -1,  7,  6, 0,  0,  5)	\
+	_(OTTO_REG_9310_5,    0x7e1c,   0x7e1c,   0x7e20,   0x7e20,  53, -1,  8,  6, 0,  0,  5)	\
 
 #define OTTO_REG_ENUM(name, ctrl_addr, sts_addr, wr_data, rd_data, max,	\
-		      busy_bit, cbit, tbit, rmode)		\
+		      busy_bit, cbit, tbit, rmode, addr_lsb, addr_msb)	\
 	name,
 
 enum otto_table_reg {
@@ -69,7 +73,7 @@ enum otto_table_reg {
 };
 
 #define OTTO_REG_MAX(name, ctrl_addr, sts_addr, wr_data, rd_data, max,	\
-		     busy_bit, cbit, tbit, rmode)		\
+		     busy_bit, cbit, tbit, rmode, addr_lsb, addr_msb)	\
 	name##_MAX_DATA = max,
 
 enum otto_table_reg_max {
@@ -77,12 +81,14 @@ enum otto_table_reg_max {
 };
 
 #define OTTO_REG_DESC(name, ctrl_addr_, sts_addr_, wr_data_, rd_data_,	\
-		      max_, busy_bit_, cbit_, tbit_, rmode_)\
+		      max_, busy_bit_, cbit_, tbit_, rmode_, addr_lsb_,	\
+		      addr_msb_)					\
 	[name] = {							\
 		.ctrl_addr = ctrl_addr_, .sts_addr = sts_addr_,		\
 		.wr_data = wr_data_, .rd_data = rd_data_,		\
 		.busy_bit = busy_bit_, .c_bit = cbit_, .t_bit = tbit_,	\
-		.rmode = rmode_,					\
+		.rmode = rmode_, .addr_lsb = addr_lsb_,			\
+		.addr_msb = addr_msb_,					\
 	},
 
 static struct otto_table otto_regs[OTTO_REG_END] = {
@@ -376,7 +382,7 @@ static int otto_table_exec(int handle, bool is_write, int idx)
 	const struct otto_table_map *map = &otto_table_maps[handle];
 	struct otto_table *r = &otto_regs[map->reg];
 	int ret = 0;
-	u32 cmd, val, sts_bit;
+	u32 cmd, val, addr_mask, sts_bit;
 
 	/* Read/write bit has inverted meaning on RTL838x */
 	if (r->rmode)
@@ -393,7 +399,9 @@ static int otto_table_exec(int handle, bool is_write, int idx)
 	}
 
 	cmd |= map->type << r->t_bit; /* Table type */
-	cmd |= idx & (BIT(r->t_bit) - 1); /* Index */
+
+	addr_mask = GENMASK(r->addr_msb, r->addr_lsb);
+	cmd |= field_prep(addr_mask, idx); /* Index */
 
 	/* Defensive pre check in case an earlier command never completed */
 	ret = regmap_read_poll_timeout(otto_map, r->sts_addr, val,
