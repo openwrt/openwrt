@@ -28,7 +28,7 @@
 		led-running = &led_system_blue;
 		led-failsafe = &led_system_red;
 		led-upgrade = &led_system_green;
-		label-mac-device = &dp2;
+		label-mac-device = &dp5;
 	};
 
 	chosen {
@@ -297,6 +297,17 @@
 				label = "devinfo";
 				reg = <0x1060000 0x20000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "ascii-eq-delim-env";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					hw_mac_addr: hw_mac_addr {
+						compatible = "mac-base";
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 
 			partition@1080000 {
@@ -500,6 +511,8 @@
 	status = "okay";
 	phy-handle = <&qca8075_4>;
 	label = "wan";
+	nvmem-cells = <&hw_mac_addr 0>;
+	nvmem-cell-names = "mac-address";
 };
 
 &ssphy_0 {
