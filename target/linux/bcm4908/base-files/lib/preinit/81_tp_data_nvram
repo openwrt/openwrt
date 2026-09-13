@@ -1,0 +1,42 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0 OR BSD-2-Clause
+#
+# Merges the per-unit 5GHz radio settings that 05_tp_data_factory read
+# out of the "tp_data" partition over the reference nvram file shipped
+# in the image, so brcmfmac gets this board's own calibration and MAC
+# instead of the values committed to the tree.
+#
+# Split from the reading half because this writes to /lib/firmware,
+# which is only possible once the overlay is up - so it has to run after
+# 80_mount_root, while the read has to happen before 10_indicate_preinit
+# generates board.json. Both are well before kmodloader loads brcmfmac.
+
+tp_data_nvram() {
+	local overrides=/tmp/tp_data_nvram
+	local nvram="/lib/firmware/brcm/brcmfmac4366c-pcie.tplink,archer-c2300-v1.txt"
+
+	[ -s "$overrides" ] || return 0
+	[ -f "$nvram" ] || return 0
+
+	# Replace entries the board has its own values for, keep the rest,
+	# and append any key the shipped file does not carry at all.
+	awk -F= '
+		NR==FNR { ov[$1]=$0; next }
+		/^#/ || NF==0 { print; next }
+		{ k=$1; if (k in ov) { print ov[k]; seen[k]=1 } else print }
+		END { for (k in ov) if (!(k in seen)) print ov[k] }
+	' "$overrides" "$nvram" > "$nvram.new" || {
+		rm -f "$nvram.new"
+		return 0
+	}
+
+	# Only replace when something actually changed: this runs on every
+	# boot, and mv always lands a fresh copy in the overlay upper layer.
+	if cmp -s "$nvram.new" "$nvram"; then
+		rm -f "$nvram.new"
+	else
+		mv "$nvram.new" "$nvram"
+	fi
+}
+
+boot_hook_add preinit_main tp_data_nvram

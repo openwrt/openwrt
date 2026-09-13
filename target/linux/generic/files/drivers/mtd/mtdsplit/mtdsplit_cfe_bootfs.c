@@ -31,9 +31,19 @@ static int mtdsplit_cfe_bootfs_parse(struct mtd_info *mtd,
 	size_t offset;
 	int err;
 
-	/* Don't parse backup partitions */
+	/*
+	 * Don't parse partitions this parser is not responsible for. Return
+	 * -ENOENT and not -EINVAL: add_mtd_partitions() only treats -ENOENT
+	 * as "no parser applies here, carry on". Any other negative return
+	 * is fatal for the whole parent MTD device and deletes every
+	 * partition under it, including ones that parsed successfully.
+	 *
+	 * CFE's dual-image layout marks both firmware slots with this
+	 * parser's compatible, because either of them can be the booted one,
+	 * so this path is always taken for one of the two.
+	 */
 	if (strcmp(mtd->name, "firmware"))
-		return -EINVAL;
+		return -ENOENT;
 
 	/* Find the end of JFFS2 bootfs partition */
 	offset = 0;

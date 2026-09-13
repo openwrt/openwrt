@@ -1,0 +1,73 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Anatoliy Shulika <shulikaa@icloud.com>
+Date: Thu, 6 Aug 2026 12:00:00 +0200
+Subject: [PATCH] arm64: dts: broadcom: archer-c2300-v1: add tp_data
+
+The last 13 MiB of the NAND (0x7300000..0x8000000) is left unmapped by
+the current layout. Under the vendor firmware this region holds TP-Link's
+factory data - the board's MAC address, the product/region information
+and the WiFi PA calibration - as a UBI volume named "tp_data".
+
+Describe it as a read-only partition marked "linux,ubi" so the kernel
+attaches it at boot and userspace can read the factory data back. It is
+never written by OpenWrt.
+
+Signed-off-by: Anatoliy Shulika <shulikaa@icloud.com>
+---
+--- a/arch/arm64/boot/dts/broadcom/bcmbca/bcm4906-tplink-archer-c2300-v1.dts
++++ b/arch/arm64/boot/dts/broadcom/bcmbca/bcm4906-tplink-archer-c2300-v1.dts
+@@ -187,6 +187,54 @@
+ 			compatible = "brcm,bcm4908-firmware";
+ 			reg = <0x3a00000 0x3900000>;
+ 		};
++
++		/*
++		 * Everything past the second firmware partition is left
++		 * unmapped by the stock OpenWrt layout: 0x7300000..0x8000000,
++		 * 13 MiB. Under the vendor firmware this tail holds the CFE
++		 * "data" (4 MiB) and "nvram" (1 MiB) partitions plus "misc2"
++		 * (8 MiB), which is where TP-Link keeps its per-unit factory
++		 * data - tp_data/default-mac (the board's real MAC address),
++		 * tp_data/product-info (model, region) and tp_data/radio_bk
++		 * (WiFi PA calibration).
++		 *
++		 * Mapped read-only so the factory data can be read back and
++		 * cannot be damaged; nothing here is written by OpenWrt.
++		 *
++		 * Layout confirmed by reading the partition on a live device
++		 * and comparing against a dump of the vendor "misc2" mtd taken
++		 * under stock firmware. misc2 is the *first* 8 MiB of this
++		 * region (base 0), so offsets match the stock dump exactly:
++		 *
++		 *   0x4ed038  "radio_bk"      (filename record)
++		 *   0x4f5838  "product-info"  (filename record)
++		 *   0x4f9038  "default-mac"   (filename record)
++		 *   0x50f830  MAC address, 6 raw bytes
++		 *
++		 * The remaining ~5 MiB (CFE "data" and "nvram") reads back as
++		 * erased. Note raw reads of this region log a burst of
++		 * "uncorrectable error" messages from the NAND controller: the
++		 * vendor wrote it with a different ECC scheme than OpenWrt
++		 * uses, so ECC never validates even though the data itself
++		 * comes back intact. Harmless, but noisy - silence the console
++		 * with "dmesg -n 1" before dumping it.
++		 *
++		 * tp_data is a real UBIFS filesystem (confirmed by extracting
++		 * a "misc2" dump with ubi_reader), not a flat blob, so the
++		 * offsets above are NOT stable across units or reflashes -
++		 * UBI's physical block layout depends on each flash's own
++		 * wear-leveling history. "compatible = linux,ubi" below makes
++		 * the kernel auto-attach it at boot (drivers/mtd/ubi/build.c,
++		 * ubi_notify_add()), so /lib/preinit/81_tp_data_nvram
++		 * can mount it read-only and read default-mac/radio_bk by
++		 * filename instead of relying on fragile fixed offsets.
++		 */
++		partition@7300000 {
++			compatible = "linux,ubi";
++			label = "tp_data";
++			reg = <0x7300000 0xd00000>;
++			read-only;
++		};
+ 	};
+ };
+ 
