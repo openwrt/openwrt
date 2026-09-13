@@ -164,6 +164,9 @@ enum otto_table_id {
 #define otto_table_write(id, idx, p) \
 	otto_table_write_bytes((id), (idx), (p), otto_table_size(p))
 
+#define otto_table_offset_read(id, idx, p, word_offset) \
+	otto_table_read_bytes((id), (idx), (p), (word_offset), otto_table_size(p))
+
 /* How many rows a table has, so that a caller sweeping one does not have to
  * carry its own copy of the size. Negative errno for an id that does not name
  * a table.

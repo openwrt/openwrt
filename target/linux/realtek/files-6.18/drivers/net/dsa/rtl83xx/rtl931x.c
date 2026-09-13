@@ -461,15 +461,12 @@ static u64 rtldsa_931x_stat_port_table_read(int port, unsigned int mib_size,
 	 * index.
 	 */
 	if (mib_size == 2) {
-		otto_table_read_bytes(id, port, val,
-				      field_offset - (mib_offset + 1),
-				      sizeof(val));
+		otto_table_offset_read(id, port, &val, field_offset - (mib_offset + 1));
 
 		return (u64)val[0] << 32 | val[1];
 	}
 
-	otto_table_read_bytes(id, port, val, field_offset - mib_offset,
-			      sizeof(val[0]));
+	otto_table_offset_read(id, port, &val[0], field_offset - mib_offset);
 
 	return val[0];
 }
