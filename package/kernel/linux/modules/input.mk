@@ -356,7 +356,7 @@ define KernelPackage/rc-core
 	CONFIG_RC_CORE
   FILES:=$(LINUX_DIR)/drivers/media/rc/rc-core.ko
   AUTOLOAD:=$(call AutoProbe,rc-core)
-  DEPENDS:=+kmod-input-core
+  DEPENDS:=@!LINUX_6_12 +kmod-input-core
 endef
 
 define KernelPackage/rc-core/description

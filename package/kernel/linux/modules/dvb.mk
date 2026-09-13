@@ -23,7 +23,7 @@ define KernelPackage/dvb-core
 	CONFIG_DVB_DEMUX_SECTION_LOSS_LOG=y
   FILES:=$(LINUX_DIR)/drivers/media/dvb-core/dvb-core.ko
   AUTOLOAD:=$(call AutoProbe,dvb-core)
-  DEPENDS:=+kmod-i2c-core
+  DEPENDS:=@!LINUX_6_12 +kmod-i2c-core
 endef
 
 define KernelPackage/dvb-core/description
@@ -1046,7 +1046,7 @@ define KernelPackage/video-em28xx
 	CONFIG_VIDEO_EM28XX
   FILES:=$(LINUX_DIR)/drivers/media/usb/em28xx/em28xx.ko
   AUTOLOAD:=$(call AutoProbe,em28xx)
-  DEPENDS+=+kmod-usb-core +kmod-i2c-core +kmod-tveeprom +kmod-video-core
+  DEPENDS+=@!LINUX_6_12 +kmod-usb-core +kmod-i2c-core +kmod-tveeprom +kmod-video-core
   SUBMENU:=$(VIDEO_MENU)
 endef
 
