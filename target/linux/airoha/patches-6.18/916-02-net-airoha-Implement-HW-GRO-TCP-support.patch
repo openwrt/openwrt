@@ -561,9 +561,9 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  	/* reserve hw queues for HTB offloading */
 --- a/drivers/net/ethernet/airoha/airoha_eth.h
 +++ b/drivers/net/ethernet/airoha/airoha_eth.h
-@@ -44,6 +44,18 @@
+@@ -45,6 +45,18 @@
  	 (_n) == 15 ? 128 :		\
- 	 (_n) ==  0 ? 1024 : 16)
+ 	 (_n) ==  0 ? 1024 : 32)
  
 +#define AIROHA_LRO_PAGE_ORDER		order_base_2(SZ_16K / PAGE_SIZE)
 +#define AIROHA_MAX_NUM_LRO_QUEUES	8
@@ -580,7 +580,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  #define PSE_RSV_PAGES			128
  #define PSE_QUEUE_RSV_PAGES		64
  
-@@ -676,6 +688,18 @@ static inline bool airoha_is_7583(struct
+@@ -677,6 +689,18 @@ static inline bool airoha_is_7583(struct
  	return eth->soc->version == 0x7583;
  }
  
