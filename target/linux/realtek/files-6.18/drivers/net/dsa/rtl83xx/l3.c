@@ -231,7 +231,7 @@ static void otto_l3_930x_host_route_write(struct otto_l3_ctrl *ctrl, int idx, st
 		rt->attr.dst_null);
 	dev_dbg(ctrl->dev, "GW: %pI4, prefix_len: %d\n", &rt->dst_ip, rt->prefix_len);
 
-	v = BIT(31); /* Entry is valid */
+	v = rt->attr.valid ? BIT(31) : 0;
 	v |= (rt->attr.type & 0x3) << 29;
 	v |= rt->attr.hit ? BIT(20) : 0;
 	v |= rt->attr.dst_null ? BIT(19) : 0;
@@ -290,7 +290,7 @@ static int otto_l3_930x_find_slot(struct otto_l3_ctrl *ctrl, struct otto_l3_rout
 			otto_l3_930x_host_route_read(ctrl, idx, &route_entry);
 			dev_dbg(ctrl->dev, "route valid %d, route dest: %pI4, hit %d\n",
 				rt->attr.valid, &rt->dst_ip, rt->attr.hit);
-			if (!must_exist && rt->attr.valid)
+			if (!must_exist && !route_entry.attr.valid)
 				return idx;
 			if (must_exist && route_entry.dst_ip == rt->dst_ip)
 				return idx;
@@ -552,8 +552,8 @@ static void otto_l3_930x_route_write(struct otto_l3_ctrl *ctrl, int idx, struct 
 	v |= (rt->nh.id & 0x7ff) << 7;
 	v |= rt->attr.ttl_dec ? BIT(6) : 0;
 	v |= rt->attr.ttl_check ? BIT(5) : 0;
-	v |= rt->attr.dst_null ? BIT(6) : 0;
-	v |= rt->attr.qos_as ? BIT(6) : 0;
+	v |= rt->attr.dst_null ? BIT(4) : 0;
+	v |= rt->attr.qos_as ? BIT(3) : 0;
 	v |= rt->attr.qos_prio & 0x7;
 	v |= rt->prefix_len == 0 ? BIT(20) : 0; /* set default route bit */
 
@@ -743,11 +743,6 @@ static int otto_l3_930x_setup(struct otto_l3_ctrl *ctrl)
 	pr_debug("L3_IPUC_ROUTE_CTRL %08x, IPMC_ROUTE %08x, IP6UC_ROUTE %08x, IP6MC_ROUTE %08x\n",
 		 sw_r32(RTL930X_L3_IPUC_ROUTE_CTRL), sw_r32(RTL930X_L3_IPMC_ROUTE_CTRL),
 		 sw_r32(RTL930X_L3_IP6UC_ROUTE_CTRL), sw_r32(RTL930X_L3_IP6MC_ROUTE_CTRL));
-	sw_w32_mask(0, 1, RTL930X_L3_IPUC_ROUTE_CTRL);
-	sw_w32_mask(0, 1, RTL930X_L3_IP6UC_ROUTE_CTRL);
-	sw_w32_mask(0, 1, RTL930X_L3_IPMC_ROUTE_CTRL);
-	sw_w32_mask(0, 1, RTL930X_L3_IP6MC_ROUTE_CTRL);
-
 	sw_w32(0x00002001, RTL930X_L3_IPUC_ROUTE_CTRL);
 	sw_w32(0x00014581, RTL930X_L3_IP6UC_ROUTE_CTRL);
 	sw_w32(0x00000501, RTL930X_L3_IPMC_ROUTE_CTRL);
@@ -790,6 +785,7 @@ static int otto_l3_alloc_egress_intf(struct otto_l3_ctrl *ctrl, u64 mac, int vla
 
 	if (free_mac < 0) {
 		dev_err(ctrl->dev, "No free egress interface, cannot offload\n");
+		mutex_unlock(ctrl->lock);
 		return -1;
 	}
 
