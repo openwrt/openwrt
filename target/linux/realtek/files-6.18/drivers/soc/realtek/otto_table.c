@@ -20,58 +20,66 @@ static struct regmap *otto_map;
  * and a window of data registers holding the entry.
  */
 struct otto_table {
-	u16 addr;
-	u16 data;
+	u32 ctrl_addr;
+	u32 sts_addr;
+	u32 wr_data;
+	u32 rd_data;
 	u8 c_bit;
 	u8 t_bit;
 	u8 rmode;
 	struct mutex lock;
 };
 
-/* One row per table access register: name, command register, data window,
- * how many data registers the window holds, the read/write bit, the shift the
- * table type sits at, and whether the read/write bit is inverted. The enum,
- * the descriptors and the per-register width limit are all generated from
- * here, so an entry cannot be described in one place and not in the others.
+/* One row per table access register: name, command register, status register,
+ * write data window, read data window, how many data registers the window holds,
+ * the read/write bit, the shift the table type sits at and whether the read/write
+ * bit is inverted. The enum, the descriptors and the per-register width limit
+ * are all generated from here, so an entry cannot be described in one place
+ * and not in the others.
  */
-#define OTTO_REG_LIST(_)						\
-	_(OTTO_REG_8380_L2,  0x6900, 0x6908,  3, 15, 13, 1)	\
-	_(OTTO_REG_8380_0,   0x6914, 0x6918, 18, 14, 12, 1)	\
-	_(OTTO_REG_8380_1,   0xA4C8, 0xA4CC,  6, 14, 12, 1)	\
-	_(OTTO_REG_8390_L2,  0x1180, 0x1184,  3, 16, 14, 0)	\
-	_(OTTO_REG_8390_0,   0x1190, 0x1194, 17, 15, 12, 0)	\
-	_(OTTO_REG_8390_1,   0x6B80, 0x6B84,  4, 14, 12, 0)	\
-	_(OTTO_REG_8390_2,   0x611C, 0x6120,  9,  8,  6, 0)	\
-	_(OTTO_REG_9300_L2,  0xB320, 0xB334,  3, 18, 16, 0)	\
-	_(OTTO_REG_9300_0,   0xB340, 0xB344, 19, 16, 12, 0)	\
-	_(OTTO_REG_9300_1,   0xB3A0, 0xB3A4, 20, 16, 13, 0)	\
-	_(OTTO_REG_9300_2,   0xCE04, 0xCE08,  6, 14, 12, 0)	\
-	_(OTTO_REG_9300_HSB, 0xD600, 0xD604, 30,  7,  6, 0)	\
-	_(OTTO_REG_9300_HSA, 0x7880, 0x7884, 22,  9,  8, 0)	\
-	_(OTTO_REG_9310_0,   0x8500, 0x8508,  8, 19, 15, 0)	\
-	_(OTTO_REG_9310_1,   0x40C0, 0x40C4, 22, 16, 14, 0)	\
-	_(OTTO_REG_9310_2,   0x8528, 0x852C,  6, 18, 14, 0)	\
-	_(OTTO_REG_9310_3,   0x0200, 0x0204,  9, 15, 12, 0)	\
-	_(OTTO_REG_9310_4,   0x20dc, 0x20e0, 29,  7,  6, 0)	\
-	_(OTTO_REG_9310_5,   0x7e1c, 0x7e20, 53,  8,  6, 0)	\
+#define OTTO_REG_LIST(_)								\
+	_(OTTO_REG_8380_L2,   0x6900,   0x6900,   0x6908,   0x6908,   3, 15, 13, 1)	\
+	_(OTTO_REG_8380_0,    0x6914,   0x6914,   0x6918,   0x6918,  18, 14, 12, 1)	\
+	_(OTTO_REG_8380_1,    0xA4C8,   0xA4C8,   0xA4CC,   0xA4CC,   6, 14, 12, 1)	\
+	_(OTTO_REG_8390_L2,   0x1180,   0x1180,   0x1184,   0x1184,   3, 16, 14, 0)	\
+	_(OTTO_REG_8390_0,    0x1190,   0x1190,   0x1194,   0x1194,  17, 15, 12, 0)	\
+	_(OTTO_REG_8390_1,    0x6B80,   0x6B80,   0x6B84,   0x6B84,   4, 14, 12, 0)	\
+	_(OTTO_REG_8390_2,    0x611C,   0x611C,   0x6120,   0x6120,   9,  8,  6, 0)	\
+	_(OTTO_REG_9300_L2,   0xB320,   0xB320,   0xB334,   0xB334,   3, 18, 16, 0)	\
+	_(OTTO_REG_9300_0,    0xB340,   0xB340,   0xB344,   0xB344,  19, 16, 12, 0)	\
+	_(OTTO_REG_9300_1,    0xB3A0,   0xB3A0,   0xB3A4,   0xB3A4,  20, 16, 13, 0)	\
+	_(OTTO_REG_9300_2,    0xCE04,   0xCE04,   0xCE08,   0xCE08,   6, 14, 12, 0)	\
+	_(OTTO_REG_9300_HSB,  0xD600,   0xD600,   0xD604,   0xD604,  30,  7,  6, 0)	\
+	_(OTTO_REG_9300_HSA,  0x7880,   0x7880,   0x7884,   0x7884,  22,  9,  8, 0)	\
+	_(OTTO_REG_9310_0,    0x8500,   0x8500,   0x8508,   0x8508,   8, 19, 15, 0)	\
+	_(OTTO_REG_9310_1,    0x40C0,   0x40C0,   0x40C4,   0x40C4,  22, 16, 14, 0)	\
+	_(OTTO_REG_9310_2,    0x8528,   0x8528,   0x852C,   0x852C,   6, 18, 14, 0)	\
+	_(OTTO_REG_9310_3,    0x0200,   0x0200,   0x0204,   0x0204,   9, 15, 12, 0)	\
+	_(OTTO_REG_9310_4,    0x20dc,   0x20dc,   0x20e0,   0x20e0,  29,  7,  6, 0)	\
+	_(OTTO_REG_9310_5,    0x7e1c,   0x7e1c,   0x7e20,   0x7e20,  53,  8,  6, 0)	\
 
-#define OTTO_REG_ENUM(name, addr, data, max, cbit, tbit, rmode)	name,
+#define OTTO_REG_ENUM(name, ctrl_addr, sts_addr, wr_data, rd_data, max,	\
+		       cbit, tbit, rmode)					\
+	name,
 
 enum otto_table_reg {
 	OTTO_REG_LIST(OTTO_REG_ENUM)
 	OTTO_REG_END
 };
 
-#define OTTO_REG_MAX(name, addr, data, max, cbit, tbit, rmode)	\
+#define OTTO_REG_MAX(name, ctrl_addr, sts_addr, wr_data, rd_data, max,	\
+		      cbit, tbit, rmode)				\
 	name##_MAX_DATA = max,
 
 enum otto_table_reg_max {
 	OTTO_REG_LIST(OTTO_REG_MAX)
 };
 
-#define OTTO_REG_DESC(name, addr_, data_, max_, cbit_, tbit_, rmode_)	\
+#define OTTO_REG_DESC(name, ctrl_addr_, sts_addr_, wr_data_, rd_data_,	\
+		       max_, cbit_, tbit_, rmode_)			\
 	[name] = {							\
-		.addr = addr_, .data = data_,				\
+		.ctrl_addr = ctrl_addr_, .sts_addr = sts_addr_,		\
+		.wr_data = wr_data_, .rd_data = rd_data_,		\
 		.c_bit = cbit_, .t_bit = tbit_, .rmode = rmode_,	\
 	},
 
@@ -379,7 +387,7 @@ static int otto_table_exec(int handle, bool is_write, int idx)
 	cmd |= idx & (BIT(r->t_bit) - 1); /* Index */
 
 	/* Defensive pre check in case an earlier command never completed */
-	ret = regmap_read_poll_timeout(otto_map, r->addr, val,
+	ret = regmap_read_poll_timeout(otto_map, r->sts_addr, val,
 				       !(val & BIT(r->c_bit + 1)), 20, 10000);
 	if (ret) {
 		pr_err_ratelimited("otto_table: table %d busy, command not sent\n",
@@ -387,11 +395,11 @@ static int otto_table_exec(int handle, bool is_write, int idx)
 		return ret;
 	}
 
-	ret = regmap_write(otto_map, r->addr, cmd);
+	ret = regmap_write(otto_map, r->ctrl_addr, cmd);
 	if (ret)
 		return ret;
 
-	ret = regmap_read_poll_timeout(otto_map, r->addr, val,
+	ret = regmap_read_poll_timeout(otto_map, r->sts_addr, val,
 				       !(val & BIT(r->c_bit + 1)), 20, 10000);
 	if (ret)
 		pr_err_ratelimited("otto_table: table %d did not complete\n",
@@ -429,7 +437,7 @@ int __otto_table_read_bytes(int handle, int idx, void *buf, int word_offset,
 	if (ret)
 		return ret;
 
-	return regmap_bulk_read(otto_map, r->data + word_offset * 4, out, words);
+	return regmap_bulk_read(otto_map, r->rd_data + word_offset * 4, out, words);
 }
 EXPORT_SYMBOL_GPL(__otto_table_read_bytes);
 
@@ -449,7 +457,7 @@ int __otto_table_write_bytes(int handle, int idx, const void *buf, size_t size)
 		      size, otto_table_handle_to_id(handle), words))
 		return -EINVAL;
 
-	ret = regmap_bulk_write(otto_map, r->data, in, words);
+	ret = regmap_bulk_write(otto_map, r->wr_data, in, words);
 	if (ret)
 		return ret;
 
