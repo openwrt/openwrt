@@ -26,10 +26,6 @@
 #define RTPCS_SPEED_2500			5
 #define RTPCS_SPEED_5000			6
 
-/* USXGMII-AN opcodes. RTK variant unused but kept for documentation */
-#define RTPCS_USXGMII_AN_OPC_STD		0x03
-#define RTPCS_USXGMII_AN_OPC_RTK		0xaa
-
 #define RTPCS_838X_CPU_PORT			28
 #define RTPCS_838X_SERDES_CNT			6
 #define RTPCS_838X_MAC_LINK_DUP_STS		0xa19c
@@ -182,10 +178,74 @@ enum rtpcs_page {
 
 /* PAGE_TGR_PRO_0 */
 
+#define TGR_PRO_0_REG00			0x00
+
+#define TGR_PRO_0_REG03			0x03
+#define  RTL93XX_CFG_EEE_EN		BIT(15)
+
 #define TGR_PRO_0_REG13			0x0d
 #define  RTL93XX_CFG_LINKDW_SEL		BIT(6)
 #define   RTL93XX_CFG_LINKDW_SEL_DAC	0x0
 #define   RTL93XX_CFG_LINKDW_SEL_NON_DAC	RTL93XX_CFG_LINKDW_SEL
+
+#define TGR_PRO_0_REG14			0x0e
+#define  RTL93XX_USXG_AN_ENABLE		BIT(10)
+
+#define TGR_PRO_0_REG18			0x12
+#define  RTL93XX_CFG_AM_INSERT_PD	GENMASK(15, 0)
+
+#define TGR_PRO_0_REG19			0x13
+#define  RTL93XX_CFG_AM0_M1		GENMASK(15, 8)
+#define  RTL93XX_CFG_AM0_M0		GENMASK(7, 0)
+
+#define TGR_PRO_0_REG20			0x14
+#define  RTL93XX_CFG_AM1_M0		GENMASK(15, 8)
+#define  RTL93XX_CFG_AM0_M2		GENMASK(7, 0)
+
+#define TGR_PRO_0_REG21			0x15
+#define  RTL93XX_CFG_AM1_M2		GENMASK(15, 8)
+#define  RTL93XX_CFG_AM1_M1		GENMASK(7, 0)
+
+#define TGR_PRO_0_REG22			0x16
+#define  RTL93XX_CFG_AM2_M1		GENMASK(15, 8)
+#define  RTL93XX_CFG_AM2_M0		GENMASK(7, 0)
+
+#define TGR_PRO_0_REG23			0x17
+#define  RTL93XX_CFG_AM3_M0		GENMASK(15, 8)
+#define  RTL93XX_CFG_AM2_M2		GENMASK(7, 0)
+
+#define TGR_PRO_0_REG24			0x18
+#define  RTL93XX_CFG_AM3_M2		GENMASK(15, 8)
+#define  RTL93XX_CFG_AM3_M1		GENMASK(7, 0)
+
+#define TGR_PRO_0_REG29			0x1d
+#define  RTL93XX_SW_AM_PD		BIT(11)
+#define  RTL93XX_USXG_INTF_CH3_RX	BIT(10)
+
+/* PAGE_TGR_PRO_1 */
+
+#define TGR_PRO_1_REG06			0x06
+#define  RTL93XX_CFG_QHSG_TXCFG_MAC_CH0	GENMASK(15, 0)
+
+#define TGR_PRO_1_REG08			0x08
+#define  RTL93XX_CFG_QHSG_TXCFG_MAC_CH1	GENMASK(15, 0)
+
+#define TGR_PRO_1_REG10			0x0a
+#define  RTL93XX_CFG_QHSG_TXCFG_MAC_CH2	GENMASK(15, 0)
+
+#define TGR_PRO_1_REG12			0x0c
+#define  RTL93XX_CFG_QHSG_TXCFG_MAC_CH3	GENMASK(15, 0)
+
+#define TGR_PRO_1_REG16			0x10
+#define  RTL93XX_CFG_QHSG_AN_OPC	GENMASK(7, 0)
+#define   RTL93XX_CFG_QHSG_AN_OPC_STD	0x03
+#define   RTL93XX_CFG_QHSG_AN_OPC_RTK	0xaa
+
+#define TGR_PRO_1_REG17			0x11
+#define  RTL93XX_CFG_QHSG_AN_EN_CH3	BIT(3)
+#define  RTL93XX_CFG_QHSG_AN_EN_CH2	BIT(2)
+#define  RTL93XX_CFG_QHSG_AN_EN_CH1	BIT(1)
+#define  RTL93XX_CFG_QHSG_AN_EN_CH0	BIT(0)
 
 /* PAGE_WDIG */
 
@@ -1341,7 +1401,7 @@ static bool rtpcs_93xx_sds_10gr_link_up(struct rtpcs_serdes *sds)
 static int rtpcs_93xx_sds_set_autoneg(struct rtpcs_serdes *sds, unsigned int neg_mode,
 				      const unsigned long *advertising)
 {
-	u16 en_val;
+	u16 an_en, en_val;
 
 	switch (sds->hw_mode) {
 	case RTPCS_SDS_MODE_XSGMII:
@@ -1355,7 +1415,10 @@ static int rtpcs_93xx_sds_set_autoneg(struct rtpcs_serdes *sds, unsigned int neg
 		 *
 		 * forced USXGMII link not supported yet, always activate USXGMII-AN
 		 */
-		return rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_1, 0x11, 3, 0, 0xf);
+		an_en = RTL93XX_CFG_QHSG_AN_EN_CH0 | RTL93XX_CFG_QHSG_AN_EN_CH1 |
+			RTL93XX_CFG_QHSG_AN_EN_CH2 | RTL93XX_CFG_QHSG_AN_EN_CH3;
+		return rtpcs_sds_write_mask(sds, PAGE_TGR_PRO_1, TGR_PRO_1_REG17,
+					    an_en, an_en);
 
 	default:
 		return rtpcs_generic_sds_set_autoneg(sds, neg_mode, advertising);
@@ -1370,31 +1433,47 @@ static void rtpcs_93xx_sds_usxgmii_config(struct rtpcs_serdes *sds)
 	 */
 
 	/* undocumented; part of USXGMII patch sequences in the SDK */
-	rtpcs_sds_write(sds, PAGE_TGR_PRO_0, 0x00, 0x0000);
-	rtpcs_sds_write(sds, PAGE_TGR_PRO_0, 0x0D, 0x0F00);
-	rtpcs_sds_write(sds, PAGE_TGR_PRO_0, 0x1D, 0x0600);
+	rtpcs_sds_write(sds, PAGE_TGR_PRO_0, TGR_PRO_0_REG00, 0x0000);
+	rtpcs_sds_write(sds, PAGE_TGR_PRO_0, TGR_PRO_0_REG13, 0x0F00);
+	rtpcs_sds_write(sds, PAGE_TGR_PRO_0, TGR_PRO_0_REG29, 0x0600);
 
-	rtpcs_sds_write(sds, PAGE_TGR_PRO_1, 0x06, 0x1401); /* QHSG_TXCFG_MAC_CH0 */
-	rtpcs_sds_write(sds, PAGE_TGR_PRO_1, 0x08, 0x1401); /* QHSG_TXCFG_MAC_CH1 */
-	rtpcs_sds_write(sds, PAGE_TGR_PRO_1, 0x0a, 0x1401); /* QHSG_TXCFG_MAC_CH2 */
-	rtpcs_sds_write(sds, PAGE_TGR_PRO_1, 0x0c, 0x1401); /* QHSG_TXCFG_MAC_CH3 */
+	rtpcs_sds_write_mask(sds, PAGE_TGR_PRO_1, TGR_PRO_1_REG06,
+			     RTL93XX_CFG_QHSG_TXCFG_MAC_CH0, 0x1401);
+	rtpcs_sds_write_mask(sds, PAGE_TGR_PRO_1, TGR_PRO_1_REG08,
+			     RTL93XX_CFG_QHSG_TXCFG_MAC_CH1, 0x1401);
+	rtpcs_sds_write_mask(sds, PAGE_TGR_PRO_1, TGR_PRO_1_REG10,
+			     RTL93XX_CFG_QHSG_TXCFG_MAC_CH2, 0x1401);
+	rtpcs_sds_write_mask(sds, PAGE_TGR_PRO_1, TGR_PRO_1_REG12,
+			     RTL93XX_CFG_QHSG_TXCFG_MAC_CH3, 0x1401);
 
 	/* USXGMII AN mode */
-	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_1, 0x10, 7, 0, RTPCS_USXGMII_AN_OPC_STD); /* QHSG_AN_OPC */
-	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x12, 15, 0, 0xa4); /* am_period */
+	rtpcs_sds_write_mask(sds, PAGE_TGR_PRO_1, TGR_PRO_1_REG16, RTL93XX_CFG_QHSG_AN_OPC,
+			     RTL93XX_CFG_QHSG_AN_OPC_STD);
+	rtpcs_sds_write_mask(sds, PAGE_TGR_PRO_0, TGR_PRO_0_REG18, RTL93XX_CFG_AM_INSERT_PD,
+			     0xa4);
 
 	/* clear alignment markers */
-	rtpcs_sds_write(sds, PAGE_TGR_PRO_0, 0x13, 0x0000); /* AM0_M1 | AM0_M0 */
-	rtpcs_sds_write(sds, PAGE_TGR_PRO_0, 0x14, 0x0000); /* AM1_M0 | AM0_M2 */
-	rtpcs_sds_write(sds, PAGE_TGR_PRO_0, 0x15, 0x0000); /* AM1_M2 | AM1_M1 */
-	rtpcs_sds_write(sds, PAGE_TGR_PRO_0, 0x16, 0x0000); /* AM2_M1 | AM2_M0 */
-	rtpcs_sds_write(sds, PAGE_TGR_PRO_0, 0x17, 0x0000); /* AM3_M0 | AM2_M2 */
-	rtpcs_sds_write(sds, PAGE_TGR_PRO_0, 0x18, 0x0000); /* AM3_M2 | AM3_M1 */
+	rtpcs_sds_write_mask(sds, PAGE_TGR_PRO_0, TGR_PRO_0_REG19,
+			     RTL93XX_CFG_AM0_M1 | RTL93XX_CFG_AM0_M0, 0x0);
+	rtpcs_sds_write_mask(sds, PAGE_TGR_PRO_0, TGR_PRO_0_REG20,
+			     RTL93XX_CFG_AM1_M0 | RTL93XX_CFG_AM0_M2, 0x0);
+	rtpcs_sds_write_mask(sds, PAGE_TGR_PRO_0, TGR_PRO_0_REG21,
+			     RTL93XX_CFG_AM1_M2 | RTL93XX_CFG_AM1_M1, 0x0);
+	rtpcs_sds_write_mask(sds, PAGE_TGR_PRO_0, TGR_PRO_0_REG22,
+			     RTL93XX_CFG_AM2_M1 | RTL93XX_CFG_AM2_M0, 0x0);
+	rtpcs_sds_write_mask(sds, PAGE_TGR_PRO_0, TGR_PRO_0_REG23,
+			     RTL93XX_CFG_AM3_M0 | RTL93XX_CFG_AM2_M2, 0x0);
+	rtpcs_sds_write_mask(sds, PAGE_TGR_PRO_0, TGR_PRO_0_REG24,
+			     RTL93XX_CFG_AM3_M2 | RTL93XX_CFG_AM3_M1, 0x0);
 
-	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0xe, 10, 10, 0x1);  /* an_table */
-	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x1d, 11, 10, 0x1); /* sync_bit */
+	rtpcs_sds_write_mask(sds, PAGE_TGR_PRO_0, TGR_PRO_0_REG14, RTL93XX_USXG_AN_ENABLE,
+			     RTL93XX_USXG_AN_ENABLE);
+	rtpcs_sds_write_mask(sds, PAGE_TGR_PRO_0, TGR_PRO_0_REG29,
+			     RTL93XX_SW_AM_PD | RTL93XX_USXG_INTF_CH3_RX,
+			     RTL93XX_USXG_INTF_CH3_RX);
 
-	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x03, 15, 15, 0x1); /* EEE_EN */
+	rtpcs_sds_write_mask(sds, PAGE_TGR_PRO_0, TGR_PRO_0_REG03, RTL93XX_CFG_EEE_EN,
+			     RTL93XX_CFG_EEE_EN);
 }
 
 static int rtpcs_93xx_init(struct rtpcs_ctrl *ctrl)
