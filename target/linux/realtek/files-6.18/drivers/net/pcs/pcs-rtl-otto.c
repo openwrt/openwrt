@@ -100,7 +100,7 @@
 #define RTPCS_93XX_SDS_USXGMII_SUBMODE_5GDX	0x04
 #define RTPCS_93XX_SDS_USXGMII_SUBMODE_2_5GSX	0x05
 
-/* Registers of the internal SerDes of the 9310 */
+/* RTL931x switch-core registers controlling the SerDes */
 #define RTPCS_931X_MAC_GROUP0_1_CTRL		(0x13a4)
 #define RTPCS_931X_MAC_GROUP2_3_CTRL		(0x13a8)
 #define RTPCS_931X_MAC_GROUP4_CTRL		(0x13ac)
@@ -116,6 +116,8 @@
 #define RTPCS_931X_SDS_PRE_AMP_MASK		GENMASK(4, 0)
 #define RTPCS_931X_SDS_MAIN_AMP_MASK		GENMASK(9, 5)
 #define RTPCS_931X_SDS_POST_AMP_MASK		GENMASK(14, 10)
+
+/* Paged SerDes registers */
 
 /*
  * A SerDes has a register space separated into several pages. Each page
@@ -167,34 +169,40 @@ enum rtpcs_page {
 #define DIGI_1(page)	((page) + 0x40)
 #define DIGI_2(page)	((page) + 0x80)
 
-/* TGR_PRO_0, reg 0x0d */
-#define RTL93XX_LINKDW_SEL		BIT(6)
-#define RTL93XX_LINKDW_SEL_DAC		0x0
-#define RTL93XX_LINKDW_SEL_NON_DAC	BIT(6)
+/* PAGE_TGR_PRO_0 */
 
-/* ANA_MISC, reg 0x00 */
-#define RTL93XX_FRC_CMU_EN_MASK		GENMASK(11, 10)
-#define RTL93XX_FRC_CMU_EN_UNFORCED	FIELD_PREP(RTL93XX_FRC_CMU_EN_MASK, 0x0)
-#define RTL93XX_FRC_CMU_EN_FORCE_OFF	FIELD_PREP(RTL93XX_FRC_CMU_EN_MASK, 0x1)
-#define RTL93XX_FRC_CMU_EN_FORCE_ON	FIELD_PREP(RTL93XX_FRC_CMU_EN_MASK, 0x3)
-#define RTL93XX_FRC_PDOWN_MASK		GENMASK(7, 6)
-#define RTL93XX_FRC_PDOWN_DOWN		FIELD_PREP(RTL93XX_FRC_PDOWN_MASK, 0x3)
-#define RTL93XX_FRC_PDOWN_UNFORCED	FIELD_PREP(RTL93XX_FRC_PDOWN_MASK, 0x0)
-#define RTL93XX_FRC_RX_EN_MASK		GENMASK(5, 4)
-#define RTL93XX_FRC_RX_EN_ON		FIELD_PREP(RTL93XX_FRC_RX_EN_MASK, 0x3)
-#define RTL93XX_FRC_RX_EN_OFF		FIELD_PREP(RTL93XX_FRC_RX_EN_MASK, 0x1)
-#define RTL93XX_FRC_V2ANALOG_MASK	GENMASK(1, 0)
-#define RTL93XX_FRC_V2ANALOG_UNFORCED	FIELD_PREP(RTL93XX_FRC_V2ANALOG_MASK, 0x0)
-#define RTL93XX_FRC_V2ANALOG_FORCE_OFF	FIELD_PREP(RTL93XX_FRC_V2ANALOG_MASK, 0x1)
+#define TGR_PRO_0_REG13			0x0d
+#define  RTL93XX_CFG_LINKDW_SEL		BIT(6)
+#define   RTL93XX_CFG_LINKDW_SEL_DAC	0x0
+#define   RTL93XX_CFG_LINKDW_SEL_NON_DAC	RTL93XX_CFG_LINKDW_SEL
 
-/* DIGI_1(WDIG), reg 0x01 */
+/* PAGE_WDIG */
+
+#define WDIG_REG01			0x01
 /*
- * Gates a digital clock inside the SerDes. The exact block is unknown — it
+ * Gates a digital clock inside the SerDes. The exact block is unknown; it
  * appears to be used by all modes except USXGMII and 10GBASE-R. The bit name
  * is inherited from an earlier SerDes generation and has not been verified
  * on RTL931x. GLI could mean "GMII Line Interface" or "Gigabit Line Interface".
  */
-#define RTL931X_STOP_GLI_CLK		BIT(0)
+#define  RTL931X_STOP_GLI_CLK		BIT(0) /* Only used on DIGI_1(). */
+
+/* PAGE_ANA_MISC */
+
+#define ANA_MISC_REG00			0x00
+#define  RTL93XX_FRC_CMU_EN		GENMASK(11, 10)
+#define   RTL93XX_FRC_CMU_EN_UNFORCED	FIELD_PREP(RTL93XX_FRC_CMU_EN, 0x0)
+#define   RTL93XX_FRC_CMU_EN_FORCE_OFF	FIELD_PREP(RTL93XX_FRC_CMU_EN, 0x1)
+#define   RTL93XX_FRC_CMU_EN_FORCE_ON	FIELD_PREP(RTL93XX_FRC_CMU_EN, 0x3)
+#define  RTL93XX_FRC_PDOWN		GENMASK(7, 6)
+#define   RTL93XX_FRC_PDOWN_FORCE_DOWN	FIELD_PREP(RTL93XX_FRC_PDOWN, 0x3)
+#define   RTL93XX_FRC_PDOWN_UNFORCED	FIELD_PREP(RTL93XX_FRC_PDOWN, 0x0)
+#define  RTL93XX_FRC_RX_EN		GENMASK(5, 4)
+#define   RTL93XX_FRC_RX_EN_FORCE_ON	FIELD_PREP(RTL93XX_FRC_RX_EN, 0x3)
+#define   RTL93XX_FRC_RX_EN_FORCE_OFF	FIELD_PREP(RTL93XX_FRC_RX_EN, 0x1)
+#define  RTL93XX_FRC_V2ANALOG		GENMASK(1, 0)
+#define   RTL93XX_FRC_V2ANALOG_UNFORCED	FIELD_PREP(RTL93XX_FRC_V2ANALOG, 0x0)
+#define   RTL93XX_FRC_V2ANALOG_FORCE_OFF	FIELD_PREP(RTL93XX_FRC_V2ANALOG, 0x1)
 
 enum rtpcs_sds_type {
 	RTPCS_SDS_TYPE_UNKNOWN,
@@ -1905,11 +1913,11 @@ static void rtpcs_930x_sds_set_power(struct rtpcs_serdes *sds, bool on)
 {
 	int power_down, rx_enable;
 
-	power_down = on ? RTL93XX_FRC_PDOWN_UNFORCED : RTL93XX_FRC_PDOWN_DOWN;
-	rx_enable = on ? RTL93XX_FRC_RX_EN_ON : RTL93XX_FRC_RX_EN_OFF;
+	power_down = on ? RTL93XX_FRC_PDOWN_UNFORCED : RTL93XX_FRC_PDOWN_FORCE_DOWN;
+	rx_enable = on ? RTL93XX_FRC_RX_EN_FORCE_ON : RTL93XX_FRC_RX_EN_FORCE_OFF;
 
-	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, 0x00,
-			     RTL93XX_FRC_PDOWN_MASK | RTL93XX_FRC_RX_EN_MASK,
+	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, ANA_MISC_REG00,
+			     RTL93XX_FRC_PDOWN | RTL93XX_FRC_RX_EN,
 			     power_down | rx_enable);
 }
 
@@ -2960,7 +2968,7 @@ static int rtpcs_930x_sds_config_hw_mode(struct rtpcs_serdes *sds, enum rtpcs_sd
 		break;
 
 	case RTPCS_SDS_MODE_10GBASER:
-		rtpcs_sds_write(sds, PAGE_TGR_PRO_0, 0x0D, 0x0F00);
+		rtpcs_sds_write(sds, PAGE_TGR_PRO_0, TGR_PRO_0_REG13, 0x0F00);
 		rtpcs_sds_write(sds, PAGE_TGR_PRO_0, 0x00, 0x0000);
 		rtpcs_sds_write(sds, PAGE_TGR_PRO_0, 0x01, 0xC800);
 
@@ -3433,13 +3441,13 @@ static int rtpcs_931x_sds_deactivate(struct rtpcs_serdes *sds)
 {
 	int ret;
 
-	ret = rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, 0x0,
-				   RTL93XX_FRC_PDOWN_MASK | RTL93XX_FRC_RX_EN_MASK,
-				   RTL93XX_FRC_PDOWN_DOWN | RTL93XX_FRC_RX_EN_OFF);
+	ret = rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, ANA_MISC_REG00,
+				   RTL93XX_FRC_PDOWN | RTL93XX_FRC_RX_EN,
+				   RTL93XX_FRC_PDOWN_FORCE_DOWN | RTL93XX_FRC_RX_EN_FORCE_OFF);
 	if (ret)
 		return ret;
 
-	ret = rtpcs_sds_write_mask(sds, DIGI_1(PAGE_WDIG), 0x1, RTL931X_STOP_GLI_CLK,
+	ret = rtpcs_sds_write_mask(sds, DIGI_1(PAGE_WDIG), WDIG_REG01, RTL931X_STOP_GLI_CLK,
 				   RTL931X_STOP_GLI_CLK);
 	if (ret)
 		return ret;
@@ -3457,14 +3465,15 @@ static int rtpcs_931x_sds_activate(struct rtpcs_serdes *sds)
 
 	if (sds->hw_mode != RTPCS_SDS_MODE_USXGMII &&
 	    sds->hw_mode != RTPCS_SDS_MODE_10GBASER) {
-		ret = rtpcs_sds_write_mask(sds, DIGI_1(PAGE_WDIG), 0x1, RTL931X_STOP_GLI_CLK, 0x0);
+		ret = rtpcs_sds_write_mask(sds, DIGI_1(PAGE_WDIG), WDIG_REG01,
+					   RTL931X_STOP_GLI_CLK, 0x0);
 		if (ret)
 			return ret;
 	}
 
-	ret = rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, 0x0,
-				   RTL93XX_FRC_PDOWN_MASK | RTL93XX_FRC_RX_EN_MASK,
-				   RTL93XX_FRC_PDOWN_UNFORCED | RTL93XX_FRC_RX_EN_ON);
+	ret = rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, ANA_MISC_REG00,
+				   RTL93XX_FRC_PDOWN | RTL93XX_FRC_RX_EN,
+				   RTL93XX_FRC_PDOWN_UNFORCED | RTL93XX_FRC_RX_EN_FORCE_ON);
 	if (ret)
 		return ret;
 
@@ -3491,12 +3500,12 @@ static void rtpcs_931x_sds_rx_reset(struct rtpcs_serdes *sds)
 		return;
 
 	rtpcs_931x_sds_10g_ana_pre(sds);
-	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, 0x0, RTL93XX_FRC_RX_EN_MASK,
-			     RTL93XX_FRC_RX_EN_OFF);
+	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, ANA_MISC_REG00, RTL93XX_FRC_RX_EN,
+			     RTL93XX_FRC_RX_EN_FORCE_OFF);
 
 	rtpcs_931x_sds_10g_ana_post(sds);
-	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, 0x0, RTL93XX_FRC_RX_EN_MASK,
-			     RTL93XX_FRC_RX_EN_ON);
+	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, ANA_MISC_REG00, RTL93XX_FRC_RX_EN,
+			     RTL93XX_FRC_RX_EN_FORCE_ON);
 	msleep(50);
 }
 
@@ -3813,9 +3822,9 @@ static int rtpcs_931x_sds_config_attachment(struct rtpcs_serdes *sds,
 	/* SDK: media none behavior - baseline applied regardless of attachment */
 	rtpcs_931x_sds_10g_ana_pre(sds);
 
-	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, 0x0, RTL93XX_FRC_CMU_EN_MASK,
+	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, ANA_MISC_REG00, RTL93XX_FRC_CMU_EN,
 			     RTL93XX_FRC_CMU_EN_FORCE_ON);
-	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, 0x0, RTL93XX_FRC_V2ANALOG_MASK,
+	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, ANA_MISC_REG00, RTL93XX_FRC_V2ANALOG,
 			     RTL93XX_FRC_V2ANALOG_FORCE_OFF);
 
 	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xf, 5, 0, 0x4);
@@ -3830,10 +3839,10 @@ static int rtpcs_931x_sds_config_attachment(struct rtpcs_serdes *sds,
 		  hw_mode == RTPCS_SDS_MODE_XSGMII ||
 		  hw_mode == RTPCS_SDS_MODE_USXGMII);
 
-	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, 0x0, RTL93XX_FRC_CMU_EN_MASK,
+	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, ANA_MISC_REG00, RTL93XX_FRC_CMU_EN,
 			     RTL93XX_FRC_CMU_EN_UNFORCED);
 	rtpcs_sds_write_bits(sds, PAGE_ANA_5G0, 0x7, 15, 15, is_dac ? 0x1 : 0x0);
-	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, 0x0, RTL93XX_FRC_CMU_EN_MASK,
+	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, ANA_MISC_REG00, RTL93XX_FRC_CMU_EN,
 			     RTL93XX_FRC_CMU_EN_FORCE_ON);
 
 	switch (attachment) {
@@ -3867,19 +3876,19 @@ static int rtpcs_931x_sds_config_attachment(struct rtpcs_serdes *sds,
 	if (ret)
 		return ret;
 
-	rtpcs_sds_write_mask(sds, PAGE_TGR_PRO_0, 0xd, RTL93XX_LINKDW_SEL,
-			     is_dac ? RTL93XX_LINKDW_SEL_DAC : RTL93XX_LINKDW_SEL_NON_DAC);
+	rtpcs_sds_write_mask(sds, PAGE_TGR_PRO_0, TGR_PRO_0_REG13, RTL93XX_CFG_LINKDW_SEL,
+			     is_dac ? RTL93XX_CFG_LINKDW_SEL_DAC : RTL93XX_CFG_LINKDW_SEL_NON_DAC);
 
 	if (is_10g)
 		rtpcs_931x_sds_10g_ana_post(sds);
 
-	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, 0x0, RTL93XX_FRC_V2ANALOG_MASK,
+	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, ANA_MISC_REG00, RTL93XX_FRC_V2ANALOG,
 			     RTL93XX_FRC_V2ANALOG_UNFORCED);
 	rtpcs_sds_write_bits(sds, PAGE_ANA_5G0, 0x12, 7, 6, 0x3);
 
-	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, 0x0, RTL93XX_FRC_CMU_EN_MASK,
+	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, ANA_MISC_REG00, RTL93XX_FRC_CMU_EN,
 			     RTL93XX_FRC_CMU_EN_FORCE_OFF);
-	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, 0x0, RTL93XX_FRC_CMU_EN_MASK,
+	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, ANA_MISC_REG00, RTL93XX_FRC_CMU_EN,
 			     RTL93XX_FRC_CMU_EN_FORCE_ON);
 
 	/* clear pending SerDes RX idle interrupt flag */
