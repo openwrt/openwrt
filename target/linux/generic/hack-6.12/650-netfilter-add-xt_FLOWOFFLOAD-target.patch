@@ -44,7 +44,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  obj-$(CONFIG_NETFILTER_XT_TARGET_LED) += xt_LED.o
 --- /dev/null
 +++ b/net/netfilter/xt_FLOWOFFLOAD.c
-@@ -0,0 +1,703 @@
+@@ -0,0 +1,760 @@
 +/*
 + * Copyright (C) 2018-2021 Felix Fietkau <nbd@nbd.name>
 + *
@@ -57,7 +57,10 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +#include <linux/netfilter.h>
 +#include <linux/netfilter/xt_FLOWOFFLOAD.h>
 +#include <linux/if_vlan.h>
++#include <linux/rtnetlink.h>
 +#include <net/ip.h>
++#include <net/net_namespace.h>
++#include <net/netns/generic.h>
 +#include <net/netfilter/nf_conntrack.h>
 +#include <net/netfilter/nf_conntrack_extend.h>
 +#include <net/netfilter/nf_conntrack_helper.h>
@@ -74,7 +77,14 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +struct xt_flowoffload_table {
 +	struct nf_flowtable ft;
 +	struct hlist_head hooks;
++	/* Protects the hook list and hook bookkeeping. */
++	spinlock_t hooks_lock;
 +	struct delayed_work work;
++};
++
++struct xt_flowoffload_net {
++	struct xt_flowoffload_table flowtable[2];
++	struct notifier_block netdev_notifier;
 +};
 +
 +struct nf_forward_info {
@@ -92,9 +102,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	enum flow_offload_xmit_type xmit_type;
 +};
 +
-+static DEFINE_SPINLOCK(hooks_lock);
-+
-+struct xt_flowoffload_table flowtable[2];
++static unsigned int xt_flowoffload_net_id __read_mostly;
 +
 +static unsigned int
 +xt_flowoffload_net_hook(void *priv, struct sk_buff *skb,
@@ -175,36 +183,43 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	if (!dev)
 +		return;
 +
-+	spin_lock_bh(&hooks_lock);
++	spin_lock_bh(&table->hooks_lock);
 +	hook = flow_offload_lookup_hook(table, dev);
 +	if (hook)
 +		hook->used = true;
 +	else
 +		xt_flowoffload_create_hook(table, dev);
-+	spin_unlock_bh(&hooks_lock);
++	spin_unlock_bh(&table->hooks_lock);
 +}
 +
 +static void
 +xt_flowoffload_register_hooks(struct xt_flowoffload_table *table)
 +{
 +	struct xt_flowoffload_hook *hook;
++	int err;
 +
++	spin_lock_bh(&table->hooks_lock);
 +restart:
 +	hlist_for_each_entry(hook, &table->hooks, list) {
 +		if (hook->registered)
 +			continue;
 +
-+		hook->registered = true;
 +		hook->net = dev_net(hook->ops.dev);
-+		spin_unlock_bh(&hooks_lock);
-+		nf_register_net_hook(hook->net, &hook->ops);
-+		if (table->ft.flags & NF_FLOWTABLE_HW_OFFLOAD)
++		spin_unlock_bh(&table->hooks_lock);
++		err = nf_register_net_hook(hook->net, &hook->ops);
++		if (!err && table->ft.flags & NF_FLOWTABLE_HW_OFFLOAD)
 +			table->ft.type->setup(&table->ft, hook->ops.dev,
 +					      FLOW_BLOCK_BIND);
-+		spin_lock_bh(&hooks_lock);
++		spin_lock_bh(&table->hooks_lock);
++		if (err) {
++			hlist_del(&hook->list);
++			kfree(hook);
++		} else {
++			hook->registered = true;
++		}
 +		goto restart;
 +	}
-+
++	spin_unlock_bh(&table->hooks_lock);
 +}
 +
 +static bool
@@ -214,7 +229,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	bool active = false;
 +
 +restart:
-+	spin_lock_bh(&hooks_lock);
++	spin_lock_bh(&table->hooks_lock);
 +	hlist_for_each_entry(hook, &table->hooks, list) {
 +		if (hook->used || !hook->registered) {
 +			active = true;
@@ -222,7 +237,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +		}
 +
 +		hlist_del(&hook->list);
-+		spin_unlock_bh(&hooks_lock);
++		spin_unlock_bh(&table->hooks_lock);
 +		if (table->ft.flags & NF_FLOWTABLE_HW_OFFLOAD)
 +			table->ft.type->setup(&table->ft, hook->ops.dev,
 +					      FLOW_BLOCK_UNBIND);
@@ -230,7 +245,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +		kfree(hook);
 +		goto restart;
 +	}
-+	spin_unlock_bh(&hooks_lock);
++	spin_unlock_bh(&table->hooks_lock);
 +
 +	return active;
 +}
@@ -246,7 +261,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +
 +	table = container_of(flowtable, struct xt_flowoffload_table, ft);
 +
-+	spin_lock_bh(&hooks_lock);
++	spin_lock_bh(&table->hooks_lock);
 +	hlist_for_each_entry(hook, &table->hooks, list) {
 +		if (hook->ops.dev->ifindex != tuple0->iifidx &&
 +		    hook->ops.dev->ifindex != tuple1->iifidx)
@@ -254,7 +269,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +
 +		hook->used = true;
 +	}
-+	spin_unlock_bh(&hooks_lock);
++	spin_unlock_bh(&table->hooks_lock);
 +}
 +
 +static void
@@ -266,11 +281,13 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +
 +	table = container_of(work, struct xt_flowoffload_table, work.work);
 +
-+	spin_lock_bh(&hooks_lock);
++	/* Serialize hook updates with device removal. */
++	rtnl_net_lock(read_pnet(&table->ft.net));
 +	xt_flowoffload_register_hooks(table);
++	spin_lock_bh(&table->hooks_lock);
 +	hlist_for_each_entry(hook, &table->hooks, list)
 +		hook->used = false;
-+	spin_unlock_bh(&hooks_lock);
++	spin_unlock_bh(&table->hooks_lock);
 +
 +	err = nf_flow_table_iterate(&table->ft, xt_flowoffload_check_hook,
 +				    NULL);
@@ -278,10 +295,12 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +		goto out;
 +
 +	if (!xt_flowoffload_cleanup_hooks(table))
-+		return;
++		goto unlock;
 +
 +out:
 +	queue_delayed_work(system_power_efficient_wq, &table->work, HZ);
++unlock:
++	rtnl_net_unlock(read_pnet(&table->ft.net));
 +}
 +
 +static bool
@@ -515,6 +534,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +static unsigned int
 +flowoffload_tg(struct sk_buff *skb, const struct xt_action_param *par)
 +{
++	struct xt_flowoffload_net *xn;
 +	struct xt_flowoffload_table *table;
 +	const struct xt_flowoffload_target_info *info = par->targinfo;
 +	struct tcphdr _tcph, *tcph = NULL;
@@ -524,7 +544,6 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	struct flow_offload *flow = NULL;
 +	struct net_device *devs[2] = {};
 +	struct nf_conn *ct;
-+	struct net *net;
 +
 +	if (xt_flowoffload_skip(skb, xt_family(par)))
 +		return XT_CONTINUE;
@@ -581,11 +600,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +		ct->proto.tcp.seen[1].flags |= IP_CT_TCP_FLAG_BE_LIBERAL;
 +	}
 +
-+	table = &flowtable[!!(info->flags & XT_FLOWOFFLOAD_HW)];
-+
-+	net = read_pnet(&table->ft.net);
-+	if (!net)
-+		write_pnet(&table->ft.net, xt_net(par));
++	xn = net_generic(xt_net(par), xt_flowoffload_net_id);
++	table = &xn->flowtable[!!(info->flags & XT_FLOWOFFLOAD_HW)];
 +
 +	__set_bit(NF_FLOW_HW_BIDIRECTIONAL, &flow->flags);
 +	if (flow_offload_add(&table->ft, flow) < 0)
@@ -631,29 +647,39 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +static int flow_offload_netdev_event(struct notifier_block *this,
 +				     unsigned long event, void *ptr)
 +{
++	struct xt_flowoffload_net *xn = container_of(this,
++					struct xt_flowoffload_net,
++					netdev_notifier);
 +	struct xt_flowoffload_hook *hook0, *hook1;
 +	struct net_device *dev = netdev_notifier_info_to_dev(ptr);
 +
 +	if (event != NETDEV_UNREGISTER)
 +		return NOTIFY_DONE;
 +
-+	spin_lock_bh(&hooks_lock);
-+	hook0 = flow_offload_lookup_hook(&flowtable[0], dev);
++	spin_lock_bh(&xn->flowtable[0].hooks_lock);
++	hook0 = flow_offload_lookup_hook(&xn->flowtable[0], dev);
 +	if (hook0)
 +		hlist_del(&hook0->list);
++	spin_unlock_bh(&xn->flowtable[0].hooks_lock);
 +
-+	hook1 = flow_offload_lookup_hook(&flowtable[1], dev);
++	spin_lock_bh(&xn->flowtable[1].hooks_lock);
++	hook1 = flow_offload_lookup_hook(&xn->flowtable[1], dev);
 +	if (hook1)
 +		hlist_del(&hook1->list);
-+	spin_unlock_bh(&hooks_lock);
++	spin_unlock_bh(&xn->flowtable[1].hooks_lock);
 +
 +	if (hook0) {
-+		nf_unregister_net_hook(hook0->net, &hook0->ops);
++		if (hook0->registered)
++			nf_unregister_net_hook(hook0->net, &hook0->ops);
 +		kfree(hook0);
 +	}
 +
 +	if (hook1) {
-+		nf_unregister_net_hook(hook1->net, &hook1->ops);
++		if (hook1->registered) {
++			nf_unregister_net_hook(hook1->net, &hook1->ops);
++			xn->flowtable[1].ft.type->setup(&xn->flowtable[1].ft,
++						       dev, FLOW_BLOCK_UNBIND);
++		}
 +		kfree(hook1);
 +	}
 +
@@ -661,10 +687,6 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +
 +	return NOTIFY_DONE;
 +}
-+
-+static struct notifier_block flow_offload_netdev_notifier = {
-+	.notifier_call	= flow_offload_netdev_event,
-+};
 +
 +static int nf_flow_rule_route_inet(struct net *net,
 +				   struct flow_offload *flow,
@@ -699,50 +721,85 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	.owner		= THIS_MODULE,
 +};
 +
-+static int init_flowtable(struct xt_flowoffload_table *tbl)
++static int init_flowtable(struct net *net, struct xt_flowoffload_table *tbl,
++			  unsigned int flags)
 +{
++	spin_lock_init(&tbl->hooks_lock);
++	INIT_HLIST_HEAD(&tbl->hooks);
 +	INIT_DELAYED_WORK(&tbl->work, xt_flowoffload_hook_work);
 +	tbl->ft.type = &flowtable_inet;
-+	tbl->ft.flags = NF_FLOWTABLE_COUNTER;
++	tbl->ft.flags = NF_FLOWTABLE_COUNTER | flags;
++	write_pnet(&tbl->ft.net, net);
 +
 +	return nf_flow_table_init(&tbl->ft);
 +}
 +
-+static int __init xt_flowoffload_tg_init(void)
++static int __net_init xt_flowoffload_net_init(struct net *net)
 +{
++	struct xt_flowoffload_net *xn = net_generic(net, xt_flowoffload_net_id);
 +	int ret;
 +
-+	register_netdevice_notifier(&flow_offload_netdev_notifier);
-+
-+	ret = init_flowtable(&flowtable[0]);
++	ret = init_flowtable(net, &xn->flowtable[0], 0);
 +	if (ret)
 +		return ret;
 +
-+	ret = init_flowtable(&flowtable[1]);
++	ret = init_flowtable(net, &xn->flowtable[1], NF_FLOWTABLE_HW_OFFLOAD);
 +	if (ret)
 +		goto cleanup;
 +
-+	flowtable[1].ft.flags |= NF_FLOWTABLE_HW_OFFLOAD;
-+
-+	ret = xt_register_target(&offload_tg_reg);
++	xn->netdev_notifier.notifier_call = flow_offload_netdev_event;
++	ret = register_netdevice_notifier_net(net, &xn->netdev_notifier);
 +	if (ret)
 +		goto cleanup2;
 +
 +	return 0;
 +
 +cleanup2:
-+	nf_flow_table_free(&flowtable[1].ft);
++	nf_flow_table_free(&xn->flowtable[1].ft);
 +cleanup:
-+	nf_flow_table_free(&flowtable[0].ft);
++	nf_flow_table_free(&xn->flowtable[0].ft);
++	return ret;
++}
++
++static void __net_exit xt_flowoffload_net_exit(struct net *net)
++{
++	struct xt_flowoffload_net *xn = net_generic(net, xt_flowoffload_net_id);
++
++	cancel_delayed_work_sync(&xn->flowtable[0].work);
++	cancel_delayed_work_sync(&xn->flowtable[1].work);
++	unregister_netdevice_notifier_net(net, &xn->netdev_notifier);
++	/* Hook unregistration does not wait for packet processing. */
++	synchronize_net();
++	nf_flow_table_free(&xn->flowtable[0].ft);
++	nf_flow_table_free(&xn->flowtable[1].ft);
++}
++
++static struct pernet_operations xt_flowoffload_net_ops = {
++	.init = xt_flowoffload_net_init,
++	.exit = xt_flowoffload_net_exit,
++	.id   = &xt_flowoffload_net_id,
++	.size = sizeof(struct xt_flowoffload_net),
++};
++
++static int __init xt_flowoffload_tg_init(void)
++{
++	int ret;
++
++	ret = register_pernet_subsys(&xt_flowoffload_net_ops);
++	if (ret)
++		return ret;
++
++	ret = xt_register_target(&offload_tg_reg);
++	if (ret)
++		unregister_pernet_subsys(&xt_flowoffload_net_ops);
++
 +	return ret;
 +}
 +
 +static void __exit xt_flowoffload_tg_exit(void)
 +{
 +	xt_unregister_target(&offload_tg_reg);
-+	unregister_netdevice_notifier(&flow_offload_netdev_notifier);
-+	nf_flow_table_free(&flowtable[0].ft);
-+	nf_flow_table_free(&flowtable[1].ft);
++	unregister_pernet_subsys(&xt_flowoffload_net_ops);
 +}
 +
 +MODULE_LICENSE("GPL");
@@ -758,7 +815,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #include <net/netfilter/nf_flow_table.h>
  #include <net/netfilter/nf_conntrack.h>
  #include <net/netfilter/nf_conntrack_core.h>
-@@ -374,8 +373,7 @@ flow_offload_lookup(struct nf_flowtable
+@@ -376,8 +375,7 @@ flow_offload_lookup(struct nf_flowtable
  }
  EXPORT_SYMBOL_GPL(flow_offload_lookup);
  
@@ -768,7 +825,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		      void (*iter)(struct nf_flowtable *flowtable,
  				   struct flow_offload *flow, void *data),
  		      void *data)
-@@ -436,6 +434,7 @@ static void nf_flow_offload_gc_step(stru
+@@ -438,6 +436,7 @@ static void nf_flow_offload_gc_step(stru
  		nf_flow_offload_stats(flow_table, flow);
  	}
  }
@@ -798,7 +855,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +#endif /* _XT_FLOWOFFLOAD_H */
 --- a/include/net/netfilter/nf_flow_table.h
 +++ b/include/net/netfilter/nf_flow_table.h
-@@ -294,6 +294,11 @@ void nf_flow_table_free(struct nf_flowta
+@@ -296,6 +296,11 @@ void nf_flow_table_free(struct nf_flowta
  
  void flow_offload_teardown(struct flow_offload *flow);
  
