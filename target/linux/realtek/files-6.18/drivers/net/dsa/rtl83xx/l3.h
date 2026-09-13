@@ -98,6 +98,7 @@ struct otto_l3_config {
 	void (*route_read)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt);
 	void (*route_write)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt);
 	int (*setup)(struct otto_l3_ctrl *ctrl);
+	void (*dbgfs_init)(struct otto_l3_ctrl *ctrl);
 };
 
 struct otto_l3_ctrl {
