@@ -9,6 +9,8 @@
 #include <linux/hash.h>
 #include <linux/if_vlan.h>
 #include <linux/interrupt.h>
+#include <linux/ip.h>
+#include <linux/ipv6.h>
 #include <linux/module.h>
 #include <linux/of.h>
 #include <linux/of_address.h>
@@ -489,7 +491,8 @@ static void edma_rx_csum(struct net_device *netdev, struct sk_buff *skb,
 			 const struct edma_rx_preheader *rxph, u32 status,
 			 unsigned int l2_len)
 {
-	u32 pre4, sum, l4_off;
+	u32 pre4, sum, l3_off, l4_off, ip_len;
+	unsigned char *l3;
 	__sum16 hw;
 	u8 pid;
 
@@ -523,8 +526,22 @@ static void edma_rx_csum(struct net_device *netdev, struct sk_buff *skb,
 		return;
 
 	pre4 = le32_to_cpu(rxph->rx_pre4);
+	l3_off = (pre4 >> EDMA_RXPH_L3_OFFSET_SHIFT) & EDMA_RXPH_L3_OFFSET_MASK;
 	l4_off = (pre4 >> EDMA_RXPH_L4_OFFSET_SHIFT) & EDMA_RXPH_L4_OFFSET_MASK;
-	if (l4_off <= l2_len || l4_off > skb_headlen(skb) + l2_len)
+	if (l3_off < l2_len || l4_off <= l3_off ||
+	    l4_off > skb_headlen(skb) + l2_len)
+		return;
+
+	/* The sum ends with the IP packet, and the stack subtracts the padding
+	 * it trims behind it.
+	 */
+	l3 = skb->data + l3_off - l2_len;
+	if (pid & EDMA_RXDESC_PID_IPV6)
+		ip_len = sizeof(struct ipv6hdr) +
+			 ntohs(((struct ipv6hdr *)l3)->payload_len);
+	else
+		ip_len = ntohs(((struct iphdr *)l3)->tot_len);
+	if (skb->len + l2_len > l3_off + ip_len)
 		return;
 
 	sum = (le32_to_cpu(rxph->rx_pre6) >> EDMA_RXPH_CSUM_SHIFT) &
