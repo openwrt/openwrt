@@ -191,8 +191,8 @@ static void otto_l3_930x_host_route_read(struct otto_l3_ctrl *ctrl, int idx, str
 		break;
 	case 2: /* IPv6 Unicast route */
 		ipv6_addr_set(&rt->dst_ip6,
-			      data[3], data[2],
-			      data[1], data[0]);
+			      data[1], data[2],
+			      data[3], data[4]);
 		break;
 	case 1: /* IPv4 Multicast route */
 	case 3: /* IPv6 Multicast route */
