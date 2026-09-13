@@ -253,6 +253,50 @@
 &sdhci {
 	status = "okay";
 	non-removable;
+
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	partition@0 {
+		label = "u-boot";
+		reg = <0x00000000 0x00040000>;
+		read-only;
+	};
+
+    partition@40000 {
+        label = "u-boot-env";
+        reg = <0x00040000 0x00010000>;
+    };
+
+    partition@50000 {
+        label = "reserved";
+        reg = <0x00050000 0x00010000>;
+    };
+
+    partition@60000 {
+        label = "factory";
+        reg = <0x00060000 0x00400000>;
+    };
+
+    partition@460000 {
+        label = "kernel";
+        reg = <0x00460000 0x00800000>;
+    };
+
+    partition@c60000 {
+        label = "rootfs";
+        reg = <0x00C60000 0x0F3A0000>;
+    };
+
+    partition@10000000 {
+        label = "rootfs_data";
+        reg = <0x10000000 0x0F000000>;
+    };
+
+    partition@1F000000 {
+        label = "reserved";
+        reg = <0x1F000000 0x01000000>;
+    };
 };
 
 &switch {
