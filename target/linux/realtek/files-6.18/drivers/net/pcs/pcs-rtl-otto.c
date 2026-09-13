@@ -169,6 +169,17 @@ enum rtpcs_page {
 #define DIGI_1(page)	((page) + 0x40)
 #define DIGI_2(page)	((page) + 0x80)
 
+/* PAGE_SDS */
+
+#define SDS_REG00			0x00
+#define  RTL838X_SDS_EN_RX		BIT(1)
+#define  RTL838X_SDS_EN_TX		BIT(0)
+
+/* PAGE_SDS_EXT */
+
+#define SDS_EXT_REG03			0x03
+#define  RTL838X_REG_CML_SEL		BIT(1)
+
 /* PAGE_TGR_PRO_0 */
 
 #define TGR_PRO_0_REG13			0x0d
@@ -898,8 +909,8 @@ static int rtpcs_838x_sds_deactivate(struct rtpcs_serdes *sds)
 	if (ret)
 		return ret;
 
-	/* EN_RX | EN_TX */
-	ret = rtpcs_sds_write_bits(sds, PAGE_SDS, 0, 1, 0, 0x0);
+	ret = rtpcs_sds_write_mask(sds, PAGE_SDS, SDS_REG00,
+				   RTL838X_SDS_EN_RX | RTL838X_SDS_EN_TX, 0);
 	if (ret)
 		return ret;
 
@@ -916,8 +927,9 @@ static int rtpcs_838x_sds_activate(struct rtpcs_serdes *sds)
 	if (ret)
 		return ret;
 
-	/* EN_RX | EN_TX */
-	ret = rtpcs_sds_write_bits(sds, PAGE_SDS, 0, 1, 0, 0x3);
+	ret = rtpcs_sds_write_mask(sds, PAGE_SDS, SDS_REG00,
+				   RTL838X_SDS_EN_RX | RTL838X_SDS_EN_TX,
+				   RTL838X_SDS_EN_RX | RTL838X_SDS_EN_TX);
 	if (ret)
 		return ret;
 
@@ -1000,7 +1012,8 @@ static int rtpcs_838x_sds_config_hw_mode(struct rtpcs_serdes *sds, enum rtpcs_sd
 
 		/* CKREFBUF_S0S1 */
 		regmap_write_bits(ctrl->map, RTPCS_838X_PLL_CML_CTRL, 0xf, 0xf);
-		rtpcs_sds_write_bits(sds, PAGE_SDS_EXT, 0x3, 1, 1, 0x1); /* REG_CML_SEL */
+		rtpcs_sds_write_mask(sds, PAGE_SDS_EXT, SDS_EXT_REG03,
+				     RTL838X_REG_CML_SEL, RTL838X_REG_CML_SEL);
 	}
 
 	rtpcs_sds_write(sds, PAGE_SDS_EXT, 0x9, 0x8e64);
