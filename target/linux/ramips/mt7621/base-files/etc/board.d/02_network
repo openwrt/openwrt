@@ -152,6 +152,13 @@ ramips_setup_interfaces()
 	gnubee,gb-pc2)
 		ucidef_set_interface_lan "ethblack ethblue ethyellow"
 		;;
+	kuwfi,c900gl)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
+		ucidef_set_interface "wwan" device "/dev/cdc-wdm0" protocol "qmi"
+		# board.d runs again after every sysupgrade; keep the entry single.
+		uci -q del_list firewall.@zone[1].network='wwan'
+		uci add_list firewall.@zone[1].network='wwan'
+		;;
 	mikrotik,routerboard-760igs)
 		ucidef_set_interfaces_lan_wan "lan2 lan3 lan4 lan5" "wan sfp"
 		;;
@@ -267,6 +274,9 @@ ramips_setup_macs()
 		lan_mac=$(mtd_get_mac_ascii config mac)
 		wan_mac=$lan_mac
 		label_mac=$lan_mac
+		;;
+	kuwfi,c900gl)
+		label_mac=$(mtd_get_mac_binary Factory 0x4)
 		;;
 	belkin,rt1800|\
 	linksys,e7350)

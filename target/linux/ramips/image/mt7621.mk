@@ -2093,6 +2093,31 @@ define Device/keenetic_kn-3510
 endef
 TARGET_DEVICES += keenetic_kn-3510
 
+define Device/kuwfi_c900gl
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 16000k
+  # The stock web updater accepts a legacy uImage named MT7621A_11AC_8_64 and
+  # writes ih_size + 64 bytes of it; the vendor U-Boot checksums that same
+  # range on every boot.  An initramfs is complete in itself, so it is what
+  # the updater installs, and sysupgrade from it writes the flash layout.
+  # No UIMAGE_NAME: sysupgrade.bin must keep a name the updater rejects.
+  KERNEL_INITRAMFS := $$(KERNEL/lzma-loader) | uImage none -n MT7621A_11AC_8_64
+ifeq ($(IB),)
+ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
+  ARTIFACTS := initramfs-factory.bin
+  ARTIFACT/initramfs-factory.bin := append-image-stage initramfs-kernel.bin | \
+	check-size 8192k
+endif
+endif
+  DEVICE_VENDOR := KuWFi
+  DEVICE_MODEL := C900GL
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3 \
+	kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi \
+	kmod-ledtrig-network -uboot-envtools
+endef
+TARGET_DEVICES += kuwfi_c900gl
+
 define Device/lenovo_newifi-d1
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
