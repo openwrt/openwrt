@@ -957,17 +957,25 @@ static void otto_l3_route_remove(struct otto_l3_ctrl *ctrl, struct otto_l3_route
 
 	if (r->is_host_route) {
 		id = ctrl->cfg->find_slot(ctrl, r, false);
-		dev_dbg(ctrl->dev, "Got id for host route: %d\n", id);
-		r->attr.valid = false;
-		ctrl->cfg->host_route_write(ctrl, id, r);
+		if (id >= 0) {
+			dev_dbg(ctrl->dev, "Got id for host route: %d\n", id);
+			r->attr.valid = false;
+			ctrl->cfg->host_route_write(ctrl, id, r);
+		} else {
+			dev_err(ctrl->dev, "Host route was not in hardware\n");
+		}
 		clear_bit(r->id - MAX_ROUTES, ctrl->host_route_use_bm);
 	} else {
 		/* If there is a HW representation of the route, delete it */
 		if (ctrl->cfg->route_lookup_hw) {
 			id = ctrl->cfg->route_lookup_hw(ctrl, r);
-			dev_info(ctrl->dev, "Got id for prefix route: %d\n", id);
-			r->attr.valid = false;
-			ctrl->cfg->route_write(ctrl, id, r);
+			if (id >= 0) {
+				dev_dbg(ctrl->dev, "Got id for prefix route: %d\n", id);
+				r->attr.valid = false;
+				ctrl->cfg->route_write(ctrl, id, r);
+			} else {
+				dev_err(ctrl->dev, "Prefix route was not in hardware\n");
+			}
 		}
 		clear_bit(r->id, ctrl->route_use_bm);
 	}
