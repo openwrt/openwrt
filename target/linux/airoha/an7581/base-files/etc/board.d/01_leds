@@ -25,6 +25,9 @@ nokia,xg-040g-md-ubi)
 	ucidef_set_led_netdev "lan3" "lan3" "mt7530-0:0b:green:lan-3" "lan3" "link tx rx"
 	ucidef_set_led_netdev "lan4" "lan4" "mt7530-0:0c:green:lan-4" "lan4" "link tx rx"
 	;;
+vsol,v2902a)
+	ucidef_set_led_timer "los" "los" "red:los" "1000" "1000"
+	;;
 esac
 
 board_config_flush

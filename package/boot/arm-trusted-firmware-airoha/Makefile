@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_VERSION:=2.10
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 PKG_HASH:=88215a62291b9ba87da8e50b077741103cdc08fb6c9e1ebd34dfaace746d3201
 
 PKG_MAINTAINER:=Christian Marangi <ansuelsmth@gmail.com>
@@ -30,7 +30,8 @@ define Trusted-Firmware-A/an7581-bl2
   $(call Trusted-Firmware-A/bl2/Default)
   BUILD_SUBTARGET:=an7581
   SOC:=EN7581
-  BUILD_DEVICES:=airoha_an7581-evb airoha_an7581-evb-emmc-eagle airoha_an7581-evb-emmc-kite nokia_valyrian nokia_xg-040g-md-ubi
+  BUILD_DEVICES:=airoha_an7581-evb airoha_an7581-evb-emmc-eagle airoha_an7581-evb-emmc-kite nokia_valyrian nokia_xg-040g-md-ubi \
+	vsol_v2902a
 endef
 
 define Trusted-Firmware-A/an7583-bl2
@@ -51,7 +52,8 @@ define Trusted-Firmware-A/an7581-bl31
   $(call Trusted-Firmware-A/bl31/Default)
   BUILD_SUBTARGET:=an7581
   SOC:=EN7581
-  BUILD_DEVICES:=airoha_an7581-evb airoha_an7581-evb-emmc-eagle airoha_an7581-evb-emmc-kite nokia_valyrian nokia_xg-040g-md-ubi
+  BUILD_DEVICES:=airoha_an7581-evb airoha_an7581-evb-emmc-eagle airoha_an7581-evb-emmc-kite nokia_valyrian nokia_xg-040g-md-ubi \
+	vsol_v2902a
 endef
 
 define Trusted-Firmware-A/an7583-bl31
