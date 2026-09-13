@@ -1,0 +1,420 @@
+From 580088c3c906b0da724d5fd03d879d6110a7be37 Mon Sep 17 00:00:00 2001
+From: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+Date: Sun, 6 Sep 2026 17:28:31 +0200
+Subject: [PATCH 8/8] net: dsa: realtek: rtl8365mb: re-latch the family D
+ SerDes
+
+With the previous patch the trunk on a TP-Link Archer AX55 v1 (IPQ5018 +
+RTL8367S-VB) reports 2.5Gbps/Full on both sides but moves no frames: the
+CPU MAC transmits, s00_p06_ifInOctets stays at zero and so does
+mmc_rx_framecount_gb, with no CRC, alignment or FIFO errors.
+
+The receiver latches on the DISABLE -> HSGMII edge in SDS_MISC rather
+than on the value, and it will not latch until the MAC at the other end
+of the trunk has brought its own half of the link up. On this board the
+two are far apart:
+
+  5.27  rtl8365mb: configuring for fixed/2500base-x   <- pcs_config()
+  7.72  ipq5018-gmac-dwmac eth0: configuring for fixed/2500base-x
+  8.02  ipq5018-gmac-dwmac eth0: Link is Up - 2.5Gbps/Full
+  8.56  SerDes latches
+
+pcs_config() runs 2.7 s before the SoC MAC even starts configuring, so
+driving the edge from there cannot work, whatever the sequence. Neither
+does pcs_link_up(), which fires about a millisecond before phylink
+reports the switch-side link and is still 2.5 s early. Instrumented,
+SDS 0x3D reads 0x0100 in both cases.
+
+Doing the same writes from a workqueue does work, and the timing says why:
+with a 2000 ms retry interval it took 3 attempts, with 200 ms it took 7,
+with 50 ms it took 9 - but the successful attempt always landed 100-500 ms
+after dwmac's "Link is Up", never before it. A single attempt scheduled
+for just after that point latches first try, three boots in a row.
+
+So retry until the far end shows up. The interval and cap are generous
+because the driver has no view of the other MAC - it is on the SoC side
+of the link, behind a different driver - and the delay before dwmac comes
+up is a property of the boot, not of this chip. Keying off that link
+directly would be better than polling, but there is no path for it from
+here.
+
+The work is cancelled in teardown(), and re-armed from pcs_config() after
+resetting the retry budget, since an attempt parks the mode for 20 ms and
+a link that flaps would otherwise re-arm the sequence indefinitely.
+
+Co-developed-by: Oleg Gavrilov <gabonpivovich@gmail.com>
+Signed-off-by: Oleg Gavrilov <gabonpivovich@gmail.com>
+Signed-off-by: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+---
+ drivers/net/dsa/realtek/rtl8365mb_main.c | 219 ++++++++++++++++++++---
+ 1 file changed, 195 insertions(+), 24 deletions(-)
+
+--- a/drivers/net/dsa/realtek/rtl8365mb_main.c
++++ b/drivers/net/dsa/realtek/rtl8365mb_main.c
+@@ -103,6 +103,7 @@
+ #include <linux/if_bridge.h>
+ #include <linux/if_vlan.h>
+ #include <linux/phylink.h>
++#include <linux/workqueue.h>
+ 
+ #include "realtek.h"
+ #include "realtek-smi.h"
+@@ -284,6 +285,9 @@
+ #define   RTL8365MB_SDS_MISC_SGMII_SPD_MASK		0x0180
+ #define   RTL8365MB_SDS_MISC_MAC8_SEL_SGMII_MASK	0x0040
+ 
++#define RTL8365MB_D_SDS_RELATCH_TRIES			15
++#define RTL8365MB_D_SDS_RELATCH_INTERVAL_MS		1000
++
+ /* SerDes internal registers, accessed via the SDS_INDACS registers. The BMCR
+  * data path reset holds BMCR_ANENABLE | BMCR_ISOLATE while toggling the
+  * vendor-specific low bits from phase 1 to phase 2, which triggers a data path
+@@ -929,9 +933,18 @@ struct rtl8365mb {
+ 	const struct rtl8365mb_chip_info *chip_info;
+ 	struct rtl8365mb_cpu cpu;
+ 	struct mutex mib_lock;
++	/* Serializes access to the shared SDS_INDACS ADR/CMD/DATA window and
++	 * to RTL8365MB_SDS_MISC_REG, both reachable from phylink's PCS poll
++	 * (mb->pcs.poll) and from workqueue-driven paths such as the family D
++	 * SerDes re-latch.
++	 */
++	struct mutex sds_lock;
+ 	struct rtl8365mb_port ports[RTL8365MB_MAX_NUM_PORTS];
+ 	struct phylink_pcs pcs;
+ 	bool sds_supported;
++	struct delayed_work sds_relatch;
++	unsigned int sds_relatch_tries;
++	u32 sds_misc_target_val;
+ };
+ 
+ #define pcs_to_rtl8365mb(_pcs) container_of((_pcs), struct rtl8365mb, pcs)
+@@ -1273,43 +1286,53 @@ static int rtl8365mb_ext_config_rgmii(st
+ static int rtl8365mb_sds_write(struct realtek_priv *priv, u8 index,
+ 			       u16 addr, u16 data)
+ {
++	struct rtl8365mb *mb = priv->chip_data;
+ 	int ret;
+ 
++	mutex_lock(&mb->sds_lock);
++
+ 	ret = regmap_write(priv->map, RTL8365MB_SDS_INDACS_DATA_REG, data);
+ 	if (ret)
+-		return ret;
++		goto out_unlock;
+ 
+ 	ret = regmap_write(priv->map, RTL8365MB_SDS_INDACS_ADR_REG, addr);
+ 	if (ret)
+-		return ret;
++		goto out_unlock;
+ 
+ 	/* The SerDes indirect access engine completes the command within the
+ 	 * register write transaction, so there is no need to wait or poll for
+ 	 * completion before the next access, matching the vendor driver.
+ 	 */
+-	return regmap_write(priv->map, RTL8365MB_SDS_INDACS_CMD_REG,
+-			    RTL8365MB_SDS_INDACS_CMD_RUN_MASK |
+-			    RTL8365MB_SDS_INDACS_CMD_WR_MASK |
+-			    FIELD_PREP(RTL8365MB_SDS_INDACS_CMD_INDEX_MASK,
+-				       index));
++	ret = regmap_write(priv->map, RTL8365MB_SDS_INDACS_CMD_REG,
++			   RTL8365MB_SDS_INDACS_CMD_RUN_MASK |
++			   RTL8365MB_SDS_INDACS_CMD_WR_MASK |
++			   FIELD_PREP(RTL8365MB_SDS_INDACS_CMD_INDEX_MASK,
++				      index));
++
++out_unlock:
++	mutex_unlock(&mb->sds_lock);
++	return ret;
+ }
+ 
+ static int rtl8365mb_sds_read(struct realtek_priv *priv, u8 index,
+ 			      u16 addr, u16 *data)
+ {
++	struct rtl8365mb *mb = priv->chip_data;
+ 	u32 val;
+ 	int ret;
+ 
++	mutex_lock(&mb->sds_lock);
++
+ 	ret = regmap_write(priv->map, RTL8365MB_SDS_INDACS_ADR_REG, addr);
+ 	if (ret)
+-		return ret;
++		goto out_unlock;
+ 
+ 	ret = regmap_write(priv->map, RTL8365MB_SDS_INDACS_CMD_REG,
+ 			   RTL8365MB_SDS_INDACS_CMD_RUN_MASK |
+ 			   FIELD_PREP(RTL8365MB_SDS_INDACS_CMD_INDEX_MASK,
+ 				      index));
+ 	if (ret)
+-		return ret;
++		goto out_unlock;
+ 
+ 	/* Wait for the indirect read to complete: the engine clears the BUSY
+ 	 * bit once the data register holds the result.
+@@ -1319,15 +1342,17 @@ static int rtl8365mb_sds_read(struct rea
+ 				       !(val & RTL8365MB_SDS_INDACS_CMD_BUSY_MASK),
+ 				       10, 1000);
+ 	if (ret)
+-		return ret;
++		goto out_unlock;
+ 
+ 	ret = regmap_read(priv->map, RTL8365MB_SDS_INDACS_DATA_REG, &val);
+ 	if (ret)
+-		return ret;
++		goto out_unlock;
+ 
+ 	*data = val;
+ 
+-	return 0;
++out_unlock:
++	mutex_unlock(&mb->sds_lock);
++	return ret;
+ }
+ 
+ /* The vendor driver selects between two sets of SerDes tuning parameters based
+@@ -1449,6 +1474,13 @@ static int rtl8365mb_pcs_config(struct p
+ 
+ 	is_d = rtl8365mb_get_family(priv) == RTL8365MB_FAMILY_D;
+ 
++	/* Cancel any in-flight relatch before touching SDS_MISC at all - it
++	 * drops sds_lock across its own sleeps and could otherwise race
++	 * every write below, not just the park/restore sequence.
++	 */
++	if (is_d)
++		cancel_delayed_work_sync(&mb->sds_relatch);
++
+ 	/* Select the appropriate tuning table and SDS mode */
+ 	if (interface == PHY_INTERFACE_MODE_2500BASEX) {
+ 		if (is_d) {
+@@ -1516,10 +1548,6 @@ static int rtl8365mb_pcs_config(struct p
+ 		if (ret)
+ 			return ret;
+ 
+-		misc_mask = RTL8365MB_D_SDS_MISC_PA33PC_EN |
+-			    RTL8365MB_D_SDS_MISC_PA12PC_EN |
+-			    RTL8365MB_D_SDS_MISC_MODE_FIELD_MASK |
+-			    RTL8365MB_D_SDS_MISC_MAC6_SEL_SDS0;
+ 		misc_val  = RTL8365MB_D_SDS_MISC_PA33PC_EN |
+ 			    RTL8365MB_D_SDS_MISC_PA12PC_EN |
+ 			    RTL8365MB_D_SDS_MISC_MAC6_SEL_SDS0 | sds_mode;
+@@ -1532,13 +1560,34 @@ static int rtl8365mb_pcs_config(struct p
+ 			    RTL8365MB_SDS_MISC_MAC8_SEL_HSGMII_MASK;
+ 	}
+ 
+-	ret = regmap_update_bits(priv->map, RTL8365MB_SDS_MISC_REG,
+-				 misc_mask, misc_val);
+-	if (ret)
+-		return ret;
++	/* Full writes rather than update_bits: misc_val carries
++	 * every field of SDS_MISC that matters here (the PA enables,
++	 * MAC6_SEL_SDS0 and the mode), and comes out as 0x0E12 - the same
++	 * value the stock firmware holds with the trunk up.
++	 *
++	 * The receiver latches on a DISABLE -> HSGMII edge rather than on
++	 * the value, but that edge cannot be driven from here - it's
++	 * driven later by the relatch workqueue, once the far end has a
++	 * chance of being up.
++	 */
++	if (is_d) {
++		mb->sds_misc_target_val = misc_val;
++
++		mutex_lock(&mb->sds_lock);
++		ret = regmap_write(priv->map, RTL8365MB_SDS_MISC_REG, misc_val);
++		mutex_unlock(&mb->sds_lock);
++		if (ret)
++			return ret;
++	} else {
++		mutex_lock(&mb->sds_lock);
++		ret = regmap_update_bits(priv->map, RTL8365MB_SDS_MISC_REG,
++					 misc_mask, misc_val);
++		mutex_unlock(&mb->sds_lock);
++		if (ret)
++			return ret;
+ 
+-	if (!is_d) {
+-		val = sds_mode << RTL8365MB_DIGITAL_INTERFACE_SELECT_MODE_OFFSET(id);
++		val = sds_mode <<
++		      RTL8365MB_DIGITAL_INTERFACE_SELECT_MODE_OFFSET(id);
+ 		ret = regmap_update_bits(priv->map,
+ 					 RTL8365MB_DIGITAL_INTERFACE_SELECT_REG(id),
+ 					 RTL8365MB_DIGITAL_INTERFACE_SELECT_MODE_MASK(id),
+@@ -1584,8 +1633,22 @@ static int rtl8365mb_pcs_config(struct p
+ 	val &= ~RTL8365MB_SDS_NWAY_EN_MASK;
+ 	val |= RTL8365MB_SDS_NWAY_RESTART_MASK;
+ 
+-	return rtl8365mb_sds_write(priv, sds_index,
+-				   RTL8365MB_SDS_REG_NWAY, val);
++	ret = rtl8365mb_sds_write(priv, sds_index,
++				  RTL8365MB_SDS_REG_NWAY, val);
++	if (ret)
++		return ret;
++
++	/* Last: the receiver latches on the DISABLE -> HSGMII edge, and the
++	 * SerDes and data-path resets above would wipe it if this ran any
++	 * earlier.
++	 */
++	if (is_d) {
++		mb->sds_relatch_tries = 0;
++		mod_delayed_work(system_power_efficient_wq, &mb->sds_relatch,
++				 msecs_to_jiffies(RTL8365MB_D_SDS_RELATCH_INTERVAL_MS));
++	}
++
++	return 0;
+ }
+ 
+ static bool rtl8365mb_interface_is_serdes(phy_interface_t interface)
+@@ -1686,6 +1749,10 @@ static void rtl8365mb_pcs_link_up(struct
+ 
+ 	/* Family D forces the external MAC ability from mac_link_up(); its
+ 	 * SDS_MISC fields do not share the family C link-force layout.
++	 *
++	 * The SerDes re-latch cannot be driven from here either: this runs
++	 * about a millisecond before phylink reports the link, and the edge
++	 * does not take that early. Kick off the retry work instead.
+ 	 */
+ 	if (rtl8365mb_get_family(priv) == RTL8365MB_FAMILY_D)
+ 		return;
+@@ -2016,11 +2083,13 @@ static void rtl8365mb_phylink_mac_link_u
+ 			if (rx_pause)
+ 				val |= RTL8365MB_SDS_MISC_SGMII_RXFC_MASK;
+ 
++			mutex_lock(&mb->sds_lock);
+ 			ret = regmap_update_bits(priv->map,
+ 						 RTL8365MB_SDS_MISC_REG,
+ 						 RTL8365MB_SDS_MISC_SGMII_TXFC_MASK |
+ 							 RTL8365MB_SDS_MISC_SGMII_RXFC_MASK,
+ 						 val);
++			mutex_unlock(&mb->sds_lock);
+ 			if (ret)
+ 				dev_err(priv->dev,
+ 					"failed to force SerDes pause modes on port %d: %pe\n",
+@@ -3211,6 +3280,96 @@ static int rtl8365mb_reset_chip(struct r
+ 					20000, 1e6);
+ }
+ 
++/* The family D receiver latches on a DISABLE -> HSGMII edge in SDS_MISC
++ * rather than on the value, and not until the MAC at the other end of the
++ * trunk has brought its own half of the link up. On the boards seen so far
++ * that happens seconds after pcs_config() has returned, so the edge is
++ * driven from here and retried until the receiver reports link.
++ *
++ * How long the far end takes is a property of the boot rather than of this
++ * chip, and there is no path from this driver to the other MAC - it sits on
++ * the SoC side, behind a different driver - hence the poll.
++ */
++
++static void rtl8365mb_sds_relatch_work(struct work_struct *work)
++{
++	struct rtl8365mb *mb = container_of(to_delayed_work(work),
++					    struct rtl8365mb, sds_relatch);
++	struct realtek_priv *priv = mb->priv;
++	u32 park, target;
++	u16 status = 0;
++	int ret;
++
++	/* Use the stashed target value */
++	target = mb->sds_misc_target_val;
++
++	park = (target & ~RTL8365MB_D_SDS_MISC_MODE_FIELD_MASK) |
++	       RTL8365MB_D_PORT_SDS_MODE_DISABLE;
++
++	mutex_lock(&mb->sds_lock);
++
++	ret = regmap_write(priv->map, RTL8365MB_SDS_MISC_REG, park);
++	if (ret) {
++		dev_err_ratelimited(priv->dev,
++				    "failed to write park mode to SDS_MISC: %pe\n",
++				    ERR_PTR(ret));
++		goto out_unlock;
++	}
++
++	mutex_unlock(&mb->sds_lock);
++	msleep(20);
++	mutex_lock(&mb->sds_lock);
++
++	ret = regmap_write(priv->map, RTL8365MB_SDS_MISC_REG, target);
++	if (ret) {
++		dev_err_ratelimited(priv->dev,
++				    "failed to restore target mode to SDS_MISC: %pe\n",
++				    ERR_PTR(ret));
++		goto out_unlock;
++	}
++
++	mutex_unlock(&mb->sds_lock);
++
++	/* Perform msleep and the safe read completely outside the lock context */
++	msleep(200);
++
++	ret = rtl8365mb_sds_read(priv, RTL8365MB_D_SDS_EXT0_INDEX,
++				 RTL8365MB_SDS_REG_LINK_STATUS, &status);
++	if (ret) {
++		dev_err_ratelimited(priv->dev,
++				    "failed to read SerDes link status: %pe\n",
++				    ERR_PTR(ret));
++	} else if (status & RTL8365MB_SDS_LINK_STATUS_LINK_MASK) {
++		dev_dbg(priv->dev, "SerDes latched after %u attempt(s)\n",
++			mb->sds_relatch_tries + 1);
++		return; /* Success, do not reschedule work */
++	}
++
++	/* Not latched yet: retry until the far end comes up */
++	if (++mb->sds_relatch_tries >= RTL8365MB_D_SDS_RELATCH_TRIES) {
++		dev_warn(priv->dev,
++			 "SerDes did not latch, trunk will stay down\n");
++		return;
++	}
++
++	queue_delayed_work(system_power_efficient_wq, &mb->sds_relatch,
++			   msecs_to_jiffies(RTL8365MB_D_SDS_RELATCH_INTERVAL_MS));
++	return;
++
++out_unlock:
++	mutex_unlock(&mb->sds_lock);
++
++	/* Retry logic for regmap errors encountered inside the lock */
++	if (++mb->sds_relatch_tries >= RTL8365MB_D_SDS_RELATCH_TRIES) {
++		dev_warn(priv->dev,
++			 "SerDes did not latch due to register errors, trunk will stay down\n");
++		return;
++	}
++
++	queue_delayed_work(system_power_efficient_wq, &mb->sds_relatch,
++			   msecs_to_jiffies(RTL8365MB_D_SDS_RELATCH_INTERVAL_MS));
++}
++
+ static int rtl8365mb_setup(struct dsa_switch *ds)
+ {
+ 	struct realtek_priv *priv = ds->priv;
+@@ -3232,6 +3391,10 @@ static int rtl8365mb_setup(struct dsa_sw
+ 	 */
+ 	mb->pcs.poll = true;
+ 
++	if (rtl8365mb_get_family(priv) == RTL8365MB_FAMILY_D)
++		INIT_DELAYED_WORK(&mb->sds_relatch,
++				  rtl8365mb_sds_relatch_work);
++
+ 	ret = rtl8365mb_reset_chip(priv);
+ 	if (ret) {
+ 		dev_err(priv->dev, "failed to reset chip: %pe\n",
+@@ -3416,6 +3579,10 @@ out_error:
+ static void rtl8365mb_teardown(struct dsa_switch *ds)
+ {
+ 	struct realtek_priv *priv = ds->priv;
++	struct rtl8365mb *mb = priv->chip_data;
++
++	if (rtl8365mb_get_family(priv) == RTL8365MB_FAMILY_D)
++		cancel_delayed_work_sync(&mb->sds_relatch);
+ 
+ 	rtl8365mb_stats_teardown(priv);
+ 	rtl8365mb_irq_teardown(priv);
+@@ -3481,6 +3648,10 @@ static int rtl8365mb_detect(struct realt
+ 
+ 	dev_info(priv->dev, "found an %s switch\n", mb->chip_info->name);
+ 
++	ret = devm_mutex_init(priv->dev, &mb->sds_lock);
++	if (ret)
++		return ret;
++
+ 	priv->num_ports = RTL8365MB_MAX_NUM_PORTS;
+ 	mb->priv = priv;
+ 	mb->cpu.trap_port = RTL8365MB_MAX_NUM_PORTS;
