@@ -1,0 +1,35 @@
+From: Alexander Astrovsky <astrouski@google.com>
+Date: Sun, 23 Aug 2026 16:30:00 +0000
+Subject: [PATCH] AP: find unassociated MLD stations in ap_get_link_sta
+
+Commit 54f7b240b4e8 ("AP: find MLD stations by link address in the TX
+status callbacks") added a fallback to ap_get_link_sta() in
+handle_auth_cb() when looking up stations by link address.
+
+However, during the Authentication phase, peer link addresses in
+mld_info.links[].peer_addr are not yet established (they are bound
+during Association), and the link address is instead recorded in
+sta->auth_link_addr by commit 54f7b240b4e8 (Patch 193).
+
+Update ap_get_link_sta() to also check sta->auth_link_addr so that
+handle_auth_cb() successfully finds unassociated MLD stations.
+
+Signed-off-by: Alexander Astrovsky <astrouski@google.com>
+---
+ src/ap/sta_info.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+--- a/src/ap/sta_info.c
++++ b/src/ap/sta_info.c
+@@ -85,8 +85,9 @@ struct sta_info * ap_get_link_sta(struct
+ 
+ 	for (link_sta = hapd->sta_list; link_sta; link_sta = link_sta->next) {
+ 		if (link_sta->mld_info.mld_sta &&
+-		    ether_addr_equal(link_sta->mld_info.links[hapd->mld_link_id].peer_addr,
+-				     link_addr))
++		    (ether_addr_equal(link_sta->mld_info.links[hapd->mld_link_id].peer_addr,
++				     link_addr) ||
++		     ether_addr_equal(link_sta->auth_link_addr, link_addr)))
+ 			return link_sta;
+ 	}
+ 
