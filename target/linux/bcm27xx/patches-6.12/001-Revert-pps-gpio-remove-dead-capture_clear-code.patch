@@ -1,0 +1,93 @@
+From 6b7192398f9ce1eb43fea0f88ab1bf6524bc0270 Mon Sep 17 00:00:00 2001
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Thu, 1 Oct 2026 09:20:29 +0000
+Subject: [PATCH] Revert "pps-gpio: remove dead capture_clear code"
+
+This reverts commit 0662b3dd0c61fced109a08841f4d92f75742c7dd.
+The bcm27xx target device tree still uses the property "capture-clear".
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ drivers/pps/clients/pps-gpio.c | 37 +------------------------------------++++
+ 1 file changed, 33 insertions(+), 4 deletions(-)
+
+--- a/drivers/pps/clients/pps-gpio.c
++++ b/drivers/pps/clients/pps-gpio.c
+@@ -32,6 +32,7 @@ struct pps_gpio_device_data {
+ 	struct gpio_desc *echo_pin;
+ 	struct timer_list echo_timer;	/* timer to reset echo active state */
+ 	bool assert_falling_edge;
++	bool capture_clear;
+ 	unsigned int echo_active_ms;	/* PPS echo active duration */
+ 	unsigned long echo_timeout;	/* timer timeout value in jiffies */
+ 	struct pps_event_time ts;	/* timestamp captured in hardirq */
+@@ -61,8 +62,19 @@ static irqreturn_t pps_gpio_irq_hardirq(
+ static irqreturn_t pps_gpio_irq_thread(int irq, void *data)
+ {
+ 	struct pps_gpio_device_data *info = data;
++	int rising_edge;
+ 
+-	pps_event(info->pps, &info->ts, PPS_CAPTUREASSERT, data);
++	rising_edge = info->capture_clear ?
++		      gpiod_get_value(info->gpio_pin) : !info->assert_falling_edge;
++	if ((rising_edge && !info->assert_falling_edge) ||
++			(!rising_edge && info->assert_falling_edge))
++		pps_event(info->pps, &info->ts, PPS_CAPTUREASSERT, data);
++	else if (info->capture_clear &&
++			((rising_edge && info->assert_falling_edge) ||
++			(!rising_edge && !info->assert_falling_edge)))
++		pps_event(info->pps, &info->ts, PPS_CAPTURECLEAR, data);
++	else
++		dev_warn_ratelimited(&info->pps->dev, "IRQ did not trigger any PPS event\n");
+ 
+ 	return IRQ_HANDLED;
+ }
+@@ -78,6 +90,11 @@ static void pps_gpio_echo(struct pps_dev
+ 		if (pps->params.mode & PPS_ECHOASSERT)
+ 			gpiod_set_value(info->echo_pin, 1);
+ 		break;
++
++	case PPS_CAPTURECLEAR:
++		if (pps->params.mode & PPS_ECHOCLEAR)
++			gpiod_set_value(info->echo_pin, 1);
++		break;
+ 	}
+ 
+ 	/* fire the timer */
+@@ -139,8 +156,15 @@ static int pps_gpio_setup(struct device
+ static unsigned long
+ get_irqf_trigger_flags(const struct pps_gpio_device_data *data)
+ {
+-	return data->assert_falling_edge ? IRQF_TRIGGER_FALLING :
+-					   IRQF_TRIGGER_RISING;
++	unsigned long flags = data->assert_falling_edge ?
++		IRQF_TRIGGER_FALLING : IRQF_TRIGGER_RISING;
++
++	if (data->capture_clear) {
++		flags |= ((flags & IRQF_TRIGGER_RISING) ?
++				IRQF_TRIGGER_FALLING : IRQF_TRIGGER_RISING);
++	}
++
++	return flags;
+ }
+ 
+ static int pps_gpio_probe(struct platform_device *pdev)
+@@ -173,6 +197,9 @@ static int pps_gpio_probe(struct platfor
+ 	/* initialize PPS specific parts of the bookkeeping data structure. */
+ 	data->info.mode = PPS_CAPTUREASSERT | PPS_OFFSETASSERT |
+ 		PPS_ECHOASSERT | PPS_CANWAIT | PPS_TSFMT_TSPEC;
++	if (data->capture_clear)
++		data->info.mode |= PPS_CAPTURECLEAR | PPS_OFFSETCLEAR |
++			PPS_ECHOCLEAR;
+ 	data->info.owner = THIS_MODULE;
+ 	snprintf(data->info.name, PPS_MAX_NAME_LEN - 1, "%s.%d",
+ 		 pdev->name, pdev->id);
+@@ -184,6 +211,8 @@ static int pps_gpio_probe(struct platfor
+ 
+ 	/* register PPS source */
+ 	pps_default_params = PPS_CAPTUREASSERT | PPS_OFFSETASSERT;
++	if (data->capture_clear)
++		pps_default_params |= PPS_CAPTURECLEAR | PPS_OFFSETCLEAR;
+ 	data->pps = pps_register_source(&data->info, pps_default_params);
+ 	if (IS_ERR(data->pps)) {
+ 		dev_err(dev, "failed to register IRQ %d as PPS source\n",

@@ -167,7 +167,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  	case RK3568:
  	case RK3576:
  	case RK3588:
-@@ -4083,6 +4196,49 @@ static struct rockchip_pin_ctrl rk3399_p
+@@ -4093,6 +4206,49 @@ static struct rockchip_pin_ctrl rk3399_p
  		.drv_calc_reg		= rk3399_calc_drv_reg_and_bit,
  };
  
@@ -217,7 +217,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  static struct rockchip_pin_bank rk3568_pin_banks[] = {
  	PIN_BANK_IOMUX_FLAGS(0, 32, "gpio0", IOMUX_SOURCE_PMU | IOMUX_WIDTH_4BIT,
  					     IOMUX_SOURCE_PMU | IOMUX_WIDTH_4BIT,
-@@ -4207,6 +4363,8 @@ static const struct of_device_id rockchi
+@@ -4217,6 +4373,8 @@ static const struct of_device_id rockchi
  		.data = &rk3368_pin_ctrl },
  	{ .compatible = "rockchip,rk3399-pinctrl",
  		.data = &rk3399_pin_ctrl },
