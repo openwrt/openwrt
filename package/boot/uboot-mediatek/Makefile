@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_VERSION:=2026.07
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_HASH:=78e8bfc382fe388f9b55aa1daf8c563522a037779b5d4c349d1415e381f1243e
 PKG_BUILD_DEPENDS:=!(TARGET_ramips||TARGET_mediatek_mt7623):arm-trusted-firmware-tools/host
 
@@ -555,6 +555,14 @@ define U-Boot/mt7981_jcg_q30-pro
   BL2_SOC:=mt7981
   BL2_DDRTYPE:=ddr3
   DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3
+endef
+
+define U-Boot/mt7981_keenetic_kn-1012
+  NAME:=Keenetic KN-1012 (chainload)
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=keenetic_kn-1012 netcraze_nc-1012
+  UBOOT_CONFIG:=mt7981_keenetic_kn-1012
+  UBOOT_IMAGE:=u-boot.bin
 endef
 
 define U-Boot/mt7981_konka_komi-a31
@@ -1424,6 +1432,7 @@ UBOOT_TARGETS := \
 	mt7981_h3c_magic-nx30-pro \
 	mt7981_imou_hx21 \
 	mt7981_jcg_q30-pro \
+	mt7981_keenetic_kn-1012 \
 	mt7981_konka_komi-a31 \
 	mt7981_mercusys_mr85x \
 	mt7981_netis_eap930-v1 \
