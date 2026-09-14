@@ -174,9 +174,4 @@ include tp-link.mk
 include vr9.mk
 endif
 
-ifeq ($(SUBTARGET),falcon)
-DEFAULT_SOC := falcon
-include falcon.mk
-endif
-
 $(eval $(call BuildImage))
