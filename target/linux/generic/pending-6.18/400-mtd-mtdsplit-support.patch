@@ -214,7 +214,7 @@ Subject: [PATCH] mtd: mtdsplit support
  int mtd_add_partition(struct mtd_info *parent, const char *name,
  		      long long offset, long long length)
  {
-@@ -280,6 +423,7 @@ int mtd_add_partition(struct mtd_info *p
+@@ -281,6 +424,7 @@ int mtd_add_partition(struct mtd_info *p
  	if (ret)
  		goto err_remove_part;
  
@@ -222,7 +222,7 @@ Subject: [PATCH] mtd: mtdsplit support
  	mtd_add_partition_attrs(child);
  
  	return 0;
-@@ -423,6 +567,7 @@ int add_mtd_partitions(struct mtd_info *
+@@ -424,6 +568,7 @@ int add_mtd_partitions(struct mtd_info *
  			goto err_del_partitions;
  		}
  
@@ -230,7 +230,7 @@ Subject: [PATCH] mtd: mtdsplit support
  		mtd_add_partition_attrs(child);
  
  		/* Look for subpartitions (skip if no maching parser found) */
-@@ -446,31 +591,6 @@ err_del_partitions:
+@@ -447,31 +592,6 @@ err_del_partitions:
  	return ret;
  }
  
