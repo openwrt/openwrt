@@ -1170,7 +1170,10 @@ static int otto_l3_fib_add_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 			route->attr.action = ROUTE_ACT_TRAP2CPU;
 			route->attr.type = 0;
 
-			slot = ctrl->cfg->find_slot(ctrl, route, false);
+			slot = ctrl->cfg->find_slot(ctrl, route, true);
+			if (slot < 0)
+				slot = ctrl->cfg->find_slot(ctrl, route, false);
+
 			if (slot < 0) {
 				dev_err(ctrl->dev, "no slot for host route %pI4\n",
 					&route->dst_ip);
