@@ -14,11 +14,9 @@ define Device/arcadyan_arv7519rw22
   DEVICE_ALT0_VARIANT := 2.1
   DEVICE_ALT1_VENDOR := Astoria Networks
   DEVICE_ALT1_MODEL := ARV7519RW22
-  KERNEL_SIZE := 2048k
   IMAGE_SIZE := 31232k
   DEVICE_PACKAGES := kmod-usb-dwc2 xrx200-rev1.1-phy22f-firmware xrx200-rev1.2-phy22f-firmware
   SUPPORTED_DEVICES += ARV7519RW22
-  DEFAULT := n
 endef
 TARGET_DEVICES += arcadyan_arv7519rw22
 
