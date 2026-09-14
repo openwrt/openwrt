@@ -1,3 +1,14 @@
+From bbcf1fa610aa0029b58c0c2c69c03f8ac1f9160d Mon Sep 17 00:00:00 2001
+From: Alexander Couzens <lynxis@fe80.eu>
+Date: Mon, 25 Aug 2014 06:36:01 +0000
+Subject: [PATCH] rt2x00: allow disabling bands through dts
+
+Add the "ralink,2ghz" and "ralink,5ghz" properties to the wmac node so
+that a band can be turned off on boards where it is not usable. A value
+of 0 clears the matching bit in spec->supported_bands.
+
+Signed-off-by: Alexander Couzens <lynxis@fe80.eu>
+---
 --- a/drivers/net/wireless/ralink/rt2x00/rt2x00dev.c
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2x00dev.c
 @@ -1013,6 +1013,14 @@ static int rt2x00lib_probe_hw_modes(stru
