@@ -3069,10 +3069,12 @@ static int rtpcs_930x_sds_config_hw_mode(struct rtpcs_serdes *sds, enum rtpcs_sd
 
 config_cmu:
 	ret = rtpcs_93xx_sds_config_cmu(sds, hw_mode);
-	if (ret < 0)
+	if (ret < 0) {
 		dev_err(sds->ctrl->dev,
 			"SerDes %d could not configure PLL for mode %d: %d\n",
 			sds->id, hw_mode, ret);
+		return ret;
+	}
 
 	return 0;
 }
