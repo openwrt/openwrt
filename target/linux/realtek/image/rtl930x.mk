@@ -12,6 +12,16 @@ define Device/d-link_dgs-1250-28x
 endef
 TARGET_DEVICES += d-link_dgs-1250-28x
 
+define Device/draytek_g2282x
+  SOC := rtl9301
+  DEVICE_VENDOR := DrayTek
+  DEVICE_MODEL := VigorSwitch G2282x
+  IMAGE_SIZE := 31232k
+  DEVICE_PACKAGES += kmod-hwmon-adt7475
+  $(Device/kernel-lzma)
+endef
+TARGET_DEVICES += draytek_g2282x
+
 define Device/sirivision_sr-st3408f
   SOC := rtl9303
   UIMAGE_MAGIC := 0x93000000
