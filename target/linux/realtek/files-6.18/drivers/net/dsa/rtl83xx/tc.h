@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-#ifndef _RTL83XX_TC_H
-#define _RTL83XX_TC_H
+#ifndef _OTTO_TC_H
+#define _OTTO_TC_H
 
 #include <linux/types.h>
 
@@ -33,4 +33,4 @@ int rtldsa_931x_port_rate_police_del(struct dsa_switch *ds, int port,
 				     struct flow_cls_offload *cls,
 				     bool ingress);
 
-#endif /* _RTL83XX_TC_H */
+#endif /* _OTTO_TC_H */

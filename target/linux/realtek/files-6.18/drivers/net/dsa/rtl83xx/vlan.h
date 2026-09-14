@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-#ifndef _OTTO_VLAN_H_
-#define _OTTO_VLAN_H_
+#ifndef _OTTO_VLAN_H
+#define _OTTO_VLAN_H
 
 #include <linux/netlink.h>
 #include <linux/types.h>
@@ -109,4 +109,4 @@ int rtldsa_port_vlan_fast_age(struct dsa_switch *ds, int port, u16 vid);
 int rtldsa_vlan_msti_set(struct dsa_switch *ds, struct dsa_bridge bridge,
 			 const struct switchdev_vlan_msti *msti);
 
-#endif /* _OTTO_VLAN_H_ */
+#endif /* _OTTO_VLAN_H */
