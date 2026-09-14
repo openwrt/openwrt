@@ -893,7 +893,16 @@ static int otto_l3_nexthop_update(struct otto_l3_ctrl *ctrl, __be32 ip_addr, u64
 		r->pr.dip_m = inet_make_mask(r->prefix_len);
 
 		if (r->is_host_route) {
-			int slot = ctrl->cfg->find_slot(ctrl, r, false);
+			int slot = ctrl->cfg->find_slot(ctrl, r, true);
+
+			if (slot < 0)
+				slot = ctrl->cfg->find_slot(ctrl, r, false);
+
+			if (slot < 0) {
+				dev_err(ctrl->dev, "no slot for host route %pI4\n",
+					&r->dst_ip);
+				continue;
+			}
 
 			dev_info(ctrl->dev, "Got slot for route: %d\n", slot);
 			ctrl->cfg->host_route_write(ctrl, slot, r);
@@ -1162,6 +1171,12 @@ static int otto_l3_fib_add_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 			route->attr.type = 0;
 
 			slot = ctrl->cfg->find_slot(ctrl, route, false);
+			if (slot < 0) {
+				dev_err(ctrl->dev, "no slot for host route %pI4\n",
+					&route->dst_ip);
+				goto out_free_rt;
+			}
+
 			dev_dbg(ctrl->dev, "Got slot for route: %d\n", slot);
 			ctrl->cfg->host_route_write(ctrl, slot, route);
 		}
