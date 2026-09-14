@@ -41,6 +41,9 @@ else
 	if [ -d $(LINUX_DIR)/user_headers ]; then \
 		rm -rf $(LINUX_DIR)/user_headers; \
 	fi
+    ifeq ($(CONFIG_EXTERNAL_KERNEL_TREE_PATCH),y)
+	$(Kernel/Patch)
+    endif
   endef
 endif
 
