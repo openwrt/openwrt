@@ -51,7 +51,7 @@ Signed-off-by: Namjae Jeon <linkinjeon@kernel.org>
  
  	return 0;
  }
-@@ -603,12 +611,7 @@ static int ksmbd_netdev_event(struct not
+@@ -608,12 +616,7 @@ static int ksmbd_netdev_event(struct not
  		if (iface && iface->state == IFACE_STATE_CONFIGURED) {
  			ksmbd_debug(CONN, "netdev-down event: netdev(%s) is going down\n",
  					iface->name);
@@ -65,7 +65,7 @@ Signed-off-by: Namjae Jeon <linkinjeon@kernel.org>
  			iface->state = IFACE_STATE_DOWN;
  			break;
  		}
-@@ -636,11 +639,25 @@ static void tcp_stop_kthread(struct task
+@@ -641,11 +644,25 @@ static void tcp_stop_kthread(struct task
  	if (!kthread)
  		return;
  
@@ -92,7 +92,7 @@ Signed-off-by: Namjae Jeon <linkinjeon@kernel.org>
  void ksmbd_tcp_destroy(void)
  {
  	struct interface *iface, *tmp;
-@@ -648,6 +665,7 @@ void ksmbd_tcp_destroy(void)
+@@ -653,6 +670,7 @@ void ksmbd_tcp_destroy(void)
  	unregister_netdevice_notifier(&ksmbd_netdev_notifier);
  
  	list_for_each_entry_safe(iface, tmp, &iface_list, entry) {
