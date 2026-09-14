@@ -2994,7 +2994,7 @@ define Device/tplink_archer-ax80-v1.60
   DEVICE_DTS := mt7986a-tplink-archer-ax80-v1
   DEVICE_DTS_CONFIG := config-ax80_v1
   DEVICE_DTS_DIR := ../dts
-  SUPPORTED_DEVIVES := tplink,archer-ax80-v1 tplink,archer-ax80-v1.60
+  SUPPORTED_DEVICES := tplink,archer-ax80-v1 tplink,archer-ax80-v1.60
   DEVICE_PACKAGES := kmod-leds-lp5523 kmod-usb3 kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware
   UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
