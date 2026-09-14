@@ -164,6 +164,12 @@ enum otto_table_id {
 #define otto_table_write(id, idx, p) \
 	otto_table_write_bytes((id), (idx), (p), otto_table_size(p))
 
+/* How many rows a table has, so that a caller sweeping one does not have to
+ * carry its own copy of the size. Negative errno for an id that does not name
+ * a table.
+ */
+int otto_table_rows(enum otto_table_id id);
+
 /* Hold a table across more than one access. The __ variants expect the caller
  * to hold it.
  */

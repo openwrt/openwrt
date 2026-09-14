@@ -324,6 +324,17 @@ static bool otto_table_index_ok(int handle, int idx)
 			  idx, otto_table_handle_to_id(handle), rows);
 }
 
+int otto_table_rows(enum otto_table_id id)
+{
+	int handle = otto_table_id_to_handle(id);
+
+	if (handle < 0)
+		return handle;
+
+	return otto_table_maps[handle].rows;
+}
+EXPORT_SYMBOL_GPL(otto_table_rows);
+
 /* Take a table and hold it until otto_table_release() */
 int otto_table_acquire(enum otto_table_id id)
 {
