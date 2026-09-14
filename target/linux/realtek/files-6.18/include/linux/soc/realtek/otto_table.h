@@ -160,12 +160,21 @@ enum otto_table_id {
  * transfer cannot run past it.
  */
 #define otto_table_read(id, idx, p) \
-	otto_table_read_bytes((id), (idx), (p), 0, otto_table_size(p))
+	otto_table_read_bytes((id), (idx), (p), 0, otto_table_size(p), 0, NULL, NULL)
 #define otto_table_write(id, idx, p) \
-	otto_table_write_bytes((id), (idx), (p), otto_table_size(p))
+	otto_table_write_bytes((id), (idx), (p), otto_table_size(p), 0, NULL, NULL)
 
 #define otto_table_offset_read(id, idx, p, word_offset) \
-	otto_table_read_bytes((id), (idx), (p), (word_offset), otto_table_size(p))
+	otto_table_read_bytes((id), (idx), (p), (word_offset), otto_table_size(p), 0, NULL, NULL)
+
+/*
+ * Read/Write functions for lut tables that need a special access method and
+ * return hit status and hit index if the hit status was set.
+ */
+#define otto_lut_table_read(id, idx, p, method, hit, hit_idx) \
+	otto_table_read_bytes((id), (idx), (p), 0, otto_table_size(p), (method), (hit), (hit_idx))
+#define otto_lut_table_write(id, idx, p, method, hit, hit_idx) \
+	otto_table_write_bytes((id), (idx), (p), otto_table_size(p), (method), (hit), (hit_idx))
 
 /* How many rows a table has, so that a caller sweeping one does not have to
  * carry its own copy of the size. Negative errno for an id that does not name
@@ -181,9 +190,16 @@ int otto_table_acquire(enum otto_table_id id);
 void otto_table_release(int handle);
 
 #define __otto_table_read(handle, idx, p) \
-	__otto_table_read_bytes((handle), (idx), (p), 0, otto_table_size(p))
+	__otto_table_read_bytes((handle), (idx), (p), 0, otto_table_size(p), 0, NULL, NULL)
 #define __otto_table_write(handle, idx, p) \
-	__otto_table_write_bytes((handle), (idx), (p), otto_table_size(p))
+	__otto_table_write_bytes((handle), (idx), (p), otto_table_size(p), 0, NULL, NULL)
+
+#define __otto_lut_table_read(handle, idx, p, method, hit, hit_idx)				\
+	__otto_table_read_bytes((handle), (idx), (p), 0, otto_table_size(p), (method), (hit),	\
+				(hit_idx))
+#define __otto_lut_table_write(handle, idx, p, method, hit, hit_idx)				\
+	__otto_table_write_bytes((handle), (idx), (p), otto_table_size(p), (method), (hit),	\
+				 (hit_idx))
 
 /* What the macros above expand to. A read takes size bytes starting at word of
  * the entry and has to end inside it; the whole-entry forms start at word zero.
@@ -193,11 +209,14 @@ void otto_table_release(int handle);
  * checks the return value.
  */
 int otto_table_read_bytes(enum otto_table_id id, int idx, void *buf,
-			  int word_offset, size_t size);
-int otto_table_write_bytes(enum otto_table_id id, int idx, const void *buf, size_t size);
+			  int word_offset, size_t size, int method,
+			  bool *hit, u32 *hit_idx);
+int otto_table_write_bytes(enum otto_table_id id, int idx, const void *buf, size_t size,
+			   int method, bool *hit, u32 *hit_idx);
 
 int __otto_table_read_bytes(int handle, int idx, void *buf, int word_offset,
-			    size_t size);
-int __otto_table_write_bytes(int handle, int idx, const void *buf, size_t size);
+			    size_t size, int method, bool *hit, u32 *hit_idx);
+int __otto_table_write_bytes(int handle, int idx, const void *buf, size_t size,
+			     int method, bool *hit, u32 *hit_idx);
 
 #endif /* _OTTO_TABLE_H */
