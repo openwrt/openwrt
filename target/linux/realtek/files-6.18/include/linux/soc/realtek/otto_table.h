@@ -20,8 +20,9 @@
  * them. The names, and the entry width of each table, are Realtek's own, taken
  * from the table lists in the GPL SDK
  * (src/hal/chipdef/<chip>/rtk_<chip>_table_list.c). Several tables share one
- * type value, which means they are the same rows read with a different layout;
- * they are listed separately because their entry widths differ.
+ * type value; unless they also carry an offset, that means they are the same
+ * rows read with a different layout. They are listed separately because their
+ * entry widths differ.
  */
 enum otto_table_id {
 	RTL8380_TBL_L2_UC = OTTO_TBL_ID_BASE,
