@@ -310,14 +310,14 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	phy_interface_t phy_mode;
  	struct phylink *phylink;
  	struct mtk_mac *mac;
--	int id, err;
-+	int id, err, count;
+-	int id, err, i;
++	int id, err, count, i;
  	int txqs = 1;
  	u32 val;
  
 @@ -5062,6 +5120,8 @@ static int mtk_add_mac(struct mtk_eth *e
- 	mac->phylink_config.lpi_capabilities = MAC_100FD | MAC_1000FD |
- 		MAC_2500FD;
+ 	/* LPI above 1 Gbps is not supported */
+ 	mac->phylink_config.lpi_capabilities = MAC_100FD | MAC_1000FD;
  	mac->phylink_config.lpi_timer_default = 1000;
 +	mac->phylink_config.num_possible_pcs = 0;
 +	mac->phylink_config.fill_available_pcs = mtk_fill_available_pcs;
@@ -380,7 +380,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	if (mtk_is_netsys_v3_or_greater(mac->hw) &&
  	    MTK_HAS_CAPS(mac->hw->soc->caps, MTK_ESW) &&
  	    id == MTK_GMAC1_ID) {
-@@ -5108,18 +5207,16 @@ static int mtk_add_mac(struct mtk_eth *e
+@@ -5108,30 +5207,16 @@ static int mtk_add_mac(struct mtk_eth *e
  		phy_interface_zero(mac->phylink_config.supported_interfaces);
  		__set_bit(PHY_INTERFACE_MODE_INTERNAL,
  			  mac->phylink_config.supported_interfaces);
@@ -394,6 +394,18 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +			  mac->phylink_config.supported_interfaces);
  	}
  
+-	/* LPI wake-up timing is only verified on MTK_GMAC_EEE SoCs */
+-	if (MTK_HAS_CAPS(eth->soc->caps, MTK_GMAC_EEE)) {
+-		phy_interface_copy(mac->phylink_config.lpi_interfaces,
+-				   mac->phylink_config.supported_interfaces);
+-		__clear_bit(PHY_INTERFACE_MODE_2500BASEX,
+-			    mac->phylink_config.lpi_interfaces);
+-		for (i = 0; i < PHY_INTERFACE_MODE_MAX; i++)
+-			if (mtk_interface_mode_is_xgmii(eth, i))
+-				__clear_bit(i,
+-					    mac->phylink_config.lpi_interfaces);
+-	}
+-
 -	phylink = phylink_create(&mac->phylink_config,
 -				 of_fwnode_handle(mac->of_node),
 -				 phy_mode, &mtk_phylink_ops);
@@ -407,10 +419,22 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	if (MTK_HAS_CAPS(mac->hw->soc->caps, MTK_2P5GPHY) &&
  	    id == MTK_GMAC2_ID)
  		__set_bit(PHY_INTERFACE_MODE_INTERNAL,
-@@ -5142,6 +5239,16 @@ static int mtk_add_mac(struct mtk_eth *e
+@@ -5154,6 +5239,28 @@ static int mtk_add_mac(struct mtk_eth *e
  	eth->netdev[id]->irq = eth->irq[MTK_FE_IRQ_SHARED];
  	eth->netdev[id]->dev.of_node = np;
  
++	/* LPI wake-up timing is only verified on MTK_GMAC_EEE SoCs */
++	if (MTK_HAS_CAPS(eth->soc->caps, MTK_GMAC_EEE)) {
++		phy_interface_copy(mac->phylink_config.lpi_interfaces,
++				   mac->phylink_config.supported_interfaces);
++		__clear_bit(PHY_INTERFACE_MODE_2500BASEX,
++			    mac->phylink_config.lpi_interfaces);
++		for (i = 0; i < PHY_INTERFACE_MODE_MAX; i++)
++			if (mtk_interface_mode_is_xgmii(eth, i))
++				__clear_bit(i,
++					    mac->phylink_config.lpi_interfaces);
++	}
++
 +	phylink = phylink_create(&mac->phylink_config,
 +				 of_fwnode_handle(mac->of_node),
 +				 phy_mode, &mtk_phylink_ops);
@@ -424,7 +448,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7628))
  		eth->netdev[id]->max_mtu = MTK_MAX_RX_LENGTH - MTK_RX_ETH_HLEN;
  	else
-@@ -5335,7 +5442,8 @@ static int mtk_probe(struct platform_dev
+@@ -5347,7 +5454,8 @@ static int mtk_probe(struct platform_dev
  			regmap_write(cci, 0, 3);
  	}
  
@@ -481,7 +505,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	MTK_2P5GPHY_BIT,
  	MTK_ESW_BIT,
  	MTK_GEPHY_BIT,
-@@ -996,6 +1006,8 @@ enum mkt_eth_capabilities {
+@@ -997,6 +1007,8 @@ enum mkt_eth_capabilities {
  	MTK_ETH_MUX_GMAC2_TO_2P5GPHY_BIT,
  	MTK_ETH_MUX_GMAC1_GMAC2_TO_SGMII_RGMII_BIT,
  	MTK_ETH_MUX_GMAC12_TO_GEPHY_SGMII_BIT,
@@ -490,7 +514,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	/* PATH BITS */
  	MTK_ETH_PATH_GMAC1_RGMII_BIT,
-@@ -1005,13 +1017,18 @@ enum mkt_eth_capabilities {
+@@ -1006,13 +1018,18 @@ enum mkt_eth_capabilities {
  	MTK_ETH_PATH_GMAC2_SGMII_BIT,
  	MTK_ETH_PATH_GMAC2_2P5GPHY_BIT,
  	MTK_ETH_PATH_GMAC2_GEPHY_BIT,
@@ -509,7 +533,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  #define MTK_2P5GPHY		BIT_ULL(MTK_2P5GPHY_BIT)
  #define MTK_ESW			BIT_ULL(MTK_ESW_BIT)
  #define MTK_GEPHY		BIT_ULL(MTK_GEPHY_BIT)
-@@ -1041,6 +1058,10 @@ enum mkt_eth_capabilities {
+@@ -1043,6 +1060,10 @@ enum mkt_eth_capabilities {
  	BIT_ULL(MTK_ETH_MUX_GMAC1_GMAC2_TO_SGMII_RGMII_BIT)
  #define MTK_ETH_MUX_GMAC12_TO_GEPHY_SGMII	\
  	BIT_ULL(MTK_ETH_MUX_GMAC12_TO_GEPHY_SGMII_BIT)
@@ -520,7 +544,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  /* Supported path present on SoCs */
  #define MTK_ETH_PATH_GMAC1_RGMII	BIT_ULL(MTK_ETH_PATH_GMAC1_RGMII_BIT)
-@@ -1050,7 +1071,11 @@ enum mkt_eth_capabilities {
+@@ -1052,7 +1073,11 @@ enum mkt_eth_capabilities {
  #define MTK_ETH_PATH_GMAC2_SGMII	BIT_ULL(MTK_ETH_PATH_GMAC2_SGMII_BIT)
  #define MTK_ETH_PATH_GMAC2_2P5GPHY	BIT_ULL(MTK_ETH_PATH_GMAC2_2P5GPHY_BIT)
  #define MTK_ETH_PATH_GMAC2_GEPHY	BIT_ULL(MTK_ETH_PATH_GMAC2_GEPHY_BIT)
@@ -532,7 +556,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  #define MTK_GMAC1_RGMII		(MTK_ETH_PATH_GMAC1_RGMII | MTK_RGMII)
  #define MTK_GMAC1_TRGMII	(MTK_ETH_PATH_GMAC1_TRGMII | MTK_TRGMII)
-@@ -1059,7 +1084,11 @@ enum mkt_eth_capabilities {
+@@ -1061,7 +1086,11 @@ enum mkt_eth_capabilities {
  #define MTK_GMAC2_SGMII		(MTK_ETH_PATH_GMAC2_SGMII | MTK_SGMII)
  #define MTK_GMAC2_GEPHY		(MTK_ETH_PATH_GMAC2_GEPHY | MTK_GEPHY)
  #define MTK_GMAC2_2P5GPHY	(MTK_ETH_PATH_GMAC2_2P5GPHY | MTK_2P5GPHY)
@@ -544,7 +568,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  /* MUXes present on SoCs */
  /* 0: GDM1 -> GMAC1, 1: GDM1 -> ESW */
-@@ -1086,6 +1115,12 @@ enum mkt_eth_capabilities {
+@@ -1088,6 +1117,12 @@ enum mkt_eth_capabilities {
  #define MTK_MUX_GMAC12_TO_GEPHY_SGMII   \
  	(MTK_ETH_MUX_GMAC12_TO_GEPHY_SGMII | MTK_MUX)
  
@@ -557,7 +581,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  #define MTK_HAS_CAPS(caps, _x)		(((caps) & (_x)) == (_x))
  
  #define MT7621_CAPS  (MTK_GMAC1_RGMII | MTK_GMAC1_TRGMII | \
-@@ -1117,9 +1152,12 @@ enum mkt_eth_capabilities {
+@@ -1119,9 +1154,12 @@ enum mkt_eth_capabilities {
  		      MTK_MUX_GMAC12_TO_GEPHY_SGMII | MTK_QDMA | \
  		      MTK_RSTCTRL_PPE1 | MTK_SRAM)
  
@@ -573,7 +597,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  struct mtk_tx_dma_desc_info {
  	dma_addr_t	addr;
-@@ -1300,6 +1338,7 @@ struct mtk_eth {
+@@ -1302,6 +1340,7 @@ struct mtk_eth {
  	struct regmap			*ethsys;
  	struct regmap			*infra;
  	struct phylink_pcs		*sgmii_pcs[MTK_MAX_DEVS];
@@ -581,7 +605,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	struct regmap			*pctl;
  	bool				hwlro;
  	refcount_t			dma_refcnt;
-@@ -1366,6 +1405,8 @@ struct mtk_mac {
+@@ -1368,6 +1407,8 @@ struct mtk_mac {
  	struct device_node		*of_node;
  	struct phylink			*phylink;
  	struct phylink_config		phylink_config;
@@ -590,7 +614,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	struct mtk_eth			*hw;
  	struct mtk_hw_stats		*hw_stats;
  	__be32				hwlro_ip[MTK_MAX_LRO_IP_CNT];
-@@ -1517,6 +1558,7 @@ int mtk_gmac_sgmii_path_setup(struct mtk
+@@ -1519,6 +1560,7 @@ int mtk_gmac_sgmii_path_setup(struct mtk
  int mtk_gmac_2p5gphy_path_setup(struct mtk_eth *eth, int mac_id);
  int mtk_gmac_gephy_path_setup(struct mtk_eth *eth, int mac_id);
  int mtk_gmac_rgmii_path_setup(struct mtk_eth *eth, int mac_id);
