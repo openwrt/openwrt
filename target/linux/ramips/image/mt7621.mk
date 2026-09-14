@@ -3184,6 +3184,25 @@ define Device/tplink_ex220-v2
 endef
 TARGET_DEVICES += tplink_ex220-v2
 
+define Device/tplink_mr600-v1-eu
+  $(Device/dsa-migration)
+  $(Device/tplink-v2)
+  DEVICE_MODEL := MR600
+  DEVICE_VARIANT := v1 (EU)
+  TPLINK_FLASHLAYOUT := 16Mltq
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 \
+		kmod-usb-net-qmi-wwan uqmi kmod-usb3 \
+		kmod-ledtrig-network -uboot-envtools
+  IMAGE/factory.bin := tplink-v2-image -e -a 0x10000
+  IMAGE/sysupgrade.bin := tplink-v2-image -s -e -a 0x10000 | check-size | \
+	append-metadata
+  KERNEL := $(KERNEL_DTB) | uImage lzma
+  KERNEL_INITRAMFS := $$(KERNEL) | tplink-v2-header
+  TPLINK_BOARD_ID := MR600-V1-EU
+  IMAGE_SIZE := 16384k
+endef
+TARGET_DEVICES += tplink_mr600-v1-eu
+
 define Device/tplink_mr600-v2-eu
   $(Device/dsa-migration)
   $(Device/tplink-v2)
