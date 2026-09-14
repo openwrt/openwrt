@@ -1715,26 +1715,10 @@ static int rtpcs_93xx_sds_set_mac_driven_mode(struct rtpcs_serdes *sds,
 }
 
 /*
- * Read/write the SerDes IP mode register: page 0x1f reg 0x09, bits 11:7
- * hold the 5-bit mode value, bit 6 is the "force mode" enable. The same
+ * Write the SerDes IP mode register: page 0x1f reg 0x09, bits 11:7 hold
+ * the 5-bit mode value and bit 6 is the "force mode" enable. The same
  * physical field is used on RTL930x and RTL931x.
  */
-static int rtpcs_93xx_sds_get_ip_mode(struct rtpcs_serdes *sds)
-{
-	const s16 *vals = sds->ctrl->cfg->sds_hw_mode_vals;
-	int raw;
-
-	raw = rtpcs_sds_read_bits(sds, PAGE_WDIG, 0x09, 11, 7);
-	if (raw < 0)
-		return raw;
-
-	for (int i = 0; i < RTPCS_SDS_MODE_MAX; i++)
-		if (vals[i] == raw)
-			return i;
-
-	return -ENOENT;
-}
-
 static int rtpcs_93xx_sds_set_ip_mode(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode)
 {
 	int raw;
@@ -2017,11 +2001,9 @@ static int rtpcs_930x_sds_reconfigure_to_pll(struct rtpcs_serdes *sds, enum rtpc
 {
 	enum rtpcs_sds_pll_speed speed;
 	enum rtpcs_sds_pll_type old_pll;
-	int hw_mode, ret;
-
-	hw_mode = rtpcs_93xx_sds_get_ip_mode(sds);
-	if (hw_mode < 0)
-		return hw_mode;
+	enum rtpcs_sds_mode hw_mode = sds->hw_mode;
+	enum rtpcs_sds_usxgmii_submode submode = sds->usxgmii_submode;
+	int ret;
 
 	ret = rtpcs_930x_sds_get_pll_select(sds, &old_pll);
 	if (ret < 0)
@@ -2032,22 +2014,23 @@ static int rtpcs_930x_sds_reconfigure_to_pll(struct rtpcs_serdes *sds, enum rtpc
 		return ret;
 
 	rtpcs_930x_sds_set_power(sds, false);
-	rtpcs_93xx_sds_set_ip_mode(sds, RTPCS_SDS_MODE_OFF);
+	ret = sds->ops->set_hw_mode(sds, RTPCS_SDS_MODE_OFF, RTPCS_SDS_USXGMII_SM_NONE);
+	if (ret < 0)
+		goto out_power_up;
 
 	ret = rtpcs_93xx_sds_set_pll_config(sds, pll, speed);
 	if (ret < 0)
-		return ret;
+		goto out_power_up;
 
-	ret = rtpcs_930x_sds_set_pll_select(sds, sds->hw_mode, pll);
+	ret = rtpcs_930x_sds_set_pll_select(sds, hw_mode, pll);
 	if (ret < 0)
-		return ret;
+		goto out_power_up;
 
-	rtpcs_93xx_sds_set_ip_mode(sds, hw_mode);
-	if (rtpcs_930x_sds_wait_clock_ready(sds))
-		dev_err(sds->ctrl->dev, "SerDes %d could not sync clock\n", sds->id);
+	ret = sds->ops->set_hw_mode(sds, hw_mode, submode);
 
+out_power_up:
 	rtpcs_930x_sds_set_power(sds, true);
-	return 0;
+	return ret;
 }
 
 static void rtpcs_930x_sds_reset_state_machine(struct rtpcs_serdes *sds)
@@ -2086,66 +2069,33 @@ static int rtpcs_930x_sds_init_state_machine(struct rtpcs_serdes *sds,
 	return ret;
 }
 
-static int rtpcs_930x_sds_apply_ip_mode(struct rtpcs_serdes *sds,
-					enum rtpcs_sds_mode hw_mode)
-{
-	struct device *dev = sds->ctrl->dev;
-	int ret;
-
-	/*
-	 * TODO: Usually one would expect that it is enough to modify the SDS_MODE_SEL_*
-	 * registers (lets call it MAC setup). It seems as if this complex sequence is only
-	 * needed for modes that cannot be set by the SoC itself. Additionally it is unclear
-	 * if this sequence should quit early in case of errors.
-	 */
-
-	ret = rtpcs_93xx_sds_set_ip_mode(sds, RTPCS_SDS_MODE_OFF);
-	if (ret < 0)
-		return ret;
-
-	if (hw_mode == RTPCS_SDS_MODE_OFF)
-		return 0;
-
-	ret = rtpcs_93xx_sds_config_cmu(sds, hw_mode);
-	if (ret < 0)
-		dev_err(dev, "SerDes %d could not configure PLL for mode %d: %d\n",
-			sds->id, hw_mode, ret);
-
-	ret = rtpcs_93xx_sds_set_ip_mode(sds, hw_mode);
-	if (ret < 0)
-		return ret;
-
-	if (rtpcs_930x_sds_wait_clock_ready(sds))
-		dev_err(dev, "SerDes %d could not sync clock\n", sds->id);
-
-	if (rtpcs_930x_sds_init_state_machine(sds, hw_mode))
-		dev_err(dev, "SerDes %d could not reset state machine\n", sds->id);
-
-	return 0;
-}
-
 static int rtpcs_930x_sds_set_mode(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode,
 				   enum rtpcs_sds_usxgmii_submode submode)
 {
-	/*
-	 * Several modes can be configured via MAC setup, just by setting
-	 * a register to a specific value and the MAC will configure
-	 * "everything" as needed. For some modes, this seems incomplete and
-	 * we need to do manual configuration in the SerDes IP core itself.
-	 */
+	int ret;
 
 	switch (hw_mode) {
 	case RTPCS_SDS_MODE_SGMII:
 	case RTPCS_SDS_MODE_1000BASEX:
 	case RTPCS_SDS_MODE_2500BASEX:
 	case RTPCS_SDS_MODE_10GBASER:
-		return rtpcs_930x_sds_apply_ip_mode(sds, hw_mode);
+		ret = rtpcs_93xx_sds_set_ip_mode(sds, hw_mode);
+		break;
 
 	default:
+		ret = rtpcs_93xx_sds_set_mac_driven_mode(sds, hw_mode, submode);
 		break;
 	}
+	if (ret)
+		return ret;
 
-	return rtpcs_93xx_sds_set_mac_driven_mode(sds, hw_mode, submode);
+	if (hw_mode != RTPCS_SDS_MODE_OFF && rtpcs_930x_sds_wait_clock_ready(sds))
+		dev_err(sds->ctrl->dev, "SerDes %d could not sync clock\n", sds->id);
+
+	if (rtpcs_930x_sds_init_state_machine(sds, hw_mode))
+		dev_err(sds->ctrl->dev, "SerDes %d could not reset state machine\n", sds->id);
+
+	return 0;
 }
 
 static int rtpcs_930x_sds_deactivate(struct rtpcs_serdes *sds)
@@ -3032,8 +2982,12 @@ static int rtpcs_930x_sds_config_hw_mode(struct rtpcs_serdes *sds, enum rtpcs_sd
 		if (sds->type != RTPCS_SDS_TYPE_5G)
 			return -ENOTSUPP;
 
-		return rtpcs_sds_apply_config(sds, rtpcs_930x_sds_cfg_5g_qsgmii,
-					      ARRAY_SIZE(rtpcs_930x_sds_cfg_5g_qsgmii));
+		ret = rtpcs_sds_apply_config(sds, rtpcs_930x_sds_cfg_5g_qsgmii,
+					     ARRAY_SIZE(rtpcs_930x_sds_cfg_5g_qsgmii));
+		if (ret < 0)
+			return ret;
+
+		goto config_cmu;
 	}
 
 	if (hw_mode != RTPCS_SDS_MODE_USXGMII) {
@@ -3112,6 +3066,13 @@ static int rtpcs_930x_sds_config_hw_mode(struct rtpcs_serdes *sds, enum rtpcs_sd
 
 	if (hw_mode == RTPCS_SDS_MODE_10GBASER && is_even_sds)
 		rtpcs_sds_write(sds, PAGE_ANA_10G_EXT, 0x1D, 0x76E1);
+
+config_cmu:
+	ret = rtpcs_93xx_sds_config_cmu(sds, hw_mode);
+	if (ret < 0)
+		dev_err(sds->ctrl->dev,
+			"SerDes %d could not configure PLL for mode %d: %d\n",
+			sds->id, hw_mode, ret);
 
 	return 0;
 }
