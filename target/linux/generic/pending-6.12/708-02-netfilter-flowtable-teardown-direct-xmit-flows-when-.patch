@@ -1,0 +1,237 @@
+From ea91a84dd468b21eeffe12aa5be22d96969c3249 Mon Sep 17 00:00:00 2001
+From: Eric Woudstra <ericwouds@gmail.com>
+Date: Mon, 14 Sep 2026 09:09:14 +0200
+Subject: [PATCH] netfilter: flowtable: teardown direct xmit flows when the fdb
+ entry moves
+
+A direct xmit flow stores the bridge port and the destination address that
+the bridge fdb resolved when the flow was created. When the host moves to
+another port of the same bridge, for example a station roaming to another
+access point, the bridge updates its fdb entry and the flow keeps sending
+to the old port. Packets from the other end keep hitting the flow and
+refresh it, so it does not expire while the sender retransmits. A hardware
+offloaded flow behaves the same, and none of its packets reaches the
+software path.
+
+Before the bridge moves an fdb entry to another port it notifies
+SWITCHDEV_FDB_DEL_TO_DEVICE for the old port. Tear down every direct xmit
+flow whose bridge port, vid and destination address match on that
+notification. The bridge port is stored in the tuple for this: the out
+interface is the lowest device of the path and differs from the port when
+the port is a vlan device. The notifier runs in atomic context, so the
+flows are walked from a workqueue.
+
+The same notification is sent when an entry ages out or is flushed; a flow
+torn down that way is offloaded again once the bridge relearns the host.
+When the work item cannot be allocated the flow ages out as before, the
+same as dsa_user_fdb_event() drops the hardware fdb update in that case.
+
+Signed-off-by: Eric Woudstra <ericwouds@gmail.com>
+Co-developed-by: Julius Bairaktaris <julius@bairaktaris.de>
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+Assisted-by: LLM
+
+---
+ net/netfilter/nf_flow_table_core.c | 99 ++++++++++++++++++++++++++++++
+ 1 file changed, 99 insertions(+)
+
+--- a/net/netfilter/nf_flow_table_core.c
++++ b/net/netfilter/nf_flow_table_core.c
+@@ -4,7 +4,9 @@
+ #include <linux/module.h>
+ #include <linux/netfilter.h>
+ #include <linux/rhashtable.h>
++#include <linux/etherdevice.h>
+ #include <linux/netdevice.h>
++#include <net/switchdev.h>
+ #include <net/ip.h>
+ #include <net/ip6_route.h>
+ #include <net/netfilter/nf_tables.h>
+@@ -127,6 +129,8 @@ static int flow_offload_fill_route(struc
+ 		memcpy(flow_tuple->out.h_source, route->tuple[dir].out.h_source,
+ 		       ETH_ALEN);
+ 		flow_tuple->out.ifidx = route->tuple[dir].out.ifindex;
++		flow_tuple->out.bridge_ifidx =
++			route->tuple[dir].out.bridge_ifindex;
+ 		flow_tuple->out.hw_ifidx = route->tuple[dir].out.hw_ifindex;
+ 		flow_tuple->out.bridge_vid = route->tuple[dir].out.bridge_vid;
+ 		dst_release(dst);
+@@ -599,6 +603,94 @@ void nf_flow_table_cleanup(struct net_de
+ }
+ EXPORT_SYMBOL_GPL(nf_flow_table_cleanup);
+ 
++static struct workqueue_struct *nf_flow_fdb_del_wq;
++
++struct nf_flow_fdb_del_work {
++	struct work_struct	work;
++	struct net_device	*dev;
++	netdevice_tracker	dev_tracker;
++	u16			vid;
++	u8			addr[ETH_ALEN];
++	bool			found;
++};
++
++static bool nf_flow_tuple_fdb_match(const struct flow_offload_tuple *tuple,
++				    const struct nf_flow_fdb_del_work *fw)
++{
++	return tuple->xmit_type == FLOW_OFFLOAD_XMIT_DIRECT &&
++	       tuple->out.bridge_ifidx == fw->dev->ifindex &&
++	       tuple->out.bridge_vid == fw->vid &&
++	       ether_addr_equal(tuple->out.h_dest, fw->addr);
++}
++
++static void nf_flow_table_do_fdb_del(struct nf_flowtable *flow_table,
++				     struct flow_offload *flow, void *data)
++{
++	struct nf_flow_fdb_del_work *fw = data;
++
++	if (nf_flow_tuple_fdb_match(&flow->tuplehash[0].tuple, fw) ||
++	    nf_flow_tuple_fdb_match(&flow->tuplehash[1].tuple, fw)) {
++		flow_offload_teardown(flow);
++		fw->found = true;
++	}
++}
++
++static void nf_flow_table_fdb_del_work(struct work_struct *work)
++{
++	struct nf_flow_fdb_del_work *fw;
++	struct nf_flowtable *flowtable;
++
++	fw = container_of(work, struct nf_flow_fdb_del_work, work);
++
++	mutex_lock(&flowtable_lock);
++	list_for_each_entry(flowtable, &flowtables, list) {
++		if (!net_eq(read_pnet(&flowtable->net), dev_net(fw->dev)))
++			continue;
++
++		fw->found = false;
++		nf_flow_table_iterate(flowtable, nf_flow_table_do_fdb_del, fw);
++		if (fw->found)
++			mod_delayed_work(system_power_efficient_wq,
++					 &flowtable->gc_work, 0);
++	}
++	mutex_unlock(&flowtable_lock);
++
++	netdev_put(fw->dev, &fw->dev_tracker);
++	kfree(fw);
++}
++
++/* The bridge notifies the old port before it moves an fdb entry. Flows
++ * sending directly to that port are torn down. Skipping the teardown on
++ * allocation failure leaves the flow to age out, the same as a missed fdb
++ * update does for a switchdev driver.
++ */
++static int nf_flow_table_switchdev_event(struct notifier_block *nb,
++					 unsigned long event, void *ptr)
++{
++	struct switchdev_notifier_fdb_info *fdb_info = ptr;
++	struct nf_flow_fdb_del_work *fw;
++
++	if (event != SWITCHDEV_FDB_DEL_TO_DEVICE || fdb_info->is_local)
++		return NOTIFY_DONE;
++
++	fw = kzalloc_obj(*fw, GFP_ATOMIC);
++	if (!fw)
++		return NOTIFY_DONE;
++
++	INIT_WORK(&fw->work, nf_flow_table_fdb_del_work);
++	fw->dev = fdb_info->info.dev;
++	netdev_hold(fw->dev, &fw->dev_tracker, GFP_ATOMIC);
++	fw->vid = fdb_info->vid;
++	ether_addr_copy(fw->addr, fdb_info->addr);
++	queue_work(nf_flow_fdb_del_wq, &fw->work);
++
++	return NOTIFY_DONE;
++}
++
++static struct notifier_block nf_flow_table_switchdev_nb = {
++	.notifier_call = nf_flow_table_switchdev_event,
++};
++
+ void nf_flow_table_free(struct nf_flowtable *flow_table)
+ {
+ 	mutex_lock(&flowtable_lock);
+@@ -689,6 +781,16 @@ static int __init nf_flow_table_module_i
+ 	if (ret)
+ 		goto out_offload;
+ 
++	nf_flow_fdb_del_wq = alloc_workqueue("nf_flow_fdb_del", WQ_UNBOUND, 0);
++	if (!nf_flow_fdb_del_wq) {
++		ret = -ENOMEM;
++		goto out_wq;
++	}
++
++	ret = register_switchdev_notifier(&nf_flow_table_switchdev_nb);
++	if (ret)
++		goto out_switchdev;
++
+ 	ret = nf_flow_register_bpf();
+ 	if (ret)
+ 		goto out_bpf;
+@@ -700,6 +802,10 @@ static int __init nf_flow_table_module_i
+ 	return 0;
+ 
+ out_bpf:
++	unregister_switchdev_notifier(&nf_flow_table_switchdev_nb);
++out_switchdev:
++	destroy_workqueue(nf_flow_fdb_del_wq);
++out_wq:
+ 	nf_flow_table_offload_exit();
+ out_offload:
+ 	unregister_pernet_subsys(&nf_flow_table_net_ops);
+@@ -708,6 +814,8 @@ out_offload:
+ 
+ static void __exit nf_flow_table_module_exit(void)
+ {
++	unregister_switchdev_notifier(&nf_flow_table_switchdev_nb);
++	destroy_workqueue(nf_flow_fdb_del_wq);
+ 	unregister_netdevice_notifier(&flow_offload_netdev_notifier);
+ 	nf_flow_table_offload_exit();
+ 	unregister_pernet_subsys(&nf_flow_table_net_ops);
+--- a/include/net/netfilter/nf_flow_table.h
++++ b/include/net/netfilter/nf_flow_table.h
+@@ -146,6 +146,7 @@ struct flow_offload_tuple {
+ 		struct {
+ 			u32		ifidx;
+ 			u32		hw_ifidx;
++			u32		bridge_ifidx;
+ 			u16		bridge_vid;
+ 			u8		h_source[ETH_ALEN];
+ 			u8		h_dest[ETH_ALEN];
+@@ -212,6 +213,7 @@ struct nf_flow_route {
+ 		struct {
+ 			u32			ifindex;
+ 			u32			hw_ifindex;
++			u32			bridge_ifindex;
+ 			u16			bridge_vid;
+ 			u8			h_source[ETH_ALEN];
+ 			u8			h_dest[ETH_ALEN];
+--- a/net/netfilter/nft_flow_offload.c
++++ b/net/netfilter/nft_flow_offload.c
+@@ -85,6 +85,7 @@ struct nft_forward_info {
+ 		__u16	id;
+ 		__be16	proto;
+ 	} encap[NF_FLOW_TABLE_ENCAP_MAX];
++	u32 bridge_ifidx;
+ 	u16 bridge_vid;
+ 	u8 num_encaps;
+ 	u8 ingress_vlans;
+@@ -159,6 +160,10 @@ static void nft_dev_path_info(const stru
+ 			case DEV_PATH_BR_VLAN_KEEP:
+ 				break;
+ 			}
++			/* dev_fill_forward_path() adds the bridge port after
++			 * the bridge.
++			 */
++			info->bridge_ifidx = stack->path[i + 1].dev->ifindex;
+ 			info->bridge_vid = path->bridge.vlan_id;
+ 			info->xmit_type = FLOW_OFFLOAD_XMIT_DIRECT;
+ 			break;
+@@ -224,6 +229,7 @@ static void nft_dev_forward_path(struct
+ 		memcpy(route->tuple[dir].out.h_dest, info.h_dest, ETH_ALEN);
+ 		route->tuple[dir].out.ifindex = info.outdev->ifindex;
+ 		route->tuple[dir].out.hw_ifindex = info.hw_outdev->ifindex;
++		route->tuple[dir].out.bridge_ifindex = info.bridge_ifidx;
+ 		route->tuple[dir].out.bridge_vid = info.bridge_vid;
+ 		route->tuple[dir].xmit_type = info.xmit_type;
+ 	}
