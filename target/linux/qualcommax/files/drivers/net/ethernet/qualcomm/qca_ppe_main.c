@@ -1789,9 +1789,18 @@ static void ppe_ctrlpkt_init(struct qca_ppe_priv *priv)
 	regmap_write(priv->regmap, PPE_RFDB_TBL(31), 0xc2000000);
 	regmap_write(priv->regmap, PPE_RFDB_TBL(31) + 4, 0x00010180);
 
-	/* APP_CTRL[0]: match RFDB profile 31, bypass STP, redirect to CPU */
+	/* RFDB_TBL[30]: Slow Protocols MAC 01:80:c2:00:00:02 (LACP, marker).
+	 * Without this entry the PPE keeps LACPDUs away from the CPU port and a
+	 * bond over these ports never sees its partner.
+	 */
+	regmap_write(priv->regmap, PPE_RFDB_TBL(30), 0xc2000002);
+	regmap_write(priv->regmap, PPE_RFDB_TBL(30) + 4, 0x00010180);
+
+	/* APP_CTRL[0]: match RFDB profiles 30 and 31 (bits 32 and 33 of the
+	 * RFDB index bitmap), bypass STP, redirect to CPU
+	 */
 	regmap_write(priv->regmap, PPE_APP_CTRL(0), 0x00000003);
-	regmap_write(priv->regmap, PPE_APP_CTRL(0) + 4, 0x00000002);
+	regmap_write(priv->regmap, PPE_APP_CTRL(0) + 4, 0x00000003);
 	regmap_write(priv->regmap, PPE_APP_CTRL(0) + 8,
 		     PPE_APP_CTRL_PORT_BITMAP_EN |
 		     FIELD_PREP(PPE_APP_CTRL_PORT_BITMAP, ports) |
