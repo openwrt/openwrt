@@ -1,8 +1,32 @@
-src-git packages https://git.openwrt.org/feed/packages.git
-src-git luci https://git.openwrt.org/project/luci.git
-src-git routing https://git.openwrt.org/feed/routing.git
-src-git telephony https://git.openwrt.org/feed/telephony.git
-src-git video https://github.com/openwrt/video.git
-#src-git targets https://github.com/openwrt/targets.git
-#src-git oldpackages http://git.openwrt.org/packages.git
-#src-link custom /usr/src/openwrt/custom-feed
+# ============================================================
+#  feeds.conf.default — GL-MT3600BE
+#  上游: OpenWrt 25.12.5 (含 GL-MT3600BE 原生 + 安全修复, 含 CVE-2026-53921)
+#  增量: FanchmWrt 25.12.4 (fwx / fwxd / fullconenat / feeds_patches)
+#
+#  所有 feed 均锁定到具体 commit, 保证构建可复现.
+#  若需跟随最新服务版本, 把 ^<hash> 去掉即可 (不推荐用于成品).
+# ============================================================
+
+# ---- 官方四个 feed (25.12.5 对应 commit, 来源: fanchmwrt/feeds.conf.default) ----
+src-git packages https://git.openwrt.org/feed/packages.git^f91b06b3faff7ad3c8cbeb1ab39cef680d2f28ed
+src-git luci     https://git.openwrt.org/project/luci.git^e9ebca7598ce2f754b76267fd66bf2b85e6e4347
+src-git routing  https://git.openwrt.org/feed/routing.git^b2097c85bef85251364f59a6b2a3ed1f9f5c0c21
+src-git telephony https://git.openwrt.org/feed/telephony.git^2618106d5846a4a542fdf5809f0d3ed228ce439b
+src-git video    https://github.com/openwrt/video.git^094bf58da6682f895255a35a84349a79dab4bf95
+
+# ---- FanchmWrt 自有包 feed (fwx / fwxd / fullconenat / luci-theme-fanchmwrt) ----
+# 重要: fanchmwrt-packages 是独立仓, 经 API 核验**只有 main 分支** (无 fanchmwrt-25.12.4)
+# 因此用 ;main 跟随头; 稳定后请用 ^<具体commit> 钉死 (见下方注释行)
+src-git fanchmwrt https://github.com/fanchmwrt/fanchmwrt-packages.git;main
+# 若要可复现, 首次构建成功后:
+#   cd fanchmwrt-packages && git log -1 --format=%H  -> 得到具体 commit
+# 然后替换为: src-git fanchmwrt https://github.com/fanchmwrt/fanchmwrt-packages.git^<commit>
+
+# ============================================================
+#  说明
+# ============================================================
+# 1. 官方 feed 用 ^<hash> 钉死 (GIT "fixed commit" 语法, 见 OpenWrt feeds 文档)
+# 2. fanchm feed 用 ;<branch> 跟随分支头 —— 因 fork 活跃 (pays123456/fanchmwrt
+#    已领先上游 6 commits), 建议首次成功后用 git log 取具体 hash 再钉死
+# 3. feeds_patches/package-manager-call 不在此处, 它由 diy-part1.sh 直接
+#    以 files/ 方式覆盖进源码树 (见 scripts/diy-part1.sh)
