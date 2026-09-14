@@ -96,6 +96,35 @@ platform_check_image() {
 		return 0
 	fi
 
+	if is_gpt_dualboot; then
+		# extract boot sector from image
+		get_image_dd "$1" of=/tmp/image.bs count=63 bs=512b
+
+		if part_magic_efi /tmp/image.bs; then
+			get_partitions /tmp/image.bs image
+			local img_parts="$(wc -l < /tmp/partmap.image)"
+			rm -f /tmp/image.bs /tmp/partmap.image
+
+			if [ "$img_parts" -lt 4 ]; then
+				v "Invalid image: expected 4 partitions for dual-boot, found $img_parts"
+				return 1
+			fi
+
+			export_partdevice_label esppart "EFI system partition" && \
+				export_partdevice_label bootpart openwrt_boot && \
+				export_partdevice_label partdev openwrt_rootfs && \
+				export_partdevice_label partdevalt openwrt_rootfs_alt || {
+					v "Unable to determine upgrade device"
+					return 1
+				}
+			return 0
+		else
+			v "Invalid image type"
+			rm -f /tmp/image.bs
+			return 1
+		fi
+	fi
+
 	case "$(get_magic_word "$1")" in
 		eb48|eb63) ;;
 		*)
@@ -134,11 +163,12 @@ platform_copy_config() {
 	# ONIE upgrade bundles sysupgrade.tgz into the installer itself.
 	is_onie_install && return 0
 
-	if export_partdevice partdev 1; then
+	if (is_gpt_dualboot && export_partdevice_label partdev openwrt_boot) || export_partdevice partdev 1; then
+		mkdir -p /tmp/boot
 		part_magic_fat "/dev/$partdev" && parttype=vfat
-		mount -t $parttype -o rw,noatime "/dev/$partdev" /mnt
-		cp -af "$UPGRADE_BACKUP" "/mnt/$BACKUP_FILE"
-		umount /mnt
+		mount -t $parttype -o rw,noatime "/dev/$partdev" /tmp/boot
+		cp -af "$UPGRADE_BACKUP" "/tmp/boot/$BACKUP_FILE"
+		umount /tmp/boot
 	fi
 }
 
@@ -146,7 +176,38 @@ platform_do_bootloader_upgrade() {
 	local bootpart parttable=msdos
 	local diskdev="$1"
 
-	if export_partdevice bootpart 1; then
+	if is_gpt_dualboot; then
+		export_partdevice_label esppart "EFI system partition" || {
+			v "Unable to find 'EFI system partition'"
+			return 1
+		}
+
+		mkdir -p /tmp/.esp /tmp/.tmp
+		mount -o ro,loop $diskdev /tmp/.tmp
+		mount -o rw,noatime "/dev/$esppart" /tmp/.esp
+
+		set -- /tmp/.tmp/efi/boot/boot???.efi
+		new=$1; old="${new/\/tmp\/.tmp//tmp/.esp}"
+		[ -f "$new" ] || v "Unable to find EFI bootloader in the update image"
+		[ -f "$old" ] || v "Unable to find EFI bootloader on /dev/$esppart"
+		[ -f "$new" ] && [ -f "$old" ] || {
+			umount /tmp/.esp /tmp/.tmp
+			return 1
+		}
+
+		if ! cmp -s "$old" "$new"; then
+			v "Bootloader on /dev/$esppart needs to be updated"
+			mkdir -p "$(dirname "$old")"
+			ask_bool 0 "Skip" || {
+				v "Upgrading bootloader on /dev/$esppart..."
+				cp -a "$new" "$old"
+			}
+		else
+			v "Bootloader on /dev/$esppart does not need to be updated"
+		fi
+
+		umount /tmp/.esp /tmp/.tmp
+	elif export_partdevice bootpart 1; then
 		mkdir -p /tmp/boot
 		mount -o rw,noatime "/dev/$bootpart" /tmp/boot
 		echo "(hd0) /dev/$diskdev" > /tmp/device.map
@@ -164,7 +225,54 @@ platform_do_bootloader_upgrade() {
 }
 
 platform_do_upgrade() {
-	local diskdev partdev diff
+	local _alt bootpart defboot diff diskdev partdev partdevalt part size start
+
+	if is_gpt_dualboot; then
+		# extract the boot sector from the image
+		get_image_dd "$1" of=/tmp/image.bs count=63 bs=512b
+
+		export_partdevice_label esppart "EFI system partition" && \
+			export_partdevice_label bootpart openwrt_boot && \
+			export_partdevice_label partdev openwrt_rootfs && \
+			export_partdevice_label partdevalt openwrt_rootfs_alt || {
+				v "Unable to determine upgrade device"
+				return 1
+			}
+
+		grep -q 'root=PARTLABEL=openwrt_rootfs_alt' /proc/cmdline && _alt= || _alt=_alt
+		get_partitions /tmp/image.bs image
+		while read part start size; do
+			case "$part" in
+			1)
+				v "Extracting bootloader from image..."
+				get_image_dd "$1" of=/tmp/.grub.img ibs="512" obs=1M skip="$start" count="$size"
+			;;
+			2)
+				v "Writing new kernel to /boot/vmlinuz$_alt..."
+				if [ -n "$_alt" ]; then defboot=1; else defboot=0; fi
+				get_image_dd "$1" of=/tmp/.bootkernel.img ibs="512" obs=1M skip="$start" count="$size"
+				mkdir -p /tmp/boot /tmp/.bootkernel && \
+					mount -o rw,noatime "/dev/$bootpart" /tmp/boot && \
+					mount -o ro,loop /tmp/.bootkernel.img /tmp/.bootkernel && \
+					cp -af /tmp/.bootkernel/boot/vmlinuz /tmp/boot/boot/vmlinuz$_alt && \
+					grub-editenv /tmp/boot/boot/grub/grubenv set attempt=0 target_slot=$defboot
+				umount /tmp/boot /tmp/.bootkernel; rm -f /tmp/.bootkernel.img
+				sync
+			;;
+			3)
+				[ -n "$_alt" ] && partdev=$partdevalt
+				v "Writing new rootfs to /dev/$partdev..."
+				get_image_dd "$1" of="/dev/$partdev" ibs="512" obs=1M skip="$start" count="$size" conv=fsync
+			;;
+			esac
+		done < /tmp/partmap.image
+
+		platform_do_bootloader_upgrade /tmp/.grub.img
+		rm -f /tmp/.grub.img /tmp/image.bs /tmp/partmap.image /tmp/sysupgrade.*
+		sync
+
+		return 0
+	fi
 
 	if is_onie_install; then
 		platform_do_upgrade_onie "$1"
