@@ -36,7 +36,7 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
 
 --- a/drivers/clk/clk-devres.c
 +++ b/drivers/clk/clk-devres.c
-@@ -218,8 +218,8 @@ static void devm_clk_bulk_release_all_en
+@@ -226,8 +226,8 @@ static void devm_clk_bulk_release_all_en
  	clk_bulk_put_all(devres->num_clks, devres->clks);
  }
  
@@ -47,7 +47,7 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
  {
  	struct clk_bulk_devres *devres;
  	int ret;
-@@ -244,11 +244,12 @@ int __must_check devm_clk_bulk_get_all_e
+@@ -252,11 +252,12 @@ int __must_check devm_clk_bulk_get_all_e
  	} else {
  		clk_bulk_put_all(devres->num_clks, devres->clks);
  		devres_free(devres);
