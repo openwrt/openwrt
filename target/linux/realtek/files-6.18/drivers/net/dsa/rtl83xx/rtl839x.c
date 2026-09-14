@@ -5,6 +5,7 @@
 
 #include "l3.h"
 #include "pie.h"
+#include "qos.h"
 #include "rtl-otto.h"
 #include "vlan.h"
 
