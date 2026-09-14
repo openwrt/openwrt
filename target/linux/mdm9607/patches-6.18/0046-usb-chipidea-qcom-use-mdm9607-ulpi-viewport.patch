@@ -1,0 +1,171 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitry Sinyavin <sinyavin@gmail.com>
+Date: Fri, 14 Aug 2026 20:00:00 +0200
+Subject: [PATCH] usb: chipidea: qcom: add MDM9607 ULPI protocol
+
+The selected factory DTB supplies four PHY override writes and requests the
+manual D+ pull-up path. Hardware testing showed that the generic ChipIdea
+ULPI interface never completes the pull-up transaction: the gadget binds,
+but the UDC remains not attached.
+
+The downstream MDM9607 driver submits ULPI RUN transactions directly,
+while the generic mainline accessor prepends a WAKEUP transaction. Add an
+isolated MDM9607 accessor matching the hardware driver, apply the exact
+four overrides from the selected factory DTB, and repeat the PHY POR as
+required after programming override registers.
+
+Signed-off-by: Dmitry Sinyavin <sinyavin@gmail.com>
+---
+ drivers/phy/qualcomm/phy-qcom-usb-hs-28nm.c |  8 +++
+ drivers/usb/chipidea/ci_hdrc_msm.c          | 90 +++++++++++++++++++++++++----
+ 2 files changed, 87 insertions(+), 11 deletions(-)
+
+--- a/drivers/usb/chipidea/ci_hdrc_msm.c
++++ b/drivers/usb/chipidea/ci_hdrc_msm.c
+@@ -32,6 +32,11 @@
+ #define MDM9607_ULPI_MISC_A		0x96
+ #define MDM9607_VBUSVLDEXT		BIT(0)
+ #define MDM9607_VBUSVLDEXTSEL		BIT(1)
++#define MDM9607_ULPI_RUN		BIT(30)
++#define MDM9607_ULPI_WRITE		BIT(29)
++#define MDM9607_ULPI_ADDR(n)		((n) << 16)
++#define MDM9607_ULPI_DATA(n)		(n)
++#define MDM9607_ULPI_TIMEOUT_US		10000
+ 
+ /* Vendor base starts at 0x200 beyond CI base */
+ #define HS_PHY_CTRL			0x0040
+@@ -52,6 +57,71 @@ struct ci_hdrc_msm {
+ 	bool force_peripheral_session;
+ };
+ 
++struct mdm9607_ulpi_override {
++	u8 value;
++	u8 reg;
++};
++
++static const struct mdm9607_ulpi_override mdm9607_factory_phy_init[] = {
++	{ 0x44, 0x80 },
++	{ 0x38, 0x81 },
++	{ 0x24, 0x82 },
++	{ 0x13, 0x83 },
++};
++
++static int mdm9607_ulpi_wait(struct ci_hdrc *ci)
++{
++	unsigned int usec = MDM9607_ULPI_TIMEOUT_US;
++
++	while (usec--) {
++		if (!hw_read(ci, OP_ULPI_VIEWPORT, MDM9607_ULPI_RUN))
++			return 0;
++		udelay(1);
++	}
++
++	return -ETIMEDOUT;
++}
++
++/*
++ * MDM9607's downstream driver issues RUN directly.  The generic ChipIdea
++ * ULPI accessors prepend a WAKEUP transaction which this older viewport
++ * does not acknowledge reliably.
++ */
++static int mdm9607_ulpi_write(struct ci_hdrc *ci, u8 reg, u8 value)
++{
++	hw_write(ci, OP_ULPI_VIEWPORT, 0xffffffff,
++		 MDM9607_ULPI_RUN | MDM9607_ULPI_WRITE |
++		 MDM9607_ULPI_ADDR(reg) | MDM9607_ULPI_DATA(value));
++
++	return mdm9607_ulpi_wait(ci);
++}
++
++static void mdm9607_apply_factory_phy_init(struct device *dev,
++					   struct ci_hdrc *ci)
++{
++	unsigned int i;
++	int ret;
++
++	for (i = 0; i < ARRAY_SIZE(mdm9607_factory_phy_init); i++) {
++		ret = mdm9607_ulpi_write(ci, mdm9607_factory_phy_init[i].reg,
++					 mdm9607_factory_phy_init[i].value);
++		if (ret) {
++			dev_err(dev,
++				"MDM9607 factory PHY init failed at reg %#x value %#x: %d\n",
++				mdm9607_factory_phy_init[i].reg,
++				mdm9607_factory_phy_init[i].value, ret);
++			return;
++		}
++	}
++
++	ret = phy_reset(ci->phy);
++	if (ret) {
++		dev_err(dev, "MDM9607 post-override PHY reset failed: %d\n",
++			ret);
++		return;
++	}
++}
++
+ static int
+ ci_hdrc_msm_por_reset(struct reset_controller_dev *r, unsigned long id)
+ {
+@@ -110,6 +180,9 @@ static int ci_hdrc_msm_notify_event(stru
+ 			return ret;
+ 		}
+ 
++		if (msm_ci->force_peripheral_session)
++			mdm9607_apply_factory_phy_init(dev, ci);
++
+ 		/* use AHB transactor, allow posted data writes */
+ 		hw_write_id_reg(ci, HS_PHY_AHB_MODE, 0xffffffff, 0x8);
+ 
+@@ -134,13 +207,10 @@ static int ci_hdrc_msm_notify_event(stru
+ 		if (msm_ci->force_peripheral_session) {
+ 			u8 mask = MDM9607_VBUSVLDEXT |
+ 				  MDM9607_VBUSVLDEXTSEL;
+-			if (!ci->ulpi)
+-				return -ENODEV;
+-
+ 			if (ci->gadget.connected) {
+-				ret = ulpi_write(ci->ulpi,
+-						 ULPI_SET(MDM9607_ULPI_MISC_A),
+-						 mask);
++				ret = mdm9607_ulpi_write(ci,
++							 ULPI_SET(MDM9607_ULPI_MISC_A),
++							 mask);
+ 				if (ret) {
+ 					dev_err(dev,
+ 						"MDM9607 ULPI MISC_A set failed: %d\n",
+@@ -154,9 +224,9 @@ static int ci_hdrc_msm_notify_event(stru
+ 				hw_write(ci, OP_USBCMD, HSPHY_SESS_VLD_CTRL,
+ 					 HSPHY_SESS_VLD_CTRL);
+ 			} else {
+-				ret = ulpi_write(ci->ulpi,
+-						 ULPI_CLR(MDM9607_ULPI_MISC_A),
+-						 mask);
++				ret = mdm9607_ulpi_write(ci,
++							 ULPI_CLR(MDM9607_ULPI_MISC_A),
++							 mask);
+ 				if (ret) {
+ 					dev_err(dev,
+ 						"MDM9607 ULPI MISC_A clear failed: %d\n",
+--- a/drivers/phy/qualcomm/phy-qcom-usb-hs-28nm.c
++++ b/drivers/phy/qualcomm/phy-qcom-usb-hs-28nm.c
+@@ -288,12 +288,20 @@ static int qcom_snps_hsphy_exit(struct p
+ 	return 0;
+ }
+ 
++static int qcom_snps_hsphy_reset_op(struct phy *phy)
++{
++	struct hsphy_priv *priv = phy_get_drvdata(phy);
++
++	return qcom_snps_hsphy_por_reset(priv);
++}
++
+ static const struct phy_ops qcom_snps_hsphy_ops = {
+ 	.init = qcom_snps_hsphy_init,
+ 	.exit = qcom_snps_hsphy_exit,
+ 	.power_on = qcom_snps_hsphy_power_on,
+ 	.power_off = qcom_snps_hsphy_power_off,
+ 	.set_mode = qcom_snps_hsphy_set_mode,
++	.reset = qcom_snps_hsphy_reset_op,
+ 	.owner = THIS_MODULE,
+ };
+ 
