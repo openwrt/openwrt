@@ -1,0 +1,78 @@
+# ============================================================
+#  GL-MT3600BE — OpenWrt 25.12 (底) + FanchmWrt 增量
+#  个人家用, 纯本地编译, 不分发
+#
+#  包名来源: fanchmwrt/fanchmwrt-packages (分支 main), 目录 package/fcm/
+#    fwx / fwxd / libfwx_common / fullconenat / fullconenat-nft / luci-theme-fanchmwrt
+#  注: luci-app-fwx.json 由 fwxd 包自动安装到 /usr/share/rpcd/acl.d/, 无需单独选包
+# ============================================================
+
+# ===== 目标平台 (MT7987A / Filogic / 双频 BE3600 / 2×2.5G) =====
+CONFIG_TARGET_mediatek=y
+CONFIG_TARGET_mediatek_filogic=y
+CONFIG_TARGET_mediatek_filogic_DEVICE_glinet_gl-mt3600be=y
+
+# ===== 基础系统 =====
+CONFIG_BUSYBOX_DEFAULT_FEATURE_IPV6=y
+CONFIG_PACKAGE_ipv6helper=y
+CONFIG_PACKAGE_odhcpd_ipv6only=y
+CONFIG_PACKAGE_odhcp6c=y
+
+# ===== 无线 (mt76 开源驱动, MT7990, 25.12 默认) =====
+CONFIG_PACKAGE_wpad_openssl=y
+CONFIG_PACKAGE_iw=y
+CONFIG_PACKAGE_iwinfo=y
+CONFIG_PACKAGE_wifi-scripts=y
+
+# ===== LuCI Web 管理 (含 apk 包管理前端) =====
+CONFIG_PACKAGE_luci=y
+CONFIG_PACKAGE_luci-ssl=y
+CONFIG_PACKAGE_luci-app-firewall=y
+CONFIG_PACKAGE_luci-app-network=y
+CONFIG_PACKAGE_luci-app-system=y
+CONFIG_PACKAGE_luci-app-upnp=y
+CONFIG_PACKAGE_luci-app-ttyd=y
+CONFIG_PACKAGE_luci-proto-wireguard=y
+# 25.12 默认 apk: 包管理器前端 (配合 files/usr/libexec/package-manager-call)
+CONFIG_PACKAGE_luci-app-package-manager=y
+
+# ===== 包管理器 (25.12 默认 apk) =====
+CONFIG_PACKAGE_apk-mbedtls=y
+CONFIG_PACKAGE_procd-ujail=y
+
+# ===== 网络增强 (家用常见) =====
+CONFIG_PACKAGE_ddns-scripts=y
+CONFIG_PACKAGE_luci-app-ddns=y
+CONFIG_PACKAGE_luci-app-samba4=y
+CONFIG_PACKAGE_samba4-server=y
+CONFIG_PACKAGE_luci-app-sqm=y
+CONFIG_PACKAGE_sqm-scripts=y
+
+# ============================================================
+#  FanchmWrt 增量 — 包名经 fanchmwrt-packages/package/fcm/ 实锤
+#    https://github.com/fanchmwrt/fanchmwrt-packages/tree/main/package/fcm
+#  个人免费; OAF/应用特征文件商用禁止
+#  再分发须保留版权 + 注明仓库 (FanchmWrt README)
+# ============================================================
+
+# --- 1. fwx 核心 (fwxd 含守护 + Luci 页面 + ACL, libfwx_common 为共享库) ---
+CONFIG_PACKAGE_libfwx_common=y
+CONFIG_PACKAGE_fwx=y
+CONFIG_PACKAGE_fwxd=y
+# 注: luci-app-fwx 不是独立包, 其 json ACL 由 fwxd 安装, 无需此处列出
+
+# --- 2. 全锥 NAT (fanchm 实现: nft 版优先, 与 iptables 传统版互斥) ---
+CONFIG_PACKAGE_fullconenat-nft=y
+# CONFIG_PACKAGE_fullconenat=y              # iptables 传统版, 留作回退
+
+# --- 3. Fanchm 主题 (可选, 纯外观) ---
+CONFIG_PACKAGE_luci-theme-fanchmwrt=y
+
+# ============================================================
+#  构建选项
+# ============================================================
+CONFIG_CCACHE=y
+CONFIG_DEVEL=y
+CONFIG_BUILD_LOG=y
+# CONFIG_PACKAGE_python3 is not set
+# CONFIG_PACKAGE_python3-pip is not set

@@ -1,0 +1,223 @@
+name: Build GL-MT3600BE (OpenWrt 25.12 + FanchmWrt)
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_ref:
+        description: "OpenWrt 基线 (openwrt-25.12 跟随安全更新, 或 v25.12.5 锁定)"
+        default: "openwrt-25.12"
+        required: true
+      config_file:
+        description: "defconfig 相对仓库根的路径"
+        default: "gl-mt3600be.defconfig"
+        required: true
+      upload_release:
+        description: "是否发布到 Releases (也可打 tag 触发)"
+        default: "false"
+        required: true
+  push:
+    branches: [gl-mt3600be-fanchm, openwrt-25.12, main]
+    paths:
+      - "gl-mt3600be.defconfig"
+      - "feeds.conf.default"
+      - "files/**"
+      - "scripts/**"
+      - ".github/workflows/build.yml"
+  pull_request:
+    branches: [openwrt-25.12]
+    paths:
+      - "gl-mt3600be.defconfig"
+      - "feeds.conf.default"
+      - ".github/workflows/build.yml"
+  schedule:
+    - cron: "5 2 * * 1"
+
+env:
+  BASE_REPO: https://github.com/openwrt/openwrt.git
+  BASE_REF: ${{ github.event.inputs.base_ref || 'openwrt-25.12' }}
+  CONFIG_FILE: ${{ github.event.inputs.config_file || 'gl-mt3600be.defconfig' }}
+  FANCHM_PKG_REPO: https://github.com/fanchmwrt/fanchmwrt-packages.git
+  FANCHM_PKG_BRANCH: main
+  DEVICE: glinet_gl-mt3600be
+  TARGET: mediatek
+  SUBTARGET: filogic
+  TZ: Asia/Shanghai
+
+jobs:
+  validate:
+    name: 离线校验
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: 运行校验器
+        run: |
+          chmod +x validate.sh check_config.py kconfig_check.py validate-workflow.py
+          ./validate.sh || true
+          python3 check_config.py
+          python3 kconfig_check.py
+          python3 validate-workflow.py
+
+  build:
+    name: 构建固件 (${{ env.DEVICE }})
+    needs: validate
+    runs-on: ubuntu-22.04
+    timeout-minutes: 360
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 释放磁盘空间
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost \
+                     "$AGENT_TOOLSDIRECTORY" /usr/local/lib/android \
+                     /var/lib/docker /var/cache/apt/archives
+          df -h
+
+      - name: 安装构建依赖
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential clang flex bison g++ gawk gcc-multilib gnutls-dev \
+            libelf-dev libssl-dev libncurses-dev libstdc++6 libtool autoconf \
+            python3 python3-dev python3-pip python3-venv rsync unzip zlib1g-dev \
+            file wget ca-certificates kmod git gettext \
+            libgmp-dev libmpfr-dev libmpc-dev ocaml-nox \
+            ccache curl cmake asciidoc device-tree-compiler jq
+          echo "gcc: $(gcc --version | head -1)"
+
+      - name: 校验 GL-MT3600BE 原生支持 (当前 checkout 即基线)
+        run: |
+          if ! grep -rq "gl-mt3600be\|gl_mt3600be" target/linux/mediatek/ 2>/dev/null; then
+            echo "::error::当前 checkout 未含 GL-MT3600BE 支持"
+            echo "  请在基于 openwrt-25.12 / v25.12.5+ 的分支上运行, 或设 BASE_REF"
+            exit 1
+          fi
+          echo "GL-MT3600BE 支持已确认"
+
+      - name: 配置 feeds (追加 fanchm feed, 保留官方四件)
+        run: |
+          # 若仓库根有定制版 feeds.conf.default 则用它, 否则在官方基础上追加
+          if [ -f feeds.conf.default ]; then
+            cp feeds.conf.default feeds.conf
+          else
+            cp feeds.conf feeds.conf.bak
+            : > feeds.conf.default
+          fi
+          # 确保 fanchm feed 存在 (幂等)
+          grep -q "src-git fanchmwrt" feeds.conf.default || cat >> feeds.conf.default <<EOF
+          src-git fanchmwrt ${FANCHM_PKG_REPO}
+          EOF
+          cp feeds.conf.default feeds.conf
+          echo "--- feeds.conf ---"
+          cat feeds.conf
+
+      - name: DIY part1 (设备校验, 幂等追加)
+        run: |
+          [ -x scripts/diy-part1.sh ] || chmod +x scripts/diy-part1.sh
+          ./scripts/diy-part1.sh "$PWD"
+
+      - name: 更新并安装 feeds
+        run: |
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+          echo "--- 已注册 fanchm 包 ---"
+          ls package/feeds/fanchmwrt/ 2>/dev/null || ls package/feeds/ | grep -i fanch
+
+      - name: 拷贝 files/ 覆盖 (package-manager-call, apk/opkg 兼容层)
+        run: |
+          if [ -d files ] && [ "$(ls -A files 2>/dev/null)" ]; then
+            cp -rf files/. ./
+            echo "==> files/ 已覆盖到源码树"
+            ls -l usr/libexec/package-manager-call 2>/dev/null || true
+          fi
+
+      - name: 载入 defconfig
+        run: |
+          [ -f "$CONFIG_FILE" ] || { echo "::error::$CONFIG_FILE 不存在"; exit 1; }
+          cp "$CONFIG_FILE" .config
+          make defconfig
+          echo "--- Fanchm 包选中状态 ---"
+          grep -E "CONFIG_PACKAGE_(libfwx_common|fwx|fwxd|fullconenat|luci-app-fwx|luci-theme-fanchmwrt)=" .config || true
+
+      - name: DIY part2 (校验 fwx/fwxd 是否选入 .config)
+        run: |
+          SCRIPT="scripts/diy-part2-fanchm.sh"
+          [ -x "$SCRIPT" ] || SCRIPT="scripts/diy-part2.sh"
+          [ -x "$SCRIPT" ] && "$SCRIPT" "$PWD" || echo "::warning::无 diy-part2 校验脚本, 跳过"
+
+      - name: 下载依赖源码
+        continue-on-error: true
+        run: |
+          make download -j"$(nproc)" V=s || make download V=s
+
+      - name: 编译固件
+        id: compile
+        run: |
+          export CCACHE_DIR=$HOME/.ccache
+          ccache -M 10G || true
+          make -j"$(nproc)" V=s 2>&1 | tee build.log
+          echo "exit=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
+
+      - name: 编译失败诊断
+        if: failure() && steps.compile.outcome == 'failure'
+        run: |
+          echo "=== build.log 末尾 120 行 ==="
+          tail -n 120 build.log
+          echo "=== 疑似错误点 ==="
+          grep -nE "error:|Error |ERROR:|failed to build|Package.*not found" build.log | tail -40 || true
+
+      - name: 收集产物
+        if: success()
+        run: |
+          OUT="bin/targets/mediatek/filogic"
+          mkdir -p artifacts
+          cp "$OUT"/*${DEVICE}*sysupgrade* artifacts/ 2>/dev/null || true
+          cp "$OUT"/*${DEVICE}*.manifest artifacts/ 2>/dev/null || true
+          cp "$OUT"/sha256sums artifacts/ 2>/dev/null || true
+          cp .config "artifacts/config-${DEVICE}.txt" 2>/dev/null || true
+          cp build.log artifacts/ 2>/dev/null || true
+          ls -lh artifacts/
+
+      - name: 计算 SHA256
+        if: success()
+        working-directory: artifacts
+        run: |
+          sha256sum * > sha256sums.txt
+          cat sha256sums.txt
+
+      - name: 上传 Artifact (保留 30 天)
+        if: success()
+        uses: upload-artifact@v4
+        with:
+          name: gl-mt3600be-firmware-${{ env.BASE_REF }}-${{ github.sha }}
+          path: artifacts/
+          retention-days: 30
+
+      - name: 发布 Release (tag 触发)
+        if: success() && startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/*
+          body: |
+            GL-MT3600BE 固件 (OpenWrt ${{ env.BASE_REF }} + FanchmWrt main)
+            - 基础: ${{ env.BASE_REF }} (含 GL-MT3600BE 原生支持)
+            - Fanchm 增量: fwx / fwxd / libfwx_common / fullconenat-nft / luci-theme-fanchmwrt
+            - 提交: ${{ github.sha }}
+            - 用法: 首次建议 U-Boot recovery, Web 升级请取消 '保留配置'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  notify:
+    name: 汇总
+    needs: [validate, build]
+    runs-on: ubuntu-22.04
+    if: always()
+    steps:
+      - name: 结果
+        run: |
+          echo "validate: ${{ needs.validate.result }}"
+          echo "build:   ${{ needs.build.result }}"
