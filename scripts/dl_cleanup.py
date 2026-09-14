@@ -59,7 +59,9 @@ def parseVer_12(match, filepath):
         patchlevel = ord(patchlevel[0])
     else:
         patchlevel = 0
-    progversion = (int(match.group(2)) << 192) | (int(match.group(3)) << 128) | patchlevel
+    progversion = (
+        (int(match.group(2)) << 192) | (int(match.group(3)) << 128) | patchlevel
+    )
     return (progname, progversion)
 
 
