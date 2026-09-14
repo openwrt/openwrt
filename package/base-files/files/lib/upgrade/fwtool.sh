@@ -72,7 +72,11 @@ fwtool_check_image() {
 		# so we add the secondary check [ "$dev" = "$oem" ];
 		# If in Step 1 the oem_file was found and valid, the $oem == "b3000" so
 		# [ ("$dev" == "b3000) == ("$oem" == "b3000") ] so firmware is valid oem
-		if [ "$dev" = "$device" ] || [ "$dev" = "$oem" ]; then
+		#
+		# Images built for generic targets (e.g. x86, armsr, malta) may declare the
+		# special device "generic" and run on any board, so treat it as a wildcard
+		# that matches the current device.
+		if [ "$dev" = "$device" ] || [ "$dev" = "$oem" ] || [ "$dev" = "generic" ]; then
 			# major compat version -> no sysupgrade
 			if [ "${devicecompat%.*}" != "${imagecompat%.*}" ]; then
 				v "The device is supported, but this image is incompatible for sysupgrade based on the image version ($devicecompat->$imagecompat)."
