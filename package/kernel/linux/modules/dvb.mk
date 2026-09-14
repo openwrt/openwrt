@@ -645,7 +645,7 @@ define MediaTuner
 	CONFIG_MEDIA_SUPPORT \
 	CONFIG_MEDIA_DIGITAL_TV_SUPPORT=y \
 	$2
-  DEPENDS:=+kmod-i2c-core
+  DEPENDS:=@!LINUX_6_12 +kmod-i2c-core
   FILES:=$(LINUX_DIR)/drivers/media/tuners/$1.ko
   AUTOLOAD:=$(call AutoProbe,$1)
 endef
