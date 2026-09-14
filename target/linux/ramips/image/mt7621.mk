@@ -2981,7 +2981,7 @@ define Device/tozed_zlt-s12-pro
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := TOZED
   DEVICE_MODEL := ZLT S12 PRO
-  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3 comgt-ncm -uboot-envtools
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3 comgt-ncm -uboot-envtools modemsignal-leds
 endef
 TARGET_DEVICES += tozed_zlt-s12-pro
 
@@ -3191,7 +3191,7 @@ define Device/tplink_mr600-v2-eu
   DEVICE_VARIANT := v2 (EU)
   TPLINK_FLASHLAYOUT := 16Mltq
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap \
-		kmod-usb-net-qmi-wwan uqmi kmod-usb3 -uboot-envtools
+		kmod-usb-net-qmi-wwan uqmi kmod-usb3 -uboot-envtools modemsignal-leds
   IMAGE/factory.bin := tplink-v2-image -e -a 0x10000
   IMAGE/sysupgrade.bin := tplink-v2-image -s -e -a 0x10000 | check-size | \
 	append-metadata
