@@ -1,0 +1,78 @@
+From a3729e0df005a936ceb3c2b0d167f01a2b03f970 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Jonas=20K=C3=B6ppeler?= <j.koeppeler@tu-berlin.de>
+Date: Mon, 20 Jul 2026 23:14:52 +0200
+Subject: [PATCH] net/sched: sch_cake: skip clearing unused tins during rate
+ adjustment
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+When cake_configure_rates() is called from the dequeue path with
+rate_adjust=true, it only needs to update the rate parameters. The
+loop that clears the unused tins is both unnecessary and harmful in
+this path:
+
+ - cake_clear_tin() overwrites q->cur_tin and q->cur_flow, which are
+   actively used by cake_dequeue(), corrupting the dequeue state.
+ - iterating over the unused tins and their internal queues to purge
+   packets adds needless overhead to the hot path.
+
+Skip the entire loop when rate_adjust is set, as neither
+cake_clear_tin() nor the mtu_time update are needed when only the
+rate changes.
+
+The clearing loop runs on every rate adjustment from the dequeue path,
+clearing (max_tins - cur_tins) tins each time, so the cost grows the
+fewer tins the configured mode actually uses. Testing cake_mq over veth
+(8 rx/tx queues, 2 Gbit limit) with flent's [1] rrul and tcp_nup tests and
+32 TCP upstreams shows a large drop in loaded latency and a throughput
+gain, restoring behaviour to pre-15c2715a5264 levels:
+
+  +------------+------+------+-------+-------+---------+
+  | kernel     | mode | test |  base |  load |    tput |
+  |            |      |      |  (ms) |  (ms) |  (Mbit) |
+  +------------+------+------+-------+-------+---------+
+  | net-next   | be   | rrul | 0.810 | 11.78 | 1469.67 |
+  | net-next   | be   | nup  | 0.637 | 85.71 | 1243.15 |
+  | net-next   | ds3  | rrul | 0.397 | 15.28 | 1770.06 |
+  | net-next   | ds3  | nup  | 0.351 | 15.98 | 1799.39 |
+  +------------+------+------+-------+-------+---------+
+  | patched    | be   | rrul | 0.092 |  0.56 | 1873.40 |
+  | patched    | be   | nup  | 0.109 |  1.82 | 1869.12 |
+  | patched    | ds3  | rrul | 0.097 |  0.98 | 1866.10 |
+  | patched    | ds3  | nup  | 0.101 |  0.51 | 1861.79 |
+  +------------+------+------+-------+-------+---------+
+
+The same trend holds on real hardware (IPQ8074A, 4 rx/tx queues,
+OpenWrt): in besteffort mode the tcp_nup loaded latency drops from
+~470 ms to ~4 ms.
+
+[1] https://flent.org
+
+Fixes: 15c2715a5264 ("net/sched: sch_cake: fixup cake_mq rate adjustment for diffserv config")
+Signed-off-by: Jonas Köppeler <j.koeppeler@tu-berlin.de>
+Tested-by: Mike Pham <mikepham4321@gmail.com>
+Acked-by: Toke Høiland-Jørgensen <toke@toke.dk>
+Link: https://patch.msgid.link/20260720-sch_cake-skip-clearing-tins-v2-1-e6a8b0275c73@tu-berlin.de
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ net/sched/sch_cake.c | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
+
+--- a/net/sched/sch_cake.c
++++ b/net/sched/sch_cake.c
+@@ -2603,9 +2603,11 @@ static void cake_configure_rates(struct
+ 		break;
+ 	}
+ 
+-	for (c = qd->tin_cnt; c < CAKE_MAX_TINS; c++) {
+-		cake_clear_tin(sch, c);
+-		qd->tins[c].cparams.mtu_time = qd->tins[ft].cparams.mtu_time;
++	if (!rate_adjust) {
++		for (c = qd->tin_cnt; c < CAKE_MAX_TINS; c++) {
++			cake_clear_tin(sch, c);
++			qd->tins[c].cparams.mtu_time = qd->tins[ft].cparams.mtu_time;
++		}
+ 	}
+ 
+ 	qd->rate_ns   = qd->tins[ft].tin_rate_ns;
