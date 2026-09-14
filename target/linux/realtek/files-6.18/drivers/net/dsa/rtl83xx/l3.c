@@ -956,13 +956,14 @@ static void otto_l3_route_remove(struct otto_l3_ctrl *ctrl, struct otto_l3_route
 		dev_warn(ctrl->dev, "Could not remove route\n");
 
 	if (r->is_host_route) {
-		id = ctrl->cfg->find_slot(ctrl, r, false);
+		id = ctrl->cfg->find_slot(ctrl, r, true);
 		if (id >= 0) {
 			dev_dbg(ctrl->dev, "Got id for host route: %d\n", id);
 			r->attr.valid = false;
 			ctrl->cfg->host_route_write(ctrl, id, r);
 		} else {
-			dev_err(ctrl->dev, "Host route was not in hardware\n");
+			dev_err(ctrl->dev, "Host route %pI4 was not in hardware\n",
+				&r->dst_ip);
 		}
 		clear_bit(r->id - MAX_ROUTES, ctrl->host_route_use_bm);
 	} else {
