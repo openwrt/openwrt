@@ -57,7 +57,7 @@ proto_wireguard_setup() {
 	config_get tunlink "${config}" "tunlink"
 
 	# Add the link only if it didn't already exist
-	ip -br link show "${config}" >/dev/null 2>&1 || ip link add dev "${config}" type wireguard
+	ip -br link show dev "${config}" >/dev/null 2>&1 || ip link add dev "${config}" type wireguard
 
 	[ -n "${mtu}" ] && ip link set mtu "${mtu}" dev "${config}"
 
