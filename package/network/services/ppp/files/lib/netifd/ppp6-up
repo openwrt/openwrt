@@ -31,6 +31,16 @@ if [ -n "$AUTOIPV6" ]; then
 	[ "$NOSOURCEFILTER" = "1" ] && json_add_boolean sourcefilter "0"
 	[ "$DELEGATE" = "0" ] && json_add_boolean delegate "0"
 	[ -n "$NORELEASE" ] && json_add_boolean norelease "1"
+	if [ -n "$DNS6" ]; then
+		json_add_array dns
+		local OLD_IFS="$IFS"
+		IFS=","
+		for dns in $DNS6; do
+			json_add_string "" "$dns"
+		done
+		IFS="$OLD_IFS"
+		json_close_array
+	fi
 	json_close_object
 	ubus call network add_dynamic "$(json_dump)"
 fi
