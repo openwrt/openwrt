@@ -1,0 +1,35 @@
+From: Aleksei Sviridkin <f@lex.la>
+Subject: [PATCH] dt-bindings: net: ethernet-phy: add needs-host-firmware
+
+A PHY can be one that the host has to load firmware into before it can
+be driven at all. A controller that connects to such a PHY at setup
+finds nothing usable and drops the port for the whole uptime, even
+though the PHY works seconds later.
+
+The flag declares that. A consumer that sees it keeps the port and
+connects the PHY once its driver binds. It describes the PHY, so it
+sits on the PHY node and needs no prefix naming one.
+
+Assisted-by: LLM
+Signed-off-by: Aleksei Sviridkin <f@lex.la>
+
+Submitted upstream: https://lore.kernel.org/netdev/20260908155729.4164814-2-f@lex.la/
+
+---
+--- a/Documentation/devicetree/bindings/net/ethernet-phy.yaml
++++ b/Documentation/devicetree/bindings/net/ethernet-phy.yaml
+@@ -194,6 +194,14 @@ properties:
+       used. The absence of this property indicates the muxers
+       should be configured so that the external PHY is used.
+ 
++  needs-host-firmware:
++    $ref: /schemas/types.yaml#/definitions/flag
++    description:
++      This PHY runs firmware that the host must load before it can be
++      driven, and is not usable for as long as that has not happened. A
++      controller referencing it keeps the port and connects the PHY once
++      its driver binds, instead of failing at setup.
++
+   resets:
+     maxItems: 1
+ 
