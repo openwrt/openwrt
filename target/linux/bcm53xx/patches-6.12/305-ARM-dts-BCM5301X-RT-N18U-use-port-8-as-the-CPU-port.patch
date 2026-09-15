@@ -1,0 +1,90 @@
+From af79c22d66def68f69ca699f30731b98257b0da5 Mon Sep 17 00:00:00 2001
+From: Semih Baskan <strst.gs@gmail.com>
+Date: Thu, 3 Sep 2026 12:00:00 +0300
+Subject: [PATCH] ARM: dts: BCM5301X: RT-N18U: use switch port 8 as the CPU port
+
+The switch block makes port 5 the CPU port and leaves port 8, the IMP0
+management port, disabled. On the BCM53011 a standalone port then
+cannot receive its own tagged traffic: the VID lookup is always active,
+a tagged frame whose VID is missing from the VLAN table is forwarded
+only toward the management port, and with that port disabled the frame
+is dropped. A VLAN tagged PPPoE WAN on this board never establishes.
+
+Make port 8 the only CPU port and disable port 5, the layout
+bcm47094-netgear-r8500.dts already uses. The vendor firmware brings its
+switch up on port 8 too.
+
+The conduit moves from gmac0 to gmac2. The CFE on this board provisions
+et0macaddr only, so gmac2 would otherwise take a random address on every
+boot. Add the nvram node and give gmac2 the et0macaddr cell, the address
+gmac0 already has. gmac0 stays enabled but now sits behind the disabled
+port 5 and carries no traffic. The nvram partition starts at NAND offset
+0x80000 and is 0x180000 long, read from the partition table on the unit;
+the other ASUS NAND boards in tree use the same node.
+
+Tested on an Asus RT-N18U (BCM53011 rev 5) on the 6.18 kernel, across two
+boots, with a second router as the tagged-link peer and PPPoE
+concentrator. The conduit comes up as eth2 with et0macaddr on both boots,
+eth0 stays present and idle, and lan1 to lan4 and wan keep their names and
+the brcm tagging. The switch selects IMP0 as its management port, so the
+frames it steers there, the tagged miss path included, now end at the CPU
+port. Tagged reception on the standalone wan works with nothing in the
+VLAN table: wan.60 exchanges pings with the peer. A PPPoE session over
+wan.35 establishes with the default route on pppoe-wan. Untagged traffic
+on wan and bridged LAN traffic work, a bridge VLAN under vlan_filtering 1
+programs the table as before, and management over br-lan survived the
+flash. The known trade-off was measured as well: after the wan.60 upper is
+deleted, VID-60 frames still reach the CPU, because the miss path now ends
+at the CPU port.
+
+Signed-off-by: Semih Baskan <strst.gs@gmail.com>
+---
+ arch/arm/boot/dts/broadcom/bcm47081-asus-rt-n18u.dts | 20 +++++++++++++++-----
+ 1 file changed, 15 insertions(+), 5 deletions(-)
+
+--- a/arch/arm/boot/dts/broadcom/bcm47081-asus-rt-n18u.dts
++++ b/arch/arm/boot/dts/broadcom/bcm47081-asus-rt-n18u.dts
+@@ -25,6 +25,15 @@
+ 		      <0x88000000 0x08000000>;
+ 	};
+ 
++	nvram@1c080000 {
++		compatible = "brcm,nvram";
++		reg = <0x1c080000 0x180000>;
++
++		et0macaddr: et0macaddr {
++			#nvmem-cell-cells = <1>;
++		};
++	};
++
+ 	leds {
+ 		compatible = "gpio-leds";
+ 
+@@ -78,6 +87,11 @@
+ 	status = "okay";
+ };
+ 
++&gmac2 {
++	nvmem-cells = <&et0macaddr 0>;
++	nvmem-cell-names = "mac-address";
++};
++
+ &srab {
+ 	status = "okay";
+ 
+@@ -103,14 +117,10 @@
+ 		};
+ 
+ 		port@5 {
+-			label = "cpu";
+-		};
+-
+-		port@7 {
+ 			status = "disabled";
+ 		};
+ 
+-		port@8 {
++		port@7 {
+ 			status = "disabled";
+ 		};
+ 	};
