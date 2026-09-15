@@ -2991,6 +2991,7 @@ define Device/tplink_archer-ax80-v1.60
   DEVICE_VENDOR := TP-Link
   DEVICE_MODEL := Archer AX80
   DEVICE_VARIANT := v1.60
+  BOARD_NAME := tplink_archer-ax80-v1
   DEVICE_DTS := mt7986a-tplink-archer-ax80-v1
   DEVICE_DTS_CONFIG := config-ax80_v1
   DEVICE_DTS_DIR := ../dts
