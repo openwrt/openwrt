@@ -401,7 +401,7 @@ static int routerboot_partitions_parse(struct mtd_info *master,
 		if (!master->erasesize || parts[idx].size >= master->erasesize)
 			break;
 
-		if (parts[idx].offset % master->erasesize)
+		if (!IS_ALIGNED(parts[idx].offset, master->erasesize))
 			break;	/* not block aligned to begin with */
 
 		grown = ALIGN(parts[idx].size, master->erasesize);
