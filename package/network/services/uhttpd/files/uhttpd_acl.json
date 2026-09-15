@@ -1,0 +1,111 @@
+{
+	"user": "uhttpd",
+	"access": {
+		"session": {
+			"methods": [
+				"access",
+				"destroy",
+				"get",
+				"login",
+				"set"
+			]
+		},
+		"file": {
+			"methods": [
+				"*"
+			]
+		},
+		"iwinfo": {
+			"methods": [
+				"*"
+			]
+		},
+		"luci": {
+			"methods": [
+				"*"
+			]
+		},
+		"luci-rpc": {
+			"methods": [
+				"*"
+			]
+		},
+		"luci.*": {
+			"methods": [
+				"*"
+			]
+		},
+		"rc": {
+			"methods": [
+				"*"
+			]
+		},
+		"rpc-sys": {
+			"methods": [
+				"*"
+			]
+		},
+		"system": {
+			"methods": [
+				"board",
+				"info",
+				"reboot",
+				"validate_firmware_image"
+			]
+		},
+		"uci": {
+			"methods": [
+				"*"
+			]
+		},
+		"dsl": {
+			"methods": [
+				"metrics",
+				"statistics"
+			]
+		},
+		"fingerprint": {
+			"methods": [
+				"fingerprint"
+			]
+		},
+		"hostapd.*": {
+			"methods": [
+				"del_client",
+				"wps_cancel",
+				"wps_start",
+				"wps_status"
+			]
+		},
+		"log": {
+			"methods": [
+				"read"
+			]
+		},
+		"network": {
+			"methods": [
+				"get_proto_handlers"
+			]
+		},
+		"network.device": {
+			"methods": [
+				"status"
+			]
+		},
+		"network.interface": {
+			"methods": [
+				"dump"
+			]
+		},
+		"network.rrdns": {
+			"methods": [
+				"lookup"
+			]
+		},
+		"service": {
+			"methods": [
+				"list"
+			]
+		}
+	}
+}
