@@ -362,8 +362,7 @@ struct rtpcs_sds_ops {
 	int (*set_pll_select)(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode,
 			      enum rtpcs_sds_pll_type pll);
 	int (*reset_cmu)(struct rtpcs_serdes *sds, enum rtpcs_sds_pll_type pll);
-	/* online reconfiguration of a running SerDes to another PLL */
-	int (*reconfigure_to_pll)(struct rtpcs_serdes *sds, enum rtpcs_sds_pll_type pll);
+	int (*set_power)(struct rtpcs_serdes *sds, bool on);
 
 	int (*config_polarity)(struct rtpcs_serdes *sds, unsigned int tx_pol,
 			       unsigned int rx_pol);
@@ -1558,6 +1557,49 @@ static int rtpcs_93xx_sds_set_pll_config(struct rtpcs_serdes *sds, enum rtpcs_sd
 	return ret;
 }
 
+static int rtpcs_93xx_sds_reconfigure_to_pll(struct rtpcs_serdes *sds,
+					     enum rtpcs_sds_pll_type pll)
+{
+	enum rtpcs_sds_usxgmii_submode submode = sds->usxgmii_submode;
+	enum rtpcs_sds_mode hw_mode = sds->hw_mode;
+	enum rtpcs_sds_pll_speed speed;
+	enum rtpcs_sds_pll_type old_pll;
+	int power_ret, ret;
+
+	if (pll >= RTPCS_SDS_PLL_TYPE_END)
+		return -EINVAL;
+
+	/* CMU allocation only requests migration to the other PLL. */
+	old_pll = pll == RTPCS_SDS_PLL_TYPE_LC ? RTPCS_SDS_PLL_TYPE_RING : RTPCS_SDS_PLL_TYPE_LC;
+
+	ret = rtpcs_93xx_sds_get_pll_config(sds, old_pll, &speed);
+	if (ret < 0)
+		return ret;
+
+	ret = sds->ops->set_power(sds, false);
+	if (ret < 0)
+		return ret;
+
+	ret = sds->ops->set_hw_mode(sds, RTPCS_SDS_MODE_OFF, RTPCS_SDS_USXGMII_SM_NONE);
+	if (ret < 0)
+		goto out_power_up;
+
+	ret = rtpcs_93xx_sds_set_pll_config(sds, pll, speed);
+	if (ret < 0)
+		goto out_power_up;
+
+	ret = sds->ops->set_pll_select(sds, hw_mode, pll);
+	if (ret < 0)
+		goto out_power_up;
+
+	ret = sds->ops->set_hw_mode(sds, hw_mode, submode);
+
+out_power_up:
+	power_ret = sds->ops->set_power(sds, true);
+
+	return ret < 0 ? ret : power_ret;
+}
+
 static int rtpcs_93xx_sds_config_cmu(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode)
 {
 	struct rtpcs_serdes *nb_sds = rtpcs_sds_get_neighbor(sds);
@@ -1618,7 +1660,7 @@ static int rtpcs_93xx_sds_config_cmu(struct rtpcs_serdes *sds, enum rtpcs_sds_mo
 			 "SerDes %d needs LC PLL, reconfigure SDS %d to use ring PLL\n",
 			 sds->id, nb_sds->id);
 
-		ret = nb_sds->ops->reconfigure_to_pll(nb_sds, RTPCS_SDS_PLL_TYPE_RING);
+		ret = rtpcs_93xx_sds_reconfigure_to_pll(nb_sds, RTPCS_SDS_PLL_TYPE_RING);
 		if (ret < 0)
 			return ret;
 
@@ -1715,26 +1757,10 @@ static int rtpcs_93xx_sds_set_mac_driven_mode(struct rtpcs_serdes *sds,
 }
 
 /*
- * Read/write the SerDes IP mode register: page 0x1f reg 0x09, bits 11:7
- * hold the 5-bit mode value, bit 6 is the "force mode" enable. The same
+ * Write the SerDes IP mode register: page 0x1f reg 0x09, bits 11:7 hold
+ * the 5-bit mode value and bit 6 is the "force mode" enable. The same
  * physical field is used on RTL930x and RTL931x.
  */
-static int rtpcs_93xx_sds_get_ip_mode(struct rtpcs_serdes *sds)
-{
-	const s16 *vals = sds->ctrl->cfg->sds_hw_mode_vals;
-	int raw;
-
-	raw = rtpcs_sds_read_bits(sds, PAGE_WDIG, 0x09, 11, 7);
-	if (raw < 0)
-		return raw;
-
-	for (int i = 0; i < RTPCS_SDS_MODE_MAX; i++)
-		if (vals[i] == raw)
-			return i;
-
-	return -ENOENT;
-}
-
 static int rtpcs_93xx_sds_set_ip_mode(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode)
 {
 	int raw;
@@ -2001,53 +2027,16 @@ static int rtpcs_930x_sds_wait_clock_ready(struct rtpcs_serdes *sds)
 	return -EBUSY;
 }
 
-static void rtpcs_930x_sds_set_power(struct rtpcs_serdes *sds, bool on)
+static int rtpcs_930x_sds_set_power(struct rtpcs_serdes *sds, bool on)
 {
 	int power_down, rx_enable;
 
 	power_down = on ? RTL93XX_FRC_PDOWN_UNFORCED : RTL93XX_FRC_PDOWN_FORCE_DOWN;
 	rx_enable = on ? RTL93XX_FRC_RX_EN_FORCE_ON : RTL93XX_FRC_RX_EN_FORCE_OFF;
 
-	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, ANA_MISC_REG00,
-			     RTL93XX_FRC_PDOWN | RTL93XX_FRC_RX_EN,
-			     power_down | rx_enable);
-}
-
-static int rtpcs_930x_sds_reconfigure_to_pll(struct rtpcs_serdes *sds, enum rtpcs_sds_pll_type pll)
-{
-	enum rtpcs_sds_pll_speed speed;
-	enum rtpcs_sds_pll_type old_pll;
-	int hw_mode, ret;
-
-	hw_mode = rtpcs_93xx_sds_get_ip_mode(sds);
-	if (hw_mode < 0)
-		return hw_mode;
-
-	ret = rtpcs_930x_sds_get_pll_select(sds, &old_pll);
-	if (ret < 0)
-		return ret;
-
-	ret = rtpcs_93xx_sds_get_pll_config(sds, old_pll, &speed);
-	if (ret < 0)
-		return ret;
-
-	rtpcs_930x_sds_set_power(sds, false);
-	rtpcs_93xx_sds_set_ip_mode(sds, RTPCS_SDS_MODE_OFF);
-
-	ret = rtpcs_93xx_sds_set_pll_config(sds, pll, speed);
-	if (ret < 0)
-		return ret;
-
-	ret = rtpcs_930x_sds_set_pll_select(sds, sds->hw_mode, pll);
-	if (ret < 0)
-		return ret;
-
-	rtpcs_93xx_sds_set_ip_mode(sds, hw_mode);
-	if (rtpcs_930x_sds_wait_clock_ready(sds))
-		dev_err(sds->ctrl->dev, "SerDes %d could not sync clock\n", sds->id);
-
-	rtpcs_930x_sds_set_power(sds, true);
-	return 0;
+	return rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, ANA_MISC_REG00,
+				    RTL93XX_FRC_PDOWN | RTL93XX_FRC_RX_EN,
+				    power_down | rx_enable);
 }
 
 static void rtpcs_930x_sds_reset_state_machine(struct rtpcs_serdes *sds)
@@ -2086,66 +2075,33 @@ static int rtpcs_930x_sds_init_state_machine(struct rtpcs_serdes *sds,
 	return ret;
 }
 
-static int rtpcs_930x_sds_apply_ip_mode(struct rtpcs_serdes *sds,
-					enum rtpcs_sds_mode hw_mode)
-{
-	struct device *dev = sds->ctrl->dev;
-	int ret;
-
-	/*
-	 * TODO: Usually one would expect that it is enough to modify the SDS_MODE_SEL_*
-	 * registers (lets call it MAC setup). It seems as if this complex sequence is only
-	 * needed for modes that cannot be set by the SoC itself. Additionally it is unclear
-	 * if this sequence should quit early in case of errors.
-	 */
-
-	ret = rtpcs_93xx_sds_set_ip_mode(sds, RTPCS_SDS_MODE_OFF);
-	if (ret < 0)
-		return ret;
-
-	if (hw_mode == RTPCS_SDS_MODE_OFF)
-		return 0;
-
-	ret = rtpcs_93xx_sds_config_cmu(sds, hw_mode);
-	if (ret < 0)
-		dev_err(dev, "SerDes %d could not configure PLL for mode %d: %d\n",
-			sds->id, hw_mode, ret);
-
-	ret = rtpcs_93xx_sds_set_ip_mode(sds, hw_mode);
-	if (ret < 0)
-		return ret;
-
-	if (rtpcs_930x_sds_wait_clock_ready(sds))
-		dev_err(dev, "SerDes %d could not sync clock\n", sds->id);
-
-	if (rtpcs_930x_sds_init_state_machine(sds, hw_mode))
-		dev_err(dev, "SerDes %d could not reset state machine\n", sds->id);
-
-	return 0;
-}
-
 static int rtpcs_930x_sds_set_mode(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode,
 				   enum rtpcs_sds_usxgmii_submode submode)
 {
-	/*
-	 * Several modes can be configured via MAC setup, just by setting
-	 * a register to a specific value and the MAC will configure
-	 * "everything" as needed. For some modes, this seems incomplete and
-	 * we need to do manual configuration in the SerDes IP core itself.
-	 */
+	int ret;
 
 	switch (hw_mode) {
 	case RTPCS_SDS_MODE_SGMII:
 	case RTPCS_SDS_MODE_1000BASEX:
 	case RTPCS_SDS_MODE_2500BASEX:
 	case RTPCS_SDS_MODE_10GBASER:
-		return rtpcs_930x_sds_apply_ip_mode(sds, hw_mode);
+		ret = rtpcs_93xx_sds_set_ip_mode(sds, hw_mode);
+		break;
 
 	default:
+		ret = rtpcs_93xx_sds_set_mac_driven_mode(sds, hw_mode, submode);
 		break;
 	}
+	if (ret)
+		return ret;
 
-	return rtpcs_93xx_sds_set_mac_driven_mode(sds, hw_mode, submode);
+	if (hw_mode != RTPCS_SDS_MODE_OFF && rtpcs_930x_sds_wait_clock_ready(sds))
+		dev_err(sds->ctrl->dev, "SerDes %d could not sync clock\n", sds->id);
+
+	if (rtpcs_930x_sds_init_state_machine(sds, hw_mode))
+		dev_err(sds->ctrl->dev, "SerDes %d could not reset state machine\n", sds->id);
+
+	return 0;
 }
 
 static int rtpcs_930x_sds_deactivate(struct rtpcs_serdes *sds)
@@ -3032,8 +2988,12 @@ static int rtpcs_930x_sds_config_hw_mode(struct rtpcs_serdes *sds, enum rtpcs_sd
 		if (sds->type != RTPCS_SDS_TYPE_5G)
 			return -ENOTSUPP;
 
-		return rtpcs_sds_apply_config(sds, rtpcs_930x_sds_cfg_5g_qsgmii,
-					      ARRAY_SIZE(rtpcs_930x_sds_cfg_5g_qsgmii));
+		ret = rtpcs_sds_apply_config(sds, rtpcs_930x_sds_cfg_5g_qsgmii,
+					     ARRAY_SIZE(rtpcs_930x_sds_cfg_5g_qsgmii));
+		if (ret < 0)
+			return ret;
+
+		goto config_cmu;
 	}
 
 	if (hw_mode != RTPCS_SDS_MODE_USXGMII) {
@@ -3112,6 +3072,15 @@ static int rtpcs_930x_sds_config_hw_mode(struct rtpcs_serdes *sds, enum rtpcs_sd
 
 	if (hw_mode == RTPCS_SDS_MODE_10GBASER && is_even_sds)
 		rtpcs_sds_write(sds, PAGE_ANA_10G_EXT, 0x1D, 0x76E1);
+
+config_cmu:
+	ret = rtpcs_93xx_sds_config_cmu(sds, hw_mode);
+	if (ret < 0) {
+		dev_err(sds->ctrl->dev,
+			"SerDes %d could not configure PLL for mode %d: %d\n",
+			sds->id, hw_mode, ret);
+		return ret;
+	}
 
 	return 0;
 }
@@ -3767,48 +3736,6 @@ static int rtpcs_931x_sds_set_pll_select(struct rtpcs_serdes *sds, enum rtpcs_sd
 		return ret;
 
 	return rtpcs_sds_write_bits(sds, cmu_page, 0x7, 15, 15, pll);
-}
-
-static int rtpcs_931x_sds_reconfigure_to_pll(struct rtpcs_serdes *sds, enum rtpcs_sds_pll_type pll)
-{
-	enum rtpcs_sds_pll_type tmp_pll;
-	enum rtpcs_sds_pll_speed speed;
-	enum rtpcs_sds_mode tmp_mode;
-	int ret;
-
-	/* assume we always reconfigure to the other PLL */
-	tmp_pll = (pll == RTPCS_SDS_PLL_TYPE_LC) ? RTPCS_SDS_PLL_TYPE_RING : RTPCS_SDS_PLL_TYPE_LC;
-
-	ret = rtpcs_93xx_sds_get_pll_config(sds, tmp_pll, &speed);
-	if (ret < 0)
-		return ret;
-
-	tmp_mode = sds->hw_mode;
-
-	/* turn off SerDes for reconfiguration */
-	ret = rtpcs_931x_sds_power(sds, false);
-	if (ret < 0)
-		return ret;
-
-	ret = rtpcs_931x_sds_set_mode(sds, RTPCS_SDS_MODE_OFF, RTPCS_SDS_USXGMII_SM_NONE);
-	if (ret < 0)
-		return ret;
-
-	/* reconfigure to other PLL */
-	ret = rtpcs_93xx_sds_set_pll_config(sds, pll, speed);
-	if (ret < 0)
-		return ret;
-
-	ret = rtpcs_931x_sds_set_pll_select(sds, sds->hw_mode, pll);
-	if (ret < 0)
-		return ret;
-
-	/* turn on SerDes again */
-	ret = rtpcs_931x_sds_set_mode(sds, tmp_mode, sds->usxgmii_submode);
-	if (ret < 0)
-		return ret;
-
-	return rtpcs_931x_sds_power(sds, true);
 }
 
 static int rtpcs_931x_sds_config_polarity(struct rtpcs_serdes *sds, unsigned int tx_pol,
@@ -4715,7 +4642,7 @@ static const struct rtpcs_sds_ops rtpcs_930x_sds_ops = {
 	.get_pll_select		= rtpcs_930x_sds_get_pll_select,
 	.set_pll_select		= rtpcs_930x_sds_set_pll_select,
 	.reset_cmu		= rtpcs_930x_sds_reset_cmu,
-	.reconfigure_to_pll	= rtpcs_930x_sds_reconfigure_to_pll,
+	.set_power		= rtpcs_930x_sds_set_power,
 	.config_polarity	= rtpcs_930x_sds_config_polarity,
 	.deactivate		= rtpcs_930x_sds_deactivate,
 	.activate		= rtpcs_930x_sds_activate,
@@ -4757,7 +4684,7 @@ static const struct rtpcs_sds_ops rtpcs_931x_sds_ops = {
 	.restart_autoneg	= rtpcs_generic_sds_restart_autoneg,
 	.get_pll_select		= rtpcs_931x_sds_get_pll_select,
 	.set_pll_select		= rtpcs_931x_sds_set_pll_select,
-	.reconfigure_to_pll	= rtpcs_931x_sds_reconfigure_to_pll,
+	.set_power		= rtpcs_931x_sds_power,
 	.config_polarity	= rtpcs_931x_sds_config_polarity,
 	.deactivate		= rtpcs_931x_sds_deactivate,
 	.activate		= rtpcs_931x_sds_activate,
