@@ -1216,6 +1216,7 @@ static int otto_l3_fib_del_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 	struct fib_nh *nh = fib_info_nh(info->fi, 0);
 	struct rhlist_head *tmp, *list;
 	struct otto_l3_route *route;
+	bool found = false;
 
 	if (otto_l3_fib_check_v4(ctrl, info, FIB_EVENT_ENTRY_DEL))
 		return 0;
@@ -1231,10 +1232,17 @@ static int otto_l3_fib_del_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 		if (route->dst_ip == info->dst && route->prefix_len == info->dst_len) {
 			dev_info(ctrl->dev, "found a route with id %d, nh-id %d\n",
 				 route->id, route->nh.id);
+			found = true;
 			break;
 		}
 	}
 	rcu_read_unlock();
+
+	if (!found) {
+		dev_err(ctrl->dev, "no route %pI4/%d via %pI4\n",
+			&info->dst, info->dst_len, &nh->fib_nh_gw4);
+		return -ENOENT;
+	}
 
 	rtl83xx_l2_nexthop_rm(priv, &route->nh);
 
