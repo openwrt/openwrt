@@ -1,0 +1,95 @@
+From ae67c4786051a81147975ed37c072c9139576d7c Mon Sep 17 00:00:00 2001
+From: Alan Gao <1226010136@qq.com>
+Date: Tue, 25 Aug 2026 00:00:00 +0800
+Subject: [PATCH] remoteproc: qcom_q6v5_mpd: skip MSA lock for internal radio
+
+The MPD start sequence applies MSA lock and unlock operations to every
+user protection domain before selecting the IPQ5018-specific internal
+radio power-up sequence.
+
+The original IPQ5018 MPD implementation used the dedicated internal
+Wi-Fi SCM calls for the AHB radio without applying the MSA lock.  The
+current driver instead reaches those calls only after the generic MSA
+lock.  On firmware following the original sequence, the lock for PASID
+0x112 is rejected with -EINVAL and startup stops before the internal
+radio power-up call.
+
+Describe the IPQ5018 MSA-lock exception in the per-SoC data and combine
+it with ASID 1 when applying the lock and unlock.  Keep the existing
+ASID-based selection of the dedicated power-up and shutdown calls
+unchanged, so other SoCs retain their current behavior.  External radio
+protection domains also continue to use the generic MSA sequence.
+
+The original IPQ5018 MPD implementation is available at:
+https://patches.linaro.org/patch/660628/
+
+Signed-off-by: Alan Gao <1226010136@qq.com>
+---
+ drivers/remoteproc/qcom_q6v5_mpd.c | 26 ++++++++++++++++++--------
+ 1 file changed, 18 insertions(+), 8 deletions(-)
+
+--- a/drivers/remoteproc/qcom_q6v5_mpd.c
++++ b/drivers/remoteproc/qcom_q6v5_mpd.c
+@@ -99,6 +99,7 @@ struct userpd {
+ struct wcss_data {
+ 	u32 pasid;
+ 	bool share_upd_info_to_q6;
++	bool skip_msa_lock_internal_radio;
+ 	u8 bootargs_version;
+ };
+ 
+@@ -164,12 +165,16 @@ static int wcss_pd_start(struct rproc *r
+ 	struct rproc *rpd_rproc = dev_get_drvdata(upd->dev->parent);
+ 	struct q6_wcss *wcss = rpd_rproc->priv;
+ 	u32 pasid = (upd->pd_asid << 8) | UPD_SWID;
++	bool skip_msa_lock = wcss->desc->skip_msa_lock_internal_radio &&
++			     upd->pd_asid == 1;
+ 	int ret;
+ 
+-	ret = qcom_scm_msa_lock(pasid);
+-	if (ret) {
+-		dev_err(upd->dev, "failed to power up pd\n");
+-		return ret;
++	if (!skip_msa_lock) {
++		ret = qcom_scm_msa_lock(pasid);
++		if (ret) {
++			dev_err(upd->dev, "failed to power up pd\n");
++			return ret;
++		}
+ 	}
+ 
+ 	if (upd->q6.spawn_bit) {
+@@ -242,6 +247,8 @@ static int wcss_pd_stop(struct rproc *rp
+ 	struct rproc *rpd_rproc = dev_get_drvdata(upd->dev->parent);
+ 	struct q6_wcss *wcss = rpd_rproc->priv;
+ 	u32 pasid = (upd->pd_asid << 8) | UPD_SWID;
++	bool skip_msa_lock = wcss->desc->skip_msa_lock_internal_radio &&
++			     upd->pd_asid == 1;
+ 	int ret;
+ 
+ 	if (rproc->state != RPROC_CRASHED && upd->q6.stop_bit) {
+@@ -260,10 +267,12 @@ static int wcss_pd_stop(struct rproc *rp
+ 		}
+ 	}
+ 
+-	ret = qcom_scm_msa_unlock(pasid);
+-	if (ret) {
+-		dev_err(upd->dev, "failed to power down pd\n");
+-		return ret;
++	if (!skip_msa_lock) {
++		ret = qcom_scm_msa_unlock(pasid);
++		if (ret) {
++			dev_err(upd->dev, "failed to power down pd\n");
++			return ret;
++		}
+ 	}
+ 
+ 	rproc_shutdown(rpd_rproc);
+@@ -845,6 +854,7 @@ static void q6_wcss_remove(struct platfo
+ static const struct wcss_data q6_ipq5018_res_init = {
+ 	.pasid = MPD_WCNSS_PAS_ID,
+ 	.share_upd_info_to_q6 = true,
++	.skip_msa_lock_internal_radio = true,
+ 	.bootargs_version = VERSION1,
+ 	// .mdt_load_sec = qcom_mdt_load_pd_seg,
+ };
