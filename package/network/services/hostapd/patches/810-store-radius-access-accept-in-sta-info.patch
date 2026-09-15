@@ -1,0 +1,177 @@
+From f75364dd8cfd3d9c5dbeac407ecb6373d1a90376 Mon Sep 17 00:00:00 2001
+From: "Gregory N. Schmit" <schmitgreg@gmail.com>
+Date: Fri, 13 Feb 2026 16:35:41 -0600
+Subject: [PATCH] hostapd: store RADIUS Access-Accept in STA Info
+
+Store RADIUS Access-Accept message in the `sta_info` struct so it can
+be retrieved later if needed, e.g. to inspect RADIUS attributes. Also,
+add two functions to the RADIUS module to enable iterating over the
+attributes in a RADIUS message.
+
+This change is required to support the ability of openwrt's ubus module
+to provide a station's RADIUS attributes in the response of the
+`get_clients` call. This change is motivated by a dynamic tunnel
+initiator program I am working on
+(https://github.com/gregschmit/dtuninit), which needs to know the tunnel
+parameters provided by the RADIUS server, however it could be useful for
+other purposes as well.
+
+Signed-off-by: Gregory N. Schmit <schmitgreg@gmail.com>
+---
+ src/ap/ieee802_11_auth.c | 17 +++++++++++++++++
+ src/ap/ieee802_1x.c      | 16 ++++++++++++++++
+ src/ap/sta_info.c        |  4 ++++
+ src/ap/sta_info.h        |  7 +++++++
+ src/radius/radius.c      | 27 +++++++++++++++++++++++++++
+ src/radius/radius.h      |  3 +++
+ 6 files changed, 74 insertions(+)
+
+diff --git a/src/ap/ieee802_11_auth.c b/src/ap/ieee802_11_auth.c
+index 913a995978..c9c8ec176e 100644
+--- a/src/ap/ieee802_11_auth.c
++++ b/src/ap/ieee802_11_auth.c
+@@ -610,6 +610,23 @@ hostapd_acl_recv_radius(struct radius_msg *msg, struct radius_msg *req,
+ 				   "No STA/SM entry found for the RADIUS PSK response");
+ 			goto done;
+ 		}
++
++		if (success) {
++			/* Store a copy of the message for later retrieval. */
++			struct radius_msg *new_msg;
++
++			new_msg = radius_msg_parse(
++				wpabuf_head(radius_msg_get_buf(msg)),
++				wpabuf_len(radius_msg_get_buf(msg))
++			);
++			if (new_msg) {
++				radius_msg_free(sta->radius_accept);
++				sta->radius_accept = new_msg;
++			} else {
++				wpa_printf(MSG_ERROR,
++					   "Failed to parse RADIUS Access-Accept for storage");
++			}
++		}
+ #ifdef NEED_AP_MLME
+ 		if (success &&
+ 		    (ieee802_11_set_radius_info(hapd, sta, cache->accepted,
+diff --git a/src/ap/ieee802_1x.c b/src/ap/ieee802_1x.c
+index dda0efac52..3d75c1da57 100644
+--- a/src/ap/ieee802_1x.c
++++ b/src/ap/ieee802_1x.c
+@@ -2100,6 +2100,22 @@ ieee802_1x_receive_auth(struct radius_msg *msg, struct radius_msg *req,
+ 
+ 	switch (hdr->code) {
+ 	case RADIUS_CODE_ACCESS_ACCEPT:
++		/* Store a copy of the message for later retrieval. */
++		{
++			struct radius_msg *new_msg;
++
++			new_msg = radius_msg_parse(
++				wpabuf_head(radius_msg_get_buf(msg)),
++				wpabuf_len(radius_msg_get_buf(msg))
++			);
++			if (new_msg) {
++				radius_msg_free(sta->radius_accept);
++				sta->radius_accept = new_msg;
++			} else {
++				wpa_printf(MSG_ERROR,
++					   "Failed to parse RADIUS Access-Accept for storage");
++			}
++		}
+ #ifndef CONFIG_NO_VLAN
+ 		if (hapd->conf->ssid.dynamic_vlan != DYNAMIC_VLAN_DISABLED &&
+ 		    ieee802_1x_update_vlan(msg, hapd, sta) < 0)
+diff --git a/src/ap/sta_info.c b/src/ap/sta_info.c
+index e3218812f5..39aad9383d 100644
+--- a/src/ap/sta_info.c
++++ b/src/ap/sta_info.c
+@@ -421,6 +421,10 @@ void ap_free_sta(struct hostapd_data *hapd, struct sta_info *sta)
+ 	hostapd_free_psk_list(sta->psk);
+ 	os_free(sta->identity);
+ 	os_free(sta->radius_cui);
++#ifndef CONFIG_NO_RADIUS
++	radius_msg_free(sta->radius_accept);
++	sta->radius_accept = NULL;
++#endif /* CONFIG_NO_RADIUS */
+ 	os_free(sta->t_c_url);
+ 	wpabuf_free(sta->hs20_deauth_req);
+ 	os_free(sta->hs20_session_info_url);
+diff --git a/src/ap/sta_info.h b/src/ap/sta_info.h
+index f08cbcfae9..cab09e24e6 100644
+--- a/src/ap/sta_info.h
++++ b/src/ap/sta_info.h
+@@ -19,6 +19,10 @@
+ #include "pasn/pasn_common.h"
+ #include "hostapd.h"
+ 
++#ifndef CONFIG_NO_RADIUS
++#include "radius/radius.h"
++#endif /* CONFIG_NO_RADIUS */
++
+ /* STA flags */
+ #define WLAN_STA_AUTH BIT(0)
+ #define WLAN_STA_ASSOC BIT(1)
+@@ -187,6 +191,9 @@ struct sta_info {
+ 
+ 	char *identity; /* User-Name from RADIUS */
+ 	char *radius_cui; /* Chargeable-User-Identity from RADIUS */
++#ifndef CONFIG_NO_RADIUS
++	struct radius_msg *radius_accept; /* RADIUS Access-Accept Message */
++#endif /* CONFIG_NO_RADIUS */
+ 
+ 	struct ieee80211_ht_capabilities *ht_capabilities;
+ 	struct ieee80211_vht_capabilities *vht_capabilities;
+diff --git a/src/radius/radius.c b/src/radius/radius.c
+index b72e5e9528..339ae51d60 100644
+--- a/src/radius/radius.c
++++ b/src/radius/radius.c
+@@ -422,6 +422,33 @@ void radius_msg_dump(struct radius_msg *msg)
+ 	}
+ }
+ 
++/**
++ * radius_msg_get_attr_used - Get number of attributes in RADIUS message
++ * @msg: RADIUS message
++ * Returns: Number of attributes in the message
++ */
++size_t radius_msg_get_attr_used(struct radius_msg *msg)
++{
++	return msg->attr_used;
++}
++
++
++/**
++ * radius_msg_get_attr_hdr - Get attribute header by index
++ * @msg: RADIUS message
++ * @idx: Attribute index (0 .. radius_msg_get_attr_used() - 1)
++ * Returns: Pointer to attribute header or %NULL if index is out of bounds
++ *
++ * This function can be used to iterate over all attributes in a RADIUS
++ * message. The caller should not modify the returned data.
++ */
++struct radius_attr_hdr *
++radius_msg_get_attr_hdr(struct radius_msg *msg, size_t idx)
++{
++	if (idx >= msg->attr_used) { return NULL; }
++
++	return radius_get_attr_hdr(msg, idx);
++}
+ 
+ u8 * radius_msg_add_msg_auth(struct radius_msg *msg)
+ {
+diff --git a/src/radius/radius.h b/src/radius/radius.h
+index 25a4744c22..1d8a739e6a 100644
+--- a/src/radius/radius.h
++++ b/src/radius/radius.h
+@@ -271,6 +271,9 @@ struct wpabuf * radius_msg_get_buf(struct radius_msg *msg);
+ struct radius_msg * radius_msg_new(u8 code, u8 identifier);
+ void radius_msg_free(struct radius_msg *msg);
+ void radius_msg_dump(struct radius_msg *msg);
++size_t radius_msg_get_attr_used(struct radius_msg *msg);
++struct radius_attr_hdr *
++radius_msg_get_attr_hdr(struct radius_msg *msg, size_t idx);
+ u8 * radius_msg_add_msg_auth(struct radius_msg *msg);
+ int radius_msg_finish(struct radius_msg *msg, const u8 *secret,
+ 		      size_t secret_len);
+-- 
+2.47.1
