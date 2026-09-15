@@ -78,6 +78,8 @@ struct otto_l3_route {
 	bool is_host_route;
 	int id;				/* ID number of this route */
 	struct rhlist_head linkage;
+	struct list_head list;		/* all routes, for lookups by destination */
+	u32 tb_id;			/* routing table the route came from */
 	u16 switch_mac_id;		/* Index into switch's own MACs, RTL839X only */
 	struct otto_l3_nexthop nh;
 	struct pie_rule pr;
@@ -108,6 +110,7 @@ struct otto_l3_ctrl {
 	struct notifier_block fib_nb;
 	struct notifier_block ne_nb;
 	struct rhltable routes;
+	struct list_head routes_list;
 	unsigned long route_use_bm[MAX_ROUTES / 32];
 	unsigned long host_route_use_bm[MAX_HOST_ROUTES / 32];
 	struct otto_l3_intf *interfaces[MAX_INTERFACES];

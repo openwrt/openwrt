@@ -990,6 +990,35 @@ static bool otto_l3_route_is_at(struct otto_l3_ctrl *ctrl, int id, struct otto_l
 	return false;
 }
 
+/* The routes are hashed on the gateway, which is the field a replace
+ * changes, so a lookup by destination needs a list of its own.
+ */
+static struct otto_l3_route *otto_l3_route_find(struct otto_l3_ctrl *ctrl, u32 tb_id, u8 type,
+						u32 dst_ip, const struct in6_addr *dst_ip6,
+						int prefix_len)
+{
+	struct otto_l3_route *r;
+
+	list_for_each_entry(r, &ctrl->routes_list, list) {
+		if (r->tb_id != tb_id || r->attr.type != type ||
+		    r->prefix_len != prefix_len)
+			continue;
+
+		switch (type) {
+		case ROUTE_TYPE_IP4UC:
+			if (r->dst_ip == dst_ip)
+				return r;
+			break;
+		case ROUTE_TYPE_IP6UC:
+			if (ipv6_addr_equal(&r->dst_ip6, dst_ip6))
+				return r;
+			break;
+		}
+	}
+
+	return NULL;
+}
+
 static void otto_l3_route_remove(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r)
 {
 	int id;
@@ -1038,7 +1067,26 @@ static void otto_l3_route_remove(struct otto_l3_ctrl *ctrl, struct otto_l3_route
 		clear_bit(r->id, ctrl->route_use_bm);
 	}
 
+	list_del(&r->list);
 	kfree(r);
+}
+
+static void otto_l3_route_teardown(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r)
+{
+	struct rtl838x_switch_priv *priv = ctrl->priv;
+
+	/* A route whose gateway never resolved holds no next hop and no PIE
+	 * rule: otto_l3_nexthop_update() is what allocates them.
+	 */
+	if (r->pr.id >= 0) {
+		rtl83xx_l2_nexthop_rm(priv, &r->nh);
+		priv->r->pie_rule_rm(priv, &r->pr);
+	}
+
+	dev_dbg(ctrl->dev, "releasing packet counter %d\n", r->pr.packet_cntr);
+	rtldsa_packet_cntr_free(priv, r->pr.packet_cntr);
+
+	otto_l3_route_remove(ctrl, r);
 }
 
 static struct otto_l3_route *otto_l3_host_route_alloc(struct otto_l3_ctrl *ctrl, u32 ip)
@@ -1080,6 +1128,7 @@ static struct otto_l3_route *otto_l3_host_route_alloc(struct otto_l3_ctrl *ctrl,
 		goto out_free;
 	}
 
+	list_add_tail(&r->list, &ctrl->routes_list);
 	set_bit(idx, ctrl->host_route_use_bm);
 
 	mutex_unlock(ctrl->lock);
@@ -1127,6 +1176,7 @@ static struct otto_l3_route *otto_l3_route_alloc(struct otto_l3_ctrl *ctrl, u32 
 		goto out_free;
 	}
 
+	list_add_tail(&r->list, &ctrl->routes_list);
 	set_bit(idx, ctrl->route_use_bm);
 
 	mutex_unlock(ctrl->lock);
@@ -1181,6 +1231,17 @@ static int otto_l3_fib_add_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 		return -ENODEV;
 	}
 
+	/* Every add that reaches the driver arrives as a replace, so a route
+	 * for this destination may already be programmed. Take it out first.
+	 */
+	route = otto_l3_route_find(ctrl, info->tb_id, ROUTE_TYPE_IP4UC, info->dst, NULL,
+				   info->dst_len);
+	if (route) {
+		dev_dbg(ctrl->dev, "replacing route %pI4/%d, id %d\n",
+			&info->dst, info->dst_len, route->id);
+		otto_l3_route_teardown(ctrl, route);
+	}
+
 	/* Allocate route or host-route entry (if hardware supports this) */
 	if (info->dst_len == 32 && ctrl->cfg->host_route_write)
 		route = otto_l3_host_route_alloc(ctrl, nh->fib_nh_gw4);
@@ -1197,6 +1258,8 @@ static int otto_l3_fib_add_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 
 	route->dst_ip = info->dst;
 	route->prefix_len = info->dst_len;
+	route->tb_id = info->tb_id;
+	route->attr.type = ROUTE_TYPE_IP4UC;
 	route->nh.rvid = vlan;
 
 	if (ctrl->cfg->set_router_mac) {
@@ -1250,7 +1313,6 @@ out_free_rt:
 
 static int otto_l3_fib_del_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifier_info *info)
 {
-	struct rtl838x_switch_priv *priv = ctrl->priv;
 	struct fib_nh *nh = fib_info_nh(info->fi, 0);
 	struct rhlist_head *tmp, *list;
 	struct otto_l3_route *route;
@@ -1282,18 +1344,7 @@ static int otto_l3_fib_del_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 		return -ENOENT;
 	}
 
-	/* A route whose gateway never resolved holds no next hop and no PIE
-	 * rule: otto_l3_nexthop_update() is what allocates them.
-	 */
-	if (route->pr.id >= 0) {
-		rtl83xx_l2_nexthop_rm(priv, &route->nh);
-		priv->r->pie_rule_rm(priv, &route->pr);
-	}
-
-	dev_dbg(ctrl->dev, "releasing packet counter %d\n", route->pr.packet_cntr);
-	rtldsa_packet_cntr_free(priv, route->pr.packet_cntr);
-
-	otto_l3_route_remove(ctrl, route);
+	otto_l3_route_teardown(ctrl, route);
 
 	nh->fib_nh_flags &= ~RTNH_F_OFFLOAD;
 
@@ -2008,6 +2059,7 @@ int otto_l3_probe(struct device *dev, struct rtl838x_switch_priv *priv)
 	}
 
 	/* Initialize hash table for L3 routing */
+	INIT_LIST_HEAD(&ctrl->routes_list);
 	rhltable_init(&ctrl->routes, &otto_l3_route_ht_params);
 
 	/*
