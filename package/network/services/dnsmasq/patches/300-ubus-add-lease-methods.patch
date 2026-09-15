@@ -1,0 +1,400 @@
+From: Pierre Gaufillet <pierre.gaufillet@bergamote.eu>
+Date: Tue, 05 May 2026 08:33:45 +0200
+Subject: [PATCH] dnsmasq: add ubus methods for DHCP lease management
+
+Adds add_lease, delete_lease, and get_leases ubus methods with input
+validation and hardened handlers. Enables external daemons (e.g.
+lease-sync) to synchronize DHCP leases across HA cluster nodes.
+
+Signed-off-by: Pierre Gaufillet <pierre.gaufillet@bergamote.eu>
+---
+--- a/src/dnsmasq.h
++++ b/src/dnsmasq.h
+@@ -1618,6 +1618,7 @@ char *host_from_dns(struct in_addr addr);
+ 
+ /* lease.c */
+ #ifdef HAVE_DHCP
++struct dhcp_lease *lease_get_all(void);
+ void lease_update_file(time_t now);
+ void lease_update_dns(int force);
+ void lease_init(time_t now);
+--- a/src/lease.c
++++ b/src/lease.c
+@@ -163,6 +163,11 @@ static int read_leases(time_t now, FILE *leasestream)
+     return (items == 0 || items == EOF);
+ }
+ 
++struct dhcp_lease *lease_get_all(void)
++{
++  return leases;
++}
++
+ void lease_init(time_t now)
+ {
+   FILE *leasestream;
+--- a/src/ubus.c
++++ b/src/ubus.c
+@@ -27,6 +27,48 @@ static int ubus_handle_metrics(struct ubus_context *ctx, struct ubus_object *obj
+ 			       struct ubus_request_data *req, const char *method,
+ 			       struct blob_attr *msg);
+ 
++#ifdef HAVE_DHCP
++enum {
++  ADD_LEASE_IP,
++  ADD_LEASE_MAC,
++  ADD_LEASE_HOSTNAME,
++  ADD_LEASE_CLIENT_ID,
++  ADD_LEASE_EXPIRES,
++  ADD_LEASE_IA_ID,
++  ADD_LEASE_IS_TEMPORARY,
++  __ADD_LEASE_MAX
++};
++
++static const struct blobmsg_policy add_lease_policy[__ADD_LEASE_MAX] = {
++  [ADD_LEASE_IP] = { .name = "ip", .type = BLOBMSG_TYPE_STRING },
++  [ADD_LEASE_MAC] = { .name = "mac", .type = BLOBMSG_TYPE_STRING },
++  [ADD_LEASE_HOSTNAME] = { .name = "hostname", .type = BLOBMSG_TYPE_STRING },
++  [ADD_LEASE_CLIENT_ID] = { .name = "client_id", .type = BLOBMSG_TYPE_STRING },
++  [ADD_LEASE_EXPIRES] = { .name = "expires", .type = BLOBMSG_TYPE_INT32 },
++  [ADD_LEASE_IA_ID] = { .name = "iaid", .type = BLOBMSG_TYPE_INT32 },
++  [ADD_LEASE_IS_TEMPORARY] = { .name = "is_temporary", .type = BLOBMSG_TYPE_BOOL },
++};
++
++enum {
++  DELETE_LEASE_IP,
++  __DELETE_LEASE_MAX
++};
++
++static const struct blobmsg_policy delete_lease_policy[__DELETE_LEASE_MAX] = {
++  [DELETE_LEASE_IP] = { .name = "ip", .type = BLOBMSG_TYPE_STRING },
++};
++
++static int ubus_handle_add_lease(struct ubus_context *ctx, struct ubus_object *obj,
++				  struct ubus_request_data *req, const char *method,
++				  struct blob_attr *msg);
++static int ubus_handle_delete_lease(struct ubus_context *ctx, struct ubus_object *obj,
++				     struct ubus_request_data *req, const char *method,
++				     struct blob_attr *msg);
++static int ubus_handle_get_leases(struct ubus_context *ctx, struct ubus_object *obj,
++				   struct ubus_request_data *req, const char *method,
++				   struct blob_attr *msg);
++#endif
++
+ #ifdef HAVE_CONNTRACK
+ enum {
+   SET_CONNMARK_ALLOWLIST_MARK,
+@@ -56,6 +98,11 @@ static void ubus_subscribe_cb(struct ubus_context *ctx, struct ubus_object *obj)
+ 
+ static const struct ubus_method ubus_object_methods[] = {
+   UBUS_METHOD_NOARG("metrics", ubus_handle_metrics),
++#ifdef HAVE_DHCP
++  UBUS_METHOD("add_lease", ubus_handle_add_lease, add_lease_policy),
++  UBUS_METHOD("delete_lease", ubus_handle_delete_lease, delete_lease_policy),
++  UBUS_METHOD_NOARG("get_leases", ubus_handle_get_leases),
++#endif
+ #ifdef HAVE_CONNTRACK
+   UBUS_METHOD("set_connmark_allowlist", ubus_handle_set_connmark_allowlist, set_connmark_allowlist_policy),
+ #endif
+@@ -195,10 +242,301 @@ static int ubus_handle_metrics(struct ubus_context *ctx, struct ubus_object *obj
+ 
+   for (i=0; i < __METRIC_MAX; i++)
+     CHECK(blobmsg_add_u32(&b, get_metric_name(i), daemon->metrics[i]));
+-  
++
++  CHECK(ubus_send_reply(ctx, req, b.head));
++  return UBUS_STATUS_OK;
++}
++
++#ifdef HAVE_DHCP
++static int ubus_handle_add_lease(struct ubus_context *ctx, struct ubus_object *obj,
++				  struct ubus_request_data *req, const char *method,
++				  struct blob_attr *msg)
++{
++  struct blob_attr *tb[__ADD_LEASE_MAX];
++  struct dhcp_lease *lease;
++  const char *ipaddr, *hwaddr, *hostname, *client_id;
++  union all_addr addr;
++  unsigned char hwaddr_bin[DHCP_CHADDR_MAX];
++  unsigned char clid_bin[256];
++  char hwaddr_str[DHCP_CHADDR_MAX * 3 + 1];
++  int hw_len, hw_type, clid_len = 0;
++  int i;
++  time_t now = dnsmasq_time();
++  uint32_t expires;
++  uint32_t ia_id = 0;
++  int is_temporary = 0;
++
++  (void)ctx;
++  (void)obj;
++  (void)req;
++  (void)method;
++
++  blobmsg_parse(add_lease_policy, __ADD_LEASE_MAX, tb, blob_data(msg), blob_len(msg));
++
++  if (!tb[ADD_LEASE_IP] || !tb[ADD_LEASE_MAC] || !tb[ADD_LEASE_EXPIRES])
++    {
++      my_syslog(LOG_ERR, _("UBus add_lease: missing required parameters (ip, mac, expires)"));
++      return UBUS_STATUS_INVALID_ARGUMENT;
++    }
++
++  ipaddr = blobmsg_get_string(tb[ADD_LEASE_IP]);
++  hwaddr = blobmsg_get_string(tb[ADD_LEASE_MAC]);
++  expires = blobmsg_get_u32(tb[ADD_LEASE_EXPIRES]);
++
++  hostname = tb[ADD_LEASE_HOSTNAME] ? blobmsg_get_string(tb[ADD_LEASE_HOSTNAME]) : NULL;
++  client_id = tb[ADD_LEASE_CLIENT_ID] ? blobmsg_get_string(tb[ADD_LEASE_CLIENT_ID]) : NULL;
++
++  if (tb[ADD_LEASE_IA_ID])
++    ia_id = blobmsg_get_u32(tb[ADD_LEASE_IA_ID]);
++
++  if (tb[ADD_LEASE_IS_TEMPORARY])
++    is_temporary = blobmsg_get_bool(tb[ADD_LEASE_IS_TEMPORARY]);
++
++  if (expires == 0)
++    {
++      my_syslog(LOG_ERR, _("UBus add_lease: expires must be non-zero"));
++      return UBUS_STATUS_INVALID_ARGUMENT;
++    }
++
++  hw_len = parse_hex((char*)hwaddr, hwaddr_bin, DHCP_CHADDR_MAX, NULL, &hw_type);
++  if (hw_len <= 0)
++    {
++      my_syslog(LOG_ERR, _("UBus add_lease: invalid MAC address '%s'"), hwaddr);
++      return UBUS_STATUS_INVALID_ARGUMENT;
++    }
++
++  if (hw_type == 0)
++    hw_type = ARPHRD_ETHER;
++
++  if (client_id && *client_id)
++    {
++      clid_len = parse_hex((char*)client_id, clid_bin, sizeof(clid_bin), NULL, NULL);
++      if (clid_len < 0)
++	{
++	  my_syslog(LOG_WARNING, _("UBus add_lease: invalid client_id '%s', ignoring"), client_id);
++	  clid_len = 0;
++	}
++    }
++
++  if (hostname && *hostname && !legal_hostname((char *)hostname))
++    {
++      my_syslog(LOG_ERR, _("UBus add_lease: invalid hostname '%s'"), hostname);
++      return UBUS_STATUS_INVALID_ARGUMENT;
++    }
++
++  for (i = 0; i < hw_len; i++)
++    sprintf(hwaddr_str + i * 3, "%02x:", hwaddr_bin[i]);
++  hwaddr_str[hw_len * 3 - 1] = '\0';
++
++  if (inet_pton(AF_INET, ipaddr, &addr.addr4))
++    {
++      if (!daemon->dhcp)
++	{
++	  my_syslog(LOG_ERR, _("UBus add_lease: DHCPv4 not configured"));
++	  return UBUS_STATUS_INVALID_ARGUMENT;
++	}
++
++      if (ia_id != 0 || is_temporary)
++	{
++	  my_syslog(LOG_ERR, _("UBus add_lease: iaid and is_temporary must be zero for IPv4"));
++	  return UBUS_STATUS_INVALID_ARGUMENT;
++	}
++
++      if (!(lease = lease_find_by_addr(addr.addr4)))
++	lease = lease4_allocate(addr.addr4);
++    }
++#ifdef HAVE_DHCP6
++  else if (inet_pton(AF_INET6, ipaddr, &addr.addr6))
++    {
++      if (!daemon->doing_dhcp6)
++	{
++	  my_syslog(LOG_ERR, _("UBus add_lease: DHCPv6 not configured"));
++	  return UBUS_STATUS_INVALID_ARGUMENT;
++	}
++
++      if ((lease = lease6_find_by_addr(&addr.addr6, 128, 0)))
++	{
++	  if (lease->iaid != ia_id)
++	    {
++	      my_syslog(LOG_ERR, _("UBus add_lease: iaid %u does not match existing lease for %s"),
++			ia_id, ipaddr);
++	      return UBUS_STATUS_INVALID_ARGUMENT;
++	    }
++	}
++      else
++	{
++	  lease = lease6_allocate(&addr.addr6, is_temporary ? LEASE_TA : LEASE_NA);
++	  if (lease)
++	    lease_set_iaid(lease, ia_id);
++	}
++    }
++#endif
++  else
++    {
++      my_syslog(LOG_ERR, _("UBus add_lease: invalid IP address '%s'"), ipaddr);
++      return UBUS_STATUS_INVALID_ARGUMENT;
++    }
++
++  if (!lease)
++    {
++      my_syslog(LOG_ERR, _("UBus add_lease: unable to allocate lease for %s"), ipaddr);
++      return UBUS_STATUS_UNKNOWN_ERROR;
++    }
++
++  lease_set_hwaddr(lease, hwaddr_bin, clid_len > 0 ? clid_bin : NULL,
++		   hw_len, hw_type, clid_len, now, 0);
++
++  /* expires is duration (seconds remaining), matching dbus AddDhcpLease convention */
++  lease_set_expires(lease, expires, now);
++
++  if (hostname && *hostname)
++    {
++#ifdef HAVE_DHCP6
++      if (lease->flags & (LEASE_TA | LEASE_NA))
++	lease_set_hostname(lease, hostname, 0, get_domain6(&lease->addr6), NULL);
++      else
++#endif
++	lease_set_hostname(lease, hostname, 0, get_domain(lease->addr), NULL);
++    }
++
++  lease_update_file(now);
++  lease_update_dns(0);
++
++  /* Clear script-triggering flags - externally injected leases should not
++     trigger dhcp-script, matching the behavior of read_leases() at startup.
++     This prevents ping-pong in HA setups where lease-sync injects leases. */
++  lease->flags &= ~(LEASE_NEW | LEASE_CHANGED | LEASE_AUX_CHANGED | LEASE_EXP_CHANGED);
++
++  my_syslog(LOG_INFO, _("UBus add_lease: added %s %s %s"),
++	    ipaddr, hwaddr_str, hostname ? hostname : "");
++
++  return UBUS_STATUS_OK;
++}
++
++static int ubus_handle_delete_lease(struct ubus_context *ctx, struct ubus_object *obj,
++				     struct ubus_request_data *req, const char *method,
++				     struct blob_attr *msg)
++{
++  struct blob_attr *tb[__DELETE_LEASE_MAX];
++  struct dhcp_lease *lease = NULL;
++  const char *ipaddr;
++  union all_addr addr;
++  time_t now = dnsmasq_time();
++
++  (void)ctx;
++  (void)obj;
++  (void)req;
++  (void)method;
++
++  blobmsg_parse(delete_lease_policy, __DELETE_LEASE_MAX, tb, blob_data(msg), blob_len(msg));
++
++  if (!tb[DELETE_LEASE_IP])
++    return UBUS_STATUS_INVALID_ARGUMENT;
++
++  ipaddr = blobmsg_get_string(tb[DELETE_LEASE_IP]);
++
++  if (inet_pton(AF_INET, ipaddr, &addr.addr4) && daemon->dhcp)
++    lease = lease_find_by_addr(addr.addr4);
++#ifdef HAVE_DHCP6
++  else if (inet_pton(AF_INET6, ipaddr, &addr.addr6) && daemon->doing_dhcp6)
++    lease = lease6_find_by_addr(&addr.addr6, 128, 0);
++#endif
++
++  if (!lease)
++    {
++      my_syslog(LOG_DEBUG, _("UBus delete_lease: lease not found for %s"), ipaddr);
++      return UBUS_STATUS_NOT_FOUND;
++    }
++
++  lease_prune(lease, now);
++  lease_update_file(now);
++  lease_update_dns(0);
++
++  my_syslog(LOG_INFO, _("UBus delete_lease: deleted %s"), ipaddr);
++
++  return UBUS_STATUS_OK;
++}
++
++static int ubus_handle_get_leases(struct ubus_context *ctx, struct ubus_object *obj,
++				   struct ubus_request_data *req, const char *method,
++				   struct blob_attr *msg)
++{
++  struct dhcp_lease *lease;
++  void *array, *table;
++  char addr_str[INET6_ADDRSTRLEN];
++  char hwaddr_str[DHCP_CHADDR_MAX * 3 + 1];
++  char clid_str[256 * 3 + 1];
++  int i, n;
++  time_t now = dnsmasq_time();
++
++  (void)obj;
++  (void)method;
++  (void)msg;
++
++  CHECK(blob_buf_init(&b, 0));
++  array = blobmsg_open_array(&b, "leases");
++
++  for (lease = lease_get_all(); lease; lease = lease->next)
++    {
++      table = blobmsg_open_table(&b, NULL);
++
++#ifdef HAVE_DHCP6
++      if (lease->flags & (LEASE_TA | LEASE_NA))
++	{
++	  inet_ntop(AF_INET6, &lease->addr6, addr_str, sizeof(addr_str));
++	  CHECK(blobmsg_add_string(&b, "ip", addr_str));
++	  CHECK(blobmsg_add_string(&b, "type", (lease->flags & LEASE_TA) ? "temporary" : "normal"));
++	  CHECK(blobmsg_add_u32(&b, "iaid", lease->iaid));
++	}
++      else
++#endif
++	{
++	  inet_ntop(AF_INET, &lease->addr, addr_str, sizeof(addr_str));
++	  CHECK(blobmsg_add_string(&b, "ip", addr_str));
++	}
++
++      if (lease->hwaddr_len > 0)
++	{
++	  for (i = 0; i < lease->hwaddr_len && i < DHCP_CHADDR_MAX; i++)
++	    sprintf(hwaddr_str + i * 3, "%02x:", lease->hwaddr[i]);
++	  hwaddr_str[i * 3 - 1] = '\0';
++	  CHECK(blobmsg_add_string(&b, "mac", hwaddr_str));
++	}
++
++      if (lease->hostname && *lease->hostname)
++	CHECK(blobmsg_add_string(&b, "hostname", lease->hostname));
++
++      /* Expiry as duration (seconds remaining), matching add_lease input
++	 and the dbus AddDhcpLease convention.
++	 lease->expires==0 means infinite; lease_set_expires uses 0xffffffff
++	 as the infinite sentinel on input, so return that for round-trip. */
++      if (lease->expires == 0)
++	CHECK(blobmsg_add_u32(&b, "expires", 0xffffffff));
++      else if (difftime(lease->expires, now) > 0.0)
++	CHECK(blobmsg_add_u32(&b, "expires", (uint32_t)difftime(lease->expires, now)));
++      else
++	CHECK(blobmsg_add_u32(&b, "expires", 0));
++
++      if (lease->clid && lease->clid_len > 0)
++	{
++	  n = lease->clid_len;
++	  if (n > (int)(sizeof(clid_str) - 1) / 3)
++	    n = (int)(sizeof(clid_str) - 1) / 3;
++	  for (i = 0; i < n; i++)
++	    sprintf(clid_str + i * 3, "%02x:", lease->clid[i]);
++	  clid_str[n * 3 - 1] = '\0';
++	  CHECK(blobmsg_add_string(&b, "client_id", clid_str));
++	}
++
++      blobmsg_close_table(&b, table);
++    }
++
++  blobmsg_close_array(&b, array);
+   CHECK(ubus_send_reply(ctx, req, b.head));
++
+   return UBUS_STATUS_OK;
+ }
++#endif
+ 
+ #ifdef HAVE_CONNTRACK
+ static int ubus_handle_set_connmark_allowlist(struct ubus_context *ctx, struct ubus_object *obj,
