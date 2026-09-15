@@ -3419,6 +3419,15 @@ define Device/wavlink_wl-wn533a8
 endef
 TARGET_DEVICES += wavlink_wl-wn533a8
 
+define Device/wavlink_ws-wn552k1-c
+  $(Device/dsa-migration)
+  DEVICE_VENDOR := Wavlink
+  DEVICE_MODEL := WS-WN552K1-C
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615-firmware kmod-usb3 -uboot-envtools
+  IMAGE_SIZE := 15040k
+endef
+TARGET_DEVICES += wavlink_ws-wn552k1-c
+
 define Device/wavlink_ws-wn572hp3-4g
   $(Device/dsa-migration)
   DEVICE_VENDOR := Wavlink
