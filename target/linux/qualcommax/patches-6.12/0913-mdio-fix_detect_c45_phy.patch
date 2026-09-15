@@ -1,0 +1,79 @@
+--- a/drivers/net/mdio/fwnode_mdio.c
++++ b/drivers/net/mdio/fwnode_mdio.c
+@@ -7,6 +7,7 @@
+  */
+ 
+ #include <linux/acpi.h>
++#include <linux/delay.h>
+ #include <linux/dev_printk.h>
+ #include <linux/fwnode_mdio.h>
+ #include <linux/of.h>
+@@ -125,19 +126,52 @@ int fwnode_mdiobus_register_phy(struct m
+ 	struct mii_timestamper *mii_ts = NULL;
+ 	struct pse_control *psec = NULL;
+ 	struct phy_device *phy;
++	struct phy_c45_device_ids c45_ids;
+ 	bool is_c45;
+ 	u32 phy_id;
+-	int rc;
++	int rc, retries = 0;
+ 
+ 	mii_ts = fwnode_find_mii_timestamper(child);
+ 	if (IS_ERR(mii_ts))
+ 		return PTR_ERR(mii_ts);
+ 
+ 	is_c45 = fwnode_device_is_compatible(child, "ethernet-phy-ieee802.3-c45");
+-	if (is_c45 || fwnode_get_phy_id(child, &phy_id))
++
++	memset(&c45_ids, 0xff, sizeof(c45_ids));
++	c45_ids.devices_in_package = BIT(MDIO_MMD_PMAPMD);
++	c45_ids.mmds_present = BIT(MDIO_MMD_PMAPMD);
++
++	if (!fwnode_get_phy_id(child, &phy_id)) {
++		if (is_c45) {
++			/*
++			 * DT supplied a Clause 45 PHY ID in the form
++			 * "ethernet-phy-idXXXX.XXXX". Populate synthetic
++			 * c45_ids so normal C45 driver matching and module
++			 * autoload work.
++			 */
++			c45_ids.device_ids[MDIO_MMD_PMAPMD] = phy_id;
++			phy = phy_device_create(bus, addr, 0, true, &c45_ids);
++		} else {
++			phy = phy_device_create(bus, addr, phy_id, false, NULL);
++		}
++	} else {
+ 		phy = get_phy_device(bus, addr, is_c45);
+-	else
+-		phy = phy_device_create(bus, addr, phy_id, 0, NULL);
++
++		if (IS_ERR(phy) && is_c45 && PTR_ERR(phy) == -ENODEV) {
++			/*
++			 * Some DT-declared Clause 45 PHYs can take time after
++			 * power-on/reset before they answer ID reads.
++			 * Retry for up to 5 seconds before giving up.
++			 */
++			for (retries = 1; retries <= 50; retries++) {
++				msleep(100);
++				phy = get_phy_device(bus, addr, true);
++				if (!IS_ERR(phy) || PTR_ERR(phy) != -ENODEV)
++					break;
++			}
++		}
++	}
++
+ 	if (IS_ERR(phy)) {
+ 		rc = PTR_ERR(phy);
+ 		goto clean_mii_ts;
+@@ -179,6 +213,11 @@ int fwnode_mdiobus_register_phy(struct m
+ 	if (mii_ts)
+ 		phy->mii_ts = mii_ts;
+ 
++	if (retries)
++		dev_info(&bus->dev,
++			 "C45 PHY at address %u became ready after %d ms\n",
++			 addr, retries * 100);
++
+ 	return 0;
+ 
+ unregister_phy:
