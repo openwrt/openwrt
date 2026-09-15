@@ -3461,6 +3461,18 @@ define Device/wevo_11acnas
 endef
 TARGET_DEVICES += wevo_11acnas
 
+define Device/wevo_hi1200ac
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 16064k
+  UIMAGE_NAME := Hi1200AC(0.0.0)
+  DEVICE_VENDOR := WeVO
+  DEVICE_MODEL := Hi1200AC
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3 \
+	kmod-usb-ledtrig-usbport -uboot-envtools
+endef
+TARGET_DEVICES += wevo_hi1200ac
+
 define Device/wevo_w2914ns-v2
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
