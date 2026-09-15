@@ -1,0 +1,38 @@
+From a63cc9a8c81d6282fb3d38930d18c6b06a9a264d Mon Sep 17 00:00:00 2001
+From: Devon Openheim <devopenm@proton.me>
+Date: Wed, 12 Aug 2026 12:29:04 +0100
+Subject: [PATCH] dt-bindings: vendor-prefixes: add ASR Microelectronics
+ and Notion
+
+Document the `asr` vendor prefix (ASR Microelectronics) and `notion`
+prefix (Notion), required by the ASR1802S SoC and Notion R291 ASR
+board support.
+
+The R291 gateway is manufactured by Notion and sold by operator Ooredoo
+under carrier branding; the board compatible and DT model use the
+manufacturer, not the operator.
+
+Signed-off-by: Devon Openheim <devopenm@proton.me>
+
+---
+
+--- a/Documentation/devicetree/bindings/vendor-prefixes.yaml
++++ b/Documentation/devicetree/bindings/vendor-prefixes.yaml
+@@ -165,6 +165,8 @@ patternProperties:
+     description: ASIX Electronics Corporation
+   "^aspeed,.*":
+     description: ASPEED Technology Inc.
++  "^asr,.*":
++    description: ASR Microelectronics Co., Ltd.
+   "^asrock,.*":
+     description: ASRock Inc.
+   "^asteralabs,.*":
+@@ -1051,6 +1053,8 @@ patternProperties:
+     description: Nokia
+   "^nordic,.*":
+     description: Nordic Semiconductor
++  "^notion,.*":
++    description: Notion
+   "^novatek,.*":
+     description: Novatek
+   "^novtech,.*":
