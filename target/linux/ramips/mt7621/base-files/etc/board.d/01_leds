@@ -288,6 +288,10 @@ zyxel,lte3301-plus)
 zyxel,lte5398-m904)
 	ucidef_set_led_netdev "internet" "LTE/3G Internet Activity" "green:internet" "wwan0" "rx tx"
 	;;
+notion,r281)
+	ucidef_set_led_netdev "wifi" "wifi" "white:wifi" "phy0tpt" "link"
+	ucidef_set_led_switch "lan" "lan" "white:lan" "switch0" "1 2 3"
+	;;
 esac
 
 board_config_flush
