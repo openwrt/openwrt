@@ -81,11 +81,18 @@ struct otto_l3_route {
 	u32 tb_id;			/* routing table the route came from */
 	u16 switch_mac_id;		/* Index into switch's own MACs, RTL839X only */
 	struct otto_l3_nexthop nh;
+	bool nh_added;			/* next hop programmed into the L2 table */
 	struct pie_rule pr;
 	struct otto_l3_route_attr attr;
 };
 
 struct otto_l3_config {
+	/* Whether a route entry matches the destination by itself. RTL838x and
+	 * RTL839x store only the gateway, so those need a PIE rule to match the
+	 * destination and point at the next hop; RTL930x writes the destination
+	 * and its mask into the entry.
+	 */
+	bool route_matches_dst;
 	int (*find_slot)(struct otto_l3_ctrl *ctrl, struct otto_l3_route *rt, bool must_exist);
 	void (*set_egress_intf)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_intf *intf);
 	u64 (*get_egress_mac)(struct otto_l3_ctrl *ctrl, u32 idx);
