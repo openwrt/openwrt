@@ -60,7 +60,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  mtk_wed_mcu_load_firmware(struct mtk_wed_wo *wo)
  {
  	const struct mtk_wed_fw_trailer *trailer;
-@@ -324,6 +357,7 @@ mtk_wed_mcu_load_firmware(struct mtk_wed
+@@ -324,14 +357,21 @@ mtk_wed_mcu_load_firmware(struct mtk_wed
  	u32 val, boot_cr;
  	int ret, i;
  
@@ -68,11 +68,15 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  	wo->boot_regmap = syscon_regmap_lookup_by_phandle(wo->hw->node,
  							  "mediatek,wo-cpuboot");
  
-@@ -332,6 +366,9 @@ mtk_wed_mcu_load_firmware(struct mtk_wed
+ 	/* load firmware region metadata */
+ 	for (i = 0; i < ARRAY_SIZE(mem_region); i++) {
++		if (i == MTK_WED_WO_REGION_ILM)
++			continue;
++
  		if (i == MTK_WED_WO_REGION_BOOT && !IS_ERR(wo->boot_regmap))
  			continue;
  
-+		if (mem_region[i].addr)
++		if (mem_region[i].addr && mem_region[i].shared)
 +			continue;
 +
  		ret = mtk_wed_get_reserved_memory_region(wo->hw, mem_region[i].name,
