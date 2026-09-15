@@ -720,6 +720,28 @@ static int otto_l3_alloc_router_mac(struct otto_l3_ctrl *ctrl, u64 mac)
 	return 0;
 }
 
+/* Read back an egress interface descriptor, the layout written below. */
+__maybe_unused
+static void otto_l3_930x_get_egress_intf(struct otto_l3_ctrl *ctrl, int idx,
+					 struct otto_l3_intf *intf)
+{
+	u32 data[2];
+
+	otto_table_read(RTL9300_TBL_L3_EGR_INTF, idx & 0x7f, &data);
+
+	intf->vid = (data[0] >> 9) & 0xfff;
+	intf->smac_idx = (data[0] >> 3) & 0x3f;
+	intf->ip4_mtu_id = data[0] & 0x7;
+
+	intf->ip6_mtu_id = (data[1] >> 28) & 0x7;
+	intf->ttl_scope = (data[1] >> 20) & 0xff;
+	intf->hl_scope = (data[1] >> 12) & 0xff;
+	intf->ip4_icmp_redirect = (data[1] >> 9) & 0x7;
+	intf->ip6_icmp_redirect = (data[1] >> 6) & 0x7;
+	intf->ip4_pbr_icmp_redirect = (data[1] >> 3) & 0x7;
+	intf->ip6_pbr_icmp_redirect = data[1] & 0x7;
+}
+
 /*
  * Sets up an egress interface for L3 actions Actions for ip4/6_icmp_redirect, ip4/6_pbr_icmp_redirect are:
  * 0: FORWARD, 1: DROP, 2: TRAP2CPU, 3: COPY2CPU, 4: TRAP2MASTERCPU, 5: COPY2MASTERCPU,  6: HARDDROP
@@ -1818,6 +1840,85 @@ static const struct file_operations otto_l3_930x_route_fops = {
 	.release = single_release,
 };
 
+/* The chain a routed packet follows once the route table has matched. The next
+ * hop names both halves of what the packet becomes: a DMAC entry in the L2
+ * table, which carries the destination MAC and the port it leaves by, and an
+ * egress interface, which carries the VLAN it is sent into and the source MAC
+ * it is sent with. A route that matches and still does not forward is broken at
+ * one of these, and none of it can be read back anywhere else.
+ */
+static int otto_l3_930x_nexthop_show(struct seq_file *m, void *v)
+{
+	struct otto_l3_ctrl *ctrl = m->private;
+	struct rtl838x_switch_priv *priv = ctrl->priv;
+	int l2_rows, rows;
+
+	seq_puts(m,
+		 "NH_ID DMAC_IDX INTF  VID SMAC              V NH STATIC TRK PORT MAC               RVID NH_RID\n");
+
+	rows = otto_table_rows(RTL9300_TBL_L3_NEXTHOP);
+	l2_rows = otto_table_rows(RTL9300_TBL_L2_UC);
+	if (rows < 0 || l2_rows < 0)
+		return rows < 0 ? rows : l2_rows;
+
+	for (int idx = 0; idx < rows; idx++) {
+		struct rtl838x_l2_entry e = {};
+		struct otto_l3_intf egr = {};
+		u16 dmac_idx, intf;
+		u8 smac[ETH_ALEN];
+
+		if (!(idx % 64))
+			cond_resched();
+
+		ctrl->cfg->get_nexthop(ctrl, idx, &dmac_idx, &intf);
+		if (!dmac_idx && !intf)
+			continue;
+
+		ctrl->cfg->get_egress_intf(ctrl, intf, &egr);
+		u64_to_ether_addr(ctrl->cfg->get_egress_mac(ctrl, L3_EGRESS_DMACS + egr.smac_idx),
+				  smac);
+
+		seq_printf(m, "%5d %8d %4d %4d %pM", idx, dmac_idx, intf, egr.vid, smac);
+
+		/* The field also carries the three values that name an action
+		 * instead of an entry, and they are all above the table.
+		 */
+		if (dmac_idx >= l2_rows) {
+			seq_printf(m, " %s\n",
+				   dmac_idx == 0x7fff ? "drop" :
+				   dmac_idx == 0x7ffe ? "trap to CPU" :
+				   dmac_idx == 0x7ffd ? "trap to master CPU" :
+				   "out of the L2 table");
+			continue;
+		}
+
+		priv->r->read_l2_entry_using_hash(dmac_idx >> 2, dmac_idx & 0x3, &e);
+		if (!e.valid) {
+			seq_puts(m, " 0  -      -   -    -                 -    -\n");
+			continue;
+		}
+
+		seq_printf(m, " %d %2d %6d %3d %4d %pM %4d %6d\n",
+			   e.valid, e.next_hop, e.is_static, e.is_trunk, e.port,
+			   e.mac, e.rvid, e.nh_route_id);
+	}
+
+	return 0;
+}
+
+static int otto_l3_930x_nexthop_open(struct inode *inode, struct file *filp)
+{
+	return single_open(filp, otto_l3_930x_nexthop_show, inode->i_private);
+}
+
+static const struct file_operations otto_l3_930x_nexthop_fops = {
+	.owner   = THIS_MODULE,
+	.open    = otto_l3_930x_nexthop_open,
+	.read    = seq_read,
+	.llseek  = seq_lseek,
+	.release = single_release,
+};
+
 /* Clear the HIT bit of every valid unicast entry in the host route table by
  * read-modify-write. Read through the unicast view so the write covers the
  * entry and nothing else, the way the vendor SDK rewrites it through its own
@@ -1974,6 +2075,7 @@ static void otto_l3_930x_dbgfs_init(struct otto_l3_ctrl *ctrl)
 		return;
 
 	debugfs_create_file("routes", 0400, root, ctrl, &otto_l3_930x_route_fops);
+	debugfs_create_file("nexthops", 0400, root, ctrl, &otto_l3_930x_nexthop_fops);
 	debugfs_create_file("clear_route_hits", 0200, root, ctrl, &otto_l3_930x_clear_hit_fops);
 }
 
@@ -1991,6 +2093,7 @@ const struct otto_l3_config otto_l3_839x_cfg = {
 const struct otto_l3_config otto_l3_930x_cfg = {
 #ifdef CONFIG_NET_DSA_RTL83XX_RTL930X_L3_OFFLOAD
 	.find_slot = otto_l3_930x_find_slot,
+	.get_egress_intf = otto_l3_930x_get_egress_intf,
 	.get_egress_mac = otto_l3_930x_get_egress_mac,
 	.set_egress_mac = otto_l3_930x_set_egress_mac,
 	.set_egress_intf = otto_l3_930x_set_egress_intf,
