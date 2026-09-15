@@ -14,21 +14,34 @@ let commit;
 
 let config = uci.cursor().get_all("wireless") ?? {};
 
-function radio_exists(path, macaddr, phy, radio) {
+function radio_exists(path, macaddr, phy, radio, band) {
 	for (let name, s in config) {
 		if (s[".type"] != "wifi-device")
 			continue;
-		if (radio != null && int(s.radio) != radio)
-			continue;
+
+		let match = false;
 		if (s.macaddr && lc(s.macaddr) == lc(macaddr))
-			return true;
-		if (s.phy == phy)
-			return true;
-		if (!s.path || !path)
+			match = true;
+		else if (s.phy == phy)
+			match = true;
+		else if (s.path && path && substr(s.path, -length(path)) == path)
+			match = true;
+
+		if (!match)
 			continue;
-		if (substr(s.path, -length(path)) == path)
-			return true;
+
+		if (radio != null && s.band && band && lc(s.band) != lc(band))
+			continue;
+
+		if (radio != null && s.band && band && int(s.radio) != radio) {
+			print(`set wireless.${name}.radio='${radio}'\n`);
+			s.radio = radio;
+			commit = true;
+		}
+
+		return true;
 	}
+
 }
 
 for (let phy_name, phy in board.wlan) {
@@ -69,7 +82,7 @@ for (let phy_name, phy in board.wlan) {
 			continue;
 
 		let macaddr = trim(readfile(`/sys/class/ieee80211/${phy_name}/macaddress`));
-		if (radio_exists(phy.path, macaddr, phy_name, radio.index))
+		if (radio_exists(phy.path, macaddr, phy_name, radio.index, band_name))
 			continue;
 
 		let id = `phy='${phy_name}'`;
