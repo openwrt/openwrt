@@ -808,7 +808,7 @@ static int otto_l3_930x_setup(struct otto_l3_ctrl *ctrl)
 
 static int otto_l3_alloc_egress_intf(struct otto_l3_ctrl *ctrl, u64 mac, int vlan)
 {
-	struct otto_l3_intf intf;
+	struct otto_l3_intf intf = {};
 	int free_mac = -1;
 	u64 m;
 
@@ -819,7 +819,9 @@ static int otto_l3_alloc_egress_intf(struct otto_l3_ctrl *ctrl, u64 mac, int vla
 			free_mac = i;
 			continue;
 		}
-		if (m == mac) {
+		if (m == mac && ctrl->interfaces[i].vid == vlan) {
+			dev_dbg(ctrl->dev, "reusing egress interface %d for VLAN %d\n",
+				i, vlan);
 			mutex_unlock(ctrl->lock);
 			return i;
 		}
@@ -840,7 +842,9 @@ static int otto_l3_alloc_egress_intf(struct otto_l3_ctrl *ctrl, u64 mac, int vla
 	intf.hl_scope = 1;  /* Hop Limit */
 	intf.ip4_icmp_redirect = intf.ip6_icmp_redirect = 2;  /* FORWARD */
 	intf.ip4_pbr_icmp_redirect = intf.ip6_pbr_icmp_redirect = 2; /* FORWARD; */
+	dev_dbg(ctrl->dev, "new egress interface %d for VLAN %d\n", free_mac, vlan);
 	ctrl->cfg->set_egress_intf(ctrl, free_mac, &intf);
+	ctrl->interfaces[free_mac] = intf;
 
 	ctrl->cfg->set_egress_mac(ctrl, L3_EGRESS_DMACS + free_mac, mac);
 
