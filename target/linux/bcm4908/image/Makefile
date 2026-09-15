@@ -113,9 +113,10 @@ define Device/tplink_archer-c2300-v1
   DEVICE_MODEL := Archer C2300
   DEVICE_VARIANT := v1
   DEVICE_DTS := broadcom/bcmbca/bcm4906-tplink-archer-c2300-v1
+  DEVICE_PACKAGES := brcmfmac-firmware-4366c0-pcie kmod-brcmfmac \
+	wpad-basic-mbedtls
   IMAGES := bin
   IMAGE/bin := append-ubi | bcm4908img
-  BROKEN := y
 endef
 TARGET_DEVICES += tplink_archer-c2300-v1
 
