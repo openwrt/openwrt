@@ -669,7 +669,7 @@ static int otto_l3_port_dev_lower_find(struct net_device *dev, struct otto_l3_ct
 	struct netdev_nested_priv _priv;
 
 	data.ctrl = ctrl;
-	data.port = 0;
+	data.port = -EINVAL;
 	_priv.data = (void *)&data;
 
 	netdev_walk_all_lower_dev(dev, otto_l3_port_lower_walk, &_priv);
