@@ -108,6 +108,7 @@ platform_do_upgrade() {
 	8dev,jalapeno|\
 	aruba,ap-303|\
 	aruba,ap-303h|\
+	aruba,ap-305|\
 	aruba,ap-365|\
 	avm,fritzbox-7530|\
 	avm,fritzrepeater-1200|\
