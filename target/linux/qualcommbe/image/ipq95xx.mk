@@ -31,6 +31,17 @@ define Device/askey_sbe1v1k
 endef
 TARGET_DEVICES += askey_sbe1v1k
 
+define Device/linksys_ln6001
+	$(call Device/FitImage)
+	DEVICE_VENDOR := Linksys
+	DEVICE_MODEL := LN6001
+	DEVICE_DTS := ipq9554-linksys-ln6001
+	SOC := ipq9554
+	DEVICE_PACKAGES += kmod-leds-pwm
+	IMAGES :=
+endef
+TARGET_DEVICES += linksys_ln6001
+
 define Device/qcom_rdp433
 	$(call Device/FitImageLzma)
 	DEVICE_VENDOR := Qualcomm Technologies, Inc.
