@@ -1,0 +1,251 @@
+From 700c7da46ccb767cd80308c95402720e801d6cc3 Mon Sep 17 00:00:00 2001
+From: Gabriel Rodriguez <lifehacksback@gmail.com>
+Date: Thu, 10 Sep 2026 19:07:25 -0700
+Subject: [PATCH] ARM: mvebu: add Armada 38x shared DFS support
+
+Implement the synchronized two-CPU PMSU DFS transition required by dual-core Armada 38x SoCs.
+
+Use CPU-bound kthread workers so both CPUs enter the WFI transition from task context. Refuse further transitions after a fatal completion timeout.
+
+Signed-off-by: Gabriel Rodriguez <lifehacksback@gmail.com>
+---
+ arch/arm/mach-mvebu/pmsu.c | 202 +++++++++++++++++++++++++++++++++++++
+ include/linux/mvebu-pmsu.h |   2 +
+ 2 files changed, 204 insertions(+)
+
+--- a/arch/arm/mach-mvebu/pmsu.c
++++ b/arch/arm/mach-mvebu/pmsu.c
+@@ -16,11 +16,13 @@
+ #define pr_fmt(fmt) "mvebu-pmsu: " fmt
+ 
+ #include <linux/clk.h>
++#include <linux/completion.h>
+ #include <linux/cpu_pm.h>
+ #include <linux/delay.h>
+ #include <linux/init.h>
+ #include <linux/io.h>
+ #include <linux/kernel.h>
++#include <linux/kthread.h>
+ #include <linux/mbus.h>
+ #include <linux/mvebu-pmsu.h>
+ #include <linux/of.h>
+@@ -566,6 +568,206 @@ static void mvebu_pmsu_dfs_request_local
+ 	local_irq_restore(flags);
+ }
+ 
++/*
++ * Armada 38x has a shared CPU frequency domain. Both CPUs must
++ * participate in the same DFS/WFI transaction.
++ */
++#define MVEBU_PMSU_DFS_CPUS	2
++
++struct mvebu_pmsu_dfs_cpu {
++	struct kthread_worker *worker;
++	struct kthread_work work;
++	unsigned int cpu;
++};
++
++static DEFINE_PER_CPU(struct mvebu_pmsu_dfs_cpu, dfs_cpu);
++static DECLARE_COMPLETION(dfs_ready);
++static DECLARE_COMPLETION(dfs_done);
++static unsigned int dfs_go;
++static bool dfs_failed;
++
++static void mvebu_pmsu_dfs_prepare(u32 hwcpu)
++{
++	u32 reg;
++
++	reg = readl(pmsu_mp_base + PMSU_EVENT_STATUS_AND_MASK(hwcpu));
++	reg &= ~PMSU_EVENT_STATUS_AND_MASK_DFS_DONE;
++	reg |= PMSU_EVENT_STATUS_AND_MASK_DFS_DONE_MASK;
++	writel(reg, pmsu_mp_base + PMSU_EVENT_STATUS_AND_MASK(hwcpu));
++
++	reg = readl(pmsu_mp_base + PMSU_STATUS_AND_MASK(hwcpu));
++	reg |= PMSU_STATUS_AND_MASK_CPU_IDLE_WAIT |
++	       PMSU_STATUS_AND_MASK_IRQ_MASK |
++	       PMSU_STATUS_AND_MASK_FIQ_MASK;
++	writel(reg, pmsu_mp_base + PMSU_STATUS_AND_MASK(hwcpu));
++
++	reg = readl(pmsu_mp_base + PMSU_CONTROL_AND_CONFIG(hwcpu));
++	reg |= PMSU_CONTROL_AND_CONFIG_DFS_REQ;
++	writel(reg, pmsu_mp_base + PMSU_CONTROL_AND_CONFIG(hwcpu));
++}
++
++static void mvebu_pmsu_dfs_finish(u32 hwcpu)
++{
++	u32 reg;
++
++	reg = readl(pmsu_mp_base + PMSU_STATUS_AND_MASK(hwcpu));
++	reg &= ~PMSU_STATUS_AND_MASK_CPU_IDLE_WAIT;
++	writel(reg, pmsu_mp_base + PMSU_STATUS_AND_MASK(hwcpu));
++
++	reg = readl(pmsu_mp_base + PMSU_EVENT_STATUS_AND_MASK(hwcpu));
++	reg &= ~PMSU_EVENT_STATUS_AND_MASK_DFS_DONE_MASK;
++	writel(reg, pmsu_mp_base + PMSU_EVENT_STATUS_AND_MASK(hwcpu));
++}
++
++static void mvebu_pmsu_dfs_work(struct kthread_work *work)
++{
++	struct mvebu_pmsu_dfs_cpu *ctx =
++		container_of(work, struct mvebu_pmsu_dfs_cpu, work);
++	u32 hwcpu = cpu_logical_map(ctx->cpu);
++	unsigned long flags;
++
++	local_irq_save(flags);
++
++	mvebu_pmsu_dfs_prepare(hwcpu);
++
++	complete(&dfs_ready);
++
++	/*
++	 * Pair with the release below so the caller completes its PMSU
++	 * setup before the remote CPU proceeds to WFI.
++	 */
++	while (!smp_load_acquire(&dfs_go))
++		cpu_relax();
++
++	wfi();
++
++	mvebu_pmsu_dfs_finish(hwcpu);
++
++	local_irq_restore(flags);
++
++	complete(&dfs_done);
++}
++
++int mvebu_pmsu_dfs_request_38x(void)
++{
++	struct mvebu_pmsu_dfs_cpu *ctx;
++	unsigned int caller;
++	unsigned int remote;
++	u32 hwcaller;
++	unsigned long flags;
++
++	if (!pmsu_mp_base)
++		return -ENODEV;
++
++	if (READ_ONCE(dfs_failed))
++		return -EIO;
++
++	if (num_online_cpus() != MVEBU_PMSU_DFS_CPUS)
++		return -EBUSY;
++
++	migrate_disable();
++
++	caller = smp_processor_id();
++	remote = cpumask_any_but(cpu_online_mask, caller);
++	hwcaller = cpu_logical_map(caller);
++
++	if (remote >= nr_cpu_ids) {
++		migrate_enable();
++		return -EBUSY;
++	}
++
++	ctx = per_cpu_ptr(&dfs_cpu, remote);
++
++	if (!ctx->worker) {
++		migrate_enable();
++		return -ENODEV;
++	}
++
++	reinit_completion(&dfs_ready);
++	reinit_completion(&dfs_done);
++	WRITE_ONCE(dfs_go, 0);
++
++	if (!kthread_queue_work(ctx->worker, &ctx->work)) {
++		migrate_enable();
++		return -EBUSY;
++	}
++
++	wait_for_completion(&dfs_ready);
++
++	local_irq_save(flags);
++
++	mvebu_pmsu_dfs_prepare(hwcaller);
++
++	/*
++	 * Publish completion of the caller's PMSU setup before allowing
++	 * the remote CPU to proceed to WFI.
++	 */
++	smp_store_release(&dfs_go, 1);
++
++	wfi();
++
++	mvebu_pmsu_dfs_finish(hwcaller);
++
++	local_irq_restore(flags);
++
++	if (!wait_for_completion_timeout(&dfs_done, HZ)) {
++		WRITE_ONCE(dfs_failed, true);
++		migrate_enable();
++		return -ETIME;
++	}
++
++	migrate_enable();
++
++	return 0;
++}
++
++static int __init mvebu_pmsu_dfs_init(void)
++{
++	unsigned int cpu;
++
++	if (!of_machine_is_compatible("marvell,armada380"))
++		return 0;
++
++	for_each_possible_cpu(cpu) {
++		struct mvebu_pmsu_dfs_cpu *ctx;
++		struct kthread_worker *worker;
++
++		if (cpu >= MVEBU_PMSU_DFS_CPUS)
++			break;
++
++		ctx = per_cpu_ptr(&dfs_cpu, cpu);
++		ctx->cpu = cpu;
++
++		kthread_init_work(&ctx->work, mvebu_pmsu_dfs_work);
++
++		worker = kthread_create_worker_on_cpu(cpu, 0, "mvebu-dfs/%u");
++		if (IS_ERR(worker)) {
++			int ret = PTR_ERR(worker);
++			unsigned int n;
++
++			for_each_possible_cpu(n) {
++				struct mvebu_pmsu_dfs_cpu *tmp;
++
++				if (n == cpu)
++					break;
++
++				tmp = per_cpu_ptr(&dfs_cpu, n);
++				if (tmp->worker) {
++					kthread_destroy_worker(tmp->worker);
++					tmp->worker = NULL;
++				}
++			}
++
++			return ret;
++		}
++
++		ctx->worker = worker;
++	}
++
++	return 0;
++}
++late_initcall(mvebu_pmsu_dfs_init);
++
+ int mvebu_pmsu_dfs_request(int cpu)
+ {
+ 	unsigned long timeout;
+--- a/include/linux/mvebu-pmsu.h
++++ b/include/linux/mvebu-pmsu.h
+@@ -13,8 +13,10 @@
+ 
+ #ifdef CONFIG_MACH_MVEBU_V7
+ int mvebu_pmsu_dfs_request(int cpu);
++int mvebu_pmsu_dfs_request_38x(void);
+ #else
+ static inline int mvebu_pmsu_dfs_request(int cpu) { return -ENODEV; }
++static inline int mvebu_pmsu_dfs_request_38x(void) { return -ENODEV; }
+ #endif
+ 
+ #endif /* __MVEBU_PMSU_H__ */
