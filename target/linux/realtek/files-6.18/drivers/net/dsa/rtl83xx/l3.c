@@ -867,8 +867,6 @@ static int otto_l3_nexthop_update(struct otto_l3_ctrl *ctrl, __be32 ip_addr, u64
 		dev_dbg(ctrl->dev, "%s: Setting up fwding: ip %pI4, GW mac %016llx\n",
 			__func__, &ip_addr, mac);
 
-		/* Reads the ROUTING table entry associated with the route */
-		ctrl->cfg->route_read(ctrl, r->id, r);
 		dev_dbg(ctrl->dev, "Route with id %d to %pI4 / %d\n",
 			r->id, &r->dst_ip, r->prefix_len);
 
