@@ -129,6 +129,10 @@ qxwlan,e2600ac-c2)
 	ucidef_set_led_wlan "wlan2g" "WLAN0" "green:wlan0" "phy0tpt"
 	ucidef_set_led_wlan "wlan5g" "WLAN1" "green:wlan1" "phy1tpt"
 	;;
+mbox,hsa-500)
+	ucidef_set_led_netdev "lte" "LTE" "blue:lte" "wwan0"
+	ucidef_set_led_wlan "wifi" "WIFI" "blue:wifi" "phy0tpt"
+	;;
 sony,ncp-hg100-cellular)
 	ucidef_set_led_netdev "lan" "LAN" "green:lan" "lan"
 	ucidef_set_led_netdev "wan" "WAN" "green:wan" "wan"
