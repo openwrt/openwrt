@@ -77,6 +77,7 @@
 #include <linux/of_fdt.h>
 #include <linux/libfdt_env.h>
 #include <linux/string.h>
+#include <linux/math64.h>
 
 #define RB_MAGIC_HARD	(('H') | ('a' << 8) | ('r' << 16) | ('d' << 24))
 #define RB_MAGIC_SOFT	(('S') | ('o' << 8) | ('f' << 16) | ('t' << 24))
@@ -394,6 +395,7 @@ static int routerboot_partitions_parse(struct mtd_info *master,
 	 */
 	for (int idx = 0; idx < np; idx++) {
 		size_t grown, limit;
+		u32 rem;
 
 		if (strcmp(parts[idx].name, "soft_config"))
 			continue;
@@ -401,7 +403,8 @@ static int routerboot_partitions_parse(struct mtd_info *master,
 		if (!master->erasesize || parts[idx].size >= master->erasesize)
 			break;
 
-		if (parts[idx].offset % master->erasesize)
+		div_u64_rem(parts[idx].offset, master->erasesize, &rem);
+		if (rem)
 			break;	/* not block aligned to begin with */
 
 		grown = ALIGN(parts[idx].size, master->erasesize);
