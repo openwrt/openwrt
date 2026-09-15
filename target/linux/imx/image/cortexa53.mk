@@ -81,7 +81,7 @@ define Device/gateworks_venice
 	kmod-can kmod-can-flexcan kmod-can-mcp251x \
 	kmod-dsa-ksz9477-i2c
   IMAGES := img.gz
-  IMAGE/img.gz := boot-scr | boot-img-ext4 | sdcard-img-ext4 | gzip | append-metadata
+  IMAGE/img.gz := boot-scr | boot-img-ext4 | sdcard-img-ext4 | libdeflate-gzip | append-metadata
 endef
 TARGET_DEVICES += gateworks_venice
 
@@ -102,6 +102,6 @@ define Device/kontron_osm-s-imx8mp
 	kmod-rtc-rv3028
   UBOOT := kontron-osm-s-mx8mp
   IMAGES := img.gz
-  IMAGE/img.gz := boot-scr | boot-img-ext4 | sdcard-img-ext4 | sdcard-img-add-uboot | gzip | append-metadata
+  IMAGE/img.gz := boot-scr | boot-img-ext4 | sdcard-img-ext4 | sdcard-img-add-uboot | libdeflate-gzip | append-metadata
 endef
 TARGET_DEVICES += kontron_osm-s-imx8mp

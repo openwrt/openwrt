@@ -185,14 +185,6 @@ define Image/BuildKernel/MkuImage
 		-n '$(call toupper,$(ARCH)) $(VERSION_DIST) Linux-$(LINUX_VERSION)' -d $(4) $(5)
 endef
 
-ifdef CONFIG_TARGET_IMAGES_GZIP
-  define Image/Gzip
-	rm -f $(1).gz
-	gzip -9n $(1)
-  endef
-endif
-
-
 # Disable noisy checks by default as in upstream
 DTC_WARN_FLAGS := \
   -Wno-interrupt_provider \
@@ -337,7 +329,7 @@ endef
 define Image/mkfs/targz
 	$(TAR) -cp --numeric-owner --owner=0 --group=0 --mode=a-s --sort=name \
 		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") \
-		-C $(call mkfs_target_dir,$(1)) . | gzip -9n > $@
+		-C $(call mkfs_target_dir,$(1)) . | libdeflate-gzip -12 -c > $@
 endef
 
 define Image/Manifest
@@ -363,11 +355,11 @@ define Image/gzip-ext4-padded-squashfs
   endef
 
   ifneq ($(CONFIG_TARGET_IMAGES_GZIP),)
-    define Image/Build/gzip/ext4
-      $(call Image/Build/gzip,ext4)
+    define Image/Build/libdeflate-gzip/ext4
+      $(call Image/Build/libdeflate-gzip,ext4)
     endef
-    define Image/Build/gzip/squashfs
-      $(call Image/Build/gzip,squashfs)
+    define Image/Build/libdeflate-gzip/squashfs
+      $(call Image/Build/libdeflate-gzip,squashfs)
     endef
   endif
 
@@ -378,7 +370,7 @@ ifdef CONFIG_TARGET_ROOTFS_TARGZ
   define Image/Build/targz
 	$(TAR) -cp --numeric-owner --owner=0 --group=0 --mode=a-s --sort=name \
 		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") \
-		-C $(TARGET_DIR)/ . | gzip -9n > $(BIN_DIR)/$(IMG_PREFIX)$(if $(PROFILE_SANITIZED),-$(PROFILE_SANITIZED))-rootfs.tar.gz
+		-C $(TARGET_DIR)/ . | libdeflate-gzip -12 -c > $(BIN_DIR)/$(IMG_PREFIX)$(if $(PROFILE_SANITIZED),-$(PROFILE_SANITIZED))-rootfs.tar.gz
   endef
 endif
 endif
@@ -386,7 +378,7 @@ endif
 ifeq ($(filter-out cpiogz,$(ROOTFS_FILESYSTEM)),)
 ifdef CONFIG_TARGET_ROOTFS_CPIOGZ
   define Image/Build/cpiogz
-	( cd $(TARGET_DIR); find . | $(STAGING_DIR_HOST)/bin/cpio -o -H newc -R 0:0 | gzip -9n >$(BIN_DIR)/$(IMG_ROOTFS).cpio.gz )
+	( cd $(TARGET_DIR); find . | $(STAGING_DIR_HOST)/bin/cpio -o -H newc -R 0:0 | libdeflate-gzip -12 -c >$(BIN_DIR)/$(IMG_ROOTFS).cpio.gz )
   endef
 endif
 endif
@@ -786,7 +778,7 @@ define Device/Build/image
   .IGNORE: $(BIN_DIR)/$(call DEVICE_IMG_NAME,$(1),$(2))
 
   $(BIN_DIR)/$(call DEVICE_IMG_NAME,$(1),$(2)).gz: $(KDIR)/tmp/$(call DEVICE_IMG_NAME,$(1),$(2))
-	gzip -c -9n $$^ > $$@
+	libdeflate-gzip -12 -c $$^ > $$@
 
   $(BIN_DIR)/$(call DEVICE_IMG_NAME,$(1),$(2)): $(KDIR)/tmp/$(call DEVICE_IMG_NAME,$(1),$(2))
 	cp $$^ $$@

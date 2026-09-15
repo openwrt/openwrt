@@ -66,7 +66,7 @@ define Build/prepend-dtb
 endef
 
 define Image/cpiogz
-	( cd $(TARGET_DIR); find . | cpio -o -H newc | gzip -9n >$(KDIR_TMP)/$(IMG_PREFIX)-rootfs.cpio.gz )
+	( cd $(TARGET_DIR); find . | cpio -o -H newc | libdeflate-gzip -12 -c >$(KDIR_TMP)/$(IMG_PREFIX)-rootfs.cpio.gz )
 endef
 
 define Device/Default

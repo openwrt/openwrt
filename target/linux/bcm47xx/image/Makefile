@@ -19,7 +19,7 @@ define Image/Prepare
 	# Less optimal LZMA compression (no dictionary), handled by CFE.
 	$(STAGING_DIR_HOST)/bin/lzma e -so -d16 $(KDIR)/vmlinux > $(KDIR)/vmlinux-nodictionary.lzma
 
-	gzip -nc9 $(KDIR)/vmlinux > $(KDIR)/vmlinux.gz
+	libdeflate-gzip -12 -c $(KDIR)/vmlinux > $(KDIR)/vmlinux.gz
 ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 	cat $(KDIR)/vmlinux-initramfs | $(STAGING_DIR_HOST)/bin/lzma e -si -so -eos -lc1 -lp2 -pb2 > $(KDIR)/vmlinux-initramfs.lzma
 	$(STAGING_DIR_HOST)/bin/lzma e -so -d16 $(KDIR)/vmlinux-initramfs > $(KDIR)/vmlinux-initramfs-nodictionary.lzma
