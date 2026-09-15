@@ -54,6 +54,16 @@ define Device/nokia_g240g-e
 endef
 TARGET_DEVICES += nokia_g240g-e
 
+define Device/nokia_g140w-f
+  DEVICE_VENDOR := Nokia
+  DEVICE_MODEL := G-140W-F
+  DEVICE_DTS := en751221_nokia_g140w-f
+  IMAGES := tclinux.trx
+  IMAGE/tclinux.trx := append-kernel | lzma | tclinux-trx
+  DEVICE_PACKAGES := kmod-usb3 kmod-mt7603 kmod-mt76x2
+endef
+TARGET_DEVICES += nokia_g140w-f
+
 define Device/smartfiber_xp8421-b
   DEVICE_VENDOR := SmartFiber
   DEVICE_MODEL := XP8421-B
