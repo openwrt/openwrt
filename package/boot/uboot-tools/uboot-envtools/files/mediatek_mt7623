@@ -2,7 +2,10 @@
 # Copyright (C) 2021 OpenWrt.org
 #
 
-[ -e /etc/config/ubootenv ] && exit 0
+if [ -e /etc/config/ubootenv ]; then
+	[ "$(uci -q get ubootenv.@ubootenv[0].dev)" = "/dev/p1" ] || exit 0
+	rm -f /etc/config/ubootenv /etc/fw_env.config
+fi
 
 touch /etc/config/ubootenv
 
@@ -13,9 +16,11 @@ board=$(board_name)
 
 case "$board" in
 bananapi,bpi-r2)
-	. /lib/upgrade/common.sh
-	bootdev="$(fitblk_get_bootdev)"
-	ubootenv_add_uci_config "/dev/${bootdev%p[0-9]*}p1" "0xb0000" "0x10000" "0x10000" "1"
+	. /lib/upgrade/fit.sh
+	export_fitblk_bootdev
+	[ -n "$EMMC_KERN_DEV" ] || exit 1
+	bootdev=${EMMC_KERN_DEV%%p[0-9]*}
+	ubootenv_add_uci_config "${bootdev}p1" "0xb0000" "0x10000" "0x10000" "1"
 	;;
 unielec,u7623-02)
 	ubootenv_add_uci_config "/dev/mmcblk0p1" "0xc0000" "0x10000" "0x10000" "1"
