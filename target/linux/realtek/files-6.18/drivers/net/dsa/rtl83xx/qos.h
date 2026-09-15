@@ -17,6 +17,4 @@ void rtldsa_839x_qos_init(struct rtl838x_switch_priv *priv);
 void rtldsa_930x_qos_init(struct rtl838x_switch_priv *priv);
 void rtldsa_931x_qos_init(struct rtl838x_switch_priv *priv);
 
-void rtl839x_set_egress_queue(int port, int queue);
-
 #endif /* _OTTO_QOS_H */

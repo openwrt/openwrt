@@ -157,9 +157,12 @@ static void rtl839x_setup_default_prio2queue(void)
 }
 
 /* Sets the output queue assigned to a port, the port can be the CPU-port */
-void rtl839x_set_egress_queue(int port, int queue)
+static void rtl839x_set_egress_queue(int port, int queue)
 {
-	sw_w32(queue << ((port % 10) * 3), RTL839X_QM_PORT_QNUM(port));
+	u32 shift = (port % 10) * 3;
+	u32 mask = 0x7 << shift;
+
+	sw_w32_mask(mask, (queue & 0x7) << shift, RTL839X_QM_PORT_QNUM(port));
 }
 
 /* Sets the priority assigned of an ingress port, the port can be the CPU-port */
@@ -322,11 +325,8 @@ void rtldsa_839x_qos_init(struct rtl838x_switch_priv *priv)
 	pr_info("RTL839X_PRI_SEL_TBL_CTRL(i): %08x\n", sw_r32(RTL839X_PRI_SEL_TBL_CTRL(0)));
 	rtl839x_setup_default_prio2queue();
 
-	for (int port = 0; port < priv->r->cpu_port; port++)
-		sw_w32(7, RTL839X_QM_PORT_QNUM(port));
-
-	/* CPU-port gets queue number 7 */
-	sw_w32(7, RTL839X_QM_PORT_QNUM(priv->r->cpu_port));
+	for (int port = 0; port <= priv->r->cpu_port; port++)
+		rtl839x_set_egress_queue(port, 7);
 
 	for (int port = 0; port <= priv->r->cpu_port; port++) {
 		rtldsa_839x_set_ingress_priority(port, 0);
