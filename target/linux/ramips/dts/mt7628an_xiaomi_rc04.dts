@@ -1,0 +1,13 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7628an_xiaomi_mi-ra75.dts"
+
+/ {
+	compatible = "xiaomi,mi-wifi-range-extender-ac1200-rc04", "xiaomi,mira75", "mediatek,mt7628an-soc";
+	model = "Xiaomi Mi AC1200 WLAN Range Extender RC04";
+};
+
+/* Override the EEPROM layout size to accommodate the MT7613BE radio chip data */
+&eeprom_factory_8000 {
+	reg = <0x8000 0x4da8>;
+};
