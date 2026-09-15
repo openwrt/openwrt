@@ -42,7 +42,7 @@ Signed-off-by: Miquel Raynal <miquel.raynal@bootlin.com>
  obj-$(CONFIG_MTD_SPI_NAND) += spinand.o
 --- a/drivers/mtd/nand/spi/core.c
 +++ b/drivers/mtd/nand/spi/core.c
-@@ -1226,6 +1226,7 @@ static const struct nand_ops spinand_ops
+@@ -1275,6 +1275,7 @@ static const struct nand_ops spinand_ops
  static const struct spinand_manufacturer *spinand_manufacturers[] = {
  	&alliancememory_spinand_manufacturer,
  	&ato_spinand_manufacturer,
