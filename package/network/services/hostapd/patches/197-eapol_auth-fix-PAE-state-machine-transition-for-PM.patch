@@ -1,0 +1,46 @@
+From: Alexander Astrovsky <astrouski@google.com>
+Date: Sun, 23 Aug 2026 21:10:00 +0000
+Subject: [PATCH] eapol_auth: fix PAE state machine transition for PMKSA cache
+
+When a station reconnects or roams using a cached PMKSA entry
+(EAPOL_SM_FROM_PMKSA_CACHE), such as when roaming back to a previously
+connected AP (e.g. AP0 -> AP1 -> AP0 in WPA3-Enterprise PMKSA caching
+tests), full EAP authentication is bypassed.
+
+Upon reassociation or receiving an EAPOL-Start, the PAE state machine
+transitions through AUTH_PAE_RESTART / AUTH_PAE_CONNECTING to
+AUTH_PAE_AUTHENTICATING via SM_ENTER(AUTH_PAE, AUTHENTICATING), which
+unconditionally executes sm->authSuccess = false.
+Because the PMK is already cached, no new EAP exchange runs, leaving
+sm->authSuccess as false.
+
+Once the WPA 4-way handshake completes, wpa_auth drives sm->portValid to
+true. However, because sm->authSuccess is false, the condition
+(sm->authSuccess && sm->portValid) in SM_STEP(AUTH_PAE) fails,
+stranding the PAE state machine in AUTH_PAE_AUTHENTICATING.
+
+Fix this by allowing the AUTH_PAE_AUTHENTICATING -> AUTHENTICATED
+transition in SM_STEP(AUTH_PAE) when sm->portValid is true and either
+sm->authSuccess or (sm->flags & EAPOL_SM_FROM_PMKSA_CACHE) is set. This
+guarantees that transition to AUTH_PAE_AUTHENTICATED occurs only after
+the 4-way handshake completes and keys are installed (portValid == true).
+
+Signed-off-by: Alexander Astrovsky <astrouski@google.com>
+---
+ src/eapol_auth/eapol_auth_sm.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+Index: hostapd-2026.08.07~831364bf/src/eapol_auth/eapol_auth_sm.c
+===================================================================
+--- hostapd-2026.08.07~831364bf.orig/src/eapol_auth/eapol_auth_sm.c
++++ hostapd-2026.08.07~831364bf/src/eapol_auth/eapol_auth_sm.c
+@@ -433,7 +433,8 @@ SM_STEP(AUTH_PAE)
+ 				SM_ENTER(AUTH_PAE, DISCONNECTED);
+ 			break;
+ 		case AUTH_PAE_AUTHENTICATING:
+-			if (sm->authSuccess && sm->portValid)
++			if (sm->portValid &&
++			    (sm->authSuccess || (sm->flags & EAPOL_SM_FROM_PMKSA_CACHE)))
+ 				SM_ENTER(AUTH_PAE, AUTHENTICATED);
+ 			else if (sm->authFail ||
+ 				 (sm->keyDone && !sm->portValid))
