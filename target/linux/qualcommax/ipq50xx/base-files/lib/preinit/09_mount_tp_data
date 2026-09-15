@@ -1,5 +1,5 @@
 #!/bin/sh
-# The TP-Link Archer AX55 v1 keeps its factory data (including the 6-byte
+# TP-Link/Mercusys boards keep their factory data (including the 6-byte
 # "default-mac") in the tp_data UBIFS volume. Attach and mount it read-only
 # during preinit so board.d/02_network and the ath11k caldata hotplug can
 # read the MAC without each attaching the volume themselves.
@@ -7,7 +7,10 @@
 . /lib/functions.sh
 
 preinit_mount_tp_data() {
-	[ "$(board_name)" = "tplink,archer-ax55-v1" ] || return
+	case "$(board_name)" in
+	mercusys,mr80x-v2|tplink,archer-ax55-v1) ;;
+	*) return ;;
+	esac
 
 	# ubiattach lives in /usr/sbin, which the preinit PATH omits
 	local PATH="/usr/sbin:/usr/bin:$PATH"

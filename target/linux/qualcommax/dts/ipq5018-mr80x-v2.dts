@@ -1,0 +1,386 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+#include "ipq5018.dtsi"
+#include "ipq5018-ess.dtsi"
+#include "ipq5018-qcn6122.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/net/qca-uniphy.h>
+
+/ {
+	model = "Mercusys MR80X v2";
+	compatible = "mercusys,mr80x-v2", "qcom,ipq5018";
+
+	aliases {
+		led-boot = &led_sys_green;
+		led-failsafe = &led_sys_orange;
+		led-running = &led_sys_green;
+		led-upgrade = &led_sys_orange;
+		serial0 = &blsp1_uart1;
+		ethernet1 = &gmac1;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		/* U-Boot hardcodes root=mtd:ubi_rootfs; override it */
+		bootargs-append = " root=/dev/ubiblock0_1 coherent_pool=2M";
+	};
+
+	/*
+	 * Single button for both reset and WPS on the factory firmware.
+	 * WPS is deprecated, only expose as reset button.
+	 */
+	keys {
+		compatible = "gpio-keys";
+		pinctrl-0 = <&button_pins>;
+		pinctrl-names = "default";
+
+		reset-button {
+			label = "reset";
+			gpios = <&tlmm 14 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_sys_green: sys-green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&tlmm 13 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
+		};
+
+		led_sys_orange: sys-orange {
+			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&tlmm 12 GPIO_ACTIVE_HIGH>;
+		};
+
+		wan {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WAN;
+			gpios = <&tlmm 10 GPIO_ACTIVE_HIGH>;
+		};
+
+		lan1 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <1>;
+			gpios = <&tlmm 33 GPIO_ACTIVE_HIGH>;
+		};
+
+		lan2 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <2>;
+			gpios = <&tlmm 11 GPIO_ACTIVE_HIGH>;
+		};
+
+		lan3 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <3>;
+			gpios = <&tlmm 32 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+};
+
+/*
+ * ===============================================================
+ *     _______________________         _______________________
+ *    |        IPQ5018        |       |       RTL8367S        |
+ *    | +------+   +--------+ |       | +--------+   +------+ |
+ *    | | MAC0 |---| GE Phy | |       | |  Phy0  |---| Port1| |
+ *    | +------+   +--------+ |       | +--------+   +------+ |
+ *    | +------+   +--------+ |       | +--------+   +------+ |
+ *    | | MAC1 |---| Uniphy |-+-SGMII-+-| ExtPort|---| Port6| |
+ *    | +------+   +--------+ |       | +--------+   +------+ |
+ *    |_______________________|       | | Phy1-3 |---| P2-4 | |
+ *                                    | +--------+   +------+ |
+ *                                    |_______________________|
+ *
+ * IPQ5018 MAC0 -> internal GePHY (phy@7), left disabled: no RJ45 is
+ *                 wired to it, all four ports hang off the switch
+ * IPQ5018 MAC1 -> Uniphy SGMII -> RTL8367S Port6 (CPU port)
+ * RTL8367S Phy0-3 -> Ports 1-4 -> LAN/WAN
+ * RTL8367S managed via MDIO1 @90000
+ * ===============================================================
+ */
+
+&uniphy0 {
+	status = "okay";
+
+	assigned-clocks = <&uniphy0 UNIPHY_CLK_REF>;
+	assigned-clock-rates = <UNIPHY_REFCLK_25MHZ>;
+};
+
+// MAC1 ---sgmii (UNIPHY PCS)---> RTL8367S Port6 (CPU port)
+&gmac1 {
+	status = "okay";
+
+	phy-mode = "sgmii";
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
+};
+
+&mdio0 {
+	status = "okay";
+};
+
+&mdio1 {
+	status = "okay";
+
+	pinctrl-0 = <&mdio1_pins>, <&switch_reset_pins>;
+	pinctrl-names = "default";
+	reset-gpios = <&tlmm 26 GPIO_ACTIVE_LOW>;
+
+	/* RTL8367S switch (Realtek RTL8365MB-compatible) via MDIO */
+	switch1: ethernet-switch@1d {
+		compatible = "realtek,rtl8365mb";
+		reg = <29>;
+
+		/*
+		 * Internal MDIO bus for RTL8367S built-in PHYs.
+		 * The rtl8365mb driver creates a user MDIO bus from
+		 * this subnode via rtl83xx_setup_user_mdio().
+		 */
+		mdio {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			rtl8367s_0: ethernet-phy@0 {
+				reg = <0>;
+			};
+
+			rtl8367s_1: ethernet-phy@1 {
+				reg = <1>;
+			};
+
+			rtl8367s_2: ethernet-phy@2 {
+				reg = <2>;
+			};
+
+			rtl8367s_3: ethernet-phy@3 {
+				reg = <3>;
+			};
+		};
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				label = "wan";
+				phy-handle = <&rtl8367s_0>;
+			};
+
+			port@1 {
+				reg = <1>;
+				label = "lan1";
+				phy-handle = <&rtl8367s_1>;
+			};
+
+			port@2 {
+				reg = <2>;
+				label = "lan2";
+				phy-handle = <&rtl8367s_2>;
+			};
+
+			port@3 {
+				reg = <3>;
+				label = "lan3";
+				phy-handle = <&rtl8367s_3>;
+			};
+
+			port@6 {
+				reg = <6>;
+				label = "cpu";
+				phy-mode = "sgmii";
+				ethernet = <&gmac1>;
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+		};
+	};
+};
+
+&sleep_clk {
+	clock-frequency = <32000>;
+};
+
+&xo_board_clk {
+	clock-div = <4>;
+	clock-mult = <1>;
+};
+
+&blsp1_uart1 {
+	status = "okay";
+
+	pinctrl-0 = <&serial_0_pins>;
+	pinctrl-names = "default";
+};
+
+&crypto {
+	status = "okay";
+};
+
+&cryptobam {
+	status = "okay";
+};
+
+&prng {
+	status = "okay";
+};
+
+&qfprom {
+	status = "okay";
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&qpic_nand {
+	pinctrl-0 = <&qpic_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	nand@0 {
+		compatible = "spi-nand";
+		reg = <0>;
+		nand-ecc-engine = <&qpic_nand>;
+		nand-bus-width = <8>;
+
+		partitions {
+			compatible = "qcom,smem-part";
+		};
+	};
+};
+
+&tlmm {
+	button_pins: button-state {
+		pins = "gpio14";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-pull-up;
+	};
+
+	mdio1_pins: mdio-state {
+		mdc-pins {
+			pins = "gpio36";
+			function = "mdc";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		mdio-pins {
+			pins = "gpio37";
+			function = "mdio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+
+	switch_reset_pins: switch-reset-state {
+		pins = "gpio26";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-pull-down;
+	};
+
+	qpic_pins: qpic-state {
+		clock-pins {
+			pins = "gpio9";
+			function = "qspi_clk";
+			drive-strength = <8>;
+			bias-disable;
+		};
+
+		cs-pins {
+			pins = "gpio8";
+			function = "qspi_cs";
+			drive-strength = <8>;
+			bias-disable;
+		};
+
+		data-pins {
+			pins = "gpio4", "gpio5", "gpio6", "gpio7";
+			function = "qspi_data";
+			drive-strength = <8>;
+			bias-disable;
+		};
+	};
+
+	serial_0_pins: uart0-state {
+		tx-pins {
+			pins = "gpio29";
+			function = "blsp0_uart1";
+			drive-strength = <8>;
+			bias-disable;
+			output-high;
+		};
+
+		rx-pins {
+			pins = "gpio28";
+			function = "blsp0_uart1";
+			drive-strength = <8>;
+			bias-disable;
+			input-enable;
+		};
+	};
+};
+
+/*
+ * q6_region size (48MB) is already set by ipq5018-qcn6122.dtsi.
+ *
+ * ath11k Wi-Fi consumes too large memory spaces and too few spaces are
+ * available for users. To prevent OOM when using LuCI or other softwares,
+ * disable Wi-Fi related peripherals at the moment.
+ */
+&q6v5_wcss {
+	status = "disabled";
+
+	firmware-name = "ath11k/IPQ5018/hw1.0/q6_fw.mdt",
+			"ath11k/IPQ5018/hw1.0/m3_fw.mdt",
+			"ath11k/QCN6122/hw1.0/m3_fw.mdt";
+	boot-args = <0x2 0x4 0x2 0x1b 0x0 0x0>;
+	/* pcie:1, len:4, updid:2, reset:gpio27 */
+};
+
+&wifi {
+	status = "disabled";
+
+	qcom,rproc = <&q6_wcss_pd1>;
+	qcom,ath11k-fw-memory-mode = <2>;
+	qcom,bdf-addr = <0x4c400000>;
+	qcom,ath11k-calibration-variant = "Mercusys-MR80X-v2";
+
+	ieee80211-freq-limit = <2400000 2483000>;
+};
+
+&wifi1 {
+	status = "disabled";
+
+	qcom,rproc = <&q6_wcss_pd2>;
+	qcom,userpd-subsys-name = "q6v5_wcss_userpd2";
+	qcom,ath11k-fw-memory-mode = <2>;
+	qcom,bdf-addr = <0x4d100000>;
+	qcom,m3-dump-addr = <0x4df00000>;
+	qcom,ath11k-calibration-variant = "Mercusys-MR80X-v2";
+
+	ieee80211-freq-limit = <5150000 5730000>;
+};

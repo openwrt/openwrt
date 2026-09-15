@@ -54,6 +54,12 @@ case "$FIRMWARE" in
 		ath11k_set_macflag
 		ath11k_remove_regdomain
 		;;
+	mercusys,mr80x-v2)
+		caldata_extract "0:art" 0x1000 0x20000
+		label_mac=$(get_mac_binary /tmp/tp_data/default-mac 0)
+		ath11k_patch_mac $(macaddr_add "$label_mac" -1) 0
+		ath11k_set_macflag
+		;;
 	xiaomi,ax6000|\
 	xiaomi,redmi-ax5400)
 		caldata_extract "0:art" 0x1000 0x20000
@@ -111,6 +117,12 @@ case "$FIRMWARE" in
 		[ -n "$label_mac" ] && ath11k_patch_mac "$(macaddr_add "$label_mac" 3)" 0
 		ath11k_set_macflag
 		ath11k_remove_regdomain
+		;;
+	mercusys,mr80x-v2)
+		caldata_extract "0:art" 0x26800 0x20000
+		label_mac=$(get_mac_binary /tmp/tp_data/default-mac 0)
+		ath11k_patch_mac $(macaddr_add "$label_mac" -2) 0
+		ath11k_set_macflag
 		;;
 	yuncore,ax830)
 		caldata_extract "0:ART" 0x4c000 0x20000
