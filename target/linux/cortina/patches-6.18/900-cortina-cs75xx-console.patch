@@ -1,0 +1,95 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Fil Dunsky <filipp.dunsky@gmail.com>
+Date: Sat, 05 Sep 2026 07:30:20 +0300
+Subject: [PATCH] arm: cortina: hook up the CS75xx platform, clock, irqchip and UART
+
+Wire the out-of-tree Cortina CS75xx (Goldengate G2) support into the
+kernel build: source arch/arm/mach-cortina/Kconfig and add the machine
+directory to the ARM Makefile, add the GOLDENGATE_CLK and GOLDENGATE_IRQ
+symbols that build clk-cs75xx.c and irq-cs75xx.c, and add SERIAL_CORTINA
+and SERIAL_CORTINA_CONSOLE for the on-chip UART driver serial_cortina.c.
+
+Signed-off-by: Fil Dunsky <filipp.dunsky@gmail.com>
+---
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -464,6 +464,7 @@ source "arch/arm/mach-versatile/Kconfig"
+ source "arch/arm/mach-vt8500/Kconfig"
+ 
+ source "arch/arm/mach-zynq/Kconfig"
++source "arch/arm/mach-cortina/Kconfig"
+ 
+ # ARMv7-M architecture
+ config ARCH_LPC18XX
+--- a/arch/arm/Makefile
++++ b/arch/arm/Makefile
+@@ -224,6 +224,7 @@ machine-$(CONFIG_ARCH_TEGRA)		+= tegra
+ machine-$(CONFIG_ARCH_U8500)		+= ux500
+ machine-$(CONFIG_ARCH_VT8500)		+= vt8500
+ machine-$(CONFIG_ARCH_ZYNQ)		+= zynq
++machine-$(CONFIG_ARCH_CORTINA_CS75XX)	+= cortina
+ machine-$(CONFIG_PLAT_VERSATILE)	+= versatile
+ machine-$(CONFIG_PLAT_SPEAR)		+= spear
+ 
+--- a/drivers/clk/Kconfig
++++ b/drivers/clk/Kconfig
+@@ -584,3 +584,6 @@ config CLK_FD_KUNIT_TEST
+ 	  Kunit test for the clk-fractional-divider type.
+ 
+ endif
++
++config GOLDENGATE_CLK
++	bool
+--- a/drivers/clk/Makefile
++++ b/drivers/clk/Makefile
+@@ -168,3 +168,4 @@ endif
+ obj-y					+= xilinx/
+ obj-$(CONFIG_ARCH_ZYNQ)			+= zynq/
+ obj-$(CONFIG_COMMON_CLK_ZYNQMP)         += zynqmp/
++obj-$(CONFIG_GOLDENGATE_CLK)	+= clk-cs75xx.o
+--- a/drivers/irqchip/Kconfig
++++ b/drivers/irqchip/Kconfig
+@@ -824,3 +824,8 @@ config SUNPLUS_SP7021_INTC
+ 	  the primary controller on C-Chip.
+ 
+ endmenu
++
++config GOLDENGATE_IRQ
++	bool
++	select IRQ_DOMAIN
++	select GENERIC_IRQ_CHIP
+--- a/drivers/irqchip/Makefile
++++ b/drivers/irqchip/Makefile
+@@ -136,3 +136,4 @@ obj-$(CONFIG_APPLE_AIC)			+= irq-apple-a
+ obj-$(CONFIG_MCHP_EIC)			+= irq-mchp-eic.o
+ obj-$(CONFIG_SOPHGO_SG2042_MSI)		+= irq-sg2042-msi.o
+ obj-$(CONFIG_SUNPLUS_SP7021_INTC)	+= irq-sp7021-intc.o
++obj-$(CONFIG_GOLDENGATE_IRQ)	+= irq-cs75xx.o
+--- a/drivers/tty/serial/Kconfig
++++ b/drivers/tty/serial/Kconfig
+@@ -1623,3 +1623,18 @@ endmenu
+ 
+ config SERIAL_MCTRL_GPIO
+ 	tristate
++
++config SERIAL_CORTINA
++	bool "Cortina CS75xx serial port support"
++	depends on ARM
++	select SERIAL_CORE
++	select SERIAL_EARLYCON
++	help
++	  Onboard UART of Cortina CS75xx (Goldengate) SoCs.
++
++config SERIAL_CORTINA_CONSOLE
++	bool "Console on Cortina CS75xx serial port"
++	depends on SERIAL_CORTINA=y
++	select SERIAL_CORE_CONSOLE
++	help
++	  Use the Cortina CS75xx UART as the system console.
+--- a/drivers/tty/serial/Makefile
++++ b/drivers/tty/serial/Makefile
+@@ -100,3 +100,4 @@ obj-$(CONFIG_SERIAL_MCTRL_GPIO)	+= seria
+ 
+ obj-$(CONFIG_KGDB_SERIAL_CONSOLE) += kgdboc.o
+ obj-$(CONFIG_SERIAL_NUVOTON_MA35D1) += ma35d1_serial.o
++obj-$(CONFIG_SERIAL_CORTINA)	+= serial_cortina.o

@@ -1,0 +1,347 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+#include <dt-bindings/clock/cs75xx-clock.h>
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+#include <dt-bindings/gpio/gpio.h>
+/ {
+	compatible = "cortina,cs75xx";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	aliases {
+		serial0 = &uart0;
+		serial1 = &uart1;
+		serial2 = &uart2;
+		serial3 = &uart3;
+		gpio0 = &gpio0;
+		gpio1 = &gpio1;
+		gpio2 = &gpio2;
+		gpio3 = &gpio3;
+		gpio4 = &gpio4;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a9";
+			reg = <0>;
+		};
+		cpu@1 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a9";
+			reg = <1>;
+		};
+	};
+
+	amba: amba {
+		compatible = "simple-bus";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		interrupt-parent = <&gic>;
+		ranges;
+
+		gic: interrupt-controller@f8001000 {
+			compatible = "arm,cortex-a9-gic";
+			#interrupt-cells = <3>;
+			interrupt-controller;
+			reg = <0xF8001000 0x1000>,
+			      <0xF8000100 0x0100>;
+			status = "okay";
+		};
+
+		l2: l2-cache-controller@f5010000 {
+			compatible = "arm,pl310-cache";
+			reg = <0xF5010000 0x1000>;
+			cache-unified;
+			cache-level = <2>;
+			arm,shared-override;
+			arm,tag-latency = <1 1 1>;
+			arm,data-latency = <1 1 2>;
+			status = "okay";
+		};
+
+		global_timer: timer@f8000200 {
+			compatible = "arm,cortex-a9-global-timer";
+			interrupt-parent = <&gic>;
+			reg = <0xF8000200 0x20>;
+			interrupts = <GIC_PPI 11 IRQ_TYPE_EDGE_RISING>;
+			clocks = <&mainclk CS75XX_CLK_APB>;
+			status = "okay";
+		};
+
+		arm_timer: twd_timer@f8000600 {
+			compatible = "arm,cortex-a9-twd-timer";
+			interrupt-parent = <&gic>;
+			reg = <0xF8000600 0x20>;
+			interrupts = <GIC_PPI 13 IRQ_TYPE_EDGE_RISING>;
+			clocks = <&mainclk CS75XX_CLK_APB>;
+			status = "okay";
+		};
+
+		arm_wdt: twd_wdt@f8000620 {
+			compatible = "arm,cortex-a9-twd-wdt";
+			interrupt-parent = <&gic>;
+			reg = <0xF8000620 0x20>;
+			interrupts = <GIC_PPI 14 IRQ_TYPE_EDGE_RISING>;
+			status = "disabled";
+		};
+
+		mainclk: clock@f000000c {
+			compatible = "cortina,cs75xx-clk";
+			reg = <0xF000000C 0x04>;
+			#clock-cells = <1>;
+			status = "okay";
+		};
+
+		intc: regbus_intc@f0070004 {
+			compatible = "cortina,cs75xx-intc";
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 3 IRQ_TYPE_LEVEL_HIGH>;
+			reg = <0xF0070004 0x8>;
+			status = "okay";
+		};
+
+		uart0: serial@f0070110 {
+			compatible = "cortina,cs75xx-uart";
+			reg = <0xF0070110 0x30>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 6 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&mainclk CS75XX_CLK_APB>;
+			status = "okay";
+		};
+		uart1: serial@f0070140 {
+			compatible = "cortina,cs75xx-uart";
+			reg = <0xF0070140 0x30>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 7 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&mainclk CS75XX_CLK_APB>;
+			status = "disabled";
+		};
+		uart2: serial@f0070170 {
+			compatible = "cortina,cs75xx-uart";
+			reg = <0xF0070170 0x30>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 8 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&mainclk CS75XX_CLK_APB>;
+			status = "disabled";
+		};
+		uart3: serial@f00701a0 {
+			compatible = "cortina,cs75xx-uart";
+			reg = <0xF00701A0 0x30>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 9 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&mainclk CS75XX_CLK_APB>;
+			status = "disabled";
+		};
+
+		rtc0: rtc@f4920000 {
+			compatible = "cortina,cs75xx-rtc";
+			reg = <0xF4920000 0x50>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 10 IRQ_TYPE_LEVEL_HIGH>,
+					<GIC_SPI 11 IRQ_TYPE_LEVEL_HIGH>;
+			status = "disabled";
+		};
+
+		gpio0: gpio@f00701d0 {
+			compatible = "cortina,cs75xx-gpio";
+			reg = <0xF00701D0 0x20>, <0xF000001C 0x04>;
+			interrupts = <6>;
+			interrupt-parent = <&intc>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+		};
+		gpio1: gpio@f00701f0 {
+			compatible = "cortina,cs75xx-gpio";
+			reg = <0xF00701F0 0x20>, <0xF0000020 0x04>;
+			interrupts = <7>;
+			interrupt-parent = <&intc>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+		};
+		gpio2: gpio@f0070210 {
+			compatible = "cortina,cs75xx-gpio";
+			reg = <0xF0070210 0x20>, <0xF0000024 0x04>;
+			interrupts = <8>;
+			interrupt-parent = <&intc>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+		};
+		gpio3: gpio@f0070230 {
+			compatible = "cortina,cs75xx-gpio";
+			reg = <0xF0070230 0x20>, <0xF0000028 0x04>;
+			interrupts = <9>;
+			interrupt-parent = <&intc>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+		};
+		gpio4: gpio@f0070250 {
+			compatible = "cortina,cs75xx-gpio";
+			reg = <0xF0070250 0x20>, <0xF000002C 0x04>;
+			interrupts = <10>;
+			interrupt-parent = <&intc>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+		};
+
+		soc_i2c: i2c@f00700e8 {
+			compatible = "cortina,cs75xx-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0xF00700E8 0x28>;
+			interrupts = <11>;
+			interrupt-parent = <&intc>;
+			clocks = <&mainclk CS75XX_CLK_APB>;
+			status = "disabled";
+		};
+
+		mdio0: mdio@f00700a0 {
+			compatible = "cortina,cs75xx-mdio";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0xF00700A0 0x14>;
+			status = "disabled";
+		};
+
+		ethernet: ethernet@f0000000 {
+			compatible = "cortina,cs752x-eth";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0xF0000000 0x100>, <0xF0010000 0x500>,
+			      <0xF0090000 0x400>, <0xF0020000 0x4000>,
+			      <0xF0030000 0x400>, <0xF0040000 0x800>,
+			      <0xF0060000 0x100>, <0xF0400000 0x100000>;
+			reg-names = "global", "ni", "dma", "fe", "qm", "tm",
+				    "sch", "xram";
+			interrupts = <GIC_SPI 37 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 38 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 39 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-names = "eth0", "eth1", "eth2";
+			status = "disabled";
+
+			gmac0: ethernet-port@0 {
+				reg = <0>;
+				status = "disabled";
+			};
+
+			gmac1: ethernet-port@1 {
+				reg = <1>;
+				status = "disabled";
+			};
+
+			gmac2: ethernet-port@2 {
+				reg = <2>;
+				status = "disabled";
+			};
+		};
+
+		pcie0: pcie@80000000 {
+			compatible = "cortina,cs75xx-pcie";
+			reg = <0x80000000 0x1000>, <0x80001000 0x1000>,
+			      <0xF00A0000 0x100>, <0xF0000000 0x20>,
+			      <0xF00A1000 0x400>;
+			reg-names = "dbi", "config", "app", "global", "phy";
+			#address-cells = <3>;
+			#size-cells = <2>;
+			device_type = "pci";
+			bus-range = <0x00 0xff>;
+			num-lanes = <1>;
+			ranges = <0x82000000 0 0x80200000 0x80200000 0 0x1FE00000>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 33 IRQ_TYPE_LEVEL_HIGH>;
+			#interrupt-cells = <1>;
+			interrupt-map-mask = <0 0 0 7>;
+			interrupt-map = <0 0 0 1 &pcie0_intc 1>,
+					<0 0 0 2 &pcie0_intc 2>,
+					<0 0 0 3 &pcie0_intc 3>,
+					<0 0 0 4 &pcie0_intc 4>;
+			status = "disabled";
+
+			pcie0_intc: interrupt-controller {
+				interrupt-controller;
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
+			};
+		};
+
+		pcie1: pcie@a0000000 {
+			compatible = "cortina,cs75xx-pcie";
+			reg = <0xA0000000 0x1000>, <0xA0001000 0x1000>,
+			      <0xF00A0400 0x100>, <0xF0000000 0x20>,
+			      <0xF00A5000 0x400>;
+			reg-names = "dbi", "config", "app", "global", "phy";
+			#address-cells = <3>;
+			#size-cells = <2>;
+			device_type = "pci";
+			bus-range = <0x00 0xff>;
+			num-lanes = <1>;
+			ranges = <0x82000000 0 0xA0200000 0xA0200000 0 0x1FE00000>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 34 IRQ_TYPE_LEVEL_HIGH>;
+			#interrupt-cells = <1>;
+			interrupt-map-mask = <0 0 0 7>;
+			interrupt-map = <0 0 0 1 &pcie1_intc 1>,
+					<0 0 0 2 &pcie1_intc 2>,
+					<0 0 0 3 &pcie1_intc 3>,
+					<0 0 0 4 &pcie1_intc 4>;
+			status = "disabled";
+
+			pcie1_intc: interrupt-controller {
+				interrupt-controller;
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
+			};
+		};
+
+		pcie2: pcie@c0000000 {
+			compatible = "cortina,cs75xx-pcie";
+			reg = <0xC0000000 0x1000>, <0xC0001000 0x1000>,
+			      <0xF00A0800 0x100>, <0xF0000000 0x20>,
+			      <0xF00A9000 0x400>;
+			reg-names = "dbi", "config", "app", "global", "phy";
+			#address-cells = <3>;
+			#size-cells = <2>;
+			device_type = "pci";
+			bus-range = <0x00 0xff>;
+			num-lanes = <1>;
+			ranges = <0x82000000 0 0xC0200000 0xC0200000 0 0x1FE00000>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 35 IRQ_TYPE_LEVEL_HIGH>;
+			#interrupt-cells = <1>;
+			interrupt-map-mask = <0 0 0 7>;
+			interrupt-map = <0 0 0 1 &pcie2_intc 1>,
+					<0 0 0 2 &pcie2_intc 2>,
+					<0 0 0 3 &pcie2_intc 3>,
+					<0 0 0 4 &pcie2_intc 4>;
+			status = "disabled";
+
+			pcie2_intc: interrupt-controller {
+				interrupt-controller;
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
+			};
+		};
+
+		nandc: nand@e0000000 {
+			compatible = "cortina,cs752x-nand";
+			reg = <0xE0000000 0x08000000>,
+				<0xF0050000 0x300>,
+				<0xF0090400 0x300>;
+			status = "disabled";
+		};
+	};
+};
