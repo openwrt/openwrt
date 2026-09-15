@@ -87,6 +87,7 @@ struct otto_l3_route {
 
 struct otto_l3_config {
 	int (*find_slot)(struct otto_l3_ctrl *ctrl, struct otto_l3_route *rt, bool must_exist);
+	void (*get_egress_intf)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_intf *intf);
 	void (*set_egress_intf)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_intf *intf);
 	u64 (*get_egress_mac)(struct otto_l3_ctrl *ctrl, u32 idx);
 	void (*set_egress_mac)(struct otto_l3_ctrl *ctrl, u32 idx, u64 mac);
