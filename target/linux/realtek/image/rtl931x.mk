@@ -66,6 +66,16 @@ define Device/plasmacloud_psx28
 endef
 TARGET_DEVICES += plasmacloud_psx28
 
+define Device/sirivision_sr-st31212f
+  SOC := rtl9313
+  UIMAGE_MAGIC := 0x93000000
+  DEVICE_VENDOR := Sirivision
+  DEVICE_MODEL := SR-ST31212F
+  IMAGE_SIZE := 13312k
+  $(Device/kernel-lzma)
+endef
+TARGET_DEVICES += sirivision_sr-st31212f
+
 define Device/ubnt_usw-pro-xg-8-poe
   SOC := rtl9313
   DEVICE_VENDOR := Ubiquiti
