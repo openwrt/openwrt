@@ -1,0 +1,34 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: firepinn <firepinn@gmail.com>
+Date: Thu, 10 Jul 2026 00:00:00 +0000
+Subject: [PATCH] arm64: dts: rockchip: Update LED properties for ArmSom
+ Sige5
+
+Add OpenWrt's LED aliases for showing system status.
+
+Signed-off-by: firepinn <firepinn@gmail.com>
+---
+
+--- a/arch/arm64/boot/dts/rockchip/rk3576-armsom-sige5.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3576-armsom-sige5.dts
+@@ -21,6 +21,11 @@
+ 	aliases {
+ 		ethernet0 = &gmac0;
+ 		ethernet1 = &gmac1;
++
++		led-boot = &green_led;
++		led-failsafe = &green_led;
++		led-running = &green_led;
++		led-upgrade = &green_led;
+ 	};
+ 
+ 	chosen {
+@@ -45,7 +50,7 @@
+ 			color = <LED_COLOR_ID_GREEN>;
++			default-state = "on";
+ 			function = LED_FUNCTION_HEARTBEAT;
+ 			gpios = <&gpio4 RK_PB2 GPIO_ACTIVE_HIGH>;
+-			linux,default-trigger = "heartbeat";
+ 		};
+ 
+ 		red_led: red-led {
