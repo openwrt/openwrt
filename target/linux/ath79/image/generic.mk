@@ -3231,6 +3231,21 @@ define Device/watchguard_ap100
 endef
 TARGET_DEVICES += watchguard_ap100
 
+define Device/watchguard_ap120
+  $(Device/senao_loader_okli)
+  SOC := qca9558
+  DEVICE_VENDOR := WatchGuard
+  DEVICE_MODEL := AP120
+  DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct
+  IMAGE_SIZE := 14400k
+  LOADER_FLASH_OFFS := 0x1E0000
+  SENAO_IMGNAME := senao-ap120
+  WATCHGUARD_MAGIC := 82kdlzk2
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | \
+	check-size | senao-tar-gz $$$$(SENAO_IMGNAME) | watchguard-cksum $$$$(WATCHGUARD_MAGIC)
+endef
+TARGET_DEVICES += watchguard_ap120
+
 define Device/watchguard_ap200
   $(Device/senao_loader_okli)
   SOC := ar9344
