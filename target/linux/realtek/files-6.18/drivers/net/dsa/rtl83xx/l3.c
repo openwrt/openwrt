@@ -1070,6 +1070,7 @@ static struct otto_l3_route *otto_l3_host_route_alloc(struct otto_l3_ctrl *ctrl,
 
 	r->gw_ip = ip;
 	r->pr.id = -1; /* We still need to allocate a rule in HW */
+	r->pr.packet_cntr = -1;
 	r->is_host_route = true;
 
 	err = rhltable_insert(&ctrl->routes, &r->linkage, otto_l3_route_ht_params);
@@ -1116,6 +1117,7 @@ static struct otto_l3_route *otto_l3_route_alloc(struct otto_l3_ctrl *ctrl, u32 
 	r->id = idx;
 	r->gw_ip = ip;
 	r->pr.id = -1; /* We still need to allocate a rule in HW */
+	r->pr.packet_cntr = -1;
 	r->is_host_route = false;
 
 	err = rhltable_insert(&ctrl->routes, &r->linkage, otto_l3_route_ht_params);
@@ -1280,11 +1282,16 @@ static int otto_l3_fib_del_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 		return -ENOENT;
 	}
 
-	rtl83xx_l2_nexthop_rm(priv, &route->nh);
+	/* A route whose gateway never resolved holds no next hop and no PIE
+	 * rule: otto_l3_nexthop_update() is what allocates them.
+	 */
+	if (route->pr.id >= 0) {
+		rtl83xx_l2_nexthop_rm(priv, &route->nh);
+		priv->r->pie_rule_rm(priv, &route->pr);
+	}
 
-	dev_info(ctrl->dev, "releasing packet counter %d\n", route->pr.packet_cntr);
+	dev_dbg(ctrl->dev, "releasing packet counter %d\n", route->pr.packet_cntr);
 	rtldsa_packet_cntr_free(priv, route->pr.packet_cntr);
-	priv->r->pie_rule_rm(priv, &route->pr);
 
 	otto_l3_route_remove(ctrl, route);
 
