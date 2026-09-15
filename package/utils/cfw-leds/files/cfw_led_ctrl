@@ -1,0 +1,310 @@
+#!/bin/sh
+#===============================================================================
+# cfw_led_ctrl — external LED controller for the COMFAST CF-WA350 (ath79, DSA)
+#-------------------------------------------------------------------------------
+# Reproduces the LED behavior of the stock vendor firmware for the three
+# external LEDs, which no standard kernel trigger provides:
+#
+#   OFF      no cable in the port (radio disabled for the WLAN LED)
+#   SOLID    link up, no data being transferred
+#   BLINK    traffic flowing; blink rate scales with throughput
+#
+# Afterglow: when traffic stops, blinking decays gradually (quadratic curve
+# from the session peak rate, never speeding up) for HOLDOVER seconds before
+# the LED returns to solid. This prevents on/off flicker with bursty traffic
+# such as video streaming.
+#
+# Data sources on this DSA-based device:
+#   - WAN/LAN ports: hardware MIB counters (RxGoodByte + TxByte) of the
+#     QCA8337 switch, read with "ethtool -S <port>". These count ALL traffic
+#     passing the port, including frames forwarded in hardware by the DSA
+#     bridge offload, which never reach the CPU and are therefore invisible
+#     to the kernel netdev counters in /sys. This is the same counter source
+#     the stock firmware used. If ethtool or the MIB counters are unavailable
+#     the daemon automatically falls back to the kernel counters.
+#   - WLAN (2.4 GHz): kernel netdev counters of every interface currently
+#     attached to the on-board 2.4 GHz radio, derived at runtime from
+#     /sys/class/net/*/phy80211 (AP, STA, mesh and renamed interfaces
+#     all covered; wireless traffic always passes the CPU).
+#   - Link state: carrier of each DSA port netdev.
+#
+# Pure POSIX shell (busybox ash compatible). Runtime dependency: ethtool.
+#===============================================================================
+
+LEDS_ROOT="${LEDS_ROOT:-/sys/class/leds}"
+NET_ROOT="${NET_ROOT:-/sys/class/net}"
+
+#========================== device settings ===================================
+WAN_LED="${WAN_LED:-blue:ext-wan}"
+LAN_LED="${LAN_LED:-blue:ext-lan}"
+WLAN_LED="${WLAN_LED:-blue:ext-wlan2g}"
+
+WAN_IF="${WAN_IF:-wan}"          # DSA netdev of switch port 1 (WAN jack)
+LAN_IF="${LAN_IF:-lan}"          # DSA netdev of switch port 2 (LAN jack)
+
+IDLE_KBPS="${IDLE_KBPS:-16}"     # below this rate (KiB/s) traffic counts as idle
+HOLDOVER="${HOLDOVER:-20}"       # afterglow duration in seconds (10-30)
+USE_ETHTOOL="${USE_ETHTOOL:-1}"  # 1 = read switch MIB via ethtool, 0 = kernel only
+#===============================================================================
+
+# Kernel netdev counters -> IB_KB (KiB), or -1 if the interface is absent.
+# Each operand is scaled down before the addition to stay safe on 32-bit
+# shell arithmetic over long uptimes.
+sys_bytes() {
+	if read _r < "$NET_ROOT/$1/statistics/rx_bytes" 2>/dev/null \
+	   && read _t < "$NET_ROOT/$1/statistics/tx_bytes" 2>/dev/null; then
+		IB_KB=$(( _r / 1024 + _t / 1024 ))
+	else
+		IB_KB=-1
+	fi
+}
+
+# Hardware MIB counters of a switch port -> IB_KB, with automatic fallback
+# to the kernel counters when ethtool is unavailable or the interface has
+# no RxGoodByte/TxByte statistics (e.g. wireless).
+mib_bytes() {
+	if [ "$ETHTOOL_MODE" = 1 ]; then
+		_p=$(ethtool -S "$1" 2>/dev/null | awk \
+			'/RxGoodByte:/{rx=$2} /TxByte:/{tx=$2} END{if(rx!=""&&tx!="")printf "%d",(rx+tx)/1024}')
+		if [ -n "$_p" ]; then
+			IB_KB=$_p
+			return
+		fi
+	fi
+	sys_bytes "$1"
+}
+
+if_carrier_up() {
+	[ -n "$1" ] || return 1
+	[ -e "$NET_ROOT/$1/carrier" ] || return 1
+	read _c < "$NET_ROOT/$1/carrier" 2>/dev/null || _c=0
+	[ "$_c" = "1" ]
+}
+
+# Current netdevs of the on-board 2.4 GHz radio: any interface whose
+# phy80211 symlink does not resolve to a PCI device (the 5 GHz card).
+wlan_ifs() {
+	for _p in "$NET_ROOT"/*/phy80211; do
+		[ -e "$_p" ] || continue
+		case "$(readlink -f "$_p" 2>/dev/null)" in
+		*pci*) continue ;;
+		esac
+		_n=${_p%/phy80211}
+		echo "${_n##*/}"
+	done
+}
+
+wlan_link() { # $1 = 2.4 GHz netdev list; 1 if any has carrier
+	for _i in $1; do
+		if_carrier_up "$_i" && return 0
+	done
+	return 1
+}
+
+wlan_bytes() { # $1 = list; KiB summed over 2.4 GHz netdevs; -1 if none
+	_s=0; _found=0
+	for _i in $1; do
+		if read _r < "$NET_ROOT/$_i/statistics/rx_bytes" 2>/dev/null \
+		   && read _t < "$NET_ROOT/$_i/statistics/tx_bytes" 2>/dev/null; then
+			_s=$(( _s + _r / 1024 + _t / 1024 ))
+			_found=1
+		fi
+	done
+	[ "$_found" = 1 ] && IB_KB=$_s || IB_KB=-1
+}
+
+# Apply an LED state: off / on / <blink half-period in ms> (kernel timer trigger).
+set_led_mode() {
+	_l=$1; _m=$2
+	case "$_m" in
+	off)
+		echo none > "$LEDS_ROOT/$_l/trigger" 2>/dev/null
+		echo 0 > "$LEDS_ROOT/$_l/brightness" 2>/dev/null
+	;;
+	on)
+		echo none > "$LEDS_ROOT/$_l/trigger" 2>/dev/null
+		echo 1 > "$LEDS_ROOT/$_l/brightness" 2>/dev/null
+	;;
+	*)
+		echo timer > "$LEDS_ROOT/$_l/trigger" 2>/dev/null
+		echo "$_m" > "$LEDS_ROOT/$_l/delay_on" 2>/dev/null
+		echo "$_m" > "$LEDS_ROOT/$_l/delay_off" 2>/dev/null
+	;;
+	esac
+}
+
+# Rate (KiB/s) -> blink half-period in ms (tuned on real hardware).
+rate_delay() {
+	if   [ "$1" -ge 4096 ]; then RD=50
+	elif [ "$1" -ge 1024 ]; then RD=60
+	elif [ "$1" -ge  256 ]; then RD=80
+	elif [ "$1" -ge   32 ]; then RD=100
+	else                         RD=150
+	fi
+}
+
+# Per-group decision engine.
+# Inputs : G_LINK G_RATE G_PEAK G_AG G_LASTRD
+# Output : M = off | on | <blink ms>; updates G_PEAK G_AG G_LASTRD
+group_mode() {
+	# No cable / radio down: off, and forget the session.
+	if [ "$G_LINK" = "0" ]; then
+		M=off; G_PEAK=0; G_AG=0; G_LASTRD=0
+		return
+	fi
+	# Real traffic: blink according to rate, remember session peak.
+	if [ "$G_RATE" -ge "$IDLE_KBPS" ]; then
+		[ "$G_RATE" -gt "$G_PEAK" ] && G_PEAK=$G_RATE
+		G_AG=0
+		rate_delay "$G_RATE"
+		M=$RD; G_LASTRD=$RD
+		return
+	fi
+	# No real traffic but the session is still glowing: synthetic rate
+	# decaying quadratically from the peak; blink may only slow down,
+	# never speed up, for a natural tail-off.
+	if [ "$G_PEAK" -ge "$IDLE_KBPS" ] && [ "$G_AG" -lt "$HOLDOVER" ]; then
+		G_AG=$(( G_AG + 1 ))
+		_RM=$(( HOLDOVER - G_AG ))
+		_SY=$(( G_PEAK * _RM * _RM / (HOLDOVER * HOLDOVER) ))
+		if [ "$_SY" -ge "$IDLE_KBPS" ]; then
+			rate_delay "$_SY"
+			[ "$RD" -lt "$G_LASTRD" ] && RD=$G_LASTRD
+			M=$RD; G_LASTRD=$RD
+		else
+			M=on
+		fi
+		return
+	fi
+	# Fully idle: solid on.
+	M=on; G_PEAK=0; G_AG=0; G_LASTRD=0
+}
+
+# Vendor "LEDs off" feature (/etc/led_off flag file).
+leds_disabled() {
+	[ -e /etc/led_off ]
+}
+
+#------------------------- initialization --------------------------------------
+
+WLAN_IFS=$(wlan_ifs | tr '\n' ' ')
+
+# Detect the counter source: qca8k exposes RxGoodByte/TxByte via ethtool -S.
+ETHTOOL_MODE=0
+if [ "$USE_ETHTOOL" = 1 ] && command -v ethtool >/dev/null 2>&1; then
+	if ethtool -S "$WAN_IF" 2>/dev/null | grep -q "RxGoodByte:"; then
+		ETHTOOL_MODE=1
+	fi
+fi
+if [ "$ETHTOOL_MODE" = 0 ]; then
+	echo "warning: ethtool/MIB unavailable, falling back to kernel counters (blind to hardware-forwarded traffic)" >&2
+fi
+
+# Release the managed LEDs from any kernel trigger applied earlier at boot.
+for _l in "$WAN_LED" "$LAN_LED" "$WLAN_LED"; do
+	grep -qw timer "$LEDS_ROOT/$_l/trigger" 2>/dev/null || \
+		echo "warning: timer trigger unavailable for $_l" >&2
+	[ -e "$LEDS_ROOT/$_l/trigger" ] && echo none > "$LEDS_ROOT/$_l/trigger" 2>/dev/null
+done
+
+for _i in "$WAN_IF" "$LAN_IF"; do
+	[ -e "$NET_ROOT/$_i" ] || echo "warning: interface $_i missing (is this a DSA image?)" >&2
+done
+
+if [ "$ETHTOOL_MODE" = 1 ]; then SRC="switch MIB (ethtool)"; else SRC="kernel counters"; fi
+logger -t cfw_leds "started: WAN='$WAN_LED'($WAN_IF) LAN='$LAN_LED'($LAN_IF) WLAN='$WLAN_LED'($WLAN_IFS) src=$SRC holdover=${HOLDOVER}s idle=${IDLE_KBPS}KiB/s"
+
+cleanup() { # leave the LEDs in the same defined state the init uses
+	for _l in "$WAN_LED" "$LAN_LED" "$WLAN_LED"; do
+		set_led_mode "$_l" on
+	done
+	logger -t cfw_leds "stopped"
+	exit 0
+}
+trap cleanup INT TERM
+
+#------------------------- main loop -------------------------------------------
+
+FIRST=1
+P_WAN=0; P_LAN=0; P_WL=0
+R_WAN=0; R_LAN=0; R_WL=0
+WAN_STATE="INIT"; LAN_STATE="INIT"; WLAN_STATE="INIT"
+WAN_PEAK=0; WAN_AG=0; WAN_LASTRD=0
+LAN_PEAK=0; LAN_AG=0; LAN_LASTRD=0
+WLAN_PEAK=0; WLAN_AG=0; WLAN_LASTRD=0
+DC=0
+LEDS_OFF=0
+
+while :; do
+	DC=$(( DC + 1 ))
+
+	# Vendor "LEDs off" mode (re-read every ~5 s, applied on transition).
+	[ $(( DC % 5 )) -eq 1 ] && { leds_disabled && LEDS_OFF=1 || LEDS_OFF=0; }
+	if [ "$LEDS_OFF" = 1 ]; then
+		if [ "$WAN_STATE" != "OFFD" ]; then
+			for _l in "$WAN_LED" "$LAN_LED" "$WLAN_LED"; do
+				set_led_mode "$_l" off
+			done
+		fi
+		WAN_STATE="OFFD"; LAN_STATE="OFFD"; WLAN_STATE="OFFD"
+		WAN_PEAK=0; WAN_AG=0; LAN_PEAK=0; LAN_AG=0; WLAN_PEAK=0; WLAN_AG=0
+		sleep 1
+		FIRST=1
+		continue
+	fi
+
+	# Link state straight from each DSA port carrier.
+	if if_carrier_up "$WAN_IF"; then WAN_LINK=1; else WAN_LINK=0; fi
+	if if_carrier_up "$LAN_IF"; then LAN_LINK=1; else LAN_LINK=0; fi
+	WLAN_NOW=$(wlan_ifs)
+	if wlan_link "$WLAN_NOW"; then WLAN_LINK=1; else WLAN_LINK=0; fi
+
+	# Counters: hardware MIB for switch ports, kernel counters for WLAN.
+	mib_bytes "$WAN_IF";  CW=$IB_KB; [ $CW -lt 0 ] && CW=0
+	mib_bytes "$LAN_IF";  CL=$IB_KB; [ $CL -lt 0 ] && CL=0
+	wlan_bytes "$WLAN_NOW"; C1=$IB_KB; [ $C1 -lt 0 ] && C1=0
+
+	if [ $FIRST = 1 ]; then
+		P_WAN=$CW; P_LAN=$CL; P_WL=$C1
+		FIRST=0
+		sleep 1
+		continue
+	fi
+
+	# Per-second deltas in KiB == KiB/s (clamped against counter resets).
+	D_WAN=$(( CW - P_WAN )); [ $D_WAN -lt 0 ] && D_WAN=0
+	D_LAN=$(( CL - P_LAN )); [ $D_LAN -lt 0 ] && D_LAN=0
+	D_WL=$(( C1 - P_WL ));   [ $D_WL -lt 0 ] && D_WL=0
+	P_WAN=$CW; P_LAN=$CL; P_WL=$C1
+
+	# Asymmetric smoothing: slow attack (no single-packet flicker),
+	# fast release (quick return towards solid after bursts).
+	I_WAN=$D_WAN; I_LAN=$D_LAN; I_WL=$D_WL
+	if [ $I_WAN -lt $R_WAN ]; then R_WAN=$(( (R_WAN + 3 * I_WAN) / 4 )); else R_WAN=$(( (3 * R_WAN + I_WAN) / 4 )); fi
+	if [ $I_LAN -lt $R_LAN ]; then R_LAN=$(( (R_LAN + 3 * I_LAN) / 4 )); else R_LAN=$(( (3 * R_LAN + I_LAN) / 4 )); fi
+	if [ $I_WL -lt $R_WL ];   then R_WL=$(( (R_WL + 3 * I_WL) / 4 ));   else R_WL=$(( (3 * R_WL + I_WL) / 4 )); fi
+
+	G_LINK=$WAN_LINK; G_RATE=$R_WAN; G_PEAK=$WAN_PEAK; G_AG=$WAN_AG; G_LASTRD=$WAN_LASTRD
+	group_mode
+	WAN_PEAK=$G_PEAK; WAN_AG=$G_AG; WAN_LASTRD=$G_LASTRD; NWS=$M
+
+	G_LINK=$LAN_LINK; G_RATE=$R_LAN; G_PEAK=$LAN_PEAK; G_AG=$LAN_AG; G_LASTRD=$LAN_LASTRD
+	group_mode
+	LAN_PEAK=$G_PEAK; LAN_AG=$G_AG; LAN_LASTRD=$G_LASTRD; NLS=$M
+
+	G_LINK=$WLAN_LINK; G_RATE=$R_WL; G_PEAK=$WLAN_PEAK; G_AG=$WLAN_AG; G_LASTRD=$WLAN_LASTRD
+	group_mode
+	WLAN_PEAK=$G_PEAK; WLAN_AG=$G_AG; WLAN_LASTRD=$G_LASTRD; NWLS=$M
+
+	if [ "$NWS" != "$WAN_STATE" ]; then
+		set_led_mode "$WAN_LED" "$NWS"; WAN_STATE=$NWS
+	fi
+	if [ "$NLS" != "$LAN_STATE" ]; then
+		set_led_mode "$LAN_LED" "$NLS"; LAN_STATE=$NLS
+	fi
+	if [ "$NWLS" != "$WLAN_STATE" ]; then
+		set_led_mode "$WLAN_LED" "$NWLS"; WLAN_STATE=$NWLS
+	fi
+
+	sleep 1
+done
