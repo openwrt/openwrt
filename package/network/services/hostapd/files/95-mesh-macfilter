@@ -1,0 +1,28 @@
+#!/bin/sh
+
+. /lib/functions.sh
+
+start_plink_macfilter() {
+	local mode
+	local device
+	local path
+
+	config_get mode $1 mode
+	[ "$mode" = "mesh" ] || return
+
+	config_get device $1 device
+	config_get path $device path
+	[ -d "/sys/devices/$path/net/$DEVICENAME" ] || return
+
+	ps | grep mesh-macfilter | grep $device | grep -q $DEVICENAME && return
+	/usr/bin/ucode /lib/netifd/wireless/mesh-macfilter.uc $device $DEVICENAME
+}
+
+if [ "$ACTION" = "add" ]; then
+	case "$DEVICENAME" in
+		*"mesh"*)
+			[ -e /etc/config/wireless ] && config_load wireless || return
+			config_foreach start_plink_macfilter wifi-iface
+		;;
+	esac
+fi
