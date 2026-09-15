@@ -2093,6 +2093,19 @@ define Device/keenetic_kn-3510
 endef
 TARGET_DEVICES += keenetic_kn-3510
 
+define Device/zyxel_keenetic-giga-iii
+  $(Device/nand)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 51000k
+  DEVICE_VENDOR := Zyxel
+  DEVICE_MODEL := Keenetic Giga III
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb3 kmod-usb-ledtrig-usbport
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | \
+	check-size | pad-to $$(BLOCKSIZE) | zyimage -d 0x2880 -v "KN-GIGA3"
+endef
+TARGET_DEVICES += zyxel_keenetic-giga-iii
+
 define Device/lenovo_newifi-d1
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
