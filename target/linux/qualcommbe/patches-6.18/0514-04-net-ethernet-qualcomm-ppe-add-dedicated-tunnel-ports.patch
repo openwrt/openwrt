@@ -1,0 +1,306 @@
+From: Kenneth Kasilag <kenneth@kasilag.me>
+Date: Wed, 15 Jul 2026 09:00:00 +0800
+Subject: [PATCH] net: ethernet: qualcomm: ppe: add dedicated tunnel ports
+
+APPE does not send encapsulated traffic directly through the ordinary
+underlay port.  The vendor transaction allocates a tunnel virtual port,
+copies the underlay queue and physical-port identity to it, and only then
+marks its tunnel context active.
+
+Reserve a range disjoint from wireless virtual ports, add serialized encap
+and tunnel-port allocators, and program the dedicated port with reversible
+MTU, queue and L2 state updates.  Expose the L2 context last during
+activation and hide it first during teardown so a partial transaction is
+never visible to the flow engine.
+
+Signed-off-by: Kenneth Kasilag <kenneth@kasilag.me>
+
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe.h
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe.h
+@@ -6,6 +6,7 @@
+ #ifndef __PPE_H__
+ #define __PPE_H__
+ 
++#include <linux/bitmap.h>
+ #include <linux/compiler.h>
+ #include <linux/interconnect.h>
+ #include <linux/mutex.h>
+@@ -22,6 +23,9 @@ struct ppe_flowtable;
+  * survive from physical-port setup through later virtual-port use.
+  */
+ #define PPE_PORT_ID_COUNT	256
++#define PPE_TUNNEL_ID_COUNT	128
++#define PPE_TUNNEL_L3_IF_COUNT	128
++#define PPE_TUNNEL_VP_COUNT	184
+ 
+ /* Per-SoC PPE parameters. The PPE register layer is shared between the
+  * HPPE (IPQ807x) and APPE (IPQ9574) generations; this collects the few
+@@ -96,6 +100,11 @@ struct ppe_device {
+ 	u8 flow_cmd_id;
+ 	/* Serialize the APPE tunnel command and table registers. */
+ 	struct mutex tunnel_lock;
++	/* Serialize tunnel object ID and dedicated VP allocation. */
++	struct mutex tunnel_state_lock;
++	DECLARE_BITMAP(tunnel_id_map, PPE_TUNNEL_ID_COUNT);
++	DECLARE_BITMAP(tunnel_l3_if_map, PPE_TUNNEL_L3_IF_COUNT);
++	DECLARE_BITMAP(tunnel_vp_map, PPE_TUNNEL_VP_COUNT);
+ 	unsigned int num_icc_paths;
+ 	struct icc_bulk_data icc_paths[] __counted_by(num_icc_paths);
+ };
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_regs.h
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_regs.h
+@@ -470,6 +470,7 @@
+ #define PPE_L2_VP_PORT_TBL_INC			0x10
+ #define PPE_L2_VP_PORT_W0_INVALID_VSI_FWD_EN	BIT(0)
+ #define PPE_L2_VP_PORT_W0_DST_INFO		GENMASK(9, 2)
++#define PPE_L2_VP_PORT_W0_PHYSICAL_PORT		GENMASK(12, 10)
+ #define PPE_L2_VP_PORT_W1_STATE_CHECK_EN	BIT(28)
+ #define PPE_L2_VP_PORT_W1_VP_TYPE		BIT(29)
+ #define PPE_L2_VP_PORT_W1_CONTEXT_ACTIVE	BIT(30)
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_tunnel.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_tunnel.c
+@@ -10,10 +10,12 @@
+ #include <linux/bitfield.h>
+ #include <linux/device.h>
+ #include <linux/errno.h>
++#include <linux/if_ether.h>
+ #include <linux/kernel.h>
+ #include <linux/regmap.h>
+ 
+ #include "ppe.h"
++#include "ppe_config.h"
+ #include "ppe_regs.h"
+ #include "ppe_tunnel.h"
+ 
+@@ -431,9 +433,205 @@ out:
+ 	return ret;
+ }
+ 
++/* One match-or-allocate bitmap allocator backs the tunnel encap-ID,
++ * tunnel-L3-interface and dedicated-VP spaces; @base offsets the
++ * returned and freed identifiers into the caller's number space.
++ */
++static int ppe_tunnel_bitmap_alloc(struct ppe_device *ppe_dev,
++				   unsigned long *map, int count, int base)
++{
++	unsigned int id;
++
++	if (ppe_tunnel_check(ppe_dev))
++		return -EOPNOTSUPP;
++
++	mutex_lock(&ppe_dev->tunnel_state_lock);
++	id = find_first_zero_bit(map, count);
++	if (id < count)
++		__set_bit(id, map);
++	mutex_unlock(&ppe_dev->tunnel_state_lock);
++
++	return id < count ? base + id : -ENOSPC;
++}
++
++static void ppe_tunnel_bitmap_free(struct ppe_device *ppe_dev,
++				   unsigned long *map, int count, int base,
++				   int id)
++{
++	bool allocated;
++
++	id -= base;
++	if (WARN_ON_ONCE(id < 0 || id >= count))
++		return;
++
++	mutex_lock(&ppe_dev->tunnel_state_lock);
++	allocated = test_and_clear_bit(id, map);
++	mutex_unlock(&ppe_dev->tunnel_state_lock);
++	WARN_ON_ONCE(!allocated);
++}
++
++int ppe_tunnel_id_alloc(struct ppe_device *ppe_dev)
++{
++	return ppe_tunnel_bitmap_alloc(ppe_dev, ppe_dev->tunnel_id_map,
++				       PPE_TUNNEL_ID_COUNT, 0);
++}
++
++void ppe_tunnel_id_free(struct ppe_device *ppe_dev, int tunnel_id)
++{
++	ppe_tunnel_bitmap_free(ppe_dev, ppe_dev->tunnel_id_map,
++			       PPE_TUNNEL_ID_COUNT, 0, tunnel_id);
++}
++
++int ppe_tunnel_l3_if_alloc(struct ppe_device *ppe_dev)
++{
++	return ppe_tunnel_bitmap_alloc(ppe_dev, ppe_dev->tunnel_l3_if_map,
++				       PPE_TUNNEL_L3_IF_COUNT, 0);
++}
++
++void ppe_tunnel_l3_if_free(struct ppe_device *ppe_dev, int l3_if)
++{
++	ppe_tunnel_bitmap_free(ppe_dev, ppe_dev->tunnel_l3_if_map,
++			       PPE_TUNNEL_L3_IF_COUNT, 0, l3_if);
++}
++
++int ppe_tunnel_vp_alloc(struct ppe_device *ppe_dev)
++{
++	return ppe_tunnel_bitmap_alloc(ppe_dev, ppe_dev->tunnel_vp_map,
++				       PPE_TUNNEL_VP_COUNT,
++				       PPE_TUNNEL_VP_BASE);
++}
++
++void ppe_tunnel_vp_free(struct ppe_device *ppe_dev, int vp)
++{
++	ppe_tunnel_bitmap_free(ppe_dev, ppe_dev->tunnel_vp_map,
++			       PPE_TUNNEL_VP_COUNT, PPE_TUNNEL_VP_BASE, vp);
++}
++
++/* Configure the dedicated tunnel VP exactly as the vendor transaction does:
++ * give it the tunnel MTU, copy the underlay port's unicast queue, map it to
++ * that physical port, then expose an active tunnel context. On teardown the
++ * context is hidden first. The reserved VP range has no other owner, so its
++ * inactive state is the all-zero table state.
++ */
++int ppe_tunnel_port_set(struct ppe_device *ppe_dev, int vp,
++			int physical_port, int mtu, bool active)
++{
++	u32 l2_old[4], l2_new[4] = {};
++	u32 l2_verify[4], mtu_verify[3], queue_verify;
++	u32 mtu_old[3], mtu_new[3] = {};
++	u32 queue_old, queue_new = 0;
++	u32 l2_reg, mtu_reg, queue_reg;
++	int q_start, q_end, ret, err;
++
++	if (vp < PPE_TUNNEL_VP_BASE ||
++	    vp >= PPE_TUNNEL_VP_BASE + PPE_TUNNEL_VP_COUNT ||
++	    physical_port < 0 || physical_port >= ppe_dev->num_ports ||
++	    mtu < 0 || mtu + ETH_HLEN > FIELD_MAX(PPE_MRU_MTU_CTRL_W0_MTU))
++		return -EINVAL;
++	ret = ppe_tunnel_check(ppe_dev);
++	if (ret)
++		return ret;
++
++	l2_reg = PPE_L2_VP_PORT_TBL_ADDR + PPE_L2_VP_PORT_TBL_INC * vp;
++	mtu_reg = PPE_MRU_MTU_CTRL_TBL_ADDR + PPE_MRU_MTU_CTRL_TBL_INC * vp;
++	queue_reg = PPE_UCAST_QUEUE_MAP_TBL_ADDR +
++		    PPE_UCAST_QUEUE_MAP_TBL_INC * vp;
++
++	mutex_lock(&ppe_dev->tunnel_state_lock);
++	ret = regmap_bulk_read(ppe_dev->regmap, l2_reg, l2_old,
++			       ARRAY_SIZE(l2_old));
++	if (ret)
++		goto out;
++	ret = regmap_bulk_read(ppe_dev->regmap, mtu_reg, mtu_old,
++			       ARRAY_SIZE(mtu_old));
++	if (ret)
++		goto out;
++	ret = regmap_read(ppe_dev->regmap, queue_reg, &queue_old);
++	if (ret)
++		goto out;
++
++	if (active) {
++		ret = ppe_port_resource_get(ppe_dev, physical_port,
++					    PPE_RES_UCAST, &q_start, &q_end);
++		if (ret)
++			goto out;
++		if (q_start > q_end) {
++			ret = -EINVAL;
++			goto out;
++		}
++		PPE_MRU_MTU_CTRL_SET_MRU(mtu_new, mtu + ETH_HLEN);
++		PPE_MRU_MTU_CTRL_SET_MTU(mtu_new, mtu + ETH_HLEN);
++		PPE_MRU_MTU_CTRL_SET_RX_CNT_EN(mtu_new, true);
++		PPE_MRU_MTU_CTRL_SET_TX_CNT_EN(mtu_new, true);
++		queue_new = FIELD_PREP(PPE_UCAST_QUEUE_MAP_TBL_PROFILE_ID,
++				       physical_port) |
++			    FIELD_PREP(PPE_UCAST_QUEUE_MAP_TBL_QUEUE_ID,
++				       q_start);
++		l2_new[0] = FIELD_PREP(PPE_L2_VP_PORT_W0_PHYSICAL_PORT,
++				       physical_port);
++		l2_new[1] = PPE_L2_VP_PORT_W1_STATE_CHECK_EN |
++			      PPE_L2_VP_PORT_W1_CONTEXT_ACTIVE;
++	}
++
++	/* On activation expose L2 state last; on teardown hide it first. */
++	if (!active) {
++		ret = regmap_bulk_write(ppe_dev->regmap, l2_reg, l2_new,
++					ARRAY_SIZE(l2_new));
++		if (ret)
++			goto restore;
++	}
++	ret = regmap_bulk_write(ppe_dev->regmap, mtu_reg, mtu_new,
++				ARRAY_SIZE(mtu_new));
++	if (ret)
++		goto restore;
++	ret = regmap_write(ppe_dev->regmap, queue_reg, queue_new);
++	if (ret)
++		goto restore;
++	if (active) {
++		ret = regmap_bulk_write(ppe_dev->regmap, l2_reg, l2_new,
++					ARRAY_SIZE(l2_new));
++		if (ret)
++			goto restore;
++	}
++	ret = regmap_bulk_read(ppe_dev->regmap, l2_reg, l2_verify,
++			       ARRAY_SIZE(l2_verify));
++	if (ret)
++		goto restore;
++	ret = regmap_bulk_read(ppe_dev->regmap, mtu_reg, mtu_verify,
++			       ARRAY_SIZE(mtu_verify));
++	if (ret)
++		goto restore;
++	ret = regmap_read(ppe_dev->regmap, queue_reg, &queue_verify);
++	if (ret)
++		goto restore;
++	if (memcmp(l2_verify, l2_new, sizeof(l2_new)) ||
++	    memcmp(mtu_verify, mtu_new, sizeof(mtu_new)) ||
++	    queue_verify != queue_new) {
++		ret = -EIO;
++		goto restore;
++	}
++	goto out;
++
++restore:
++	err = regmap_bulk_write(ppe_dev->regmap, l2_reg, l2_old,
++				ARRAY_SIZE(l2_old));
++	err |= regmap_bulk_write(ppe_dev->regmap, mtu_reg, mtu_old,
++				 ARRAY_SIZE(mtu_old));
++	err |= regmap_write(ppe_dev->regmap, queue_reg, queue_old);
++	if (err)
++		dev_err(ppe_dev->dev, "failed to restore tunnel VP %d\n", vp);
++out:
++	mutex_unlock(&ppe_dev->tunnel_state_lock);
++	return ret;
++}
++
+ int ppe_tunnel_hw_init(struct ppe_device *ppe_dev)
+ {
+ 	mutex_init(&ppe_dev->tunnel_lock);
++	mutex_init(&ppe_dev->tunnel_state_lock);
++	bitmap_zero(ppe_dev->tunnel_id_map, PPE_TUNNEL_ID_COUNT);
++	bitmap_zero(ppe_dev->tunnel_l3_if_map, PPE_TUNNEL_L3_IF_COUNT);
++	bitmap_zero(ppe_dev->tunnel_vp_map, PPE_TUNNEL_VP_COUNT);
+ 
+ 	return 0;
+ }
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_tunnel.h
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_tunnel.h
+@@ -13,6 +13,9 @@
+ #define PPE_TUNNEL_ENCAP_HEADER_WORDS	32
+ #define PPE_TUNNEL_KEY_WORDS		3
+ 
++/* Keep tunnel VPs disjoint from the wireless VP pool (64..71). */
++#define PPE_TUNNEL_VP_BASE		72
++
+ struct ppe_device;
+ 
+ struct ppe_tunnel_decap_entry {
+@@ -41,5 +44,13 @@ int ppe_tunnel_port_l3_if_set(struct ppe
+ int ppe_tunnel_l3_if_set(struct ppe_device *ppe_dev, int index, u32 value);
+ int ppe_tunnel_key_set(struct ppe_device *ppe_dev, int type,
+ 		       const u32 key[PPE_TUNNEL_KEY_WORDS]);
++int ppe_tunnel_id_alloc(struct ppe_device *ppe_dev);
++void ppe_tunnel_id_free(struct ppe_device *ppe_dev, int tunnel_id);
++int ppe_tunnel_l3_if_alloc(struct ppe_device *ppe_dev);
++void ppe_tunnel_l3_if_free(struct ppe_device *ppe_dev, int l3_if);
++int ppe_tunnel_vp_alloc(struct ppe_device *ppe_dev);
++void ppe_tunnel_vp_free(struct ppe_device *ppe_dev, int vp);
++int ppe_tunnel_port_set(struct ppe_device *ppe_dev, int vp,
++			int physical_port, int mtu, bool active);
+ 
+ #endif
