@@ -1,0 +1,17 @@
+#!/bin/sh /etc/rc.common
+
+START=21
+USE_PROCD=1
+
+boot() {
+	case $(board_name) in
+	hpe,1920-24g-poe-370w)
+    logger -t fan.control "Fan Control Script Started"
+    procd_open_instance
+    procd_set_param command "/sbin/jg926a_fanctrl.sh"
+    procd_set_param stdout 0
+    procd_set_param stderr 0
+    procd_set_param respawn
+    procd_close_instance
+  esac
+}
