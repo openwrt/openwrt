@@ -1,0 +1,104 @@
+From 213584a702492eef6e367ef991cbf453b8fb4e82 Mon Sep 17 00:00:00 2001
+From: Konstantin Meshkov <skyline@mail.ru>
+Date: Thu, 27 Aug 2026 10:46:01 +0300
+Subject: [PATCH] net: phy: marvell: add LED support for 88E1116R PHY
+
+The Marvell 88E1116R PHY (used e.g. on the D-Link DNS-325) exposes its
+LEDs through the same page 3 register 0x10 LED control layout as the
+88E1318S: four bits of function-select per LED for LED[0..2], with the
+same family function codes (OFF=0x8, ON=0x9, BLINK=0xb).  The stock
+value 0x1107 programs LED0 = 1G link (mode 0x7) and LED2 = link/activity
+(mode 0x1), leaving LED1 unused.
+
+Wire up the existing 88E1318S LED handlers in the 88E1116R driver entry
+so the PHY LEDs can be described in the device tree and driven through
+the LED trigger API with hardware offload.  LED polarity (active-high /
+active-low) is configured through the PHY LED DT binding using the
+led_polarity_set callback.
+
+The DNS-325 device tree change follows in a separate commit.
+
+Co-developed-by: Aleksander Jan Bajkowski <olek2@wp.pl>
+Signed-off-by: Konstantin Meshkov <skyline@mail.ru>
+
+---
+ drivers/net/phy/marvell.c | 46 +++++++++++++++++++++++++++++++++++++---
+ 1 file changed, 46 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/phy/marvell.c
++++ b/drivers/net/phy/marvell.c
+@@ -149,6 +149,9 @@
+ #define MII_88E1318S_PHY_LED_FUNC_ON		(0x9)
+ #define MII_88E1318S_PHY_LED_FUNC_HI_Z		(0xa)
+ #define MII_88E1318S_PHY_LED_FUNC_BLINK		(0xb)
++#define MII_88E1318S_PHY_LED_POL		0x11
++#define MII_88E1318S_PHY_LED_POL_ACT_HIGH(idx)	(1 << 2 * (idx))
++#define M88E1318S_MAX_LEDS			3
+ #define MII_88E1318S_PHY_LED_TCR		0x12
+ #define MII_88E1318S_PHY_LED_TCR_FORCE_INT	BIT(15)
+ #define MII_88E1318S_PHY_LED_TCR_INTn_ENABLE	BIT(7)
+@@ -3572,7 +3575,7 @@
+ {
+ 	int mode, reg;
+ 
+-	if (index > 2)
++	if (index >= M88E1318S_MAX_LEDS)
+ 		return -EINVAL;
+ 
+ 	reg = phy_read_paged(phydev, MII_MARVELL_LED_PAGE,
+@@ -3585,6 +3588,42 @@
+ 	return marvell_get_led_rules(index, rules, mode);
+ }
+ 
++static int m88e1318_led_polarity_set(struct phy_device *phydev, int index,
++				     unsigned long modes)
++{
++	bool force_active_low = false, force_active_high = false;
++	u32 mode;
++
++	if (index >= M88E1318S_MAX_LEDS)
++		return -EINVAL;
++
++	for_each_set_bit(mode, &modes, __PHY_LED_MODES_NUM) {
++		switch (mode) {
++		case PHY_LED_ACTIVE_LOW:
++			force_active_low = true;
++			break;
++		case PHY_LED_ACTIVE_HIGH:
++			force_active_high = true;
++			break;
++		default:
++			return -EINVAL;
++		}
++	}
++
++	if (force_active_low)
++		return phy_modify_paged(phydev, MII_MARVELL_LED_PAGE,
++					MII_88E1318S_PHY_LED_POL,
++					MII_88E1318S_PHY_LED_POL_ACT_HIGH(index),
++					0);
++
++	if (force_active_high)
++		return phy_modify_paged(phydev, MII_MARVELL_LED_PAGE,
++					MII_88E1318S_PHY_LED_POL, 0,
++					MII_88E1318S_PHY_LED_POL_ACT_HIGH(index));
++
++	return -EINVAL;
++}
++
+ static int marvell_probe(struct phy_device *phydev)
+ {
+ 	struct marvell_priv *priv;
+@@ -3942,6 +3981,12 @@
+ 		.get_stats = marvell_get_stats,
+ 		.get_tunable = m88e1011_get_tunable,
+ 		.set_tunable = m88e1011_set_tunable,
++		.led_polarity_set = m88e1318_led_polarity_set,
++		.led_brightness_set = m88e1318_led_brightness_set,
++		.led_blink_set = m88e1318_led_blink_set,
++		.led_hw_is_supported = m88e1318_led_hw_is_supported,
++		.led_hw_control_set = m88e1318_led_hw_control_set,
++		.led_hw_control_get = m88e1318_led_hw_control_get,
+ 	},
+ 	{
+ 		.phy_id = MARVELL_PHY_ID_88E1510,
