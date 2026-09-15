@@ -2716,6 +2716,22 @@ define Device/plasmacloud_pax1800-lite
 endef
 TARGET_DEVICES += plasmacloud_pax1800-lite
 
+define Device/qihoo_360t5
+  $(Device/nand)
+  DEVICE_VENDOR := Qihoo
+  DEVICE_MODEL := 360T5
+  DEVICE_DTS := mt7621_qihoo_360t5
+  IMAGE_SIZE := 129792k
+  KERNEL_LOADADDR := 0x82000000
+  KERNEL := kernel-bin | relocate-kernel $(loadaddr-y) | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615-firmware -uboot-envtools
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | \
+	append-ubi | check-size
+endef
+TARGET_DEVICES += qihoo_360t5
+
 define Device/raisecom_msg1500-x-00
   $(Device/nand)
   $(Device/uimage-lzma-loader)
