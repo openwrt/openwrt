@@ -1,0 +1,209 @@
+From c7819e847b7f1ccfd5d644edb3d0feed4f28a783 Mon Sep 17 00:00:00 2001
+From: Stanislaw Pal <kuncy7@gmail.com>
+Date: Sat, 12 Sep 2026 21:00:00 +0200
+Subject: [PATCH] net: dsa: realtek: rtl8365mb: repeat the SerDes bring-up once
+ the conduit link is up
+
+On the TP-Link Archer AX55 v1 (IPQ5018 + RTL8367S, CPU port on a
+2500base-x fixed link) the trunk intermittently comes up broken after
+boot: either every frame the CPU sends reaches the switch CPU port with a
+bad FCS, or the port does not count a single octet while the conduit
+keeps transmitting. The SerDes registers read back the same on good and
+bad boots, and running the switch-side bring-up a second time clears
+both states.
+
+The switch end of the trunk is configured when phylink brings up the CPU
+port, about two seconds before the conduit MAC comes up and the UNIPHY
+on the SoC resets and recalibrates the PLL of its own end. The vendor
+bootloader does it the other way round: it sets up the UNIPHY first and
+only then resets and configures the switch.
+
+Once the SerDes PCS link is up, wait for the conduit to report carrier,
+give it a second to settle and repeat the bring-up once. This has only
+been seen with an IPQ5018 GMAC as the conduit, so the work is armed only
+there. It calls pcs_link_up() concurrently with mac_link_up(), so take
+sds_lock around the SDS_MISC update in pcs_link_up() as well.
+
+Measured on one AX55 v1, counting a boot as bad when the CPU port counts
+FCS errors or no octets while the conduit transmits:
+
+  without this change: 2 of 9 boots bad
+  with this change:    0 of 15 boots bad
+                       (7 cold starts, 4 soft reboots, 4 sysupgrades)
+
+Signed-off-by: Stanislaw Pal <kuncy7@gmail.com>
+---
+--- a/drivers/net/dsa/realtek/rtl8365mb_main.c
++++ b/drivers/net/dsa/realtek/rtl8365mb_main.c
+@@ -98,10 +98,12 @@
+ #include <linux/irqdomain.h>
+ #include <linux/mii.h>
+ #include <linux/mutex.h>
++#include <linux/of.h>
+ #include <linux/of_irq.h>
+ #include <linux/regmap.h>
+ #include <linux/if_bridge.h>
+ #include <linux/if_vlan.h>
++#include <linux/netdevice.h>
+ #include <linux/phylink.h>
+ #include <linux/workqueue.h>
+ 
+@@ -288,6 +290,10 @@
+ #define RTL8365MB_D_SDS_RELATCH_TRIES			15
+ #define RTL8365MB_D_SDS_RELATCH_INTERVAL_MS		1000
+ 
++#define RTL8365MB_SDS_REINIT_POLL_MS			200
++#define RTL8365MB_SDS_REINIT_SETTLE_MS			1000
++#define RTL8365MB_SDS_REINIT_TIMEOUT_MS			30000
++
+ /* SerDes internal registers, accessed via the SDS_INDACS registers. The BMCR
+  * data path reset holds BMCR_ANENABLE | BMCR_ISOLATE while toggling the
+  * vendor-specific low bits from phase 1 to phase 2, which triggers a data path
+@@ -945,6 +951,15 @@ struct rtl8365mb {
+ 	struct delayed_work sds_relatch;
+ 	unsigned int sds_relatch_tries;
+ 	u32 sds_misc_target_val;
++	struct delayed_work sds_reinit_work;
++	phy_interface_t sds_reinit_interface;
++	unsigned int sds_reinit_neg_mode;
++	unsigned int sds_reinit_waited;
++	int sds_reinit_speed;
++	int sds_reinit_duplex;
++	bool sds_reinit_armed;
++	bool sds_reinit_settling;
++	bool sds_reinit_needed;
+ };
+ 
+ #define pcs_to_rtl8365mb(_pcs) container_of((_pcs), struct rtl8365mb, pcs)
+@@ -1784,12 +1799,111 @@ static void rtl8365mb_pcs_link_up(struct
+ 	 * force from rtl8365mb_phylink_mac_link_up(), where the resolved pause
+ 	 * modes are known.
+ 	 */
++	mutex_lock(&mb->sds_lock);
+ 	ret = regmap_update_bits(priv->map, RTL8365MB_SDS_MISC_REG, mask, val);
++	mutex_unlock(&mb->sds_lock);
+ 	if (ret) {
+ 		dev_err(priv->dev, "failed to force SerDes link: %pe\n",
+ 			ERR_PTR(ret));
+ 		return;
+ 	}
++
++	/* The SoC end of the trunk may reset and recalibrate its own PLL after
++	 * this point. Repeat the bring-up once the conduit reports link, see
++	 * rtl8365mb_sds_reinit_work().
++	 */
++	if (!mb->sds_reinit_needed)
++		return;
++
++	mb->sds_reinit_neg_mode = neg_mode;
++	mb->sds_reinit_interface = interface;
++	mb->sds_reinit_speed = speed;
++	mb->sds_reinit_duplex = duplex;
++	if (!mb->sds_reinit_armed) {
++		mb->sds_reinit_armed = true;
++		mb->sds_reinit_waited = 0;
++		mb->sds_reinit_settling = false;
++		queue_delayed_work(system_power_efficient_wq,
++				   &mb->sds_reinit_work, 0);
++	}
++}
++
++/* The switch side of a SerDes CPU port is configured when phylink brings the
++ * CPU port up, which on some boards happens well before the conduit MAC has
++ * configured its own end of the link. On an IPQ5018 the UNIPHY resets and
++ * recalibrates its PLL at that point, about two seconds after the switch
++ * SerDes was set up, and the switch receiver sometimes comes out of it
++ * counting nothing or FCS errors only. A second bring-up clears that. The
++ * vendor bootloader avoids it by configuring the SoC end first and the
++ * switch afterwards. Wait for the conduit link, let it settle and run the
++ * bring-up once more.
++ *
++ * This has only been seen with an IPQ5018 GMAC as the conduit, so the work is
++ * armed only there, see rtl8365mb_sds_reinit_needed().
++ */
++static void rtl8365mb_sds_reinit_work(struct work_struct *work)
++{
++	struct rtl8365mb *mb = container_of(to_delayed_work(work),
++					    struct rtl8365mb, sds_reinit_work);
++	struct realtek_priv *priv = mb->priv;
++	struct net_device *conduit = NULL;
++	struct dsa_port *dp;
++	int ret;
++
++	dsa_switch_for_each_cpu_port(dp, &priv->ds) {
++		conduit = dp->conduit;
++		break;
++	}
++
++	if (!mb->sds_reinit_settling) {
++		if (!conduit || !netif_carrier_ok(conduit)) {
++			if (mb->sds_reinit_waited >=
++			    RTL8365MB_SDS_REINIT_TIMEOUT_MS) {
++				dev_warn(priv->dev,
++					 "conduit link not up, SerDes bring-up not repeated\n");
++				return;
++			}
++
++			mb->sds_reinit_waited += RTL8365MB_SDS_REINIT_POLL_MS;
++			queue_delayed_work(system_power_efficient_wq,
++					   &mb->sds_reinit_work,
++					   msecs_to_jiffies(RTL8365MB_SDS_REINIT_POLL_MS));
++			return;
++		}
++
++		mb->sds_reinit_settling = true;
++		queue_delayed_work(system_power_efficient_wq,
++				   &mb->sds_reinit_work,
++				   msecs_to_jiffies(RTL8365MB_SDS_REINIT_SETTLE_MS));
++		return;
++	}
++
++	ret = rtl8365mb_pcs_config(&mb->pcs, mb->sds_reinit_neg_mode,
++				   mb->sds_reinit_interface, NULL, false);
++	if (ret) {
++		dev_err(priv->dev, "failed to repeat SerDes bring-up: %pe\n",
++			ERR_PTR(ret));
++		return;
++	}
++
++	rtl8365mb_pcs_link_up(&mb->pcs, mb->sds_reinit_neg_mode,
++			      mb->sds_reinit_interface, mb->sds_reinit_speed,
++			      mb->sds_reinit_duplex);
++	dev_dbg(priv->dev, "SerDes bring-up repeated after conduit link up\n");
++}
++
++static bool rtl8365mb_sds_reinit_needed(struct realtek_priv *priv)
++{
++	struct dsa_port *dp;
++
++	dsa_switch_for_each_cpu_port(dp, &priv->ds) {
++		if (dp->conduit && dp->conduit->dev.parent &&
++		    of_device_is_compatible(dp->conduit->dev.parent->of_node,
++					    "qcom,ipq5018-gmac"))
++			return true;
++	}
++
++	return false;
+ }
+ 
+ static const struct phylink_pcs_ops rtl8365mb_pcs_ops = {
+@@ -3396,6 +3510,9 @@ static int rtl8365mb_setup(struct dsa_sw
+ 		INIT_DELAYED_WORK(&mb->sds_relatch,
+ 				  rtl8365mb_sds_relatch_work);
+ 
++	INIT_DELAYED_WORK(&mb->sds_reinit_work, rtl8365mb_sds_reinit_work);
++	mb->sds_reinit_needed = rtl8365mb_sds_reinit_needed(priv);
++
+ 	ret = rtl8365mb_reset_chip(priv);
+ 	if (ret) {
+ 		dev_err(priv->dev, "failed to reset chip: %pe\n",
+@@ -3585,6 +3702,9 @@ static void rtl8365mb_teardown(struct ds
+ 	if (rtl8365mb_get_family(priv) == RTL8365MB_FAMILY_D)
+ 		cancel_delayed_work_sync(&mb->sds_relatch);
+ 
++	cancel_delayed_work_sync(&mb->sds_reinit_work);
++	mb->sds_reinit_armed = false;
++
+ 	rtl8365mb_stats_teardown(priv);
+ 	rtl8365mb_irq_teardown(priv);
+ }
