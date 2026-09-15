@@ -3622,6 +3622,12 @@ define Device/xiaomi_mi-router-cr660x
   DEVICE_PACKAGES += kmod-mt7915-firmware
 endef
 
+define Device/xiaomi_mi-router-cr660x-tr60x
+  $(Device/xiaomi_mi-router-cr660x)
+  DEVICE_MODEL := Mi Router CR660x-TR60x
+endef
+TARGET_DEVICES += xiaomi_mi-router-cr660x-tr60x
+
 define Device/xiaomi_mi-router-cr6606
   $(Device/xiaomi_mi-router-cr660x)
   DEVICE_MODEL := Mi Router CR6606
