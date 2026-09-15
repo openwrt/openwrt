@@ -20,13 +20,42 @@ tplink_sg2xxx_fix_mtdparts() {
 }
 
 platform_check_image() {
+	local board=$(board_name)
+
+	case "$board" in
+	draytek,g2282x)
+		draytek_g2282x_set_part_name || return 1
+		;;
+	esac
+
 	return 0
+}
+
+# Active slot is a "bootpartition" variable in the SYSINFO mtd
+# partition, not standard U-Boot env. Self-upgrades the active slot
+# instead of flipping it.
+draytek_g2282x_set_part_name() {
+	local bootpart sysinfo
+	sysinfo=$(find_mtd_part SYSINFO)
+	bootpart=$(sed -n 's/.*bootpartition=\([01]\).*/\1/p' "${sysinfo:-/dev/null}")
+	case "$bootpart" in
+	0) PART_NAME="Kernel" ;;
+	1) PART_NAME="Kernel2" ;;
+	*)
+		echo "draytek,g2282x: could not read bootpartition from SYSINFO" >&2
+		return 1
+		;;
+	esac
 }
 
 platform_do_upgrade() {
 	local board=$(board_name)
 
 	case "$board" in
+	draytek,g2282x)
+		draytek_g2282x_set_part_name || return 1
+		default_do_upgrade "$1"
+		;;
 	plasmacloud,esx28|\
 	plasmacloud,mcx3|\
 	plasmacloud,psx8|\
