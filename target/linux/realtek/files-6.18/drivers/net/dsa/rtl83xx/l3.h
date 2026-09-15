@@ -67,6 +67,7 @@ struct otto_l3_nexthop {
 	u16 l2_id;	/* Index of this next hop forwarding entry in L2 FIB table */
 	u64 gw;		/* The gateway MAC address packets are forwarded to */
 	int if_id;	/* Interface (into L3_EGR_INTF_IDX) */
+	bool l2_installed;	/* Entry written to the L2 table */
 };
 
 struct otto_l3_route {
@@ -86,6 +87,12 @@ struct otto_l3_route {
 };
 
 struct otto_l3_config {
+	/* Which of the two routing models the family uses. RTL930x writes the
+	 * destination and its mask into the route entry, so the L3 tables match
+	 * on their own. RTL838x and RTL839x store only the gateway there and
+	 * need a PIE rule to match the destination and point at the next hop.
+	 */
+	bool use_l3_tables;
 	int (*find_slot)(struct otto_l3_ctrl *ctrl, struct otto_l3_route *rt, bool must_exist);
 	void (*set_egress_intf)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_intf *intf);
 	u64 (*get_egress_mac)(struct otto_l3_ctrl *ctrl, u32 idx);

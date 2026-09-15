@@ -883,7 +883,8 @@ static int otto_l3_nexthop_update(struct otto_l3_ctrl *ctrl, __be32 ip_addr, u64
 			ctrl->cfg->set_egress_mac(ctrl, r->id, mac);
 
 		/* Update ROUTING table: map gateway-mac and switch-mac id to route id */
-		rtl83xx_l2_nexthop_add(priv, &r->nh);
+		if (!rtl83xx_l2_nexthop_add(priv, &r->nh))
+			r->nh.l2_installed = true;
 
 		r->attr.valid = true;
 		r->attr.action = ROUTE_ACT_FORWARD;
@@ -917,6 +918,9 @@ static int otto_l3_nexthop_update(struct otto_l3_ctrl *ctrl, __be32 ip_addr, u64
 
 		if (ctrl->cfg->set_nexthop)
 			ctrl->cfg->set_nexthop(ctrl, r->nh.id, r->nh.l2_id, r->nh.if_id);
+
+		if (ctrl->cfg->use_l3_tables)
+			continue;
 
 		if (r->pr.id < 0) {
 			r->pr.packet_cntr = rtldsa_packet_cntr_alloc(priv);
@@ -1079,13 +1083,14 @@ static void otto_l3_route_teardown(struct otto_l3_ctrl *ctrl, struct otto_l3_rou
 {
 	struct rtl838x_switch_priv *priv = ctrl->priv;
 
-	/* A route whose gateway never resolved holds no next hop and no PIE
-	 * rule: otto_l3_nexthop_update() is what allocates them.
+	/* A route whose gateway never resolved holds neither of these:
+	 * otto_l3_nexthop_update() is what allocates them, and it may have
+	 * programmed the next hop without reaching the PIE rule.
 	 */
-	if (r->pr.id >= 0) {
+	if (r->nh.l2_installed)
 		rtl83xx_l2_nexthop_rm(priv, &r->nh);
+	if (r->pr.id >= 0)
 		priv->r->pie_rule_rm(priv, &r->pr);
-	}
 
 	dev_dbg(ctrl->dev, "releasing packet counter %d\n", r->pr.packet_cntr);
 	rtldsa_packet_cntr_free(priv, r->pr.packet_cntr);
@@ -1994,6 +1999,7 @@ const struct otto_l3_config otto_l3_839x_cfg = {
 
 const struct otto_l3_config otto_l3_930x_cfg = {
 #ifdef CONFIG_NET_DSA_RTL83XX_RTL930X_L3_OFFLOAD
+	.use_l3_tables = true,
 	.find_slot = otto_l3_930x_find_slot,
 	.get_egress_mac = otto_l3_930x_get_egress_mac,
 	.set_egress_mac = otto_l3_930x_set_egress_mac,
