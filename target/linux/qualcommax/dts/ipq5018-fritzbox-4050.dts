@@ -1,0 +1,343 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+#include "ipq5018.dtsi"
+#include "ipq5018-ess.dtsi"
+#include "ipq5018-qcn6122.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+	model = "AVM FRITZ!Box 4050";
+	compatible = "avm,fritzbox-4050", "qcom,ipq5018";
+
+	aliases {
+		serial0 = &blsp1_uart1;
+	};
+
+	chosen {
+		bootargs = "ubi.mtd=ubi root=/dev/ubiblock0_0 swiotlb=1 coherent_pool=2M";
+		stdout-path = "serial0:115200n8";
+	};
+
+	keys {
+		compatible = "gpio-keys";
+		pinctrl-0 = <&button_pins>;
+		pinctrl-names = "default";
+
+		button-0 {
+			label = "wlan";
+			gpios = <&tlmm 13 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RFKILL>;
+		};
+
+		button-1 {
+			label = "dect";
+			gpios = <&tlmm 17 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_PHONE>;
+		};
+
+		button-2 {
+			label = "wps";
+			gpios = <&tlmm 39 GPIO_ACTIVE_HIGH>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+	};
+
+	reg_usb_vbus: regulator-usb-vbus {
+		compatible = "regulator-fixed";
+		regulator-name = "usb_vbus";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpios = <&tlmm 45 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+		enable-active-high;
+	};
+};
+
+&blsp1_uart1 {
+	pinctrl-0 = <&serial_0_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&mdio0 {
+	status = "okay";
+};
+
+&mdio1 {
+	status = "okay";
+
+	pinctrl-0 = <&mdio1_pins>;
+	pinctrl-names = "default";
+	reset-gpios = <&tlmm 1 GPIO_ACTIVE_LOW>;
+
+	qca8337_0: ethernet-phy@0 {
+		reg = <0>;
+	};
+
+	qca8337_1: ethernet-phy@1 {
+		reg = <1>;
+	};
+
+	qca8337_2: ethernet-phy@2 {
+		reg = <2>;
+	};
+
+	qca8337_3: ethernet-phy@3 {
+		reg = <3>;
+	};
+
+	qca8337_4: ethernet-phy@4 {
+		reg = <4>;
+	};
+
+	ethernet-switch@17 {
+		compatible = "qca,qca8337";
+		reg = <0x17>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		mdio = <&mdio1>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@1 {
+				reg = <1>;
+				label = "lan1";
+				phy-handle = <&qca8337_0>;
+			};
+
+			port@3 {
+				reg = <3>;
+				label = "lan2";
+				phy-handle = <&qca8337_2>;
+			};
+
+			port@5 {
+				reg = <5>;
+				label = "lan3";
+				phy-handle = <&qca8337_4>;
+			};
+
+			port@6 {
+				reg = <6>;
+				label = "cpu";
+				phy-mode = "sgmii";
+				ethernet = <&gmac1>;
+				qca,sgmii-enable-pll;
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+		};
+	};
+};
+
+&gmac0 {
+	status = "okay";
+
+	label = "wan";
+};
+
+&gmac1 {
+	status = "okay";
+
+	phy-mode = "sgmii";
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
+};
+
+&uniphy0 {
+	status = "okay";
+
+	assigned-clocks = <&uniphy0 UNIPHY_CLK_REF>;
+	assigned-clock-rates = <UNIPHY_REFCLK_25MHZ>;
+};
+
+&tlmm {
+	button_pins: button-pins {
+		pins = "gpio13", "gpio17", "gpio39";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-pull-up;
+	};
+
+	mdio1_pins: mdio-state {
+		mdc-pins {
+			pins = "gpio36";
+			function = "mdc";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		mdio-pins {
+			pins = "gpio37";
+			function = "mdio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+
+	qpic_pins: qpic-state {
+		clock-pins {
+			pins = "gpio9";
+			function = "qspi_clk";
+			drive-strength = <8>;
+			bias-disable;
+		};
+
+		cs-pins {
+			pins = "gpio8";
+			function = "qspi_cs";
+			drive-strength = <8>;
+			bias-disable;
+		};
+
+		data-pins {
+			pins = "gpio4", "gpio5", "gpio6", "gpio7";
+			function = "qspi_data";
+			drive-strength = <8>;
+			bias-disable;
+		};
+	};
+
+	serial_0_pins: uart0-state {
+		pins = "gpio20", "gpio21";
+		function = "blsp0_uart0";
+		drive-strength = <8>;
+		bias-disable;
+	};
+};
+
+&usb {
+	status = "okay";
+
+	dr_mode = "host";
+
+	// workaround
+	phys = <&usbphy0>;
+	phy-names = "usb2-phy";
+	qcom,select-utmi-as-pipe-clk;
+};
+
+&usbphy0 {
+	status = "okay";
+	vdd-supply = <&reg_usb_vbus>;
+};
+
+&sleep_clk {
+	clock-frequency = <32000>;
+};
+
+&xo_board_clk {
+	clock-div = <4>;
+	clock-mult = <1>;
+};
+
+&qpic_nand {
+	pinctrl-0 = <&qpic_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	nand@0 {
+		compatible = "avm,nand_partitions", "spi-nand";
+		reg = <0>;
+		nand-ecc-engine = <&qpic_nand>;
+		nand-ecc-strength = <4>;
+		nand-ecc-step-size = <512>;
+		nand-bus-width = <8>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "urloader";
+				reg = <0x00000000 0x540000>;
+				read-only;
+			};
+
+			partition@1 {
+				label = "nand-tffs";
+				reg = <0x540000 0x800000>;
+				read-only;
+			};
+
+			partition@2 {
+				label = "fit0";
+				reg = <0xd40000 0x800000>;
+			};
+
+			partition@3 {
+				label = "fit1";
+				reg = <0x1540000 0x800000>;
+			};
+
+			partition@4 {
+				label = "ubi";
+				reg = <0x1d40000 0x62c0000>;
+			};
+		};
+	};
+};
+
+&prng {
+	status = "okay";
+};
+
+&qfprom {
+	status = "okay";
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&pwm {
+	status = "okay";
+};
+
+&q6v5_wcss {
+	status = "okay";
+
+	/* The QCN6102 radio should map to UPD ID 2. Without       */
+	/* bootargs, the firmware will expect it to be on UPD ID 3 */
+	boot-args = <
+		/*       type:	*/	0x2	/* PCIE0	*/
+		/*     length:	*/	4
+		/*     UPD ID:	*/	2
+		/* reset GPIO:	*/	15
+		/*   reserved:	*/	0 0>;
+};
+
+&wifi {
+	// IPQ5018
+	status = "okay";
+
+	qcom,rproc = <&q6_wcss_pd1>;
+	qcom,ath11k-calibration-variant = "AVM-FritzBox4050";
+	qcom,ath11k-fw-memory-mode = <1>;
+	qcom,bdf-addr = <0x4c400000>;
+};
+
+&wifi1 {
+	// QCN6102 5G
+	status = "okay";
+
+	qcom,rproc = <&q6_wcss_pd2>;
+	qcom,userpd-subsys-name = "q6v5_wcss_userpd2";
+	qcom,ath11k-calibration-variant = "AVM-FritzBox4050";
+	qcom,ath11k-fw-memory-mode = <1>;
+	qcom,bdf-addr = <0x4d100000>;
+	qcom,m3-dump-addr = <0x4df00000>;
+};

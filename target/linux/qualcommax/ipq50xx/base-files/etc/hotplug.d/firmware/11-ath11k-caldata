@@ -9,6 +9,13 @@ board=$(board_name)
 case "$FIRMWARE" in
 "ath11k/IPQ5018/hw1.0/cal-ahb-c000000.wifi.bin")
 	case "$board" in
+	avm,fritzbox-4050)
+		/usr/bin/fritz_cal_extract -i 44 -s 0x480800 -e 0x207 -l 131072 -o /lib/firmware/$FIRMWARE \
+			$(find_mtd_chardev "urloader")
+		wlan_mac=$(cat /proc/device-tree/chosen/macwlan)
+		ath11k_patch_mac $wlan_mac 0
+		ath11k_set_macflag
+		;;
 	cmcc,mr3000d-ci)
 		caldata_extract "0:art" 0x1000 0x20000
 		wlan_mac=$(mtd_get_mac_binary 0:art 12)
@@ -70,6 +77,13 @@ case "$FIRMWARE" in
 	;;
 "ath11k/QCN6122/hw1.0/cal-ahb-b00a040.wifi.bin")
 	case "$board" in
+	avm,fritzbox-4050)
+		/usr/bin/fritz_cal_extract -i 44 -s 0x484000 -e 0x208 -l 131072 -o /lib/firmware/$FIRMWARE \
+			$(find_mtd_chardev "urloader")
+		wlan_mac=$(cat /proc/device-tree/chosen/macwlan2)
+		ath11k_patch_mac $wlan_mac 0
+		ath11k_set_macflag
+		;;
 	cmcc,mr3000d-ci)
 		caldata_extract "0:art" 0x26800 0x20000
 		wlan_mac=$(mtd_get_mac_binary 0:art 18)
