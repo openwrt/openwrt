@@ -100,6 +100,49 @@ endef
 $(eval $(call KernelPackage,ib700-wdt))
 
 
+define KernelPackage/igen6-edac
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Intel client SoC In-Band ECC (IBECC)
+  DEPENDS:=@TARGET_x86_64 @PCI_SUPPORT
+  KCONFIG:= \
+	CONFIG_EDAC=m \
+	CONFIG_EDAC_IGEN6=m \
+	CONFIG_EDAC_LEGACY_SYSFS=y \
+	CONFIG_EDAC_DEBUG=n \
+	CONFIG_EDAC_DECODE_MCE=n \
+	CONFIG_EDAC_SCRUB=n \
+	CONFIG_EDAC_ECS=n \
+	CONFIG_EDAC_MEM_REPAIR=n \
+	CONFIG_EDAC_E752X=n \
+	CONFIG_EDAC_I82975X=n \
+	CONFIG_EDAC_I3000=n \
+	CONFIG_EDAC_I3200=n \
+	CONFIG_EDAC_IE31200=n \
+	CONFIG_EDAC_X38=n \
+	CONFIG_EDAC_I5400=n \
+	CONFIG_EDAC_I7CORE=n \
+	CONFIG_EDAC_I5100=n \
+	CONFIG_EDAC_I7300=n \
+	CONFIG_EDAC_SBRIDGE=n \
+	CONFIG_EDAC_SKX=n \
+	CONFIG_EDAC_I10NM=n \
+	CONFIG_EDAC_PND2=n \
+	CONFIG_RAS=y
+  FILES:= \
+	$(LINUX_DIR)/drivers/edac/edac_core.ko \
+	$(LINUX_DIR)/drivers/edac/igen6_edac.ko
+  AUTOLOAD:=$(call AutoProbe,edac_core igen6_edac)
+endef
+
+define KernelPackage/igen6-edac/description
+  Kernel module for the Intel client SoC Integrated Memory Controller
+  In-Band ECC (IBECC), as found on Elkhart Lake, Tiger Lake, Alder Lake-N
+  and later. Reports corrected and uncorrected memory errors through EDAC.
+endef
+
+$(eval $(call KernelPackage,igen6-edac))
+
+
 define KernelPackage/intel-lpss
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Intel LPSS common
