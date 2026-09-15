@@ -2,22 +2,27 @@
 /*
  * BCM6318 PCIe Controller Driver
  *
+ * Copyright (C) 2026 Hang Zhou <929513338@qq.com>
  * Copyright (C) 2020 Álvaro Fernández Rojas <noltari@gmail.com>
  * Copyright (C) 2015 Jonas Gorski <jonas.gorski@gmail.com>
  * Copyright (C) 2008 Maxime Bizon <mbizon@freebox.fr>
  */
 
+#include <linux/bitops.h>
 #include <linux/clk.h>
 #include <linux/init.h>
 #include <linux/delay.h>
 #include <linux/kernel.h>
+#include <linux/mfd/syscon.h>
 #include <linux/mm.h>
 #include <linux/module.h>
 #include <linux/of_irq.h>
+#include <linux/of_device.h>
 #include <linux/of_pci.h>
 #include <linux/of_platform.h>
 #include <linux/pci.h>
 #include <linux/platform_device.h>
+#include <linux/regmap.h>
 #include <linux/reset.h>
 #include <linux/types.h>
 #include <linux/version.h>
@@ -99,16 +104,45 @@
 
 #define PCIE_DEVICE_OFFSET		0x9000
 
+/* PcieCfgType1Rc.StatusCommand.{MemSpace,BusMaster} */
+#define PCIE_COMMAND_STATUS_REG		0x004
+
+/* IntControlSoftReset.Bits.SoftRstPcie0Core */
+#define BCM3383_CORE_RESET_PCIE0_CORE	BIT(18)
+
+struct bcm6318_pcie;
+
+struct pcie_variant_data {
+	const char *name;
+	const char * const *reset_names;
+	unsigned int num_resets;
+	bool needs_softreset;
+	bool uses_top_reset;
+	void (*reset)(struct bcm6318_pcie *priv);
+	void (*setup)(struct bcm6318_pcie *priv);
+};
+
 struct bcm6318_pcie {
 	void __iomem *base;
 	int irq;
-	struct clk *clk;
-	struct clk *clk25;
-	struct clk *clk_ubus;
+	const struct pcie_variant_data *variant;
+	struct clk_bulk_data *clks;
+	int num_clks;
 	struct reset_control *reset;
-	struct reset_control *reset_ext;
-	struct reset_control *reset_core;
-	struct reset_control *reset_hard;
+	union {
+		/* BCM6318 */
+		struct {
+			struct reset_control *ext;
+			struct reset_control *core;
+			struct reset_control *hard;
+		};
+
+		/* BCM3383 */
+		struct {
+			struct reset_control *top;
+			struct regmap *soft;
+		};
+	} resets;
 };
 
 static struct bcm6318_pcie bcm6318_pcie;
@@ -230,18 +264,25 @@ static struct pci_controller bcm6318_pcie_controller = {
 	.mem_resource = &bcm6318_pcie_mem_resource,
 };
 
+static void pcie_disable_clks(void *data)
+{
+	struct bcm6318_pcie *priv = data;
+
+	clk_bulk_disable_unprepare(priv->num_clks, priv->clks);
+}
+
 static void bcm6318_pcie_reset(struct bcm6318_pcie *priv)
 {
 	u32 val;
 
-	reset_control_deassert(priv->reset_hard);
+	reset_control_deassert(priv->resets.hard);
 
 	reset_control_assert(priv->reset);
-	reset_control_assert(priv->reset_core);
-	reset_control_assert(priv->reset_ext);
+	reset_control_assert(priv->resets.core);
+	reset_control_assert(priv->resets.ext);
 	mdelay(10);
 
-	reset_control_deassert(priv->reset_ext);
+	reset_control_deassert(priv->resets.ext);
 	mdelay(10);
 
 	reset_control_deassert(priv->reset);
@@ -252,7 +293,33 @@ static void bcm6318_pcie_reset(struct bcm6318_pcie *priv)
 	__raw_writel(val, priv->base + PCIE_HARD_DEBUG_REG);
 	mdelay(10);
 
-	reset_control_deassert(priv->reset_core);
+	reset_control_deassert(priv->resets.core);
+	mdelay(200);
+}
+
+static void bcm3383_pcie_reset(struct bcm6318_pcie *priv)
+{
+	u32 val;
+
+	regmap_update_bits(priv->resets.soft, 0,
+			   BCM3383_CORE_RESET_PCIE0_CORE, 0);
+	reset_control_assert(priv->reset);
+	reset_control_assert(priv->resets.top);
+	mdelay(10);
+
+	reset_control_deassert(priv->reset);
+	mdelay(10);
+
+	reset_control_deassert(priv->resets.top);
+	mdelay(10);
+
+	val = __raw_readl(priv->base + PCIE_HARD_DEBUG_REG);
+	val &= ~HARD_DEBUG_SERDES_IDDQ;
+	__raw_writel(val, priv->base + PCIE_HARD_DEBUG_REG);
+
+	regmap_update_bits(priv->resets.soft, 0,
+			   BCM3383_CORE_RESET_PCIE0_CORE,
+			   BCM3383_CORE_RESET_PCIE0_CORE);
 	mdelay(200);
 }
 
@@ -299,14 +366,38 @@ static void bcm6318_pcie_setup(struct bcm6318_pcie *priv)
 		     priv->base + PCIE_EXT_CFG_INDEX_REG);
 }
 
+static void bcm3383_pcie_setup(struct bcm6318_pcie *priv)
+{
+	u32 val;
+
+	bcm6318_pcie_setup(priv);
+
+	val = __raw_readl(priv->base + PCIE_COMMAND_STATUS_REG);
+	val |= PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER;
+	__raw_writel(val, priv->base + PCIE_COMMAND_STATUS_REG);
+}
+
 static int bcm6318_pcie_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
 	struct device_node *np = dev->of_node;
 	struct bcm6318_pcie *priv = &bcm6318_pcie;
 	struct resource *res;
+	struct reset_control_bulk_data resets[5] = {};
 	int ret;
 	LIST_HEAD(resources);
+
+	priv->variant = of_device_get_match_data(dev);
+	if (!priv->variant)
+		return dev_err_probe(dev, -EINVAL, "missing PCIe variant data\n");
+
+	dev_info(dev, "starting %s PCIe bring-up\n", priv->variant->name);
+	priv->clks = NULL;
+	priv->num_clks = 0;
+	priv->reset = NULL;
+	priv->resets.ext = NULL;
+	priv->resets.core = NULL;
+	priv->resets.hard = NULL;
 
 	of_pci_check_probe_only();
 
@@ -321,49 +412,45 @@ static int bcm6318_pcie_probe(struct platform_device *pdev)
 
 	bmips_pci_irq = priv->irq;
 
-	priv->reset = devm_reset_control_get(dev, "pcie");
-	if (IS_ERR(priv->reset))
-		return PTR_ERR(priv->reset);
-
-	priv->reset_ext = devm_reset_control_get(dev, "pcie-ext");
-	if (IS_ERR(priv->reset_ext))
-		return PTR_ERR(priv->reset_ext);
-
-	priv->reset_core = devm_reset_control_get(dev, "pcie-core");
-	if (IS_ERR(priv->reset_core))
-		return PTR_ERR(priv->reset_core);
-
-	priv->reset_hard = devm_reset_control_get(dev, "pcie-hard");
-	if (IS_ERR(priv->reset_hard))
-		return PTR_ERR(priv->reset_hard);
-
-	priv->clk = devm_clk_get(dev, "pcie");
-	if (IS_ERR(priv->clk))
-		return PTR_ERR(priv->clk);
-
-	priv->clk25 = devm_clk_get(dev, "pcie25");
-	if (IS_ERR(priv->clk25))
-		return PTR_ERR(priv->clk25);
-
-	priv->clk_ubus = devm_clk_get(dev, "pcie-ubus");
-	if (IS_ERR(priv->clk_ubus))
-		return PTR_ERR(priv->clk_ubus);
-
-	ret = clk_prepare_enable(priv->clk);
-	if (ret) {
-		dev_err(dev, "could not enable clock\n");
-		return ret;
+	if (priv->variant->needs_softreset) {
+		priv->resets.soft =
+			syscon_regmap_lookup_by_phandle(np, "brcm,softreset");
+		if (IS_ERR(priv->resets.soft))
+			return dev_err_probe(dev, PTR_ERR(priv->resets.soft),
+					     "could not get SoftReset syscon\n");
 	}
 
-	ret = clk_prepare_enable(priv->clk25);
-	if (ret) {
-		dev_err(dev, "could not enable clock\n");
-		return ret;
+	if (priv->variant->num_resets > ARRAY_SIZE(resets))
+		return dev_err_probe(dev, -EINVAL, "too many PCIe resets\n");
+
+	for (unsigned int i = 0; i < priv->variant->num_resets; i++)
+		resets[i].id = priv->variant->reset_names[i];
+
+	ret = devm_reset_control_bulk_get_exclusive(dev, priv->variant->num_resets, resets);
+	if (ret)
+		return dev_err_probe(dev, ret, "could not get PCIe resets\n");
+
+	priv->reset = resets[0].rstc;
+	if (priv->variant->uses_top_reset) {
+		priv->resets.top = resets[1].rstc;
+	} else {
+		priv->resets.ext = resets[1].rstc;
+		priv->resets.core = resets[2].rstc;
+		priv->resets.hard = resets[3].rstc;
 	}
 
-	ret = clk_prepare_enable(priv->clk_ubus);
+	priv->num_clks = devm_clk_bulk_get_all(dev, &priv->clks);
+	if (priv->num_clks < 0)
+		return dev_err_probe(dev, priv->num_clks,
+				     "could not get PCIe clocks\n");
+
+	ret = clk_bulk_prepare_enable(priv->num_clks, priv->clks);
 	if (ret) {
-		dev_err(dev, "could not enable clock\n");
+		return dev_err_probe(dev, ret, "could not enable PCIe clocks\n");
+	}
+
+	ret = devm_add_action_or_reset(dev, pcie_disable_clks, priv);
+	if (ret) {
 		return ret;
 	}
 
@@ -374,16 +461,49 @@ static int bcm6318_pcie_probe(struct platform_device *pdev)
 	of_pci_parse_bus_range(np, &bcm6318_pcie_busn_resource);
 	pci_add_resource(&resources, &bcm6318_pcie_busn_resource);
 
-	bcm6318_pcie_reset(priv);
-	bcm6318_pcie_setup(priv);
+	priv->variant->reset(priv);
+	priv->variant->setup(priv);
 
 	register_pci_controller(&bcm6318_pcie_controller);
 
 	return 0;
 }
 
+static const char * const bcm6318_pcie_reset_names[] = {
+	"pcie",
+	"pcie-ext",
+	"pcie-core",
+	"pcie-hard",
+};
+
+static const char * const bcm3383_pcie_reset_names[] = {
+	"pcie",
+	"pcie-top",
+};
+
+static const struct pcie_variant_data bcm6318_pcie_variant_data = {
+	.name = "BCM6318",
+	.reset_names = bcm6318_pcie_reset_names,
+	.num_resets = ARRAY_SIZE(bcm6318_pcie_reset_names),
+	.needs_softreset = false,
+	.uses_top_reset = false,
+	.reset = bcm6318_pcie_reset,
+	.setup = bcm6318_pcie_setup,
+};
+
+static const struct pcie_variant_data bcm3383_pcie_variant_data = {
+	.name = "BCM3383",
+	.reset_names = bcm3383_pcie_reset_names,
+	.num_resets = ARRAY_SIZE(bcm3383_pcie_reset_names),
+	.needs_softreset = true,
+	.uses_top_reset = true,
+	.reset = bcm3383_pcie_reset,
+	.setup = bcm3383_pcie_setup,
+};
+
 static const struct of_device_id bcm6318_pcie_of_match[] = {
-	{ .compatible = "brcm,bcm6318-pcie", },
+	{ .compatible = "brcm,bcm6318-pcie", .data = &bcm6318_pcie_variant_data },
+	{ .compatible = "brcm,bcm3383-pcie", .data = &bcm3383_pcie_variant_data },
 	{ /* sentinel */ }
 };
 MODULE_DEVICE_TABLE(of, bcm6318_pcie_of_match);

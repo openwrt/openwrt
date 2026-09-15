@@ -8,12 +8,12 @@ Content-Transfer-Encoding: 8bit
 
 Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
 ---
- arch/mips/Kconfig | 7 +------
- 1 file changed, 1 insertion(+), 6 deletions(-)
+ arch/mips/Kconfig | 6 +-----
+ 1 file changed, 1 insertion(+), 5 deletions(-)
 
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -259,19 +259,13 @@ config BMIPS_GENERIC
+@@ -259,19 +259,14 @@ config BMIPS_GENERIC
  	select SYNC_R4K
  	select COMMON_CLK
  	select BCM6345_L1_IRQ
@@ -29,7 +29,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  	select SYS_HAS_CPU_BMIPS32_3300
  	select SYS_HAS_CPU_BMIPS4350
  	select SYS_HAS_CPU_BMIPS4380
--	select SYS_HAS_CPU_BMIPS5000
+ 	select SYS_HAS_CPU_BMIPS5000
  	select SWAP_IO_SPACE
  	select USB_EHCI_BIG_ENDIAN_DESC if CPU_BIG_ENDIAN
  	select USB_EHCI_BIG_ENDIAN_MMIO if CPU_BIG_ENDIAN

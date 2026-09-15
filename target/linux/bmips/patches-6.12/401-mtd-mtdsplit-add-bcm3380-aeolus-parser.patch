@@ -1,0 +1,35 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: OpenWrt <openwrt-devel@lists.openwrt.org>
+Date: Fri, 10 Jul 2026 00:00:00 +0000
+Subject: [PATCH] mtd: mtdsplit: add BCM3380 Aeolus firmware parser
+
+Add a target-specific mtdsplit parser for the BCM3380 Aeolus
+ProgramStore dual-image format. The parser source is provided by the
+bmips target files overlay.
+
+--- a/drivers/mtd/mtdsplit/Kconfig
++++ b/drivers/mtd/mtdsplit/Kconfig
+@@ -19,6 +19,13 @@ config MTD_SPLIT_BCM_WFI_FW
+ 	depends on MTD_SPLIT_SUPPORT
+ 	select MTD_SPLIT
+ 
++config MTD_SPLIT_BCM3380_AEOLUS_FW
++	bool "BCM3380 Aeolus dual-image firmware parser"
++	depends on MTD_SPLIT_SUPPORT
++	select MTD_SPLIT
++	help
++	  This parser splits BCM3380 Aeolus dual-image ProgramStore firmware.
++
+ config MTD_SPLIT_CFE_BOOTFS
+ 	bool "Parser finding rootfs appended to the CFE bootfs"
+ 	depends on MTD_SPLIT_SUPPORT && (ARCH_BCM4908 || ARCH_BCMBCA)
+--- a/drivers/mtd/mtdsplit/Makefile
++++ b/drivers/mtd/mtdsplit/Makefile
+@@ -1,6 +1,7 @@
+ obj-$(CONFIG_MTD_SPLIT)		+= mtdsplit.o
++obj-$(CONFIG_MTD_SPLIT_BCM3380_AEOLUS_FW) += mtdsplit_bcm3380_aeolus.o
+ obj-$(CONFIG_MTD_SPLIT_BCM63XX_FW) += mtdsplit_bcm63xx.o
+ obj-$(CONFIG_MTD_SPLIT_BCM_WFI_FW) += mtdsplit_bcm_wfi.o
+ obj-$(CONFIG_MTD_SPLIT_CFE_BOOTFS) += mtdsplit_cfe_bootfs.o
+ obj-$(CONFIG_MTD_SPLIT_SEAMA_FW) += mtdsplit_seama.o
+ obj-$(CONFIG_MTD_SPLIT_SEIL_FW) += mtdsplit_seil.o

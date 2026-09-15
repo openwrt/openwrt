@@ -1,0 +1,26 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Hang Zhou <929513338@qq.com>
+Date: Sun, 19 Jul 2026 01:30:00 +1000
+Subject: [PATCH] net: dsa: b53: read reset-gpios from DT
+
+The B53 driver already has a GPIO reset path, but non-BCM47XX builds never
+return a valid reset GPIO. Allow DT-described SPI switches to provide
+reset-gpios.
+
+--- a/drivers/net/dsa/b53/b53_priv.h
++++ b/drivers/net/dsa/b53/b53_priv.h
+@@ -481,9 +481,13 @@ static inline int b53_switch_get_reset_g
+ 	}
+ }
+ #else
++#include <linux/of_gpio.h>
++
+ static inline int b53_switch_get_reset_gpio(struct b53_device *dev)
+ {
+-	return -ENOENT;
++	return dev->dev && dev->dev->of_node ?
++		of_get_named_gpio(dev->dev->of_node, "reset-gpios", 0) :
++		-ENOENT;
+ }
+ #endif
+ 
