@@ -68,8 +68,6 @@ define Device/glinet_gl-common
 	PAGESIZE := 2048
 	DEVICE_DTS_CONFIG := config@cp03-c1
 	SOC := ipq6000
-	IMAGES += factory.bin
-	IMAGE/factory.bin := append-ubi | append-gl-metadata
 endef
 
 define Device/glinet_gl-ax1800
