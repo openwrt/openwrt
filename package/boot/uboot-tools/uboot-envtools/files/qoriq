@@ -34,6 +34,7 @@ fsl,T4240RDB)
 			exit 1
 	esac
 	;;
+watchguard,firebox-m200 |\
 watchguard,firebox-m300)
 	ubootenv_add_uci_config "/dev/mtd9" "0x0" "0x2000" "0x10000"
 	;;

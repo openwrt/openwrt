@@ -1,0 +1,136 @@
+From 4945d8c9cb66ee298bd534b5c5d3ef64a5c7d4bf Mon Sep 17 00:00:00 2001
+From: Stijn Tintel <stijn@linux-ipv6.be>
+Date: Tue, 24 Mar 2026 13:03:51 +0200
+Subject: [PATCH 2/2] powerpc64: skip vector setjmp state when AltiVec is
+ unavailable
+
+Build the ppc64 setjmp assembly as preprocessed source so the vector
+save and restore path can be omitted when the compiler is targeting CPUs
+without AltiVec.
+
+When __ALTIVEC__ is defined, keep the current unconditional vector state
+handling. Otherwise, read __hwcap and skip the lvx/stvx sequence unless
+PPC_FEATURE_HAS_ALTIVEC is present.
+
+Use TOC-relative access to __hwcap instead of loading a PC-relative
+literal from the instruction stream.
+
+Signed-off-by: Stijn Tintel <stijn@linux-ipv6.be>
+---
+ src/setjmp/powerpc64/longjmp.S | 28 +++++++++++++++++++++++++++-
+ src/setjmp/powerpc64/setjmp.S  | 20 ++++++++++++++++++++
+ 2 files changed, 47 insertions(+), 1 deletion(-)
+
+diff --git a/src/setjmp/powerpc64/longjmp.S b/src/setjmp/powerpc64/longjmp.S
+index 81d45ff6..920fba30 100644
+--- a/src/setjmp/powerpc64/longjmp.S
++++ b/src/setjmp/powerpc64/longjmp.S
+@@ -1,9 +1,28 @@
++#include <bits/hwcap.h>
++
++#define HWCAP_ALTIVEC_HI (PPC_FEATURE_HAS_ALTIVEC >> 16)
++
++#ifndef __ALTIVEC__
++	.hidden __hwcap
++#endif
++
+ 	.global _longjmp
+ 	.global longjmp
+ 	.type   _longjmp,@function
+ 	.type   longjmp,@function
+ _longjmp:
+ longjmp:
++	addis 2, 12, .TOC.-longjmp@ha
++	addi  2,  2, .TOC.-longjmp@l
++	b     1f
++	nop
++
++	.localentry _longjmp,.-_longjmp
++	.localentry longjmp,.-longjmp
++1:
++#ifndef __ALTIVEC__
++	mr   5,  2
++#endif
+ 	# 0) move old return address into the link register
+ 	ld   0,  0*8(3)
+ 	mtlr 0
+@@ -57,6 +76,13 @@ longjmp:
+ 	lfd 31, 39*8(3)
+ 
+ 	# 6) restore vector registers v20-v31
++#ifndef __ALTIVEC__
++	addis 6, 5, __hwcap@toc@ha
++	addi  6, 6, __hwcap@toc@l
++	ld    6, 0(6)
++	andis. 6, 6, HWCAP_ALTIVEC_HI
++	beq   1f
++#endif
+ 	addi 3, 3, 40*8
+ 	lvx 20, 0, 3 ; addi 3, 3, 16
+ 	lvx 21, 0, 3 ; addi 3, 3, 16
+@@ -70,6 +96,9 @@ longjmp:
+ 	lvx 29, 0, 3 ; addi 3, 3, 16
+ 	lvx 30, 0, 3 ; addi 3, 3, 16
+ 	lvx 31, 0, 3
++#ifndef __ALTIVEC__
++1:
++#endif
+ 
+ 	# 7) return r4 ? r4 : 1
+ 	mr    3,   4
+@@ -78,4 +107,3 @@ longjmp:
+ 	li    3,   1
+ 1:
+ 	blr
+-
+diff --git a/src/setjmp/powerpc64/setjmp.S b/src/setjmp/powerpc64/setjmp.S
+index 37683fda..dd71efe0 100644
+--- a/src/setjmp/powerpc64/setjmp.S
++++ b/src/setjmp/powerpc64/setjmp.S
+@@ -1,3 +1,11 @@
++#include <bits/hwcap.h>
++
++#define HWCAP_ALTIVEC_HI (PPC_FEATURE_HAS_ALTIVEC >> 16)
++
++#ifndef __ALTIVEC__
++	.hidden __hwcap
++#endif
++
+ 	.global __setjmp
+ 	.global _setjmp
+ 	.global setjmp
+@@ -7,6 +15,8 @@
+ __setjmp:
+ _setjmp:
+ setjmp:
++	addis 2, 12, .TOC.-__setjmp@ha
++	addi  2,  2, .TOC.-__setjmp@l
+ 	ld 5, 24(1)   # load from the TOC slot in the caller's stack frame
+ 	b __setjmp_toc
+ 
+@@ -70,6 +80,13 @@ __setjmp_toc:
+ 	stfd 31, 39*8(3)
+ 
+ 	# 5) store vector registers v20-v31
++#ifndef __ALTIVEC__
++	addis 4, 2, __hwcap@toc@ha
++	addi  4, 4, __hwcap@toc@l
++	ld    4, 0(4)
++	andis. 4, 4, HWCAP_ALTIVEC_HI
++	beq   1f
++#endif
+ 	addi  3, 3, 40*8
+ 	stvx 20, 0, 3 ; addi 3, 3, 16
+ 	stvx 21, 0, 3 ; addi 3, 3, 16
+@@ -83,6 +100,9 @@ __setjmp_toc:
+ 	stvx 29, 0, 3 ; addi 3, 3, 16
+ 	stvx 30, 0, 3 ; addi 3, 3, 16
+ 	stvx 31, 0, 3
++#ifndef __ALTIVEC__
++1:
++#endif
+ 
+ 	# 6) return 0
+ 	li 3, 0
+-- 
+2.53.0

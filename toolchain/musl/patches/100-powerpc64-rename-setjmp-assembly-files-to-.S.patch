@@ -1,0 +1,24 @@
+From adee90ef00075626be8004642afcd8d20f8dac99 Mon Sep 17 00:00:00 2001
+From: Stijn Tintel <stijn@linux-ipv6.be>
+Date: Tue, 24 Mar 2026 13:02:43 +0200
+Subject: [PATCH 1/2] powerpc64: rename setjmp assembly files to .S
+
+Signed-off-by: Stijn Tintel <stijn@linux-ipv6.be>
+---
+ src/setjmp/powerpc64/{longjmp.s => longjmp.S} | 0
+ src/setjmp/powerpc64/{setjmp.s => setjmp.S}   | 0
+ 2 files changed, 0 insertions(+), 0 deletions(-)
+ rename src/setjmp/powerpc64/{longjmp.s => longjmp.S} (100%)
+ rename src/setjmp/powerpc64/{setjmp.s => setjmp.S} (100%)
+
+diff --git a/src/setjmp/powerpc64/longjmp.s b/src/setjmp/powerpc64/longjmp.S
+similarity index 100%
+rename from src/setjmp/powerpc64/longjmp.s
+rename to src/setjmp/powerpc64/longjmp.S
+diff --git a/src/setjmp/powerpc64/setjmp.s b/src/setjmp/powerpc64/setjmp.S
+similarity index 100%
+rename from src/setjmp/powerpc64/setjmp.s
+rename to src/setjmp/powerpc64/setjmp.S
+-- 
+2.53.0
+
