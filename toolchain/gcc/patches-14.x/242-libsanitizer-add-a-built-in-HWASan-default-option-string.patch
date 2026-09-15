@@ -1,0 +1,38 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Matthew Cather <mattbob4@gmail.com>
+Date: Tue, 15 Sep 2026 14:00:26 -0700
+Subject: [PATCH] libsanitizer: add a built-in HWASan default option string
+
+Instrumented daemons on the target have no convenient place to set
+HWASAN_OPTIONS, so the runtime needs a built-in default. The string
+comes in at build time as -DHWASAN_DEFAULT_OPTIONS=<opts>, unquoted;
+the options are colon separated with no spaces, so they survive the
+shell and make, and the runtime stringifies them.
+
+The built-in string is parsed before __hwasan_default_options() and
+before the HWASAN_OPTIONS environment variable, so both still
+override it.
+
+Signed-off-by: Matthew Cather <mattbob4@gmail.com>
+---
+ libsanitizer/hwasan/hwasan.cpp |    9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+--- a/libsanitizer/hwasan/hwasan.cpp
++++ b/libsanitizer/hwasan/hwasan.cpp
+@@ -129,6 +129,15 @@ static void InitializeFlags() {
+   RegisterCommonFlags(&ubsan_parser);
+ #endif
+
++  // Build-time default; __hwasan_default_options and HWASAN_OPTIONS override it.
++#ifdef HWASAN_DEFAULT_OPTIONS
++#define HWASAN_STR2(x) #x
++#define HWASAN_STR(x) HWASAN_STR2(x)
++  parser.ParseString(HWASAN_STR(HWASAN_DEFAULT_OPTIONS));
++#undef HWASAN_STR
++#undef HWASAN_STR2
++#endif
++
+   // Override from user-specified string.
+   if (__hwasan_default_options)
+     parser.ParseString(__hwasan_default_options());
