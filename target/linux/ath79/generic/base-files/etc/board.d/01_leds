@@ -418,6 +418,15 @@ tplink,tl-wr1043n-v5)
 	ucidef_set_led_switch "lan3" "LAN3" "green:lan3" "switch0" "0x04"
 	ucidef_set_led_switch "lan4" "LAN4" "green:lan4" "switch0" "0x02"
 	;;
+tplink,tl-wr942n-v1)
+	ucidef_set_led_switch "lan1" "LAN1" "green:lan-1" "switch0" "0x04"
+	ucidef_set_led_switch "lan2" "LAN2" "green:lan-2" "switch0" "0x08"
+	ucidef_set_led_switch "lan3" "LAN3" "green:lan-3" "switch0" "0x10"
+	ucidef_set_led_switch "lan4" "LAN4" "green:lan-4" "switch0" "0x02"
+	ucidef_set_led_netdev "wan" "WAN" "green:wan" "eth1"
+	ucidef_set_led_usbport "usb_lower" "USB (lower)" "green:usb-1" "1-1-port2"
+	ucidef_set_led_usbport "usb_upper" "USB (upper)" "green:usb-2" "1-1-port1"
+	;;
 tplink,archer-c6-v2|\
 tplink,archer-c6-v2-us)
 	ucidef_set_led_switch "lan" "LAN" "green:lan" "switch0" "0x3c"
