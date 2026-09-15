@@ -1,0 +1,43 @@
+From: Kenneth Kasilag <kenneth@kasilag.me>
+Subject: generic: net: phy: realtek: speedup rtl8261x fw load
+
+The RTL8261x firmware patch engine applies every OP_WRITE entry with
+phy_modify_mmd(), which reads the register before writing it to preserve
+the bits outside the [msb:lsb] field. The patch data is almost entirely
+full-register (15:0) writes, for which the readback is masked away and
+serves no purpose.
+
+Use the plain phy_write_mmd() for a full-width field and keep
+phy_modify_mmd() only for the few partial-field entries. This roughly
+halves the number of MDIO transactions during the firmware download.
+
+On a native MDIO bus the readback is cheap, but when the PHY is
+reached over a slow transport such as an I2C-to-MDIO (rollball) bridge
+it can take a very long time.
+
+Signed-off-by: Kenneth Kasilag <kenneth@kasilag.me>
+---
+
+--- a/drivers/net/phy/realtek/realtek_main.c
++++ b/drivers/net/phy/realtek/realtek_main.c
+@@ -511,8 +511,18 @@ static int rtl8261x_fw_execute_entry(str
+ 
+ 	switch (entry->type) {
+ 	case OP_WRITE:
+-		ret = phy_modify_mmd(phydev, dev, addr,
+-				     GENMASK(msb, lsb), (value << lsb) & GENMASK(msb, lsb));
++		/* The firmware patch data is almost entirely full-register
++		 * writes. Issue those as a plain write: the read/modify of
++		 * phy_modify_mmd() would only be masked away, and skipping the
++		 * readback roughly halves the MDIO traffic, which dominates the
++		 * download time over a slow transport such as an I2C-to-MDIO
++		 * (rollball) bridge.
++		 */
++		if (msb == 15 && lsb == 0)
++			ret = phy_write_mmd(phydev, dev, addr, value);
++		else
++			ret = phy_modify_mmd(phydev, dev, addr, GENMASK(msb, lsb),
++					     (value << lsb) & GENMASK(msb, lsb));
+ 		if (ret) {
+ 			phydev_err(phydev, "WRITE failed: dev=%d addr=0x%04x\n", dev, addr);
+ 			return ret;

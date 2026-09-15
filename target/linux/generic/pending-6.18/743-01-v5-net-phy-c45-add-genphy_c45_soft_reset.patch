@@ -1,0 +1,149 @@
+From patchwork Mon Jun 15 09:08:13 2026
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+X-Patchwork-Submitter: javen <javen_xu@realsil.com.cn>
+X-Patchwork-Id: 14629116
+X-Patchwork-Delegate: kuba@kernel.org
+Received: from rtits2.realtek.com.tw (rtits2.realtek.com [211.75.126.72])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+	(No client certificate requested)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 80E53331EBF;
+	Mon, 15 Jun 2026 09:09:47 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org;
+ arc=none smtp.client-ip=211.75.126.72
+ARC-Seal: i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1781514591; cv=none;
+ b=kyOggkk2HuIHECcH1cGl7rC9xY3GB7Nc0nMa2DZNoFXqSocLPdd915phP0dOADHFhsgTCkxbG4Rbowjt2RF51W+uHuURT3MEVrUp7uCF1K5GkuzlyLSKkTUHUSudazl5DPprHna/dXF8Q4RpPmS5RtsDRGP8KozqdPKtByP4L8I=
+ARC-Message-Signature: i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1781514591; c=relaxed/simple;
+	bh=Y3um3qpyHWGl0lz/BSlArkpQ3KA3tg7clz18nyjmlps=;
+	h=From:To:CC:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version:Content-Type;
+ b=HHGw5ZyaRxwAmu5kZo5/Byg2Okyx8SBtF9xINIsGpXDiEzveFDDhlDLD2VAuMebDUFzt45dCMUNKvuPK6jscFM0g38jepYEIjAufQcgtnA+CqCx4MRM4l/sf3T3GkwK3tHl1oeKqA4UyxXsHl6Vj+KAquc6csXOtRRQlzhi2Fb4=
+ARC-Authentication-Results: i=1; smtp.subspace.kernel.org;
+ dmarc=pass (p=none dis=none) header.from=realsil.com.cn;
+ spf=pass smtp.mailfrom=realsil.com.cn;
+ dkim=pass (2048-bit key) header.d=realsil.com.cn header.i=@realsil.com.cn
+ header.b=ALT0Bglj; arc=none smtp.client-ip=211.75.126.72
+Authentication-Results: smtp.subspace.kernel.org;
+ dmarc=pass (p=none dis=none) header.from=realsil.com.cn
+Authentication-Results: smtp.subspace.kernel.org;
+ spf=pass smtp.mailfrom=realsil.com.cn
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=realsil.com.cn header.i=@realsil.com.cn
+ header.b="ALT0Bglj"
+X-SpamFilter-By: ArmorX SpamTrap 5.80 with qID 65F98KxG4611677,
+ This message is accepted by code: ctloc85258
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=realsil.com.cn;
+	s=dkim; t=1781514500;
+	bh=C5A7DXA96OZ3Yl78IqhHnJQrzYi9kruAq5KanhjRFRg=;
+	h=From:To:CC:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version:Content-Transfer-Encoding:Content-Type;
+	b=ALT0BgljtCFcBCHB7xFfH77u6tJPe+s4/vrRyuH3fm8urMZrUGBNZs8sk9HEXVPBC
+	 t+gUabB6q4AIH+LVVrVqGvCjCf3NWPSoSw3BvM0RK3fJBXHSvvGR0dtwTSAGHSGDOy
+	 7AihtuC7LR78WbrbBT6i9EuvUfUJoZ5EldOsvzPevaIoXatGw20FGwgsGqVJBL1fS/
+	 cfGCpK4pjQWscIDbVYlGWKgs03FMmGfwJtx/NWOSxtFoCaelj9MekDqdq4jKQrvYLP
+	 Ok1mH7KFfT+WMg3q/6/N1mwmVHs/oHWkvsL9l27n5WkYxuT5g2Ewx0IQKqBl3yWKlT
+	 gnYA+Q+Xg332w==
+Received: from RS-EX-MBS2.realsil.com.cn ([172.29.17.102])
+	by rtits2.realtek.com.tw (8.15.2/3.29/5.94) with ESMTPS id 65F98KxG4611677
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL);
+	Mon, 15 Jun 2026 17:08:20 +0800
+Received: from RS-EX-MBS1.realsil.com.cn (172.29.17.101) by
+ RS-EX-MBS2.realsil.com.cn (172.29.17.102) with Microsoft SMTP Server
+ (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ 15.2.2562.17; Mon, 15 Jun 2026 17:08:19 +0800
+Received: from 172.29.37.154 (172.29.37.152) by RS-EX-MBS1.realsil.com.cn
+ (172.29.17.101) with Microsoft SMTP Server id 15.2.2562.17 via Frontend
+ Transport; Mon, 15 Jun 2026 17:08:19 +0800
+From: javen <javen_xu@realsil.com.cn>
+To: <andrew@lunn.ch>, <hkallweit1@gmail.com>, <linux@armlinux.org.uk>,
+	<davem@davemloft.net>, <edumazet@google.com>, <kuba@kernel.org>,
+	<pabeni@redhat.com>, <freddy_gu@realsil.com.cn>, <nb@tipi-net.de>
+CC: <netdev@vger.kernel.org>, <linux-kernel@vger.kernel.org>,
+	<daniel@makrotopia.org>, <vladimir.oltean@nxp.com>, Javen Xu
+	<javen_xu@realsil.com.cn>
+Subject: [PATCH net-next v5 1/4] net: phy: c45: add genphy_c45_soft_reset()
+Date: Mon, 15 Jun 2026 17:08:13 +0800
+Message-ID: <20260615090817.429-2-javen_xu@realsil.com.cn>
+X-Mailer: git-send-email 2.50.1.windows.1
+In-Reply-To: <20260615090817.429-1-javen_xu@realsil.com.cn>
+References: <20260615090817.429-1-javen_xu@realsil.com.cn>
+Precedence: bulk
+X-Mailing-List: netdev@vger.kernel.org
+List-Id: <netdev.vger.kernel.org>
+List-Subscribe: <mailto:netdev+subscribe@vger.kernel.org>
+List-Unsubscribe: <mailto:netdev+unsubscribe@vger.kernel.org>
+MIME-Version: 1.0
+X-Patchwork-Delegate: kuba@kernel.org
+
+From: Javen Xu <javen_xu@realsil.com.cn>
+
+Add a generic Clause 45 software reset helper. The helper sets the reset
+bit in the PMA/PMD control register and waits until the bit is cleared by
+hardware.
+
+Reviewed-by: Nicolai Buchwitz <nb@tipi-net.de>
+Signed-off-by: Javen Xu <javen_xu@realsil.com.cn>
+---
+Changes in v2:
+ - no changes, new file
+
+Changes in v3:
+ - re-order function according to the order in phy-c45.c
+
+Changes in v4:
+ - no changes
+
+Changes in v5:
+ - no changes
+
+Changes in v6:
+ - increase timeout to 600ms
+---
+ drivers/net/phy/phy-c45.c | 22 ++++++++++++++++++++++
+ include/linux/phy.h       |  1 +
+ 2 files changed, 23 insertions(+)
+
+--- a/drivers/net/phy/phy-c45.c
++++ b/drivers/net/phy/phy-c45.c
+@@ -384,6 +384,28 @@ int genphy_c45_check_and_restart_aneg(st
+ EXPORT_SYMBOL_GPL(genphy_c45_check_and_restart_aneg);
+ 
+ /**
++ * genphy_c45_soft_reset - software reset the PHY via Clause 45 PMA/PMD control register
++ * @phydev: target phy_device struct
++ *
++ * Return: 0 on success, negative errno on failure.
++ */
++int genphy_c45_soft_reset(struct phy_device *phydev)
++{
++	int ret, val;
++
++	ret = phy_set_bits_mmd(phydev, MDIO_MMD_PMAPMD, MDIO_CTRL1,
++			       MDIO_CTRL1_RESET);
++	if (ret < 0)
++		return ret;
++
++	return phy_read_mmd_poll_timeout(phydev, MDIO_MMD_PMAPMD,
++					 MDIO_CTRL1, val,
++					 !(val & MDIO_CTRL1_RESET),
++					 5000, 600000, true);
++}
++EXPORT_SYMBOL_GPL(genphy_c45_soft_reset);
++
++/**
+  * genphy_c45_aneg_done - return auto-negotiation complete status
+  * @phydev: target phy_device struct
+  *
+--- a/include/linux/phy.h
++++ b/include/linux/phy.h
+@@ -1991,6 +1991,7 @@ int genphy_c37_read_status(struct phy_de
+ /* Clause 45 PHY */
+ int genphy_c45_restart_aneg(struct phy_device *phydev);
+ int genphy_c45_check_and_restart_aneg(struct phy_device *phydev, bool restart);
++int genphy_c45_soft_reset(struct phy_device *phydev);
+ int genphy_c45_aneg_done(struct phy_device *phydev);
+ int genphy_c45_read_link(struct phy_device *phydev);
+ int genphy_c45_read_lpa(struct phy_device *phydev);
