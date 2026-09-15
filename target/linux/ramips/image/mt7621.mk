@@ -2275,13 +2275,13 @@ define Device/MikroTik
   DEVICE_PACKAGES := kmod-usb3 -uboot-envtools
   KERNEL_NAME := vmlinuz
   KERNEL := kernel-bin | append-dtb-elf
-  IMAGE/sysupgrade.bin := append-kernel | yaffs-filesystem -L | \
+  IMAGES := sysupgrade.bin.gz sysupgrade-v7.bin.gz
+  IMAGE/sysupgrade.bin.gz := append-kernel | yaffs-filesystem -L | \
 	pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size | \
-	append-metadata
-  IMAGES += sysupgrade-v7.bin
-  IMAGE/sysupgrade-v7.bin := append-kernel | kernel-pack-npk | \
+	libdeflate-gzip | append-metadata
+  IMAGE/sysupgrade-v7.bin.gz := append-kernel | kernel-pack-npk | \
 	  yaffs-filesystem -L | pad-to $$$$(BLOCKSIZE) | \
-	  append-rootfs | pad-rootfs | check-size | append-metadata
+	  append-rootfs | pad-rootfs | check-size | libdeflate-gzip | append-metadata
 endef
 
 define Device/mikrotik_ltap-2hnd
