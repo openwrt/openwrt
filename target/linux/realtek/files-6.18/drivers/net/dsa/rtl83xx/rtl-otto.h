@@ -825,6 +825,12 @@ enum rtldsa_flood_type {
 #define L3_COPY2MASTERCPU	5
 #define L3_HARDDROP		6
 
+/* Route entry types */
+#define ROUTE_TYPE_IP4UC	0
+#define ROUTE_TYPE_IP4MC	1
+#define ROUTE_TYPE_IP6UC	2
+#define ROUTE_TYPE_IP6MC	3
+
 /* Route actions */
 #define ROUTE_ACT_FORWARD	0
 #define ROUTE_ACT_TRAP2CPU	1

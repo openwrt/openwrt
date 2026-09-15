@@ -188,16 +188,16 @@ static void otto_l3_930x_host_route_read(struct otto_l3_ctrl *ctrl, int idx, str
 		return;
 	rt->attr.type = (v >> 29) & 0x3;
 	switch (rt->attr.type) {
-	case 0: /* IPv4 Unicast route */
+	case ROUTE_TYPE_IP4UC:
 		rt->dst_ip = data[4];
 		break;
-	case 2: /* IPv6 Unicast route */
+	case ROUTE_TYPE_IP6UC:
 		ipv6_addr_set(&rt->dst_ip6,
 			      data[1], data[2],
 			      data[3], data[4]);
 		break;
-	case 1: /* IPv4 Multicast route */
-	case 3: /* IPv6 Multicast route */
+	case ROUTE_TYPE_IP4MC:
+	case ROUTE_TYPE_IP6MC:
 		dev_warn(ctrl->dev, "route type not supported\n");
 		return;
 	}
@@ -246,20 +246,20 @@ static void otto_l3_930x_host_route_write(struct otto_l3_ctrl *ctrl, int idx, st
 
 	data[0] = v;
 	switch (rt->attr.type) {
-	case 0: /* IPv4 Unicast route */
+	case ROUTE_TYPE_IP4UC:
 		data[1] = 0;
 		data[2] = 0;
 		data[3] = 0;
 		data[4] = rt->dst_ip;
 		break;
-	case 2: /* IPv6 Unicast route */
+	case ROUTE_TYPE_IP6UC:
 		data[1] = rt->dst_ip6.s6_addr32[0];
 		data[2] = rt->dst_ip6.s6_addr32[1];
 		data[3] = rt->dst_ip6.s6_addr32[2];
 		data[4] = rt->dst_ip6.s6_addr32[3];
 		break;
-	case 1: /* IPv4 Multicast route */
-	case 3: /* IPv6 Multicast route */
+	case ROUTE_TYPE_IP4MC:
+	case ROUTE_TYPE_IP6MC:
 		dev_warn(ctrl->dev, "route type not supported\n");
 		return;
 	}
@@ -303,11 +303,11 @@ static int otto_l3_930x_find_slot(struct otto_l3_ctrl *ctrl, struct otto_l3_rout
 			    route_entry.attr.valid &&
 			    route_entry.attr.type == rt->attr.type) {
 				switch (rt->attr.type) {
-				case 0:
+				case ROUTE_TYPE_IP4UC:
 					if (route_entry.dst_ip == rt->dst_ip)
 						return idx;
 					break;
-				case 2:
+				case ROUTE_TYPE_IP6UC:
 					if (ipv6_addr_equal(&route_entry.dst_ip6, &rt->dst_ip6))
 						return idx;
 					break;
@@ -465,7 +465,7 @@ static void otto_l3_930x_route_read(struct otto_l3_ctrl *ctrl, int idx, struct o
 	dev_dbg(ctrl->dev, "host route %d, default_route %d\n", host_route, default_route);
 
 	switch (rt->attr.type) {
-	case 0: /* IPv4 Unicast route */
+	case ROUTE_TYPE_IP4UC:
 		rt->dst_ip = data[4];
 		ip4_m = data[9];
 		dev_dbg(ctrl->dev, "Read ip4 mask: %08x\n", ip4_m);
@@ -476,7 +476,7 @@ static void otto_l3_930x_route_read(struct otto_l3_ctrl *ctrl, int idx, struct o
 		else
 			rt->prefix_len = inet_mask_len(ip4_m);
 		break;
-	case 2: /* IPv6 Unicast route */
+	case ROUTE_TYPE_IP6UC:
 		ipv6_addr_set(&rt->dst_ip6,
 			      data[1], data[2],
 			      data[3], data[4]);
@@ -490,8 +490,8 @@ static void otto_l3_930x_route_read(struct otto_l3_ctrl *ctrl, int idx, struct o
 		else
 			rt->prefix_len = otto_l3_930x_mask6_len(&ip6_m);
 		break;
-	case 1: /* IPv4 Multicast route */
-	case 3: /* IPv6 Multicast route */
+	case ROUTE_TYPE_IP4MC:
+	case ROUTE_TYPE_IP6MC:
 		dev_warn(ctrl->dev, "route type not supported\n");
 		return;
 	}
@@ -532,7 +532,7 @@ static int otto_l3_930x_route_lookup_hw(struct otto_l3_ctrl *ctrl, struct otto_l
 	struct in6_addr ip6_m;
 	u32 ip4_m, v;
 
-	if (rt->attr.type == 1 || rt->attr.type == 3) /* Hardware only supports UC routes */
+	if (rt->attr.type == ROUTE_TYPE_IP4MC || rt->attr.type == ROUTE_TYPE_IP6MC)
 		return -1;
 
 	sw_w32_mask(0x3 << 19, rt->attr.type, RTL930X_L3_HW_LU_KEY_CTRL);
@@ -603,7 +603,7 @@ static void otto_l3_930x_route_write(struct otto_l3_ctrl *ctrl, int idx, struct 
 	data[5] = 0x3 << 29;
 
 	switch (rt->attr.type) {
-	case 0: /* IPv4 Unicast route */
+	case ROUTE_TYPE_IP4UC:
 		data[1] = 0;
 		data[2] = 0;
 		data[3] = 0;
@@ -616,7 +616,7 @@ static void otto_l3_930x_route_write(struct otto_l3_ctrl *ctrl, int idx, struct 
 		data[8] = 0;
 		data[9] = ip4_m;
 		break;
-	case 2: /* IPv6 Unicast route */
+	case ROUTE_TYPE_IP6UC:
 		data[1] = rt->dst_ip6.s6_addr32[0];
 		data[2] = rt->dst_ip6.s6_addr32[1];
 		data[3] = rt->dst_ip6.s6_addr32[2];
@@ -631,8 +631,8 @@ static void otto_l3_930x_route_write(struct otto_l3_ctrl *ctrl, int idx, struct 
 		data[8] = ip6_m.s6_addr32[2];
 		data[9] = ip6_m.s6_addr32[3];
 		break;
-	case 1: /* IPv4 Multicast route */
-	case 3: /* IPv6 Multicast route */
+	case ROUTE_TYPE_IP4MC:
+	case ROUTE_TYPE_IP6MC:
 		dev_warn(ctrl->dev, "route type not supported\n");
 		return;
 	}
@@ -883,7 +883,7 @@ static int otto_l3_nexthop_update(struct otto_l3_ctrl *ctrl, __be32 ip_addr, u64
 
 		r->attr.valid = true;
 		r->attr.action = ROUTE_ACT_FORWARD;
-		r->attr.type = 0;
+		r->attr.type = ROUTE_TYPE_IP4UC;
 		r->attr.hit = false; /* Reset route-used indicator */
 
 		/* Add PIE entry with dst_ip and prefix_len */
@@ -981,9 +981,9 @@ static bool otto_l3_route_is_at(struct otto_l3_ctrl *ctrl, int id, struct otto_l
 		return false;
 
 	switch (r->attr.type) {
-	case 0:
+	case ROUTE_TYPE_IP4UC:
 		return entry.dst_ip == r->dst_ip;
-	case 2:
+	case ROUTE_TYPE_IP6UC:
 		return ipv6_addr_equal(&entry.dst_ip6, &r->dst_ip6);
 	}
 
@@ -1218,7 +1218,7 @@ static int otto_l3_fib_add_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 			route->nh.port = priv->r->port_ignore;
 			route->attr.valid = true;
 			route->attr.action = ROUTE_ACT_TRAP2CPU;
-			route->attr.type = 0;
+			route->attr.type = ROUTE_TYPE_IP4UC;
 
 			slot = ctrl->cfg->find_slot(ctrl, route, true);
 			if (slot < 0)
