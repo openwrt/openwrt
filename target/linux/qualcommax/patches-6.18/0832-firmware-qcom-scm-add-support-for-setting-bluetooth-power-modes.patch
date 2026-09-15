@@ -1,0 +1,98 @@
+From af1c5e73ca325a1c5c3688ebf47e8a9a66257358 Mon Sep 17 00:00:00 2001
+From: George Moussalem <george.moussalem@outlook.com>
+Date: Thu, 09 Jul 2026 13:17:05 +0400
+Subject: [PATCH v5 3/6] firmware: qcom: scm: Add support for setting Bluetooth power modes
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+Message-Id: <20260709-ipq5018-bluetooth-v5-3-0da36dcc3373@outlook.com>
+
+The Bluetooth subsystem (BTSS) on the IPQ5018 SoC supports setting power
+modes which are required to be configured through a Secure Channel
+Manager (SCM) call to TrustZone. However, not all Trusted Execution
+Environment (QSEE) images support this call, so first check if the call
+is available.
+
+Reviewed-by: Bartosz Golaszewski <bartosz.golaszewski@oss.qualcomm.com>
+Reviewed-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Reviewed-by: Dmitry Baryshkov <dmitry.baryshkov@oss.qualcomm.com>
+Signed-off-by: George Moussalem <george.moussalem@outlook.com>
+---
+ drivers/firmware/qcom/qcom_scm.c       | 44 ++++++++++++++++++++++++++++++++++
+ drivers/firmware/qcom/qcom_scm.h       |  1 +
+ include/linux/firmware/qcom/qcom_scm.h |  1 +
+ 3 files changed, 46 insertions(+)
+
+--- a/drivers/firmware/qcom/qcom_scm.c
++++ b/drivers/firmware/qcom/qcom_scm.c
+@@ -964,6 +964,50 @@ int qcom_scm_msa_unlock(u32 peripheral)
+ }
+ EXPORT_SYMBOL_GPL(qcom_scm_msa_unlock);
+ 
++/**
++ * qcom_scm_pas_set_bluetooth_power_mode() - Configure power mode for the
++ *					     Bluetooth subsystem (BTSS)
++ * @pas_id:	peripheral authentication service id
++ * @eco_mode:	true for ECO mode, false for normal operation
++ *
++ * Return: 0 on success, negative errno on failure.
++ * Returns -EOPNOTSUPP if the firmware configuration call is unavailable.
++ */
++int qcom_scm_pas_set_bluetooth_power_mode(u32 pas_id, bool eco_mode)
++{
++	struct qcom_scm_desc desc = {
++		.svc = QCOM_SCM_SVC_PIL,
++		.cmd = QCOM_SCM_PIL_PAS_BT_PWR_MODE,
++		.arginfo = QCOM_SCM_ARGS(2),
++		.args[0] = pas_id,
++		.args[1] = eco_mode ? 0x4 : 0x0,
++		.owner = ARM_SMCCC_OWNER_SIP,
++	};
++	struct qcom_scm_res res;
++	int ret;
++
++	if (!__qcom_scm_is_call_available(__scm->dev, QCOM_SCM_SVC_PIL,
++					  QCOM_SCM_PIL_PAS_BT_PWR_MODE))
++		return -EOPNOTSUPP;
++
++	ret = qcom_scm_clk_enable();
++	if (ret)
++		return ret;
++
++	ret = qcom_scm_bw_enable();
++	if (ret)
++		goto disable_clk;
++
++	ret = qcom_scm_call(__scm->dev, &desc, &res);
++	qcom_scm_bw_disable();
++
++disable_clk:
++	qcom_scm_clk_disable();
++
++	return ret ? : res.result[0];
++}
++EXPORT_SYMBOL_GPL(qcom_scm_pas_set_bluetooth_power_mode);
++
+ static int __qcom_scm_pas_mss_reset(struct device *dev, bool reset)
+ {
+ 	struct qcom_scm_desc desc = {
+--- a/drivers/firmware/qcom/qcom_scm.h
++++ b/drivers/firmware/qcom/qcom_scm.h
+@@ -109,6 +109,7 @@ int qcom_scm_shm_bridge_enable(struct de
+ #define QCOM_SCM_INTERNAL_WIFI_POWERUP	0x17
+ #define QCOM_SCM_INTERNAL_WIFI_SHUTDOWN	0x18
+ #define QCOM_SCM_PIL_PAS_LOAD_SEG	0x19
++#define QCOM_SCM_PIL_PAS_BT_PWR_MODE	0x21
+ #define QCOM_SCM_MSA_LOCK		0x24
+ #define QCOM_SCM_MSA_UNLOCK		0x25
+ 
+--- a/include/linux/firmware/qcom/qcom_scm.h
++++ b/include/linux/firmware/qcom/qcom_scm.h
+@@ -84,6 +84,7 @@ int qcom_scm_internal_wifi_shutdown(u32
+ int qcom_scm_pas_load_segment(u32 peripheral, int segment, dma_addr_t dma, int seg_cnt);
+ int qcom_scm_msa_lock(u32 peripheral);
+ int qcom_scm_msa_unlock(u32 peripheral);
++int qcom_scm_pas_set_bluetooth_power_mode(u32 pas_id, bool eco_mode);
+ 
+ int qcom_scm_io_readl(phys_addr_t addr, unsigned int *val);
+ int qcom_scm_io_writel(phys_addr_t addr, unsigned int val);
