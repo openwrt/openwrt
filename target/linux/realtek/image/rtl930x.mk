@@ -171,6 +171,23 @@ define Device/keeplink_kp-9000-8xm
 endef
 TARGET_DEVICES += keeplink_kp-9000-8xm
 
+define Device/mokerlink_2g080gm
+  SOC := rtl9303
+  UIMAGE_MAGIC := 0x83800000
+  DEVICE_VENDOR := MokerLink
+  DEVICE_MODEL := 2G080GM
+  IMAGE_SIZE := 12288k
+  $(Device/kernel-lzma)
+  IMAGES += factory.bix
+  IMAGE/factory.bix := \
+	append-kernel | \
+	pad-to 64k | \
+	append-rootfs | \
+	pad-rootfs | \
+	check-size
+endef
+TARGET_DEVICES += mokerlink_2g080gm
+
 define Device/nicgiga_s100-0800s-m
   SOC := rtl9303
   UIMAGE_MAGIC := 0x93030000
