@@ -1,0 +1,10 @@
+--- a/drivers/irqchip/Kconfig
++++ b/drivers/irqchip/Kconfig
+@@ -20,6 +20,7 @@ config ARM_GIC_MAX_NR
+ 	int
+ 	depends on ARM_GIC
+ 	default 2 if ARCH_REALVIEW
++	default 2 if ARCH_ALPINE
+ 	default 1
+ 
+ config ARM_GIC_V2M
