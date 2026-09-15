@@ -47,6 +47,13 @@
 		HASH_PSE_CELLS = <0>; \
 	};
 
+#define PSE_PI_SUPPLY(p, s) \
+	pse_pi##p: pse-pi@p { \
+		reg = <p>; \
+		HASH_PSE_CELLS = <0>; \
+		vpwr-supply = <s>; \
+	};
+
 #define SWITCH_PORT(p, l, m) \
 	port##p: port@##p { \
 		reg = <##p>; \
