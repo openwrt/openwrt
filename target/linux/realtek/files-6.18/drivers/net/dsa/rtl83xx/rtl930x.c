@@ -534,7 +534,7 @@ static void rtl930x_fill_l2_row(u32 r[], struct rtl838x_l2_entry *e)
 		}
 		r[2] |= port << 20;
 		r[2] |= e->block_da ? BIT(15) : 0;
-		r[2] |= e->block_sa ? BIT(17) : 0;
+		r[2] |= e->block_sa ? BIT(16) : 0;
 		r[2] |= e->suspended ? BIT(13) : 0;
 		r[2] |= (e->age & 0x3) << 17;
 		/* the UC_VID field in hardware is used for the VID or for the route id */
