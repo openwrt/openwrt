@@ -524,7 +524,6 @@ static void rtl930x_fill_l2_row(u32 r[], struct rtl838x_l2_entry *e)
 	if (e->type == L2_UNICAST) {
 		r[2] |= e->is_static ? BIT(14) : 0;
 		r[1] |= e->rvid & 0xfff;
-		r[2] |= (e->port & 0x3ff) << 20;
 		if (e->is_trunk) {
 			r[2] |= BIT(30);
 			port = e->stack_dev << 9 | (e->port & 0x3f);
