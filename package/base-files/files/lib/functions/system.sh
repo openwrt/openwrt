@@ -1,7 +1,6 @@
 # Copyright (C) 2006-2013 OpenWrt.org
 
 . /lib/functions.sh
-. /usr/share/libubox/jshn.sh
 
 get_mac_binary() {
 	local path="$1"
@@ -30,7 +29,6 @@ get_mac_label_dt() {
 
 get_mac_label_json() {
 	local cfg="/etc/board.json"
-	local macaddr
 
 	if ! [ -s "$cfg" ]; then
 		if [ -n "$CFG" ] && [ -s "$CFG" ]; then
@@ -40,15 +38,7 @@ get_mac_label_json() {
 		fi
 	fi
 
-	json_init
-	json_load "$(cat $cfg)"
-	if json_is_a system object; then
-		json_select system
-			json_get_var macaddr label_macaddr
-		json_select ..
-	fi
-
-	echo $macaddr
+	jsonfilter -i "$cfg" -e @.system.label_macaddr
 }
 
 get_mac_label() {
