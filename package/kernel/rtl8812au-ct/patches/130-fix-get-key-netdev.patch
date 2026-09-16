@@ -1,0 +1,21 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Alexander Zaguzin <st7105@gmail.com>
+Date: Wed, 16 Sep 2026 18:39:01 +0300
+Subject: [PATCH] fix net_device reference in get_key callback
+
+The cfg80211 7.2 conversion changed the get_key callback argument to
+wireless_dev, but left its debug statement referring to ndev. Obtain the
+net_device from wdev, as the other converted callbacks already do.
+
+Signed-off-by: Alexander Zaguzin <st7105@gmail.com>
+---
+--- a/os_dep/linux/ioctl_cfg80211.c
++++ b/os_dep/linux/ioctl_cfg80211.c
+@@ -1540,6 +1540,7 @@ static int cfg80211_rtw_get_key(struct w
+                                 void (*callback)(void *cookie,
+                                         struct key_params*))
+ {
++	struct net_device *ndev = wdev_to_ndev(wdev);
+ #if 0
+ 	struct iwm_priv *iwm = ndev_to_iwm(ndev);
+ 	struct iwm_key *key = &iwm->keys[key_index];
