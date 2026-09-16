@@ -1,0 +1,37 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robimarko@gmail.com>
+Date: Wed, 16 Sep 2026 14:26:38 +0200
+Subject: [PATCH] remoteproc: qcom: wcss-sec: enable PRNG clock
+
+The IPQ8074 WCSS secure PIL requires the PRNG clock while the remote
+processor is running. Acquire and enable the optional PRNG clock at
+probe, using the same managed clock handling as the sleep and
+interconnect clocks.
+
+Signed-off-by: Robert Marko <robimarko@gmail.com>
+---
+ drivers/remoteproc/qcom_q6v5_wcss_sec.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+--- a/drivers/remoteproc/qcom_q6v5_wcss_sec.c
++++ b/drivers/remoteproc/qcom_q6v5_wcss_sec.c
+@@ -316,6 +316,7 @@ static int wcss_sec_probe(struct platfor
+ 	struct rproc *rproc;
+ 	struct wcss_sec *wcss;
+ 	struct clk *sleep_clk;
++	struct clk *prng_clk;
+ 	struct clk *int_clk;
+ 	const char **firmware = NULL;
+ 	const struct wcss_data *desc = of_device_get_match_data(&pdev->dev);
+@@ -355,6 +356,11 @@ static int wcss_sec_probe(struct platfor
+ 		return dev_err_probe(&pdev->dev, PTR_ERR(int_clk),
+ 				     "Failed to get interconnect clock\n");
+ 
++	prng_clk = devm_clk_get_optional_enabled(&pdev->dev, "prng");
++	if (IS_ERR(prng_clk))
++		return dev_err_probe(&pdev->dev, PTR_ERR(prng_clk),
++				     "Failed to get prng clock\n");
++
+ 	ret = qcom_q6v5_init(&wcss->q6, pdev, rproc,
+ 			     WCSS_CRASH_REASON, NULL, NULL);
+ 	if (ret)
