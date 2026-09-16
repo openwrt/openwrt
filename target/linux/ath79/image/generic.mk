@@ -1883,6 +1883,16 @@ define Device/huawei_ap6010dn
 endef
 TARGET_DEVICES += huawei_ap6010dn
 
+define Device/intelbras_wom-5a-16m
+  SOC := ar9342
+  DEVICE_VENDOR := Intelbras
+  DEVICE_MODEL := WOM 5A
+  DEVICE_VARIANT := 16M
+  IMAGE_SIZE := 16000k
+  DEVICE_PACKAGES := rssileds
+endef
+TARGET_DEVICES += intelbras_wom-5a-16m
+
 define Device/iodata_etg3-r
   SOC := ar9342
   DEVICE_VENDOR := I-O DATA
