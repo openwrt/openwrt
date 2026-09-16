@@ -66,7 +66,10 @@ def prompt_skip_or_install(tool, install_hint):
 	print("'%s' was not found on this system (checked via PATH)." % tool)
 	print("Without it this script can't tell when the device is reachable")
 	print("- it would have to guess the timing blindly instead.")
-	answer = input("Skip the %s check and try connecting blindly? [y/N] " % tool).strip().lower()
+	try:
+		answer = input("Skip the %s check and try connecting blindly? [y/N] " % tool).strip().lower()
+	except EOFError:
+		answer = ""
 	if answer in ("y", "yes"):
 		return True
 	print()
