@@ -1,0 +1,66 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Wed, 9 Sep 2026 23:09:44 +0200
+Subject: [PATCH] netfilter: flowtable: promote a flow offloaded in one direction only
+
+A flow offloaded in the original direction alone carries a reply tuple
+that conntrack has never seen a packet for. Leave that direction on the
+classic path, so conntrack tracks it, and offload it as well once the
+connection is assured.
+
+act_ct promotes its unidirectional UDP flows on the same condition.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+Assisted-by: Claude:claude-opus-5
+---
+ net/netfilter/nf_flow_table_ip.c | 26 ++++++++++++++++++++++++++
+ 1 file changed, 26 insertions(+)
+
+--- a/net/netfilter/nf_flow_table_ip.c
++++ b/net/netfilter/nf_flow_table_ip.c
+@@ -367,6 +367,26 @@ nf_flow_offload_lookup(struct nf_flowtab
+ 	return flow_offload_lookup(flow_table, &tuple);
+ }
+ 
++/* The reply direction of a flow offloaded in one direction only stays on the
++ * classic path so that conntrack sees it. Once conntrack has, the flow is
++ * offloaded in both directions.
++ */
++static bool nf_flow_reply_unoffloaded(struct nf_flowtable *flow_table,
++				      struct flow_offload *flow,
++				      enum flow_offload_tuple_dir dir)
++{
++	if (dir != FLOW_OFFLOAD_DIR_REPLY ||
++	    test_bit(NF_FLOW_HW_BIDIRECTIONAL, &flow->flags))
++		return false;
++
++	if (test_bit(IPS_ASSURED_BIT, &flow->ct->status)) {
++		set_bit(NF_FLOW_HW_BIDIRECTIONAL, &flow->flags);
++		flow_offload_refresh(flow_table, flow, true);
++	}
++
++	return true;
++}
++
+ static int nf_flow_offload_forward(struct nf_flowtable_ctx *ctx,
+ 				   struct nf_flowtable *flow_table,
+ 				   struct flow_offload_tuple_rhash *tuplehash,
+@@ -380,6 +400,9 @@ static int nf_flow_offload_forward(struc
+ 	dir = tuplehash->tuple.dir;
+ 	flow = container_of(tuplehash, struct flow_offload, tuplehash[dir]);
+ 
++	if (nf_flow_reply_unoffloaded(flow_table, flow, dir))
++		return 0;
++
+ 	mtu = flow->tuplehash[dir].tuple.mtu + ctx->offset;
+ 	if (unlikely(nf_flow_exceeds_mtu(skb, mtu)))
+ 		return 0;
+@@ -662,6 +685,9 @@ static int nf_flow_offload_ipv6_forward(
+ 	dir = tuplehash->tuple.dir;
+ 	flow = container_of(tuplehash, struct flow_offload, tuplehash[dir]);
+ 
++	if (nf_flow_reply_unoffloaded(flow_table, flow, dir))
++		return 0;
++
+ 	mtu = flow->tuplehash[dir].tuple.mtu + ctx->offset;
+ 	if (unlikely(nf_flow_exceeds_mtu(skb, mtu)))
+ 		return 0;
