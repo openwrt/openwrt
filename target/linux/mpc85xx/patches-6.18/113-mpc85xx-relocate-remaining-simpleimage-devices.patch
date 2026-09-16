@@ -1,0 +1,27 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Grische <github@grische.xyz>
+Date: Wed, 16 Sep 2026 19:10:33 +0200
+Subject: [PATCH] powerpc: mpc85xx: relocate remaining simpleImage devices
+
+Link the simpleImage loader of HiveAP-330, BR200-WP and WS-AP3715i at
+0x3000000, so their kernels no longer exceed the space available below
+the loader.
+
+Signed-off-by: Grische <github@grische.xyz>
+---
+--- a/arch/powerpc/boot/wrapper
++++ b/arch/powerpc/boot/wrapper
+@@ -349,6 +349,13 @@ simpleboot-ws-ap3825i)
+     link_address='0x3000000'
+     binary=y
+     ;;
++simpleboot-br200-wp|\
++simpleboot-hiveap-330|\
++simpleboot-ws-ap3715i)
++    platformo="$object/fixed-head.o $object/simpleboot.o"
++    link_address='0x3000000'
++    binary=y
++    ;;
+ simpleboot-*)
+     platformo="$object/fixed-head.o $object/simpleboot.o"
+     binary=y
