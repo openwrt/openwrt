@@ -1,3 +1,18 @@
+From e0d482fdcfe92046f9d32e00624014c31576be6d Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Sun, 5 Feb 2017 17:55:53 +0100
+Subject: [PATCH] rt2x00: mt7620: differentiate based on SoC CHIP_VER
+
+The vendor driver does things differently based on what it finds in the
+SoC's CHIP_VER register, which tells whether this is MT7620N or MT7620A
+(PKG) and most likely also the revision (VER) and something about the
+silicon implementer (ECO). Introduce codepaths just like the ones in
+the vendor driver to handle the different chips properly. Some of those
+paths are most likely dead code left over from FPGA versions or early
+prototypes of the chip.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800.h
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800.h
 @@ -1056,6 +1056,11 @@

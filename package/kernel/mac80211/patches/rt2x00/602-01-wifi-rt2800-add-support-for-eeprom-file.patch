@@ -1,3 +1,4 @@
+From bf44cb5fb0f510b89e7a651e650dbf71062441d9 Mon Sep 17 00:00:00 2001
 From: Rosen Penev <rosenp@gmail.com>
 Date: Wed, 18 Feb 2026 16:17:47 -0800
 Subject: [PATCH] wifi: rt2800: add support for eeprom file
@@ -6,7 +7,6 @@ Allows loading through ralink,eeprom.
 
 Signed-off-by: Rosen Penev <rosenp@gmail.com>
 ---
-
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 @@ -25,6 +25,7 @@

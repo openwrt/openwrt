@@ -825,6 +825,12 @@ enum rtldsa_flood_type {
 #define L3_COPY2MASTERCPU	5
 #define L3_HARDDROP		6
 
+/* Route entry types */
+#define ROUTE_TYPE_IP4UC	0
+#define ROUTE_TYPE_IP4MC	1
+#define ROUTE_TYPE_IP6UC	2
+#define ROUTE_TYPE_IP6MC	3
+
 /* Route actions */
 #define ROUTE_ACT_FORWARD	0
 #define ROUTE_ACT_TRAP2CPU	1
@@ -1576,9 +1582,6 @@ int rtldsa_mst_replace(struct rtl838x_switch_priv *priv, u16 msti, u16 old_mst_s
 int rtldsa_83xx_lag_setup_algomask(struct rtl838x_switch_priv *priv, int group,
 				   struct netdev_lag_upper_info *info);
 
-void rtldsa_838x_qos_init(struct rtl838x_switch_priv *priv);
-void rtldsa_839x_qos_init(struct rtl838x_switch_priv *priv);
-
 void rtldsa_port_fast_age(struct dsa_switch *ds, int port);
 int rtldsa_packet_cntr_alloc(struct rtl838x_switch_priv *priv);
 void rtldsa_packet_cntr_free(struct rtl838x_switch_priv *priv, int idx);
@@ -1587,20 +1590,16 @@ int rtl83xx_port_is_under(const struct net_device *dev, struct rtl838x_switch_pr
 void rtldsa_port_stp_state_set(struct dsa_switch *ds, int port, u8 state);
 /* Port register accessor functions for the RTL839x and RTL931X SoCs */
 void rtl839x_mask_port_reg_be(u64 clear, u64 set, int reg);
-u32 rtldsa_839x_get_egress_rate(struct rtl838x_switch_priv *priv, int port);
 u64 rtl839x_get_port_reg_be(int reg);
 void rtl839x_set_port_reg_be(u64 set, int reg);
 void rtl839x_mask_port_reg_le(u64 clear, u64 set, int reg);
-int rtldsa_839x_set_egress_rate(struct rtl838x_switch_priv *priv, int port, u32 rate);
 void rtl839x_set_port_reg_le(u64 set, int reg);
 u64 rtl839x_get_port_reg_le(int reg);
 
 /* Port register accessor functions for the RTL838x and RTL930X SoCs */
 void rtl838x_mask_port_reg(u64 clear, u64 set, int reg);
 void rtl838x_set_port_reg(u64 set, int reg);
-u32 rtldsa_838x_get_egress_rate(struct rtl838x_switch_priv *priv, int port);
 u64 rtl838x_get_port_reg(int reg);
-int rtldsa_838x_set_egress_rate(struct rtl838x_switch_priv *priv, int port, u32 rate);
 
 /* RTL838x-specific */
 u32 rtl838x_hash(struct rtl838x_switch_priv *priv, u64 seed);
@@ -1626,8 +1625,6 @@ int rtl83xx_lag_del(struct dsa_switch *ds, int group, int port);
  * they are static and not made available externally. To preserve them for future use
  * collect them in this section.
  */
-
-void rtl839x_set_egress_queue(int port, int queue);
 
 void rtl9300_dump_debug(void);
 
@@ -1669,8 +1666,5 @@ void rtldsa_update_counters_atomically(struct rtl838x_switch_priv *priv, int por
 struct otto_l3_nexthop;
 int rtl83xx_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop *nh);
 int rtl83xx_l2_nexthop_rm(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop *nh);
-
-extern int rtldsa_max_available_queue[];
-extern int rtldsa_default_queue_weights[];
 
 #endif /* _RTL838X_H */
