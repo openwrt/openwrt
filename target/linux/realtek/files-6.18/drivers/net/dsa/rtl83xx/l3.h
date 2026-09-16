@@ -77,6 +77,7 @@ struct otto_l3_route {
 	int prefix_len;			/* Network prefix len of the destination net */
 	bool is_host_route;
 	int id;				/* ID number of this route */
+	int row;			/* Row it occupies in the prefix route table */
 	struct rhlist_head linkage;
 	struct list_head list;		/* all routes, for lookups by destination */
 	u32 tb_id;			/* routing table the route came from */

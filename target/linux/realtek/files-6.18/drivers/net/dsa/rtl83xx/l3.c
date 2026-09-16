@@ -932,7 +932,7 @@ static int otto_l3_nexthop_update(struct otto_l3_ctrl *ctrl, __be32 ip_addr, u64
 			dev_info(ctrl->dev, "Got slot for route: %d\n", slot);
 			ctrl->cfg->host_route_write(ctrl, slot, r);
 		} else {
-			ctrl->cfg->route_write(ctrl, r->id, r);
+			ctrl->cfg->route_write(ctrl, r->row, r);
 			r->pr.fwd_sel = true;
 			r->pr.fwd_data = r->nh.l2_id;
 			r->pr.fwd_act = PIE_ACT_ROUTE_UC;
@@ -1070,11 +1070,11 @@ static void otto_l3_route_remove(struct otto_l3_ctrl *ctrl, struct otto_l3_route
 	} else {
 		/* If there is a HW representation of the route, delete it */
 		if (ctrl->cfg->route_lookup_hw) {
-			/* The route was written at its own id; ask the hardware
-			 * only when it is not there.
+			/* The route was written at the row we recorded; ask the
+			 * hardware only when it is not there.
 			 */
-			if (otto_l3_route_is_at(ctrl, r->id, r)) {
-				id = r->id;
+			if (otto_l3_route_is_at(ctrl, r->row, r)) {
+				id = r->row;
 			} else {
 				id = ctrl->cfg->route_lookup_hw(ctrl, r);
 				if (id >= 0 && !otto_l3_route_is_at(ctrl, id, r)) {
@@ -1146,6 +1146,7 @@ static struct otto_l3_route *otto_l3_host_route_alloc(struct otto_l3_ctrl *ctrl,
 	 * route (on RTL93xx) as we use this ID to associate a DMAC and next-hop entry
 	 */
 	r->id = idx + MAX_ROUTES;
+	r->row = -1;			/* placed by find_slot(), not by row */
 
 	r->gw_ip = ip;
 	r->pr.id = -1; /* We still need to allocate a rule in HW */
@@ -1195,6 +1196,7 @@ static struct otto_l3_route *otto_l3_route_alloc(struct otto_l3_ctrl *ctrl, u32 
 	}
 
 	r->id = idx;
+	r->row = idx;
 	r->gw_ip = ip;
 	r->pr.id = -1; /* We still need to allocate a rule in HW */
 	r->pr.packet_cntr = -1;
