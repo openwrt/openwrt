@@ -177,6 +177,35 @@ define Kernel/PrepareConfigPerRootfs
 	}
 endef
 
+# $1: Path to the initramfs cpio to compress
+define Kernel/CompileImage/Initramfs/Compress/BZIP2
+	$(STAGING_DIR_HOST)/bin/bzip2 -9 -c < $(1) > $(1).bzip2
+endef
+
+define Kernel/CompileImage/Initramfs/Compress/GZIP
+	$(STAGING_DIR_HOST)/bin/libdeflate-gzip -n -f -S .gzip -12 $(1)
+endef
+
+define Kernel/CompileImage/Initramfs/Compress/LZ4
+	$(STAGING_DIR_HOST)/bin/lz4c -l -c1 -fz --favor-decSpeed $(1) $(1).lz4
+endef
+
+define Kernel/CompileImage/Initramfs/Compress/LZMA
+	$(STAGING_DIR_HOST)/bin/lzma e -lc1 -lp2 -pb2 $(1) $(1).lzma
+endef
+
+define Kernel/CompileImage/Initramfs/Compress/LZO
+	$(STAGING_DIR_HOST)/bin/lzop -9 -f $(1)
+endef
+
+define Kernel/CompileImage/Initramfs/Compress/XZ
+	$(STAGING_DIR_HOST)/bin/xz -T$(if $(filter 1,$(NPROC)),2,0) -9 -fz --check=crc32 $(1)
+endef
+
+define Kernel/CompileImage/Initramfs/Compress/ZSTD
+	$(STAGING_DIR_HOST)/bin/zstd -T0 -f -o $(1).zstd $(1)
+endef
+
 ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 # $1: Custom TARGET_DIR. If omitted TARGET_DIR is used.
 # $2: If defined Generate Per Rootfs Kernel Directory and use it
@@ -196,20 +225,9 @@ define Kernel/CompileImage/Initramfs
 					( cd $(if $(1),$(1),$(TARGET_DIR)); find . | LC_ALL=C sort | $(STAGING_DIR_HOST)/bin/cpio --reproducible -o -H newc -R 0:0 > $(KERNEL_BUILD_DIR)/initrd$(2).cpio );) \
 				$(if $(SOURCE_DATE_EPOCH), \
 					touch -hcd "@$(SOURCE_DATE_EPOCH)" $(KERNEL_BUILD_DIR)/initrd$(2).cpio;) \
-				$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_BZIP2), \
-					$(STAGING_DIR_HOST)/bin/bzip2 -9 -c < $(KERNEL_BUILD_DIR)/initrd$(2).cpio > $(KERNEL_BUILD_DIR)/initrd$(2).cpio.bzip2;) \
-				$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_GZIP), \
-					$(STAGING_DIR_HOST)/bin/libdeflate-gzip -n -f -S .gzip -12 $(KERNEL_BUILD_DIR)/initrd$(2).cpio;) \
-				$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_LZ4), \
-					$(STAGING_DIR_HOST)/bin/lz4c -l -c1 -fz --favor-decSpeed $(KERNEL_BUILD_DIR)/initrd$(2).cpio $(KERNEL_BUILD_DIR)/initrd$(2).cpio.lz4;) \
-				$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_LZMA), \
-					$(STAGING_DIR_HOST)/bin/lzma e -lc1 -lp2 -pb2 $(KERNEL_BUILD_DIR)/initrd$(2).cpio $(KERNEL_BUILD_DIR)/initrd$(2).cpio.lzma;) \
-				$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_LZO), \
-					$(STAGING_DIR_HOST)/bin/lzop -9 -f $(KERNEL_BUILD_DIR)/initrd$(2).cpio;) \
-				$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_XZ), \
-					$(STAGING_DIR_HOST)/bin/xz -T$(if $(filter 1,$(NPROC)),2,0) -9 -fz --check=crc32 $(KERNEL_BUILD_DIR)/initrd$(2).cpio;) \
-				$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_ZSTD), \
-					$(STAGING_DIR_HOST)/bin/zstd -T0 -f -o $(KERNEL_BUILD_DIR)/initrd$(2).cpio.zstd $(KERNEL_BUILD_DIR)/initrd$(2).cpio;) \
+				$(foreach ALGO,BZIP2 GZIP LZ4 LZMA LZO XZ ZSTD, \
+					$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_$(ALGO)), \
+						$(call Kernel/CompileImage/Initramfs/Compress/$(ALGO),$(KERNEL_BUILD_DIR)/initrd$(2).cpio);)) \
 			}, gen-cpio$(2)); \
 			$(if $(2),,$(KERNEL_MAKE) $(KERNEL_MAKEOPTS_IMAGE) $(if $(KERNELNAME),$(KERNELNAME),all);),\
 			$(KERNEL_MAKE) $(if $(2),-C $(LINUX_DIR)$(2)) $(KERNEL_MAKEOPTS_IMAGE) $(if $(KERNELNAME),$(KERNELNAME),all);) \
