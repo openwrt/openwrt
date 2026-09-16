@@ -1,0 +1,29 @@
+#!/bin/sh
+
+. /lib/functions/uci-defaults.sh
+
+board_config_update
+
+case "$(board_name)" in
+bananapi,bpi-cm6-io|\
+bananapi,bpi-f3|\
+milkv,jupiter|\
+xunlong,orangepi-rv2)
+	ucidef_set_interface_lan 'eth0 eth1'
+	;;
+xunlong,orangepi-r2s)
+	ucidef_set_network_device_path 'eth2' 'platform/soc/soc:pcie-bus/ca400000.pcie/pci0001:00/0001:00:00.0/0001:01:00.0'
+	ucidef_set_network_device_path 'eth3' 'platform/soc/soc:pcie-bus/ca800000.pcie/pci0002:00/0002:00:00.0/0002:01:00.0'
+	ucidef_set_interface_lan 'eth0 eth1 eth2 eth3'
+	;;
+spacemit,musepi-pro)
+	ucidef_set_interface_lan 'eth0'
+	;;
+*)
+	echo "Unsupported hardware. Network interfaces not initialized"
+	;;
+esac
+
+board_config_flush
+
+exit 0

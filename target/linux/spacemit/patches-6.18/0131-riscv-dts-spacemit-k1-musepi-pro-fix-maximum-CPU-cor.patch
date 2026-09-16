@@ -1,0 +1,46 @@
+From 0718004d7644abea41e3a55a7d36180424fe52fc Mon Sep 17 00:00:00 2001
+From: Aurelien Jarno <aurelien@aurel32.net>
+Date: Wed, 29 Jul 2026 17:02:21 +0200
+Subject: [PATCH] riscv: dts: spacemit: k1-musepi-pro: fix maximum CPU core
+ voltage
+
+On the MusePi Pro board, the buck1 and buck2 voltage regulators, which
+supply the CPU core voltage, are configured with a maximum output
+voltage of 3.45V, while the highest operating point requires only
+1.050V. This means that a kernel bug, OPP misconfiguration, or
+privileged userspace could request a voltage above the safe operating
+limit, causing possible permanent CPU damage.
+
+Set the maximum regulator voltage to 1.050V instead.
+
+Fixes: e2dac7c7a3a8 ("riscv: dts: spacemit: k1-musepi-pro: add PMIC and power infrastructure")
+Link: https://sashiko.dev/#/message/20260728211020.1248676-2-aurelien%40aurel32.net
+Cc: stable@vger.kernel.org
+Signed-off-by: Aurelien Jarno <aurelien@aurel32.net>
+Reviewed-by: Yixun Lan <dlan@kernel.org>
+Link: https://patch.msgid.link/20260729150722.1598630-5-aurelien@aurel32.net
+Signed-off-by: Yixun Lan <dlan@kernel.org>
+(cherry picked from commit f045253a03589b2616332560b4120e584342a987)
+---
+ arch/riscv/boot/dts/spacemit/k1-musepi-pro.dts | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/arch/riscv/boot/dts/spacemit/k1-musepi-pro.dts
++++ b/arch/riscv/boot/dts/spacemit/k1-musepi-pro.dts
+@@ -180,14 +180,14 @@
+ 		regulators {
+ 			buck1 {
+ 				regulator-min-microvolt = <500000>;
+-				regulator-max-microvolt = <3450000>;
++				regulator-max-microvolt = <1050000>;
+ 				regulator-ramp-delay = <5000>;
+ 				regulator-always-on;
+ 			};
+ 
+ 			buck2 {
+ 				regulator-min-microvolt = <500000>;
+-				regulator-max-microvolt = <3450000>;
++				regulator-max-microvolt = <1050000>;
+ 				regulator-ramp-delay = <5000>;
+ 				regulator-always-on;
+ 			};

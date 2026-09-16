@@ -1,0 +1,39 @@
+#iterate over each partition from the bootdisk and find 'bootfs'
+find_partn_by_name() {
+	local name="$1" var="$2" part start size partdev
+
+	while read part start size; do
+		if export_partdevice partdev $part; then
+			. "/sys/class/block/$partdev/uevent"
+			if [ "$PARTNAME" = "$name" ]; then
+				export "$var=$PARTN"
+				return 0
+			fi
+		fi
+	done < /tmp/partmap.bootdisk
+
+	return 1
+}
+
+move_config() {
+	local diskdev partdev
+
+	. /lib/upgrade/common.sh
+
+	if export_bootdevice && export_partdevice diskdev 0; then
+		get_partitions "/dev/$diskdev" bootdisk
+
+		if find_partn_by_name "bootfs" bootn && export_partdevice partdev "$bootn"; then
+			if mount -o rw,noatime "/dev/$partdev" /mnt; then
+				if [ -f "/mnt/$BACKUP_FILE" ]; then
+					mv -f "/mnt/$BACKUP_FILE" /
+				fi
+				umount /mnt
+			fi
+		fi
+
+		rm -f /tmp/partmap.bootdisk
+	fi
+}
+
+boot_hook_add preinit_mount_root move_config
