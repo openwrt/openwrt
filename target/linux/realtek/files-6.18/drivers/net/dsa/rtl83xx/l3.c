@@ -568,6 +568,45 @@ static int otto_l3_930x_route_lookup_hw(struct otto_l3_ctrl *ctrl, struct otto_l
 	return -1;
 }
 
+/* Move count prefix route rows from src to dst. The rows are copied as they
+ * are: re-encoding them would rebuild the entries from driver state, which
+ * does not carry the hit bit, and would lose the multicast rows the driver
+ * cannot decode.
+ */
+__maybe_unused
+static int otto_l3_930x_route_rows_move(struct otto_l3_ctrl *ctrl, int dst, int src, int count)
+{
+	u32 data[11];
+	int handle, err = 0;
+
+	handle = otto_table_acquire(RTL9300_TBL_L3_PREFIX_ROUTE_IPUC);
+	if (handle < 0) {
+		dev_err(ctrl->dev, "cannot move prefix route rows: %d\n", handle);
+		return handle;
+	}
+
+	/* The ranges overlap by one row per insertion or removal, so the copy
+	 * runs away from the direction of travel. A read that fails hands back
+	 * a cleared buffer, so a row is only written once its source is in.
+	 */
+	for (int n = 0; n < count; n++) {
+		int i = dst > src ? count - 1 - n : n;
+
+		err = __otto_table_read(handle, src + i, &data);
+		if (!err)
+			err = __otto_table_write(handle, dst + i, &data);
+		if (err) {
+			dev_err(ctrl->dev, "prefix route row %d not moved to %d: %d\n",
+				src + i, dst + i, err);
+			break;
+		}
+	}
+
+	otto_table_release(handle);
+
+	return err;
+}
+
 /* Write a prefix route into the routing table CAM at position idx
  * Currently only IPv4 and IPv6 unicast routes are supported
  */
@@ -875,6 +914,78 @@ static int otto_l3_alloc_egress_intf(struct otto_l3_ctrl *ctrl, u64 mac, int vla
 	return free_mac;
 }
 
+/* Row 0 is not used, see otto_l3_930x_setup(). */
+#define FIRST_PREFIX_ROW	1
+
+/* The programmed prefix routes sit in one dense block, longest prefix first,
+ * because the hardware answers a lookup with the lowest matching row rather
+ * than the most specific one.
+ */
+static int otto_l3_prefix_rows(struct otto_l3_ctrl *ctrl, int at_least)
+{
+	struct otto_l3_route *q;
+	int n = 0;
+
+	list_for_each_entry(q, &ctrl->routes_list, list) {
+		if (!q->is_host_route && q->row >= 0 && q->prefix_len >= at_least)
+			n++;
+	}
+
+	return n;
+}
+
+/* Open the row this route belongs at, pushing everything below it down. */
+static int otto_l3_route_place(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r)
+{
+	struct otto_l3_route *q;
+	int row, last;
+
+	if (!ctrl->cfg->route_rows_move)
+		return r->id;
+
+	row = FIRST_PREFIX_ROW + otto_l3_prefix_rows(ctrl, r->prefix_len);
+	last = FIRST_PREFIX_ROW + otto_l3_prefix_rows(ctrl, 0);
+
+	if (row < last) {
+		/* A failed move leaves the block half shifted, and the rows the
+		 * list names would no longer be the rows that hold them.
+		 */
+		if (ctrl->cfg->route_rows_move(ctrl, row + 1, row, last - row))
+			return -1;
+
+		list_for_each_entry(q, &ctrl->routes_list, list)
+			if (!q->is_host_route && q->row >= row)
+				q->row++;
+	}
+
+	return row;
+}
+
+/* Close the row this route leaves behind, pulling everything below it up. */
+static void otto_l3_route_compact(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r)
+{
+	struct otto_l3_route *q;
+	int last;
+
+	if (!ctrl->cfg->route_rows_move || r->row < FIRST_PREFIX_ROW)
+		return;
+
+	last = FIRST_PREFIX_ROW + otto_l3_prefix_rows(ctrl, 0) - 1;
+	if (r->row >= last)
+		return;
+
+	if (ctrl->cfg->route_rows_move(ctrl, r->row, r->row + 1, last - r->row))
+		return;
+
+	list_for_each_entry(q, &ctrl->routes_list, list)
+		if (!q->is_host_route && q->row > r->row)
+			q->row--;
+
+	/* The tail now holds a copy of the row above it. */
+	r->attr.valid = false;
+	ctrl->cfg->route_write(ctrl, last, r);
+}
+
 /* Updates an L3 next hop entry in the ROUTING table */
 static int otto_l3_nexthop_update(struct otto_l3_ctrl *ctrl, __be32 ip_addr, u64 mac)
 {
@@ -932,6 +1043,12 @@ static int otto_l3_nexthop_update(struct otto_l3_ctrl *ctrl, __be32 ip_addr, u64
 			dev_info(ctrl->dev, "Got slot for route: %d\n", slot);
 			ctrl->cfg->host_route_write(ctrl, slot, r);
 		} else {
+			if (r->row < 0)
+				r->row = otto_l3_route_place(ctrl, r);
+
+			if (r->row < 0)
+				continue;
+
 			ctrl->cfg->route_write(ctrl, r->row, r);
 			r->pr.fwd_sel = true;
 			r->pr.fwd_data = r->nh.l2_id;
@@ -1005,9 +1122,17 @@ static bool otto_l3_route_is_at(struct otto_l3_ctrl *ctrl, int id, struct otto_l
 {
 	struct otto_l3_route entry;
 
+	if (id < FIRST_PREFIX_ROW)
+		return false;
+
 	ctrl->cfg->route_read(ctrl, id, &entry);
+	/* The next hop index the row carries is the id of the route that wrote
+	 * it, which is what tells two routes for one destination apart. It is
+	 * tested last: the reader leaves it untouched on a multicast row, and
+	 * the type comparison is what stops it being read there.
+	 */
 	if (!entry.attr.valid || entry.attr.type != r->attr.type ||
-	    entry.prefix_len != r->prefix_len)
+	    entry.prefix_len != r->prefix_len || entry.nh.id != r->id)
 		return false;
 
 	switch (r->attr.type) {
@@ -1070,22 +1195,23 @@ static void otto_l3_route_remove(struct otto_l3_ctrl *ctrl, struct otto_l3_route
 	} else {
 		/* If there is a HW representation of the route, delete it */
 		if (ctrl->cfg->route_lookup_hw) {
-			/* The route was written at the row we recorded; ask the
-			 * hardware only when it is not there.
+			/* The route was written at the row we recorded, and a
+			 * route whose gateway never resolved has none. Ask the
+			 * hardware when it is not where we put it.
 			 */
-			if (otto_l3_route_is_at(ctrl, r->row, r)) {
-				id = r->row;
-			} else {
+			id = r->row;
+			if (!otto_l3_route_is_at(ctrl, id, r)) {
 				id = ctrl->cfg->route_lookup_hw(ctrl, r);
-				if (id >= 0 && !otto_l3_route_is_at(ctrl, id, r)) {
-					dev_err(ctrl->dev,
-						"prefix route %pI4/%d: row %d holds another route\n",
-						&r->dst_ip, r->prefix_len, id);
+				if (!otto_l3_route_is_at(ctrl, id, r)) {
+					if (id >= FIRST_PREFIX_ROW)
+						dev_err(ctrl->dev,
+							"prefix route %pI4/%d: row %d holds another route\n",
+							&r->dst_ip, r->prefix_len, id);
 					id = -1;
 				}
 			}
 
-			if (id >= 0) {
+			if (id >= FIRST_PREFIX_ROW) {
 				dev_dbg(ctrl->dev, "Got id for prefix route: %d\n", id);
 				r->attr.valid = false;
 				ctrl->cfg->route_write(ctrl, id, r);
@@ -1093,6 +1219,12 @@ static void otto_l3_route_remove(struct otto_l3_ctrl *ctrl, struct otto_l3_route
 				dev_err(ctrl->dev, "prefix route %pI4/%d was not in hardware\n",
 					&r->dst_ip, r->prefix_len);
 			}
+
+			/* The block closes up over the row the route was
+			 * really at, which is not always the one recorded.
+			 */
+			r->row = id;
+			otto_l3_route_compact(ctrl, r);
 		}
 		clear_bit(r->id, ctrl->route_use_bm);
 	}
@@ -1196,7 +1328,7 @@ static struct otto_l3_route *otto_l3_route_alloc(struct otto_l3_ctrl *ctrl, u32 
 	}
 
 	r->id = idx;
-	r->row = idx;
+	r->row = -1;			/* placed when the gateway resolves */
 	r->gw_ip = ip;
 	r->pr.id = -1; /* We still need to allocate a rule in HW */
 	r->pr.packet_cntr = -1;
@@ -2115,6 +2247,7 @@ const struct otto_l3_config otto_l3_930x_cfg = {
 	.get_nexthop = otto_l3_930x_get_nexthop,
 	.set_nexthop = otto_l3_930x_set_nexthop,
 	.route_lookup_hw = otto_l3_930x_route_lookup_hw,
+	.route_rows_move = otto_l3_930x_route_rows_move,
 	.route_read = otto_l3_930x_route_read,
 	.route_write = otto_l3_930x_route_write,
 	.setup = otto_l3_930x_setup,
