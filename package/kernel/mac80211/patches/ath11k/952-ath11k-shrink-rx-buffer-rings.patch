@@ -1,0 +1,28 @@
+From: OpenClaw agent <noreply@local>
+Subject: [PATCH] ath11k: halve RX buffer ring sizes for 512MB ipq807x (MX4200)
+
+RX buffer pools (bufs_max*3, page_frag 32KB pages) exhausted the 372MB
+usable RAM under sustained load -> OOM hang. Halve RX/monitor rings.
+---
+--- a/drivers/net/wireless/ath/ath11k/dp.h
++++ b/drivers/net/wireless/ath/ath11k/dp.h
+@@ -217,13 +217,13 @@
+ #define DP_REO_EXCEPTION_RING_SIZE	128
+ #define DP_REO_CMD_RING_SIZE		256
+ #define DP_REO_STATUS_RING_SIZE		2048
+-#define DP_RXDMA_BUF_RING_SIZE		4096
+-#define DP_RXDMA_REFILL_RING_SIZE	2048
++#define DP_RXDMA_BUF_RING_SIZE		2048
++#define DP_RXDMA_REFILL_RING_SIZE	1024
+ #define DP_RXDMA_ERR_DST_RING_SIZE	1024
+-#define DP_RXDMA_MON_STATUS_RING_SIZE	1024
+-#define DP_RXDMA_MONITOR_BUF_RING_SIZE	4096
+-#define DP_RXDMA_MONITOR_DST_RING_SIZE	2048
+-#define DP_RXDMA_MONITOR_DESC_RING_SIZE	4096
++#define DP_RXDMA_MON_STATUS_RING_SIZE	512
++#define DP_RXDMA_MONITOR_BUF_RING_SIZE	2048
++#define DP_RXDMA_MONITOR_DST_RING_SIZE	1024
++#define DP_RXDMA_MONITOR_DESC_RING_SIZE	2048
+ 
+ #define DP_RX_RELEASE_RING_NUM	3
+ 
