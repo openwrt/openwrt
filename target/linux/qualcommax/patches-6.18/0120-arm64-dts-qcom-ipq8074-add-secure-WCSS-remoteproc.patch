@@ -57,7 +57,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +			compatible = "qcom,ipq8074-wcss-sec-pil";
 +			reg = <0x0cd00000 0x4040>, <0x004ab000 0x20>;
 +			reg-names = "qdsp6", "rmb";
-+			firmware-name = "IPQ8074/q6_fw.mdt";
++			firmware-name = "IPQ8074/q6_fw.mdt", "IPQ8074/m3_fw.mdt";
 +
 +			interrupts-extended = <&intc GIC_SPI 325 IRQ_TYPE_EDGE_RISING>,
 +					      <&wcss_smp2p_in 0 IRQ_TYPE_NONE>,
