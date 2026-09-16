@@ -48,7 +48,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  	soc: soc@0 {
  		#address-cells = <1>;
  		#size-cells = <1>;
-@@ -1028,6 +1054,52 @@
+@@ -1028,6 +1054,44 @@
  				ranges;
  			};
  		};
@@ -69,14 +69,6 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +					  "ready",
 +					  "handover",
 +					  "stop-ack";
-+
-+			resets = <&gcc GCC_WCSSAON_RESET>,
-+				 <&gcc GCC_WCSS_BCR>,
-+				 <&gcc GCC_WCSS_Q6_BCR>;
-+
-+			reset-names = "wcss_aon_reset",
-+				      "wcss_reset",
-+				      "wcss_q6_reset";
 +
 +			clocks = <&gcc GCC_PRNG_AHB_CLK>;
 +			clock-names = "prng";
