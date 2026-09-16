@@ -705,15 +705,29 @@ int rtldsa_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct otto_l3_nexth
  */
 int rtldsa_l2_nexthop_del(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop *nh)
 {
-	struct rtl838x_l2_entry e;
+	u64 seed = priv->r->l2_hash_seed(nh->mac, nh->rvid);
+	struct rtl838x_l2_entry e = {};
 	u32 key = nh->l2_id >> 2;
 	int i = nh->l2_id & 0x3;
-	u64 entry = entry = priv->r->read_l2_entry_using_hash(key, i, &e);
+	u64 entry = priv->r->read_l2_entry_using_hash(key, i, &e);
 
-	pr_debug("%s: id %d, key %d, index %d\n", __func__, nh->l2_id, key, i);
-	if (!e.valid) {
-		dev_err(priv->dev, "unknown nexthop, id %x\n", nh->l2_id);
-		return -1;
+	dev_dbg(priv->dev, "next hop %d sits at key %d, index %d\n", nh->l2_id, key, i);
+
+	/* The slot is addressed by the index the installer recorded, so ask the
+	 * entry whether it is still the one that was installed, comparing it on
+	 * the seed the installer searches by. Nothing counts the routes sharing
+	 * a next hop yet, so a sibling taken down first can get here.
+	 */
+	if (!e.valid || !e.next_hop) {
+		dev_err(priv->dev, "next hop %d is no longer one, leaving it alone\n",
+			nh->l2_id);
+		return -ESTALE;
+	}
+
+	if ((entry & 0x0fffffffffffffffULL) != seed) {
+		dev_err(priv->dev, "next hop %d now holds %pM, not removing it\n",
+			nh->l2_id, e.mac);
+		return -ESTALE;
 	}
 
 	if (e.is_static)
