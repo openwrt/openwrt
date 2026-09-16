@@ -651,10 +651,6 @@ int rtldsa_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct otto_l3_nexth
 	pr_debug("%s searching for %08llx vid %d with key %d, seed: %016llx\n",
 		 __func__, nh->mac, nh->rvid, key, seed);
 
-	e.type = L2_UNICAST;
-	u64_to_ether_addr(nh->mac, &e.mac[0]);
-	e.port = nh->port;
-
 	/* Loop over all entries in the hash-bucket and over the second block on 93xx SoCs */
 	for (int i = 0; i < priv->r->l2_bucket_size; i++) {
 		entry = priv->r->read_l2_entry_using_hash(key, i, &e);
@@ -682,15 +678,15 @@ int rtldsa_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct otto_l3_nexth
 		if (e.next_hop)
 			return 0;
 	} else {
+		/* The reader leaves the descriptor untouched on an invalid
+		 * entry, so what it holds here is either stack contents or a
+		 * neighbour read earlier in the loop.
+		 */
+		memset(&e, 0, sizeof(e));
+		e.type = L2_UNICAST;
 		e.valid = true;
 		e.is_static = true;
 		e.rvid = nh->rvid;
-		e.is_ip_mc = false;
-		e.is_ipv6_mc = false;
-		e.block_da = false;
-		e.block_sa = false;
-		e.suspended = false;
-		e.age = 0;			/* With port-ignore */
 		e.port = priv->r->port_ignore;
 		u64_to_ether_addr(nh->mac, &e.mac[0]);
 	}
