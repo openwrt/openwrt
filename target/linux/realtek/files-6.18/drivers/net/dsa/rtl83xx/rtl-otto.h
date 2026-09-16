@@ -90,76 +90,6 @@
 #define RTL930X_STAT_CTRL			(0x3248)
 #define RTL931X_STAT_CTRL			(0x5720)
 
-/* VLAN registers */
-#define RTL838X_VLAN_CTRL			(0x3A74)
-#define RTL838X_VLAN_PROFILE(idx)		(0x3A88 + ((idx) << 2))
-#define RTL838X_VLAN_PROFILE_MAX		7
-#define RTL838X_VLAN_PORT_EGR_FLTR		(0x3A84)
-#define RTL838X_VLAN_PORT_PB_VLAN		(0x3C00)
-#define RTL838X_VLAN_PORT_IGR_FLTR		(0x3A7C)
-
-#define RTL838X_VLAN_L2_LEARN_EN(i)		(i)
-#define RTL838X_VLAN_L2_UNKN_MC_FLD(pmsk)	(pmsk << 1)
-#define RTL838X_VLAN_IP4_UNKN_MC_FLD(pmsk)	(pmsk << 10)
-#define RTL838X_VLAN_IP6_UNKN_MC_FLD(pmsk)	(pmsk << 19)
-
-#define RTL838X_VLAN_L2_LEARN_EN_R(p)		(p & RTL838X_VLAN_L2_LEARN_EN(1))
-#define RTL838X_VLAN_L2_UNKN_MC_FLD_PMSK(p)	((p >> 1) & (MAX_MC_PMASKS - 1))
-#define RTL838X_VLAN_IP4_UNKN_MC_FLD_PMSK(p)	((p >> 10) & (MAX_MC_PMASKS - 1))
-#define RTL838X_VLAN_IP6_UNKN_MC_FLD_PMSK(p)	((p >> 19) & (MAX_MC_PMASKS - 1))
-
-#define RTL839X_VLAN_PROFILE(idx)		(0x25C0 + (((idx) << 3)))
-#define RTL839X_VLAN_PROFILE_MAX		7
-#define RTL839X_VLAN_CTRL			(0x26D4)
-#define RTL839X_VLAN_PORT_PB_VLAN		(0x26D8)
-#define RTL839X_VLAN_PORT_IGR_FLTR		(0x27B4)
-#define RTL839X_VLAN_PORT_EGR_FLTR		(0x27C4)
-
-#define RTL839X_VLAN_L2_LEARN_EN(i)		(i)
-#define RTL839X_VLAN_L2_UNKN_MC_FLD(pmsk)	(pmsk << 1)
-#define RTL839X_VLAN_IP4_UNKN_MC_FLD(pmsk)	(pmsk << 13)
-#define RTL839X_VLAN_IP6_UNKN_MC_FLD(pmsk)	(pmsk)
-
-#define RTL839X_VLAN_L2_LEARN_EN_R(p)		(p[1] & RTL839X_VLAN_L2_LEARN_EN(1))
-#define RTL839X_VLAN_L2_UNKN_MC_FLD_PMSK(p)	((p[1] >> 1) & (MAX_MC_PMASKS - 1))
-#define RTL839X_VLAN_IP4_UNKN_MC_FLD_PMSK(p)	((p[1] >> 13) & (MAX_MC_PMASKS - 1))
-#define RTL839X_VLAN_IP6_UNKN_MC_FLD_PMSK(p)	((p[0]) & (MAX_MC_PMASKS - 1))
-
-#define RTL930X_VLAN_PROFILE_SET(idx)		(0x9c60 + (((idx) * 20)))
-#define RTL930X_VLAN_PROFILE_MAX		7
-#define RTL930X_VLAN_CTRL			(0x82D4)
-#define RTL930X_VLAN_PORT_PB_VLAN		(0x82D8)
-#define RTL930X_VLAN_PORT_IGR_FLTR		(0x83C0)
-#define RTL930X_VLAN_PORT_EGR_FLTR		(0x83C8)
-
-#define RTL930X_VLAN_L2_UNKN_MC_FLD(pmsk)	(pmsk)
-#define RTL930X_VLAN_IP4_UNKN_MC_FLD(pmsk)	(pmsk)
-#define RTL930X_VLAN_IP6_UNKN_MC_FLD(pmsk)	(pmsk)
-
-#define RTL930X_VLAN_L2_LEARN_EN_R(p)		(p[0] & (3 << 21))
-#define RTL930X_VLAN_L2_UNKN_MC_FLD_PMSK(p)	(p[2] & RTL930X_MC_PMASK_ALL_PORTS)
-#define RTL930X_VLAN_IP4_UNKN_MC_FLD_PMSK(p)	(p[3] & RTL930X_MC_PMASK_ALL_PORTS)
-#define RTL930X_VLAN_IP6_UNKN_MC_FLD_PMSK(p)	(p[4] & RTL930X_MC_PMASK_ALL_PORTS)
-
-#define RTL931X_VLAN_PROFILE_SET(idx)		(0x9800 + (((idx) * 28)))
-#define RTL931X_VLAN_PROFILE_MAX		15
-#define RTL931X_VLAN_CTRL			(0x94E4)
-#define RTL931X_VLAN_PORT_IGR_CTRL		(0x94E8)
-#define RTL931X_VLAN_PORT_IGR_FLTR		(0x96B4)
-#define RTL931X_VLAN_PORT_EGR_FLTR		(0x96C4)
-
-#define RTL931X_VLAN_L2_UNKN_MC_FLD_H(pmsk)	(((u64)pmsk) >> 32)
-#define RTL931X_VLAN_L2_UNKN_MC_FLD_L(pmsk)	(pmsk & GENMASK_ULL(31, 0))
-#define RTL931X_VLAN_IP4_UNKN_MC_FLD_H(pmsk)	(((u64)pmsk) >> 32)
-#define RTL931X_VLAN_IP4_UNKN_MC_FLD_L(pmsk)	(pmsk & GENMASK_ULL(31, 0))
-#define RTL931X_VLAN_IP6_UNKN_MC_FLD_H(pmsk)	(((u64)pmsk) >> 32)
-#define RTL931X_VLAN_IP6_UNKN_MC_FLD_L(pmsk)	(pmsk & GENMASK_ULL(31, 0))
-
-#define RTL931X_VLAN_L2_LEARN_EN_R(p)		(p[0] & (3 << 14))
-#define RTL931X_VLAN_L2_UNKN_MC_FLD_PMSK(p)	((((u64)p[1]) << 32 | p[2]) & RTL931X_MC_PMASK_ALL_PORTS)
-#define RTL931X_VLAN_IP4_UNKN_MC_FLD_PMSK(p)	((((u64)p[3]) << 32 | p[4]) & RTL931X_MC_PMASK_ALL_PORTS)
-#define RTL931X_VLAN_IP6_UNKN_MC_FLD_PMSK(p)	((((u64)p[5]) << 32 | p[6]) & RTL931X_MC_PMASK_ALL_PORTS)
-
 /* Table access registers */
 #define RTL838X_TBL_ACCESS_CTRL_0		(0x6914)
 #define RTL838X_TBL_ACCESS_DATA_0(idx)		(0x6918 + ((idx) << 2))
@@ -339,7 +269,6 @@
 #define MV_ACT_TRAP2CPU				2
 #define MV_ACT_COPY2CPU				3
 
-#define RTL838X_VLAN_STP_CTRL			(0x3b20)
 #define RTL839X_ST_CTRL				(0x27e4)
 #define RTL930X_ST_CTRL				(0x8798)
 #define RTL931X_ST_CTRL				(0x8000)
@@ -348,11 +277,6 @@
 #define RTL930X_L2_PORT_DABLK_CTRL		(0x9060)
 
 #define RTL838X_L2_PORT_LM_ACT(p)		(0x3208 + ((p) << 2))
-#define RTL838X_VLAN_PORT_FWD			(0x3A78)
-#define RTL839X_VLAN_PORT_FWD			(0x27AC)
-#define RTL930X_VLAN_PORT_FWD			(0x834C)
-#define RTL931X_VLAN_PORT_FWD			(0x95CC)
-#define RTL838X_VLAN_FID_CTRL			(0x3aa8)
 
 /* Port Mirroring */
 #define RTL838X_MIR_CTRL			(0x5D00)
@@ -879,7 +803,6 @@ enum rtldsa_flood_type {
 /* get shift for given led in any set */
 #define RTL931X_LED_SET_LEDX_SHIFT(x) (16 * (x % 2))
 
-#define MAX_VLANS 4096
 #define MAX_LAGS 16
 #define MAX_PRIOS 8
 #define RTL930X_PORT_IGNORE 0x3f
@@ -1090,17 +1013,6 @@ enum fwd_rule_action {
 enum pie_phase {
 	PHASE_VACL = 0,
 	PHASE_IACL = 1,
-};
-
-enum igr_filter {
-	IGR_FORWARD = 0,
-	IGR_DROP = 1,
-	IGR_TRAP = 2,
-};
-
-enum egr_filter {
-	EGR_DISABLE = 0,
-	EGR_ENABLE = 1,
 };
 
 /* Intermediate representation of a  Packet Inspection Engine Rule
@@ -1576,18 +1488,13 @@ struct rtldsa_mib_desc {
 	const struct rtldsa_mib_list_item *list;
 };
 
-bool rtldsa_mst_put_slot(struct rtl838x_switch_priv *priv, u16 mst_slot);
-int rtldsa_mst_replace(struct rtl838x_switch_priv *priv, u16 msti, u16 old_mst_slot);
-
 int rtldsa_83xx_lag_setup_algomask(struct rtl838x_switch_priv *priv, int group,
 				   struct netdev_lag_upper_info *info);
 
 void rtldsa_port_fast_age(struct dsa_switch *ds, int port);
 int rtldsa_packet_cntr_alloc(struct rtl838x_switch_priv *priv);
 void rtldsa_packet_cntr_free(struct rtl838x_switch_priv *priv, int idx);
-int rtldsa_port_get_stp_state(struct rtl838x_switch_priv *priv, int port);
 int rtl83xx_port_is_under(const struct net_device *dev, struct rtl838x_switch_priv *priv);
-void rtldsa_port_stp_state_set(struct dsa_switch *ds, int port, u8 state);
 /* Port register accessor functions for the RTL839x and RTL931X SoCs */
 void rtl839x_mask_port_reg_be(u64 clear, u64 set, int reg);
 u64 rtl839x_get_port_reg_be(int reg);

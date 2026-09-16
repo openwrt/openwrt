@@ -5,6 +5,7 @@
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 
 #include "rtl-otto.h"
+#include "vlan.h"
 
 #define RTL838X_DRIVER_NAME "rtl838x"
 
