@@ -223,7 +223,7 @@ static void rtl839x_fill_l2_entry(u32 r[], struct rtl838x_l2_entry *e)
 				e->nh_route_id = (r[2] >> 4) & 0x1ff;
 				e->vid = e->rvid;
 			}
-			e->age = (r[2] >> 21) & 3;
+			e->age = (r[2] >> 21) & 0x7;
 			e->valid = true;
 			if (!(r[2] & 0xc0fd0000)) /* Check for valid entry */
 				e->valid = false;
@@ -278,7 +278,7 @@ static void rtl839x_fill_l2_row(u32 r[], struct rtl838x_l2_entry *e)
 			r[2] |= e->block_da ? BIT(19) : 0;
 			r[2] |= e->block_sa ? BIT(20) : 0;
 			r[2] |= e->suspended ? BIT(17) : 0;
-			r[2] |= ((u32)e->age) << 21;
+			r[2] |= (e->age & 0x7) << 21;
 			if (e->next_hop) {
 				r[2] |= BIT(16);
 				r[2] |= e->nh_vlan_target ? BIT(15) : 0;

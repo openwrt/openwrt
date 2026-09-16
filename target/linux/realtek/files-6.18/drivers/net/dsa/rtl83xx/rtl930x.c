@@ -483,7 +483,7 @@ static void rtl930x_fill_l2_entry(u32 r[], struct rtl838x_l2_entry *e)
 		e->block_da = !!(r[2] & BIT(15));
 		e->block_sa = !!(r[2] & BIT(16));
 		e->suspended = !!(r[2] & BIT(13));
-		e->age = (r[2] >> 17) & 3;
+		e->age = (r[2] >> 17) & 0x7;
 		e->valid = true;
 		/* the UC_VID field in hardware is used for the VID or for the route id */
 		if (e->next_hop) {
@@ -536,7 +536,7 @@ static void rtl930x_fill_l2_row(u32 r[], struct rtl838x_l2_entry *e)
 		r[2] |= e->block_da ? BIT(15) : 0;
 		r[2] |= e->block_sa ? BIT(16) : 0;
 		r[2] |= e->suspended ? BIT(13) : 0;
-		r[2] |= (e->age & 0x3) << 17;
+		r[2] |= (e->age & 0x7) << 17;
 		/* the UC_VID field in hardware is used for the VID or for the route id */
 		if (e->next_hop)
 			r[2] |= e->nh_route_id & 0x7ff;
