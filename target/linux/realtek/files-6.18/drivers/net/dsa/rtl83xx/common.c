@@ -640,7 +640,7 @@ void rtldsa_packet_cntr_free(struct rtl838x_switch_priv *priv, int idx)
  * Called from the L3 layer
  * The index in the L2 hash table is filled into nh->l2_id;
  */
-int rtl83xx_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop *nh)
+int rtldsa_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop *nh)
 {
 	struct rtl838x_l2_entry e;
 	u64 seed = priv->r->l2_hash_seed(nh->mac, nh->rvid);
@@ -707,7 +707,7 @@ int rtl83xx_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct otto_l3_next
  * If it was static, the entire entry is removed, otherwise the nexthop bit is cleared
  * and we wait until the entry ages out
  */
-int rtl83xx_l2_nexthop_rm(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop *nh)
+int rtldsa_l2_nexthop_del(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop *nh)
 {
 	struct rtl838x_l2_entry e;
 	u32 key = nh->l2_id >> 2;

@@ -1664,7 +1664,7 @@ void rtldsa_counters_unlock_table(struct rtl838x_switch_priv *priv, int port)
 void rtldsa_update_counters_atomically(struct rtl838x_switch_priv *priv, int port);
 
 struct otto_l3_nexthop;
-int rtl83xx_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop *nh);
-int rtl83xx_l2_nexthop_rm(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop *nh);
+int rtldsa_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop *nh);
+int rtldsa_l2_nexthop_del(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop *nh);
 
 #endif /* _RTL838X_H */

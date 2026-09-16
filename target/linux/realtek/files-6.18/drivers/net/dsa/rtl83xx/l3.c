@@ -905,7 +905,7 @@ static int otto_l3_nexthop_update(struct otto_l3_ctrl *ctrl, __be32 ip_addr, u64
 			ctrl->cfg->set_egress_mac(ctrl, r->id, mac);
 
 		/* Update ROUTING table: map gateway-mac and switch-mac id to route id */
-		if (!rtl83xx_l2_nexthop_add(priv, &r->nh))
+		if (!rtldsa_l2_nexthop_add(priv, &r->nh))
 			r->nh.l2_installed = true;
 
 		r->attr.valid = true;
@@ -1110,7 +1110,7 @@ static void otto_l3_route_teardown(struct otto_l3_ctrl *ctrl, struct otto_l3_rou
 	 * programmed the next hop without reaching the PIE rule.
 	 */
 	if (r->nh.l2_installed)
-		rtl83xx_l2_nexthop_rm(priv, &r->nh);
+		rtldsa_l2_nexthop_del(priv, &r->nh);
 	if (r->pr.id >= 0)
 		priv->r->pie_rule_rm(priv, &r->pr);
 
