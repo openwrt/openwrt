@@ -164,7 +164,7 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
  int hostapd_sta_add(struct hostapd_data *hapd,
 --- /dev/null
 +++ b/src/ap/apup.c
-@@ -0,0 +1,175 @@
+@@ -0,0 +1,176 @@
 +/*
 + * hostapd / APuP Access Point Micro Peering
 + *
@@ -288,6 +288,7 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
 +	if (hostapd_get_aid(hapd, sta_ret) < 0)
 +	{
 +		wpa_printf(MSG_INFO, "apup_process_beacon(...) No room for more AIDs");
++		ap_free_sta(hapd, sta_ret);
 +		return;
 +	}
 +
