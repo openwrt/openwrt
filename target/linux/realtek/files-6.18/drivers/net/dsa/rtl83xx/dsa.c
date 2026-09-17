@@ -1501,10 +1501,19 @@ void rtldsa_port_fast_age(struct dsa_switch *ds, int port)
 static void rtldsa_setup_l2_uc_entry(struct rtl838x_l2_entry *e, int port,
 				     int vid, u64 mac)
 {
+	bool next_hop = e->valid && e->next_hop;
+	u16 nh_route_id = next_hop ? e->nh_route_id : 0;
+
 	memset(e, 0, sizeof(*e));
 
 	e->type = L2_UNICAST;
 	e->valid = true;
+
+	/* A route may be forwarding through this address already, and the id
+	 * it is known by lives nowhere else.
+	 */
+	e->next_hop = next_hop;
+	e->nh_route_id = nh_route_id;
 
 	e->age = 3;
 	e->is_static = true;
