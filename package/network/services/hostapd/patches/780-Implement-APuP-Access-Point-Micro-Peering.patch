@@ -164,7 +164,7 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
  int hostapd_sta_add(struct hostapd_data *hapd,
 --- /dev/null
 +++ b/src/ap/apup.c
-@@ -0,0 +1,169 @@
+@@ -0,0 +1,175 @@
 +/*
 + * hostapd / APuP Access Point Micro Peering
 + *
@@ -219,6 +219,12 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
 +		return;
 +
 +	sta_ret = ap_sta_add(hapd, mgmt->bssid);
++	if (!sta_ret)
++	{
++		wpa_printf(MSG_INFO,
++		           "apup_process_beacon(...) Failed to add APuP peer");
++		return;
++	}
 +
 +	/* TODO: this has been added just to making compiler happy after breaking
 +	 * changes introduced in 11a607d12 and 7855b6d60 to support
