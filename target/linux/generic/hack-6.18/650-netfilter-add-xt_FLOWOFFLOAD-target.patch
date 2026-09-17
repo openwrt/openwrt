@@ -44,7 +44,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  obj-$(CONFIG_NETFILTER_XT_TARGET_LED) += xt_LED.o
 --- /dev/null
 +++ b/net/netfilter/xt_FLOWOFFLOAD.c
-@@ -0,0 +1,769 @@
+@@ -0,0 +1,772 @@
 +/*
 + * Copyright (C) 2018-2021 Felix Fietkau <nbd@nbd.name>
 + *
@@ -95,6 +95,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +		__u16	id;
 +		__be16	proto;
 +	} encap[NF_FLOW_TABLE_ENCAP_MAX];
++	u16 bridge_vid;
 +	u8 num_encaps;
 +	u8 ingress_vlans;
 +	u8 h_source[ETH_ALEN];
@@ -409,6 +410,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +			case DEV_PATH_BR_VLAN_KEEP:
 +				break;
 +			}
++			info->bridge_vid = path->bridge.vlan_id;
 +			break;
 +		default:
 +			info->indev = NULL;
@@ -493,6 +495,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +		memcpy(route->tuple[dir].out.h_source, info.h_source, ETH_ALEN);
 +		memcpy(route->tuple[dir].out.h_dest, info.h_dest, ETH_ALEN);
 +		route->tuple[dir].out.hw_ifindex = info.hw_outdev->ifindex;
++		route->tuple[dir].out.bridge_vid = info.bridge_vid;
 +		route->tuple[dir].xmit_type = info.xmit_type;
 +	}
 +}
@@ -824,7 +827,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #include <net/netfilter/nf_flow_table.h>
  #include <net/netfilter/nf_conntrack.h>
  #include <net/netfilter/nf_conntrack_core.h>
-@@ -415,8 +414,7 @@ flow_offload_lookup(struct nf_flowtable
+@@ -417,8 +416,7 @@ flow_offload_lookup(struct nf_flowtable
  }
  EXPORT_SYMBOL_GPL(flow_offload_lookup);
  
@@ -834,7 +837,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		      void (*iter)(struct nf_flowtable *flowtable,
  				   struct flow_offload *flow, void *data),
  		      void *data)
-@@ -589,6 +587,7 @@ static void nf_flow_offload_gc_step(stru
+@@ -591,6 +589,7 @@ static void nf_flow_offload_gc_step(stru
  		nf_flow_offload_stats(flow_table, flow);
  	}
  }
@@ -864,7 +867,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +#endif /* _XT_FLOWOFFLOAD_H */
 --- a/include/net/netfilter/nf_flow_table.h
 +++ b/include/net/netfilter/nf_flow_table.h
-@@ -302,6 +302,11 @@ void nf_flow_table_free(struct nf_flowta
+@@ -304,6 +304,11 @@ void nf_flow_table_free(struct nf_flowta
  
  void flow_offload_teardown(struct flow_offload *flow);
  
