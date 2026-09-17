@@ -10,10 +10,13 @@ PKG_NAME:=firmware-utils
 PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL=$(PROJECT_GIT)/project/firmware-utils.git
-PKG_SOURCE_DATE:=2026-07-30
-PKG_SOURCE_VERSION:=c9da48613b5d7b892d5a3871dc6332487360de4a
-PKG_MIRROR_HASH:=50dff83ef53cd81b06cf30117f4cbcbf0c5176d631efbe4fe466007c8dee510f
+# WIP: temporary fork carrying mkbossimg, needed by the Bintec elmeg RS123.
+# Revert to $(PROJECT_GIT)/project/firmware-utils.git once
+# "mkbossimg: add tool for Bintec BOSS firmware images" is merged upstream.
+PKG_SOURCE_URL:=https://github.com/simonwunderlich/firmware-utils.git
+PKG_SOURCE_DATE:=2026-09-17
+PKG_SOURCE_VERSION:=e450dfd1b78a715bb0b1f903bc569b71b8f667fb
+PKG_MIRROR_HASH:=4deabf65af072e3a088619e5d1586c6c46c3bc7b5aa41d0a955824cbd3350824
 
 include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/cmake.mk
