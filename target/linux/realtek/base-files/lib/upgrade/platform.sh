@@ -76,6 +76,7 @@ platform_do_upgrade() {
 		nand_do_upgrade "$1"
 		;;
 	zyxel,xgs1930-28hp|\
+	zyxel,xgs2220-30hp|\
 	zyxel,xmg1915-10e|\
 	zyxel,xmg1915-10ep|\
 	zyxel,xs1930-10|\
