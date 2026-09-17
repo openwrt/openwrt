@@ -120,3 +120,8 @@ config MTD_SPLIT_OPENWRT_PROLOG
 	bool "OpenWrt executable prolog-based parser"
 	depends on MTD_SPLIT_SUPPORT
 	select MTD_SPLIT
+
+config MTD_SPLIT_BINTEC_FW
+	bool "Bintec (BOSS image) firmware parser"
+	depends on MTD_SPLIT_SUPPORT
+	select MTD_SPLIT
