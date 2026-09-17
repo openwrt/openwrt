@@ -1666,6 +1666,17 @@ static int rtldsa_port_fdb_add(struct dsa_switch *ds, int port,
 
 	/* Found an existing or empty entry */
 	if (idx >= 0) {
+		struct rtldsa_l2_uc *m = rtldsa_l2_uc_lookup(priv, idx);
+
+		if (m) {
+			/* A slot nobody had claimed carries whatever its last
+			 * owner left behind.
+			 */
+			if (!e.valid)
+				*m = (struct rtldsa_l2_uc){};
+			m->fdb_ref = true;
+		}
+
 		rtldsa_setup_l2_uc_entry(&e, port, vid, mac);
 		priv->r->write_l2_entry_using_hash(idx >> 2, idx & 0x3, &e);
 		goto out;
@@ -1709,8 +1720,24 @@ static int rtldsa_port_fdb_del(struct dsa_switch *ds, int port,
 	idx = rtldsa_find_l2_hash_entry(priv, seed, true, &e);
 
 	if (idx >= 0) {
+		struct rtldsa_l2_uc *m = rtldsa_l2_uc_lookup(priv, idx);
+
 		pr_debug("Found entry index %d, key %d and bucket %d\n", idx, idx >> 2, idx & 3);
-		e.valid = false;
+
+		if (m)
+			m->fdb_ref = false;
+
+		/* A route still forwarding through this address keeps it, as
+		 * the next hop it already is, reachable through no port of its
+		 * own.
+		 */
+		if (m && m->l3_refcount && e.next_hop) {
+			e.port = priv->r->port_ignore;
+			e.age = 0;
+		} else {
+			e.valid = false;
+		}
+
 		priv->r->write_l2_entry_using_hash(idx >> 2, idx & 0x3, &e);
 		goto out;
 	}

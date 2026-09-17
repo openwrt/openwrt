@@ -656,6 +656,16 @@ int rtldsa_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct otto_l3_nexth
 	}
 
 	/* Found an existing (e->valid is true) or empty entry, make it a nexthop entry */
+	if (!nh->l2_installed || nh->l2_id != idx) {
+		struct rtldsa_l2_uc *m = rtldsa_l2_uc_lookup(priv, idx);
+
+		/* An entry nobody had claimed carries whatever its last
+		 * owner left behind.
+		 */
+		if (m && !e.valid)
+			*m = (struct rtldsa_l2_uc){};
+	}
+
 	nh->l2_id = idx;
 	nh->l2_seed = seed;
 	if (e.valid) {
@@ -690,6 +700,7 @@ int rtldsa_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct otto_l3_nexth
 int rtldsa_l2_nexthop_del(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop *nh)
 {
 	struct rtl838x_l2_entry e = {};
+	struct rtldsa_l2_uc *m;
 	u32 key = nh->l2_id >> 2;
 	int i = nh->l2_id & 0x3;
 	int idx;
@@ -717,7 +728,12 @@ int rtldsa_l2_nexthop_del(struct rtl838x_switch_priv *priv, struct otto_l3_nexth
 		return -ESTALE;
 	}
 
-	if (e.is_static)
+	m = rtldsa_l2_uc_lookup(priv, nh->l2_id);
+
+	/* The bridge put this address here as well, so the entry stays; it
+	 * just stops being a next hop.
+	 */
+	if (e.is_static && (!m || !m->fdb_ref))
 		e.valid = false;
 	e.next_hop = false;
 	/* A route id takes that field on the families that keep one, so what
