@@ -60,7 +60,6 @@ struct otto_l3_nexthop {
 	u16 id;		/* ID: L3_NEXT_HOP table-index or route-index set in L2_NEXT_HOP */
 	u32 dev_id;
 	u16 port;
-	u16 vid;	/* VLAN-ID for L2 table entry (saved from L2-UC entry) */
 	u16 rvid;	/* Relay VID/FID for the L2 table entry */
 	u64 mac;	/* The MAC address of the entry in the L2_NEXT_HOP table */
 	u16 mac_id;

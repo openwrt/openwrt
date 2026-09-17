@@ -660,7 +660,6 @@ int rtldsa_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct otto_l3_nexth
 	nh->l2_seed = seed;
 	if (e.valid) {
 		nh->port = e.port;
-		nh->vid = e.vid;		/* Save VID */
 		nh->rvid = e.rvid;
 		nh->dev_id = e.stack_dev;
 		/* If the entry is already a valid next hop entry, don't change it */
@@ -721,8 +720,10 @@ int rtldsa_l2_nexthop_del(struct rtl838x_switch_priv *priv, struct otto_l3_nexth
 	if (e.is_static)
 		e.valid = false;
 	e.next_hop = false;
-	e.vid = nh->vid;		/* Restore VID */
-	e.rvid = nh->rvid;
+	/* A route id takes that field on the families that keep one, so what
+	 * goes back is the relay VID, which the row still carries either way.
+	 */
+	e.vid = e.rvid;
 
 	priv->r->write_l2_entry_using_hash(key, i, &e);
 
