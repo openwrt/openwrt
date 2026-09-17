@@ -838,6 +838,11 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 
 	priv->r = r;
 
+	priv->l2_uc_map = devm_kcalloc(dev, r->fib_entries, sizeof(*priv->l2_uc_map),
+				       GFP_KERNEL);
+	if (!priv->l2_uc_map)
+		return -ENOMEM;
+
 	priv->ds = devm_kzalloc(dev, sizeof(*priv->ds), GFP_KERNEL);
 	if (!priv->ds)
 		return -ENOMEM;

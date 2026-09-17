@@ -969,6 +969,17 @@ enum l2_entry_type {
 	IP6_MULTICAST = 4,
 };
 
+/* What keeps one L2 unicast hash table entry alive. Only the hash table is
+ * covered: the CAM is a table of its own with its own numbering, and a next
+ * hop never lands there, so nothing shares a CAM entry.
+ */
+struct rtldsa_l2_uc {
+	bool fdb_ref:1;		/* written by an fdb handler */
+	u8 l3_refcount:7;	/* routes forwarding through it */
+};
+
+#define RTLDSA_L2_L3_REFCOUNT_MAX	0x7f
+
 struct rtl838x_l2_entry {
 	u8 mac[6];
 	u16 vid;
@@ -1409,6 +1420,8 @@ struct rtl838x_switch_priv {
 	 */
 	struct mutex counters_lock;
 
+	struct rtldsa_l2_uc *l2_uc_map;
+
 	/**
 	 * @msts: MSTI to HW MST slot allocations. index 0 is for HW slot 1 because CIST is
 	 * not stored in @msts
@@ -1573,6 +1586,19 @@ void rtldsa_update_counters_atomically(struct rtl838x_switch_priv *priv, int por
 struct otto_l3_nexthop;
 int rtldsa_find_l2_hash_entry(struct rtl838x_switch_priv *priv, u64 seed,
 			      bool must_exist, struct rtl838x_l2_entry *e);
+
+/* RTL931x hashes its second block into rows the fib_entries count does not
+ * reach, so an index can fall outside the map and is simply not tracked.
+ */
+static inline struct rtldsa_l2_uc *rtldsa_l2_uc_lookup(struct rtl838x_switch_priv *priv,
+						      int idx)
+{
+	if (idx < 0 || idx >= priv->r->fib_entries)
+		return NULL;
+
+	return &priv->l2_uc_map[idx];
+}
+
 int rtldsa_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop *nh);
 int rtldsa_l2_nexthop_del(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop *nh);
 
