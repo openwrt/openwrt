@@ -2455,6 +2455,34 @@ int hostapd_ubus_notify_bss_transition_query(
 #endif
 }
 
+/* `body` starts at the Category octet of the Action frame */
+void hostapd_ubus_notify_action_frame(struct hostapd_data *hapd,
+				      const char *type, const u8 *addr,
+				      const u8 *body, size_t body_len)
+{
+	struct ubus_object *obj = hostapd_ubus_notify_obj(hapd);
+	char *hex;
+
+	if (!obj->has_subscribers)
+		return;
+
+	if (!addr || !body || !body_len)
+		return;
+
+	blob_buf_init(&b, 0);
+	blobmsg_add_macaddr(&b, "address", addr);
+	blobmsg_add_string(&b, "ifname", hapd->conf->iface);
+	blobmsg_add_string(&b, "type", type);
+
+	hex = blobmsg_alloc_string_buffer(&b, "frame", 2 * body_len + 1);
+	if (!hex)
+		return;
+	wpa_snprintf_hex(hex, 2 * body_len + 1, body, body_len);
+	blobmsg_add_string_buffer(&b);
+
+	ubus_notify(ctx, obj, "action-frame", b.head, -1);
+}
+
 #ifdef CONFIG_APUP
 void hostapd_ubus_notify_apup_newpeer(
 	struct hostapd_data *hapd, const u8 *addr, const char *ifname)

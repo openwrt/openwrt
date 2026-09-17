@@ -501,6 +501,25 @@ probe/assoc/auth requests via object subscribe.
  	wpa_hexdump(MSG_DEBUG, "WNM: BSS Transition Candidate List Entries",
  		    pos, end - pos);
  }
+@@ -816,6 +822,9 @@ int ieee802_11_rx_wnm_action_ap(struct h
+ 		return 0;
+ 	case WNM_BSS_TRANS_MGMT_QUERY:
+ 		hapd->openwrt_stats.wnm.bss_transition_query_rx++;
++		/* The frame body starts at the Category octet */
++		hostapd_ubus_notify_action_frame(hapd, "btm-query", mgmt->sa,
++						 payload - 2, plen + 2);
+ 		ieee802_11_rx_bss_trans_mgmt_query(hapd, mgmt->sa, payload,
+ 						   plen);
+ 		return 0;
+@@ -828,6 +837,8 @@ int ieee802_11_rx_wnm_action_ap(struct h
+ 		ieee802_11_rx_wnmsleep_req(hapd, mgmt->sa, payload, plen);
+ 		return 0;
+ 	case WNM_NOTIFICATION_REQ:
++		hostapd_ubus_notify_action_frame(hapd, "wnm-request", mgmt->sa,
++						 payload - 2, plen + 2);
+ 		ieee802_11_rx_wnm_notification_req(hapd, mgmt->sa, payload,
+ 						   plen);
+ 		return 0;
 --- a/src/ap/wpa_auth_glue.c
 +++ b/src/ap/wpa_auth_glue.c
 @@ -416,6 +416,7 @@ static void hostapd_wpa_auth_psk_failure
@@ -708,3 +727,52 @@ probe/assoc/auth requests via object subscribe.
  int retrieve_sta_taxonomy(const struct hostapd_data *hapd,
  			  struct sta_info *sta, char *buf, size_t buflen);
  
+--- a/src/ap/gas_serv.c
++++ b/src/ap/gas_serv.c
+@@ -1735,7 +1735,8 @@ void gas_serv_req_dpp_processing(struct
+ static void gas_serv_rx_gas_initial_req(struct hostapd_data *hapd,
+ 					const u8 *sa,
+ 					const u8 *data, size_t len, int prot,
+-					int std_addr3, int freq)
++					int std_addr3, int freq,
++					const u8 *body, size_t body_len)
+ {
+ 	const u8 *pos = data;
+ 	const u8 *end = data + len;
+@@ -1869,6 +1870,10 @@ static void gas_serv_rx_gas_initial_req(
+ 		pos += elen;
+ 	}
+ 
++	if (qi.neighbor_report)
++		hostapd_ubus_notify_action_frame(hapd, "anqp-neighbor-report",
++						 sa, body, body_len);
++
+ 	gas_serv_req_local_processing(hapd, sa, dialog_token, &qi, prot,
+ 				      std_addr3);
+ }
+@@ -1987,7 +1992,8 @@ static void gas_serv_rx_public_action(vo
+ {
+ 	struct hostapd_data *hapd = ctx;
+ 	const struct ieee80211_mgmt *mgmt;
+-	const u8 *sa, *data;
++	const u8 *sa, *data, *body;
++	size_t body_len;
+ 	int prot, std_addr3;
+ 
+ 	mgmt = (const struct ieee80211_mgmt *) buf;
+@@ -2009,12 +2015,14 @@ static void gas_serv_rx_public_action(vo
+ 		std_addr3 = 0;
+ 	else
+ 		std_addr3 = is_broadcast_ether_addr(mgmt->bssid);
++	body = buf + IEEE80211_HDRLEN;
++	body_len = len - IEEE80211_HDRLEN;
+ 	len -= IEEE80211_HDRLEN + 1;
+ 	data = buf + IEEE80211_HDRLEN + 1;
+ 	switch (data[0]) {
+ 	case WLAN_PA_GAS_INITIAL_REQ:
+ 		gas_serv_rx_gas_initial_req(hapd, sa, data + 1, len - 1, prot,
+-					    std_addr3, freq);
++					    std_addr3, freq, body, body_len);
+ 		break;
+ 	case WLAN_PA_GAS_COMEBACK_REQ:
+ 		gas_serv_rx_gas_comeback_req(hapd, sa, data + 1, len - 1, prot,
