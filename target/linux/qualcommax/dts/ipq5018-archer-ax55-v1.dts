@@ -111,6 +111,18 @@
 		gpios = <&tlmm 27 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 	};
+
+	reserved-memory {
+		q6_region_qcn6122_1: q6-region-qcn6122-1@4d200000 {
+			reg = <0x0 0x4d200000 0x0 0xd00000>;
+			no-map;
+		};
+
+		m3_dump_qcn6122_1: m3-dump-qcn6122-1@4df00000 {
+			reg = <0x0 0x4df00000 0x0 0x100000>;
+			no-map;
+		};
+	};
 };
 
 &sleep_clk {
@@ -426,35 +438,23 @@
 	};
 };
 
-/*
- * WiFi: IPQ5018 2.4 GHz + QCN6122/QCN6102 5 GHz, the 5 GHz radio on
- * userpd 3 (q6_wcss_pd3) with no boot-args - same layout as the
- * GL.iNet GL-B3000 - so the board-specific, unexposed QCN6122 reset
- * GPIO is not needed. Per-device pre-cal comes from 0:ART via the
- * 11-ath11k-caldata hotplug.
- */
-&q6v5_wcss {
-	status = "okay";
-};
-
 &wifi {
 	status = "okay";
 
-	qcom,rproc = <&q6_wcss_pd1>;
+	qcom,rproc = <&q6v5_wcss>;
 	qcom,ath11k-fw-memory-mode = <1>;
 	qcom,ath11k-calibration-variant = "TP-Link-Archer-AX55-v1";
-	qcom,bdf-addr = <0x4c400000>;
 };
 
 &wifi1 {
 	status = "okay";
 
-	qcom,rproc = <&q6_wcss_pd3>;
-	qcom,userpd-subsys-name = "q6v5_wcss_userpd3";
+	qcom,rproc = <&q6v5_wcss>;
 	qcom,ath11k-fw-memory-mode = <1>;
 	qcom,ath11k-calibration-variant = "TP-Link-Archer-AX55-v1";
-	qcom,bdf-addr = <0x4d100000>;
-	qcom,m3-dump-addr = <0x4df00000>;
+
+	memory-region = <&q6_region_qcn6122_1>, <&q6_region_ipq5018>, <&m3_dump_qcn6122_1>;
+	memory-region-names = "q6-region", "m3-region", "m3-dump";
 };
 
 &tlmm {

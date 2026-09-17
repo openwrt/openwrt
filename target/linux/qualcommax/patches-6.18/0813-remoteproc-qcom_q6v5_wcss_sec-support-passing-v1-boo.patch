@@ -1,0 +1,161 @@
+From ae6a6b820f92063cc606906ac8923fd5adbd9346 Mon Sep 17 00:00:00 2001
+From: George Moussalem <george.moussalem@outlook.com>
+Date: Wed, 23 Sep 2026 14:46:29 +0400
+Subject: [PATCH] remoteproc: qcom_q6v5_wcss_sec: support passing v1 bootargs
+ to Q6 root PD
+
+On multi-PD platforms such as IPQ5018, boot args can be passed to the
+root PD run on the Q6 processor which in turn boots the user PDs for
+internal (IPQ5018) and external wifi radios (such as QCN6122).
+These boot args let the user PD process know details like what PCIE
+index, user PD ID, and reset GPIO is used. These are otherwise hardcoded
+in the firmware.
+
+Below is the structure expected of the version 1 boot args including the
+default values hardcoded in the firmware for IPQ5018:
+
++------------+------+--------------+--------------+
+| Argument   | type | def val UPD2 | def val UPD3 |
++------------+------+--------------+--------------+
+| PCIE Index | u32  | 0x02 (PCIE1) | 0x01 (PCIE0) |
+| Length     | u32  | 0x04         | 0x04         |
+| User PD ID | u32  | 0x02         | 0x03         |
+| Reset GPIO | u32  | 0x12         | 0x0f         |
+| Reserved 1 | u32  | 0x00         | 0x00         |
+| Reserved 2 | u32  | 0x00         | 0x00         |
++------------+------+--------------+--------------+
+
+On IPQ5018/QCN6122 boards, the default mapping is as follows:
+
+          +-> UPD1 ----> IPQ5018 Internal 2.4G Radio
+         /
+        /
+Root PD +---> UPD2 ----> QCN6122 5G/6G Radio on PCIE1
+        \
+         \
+          +-> UPD3 ----> QCN6102 5G/6G Radio on PCIE0
+
+To support boards with other mappings or control what UPD ID is used,
+let's add support for passing boot args for more flexibility.
+
+Signed-off-by: George Moussalem <george.moussalem@outlook.com>
+---
+ drivers/remoteproc/qcom_q6v5_wcss_sec.c | 85 +++++++++++++++++++++++++
+ 1 file changed, 85 insertions(+)
+
+--- a/drivers/remoteproc/qcom_q6v5_wcss_sec.c
++++ b/drivers/remoteproc/qcom_q6v5_wcss_sec.c
+@@ -13,6 +13,7 @@
+ #include <linux/of_reserved_mem.h>
+ #include <linux/platform_device.h>
+ #include <linux/soc/qcom/mdt_loader.h>
++#include <linux/soc/qcom/smem.h>
+ 
+ #include "qcom_common.h"
+ #include "qcom_q6v5.h"
+@@ -27,6 +28,10 @@
+ 
+ #define MAX_FIRMWARE			3
+ 
++#define REMOTE_PID			1
++#define UPD_BOOT_INFO_HEADER_TYPE	0x2
++#define UPD_BOOT_INFO_SMEM_ID		507
++
+ struct wcss_sec {
+ 	struct device *dev;
+ 	struct qcom_rproc_glink glink_subdev;
+@@ -136,6 +141,80 @@ static void *wcss_sec_da_to_va(struct rp
+ 	return wcss->mem_region + offset;
+ }
+ 
++static int share_upd_bootinfo_to_q6(struct rproc *rproc)
++{
++	struct wcss_sec *wcss = rproc->priv;
++	struct device_node *np = wcss->dev->of_node;
++	u16 cnt = 0, version;
++	u8 *bootargs_arr;
++	size_t size;
++	int i, ret;
++	u32 rd_val;
++	void *ptr;
++
++	cnt = ret = of_property_count_u32_elems(np, "boot-args");
++	if (ret < 0) {
++		if (ret == -EINVAL || ret == -ENODATA) {
++			dev_dbg(wcss->dev, "boot-args property not found or set\n");
++			return 0;
++		} else {
++			dev_err(wcss->dev, "failed to read boot args: %d\n", ret);
++			return ret;
++		}
++	}
++
++	ret = qcom_smem_alloc(REMOTE_PID, UPD_BOOT_INFO_SMEM_ID,
++			      sizeof(version) + sizeof(cnt) + cnt);
++	if (ret && ret != -EEXIST) {
++		dev_err(wcss->dev,
++			"failed to allocate q6 bootinfo smem segment\n");
++		return ret;
++	}
++
++	ptr = qcom_smem_get(REMOTE_PID, UPD_BOOT_INFO_SMEM_ID, &size);
++	if (sizeof(version) + sizeof(cnt) + cnt > size) {
++		dev_err(wcss->dev, "Allocated smem memory segment is too small\n");
++		return -ENOMEM;
++	} else if (IS_ERR(ptr)) {
++		dev_err(wcss->dev,
++			"Unable to acquire smp2p item(%d) ret:%ld\n",
++			UPD_BOOT_INFO_SMEM_ID, PTR_ERR(ptr));
++		return PTR_ERR(ptr);
++	}
++
++	version = 1;
++	memcpy_toio(ptr, &version, sizeof(version));
++	ptr += sizeof(version);
++
++	/* No of elements */
++	memcpy_toio(ptr, &cnt, sizeof(u16));
++	ptr += sizeof(u16);
++
++	bootargs_arr = kzalloc(cnt, GFP_KERNEL);
++	if (!bootargs_arr) {
++		dev_err(wcss->dev, "failed to allocate memory\n");
++		return -ENOMEM;
++	}
++
++	for (i = 0; i < cnt; i++) {
++		ret = of_property_read_u32_index(np, "boot-args", i, &rd_val);
++		if (ret) {
++			dev_err(wcss->dev, "failed to read boot args\n");
++			kfree(bootargs_arr);
++			return ret;
++		}
++		bootargs_arr[i] = (u8)rd_val;
++	}
++
++	/* Copy bootargs */
++	memcpy_toio(ptr, bootargs_arr, cnt);
++	ptr += (cnt);
++
++	kfree(bootargs_arr);
++
++	return 0;
++}
++
+ static int wcss_sec_load(struct rproc *rproc, const struct firmware *fw)
+ {
+ 	struct wcss_sec *wcss = rproc->priv;
+@@ -143,6 +222,13 @@ static int wcss_sec_load(struct rproc *r
+ 	const struct firmware *fw_hdl;
+ 	int i, ret;
+ 
++	ret = share_upd_bootinfo_to_q6(rproc);
++	if (ret) {
++		dev_err(wcss->dev,
++			"user pd boot info sharing with q6 failed %d\n", ret);
++		return ret;
++	}
++
+ 	if (wcss->desc->use_tmelcom) {
+ 		wcss->metadata = qcom_mdt_read_metadata(fw, &wcss->metadata_len,
+ 							rproc->firmware, wcss->dev);

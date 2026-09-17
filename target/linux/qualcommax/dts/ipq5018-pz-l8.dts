@@ -339,10 +339,9 @@
 
 &wifi {
 	// IPQ5018
-	qcom,rproc = <&q6_wcss_pd1>;
+	qcom,rproc = <&q6v5_wcss>;
 	qcom,ath11k-calibration-variant = "CMCC-PZ-L8";
 	qcom,ath11k-fw-memory-mode = <1>;
-	qcom,bdf-addr = <0x4c400000>;
 
 	ieee80211-freq-limit = <2400000 2483000>;
 
@@ -351,12 +350,9 @@
 
 &wifi1 {
 	// QCN6102 5G
-	qcom,rproc = <&q6_wcss_pd2>;
-	qcom,userpd-subsys-name = "q6v5_wcss_userpd2";
+	qcom,rproc = <&q6v5_wcss>;
 	qcom,ath11k-calibration-variant = "CMCC-PZ-L8";
 	qcom,ath11k-fw-memory-mode = <1>;
-	qcom,bdf-addr = <0x4d100000>;
-	qcom,m3-dump-addr = <0x4df00000>;
 
 	ieee80211-freq-limit = <5150000 5730000>;
 

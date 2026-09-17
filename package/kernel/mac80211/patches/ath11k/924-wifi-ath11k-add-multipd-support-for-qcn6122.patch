@@ -1,0 +1,63 @@
+From 6bf812f473b2a412a0a9b82d673ec9e44bf29dd4 Mon Sep 17 00:00:00 2001
+From: George Moussalem <george.moussalem@outlook.com>
+Date: Thu, 17 Sep 2026 17:51:23 +0400
+Subject: [PATCH ath-next 15/16] wifi: ath11k: add multipd support for QCN6122
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+Message-Id: <20260917-ipq5018-qcn6122-mpd-v1-15-ca1168c321a2@outlook.com>
+
+IPQ5018/QCN6122 boards follow the multi PD (protection domains)
+architecture where the root PD manages the life cycle of the user PDs
+(radio instances). This topology avoids having one instance of the
+running Q6 firmware crashing resulting in crashing the others.
+
+The IPQ5018 platform can come with one or two optional QCN6122 wifi
+cards. To differentiate the two, the user PD instance number (1 or 2) is
+added to the QMI service instance ID so the QCN6122 firmware knows which
+radio instance to use and on what PCIe rail it is on.
+
+On IPQ5018/QCN6122 boards, the default mapping is as follows:
+
+          +-> User PD 1 ----> IPQ5018 Internal 2.4G Radio
+         /
+        /
+Root PD +---> User PD 2 ----> QCN6122 5G/6G Radio on PCIE1
+        \
+         \
+          +-> User PD 3 ----> QCN6102 5G/6G Radio on PCIE0
+
+Signed-off-by: George Moussalem <george.moussalem@outlook.com>
+---
+ drivers/net/wireless/ath/ath11k/ahb.c | 8 ++++++++
+ drivers/net/wireless/ath/ath11k/ahb.h | 2 ++
+ 2 files changed, 10 insertions(+)
+
+--- a/drivers/net/wireless/ath/ath11k/ahb.c
++++ b/drivers/net/wireless/ath/ath11k/ahb.c
+@@ -937,6 +937,14 @@ static int ath11k_ahb_init_userpd(struct
+ 
+ 		ab_ahb->userpd_id = userpd_id;
+ 		break;
++	case ATH11K_HW_QCN6122_HW10:
++		if (userpd_id != ATH11K_AHB_USERPD_ID_2 &&
++		    userpd_id != ATH11K_AHB_USERPD_ID_3)
++			return -EINVAL;
++
++		ab_ahb->userpd_id = userpd_id;
++		ab->qmi.service_ins_id += (ab_ahb->userpd_id - 1);
++		break;
+ 	default:
+ 		return -EINVAL;
+ 	}
+--- a/drivers/net/wireless/ath/ath11k/ahb.h
++++ b/drivers/net/wireless/ath/ath11k/ahb.h
+@@ -28,6 +28,8 @@
+ 
+ enum ath11k_ahb_userpd_id {
+ 	ATH11K_AHB_USERPD_ID_1 = 1,
++	ATH11K_AHB_USERPD_ID_2,
++	ATH11K_AHB_USERPD_ID_3,
+ 	ATH11K_AHB_USERPD_ID_MAX,
+ };
+ 
