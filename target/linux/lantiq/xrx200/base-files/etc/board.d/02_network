@@ -11,7 +11,8 @@ lantiq_setup_interfaces()
 	local board="$1"
 
 	case "$board" in
-	arcadyan,arv7519rw22)
+	arcadyan,arv7519rw22|\
+	bintec,rs123)
 		ucidef_set_interface_lan "lan1 lan2 lan3 lan4 lan5"
 		;;
 	arcadyan,vgv7510kw22-brn|\
@@ -75,7 +76,8 @@ lantiq_setup_dsl()
 		annex="b"
 		;;
 	avm,fritz5490|\
-	avm,fritz5490-micron)
+	avm,fritz5490-micron|\
+	bintec,rs123)
 		return
 		;;
 	esac
