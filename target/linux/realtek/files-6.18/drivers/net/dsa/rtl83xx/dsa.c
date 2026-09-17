@@ -1541,8 +1541,8 @@ static int rtldsa_l2_hash_index(u32 key, int slot)
  * when an empty slot was found and must exist is false, the index of the slot is returned
  * when no slots are available returns -1
  */
-static int rtldsa_find_l2_hash_entry(struct rtl838x_switch_priv *priv, u64 seed,
-				     bool must_exist, struct rtl838x_l2_entry *e)
+int rtldsa_find_l2_hash_entry(struct rtl838x_switch_priv *priv, u64 seed,
+			      bool must_exist, struct rtl838x_l2_entry *e)
 {
 	u32 key = priv->r->l2_hash_key(priv, seed);
 	int free_slot = -1;

@@ -642,26 +642,14 @@ void rtldsa_packet_cntr_free(struct rtl838x_switch_priv *priv, int idx)
  */
 int rtldsa_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop *nh)
 {
-	struct rtl838x_l2_entry e;
+	struct rtl838x_l2_entry e = {};
 	u64 seed = priv->r->l2_hash_seed(nh->mac, nh->rvid);
-	u32 key = priv->r->l2_hash_key(priv, seed);
-	int idx = -1;
-	u64 entry;
+	int idx;
 
-	pr_debug("%s searching for %08llx vid %d with key %d, seed: %016llx\n",
-		 __func__, nh->mac, nh->rvid, key, seed);
+	pr_debug("%s searching for %08llx vid %d, seed: %016llx\n",
+		 __func__, nh->mac, nh->rvid, seed);
 
-	/* Loop over all entries in the hash-bucket and over the second block on 93xx SoCs */
-	for (int i = 0; i < priv->r->l2_bucket_size; i++) {
-		entry = priv->r->read_l2_entry_using_hash(key, i, &e);
-
-		if (!e.valid || ((entry & 0x0fffffffffffffffULL) == seed)) {
-			idx = i > 3 ? ((key >> 14) & 0xffff) | (i & 3)
-					: ((key << 2) | i) & 0xffff;
-			break;
-		}
-	}
-
+	idx = rtldsa_find_l2_hash_entry(priv, seed, false, &e);
 	if (idx < 0) {
 		pr_err("%s: No more L2 forwarding entries available\n", __func__);
 		return -1;
@@ -678,10 +666,6 @@ int rtldsa_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct otto_l3_nexth
 		if (e.next_hop)
 			return 0;
 	} else {
-		/* The reader leaves the descriptor untouched on an invalid
-		 * entry, so what it holds here is either stack contents or a
-		 * neighbour read earlier in the loop.
-		 */
 		memset(&e, 0, sizeof(e));
 		e.type = L2_UNICAST;
 		e.valid = true;
