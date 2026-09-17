@@ -65,6 +65,7 @@ struct otto_l3_nexthop {
 	u64 mac;	/* The MAC address of the entry in the L2_NEXT_HOP table */
 	u16 mac_id;
 	u16 l2_id;	/* Index of this next hop forwarding entry in L2 FIB table */
+	u64 l2_seed;	/* Seed the entry at l2_id was claimed on */
 	u64 gw;		/* The gateway MAC address packets are forwarded to */
 	int if_id;	/* Interface (into L3_EGR_INTF_IDX) */
 	bool l2_installed;	/* Entry written to the L2 table */

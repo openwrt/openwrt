@@ -657,6 +657,7 @@ int rtldsa_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct otto_l3_nexth
 
 	/* Found an existing (e->valid is true) or empty entry, make it a nexthop entry */
 	nh->l2_id = idx;
+	nh->l2_seed = seed;
 	if (e.valid) {
 		nh->port = e.port;
 		nh->vid = e.vid;		/* Save VID */
@@ -689,28 +690,31 @@ int rtldsa_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct otto_l3_nexth
  */
 int rtldsa_l2_nexthop_del(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop *nh)
 {
-	u64 seed = priv->r->l2_hash_seed(nh->mac, nh->rvid);
 	struct rtl838x_l2_entry e = {};
 	u32 key = nh->l2_id >> 2;
 	int i = nh->l2_id & 0x3;
-	u64 entry = priv->r->read_l2_entry_using_hash(key, i, &e);
+	int idx;
 
 	dev_dbg(priv->dev, "next hop %d sits at key %d, index %d\n", nh->l2_id, key, i);
 
-	/* The slot is addressed by the index the installer recorded, so ask the
-	 * entry whether it is still the one that was installed, comparing it on
-	 * the seed the installer searches by. Nothing counts the routes sharing
-	 * a next hop yet, so a sibling taken down first can get here.
+	/* Search on the seed the installer claimed the row on, because the
+	 * caller replaces the address before every install. Landing on the
+	 * recorded index answers both questions at once: the row still holds
+	 * the address that was installed, and it is still the same row. A
+	 * negative index means the address has left the bucket altogether.
+	 * Nothing counts the routes sharing a next hop yet, so a sibling taken
+	 * down first can get here.
 	 */
-	if (!e.valid || !e.next_hop) {
-		dev_err(priv->dev, "next hop %d is no longer one, leaving it alone\n",
-			nh->l2_id);
+	idx = rtldsa_find_l2_hash_entry(priv, nh->l2_seed, true, &e);
+	if (idx != nh->l2_id) {
+		dev_err(priv->dev, "next hop %d is at %d now, not removing it\n",
+			nh->l2_id, idx);
 		return -ESTALE;
 	}
 
-	if ((entry & 0x0fffffffffffffffULL) != seed) {
-		dev_err(priv->dev, "next hop %d now holds %pM, not removing it\n",
-			nh->l2_id, e.mac);
+	if (!e.next_hop) {
+		dev_err(priv->dev, "next hop %d is no longer one, leaving it alone\n",
+			nh->l2_id);
 		return -ESTALE;
 	}
 
