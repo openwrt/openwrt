@@ -1,0 +1,128 @@
+From 4ad0a70bf13b45059a3c173d845a0c7ee4ce792a Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.com>
+Date: Wed, 2 Sep 2026 21:29:19 +0100
+Subject: [PATCH] clk: Add clk-hog driver
+
+Add clk-hog, a trivial device-tree-only driver modelled on the
+gpio-hog concept: a node that just claims a set of clocks (configuring
+them via the standard assigned-clocks properties) and holds them
+prepared/enabled for as long as the node is bound, with no other
+consumer required.
+
+Assisted-by: Claude:claude-opus-5
+Signed-off-by: Phil Elwell <phil@raspberrypi.com>
+---
+ drivers/clk/Kconfig   | 11 +++++++
+ drivers/clk/Makefile  |  1 +
+ drivers/clk/clk-hog.c | 75 +++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 87 insertions(+)
+ create mode 100644 drivers/clk/clk-hog.c
+
+--- a/drivers/clk/Kconfig
++++ b/drivers/clk/Kconfig
+@@ -33,6 +33,17 @@ menuconfig COMMON_CLK
+ 
+ if COMMON_CLK
+ 
++config CLK_HOG
++	tristate "Clock hog driver"
++	depends on OF
++	help
++	  A trivial driver, modelled on the gpio-hog concept, for a device
++	  tree node whose only job is to claim, configure (via the standard
++	  assigned-clocks properties) and enable one or more clocks, keeping
++	  them running for as long as the node is bound. Useful for holding
++	  a clock output (such as a GPCLK routed to a GPIO pin) enabled when
++	  there is no other consumer driver to do it.
++
+ config COMMON_CLK_WM831X
+ 	tristate "Clock driver for WM831x/2x PMICs"
+ 	depends on MFD_WM831X
+--- a/drivers/clk/Makefile
++++ b/drivers/clk/Makefile
+@@ -36,6 +36,7 @@ obj-$(CONFIG_COMMON_CLK)	+= clk-gpio.o
+ ifeq ($(CONFIG_OF), y)
+ obj-$(CONFIG_COMMON_CLK)	+= clk-conf.o
+ endif
++obj-$(CONFIG_CLK_HOG)		+= clk-hog.o
+ 
+ # KUnit specific helpers
+ ifeq ($(CONFIG_COMMON_CLK), y)
+--- /dev/null
++++ b/drivers/clk/clk-hog.c
+@@ -0,0 +1,75 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * clk-hog.c - a trivial clock "hog" driver
++ *
++ * Modelled on the gpio-hog concept in gpiolib-of.c: a device tree node
++ * whose sole purpose is to claim, configure (via the standard
++ * assigned-clocks/assigned-clock-rates/assigned-clock-parents
++ * properties) and enable one or more clocks, and keep them running for
++ * as long as the node is bound - e.g. to hold a GPCLK output enabled
++ * with no other consumer driver involved.
++ */
++
++#include <linux/clk.h>
++#include <linux/mod_devicetable.h>
++#include <linux/module.h>
++#include <linux/platform_device.h>
++
++struct clk_hog {
++	struct clk_bulk_data *clks;
++	int num_clks;
++};
++
++static int clk_hog_probe(struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++	struct clk_hog *hog;
++	int ret;
++
++	hog = devm_kzalloc(dev, sizeof(*hog), GFP_KERNEL);
++	if (!hog)
++		return -ENOMEM;
++
++	ret = devm_clk_bulk_get_all(dev, &hog->clks);
++	if (ret < 0)
++		return dev_err_probe(dev, ret, "failed to get clocks\n");
++
++	if (!ret)
++		return dev_err_probe(dev, -EINVAL, "no clocks specified\n");
++
++	hog->num_clks = ret;
++
++	ret = clk_bulk_prepare_enable(hog->num_clks, hog->clks);
++	if (ret)
++		return dev_err_probe(dev, ret, "failed to enable clocks\n");
++
++	platform_set_drvdata(pdev, hog);
++
++	return 0;
++}
++
++static void clk_hog_remove(struct platform_device *pdev)
++{
++	struct clk_hog *hog = platform_get_drvdata(pdev);
++
++	clk_bulk_disable_unprepare(hog->num_clks, hog->clks);
++}
++
++static const struct of_device_id clk_hog_of_match[] = {
++	{ .compatible = "clk-hog" },
++	{ }
++};
++MODULE_DEVICE_TABLE(of, clk_hog_of_match);
++
++static struct platform_driver clk_hog_driver = {
++	.probe = clk_hog_probe,
++	.remove = clk_hog_remove,
++	.driver = {
++		.name = "clk-hog",
++		.of_match_table = clk_hog_of_match,
++	},
++};
++module_platform_driver(clk_hog_driver);
++
++MODULE_DESCRIPTION("Clock hog driver");
++MODULE_LICENSE("GPL");

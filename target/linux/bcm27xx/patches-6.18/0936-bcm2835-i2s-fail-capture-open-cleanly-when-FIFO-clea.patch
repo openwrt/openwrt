@@ -1,0 +1,110 @@
+From e52b68e07297fadf64efabc25e0c24b36f13e092 Mon Sep 17 00:00:00 2001
+From: Guilherme Silva Sousa <guisousa09@hotmail.com>
+Date: Tue, 1 Sep 2026 03:24:04 -0300
+Subject: [PATCH] bcm2835-i2s: fail capture open cleanly when FIFO clear has no
+ clock
+
+In clock-consumer (slave) mode the RX/TX FIFO clear requires PCM clock
+cycles to complete. When the external bit clock is absent at open time
+(source device off or unplugged), the SYNC round trip times out, the
+FIFOs are left uncleared, and starting DMA on top of the stale RX FIFO
+makes capture free-run: DREQ sticks high, the same dead word is re-read
+at bus speed, and the poisoned state survives further stream cycles
+until reboot.
+
+Return an error from bcm2835_i2s_clear_fifos() on SYNC timeout and
+propagate it in .prepare for the capture branch that clears stale RX
+data, so the open fails with -EIO instead of recording garbage. The
+hw_params-time clear stays tolerant: on clock-consumer links it runs
+legitimately before the provider's clocks are up, and the .prepare
+clear is the one that must succeed there.
+
+Validated on a Raspberry Pi 4B (6.18.34+rpt-rpi-v8) with a WM8804
+S/PDIF receiver board as clock provider: opening capture with the
+optical source unplugged now fails cleanly in ~0.6s with no bogus
+data, and the next open after the source returns captures normally,
+with no reboot needed.
+
+Fixes: c6aeb7de226d ("ASoC: Add support for BCM2835")
+Signed-off-by: Guilherme Silva Sousa <guisousa09@hotmail.com>
+---
+ sound/soc/bcm/bcm2835-i2s.c | 33 +++++++++++++++++++++++++++------
+ 1 file changed, 27 insertions(+), 6 deletions(-)
+
+--- a/sound/soc/bcm/bcm2835-i2s.c
++++ b/sound/soc/bcm/bcm2835-i2s.c
+@@ -149,8 +149,8 @@ static void bcm2835_i2s_stop_clock(struc
+ 	dev->clk_prepared = false;
+ }
+ 
+-static void bcm2835_i2s_clear_fifos(struct bcm2835_i2s_dev *dev,
+-				    bool tx, bool rx)
++static int bcm2835_i2s_clear_fifos(struct bcm2835_i2s_dev *dev,
++				   bool tx, bool rx)
+ {
+ 	int timeout = 1000;
+ 	uint32_t syncval;
+@@ -187,8 +187,9 @@ static void bcm2835_i2s_clear_fifos(stru
+ 	/* Wait for 2 PCM clock cycles */
+ 
+ 	/*
+-	 * Toggle the SYNC flag. After 2 PCM clock cycles it can be read back
+-	 * FIXME: This does not seem to work for slave mode!
++	 * Toggle the SYNC flag. After 2 PCM clock cycles it can be read back.
++	 * The reset will timeout in clock consumer mode without an external
++	 * clock.
+ 	 */
+ 	regmap_read(dev->i2s_regmap, BCM2835_I2S_CS_A_REG, &syncval);
+ 	syncval &= BCM2835_I2S_SYNC;
+@@ -204,7 +205,8 @@ static void bcm2835_i2s_clear_fifos(stru
+ 	}
+ 
+ 	if (!timeout)
+-		dev_err(dev->dev, "I2S SYNC error!\n");
++		dev_err(dev->dev,
++			"FIFO clear timed out: no PCM clock (clock consumer with the provider not running?)\n");
+ 
+ 	/* Stop clock if it was not running before */
+ 	if (!clk_was_prepared)
+@@ -213,6 +215,14 @@ static void bcm2835_i2s_clear_fifos(stru
+ 	/* Restore I2S state */
+ 	regmap_update_bits(dev->i2s_regmap, BCM2835_I2S_CS_A_REG,
+ 			BCM2835_I2S_RXON | BCM2835_I2S_TXON, i2s_active_state);
++
++	/*
++	 * Without the SYNC round trip the FIFOs were not actually cleared:
++	 * starting DMA on top of a stale FIFO makes RX free-run (DREQ stuck
++	 * high, the same dead word re-read at bus speed) and the state then
++	 * survives further stream cycles. Fail the stream instead.
++	 */
++	return timeout ? 0 : -EIO;
+ }
+ 
+ static int bcm2835_i2s_set_dai_fmt(struct snd_soc_dai *dai,
+@@ -588,6 +598,11 @@ static int bcm2835_i2s_hw_params(struct
+ 			| BCM2835_I2S_RX(0x20), 0xffffffff);
+ 
+ 	/* Clear FIFOs */
++	/*
++	 * May time out benignly here: on clock-consumer links the provider's
++	 * clocks are often not running yet at hw_params time; the clear that
++	 * must succeed is the one in .prepare.
++	 */
+ 	bcm2835_i2s_clear_fifos(dev, true, true);
+ 
+ 	dev_dbg(dev->dev,
+@@ -636,7 +651,13 @@ static int bcm2835_i2s_prepare(struct sn
+ 		bcm2835_i2s_clear_fifos(dev, true, false);
+ 	else if (substream->stream == SNDRV_PCM_STREAM_CAPTURE
+ 			&& (cs_reg & BCM2835_I2S_RXD))
+-		bcm2835_i2s_clear_fifos(dev, false, true);
++		/*
++		 * Stale RX data with no working clock cannot be cleared: DMA
++		 * would free-run over the dead FIFO (DREQ stuck high) and the
++		 * poisoned state survives stream cycles. Fail this capture
++		 * open instead of recording garbage.
++		 */
++		return bcm2835_i2s_clear_fifos(dev, false, true);
+ 
+ 	return 0;
+ }

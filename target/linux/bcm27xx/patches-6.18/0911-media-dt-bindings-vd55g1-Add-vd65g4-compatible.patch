@@ -1,0 +1,33 @@
+From f36fbf03a1d8df50fa043a5b6efeb5b73c4f525a Mon Sep 17 00:00:00 2001
+From: Benjamin Mugnier <benjamin.mugnier@foss.st.com>
+Date: Tue, 19 Aug 2025 16:47:41 +0200
+Subject: [PATCH] media: dt-bindings: vd55g1: Add vd65g4 compatible
+
+Commit 5489abf66338c7890edc1a4ababedcb48ec3e996 upstream
+
+Switch compatible from a const to an enum to accommodate both the vd55g1
+and the vd65g4, which is the color variant.
+
+Signed-off-by: Benjamin Mugnier <benjamin.mugnier@foss.st.com>
+Acked-by: Conor Dooley <conor.dooley@microchip.com>
+Signed-off-by: Sakari Ailus <sakari.ailus@linux.intel.com>
+Signed-off-by: Hans Verkuil <hverkuil+cisco@kernel.org>
+---
+ Documentation/devicetree/bindings/media/i2c/st,vd55g1.yaml | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+--- a/Documentation/devicetree/bindings/media/i2c/st,vd55g1.yaml
++++ b/Documentation/devicetree/bindings/media/i2c/st,vd55g1.yaml
+@@ -25,7 +25,11 @@ allOf:
+ 
+ properties:
+   compatible:
+-    const: st,vd55g1
++    enum:
++      - st,vd55g1
++      - st,vd65g4
++    description:
++      VD55G1 is the monochrome variant, while VD65G4 is the color one.
+ 
+   reg:
+     maxItems: 1

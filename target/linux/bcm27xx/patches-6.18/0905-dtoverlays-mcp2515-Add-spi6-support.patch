@@ -1,0 +1,92 @@
+From 61f17000af193604074c2fde6a2dfbb490ae5c75 Mon Sep 17 00:00:00 2001
+From: zjzhao <zjzhao@edatec.cn>
+Date: Fri, 31 Jul 2026 18:26:37 +0800
+Subject: [PATCH] dtoverlays: mcp2515: Add spi6 support
+
+Add spi6-0 and spi6-1 parameters to the mcp2515 overlay to support
+MCP2515 CAN controllers connected to the SPI6 interface. This adds the
+necessary spidev disable fragments and overrides consistent with the
+existing spi3/spi5 pattern.
+
+Update README to reflect spi6 in the supported interface list.
+
+Signed-off-by: zjzhao <zjzhao@edatec.cn>
+---
+ arch/arm/boot/dts/overlays/README             |  4 +--
+ .../arm/boot/dts/overlays/mcp2515-overlay.dts | 31 +++++++++++++++++--
+ 2 files changed, 31 insertions(+), 4 deletions(-)
+
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -3489,8 +3489,8 @@ Params: s08-spi<n>-<m>-present  4-bit in
+ 
+ 
+ Name:   mcp2515
+-Info:   Configures the MCP2515 CAN controller on spi0/1/2/3/5
+-        For devices on spi1, spi2, spi3 or spi5, the interfaces should be
++Info:   Configures the MCP2515 CAN controller on spi0/1/2/3/5/6
++        For devices on spi1, spi2, spi3, spi5 or spi6, the interfaces should be
+         enabled with one of the spi<n>-1/2/3cs overlays.
+ Load:   dtoverlay=mcp2515,<param>=<val>
+ Params: spi<n>-<m>              Configure device at spi<n>, cs<m>
+--- a/arch/arm/boot/dts/overlays/mcp2515-overlay.dts
++++ b/arch/arm/boot/dts/overlays/mcp2515-overlay.dts
+@@ -95,6 +95,20 @@
+ 	};
+ 
+ 	fragment@12 {
++		target-path = "spi6/spidev@0";
++		__dormant__ {
++			status = "disabled";
++		};
++	};
++
++	fragment@13 {
++		target-path = "spi6/spidev@1";
++		__dormant__ {
++			status = "disabled";
++		};
++	};
++
++	fragment@14 {
+ 		target = <&gpio>;
+ 		__overlay__ {
+ 			mcp2515_pins: mcp2515_pins {
+@@ -104,7 +118,7 @@
+ 		};
+ 	};
+ 
+-	fragment@13 {
++	fragment@15 {
+ 		target-path = "/clocks";
+ 		__overlay__ {
+ 			clk_mcp2515_osc: mcp2515-osc {
+@@ -115,7 +129,7 @@
+ 		};
+ 	};
+ 
+-	mcp2515_frag: fragment@14 {
++	mcp2515_frag: fragment@16 {
+ 		target = <&spi0>;
+ 		__overlay__ {
+ 			status = "okay";
+@@ -205,6 +219,19 @@
+ 			<&mcp2515_pins>, "name=mcp2515_spi5_1_pins",
+ 			<&clk_mcp2515_osc>, "name=mcp2515-spi5-1-osc";
+ 
++		spi6-0 = <0>, "+12",
++			<&mcp2515_frag>, "target?=0",
++			<&mcp2515_frag>, "target-path=spi6",
++			<&mcp2515>, "reg:0=0",
++			<&mcp2515_pins>, "name=mcp2515_spi6_0_pins",
++			<&clk_mcp2515_osc>, "name=mcp2515-spi6-0-osc";
++		spi6-1 = <0>, "+13",
++			<&mcp2515_frag>, "target?=0",
++			<&mcp2515_frag>, "target-path=spi6",
++			<&mcp2515>, "reg:0=1",
++			<&mcp2515_pins>, "name=mcp2515_spi6_1_pins",
++			<&clk_mcp2515_osc>, "name=mcp2515-spi6-1-osc";
++
+ 		oscillator = <&clk_mcp2515_osc>, "clock-frequency:0";
+ 		speed = <&mcp2515>, "spi-max-frequency:0";
+ 		interrupt = <&mcp2515_pins>, "brcm,pins:0",

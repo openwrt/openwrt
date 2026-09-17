@@ -7,8 +7,8 @@ Subject: [PATCH] Revert "arm64: errata: Mitigate TLBI errata on various Arm
 This reverts commit 308ed83bec327158d2822133e42f99979e978f8f.
 ---
  arch/arm64/Kconfig             | 36 ----------------------------------
- arch/arm64/kernel/cpu_errata.c | 30 ++--------------------------
- 2 files changed, 2 insertions(+), 64 deletions(-)
+ arch/arm64/kernel/cpu_errata.c | 28 +-------------------------
+ 2 files changed, 1 insertion(+), 63 deletions(-)
 
 --- a/arch/arm64/Kconfig
 +++ b/arch/arm64/Kconfig
@@ -92,12 +92,3 @@ This reverts commit 308ed83bec327158d2822133e42f99979e978f8f.
  };
  #endif
  
-@@ -725,7 +699,7 @@ const struct arm64_cpu_capabilities arm6
- #endif
- #ifdef CONFIG_ARM64_WORKAROUND_REPEAT_TLBI
- 	{
--		.desc = "Broken broadcast TLBI completion",
-+		.desc = "Qualcomm erratum 1009, or ARM erratum 1286807, 2441009",
- 		.capability = ARM64_WORKAROUND_REPEAT_TLBI,
- 		.type = ARM64_CPUCAP_LOCAL_CPU_ERRATUM,
- 		.matches = cpucap_multi_entry_cap_matches,

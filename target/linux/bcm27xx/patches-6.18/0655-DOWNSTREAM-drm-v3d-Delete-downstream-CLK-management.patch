@@ -11,8 +11,8 @@ Signed-off-by: Maíra Canal <mcanal@igalia.com>
  drivers/gpu/drm/v3d/v3d_drv.c    | 31 -------------
  drivers/gpu/drm/v3d/v3d_drv.h    |  6 ---
  drivers/gpu/drm/v3d/v3d_gem.c    |  2 -
- drivers/gpu/drm/v3d/v3d_submit.c | 80 ++------------------------------
- 4 files changed, 3 insertions(+), 116 deletions(-)
+ drivers/gpu/drm/v3d/v3d_submit.c | 78 +--------------------------------------
+ 4 files changed, 2 insertions(+), 115 deletions(-)
 
 --- a/drivers/gpu/drm/v3d/v3d_drv.c
 +++ b/drivers/gpu/drm/v3d/v3d_drv.c
@@ -215,15 +215,6 @@ Signed-off-by: Maíra Canal <mcanal@igalia.com>
  
  	kref_init(&job->refcount);
  
-@@ -1404,7 +1341,7 @@ v3d_submit_cpu_ioctl(struct drm_device *
- 	trace_v3d_submit_cpu_ioctl(&v3d->drm, cpu_job->job_type);
- 
- 	ret = v3d_job_init(v3d, file_priv, &cpu_job->base,
--			   v3d_cpu_job_free, 0, &se, V3D_CPU);
-+			   v3d_job_free, 0, &se, V3D_CPU);
- 	if (ret) {
- 		v3d_job_deallocate((void *)&cpu_job);
- 		goto fail;
 @@ -1490,14 +1427,3 @@ fail:
  
  	return ret;
