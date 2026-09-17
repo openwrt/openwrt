@@ -1,0 +1,146 @@
+From 9205c8298b6d41392fff9b1d187e0be7a8b7aeeb Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.com>
+Date: Mon, 3 Aug 2026 09:11:15 +0100
+Subject: [PATCH] overlays: mcp2515: Cosmetic tweaks
+
+Two minor cosmetic changes:
+1. Renumber the common fragments to 100-102 to avoid ths need to shuffle
+   them up with each addition.
+2. Standardise on hyphens as node name separators - underscores are not
+   wrong, but using a mixture is.
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.com>
+---
+ .../arm/boot/dts/overlays/mcp2515-overlay.dts | 36 +++++++++----------
+ 1 file changed, 18 insertions(+), 18 deletions(-)
+
+--- a/arch/arm/boot/dts/overlays/mcp2515-overlay.dts
++++ b/arch/arm/boot/dts/overlays/mcp2515-overlay.dts
+@@ -108,17 +108,17 @@
+ 		};
+ 	};
+ 
+-	fragment@14 {
++	fragment@100 {
+ 		target = <&gpio>;
+ 		__overlay__ {
+-			mcp2515_pins: mcp2515_pins {
++			mcp2515_pins: mcp2515-pins {
+ 				brcm,pins = <25>;
+ 				brcm,function = <BCM2835_FSEL_GPIO_IN>;
+ 			};
+ 		};
+ 	};
+ 
+-	fragment@15 {
++	fragment@101 {
+ 		target-path = "/clocks";
+ 		__overlay__ {
+ 			clk_mcp2515_osc: mcp2515-osc {
+@@ -129,7 +129,7 @@
+ 		};
+ 	};
+ 
+-	mcp2515_frag: fragment@16 {
++	mcp2515_frag: fragment@102 {
+ 		target = <&spi0>;
+ 		__overlay__ {
+ 			status = "okay";
+@@ -153,83 +153,83 @@
+ 		spi0-0 = <0>, "+0",
+ 			<&mcp2515_frag>, "target:0=", <&spi0>,
+ 			<&mcp2515>, "reg:0=0",
+-			<&mcp2515_pins>, "name=mcp2515_spi0_0_pins",
++			<&mcp2515_pins>, "name=mcp2515-spi0-0-pins",
+ 			<&clk_mcp2515_osc>, "name=mcp2515-spi0-0-osc";
+ 		spi0-1 = <0>, "+1",
+ 			<&mcp2515_frag>, "target:0=", <&spi0>,
+ 			<&mcp2515>, "reg:0=1",
+-			<&mcp2515_pins>, "name=mcp2515_spi0_1_pins",
++			<&mcp2515_pins>, "name=mcp2515-spi0-1-pins",
+ 			<&clk_mcp2515_osc>, "name=mcp2515-spi0-1-osc";
+ 
+ 		spi1-0 = <0>, "+2",
+ 			<&mcp2515_frag>, "target:0=", <&spi1>,
+ 			<&mcp2515>, "reg:0=0",
+-			<&mcp2515_pins>, "name=mcp2515_spi1_0_pins",
++			<&mcp2515_pins>, "name=mcp2515-spi1-0-pins",
+ 			<&clk_mcp2515_osc>, "name=mcp2515-spi1-0-osc";
+ 		spi1-1 = <0>, "+3",
+ 			<&mcp2515_frag>, "target:0=", <&spi1>,
+ 			<&mcp2515>, "reg:0=1",
+-			<&mcp2515_pins>, "name=mcp2515_spi1_1_pins",
++			<&mcp2515_pins>, "name=mcp2515-spi1-1-pins",
+ 			<&clk_mcp2515_osc>, "name=mcp2515-spi1-1-osc";
+ 		spi1-2 = <0>, "+4",
+ 			<&mcp2515_frag>, "target:0=", <&spi1>,
+ 			<&mcp2515>, "reg:0=2",
+-			<&mcp2515_pins>, "name=mcp2515_spi1_2_pins",
++			<&mcp2515_pins>, "name=mcp2515-spi1-2-pins",
+ 			<&clk_mcp2515_osc>, "name=mcp2515-spi1-2-osc";
+ 
+ 		spi2-0 = <0>, "+5",
+ 			<&mcp2515_frag>, "target:0=", <&spi2>,
+ 			<&mcp2515>, "reg:0=0",
+-			<&mcp2515_pins>, "name=mcp2515_spi2_0_pins",
++			<&mcp2515_pins>, "name=mcp2515-spi2-0-pins",
+ 			<&clk_mcp2515_osc>, "name=mcp2515-spi2-0-osc";
+ 		spi2-1 = <0>, "+6",
+ 			<&mcp2515_frag>, "target:0=", <&spi2>,
+ 			<&mcp2515>, "reg:0=1",
+-			<&mcp2515_pins>, "name=mcp2515_spi2_1_pins",
++			<&mcp2515_pins>, "name=mcp2515-spi2-1-pins",
+ 			<&clk_mcp2515_osc>, "name=mcp2515-spi2-1-osc";
+ 		spi2-2 = <0>, "+7",
+ 			<&mcp2515_frag>, "target:0=", <&spi2>,
+ 			<&mcp2515>, "reg:0=2",
+-			<&mcp2515_pins>, "name=mcp2515_spi2_2_pins",
++			<&mcp2515_pins>, "name=mcp2515-spi2-2-pins",
+ 			<&clk_mcp2515_osc>, "name=mcp2515-spi2-2-osc";
+ 
+ 		spi3-0 = <0>, "+8",
+ 			<&mcp2515_frag>, "target?=0",
+ 			<&mcp2515_frag>, "target-path=spi3",
+ 			<&mcp2515>, "reg:0=0",
+-			<&mcp2515_pins>, "name=mcp2515_spi3_0_pins",
++			<&mcp2515_pins>, "name=mcp2515-spi3-0-pins",
+ 			<&clk_mcp2515_osc>, "name=mcp2515-spi3-0-osc";
+ 		spi3-1 = <0>, "+9",
+ 			<&mcp2515_frag>, "target?=0",
+ 			<&mcp2515_frag>, "target-path=spi3",
+ 			<&mcp2515>, "reg:0=1",
+-			<&mcp2515_pins>, "name=mcp2515_spi3_1_pins",
++			<&mcp2515_pins>, "name=mcp2515-spi3-1-pins",
+ 			<&clk_mcp2515_osc>, "name=mcp2515-spi3-1-osc";
+ 
+ 		spi5-0 = <0>, "+10",
+ 			<&mcp2515_frag>, "target?=0",
+ 			<&mcp2515_frag>, "target-path=spi5",
+ 			<&mcp2515>, "reg:0=0",
+-			<&mcp2515_pins>, "name=mcp2515_spi5_0_pins",
++			<&mcp2515_pins>, "name=mcp2515-spi5-0-pins",
+ 			<&clk_mcp2515_osc>, "name=mcp2515-spi5-0-osc";
+ 		spi5-1 = <0>, "+11",
+ 			<&mcp2515_frag>, "target?=0",
+ 			<&mcp2515_frag>, "target-path=spi5",
+ 			<&mcp2515>, "reg:0=1",
+-			<&mcp2515_pins>, "name=mcp2515_spi5_1_pins",
++			<&mcp2515_pins>, "name=mcp2515-spi5-1-pins",
+ 			<&clk_mcp2515_osc>, "name=mcp2515-spi5-1-osc";
+ 
+ 		spi6-0 = <0>, "+12",
+ 			<&mcp2515_frag>, "target?=0",
+ 			<&mcp2515_frag>, "target-path=spi6",
+ 			<&mcp2515>, "reg:0=0",
+-			<&mcp2515_pins>, "name=mcp2515_spi6_0_pins",
++			<&mcp2515_pins>, "name=mcp2515-spi6-0-pins",
+ 			<&clk_mcp2515_osc>, "name=mcp2515-spi6-0-osc";
+ 		spi6-1 = <0>, "+13",
+ 			<&mcp2515_frag>, "target?=0",
+ 			<&mcp2515_frag>, "target-path=spi6",
+ 			<&mcp2515>, "reg:0=1",
+-			<&mcp2515_pins>, "name=mcp2515_spi6_1_pins",
++			<&mcp2515_pins>, "name=mcp2515-spi6-1-pins",
+ 			<&clk_mcp2515_osc>, "name=mcp2515-spi6-1-osc";
+ 
+ 		oscillator = <&clk_mcp2515_osc>, "clock-frequency:0";

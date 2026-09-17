@@ -1,0 +1,136 @@
+From 8c74b839debd96d0d7a441abc35d36b20fdda278 Mon Sep 17 00:00:00 2001
+From: zjzhao <zjzhao@edatec.cn>
+Date: Wed, 26 Aug 2026 18:08:08 +0800
+Subject: [PATCH] overlays: rt5616: Add RT5616 audio codec overlay
+
+Add an overlay for the Realtek RT5616 I2S audio codec:
+- rt5616-mclk: 12.288 MHz fixed clock feeding the codec MCLK pin
+- rt5616@1b: codec on I2C1 at 0x1b with the mclk clock
+- simple-audio-card: I2S link to the I2S consumer controller
+  (GPIO 18-21) with mclk-fs = 256 for 48 kHz operation
+
+The codec is the clock master (bitclock/frame master); the RP1 I2S
+consumer block only supports slave mode, so the bitclock-master and
+frame-master properties point at the codec side.
+
+The alsaname parameter overrides the ALSA card name.
+
+Tested on Raspberry Pi 5 (EDATEC IPC3020) with:
+  dtoverlay=rt5616
+
+Signed-off-by: zjzhao <zjzhao@edatec.cn>
+---
+ arch/arm/boot/dts/overlays/Makefile           |  1 +
+ arch/arm/boot/dts/overlays/README             |  8 ++
+ arch/arm/boot/dts/overlays/rt5616-overlay.dts | 78 +++++++++++++++++++
+ 3 files changed, 87 insertions(+)
+ create mode 100644 arch/arm/boot/dts/overlays/rt5616-overlay.dts
+
+--- a/arch/arm/boot/dts/overlays/Makefile
++++ b/arch/arm/boot/dts/overlays/Makefile
+@@ -264,6 +264,7 @@ dtbo-$(CONFIG_ARCH_BCM2835) += \
+ 	rpi-sense-v2.dtbo \
+ 	rpi-tv.dtbo \
+ 	rra-digidac1-wm8741-audio.dtbo \
++	rt5616.dtbo \
+ 	sainsmart18.dtbo \
+ 	sc16is750-i2c.dtbo \
+ 	sc16is752-i2c.dtbo \
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -4738,6 +4738,14 @@ Load:   dtoverlay=rra-digidac1-wm8741-au
+ Params: <None>
+ 
+ 
++Name:   rt5616
++Info:   Overlay for the Realtek RT5616 I2S audio codec (HAT with the RT5616
++        codec on I2C1 at 0x1b, MCLK 12.288 MHz, I2S connected to the I2S
++        consumer controller on GPIO 18-21).
++Load:   dtoverlay=rt5616,<param>=<val>
++Params: alsaname                Changes the card name in ALSA
++
++
+ Name:   sainsmart18
+ Info:   Overlay for the SPI-connected Sainsmart 1.8" display (based on the
+         ST7735R chip).
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/rt5616-overlay.dts
+@@ -0,0 +1,78 @@
++// SPDX-License-Identifier: GPL-2.0-only
++// Definitions for the Realtek RT5616 I2S audio codec
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "brcm,bcm2835";
++
++	fragment@0 {
++		target = <&i2s_clk_consumer>;
++		__overlay__ {
++			status = "okay";
++		};
++	};
++
++	fragment@1 {
++		target-path = "/";
++		__overlay__ {
++			rt5616_mclk: rt5616-mclk {
++				compatible = "fixed-clock";
++				#clock-cells = <0>;
++				clock-frequency = <12288000>;
++			};
++		};
++	};
++
++	fragment@2 {
++		target = <&i2c1>;
++		__overlay__ {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "okay";
++
++			rt5616: rt5616@1b {
++				#sound-dai-cells = <0>;
++				compatible = "realtek,rt5616";
++				reg = <0x1b>;
++				clocks = <&rt5616_mclk>;
++				clock-names = "mclk";
++			};
++		};
++	};
++
++	fragment@3 {
++		target = <&sound>;
++		rt5616_card: __overlay__ {
++			compatible = "simple-audio-card";
++			simple-audio-card,format = "i2s";
++			simple-audio-card,name = "rt5616-codec";
++			simple-audio-card,mclk-fs = <256>;
++			status = "okay";
++
++			simple-audio-card,bitclock-master = <&sound_master>;
++			simple-audio-card,frame-master = <&sound_master>;
++
++			simple-audio-card,widgets =
++				"Microphone", "Mic Jack",
++				"Headphone", "Headphone Jack";
++			simple-audio-card,routing =
++				"IN1P", "Mic Jack",
++				"IN2P", "Mic Jack",
++				"Headphone Jack", "HPOL",
++				"Headphone Jack", "HPOR";
++
++			simple-audio-card,cpu {
++				sound-dai = <&i2s_clk_consumer>;
++			};
++
++			sound_master: simple-audio-card,codec {
++				sound-dai = <&rt5616>;
++			};
++		};
++	};
++
++	__overrides__ {
++		alsaname = <&rt5616_card>,"simple-audio-card,name";
++	};
++};

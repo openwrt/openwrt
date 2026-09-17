@@ -1,0 +1,54 @@
+From db35ff6d13af6b095c4f2915e03292b946dcad22 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.com>
+Date: Thu, 10 Sep 2026 11:43:05 +0100
+Subject: [PATCH] net: macb: Add PHY post-reset settle delay
+
+Some PHYs need extra time after reset is deasserted before they
+will respond on MDIO. macb_mdio_reset() currently returns
+immediately after deasserting phy-reset-gpios, so the initial MDIO
+bus scan can run before such a PHY is ready, causing it to go
+undetected.
+
+Add an optional "phy-reset-post-delay" DT property (milliseconds,
+clamped to 1s) and sleep for it after releasing reset. Defaults to
+0, so existing DTs are unaffected.
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.com>
+---
+ drivers/net/ethernet/cadence/macb.h      | 1 +
+ drivers/net/ethernet/cadence/macb_main.c | 7 +++++++
+ 2 files changed, 8 insertions(+)
+
+--- a/drivers/net/ethernet/cadence/macb.h
++++ b/drivers/net/ethernet/cadence/macb.h
+@@ -1373,6 +1373,7 @@ struct macb {
+ 
+ 	struct gpio_desc	*phy_reset_gpio;
+ 	int			phy_reset_ms;
++	int			phy_reset_post_ms;
+ 
+ 	/* AT91RM9200 transmit queue (1 on wire + 1 queued) */
+ 	struct macb_tx_skb	rm9200_txq[2];
+--- a/drivers/net/ethernet/cadence/macb_main.c
++++ b/drivers/net/ethernet/cadence/macb_main.c
+@@ -502,6 +502,7 @@ static int macb_mdio_reset(struct mii_bu
+ 		gpiod_set_value_cansleep(bp->phy_reset_gpio, 1);
+ 		msleep(bp->phy_reset_ms);
+ 		gpiod_set_value_cansleep(bp->phy_reset_gpio, 0);
++		msleep(bp->phy_reset_post_ms);
+ 	}
+ 
+ 	return 0;
+@@ -6007,6 +6008,12 @@ static int macb_probe(struct platform_de
+ 	if (bp->phy_reset_ms > 1000)
+ 		bp->phy_reset_ms = 1000;
+ 
++	bp->phy_reset_post_ms = 0;
++	of_property_read_u32(np, "phy-reset-post-delay", &bp->phy_reset_post_ms);
++	/* A sane post-reset delay should not be longer than 1s */
++	if (bp->phy_reset_post_ms > 1000)
++		bp->phy_reset_post_ms = 1000;
++
+ 	/* IP specific init */
+ 	err = init(pdev);
+ 	if (err)
