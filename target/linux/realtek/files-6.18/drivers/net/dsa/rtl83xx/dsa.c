@@ -1530,6 +1530,11 @@ static void rtldsa_setup_l2_mc_entry(struct rtl838x_l2_entry *e, int vid, u64 ma
 	u64_to_ether_addr(mac, e->mac);
 }
 
+static int rtldsa_l2_hash_index(u32 key, int slot)
+{
+	return slot > 3 ? ((key >> 14) & 0xffff) | (slot & 3) : ((key << 2) | slot) & 0xffff;
+}
+
 /* Uses the seed to identify a hash bucket in the L2 using the derived hash key and then loops
  * over the entries in the bucket until either a matching entry is found or an empty slot
  * Returns the filled in rtl838x_l2_entry and the index in the bucket when an entry was found
@@ -1539,8 +1544,8 @@ static void rtldsa_setup_l2_mc_entry(struct rtl838x_l2_entry *e, int vid, u64 ma
 static int rtldsa_find_l2_hash_entry(struct rtl838x_switch_priv *priv, u64 seed,
 				     bool must_exist, struct rtl838x_l2_entry *e)
 {
-	int idx = -1;
 	u32 key = priv->r->l2_hash_key(priv, seed);
+	int free_slot = -1;
 	u64 entry;
 
 	pr_debug("%s: using key %x, for seed %016llx\n", __func__, key, seed);
@@ -1548,15 +1553,30 @@ static int rtldsa_find_l2_hash_entry(struct rtl838x_switch_priv *priv, u64 seed,
 	for (int i = 0; i < priv->r->l2_bucket_size; i++) {
 		entry = priv->r->read_l2_entry_using_hash(key, i, e);
 		pr_debug("valid %d, mac %016llx\n", e->valid, ether_addr_to_u64(&e->mac[0]));
-		if (must_exist && !e->valid)
+
+		/* Remember the first free slot, but keep looking: the address
+		 * may be sitting further down the bucket.
+		 */
+		if (!e->valid) {
+			if (free_slot < 0)
+				free_slot = i;
 			continue;
-		if (!e->valid || ((entry & 0x0fffffffffffffffULL) == seed)) {
-			idx = i > 3 ? ((key >> 14) & 0xffff) | (i & 3) : ((key << 2) | i) & 0xffff;
-			break;
 		}
+
+		if ((entry & 0x0fffffffffffffffULL) == seed)
+			return rtldsa_l2_hash_index(key, i);
 	}
 
-	return idx;
+	if (must_exist || free_slot < 0)
+		return -1;
+
+	/* The loop leaves the last entry it read here, valid bit included.
+	 * Reading the free slot back does not undo that on RTL930x and
+	 * RTL931x, whose readers return as soon as the valid bit is clear.
+	 */
+	memset(e, 0, sizeof(*e));
+
+	return rtldsa_l2_hash_index(key, free_slot);
 }
 
 /* Uses the seed to identify an entry in the CAM by looping over all its entries
