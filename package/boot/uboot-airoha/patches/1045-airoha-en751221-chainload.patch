@@ -1,0 +1,1189 @@
+From 624daf48aa66a54ae1f117e7fa1bc957263c2fa8 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Sat, 12 Sep 2026 19:26:13 -0300
+Subject: [PATCH] airoha: en751221: chainload
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ Makefile                                      |  21 +
+ arch/mips/mach-econet/Kconfig                 |  15 +
+ arch/mips/mach-econet/chainloader/README.rst  | 101 +++
+ .../mach-econet/chainloader/chainloader.c     | 651 ++++++++++++++++++
+ .../mach-econet/chainloader/chainloader.lds   |  19 +
+ arch/mips/mach-econet/chainloader/start.S     | 179 +++++
+ arch/mips/mach-econet/en751221/init.c         |  32 +
+ tools/build-econet-chainloader.sh             |  32 +
+ tools/econet_chainloader_image.py             |  29 +
+ 9 files changed, 1079 insertions(+)
+ create mode 100644 arch/mips/mach-econet/chainloader/README.rst
+ create mode 100644 arch/mips/mach-econet/chainloader/chainloader.c
+ create mode 100644 arch/mips/mach-econet/chainloader/chainloader.lds
+ create mode 100644 arch/mips/mach-econet/chainloader/start.S
+ create mode 100755 tools/build-econet-chainloader.sh
+ create mode 100755 tools/econet_chainloader_image.py
+
+diff --git a/Makefile b/Makefile
+index 22462710090..836880ddedd 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1422,6 +1422,27 @@ targets += tcboot.bin
+ all: tcboot.bin
+ endif
+ 
++# Build the EN751221 BootROM XMODEM chainloader.
++ifeq ($(CONFIG_ECONET_BOOTROM_CHAINLOADER),y)
++econet-chain-soc := en751221
++econet-chain-src := $(abspath $(srctree))
++econet-chain-dir := $(econet-chain-src)/arch/mips/mach-econet/chainloader
++econet-chain-image := $(econet-chain-soc)-chainloader.bin
++quiet_cmd_econet_chainloader = CHAIN   $@
++cmd_econet_chainloader = srctree="$(abspath $(srctree))" objtree="$(CURDIR)" \
++	CROSS_COMPILE="$(CROSS_COMPILE)" UBOOT_LOAD_ADDR=$(CONFIG_TEXT_BASE) \
++	PYTHON3="$(PYTHON3)" $(CONFIG_SHELL) \
++	$(econet-chain-src)/tools/build-econet-chainloader.sh $(econet-chain-soc)
++
++$(econet-chain-image): $(wildcard $(econet-chain-dir)/*.[cS]) \
++	$(econet-chain-dir)/chainloader.lds \
++	$(econet-chain-src)/tools/build-econet-chainloader.sh \
++	$(econet-chain-src)/tools/econet_chainloader_image.py FORCE
++	$(call if_changed,econet_chainloader)
++targets += $(econet-chain-image)
++all: $(econet-chain-image)
++endif
++
+ # Build the EcoNet DDR payload before Binman consumes it, including O= builds.
+ ifeq ($(CONFIG_ARCH_ECONET)$(CONFIG_TPL),yy)
+ econet-ddr-soc-$(CONFIG_TARGET_EN751221) := en751221
+diff --git a/arch/mips/mach-econet/Kconfig b/arch/mips/mach-econet/Kconfig
+index 898df14fea5..825fce48284 100644
+--- a/arch/mips/mach-econet/Kconfig
++++ b/arch/mips/mach-econet/Kconfig
+@@ -45,6 +45,21 @@ config TARGET_EN7580
+ 
+ endchoice
+ 
++config ECONET_BOOTROM_CHAINLOADER
++	bool "Build the BootROM XMODEM chainloader"
++	depends on TARGET_EN751221
++	default y
++	help
++	  Build en751221-chainloader.bin, a ~10 KiB standalone loader for the
++	  EN751221 internal BootROM recovery path.
++
++	  The BootROM downloads it to 0x80009000 over XMODEM and jumps there;
++	  it then pulls an unmodified u-boot.bin over XMODEM into
++	  CONFIG_TEXT_BASE and jumps to it. Nothing in U-Boot proper changes,
++	  and DRAM is already calibrated by the BootROM at that point.
++
++	  See arch/mips/mach-econet/chainloader/README.rst.
++
+ config ECONET_FLASH_BOOT
+ 	bool "Build the unsigned 128 KiB flash entry and raw U-Boot loader"
+ 	depends on !SPL && !TPL
+diff --git a/arch/mips/mach-econet/chainloader/README.rst b/arch/mips/mach-econet/chainloader/README.rst
+new file mode 100644
+index 00000000000..aea539d27a1
+--- /dev/null
++++ b/arch/mips/mach-econet/chainloader/README.rst
+@@ -0,0 +1,101 @@
++EN751221 BootROM XMODEM chainloader
++===================================
++
++What it is
++----------
++
++``en751221-chainloader.bin`` is a ~9 KiB standalone loader for the EN751221
++internal BootROM recovery path. The BootROM downloads it to ``0x80009000``
++over XMODEM and jumps there; it then pulls an **unmodified** ``u-boot.bin``
++over XMODEM into ``CONFIG_TEXT_BASE`` and jumps to it.
++
++Nothing in U-Boot proper changes. This replaces an earlier attempt at linking
++U-Boot itself at ``0x80009000`` so the BootROM could load it directly, which
++needed ``SKIP_LOWLEVEL_INIT``, ``SKIP_RELOCATE``, a second ``TEXT_BASE``, a
++second device tree and SoC breadcrumbs inside ``arch/mips/cpu/start.S`` and
++``common/board_f.c``.
++
++Use
++---
++
++Enable ``CONFIG_ECONET_BOOTROM_CHAINLOADER`` (default ``y`` on
++``TARGET_EN751221``) and ``make``. The image lands next to ``u-boot.bin``.
++
++Hold the board in BootROM recovery, send the chainloader with the BootROM's
++own XMODEM, then send ``u-boot.bin`` to the chainloader::
++
++  picocom -b 115200 --send-cmd "<path>/xsend.sh" /dev/ttyUSB0
++
++Send ``u-boot.bin`` **through a wrapper that flushes the serial input queue**
++before running ``sx``::
++
++  #!/bin/sh
++  python3 -c 'import termios; termios.tcflush(0, termios.TCIFLUSH)'
++  exec sx -k -X "$@"
++
++Without the flush, the ``'C'`` characters the receiver emits while waiting pile
++up in the host's input queue. ``sx`` consumes one during the handshake and
++reads the rest in place of the first ACK; in lrzsz ``case WANTCRC:`` falls
++through to ``case NAK:``, so every one of them prints ``Retry N: NAK on
++sector`` until ``Retry Count Exceeded``. ``-k`` uses 1 KiB blocks: 367 instead
++of 2936 for a 375 KiB ``u-boot.bin``.
++
++Three SoC quirks this had to work around
++----------------------------------------
++
++**1. Uncached 8-bit stores corrupt the rest of the word.** An ``sb`` to
++uncached DRAM becomes a read-modify-write on the peripheral bus whose read side
++returns stale bus data, so the other three bytes of the word come back as
++leftovers of unrelated transactions. Measured on the board, writing
++``0x10..0x1f`` with byte stores and reading back as words::
++
++  KSEG0 cached:   10111213 14151617 18191a1b 1c1d1e1f
++  KSEG1 uncached: 10101210 14101610 08100a10 0c100e10
++
++The chainloader therefore runs with ``Config.K0 = 3`` (cached), keeps its stack
++in KSEG0, and receives U-Boot into cached memory. ``chainload_jump`` does
++``Index_Writeback_Inv_D`` plus ``Index_Invalidate_I`` before handing over, so
++the received image is in DRAM, and leaves KSEG0 uncached for U-Boot to
++reconfigure.
++
++**2. The UART needs a settle between LSR and RBR.** ``LSR.DR`` going high does
++not mean ``RBR`` is valid yet; reading it immediately returns bus leftovers.
++The vendor driver has the same workaround::
++
++  /* tc3162_uart.c */
++  #define READ_OTHER(x) ((x & 0xc) + 0xbfb003a0)
++  tmp = VPint(READ_OTHER(CR_UART_RBR));  wmb();
++  ch  = UART_RDL(CR_UART_RBR);           wmb();
++
++``uart_rx_settle()`` does the equivalent with a register this board is known to
++tolerate. All UART access is 32-bit; the registers are 32-bit spaced
++(``RBR/THR`` 0x00, ``IER`` 0x04, ``IIR/FCR`` 0x08, ``LCR`` 0x0c, ``MCR`` 0x10,
++``LSR`` 0x14) at ``0xbfbf0000``.
++
++**3. The BootROM leaves dirty cache lines.** It writes the downloaded image
++through the cache, so ``start.S`` writes back and invalidates before touching
++anything. ``LSR`` bit 6 (TEMT) is never asserted on this part, so nothing waits
++on it.
++
++Self-check
++----------
++
++The BootROM validates its own XMODEM download with an 8-bit checksum, which
++lets corruption through. ``tools/econet_chainloader_image.py`` stores a CRC32 of
++the image in its last loaded word and pads to 128 bytes; the chainloader
++recomputes it in DRAM and refuses to continue on a mismatch::
++
++  EN751221 BootROM chainloader
++  XMODEM 128/1k, CRC16 ou checksum -> 0x81000000
++  ticks/ms=0x00070627 self len=0x000021f4 crc=0x174efbda want=0x174efbda OK
++
++Everything mutable lives in ``.bss``, which is outside the checked region and
++zeroed by ``start.S`` (the BootROM's XMODEM padding lands there).
++
++There is no wall clock, so ``calibrate()`` derives CP0 Count ticks per
++millisecond from the time the banner took to shift out at 115200 8N1. Timeouts,
++the 3 s handshake cadence and the purge-before-NAK all hang off that.
++
++On failure the report gives ``blocks=`` ``dup=`` ``tries=`` ``mode=`` ``err=``
++``lsrerr=`` plus the first error: ``kind`` 1 bad header, 2 intra-packet
++timeout, 3 CRC/checksum, 4 out-of-sequence, with the first 16 bytes received.
+diff --git a/arch/mips/mach-econet/chainloader/chainloader.c b/arch/mips/mach-econet/chainloader/chainloader.c
+new file mode 100644
+index 00000000000..cdc1a06ec17
+--- /dev/null
++++ b/arch/mips/mach-econet/chainloader/chainloader.c
+@@ -0,0 +1,651 @@
++/* SPDX-License-Identifier: GPL-2.0+ */
++typedef unsigned char u8;
++typedef unsigned short u16;
++typedef unsigned int u32;
++
++enum {
++	SOH = 0x01,
++	STX = 0x02,
++	EOT = 0x04,
++	ACK = 0x06,
++	NAK = 0x15,
++	CAN = 0x18,
++	CRC_REQ = 'C',
++};
++
++#define UART_BASE                0xbfbf0000u
++#define UART_RBR                 0x00u
++#define UART_THR                 0x00u
++#define UART_IER                 0x04u
++#define UART_LSR                 0x14u
++#define UART_LSR_DR              0x01u
++#define UART_LSR_THRE            0x20u
++#define UART_LSR_TEMT            0x40u
++#define UART_LSR_ERR             0x1eu	/* OE | PE | FE | BI */
++
++#ifndef UBOOT_LOAD_ADDR
++#define UBOOT_LOAD_ADDR          0x81000000u
++#endif
++
++/* Cached KSEG0: uncached 8-bit stores corrupt the word on this chip (see README). */
++#define UBOOT_LOAD_CACHED        (UBOOT_LOAD_ADDR)
++#define UBOOT_ENTRY_CACHED       (UBOOT_LOAD_ADDR)
++#define UBOOT_MAX_SIZE           0x00400000u
++
++#define CR_TIMER_CTL             0xbfbf0100u
++
++/* Assumed console baud rate for calibrating the timebase. */
++#define CONSOLE_CPS              11520u	/* 115200 8N1 = 11520 chars/s */
++#define DEFAULT_TICKS_PER_MS     250000u	/* fallback: CP0 Count at 250 MHz */
++
++/* Protocol tuning. */
++#define HANDSHAKE_TRIES          200
++#define HANDSHAKE_MS             3000
++#define BYTE_MS                  1000
++#define NEXT_HDR_MS              5000
++#define CSUM_PROBE_MS            300
++#define PURGE_MS                 300
++#define MAX_ERRORS               16
++
++extern u32 __image_start;
++extern u32 __chk_start;
++
++#define CHK_CHUNK                128u
++
++static inline u32 mmio_read32(u32 addr)
++{
++	return *(volatile u32 *)addr;
++}
++
++static inline void mmio_write32(u32 addr, u32 val)
++{
++	*(volatile u32 *)addr = val;
++}
++
++/* CP0 Count: fixed-rate timebase, independent of loop speed. */
++static inline u32 cp0_count(void)
++{
++	u32 v;
++
++	__asm__ volatile("mfc0 %0, $9" : "=r"(v));
++	return v;
++}
++
++static void watchdog_kick(void)
++{
++	u32 val = mmio_read32(CR_TIMER_CTL);
++
++	val &= 0xffc0ffffu;
++	val |= 0x00200000u;
++	mmio_write32(CR_TIMER_CTL, val);
++	__asm__ volatile("sync" ::: "memory");
++}
++
++/* Mutable state lives in .bss: .data is covered by the image self-check. */
++/*
++ * Delay between seeing DR and reading the RBR. Replicates exactly the cost
++ * of watchdog_kick() (two MMIO transactions plus sync, ~5 us), which is
++ * what the v10 probe had between the two reads.
++ */
++static void uart_rx_settle(void)
++{
++	u32 val = mmio_read32(CR_TIMER_CTL);
++
++	val &= 0xffc0ffffu;
++	val |= 0x00200000u;
++	mmio_write32(CR_TIMER_CTL, val);
++	__asm__ volatile("sync" ::: "memory");
++}
++
++static u32 ticks_per_ms;
++static u32 tx_chars;
++
++static void uart_putc(u8 c)
++{
++	while (!(mmio_read32(UART_BASE + UART_LSR) & UART_LSR_THRE))
++		;
++	mmio_write32(UART_BASE + UART_THR, c);
++	tx_chars++;
++}
++
++static void uart_puts(const char *s)
++{
++	while (*s) {
++		// if (*s == '\n')
++		// 	uart_putc('\r');
++		uart_putc((u8)*s++);
++	}
++}
++
++/* Only shifts and a table: no division in the diagnostic path. */
++static void put_hex32(u32 v)
++{
++	static const char hex[] = "0123456789abcdef";
++	int shift;
++
++	for (shift = 28; shift >= 0; shift -= 4)
++		uart_putc(hex[(v >> shift) & 0xf]);
++}
++
++/*
++ * Calibrate the CP0 Count against the UART shift rate: the banner has
++ * already been transmitted, so the elapsed time divided by the number of
++ * characters gives the period of one character, which at 115200 8N1 is
++ * 1/11520 s.
++ */
++static void calibrate(u32 t0, u32 chars)
++{
++	u32 dt, per_char, per_sec;
++
++	dt = cp0_count() - t0;
++
++	if (!chars)
++		return;
++	per_char = dt / chars;
++	if (per_char < 8u || per_char > 400000u)
++		return;			/* implausible: stay on fallback */
++
++	per_sec = per_char * CONSOLE_CPS;
++	if (per_sec < 1000000u || per_sec > 2000000000u)
++		return;
++
++	ticks_per_ms = per_sec / 1000u;
++}
++
++static u32 rx_lsr_err;
++static u32 rx_wait_n;
++static int have_pushback;
++static u8 pushback_byte;
++
++static int uart_getc_to(u8 *out, u32 ms)
++{
++	u32 t0 = cp0_count();
++	u32 limit = ms * ticks_per_ms;
++	u32 last = t0;
++	int waited = 0;
++
++	if (have_pushback) {
++		have_pushback = 0;
++		*out = pushback_byte;
++		return 1;
++	}
++
++	for (;;) {
++		u32 lsr = mmio_read32(UART_BASE + UART_LSR);
++		u32 now;
++
++		rx_lsr_err |= lsr & UART_LSR_ERR;
++		if (lsr & UART_LSR_DR) {
++			u32 raw;
++
++			if (waited)
++				rx_wait_n++;
++			/*
++			 * DR going high doesn't mean the RBR is already valid on
++			 * this chip. The v10 probe read correctly because it had
++			 * a watchdog_kick() between the LSR and RBR reads; without
++			 * it, an immediate read returns bus garbage. Same sequence
++			 * here.
++			 */
++			uart_rx_settle();
++			raw = mmio_read32(UART_BASE + UART_RBR);
++			*out = (u8)raw;
++			return 1;
++		}
++
++		now = cp0_count();
++		if ((now - t0) >= limit) {
++			watchdog_kick();
++			return 0;
++		}
++		waited = 1;
++		/* Don't kick the watchdog every loop: this is the RX loop. */
++		if ((now - last) >= ticks_per_ms) {
++			watchdog_kick();
++			last = now;
++		}
++	}
++}
++
++static void uart_pushback(u8 c)
++{
++	pushback_byte = c;
++	have_pushback = 1;
++}
++
++/* Discard everything until the line is idle for the given time. */
++static void uart_purge(u32 ms)
++{
++	u8 c;
++
++	have_pushback = 0;
++	while (uart_getc_to(&c, ms))
++		;
++}
++
++static u16 crc16_xmodem(const u8 *buf, u32 len)
++{
++	u16 crc = 0;
++	u32 i;
++	int bit;
++
++	for (i = 0; i < len; i++) {
++		crc ^= (u16)buf[i] << 8;
++		for (bit = 0; bit < 8; bit++) {
++			if (crc & 0x8000)
++				crc = (u16)((crc << 1) ^ 0x1021);
++			else
++				crc = (u16)(crc << 1);
++		}
++		if ((i & 0x7fu) == 0)
++			watchdog_kick();
++	}
++
++	return crc;
++}
++
++static u8 csum8(const u8 *buf, u32 len)
++{
++	u8 sum = 0;
++	u32 i;
++
++	for (i = 0; i < len; i++)
++		sum = (u8)(sum + buf[i]);
++
++	return sum;
++}
++
++static u32 crc32_ieee(const volatile u8 *buf, u32 len)
++{
++	u32 crc = 0xffffffffu;
++	u32 i;
++	int bit;
++
++	for (i = 0; i < len; i++) {
++		crc ^= buf[i];
++		for (bit = 0; bit < 8; bit++)
++			crc = (crc >> 1) ^ ((0u - (crc & 1u)) & 0xedb88320u);
++		if ((i & 0x3fffu) == 0)
++			watchdog_kick();
++	}
++
++	return ~crc;
++}
++
++/* Deferred diagnostics: nothing can be printed while the link is live. */
++static u32 err_count;
++static u32 err_first_kind;	/* 1 hdr, 2 timeout, 3 trailer, 4 sequence */
++static u32 err_first_blk;
++static u32 err_first_exp;
++static u32 err_first_len;
++static u32 err_first_got;
++static u32 err_first_want;
++static u8 err_first_data[16];
++static u32 stat_blocks;
++static u32 stat_dups;
++static u32 stat_tries;
++static int stat_1k;
++static int stat_csum;
++
++static void note_error(u32 kind, u32 blk, u32 exp, u32 len, u32 got, u32 want)
++{
++	if (!err_count) {
++		err_first_kind = kind;
++		err_first_blk = blk;
++		err_first_exp = exp;
++		err_first_len = len;
++		err_first_got = got;
++		err_first_want = want;
++	}
++	err_count++;
++}
++
++/*
++ * XMODEM receiver: 128-byte (SOH) and 1K (STX) blocks, CRC16/XMODEM with
++ * fallback to 8-bit checksum, per-byte timeout, and purge-based resync.
++ */
++static u32 xmodem_receive(void)
++{
++	volatile u8 *dst = (volatile u8 *)UBOOT_LOAD_CACHED;
++	static u8 packet[1024];
++	u8 expected = 1;
++	u32 total = 0;
++	u8 ch;
++	int cancels = 0;
++	int tries;
++
++	uart_purge(100);
++
++	for (tries = 0;; tries++) {
++		stat_tries = (u32)tries;
++		if (tries >= HANDSHAKE_TRIES)
++			return 0;
++		/* Ask for CRC first; later also offer checksum mode. */
++		uart_putc(tries < 40 ? CRC_REQ : NAK);
++		if (!uart_getc_to(&ch, HANDSHAKE_MS))
++			continue;
++		if (ch == SOH || ch == STX || ch == EOT || ch == CAN)
++			break;
++	}
++
++	for (;;) {
++		u32 plen, i;
++		u8 blk, blki, t1, t2;
++		u16 got_crc, want_crc;
++		int have_t2, ok;
++
++		if (ch == EOT) {
++			uart_putc(ACK);
++			return total;
++		}
++
++		if (ch == CAN) {
++			if (++cancels >= 2)
++				return 0;
++			if (!uart_getc_to(&ch, BYTE_MS))
++				goto resync;
++			continue;
++		}
++		cancels = 0;
++
++		if (ch != SOH && ch != STX) {
++			note_error(1, ch, expected, 0, 0, 0);
++			goto resync;
++		}
++
++		plen = (ch == STX) ? 1024u : 128u;
++		if (plen == 1024u)
++			stat_1k = 1;
++
++		if (!uart_getc_to(&blk, BYTE_MS) ||
++		    !uart_getc_to(&blki, BYTE_MS)) {
++			note_error(2, 0, expected, plen, 0, 0);
++			goto resync;
++		}
++
++		for (i = 0; i < plen; i++) {
++			if (!uart_getc_to(&packet[i], BYTE_MS)) {
++				note_error(2, blk, expected, i, 0, 0);
++				goto resync;
++			}
++			if ((i & 0x1fu) == 0)
++				watchdog_kick();
++		}
++
++		if (!uart_getc_to(&t1, BYTE_MS)) {
++			note_error(2, blk, expected, plen, 0, 0);
++			goto resync;
++		}
++
++		have_t2 = uart_getc_to(&t2, CSUM_PROBE_MS);
++		want_crc = crc16_xmodem(packet, plen);
++		got_crc = have_t2 ? (u16)(((u16)t1 << 8) | t2) : 0;
++		ok = 0;
++
++		if (have_t2 && got_crc == want_crc) {
++			ok = 1;
++		} else if (t1 == csum8(packet, plen)) {
++			/* Checksum mode: t2 is already the start of the next packet. */
++			stat_csum = 1;
++			ok = 1;
++			if (have_t2)
++				uart_pushback(t2);
++		}
++
++		if (!ok) {
++			if (!err_count)
++				for (i = 0; i < sizeof(err_first_data) && i < plen; i++)
++					err_first_data[i] = packet[i];
++			note_error(3, blk, expected, plen, got_crc, want_crc);
++			goto resync;
++		}
++
++		if ((u8)(blk + blki) != 0xff) {
++			note_error(1, blk, blki, plen, 0, 0);
++			goto resync;
++		}
++
++		/* Retransmission of a block already received. */
++		if (blk == (u8)(expected - 1)) {
++			stat_dups++;
++			uart_putc(ACK);
++			if (!uart_getc_to(&ch, NEXT_HDR_MS))
++				goto resync;
++			continue;
++		}
++
++		if (blk != expected) {
++			note_error(4, blk, expected, plen, 0, 0);
++			goto resync;
++		}
++
++		if (total + plen > UBOOT_MAX_SIZE) {
++			uart_putc(CAN);
++			uart_putc(CAN);
++			return 0;
++		}
++
++		for (i = 0; i < plen; i++)
++			dst[total + i] = packet[i];
++		total += plen;
++		expected++;
++		stat_blocks++;
++		watchdog_kick();
++
++		uart_putc(ACK);
++		if (!uart_getc_to(&ch, NEXT_HDR_MS)) {
++			note_error(2, 0, expected, 0, 0, 0);
++			goto resync;
++		}
++		continue;
++
++resync:
++		if (err_count >= MAX_ERRORS) {
++			uart_putc(CAN);
++			uart_putc(CAN);
++			uart_putc(CAN);
++			uart_purge(PURGE_MS);
++			return 0;
++		}
++		uart_purge(PURGE_MS);
++		uart_putc(NAK);
++		if (!uart_getc_to(&ch, NEXT_HDR_MS)) {
++			note_error(2, 0, expected, 0, 0, 0);
++			ch = 0;
++		}
++	}
++}
++
++static void put_hex8(u8 v)
++{
++	static const char hex8[] = "0123456789abcdef";
++
++	uart_putc(hex8[(v >> 4) & 0xf]);
++	uart_putc(hex8[v & 0xf]);
++}
++
++static u32 chunk_crc(const volatile u8 *img, u32 len, u32 i)
++{
++	u32 off = i * CHK_CHUNK;
++	u32 n = len - off;
++
++	if (n > CHK_CHUNK)
++		n = CHK_CHUNK;
++	return crc32_ieee(img + off, n);
++}
++
++/*
++ * Checks the loaded image against the per-128-byte-block CRC32 table that
++ * patch_crc.py wrote at its end: locates the block, not just flags failure.
++ */
++static void self_check(void)
++{
++	const volatile u8 *img = (const volatile u8 *)&__image_start;
++	const volatile u32 *tab = (const volatile u32 *)&__chk_start;
++	u32 len = (u32)&__chk_start - (u32)&__image_start;
++	u32 nchunks = (len + CHK_CHUNK - 1u) / CHK_CHUNK;
++	u32 i, n, off, bad = 0, first_bad = 0;
++
++	uart_puts(" self len=0x");
++	put_hex32(len);
++	uart_puts(" blocks=0x");
++	put_hex32(nchunks);
++
++	for (i = 0; i < nchunks; i++) {
++		if (chunk_crc(img, len, i) != tab[i]) {
++			if (!bad)
++				first_bad = i;
++			bad++;
++		}
++	}
++
++	uart_puts(" bad=0x");
++	put_hex32(bad);
++	if (!bad) {
++		uart_puts(" OK\n");
++		return;
++	}
++
++	uart_puts("\nbad idx:");
++	for (i = 0; i < nchunks; i++)
++		if (chunk_crc(img, len, i) != tab[i]) {
++			uart_puts(" 0x");
++			put_hex32(i);
++		}
++
++	off = first_bad * CHK_CHUNK;
++	n = len - off;
++	if (n > CHK_CHUNK)
++		n = CHK_CHUNK;
++
++	uart_puts("\ngot=0x");
++	put_hex32(chunk_crc(img, len, first_bad));
++	uart_puts(" want=0x");
++	put_hex32(tab[first_bad]);
++	uart_puts("\ndump @0x");
++	put_hex32((u32)&__image_start + off);
++	uart_putc('\n');
++	for (i = 0; i < n; i++) {
++		put_hex8(img[off + i]);
++		if ((i & 0x1fu) == 0x1fu)
++			uart_putc('\n');
++	}
++	uart_puts("corrupted image; continuing anyway\n");
++}
++
++/*
++ * Writes 16 bytes with 8-bit stores and reads them back as words, once
++ * through KSEG0 (cached) and once through KSEG1 (uncached), at the same
++ * physical address. Expected in both: 10111213 14151617 18191a1b 1c1d1e1f.
++ */
++extern void chainload_jump(u32 entry) __attribute__((noreturn));
++
++static void report(void)
++{
++	uart_puts("\nblocks=0x");
++	put_hex32(stat_blocks);
++	uart_puts(" dup=0x");
++	put_hex32(stat_dups);
++	uart_puts(" tries=0x");
++	put_hex32(stat_tries);
++	uart_puts(" mode=");
++	uart_puts(stat_1k ? "1k/" : "128/");
++	uart_puts(stat_csum ? "csum" : "crc16");
++	uart_puts(" err=0x");
++	put_hex32(err_count);
++	uart_puts(" lsrerr=0x");
++	put_hex32(rx_lsr_err);
++	if (err_count) {
++		uart_puts("\nfirst: kind=0x");
++		put_hex32(err_first_kind);
++		uart_puts(" blk=0x");
++		put_hex32(err_first_blk);
++		uart_puts(" exp=0x");
++		put_hex32(err_first_exp);
++		uart_puts(" at=0x");
++		put_hex32(err_first_len);
++		uart_puts(" got=0x");
++		put_hex32(err_first_got);
++		uart_puts(" want=0x");
++		put_hex32(err_first_want);
++		uart_puts("\ndata:");
++		{
++			u32 i;
++
++			for (i = 0; i < sizeof(err_first_data); i++) {
++				uart_putc(' ');
++				put_hex8(err_first_data[i]);
++			}
++		}
++		uart_puts(" waits=0x");
++		put_hex32(rx_wait_n);
++	}
++	uart_putc('\n');
++}
++
++static void halt(void)
++{
++	for (;;)
++		watchdog_kick();
++}
++
++void chainloader_main(void)
++{
++	u32 len, image_crc, t0;
++	volatile u32 *w = (volatile u32 *)UBOOT_LOAD_CACHED;
++	u32 i;
++
++	watchdog_kick();
++
++	/* The BootROM may leave the UART IRQ enabled; this runs in polling mode. */
++	mmio_write32(UART_BASE + UART_IER, 0);
++
++	ticks_per_ms = DEFAULT_TICKS_PER_MS;
++	tx_chars = 0;
++	t0 = cp0_count();
++	uart_puts("\nEN751221 BootROM chainloader\n");
++	uart_puts("XMODEM 128/1k, CRC16 ou checksum -> 0x81000000\n");
++	calibrate(t0, tx_chars);
++
++	uart_puts("ticks/ms=0x");
++	put_hex32(ticks_per_ms);
++
++	self_check();
++
++	uart_puts("waiting\n");
++
++	len = xmodem_receive();
++	if (!len) {
++		report();
++		uart_puts("XMODEM failed/cancelled\n");
++		halt();
++	}
++
++	__asm__ volatile("sync" ::: "memory");
++
++	report();
++	uart_puts("received 0x");
++	put_hex32(len);
++	uart_puts(" bytes\nfirst words: ");
++	for (i = 0; i < 4; i++) {
++		put_hex32(w[i]);
++		if (i != 3)
++			uart_putc(' ');
++	}
++	uart_putc('\n');
++
++	image_crc = crc32_ieee((volatile u8 *)UBOOT_LOAD_CACHED, len);
++	uart_puts("crc32: ");
++	put_hex32(image_crc);
++	uart_putc('\n');
++
++	if (w[0] == 0x00000000u || w[0] == 0xffffffffu) {
++		uart_puts("invalid first word; refusing jump\n");
++		halt();
++	}
++
++	watchdog_kick();
++	uart_puts("jump 0x81000000\n");
++	__asm__ volatile("sync" ::: "memory");
++	chainload_jump(UBOOT_ENTRY_CACHED);
++}
+diff --git a/arch/mips/mach-econet/chainloader/chainloader.lds b/arch/mips/mach-econet/chainloader/chainloader.lds
+new file mode 100644
+index 00000000000..7099057a1a3
+--- /dev/null
++++ b/arch/mips/mach-econet/chainloader/chainloader.lds
+@@ -0,0 +1,19 @@
++OUTPUT_ARCH(mips)
++ENTRY(_start)
++SECTIONS
++{
++	. = 0x80009000;
++	__image_start = .;
++	.text : ALIGN(4) { KEEP(*(.text.start)) *(.text .text.*) }
++	.rodata : ALIGN(4) { *(.rodata .rodata.*) }
++	.data : ALIGN(4) { *(.data .data.*) }
++	.got : ALIGN(4) { *(.got .got.*) }
++	/* Tabela de CRC32 por bloco de 128 B, gravada depois do link pelo
++	 * patch_crc.py. Fica por ultimo: tudo antes dela e o que e conferido.
++	 */
++	.imgchk : ALIGN(4) { __chk_start = .; FILL(0x00000000) . = . + 96 * 4; }
++	__image_load_end = .;
++	.bss (NOLOAD) : ALIGN(16) { __bss_start = .; *(.bss .bss.* COMMON) . = ALIGN(16); __bss_end = .; }
++	__image_end = .;
++	/DISCARD/ : { *(.comment) *(.note*) *(.MIPS.abiflags) *(.reginfo) *(.pdr) *(.gnu.attributes) }
++}
+diff --git a/arch/mips/mach-econet/chainloader/start.S b/arch/mips/mach-econet/chainloader/start.S
+new file mode 100644
+index 00000000000..8c0091e362b
+--- /dev/null
++++ b/arch/mips/mach-econet/chainloader/start.S
+@@ -0,0 +1,179 @@
++/* SPDX-License-Identifier: GPL-2.0+ */
++.set noreorder
++.set noat
++
++.section .text.start, "ax", @progbits
++.globl _start
++.ent _start
++_start:
++	/* Mask every interrupt inherited from the BootROM before polling the UART. */
++	mfc0	$t0, $12
++	li	$t1, 0xffff00fe
++	and	$t0, $t0, $t1
++	mtc0	$t0, $12
++	ehb
++	mtc0	$zero, $13		/* Cause: DC=0, Count runs */
++	ehb
++
++	/*
++	 * The BootROM writes the image to DRAM through the cache. Before
++	 * switching to running uncached, write back the dirty lines and
++	 * invalidate the I-cache, otherwise we read stale DRAM.
++	 */
++	mfc0	$t0, $16, 1		/* Config1 */
++
++	/* D-cache: DL=[12:10] line, DS=[15:13] sets, DA=[9:7] ways */
++	srl	$t1, $t0, 10
++	andi	$t1, $t1, 7
++	beqz	$t1, 2f
++	 nop
++	li	$t2, 2
++	sllv	$t2, $t2, $t1		/* line size */
++	srl	$t3, $t0, 13
++	andi	$t3, $t3, 7
++	li	$t4, 64
++	sllv	$t4, $t4, $t3		/* sets */
++	srl	$t5, $t0, 7
++	andi	$t5, $t5, 7
++	addiu	$t5, $t5, 1		/* ways */
++	mul	$t6, $t2, $t4
++	mul	$t6, $t6, $t5		/* total size */
++	lui	$t7, 0x8000
++	addu	$t8, $t7, $t6
++1:
++	cache	0x01, 0($t7)		/* Index_Writeback_Inv_D */
++	addu	$t7, $t7, $t2
++	bne	$t7, $t8, 1b
++	 nop
++	sync
++2:
++	/* I-cache: IL=[21:19] line, IS=[24:22] sets, IA=[18:16] ways */
++	srl	$t1, $t0, 19
++	andi	$t1, $t1, 7
++	beqz	$t1, 4f
++	 nop
++	li	$t2, 2
++	sllv	$t2, $t2, $t1
++	srl	$t3, $t0, 22
++	andi	$t3, $t3, 7
++	li	$t4, 64
++	sllv	$t4, $t4, $t3
++	srl	$t5, $t0, 16
++	andi	$t5, $t5, 7
++	addiu	$t5, $t5, 1
++	mul	$t6, $t2, $t4
++	mul	$t6, $t6, $t5
++	lui	$t7, 0x8000
++	addu	$t8, $t7, $t6
++3:
++	cache	0x00, 0($t7)		/* Index_Invalidate_I */
++	addu	$t7, $t7, $t2
++	bne	$t7, $t8, 3b
++	 nop
++	sync
++4:
++	/*
++	 * CACHED KSEG0. Uncached 8-bit writes on this chip do a
++	 * read-modify-write that brings bus garbage into the other 3
++	 * bytes of the word; with cache, every store becomes a full
++	 * line writeback and the problem goes away. The BootROM runs
++	 * this way and it works.
++	 */
++	mfc0	$t0, $16
++	li	$t1, -8
++	and	$t0, $t0, $t1
++	ori	$t0, $t0, 3
++	mtc0	$t0, $16
++	ehb
++	sync
++
++	/* Stack in cached KSEG0, below the download address. */
++	lui	$sp, 0x8001
++	addiu	$sp, $sp, -0x8000
++	addiu	$sp, $sp, -32
++
++	/* Zero .bss: the BootROM's XMODEM padding lands exactly there. */
++	la	$t0, __bss_start
++	la	$t1, __bss_end
++5:
++	sltu	$t2, $t0, $t1
++	beqz	$t2, 6f
++	 nop
++	sw	$zero, 0($t0)
++	b	5b
++	 addiu	$t0, $t0, 4
++6:
++	sync
++
++	jal	chainloader_main
++	 nop
++
++7:	b	7b
++	 nop
++.end _start
++
++.globl chainload_jump
++.ent chainload_jump
++chainload_jump:
++	/* Write the received image back to DRAM before leaving. */
++	move	$s0, $a0
++	mfc0	$t0, $16, 1
++	srl	$t1, $t0, 10
++	andi	$t1, $t1, 7
++	beqz	$t1, 2f
++	 nop
++	li	$t2, 2
++	sllv	$t2, $t2, $t1
++	srl	$t3, $t0, 13
++	andi	$t3, $t3, 7
++	li	$t4, 64
++	sllv	$t4, $t4, $t3
++	srl	$t5, $t0, 7
++	andi	$t5, $t5, 7
++	addiu	$t5, $t5, 1
++	mul	$t6, $t2, $t4
++	mul	$t6, $t6, $t5
++	lui	$t7, 0x8000
++	addu	$t8, $t7, $t6
++1:
++	cache	0x01, 0($t7)		/* Index_Writeback_Inv_D */
++	addu	$t7, $t7, $t2
++	bne	$t7, $t8, 1b
++	 nop
++	sync
++2:
++	srl	$t1, $t0, 19
++	andi	$t1, $t1, 7
++	beqz	$t1, 4f
++	 nop
++	li	$t2, 2
++	sllv	$t2, $t2, $t1
++	srl	$t3, $t0, 22
++	andi	$t3, $t3, 7
++	li	$t4, 64
++	sllv	$t4, $t4, $t3
++	srl	$t5, $t0, 16
++	andi	$t5, $t5, 7
++	addiu	$t5, $t5, 1
++	mul	$t6, $t2, $t4
++	mul	$t6, $t6, $t5
++	lui	$t7, 0x8000
++	addu	$t8, $t7, $t6
++3:
++	cache	0x00, 0($t7)		/* Index_Invalidate_I */
++	addu	$t7, $t7, $t2
++	bne	$t7, $t8, 3b
++	 nop
++	sync
++4:
++	/* Hand off control with uncached KSEG0; U-Boot reconfigures it. */
++	mfc0	$t0, $16
++	li	$t1, -8
++	and	$t0, $t0, $t1
++	ori	$t0, $t0, 2
++	mtc0	$t0, $16
++	ehb
++	sync
++	jr	$s0
++	 nop
++.end chainload_jump
+diff --git a/arch/mips/mach-econet/en751221/init.c b/arch/mips/mach-econet/en751221/init.c
+index 1b7d5f81d7a..153947c07f2 100644
+--- a/arch/mips/mach-econet/en751221/init.c
++++ b/arch/mips/mach-econet/en751221/init.c
+@@ -3,6 +3,7 @@
+ #include <init.h>
+ #include <asm/global_data.h>
+ #include <asm/io.h>
++#include <linux/bitops.h>
+ #include <linux/sizes.h>
+ #include <mach/en751221.h>
+ #include <soc/airoha/pkgids.h>
+@@ -11,6 +12,35 @@ DECLARE_GLOBAL_DATA_PTR;
+ 
+ #define NP_SCU_BASE		((void __iomem *)CKSEG1ADDR(0x1fb00000))
+ 
++#define EN7512_BOOTROM_RECOVERY_LATCH	BIT(0)
++
++/*
++ * The BootROM sets CHIP_SCU[0] when it enters the XMODEM recovery path, which
++ * is how the chainloader gets us here. Leaving the latch set sends the SoC
++ * straight back into recovery on the next warm reset.
++ */
++static void en751221_clear_bootrom_recovery_latch(void)
++{
++	void __iomem *reg = (void __iomem *)EN7512_CHIP_SCU_BASE;
++	u32 val;
++
++	val = __raw_readl(reg);
++	if (!(val & EN7512_BOOTROM_RECOVERY_LATCH))
++		return;
++
++	__raw_writel(val & ~EN7512_BOOTROM_RECOVERY_LATCH, reg);
++
++	/* Flush the MMIO write before a following reset. */
++	(void)__raw_readl(reg);
++}
++
++int mach_cpu_init(void)
++{
++	en751221_clear_bootrom_recovery_latch();
++
++	return 0;
++}
++
+ int dram_init(void)
+ {
+ 	u32 val = __raw_readl((void __iomem *)EN7512_REG_SAVE_INFO);
+@@ -37,6 +67,8 @@ ulong notrace get_tbclk(void)
+ 
+ void _machine_restart(void)
+ {
++	en751221_clear_bootrom_recovery_latch();
++
+ 	__raw_writel(0x80000000, (void __iomem *)EN7512_RESET_CONTROL);
+ 
+ 	for (;;)
+diff --git a/tools/build-econet-chainloader.sh b/tools/build-econet-chainloader.sh
+new file mode 100755
+index 00000000000..7275f4262d6
+--- /dev/null
++++ b/tools/build-econet-chainloader.sh
+@@ -0,0 +1,32 @@
++#!/bin/sh
++# SPDX-License-Identifier: GPL-2.0+
++#
++# Build the EN751221 BootROM XMODEM chainloader.
++#
++# The BootROM loads it at 0x80009000 and it pulls an unmodified u-boot.bin
++# over XMODEM into UBOOT_LOAD_ADDR (CONFIG_TEXT_BASE), then jumps there.
++set -eu
++soc="$1"
++case "$soc" in
++ en751221) endian=-EB; emulation=elf32btsmip ;;
++ *) echo "unsupported chainloader SoC: $soc" >&2; exit 1 ;;
++esac
++: "${srctree:?}" "${objtree:?}" "${CROSS_COMPILE:?}" "${UBOOT_LOAD_ADDR:?}"
++src="$srctree/arch/mips/mach-econet/chainloader"
++build="$objtree/.econet-chainloader-$soc"
++out="$objtree/$soc-chainloader.bin"
++mkdir -p "$build"
++cc="${CROSS_COMPILE}gcc"
++ld="${CROSS_COMPILE}ld"
++objcopy="${CROSS_COMPILE}objcopy"
++flags="$endian -mabi=32 -mips32r2 -msoft-float -mno-abicalls -fno-pic -fno-pie \
++ -ffreestanding -fno-builtin -fno-stack-protector -Os -G0 -Wall"
++"$cc" $flags -c "$src/start.S" -o "$build/start.o"
++"$cc" $flags -DUBOOT_LOAD_ADDR="$UBOOT_LOAD_ADDR" \
++ -c "$src/chainloader.c" -o "$build/chainloader.o"
++"$ld" $endian -m "$emulation" -T "$src/chainloader.lds" \
++ -Map "$build/chainloader.map" -o "$build/chainloader.elf" \
++ "$build/start.o" "$build/chainloader.o"
++"$objcopy" -O binary "$build/chainloader.elf" "$out"
++# Self-check word plus padding to the BootROM's XMODEM block size.
++"${PYTHON3:-python3}" "$srctree/tools/econet_chainloader_image.py" "$out"
+diff --git a/tools/econet_chainloader_image.py b/tools/econet_chainloader_image.py
+new file mode 100755
+index 00000000000..440210d244c
+--- /dev/null
++++ b/tools/econet_chainloader_image.py
+@@ -0,0 +1,29 @@
++#!/usr/bin/env python3
++# SPDX-License-Identifier: GPL-2.0+
++"""Finalize the EN751221 chainloader binary.
++
++The BootROM validates its XMODEM download with an 8-bit checksum, which lets
++corruption through, so the last loaded word holds a CRC32 of everything before
++it and the chainloader verifies itself in DRAM before doing anything else.
++
++The image is then padded to a multiple of 128 bytes so the BootROM does not
++invent padding of its own on top of .bss.
++"""
++import binascii
++import struct
++import sys
++
++XMODEM_BLOCK = 128
++
++path = sys.argv[1]
++data = bytearray(open(path, 'rb').read())
++if len(data) < 8:
++    sys.exit('chainloader image too short')
++
++crc = binascii.crc32(bytes(data[:-4])) & 0xffffffff
++data[-4:] = struct.pack('>I', crc)          # MIPS big-endian
++pad = (-len(data)) % XMODEM_BLOCK
++data += b'\x00' * pad
++open(path, 'wb').write(bytes(data))
++print('  CHAIN   %s: len=0x%x crc32=0x%08x size=%d'
++      % (path, len(data) - pad - 4, crc, len(data)))
+-- 
+2.55.0
+

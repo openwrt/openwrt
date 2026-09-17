@@ -1,0 +1,118 @@
+From 484e2451019700346b23d2147a6ac87564a8318b Mon Sep 17 00:00:00 2001
+From: Yuzhii0718 <yuzhii0718@outlook.com>
+Date: Fri, 28 Aug 2026 22:12:10 +0800
+Subject: [PATCH] econet: print SoC name and package ID druing boot
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ arch/mips/mach-econet/en751221/init.c | 14 +++++++++++++-
+ arch/mips/mach-econet/en7528/init.c   | 14 +++++++++++++-
+ include/soc/airoha/pkgids.h           | 12 ++++++++++++
+ 3 files changed, 38 insertions(+), 2 deletions(-)
+
+diff --git a/arch/mips/mach-econet/en751221/init.c b/arch/mips/mach-econet/en751221/init.c
+index 53d19b3ad8e..33148eccadb 100644
+--- a/arch/mips/mach-econet/en751221/init.c
++++ b/arch/mips/mach-econet/en751221/init.c
+@@ -5,9 +5,12 @@
+ #include <asm/io.h>
+ #include <linux/sizes.h>
+ #include <mach/en751221.h>
++#include <soc/airoha/pkgids.h>
+ 
+ DECLARE_GLOBAL_DATA_PTR;
+ 
++#define NP_SCU_BASE		((void __iomem *)CKSEG1ADDR(0x1fb00000))
++
+ int dram_init(void)
+ {
+ 	u32 val = __raw_readl((void __iomem *)EN7512_REG_SAVE_INFO);
+@@ -22,10 +25,19 @@ int dram_init(void)
+ 
+ int print_cpuinfo(void)
+ {
++	u32 hir = get_pkg_mem(NP_SCU_BASE);
++	u32 pdidr = get_pdidr_mem(NP_SCU_BASE);
++	u32 pkgid = get_pkgid_mem(NP_SCU_BASE);
+ 	u32 val = __raw_readl((void __iomem *)EN7512_REG_SAVE_INFO);
+ 	u32 clk = (val & EN7512_SAVE_CLK_MASK) >> EN7512_SAVE_CLK_SHIFT;
++	const char *soc_name = airoha_soc_name_from_regs(hir, pkgid, pdidr);
++
++	if (pkgid != END_PACKAGE_ID) {
++		printf("SoC:   Airoha %s\n", soc_name);
++	} else {
++		printf("SoC:   Airoha EN7512/EN7521 MIPS34K\n");
++	}
+ 
+-	printf("CPU:   Airoha EN7512/EN7521 MIPS34K\n");
+ 	if (clk)
+ 		printf("Clock: %u MHz\n", clk);
+ 	else
+diff --git a/arch/mips/mach-econet/en7528/init.c b/arch/mips/mach-econet/en7528/init.c
+index ef64ba4162a..3fed6e1d504 100644
+--- a/arch/mips/mach-econet/en7528/init.c
++++ b/arch/mips/mach-econet/en7528/init.c
+@@ -12,6 +12,7 @@
+ #include <linux/errno.h>
+ #include <linux/io.h>
+ #include <linux/sizes.h>
++#include <soc/airoha/pkgids.h>
+ 
+ DECLARE_GLOBAL_DATA_PTR;
+ 
+@@ -19,10 +20,21 @@ DECLARE_GLOBAL_DATA_PTR;
+ #define EN7528_SYS_GLOBAL_PARM				0xbfb00284UL
+ #define EN7528_SYS_GLOBAL_DRAM_SIZE_MASK	GENMASK(31, 20)
+ #define EN7528_SYS_GLOBAL_DRAM_SIZE_SHIFT	20
++#define NP_SCU_BASE		((void __iomem *)CKSEG1ADDR(0x1fb00000))
+ 
+ int print_cpuinfo(void)
+ {
+-	printf("CPU:   Airoha EN7528\n");
++	u32 hir = get_pkg_mem(NP_SCU_BASE);
++	u32 pdidr = get_pdidr_mem(NP_SCU_BASE);
++	u32 pkgid = get_pkgid_mem(NP_SCU_BASE);
++	const char *soc_name = airoha_soc_name_from_regs(hir, pkgid, pdidr);
++
++	if (pkgid != END_PACKAGE_ID) {
++		printf("SoC:   Airoha %s\n", soc_name);
++	} else {
++		printf("SoC:   Airoha EN7528\n");
++	}
++
+ 	return 0;
+ }
+ 
+diff --git a/include/soc/airoha/pkgids.h b/include/soc/airoha/pkgids.h
+index c20e46973ba..d23a74f5df9 100644
+--- a/include/soc/airoha/pkgids.h
++++ b/include/soc/airoha/pkgids.h
+@@ -500,6 +500,12 @@ static inline u32 get_pkgid(void)
+ 	return airoha_pkgid_from_screg(value);
+ }
+ 
++static inline u32 get_pkgid_mem(void __iomem *np_scu)
++{
++	return airoha_pkgid_from_screg(readl(np_scu +
++					     AIROHA_NP_SCU_SCREG_WR1));
++}
++
+ /* HIR identifies the SoC family, for example EN7523_PKG (0x0c). */
+ static inline enum airoha_pkg get_pkg(void)
+ {
+@@ -527,6 +533,12 @@ static inline u32 get_pdidr(void)
+ 	return FIELD_GET(AIROHA_NP_SCU_PDIDR_MASK, value);
+ }
+ 
++static inline enum airoha_pkg get_pkg_mem(void __iomem *np_scu)
++{
++	return FIELD_GET(AIROHA_NP_SCU_HIR_MASK,
++			 readl(np_scu + AIROHA_NP_SCU_HIR));
++}
++
+ static inline u32 get_pdidr_mem(void __iomem *np_scu)
+ {
+ 	return FIELD_GET(AIROHA_NP_SCU_PDIDR_MASK,
+-- 
+2.55.0
+

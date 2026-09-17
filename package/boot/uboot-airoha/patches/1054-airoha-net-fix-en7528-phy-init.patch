@@ -1,0 +1,311 @@
+From a123295f2d3490a3015eb40e54dc13f17334d136 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Wed, 16 Sep 2026 23:51:25 -0300
+Subject: [PATCH] airoha: net: fix en7528 phy init
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ arch/mips/dts/econet,en751221.dtsi            |  7 +++--
+ .../dts/econet,en7528-tplink-xc220-g3v.dts    |  3 +-
+ arch/mips/dts/econet,en7528.dtsi              | 15 +++++++--
+ board/econet/en7512/board.c                   | 26 ----------------
+ board/econet/en7528/board.c                   | 22 -------------
+ configs/en751221_nokia_g240g-e_defconfig      |  1 -
+ configs/en751221_reference_defconfig          |  1 -
+ configs/en7528_tplink_xc220_g3v_defconfig     |  1 -
+ drivers/net/Kconfig                           |  1 +
+ drivers/net/airoha_eth.c                      | 31 ++++++-------------
+ 10 files changed, 30 insertions(+), 78 deletions(-)
+
+diff --git a/arch/mips/dts/econet,en751221.dtsi b/arch/mips/dts/econet,en751221.dtsi
+index 07bf25a64e7..876eab8e019 100644
+--- a/arch/mips/dts/econet,en751221.dtsi
++++ b/arch/mips/dts/econet,en751221.dtsi
+@@ -107,9 +107,11 @@
+ 			         <&scuclk EN751221_FE_QDMA2_RST>,
+ 			         <&scuclk EN751221_GDMA_RST>,
+ 			         <&scuclk EN751221_FE_UNZIP_RST>,
+-			         <&scuclk EN751221_GDMP_RST>;
++			         <&scuclk EN751221_GDMP_RST>,
++			         <&scuclk EN751221_GSW_RST>;
+ 			reset-names = "fe", "pdma", "qdma",
+-			              "gdma", "fe-unzip", "gdmp";
++			              "gdma", "fe-unzip", "gdmp",
++			              "switch";
+ 
+ 			#address-cells = <1>;
+ 			#size-cells = <0>;
+@@ -131,7 +133,6 @@
+ 		switch0: switch@1fb58000 {
+ 			compatible = "econet,en751221-switch";
+ 			reg = <0x1fb58000 0x8000>;
+-			resets = <&scuclk EN751221_GSW_RST>;
+ 
+ 			status = "disabled";
+ 
+diff --git a/arch/mips/dts/econet,en7528-tplink-xc220-g3v.dts b/arch/mips/dts/econet,en7528-tplink-xc220-g3v.dts
+index fd9ab27a49e..ccf39e8d370 100644
+--- a/arch/mips/dts/econet,en7528-tplink-xc220-g3v.dts
++++ b/arch/mips/dts/econet,en7528-tplink-xc220-g3v.dts
+@@ -83,7 +83,8 @@
+ 			color = <LED_COLOR_ID_GREEN>;
+ 			function = LED_FUNCTION_POWER;
+ 			function-enumerator = <36>;
+-			gpios = <&pinctrl 36 GPIO_ACTIVE_HIGH>;
++			gpios = <&pinctrl 36 GPIO_ACTIVE_LOW>;
++			default-state = "on";
+ 		};
+ 	};
+ };
+diff --git a/arch/mips/dts/econet,en7528.dtsi b/arch/mips/dts/econet,en7528.dtsi
+index 31eb143eb3b..fe184bba502 100644
+--- a/arch/mips/dts/econet,en7528.dtsi
++++ b/arch/mips/dts/econet,en7528.dtsi
+@@ -100,8 +100,9 @@
+ 
+ 			resets = <&scuclk EN7528_FE_RST>,
+ 				 <&scuclk EN7528_FE_QDMA1_RST>,
+-				 <&scuclk EN7528_FE_QDMA2_RST>;
+-			reset-names = "fe", "pdma", "qdma";
++				 <&scuclk EN7528_FE_QDMA2_RST>,
++				 <&scuclk EN7528_GSW_RST>;
++			reset-names = "fe", "pdma", "qdma", "switch";
+ 
+ 			#address-cells = <1>;
+ 			#size-cells = <0>;
+@@ -122,7 +123,17 @@
+ 		switch: switch@1fb58000 {
+ 			compatible = "airoha,en7528-switch";
+ 			reg = <0x1fb58000 0x8000>;
++
+ 			status = "disabled";
++
++			#address-cells = <1>;
++			#size-cells = <0>;
++			dsa,member = <0 0>;
++
++			mdio {
++				#address-cells = <1>;
++				#size-cells = <0>;
++			};
+ 		};
+ 	};
+ };
+diff --git a/board/econet/en7512/board.c b/board/econet/en7512/board.c
+index 2b589faa81b..b324c020232 100644
+--- a/board/econet/en7512/board.c
++++ b/board/econet/en7512/board.c
+@@ -1,34 +1,8 @@
+ // SPDX-License-Identifier: GPL-2.0+
+ 
+-#include <dm.h>
+ #include <init.h>
+-#include <linux/errno.h>
+-#include <stdio.h>
+-
+-extern U_BOOT_DRIVER(airoha_eth);
+ 
+ int board_init(void)
+ {
+ 	return 0;
+ }
+-
+-int board_late_init(void)
+-{
+-	struct udevice *dev;
+-	int ret;
+-
+-	if (!IS_ENABLED(CONFIG_AIROHA_ETH))
+-		return 0;
+-
+-	/*
+-	 * The EN751221 Ethernet parent is intentionally not probed while the
+-	 * driver model is being initialized. Probe it after the console is
+-	 * usable and just before initr_net() enumerates UCLASS_ETH devices.
+-	 */
+-	ret = uclass_get_device_by_driver(UCLASS_SIMPLE_BUS,
+-					  DM_DRIVER_GET(airoha_eth), &dev);
+-	if (ret && ret != -ENODEV)
+-		printf("EN751221 Ethernet probe failed: %d\n", ret);
+-
+-	return 0;
+-}
+diff --git a/board/econet/en7528/board.c b/board/econet/en7528/board.c
+index 6a40adee7f3..b324c020232 100644
+--- a/board/econet/en7528/board.c
++++ b/board/econet/en7528/board.c
+@@ -1,30 +1,8 @@
+ // SPDX-License-Identifier: GPL-2.0+
+ 
+-#include <dm.h>
+ #include <init.h>
+-#include <linux/errno.h>
+-#include <stdio.h>
+-
+-extern U_BOOT_DRIVER(airoha_eth);
+ 
+ int board_init(void)
+ {
+ 	return 0;
+ }
+-
+-int board_late_init(void)
+-{
+-	struct udevice *dev;
+-	int ret;
+-
+-	if (!IS_ENABLED(CONFIG_AIROHA_ETH))
+-		return 0;
+-
+-	/* Probe only after the serial console is available for diagnostics. */
+-	ret = uclass_get_device_by_driver(UCLASS_SIMPLE_BUS,
+-					  DM_DRIVER_GET(airoha_eth), &dev);
+-	if (ret)
+-		printf("EN751627/EN7528 Ethernet probe failed: %d\n", ret);
+-
+-	return 0;
+-}
+diff --git a/configs/en751221_nokia_g240g-e_defconfig b/configs/en751221_nokia_g240g-e_defconfig
+index c0ec234abf4..fe6e47c9110 100644
+--- a/configs/en751221_nokia_g240g-e_defconfig
++++ b/configs/en751221_nokia_g240g-e_defconfig
+@@ -22,7 +22,6 @@ CONFIG_SYS_PBSIZE=1049
+ CONFIG_SYS_CONSOLE_IS_IN_ENV=y
+ CONFIG_DISPLAY_CPUINFO=y
+ # CONFIG_DISPLAY_BOARDINFO is not set
+-CONFIG_BOARD_LATE_INIT=y
+ CONFIG_HUSH_PARSER=y
+ CONFIG_SYS_PROMPT="U-Boot> "
+ CONFIG_SYS_MAXARGS=8
+diff --git a/configs/en751221_reference_defconfig b/configs/en751221_reference_defconfig
+index 3c650a17158..1f317189b26 100644
+--- a/configs/en751221_reference_defconfig
++++ b/configs/en751221_reference_defconfig
+@@ -22,7 +22,6 @@ CONFIG_SYS_PBSIZE=1049
+ CONFIG_SYS_CONSOLE_IS_IN_ENV=y
+ CONFIG_DISPLAY_CPUINFO=y
+ # CONFIG_DISPLAY_BOARDINFO is not set
+-CONFIG_BOARD_LATE_INIT=y
+ CONFIG_HUSH_PARSER=y
+ CONFIG_SYS_PROMPT="U-Boot> "
+ CONFIG_SYS_MAXARGS=8
+diff --git a/configs/en7528_tplink_xc220_g3v_defconfig b/configs/en7528_tplink_xc220_g3v_defconfig
+index d27ec8f36ed..e4357873534 100644
+--- a/configs/en7528_tplink_xc220_g3v_defconfig
++++ b/configs/en7528_tplink_xc220_g3v_defconfig
+@@ -24,7 +24,6 @@ CONFIG_SYS_PBSIZE=1049
+ CONFIG_SYS_CONSOLE_IS_IN_ENV=y
+ CONFIG_DISPLAY_CPUINFO=y
+ # CONFIG_DISPLAY_BOARDINFO is not set
+-CONFIG_BOARD_LATE_INIT=y
+ CONFIG_HUSH_PARSER=y
+ CONFIG_SYS_PROMPT="U-Boot> "
+ CONFIG_SYS_MAXARGS=16
+diff --git a/drivers/net/Kconfig b/drivers/net/Kconfig
+index 9462019238e..61f616812a8 100644
+--- a/drivers/net/Kconfig
++++ b/drivers/net/Kconfig
+@@ -130,6 +130,7 @@ source "drivers/net/airoha/Kconfig"
+ config AIROHA_ETH
+ 	bool "Airoha Ethernet QDMA Driver"
+ 	depends on ARCH_AIROHA || ARCH_ECONET
++	select MISC
+ 	select PHYLIB
+ 	select DM_MDIO
+ 	select DEVRES
+diff --git a/drivers/net/airoha_eth.c b/drivers/net/airoha_eth.c
+index bba9006ecb7..edb7080f5a7 100644
+--- a/drivers/net/airoha_eth.c
++++ b/drivers/net/airoha_eth.c
+@@ -638,7 +638,6 @@ struct airoha_eth_soc_data {
+ 	bool gen1;
+ 	bool legacy_qdma;
+ 	bool direct_reset;
+-	bool late_probe;
+ 	bool dscp_byte_swap;
+ 	bool switch_mdio;
+ 	int num_xsi_rsts;
+@@ -2804,8 +2803,7 @@ static int airoha_eth_probe(struct udevice *dev)
+ 						sizeof(struct reset_ctl), GFP_KERNEL);
+ 		if (!eth->rsts.resets)
+ 			return -ENOMEM;
+-		eth->rsts.count = data->version == 0x7528 ? 3 :
+-				  AIROHA_MAX_NUM_RSTS;
++		eth->rsts.count = AIROHA_MAX_NUM_RSTS;
+ 
+ 		if (data->num_xsi_rsts) {
+ 			eth->xsi_rsts.resets = devm_kcalloc(dev, data->num_xsi_rsts,
+@@ -2827,11 +2825,10 @@ static int airoha_eth_probe(struct udevice *dev)
+ 		if (ret)
+ 			return ret;
+ 
+-		if (data->version != 0x7528) {
+-			ret = reset_get_by_name(dev, "switch", &eth->rsts.resets[3]);
+-			if (ret)
+-				return ret;
+-		}
++		ret = reset_get_by_name(dev, "switch",
++					&eth->rsts.resets[3]);
++		if (ret)
++			return ret;
+ 
+ 		for (i = 0; i < data->num_xsi_rsts; i++) {
+ 			ret = reset_get_by_name(dev, data->xsi_rsts_names[i],
+@@ -3556,17 +3553,11 @@ static int arht_eth_write_hwaddr(struct udevice *dev)
+ 
+ static int airoha_eth_bind(struct udevice *dev)
+ {
+-	const struct airoha_eth_soc_data *data;
+-
+-	data = (const void *)dev_get_driver_data(dev);
+-
+ 	/*
+-	 * Force probe on SoCs that can safely initialize the parent during DM
+-	 * bring-up.  MIPS EN75xx boards keep Ethernet in board_late_init() so a
+-	 * reset/QDMA failure is still visible on the serial console.
++	 * Force Probe as we set the Main ETH driver as misc
++	 * to register multiple eth port for each GDM
+ 	 */
+-	if (!data || !data->late_probe)
+-		dev_or_flags(dev, DM_FLAG_PROBE_AFTER_BIND);
++	dev_or_flags(dev, DM_FLAG_PROBE_AFTER_BIND);
+ 
+ 	return 0;
+ }
+@@ -3585,7 +3576,6 @@ static const struct airoha_eth_soc_data en751221_data = {
+ 	.gen1 = true,
+ 	.legacy_qdma = true,
+ 	.direct_reset = true,
+-	.late_probe = true,
+ 	.dscp_byte_swap = true,
+ 	.switch_mdio = true,
+ 	.switch_compatible = "econet,en751221-switch",
+@@ -3596,7 +3586,6 @@ static const struct airoha_eth_soc_data en751627_data = {
+ 	.version = 0x7528,
+ 	.gen1 = true,
+ 	.legacy_qdma = true,
+-	.late_probe = true,
+ 	.dscp_byte_swap = true,
+ 	.switch_compatible = "airoha,en751627-switch",
+ };
+@@ -3605,7 +3594,7 @@ static const struct airoha_eth_soc_data en7528_data = {
+ 	.version = 0x7528,
+ 	.gen1 = true,
+ 	.legacy_qdma = true,
+-	.late_probe = true,
++	.switch_mdio = true,
+ 	.switch_compatible = "airoha,en7528-switch",
+ };
+ 
+@@ -3667,7 +3656,7 @@ U_BOOT_DRIVER(airoha_eth_port) = {
+ 
+ U_BOOT_DRIVER(airoha_eth) = {
+ 	.name = "airoha-eth",
+-	.id = UCLASS_SIMPLE_BUS,
++	.id = UCLASS_MISC,
+ 	.of_match = airoha_eth_ids,
+ 	.probe = airoha_eth_probe,
+ 	.bind = airoha_eth_bind,
+-- 
+2.55.0
+

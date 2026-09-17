@@ -1,0 +1,142 @@
+From cbca309fd5af1a54dd50762194d1f64152a9957d Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Fri, 11 Sep 2026 11:43:25 -0300
+Subject: [PATCH] airoha: ethernet: remove MISC type and enable switch mdio
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ arch/mips/mach-econet/Kconfig |  1 -
+ board/econet/en7512/board.c   |  2 +-
+ board/econet/en7528/board.c   |  2 +-
+ drivers/net/Kconfig           |  2 +-
+ drivers/net/airoha_eth.c      | 14 ++++++++------
+ 5 files changed, 11 insertions(+), 10 deletions(-)
+
+diff --git a/arch/mips/mach-econet/Kconfig b/arch/mips/mach-econet/Kconfig
+index 82494e6284e..898df14fea5 100644
+--- a/arch/mips/mach-econet/Kconfig
++++ b/arch/mips/mach-econet/Kconfig
+@@ -47,7 +47,6 @@ endchoice
+ 
+ config ECONET_FLASH_BOOT
+ 	bool "Build the unsigned 128 KiB flash entry and raw U-Boot loader"
+-	depends on TARGET_EN751627 || TARGET_EN7528 || TARGET_EN7580
+ 	depends on !SPL && !TPL
+ 	default y
+ 	help
+diff --git a/board/econet/en7512/board.c b/board/econet/en7512/board.c
+index c20597e84a1..2b589faa81b 100644
+--- a/board/econet/en7512/board.c
++++ b/board/econet/en7512/board.c
+@@ -25,7 +25,7 @@ int board_late_init(void)
+ 	 * driver model is being initialized. Probe it after the console is
+ 	 * usable and just before initr_net() enumerates UCLASS_ETH devices.
+ 	 */
+-	ret = uclass_get_device_by_driver(UCLASS_MISC,
++	ret = uclass_get_device_by_driver(UCLASS_SIMPLE_BUS,
+ 					  DM_DRIVER_GET(airoha_eth), &dev);
+ 	if (ret && ret != -ENODEV)
+ 		printf("EN751221 Ethernet probe failed: %d\n", ret);
+diff --git a/board/econet/en7528/board.c b/board/econet/en7528/board.c
+index 7c411e42a36..6a40adee7f3 100644
+--- a/board/econet/en7528/board.c
++++ b/board/econet/en7528/board.c
+@@ -21,7 +21,7 @@ int board_late_init(void)
+ 		return 0;
+ 
+ 	/* Probe only after the serial console is available for diagnostics. */
+-	ret = uclass_get_device_by_driver(UCLASS_MISC,
++	ret = uclass_get_device_by_driver(UCLASS_SIMPLE_BUS,
+ 					  DM_DRIVER_GET(airoha_eth), &dev);
+ 	if (ret)
+ 		printf("EN751627/EN7528 Ethernet probe failed: %d\n", ret);
+diff --git a/drivers/net/Kconfig b/drivers/net/Kconfig
+index 8e05606ce56..9462019238e 100644
+--- a/drivers/net/Kconfig
++++ b/drivers/net/Kconfig
+@@ -130,8 +130,8 @@ source "drivers/net/airoha/Kconfig"
+ config AIROHA_ETH
+ 	bool "Airoha Ethernet QDMA Driver"
+ 	depends on ARCH_AIROHA || ARCH_ECONET
+-	select MISC
+ 	select PHYLIB
++	select DM_MDIO
+ 	select DEVRES
+ 	select DM_ETH_PHY
+ 	select DM_RESET
+diff --git a/drivers/net/airoha_eth.c b/drivers/net/airoha_eth.c
+index a47d1678427..9ecd1d765ad 100644
+--- a/drivers/net/airoha_eth.c
++++ b/drivers/net/airoha_eth.c
+@@ -608,6 +608,7 @@ struct airoha_eth_soc_data {
+ 	bool direct_reset;
+ 	bool late_probe;
+ 	bool dscp_byte_swap;
++	bool switch_mdio;
+ 	int num_xsi_rsts;
+ 	const char * const *xsi_rsts_names;
+ 	const char *switch_compatible;
+@@ -2438,8 +2439,8 @@ static int airoha_eth_probe(struct udevice *dev)
+ 	if (ret)
+ 		return ret;
+ 
+-	/* Airoha switch mdio PHYs maybe used by several GDM devices */
+-	if (!data->econet && data->version != 0x7528) {
++	/* Switch MDIO PHYs may be used by several GDM devices. */
++	if (data->switch_mdio) {
+ 		mdio_dev = airoha_switch_mdio_init(dev);
+ 		if (!IS_ERR_OR_NULL(mdio_dev))
+ 			eth->switch_mdio_dev = mdio_dev;
+@@ -2500,9 +2501,6 @@ static int airoha_eth_port_probe(struct udevice *dev)
+ 		return -EINVAL;
+ #endif
+ 	} else {
+-		if (eth->soc->econet)
+-			return 0;
+-
+ 		/*
+ 		 * GDM1 device connected to airoha switch. Probe airoha switch
+ 		 * mdio to be able set/query states of corresponding LAN ports.
+@@ -3156,6 +3154,7 @@ static const struct airoha_eth_soc_data en7523_data = {
+ 	.version = 0x7523,
+ 	.xsi_rsts_names = en7523_xsi_rsts_names,
+ 	.num_xsi_rsts = ARRAY_SIZE(en7523_xsi_rsts_names),
++	.switch_mdio = true,
+ 	.switch_compatible = "airoha,en7523-switch",
+ };
+ 
+@@ -3167,6 +3166,7 @@ static const struct airoha_eth_soc_data en751221_data = {
+ 	.direct_reset = true,
+ 	.late_probe = true,
+ 	.dscp_byte_swap = true,
++	.switch_mdio = true,
+ 	.switch_compatible = "econet,en751221-switch",
+ };
+ 
+@@ -3192,12 +3192,14 @@ static const struct airoha_eth_soc_data en7581_data = {
+ 	.version = 0x7581,
+ 	.xsi_rsts_names = en7581_xsi_rsts_names,
+ 	.num_xsi_rsts = ARRAY_SIZE(en7581_xsi_rsts_names),
++	.switch_mdio = true,
+ 	.switch_compatible = "airoha,en7581-switch",
+ };
+ 
+ static const struct airoha_eth_soc_data an7583_data = {
+ 	.xsi_rsts_names = an7583_xsi_rsts_names,
+ 	.num_xsi_rsts = ARRAY_SIZE(an7583_xsi_rsts_names),
++	.switch_mdio = true,
+ 	.switch_compatible = "airoha,an7583-switch",
+ };
+ 
+@@ -3244,7 +3246,7 @@ U_BOOT_DRIVER(airoha_eth_port) = {
+ 
+ U_BOOT_DRIVER(airoha_eth) = {
+ 	.name = "airoha-eth",
+-	.id = UCLASS_MISC,
++	.id = UCLASS_SIMPLE_BUS,
+ 	.of_match = airoha_eth_ids,
+ 	.probe = airoha_eth_probe,
+ 	.bind = airoha_eth_bind,
+-- 
+2.55.0
+

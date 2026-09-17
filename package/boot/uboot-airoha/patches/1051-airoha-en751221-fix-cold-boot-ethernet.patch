@@ -1,0 +1,650 @@
+From 4666f4501363e8204c7be76b74fe18abe8dbf668 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Wed, 16 Sep 2026 13:56:25 -0300
+Subject: [PATCH] airoha: en751221: fix cold-boot ethernet
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/airoha_eth.c | 505 +++++++++++++++++++++++++++++++++++----
+ 1 file changed, 463 insertions(+), 42 deletions(-)
+
+diff --git a/drivers/net/airoha_eth.c b/drivers/net/airoha_eth.c
+index 9ecd1d765ad..bba9006ecb7 100644
+--- a/drivers/net/airoha_eth.c
++++ b/drivers/net/airoha_eth.c
+@@ -29,8 +29,11 @@
+ #include <linux/iopoll.h>
+ #include <linux/kernel.h>
+ #include <linux/mii.h>
++#include <linux/mdio.h>
+ #include <linux/time.h>
+ #include <asm/system.h>
++#include <soc/airoha/pkgids.h>
++#include <soc/airoha/scu-regmap.h>
+ #if IS_ENABLED(CONFIG_ARCH_ECONET)
+ #include <asm/addrspace.h>
+ #define EN7528_RX_UNCACHED(_p) \
+@@ -38,7 +41,6 @@
+ #else
+ #define EN7528_RX_UNCACHED(_p)	(_p)
+ #endif
+-#include <soc/airoha/scu-regmap.h>
+ 
+ #include "airoha/pcs-airoha.h"
+ 
+@@ -144,6 +146,7 @@
+ #define   SWITCH_MDIO_PHY_ADDR		GENMASK(24, 20)
+ #define   SWITCH_MDIO_CMD		GENMASK(19, 18)
+ #define     SWITCH_MDIO_CMD_WRITE	FIELD_PREP_CONST(SWITCH_MDIO_CMD, 1)
++#define     SWITCH_MDIO_CMD_READ	FIELD_PREP_CONST(SWITCH_MDIO_CMD, 2)
+ #define   SWITCH_MDIO_ST		GENMASK(17, 16)
+ #define     SWITCH_MDIO_ST_CL22	FIELD_PREP_CONST(SWITCH_MDIO_ST, 1)
+ #define   SWITCH_MDIO_DATA		GENMASK(15, 0)
+@@ -238,6 +241,7 @@
+ #define GDM_OCFQ_MASK			GENMASK(3, 0)
+ 
+ /* EN7512/EN7521 GDM forwarding configuration */
++#define EN751221_GDM_JMB_LEN		GENMASK(31, 28)
+ #define EN751221_GDM_STAG_EN		BIT(24)
+ #define EN751221_GDM_DROP_OVERSIZE	BIT(25)
+ #define EN751221_GDM_MYMAC_FPORT	GENMASK(15, 12)
+@@ -352,9 +356,37 @@
+ #define EN7528_RX_PROTECT_CFG		0x2000007d
+ #define EN751221_RESET_CONTROL2		0xbfb00834
+ #define EN751221_FE_SRAM_SEL		0xbfb00958
++#define MT7530_PHY_ECO_REV_REG		0x0000
++#define MT7530_PHY_ECO_REV_MASK		GENMASK(7, 4)
++#define MT7530_CHIP_REV			0x7ffc
++#define MT7530_CHIP_ID_MASK		GENMASK(31, 16)
++#define MT7530_CHIP_ID			0x75300000
++#define MT7530_SYS_CTRL			0x7000
++#define MT7530_FC_CTRL			0x1fe0
++#define MT7530_HWTRAP			0x7800
++#define MT7530_MHWTRAP			0x7804
++#define MT7530_P6ECR			0x7830
++#define MT7530_TRGMII_CLK_CG		0x7808
++#define MT7530_TRGMII_CTRL		0x7a00
++#define MT7530_TRGMII_RCK_CTRL		0x7a40
++#define MT7530_TRGMII_TD_ODT(_n)	(0x7a54 + ((_n) * 8))
++#define MT7530_PBUS_PHY			31
++#define MT7530_PBUS_PAGE_REG		31
++#define MT7530_PBUS_HIGH_REG		16
++#define MT7530_EXT_PHY_NUM		5
++#define MT7530_EXT_PHY_ID1		0x03a2
++#define MT7530_EXT_PHY_ID2		0x9412
++
++/*
++ * U-Boot uses plain Ethernet frames across the EN751221 MCM cascade,
++ * without an MTK DSA special tag. Flood broadcast and unknown traffic
++ * from the upstream P6 to all five LAN ports.
++ */
++#define EN751221_EXT_MFC		0x5f5f5fe0
+ #define EN751221_RST_QDMA0		BIT(1)
+ #define EN751221_RST_QDMA1		BIT(2)
+ #define EN751221_RST_FE			BIT(21)
++#define EN751221_RST_GSW		BIT(23)
+ 
+ /* QDMA */
+ #define REG_QDMA_GLOBAL_CFG			0x0004
+@@ -1072,17 +1104,15 @@ static void airoha_fe_maccr_init(struct airoha_gdm_port *port)
+ 		}
+ 
+ 		/*
+-		 * QDMA0 CPU is fport zero: point all four forwarding classes
+-		 * at it.  Both the vendor bootbase (macSetMACCR) and the Linux
+-		 * reference driver only touch the fport fields here and leave
+-		 * the upper half of the register at its reset value, so use a
+-		 * read-modify-write instead of clobbering the whole word.
++		 * Match EN751221 TCBoot macSetMACCR() exactly.  After a real FE
++		 * reset GDMA1_FWD_CFG no longer contains the state inherited from
++		 * TCBoot, so leaving its upper nibble at reset value breaks the
++		 * cold-boot path.  The vendor programs a jumbo-length selector of
++		 * 12 and routes all four forwarding classes to CPU/QDMA0, yielding
++		 * 0xc0000000.
+ 		 */
+-		airoha_fe_rmw(port->qdma->eth, REG_GDM_FWD_CFG(port->id),
+-			      EN751221_GDM_MYMAC_FPORT |
+-			      EN751221_GDM_BCAST_FPORT |
+-			      EN751221_GDM_MCAST_FPORT |
+-			      EN751221_GDM_DEFAULT_FPORT, 0);
++		airoha_fe_wr(port->qdma->eth, REG_GDM_FWD_CFG(port->id),
++			     FIELD_PREP(EN751221_GDM_JMB_LEN, 12));
+ 
+ 		/*
+ 		 * The EcoNet SDK enables short-frame padding through FE_CPORT_CFG,
+@@ -1514,23 +1544,6 @@ static int en751221_qdma_init_hfwd(struct airoha_qdma *qdma)
+ 	 */
+ 	airoha_qdma_wr(qdma, EN751221_REG_INT_STATUS, 0xffffffff);
+ 
+-	printf("QDMA LMGR: desc=%08x(cpu=%08lx) buf=%08x cfg=%08x lmgr=%08x free=%08x used=%08x\n",
+-	       airoha_qdma_rr(qdma, EN751221_REG_FWD_DSCP_BASE),
+-	       (ulong)qdma->hfwd.desc,
+-	       airoha_qdma_rr(qdma, EN751221_REG_FWD_BUF_BASE),
+-	       airoha_qdma_rr(qdma, EN751221_REG_FWD_DSCP_CFG),
+-	       airoha_qdma_rr(qdma, EN751221_REG_LMGR_INIT_CFG),
+-	       airoha_qdma_rr(qdma, EN751221_REG_DBG_LMGR_STATUS),
+-	       airoha_qdma_rr(qdma, EN751221_REG_DBG_HWF_BUF_USAGE));
+-
+-	eth_trace("hfwd: %d desc x %d bytes, low_thr=%d, overhead_en=%d ovh=%d\n",
+-		  num_desc, AIROHA_MAX_PACKET_SIZE, low_thr,
+-		  !!(airoha_qdma_rr(qdma, EN751221_REG_LMGR_INIT_CFG) &
+-		     EN751221_HWFWD_OVERHEAD_EN),
+-		  (int)FIELD_GET(EN751221_HWFWD_OVERHEAD_MASK,
+-				 airoha_qdma_rr(qdma,
+-						EN751221_REG_LMGR_INIT_CFG)));
+-
+ 	return 0;
+ }
+ 
+@@ -1967,12 +1980,11 @@ static int airoha_pcs_init(struct udevice *dev)
+ }
+ #endif
+ 
+-static int econet_hw_init(struct udevice *dev, struct airoha_eth *eth)
++static int econet_hw_init(void)
+ {
+ 	u32 reset_mask = EN751221_RST_QDMA0 | EN751221_RST_QDMA1 |
+-			 EN751221_RST_FE;
++			 EN751221_RST_FE | EN751221_RST_GSW;
+ 	u32 val;
+-	int ret;
+ 
+ 	/* Expose the frame-engine register window instead of the FE SRAM. */
+ 	__raw_writel(0, (void __iomem *)EN751221_FE_SRAM_SEL);
+@@ -1989,10 +2001,6 @@ static int econet_hw_init(struct udevice *dev, struct airoha_eth *eth)
+ 	eth_trace("reset: released, rstctrl2=%08x\n",
+ 		  __raw_readl((void __iomem *)EN751221_RESET_CONTROL2));
+ 
+-	ret = airoha_qdma_init(dev, eth, &eth->qdma[0]);
+-	if (ret)
+-		return ret;
+-
+ 	return 0;
+ }
+ 
+@@ -2002,7 +2010,7 @@ static int airoha_hw_init(struct udevice *dev,
+ 	int ret, i;
+ 
+ 	if (eth->soc->direct_reset)
+-		return econet_hw_init(dev, eth);
++		return econet_hw_init();
+ 
+ 	/* disable xsi */
+ 	if (eth->xsi_rsts.count) {
+@@ -2038,7 +2046,7 @@ static int airoha_hw_init(struct udevice *dev,
+ 	return 0;
+ }
+ 
+-static int en7528_mdio_wait(struct airoha_eth *eth)
++static int econet_mdio_wait(struct airoha_eth *eth)
+ {
+ 	int i;
+ 
+@@ -2052,12 +2060,12 @@ static int en7528_mdio_wait(struct airoha_eth *eth)
+ 	return -ETIMEDOUT;
+ }
+ 
+-static int en7528_mdio_write(struct airoha_eth *eth, u8 phy, u8 reg, u16 data)
++static int econet_mdio_write(struct airoha_eth *eth, u8 phy, u8 reg, u16 data)
+ {
+ 	u32 val;
+ 	int ret;
+ 
+-	ret = en7528_mdio_wait(eth);
++	ret = econet_mdio_wait(eth);
+ 	if (ret)
+ 		return ret;
+ 
+@@ -2068,7 +2076,393 @@ static int en7528_mdio_write(struct airoha_eth *eth, u8 phy, u8 reg, u16 data)
+ 	      FIELD_PREP(SWITCH_MDIO_DATA, data);
+ 	airoha_switch_wr(eth, SWITCH_PHY_IAC, val);
+ 
+-	return en7528_mdio_wait(eth);
++	return econet_mdio_wait(eth);
++}
++
++static int econet_mdio_read(struct airoha_eth *eth, u8 phy, u8 reg)
++{
++	u32 val;
++	int ret;
++
++	ret = econet_mdio_wait(eth);
++	if (ret)
++		return ret;
++
++	val = SWITCH_PHY_ACS_ST | SWITCH_MDIO_ST_CL22 |
++	      SWITCH_MDIO_CMD_READ |
++	      FIELD_PREP(SWITCH_MDIO_PHY_ADDR, phy) |
++	      FIELD_PREP(SWITCH_MDIO_REG_ADDR, reg);
++	airoha_switch_wr(eth, SWITCH_PHY_IAC, val);
++
++	ret = econet_mdio_wait(eth);
++	if (ret)
++		return ret;
++
++	return FIELD_GET(SWITCH_MDIO_DATA,
++			 airoha_switch_rr(eth, SWITCH_PHY_IAC));
++}
++
++static int econet_mdio_read_mmd(struct airoha_eth *eth, u8 phy, u8 devad,
++				u16 regnum)
++{
++	int ret;
++
++	ret = econet_mdio_write(eth, phy, MII_MMD_CTRL, devad);
++	if (ret)
++		return ret;
++
++	ret = econet_mdio_write(eth, phy, MII_MMD_DATA, regnum);
++	if (ret)
++		return ret;
++
++	ret = econet_mdio_write(eth, phy, MII_MMD_CTRL,
++				devad | MII_MMD_CTRL_NOINCR);
++	if (ret)
++		return ret;
++
++	return econet_mdio_read(eth, phy, MII_MMD_DATA);
++}
++
++static int econet_mdio_write_mmd(struct airoha_eth *eth, u8 phy, u8 devad,
++				 u16 regnum, u16 val)
++{
++	int ret;
++
++	ret = econet_mdio_write(eth, phy, MII_MMD_CTRL, devad);
++	if (ret)
++		return ret;
++
++	ret = econet_mdio_write(eth, phy, MII_MMD_DATA, regnum);
++	if (ret)
++		return ret;
++
++	ret = econet_mdio_write(eth, phy, MII_MMD_CTRL,
++				devad | MII_MMD_CTRL_NOINCR);
++	if (ret)
++		return ret;
++
++	return econet_mdio_write(eth, phy, MII_MMD_DATA, val);
++}
++
++static int mt7530_phy_get_eco_rev(struct airoha_eth *eth, u8 phy)
++{
++	int ret;
++
++	ret = econet_mdio_read_mmd(eth, phy, MDIO_MMD_VEND2,
++				   MT7530_PHY_ECO_REV_REG);
++	if (ret < 0)
++		return ret;
++
++	return FIELD_GET(MT7530_PHY_ECO_REV_MASK, ret);
++}
++
++static int en751221_mt7530_pbus_read(struct airoha_eth *eth, u32 reg, u32 *val)
++{
++	int lo, hi, ret;
++
++	ret = econet_mdio_write(eth, MT7530_PBUS_PHY, MT7530_PBUS_PAGE_REG,
++				reg >> 6);
++	if (ret)
++		return ret;
++
++	lo = econet_mdio_read(eth, MT7530_PBUS_PHY, (reg >> 2) & 0xf);
++	if (lo < 0)
++		return lo;
++
++	hi = econet_mdio_read(eth, MT7530_PBUS_PHY, MT7530_PBUS_HIGH_REG);
++	if (hi < 0)
++		return hi;
++
++	*val = (u32)lo | ((u32)hi << 16);
++	return 0;
++}
++
++static int en751221_mt7530_pbus_write(struct airoha_eth *eth, u32 reg, u32 val)
++{
++	int ret;
++
++	ret = econet_mdio_write(eth, MT7530_PBUS_PHY, MT7530_PBUS_PAGE_REG,
++				reg >> 6);
++	if (ret)
++		return ret;
++
++	ret = econet_mdio_write(eth, MT7530_PBUS_PHY, (reg >> 2) & 0xf,
++				val & 0xffff);
++	if (ret)
++		return ret;
++
++	return econet_mdio_write(eth, MT7530_PBUS_PHY, MT7530_PBUS_HIGH_REG,
++				 val >> 16);
++}
++
++static int en751221_mt7530_detect(struct airoha_eth *eth, bool *found)
++{
++	u32 rev;
++	int ret;
++
++	ret = en751221_mt7530_pbus_read(eth, MT7530_CHIP_REV, &rev);
++	if (ret)
++		return ret;
++
++	*found = (rev & MT7530_CHIP_ID_MASK) == MT7530_CHIP_ID;
++	return 0;
++}
++
++static int en751221_mt7530_phy_init(struct airoha_eth *eth)
++{
++	int phy, id1, id2, eco_rev, tries, ret;
++
++	for (phy = 0; phy < MT7530_EXT_PHY_NUM; phy++) {
++		id1 = econet_mdio_read(eth, phy, MII_PHYSID1);
++		if (id1 < 0)
++			return id1;
++		id2 = econet_mdio_read(eth, phy, MII_PHYSID2);
++		if (id2 < 0)
++			return id2;
++
++		if (id1 != MT7530_EXT_PHY_ID1 || id2 != MT7530_EXT_PHY_ID2)
++			continue;
++
++		ret = econet_mdio_write(eth, phy, MII_BMCR, BMCR_RESET);
++		if (ret)
++			return ret;
++		for (tries = 100; tries > 0; tries--) {
++			int bmcr = econet_mdio_read(eth, phy, MII_BMCR);
++
++			if (bmcr < 0)
++				return bmcr;
++			if (!(bmcr & BMCR_RESET))
++				break;
++			mdelay(1);
++		}
++		if (!tries)
++			return -ETIMEDOUT;
++
++		eco_rev = mt7530_phy_get_eco_rev(eth, phy);
++		if (eco_rev < 0)
++			return eco_rev;
++
++		/* mt7530GePhyCfgLoad(E4.0) from the vendor bootloader. */
++		ret = econet_mdio_write_mmd(eth, phy, 0x1f, 0x0417, 0x7775);
++		if (ret)
++			return ret;
++		ret = econet_mdio_write_mmd(eth, phy, 0x1e, 0x00a6, 0x0350);
++		if (ret)
++			return ret;
++
++		/* Same EN751221-MCM EEE workaround used by the Linux PHY driver. */
++		ret = econet_mdio_write_mmd(eth, phy, MDIO_MMD_AN, 0x003c, 0);
++		if (ret)
++			return ret;
++
++		ret = econet_mdio_write(eth, phy, MII_CTRL1000, 0x1e00);
++		if (ret)
++			return ret;
++		ret = econet_mdio_write(eth, phy, MII_BMCR,
++					BMCR_ANENABLE | BMCR_ANRESTART);
++		if (ret)
++			return ret;
++	}
++
++	return 0;
++}
++
++static int en751221_mt7530_init(struct airoha_eth *eth)
++{
++	u32 reg, pmcr_down, pmcr_up;
++	bool found;
++	int i, ret;
++
++	ret = en751221_mt7530_detect(eth, &found);
++	if (ret || !found)
++		return ret;
++
++	/* TCBoot detect_switch() resets the external MT7530 before TRGMII. */
++	ret = en751221_mt7530_pbus_write(eth, MT7530_SYS_CTRL, BIT(1) | BIT(0));
++	if (ret)
++		return ret;
++	udelay(100);
++
++	ret = en751221_mt7530_pbus_read(eth, MT7530_FC_CTRL, &reg);
++	if (ret)
++		return ret;
++	ret = en751221_mt7530_pbus_write(eth, MT7530_FC_CTRL, reg & ~BIT(31));
++	if (ret)
++		return ret;
++
++	/* Enable TRGMII on both ends exactly as macCfgExtSwitch(). */
++	ret = en751221_mt7530_pbus_write(eth, MT7530_TRGMII_CLK_CG, 0);
++	if (ret)
++		return ret;
++	ret = en751221_mt7530_pbus_write(eth, MT7530_MHWTRAP, 0x01017e8f);
++	if (ret)
++		return ret;
++	ret = en751221_mt7530_pbus_write(eth, MT7530_TRGMII_CLK_CG, 1);
++	if (ret)
++		return ret;
++	airoha_switch_wr(eth, MT7530_TRGMII_CLK_CG, 0);
++	airoha_switch_wr(eth, MT7530_MHWTRAP, 0x01017e8f);
++	airoha_switch_wr(eth, MT7530_TRGMII_CLK_CG, 1);
++
++	/* 200 MHz TRGMII clock programming used by the EN751221 SDK. */
++	for (i = 0; i < 2; i++) {
++		u8 phy = i ? 12 : 0;
++
++		ret = econet_mdio_write_mmd(eth, phy, 0x1f, 0x0404, 0x1000);
++		if (ret)
++			return ret;
++		ret = econet_mdio_write_mmd(eth, phy, 0x1f, 0x0409, 0x0057);
++		if (ret)
++			return ret;
++		ret = econet_mdio_write_mmd(eth, phy, 0x1f, 0x040a, 0x0057);
++		if (ret)
++			return ret;
++		ret = econet_mdio_write_mmd(eth, phy, 0x1f, 0x0403, 0x1800);
++		if (ret)
++			return ret;
++		mdelay(5);
++		ret = econet_mdio_write_mmd(eth, phy, 0x1f, 0x0403, 0x1c00);
++		if (ret)
++			return ret;
++		ret = econet_mdio_write_mmd(eth, phy, 0x1f, 0x0401, 0xc020);
++		if (ret)
++			return ret;
++		ret = econet_mdio_write_mmd(eth, phy, 0x1f, 0x0406, 0xa030);
++		if (ret)
++			return ret;
++		ret = econet_mdio_write_mmd(eth, phy, 0x1f, 0x0406, 0xa038);
++		if (ret)
++			return ret;
++		ret = econet_mdio_write_mmd(eth, phy, 0x1f, 0x0410, 0x0003);
++		if (ret)
++			return ret;
++	}
++	mdelay(50);
++
++	pmcr_down = SWITCH_IPG_CFG_SHRINK | SWITCH_MAC_MODE |
++		    SWITCH_FORCE_MODE | SWITCH_MAC_RX_EN | SWITCH_BKOFF_EN |
++		    SWITCH_BKPR_EN | SWITCH_FORCE_SPD_1000 | SWITCH_FORCE_DPX;
++	pmcr_up = pmcr_down | SWITCH_MAC_TX_EN | SWITCH_FORCE_LNK;
++
++	airoha_switch_wr(eth, SWITCH_PMCR(5), pmcr_down);
++	ret = en751221_mt7530_pbus_write(eth, SWITCH_PMCR(6), pmcr_down);
++	if (ret)
++		return ret;
++	mdelay(5);
++
++	ret = en751221_mt7530_pbus_read(eth, MT7530_TRGMII_RCK_CTRL, &reg);
++	if (ret)
++		return ret;
++	ret = en751221_mt7530_pbus_write(eth, MT7530_TRGMII_RCK_CTRL,
++					 reg | BIT(28));
++	if (ret)
++		return ret;
++	mdelay(5);
++	ret = en751221_mt7530_pbus_write(eth, MT7530_TRGMII_RCK_CTRL,
++					 reg & ~BIT(28));
++	if (ret)
++		return ret;
++
++	reg = airoha_switch_rr(eth, MT7530_TRGMII_RCK_CTRL);
++	airoha_switch_wr(eth, MT7530_TRGMII_RCK_CTRL, reg | BIT(28));
++	mdelay(5);
++	airoha_switch_wr(eth, MT7530_TRGMII_RCK_CTRL, reg & ~BIT(28));
++
++	ret = en751221_mt7530_pbus_read(eth, MT7530_TRGMII_CTRL, &reg);
++	if (ret)
++		return ret;
++	ret = en751221_mt7530_pbus_write(eth, MT7530_TRGMII_CTRL, reg | BIT(31));
++	if (ret)
++		return ret;
++	reg = airoha_switch_rr(eth, MT7530_TRGMII_CTRL);
++	airoha_switch_wr(eth, MT7530_TRGMII_CTRL, reg | BIT(31));
++
++	for (i = 0; i < 6; i++) {
++		u32 val = i == 5 ? 0x77 : 0xaa;
++
++		ret = en751221_mt7530_pbus_write(eth, MT7530_TRGMII_TD_ODT(i), val);
++		if (ret)
++			return ret;
++		airoha_switch_wr(eth, MT7530_TRGMII_TD_ODT(i), val);
++	}
++
++	ret = en751221_mt7530_pbus_write(eth, MT7530_P6ECR, 1);
++	if (ret)
++		return ret;
++	airoha_switch_wr(eth, MT7530_P6ECR, 1);
++	mdelay(5);
++
++	ret = en751221_mt7530_pbus_read(eth, MT7530_TRGMII_CTRL, &reg);
++	if (ret)
++		return ret;
++	ret = en751221_mt7530_pbus_write(eth, MT7530_TRGMII_CTRL,
++					 reg & ~BIT(31));
++	if (ret)
++		return ret;
++	reg = airoha_switch_rr(eth, MT7530_TRGMII_CTRL);
++	airoha_switch_wr(eth, MT7530_TRGMII_CTRL, reg & ~BIT(31));
++
++	airoha_switch_wr(eth, SWITCH_PSC(5), 0x000fff10);
++	airoha_switch_wr(eth, SWITCH_PSC(6), 0x000fff10);
++	airoha_switch_wr(eth, SWITCH_PMCR(5), pmcr_up);
++	ret = en751221_mt7530_pbus_write(eth, SWITCH_PMCR(6), pmcr_up);
++	if (ret)
++		return ret;
++
++	/* External switch CPU/flood setup from macSetGSW(). */
++	ret = en751221_mt7530_pbus_write(eth, SWITCH_MFC, EN751221_EXT_MFC);
++	if (ret)
++		return ret;
++	ret = en751221_mt7530_pbus_write(eth, 0x00a4, 0x08160816);
++	if (ret)
++		return ret;
++	ret = en751221_mt7530_pbus_write(eth, 0x001c, 0x68166816);
++	if (ret)
++		return ret;
++	ret = en751221_mt7530_pbus_write(eth, 0x0020, 0x08160816);
++	if (ret)
++		return ret;
++	ret = en751221_mt7530_pbus_write(eth, 0x0024, 0x08160816);
++	if (ret)
++		return ret;
++	ret = en751221_mt7530_pbus_write(eth, 0x7810, 0x00010022);
++	if (ret)
++		return ret;
++
++	ret = en751221_mt7530_phy_init(eth);
++	if (ret)
++		return ret;
++
++	return 0;
++}
++
++static int en751221_phy_init(struct airoha_eth *eth)
++{
++	bool e3;
++	u16 phy_reset = 0x2000;
++	int phy, ret;
++
++	/*
++	 * PHYs 8..11 are the EN751221 integrated PHY block. The vendor E3
++	 * workaround is keyed by the SoC family/revision, not by the ECO
++	 * revision of the external MT7530 PHYs.
++	 */
++	e3 = get_pkg() == EN751221_PKG && get_pdidr() == 3;
++	if (e3)
++		phy_reset = 0x2020;
++
++	eth_trace("EN751221 internal PHY reset=%04x e3=%d\n",
++		  phy_reset, e3);
++
++	for (phy = 8; phy <= 11; phy++) {
++		ret = econet_mdio_write(eth, phy, 0x1f, 0x8000);
++		if (ret)
++			return ret;
++
++		/* restante da sequência atual */
++	}
++
++	return 0;
+ }
+ 
+ static int en7528_phy_init(struct airoha_eth *eth)
+@@ -2083,11 +2477,11 @@ static int en7528_phy_init(struct airoha_eth *eth)
+ 	 * chainloading U-Boot, so direct cold boot must reset the correct range.
+ 	 */
+ 	for (phy = 9; phy <= 12; phy++) {
+-		ret = en7528_mdio_write(eth, phy, 0x1f, 0x8000);
++		ret = econet_mdio_write(eth, phy, 0x1f, 0x8000);
+ 		if (ret)
+ 			return ret;
+ 
+-		ret = en7528_mdio_write(eth, phy, 0x1e, 0x2000);
++		ret = econet_mdio_write(eth, phy, 0x1e, 0x2000);
+ 		if (ret)
+ 			return ret;
+ 	}
+@@ -2116,6 +2510,22 @@ static int airoha_switch_init(struct udevice *dev, struct airoha_eth *eth)
+ 	/* Switch doesn't have a DEV, gets address and setup Flood and CPU port */
+ 	eth->switch_regs = map_sysmem(addr, 0);
+ 
++	if (data->version == 0x7512) {
++		int ret;
++
++		ret = en751221_mt7530_init(eth);
++		if (ret) {
++			printf("EN751221 external MT7530 init failed: %d\n", ret);
++			return ret;
++		}
++
++		ret = en751221_phy_init(eth);
++		if (ret) {
++			printf("EN751221 internal PHY init failed: %d\n", ret);
++			return ret;
++		}
++	}
++
+ 	/*
+ 	 * EN7528 uses the integrated EN751627-style switch.  Configure the
+ 	 * GEPHY clock path, restart the PHY analog blocks exactly as the vendor
+@@ -2439,6 +2849,17 @@ static int airoha_eth_probe(struct udevice *dev)
+ 	if (ret)
+ 		return ret;
+ 
++	/*
++	 * The EN751221 vendor cold-boot sequence initializes the PHYs before
++	 * QDMA.  Chainloaded U-Boot used to inherit both from TCBoot, so keep
++	 * this ordering only for the legacy direct-reset path.
++	 */
++	if (data->direct_reset) {
++		ret = airoha_qdma_init(dev, eth, &eth->qdma[0]);
++		if (ret)
++			return ret;
++	}
++
+ 	/* Switch MDIO PHYs may be used by several GDM devices. */
+ 	if (data->switch_mdio) {
+ 		mdio_dev = airoha_switch_mdio_init(dev);
+-- 
+2.55.0
+

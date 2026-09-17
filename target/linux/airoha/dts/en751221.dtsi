@@ -476,6 +476,23 @@
 				reg = <8>;
 				phy-mode = "internal";
 				status = "disabled";
+
+				airoha,scu = <&scuclk>;
+
+				leds {
+					led@0 {
+						reg = <0>;
+						function = LED_FUNCTION_LAN;
+						active-low;
+					};
+
+					led@1 {
+						reg = <1>;
+						function = LED_FUNCTION_ACTIVITY;
+						status = "disabled";
+						active-low;
+					};
+				};
 			};
 
 			fsw_phy1: ethernet-phy@9 {
@@ -483,6 +500,23 @@
 				reg = <9>;
 				phy-mode = "internal";
 				status = "disabled";
+
+				airoha,scu = <&scuclk>;
+
+				leds {
+					led@0 {
+						reg = <0>;
+						function = LED_FUNCTION_LAN;
+						active-low;
+					};
+
+					led@1 {
+						reg = <1>;
+						function = LED_FUNCTION_ACTIVITY;
+						status = "disabled";
+						active-low;
+					};
+				};
 			};
 
 			fsw_phy2: ethernet-phy@10 {
@@ -490,6 +524,23 @@
 				reg = <10>;
 				phy-mode = "internal";
 				status = "disabled";
+
+				airoha,scu = <&scuclk>;
+
+				leds {
+					led@0 {
+						reg = <0>;
+						function = LED_FUNCTION_LAN;
+						active-low;
+					};
+
+					led@1 {
+						reg = <1>;
+						function = LED_FUNCTION_ACTIVITY;
+						status = "disabled";
+						active-low;
+					};
+				};
 			};
 
 			fsw_phy3: ethernet-phy@11 {
@@ -497,6 +548,23 @@
 				reg = <11>;
 				phy-mode = "internal";
 				status = "disabled";
+
+				airoha,scu = <&scuclk>;
+
+				leds {
+					led@0 {
+						reg = <0>;
+						function = LED_FUNCTION_LAN;
+						active-low;
+					};
+
+					led@1 {
+						reg = <1>;
+						function = LED_FUNCTION_ACTIVITY;
+						status = "disabled";
+						active-low;
+					};
+				};
 			};
 
 			fsw_phy4: ethernet-phy@12 {
@@ -504,6 +572,23 @@
 				reg = <12>;
 				phy-mode = "internal";
 				status = "disabled";
+
+				airoha,scu = <&scuclk>;
+
+				leds {
+					led@0 {
+						reg = <0>;
+						function = LED_FUNCTION_LAN;
+						active-low;
+					};
+
+					led@1 {
+						reg = <1>;
+						function = LED_FUNCTION_ACTIVITY;
+						status = "disabled";
+						active-low;
+					};
+				};
 			};
 
 			switch1: switch@1f {
@@ -579,26 +664,116 @@
 					gsw_phy0: ethernet-phy@0 {
 						compatible = "ethernet-phy-ieee802.3-c22";
 						reg = <0>;
+
+						airoha,scu = <&scuclk>;
+
+						leds {
+							led@0 {
+								reg = <0>;
+								function = LED_FUNCTION_LAN;
+								status = "disabled";
+								active-low;
+							};
+
+							led@1 {
+								reg = <1>;
+								function = LED_FUNCTION_ACTIVITY;
+								status = "disabled";
+								active-low;
+							};
+						};
 					};
 
 					gsw_phy1: ethernet-phy@1 {
 						compatible = "ethernet-phy-ieee802.3-c22";
 						reg = <1>;
+
+						airoha,scu = <&scuclk>;
+
+						leds {
+							led@0 {
+								reg = <0>;
+								function = LED_FUNCTION_LAN;
+								status = "disabled";
+								active-low;
+							};
+
+							led@1 {
+								reg = <1>;
+								function = LED_FUNCTION_ACTIVITY;
+								status = "disabled";
+								active-low;
+							};
+						};
 					};
 
 					gsw_phy2: ethernet-phy@2 {
 						compatible = "ethernet-phy-ieee802.3-c22";
 						reg = <2>;
+
+						airoha,scu = <&scuclk>;
+
+						leds {
+							led@0 {
+								reg = <0>;
+								function = LED_FUNCTION_LAN;
+								status = "disabled";
+								active-low;
+							};
+
+							led@1 {
+								reg = <1>;
+								function = LED_FUNCTION_ACTIVITY;
+								status = "disabled";
+								active-low;
+							};
+						};
 					};
 
 					gsw_phy3: ethernet-phy@3 {
 						compatible = "ethernet-phy-ieee802.3-c22";
 						reg = <3>;
+
+						airoha,scu = <&scuclk>;
+
+						leds {
+							led@0 {
+								reg = <0>;
+								function = LED_FUNCTION_LAN;
+								status = "disabled";
+								active-low;
+							};
+
+							led@1 {
+								reg = <1>;
+								function = LED_FUNCTION_ACTIVITY;
+								status = "disabled";
+								active-low;
+							};
+						};
 					};
 
 					gsw_phy4: ethernet-phy@4 {
 						compatible = "ethernet-phy-ieee802.3-c22";
 						reg = <4>;
+
+						airoha,scu = <&scuclk>;
+
+						leds {
+							led@0 {
+								reg = <0>;
+								function = LED_FUNCTION_LAN;
+								status = "disabled";
+								active-low;
+							};
+
+							led@1 {
+								reg = <1>;
+								function = LED_FUNCTION_ACTIVITY;
+								status = "disabled";
+								active-low;
+							};
+						};
 					};
 				};
 			};

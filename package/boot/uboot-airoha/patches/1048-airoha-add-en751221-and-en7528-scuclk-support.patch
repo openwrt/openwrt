@@ -1,0 +1,603 @@
+From 0ff6b5fd1725dcb829f9282d9ff0208016a5bbd5 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Wed, 16 Sep 2026 10:29:47 -0300
+Subject: [PATCH] airoha: add en751221 and en7528 scuclk support
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/clk/airoha/clk-airoha.c               | 238 +++++++++++++++++-
+ drivers/reset/reset-airoha.c                  |  96 +++++--
+ .../dt-bindings/clock/econet,en751221-scu.h   |  12 +
+ include/dt-bindings/clock/econet,en7528-scu.h |  12 +
+ include/dt-bindings/reset/econet,en7528-scu.h |  49 ++++
+ 5 files changed, 389 insertions(+), 18 deletions(-)
+ create mode 100644 include/dt-bindings/clock/econet,en751221-scu.h
+ create mode 100644 include/dt-bindings/clock/econet,en7528-scu.h
+ create mode 100644 include/dt-bindings/reset/econet,en7528-scu.h
+
+diff --git a/drivers/clk/airoha/clk-airoha.c b/drivers/clk/airoha/clk-airoha.c
+index ea1c02a16b6..93416abe2ae 100644
+--- a/drivers/clk/airoha/clk-airoha.c
++++ b/drivers/clk/airoha/clk-airoha.c
+@@ -15,10 +15,14 @@
+ #include <dm/devres.h>
+ #include <dm/device_compat.h>
+ #include <dm/lists.h>
++#include <linux/delay.h>
+ #include <regmap.h>
+ #include <soc/airoha/scu-regmap.h>
++#include <soc/airoha/pkgids.h>
+ 
+ #include <dt-bindings/clock/en7523-clk.h>
++#include <dt-bindings/clock/econet,en751221-scu.h>
++#include <dt-bindings/clock/econet,en7528-scu.h>
+ 
+ #define REG_GSW_CLK_DIV_SEL		0x1b4
+ #define REG_EMI_CLK_DIV_SEL		0x1b8
+@@ -28,6 +32,42 @@
+ #define REG_NPU_CLK_DIV_SEL		0x1fc
+ #define REG_CRYPTO_CLKSRC		0x200
+ 
++/* EN751221 / EN7528 NP-SCU and CHIP-SCU clock registers. */
++#define REG_PCI_CONTROL			0x088
++#define   REG_PCI_CONTROL_PERSTOUT	BIT(29)
++#define   REG_PCI_CONTROL_PERSTOUT1	BIT(26)
++#define   REG_PCI_CONTROL_REFCLK_EN1	BIT(22)
++#define REG_RESET_CONTROL1		0x834
++#define   REG_RESET_CONTROL_PCIEHB	BIT(29)
++#define   REG_RESET_CONTROL_PCIE1	BIT(27)
++#define   REG_RESET_CONTROL_PCIE0	BIT(26)
++#define REG_HIR				0x064
++#define   REG_HIR_MASK			GENMASK(31, 16)
++#define EN751221_REG_SPI_DIV		0x0cc
++#define EN751221_REG_SPI_DIV_MASK	GENMASK(15, 8)
++#define EN751221_SPI_BASE		500000000
++#define EN751221_SPI_BASE_EN7526C	400000000
++#define EN751221_SPI_DIV_DEFAULT	40
++#define EN751221_REG_BUS		0x284
++#define EN751221_REG_BUS_MASK		GENMASK(21, 12)
++#define EN751221_REG_SSR3		0x094
++#define EN751221_REG_SSR3_GSW_MASK	GENMASK(9, 8)
++#define EN751221_REG_NP_PER_DOM_CLK_GAT_1 0x0e4
++#define   EN751221_XPON_TOD_CLK_EN	BIT(8)
++#define EN751221_REG_TOD_DIVIDER_ENABLE 0x0ec
++#define   EN751221_XPON_TOD_DIV_EN	BIT(1)
++#define EN751221_MAX_CLKS		5
++
++#define EN7528_REG_SPI_DIV		0x0cc
++#define EN7528_REG_SPI_DIV_MASK	GENMASK(15, 8)
++#define EN7528_SPI_BASE		400000000
++#define EN7528_SPI_DIV_DEFAULT		10
++#define EN7528_REG_NP_PER_DOM_CLK_GAT_1 0x0e4
++#define   EN7528_XPON_TOD_CLK_EN	BIT(8)
++#define EN7528_REG_TOD_DIVIDER_ENABLE	0x0ec
++#define   EN7528_XPON_TOD_DIV_EN	BIT(1)
++#define EN7528_MAX_CLKS		5
++
+ #define REG_NP_SCU_PCIC			0x88
+ #define REG_NP_SCU_SSTR			0x9c
+ #define REG_PCIE_XSI0_SEL_MASK		GENMASK(14, 13)
+@@ -58,14 +98,29 @@ struct airoha_clk_desc {
+ 	u8 div_offset;
+ };
+ 
++struct airoha_econet_clk_data {
++	u32 spi_base;
++	u32 spi_alt_base;
++	u32 spi_alt_pkg;
++	u16 spi_div_reg;
++	u32 spi_div_mask;
++	u32 spi_div_default;
++	u16 xpon_tod_clk_reg;
++	u32 xpon_tod_clk_mask;
++	u16 xpon_tod_div_reg;
++	u32 xpon_tod_div_mask;
++};
++
+ struct airoha_clk_priv {
+ 	struct regmap *chip_scu_map;
++	struct regmap *scu_map;
+ 	struct airoha_clk_soc_data *data;
+ };
+ 
+ struct airoha_clk_soc_data {
+ 	u32 num_clocks;
+ 	const struct airoha_clk_desc *descs;
++	const struct airoha_econet_clk_data *econet;
+ };
+ 
+ static const u32 gsw_base[] = { 400000000, 500000000 };
+@@ -79,6 +134,8 @@ static const u32 bus7581_base[] = { 600000000, 540000000 };
+ static const u32 npu7581_base[] = { 800000000, 750000000, 720000000, 600000000 };
+ static const u32 crypto_base[] = { 540000000, 480000000 };
+ static const u32 emmc7581_base[] = { 200000000, 150000000 };
++/* EN751221 / EN7528 */
++static const u32 gsw751221_base[] = { 500000000, 250000000, 400000000, 200000000 };
+ /* AN7583 */
+ static const u32 gsw7583_base[] = { 540672000, 270336000, 400000000, 200000000 };
+ static const u32 emi7583_base[] = { 540672000, 480000000, 400000000, 300000000 };
+@@ -471,20 +528,129 @@ static u32 airoha_clk_get_div(const struct airoha_clk_desc *desc, u32 val)
+ 	return (val + desc->div_offset) * desc->div_step;
+ }
+ 
++static ulong airoha_econet_clk_get_rate(struct airoha_clk_priv *priv,
++					unsigned int id)
++{
++	const struct airoha_econet_clk_data *data = priv->data->econet;
++	u32 val, rate, div, pkg;
++	int ret;
++
++	switch (id) {
++	case EN751221_CLK_PCIE:
++		/* Linux models this as a gate without a rate parent. */
++		return 0;
++	case EN751221_CLK_SPI:
++		rate = data->spi_base;
++		if (data->spi_alt_base) {
++			ret = regmap_read(priv->scu_map, REG_HIR, &pkg);
++			if (!ret) {
++				pkg = (pkg & REG_HIR_MASK) >> 16;
++				if (pkg == data->spi_alt_pkg)
++					rate = data->spi_alt_base;
++			}
++		}
++
++		ret = regmap_read(priv->chip_scu_map, data->spi_div_reg, &val);
++		if (ret)
++			return 0;
++		div = (val & data->spi_div_mask) >> __ffs(data->spi_div_mask);
++		div *= 2;
++		if (!div)
++			div = data->spi_div_default;
++		return rate / div;
++	case EN751221_CLK_BUS:
++		ret = regmap_read(priv->scu_map, EN751221_REG_BUS, &val);
++		if (ret)
++			return 0;
++		return ((val & EN751221_REG_BUS_MASK) >> 12) * 1000000UL;
++	case EN751221_CLK_CPU:
++		rate = airoha_econet_clk_get_rate(priv, EN751221_CLK_BUS);
++		return rate * 4;
++	case EN751221_CLK_GSW:
++		ret = regmap_read(priv->scu_map, EN751221_REG_SSR3, &val);
++		if (ret)
++			return 0;
++		val = (val & EN751221_REG_SSR3_GSW_MASK) >> 8;
++		if (val >= ARRAY_SIZE(gsw751221_base))
++			return 0;
++		return gsw751221_base[val];
++	default:
++		return 0;
++	}
++}
++
++static int airoha_econet_pcie_enable(struct airoha_clk_priv *priv)
++{
++	u32 mask;
++	int ret;
++
++	ret = regmap_clear_bits(priv->scu_map, REG_PCI_CONTROL,
++				REG_PCI_CONTROL_PERSTOUT1 |
++				REG_PCI_CONTROL_PERSTOUT);
++	if (ret)
++		return ret;
++
++	udelay(1000);
++	ret = regmap_set_bits(priv->scu_map, REG_PCI_CONTROL,
++			      REG_PCI_CONTROL_REFCLK_EN1);
++	if (ret)
++		return ret;
++	udelay(1000);
++
++	mask = REG_RESET_CONTROL_PCIE1 | REG_RESET_CONTROL_PCIE0 |
++	       REG_RESET_CONTROL_PCIEHB;
++	ret = regmap_clear_bits(priv->scu_map, REG_RESET_CONTROL1, mask);
++	if (ret)
++		return ret;
++
++	udelay(1000);
++	ret = regmap_set_bits(priv->scu_map, REG_RESET_CONTROL1, mask);
++	if (ret)
++		return ret;
++
++	mdelay(100);
++	ret = regmap_clear_bits(priv->scu_map, REG_RESET_CONTROL1, mask);
++	if (ret)
++		return ret;
++
++	udelay(5000);
++	mask = REG_PCI_CONTROL_PERSTOUT1 | REG_PCI_CONTROL_PERSTOUT;
++	ret = regmap_clear_bits(priv->scu_map, REG_PCI_CONTROL, mask);
++	if (ret)
++		return ret;
++
++	udelay(1000);
++	ret = regmap_set_bits(priv->scu_map, REG_PCI_CONTROL, mask);
++	if (ret)
++		return ret;
++
++	mdelay(250);
++	return 0;
++}
++
+ static int airoha_clk_enable(struct clk *clk)
+ {
+ 	struct airoha_clk_priv *priv = dev_get_priv(clk->dev);
+ 	struct airoha_clk_soc_data *data = priv->data;
+ 	int id = clk->id;
+ 
+-	if (id > data->num_clocks)
++	if (id >= data->num_clocks)
+ 		return -EINVAL;
+ 
++	if (data->econet && id == EN751221_CLK_PCIE)
++		return airoha_econet_pcie_enable(priv);
++
+ 	return 0;
+ }
+ 
+ static int airoha_clk_disable(struct clk *clk)
+ {
++	struct airoha_clk_priv *priv = dev_get_priv(clk->dev);
++
++	if (priv->data->econet && clk->id == EN751221_CLK_PCIE)
++		return regmap_clear_bits(priv->scu_map, REG_PCI_CONTROL,
++					 REG_PCI_CONTROL_REFCLK_EN1);
++
+ 	return 0;
+ }
+ 
+@@ -499,11 +665,14 @@ static ulong airoha_clk_get_rate(struct clk *clk)
+ 	ulong rate;
+ 	int ret;
+ 
+-	if (id > data->num_clocks) {
++	if (id >= data->num_clocks) {
+ 		dev_err(clk->dev, "Invalid clk ID %d\n", id);
+ 		return 0;
+ 	}
+ 
++	if (data->econet)
++		return airoha_econet_clk_get_rate(priv, id);
++
+ 	desc = &data->descs[id];
+ 
+ 	ret = regmap_read(map, desc->base_reg, &val);
+@@ -562,11 +731,18 @@ static ulong airoha_clk_set_rate(struct clk *clk, ulong rate)
+ 	int div;
+ 	int ret;
+ 
+-	if (id > data->num_clocks) {
++	if (id >= data->num_clocks) {
+ 		dev_err(clk->dev, "Invalid clk ID %d\n", id);
+ 		return 0;
+ 	}
+ 
++	if (data->econet) {
++		ulong current = airoha_econet_clk_get_rate(priv, id);
++
++		/* Linux exposes these clocks as fixed-rate after strap/divider setup. */
++		return current == rate ? current : 0;
++	}
++
+ 	desc = &data->descs[id];
+ 
+ 	if (!desc->base_bits && !desc->div_bits) {
+@@ -662,7 +838,24 @@ static int airoha_clk_probe(struct udevice *dev)
+ 	if (IS_ERR(priv->chip_scu_map))
+ 		return PTR_ERR(priv->chip_scu_map);
+ 
++	priv->scu_map = airoha_get_scu_regmap();
++	if (IS_ERR(priv->scu_map))
++		return PTR_ERR(priv->scu_map);
++
+ 	priv->data = (void *)dev_get_driver_data(dev);
++	if (priv->data->econet) {
++		const struct airoha_econet_clk_data *data = priv->data->econet;
++		int ret;
++
++		ret = regmap_set_bits(priv->chip_scu_map, data->xpon_tod_clk_reg,
++				      data->xpon_tod_clk_mask);
++		if (ret)
++			return ret;
++		ret = regmap_set_bits(priv->chip_scu_map, data->xpon_tod_div_reg,
++				      data->xpon_tod_div_mask);
++		if (ret)
++			return ret;
++	}
+ 
+ 	return 0;
+ }
+@@ -697,9 +890,46 @@ static const struct airoha_clk_soc_data an7583_data = {
+ 	.descs = an7583_base_clks,
+ };
+ 
++static const struct airoha_econet_clk_data en751221_econet_data = {
++	.spi_base = EN751221_SPI_BASE,
++	.spi_alt_base = EN751221_SPI_BASE_EN7526C,
++	.spi_alt_pkg = EN7526C_PKG,
++	.spi_div_reg = EN751221_REG_SPI_DIV,
++	.spi_div_mask = EN751221_REG_SPI_DIV_MASK,
++	.spi_div_default = EN751221_SPI_DIV_DEFAULT,
++	.xpon_tod_clk_reg = EN751221_REG_NP_PER_DOM_CLK_GAT_1,
++	.xpon_tod_clk_mask = EN751221_XPON_TOD_CLK_EN,
++	.xpon_tod_div_reg = EN751221_REG_TOD_DIVIDER_ENABLE,
++	.xpon_tod_div_mask = EN751221_XPON_TOD_DIV_EN,
++};
++
++static const struct airoha_clk_soc_data en751221_data = {
++	.num_clocks = EN751221_MAX_CLKS,
++	.econet = &en751221_econet_data,
++};
++
++static const struct airoha_econet_clk_data en7528_econet_data = {
++	.spi_base = EN7528_SPI_BASE,
++	.spi_div_reg = EN7528_REG_SPI_DIV,
++	.spi_div_mask = EN7528_REG_SPI_DIV_MASK,
++	.spi_div_default = EN7528_SPI_DIV_DEFAULT,
++	.xpon_tod_clk_reg = EN7528_REG_NP_PER_DOM_CLK_GAT_1,
++	.xpon_tod_clk_mask = EN7528_XPON_TOD_CLK_EN,
++	.xpon_tod_div_reg = EN7528_REG_TOD_DIVIDER_ENABLE,
++	.xpon_tod_div_mask = EN7528_XPON_TOD_DIV_EN,
++};
++
++static const struct airoha_clk_soc_data en7528_data = {
++	.num_clocks = EN7528_MAX_CLKS,
++	.econet = &en7528_econet_data,
++};
++
+ static const struct udevice_id airoha_clk_ids[] = {
++	{ .compatible = "airoha,en751221-scu",
++	  .data = (ulong)&en751221_data,
++	},
+ 	{ .compatible = "airoha,en7528-scu",
+-	  .data = (ulong)&en7523_data,
++	  .data = (ulong)&en7528_data,
+ 	},
+ 	{ .compatible = "airoha,en7523-scu",
+ 	  .data = (ulong)&en7523_data,
+diff --git a/drivers/reset/reset-airoha.c b/drivers/reset/reset-airoha.c
+index 56856570c14..2ca25b1446d 100644
+--- a/drivers/reset/reset-airoha.c
++++ b/drivers/reset/reset-airoha.c
+@@ -16,11 +16,15 @@
+ #include <dt-bindings/reset/airoha,en7523-reset.h>
+ #include <dt-bindings/reset/airoha,en7581-reset.h>
+ #include <dt-bindings/reset/airoha,an7583-reset.h>
++#include <dt-bindings/reset/econet,en751221-scu.h>
++#include <dt-bindings/reset/econet,en7528-scu.h>
+ 
+ #define RST_NR_PER_BANK			32
+ 
+ #define REG_RESET_CONTROL2		0x830
+ #define REG_RESET_CONTROL1		0x834
++#define EN751221_REG_RST_DMT		0x084
++#define EN751221_REG_RST_USB		0x0ec
+ 
+ struct airoha_reset_priv {
+ 	const u16 *bank_ofs;
+@@ -34,6 +38,13 @@ static const u16 en7581_rst_ofs[] = {
+ 	REG_RESET_CONTROL1,
+ };
+ 
++static const u16 en751221_rst_ofs[] = {
++	REG_RESET_CONTROL2,
++	REG_RESET_CONTROL1,
++	EN751221_REG_RST_DMT,
++	EN751221_REG_RST_USB,
++};
++
+ static const u16 en7523_rst_map[] = {
+ 	/* RST_CTRL2 */
+ 	[EN7523_XPON_PHY_RST]		= 0,
+@@ -81,6 +92,58 @@ static const u16 en7523_rst_map[] = {
+ 	[EN7523_XPON_MAC_RST]		= RST_NR_PER_BANK + 31,
+ };
+ 
++static const u16 en751221_rst_map[] = {
++	/* RST_CTRL2 */
++	[EN751221_XPON_PHY_RST]		= 0,
++	[EN751221_GFAST_RST]		= 1,
++	[EN751221_CPU_TIMER2_RST]	= 2,
++	[EN751221_UART3_RST]		= 3,
++	[EN751221_UART4_RST]		= 4,
++	[EN751221_UART5_RST]		= 5,
++	[EN751221_I2C2_RST]		= 6,
++	[EN751221_XSI_MAC_RST]		= 7,
++	[EN751221_XSI_PHY_RST]		= 8,
++
++	/* RST_CTRL1 */
++	[EN751221_PCM1_ZSI_ISI_RST]	= RST_NR_PER_BANK + 0,
++	[EN751221_FE_QDMA1_RST]		= RST_NR_PER_BANK + 1,
++	[EN751221_FE_QDMA2_RST]		= RST_NR_PER_BANK + 2,
++	[EN751221_FE_UNZIP_RST]		= RST_NR_PER_BANK + 3,
++	[EN751221_PCM2_RST]		= RST_NR_PER_BANK + 4,
++	[EN751221_PTM_MAC_RST]		= RST_NR_PER_BANK + 5,
++	[EN751221_CRYPTO_RST]		= RST_NR_PER_BANK + 6,
++	[EN751221_SAR_RST]		= RST_NR_PER_BANK + 7,
++	[EN751221_TIMER_RST]		= RST_NR_PER_BANK + 8,
++	[EN751221_INTC_RST]		= RST_NR_PER_BANK + 9,
++	[EN751221_BONDING_RST]		= RST_NR_PER_BANK + 10,
++	[EN751221_PCM1_RST]		= RST_NR_PER_BANK + 11,
++	[EN751221_UART_RST]		= RST_NR_PER_BANK + 12,
++	[EN751221_GPIO_RST]		= RST_NR_PER_BANK + 13,
++	[EN751221_GDMA_RST]		= RST_NR_PER_BANK + 14,
++	[EN751221_I2C_MASTER_RST]	= RST_NR_PER_BANK + 16,
++	[EN751221_PCM2_ZSI_ISI_RST]	= RST_NR_PER_BANK + 17,
++	[EN751221_SFC_RST]		= RST_NR_PER_BANK + 18,
++	[EN751221_UART2_RST]		= RST_NR_PER_BANK + 19,
++	[EN751221_GDMP_RST]		= RST_NR_PER_BANK + 20,
++	[EN751221_FE_RST]		= RST_NR_PER_BANK + 21,
++	[EN751221_USB_HOST_P0_RST]	= RST_NR_PER_BANK + 22,
++	[EN751221_GSW_RST]		= RST_NR_PER_BANK + 23,
++	[EN751221_SFC2_PCM_RST]		= RST_NR_PER_BANK + 25,
++	[EN751221_PCIE0_RST]		= RST_NR_PER_BANK + 26,
++	[EN751221_PCIE1_RST]		= RST_NR_PER_BANK + 27,
++	[EN751221_CPU_TIMER_RST]	= RST_NR_PER_BANK + 28,
++	[EN751221_PCIE_HB_RST]		= RST_NR_PER_BANK + 29,
++	[EN751221_SIMIF_RST]		= RST_NR_PER_BANK + 30,
++	[EN751221_XPON_MAC_RST]		= RST_NR_PER_BANK + 31,
++
++	/* RST_DMT */
++	[EN751221_DMT_RST]		= 2 * RST_NR_PER_BANK + 0,
++
++	/* RST_USB */
++	[EN751221_USB_PHY_P0_RST]	= 3 * RST_NR_PER_BANK + 6,
++	[EN751221_USB_PHY_P1_RST]	= 3 * RST_NR_PER_BANK + 7,
++};
++
+ static const u16 en7581_rst_map[] = {
+ 	/* RST_CTRL2 */
+ 	[EN7581_XPON_PHY_RST]		= 0,
+@@ -255,7 +318,8 @@ static struct reset_ops airoha_reset_ops = {
+ 	.rst_status = airoha_reset_status,
+ };
+ 
+-static int reset_init(struct udevice *dev, const u16 *rst_map, int num_rsts)
++static int reset_init(struct udevice *dev, const u16 *rst_map,
++		      const u16 *rst_ofs, int num_rsts)
+ {
+ 	struct airoha_reset_priv *priv = dev_get_priv(dev);
+ 
+@@ -263,7 +327,7 @@ static int reset_init(struct udevice *dev, const u16 *rst_map, int num_rsts)
+ 	if (IS_ERR(priv->map))
+ 		return PTR_ERR(priv->map);
+ 
+-	priv->bank_ofs = en7581_rst_ofs;
++	priv->bank_ofs = rst_ofs;
+ 	priv->idx_map = rst_map;
+ 	priv->num_rsts = num_rsts;
+ 
+@@ -272,22 +336,26 @@ static int reset_init(struct udevice *dev, const u16 *rst_map, int num_rsts)
+ 
+ static int airoha_reset_probe(struct udevice *dev)
+ {
+-	if (ofnode_device_is_compatible(dev_ofnode(dev),
+-					"airoha,en7528-scu") ||
+-	    ofnode_device_is_compatible(dev_ofnode(dev),
+-					"airoha,en7523-scu"))
+-		return reset_init(dev, en7523_rst_map,
++	ofnode node = dev_ofnode(dev);
++
++	if (ofnode_device_is_compatible(node, "airoha,en751221-scu") ||
++	    ofnode_device_is_compatible(node, "econet,en751221-scu") ||
++	    ofnode_device_is_compatible(node, "airoha,en7528-scu") ||
++	    ofnode_device_is_compatible(node, "econet,en7528-scu"))
++		return reset_init(dev, en751221_rst_map, en751221_rst_ofs,
++				  ARRAY_SIZE(en751221_rst_map));
++
++	if (ofnode_device_is_compatible(node, "airoha,en7523-scu"))
++		return reset_init(dev, en7523_rst_map, en7581_rst_ofs,
+ 				  ARRAY_SIZE(en7523_rst_map));
+ 
+-	if (ofnode_device_is_compatible(dev_ofnode(dev),
+-					"airoha,en7581-scu"))
+-		return reset_init(dev, en7581_rst_map,
++	if (ofnode_device_is_compatible(node, "airoha,en7581-scu"))
++		return reset_init(dev, en7581_rst_map, en7581_rst_ofs,
+ 				  ARRAY_SIZE(en7581_rst_map));
+ 
+-	if (ofnode_device_is_compatible(dev_ofnode(dev),
+-					"airoha,an7583-scu"))
+-		return reset_init(dev, an7583_rst_map,
+-				 ARRAY_SIZE(an7583_rst_map));
++	if (ofnode_device_is_compatible(node, "airoha,an7583-scu"))
++		return reset_init(dev, an7583_rst_map, en7581_rst_ofs,
++				  ARRAY_SIZE(an7583_rst_map));
+ 
+ 	return -ENODEV;
+ }
+diff --git a/include/dt-bindings/clock/econet,en751221-scu.h b/include/dt-bindings/clock/econet,en751221-scu.h
+new file mode 100644
+index 00000000000..318ec8a4670
+--- /dev/null
++++ b/include/dt-bindings/clock/econet,en751221-scu.h
+@@ -0,0 +1,12 @@
++/* SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause) */
++
++#ifndef _DT_BINDINGS_CLOCK_ECONET_EN751221_SCU_H_
++#define _DT_BINDINGS_CLOCK_ECONET_EN751221_SCU_H_
++
++#define EN751221_CLK_PCIE	0
++#define EN751221_CLK_SPI	1
++#define EN751221_CLK_BUS	2
++#define EN751221_CLK_CPU	3
++#define EN751221_CLK_GSW	4
++
++#endif /* _DT_BINDINGS_CLOCK_ECONET_EN751221_SCU_H_ */
+diff --git a/include/dt-bindings/clock/econet,en7528-scu.h b/include/dt-bindings/clock/econet,en7528-scu.h
+new file mode 100644
+index 00000000000..7b036415d1f
+--- /dev/null
++++ b/include/dt-bindings/clock/econet,en7528-scu.h
+@@ -0,0 +1,12 @@
++/* SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause) */
++
++#ifndef _DT_BINDINGS_CLOCK_ECONET_EN7528_SCU_H_
++#define _DT_BINDINGS_CLOCK_ECONET_EN7528_SCU_H_
++
++#define EN7528_CLK_PCIE		0
++#define EN7528_CLK_SPI		1
++#define EN7528_CLK_BUS		2
++#define EN7528_CLK_CPU		3
++#define EN7528_CLK_GSW		4
++
++#endif /* _DT_BINDINGS_CLOCK_ECONET_EN7528_SCU_H_ */
+diff --git a/include/dt-bindings/reset/econet,en7528-scu.h b/include/dt-bindings/reset/econet,en7528-scu.h
+new file mode 100644
+index 00000000000..fac1d523781
+--- /dev/null
++++ b/include/dt-bindings/reset/econet,en7528-scu.h
+@@ -0,0 +1,49 @@
++/* SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause) */
++
++#ifndef __DT_BINDINGS_RESET_CONTROLLER_ECONET_EN7528_H_
++#define __DT_BINDINGS_RESET_CONTROLLER_ECONET_EN7528_H_
++
++#define EN7528_XPON_PHY_RST		 0
++#define EN7528_PCM1_ZSI_ISI_RST	 1
++#define EN7528_FE_QDMA1_RST		 2
++#define EN7528_FE_QDMA2_RST		 3
++#define EN7528_FE_UNZIP_RST		 4
++#define EN7528_PCM2_RST		 5
++#define EN7528_PTM_MAC_RST		 6
++#define EN7528_CRYPTO_RST		 7
++#define EN7528_SAR_RST		 8
++#define EN7528_TIMER_RST		 9
++#define EN7528_INTC_RST		10
++#define EN7528_BONDING_RST		11
++#define EN7528_PCM1_RST		12
++#define EN7528_UART_RST		13
++#define EN7528_GPIO_RST		14
++#define EN7528_GDMA_RST		15
++#define EN7528_I2C_MASTER_RST		16
++#define EN7528_PCM2_ZSI_ISI_RST	17
++#define EN7528_SFC_RST		18
++#define EN7528_UART2_RST		19
++#define EN7528_GDMP_RST		20
++#define EN7528_FE_RST			21
++#define EN7528_USB_HOST_P0_RST	22
++#define EN7528_GSW_RST		23
++#define EN7528_SFC2_PCM_RST		24
++#define EN7528_PCIE0_RST		25
++#define EN7528_PCIE1_RST		26
++#define EN7528_CPU_TIMER_RST		27
++#define EN7528_PCIE_HB_RST		28
++#define EN7528_SIMIF_RST		29
++#define EN7528_XPON_MAC_RST		30
++#define EN7528_GFAST_RST		31
++#define EN7528_CPU_TIMER2_RST		32
++#define EN7528_UART3_RST		33
++#define EN7528_UART4_RST		34
++#define EN7528_UART5_RST		35
++#define EN7528_I2C2_RST		36
++#define EN7528_XSI_MAC_RST		37
++#define EN7528_XSI_PHY_RST		38
++#define EN7528_DMT_RST		39
++#define EN7528_USB_PHY_P0_RST		40
++#define EN7528_USB_PHY_P1_RST		41
++
++#endif /* __DT_BINDINGS_RESET_CONTROLLER_ECONET_EN7528_H_ */
+-- 
+2.55.0
+

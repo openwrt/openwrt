@@ -1,0 +1,894 @@
+From 37e04e37e9ae512ae9919ac9f410e38de689e5a7 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Tue, 8 Sep 2026 19:09:54 -0300
+Subject: [PATCH] mips: airoha: add tpl+spl build for en7528 and move
+ print_cpuinfo to cpu.c
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ .../dts/econet,en7528-reference-u-boot.dtsi   |  58 +++
+ arch/mips/dts/econet,en7528-reference.dts     |   2 +-
+ .../dts/econet,en7528-tplink-xc220-g3v.dts    |   2 +-
+ arch/mips/dts/econet,en7528.dtsi              |   4 +-
+ arch/mips/mach-econet/Kconfig                 |  10 +-
+ arch/mips/mach-econet/cpu.c                   |  36 ++
+ arch/mips/mach-econet/en751221/init.c         |  23 --
+ arch/mips/mach-econet/en7528/init.c           |  18 -
+ arch/mips/mach-econet/en7580/init.c           |  15 -
+ arch/mips/mach-econet/include/mach/boot.h     |   7 +
+ arch/mips/mach-econet/include/mach/en7528.h   |  23 ++
+ configs/en7528_reference_defconfig            |  15 +
+ configs/en7528_tplink_xc220_g3v_defconfig     |  15 +
+ include/soc/airoha/pkgids.h                   | 383 +++++++++++++++++-
+ 14 files changed, 536 insertions(+), 75 deletions(-)
+ create mode 100644 arch/mips/dts/econet,en7528-reference-u-boot.dtsi
+ create mode 100644 arch/mips/mach-econet/include/mach/en7528.h
+
+diff --git a/arch/mips/dts/econet,en7528-reference-u-boot.dtsi b/arch/mips/dts/econet,en7528-reference-u-boot.dtsi
+new file mode 100644
+index 00000000000..658767cb04d
+--- /dev/null
++++ b/arch/mips/dts/econet,en7528-reference-u-boot.dtsi
+@@ -0,0 +1,58 @@
++// SPDX-License-Identifier: GPL-2.0+
++#include <linux/stringify.h>
++
++/ {
++	binman: binman {
++		multiple-images;
++	};
++};
++
++&uart0 {
++	bootph-all;
++};
++
++&binman {
++	spl-img {
++		filename = "u-boot-spl.img";
++
++		mkimage {
++			args = "-A", "mips", "-T", "standalone", "-O", "u-boot",
++			       "-C", "none", "-n", "EN7528 U-Boot SPL",
++			       "-a", __stringify(CONFIG_SPL_TEXT_BASE),
++			       "-e", __stringify(CONFIG_SPL_TEXT_BASE);
++
++			u-boot-spl {
++			};
++		};
++	};
++
++	en7528-uboot {
++		filename = "u-boot-en7528.bin";
++		pad-byte = <0xff>;
++
++		u-boot-tpl {
++			offset = <0x00000000>;
++			size = <0x00008000>;
++		};
++
++		ddr-blob {
++			type = "blob";
++			filename = "en7528_ddr.bin";
++			offset = <0x00008000>;
++			size = <0x00004f70>;
++		};
++
++		spl {
++			type = "blob";
++			filename = "u-boot-spl.img";
++			offset = <0x00010000>;
++			size = <0x00040000>;
++		};
++
++		u-boot {
++			type = "blob";
++			filename = "u-boot.img";
++			offset = <0x00050000>;
++		};
++	};
++};
+diff --git a/arch/mips/dts/econet,en7528-reference.dts b/arch/mips/dts/econet,en7528-reference.dts
+index 938710d85ee..bbebfb14487 100644
+--- a/arch/mips/dts/econet,en7528-reference.dts
++++ b/arch/mips/dts/econet,en7528-reference.dts
+@@ -26,7 +26,7 @@
+ 	};
+ };
+ 
+-&uart1 {
++&uart0 {
+ 	status = "okay";
+ };
+ 
+diff --git a/arch/mips/dts/econet,en7528-tplink-xc220-g3v.dts b/arch/mips/dts/econet,en7528-tplink-xc220-g3v.dts
+index 5fd7d82f7c7..b2f728dbea0 100644
+--- a/arch/mips/dts/econet,en7528-tplink-xc220-g3v.dts
++++ b/arch/mips/dts/econet,en7528-tplink-xc220-g3v.dts
+@@ -17,7 +17,7 @@
+ 	};
+ };
+ 
+-&uart1 {
++&uart0 {
+ 	status = "okay";
+ };
+ 
+diff --git a/arch/mips/dts/econet,en7528.dtsi b/arch/mips/dts/econet,en7528.dtsi
+index fc1bec23578..d4565e8f36b 100644
+--- a/arch/mips/dts/econet,en7528.dtsi
++++ b/arch/mips/dts/econet,en7528.dtsi
+@@ -19,7 +19,7 @@
+ 	};
+ 
+ 	aliases {
+-		serial0 = &uart1;
++		serial0 = &uart0;
+ 		ethernet0 = &gdm1;
+ 	};
+ 
+@@ -43,7 +43,7 @@
+ 			#reset-cells = <1>;
+ 		};
+ 
+-		uart1: serial@1fbf0000 {
++		uart0: serial@1fbf0000 {
+ 			compatible = "ns16550";
+ 			reg = <0x1fbf0000 0x30>;
+ 			reg-io-width = <4>;
+diff --git a/arch/mips/mach-econet/Kconfig b/arch/mips/mach-econet/Kconfig
+index bd763d690be..ea0db99918d 100644
+--- a/arch/mips/mach-econet/Kconfig
++++ b/arch/mips/mach-econet/Kconfig
+@@ -5,6 +5,8 @@ config TARGET_EN751221
+ 	bool "Airoha EN751221 SoC"
+ 	select SYSCON
+ 	select MIPS_TUNE_34KC
++	select BINMAN
++	select SPL_LOADER_SUPPORT if SPL
+ 
+ config TARGET_EN751627
+ 	bool "Airoha EN7516/EN7527 SoC (big-endian)"
+@@ -20,12 +22,16 @@ config TARGET_EN7528
+ 	select SYSCON
+ 	select MIPS_TUNE_1004KC
+ 	select MIPS_SKIP_CP0_COUNT_CLEAR
++	select BINMAN
++	select SPL_LOADER_SUPPORT if SPL
+ 
+ config TARGET_EN7580
+ 	bool "Airoha EN7580 SoC"
+ 	select SYSCON
+ 	select MIPS_TUNE_1004KC
+ 	select MIPS_SKIP_CP0_COUNT_CLEAR
++	select BINMAN
++	select SPL_LOADER_SUPPORT if SPL
+ 	help
+ 	  Select support for the little-endian MIPS32r2 EN7580 family.
+ 	  Initial support targets direct TPL/SPL bring-up on the XGZ030.
+@@ -85,8 +91,6 @@ config BUILD_TARGET
+ config BOARD_EN7512_REFERENCE
+ 	bool "EN7512/EN7521 reference board"
+ 	select TARGET_EN751221
+-	select BINMAN
+-	select SPL_LOADER_SUPPORT if SPL
+ 	help
+ 	  Build a boot image compatible with the EN7512/EN7521 TCBoot flow.
+ 	  TPL initializes the serial flash controller, executes the legacy DDR
+@@ -95,8 +99,6 @@ config BOARD_EN7512_REFERENCE
+ config BOARD_EN7580_XGZ030
+ 	bool "XGZ030 (EN7580, experimental TPL/SPL)"
+ 	select TARGET_EN7580
+-	select BINMAN
+-	select SPL_LOADER_SUPPORT if SPL
+ 	help
+ 	  Experimental direct-boot target for the XGZ030 EN7580 platform.
+ 	  TPL runs from the reset mapping, loads the GPL RAM-training payload
+diff --git a/arch/mips/mach-econet/cpu.c b/arch/mips/mach-econet/cpu.c
+index cec59403251..57928d890f9 100644
+--- a/arch/mips/mach-econet/cpu.c
++++ b/arch/mips/mach-econet/cpu.c
+@@ -1 +1,37 @@
+ // SPDX-License-Identifier: GPL-2.0
++/*
++ * Author: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
++ */
++#include <fdt_support.h>
++#include <init.h>
++#include <sysreset.h>
++#include <asm/global_data.h>
++#include <asm/system.h>
++#include <linux/bitops.h>
++#include <linux/errno.h>
++#include <linux/io.h>
++#include <linux/sizes.h>
++#include <soc/airoha/pkgids.h>
++
++#define ECONET_NP_SCU_BASE \
++	((void __iomem *)CKSEG1ADDR(AIROHA_NP_SCU_BASE))
++
++#define ECONET_CHIP_SCU_BASE \
++	((void __iomem *)CKSEG1ADDR(AIROHA_CHIP_SCU_BASE))
++
++#define ECONET_EFUSE_BASE \
++	((void __iomem *)CKSEG1ADDR(AIROHA_EFUSE_BASE))
++
++const char *econet_get_soc_name(void)
++{
++	return airoha_soc_name_from_mips_mem(ECONET_NP_SCU_BASE,
++										 ECONET_CHIP_SCU_BASE,
++										 ECONET_EFUSE_BASE);
++}
++
++int print_cpuinfo(void)
++{
++	printf("SoC:   EcoNet %s\n", econet_get_soc_name());
++
++	return 0;
++}
+diff --git a/arch/mips/mach-econet/en751221/init.c b/arch/mips/mach-econet/en751221/init.c
+index 33148eccadb..1b7d5f81d7a 100644
+--- a/arch/mips/mach-econet/en751221/init.c
++++ b/arch/mips/mach-econet/en751221/init.c
+@@ -23,29 +23,6 @@ int dram_init(void)
+ 	return 0;
+ }
+ 
+-int print_cpuinfo(void)
+-{
+-	u32 hir = get_pkg_mem(NP_SCU_BASE);
+-	u32 pdidr = get_pdidr_mem(NP_SCU_BASE);
+-	u32 pkgid = get_pkgid_mem(NP_SCU_BASE);
+-	u32 val = __raw_readl((void __iomem *)EN7512_REG_SAVE_INFO);
+-	u32 clk = (val & EN7512_SAVE_CLK_MASK) >> EN7512_SAVE_CLK_SHIFT;
+-	const char *soc_name = airoha_soc_name_from_regs(hir, pkgid, pdidr);
+-
+-	if (pkgid != END_PACKAGE_ID) {
+-		printf("SoC:   Airoha %s\n", soc_name);
+-	} else {
+-		printf("SoC:   Airoha EN7512/EN7521 MIPS34K\n");
+-	}
+-
+-	if (clk)
+-		printf("Clock: %u MHz\n", clk);
+-	else
+-		printf("Clock: unknown\n");
+-
+-	return 0;
+-}
+-
+ ulong notrace get_tbclk(void)
+ {
+ 	u32 val = __raw_readl((void __iomem *)EN7512_REG_SAVE_INFO);
+diff --git a/arch/mips/mach-econet/en7528/init.c b/arch/mips/mach-econet/en7528/init.c
+index e6a61a88c86..d171a7ec6b3 100644
+--- a/arch/mips/mach-econet/en7528/init.c
++++ b/arch/mips/mach-econet/en7528/init.c
+@@ -20,24 +20,6 @@ DECLARE_GLOBAL_DATA_PTR;
+ #define EN7528_SYS_GLOBAL_PARM				0xbfb00284UL
+ #define NP_SCU_BASE		((void __iomem *)CKSEG1ADDR(0x1fb00000))
+ 
+-int print_cpuinfo(void)
+-{
+-	u32 hir = get_pkg_mem(NP_SCU_BASE);
+-	u32 pdidr = get_pdidr_mem(NP_SCU_BASE);
+-	u32 pkgid = get_pkgid_mem(NP_SCU_BASE);
+-	const char *soc_name = airoha_soc_name_from_regs(hir, pkgid, pdidr);
+-
+-	if (pkgid != END_PACKAGE_ID) {
+-		printf("SoC:   Airoha %s\n", soc_name);
+-	} else {
+-		printf("SoC:   Airoha %s\n",
+-		       IS_ENABLED(CONFIG_TARGET_EN751627) ?
+-		       "EN7516/EN7527" : "EN7528");
+-	}
+-
+-	return 0;
+-}
+-
+ int dram_init(void)
+ {
+ 	u32 value, size_mb;
+diff --git a/arch/mips/mach-econet/en7580/init.c b/arch/mips/mach-econet/en7580/init.c
+index ee73daa8d80..71755b3896d 100644
+--- a/arch/mips/mach-econet/en7580/init.c
++++ b/arch/mips/mach-econet/en7580/init.c
+@@ -17,21 +17,6 @@ DECLARE_GLOBAL_DATA_PTR;
+ #define EN7580_RESET_CONTROL		0xbfb00040UL
+ #define NP_SCU_BASE			((void __iomem *)CKSEG1ADDR(0x1fb00000))
+ 
+-int print_cpuinfo(void)
+-{
+-	u32 hir = get_pkg_mem(NP_SCU_BASE);
+-	u32 pdidr = get_pdidr_mem(NP_SCU_BASE);
+-	u32 pkgid = get_pkgid_mem(NP_SCU_BASE);
+-	const char *soc_name = airoha_soc_name_from_regs(hir, pkgid, pdidr);
+-
+-	if (pkgid != END_PACKAGE_ID)
+-		printf("SoC:   Airoha %s\n", soc_name);
+-	else
+-		printf("SoC:   Airoha EN7580\n");
+-
+-	return 0;
+-}
+-
+ int dram_init(void)
+ {
+ 	u32 value, size_mb;
+diff --git a/arch/mips/mach-econet/include/mach/boot.h b/arch/mips/mach-econet/include/mach/boot.h
+index c29312257bc..0c289871cde 100644
+--- a/arch/mips/mach-econet/include/mach/boot.h
++++ b/arch/mips/mach-econet/include/mach/boot.h
+@@ -29,6 +29,13 @@
+ #define ECONET_DDR_BLOB_SIZE		EN7512_DDR_BLOB_SIZE
+ #define ECONET_SPL_IMAGE_OFFSET		EN7512_SPL_IMAGE_OFFSET
+ #define ECONET_UBOOT_IMAGE_OFFSET	EN7512_UBOOT_IMAGE_OFFSET
++#elif defined(CONFIG_TARGET_EN751627) || defined(CONFIG_TARGET_EN7528)
++#include <mach/en7528.h>
++#define ECONET_DDR_BLOB_ADDR		EN7528_DDR_BLOB_ADDR
++#define ECONET_DDR_BLOB_OFFSET		EN7528_DDR_BLOB_OFFSET
++#define ECONET_DDR_BLOB_SIZE		EN7528_DDR_BLOB_SIZE
++#define ECONET_SPL_IMAGE_OFFSET		EN7528_SPL_IMAGE_OFFSET
++#define ECONET_UBOOT_IMAGE_OFFSET	EN7528_UBOOT_IMAGE_OFFSET
+ #elif defined(CONFIG_TARGET_EN7580)
+ #include <mach/en7580.h>
+ #define ECONET_DDR_BLOB_ADDR		EN7580_DDR_BLOB_ADDR
+diff --git a/arch/mips/mach-econet/include/mach/en7528.h b/arch/mips/mach-econet/include/mach/en7528.h
+new file mode 100644
+index 00000000000..10c3d71695b
+--- /dev/null
++++ b/arch/mips/mach-econet/include/mach/en7528.h
+@@ -0,0 +1,23 @@
++/* SPDX-License-Identifier: GPL-2.0+ */
++#ifndef __MACH_EN7528_H__
++#define __MACH_EN7528_H__
++
++/*
++ * EN7580 uses the same 48 KiB FE SRAM window as EN7528. The vendor RAM
++ * training stage is linked at the beginning of the cached alias.
++ */
++#define EN7528_DDR_BLOB_ADDR		0x9fa30000
++#define EN7528_DDR_BLOB_OFFSET		0x00010000
++#define EN7528_DDR_BLOB_SIZE		0x0000b000
++
++/* Keep the first 128 KiB reserved for TPL and the RAM-training payload. */
++#define EN7528_SPL_IMAGE_OFFSET		0x00020000
++#define EN7528_UBOOT_IMAGE_OFFSET	0x00060000
++
++#define EN7528_SYS_GLOBAL_PARM		0xbfb00284
++#define EN7528_DRAM_SIZE_MASK		0xfff00000
++#define EN7528_DRAM_SIZE_SHIFT		20
++#define EN7528_SYS_CLK_MASK		0x000ffc00
++#define EN7528_SYS_CLK_SHIFT		10
++
++#endif
+diff --git a/configs/en7528_reference_defconfig b/configs/en7528_reference_defconfig
+index 6559addc712..1c9e18ca8b7 100644
+--- a/configs/en7528_reference_defconfig
++++ b/configs/en7528_reference_defconfig
+@@ -70,3 +70,18 @@ CONFIG_SPI_FLASH_WINBOND=y
+ CONFIG_SPI_FLASH_XMC=y
+ CONFIG_SPI_FLASH_MTD=y
+ CONFIG_LZMA=y
++CONFIG_SPL_LIBCOMMON_SUPPORT=y
++CONFIG_SPL_LIBGENERIC_SUPPORT=y
++CONFIG_SPL_SYS_MALLOC_F_LEN=0x10000
++CONFIG_SPL_SERIAL=y
++CONFIG_SPL_BSS_START_ADDR=0x80080000
++CONFIG_SPL_BSS_MAX_SIZE=0x10000
++CONFIG_SPL=y
++CONFIG_SPL_MAX_SIZE=0x30000
++CONFIG_SPL_SYS_MALLOC_SIMPLE=y
++CONFIG_SPL_OF_CONTROL=y
++CONFIG_SPL_DM=y
++# CONFIG_BINMAN_FDT is not set
++CONFIG_TPL_SYS_MALLOC_F_LEN=0x1000
++CONFIG_TPL=y
++# CONFIG_TPL_FRAMEWORK is not set
+\ No newline at end of file
+diff --git a/configs/en7528_tplink_xc220_g3v_defconfig b/configs/en7528_tplink_xc220_g3v_defconfig
+index 59240cd3501..e54a6eef8d5 100644
+--- a/configs/en7528_tplink_xc220_g3v_defconfig
++++ b/configs/en7528_tplink_xc220_g3v_defconfig
+@@ -71,3 +71,18 @@ CONFIG_SPI_FLASH_WINBOND=y
+ CONFIG_SPI_FLASH_XMC=y
+ CONFIG_SPI_FLASH_MTD=y
+ CONFIG_LZMA=y
++CONFIG_SPL_LIBCOMMON_SUPPORT=y
++CONFIG_SPL_LIBGENERIC_SUPPORT=y
++CONFIG_SPL_SYS_MALLOC_F_LEN=0x10000
++CONFIG_SPL_SERIAL=y
++CONFIG_SPL_BSS_START_ADDR=0x80080000
++CONFIG_SPL_BSS_MAX_SIZE=0x10000
++CONFIG_SPL=y
++CONFIG_SPL_MAX_SIZE=0x30000
++CONFIG_SPL_SYS_MALLOC_SIMPLE=y
++CONFIG_SPL_OF_CONTROL=y
++CONFIG_SPL_DM=y
++# CONFIG_BINMAN_FDT is not set
++CONFIG_TPL_SYS_MALLOC_F_LEN=0x1000
++CONFIG_TPL=y
++# CONFIG_TPL_FRAMEWORK is not set
+\ No newline at end of file
+diff --git a/include/soc/airoha/pkgids.h b/include/soc/airoha/pkgids.h
+index d23a74f5df9..b212e657d78 100644
+--- a/include/soc/airoha/pkgids.h
++++ b/include/soc/airoha/pkgids.h
+@@ -12,15 +12,41 @@
+ 
+ #define AIROHA_PKG_ID_NAME(_id) [(_id)] = #_id
+ 
++#define AIROHA_NP_SCU_BASE		0x1fb00000
++#define AIROHA_NP_SCU_SIZE		0x960
++#define AIROHA_CHIP_SCU_BASE		0x1fa20000
++#define AIROHA_CHIP_SCU_SIZE		0x360
++#define AIROHA_EFUSE_BASE		0x1fbf8000
++
+ #define AIROHA_NP_SCU_PDIDR		0x05c
+ #define AIROHA_NP_SCU_HIR		0x064
+ #define AIROHA_NP_SCU_SCREG_WR1	0x284
++#define AIROHA_NP_SCU_MT751020_CFG	0x0f8
++
++#define AIROHA_CHIP_SCU_751627_PKG	0x174
++#define AIROHA_CHIP_SCU_7526C_PKG	0x1ec
++
++#define AIROHA_EFUSE_VERIFY_DATA0	0x214
++#define AIROHA_EFUSE_VERIFY_DATA1	0x218
+ 
+ #define AIROHA_NP_SCU_HIR_MASK		GENMASK(31, 16)
+ #define AIROHA_NP_SCU_PDIDR_MASK	GENMASK(15, 0)
+ #define AIROHA_NP_SCU_PACKAGE_ID_MASK	GENMASK(3, 0)
+ #define AIROHA_NP_SCU_PACKAGE_ID_EXT	BIT(7)
+ 
++#define AIROHA_CHIP_SCU_751627_QFP	BIT(15)
++#define AIROHA_CHIP_SCU_7526C_FP	BIT(10)
++
++#define AIROHA_EFUSE_PKG_7526C_MASK		0x3c
++#define AIROHA_EFUSE_PKG_MASK_751627		0xc0000
++#define AIROHA_EFUSE_REMARK_BIT_751627		BIT(0)
++#define AIROHA_EFUSE_PKG_REMARK_SHIFT_751627	2
++#define AIROHA_EFUSE_PKG_MASK			GENMASK(5, 0)
++#define AIROHA_EFUSE_REMARK_BIT			BIT(6)
++#define AIROHA_EFUSE_PKG_REMARK_SHIFT		7
++#define AIROHA_EFUSE_DDR3_BIT			BIT(23)
++#define AIROHA_EFUSE_DDR3_REMARK_BIT		BIT(24)
++
+ enum airoha_pkg {
+ 	/* AN7583 */
+ 	AN7583_PKG = 0x10,
+@@ -56,6 +82,29 @@ enum airoha_pkg {
+ 	MT751020_PKG = 0x5,
+ };
+ 
++/*
++ * Raw MIPS eFuse package encodings from the vendor SDK. These values are
++ * family-relative and therefore may overlap.
++ */
++enum airoha_mips_efuse_pkg_id {
++	AIROHA_EFUSE_EN7527H = 0x0,
++	AIROHA_EFUSE_EN7527G = 0x0,
++	AIROHA_EFUSE_EN7561G = 0xc0000,
++	AIROHA_EFUSE_EN7516G = 0x80000,
++
++	AIROHA_EFUSE_EN7526F = 0x00,
++	AIROHA_EFUSE_EN7521F = 0x10,
++	AIROHA_EFUSE_EN7521S = 0x20,
++	AIROHA_EFUSE_EN7512 = 0x04,
++	AIROHA_EFUSE_EN7526D = 0x01,
++	AIROHA_EFUSE_EN7526FT = 0x11,
++	AIROHA_EFUSE_EN7513 = 0x05,
++	AIROHA_EFUSE_EN7526G = 0x02,
++	AIROHA_EFUSE_EN7521G = 0x12,
++	AIROHA_EFUSE_EN7513G = 0x06,
++	AIROHA_EFUSE_EN7586 = 0x0a,
++};
++
+ enum airoha_pkg_ids {
+ 	/*EN7523*/
+ 	EN7529DU,
+@@ -86,8 +135,8 @@ enum airoha_pkg_ids {
+ 	EN7528HU,
+ 	EN7528DU,
+ 	EN7561DU,
+-	EN7526FHEN7528DU,
+-	EN7521GEN7528DU,
++	EN7526FH,
++	EN7521G,
+ 
+ 	/* EN7580 */
+ 	EN7580GT,
+@@ -176,9 +225,23 @@ enum airoha_pkg_ids {
+ 	AN7583FS,
+ 	AN7583FF,
+ 
++	/* MIPS variants missing from the vendor chipId_t table */
++	EN7561HU,
++	EN7528GT_EN7580,
++	EN7527H,
++	EN7586,
++	MT7510,
++	MT7511,
++
+ 	END_PACKAGE_ID = 0xFFFFFFFF,
+ };
+ 
++/* Compatibility with vendor/legacy detector identifiers. */
++#define EN7526FH_EN7528DU	EN7526FH
++#define EN7521G_EN7528DU	EN7521G
++#define EN7526FHEN7528DU	EN7526FH
++#define EN7521GEN7528DU	EN7521G
++
+ static const char *const airoha_pkg_id_names[] = {
+ 	/* EN7523 */
+ 	AIROHA_PKG_ID_NAME(EN7529DU),
+@@ -209,8 +272,8 @@ static const char *const airoha_pkg_id_names[] = {
+ 	AIROHA_PKG_ID_NAME(EN7528HU),
+ 	AIROHA_PKG_ID_NAME(EN7528DU),
+ 	AIROHA_PKG_ID_NAME(EN7561DU),
+-	AIROHA_PKG_ID_NAME(EN7526FHEN7528DU),
+-	AIROHA_PKG_ID_NAME(EN7521GEN7528DU),
++	AIROHA_PKG_ID_NAME(EN7526FH),
++	AIROHA_PKG_ID_NAME(EN7521G),
+ 
+ 	/* EN7580 */
+ 	AIROHA_PKG_ID_NAME(EN7580GT),
+@@ -292,6 +355,14 @@ static const char *const airoha_pkg_id_names[] = {
+ 	AIROHA_PKG_ID_NAME(AN7583FD),
+ 	AIROHA_PKG_ID_NAME(AN7583FS),
+ 	AIROHA_PKG_ID_NAME(AN7583FF),
++
++	/* MIPS variants */
++	AIROHA_PKG_ID_NAME(EN7561HU),
++	AIROHA_PKG_ID_NAME(EN7528GT_EN7580),
++	AIROHA_PKG_ID_NAME(EN7527H),
++	AIROHA_PKG_ID_NAME(EN7586),
++	AIROHA_PKG_ID_NAME(MT7510),
++	AIROHA_PKG_ID_NAME(MT7511),
+ };
+ 
+ static inline const char *airoha_pkg_id_name(enum airoha_pkg_ids id)
+@@ -320,6 +391,46 @@ airoha_pkg_id_range_name(u32 pkgid, enum airoha_pkg_ids first,
+ 	return airoha_pkg_id_names[id];
+ }
+ 
++static inline u32 airoha_efuse_pkgid(u32 value)
++{
++	if (value & AIROHA_EFUSE_REMARK_BIT)
++		value >>= AIROHA_EFUSE_PKG_REMARK_SHIFT;
++
++	return value & AIROHA_EFUSE_PKG_MASK;
++}
++
++static inline u32 airoha_efuse_pkgid_751627(u32 value)
++{
++	if (value & AIROHA_EFUSE_REMARK_BIT_751627)
++		value >>= AIROHA_EFUSE_PKG_REMARK_SHIFT_751627;
++
++	return value & AIROHA_EFUSE_PKG_MASK_751627;
++}
++
++static inline bool airoha_efuse_is_ddr3(u32 value)
++{
++	if (value & AIROHA_EFUSE_REMARK_BIT)
++		return !!(value & AIROHA_EFUSE_DDR3_REMARK_BIT);
++
++	return !!(value & AIROHA_EFUSE_DDR3_BIT);
++}
++
++static inline bool airoha_efuse_is_enp_mod(u32 value)
++{
++	if (value & BIT(3))
++		return !!(value & BIT(5));
++
++	return !!(value & BIT(1));
++}
++
++static inline bool airoha_efuse_is_ens_mod(u32 value)
++{
++	if (value & BIT(3))
++		return !!(value & BIT(6));
++
++	return !!(value & BIT(2));
++}
++
+ static inline enum airoha_pkg airoha_pkg_from_id(u32 id)
+ {
+ 	switch (id) {
+@@ -415,23 +526,181 @@ airoha_soc_variant_name(enum airoha_pkg pkg, u32 pkgid)
+ 	case EN7523_PKG:
+ 		return airoha_pkg_id_range_name(pkgid, EN7529DU, EN7523DTM);
+ 	case EN7528_PKG:
+-		return airoha_pkg_id_range_name(pkgid, EN7528HU,
+-						EN7521GEN7528DU);
++		switch (pkgid) {
++		case 0x0:
++			return airoha_pkg_id_name(EN7528HU);
++		case 0x1:
++			return airoha_pkg_id_name(EN7528DU);
++		case 0x2:
++			return airoha_pkg_id_name(EN7561DU);
++		case 0x3:
++			return airoha_pkg_id_name(EN7526FH);
++		case 0x4:
++			return airoha_pkg_id_name(EN7561HU);
++		case 0x7:
++			return airoha_pkg_id_name(EN7521G);
++		default:
++			return NULL;
++		}
+ 	case EN7580_PKG:
+-		return airoha_pkg_id_range_name(pkgid, EN7580GT, EN7580);
++		switch (pkgid) {
++		case 0x0:
++			return airoha_pkg_id_name(EN7580GT);
++		case 0x1:
++			return airoha_pkg_id_name(EN7580ST);
++		case 0x2:
++			return airoha_pkg_id_name(EN7580GAT);
++		case 0x3:
++			return airoha_pkg_id_name(EN7565);
++		case 0x4:
++			return airoha_pkg_id_name(EN7528GT_EN7580);
++		default:
++			return NULL;
++		}
++	/*
++	 * EN7516/EN7527, EN7526C/EN7522 and EN7512/EN7521 do not
++	 * have a linear SCREG_WR1 package-id encoding. Decode them from
++	 * the MIPS eFuse registers with airoha_soc_variant_name_mips().
++	 */
+ 	case EN751627_PKG:
+-		return airoha_pkg_id_range_name(pkgid, EN7516G, EN751627);
+ 	case EN7526C_PKG:
+-		return airoha_pkg_id_range_name(pkgid, EN7521FCUD, EN751221);
+ 	case EN751221_PKG:
+-		return airoha_pkg_id_range_name(pkgid, EN7512, EN751221);
+ 	case MT751020_PKG:
+-		return airoha_pkg_id_range_name(pkgid, MT7520S, MT7525G);
++		return NULL;
+ 	default:
+ 		return NULL;
+ 	}
+ }
+ 
++static inline const char *
++airoha_soc_variant_name_efuse(enum airoha_pkg pkg, u32 efuse0, u32 efuse1,
++			      u32 chip_scu_174, u32 chip_scu_1ec)
++{
++	u32 efuse_pkg;
++
++	switch (airoha_pkg_from_id(pkg)) {
++	case EN751627_PKG:
++		efuse_pkg = airoha_efuse_pkgid_751627(efuse0);
++
++		if (efuse_pkg == AIROHA_EFUSE_EN7516G)
++			return airoha_pkg_id_name(EN7516G);
++
++		if (efuse_pkg == AIROHA_EFUSE_EN7561G &&
++		    !(chip_scu_174 & AIROHA_CHIP_SCU_751627_QFP))
++			return airoha_pkg_id_name(EN7561G);
++
++		if (efuse_pkg == AIROHA_EFUSE_EN7527H) {
++			if (chip_scu_174 & AIROHA_CHIP_SCU_751627_QFP)
++				return airoha_pkg_id_name(EN7527H);
++
++			return airoha_pkg_id_name(EN7527G);
++		}
++
++		return NULL;
++
++	case EN7526C_PKG:
++		efuse_pkg = airoha_efuse_pkgid(efuse0) &
++			     AIROHA_EFUSE_PKG_7526C_MASK;
++
++		if (efuse_pkg == AIROHA_EFUSE_EN7521F) {
++			if (airoha_efuse_is_ddr3(efuse0))
++				return airoha_pkg_id_name(EN7521FCUD);
++
++			return airoha_pkg_id_name(EN7521F);
++		}
++
++		if (efuse_pkg == AIROHA_EFUSE_EN7521S)
++			return airoha_pkg_id_name(EN7521S);
++
++		if (efuse_pkg == AIROHA_EFUSE_EN7526F) {
++			bool ft_c;
++
++			ft_c = efuse0 & AIROHA_EFUSE_REMARK_BIT ?
++			       !!(efuse1 & BIT(10)) :
++			       !!(efuse1 & BIT(9));
++
++			if (ft_c)
++				return airoha_pkg_id_name(EN7526FT_C);
++
++			if (chip_scu_1ec & AIROHA_CHIP_SCU_7526C_FP)
++				return airoha_pkg_id_name(EN7526FP);
++
++			return airoha_pkg_id_name(EN7526F);
++		}
++
++		return NULL;
++
++	case EN751221_PKG:
++		switch (airoha_efuse_pkgid(efuse0)) {
++		case AIROHA_EFUSE_EN7526F:
++			return airoha_pkg_id_name(EN7526F);
++		case AIROHA_EFUSE_EN7526D:
++			return airoha_pkg_id_name(EN7526D);
++		case AIROHA_EFUSE_EN7526G:
++			return airoha_pkg_id_name(EN7526G);
++		case AIROHA_EFUSE_EN7512:
++			return airoha_pkg_id_name(EN7512);
++		case AIROHA_EFUSE_EN7513:
++			return airoha_pkg_id_name(EN7513);
++		case AIROHA_EFUSE_EN7513G:
++			return airoha_pkg_id_name(EN7513G);
++		case AIROHA_EFUSE_EN7586:
++			return airoha_pkg_id_name(EN7586);
++		case AIROHA_EFUSE_EN7521F:
++			return airoha_pkg_id_name(EN7521F);
++		case AIROHA_EFUSE_EN7526FT:
++			return airoha_pkg_id_name(EN7526FT);
++		case AIROHA_EFUSE_EN7521G:
++			return airoha_pkg_id_name(EN7521G);
++		case AIROHA_EFUSE_EN7521S:
++			return airoha_pkg_id_name(EN7521S);
++		default:
++			return NULL;
++		}
++	default:
++		return NULL;
++	}
++}
++
++static inline const char *
++airoha_soc_variant_name_mt751020(u32 np_scu_cfg, u32 efuse0)
++{
++	bool enp = airoha_efuse_is_enp_mod(efuse0);
++	bool ens = airoha_efuse_is_ens_mod(efuse0);
++
++	switch (np_scu_cfg & 0x3) {
++	case 0x0:
++		return airoha_pkg_id_name(enp ? MT7510 : MT7511);
++	case 0x2:
++		if (ens)
++			return airoha_pkg_id_name(MT7520S);
++		return airoha_pkg_id_name(enp ? MT7520 : MT7525);
++	case 0x3:
++		return airoha_pkg_id_name(enp ? MT7520G : MT7525G);
++	default:
++		return NULL;
++	}
++}
++
++static inline const char *
++airoha_soc_variant_name_mips(enum airoha_pkg pkg, u32 pkgid,
++			     u32 np_scu_cfg, u32 chip_scu_174,
++			     u32 chip_scu_1ec, u32 efuse0, u32 efuse1)
++{
++	switch (airoha_pkg_from_id(pkg)) {
++	case EN751627_PKG:
++	case EN7526C_PKG:
++	case EN751221_PKG:
++		return airoha_soc_variant_name_efuse(pkg, efuse0, efuse1,
++						      chip_scu_174,
++						      chip_scu_1ec);
++	case MT751020_PKG:
++		return airoha_soc_variant_name_mt751020(np_scu_cfg, efuse0);
++	default:
++		return airoha_soc_variant_name(pkg, pkgid);
++	}
++}
++
+ static inline const char *airoha_soc_name(enum airoha_pkg pkg, u32 pkgid)
+ {
+ 	const char *name;
+@@ -473,6 +742,38 @@ airoha_soc_name_from_regs(u32 hir, u32 pkgid, u32 pdidr)
+ 	return "unknown";
+ }
+ 
++static inline const char *
++airoha_soc_name_from_mips_regs(u32 hir, u32 pkgid, u32 pdidr,
++			       u32 np_scu_cfg, u32 chip_scu_174,
++			       u32 chip_scu_1ec, u32 efuse0, u32 efuse1)
++{
++	enum airoha_pkg hir_pkg = airoha_pkg_from_id(hir);
++	enum airoha_pkg pdidr_pkg = airoha_pkg_from_id(pdidr);
++	const char *name;
++
++	name = airoha_soc_variant_name_mips(hir_pkg, pkgid, np_scu_cfg,
++					     chip_scu_174, chip_scu_1ec,
++					     efuse0, efuse1);
++	if (name)
++		return name;
++
++	name = airoha_soc_variant_name_mips(pdidr_pkg, pkgid, np_scu_cfg,
++					     chip_scu_174, chip_scu_1ec,
++					     efuse0, efuse1);
++	if (name)
++		return name;
++
++	name = airoha_pkg_family_name(hir_pkg);
++	if (name)
++		return name;
++
++	name = airoha_pkg_family_name(pdidr_pkg);
++	if (name)
++		return name;
++
++	return "unknown";
++}
++
+ static inline u32 airoha_pkgid_from_screg(u32 value)
+ {
+ 	u32 pkgid = FIELD_GET(AIROHA_NP_SCU_PACKAGE_ID_MASK, value);
+@@ -483,6 +784,66 @@ static inline u32 airoha_pkgid_from_screg(u32 value)
+ 	return pkgid;
+ }
+ 
++/*
++ * Direct-MMIO helper for MIPS boot code/early platform code.
++ *
++ * In U-Boot on MIPS the caller can pass uncached KSEG1 mappings, e.g.
++ * (void __iomem *)CKSEG1ADDR(AIROHA_NP_SCU_BASE).
++ */
++static inline const char *
++airoha_soc_name_from_mips_mem(void __iomem *np_scu, void __iomem *chip_scu,
++			      void __iomem *efuse)
++{
++	u32 hir, pdidr, pkgid, np_scu_cfg = 0;
++	u32 chip_scu_174 = 0, chip_scu_1ec = 0;
++	u32 efuse0 = 0, efuse1 = 0;
++	enum airoha_pkg pkg;
++
++	hir = FIELD_GET(AIROHA_NP_SCU_HIR_MASK,
++			readl(np_scu + AIROHA_NP_SCU_HIR));
++	pdidr = FIELD_GET(AIROHA_NP_SCU_PDIDR_MASK,
++			  readl(np_scu + AIROHA_NP_SCU_PDIDR));
++	pkgid = airoha_pkgid_from_screg(readl(np_scu +
++					      AIROHA_NP_SCU_SCREG_WR1));
++
++	pkg = airoha_pkg_from_id(hir);
++	if (!pkg)
++		pkg = airoha_pkg_from_id(pdidr);
++
++	switch (pkg) {
++	case EN751627_PKG:
++		if (!chip_scu || !efuse)
++			return airoha_pkg_family_name(pkg);
++		chip_scu_174 = readl(chip_scu + AIROHA_CHIP_SCU_751627_PKG);
++		efuse0 = readl(efuse + AIROHA_EFUSE_VERIFY_DATA0);
++		break;
++	case EN7526C_PKG:
++		if (!chip_scu || !efuse)
++			return airoha_pkg_family_name(pkg);
++		chip_scu_1ec = readl(chip_scu + AIROHA_CHIP_SCU_7526C_PKG);
++		efuse0 = readl(efuse + AIROHA_EFUSE_VERIFY_DATA0);
++		efuse1 = readl(efuse + AIROHA_EFUSE_VERIFY_DATA1);
++		break;
++	case EN751221_PKG:
++		if (!efuse)
++			return airoha_pkg_family_name(pkg);
++		efuse0 = readl(efuse + AIROHA_EFUSE_VERIFY_DATA0);
++		break;
++	case MT751020_PKG:
++		if (!efuse)
++			return airoha_pkg_family_name(pkg);
++		np_scu_cfg = readl(np_scu + AIROHA_NP_SCU_MT751020_CFG);
++		efuse0 = readl(efuse + AIROHA_EFUSE_VERIFY_DATA0);
++		break;
++	default:
++		break;
++	}
++
++	return airoha_soc_name_from_mips_regs(hir, pkgid, pdidr, np_scu_cfg,
++					      chip_scu_174, chip_scu_1ec,
++					      efuse0, efuse1);
++}
++
+ /*
+  * Package IDs are family-relative values stored by the bootloader in the
+  * NP-SCU watchdog-reset scratch register 1. A value of zero is valid.
+-- 
+2.55.0
+

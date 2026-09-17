@@ -1,0 +1,203 @@
+From 15dec8160772dcc0dd1d3edb5e13d7b0d78834e7 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Thu, 10 Sep 2026 14:06:42 -0300
+Subject: [PATCH] en7528: ethernet: fix RX path
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/airoha_eth.c | 148 ++++++++++++++++++++++++---------------
+ 1 file changed, 90 insertions(+), 58 deletions(-)
+
+diff --git a/drivers/net/airoha_eth.c b/drivers/net/airoha_eth.c
+index c9f4f0b4e94..a47d1678427 100644
+--- a/drivers/net/airoha_eth.c
++++ b/drivers/net/airoha_eth.c
+@@ -137,8 +137,16 @@
+ #define   SMACCR1_MAC0			GENMASK(15, 8)
+ #define   SMACCR1_MAC1			GENMASK(7, 0)
+ #define SWITCH_SYS_CTRL			0x7000
+-#define   SWITCH_SYS_CTRL_PHY_RST	BIT(2)
+ #define SWITCH_PHY_POLL			0x7018
++#define SWITCH_PHY_IAC			0x701c
++#define   SWITCH_PHY_ACS_ST		BIT(31)
++#define   SWITCH_MDIO_REG_ADDR		GENMASK(29, 25)
++#define   SWITCH_MDIO_PHY_ADDR		GENMASK(24, 20)
++#define   SWITCH_MDIO_CMD		GENMASK(19, 18)
++#define     SWITCH_MDIO_CMD_WRITE	FIELD_PREP_CONST(SWITCH_MDIO_CMD, 1)
++#define   SWITCH_MDIO_ST		GENMASK(17, 16)
++#define     SWITCH_MDIO_ST_CL22	FIELD_PREP_CONST(SWITCH_MDIO_ST, 1)
++#define   SWITCH_MDIO_DATA		GENMASK(15, 0)
+ #define   SWITCH_PHY_AP_EN		GENMASK(30, 24)
+ #define   SWITCH_EEE_POLL_EN		GENMASK(22, 16)
+ #define   SWITCH_PHY_PRE_EN		BIT(15)
+@@ -2029,6 +2037,66 @@ static int airoha_hw_init(struct udevice *dev,
+ 	return 0;
+ }
+ 
++static int en7528_mdio_wait(struct airoha_eth *eth)
++{
++	int i;
++
++	for (i = 0; i < 10000; i++) {
++		if (!(airoha_switch_rr(eth, SWITCH_PHY_IAC) &
++		      SWITCH_PHY_ACS_ST))
++			return 0;
++		udelay(1);
++	}
++
++	return -ETIMEDOUT;
++}
++
++static int en7528_mdio_write(struct airoha_eth *eth, u8 phy, u8 reg, u16 data)
++{
++	u32 val;
++	int ret;
++
++	ret = en7528_mdio_wait(eth);
++	if (ret)
++		return ret;
++
++	val = SWITCH_PHY_ACS_ST | SWITCH_MDIO_ST_CL22 |
++	      SWITCH_MDIO_CMD_WRITE |
++	      FIELD_PREP(SWITCH_MDIO_PHY_ADDR, phy) |
++	      FIELD_PREP(SWITCH_MDIO_REG_ADDR, reg) |
++	      FIELD_PREP(SWITCH_MDIO_DATA, data);
++	airoha_switch_wr(eth, SWITCH_PHY_IAC, val);
++
++	return en7528_mdio_wait(eth);
++}
++
++static int en7528_phy_init(struct airoha_eth *eth)
++{
++	int phy, ret;
++
++	/*
++	 * EN7528 exposes its four integrated GEPHYs at MDIO addresses 9..12.
++	 * The older shared macPhyReset() helper used by EN7512 hard-codes
++	 * 8..11, but the EN7528-specific vendor PHY driver and bootrom both
++	 * operate on 9..12.  TCBoot used to leave these PHYs initialized before
++	 * chainloading U-Boot, so direct cold boot must reset the correct range.
++	 */
++	for (phy = 9; phy <= 12; phy++) {
++		ret = en7528_mdio_write(eth, phy, 0x1f, 0x8000);
++		if (ret)
++			return ret;
++
++		ret = en7528_mdio_write(eth, phy, 0x1e, 0x2000);
++		if (ret)
++			return ret;
++	}
++
++	/* bootram tc3162_eth_init() gives the analog PHYs one second here. */
++	mdelay(1000);
++
++	return 0;
++}
++
+ static int airoha_switch_init(struct udevice *dev, struct airoha_eth *eth)
+ {
+ 	struct airoha_eth_soc_data *data = (void *)dev_get_driver_data(dev);
+@@ -2048,16 +2116,21 @@ static int airoha_switch_init(struct udevice *dev, struct airoha_eth *eth)
+ 	eth->switch_regs = map_sysmem(addr, 0);
+ 
+ 	/*
+-	 * Keep EN7528 on the pre-switch-MDIO path while its integrated switch
+-	 * bring-up is being debugged. TCBoot already trained the GEPHY analog
+-	 * side before chainloading us, so do not reset or rebuild the switch.
+-	 *
+-	 * This is the direct-register setup used by the older driver: flood
+-	 * unknown traffic, force CPU port 6 up and leave user-port/PHY state to
+-	 * the previous boot stage except for enabling hardware PHY polling.
++	 * EN7528 uses the integrated EN751627-style switch.  Configure the
++	 * GEPHY clock path, restart the PHY analog blocks exactly as the vendor
++	 * bootloader does, then restore the known-good switch forwarding state.
+ 	 */
+ 	if (data->version == 0x7528) {
+-		int port;
++		int port, ret;
++
++		airoha_switch_wr(eth, SWITCH_GEPHY_CONN_CFG,
++				 EN7528_TCBOOT_GEPHY_CONN_CFG);
++
++		ret = en7528_phy_init(eth);
++		if (ret) {
++			printf("EN7528 GEPHY init failed: %d\n", ret);
++			return ret;
++		}
+ 
+ 		/*
+ 		 * Do not depend on TCBoot's per-port VLAN/isolation state. The
+@@ -2084,8 +2157,6 @@ static int airoha_switch_init(struct udevice *dev, struct airoha_eth *eth)
+ 		airoha_switch_wr(eth, SWITCH_PVC(6), EN7528_TCBOOT_PVC);
+ 		airoha_switch_wr(eth, SWITCH_PPBV1(6), EN7528_TCBOOT_PPBV1);
+ 		airoha_switch_wr(eth, SWITCH_APC, EN7528_VENDOR_APC);
+-		airoha_switch_wr(eth, SWITCH_GEPHY_CONN_CFG,
+-				 EN7528_TCBOOT_GEPHY_CONN_CFG);
+ 		airoha_switch_wr(eth, SWITCH_PHY_POLL, 0x7f7f8c08);
+ 
+ 		/* Enable per-port MIB counters used by the EN7528 TX-path trace. */
+@@ -2140,53 +2211,14 @@ static int airoha_switch_init(struct udevice *dev, struct airoha_eth *eth)
+ 		return 0;
+ 	}
+ 
+-	if (data->version == 0x7528) {
+-		airoha_switch_wr(eth, SWITCH_MFC, EN7528_TCBOOT_MFC);
+-		airoha_switch_wr(eth, SWITCH_PMCR(6), EN7528_TCBOOT_PMCR6);
+-	} else {
+-		airoha_switch_wr(eth, SWITCH_MFC, SWITCH_BC_FFP |
+-				 SWITCH_UNM_FFP | SWITCH_UNU_FFP);
+-		airoha_switch_wr(eth, SWITCH_PMCR(6),
+-				 SWITCH_IPG_CFG_SHORT | SWITCH_MAC_MODE |
+-				 SWITCH_FORCE_MODE | SWITCH_MAC_TX_EN |
+-				 SWITCH_MAC_RX_EN | SWITCH_BKOFF_EN |
+-				 SWITCH_BKPR_EN | SWITCH_FORCE_SPD_1000 |
+-				 SWITCH_FORCE_DPX | SWITCH_FORCE_LNK);
+-	}
+-
+-	/*
+-	 * TCBoot's jump path tears down the Ethernet block.  Releasing the GSW
+-	 * reset above is therefore not enough on EN7528: restart the integrated
+-	 * PHYs before enabling hardware polling.
+-	 */
+-	if (data->version == 0x7528) {
+-		int port;
+-
+-		airoha_switch_wr(eth, SWITCH_SYS_CTRL, SWITCH_SYS_CTRL_PHY_RST);
+-		mdelay(20);
+-
+-		airoha_switch_wr(eth, SWITCH_MIB_CCR, SWITCH_MIB_OCT_CNT_MASK);
+-		airoha_switch_wr(eth, SWITCH_MIB_CCR,
+-				 SWITCH_MIB_ENABLE | SWITCH_MIB_OCT_CNT_MASK);
+-
+-		/* TCBoot leaves the same all-port matrix on user ports and P6. */
+-		for (port = 1; port <= 4; port++) {
+-			airoha_switch_wr(eth, SWITCH_PCR(port), EN7528_TCBOOT_PCR);
+-			airoha_switch_wr(eth, SWITCH_PSC(port), EN7528_TCBOOT_PSC);
+-			airoha_switch_wr(eth, SWITCH_PVC(port), EN7528_TCBOOT_PVC);
+-			airoha_switch_wr(eth, SWITCH_PPBV1(port), EN7528_TCBOOT_PPBV1);
+-			airoha_switch_wr(eth, SWITCH_PMCR(port),
+-					 EN7528_TCBOOT_PMCR_USER);
+-		}
+-
+-		airoha_switch_wr(eth, SWITCH_PCR(6), EN7528_TCBOOT_PCR);
+-		airoha_switch_wr(eth, SWITCH_PSC(6), EN7528_TCBOOT_PSC);
+-		airoha_switch_wr(eth, SWITCH_PVC(6), EN7528_TCBOOT_PVC);
+-		airoha_switch_wr(eth, SWITCH_PPBV1(6), EN7528_TCBOOT_PPBV1);
+-		airoha_switch_wr(eth, SWITCH_APC, EN7528_VENDOR_APC);
+-		airoha_switch_wr(eth, SWITCH_GEPHY_CONN_CFG,
+-				 EN7528_TCBOOT_GEPHY_CONN_CFG);
+-	}
++	airoha_switch_wr(eth, SWITCH_MFC, SWITCH_BC_FFP |
++			 SWITCH_UNM_FFP | SWITCH_UNU_FFP);
++	airoha_switch_wr(eth, SWITCH_PMCR(6),
++			 SWITCH_IPG_CFG_SHORT | SWITCH_MAC_MODE |
++			 SWITCH_FORCE_MODE | SWITCH_MAC_TX_EN |
++			 SWITCH_MAC_RX_EN | SWITCH_BKOFF_EN |
++			 SWITCH_BKPR_EN | SWITCH_FORCE_SPD_1000 |
++			 SWITCH_FORCE_DPX | SWITCH_FORCE_LNK);
+ 
+ 	if (data->gen1)
+ 		eth_trace("switch: mfc=%08x pmcr6=%08x pcr6=%08x apc=%08x sysctrl=%08x\n",
+-- 
+2.55.0
+

@@ -1,0 +1,55 @@
+From d199a55c2eab119813ec241b38afd0b1c2e2a408 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Thu, 17 Sep 2026 14:38:50 -0300
+Subject: [PATCH] airoha: en7523: fix xc220-g3v kernel reader
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ defenvs/en7528_xc220_g3v_env | 16 ++++++----------
+ 1 file changed, 6 insertions(+), 10 deletions(-)
+
+diff --git a/defenvs/en7528_xc220_g3v_env b/defenvs/en7528_xc220_g3v_env
+index 451298b8da9..6d753bacc45 100644
+--- a/defenvs/en7528_xc220_g3v_env
++++ b/defenvs/en7528_xc220_g3v_env
+@@ -8,24 +8,20 @@ bootfile=openwrt-airoha-en7528-tplink_xc220-g3v-initramfs-kernel.bin
+ bootloaderfile=openwrt-airoha-en7528-tplink_xc220-g3v-uboot-bootloader.bin
+ 
+ boot_tftp=tftpboot $loadaddr $bootfile && bootm $loadaddr#$bootconf
+-ubi_read_openwrt=ubi read $loadaddr fit && iminfo $loadaddr
++nor_read_openwrt=mtd read firmware $loadaddr 0x0 0x800000 && iminfo $loadaddr
+ 
+-boot_openwrt=led $bootled_pwr blink 255; ( run ubi_read_openwrt || echo Install openwrt ; run boot_tftp ) && bootm $loadaddr#$bootconf ; led $bootled_pwr on
+-boot_ubi=ubi part ubi && run boot_openwrt
++boot_openwrt=led $bootled_pwr blink 255; ( run nor_read_openwrt || echo Install openwrt ; run boot_tftp ) && bootm $loadaddr#$bootconf ; led $bootled_pwr on
+ 
+ upgrade_uboot=\
+   mw.b 0x89400000 0xff 0x100000 && tftpboot 0x89400000 ${bootloaderfile} && \
+   mtd erase u-boot && mtd write u-boot 0x89400000
+ 
+-format_ubi_part=\
++format_part=\
+   mtd read nor0 0x89500000 0xf40000 0xc0000 && \
+-  mtd erase ubi && ubi part ubi && \
+-  ubi create ubootenv 0x1f000 static && \
+-  ubi create ubootenv2 0x1f000 static && \
+-  ubi create art 0xc0000 static && ubi write 0x89500000 art 0xc0000 && \
++  mtd erase firmware && \
+   run upgrade_uboot
+ 
+-bootcmd=run boot_ubi
++bootcmd=run boot_openwrt
+ bootdelay=3
+ bootmenu_confirm_return=askenv - Press ENTER to return to menu ; bootmenu 20
+ bootmenu_default=0
+@@ -33,6 +29,6 @@ bootmenu_delay=3
+ bootmenu_title=      34m( ( ( mOpenWrt34m ) ) )
+ bootmenu_0=Run default boot command.=run boot_openwrt
+ bootmenu_1=Boot system via TFTP.=run boot_tftp ; run bootmenu_confirm_return
+-bootmenu_2=Format UBI partition.=run format_ubi_part
++bootmenu_2=Format partition.=run format_part
+ bootmenu_4=Upgrade u-boot.=run upgrade_uboot
+ bootmenu_5=Reboot.=reset
+-- 
+2.55.0
+

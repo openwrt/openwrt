@@ -1,0 +1,104 @@
+From 1993356dcc1942cf5b91a09153db930b8ab503e2 Mon Sep 17 00:00:00 2001
+From: Yuzhii0718 <yuzhii0718@outlook.com>
+Date: Fri, 28 Aug 2026 21:41:22 +0800
+Subject: [PATCH] airoha: print SoC name and package ID druing boot
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ arch/arm/mach-airoha/an7581/init.c | 13 ++++++++++++-
+ arch/arm/mach-airoha/an7583/init.c | 13 ++++++++++++-
+ arch/arm/mach-airoha/en7523/init.c | 13 ++++++++++++-
+ 3 files changed, 36 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/mach-airoha/an7581/init.c b/arch/arm/mach-airoha/an7581/init.c
+index ab32706a79d..c0e5dbbe08a 100644
+--- a/arch/arm/mach-airoha/an7581/init.c
++++ b/arch/arm/mach-airoha/an7581/init.c
+@@ -7,12 +7,23 @@
+ #include <asm/armv8/mmu.h>
+ #include <asm/global_data.h>
+ #include <asm/system.h>
++#include <soc/airoha/pkgids.h>
+ 
+ DECLARE_GLOBAL_DATA_PTR;
+ 
+ int print_cpuinfo(void)
+ {
+-	printf("CPU:   Airoha AN7581\n");
++	u32 hir = get_pkg();
++	u32 pdidr = get_pdidr();
++	u32 pkgid = get_pkgid();
++	const char *soc_name = airoha_soc_name_from_regs(hir, pkgid, pdidr);
++
++	if (pkgid != END_PACKAGE_ID) {
++		printf("SoC:   Airoha %s\n", soc_name);
++	} else {
++		printf("SoC:   Airoha AN7581\n");
++	}
++
+ 	return 0;
+ }
+ 
+diff --git a/arch/arm/mach-airoha/an7583/init.c b/arch/arm/mach-airoha/an7583/init.c
+index 4cf7f8caf85..d9810ea116c 100644
+--- a/arch/arm/mach-airoha/an7583/init.c
++++ b/arch/arm/mach-airoha/an7583/init.c
+@@ -7,12 +7,23 @@
+ #include <asm/armv8/mmu.h>
+ #include <asm/global_data.h>
+ #include <asm/system.h>
++#include <soc/airoha/pkgids.h>
+ 
+ DECLARE_GLOBAL_DATA_PTR;
+ 
+ int print_cpuinfo(void)
+ {
+-	printf("CPU:   Airoha AN7583\n");
++	u32 hir = get_pkg();
++	u32 pdidr = get_pdidr();
++	u32 pkgid = get_pkgid();
++	const char *soc_name = airoha_soc_name_from_regs(hir, pkgid, pdidr);
++
++	if (pkgid != END_PACKAGE_ID) {
++		printf("SoC:   Airoha %s\n", soc_name);
++	} else {
++		printf("SoC:   Airoha AN7583\n");
++	}
++
+ 	return 0;
+ }
+ 
+diff --git a/arch/arm/mach-airoha/en7523/init.c b/arch/arm/mach-airoha/en7523/init.c
+index 63d304b8a8a..40ad903552f 100644
+--- a/arch/arm/mach-airoha/en7523/init.c
++++ b/arch/arm/mach-airoha/en7523/init.c
+@@ -11,6 +11,7 @@
+ #include <linux/errno.h>
+ #include <linux/io.h>
+ #include <linux/sizes.h>
++#include <soc/airoha/pkgids.h>
+ 
+ DECLARE_GLOBAL_DATA_PTR;
+ 
+@@ -21,7 +22,17 @@ DECLARE_GLOBAL_DATA_PTR;
+ 
+ int print_cpuinfo(void)
+ {
+-	printf("CPU:   Airoha EN7523/EN7529/EN7562\n");
++	u32 hir = get_pkg();
++	u32 pdidr = get_pdidr();
++	u32 pkgid = get_pkgid();
++	const char *soc_name = airoha_soc_name_from_regs(hir, pkgid, pdidr);
++
++	if (pkgid != END_PACKAGE_ID) {
++		printf("SoC:   Airoha %s\n", soc_name);
++	} else {
++		printf("SoC:   Airoha EN7523/EN7529/EN7562\n");
++	}
++
+ 	return 0;
+ }
+ 
+-- 
+2.55.0
+

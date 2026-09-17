@@ -172,8 +172,8 @@ endif
 endef
 
 define Download/atf-airoha
-  SOURCE_DATE:=2026-09-07
-  SOURCE_VERSION:=e3ad2bb0ed1632ce7b7cce426333112df4014603
+  SOURCE_DATE:=2026-09-09
+  SOURCE_VERSION:=82c1167a0df96465f0b9072e07b069acc6fd3614
   URL:=https://sirherobrine23.com.br/airoha/atf-airoha.git
   PROTO:=git
   FILE:=atf-airoha-$$$$(subst -,.,$$$$(SOURCE_DATE))~$$$$(call version_abbrev,$$$$(SOURCE_VERSION)).tar.zst

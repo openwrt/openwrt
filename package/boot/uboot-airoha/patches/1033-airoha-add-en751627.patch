@@ -1,0 +1,503 @@
+From 1c58e0806fb3e12f34934bbb31a4b585cbddb67a Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Tue, 8 Sep 2026 14:06:16 -0300
+Subject: [PATCH] airoha: add en751627
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ arch/mips/dts/Makefile                      |  1 +
+ arch/mips/dts/econet,en751627-reference.dts | 47 ++++++++++++
+ arch/mips/dts/econet,en751627.dtsi          | 34 +++++++++
+ arch/mips/mach-econet/Kconfig               | 23 +++++-
+ arch/mips/mach-econet/Makefile              |  1 +
+ arch/mips/mach-econet/en7528/init.c         | 26 ++++---
+ board/econet/en7528/board.c                 |  2 +-
+ configs/en751627_reference_defconfig        | 74 +++++++++++++++++++
+ doc/board/econet/en751627.rst               | 81 +++++++++++++++++++++
+ doc/board/econet/index.rst                  |  1 +
+ drivers/net/airoha_eth.c                    | 21 +++++-
+ 11 files changed, 293 insertions(+), 18 deletions(-)
+ create mode 100644 arch/mips/dts/econet,en751627-reference.dts
+ create mode 100644 arch/mips/dts/econet,en751627.dtsi
+ create mode 100644 configs/en751627_reference_defconfig
+ create mode 100644 doc/board/econet/en751627.rst
+
+diff --git a/arch/mips/dts/Makefile b/arch/mips/dts/Makefile
+index 3932c077a6b..3e0d1b6e7c3 100644
+--- a/arch/mips/dts/Makefile
++++ b/arch/mips/dts/Makefile
+@@ -8,6 +8,7 @@ dtb-$(CONFIG_TARGET_PIC32MZDASK) += pic32mzda_sk.dtb
+ dtb-$(CONFIG_TARGET_XILFPGA) += nexys4ddr.dtb
+ dtb-$(CONFIG_BOARD_EN7512_REFERENCE) += econet,en751221-reference.dtb
+ dtb-$(CONFIG_BOARD_EN7528_TPLINK_XC220_G3V) += econet,en7528-tplink-xc220-g3v.dtb
++dtb-$(CONFIG_BOARD_EN751627_REFERENCE) += econet,en751627-reference.dtb
+ dtb-$(CONFIG_BOARD_EN7528_REFERENCE) += econet,en7528-reference.dtb
+ dtb-$(CONFIG_BOARD_EN7580_XGZ030) += econet,en7580-xgz030.dtb
+ dtb-$(CONFIG_BOARD_BROADCOM_BCM968380GERG) += brcm,bcm968380gerg.dtb
+diff --git a/arch/mips/dts/econet,en751627-reference.dts b/arch/mips/dts/econet,en751627-reference.dts
+new file mode 100644
+index 00000000000..5b5570e3751
+--- /dev/null
++++ b/arch/mips/dts/econet,en751627-reference.dts
+@@ -0,0 +1,47 @@
++// SPDX-License-Identifier: GPL-2.0+
++/* Generic chainload target; adapt flash type and wiring to the board. */
++/dts-v1/;
++#include "econet,en751627.dtsi"
++
++/ {
++	model = "Airoha EN7516/EN7527 reference board";
++	compatible = "econet,en751627-reference", "econet,en751627";
++
++	memory@0 {
++		device_type = "memory";
++		/* Placeholder; dram_init uses the vendor calibrated size. */
++		reg = <0x00000000 0x10000000>;
++	};
++
++	chosen {
++		stdout-path = "serial0:115200n8";
++	};
++};
++
++&uart1 {
++	status = "okay";
++};
++
++&spi0 {
++	status = "okay";
++
++	flash@0 {
++		compatible = "spi-nand";
++		reg = <0>;
++		spi-max-frequency = <25000000>;
++		spi-tx-bus-width = <1>;
++		spi-rx-bus-width = <1>;
++	};
++};
++
++&eth {
++	status = "okay";
++};
++
++&gdm1 {
++	status = "okay";
++};
++
++&switch {
++	status = "okay";
++};
+diff --git a/arch/mips/dts/econet,en751627.dtsi b/arch/mips/dts/econet,en751627.dtsi
+new file mode 100644
+index 00000000000..2c46651e04d
+--- /dev/null
++++ b/arch/mips/dts/econet,en751627.dtsi
+@@ -0,0 +1,34 @@
++// SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++/* EN7516/EN7527 is the big-endian member of the EN7528 family. */
++#include "econet,en7528.dtsi"
++
++/ {
++	compatible = "econet,en751627", "airoha,en751627";
++};
++
++&chip_scu {
++	compatible = "airoha,scuclk", "airoha,en751627-chip-scu",
++		     "airoha,en7528-chip-scu", "syscon";
++	native-endian;
++};
++
++&scuclk {
++	compatible = "airoha,en751627-scu", "airoha,en7528-scu", "syscon";
++	native-endian;
++};
++
++&uart1 {
++	big-endian;
++};
++
++&spi0 {
++	native-endian;
++};
++
++&eth {
++	compatible = "econet,en751627-eth";
++};
++
++&switch {
++	compatible = "airoha,en751627-switch", "airoha,en7528-switch";
++};
+diff --git a/arch/mips/mach-econet/Kconfig b/arch/mips/mach-econet/Kconfig
+index 9bed7d2545d..bd763d690be 100644
+--- a/arch/mips/mach-econet/Kconfig
++++ b/arch/mips/mach-econet/Kconfig
+@@ -6,6 +6,15 @@ config TARGET_EN751221
+ 	select SYSCON
+ 	select MIPS_TUNE_34KC
+ 
++config TARGET_EN751627
++	bool "Airoha EN7516/EN7527 SoC (big-endian)"
++	select SYSCON
++	select MIPS_TUNE_1004KC
++	select MIPS_SKIP_CP0_COUNT_CLEAR
++	help
++	  EN7516/EN7527 shares the EN7528 peripheral and CPU support.
++	  This target uses the big-endian vendor first-stage handoff.
++
+ config TARGET_EN7528
+ 	bool "Airoha EN7528 SoC"
+ 	select SYSCON
+@@ -26,17 +35,17 @@ config SYS_VENDOR
+ 
+ config SYS_SOC
+ 	default "en751221" if TARGET_EN751221
+-	default "en7528" if TARGET_EN7528
++	default "en7528" if TARGET_EN7528 || TARGET_EN751627
+ 	default "en7580" if TARGET_EN7580
+ 
+ config SYS_BOARD
+ 	default "en7512" if TARGET_EN751221
+-	default "en7528" if TARGET_EN7528
++	default "en7528" if TARGET_EN7528 || TARGET_EN751627
+ 	default "en7580" if TARGET_EN7580
+ 
+ config SYS_CONFIG_NAME
+ 	default "en7512" if TARGET_EN751221
+-	default "en7528" if TARGET_EN7528
++	default "en7528" if TARGET_EN7528 || TARGET_EN751627
+ 	default "en7580" if TARGET_EN7580
+ 
+ config SYS_MALLOC_F_LEN
+@@ -111,4 +120,12 @@ config BOARD_EN7528_REFERENCE
+ 	  on the DASAN H660GM-A.  Like the XC220-G3V it is chainloaded after a
+ 	  previous stage has trained DDR, but boots from SPI-NAND.
+ 
++config BOARD_EN751627_REFERENCE
++	bool "Airoha EN7516/EN7527 reference board (chainloaded)"
++	depends on SYS_BIG_ENDIAN
++	select TARGET_EN751627
++	help
++	  Build U-Boot proper with integrated Ethernet and SPI-NAND support.
++	  A preceding stage must initialize DDR, CPU clocks and switch PHYs.
++
+ endmenu
+diff --git a/arch/mips/mach-econet/Makefile b/arch/mips/mach-econet/Makefile
+index d99998e4e70..0072fd747c5 100644
+--- a/arch/mips/mach-econet/Makefile
++++ b/arch/mips/mach-econet/Makefile
+@@ -7,6 +7,7 @@ else
+ obj-y += cpu.o
+ obj-$(CONFIG_TARGET_EN751221) += en751221/
+ obj-$(CONFIG_TARGET_EN7528)   += en7528/
++obj-$(CONFIG_TARGET_EN751627) += en7528/
+ obj-$(CONFIG_TARGET_EN7580)   += en7580/
+ ifeq ($(CONFIG_SPL_BUILD),y)
+ obj-y += early_sfc.o
+diff --git a/arch/mips/mach-econet/en7528/init.c b/arch/mips/mach-econet/en7528/init.c
+index 3fed6e1d504..e6a61a88c86 100644
+--- a/arch/mips/mach-econet/en7528/init.c
++++ b/arch/mips/mach-econet/en7528/init.c
+@@ -18,8 +18,6 @@ DECLARE_GLOBAL_DATA_PTR;
+ 
+ #define EN7528_RESET_CONTROL				0xbfb00040UL
+ #define EN7528_SYS_GLOBAL_PARM				0xbfb00284UL
+-#define EN7528_SYS_GLOBAL_DRAM_SIZE_MASK	GENMASK(31, 20)
+-#define EN7528_SYS_GLOBAL_DRAM_SIZE_SHIFT	20
+ #define NP_SCU_BASE		((void __iomem *)CKSEG1ADDR(0x1fb00000))
+ 
+ int print_cpuinfo(void)
+@@ -32,7 +30,9 @@ int print_cpuinfo(void)
+ 	if (pkgid != END_PACKAGE_ID) {
+ 		printf("SoC:   Airoha %s\n", soc_name);
+ 	} else {
+-		printf("SoC:   Airoha EN7528\n");
++		printf("SoC:   Airoha %s\n",
++		       IS_ENABLED(CONFIG_TARGET_EN751627) ?
++		       "EN7516/EN7527" : "EN7528");
+ 	}
+ 
+ 	return 0;
+@@ -44,19 +44,21 @@ int dram_init(void)
+ 
+ 	/*
+ 	 * The vendor first stage stores the calibrated DRAM size in MiB in the
+-	 * upper 12 bits of SYS_GLOBAL_PARM.  EN751221 uses the lower 12 bits of
+-	 * the same register because its boot code is built big-endian, whereas
+-	 * EN7528 is little-endian.
++	 * SYS_GLOBAL_PARM bitfield. EN751627 (big-endian) places dram_size in
++	 * bits [11:0]; EN7528 (little-endian) places it in bits [31:20].
++	 * The MMIO word itself is native-endian on both variants.
+ 	 */
+-	value = readl((void __iomem *)EN7528_SYS_GLOBAL_PARM);
+-	size_mb = (value & EN7528_SYS_GLOBAL_DRAM_SIZE_MASK) >>
+-		  EN7528_SYS_GLOBAL_DRAM_SIZE_SHIFT;
++	value = __raw_readl((void __iomem *)EN7528_SYS_GLOBAL_PARM);
++	if (IS_ENABLED(CONFIG_TARGET_EN751627))
++		size_mb = value & GENMASK(11, 0);
++	else
++		size_mb = (value >> 20) & GENMASK(11, 0);
+ 
+-	debug("EN7528 DRAM: global-param=%08x size=%u MiB\n",
++	debug("EN751627/EN7528 DRAM: global-param=%08x size=%u MiB\n",
+ 	      value, size_mb);
+ 
+ 	if (size_mb < 32 || size_mb > 512) {
+-		printf("Invalid EN7528 calibrated DRAM size: %u MiB\n",
++		printf("Invalid EN751627/EN7528 calibrated DRAM size: %u MiB\n",
+ 		       size_mb);
+ 		return -EINVAL;
+ 	}
+@@ -93,7 +95,7 @@ int ft_system_setup(void *blob, struct bd_info *bd)
+ 
+ void _machine_restart(void)
+ {
+-	writel(0x80000000, (void __iomem *)EN7528_RESET_CONTROL);
++	__raw_writel(0x80000000, (void __iomem *)EN7528_RESET_CONTROL);
+ 	while (1) {
+ 		/* loop forever */
+ 	}
+diff --git a/board/econet/en7528/board.c b/board/econet/en7528/board.c
+index 6c61cca2930..9710e616712 100644
+--- a/board/econet/en7528/board.c
++++ b/board/econet/en7528/board.c
+@@ -24,7 +24,7 @@ int board_late_init(void)
+ 	ret = uclass_get_device_by_driver(UCLASS_MISC,
+ 					  DM_DRIVER_GET(airoha_eth), &dev);
+ 	if (ret && ret != -ENODEV)
+-		printf("EN7528 Ethernet probe failed: %d\n", ret);
++		printf("EN751627/EN7528 Ethernet probe failed: %d\n", ret);
+ 
+ 	return 0;
+ }
+diff --git a/configs/en751627_reference_defconfig b/configs/en751627_reference_defconfig
+new file mode 100644
+index 00000000000..56c8f50811b
+--- /dev/null
++++ b/configs/en751627_reference_defconfig
+@@ -0,0 +1,74 @@
++CONFIG_MIPS=y
++CONFIG_SYS_BIG_ENDIAN=y
++CONFIG_SKIP_LOWLEVEL_INIT=y
++CONFIG_SYS_MALLOC_LEN=0x400000
++CONFIG_NR_DRAM_BANKS=1
++CONFIG_ENV_SIZE=0x1000
++CONFIG_DEFAULT_DEVICE_TREE="econet,en751627-reference"
++CONFIG_SYS_LOAD_ADDR=0x82000000
++CONFIG_SYS_BOOTM_LEN=0x08000000
++CONFIG_ARCH_ECONET=y
++CONFIG_BUILD_TARGET="u-boot.bin"
++CONFIG_BOARD_EN751627_REFERENCE=y
++CONFIG_SYS_MIPS_TIMER_FREQ=200000000
++# CONFIG_MIPS_CACHE_SETUP is not set
++CONFIG_RESTORE_EXCEPTION_VECTOR_BASE=y
++CONFIG_MIPS_BOOT_FDT=y
++CONFIG_MIPS_RELOCATION_TABLE_SIZE=0xc000
++CONFIG_OF_SYSTEM_SETUP=y
++CONFIG_FIT=y
++CONFIG_FIT_VERBOSE=y
++CONFIG_BOOTDELAY=3
++CONFIG_OF_STDOUT_VIA_ALIAS=y
++CONFIG_DEFAULT_FDT_FILE="econet,en751627-reference.dtb"
++CONFIG_SYS_PBSIZE=1049
++CONFIG_SYS_CONSOLE_IS_IN_ENV=y
++CONFIG_DISPLAY_CPUINFO=y
++# CONFIG_DISPLAY_BOARDINFO is not set
++CONFIG_BOARD_LATE_INIT=y
++CONFIG_HUSH_PARSER=y
++CONFIG_SYS_PROMPT="EN751627 U-Boot> "
++CONFIG_SYS_MAXARGS=16
++CONFIG_CMD_BOOTZ=y
++CONFIG_CMD_BOOTMENU=y
++CONFIG_CMD_MEMINFO=y
++CONFIG_CMD_BIND=y
++CONFIG_CMD_MTD=y
++CONFIG_CMD_SF=y
++CONFIG_CMD_DHCP=y
++CONFIG_CMD_MII=y
++CONFIG_CMD_PING=y
++CONFIG_CMD_TFTPBOOT=y
++CONFIG_CMD_MTDPARTS=y
++CONFIG_CMD_LOG=y
++CONFIG_ENV_OVERWRITE=y
++CONFIG_ENV_IS_NOWHERE=y
++CONFIG_ENV_RELOC_GD_ENV_ADDR=y
++CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
++CONFIG_NET_RANDOM_ETHADDR=y
++CONFIG_SYS_RX_ETH_BUFFER=16
++CONFIG_REGMAP=y
++CONFIG_MTD=y
++CONFIG_DM_MTD=y
++CONFIG_DM_MDIO=y
++CONFIG_AIROHA_ETH=y
++CONFIG_HEXDUMP=y
++CONFIG_PHY=y
++CONFIG_SYS_NS16550=y
++CONFIG_SYS_NS16550_MEM32=y
++CONFIG_DEBUG_UART=y
++CONFIG_DEBUG_UART_NS16550=y
++CONFIG_DEBUG_UART_BASE=0xbfbf0000
++CONFIG_DEBUG_UART_CLOCK=1843200
++CONFIG_DEBUG_UART_SHIFT=2
++CONFIG_DEBUG_UART_SKIP_INIT=y
++CONFIG_SPI=y
++CONFIG_DM_SPI=y
++CONFIG_AIROHA_SNFI_SPI=y
++CONFIG_DM_SPI_FLASH=y
++CONFIG_SPI_FLASH=y
++CONFIG_MTD_SPI_NAND=y
++CONFIG_SPI_FLASH_WINBOND=y
++CONFIG_SPI_FLASH_XMC=y
++CONFIG_SPI_FLASH_MTD=y
++CONFIG_LZMA=y
+diff --git a/doc/board/econet/en751627.rst b/doc/board/econet/en751627.rst
+new file mode 100644
+index 00000000000..62996cacf0c
+--- /dev/null
++++ b/doc/board/econet/en751627.rst
+@@ -0,0 +1,81 @@
++.. SPDX-License-Identifier: GPL-2.0+
++
++EN7516/EN7527
++=============
++
++The EN751627 target is the big-endian member of the EN7528 MIPS1004Kc
++family. It shares the CPU/board implementation in ``en7528/`` and the
++peripheral register map in ``econet,en7528.dtsi``. It does not select
++``TARGET_EN7528`` or reuse its little-endian DDR calibration payload.
++
++Build
++-----
++
++Use a GNU MIPS toolchain capable of generating big-endian MIPS32r2 code::
++
++   make O=build/en751627 en751627_reference_defconfig
++   make O=build/en751627 CROSS_COMPILE=mips-linux-gnu- -j4
++
++The result is ``build/en751627/u-boot.bin`` with an appended device tree,
++linked at 0x81000000. This is a RAM-loaded U-Boot proper image. A preceding
++stage must initialize DDR, CPU/cache state, SPI clocks and switch PHYs.
++It is not a replacement flash image for tcboot: this target has no EN751627
++TPL/SPL or cold-boot DDR training implementation.
++
++Hardware description
++--------------------
++
++``econet,en751627.dtsi`` describes the common SoC, overriding the EN7528
++Ethernet compatible to select native big-endian QDMA descriptors. The SCU,
++reset and switch compatibles retain EN7528 fallbacks for their shared
++register layout. SPI and SCU regmaps use native-endian 32-bit MMIO; UART
++uses aligned big-endian 32-bit accesses.
++
++The generic reference DTS enables GDM1, the integrated switch and a single
++SPI-NAND on CS0. No board-specific flash partitions are assumed. For a
++SPI-NOR board, change the flash compatible to ``jedec,spi-nor`` in the
++board DTS; the SPI driver then uses its manual SPI-MEM path. Verify wiring,
++flash part support, RAM size and clocks against the actual board.
++``spi-max-frequency`` does not program the SFC clock without a clock provider;
++this configuration inherits that clock from the preceding stage.
++
++The initial 256 MiB memory node is a placeholder. ``dram_init()`` reads
++calibrated size from bits [11:0] of SYS_GLOBAL_PARM (0xbfb00284), whereas
++the EN7528 handoff uses bits [31:20]. ``OF_SYSTEM_SETUP`` fixes the kernel
++memory node before a supported FDT boot. The CP0 timer configuration assumes
++200 MHz, as in the existing EN7528 reference target; adjust it for boards
++with a different Count frequency.
++
++Ethernet and SPI
++----------------
++
++The EN751627 Ethernet data entry selects the shared EN7528 QDMA ring,
++moving-null RX/TX descriptor and integrated-switch profile. Its version
++field denotes that shared hardware profile. Unlike EN7528, it enables QDMA
++GLOBAL_CFG bit 27 (descriptor byte swap). Legacy descriptors are stored in
++native CPU order. Message-word and payload swap remain enabled on both
++variants; the TX destination field stays in bits [21:19].
++
++The SPI compatible binds the existing SNFI driver. Both SFC and NFI banks
++use native 32-bit register access, with FIFO data extracted byte by byte.
++SPI-NAND retains the existing DMA path and on-die ECC policy. This does not
++implement tcboot controller-ECC/BMT image compatibility. NAND data written
++with a different ECC layout cannot be assumed readable by this driver.
++
++Evidence and validation
++-----------------------
++
++The reference consulted was the TP-Link VX830v GPL SDK under
++``bba_3_0_platform/sdk/en7516/bootrom/bootram/``:
++
++* ``include/asm/tc3162.h``: SYS_GLOBAL_PARM_T bitfield layout.
++* ``net/7512_eth.c``: QDMA descriptor swap conditional on
++  TCSUPPORT_LITTLE_ENDIAN.
++* ``net/7512_eth.h``: corresponding big/little-endian TX message bitfields.
++* ``flash/controller/spi_controller/spi_nfi.c``: NFI register helpers use
++  INREG32/OUTREG32, including helpers named REG16.
++
++Full cross-builds and compiled DTS checks cover EN751627 and EN7528.
++SDK TX-message and DRAM-handoff constants were compiled in both byte orders
++and checked against the fields used here. These checks do not validate live
++Ethernet traffic, flash DMA or booting on a physical EN7516/EN7527 board.
+diff --git a/doc/board/econet/index.rst b/doc/board/econet/index.rst
+index df24ef7f1b6..961b1d6a4ab 100644
+--- a/doc/board/econet/index.rst
++++ b/doc/board/econet/index.rst
+@@ -7,3 +7,4 @@ EcoNet/Airoha
+    :maxdepth: 2
+ 
+    en7512
++   en751627
+diff --git a/drivers/net/airoha_eth.c b/drivers/net/airoha_eth.c
+index cfd9ac0e92b..c9f4f0b4e94 100644
+--- a/drivers/net/airoha_eth.c
++++ b/drivers/net/airoha_eth.c
+@@ -1570,6 +1570,10 @@ static int en751221_qdma_init(struct airoha_qdma *qdma)
+ 		      GLOBAL_CFG_IRQ0_EN_MASK |
+ 		      FIELD_PREP(GLOBAL_CFG_MAX_ISSUE_NUM_MASK, 3);
+ 
++		/* Vendor 7512_eth.c: native BE descriptors require bit 27. */
++		if (qdma->eth->soc->dscp_byte_swap)
++			cfg |= GLOBAL_CFG_DSCP_BYTE_SWAP_MASK;
++
+ 		airoha_qdma_wr(qdma, EN751221_REG_RX_PROTECT_CFG,
+ 			       EN7528_RX_PROTECT_CFG);
+ 		for (i = 0; i < EN751221_NUM_TXQ_DIS_CFG; i++)
+@@ -2650,8 +2654,8 @@ static int en751221_eth_send(struct udevice *dev, void *packet, int length)
+ 		   FIELD_PREP(EN751221_TXMSG_CHANNEL_MASK, 0) |
+ 		   FIELD_PREP(EN751221_TXMSG_QUEUE_MASK, 0));
+ 	/*
+-	 * The EN751627 little-endian LAN TX message layout is also used by
+-	 * EN7528: fport is bits [21:19], while VLAN/offload fields stay zero.
++	 * Vendor BE/LE bitfield declarations put fport in bits [21:19] on
++	 * both EN751627 and EN7528; VLAN/offload fields stay zero.
+ 	 * GDM1 therefore produces word 1 = 0x00080000.
+ 	 */
+ 	WRITE_ONCE(desc->msg1,
+@@ -3134,6 +3138,16 @@ static const struct airoha_eth_soc_data en751221_data = {
+ 	.switch_compatible = "econet,en751221-switch",
+ };
+ 
++/* Same QDMA/ring/switch profile, with native big-endian descriptors. */
++static const struct airoha_eth_soc_data en751627_data = {
++	.version = 0x7528,
++	.gen1 = true,
++	.legacy_qdma = true,
++	.late_probe = true,
++	.dscp_byte_swap = true,
++	.switch_compatible = "airoha,en751627-switch",
++};
++
+ static const struct airoha_eth_soc_data en7528_data = {
+ 	.version = 0x7528,
+ 	.gen1 = true,
+@@ -3159,6 +3173,9 @@ static const struct udevice_id airoha_eth_ids[] = {
+ 	{ .compatible = "econet,en751221-eth",
+ 	  .data = (ulong)&en751221_data,
+ 	},
++	{ .compatible = "econet,en751627-eth",
++	  .data = (ulong)&en751627_data,
++	},
+ 	{ .compatible = "econet,en7528-eth",
+ 	  .data = (ulong)&en7528_data,
+ 	},
+-- 
+2.55.0
+
