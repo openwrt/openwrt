@@ -7,6 +7,7 @@
 #include "pie.h"
 #include "qos.h"
 #include "rtl-otto.h"
+#include "stats.h"
 #include "vlan.h"
 
 const struct rtldsa_mib_list_item rtldsa_839x_mib_list[] = {

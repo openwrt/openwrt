@@ -8,6 +8,7 @@
 #include "pie.h"
 #include "qos.h"
 #include "rtl-otto.h"
+#include "stats.h"
 #include "tc.h"
 #include "vlan.h"
 
