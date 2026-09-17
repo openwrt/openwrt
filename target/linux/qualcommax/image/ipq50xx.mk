@@ -295,6 +295,24 @@ define Device/yuncore_ax850
 endef
 TARGET_DEVICES += yuncore_ax850
 
+define Device/zte_t5400
+	$(call Device/FitImageLzma)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := ZTE
+	DEVICE_MODEL := T5400
+	DEVICE_DTS_CONFIG := config@mp03.1
+	SOC := ipq5018
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	IMAGE_SIZE := 61440k
+	NAND_SIZE := 256m
+	DEVICE_PACKAGES := ath11k-firmware-ipq5018 \
+		kmod-ath11k-pci \
+		ath11k-firmware-qcn9074 \
+		ipq-wifi-zte_t5400
+endef
+TARGET_DEVICES += zte_t5400
+
 define Device/zyxel_scr50axe
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
