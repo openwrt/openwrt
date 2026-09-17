@@ -19,18 +19,6 @@
 	};
 };
 
-/*
- * dtsi tags this controller airoha,en7523-spi (en7523_spi_data has_nfi=true),
- * so the driver tries to map a non-existent NFI reg region and fails
- * (-EINVAL invalid resource). EN751221 has no NFI (SFC/NOR path), so use
- * the correct compatible -> en751221_spi_data (has_nfi=false).
- */
-&spi_ctrl {
-	compatible = "econet,en751221-spi";
-	clocks = <&scuclk EN751221_CLK_SPI>;
-	clock-names = "spi";
-};
-
 &nand {
 	status = "okay";
 	econet,bmt;

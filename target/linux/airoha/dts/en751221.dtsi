@@ -27,10 +27,16 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		cpu@0 {
+		cpu0: cpu@0 {
 			device_type = "cpu";
 			compatible = "mips,mips34Kc";
 			reg = <0>;
+		};
+
+		cpu1: cpu@1 {
+			device_type = "cpu";
+			compatible = "mips,mips34Kc";
+			reg = <1>;
 		};
 	};
 
@@ -41,37 +47,21 @@
 		#interrupt-cells = <1>;
 	};
 
-	chip_scu: syscon@1fa20000 {
-		compatible = "airoha,scuclk", "econet,en751221-chip-scu", "syscon";
-		reg = <0x1fa20000 0x400>;
-	};
-
-	scuclk: system-controller@1fb00000 {
-		compatible = "econet,en751221-scu", "syscon";
-		reg = <0x1fb00000 0x1000>;
-
-		airoha,chip-scu = <&chip_scu>;
-		#clock-cells = <1>;
-		#reset-cells = <1>;
-	};
-
-	spi0: spi_controller@1fa10000 {
+	spi0: spi@1fa10000 {
 		compatible = "econet,en751221-spi";
-		reg = <0x1fa10000 0x140>,
-		      <0x1fa11000 0x160>;
+		reg = <0x1fa10000 0x140>;
 
 		clocks = <&scuclk EN751221_CLK_SPI>;
 		clock-names = "spi";
-
-		airoha,scu = <&scuclk>, <&chip_scu>;
-		airoha,scu-names = "scuclk", "chip-scu";
-
 		#address-cells = <1>;
 		#size-cells = <0>;
 
 		nand: nand@0 {
 			compatible = "spi-nand";
 			reg = <0>;
+			spi-max-frequency = <25000000>;
+			spi-rx-bus-width = <2>;
+			spi-tx-bus-width = <1>;
 			nand-ecc-engine = <&nand>;
 		};
 	};
@@ -97,6 +87,7 @@
 		interrupt-controller;
 		#interrupt-cells = <1>;
 		econet,shadow-interrupts = <7 2>, <8 3>, <13 12>, <30 29>;
+		econet,cpu-interrupt-map = <7 0>, <8 1>;
 	};
 
 	timer_hpt: timer@1fbf0400 {
@@ -106,6 +97,20 @@
 		interrupt-parent = <&intc>;
 		interrupts = <30>;
 		clocks = <&hpt_clock>;
+	};
+
+	chip_scu: syscon@1fa20000 {
+		compatible = "airoha,chip-scu", "syscon";
+		reg = <0x1fa20000 0x400>;
+	};
+
+	scuclk: system-controller@1fb00000 {
+		compatible = "econet,en751221-scu", "syscon";
+		reg = <0x1fb00000 0x1000>;
+		airoha,chip-scu = <&chip_scu>;
+
+		#clock-cells = <1>;
+		#reset-cells = <1>;
 	};
 
 	watchdog: watchdog@1fbf0100 {
@@ -237,6 +242,24 @@
 		};
 	};
 
+	wed0: wed@1fa02000 {
+		compatible = "econet,en751221-wed", "syscon";
+		reg = <0x1fa02000 0xb00>,
+		      <0x1fa06000 0x400>;
+		reg-names = "wed", "wdma";
+		interrupt-parent = <&intc>;
+		interrupts = <51>;
+	};
+
+	wed1: wed@1fa03000 {
+		compatible = "econet,en751221-wed", "syscon";
+		reg = <0x1fa03000 0xb00>,
+		      <0x1fa06400 0x400>;
+		reg-names = "wed", "wdma";
+		interrupt-parent = <&intc>;
+		interrupts = <52>;
+	};
+
 	usb: usb@1fb90000 {
 		compatible = "mediatek,mt8173-xhci", "mediatek,mtk-xhci";
 		reg = <0x1fb90000 0x4000>,
@@ -354,6 +377,7 @@
 		interrupt-parent = <&intc>;
 		interrupts = <21>, <22>;
 		interrupt-names = "qdma0", "qdma1";
+		airoha,wed = <&wed0>, <&wed1>;
 
 		resets = <&scuclk EN751221_FE_RST>,
 		         <&scuclk EN751221_FE_QDMA1_RST>,
@@ -361,7 +385,7 @@
 		         <&scuclk EN751221_GDMA_RST>,
 		         <&scuclk EN751221_FE_UNZIP_RST>,
 		         <&scuclk EN751221_GDMP_RST>;
-		reset-names = "fe", "pdma", "qdma",
+		reset-names = "fe", "pdma", "qdma", /* rename to pdma, qdma */
 		              "gdma", "fe-unzip", "gdmp";
 
 		#address-cells = <1>;
