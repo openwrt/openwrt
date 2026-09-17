@@ -3,6 +3,8 @@ define Package/ath11k-firmware-ipq5018/install
 	$(INSTALL_DIR) $(1)/lib/firmware/ath11k/IPQ5018/hw1.0
 	$(INSTALL_DATA) \
 		$(PKG_BUILD_DIR)/ath11k/IPQ5018/hw1.0/* $(1)/lib/firmware/ath11k/IPQ5018/hw1.0/
+	$(LN) ./m3_fw.mdt $(1)/lib/firmware/ath11k/IPQ5018/hw1.0/m3_fw.mbn
+	$(LN) ./q6_fw.mdt $(1)/lib/firmware/ath11k/IPQ5018/hw1.0/q6_fw.mbn
 endef
 $(eval $(call BuildPackage,ath11k-firmware-ipq5018))
 

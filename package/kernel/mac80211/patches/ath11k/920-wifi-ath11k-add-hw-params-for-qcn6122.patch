@@ -1,31 +1,37 @@
+From db5b8cc4b6a51397ebdd9f7d149c1efdcbb4112f Mon Sep 17 00:00:00 2001
 From: George Moussalem <george.moussalem@outlook.com>
-Date: Wed, 27 Oct 2024 16:34:11 +0400
-Subject: [PATCH] wifi: ath11k: add hw params for QCN6122
+Date: Thu, 17 Sep 2026 17:51:19 +0400
+Subject: [PATCH ath-next 11/16] wifi: ath11k: add hw params for QCN6122
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+Message-Id: <20260917-ipq5018-qcn6122-mpd-v1-11-ca1168c321a2@outlook.com>
 
 Add QCN6122 platform support.
 
 QCN6122 is a PCIe based solution that is attached to and enumerated
 by the WPSS (Wireless Processor SubSystem) Q6 processor.
 
-Though it is a PCIe device, since it is not attached to APSS processor
-(Application Processor SubSystem), APSS will be unaware of such a decice
-and hence it is registered to the APSS processor as a platform device(AHB).
-Because of this hybrid nature, it is called as a hybrid bus device.
+Though it is a PCIe device, since it is not attached to APSS processor,
+APSS will be unaware of such a decice and hence it is registered to the
+APSS processor as a platform AHB device.
 
-As such, QCN6122 is a hybrid bus type device and follows the same codepath
-as for WCN6750.
+As such, QCN6122 is a hybrid bus type device and follows the same
+codepath as for WCN6750.
 
 This is a heavily simplified version of below downstream patch:
-Download from https://git.codelinaro.org/clo/qsdk/oss/system/feeds/wlan-open/-/blob/NHSS.QSDK.12.4.5.r2/mac80211/patches/232-ath11k-qcn6122-support.patch
+Link: https://git.codelinaro.org/clo/qsdk/oss/system/feeds/wlan-open/-/blob/NHSS.QSDK.12.4.5.r2/mac80211/patches/232-ath11k-qcn6122-support.patch
 
-Co-developed-by: George Moussalem <george.moussalem@outlook.com>
-Signed-off-by: Sowmiya Sree Elavalagan <ssreeela@codeaurora.org>
 Signed-off-by: George Moussalem <george.moussalem@outlook.com>
 ---
+ drivers/net/wireless/ath/ath11k/core.c | 85 ++++++++++++++++++++++++++++++++++
+ drivers/net/wireless/ath/ath11k/core.h |  1 +
+ drivers/net/wireless/ath/ath11k/qmi.h  |  3 +-
+ 3 files changed, 88 insertions(+), 1 deletion(-)
 
 --- a/drivers/net/wireless/ath/ath11k/core.c
 +++ b/drivers/net/wireless/ath/ath11k/core.c
-@@ -926,6 +926,66 @@ static struct ath11k_hw_params ath11k_hw
+@@ -936,6 +936,91 @@ static struct ath11k_hw_params ath11k_hw
  		.cfr_num_stream_bufs = 255,
  		.cfr_stream_buf_size = 8200,
  	},
@@ -36,28 +42,13 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
 +			.dir = "QCN6122/hw1.0",
 +			.board_size = 256 * 1024,
 +			.cal_offset = 128 * 1024,
++			.m3_loader = ath11k_m3_fw_loader_ahb,
 +		},
-+		.hal_params = &ath11k_hw_hal_params_ipq5018,
 +		.max_radios = MAX_RADIOS_5018,
 +		.bdf_addr = 0x4D200000,
 +		.hw_ops = &ipq5018_ops,
-+		.hal_desc_sz = sizeof(struct hal_rx_desc_qcn9074),
++		.internal_sleep_clock = false,
 +		.qmi_service_ins_id = ATH11K_QMI_WLFW_SERVICE_INS_ID_V01_QCN6122,
-+		.interface_modes = BIT(NL80211_IFTYPE_STATION) |
-+					BIT(NL80211_IFTYPE_AP) |
-+					BIT(NL80211_IFTYPE_MESH_POINT),
-+		.spectral = {
-+			.fft_sz = 2,
-+			.fft_pad_sz = 0,
-+			.summary_pad_sz = 16,
-+			.fft_hdr_len = 24,
-+			.max_fft_bins = 1024,
-+		},
-+		.credit_flow = false,
-+		.supports_monitor = true,
-+		.supports_shadow_regs = false,
-+		.idle_ps = false,
-+		.supports_suspend = false,
 +		.host_ce_config = ath11k_host_ce_config_qcn9074,
 +		.ce_count = CE_CNT_5018,
 +		.target_ce_config = ath11k_target_ce_config_wlan_ipq5018,
@@ -70,24 +61,64 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
 +		.rx_mac_buf_ring = false,
 +		.vdev_start_delay = false,
 +		.htt_peer_map_v2 = true,
++
++		.spectral = {
++			.fft_sz = 2,
++			.fft_pad_sz = 0,
++			.summary_pad_sz = 16,
++			.fft_hdr_len = 24,
++			.max_fft_bins = 1024,
++			.fragment_160mhz = false,
++		},
++
++		.interface_modes = BIT(NL80211_IFTYPE_STATION) |
++					BIT(NL80211_IFTYPE_AP) |
++					BIT(NL80211_IFTYPE_MESH_POINT),
++		.supports_monitor = true,
++		.full_monitor_mode = false,
++		.supports_shadow_regs = false,
++		.idle_ps = false,
++		.supports_sta_ps = false,
 +		.coldboot_cal_mm = false,
 +		.coldboot_cal_ftm = false,
 +		.cbcal_restart_fw = true,
++		.fw_mem_mode = 1,
++		.num_vdevs = 16 + 1,
++		.num_peers = 512,
++		.supports_suspend = false,
++		.hal_desc_sz = sizeof(struct hal_rx_desc_qcn9074),
++		.supports_regdb = false,
 +		.fix_l1ss = true,
-+		.alloc_cacheable_memory = true,
-+		.m3_fw_support = false,
++		.credit_flow = false,
++		.hal_params = &ath11k_hw_hal_params_ipq5018,
++		.supports_dynamic_smps_6ghz = false,
++		.alloc_cacheable_memory = false,
++		.supports_rssi_stats = false,
++		.fw_wmi_diag_event = false,
++		.current_cc_support = false,
++		.dbr_debug_support = true,
++		.global_reset = false,
++		.bios_sar_capa = NULL,
++		.m3_fw_support = true,
 +		.fixed_bdf_addr = true,
 +		.fixed_mem_region = true,
 +		.static_window_map = true,
 +		.hybrid_bus_type = true,
-+		.fw_mem_mode = 1,
-+		.supports_sta_ps = false,
-+		.dbr_debug_support = true,
-+		.bios_sar_capa = NULL,
 +		.fixed_fw_mem = false,
 +		.support_off_channel_tx = false,
++		.supports_multi_bssid = false,
++
++		.sram_dump = {},
++
 +		.tcl_ring_retry = true,
 +		.tx_ring_size = DP_TCL_DATA_RING_SIZE,
++		.smp2p_wow_exit = false,
++		.support_fw_mac_sequence = false,
++		.support_dual_stations = false,
++		.pdev_suspend = false,
++		.cfr_support = false,
++		.cfr_num_stream_bufs = 0,
++		.cfr_stream_buf_size = 0,
 +	},
  };
  

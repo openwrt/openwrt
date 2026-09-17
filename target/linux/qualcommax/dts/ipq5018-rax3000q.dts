@@ -74,6 +74,22 @@
 			default-state = "off";
 		};
 	};
+
+	reserved-memory {
+		q6_region_qcn6122_1: q6-region-qcn6122-1@4d200000 {
+			reg = <0x0 0x4d200000 0x0 0xd00000>;
+			no-map;
+
+			status = "disabled";
+		};
+
+		m3_dump_qcn6122_1: m3-dump-qcn6122-1@4df00000 {
+			reg = <0x0 0x4df00000 0x0 0x100000>;
+			no-map;
+
+			status = "disabled";
+		};
+	};
 };
 
 &sleep_clk {
@@ -319,6 +335,17 @@
 };
 
 //256M RAM is too small for ath11k, so WiFi is disabled to prevent OOM.
+&q6_region {
+	status = "disabled";
+};
+
+&q6_region_ipq5018 {
+	status = "disabled";
+};
+
+&m3_dump_ipq5018 {
+	status = "disabled";
+};
 
 &q6v5_wcss {
 	status = "disabled";
@@ -337,20 +364,19 @@
 	// IPQ5018
 	status = "disabled";
 
-	qcom,rproc = <&q6_wcss_pd1>;
+	qcom,rproc = <&q6v5_wcss>;
 	qcom,ath11k-calibration-variant = "CMCC-RAX3000Q";
 	qcom,ath11k-fw-memory-mode = <1>;
-	qcom,bdf-addr = <0x4c400000>;
 };
 
 &wifi1 {
 	// QCN6102 5G
 	status = "disabled";
 
-	qcom,rproc = <&q6_wcss_pd2>;
-	qcom,userpd-subsys-name = "q6v5_wcss_userpd2";
+	qcom,rproc = <&q6v5_wcss>;
 	qcom,ath11k-calibration-variant = "CMCC-RAX3000Q";
 	qcom,ath11k-fw-memory-mode = <1>;
-	qcom,bdf-addr = <0x4d100000>;
-	qcom,m3-dump-addr = <0x4df00000>;
+
+	memory-region = <&q6_region_qcn6122_1>, <&q6_region_ipq5018>, <&m3_dump_qcn6122_1>;
+	memory-region-names = "q6-region", "m3-region", "m3-dump";
 };
