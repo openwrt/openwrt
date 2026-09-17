@@ -151,6 +151,42 @@ define U-Boot/en7523_tplink_xx230v-v1
 endef
 UBOOT_TARGETS += en7523_tplink_xx230v-v1
 
+define U-Boot/en751221_reference
+  NAME:=Genric en751221
+  UBOOT_IMAGE:=tcboot.bin
+  UBOOT_CONFIG:=en751221_reference
+  BUILD_SUBTARGET:=en751221
+  BUILD_DEVICES:=en751221_generic
+endef
+UBOOT_TARGETS += en751221_reference
+
+define U-Boot/en751221_nokia_g240g-e
+  NAME:=Nokia G-240G-E
+  UBOOT_IMAGE:=tcboot.bin
+  UBOOT_CONFIG:=en751221_nokia_g240g-e
+  BUILD_SUBTARGET:=en751221
+  BUILD_DEVICES:=nokia_g240g-e
+endef
+UBOOT_TARGETS += en751221_nokia_g240g-e
+
+define U-Boot/en7528_reference
+  NAME:=Genric en7528
+  UBOOT_IMAGE:=tcboot.bin
+  UBOOT_CONFIG:=en7528_reference
+  BUILD_SUBTARGET:=en7528
+  BUILD_DEVICES:=en7528_generic
+endef
+UBOOT_TARGETS += en7528_reference
+
+define U-Boot/en7528_tplink_xc220-g3v
+  NAME:=TP-Link XC220-G3v
+  UBOOT_IMAGE:=tcboot.bin
+  UBOOT_CONFIG:=en7528_tplink_xc220_g3v
+  BUILD_SUBTARGET:=en7528
+  BUILD_DEVICES:=tplink_xc220-g3v
+endef
+UBOOT_TARGETS += en7528_tplink_xc220-g3v
+
 UBOOT_CUSTOMIZE_CONFIG := \
 	--disable TOOLS_KWBIMAGE \
 	--disable TOOLS_LIBCRYPTO \
@@ -176,8 +212,13 @@ endef
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/u-boot.$(if $(LZMA_COMPRESS),lzma,bin) \
-		$(STAGING_DIR_IMAGE)/$(BUILD_VARIANT)-u-boot.$(if $(LZMA_COMPRESS),lzma,bin)
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/u-boot.bin \
+		$(STAGING_DIR_IMAGE)/$(BUILD_VARIANT)-u-boot.bin
+	$(if $(filter tcboot.bin,$(UBOOT_IMAGE)), \
+		$(INSTALL_DATA) $(PKG_BUILD_DIR)/tcboot.bin \
+			$(STAGING_DIR_IMAGE)/$(BUILD_VARIANT)-tcboot.bin)
+	$(if $(LZMA_COMPRESS), $(INSTALL_DATA) $(PKG_BUILD_DIR)/u-boot.lzma \
+		$(STAGING_DIR_IMAGE)/$(BUILD_VARIANT)-u-boot.lzma)
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/u-boot.dtb \
 		$(STAGING_DIR_IMAGE)/$(BUILD_VARIANT)-u-boot.dtb
 endef

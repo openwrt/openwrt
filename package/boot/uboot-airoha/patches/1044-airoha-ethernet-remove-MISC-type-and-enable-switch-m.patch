@@ -113,7 +113,7 @@ index a47d1678427..9ecd1d765ad 100644
  	.switch_compatible = "econet,en751221-switch",
  };
  
-@@ -3192,12 +3192,14 @@ static const struct airoha_eth_soc_data en7581_data = {
+@@ -3192,13 +3192,15 @@ static const struct airoha_eth_soc_data en7581_data = {
  	.version = 0x7581,
  	.xsi_rsts_names = en7581_xsi_rsts_names,
  	.num_xsi_rsts = ARRAY_SIZE(en7581_xsi_rsts_names),
@@ -122,6 +122,7 @@ index a47d1678427..9ecd1d765ad 100644
  };
  
  static const struct airoha_eth_soc_data an7583_data = {
+ 	.version = 0x7583,
  	.xsi_rsts_names = an7583_xsi_rsts_names,
  	.num_xsi_rsts = ARRAY_SIZE(an7583_xsi_rsts_names),
 +	.switch_mdio = true,
@@ -139,4 +140,3 @@ index a47d1678427..9ecd1d765ad 100644
  	.bind = airoha_eth_bind,
 -- 
 2.55.0
-
