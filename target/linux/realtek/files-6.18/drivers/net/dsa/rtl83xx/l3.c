@@ -530,17 +530,18 @@ static void otto_l3_930x_net6_mask(int prefix_len, struct in6_addr *ip6_m)
 __maybe_unused
 static int otto_l3_930x_route_lookup_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_route *rt)
 {
-	struct in6_addr ip6_m;
 	u32 ip4_m, v;
 
 	if (rt->attr.type == ROUTE_TYPE_IP4MC || rt->attr.type == ROUTE_TYPE_IP6MC)
 		return -1;
 
-	sw_w32_mask(0x3 << 19, rt->attr.type, RTL930X_L3_HW_LU_KEY_CTRL);
+	sw_w32_mask(0x3 << 19, rt->attr.type << 19, RTL930X_L3_HW_LU_KEY_CTRL);
 	if (rt->attr.type) { /* IPv6 */
-		otto_l3_930x_net6_mask(rt->prefix_len, &ip6_m);
+		struct in6_addr key;
+
+		ipv6_addr_prefix(&key, &rt->dst_ip6, rt->prefix_len);
 		for (int i = 0; i < 4; i++)
-			sw_w32(rt->dst_ip6.s6_addr32[0] & ip6_m.s6_addr32[0],
+			sw_w32(key.s6_addr32[i],
 			       RTL930X_L3_HW_LU_KEY_IP_CTRL + (i << 2));
 	} else { /* IPv4 */
 		ip4_m = inet_make_mask(rt->prefix_len);
