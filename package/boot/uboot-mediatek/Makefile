@@ -1502,13 +1502,15 @@ ifdef CONFIG_TARGET_mediatek
 UBOOT_MAKE_FLAGS += $(UBOOT_IMAGE:.fip=.bin)
 endif
 
+FIP_BL31=$(STAGING_DIR_IMAGE)/$(if $(BL2_SOC),$(BL2_SOC),$(BUILD_SUBTARGET))-$(BL2_BOOTDEV)-$(if $(BL2_DDRTYPE),$(BL2_DDRTYPE)-)$(if $(BL2_DDRBLOB),$(BL2_DDRBLOB)ddr-)bl31.bin
+
 define Build/fip-image
 	$(if $(FIP_COMPRESS),\
-		xz -f -e -k -9 -C crc32 $(STAGING_DIR_IMAGE)/$(if $(BL2_SOC),$(BL2_SOC),$(BUILD_SUBTARGET))-$(BL2_BOOTDEV)-$(if $(BL2_DDRTYPE),$(BL2_DDRTYPE)-)$(if $(BL2_DDRBLOB),$(BL2_DDRBLOB)ddr-)bl31.bin ;\
+		xz -f -e -k -9 -C crc32 $(FIP_BL31) ;\
 		xz -f -e -k -9 -C crc32 $(PKG_BUILD_DIR)/u-boot.bin \
 	)
 	$(STAGING_DIR_HOST)/bin/fiptool create \
-		--soc-fw $(STAGING_DIR_IMAGE)/$(if $(BL2_SOC),$(BL2_SOC),$(BUILD_SUBTARGET))-$(BL2_BOOTDEV)-$(if $(BL2_DDRTYPE),$(BL2_DDRTYPE)-)$(if $(BL2_DDRBLOB),$(BL2_DDRBLOB)ddr-)bl31.bin$(if $(FIP_COMPRESS),.xz) \
+		--soc-fw $(FIP_BL31)$(if $(FIP_COMPRESS),.xz) \
 		--nt-fw $(PKG_BUILD_DIR)/u-boot.bin$(if $(FIP_COMPRESS),.xz) \
 		$(PKG_BUILD_DIR)/u-boot.fip
 endef
@@ -1543,3 +1545,9 @@ define Build/InstallDev
 endef
 
 $(eval $(call BuildPackage/U-Boot))
+
+# The fip contains BL31 from trusted-firmware-a, so build it again if that
+# changed.
+ifeq ($(DUMP)$(UBOOT_IMAGE),u-boot.fip)
+$(STAMP_BUILT): $(wildcard $(FIP_BL31))
+endif
