@@ -1603,6 +1603,15 @@ static int otto_l3_fib_notifier(struct notifier_block *this, unsigned long event
 		if (info->family == AF_INET) {
 			struct fib_entry_notifier_info *fen_info = ptr;
 
+			/* A route through a nexthop object keeps no nexthop
+			 * array of its own, and everything below reads one.
+			 */
+			if (fen_info->fi->nh) {
+				dev_dbg(ctrl->dev, "route through a nexthop object, not offloaded\n");
+				kfree(fib_work);
+				return NOTIFY_DONE;
+			}
+
 			if (fen_info->fi->fib_nh_is_v6) {
 				NL_SET_ERR_MSG_MOD(info->extack,
 						   "IPv6 gateway with IPv4 route is not supported");
