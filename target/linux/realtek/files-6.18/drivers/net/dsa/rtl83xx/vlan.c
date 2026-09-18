@@ -312,8 +312,8 @@ void rtl839x_vlan_tables_read(u32 vlan, struct rtldsa_vlan_info *info)
 	info->member_ports = u;
 	info->member_ports = (info->member_ports << 21) | ((v >> 11) & 0x1fffff);
 	info->profile_id = w >> 30 | ((v & 1) << 2);
-	info->hash_mc_fid = !!(w & BIT(2));
-	info->hash_uc_fid = !!(w & BIT(3));
+	info->hash_mc_fid = !!(v & BIT(1));
+	info->hash_uc_fid = !!(v & BIT(2));
 	info->fid = (v >> 3) & 0xff;
 
 	otto_table_read(RTL8390_TBL_UNTAG, vlan, &untag);
