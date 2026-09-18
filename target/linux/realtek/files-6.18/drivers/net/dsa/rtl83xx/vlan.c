@@ -771,31 +771,6 @@ void rtl931x_vlan_port_pvid_set(int port, enum pbvlan_type type, int pvid)
 		sw_w32_mask(0xfff << 14, pvid << 14, RTL931X_VLAN_PORT_IGR_CTRL + (port << 2));
 }
 
-static int rtldsa_vlan_prepare(struct dsa_switch *ds, int port,
-			       const struct switchdev_obj_port_vlan *vlan)
-{
-	struct rtldsa_vlan_info info;
-	struct rtl838x_switch_priv *priv = ds->priv;
-
-	priv->r->vlan_tables_read(0, &info);
-
-	pr_debug("VLAN 0: Member ports %llx, untag %llx, profile %d, MC# %d, UC# %d, FID %x\n",
-		 info.member_ports, info.untagged_ports, info.profile_id,
-		 info.hash_mc_fid, info.hash_uc_fid, info.fid);
-
-	priv->r->vlan_tables_read(1, &info);
-	pr_debug("VLAN 1: Member ports %llx, untag %llx, profile %d, MC# %d, UC# %d, FID %x\n",
-		 info.member_ports, info.untagged_ports, info.profile_id,
-		 info.hash_mc_fid, info.hash_uc_fid, info.fid);
-	priv->r->vlan_set_untagged(1, info.untagged_ports);
-	pr_debug("SET: Untagged ports, VLAN %d: %llx\n", 1, info.untagged_ports);
-
-	priv->r->vlan_set_tagged(1, &info);
-	pr_debug("SET: Member ports, VLAN %d: %llx\n", 1, info.member_ports);
-
-	return 0;
-}
-
 int rtldsa_vlan_filtering(struct dsa_switch *ds, int port,
 				 bool vlan_filtering,
 				 struct netlink_ext_ack *extack)
@@ -842,7 +817,6 @@ int rtldsa_vlan_add(struct dsa_switch *ds, int port,
 {
 	struct rtldsa_vlan_info info;
 	struct rtl838x_switch_priv *priv = ds->priv;
-	int err;
 
 	pr_debug("%s port %d, vid %d, flags %x\n",
 		 __func__, port, vlan->vid, vlan->flags);
@@ -855,10 +829,6 @@ int rtldsa_vlan_add(struct dsa_switch *ds, int port,
 		dev_err(priv->dev, "VLAN out of range: %d", vlan->vid);
 		return -ENOTSUPP;
 	}
-
-	err = rtldsa_vlan_prepare(ds, port, vlan);
-	if (err)
-		return err;
 
 	mutex_lock(&priv->reg_mutex);
 
