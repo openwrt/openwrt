@@ -592,6 +592,8 @@ sub gen_package_auxiliary() {
 		my @depends = sort keys %depends;
 		if (@depends > 0) {
 			foreach my $n (@{$pkg->{provides}}) {
+				# A real package of that name keeps its own dependencies
+				next if $n ne $name && $package{$n};
 				print "Package/$n/depends = @depends\n";
 			}
 		}
