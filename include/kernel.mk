@@ -273,7 +273,37 @@ $(call KernelPackage/$(1)/config)
 
 endef
 
-version_filter=$(if $(findstring @,$(1)),$(shell $(SCRIPT_DIR)/package-metadata.pl version_filter $(KERNEL_PATCHVER) $(1)),$(1))
+version_filter_perl=$(shell $(SCRIPT_DIR)/package-metadata.pl version_filter $(KERNEL_PATCHVER) $(1))
+
+# Items of the form <name>@<op><version> are filtered in make, as a perl
+# call per list costs seconds when parsing all kmod packages. The version
+# comparison stays in package-metadata.pl, but runs only once per version.
+# Any other form of item is passed to package-metadata.pl as before.
+
+# $(1): version, returns the operators that are true for KERNEL_PATCHVER
+version_ops=$(if $(filter undefined,$(origin version_ops/$(1))),$(eval \
+	version_ops/$(1):=$(call version_filter_perl,$(foreach op,lt le gt ge eq ne,$(op)@$(op)$(1)))))$(version_ops/$(1))
+
+strip_digits=$(subst 9,,$(subst 8,,$(subst 7,,$(subst 6,,$(subst 5,,$(subst 4,,$(subst 3,,$(subst 2,,$(subst 1,,$(subst 0,,$(1)))))))))))
+
+# $(1): version, returns y if it is a list of numbers separated by dots
+version_is_plain=$(if $(or $(filter .% %.,$(1)),$(findstring ..,$(1)),$(subst .,,$(call strip_digits,$(1)))),,$(if $(findstring .,$(1)),y))
+
+# $(1): condition such as ge6.18
+version_cond_op=$(firstword $(foreach op,lt le gt ge eq ne,$(if $(filter $(op)%,$(1)),$(op))))
+version_cond_ver=$(patsubst $(call version_cond_op,$(1))%,%,$(1))
+
+# $(1): item such as foo@ge6.18, $(2): name, $(3): condition
+version_filter_item=$(if $(and $(2),$(call version_cond_op,$(3)),$(call version_is_plain,$(call version_cond_ver,$(3)))), \
+	$(if $(filter $(call version_cond_op,$(3)),$(call version_ops,$(call version_cond_ver,$(3)))),$(2)), \
+	$(call version_filter_perl,$(1)))
+
+version_filter=$(if $(findstring @,$(1)),$(strip $(foreach item,$(1), \
+	$(if $(findstring @,$(item)), \
+		$(if $(filter 2,$(words $(subst @, ,$(item)))), \
+			$(call version_filter_item,$(item),$(word 1,$(subst @, ,$(item))),$(word 2,$(subst @, ,$(item)))), \
+			$(call version_filter_perl,$(item))), \
+		$(item)))),$(1))
 
 # 1: priority (optional)
 # 2: module list
