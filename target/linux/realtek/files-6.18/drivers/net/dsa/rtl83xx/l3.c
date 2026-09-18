@@ -28,6 +28,7 @@ struct otto_l3_net_event_work {
 	struct otto_l3_ctrl *ctrl;
 	u64 mac;
 	struct in6_addr gw_addr;
+	int ifindex;
 };
 
 struct otto_l3_fib_event_work {
@@ -1030,7 +1031,7 @@ static void otto_l3_route_compact(struct otto_l3_ctrl *ctrl, struct otto_l3_rout
 }
 
 /* Updates an L3 next hop entry in the ROUTING table */
-static int otto_l3_nexthop_update(struct otto_l3_ctrl *ctrl, u8 type,
+static int otto_l3_nexthop_update(struct otto_l3_ctrl *ctrl, u8 type, int ifindex,
 				  const struct in6_addr *gw, u64 mac)
 {
 	struct rtl838x_switch_priv *priv = ctrl->priv;
@@ -1055,10 +1056,11 @@ static int otto_l3_nexthop_update(struct otto_l3_ctrl *ctrl, u8 type,
 	list_for_each_entry(r, &ctrl->routes_list, list) {
 		bool no_port;
 
-		/* An address of one family can be written as an address of the
-		 * other, so the key alone does not say whose route this is.
+		/* An IPv4 gateway written v4-mapped is a valid IPv6 one, so
+		 * the key alone does not say whose route this is.
 		 */
-		if (r->attr.type != type || !ipv6_addr_equal(&r->gw_ip, gw))
+		if (r->attr.type != type || r->gw_ifindex != ifindex ||
+		    !ipv6_addr_equal(&r->gw_ip, gw))
 			continue;
 
 		dev_dbg(ctrl->dev, "setting up fwding: gw %pI6c, mac %016llx\n",
@@ -1187,7 +1189,7 @@ static int otto_l3_port_ipv4_resolve(struct otto_l3_ctrl *ctrl,
 		mac = ether_addr_to_u64(n->ha);
 		dev_info(ctrl->dev, "resolved mac: %016llx\n", mac);
 		ipv6_addr_set_v4mapped(ip_addr, &gw);
-		otto_l3_nexthop_update(ctrl, ROUTE_TYPE_IP4UC, &gw, mac);
+		otto_l3_nexthop_update(ctrl, ROUTE_TYPE_IP4UC, dev->ifindex, &gw, mac);
 	} else {
 		dev_info(ctrl->dev, "need to wait\n");
 		neigh_event_send(n, NULL);
@@ -1514,6 +1516,7 @@ static int otto_l3_fib_add_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 	route->tb_id = info->tb_id;
 	route->attr.type = ROUTE_TYPE_IP4UC;
 	route->nh.rvid = vlan;
+	route->gw_ifindex = ndev->ifindex;
 
 	if (ctrl->cfg->set_router_mac) {
 		u64 mac = ether_addr_to_u64(ndev->dev_addr);
@@ -1732,8 +1735,8 @@ static void otto_l3_net_event_work_do(struct work_struct *work)
 	struct otto_l3_net_event_work *net_work =
 		container_of(work, struct otto_l3_net_event_work, work);
 
-	otto_l3_nexthop_update(net_work->ctrl, ROUTE_TYPE_IP4UC, &net_work->gw_addr,
-			       net_work->mac);
+	otto_l3_nexthop_update(net_work->ctrl, ROUTE_TYPE_IP4UC, net_work->ifindex,
+			       &net_work->gw_addr, net_work->mac);
 
 	kfree(net_work);
 }
@@ -1770,6 +1773,7 @@ static int otto_l3_netevent_notifier(struct notifier_block *this, unsigned long 
 		net_work->ctrl = ctrl;
 
 		net_work->mac = ether_addr_to_u64(n->ha);
+		net_work->ifindex = dev->ifindex;
 		ipv6_addr_set_v4mapped(*(__be32 *)n->primary_key, &net_work->gw_addr);
 
 		dev_dbg(ctrl->dev, "updating neighbour on port %d, mac %016llx\n",
