@@ -1,0 +1,48 @@
+From c6c159fcdb4e9a678eda0831f971e4a3a488ec47 Mon Sep 17 00:00:00 2001
+From: Gilberto Conde <gilbertorconde@gmail.com>
+Date: Mon, 21 Sep 2026 10:34:19 +0100
+Subject: [PATCH] pinctrl: qcom: ipq5018: add missing pwm3 function on gpio13
+
+GPIO13 supports the PWM3 function at mux select value 4, but the
+pingroup table leaves that slot empty and gpio13 is not listed in
+pwm3_groups. Selecting pwm3 on gpio13 is therefore rejected by the
+pinmux core:
+
+  ipq5018-tlmm: invalid group "gpio13" for function "pwm3"
+
+The GL.iNet GL-X2000 drives its fan from PWM3 on this pin, and the
+vendor firmware muxes it with select value 4:
+
+  gpio13 : out low  func4 8mA no pull
+
+Add pwm3 to the fourth function slot of gpio13 and list gpio13 in
+pwm3_groups. With this the pin muxes as expected:
+
+  pin 13 (GPIO_13): device 1941010.pwm function pwm3 group gpio13
+
+Fixes: 725d1c891658 ("pinctrl: qcom: Add IPQ5018 pinctrl driver")
+Signed-off-by: Gilberto Conde <gilbertorconde@gmail.com>
+Reviewed-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Link: https://patch.msgid.link/20260921093419.2870168-1-gilbertorconde@gmail.com
+Signed-off-by: Bartosz Golaszewski <bartosz.golaszewski@oss.qualcomm.com>
+---
+--- a/drivers/pinctrl/qcom/pinctrl-ipq5018.c
++++ b/drivers/pinctrl/qcom/pinctrl-ipq5018.c
+@@ -565,7 +565,7 @@ static const char * const qdss_cti_trig_
+ };
+ 
+ static const char * const pwm3_groups[] = {
+-	"gpio45", "gpio30",
++	"gpio45", "gpio30", "gpio13",
+ };
+ 
+ static const char * const qdss_cti_trig_in_b1_groups[] = {
+@@ -691,7 +691,7 @@ static const struct msm_pingroup ipq5018
+ 	PINGROUP(10, blsp0_spi, blsp1_uart0, led0, gcc_plltest, qdss_tracedata_a, _, _, _, _),
+ 	PINGROUP(11, blsp0_spi, blsp1_uart0, _, gcc_tlmm, qdss_tracedata_a, _, _, _, _),
+ 	PINGROUP(12, blsp0_spi, blsp0_i2c, blsp1_uart0, _, gcc_plltest, qdss_tracedata_a, _, _, _),
+-	PINGROUP(13, blsp0_spi, blsp0_i2c, blsp1_uart0, _, qdss_tracedata_a, _, _, _, _),
++	PINGROUP(13, blsp0_spi, blsp0_i2c, blsp1_uart0, pwm3, qdss_tracedata_a, _, _, _, _),
+ 	PINGROUP(14, pcie0_clk, _, _, cri_trng0, qdss_tracedata_a, _, _, _, _),
+ 	PINGROUP(15, _, _, cri_trng1, qdss_tracedata_a, _, _, _, _, _),
+ 	PINGROUP(16, pcie0_wake, _, _, cri_trng, qdss_tracedata_a, _, _, _, _),
