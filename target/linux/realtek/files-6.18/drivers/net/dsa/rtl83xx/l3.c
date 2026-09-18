@@ -926,17 +926,19 @@ static int otto_l3_alloc_egress_intf(struct otto_l3_ctrl *ctrl, u64 mac, int vla
 /* Row 0 is not used, see otto_l3_930x_setup(). */
 #define FIRST_PREFIX_ROW	1
 
-/* The programmed prefix routes sit in one dense block, longest prefix first,
- * because the hardware answers a lookup with the lowest matching row rather
- * than the most specific one.
+/* The programmed prefix routes of one address family sit in one dense block,
+ * longest prefix first, because the hardware answers a lookup with the lowest
+ * matching row rather than the most specific one. A lookup carries the entry
+ * type, so a block is only ever matched against its own family.
  */
-static int otto_l3_prefix_rows(struct otto_l3_ctrl *ctrl, int at_least)
+static int otto_l3_prefix_rows(struct otto_l3_ctrl *ctrl, u8 type, int at_least)
 {
 	struct otto_l3_route *q;
 	int n = 0;
 
 	list_for_each_entry(q, &ctrl->routes_list, list) {
-		if (!q->is_host_route && q->row >= 0 && q->prefix_len >= at_least)
+		if (!q->is_host_route && q->row >= 0 &&
+		    q->attr.type == type && q->prefix_len >= at_least)
 			n++;
 	}
 
@@ -977,8 +979,8 @@ static int otto_l3_route_place(struct otto_l3_ctrl *ctrl, struct otto_l3_route *
 	if (ctrl->prefix_rows_stale)
 		return -1;
 
-	row = FIRST_PREFIX_ROW + otto_l3_prefix_rows(ctrl, r->prefix_len);
-	last = FIRST_PREFIX_ROW + otto_l3_prefix_rows(ctrl, 0);
+	row = FIRST_PREFIX_ROW + otto_l3_prefix_rows(ctrl, r->attr.type, r->prefix_len);
+	last = FIRST_PREFIX_ROW + otto_l3_prefix_rows(ctrl, r->attr.type, 0);
 
 	if (row < last) {
 		/* A failed move leaves the block half shifted, and the rows the
@@ -990,7 +992,8 @@ static int otto_l3_route_place(struct otto_l3_ctrl *ctrl, struct otto_l3_route *
 		}
 
 		list_for_each_entry(q, &ctrl->routes_list, list)
-			if (!q->is_host_route && q->row >= row)
+			if (!q->is_host_route && q->attr.type == r->attr.type &&
+			    q->row >= row)
 				q->row++;
 	}
 
@@ -1007,7 +1010,7 @@ static void otto_l3_route_compact(struct otto_l3_ctrl *ctrl, struct otto_l3_rout
 	    ctrl->prefix_rows_stale)
 		return;
 
-	last = FIRST_PREFIX_ROW + otto_l3_prefix_rows(ctrl, 0) - 1;
+	last = FIRST_PREFIX_ROW + otto_l3_prefix_rows(ctrl, r->attr.type, 0) - 1;
 	if (r->row >= last)
 		return;
 
@@ -1017,7 +1020,8 @@ static void otto_l3_route_compact(struct otto_l3_ctrl *ctrl, struct otto_l3_rout
 	}
 
 	list_for_each_entry(q, &ctrl->routes_list, list)
-		if (!q->is_host_route && q->row > r->row)
+		if (!q->is_host_route && q->attr.type == r->attr.type &&
+		    q->row > r->row)
 			q->row--;
 
 	/* The tail now holds a copy of the row above it. */
