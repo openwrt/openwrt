@@ -340,7 +340,8 @@ endef
 endif
 
   BUILD_PACKAGES += $(1)
-  $(STAMP_PREPARED): $$(if $(QUILT)$(DUMP),,$(call find_library_dependencies,$(1)))
+  $(if $(CONFIG_PACKAGE_$(1))$(DEVELOPER), \
+    $(STAMP_PREPARED): $$(if $(QUILT)$(DUMP),,$(call find_library_dependencies,$(1))))
 
   $(foreach FIELD, TITLE CATEGORY SECTION VERSION,
     ifeq ($($(FIELD)),)
