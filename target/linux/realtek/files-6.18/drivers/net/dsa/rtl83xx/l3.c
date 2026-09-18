@@ -514,12 +514,13 @@ static void otto_l3_930x_route_read(struct otto_l3_ctrl *ctrl, int idx, struct o
 __maybe_unused
 static void otto_l3_930x_net6_mask(int prefix_len, struct in6_addr *ip6_m)
 {
-	int o, b;
-	/* Define network mask */
-	o = prefix_len >> 3;
-	b = prefix_len & 0x7;
+	int o = prefix_len >> 3;
+	int b = prefix_len & 0x7;
+
+	memset(ip6_m, 0, sizeof(*ip6_m));
 	memset(ip6_m->s6_addr, 0xff, o);
-	ip6_m->s6_addr[o] |= b ? 0xff00 >> b : 0x00;
+	if (b)
+		ip6_m->s6_addr[o] = 0xff00 >> b;
 }
 
 /*
