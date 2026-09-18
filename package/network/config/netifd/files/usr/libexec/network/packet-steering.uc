@@ -108,13 +108,14 @@ cpus = map(glob("/sys/bus/cpu/devices/*"), (path) => {
 	};
 });
 
+sort(cpus, (a, b) => a.id - b.id);
 cpus = slice(cpus, 0, 64);
 if (length(cpus) < 2)
 	exit(0);
 
 function cpu_add_weight(cpu_id, weight)
 {
-	let cpu = cpus[cpu_id];
+	let cpu = filter(cpus, (c) => c.id == cpu_id)[0];
 	cpu.load += weight;
 	for (let sibling in cpus) {
 		if (sibling == cpu || sibling.core != cpu.core)
@@ -207,7 +208,7 @@ function assign_dev_queues_cpu(dev) {
 
 		let task = dev.rx_tasks[i];
 		if (num >= length(cpus))
-			cpu = i % length(cpus);
+			cpu = cpus[i % length(cpus)].id;
 		else if (task)
 			cpu = get_next_cpu(napi_weight);
 		else
@@ -219,7 +220,7 @@ function assign_dev_queues_cpu(dev) {
 			continue;
 
 		if (num >= length(cpus))
-			cpu = (i + 1) % length(cpus);
+			cpu = cpus[(i + 1) % length(cpus)].id;
 		else if (all_cpus)
 			cpu = -1;
 		else
