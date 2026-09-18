@@ -471,7 +471,8 @@ endef
 cache_slot = $(KDIR)/cache/$(subst /,_,$(patsubst $(KDIR)/%,%,$(1)))
 
 define Build/libdeflate-gzip
-	$(STAGING_DIR_HOST)/bin/libdeflate-gzip -f -12 -c $@ $(1) > $@.new
+	$(CACHE_RUN) $(call cache_slot,$@).gz $@ $@.new \
+		$(STAGING_DIR_HOST)/bin/libdeflate-gzip -f -12 -k -S .new $(1) $@
 	@mv $@.new $@
 endef
 
