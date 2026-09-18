@@ -2376,7 +2376,7 @@ static void otto_l3_930x_dump_print(struct seq_file *m, const struct otto_l3_930
 {
 	char nh_id[8] = "-", dst_null[8] = "-", ttl[8] = "-", qos[8] = "-";
 	char hash[8] = "-", slot[8] = "-", hit[8] = "-", action[8] = "-";
-	char dest[48] = "-";
+	char dest[INET6_ADDRSTRLEN + sizeof("/128")] = "-";
 
 	if (!r->is_prefix) {
 		snprintf(hash, sizeof(hash), "%u", (r->addr >> 3) & 0x1ff);
@@ -2399,7 +2399,7 @@ static void otto_l3_930x_dump_print(struct seq_file *m, const struct otto_l3_930
 			snprintf(dest, sizeof(dest), "%pI4/%d", &r->ip4, r->prefix_len);
 	}
 
-	seq_printf(m, "%-7s%5u 0x%04x %4s %4s %5u 1 %-6s%4s %-24s%-7s%5s %4s %-8s %s\n",
+	seq_printf(m, "%-7s%5u 0x%04x %4s %4s %5u 1 %-6s%4s %-48s %-7s%5s %4s %-8s %s\n",
 		   r->is_prefix ? "prefix" : "host", r->idx, r->addr, hash, slot, r->width,
 		   otto_l3_930x_dump_type_name[r->type], hit, dest, action, nh_id, dst_null,
 		   ttl, qos);
@@ -2423,7 +2423,7 @@ static int otto_l3_930x_dump_show(struct seq_file *m, void *v)
 	int rows;
 	u32 addr;
 
-	seq_puts(m, "TABLE    IDX   ADDR HASH SLOT WIDTH V TYPE   HIT DESTINATION             ACTION NH_ID NULL TTL      QOS\n");
+	seq_puts(m, "TABLE    IDX   ADDR HASH SLOT WIDTH V TYPE   HIT DESTINATION                                      ACTION NH_ID NULL TTL      QOS\n");
 
 	rows = otto_table_rows(RTL9300_TBL_L3_HOST_ROUTE_IPMC);
 	if (rows < 0)
