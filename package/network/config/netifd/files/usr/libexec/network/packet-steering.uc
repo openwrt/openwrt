@@ -57,11 +57,15 @@ function set_task_cpu(pid, cpu) {
 
 function cpu_mask(cpu)
 {
-	let mask;
+	let mask = 0;
 	if (cpu < 0)
-		mask = (1 << length(cpus)) - 1;
+		for (let c in cpus)
+			mask |= (1 << c.id);
 	else
 		mask = (1 << int(cpu));
+	let hi = (mask >> 32) & 0xffffffff;
+	if (hi)
+		return sprintf("%x,%08x", hi, mask & 0xffffffff);
 	return sprintf("%x", mask);
 }
 
@@ -109,7 +113,7 @@ cpus = map(glob("/sys/bus/cpu/devices/*"), (path) => {
 });
 
 sort(cpus, (a, b) => a.id - b.id);
-cpus = slice(cpus, 0, 64);
+cpus = filter(cpus, (c) => c.id < 64);
 if (length(cpus) < 2)
 	exit(0);
 
