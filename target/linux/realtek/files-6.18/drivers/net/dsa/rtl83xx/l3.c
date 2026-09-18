@@ -10,6 +10,7 @@
 #include <net/arp.h>
 #include <net/fib_notifier.h>
 #include <net/ip6_fib.h>
+#include <net/ndisc.h>
 #include <net/netevent.h>
 #include <net/nexthop.h>
 #include <uapi/linux/rtnetlink.h>
@@ -29,6 +30,7 @@ struct otto_l3_net_event_work {
 	u64 mac;
 	struct in6_addr gw_addr;
 	int ifindex;
+	u8 type;
 };
 
 struct otto_l3_fib_event_work {
@@ -1166,30 +1168,31 @@ static int otto_l3_nexthop_update(struct otto_l3_ctrl *ctrl, u8 type, int ifinde
 	return 0;
 }
 
-static int otto_l3_port_ipv4_resolve(struct otto_l3_ctrl *ctrl,
-				     struct net_device *dev, __be32 ip_addr)
+static int otto_l3_port_gw_resolve(struct otto_l3_ctrl *ctrl, struct net_device *dev,
+				   struct neigh_table *tbl, const struct in6_addr *gw)
 {
-	struct neighbour *n = neigh_lookup(&arp_tbl, &ip_addr, dev);
+	/* An ARP neighbour is keyed on four bytes, which in a v4-mapped
+	 * address are the last word of it.
+	 */
+	const void *key = tbl == &arp_tbl ? (const void *)&gw->s6_addr32[3] : gw;
+	u8 type = tbl == &arp_tbl ? ROUTE_TYPE_IP4UC : ROUTE_TYPE_IP6UC;
+	struct neighbour *n = neigh_lookup(tbl, key, dev);
 	int err = 0;
 	u64 mac;
 
 	if (!n) {
-		n = neigh_create(&arp_tbl, &ip_addr, dev);
+		n = neigh_create(tbl, key, dev);
 		if (IS_ERR(n))
 			return PTR_ERR(n);
 	}
 
 	/* If the neigh is already resolved, then go ahead and
-	 * install the entry, otherwise start the ARP process to
-	 * resolve the neigh.
+	 * install the entry, otherwise start the resolution.
 	 */
 	if (n->nud_state & NUD_VALID) {
-		struct in6_addr gw;
-
 		mac = ether_addr_to_u64(n->ha);
 		dev_info(ctrl->dev, "resolved mac: %016llx\n", mac);
-		ipv6_addr_set_v4mapped(ip_addr, &gw);
-		otto_l3_nexthop_update(ctrl, ROUTE_TYPE_IP4UC, dev->ifindex, &gw, mac);
+		otto_l3_nexthop_update(ctrl, type, dev->ifindex, gw, mac);
 	} else {
 		dev_info(ctrl->dev, "need to wait\n");
 		neigh_event_send(n, NULL);
@@ -1556,7 +1559,7 @@ static int otto_l3_fib_add_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 
 	/* We need to resolve the mac address of the GW */
 	if (nh->fib_nh_gw4)
-		otto_l3_port_ipv4_resolve(ctrl, ndev, nh->fib_nh_gw4);
+		otto_l3_port_gw_resolve(ctrl, ndev, &arp_tbl, &gw);
 
 	nh->fib_nh_flags |= RTNH_F_OFFLOAD;
 
@@ -1735,7 +1738,7 @@ static void otto_l3_net_event_work_do(struct work_struct *work)
 	struct otto_l3_net_event_work *net_work =
 		container_of(work, struct otto_l3_net_event_work, work);
 
-	otto_l3_nexthop_update(net_work->ctrl, ROUTE_TYPE_IP4UC, net_work->ifindex,
+	otto_l3_nexthop_update(net_work->ctrl, net_work->type, net_work->ifindex,
 			       &net_work->gw_addr, net_work->mac);
 
 	kfree(net_work);
@@ -1756,7 +1759,14 @@ static int otto_l3_netevent_notifier(struct notifier_block *this, unsigned long 
 		if (!ctrl->cfg->setup)
 			return NOTIFY_DONE;
 
-		if (n->tbl != &arp_tbl)
+		if (n->tbl != &arp_tbl && n->tbl != &nd_tbl)
+			return NOTIFY_DONE;
+
+		/* Only where the L3 tables carry an IPv6 destination can a
+		 * route be waiting on an ndisc neighbour, which is how the
+		 * FIB side of the same question is answered.
+		 */
+		if (n->tbl == &nd_tbl && !ctrl->cfg->use_l3_tables)
 			return NOTIFY_DONE;
 		dev = n->dev;
 		port = otto_l3_port_dev_lower_find(dev, ctrl);
@@ -1774,7 +1784,14 @@ static int otto_l3_netevent_notifier(struct notifier_block *this, unsigned long 
 
 		net_work->mac = ether_addr_to_u64(n->ha);
 		net_work->ifindex = dev->ifindex;
-		ipv6_addr_set_v4mapped(*(__be32 *)n->primary_key, &net_work->gw_addr);
+		if (n->tbl == &arp_tbl) {
+			ipv6_addr_set_v4mapped(*(__be32 *)n->primary_key,
+					       &net_work->gw_addr);
+			net_work->type = ROUTE_TYPE_IP4UC;
+		} else {
+			net_work->gw_addr = *(struct in6_addr *)n->primary_key;
+			net_work->type = ROUTE_TYPE_IP6UC;
+		}
 
 		dev_dbg(ctrl->dev, "updating neighbour on port %d, mac %016llx\n",
 			port, net_work->mac);
