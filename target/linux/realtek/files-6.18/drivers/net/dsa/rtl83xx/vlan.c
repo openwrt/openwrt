@@ -663,7 +663,7 @@ void rtl931x_vlan_tables_read(u32 vlan, struct rtldsa_vlan_info *info)
 	info->if_id = (x >> 20) & 0x3ff;
 	info->multicast_grp_mask = x & 0xffff;
 	if (y & BIT(31))
-		info->l2_tunnel_list_id = y >> 18;
+		info->l2_tunnel_list_id = (y >> 18) & 0x1fff;
 	else
 		info->l2_tunnel_list_id = -1;
 	pr_debug("%s read member %016llx, profile-id %d, uc %d, mc %d, intf-id %d\n", __func__,
@@ -685,7 +685,7 @@ void rtl931x_vlan_set_tagged(u32 vlan, struct rtldsa_vlan_info *info)
 	w |= info->fid & 0x7f;
 	x = info->hash_uc_fid ? BIT(31) : 0;
 	x |= info->hash_mc_fid ? BIT(30) : 0;
-	x |= info->if_id & 0x3ff << 20;
+	x |= ((u32)info->if_id & 0x3ff) << 20;
 	x |= (info->profile_id & 0xf) << 16;
 	x |= info->multicast_grp_mask & 0xffff;
 	if (info->l2_tunnel_list_id >= 0) {
