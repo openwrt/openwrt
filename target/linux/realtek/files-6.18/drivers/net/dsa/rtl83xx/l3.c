@@ -1104,7 +1104,6 @@ static int otto_l3_nexthop_update(struct otto_l3_ctrl *ctrl, u8 type,
 
 		r->attr.valid = true;
 		r->attr.action = no_port ? ROUTE_ACT_TRAP2CPU : ROUTE_ACT_FORWARD;
-		r->attr.type = ROUTE_TYPE_IP4UC;
 		r->attr.hit = false; /* Reset route-used indicator */
 
 		/* Forwarding a packet is what makes this a hop, and a hop
@@ -1116,9 +1115,11 @@ static int otto_l3_nexthop_update(struct otto_l3_ctrl *ctrl, u8 type,
 		r->attr.ttl_dec = !no_port;
 		r->attr.ttl_check = !no_port;
 
-		/* Add PIE entry with dst_ip and prefix_len */
-		r->pr.dip = r->dst_ip;
-		r->pr.dip_m = inet_make_mask(r->prefix_len);
+		if (r->attr.type == ROUTE_TYPE_IP4UC) {
+			/* Add PIE entry with dst_ip and prefix_len */
+			r->pr.dip = r->dst_ip;
+			r->pr.dip_m = inet_make_mask(r->prefix_len);
+		}
 
 		if (r->is_host_route) {
 			int slot = ctrl->cfg->find_slot(ctrl, r, true);
