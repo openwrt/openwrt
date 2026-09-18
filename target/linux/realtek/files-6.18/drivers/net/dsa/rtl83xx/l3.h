@@ -71,7 +71,7 @@ struct otto_l3_nexthop {
 };
 
 struct otto_l3_route {
-	u32 gw_ip;			/* IP of the route's gateway */
+	struct in6_addr gw_ip;		/* Gateway of the route, IPv4 v4-mapped */
 	u32 dst_ip;			/* IP of the destination net */
 	struct in6_addr dst_ip6;
 	int prefix_len;			/* Network prefix len of the destination net */
