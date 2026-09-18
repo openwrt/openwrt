@@ -17,6 +17,14 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
+	aliases {
+		serial0 = &uart1;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+	
 	hpt_clock: clock {
 		compatible = "fixed-clock";
 		#clock-cells = <0>;
@@ -274,7 +282,7 @@
 		usb3-lpm-capable;
 	};
 
-	uart: serial@1fbf0000 {
+	uart1: serial@1fbf0000 {
 		compatible = "ns16550";
 		reg = <0x1fbf0000 0x30>;
 		reg-io-width = <4>;
