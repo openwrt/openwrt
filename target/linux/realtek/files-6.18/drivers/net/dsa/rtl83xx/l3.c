@@ -18,7 +18,7 @@
 #include "rtl-otto.h"
 
 static const struct rhashtable_params otto_l3_route_ht_params = {
-	.key_len     = sizeof(u32),
+	.key_len     = sizeof(struct in6_addr),
 	.key_offset  = offsetof(struct otto_l3_route, gw_ip),
 	.head_offset = offsetof(struct otto_l3_route, linkage),
 };
@@ -27,7 +27,7 @@ struct otto_l3_net_event_work {
 	struct work_struct work;
 	struct otto_l3_ctrl *ctrl;
 	u64 mac;
-	u32 gw_addr;
+	struct in6_addr gw_addr;
 };
 
 struct otto_l3_fib_event_work {
@@ -1030,7 +1030,8 @@ static void otto_l3_route_compact(struct otto_l3_ctrl *ctrl, struct otto_l3_rout
 }
 
 /* Updates an L3 next hop entry in the ROUTING table */
-static int otto_l3_nexthop_update(struct otto_l3_ctrl *ctrl, __be32 ip_addr, u64 mac)
+static int otto_l3_nexthop_update(struct otto_l3_ctrl *ctrl, u8 type,
+				  const struct in6_addr *gw, u64 mac)
 {
 	struct rtl838x_switch_priv *priv = ctrl->priv;
 	struct otto_l3_route *r;
@@ -1046,7 +1047,7 @@ static int otto_l3_nexthop_update(struct otto_l3_ctrl *ctrl, __be32 ip_addr, u64
 	 * of the driver walk that list with no lock.
 	 */
 	rcu_read_lock();
-	known = rhltable_lookup(&ctrl->routes, &ip_addr, otto_l3_route_ht_params);
+	known = rhltable_lookup(&ctrl->routes, gw, otto_l3_route_ht_params);
 	rcu_read_unlock();
 	if (!known)
 		return -ENOENT;
@@ -1054,11 +1055,14 @@ static int otto_l3_nexthop_update(struct otto_l3_ctrl *ctrl, __be32 ip_addr, u64
 	list_for_each_entry(r, &ctrl->routes_list, list) {
 		bool no_port;
 
-		if (r->gw_ip != ip_addr)
+		/* An address of one family can be written as an address of the
+		 * other, so the key alone does not say whose route this is.
+		 */
+		if (r->attr.type != type || !ipv6_addr_equal(&r->gw_ip, gw))
 			continue;
 
-		dev_dbg(ctrl->dev, "%s: Setting up fwding: ip %pI4, GW mac %016llx\n",
-			__func__, &ip_addr, mac);
+		dev_dbg(ctrl->dev, "setting up fwding: gw %pI6c, mac %016llx\n",
+			gw, mac);
 
 		dev_dbg(ctrl->dev, "Route with id %d to %pI4 / %d\n",
 			r->id, &r->dst_ip, r->prefix_len);
@@ -1085,7 +1089,7 @@ static int otto_l3_nexthop_update(struct otto_l3_ctrl *ctrl, __be32 ip_addr, u64
 			  r->nh.port == priv->r->port_ignore;
 		if (no_port && r->attr.action != ROUTE_ACT_TRAP2CPU)
 			dev_info(ctrl->dev, "no port for %pI4, routing %pI4/%d in software\n",
-				 &ip_addr, &r->dst_ip, r->prefix_len);
+				 &gw->s6_addr32[3], &r->dst_ip, r->prefix_len);
 
 		r->attr.valid = true;
 		r->attr.action = no_port ? ROUTE_ACT_TRAP2CPU : ROUTE_ACT_FORWARD;
@@ -1177,9 +1181,12 @@ static int otto_l3_port_ipv4_resolve(struct otto_l3_ctrl *ctrl,
 	 * resolve the neigh.
 	 */
 	if (n->nud_state & NUD_VALID) {
+		struct in6_addr gw;
+
 		mac = ether_addr_to_u64(n->ha);
 		dev_info(ctrl->dev, "resolved mac: %016llx\n", mac);
-		otto_l3_nexthop_update(ctrl, ip_addr, mac);
+		ipv6_addr_set_v4mapped(ip_addr, &gw);
+		otto_l3_nexthop_update(ctrl, ROUTE_TYPE_IP4UC, &gw, mac);
 	} else {
 		dev_info(ctrl->dev, "need to wait\n");
 		neigh_event_send(n, NULL);
@@ -1328,7 +1335,8 @@ static void otto_l3_route_teardown(struct otto_l3_ctrl *ctrl, struct otto_l3_rou
 	otto_l3_route_remove(ctrl, r);
 }
 
-static struct otto_l3_route *otto_l3_host_route_alloc(struct otto_l3_ctrl *ctrl, u32 ip)
+static struct otto_l3_route *otto_l3_host_route_alloc(struct otto_l3_ctrl *ctrl,
+						      const struct in6_addr *gw)
 {
 	struct otto_l3_route *r;
 	int idx = 0, err;
@@ -1342,7 +1350,7 @@ static struct otto_l3_route *otto_l3_host_route_alloc(struct otto_l3_ctrl *ctrl,
 		mutex_unlock(ctrl->lock);
 		return NULL;
 	}
-	dev_dbg(ctrl->dev, "id: %d, ip %pI4\n", idx, &ip);
+	dev_dbg(ctrl->dev, "id: %d, gw %pI6c\n", idx, gw);
 
 	r = kzalloc(sizeof(*r), GFP_KERNEL);
 	if (!r) {
@@ -1356,7 +1364,7 @@ static struct otto_l3_route *otto_l3_host_route_alloc(struct otto_l3_ctrl *ctrl,
 	r->id = idx + MAX_ROUTES;
 	r->row = -1;			/* placed by find_slot(), not by row */
 
-	r->gw_ip = ip;
+	r->gw_ip = *gw;
 	r->pr.id = -1; /* We still need to allocate a rule in HW */
 	r->pr.packet_cntr = -1;
 	r->is_host_route = true;
@@ -1381,7 +1389,8 @@ out_free:
 	return NULL;
 }
 
-static struct otto_l3_route *otto_l3_route_alloc(struct otto_l3_ctrl *ctrl, u32 ip)
+static struct otto_l3_route *otto_l3_route_alloc(struct otto_l3_ctrl *ctrl,
+						 const struct in6_addr *gw)
 {
 	struct otto_l3_route *r;
 	int idx = 0, err;
@@ -1395,7 +1404,7 @@ static struct otto_l3_route *otto_l3_route_alloc(struct otto_l3_ctrl *ctrl, u32 
 		mutex_unlock(ctrl->lock);
 		return NULL;
 	}
-	dev_dbg(ctrl->dev, "id: %d, ip %pI4\n", idx, &ip);
+	dev_dbg(ctrl->dev, "id: %d, gw %pI6c\n", idx, gw);
 
 	r = kzalloc(sizeof(*r), GFP_KERNEL);
 	if (!r) {
@@ -1405,7 +1414,7 @@ static struct otto_l3_route *otto_l3_route_alloc(struct otto_l3_ctrl *ctrl, u32 
 
 	r->id = idx;
 	r->row = -1;			/* placed when the gateway resolves */
-	r->gw_ip = ip;
+	r->gw_ip = *gw;
 	r->pr.id = -1; /* We still need to allocate a rule in HW */
 	r->pr.packet_cntr = -1;
 	r->is_host_route = false;
@@ -1461,6 +1470,7 @@ static int otto_l3_fib_add_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 	struct rtl838x_switch_priv *priv = ctrl->priv;
 	struct fib_nh *nh = fib_info_nh(info->fi, 0);
 	struct otto_l3_route *route;
+	struct in6_addr gw;
 	int port;
 
 	if (otto_l3_fib_check_v4(ctrl, info, FIB_EVENT_ENTRY_ADD))
@@ -1484,10 +1494,11 @@ static int otto_l3_fib_add_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 	}
 
 	/* Allocate route or host-route entry (if hardware supports this) */
+	ipv6_addr_set_v4mapped(nh->fib_nh_gw4, &gw);
 	if (info->dst_len == 32 && ctrl->cfg->host_route_write)
-		route = otto_l3_host_route_alloc(ctrl, nh->fib_nh_gw4);
+		route = otto_l3_host_route_alloc(ctrl, &gw);
 	else
-		route = otto_l3_route_alloc(ctrl, nh->fib_nh_gw4);
+		route = otto_l3_route_alloc(ctrl, &gw);
 
 	if (route)
 		dev_info(ctrl->dev, "route hashtable extended for gw %pI4\n", &nh->fib_nh_gw4);
@@ -1558,19 +1569,23 @@ static int otto_l3_fib_del_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 	struct rhlist_head *tmp, *list;
 	struct otto_l3_route *route;
 	bool found = false;
+	struct in6_addr gw;
 
 	if (otto_l3_fib_check_v4(ctrl, info, FIB_EVENT_ENTRY_DEL))
 		return 0;
 
+	ipv6_addr_set_v4mapped(nh->fib_nh_gw4, &gw);
+
 	rcu_read_lock();
-	list = rhltable_lookup(&ctrl->routes, &nh->fib_nh_gw4, otto_l3_route_ht_params);
+	list = rhltable_lookup(&ctrl->routes, &gw, otto_l3_route_ht_params);
 	if (!list) {
 		rcu_read_unlock();
 		dev_err(ctrl->dev, "no such gateway: %pI4\n", &nh->fib_nh_gw4);
 		return -ENOENT;
 	}
 	rhl_for_each_entry_rcu(route, tmp, list, linkage) {
-		if (route->dst_ip == info->dst && route->prefix_len == info->dst_len) {
+		if (route->attr.type == ROUTE_TYPE_IP4UC &&
+		    route->dst_ip == info->dst && route->prefix_len == info->dst_len) {
 			dev_info(ctrl->dev, "found a route with id %d, nh-id %d\n",
 				 route->id, route->nh.id);
 			found = true;
@@ -1716,7 +1731,8 @@ static void otto_l3_net_event_work_do(struct work_struct *work)
 	struct otto_l3_net_event_work *net_work =
 		container_of(work, struct otto_l3_net_event_work, work);
 
-	otto_l3_nexthop_update(net_work->ctrl, net_work->gw_addr, net_work->mac);
+	otto_l3_nexthop_update(net_work->ctrl, ROUTE_TYPE_IP4UC, &net_work->gw_addr,
+			       net_work->mac);
 
 	kfree(net_work);
 }
@@ -1753,7 +1769,7 @@ static int otto_l3_netevent_notifier(struct notifier_block *this, unsigned long 
 		net_work->ctrl = ctrl;
 
 		net_work->mac = ether_addr_to_u64(n->ha);
-		net_work->gw_addr = *(__be32 *)n->primary_key;
+		ipv6_addr_set_v4mapped(*(__be32 *)n->primary_key, &net_work->gw_addr);
 
 		dev_dbg(ctrl->dev, "updating neighbour on port %d, mac %016llx\n",
 			port, net_work->mac);
