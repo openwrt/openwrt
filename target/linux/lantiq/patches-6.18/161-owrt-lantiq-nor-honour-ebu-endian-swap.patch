@@ -1,0 +1,107 @@
+From 9c08595eb28706d277f28ecae0b90bf8419191b6 Mon Sep 17 00:00:00 2001
+From: Simon Wunderlich <sw@simonwunderlich.de>
+Date: Fri, 18 Sep 2026 10:05:00 +0200
+Subject: [PATCH] mtd: lantiq-flash: honour the EBU's own endianness swap
+
+The driver swaps address bit 1 while probing the chip and afterwards
+swizzles the CFI unlock addresses, to compensate for the EBU/PCI
+endianness swapping that U-Boot leaves enabled on Lantiq boards.
+
+Bootloaders that instead enable the EBU's own endianness swapping for
+the flash chip select (EBU_BUSCONx bit 30) present the chip at its
+unswapped addresses. With the driver's software swap on top, the CFI
+query returns garbage and probing fails, leaving the board without MTD.
+The Bintec elmeg RS123 and RS353 (BOSS bootmonitor) are such boards.
+
+Measured on the RS123, CFI ident at 0x10/0x11/0x12 with bit 30 set:
+
+  unswapped: 0051 0052 0059   ("QRY")
+  swapped:   8f5b 0000 3c11   (garbage)
+
+Clearing bit 30 from the loader instead is not an option: probing then
+succeeds, but all data comes back halfword-swapped relative to what the
+bootmonitor wrote and reads (the BOSS header shows up as
+"LDTE CATseloyedE"), so neither the MAC in the boot partition nor a
+kernel written by sysupgrade would be usable.
+
+Skip the software swap when the bootloader enabled the hardware swap.
+The register is only read when the flash node carries
+"lantiq,ebu-swap-check", as requested in the review of the 2017
+submission of this fix, and the access is compiled in only for XWAY
+SoCs, since Falcon has no EBU of this kind:
+https://lists.infradead.org/pipermail/linux-mtd/2017-January/071747.html
+https://www.spinics.net/lists/mips/msg66319.html
+
+Based on that patch by Sebastien Decourriere.
+
+Signed-off-by: Simon Wunderlich <sw@simonwunderlich.de>
+---
+ drivers/mtd/maps/lantiq-flash.c | 26 +++++++++++++++++++++++++-
+ 1 file changed, 25 insertions(+), 1 deletion(-)
+
+--- a/drivers/mtd/maps/lantiq-flash.c
++++ b/drivers/mtd/maps/lantiq-flash.c
+@@ -30,8 +30,16 @@
+  * map. The workaround involves swapping all addresses whilst probing the chip.
+  * Once probing is complete we stop swapping the addresses but swizzle the
+  * unlock addresses to ensure that access to the NOR device works correctly.
++ *
++ * Some bootloaders instead enable the EBU's own endianness swapping for the
++ * flash chip select (EBU_BUSCONx bit 30). The chip then answers at the
++ * unswapped addresses and none of the above is needed. Boards ask the driver
++ * to honour that bit with the "lantiq,ebu-swap-check" property. Falcon has
++ * no EBU of this kind, so the register is only touched on XWAY SoCs.
+  */
+ 
++#define EBU_ENDIAN_SWAP		BIT(30)
++
+ enum {
+ 	LTQ_NOR_PROBING,
+ 	LTQ_NOR_NORMAL
+@@ -139,6 +147,7 @@ ltq_mtd_probe(struct platform_device *pd
+ 	int err = 0;
+ 	int i;
+ 	int devices_found = 0;
++	bool swap_check;
+ 
+ 	static const char *rom_probe_types[] = {
+ 		"cfi_probe", "jedec_probe", NULL
+@@ -151,7 +160,18 @@ ltq_mtd_probe(struct platform_device *pd
+ 
+ 	platform_set_drvdata(pdev, ltq_mtd);
+ 
++	swap_check = of_property_read_bool(pdev->dev.of_node,
++					   "lantiq,ebu-swap-check");
++
+ 	for (i = 0; i < pdev->num_resources; i++) {
++		bool hw_swap = false;
++
++#ifdef CONFIG_SOC_TYPE_XWAY
++		if (swap_check)
++			hw_swap = ltq_ebu_r32(LTQ_EBU_BUSCON0 + 4 * i) &
++				  EBU_ENDIAN_SWAP;
++#endif
++
+ 		printk(KERN_NOTICE "lantiq nor flash device: %.8llx at %.8llx\n",
+ 		       (unsigned long long)resource_size(&pdev->resource[i]),
+ 		       (unsigned long long)pdev->resource[i].start);
+@@ -187,7 +207,8 @@ ltq_mtd_probe(struct platform_device *pd
+ 			goto err_out;
+ 		}
+ 
+-		ltq_mtd->map[i].map_priv_1 = LTQ_NOR_PROBING;
++		ltq_mtd->map[i].map_priv_1 = hw_swap ? LTQ_NOR_NORMAL
++						     : LTQ_NOR_PROBING;
+ 		for (type = rom_probe_types; !ltq_mtd->mtd[i] && *type; type++)
+ 			ltq_mtd->mtd[i] = do_map_probe(*type, &ltq_mtd->map[i]);
+ 		ltq_mtd->map[i].map_priv_1 = LTQ_NOR_NORMAL;
+@@ -202,6 +223,9 @@ ltq_mtd_probe(struct platform_device *pd
+ 		ltq_mtd->mtd[i]->owner = THIS_MODULE;
+ 		ltq_mtd->mtd[i]->dev.parent = &pdev->dev;
+ 
++		if (hw_swap)
++			continue;
++
+ 		cfi = ltq_mtd->map[i].fldrv_priv;
+ 		cfi->addr_unlock1 ^= 1;
+ 		cfi->addr_unlock2 ^= 1;
