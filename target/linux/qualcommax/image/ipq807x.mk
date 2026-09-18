@@ -615,7 +615,7 @@ define Device/zte_mf269
 	DEVICE_DTS_CONFIG := config@ac04
 	SOC := ipq8071
 	KERNEL_SIZE := 53248k
-	DEVICE_PACKAGES := ipq-wifi-zte_mf269
+	DEVICE_PACKAGES := ipq-wifi-zte_mf269 kmod-leds-aw9106
 endef
 TARGET_DEVICES += zte_mf269
 
