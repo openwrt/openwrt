@@ -1,0 +1,24 @@
+From cad43d0fb0e80a1feb8999c70fd55389abfa3beb Mon Sep 17 00:00:00 2001
+From: Gilberto Conde <gilbertorconde@gmail.com>
+Date: Fri, 18 Sep 2026 15:28:50 +0000
+Subject: [PATCH] net: usb: qmi_wwan: add Quectel EG120K-EA
+
+The Quectel EG120K-EA (LTE Cat.12) reports USB ID 2c7c:030b and exposes its
+QMI/RMNET function on a vendor-specific ff/ff/ff interface. The same product
+ID is already known to the option driver as EM060K, which claims the serial
+interfaces; without a qmi_wwan entry the data interface is left unbound.
+
+Found on the GL.iNet GL-X2000.
+
+Signed-off-by: Gilberto Conde <gilbertorconde@gmail.com>
+---
+--- a/drivers/net/usb/qmi_wwan.c
++++ b/drivers/net/usb/qmi_wwan.c
+@@ -1085,6 +1085,7 @@ static const struct usb_device_id produc
+ 	{QMI_MATCH_FF_FF_FF(0x2c7c, 0x0122)},	/* Quectel RG650V */
+ 	{QMI_MATCH_FF_FF_FF(0x2c7c, 0x0125)},	/* Quectel EC25, EC20 R2.0  Mini PCIe */
+ 	{QMI_MATCH_FF_FF_FF(0x2c7c, 0x0306)},	/* Quectel EP06/EG06/EM06 */
++	{QMI_MATCH_FF_FF_FF(0x2c7c, 0x030b)},	/* Quectel EM060K/EG120K-EA */
+ 	{QMI_MATCH_FF_FF_FF(0x2c7c, 0x0512)},	/* Quectel EG12/EM12 */
+ 	{QMI_MATCH_FF_FF_FF(0x2c7c, 0x0620)},	/* Quectel EM160R-GL */
+ 	{QMI_MATCH_FF_FF_FF(0x2c7c, 0x0800)},	/* Quectel RM500Q-GL */
