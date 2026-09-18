@@ -358,7 +358,8 @@ endif
     $(foreach target, \
       $(if $(Package/$(1)/targets),$(Package/$(1)/targets), \
         $(if $(PKG_TARGETS),$(PKG_TARGETS), ipkg) \
-      ), $(BuildTarget/$(target)) \
+      ), $(if $(or $(CONFIG_PACKAGE_$(1)),$(DEVELOPER),$(filter undefined,$(origin BuildTarget/$(target)/disabled))), \
+	$(BuildTarget/$(target)),$(BuildTarget/$(target)/disabled)) \
     ) \
   )
   $(if $(PKG_HOST_ONLY),,$(call Build/DefaultTargets,$(1)))

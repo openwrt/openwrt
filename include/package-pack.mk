@@ -626,6 +626,13 @@ endif
 
 	@[ -f $$(PACK_$(1)) ]
 
+$(BuildTarget/ipkg/disabled)
+  endef
+
+  # Packages that are not selected only need the clean rule, which removes
+  # packages built before they were deselected. The rest of BuildTarget/ipkg
+  # takes about 0.7 ms per package to parse, for more than 1000 kmods.
+  define BuildTarget/ipkg/disabled
     $(1)-clean:
 ifeq ($(CONFIG_USE_APK),)
 	$$(call remove_ipkg_files,$(1),$$(call opkg_package_files,$(call gen_package_wildcard,$(1))))
@@ -633,8 +640,6 @@ else
 	$$(call remove_ipkg_files,$(1),$$(call apk_package_files,$(call gen_package_wildcard,$(1))))
 endif
 
-
     clean: $(1)-clean
-
   endef
 endif
