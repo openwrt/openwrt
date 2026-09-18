@@ -489,9 +489,19 @@
 	status = "okay";
 };
 
-&dwc_0 {
+&qusb_phy_0 {
+	status = "okay";
+	vdd-supply = <&reg_usb_vbus>;
+};
+
+&usb3 {
 	#address-cells = <1>;
 	#size-cells = <0>;
+
+	vbus-supply = <&reg_usb_vbus>;
+	dr_mode = "host";
+
+	status = "okay";
 
 	usb3_port1: port@1 {
 		reg = <1>;
@@ -502,16 +512,6 @@
 		reg = <2>;
 		#trigger-source-cells = <0>;
 	};
-};
-
-&qusb_phy_0 {
-	status = "okay";
-	vdd-supply = <&reg_usb_vbus>;
-};
-
-&usb3 {
-	status = "okay";
-	vbus-supply = <&reg_usb_vbus>;
 };
 
 &pcie_phy {

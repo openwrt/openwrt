@@ -90,7 +90,7 @@ Reviewed-by: Benjamin Larsson <benjamin.larsson@genexis.eu>
  		return -EINVAL;
  
  	if (type == IRQ_TYPE_NONE) {
-@@ -303,9 +306,11 @@ static irqreturn_t airoha_irq_handler(in
+@@ -304,9 +307,11 @@ static irqreturn_t airoha_irq_handler(in
  {
  	struct airoha_pinctrl *pinctrl = data;
  	bool handled = false;
@@ -103,7 +103,7 @@ Reviewed-by: Benjamin Larsson <benjamin.larsson@genexis.eu>
  		struct gpio_irq_chip *girq = &pinctrl->gpiochip.irq;
  		u32 regmap;
  		unsigned long status;
-@@ -339,6 +344,22 @@ static const struct irq_chip airoha_gpio
+@@ -340,6 +345,22 @@ static const struct irq_chip airoha_gpio
  	GPIOCHIP_IRQ_RESOURCE_HELPERS,
  };
  
@@ -126,7 +126,7 @@ Reviewed-by: Benjamin Larsson <benjamin.larsson@genexis.eu>
  static int airoha_pinctrl_add_gpiochip(struct airoha_pinctrl *pinctrl,
  					struct platform_device *pdev)
  {
-@@ -361,6 +382,7 @@ static int airoha_pinctrl_add_gpiochip(s
+@@ -362,6 +383,7 @@ static int airoha_pinctrl_add_gpiochip(s
  
  	girq->default_type = IRQ_TYPE_NONE;
  	girq->handler = handle_bad_irq;
@@ -134,7 +134,7 @@ Reviewed-by: Benjamin Larsson <benjamin.larsson@genexis.eu>
  	gpio_irq_chip_set_chip(girq, &airoha_gpio_irq_chip);
  
  	irq = platform_get_irq(pdev, 0);
-@@ -849,6 +871,7 @@ int airoha_pinctrl_probe(struct platform
+@@ -850,6 +872,7 @@ int airoha_pinctrl_probe(struct platform
  	pinctrl->grps = data->grps;
  	pinctrl->funcs = data->funcs;
  	pinctrl->confs_info = data->confs_info;

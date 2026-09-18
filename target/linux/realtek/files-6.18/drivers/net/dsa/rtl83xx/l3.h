@@ -7,7 +7,6 @@
 
 #define MAX_HOST_ROUTES		1536
 #define MAX_ROUTES		512
-#define MAX_INTERFACES		100
 
 #define HASH_PICK(val, lsb, len) ((val & (((1 << len) - 1) << lsb)) >> lsb)
 
@@ -61,13 +60,14 @@ struct otto_l3_nexthop {
 	u16 id;		/* ID: L3_NEXT_HOP table-index or route-index set in L2_NEXT_HOP */
 	u32 dev_id;
 	u16 port;
-	u16 vid;	/* VLAN-ID for L2 table entry (saved from L2-UC entry) */
 	u16 rvid;	/* Relay VID/FID for the L2 table entry */
 	u64 mac;	/* The MAC address of the entry in the L2_NEXT_HOP table */
 	u16 mac_id;
 	u16 l2_id;	/* Index of this next hop forwarding entry in L2 FIB table */
+	u64 l2_seed;	/* Seed the entry at l2_id was claimed on */
 	u64 gw;		/* The gateway MAC address packets are forwarded to */
 	int if_id;	/* Interface (into L3_EGR_INTF_IDX) */
+	bool l2_installed;	/* Entry written to the L2 table */
 };
 
 struct otto_l3_route {
@@ -77,7 +77,10 @@ struct otto_l3_route {
 	int prefix_len;			/* Network prefix len of the destination net */
 	bool is_host_route;
 	int id;				/* ID number of this route */
+	int row;			/* Row it occupies in the prefix route table */
 	struct rhlist_head linkage;
+	struct list_head list;		/* all routes, for lookups by destination */
+	u32 tb_id;			/* routing table the route came from */
 	u16 switch_mac_id;		/* Index into switch's own MACs, RTL839X only */
 	struct otto_l3_nexthop nh;
 	struct pie_rule pr;
@@ -85,7 +88,14 @@ struct otto_l3_route {
 };
 
 struct otto_l3_config {
+	/* Which of the two routing models the family uses. RTL930x writes the
+	 * destination and its mask into the route entry, so the L3 tables match
+	 * on their own. RTL838x and RTL839x store only the gateway there and
+	 * need a PIE rule to match the destination and point at the next hop.
+	 */
+	bool use_l3_tables;
 	int (*find_slot)(struct otto_l3_ctrl *ctrl, struct otto_l3_route *rt, bool must_exist);
+	void (*get_egress_intf)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_intf *intf);
 	void (*set_egress_intf)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_intf *intf);
 	u64 (*get_egress_mac)(struct otto_l3_ctrl *ctrl, u32 idx);
 	void (*set_egress_mac)(struct otto_l3_ctrl *ctrl, u32 idx, u64 mac);
@@ -95,9 +105,11 @@ struct otto_l3_config {
 	void (*get_nexthop)(struct otto_l3_ctrl *ctrl, int idx, u16 *dmac_id, u16 *interface);
 	void (*set_nexthop)(struct otto_l3_ctrl *ctrl, int idx, u16 dmac_id, u16 interface);
 	int (*route_lookup_hw)(struct otto_l3_ctrl *ctrl, struct otto_l3_route *rt);
+	int (*route_rows_move)(struct otto_l3_ctrl *ctrl, int dst, int src, int count);
 	void (*route_read)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt);
 	void (*route_write)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt);
 	int (*setup)(struct otto_l3_ctrl *ctrl);
+	void (*dbgfs_init)(struct otto_l3_ctrl *ctrl);
 };
 
 struct otto_l3_ctrl {
@@ -107,9 +119,10 @@ struct otto_l3_ctrl {
 	struct notifier_block fib_nb;
 	struct notifier_block ne_nb;
 	struct rhltable routes;
+	struct list_head routes_list;
 	unsigned long route_use_bm[MAX_ROUTES / 32];
 	unsigned long host_route_use_bm[MAX_HOST_ROUTES / 32];
-	struct otto_l3_intf *interfaces[MAX_INTERFACES];
+	struct otto_l3_intf interfaces[MAX_SMACS];
 	struct mutex *lock; /* protect register access */
 };
 

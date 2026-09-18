@@ -62,12 +62,12 @@ endef
 TARGET_DEVICES += meraki_mx60
 
 define Device/netgear_wndap6x0
-  FILESYSTEMS := squashfs
   DEVICE_VENDOR := NETGEAR
   DEVICE_PACKAGES := kmod-eeprom-at24 swconfig
   SUBPAGESIZE := 256
   PAGESIZE := 512
   BLOCKSIZE := 16k
+  MKUBIFS_OPTS := -m $$(PAGESIZE) -e 15872 -c 1332
   DEVICE_DTC_FLAGS := --space 32768
   IMAGE_SIZE := 27392k
   IMAGES := sysupgrade.bin factory.img
@@ -94,7 +94,6 @@ endef
 TARGET_DEVICES += netgear_wndap660
 
 define Device/netgear_wndr4700
-  FILESYSTEMS := squashfs
   DEVICE_VENDOR := NETGEAR
   DEVICE_MODEL := Centria N900 WNDR4700
   DEVICE_ALT0_VENDOR := NETGEAR
@@ -109,6 +108,7 @@ define Device/netgear_wndr4700
   PAGESIZE := 2048
   SUBPAGESIZE := 512
   BLOCKSIZE := 128k
+  MKUBIFS_OPTS := -m $$(PAGESIZE) -e 126KiB -c 928
   DEVICE_DTC_FLAGS := --space 131008
   IMAGE_SIZE := 24960k
   IMAGES := factory.img sysupgrade.bin

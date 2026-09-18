@@ -8,6 +8,9 @@
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 
 #include "rtl-otto.h"
+#include "stats.h"
+#include "tc.h"
+#include "vlan.h"
 
 /* Ethernet header, two stacked VLAN tags (802.1ad QinQ) and FCS */
 #define RTLDSA_FRAME_OVERHEAD		(ETH_HLEN + 2 * VLAN_HLEN + ETH_FCS_LEN)
@@ -30,22 +33,8 @@ static const u8 ipv6_all_hosts_mcast_addr_mask[ETH_ALEN] = {
 	0xff, 0xff, 0xff, 0xff, 0xff, 0xff
 };
 
-static void rtldsa_init_counters(struct rtl838x_switch_priv *priv);
 static void rtldsa_port_xstp_state_set(struct rtl838x_switch_priv *priv, int port,
 				       u8 state, u16 mst_slot);
-
-static void rtldsa_init_stats(struct rtl838x_switch_priv *priv)
-{
-	mutex_lock(&priv->reg_mutex);
-
-	if (priv->r->stat_init)
-		priv->r->stat_init(priv);
-
-	/* Reset statistics counters */
-	sw_w32_mask(0, 1, priv->r->stat_rst);
-
-	mutex_unlock(&priv->reg_mutex);
-}
 
 /* DSA callbacks */
 
@@ -59,20 +48,6 @@ static enum dsa_tag_protocol rtldsa_get_tag_protocol(struct dsa_switch *ds,
 	return DSA_TAG_PROTO_RTL_OTTO;
 }
 
-static void rtldsa_vlan_set_pvid(struct rtl838x_switch_priv *priv,
-				  int port, int pvid)
-{
-	/* Set both inner and outer PVID of the port */
-	priv->r->vlan_port_pvid_set(port, PBVLAN_TYPE_INNER, pvid);
-	priv->r->vlan_port_pvid_set(port, PBVLAN_TYPE_OUTER, pvid);
-	priv->r->vlan_port_pvidmode_set(port, PBVLAN_TYPE_INNER,
-					PBVLAN_MODE_UNTAG_AND_PRITAG);
-	priv->r->vlan_port_pvidmode_set(port, PBVLAN_TYPE_OUTER,
-					PBVLAN_MODE_UNTAG_AND_PRITAG);
-
-	priv->ports[port].pvid = pvid;
-}
-
 static void rtldsa_83xx_mc_pmasks_setup(struct rtl838x_switch_priv *priv)
 {
 	/* RTL8380 and RTL8390 use an index into the portmask table to set the
@@ -81,40 +56,6 @@ static void rtldsa_83xx_mc_pmasks_setup(struct rtl838x_switch_priv *priv)
 	 * see e.g. rtl9300_vlan_profile_setup
 	 */
 	priv->r->write_mcast_pmask(MC_PMASK_ALL_PORTS_IDX, ~0);
-}
-
-/* Initialize all VLANS */
-static void rtldsa_vlan_setup(struct rtl838x_switch_priv *priv)
-{
-	struct rtldsa_vlan_info info = {
-		.l2_tunnel_list_id = -1,
-	};
-
-	pr_info("In %s\n", __func__);
-
-	priv->r->vlan_profile_setup(0);
-	priv->r->vlan_profile_dump(priv, 0);
-
-	/* Initialize normal VLANs 1-4095 */
-	for (int i = 1; i < MAX_VLANS; i++)
-		priv->r->vlan_set_tagged(i, &info);
-
-	/*
-	 * Initialize the special VLAN 0 and reset PVIDs. The CPU port PVID
-	 * is applied to packets from the CPU for untagged destinations,
-	 * regardless if the actual ingress VID. Any port with untagged
-	 * egress VLAN(s) must therefore be a member of VLAN 0 to support
-	 * CPU port as ingress when VLAN filtering is enabled.
-	 */
-	for (int i = 0; i <= priv->r->cpu_port; i++) {
-		rtldsa_vlan_set_pvid(priv, i, 0);
-		info.member_ports |= BIT_ULL(i);
-	}
-	priv->r->vlan_set_tagged(0, &info);
-
-	/* Set forwarding action based on inner VLAN tag */
-	for (int i = 0; i < priv->r->cpu_port; i++)
-		priv->r->vlan_fwd_on_inner(i, true);
 }
 
 static void rtldsa_setup_bpdu_traps(struct rtl838x_switch_priv *priv)
@@ -175,8 +116,8 @@ static int rtldsa_83xx_setup(struct dsa_switch *ds)
 	}
 
 	priv->r->print_matrix();
-	rtldsa_init_stats(priv);
-	rtldsa_init_counters(priv);
+	rtldsa_stats_init(priv);
+	rtldsa_stats_init_counters(priv);
 
 	rtldsa_83xx_mc_pmasks_setup(priv);
 	rtldsa_vlan_setup(priv);
@@ -225,8 +166,8 @@ static int rtldsa_93xx_setup(struct dsa_switch *ds)
 	priv->r->traffic_set(priv->r->cpu_port, BIT_ULL(priv->r->cpu_port));
 	priv->r->print_matrix();
 
-	rtldsa_init_stats(priv);
-	rtldsa_init_counters(priv);
+	rtldsa_stats_init(priv);
+	rtldsa_stats_init_counters(priv);
 
 	rtldsa_vlan_setup(priv);
 
@@ -243,9 +184,11 @@ static int rtldsa_93xx_setup(struct dsa_switch *ds)
 
 	priv->r->pie_init(priv);
 
-	err = rtldsa_tc_init(priv);
-	if (err)
-		return err;
+	if (priv->r->pie_rule_id_is_log_counter) {
+		err = rtldsa_tc_init(priv);
+		if (err)
+			return err;
+	}
 
 	priv->r->led_init(priv);
 
@@ -254,12 +197,12 @@ static int rtldsa_93xx_setup(struct dsa_switch *ds)
 
 static int rtldsa_phylink_fill_available_pcs(struct phylink_config *config,
 					     struct phylink_pcs **available_pcs,
-					     unsigned int num_available_pcs)
+					     unsigned int num_possible_pcs)
 {
 	struct dsa_port *dp = dsa_phylink_to_port(config);
 
 	return fwnode_phylink_pcs_parse(of_fwnode_handle(dp->dn),
-					available_pcs, &num_available_pcs);
+					available_pcs, num_possible_pcs);
 }
 
 static void rtldsa_phylink_get_caps(struct dsa_switch *ds, int port,
@@ -284,8 +227,8 @@ static void rtldsa_phylink_get_caps(struct dsa_switch *ds, int port,
 		__set_bit(PHY_INTERFACE_MODE_10G_QXGMII, config->supported_interfaces);
 	}
 
-	if (!fwnode_phylink_pcs_parse(of_fwnode_handle(dp->dn), NULL,
-				      &config->num_available_pcs)) {
+	config->num_possible_pcs = fwnode_phylink_pcs_count(of_fwnode_handle(dp->dn));
+	if (config->num_possible_pcs) {
 		config->fill_available_pcs = rtldsa_phylink_fill_available_pcs;
 		bitmap_copy(config->pcs_interfaces, config->supported_interfaces,
 			    PHY_INTERFACE_MODE_MAX);
@@ -473,491 +416,6 @@ static void rtldsa_93xx_phylink_mac_link_up(struct phylink_config *config,
 
 	/* Restart TX/RX to port */
 	sw_w32_mask(0, 0x3, priv->r->mac_port_ctrl(port));
-}
-
-static bool rtldsa_read_mib_item(struct rtl838x_switch_priv *priv, int port,
-				 const struct rtldsa_mib_item *mib_item,
-				 u64 *data)
-{
-	u32 high1, high2;
-	int reg, reg_offset, addr_low;
-
-	switch (mib_item->reg) {
-	case MIB_REG_STD:
-		reg = priv->r->stat_port_std_mib;
-		reg_offset = 256;
-		break;
-	case MIB_REG_PRV:
-		reg = priv->r->stat_port_prv_mib;
-		reg_offset = 128;
-		break;
-	case MIB_TBL_STD:
-	case MIB_TBL_PRV:
-		if (!priv->r->stat_port_table_read)
-			return false;
-
-		*data = priv->r->stat_port_table_read(port, mib_item->size, mib_item->offset,
-						      mib_item->reg == MIB_TBL_PRV);
-
-		return true;
-	default:
-		return false;
-	}
-
-	addr_low = reg + (port + 1) * reg_offset - 4 - mib_item->offset;
-
-	if (mib_item->size == 2) {
-		high1 = sw_r32(addr_low - 4);
-		*data = sw_r32(addr_low);
-		high2 = sw_r32(addr_low - 4);
-		if (high1 != high2) {
-			/* Low must have wrapped and overflowed into high, read again */
-			*data = sw_r32(addr_low);
-		}
-		*data |= (u64)high2 << 32;
-	} else {
-		*data = sw_r32(addr_low);
-	}
-
-	return true;
-}
-
-static void rtldsa_update_counter(struct rtl838x_switch_priv *priv, int port,
-				  struct rtldsa_counter *counter,
-				  const struct rtldsa_mib_item *mib_item)
-{
-	u64 val;
-	u32 val32, diff;
-
-	if (!rtldsa_read_mib_item(priv, port, mib_item, &val))
-		return;
-
-	if (mib_item->size == 2) {
-		counter->val = val;
-	} else {
-		val32 = (u32)val;
-		diff = val32 - counter->last;
-		counter->val += diff;
-		counter->last = val32;
-	}
-}
-
-static void rtldsa_update_link_stat(struct rtnl_link_stats64 *s,
-				    const struct rtldsa_counter_state *counters)
-{
-	s->rx_packets = counters->if_in_ucast_pkts.val +
-			counters->if_in_mcast_pkts.val +
-			counters->if_in_bcast_pkts.val +
-			counters->rx_pkts_over_max_octets.val;
-
-	s->tx_packets = counters->if_out_ucast_pkts.val +
-			counters->if_out_mcast_pkts.val +
-			counters->if_out_bcast_pkts.val -
-			counters->if_out_discards.val;
-
-	/* Subtract FCS for each packet, and pause frames */
-	s->rx_bytes = counters->if_in_octets.val -
-		      4 * s->rx_packets -
-		      64 * counters->rx_pause_frames.val;
-	s->tx_bytes = counters->if_out_octets.val -
-		      4 * s->tx_packets -
-		      64 * counters->tx_pause_frames.val;
-
-	s->collisions = counters->collisions.val;
-
-	s->rx_dropped = counters->drop_events.val;
-	s->tx_dropped = counters->if_out_discards.val;
-
-	s->rx_crc_errors = counters->crc_align_errors.val;
-	s->rx_errors = s->rx_crc_errors;
-
-	s->tx_aborted_errors = counters->excessive_collisions.val;
-	s->tx_window_errors = counters->late_collisions.val;
-	s->tx_errors = s->tx_aborted_errors + s->tx_window_errors;
-}
-
-static void rtldsa_update_port_counters(struct rtl838x_switch_priv *priv, int port)
-{
-	struct rtldsa_counter_state *counters = &priv->ports[port].counters;
-	const struct rtldsa_mib_desc *mib_desc;
-	ktime_t now;
-
-	mib_desc = priv->r->mib_desc;
-
-	/* Prevent unnecessary updates when the user accesses different stats quickly.
-	 * This compensates a bit for always updating all stats, even when just a
-	 * subset is actually requested.
-	 */
-	now = ktime_get();
-	if (ktime_before(now, ktime_add_ms(counters->last_update, 100)))
-		return;
-	counters->last_update = now;
-
-	rtldsa_update_counter(priv, port, &counters->symbol_errors,
-			      &mib_desc->symbol_errors);
-
-	rtldsa_update_counter(priv, port, &counters->if_in_octets,
-			      &mib_desc->if_in_octets);
-	rtldsa_update_counter(priv, port, &counters->if_out_octets,
-			      &mib_desc->if_out_octets);
-	rtldsa_update_counter(priv, port, &counters->if_in_ucast_pkts,
-			      &mib_desc->if_in_ucast_pkts);
-	rtldsa_update_counter(priv, port, &counters->if_in_mcast_pkts,
-			      &mib_desc->if_in_mcast_pkts);
-	rtldsa_update_counter(priv, port, &counters->if_in_bcast_pkts,
-			      &mib_desc->if_in_bcast_pkts);
-	rtldsa_update_counter(priv, port, &counters->if_out_ucast_pkts,
-			      &mib_desc->if_out_ucast_pkts);
-	rtldsa_update_counter(priv, port, &counters->if_out_mcast_pkts,
-			      &mib_desc->if_out_mcast_pkts);
-	rtldsa_update_counter(priv, port, &counters->if_out_bcast_pkts,
-			      &mib_desc->if_out_bcast_pkts);
-	rtldsa_update_counter(priv, port, &counters->if_out_discards,
-			      &mib_desc->if_out_discards);
-	rtldsa_update_counter(priv, port, &counters->single_collisions,
-			      &mib_desc->single_collisions);
-	rtldsa_update_counter(priv, port, &counters->multiple_collisions,
-			      &mib_desc->multiple_collisions);
-	rtldsa_update_counter(priv, port, &counters->deferred_transmissions,
-			      &mib_desc->deferred_transmissions);
-	rtldsa_update_counter(priv, port, &counters->late_collisions,
-			      &mib_desc->late_collisions);
-	rtldsa_update_counter(priv, port, &counters->excessive_collisions,
-			      &mib_desc->excessive_collisions);
-	rtldsa_update_counter(priv, port, &counters->crc_align_errors,
-			      &mib_desc->crc_align_errors);
-	rtldsa_update_counter(priv, port, &counters->rx_pkts_over_max_octets,
-			      &mib_desc->rx_pkts_over_max_octets);
-
-	rtldsa_update_counter(priv, port, &counters->unsupported_opcodes,
-			      &mib_desc->unsupported_opcodes);
-
-	rtldsa_update_counter(priv, port, &counters->rx_undersize_pkts,
-			      &mib_desc->rx_undersize_pkts);
-	rtldsa_update_counter(priv, port, &counters->rx_oversize_pkts,
-			      &mib_desc->rx_oversize_pkts);
-	rtldsa_update_counter(priv, port, &counters->rx_fragments,
-			      &mib_desc->rx_fragments);
-	rtldsa_update_counter(priv, port, &counters->rx_jabbers,
-			      &mib_desc->rx_jabbers);
-
-	for (int i = 0; i < ARRAY_SIZE(mib_desc->tx_pkts); i++) {
-		if (mib_desc->tx_pkts[i].reg == MIB_REG_INVALID)
-			break;
-
-		rtldsa_update_counter(priv, port, &counters->tx_pkts[i],
-				      &mib_desc->tx_pkts[i]);
-	}
-	for (int i = 0; i < ARRAY_SIZE(mib_desc->rx_pkts); i++) {
-		if (mib_desc->rx_pkts[i].reg == MIB_REG_INVALID)
-			break;
-
-		rtldsa_update_counter(priv, port, &counters->rx_pkts[i],
-				      &mib_desc->rx_pkts[i]);
-	}
-
-	rtldsa_update_counter(priv, port, &counters->drop_events,
-			      &mib_desc->drop_events);
-	rtldsa_update_counter(priv, port, &counters->collisions,
-			      &mib_desc->collisions);
-
-	rtldsa_update_counter(priv, port, &counters->rx_pause_frames,
-			      &mib_desc->rx_pause_frames);
-	rtldsa_update_counter(priv, port, &counters->tx_pause_frames,
-			      &mib_desc->tx_pause_frames);
-
-	/* prepare get_stats64 reply without requiring caller waiting for mutex */
-	spin_lock(&counters->link_stat_lock);
-	rtldsa_update_link_stat(&counters->link_stat, counters);
-	spin_unlock(&counters->link_stat_lock);
-}
-
-void rtldsa_counters_lock_register(struct rtl838x_switch_priv *priv, int port)
-	__acquires(&priv->ports[port].counters.lock)
-{
-	spin_lock(&priv->ports[port].counters.lock);
-}
-
-void rtldsa_counters_unlock_register(struct rtl838x_switch_priv *priv, int port)
-	__releases(&priv->ports[port].counters.lock)
-{
-	spin_unlock(&priv->ports[port].counters.lock);
-}
-
-void rtldsa_counters_lock_table(struct rtl838x_switch_priv *priv, int port __maybe_unused)
-	__acquires(&priv->counters_lock)
-{
-	mutex_lock(&priv->counters_lock);
-}
-
-void rtldsa_counters_unlock_table(struct rtl838x_switch_priv *priv, int port __maybe_unused)
-	__releases(&priv->ports[port].counters.lock)
-{
-	mutex_unlock(&priv->counters_lock);
-}
-
-static void rtldsa_counters_lock(struct rtl838x_switch_priv *priv, int port)
-{
-	priv->r->stat_counters_lock(priv, port);
-}
-
-static void rtldsa_counters_unlock(struct rtl838x_switch_priv *priv, int port)
-{
-	priv->r->stat_counters_unlock(priv, port);
-}
-
-static void rtldsa_poll_counters(struct work_struct *work)
-{
-	struct rtl838x_switch_priv *priv = container_of(to_delayed_work(work),
-							struct rtl838x_switch_priv,
-							counters_work);
-
-	for (int port = 0; port < priv->r->cpu_port; port++) {
-		if (!priv->ports[port].phy && !priv->ports[port].has_pcs)
-			continue;
-
-		rtldsa_counters_lock(priv, port);
-		rtldsa_update_port_counters(priv, port);
-		rtldsa_counters_unlock(priv, port);
-	}
-
-	queue_delayed_work(priv->wq, &priv->counters_work,
-			   priv->r->stat_counter_poll_interval);
-}
-
-static void rtldsa_init_counters(struct rtl838x_switch_priv *priv)
-{
-	struct rtldsa_counter_state *counters;
-
-	for (int port = 0; port < priv->r->cpu_port; port++) {
-		if (!priv->ports[port].phy && !priv->ports[port].has_pcs)
-			continue;
-
-		counters = &priv->ports[port].counters;
-
-		memset(counters, 0, sizeof(*counters));
-		spin_lock_init(&counters->lock);
-		spin_lock_init(&counters->link_stat_lock);
-	}
-
-	INIT_DELAYED_WORK(&priv->counters_work, rtldsa_poll_counters);
-	queue_delayed_work(priv->wq, &priv->counters_work,
-			   priv->r->stat_counter_poll_interval);
-}
-
-static void rtldsa_get_strings(struct dsa_switch *ds,
-			       int port, u32 stringset, u8 *data)
-{
-	struct rtl838x_switch_priv *priv = ds->priv;
-	const struct rtldsa_mib_desc *mib_desc;
-
-	if (stringset != ETH_SS_STATS)
-		return;
-
-	if (port < 0 || port >= priv->r->cpu_port)
-		return;
-
-	mib_desc = priv->r->mib_desc;
-
-	for (int i = 0; i < mib_desc->list_count; i++)
-		ethtool_puts(&data, mib_desc->list[i].name);
-}
-
-static void rtldsa_get_ethtool_stats(struct dsa_switch *ds, int port,
-				     u64 *data)
-{
-	struct rtl838x_switch_priv *priv = ds->priv;
-	const struct rtldsa_mib_desc *mib_desc;
-	const struct rtldsa_mib_item *mib_item;
-
-	if (port < 0 || port >= priv->r->cpu_port)
-		return;
-
-	mib_desc = priv->r->mib_desc;
-	for (int i = 0; i < mib_desc->list_count; i++) {
-		mib_item = &mib_desc->list[i].item;
-		rtldsa_read_mib_item(priv, port, mib_item, &data[i]);
-	}
-}
-
-static int rtldsa_get_sset_count(struct dsa_switch *ds, int port, int sset)
-{
-	struct rtl838x_switch_priv *priv = ds->priv;
-
-	if (sset != ETH_SS_STATS)
-		return 0;
-
-	if (port < 0 || port >= priv->r->cpu_port)
-		return 0;
-
-	return priv->r->mib_desc->list_count;
-}
-
-static void rtldsa_get_eth_phy_stats(struct dsa_switch *ds, int port,
-				     struct ethtool_eth_phy_stats *phy_stats)
-{
-	struct rtl838x_switch_priv *priv = ds->priv;
-	struct rtldsa_counter_state *counters = &priv->ports[port].counters;
-
-	if (port < 0 || port >= priv->r->cpu_port)
-		return;
-
-	rtldsa_counters_lock(priv, port);
-
-	rtldsa_update_port_counters(priv, port);
-
-	phy_stats->SymbolErrorDuringCarrier = counters->symbol_errors.val;
-
-	rtldsa_counters_unlock(priv, port);
-}
-
-static void rtldsa_get_eth_mac_stats(struct dsa_switch *ds, int port,
-				     struct ethtool_eth_mac_stats *mac_stats)
-{
-	struct rtl838x_switch_priv *priv = ds->priv;
-	struct rtldsa_counter_state *counters = &priv->ports[port].counters;
-
-	if (port < 0 || port >= priv->r->cpu_port)
-		return;
-
-	rtldsa_counters_lock(priv, port);
-
-	rtldsa_update_port_counters(priv, port);
-
-	/* Frame and octet counters are calculated based on RFC3635, while also
-	 * taking into account that the behaviour of the hardware counters differs
-	 * in some places.
-	 */
-
-	mac_stats->FramesReceivedOK = counters->if_in_ucast_pkts.val +
-				      counters->if_in_mcast_pkts.val +
-				      counters->if_in_bcast_pkts.val +
-				      counters->rx_pause_frames.val +
-				      counters->rx_pkts_over_max_octets.val;
-
-	mac_stats->FramesTransmittedOK = counters->if_out_ucast_pkts.val +
-					 counters->if_out_mcast_pkts.val +
-					 counters->if_out_bcast_pkts.val +
-					 counters->tx_pause_frames.val -
-					 counters->if_out_discards.val;
-
-	mac_stats->OctetsReceivedOK = counters->if_in_octets.val -
-				      18 * mac_stats->FramesReceivedOK;
-	mac_stats->OctetsTransmittedOK = counters->if_out_octets.val -
-					 18 * mac_stats->FramesTransmittedOK;
-
-	mac_stats->SingleCollisionFrames = counters->single_collisions.val;
-	mac_stats->MultipleCollisionFrames = counters->multiple_collisions.val;
-	mac_stats->FramesWithDeferredXmissions = counters->deferred_transmissions.val;
-	mac_stats->LateCollisions = counters->late_collisions.val;
-	mac_stats->FramesAbortedDueToXSColls = counters->excessive_collisions.val;
-
-	mac_stats->FrameCheckSequenceErrors = counters->crc_align_errors.val;
-
-	rtldsa_counters_unlock(priv, port);
-}
-
-static void rtldsa_get_eth_ctrl_stats(struct dsa_switch *ds, int port,
-				      struct ethtool_eth_ctrl_stats *ctrl_stats)
-{
-	struct rtl838x_switch_priv *priv = ds->priv;
-	struct rtldsa_counter_state *counters = &priv->ports[port].counters;
-
-	if (port < 0 || port >= priv->r->cpu_port)
-		return;
-
-	rtldsa_counters_lock(priv, port);
-
-	rtldsa_update_port_counters(priv, port);
-
-	ctrl_stats->UnsupportedOpcodesReceived = counters->unsupported_opcodes.val;
-
-	rtldsa_counters_unlock(priv, port);
-}
-
-static void rtldsa_get_rmon_stats(struct dsa_switch *ds, int port,
-				  struct ethtool_rmon_stats *rmon_stats,
-				  const struct ethtool_rmon_hist_range **ranges)
-{
-	struct rtl838x_switch_priv *priv = ds->priv;
-	const struct rtldsa_mib_desc *mib_desc;
-	struct rtldsa_counter_state *counters = &priv->ports[port].counters;
-
-	if (port < 0 || port >= priv->r->cpu_port)
-		return;
-
-	mib_desc = priv->r->mib_desc;
-
-	rtldsa_counters_lock(priv, port);
-
-	rtldsa_update_port_counters(priv, port);
-
-	rmon_stats->undersize_pkts = counters->rx_undersize_pkts.val;
-	rmon_stats->oversize_pkts = counters->rx_oversize_pkts.val;
-	rmon_stats->fragments = counters->rx_fragments.val;
-	rmon_stats->jabbers = counters->rx_jabbers.val;
-
-	for (int i = 0; i < ARRAY_SIZE(mib_desc->rx_pkts); i++) {
-		if (mib_desc->rx_pkts[i].reg == MIB_REG_INVALID)
-			break;
-
-		rmon_stats->hist[i] = counters->rx_pkts[i].val;
-	}
-
-	for (int i = 0; i < ARRAY_SIZE(mib_desc->tx_pkts); i++) {
-		if (mib_desc->tx_pkts[i].reg == MIB_REG_INVALID)
-			break;
-
-		rmon_stats->hist_tx[i] = counters->tx_pkts[i].val;
-	}
-
-	*ranges = mib_desc->rmon_ranges;
-
-	rtldsa_counters_unlock(priv, port);
-}
-
-void rtldsa_update_counters_atomically(struct rtl838x_switch_priv *priv, int port)
-{
-	rtldsa_counters_lock(priv, port);
-	rtldsa_update_port_counters(priv, port);
-	rtldsa_counters_unlock(priv, port);
-}
-
-static void rtldsa_get_stats64(struct dsa_switch *ds, int port,
-			       struct rtnl_link_stats64 *s)
-{
-	struct rtl838x_switch_priv *priv = ds->priv;
-	struct rtldsa_counter_state *counters = &priv->ports[port].counters;
-
-	if (port < 0 || port >= priv->r->cpu_port)
-		return;
-
-	if (priv->r->stat_update_counters_atomically)
-		priv->r->stat_update_counters_atomically(priv, port);
-
-	/* retrieve prepared return data without potentially sleeping via mutex */
-	spin_lock(&counters->link_stat_lock);
-	memcpy(s, &counters->link_stat, sizeof(*s));
-	spin_unlock(&counters->link_stat_lock);
-}
-
-static void rtldsa_get_pause_stats(struct dsa_switch *ds, int port,
-				   struct ethtool_pause_stats *pause_stats)
-{
-	struct rtl838x_switch_priv *priv = ds->priv;
-	struct rtldsa_counter_state *counters = &priv->ports[port].counters;
-
-	if (port < 0 || port >= priv->r->cpu_port)
-		return;
-
-	rtldsa_counters_lock(priv, port);
-
-	rtldsa_update_port_counters(priv, port);
-
-	pause_stats->tx_pause_frames = counters->tx_pause_frames.val;
-	pause_stats->rx_pause_frames = counters->rx_pause_frames.val;
-
-	rtldsa_counters_unlock(priv, port);
 }
 
 static int rtldsa_mc_group_alloc(struct rtl838x_switch_priv *priv, int port)
@@ -1321,7 +779,7 @@ static void rtldsa_mst_release_slot(struct kref *ref)
  * Return: false when MST slot reference counter was only decreased or an invalid @mst_slot was
  * given, true when @mst_slot is now unused
  */
-static bool rtldsa_mst_put_slot(struct rtl838x_switch_priv *priv, u16 mst_slot)
+bool rtldsa_mst_put_slot(struct rtl838x_switch_priv *priv, u16 mst_slot)
 				__must_hold(&priv->reg_mutex)
 {
 	unsigned int index;
@@ -1350,7 +808,7 @@ static bool rtldsa_mst_put_slot(struct rtl838x_switch_priv *priv, u16 mst_slot)
  *
  * Return: allocated slot (with increased reference count) or negative encoded error value
  */
-static int rtldsa_mst_replace(struct rtl838x_switch_priv *priv, u16 msti, u16 old_mst_slot)
+int rtldsa_mst_replace(struct rtl838x_switch_priv *priv, u16 msti, u16 old_mst_slot)
 			      __must_hold(&priv->reg_mutex)
 {
 	int mst_slot_new;
@@ -1530,197 +988,6 @@ static int rtldsa_port_mst_state_set(struct dsa_switch *ds, int port,
 	return 0;
 }
 
-static int rtldsa_vlan_filtering(struct dsa_switch *ds, int port,
-				 bool vlan_filtering,
-				 struct netlink_ext_ack *extack)
-{
-	struct rtl838x_switch_priv *priv = ds->priv;
-
-	pr_debug("%s: port %d\n", __func__, port);
-	mutex_lock(&priv->reg_mutex);
-
-	if (vlan_filtering) {
-		/* Enable ingress and egress filtering
-		 * The VLAN_PORT_IGR_FILTER register uses 2 bits for each port to define
-		 * the filter action:
-		 * 0: Always Forward
-		 * 1: Drop packet
-		 * 2: Trap packet to CPU port
-		 * The Egress filter used 1 bit per state (0: DISABLED, 1: ENABLED)
-		 */
-		if (port != priv->r->cpu_port) {
-			priv->r->set_vlan_igr_filter(port, IGR_DROP);
-			priv->r->set_vlan_egr_filter(port, EGR_ENABLE);
-		} else {
-			priv->r->set_vlan_igr_filter(port, IGR_TRAP);
-			priv->r->set_vlan_egr_filter(port, EGR_DISABLE);
-		}
-
-	} else {
-		/* Disable ingress and egress filtering */
-		if (port != priv->r->cpu_port)
-			priv->r->set_vlan_igr_filter(port, IGR_FORWARD);
-
-		priv->r->set_vlan_egr_filter(port, EGR_DISABLE);
-	}
-
-	/* Do we need to do something to the CPU-Port, too? */
-	mutex_unlock(&priv->reg_mutex);
-
-	return 0;
-}
-
-static int rtldsa_vlan_prepare(struct dsa_switch *ds, int port,
-			       const struct switchdev_obj_port_vlan *vlan)
-{
-	struct rtldsa_vlan_info info;
-	struct rtl838x_switch_priv *priv = ds->priv;
-
-	priv->r->vlan_tables_read(0, &info);
-
-	pr_debug("VLAN 0: Member ports %llx, untag %llx, profile %d, MC# %d, UC# %d, FID %x\n",
-		 info.member_ports, info.untagged_ports, info.profile_id,
-		 info.hash_mc_fid, info.hash_uc_fid, info.fid);
-
-	priv->r->vlan_tables_read(1, &info);
-	pr_debug("VLAN 1: Member ports %llx, untag %llx, profile %d, MC# %d, UC# %d, FID %x\n",
-		 info.member_ports, info.untagged_ports, info.profile_id,
-		 info.hash_mc_fid, info.hash_uc_fid, info.fid);
-	priv->r->vlan_set_untagged(1, info.untagged_ports);
-	pr_debug("SET: Untagged ports, VLAN %d: %llx\n", 1, info.untagged_ports);
-
-	priv->r->vlan_set_tagged(1, &info);
-	pr_debug("SET: Member ports, VLAN %d: %llx\n", 1, info.member_ports);
-
-	return 0;
-}
-
-static int rtldsa_vlan_add(struct dsa_switch *ds, int port,
-			   const struct switchdev_obj_port_vlan *vlan,
-			   struct netlink_ext_ack *extack)
-{
-	struct rtldsa_vlan_info info;
-	struct rtl838x_switch_priv *priv = ds->priv;
-	int err;
-
-	pr_debug("%s port %d, vid %d, flags %x\n",
-		 __func__, port, vlan->vid, vlan->flags);
-
-	/* Let no one mess with our special VLAN 0 */
-	if (!vlan->vid)
-		return 0;
-
-	if (vlan->vid >= MAX_VLANS) {
-		dev_err(priv->dev, "VLAN out of range: %d", vlan->vid);
-		return -ENOTSUPP;
-	}
-
-	err = rtldsa_vlan_prepare(ds, port, vlan);
-	if (err)
-		return err;
-
-	mutex_lock(&priv->reg_mutex);
-
-	/*
-	 * Realtek switches copy frames as-is to/from the CPU. For a proper
-	 * VLAN handling the 12 bit RVID field (= VLAN id) for incoming traffic
-	 * and the 1 bit RVID_SEL field (0 = use inner tag, 1 = use outer tag)
-	 * for outgoing traffic of the CPU tag structure need to be handled. As
-	 * of now no such logic is in place. So for the CPU port keep the fixed
-	 * PVID=0 from initial setup in place and ignore all subsequent settings.
-	 */
-	if (port != priv->r->cpu_port) {
-		if (vlan->flags & BRIDGE_VLAN_INFO_PVID)
-			rtldsa_vlan_set_pvid(priv, port, vlan->vid);
-		else if (priv->ports[port].pvid == vlan->vid)
-			rtldsa_vlan_set_pvid(priv, port, 0);
-	}
-
-	/* Get port memberships of this vlan */
-	priv->r->vlan_tables_read(vlan->vid, &info);
-
-	/* new VLAN? */
-	if (!info.member_ports) {
-		info.fid = 0;
-		info.hash_mc_fid = false;
-		info.hash_uc_fid = false;
-		info.profile_id = 0;
-	}
-
-	/* sanitize untagged_ports - must be a subset */
-	if (info.untagged_ports & ~info.member_ports)
-		info.untagged_ports = 0;
-
-	info.member_ports |= BIT_ULL(port);
-	if (vlan->flags & BRIDGE_VLAN_INFO_UNTAGGED)
-		info.untagged_ports |= BIT_ULL(port);
-	else
-		info.untagged_ports &= ~BIT_ULL(port);
-
-	priv->r->vlan_set_untagged(vlan->vid, info.untagged_ports);
-	pr_debug("Untagged ports, VLAN %d: %llx\n", vlan->vid, info.untagged_ports);
-
-	priv->r->vlan_set_tagged(vlan->vid, &info);
-	pr_debug("Member ports, VLAN %d: %llx\n", vlan->vid, info.member_ports);
-
-	mutex_unlock(&priv->reg_mutex);
-
-	return 0;
-}
-
-static int rtldsa_vlan_del(struct dsa_switch *ds, int port,
-			   const struct switchdev_obj_port_vlan *vlan)
-{
-	struct rtldsa_vlan_info info;
-	struct rtl838x_switch_priv *priv = ds->priv;
-	u16 pvid;
-
-	pr_debug("%s: port %d, vid %d, flags %x\n",
-		 __func__, port, vlan->vid, vlan->flags);
-
-	/* Let no one mess with our special VLAN 0 */
-	if (!vlan->vid)
-		return 0;
-
-	if (vlan->vid >= MAX_VLANS) {
-		dev_err(priv->dev, "VLAN out of range: %d", vlan->vid);
-		return -ENOTSUPP;
-	}
-
-	mutex_lock(&priv->reg_mutex);
-	pvid = priv->ports[port].pvid;
-
-	/* Reset to default if removing the current PVID */
-	if (vlan->vid == pvid)
-		rtldsa_vlan_set_pvid(priv, port, 0);
-
-	/* Get port memberships of this vlan */
-	priv->r->vlan_tables_read(vlan->vid, &info);
-
-	/* remove port from both tables */
-	info.untagged_ports &= (~BIT_ULL(port));
-	info.member_ports &= (~BIT_ULL(port));
-
-	/* VLANs without members are set back (implicitly) to CIST by DSA */
-	if (!info.member_ports) {
-		u16 mst = info.fid;
-
-		info.fid = 0;
-
-		rtldsa_mst_put_slot(priv, mst);
-	}
-
-	priv->r->vlan_set_untagged(vlan->vid, info.untagged_ports);
-	pr_debug("Untagged ports, VLAN %d: %llx\n", vlan->vid, info.untagged_ports);
-
-	priv->r->vlan_set_tagged(vlan->vid, &info);
-	pr_debug("Member ports, VLAN %d: %llx\n", vlan->vid, info.member_ports);
-
-	mutex_unlock(&priv->reg_mutex);
-
-	return 0;
-}
-
 void rtldsa_port_fast_age(struct dsa_switch *ds, int port)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
@@ -1733,53 +1000,22 @@ void rtldsa_port_fast_age(struct dsa_switch *ds, int port)
 	mutex_unlock(&priv->reg_mutex);
 }
 
-static int rtldsa_port_vlan_fast_age(struct dsa_switch *ds, int port, u16 vid)
-{
-	struct rtl838x_switch_priv *priv = ds->priv;
-	int ret;
-
-	if (!priv->r->fast_age)
-		return -EOPNOTSUPP;
-
-	mutex_lock(&priv->reg_mutex);
-	ret = priv->r->fast_age(priv, port, vid);
-	mutex_unlock(&priv->reg_mutex);
-
-	return ret;
-}
-
-static int rtldsa_vlan_msti_set(struct dsa_switch *ds, struct dsa_bridge bridge,
-				const struct switchdev_vlan_msti *msti)
-{
-	struct rtl838x_switch_priv *priv = ds->priv;
-	struct rtldsa_vlan_info info;
-	u16 mst_slot_old;
-	int mst_slot;
-
-	priv->r->vlan_tables_read(msti->vid, &info);
-	mst_slot_old = info.fid;
-
-	/* find HW slot for MSTI */
-	mutex_lock(&priv->reg_mutex);
-	mst_slot = rtldsa_mst_replace(priv, msti->msti, mst_slot_old);
-	mutex_unlock(&priv->reg_mutex);
-
-	if (mst_slot < 0)
-		return mst_slot;
-
-	info.fid = mst_slot;
-	priv->r->vlan_set_tagged(msti->vid, &info);
-
-	return 0;
-}
-
 static void rtldsa_setup_l2_uc_entry(struct rtl838x_l2_entry *e, int port,
 				     int vid, u64 mac)
 {
+	bool next_hop = e->valid && e->next_hop;
+	u16 nh_route_id = next_hop ? e->nh_route_id : 0;
+
 	memset(e, 0, sizeof(*e));
 
 	e->type = L2_UNICAST;
 	e->valid = true;
+
+	/* A route may be forwarding through this address already, and the id
+	 * it is known by lives nowhere else.
+	 */
+	e->next_hop = next_hop;
+	e->nh_route_id = nh_route_id;
 
 	e->age = 3;
 	e->is_static = true;
@@ -1805,17 +1041,22 @@ static void rtldsa_setup_l2_mc_entry(struct rtl838x_l2_entry *e, int vid, u64 ma
 	u64_to_ether_addr(mac, e->mac);
 }
 
+static int rtldsa_l2_hash_index(u32 key, int slot)
+{
+	return slot > 3 ? ((key >> 14) & 0xffff) | (slot & 3) : ((key << 2) | slot) & 0xffff;
+}
+
 /* Uses the seed to identify a hash bucket in the L2 using the derived hash key and then loops
  * over the entries in the bucket until either a matching entry is found or an empty slot
  * Returns the filled in rtl838x_l2_entry and the index in the bucket when an entry was found
  * when an empty slot was found and must exist is false, the index of the slot is returned
  * when no slots are available returns -1
  */
-static int rtldsa_find_l2_hash_entry(struct rtl838x_switch_priv *priv, u64 seed,
-				     bool must_exist, struct rtl838x_l2_entry *e)
+int rtldsa_find_l2_hash_entry(struct rtl838x_switch_priv *priv, u64 seed,
+			      bool must_exist, struct rtl838x_l2_entry *e)
 {
-	int idx = -1;
 	u32 key = priv->r->l2_hash_key(priv, seed);
+	int free_slot = -1;
 	u64 entry;
 
 	pr_debug("%s: using key %x, for seed %016llx\n", __func__, key, seed);
@@ -1823,15 +1064,30 @@ static int rtldsa_find_l2_hash_entry(struct rtl838x_switch_priv *priv, u64 seed,
 	for (int i = 0; i < priv->r->l2_bucket_size; i++) {
 		entry = priv->r->read_l2_entry_using_hash(key, i, e);
 		pr_debug("valid %d, mac %016llx\n", e->valid, ether_addr_to_u64(&e->mac[0]));
-		if (must_exist && !e->valid)
+
+		/* Remember the first free slot, but keep looking: the address
+		 * may be sitting further down the bucket.
+		 */
+		if (!e->valid) {
+			if (free_slot < 0)
+				free_slot = i;
 			continue;
-		if (!e->valid || ((entry & 0x0fffffffffffffffULL) == seed)) {
-			idx = i > 3 ? ((key >> 14) & 0xffff) | i >> 1 : ((key << 2) | i) & 0xffff;
-			break;
 		}
+
+		if ((entry & 0x0fffffffffffffffULL) == seed)
+			return rtldsa_l2_hash_index(key, i);
 	}
 
-	return idx;
+	if (must_exist || free_slot < 0)
+		return -1;
+
+	/* The loop leaves the last entry it read here, valid bit included.
+	 * Reading the free slot back does not undo that on RTL930x and
+	 * RTL931x, whose readers return as soon as the valid bit is clear.
+	 */
+	memset(e, 0, sizeof(*e));
+
+	return rtldsa_l2_hash_index(key, free_slot);
 }
 
 /* Uses the seed to identify an entry in the CAM by looping over all its entries
@@ -1921,6 +1177,17 @@ static int rtldsa_port_fdb_add(struct dsa_switch *ds, int port,
 
 	/* Found an existing or empty entry */
 	if (idx >= 0) {
+		struct rtldsa_l2_uc *m = rtldsa_l2_uc_lookup(priv, idx);
+
+		if (m) {
+			/* A slot nobody had claimed carries whatever its last
+			 * owner left behind.
+			 */
+			if (!e.valid)
+				*m = (struct rtldsa_l2_uc){};
+			m->fdb_ref = true;
+		}
+
 		rtldsa_setup_l2_uc_entry(&e, port, vid, mac);
 		priv->r->write_l2_entry_using_hash(idx >> 2, idx & 0x3, &e);
 		goto out;
@@ -1964,8 +1231,24 @@ static int rtldsa_port_fdb_del(struct dsa_switch *ds, int port,
 	idx = rtldsa_find_l2_hash_entry(priv, seed, true, &e);
 
 	if (idx >= 0) {
+		struct rtldsa_l2_uc *m = rtldsa_l2_uc_lookup(priv, idx);
+
 		pr_debug("Found entry index %d, key %d and bucket %d\n", idx, idx >> 2, idx & 3);
-		e.valid = false;
+
+		if (m)
+			m->fdb_ref = false;
+
+		/* A route still forwarding through this address keeps it, as
+		 * the next hop it already is, reachable through no port of its
+		 * own.
+		 */
+		if (m && m->l3_refcount && e.next_hop) {
+			e.port = priv->r->port_ignore;
+			e.age = 0;
+		} else {
+			e.valid = false;
+		}
+
 		priv->r->write_l2_entry_using_hash(idx >> 2, idx & 0x3, &e);
 		goto out;
 	}
@@ -2549,118 +1832,6 @@ out:
 	return 0;
 }
 
-static const struct flow_action_entry *rtldsa_rate_policy_extract(struct flow_cls_offload *cls)
-{
-	struct flow_rule *rule;
-
-	/* only simple rules with a single action are supported */
-	rule = flow_cls_offload_flow_rule(cls);
-
-	if (!flow_action_basic_hw_stats_check(&cls->rule->action,
-					      cls->common.extack))
-		return NULL;
-
-	if (!flow_offload_has_one_action(&rule->action))
-		return NULL;
-
-	return &rule->action.entries[0];
-}
-
-static bool rtldsa_port_rate_police_validate(const struct flow_action_entry *act)
-{
-	if (!act)
-		return false;
-
-	/* only allow action which just limit rate with by dropping packets */
-	if (act->id != FLOW_ACTION_POLICE)
-		return false;
-
-	if (act->police.rate_pkt_ps > 0)
-		return false;
-
-	if (act->police.exceed.act_id != FLOW_ACTION_DROP)
-		return false;
-
-	if (act->police.notexceed.act_id != FLOW_ACTION_ACCEPT)
-		return false;
-
-	return true;
-}
-
-static int rtldsa_cls_flower_add(struct dsa_switch *ds, int port,
-				 struct flow_cls_offload *cls,
-				 bool ingress)
-{
-	struct rtl838x_switch_priv *priv = ds->priv;
-	struct rtldsa_port *p = &priv->ports[port];
-	const struct flow_action_entry *act;
-	int ret;
-
-	if (!priv->r->port_rate_police_add)
-		return -EOPNOTSUPP;
-
-	/* the single action must be a rate/bandwidth limiter */
-	act = rtldsa_rate_policy_extract(cls);
-
-	if (!rtldsa_port_rate_police_validate(act))
-		return -EOPNOTSUPP;
-
-	mutex_lock(&priv->reg_mutex);
-
-	/* only allow one offloaded police for ingress/egress */
-	if (ingress && p->rate_police_ingress) {
-		ret = -EOPNOTSUPP;
-		goto unlock;
-	}
-
-	if (!ingress && p->rate_police_egress) {
-		ret = -EOPNOTSUPP;
-		goto unlock;
-	}
-
-	ret = priv->r->port_rate_police_add(ds, port, act, ingress);
-	if (ret < 0)
-		goto unlock;
-
-	if (ingress)
-		p->rate_police_ingress = true;
-	else
-		p->rate_police_egress = true;
-
-unlock:
-	mutex_unlock(&priv->reg_mutex);
-
-	return ret;
-}
-
-static int rtldsa_cls_flower_del(struct dsa_switch *ds, int port,
-				 struct flow_cls_offload *cls,
-				 bool ingress)
-{
-	struct rtl838x_switch_priv *priv = ds->priv;
-	struct rtldsa_port *p = &priv->ports[port];
-	int ret;
-
-	if (!priv->r->port_rate_police_del)
-		return -EOPNOTSUPP;
-
-	mutex_lock(&priv->reg_mutex);
-
-	ret = priv->r->port_rate_police_del(ds, port, cls, ingress);
-	if (ret < 0)
-		goto unlock;
-
-	if (ingress)
-		p->rate_police_ingress = false;
-	else
-		p->rate_police_egress = false;
-
-unlock:
-	mutex_unlock(&priv->reg_mutex);
-
-	return ret;
-}
-
 const struct phylink_mac_ops rtldsa_83xx_phylink_mac_ops = {
 	.mac_config		= rtldsa_83xx_phylink_mac_config,
 	.mac_link_down		= rtldsa_phylink_mac_link_down,
@@ -2786,4 +1957,5 @@ const struct dsa_switch_ops rtldsa_93xx_switch_ops = {
 
 	.cls_flower_add		= rtldsa_cls_flower_add,
 	.cls_flower_del		= rtldsa_cls_flower_del,
+	.cls_flower_stats	= rtldsa_cls_flower_stats,
 };

@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
+config REALTEK_OTTO_TABLE
+	bool
+	depends on MACH_REALTEK_RTL
+	select MFD_SYSCON
+	help
+	  Serialise access to the switch tables that the RTL83xx and RTL93xx
+	  SoCs reach through a command register and a window of data
+	  registers. Selected by the drivers that use them.

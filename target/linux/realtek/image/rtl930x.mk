@@ -12,6 +12,16 @@ define Device/d-link_dgs-1250-28x
 endef
 TARGET_DEVICES += d-link_dgs-1250-28x
 
+define Device/draytek_g2282x
+  SOC := rtl9301
+  DEVICE_VENDOR := DrayTek
+  DEVICE_MODEL := VigorSwitch G2282x
+  IMAGE_SIZE := 31232k
+  DEVICE_PACKAGES += kmod-hwmon-adt7475
+  $(Device/kernel-lzma)
+endef
+TARGET_DEVICES += draytek_g2282x
+
 define Device/sirivision_sr-st3408f
   SOC := rtl9303
   UIMAGE_MAGIC := 0x93000000
@@ -22,6 +32,16 @@ define Device/sirivision_sr-st3408f
   $(Device/kernel-lzma)
 endef
 TARGET_DEVICES += sirivision_sr-st3408f
+
+define Device/sirivision_sr-st3808f
+  SOC := rtl9303
+  UIMAGE_MAGIC := 0x93000000
+  DEVICE_VENDOR := Sirivision
+  DEVICE_MODEL := SR-ST3808F
+  IMAGE_SIZE := 13312k
+  $(Device/kernel-lzma)
+endef
+TARGET_DEVICES += sirivision_sr-st3808f
 
 define Device/hasivo_f1100w-4sx-4xgt-common
   SOC := rtl9303
@@ -139,6 +159,34 @@ define Device/horaco_zx-swtgw2c8f
 	check-size
 endef
 TARGET_DEVICES += horaco_zx-swtgw2c8f
+
+define Device/keeplink_kp-9000-8xm
+  SOC := rtl9303
+  UIMAGE_MAGIC := 0x93000000
+  DEVICE_VENDOR := KeepLiNK
+  DEVICE_MODEL := KP-9000-8XM
+  # The bootloader and the OEM web interface write into a 14 MiB RUNTIME1
+  IMAGE_SIZE := 14336k
+  $(Device/kernel-lzma)
+endef
+TARGET_DEVICES += keeplink_kp-9000-8xm
+
+define Device/mokerlink_2g080gm
+  SOC := rtl9303
+  UIMAGE_MAGIC := 0x83800000
+  DEVICE_VENDOR := MokerLink
+  DEVICE_MODEL := 2G080GM
+  IMAGE_SIZE := 12288k
+  $(Device/kernel-lzma)
+  IMAGES += factory.bix
+  IMAGE/factory.bix := \
+	append-kernel | \
+	pad-to 64k | \
+	append-rootfs | \
+	pad-rootfs | \
+	check-size
+endef
+TARGET_DEVICES += mokerlink_2g080gm
 
 define Device/nicgiga_s100-0800s-m
   SOC := rtl9303

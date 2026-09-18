@@ -33,6 +33,16 @@
 	};
 };
 
+&spi_1_pins {
+	mux-2 {
+		pins = "gpio56", "gpio49";
+	};
+};
+
+&blsp1_spi2 {
+	cs-gpios = <&tlmm 56 GPIO_ACTIVE_LOW>;
+};
+
 &mdio {
 	status = "okay";
 	pinctrl-0 = <&mdio_pins>;

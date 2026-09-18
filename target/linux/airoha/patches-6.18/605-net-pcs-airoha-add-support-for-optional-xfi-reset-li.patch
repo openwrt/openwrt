@@ -18,7 +18,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 
 --- a/drivers/net/pcs/airoha/pcs-airoha-common.c
 +++ b/drivers/net/pcs/airoha/pcs-airoha-common.c
-@@ -144,6 +144,10 @@ static int airoha_pcs_setup_scu(struct a
+@@ -143,6 +143,10 @@ static int airoha_pcs_setup_scu(struct a
  	const struct airoha_pcs_match_data *data = priv->data;
  	int ret;
  
@@ -29,7 +29,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	switch (data->port_type) {
  	case AIROHA_PCS_ETH:
  		airoha_pcs_setup_scu_eth(priv, interface);
-@@ -161,6 +165,10 @@ static int airoha_pcs_setup_scu(struct a
+@@ -160,6 +164,10 @@ static int airoha_pcs_setup_scu(struct a
  		break;
  	}
  

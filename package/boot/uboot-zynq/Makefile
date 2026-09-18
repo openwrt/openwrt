@@ -61,6 +61,10 @@ UBOOT_TARGETS := \
 	zybo \
 	zybo_z7
 
+# mkeficapsule host tool is disabled
+# due to a host-side GnuTLS dependency
+UBOOT_CUSTOMIZE_CONFIG := --disable TOOLS_MKEFICAPSULE
+
 define Build/InstallDev
 	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
 	$(CP) $(PKG_BUILD_DIR)/spl/boot.bin $(STAGING_DIR_IMAGE)/$(BUILD_DEVICES)-boot.bin

@@ -354,7 +354,7 @@ Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
  	if (fdt_check_header(fdt))
  		panic("Corrupt DT");
  
-@@ -68,12 +387,76 @@ static __init const void *realtek_fixup_
+@@ -68,12 +387,77 @@ static __init const void *realtek_fixup_
  
  }
  
@@ -413,6 +413,7 @@ Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
 +	{ .compatible = "realtek,rtl839x-soc", .data = &rtl839x_soc },
 +	{ .compatible = "realtek,rtl9301-soc", .data = &rtl930x_soc },
 +	{ .compatible = "realtek,rtl9302-soc", .data = &rtl930x_soc },
++	{ .compatible = "realtek,rtl9302b-soc", .data = &rtl930x_soc },
 +	{ .compatible = "realtek,rtl9302c-soc", .data = &rtl930x_soc },
 +	{ .compatible = "realtek,rtl9303-soc", .data = &rtl930x_soc },
 +	{ .compatible = "realtek,rtl930x-soc", .data = &rtl930x_soc },

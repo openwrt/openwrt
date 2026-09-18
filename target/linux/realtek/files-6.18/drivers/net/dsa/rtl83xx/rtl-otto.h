@@ -6,7 +6,10 @@
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 #include <net/dsa.h>
 
-#include "table.h"
+#include <linux/soc/realtek/otto_table.h>
+
+#include "stats.h"
+#include "vlan.h"
 
 /* Register definition */
 #define RTL838X_MAC_PORT_CTRL(port)		(0xd560 + (((port) << 7)))
@@ -69,94 +72,6 @@
 
 #define RTL838X_PORT_ISO_CTRL(port)		(0x4100 + ((port) << 2))
 #define RTL839X_PORT_ISO_CTRL(port)		(0x1400 + ((port) << 3))
-
-/* Packet statistics */
-#define RTL838X_STAT_PORT_STD_MIB		(0x1200)
-#define RTL839X_STAT_PORT_STD_MIB		(0xC000)
-#define RTL930X_STAT_PORT_MIB_CNTR		(0x0664)
-#define RTL930X_STAT_PORT_PRVTE_CNTR		(0x2364)
-#define RTL838X_STAT_RST			(0x3100)
-#define RTL839X_STAT_RST			(0xF504)
-#define RTL930X_STAT_RST			(0x3240)
-#define RTL931X_STAT_RST			(0x7ef4)
-#define RTL838X_STAT_PORT_RST			(0x3104)
-#define RTL839X_STAT_PORT_RST			(0xF508)
-#define RTL930X_STAT_PORT_RST			(0x3244)
-#define RTL931X_STAT_PORT_RST			(0x7ef8)
-#define RTL838X_STAT_CTRL			(0x3108)
-#define RTL839X_STAT_CTRL			(0x04cc)
-#define RTL930X_STAT_CTRL			(0x3248)
-#define RTL931X_STAT_CTRL			(0x5720)
-
-/* VLAN registers */
-#define RTL838X_VLAN_CTRL			(0x3A74)
-#define RTL838X_VLAN_PROFILE(idx)		(0x3A88 + ((idx) << 2))
-#define RTL838X_VLAN_PROFILE_MAX		7
-#define RTL838X_VLAN_PORT_EGR_FLTR		(0x3A84)
-#define RTL838X_VLAN_PORT_PB_VLAN		(0x3C00)
-#define RTL838X_VLAN_PORT_IGR_FLTR		(0x3A7C)
-
-#define RTL838X_VLAN_L2_LEARN_EN(i)		(i)
-#define RTL838X_VLAN_L2_UNKN_MC_FLD(pmsk)	(pmsk << 1)
-#define RTL838X_VLAN_IP4_UNKN_MC_FLD(pmsk)	(pmsk << 10)
-#define RTL838X_VLAN_IP6_UNKN_MC_FLD(pmsk)	(pmsk << 19)
-
-#define RTL838X_VLAN_L2_LEARN_EN_R(p)		(p & RTL838X_VLAN_L2_LEARN_EN(1))
-#define RTL838X_VLAN_L2_UNKN_MC_FLD_PMSK(p)	((p >> 1) & (MAX_MC_PMASKS - 1))
-#define RTL838X_VLAN_IP4_UNKN_MC_FLD_PMSK(p)	((p >> 10) & (MAX_MC_PMASKS - 1))
-#define RTL838X_VLAN_IP6_UNKN_MC_FLD_PMSK(p)	((p >> 19) & (MAX_MC_PMASKS - 1))
-
-#define RTL839X_VLAN_PROFILE(idx)		(0x25C0 + (((idx) << 3)))
-#define RTL839X_VLAN_PROFILE_MAX		7
-#define RTL839X_VLAN_CTRL			(0x26D4)
-#define RTL839X_VLAN_PORT_PB_VLAN		(0x26D8)
-#define RTL839X_VLAN_PORT_IGR_FLTR		(0x27B4)
-#define RTL839X_VLAN_PORT_EGR_FLTR		(0x27C4)
-
-#define RTL839X_VLAN_L2_LEARN_EN(i)		(i)
-#define RTL839X_VLAN_L2_UNKN_MC_FLD(pmsk)	(pmsk << 1)
-#define RTL839X_VLAN_IP4_UNKN_MC_FLD(pmsk)	(pmsk << 13)
-#define RTL839X_VLAN_IP6_UNKN_MC_FLD(pmsk)	(pmsk)
-
-#define RTL839X_VLAN_L2_LEARN_EN_R(p)		(p[1] & RTL839X_VLAN_L2_LEARN_EN(1))
-#define RTL839X_VLAN_L2_UNKN_MC_FLD_PMSK(p)	((p[1] >> 1) & (MAX_MC_PMASKS - 1))
-#define RTL839X_VLAN_IP4_UNKN_MC_FLD_PMSK(p)	((p[1] >> 13) & (MAX_MC_PMASKS - 1))
-#define RTL839X_VLAN_IP6_UNKN_MC_FLD_PMSK(p)	((p[0]) & (MAX_MC_PMASKS - 1))
-
-#define RTL930X_VLAN_PROFILE_SET(idx)		(0x9c60 + (((idx) * 20)))
-#define RTL930X_VLAN_PROFILE_MAX		7
-#define RTL930X_VLAN_CTRL			(0x82D4)
-#define RTL930X_VLAN_PORT_PB_VLAN		(0x82D8)
-#define RTL930X_VLAN_PORT_IGR_FLTR		(0x83C0)
-#define RTL930X_VLAN_PORT_EGR_FLTR		(0x83C8)
-
-#define RTL930X_VLAN_L2_UNKN_MC_FLD(pmsk)	(pmsk)
-#define RTL930X_VLAN_IP4_UNKN_MC_FLD(pmsk)	(pmsk)
-#define RTL930X_VLAN_IP6_UNKN_MC_FLD(pmsk)	(pmsk)
-
-#define RTL930X_VLAN_L2_LEARN_EN_R(p)		(p[0] & (3 << 21))
-#define RTL930X_VLAN_L2_UNKN_MC_FLD_PMSK(p)	(p[2] & RTL930X_MC_PMASK_ALL_PORTS)
-#define RTL930X_VLAN_IP4_UNKN_MC_FLD_PMSK(p)	(p[3] & RTL930X_MC_PMASK_ALL_PORTS)
-#define RTL930X_VLAN_IP6_UNKN_MC_FLD_PMSK(p)	(p[4] & RTL930X_MC_PMASK_ALL_PORTS)
-
-#define RTL931X_VLAN_PROFILE_SET(idx)		(0x9800 + (((idx) * 28)))
-#define RTL931X_VLAN_PROFILE_MAX		15
-#define RTL931X_VLAN_CTRL			(0x94E4)
-#define RTL931X_VLAN_PORT_IGR_CTRL		(0x94E8)
-#define RTL931X_VLAN_PORT_IGR_FLTR		(0x96B4)
-#define RTL931X_VLAN_PORT_EGR_FLTR		(0x96C4)
-
-#define RTL931X_VLAN_L2_UNKN_MC_FLD_H(pmsk)	(((u64)pmsk) >> 32)
-#define RTL931X_VLAN_L2_UNKN_MC_FLD_L(pmsk)	(pmsk & GENMASK_ULL(31, 0))
-#define RTL931X_VLAN_IP4_UNKN_MC_FLD_H(pmsk)	(((u64)pmsk) >> 32)
-#define RTL931X_VLAN_IP4_UNKN_MC_FLD_L(pmsk)	(pmsk & GENMASK_ULL(31, 0))
-#define RTL931X_VLAN_IP6_UNKN_MC_FLD_H(pmsk)	(((u64)pmsk) >> 32)
-#define RTL931X_VLAN_IP6_UNKN_MC_FLD_L(pmsk)	(pmsk & GENMASK_ULL(31, 0))
-
-#define RTL931X_VLAN_L2_LEARN_EN_R(p)		(p[0] & (3 << 14))
-#define RTL931X_VLAN_L2_UNKN_MC_FLD_PMSK(p)	((((u64)p[1]) << 32 | p[2]) & RTL931X_MC_PMASK_ALL_PORTS)
-#define RTL931X_VLAN_IP4_UNKN_MC_FLD_PMSK(p)	((((u64)p[3]) << 32 | p[4]) & RTL931X_MC_PMASK_ALL_PORTS)
-#define RTL931X_VLAN_IP6_UNKN_MC_FLD_PMSK(p)	((((u64)p[5]) << 32 | p[6]) & RTL931X_MC_PMASK_ALL_PORTS)
 
 /* Table access registers */
 #define RTL838X_TBL_ACCESS_CTRL_0		(0x6914)
@@ -337,7 +252,6 @@
 #define MV_ACT_TRAP2CPU				2
 #define MV_ACT_COPY2CPU				3
 
-#define RTL838X_VLAN_STP_CTRL			(0x3b20)
 #define RTL839X_ST_CTRL				(0x27e4)
 #define RTL930X_ST_CTRL				(0x8798)
 #define RTL931X_ST_CTRL				(0x8000)
@@ -346,11 +260,6 @@
 #define RTL930X_L2_PORT_DABLK_CTRL		(0x9060)
 
 #define RTL838X_L2_PORT_LM_ACT(p)		(0x3208 + ((p) << 2))
-#define RTL838X_VLAN_PORT_FWD			(0x3A78)
-#define RTL839X_VLAN_PORT_FWD			(0x27AC)
-#define RTL930X_VLAN_PORT_FWD			(0x834C)
-#define RTL931X_VLAN_PORT_FWD			(0x95CC)
-#define RTL838X_VLAN_FID_CTRL			(0x3aa8)
 
 /* Port Mirroring */
 #define RTL838X_MIR_CTRL			(0x5D00)
@@ -574,26 +483,6 @@
 #define RTL839X_SPCL_TRAP_SWITCH_IPV4_ADDR_CTRL	(0x106C)
 #define RTL839X_SPCL_TRAP_CRC_CTRL		(0x1070)
 
-#define RTL930X_BANDWIDTH_CTRL_EGRESS(port)	(0x7660 + (port * 16))
-#define RTL930X_BANDWIDTH_CTRL_INGRESS(port)	(0x8068 + (port * 4))
-#define RTL930X_BANDWIDTH_CTRL_MAX_BURST	(64 * 1000)
-#define RTL930X_BANDWIDTH_CTRL_INGRESS_BURST_HIGH_ON(port) \
-						(0x80DC + (port * 8))
-#define RTL930X_BANDWIDTH_CTRL_INGRESS_BURST_HIGH_OFF(port) \
-						(0x80E0 + (port * 8))
-#define RTL930X_BANDWIDTH_CTRL_INGRESS_BURST_MAX \
-						GENMASK(30, 0)
-
-#define RTL931X_BANDWIDTH_CTRL_EGRESS(port)	(0x2164 + (port * 8))
-#define RTL931X_BANDWIDTH_CTRL_INGRESS(port)	(0xe008 + (port * 8))
-
-#define RTL93XX_BANDWIDTH_CTRL_RATE_MAX		GENMASK(19, 0)
-#define RTL93XX_BANDWIDTH_CTRL_ENABLE		BIT(20)
-#define RTL931X_BANDWIDTH_CTRL_MAX_BURST	GENMASK(15, 0)
-
-#define RTL930X_INGRESS_FC_CTRL(port)		(0x81CC + ((port / 29) * 4))
-#define RTL930X_INGRESS_FC_CTRL_EN(port)	BIT(port % 29)
-
 /* Switch interrupts */
 #define RTL838X_IMR_GLB				(0x1100)
 #define RTL838X_IMR_PORT_LINK_STS_CHG		(0x1104)
@@ -787,9 +676,6 @@ enum rtldsa_flood_type {
 #define RTL930X_QM_INTPRI2QID_CTRL		(0xA320)
 #define RTL931X_QM_INTPRI2QID_CTRL		(0xA9D0)
 
-/* Debug features */
-#define RTL930X_STAT_PRVTE_DROP_COUNTER0	(0xB5B8)
-
 /* Packet Inspection Engine */
 #define RTL838X_METER_GLB_CTRL			(0x4B08)
 #define RTL839X_METER_GLB_CTRL			(0x1300)
@@ -843,6 +729,12 @@ enum rtldsa_flood_type {
 #define L3_COPY2MASTERCPU	5
 #define L3_HARDDROP		6
 
+/* Route entry types */
+#define ROUTE_TYPE_IP4UC	0
+#define ROUTE_TYPE_IP4MC	1
+#define ROUTE_TYPE_IP6UC	2
+#define ROUTE_TYPE_IP6MC	3
+
 /* Route actions */
 #define ROUTE_ACT_FORWARD	0
 #define ROUTE_ACT_TRAP2CPU	1
@@ -891,7 +783,6 @@ enum rtldsa_flood_type {
 /* get shift for given led in any set */
 #define RTL931X_LED_SET_LEDX_SHIFT(x) (16 * (x % 2))
 
-#define MAX_VLANS 4096
 #define MAX_LAGS 16
 #define MAX_PRIOS 8
 #define RTL930X_PORT_IGNORE 0x3f
@@ -920,90 +811,6 @@ enum rtldsa_flood_type {
 #define L3_EGRESS_DMACS 2048
 #define MAX_SMACS 64
 #define DSCP_MAP_MAX 64
-
-/* This interval needs to be short enough to prevent an undetected counter
- * overflow. The octet counters don't need to be considered for this, because
- * they are 64 bits on all platforms. Based on the possible packets per second
- * at the highest supported speeds, an interval of a minute is probably a safe
- * choice for the other counters.
- */
-#define RTLDSA_COUNTERS_POLL_INTERVAL	(60 * HZ)
-
-/* Some SoC families require table access to get the HW counters. A mutex is
- * required for this access - which will potentially cause a sleep in the
- * current context. This is not always possible with .get_stats64 because it
- * is also called in atomic contexts.
- *
- * For these SoCs, the retrieval of the current counters in .get_stats64 is
- * skipped and the counters are simply retrieved a lot more often from the HW.
- */
-#define RTLDSA_COUNTERS_FAST_POLL_INTERVAL	(3 * HZ)
-
-enum pbvlan_type {
-	PBVLAN_TYPE_INNER = 0,
-	PBVLAN_TYPE_OUTER,
-};
-
-enum pbvlan_mode {
-	PBVLAN_MODE_UNTAG_AND_PRITAG = 0,
-	PBVLAN_MODE_UNTAG_ONLY,
-	PBVLAN_MODE_ALL_PKT,
-};
-
-struct rtldsa_counter {
-	u64 val;
-	u32 last;
-};
-
-struct rtldsa_counter_state {
-	/**
-	 * @lock: protect updates to members of the structure when the
-	 * priv->counters_lock is not used. (see rtl931x_reg->stat_update_counters_atomically)
-	 */
-	spinlock_t lock;
-	ktime_t last_update;
-
-	struct rtldsa_counter symbol_errors;
-
-	struct rtldsa_counter if_in_octets;
-	struct rtldsa_counter if_out_octets;
-	struct rtldsa_counter if_in_ucast_pkts;
-	struct rtldsa_counter if_in_mcast_pkts;
-	struct rtldsa_counter if_in_bcast_pkts;
-	struct rtldsa_counter if_out_ucast_pkts;
-	struct rtldsa_counter if_out_mcast_pkts;
-	struct rtldsa_counter if_out_bcast_pkts;
-	struct rtldsa_counter if_out_discards;
-	struct rtldsa_counter single_collisions;
-	struct rtldsa_counter multiple_collisions;
-	struct rtldsa_counter deferred_transmissions;
-	struct rtldsa_counter late_collisions;
-	struct rtldsa_counter excessive_collisions;
-	struct rtldsa_counter crc_align_errors;
-	struct rtldsa_counter rx_pkts_over_max_octets;
-
-	struct rtldsa_counter unsupported_opcodes;
-
-	struct rtldsa_counter rx_undersize_pkts;
-	struct rtldsa_counter rx_oversize_pkts;
-	struct rtldsa_counter rx_fragments;
-	struct rtldsa_counter rx_jabbers;
-
-	struct rtldsa_counter tx_pkts[ETHTOOL_RMON_HIST_MAX];
-	struct rtldsa_counter rx_pkts[ETHTOOL_RMON_HIST_MAX];
-
-	struct rtldsa_counter drop_events;
-	struct rtldsa_counter collisions;
-
-	struct rtldsa_counter rx_pause_frames;
-	struct rtldsa_counter tx_pause_frames;
-
-	/** @link_stat_lock: Protect link_stat */
-	spinlock_t link_stat_lock;
-
-	/** @link_stat: Prepared return data for .get_stats64 which can be accessed without mutex */
-	struct rtnl_link_stats64 link_stat;
-};
 
 struct rtldsa_93xx_lag_entry {
 	u32 trk_port0:6;
@@ -1053,46 +860,12 @@ struct rtldsa_port {
 	const struct dsa_port *dp;
 };
 
-struct rtldsa_vlan_info {
-	u64 untagged_ports;
-	u64 member_ports;
-	u8 profile_id;
-	bool hash_mc_fid;
-	bool hash_uc_fid;
-	u8 fid; /* AKA MSTI */
-
-	/* The following fields are used only by the RTL931X */
-	int if_id;		/* Interface (index in L3_EGR_INTF_IDX) */
-	u16 multicast_grp_mask;
-	int l2_tunnel_list_id;
-};
-
 struct rtldsa_mst {
 	/** @msti: MSTI mapped to this slot. 0 == unused */
 	u16 msti;
 
 	/** @refcount: number of vlans currently using this msti, undefined when unused */
 	struct kref refcount;
-};
-
-struct rtldsa_vlan_profile {
-	union {
-		struct {
-			u64 l2;
-			u64 ip;
-			u64 ip6;
-		} pmsks;
-		struct {
-			u16 l2;
-			u16 ip;
-			u16 ip6;
-		} pmsks_idx;
-	} unkn_mc_fld;
-
-	int l2_learn;
-
-	u8 pmsk_is_idx:1, routing_ipuc:1, routing_ip6uc:1,
-	   routing_ipmc:1, routing_ip6mc:1, bridge_ipmc:1, bridge_ip6mc:1;
 };
 
 enum l2_entry_type {
@@ -1102,6 +875,17 @@ enum l2_entry_type {
 	IP4_MULTICAST = 3,
 	IP6_MULTICAST = 4,
 };
+
+/* What keeps one L2 unicast hash table entry alive. Only the hash table is
+ * covered: the CAM is a table of its own with its own numbering, and a next
+ * hop never lands there, so nothing shares a CAM entry.
+ */
+struct rtldsa_l2_uc {
+	bool fdb_ref:1;		/* written by an fdb handler */
+	u8 l3_refcount:7;	/* routes forwarding through it */
+};
+
+#define RTLDSA_L2_L3_REFCOUNT_MAX	0x7f
 
 struct rtl838x_l2_entry {
 	u8 mac[6];
@@ -1147,17 +931,6 @@ enum fwd_rule_action {
 enum pie_phase {
 	PHASE_VACL = 0,
 	PHASE_IACL = 1,
-};
-
-enum igr_filter {
-	IGR_FORWARD = 0,
-	IGR_DROP = 1,
-	IGR_TRAP = 2,
-};
-
-enum egr_filter {
-	EGR_DISABLE = 0,
-	EGR_ENABLE = 1,
 };
 
 /* Intermediate representation of a  Packet Inspection Engine Rule
@@ -1313,15 +1086,6 @@ struct pie_rule {
 
 struct rtl838x_switch_priv;
 
-struct rtl83xx_flow {
-	unsigned long cookie;
-	struct rhash_head node;
-	struct rcu_head rcu_head;
-	struct rtl838x_switch_priv *priv;
-	struct pie_rule rule;
-	u32 flags;
-};
-
 /**
  * struct rtldsa_mirror_config - Mirror configuration for specific group and port
  */
@@ -1385,6 +1149,10 @@ struct rtldsa_config {
 	int imr_glb;
 	int n_counters;
 	int n_pie_blocks;
+	/* PIE rule ID doubles as the LOG-table counter ID (RTL930x); also
+	 * gates ingress cls_flower offload, which relies on that property.
+	 */
+	bool pie_rule_id_is_log_counter;
 	u8 num_lag_ids;
 	u8 cpu_port;
 	u8 port_ignore;
@@ -1559,6 +1327,8 @@ struct rtl838x_switch_priv {
 	 */
 	struct mutex counters_lock;
 
+	struct rtldsa_l2_uc *l2_uc_map;
+
 	/**
 	 * @msts: MSTI to HW MST slot allocations. index 0 is for HW slot 1 because CIST is
 	 * not stored in @msts
@@ -1572,104 +1342,25 @@ struct fdb_update_work {
 	u64 macs[];
 };
 
-enum mib_reg {
-	MIB_REG_INVALID = 0,
-	MIB_REG_STD,
-	MIB_REG_PRV,
-	MIB_TBL_STD,
-	MIB_TBL_PRV,
-};
-
-#define MIB_ITEM(_reg, _offset, _size) \
-		{.reg = _reg, .offset = _offset, .size = _size}
-
-#define MIB_LIST_ITEM(_name, _item) \
-		{.name = _name, .item = _item}
-
-struct rtldsa_mib_item {
-	enum mib_reg reg;
-	unsigned int offset;
-	unsigned int size;
-};
-
-struct rtldsa_mib_list_item {
-	const char *name;
-	struct rtldsa_mib_item item;
-};
-
-struct rtldsa_mib_desc {
-	struct rtldsa_mib_item symbol_errors;
-
-	struct rtldsa_mib_item if_in_octets;
-	struct rtldsa_mib_item if_out_octets;
-	struct rtldsa_mib_item if_in_ucast_pkts;
-	struct rtldsa_mib_item if_in_mcast_pkts;
-	struct rtldsa_mib_item if_in_bcast_pkts;
-	struct rtldsa_mib_item if_out_ucast_pkts;
-	struct rtldsa_mib_item if_out_mcast_pkts;
-	struct rtldsa_mib_item if_out_bcast_pkts;
-	struct rtldsa_mib_item if_out_discards;
-	struct rtldsa_mib_item single_collisions;
-	struct rtldsa_mib_item multiple_collisions;
-	struct rtldsa_mib_item deferred_transmissions;
-	struct rtldsa_mib_item late_collisions;
-	struct rtldsa_mib_item excessive_collisions;
-	struct rtldsa_mib_item crc_align_errors;
-	struct rtldsa_mib_item rx_pkts_over_max_octets;
-
-	struct rtldsa_mib_item unsupported_opcodes;
-
-	struct rtldsa_mib_item rx_undersize_pkts;
-	struct rtldsa_mib_item rx_oversize_pkts;
-	struct rtldsa_mib_item rx_fragments;
-	struct rtldsa_mib_item rx_jabbers;
-
-	struct rtldsa_mib_item tx_pkts[ETHTOOL_RMON_HIST_MAX];
-	struct rtldsa_mib_item rx_pkts[ETHTOOL_RMON_HIST_MAX];
-	struct ethtool_rmon_hist_range rmon_ranges[ETHTOOL_RMON_HIST_MAX];
-
-	struct rtldsa_mib_item drop_events;
-	struct rtldsa_mib_item collisions;
-
-	struct rtldsa_mib_item rx_pause_frames;
-	struct rtldsa_mib_item tx_pause_frames;
-
-	size_t list_count;
-	const struct rtldsa_mib_list_item *list;
-};
-
 int rtldsa_83xx_lag_setup_algomask(struct rtl838x_switch_priv *priv, int group,
 				   struct netdev_lag_upper_info *info);
-
-void rtldsa_838x_qos_init(struct rtl838x_switch_priv *priv);
-void rtldsa_839x_qos_init(struct rtl838x_switch_priv *priv);
 
 void rtldsa_port_fast_age(struct dsa_switch *ds, int port);
 int rtldsa_packet_cntr_alloc(struct rtl838x_switch_priv *priv);
 void rtldsa_packet_cntr_free(struct rtl838x_switch_priv *priv, int idx);
-int rtldsa_port_get_stp_state(struct rtl838x_switch_priv *priv, int port);
 int rtl83xx_port_is_under(const struct net_device *dev, struct rtl838x_switch_priv *priv);
-void rtldsa_port_stp_state_set(struct dsa_switch *ds, int port, u8 state);
-int rtl83xx_setup_tc(struct net_device *dev, enum tc_setup_type type, void *type_data);
-int rtldsa_tc_init(struct rtl838x_switch_priv *priv);
-void rtldsa_tc_cleanup(struct rtl838x_switch_priv *priv);
-
 /* Port register accessor functions for the RTL839x and RTL931X SoCs */
 void rtl839x_mask_port_reg_be(u64 clear, u64 set, int reg);
-u32 rtldsa_839x_get_egress_rate(struct rtl838x_switch_priv *priv, int port);
 u64 rtl839x_get_port_reg_be(int reg);
 void rtl839x_set_port_reg_be(u64 set, int reg);
 void rtl839x_mask_port_reg_le(u64 clear, u64 set, int reg);
-int rtldsa_839x_set_egress_rate(struct rtl838x_switch_priv *priv, int port, u32 rate);
 void rtl839x_set_port_reg_le(u64 set, int reg);
 u64 rtl839x_get_port_reg_le(int reg);
 
 /* Port register accessor functions for the RTL838x and RTL930X SoCs */
 void rtl838x_mask_port_reg(u64 clear, u64 set, int reg);
 void rtl838x_set_port_reg(u64 set, int reg);
-u32 rtldsa_838x_get_egress_rate(struct rtl838x_switch_priv *priv, int port);
 u64 rtl838x_get_port_reg(int reg);
-int rtldsa_838x_set_egress_rate(struct rtl838x_switch_priv *priv, int port, u32 rate);
 
 /* RTL838x-specific */
 u32 rtl838x_hash(struct rtl838x_switch_priv *priv, u64 seed);
@@ -1696,11 +1387,7 @@ int rtl83xx_lag_del(struct dsa_switch *ds, int group, int port);
  * collect them in this section.
  */
 
-void rtl839x_pie_rule_dump(struct  pie_rule *pr);
-void rtl839x_set_egress_queue(int port, int queue);
-
 void rtl9300_dump_debug(void);
-void rtl930x_pie_rule_dump_raw(u32 r[]);
 
 extern const struct dsa_switch_ops rtldsa_83xx_switch_ops;
 extern const struct dsa_switch_ops rtldsa_93xx_switch_ops;
@@ -1716,7 +1403,6 @@ extern const struct rtldsa_config rtldsa_931x_cfg;
 /* TODO actually from arch/mips/rtl838x/prom.c */
 extern struct rtl83xx_soc_info soc_info;
 
-
 void rtl838x_dbgfs_init(struct rtl838x_switch_priv *priv);
 void rtl930x_dbgfs_init(struct rtl838x_switch_priv *priv);
 void rtldsa_93xx_lag_switch_init(struct rtl838x_switch_priv *priv);
@@ -1727,24 +1413,23 @@ int rtldsa_93xx_lag_set_port_members(struct rtl838x_switch_priv *priv, int group
 
 void rtldsa_93xx_prepare_lag_fdb(struct rtl838x_l2_entry *e, int lag_group);
 
-void rtldsa_counters_lock_register(struct rtl838x_switch_priv *priv, int port)
-	__acquires(&priv->ports[port].counters.lock);
-void rtldsa_counters_unlock_register(struct rtl838x_switch_priv *priv, int port)
-	__releases(&priv->ports[port].counters.lock);
-void rtldsa_counters_lock_table(struct rtl838x_switch_priv *priv, int port)
-	__acquires(&priv->counters_lock);
-void rtldsa_counters_unlock_table(struct rtl838x_switch_priv *priv, int port)
-	__releases(&priv->ports[port].counters.lock);
-
-void rtldsa_update_counters_atomically(struct rtl838x_switch_priv *priv, int port);
-
-
 struct otto_l3_nexthop;
-int rtl83xx_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop *nh);
-int rtl83xx_l2_nexthop_rm(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop *nh);
+int rtldsa_find_l2_hash_entry(struct rtl838x_switch_priv *priv, u64 seed,
+			      bool must_exist, struct rtl838x_l2_entry *e);
 
+/* RTL931x hashes its second block into rows the fib_entries count does not
+ * reach, so an index can fall outside the map and is simply not tracked.
+ */
+static inline struct rtldsa_l2_uc *rtldsa_l2_uc_lookup(struct rtl838x_switch_priv *priv,
+						      int idx)
+{
+	if (idx < 0 || idx >= priv->r->fib_entries)
+		return NULL;
 
-extern int rtldsa_max_available_queue[];
-extern int rtldsa_default_queue_weights[];
+	return &priv->l2_uc_map[idx];
+}
+
+int rtldsa_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop *nh);
+int rtldsa_l2_nexthop_del(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop *nh);
 
 #endif /* _RTL838X_H */

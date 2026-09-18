@@ -1,3 +1,15 @@
+From 7f895c67760c5e139b5be1e11eadb67708770aa4 Mon Sep 17 00:00:00 2001
+From: Felix Kaechele <heffer@fedoraproject.org>
+Date: Mon, 29 Jul 2013 13:09:16 +0000
+Subject: [PATCH] rt2x00: change led polarity from OF
+
+Allow the LED polarity stored in the EEPROM to be overridden from the
+device tree using the "ralink,led-polarity" property of the wmac node.
+Valid values are 0 and 1. On SoC devices the LED is switched off before
+it is registered.
+
+Signed-off-by: Felix Kaechele <heffer@fedoraproject.org>
+---
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 @@ -27,6 +27,7 @@
@@ -8,7 +20,7 @@
  
  #include "rt2x00.h"
  #include "rt2800lib.h"
-@@ -11414,6 +11415,17 @@ static int rt2800_init_eeprom(struct rt2
+@@ -11361,6 +11362,17 @@ static int rt2800_init_eeprom(struct rt2
  	rt2800_init_led(rt2x00dev, &rt2x00dev->led_assoc, LED_TYPE_ASSOC);
  	rt2800_init_led(rt2x00dev, &rt2x00dev->led_qual, LED_TYPE_QUALITY);
  

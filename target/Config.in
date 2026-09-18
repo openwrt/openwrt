@@ -116,7 +116,11 @@ config NAND_SUPPORT
 config LEGACY_SDCARD_SUPPORT
 	bool
 
+config HAS_ATOMIC64
+	bool
+
 config ARCH_64BIT
+	select HAS_ATOMIC64
 	bool
 
 config VIRTIO_SUPPORT
@@ -152,14 +156,21 @@ config armeb
 config arm_v6
 	bool
 
+config arm_v6k
+	select HAS_ATOMIC64
+	bool
+
 config arm_v7
+	select HAS_ATOMIC64
 	bool
 
 config i386
+	select HAS_ATOMIC64
 	bool
 
 config i686
-	bool 
+	select HAS_ATOMIC64
+	bool
 
 config loongarch64
 	select ARCH_64BIT

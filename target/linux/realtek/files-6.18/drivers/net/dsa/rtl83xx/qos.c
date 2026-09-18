@@ -4,6 +4,7 @@
 #include <linux/delay.h>
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 
+#include "qos.h"
 #include "rtl-otto.h"
 
 enum scheduler_type {
@@ -11,9 +12,9 @@ enum scheduler_type {
 	WEIGHTED_ROUND_ROBIN,
 };
 
-int rtldsa_max_available_queue[] = {0, 1, 2, 3, 4, 5, 6, 7};
-int rtldsa_default_queue_weights[] = {1, 1, 1, 1, 1, 1, 1, 1};
-int dot1p_priority_remapping[] = {0, 1, 2, 3, 4, 5, 6, 7};
+static int rtldsa_max_available_queue[] = {0, 1, 2, 3, 4, 5, 6, 7};
+static int rtldsa_default_queue_weights[] = {1, 1, 1, 1, 1, 1, 1, 1};
+static int dot1p_priority_remapping[] = {0, 1, 2, 3, 4, 5, 6, 7};
 
 static void rtl839x_read_scheduling_table(int port)
 {
@@ -156,9 +157,12 @@ static void rtl839x_setup_default_prio2queue(void)
 }
 
 /* Sets the output queue assigned to a port, the port can be the CPU-port */
-void rtl839x_set_egress_queue(int port, int queue)
+static void rtl839x_set_egress_queue(int port, int queue)
 {
-	sw_w32(queue << ((port % 10) * 3), RTL839X_QM_PORT_QNUM(port));
+	u32 shift = (port % 10) * 3;
+	u32 mask = 0x7 << shift;
+
+	sw_w32_mask(mask, (queue & 0x7) << shift, RTL839X_QM_PORT_QNUM(port));
 }
 
 /* Sets the priority assigned of an ingress port, the port can be the CPU-port */
@@ -321,11 +325,8 @@ void rtldsa_839x_qos_init(struct rtl838x_switch_priv *priv)
 	pr_info("RTL839X_PRI_SEL_TBL_CTRL(i): %08x\n", sw_r32(RTL839X_PRI_SEL_TBL_CTRL(0)));
 	rtl839x_setup_default_prio2queue();
 
-	for (int port = 0; port < priv->r->cpu_port; port++)
-		sw_w32(7, RTL839X_QM_PORT_QNUM(port));
-
-	/* CPU-port gets queue number 7 */
-	sw_w32(7, RTL839X_QM_PORT_QNUM(priv->r->cpu_port));
+	for (int port = 0; port <= priv->r->cpu_port; port++)
+		rtl839x_set_egress_queue(port, 7);
 
 	for (int port = 0; port <= priv->r->cpu_port; port++) {
 		rtldsa_839x_set_ingress_priority(port, 0);
@@ -367,4 +368,149 @@ void rtldsa_839x_qos_init(struct rtl838x_switch_priv *priv)
 		sw_w32(255 << 24 | 74 << 12 | 64, RTL839X_WRED_QUEUE_THR_CTRL(q, 0));
 		sw_w32(255 << 24 | 70 << 12 | 60, RTL839X_WRED_QUEUE_THR_CTRL(q, 0));
 	}
+}
+
+static void rtldsa_930x_qos_set_group_selector(int port, int group)
+{
+	sw_w32_mask(RTL93XX_PORT_TBL_IDX_CTRL_IDX_MASK(port),
+		    group << RTL93XX_PORT_TBL_IDX_CTRL_IDX_OFFSET(port),
+		    RTL930X_PORT_TBL_IDX_CTRL(port));
+}
+
+static void rtldsa_930x_qos_setup_default_dscp2queue_map(void)
+{
+	u32 queue;
+
+	/* The default mapping between dscp and queue is based on
+	 * the first 3 bits indicate the precedence (prio = dscp >> 3).
+	 */
+	for (int i = 0; i < DSCP_MAP_MAX; i++) {
+		queue = (i >> 3) << RTL93XX_REMAP_DSCP_INTPRI_DSCP_OFFSET(i);
+		sw_w32_mask(RTL93XX_REMAP_DSCP_INTPRI_DSCP_MASK(i),
+			    queue, RTL930X_REMAP_DSCP(i));
+	}
+}
+
+static void rtldsa_930x_qos_prio2queue_matrix(int *min_queues)
+{
+	u32 v = 0;
+
+	for (int i = 0; i < MAX_PRIOS; i++)
+		v |= i << (min_queues[i] * 3);
+
+	sw_w32(v, RTL930X_QM_INTPRI2QID_CTRL);
+}
+
+static void rtldsa_930x_qos_set_scheduling_queue_weights(struct rtl838x_switch_priv *priv)
+{
+	struct dsa_port *dp;
+	u32 addr;
+
+	dsa_switch_for_each_user_port(dp, priv->ds) {
+		for (int q = 0; q < 8; q++) {
+			if (dp->index < 24)
+				addr = RTL930X_SCHED_PORT_Q_CTRL_SET0(dp->index, q);
+			else
+				addr = RTL930X_SCHED_PORT_Q_CTRL_SET1(dp->index, q);
+
+			sw_w32(rtldsa_default_queue_weights[q], addr);
+		}
+	}
+}
+
+void rtldsa_930x_qos_init(struct rtl838x_switch_priv *priv)
+{
+	struct dsa_port *dp;
+	u32 v;
+
+	/* Assign all the ports to the Group-0 */
+	dsa_switch_for_each_user_port(dp, priv->ds)
+		rtldsa_930x_qos_set_group_selector(dp->index, 0);
+
+	rtldsa_930x_qos_prio2queue_matrix(rtldsa_max_available_queue);
+
+	/* configure priority weights */
+	v = 0;
+	v |= FIELD_PREP(RTL93XX_PRI_SEL_TBL_CTRL_PORT_MASK, 3);
+	v |= FIELD_PREP(RTL93XX_PRI_SEL_TBL_CTRL_DSCP_MASK, 5);
+	v |= FIELD_PREP(RTL93XX_PRI_SEL_TBL_CTRL_ITAG_MASK, 6);
+	v |= FIELD_PREP(RTL93XX_PRI_SEL_TBL_CTRL_OTAG_MASK, 7);
+
+	sw_w32(v, RTL930X_PRI_SEL_TBL_CTRL(0));
+
+	rtldsa_930x_qos_setup_default_dscp2queue_map();
+	rtldsa_930x_qos_set_scheduling_queue_weights(priv);
+}
+
+static void rtldsa_931x_qos_set_group_selector(int port, int group)
+{
+	sw_w32_mask(RTL93XX_PORT_TBL_IDX_CTRL_IDX_MASK(port),
+		    group << RTL93XX_PORT_TBL_IDX_CTRL_IDX_OFFSET(port),
+		    RTL931X_PORT_TBL_IDX_CTRL(port));
+}
+
+static void rtldsa_931x_qos_setup_default_dscp2queue_map(void)
+{
+	u32 queue;
+
+	/* The default mapping between dscp and queue is based on
+	 * the first 3 bits indicate the precedence (prio = dscp >> 3).
+	 */
+	for (int i = 0; i < DSCP_MAP_MAX; i++) {
+		queue = (i >> 3) << RTL93XX_REMAP_DSCP_INTPRI_DSCP_OFFSET(i);
+		sw_w32_mask(RTL93XX_REMAP_DSCP_INTPRI_DSCP_MASK(i),
+			    queue, RTL931X_REMAP_DSCP(i));
+	}
+}
+
+static void rtldsa_931x_qos_prio2queue_matrix(int *min_queues)
+{
+	u32 v = 0;
+
+	for (int i = 0; i < MAX_PRIOS; i++)
+		v |= i << (min_queues[i] * 3);
+
+	sw_w32(v, RTL931X_QM_INTPRI2QID_CTRL);
+}
+
+static void rtldsa_931x_qos_set_scheduling_queue_weights(struct rtl838x_switch_priv *priv)
+{
+	struct dsa_port *dp;
+	u32 addr;
+
+	dsa_switch_for_each_user_port(dp, priv->ds) {
+		for (int q = 0; q < 8; q++) {
+			if (dp->index < 51)
+				addr = RTL931X_SCHED_PORT_Q_CTRL_SET0(dp->index, q);
+			else
+				addr = RTL931X_SCHED_PORT_Q_CTRL_SET1(dp->index, q);
+
+			sw_w32(rtldsa_default_queue_weights[q], addr);
+		}
+	}
+}
+
+void rtldsa_931x_qos_init(struct rtl838x_switch_priv *priv)
+{
+	struct dsa_port *dp;
+	u32 v;
+
+	/* Assign all the ports to the Group-0 */
+	dsa_switch_for_each_user_port(dp, priv->ds)
+		rtldsa_931x_qos_set_group_selector(dp->index, 0);
+
+	rtldsa_931x_qos_prio2queue_matrix(rtldsa_max_available_queue);
+
+	/* configure priority weights */
+	v = 0;
+	v |= FIELD_PREP(RTL93XX_PRI_SEL_TBL_CTRL_PORT_MASK, 3);
+	v |= FIELD_PREP(RTL93XX_PRI_SEL_TBL_CTRL_DSCP_MASK, 5);
+	v |= FIELD_PREP(RTL93XX_PRI_SEL_TBL_CTRL_ITAG_MASK, 6);
+	v |= FIELD_PREP(RTL93XX_PRI_SEL_TBL_CTRL_OTAG_MASK, 7);
+
+	sw_w32(v, RTL931X_PRI_SEL_TBL_CTRL(0) + 4);
+	sw_w32(0, RTL931X_PRI_SEL_TBL_CTRL(0));
+
+	rtldsa_931x_qos_setup_default_dscp2queue_map();
+	rtldsa_931x_qos_set_scheduling_queue_weights(priv);
 }

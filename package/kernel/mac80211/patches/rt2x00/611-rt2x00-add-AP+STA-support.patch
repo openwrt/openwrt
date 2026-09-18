@@ -1,3 +1,13 @@
+From 2bf5a25f87728613e9dfcdf52b9b44261aaa550f Mon Sep 17 00:00:00 2001
+From: John Crispin <john@openwrt.org>
+Date: Sun, 12 Jan 2014 12:07:51 +0000
+Subject: [PATCH] rt2x00: add AP+STA support
+
+Add NL80211_IFTYPE_STATION to the AP interface limit so that an AP and
+a station interface can be brought up at the same time.
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
 --- a/drivers/net/wireless/ralink/rt2x00/rt2x00dev.c
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2x00dev.c
 @@ -1344,7 +1344,7 @@ static inline void rt2x00lib_set_if_comb

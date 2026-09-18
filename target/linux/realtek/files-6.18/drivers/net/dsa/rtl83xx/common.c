@@ -17,6 +17,7 @@
 
 #include "l3.h"
 #include "rtl-otto.h"
+#include "tc.h"
 
 int rtldsa_port_get_stp_state(struct rtl838x_switch_priv *priv, int port)
 {
@@ -565,12 +566,28 @@ int rtldsa_93xx_lag_set_port_members(struct rtl838x_switch_priv *priv, int group
  */
 int rtldsa_packet_cntr_alloc(struct rtl838x_switch_priv *priv)
 {
-	int idx, j;
+	int idx, j, base = 0;
+
+	/* On SoCs where a PIE rule implicitly logs into the LOG table entry
+	 * with its own rule ID (RTL930x), the tc cls_flower offload consumes
+	 * one LOG counter per PIE rule and does not pass through this
+	 * allocator. Keep that range reserved so a route counter handed out
+	 * here cannot alias a flow's LOG entry.
+	 *
+	 * The offload is ingress-only, so PIE rule IDs currently populate
+	 * only the lower half of that range, and a route counter's LOG entry
+	 * (idx / 2) never dips below the upper half either. If egress PIE
+	 * rules are ever wired up, this reservation needs to grow so their
+	 * LOG entries stay clear of route counters too.
+	 */
+	if (priv->r->pie_rule_id_is_log_counter)
+		base = priv->r->n_pie_blocks * PIE_BLOCK_SIZE;
 
 	scoped_guard(mutex, &priv->reg_mutex) {
-		idx = find_first_bit(priv->packet_cntr_use_bm, priv->r->n_counters * 2);
+		idx = find_next_bit(priv->packet_cntr_use_bm, priv->r->n_counters * 2, base);
 		if (idx >= priv->r->n_counters * 2) {
-			j = find_first_zero_bit(priv->octet_cntr_use_bm, priv->r->n_counters);
+			j = find_next_zero_bit(priv->octet_cntr_use_bm, priv->r->n_counters,
+					       base / 2);
 			if (j >= priv->r->n_counters)
 				return -1;
 
@@ -617,63 +634,142 @@ void rtldsa_packet_cntr_free(struct rtl838x_switch_priv *priv, int idx)
 	}
 }
 
+/* The count pins at its ceiling rather than wrapping: an entry that reached it
+ * is never freed by the driver again, which leaks a row but never hands a live
+ * one to somebody else.
+ */
+static void rtldsa_l2_uc_get(struct rtl838x_switch_priv *priv, int idx)
+{
+	struct rtldsa_l2_uc *m = rtldsa_l2_uc_lookup(priv, idx);
+
+	if (!m)
+		return;
+
+	if (m->l3_refcount == RTLDSA_L2_L3_REFCOUNT_MAX) {
+		dev_warn_once(priv->dev, "L2 entry %d has too many routes to count\n", idx);
+		return;
+	}
+
+	m->l3_refcount++;
+}
+
+static void rtldsa_l2_uc_put(struct rtl838x_switch_priv *priv, int idx)
+{
+	struct rtldsa_l2_uc *m = rtldsa_l2_uc_lookup(priv, idx);
+
+	if (!m || !m->l3_refcount || m->l3_refcount == RTLDSA_L2_L3_REFCOUNT_MAX)
+		return;
+
+	m->l3_refcount--;
+}
+
+/* Give the row back once nothing forwards through it any more. @e has to be a
+ * fresh read of the row at nh->l2_id.
+ */
+static void rtldsa_l2_uc_release_row(struct rtl838x_switch_priv *priv,
+				     struct otto_l3_nexthop *nh,
+				     struct rtl838x_l2_entry *e)
+{
+	struct rtldsa_l2_uc *m = rtldsa_l2_uc_lookup(priv, nh->l2_id);
+
+	/* Another route is still forwarding through this entry: it has to stay
+	 * exactly as it is, next hop and route id included.
+	 */
+	if (m && m->l3_refcount)
+		return;
+
+	/* The bridge put this address here as well, so the entry stays; it
+	 * just stops being a next hop.
+	 */
+	if (e->is_static && (!m || !m->fdb_ref))
+		e->valid = false;
+	e->next_hop = false;
+	/* A route id takes that field on the families that keep one, so what
+	 * goes back is the relay VID, which the row still carries either way.
+	 */
+	e->vid = e->rvid;
+
+	priv->r->write_l2_entry_using_hash(nh->l2_id >> 2, nh->l2_id & 0x3, e);
+}
+
+/* Release a reference taken on a remembered index. The switch drops rows on
+ * its own, by ageing and by the per-port flush the bridge asks for, and
+ * whoever claims one next counts itself from zero: that count is not ours to
+ * spend. Search on the seed the reference was taken on, because the caller has
+ * already overwritten the address.
+ */
+static void rtldsa_l2_uc_put_row(struct rtl838x_switch_priv *priv,
+				 struct otto_l3_nexthop *nh)
+{
+	struct rtl838x_l2_entry e = {};
+
+	if (rtldsa_find_l2_hash_entry(priv, nh->l2_seed, true, &e) != nh->l2_id)
+		return;
+
+	if (!e.next_hop)
+		return;
+
+	rtldsa_l2_uc_put(priv, nh->l2_id);
+	rtldsa_l2_uc_release_row(priv, nh, &e);
+}
+
 /* Add an L2 nexthop entry for the L3 routing system / PIE forwarding in the SoC
  * Use VID and MAC in rtl838x_l2_entry to identify either a free slot in the L2 hash table
  * or mark an existing entry as a nexthop by setting it's nexthop bit
  * Called from the L3 layer
  * The index in the L2 hash table is filled into nh->l2_id;
  */
-int rtl83xx_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop *nh)
+int rtldsa_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop *nh)
 {
-	struct rtl838x_l2_entry e;
+	struct rtl838x_l2_entry e = {};
 	u64 seed = priv->r->l2_hash_seed(nh->mac, nh->rvid);
-	u32 key = priv->r->l2_hash_key(priv, seed);
-	int idx = -1;
-	u64 entry;
+	int idx;
 
-	pr_debug("%s searching for %08llx vid %d with key %d, seed: %016llx\n",
-		 __func__, nh->mac, nh->rvid, key, seed);
+	pr_debug("%s searching for %08llx vid %d, seed: %016llx\n",
+		 __func__, nh->mac, nh->rvid, seed);
 
-	e.type = L2_UNICAST;
-	u64_to_ether_addr(nh->mac, &e.mac[0]);
-	e.port = nh->port;
+	/* The search, the count and the write are one step: anything else may
+	 * claim the entry we settled on in between.
+	 */
+	guard(mutex)(&priv->reg_mutex);
 
-	/* Loop over all entries in the hash-bucket and over the second block on 93xx SoCs */
-	for (int i = 0; i < priv->r->l2_bucket_size; i++) {
-		entry = priv->r->read_l2_entry_using_hash(key, i, &e);
-
-		if (!e.valid || ((entry & 0x0fffffffffffffffULL) == seed)) {
-			idx = i > 3 ? ((key >> 14) & 0xffff) | i >> 1
-					: ((key << 2) | i) & 0xffff;
-			break;
-		}
-	}
-
+	idx = rtldsa_find_l2_hash_entry(priv, seed, false, &e);
 	if (idx < 0) {
 		pr_err("%s: No more L2 forwarding entries available\n", __func__);
 		return -1;
 	}
 
 	/* Found an existing (e->valid is true) or empty entry, make it a nexthop entry */
+	if (nh->l2_installed && nh->l2_id != idx)
+		rtldsa_l2_uc_put_row(priv, nh);
+
+	if (!nh->l2_installed || nh->l2_id != idx) {
+		struct rtldsa_l2_uc *m = rtldsa_l2_uc_lookup(priv, idx);
+
+		/* An entry nobody had claimed carries whatever its last owner
+		 * left behind, including a count for a route long gone.
+		 */
+		if (m && !e.valid)
+			*m = (struct rtldsa_l2_uc){};
+
+		rtldsa_l2_uc_get(priv, idx);
+	}
+
 	nh->l2_id = idx;
+	nh->l2_seed = seed;
 	if (e.valid) {
 		nh->port = e.port;
-		nh->vid = e.vid;		/* Save VID */
 		nh->rvid = e.rvid;
 		nh->dev_id = e.stack_dev;
 		/* If the entry is already a valid next hop entry, don't change it */
 		if (e.next_hop)
 			return 0;
 	} else {
+		memset(&e, 0, sizeof(e));
+		e.type = L2_UNICAST;
 		e.valid = true;
 		e.is_static = true;
 		e.rvid = nh->rvid;
-		e.is_ip_mc = false;
-		e.is_ipv6_mc = false;
-		e.block_da = false;
-		e.block_sa = false;
-		e.suspended = false;
-		e.age = 0;			/* With port-ignore */
 		e.port = priv->r->port_ignore;
 		u64_to_ether_addr(nh->mac, &e.mac[0]);
 	}
@@ -690,26 +786,38 @@ int rtl83xx_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct otto_l3_next
  * If it was static, the entire entry is removed, otherwise the nexthop bit is cleared
  * and we wait until the entry ages out
  */
-int rtl83xx_l2_nexthop_rm(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop *nh)
+int rtldsa_l2_nexthop_del(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop *nh)
 {
-	struct rtl838x_l2_entry e;
+	struct rtl838x_l2_entry e = {};
 	u32 key = nh->l2_id >> 2;
 	int i = nh->l2_id & 0x3;
-	u64 entry = entry = priv->r->read_l2_entry_using_hash(key, i, &e);
+	int idx;
 
-	pr_debug("%s: id %d, key %d, index %d\n", __func__, nh->l2_id, key, i);
-	if (!e.valid) {
-		dev_err(priv->dev, "unknown nexthop, id %x\n", nh->l2_id);
-		return -1;
+	guard(mutex)(&priv->reg_mutex);
+
+	dev_dbg(priv->dev, "next hop %d sits at key %d, index %d\n", nh->l2_id, key, i);
+
+	/* Search on the seed the installer claimed the row on, because the
+	 * caller replaces the address before every install. Landing on the
+	 * recorded index answers both questions at once: the row still holds
+	 * the address that was installed, and it is still the same row. A
+	 * negative index means the address has left the bucket altogether.
+	 */
+	idx = rtldsa_find_l2_hash_entry(priv, nh->l2_seed, true, &e);
+	if (idx != nh->l2_id) {
+		dev_err(priv->dev, "next hop %d is at %d now, not removing it\n",
+			nh->l2_id, idx);
+		return -ESTALE;
 	}
 
-	if (e.is_static)
-		e.valid = false;
-	e.next_hop = false;
-	e.vid = nh->vid;		/* Restore VID */
-	e.rvid = nh->rvid;
+	if (!e.next_hop) {
+		dev_err(priv->dev, "next hop %d is no longer one, leaving it alone\n",
+			nh->l2_id);
+		return -ESTALE;
+	}
 
-	priv->r->write_l2_entry_using_hash(key, i, &e);
+	rtldsa_l2_uc_put(priv, nh->l2_id);
+	rtldsa_l2_uc_release_row(priv, nh, &e);
 
 	return 0;
 }
@@ -811,8 +919,9 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 	if (err)
 		return err;
 
-	/* Initialize access to RTL switch tables */
-	otto_table_init();
+	err = otto_table_loaded();
+	if (err)
+		return dev_err_probe(dev, err, "no switch table access\n");
 
 	r = device_get_match_data(&pdev->dev);
 	priv = devm_kzalloc(dev, struct_size(priv, msts, r->n_mst - 1), GFP_KERNEL);
@@ -820,6 +929,11 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 		return -ENOMEM;
 
 	priv->r = r;
+
+	priv->l2_uc_map = devm_kcalloc(dev, r->fib_entries, sizeof(*priv->l2_uc_map),
+				       GFP_KERNEL);
+	if (!priv->l2_uc_map)
+		return -ENOMEM;
 
 	priv->ds = devm_kzalloc(dev, sizeof(*priv->ds), GFP_KERNEL);
 	if (!priv->ds)

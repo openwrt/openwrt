@@ -16,7 +16,6 @@
 #define EDMA_HW_RESET_ID "edma_rst"
 
 /* Global / control registers */
-#define EDMA_REG_MAS_CTRL 0x0
 #define EDMA_REG_PORT_CTRL 0x4
 #define EDMA_REG_RXDESC2FILL_MAP_0 0x18
 #define EDMA_REG_RXDESC2FILL_MAP_1 0x1c
@@ -74,6 +73,12 @@
 #define EDMA_TXCMPL_PROD_IDX_MASK 0xffff
 #define EDMA_TXCMPL_CONS_IDX_MASK 0xffff
 #define EDMA_TXCMPL_RETMODE_OPAQUE 0x0
+/* The engine returns one completion per descriptor: the more bit marks every
+ * completion of a frame but its last, and the error field reports what the
+ * engine made of the descriptor, above the ring id it read it from.
+ */
+#define EDMA_TXCMPL_ERROR GENMASK(29, 7)
+#define EDMA_TXCMPL_MORE BIT(30)
 
 /* TX interrupt registers */
 #define EDMA_REG_TX_INT_STAT(b, n)  ((b) + (0x1000 * (n)))
@@ -116,6 +121,11 @@
 #define EDMA_RXDESC_PL_OFFSET_SHIFT 16
 #define EDMA_RXDESC_RX_EN 0x1
 #define EDMA_RXDESC_PACKET_LEN_MASK 0x3fff
+/* A frame the engine had to spread over several receive descriptors. The fill
+ * buffers are sized for the largest frame the conduit accepts, so it does not
+ * arise; a frame that carried it would be handed up in pieces.
+ */
+#define EDMA_RXDESC_MORE BIT(30)
 
 /* RX descriptor ring interrupt registers */
 #define EDMA_REG_RXDESC_INT_STAT(n) (0x49000 + (0x1000 * (n)))
@@ -126,6 +136,32 @@
 #define EDMA_RXDESC_INT_MASK_PKT_INT 0x1
 #define EDMA_RX_MOD_TIMER_INIT 1000
 
+/* RX descriptor status fields */
+#define EDMA_RXDESC_L4_CSUM_OK BIT(14)
+#define EDMA_RXDESC_L3_CSUM_OK BIT(15)
+#define EDMA_RXDESC_PID_SHIFT 24
+#define EDMA_RXDESC_PID_MASK 0xf
+/* The packet type the parser reports: the low two bits name the transport and
+ * the next one the address family, so the four values the engine checksums are
+ * TCP and UDP over either family.
+ */
+#define EDMA_RXDESC_PID_IPV6 0x4
+#define EDMA_RXDESC_PID_NON_IP 0x8
+#define EDMA_RXDESC_PID_TCP_UDP (BIT(1) | BIT(2) | BIT(5) | BIT(6))
+
+/* RX preheader fields */
+#define EDMA_RXPH_HASH_MASK GENMASK(20, 0)
+#define EDMA_RXPH_HASH_FLAG_SHIFT 21
+#define EDMA_RXPH_HASH_FLAG_MASK 0x7
+#define EDMA_RXPH_HASH_5TUPLE 1
+#define EDMA_RXPH_HASH_3TUPLE 2
+#define EDMA_RXPH_L3_OFFSET_SHIFT 16
+#define EDMA_RXPH_L3_OFFSET_MASK 0xff
+#define EDMA_RXPH_L4_OFFSET_SHIFT 8
+#define EDMA_RXPH_L4_OFFSET_MASK 0xff
+#define EDMA_RXPH_CSUM_SHIFT 16
+#define EDMA_RXPH_CSUM_MASK 0xffff
+
 /* PPE queue to receive ring mapping: a four-bit ring id per switch queue. */
 #define EDMA_QID2RID_TABLE_MEM(n) (0x5a000 + (0x4 * (n)))
 #define EDMA_QID2RID_DEPTH 0x40
@@ -134,15 +170,8 @@
 /* TXDESC to TXCMPL ring mapping */
 #define EDMA_REG_TXDESC2CMPL_MAP(n) (0x0c + 0x4 * (n))
 
-/* Misc error interrupt masks */
-#define EDMA_MISC_AXI_RD_ERR_MASK_EN 0x1
-#define EDMA_MISC_AXI_WR_ERR_MASK_EN 0x2
-#define EDMA_MISC_RX_DESC_FIFO_FULL_MASK_EN 0x4
-#define EDMA_MISC_RX_ERR_BUF_SIZE_MASK_EN 0x8
-#define EDMA_MISC_TX_SRAM_FULL_MASK_EN 0x10
-#define EDMA_MISC_TX_CMPL_BUF_FULL_MASK_EN 0x20
-#define EDMA_MISC_DATA_LEN_ERR_MASK_EN 0x40
-#define EDMA_MISC_TX_TIMEOUT_MASK_EN 0x80
+/* Registers the ethtool dump reports, as offset and value pairs. */
+#define EDMA_REGS_COUNT 34
 
 /* Sizes and ring configuration */
 #define EDMA_MAX_FRAME_SIZE 12288
@@ -152,7 +181,14 @@
 #define EDMA_TX_PREHDR_SIZE (sizeof(struct edma_tx_preheader))
 #define EDMA_TX_RING_SIZE 128
 #define EDMA_RX_RING_SIZE 2048
-#define EDMA_TX_RING_THRESH 16
+/* The bounds a frame is described to the engine within: at most this many
+ * buffers, and no buffer below this size before the last. The queue stops
+ * with room for a frame that takes every descriptor, or it would restart on
+ * space that the next frame still could not use.
+ */
+#define EDMA_TX_MAX_SEGS 32
+#define EDMA_TX_MIN_SEG 16
+#define EDMA_TX_RING_THRESH (EDMA_TX_MAX_SEGS + 1)
 
 /* Descriptor accessors */
 #define EDMA_GET_DESC(R, i, type) (&(((type *)((R)->desc))[i]))
@@ -162,10 +198,19 @@
 #define EDMA_TXCMPL_DESC(R, i) EDMA_GET_DESC(R, i, struct edma_txcmpl)
 
 /* TX descriptor fields */
+#define EDMA_TXDESC_MORE BIT(30)
+#define EDMA_TXDESC_TSO_EN BIT(28)
 #define EDMA_TXDESC_PREHEADER_SHIFT 29
+#define EDMA_TXDESC_PREHEADER BIT(EDMA_TXDESC_PREHEADER_SHIFT)
 #define EDMA_TXDESC_DATA_OFFSET_SHIFT 16
 #define EDMA_TXDESC_DATA_OFFSET_MASK 0xff
 #define EDMA_TXDESC_DATA_LENGTH_MASK 0xffff
+
+/* TX preheader fields */
+#define EDMA_TX_PRE4_ADV_OFFLOAD_EN BIT(28)
+#define EDMA_TX_PRE6_CSUM_MODE_L4 (0x1 << 29)
+#define EDMA_TX_PRE6_MSS_MASK 0x3fff
+#define EDMA_TX_PRE6_IP_CSUM_EN BIT(31)
 
 /* Preheader fields */
 #define EDMA_DST_PORT_TYPE 0x20
@@ -218,6 +263,18 @@ struct edma_rx_preheader {
 	u32 rx_pre7;
 };
 
+struct edma_stats {
+	u64 rx_untracked_page;
+	u64 rx_bad_src_info;
+	u64 rx_no_skb;
+	u64 rx_no_tag;
+	u64 rx_split_frame;
+	u64 rx_fill_starved;
+	u64 tx_desc_error;
+	u64 tx_unnamed_frame;
+	u64 misc_error;
+};
+
 struct edma_soc_data {
 	u32 txcmpl_base;
 	u32 tx_int_base;
@@ -250,6 +307,18 @@ struct edma_priv {
 	struct page_pool *page_pool;
 	u32 rx_buffer_size;
 	u8 rx_page_order;
+
+	/* The frame a run of completions belongs to, named by the first of
+	 * them and released on the last.
+	 */
+	struct sk_buff *txcmpl_skb;
+	u32 txcmpl_idx;
+	bool txcmpl_run;
+
+	/* Counted here rather than in netdev->stats, which cannot say which of
+	 * the reasons a frame went missing for.
+	 */
+	struct edma_stats stats;
 
 	struct edma_ring txdesc_ring;
 	struct edma_ring txcmpl_ring;
