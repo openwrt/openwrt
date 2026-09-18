@@ -1911,6 +1911,16 @@ static const char * const otto_l3_930x_dump_action_name[4] = {
 	[ROUTE_ACT_DROP]     = "drop",
 };
 
+/* Rows one entry of the prefix route table covers, by type: IPv4 unicast,
+ * IPv4 multicast, IPv6 unicast, IPv6 multicast. The rows behind the first
+ * read back as entries of their own, so anything walking the table has to
+ * step over them. The multicast pair is the Realtek GPL SDK's
+ * (dal_longan_l3.h: LONGAN_L3_ROUTE_IPMC_WIDTH_IPV4 and _IPV6); nothing here
+ * programs a multicast entry, and the walk has to step over one it meets all
+ * the same.
+ */
+static const u8 otto_l3_930x_prefix_widths[] = { 1, 2, V6_PREFIX_ROWS, 8 };
+
 /* One valid entry, decoded and ready to print. Multicast entries (type 1 and
  * 3) only carry what word 0 says (valid, type, hence width): no field
  * position beyond that is in this driver or in the GPL SDK excerpts it was
@@ -1998,7 +2008,7 @@ static bool otto_l3_930x_dump_decode_prefix(const u32 *data, u32 addr,
 	rec->addr = addr;
 	rec->idx = addr;
 	rec->type = (data[0] >> 29) & 0x3;
-	rec->width = 1;
+	rec->width = otto_l3_930x_prefix_widths[rec->type];
 
 	if (rec->type != 0 && rec->type != 2)
 		return true; /* multicast: type/width only */
@@ -2133,18 +2143,21 @@ static int otto_l3_930x_dump_show(struct seq_file *m, void *v)
 	if (handle < 0)
 		return handle;
 
-	for (addr = 0; addr < rows; addr++) {
-		if (!(addr % 64))
+	for (addr = 0, n = 0; addr < rows; n++) {
+		if (!(n % 64))
 			cond_resched();
 
 		__otto_table_read(handle, addr, &prefix_data);
-		if (!otto_l3_930x_dump_decode_prefix(prefix_data, addr, &rec))
+		if (!otto_l3_930x_dump_decode_prefix(prefix_data, addr, &rec)) {
+			addr++;
 			continue;
+		}
 
 		if (!rec.decoded)
 			mc_seen++;
 
 		otto_l3_930x_dump_print(m, &rec);
+		addr += rec.width;
 	}
 
 	otto_table_release(handle);
@@ -2325,10 +2338,12 @@ static int otto_l3_930x_clear_hit_prefix(unsigned int *cleared, unsigned int *sk
 	if (handle < 0)
 		return handle;
 
-	for (addr = 0; addr < rows; addr++) {
+	for (addr = 0; addr < rows;) {
 		__otto_table_read(handle, addr, &data);
-		if (!otto_l3_930x_dump_decode_prefix(data, addr, &rec))
+		if (!otto_l3_930x_dump_decode_prefix(data, addr, &rec)) {
+			addr++;
 			continue;
+		}
 
 		if (!rec.decoded) {
 			(*skipped_mc)++;
@@ -2337,6 +2352,8 @@ static int otto_l3_930x_clear_hit_prefix(unsigned int *cleared, unsigned int *sk
 			__otto_table_write(handle, addr, &data);
 			(*cleared)++;
 		}
+
+		addr += rec.width;
 	}
 
 	otto_table_release(handle);
