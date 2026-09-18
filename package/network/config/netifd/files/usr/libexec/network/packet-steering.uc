@@ -57,20 +57,22 @@ function set_task_cpu(pid, cpu) {
 
 function cpu_mask(cpu)
 {
-	let mask;
+	let mask = 0;
 	if (cpu < 0)
-		mask = (1 << length(cpus)) - 1;
+		for (let c in cpus)
+			mask |= (1 << c.id);
 	else
 		mask = (1 << int(cpu));
+	let hi = (mask >> 32) & 0xffffffff;
+	if (hi)
+		return sprintf("%x,%08x", hi, mask & 0xffffffff);
 	return sprintf("%x", mask);
 }
 
 function set_netdev_cpu(dev, cpu, rx_queue) {
 	rx_queue ??= "rx-*";
 	let queues = glob(`/sys/class/net/${dev}/queues/${rx_queue}/rps_cpus`);
-	let val = cpu_mask(cpu);
-	if (disable)
-		val = 0;
+	let val = disable ? 0 : cpu_mask(cpu);
 	for (let queue in queues) {
 		if (debug || do_nothing)
 			warn(`echo ${val} > ${queue}\n`);
@@ -109,7 +111,9 @@ cpus = map(glob("/sys/bus/cpu/devices/*"), (path) => {
 });
 
 sort(cpus, (a, b) => a.id - b.id);
-cpus = slice(cpus, 0, 64);
+// cpu_mask() only handles ids below 64; the disabled path resets affinity and rps_cpus without it
+if (!disable)
+	cpus = filter(cpus, (c) => c.id < 64);
 if (length(cpus) < 2)
 	exit(0);
 
