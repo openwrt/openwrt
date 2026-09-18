@@ -5,6 +5,7 @@
 #include <linux/iopoll.h>
 #include <net/nexthop.h>
 
+#include "l2.h"
 #include "l3.h"
 #include "pie.h"
 #include "qos.h"
@@ -106,39 +107,6 @@ static inline int rtl838x_port_iso_ctrl(int p)
 	return RTL838X_PORT_ISO_CTRL(p);
 }
 
-static u64 rtl838x_l2_hash_seed(u64 mac, u32 vid)
-{
-	return mac << 12 | vid;
-}
-
-/* Applies the same hash algorithm as the one used currently by the ASIC to the seed
- * and returns a key into the L2 hash table
- */
-static u32 rtl838x_l2_hash_key(struct rtl838x_switch_priv *priv, u64 seed)
-{
-	u32 h1, h2, h3, h;
-
-	if (sw_r32(priv->r->l2_ctrl_0) & 1) {
-		h1 = (seed >> 11) & 0x7ff;
-		h1 = ((h1 & 0x1f) << 6) | ((h1 >> 5) & 0x3f);
-
-		h2 = (seed >> 33) & 0x7ff;
-		h2 = ((h2 & 0x3f) << 5) | ((h2 >> 6) & 0x1f);
-
-		h3 = (seed >> 44) & 0x7ff;
-		h3 = ((h3 & 0x7f) << 4) | ((h3 >> 7) & 0xf);
-
-		h = h1 ^ h2 ^ h3 ^ ((seed >> 55) & 0x1ff);
-		h ^= ((seed >> 22) & 0x7ff) ^ (seed & 0x7ff);
-	} else {
-		h = ((seed >> 55) & 0x1ff) ^ ((seed >> 44) & 0x7ff) ^
-		    ((seed >> 33) & 0x7ff) ^ ((seed >> 22) & 0x7ff) ^
-		    ((seed >> 11) & 0x7ff) ^ (seed & 0x7ff);
-	}
-
-	return h;
-}
-
 static inline int rtl838x_mac_force_mode_ctrl(int p)
 {
 	return RTL838X_MAC_FORCE_MODE_CTRL + (p << 2);
@@ -147,16 +115,6 @@ static inline int rtl838x_mac_force_mode_ctrl(int p)
 static inline int rtl838x_mac_port_ctrl(int p)
 {
 	return RTL838X_MAC_PORT_CTRL(p);
-}
-
-static inline int rtl838x_l2_port_new_salrn(int p)
-{
-	return RTL838X_L2_PORT_NEW_SALRN(p);
-}
-
-static inline int rtl838x_l2_port_new_sa_fwd(int p)
-{
-	return RTL838X_L2_PORT_NEW_SA_FWD(p);
 }
 
 static int rtldsa_838x_get_mirror_config(struct rtldsa_mirror_config *config,
@@ -179,248 +137,6 @@ static int rtldsa_838x_get_mirror_config(struct rtldsa_mirror_config *config,
 static inline int rtl838x_trk_mbr_ctr(int group)
 {
 	return RTL838X_TRK_MBR_CTR + (group << 2);
-}
-
-/* Fills an L2 entry structure from the SoC registers */
-static void rtl838x_fill_l2_entry(u32 r[], struct rtl838x_l2_entry *e)
-{
-	/* Table contains different entry types, we need to identify the right one:
-	 * Check for MC entries, first
-	 * In contrast to the RTL93xx SoCs, there is no valid bit, use heuristics to
-	 * identify valid entries
-	 */
-	e->is_ip_mc = !!(r[0] & BIT(22));
-	e->is_ipv6_mc = !!(r[0] & BIT(21));
-	e->type = L2_INVALID;
-
-	if (!e->is_ip_mc && !e->is_ipv6_mc) {
-		e->mac[0] = (r[1] >> 20);
-		e->mac[1] = (r[1] >> 12);
-		e->mac[2] = (r[1] >> 4);
-		e->mac[3] = (r[1] & 0xf) << 4 | (r[2] >> 28);
-		e->mac[4] = (r[2] >> 20);
-		e->mac[5] = (r[2] >> 12);
-
-		e->rvid = r[2] & 0xfff;
-		e->vid = r[0] & 0xfff;
-
-		/* Is it a unicast entry? check multicast bit */
-		if (!(e->mac[0] & 1)) {
-			e->is_static = !!((r[0] >> 19) & 1);
-			e->port = (r[0] >> 12) & 0x1f;
-			e->block_da = !!(r[1] & BIT(30));
-			e->block_sa = !!(r[1] & BIT(31));
-			e->suspended = !!(r[1] & BIT(29));
-			e->next_hop = !!(r[1] & BIT(28));
-			if (e->next_hop) {
-				pr_debug("Found next hop entry, need to read extra data\n");
-				e->nh_vlan_target = !!(r[0] & BIT(9));
-				e->nh_route_id = r[0] & 0x1ff;
-				e->vid = e->rvid;
-			}
-			e->age = (r[0] >> 17) & 0x3;
-			e->valid = true;
-
-			/* A valid entry has one of multi-cast, aging, sa/da-blocking,
-			 * next-hop or static entry bit set
-			 */
-			if (!(r[0] & 0x007c0000) && !(r[1] & 0xd0000000))
-				e->valid = false;
-			else
-				e->type = L2_UNICAST;
-		} else { /* L2 multicast */
-			pr_debug("Got L2 MC entry: %08x %08x %08x\n", r[0], r[1], r[2]);
-			e->valid = true;
-			e->type = L2_MULTICAST;
-			e->mc_portmask_index = (r[0] >> 12) & 0x1ff;
-		}
-	} else { /* IPv4 and IPv6 multicast */
-		e->valid = true;
-		e->mc_portmask_index = (r[0] >> 12) & 0x1ff;
-		e->mc_gip = (r[1] << 20) | (r[2] >> 12);
-		e->rvid = r[2] & 0xfff;
-	}
-	if (e->is_ip_mc)
-		e->type = IP4_MULTICAST;
-	if (e->is_ipv6_mc)
-		e->type = IP6_MULTICAST;
-}
-
-/* Fills the 3 SoC table registers r[] with the information of in the rtl838x_l2_entry */
-static void rtl838x_fill_l2_row(u32 r[], struct rtl838x_l2_entry *e)
-{
-	u64 mac = ether_addr_to_u64(e->mac);
-
-	if (!e->valid) {
-		r[0] = r[1] = r[2] = 0;
-		return;
-	}
-
-	r[0] = e->is_ip_mc ? BIT(22) : 0;
-	r[0] |= e->is_ipv6_mc ? BIT(21) : 0;
-
-	if (!e->is_ip_mc && !e->is_ipv6_mc) {
-		r[1] = mac >> 20;
-		r[2] = (mac & 0xfffff) << 12;
-
-		/* Is it a unicast entry? check multicast bit */
-		if (!(e->mac[0] & 1)) {
-			r[0] |= e->is_static ? BIT(19) : 0;
-			r[0] |= (e->port & 0x3f) << 12;
-			r[0] |= e->vid;
-			r[1] |= e->block_da ? BIT(30) : 0;
-			r[1] |= e->block_sa ? BIT(31) : 0;
-			r[1] |= e->suspended ? BIT(29) : 0;
-			r[2] |= e->rvid & 0xfff;
-			if (e->next_hop) {
-				r[1] |= BIT(28);
-				r[0] |= e->nh_vlan_target ? BIT(9) : 0;
-				r[0] |= e->nh_route_id & 0x1ff;
-			}
-			r[0] |= (e->age & 0x3) << 17;
-		} else { /* L2 Multicast */
-			r[0] |= (e->mc_portmask_index & 0x1ff) << 12;
-			r[2] |= e->rvid & 0xfff;
-			r[0] |= e->vid & 0xfff;
-			pr_debug("FILL MC: %08x %08x %08x\n", r[0], r[1], r[2]);
-		}
-	} else { /* IPv4 and IPv6 multicast */
-		r[0] |= (e->mc_portmask_index & 0x1ff) << 12;
-		r[1] = e->mc_gip >> 20;
-		r[2] = e->mc_gip << 12;
-		r[2] |= e->rvid;
-	}
-}
-
-/* Read an L2 UC or MC entry out of a hash bucket of the L2 forwarding table
- * hash is the id of the bucket and pos is the position of the entry in that bucket
- * The data read from the SoC is filled into rtl838x_l2_entry
- */
-static u64 rtl838x_read_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_l2_entry *e)
-{
-	u32 r[3];
-	u32 idx = (0 << 14) | (hash << 2) | pos; /* Search SRAM, with hash and at pos in bucket */
-
-	/* Access L2 Table 0 */
-	otto_table_read(RTL8380_TBL_L2_UC, idx, &r);
-
-	rtl838x_fill_l2_entry(r, e);
-	if (!e->valid)
-		return 0;
-
-	return (((u64)r[1]) << 32) | (r[2]);  /* mac and vid concatenated as hash seed */
-}
-
-static void rtl838x_write_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_l2_entry *e)
-{
-	u32 r[3];
-	u32 idx = (0 << 14) | (hash << 2) | pos; /* Access SRAM, with hash and at pos in bucket */
-
-	rtl838x_fill_l2_row(r, e);
-
-	/* Access L2 Table 0 */
-	otto_table_write(RTL8380_TBL_L2_UC, idx, &r);
-}
-
-static u64 rtl838x_read_cam(int idx, struct rtl838x_l2_entry *e)
-{
-	u32 r[3];
-
-	/* Access L2 Table 1 */
-	otto_table_read(RTL8380_TBL_L2_CAM_UC, idx, &r);
-
-	rtl838x_fill_l2_entry(r, e);
-	if (!e->valid)
-		return 0;
-
-	pr_debug("Found in CAM: R1 %x R2 %x R3 %x\n", r[0], r[1], r[2]);
-
-	/* Return MAC with concatenated VID ac concatenated ID */
-	return (((u64)r[1]) << 32) | r[2];
-}
-
-static void rtl838x_write_cam(int idx, struct rtl838x_l2_entry *e)
-{
-	u32 r[3];
-
-	rtl838x_fill_l2_row(r, e);
-
-	/* Access L2 Table 1 */
-	otto_table_write(RTL8380_TBL_L2_CAM_UC, idx, &r);
-}
-
-static u64 rtl838x_read_mcast_pmask(int idx)
-{
-	u32 portmask;
-
-	otto_table_read(RTL8380_TBL_MC_PMSK, idx, &portmask);
-
-	return portmask;
-}
-
-static void rtl838x_write_mcast_pmask(int idx, u64 portmask)
-{
-	u32 buf[1] = { ((u32)portmask) & RTL838X_MC_PMASK_ALL_PORTS };
-
-	otto_table_write(RTL8380_TBL_MC_PMSK, idx, &buf);
-}
-
-static void rtl838x_l2_learning_setup(void)
-{
-	/* Set portmask for broadcast traffic and unknown unicast address flooding
-	 * to the reserved entry in the portmask table used also for
-	 * multicast flooding
-	 */
-	sw_w32(RTL838X_L2_BC_FLD(MC_PMASK_ALL_PORTS_IDX) |
-	       RTL838X_L2_UNKN_UC_FLD(MC_PMASK_ALL_PORTS_IDX),
-	       RTL838X_L2_FLD_PMSK);
-
-	/* Enable learning constraint system-wide (bit 0), per-port (bit 1)
-	 * and per vlan (bit 2)
-	 */
-	sw_w32(0x7, RTL838X_L2_LRN_CONSTRT_EN);
-
-	/* Limit learning to maximum: 16k entries, after that just flood (bits 0-1) */
-	sw_w32((0x3fff << 2) | 0, RTL838X_L2_LRN_CONSTRT);
-
-	/* Do not trap ARP packets to CPU_PORT */
-	sw_w32(0, RTL838X_SPCL_TRAP_ARP_CTRL);
-}
-
-static void rtl838x_enable_learning(int port, bool enable)
-{
-	/* Limit learning to maximum: 16k entries */
-
-	sw_w32_mask(0x3fff << 2, enable ? (0x3fff << 2) : 0,
-		    RTL838X_L2_PORT_LRN_CONSTRT + (port << 2));
-}
-
-static void rtl838x_enable_flood(int port, enum rtldsa_flood_type mode)
-{
-	/* 0: Forward
-	 * 1: Disable
-	 * 2: to CPU
-	 * 3: Copy to CPU
-	 */
-	sw_w32_mask(0x3, mode,
-		    RTL838X_L2_PORT_LRN_CONSTRT + (port << 2));
-}
-
-static void rtl838x_enable_mcast_flood(int port, bool enable)
-{
-}
-
-static void rtl838x_enable_bcast_flood(int port, bool enable)
-{
-}
-
-static void rtl838x_set_static_move_action(int port, bool forward)
-{
-	int shift = MV_ACT_PORT_SHIFT(port);
-	u32 val = forward ? MV_ACT_FORWARD : MV_ACT_DROP;
-
-	sw_w32_mask(MV_ACT_MASK << shift, val << shift,
-		    RTL838X_L2_PORT_STATIC_MV_ACT(port));
 }
 
 static int rtldsa_838x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, int port)
@@ -547,36 +263,6 @@ static void rtl838x_packet_cntr_clear(struct rtl838x_switch_priv *priv, int coun
 	__otto_table_write(tbl, counter / 2, &buf);
 
 	otto_table_release(tbl);
-}
-
-static int rtldsa_838x_fast_age(struct rtl838x_switch_priv *priv, int port, int vid)
-{
-	u32 val;
-
-	val = BIT(26) | BIT(23) | (port << 5);
-	if (vid >= 0)
-		val |= BIT(24) | (vid << 10);
-
-	sw_w32(val, priv->r->l2_tbl_flush_ctrl);
-	do { } while (sw_r32(priv->r->l2_tbl_flush_ctrl) & BIT(26));
-
-	return 0;
-}
-
-static int rtl838x_set_ageing_time(unsigned long msec)
-{
-	int t = sw_r32(RTL838X_L2_CTRL_1);
-
-	t &= 0x7FFFFF;
-	t = t * 128 / 625; /* Aging time in seconds. 0: L2 aging disabled */
-	pr_debug("L2 AGING time: %d sec\n", t);
-
-	t = (msec * 625 + 127000) / 128000;
-	t = t > 0x7FFFFF ? 0x7FFFFF : t;
-	sw_w32_mask(0x7FFFFF, t, RTL838X_L2_CTRL_1);
-	pr_debug("Dynamic aging for ports: %x\n", sw_r32(RTL838X_L2_PORT_AGING_OUT));
-
-	return 0;
 }
 
 static void rtl838x_set_igr_filter(int port, enum igr_filter state)
