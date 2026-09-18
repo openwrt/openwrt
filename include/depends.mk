@@ -14,6 +14,10 @@ DEP_FINDPARAMS := -x "*/.svn*" -x ".*" -x "*:*" -x "*\!*" -x "* *" -x "*\\\#*" -
 find_md5=find $(wildcard $(1)) -type f $(patsubst -x,-and -not -path,$(DEP_FINDPARAMS) $(2)) -printf "%p%T@\n" | LC_ALL=C sort | $(MKHASH) md5
 find_md5_reproducible=find $(wildcard $(1)) -type f $(patsubst -x,-and -not -path,$(DEP_FINDPARAMS) $(2)) -print0 | xargs -0 $(MKHASH) md5 | LC_ALL=C sort | $(MKHASH) md5
 
+# Make expands the names of the prepared stamps several times, so hash the
+# package files only on first use.
+PKG_FILES_MD5=$(eval PKG_FILES_MD5:=$(shell $(call $(if $(CONFIG_AUTOREMOVE),find_md5_reproducible,find_md5),${CURDIR} $(PKG_FILE_DEPENDS),)))$(PKG_FILES_MD5)
+
 define rdep
   .PRECIOUS: $(2)
   .SILENT: $(2)_check
