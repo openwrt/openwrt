@@ -239,13 +239,25 @@ ifeq ($(SDK),1)
 
 else
 
+# The check if .config is in sync takes about a second. Skip it if the last
+# check passed, and neither .config nor a Kconfig file changed since then.
+CONFIG_CHECK_STAMP:=tmp/.config-check
+CONFIG_CHECK_FILES:=.config Config.in config target toolchain package feeds \
+	tmp/.config-package.in tmp/.config-target.in tmp/.config-feeds.in scripts/config/conf
+
 %::
 	@+$(PREP_MK) $(NO_TRACE_MAKE) -r -s prereq
 	@( \
+		[ -f $(CONFIG_CHECK_STAMP) ] && [ -z "$$(find $(CONFIG_CHECK_FILES) -newer $(CONFIG_CHECK_STAMP) \
+			\( -name .config -o -name conf -o -name '*.in' -o -name 'Config.*' \) -print -quit 2>/dev/null)" ] && exit 0; \
+		touch $(CONFIG_CHECK_STAMP).new; \
 		cp .config tmp/.config; \
 		./scripts/config/conf $(KCONF_FLAGS) --defconfig=tmp/.config -w tmp/.config Config.in > /dev/null 2>&1; \
 		if ./scripts/kconfig.pl '>' .config tmp/.config | grep -q CONFIG; then \
+			rm -f $(CONFIG_CHECK_STAMP) $(CONFIG_CHECK_STAMP).new; \
 			printf "$(_R)WARNING: your configuration is out of sync. Please run make menuconfig, oldconfig or defconfig!$(_N)\n" >&2; \
+		else \
+			mv $(CONFIG_CHECK_STAMP).new $(CONFIG_CHECK_STAMP); \
 		fi \
 	)
 	@+$(ULIMIT_FIX) $(SUBMAKE) -r $@ $(if $(WARN_PARALLEL_ERROR), || { \
