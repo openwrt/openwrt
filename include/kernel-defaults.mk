@@ -133,9 +133,35 @@ define Kernel/Configure/Initramfs
 	$(call Kernel/SetInitramfs,$(1),$(2))
 endef
 
+# The image link reads symtab.h through EXTRA_LDSFLAGS. It sits above
+# $(LINUX_DIR), so the scan below has to name it. A package built module
+# changes it without a change in the kernel tree.
+KERNEL_MAKE_DEPENDS_image := $(if $(CONFIG_STRIP_KERNEL_EXPORTS),$(KERNEL_BUILD_DIR)/symtab.h)
+
+# $(1): stamp name, $(2): make targets and options, $(3): commands to run before kbuild
+# kbuild takes about half a second even if nothing changed, and runs twice
+# per build. Skip it if the command line did not change since its last
+# successful run, and no file in the kernel tree or the toolchain is newer.
+# The build system files at the top of the kernel tree are not inputs of
+# kbuild, apart from .config.
+define Kernel/Make
+	{ \
+		stamp=$(LINUX_DIR)/.kbuild_$(1); \
+		key="$$$$(printf '%s' '$(subst ','\'',$(KERNEL_MAKE) $(2))' | $(MKHASH) md5)"; \
+		[ "$$$$(cat $$$$stamp 2>/dev/null)" = "$$$$key" ] && [ -z "$$$$(find $(LINUX_DIR) $(TOOLCHAIN_DIR)/bin \
+			$(KERNEL_MAKE_DEPENDS_$(1)) \
+			\( -path '$(LINUX_DIR)/.*' ! -path '$(LINUX_DIR)/.config' \) -prune -o \
+			! -type d -newer $$$$stamp -print -quit)" ] || { \
+			rm -f $$$$stamp; \
+			$(3) \
+			$(KERNEL_MAKE) $(2) && echo "$$$$key" > $$$$stamp; \
+		}; \
+	}
+endef
+
 define Kernel/CompileModules/Default
-	rm -f $(LINUX_DIR)/vmlinux $(LINUX_DIR)/System.map
-	+$(KERNEL_MAKE) $(if $(KERNELNAME),$(KERNELNAME),all) modules
+	+$(call Kernel/Make,modules,$(if $(KERNELNAME),$(KERNELNAME),all) modules, \
+		rm -f $(LINUX_DIR)/vmlinux $(LINUX_DIR)/System.map;)
 	# If .config did not change, use the previous timestamp to avoid package rebuilds
 	cmp -s $(LINUX_DIR)/.config $(LINUX_DIR)/.config.modules.save && \
 		mv $(LINUX_DIR)/.config.modules.save $(LINUX_DIR)/.config; \
@@ -165,7 +191,7 @@ endef
 
 define Kernel/CompileImage/Default
 	rm -f $(TARGET_DIR)/init
-	+$(KERNEL_MAKE) $(KERNEL_MAKEOPTS_IMAGE) $(if $(KERNELNAME),$(KERNELNAME),all)
+	+$(call Kernel/Make,image,$(KERNEL_MAKEOPTS_IMAGE) $(if $(KERNELNAME),$(KERNELNAME),all))
 	$(call Kernel/CopyImage)
 endef
 
