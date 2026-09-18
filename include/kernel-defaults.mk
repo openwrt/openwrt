@@ -204,6 +204,11 @@ define Kernel/PrepareConfigPerRootfs
 endef
 
 ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
+# $1: Per Device Rootfs ID
+# $2: suffix of the compressed initrd
+Kernel/CacheInitrd = $(CACHE_RUN) $(KERNEL_BUILD_DIR)/cache/initrd$(1).cpio.$(2) \
+	$(KERNEL_BUILD_DIR)/initrd$(1).cpio $(KERNEL_BUILD_DIR)/initrd$(1).cpio.$(2)
+
 # $1: Custom TARGET_DIR. If omitted TARGET_DIR is used.
 # $2: If defined Generate Per Rootfs Kernel Directory and use it
 # For Separate Initramfs, the regular kernel is used as is, as its config
@@ -226,16 +231,21 @@ define Kernel/CompileImage/Initramfs
 				$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_BZIP2), \
 					$(STAGING_DIR_HOST)/bin/bzip2 -9 -c < $(KERNEL_BUILD_DIR)/initrd$(2).cpio > $(KERNEL_BUILD_DIR)/initrd$(2).cpio.bzip2;) \
 				$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_GZIP), \
-					$(STAGING_DIR_HOST)/bin/libdeflate-gzip -n -f -S .gzip -12 $(KERNEL_BUILD_DIR)/initrd$(2).cpio;) \
+					$(call Kernel/CacheInitrd,$(2),gzip) \
+					$(STAGING_DIR_HOST)/bin/libdeflate-gzip -n -k -f -S .gzip -12 $(KERNEL_BUILD_DIR)/initrd$(2).cpio;) \
 				$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_LZ4), \
+					$(call Kernel/CacheInitrd,$(2),lz4) \
 					$(STAGING_DIR_HOST)/bin/lz4c -l -c1 -fz --favor-decSpeed $(KERNEL_BUILD_DIR)/initrd$(2).cpio $(KERNEL_BUILD_DIR)/initrd$(2).cpio.lz4;) \
 				$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_LZMA), \
+					$(call Kernel/CacheInitrd,$(2),lzma) \
 					$(STAGING_DIR_HOST)/bin/lzma e -lc1 -lp2 -pb2 $(KERNEL_BUILD_DIR)/initrd$(2).cpio $(KERNEL_BUILD_DIR)/initrd$(2).cpio.lzma;) \
 				$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_LZO), \
 					$(STAGING_DIR_HOST)/bin/lzop -9 -f $(KERNEL_BUILD_DIR)/initrd$(2).cpio;) \
 				$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_XZ), \
-					$(STAGING_DIR_HOST)/bin/xz -T$(if $(filter 1,$(NPROC)),2,0) -9 -fz --check=crc32 $(KERNEL_BUILD_DIR)/initrd$(2).cpio;) \
+					$(call Kernel/CacheInitrd,$(2),xz) \
+					$(STAGING_DIR_HOST)/bin/xz -T$(if $(filter 1,$(NPROC)),2,0) -9 -fzk --check=crc32 $(KERNEL_BUILD_DIR)/initrd$(2).cpio;) \
 				$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_ZSTD), \
+					$(call Kernel/CacheInitrd,$(2),zstd) \
 					$(STAGING_DIR_HOST)/bin/zstd -T0 -f -o $(KERNEL_BUILD_DIR)/initrd$(2).cpio.zstd $(KERNEL_BUILD_DIR)/initrd$(2).cpio;) \
 			}, gen-cpio$(2));,\
 			$(KERNEL_MAKE) $(if $(2),-C $(LINUX_DIR)$(2)) $(KERNEL_MAKEOPTS_IMAGE) $(if $(KERNELNAME),$(KERNELNAME),all);) \
