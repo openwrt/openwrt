@@ -19,7 +19,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 
 --- a/include/net/netfilter/nf_flow_table.h
 +++ b/include/net/netfilter/nf_flow_table.h
-@@ -29,6 +29,7 @@ struct nf_flow_key {
+@@ -31,6 +31,7 @@ struct nf_flow_key {
  		struct flow_dissector_key_ipv4_addrs	ipv4;
  		struct flow_dissector_key_ipv6_addrs	ipv6;
  	};
@@ -27,7 +27,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  	struct flow_dissector_key_keyid			enc_key_id;
  	union {
  		struct flow_dissector_key_ipv4_addrs	enc_ipv4;
-@@ -138,6 +139,7 @@ struct flow_offload_tuple {
+@@ -140,6 +141,7 @@ struct flow_offload_tuple {
  					encap_num:2,
  					in_vlan_ingress:2;
  	u16				mtu;
@@ -102,15 +102,15 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  		key->tcp.flags = 0;
 --- a/net/netfilter/nft_flow_offload.c
 +++ b/net/netfilter/nft_flow_offload.c
-@@ -8,6 +8,7 @@
- #include <linux/spinlock.h>
+@@ -9,6 +9,7 @@
+ #include <linux/if_vlan.h>
  #include <linux/netfilter/nf_conntrack_common.h>
  #include <linux/netfilter/nf_tables.h>
 +#include <net/dsfield.h>
  #include <net/ip.h>
  #include <net/flow.h>
  #include <net/netfilter/nf_tables.h>
-@@ -20,6 +21,27 @@ struct nft_flow_offload {
+@@ -21,6 +22,27 @@ struct nft_flow_offload {
  	struct nft_flowtable	*flowtable;
  };
  
@@ -138,13 +138,13 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  static bool nft_flow_offload_skip(struct sk_buff *skb, int family)
  {
  	if (skb_sec_path(skb))
-@@ -112,6 +134,9 @@ static void nft_flow_offload_eval(const
+@@ -119,6 +141,9 @@ static void nft_flow_offload_eval(const
  	if (!flow)
  		goto err_flow_alloc;
-
+ 
 +	nft_flow_set_dscp(pkt, flow, dir);
 +	nft_flow_set_dscp(pkt, flow, !dir);
 +
-	if (routing)
-		flow_offload_route_init(flow, &route);
-	else
+ 	if (routing)
+ 		flow_offload_route_init(flow, &route);
+ 	else

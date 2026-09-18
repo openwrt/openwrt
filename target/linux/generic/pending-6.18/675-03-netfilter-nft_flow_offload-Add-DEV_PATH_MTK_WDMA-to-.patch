@@ -16,11 +16,9 @@ Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
  net/netfilter/nf_flow_table_path.c | 5 +++++
  1 file changed, 5 insertions(+)
 
-diff --git a/net/netfilter/nf_flow_table_path.c b/net/netfilter/nf_flow_table_path.c
-index 76d4ff145439..a452d6591b4f 100644
 --- a/net/netfilter/nf_flow_table_path.c
 +++ b/net/netfilter/nf_flow_table_path.c
-@@ -103,6 +103,7 @@ static void nft_dev_path_info(const struct net_device_path_stack *stack,
+@@ -103,6 +103,7 @@ static void nft_dev_path_info(const stru
  		switch (path->type) {
  		case DEV_PATH_ETHERNET:
  		case DEV_PATH_DSA:
@@ -28,7 +26,7 @@ index 76d4ff145439..a452d6591b4f 100644
  		case DEV_PATH_VLAN:
  		case DEV_PATH_PPPOE:
  			info->indev = path->dev;
-@@ -115,6 +116,10 @@ static void nft_dev_path_info(const struct net_device_path_stack *stack,
+@@ -115,6 +116,10 @@ static void nft_dev_path_info(const stru
  				i = stack->num_paths;
  				break;
  			}
@@ -39,6 +37,3 @@ index 76d4ff145439..a452d6591b4f 100644
  
  			/* DEV_PATH_VLAN and DEV_PATH_PPPOE */
  			if (info->num_encaps >= NF_FLOW_TABLE_ENCAP_MAX) {
--- 
-2.55.0
-

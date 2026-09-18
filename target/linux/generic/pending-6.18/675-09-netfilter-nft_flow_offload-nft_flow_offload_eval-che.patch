@@ -16,11 +16,9 @@ Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
  net/netfilter/nft_flow_offload.c | 9 ++++++---
  1 file changed, 6 insertions(+), 3 deletions(-)
 
-diff --git a/net/netfilter/nft_flow_offload.c b/net/netfilter/nft_flow_offload.c
-index b8f76c9057fd..ea6241a2f1eb 100644
 --- a/net/netfilter/nft_flow_offload.c
 +++ b/net/netfilter/nft_flow_offload.c
-@@ -58,7 +58,7 @@ static void nft_flow_offload_eval(const struct nft_expr *expr,
+@@ -58,7 +58,7 @@ static void nft_flow_offload_eval(const
  	struct flow_offload *flow;
  	enum ip_conntrack_dir dir;
  	struct nf_conn *ct;
@@ -29,7 +27,7 @@ index b8f76c9057fd..ea6241a2f1eb 100644
  
  	if (nft_flow_offload_skip(pkt->skb, nft_pf(pkt)))
  		goto out;
-@@ -69,8 +69,11 @@ static void nft_flow_offload_eval(const struct nft_expr *expr,
+@@ -69,8 +69,11 @@ static void nft_flow_offload_eval(const
  
  	switch (ct->tuplehash[IP_CT_DIR_ORIGINAL].tuple.dst.protonum) {
  	case IPPROTO_TCP:
@@ -43,6 +41,3 @@ index b8f76c9057fd..ea6241a2f1eb 100644
  		if (unlikely(!tcph || tcph->fin || tcph->rst ||
  			     !nf_conntrack_tcp_established(ct)))
  			goto out;
--- 
-2.55.0
-
