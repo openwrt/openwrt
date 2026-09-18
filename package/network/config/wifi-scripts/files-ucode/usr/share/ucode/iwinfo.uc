@@ -108,7 +108,7 @@ function bss_info_get(daemon, ifname, timed_out) {
 	return bss_info;
 }
 
-export function update() {
+export function update(only) {
 	let timed_out = {};
 
 	phys = nl80211.request(nl80211.const.NL80211_CMD_GET_WIPHY, nl80211.const.NLM_F_DUMP, { split_wiphy_dump: true });
@@ -119,17 +119,21 @@ export function update() {
 	for (let k, v in interfaces) {
 		let iface = ifaces[v.ifname] = v;
 
-		iface.mode = iftypes[iface.iftype] ?? 'unknown',
+		iface.mode = iftypes[iface.iftype] ?? 'unknown';
+
+		iface.bss_info = bss_info_get('hostapd', v.ifname, timed_out);
+		if (!iface.bss_info)
+			iface.bss_info = bss_info_get('wpa_supplicant', v.ifname, timed_out);
+
+		if (only && only != v.ifname)
+			continue;
+
 		iface.survey = get_survey(iface);
 		iface.noise = get_noise(iface);
 		iface.country = get_country(iface);
 		iface.max_power = get_max_power(iface);
 		iface.assoclist = nl80211.request(nl80211.const.NL80211_CMD_GET_STATION, nl80211.const.NLM_F_DUMP, { dev: v.ifname }) ?? [];
 		iface.hardware = get_hardware_id(iface);
-
-		iface.bss_info = bss_info_get('hostapd', v.ifname, timed_out);
-		if (!iface.bss_info)
-			iface.bss_info = bss_info_get('wpa_supplicant', v.ifname, timed_out);
 	}
 
 	for (let radio, data in wireless_status)
@@ -746,5 +750,3 @@ export function scan(dev) {
 
 	return cells;
 };
-
-update();
