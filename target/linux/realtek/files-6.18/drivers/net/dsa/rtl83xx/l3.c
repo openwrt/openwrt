@@ -929,6 +929,27 @@ static int otto_l3_alloc_egress_intf(struct otto_l3_ctrl *ctrl, u64 mac, int vla
 /* Row 0 is not used, see otto_l3_930x_setup(). */
 #define FIRST_PREFIX_ROW	1
 
+/* An IPv6 prefix route is matched over three consecutive rows, and only rows
+ * 0 and 3 of every eight can hold the first of the three, so two rows in every
+ * eight start no route at all. The last row one may start at is four below the
+ * last row of the table. The IPv6 rows therefore run downwards from there
+ * against the IPv4 rows, which run upwards from FIRST_PREFIX_ROW (Realtek GPL
+ * SDK, dal_longan_l3.c: L3_ROUTE_TBL_USED, IS_L3_ROUTE_IPV6_IDX_VALID and
+ * L3_ROUTE_IPV6_IDX_MAX).
+ */
+#define V6_PREFIX_ROWS		3
+#define FIRST_V6_ROW		(MAX_ROUTES - 1 - 4)
+
+static int otto_l3_v6_row(int slot)
+{
+	return FIRST_V6_ROW - (slot / 2) * 8 - (slot % 2) * V6_PREFIX_ROWS;
+}
+
+static int otto_l3_v6_slot(int row)
+{
+	return 2 * (FIRST_V6_ROW / 8 - row / 8) + (row % 8 ? 0 : 1);
+}
+
 /* The programmed prefix routes of one address family sit in one dense block,
  * longest prefix first, because the hardware answers a lookup with the lowest
  * matching row rather than the most specific one. A lookup carries the entry
@@ -973,8 +994,8 @@ static void otto_l3_rows_stale(struct otto_l3_ctrl *ctrl, struct otto_l3_route *
 /* Open the row this route belongs at, pushing everything below it down. */
 static int otto_l3_route_place(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r)
 {
+	int below, rows, row, last, v6_rows;
 	struct otto_l3_route *q;
-	int row, last;
 
 	if (!ctrl->cfg->route_rows_move)
 		return r->id;
@@ -982,13 +1003,49 @@ static int otto_l3_route_place(struct otto_l3_ctrl *ctrl, struct otto_l3_route *
 	if (ctrl->prefix_rows_stale)
 		return -1;
 
-	row = FIRST_PREFIX_ROW + otto_l3_prefix_rows(ctrl, r->attr.type, r->prefix_len);
-	last = FIRST_PREFIX_ROW + otto_l3_prefix_rows(ctrl, r->attr.type, 0);
+	below = otto_l3_prefix_rows(ctrl, r->attr.type, r->prefix_len);
+	rows = otto_l3_prefix_rows(ctrl, r->attr.type, 0);
+
+	if (r->attr.type == ROUTE_TYPE_IP6UC) {
+		int v4_rows = otto_l3_prefix_rows(ctrl, ROUTE_TYPE_IP4UC, 0);
+
+		if (otto_l3_v6_row(rows) < FIRST_PREFIX_ROW + v4_rows) {
+			dev_err(ctrl->dev, "prefix route table full, %d IPv4 and %d IPv6 routes\n",
+				v4_rows, rows);
+			return -1;
+		}
+
+		/* Deepest first, so a route is only written over a slot the
+		 * route that held it has already left.
+		 */
+		for (int s = rows - 1; s >= rows - below; s--)
+			if (ctrl->cfg->route_rows_move(ctrl, otto_l3_v6_row(s + 1),
+						       otto_l3_v6_row(s), V6_PREFIX_ROWS)) {
+				otto_l3_rows_stale(ctrl, r, otto_l3_v6_row(s));
+				return -1;
+			}
+
+		row = otto_l3_v6_row(rows - below);
+
+		list_for_each_entry(q, &ctrl->routes_list, list)
+			if (!q->is_host_route && q->attr.type == r->attr.type &&
+			    q->row >= FIRST_PREFIX_ROW && q->row <= row)
+				q->row = otto_l3_v6_row(otto_l3_v6_slot(q->row) + 1);
+
+		return row;
+	}
+
+	v6_rows = otto_l3_prefix_rows(ctrl, ROUTE_TYPE_IP6UC, 0);
+	row = FIRST_PREFIX_ROW + below;
+	last = FIRST_PREFIX_ROW + rows;
+
+	if (v6_rows && otto_l3_v6_row(v6_rows - 1) <= last) {
+		dev_err(ctrl->dev, "prefix route table full, %d IPv4 and %d IPv6 routes\n",
+			rows, v6_rows);
+		return -1;
+	}
 
 	if (row < last) {
-		/* A failed move leaves the block half shifted, and the rows the
-		 * list names would no longer be the rows that hold them.
-		 */
 		if (ctrl->cfg->route_rows_move(ctrl, row + 1, row, last - row)) {
 			otto_l3_rows_stale(ctrl, r, row);
 			return -1;
@@ -1007,27 +1064,49 @@ static int otto_l3_route_place(struct otto_l3_ctrl *ctrl, struct otto_l3_route *
 static void otto_l3_route_compact(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r)
 {
 	struct otto_l3_route *q;
-	int last;
+	int rows, last;
 
 	if (!ctrl->cfg->route_rows_move || r->row < FIRST_PREFIX_ROW ||
 	    ctrl->prefix_rows_stale)
 		return;
 
-	last = FIRST_PREFIX_ROW + otto_l3_prefix_rows(ctrl, r->attr.type, 0) - 1;
-	if (r->row >= last)
-		return;
+	rows = otto_l3_prefix_rows(ctrl, r->attr.type, 0);
 
-	if (ctrl->cfg->route_rows_move(ctrl, r->row, r->row + 1, last - r->row)) {
-		otto_l3_rows_stale(ctrl, r, r->row);
-		return;
+	if (r->attr.type == ROUTE_TYPE_IP6UC) {
+		int slot = otto_l3_v6_slot(r->row);
+
+		last = otto_l3_v6_row(rows - 1);
+		if (slot >= rows - 1)
+			return;
+
+		for (int s = slot + 1; s < rows; s++)
+			if (ctrl->cfg->route_rows_move(ctrl, otto_l3_v6_row(s - 1),
+						       otto_l3_v6_row(s), V6_PREFIX_ROWS)) {
+				otto_l3_rows_stale(ctrl, r, otto_l3_v6_row(s));
+				return;
+			}
+
+		list_for_each_entry(q, &ctrl->routes_list, list)
+			if (!q->is_host_route && q->attr.type == r->attr.type &&
+			    q->row >= FIRST_PREFIX_ROW && q->row < r->row)
+				q->row = otto_l3_v6_row(otto_l3_v6_slot(q->row) - 1);
+	} else {
+		last = FIRST_PREFIX_ROW + rows - 1;
+		if (r->row >= last)
+			return;
+
+		if (ctrl->cfg->route_rows_move(ctrl, r->row, r->row + 1, last - r->row)) {
+			otto_l3_rows_stale(ctrl, r, r->row);
+			return;
+		}
+
+		list_for_each_entry(q, &ctrl->routes_list, list)
+			if (!q->is_host_route && q->attr.type == r->attr.type &&
+			    q->row > r->row)
+				q->row--;
 	}
 
-	list_for_each_entry(q, &ctrl->routes_list, list)
-		if (!q->is_host_route && q->attr.type == r->attr.type &&
-		    q->row > r->row)
-			q->row--;
-
-	/* The tail now holds a copy of the row above it. */
+	/* The tail now holds a copy of the row the block has pulled up. */
 	r->attr.valid = false;
 	ctrl->cfg->route_write(ctrl, last, r);
 }
