@@ -86,18 +86,18 @@
 &mdio0 {
 	status = "okay";
 
-	switch@0 {
+	ethernet-switch@0 {
 		compatible = "qca,qca8337";
 		#address-cells = <1>;
 		#size-cells = <0>;
 
 		reg = <0>;
 
-		ports {
+		ethernet-ports {
 			#address-cells = <1>;
 			#size-cells = <0>;
 
-			port@0 {
+			ethernet-port@0 {
 				reg = <0>;
 				label = "cpu";
 				ethernet = <&eth0>;
@@ -109,7 +109,7 @@
 				};
 			};
 
-			port@1 {
+			ethernet-port@1 {
 				reg = <1>;
 				label = "lan1";
 				phy-mode = "internal";
@@ -128,7 +128,7 @@
 				};
 			};
 
-			port@2 {
+			ethernet-port@2 {
 				reg = <2>;
 				label = "lan2";
 				phy-mode = "internal";
@@ -147,7 +147,7 @@
 				};
 			};
 
-			port@3 {
+			ethernet-port@3 {
 				reg = <3>;
 				label = "lan3";
 				phy-mode = "internal";
@@ -166,7 +166,7 @@
 				};
 			};
 
-			port@4 {
+			ethernet-port@4 {
 				reg = <4>;
 				label = "lan4";
 				phy-mode = "internal";
@@ -185,7 +185,7 @@
 				};
 			};
 
-			port@5 {
+			ethernet-port@5 {
 				reg = <5>;
 				label = "lan5";
 				phy-mode = "internal";
@@ -208,23 +208,23 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 
-			phy_port1: phy@0 {
+			phy_port1: ethernet-phy@0 {
 				reg = <0>;
 			};
 
-			phy_port2: phy@1 {
+			phy_port2: ethernet-phy@1 {
 				reg = <1>;
 			};
 
-			phy_port3: phy@2 {
+			phy_port3: ethernet-phy@2 {
 				reg = <2>;
 			};
 
-			phy_port4: phy@3 {
+			phy_port4: ethernet-phy@3 {
 				reg = <3>;
 			};
 
-			phy_port5: phy@4 {
+			phy_port5: ethernet-phy@4 {
 				reg = <4>;
 			};
 		};
