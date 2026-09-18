@@ -22,7 +22,7 @@
 	leds {
 		compatible = "gpio-leds";
 
-		led-pon {
+		led_pon: led-pon {
 			label = "green:pon";
 			gpios = <&pinctrl 2 GPIO_ACTIVE_LOW>;
 			default-state = "off";
@@ -40,7 +40,7 @@
 			default-state = "off";
 		};
 
-		led-los {
+		led_los: led-los {
 			label = "red:los";
 			gpios = <&pinctrl 24 GPIO_ACTIVE_LOW>;
 			default-state = "off";
@@ -92,15 +92,18 @@
 	};
 };
 
-/* Keep the laser disabled until the optical support is added separately.
- * That change must transfer GPIO16 ownership to the SFP/optical driver.
+/* GPIO 27 enables the BOSA transmitter 3V3 supply (OEM "LED_PHY_VCC_DISABLE").
+ * The pin floats high (supply disabled) unless driven low; the OEM firmware
+ * drives it low right after the transmitter is disabled. Without it the laser
+ * only survives short bursts and upstream stalls at ~60 Mbit/s. GPIO 16
+ * (TX_DISABLE) is left to the optical driver.
  */
 &pinctrl {
-	pon-tx-disable-hog {
+	pon-vcc-enable-hog {
 		gpio-hog;
-		gpios = <16 GPIO_ACTIVE_HIGH>;
-		output-high;
-		line-name = "pon-tx-disable";
+		gpios = <27 GPIO_ACTIVE_HIGH>;
+		output-low;
+		line-name = "pon-vcc-disable";
 	};
 };
 
@@ -123,25 +126,46 @@
 	label = "lan1";
 };
 
-/* Do not expose flash before the OEM NAND/BMT layout is supported. */
+/* The SPI-NAND is exposed as a whole; the OEM tcboot layout uses BMT block
+ * remapping, so no fixed partitions are described here. The UBI layout comes
+ * with the U-Boot port for this board.
+ */
 &spi0 {
-	status = "disabled";
+	status = "okay";
 };
 
-&nand {
-	status = "disabled";
-};
+/* Airoha LDD/LA at I2C 0x70, bound as en7570 like the other EN751221 boards
+ * (Genexis Platinum-4410, Jiuzhou EN7526GT). The factory LDD/LA calibration
+ * lives in the OEM "misc" partition and will be referenced through nvmem once
+ * the flash layout is described.
+ */
+&i2c0 {
+	status = "okay";
 
-&xpon {
-	status = "disabled";
+	en7570: lddla@70 {
+		compatible = "airoha,en7570";
+		reg = <0x70>;
+		phys = <&xpon_phy>;
+		phy-names = "xpon";
+	};
 };
 
 &xpon_phy {
-	status = "disabled";
+	status = "okay";
+};
+
+&xpon {
+	status = "okay";
+	airoha,gpon-serial-from-mac;
+	omci-vendor-id = "TPLG";
+	/* Order consumed by airoha-xpon: GPON status, then LOS. */
+	leds = <&led_pon>, <&led_los>;
+	led-names = "pon", "los";
 };
 
 &gdm2 {
-	status = "disabled";
+	status = "okay";
+	phy-mode = "internal";
 };
 
 &usb {
