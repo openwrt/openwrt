@@ -10,6 +10,8 @@ include $(TOPDIR)/include/verbose.mk
 
 ifeq ($(SDK),1)
   include $(TOPDIR)/include/version.mk
+else ifeq ($(filter-out 0,$(MAKELEVEL))$(origin REVISION)$(origin SOURCE_DATE_EPOCH),$(MAKELEVEL)environmentenvironment)
+  # Recursive calls of the top-level Makefile get both from its environment.
 else
   REVISION:=$(shell $(TOPDIR)/scripts/getver.sh)
   SOURCE_DATE_EPOCH:=$(shell $(TOPDIR)/scripts/get_source_date_epoch.sh)
