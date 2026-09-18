@@ -18,6 +18,9 @@ ipq50xx_setup_interfaces()
 	glinet,gl-b3000)
 		ucidef_set_interfaces_lan_wan "lan1 lan2" "wan"
 		;;
+	glinet,gl-x2000)
+		ucidef_set_interfaces_lan_wan "lan" "wan"
+		;;
 	cmcc,mr3000d-ci|\
 	linksys,mx2000|\
 	linksys,mx5500|\
@@ -47,6 +50,15 @@ ipq50xx_setup_macs()
 	local label_mac=""
 
 	case $board in
+	glinet,gl-x2000)
+		# base MAC is 6 raw bytes at 0:art offset 0x6; offset 0x0 is erased,
+		# which is why U-Boot reports "MAC Address from ART is not valid"
+		label_mac=$(mtd_get_mac_binary "0:art" 0x6)
+		[ -n "$label_mac" ] || return
+		ucidef_set_interface_macaddr "wan" "$label_mac"
+		ucidef_set_interface_macaddr "lan" "$(macaddr_add "$label_mac" 1)"
+		ucidef_set_label_macaddr "$label_mac"
+		;;
 	tplink,archer-ax55-v1)
 		# factory MAC is 6 raw bytes in tp_data/default-mac, mounted
 		# read-only during preinit (see lib/preinit/09_mount_tp_data)

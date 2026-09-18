@@ -1,0 +1,462 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+
+/dts-v1/;
+
+#include "ipq5018.dtsi"
+#include "ipq5018-ess.dtsi"
+#include "ipq5018-qcn6122.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	model = "GL.iNet GL-X2000";
+	compatible = "glinet,gl-x2000", "qcom,ipq5018";
+
+	aliases {
+		ethernet0 = &gmac0;
+		ethernet1 = &gmac1;
+		label-mac-device = &gmac0;
+		led-boot = &led_system_power;
+		led-failsafe = &led_system_power;
+		led-running = &led_system_power;
+		led-upgrade = &led_system_power;
+		serial0 = &blsp1_uart1;
+	};
+
+	chosen {
+		bootargs-append = " root=/dev/ubiblock0_1 swiotlb=1 coherent_pool=2M";
+		stdout-path = "serial0:115200n8";
+	};
+
+	fan: pwm-fan {
+		compatible = "pwm-fan";
+		pinctrl-0 = <&fan_pins>;
+		pinctrl-names = "default";
+		cooling-levels = <36 128 192 255>;
+		#cooling-cells = <2>;
+		fan-supply = <&fan_vreg>;
+		pwms = <&pwm 3 40000 0>;
+	};
+
+	fan_vreg: regulator-fan {
+		compatible = "regulator-fixed";
+		regulator-name = "fan_power";
+		gpio = <&tlmm 34 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		regulator-boot-on;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+		pinctrl-0 = <&button_pins>;
+		pinctrl-names = "default";
+
+		button-reset {
+			label = "reset";
+			gpios = <&tlmm 27 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+			debounce-interval = <60>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-0 = <&leds_pins>;
+		pinctrl-names = "default";
+
+		led_system_power: led-power {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&tlmm 28 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
+		};
+
+		led_wan_internet: led-wan {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WAN;
+			gpios = <&tlmm 32 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-wlan2g {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN_2GHZ;
+			gpios = <&tlmm 1 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-wlan5g {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN_5GHZ;
+			gpios = <&tlmm 31 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-signal1 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_INDICATOR;
+			function-enumerator = <1>;
+			gpios = <&tlmm 44 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-signal2 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_INDICATOR;
+			function-enumerator = <2>;
+			gpios = <&tlmm 24 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-signal3 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_INDICATOR;
+			function-enumerator = <3>;
+			gpios = <&tlmm 17 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-signal4 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_INDICATOR;
+			function-enumerator = <4>;
+			gpios = <&tlmm 19 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	usb_vreg_5p0: regulator-usb-5p0 {
+		compatible = "regulator-fixed";
+		regulator-name = "usb_vbus";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpio = <&tlmm 30 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+	};
+};
+
+/*
+ * =================================================================
+ *     _______________________             ____________
+ *    |        IPQ5018        |           |            |
+ *    | +------+   +--------+ |           | +--------+ |
+ *    | | MAC0 |---| GE Phy |-+--- MDI ---+ |  RJ45  | |  WAN
+ *    | +------+   +--------+ |           | +--------+ |
+ *    |                       |           |____________|
+ *    |                       |            _______________________
+ *    |                       |           |        AR8031         |
+ *    | +------+   +--------+ |           | +--------+   +------+ |
+ *    | | MAC1 |---| Uniphy |-+-- SGMII---+ |  Phy   |---| RJ45 | |  LAN
+ *    | +------+   +--------+ |           | +--------+   +------+ |
+ *    |_______________________|           |_______________________|
+ *
+ * =================================================================
+ */
+
+/* without a cooling-map the thermal core leaves the fan at full speed */
+&{/thermal-zones/cpu-thermal/trips} {
+	cpu_trip_active_low: active-low {
+		temperature = <55000>;
+		hysteresis = <5000>;
+		type = "active";
+	};
+
+	cpu_trip_active_med: active-med {
+		temperature = <75000>;
+		hysteresis = <5000>;
+		type = "active";
+	};
+
+	cpu_trip_active_high: active-high {
+		temperature = <95000>;
+		hysteresis = <5000>;
+		type = "active";
+	};
+};
+
+&{/thermal-zones/cpu-thermal/cooling-maps} {
+	fan-active-low {
+		trip = <&cpu_trip_active_low>;
+		cooling-device = <&fan 1 1>;
+	};
+
+	fan-active-med {
+		trip = <&cpu_trip_active_med>;
+		cooling-device = <&fan 2 2>;
+	};
+
+	fan-active-high {
+		trip = <&cpu_trip_active_high>;
+		cooling-device = <&fan 3 3>;
+	};
+};
+
+&uniphy0 {
+	status = "okay";
+
+	assigned-clocks = <&uniphy0 UNIPHY_CLK_REF>;
+	assigned-clock-rates = <UNIPHY_REFCLK_25MHZ>;
+};
+
+// MAC0 ---MDI---> IPQ5018 GE PHY
+&gmac0 {
+	status = "okay";
+
+	label = "wan";
+
+	nvmem-cells = <&macaddr_gmac1 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+// MAC1 ---SGMII---> AR8031
+&gmac1 {
+	status = "okay";
+
+	phy-handle = <&ethernet_phy>;
+	phy-mode = "sgmii";
+
+	label = "lan";
+
+	nvmem-cells = <&macaddr_gmac1 1>;
+	nvmem-cell-names = "mac-address";
+};
+
+&mdio0 {
+	status = "okay";
+};
+
+&mdio1 {
+	status = "okay";
+
+	pinctrl-0 = <&mdio1_pins>;
+	pinctrl-names = "default";
+	reset-gpios = <&tlmm 39 GPIO_ACTIVE_LOW>;
+
+	// Atheros AR8031
+	ethernet_phy: ethernet-phy@4 {
+		compatible = "ethernet-phy-id004d.d074";
+		reg = <4>;
+	};
+};
+
+&sleep_clk {
+	clock-frequency = <32000>;
+};
+
+&xo_board_clk {
+	clock-div = <4>;
+	clock-mult = <1>;
+};
+
+&blsp1_uart1 {
+	status = "okay";
+
+	pinctrl-0 = <&serial_0_pins>;
+	pinctrl-names = "default";
+};
+
+&prng {
+	status = "okay";
+};
+
+&pwm {
+	status = "okay";
+
+	pinctrl-0 = <&pwm_pins>;
+	pinctrl-names = "default";
+};
+
+&qfprom {
+	status = "okay";
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&qpic_nand {
+	pinctrl-0 = <&qpic_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	nand@0 {
+		compatible = "spi-nand";
+		reg = <0>;
+		nand-ecc-engine = <&qpic_nand>;
+		nand-bus-width = <8>;
+
+		partitions {
+			compatible = "qcom,smem-part";
+
+			partition-0-art {
+				label = "0:art";
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_gmac1: macaddr@6 {
+						compatible = "mac-base";
+						#nvmem-cell-cells = <1>;
+						reg = <0x6 0x6>;
+					};
+				};
+			};
+		};
+	};
+};
+
+&tlmm {
+	button_pins: button-state {
+		pins = "gpio27";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-pull-up;
+	};
+
+	fan_pins: fan-state {
+		speed-pins {
+			pins = "gpio26";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-disable;
+		};
+	};
+
+	leds_pins: leds-state {
+		pins = "gpio1", "gpio17", "gpio19", "gpio24",
+		       "gpio28", "gpio31", "gpio32", "gpio44";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-pull-down;
+	};
+
+	mdio1_pins: mdio-state {
+		mdc-pins {
+			pins = "gpio36";
+			function = "mdc";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		mdio-pins {
+			pins = "gpio37";
+			function = "mdio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+
+	pwm_pins: pwm-state {
+		pins = "gpio13";
+		function = "pwm3";
+		drive-strength = <8>;
+	};
+
+	qpic_pins: qpic-state {
+		clock-pins {
+			pins = "gpio9";
+			function = "qspi_clk";
+			drive-strength = <8>;
+			bias-disable;
+		};
+
+		cs-pins {
+			pins = "gpio8";
+			function = "qspi_cs";
+			drive-strength = <8>;
+			bias-disable;
+		};
+
+		data-pins {
+			pins = "gpio4", "gpio5", "gpio6", "gpio7";
+			function = "qspi_data";
+			drive-strength = <8>;
+			bias-disable;
+		};
+	};
+
+	serial_0_pins: uart0-state {
+		pins = "gpio20", "gpio21";
+		function = "blsp0_uart0";
+		drive-strength = <8>;
+		bias-disable;
+	};
+
+	/*
+	 * Modem and USB hub control lines. Nothing consumes these, so drive
+	 * them as GPIO hogs. Levels match what the stock firmware leaves them
+	 * at: enable/power asserted, reset released.
+	 */
+	modem-enable-hog {
+		gpio-hog;
+		gpios = <12 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "modem-enable";
+	};
+
+	modem-reset-hog {
+		gpio-hog;
+		gpios = <22 GPIO_ACTIVE_HIGH>;
+		output-low;
+		line-name = "modem-reset";
+	};
+
+	modem-power-hog {
+		gpio-hog;
+		gpios = <38 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "modem-power";
+	};
+
+	usb-hub-reset-hog {
+		gpio-hog;
+		gpios = <33 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "usb-hub-reset";
+	};
+};
+
+&usb {
+	status = "okay";
+
+	dr_mode = "host";
+};
+
+&usbphy0 {
+	status = "okay";
+};
+
+/* the Quectel EG120K-EA modem enumerates at SuperSpeed */
+&usbphy1 {
+	status = "okay";
+
+	vdd-supply = <&usb_vreg_5p0>;
+};
+
+&wifi {
+	status = "okay";
+
+	qcom,rproc = <&q6_wcss_pd1>;
+	qcom,userpd-subsys-name = "q6v5_wcss_userpd1";
+	qcom,ath11k-calibration-variant = "GL-iNet-GL-X2000";
+	qcom,ath11k-fw-memory-mode = <1>;
+	qcom,bdf-addr = <0x4c400000>;
+};
+
+/* the second QCN6122 instance keeps its BDF and M3 dump above 0x4e000000 */
+&q6_region {
+	reg = <0x0 0x4b000000 0x0 0x4d00000>;
+};
+
+/*
+ * The QCN6122 is wired to the second instance: the stock device tree
+ * enables wifi2@/userpd3 and leaves wifi1@/userpd2 disabled.
+ */
+&wifi2 {
+	status = "okay";
+
+	qcom,rproc = <&q6_wcss_pd3>;
+	qcom,userpd-subsys-name = "q6v5_wcss_userpd3";
+	qcom,ath11k-calibration-variant = "GL-iNet-GL-X2000";
+	qcom,ath11k-fw-memory-mode = <1>;
+	qcom,bdf-addr = <0x4e500000>;
+	qcom,m3-dump-addr = <0x4f200000>;
+};

@@ -110,6 +110,32 @@ define Device/glinet_gl-b3000
 endef
 TARGET_DEVICES += glinet_gl-b3000
 
+define Device/glinet_gl-x2000
+	$(call Device/FitImage)
+	DEVICE_VENDOR := GL.iNet
+	DEVICE_MODEL := GL-X2000
+	SOC := ipq5018
+	KERNEL_IN_UBI := 1
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	NAND_SIZE := 128m
+	DEVICE_DTS_CONFIG := config@mp03.5-c1
+	SUPPORTED_DEVICES += x2000
+	BOOT_SCRIPT := glinet_qsdk.bootscript
+	IMAGES := factory.img sysupgrade.bin
+	IMAGE/factory.img := append-ubi | \
+		gl-qsdk-factory ubi_offset=0x00a00000 ubi_size=0x07600000 | \
+		append-metadata
+	DEVICE_PACKAGES := \
+		ath11k-firmware-ipq5018-qcn6122 \
+		ipq-wifi-glinet_gl-x2000 \
+		kmod-hwmon-pwmfan \
+		kmod-usb-net-qmi-wwan \
+		kmod-usb-serial-option \
+		dumpimage
+endef
+TARGET_DEVICES += glinet_gl-x2000
+
 define Device/iodata_wn-dax3000gr
 	$(call Device/FitImageLzma)
 	DEVICE_VENDOR := I-O DATA

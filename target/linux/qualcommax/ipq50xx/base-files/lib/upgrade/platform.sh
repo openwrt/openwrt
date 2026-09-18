@@ -200,6 +200,15 @@ platform_do_upgrade() {
 	glinet,gl-b3000)
 		glinet_do_upgrade "$1"
 		;;
+	glinet,gl-x2000)
+		# The stock UBI fills the whole partition (0 free LEBs) with its
+		# own wifi_fw and ubi_rootfs volumes, leaving no room for the
+		# OpenWrt rootfs. Drop them before upgrading.
+		CI_UBIPART="rootfs"
+		remove_oem_ubi_volume ubi_rootfs
+		remove_oem_ubi_volume wifi_fw
+		glinet_do_upgrade "$1"
+		;;
 	linksys,mr5500|\
 	linksys,mx2000|\
 	linksys,mx5500|\
