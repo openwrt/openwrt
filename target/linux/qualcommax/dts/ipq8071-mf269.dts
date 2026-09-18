@@ -237,10 +237,54 @@
 	pinctrl-names = "default";
 	status = "okay";
 
-	/* No driver exists */
-	aw9106: gpio-expander@5b {
+	aw9106: led-controller@5b {
+		compatible = "awinic,aw9106b";
 		reg = <0x5b>;
 		reset-gpios = <&tlmm 54 GPIO_ACTIVE_HIGH>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		/* Channel-to-color mapping determined by physically
+		 * observing the front panel while sweeping each channel
+		 * (register 0x20 + channel) individually via i2cset.
+		 * Swap the "reg" values below if your unit's order
+		 * differs.
+		 */
+		led@0 {
+			reg = <0>;
+			label = "blue:wifi";
+			default-state = "off";
+		};
+
+		led@1 {
+			reg = <1>;
+			label = "red:wifi";
+			default-state = "off";
+		};
+
+		led@2 {
+			reg = <2>;
+			label = "white:wifi";
+			default-state = "off";
+		};
+
+		led@3 {
+			reg = <3>;
+			label = "blue:network";
+			default-state = "off";
+		};
+
+		led@4 {
+			reg = <4>;
+			label = "red:network";
+			default-state = "off";
+		};
+
+		led@5 {
+			reg = <5>;
+			label = "white:network";
+			default-state = "off";
+		};
 	};
 };
 
