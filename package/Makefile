@@ -188,7 +188,7 @@ endif
 $(curdir)/flags-install:= -j1
 
 $(eval $(call stampfile,$(curdir),package,prereq,.config))
-$(eval $(call stampfile,$(curdir),package,cleanup,$(TMP_DIR)/.build))
+$(eval $(call stampfile,$(curdir),package,cleanup,.config $(TMP_DIR)/.packageinfo))
 $(eval $(call stampfile,$(curdir),package,compile,$(TMP_DIR)/.build))
 $(eval $(call stampfile,$(curdir),package,install,$(TMP_DIR)/.build))
 $(eval $(call stampfile,$(curdir),package,check,$(TMP_DIR)/.build))
