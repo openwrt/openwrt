@@ -565,6 +565,7 @@ config KERNEL_DEBUG_INFO
 
 config KERNEL_DEBUG_INFO_BTF
 	bool "Enable additional BTF type information"
+	default y if TARGET_rockchip
 	depends on !HOST_OS_MACOS
 	depends on KERNEL_DEBUG_INFO && !KERNEL_DEBUG_INFO_REDUCED
 	select DWARVES
@@ -591,6 +592,7 @@ config KERNEL_MODULE_ALLOW_BTF_MISMATCH
 
 config KERNEL_DEBUG_INFO_REDUCED
 	bool "Reduce debugging information"
+	default n if TARGET_rockchip
 	default y
 	depends on KERNEL_DEBUG_INFO
 	help
