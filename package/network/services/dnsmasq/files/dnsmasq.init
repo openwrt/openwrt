@@ -169,6 +169,14 @@ append_rev_server() {
 	xappend "--rev-server=$1"
 }
 
+append_conf_file() {
+	if [ -r "$1" ]
+	then
+		xappend "--conf-file=$1"
+		append_extramount "$1"
+	fi
+}
+
 append_address() {
 	local address_as_local="$2"
 	xappend "--address=$1"
@@ -1038,6 +1046,8 @@ dnsmasq_start()
 	config_list_foreach "$cfg" "listen_address" append_listenaddress
 	config_list_foreach "$cfg" "server" append_server
 	config_list_foreach "$cfg" "rev_server" append_rev_server
+
+	config_list_foreach "$cfg" "conf_file" append_conf_file
 
 	local address_as_local
 	config_get address_as_local "$cfg" address_as_local 0
