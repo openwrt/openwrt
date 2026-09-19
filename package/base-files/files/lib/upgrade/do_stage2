@@ -18,6 +18,10 @@ fi
 v "Upgrade completed"
 sleep 1
 
+if [ "${INTERACTIVE:-0}" -eq 1 ] && ! ask_bool $(( ! ${EFI_DUALBOOT:-0} )) "Reboot now?"; then
+	return 0
+fi
+
 v "Rebooting system..."
 umount -a
 reboot -f
