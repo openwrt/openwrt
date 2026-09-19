@@ -3479,6 +3479,24 @@ define Device/tplink_archer-ax80-v1
 endef
 TARGET_DEVICES += tplink_archer-ax80-v1
 
+define Device/tplink_archer-ax80-v1.60
+  DEVICE_VENDOR := TP-Link
+  DEVICE_MODEL := Archer AX80
+  DEVICE_VARIANT := v1.60
+  BOARD_NAME := tplink_archer-ax80-v1
+  DEVICE_DTS := mt7986a-tplink-archer-ax80-v1
+  DEVICE_DTS_CONFIG := config-ax80_v1
+  DEVICE_DTS_DIR := ../dts
+  SUPPORTED_DEVICES := tplink,archer-ax80-v1 tplink,archer-ax80-v1.60
+  DEVICE_PACKAGES := kmod-leds-lp5523 kmod-usb3 kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGE_SIZE := 51200k
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += tplink_archer-ax80-v1.60
+
 define Device/tplink_archer-ax80-v1-eu
   DEVICE_VENDOR := TP-Link
   DEVICE_MODEL := Archer AX80
