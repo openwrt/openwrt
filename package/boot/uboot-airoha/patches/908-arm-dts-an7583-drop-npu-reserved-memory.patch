@@ -1,0 +1,50 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Li Xiao <Li.Xiao@airoha.com>
+Date: Tue, 11 Aug 2026 15:57:43 +0800
+Subject: [PATCH] arm: dts: an7583: drop NPU reserved-memory nodes
+
+U-Boot does not use the AN7583 NPU firmware and buffer regions.
+
+Keeping these entries in the U-Boot control device tree unnecessarily
+reserves 39 MiB of DRAM. Drop the NPU reserved-memory nodes while
+retaining the memory region reserved for TF-A.
+
+Signed-off-by: Li Xiao <Li.Xiao@airoha.com>
+---
+ arch/arm/dts/an7583.dtsi |   25 -------------------------
+ 1 file changed, 25 deletions(-)
+
+--- a/arch/arm/dts/an7583.dtsi
++++ b/arch/arm/dts/an7583.dtsi
+@@ -21,31 +21,6 @@
+ 			no-map;
+ 			reg = <0x0 0x80000000 0x0 0x40000>;
+ 		};
+-
+-		npu-binary@84000000 {
+-			no-map;
+-			reg = <0x0 0x84000000 0x0 0xa00000>;
+-		};
+-
+-		npu-flag@84b0000 {
+-			no-map;
+-			reg = <0x0 0x84b00000 0x0 0x100000>;
+-		};
+-
+-		npu-pkt@85000000 {
+-			no-map;
+-			reg = <0x0 0x85000000 0x0 0x1a00000>;
+-		};
+-
+-		npu-phyaddr@86b00000 {
+-			no-map;
+-			reg = <0x0 0x86b00000 0x0 0x100000>;
+-		};
+-
+-		npu-rxdesc@86d00000 {
+-			no-map;
+-			reg = <0x0 0x86d00000 0x0 0x100000>;
+-		};
+ 	};
+ 
+ 	psci {
