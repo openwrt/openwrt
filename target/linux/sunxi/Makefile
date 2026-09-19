@@ -8,20 +8,16 @@ ARCH:=arm
 BOARD:=sunxi
 BOARDNAME:=Allwinner ARM SoCs
 FEATURES:=ext4 display ramdisk rootfs-part rtc squashfs usb usbgadget
-SUBTARGETS:=cortexa8 cortexa7 cortexa53 arm926ejs
+SUBTARGETS:=cortexa8 cortexa7 cortexa53 cortexa55 arm926ejs
 
 KERNEL_PATCHVER:=6.18
 
 KERNELNAME:=zImage dtbs
 
-# A10: Cortex-A8
-# A13: Cortex-A8
-# A20: dual Cortex-A7
-# A31: quad Cortex-A7
-# A80: octa Cortex-A15/A7
-# H3: quad Cortex-A7
-# R40: quad Cortex-A7
-# A64/H5/H6/H616: quad Cortex-A53
+# cortexa8: A10/A13
+# cortexa7: A20/A31/A80/H3/R40
+# cortexa53: A64/H5/H6/H616/H618
+# cortexa55: A523/A527/T527
 
 include $(INCLUDE_DIR)/target.mk
 
