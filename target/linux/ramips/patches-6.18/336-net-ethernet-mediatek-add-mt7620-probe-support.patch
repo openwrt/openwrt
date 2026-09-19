@@ -1,0 +1,641 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Gleb Pesin <dormancygrace@gmail.com>
+Date: Sun, 3 Aug 2026 02:10:00 +0000
+Subject: [PATCH] net: ethernet: mediatek: add MT7620 support
+
+Add an explicit, conservative MT7620 path to the generic MediaTek frame
+engine driver. MT7620 shares the legacy PDMA register layout with MT7628,
+but uses a normal GDMA/CDMA path and the integrated gigabit switch.
+
+Keep checksum, VLAN and segmentation offloads disabled during the first
+hardware-validation stage. Sequence the named FE and ESW resets explicitly,
+matching the proven legacy driver. Use the MT7620 descriptor forwarding
+encoding, 16-DWORD PDMA burst, two-byte RX alignment and SoC-specific
+GDMA/CDMA registers. Avoid accessing the newer standalone GMAC, ethsys and
+MDIO blocks which do not exist on this SoC.
+
+Attach the existing target-local MT7620 DSA switch through a narrow
+lifecycle hook owned by the switch glue. Translate the Ralink tagger's
+hardware-port metadata to and from the legacy MT7620 DMA descriptors, so
+the generic frame engine remains the DSA conduit without an in-band tag.
+
+Copy the first buffer's TXD4 metadata to the descriptor consumed by legacy
+PDMA, keep integrated-switch RX traffic on the sole conduit, and initialize
+RX metadata before registering the conduit. Reset the software TX cursor
+with the hardware indices and order cleanup so repeated close/open cycles
+and module removal remain safe.
+
+Signed-off-by: Gleb Pesin <dormancygrace@gmail.com>
+---
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -34,10 +34,13 @@
+ #include <net/checksum.h>
+ #include <net/page_pool/helpers.h>
+ #include <linux/genalloc.h>
++#include <linux/soc/mediatek/mt7620-gsw.h>
+ 
+ #include "mtk_eth_soc.h"
+ #include "mtk_wed.h"
+ 
++static bool mtk_uses_ralink_dsa(struct net_device *dev);
++
+ static int mtk_msg_level = -1;
+ module_param_named(msg_level, mtk_msg_level, int, 0);
+ MODULE_PARM_DESC(msg_level, "Message level (-1=defaults,0=none,...,16=all)");
+@@ -121,6 +124,38 @@ static const struct mtk_reg_map mt7628_r
+ 	},
+ };
+ 
++/* MT7620 shares the legacy PDMA layout with MT7628, but has a normal
++ * GDMA/CDMA path in front of its integrated gigabit switch.
++ */
++static const struct mtk_reg_map mt7620_reg_map = {
++	.tx_irq_mask		= 0x0a28,
++	.tx_irq_status		= 0x0a20,
++	.pdma = {
++		.rx_ptr		= 0x0900,
++		.rx_cnt_cfg	= 0x0904,
++		.pcrx_ptr	= 0x0908,
++		.glo_cfg	= 0x0a04,
++		.rst_idx	= 0x0a08,
++		.delay_irq	= 0x0a0c,
++		.irq_status	= 0x0a20,
++		.irq_mask	= 0x0a28,
++		.int_grp	= 0x0a50,
++	},
++	.gdm1_cnt		= 0x1300,
++};
++
++#define MT7620_CDMA_CSG_CFG	0x0400
++#define MT7620_GDMA1_FWD_CFG	0x0600
++#define MT7620_CDMA_CSUM_EN	GENMASK(2, 0)
++#define MT7620_GDMA_CSUM_EN	GENMASK(22, 20)
++#define MT7620_PDMA_BT_16DWORDS	(2 << 4)
++#define MT7620_TX_DMA_PN_GDMA1	BIT(24)
++#define MT7620_TX_DMA_QN3	(3 << 16)
++#define MT7620_TX_DMA_FP_BMAP	GENMASK(27, 20)
++#define MT7620_TX_DMA_LAST_PORT	5
++#define MT7620_RX_DMA_L4_VALID	BIT(23)
++#define MT7620_RX_DMA_SP		GENMASK(21, 19)
++
+ static const struct mtk_reg_map mt7986_reg_map = {
+ 	.tx_irq_mask		= 0x461c,
+ 	.tx_irq_status		= 0x4618,
+@@ -581,6 +616,14 @@ static void mtk_mac_config(struct phylin
+ 	int val, ge_mode, err = 0;
+ 	u32 i;
+ 
++	/* MT7620 terminates GDMA directly at its integrated switch and has no
++	 * standalone GMAC control block at MTK_MAC_MCR().
++	 */
++	if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7620)) {
++		mac->interface = state->interface;
++		return;
++	}
++
+ 	/* MT76x8 has no hardware settings between for the MAC */
+ 	if (!MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7628) &&
+ 	    mac->interface != state->interface) {
+@@ -742,6 +785,9 @@ static int mtk_mac_finish(struct phylink
+ 	struct mtk_eth *eth = mac->hw;
+ 	u32 mcr_cur, mcr_new;
+ 
++	if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7620))
++		return 0;
++
+ 	/* Enable SGMII */
+ 	if (interface == PHY_INTERFACE_MODE_SGMII ||
+ 	    phy_interface_mode_is_8023z(interface))
+@@ -767,6 +813,9 @@ static void mtk_mac_link_down(struct phy
+ 	struct mtk_mac *mac = container_of(config, struct mtk_mac,
+ 					   phylink_config);
+ 
++	if (MTK_HAS_CAPS(mac->hw->soc->caps, MTK_SOC_MT7620))
++		return;
++
+ 	if (!mtk_interface_mode_is_xgmii(mac->hw, interface)) {
+ 		/* GMAC modes */
+ 		mtk_m32(mac->hw,
+@@ -935,6 +984,11 @@ static void mtk_mac_link_up(struct phyli
+ 	struct mtk_mac *mac = container_of(config, struct mtk_mac,
+ 					   phylink_config);
+ 
++	if (MTK_HAS_CAPS(mac->hw->soc->caps, MTK_SOC_MT7620)) {
++		mac->speed = speed;
++		return;
++	}
++
+ 	if (mtk_interface_mode_is_xgmii(mac->hw, interface))
+ 		mtk_xgdm_mac_link_up(mac, phy, mode, interface, speed, duplex,
+ 				     tx_pause, rx_pause);
+@@ -949,6 +1003,9 @@ static void mtk_mac_disable_tx_lpi(struc
+ 					   phylink_config);
+ 	struct mtk_eth *eth = mac->hw;
+ 
++	if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7620))
++		return;
++
+ 	mtk_m32(eth, MAC_MCR_EEE100M | MAC_MCR_EEE1G, 0, MTK_MAC_MCR(mac->id));
+ }
+ 
+@@ -960,6 +1017,9 @@ static int mtk_mac_enable_tx_lpi(struct
+ 	struct mtk_eth *eth = mac->hw;
+ 	u32 val;
+ 
++	if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7620))
++		return -EOPNOTSUPP;
++
+ 	if (mtk_interface_mode_is_xgmii(eth, mac->interface))
+ 		return -EOPNOTSUPP;
+ 
+@@ -1129,6 +1189,11 @@ static int mtk_set_mac_address(struct ne
+ 
+ 	if (unlikely(test_bit(MTK_RESETTING, &mac->hw->state)))
+ 		return -EBUSY;
++	/* MT7620 keeps the conduit MAC in the integrated switch. The switch
++	 * glue programs it once that driver has attached.
++	 */
++	if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7620))
++		return 0;
+ 
+ 	spin_lock_bh(&mac->hw->page_lock);
+ 	if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7628)) {
+@@ -1153,6 +1218,11 @@ void mtk_stats_update_mac(struct mtk_mac
+ {
+ 	struct mtk_hw_stats *hw_stats = mac->hw_stats;
+ 	struct mtk_eth *eth = mac->hw;
++	/* MT7620 has a different MIB layout. Keep software netdev counters
++	 * authoritative until its MIB decoder is ported.
++	 */
++	if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7620))
++		return;
+ 
+ 	u64_stats_update_begin(&hw_stats->syncp);
+ 
+@@ -1507,7 +1577,16 @@ static void mtk_tx_set_dma_desc_v1(struc
+ 		data |= TX_DMA_LS0;
+ 	WRITE_ONCE(desc->txd3, data);
+ 
+-	data = (mac->id + 1) << TX_DMA_FPORT_SHIFT; /* forward port */
++	if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7620)) {
++		data = MT7620_TX_DMA_QN3;
++		if (info->port_map)
++			data |= FIELD_PREP(MT7620_TX_DMA_FP_BMAP,
++					   info->port_map);
++		else
++			data |= MT7620_TX_DMA_PN_GDMA1;
++	} else {
++		data = (mac->id + 1) << TX_DMA_FPORT_SHIFT; /* forward port */
++	}
+ 	if (info->first) {
+ 		if (info->gso)
+ 			data |= TX_DMA_TSO;
+@@ -1627,6 +1706,13 @@ mtk_tx_map_info(struct mtk_eth *eth, str
+ 	}
+ 
+ 	mtk_tx_set_dma_desc(dev, txd, txd_info);
++	/* The generic ring is only bookkeeping on the legacy PDMA path.  MT7620
++	 * also consumes TXD4 in the real PDMA descriptor for its switch-port map.
++	 * Preserve the first buffer's offload flags when two buffers share one
++	 * hardware descriptor.
++	 */
++	if (MTK_HAS_CAPS(soc->caps, MTK_SOC_MT7620) && !(state->nbuf & 1))
++		WRITE_ONCE(state->txd_pdma->txd4, READ_ONCE(txd->txd4));
+ 	tx_buf = state->tx_buf;
+ 	tx_buf->data = (void *)MTK_DMA_DUMMY_DESC;
+ 	tx_buf->mac_id = mac->id;
+@@ -1690,8 +1776,18 @@ static int mtk_tx_map(struct sk_buff *sk
+ 	int queue = skb_get_queue_mapping(skb);
+ 	int i, frag_size = skb_headlen(skb);
+ 	bool gso_v4, gso_fraglist;
++	u8 port_map = 0;
+ 	int offset = 0;
+ 
++	if (MTK_HAS_CAPS(soc->caps, MTK_SOC_MT7620) &&
++	    mtk_uses_ralink_dsa(dev)) {
++		struct metadata_dst *md_dst = skb_metadata_dst(skb);
++
++		if (md_dst && md_dst->type == METADATA_HW_PORT_MUX &&
++		    md_dst->u.port_info.port_id <= MT7620_TX_DMA_LAST_PORT)
++			port_map = BIT(md_dst->u.port_info.port_id);
++	}
++
+ 	txq = netdev_get_tx_queue(dev, queue);
+ 	itxd = ring->next_free;
+ 	if (itxd == ring->last_free)
+@@ -1710,6 +1806,7 @@ next:
+ 		.csum = cur_skb->ip_summed == CHECKSUM_PARTIAL || gso,
+ 		.vlan = skb_vlan_tag_present(skb),
+ 		.vlan_tci = skb_vlan_tag_get(skb),
++		.port_map = port_map,
+ 		.first = true,
+ 	};
+ 
+@@ -1786,6 +1883,7 @@ next_frag:
+ 		frag_size = skb_frag_size(frag);
+ 		memset(&txd_info, 0, sizeof(struct mtk_tx_dma_desc_info));
+ 		txd_info.qid = queue;
++		txd_info.port_map = port_map;
+ 		offset = 0;
+ 		while (frag_size) {
+ 			txd_info.size = min_t(unsigned int, frag_size,
+@@ -2447,6 +2545,8 @@ static int mtk_poll_rx(struct napi_struc
+ 			default:
+ 				break;
+ 			}
++		} else if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7620)) {
++			mac = 0;
+ 		} else if (!MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7628) &&
+ 			   !(trxd.rxd4 & RX_DMA_SPECIAL_TAG)) {
+ 			mac = RX_DMA_GET_SPORT(trxd.rxd4) - 1;
+@@ -2571,6 +2671,16 @@ static int mtk_poll_rx(struct napi_struc
+ 			skb_checksum_none_assert(skb);
+ 		skb->protocol = eth_type_trans(skb, netdev);
+ 
++		if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7620) &&
++		    mtk_uses_ralink_dsa(netdev)) {
++			unsigned int port;
++
++			port = FIELD_GET(MT7620_RX_DMA_SP, trxd.rxd4);
++			if (port < ARRAY_SIZE(eth->dsa_meta) &&
++			    eth->dsa_meta[port])
++				skb_dst_set_noref(skb, &eth->dsa_meta[port]->dst);
++		}
++
+ 		/* When using VLAN untagging in combination with DSA, the
+ 		 * hardware treats the MTK special tag as a VLAN and untags it.
+ 		 */
+@@ -2955,6 +3065,7 @@ static int mtk_tx_alloc(struct mtk_eth *
+ 		if (mtk_is_netsys_v2_or_greater(eth))
+ 			mtk_w32(eth, val, soc->reg_map->qdma.tx_sch_rate + 4);
+ 	} else {
++		ring->cpu_idx = 0;
+ 		mtk_w32(eth, ring->phys_pdma, MT7628_TX_BASE_PTR0);
+ 		mtk_w32(eth, ring_size, MT7628_TX_MAX_CNT0);
+ 		mtk_w32(eth, 0, MT7628_TX_CTX_IDX0);
+@@ -3711,6 +3822,11 @@ static int mtk_start_dma(struct mtk_eth
+ 			MTK_RX_DMA_EN | rx_2b_offset |
+ 			MTK_RX_BT_32DWORDS | MTK_MULTI_EN,
+ 			reg_map->pdma.glo_cfg);
++	} else if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7620)) {
++		mtk_w32(eth, MTK_TX_WB_DDONE | MTK_TX_DMA_EN |
++			 MTK_RX_DMA_EN | rx_2b_offset |
++			 MT7620_PDMA_BT_16DWORDS,
++			 reg_map->pdma.glo_cfg);
+ 	} else {
+ 		mtk_w32(eth, MTK_TX_WB_DDONE | MTK_TX_DMA_EN | MTK_RX_DMA_EN |
+ 			MTK_MULTI_EN | MTK_PDMA_SIZE_8DWORDS,
+@@ -3726,6 +3842,13 @@ static void mtk_gdm_config(struct mtk_et
+ 
+ 	if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7628))
+ 		return;
++	if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7620)) {
++		val = mtk_r32(eth, MT7620_GDMA1_FWD_CFG);
++		val &= ~GENMASK(2, 0);
++		val |= MT7620_GDMA_CSUM_EN;
++		mtk_w32(eth, val, MT7620_GDMA1_FWD_CFG);
++		return;
++	}
+ 
+ 	val = mtk_r32(eth, MTK_GDMA_FWD_CFG(id));
+ 
+@@ -3754,6 +3877,16 @@ static bool mtk_uses_dsa(struct net_devi
+ #endif
+ }
+ 
++static bool mtk_uses_ralink_dsa(struct net_device *dev)
++{
++#if IS_ENABLED(CONFIG_NET_DSA)
++	return netdev_uses_dsa(dev) &&
++	       dev->dsa_ptr->tag_ops->proto == DSA_TAG_PROTO_RALINK;
++#else
++	return false;
++#endif
++}
++
+ /*
+  * Recompute the per-conduit DSA user-port queue map.  Each conduit's mac
+  * gets a queue base (queues 0..MTK_MAX_DEVS-1 are reserved for non-DSA
+@@ -3856,12 +3989,34 @@ static int mtk_max_gmac_mtu(struct mtk_e
+ 	return max_mtu;
+ }
+ 
++static int mtk_dsa_metadata_init(struct mtk_eth *eth)
++{
++	int i;
++
++	for (i = 0; i < ARRAY_SIZE(eth->dsa_meta); i++) {
++		struct metadata_dst *md_dst = eth->dsa_meta[i];
++
++		if (md_dst)
++			continue;
++
++		md_dst = metadata_dst_alloc(0, METADATA_HW_PORT_MUX,
++					    GFP_KERNEL);
++		if (!md_dst)
++			return -ENOMEM;
++
++		md_dst->u.port_info.port_id = i;
++		eth->dsa_meta[i] = md_dst;
++	}
++
++	return 0;
++}
++
+ static int mtk_open(struct net_device *dev)
+ {
+ 	struct mtk_mac *mac = netdev_priv(dev);
+ 	struct mtk_eth *eth = mac->hw;
+ 	struct mtk_mac *target_mac;
+-	int i, err, ppe_num, mtu;
++	int err, ppe_num, mtu;
+ 
+ 	ppe_num = eth->soc->ppe_num;
+ 
+@@ -3927,21 +4082,10 @@ static int mtk_open(struct net_device *d
+ 	if (mtk_is_netsys_v2_or_greater(eth))
+ 		return 0;
+ 
+-	if (mtk_uses_dsa(dev) && !eth->prog) {
+-		for (i = 0; i < ARRAY_SIZE(eth->dsa_meta); i++) {
+-			struct metadata_dst *md_dst = eth->dsa_meta[i];
+-
+-			if (md_dst)
+-				continue;
+-
+-			md_dst = metadata_dst_alloc(0, METADATA_HW_PORT_MUX,
+-						    GFP_KERNEL);
+-			if (!md_dst)
+-				return -ENOMEM;
+-
+-			md_dst->u.port_info.port_id = i;
+-			eth->dsa_meta[i] = md_dst;
+-		}
++	if ((mtk_uses_dsa(dev) || mtk_uses_ralink_dsa(dev)) && !eth->prog) {
++		err = mtk_dsa_metadata_init(eth);
++		if (err)
++			return err;
+ 	} else {
+ 		/* Hardware DSA untagging and VLAN RX offloading need to be
+ 		 * disabled if at least one MAC does not use DSA.
+@@ -4177,7 +4321,8 @@ static void mtk_set_mcr_max_rx(struct mt
+ 	struct mtk_eth *eth = mac->hw;
+ 	u32 mcr_cur, mcr_new;
+ 
+-	if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7628))
++	if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7628) ||
++	    MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7620))
+ 		return;
+ 
+ 	mcr_cur = mtk_r32(mac->hw, MTK_MAC_MCR(mac->id));
+@@ -4347,7 +4492,8 @@ static bool mtk_hw_check_dma_hang(struct
+ 	bool qfsm_hang, qfwd_hang;
+ 	bool ret = false;
+ 
+-	if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7628))
++	if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7628) ||
++	    MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7620))
+ 		return false;
+ 
+ 	/* WDMA sanity checks */
+@@ -4456,6 +4602,39 @@ static int mtk_hw_init(struct mtk_eth *e
+ 		regmap_update_bits(eth->ethsys, ETHSYS_DMA_AG_MAP, dma_mask,
+ 				   of_dma_is_coherent(eth->dma_dev->of_node) * dma_mask);
+ 
++	if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7620)) {
++		ret = reset_control_assert(eth->rst_fe);
++		if (ret)
++			goto err_disable_pm;
++		ret = reset_control_assert(eth->rst_esw);
++		if (ret) {
++			reset_control_deassert(eth->rst_fe);
++			goto err_disable_pm;
++		}
++		usleep_range(60, 120);
++		ret = reset_control_deassert(eth->rst_fe);
++		if (ret)
++			goto err_disable_pm;
++		ret = reset_control_deassert(eth->rst_esw);
++		if (ret)
++			goto err_disable_pm;
++		usleep_range(1000, 1200);
++
++		/* Enable checksum parsing in CDMA so the netdev checksum
++		 * offloads advertised in mtk_add_mac() take effect.
++		 */
++		val = mtk_r32(eth, MT7620_CDMA_CSG_CFG);
++		mtk_w32(eth, val | MT7620_CDMA_CSUM_EN,
++			MT7620_CDMA_CSG_CFG);
++
++		mtk_dim_rx(&eth->rx_dim.work);
++		mtk_dim_tx(&eth->tx_dim.work);
++		mtk_tx_irq_disable(eth, ~0);
++		mtk_rx_irq_disable(eth, ~0);
++
++		return 0;
++	}
++
+ 	if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7628)) {
+ 		ret = device_reset(eth->dev);
+ 		if (ret) {
+@@ -5546,9 +5725,27 @@ static int mtk_probe(struct platform_dev
+ 	if (IS_ERR(eth->base))
+ 		return PTR_ERR(eth->base);
+ 
+-	if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7628))
++	if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7628) ||
++	    MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7620))
+ 		eth->ip_align = NET_IP_ALIGN;
+ 
++	if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7620)) {
++		eth->rst_fe =
++			devm_reset_control_get_optional_exclusive(&pdev->dev, "fe");
++		if (IS_ERR(eth->rst_fe))
++			return dev_err_probe(&pdev->dev, PTR_ERR(eth->rst_fe),
++					     "failed to get FE reset\n");
++
++		eth->rst_esw =
++			devm_reset_control_get_optional_exclusive(&pdev->dev, "esw");
++		if (IS_ERR(eth->rst_esw))
++			return dev_err_probe(&pdev->dev, PTR_ERR(eth->rst_esw),
++					     "failed to get ESW reset\n");
++
++		if (!eth->rst_fe && !eth->rst_esw)
++			dev_warn(&pdev->dev, "no FE/ESW resets found\n");
++	}
++
+ 	if (MTK_HAS_CAPS(eth->soc->caps, MTK_36BIT_DMA)) {
+ 		err = dma_set_mask(&pdev->dev, DMA_BIT_MASK(36));
+ 		if (!err)
+@@ -5572,7 +5769,8 @@ static int mtk_probe(struct platform_dev
+ 	eth->tx_dim.mode = DIM_CQ_PERIOD_MODE_START_FROM_EQE;
+ 	INIT_WORK(&eth->tx_dim.work, mtk_dim_tx);
+ 
+-	if (!MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7628)) {
++	if (!MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7628) &&
++	    !MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7620)) {
+ 		eth->ethsys = syscon_regmap_lookup_by_phandle(pdev->dev.of_node,
+ 							      "mediatek,ethsys");
+ 		if (IS_ERR(eth->ethsys)) {
+@@ -5750,8 +5948,11 @@ static int mtk_probe(struct platform_dev
+ 	if (err)
+ 		goto err_free_dev;
+ 
+-	/* No MT7628/88 support yet */
+-	if (!MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7628)) {
++	/* MT7620's MDIO controller lives in the integrated switch and will be
++	 * registered by the switch glue, not by the generic FE MDIO block.
++	 */
++	if (!MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7628) &&
++	    !MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7620)) {
+ 		err = mtk_mdio_init(eth);
+ 		if (err)
+ 			goto err_free_dev;
+@@ -5778,6 +5979,19 @@ static int mtk_probe(struct platform_dev
+ 		}
+ 	}
+ 
++	if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7620)) {
++		if (!eth->netdev[0]) {
++			dev_err(&pdev->dev, "missing MAC 0 for MT7620\n");
++			err = -EINVAL;
++			goto err_deinit_ppe;
++		}
++
++		netif_keep_dst(eth->netdev[0]);
++		err = mtk_dsa_metadata_init(eth);
++		if (err)
++			goto err_deinit_ppe;
++	}
++
+ 	for (i = 0; i < MTK_MAX_DEVS; i++) {
+ 		if (!eth->netdev[i])
+ 			continue;
+@@ -5807,11 +6021,25 @@ static int mtk_probe(struct platform_dev
+ 	netif_napi_add(eth->dummy_dev, &eth->rx_napi, mtk_napi_rx);
+ 
+ 	platform_set_drvdata(pdev, eth);
+-	schedule_delayed_work(&eth->reset.monitor_work,
+-			      MTK_DMA_MONITOR_TIMEOUT);
++	if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7620)) {
++		err = mt7620_gsw_upstream_init(&pdev->dev, eth->netdev[0]);
++		if (err)
++			goto err_cleanup_switch;
++	}
++
++	if (!MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7620))
++		schedule_delayed_work(&eth->reset.monitor_work,
++				      MTK_DMA_MONITOR_TIMEOUT);
+ 
+ 	return 0;
+ 
++err_cleanup_switch:
++	mt7620_gsw_upstream_cleanup(&pdev->dev);
++	mtk_unreg_dev(eth);
++	netif_napi_del(&eth->tx_napi);
++	netif_napi_del(&eth->rx_napi);
++	free_netdev(eth->dummy_dev);
++	goto err_deinit_ppe;
+ err_unreg_netdev:
+ 	mtk_unreg_dev(eth);
+ err_deinit_ppe:
+@@ -5835,6 +6063,18 @@ static void mtk_remove(struct platform_d
+ 	struct mtk_mac *mac;
+ 	int i;
+ 
++	if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7620)) {
++		mt7620_gsw_upstream_cleanup(&pdev->dev);
++		mtk_cleanup(eth);
++		netif_napi_del(&eth->tx_napi);
++		netif_napi_del(&eth->rx_napi);
++		free_netdev(eth->dummy_dev);
++		mtk_mdio_cleanup(eth);
++		mtk_wed_exit();
++		mtk_hw_deinit(eth);
++		return;
++	}
++
+ 	/* stop all devices to make sure that dma is properly shut down */
+ 	for (i = 0; i < MTK_MAX_DEVS; i++) {
+ 		if (!eth->netdev[i])
+@@ -6115,6 +6355,27 @@ static const struct mtk_soc_data rt5350_
+ 	},
+ };
+ 
++static const struct mtk_soc_data mt7620_data = {
++	.reg_map = &mt7620_reg_map,
++	.caps = MT7620_CAPS,
++	.required_pctl = false,
++	.version = 1,
++	.tx = {
++		DESC_SIZE(struct mtk_tx_dma),
++		.dma_max_len = MTK_TX_DMA_BUF_LEN,
++		.dma_len_offset = 16,
++		.dma_size = MTK_DMA_SIZE(256),
++	},
++	.rx = {
++		DESC_SIZE(struct mtk_rx_dma),
++		.irq_done_mask = MTK_RX_DONE_INT,
++		.dma_l4_valid = MT7620_RX_DMA_L4_VALID,
++		.dma_max_len = MTK_TX_DMA_BUF_LEN,
++		.dma_len_offset = 16,
++		.dma_size = MTK_DMA_SIZE(256),
++	},
++};
++
+ const struct of_device_id of_mtk_match[] = {
+ 	{ .compatible = "mediatek,mt2701-eth", .data = &mt2701_data },
+ 	{ .compatible = "mediatek,mt7621-eth", .data = &mt7621_data },
+@@ -6124,6 +6385,7 @@ const struct of_device_id of_mtk_match[]
+ 	{ .compatible = "mediatek,mt7981-eth", .data = &mt7981_data },
+ 	{ .compatible = "mediatek,mt7986-eth", .data = &mt7986_data },
+ 	{ .compatible = "mediatek,mt7988-eth", .data = &mt7988_data },
++	{ .compatible = "mediatek,mt7620-eth-upstream", .data = &mt7620_data },
+ 	{ .compatible = "ralink,rt5350-eth", .data = &rt5350_data },
+ 	{},
+ };
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
+@@ -1000,6 +1000,7 @@ enum mkt_eth_capabilities {
+ 	MTK_SHARED_INT_BIT,
+ 	MTK_TRGMII_MT7621_CLK_BIT,
+ 	MTK_QDMA_BIT,
++	MTK_SOC_MT7620_BIT,
+ 	MTK_SOC_MT7628_BIT,
+ 	MTK_RSTCTRL_PPE1_BIT,
+ 	MTK_RSTCTRL_PPE2_BIT,
+@@ -1047,6 +1048,7 @@ enum mkt_eth_capabilities {
+ #define MTK_SHARED_INT		BIT_ULL(MTK_SHARED_INT_BIT)
+ #define MTK_TRGMII_MT7621_CLK	BIT_ULL(MTK_TRGMII_MT7621_CLK_BIT)
+ #define MTK_QDMA		BIT_ULL(MTK_QDMA_BIT)
++#define MTK_SOC_MT7620		BIT_ULL(MTK_SOC_MT7620_BIT)
+ #define MTK_SOC_MT7628		BIT_ULL(MTK_SOC_MT7628_BIT)
+ #define MTK_RSTCTRL_PPE1	BIT_ULL(MTK_RSTCTRL_PPE1_BIT)
+ #define MTK_RSTCTRL_PPE2	BIT_ULL(MTK_RSTCTRL_PPE2_BIT)
+@@ -1143,6 +1145,8 @@ enum mkt_eth_capabilities {
+ #define MT7623_CAPS  (MTK_GMAC1_RGMII | MTK_GMAC1_TRGMII | MTK_GMAC2_RGMII | \
+ 		      MTK_QDMA)
+ 
++#define MT7620_CAPS  (MTK_SHARED_INT | MTK_SOC_MT7620)
++
+ #define MT7628_CAPS  (MTK_SHARED_INT | MTK_SOC_MT7628)
+ 
+ #define MT7629_CAPS  (MTK_GMAC1_SGMII | MTK_GMAC2_SGMII | MTK_GMAC2_GEPHY | \
+@@ -1172,6 +1176,7 @@ struct mtk_tx_dma_desc_info {
+ 	u32		size;
+ 	u16		vlan_tci;
+ 	u16		qid;
++	u8		port_map;
+ 	u8		gso:1;
+ 	u8		csum:1;
+ 	u8		vlan:1;
+@@ -1361,6 +1366,8 @@ struct mtk_eth {
+ 	dma_addr_t			phy_scratch_ring;
+ 	void				*scratch_head[MTK_FQ_DMA_HEAD];
+ 	struct clk			*clks[MTK_CLK_MAX];
++	struct reset_control		*rst_fe;
++	struct reset_control		*rst_esw;
+ 
+ 	struct mii_bus			*mii_bus;
+ 	unsigned int			mdc_divider;
