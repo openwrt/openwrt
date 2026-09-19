@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: GPL-2.0-or-later OR BSD-2-Clause
+
+rootfs_prepare() {
+	case "$(board_name)" in
+	vsol,v2901q-a | vsol,v2902a-s)
+		local mtd_num ubi_dev
+
+		mtd_num=$(find_mtd_index "rootfs_data")
+
+		if [ -n "$mtd_num" ] && [ "$(cat /sys/class/ubi/ubi1/mtd_num)" = "$mtd_num" ]; then
+			if ! ubinfo "/dev/ubi1" -N "rootfs_data" >/dev/null 2>&1; then
+				echo 'Creating "rootfs_data" UBI volume'
+				ubimkvol "/dev/ubi1" -m -n 0 -N "rootfs_data"
+				ubi_dev=$(cat "/sys/class/ubi/ubi1_0/dev")
+				mknod -m 0600 "/dev/ubi1_0" c "${ubi_dev%%:*}" "${ubi_dev##*:}"
+			fi
+		fi
+		;;
+	esac
+}
+
+boot_hook_add preinit_main rootfs_prepare
