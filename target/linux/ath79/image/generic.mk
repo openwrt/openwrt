@@ -2098,9 +2098,11 @@ define Device/mercury_mw4530r-v1
   DEVICE_VENDOR := Mercury
   DEVICE_MODEL := MW4530R
   DEVICE_VARIANT := v1
-  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport -swconfig
   TPLINK_HWID := 0x45300001
   SUPPORTED_DEVICES += tl-wdr4300
+  DEVICE_COMPAT_VERSION := 1.1
+  DEVICE_COMPAT_MESSAGE := Config cannot be migrated from swconfig to DSA
 endef
 TARGET_DEVICES += mercury_mw4530r-v1
 
