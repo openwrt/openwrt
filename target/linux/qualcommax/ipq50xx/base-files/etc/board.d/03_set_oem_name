@@ -7,7 +7,8 @@ ipq50xx_set_oem_name()
 {
 	local board="$1"
 	case $board in
-	glinet,gl-b3000)
+	glinet,gl-b3000|\
+	glinet,gl-x2000)
 		oem_name=${board#*-}
 		echo "$oem_name"  > "$oem_file"
 		;;
