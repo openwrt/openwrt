@@ -1,0 +1,36 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Josef Schlehofer <pepe.schlehofer@gmail.com>
+Date: Sat, 16 Aug 2026 00:30:00 +0200
+Subject: [PATCH] powerpc: dts: turris1x: ignore the SD card write-protect
+
+The Turris 1.x has a microSD slot, so there is no write-protect
+contact at all, and the eSDHC WP input is left floating. Without
+"disable-wp" the fsl-esdhc driver reads the write-protect state from
+the WPSPL bit, which then depends on the floating pin: the very same
+card comes up read-write on one boot and read-only on another, and on
+the read-only boots the overlay cannot be mounted and the system loses
+its configuration.
+
+Tell the mmc core to ignore the write-protect state.
+
+Other boards with the same kind of slot solve this the same way: the
+CZ.NIC Turris MOX describes its WP input with "wp-inverted" in
+armada-3720-turris-mox.dts, and the imx8mp-phyboard-pollux added
+"disable-wp" for an unconnected WP line in commit "arm64: dts:
+imx8mp-phyboard-pollux: Disable write-protect on SD card".
+
+Signed-off-by: Josef Schlehofer <pepe.schlehofer@gmail.com>
+---
+ arch/powerpc/boot/dts/turris1x.dts | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/arch/powerpc/boot/dts/turris1x.dts
++++ b/arch/powerpc/boot/dts/turris1x.dts
+@@ -248,6 +248,7 @@
+ 		sdhc@2e000 {
+ 			bus-width = <4>;
+ 			cd-gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
++			disable-wp;
+ 		};
+ 	};
+ 
