@@ -600,9 +600,12 @@ define Device/tplink_tl-wdr3600-v1
   SOC := ar9344
   DEVICE_MODEL := TL-WDR3600
   DEVICE_VARIANT := v1
-  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport -swconfig \
+	kmod-dsa-qca8k kmod-phy-qca83xx
   TPLINK_HWID := 0x36000001
   SUPPORTED_DEVICES += tl-wdr4300
+  DEVICE_COMPAT_VERSION := 1.1
+  DEVICE_COMPAT_MESSAGE := Config cannot be migrated from swconfig to DSA
 endef
 TARGET_DEVICES += tplink_tl-wdr3600-v1
 
@@ -611,9 +614,12 @@ define Device/tplink_tl-wdr4300-v1
   SOC := ar9344
   DEVICE_MODEL := TL-WDR4300
   DEVICE_VARIANT := v1
-  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport -swconfig \
+	kmod-dsa-qca8k kmod-phy-qca83xx
   TPLINK_HWID := 0x43000001
   SUPPORTED_DEVICES += tl-wdr4300
+  DEVICE_COMPAT_VERSION := 1.1
+  DEVICE_COMPAT_MESSAGE := Config cannot be migrated from swconfig to DSA
 endef
 TARGET_DEVICES += tplink_tl-wdr4300-v1
 
@@ -622,9 +628,12 @@ define Device/tplink_tl-wdr4300-v1-il
   SOC := ar9344
   DEVICE_MODEL := TL-WDR4300
   DEVICE_VARIANT := v1 (IL)
-  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport -swconfig \
+	kmod-dsa-qca8k kmod-phy-qca83xx
   TPLINK_HWID := 0x43008001
   SUPPORTED_DEVICES += tl-wdr4300
+  DEVICE_COMPAT_VERSION := 1.1
+  DEVICE_COMPAT_MESSAGE := Config cannot be migrated from swconfig to DSA
 endef
 TARGET_DEVICES += tplink_tl-wdr4300-v1-il
 
@@ -633,9 +642,12 @@ define Device/tplink_tl-wdr4310-v1
   SOC := ar9344
   DEVICE_MODEL := TL-WDR4310
   DEVICE_VARIANT := v1
-  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport -swconfig \
+	kmod-dsa-qca8k kmod-phy-qca83xx
   TPLINK_HWID := 0x43100001
   SUPPORTED_DEVICES += tl-wdr4300
+  DEVICE_COMPAT_VERSION := 1.1
+  DEVICE_COMPAT_MESSAGE := Config cannot be migrated from swconfig to DSA
 endef
 TARGET_DEVICES += tplink_tl-wdr4310-v1
 
