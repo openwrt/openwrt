@@ -97,9 +97,7 @@ HOST_CONFIGURE_ARGS = \
 	--localstatedir=$(HOST_BUILD_PREFIX)/var \
 	--sbindir=$(HOST_BUILD_PREFIX)/bin
 
-ifneq ($(YEAR_2038),y)
-  HOST_CONFIGURE_ARGS += --disable-year2038
-endif
+HOST_CONFIGURE_ARGS += $(if $(filter y,$(YEAR_2038)),,--disable-year2038)
 
 HOST_MAKE_VARS = \
 	CFLAGS="$(HOST_CFLAGS)" \
