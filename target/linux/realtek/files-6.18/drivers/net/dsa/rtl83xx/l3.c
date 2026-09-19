@@ -1576,9 +1576,7 @@ static int otto_l3_fib_notifier(struct notifier_block *this, unsigned long event
 	struct otto_l3_fib_event_work *fib_work;
 	struct fib_notifier_info *info = ptr;
 
-	if ((info->family != AF_INET && info->family != AF_INET6 &&
-	     info->family != RTNL_FAMILY_IPMR &&
-	     info->family != RTNL_FAMILY_IP6MR))
+	if (info->family != AF_INET && info->family != AF_INET6)
 		return NOTIFY_DONE;
 
 	/* ignore FIB events for HW with missing L3 offloading implementation */
