@@ -165,7 +165,8 @@ define Device/tplink_archer-xr500v-v1
   IMAGE/sysupgrade.bin := append-kernel | \
     fit none $$(KDIR)/image-$$(DEVICE_DTS).dtb external-static-with-rootfs | \
     append-metadata
-  DEVICE_PACKAGES := kmod-usb3 fitblk uboot-envtools omci-agent
+  DEVICE_PACKAGES := kmod-usb3 kmod-mt7603 kmod-mt76x2 wpad-basic-mbedtls \
+    fitblk uboot-envtools omci-agent
 endef
 TARGET_DEVICES += tplink_archer-xr500v-v1
 

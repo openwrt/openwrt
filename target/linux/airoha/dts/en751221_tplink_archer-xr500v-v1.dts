@@ -353,3 +353,66 @@
 	mediatek,u3p-dis-msk = <0x1>;
 	status = "okay";
 };
+
+/* PCIe port 0 carries the MT7603 (2.4 GHz). It only enumerates with the
+ * vendor config-TLP format and a second reset after the PHY comes up, both
+ * opt-in in pcie-mediatek (airoha/kernel). Port 1 carries the MT7662 (5 GHz).
+ */
+&pcie0 {
+	status = "okay";
+	econet,en751221-port0-quirks;
+};
+
+&slot0 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+
+		/*
+		 * MT7603 expects a 1 KiB EEPROM. mt76 zero-initializes that
+		 * buffer before copying this compact 256-byte non-zero prefix;
+		 * valid calibration-free fields are then merged from eFuse.
+		 */
+		mediatek,eeprom-data = [
+			03 76 00 00 02 76 03 50 00 01 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00 00 00 00 22 00 00 00 00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00 00 00 00 00 b8 40 c8 20 00 00 00 40 c8 20 00
+			00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			05 00 00 00 a4 00 00 88 00 00 00 00 00 00 00 00
+		];
+		mediatek,eeprom-merge-otp;
+		/* The panel Wi-Fi LED hangs off the chip's GPIO12/13 pads. */
+		mediatek,gpio-led;
+		nvmem-cells = <&macaddr_misc_f100 1>;
+		nvmem-cell-names = "mac-address";
+	};
+};
+
+&pcie1 {
+	status = "okay";
+};
+
+&slot1 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&eeprom_misc_e0000>, <&macaddr_misc_f100 2>;
+		nvmem-cell-names = "eeprom", "mac-address";
+
+		led {
+			led-sources = <2>;
+			led-active-low;
+		};
+	};
+};
