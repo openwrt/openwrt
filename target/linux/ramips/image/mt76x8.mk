@@ -233,6 +233,19 @@ define Device/cudy_lt500-outdoor-v1
 endef
 TARGET_DEVICES += cudy_lt500-outdoor-v1
 
+define Device/cudy_lt500-v2
+  IMAGE_SIZE := 15872k
+  DEVICE_VENDOR := Cudy
+  DEVICE_MODEL := LT500
+  DEVICE_VARIANT := v2
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-net-qmi-wwan \
+	kmod-usb-serial-option modemmanager \
+	kmod-mt7615e kmod-mt7663-firmware-ap
+  UIMAGE_NAME := R25
+  SUPPORTED_DEVICES += R25
+endef
+TARGET_DEVICES += cudy_lt500-v2
+
 define Device/cudy_m1200-v1
   IMAGE_SIZE := 15872k
   DEVICE_VENDOR := Cudy
