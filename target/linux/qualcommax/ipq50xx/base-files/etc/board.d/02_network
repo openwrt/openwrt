@@ -18,6 +18,7 @@ ipq50xx_setup_interfaces()
 	glinet,gl-b3000)
 		ucidef_set_interfaces_lan_wan "lan1 lan2" "wan"
 		;;
+	avm,fritzbox-4050|\
 	cmcc,mr3000d-ci|\
 	linksys,mx2000|\
 	linksys,mx5500|\
@@ -45,8 +46,17 @@ ipq50xx_setup_macs()
 {
 	local board="$1"
 	local label_mac=""
+	local lan_mac=""
+	local wan_mac=""
 
 	case $board in
+	avm,fritzbox-4050)
+		wan_mac=$(cat /proc/device-tree/chosen/macdsl)
+		lan_mac=$(cat /proc/device-tree/chosen/maca)
+		ucidef_set_interface_macaddr "wan" $wan_mac
+		ucidef_set_interface_macaddr "lan" $lan_mac
+		ucidef_set_label_macaddr "$lan_mac"
+		;;
 	tplink,archer-ax55-v1)
 		# factory MAC is 6 raw bytes in tp_data/default-mac, mounted
 		# read-only during preinit (see lib/preinit/09_mount_tp_data)
