@@ -585,9 +585,9 @@ sub gen_package_auxiliary() {
 		}
 		my %depends;
 		foreach my $dep (@{$pkg->{depends} || []}) {
-			if ($dep =~ m!^\+?(?:[^:]+:)?([^@]+)$!) {
-				$depends{$1}++;
-			}
+			next unless $dep =~ m!^\+?(?:([^:]+):)?([^@]+)$!;
+			my ($condition, $depname) = ($1, $2);
+			$depends{get_conditional_dep($condition, $depname)}++;
 		}
 		my @depends = sort keys %depends;
 		if (@depends > 0) {
