@@ -369,7 +369,7 @@ platform_do_upgrade() {
 		CI_UBIPART="$(cmdline_get_var ubi.mtd)"
 		nand_do_upgrade "$1"
 		;;
-	nradio,c8-668gl)
+	nradio,c8-668gl|benton,sn-r1)
 		CI_DATAPART="rootfs_data"
 		CI_KERNPART="kernel_2nd"
 		CI_ROOTPART="rootfs_2nd"
@@ -471,7 +471,7 @@ platform_check_image() {
 	creatlentem,clt-r30b1|\
 	creatlentem,clt-r30b1-112m|\
 	hiveton,h5000m|\
-	nradio,c8-668gl)
+	nradio,c8-668gl|benton,sn-r1)
 		# tar magic `ustar`
 		magic="$(dd if="$1" bs=1 skip=257 count=5 2>/dev/null)"
 

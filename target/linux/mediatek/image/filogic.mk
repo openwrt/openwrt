@@ -181,8 +181,6 @@ define Device/acelink_ew-7886cax
   PAGESIZE := 2048
   IMAGE_SIZE := 65536k
   KERNEL_IN_UBI := 1
-  IMAGES += factory.bin
-  IMAGE/factory.bin := append-ubi | check-size $$$$(IMAGE_SIZE)
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += acelink_ew-7886cax
@@ -283,8 +281,6 @@ define Device/alwaylink_m01k43
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   IMAGE_SIZE := 57344k
-  IMAGES += factory.bin
-  IMAGE/factory.bin := append-ubi | check-size $$$$(IMAGE_SIZE)
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += alwaylink_m01k43
@@ -300,8 +296,6 @@ define Device/asiarf_ap7986-003
   PAGESIZE := 2048
   IMAGE_SIZE := 65536k
   KERNEL_IN_UBI := 1
-  IMAGES += factory.bin
-  IMAGE/factory.bin := append-ubi | check-size $$$$(IMAGE_SIZE)
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += asiarf_ap7986-003
@@ -964,7 +958,6 @@ define Device/cetron_ct3003
   PAGESIZE := 2048
   KERNEL_IN_UBI := 1
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
-  IMAGES += factory.bin
   IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | cetron-header rd30 CT3003
 endef
 TARGET_DEVICES += cetron_ct3003
@@ -985,8 +978,6 @@ define Device/cmcc_a10-stock
   PAGESIZE := 2048
   IMAGE_SIZE := 65536k
   KERNEL_IN_UBI := 1
-  IMAGES += factory.bin
-  IMAGE/factory.bin := append-ubi | check-size $$$$(IMAGE_SIZE)
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += cmcc_a10-stock
@@ -1087,7 +1078,6 @@ define Device/comfast_cf-e393ax
   IMAGE_SIZE := 65536k
   KERNEL_IN_UBI := 1
   IMAGES := sysupgrade.bin factory.bin
-  IMAGE/factory.bin := append-ubi | check-size $$$$(IMAGE_SIZE)
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += comfast_cf-e393ax
@@ -1825,7 +1815,6 @@ define Device/edgecore_eap111
   KERNEL_IN_UBI := 1
   IMAGE_SIZE := 65536k
   IMAGES := sysupgrade.bin factory.bin
-  IMAGE/factory.bin := append-ubi | check-size $$$$(IMAGE_SIZE)
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
 endef
@@ -1836,7 +1825,6 @@ define Device/elecom_wrc-x3000gs3
   DEVICE_MODEL := WRC-X3000GS3
   DEVICE_DTS := mt7981b-elecom-wrc-x3000gs3
   DEVICE_DTS_DIR := ../dts
-  IMAGES += factory.bin
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   IMAGE/factory.bin := sysupgrade-tar | mstc-header 5.04(XZQ.0)b90 COMD | \
 	elecom-product-header WRC-X3000GS3
@@ -1850,7 +1838,6 @@ define Device/elecom_wrc-x6000gsd
   DEVICE_DTS := mt7986b-elecom-wrc-x6000gsd
   DEVICE_DTS_DIR := ../dts
   DEVICE_DTS_LOADADDR := 0x47000000
-  IMAGES += factory.bin
   IMAGE/factory.bin := sysupgrade-tar | mstc-header 5.04(XZR.0)b90 YTC@ | \
 	elecom-product-header WRC-X6000GS
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
@@ -1864,7 +1851,6 @@ define Device/elecom_wrc-x6000qs
   DEVICE_DTS := mt7986b-elecom-wrc-x6000qs
   DEVICE_DTS_DIR := ../dts
   DEVICE_DTS_LOADADDR := 0x47000000
-  IMAGES += factory.bin
   IMAGE/factory.bin := sysupgrade-tar | mstc-header 5.04(XZL.0)b90 COMD | \
 	elecom-product-header WRC-X6000QS
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
@@ -1993,7 +1979,6 @@ define Device/glinet_gl-mt6000
   DEVICE_DTS := mt7986a-glinet-gl-mt6000
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := e2fsprogs f2fsck mkf2fs kmod-usb3 kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware
-  IMAGES += factory.bin
   IMAGE/factory.bin := append-kernel | pad-to 32M | append-rootfs
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-gl-metadata
   ARTIFACTS := preloader.bin bl31-uboot.fip
@@ -2008,7 +1993,6 @@ define Device/glinet_gl-x3000-xe3000-common
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware mkf2fs \
     kmod-fs-f2fs kmod-hwmon-pwmfan kmod-usb3 kmod-usb-serial-option \
     kmod-usb-storage kmod-usb-net-qmi-wwan uqmi
-  IMAGES += factory.bin
   IMAGE/factory.bin := append-kernel | pad-to 32M | append-rootfs
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   ARTIFACTS := preloader.bin bl31-uboot.fip
@@ -2382,7 +2366,6 @@ define Device/keenetic_kap-630-common
   KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb | \
 	append-squashfs4-fakeroot
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
-  IMAGES += factory.bin
   IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | \
 	append-ubi | check-size | zyimage -d $$(ZYIMAGE_ID) -v "$$(DEVICE_MODEL)"
 endef
@@ -2409,7 +2392,6 @@ define Device/keenetic_kn-1812-common
   KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb | \
 	append-squashfs4-fakeroot
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
-  IMAGES += factory.bin
   IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | \
 	append-ubi | check-size | zyimage -d $$(ZYIMAGE_ID) -v "$$(DEVICE_MODEL)"
 endef
@@ -2436,7 +2418,6 @@ define Device/keenetic_kn-3711
   IMAGE_SIZE := 108544k
   KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb | \
 	append-squashfs4-fakeroot
-  IMAGES += factory.bin
   IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | \
 	append-ubi | check-size | zyimage -d 0x803711 -v "KN-3711"
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
@@ -2456,7 +2437,6 @@ define Device/keenetic_kn-3811
   IMAGE_SIZE := 233984k
   KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb | \
 	append-squashfs4-fakeroot
-  IMAGES += factory.bin
   IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | \
 	append-ubi | check-size | zyimage -d 0x803811 -v "KN-3811"
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
@@ -2476,7 +2456,6 @@ define Device/keenetic_kn-3911
   IMAGE_SIZE := 108544k
   KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb | \
 	append-squashfs4-fakeroot
-  IMAGES += factory.bin
   IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | \
 	append-ubi | check-size | zyimage -d 0x803911 -v "KN-3911"
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
@@ -2605,8 +2584,6 @@ define Device/mediatek_mt7986a-rfb-nand
   PAGESIZE := 2048
   IMAGE_SIZE := 65536k
   KERNEL_IN_UBI := 1
-  IMAGES += factory.bin
-  IMAGE/factory.bin := append-ubi | check-size $$$$(IMAGE_SIZE)
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += mediatek_mt7986a-rfb-nand
@@ -2623,8 +2600,6 @@ define Device/mediatek_mt7986b-rfb
   PAGESIZE := 2048
   IMAGE_SIZE := 65536k
   KERNEL_IN_UBI := 1
-  IMAGES += factory.bin
-  IMAGE/factory.bin := append-ubi | check-size $$$$(IMAGE_SIZE)
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += mediatek_mt7986b-rfb
@@ -3157,8 +3132,6 @@ define Device/openembed_som7981
   PAGESIZE := 2048
   IMAGE_SIZE := 244224k
   KERNEL_IN_UBI := 1
-  IMAGES += factory.bin
-  IMAGE/factory.bin := append-ubi | check-size $$$$(IMAGE_SIZE)
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += openembed_som7981
@@ -3388,8 +3361,6 @@ define Device/teltonika_rutc50
   UBINIZE_OPTS := -E 5
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware kmod-usb3 kmod-usb-net-qmi-wwan \
   kmod-usb-serial-option kmod-gpio-nxp-74hc164 uqmi
-  IMAGES += factory.bin
-  IMAGE/factory.bin := append-ubi | append-teltonika-metadata
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += teltonika_rutc50
@@ -3405,8 +3376,6 @@ define Device/tenbay_wr3000k
   PAGESIZE := 2048
   IMAGE_SIZE := 49152k
   KERNEL_IN_UBI := 1
-  IMAGES += factory.bin
-  IMAGE/factory.bin := append-ubi | check-size $$$$(IMAGE_SIZE)
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += tenbay_wr3000k
@@ -3553,8 +3522,6 @@ define Device/tplink_eap683-lr
   PAGESIZE := 2048
   IMAGE_SIZE := 39424k
   KERNEL_IN_UBI := 1
-  IMAGES += factory.bin
-  IMAGE/factory.bin := append-ubi | check-size $$$$(IMAGE_SIZE)
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += tplink_eap683-lr
@@ -3597,7 +3564,6 @@ define Device/tplink_fr365-v1
   PAGESIZE := 2048
   IMAGE_SIZE := 32768k
   KERNEL_IN_UBI := 1
-  IMAGES += factory.bin
   KERNEL_INITRAMFS := kernel-bin | lzma | \
 	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
   IMAGE/factory.ubi := append-ubi | check-size $$$$(IMAGE_SIZE)
@@ -3753,7 +3719,6 @@ define Device/wavlink_wl-wn586x3b
   KERNEL_IN_UBI := 1
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
   IMAGES := factory.bin initramfs-kernel.bin sysupgrade.bin
-  IMAGE/factory.bin := append-ubi | check-size $$(IMAGE_SIZE)
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += wavlink_wl-wn586x3b
@@ -4001,8 +3966,6 @@ define Device/zbtlink_zbt-z8102ax
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   IMAGE_SIZE := 65536k
-  IMAGES += factory.bin
-  IMAGE/factory.bin := append-ubi | check-size $$(IMAGE_SIZE)
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += zbtlink_zbt-z8102ax
@@ -4018,8 +3981,6 @@ define Device/zbtlink_zbt-z8102ax-v2
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   IMAGE_SIZE := 65536k
-  IMAGES += factory.bin
-  IMAGE/factory.bin := append-ubi | check-size $$(IMAGE_SIZE)
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   DEVICE_COMPAT_VERSION := 1.1
   DEVICE_COMPAT_MESSAGE := Partition layout has been changed to fit the bootloader
@@ -4037,8 +3998,6 @@ define Device/zbtlink_zbt-z8103ax
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   IMAGE_SIZE := 65536k
-  IMAGES += factory.bin
-  IMAGE/factory.bin := append-ubi | check-size $$(IMAGE_SIZE)
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += zbtlink_zbt-z8103ax
@@ -4056,8 +4015,6 @@ define Device/zbtlink_zbt-z8103ax-c
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   IMAGE_SIZE := 65536k
-  IMAGES += factory.bin
-  IMAGE/factory.bin := append-ubi | check-size $$(IMAGE_SIZE)
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += zbtlink_zbt-z8103ax-c
@@ -4074,8 +4031,6 @@ define Device/zbtlink_zbt-z8105ax-c
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   IMAGE_SIZE := 65536k
-  IMAGES += factory.bin
-  IMAGE/factory.bin := append-ubi | check-size $$(IMAGE_SIZE)
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += zbtlink_zbt-z8105ax-c
@@ -4092,8 +4047,6 @@ define Device/zbtlink_zbt-z8106ax-s
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   IMAGE_SIZE := 65536k
-  IMAGES += factory.bin
-  IMAGE/factory.bin := append-ubi | check-size $$(IMAGE_SIZE)
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += zbtlink_zbt-z8106ax-s
@@ -4112,8 +4065,6 @@ define Device/zbtlink_zbt-z8106ax-t
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   IMAGE_SIZE := 65536k
-  IMAGES += factory.bin
-  IMAGE/factory.bin := append-ubi | check-size $$(IMAGE_SIZE)
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += zbtlink_zbt-z8106ax-t
@@ -4151,8 +4102,6 @@ define Device/zyxel_ex5601-t0-stock
   PAGESIZE := 4096
   IMAGE_SIZE := 65536k
   KERNEL_IN_UBI := 1
-  IMAGES += factory.bin
-  IMAGE/factory.bin := append-ubi | check-size $$$$(IMAGE_SIZE)
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += zyxel_ex5601-t0-stock
@@ -4218,8 +4167,6 @@ define Device/zyxel_nwa50ax-pro
   PAGESIZE := 2048
   IMAGE_SIZE := 51200k
   KERNEL_IN_UBI := 1
-  IMAGES += factory.bin
-  IMAGE/factory.bin := append-ubi | check-size $$$$(IMAGE_SIZE) | zyxel-nwa-fit-filogic
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += zyxel_nwa50ax-pro
@@ -4249,3 +4196,16 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 endif
 endef
 TARGET_DEVICES += zyxel_wx5600-t0-ubootmod
+
+define Device/benton_sn-r1
+  DEVICE_VENDOR := Benton
+  DEVICE_MODEL := SN-R1
+  DEVICE_DTS := mt7981b-benton-sn-r1
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware \
+		e2fsprogs f2fs-tools kmod-nvme losetup mmc-utils
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+		fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += benton_sn-r1
