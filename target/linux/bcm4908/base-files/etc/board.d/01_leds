@@ -1,0 +1,23 @@
+#!/bin/sh
+
+. /lib/functions/leds.sh
+. /lib/functions/uci-defaults.sh
+
+board=$(board_name)
+
+board_config_update
+
+case $board in
+tplink,archer-c2300-v1)
+	ucidef_set_led_default "power" "Power" "blue:power" "1"
+	ucidef_set_led_default "backlight" "Backlight" "white:backlight" "1"
+	ucidef_set_led_default "wan-amber" "No WAN" "amber:wan" "1"
+	ucidef_set_led_netdev "wan-blue" "WAN Connected" "blue:wan" "wan" "link"
+	ucidef_set_led_netdev "lan" "LAN Connected" "blue:lan" "br-lan" "link"
+	ucidef_set_led_netdev "5ghz" "WiFi 5GHz Enabled" "blue:5ghz" "phy0-ap0" "link"
+	;;
+esac
+
+board_config_flush
+
+exit 0
