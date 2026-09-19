@@ -101,7 +101,7 @@ define stampfile
 
   .PRECIOUS: $$($(1)/stamp-$(3)) # work around a make bug
 
-  $(1)//clean:=$(1)/stamp-$(3)/clean
+  $(1)//clean+=$(1)/stamp-$(3)/clean
   $(1)/stamp-$(3)/clean: FORCE
 	@rm -f $$($(1)/stamp-$(3))
 
