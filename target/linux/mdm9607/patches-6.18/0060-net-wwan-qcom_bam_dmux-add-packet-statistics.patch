@@ -1,0 +1,60 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitry Sinyavin <sinyavin@gmail.com>
+Date: Sat, 22 Aug 2026 14:00:00 +0200
+Subject: [PATCH] net: wwan: qcom_bam_dmux: account network packets
+
+The BAM-DMUX data path does not update the network device packet and byte
+counters.  As a result, userspace sees zero traffic even while packets are
+being transferred.
+
+Use the standard per-CPU software statistics helpers.  Account transmitted
+packets after their DMA completion and received packets after removing the
+BAM-DMUX header and padding.
+
+Signed-off-by: Dmitry Sinyavin <sinyavin@gmail.com>
+---
+ drivers/net/wwan/qcom_bam_dmux.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+--- a/drivers/net/wwan/qcom_bam_dmux.c
++++ b/drivers/net/wwan/qcom_bam_dmux.c
+@@ -181,8 +181,15 @@ static void bam_dmux_tx_callback(void *d
+ {
+ 	struct bam_dmux_skb_dma *skb_dma = data;
+ 	struct sk_buff *skb = skb_dma->skb;
++	struct net_device *netdev = skb->dev;
++	unsigned int len = 0;
++
++	if (netdev)
++		len = ((struct bam_dmux_hdr *)skb->data)->len;
+ 
+ 	bam_dmux_tx_done(skb_dma);
++	if (netdev)
++		dev_sw_netstats_tx_add(netdev, 1, len);
+ 	dev_consume_skb_any(skb);
+ }
+ 
+@@ -407,6 +414,7 @@ static const struct net_device_ops bam_d
+ 	.ndo_open	= bam_dmux_netdev_open,
+ 	.ndo_stop	= bam_dmux_netdev_stop,
+ 	.ndo_start_xmit	= bam_dmux_netdev_start_xmit,
++	.ndo_get_stats64	= dev_get_tstats64,
+ };
+ 
+ static const struct device_type wwan_type = {
+@@ -426,6 +434,7 @@ static void bam_dmux_netdev_setup(struct
+ 	dev->needed_headroom = sizeof(struct bam_dmux_hdr);
+ 	dev->needed_tailroom = sizeof(u32); /* word-aligned */
+ 	dev->tx_queue_len = DEFAULT_TX_QUEUE_LEN;
++	dev->pcpu_stat_type = NETDEV_PCPU_STAT_TSTATS;
+ 
+ 	/* This perm addr will be used as interface identifier by IPv6 */
+ 	dev->addr_assign_type = NET_ADDR_RANDOM;
+@@ -542,6 +551,7 @@ static void bam_dmux_cmd_data(struct bam
+ 		break;
+ 	}
+ 
++	dev_sw_netstats_rx_add(netdev, skb->len);
+ 	netif_receive_skb(skb);
+ }
+ 

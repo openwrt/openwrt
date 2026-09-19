@@ -1,0 +1,80 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitry Sinyavin <sinyavin@gmail.com>
+Date: Fri, 14 Aug 2026 20:00:00 +0200
+Subject: [PATCH] usb: chipidea: qcom: add MDM9607 peripheral session
+
+The selected ZTE MF283V factory DTB describes the USB controller as a
+peripheral whose VBUS state is supplied by the PMIC, together with
+qcom,dp-manual-pullup.  The downstream UDC translates a PMIC connect
+notification into the GENCONFIG2/USBCMD session-valid override before
+enabling the D+ pull-up.
+
+The mainline qcom ChipIdea glue already implements the same session-valid
+override for an extcon or role-switch source.  MDM9607 does not yet have
+the corresponding PM8019 USB extcon path in mainline, so the controller
+and UDC register but stay "not attached" even with a gadget bound.
+
+Add an MDM9607-specific compatible which selects the existing
+session-valid override and treats VBUS as active for this peripheral-only
+controller. This deliberately does not add host mode or VBUS sourcing. A
+future PM8019 VBUS provider can replace the fixed session state.
+
+Signed-off-by: Dmitry Sinyavin <sinyavin@gmail.com>
+---
+ .../devicetree/bindings/usb/ci-hdrc-usb2.yaml |  4 ++++
+ drivers/usb/chipidea/ci_hdrc_msm.c             | 12 +++++++++++-
+ 2 files changed, 15 insertions(+), 1 deletion(-)
+
+--- a/Documentation/devicetree/bindings/usb/ci-hdrc-usb2.yaml
++++ b/Documentation/devicetree/bindings/usb/ci-hdrc-usb2.yaml
+@@ -26,6 +26,9 @@ properties:
+           - nxp,s32g2-usb
+           - qcom,ci-hdrc
+       - items:
++          - const: qcom,mdm9607-ci-hdrc
++          - const: qcom,ci-hdrc
++      - items:
+           - enum:
+               - nvidia,tegra114-ehci
+               - nvidia,tegra124-ehci
+--- a/drivers/usb/chipidea/ci_hdrc_msm.c
++++ b/drivers/usb/chipidea/ci_hdrc_msm.c
+@@ -43,6 +43,7 @@ struct ci_hdrc_msm {
+ 	bool secondary_phy;
+ 	bool hsic;
+ 	void __iomem *base;
++	bool force_peripheral_session;
+ };
+ 
+ static int
+@@ -114,7 +115,8 @@ static int ci_hdrc_msm_notify_event(stru
+ 			hw_write_id_reg(ci, HS_PHY_GENCONFIG_2,
+ 					HS_PHY_ULPI_TX_PKT_EN_CLR_FIX, 0);
+ 
+-		if (!IS_ERR(ci->platdata->vbus_extcon.edev) || ci->role_switch) {
++		if (!IS_ERR(ci->platdata->vbus_extcon.edev) || ci->role_switch ||
++		    msm_ci->force_peripheral_session) {
+ 			hw_write_id_reg(ci, HS_PHY_GENCONFIG_2,
+ 					HS_PHY_SESS_VLD_CTRL_EN,
+ 					HS_PHY_SESS_VLD_CTRL_EN);
+@@ -190,6 +192,12 @@ static int ci_hdrc_msm_probe(struct plat
+ 	ci->pdata.flags	= CI_HDRC_REGS_SHARED | CI_HDRC_DISABLE_STREAMING |
+ 			  CI_HDRC_OVERRIDE_AHB_BURST |
+ 			  CI_HDRC_OVERRIDE_PHY_CONTROL;
++	ci->force_peripheral_session =
++		of_device_is_compatible(pdev->dev.of_node,
++					"qcom,mdm9607-ci-hdrc");
++	if (ci->force_peripheral_session)
++		ci->pdata.flags |= CI_HDRC_FORCE_VBUS_ACTIVE_ALWAYS;
++
+ 	ci->pdata.notify_event = ci_hdrc_msm_notify_event;
+ 
+ 	reset = devm_reset_control_get(&pdev->dev, "core");
+@@ -285,6 +293,7 @@ static void ci_hdrc_msm_remove(struct pl
+ }
+ 
+ static const struct of_device_id msm_ci_dt_match[] = {
++	{ .compatible = "qcom,mdm9607-ci-hdrc", },
+ 	{ .compatible = "qcom,ci-hdrc", },
+ 	{ }
+ };

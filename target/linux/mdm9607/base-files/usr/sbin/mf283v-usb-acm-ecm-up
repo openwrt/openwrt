@@ -1,0 +1,104 @@
+#!/bin/sh
+set -eu
+
+config_root=/sys/kernel/config
+gadget="$config_root/usb_gadget/mf283v"
+device_addr=02:00:00:96:07:01
+host_addr=02:00:00:96:07:02
+device_ip=192.168.7.1
+
+mkdir -p "$config_root"
+if ! grep -q " $config_root configfs " /proc/mounts; then
+	mount -t configfs configfs "$config_root"
+fi
+
+udc=
+for candidate in /sys/class/udc/*; do
+	[ -e "$candidate" ] || continue
+	udc=${candidate##*/}
+	break
+done
+if [ -z "$udc" ]; then
+	echo "No USB device controller is registered" >&2
+	exit 1
+fi
+
+if [ -d "$gadget" ]; then
+	bound=$(cat "$gadget/UDC" 2>/dev/null || :)
+	if [ -n "$bound" ]; then
+		echo "MF283V gadget is already bound to $bound"
+		exit 0
+	fi
+else
+	mkdir -p "$gadget"
+fi
+
+serial=$(sed -n \
+	's/.*androidboot.serialno=\([^ ]*\).*/\1/p' /proc/cmdline)
+[ -n "$serial" ] || serial=mf283v
+
+echo 0x1d6b > "$gadget/idVendor"
+echo 0x0104 > "$gadget/idProduct"
+echo 0x0100 > "$gadget/bcdDevice"
+echo 0x0200 > "$gadget/bcdUSB"
+
+mkdir -p "$gadget/strings/0x409"
+echo "$serial" > "$gadget/strings/0x409/serialnumber"
+echo "ZTE" > "$gadget/strings/0x409/manufacturer"
+echo "MF283V OpenWrt console and network" > "$gadget/strings/0x409/product"
+
+mkdir -p "$gadget/configs/c.1/strings/0x409"
+echo "CDC ACM console and CDC ECM network" \
+	> "$gadget/configs/c.1/strings/0x409/configuration"
+echo 120 > "$gadget/configs/c.1/MaxPower"
+
+mkdir -p "$gadget/functions/acm.usb0"
+if [ ! -d "$gadget/functions/ecm.usb0" ]; then
+	mkdir -p "$gadget/functions/ecm.usb0"
+	# Do not let an already-present physical eth0 influence selection.
+	echo 'usb%d' > "$gadget/functions/ecm.usb0/ifname"
+fi
+echo "$device_addr" > "$gadget/functions/ecm.usb0/dev_addr"
+echo "$host_addr" > "$gadget/functions/ecm.usb0/host_addr"
+
+if [ ! -e "$gadget/configs/c.1/acm.usb0" ]; then
+	(
+		cd "$gadget/configs/c.1"
+		ln -s ../../functions/acm.usb0 acm.usb0
+	)
+fi
+if [ ! -e "$gadget/configs/c.1/ecm.usb0" ]; then
+	(
+		cd "$gadget/configs/c.1"
+		ln -s ../../functions/ecm.usb0 ecm.usb0
+	)
+fi
+
+echo "$udc" > "$gadget/UDC"
+
+# Binding expands the configfs usb%d template to the actual name (usb0).
+network_if=$(cat "$gadget/functions/ecm.usb0/ifname")
+if [ -z "$network_if" ]; then
+	echo "ECM function did not report its network interface name" >&2
+	exit 1
+fi
+
+attempt=0
+while [ "$attempt" -lt 5 ]; do
+	[ -e "/sys/class/net/$network_if" ] && break
+	sleep 1
+	attempt=$((attempt + 1))
+done
+
+if [ ! -e "/sys/class/net/$network_if" ]; then
+	echo "Composite gadget bound, but ECM interface $network_if did not appear" >&2
+	exit 1
+fi
+
+ip addr replace "$device_ip/24" dev "$network_if"
+ip link set "$network_if" up
+
+echo "MF283V ACM+ECM gadget bound to $udc"
+echo "ACM endpoint: /dev/ttyGS0"
+echo "ECM endpoint: $network_if, $device_ip/24, device MAC $device_addr"
+echo "Configure the host ECM interface as 192.168.7.2/24."

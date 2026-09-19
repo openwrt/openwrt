@@ -1,0 +1,25 @@
+#!/bin/sh
+
+trap '' HUP
+
+lock_dir=/tmp/mf283v-openwrt-usb.lock
+if ! mkdir "$lock_dir" 2>/dev/null; then
+	echo "mf283v-openwrt: USB worker is already running"
+	exit 0
+fi
+trap 'rmdir "$lock_dir"' EXIT
+
+attempt=0
+until /usr/sbin/mf283v-usb-acm-ecm-up; do
+	attempt=$((attempt + 1))
+	echo "<4>mf283v: USB ACM+ECM attempt $attempt failed; retrying" \
+		> /dev/kmsg
+	sleep 1
+done
+
+# Do not open ttyGS0 here. The normal procd hotplug rules create /dev/ttyGS0
+# and start the matching askfirst action from /etc/inittab. Keeping gadget
+# setup and console ownership separate gives the endpoint exactly one reader
+# and also preserves the standard login/ttylogin policy.
+echo "<6>mf283v: USB ACM+ECM active; ttyGS0 owned by procd" \
+	> /dev/kmsg

@@ -1,0 +1,293 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitry Sinyavin <sinyavin@gmail.com>
+Date: Fri, 14 Aug 2026 20:00:00 +0200
+Subject: [PATCH] clk: qcom: add MDM9607 EMAC clocks
+
+The MDM9607 GCC exposes the clocks and reset controls required by the
+Qualcomm EMAC block and its SGMII PHY. Add the missing clock inputs,
+branches, source clocks and reset maps used by the ZTE MF283V.
+
+Signed-off-by: Dmitry Sinyavin <sinyavin@gmail.com>
+---
+--- a/Documentation/devicetree/bindings/clock/qcom,gcc-mdm9607.yaml
++++ b/Documentation/devicetree/bindings/clock/qcom,gcc-mdm9607.yaml
+@@ -26,14 +26,20 @@ properties:
+       - qcom,gcc-mdm9607
+ 
+   clocks:
++    minItems: 2
+     items:
+       - description: XO source
+       - description: Sleep clock source
++      - description: EMAC SGMII 125 MHz feedback clock
++      - description: EMAC SGMII TX feedback clock
+ 
+   clock-names:
++    minItems: 2
+     items:
+       - const: xo
+       - const: sleep_clk
++      - const: emac_0_125m_clk
++      - const: emac_0_tx_clk
+ 
+ required:
+   - compatible
+--- a/include/dt-bindings/clock/qcom,gcc-mdm9607.h
++++ b/include/dt-bindings/clock/qcom,gcc-mdm9607.h
+@@ -94,6 +94,17 @@
+ #define GCC_USB_HSIC_IO_CAL_CLK_SRC		85
+ #define GCC_USB_HSIC_SYSTEM_CLK_SRC		86
+ 
++#define EMAC_0_125M_CLK_SRC			87
++#define GCC_EMAC_0_AHB_CLK			88
++#define GCC_EMAC_0_AXI_CLK			89
++#define GCC_EMAC_0_125M_CLK			90
++#define EMAC_0_SYS_25M_CLK_SRC			91
++#define EMAC_0_TX_CLK_SRC			92
++#define GCC_EMAC_0_SYS_25M_CLK			93
++#define GCC_EMAC_0_TX_CLK			94
++#define GCC_EMAC_0_RX_CLK			95
++#define GCC_EMAC_0_SYS_CLK			96
++
+ /* Resets */
+ #define USB2_HS_PHY_ONLY_BCR			0
+ #define QUSB2_PHY_BCR					1
+--- a/drivers/clk/qcom/gcc-mdm9607.c
++++ b/drivers/clk/qcom/gcc-mdm9607.c
+@@ -31,6 +31,8 @@ enum {
+ 	P_GPLL1,
+ 	P_GPLL2,
+ 	P_SLEEP_CLK,
++	P_EMAC_0_125M_CLK,
++	P_EMAC_0_TX_CLK,
+ };
+ 
+ static struct clk_alpha_pll gpll0_early = {
+@@ -192,6 +194,85 @@ static struct clk_rcg2 apss_ahb_clk_src
+ 	},
+ };
+ 
++static const struct parent_map gcc_xo_emac_0_125m_map[] = {
++	{ P_XO, 0 },
++	{ P_EMAC_0_125M_CLK, 1 },
++};
++
++static const struct clk_parent_data gcc_xo_emac_0_125m[] = {
++	{ .fw_name = "xo" },
++	{ .fw_name = "emac_0_125m_clk" },
++};
++
++static const struct parent_map gcc_xo_emac_0_tx_map[] = {
++	{ P_XO, 0 },
++	{ P_EMAC_0_TX_CLK, 2 },
++};
++
++static const struct clk_parent_data gcc_xo_emac_0_tx[] = {
++	{ .fw_name = "xo" },
++	{ .fw_name = "emac_0_tx_clk" },
++};
++
++static const struct freq_tbl ftbl_emac_0_125m_clk_src[] = {
++	F(19200000, P_XO, 1, 0, 0),
++	F(25000000, P_EMAC_0_125M_CLK, 5, 0, 0),
++	F(125000000, P_EMAC_0_125M_CLK, 1, 0, 0),
++	{ }
++};
++
++static struct clk_rcg2 emac_0_125m_clk_src = {
++	.cmd_rcgr = 0x4e028,
++	.hid_width = 5,
++	.parent_map = gcc_xo_emac_0_125m_map,
++	.freq_tbl = ftbl_emac_0_125m_clk_src,
++	.clkr.hw.init = &(struct clk_init_data){
++		.name = "emac_0_125m_clk_src",
++		.parent_data = gcc_xo_emac_0_125m,
++		.num_parents = 2,
++		.ops = &clk_rcg2_ops,
++	},
++};
++
++static const struct freq_tbl ftbl_emac_0_sys_25m_clk_src[] = {
++	F(19200000, P_XO, 1, 0, 0),
++	F(25000000, P_EMAC_0_125M_CLK, 5, 0, 0),
++	F(125000000, P_EMAC_0_125M_CLK, 1, 0, 0),
++	{ }
++};
++
++static struct clk_rcg2 emac_0_sys_25m_clk_src = {
++	.cmd_rcgr = 0x4e03c,
++	.hid_width = 5,
++	.parent_map = gcc_xo_emac_0_125m_map,
++	.freq_tbl = ftbl_emac_0_sys_25m_clk_src,
++	.clkr.hw.init = &(struct clk_init_data){
++		.name = "emac_0_sys_25m_clk_src",
++		.parent_data = gcc_xo_emac_0_125m,
++		.num_parents = 2,
++		.ops = &clk_rcg2_ops,
++	},
++};
++
++static const struct freq_tbl ftbl_emac_0_tx_clk_src[] = {
++	F(19200000, P_XO, 1, 0, 0),
++	F(125000000, P_EMAC_0_TX_CLK, 1, 0, 0),
++	{ }
++};
++
++static struct clk_rcg2 emac_0_tx_clk_src = {
++	.cmd_rcgr = 0x4e014,
++	.hid_width = 5,
++	.parent_map = gcc_xo_emac_0_tx_map,
++	.freq_tbl = ftbl_emac_0_tx_clk_src,
++	.clkr.hw.init = &(struct clk_init_data){
++		.name = "emac_0_tx_clk_src",
++		.parent_data = gcc_xo_emac_0_tx,
++		.num_parents = 2,
++		.ops = &clk_rcg2_ops,
++	},
++};
++
+ static struct clk_pll bimc_pll = {
+ 	.l_reg = 0x23004,
+ 	.m_reg = 0x23008,
+@@ -1380,6 +1461,117 @@ static struct clk_branch gcc_qdss_dap_cl
+ 	},
+ };
+ 
++static struct clk_branch gcc_emac_0_ahb_clk = {
++	.halt_reg = 0x4e000,
++	.halt_check = BRANCH_HALT,
++	.clkr = {
++		.enable_reg = 0x4e000,
++		.enable_mask = BIT(0),
++		.hw.init = &(struct clk_init_data){
++			.name = "gcc_emac_0_ahb_clk",
++			.ops = &clk_branch2_ops,
++		},
++	},
++};
++
++static struct clk_branch gcc_emac_0_axi_clk = {
++	.halt_reg = 0x4e008,
++	.halt_check = BRANCH_HALT,
++	.clkr = {
++		.enable_reg = 0x4e008,
++		.enable_mask = BIT(0),
++		.hw.init = &(struct clk_init_data){
++			.name = "gcc_emac_0_axi_clk",
++			.ops = &clk_branch2_ops,
++		},
++	},
++};
++
++static struct clk_branch gcc_emac_0_125m_clk = {
++	.halt_reg = 0x4e010,
++	.halt_check = BRANCH_HALT,
++	.clkr = {
++		.enable_reg = 0x4e010,
++		.enable_mask = BIT(0),
++		.hw.init = &(struct clk_init_data){
++			.name = "gcc_emac_0_125m_clk",
++			.parent_hws = (const struct clk_hw *[]){
++				&emac_0_125m_clk_src.clkr.hw
++			},
++			.num_parents = 1,
++			.flags = CLK_SET_RATE_PARENT,
++			.ops = &clk_branch2_ops,
++		},
++	},
++};
++
++static struct clk_branch gcc_emac_0_sys_25m_clk = {
++	.halt_reg = 0x4e038,
++	.halt_check = BRANCH_HALT,
++	.clkr = {
++		.enable_reg = 0x4e038,
++		.enable_mask = BIT(0),
++		.hw.init = &(struct clk_init_data){
++			.name = "gcc_emac_0_sys_25m_clk",
++			.parent_hws = (const struct clk_hw *[]){
++				&emac_0_sys_25m_clk_src.clkr.hw
++			},
++			.num_parents = 1,
++			.flags = CLK_SET_RATE_PARENT,
++			.ops = &clk_branch2_ops,
++		},
++	},
++};
++
++static struct clk_branch gcc_emac_0_tx_clk = {
++	.halt_reg = 0x4e00c,
++	.halt_check = BRANCH_HALT,
++	.clkr = {
++		.enable_reg = 0x4e00c,
++		.enable_mask = BIT(0),
++		.hw.init = &(struct clk_init_data){
++			.name = "gcc_emac_0_tx_clk",
++			.parent_hws = (const struct clk_hw *[]){
++				&emac_0_tx_clk_src.clkr.hw
++			},
++			.num_parents = 1,
++			.flags = CLK_SET_RATE_PARENT,
++			.ops = &clk_branch2_ops,
++		},
++	},
++};
++
++static struct clk_branch gcc_emac_0_rx_clk = {
++	.halt_reg = 0x4e030,
++	.halt_check = BRANCH_HALT_SKIP,
++	.clkr = {
++		.enable_reg = 0x4e030,
++		.enable_mask = BIT(0),
++		.hw.init = &(struct clk_init_data){
++			.name = "gcc_emac_0_rx_clk",
++			.ops = &clk_branch2_ops,
++		},
++	},
++};
++
++static struct clk_branch gcc_emac_0_sys_clk = {
++	.halt_reg = 0x4e034,
++	.halt_check = BRANCH_HALT,
++	.clkr = {
++		.enable_reg = 0x4e034,
++		.enable_mask = BIT(0),
++		.hw.init = &(struct clk_init_data){
++			.name = "gcc_emac_0_sys_clk",
++			.parent_hws = (const struct clk_hw *[]){
++				&emac_0_125m_clk_src.clkr.hw
++			},
++			.num_parents = 1,
++			.flags = CLK_SET_RATE_PARENT,
++			.ops = &clk_branch2_ops,
++		},
++	},
++};
++
+ static struct clk_branch gcc_usb2a_phy_sleep_clk = {
+ 	.halt_reg = 0x4102c,
+ 	.clkr = {
+@@ -1486,6 +1678,9 @@ static struct clk_regmap *gcc_mdm9607_cl
+ 	[PCNOC_BFDCD_CLK_SRC] = &pcnoc_bfdcd_clk_src.clkr,
+ 	[SYSTEM_NOC_BFDCD_CLK_SRC] = &system_noc_bfdcd_clk_src.clkr,
+ 	[APSS_AHB_CLK_SRC] = &apss_ahb_clk_src.clkr,
++	[EMAC_0_125M_CLK_SRC] = &emac_0_125m_clk_src.clkr,
++	[EMAC_0_SYS_25M_CLK_SRC] = &emac_0_sys_25m_clk_src.clkr,
++	[EMAC_0_TX_CLK_SRC] = &emac_0_tx_clk_src.clkr,
+ 	[BLSP1_QUP1_I2C_APPS_CLK_SRC] = &blsp1_qup1_i2c_apps_clk_src.clkr,
+ 	[BLSP1_QUP1_SPI_APPS_CLK_SRC] = &blsp1_qup1_spi_apps_clk_src.clkr,
+ 	[BLSP1_QUP2_I2C_APPS_CLK_SRC] = &blsp1_qup2_i2c_apps_clk_src.clkr,
+@@ -1548,6 +1743,13 @@ static struct clk_regmap *gcc_mdm9607_cl
+ 	[GCC_SDCC1_APPS_CLK] = &gcc_sdcc1_apps_clk.clkr,
+ 	[GCC_SDCC2_AHB_CLK] = &gcc_sdcc2_ahb_clk.clkr,
+ 	[GCC_SDCC2_APPS_CLK] = &gcc_sdcc2_apps_clk.clkr,
++	[GCC_EMAC_0_AHB_CLK] = &gcc_emac_0_ahb_clk.clkr,
++	[GCC_EMAC_0_AXI_CLK] = &gcc_emac_0_axi_clk.clkr,
++	[GCC_EMAC_0_125M_CLK] = &gcc_emac_0_125m_clk.clkr,
++	[GCC_EMAC_0_SYS_25M_CLK] = &gcc_emac_0_sys_25m_clk.clkr,
++	[GCC_EMAC_0_TX_CLK] = &gcc_emac_0_tx_clk.clkr,
++	[GCC_EMAC_0_RX_CLK] = &gcc_emac_0_rx_clk.clkr,
++	[GCC_EMAC_0_SYS_CLK] = &gcc_emac_0_sys_clk.clkr,
+ 	[GCC_SMMU_CFG_CLK] = &gcc_smmu_cfg_clk.clkr,
+ 	[GCC_USB2A_PHY_SLEEP_CLK] = &gcc_usb2a_phy_sleep_clk.clkr,
+ 	[GCC_USB_HS_PHY_CFG_AHB_CLK] = &gcc_usb_hs_phy_cfg_ahb_clk.clkr,

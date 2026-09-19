@@ -1,0 +1,122 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitry Sinyavin <sinyavin@gmail.com>
+Date: Sat, 25 Jul 2026 00:00:00 +0000
+Subject: [PATCH] soc: qcom: smem: resolve firmware target information
+
+Vendor firmware on platforms such as MDM9607 publishes the primary SMEM
+location indirectly.  A two-word register points to a structure with
+the "SIII" identifier, region size and physical base.
+
+Resolve this structure before mapping the SMEM header.  Keep the
+existing reserved-memory and memory-region paths unchanged for systems
+without a target-info resource.
+
+Signed-off-by: Dmitry Sinyavin <sinyavin@gmail.com>
+---
+ drivers/soc/qcom/smem.c | 81 ++++++++++++++++++++++++++++++++++++++++-------
+ 1 file changed, 69 insertions(+), 12 deletions(-)
+
+--- a/drivers/soc/qcom/smem.c
++++ b/drivers/soc/qcom/smem.c
+@@ -88,6 +88,9 @@
+ /* Max number of processors/hosts in a system */
+ #define SMEM_HOST_COUNT		25
+ 
++#define SMEM_TARGET_INFO_MAGIC	0x49494953
++#define SMEM_TARGET_INFO_SIZE	12
++
+ /**
+   * struct smem_proc_comm - proc_comm communication struct (legacy)
+   * @command:	current command to be executed
+@@ -1118,6 +1121,54 @@ static int qcom_smem_resolve_mem(struct
+ 	return 0;
+ }
+ 
++static int qcom_smem_resolve_target_info(struct platform_device *pdev,
++					 struct smem_region *region)
++{
++	struct device *dev = &pdev->dev;
++	void __iomem *target_info_reg;
++	void __iomem *target_info;
++	u64 target_info_addr;
++	u32 base;
++	u32 size;
++
++	if (of_property_match_string(dev->of_node, "reg-names",
++				     "target-info") < 0)
++		return -ENOENT;
++
++	target_info_reg =
++		devm_platform_ioremap_resource_byname(pdev, "target-info");
++	if (IS_ERR(target_info_reg))
++		return PTR_ERR(target_info_reg);
++
++	target_info_addr = readl_relaxed(target_info_reg);
++	target_info_addr |=
++		(u64)readl_relaxed(target_info_reg + sizeof(u32)) << 32;
++	if (!target_info_addr || upper_32_bits(target_info_addr))
++		return dev_err_probe(dev, -EINVAL,
++				     "invalid SMEM target-info address %#llx\n",
++				     target_info_addr);
++
++	target_info = devm_ioremap(dev, target_info_addr,
++				   SMEM_TARGET_INFO_SIZE);
++	if (!target_info)
++		return -ENOMEM;
++
++	if (readl_relaxed(target_info) != SMEM_TARGET_INFO_MAGIC)
++		return dev_err_probe(dev, -EINVAL,
++				     "invalid SMEM target-info magic\n");
++
++	size = readl_relaxed(target_info + sizeof(u32));
++	base = readl_relaxed(target_info + 2 * sizeof(u32));
++	if (!base || !size)
++		return dev_err_probe(dev, -EINVAL,
++				     "invalid SMEM target region %#x/%#x\n",
++				     base, size);
++
++	region->aux_base = base;
++	region->size = size;
++	return 0;
++}
++
+ static int qcom_smem_probe(struct platform_device *pdev)
+ {
+ 	struct smem_header *header;
+@@ -1143,18 +1194,24 @@ static int qcom_smem_probe(struct platfo
+ 	smem->dev = &pdev->dev;
+ 	smem->num_regions = num_regions;
+ 
+-	rmem = of_reserved_mem_lookup(pdev->dev.of_node);
+-	if (rmem) {
+-		smem->regions[0].aux_base = rmem->base;
+-		smem->regions[0].size = rmem->size;
+-	} else {
+-		/*
+-		 * Fall back to the memory-region reference, if we're not a
+-		 * reserved-memory node.
+-		 */
+-		ret = qcom_smem_resolve_mem(smem, "memory-region", &smem->regions[0]);
+-		if (ret)
+-			return ret;
++	ret = qcom_smem_resolve_target_info(pdev, &smem->regions[0]);
++	if (ret == -ENOENT) {
++		rmem = of_reserved_mem_lookup(pdev->dev.of_node);
++		if (rmem) {
++			smem->regions[0].aux_base = rmem->base;
++			smem->regions[0].size = rmem->size;
++		} else {
++			/*
++			 * Fall back to the memory-region reference, if
++			 * we're not a reserved-memory node.
++			 */
++			ret = qcom_smem_resolve_mem(smem, "memory-region",
++						    &smem->regions[0]);
++			if (ret)
++				return ret;
++		}
++	} else if (ret) {
++		return ret;
+ 	}
+ 
+ 	if (num_regions > 1) {
