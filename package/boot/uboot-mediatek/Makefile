@@ -330,6 +330,18 @@ define U-Boot/mt7981_cmcc_rax3000m-ubi-ddr4
   DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ubi-ddr4
 endef
 
+define U-Boot/mt7981_comfast_cf-wr631ax-ubi
+  NAME:=COMFAST CF-WR631AX (UBI)
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=comfast_cf-wr631ax-ubi
+  UBOOT_CONFIG:=mt7981_comfast_cf-wr631ax-ubi
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand-ubi
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr3-1866
+  DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ubi-ddr3-1866
+endef
+
 define U-Boot/mt7981_comfast_cf-wr632ax
   NAME:=COMFAST CF-WR632AX
   BUILD_SUBTARGET:=filogic
@@ -1405,6 +1417,7 @@ UBOOT_TARGETS := \
 	mt7981_cmcc_rax3000m-nand-ddr4 \
 	mt7981_cmcc_rax3000m-ubi-ddr3 \
 	mt7981_cmcc_rax3000m-ubi-ddr4 \
+	mt7981_comfast_cf-wr631ax-ubi \
 	mt7981_comfast_cf-wr632ax \
 	mt7981_comfast_cf-wr632ax-ubi \
 	mt7981_creatlentem_clt-r30b1-ubi \
