@@ -1,0 +1,12 @@
+--- a/dts/upstream/src/arm64/rockchip/rk3576-nanopi-r76s.dts
++++ b/dts/upstream/src/arm64/rockchip/rk3576-nanopi-r76s.dts
+@@ -812,8 +812,7 @@
+ &sdhci {
+ 	bus-width = <8>;
+ 	cap-mmc-highspeed;
+ 	full-pwr-cycle-in-suspend;
+-	mmc-hs400-1_8v;
+-	mmc-hs400-enhanced-strobe;
++	max-frequency = <52000000>;
+ 	no-sdio;
+ 	no-sd;
