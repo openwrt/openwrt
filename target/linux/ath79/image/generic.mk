@@ -2049,6 +2049,15 @@ define Device/librerouter_librerouter-v1
 endef
 TARGET_DEVICES += librerouter_librerouter-v1
 
+define Device/liteon_wp8722-bt
+  SOC := qca9563
+  DEVICE_VENDOR := Lite-On
+  DEVICE_MODEL := WP8722-BT
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct -swconfig kmod-usb2 kmod-usb-storage
+  IMAGE_SIZE := 13440k
+endef
+TARGET_DEVICES += liteon_wp8722-bt
+
 define Device/longdata_aps256
   SOC := ar9344
   DEVICE_VENDOR := LONGDATA
