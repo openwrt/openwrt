@@ -792,7 +792,7 @@ define Device/cudy_lt700-outdoor-v1
   UIMAGE_NAME := R43
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap \
 	kmod-usb3 kmod-usb-net-cdc-ncm kmod-usb-serial-option comgt-ncm \
-	-uboot-envtools
+	modemsignal-leds -uboot-envtools
   SUPPORTED_DEVICES += R43
 endef
 TARGET_DEVICES += cudy_lt700-outdoor-v1
