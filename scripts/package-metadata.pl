@@ -446,6 +446,8 @@ sub gen_package_mk() {
 	foreach my $srcname (sort {uc($a) cmp uc($b)} keys %srcpackage) {
 		my $src = $srcpackage{$srcname};
 		my $variant_default;
+		my @variants;
+		my %variant_config;
 		my %deplines = ('' => {});
 
 		foreach my $pkg (@{$src->{packages}}) {
@@ -495,8 +497,13 @@ sub gen_package_mk() {
 				if (!defined($variant_default) or $pkg->{variant_default}) {
 					$variant_default = $pkg->{variant};
 				}
-				printf "\$(curdir)/%s/variants += \$(if %s,%s)\n", $src->{path}, $config, $pkg->{variant};
+				push @variants, $pkg->{variant} unless defined $variant_config{$pkg->{variant}};
+				$variant_config{$pkg->{variant}} .= $config;
 			}
+		}
+
+		foreach my $variant (@variants) {
+			printf "\$(curdir)/%s/variants += \$(if %s,%s)\n", $src->{path}, $variant_config{$variant}, $variant;
 		}
 
 		if (defined($variant_default)) {
