@@ -1,0 +1,1296 @@
+From b8abfd4b6f4d3e41b8f72f539aaba98515f170d5 Mon Sep 17 00:00:00 2001
+From: George Moussalem <george.moussalem@outlook.com>
+Date: Thu, 09 Jul 2026 13:17:06 +0400
+Subject: [PATCH v5 4/6] Bluetooth: Introduce Qualcomm IPQ5018 IPC based HCI driver
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+Message-Id: <20260709-ipq5018-bluetooth-v5-4-0da36dcc3373@outlook.com>
+
+Add support for the Bluetooth controller found in the IPQ5018 SoC.
+This driver implements firmware loading and the transport layer between
+the HCI core and the Bluetooth controller.
+
+The firmware is loaded by the host into the memory area shared by the
+host and the controller and is authenticated by TrustZone. A Secure
+Channel Manager (SCM) call brings the peripheral core out of reset.
+
+A shared memory ring buffer topology handles runtime data frame
+transport between the host APSS and the controller.
+
+An outgoing APCS IPC bit and an incoming GIC interrupt handle host/guest
+signaling.
+
+Signed-off-by: George Moussalem <george.moussalem@outlook.com>
+---
+ drivers/bluetooth/Kconfig     |   14 +
+ drivers/bluetooth/Makefile    |    1 +
+ drivers/bluetooth/btqcomipc.c | 1230 +++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 1245 insertions(+)
+
+--- a/drivers/bluetooth/Kconfig
++++ b/drivers/bluetooth/Kconfig
+@@ -452,6 +452,20 @@ config BT_MTKUART
+ 	  Say Y here to compile support for MediaTek Bluetooth UART devices
+ 	  into the kernel or say M to compile it as module (btmtkuart).
+ 
++config BT_QCOMIPC
++	tristate "Qualcomm IPQ5018 IPC based HCI support"
++	depends on OF && ARCH_QCOM
++	select BT_QCA
++	select QCOM_MDT_LOADER
++	select QCOM_SCM
++	help
++	  Qualcomm IPQ5018 IPC based HCI driver.
++	  This driver is used to load firmware and bridge HCI data onto shared
++	  memory between the host and the Bluetooth controller.
++
++	  Say Y here to compile support for HCI over Qualcomm IPC into the
++	  kernel or say M to compile as a module.
++
+ config BT_QCOMSMD
+ 	tristate "Qualcomm SMD based HCI support"
+ 	depends on RPMSG || (COMPILE_TEST && RPMSG=n)
+--- a/drivers/bluetooth/Makefile
++++ b/drivers/bluetooth/Makefile
+@@ -23,6 +23,7 @@ obj-$(CONFIG_BT_MRVL)		+= btmrvl.o
+ obj-$(CONFIG_BT_MRVL_SDIO)	+= btmrvl_sdio.o
+ obj-$(CONFIG_BT_MTKSDIO)	+= btmtksdio.o
+ obj-$(CONFIG_BT_MTKUART)	+= btmtkuart.o
++obj-$(CONFIG_BT_QCOMIPC)	+= btqcomipc.o
+ obj-$(CONFIG_BT_QCOMSMD)	+= btqcomsmd.o
+ obj-$(CONFIG_BT_BCM)		+= btbcm.o
+ obj-$(CONFIG_BT_RTL)		+= btrtl.o
+--- /dev/null
++++ b/drivers/bluetooth/btqcomipc.c
+@@ -0,0 +1,1230 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * Copyright (c) 2026 The Linux Foundation. All rights reserved.
++ */
++
++#include <linux/clk.h>
++#include <linux/delay.h>
++#include <linux/elf.h>
++#include <linux/firmware.h>
++#include <linux/firmware/qcom/qcom_scm.h>
++#include <linux/interrupt.h>
++#include <linux/io.h>
++#include <linux/mfd/syscon.h>
++#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/platform_device.h>
++#include <linux/regmap.h>
++#include <linux/reset.h>
++#include <linux/skbuff.h>
++#include <linux/slab.h>
++#include <linux/soc/qcom/mdt_loader.h>
++#include <linux/workqueue.h>
++
++#include <net/bluetooth/bluetooth.h>
++#include <net/bluetooth/hci_core.h>
++
++#include "btqca.h"
++
++/** Message header format.
++ *
++ *        ----------------------------------------------------------------
++ * BitPos |    15    | 14 | 13 | 12 | 11 | 10 |  9  |  8  |    7 - 0     |
++ *         ---------------------------------------------------------------
++ * Field  | long_msg |ACK |        RFU        |  pkt_type |    cmd       |
++ *        ----------------------------------------------------------------
++ *
++ * - long_msg   : If set, indicates that the payload is larger than the
++ *                IPC_MSG_PLD_SZ. The payload instead contains a pointer to the
++ *                long message buffer in the shared BTSS memory space.
++ *
++ * - ACK        : Set if sending ACK by IPC interrupt is required by firmware.
++ *
++ * - RFU        : Reserved for future use.
++ *
++ * - pkt_type   : IPC Packet Type
++ *
++ * - cmd        : Contains unique command ID
++ */
++
++#define IPC_MSG_HDR_SZ		4
++#define IPC_MSG_PLD_SZ		40
++#define IPC_TOTAL_MSG_SZ	(IPC_MSG_HDR_SZ + IPC_MSG_PLD_SZ)
++
++/* Message Header */
++#define IPC_HDR_LONG_MSG	BIT(15)
++#define IPC_HDR_REQ_ACK		BIT(14)
++#define IPC_HDR_PKT_TYPE_MASK	GENMASK(9, 8)
++#define  IPC_HDR_PKT_TYPE_CUST	0
++#define  IPC_HDR_PKT_TYPE_HCI	1
++#define  IPC_HDR_PKT_TYPE_AUDIO	2
++#define  IPC_HDR_PKT_TYPE_RFU	3
++#define IPC_HDR_CMD_MASK	GENMASK(7, 0)
++
++#define IPC_CMD_STOP		1
++#define IPC_CMD_SWITCH_TO_UART	2
++#define IPC_CMD_PREPARE_DUMP	3
++#define IPC_CMD_COLLECT_DUMP	4
++#define IPC_CMD_START		5
++
++#define IPC_TX_QSIZE		32
++
++#define	TO_APPS_ADDR(a)		((u8 *)desc->base + (a))
++#define	TO_BT_ADDR(a)		(a - desc->base)
++
++#define	GET_NO_OF_BLOCKS(a, b) ((a + b - 1) / b)
++
++#define BTSS_PAS_ID		0xc
++
++#define BTSS_PWR_CTRL_DELAY_MS	50
++
++struct long_msg_info {
++	u16 smsg_free_cnt;
++	u16 lmsg_free_cnt;
++	u8 ridx;
++	u8 widx;
++} __packed;
++
++struct ipc_aux_ptr {
++	u32 len;
++	u32 buf;
++};
++
++struct ring_buffer {
++	__le16 msg_hdr;
++	__le16 len;
++	union {
++		u8 smsg_data[IPC_MSG_PLD_SZ];
++		__le32 lmsg_data;
++	} payload;
++} __packed;
++
++struct ring_buffer_info {
++	__le32 rbuf;
++	u8 ring_buf_cnt;
++	u8 ridx;
++	u8 widx;
++	u8 tidx;
++	__le32 next;
++} __packed;
++
++struct context_info {
++	__le16 total_size;
++	u8 lmsg_buf_cnt;
++	u8 smsg_buf_cnt;
++	struct ring_buffer_info sring_buf_info;
++	__le32 sring_buf;
++	__le32 lring_buf;
++	__le32 reserved;
++} __packed;
++
++struct qcom_btss {
++	struct device *dev;
++	struct hci_dev *hdev;
++
++	struct regmap *regmap;
++	u32 offset;
++	u32 bit;
++	int irq;
++
++	const char *firmware;
++	void *base;
++	phys_addr_t mem_phys;
++	size_t mem_size;
++
++	struct sk_buff_head tx_q;
++	struct workqueue_struct *wq;
++	struct work_struct work;
++	wait_queue_head_t wait_q;
++	spinlock_t lock;
++
++	struct context_info *tx_ctxt;
++	struct context_info *rx_ctxt;
++	struct long_msg_info lmsg_ctxt;
++
++	bool running;
++};
++
++static inline u32 btss_lbuf_size(struct qcom_btss *desc,
++				 const struct context_info *ctxt)
++{
++	u32 end, lring_buf, total_size;
++
++	total_size = le16_to_cpu(ctxt->total_size);
++	lring_buf = le32_to_cpu(ctxt->lring_buf);
++	end = TO_BT_ADDR((void *)ctxt) + total_size;
++
++	if (!ctxt->lmsg_buf_cnt)
++		return 0;
++
++	if (lring_buf > end)
++		return 0;
++
++	return (end - lring_buf) / ctxt->lmsg_buf_cnt;
++}
++
++static inline u8 btss_get_buf_idx(const struct context_info *ctxt,
++				  u32 lmsg_data, u32 lsz)
++{
++	u32 lring_buf = le32_to_cpu(ctxt->lring_buf);
++
++	return (u8)((lmsg_data - lring_buf) / lsz);
++}
++
++static void btqcomipc_update_stats(struct hci_dev *hdev, struct sk_buff *skb)
++{
++	u8 pkt_type = hci_skb_pkt_type(skb);
++
++	hdev->stat.byte_tx += skb->len;
++	switch (pkt_type) {
++	case HCI_COMMAND_PKT:
++		hdev->stat.cmd_tx++;
++		break;
++	case HCI_ACLDATA_PKT:
++		hdev->stat.acl_tx++;
++		break;
++	case HCI_SCODATA_PKT:
++		hdev->stat.sco_tx++;
++		break;
++	default:
++		break;
++	}
++}
++
++static void *btss_alloc_lmsg(struct qcom_btss *desc, u32 len,
++			     struct ipc_aux_ptr *aux_ptr, bool *is_lbuf_full)
++{
++	u8 idx, blks, blks_consumed;
++	u32 lring_buf, lsz;
++	void *ret_ptr;
++
++	lring_buf = le32_to_cpu(desc->tx_ctxt->lring_buf);
++
++	if (!lring_buf)
++		return ERR_PTR(-ENODEV);
++
++	lsz = btss_lbuf_size(desc, desc->tx_ctxt);
++	if (!lsz)
++		return ERR_PTR(-EINVAL);
++
++	blks = GET_NO_OF_BLOCKS(len, lsz);
++
++	if (!desc->lmsg_ctxt.lmsg_free_cnt ||
++			(blks > desc->lmsg_ctxt.lmsg_free_cnt))
++		return ERR_PTR(-EAGAIN);
++
++	idx = desc->lmsg_ctxt.widx;
++
++	if ((desc->lmsg_ctxt.widx + blks) > desc->tx_ctxt->lmsg_buf_cnt) {
++		blks_consumed = desc->tx_ctxt->lmsg_buf_cnt - idx;
++		aux_ptr->len = len - (blks_consumed * lsz);
++		aux_ptr->buf = desc->tx_ctxt->lring_buf;
++	}
++
++	desc->lmsg_ctxt.widx = (desc->lmsg_ctxt.widx + blks) %
++		desc->tx_ctxt->lmsg_buf_cnt;
++
++	desc->lmsg_ctxt.lmsg_free_cnt -= blks;
++
++	if (desc->lmsg_ctxt.lmsg_free_cnt <=
++			((desc->tx_ctxt->lmsg_buf_cnt * 20) / 100))
++		*is_lbuf_full = true;
++
++	ret_ptr = TO_APPS_ADDR(lring_buf) + (idx * lsz);
++
++	return ret_ptr;
++}
++
++static struct ring_buffer_info *btss_get_tx_rbuf(struct qcom_btss *desc,
++						 bool *is_sbuf_full)
++{
++	struct ring_buffer_info *rinfo;
++	u32 next;
++	u8 idx;
++
++	rinfo = &(desc->tx_ctxt->sring_buf_info);
++	while (rinfo != NULL) {
++		idx = (rinfo->widx + 1) % (desc->tx_ctxt->smsg_buf_cnt);
++
++		if (idx != rinfo->tidx) {
++			desc->lmsg_ctxt.smsg_free_cnt--;
++
++			if (desc->lmsg_ctxt.smsg_free_cnt <=
++				((desc->tx_ctxt->smsg_buf_cnt * 20) / 100))
++				*is_sbuf_full = true;
++
++			return rinfo;
++		}
++
++		next = le32_to_cpu(rinfo->next);
++		rinfo = next ? (struct ring_buffer_info *)TO_APPS_ADDR(next) : NULL;
++	}
++
++	return ERR_PTR(-EAGAIN);
++}
++
++static int btss_send(struct qcom_btss *desc, u16 msg_hdr,
++		     struct sk_buff *skb)
++{
++	struct hci_dev *hdev = desc->hdev;
++	struct ipc_aux_ptr aux_ptr = { };
++	struct ring_buffer_info *rinfo;
++	struct ring_buffer *rbuf;
++	bool is_lbuf_full = false;
++	bool is_sbuf_full = false;
++	u16 hdr = msg_hdr;
++	u16 lmsg_free_cnt;
++	void *ptr_buf;
++	u8 lmsg_widx;
++	u32 len;
++
++	/* Account for HCI packet type as it's not included in the skb payload */
++	len = skb ? skb->len + 1 : 0;
++
++	if (len > IPC_MSG_PLD_SZ) {
++		hdr |= IPC_HDR_LONG_MSG;
++
++		/* snapshot long message context in case we need to reverse */
++		lmsg_free_cnt = le16_to_cpu(desc->lmsg_ctxt.lmsg_free_cnt);
++		lmsg_widx = desc->lmsg_ctxt.widx;
++
++		ptr_buf = btss_alloc_lmsg(desc, len,
++					  &aux_ptr, &is_lbuf_full);
++		if (IS_ERR(ptr_buf)) {
++			bt_dev_err(hdev,
++				   "Failed to allocate long message buffer: %ld",
++				   PTR_ERR(ptr_buf));
++			hdev->stat.err_tx++;
++			return PTR_ERR(ptr_buf);
++		}
++	}
++
++	rinfo = btss_get_tx_rbuf(desc, &is_sbuf_full);
++	if (IS_ERR(rinfo)) {
++		bt_dev_err(hdev, "TX short buffers full");
++		hdev->stat.err_tx++;
++		if (len > IPC_MSG_PLD_SZ) {
++			/* reverse long message context if we allocated one */
++			desc->lmsg_ctxt.lmsg_free_cnt = cpu_to_le16(lmsg_free_cnt);
++			desc->lmsg_ctxt.widx = lmsg_widx;
++		}
++		return PTR_ERR(rinfo);
++	}
++
++	rbuf = &((struct ring_buffer *)(TO_APPS_ADDR(le32_to_cpu(rinfo->rbuf))))[rinfo->widx];
++
++	if (!skb)
++		goto complete_tx;
++
++	if (len > IPC_MSG_PLD_SZ)
++		rbuf->payload.lmsg_data = cpu_to_le32(TO_BT_ADDR(ptr_buf));
++	else
++		ptr_buf = rbuf->payload.smsg_data;
++
++	/* if it's a short message, the aux len and buf are NULL */
++	memcpy_toio(ptr_buf, &hci_skb_pkt_type(skb), 1);
++	memcpy_toio((u8 *)ptr_buf + 1, skb->data, skb->len - aux_ptr.len);
++	if (aux_ptr.buf) {
++		memcpy_toio(TO_APPS_ADDR(aux_ptr.buf),
++			    (skb->data + (skb->len - aux_ptr.len)),
++			    aux_ptr.len);
++	}
++
++	/*
++	 * if free buffer count is low, send ACK request to signal to the
++	 * firmware to process and free up queued buffers in the TX ring.
++	 */
++	if (is_sbuf_full || is_lbuf_full)
++		hdr |= IPC_HDR_REQ_ACK;
++
++complete_tx:
++	rbuf->msg_hdr = cpu_to_le16(hdr);
++	rbuf->len = cpu_to_le16(len);
++
++	dma_wmb();
++
++	rinfo->widx = (rinfo->widx + 1) % desc->tx_ctxt->smsg_buf_cnt;
++
++	regmap_set_bits(desc->regmap, desc->offset, BIT(desc->bit));
++
++	return 0;
++}
++
++static void btss_process_tx_queue(struct qcom_btss *desc)
++{
++	struct sk_buff *skb;
++	u16 hdr;
++	int ret;
++
++	while ((skb = skb_dequeue(&desc->tx_q))) {
++		hdr = FIELD_PREP(IPC_HDR_PKT_TYPE_MASK, IPC_HDR_PKT_TYPE_HCI);
++
++		ret = btss_send(desc, hdr, skb);
++		if (ret) {
++			bt_dev_err(desc->hdev, "Failed to send message");
++			skb_queue_head(&desc->tx_q, skb);
++			break;
++		}
++
++		btqcomipc_update_stats(desc->hdev, skb);
++		kfree_skb(skb);
++	}
++}
++
++static void btss_free_lmsg(struct qcom_btss *desc, u32 lmsg, u16 len)
++{
++	u8 blks, idx;
++	u32 lsz;
++
++	lsz = btss_lbuf_size(desc, desc->tx_ctxt);
++	if (!lsz) {
++		bt_dev_err(desc->hdev, "long message buffer size is zero");
++		return;
++	}
++
++	idx = btss_get_buf_idx(desc->tx_ctxt, lmsg, lsz);
++
++	if (idx != desc->lmsg_ctxt.ridx)
++		return;
++
++	blks = GET_NO_OF_BLOCKS(len, lsz);
++
++	desc->lmsg_ctxt.ridx  = (desc->lmsg_ctxt.ridx + blks) %
++		desc->tx_ctxt->lmsg_buf_cnt;
++
++	desc->lmsg_ctxt.lmsg_free_cnt += blks;
++}
++
++static int btss_recv_cust_frame(struct qcom_btss *desc, u8 cmd)
++{
++	u16 msg_hdr = 0;
++	int ret;
++
++	/*
++	 * During firmware patch download, the controller temporarily stops the
++	 * IPC transport and signals the host with IPC_CMD_STOP. The host must
++	 * stop sending new frames until the controller signals IPC_CMD_START
++	 * back to the host after the patch download has completed.
++	 */
++	switch (cmd) {
++	case IPC_CMD_STOP:
++		spin_unlock(&desc->lock);
++		ret = qcom_scm_pas_set_bluetooth_power_mode(BTSS_PAS_ID, true);
++		spin_lock(&desc->lock);
++		if (ret && ret != -EOPNOTSUPP) {
++			bt_dev_err(desc->hdev,
++				   "Failed to apply BTSS power-save mode: %d",
++				   ret);
++			return ret;
++		}
++
++		msg_hdr |= cmd;
++		ret = btss_send(desc, msg_hdr, NULL);
++		if (ret)
++			bt_dev_err(desc->hdev,
++				   "Failed to send control message");
++
++		WRITE_ONCE(desc->running, false);
++		break;
++	case IPC_CMD_START:
++		spin_unlock(&desc->lock);
++		ret = qcom_scm_pas_set_bluetooth_power_mode(BTSS_PAS_ID, false);
++		spin_lock(&desc->lock);
++		if (ret && ret != -EOPNOTSUPP) {
++			bt_dev_err(desc->hdev,
++				   "Failed to apply BTSS active power mode: %d",
++				   ret);
++			return ret;
++		}
++
++		desc->tx_ctxt = (struct context_info *)((void *)desc->rx_ctxt +
++				le16_to_cpu(desc->rx_ctxt->total_size));
++		desc->lmsg_ctxt.widx = 0;
++		desc->lmsg_ctxt.ridx = 0;
++		desc->lmsg_ctxt.smsg_free_cnt = desc->tx_ctxt->smsg_buf_cnt;
++		desc->lmsg_ctxt.lmsg_free_cnt = desc->tx_ctxt->lmsg_buf_cnt;
++
++		WRITE_ONCE(desc->running, true);
++		wake_up(&desc->wait_q);
++		break;
++	default:
++		bt_dev_err(desc->hdev, "Unsupported CMD ID: %u", cmd);
++		return -EOPNOTSUPP;
++	}
++
++	return 0;
++}
++
++static inline int btss_recv_hci_frame(struct qcom_btss *desc, const u8 *data,
++				      size_t len)
++{
++	unsigned char pkt_type;
++	struct sk_buff *skb;
++	size_t pkt_len;
++
++	if (len < 1)
++		return -EPROTO;
++
++	pkt_type = data[0];
++
++	switch (pkt_type) {
++	case HCI_EVENT_PKT:
++	{
++		if (len < 1 + HCI_EVENT_HDR_SIZE)
++			return -EILSEQ;
++		struct hci_event_hdr *hdr = (struct hci_event_hdr *)(data + 1);
++
++		pkt_len = HCI_EVENT_HDR_SIZE + hdr->plen;
++		break;
++	}
++	case HCI_COMMAND_PKT: {
++		if (len < 1 + HCI_COMMAND_HDR_SIZE)
++			return -EILSEQ;
++		struct hci_command_hdr *hdr = (struct hci_command_hdr *)(data + 1);
++
++		pkt_len = HCI_COMMAND_HDR_SIZE + hdr->plen;
++		break;
++	}
++	case HCI_ACLDATA_PKT:
++	{
++		if (len < 1 + HCI_ACL_HDR_SIZE)
++			return -EILSEQ;
++		struct hci_acl_hdr *hdr = (struct hci_acl_hdr *)(data + 1);
++
++		pkt_len = HCI_ACL_HDR_SIZE + le16_to_cpu(hdr->dlen);
++		break;
++	}
++	case HCI_SCODATA_PKT:
++	{
++		if (len < 1 + HCI_SCO_HDR_SIZE)
++			return -EILSEQ;
++		struct hci_sco_hdr *hdr = (struct hci_sco_hdr *)(data + 1);
++
++		pkt_len = HCI_SCO_HDR_SIZE + hdr->dlen;
++		break;
++	}
++	default:
++		return -EPROTO;
++	}
++
++	if (pkt_len + 1 > len)
++		return -EINVAL;
++
++	skb = bt_skb_alloc(pkt_len, GFP_ATOMIC);
++	if (!skb) {
++		desc->hdev->stat.err_rx++;
++		return -ENOMEM;
++	}
++
++	skb->dev = (void *)desc->hdev;
++	hci_skb_pkt_type(skb) = pkt_type;
++	skb_put_data(skb, data + 1, pkt_len);
++
++	hci_recv_frame(desc->hdev, skb);
++	desc->hdev->stat.byte_rx += pkt_len;
++
++	return 0;
++}
++
++static inline int btss_process_rx(struct qcom_btss *desc,
++				  struct ring_buffer_info *rinfo,
++				  bool *ack, u8 *rx_count)
++{
++	u8 ridx, widx, lbuf_idx, blks_consumed, pkt_type, cmd;
++	u32 lmsg_data, lsz, lring_buf, lring_end;
++	struct ring_buffer *rbuf;
++	uint8_t *rxbuf = NULL;
++	unsigned char *buf;
++	u16 msg_hdr;
++	u16 msg_len;
++	int ret;
++
++	ridx = rinfo->ridx;
++	lring_buf = le32_to_cpu(desc->rx_ctxt->lring_buf);
++	widx = READ_ONCE(rinfo->widx);
++
++	while (ridx != widx) {
++		struct ipc_aux_ptr aux_ptr = { };
++
++		dma_rmb();
++
++		rbuf = &((struct ring_buffer *)(TO_APPS_ADDR(le32_to_cpu(rinfo->rbuf))))[ridx];
++		msg_hdr = le16_to_cpu(rbuf->msg_hdr);
++		msg_len = le16_to_cpu(rbuf->len);
++
++		if (!(msg_hdr & IPC_HDR_LONG_MSG) && msg_len > IPC_MSG_PLD_SZ) {
++			desc->hdev->stat.err_rx++;
++			bt_dev_err(desc->hdev,
++				   "Dropping short RX frame with invalid len %u",
++				   msg_len);
++			goto continue_rx;
++		}
++
++		if (msg_hdr & IPC_HDR_LONG_MSG) {
++			lmsg_data = le32_to_cpu(rbuf->payload.lmsg_data);
++			rxbuf = TO_APPS_ADDR(lmsg_data);
++			lsz = btss_lbuf_size(desc, desc->rx_ctxt);
++			if (!lsz) {
++				bt_dev_err(desc->hdev,
++					   "Long message buffer size is zero");
++				goto continue_rx;
++			} else if (lsz > (U32_MAX - lring_buf) / desc->rx_ctxt->lmsg_buf_cnt) {
++				bt_dev_err(desc->hdev,
++					   "Long message buffer size is too large");
++				goto continue_rx;
++			}
++
++			lring_end = lring_buf + lsz * desc->rx_ctxt->lmsg_buf_cnt;
++			if (lmsg_data < lring_buf || lmsg_data >= lring_end) {
++				desc->hdev->stat.err_rx++;
++				bt_dev_err(desc->hdev,
++					   "Dropping long RX frame with invalid address 0x%08x",
++					   lmsg_data);
++				goto continue_rx;
++			}
++
++			/*
++			 * Check if the long message buffer extends past the end
++			 * of the ring buffer
++			 */
++			if (msg_len > lring_end - lmsg_data) {
++				lbuf_idx = btss_get_buf_idx(desc->rx_ctxt,
++							    lmsg_data, lsz);
++
++				blks_consumed = desc->rx_ctxt->lmsg_buf_cnt - lbuf_idx;
++				if (blks_consumed > msg_len / lsz) {
++					desc->hdev->stat.err_rx++;
++					bt_dev_err(desc->hdev,
++						   "Dropping long RX frame with invalid length %u",
++						   msg_len);
++					goto continue_rx;
++				}
++				aux_ptr.len = msg_len - (blks_consumed * lsz);
++				aux_ptr.buf = lring_buf;
++			}
++		} else {
++			rxbuf = rbuf->payload.smsg_data;
++		}
++
++		*ack = msg_hdr & IPC_HDR_REQ_ACK;
++
++		pkt_type = FIELD_GET(IPC_HDR_PKT_TYPE_MASK, msg_hdr);
++
++		switch (pkt_type) {
++		case IPC_HDR_PKT_TYPE_HCI:
++			buf = kmalloc(msg_len, GFP_ATOMIC);
++			if (!buf) {
++				desc->hdev->stat.err_rx++;
++				bt_dev_err(desc->hdev,
++					   "Dropping HCI frame due to RX allocation failure");
++				ridx = (ridx + 1) % rinfo->ring_buf_cnt;
++				rinfo->ridx = ridx;
++				if (rx_count)
++					(*rx_count)++;
++				continue;
++			}
++
++			memcpy_fromio(buf, rxbuf, msg_len - aux_ptr.len);
++
++			if (aux_ptr.buf)
++				memcpy_fromio(buf + (msg_len - aux_ptr.len),
++					      TO_APPS_ADDR(aux_ptr.buf),
++					      aux_ptr.len);
++
++			ret = btss_recv_hci_frame(desc, buf, msg_len);
++			if (ret)
++				bt_dev_err(desc->hdev,
++					   "Failed to process HCI frame: %d",
++					   ret);
++			kfree(buf);
++			break;
++		case IPC_HDR_PKT_TYPE_CUST:
++			cmd = FIELD_GET(IPC_HDR_CMD_MASK, msg_hdr);
++			ret = btss_recv_cust_frame(desc, cmd);
++			if (ret)
++				bt_dev_warn(desc->hdev,
++					    "Failed to process custom frame: %d",
++					    ret);
++			break;
++		default:
++			break;
++		}
++
++continue_rx:
++		ridx = (ridx + 1) % rinfo->ring_buf_cnt;
++		rinfo->ridx = ridx;
++
++		if (rx_count)
++			(*rx_count)++;
++	}
++
++	return 0;
++}
++
++static void btss_process_ack(struct qcom_btss *desc)
++{
++	struct ring_buffer_info *rinfo;
++	struct ring_buffer *rbuf;
++	u16 msg_hdr;
++	u16 msg_len;
++	u32 next;
++	u32 lmsg;
++	u8 tidx;
++
++	rinfo = &desc->tx_ctxt->sring_buf_info;
++	while (rinfo != NULL) {
++		tidx = rinfo->tidx;
++		rbuf = (struct ring_buffer *)TO_APPS_ADDR(le32_to_cpu(rinfo->rbuf));
++
++		while (tidx != rinfo->ridx) {
++			msg_hdr = le16_to_cpu(rbuf[tidx].msg_hdr);
++			if (msg_hdr & IPC_HDR_LONG_MSG) {
++				lmsg = le32_to_cpu(rbuf[tidx].payload.lmsg_data);
++				msg_len = le16_to_cpu(rbuf[tidx].len);
++				btss_free_lmsg(desc, lmsg, msg_len);
++			}
++
++			tidx = (tidx + 1) % desc->tx_ctxt->smsg_buf_cnt;
++			desc->lmsg_ctxt.smsg_free_cnt++;
++		}
++
++		rinfo->tidx = tidx;
++
++		btss_process_tx_queue(desc);
++
++		next = le32_to_cpu(rinfo->next);
++		rinfo = next ? (struct ring_buffer_info *)TO_APPS_ADDR(next) : NULL;
++	}
++}
++
++static void btss_worker(struct work_struct *work)
++{
++	struct qcom_btss *desc = container_of(work, struct qcom_btss, work);
++	struct ring_buffer_info *rinfo;
++	bool ack = false;
++	u32 offset, next;
++	u16 total_size;
++	int ret;
++
++	spin_lock(&desc->lock);
++
++	if (unlikely(!READ_ONCE(desc->running))) {
++		/*
++		 * FW sets offset of RX context info at the start of the memory
++		 * region upon boot
++		 */
++		offset = readl(desc->base);
++		if (offset > desc->mem_size - sizeof(struct context_info)) {
++			bt_dev_err(desc->hdev,
++				   "Invalid offset after firmware boot: 0x%08x",
++				   offset);
++			goto spin_unlock;
++		}
++		dev_dbg(desc->dev, "offset after firmware boot: 0x%08x\n",
++			offset);
++
++		desc->rx_ctxt = (struct context_info *)(desc->base + offset);
++
++		total_size = le16_to_cpu(desc->rx_ctxt->total_size);
++		if (total_size < sizeof(struct context_info) ||
++		total_size > desc->mem_size - offset) {
++			bt_dev_err(desc->hdev, "Invalid total size: %u",
++				   total_size);
++			desc->rx_ctxt = NULL;
++			goto spin_unlock;
++		}
++	} else {
++		btss_process_ack(desc);
++	}
++
++	rinfo = &(desc->rx_ctxt->sring_buf_info);
++	while (rinfo != NULL) {
++		ret = btss_process_rx(desc, rinfo, &ack,
++				      &desc->rx_ctxt->smsg_buf_cnt);
++		if (ret) {
++			bt_dev_err(desc->hdev,
++				   "Failed to process peer msgs: %d", ret);
++			goto spin_unlock;
++		}
++		next = le32_to_cpu(rinfo->next);
++		rinfo = next ? (struct ring_buffer_info *)TO_APPS_ADDR(next) : NULL;
++	}
++
++	if (ack)
++		regmap_set_bits(desc->regmap, desc->offset, BIT(desc->bit));
++
++spin_unlock:
++	spin_unlock(&desc->lock);
++}
++
++static irqreturn_t btss_irq_handler(int irq, void *data)
++{
++	struct qcom_btss *desc = data;
++
++	queue_work(desc->wq, &desc->work);
++
++	return IRQ_HANDLED;
++}
++
++static int btcomqipc_firmware_load(struct qcom_btss *desc)
++{
++	const char *dot = strrchr(desc->firmware, '.');
++	const struct elf32_phdr *phdrs;
++	const struct firmware *seg_fw;
++	const struct elf32_phdr *phdr;
++	const struct elf32_hdr *ehdr;
++	const struct firmware *fw;
++	size_t metadata_len;
++	size_t stem_len;
++	void *metadata;
++	char *seg_name;
++	int i, ret;
++
++	if (!dot || dot != desc->firmware + strlen(desc->firmware) - 4) {
++		dev_err(desc->dev, "Invalid firmware name: %s\n",
++			desc->firmware);
++		return -EINVAL;
++	}
++
++	stem_len = dot - desc->firmware;
++
++	ret = request_firmware(&fw, desc->firmware, desc->dev);
++	if (ret) {
++		dev_err(desc->dev, "Failed to request firmware: %d\n",
++			ret);
++		return ret;
++	}
++
++	metadata = qcom_mdt_read_metadata(fw, &metadata_len, desc->firmware, desc->dev);
++	if (IS_ERR(metadata)) {
++		ret = PTR_ERR(metadata);
++		dev_err(desc->dev, "error %d reading firmware %s metadata\n",
++			ret, desc->firmware);
++		goto release_fw;
++	}
++
++	ret = qcom_scm_pas_init_image(BTSS_PAS_ID, metadata, metadata_len, NULL);
++	kfree(metadata);
++	if (ret) {
++		dev_err(desc->dev, "error %d initializing firmware %s\n",
++			ret, desc->firmware);
++		goto release_fw;
++	}
++
++	/*
++	 * qcom_mdt_read_metadata has already validated the ELF/mdt header, so
++	 * no need to revalidate it again here.
++	 */
++	ehdr = (const struct elf32_hdr *)fw->data;
++	phdrs = (const struct elf32_phdr *)(ehdr + 1);
++
++	/* guard against a large (incorrect) number of program headers */
++	if (ehdr->e_phnum > 99) {
++		dev_err(desc->dev, "Too many program headers: %d\n",
++			ehdr->e_phnum);
++		ret = -EINVAL;
++		goto release_fw;
++	}
++
++	for (i = 0; i < ehdr->e_phnum; i++) {
++		phdr = &phdrs[i];
++
++		/* Only process valid loadable data segments */
++		if (phdr->p_type != PT_LOAD || !phdr->p_memsz)
++			continue;
++
++		/*
++		 * The virtual instead of the physical address must be used as
++		 * the offset.
++		 */
++		if (phdr->p_vaddr > desc->mem_size ||
++		    phdr->p_filesz > desc->mem_size - phdr->p_vaddr) {
++			dev_err(desc->dev,
++				"Segment data exceeds the reserved memory area!\n");
++			goto release_fw;
++		}
++
++		/* Check if firmware is split across multiple segment files */
++		if (phdr->p_offset > fw->size ||
++		    phdr->p_filesz > fw->size - phdr->p_offset) {
++			seg_name = kasprintf(GFP_KERNEL, "%.*sb%02d",
++					     (int)stem_len, desc->firmware, i);
++			if (!seg_name) {
++				ret = -ENOMEM;
++				goto release_fw;
++			}
++
++			ret = request_firmware(&seg_fw, seg_name,
++					       desc->dev);
++			if (ret) {
++				dev_err(desc->dev,
++					"Could not find split segment binary: %s\n",
++					seg_name);
++				goto release_seg_name;
++			}
++
++			if (seg_fw->size != phdr->p_filesz) {
++				dev_err(desc->dev,
++					"Segment binary %s has unexpected file size!\n",
++					seg_name);
++				ret = -EINVAL;
++				goto release_seg_fw;
++			}
++			memcpy_toio(desc->base + phdr->p_vaddr,
++				    seg_fw->data, phdr->p_filesz);
++			if (phdr->p_memsz > phdr->p_filesz)
++				memset_io(desc->base + phdr->p_vaddr +
++					  phdr->p_filesz, 0,
++					  phdr->p_memsz - phdr->p_filesz);
++
++release_seg_fw:
++			release_firmware(seg_fw);
++release_seg_name:
++			kfree(seg_name);
++			seg_name = NULL;
++
++			if (ret)
++				goto release_fw;
++		} else {
++			memcpy_toio(desc->base + phdr->p_vaddr,
++				    fw->data + phdr->p_offset, phdr->p_filesz);
++			if (phdr->p_memsz > phdr->p_filesz)
++				memset_io(desc->base + phdr->p_vaddr +
++					  phdr->p_filesz, 0,
++					  phdr->p_memsz - phdr->p_filesz);
++		}
++	}
++
++release_fw:
++	release_firmware(fw);
++	return ret;
++}
++
++static int btqcomipc_open(struct hci_dev *hdev)
++{
++	struct qcom_btss *desc = hci_get_drvdata(hdev);
++	int ret;
++
++	if (!qcom_scm_pas_supported(BTSS_PAS_ID)) {
++		bt_dev_err(hdev,
++			   "PAS is not available for peripheral: 0x%x",
++			   BTSS_PAS_ID);
++		return -ENODEV;
++	}
++
++	ret = btcomqipc_firmware_load(desc);
++	if (ret) {
++		bt_dev_err(hdev, "Failed to load firmware: %d", ret);
++		return ret;
++	}
++
++	enable_irq(desc->irq);
++
++	/* Boot firmware */
++	ret = qcom_scm_pas_auth_and_reset(BTSS_PAS_ID);
++	if (ret) {
++		bt_dev_err(hdev, "Failed to boot firmware: %d", ret);
++		goto disable_irq;
++	}
++
++	msleep(BTSS_PWR_CTRL_DELAY_MS);
++	ret = wait_event_timeout(desc->wait_q, READ_ONCE(desc->running),
++				 msecs_to_jiffies(1000));
++
++	if (!ret) {
++		bt_dev_err(hdev, "Timeout waiting for BTSS start");
++		ret = -ETIMEDOUT;
++		goto shutdown;
++	}
++
++	return 0;
++
++shutdown:
++	qcom_scm_pas_shutdown(BTSS_PAS_ID);
++disable_irq:
++	disable_irq(desc->irq);
++
++	return ret;
++}
++
++static int btqcomipc_close(struct hci_dev *hdev)
++{
++	struct qcom_btss *desc = hci_get_drvdata(hdev);
++	unsigned long flags;
++	int ret;
++
++	ret = qcom_scm_pas_shutdown(BTSS_PAS_ID);
++	if (ret) {
++		bt_dev_err(hdev, "Failed to stop firmware: %d", ret);
++		return ret;
++	}
++
++	disable_irq(desc->irq);
++
++	spin_lock_irqsave(&desc->lock, flags);
++	WRITE_ONCE(desc->running, false);
++	spin_unlock_irqrestore(&desc->lock, flags);
++
++	msleep(BTSS_PWR_CTRL_DELAY_MS);
++
++	return 0;
++}
++
++static int btqcomipc_setup(struct hci_dev *hdev)
++{
++	struct qca_btsoc_version ver;
++	int ret;
++
++	/*
++	 * Enable controller to do both LE scan and BR/EDR inquiry
++	 * simultaneously.
++	 */
++	hci_set_quirk(hdev, HCI_QUIRK_SIMULTANEOUS_DISCOVERY);
++
++	/*
++	 * Enable NON_PERSISTENT_SETUP QUIRK to ensure to execute
++	 * setup for every hci up.
++	 */
++	hci_set_quirk(hdev, HCI_QUIRK_NON_PERSISTENT_SETUP);
++	ret = qca_read_soc_version(hdev, &ver, QCA_IPQ5018);
++	if (ret)
++		return -EINVAL;
++
++	ret = qca_uart_setup(hdev, 0, QCA_IPQ5018, ver, NULL, NULL);
++	if (ret) {
++		bt_dev_err(hdev, "Failed to setup controller: %d\n", ret);
++		return ret;
++	}
++
++	/* Obtain and set BD address from NVMEM cell */
++	hci_set_quirk(hdev, HCI_QUIRK_USE_BDADDR_NVMEM);
++	hci_set_quirk(hdev, HCI_QUIRK_BDADDR_NVMEM_BE);
++
++	return 0;
++}
++
++static int btqcomipc_send(struct hci_dev *hdev, struct sk_buff *skb)
++{
++	u16 hdr = FIELD_PREP(IPC_HDR_PKT_TYPE_MASK, IPC_HDR_PKT_TYPE_HCI);
++	struct qcom_btss *desc = hci_get_drvdata(hdev);
++	unsigned long flags;
++	int ret;
++
++	spin_lock_irqsave(&desc->lock, flags);
++
++	if (unlikely(!READ_ONCE(desc->running))) {
++		bt_dev_err(hdev,
++			   "BTSS not initialized, failed to send message");
++		ret = -ENODEV;
++		goto spin_unlock;
++	}
++
++	ret = btss_send(desc, hdr, skb);
++	if (ret) {
++		if (ret == -EAGAIN) {
++			if (skb_queue_len(&desc->tx_q) >= IPC_TX_QSIZE) {
++				bt_dev_err(hdev,
++					   "TX queue full, dropping message");
++				hdev->stat.err_tx++;
++				ret = -ENOBUFS;
++			} else {
++				skb_queue_tail(&desc->tx_q, skb);
++				ret = 0;
++				skb = NULL;
++			}
++		} else {
++			bt_dev_err(hdev, "Failed to send message: %d", ret);
++			hdev->stat.err_tx++;
++		}
++	}
++
++spin_unlock:
++	spin_unlock_irqrestore(&desc->lock, flags);
++
++	if (!ret && skb) {
++		btqcomipc_update_stats(desc->hdev, skb);
++		kfree_skb(skb);
++	}
++
++	return ret;
++}
++
++static int btqcomipc_flush(struct hci_dev *hdev)
++{
++	struct qcom_btss *desc = hci_get_drvdata(hdev);
++
++	skb_queue_purge(&desc->tx_q);
++
++	return 0;
++}
++
++static int btqcomipc_init(struct qcom_btss *desc)
++{
++	struct device *dev = desc->dev;
++	int ret;
++
++	init_waitqueue_head(&desc->wait_q);
++	spin_lock_init(&desc->lock);
++	skb_queue_head_init(&desc->tx_q);
++
++	desc->wq = devm_alloc_ordered_workqueue(dev, "btss_wq", 0);
++	if (!desc->wq) {
++		dev_err(dev, "Failed to initialize workqueue\n");
++		return -ENOMEM;
++	}
++
++	INIT_WORK(&desc->work, btss_worker);
++
++	ret = devm_request_threaded_irq(dev, desc->irq, NULL, btss_irq_handler,
++					IRQF_TRIGGER_RISING | IRQF_ONESHOT | IRQF_NO_AUTOEN,
++					"btss_irq", desc);
++
++	if (ret) {
++		dev_err(dev, "error registering irq[%d] ret = %d\n",
++			desc->irq, ret);
++		return ret;
++	}
++
++	return 0;
++}
++
++static void btqcomipc_deinit(struct qcom_btss *desc)
++{
++	if (desc->wq)
++		flush_workqueue(desc->wq);
++	skb_queue_purge(&desc->tx_q);
++}
++
++static int btqcomipc_probe(struct platform_device *pdev)
++{
++	struct reset_control *btss_reset;
++	struct device *dev = &pdev->dev;
++	struct of_phandle_args args;
++	struct device_node *ipc_np;
++	struct qcom_btss *desc;
++	struct resource *res;
++	struct hci_dev *hdev;
++	struct clk *lpo_clk;
++	int ret;
++
++	desc = devm_kzalloc(dev, sizeof(*desc), GFP_KERNEL);
++	if (!desc)
++		return -ENOMEM;
++
++	desc->dev = dev;
++
++	ret = of_property_read_string(dev->of_node, "firmware-name",
++				      &desc->firmware);
++	if (ret < 0)
++		return ret;
++
++	desc->base = devm_platform_get_and_ioremap_resource(pdev, 0, &res);
++	if (IS_ERR(desc->base)) {
++		dev_err(dev, "unable to acquire memory-region resource\n");
++		return dev_err_probe(dev, PTR_ERR(desc->base),
++				     "unable to acquire memory-region resource\n");
++	}
++
++	desc->mem_phys = res->start;
++	desc->mem_size = resource_size(res);
++
++	ret = of_parse_phandle_with_fixed_args(dev->of_node, "qcom,ipc", 2, 0,
++					       &args);
++	if (ret)
++		return dev_err_probe(dev, ret, "Failed to get ipc node\n");
++
++	ipc_np = args.np;
++
++	desc->regmap = device_node_to_regmap(ipc_np);
++	if (IS_ERR(desc->regmap)) {
++		dev_err(dev, "Failed to get regmap from ipc node\n");
++		of_node_put(ipc_np);
++		return PTR_ERR(desc->regmap);
++	}
++
++	desc->offset = args.args[0];
++	desc->bit = args.args[1];
++
++	of_node_put(ipc_np);
++
++	lpo_clk = devm_clk_get_enabled(dev, "lpo");
++	if (IS_ERR(lpo_clk))
++		return dev_err_probe(dev, PTR_ERR(lpo_clk),
++				     "Failed to get lpo clock\n");
++
++	btss_reset = devm_reset_control_get_exclusive_deasserted(dev, NULL);
++	if (IS_ERR_OR_NULL(btss_reset))
++		return dev_err_probe(dev, PTR_ERR(btss_reset),
++				     "unable to deassert reset\n");
++
++	desc->irq = platform_get_irq(pdev, 0);
++	if (desc->irq < 0)
++		return dev_err_probe(dev, desc->irq, "Failed to acquire IRQ\n");
++
++	hdev = hci_alloc_dev();
++	if (!hdev)
++		return -ENOMEM;
++
++	hci_set_drvdata(hdev, desc);
++	desc->hdev = hdev;
++	SET_HCIDEV_DEV(hdev, &pdev->dev);
++	hdev->bus = HCI_IPC;
++
++	hdev->open = btqcomipc_open;
++	hdev->close = btqcomipc_close;
++	hdev->setup = btqcomipc_setup;
++	hdev->send = btqcomipc_send;
++	hdev->flush = btqcomipc_flush;
++	hdev->set_bdaddr = qca_set_bdaddr;
++
++	ret = btqcomipc_init(desc);
++	if (ret) {
++		hci_free_dev(hdev);
++		return dev_err_probe(dev, ret, "Failed to initialize\n");
++	}
++
++	ret = hci_register_dev(hdev);
++	if (ret < 0) {
++		btqcomipc_deinit(desc);
++		hci_free_dev(hdev);
++		return dev_err_probe(dev, -EBUSY, "Failed to register hdev\n");
++	}
++
++	platform_set_drvdata(pdev, desc);
++
++	return 0;
++}
++
++static void btqcomipc_remove(struct platform_device *pdev)
++{
++	struct qcom_btss *desc = platform_get_drvdata(pdev);
++
++	/* first unregister to stop incoming HCI traffic */
++	hci_unregister_dev(desc->hdev);
++
++	/* disable interrupt and asynchronous operations before teardown */
++	btqcomipc_deinit(desc);
++
++	hci_free_dev(desc->hdev);
++	desc->hdev = NULL;
++}
++
++static const struct of_device_id btqcomipc_of_match[] = {
++	{ .compatible = "qcom,ipq5018-bt" },
++	{ /* sentinel */},
++};
++MODULE_DEVICE_TABLE(of, btqcomipc_of_match);
++
++static struct platform_driver btqcomipc_driver = {
++	.probe = btqcomipc_probe,
++	.remove = btqcomipc_remove,
++	.driver = {
++		.name = "btqcomipc",
++		.of_match_table = btqcomipc_of_match,
++	},
++};
++
++module_platform_driver(btqcomipc_driver);
++
++MODULE_DESCRIPTION("Qualcomm Bluetooth IPC Driver");
++MODULE_LICENSE("GPL");
