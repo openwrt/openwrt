@@ -510,6 +510,10 @@ sub gen_package_mk() {
 			printf "\$(curdir)/%s/default-variant := %s\n", $src->{path}, $variant_default;
 		}
 
+		if ($src->{parallel_variants}) {
+			printf "\$(curdir)/%s/parallel-variants := 1\n", $src->{path};
+		}
+
 		unless (grep {!$_->{buildonly}} @{$src->{packages}}) {
 			printf "package- += %s\n", $src->{path};
 		}

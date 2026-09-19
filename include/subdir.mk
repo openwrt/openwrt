@@ -59,6 +59,16 @@ rebuild_check = \
 
 endif
 
+subdir_variants = $(filter-out *,$(if $(BUILD_VARIANT),$(BUILD_VARIANT),$(if $(strip $($(1)/variants)),$($(1)/variants),$(if $($(1)/default-variant),$($(1)/default-variant),__default))))
+
+# Parameters: <subdir> <builddir> <target> <variant>
+define subdir_variant
+	$(if $(BUILD_LOG),@mkdir -p $(BUILD_LOG_DIR)/$(1)/$(2)/$(filter-out __default,$(4)))
+	$(if $($(1)/autoremove),$(call rebuild_check,$(1)/$(2),$(3),,$(filter-out __default,$(4)),$($(1)/$(2)/variants)))
+	$(call log_make,$(1)/$(2),$(3),,$(filter-out __default,$(4)),$($(1)/$(2)/variants)) \
+		|| $(call ERROR,$(1),   ERROR: $(1)/$(2) failed to build$(if $(filter-out __default,$(4)), (build variant: $(4))).,$(findstring $(2),$($(1)/builddirs-ignore-$(3))))
+endef
+
 # Parameters: <subdir>
 define subdir
   $(call warn,$(1),d,D $(1))
@@ -71,13 +81,18 @@ define subdir
 			|| $(call ERROR,$(1),   ERROR: $(1)/$(bd) [$(btype)] failed to build.,$(findstring $(bd),$($(1)/builddirs-ignore-$(btype)-$(target))))
         $(if $(call diralias,$(bd)),$(call warn_eval,$(1)/$(bd),l,T,$(1)/$(call diralias,$(bd))/$(btype)/$(target): $(1)/$(bd)/$(btype)/$(target)))
       )
-      $(call warn_eval,$(1)/$(bd),t,T,$(1)/$(bd)/$(target): $(if $(NO_DEPS)$(QUILT),,$($(1)/$(bd)/$(target)) $(call $(1)//$(target),$(1)/$(bd))))
-        $(foreach variant,$(filter-out *,$(if $(BUILD_VARIANT),$(BUILD_VARIANT),$(if $(strip $($(1)/$(bd)/variants)),$($(1)/$(bd)/variants),$(if $($(1)/$(bd)/default-variant),$($(1)/$(bd)/default-variant),__default)))),
-			$(if $(BUILD_LOG),@mkdir -p $(BUILD_LOG_DIR)/$(1)/$(bd)/$(filter-out __default,$(variant)))
-			$(if $($(1)/autoremove),$(call rebuild_check,$(1)/$(bd),$(target),,$(filter-out __default,$(variant)),$($(1)/$(bd)/variants)))
-			$(call log_make,$(1)/$(bd),$(target),,$(filter-out __default,$(variant)),$($(1)/$(bd)/variants)) \
-				|| $(call ERROR,$(1),   ERROR: $(1)/$(bd) failed to build$(if $(filter-out __default,$(variant)), (build variant: $(variant))).,$(findstring $(bd),$($(1)/builddirs-ignore-$(target)))) 
+      $(if $($(1)/$(bd)/parallel-variants),
+        $(foreach variant,$(call subdir_variants,$(1)/$(bd)),
+          $(call warn_eval,$(1)/$(bd),t,T,$(1)/$(bd)/$(variant)/$(target): $(if $(NO_DEPS)$(QUILT),,$($(1)/$(bd)/$(target)) $(call $(1)//$(target),$(1)/$(bd))))
+$(call subdir_variant,$(1),$(bd),$(target),$(variant))
         )
+        $(call warn_eval,$(1)/$(bd),t,T,$(1)/$(bd)/$(target): $(foreach variant,$(call subdir_variants,$(1)/$(bd)),$(1)/$(bd)/$(variant)/$(target)))
+      ,
+        $(call warn_eval,$(1)/$(bd),t,T,$(1)/$(bd)/$(target): $(if $(NO_DEPS)$(QUILT),,$($(1)/$(bd)/$(target)) $(call $(1)//$(target),$(1)/$(bd))))
+          $(foreach variant,$(call subdir_variants,$(1)/$(bd)),
+$(call subdir_variant,$(1),$(bd),$(target),$(variant))
+          )
+      )
       $(if $(PREREQ_ONLY)$(DUMP_TARGET_DB),,
         # aliases
         $(if $(call diralias,$(bd)),$(call warn_eval,$(1)/$(bd),l,T,$(1)/$(call diralias,$(bd))/$(target): $(1)/$(bd)/$(target)))
