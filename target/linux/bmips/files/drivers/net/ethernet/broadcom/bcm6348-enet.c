@@ -589,6 +589,7 @@ static int bcm6348_emac_receive_queue(struct net_device *ndev, int budget)
 	struct bcm6348_iudma *iudma = emac->iudma;
 	struct platform_device *pdev = emac->pdev;
 	struct device *dev = &pdev->dev;
+	LIST_HEAD(rx_list);
 	int processed = 0;
 
 	/* don't scan ring further than number of refilled
@@ -662,8 +663,10 @@ static int bcm6348_emac_receive_queue(struct net_device *ndev, int budget)
 		skb->protocol = eth_type_trans(skb, ndev);
 		ndev->stats.rx_packets++;
 		ndev->stats.rx_bytes += len;
-		netif_receive_skb(skb);
+		list_add_tail(&skb->list, &rx_list);
 	} while (--budget > 0);
+
+	netif_receive_skb_list(&rx_list);
 
 	if (processed || !emac->rx_desc_count) {
 		bcm6348_emac_refill_rx(ndev);

@@ -204,6 +204,7 @@ static int ptm_stop(struct net_device *dev)
 
 static unsigned int ptm_poll(int ndev, unsigned int work_to_do)
 {
+    LIST_HEAD(rx_list);
     unsigned int work_done = 0;
     volatile struct rx_descriptor *desc;
     struct rx_descriptor reg_desc;
@@ -231,7 +232,7 @@ static unsigned int ptm_poll(int ndev, unsigned int work_to_do)
             skb->dev = g_net_dev[0];
             skb->protocol = eth_type_trans(skb, skb->dev);
 
-            netif_receive_skb(skb);
+            list_add_tail(&skb->list, &rx_list);
 
             g_ptm_priv_data.itf[0].stats.rx_packets++;
             g_ptm_priv_data.itf[0].stats.rx_bytes += reg_desc.datalen;
@@ -251,6 +252,8 @@ static unsigned int ptm_poll(int ndev, unsigned int work_to_do)
 
         work_done++;
     }
+
+    netif_receive_skb_list(&rx_list);
 
     return work_done;
 }
