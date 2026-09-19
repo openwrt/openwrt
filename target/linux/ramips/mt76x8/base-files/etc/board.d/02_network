@@ -220,6 +220,7 @@ ramips_setup_interfaces()
 		uci add_list firewall.@zone[1].network='wwan'
 		uci add_list firewall.@zone[1].network='wwan6'
 		;;
+	buffalo,wex-1166dhpl|\
 	cudy,re1200-outdoor-v1|\
 	tplink,tl-mr3020-v3)
 		ucidef_add_switch "switch0" \
@@ -363,6 +364,7 @@ ramips_setup_macs()
 	movingcomm,c120ev)
 		wan_mac=$(mtd_get_mac_binary factory 0x28)
 		;;
+	buffalo,wex-1166dhpl|\
 	onion,omega2|\
 	onion,omega2p|\
 	vocore,vocore2|\
