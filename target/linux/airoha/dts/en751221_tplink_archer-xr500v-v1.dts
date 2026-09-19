@@ -15,12 +15,29 @@
 
 	chosen {
 		stdout-path = "/serial@1fbf0000:115200";
-		bootargs = "console=ttyS0,115200 loglevel=4";
+		rootdisk = <&firmware>;
+		bootargs = "console=ttyS0,115200 loglevel=4 ubi.block=0,fit root=/dev/fit0 rootwait";
 		linux,usable-memory-range = <0x00020000 0x0ffe0000>;
+	};
+
+	aliases {
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
 	};
 
 	leds {
 		compatible = "gpio-leds";
+
+		/* GPIO 6, not hardwired: the OEM bootloader switched it on and
+		 * OpenWrt's U-Boot uses it as its boot LED. Keep it on.
+		 */
+		led_power: led-power {
+			label = "green:power";
+			gpios = <&pinctrl 6 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
 
 		led_pon: led-pon {
 			label = "green:pon";
@@ -112,6 +129,8 @@
 };
 
 &gdm1 {
+	nvmem-cells = <&macaddr_misc_f100 0>;
+	nvmem-cell-names = "mac-address";
 	status = "okay";
 };
 
@@ -163,18 +182,90 @@
 	status = "okay";
 };
 
-/* The SPI-NAND is exposed as a whole; the OEM tcboot layout uses BMT block
- * remapping, so no fixed partitions are described here. The UBI layout comes
- * with the U-Boot port for this board.
- */
 &spi0 {
 	status = "okay";
 };
 
+/* Layout of OpenWrt's U-Boot for this board (airoha/u-boot), which replaces
+ * the OEM bootloader and its BMT block remapping: tcboot.bin (DDR stage and
+ * U-Boot) in the first MiB, everything else in one UBI partition. U-Boot's
+ * format_ubi_part creates the volumes and copies the OEM "misc" partition
+ * into the "misc" volume, so the factory data keeps its OEM offsets.
+ */
+&nand {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "u-boot";
+			reg = <0x000000 0x100000>;
+			read-only;
+		};
+
+		partition@100000 {
+			label = "ubi";
+			compatible = "linux,ubi";
+			reg = <0x100000 0x7f00000>;
+
+			volumes {
+				ubi-volume-ubootenv {
+					volname = "ubootenv";
+
+					nvmem-layout {
+						compatible = "u-boot,env-redundant-bool";
+					};
+				};
+
+				ubi-volume-ubootenv2 {
+					volname = "ubootenv2";
+
+					nvmem-layout {
+						compatible = "u-boot,env-redundant-bool";
+					};
+				};
+
+				ubi-volume-misc {
+					volname = "misc";
+					read-only;
+
+					nvmem-layout {
+						compatible = "fixed-layout";
+						#address-cells = <1>;
+						#size-cells = <1>;
+
+						/* LAN MAC from the label; WAN is +1, Wi-Fi +2. */
+						macaddr_misc_f100: macaddr@f100 {
+							compatible = "mac-base";
+							reg = <0xf100 0x6>;
+							#nvmem-cell-cells = <1>;
+						};
+
+						/* Airoha LDD/LA calibration: 100 words, magic 0x07050700 at +0x94. */
+						en7570_cal: calibration@20000 {
+							reg = <0x20000 0x190>;
+						};
+
+						/* MT7662 (5 GHz) EEPROM, for the PCIe radio node. */
+						eeprom_misc_e0000: eeprom@e0000 {
+							reg = <0xe0000 0x200>;
+						};
+					};
+				};
+
+				firmware: ubi-volume-firmware {
+					volname = "fit";
+					compatible = "denx,uimage";
+				};
+			};
+		};
+	};
+};
+
 /* Airoha LDD/LA at I2C 0x70, bound as en7570 like the other EN751221 boards
- * (Genexis Platinum-4410, Jiuzhou EN7526GT). The factory LDD/LA calibration
- * lives in the OEM "misc" partition and will be referenced through nvmem once
- * the flash layout is described.
+ * (Genexis Platinum-4410, Jiuzhou EN7526GT), with the factory calibration
+ * from the "misc" volume.
  */
 &i2c0 {
 	status = "okay";
@@ -184,6 +275,8 @@
 		reg = <0x70>;
 		phys = <&xpon_phy>;
 		phy-names = "xpon";
+		nvmem-cells = <&en7570_cal>;
+		nvmem-cell-names = "calibration";
 	};
 };
 
@@ -203,6 +296,11 @@
 &gdm2 {
 	status = "okay";
 	phy-mode = "internal";
+
+	nvmem-cells = <&macaddr_misc_f100 1>;
+	nvmem-cell-names = "mac-address";
+
+	openwrt,netdev-name = "pon0";
 };
 
 &usb {
