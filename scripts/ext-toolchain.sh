@@ -461,7 +461,7 @@ probe_cc() {
 		local bin
 		for bin in "bin" "usr/bin" "usr/local/bin"; do
 			local cmd
-			for cmd in "$TOOLCHAIN/$bin/"*-*cc*; do
+			for cmd in "$TOOLCHAIN/$bin/"*-*cc*[0-9] "$TOOLCHAIN/$bin/"*-*cc*; do
 				if [ -x "$cmd" ] && [ ! -h "$cmd" ]; then
 					CC="$(cd "${cmd%/*}"; pwd)/${cmd##*/}"
 					return 0
