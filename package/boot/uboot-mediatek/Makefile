@@ -1506,11 +1506,11 @@ FIP_BL31=$(STAGING_DIR_IMAGE)/$(if $(BL2_SOC),$(BL2_SOC),$(BUILD_SUBTARGET))-$(B
 
 define Build/fip-image
 	$(if $(FIP_COMPRESS),\
-		xz -f -e -k -9 -C crc32 $(FIP_BL31) ;\
+		xz -e -9 -C crc32 -c $(FIP_BL31) > $(PKG_BUILD_DIR)/bl31.bin.xz ;\
 		xz -f -e -k -9 -C crc32 $(PKG_BUILD_DIR)/u-boot.bin \
 	)
 	$(STAGING_DIR_HOST)/bin/fiptool create \
-		--soc-fw $(FIP_BL31)$(if $(FIP_COMPRESS),.xz) \
+		--soc-fw $(if $(FIP_COMPRESS),$(PKG_BUILD_DIR)/bl31.bin.xz,$(FIP_BL31)) \
 		--nt-fw $(PKG_BUILD_DIR)/u-boot.bin$(if $(FIP_COMPRESS),.xz) \
 		$(PKG_BUILD_DIR)/u-boot.fip
 endef
