@@ -1,0 +1,41 @@
+From: Kenneth Kasilag <kenneth@kasilag.me>
+Date: Mon, 06 Jul 2026 00:00:00 +0000
+Subject: [PATCH] net: ethernet: qualcomm: ppe: give a virtual port a routable ingress
+
+The downlink offload - a wired-to-wireless flow forwarded to a virtual
+port - leaves the port's ingress L3 interface unbound, because only
+that direction crosses the hardware. Bind it: a virtual port now takes
+the same port-to-L3-interface binding as a physical port, so a packet
+that enters the PPE with the virtual port as its source is routed and
+NAT'd by the flow engine like any ingress. It reuses the L3 interface
+the downlink already programs with the router MAC, which is the one the
+reverse (wireless-to-wired) flow of the connection resolves.
+
+This is dormant on its own - nothing injects a packet sourced from a
+virtual port yet - and only completes the port's programming. The
+transmit and receive-interception paths that offload the wireless
+uplink follow.
+
+Signed-off-by: Kenneth Kasilag <kenneth@kasilag.me>
+---
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_flowtable.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_flowtable.c
+@@ -2273,12 +2273,13 @@ static int ppe_ft_flow_replace(struct pp
+ 		}
+ 
+ 		/* The port binding classifies plain ingress on the
+-		 * port; PPPoE ingress resolves its L3 interface
+-		 * through the session table instead, and a virtual
+-		 * port has no hardware ingress at all (only the
+-		 * wired-to-wireless direction is offloaded).
++		 * port, and a virtual port takes it too so that a
++		 * wireless-uplink packet injected with the port as
++		 * its source is routed by the same flow entry; PPPoE
++		 * ingress resolves its L3 interface through the
++		 * session table instead.
+ 		 */
+-		if (data.pppoe_sid < 0 && flow->vp < 0) {
++		if (data.pppoe_sid < 0) {
+ 			ret = ppe_port_l3_if_set(ft->ppe_dev, nh.port,
+ 						 nh.l3_if);
+ 			if (ret)
