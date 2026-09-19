@@ -5,6 +5,12 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
+ifeq ($(CONFIG_TARGET_IMAGES_PIGZ),y)
+  GZIPCMD:=pigz
+else
+  GZIPCMD:=gzip
+endif
+
 USB1_PACKAGES := kmod-usb-ohci
 USB2_PACKAGES := $(USB1_PACKAGES) kmod-usb2
 
@@ -19,7 +25,7 @@ define Image/Prepare
 	# Less optimal LZMA compression (no dictionary), handled by CFE.
 	$(STAGING_DIR_HOST)/bin/lzma e -so -d16 $(KDIR)/vmlinux > $(KDIR)/vmlinux-nodictionary.lzma
 
-	gzip -nc9 $(KDIR)/vmlinux > $(KDIR)/vmlinux.gz
+	$(GZIPCMD) -nc9 $(KDIR)/vmlinux > $(KDIR)/vmlinux.gz
 ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 	cat $(KDIR)/vmlinux-initramfs | $(STAGING_DIR_HOST)/bin/lzma e -si -so -eos -lc1 -lp2 -pb2 > $(KDIR)/vmlinux-initramfs.lzma
 	$(STAGING_DIR_HOST)/bin/lzma e -so -d16 $(KDIR)/vmlinux-initramfs > $(KDIR)/vmlinux-initramfs-nodictionary.lzma

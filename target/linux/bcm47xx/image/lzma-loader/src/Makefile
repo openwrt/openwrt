@@ -17,6 +17,12 @@
 #   Cleaned up, modified for lzma support, removed from kernel
 #
 
+ifeq ($(CONFIG_TARGET_IMAGES_PIGZ),y)
+  GZIPCMD:=pigz
+else
+  GZIPCMD:=gzip
+endif
+
 TEXT_START	:= 0x80001000
 BZ_TEXT_START	:= 0x80d00000
 BZ_STACK_START	:= 0x80e00000
@@ -43,7 +49,7 @@ dep:
 install:
 
 loader.gz: loader
-	gzip -nc9 $< > $@
+	$(GZIPCMD) -nc9 $< > $@
 
 loader.elf: loader.o
 	cp $< $@
