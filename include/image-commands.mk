@@ -471,11 +471,6 @@ define Build/libdeflate-gzip
 	@mv $@.new $@
 endef
 
-define Build/gzip
-	$(STAGING_DIR_HOST)/bin/gzip -f -9n -c $@ $(1) > $@.new
-	@mv $@.new $@
-endef
-
 define Build/gzip-filename
 	@mkdir -p $@.tmp
 	@cp $@ $@.tmp/$(word 1,$(1))

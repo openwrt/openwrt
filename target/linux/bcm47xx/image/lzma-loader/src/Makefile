@@ -3,7 +3,7 @@
 #
 # Copyright 2001-2003, Broadcom Corporation
 # All Rights Reserved.
-# 
+#
 # THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
 # KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
 # SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
@@ -43,7 +43,7 @@ dep:
 install:
 
 loader.gz: loader
-	gzip -nc9 $< > $@
+	libdeflate-gzip -12 -c $< > $@
 
 loader.elf: loader.o
 	cp $< $@
