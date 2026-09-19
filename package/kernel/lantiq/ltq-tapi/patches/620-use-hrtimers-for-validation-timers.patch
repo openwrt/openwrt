@@ -1,0 +1,206 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 14 Aug 2026 02:30:00 +0100
+Subject: [PATCH] use hrtimers for TAPI validation timers
+
+The hook state machine in drv_tapi_dial.c validates pulse-dial make and
+break segments with TAPI_SetTime_Timer(), which arms a classic jiffies
+timer:
+
+    Timer->Periodical_Time = HZ*nTime/1000;
+    Timer->Timer_List.expires = jiffies + Timer->Periodical_Time;
+
+At HZ=100 every validation window quantises to 10 ms ticks, with the
+usual (N-1,N] expiry smear on top. Mechanical rotary dials at 10 pps
+(make around 40 ms, break around 60 ms) survive this; fast electronic
+pulse dialers (around 20 pps, makes of 15-20 ms, found in 1980s button
+pads retrofitted onto rotary-era phones) race the timer on every single
+pulse: consecutive pulses merge pairwise and pulse counts turn into
+per-pulse coin flips. No IFX_TAPI_LINE_HOOK_VT_SET configuration can
+help, as the error lies in the timer mechanism, not in the validation
+windows.
+
+Replace the jiffies timer with an hrtimer (CLOCK_MONOTONIC,
+HRTIMER_MODE_REL_SOFT, so expiry runs in softirq context like the old
+timer callback did). The expiry handler defers the actual TAPI callback
+to the workqueue exactly like before, and periodical timers keep
+re-arming from the work item after the callback has run, so a slow
+callback defers, but never drops, a tick. The only periodical user is
+the 5 s power-save poll in drv_tapi_opcontrol.c, which does not need
+drift-free periods; all pulse-dial validation timers are one-shot and
+now expire with hrtimer precision.
+
+Timer deletion now also cancels a pending work item and re-cancels the
+hrtimer afterwards to catch a concurrent periodical re-arm. All
+TAPI_Delete_Timer() callers run in process context (channel or module
+cleanup), never from a timer callback, so cancel_work_sync() cannot
+deadlock there.
+
+hrtimer_setup() replaced hrtimer_init() in kernel 6.13 and the latter
+is gone from current kernels, hence the version guard. This supersedes
+the del_timer_sync()/from_timer() compatibility guards previously
+needed for kernel 6.18; the <linux/version.h> include is carried over
+from that adaptation.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ src/drv_tapi_linux.c | 50 +++++++++++++++++++++++++++-----------------
+ src/drv_tapi_linux.h | 11 ++++++----
+ 2 files changed, 38 insertions(+), 23 deletions(-)
+
+--- a/src/drv_tapi_linux.c
++++ b/src/drv_tapi_linux.c
+@@ -35,6 +35,7 @@
+ 
+ #ifdef __KERNEL__
+ #include <linux/kernel.h>
++#include <linux/version.h>
+ #endif
+ #ifdef MODULE
+ #include <linux/module.h>
+@@ -107,7 +108,7 @@ struct _TAPI_FD_PRIV_DATA
+ /* ============================= */
+ /* Local Functions               */
+ /* ============================= */
+-static IFX_void_t TAPI_timer_call_back (struct timer_list *t);
++static enum hrtimer_restart TAPI_hrtimer_cb (struct hrtimer *hrt);
+ #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,20))
+ static IFX_void_t TAPI_tqueue (IFX_void_t *pWork);
+ #else /* for Kernel newer or equal 2.6.20 */
+@@ -3351,7 +3352,14 @@ Timer_ID TAPI_Create_Timer(TIMER_ENTRY p
+    pTimerData->nArgument = nArgument;
+    pTimerData->bStopped = IFX_FALSE;
+ 
+-   timer_setup(&(pTimerData->Timer_List), TAPI_timer_call_back, 0);
++#if LINUX_VERSION_CODE < KERNEL_VERSION(6,13,0)
++   hrtimer_init(&(pTimerData->hrt), CLOCK_MONOTONIC, HRTIMER_MODE_REL_SOFT);
++   pTimerData->hrt.function = TAPI_hrtimer_cb;
++#else
++   hrtimer_setup(&(pTimerData->hrt), TAPI_hrtimer_cb, CLOCK_MONOTONIC,
++                 HRTIMER_MODE_REL_SOFT);
++#endif
++   pTimerData->period = 0;
+ 
+    /* Initialize Timer Task */
+ #ifdef LINUX_2_6
+@@ -3394,17 +3402,14 @@ IFX_boolean_t TAPI_SetTime_Timer(Timer_I
+           ("\nDRV_ERROR: TAPI_SetTime_Timer (Timer == 0)\n"));
+      return IFX_FALSE;
+    }
+-   Timer->Periodical_Time = HZ*nTime/1000;
+    /* prevent restart of driver */
+    Timer->bPeriodical = IFX_FALSE;
+-   /* remove driver from list */
+-   del_timer_sync(&(Timer->Timer_List));
++   hrtimer_cancel(&(Timer->hrt));
+ 
++   Timer->period = ms_to_ktime(nTime);
+    Timer->bPeriodical = bPeriodically;
+-
+-   Timer->Timer_List.expires = jiffies + Timer->Periodical_Time;
+    Timer->bStopped = IFX_FALSE;
+-   add_timer(&(Timer->Timer_List));
++   hrtimer_start(&(Timer->hrt), Timer->period, HRTIMER_MODE_REL_SOFT);
+ 
+    return IFX_TRUE;
+ }
+@@ -3424,8 +3429,7 @@ IFX_boolean_t TAPI_Stop_Timer(Timer_ID T
+    Timer->bStopped = IFX_TRUE;
+    /* prevent restart of driver */
+    Timer->bPeriodical = IFX_FALSE;
+-   /* remove driver from list */
+-   del_timer_sync(&(Timer->Timer_List));
++   hrtimer_cancel(&(Timer->hrt));
+    return (IFX_TRUE);
+ }
+ 
+@@ -3443,6 +3447,11 @@ IFX_boolean_t TAPI_Delete_Timer(Timer_ID
+    if (Timer)
+    {
+       TAPI_Stop_Timer(Timer);
++#ifdef LINUX_2_6
++      cancel_work_sync(&(Timer->timerTask));
++#endif /* LINUX_2_6 */
++      /* the work item may have re-armed a periodical timer meanwhile */
++      hrtimer_cancel(&(Timer->hrt));
+       /* free memory */
+       kfree(Timer);
+       return IFX_TRUE;
+@@ -3477,24 +3486,26 @@ static IFX_void_t TAPI_tqueue (struct wo
+       Timer->pTimerEntry(Timer, Timer->nArgument);
+       if (Timer->bPeriodical)
+       {
+-         /* remove driver from list */
+-         del_timer_sync(&(Timer->Timer_List));
+-         /* start new timer, then call function to gain precision */
+-         Timer->Timer_List.expires = jiffies + Timer->Periodical_Time;
+-         add_timer(&(Timer->Timer_List));
++         /* re-arm only after the callback ran so a slow callback defers,
++            but never drops, the next tick */
++         hrtimer_start(&(Timer->hrt), Timer->period, HRTIMER_MODE_REL_SOFT);
+       }
+    }
+ }
+ 
+ 
+ /**
+-   Helper function to get a periodical timer.
++   hrtimer expiry callback, runs in softirq context (HRTIMER_MODE_REL_SOFT).
+ 
+-   \param  arg          Pointer to corresponding timer ID.
++   \param  hrt          Pointer to the hrtimer inside the timer ID structure.
+ */
+-static IFX_void_t TAPI_timer_call_back (struct timer_list *t)
++static enum hrtimer_restart TAPI_hrtimer_cb (struct hrtimer *hrt)
+ {
+-   Timer_ID Timer = from_timer(Timer, t, Timer_List);
++   Timer_ID Timer = container_of(hrt, struct tapi_timer, hrt);
++
++   if (Timer->bStopped)
++      return HRTIMER_NORESTART;
++
+    /* do the operation in process context,
+       not in interrupt context */
+ #ifdef LINUX_2_6
+@@ -3502,6 +3513,7 @@ static IFX_void_t TAPI_timer_call_back (
+ #else
+    schedule_task (&(Timer->timerTask));
+ #endif /* LINUX_2_6 */
++   return HRTIMER_NORESTART;
+ }
+ 
+ #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,20))
+--- a/src/drv_tapi_linux.h
++++ b/src/drv_tapi_linux.h
+@@ -64,14 +64,17 @@
+ /* ============================= */
+ /* Global Structures             */
+ /* ============================= */
+-#define TIMER_ELEMENT   struct timer_list
++#include <linux/hrtimer.h>
++#include <linux/ktime.h>
++
++#define TIMER_ELEMENT   struct hrtimer
+ 
+ /* Functionpointer to the callbackfunction */
+ typedef IFX_void_t (*TIMER_ENTRY)(IFX_void_t * timer_id, IFX_ulong_t arg);
+ typedef IFX_void_t (*linux_timer_callback)(IFX_ulong_t);
+ 
+ /* Timer ID */
+-typedef struct
++typedef struct tapi_timer
+ {
+ #ifdef LINUX_2_6
+    /* !!! important, work struct must be the first element, because we
+@@ -80,9 +83,9 @@ typedef struct
+ #else
+    struct tq_struct timerTask;
+ #endif /* LINUX_2_6 */
+-   struct timer_list Timer_List;
++   struct hrtimer hrt;
+    IFX_boolean_t bPeriodical;
+-   IFX_uint32_t Periodical_Time;
++   ktime_t period;
+    TIMER_ENTRY pTimerEntry;
+    IFX_ulong_t nArgument;
+    IFX_boolean_t bStopped;
