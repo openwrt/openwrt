@@ -142,6 +142,33 @@ define Device/tplink_archer-vr1200v-v2
 endef
 TARGET_DEVICES += tplink_archer-vr1200v-v2
 
+# OpenWrt's U-Boot replaces the OEM bootloader: tcboot.bin (DDR stage plus
+# U-Boot) is in the 1 MiB "u-boot" partition, everything else is UBI. The
+# image is a FIT in the "fit" volume, booted with "bootm $loadaddr#config-1",
+# and fitblk maps the rootfs from inside it. The kernel is the self-extracting
+# vmlinuz.bin, stored uncompressed (this U-Boot has no LZMA), without an
+# appended DTB: an appended DTB would win over the one U-Boot passes, and
+# only the latter carries chosen/u-boot,version, which fitblk needs.
+define Device/tplink_archer-xr500v-v1
+  $(Device/FitImageVmlinuz)
+  DEVICE_VENDOR := TP-Link
+  DEVICE_MODEL := Archer XR500v
+  DEVICE_VARIANT := v1
+  DEVICE_DTS := en751221_tplink_archer-xr500v-v1
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  UBINIZE_OPTS := -E 5
+  KERNEL_IN_UBI := 1
+  UBOOTENV_IN_UBI := 1
+  KERNEL := kernel-bin
+  IMAGES := sysupgrade.bin
+  IMAGE/sysupgrade.bin := append-kernel | \
+    fit none $$(KDIR)/image-$$(DEVICE_DTS).dtb external-static-with-rootfs | \
+    append-metadata
+  DEVICE_PACKAGES := kmod-usb3 fitblk uboot-envtools
+endef
+TARGET_DEVICES += tplink_archer-xr500v-v1
+
 define Device/zyxel_pmg5617ga
   $(Device/tcboot_trx)
   DEVICE_VENDOR := Zyxel
