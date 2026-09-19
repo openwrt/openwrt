@@ -1,0 +1,237 @@
+From f7e2813203586442e58847ca05724f7cea6b62e7 Mon Sep 17 00:00:00 2001
+From: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+Date: Fri, 24 Jul 2026 05:35:45 +0200
+Subject: [PATCH 5/8] net: dsa: realtek: rtl8365mb: set and get vlan 4k for
+ family D
+
+The hardware structure of 4K VLAN table entries has changed between
+silicon families. Family D's CVLAN entry is two 16-bit words rather
+than three: there is no third word extending member/untag past bit 7,
+and no priority/meter fields at all. The FID field is restricted to a
+narrower 2-bit width, and the hardware runs exclusively in Independent
+VLAN Learning (IVL) mode rather than SVL, requiring the driver to
+explicitly enforce the IVL and SVLAN-check control bits.
+
+Reusing the three-word family C layout unconditionally means the third
+word is read from and written back to the register that holds it on
+family C, but does not exist as a distinct table word on family D's
+die; whatever data happens to be there gets folded into member/untag
+bits [10:8] on read, and re-written on every read-modify-write cycle
+in rtl8365mb_vlan_4k_port_set(). This patch gives family D its own
+two-word pack/unpack instead.
+
+The two-word layout was confirmed against the vendor DAL
+(_dal_rtl8367d_setAsicVlan4kEntry()) measured on a TP-Link EX511 v2
+(RTL8367S-VB, chip ID 0x6642), which only ever writes 0x0510/0x0511
+and never touches the equivalent of the third word. See also patch
+947 in kuncy7's tree, running the same two-word layout on the EX511
+since 2026-09-10 with VLAN-aware bridges, tagged/untagged members and
+per-port PVIDs.
+
+Signed-off-by: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+---
+ drivers/net/dsa/realtek/rtl8365mb_vlan.c | 144 +++++++++++++++--------
+ 1 file changed, 95 insertions(+), 49 deletions(-)
+
+--- a/drivers/net/dsa/realtek/rtl8365mb_vlan.c
++++ b/drivers/net/dsa/realtek/rtl8365mb_vlan.c
+@@ -66,6 +66,8 @@
+ #define RTL8365MB_CVLAN_ENTRY_D1_METERIDX_MASK		GENMASK(13, 9)
+ #define   RTL8365MB_CVLAN_METERIDX_LO_MASK		GENMASK(4, 0)
+ #define RTL8365MB_CVLAN_ENTRY_D1_IVL_SVL_MASK		GENMASK(14, 14)
++#define RTL8365MB_D_CVLAN_ENTRY_D1_SVLAN_CHECK_MASK	GENMASK(2, 2)
++#define RTL8365MB_D_CVLAN_ENTRY_D1_IVL_EN_MASK		GENMASK(3, 3)
+ /* extends RTL8365MB_CVLAN_ENTRY_D0_MBR_MASK */
+ #define RTL8365MB_CVLAN_ENTRY_D2_MBR_EXT_MASK		GENMASK(2, 0)
+ #define   RTL8365MB_CVLAN_MBR_HI_MASK			GENMASK(10, 8)
+@@ -97,6 +99,8 @@
+ #define RTL8365MB_METERMAX	63
+ #define RTL8365MB_VLAN_MCMAX	31
+ 
++#define RTL8365MB_D_FID_MASK	GENMASK(1, 0)
++
+ /* RTL8367S supports 4k vlans (vid<=4095) and 32 enhanced vlans
+  * for VIDs up to 8191
+  */
+@@ -192,12 +196,14 @@ static int rtl8365mb_vlan_4k_read(struct
+ 				  struct rtl8365mb_vlan4k *vlan4k)
+ {
+ 	u16 data[RTL8365MB_CVLAN_ENTRY_SIZE];
++	bool is_d = rtl8365mb_get_family(priv) == RTL8365MB_FAMILY_D;
++	size_t entry_size = is_d ? 2 : RTL8365MB_CVLAN_ENTRY_SIZE;
+ 	int val;
+ 	int ret;
+ 
+ 	ret = rtl8365mb_table_query(priv, RTL8365MB_TABLE_CVLAN,
+ 				    RTL8365MB_TABLE_OP_READ, &vid, 0, 0,
+-				    data, ARRAY_SIZE(data));
++				    data, entry_size);
+ 	if (ret)
+ 		return ret;
+ 
+@@ -205,33 +211,54 @@ static int rtl8365mb_vlan_4k_read(struct
+ 	memset(vlan4k, 0, sizeof(*vlan4k));
+ 	vlan4k->vid = vid;
+ 
++	/* member/untag: d0[7:0]/d0[15:8] on both families. Family C
++	 * extends these into data[2] bits [2:0]/[5:3] for its 11th-16th
++	 * ports; family D's die has only 8 ports and no third table
++	 * word, so data[2] does not exist there and must not be read.
++	 */
+ 	val = FIELD_GET(RTL8365MB_CVLAN_ENTRY_D0_MBR_MASK, data[0]);
+ 	vlan4k->member = FIELD_PREP(RTL8365MB_CVLAN_MBR_LO_MASK, val);
+-	val = FIELD_GET(RTL8365MB_CVLAN_ENTRY_D2_MBR_EXT_MASK, data[2]);
+-	vlan4k->member |= FIELD_PREP(RTL8365MB_CVLAN_MBR_HI_MASK, val);
++	if (!is_d) {
++		val = FIELD_GET(RTL8365MB_CVLAN_ENTRY_D2_MBR_EXT_MASK, data[2]);
++		vlan4k->member |= FIELD_PREP(RTL8365MB_CVLAN_MBR_HI_MASK, val);
++	}
+ 
+ 	val = FIELD_GET(RTL8365MB_CVLAN_ENTRY_D0_UNTAG_MASK, data[0]);
+ 	vlan4k->untag = FIELD_PREP(RTL8365MB_CVLAN_UNTAG_LO_MASK, val);
+-	val = FIELD_GET(RTL8365MB_CVLAN_ENTRY_D2_UNTAG_EXT_MASK, data[2]);
+-	vlan4k->untag |= FIELD_PREP(RTL8365MB_CVLAN_UNTAG_HI_MASK, val);
+-
+-	vlan4k->fid = FIELD_GET(RTL8365MB_CVLAN_ENTRY_D1_FID_MASK, data[1]);
+-	vlan4k->priority_en =
+-		FIELD_GET(RTL8365MB_CVLAN_ENTRY_D1_VBPEN_MASK, data[1]);
+-	vlan4k->priority =
+-		FIELD_GET(RTL8365MB_CVLAN_ENTRY_D1_VBPRI_MASK, data[1]);
+-	vlan4k->policing_en =
+-		FIELD_GET(RTL8365MB_CVLAN_ENTRY_D1_ENVLANPOL_MASK, data[1]);
+-
+-	val = FIELD_GET(RTL8365MB_CVLAN_ENTRY_D1_METERIDX_MASK, data[1]);
+-	val = FIELD_PREP(RTL8365MB_CVLAN_METERIDX_LO_MASK, val);
+-	vlan4k->meteridx = val;
+-	val = FIELD_GET(RTL8365MB_CVLAN_ENTRY_D2_METERIDX_EXT_MASK, data[2]);
+-	val = FIELD_PREP(RTL8365MB_CVLAN_METERIDX_HI_MASK, val);
+-	vlan4k->meteridx |= val;
+-
+-	vlan4k->ivl_en =
+-		FIELD_GET(RTL8365MB_CVLAN_ENTRY_D1_IVL_SVL_MASK, data[1]);
++	if (!is_d) {
++		val = FIELD_GET(RTL8365MB_CVLAN_ENTRY_D2_UNTAG_EXT_MASK, data[2]);
++		vlan4k->untag |= FIELD_PREP(RTL8365MB_CVLAN_UNTAG_HI_MASK, val);
++	}
++
++	val = FIELD_GET(RTL8365MB_CVLAN_ENTRY_D1_FID_MASK, data[1]);
++	/* FID handling differs between families */
++	if (is_d) {
++		val &= RTL8365MB_D_FID_MASK;
++		vlan4k->fid = val;
++		/* Family D has no priority/meter fields in this entry -
++		 * left zeroed by the memset() above.
++		 */
++		vlan4k->ivl_en =
++			FIELD_GET(RTL8365MB_D_CVLAN_ENTRY_D1_IVL_EN_MASK, data[1]);
++	} else {
++		vlan4k->fid = val;
++		vlan4k->priority_en =
++			FIELD_GET(RTL8365MB_CVLAN_ENTRY_D1_VBPEN_MASK, data[1]);
++		vlan4k->priority =
++			FIELD_GET(RTL8365MB_CVLAN_ENTRY_D1_VBPRI_MASK, data[1]);
++		vlan4k->policing_en =
++			FIELD_GET(RTL8365MB_CVLAN_ENTRY_D1_ENVLANPOL_MASK, data[1]);
++
++		val = FIELD_GET(RTL8365MB_CVLAN_ENTRY_D1_METERIDX_MASK, data[1]);
++		val = FIELD_PREP(RTL8365MB_CVLAN_METERIDX_LO_MASK, val);
++		vlan4k->meteridx = val;
++		val = FIELD_GET(RTL8365MB_CVLAN_ENTRY_D2_METERIDX_EXT_MASK, data[2]);
++		val = FIELD_PREP(RTL8365MB_CVLAN_METERIDX_HI_MASK, val);
++		vlan4k->meteridx |= val;
++
++		vlan4k->ivl_en =
++			FIELD_GET(RTL8365MB_CVLAN_ENTRY_D1_IVL_SVL_MASK, data[1]);
++	}
+ 
+ 	return 0;
+ }
+@@ -240,6 +267,8 @@ static int rtl8365mb_vlan_4k_write(struc
+ 				   const struct rtl8365mb_vlan4k *vlan4k)
+ {
+ 	u16 data[RTL8365MB_CVLAN_ENTRY_SIZE] = { 0 };
++	bool is_d = rtl8365mb_get_family(priv) == RTL8365MB_FAMILY_D;
++	size_t entry_size = is_d ? 2 : RTL8365MB_CVLAN_ENTRY_SIZE;
+ 	u16 vid;
+ 	int val;
+ 
+@@ -250,36 +279,53 @@ static int rtl8365mb_vlan_4k_write(struc
+ 	val = FIELD_GET(RTL8365MB_CVLAN_UNTAG_LO_MASK, vlan4k->untag);
+ 	data[0] |= FIELD_PREP(RTL8365MB_CVLAN_ENTRY_D0_UNTAG_MASK, val);
+ 
+-	data[1] |= FIELD_PREP(RTL8365MB_CVLAN_ENTRY_D1_FID_MASK, vlan4k->fid);
+-	data[1] |= FIELD_PREP(RTL8365MB_CVLAN_ENTRY_D1_VBPEN_MASK,
+-			      vlan4k->priority_en);
+-	data[1] |= FIELD_PREP(RTL8365MB_CVLAN_ENTRY_D1_VBPRI_MASK,
+-			      vlan4k->priority);
+-	data[1] |= FIELD_PREP(RTL8365MB_CVLAN_ENTRY_D1_ENVLANPOL_MASK,
+-			      vlan4k->policing_en);
+-
+-	/* FIELD_* does not play nice with struct bitfield. */
+-	val = vlan4k->meteridx;
+-	val = FIELD_GET(RTL8365MB_CVLAN_METERIDX_LO_MASK, val);
+-	data[1] |= FIELD_PREP(RTL8365MB_CVLAN_ENTRY_D1_METERIDX_MASK, val);
+-
+-	data[1] |= FIELD_PREP(RTL8365MB_CVLAN_ENTRY_D1_IVL_SVL_MASK,
+-			      vlan4k->ivl_en);
+-
+-	val = FIELD_GET(RTL8365MB_CVLAN_MBR_HI_MASK, vlan4k->member);
+-	data[2] |= FIELD_PREP(RTL8365MB_CVLAN_ENTRY_D2_MBR_EXT_MASK, val);
+-
+-	val = FIELD_GET(RTL8365MB_CVLAN_UNTAG_HI_MASK, vlan4k->untag);
+-	data[2] |= FIELD_PREP(RTL8365MB_CVLAN_ENTRY_D2_UNTAG_EXT_MASK, val);
+-
+-	val = vlan4k->meteridx;
+-	val = FIELD_GET(RTL8365MB_CVLAN_METERIDX_HI_MASK, val);
+-	data[2] |= FIELD_PREP(RTL8365MB_CVLAN_ENTRY_D2_METERIDX_EXT_MASK, val);
++	if (is_d) {
++		/* Family D always operates in IVL mode; the caller (see
++		 * rtl8365mb_vlan_4k_port_set()) never requests SVL, so the
++		 * bit is forced here rather than threaded through from
++		 * vlan4k->ivl_en, which family C does honor.
++		 */
++		data[1] |= FIELD_PREP(RTL8365MB_D_CVLAN_ENTRY_D1_IVL_EN_MASK, 1) |
++			   FIELD_PREP(RTL8365MB_D_CVLAN_ENTRY_D1_SVLAN_CHECK_MASK, 1);
++		val = vlan4k->fid & RTL8365MB_D_FID_MASK;
++		data[1] |= FIELD_PREP(RTL8365MB_CVLAN_ENTRY_D1_FID_MASK, val);
++		/* No priority/meter/member-untag-extension fields exist in
++		 * family D's 2-word entry - data[1] and data[0] above are
++		 * the whole entry, and data[2] is not part of it at all.
++		 */
++	} else {
++		val = vlan4k->fid;
++		data[1] |= FIELD_PREP(RTL8365MB_CVLAN_ENTRY_D1_FID_MASK, val);
++		data[1] |= FIELD_PREP(RTL8365MB_CVLAN_ENTRY_D1_VBPEN_MASK,
++				      vlan4k->priority_en);
++		data[1] |= FIELD_PREP(RTL8365MB_CVLAN_ENTRY_D1_VBPRI_MASK,
++				      vlan4k->priority);
++		data[1] |= FIELD_PREP(RTL8365MB_CVLAN_ENTRY_D1_ENVLANPOL_MASK,
++				      vlan4k->policing_en);
++
++		/* FIELD_* does not play nice with struct bitfield. */
++		val = vlan4k->meteridx;
++		val = FIELD_GET(RTL8365MB_CVLAN_METERIDX_LO_MASK, val);
++		data[1] |= FIELD_PREP(RTL8365MB_CVLAN_ENTRY_D1_METERIDX_MASK, val);
++
++		data[1] |= FIELD_PREP(RTL8365MB_CVLAN_ENTRY_D1_IVL_SVL_MASK,
++				      vlan4k->ivl_en);
++
++		val = FIELD_GET(RTL8365MB_CVLAN_MBR_HI_MASK, vlan4k->member);
++		data[2] |= FIELD_PREP(RTL8365MB_CVLAN_ENTRY_D2_MBR_EXT_MASK, val);
++
++		val = FIELD_GET(RTL8365MB_CVLAN_UNTAG_HI_MASK, vlan4k->untag);
++		data[2] |= FIELD_PREP(RTL8365MB_CVLAN_ENTRY_D2_UNTAG_EXT_MASK, val);
++
++		val = vlan4k->meteridx;
++		val = FIELD_GET(RTL8365MB_CVLAN_METERIDX_HI_MASK, val);
++		data[2] |= FIELD_PREP(RTL8365MB_CVLAN_ENTRY_D2_METERIDX_EXT_MASK, val);
++	}
+ 
+ 	vid = vlan4k->vid;
+ 	return rtl8365mb_table_query(priv, RTL8365MB_TABLE_CVLAN,
+ 				     RTL8365MB_TABLE_OP_WRITE, &vid, 0, 0,
+-				     data, ARRAY_SIZE(data));
++				     data, entry_size);
+ }
+ 
+ static int
