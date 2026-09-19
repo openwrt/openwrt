@@ -204,6 +204,21 @@ platform_do_upgrade() {
 		CI_KERNPART="kernel"
 		nand_do_upgrade "$1"
 		;;
+	zyxel,keenetic-giga-iii)
+		local magic="$(nand_get_magic_long "$1" 0)"
+
+		# Preserve the original port's stock uImage write path; normal
+		# OpenWrt sysupgrade images continue through nand_do_upgrade.
+		if [ "$magic" = "27051956" ]; then
+			mtd -f write "$1" firmware
+			sync
+			umount -a
+			reboot -f
+			exit 1
+		fi
+
+		nand_do_upgrade "$1"
+		;;
 	ubnt,edgerouter-x|\
 	ubnt,edgerouter-x-sfp)
 		platform_upgrade_ubnt_erx "$1"
