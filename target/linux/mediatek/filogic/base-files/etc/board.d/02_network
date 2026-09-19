@@ -66,6 +66,7 @@ mediatek_setup_interfaces()
 	jcg,q30-pro|\
 	keenetic,kn-3711|\
 	keenetic,kn-3811|\
+	laotrared,aurora-v1-ubootmod|\
 	livinet,li320|\
 	mercusys,mr85x|\
 	mercusys,mr85x-ubi|\
@@ -336,6 +337,11 @@ mediatek_setup_macs()
 		[ -n "$label_mac" ] || return
 		wan_mac=$label_mac
 		lan_mac=$(macaddr_add "$label_mac" 1)
+		;;
+	laotrared,aurora-v1-ubootmod)
+		label_mac=$(mtd_get_mac_binary "Factory" 0x4)
+		wan_mac=$label_mac
+		lan_mac=$(macaddr_setbit_la "$label_mac")
 		;;
 	mercusys,mr80x-v3|\
 	mercusys,mr85x)
