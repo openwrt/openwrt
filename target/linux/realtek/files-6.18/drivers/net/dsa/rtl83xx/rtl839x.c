@@ -3,6 +3,7 @@
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 #include <linux/etherdevice.h>
 
+#include "lag.h"
 #include "l2.h"
 #include "l3.h"
 #include "pie.h"
@@ -141,11 +142,6 @@ static int rtldsa_839x_get_mirror_config(struct rtldsa_mirror_config *config,
 	return 0;
 }
 
-static inline int rtl839x_trk_mbr_ctr(int group)
-{
-	return RTL839X_TRK_MBR_CTR + (group << 3);
-}
-
 static void rtl839x_traffic_set(int source, u64 dest_matrix)
 {
 	rtl839x_set_port_reg_be(dest_matrix, rtl839x_port_iso_ctrl(source));
@@ -282,16 +278,6 @@ static void rtl839x_set_egr_filter(int port,  enum egr_filter state)
 		    RTL839X_VLAN_PORT_EGR_FLTR + (((port >> 5) << 2)));
 }
 
-static int rtldsa_839x_set_distribution_algorithm(struct rtl838x_switch_priv *priv,
-						  int group, int algoidx, u32 algomsk)
-{
-	sw_w32_mask(3 << ((group & 0xf) << 1), algoidx << ((group & 0xf) << 1),
-		    RTL839X_TRK_HASH_IDX_CTRL + ((group >> 4) << 2));
-	sw_w32(algomsk, RTL839X_TRK_HASH_CTRL + (algoidx << 2));
-
-	return 0;
-}
-
 static void rtl839x_set_receive_management_action(int port, rma_ctrl_t type, action_type_t action)
 {
 	switch (type) {
@@ -311,20 +297,6 @@ static void rtl839x_set_receive_management_action(int port, rma_ctrl_t type, act
 		break;
 	}
 }
-
-static int rtldsa_839x_lag_set_port_members(struct rtl838x_switch_priv *priv, int group,
-					    u64 members, struct netdev_lag_upper_info *info)
-{
-	priv->lags_port_members[group] = members;
-
-	priv->r->set_port_reg_be(priv->lags_port_members[group],
-				 priv->r->trk_mbr_ctr(group));
-
-	return 0;
-}
-
-int rtldsa_83xx_lag_setup_algomask(struct rtl838x_switch_priv *priv, int group,
-				   struct netdev_lag_upper_info *info);
 
 const struct rtldsa_config rtldsa_839x_cfg = {
 	.switch_ops = &rtldsa_83xx_switch_ops,

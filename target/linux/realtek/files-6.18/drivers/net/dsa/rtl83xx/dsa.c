@@ -7,6 +7,7 @@
 #include <linux/pcs/pcs.h>
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 
+#include "lag.h"
 #include "rtl-otto.h"
 #include "stats.h"
 #include "tc.h"

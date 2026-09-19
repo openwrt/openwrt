@@ -1342,9 +1342,6 @@ struct fdb_update_work {
 	u64 macs[];
 };
 
-int rtldsa_83xx_lag_setup_algomask(struct rtl838x_switch_priv *priv, int group,
-				   struct netdev_lag_upper_info *info);
-
 void rtldsa_port_fast_age(struct dsa_switch *ds, int port);
 int rtldsa_packet_cntr_alloc(struct rtl838x_switch_priv *priv);
 void rtldsa_packet_cntr_free(struct rtl838x_switch_priv *priv, int idx);
@@ -1378,9 +1375,6 @@ void rtldsa_930x_print_matrix(void);
 /* RTL931x-specific */
 void rtldsa_931x_print_matrix(void);
 
-int rtl83xx_lag_add(struct dsa_switch *ds, int group, int port, struct netdev_lag_upper_info *info);
-int rtl83xx_lag_del(struct dsa_switch *ds, int group, int port);
-
 /*
  * TODO: The following functions are currently not in use. So compiler will complain if
  * they are static and not made available externally. To preserve them for future use
@@ -1405,11 +1399,6 @@ extern struct rtl83xx_soc_info soc_info;
 
 void rtl838x_dbgfs_init(struct rtl838x_switch_priv *priv);
 void rtl930x_dbgfs_init(struct rtl838x_switch_priv *priv);
-void rtldsa_93xx_lag_switch_init(struct rtl838x_switch_priv *priv);
-int rtldsa_93xx_lag_set_distribution_algorithm(struct rtl838x_switch_priv *priv,
-					       int group, int algoidx, u32 algomsk);
-int rtldsa_93xx_lag_set_port_members(struct rtl838x_switch_priv *priv, int group,
-				     u64 members, struct netdev_lag_upper_info *info);
 
 void rtldsa_93xx_prepare_lag_fdb(struct rtl838x_l2_entry *e, int lag_group);
 
