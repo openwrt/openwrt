@@ -1,0 +1,26 @@
+[ -e /etc/config/ubootenv ] && exit 0
+
+touch /etc/config/ubootenv
+
+. /lib/uboot-envtools.sh
+. /lib/functions.sh
+
+board=$(board_name)
+
+case "$board" in
+	tplink,archer-xr500v-v1)
+		# Redundant 4 KiB environment (CONFIG_ENV_SIZE) at the start of the
+		# two 124 KiB static volumes "ubootenv" and "ubootenv2".
+		. /lib/upgrade/nand.sh
+		envubi=$(nand_find_ubi ubi)
+		ubootenv_add_uci_config "/dev/$(nand_find_volume $envubi ubootenv)" \
+			"0x0" "0x1000" "0x1f000" "1"
+		ubootenv_add_uci_config "/dev/$(nand_find_volume $envubi ubootenv2)" \
+			"0x0" "0x1000" "0x1f000" "1"
+		;;
+esac
+
+config_load ubootenv
+config_foreach ubootenv_add_app_config
+
+exit 0
