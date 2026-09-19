@@ -42,8 +42,12 @@ merge=$(subst $(space),,$(1))
 # @brief Get hash sum of variable list.
 #
 # @param 1: List of variable names.
+#
+# The variables are config symbols, which do not change during a make call,
+# so the hash of each list is computed only once.
 ##
-confvar=$(shell echo '$(foreach v,$(1),$(v)=$(subst ','\'',$($(v))))' | $(MKHASH) md5)
+confvar_key=confvar/$(subst $(space),+,$(strip $(1)))
+confvar=$(if $(filter undefined,$(origin $(confvar_key))),$(eval $(confvar_key):=$(shell echo '$(foreach v,$(1),$(v)=$(subst ','\'',$($(v))))' | $(MKHASH) md5)))$($(confvar_key))
 ##@
 # @brief Strip last extension from file name.
 #
