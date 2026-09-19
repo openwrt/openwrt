@@ -48,6 +48,13 @@ case "$board" in
 			macaddr_setbit_la $(macaddr_setbit $(macaddr_add $addr 1) 28) > \
 			/sys${DEVPATH}/macaddress
 		;;
+	asus,rt-ax59u-ubi)
+		CI_UBIPART="ubi"
+		addr=$(mtd_get_mac_binary_ubi "factory" 0x4)
+		[ "$PHYNBR" = "1" ] && \
+			macaddr_setbit_la $(macaddr_setbit $(macaddr_add $addr 1) 28) > \
+			/sys${DEVPATH}/macaddress
+		;;
 	asus,rt-ax52|\
 	asus,rt-ax57m|\
 	asus,tuf-ax4200|\
