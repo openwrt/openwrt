@@ -947,26 +947,25 @@ int rtldsa_port_vlan_fast_age(struct dsa_switch *ds, int port, u16 vid)
 }
 
 int rtldsa_vlan_msti_set(struct dsa_switch *ds, struct dsa_bridge bridge,
-				const struct switchdev_vlan_msti *msti)
+			 const struct switchdev_vlan_msti *msti)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 	struct rtldsa_vlan_info info;
 	u16 mst_slot_old;
 	int mst_slot;
 
-	priv->r->vlan_tables_read(msti->vid, &info);
-	mst_slot_old = info.fid;
+	scoped_guard(mutex, &priv->reg_mutex) {
+		priv->r->vlan_tables_read(msti->vid, &info);
+		mst_slot_old = info.fid;
 
-	/* find HW slot for MSTI */
-	mutex_lock(&priv->reg_mutex);
-	mst_slot = rtldsa_mst_replace(priv, msti->msti, mst_slot_old);
-	mutex_unlock(&priv->reg_mutex);
+		/* find HW slot for MSTI */
+		mst_slot = rtldsa_mst_replace(priv, msti->msti, mst_slot_old);
+		if (mst_slot < 0)
+			return mst_slot;
 
-	if (mst_slot < 0)
-		return mst_slot;
-
-	info.fid = mst_slot;
-	priv->r->vlan_set_tagged(msti->vid, &info);
+		info.fid = mst_slot;
+		priv->r->vlan_set_tagged(msti->vid, &info);
+	}
 
 	return 0;
 }
