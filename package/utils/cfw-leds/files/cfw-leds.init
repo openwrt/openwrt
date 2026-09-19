@@ -1,0 +1,50 @@
+#!/bin/sh /etc/rc.common
+#===============================================================================
+# /etc/init.d/cfw-leds — COMFAST CF-WA350 external LED emulation service
+# Starts automatically at boot via procd; respawns if the daemon dies.
+#===============================================================================
+
+START=97
+STOP=15
+USE_PROCD=1
+
+PROG=/usr/bin/cfw_led_ctrl
+BOARD="comfast,cf-wa350"
+
+# Board guard: the service runs only on the CF-WA350, even if the file is
+# included in shared build files for all ath79 devices.
+board_match() {
+	grep -qs "$BOARD" /sys/firmware/devicetree/base/compatible && return 0
+	[ "$(cat /tmp/sysinfo/board_name 2>/dev/null)" = "$BOARD" ]
+}
+
+start_service() {
+	board_match || return 0
+	[ -x "$PROG" ] || {
+		logger -t cfw-leds "ERROR: $PROG not found"
+		return 1
+	}
+	procd_open_instance
+	procd_set_param command "$PROG"
+	procd_set_param stderr 1
+	procd_set_param respawn 3600 5 0
+	procd_close_instance
+}
+
+service_stopped() {
+	# When the service is stopped manually: restore the external LEDs to a
+	# defined state. They are not listed in 01_leds (the daemon is their
+	# single owner), so /etc/init.d/led cannot restore them; set them
+	# solid-on here instead.
+	board_match || return 0
+
+	for led in blue:ext-wan blue:ext-lan blue:ext-wlan2g; do
+		[ -e "/sys/class/leds/$led/trigger" ] && \
+			echo none > "/sys/class/leds/$led/trigger" 2>/dev/null
+		[ -e "/sys/class/leds/$led/brightness" ] && \
+			echo 1 > "/sys/class/leds/$led/brightness" 2>/dev/null
+	done
+
+	# Re-apply the kernel triggers of the internal LEDs, just in case.
+	[ -x /etc/init.d/led ] && /etc/init.d/led start 2>/dev/null
+}

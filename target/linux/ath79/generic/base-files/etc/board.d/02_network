@@ -280,6 +280,9 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan" "2:lan" "3:lan" "4:lan"
 		;;
+	comfast,cf-wa350)
+		ucidef_set_interfaces_lan_wan "lan" "wan"
+		;;
 	comfast,cf-wr650ac-v1|\
 	comfast,cf-wr650ac-v2|\
 	zyxel,nbg6616)
@@ -660,7 +663,8 @@ ath79_setup_macs()
 		lan_mac=$(fritz_tffs -n maca -i $(find_mtd_part "tffs (1)"))
 		wan_mac=$(fritz_tffs -n macb -i $(find_mtd_part "tffs (1)"))
 		;;
-	comfast,cf-e375ac)
+	comfast,cf-e375ac|\
+	comfast,cf-wa350)
 		wan_mac=$(macaddr_add $(mtd_get_mac_binary art 0x0) 1)
 		;;
 	compex,wpj344-16m|\
