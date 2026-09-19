@@ -181,16 +181,28 @@ sub mconf_depends {
 		if ($flags =~ /\+/) {
 			my $vdep = $vpackage{$depend};
 			if ($vdep) {
-				my @vdeps;
+				my (@vdefs, @vreal, @vrest);
 
+				# Provider precedence, explicit: default variant
+				# first (multiple defaults keep iteration order;
+				# none occur in tree), then the real-name bearer
+				# ($v->{name} eq $depend, as constructed in
+				# metadata.pm, but not relied upon here), then
+				# remaining providers in readdir scan order.
+				# Invariant: head == default ?? real-name bearer
+				# ?? first parsed. (Map-build order still governs
+				# ||-expansion display below.)
 				foreach my $v (@$vdep) {
 					next if $v->{buildonly};
 					if ($v->{variant_default}) {
-						unshift @vdeps, $v->{name};
+						unshift @vdefs, $v->{name};
+					} elsif ($v->{name} eq $depend) {
+						push @vreal, $v->{name};
 					} else {
-						push @vdeps, $v->{name};
+						push @vrest, $v->{name};
 					}
 				}
+				my @vdeps = (@vdefs, @vreal, @vrest);
 
 				$depend = shift @vdeps;
 
