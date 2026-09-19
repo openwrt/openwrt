@@ -15,8 +15,11 @@ PKG_SKIP_DOWNLOAD=$(USE_SOURCE_DIR)$(USE_GIT_TREE)$(USE_GIT_SRC_CHECKOUT)
 
 MAKE_J:=$(if $(MAKE_JOBSERVER),$(MAKE_JOBSERVER) $(if $(filter 3.% 4.0 4.1,$(MAKE_VERSION)),-j))
 
-PKG_SOURCE_DATE_EPOCH = $(if $(DUMP),,$(shell $(TOPDIR)/scripts/get_source_date_epoch.sh \
-	$(if $(wildcard $(PKG_BUILD_DIR)/version.date),$(PKG_BUILD_DIR),$(CURDIR))))
+# Make expands PKG_SOURCE_DATE_EPOCH for every recipe of the package, so
+# keep the result for each directory.
+source_date_epoch=$(if $(filter undefined,$(origin source_date_epoch/$(1))),$(eval source_date_epoch/$(1):=$(shell $(TOPDIR)/scripts/get_source_date_epoch.sh $(1))))$(source_date_epoch/$(1))
+PKG_SOURCE_DATE_EPOCH = $(if $(DUMP),,$(call source_date_epoch,$(if \
+	$(wildcard $(PKG_BUILD_DIR)/version.date),$(PKG_BUILD_DIR),$(CURDIR))))
 
 ifeq ($(strip $(PKG_BUILD_PARALLEL)),0)
 PKG_JOBS?=-j1
