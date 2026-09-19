@@ -1,3 +1,4 @@
+include ./common-alpha.mk
 include ./common-buffalo.mk
 include ./common-nec.mk
 include ./common-netgear.mk
@@ -1274,24 +1275,21 @@ endef
 TARGET_DEVICES += dlink_dir-835-a1
 
 define Device/dlink_dir-842-c
+  $(Device/alpha-encimg)
   SOC := qca9563
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DIR-842
   KERNEL := kernel-bin | append-dtb | relocate-kernel | lzma
   KERNEL_INITRAMFS := $$(KERNEL) | seama
-  IMAGES += factory.bin
   SEAMA_MTDBLOCK := 5
   SEAMA_SIGNATURE := wrgac65_dlink.2015_dir842
+  ALPHA_KEY_IV := xQYoRZeD726UAbRb846kO7TeNw8eZa6u zufEbNF3kUafxFiE
+  IMAGE_SIZE := 15680k
   # 64 bytes offset:
   # - 28 bytes seama_header
   # - 36 bytes of META data (4-bytes aligned)
   IMAGE/default := append-kernel | uImage lzma | \
 	pad-offset $$$$(BLOCKSIZE) 64 | append-rootfs
-  IMAGE/sysupgrade.bin := $$(IMAGE/default) | seama | pad-rootfs | \
-	check-size | append-metadata
-  IMAGE/factory.bin := $$(IMAGE/default) | pad-rootfs -x 64 | seama | \
-	seama-seal | check-size
-  IMAGE_SIZE := 15680k
 endef
 
 define Device/dlink_dir-842-c1
@@ -1312,6 +1310,7 @@ define Device/dlink_dir-842-c3
   $(Device/dlink_dir-842-c)
   DEVICE_VARIANT := C3
   DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct
+  SEAMA_SIGNATURE := $$(SEAMA_SIGNATURE)EU
 endef
 TARGET_DEVICES += dlink_dir-842-c3
 
