@@ -1,0 +1,67 @@
+From b06877bdf5a3373c928f058ac66a8178e07b0d53 Mon Sep 17 00:00:00 2001
+From: Stefan Reisinger <dev@stefan-reisinger.at>
+Date: Tue, 15 Sep 2026 12:26:10 +0200
+Subject: [PATCH] ARM: dts: mediatek: add BPI-R2 DS3231 overlay
+
+Add an optional overlay for a DS3231-compatible RTC connected to I2C0 on
+the BPI-R2 expansion header. Keep the RTC disabled unless the bootloader
+selects the overlay.
+
+Add the overlay to the kernel Makefile so it is compiled and checked by
+the kernel build as well.
+
+Signed-off-by: Stefan Reisinger <dev@stefan-reisinger.at>
+---
+ arch/arm/boot/dts/mediatek/Makefile            |  1 +
+ .../mt7623n-bananapi-bpi-r2-ds3231.dtso       | 30 +++++++++++++++++++
+ 2 files changed, 31 insertions(+)
+ create mode 100644 arch/arm/boot/dts/mediatek/mt7623n-bananapi-bpi-r2-ds3231.dtso
+
+diff --git a/arch/arm/boot/dts/mediatek/Makefile b/arch/arm/boot/dts/mediatek/Makefile
+index e48de3e..5e130ac 100644
+--- a/arch/arm/boot/dts/mediatek/Makefile
++++ b/arch/arm/boot/dts/mediatek/Makefile
+@@ -12,6 +12,7 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += \
+ 	mt7623a-rfb-nand.dtb \
+ 	mt7623n-rfb-emmc.dtb \
+ 	mt7623n-bananapi-bpi-r2.dtb \
++	mt7623n-bananapi-bpi-r2-ds3231.dtbo \
+ 	mt7629-rfb.dtb \
+ 	mt8127-moose.dtb \
+ 	mt8135-evbp1.dtb
+diff --git a/arch/arm/boot/dts/mediatek/mt7623n-bananapi-bpi-r2-ds3231.dtso b/arch/arm/boot/dts/mediatek/mt7623n-bananapi-bpi-r2-ds3231.dtso
+new file mode 100644
+index 0000000..f360234
+--- /dev/null
++++ b/arch/arm/boot/dts/mediatek/mt7623n-bananapi-bpi-r2-ds3231.dtso
+@@ -0,0 +1,30 @@
++// SPDX-License-Identifier: (GPL-2.0 OR MIT)
++/*
++ * Device Tree overlay for a DS3231 RTC on the BPI-R2 expansion header
++ */
++
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "bananapi,bpi-r2", "mediatek,mt7623";
++
++	fragment@0 {
++		target = <&i2c0>;
++
++		__overlay__ {
++			external_rtc: rtc@68 {
++				compatible = "maxim,ds3231";
++				reg = <0x68>;
++			};
++		};
++	};
++
++	fragment@1 {
++		target-path = "/aliases";
++
++		__overlay__ {
++			rtc0 = "/i2c@11007000/rtc@68";
++		};
++	};
++};
