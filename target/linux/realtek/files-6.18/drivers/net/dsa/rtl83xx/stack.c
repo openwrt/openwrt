@@ -4,6 +4,7 @@
 #include <linux/dsa/tag_rtl_otto.h>
 #include <linux/etherdevice.h>
 #include <linux/if_bridge.h>
+#include <linux/kstrtox.h>
 #include <linux/math64.h>
 #include <linux/module.h>
 #include <linux/netdevice.h>
@@ -59,6 +60,8 @@ enum rtl931x_talk_rpc_opcode {
 	RTL931X_TALK_RPC_SET_BRIDGE_SOURCES,
 	RTL931X_TALK_RPC_SET_PORT_ADMIN,
 	RTL931X_TALK_RPC_SET_LOCAL_LAG,
+	/* Optional read-only extension; existing messages/version stay intact. */
+	RTL931X_TALK_RPC_GET_PORT_LOCATION,
 };
 
 struct rtl931x_stack_fabric_vlan {
@@ -164,6 +167,12 @@ struct rtl931x_talk_rpc_port_state {
 	u8 padding[2];
 } __packed;
 
+struct rtl931x_talk_rpc_port_location {
+	u8 port;
+	u8 slot;
+	__be16 panel_port;
+} __packed;
+
 struct rtl931x_talk_rpc_delegated_request {
 	__be32 sequence;
 	u8 enabled;
@@ -232,6 +241,7 @@ static_assert(sizeof(struct rtl931x_talk_rpc_wire_body) ==
 static_assert(sizeof(struct rtl931x_talk_rpc_switch_info) == 52);
 static_assert(sizeof(struct rtl931x_talk_rpc_port_request) == 4);
 static_assert(sizeof(struct rtl931x_talk_rpc_port_state) == 16);
+static_assert(sizeof(struct rtl931x_talk_rpc_port_location) == 4);
 static_assert(sizeof(struct rtl931x_talk_rpc_delegated_request) == 8);
 static_assert(sizeof(struct rtl931x_talk_rpc_bridge_port_request) == 8);
 static_assert(sizeof(struct rtl931x_talk_rpc_port_vlan_request) == 12);
@@ -2526,6 +2536,49 @@ rtl931x_stack_talk_rpc_get_port_state(struct rtl931x_stack_context *stack,
 	return RTL931X_TALK_RPC_OK;
 }
 
+static u16
+rtl931x_stack_talk_rpc_get_port_location(struct rtl931x_stack_context *stack,
+			const struct rtl931x_talk_rpc_request_context *request,
+			void *reply)
+{
+	const struct rtl931x_talk_rpc_port_request *port_request = request->body;
+	struct rtl931x_talk_rpc_port_location *location = reply;
+	const struct dsa_port *dp;
+	const char *label, *p;
+	u8 port = port_request->port;
+	u16 panel;
+	u16 result = RTL931X_TALK_RPC_INVALID;
+
+	if (memchr_inv(port_request->reserved, 0,
+		       sizeof(port_request->reserved)) ||
+	    port >= stack->priv->ds->num_ports ||
+	    (READ_ONCE(stack->fabric_port_mask) & BIT_ULL(port)))
+		return result;
+	if (!rtnl_trylock())
+		return RTL931X_TALK_RPC_BUSY;
+	dp = stack->priv->ports[port].dp;
+	if (!dp || !dsa_is_user_port(stack->priv->ds, port) || !dp->user) {
+		result = RTL931X_TALK_RPC_NO_DEVICE;
+		goto out;
+	}
+	/* dp->name retains the board label even after a userspace rename. */
+	label = dp->name;
+	if (!label || strncmp(label, "lan", 3) || !label[3])
+		goto out;
+	for (p = label + 3; *p; p++)
+		if (*p < '0' || *p > '9')
+			goto out;
+	if (kstrtou16(label + 3, 10, &panel) || !panel)
+		goto out;
+	location->port = port;
+	location->slot = 0;
+	location->panel_port = cpu_to_be16(panel);
+	result = RTL931X_TALK_RPC_OK;
+out:
+	rtnl_unlock();
+	return result;
+}
+
 static u16 rtl931x_stack_talk_rpc_errno(int err)
 {
 	switch (err) {
@@ -2933,6 +2986,12 @@ static const struct rtl931x_talk_rpc_operation rtl931x_talk_rpc_operations[] = {
 		.reply_len = 0,
 		.master_only = true,
 		.handler = rtl931x_stack_talk_rpc_set_local_lag,
+	},
+	{
+		.opcode = RTL931X_TALK_RPC_GET_PORT_LOCATION,
+		.request_len = sizeof(struct rtl931x_talk_rpc_port_request),
+		.reply_len = sizeof(struct rtl931x_talk_rpc_port_location),
+		.handler = rtl931x_stack_talk_rpc_get_port_location,
 	},
 };
 
@@ -3680,6 +3739,7 @@ int rtl931x_stack_peer_get_port_info(struct rtl838x_switch_priv *priv, u8 port,
 		.port = port,
 	};
 	struct rtl931x_talk_rpc_port_state state;
+	struct rtl931x_talk_rpc_port_location location;
 	size_t reply_len = sizeof(state);
 	u32 mtu;
 	int err;
@@ -3710,6 +3770,27 @@ int rtl931x_stack_peer_get_port_info(struct rtl838x_switch_priv *priv, u8 port,
 	info->mtu = mtu;
 	info->flags = state.flags;
 	ether_addr_copy(info->mac, state.mac);
+	info->panel_port = 0;
+	info->slot = 0;
+
+	/* Negotiate by opcode, without breaking old peers' capability masks. */
+	reply_len = sizeof(location);
+	err = rtl931x_stack_talk_rpc_call(&priv->stack,
+					  RTL931X_TALK_RPC_GET_PORT_LOCATION,
+					  &request, sizeof(request), &location,
+					  &reply_len);
+	if (err == -EOPNOTSUPP)
+		return 0;
+	if (err) {
+		NL_SET_ERR_MSG_MOD(extack, "failed to read peer port location");
+		return err;
+	}
+	if (location.port != port || location.slot || !location.panel_port) {
+		NL_SET_ERR_MSG_MOD(extack, "peer returned invalid port location");
+		return -EPROTO;
+	}
+	info->panel_port = be16_to_cpu(location.panel_port);
+	info->slot = location.slot;
 
 	return 0;
 }

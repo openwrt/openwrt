@@ -3,7 +3,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=rtl931x-stack
-PKG_RELEASE:=5
+PKG_RELEASE:=6
 PKG_LICENSE:=GPL-2.0-only
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
 
@@ -42,6 +42,7 @@ define Build/Compile
 	$(TARGET_CC) $(TARGET_CPPFLAGS) $(TARGET_CFLAGS) \
 		-o $(PKG_BUILD_DIR)/rtl931x-stackd \
 		$(PKG_BUILD_DIR)/rtl931x-stackd.c \
+		$(PKG_BUILD_DIR)/stack-names.c \
 		$(PKG_BUILD_DIR)/stack-netlink.c \
 		$(TARGET_LDFLAGS) -lnl-tiny -lubus -lubox -luci
 endef

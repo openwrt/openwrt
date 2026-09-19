@@ -7,6 +7,8 @@ USE_PROCD=1
 PROG=/usr/sbin/rtl931x-stackd
 
 start_service() {
+	# Finish local naming before S20network; never wait for stack readiness.
+	"$PROG" --name-ports || return 1
 	procd_open_instance
 	procd_set_param command "$PROG"
 	procd_set_param respawn
