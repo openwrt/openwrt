@@ -9,12 +9,12 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=ppp
-PKG_VERSION:=2.5.3
-PKG_RELEASE:=2
+PKG_VERSION:=2.5.4
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://download.samba.org/pub/ppp
-PKG_HASH:=ddda28dec8aca99a403ab6070d94ffd2b17d63e9a4c5509158e99e148f572d4f
+PKG_HASH:=379a630a40d858a1347f6592d671791dde12101697a743ef9900012f3765be31
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_LICENSE:=BSD-4-Clause
@@ -32,7 +32,6 @@ CONFIGURE_ARGS += \
 	--disable-cbcp \
 	--disable-eaptls \
 	--disable-mslanman \
-	--disable-openssl-engine \
 	--disable-peap \
 	--disable-systemd \
 	--enable-ipv6cp \
@@ -42,8 +41,7 @@ CONFIGURE_ARGS += \
 	--with-static-pcap \
 	--without-openssl \
 	--without-pam \
-	--without-pcap \
-	--without-srp
+	--without-pcap
 
 define Package/ppp/Default
   SECTION:=net
