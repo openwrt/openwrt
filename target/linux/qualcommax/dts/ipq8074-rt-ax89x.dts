@@ -553,18 +553,18 @@
 		};
 	};
 
-	qca8337: switch@10 {
+	qca8337: ethernet-switch@10 {
 		compatible = "qca,qca8337";
 		#address-cells = <1>;
 		#size-cells = <0>;
 		reg = <0x10>;
 		dsa,member = <1 0>;
 
-		ports {
+		ethernet-ports {
 			#address-cells = <1>;
 			#size-cells = <0>;
 
-			port@0 {
+			ethernet-port@0 {
 				reg = <0>;
 				label = "cpu";
 				ethernet = <&port_switch>;
@@ -572,7 +572,7 @@
 				phy-handle = <&qca8035>;
 			};
 
-			port@1 {
+			ethernet-port@1 {
 				reg = <1>;
 				label = "lan7";
 				phy-handle = <&qca8337_0>;
@@ -580,7 +580,7 @@
 				nvmem-cell-names = "mac-address";
 			};
 
-			port@2 {
+			ethernet-port@2 {
 				reg = <2>;
 				label = "lan6";
 				phy-handle = <&qca8337_1>;
@@ -588,7 +588,7 @@
 				nvmem-cell-names = "mac-address";
 			};
 
-			port@3 {
+			ethernet-port@3 {
 				reg = <3>;
 				label = "lan5";
 				phy-handle = <&qca8337_2>;
@@ -596,7 +596,7 @@
 				nvmem-cell-names = "mac-address";
 			};
 
-			port@4 {
+			ethernet-port@4 {
 				reg = <4>;
 				label = "lan4";
 				phy-handle = <&qca8337_3>;
@@ -604,7 +604,7 @@
 				nvmem-cell-names = "mac-address";
 			};
 
-			port@5 {
+			ethernet-port@5 {
 				reg = <5>;
 				label = "lan3";
 				phy-handle = <&qca8337_4>;
@@ -612,7 +612,7 @@
 				nvmem-cell-names = "mac-address";
 			};
 
-			port@6 {
+			ethernet-port@6 {
 				reg = <6>;
 				label = "lan8";
 				phy-mode = "sgmii";
