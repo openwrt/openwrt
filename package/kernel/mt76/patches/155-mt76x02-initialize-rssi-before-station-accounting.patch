@@ -1,0 +1,16 @@
+mt76x02: initialize combined RX signal before WCID RSSI accounting
+
+The later mac80211 conversion must not be the first assignment of signal;
+mt76_check_sta consumes it earlier for the AGC average.
+
+--- a/mt76x02_mac.c
++++ b/mt76x02_mac.c
+@@ -872,6 +872,8 @@
+ 	}
+ 	status->freq = dev->mphy.chandef.chan->center_freq;
+ 	status->band = dev->mphy.chandef.chan->band;
++	/* WCID RSSI accounting precedes conversion to mac80211 RX status. */
++	status->signal = mt76_rx_signal(status->chains, status->chain_signal);
+ 
+ 	hdr = (struct ieee80211_hdr *)skb->data;
+ 	status->qos_ctl = *ieee80211_get_qos_ctl(hdr);

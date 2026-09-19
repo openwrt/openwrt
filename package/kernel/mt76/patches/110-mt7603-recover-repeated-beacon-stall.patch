@@ -1,0 +1,20 @@
+From: Cristian Papa <pcristian292@gmail.com>
+Subject: [PATCH] mt7603: reset PSE after a repeated beacon stall
+
+The light reset cannot always drain a leaked beacon token.  If the beacon
+stall recurs, use the existing full PSE reset path while DMA is stopped.
+
+Signed-off-by: Cristian Papa <pcristian292@gmail.com>
+--- a/mt7603/mac.c
++++ b/mt7603/mac.c
+@@ -1455,7 +1455,9 @@ static void mt7603_mac_work(struct work
+ 	}
+ 
+ 	if (dev->reset_cause[RESET_CAUSE_RESET_FAILED] ||
+-	    dev->cur_reset_cause == RESET_CAUSE_RX_PSE_BUSY)
++	    dev->cur_reset_cause == RESET_CAUSE_RX_PSE_BUSY ||
++	    (dev->cur_reset_cause == RESET_CAUSE_BEACON_STUCK &&
++	     dev->reset_cause[RESET_CAUSE_BEACON_STUCK] >= 2))
+ 		mt7603_pse_reset(dev);
+ 
+ 	if (!dev->reset_cause[RESET_CAUSE_RESET_FAILED]) {

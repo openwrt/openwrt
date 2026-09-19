@@ -1,0 +1,33 @@
+From: Cristian Papa <pcristian292@gmail.com>
+Subject: [PATCH] wifi: mt76: mt7603: initialize the global station WCID
+
+mt7603 keeps its own catch-all station (dev->global_sta.wcid, WTBL entry
+MT7603_WTBL_RESERVED) and uses it for every frame that has no station,
+including frames injected through a monitor interface. It is never passed
+to mt76_wcid_init(), so its tx_pending and tx_offchannel queues and its
+tx_list remain zeroed. The first injected frame then reaches
+__skb_queue_tail() in mt76_tx() with an uninitialized sk_buff_head:
+
+  CPU 0 Unable to handle kernel paging request at virtual address 00000000
+  epc == mt76 [...]  Comm: aireplay-ng
+  Code: ae120000 ae020004 ae500004 <ac500000>
+
+Initialize the WCID before publishing it, just as the core does for
+dev->global_wcid.
+
+Fixes: 0335c034e726 ("wifi: mt76: fix race condition related to checking tx queue fill status")
+Reported-by: NetviperZ (Archer XR500v v1, aireplay-ng -9 mon0 on 2.4 GHz)
+---
+ mt7603/init.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/mt7603/init.c
++++ b/mt7603/init.c
+@@ -231,6 +231,7 @@ mt7603_mac_init(struct mt7603_dev *dev)
+ 
+ 	eth_broadcast_addr(bc_addr);
+ 	mt7603_wtbl_init(dev, MT7603_WTBL_RESERVED, -1, bc_addr);
++	mt76_wcid_init(&dev->global_sta.wcid, 0);
+ 	dev->global_sta.wcid.idx = MT7603_WTBL_RESERVED;
+ 	rcu_assign_pointer(dev->mt76.wcid[MT7603_WTBL_RESERVED],
+ 			   &dev->global_sta.wcid);

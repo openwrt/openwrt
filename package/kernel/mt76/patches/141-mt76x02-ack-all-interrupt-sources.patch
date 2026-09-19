@@ -1,0 +1,40 @@
+mt76: mt76x02: acknowledge every raised interrupt source
+
+The handler masks the interrupt source register with irqmask before writing
+it back, so a source the driver does not subscribe to is never acknowledged.
+The device keeps MT_INT_TXDELAYINT raised on an MT7662 here, it is not part
+of irqmask, and it was therefore left asserted forever.
+
+Where the interrupt is edge triggered at the host that costs nothing, which
+is presumably why this went unnoticed.  On a shared legacy INTx line it is
+fatal: the pin stays asserted, the host re-enters the handler as fast as it
+can run it, and the CPU never gets to do anything else.  Observed on an
+EcoNet EN751221 board, where the machine goes unresponsive with no panic and
+no log -- the interrupt storm leaves no room for the watchdog threads, the
+timers, or even the console to run.
+
+Write the raised sources back first and narrow to irqmask afterwards, so
+nothing is left pending.
+
+Signed-off-by: Cristian Papa <pcristian292@gmail.com>
+--- a/mt76x02_mmio.c
++++ b/mt76x02_mmio.c
+@@ -261,8 +261,17 @@
+ 	u32 intr, mask;
+ 
+ 	intr = mt76_rr(dev, MT_INT_SOURCE_CSR);
+-	intr &= dev->mt76.mmio.irqmask;
++	/*
++	 * Acknowledge everything the device raised, then pick out what we
++	 * handle. Masking first leaves any source we do not subscribe to
++	 * asserted for good: the chip keeps raising TXDELAYINT here, it never
++	 * appears in irqmask, and so it was never written back. On a shared
++	 * INTx line that is enough to keep the pin low and have the host
++	 * re-enter this handler forever, which starves everything else on the
++	 * CPU -- no timers, no threads, and nothing in the log to say why.
++	 */
+ 	mt76_wr(dev, MT_INT_SOURCE_CSR, intr);
++	intr &= dev->mt76.mmio.irqmask;
+ 
+ 	if (!test_bit(MT76_STATE_INITIALIZED, &dev->mphy.state))
+ 		return IRQ_NONE;
