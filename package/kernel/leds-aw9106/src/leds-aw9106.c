@@ -117,13 +117,13 @@ static void aw9106_hw_reset(struct aw9106_chip *chip)
 	if (!chip->reset_gpio)
 		return;
 
-	/* Pulse low then hold high: matches vendor reset sequence
-	 * (chip requires a low->high transition on this line to come
-	 * out of shutdown and respond on the I2C bus).
+	/* Assert then release reset: the chip needs a reset pulse on
+	 * RSTN to come out of shutdown and respond on the I2C bus.
+	 * Polarity comes from the DT reset-gpios flags.
 	 */
-	gpiod_set_value_cansleep(chip->reset_gpio, 0);
-	usleep_range(1000, 2000);
 	gpiod_set_value_cansleep(chip->reset_gpio, 1);
+	usleep_range(1000, 2000);
+	gpiod_set_value_cansleep(chip->reset_gpio, 0);
 	usleep_range(1000, 2000);
 }
 
