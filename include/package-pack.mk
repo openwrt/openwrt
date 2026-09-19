@@ -202,27 +202,63 @@ endef
 # - Aside from the two aforementioned implicit provides, packages are expected
 #   to manage their provides themselves.
 #
-# - When multiple variants inside the same package have the same provide, a
-#   default variant must be set using DEFAULT_VARIANT:=1.
+# - When multiple packages provide the same virtual, a default provider
+#   should be set using DEFAULT_PROVIDER:=1.
 #
-# - Cross-package provides must be virtual and a default variant must be set. If
+# - Within one package's variants, one default variant must still be set
+#   using DEFAULT_VARIANT:=1 when they share common provides (or a
+#   provide matching some variant's package real name): it alone feeds
+#   the subdir build fallback, and keeps the provides priority and the
+#   implicit-conflicts home in that variant family. Variants with no
+#   shared provides need none: no family competes, so nothing elects
+#   or conflicts.
+#
+# - Cross-package provides must be virtual and a default must be set. If
 #   different packages provide the same versioned (i.e. non-virtual) provide the
 #   package with a higher version will be preferred, which results in unintended
 #   behavior, because the order might change with package updates.
 #
+#   Provider priority alone needs no VARIANT machinery:
+#   DEFAULT_PROVIDER confers the top tier without implying a
+#   variant family. Where no provider default is set,
+#   DEFAULT_VARIANT remains preferred when present. Note
+#   DEFAULT_VARIANT has limits: it is meant once per makefile
+#   (one default variant across all its subpackages, not one
+#   per subpackage), and several flags in one makefile collapse
+#   into a single build default, last set wins (today e.g.
+#   eapol-test overwrites hostapd-basic-mbedtls).
+#   DEFAULT_PROVIDER enables what the variant mechanism cannot
+#   express: electing a default across packages, coexisting
+#   with each family's own default variant inside a shared
+#   provides group, and claiming that group's head for
+#   resolution and apk priority. Implicit conflicts stay per
+#   variant family: DEFAULT_PROVIDER never moves the home.
+#
 #   Example:
-#   - both uclient-fetch and wget provide wget
-#   - wget doesn't have a default variant called wget that would provide an
+#   - wget is provided cross-package by uclient-fetch and the
+#     wget variants
+#   - wget doesn't have a variant called wget that would provide an
 #     implicit @wget-any
 #     - add wget to PROVIDES for both wget-ssl and wget-nossl variants so they
 #       can't be installed at the same time
 #     - add @wget-any to both packages so packages outside of wget can provide
 #       it
+#     - mark wget-ssl as the default variant using DEFAULT_VARIANT:=1,
+#       as the rule above requires: no DEFAULT_PROVIDER claims wget, so
+#       it keeps the provides priority for it
 #   - uclient-fetch has only one variant
 #     - add @wget-any to PROVIDES
-#     - mark uclient-fetch as the default variant using DEFAULT_VARIANT:=1
+#     - mark uclient-fetch as the default provider using DEFAULT_PROVIDER:=1:
+#       DEFAULT_VARIANT stays the intra-variant mechanism, and coexistence
+#       follows: a future variant family in uclient-fetch's own makefile
+#       could hold its own default variant too, so the shared @wget-any
+#       group could carry wget-ssl's default variant plus a uclient family
+#       default variant, while uclient-fetch still claims default provider
+#       for the group - several variant defaults, one provider default
 #   - switch wget consumer that don't depend on a specific version like apk to
 #     depend on @wget-any
+#   - uclient-fetch is the default provider of @wget-any, and wget-ssl of
+#     wget
 #
 # - Alternatives don't affect the packaging.
 #
@@ -247,10 +283,12 @@ endef
 
 # Get apk provider priority
 #
-# - if a package is marked as a default variant, set it to 100.
+# - if a package is marked as a default provider, set it to 200;
 #
-# - if a package has an ABI version defined, set it to 10.
-#   The enables packages with an ABI version to be installed by their base name
+# - else, if it is marked as a default variant, set it to 100;
+#
+# - else, if it has an ABI version defined, set it to 10.
+#   This enables packages with an ABI version to be installed by their base name
 #   instead of a name and an ABI version, e.g.:
 #   libfoo3, where 3 is the ABI version can be installed by just libfoo.
 #   This affects manual installation only, as the dependency resolution takes
@@ -258,12 +296,15 @@ endef
 #
 # - otherwise return nothing, i.e. package will have the default priority 0.
 #
-# 1: Default variant
-# 2: ABI version
+# 1: Default provider (DEFAULT_PROVIDER)
+# 2: Default variant (DEFAULT_VARIANT)
+# 3: ABI version
 define GetProviderPriority
 $(strip
-  $(if $(1),100,
-    $(if $(2),10)
+  $(if $(1),200,
+    $(if $(2),100,
+      $(if $(3),10)
+    )
   )
 )
 endef
@@ -423,7 +464,7 @@ endif
       Package/$(1)/PROVIDES := $$(filter-out $(1)$$(ABIV_$(1)),$$(Package/$(1)/PROVIDES)$$(if $$(ABIV_$(1)), $(1) $$(foreach provide,$$(Package/$(1)/PROVIDES),$$(provide)$$(ABIV_$(1)))))
     else
       Package/$(1)/PROVIDES := $$(call FormatProvides,$(1),$(VERSION),$(ABI_VERSION),$(PROVIDES))
-      Package/$(1)/PRIORITY := $$(call GetProviderPriority,$(DEFAULT_VARIANT),$(ABI_VERSION))
+      Package/$(1)/PRIORITY := $$(call GetProviderPriority,$(DEFAULT_PROVIDER),$(DEFAULT_VARIANT),$(ABI_VERSION))
     endif
 
 $(_define) Package/$(1)/CONTROL
