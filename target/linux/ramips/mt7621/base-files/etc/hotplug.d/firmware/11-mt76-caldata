@@ -9,6 +9,17 @@ board=$(board_name)
 case "$FIRMWARE" in
 "mediatek/mt7915_eeprom_dbdc.bin")
 	case "$board" in
+	tplink,ex220-v1-nand)
+		EEPROM=/lib/firmware/$FIRMWARE
+		mkdir -p /tmp/rom_file
+		mount -t jffs2 -o ro "/dev/mtdblock$(find_mtd_index misc_ro)" /tmp/rom_file || \
+			caldata_die "failed to mount misc_ro"
+		caldata_dd /tmp/rom_file/0x00180000 $EEPROM 0xe00 0x90000
+		ret=$?
+		umount /tmp/rom_file
+		[ "$ret" = 0 ] || { rm -f "$EEPROM"; caldata_die "failed to extract calibration data from misc_ro"; }
+		[ "$(wc -c < $EEPROM)" = "$((0xe00))" ] || { rm -f "$EEPROM"; caldata_die "short calibration data in misc_ro"; }
+		;;
 	netis,n6)
 		EEPROM=/lib/firmware/$FIRMWARE
 		head -c $((0xe00)) /dev/mtd2 > $EEPROM
