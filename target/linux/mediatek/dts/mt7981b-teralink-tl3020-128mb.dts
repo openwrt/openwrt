@@ -1,0 +1,17 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/*
+ * Copyright (C) 2026 Murad Rabadanov <the21.21@mail.ru>
+ */
+
+/dts-v1/;
+#include "mt7981b-teralink-tl3020.dtsi"
+
+/ {
+	model = "Teralink TL3020 128mb";
+	compatible = "teralink,tl3020-128mb", "mediatek,mt7981b";
+};
+
+&ubi {
+	/* reduce ubi partition size from .dtsi to fit into 128M Nand */
+	reg = <0x680000 0x7980000>;
+};
