@@ -1,47 +1,52 @@
 #!/bin/sh
-[ -z "$1" ] && echo "Error: should be run by udhcpc" && exit 1
+
+[ -z "${1}" ] && printf "Error: should be run by udhcpc\n" && exit 1
 
 set_classless_routes() {
-	local max=128
-	local type
-	while [ -n "$1" -a -n "$2" -a $max -gt 0 ]; do
-		[ ${1##*/} -eq 32 ] && type=host || type=net
-		echo "udhcpc: adding route for $type $1 via $2"
-		route add -$type "$1" gw "$2" dev "$interface"
-		max=$(($max-1))
+	max=128
+
+	while [ -n "${1}" ] && [ -n "${2}" ] && [ ${max} -gt 0 ]; do
+		printf "udhcpc: adding route for %s via %s dev %s\n" \
+			"${1}" "${2}" "${interface}"
+
+		ip route add "${1}" via "${2}" dev "${interface}"
+
+		max=$((max - 1))
 		shift 2
 	done
 }
 
 setup_interface() {
-	echo "udhcpc: ip addr add $ip/${subnet:-255.255.255.0} broadcast ${broadcast:-+} dev $interface"
-	ip addr add $ip/${subnet:-255.255.255.0} broadcast ${broadcast:-+} dev $interface
+	printf "udhcpc: ip address add %s/%s dev %s\n" \
+		"${ip}" "${mask}" "${interface}"
 
-	[ -n "$router" ] && [ "$router" != "0.0.0.0" ] && [ "$router" != "255.255.255.255" ] && {
-		echo "udhcpc: setting default routers: $router"
+	ip address add "${ip}"/"${mask}" dev "${interface}"
 
-		local valid_gw=""
-		for i in $router ; do
-			route add default gw $i dev $interface
-			valid_gw="${valid_gw:+$valid_gw|}$i"
+	[ -n "${router}" ] && [ "${router}" != "0.0.0.0" ] && [ "${router}" != "255.255.255.255" ] && {
+		printf "udhcpc: delete default routes\n"
+
+		ip -4 route flush 0.0.0.0/0
+
+		printf "udhcpc: setting default routers: %s\n" \
+			"${router}"
+
+		metric=5
+
+		for gateway in ${router}; do
+			ip route add default via "${gateway}" metric "${metric}" dev "${interface}"
+			metric=$((metric + 5))
 		done
-		
-		eval $(route -n | awk '
-			/^0.0.0.0\W{9}('$valid_gw')\W/ {next}
-			/^0.0.0.0/ {print "route del -net "$1" gw "$2";"}
-		')
 	}
 
 	# CIDR STATIC ROUTES (rfc3442)
-	[ -n "$staticroutes" ] && set_classless_routes $staticroutes
-	[ -n "$msstaticroutes" ] && set_classless_routes $msstaticroutes
+	[ -n "${staticroutes}" ] && set_classless_routes "${staticroutes}"
+	[ -n "${msstaticroutes}" ] && set_classless_routes "${msstaticroutes}"
 }
 
 
-applied=
-case "$1" in
+case "${1}" in
 	deconfig)
-		ip -4 addr flush dev "$interface"
+		ip -4 address flush dev "${interface}"
 	;;
 	renew)
 		setup_interface update
