@@ -1,0 +1,101 @@
+From ccbe7540e4aad0d1c3acc249697350b93ccb8025 Mon Sep 17 00:00:00 2001
+From: Vladislav Karmanov <vladislav.karmanov.dev@gmail.com>
+Date: Tue, 8 Sep 2026 17:52:13 +0300
+Subject: net: phy: mediatek-ge: disable EEE on the MT7530 PHY
+
+The MT7530 internal GE PHY advertises EEE by hardware default, but its
+EEE support is defective: with EEE advertised, some link partners fail
+to establish a stable link. On a 2-pair (4-wire) cable where both ends
+advertise gigabit, 1000BASE-T training cannot succeed, and instead of
+falling back to 100 Mbps the port loops, so no link or DHCP lease is
+ever obtained. MediaTek confirms the hardware is the root cause (Landen
+Chao, 2021): "EEE of the 10-year-old MT7530 internal gephy has many IOT
+problems, so it is recommended to disable its EEE."
+
+mtk_gephy_config_init() used to clear the EEE advertisement early, but
+commit af3b4b0e59de ("net: phy: mediatek-ge: do not disable EEE
+advertisement") removed that on the rationale that the DSA subdriver
+already performs an early disable. That holds for MT7531, whose
+mt7531_setup() clears MDIO_AN_EEE_ADV on each switch PHY, but not for
+the MT7530 PHY: neither the MT7621 integrated switch nor the dedicated
+MT7530 IC ever had such a loop, so removing it left those boards
+without any working early EEE disable and the link flapping came back.
+
+Since the broken hardware is the PHY, fix it in the PHY driver so it
+covers all users of this PHY, integrated in a switch or standalone:
+
+  - clear MDIO_AN_EEE_ADV in probe(), as early as possible, before
+    anything can negotiate EEE with the link partner;
+  - clear it again in config_init() and call phy_disable_eee() there.
+    config_init() is what phy_init_hw() replays after a PHY reset, when
+    the register is back at its EEE-advertising hardware default, and
+    it runs after of_set_phy_eee_broken() in phy_probe(), so the
+    eee_disabled_modes mask survives and neither phylib nor userspace
+    can re-enable EEE. dp83867 disables broken EEE from config_init()
+    the same way.
+
+Auto-negotiation then falls back to a stable 100 Mbps link instead of
+looping at gigabit. Tested on ASUS RT-AX53U (MT7621): with a 2-pair
+cable on the WAN port, a single clean 100 Mbps link comes up and a
+DHCP lease is obtained, where the unpatched driver loops.
+
+Fixes: af3b4b0e59de ("net: phy: mediatek-ge: do not disable EEE advertisement")
+Suggested-by: Andrew Lunn <andrew@lunn.ch>
+Signed-off-by: Vladislav Karmanov <vladislav.karmanov.dev@gmail.com>
+Link: https://patch.msgid.link/20260908145213.3976508-1-vladislav.karmanov.dev@gmail.com
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ drivers/net/phy/mediatek/mtk-ge.c | 29 +++++++++++++++++++++++++++++
+ 1 file changed, 29 insertions(+)
+
+diff --git a/drivers/net/phy/mediatek/mtk-ge.c b/drivers/net/phy/mediatek/mtk-ge.c
+index 73d9b72f9d9e2..96d8ac5154e5e 100644
+--- a/drivers/net/phy/mediatek/mtk-ge.c
++++ b/drivers/net/phy/mediatek/mtk-ge.c
+@@ -62,10 +62,38 @@ static void mtk_gephy_config_init(struct phy_device *phydev)
+ 		       FIELD_PREP(MTK_MCC_NEARECHO_OFFSET_MASK, 0x3));
+ }
+ 
++static int mt7530_phy_probe(struct phy_device *phydev)
++{
++	/* The MT7530 internal GE PHY has broken EEE: with EEE advertised,
++	 * some link partners fail to establish a stable link (on a 2-pair
++	 * cable, 1000BASE-T training fails and the port loops instead of
++	 * falling back). MediaTek recommends disabling EEE on this PHY.
++	 * Clear the advertisement as early as possible, before anything
++	 * can negotiate EEE with the link partner.
++	 */
++	return phy_write_mmd(phydev, MDIO_MMD_AN, MDIO_AN_EEE_ADV, 0);
++}
++
+ static int mt7530_phy_config_init(struct phy_device *phydev)
+ {
++	int ret;
++
+ 	mtk_gephy_config_init(phydev);
+ 
++	/* The probe() clear alone is not durable: phy_init_hw() replays only
++	 * ->config_init after a PHY reset, with the register back at its
++	 * EEE-advertising hardware default, and phy_probe() zeroes
++	 * eee_disabled_modes (of_set_phy_eee_broken()) after ->probe already
++	 * ran. Clear the advertisement again and mark EEE disabled, so that
++	 * neither phylib nor userspace can re-enable it; dp83867 disables
++	 * broken EEE from config_init() the same way.
++	 */
++	ret = phy_write_mmd(phydev, MDIO_MMD_AN, MDIO_AN_EEE_ADV, 0);
++	if (ret)
++		return ret;
++
++	phy_disable_eee(phydev);
++
+ 	/* Increase post_update_timer */
+ 	phy_write_paged(phydev, MTK_PHY_PAGE_EXTENDED_3,
+ 			MTK_PHY_RG_LPI_PCS_DSP_CTRL_REG11, 0x4b);
+@@ -100,6 +128,7 @@ static struct phy_driver mtk_gephy_driver[] = {
+ 	{
+ 		PHY_ID_MATCH_EXACT(MTK_GPHY_ID_MT7530),
+ 		.name		= "MediaTek MT7530 PHY",
++		.probe		= mt7530_phy_probe,
+ 		.config_init	= mt7530_phy_config_init,
+ 		/* Interrupts are handled by the switch, not the PHY
+ 		 * itself.
