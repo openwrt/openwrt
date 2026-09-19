@@ -15,6 +15,7 @@ platform_do_upgrade() {
 		CI_ROOTPART="rootfs"
 		emmc_do_upgrade "$1"
 		;;
+	askey,ebe1v1k|\
 	askey,sbe1v1k)
 		CI_KERNPART="0:HLOS"
 		CI_ROOTPART="rootfs"
@@ -30,6 +31,7 @@ platform_do_upgrade() {
 platform_copy_config() {
 	case "$(board_name)" in
 	8devices,kiwi-dvk|\
+	askey,ebe1v1k|\
 	askey,sbe1v1k)
 		emmc_copy_config
 		;;
