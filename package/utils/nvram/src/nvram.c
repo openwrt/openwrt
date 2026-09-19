@@ -101,7 +101,7 @@ static nvram_tuple_t * _nvram_realloc( nvram_handle_t *h, nvram_tuple_t *t,
 static int _nvram_rehash(nvram_handle_t *h)
 {
 	nvram_header_t *header = nvram_header(h);
-	char buf[] = "0xXXXXXXXX", *name, *value, *eq;
+	char buf[] = "0xXXXXXXXX", *name, *value, *eq, *nul, *end;
 
 	/* (Re)initialize hash table */
 	_nvram_free(h);
@@ -109,13 +109,33 @@ static int _nvram_rehash(nvram_handle_t *h)
 	/* Parse and set "name=value\0 ... \0\0" */
 	name = (char *) &header[1];
 
-	for (; *name; name = value + strlen(value) + 1) {
-		if (!(eq = strchr(name, '=')))
+	/*
+	 * Stop at the end of the used area, but never look beyond the mapped
+	 * partition. A length which does not fit the partition is ignored to
+	 * still read the variables of a broken nvram.
+	 */
+	end = h->mmap + h->length;
+	if (header->len >= sizeof(nvram_header_t) &&
+	    header->len <= h->length - h->offset)
+		end = (char *) header + header->len;
+
+	while (name < end && *name) {
+		eq = memchr(name, '=', end - name);
+		if (!eq)
 			break;
-		*eq = '\0';
+
 		value = eq + 1;
+
+		/* The value has to be terminated within this area */
+		nul = memchr(value, '\0', end - value);
+		if (!nul)
+			break;
+
+		*eq = '\0';
 		nvram_set(h, name, value);
 		*eq = '=';
+
+		name = nul + 1;
 	}
 
 	/* Set special SDRAM parameters */
