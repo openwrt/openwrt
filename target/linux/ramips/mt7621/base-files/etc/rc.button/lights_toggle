@@ -1,16 +1,53 @@
 #!/bin/sh
 
-[[ "${ACTION}" = "released" ]] || exit 0
-
+# include to get to $(board_name)
 . /lib/functions.sh
+# include to get to $(get_dt_led)
+. /lib/functions/leds.sh
 
+# functions to implement the button logic
+# note: assume $ACTION to be set and have to set $led_value as new value or exit
+
+## toggle on/off on "released" events
+## needs as first argument the path to a file containing the old value
+btn_toggle() {
+	# ignore "pressed" events
+	[ "${ACTION}" = "released" ] || exit 0
+	read -r led_value < "$1" || exit 1
+	[ "$led_value" = "0" ] && led_value=1 || led_value=0
+}
+## "released": 1 "pressed" -> 0
+btn_onoff() {
+	led_value=0
+	[ "${ACTION}" = "pressed" ] || led_value=1
+}
+
+# only handle "released" and "pressed" events here
+[ "${ACTION}" = "released" ] || [ "${ACTION}" = "pressed" ] || exit 0
+
+# select and call logic depending on model
 case "$(board_name)" in
 tplink,ec330-g5u-v1)
-	led_light="/sys/class/gpio/led-light/value"
-	echo "$((!$(cat $led_light)))" > "$led_light"
+	# this is a raw gpio device, so do things by hand
+	led_light_path="/sys/class/gpio/led-light/value"
+	# determine new value based on button logic
+	btn_toggle "${led_light_path}"
+	# set the value directly
+	echo "${led_value}" > "${led_light_path}"
 ;;
-	*)
+zyxel,wsm20)
+	# get the name/label of the led, e.g., here: "white:system"
+	led_light_name="$(get_dt_led running)"
+	# determine new value based on button logic
+	btn_onoff
+	# set the value using led_on/led_off helpers
+	if [ "${led_value}" -gt 0 ]; then
+		led_on "${led_light_name}"
+	else
+		led_off "${led_light_name}"
+	fi
+;;
+*)
+	exit 0
 ;;
 esac
-
-return 0
