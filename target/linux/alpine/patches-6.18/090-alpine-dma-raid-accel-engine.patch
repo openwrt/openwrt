@@ -1,0 +1,18 @@
+--- a/drivers/dma/Kconfig
++++ b/drivers/dma/Kconfig
+@@ -776,6 +776,8 @@ source "drivers/dma/lgm/Kconfig"
+ 
+ source "drivers/dma/stm32/Kconfig"
+ 
++source "drivers/dma/al/Kconfig"
++
+ # clients
+ comment "DMA Clients"
+ 	depends on DMA_ENGINE
+--- a/drivers/dma/Makefile
++++ b/drivers/dma/Makefile
+@@ -92,3 +92,4 @@ obj-y += qcom/
+ obj-y += stm32/
+ obj-y += ti/
+ obj-y += xilinx/
++obj-y += al/
