@@ -1,0 +1,32 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Fil Dunsky <filipp.dunsky@gmail.com>
+Date: Sat, 05 Sep 2026 07:30:20 +0300
+Subject: [PATCH] PCI: dwc: add Kconfig and Makefile entries for the Cortina CS75xx PCIe controller
+
+Add PCIE_CORTINA, a DesignWare based host controller driver for the PCIe
+root ports of Cortina CS75xx (Goldengate) SoCs.
+
+Signed-off-by: Fil Dunsky <filipp.dunsky@gmail.com>
+---
+--- a/drivers/pci/controller/dwc/Kconfig
++++ b/drivers/pci/controller/dwc/Kconfig
+@@ -518,4 +518,12 @@ config PCIE_VISCONTI_HOST
+ 	  Say Y here if you want PCIe controller support on Toshiba Visconti SoC.
+ 	  This driver supports TMPV7708 SoC.
+ 
++config PCIE_CORTINA
++	bool "Cortina CS75xx PCIe controller"
++	depends on ARCH_CORTINA_CS75XX || COMPILE_TEST
++	depends on OF && HAS_IOMEM
++	select PCIE_DW_HOST
++	help
++	  Say Y here if you want PCIe support on Cortina CS75xx (Goldengate) SoCs.
++
+ endmenu
+--- a/drivers/pci/controller/dwc/Makefile
++++ b/drivers/pci/controller/dwc/Makefile
+@@ -54,3 +54,4 @@ obj-$(CONFIG_ARM64) += pcie-hisi.o
+ obj-$(CONFIG_ARM64) += pcie-tegra194-acpi.o
+ endif
+ endif
++obj-$(CONFIG_PCIE_CORTINA) += pcie-cortina.o
