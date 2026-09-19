@@ -91,6 +91,17 @@ prepare-tmpinfo: FORCE
 	./scripts/package-metadata.pl usergroup tmp/.packageinfo > tmp/.packageusergroup || { rm -f tmp/.packageusergroup; false; }
 	touch $(TOPDIR)/tmp/.build
 
+tmpclean: FORCE
+	rm -f $(PREP_MK)
+	rm -f $(STAGING_DIR_HOST)/.prereq-build
+	rm -rf $(TOPDIR)/tmp/info
+	rm -f $(TOPDIR)/tmp/.config-package.in
+	rm -f $(TOPDIR)/tmp/.config-target.in
+	rm -f $(TOPDIR)/tmp/.config-feeds.in
+	rm -f $(TOPDIR)/tmp/.package*
+	rm -f $(TOPDIR)/tmp/.target*
+	rm -f $(TOPDIR)/tmp/.build
+
 .config: ./scripts/config/conf $(if $(CONFIG_HAVE_DOT_CONFIG),,prepare-tmpinfo)
 	@+if [ \! -e .config ] || ! grep CONFIG_HAVE_DOT_CONFIG .config >/dev/null; then \
 		[ -e $(HOME)/.openwrt/defconfig ] && cp $(HOME)/.openwrt/defconfig .config; \
@@ -114,7 +125,7 @@ config: scripts/config/conf prepare-tmpinfo FORCE
 	[ -L .config ] && export KCONFIG_OVERWRITECONFIG=1; \
 		$< $(KCONF_FLAGS) Config.in
 
-config-clean: FORCE
+config-clean: tmpclean FORCE
 	$(_SINGLE)$(NO_TRACE_MAKE) -C scripts/config clean
 
 defconfig: scripts/config/conf prepare-tmpinfo FORCE
@@ -260,12 +271,15 @@ package/symlinks-clean:
 help:
 	cat README.md
 
-distclean:
-	rm -rf bin build_dir .ccache .config* dl feeds key-build* logs package/feeds target/linux/feeds staging_dir tmp
+feedclean: tmpclean FORCE
+	rm -rf feeds package/feeds target/linux/feeds
+
+distclean: feedclean FORCE
+	rm -rf bin build_dir .ccache .config* dl key-build* logs staging_dir tmp
 	@$(_SINGLE)$(SUBMAKE) -C scripts/config clean
 
 ifeq ($(findstring v,$(DEBUG)),)
-  .SILENT: symlinkclean clean dirclean distclean config-clean download help tmpinfo-clean .config scripts/config/mconf scripts/config/conf menuconfig $(STAGING_DIR_HOST)/.prereq-build tmp/.prereq-package prepare-tmpinfo
+  .SILENT: feedclean clean dirclean distclean config-clean download help tmpclean .config scripts/config/mconf scripts/config/conf menuconfig $(STAGING_DIR_HOST)/.prereq-build tmp/.prereq-package prepare-tmpinfo
 endif
 .PHONY: help FORCE
 .NOTPARALLEL:
