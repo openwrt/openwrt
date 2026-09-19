@@ -43,6 +43,8 @@ struct rtl931x_stack_reps {
 struct rtl931x_stack_rep_priv {
 	struct rtl931x_stack_reps *reps;
 	struct net_device *bridge_dev;
+	u16 panel_port;
+	u8 slot;
 	u8 port;
 	u8 stp_state;
 	bool offloaded;
@@ -898,8 +900,13 @@ rtl931x_stack_reps_create(struct rtl838x_switch_priv *priv,
 		if (!(reps->port_mask & BIT_ULL(port)))
 			continue;
 
-		snprintf(name, sizeof(name), "sw%up%u", reps->peer_device,
-			 port);
+		if (port_info->panel_port)
+			snprintf(name, sizeof(name), "sw%us%up%u",
+				 reps->peer_device, port_info->slot,
+				 port_info->panel_port);
+		else
+			snprintf(name, sizeof(name), "sw%up%u", reps->peer_device,
+				 port);
 		dev = alloc_netdev(sizeof(*rep), name, NET_NAME_PREDICTABLE,
 				   rtl931x_stack_rep_setup);
 		if (!dev) {
@@ -910,6 +917,8 @@ rtl931x_stack_reps_create(struct rtl838x_switch_priv *priv,
 		rep = netdev_priv(dev);
 		rep->reps = reps;
 		rep->port = port;
+		rep->panel_port = port_info->panel_port;
+		rep->slot = port_info->slot;
 		SET_NETDEV_DEV(dev, priv->dev);
 		dev_net_set(dev, dev_net(fabric));
 		dev->netns_immutable = true;
@@ -1153,6 +1162,15 @@ rtl931x_stack_reps_info_matches(const struct rtl931x_stack_reps *reps,
 		}
 		if (!dev || !ether_addr_equal(dev->dev_addr, port_info->mac))
 			return false;
+		if (port_info->panel_port) {
+			const struct rtl931x_stack_rep_priv *rep = netdev_priv(dev);
+
+			/* Keep existing legacy names across a peer-only upgrade. */
+			if (rep->panel_port &&
+			    (rep->panel_port != port_info->panel_port ||
+			     rep->slot != port_info->slot))
+				return false;
+		}
 		mtu = rtl931x_stack_rep_mtu(conduit, port_info);
 		if (dev->mtu != mtu || dev->max_mtu != mtu)
 			return false;

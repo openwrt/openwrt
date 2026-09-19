@@ -8,6 +8,54 @@ This is proof-of-concept code. It currently assumes two RTL931x members, one
 to four matching physical fabric links and fixed leader/follower roles. Do not
 treat it as a general high-availability stacking implementation.
 
+## Port names
+
+Physical ports use `sw<member>s<slot>p<panel-port>` on both CPUs in a stack.
+The member ID is the configured identity, not the leader/follower role. Slot `0`
+means built-in ports. The port number is the number printed on the chassis,
+not the ASIC index. Expansion slots are reserved in the naming convention;
+this proof of concept only implements slot `0`.
+
+For example, member 0's `lan51` becomes `sw0s0p51`. Member 1's `lan51` becomes
+`sw1s0p51` both locally and as its representor on member 0. On the LGS352C,
+that front-panel port is ASIC port 52; hardware masks and the diagnostic
+`peer-port` argument continue to use ASIC indices. Names do not depend on
+link speed, stack health or which CPU exposes the device. `stack0`, bonds,
+bridges and the CPU conduit retain their existing names.
+
+No DTS changes are needed. Local naming reads the existing device-tree
+`lanN` labels, and the peer supplies its own port location through an
+additive read-only Device Talk request. It does not assume that the peer has
+the same board layout. A peer without that request keeps the legacy `swXpN`
+representor names; naming alone does not bump the Device Talk version or
+prevent management traffic. Both updated members are required for uniform
+names throughout the stack.
+
+The init script applies local names synchronously before starting stackd,
+and before the normal network init priority. This does not wait for the peer
+or link calibration. Repeating the operation with the same names is a no-op.
+It refuses to rename ports that are up or have upper devices, rather than
+cycling links or disrupting an existing bond. Fabric interfaces may still
+be specified by their board labels (`lan49`, `lan50`); stackd resolves them
+to the canonical local names without rewriting UCI.
+
+### Migrating an existing configuration
+
+This is a netdevice-name change: do not upgrade an enabled stack without
+updating its network configuration. Replace local `lanN` references with
+`sw<local-member>s0pN` and remote `swXpN` references with the corresponding
+front-panel name. Do not blindly add one to the old remote index: the
+LGS352C's SFP+ ASIC indices are 48, 50, 52 and 53 for panel ports 49--52.
+Update bridge ports, bridge-VLAN port lists (preserving `:t`/`:u*`), bond
+members, device sections and any firewall or monitoring device references.
+Keep `stack0` and its VLAN subinterfaces unchanged.
+
+Stage matching configuration and reboot; do not rename a live management
+uplink. Naming runs only for an enabled stack configuration. Disabling the
+daemon does not undo names during that boot; a reboot with stacking disabled
+returns the ordinary board names and requires matching standalone network
+configuration. This does not change the existing kernel-disable limitation.
+
 ## Boot sequence
 
 `rtl931x-stackd` and netifd start independently. The package installs a netifd
@@ -39,7 +87,7 @@ For example, the leader may add `stack0` as a tagged member of management VLAN
 config bridge-vlan 'management_vlan'
 	option device 'switch'
 	option vlan '100'
-	list ports 'lan48:u*'
+	list ports 'sw0s0p48:u*'
 	list ports 'stack0:t'
 ```
 
@@ -99,14 +147,15 @@ belong to a bridge or LAG before stacking starts. A single link may continue to
 use `option interface 'lan49'` for compatibility.
 
 Local LACP uplinks on non-fabric ports may be created before or after the stack.
-For example, `bond0` on `lan51`/`lan52` and a native stack trunk on
-`lan49`/`lan50` use separate hardware tables and need no netifd ordering hook.
+For example, member 0's `bond0` on `sw0s0p51`/`sw0s0p52` and a native stack
+trunk on `sw0s0p49`/`sw0s0p50` use separate hardware tables and need no netifd
+ordering hook for stack bring-up.
 Local LAG membership follows the switch's device ID when stacking is enabled
 or disabled. The leader synchronizes its LAG membership and LACP-selected TX
 ports to the follower through session-checked, replayable Device Talk mutations;
 peer recovery replays the current state before restoring bridge forwarding.
 Loss of the peer does not prevent local uplink changes. A fabric port cannot
-also be a bond member. This does not implement bonds containing `sw1pN` ports
+also be a bond member. This does not implement bonds containing remote ports
 or cross-chassis LACP; delegated follower ports remain owned by the leader.
 
 Before enabling a new trunk, connect at least one configured link. Stackd arms
@@ -137,7 +186,7 @@ The status interfaces expose the configured, currently active and independently
 verified hardware port masks:
 
 ```
-rtl931x-stack status lan51
+rtl931x-stack status sw1s0p51
 ubus call rtl931x.stack status
 ```
 
@@ -176,8 +225,8 @@ generation:
 uci set rtl931x-stack.main.enabled='0'
 uci commit rtl931x-stack
 /etc/init.d/rtl931x-stack stop
-rtl931x-stack status lan49
-rtl931x-stack recover-local lan49 2
+rtl931x-stack status sw1s0p49
+rtl931x-stack recover-local sw1s0p49 2
 ```
 
 The kernel rejects recovery while the physical fabric carrier is up and only
@@ -232,7 +281,7 @@ an image built from the same revision before enabling the stack.
 
 ## Peer representor contract
 
-The leader-side `sw1pN` devices are stack-specific remote bridge
+The leader-side `sw1s0pN` devices for member 1 are stack-specific remote bridge
 representors. They are not full DSA user ports. Their current contract
 includes the Ethernet data path, remote administrative state, live carrier
 state, fixed inventory MAC address and MTU, and the bridge offload subset
@@ -324,4 +373,6 @@ failure-handling interfaces as ready for wider deployment.
 The package installs `rtl931x-stack` for manual inspection and recovery. Run it
 without arguments to list the available commands. The normal boot path is
 owned by `rtl931x-stackd`; manual commands should be reserved for development
-and fault diagnosis.
+and fault diagnosis. Unlike stackd's UCI fabric aliases, CLI interface arguments
+are literal netdevice names: use `sw0s0p49`, for example, not `lan49` after
+naming has run. Numeric port arguments remain ASIC indices.

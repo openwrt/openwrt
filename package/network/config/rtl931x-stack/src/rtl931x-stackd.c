@@ -25,6 +25,7 @@
 #include <uci.h>
 
 #include "stack-netlink.h"
+#include "stack-names.h"
 
 #define STACK_OBJECT_NAME "rtl931x.stack"
 #define READY_OBJECT_NAME "rtl931x.stack.ready"
@@ -1235,20 +1236,38 @@ static void converge_timeout(struct uloop_timeout *timeout)
 	schedule_converge(daemon, HEALTH_INTERVAL_MS);
 }
 
-int main(void)
+int main(int argc, char **argv)
 {
 	struct stack_daemon *daemon = &daemon_state;
 	int config_err;
 	int err;
 
+	if (argc > 2 || (argc == 2 && strcmp(argv[1], "--name-ports"))) {
+		fprintf(stderr, "Usage: rtl931x-stackd [--name-ports]\n");
+		return EXIT_FAILURE;
+	}
 	openlog("rtl931x-stackd", LOG_PID, LOG_DAEMON);
 	clock_gettime(CLOCK_MONOTONIC, &daemon->started);
 	daemon->phase = PHASE_STARTING;
 	config_err = load_config(&daemon->config);
+	if (!config_err && daemon->config.enabled) {
+		config_err = rtl931x_stack_name_ports(daemon->config.interfaces,
+						    daemon->config.interface_count,
+						    daemon->config.member);
+		if (config_err)
+			syslog(LOG_ERR, "port naming failed: %s", strerror(-config_err));
+	}
+	if (argc == 2) {
+		if (config_err)
+			fprintf(stderr, "stack port naming/configuration failed: %s\n",
+				strerror(-config_err));
+		closelog();
+		return config_err ? EXIT_FAILURE : EXIT_SUCCESS;
+	}
 	if (config_err) {
 		daemon->phase = PHASE_FAILED;
 		daemon->last_error = config_err;
-		syslog(LOG_ERR, "invalid configuration: %s",
+		syslog(LOG_ERR, "configuration or port naming failed: %s",
 		       strerror(-config_err));
 	} else if (!daemon->config.enabled) {
 		daemon->phase = PHASE_DISABLED;

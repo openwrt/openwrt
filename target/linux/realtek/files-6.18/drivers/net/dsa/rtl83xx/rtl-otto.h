@@ -1173,6 +1173,8 @@ struct rtl931x_stack_peer_switch_info {
 
 struct rtl931x_stack_peer_port_info {
 	u32 mtu;
+	u16 panel_port;	/* Zero when the peer lacks GET_PORT_LOCATION. */
+	u8 slot;
 	u8 flags;
 	u8 mac[ETH_ALEN];
 };
