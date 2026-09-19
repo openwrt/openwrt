@@ -77,7 +77,24 @@ create_httpauth() {
 		return
 	fi
 	echo "${prefix}:${username}:${password}" >>$httpdconf
-	haveauth=1
+	have_auth=1
+}
+
+# Check if the root password is valid.
+check_root_password_valid() {
+	local pass_hash
+	pass_hash=$(awk -F: '$1 == "root" {print $2}' /etc/shadow 2>/dev/null)
+
+	case "$pass_hash" in
+		""|\!*|\**)
+			# Invalid
+			return 1
+			;;
+		*)
+			# Valid
+			return 0
+			;;
+	esac
 }
 
 append_lua_prefix() {
@@ -111,7 +128,7 @@ start_instance()
 
 	local cfg="$1"
 	local realm="$(uci_get system.@system[0].hostname)"
-	local listen http https interpreter indexes path handler httpdconf haveauth
+	local listen http https interpreter indexes path handler httpdconf have_auth force_http_auth
 	local enabled
 
 	config_get_bool enabled "$cfg" 'enabled' 1
@@ -122,21 +139,33 @@ start_instance()
 	procd_set_param stderr 1
 	procd_set_param command "$UHTTPD_BIN" -f
 
-	config_get config "$cfg" config
-	if [ -z "$config" ]; then
-		mkdir -p /var/etc/uhttpd
-		httpdconf="/var/etc/uhttpd/httpd.${cfg}.conf"
-		rm -f ${httpdconf}
-		config_list_foreach "$cfg" httpauth create_httpauth
-		if [ "$haveauth" = "1" ]; then
-			procd_append_param command -c ${httpdconf}
-			[ -r /etc/httpd.conf ] && cat /etc/httpd.conf >>/var/etc/uhttpd/httpd.${cfg}.conf
+	mkdir -p /var/etc/uhttpd
+	httpdconf="/var/etc/uhttpd/httpd.${cfg}.conf"
+	rm -f "$httpdconf"
+
+	config_list_foreach "$cfg" httpauth create_httpauth
+
+	config_get_bool force_http_auth "$cfg" "force_http_auth" "0"
+	if [ "$force_http_auth" = "1" ]; then
+		if check_root_password_valid; then
+			echo '/:root:$p$root' >> "$httpdconf"
+			have_auth=1
+		else
+			echo "uhttpd: Skipping force_http_auth because the root account does not have a valid password set." >&2
 		fi
+	fi
+
+	config_get config "$cfg" config
+	if [ -n "$httpdconf" ] && [ "$have_auth" = "1" ]; then
+		procd_append_param command -c "$httpdconf"
+		[ -r /etc/httpd.conf ] && cat /etc/httpd.conf >> "$httpdconf"
+	elif [ -n "$config" ]; then
+		# Configured a custom config file.
+		procd_append_param command -c "$config"
 	fi
 
 	append_arg "$cfg" home "-h"
 	append_arg "$cfg" realm "-r" "${realm:-OpenWrt}"
-	append_arg "$cfg" config "-c"
 	append_arg "$cfg" cgi_prefix "-x"
 	[ -f /usr/lib/uhttpd_lua.so ] && {
 		local len
