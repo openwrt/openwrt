@@ -11,7 +11,7 @@ PKG_NAME:=leds-aw9106
 PKG_RELEASE:=1
 
 PKG_MAINTAINER:=Ardeshir Barani <barani.ardeshir@gmail.com>
-PKG_LICENSE:=GPL-2.0-only
+PKG_LICENSE:=GPL-2.0-or-later
 PKG_LICENSE_FILES:=
 
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)
