@@ -22,7 +22,10 @@ export SOURCE_DATE_EPOCH
 export GIT_CONFIG_PARAMETERS='core.autocrlf=false'
 export GIT_ASKPASS:=/bin/true
 export MAKE_JOBSERVER=$(filter --jobserver%,$(MAKEFLAGS))
-export GNU_HOST_NAME:=$(shell $(TOPDIR)/scripts/config.guess)
+ifneq ($(filter-out 0,$(MAKELEVEL))$(origin GNU_HOST_NAME),$(MAKELEVEL)environment)
+  GNU_HOST_NAME:=$(shell $(TOPDIR)/scripts/config.guess)
+endif
+export GNU_HOST_NAME
 export HOST_OS:=$(shell uname)
 export HOST_ARCH:=$(shell uname -m)
 
