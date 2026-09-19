@@ -1,0 +1,38 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nickolay Savchenko <n.savchenko@axioma.lv>
+Date: Thu, 16 Jul 2026 03:35:29 +0300
+Subject: [PATCH] watchdog: add Ralink RT6855 support
+
+Add build integration for the watchdog timer in RT6855A and RT6856 SoCs.
+
+Signed-off-by: Nickolay Savchenko <n.savchenko@axioma.lv>
+---
+--- a/drivers/watchdog/Kconfig
++++ b/drivers/watchdog/Kconfig
+@@ -1999,6 +1999,16 @@ config GXP_WATCHDOG
+ 	  To compile this driver as a module, choose M here.
+ 	  The module will be called gxp-wdt.
+ 
++config RT6855_WDT
++	tristate "Ralink RT6855A/RT6856 watchdog"
++	select WATCHDOG_CORE
++	depends on SOC_RT6855
++	help
++	  Select this option to enable the hardware watchdog timer found in
++	  Ralink RT6855A and RT6856 system-on-chip devices. The watchdog uses
++	  the SoC timer block and can reset the system if userspace stops
++	  sending keepalive requests.
++
+ config MT7621_WDT
+ 	tristate "Mediatek SoC watchdog"
+ 	select WATCHDOG_CORE
+--- a/drivers/watchdog/Makefile
++++ b/drivers/watchdog/Makefile
+@@ -180,6 +180,7 @@ octeon-wdt-y := octeon-wdt-main.o octeon
+ obj-$(CONFIG_LANTIQ_WDT) += lantiq_wdt.o
+ obj-$(CONFIG_LOONGSON1_WDT) += loongson1_wdt.o
+ obj-$(CONFIG_RALINK_WDT) += rt2880_wdt.o
++obj-$(CONFIG_RT6855_WDT) += rt6855_wdt.o
+ obj-$(CONFIG_IMGPDC_WDT) += imgpdc_wdt.o
+ obj-$(CONFIG_MT7621_WDT) += mt7621_wdt.o
+ obj-$(CONFIG_PIC32_WDT) += pic32-wdt.o
