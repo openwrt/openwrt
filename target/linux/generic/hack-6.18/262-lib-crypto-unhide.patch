@@ -1,0 +1,57 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Thu, 16 Jul 2026 10:40:40 +0200
+Subject: [PATCH] lib/crypto: add tristate strings for the packaged crypto
+ libraries
+
+The lib/crypto reorganization removed the user prompts from the
+library Kconfig symbols, turning them select-only. The kmod
+packaging enables these symbols by writing them into the kernel
+config, which the kernel's oldconfig silently drops for promptless
+symbols unless some built-in selector (e.g. WIREGUARD) happens to be
+enabled, leaving kmod-crypto-lib-chacha20, kmod-crypto-lib-poly1305,
+kmod-crypto-lib-chacha20poly1305 and kmod-crypto-lib-curve25519
+empty and their exports absent from Module.symvers. Restore prompts
+for the four symbols those packages anchor on, following the
+CRYPTO_LIB_ARC4 precedent.
+
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+--- a/lib/crypto/Kconfig
++++ b/lib/crypto/Kconfig
+@@ -37,7 +37,7 @@ config CRYPTO_LIB_BLAKE2S_ARCH
+ 	default y if X86_64
+ 
+ config CRYPTO_LIB_CHACHA
+-	tristate
++	tristate "ChaCha library interface"
+ 	select CRYPTO_LIB_UTILS
+ 	help
+ 	  Enable the ChaCha library interface.  Select this if your module uses
+@@ -56,7 +56,7 @@ config CRYPTO_LIB_CHACHA_ARCH
+ 	default y if X86_64
+ 
+ config CRYPTO_LIB_CURVE25519
+-	tristate
++	tristate "Curve25519 scalar multiplication library"
+ 	select CRYPTO_LIB_UTILS
+ 	help
+ 	  The Curve25519 library functions.  Select this if your module uses any
+@@ -91,7 +91,7 @@ config CRYPTO_LIB_MD5_ARCH
+ 	default y if SPARC64
+ 
+ config CRYPTO_LIB_POLY1305
+-	tristate
++	tristate "Poly1305 library interface"
+ 	help
+ 	  The Poly1305 library functions.  Select this if your module uses any
+ 	  of the functions from <crypto/poly1305.h>.
+@@ -126,7 +126,7 @@ config CRYPTO_LIB_POLY1305_RSIZE
+ 	default 1
+ 
+ config CRYPTO_LIB_CHACHA20POLY1305
+-	tristate
++	tristate "ChaCha20-Poly1305 AEAD support (8-byte nonce library version)"
+ 	select CRYPTO_LIB_CHACHA
+ 	select CRYPTO_LIB_POLY1305
+ 	select CRYPTO_LIB_UTILS
