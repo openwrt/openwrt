@@ -15,6 +15,7 @@ if [ -d "/etc/board.d/" ] && [ ! -s "$REAL_CFG" ]; then
 fi
 
 if [ -s "$CFG" ]; then
+	fsync "$CFG" || exit
 	mv "$CFG" "$REAL_CFG" || exit
 else
 	rm -f "$CFG"
