@@ -7,6 +7,7 @@
 #include <linux/clk-provider.h>
 #include <linux/bitfield.h>
 #include <linux/io.h>
+#include <linux/math64.h>
 #include <linux/spinlock.h>
 #include <linux/bug.h>
 #include <dt-bindings/clock/siflower,sf19a2890-clk.h>
@@ -142,19 +143,21 @@ static unsigned long sf19a28_pll_recalc_rate(struct clk_hw *hw,
 	u32 fbdiv = sf_pll_param_get(priv, PLL_FBDIV_HI, PLL_FBDIV_LO);
 	u32 postdiv1 = sf_pll_param_get(priv, PLL_POSTDIV1_HI, PLL_POSTDIV1_LO);
 	u32 postdiv2 = sf_pll_param_get(priv, PLL_POSTDIV2_HI, PLL_POSTDIV2_LO);
-	u32 pll_pd = sf_readl(cmn_priv, PLL_PD);
-	u32 ref = parent_rate / refdiv;
-	u32 rate = ref * fbdiv;
-	u32 frac;
-	u64 frac_rate;
+	u32 pll_pd = sf_readl(cmn_priv, priv->offset + REG_PLL_PD);
+	u32 frac = 0;
+	u64 divider, multiplier, rate;
 
-	if (!(pll_pd & PLL_PD_DSM)) {
+	if (!refdiv || !postdiv1 || !postdiv2)
+		return 0;
+
+	if (!(pll_pd & PLL_PD_DSM))
 		frac = sf_pll_param_get(priv, PLL_FRAC_HI, PLL_FRAC_LO);
-		frac_rate = ((u64)rate * frac) >> PLL_FRAC_BITS;
-		rate += frac_rate;
-	}
-	rate = rate / postdiv1 / postdiv2;
-	return rate;
+
+	multiplier = ((u64)fbdiv << PLL_FRAC_BITS) | frac;
+	divider = (u64)refdiv * postdiv1 * postdiv2 << PLL_FRAC_BITS;
+	rate = (u64)parent_rate * multiplier;
+
+	return div64_u64(rate, divider);
 }
 
 static u8 sf19a28_pll_get_parent(struct clk_hw *hw)
