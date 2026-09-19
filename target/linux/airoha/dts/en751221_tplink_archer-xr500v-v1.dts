@@ -107,23 +107,60 @@
 	};
 };
 
-/* Physical LAN labels run opposite to the external switch port indices.
- * The Ethernet/switch controllers remain disabled in the base dtsi.
+&eth {
+	status = "okay";
+};
+
+&gdm1 {
+	status = "okay";
+};
+
+&switch0 {
+	status = "okay";
+};
+
+/* The four RJ45 ports hang off the MT7530 (switch1) behind the internal
+ * switch; port 0 of the MT7530 is not wired. Physical LAN labels run
+ * opposite to the switch port indices.
  */
+&switch1 {
+	status = "okay";
+};
+
 &gsw_port1 {
 	label = "lan4";
+	status = "okay";
 };
 
 &gsw_port2 {
 	label = "lan3";
+	status = "okay";
 };
 
 &gsw_port3 {
 	label = "lan2";
+	status = "okay";
 };
 
 &gsw_port4 {
 	label = "lan1";
+	status = "okay";
+};
+
+&gsw_phy1 {
+	status = "okay";
+};
+
+&gsw_phy2 {
+	status = "okay";
+};
+
+&gsw_phy3 {
+	status = "okay";
+};
+
+&gsw_phy4 {
+	status = "okay";
 };
 
 /* The SPI-NAND is exposed as a whole; the OEM tcboot layout uses BMT block
