@@ -86,6 +86,9 @@ config MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED
 
 config MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED
 	bool "MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED"
+	select MBEDTLS_AES_C
+	select MBEDTLS_CCM_C
+	select MBEDTLS_ECP_DP_SECP256R1_ENABLED
 	default n
 
 comment "Curves - unselect old or less-used curves to reduce binary size"
