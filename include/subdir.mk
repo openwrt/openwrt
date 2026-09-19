@@ -26,8 +26,7 @@ define ERROR
 	($(call MESSAGE, $(2)); $(if $(BUILD_LOG), echo "$(2)" >> $(BUILD_LOG_DIR)/$(1)/error.txt;) $(if $(3),, exit 1;))
 endef
 
-lastdir=$(word $(words $(subst /, ,$(1))),$(subst /, ,$(1)))
-diralias=$(if $(findstring $(1),$(call lastdir,$(1))),,$(call lastdir,$(1)))
+diralias=$(if $(findstring /,$(1)),$(notdir $(1)))
 
 subdir_make_opts = \
 	$(if $(SUBDIR_MAKE_DEBUG),-d) -r -C $(1) \
