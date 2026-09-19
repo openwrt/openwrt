@@ -438,12 +438,12 @@ endef
 ##
 define YEAR_2038
 $(shell \
-  mkdir -p $(TMP_DIR); \
-  echo '$(pound) include <time.h>' > $(TMP_DIR)/year2038.c; \
-  echo '$(pound) define LARGE_TIME_T ((time_t) (((time_t) 1 << 30) - 1 + 3 * ((time_t) 1 << 30)))' >> $(TMP_DIR)/year2038.c; \
-  echo 'int verify_time_t_range[(LARGE_TIME_T / 65537 == 65535 && LARGE_TIME_T % 65537 == 0) ? 1 : -1];' >> $(TMP_DIR)/year2038.c; \
-  echo 'int main (void) {return 0;}' >> $(TMP_DIR)/year2038.c; \
-  $(HOSTCC) $(TMP_DIR)/year2038.c -o /dev/null 2>/dev/null && echo y && rm -f $(TMP_DIR)/year2038.c || rm -f $(TMP_DIR)/year2038.c; \
+  { \
+    echo '$(pound) include <time.h>'; \
+    echo '$(pound) define LARGE_TIME_T ((time_t) (((time_t) 1 << 30) - 1 + 3 * ((time_t) 1 << 30)))'; \
+    echo 'int verify_time_t_range[(LARGE_TIME_T / 65537 == 65535 && LARGE_TIME_T % 65537 == 0) ? 1 : -1];'; \
+    echo 'int main (void) {return 0;}'; \
+  } | $(HOSTCC) -x c - -o /dev/null 2>/dev/null && echo y; \
 )
 endef
 
