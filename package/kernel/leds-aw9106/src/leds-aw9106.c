@@ -211,7 +211,7 @@ static int aw9106_parse_led_children(struct aw9106_chip *chip)
 		 * DT "color"/"function" pair, falling back to the legacy
 		 * "label" property when present.
 		 */
-		init_data.fwnode = fwnode_handle_get(child);
+		init_data.fwnode = child;
 
 		ret = devm_led_classdev_register_ext(chip->dev, &led->cdev,
 						      &init_data);
