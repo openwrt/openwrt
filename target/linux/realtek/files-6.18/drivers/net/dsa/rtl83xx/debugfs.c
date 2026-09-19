@@ -268,7 +268,11 @@ static void l2_table_print_entry(struct seq_file *m, struct rtl838x_switch_priv 
 			   e->mac[0], e->mac[1], e->mac[2], e->mac[3], e->mac[4], e->mac[5],
 			   e->vid, e->rvid);
 
-		seq_printf(m, "  port %d age %d", e->port, e->age);
+		if (priv->r->get_device_id)
+			seq_printf(m, "  device %u port %d age %d",
+				   e->stack_dev, e->port, e->age);
+		else
+			seq_printf(m, "  port %d age %d", e->port, e->age);
 		if (e->is_trunk) {
 			seq_printf(m, "  trunk %d trunk_members: 0x%08llx non-primary: 0x%08llx primary-port: %d",
 				   e->trunk,
@@ -586,6 +590,88 @@ static int rtldsa_vlan_table_open(struct inode *inode, struct file *filp)
 static const struct file_operations rtldsa_vlan_table_fops = {
 	.owner = THIS_MODULE,
 	.open = rtldsa_vlan_table_open,
+	.read = seq_read,
+	.llseek = seq_lseek,
+	.release = single_release,
+};
+
+static int rtl931x_stack_port_matrices_show(struct seq_file *m, void *v)
+{
+	struct rtl838x_switch_priv *priv = m->private;
+	u8 devices[] = {
+		READ_ONCE(priv->stack.member_id),
+		READ_ONCE(priv->stack.peer_id),
+	};
+	unsigned int device;
+	int port;
+
+	if (!priv->r->supports_stacking)
+		return -EOPNOTSUPP;
+
+	mutex_lock(&priv->reg_mutex);
+	seq_puts(m, "source-device:port permitted-local-ports\n");
+	for (device = 0; device < ARRAY_SIZE(devices); device++) {
+		if (device && devices[device] == devices[0])
+			continue;
+		for (port = 0; port <= priv->r->cpu_port; port++)
+			seq_printf(m, "%u:%d 0x%016llx\n", devices[device], port,
+				   rtl931x_stack_port_matrix_get(devices[device],
+								 port));
+	}
+	mutex_unlock(&priv->reg_mutex);
+
+	return 0;
+}
+
+static int rtl931x_stack_port_matrices_open(struct inode *inode, struct file *filp)
+{
+	return single_open(filp, rtl931x_stack_port_matrices_show,
+			   inode->i_private);
+}
+
+static const struct file_operations rtl931x_stack_port_matrices_fops = {
+	.owner = THIS_MODULE,
+	.open = rtl931x_stack_port_matrices_open,
+	.read = seq_read,
+	.llseek = seq_lseek,
+	.release = single_release,
+};
+
+static int rtl931x_stack_routes_show(struct seq_file *m, void *v)
+{
+	struct rtl838x_switch_priv *priv = m->private;
+	int i;
+
+	if (!priv->r->supports_stacking)
+		return -EOPNOTSUPP;
+
+	mutex_lock(&priv->reg_mutex);
+	seq_printf(m, "global 0x%08x\n", sw_r32(RTL931X_STK_GBL_CTRL));
+	seq_printf(m, "trunk-control 0x%08x\n", sw_r32(RTL931X_TRK_CTRL));
+	for (i = 0; i < ARRAY_SIZE(priv->stack.talk_saved_port_id); i++)
+		seq_printf(m, "port-id-%d 0x%08x\n", i,
+			   sw_r32(RTL931X_STK_PORT_ID_CTRL(i * 5)));
+	for (i = 0; i < RTL931X_STACK_MAX_DEVICES / 2; i++) {
+		seq_printf(m, "device-map-%d 0x%08x\n", i,
+			   sw_r32(RTL931X_STK_DEV_PORT_MAP_CTRL(i * 2)));
+		seq_printf(m, "nonuc-block-%d 0x%08x\n", i,
+			   sw_r32(RTL931X_STK_NONUC_BLOCK_CTRL(i * 2)));
+		seq_printf(m, "stack-trunk-%d 0x%08x\n", i,
+			   sw_r32(RTL931X_TRK_STK_CTRL + i * 4));
+	}
+	mutex_unlock(&priv->reg_mutex);
+
+	return 0;
+}
+
+static int rtl931x_stack_routes_open(struct inode *inode, struct file *filp)
+{
+	return single_open(filp, rtl931x_stack_routes_show, inode->i_private);
+}
+
+static const struct file_operations rtl931x_stack_routes_fops = {
+	.owner = THIS_MODULE,
+	.open = rtl931x_stack_routes_open,
 	.read = seq_read,
 	.llseek = seq_lseek,
 	.release = single_release,
@@ -967,4 +1053,11 @@ void rtl930x_dbgfs_init(struct rtl838x_switch_priv *priv)
 
 	debugfs_create_file("vlan_table", 0400, dbg_dir, priv,
 			    &rtldsa_vlan_table_fops);
+
+	if (priv->r->supports_stacking) {
+		debugfs_create_file("stack_port_matrices", 0400, dbg_dir, priv,
+				    &rtl931x_stack_port_matrices_fops);
+		debugfs_create_file("stack_routes", 0400, dbg_dir, priv,
+				    &rtl931x_stack_routes_fops);
+	}
 }

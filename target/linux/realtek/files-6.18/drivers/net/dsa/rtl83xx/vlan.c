@@ -38,7 +38,6 @@
 #define RTL930X_VLAN_IP4_UNKN_MC_FLD_PMSK(p)	(p[3] & RTL930X_MC_PMASK_ALL_PORTS)
 #define RTL930X_VLAN_IP6_UNKN_MC_FLD_PMSK(p)	(p[4] & RTL930X_MC_PMASK_ALL_PORTS)
 #define RTL931X_VLAN_PROFILE_SET(idx)		(0x9800 + (((idx) * 28)))
-#define RTL931X_VLAN_PORT_IGR_CTRL		(0x94E8)
 #define RTL931X_VLAN_L2_UNKN_MC_FLD_H(pmsk)	(((u64)pmsk) >> 32)
 #define RTL931X_VLAN_L2_UNKN_MC_FLD_L(pmsk)	(pmsk & GENMASK_ULL(31, 0))
 #define RTL931X_VLAN_IP4_UNKN_MC_FLD_H(pmsk)	(((u64)pmsk) >> 32)
@@ -102,17 +101,10 @@
 #define RTL930X_VLAN_PORT_TAG_STS_CTRL_IGR_P_OTAG_KEEP_MASK	GENMASK(1, 1)
 #define RTL930X_VLAN_PORT_TAG_STS_CTRL_IGR_P_ITAG_KEEP_MASK	GENMASK(0, 0)
 
-#define RTL931X_VLAN_PORT_TAG_STS_INTERNAL			0x0
 #define RTL931X_VLAN_PORT_TAG_STS_UNTAG				0x1
 #define RTL931X_VLAN_PORT_TAG_STS_TAGGED			0x2
 #define RTL931X_VLAN_PORT_TAG_STS_PRIORITY_TAGGED		0x3
 
-#define RTL931X_VLAN_PORT_TAG_CTRL_BASE				0x4860
-/* port 0-56 */
-#define RTL931X_VLAN_PORT_TAG_CTRL(port) \
-	(RTL931X_VLAN_PORT_TAG_CTRL_BASE + (port << 2))
-#define RTL931X_VLAN_PORT_TAG_EGR_OTAG_STS_MASK			GENMASK(13, 12)
-#define RTL931X_VLAN_PORT_TAG_EGR_ITAG_STS_MASK			GENMASK(11, 10)
 #define RTL931X_VLAN_PORT_TAG_EGR_OTAG_KEEP_MASK		GENMASK(9, 9)
 #define RTL931X_VLAN_PORT_TAG_EGR_ITAG_KEEP_MASK		GENMASK(8, 8)
 #define RTL931X_VLAN_PORT_TAG_IGR_OTAG_KEEP_MASK		GENMASK(7, 7)
@@ -776,9 +768,15 @@ int rtldsa_vlan_filtering(struct dsa_switch *ds, int port,
 				 struct netlink_ext_ack *extack)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
+	int err;
+
+	mutex_lock(&priv->reg_mutex);
+
+	err = rtldsa_stack_port_guard(priv, port, extack);
+	if (err)
+		goto out;
 
 	pr_debug("%s: port %d\n", __func__, port);
-	mutex_lock(&priv->reg_mutex);
 
 	if (vlan_filtering) {
 		/* Enable ingress and egress filtering
@@ -806,9 +804,10 @@ int rtldsa_vlan_filtering(struct dsa_switch *ds, int port,
 	}
 
 	/* Do we need to do something to the CPU-Port, too? */
+out:
 	mutex_unlock(&priv->reg_mutex);
 
-	return 0;
+	return err;
 }
 
 int rtldsa_vlan_add(struct dsa_switch *ds, int port,
@@ -817,6 +816,7 @@ int rtldsa_vlan_add(struct dsa_switch *ds, int port,
 {
 	struct rtldsa_vlan_info info;
 	struct rtl838x_switch_priv *priv = ds->priv;
+	int err;
 
 	pr_debug("%s port %d, vid %d, flags %x\n",
 		 __func__, port, vlan->vid, vlan->flags);
@@ -831,6 +831,10 @@ int rtldsa_vlan_add(struct dsa_switch *ds, int port,
 	}
 
 	mutex_lock(&priv->reg_mutex);
+
+	err = rtldsa_stack_port_guard(priv, port, extack);
+	if (err)
+		goto out;
 
 	/*
 	 * Realtek switches copy frames as-is to/from the CPU. For a proper
@@ -873,9 +877,10 @@ int rtldsa_vlan_add(struct dsa_switch *ds, int port,
 	priv->r->vlan_set_tagged(vlan->vid, &info);
 	pr_debug("Member ports, VLAN %d: %llx\n", vlan->vid, info.member_ports);
 
+out:
 	mutex_unlock(&priv->reg_mutex);
 
-	return 0;
+	return err;
 }
 
 int rtldsa_vlan_del(struct dsa_switch *ds, int port,
@@ -883,6 +888,7 @@ int rtldsa_vlan_del(struct dsa_switch *ds, int port,
 {
 	struct rtldsa_vlan_info info;
 	struct rtl838x_switch_priv *priv = ds->priv;
+	int err = 0;
 	u16 pvid;
 
 	pr_debug("%s: port %d, vid %d, flags %x\n",
@@ -898,6 +904,12 @@ int rtldsa_vlan_del(struct dsa_switch *ds, int port,
 	}
 
 	mutex_lock(&priv->reg_mutex);
+
+	if (rtl931x_stack_port_active(priv, port)) {
+		err = -EBUSY;
+		goto out;
+	}
+
 	pvid = priv->ports[port].pvid;
 
 	/* Reset to default if removing the current PVID */
@@ -926,9 +938,10 @@ int rtldsa_vlan_del(struct dsa_switch *ds, int port,
 	priv->r->vlan_set_tagged(vlan->vid, &info);
 	pr_debug("Member ports, VLAN %d: %llx\n", vlan->vid, info.member_ports);
 
+out:
 	mutex_unlock(&priv->reg_mutex);
 
-	return 0;
+	return err;
 }
 
 int rtldsa_port_vlan_fast_age(struct dsa_switch *ds, int port, u16 vid)

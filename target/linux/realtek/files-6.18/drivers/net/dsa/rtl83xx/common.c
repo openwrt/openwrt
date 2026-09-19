@@ -392,6 +392,7 @@ static int rtldsa_93xx_lag_set_group2ports(struct rtl838x_switch_priv *priv, int
 	u8 num_of_lag_ports = 0;
 	u8 group_ports[8];
 	u32 data[3];
+	u8 device = rtldsa_local_device(priv);
 	int i;
 
 	/* Read lag table using Table control register 2 */
@@ -428,21 +429,21 @@ static int rtldsa_93xx_lag_set_group2ports(struct rtl838x_switch_priv *priv, int
 	/* Remove tx disabled ports */
 	num_of_lag_ports = table_pos;
 
-	e.trk_dev0 = 0;
+	e.trk_dev0 = device;
 	e.trk_port0 = group_ports[0];
-	e.trk_dev1 = 0;
+	e.trk_dev1 = device;
 	e.trk_port1 = group_ports[1];
-	e.trk_dev2 = 0;
+	e.trk_dev2 = device;
 	e.trk_port2 = group_ports[2];
-	e.trk_dev3 = 0;
+	e.trk_dev3 = device;
 	e.trk_port3 = group_ports[3];
-	e.trk_dev4 = 0;
+	e.trk_dev4 = device;
 	e.trk_port4 = group_ports[4];
-	e.trk_dev5 = 0;
+	e.trk_dev5 = device;
 	e.trk_port5 = group_ports[5];
-	e.trk_dev6 = 0;
+	e.trk_dev6 = device;
 	e.trk_port6 = group_ports[6];
-	e.trk_dev7 = 0;
+	e.trk_dev7 = device;
 	e.trk_port7 = group_ports[7];
 
 	e.num_tx_candi = num_of_lag_ports;
@@ -500,8 +501,10 @@ int rtldsa_93xx_lag_set_port_members(struct rtl838x_switch_priv *priv, int group
 
 	/* apply global group and port settings */
 	ret = rtldsa_93xx_lag_set_group2ports(priv, group, info);
-	if (ret)
+	if (ret) {
+		priv->lags_port_members[group] = old_members;
 		return ret;
+	}
 
 	for_each_set_bit(port, affected_members, ARRAY_SIZE(priv->ports)) {
 		bool valid = priv->lags_port_members[group] & BIT_ULL(port);
@@ -997,11 +1000,10 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 
 	priv->link_state_irq = platform_get_irq(pdev, 0);
 	pr_info("LINK state irq: %d\n", priv->link_state_irq);
-	err = request_irq(priv->link_state_irq, rtldsa_switch_irq,
-			  IRQF_SHARED, "rtldsa-link-state", priv->ds);
+	err = devm_request_irq(dev, priv->link_state_irq, rtldsa_switch_irq,
+			       IRQF_SHARED, "rtldsa-link-state", priv->ds);
 	if (err) {
 		dev_err(dev, "Error setting up switch interrupt.\n");
-		/* Need to free allocated switch here */
 	}
 
 	/* Enable interrupts for switch, on RTL931x, the IRQ is always on globally */
@@ -1042,10 +1044,13 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 	if (priv->r->lag_switch_init)
 		priv->r->lag_switch_init(priv);
 
+	if (priv->r->supports_stacking)
+		rtl931x_stack_register(priv);
+
 	return 0;
 
 err_register_l3:
-	dsa_switch_shutdown(priv->ds);
+	dsa_unregister_switch(priv->ds);
 err_register_switch:
 	rtldsa_tc_cleanup(priv);
 	destroy_workqueue(priv->wq);
@@ -1086,6 +1091,8 @@ static void rtl83xx_sw_remove(struct platform_device *pdev)
 
 	/* TODO: */
 	pr_debug("Removing platform driver for rtl83xx-sw\n");
+	if (priv->r->supports_stacking)
+		rtl931x_stack_unregister(priv);
 
 	/* unregister notifiers which will create workqueue entries with
 	 * references to the switch structures. Also stop self-arming delayed
@@ -1095,7 +1102,7 @@ static void rtl83xx_sw_remove(struct platform_device *pdev)
 	otto_l3_remove(priv);
 	cancel_delayed_work_sync(&priv->counters_work);
 
-	dsa_switch_shutdown(priv->ds);
+	dsa_unregister_switch(priv->ds);
 
 	rtldsa_tc_cleanup(priv);
 
@@ -1136,7 +1143,28 @@ static struct platform_driver rtl83xx_switch_driver = {
 	},
 };
 
-module_platform_driver(rtl83xx_switch_driver);
+static int __init rtl83xx_switch_init(void)
+{
+	int err;
+
+	err = rtl931x_stack_init();
+	if (err)
+		return err;
+
+	err = platform_driver_register(&rtl83xx_switch_driver);
+	if (err)
+		rtl931x_stack_exit();
+
+	return err;
+}
+module_init(rtl83xx_switch_init);
+
+static void __exit rtl83xx_switch_exit(void)
+{
+	platform_driver_unregister(&rtl83xx_switch_driver);
+	rtl931x_stack_exit();
+}
+module_exit(rtl83xx_switch_exit);
 
 MODULE_AUTHOR("B. Koblitz");
 MODULE_DESCRIPTION("RTL83XX SoC Switch Driver");

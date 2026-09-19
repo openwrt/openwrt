@@ -1342,6 +1342,13 @@ void rtl931x_l2_learning_setup(void)
 
 	/* Limit learning to maximum: 64k entries, after that just flood (bits 0-2) */
 	sw_w32((0xffff << 3) | FORWARD, RTL931X_L2_LRN_CONSTRT_CTRL);
+
+	/* Static entries still age. At age zero, their source port becomes
+	 * 63 and lookups miss. CPU-port source learning is disabled, so no
+	 * useful dynamic entry depends on CPU-port aging.
+	 */
+	sw_w32_mask(BIT(RTL931X_CPU_PORT & 0x1f), 0,
+		    RTL931X_L2_PORT_AGE_CTRL_REG(RTL931X_CPU_PORT));
 }
 
 void rtldsa_931x_enable_learning(int port, bool enable)
@@ -1435,12 +1442,15 @@ int rtl931x_set_ageing_time(unsigned long msec)
 
 int rtldsa_931x_fast_age(struct rtl838x_switch_priv *priv, int port, int vid)
 {
+	u8 device;
 	u32 val;
 
 	sw_w32(0, RTL931X_L2_TBL_FLUSH_CTRL + 4);
+	device = FIELD_GET(RTL931X_STK_GBL_CTRL_MY_DEV_ID,
+			   sw_r32(RTL931X_STK_GBL_CTRL));
 
 	val = 0;
-	val |= port << 11;
+	val |= ((device << 6) | port) << 11;
 	val |= BIT(24); /* compare port id */
 	val |= BIT(28); /* status - trigger flush */
 	if (vid >= 0) {

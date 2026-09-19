@@ -1,0 +1,378 @@
+# RTL931x switch stacking
+
+This package contains the userspace manager and diagnostic client for the
+experimental RTL931x two-member switch stack. The kernel driver supplies the
+stack transport, peer-port representors and a private CPU Ethernet endpoint.
+
+This is proof-of-concept code. It currently assumes two RTL931x members, one
+to four matching physical fabric links and fixed leader/follower roles. Do not
+treat it as a general high-availability stacking implementation.
+
+## Port names
+
+Physical ports use `sw<member>s<slot>p<panel-port>` on both CPUs in a stack.
+The member ID is the configured identity, not the leader/follower role. Slot `0`
+means built-in ports. The port number is the number printed on the chassis,
+not the ASIC index. Expansion slots are reserved in the naming convention;
+this proof of concept only implements slot `0`.
+
+For example, member 0's `lan51` becomes `sw0s0p51`. Member 1's `lan51` becomes
+`sw1s0p51` both locally and as its representor on member 0. On the LGS352C,
+that front-panel port is ASIC port 52; hardware masks and the diagnostic
+`peer-port` argument continue to use ASIC indices. Names do not depend on
+link speed, stack health or which CPU exposes the device. `stack0`, bonds,
+bridges and the CPU conduit retain their existing names.
+
+No DTS changes are needed. Local naming reads the existing device-tree
+`lanN` labels, and the peer supplies its own port location through an
+additive read-only Device Talk request. It does not assume that the peer has
+the same board layout. A peer without that request keeps the legacy `swXpN`
+representor names; naming alone does not bump the Device Talk version or
+prevent management traffic. Both updated members are required for uniform
+names throughout the stack.
+
+The init script applies local names synchronously before starting stackd,
+and before the normal network init priority. This does not wait for the peer
+or link calibration. Repeating the operation with the same names is a no-op.
+It refuses to rename ports that are up or have upper devices, rather than
+cycling links or disrupting an existing bond. Fabric interfaces may still
+be specified by their board labels (`lan49`, `lan50`); stackd resolves them
+to the canonical local names without rewriting UCI.
+
+### Migrating an existing configuration
+
+This is a netdevice-name change: do not upgrade an enabled stack without
+updating its network configuration. Replace local `lanN` references with
+`sw<local-member>s0pN` and remote `swXpN` references with the corresponding
+front-panel name. Do not blindly add one to the old remote index: the
+LGS352C's SFP+ ASIC indices are 48, 50, 52 and 53 for panel ports 49--52.
+Update bridge ports, bridge-VLAN port lists (preserving `:t`/`:u*`), bond
+members, device sections and any firewall or monitoring device references.
+Keep `stack0` and its VLAN subinterfaces unchanged.
+
+Stage matching configuration and reboot; do not rename a live management
+uplink. Naming runs only for an enabled stack configuration. Disabling the
+daemon does not undo names during that boot; a reboot with stacking disabled
+returns the ordinary board names and requires matching standalone network
+configuration. This does not change the existing kernel-disable limitation.
+
+## Boot sequence
+
+`rtl931x-stackd` and netifd start independently. The package installs a netifd
+configuration selector which reads the configured stack role before netifd
+parses `/etc/config/network`. It does not wait for the fabric or peer.
+
+The leader loads its complete network configuration immediately. References to
+peer representors remain pending until stackd creates those netdevs. A follower
+loads a restricted configuration profile immediately, before its front-panel
+ports can be configured. The loopback interface and global network settings are
+retained automatically. Other network UCI sections required on the follower
+must be assigned to the selected profile. The `rtl931x.stack.ready` ubus object
+reports stack health and does not gate network startup.
+
+The default follower profile is `rtl931x-stack`. It may be changed with the
+`netifd_profile` option in `/etc/config/rtl931x-stack`.
+
+## Management network
+
+Each configured member exposes `stack0`. It is a virtual Linux Ethernet device
+representing that member CPU on the real stack fabric. Ethernet frames are
+carried unchanged, so normal 802.1Q subinterfaces can provide a private
+stack-wide management network.
+
+For example, the leader may add `stack0` as a tagged member of management VLAN
+100 on its normal bridge:
+
+```uci
+config bridge-vlan 'management_vlan'
+	option device 'switch'
+	option vlan '100'
+	list ports 'sw0s0p48:u*'
+	list ports 'stack0:t'
+```
+
+The follower can assign its own address from the same management subnet to a
+tagged stack device. Every section required on the restricted follower must
+carry the profile option:
+
+```uci
+config device 'stack_management_vlan'
+	option name 'stack0.100'
+	option type '8021q'
+	option ifname 'stack0'
+	option vid '100'
+	option profile 'rtl931x-stack'
+
+config interface 'stack_management'
+	option device 'stack0.100'
+	option proto 'static'
+	option ipaddr '10.50.16.128'
+	option netmask '255.255.255.0'
+	option profile 'rtl931x-stack'
+```
+
+Routes, rules, aliases or additional devices needed by the follower must also
+be tagged with the same profile. Wireless and dynamically injected procd
+network configuration are deliberately not loaded in restricted mode.
+
+There is no uci-defaults script for this setup: the bridge name, VLAN ID,
+management subnet and per-member address are deployment policy and cannot be
+chosen safely by the package.
+
+## Basic configuration
+
+The stack configuration names one to four fabric DSA ports and assigns the two
+device IDs. Exactly one enabled `stack` section is supported. Use a UCI list
+for a multi-link trunk:
+
+```uci
+config stack 'main'
+	option enabled '1'
+	list interface 'lan51'
+	list interface 'lan52'
+	option member_id '1'
+	option peer_id '0'
+	option master_id '0'
+	option generation '1'
+	option flags '0'
+	option boot_policy 'wait'
+	option ready_timeout '60'
+	option netifd_profile 'rtl931x-stack'
+```
+
+The peer uses the inverse member and peer IDs with the same master, generation
+and flags. Both members must list the same set of physical port numbers. Every
+fabric interface must be administratively usable and must not
+belong to a bridge or LAG before stacking starts. A single link may continue to
+use `option interface 'lan49'` for compatibility.
+
+Local LACP uplinks on non-fabric ports may be created before or after the stack.
+For example, member 0's `bond0` on `sw0s0p51`/`sw0s0p52` and a native stack
+trunk on `sw0s0p49`/`sw0s0p50` use separate hardware tables and need no netifd
+ordering hook for stack bring-up.
+Local LAG membership follows the switch's device ID when stacking is enabled
+or disabled. The leader synchronizes its LAG membership and LACP-selected TX
+ports to the follower through session-checked, replayable Device Talk mutations;
+peer recovery replays the current state before restoring bridge forwarding.
+Loss of the peer does not prevent local uplink changes. A fabric port cannot
+also be a bond member. This does not implement bonds containing remote ports
+or cross-chassis LACP; delegated follower ports remain owned by the leader.
+
+Before enabling a new trunk, connect at least one configured link. Stackd arms
+every configured port, enables the stack after one link verifies, and keeps
+unverified links out of the hardware trunk. It probes each additional live link
+directly and admits it only when it terminates on the same peer and session.
+Once configured, the RTL931x hardware hashes traffic over the active members
+and removes a failed member from the trunk. The representors remain available
+while at least one member link stays up.
+
+Bootstrap retries leave already armed ports in place so PCS/DAC calibration
+can finish. A missing carrier or a peer-probe timeout does not disarm the
+fabric or reopen its ports. After a daemon restart or an interrupted setup,
+stackd reuses the complete or partial provisional set and arms missing ports.
+It replaces a disabled provisional set only if it contains ports that are no
+longer configured; an enabled stack still requires coordinated teardown to
+change its topology.
+
+The configured fabric-port set is immutable while either kernel stack is
+enabled. Adding or removing a UCI `interface` and restarting stackd does not
+expand or shrink the live topology; stackd reports that the active kernel
+configuration is stale. Live carrier loss and restoration within the existing
+set are supported. Changing the set requires coordinated teardown on both
+members. For this proof of concept, the simplest safe procedure is to update
+both UCI configurations and reboot both members into the new topology.
+
+The status interfaces expose the configured, currently active and independently
+verified hardware port masks:
+
+```
+rtl931x-stack status sw1s0p51
+ubus call rtl931x.stack status
+```
+
+For initial bench testing, confirm that `fabric_port_mask` contains every
+configured port. `verified_fabric_port_mask` and `active_fabric_port_mask`
+contain the currently verified live members and change when cables are removed
+and restored.
+
+Also check `stack0` carrier and management reachability on both members after
+a cold boot and after disconnecting all fabric links and restoring one. With
+no active route, `stack0` must lose carrier. Once a link is verified and its
+route is active again, `stack0` must regain carrier and management traffic must
+resume without reapplying the stack configuration or rebooting either member.
+
+The `wait` policy retries stack convergence indefinitely. `fallback` restores
+standalone switch state after `ready_timeout`, while `fail` stops automatic
+retries. These policies do not broaden the network configuration selected at
+startup. A configured follower remains fail-closed if stacking fails or falls
+back; omitted standalone configuration is never activated automatically. To
+return a follower to standalone networking, disable stacking and reload or
+restart netifd explicitly.
+
+## Failure and ownership recovery
+
+The `fallback` boot policy is fail-closed. A follower refuses automatic
+fallback while its local ports are still marked as delegated. Reclaiming those
+ports while the former leader may still own them could create split-brain
+forwarding and expose traffic between otherwise isolated networks.
+
+An isolated follower can instead be recovered explicitly. First physically
+disconnect its stack link, disable and stop `rtl931x-stackd`, and inspect the
+current generation. Then issue a local recovery with a strictly newer
+generation:
+
+```
+uci set rtl931x-stack.main.enabled='0'
+uci commit rtl931x-stack
+/etc/init.d/rtl931x-stack stop
+rtl931x-stack status sw1s0p49
+rtl931x-stack recover-local sw1s0p49 2
+```
+
+The kernel rejects recovery while the physical fabric carrier is up and only
+accepts it on a follower. It commits the newer generation before changing
+ownership, invalidates the old peer session, restores bridge, VLAN, forwarding
+matrix, host FDB, DSA delegation and switch identity state, and leaves the
+former fabric port and recovered front-panel ports administratively down. The
+request is recorded in the kernel log. If any restoration step fails, the
+stack remains in the error state and the same generation can be retried after
+correcting the problem.
+
+Reload or restart netifd with an appropriate standalone configuration to bring
+the recovered ports back up. Do not reconnect the former stack link until its
+peer has also been recovered or reconfigured. Recovery is deliberately absent
+from automatic fallback, ubus and Device Talk, so another stack member cannot
+remotely seize delegated ownership.
+
+## Bridge offload
+
+Peer ports can join the same VLAN-aware bridge as local DSA ports. The driver
+programs VLAN membership, CIST state and device-aware isolation matrices on
+both switches. It also enables stack source learning while the distributed
+bridge exists. Local-to-remote, remote-to-local and remote-to-remote traffic
+can therefore remain in the RTL931x forwarding engines instead of traversing
+the leader CPU.
+
+This proof of concept deliberately supports a narrow bridge configuration:
+
+- one distributed bridge;
+- 802.1Q VLAN filtering enabled;
+- CIST only, with MST disabled;
+- multicast snooping disabled; and
+- default learning, flood and port-isolation flags.
+
+Set `option igmp_snooping '0'` explicitly on the bridge while testing. MDB
+offload, user-installed static FDB entries, non-default bridge-port flags,
+multiple distributed bridges and remote LAGs are not implemented yet. Dynamic
+unicast learning and unknown unicast, multicast and broadcast forwarding are
+offloaded.
+
+Follower front-panel link changes are carried to the leader as session-fenced,
+sequenced Device Talk events. The leader also reconciles the complete carrier
+bitmap periodically, so a lost event or a transiently busy receiver does not
+leave representor carrier state stale.
+
+The administrative state of each leader representor controls the corresponding
+follower MAC and phylink. Absolute full-bitmap mutations and inventory readback
+keep that state convergent after a lost reply or stack-link recovery.
+
+These features update the private Device Talk protocol. Both members must run
+an image built from the same revision before enabling the stack.
+
+## Peer representor contract
+
+The leader-side `sw1s0pN` devices for member 1 are stack-specific remote bridge
+representors. They are not full DSA user ports. Their current contract
+includes the Ethernet data path, remote administrative state, live carrier
+state, fixed inventory MAC address and MTU, and the bridge offload subset
+described above.
+
+The following DSA-port features are not currently provided:
+
+- live PHY configuration and most ethtool operations;
+- pause, EEE, WOL and hardware statistics;
+- MTU and MAC-address changes;
+- TC and switchdev offloads outside the supported bridge subset;
+- MST and VLAN-unaware bridges; and
+- remote LAG, mirror and traffic-control configuration.
+
+Unsupported netdevice operations return `EOPNOTSUPP`. The physical port name
+uses `d<device>p<port>`, and the representor iflink identifies its stack
+fabric port. The Device Talk protocol version and the capability bitmap shown
+by `rtl931x-stack peer-switch` negotiate the peer operations required before
+representors are activated. Those capabilities do not claim general DSA-port
+parity.
+
+If these representors remain a public interface, they will need a versioned
+per-netdevice feature ABI before their contract grows. A future cascaded-DSA
+implementation should instead expose remote ports through normal DSA APIs;
+duplicating the complete DSA ethtool, PHY and offload surface in this
+experimental representor layer is deliberately out of scope.
+
+## Generic DSA delegation status
+
+The pending generic DSA delegation patch is an experimental enablement API,
+not an upstream-ready abstraction. This topology has two switches with
+separate CPUs and separate kernels, so ordinary DSA cascading does not model
+its ownership boundary. The current delegated boolean is nevertheless shaped
+around this RTL931x implementation: it detaches an existing DSA user netdevice
+while preserving selected DSA and phylink state, then the leader creates an
+unrelated replacement netdevice.
+
+Before extending or submitting this API, an RFC should define:
+
+- delegation ownership, references and lifetime rules;
+- whether delegation initially leaves hardware and phylink enabled;
+- who owns phylink, PHY, port and switchdev configuration while delegated;
+- suspend, resume, reload, conduit-change and switch-removal behavior;
+- expected ethtool, switchdev and netdevice semantics;
+- rollback and teardown behavior after partial or uncertain operations; and
+- whether DSA should expose an explicit delegation owner or object instead of
+  embedding more state in booleans on `struct dsa_port`.
+
+Do not grow the generic API around additional RTL931x requirements before
+that design discussion. The independent RTL83xx driver-removal correction,
+`realtek: rtl83xx: unregister DSA switch on driver removal`, is already kept
+as a separate commit and must remain separate from any delegation RFC or
+patch series.
+
+## Validation status
+
+This remains proof-of-concept code. The current milestone validates the
+topology, protocol and RTL931x hardware model, but deliberately does not claim
+production readiness. There are currently no KUnit or selftests for the most
+failure-sensitive paths. Successful bench testing is not a substitute for
+that coverage.
+
+Before wider deployment, automated tests and fault injection should cover:
+
+- Device Talk wire encoding, padding and malformed messages;
+- nonce, generation, sequence and replay-cache handling;
+- uncertain mutations and rollback at every failure point;
+- the representor recovery state machine;
+- bridge VLAN flags and shadow-state replay; and
+- NAPI fragment boundaries spanning poll budgets.
+
+The hardware validation matrix should additionally cover:
+
+- unbridged ingress and egress;
+- port administrative and carrier transitions;
+- local LACP created before and after stacking, member selection changes,
+  and bond removal/recreation without disturbing the fabric;
+- local uplink traffic during peer loss and after peer LAG-state replay;
+- a fabric flap during every RPC phase;
+- leader and daemon loss at every mutation step; and
+- mirroring, ACL traps and other exceptional RX metadata.
+
+These gaps are accepted only for the present proof-of-concept phase. They
+must be addressed before describing the stack as production-ready or the
+failure-handling interfaces as ready for wider deployment.
+
+## Diagnostic client
+
+The package installs `rtl931x-stack` for manual inspection and recovery. Run it
+without arguments to list the available commands. The normal boot path is
+owned by `rtl931x-stackd`; manual commands should be reserved for development
+and fault diagnosis. Unlike stackd's UCI fabric aliases, CLI interface arguments
+are literal netdevice names: use `sw0s0p49`, for example, not `lan49` after
+naming has run. Numeric port arguments remain ASIC indices.

@@ -3,8 +3,10 @@
 #ifndef _RTL838X_H
 #define _RTL838X_H
 
+#include <linux/completion.h>
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 #include <net/dsa.h>
+#include <uapi/linux/rtl931x_stack.h>
 
 #include <linux/soc/realtek/otto_table.h>
 
@@ -62,6 +64,47 @@
 /* RTL838x stops at what its datasheet gives, below the vendor SDK value */
 #define RTL838X_MAX_FRAME			10000
 #define RTL839X_MAX_FRAME			12288
+
+/* RTL931x stacking */
+#define RTL931X_STK_GBL_CTRL			(0x1448)
+#define RTL931X_STK_GBL_CTRL_DROP_MY_DEV	BIT(8)
+#define RTL931X_STK_GBL_CTRL_MY_DEV_ID		GENMASK(7, 4)
+#define RTL931X_STK_GBL_CTRL_MASTER_DEV_ID	GENMASK(3, 0)
+#define RTL931X_STK_GBL_CTRL_STACK_MASK		GENMASK(8, 0)
+#define RTL931X_STK_PORT_ID_CTRL(slot)		(0x144c + ((slot) / 5) * 4)
+#define RTL931X_STK_PORT_ID_SHIFT(slot)		(((slot) % 5) * 6)
+#define RTL931X_STK_PORT_ID_MASK(slot)		(GENMASK(5, 0) << \
+						 RTL931X_STK_PORT_ID_SHIFT(slot))
+#define RTL931X_STK_PORT_ID_INVALID		0x3f
+#define RTL931X_STK_DEV_PORT_MAP_CTRL(dev)	(0x145c + ((dev) / 2) * 4)
+#define RTL931X_STK_DEV_PORT_MAP_SHIFT(dev)	(((dev) % 2) * 16)
+#define RTL931X_STK_DEV_PORT_MAP_MASK(dev)	(GENMASK(15, 0) << \
+						 RTL931X_STK_DEV_PORT_MAP_SHIFT(dev))
+#define RTL931X_STK_NONUC_BLOCK_CTRL(dev)	(0x147c + ((dev) / 2) * 4)
+#define RTL931X_STK_NONUC_BLOCK_SHIFT(dev)	(((dev) % 2) * 16)
+#define RTL931X_STK_NONUC_BLOCK_MASK(dev)	(GENMASK(15, 0) << \
+						 RTL931X_STK_NONUC_BLOCK_SHIFT(dev))
+#define RTL931X_TRK_CTRL_LINK_DOWN_AVOID	BIT(6)
+#define RTL931X_TRK_CTRL_LOCAL_FIRST		BIT(4)
+#define RTL931X_TRK_CTRL_STK_HASH_CAL		BIT(3)
+#define RTL931X_TRK_CTRL_STANDALONE		BIT(2)
+#define RTL931X_TRK_CTRL_NON_TMN		BIT(0)
+#define RTL931X_TRK_CTRL_STACK_MASK		(RTL931X_TRK_CTRL_LINK_DOWN_AVOID | \
+						 RTL931X_TRK_CTRL_LOCAL_FIRST | \
+						 RTL931X_TRK_CTRL_STK_HASH_CAL | \
+						 RTL931X_TRK_CTRL_STANDALONE | \
+						 RTL931X_TRK_CTRL_NON_TMN)
+#define RTL931X_TRK_LOCAL_TBL_REFRESH_EXEC	BIT(0)
+#define RTL931X_L2_CTRL_STK_AUTO_LRN		BIT(11)
+#define RTL931X_L2_FLUSH_STS			BIT(28)
+#define RTL931X_L2_FLUSH_REPLACE		BIT(27)
+#define RTL931X_L2_FLUSH_PORT_CMP		BIT(24)
+#define RTL931X_L2_FLUSH_ENTRY_TYPE		GENMASK(23, 22)
+#define RTL931X_L2_FLUSH_PORT_ID		GENMASK(21, 11)
+#define RTL931X_L2_FLUSH_REPLACING_PORT_ID	GENMASK(10, 0)
+#define RTL931X_STACK_MAX_DEVICES		16
+#define RTL931X_STACK_MAX_PORTS			56
+#define RTL931X_STACK_MAX_LINKS			4
 
 #define RTL838X_RST_GLB_CTRL_0			(0x003c)
 
@@ -147,12 +190,15 @@
 #define RTL930X_RX_PAUSE_EN			BIT(8)
 #define RTL930X_MAC_FORCE_FC_EN			BIT(9)
 
-#define RTL931X_FORCE_EN			BIT(9)
 #define RTL931X_FORCE_LINK_EN			BIT(0)
-#define RTL931X_DUPLEX_MODE			BIT(2)
+#define RTL931X_FORCE_DUPLEX_EN			BIT(2)
+#define RTL931X_FORCE_SPEED_EN			BIT(3)
 #define RTL931X_MAC_FORCE_FC_EN			BIT(4)
-#define RTL931X_TX_PAUSE_EN			BIT(16)
-#define RTL931X_RX_PAUSE_EN			BIT(17)
+#define RTL931X_LINK_SEL			BIT(9)
+#define RTL931X_DUPLEX_SEL			BIT(11)
+#define RTL931X_SPEED_SEL			GENMASK(15, 12)
+#define RTL931X_TX_PAUSE_SEL			BIT(16)
+#define RTL931X_RX_PAUSE_SEL			BIT(17)
 
 /* EEE */
 #define RTL838X_MAC_EEE_ABLTY			(0xa1a8)
@@ -187,6 +233,8 @@
 #define RTL839X_L2_PORT_AGING_OUT		(0x3b74)
 #define	RTL930X_L2_PORT_AGE_CTRL		(0x8FE0)
 #define	RTL931X_L2_PORT_AGE_CTRL		(0xc808)
+#define RTL931X_L2_PORT_AGE_CTRL_REG(p) \
+	(RTL931X_L2_PORT_AGE_CTRL + (((p) >> 5) << 2))
 #define RTL838X_TBL_ACCESS_L2_CTRL		(0x6900)
 #define RTL839X_TBL_ACCESS_L2_CTRL		(0x1180)
 #define RTL930X_TBL_ACCESS_L2_CTRL		(0xB320)
@@ -1085,6 +1133,190 @@ struct pie_rule {
 };
 
 struct rtl838x_switch_priv;
+struct rtl931x_stack_cpu;
+struct rtl931x_stack_reps;
+
+struct rtl931x_stack_registers {
+	u32 global;
+	u32 port_id[4];
+	u32 device_map[8];
+	u32 nonuc_block[8];
+	u32 stack_trunk[8];
+	u32 trunk;
+	u32 l2;
+};
+
+struct rtl931x_stack_peer_reply {
+	u64 transaction;
+	u64 boot_nonce;
+	u32 status;
+	u32 generation;
+	u32 round_trip_us;
+	u8 member_id;
+	u8 master_id;
+	u8 stack_port;
+	u8 mode;
+};
+
+struct rtl931x_stack_peer_switch_info {
+	u64 user_port_mask;
+	u64 admin_up_mask;
+	u64 carrier_mask;
+	u64 delegated_port_mask;
+	u32 capabilities;
+	u16 max_body_len;
+	u64 stack_port_mask;
+	u8 port_count;
+	u8 cpu_port;
+	u8 protocol_version;
+};
+
+struct rtl931x_stack_peer_port_info {
+	u32 mtu;
+	u16 panel_port;	/* Zero when the peer lacks GET_PORT_LOCATION. */
+	u8 slot;
+	u8 flags;
+	u8 mac[ETH_ALEN];
+};
+
+struct rtl931x_stack_conduit {
+	struct net_device *dev;
+	bool reattach;
+};
+
+#define RTL931X_STACK_RPC_MAX_BODY_LEN	64
+#define RTL931X_STACK_VLAN_F_UNTAGGED	BIT(0)
+#define RTL931X_STACK_VLAN_F_PVID	BIT(1)
+#define RTL931X_STACK_VLAN_F_MASK	(RTL931X_STACK_VLAN_F_UNTAGGED | \
+					 RTL931X_STACK_VLAN_F_PVID)
+
+struct rtl931x_stack_host_fdb {
+	u8 addr[ETH_ALEN];
+	bool created;
+};
+
+struct rtl931x_stack_bridge_port_registers {
+	u64 port_matrix;
+	u32 vlan_igr_ctrl;
+	u32 vlan_tag_ctrl;
+	u32 learning_ctrl;
+	u8 ingress_filter;
+	u8 egress_filter;
+	u8 bpdu_action;
+};
+
+/* A follower mirrors leader-local LAGs while its front-panel ports are delegated. */
+struct rtl931x_stack_peer_lag {
+	u64 touched_ports;
+	u32 saved_entry[3];
+	bool saved;
+};
+
+struct rtl931x_stack_context {
+	struct list_head list;
+	struct list_head peer_port_vlans;
+	struct list_head peer_fabric_vlans;
+	struct list_head local_fabric_vlans;
+	struct rtl931x_stack_registers saved;
+	u32 talk_saved_port_id[4];
+	struct rtl838x_switch_priv *priv;
+	struct rtl931x_stack_cpu *cpu;
+	struct rtl931x_stack_reps *reps;
+	struct rtl931x_stack_peer_lag peer_lags[MAX_LAGS];
+	u64 peer_lag_saved_ports;
+	u32 peer_lag_saved_source[RTL931X_STACK_MAX_PORTS];
+	struct net_device *talk_conduit;
+	struct packet_type talk_packet_type;
+	struct sk_buff_head talk_rx_queue;
+	struct work_struct talk_rx_work;
+	struct delayed_work port_status_work;
+	struct delayed_work reps_carrier_work;
+	struct delayed_work reps_recovery_work;
+	atomic_t fabric_link_epoch;
+	/* Serialize synchronous probe transactions. */
+	struct mutex talk_request_lock;
+	/* Protect pending transaction state and the completed reply. */
+	spinlock_t talk_reply_lock;
+	/* Coalesce follower port link callbacks into status events. */
+	spinlock_t port_status_lock;
+	/* Serialize link-state updates from independent fabric phylinks. */
+	spinlock_t fabric_link_lock;
+	struct completion talk_reply_completion;
+	struct rtl931x_stack_peer_reply talk_reply;
+	u64 talk_boot_nonce;
+	u64 talk_peer_boot_nonce;
+	u64 talk_pending_transaction;
+	u64 talk_pending_started_ns;
+	u64 port_status_changed_mask;
+	u64 port_status_up_mask;
+	u64 port_status_sequence;
+	u64 peer_port_status_sequence;
+	u64 delegated_port_mask;
+	u64 delegated_opened_port_mask;
+	u64 delegated_matrix_mask;
+	u64 fabric_port_mask;
+	u64 fabric_link_mask;
+	u64 talk_armed_port_mask;
+	u64 talk_verified_port_mask;
+	u64 peer_bridge_port_mask;
+	u64 peer_bridge_source_mask;
+	u64 peer_bridge_source_saved_mask;
+	u64 local_bridge_port_mask;
+	u64 local_remote_matrix_mask;
+	u64 bridge_saved_port_mask;
+	u32 talk_verified_carrier_changes[RTL931X_STACK_MAX_PORTS];
+	u8 talk_rpc_reply[RTL931X_STACK_RPC_MAX_BODY_LEN];
+	u16 talk_pending_opcode;
+	u16 talk_rpc_reply_len;
+	u16 talk_rpc_result;
+	u16 peer_mutation_opcode;
+	u16 peer_mutation_len;
+	u16 last_mutation_opcode;
+	u16 last_mutation_len;
+	u16 last_mutation_result;
+	u8 talk_pending_mode;
+	u8 talk_pending_port;
+	u8 talk_pending_peer;
+	u8 talk_pending_local;
+	u8 talk_armed_port;
+	u8 peer_mutation_body[RTL931X_STACK_RPC_MAX_BODY_LEN];
+	u8 last_mutation_body[RTL931X_STACK_RPC_MAX_BODY_LEN];
+	struct rtl931x_stack_host_fdb delegated_hosts[RTL931X_STACK_MAX_PORTS];
+	u64 delegated_saved_port_matrix[RTL931X_STACK_MAX_PORTS];
+	u64 peer_bridge_saved_source_matrix[RTL931X_STACK_MAX_PORTS];
+	u64 local_remote_saved_port_matrix[RTL931X_STACK_MAX_PORTS];
+	struct rtl931x_stack_bridge_port_registers
+		bridge_saved[RTL931X_STACK_MAX_PORTS];
+	u16 bridge_saved_pvid[RTL931X_STACK_MAX_PORTS];
+	u8 bridge_saved_stp_state[RTL931X_STACK_MAX_PORTS];
+	u8 peer_bridge_stp_state[RTL931X_STACK_MAX_PORTS];
+	u32 flags;
+	u32 generation;
+	u32 peer_mutation_sequence;
+	u32 last_mutation_sequence;
+	int ifindex;
+	u8 member_id;
+	u8 peer_id;
+	u8 master_id;
+	u8 port;
+	u8 state;
+	bool fabric_link_up;
+	bool registered;
+	bool saved_valid;
+	bool generation_valid;
+	bool enabled;
+	bool talk_armed;
+	bool talk_pending;
+	bool talk_pending_rpc;
+	bool talk_peer_valid;
+	bool reps_desired;
+	bool reps_recovery_pending;
+	bool peer_mutation_uncertain;
+	int reps_last_error;
+	u8 delegated_host_count;
+	u8 bridge_fabric_users;
+	u8 reps_recovery_attempts;
+};
 
 /**
  * struct rtldsa_mirror_config - Mirror configuration for specific group and port
@@ -1106,6 +1338,8 @@ struct rtldsa_mirror_config {
 struct rtldsa_config {
 	const struct dsa_switch_ops *switch_ops;
 	const struct phylink_mac_ops *phylink_mac_ops;
+	bool supports_stacking;
+	u8 (*get_device_id)(void);
 	void (*mask_port_reg_be)(u64 clear, u64 set, int reg);
 	void (*set_port_reg_be)(u64 set, int reg);
 	u64 (*get_port_reg_be)(int reg);
@@ -1319,6 +1553,7 @@ struct rtl838x_switch_priv {
 	int intf_mtu_count[MAX_INTF_MTUS];
 
 	struct delayed_work counters_work;
+	struct rtl931x_stack_context stack;
 
 	/**
 	 * @counters_lock: Protects the hardware reads happening from MIB
@@ -1336,11 +1571,35 @@ struct rtl838x_switch_priv {
 	struct rtldsa_mst msts[];
 };
 
+static inline bool rtl931x_stack_active(struct rtl838x_switch_priv *priv)
+{
+	return priv->r->supports_stacking && priv->stack.enabled;
+}
+
+static inline bool rtl931x_stack_port_active(struct rtl838x_switch_priv *priv,
+					      int port)
+{
+	u64 bit = BIT_ULL(port);
+
+	if (!priv->r->supports_stacking)
+		return false;
+
+	return (READ_ONCE(priv->stack.enabled) &&
+		(READ_ONCE(priv->stack.fabric_port_mask) & bit)) ||
+	       (READ_ONCE(priv->stack.talk_armed) &&
+		(READ_ONCE(priv->stack.talk_armed_port_mask) & bit));
+}
+
 struct fdb_update_work {
 	struct work_struct work;
 	struct net_device *ndev;
 	u64 macs[];
 };
+
+static inline u8 rtldsa_local_device(struct rtl838x_switch_priv *priv)
+{
+	return priv->r->get_device_id ? priv->r->get_device_id() : 0;
+}
 
 int rtldsa_83xx_lag_setup_algomask(struct rtl838x_switch_priv *priv, int group,
 				   struct netdev_lag_upper_info *info);
@@ -1393,12 +1652,110 @@ extern const struct dsa_switch_ops rtldsa_83xx_switch_ops;
 extern const struct dsa_switch_ops rtldsa_93xx_switch_ops;
 
 extern const struct phylink_mac_ops rtldsa_83xx_phylink_mac_ops;
-extern const struct phylink_mac_ops rtldsa_93xx_phylink_mac_ops;
+extern const struct phylink_mac_ops rtldsa_930x_phylink_mac_ops;
+extern const struct phylink_mac_ops rtldsa_931x_phylink_mac_ops;
 
 extern const struct rtldsa_config rtldsa_838x_cfg;
 extern const struct rtldsa_config rtldsa_839x_cfg;
 extern const struct rtldsa_config rtldsa_930x_cfg;
 extern const struct rtldsa_config rtldsa_931x_cfg;
+
+int rtldsa_stack_port_guard(struct rtl838x_switch_priv *priv, int port,
+			   struct netlink_ext_ack *extack);
+int rtl931x_stack_init(void);
+int rtl931x_stack_lag_set(struct rtl838x_switch_priv *priv, unsigned int group,
+			  u64 members, u64 tx_members, u8 hash);
+int rtl931x_stack_lags_cleanup(struct rtl838x_switch_priv *priv);
+int rtl931x_stack_peer_set_lag(struct rtl838x_switch_priv *priv, int group);
+void rtl931x_stack_reps_local_lag_change(struct rtl838x_switch_priv *priv, int group);
+void rtl931x_stack_exit(void);
+void rtl931x_stack_register(struct rtl838x_switch_priv *priv);
+void rtl931x_stack_unregister(struct rtl838x_switch_priv *priv);
+int rtl931x_stack_quiesce_conduit(struct rtl838x_switch_priv *priv, int port,
+				  struct rtl931x_stack_conduit *ctx);
+void rtl931x_stack_resume_conduit(struct rtl931x_stack_conduit *ctx);
+int rtl931x_stack_configure(struct rtl838x_switch_priv *priv, int port,
+			    u8 member_id, u8 peer_id, u8 master_id,
+			    u32 flags, u32 generation, bool enabled,
+			    struct netlink_ext_ack *extack);
+int rtl931x_stack_route_link_change(struct rtl838x_switch_priv *priv,
+				    int port, bool up, u64 *old_mask,
+				    u64 *new_mask);
+u64 rtl931x_stack_active_fabric_port_mask(struct rtl838x_switch_priv *priv);
+int rtl931x_stack_fabric_policy_update_locked(struct rtl838x_switch_priv *priv,
+					      u64 active_mask);
+int rtl931x_stack_peer_set_delegated(struct rtl838x_switch_priv *priv,
+				     bool delegated);
+int rtl931x_stack_peer_set_port_admin(struct rtl838x_switch_priv *priv,
+				      u64 admin_up_mask);
+int rtl931x_stack_peer_set_bridge_port(struct rtl838x_switch_priv *priv,
+				       u8 port, bool present, u8 stp_state);
+int rtl931x_stack_peer_set_bridge_sources(struct rtl838x_switch_priv *priv,
+					  u64 source_port_mask);
+int rtl931x_stack_peer_set_port_vlan(struct rtl838x_switch_priv *priv, u8 port,
+				     u16 vid, u16 flags, bool present);
+int rtl931x_stack_local_remote_matrices(struct rtl838x_switch_priv *priv,
+					u64 target_mask);
+int rtl931x_stack_local_bridge_port(struct rtl838x_switch_priv *priv,
+				    bool present);
+u64 rtl931x_stack_local_bridge_matrices(struct rtl838x_switch_priv *priv,
+					struct net_device *bridge_dev,
+					u64 remote_port_mask);
+int rtl931x_stack_local_fabric_vlan(struct rtl838x_switch_priv *priv, u16 vid,
+				    bool present);
+void rtl931x_stack_local_bridge_replay(struct rtl838x_switch_priv *priv);
+void rtl931x_stack_bridge_cleanup(struct rtl838x_switch_priv *priv);
+int rtl931x_stack_host_fdb_set_device(struct rtl838x_switch_priv *priv,
+				      const unsigned char *addr,
+				      u8 from_device, u8 to_device);
+int rtl931x_stack_host_fdb_prepare(struct rtl838x_switch_priv *priv,
+				   const unsigned char *addr, u8 device,
+				   bool *created);
+int rtl931x_stack_host_fdb_remove(struct rtl838x_switch_priv *priv,
+				  const unsigned char *addr, u8 device);
+void rtl931x_stack_bridge_port_save(u8 device, int port,
+				    struct rtl931x_stack_bridge_port_registers *saved);
+u64 rtl931x_stack_port_matrix_get(u8 device, int port);
+void rtl931x_stack_port_matrix_set(u8 device, int port, u64 port_matrix);
+void rtl931x_stack_bridge_port_apply(u8 device, int port, bool fabric,
+				     u64 fabric_port_mask, int cpu_port);
+void rtl931x_stack_bridge_port_restore(u8 device, int port,
+				       const struct rtl931x_stack_bridge_port_registers *saved);
+int rtl931x_stack_peer_get_switch_info(struct rtl838x_switch_priv *priv,
+				       struct rtl931x_stack_peer_switch_info *info,
+				       struct netlink_ext_ack *extack);
+int rtl931x_stack_peer_get_port_info(struct rtl838x_switch_priv *priv, u8 port,
+				     struct rtl931x_stack_peer_port_info *info,
+				     struct netlink_ext_ack *extack);
+int rtl931x_stack_reps_set(struct rtl838x_switch_priv *priv, bool enabled,
+			   struct netlink_ext_ack *extack);
+void rtl931x_stack_reps_get_status(struct rtl838x_switch_priv *priv,
+				   bool *active, bool *published,
+				   bool *fenced);
+void rtl931x_stack_reps_unregister(struct rtl838x_switch_priv *priv);
+void rtl931x_stack_reps_link_change(struct rtl838x_switch_priv *priv,
+				    int port, bool up);
+void rtl931x_stack_port_link_change(struct rtl838x_switch_priv *priv,
+				    int port, bool up);
+int rtl931x_stack_reps_admin_check(struct rtl838x_switch_priv *priv,
+				   u64 user_port_mask, u64 admin_up_mask);
+int rtl931x_stack_reps_carrier_update(struct rtl838x_switch_priv *priv,
+				      u64 user_port_mask,
+				      u64 carrier_mask);
+void rtl931x_stack_carrier_sync_start(struct rtl838x_switch_priv *priv);
+void rtl931x_stack_carrier_sync_stop(struct rtl838x_switch_priv *priv);
+int rtl931x_stack_reps_local_bridge_change(struct rtl838x_switch_priv *priv,
+					   struct net_device *bridge_dev);
+int rtl931x_stack_reps_init(void);
+void rtl931x_stack_reps_exit(void);
+int rtl931x_stack_cpu_sync(struct rtl838x_switch_priv *priv);
+void rtl931x_stack_cpu_unregister(struct rtl838x_switch_priv *priv);
+void rtl931x_stack_cpu_fence(struct rtl838x_switch_priv *priv);
+void rtl931x_stack_cpu_update(struct rtl838x_switch_priv *priv);
+int rtl931x_stack_device_talk_arm(struct rtl838x_switch_priv *priv, int port,
+				  struct netlink_ext_ack *extack);
+void rtl931x_stack_device_talk_disarm(struct rtl838x_switch_priv *priv);
+int rtl931x_stack_link_up_prepare(struct rtl838x_switch_priv *priv, int port);
 
 /* TODO actually from arch/mips/rtl838x/prom.c */
 extern struct rtl83xx_soc_info soc_info;

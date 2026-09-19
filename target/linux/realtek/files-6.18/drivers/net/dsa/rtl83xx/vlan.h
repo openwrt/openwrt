@@ -11,6 +11,14 @@
 struct rtl838x_switch_priv;
 
 /* VLAN definitions shared with family and debug code. */
+#define RTL931X_VLAN_PORT_IGR_CTRL				0x94e8
+#define RTL931X_VLAN_PORT_TAG_STS_INTERNAL			0x0
+#define RTL931X_VLAN_PORT_TAG_CTRL_BASE				0x4860
+#define RTL931X_VLAN_PORT_TAG_EGR_OTAG_STS_MASK			GENMASK(13, 12)
+#define RTL931X_VLAN_PORT_TAG_EGR_ITAG_STS_MASK			GENMASK(11, 10)
+#define RTL931X_VLAN_PORT_TAG_CTRL(port) \
+	(RTL931X_VLAN_PORT_TAG_CTRL_BASE + ((port) << 2))
+
 #define RTL838X_VLAN_CTRL			(0x3a74)
 #define RTL838X_VLAN_PORT_EGR_FLTR		(0x3a84)
 #define RTL838X_VLAN_PORT_IGR_FLTR		(0x3a7c)
