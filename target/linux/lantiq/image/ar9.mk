@@ -57,13 +57,12 @@ define Device/buffalo_wbmr-hp-g300h-a
   DEVICE_VARIANT := A
   IMAGE_SIZE := 31488k
   SOC := ar9
-  DEVICE_DTS := ar9_buffalo_wbmr-hp-g300h
   DEVICE_PACKAGES := kmod-usb-dwc2 kmod-usb-ledtrig-usbport \
 	kmod-ltq-adsl-ar9-mei kmod-ltq-adsl-ar9 \
 	kmod-ltq-adsl-ar9-fw-a kmod-ltq-atm-ar9 \
 	ltq-adsl-app ppp-mod-pppoa \
 	kmod-ath9k kmod-owl-loader wpad-basic-mbedtls
-  SUPPORTED_DEVICES := WBMR buffalo,wbmr-hp-g300h
+  SUPPORTED_DEVICES += WBMR buffalo,wbmr-hp-g300h buffalo,wbmr-hp-g300h-b
 endef
 TARGET_DEVICES += buffalo_wbmr-hp-g300h-a
 
@@ -73,13 +72,12 @@ define Device/buffalo_wbmr-hp-g300h-b
   DEVICE_VARIANT := B
   IMAGE_SIZE := 31488k
   SOC := ar9
-  DEVICE_DTS := ar9_buffalo_wbmr-hp-g300h
   DEVICE_PACKAGES := kmod-usb-dwc2 kmod-usb-ledtrig-usbport \
 	kmod-ltq-adsl-ar9-mei kmod-ltq-adsl-ar9 \
 	kmod-ltq-adsl-ar9-fw-b kmod-ltq-atm-ar9 \
 	ltq-adsl-app ppp-mod-pppoa \
 	kmod-ath9k kmod-owl-loader wpad-basic-mbedtls
-  SUPPORTED_DEVICES := WBMR buffalo,wbmr-hp-g300h
+  SUPPORTED_DEVICES += WBMR buffalo,wbmr-hp-g300h buffalo,wbmr-hp-g300h-a
 endef
 TARGET_DEVICES += buffalo_wbmr-hp-g300h-b
 
