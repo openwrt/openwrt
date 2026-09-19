@@ -7,6 +7,7 @@
 #include <linux/pcs/pcs.h>
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 
+#include "lag.h"
 #include "rtl-otto.h"
 #include "stats.h"
 #include "tc.h"
@@ -1773,7 +1774,7 @@ static int rtldsa_port_lag_join(struct dsa_switch *ds,
 	priv->lagmembers |= BIT_ULL(port);
 
 	pr_debug("lag_members = %llX\n", priv->lagmembers);
-	err = rtl83xx_lag_add(priv->ds, group, port, info);
+	err = rtldsa_lag_add(priv->ds, group, port, info);
 	if (err) {
 		err = -EINVAL;
 		goto out;
@@ -1808,7 +1809,7 @@ static int rtldsa_port_lag_leave(struct dsa_switch *ds, int port,
 	priv->lagmembers &= ~BIT_ULL(port);
 	priv->lag_non_primary &= ~BIT_ULL(port);
 	pr_debug("lag_members = %llX\n", priv->lagmembers);
-	err = rtl83xx_lag_del(priv->ds, group, port);
+	err = rtldsa_lag_del(priv->ds, group, port);
 	if (err) {
 		err = -EINVAL;
 		goto out;
