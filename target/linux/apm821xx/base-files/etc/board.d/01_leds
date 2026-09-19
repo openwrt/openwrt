@@ -15,17 +15,17 @@ meraki,mr24)
 	;;
 
 netgear,wndap620)
-	ucidef_set_led_switch "lan_act" "LAN (Activity)" "green:activity" "switch0" "0x04" "0x0f" "rx tx"
-	ucidef_set_led_switch "lan_100" "LAN 100Mbps" "amber:lan" "switch0" "0x04" "0x04" "link"
-	ucidef_set_led_switch "lan_1000" "LAN 1000Mbps" "green:lan" "switch0" "0x04" "0x08" "link"
+	ucidef_set_led_netdev "lan_act" "LAN (Activity)" "green:activity" "lan" "link tx rx"
+	ucidef_set_led_netdev "lan" "LAN" "amber:lan" "lan" "link"
+	ucidef_set_led_netdev "lan_1000" "LAN 1000Mbps" "green:lan" "lan" "link"
 	;;
 
 netgear,wndap660)
-	ucidef_set_led_netdev "lan_act" "LAN (Activity)" "green:activity" "eth0"
-	ucidef_set_led_switch "lan1_100" "LAN 100Mbps" "amber:lan-1" "switch0" "0x02" "0x04" "link"
-	ucidef_set_led_switch "lan1_1000" "LAN 1000Mbps" "green:lan-1" "switch0" "0x02" "0x08" "link"
-	ucidef_set_led_switch "lan2_100" "LAN 100Mbps" "amber:lan-2" "switch0" "0x04" "0x04" "link"
-	ucidef_set_led_switch "lan2_1000" "LAN 1000Mbps" "green:lan-2" "switch0" "0x04" "0x08" "link"
+	ucidef_set_led_netdev "lan_act" "LAN (Activity)" "green:activity" "br-lan" "link tx rx"
+	ucidef_set_led_netdev "lan1" "LAN1" "amber:lan-1" "lan1" "link"
+	ucidef_set_led_netdev "lan1_1000" "LAN1 1000Mbps" "green:lan-1" "lan1" "link"
+	ucidef_set_led_netdev "lan2" "LAN2" "amber:lan-2" "lan2" "link"
+	ucidef_set_led_netdev "lan2_1000" "LAN2 1000Mbps" "green:lan-2" "lan2" "link"
 	ucidef_set_led_wlan "wlan2g" "WLAN2G" "green:wlan-0" "phy0tpt"
 	ucidef_set_led_wlan "wlan5g" "WLAN5G" "green:wlan-1" "phy1tpt"
 	;;

@@ -13,10 +13,10 @@ wd,mybooklive-duo)
 	ucidef_set_interface_lan "eth0" "dhcp"
 	;;
 netgear,wndap620)
-	ucidef_add_switch "switch0" "2:lan" "5@eth0"
+	ucidef_set_interface_lan "lan" "dhcp"
 	;;
 netgear,wndap660)
-	ucidef_add_switch "switch0" "1:lan" "2:lan" "5@eth0"
+	ucidef_set_interface_lan "lan1 lan2" "dhcp"
 	;;
 meraki,mx60|\
 netgear,wndr4700)
