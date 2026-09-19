@@ -1,0 +1,42 @@
+From 0ac97ba3443f519b61bbc96079736cd8b881ea22 Mon Sep 17 00:00:00 2001
+From: Dom Cobley <popcornmix@gmail.com>
+Date: Tue, 8 Sep 2026 12:27:18 +0100
+Subject: [PATCH] drm/vc4: hdmi: Only offer even channel counts
+
+The CPU DAI advertises 1 to 8 channels and nothing narrows that further,
+so userspace can open a 3, 5 or 7 channel stream and have hw_params
+succeed. hdmi_codec_channel_alloc[] only holds allocations for 2, 4, 6 and
+8 channels, so hdmi_codec_get_ch_alloc_table_idx() then fails the stream
+at prepare:
+
+  hdmi-audio-codec hdmi-audio-codec.1.auto: Not able to map channels to speakers (-22)
+
+Constrain the channel count to a multiple of two at startup so the odd
+counts are never offered, rather than being accepted and rejected later.
+This matches the HDA HDMI codec, which applies the same constraint.
+
+Signed-off-by: Dom Cobley <popcornmix@gmail.com>
+---
+ drivers/gpu/drm/vc4/vc4_hdmi.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+--- a/drivers/gpu/drm/vc4/vc4_hdmi.c
++++ b/drivers/gpu/drm/vc4/vc4_hdmi.c
+@@ -2167,8 +2167,17 @@ static int vc4_hdmi_audio_cpu_dai_probe(
+ 	return 0;
+ }
+ 
++static int vc4_hdmi_audio_cpu_dai_startup(struct snd_pcm_substream *substream,
++					  struct snd_soc_dai *dai)
++{
++	/* hdmi-codec has no channel allocation for odd channel counts */
++	return snd_pcm_hw_constraint_step(substream->runtime, 0,
++					  SNDRV_PCM_HW_PARAM_CHANNELS, 2);
++}
++
+ static const struct snd_soc_dai_ops vc4_snd_dai_ops = {
+ 	.probe  = vc4_hdmi_audio_cpu_dai_probe,
++	.startup = vc4_hdmi_audio_cpu_dai_startup,
+ };
+ 
+ static struct snd_soc_dai_driver vc4_hdmi_audio_cpu_dai_drv = {

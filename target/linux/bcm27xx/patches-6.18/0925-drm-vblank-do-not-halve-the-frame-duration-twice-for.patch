@@ -1,0 +1,88 @@
+From 846462aa452708cd2d3528b6a8141e560919fc1c Mon Sep 17 00:00:00 2001
+From: Dom Cobley <popcornmix@gmail.com>
+Date: Fri, 7 Aug 2026 16:58:14 +0100
+Subject: [PATCH] drm/vblank: do not halve the frame duration twice for
+ interlaced modes
+
+drm_calc_timestamping_constants() derives the vblank interval from the
+crtc timings and then halves it for interlaced modes, on the basis that
+a field is half a frame. That is only correct while the crtc timings
+still describe a whole frame.
+
+drm_mode_set_crtcinfo(mode, CRTC_INTERLACE_HALVE_V) already halves
+crtc_vdisplay, crtc_vsync_start, crtc_vsync_end and crtc_vtotal for an
+interlaced mode. For a driver that uses it, crtc_htotal * crtc_vtotal is
+therefore a field and not a frame, the result is halved a second time,
+and every consumer of framedur_ns believes vblanks arrive twice as often
+as they do.
+
+vc4 is affected. vc4_hdmi_encoder_atomic_check() applies
+CRTC_INTERLACE_HALVE_V to the adjusted mode ("Rebuilds every crtc_*
+field, so CRTC_INTERLACE_HALVE_V is needed too") because the pixelvalve
+is programmed with per-field vertical timings, and
+vc4_crtc_get_scanout_position() correspondingly reports a field relative
+vpos. The timings and the scanout position are consistently per-field;
+only framedur_ns is not.
+
+On a Raspberry Pi 4 driving 1920x1080i@60 (74.25 MHz, htotal 2200,
+vtotal 1125) a field lasts 16.667 ms, so vblanks arrive 60 times a
+second. The kernel computes:
+
+  2200 * 562 * 1000000 / 74250 = 16651851 ns   already one field
+                         / 2   =  8325925 ns   half a field
+
+To see it, put the display in an interlaced mode and ask the kernel to
+print its own constants:
+
+  # echo 1 > /sys/module/drm/parameters/debug
+  # (trigger a modeset)
+  # dmesg | grep drm_calc_timestamping_constants
+  crtc 102: hwmode: htotal 2200, vtotal 562, vdisplay 540
+  crtc 102: clock 74250 kHz framedur 8325925 linedur 29629
+  # echo 0 > /sys/module/drm/parameters/debug
+
+framedur should be 16651851 for a 60 Hz field rate, and the vtotal 562
+on the line above shows the timings have already been halved.
+
+The error reaches userspace. When vblank interrupts are not held on,
+drm_update_vblank_count() advances the counter by elapsed time divided
+by framedur_ns, so on the mode above DRM_IOCTL_CRTC_GET_SEQUENCE climbs
+at 120/s instead of 60/s, with sequence_ns advancing 8.33 ms per count.
+Anything pacing on that runs at twice speed: this was found from Kodi's
+display clock, which plays a 25fps file at double rate on an interlaced
+desktop because it advances its clock once per counted vblank.
+
+Only halve when the crtc timings still describe a frame. Drivers that
+leave crtc_vtotal alone are unaffected; drivers that halved it get the
+field duration their own timings describe.
+
+A small residue remains for the latter: 1125/2 truncates to 562, so
+16651851 ns is 0.09% short of the exact 16666666 ns. That is inherent in
+deriving a duration from already halved timings, and is a great deal
+smaller than the factor of two it replaces.
+
+Signed-off-by: Dom Cobley <popcornmix@gmail.com>
+---
+ drivers/gpu/drm/drm_vblank.c | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
+
+--- a/drivers/gpu/drm/drm_vblank.c
++++ b/drivers/gpu/drm/drm_vblank.c
+@@ -649,9 +649,15 @@ void drm_calc_timestamping_constants(str
+ 		framedur_ns = div_u64((u64) frame_size * 1000000, dotclock);
+ 
+ 		/*
+-		 * Fields of interlaced scanout modes are only half a frame duration.
++		 * Fields of interlaced scanout modes are only half a frame
++		 * duration. Halving is only correct while the crtc timings
++		 * still describe a whole frame: a driver that applied
++		 * CRTC_INTERLACE_HALVE_V has already reduced crtc_vtotal to a
++		 * single field, so frame_size above is a field already and
++		 * halving it again reports half the real vblank interval.
+ 		 */
+-		if (mode->flags & DRM_MODE_FLAG_INTERLACE)
++		if ((mode->flags & DRM_MODE_FLAG_INTERLACE) &&
++		    mode->crtc_vtotal >= mode->vtotal)
+ 			framedur_ns /= 2;
+ 	} else {
+ 		drm_err(dev, "crtc %u: Can't calculate constants, dotclock = 0!\n",

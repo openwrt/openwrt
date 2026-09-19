@@ -1,0 +1,61 @@
+From 3d107ae687bb530cfcfde60976b37dd4c6ddc7d4 Mon Sep 17 00:00:00 2001
+From: Naushir Patuck <naush@raspberrypi.com>
+Date: Mon, 14 Sep 2026 14:45:45 +0100
+Subject: [PATCH] media: rp1-cfe: Add an unbind callback to tear down the graph
+
+Rebinding or reloading the source sensor driver caused the notifier
+.complete() callback to run a second time and register duplicate video
+device entities and links on the media device. This would hit a BUG in
+media_gobj_create().
+
+Add an .unbind() callback that unregisters the video nodes, removes the
+CSI2 and FE links and clears the source pointer, so that the graph is
+rebuilt from scratch on the next .complete().
+
+Tested on Pi 5 with an IMX219 using:
+
+  echo 11-0010 | sudo tee /sys/bus/i2c/drivers/imx219/unbind
+  echo 11-0010 | sudo tee /sys/bus/i2c/drivers/imx219/bind
+
+  echo 11-0010 | sudo tee /sys/bus/i2c/drivers/imx219/unbind
+  sudo rmmod imx219
+  sudo modprobe imx219
+
+Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
+---
+ .../media/platform/raspberrypi/rp1_cfe/cfe.c    | 17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
+
+--- a/drivers/media/platform/raspberrypi/rp1_cfe/cfe.c
++++ b/drivers/media/platform/raspberrypi/rp1_cfe/cfe.c
+@@ -2176,6 +2176,22 @@ static int cfe_async_bound(struct v4l2_a
+ 	return 0;
+ }
+ 
++static void cfe_async_unbind(struct v4l2_async_notifier *notifier,
++			     struct v4l2_subdev *subdev,
++			     struct v4l2_async_connection *asd)
++{
++	struct cfe_device *cfe = to_cfe_device(notifier->v4l2_dev);
++
++	if (cfe->sensor != subdev)
++		return;
++
++	cfe_unregister_nodes(cfe);
++	media_entity_remove_links(&cfe->csi2.sd.entity);
++	media_entity_remove_links(&cfe->fe.sd.entity);
++
++	cfe->sensor = NULL;
++}
++
+ static int cfe_async_complete(struct v4l2_async_notifier *notifier)
+ {
+ 	struct cfe_device *cfe = to_cfe_device(notifier->v4l2_dev);
+@@ -2185,6 +2201,7 @@ static int cfe_async_complete(struct v4l
+ 
+ static const struct v4l2_async_notifier_operations cfe_async_ops = {
+ 	.bound = cfe_async_bound,
++	.unbind = cfe_async_unbind,
+ 	.complete = cfe_async_complete,
+ };
+ 

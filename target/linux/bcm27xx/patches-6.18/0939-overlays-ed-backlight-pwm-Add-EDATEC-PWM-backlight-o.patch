@@ -1,0 +1,206 @@
+From 2acae0ee50b206834a4cc75f1f7e88358fd3a39b Mon Sep 17 00:00:00 2001
+From: zjzhao <zjzhao@edatec.cn>
+Date: Thu, 3 Sep 2026 16:19:09 +0800
+Subject: [PATCH] overlays: ed-backlight-pwm: Add EDATEC PWM backlight overlay
+
+Add a new overlay for the EDATEC PWM backlight on GPIO45, used by the
+SBC2300/SBC3300 and related boards. The overlay enables the PWM
+controller, routes GPIO45 to PWM output and creates a pwm-backlight
+device with a 16-step gamma brightness table plus an optional pca9535
+GPIO expander at 0x20 for the backlight enable signal. Two variants are
+provided: ed-backlight-pwm for CM4 based boards (BCM2711, PWM0 ch1) and
+ed-backlight-pwm-pi5 for CM5/Pi5 based boards (BCM2712 RP1, PWM1 ch3).
+
+Signed-off-by: zjzhao <zjzhao@edatec.cn>
+---
+ arch/arm/boot/dts/overlays/Makefile           |  2 +
+ arch/arm/boot/dts/overlays/README             | 14 +++++
+ .../dts/overlays/ed-backlight-pwm-overlay.dts | 62 +++++++++++++++++++
+ .../overlays/ed-backlight-pwm-pi5-overlay.dts | 62 +++++++++++++++++++
+ arch/arm/boot/dts/overlays/overlay_map.dts    |  9 +++
+ 5 files changed, 149 insertions(+)
+ create mode 100644 arch/arm/boot/dts/overlays/ed-backlight-pwm-overlay.dts
+ create mode 100644 arch/arm/boot/dts/overlays/ed-backlight-pwm-pi5-overlay.dts
+
+--- a/arch/arm/boot/dts/overlays/Makefile
++++ b/arch/arm/boot/dts/overlays/Makefile
+@@ -63,6 +63,8 @@ dtbo-$(CONFIG_ARCH_BCM2835) += \
+ 	draws-pi5.dtbo \
+ 	dwc-otg-deprecated.dtbo \
+ 	dwc2.dtbo \
++	ed-backlight-pwm.dtbo \
++	ed-backlight-pwm-pi5.dtbo \
+ 	ed-ipc.dtbo \
+ 	edt-ft5406.dtbo \
+ 	enc28j60.dtbo \
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -1278,6 +1278,20 @@ Params: dr_mode                 Dual rol
+                                 mode
+ 
+ 
++Name:   ed-backlight-pwm
++Info:   Configures the EDATEC PWM backlight for CM4 based boards
++        (BCM2711). Creates a pwm-backlight device with a 16-step gamma
++        brightness table and an optional pca9535 GPIO expander at 0x20
++        for the backlight enable signal.
++Load:   dtoverlay=ed-backlight-pwm,<param>=<val>
++Params: sg215                   Invert the brightness curve for 21.5"
++                                SG215 panels
++
++
++Name:   ed-backlight-pwm-pi5
++Info:   See ed-backlight-pwm (this is the CM5 version)
++
++
+ Name:   ed-ipc
+ Info:   Configures the EDATEC IPC/EXP series hardware peripherals.
+         This overlay provides support for PCA9535 GPIO expanders on
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/ed-backlight-pwm-overlay.dts
+@@ -0,0 +1,62 @@
++/*
++ * EDATEC PWM backlight overlay (CM4/BCM2711).
++ */
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "brcm,bcm2711";
++
++	fragment@0 {
++		target = <&pwm>;
++		__overlay__ {
++			pinctrl-names = "default";
++			pinctrl-0 = <&pwm0_1_gpio45>;
++			status = "okay";
++		};
++	};
++
++	fragment@1 {
++		target-path = "/";
++		__overlay__ {
++			backlight_pwm: backlight_pwm {
++				compatible = "pwm-backlight";
++				brightness-levels = <0 6 12 24 32 48 64 96
++					128 150 170 190 210 220 240 255>;
++				default-brightness-level = <15>;
++				pwms = <&pwm 1 2000000 0>;
++				enable-gpios = <&pca 0 1>;
++				status = "okay";
++			};
++		};
++	};
++
++	fragment@2 {
++		target = <&i2c_arm>;
++		__overlay__ {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "okay";
++
++			pca: pca@20 {
++				compatible = "nxp,pca9535";
++				reg = <0x20>;
++				gpio-controller;
++				#gpio-cells = <2>;
++				status = "okay";
++			};
++		};
++	};
++
++	fragment@3 {
++		target = <&backlight_pwm>;
++		__dormant__ {
++			brightness-levels = <255 240 220 210 190 170
++				150 128 96 64 48 32 24 12 6 0>;
++		};
++	};
++
++	__overrides__ {
++		sg215 = <0>, "+3";
++	};
++};
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/ed-backlight-pwm-pi5-overlay.dts
+@@ -0,0 +1,62 @@
++/*
++ * EDATEC PWM backlight overlay (CM5/Pi5/BCM2712).
++ */
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "brcm,bcm2712";
++
++	fragment@0 {
++		target = <&pwm1>;
++		__overlay__ {
++			pinctrl-names = "default";
++			pinctrl-0 = <&rp1_pwm1_gpio45>;
++			status = "okay";
++		};
++	};
++
++	fragment@1 {
++		target-path = "/";
++		__overlay__ {
++			backlight_pwm: backlight_pwm {
++				compatible = "pwm-backlight";
++				brightness-levels = <0 6 12 24 32 48 64 96
++					128 150 170 190 210 220 240 255>;
++				default-brightness-level = <15>;
++				pwms = <&pwm1 3 2000000 0>;
++				enable-gpios = <&pca 0 1>;
++				status = "okay";
++			};
++		};
++	};
++
++	fragment@2 {
++		target = <&i2c_arm>;
++		__overlay__ {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "okay";
++
++			pca: pca@20 {
++				compatible = "nxp,pca9535";
++				reg = <0x20>;
++				gpio-controller;
++				#gpio-cells = <2>;
++				status = "okay";
++			};
++		};
++	};
++
++	fragment@3 {
++		target = <&backlight_pwm>;
++		__dormant__ {
++			brightness-levels = <255 240 220 210 190 170
++				150 128 96 64 48 32 24 12 6 0>;
++		};
++	};
++
++	__overrides__ {
++		sg215 = <0>, "+3";
++	};
++};
+--- a/arch/arm/boot/dts/overlays/overlay_map.dts
++++ b/arch/arm/boot/dts/overlays/overlay_map.dts
+@@ -63,6 +63,15 @@
+ 		bcm2712;
+ 	};
+ 
++	ed-backlight-pwm {
++		bcm2711;
++		bcm2712 = "ed-backlight-pwm-pi5";
++	};
++
++	ed-backlight-pwm-pi5 {
++		bcm2712;
++	};
++
+ 	dwc-otg {
+ 		renamed = "dwc-otg-deprecated";
+ 	};

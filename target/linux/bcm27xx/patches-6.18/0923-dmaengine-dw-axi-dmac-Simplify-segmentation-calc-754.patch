@@ -1,0 +1,60 @@
+From f421522ac37570be3054950e42df0d5c2f60a676 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <8911409+pelwell@users.noreply.github.com>
+Date: Mon, 10 Aug 2026 16:59:30 +0100
+Subject: [PATCH] dmaengine: dw-axi-dmac: Simplify segmentation calc (#7547)
+
+When the current dw_axi_dma_chan_prep_slave_sg implementation is given a
+span larger than the maximum supported by the DMAC it attempts to
+divide it into a number of roughly equal-sized segments. This requires
+care that the results are all multiples of the transfer unit, e.g. words
+for transfers with a hardware register.
+
+Simplify the logic, and make some of the data arrive ver slightly
+earlier, by making all segments as large as possible except for the
+last one.
+
+See: https://github.com/raspberrypi/linux/issues/7543
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.com>
+Tested-by: Hans Verkuil <hverkuil+cisco@kernel.org>
+---
+ drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c | 12 +++++-------
+ 1 file changed, 5 insertions(+), 7 deletions(-)
+
+--- a/drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c
++++ b/drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c
+@@ -963,7 +963,7 @@ dw_axi_dma_chan_prep_slave_sg(struct dma
+ 	struct axi_dma_chan *chan = dchan_to_axi_dma_chan(dchan);
+ 	struct axi_dma_hw_desc *hw_desc = NULL;
+ 	struct axi_dma_desc *desc = NULL;
+-	u32 num_segments, segment_len;
++	u32 segment_len;
+ 	unsigned int loop = 0;
+ 	struct scatterlist *sg;
+ 	size_t axi_block_len;
+@@ -998,13 +998,11 @@ dw_axi_dma_chan_prep_slave_sg(struct dma
+ 	for_each_sg(sgl, sg, sg_len, i) {
+ 		mem = sg_dma_address(sg);
+ 		len = sg_dma_len(sg);
+-		num_segments = DIV_ROUND_UP(sg_dma_len(sg), axi_block_len);
+-		if (!num_segments)
++		if (!len)
+ 			continue;
+ 
+-		segment_len = DIV_ROUND_UP(sg_dma_len(sg), num_segments);
+-
+-		do {
++		while (len) {
++			segment_len = min(len, axi_block_len);
+ 			hw_desc = &desc->hw_desc[loop++];
+ 			status = dw_axi_dma_set_hw_desc(chan, hw_desc, mem, segment_len);
+ 			if (status < 0)
+@@ -1013,7 +1011,7 @@ dw_axi_dma_chan_prep_slave_sg(struct dma
+ 			desc->length += hw_desc->len;
+ 			len -= segment_len;
+ 			mem += segment_len;
+-		} while (len >= segment_len);
++		}
+ 	}
+ 
+ 	desc->nr_hw_descs = loop;
