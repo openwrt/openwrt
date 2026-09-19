@@ -1,0 +1,35 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Andrea Pesaresi <andreapesaresi82@gmail.com>
+Date: Sat, 19 Sep 2026 11:58:07 +0200
+Subject: [PATCH] ksmbd: fix SMB1 negotiate header layout
+
+The linux-6.18.y backport of commit 0a70cac78967 ("ksmbd: Fix to
+handle removal of rfc1002 header from smb_hdr") changed the SMB1
+negotiate paths to use smb_get_msg().  This helper skips the four-byte
+RFC1002 header before casting the message to struct smb_hdr.
+
+Unlike mainline, linux-6.18.y still keeps the RFC1002 length field in
+ksmbd's private struct smb_hdr.  The field is therefore skipped twice,
+which shifts the SMB1 request and response fields by four bytes and
+breaks Windows multi-protocol negotiation.
+
+Remove the stale field so that struct smb_hdr describes the message
+returned by smb_get_msg(), matching the layout expected by the
+backported negotiation and minimum-PDU-size changes.
+
+Fixes: 29dbb4e29e1f ("ksmbd: Fix to handle removal of rfc1002 header from smb_hdr")
+Signed-off-by: Andrea Pesaresi <andreapesaresi82@gmail.com>
+---
+ fs/smb/server/smb_common.h | 1 -
+ 1 file changed, 1 deletion(-)
+
+--- a/fs/smb/server/smb_common.h
++++ b/fs/smb/server/smb_common.h
+@@ -163,7 +163,6 @@
+ #define SMBFLG2_UNICODE		cpu_to_le16(0x8000)
+ 
+ struct smb_hdr {
+-	__be32 smb_buf_length;
+ 	__u8 Protocol[4];
+ 	__u8 Command;
+ 	union {
