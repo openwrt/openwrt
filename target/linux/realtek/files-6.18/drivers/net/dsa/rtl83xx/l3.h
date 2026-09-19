@@ -5,6 +5,8 @@
 
 #include "rtl-otto.h"
 
+struct fib6_info;
+
 #define MAX_HOST_ROUTES		1536
 #define MAX_ROUTES		512
 
@@ -71,6 +73,7 @@ struct otto_l3_nexthop {
 };
 
 struct otto_l3_route {
+	struct fib6_info *f6i;		/* FIB entry to report the offload on */
 	struct in6_addr gw_ip;		/* Gateway of the route, IPv4 v4-mapped */
 	int gw_ifindex;			/* Device the gateway is reached on */
 	u32 dst_ip;			/* IP of the destination net */
