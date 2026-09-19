@@ -392,7 +392,7 @@ static int rtldsa_93xx_lag_set_group2ports(struct rtl838x_switch_priv *priv, int
 	u8 num_of_lag_ports = 0;
 	u8 group_ports[8];
 	u32 data[3];
-	u8 device = rtl931x_lag_device(priv);
+	u8 device = rtldsa_local_device(priv);
 	int i;
 
 	/* Read lag table using Table control register 2 */
@@ -1044,7 +1044,7 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 	if (priv->r->lag_switch_init)
 		priv->r->lag_switch_init(priv);
 
-	if (priv->family_id == RTL9310_FAMILY_ID)
+	if (priv->r->supports_stacking)
 		rtl931x_stack_register(priv);
 
 	return 0;
@@ -1091,7 +1091,7 @@ static void rtl83xx_sw_remove(struct platform_device *pdev)
 
 	/* TODO: */
 	pr_debug("Removing platform driver for rtl83xx-sw\n");
-	if (priv->family_id == RTL9310_FAMILY_ID)
+	if (priv->r->supports_stacking)
 		rtl931x_stack_unregister(priv);
 
 	/* unregister notifiers which will create workqueue entries with

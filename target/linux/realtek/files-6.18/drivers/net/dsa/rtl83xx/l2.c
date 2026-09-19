@@ -1342,6 +1342,13 @@ void rtl931x_l2_learning_setup(void)
 
 	/* Limit learning to maximum: 64k entries, after that just flood (bits 0-2) */
 	sw_w32((0xffff << 3) | FORWARD, RTL931X_L2_LRN_CONSTRT_CTRL);
+
+	/* Static entries still age. At age zero, their source port becomes
+	 * 63 and lookups miss. CPU-port source learning is disabled, so no
+	 * useful dynamic entry depends on CPU-port aging.
+	 */
+	sw_w32_mask(BIT(RTL931X_CPU_PORT & 0x1f), 0,
+		    RTL931X_L2_PORT_AGE_CTRL_REG(RTL931X_CPU_PORT));
 }
 
 void rtldsa_931x_enable_learning(int port, bool enable)

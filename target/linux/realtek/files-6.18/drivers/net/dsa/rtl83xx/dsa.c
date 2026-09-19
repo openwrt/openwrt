@@ -55,7 +55,7 @@ static int rtldsa_connect_tag_protocol(struct dsa_switch *ds,
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 	struct rtl_otto_tagger_data *tagger_data = ds->tagger_data;
-	u8 cpu_device = 0;
+	u8 cpu_device;
 
 	if (proto != DSA_TAG_PROTO_RTL_OTTO)
 		return -EOPNOTSUPP;
@@ -63,9 +63,7 @@ static int rtldsa_connect_tag_protocol(struct dsa_switch *ds,
 	if (!tagger_data)
 		return -EINVAL;
 
-	if (priv->family_id == RTL9310_FAMILY_ID)
-		cpu_device = FIELD_GET(RTL931X_STK_GBL_CTRL_MY_DEV_ID,
-				       sw_r32(RTL931X_STK_GBL_CTRL));
+	cpu_device = rtldsa_local_device(priv);
 
 	write_lock_bh(&tagger_data->cpu_device_lock);
 	tagger_data->cpu_device = cpu_device;
@@ -206,15 +204,6 @@ static int rtldsa_93xx_setup(struct dsa_switch *ds)
 
 	priv->r->l2_learning_setup();
 
-	/* Static RTL931x entries still age.  Once their age reaches zero the
-	 * switch changes their source port to 63 and treats them as lookup
-	 * misses.  CPU-port source learning is disabled below, so there is no
-	 * useful dynamic entry whose lifetime depends on CPU-port aging.
-	 */
-	if (priv->family_id == RTL9310_FAMILY_ID)
-		sw_w32_mask(BIT(priv->r->cpu_port & 0x1f), 0,
-			    RTL931X_L2_PORT_AGE_CTRL_REG(priv->r->cpu_port));
-
 	rtldsa_port_set_salrn(priv, priv->r->cpu_port, false);
 	ds->assisted_learning_on_cpu_port = true;
 
@@ -337,7 +326,7 @@ static void rtldsa_phylink_mac_link_down(struct phylink_config *config,
 		    priv->r->mac_force_mode_ctrl(port));
 }
 
-static void rtldsa_93xx_phylink_mac_link_down(struct phylink_config *config,
+static void rtldsa_931x_phylink_mac_link_down(struct phylink_config *config,
 					      unsigned int mode,
 					      phy_interface_t interface)
 {
@@ -346,27 +335,14 @@ static void rtldsa_93xx_phylink_mac_link_down(struct phylink_config *config,
 	struct phylink_pcs *pcs;
 	int port = dp->index;
 	int err;
-	u32 v = 0;
 
-	if (priv->family_id == RTL9310_FAMILY_ID) {
-		rtl931x_stack_reps_link_change(priv, port, false);
-		rtl931x_stack_port_link_change(priv, port, false);
-		rtl931x_stack_cpu_update(priv);
-	}
-
-	/* Stop TX/RX to port */
-	sw_w32_mask(0x3, 0, priv->r->mac_port_ctrl(port));
-
-	/* No longer force link */
-	if (priv->family_id == RTL9300_FAMILY_ID)
-		v = RTL930X_FORCE_EN | RTL930X_FORCE_LINK_EN;
-	else if (priv->family_id == RTL9310_FAMILY_ID)
-		v = RTL931X_LINK_SEL | RTL931X_FORCE_LINK_EN;
-	sw_w32_mask(v, 0, priv->r->mac_force_mode_ctrl(port));
+	rtl931x_stack_reps_link_change(priv, port, false);
+	rtl931x_stack_port_link_change(priv, port, false);
+	rtl931x_stack_cpu_update(priv);
+	rtldsa_phylink_mac_link_down(config, mode, interface);
 
 	/* Also recover a stack-link workaround left set by a failed link-up. */
-	if (priv->family_id != RTL9310_FAMILY_ID ||
-	    !rtl931x_stack_port_active(priv, port))
+	if (!rtl931x_stack_port_active(priv, port))
 		return;
 
 	pcs = fwnode_pcs_get(of_fwnode_handle(dp->dn), 0);
@@ -467,7 +443,73 @@ static void rtldsa_83xx_phylink_mac_link_up(struct phylink_config *config,
 	sw_w32_mask(0, 0x3, priv->r->mac_port_ctrl(port));
 }
 
-static void rtldsa_93xx_phylink_mac_link_up(struct phylink_config *config,
+static int rtldsa_93xx_speed_select(int speed)
+{
+	switch (speed) {
+	case SPEED_10000:
+		return RTL_SPEED_10000;
+	case SPEED_5000:
+		return RTL_SPEED_5000;
+	case SPEED_2500:
+		return RTL_SPEED_2500;
+	case SPEED_1000:
+		return RTL_SPEED_1000;
+	case SPEED_100:
+		return RTL_SPEED_100;
+	case SPEED_10:
+		return RTL_SPEED_10;
+	default:
+		return -EINVAL;
+	}
+}
+
+static void rtldsa_930x_phylink_mac_link_up(struct phylink_config *config,
+					    struct phy_device *phydev,
+					    unsigned int mode,
+					    phy_interface_t interface,
+					    int speed, int duplex,
+					    bool tx_pause, bool rx_pause)
+{
+	struct dsa_port *dp = dsa_phylink_to_port(config);
+	struct rtl838x_switch_priv *priv = dp->ds->priv;
+	int port = dp->index;
+	int spdsel;
+	u32 mcr;
+
+	spdsel = rtldsa_93xx_speed_select(speed);
+	if (spdsel < 0) {
+		dev_err(priv->dev, "unsupported port %d speed %d\n", port,
+			speed);
+		return;
+	}
+
+	mcr = sw_r32(priv->r->mac_force_mode_ctrl(port));
+
+	mcr &= ~RTL930X_RX_PAUSE_EN;
+	mcr &= ~RTL930X_TX_PAUSE_EN;
+	mcr &= ~RTL930X_DUPLEX_MODE;
+	mcr &= ~RTL930X_SPEED_MASK;
+	mcr |= RTL930X_FORCE_LINK_EN;
+	mcr |= spdsel << RTL930X_SPEED_SHIFT;
+
+	if (tx_pause)
+		mcr |= RTL930X_TX_PAUSE_EN;
+	if (rx_pause)
+		mcr |= RTL930X_RX_PAUSE_EN;
+	if (duplex == DUPLEX_FULL || priv->lagmembers & BIT_ULL(port))
+		mcr |= RTL930X_DUPLEX_MODE;
+	if (dsa_port_is_cpu(dp) || priv->ports[port].phy)
+		mcr |= RTL930X_FORCE_EN;
+
+	pr_debug("%s port %d, mode %x, speed %d, duplex %d, txpause %d, rxpause %d: set mcr=%08x\n",
+		 __func__, port, mode, speed, duplex, tx_pause, rx_pause, mcr);
+	sw_w32(mcr, priv->r->mac_force_mode_ctrl(port));
+
+	/* Restart TX/RX to port */
+	sw_w32_mask(0, 0x3, priv->r->mac_port_ctrl(port));
+}
+
+static void rtldsa_931x_phylink_mac_link_up(struct phylink_config *config,
 					    struct phy_device *phydev,
 					    unsigned int mode,
 					    phy_interface_t interface,
@@ -479,29 +521,11 @@ static void rtldsa_93xx_phylink_mac_link_up(struct phylink_config *config,
 	struct phylink_pcs *pcs = NULL;
 	bool stack_port = false;
 	int port = dp->index;
-	int err;
-	u32 mcr, spdsel;
+	int spdsel, err;
+	u32 mcr;
 
-	switch (speed) {
-	case SPEED_10000:
-		spdsel = RTL_SPEED_10000;
-		break;
-	case SPEED_5000:
-		spdsel = RTL_SPEED_5000;
-		break;
-	case SPEED_2500:
-		spdsel = RTL_SPEED_2500;
-		break;
-	case SPEED_1000:
-		spdsel = RTL_SPEED_1000;
-		break;
-	case SPEED_100:
-		spdsel = RTL_SPEED_100;
-		break;
-	case SPEED_10:
-		spdsel = RTL_SPEED_10;
-		break;
-	default:
+	spdsel = rtldsa_93xx_speed_select(speed);
+	if (spdsel < 0) {
 		dev_err(priv->dev, "unsupported port %d speed %d\n", port,
 			speed);
 		return;
@@ -509,83 +533,65 @@ static void rtldsa_93xx_phylink_mac_link_up(struct phylink_config *config,
 
 	mcr = sw_r32(priv->r->mac_force_mode_ctrl(port));
 
-	if (priv->family_id == RTL9300_FAMILY_ID) {
-		mcr &= ~RTL930X_RX_PAUSE_EN;
-		mcr &= ~RTL930X_TX_PAUSE_EN;
-		mcr &= ~RTL930X_DUPLEX_MODE;
-		mcr &= ~RTL930X_SPEED_MASK;
-		mcr |= RTL930X_FORCE_LINK_EN;
-		mcr |= spdsel << RTL930X_SPEED_SHIFT;
+	mutex_lock(&priv->reg_mutex);
+	stack_port = rtl931x_stack_port_active(priv, port);
+	mutex_unlock(&priv->reg_mutex);
 
-		if (tx_pause)
-			mcr |= RTL930X_TX_PAUSE_EN;
-		if (rx_pause)
-			mcr |= RTL930X_RX_PAUSE_EN;
-		if (duplex == DUPLEX_FULL || priv->lagmembers & BIT_ULL(port))
-			mcr |= RTL930X_DUPLEX_MODE;
-		if (dsa_port_is_cpu(dp) || priv->ports[port].phy)
-			mcr |= RTL930X_FORCE_EN;
-	} else if (priv->family_id == RTL9310_FAMILY_ID) {
-		mutex_lock(&priv->reg_mutex);
-		stack_port = rtl931x_stack_port_active(priv, port);
-		mutex_unlock(&priv->reg_mutex);
+	if (stack_port) {
+		pcs = fwnode_pcs_get(of_fwnode_handle(dp->dn), 0);
+		if (IS_ERR(pcs)) {
+			dev_err(priv->dev,
+				"stack port %d has no available PCS: %pe\n",
+				port, pcs);
+			rtldsa_931x_stack_link_fail(priv, port, NULL);
+			return;
+		}
+	}
 
-		if (stack_port) {
-			pcs = fwnode_pcs_get(of_fwnode_handle(dp->dn), 0);
-			if (IS_ERR(pcs)) {
-				dev_err(priv->dev,
-					"stack port %d has no available PCS: %pe\n",
-					port, pcs);
-				rtldsa_931x_stack_link_fail(priv, port, NULL);
-				return;
-			}
+	mutex_lock(&priv->reg_mutex);
+	err = rtl931x_stack_link_up_prepare(priv, port);
+	mutex_unlock(&priv->reg_mutex);
+	if (err < 0) {
+		dev_err(priv->dev,
+			"failed to prepare stack port %d for link up: %pe\n",
+			port, ERR_PTR(err));
+		rtldsa_931x_stack_link_fail(priv, port, pcs);
+		return;
+	}
+	stack_port = err;
+
+	if (stack_port) {
+		if (!pcs) {
+			dev_err(priv->dev,
+				"stack port %d became active without a PCS\n",
+				port);
+			rtldsa_931x_stack_link_fail(priv, port, NULL);
+			return;
 		}
 
-		mutex_lock(&priv->reg_mutex);
-		err = rtl931x_stack_link_up_prepare(priv, port);
-		mutex_unlock(&priv->reg_mutex);
-		if (err < 0) {
+		err = rtl931x_pcs_stack_rx_disable(pcs, port, true);
+		if (err) {
 			dev_err(priv->dev,
-				"failed to prepare stack port %d for link up: %pe\n",
+				"failed to disable stack port %d SerDes RX: %pe\n",
 				port, ERR_PTR(err));
 			rtldsa_931x_stack_link_fail(priv, port, pcs);
 			return;
 		}
-		stack_port = err;
-
-		if (stack_port) {
-			if (!pcs) {
-				dev_err(priv->dev,
-					"stack port %d became active without a PCS\n",
-					port);
-				rtldsa_931x_stack_link_fail(priv, port, NULL);
-				return;
-			}
-
-			err = rtl931x_pcs_stack_rx_disable(pcs, port, true);
-			if (err) {
-				dev_err(priv->dev,
-					"failed to disable stack port %d SerDes RX: %pe\n",
-					port, ERR_PTR(err));
-				rtldsa_931x_stack_link_fail(priv, port, pcs);
-				return;
-			}
-		}
-
-		mcr &= ~(RTL931X_RX_PAUSE_SEL | RTL931X_TX_PAUSE_SEL |
-			 RTL931X_DUPLEX_SEL | RTL931X_SPEED_SEL);
-		mcr |= RTL931X_LINK_SEL | RTL931X_FORCE_LINK_EN |
-		       RTL931X_FORCE_DUPLEX_EN | RTL931X_FORCE_SPEED_EN |
-		       RTL931X_MAC_FORCE_FC_EN |
-		       FIELD_PREP(RTL931X_SPEED_SEL, spdsel);
-
-		if (tx_pause)
-			mcr |= RTL931X_TX_PAUSE_SEL;
-		if (rx_pause)
-			mcr |= RTL931X_RX_PAUSE_SEL;
-		if (duplex == DUPLEX_FULL || priv->lagmembers & BIT_ULL(port))
-			mcr |= RTL931X_DUPLEX_SEL;
 	}
+
+	mcr &= ~(RTL931X_RX_PAUSE_SEL | RTL931X_TX_PAUSE_SEL |
+		 RTL931X_DUPLEX_SEL | RTL931X_SPEED_SEL);
+	mcr |= RTL931X_LINK_SEL | RTL931X_FORCE_LINK_EN |
+	       RTL931X_FORCE_DUPLEX_EN | RTL931X_FORCE_SPEED_EN |
+	       RTL931X_MAC_FORCE_FC_EN |
+	       FIELD_PREP(RTL931X_SPEED_SEL, spdsel);
+
+	if (tx_pause)
+		mcr |= RTL931X_TX_PAUSE_SEL;
+	if (rx_pause)
+		mcr |= RTL931X_RX_PAUSE_SEL;
+	if (duplex == DUPLEX_FULL || priv->lagmembers & BIT_ULL(port))
+		mcr |= RTL931X_DUPLEX_SEL;
 
 	pr_debug("%s port %d, mode %x, speed %d, duplex %d, txpause %d, rxpause %d: set mcr=%08x\n",
 		 __func__, port, mode, speed, duplex, tx_pause, rx_pause, mcr);
@@ -605,11 +611,9 @@ static void rtldsa_93xx_phylink_mac_link_up(struct phylink_config *config,
 		}
 	}
 
-	if (priv->family_id == RTL9310_FAMILY_ID) {
-		rtl931x_stack_reps_link_change(priv, port, true);
-		rtl931x_stack_port_link_change(priv, port, true);
-		rtl931x_stack_cpu_update(priv);
-	}
+	rtl931x_stack_reps_link_change(priv, port, true);
+	rtl931x_stack_port_link_change(priv, port, true);
+	rtl931x_stack_cpu_update(priv);
 }
 
 static int rtldsa_mc_group_alloc(struct rtl838x_switch_priv *priv, int port)
@@ -1243,22 +1247,12 @@ static void rtldsa_setup_l2_uc_entry(struct rtl838x_l2_entry *e, int port,
 	u64_to_ether_addr(mac, e->mac);
 }
 
-static u8 rtldsa_l2_local_device(struct rtl838x_switch_priv *priv)
-				__must_hold(&priv->reg_mutex)
-{
-	if (priv->family_id != RTL9310_FAMILY_ID)
-		return 0;
-
-	return FIELD_GET(RTL931X_STK_GBL_CTRL_MY_DEV_ID,
-			 sw_r32(RTL931X_STK_GBL_CTRL));
-}
-
 static bool rtldsa_l2_entry_is_local(struct rtl838x_switch_priv *priv,
 				     const struct rtl838x_l2_entry *e)
 				     __must_hold(&priv->reg_mutex)
 {
-	return priv->family_id != RTL9310_FAMILY_ID ||
-	       e->stack_dev == rtldsa_l2_local_device(priv);
+	return !priv->r->get_device_id ||
+	       e->stack_dev == rtldsa_local_device(priv);
 }
 
 static void rtldsa_setup_l2_mc_entry(struct rtl838x_l2_entry *e, int vid, u64 mac, int mc_group)
@@ -1525,7 +1519,7 @@ int rtl931x_stack_host_fdb_set_device(struct rtl838x_switch_priv *priv,
 	u64 seed;
 	int err;
 
-	if (priv->family_id != RTL9310_FAMILY_ID ||
+	if (!priv->r->supports_stacking ||
 	    !is_valid_ether_addr(addr) ||
 	    from_device >= RTL931X_STACK_MAX_DEVICES ||
 	    to_device >= RTL931X_STACK_MAX_DEVICES)
@@ -1575,7 +1569,7 @@ int rtl931x_stack_host_fdb_prepare(struct rtl838x_switch_priv *priv,
 	u64 seed;
 	int err;
 
-	if (priv->family_id != RTL9310_FAMILY_ID ||
+	if (!priv->r->supports_stacking ||
 	    !is_valid_ether_addr(addr) || !created ||
 	    device >= RTL931X_STACK_MAX_DEVICES)
 		return -EINVAL;
@@ -1648,7 +1642,7 @@ int rtl931x_stack_host_fdb_remove(struct rtl838x_switch_priv *priv,
 	u64 seed;
 	int err;
 
-	if (priv->family_id != RTL9310_FAMILY_ID ||
+	if (!priv->r->supports_stacking ||
 	    !is_valid_ether_addr(addr) ||
 	    device >= RTL931X_STACK_MAX_DEVICES)
 		return -EINVAL;
@@ -1757,7 +1751,7 @@ static int rtldsa_port_fdb_add(struct dsa_switch *ds, int port,
 		}
 
 		rtldsa_setup_l2_uc_entry(&e, port, vid, mac);
-		e.stack_dev = rtldsa_l2_local_device(priv);
+		e.stack_dev = rtldsa_local_device(priv);
 		priv->r->write_l2_entry_using_hash(idx >> 2, idx & 0x3, &e);
 		goto out;
 	}
@@ -1767,7 +1761,7 @@ static int rtldsa_port_fdb_add(struct dsa_switch *ds, int port,
 
 	if (idx >= 0) {
 		rtldsa_setup_l2_uc_entry(&e, port, vid, mac);
-		e.stack_dev = rtldsa_l2_local_device(priv);
+		e.stack_dev = rtldsa_local_device(priv);
 		priv->r->write_cam(idx, &e);
 		goto out;
 	}
@@ -2395,7 +2389,7 @@ static int rtldsa_port_lag_join(struct dsa_switch *ds,
 		err = -EBUSY;
 		goto out;
 	}
-	if (priv->family_id == RTL9310_FAMILY_ID &&
+	if (priv->r->supports_stacking &&
 	    (priv->stack.delegated_port_mask & BIT_ULL(port))) {
 		NL_SET_ERR_MSG_MOD(extack, "a delegated port cannot join a local LAG");
 		err = -EBUSY;
@@ -2543,10 +2537,16 @@ const struct dsa_switch_ops rtldsa_83xx_switch_ops = {
 	.port_bridge_flags	= rtldsa_port_bridge_flags,
 };
 
-const struct phylink_mac_ops rtldsa_93xx_phylink_mac_ops = {
+const struct phylink_mac_ops rtldsa_930x_phylink_mac_ops = {
 	.mac_config		= rtldsa_93xx_phylink_mac_config,
-	.mac_link_down		= rtldsa_93xx_phylink_mac_link_down,
-	.mac_link_up		= rtldsa_93xx_phylink_mac_link_up,
+	.mac_link_down		= rtldsa_phylink_mac_link_down,
+	.mac_link_up		= rtldsa_930x_phylink_mac_link_up,
+};
+
+const struct phylink_mac_ops rtldsa_931x_phylink_mac_ops = {
+	.mac_config		= rtldsa_93xx_phylink_mac_config,
+	.mac_link_down		= rtldsa_931x_phylink_mac_link_down,
+	.mac_link_up		= rtldsa_931x_phylink_mac_link_up,
 };
 
 const struct dsa_switch_ops rtldsa_93xx_switch_ops = {

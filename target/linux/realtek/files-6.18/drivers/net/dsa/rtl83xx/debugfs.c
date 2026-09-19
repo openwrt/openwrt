@@ -268,7 +268,7 @@ static void l2_table_print_entry(struct seq_file *m, struct rtl838x_switch_priv 
 			   e->mac[0], e->mac[1], e->mac[2], e->mac[3], e->mac[4], e->mac[5],
 			   e->vid, e->rvid);
 
-		if (priv->family_id == RTL9310_FAMILY_ID)
+		if (priv->r->get_device_id)
 			seq_printf(m, "  device %u port %d age %d",
 				   e->stack_dev, e->port, e->age);
 		else
@@ -605,7 +605,7 @@ static int rtl931x_stack_port_matrices_show(struct seq_file *m, void *v)
 	unsigned int device;
 	int port;
 
-	if (priv->family_id != RTL9310_FAMILY_ID)
+	if (!priv->r->supports_stacking)
 		return -EOPNOTSUPP;
 
 	mutex_lock(&priv->reg_mutex);
@@ -642,7 +642,7 @@ static int rtl931x_stack_routes_show(struct seq_file *m, void *v)
 	struct rtl838x_switch_priv *priv = m->private;
 	int i;
 
-	if (priv->family_id != RTL9310_FAMILY_ID)
+	if (!priv->r->supports_stacking)
 		return -EOPNOTSUPP;
 
 	mutex_lock(&priv->reg_mutex);
@@ -1054,7 +1054,7 @@ void rtl930x_dbgfs_init(struct rtl838x_switch_priv *priv)
 	debugfs_create_file("vlan_table", 0400, dbg_dir, priv,
 			    &rtldsa_vlan_table_fops);
 
-	if (priv->family_id == RTL9310_FAMILY_ID) {
+	if (priv->r->supports_stacking) {
 		debugfs_create_file("stack_port_matrices", 0400, dbg_dir, priv,
 				    &rtl931x_stack_port_matrices_fops);
 		debugfs_create_file("stack_routes", 0400, dbg_dir, priv,

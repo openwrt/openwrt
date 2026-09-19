@@ -295,11 +295,6 @@ static u8 rtl931x_local_device(void)
 			 sw_r32(RTL931X_STK_GBL_CTRL));
 }
 
-u8 rtl931x_lag_device(struct rtl838x_switch_priv *priv)
-{
-	return priv->family_id == RTL9310_FAMILY_ID ? rtl931x_local_device() : 0;
-}
-
 /* LAG membership survives a change of MY_DEV_ID, in either direction. */
 static void rtl931x_lag_rebind(struct rtl838x_switch_priv *priv,
 			      u8 old_device, u8 new_device)
@@ -1480,7 +1475,9 @@ static u64 rtldsa_931x_stat_port_table_read(int port, unsigned int mib_size,
 
 const struct rtldsa_config rtldsa_931x_cfg = {
 	.switch_ops = &rtldsa_93xx_switch_ops,
-	.phylink_mac_ops = &rtldsa_93xx_phylink_mac_ops,
+	.phylink_mac_ops = &rtldsa_931x_phylink_mac_ops,
+	.supports_stacking = true,
+	.get_device_id = rtl931x_local_device,
 	.spanning_tree_ctrl = RTL931X_ST_CTRL,
 	.l2_bucket_size = 8,
 	.n_mst = 128,

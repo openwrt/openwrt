@@ -1338,6 +1338,8 @@ struct rtldsa_mirror_config {
 struct rtldsa_config {
 	const struct dsa_switch_ops *switch_ops;
 	const struct phylink_mac_ops *phylink_mac_ops;
+	bool supports_stacking;
+	u8 (*get_device_id)(void);
 	void (*mask_port_reg_be)(u64 clear, u64 set, int reg);
 	void (*set_port_reg_be)(u64 set, int reg);
 	u64 (*get_port_reg_be)(int reg);
@@ -1571,8 +1573,7 @@ struct rtl838x_switch_priv {
 
 static inline bool rtl931x_stack_active(struct rtl838x_switch_priv *priv)
 {
-	return priv->family_id == RTL9310_FAMILY_ID &&
-	       priv->stack.enabled;
+	return priv->r->supports_stacking && priv->stack.enabled;
 }
 
 static inline bool rtl931x_stack_port_active(struct rtl838x_switch_priv *priv,
@@ -1580,7 +1581,7 @@ static inline bool rtl931x_stack_port_active(struct rtl838x_switch_priv *priv,
 {
 	u64 bit = BIT_ULL(port);
 
-	if (priv->family_id != RTL9310_FAMILY_ID)
+	if (!priv->r->supports_stacking)
 		return false;
 
 	return (READ_ONCE(priv->stack.enabled) &&
@@ -1594,6 +1595,11 @@ struct fdb_update_work {
 	struct net_device *ndev;
 	u64 macs[];
 };
+
+static inline u8 rtldsa_local_device(struct rtl838x_switch_priv *priv)
+{
+	return priv->r->get_device_id ? priv->r->get_device_id() : 0;
+}
 
 int rtldsa_83xx_lag_setup_algomask(struct rtl838x_switch_priv *priv, int group,
 				   struct netdev_lag_upper_info *info);
@@ -1646,7 +1652,8 @@ extern const struct dsa_switch_ops rtldsa_83xx_switch_ops;
 extern const struct dsa_switch_ops rtldsa_93xx_switch_ops;
 
 extern const struct phylink_mac_ops rtldsa_83xx_phylink_mac_ops;
-extern const struct phylink_mac_ops rtldsa_93xx_phylink_mac_ops;
+extern const struct phylink_mac_ops rtldsa_930x_phylink_mac_ops;
+extern const struct phylink_mac_ops rtldsa_931x_phylink_mac_ops;
 
 extern const struct rtldsa_config rtldsa_838x_cfg;
 extern const struct rtldsa_config rtldsa_839x_cfg;
@@ -1656,7 +1663,6 @@ extern const struct rtldsa_config rtldsa_931x_cfg;
 int rtldsa_stack_port_guard(struct rtl838x_switch_priv *priv, int port,
 			   struct netlink_ext_ack *extack);
 int rtl931x_stack_init(void);
-u8 rtl931x_lag_device(struct rtl838x_switch_priv *priv);
 int rtl931x_stack_lag_set(struct rtl838x_switch_priv *priv, unsigned int group,
 			  u64 members, u64 tx_members, u8 hash);
 int rtl931x_stack_lags_cleanup(struct rtl838x_switch_priv *priv);

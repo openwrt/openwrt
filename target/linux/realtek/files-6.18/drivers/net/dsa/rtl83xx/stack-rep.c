@@ -1048,7 +1048,7 @@ void rtl931x_stack_reps_local_lag_change(struct rtl838x_switch_priv *priv,
 	struct rtl931x_stack_reps *reps;
 	int err;
 
-	if (priv->family_id != RTL9310_FAMILY_ID)
+	if (!priv->r->supports_stacking)
 		return;
 	ASSERT_RTNL();
 	reps = priv->stack.reps;
