@@ -46,16 +46,16 @@ log_make = \
 		set -o pipefail; \
 		mkdir -p $(BUILD_LOG_DIR)/$(1)$(if $(4),/$(4));) \
 	$(SCRIPT_DIR)/time.pl "time: $(1)$(if $(4),/$(4))/$(if $(3),$(3)-)$(2)" \
-	$$(SUBMAKE) $(subdir_make_opts) $(if $(3),$(3)-)$(2) \
+	$(SUBMAKE) $(subdir_make_opts) $(if $(3),$(3)-)$(2) \
 		$(if $(BUILD_LOG),SILENT= 2>&1 | tee $(BUILD_LOG_DIR)/$(1)$(if $(4),/$(4))/$(if $(3),$(3)-)$(2).txt)
 
 ifdef CONFIG_AUTOREMOVE
 rebuild_check = \
-	@-$$(NO_TRACE_MAKE) $(subdir_make_opts) check-depends >/dev/null 2>/dev/null; \
+	@-$(NO_TRACE_MAKE) $(subdir_make_opts) check-depends >/dev/null 2>/dev/null; \
 		$(if $(BUILD_LOG),mkdir -p $(BUILD_LOG_DIR)/$(1)$(if $(4),/$(4));) \
-		$$(NO_TRACE_MAKE) $(if $(BUILD_LOG),-d) -q $(subdir_make_opts) .$(if $(3),$(3)-)$(2) \
+		$(NO_TRACE_MAKE) $(if $(BUILD_LOG),-d) -q $(subdir_make_opts) .$(if $(3),$(3)-)$(2) \
 			> $(if $(BUILD_LOG),$(BUILD_LOG_DIR)/$(1)$(if $(4),/$(4))/check-$(if $(3),$(3)-)$(2).txt,/dev/null) 2>&1 || \
-			$$(SUBMAKE) $(subdir_make_opts) clean-build >/dev/null 2>/dev/null
+			$(SUBMAKE) $(subdir_make_opts) clean-build >/dev/null 2>/dev/null
 
 endif
 
@@ -69,6 +69,12 @@ define subdir_variant
 		|| $(call ERROR,$(1),   ERROR: $(1)/$(2) failed to build$(if $(filter-out __default,$(4)), (build variant: $(4))).,$(findstring $(2),$($(1)/builddirs-ignore-$(3))))
 endef
 
+# Parameters: <subdir> <builddir> <target> <build type>
+define subdir_btype
+	$(call log_make,$(1)/$(2),$(3),$(4),,$($(1)/$(2)/variants)) \
+		|| $(call ERROR,$(1),   ERROR: $(1)/$(2) [$(4)] failed to build.,$(findstring $(2),$($(1)/builddirs-ignore-$(4)-$(3))))
+endef
+
 # Parameters: <subdir>
 define subdir
   $(call warn,$(1),d,D $(1))
@@ -77,20 +83,19 @@ define subdir
     $(foreach target,$(SUBTARGETS) $($(1)/subtargets),
       $(foreach btype,$(buildtypes-$(bd)),
         $(call warn_eval,$(1)/$(bd),t,T,$(1)/$(bd)/$(btype)/$(target): $(if $(NO_DEPS)$(QUILT),,$($(1)/$(bd)/$(btype)/$(target)) $(call $(1)//$(btype)/$(target),$(1)/$(bd)/$(btype))))
-		  $(call log_make,$(1)/$(bd),$(target),$(btype),$(filter-out __default,$(variant)),$($(1)/$(bd)/variants)) \
-			|| $(call ERROR,$(1),   ERROR: $(1)/$(bd) [$(btype)] failed to build.,$(findstring $(bd),$($(1)/builddirs-ignore-$(btype)-$(target))))
+	$$(call subdir_btype,$(1),$(bd),$(target),$(btype))
         $(if $(call diralias,$(bd)),$(call warn_eval,$(1)/$(bd),l,T,$(1)/$(call diralias,$(bd))/$(btype)/$(target): $(1)/$(bd)/$(btype)/$(target)))
       )
       $(if $($(1)/$(bd)/parallel-variants),
         $(foreach variant,$(call subdir_variants,$(1)/$(bd)),
           $(call warn_eval,$(1)/$(bd),t,T,$(1)/$(bd)/$(variant)/$(target): $(if $(NO_DEPS)$(QUILT),,$($(1)/$(bd)/$(target)) $(call $(1)//$(target),$(1)/$(bd))))
-$(call subdir_variant,$(1),$(bd),$(target),$(variant))
+	$$(call subdir_variant,$(1),$(bd),$(target),$(variant))
         )
         $(call warn_eval,$(1)/$(bd),t,T,$(1)/$(bd)/$(target): $(foreach variant,$(call subdir_variants,$(1)/$(bd)),$(1)/$(bd)/$(variant)/$(target)))
       ,
         $(call warn_eval,$(1)/$(bd),t,T,$(1)/$(bd)/$(target): $(if $(NO_DEPS)$(QUILT),,$($(1)/$(bd)/$(target)) $(call $(1)//$(target),$(1)/$(bd))))
           $(foreach variant,$(call subdir_variants,$(1)/$(bd)),
-$(call subdir_variant,$(1),$(bd),$(target),$(variant))
+	$$(call subdir_variant,$(1),$(bd),$(target),$(variant))
           )
       )
       $(if $(PREREQ_ONLY)$(DUMP_TARGET_DB),,
