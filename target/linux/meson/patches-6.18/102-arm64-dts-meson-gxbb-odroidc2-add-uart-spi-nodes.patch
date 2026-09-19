@@ -1,0 +1,96 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Fil Dunsky <filipp.dunsky@gmail.com>
+Date: Sat, 23 Aug 2026 03:18:07 +0000
+Subject: [PATCH] arm64: dts: meson-gxbb-odroidc2: enable UART A/C, SPI and
+ I2C B nodes
+
+Expose the extra UART controllers, the GPIO bit-banged SPI bus and the
+second I2C controller on the ODROID-C2 40-pin header, and add the usual
+aliases so userspace can address them as i2c0/i2c1, spi0 and serial1/2.
+Add two spidev child nodes so the 40-pin header SPI bus shows up as
+/dev/spidev0.0 and /dev/spidev0.1.
+
+Signed-off-by: Fil Dunsky <filipp.dunsky@gmail.com>
+---
+ arch/arm64/boot/dts/amlogic/meson-gxbb-odroidc2.dts | 49 +++++++++++++++++++++
+ 1 file changed, 49 insertions(+)
+
+--- a/arch/arm64/boot/dts/amlogic/meson-gxbb-odroidc2.dts
++++ b/arch/arm64/boot/dts/amlogic/meson-gxbb-odroidc2.dts
+@@ -18,6 +18,11 @@
+ 
+ 	aliases {
+ 		serial0 = &uart_AO;
++		serial1 = &uart_A;
++		serial2 = &uart_C;
++		i2c0 = &i2c_A;
++		i2c1 = &i2c_B;
++		spi0 = &spi_gpio;
+ 		ethernet0 = &ethmac;
+ 	};
+ 
+@@ -176,6 +181,32 @@
+ 		};
+ 	};
+ 
++	spi_gpio: spi-gpio {
++		compatible = "spi-gpio";
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "okay";
++
++		sck-gpios  = <&gpio GPIOX_2 GPIO_ACTIVE_HIGH>;
++		miso-gpios = <&gpio GPIOX_4 GPIO_ACTIVE_HIGH>;
++		mosi-gpios = <&gpio GPIOX_7 GPIO_ACTIVE_HIGH>;
++		cs-gpios   = <&gpio GPIOX_1 GPIO_ACTIVE_LOW>,
++			     <&gpio GPIOX_3 GPIO_ACTIVE_LOW>;
++		num-chipselects = <2>;
++
++		spidev@0 {
++			compatible = "rohm,dh2228fv";
++			reg = <0>;
++			spi-max-frequency = <10000000>;
++		};
++
++		spidev@1 {
++			compatible = "rohm,dh2228fv";
++			reg = <1>;
++			spi-max-frequency = <10000000>;
++		};
++	};
++
+ 	sound {
+ 		compatible = "amlogic,gx-sound-card";
+ 		model = "ODROID-C2";
+@@ -274,6 +305,12 @@
+ 	pinctrl-names = "default";
+ };
+ 
++&i2c_B {
++	status = "okay";
++	pinctrl-0 = <&i2c_b_pins>;
++	pinctrl-names = "default";
++};
++
+ &ir {
+ 	status = "okay";
+ 	pinctrl-0 = <&remote_input_ao_pins>;
+@@ -385,6 +422,18 @@
+ 	pinctrl-names = "default";
+ };
+ 
++&uart_A {
++	status = "okay";
++	pinctrl-0 = <&uart_a_pins>;
++	pinctrl-names = "default";
++};
++
++&uart_C {
++	status = "okay";
++	pinctrl-0 = <&uart_c_pins>;
++	pinctrl-names = "default";
++};
++
+ &usb0_phy {
+ 	status = "disabled";
+ 	phy-supply = <&usb_otg_pwr>;
