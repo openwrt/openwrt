@@ -455,3 +455,13 @@ define Device/zyxel_xmg1915-10ep
   DEVICE_PACKAGES += kmod-pse-realtek-mcu-uart
 endef
 TARGET_DEVICES += zyxel_xmg1915-10ep
+
+define Device/horaco_zx530s-8s
+  SOC := rtl9303
+  DEVICE_VENDOR := Horaco
+  DEVICE_MODEL := ZX530S-8S
+  UIMAGE_MAGIC := 0x83800000
+  IMAGE_SIZE := 12288k
+  $(Device/kernel-lzma)
+endef
+TARGET_DEVICES += horaco_zx530s-8s
