@@ -65,9 +65,9 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +#define RTL826X_SDS_MAX_RESETS			20
 +
  #define RTL826X_VEND1_PKG_MODEL			0x103
- #define RTL826X_VEND1_VERSION_ID		0x104
- #define   RTL826X_VEND1_VERSION_ID_VARIANT	GENMASK(2, 0)
-@@ -2524,6 +2535,70 @@ static int rtl826x_patch_db_init(struct
+ #define   RTL826X_PKG_MODEL_8251		0x8251
+ #define   RTL826X_PKG_MODEL_8254		0x8254
+@@ -2530,6 +2541,70 @@ static int rtl826x_patch_db_init(struct
  		return rtl8264b_phy_patch_db_init(phydev);
  }
  
@@ -138,7 +138,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static int rtl826x_probe(struct phy_device *phydev)
  {
  	struct device *dev = &phydev->mdio.dev;
-@@ -2535,8 +2610,14 @@ static int rtl826x_probe(struct phy_devi
+@@ -2541,8 +2616,14 @@ static int rtl826x_probe(struct phy_devi
  		return -ENOMEM;
  
  	priv->enable_pma_low_power = device_property_read_bool(dev, "realtek,enable-pma-low-power");
@@ -153,7 +153,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	if (!priv->enable_pma_low_power)
  		phydev_warn(phydev, "PMA low-power suspend disabled\n");
  
-@@ -3337,6 +3418,7 @@ static struct phy_driver realtek_drvs[]
+@@ -3346,6 +3427,7 @@ static struct phy_driver realtek_drvs[]
  	}, {
  		.name           = "RTL8261BE 10Gbps PHY",
  		.config_init    = rtl826x_config_init,
@@ -161,7 +161,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		.probe          = rtl826x_probe,
  		.get_features   = rtl826x_get_features,
  		.suspend        = rtl826x_suspend,
-@@ -3354,6 +3436,7 @@ static struct phy_driver realtek_drvs[]
+@@ -3363,6 +3445,7 @@ static struct phy_driver realtek_drvs[]
  	}, {
  		.name           = "RTL8261N 10Gbps PHY",
  		.config_init    = rtl826x_config_init,
