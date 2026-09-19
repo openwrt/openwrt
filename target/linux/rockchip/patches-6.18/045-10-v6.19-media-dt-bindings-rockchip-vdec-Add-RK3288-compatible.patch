@@ -1,0 +1,28 @@
+From e5aa56161657b5c397ba0ba16bb1939fd6d9e81c Mon Sep 17 00:00:00 2001
+From: Jonas Karlman <jonas@kwiboo.se>
+Date: Fri, 5 Sep 2025 16:19:24 +0000
+Subject: [PATCH] media: dt-bindings: rockchip,vdec: Add RK3288 compatible
+
+Add a RK3288 compatible for a version of the Rockchip VDEC IP that only
+support HEVC decoding.
+
+Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
+Acked-by: Conor Dooley <conor.dooley@microchip.com>
+Tested-by: Diederik de Haas <didi.debian@cknow.org>  # Rock64, RockPro64, Quartz64-B, NanoPi R5S
+Tested-by: Detlev Casanova <detlev.casanova@collabora.com> # RK3399
+Signed-off-by: Nicolas Dufresne <nicolas.dufresne@collabora.com>
+Signed-off-by: Hans Verkuil <hverkuil+cisco@kernel.org>
+---
+ Documentation/devicetree/bindings/media/rockchip,vdec.yaml | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/Documentation/devicetree/bindings/media/rockchip,vdec.yaml
++++ b/Documentation/devicetree/bindings/media/rockchip,vdec.yaml
+@@ -16,6 +16,7 @@ description: |-
+ properties:
+   compatible:
+     oneOf:
++      - const: rockchip,rk3288-vdec
+       - const: rockchip,rk3399-vdec
+       - const: rockchip,rk3576-vdec
+       - const: rockchip,rk3588-vdec

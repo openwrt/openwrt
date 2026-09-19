@@ -1,0 +1,27 @@
+From b637fd0a7292aaf0e2139790693bcabfb30827c7 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Tue, 8 Sep 2026 20:45:07 +0100
+Subject: [PATCH] drm/rockchip: select SND_SOC_HDMI_CODEC for DW HDMI QP
+
+The DW HDMI QP bridge exposes its audio path through the DRM HDMI audio
+helper, which registers an hdmi-audio-codec platform device. Nothing on
+that path selects the codec driver, so a configuration with
+ROCKCHIP_DW_HDMI_QP and SND_SOC has no HDMI audio unless another
+selector happens to pull SND_SOC_HDMI_CODEC in. Select it as the CDN DP
+option already does.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ drivers/gpu/drm/rockchip/Kconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/gpu/drm/rockchip/Kconfig
++++ b/drivers/gpu/drm/rockchip/Kconfig
+@@ -81,6 +81,7 @@ config ROCKCHIP_DW_HDMI
+ config ROCKCHIP_DW_HDMI_QP
+ 	bool "Rockchip specific extensions for Synopsys DW HDMI QP"
+ 	select DRM_BRIDGE_CONNECTOR
++	select SND_SOC_HDMI_CODEC if SND_SOC
+ 	help
+ 	  This selects support for Rockchip SoC specific extensions
+ 	  for the Synopsys DesignWare HDMI QP driver. If you want to

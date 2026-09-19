@@ -1,0 +1,33 @@
+From 09820811c549ee2c408defe36b210b13c7a85fcf Mon Sep 17 00:00:00 2001
+From: Damon Ding <damon.ding@rock-chips.com>
+Date: Fri, 5 Jun 2026 10:23:04 +0800
+Subject: [PATCH] arm64: dts: rockchip: Add missing hclk for RK3588 eDP1
+
+Add the required HCLK_VO1 bus clock to RK3588 eDP1 node with
+corresponding clock-name "hclk". This clock is necessary for
+the eDP controller to access video output GRF and work properly.
+
+Previously the clock was enabled implicitly via GRF phandle
+reference. Add it explicitly now to align with updated binding.
+
+Fixes: a481bb0b1ad9 ("arm64: dts: rockchip: Add eDP1 dt node for rk3588")
+Signed-off-by: Damon Ding <damon.ding@rock-chips.com>
+Link: https://patch.msgid.link/20260605022305.3058853-3-damon.ding@rock-chips.com
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ arch/arm64/boot/dts/rockchip/rk3588-extra.dtsi | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3588-extra.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3588-extra.dtsi
+@@ -285,8 +285,8 @@
+ 	edp1: edp@fded0000 {
+ 		compatible = "rockchip,rk3588-edp";
+ 		reg = <0x0 0xfded0000 0x0 0x1000>;
+-		clocks = <&cru CLK_EDP1_24M>, <&cru PCLK_EDP1>;
+-		clock-names = "dp", "pclk";
++		clocks = <&cru CLK_EDP1_24M>, <&cru PCLK_EDP1>, <&cru HCLK_VO1>;
++		clock-names = "dp", "pclk", "hclk";
+ 		interrupts = <GIC_SPI 164 IRQ_TYPE_LEVEL_HIGH 0>;
+ 		phys = <&hdptxphy1>;
+ 		phy-names = "dp";

@@ -1,0 +1,59 @@
+From 7504c2463632a509f6085545578fa4058cef537e Mon Sep 17 00:00:00 2001
+From: Biren Pandya <birenpandya@gmail.com>
+Date: Mon, 15 Jun 2026 01:58:16 +0530
+Subject: [PATCH] media: platform: hantro_drv: Add missing
+ media_entity_cleanup()
+
+The media_entity_pads_init() (or media_entity_init()) function initializes
+the media entity, but the driver forgets to call media_entity_cleanup()
+in the error paths and remove function. Add the missing calls to fix the
+API violation and prevent potential future memory leaks.
+
+Signed-off-by: Biren Pandya <birenpandya@gmail.com>
+Reviewed-by: Benjamin Gaignard <benjamin.gaignard@collabora.com>
+Signed-off-by: Nicolas Dufresne <nicolas.dufresne@collabora.com>
+Signed-off-by: Hans Verkuil <hverkuil+cisco@kernel.org>
+---
+ drivers/media/platform/verisilicon/hantro_drv.c | 12 +++++++++---
+ 1 file changed, 9 insertions(+), 3 deletions(-)
+
+--- a/drivers/media/platform/verisilicon/hantro_drv.c
++++ b/drivers/media/platform/verisilicon/hantro_drv.c
+@@ -771,8 +771,10 @@ static int hantro_register_entity(struct
+ 		return ret;
+ 
+ 	ret = media_device_register_entity(mdev, entity);
+-	if (ret)
++	if (ret) {
++		media_entity_cleanup(entity);
+ 		return ret;
++	}
+ 
+ 	return 0;
+ }
+@@ -860,12 +862,13 @@ err_rm_links0:
+ 
+ err_rel_entity2:
+ 	media_device_unregister_entity(&func->sink);
+-
++	media_entity_cleanup(&func->sink);
+ err_rel_entity1:
+ 	media_device_unregister_entity(&func->proc);
+-
++	media_entity_cleanup(&func->proc);
+ err_rel_entity0:
+ 	media_device_unregister_entity(&func->vdev.entity);
++	media_entity_cleanup(&func->vdev.entity);
+ 	return ret;
+ }
+ 
+@@ -878,6 +881,9 @@ static void hantro_detach_func(struct ha
+ 	media_device_unregister_entity(&func->sink);
+ 	media_device_unregister_entity(&func->proc);
+ 	media_device_unregister_entity(&func->vdev.entity);
++	media_entity_cleanup(&func->sink);
++	media_entity_cleanup(&func->proc);
++	media_entity_cleanup(&func->vdev.entity);
+ }
+ 
+ static int hantro_add_func(struct hantro_dev *vpu, unsigned int funcid)
