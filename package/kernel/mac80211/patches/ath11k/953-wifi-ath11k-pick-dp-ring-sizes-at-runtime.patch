@@ -1,0 +1,153 @@
+From: Eduard Hart <eduard.hart@etik.com>
+Date: Sun, 28 Jun 2026 19:00:00 +0200
+Subject: [PATCH] wifi: ath11k: pick DP ring sizes at runtime based on total RAM
+
+ath11k pre-allocates large RX/TX-completion DP rings (~94 MB of skbs with
+two radios). On 256 MB IPQ5018 devices (e.g. TP-Link RE700X) running both
+radios this OOMs. Mirror ath12k's runtime memory detection: read the total
+RAM via si_meminfo() and, below 256 MB of usable RAM, use smaller DP ring
+sizes. Devices with more RAM keep the existing defaults, so their behaviour
+is unchanged. The threshold is < SZ_256M rather than SZ_512M because reserved
+memory regions are subtracted from totalram, so a 512 MB board reports well
+under 512 MB and must not be downgraded.
+
+The small-memory ring sizes match openwrt/openwrt#21495.
+
+Signed-off-by: Eduard Hart <eduard.hart@etik.com>
+---
+--- a/drivers/net/wireless/ath/ath11k/dp.c
++++ b/drivers/net/wireless/ath/ath11k/dp.c
+@@ -415,7 +415,7 @@
+ 
+ 		ret = ath11k_dp_srng_setup(ab, &dp->tx_ring[i].tcl_comp_ring,
+ 					   HAL_WBM2SW_RELEASE, wbm_num, 0,
+-					   DP_TX_COMP_RING_SIZE);
++					   dp->tx_comp_ring_size);
+ 		if (ret) {
+ 			ath11k_warn(ab, "failed to set up tcl_comp ring (%d) :%d\n",
+ 				    i, ret);
+@@ -1047,6 +1047,34 @@
+ 	/* Deinit any SOC level resource */
+ }
+ 
++static void ath11k_dp_set_ring_sizes(struct ath11k_dp *dp)
++{
++	struct sysinfo si;
++
++	/*
++	 * ath11k pre-allocates large RX/TX-completion DP rings; on low-memory
++	 * (256 MB) devices running two radios this OOMs. Mirror ath12k and pick
++	 * smaller ring sizes at runtime below 256 MB of usable RAM. Devices with
++	 * more RAM keep the existing defaults. The threshold is < SZ_256M (not
++	 * SZ_512M) because reserved memory regions are subtracted from totalram,
++	 * so a 512 MB board reports well under 512 MB and must not be caught.
++	 */
++	si_meminfo(&si);
++	if (si.totalram * si.mem_unit < SZ_256M) {
++		dp->tx_comp_ring_size = 2048;
++		dp->rxdma_buf_ring_size = 1024;
++		dp->rxdma_mon_status_ring_size = 512;
++		dp->rxdma_mon_buf_ring_size = 128;
++		dp->rxdma_mon_dst_ring_size = 128;
++	} else {
++		dp->tx_comp_ring_size = DP_TX_COMP_RING_SIZE;
++		dp->rxdma_buf_ring_size = DP_RXDMA_BUF_RING_SIZE;
++		dp->rxdma_mon_status_ring_size = DP_RXDMA_MON_STATUS_RING_SIZE;
++		dp->rxdma_mon_buf_ring_size = DP_RXDMA_MONITOR_BUF_RING_SIZE;
++		dp->rxdma_mon_dst_ring_size = DP_RXDMA_MONITOR_DST_RING_SIZE;
++	}
++}
++
+ int ath11k_dp_alloc(struct ath11k_base *ab)
+ {
+ 	struct ath11k_dp *dp = &ab->dp;
+@@ -1058,6 +1084,8 @@
+ 
+ 	dp->ab = ab;
+ 
++	ath11k_dp_set_ring_sizes(dp);
++
+ 	INIT_LIST_HEAD(&dp->reo_cmd_list);
+ 	INIT_LIST_HEAD(&dp->reo_cmd_cache_flush_list);
+ 	INIT_LIST_HEAD(&dp->dp_full_mon_mpdu_list);
+@@ -1084,7 +1112,7 @@
+ 	if (ret)
+ 		goto fail_link_desc_cleanup;
+ 
+-	size = sizeof(struct hal_wbm_release_ring) * DP_TX_COMP_RING_SIZE;
++	size = sizeof(struct hal_wbm_release_ring) * dp->tx_comp_ring_size;
+ 
+ 	for (i = 0; i < ab->hw_params.max_tx_ring; i++) {
+ 		idr_init(&dp->tx_ring[i].txbuf_idr);
+@@ -1092,7 +1120,7 @@
+ 		dp->tx_ring[i].tcl_data_ring_id = i;
+ 
+ 		dp->tx_ring[i].tx_status_head = 0;
+-		dp->tx_ring[i].tx_status_tail = DP_TX_COMP_RING_SIZE - 1;
++		dp->tx_ring[i].tx_status_tail = dp->tx_comp_ring_size - 1;
+ 		dp->tx_ring[i].tx_status = kmalloc(size, GFP_KERNEL);
+ 		if (!dp->tx_ring[i].tx_status) {
+ 			ret = -ENOMEM;
+--- a/drivers/net/wireless/ath/ath11k/dp.h
++++ b/drivers/net/wireless/ath/ath11k/dp.h
+@@ -257,6 +257,11 @@
+ 
+ struct ath11k_dp {
+ 	struct ath11k_base *ab;
++	u32 tx_comp_ring_size;
++	u32 rxdma_buf_ring_size;
++	u32 rxdma_mon_status_ring_size;
++	u32 rxdma_mon_buf_ring_size;
++	u32 rxdma_mon_dst_ring_size;
+ 	enum ath11k_htc_ep_id eid;
+ 	struct completion htt_tgt_version_received;
+ 	u8 htt_tgt_ver_major;
+--- a/drivers/net/wireless/ath/ath11k/dp_rx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
+@@ -578,7 +578,7 @@
+ 	ret = ath11k_dp_srng_setup(ar->ab,
+ 				   &dp->rx_refill_buf_ring.refill_buf_ring,
+ 				   HAL_RXDMA_BUF, 0,
+-				   dp->mac_id, DP_RXDMA_BUF_RING_SIZE);
++				   dp->mac_id, ar->ab->dp.rxdma_buf_ring_size);
+ 	if (ret) {
+ 		ath11k_warn(ar->ab, "failed to setup rx_refill_buf_ring\n");
+ 		return ret;
+@@ -613,7 +613,7 @@
+ 		ret = ath11k_dp_srng_setup(ar->ab,
+ 					   srng,
+ 					   HAL_RXDMA_MONITOR_STATUS, 0, dp->mac_id + i,
+-					   DP_RXDMA_MON_STATUS_RING_SIZE);
++					   ar->ab->dp.rxdma_mon_status_ring_size);
+ 		if (ret) {
+ 			ath11k_warn(ar->ab,
+ 				    "failed to setup rx_mon_status_refill_ring %d\n", i);
+@@ -636,7 +636,7 @@
+ 	ret = ath11k_dp_srng_setup(ar->ab,
+ 				   &dp->rxdma_mon_buf_ring.refill_buf_ring,
+ 				   HAL_RXDMA_MONITOR_BUF, 0, dp->mac_id,
+-				   DP_RXDMA_MONITOR_BUF_RING_SIZE);
++				   ar->ab->dp.rxdma_mon_buf_ring_size);
+ 	if (ret) {
+ 		ath11k_warn(ar->ab,
+ 			    "failed to setup HAL_RXDMA_MONITOR_BUF\n");
+@@ -645,7 +645,7 @@
+ 
+ 	ret = ath11k_dp_srng_setup(ar->ab, &dp->rxdma_mon_dst_ring,
+ 				   HAL_RXDMA_MONITOR_DST, 0, dp->mac_id,
+-				   DP_RXDMA_MONITOR_DST_RING_SIZE);
++				   ar->ab->dp.rxdma_mon_dst_ring_size);
+ 	if (ret) {
+ 		ath11k_warn(ar->ab,
+ 			    "failed to setup HAL_RXDMA_MONITOR_DST\n");
+--- a/drivers/net/wireless/ath/ath11k/dp_tx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_tx.c
+@@ -122,7 +122,7 @@
+ 
+ 	spin_lock_bh(&tx_ring->tx_idr_lock);
+ 	ret = idr_alloc(&tx_ring->txbuf_idr, skb, 0,
+-			DP_TX_IDR_SIZE - 1, GFP_ATOMIC);
++			dp->tx_comp_ring_size - 1, GFP_ATOMIC);
+ 	spin_unlock_bh(&tx_ring->tx_idr_lock);
+ 
+ 	if (unlikely(ret < 0)) {
