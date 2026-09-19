@@ -8,8 +8,7 @@ ath79_setup_interfaces()
 
 	case "$board" in
 	mikrotik,routerboard-2011uias-2hnd)
-		ucidef_add_switch "switch0" \
-			"0@eth0" "2:lan" "3:lan" "4:lan" "5:lan" "6:lan" "1:wan"
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 eth1.1" "wan"
 		ucidef_add_switch "switch1" \
 			"0@eth1" "1:lan:5" "2:lan:4" "3:lan:3" "4:lan:2" "5:lan:1"
 		;;
