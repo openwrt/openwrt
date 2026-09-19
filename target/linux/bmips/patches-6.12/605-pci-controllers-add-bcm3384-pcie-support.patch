@@ -1,0 +1,35 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Rikka0w0 <929513338@qq.com>
+Date: Sat, 8 Aug 2026 00:00:00 +1000
+Subject: [PATCH] pci: add bcm3384-pcie support
+
+Signed-off-by: Rikka0w0 <929513338@qq.com>
+---
+ drivers/pci/controller/Kconfig  | 6 ++++++
+ drivers/pci/controller/Makefile | 1 +
+ 2 files changed, 7 insertions(+)
+
+--- a/drivers/pci/controller/Kconfig
++++ b/drivers/pci/controller/Kconfig
+@@ -179,6 +179,12 @@ config PCIE_BCM3380
+ 	depends on OF
+ 	select BCM3380_GPHY
+ 
++config PCIE_BCM3384
++	bool "BCM3384 PCIe controller"
++	depends on BMIPS_GENERIC || COMPILE_TEST
++	depends on OF
++	select BCM3384_PMC
++
+ config PCI_BCM6348
+ 	bool "BCM6348 PCI controller"
+ 	depends on BMIPS_GENERIC || COMPILE_TEST
+--- a/drivers/pci/controller/Makefile
++++ b/drivers/pci/controller/Makefile
+@@ -1,5 +1,6 @@
+ # SPDX-License-Identifier: GPL-2.0
+ obj-$(CONFIG_PCIE_BCM3380) += pcie-bcm3380.o
++obj-$(CONFIG_PCIE_BCM3384) += pcie-bcm3384.o
+ obj-$(CONFIG_PCI_BCM6348) += pci-bcm6348.o
+ obj-$(CONFIG_PCIE_BCM6318) += pcie-bcm6318.o
+ obj-$(CONFIG_PCIE_BCM6328) += pcie-bcm6328.o
