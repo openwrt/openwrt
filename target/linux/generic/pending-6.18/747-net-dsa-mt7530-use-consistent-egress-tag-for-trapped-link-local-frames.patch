@@ -1,0 +1,86 @@
+From 76501d9ef748b259cdd91174407cc0a97ddbdb55 Mon Sep 17 00:00:00 2001
+From: Tao Gong <gongtao0607@gmail.com>
+Date: Sat, 19 Sep 2026 02:56:10 +0000
+Subject: [PATCH] net: dsa: mt7530: use consistent egress tag for trapped link-local frames
+
+commit 3ac85bcfd404 ("net: dsa: mt7530: preserve VLAN tags on trapped
+link-local frames") changed the egress VLAN tag attribute for trapped
+link-local frames in BPC, RGAC1, and RGAC2 from MT7530_VLAN_EG_UNTAGGED
+to MT7530_VLAN_EG_DISABLED, with the intention of passing frames
+through without VLAN tag modification.
+
+However, in MT7530 hardware, MT7530_VLAN_EG_DISABLED disables the
+protocol-level egress tagging override, causing trapped frames to
+fall back to the egress port's active VLAN table (VAWD2) rule. When a
+bridge with VLAN filtering is active, the CPU port is configured with
+stack mode, causing the switch to insert a VLAN tag into incoming
+untagged BPDUs (01:80:C2:00:00:00) and other link-local frames before
+delivering them to the CPU conduit.
+
+Because BPDUs arrive at the CPU with a VLAN tag (EtherType 0x8100
+at offset 12 instead of 802.3 length <= 1500), userspace STP daemons
+(such as ustpd) and the kernel bridge drop or ignore them, breaking
+STP convergence.
+
+Use MT7530_VLAN_EG_CONSISTENT instead. This instructs the hardware to
+keep egress tagging consistent with the ingress wire format: frames
+received untagged on the wire remain untagged when forwarded to the
+CPU, while VLAN-tagged frames preserve their original VLAN tag.
+
+Fixes: 3ac85bcfd404 ("net: dsa: mt7530: preserve VLAN tags on trapped link-local frames")
+Link: https://lore.kernel.org/netdev/20260919065214.31604-2-gongtao0607@gmail.com/
+Signed-off-by: Tao Gong <gongtao0607@gmail.com>
+---
+--- a/drivers/net/dsa/mt7530.c
++++ b/drivers/net/dsa/mt7530.c
+@@ -1227,39 +1227,39 @@ static void
+ mt753x_trap_frames(struct mt7530_priv *priv)
+ {
+ 	/* Trap 802.1X PAE frames and BPDUs to the CPU port(s) and egress
+-	 * them with the EG_TAG attribute set to disabled (system default)
+-	 * so that any VLAN tags in the frame are not modified by the
+-	 * switch egress VLAN tag processing. This preserves VLAN tags
+-	 * for reception on VLAN sub-interfaces.
++	 * them with the EG_TAG attribute set to consistent so that any
++	 * VLAN tags in the frame are not modified by the switch egress
++	 * VLAN tag processing. This preserves VLAN tags for reception
++	 * on VLAN sub-interfaces.
+ 	 */
+ 	mt7530_rmw(priv, MT753X_BPC,
+ 		   PAE_BPDU_FR | PAE_EG_TAG_MASK | PAE_PORT_FW_MASK |
+ 			   BPDU_EG_TAG_MASK | BPDU_PORT_FW_MASK,
+-		   PAE_BPDU_FR | PAE_EG_TAG(MT7530_VLAN_EG_DISABLED) |
++		   PAE_BPDU_FR | PAE_EG_TAG(MT7530_VLAN_EG_CONSISTENT) |
+ 			   PAE_PORT_FW(TO_CPU_FW_CPU_ONLY) |
+-			   BPDU_EG_TAG(MT7530_VLAN_EG_DISABLED) |
++			   BPDU_EG_TAG(MT7530_VLAN_EG_CONSISTENT) |
+ 			   TO_CPU_FW_CPU_ONLY);
+ 
+ 	/* Trap frames with :01 and :02 MAC DAs to the CPU port(s) and
+-	 * egress them with EG_TAG disabled.
++	 * egress them with EG_TAG consistent.
+ 	 */
+ 	mt7530_rmw(priv, MT753X_RGAC1,
+ 		   R02_BPDU_FR | R02_EG_TAG_MASK | R02_PORT_FW_MASK |
+ 			   R01_BPDU_FR | R01_EG_TAG_MASK | R01_PORT_FW_MASK,
+-		   R02_BPDU_FR | R02_EG_TAG(MT7530_VLAN_EG_DISABLED) |
++		   R02_BPDU_FR | R02_EG_TAG(MT7530_VLAN_EG_CONSISTENT) |
+ 			   R02_PORT_FW(TO_CPU_FW_CPU_ONLY) | R01_BPDU_FR |
+-			   R01_EG_TAG(MT7530_VLAN_EG_DISABLED) |
++			   R01_EG_TAG(MT7530_VLAN_EG_CONSISTENT) |
+ 			   TO_CPU_FW_CPU_ONLY);
+ 
+ 	/* Trap frames with :03 and :0E MAC DAs to the CPU port(s) and
+-	 * egress them with EG_TAG disabled.
++	 * egress them with EG_TAG consistent.
+ 	 */
+ 	mt7530_rmw(priv, MT753X_RGAC2,
+ 		   R0E_BPDU_FR | R0E_EG_TAG_MASK | R0E_PORT_FW_MASK |
+ 			   R03_BPDU_FR | R03_EG_TAG_MASK | R03_PORT_FW_MASK,
+-		   R0E_BPDU_FR | R0E_EG_TAG(MT7530_VLAN_EG_DISABLED) |
++		   R0E_BPDU_FR | R0E_EG_TAG(MT7530_VLAN_EG_CONSISTENT) |
+ 			   R0E_PORT_FW(TO_CPU_FW_CPU_ONLY) | R03_BPDU_FR |
+-			   R03_EG_TAG(MT7530_VLAN_EG_DISABLED) |
++			   R03_EG_TAG(MT7530_VLAN_EG_CONSISTENT) |
+ 			   TO_CPU_FW_CPU_ONLY);
+ }
