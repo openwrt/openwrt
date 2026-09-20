@@ -2389,17 +2389,12 @@ static int rtpcs_930x_sds_rxeq_vth_set_adapt(struct rtpcs_serdes *sds, bool enab
 static int rtpcs_930x_sds_rxeq_vth_set_value(struct rtpcs_serdes *sds, unsigned int vth_p,
 					     unsigned int vth_n)
 {
-	int ret;
+	u16 val;
 
-	ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x13,  5,  3, vth_p);
-	if (ret < 0)
-		return ret;
+	val = FIELD_PREP(RTL930X_VTHP_INIT, vth_p) | FIELD_PREP(RTL930X_VTHN_INIT, vth_n);
 
-	ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x13,  2,  0, vth_n);
-	if (ret < 0)
-		return ret;
-
-	return 0;
+	return rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG19,
+				    RTL930X_VTHP_INIT | RTL930X_VTHN_INIT, val);
 }
 
 static int rtpcs_930x_sds_rxeq_vth_get(struct rtpcs_serdes *sds, unsigned int *vth_p,
