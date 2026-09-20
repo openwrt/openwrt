@@ -1784,7 +1784,8 @@ static int otto_l3_fib_check_v6(struct otto_l3_ctrl *ctrl, struct fib6_info *rt,
 	 * specific row holds, and the destinations this driver leaves out are
 	 * exactly the ones it does not know what to do with - a prefix that is
 	 * on-link somewhere else among them. Sending those to the gateway is
-	 * worse than dropping them, which is what happens without the row.
+	 * worse than trapping them, which is what the catch-all row does with
+	 * them.
 	 */
 	if (ipv6_addr_any(&rt->fib6_dst.addr) || ipv6_addr_loopback(&rt->fib6_dst.addr))
 		return -EOPNOTSUPP;
@@ -1866,6 +1867,48 @@ static int otto_l3_fib_del_v6_local(struct otto_l3_ctrl *ctrl, struct fib6_info 
 		return 0;
 
 	otto_l3_route_teardown(ctrl, route);
+
+	return 0;
+}
+
+/* A destination with no row of its own misses the route lookup, and the miss
+ * is a drop the hardware gives no way to change: the Realtek GPL SDK carries a
+ * lookup miss action in the multicast route controls and in neither of the
+ * unicast ones (rtk_longan_regField_list.c, L3_IP6MC_ROUTE_CTRL against
+ * L3_IP6UC_ROUTE_CTRL). The router MAC matches on any port and any VLAN, so
+ * that drop takes every IP frame addressed to the switch whose destination
+ * this driver did not program - an on-link prefix among them, since a route
+ * with no gateway to resolve is never offloaded.
+ *
+ * One row below the whole block catches them and hands them to the CPU, which
+ * is what the box does with the offload off. It forwards nothing, so it needs
+ * no next hop: index zero is what the hardware reads as "no next hop" on a
+ * route that only traps. The block is ordered longest prefix first and the
+ * hardware answers with the lowest matching row, so a destination that has a
+ * row of its own is answered by that row and never reaches this one.
+ *
+ * It is not a route the kernel knows about: table id zero is not a table the
+ * kernel hands out, so no FIB event finds it and takes it away.
+ */
+static int otto_l3_add_catch_all(struct otto_l3_ctrl *ctrl, u8 type)
+{
+	struct otto_l3_route *route;
+
+	route = otto_l3_route_alloc(ctrl, &in6addr_any);
+	if (!route)
+		return -ENOSPC;
+
+	route->attr.type = type;
+	route->attr.action = ROUTE_ACT_TRAP2CPU;
+	route->attr.valid = true;
+
+	route->row = otto_l3_route_place(ctrl, route);
+	if (route->row < FIRST_PREFIX_ROW) {
+		otto_l3_route_teardown(ctrl, route);
+		return -ENOSPC;
+	}
+
+	ctrl->cfg->route_write(ctrl, route->row, route);
 
 	return 0;
 }
@@ -2857,6 +2900,12 @@ int otto_l3_probe(struct device *dev, struct rtl838x_switch_priv *priv)
 	/* Initialize hash table for L3 routing */
 	INIT_LIST_HEAD(&ctrl->routes_list);
 	rhltable_init(&ctrl->routes, &otto_l3_route_ht_params);
+
+	/* Before the notifiers, so no destination is dropped in the window
+	 * where the tables are live and the routes have not arrived yet.
+	 */
+	if (ctrl->cfg->use_l3_tables && otto_l3_add_catch_all(ctrl, ROUTE_TYPE_IP6UC))
+		dev_err(dev, "no row for the IPv6 catch-all, destinations without one will be dropped\n");
 
 	/*
 	 * Register netevent notifier callback to catch notifications about neighboring changes
