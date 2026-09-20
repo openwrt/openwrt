@@ -97,6 +97,11 @@ trx_fixup(int fd, const char *name)
 		goto err2;
 	}
 
+	if (trx->len < sizeof(struct trx_header) || trx->len > len) {
+		fprintf(stderr, "Invalid TRX header length: %u\n", trx->len);
+		goto err2;
+	}
+
 	scan = ptr + offsetof(struct trx_header, flag_version);
 	trx->crc32 = crc32buf(scan, trx->len - (scan - ptr));
 	msync(ptr, sizeof(struct trx_header), MS_SYNC|MS_INVALIDATE);
