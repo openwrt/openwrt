@@ -2907,6 +2907,9 @@ int otto_l3_probe(struct device *dev, struct rtl838x_switch_priv *priv)
 	if (ctrl->cfg->use_l3_tables && otto_l3_add_catch_all(ctrl, ROUTE_TYPE_IP6UC))
 		dev_err(dev, "no row for the IPv6 catch-all, destinations without one will be dropped\n");
 
+	if (ctrl->cfg->use_l3_tables && otto_l3_add_catch_all(ctrl, ROUTE_TYPE_IP4UC))
+		dev_err(dev, "no row for the IPv4 catch-all, destinations without one will be dropped\n");
+
 	/*
 	 * Register netevent notifier callback to catch notifications about neighboring changes
 	 * to update nexthop entries for L3 routing.
