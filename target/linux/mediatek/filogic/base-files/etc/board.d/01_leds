@@ -163,7 +163,8 @@ iptime,ax3000sm)
 iptime,ax7800m-6e)
 	ucidef_set_led_netdev "wan" "wan" "mdio-bus:06:blue:wan" "eth1" "link tx rx"
 	;;
-keenetic,kn-1012)
+keenetic,kn-1012|\
+netcraze,nc-1012)
 	ucidef_set_led_netdev "wan" "wan" "green:wan" "wan" "link tx rx"
 	ucidef_set_led_netdev "internet" "internet" "green:wan-online" "wan" "link"
 	;;
