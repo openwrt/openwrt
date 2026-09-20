@@ -328,7 +328,136 @@
 					groups = "pon";
 				};
 			};
+
+			/*
+			 * PCM/ZSI pin groups. Every PCM mux bit lives in
+			 * chip_scu + 0x0104 (REG_IOMUX_CONTROL1): pcm1
+			 * gpio 25-28 bit 13, pcm2 gpio 17-20 bit 14,
+			 * pcm_spi gpio 17-20 bit 12 (SPI2_MODE), pcm_spi_int
+			 * gpio 16 bit 11, pcm_spi_rst gpio 15 bit 10,
+			 * pcm_spi_cs4 gpio 22 bit 9, pcm_spi_cs3 gpio 16
+			 * bit 8. "pcm_spi" occupies the same four pins as
+			 * "pcm2", so a board using the multiplexed SLIC
+			 * control channel gives up the second PCM bus.
+			 * pcm_spi_int and pcm_spi_cs3 are both gpio 16 --
+			 * pick one.
+			 */
+			pcm1_pins: pcm1-pins {
+				mux {
+					function = "pcm";
+					groups = "pcm1";
+				};
+			};
+
+			pcm2_pins: pcm2-pins {
+				mux {
+					function = "pcm";
+					groups = "pcm2";
+				};
+			};
+
+			/* PCM bus 2 pins carrying the multiplexed SLIC control channel */
+			pcm_spi_pins: pcm-spi-pins {
+				mux {
+					function = "pcm_spi";
+					groups = "pcm_spi", "pcm_spi_rst";
+				};
+			};
+
+			pcm_spi_cs4_pins: pcm-spi-cs4-pins {
+				mux {
+					function = "pcm_spi";
+					groups = "pcm_spi_cs4";
+				};
+			};
 		};
+	};
+
+	pcm0: pcm@1fbd0000 {
+		compatible = "econet,en751221-pcm";
+		reg = <0x1fbd0000 0x1000>;
+		reg-names = "pcm";
+
+		/* PCM1 input in the EN751221 interrupt controller. */
+		interrupt-parent = <&intc>;
+		interrupts = <11>;
+
+		resets = <&scuclk EN751221_PCM1_RST>;
+		reset-names = "pcm";
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&pcm1_pins>;
+
+		/* read back from stock firmware; see pcm_asterisk docs/01 */
+		airoha,pcm-interface-control = <0xf5071306>;
+
+		/*
+		 * 16-bit slots at bit offsets 32, 48, 64, 80, 96, 112,
+		 * 128, 144. Two slots per register; low half is the even
+		 * slot, high half the odd one.
+		 */
+		airoha,tx-slot-config = <0x10301020 0x10501040
+					 0x10701060 0x10901080>;
+		airoha,rx-slot-config = <0x10301020 0x10501040
+					 0x10701060 0x10901080>;
+		airoha,dma-channel-mask = <0xff>;
+
+		status = "disabled";
+	};
+
+	/* Second PCM instance. Present in silicon; rarely wired up. */
+	pcm1: pcm@1fbd2000 {
+		compatible = "econet,en751221-pcm";
+		reg = <0x1fbd2000 0x1000>;
+		reg-names = "pcm";
+		/* PCM2 input; hwirq 33 is in the controller's second bank. */
+		interrupt-parent = <&intc>;
+		interrupts = <33>;
+		resets = <&scuclk EN751221_PCM2_RST>;
+		reset-names = "pcm";
+		pinctrl-names = "default";
+		pinctrl-0 = <&pcm2_pins>;
+		airoha,pcm-interface-control = <0xf5071306>;
+		status = "disabled";
+	};
+
+	/*
+	 * ZSI: the SLIC control channel multiplexed over the PCM bus.
+	 * It rides the pcm2 pins, so a board that enables this cannot
+	 * also mux pcm2 on pcm1 above.
+	 */
+	zsi0: zsi@1fbd1000 {
+		compatible = "econet,en751221-zsi";
+		reg = <0x1fbd1000 0x1000>;
+		reg-names = "zsi";
+
+		airoha,scu = <&scuclk>;
+		airoha,chip-scu = <&chip_scu>;
+		resets = <&scuclk EN751221_PCM1_ZSI_ISI_RST>;
+		reset-names = "zsi";
+
+		/*
+		 * Temporary compatibility path: the current MIPS clock provider
+		 * has no SLIC clock. These raw offsets are verified on EN751221
+		 * only and the driver rejects this property on other SoCs.
+		 */
+		airoha,legacy-scu-programming;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&pcm_spi_pins>;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		/*
+		 * Inter-byte gap. The wrapper acknowledges a byte as soon
+		 * as it has sent it, but the SLIC still has to clock it
+		 * over the 8 kHz bus. Below about 2000 us the SLIC
+		 * mis-parses profile streams.
+		 */
+		airoha,zsi-gap-us = <5000>;
+
+		status = "disabled";
 	};
 
 	xpon_phy: phy@1faf0000 {

@@ -173,6 +173,39 @@ model = "TP-Link xc220 g3v";
 	};
 };
 
+&pcm0 {
+	/* Single FXS line (only "FXS1" is wired out on this board) -- channel 0 only. */
+	airoha,dma-channel-mask = <0x01>;
+	status = "okay";
+};
+
+/*
+ * ISI multiplexes the SLIC control channel onto the PCM pins, not the
+ * flash-shared &spi bus. No reset-gpios here: this board's vendor
+ * firmware (type=ISI slic=si32192) never assigns a discrete SLIC reset
+ * GPIO -- confirmed from the real compiled spi.ko (CSI_reset_gpio == 2,
+ * the "no discrete GPIO" case) plus MediaTek's own slic_adaptor_s.c,
+ * whose Silicon Labs reset path is purely PCLK/FSYNC-sequenced ("Reset
+ * C"). Reset is handled by en75xx_isi_spi_hw_init()'s own reset-controller
+ * pulse instead.
+ */
+&isi0 {
+	status = "okay";
+
+	proslic0: proslic@0 {
+		compatible = "silabs,si32192";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+		spi-cpha;
+		spi-cpol;
+
+		airoha,pcm = <&pcm0>;
+		airoha,pcm-channel = <0>;
+
+		status = "okay";
+	};
+};
+
 &pcie0 {
 	status = "okay";
 };

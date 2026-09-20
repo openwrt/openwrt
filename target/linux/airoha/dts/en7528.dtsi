@@ -217,7 +217,146 @@
 						groups = "gpio37";
 					};
 				};
+
+				/*
+				 * PCM/ISI pin groups. Most PCM mux bits live
+				 * in chip_scu + 0x015c (REG_PON_I2C_MODE):
+				 * pcm1 gpio 12-15 bit 19, pcm2 gpio 24-27
+				 * bit 20, pcm_spi gpio 4-7 bit 18,
+				 * pcm_spi_int gpio 1 bit 17, pcm_spi_rst
+				 * gpio 2 bit 16, pcm_spi_cs1 gpio 3 bit 14,
+				 * pcm_spi_cs2 gpio 10 (FORCE_GPIO22_EN
+				 * bit 10). pcm_spi has its own four pins
+				 * and does not overlap either PCM bus, so a
+				 * board can run both PCM buses and the SLIC
+				 * control channel (ISI, multiplexed onto
+				 * pcm_spi) at the same time.
+				 */
+				pcm1_pins: pcm1-pins {
+					mux {
+						function = "pcm";
+						groups = "pcm1";
+					};
+				};
+
+				pcm2_pins: pcm2-pins {
+					mux {
+						function = "pcm";
+						groups = "pcm2";
+					};
+				};
+
+				pcm_spi_pins: pcm-spi-pins {
+					mux {
+						function = "pcm_spi";
+						groups = "pcm_spi", "pcm_spi_int", "pcm_spi_rst";
+					};
+				};
+
+				pcm_spi_cs1_pins: pcm-spi-cs1-pins {
+					mux {
+						function = "pcm_spi";
+						groups = "pcm_spi_cs1";
+					};
+				};
+
+				pcm_spi_cs2_pins: pcm-spi-cs2-pins {
+					mux {
+						function = "pcm_spi";
+						groups = "pcm_spi_cs2";
+					};
+				};
 			};
+		};
+
+		pcm0: pcm@1fbd0000 {
+			compatible = "econet,en7528-pcm";
+			reg = <0x1fbd0000 0x1000>;
+			reg-names = "pcm";
+
+			interrupts = <GIC_SHARED 11 IRQ_TYPE_LEVEL_HIGH>;
+
+			resets = <&scuclk EN7528_PCM1_RST>;
+			reset-names = "pcm";
+
+			pinctrl-names = "default";
+			pinctrl-0 = <&pcm1_pins>;
+
+			airoha,chip-scu = <&chip_scu>;
+			airoha,pcm-interface-control = <0xf5071306>;
+
+			airoha,tx-slot-config = <0x10301020 0x10501040
+						 0x10701060 0x10901080>;
+			airoha,rx-slot-config = <0x10301020 0x10501040
+						 0x10701060 0x10901080>;
+			airoha,dma-channel-mask = <0xff>;
+			/*
+			 * Two independent DMA packing bugs on this SoC's
+			 * gen1 PCM engine, not the same thing: byte order
+			 * within a 16-bit sample vs. the order of the two
+			 * samples packed into each 32-bit DMA word. A board
+			 * needs whichever its own driver expects; both
+			 * default off here.
+			 */
+			/* airoha,pcm-big-endian; */
+			airoha,pcm-swap-samples;
+
+			status = "disabled";
+		};
+
+		pcm1: pcm@1fbd2000 {
+			compatible = "econet,en7528-pcm";
+			reg = <0x1fbd2000 0x1000>;
+			reg-names = "pcm";
+			interrupts = <GIC_SHARED 32 IRQ_TYPE_LEVEL_HIGH>;
+			resets = <&scuclk EN7528_PCM2_RST>;
+			reset-names = "pcm";
+			pinctrl-names = "default";
+			pinctrl-0 = <&pcm2_pins>;
+			airoha,chip-scu = <&chip_scu>;
+			airoha,pcm-interface-control = <0xf5071306>;
+			airoha,pcm-swap-samples;
+			status = "disabled";
+		};
+
+		zsi0: zsi@1fbd1000 {
+			compatible = "econet,en7528-zsi";
+			reg = <0x1fbd1000 0x1000>;
+			reg-names = "zsi";
+
+			resets = <&scuclk EN7528_PCM1_ZSI_ISI_RST>;
+			reset-names = "zsi";
+
+			pinctrl-names = "default";
+			pinctrl-0 = <&pcm_spi_pins>, <&pcm_spi_cs1_pins>;
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+			airoha,zsi-gap-us = <5000>;
+			status = "disabled";
+		};
+
+		/*
+		 * ISI. Same wrapper as zsi0, same pins, same reset line --
+		 * ISI and ZSI are alternate framings of one physical block,
+		 * so a board enables at most one of the two at this address.
+		 * Chip-SCU clock-source/pinmux routing for the SLIC (chip
+		 * SCU 0x15c/0x130) lives in the SLIC driver, not here.
+		 */
+		isi0: spi@1fbd1000 {
+			compatible = "econet,en7528-isi-spi";
+			reg = <0x1fbd1000 0x1000>;
+			reg-names = "isi";
+
+			resets = <&scuclk EN7528_PCM1_ZSI_ISI_RST>,
+				 <&scuclk EN7528_PCM2_ZSI_ISI_RST>;
+			reset-names = "pcm1-isi", "pcm2-isi";
+			airoha,scu = <&scuclk>;
+			airoha,chip-scu = <&chip_scu>;
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
 		};
 
 		timer_hpt: timer@1fbf0400 {

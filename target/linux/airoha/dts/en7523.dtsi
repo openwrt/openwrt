@@ -374,6 +374,56 @@
 					pins = "gpio4";
 				};
 			};
+
+			/*
+			 * PCM/ISI pin groups from pinctrl-en7523.c. Mux
+			 * bits all live in chip_scu + 0x214
+			 * (REG_GPIO_SPI_CS1_MODE): pcm1 gpio 24-27 bit 12,
+			 * pcm2 gpio 16-19 bit 13, pcm_spi gpio 16-19,24-27
+			 * bit 16, pcm_spi_rst gpio 14 bit 8, pcm_spi_int
+			 * gpio 15 bit 9, pcm_spi_cs1 gpio 22 bit 17.
+			 * "pcm_spi" occupies the same eight pins as pcm1
+			 * and pcm2 together -- the SLIC control channel is
+			 * multiplexed onto the PCM pins, not a separate
+			 * bus. Do not select pcm1/pcm2 and pcm_spi at the
+			 * same time.
+			 */
+			pcm1_pins: pcm1-pins {
+				mux {
+					function = "pcm";
+					groups = "pcm1";
+				};
+			};
+
+			pcm2_pins: pcm2-pins {
+				mux {
+					function = "pcm";
+					groups = "pcm2";
+				};
+			};
+
+			/* PCM bus plus the multiplexed SLIC control channel */
+			pcm_spi_pins: pcm-spi-pins {
+				mux {
+					function = "pcm_spi";
+					groups = "pcm_spi", "pcm_spi_int", "pcm_spi_rst";
+				};
+			};
+
+			/* one chip select per SLIC; add only what the board wires */
+			pcm_spi_cs1_pins: pcm-spi-cs1-pins {
+				mux {
+					function = "pcm_spi";
+					groups = "pcm_spi_cs1";
+				};
+			};
+
+			pcm_spi_cs2_pins: pcm-spi-cs2-pins {
+				mux {
+					function = "pcm_spi";
+					groups = "pcm_spi_cs2_p128";
+				};
+			};
 		};
 
 		pwm: pwm {
@@ -381,6 +431,116 @@
 
 			#pwm-cells = <3>;
 		};
+	};
+
+	pcm0: pcm@1fbd0000 {
+		compatible = "airoha,en7523-pcm";
+		reg = <0x1fbd0000 0x1000>;
+		reg-names = "pcm";
+
+		interrupts = <GIC_SPI 27 IRQ_TYPE_LEVEL_HIGH>;
+
+		resets = <&scuclk EN7523_PCM1_RST>;
+		reset-names = "pcm";
+
+		/*
+		 * With a pinctrl state present the driver leaves the mux
+		 * alone -- the pinctrl core applies it before probe.
+		 * Boards using the multiplexed SLIC control channel want
+		 * &pcm_spi_pins here instead of &pcm1_pins.
+		 */
+		pinctrl-names = "default";
+		pinctrl-0 = <&pcm1_pins>;
+
+		/*
+		 * The computed default from the vendor's own config node
+		 * is 0x00051306; the value below is what a stock device
+		 * reads back. If a board misbehaves, 0x00051306 is the
+		 * other candidate.
+		 */
+		airoha,pcm-interface-control = <0xf5071306>;
+
+		airoha,tx-slot-config = <0x10301020 0x10501040
+					 0x10701060 0x10901080>;
+		airoha,rx-slot-config = <0x10301020 0x10501040
+					 0x10701060 0x10901080>;
+		airoha,dma-channel-mask = <0x0f>;
+
+		status = "disabled";
+	};
+
+	/*
+	 * Second PCM instance. Present in silicon and inside the vendor's
+	 * window, but the confirmed EN7523 map exposes one PCM interrupt
+	 * (GIC SPI 27) and a separate I2S interrupt (GIC SPI 48). Do not
+	 * assign the I2S interrupt to this speculative second PCM node.
+	 * Without "interrupts" the driver uses its polling worker.
+	 */
+	pcm1: pcm@1fbd2000 {
+		compatible = "airoha,en7523-pcm";
+		reg = <0x1fbd2000 0x1000>;
+		reg-names = "pcm";
+		pinctrl-names = "default";
+		pinctrl-0 = <&pcm2_pins>;
+		airoha,pcm-interface-control = <0xf5071306>;
+		status = "disabled";
+	};
+
+	/*
+	 * ZSI. On EN7523 the SLIC serial path does not use the old SIF
+	 * block, and it does not use spi@1fa10000 either -- that is the
+	 * flash controller. It rides the PCM pins through the wrapper in
+	 * this window, which is why this node wants &pcm_spi_pins and why
+	 * a board cannot have both this and pcm1_pins on pcm0.
+	 */
+	zsi0: zsi@1fbd1000 {
+		compatible = "airoha,en7523-zsi";
+		reg = <0x1fbd1000 0x1000>;
+		reg-names = "zsi";
+		resets = <&scuclk EN7523_PCM1_ZSI_ISI_RST>;
+		reset-names = "zsi";
+		clocks = <&scuclk EN7523_CLK_SLIC>;
+		clock-names = "slic";
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&pcm_spi_pins>, <&pcm_spi_cs1_pins>;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+		airoha,zsi-gap-us = <5000>;
+		status = "disabled";
+	};
+
+	/*
+	 * ISI. Same wrapper as zsi0 above, same pins, same reset line --
+	 * ISI and ZSI are alternate framings of one physical block, so a
+	 * board enables at most one of these two nodes, never both.
+	 *
+	 * Unlike zsi0, this needs the raw SCU phandles: SYS SCU 0x94
+	 * (interface mode) and chip SCU 0x214/0x1d0/0x264 (clock source,
+	 * pin routing, audio PLL) are not modelled as clock/reset
+	 * providers upstream, so en75xx_isi_spi.c reaches them directly.
+	 * EN7523 additionally needs the audio PLL (see en75xx_isi_spi.c);
+	 * that is what produces the 24.576 MHz PSCLK the SLIC needs here,
+	 * since the generic peripheral clock tops out at 5 MHz.
+	 */
+	isi0: spi@1fbd1000 {
+		compatible = "airoha,en7523-isi-spi";
+		reg = <0x1fbd1000 0x1000>;
+		reg-names = "isi";
+		resets = <&scuclk EN7523_PCM1_ZSI_ISI_RST>;
+		reset-names = "isi";
+		clocks = <&scuclk EN7523_CLK_SLIC>;
+		clock-names = "slic";
+		airoha,scu = <&scuclk>;
+		airoha,chip-scu = <&chip_scu>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&pcm_spi_pins>, <&pcm_spi_cs1_pins>;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
 	};
 
 	uart1: serial@1fbf0000 {
