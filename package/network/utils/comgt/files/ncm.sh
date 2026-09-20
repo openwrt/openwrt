@@ -60,9 +60,18 @@ ncm_query_id() {
 	local device="$1" script="$2" tag="$3"
 	local val
 
-	val=$(gcom -d "$device" -s "/etc/gcom/$script.gcom" | awk -v RS='\r?\n' -v tag="$tag" \
-		'NF && $0 !~ "AT\\+" tag { sub("\\+" tag ": ", ""); print tolower($1); exit; }')
-	[ "$val" = "error" ] && val=""
+	val=$(gcom -d "$device" -s "/etc/gcom/$script.gcom" | awk -v RS='\r?\n' -v tag="$tag" '
+		# echo of any AT command; remember whether it was the one we sent
+		$1 ~ /^AT[+*^#$]/ { seen = ($0 ~ ("AT\\+" tag)); next }
+		sub(("\\+" tag ": "), "") { print tolower($1); done = 1; exit }
+		# unsolicited result codes and bare status lines are not an answer
+		($1 ~ /^[+*^]/ || $1 == "OK" || $1 == "ERROR" || $1 == "RDY") { next }
+		NF {
+			if (seen) { print tolower($1); done = 1; exit }
+			if (fallback == "") fallback = tolower($1)
+		}
+		# no echo (ATE0): fall back to the first line that looked like an answer
+		END { if (!done && fallback != "") print fallback }')
 
 	echo "$val"
 }
