@@ -487,6 +487,14 @@ define Device/sinovoip_bpi-r2-pro
 endef
 TARGET_DEVICES += sinovoip_bpi-r2-pro
 
+define Device/widora_mangopi-m28k
+  $(Device/rk3528)
+  DEVICE_VENDOR := Widora
+  DEVICE_MODEL := MangoPi M28K
+  DEVICE_PACKAGES := kmod-button-hotplug kmod-input-adc-keys kmod-r8169
+endef
+TARGET_DEVICES += widora_mangopi-m28k
+
 define Device/xunlong_orangepi-r1-plus
   $(Device/rk3328)
   DEVICE_VENDOR := Xunlong
