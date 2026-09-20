@@ -49,6 +49,7 @@ PKG_GNULIB_MODS = \
 	tsearch
 
 HOST_BUILD_PARALLEL:=1
+HOST_CONFIGURE_CACHE:=1
 
 include $(INCLUDE_DIR)/host-build.mk
 
