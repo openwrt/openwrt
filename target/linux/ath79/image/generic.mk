@@ -576,7 +576,7 @@ define Device/avm_fritz300e
   SOC := ar7242
   IMAGE_SIZE := 15232k
   DEVICE_MODEL := FRITZ!WLAN Repeater 300E
-  DEVICE_PACKAGES += rssileds -swconfig
+  DEVICE_PACKAGES += rssileds kmod-phy-intel-xway -swconfig
   SUPPORTED_DEVICES += fritz300e
 endef
 TARGET_DEVICES += avm_fritz300e
