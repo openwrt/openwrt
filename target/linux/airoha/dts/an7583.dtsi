@@ -378,6 +378,12 @@
 			};
 		};
 
+		rng@1faa1000 {
+			compatible = "airoha,en7581-trng";
+			reg = <0x0 0x1faa1000 0x0 0xc04>;
+			interrupts = <GIC_SPI 35 IRQ_TYPE_LEVEL_HIGH>;
+		};
+
 		system-controller@1fbf0200 {
 			compatible = "syscon", "simple-mfd";
 			reg = <0x0 0x1fbf0200 0x0 0xc0>;
