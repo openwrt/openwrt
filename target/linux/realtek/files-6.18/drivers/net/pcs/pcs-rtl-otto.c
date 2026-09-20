@@ -176,6 +176,11 @@ enum rtpcs_page {
 #define SDS_EXT_REG03			0x03
 #define  RTL838X_REG_CML_SEL		BIT(1)
 
+/* PAGE_TGR_STD_1 */
+
+#define TGR_STD_1_REG00			0x00
+#define  RTL93XX_10GBASE_R_T_RX_LINK	BIT(12)
+
 /* PAGE_TGR_PRO_0 */
 
 #define TGR_PRO_0_REG00			0x00
@@ -257,6 +262,13 @@ enum rtpcs_page {
  * on RTL931x. GLI could mean "GMII Line Interface" or "Gigabit Line Interface".
  */
 #define  RTL931X_STOP_GLI_CLK		BIT(0) /* Only used on DIGI_1(). */
+
+#define WDIG_REG02			0x02
+#define  RTL93XX_DBGO_SEL_0		GENMASK(15, 0)
+
+#define WDIG_REG09			0x09
+#define  RTL93XX_FRC_SDS_MD_VAL		GENMASK(11, 7)
+#define  RTL93XX_FRC_SDS_MD_ON		BIT(6)
 
 /* PAGE_ANA_MISC */
 
@@ -1390,11 +1402,15 @@ static bool rtpcs_93xx_sds_10gr_link_up(struct rtpcs_serdes *sds)
 	int link;
 
 	/* Link status may be latched low; the second read is current state. */
-	link = rtpcs_sds_read_bits(sds, PAGE_TGR_STD_1, 0x0, 12, 12);
+	link = rtpcs_sds_read(sds, PAGE_TGR_STD_1, TGR_STD_1_REG00);
 	if (link < 0)
 		return false;
 
-	return rtpcs_sds_read_bits(sds, PAGE_TGR_STD_1, 0x0, 12, 12) == 1;
+	link = rtpcs_sds_read(sds, PAGE_TGR_STD_1, TGR_STD_1_REG00);
+	if (link < 0)
+		return false;
+
+	return (link & RTL93XX_10GBASE_R_T_RX_LINK) == RTL93XX_10GBASE_R_T_RX_LINK;
 }
 
 static int rtpcs_93xx_sds_set_autoneg(struct rtpcs_serdes *sds, unsigned int neg_mode,
@@ -1745,7 +1761,8 @@ static int rtpcs_93xx_sds_set_mac_driven_mode(struct rtpcs_serdes *sds,
 {
 	int ret;
 
-	ret = rtpcs_sds_write_bits(sds, PAGE_WDIG, 0x09, 6, 6, 0);
+	ret = rtpcs_sds_write_mask(sds, PAGE_WDIG, WDIG_REG09,
+				   RTL93XX_FRC_SDS_MD_ON, 0);
 	if (ret)
 		return ret;
 
@@ -1756,13 +1773,9 @@ static int rtpcs_93xx_sds_set_mac_driven_mode(struct rtpcs_serdes *sds,
 	return rtpcs_93xx_sds_apply_usxgmii_submode(sds, submode);
 }
 
-/*
- * Write the SerDes IP mode register: page 0x1f reg 0x09, bits 11:7 hold
- * the 5-bit mode value and bit 6 is the "force mode" enable. The same
- * physical field is used on RTL930x and RTL931x.
- */
 static int rtpcs_93xx_sds_set_ip_mode(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode)
 {
+	u16 prg_val;
 	int raw;
 
 	if (hw_mode >= RTPCS_SDS_MODE_MAX)
@@ -1772,8 +1785,9 @@ static int rtpcs_93xx_sds_set_ip_mode(struct rtpcs_serdes *sds, enum rtpcs_sds_m
 	if (raw < 0)
 		return -EOPNOTSUPP;
 
-	/* BIT(0) is force mode enable bit */
-	return rtpcs_sds_write_bits(sds, PAGE_WDIG, 0x09, 11, 6, raw << 1 | BIT(0));
+	prg_val = FIELD_PREP(RTL93XX_FRC_SDS_MD_VAL, raw) | RTL93XX_FRC_SDS_MD_ON;
+	return rtpcs_sds_write_mask(sds, PAGE_WDIG, WDIG_REG09,
+				    RTL93XX_FRC_SDS_MD_VAL | RTL93XX_FRC_SDS_MD_ON, prg_val);
 }
 
 static void rtpcs_93xx_sds_fill_caps(struct rtpcs_serdes *sds)
