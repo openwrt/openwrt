@@ -17,7 +17,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
 
 --- a/drivers/leds/Kconfig
 +++ b/drivers/leds/Kconfig
-@@ -328,6 +328,15 @@ config LEDS_COBALT_RAQ
+@@ -337,6 +337,15 @@ config LEDS_COBALT_RAQ
  	help
  	  This option enables support for the Cobalt Raq series LEDs.
  
@@ -35,8 +35,8 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  	depends on LEDS_CLASS_MULTICOLOR
 --- a/drivers/leds/Makefile
 +++ b/drivers/leds/Makefile
-@@ -81,6 +81,7 @@ obj-$(CONFIG_LEDS_POWERNV)		+= leds-powe
- obj-$(CONFIG_LEDS_PWM)			+= leds-pwm.o
+@@ -85,6 +85,7 @@ obj-$(CONFIG_LEDS_PWM)			+= leds-pwm.o
+ obj-$(CONFIG_LEDS_QNAP_MCU)		+= leds-qnap-mcu.o
  obj-$(CONFIG_LEDS_REGULATOR)		+= leds-regulator.o
  obj-$(CONFIG_LEDS_SC27XX_BLTC)		+= leds-sc27xx-bltc.o
 +obj-$(CONFIG_LEDS_SERCOMM_MSP430)	+= leds-sercomm-msp430.o
