@@ -5,6 +5,72 @@ Subject: [PATCH] tools/mkimage: allow to use different magic in uImages
 
 This patch makes it possible to set a custom image magic.
 
+--- a/tools/dumpimage.c
++++ b/tools/dumpimage.c
+@@ -7,12 +7,15 @@
+ 
+ #include "dumpimage.h"
+ #include <image.h>
++#include <stdint.h>
+ #include <version.h>
+ 
+ static void usage(void);
+ 
+ /* parameters initialized by core will be used by the image type code */
+-static struct image_tool_params params;
++static struct image_tool_params params = {
++	.magic = IH_MAGIC,
++};
+ 
+ /*
+  * dumpimage_extract_subimage -
+@@ -67,16 +70,26 @@ int main(int argc, char **argv)
+ 	int ifd = -1;
+ 	struct stat sbuf;
+ 	char *ptr;
++	unsigned long long magic;
+ 	int retval = EXIT_SUCCESS;
+ 	struct image_type_params *tparams = NULL;
+ 
+ 	params.cmdname = *argv;
+ 
+-	while ((opt = getopt(argc, argv, "hlo:T:p:V")) != -1) {
++	while ((opt = getopt(argc, argv, "hlM:o:T:p:V")) != -1) {
+ 		switch (opt) {
+ 		case 'l':
+ 			params.lflag = 1;
+ 			break;
++		case 'M':
++			magic = strtoull(optarg, &ptr, 16);
++			if (*ptr || magic > UINT32_MAX) {
++				fprintf(stderr, "%s: invalid magic %s\n",
++					params.cmdname, optarg);
++				exit(EXIT_FAILURE);
++			}
++			params.magic = magic;
++			break;
+ 		case 'o':
+ 			params.outfile = optarg;
+ 			params.iflag = 1;
+@@ -201,13 +214,15 @@ int main(int argc, char **argv)
+ 
+ static void usage(void)
+ {
+-	fprintf(stderr, "Usage: %s [-T type] -l image\n"
++	fprintf(stderr, "Usage: %s [-T type] [-M magic] -l image\n"
+ 		"          -l ==> list image header information\n"
+-		"          -T ==> parse image file as 'type'\n",
++		"          -T ==> parse image file as 'type'\n"
++		"          -M ==> set expected image magic to 'magic'\n",
+ 		params.cmdname);
+ 	fprintf(stderr,
+-		"       %s [-T type] [-p position] [-o outfile] image\n"
++		"       %s [-T type] [-M magic] [-p position] [-o outfile] image\n"
+ 		"          -T ==> declare image type as 'type'\n"
++		"          -M ==> set expected image magic to 'magic'\n"
+ 		"          -p ==> 'position' (starting at 0) of the component to extract from image\n"
+ 		"          -o ==> extract component to file 'outfile'\n",
+ 		params.cmdname);
 --- a/tools/mkimage.c
 +++ b/tools/mkimage.c
 @@ -26,6 +26,7 @@ static struct image_tool_params params =
