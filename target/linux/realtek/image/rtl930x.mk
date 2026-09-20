@@ -253,6 +253,16 @@ define Device/ubnt_usw-aggregation
 endef
 TARGET_DEVICES += ubnt_usw-aggregation
 
+define Device/ubnt_usw-pro-max-24-poe
+  SOC := rtl9302
+  DEVICE_VENDOR := Ubiquiti
+  DEVICE_MODEL := UniFi USW Pro Max 24 PoE
+  IMAGE_SIZE := 30912k
+  DEVICE_PACKAGES := kmod-hwmon-adt7475 kmod-pse-realtek-mcu-i2c
+  $(Device/kernel-lzma)
+endef
+TARGET_DEVICES += ubnt_usw-pro-max-24-poe
+
 define Device/vimin_vm-s100-0800ms
   SOC := rtl9303
   UIMAGE_MAGIC := 0x93000000

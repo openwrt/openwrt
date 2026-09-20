@@ -1,0 +1,385 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+/dts-v1/;
+
+#include "rtl930x.dtsi"
+
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/gpio/gpio.h>
+
+/ {
+	compatible = "ubnt,usw-pro-max-24-poe", "realtek,rtl9302b-soc";
+	model = "UniFi USW Pro Max 24 PoE";
+
+	aliases {
+		label-mac-device = &ethernet0;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,115200 earlycon";
+		stdout-path = "serial0:115200n8";
+	};
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x00000000 0x10000000>, /* first 256 MiB */
+		      <0x20000000 0x10000000>; /* remaining 256 MiB */
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		key-reset {
+			label = "reset";
+			gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	led_set: led_set@0 {
+		compatible = "realtek,rtl9300-leds";
+		clock-frequency = <1250000>;
+		active-low;
+
+		/*
+		 * selects all speed modes to trigger a LED. This doesn't correspond
+		 * to actual LED behavior. The serial stream is fed into the Etherlighting
+		 * MCU which translates that into the LEDs, managing color, behavior etc. in
+		 * addition.
+		 */
+		led_set0 = <(RTL93XX_LED_SET_10G | RTL93XX_LED_SET_5G | RTL93XX_LED_SET_2P5G |
+			     RTL93XX_LED_SET_1G | RTL93XX_LED_SET_100M | RTL93XX_LED_SET_10M |
+			     RTL93XX_LED_SET_LINK | RTL93XX_LED_SET_ACT)>;
+	};
+
+	sfp1: sfp-p1 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c_sfp1>;
+		los-gpio = <&gpio1 0 GPIO_ACTIVE_HIGH>;
+		mod-def0-gpio = <&gpio1 2 GPIO_ACTIVE_LOW>;
+		tx-disable-gpio = <&gpio1 3 GPIO_ACTIVE_HIGH>;
+		tx-fault-gpio = <&gpio1 1 GPIO_ACTIVE_HIGH>;
+	};
+
+	sfp2: sfp-p2 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c_sfp2>;
+		los-gpio = <&gpio1 4 GPIO_ACTIVE_HIGH>;
+		mod-def0-gpio = <&gpio1 6 GPIO_ACTIVE_LOW>;
+		tx-disable-gpio = <&gpio1 7 GPIO_ACTIVE_HIGH>;
+		tx-fault-gpio = <&gpio1 5 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0xa0000>;
+				read-only;
+			};
+
+			partition@a0000 {
+				label = "u-boot-env";
+				reg = <0xa0000 0x10000>;
+			};
+
+			/*
+			 * Vendor layout has two kernel partitions:
+			 * (1) <0xb0000 0xf10000> = "kernel0"
+			 * (2) <0xfc0000 0xf20000> = "kernel1"
+			 */
+			partition@b0000 {
+				label = "firmware";
+				reg = <0xb0000 0x1e30000>;
+				compatible = "openwrt,uimage", "denx,uimage";
+			};
+
+			partition@1ee0000 {
+				label = "cdata";
+				reg = <0x1ee0000 0x10000>;
+			};
+
+			partition@1ef0000 {
+				label = "cfg";
+				reg = <0x1ef0000 0x100000>;
+			};
+
+			partition@1ff0000 {
+				label = "EEPROM";
+				reg = <0x1ff0000 0x10000>;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					factory_macaddr: macaddr@0 {
+						compatible = "mac-base";
+						reg = <0x0 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
+		};
+	};
+};
+
+&ethernet0 {
+	nvmem-cells = <&factory_macaddr 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&gpio0 {
+	/*
+	 * GPIO 1 is the global reset pin shared by all PHYs across all MDIO
+	 * buses. It is intentionally not declared as reset-gpios on any bus:
+	 * the MDIO driver / phylink only support a reset GPIO per bus, not on
+	 * the parent controller. Attaching it to a single bus would still reset
+	 * the PHYs on the other buses as a side effect, leaving their software
+	 * state out of sync with the hardware and likely breaking them.
+	 */
+	phy_reset_hog {
+		gpio-hog;
+		gpios = <1 GPIO_ACTIVE_LOW>;
+		output-low;
+		line-name = "phy-reset";
+	};
+};
+
+&i2c_mst1 {
+	status = "okay";
+
+	i2c1: i2c@1 {
+		reg = <1>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		adt7475@2e {
+			compatible = "adi,adt7475";
+			reg = <0x2e>;
+		};
+	};
+
+	i2c_sfp1: i2c@2 { reg = <2>; };
+	i2c_sfp2: i2c@3 { reg = <3>; };
+	i2c4: i2c@4 { reg = <4>; }; /* Etherlighting MCU at 0x66 */
+
+	i2c6: i2c@6 {
+		reg = <6>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		gpio1: gpio@25 {
+			compatible = "nxp,pca9555";
+			reg = <0x25>;
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+	};
+};
+
+&i2c_mst2 {
+	status = "okay";
+
+	i2c0: i2c@0 {
+		reg = <0>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		pse: ethernet-pse@20 {
+			compatible = "ubnt,usw-pro-max-24-poe-pse", "realtek,pse-mcu-gen2-smbus";
+			reg = <0x20>;
+
+			reset-gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
+
+			pse-pis {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				PSE_PI(0)
+				PSE_PI(1)
+				PSE_PI(2)
+				PSE_PI(3)
+				PSE_PI(4)
+				PSE_PI(5)
+				PSE_PI(6)
+				PSE_PI(7)
+				PSE_PI(8)
+				PSE_PI(9)
+				PSE_PI(10)
+				PSE_PI(11)
+				PSE_PI(12)
+				PSE_PI(13)
+				PSE_PI(14)
+				PSE_PI(15)
+				PSE_PI(16)
+				PSE_PI(17)
+				PSE_PI(18)
+				PSE_PI(19)
+				PSE_PI(20)
+				PSE_PI(21)
+				PSE_PI(22)
+				PSE_PI(23)
+			};
+		};
+	};
+
+	i2c7: i2c@7 {
+		reg = <7>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		gpio2: gpio@22 {
+			compatible = "nxp,pca9555";
+			reg = <0x22>;
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+	};
+};
+
+&mdio_bus0 {
+	/* RTL8218E */
+	ethernet-phy-package@0 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0>;
+
+		PHY_C22(0, 0)
+		PHY_C22(1, 1)
+		PHY_C22(2, 2)
+		PHY_C22(3, 3)
+		PHY_C22(4, 4)
+		PHY_C22(5, 5)
+		PHY_C22(6, 6)
+		PHY_C22(7, 7)
+	};
+};
+
+&mdio_bus1 {
+	/* RTL8218E */
+	ethernet-phy-package@8 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <8>;
+
+		PHY_C22(8, 8)
+		PHY_C22(9, 9)
+		PHY_C22(10, 10)
+		PHY_C22(11, 11)
+		PHY_C22(12, 12)
+		PHY_C22(13, 13)
+		PHY_C22(14, 14)
+		PHY_C22(15, 15)
+	};
+};
+
+&mdio_bus2 {
+	/* RTL8224 */
+	ethernet-phy-package@0 {
+		reg = <0>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		PHY_C45(16, 0)
+		PHY_C45(17, 1)
+		PHY_C45(18, 2)
+		PHY_C45(19, 3)
+	};
+
+	/* RTL8224 */
+	ethernet-phy-package@4 {
+		reg = <4>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		PHY_C45(20, 4)
+		PHY_C45(21, 5)
+		PHY_C45(22, 6)
+		PHY_C45(23, 7)
+	};
+};
+
+&switch0 {
+	ethernet-ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		SWITCH_PORT_LED(0, 1, 2, 0, 0, usxgmii)
+		SWITCH_PORT_LED(1, 2, 2, 1, 0, usxgmii)
+		SWITCH_PORT_LED(2, 3, 2, 2, 0, usxgmii)
+		SWITCH_PORT_LED(3, 4, 2, 3, 0, usxgmii)
+		SWITCH_PORT_LED(4, 5, 2, 4, 0, usxgmii)
+		SWITCH_PORT_LED(5, 6, 2, 5, 0, usxgmii)
+		SWITCH_PORT_LED(6, 7, 2, 6, 0, usxgmii)
+		SWITCH_PORT_LED(7, 8, 2, 7, 0, usxgmii)
+
+		SWITCH_PORT_LED(8, 9, 3, 0, 0, usxgmii)
+		SWITCH_PORT_LED(9, 10, 3, 1, 0, usxgmii)
+		SWITCH_PORT_LED(10, 11, 3, 2, 0, usxgmii)
+		SWITCH_PORT_LED(11, 12, 3, 3, 0, usxgmii)
+		SWITCH_PORT_LED(12, 13, 3, 4, 0, usxgmii)
+		SWITCH_PORT_LED(13, 14, 3, 5, 0, usxgmii)
+		SWITCH_PORT_LED(14, 15, 3, 6, 0, usxgmii)
+		SWITCH_PORT_LED(15, 16, 3, 7, 0, usxgmii)
+
+		SWITCH_PORT_LED(16, 17, 4, 0, 0, 10g-qxgmii)
+		SWITCH_PORT_LED(17, 18, 4, 1, 0, 10g-qxgmii)
+		SWITCH_PORT_LED(18, 19, 4, 2, 0, 10g-qxgmii)
+		SWITCH_PORT_LED(19, 20, 4, 3, 0, 10g-qxgmii)
+
+		SWITCH_PORT_LED(20, 21, 5, 0, 0, 10g-qxgmii)
+		SWITCH_PORT_LED(21, 22, 5, 1, 0, 10g-qxgmii)
+		SWITCH_PORT_LED(22, 23, 5, 2, 0, 10g-qxgmii)
+		SWITCH_PORT_LED(23, 24, 5, 3, 0, 10g-qxgmii)
+
+		SWITCH_PORT_SFP(24, 25, 6, 0, 1)
+		SWITCH_PORT_SFP(25, 26, 7, 0, 2)
+
+		/* CPU port */
+		port@28 {
+			ethernet = <&ethernet0>;
+			reg = <28>;
+			phy-mode = "internal";
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
+		};
+	};
+};
+
+&phy0 { pses = <&pse_pi0>; };
+&phy1 { pses = <&pse_pi1>; };
+&phy2 { pses = <&pse_pi2>; };
+&phy3 { pses = <&pse_pi3>; };
+&phy4 { pses = <&pse_pi4>; };
+&phy5 { pses = <&pse_pi5>; };
+&phy6 { pses = <&pse_pi6>; };
+&phy7 { pses = <&pse_pi7>; };
+&phy8 { pses = <&pse_pi8>; };
+&phy9 { pses = <&pse_pi9>; };
+&phy10 { pses = <&pse_pi10>; };
+&phy11 { pses = <&pse_pi11>; };
+&phy12 { pses = <&pse_pi12>; };
+&phy13 { pses = <&pse_pi13>; };
+&phy14 { pses = <&pse_pi14>; };
+&phy15 { pses = <&pse_pi15>; };
+&phy16 { pses = <&pse_pi16>; };
+&phy17 { pses = <&pse_pi17>; };
+&phy18 { pses = <&pse_pi18>; };
+&phy19 { pses = <&pse_pi19>; };
+&phy20 { pses = <&pse_pi20>; };
+&phy21 { pses = <&pse_pi21>; };
+&phy22 { pses = <&pse_pi22>; };
+&phy23 { pses = <&pse_pi23>; };
