@@ -1,0 +1,44 @@
+#!/bin/sh
+#
+# Points the autoconf result cache at the file that the build system keeps for
+# this package. Set CONFIGURE_CACHE_DIR to switch this on; see rules.mk.
+#
+# configure sources the site scripts before it loads the cache, so setting
+# cache_file here has the same effect as --cache-file, without a configure
+# argument that a hand written configure script would choke on.
+
+# Autoconf before 2.70 reads CONFIG_SITE as a single path name, so the site
+# script of the architecture cannot be a second word in it. Load it from here.
+if [ -n "$CONFIG_SITE_BASE" ] && [ -r "$CONFIG_SITE_BASE" ]; then
+	. "$CONFIG_SITE_BASE"
+fi
+
+if [ -n "$CONFIGURE_CACHE_FILE" ]; then
+	configure_cache_dir=${CONFIGURE_CACHE_FILE%/*}
+
+	mkdir -p "$configure_cache_dir" 2>/dev/null
+
+	# A change of the configure arguments gives a new file name. Drop the
+	# file of the previous arguments so that the directory holds one cache
+	# per package.
+	for configure_cache_stale in "$configure_cache_dir"/*.cache; do
+		[ -f "$configure_cache_stale" ] || continue
+		[ "$configure_cache_stale" = "$CONFIGURE_CACHE_FILE" ] || rm -f "$configure_cache_stale"
+	done
+
+	# A cached program path outlives a wipe of staging_dir, so it can name a
+	# tool that is gone, or miss one that the build installed since. Drop
+	# those answers and let configure search PATH again. A search runs no
+	# compiler, and the compiler is where the time goes.
+	if [ -f "$CONFIGURE_CACHE_FILE" ]; then
+		grep -v -e '^ac_cv_path_' -e '^ac_cv_prog_' \
+			"$CONFIGURE_CACHE_FILE" > "$CONFIGURE_CACHE_FILE.tmp"
+		mv -f "$CONFIGURE_CACHE_FILE.tmp" "$CONFIGURE_CACHE_FILE"
+	fi
+
+	cache_file=$CONFIGURE_CACHE_FILE
+
+	# A configure script that runs further configure scripts must not hand
+	# this cache to them. Their checks run with different flags.
+	unset CONFIGURE_CACHE_FILE configure_cache_dir configure_cache_stale
+fi

@@ -188,11 +188,19 @@ include $(INCLUDE_DIR)/autotools.mk
 _pkg_target:=$(if $(QUILT),,.)
 
 override MAKEFLAGS=
-CONFIG_SITE:=$(INCLUDE_DIR)/site/$(ARCH)
+CONFIG_SITE_BASE:=$(INCLUDE_DIR)/site/$(ARCH)
+CONFIG_SITE:=$(INCLUDE_DIR)/site/cache
+# Set PKG_CONFIGURE_CACHE:=1 to keep the autoconf result cache of this package
+# between builds. Opt in only after you check that the package configures the
+# same way with a warm cache as it does without one. A configure script that
+# changes CPPFLAGS or CFLAGS inside an AC_CACHE_VAL body is not safe: a warm
+# cache restores the value and skips the change. Compare the generated
+# Makefile, not only config.h, because that is where the difference shows.
+PKG_CONFIGURE_CACHE_FILE = $(CONFIGURE_CACHE_BASE)/$(TOOLCHAIN_DIR_NAME)/$(notdir $(PKG_BUILD_DIR))/$(call strhash,$(CONFIGURE_ARGS) $(CONFIGURE_VARS)).cache
 CUR_MAKEFILE:=$(filter-out Makefile,$(firstword $(MAKEFILE_LIST)))
 SUBMAKE:=$(NO_TRACE_MAKE) $(if $(CUR_MAKEFILE),-f $(CUR_MAKEFILE))
 PKG_CONFIG_PATH=$(STAGING_DIR)/usr/lib/pkgconfig:$(STAGING_DIR)/usr/share/pkgconfig
-unexport QUIET CONFIG_SITE
+unexport QUIET CONFIG_SITE CONFIG_SITE_BASE
 
 ifeq ($(DUMP)$(filter prereq clean refresh update,$(MAKECMDGOALS)),)
   ifneq ($(if $(QUILT),,$(CONFIG_AUTOREBUILD)),)
@@ -224,6 +232,7 @@ define Build/Exports/Default
   $(1) : export STAGING_PREFIX=$$(STAGING_DIR)/usr
   $(1) : export PATH=$$(TARGET_PATH_PKG)
   $(1) : export CONFIG_SITE:=$$(CONFIG_SITE)
+  $(1) : export CONFIG_SITE_BASE:=$$(CONFIG_SITE_BASE)
   $(1) : export PKG_CONFIG_PATH:=$$(PKG_CONFIG_PATH)
   $(1) : export PKG_CONFIG_LIBDIR:=$$(PKG_CONFIG_PATH)
   $(1) : export GIT_CEILING_DIRECTORIES:=$$(BUILD_DIR)
@@ -258,6 +267,7 @@ define Build/CoreTargets
 	$(call BuildTimeLog,end,prepare)
 
   $(call Build/Exports,$(STAMP_CONFIGURED))
+  $(if $(and $(CONFIGURE_CACHE_BASE),$(PKG_CONFIGURE_CACHE)),$(STAMP_CONFIGURED) : export CONFIGURE_CACHE_FILE:=$(PKG_CONFIGURE_CACHE_FILE))
   $(STAMP_CONFIGURED): $(STAMP_PREPARED) $(STAMP_CONFIGURED_DEPENDS)
 	$(call BuildTimeLog,begin,configure)
 	rm -f $(STAMP_CONFIGURED_WILDCARD)

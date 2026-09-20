@@ -206,6 +206,33 @@ else
   BuildTimeLog =
 endif
 
+# A package that sets PKG_CONFIGURE_CACHE or HOST_CONFIGURE_CACHE keeps the
+# autoconf result cache of its configure checks, so a package that is cleaned
+# and built again reads the answers instead of running the checks. The cache
+# lives in tmp/, which dirclean removes, so a full reset of the tree starts
+# from cold answers.
+#
+# The path covers everything that changes an answer: the toolchain for a target
+# package, the host compiler for a host package, and a hash of the configure
+# arguments and build flags for both. autoconf refuses a cache that it wrote
+# with different flags on top of that.
+#
+# A package must opt in, because a cache is only correct for a configure script
+# that keeps its side effects outside the AC_CACHE_VAL body. ncurses appends
+# -D_XOPEN_SOURCE to CPPFLAGS inside that body, so a cached run restores the
+# value, skips the append and then fails to compile. Read the note above
+# PKG_CONFIGURE_CACHE in package.mk before you opt a package in.
+#
+# Set CONFIGURE_CACHE_DIR to a path of your own to keep the cache elsewhere, or
+# to the empty string to run every check again.
+ifeq ($(origin CONFIGURE_CACHE_DIR),undefined)
+  CONFIGURE_CACHE_DIR:=$(TMP_DIR)/configure-cache
+endif
+ifneq ($(CONFIGURE_CACHE_DIR),)
+  CONFIGURE_CACHE_BASE:=$(if $(filter /%,$(CONFIGURE_CACHE_DIR)),$(CONFIGURE_CACHE_DIR),$(TOPDIR)/$(CONFIGURE_CACHE_DIR))
+  strhash=$(shell printf '%s' '$(subst ','\'',$(1))' | $(MKHASH) md5)
+endif
+
 BUILD_DIR_HOST:=$(if $(IS_PACKAGE_BUILD),$(BUILD_DIR_BASE)/hostpkg,$(BUILD_DIR_BASE)/host)
 STAGING_DIR_HOST:=$(abspath $(STAGING_DIR)/../host)
 STAGING_DIR_HOSTPKG:=$(abspath $(STAGING_DIR)/../hostpkg)
@@ -358,6 +385,14 @@ export TARGET_CC_NOCACHE
 export TARGET_CXX_NOCACHE
 export HOSTCC_NOCACHE
 export HOSTCXX_NOCACHE
+
+# A new host compiler behind an unchanged name changes what a configure check
+# answers, and autoconf does not detect that. gcc 14 turned an implicit function
+# declaration into an error, which changed many of those answers. The configure
+# cache of a host package is therefore keyed on the compiler as well. prereq
+# builds mkhash and links the compiler into staging_dir, so both exist by the
+# time a configure recipe asks for this.
+host_cc_id = $(if $(filter undefined,$(origin __host_cc_id)),$(eval __host_cc_id:=$(shell $(HOSTCC_NOCACHE) --version 2>/dev/null | head -1 | $(MKHASH) md5)))$(__host_cc_id)
 
 ifneq ($(CONFIG_CCACHE),)
   TARGET_CC:= ccache $(TARGET_CC)
