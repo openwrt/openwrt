@@ -894,19 +894,6 @@ static int rtpcs_sds_apply_config(struct rtpcs_serdes *sds,
 	return 0;
 }
 
-static int rtpcs_sds_apply_config_xsg(struct rtpcs_serdes *sds,
-				      const struct rtpcs_sds_config *config, size_t count)
-{
-	int ret;
-
-	for (size_t i = 0; i < count; i++) {
-		ret = rtpcs_sds_xsg_write(sds, config[i].page, config[i].reg, config[i].data);
-		if (ret)
-			return ret;
-	}
-	return 0;
-}
-
 /*
  * Allocate a regmap_field on the SoC-side register map for this SerDes and
  * store the resulting pointer in *dst. Convenience helper for per-SerDes
@@ -1951,10 +1938,10 @@ static const struct rtpcs_sds_tx_config rtpcs_930x_sds_tx_config_phy = {
  */
 static int rtpcs_930x_sds_get_phys_sds_id(int sds_id, int page)
 {
-        if (sds_id == 3 && page < 4)
-                return 10;
+	if (sds_id == 3 && page < PAGE_TGR_STD_0)
+		return 10;
 
-        return sds_id;
+	return sds_id;
 }
 
 static int rtpcs_930x_sds_op_read(struct rtpcs_serdes *sds, enum rtpcs_page page, int regnum,
@@ -1992,24 +1979,14 @@ static int rtpcs_930x_sds_op_xsg_write(struct rtpcs_serdes *sds, enum rtpcs_page
 {
 	int phys_sds_id, ret;
 
-	switch (sds->id) {
-	case 2:
-		phys_sds_id = 2;
-		break;
-	case 3:
-		phys_sds_id = 10;
-		break;
-	default:
+	if ((sds->id != 2 && sds->id != 3) || page >= PAGE_TGR_STD_0)
 		return -ENOTSUPP;
-	}
 
-	if (page >= 4)
-		return sds->ops->write(sds, page, regnum, bithigh, bitlow, value);
-
-	ret = __rtpcs_sds_write_raw(sds->ctrl, phys_sds_id, page, regnum, bithigh, bitlow, value);
+	ret = rtpcs_930x_sds_op_write(sds, page, regnum, bithigh, bitlow, value);
 	if (ret)
 		return ret;
 
+	phys_sds_id = rtpcs_930x_sds_get_phys_sds_id(sds->id, page);
 	return __rtpcs_sds_write_raw(sds->ctrl, phys_sds_id + 1, page, regnum, bithigh, bitlow,
 				     value);
 }
@@ -3076,12 +3053,9 @@ static const struct rtpcs_sds_config rtpcs_930x_sds_cfg_final_odd[] =
 
 static int rtpcs_930x_sds_config_hw_mode(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode)
 {
-	int (*apply_fn)(struct rtpcs_serdes *, const struct rtpcs_sds_config *, size_t);
 	bool is_xsgmii = (hw_mode == RTPCS_SDS_MODE_XSGMII);
 	bool is_even_sds = (sds == rtpcs_sds_get_even(sds));
 	int ret;
-
-	apply_fn = is_xsgmii ? rtpcs_sds_apply_config_xsg : rtpcs_sds_apply_config;
 
 	if (hw_mode == RTPCS_SDS_MODE_QSGMII) {
 		if (sds->type != RTPCS_SDS_TYPE_5G)
@@ -3104,7 +3078,8 @@ static int rtpcs_930x_sds_config_hw_mode(struct rtpcs_serdes *sds, enum rtpcs_sd
 		}
 	}
 
-	ret = apply_fn(sds, rtpcs_930x_sds_cfg_ana_com, ARRAY_SIZE(rtpcs_930x_sds_cfg_ana_com));
+	ret = rtpcs_sds_apply_config(sds, rtpcs_930x_sds_cfg_ana_com,
+				     ARRAY_SIZE(rtpcs_930x_sds_cfg_ana_com));
 	if (ret < 0)
 		return ret;
 
@@ -3141,13 +3116,13 @@ static int rtpcs_930x_sds_config_hw_mode(struct rtpcs_serdes *sds, enum rtpcs_sd
 
 	case RTPCS_SDS_MODE_XSGMII:
 	case RTPCS_SDS_MODE_USXGMII:
-		ret = apply_fn(sds, rtpcs_930x_sds_cfg_ana_10g,
-			       ARRAY_SIZE(rtpcs_930x_sds_cfg_ana_10g));
+		ret = rtpcs_sds_apply_config(sds, rtpcs_930x_sds_cfg_ana_10g,
+					     ARRAY_SIZE(rtpcs_930x_sds_cfg_ana_10g));
 		if (ret < 0)
 			return ret;
 
-		ret = apply_fn(sds, rtpcs_930x_sds_cfg_usxgmii_xsgmii,
-			       ARRAY_SIZE(rtpcs_930x_sds_cfg_usxgmii_xsgmii));
+		ret = rtpcs_sds_apply_config(sds, rtpcs_930x_sds_cfg_usxgmii_xsgmii,
+					     ARRAY_SIZE(rtpcs_930x_sds_cfg_usxgmii_xsgmii));
 		if (ret < 0)
 			return ret;
 
@@ -3160,11 +3135,11 @@ static int rtpcs_930x_sds_config_hw_mode(struct rtpcs_serdes *sds, enum rtpcs_sd
 	}
 
 	if (is_even_sds)
-		ret = apply_fn(sds, rtpcs_930x_sds_cfg_final_even,
-			       ARRAY_SIZE(rtpcs_930x_sds_cfg_final_even));
+		ret = rtpcs_sds_apply_config(sds, rtpcs_930x_sds_cfg_final_even,
+					     ARRAY_SIZE(rtpcs_930x_sds_cfg_final_even));
 	else
-		ret = apply_fn(sds, rtpcs_930x_sds_cfg_final_odd,
-			       ARRAY_SIZE(rtpcs_930x_sds_cfg_final_odd));
+		ret = rtpcs_sds_apply_config(sds, rtpcs_930x_sds_cfg_final_odd,
+					     ARRAY_SIZE(rtpcs_930x_sds_cfg_final_odd));
 
 	if (ret < 0)
 		return ret;
