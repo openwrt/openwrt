@@ -2219,6 +2219,7 @@ static int rtpcs_930x_sds_tx_config(struct rtpcs_serdes *sds, enum rtpcs_sds_mod
 				    const struct rtpcs_sds_tx_config *tx_conf)
 {
 	enum rtpcs_page page;
+	u16 mask, val;
 	int ret;
 
 	ret = rtpcs_93xx_sds_get_cmu_page(hw_mode);
@@ -2230,29 +2231,22 @@ static int rtpcs_930x_sds_tx_config(struct rtpcs_serdes *sds, enum rtpcs_sds_mod
 
 	ret = rtpcs_sds_write_mask(sds, page, ANA_SPD_EXT_REG24, RTL930X_TX_IMPEDANCE,
 				   FIELD_PREP(RTL930X_TX_IMPEDANCE, tx_conf->impedance));
-	if (!ret)
-		ret = rtpcs_sds_write_mask(sds, page, ANA_SPD_EXT_REG07, RTL930X_TX_MAIN_AMP,
-					   FIELD_PREP(RTL930X_TX_MAIN_AMP, tx_conf->main_amp));
 
-	/* pre-amp */
 	if (!ret)
 		ret = rtpcs_sds_write_mask(sds, page, ANA_SPD_EXT_REG01, RTL930X_TX_PRE_AMP,
 					   FIELD_PREP(RTL930X_TX_PRE_AMP, tx_conf->pre_amp));
 	if (!ret)
-		ret = rtpcs_sds_write_mask(sds, page, ANA_SPD_EXT_REG07,
-					   RTL930X_TX_PRE_AMP_EN,
-					   tx_conf->pre_amp ? RTL930X_TX_PRE_AMP_EN : 0);
-
-	/* post-amp */
-	if (!ret)
 		ret = rtpcs_sds_write_mask(sds, page, ANA_SPD_EXT_REG06, RTL930X_TX_POST_AMP,
 					   FIELD_PREP(RTL930X_TX_POST_AMP, tx_conf->post_amp));
-	if (!ret)
-		ret = rtpcs_sds_write_mask(sds, page, ANA_SPD_EXT_REG07,
-					   RTL930X_TX_POST_AMP_EN,
-					   tx_conf->post_amp ? RTL930X_TX_POST_AMP_EN : 0);
 
-	return ret;
+	if (ret)
+		return ret;
+
+	mask = RTL930X_TX_MAIN_AMP | RTL930X_TX_PRE_AMP_EN | RTL930X_TX_POST_AMP_EN;
+	val = FIELD_PREP(RTL930X_TX_MAIN_AMP, tx_conf->main_amp) |
+	      (tx_conf->pre_amp ? RTL930X_TX_PRE_AMP_EN : 0) |
+	      (tx_conf->post_amp ? RTL930X_TX_POST_AMP_EN : 0);
+	return rtpcs_sds_write_mask(sds, page, ANA_SPD_EXT_REG07, mask, val);
 }
 
 static int rtpcs_930x_sds_rxeq_set_debug(struct rtpcs_serdes *sds, unsigned int debug_sel)
