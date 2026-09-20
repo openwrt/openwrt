@@ -50,9 +50,9 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +};
 --- a/drivers/irqchip/Kconfig
 +++ b/drivers/irqchip/Kconfig
-@@ -110,6 +110,10 @@ config I8259
- 	bool
- 	select IRQ_DOMAIN
+@@ -143,6 +143,10 @@ config BCM2712_MIP
+ 
+ 	  If unsure say n.
  
 +config BCM6345_EXT_IRQ
 +	bool "BCM6345 External IRQ Controller"
@@ -61,16 +61,6 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  config BCM6345_L1_IRQ
  	bool
  	select GENERIC_IRQ_CHIP
---- a/drivers/irqchip/Makefile
-+++ b/drivers/irqchip/Makefile
-@@ -62,6 +62,7 @@ obj-$(CONFIG_XTENSA_MX)			+= irq-xtensa-
- obj-$(CONFIG_XILINX_INTC)		+= irq-xilinx-intc.o
- obj-$(CONFIG_IRQ_CROSSBAR)		+= irq-crossbar.o
- obj-$(CONFIG_SOC_VF610)			+= irq-vf610-mscm-ir.o
-+obj-$(CONFIG_BCM6345_EXT_IRQ)		+= irq-bcm6345-ext.o
- obj-$(CONFIG_BCM6345_L1_IRQ)		+= irq-bcm6345-l1.o
- obj-$(CONFIG_BCM7038_L1_IRQ)		+= irq-bcm7038-l1.o
- obj-$(CONFIG_BCM7120_L2_IRQ)		+= irq-bcm7120-l2.o
 --- /dev/null
 +++ b/drivers/irqchip/irq-bcm6345-ext.c
 @@ -0,0 +1,280 @@
@@ -371,3 +361,13 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +void bcm6345_ext_intc_init(int n_irqs, int *irqs, void __iomem *reg, int shift);
 +
 +#endif /* __INCLUDE_LINUX_IRQCHIP_IRQ_BCM6345_EXT_H */
+--- a/drivers/irqchip/Makefile
++++ b/drivers/irqchip/Makefile
+@@ -68,6 +68,7 @@ obj-$(CONFIG_XILINX_INTC)		+= irq-xilinx
+ obj-$(CONFIG_IRQ_CROSSBAR)		+= irq-crossbar.o
+ obj-$(CONFIG_SOC_VF610)			+= irq-vf610-mscm-ir.o
+ obj-$(CONFIG_BCM2712_MIP)               += irq-bcm2712-mip.o
++obj-$(CONFIG_BCM6345_EXT_IRQ)		+= irq-bcm6345-ext.o
+ obj-$(CONFIG_BCM6345_L1_IRQ)		+= irq-bcm6345-l1.o
+ obj-$(CONFIG_BCM7038_L1_IRQ)		+= irq-bcm7038-l1.o
+ obj-$(CONFIG_BCM7120_L2_IRQ)		+= irq-bcm7120-l2.o
