@@ -1218,7 +1218,7 @@ static void otto_l3_route_remove(struct otto_l3_ctrl *ctrl, struct otto_l3_route
 		clear_bit(r->id - MAX_ROUTES, ctrl->host_route_use_bm);
 	} else {
 		/* If there is a HW representation of the route, delete it */
-		if (ctrl->cfg->route_lookup_hw) {
+		if (ctrl->cfg->route_lookup_hw && r->row >= FIRST_PREFIX_ROW) {
 			/* The route was written at the row we recorded, and a
 			 * route whose gateway never resolved has none. Ask the
 			 * hardware when it is not where we put it.
