@@ -1049,6 +1049,15 @@ static int otto_l3_nexthop_update(struct otto_l3_ctrl *ctrl, __be32 ip_addr, u64
 		r->attr.type = ROUTE_TYPE_IP4UC;
 		r->attr.hit = false; /* Reset route-used indicator */
 
+		/* Forwarding a packet is what makes this a hop, and a hop
+		 * spends one of the packet's. The two bits are what the SDK
+		 * asks for on an entry it creates with no flags of its own.
+		 * A route trapped for want of a port does not forward, so it
+		 * keeps them clear.
+		 */
+		r->attr.ttl_dec = !no_port;
+		r->attr.ttl_check = !no_port;
+
 		/* Add PIE entry with dst_ip and prefix_len */
 		r->pr.dip = r->dst_ip;
 		r->pr.dip_m = inet_make_mask(r->prefix_len);
