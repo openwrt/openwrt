@@ -169,6 +169,9 @@ enum rtpcs_page {
 #define  RTL838X_SDS_EN_RX		BIT(1)
 #define  RTL838X_SDS_EN_TX		BIT(0)
 
+#define SDS_REG03			0x03
+#define  RTL83XX_SOFT_RST		BIT(6)
+
 #define SDS_REG04			0x04
 #define  RTL931X_CFG_EN_LINK_FIB1G	BIT(2)
 
@@ -943,6 +946,14 @@ static int rtpcs_sds_set_mac_mode(struct rtpcs_serdes *sds, enum rtpcs_sds_mode 
 
 /* Variant-specific functions */
 
+/* RTL83XX */
+
+static void rtpcs_83xx_sds_soft_reset(struct rtpcs_serdes *sds)
+{
+	rtpcs_sds_write_mask(sds, PAGE_SDS, SDS_REG03, RTL83XX_SOFT_RST, RTL83XX_SOFT_RST);
+	rtpcs_sds_write_mask(sds, PAGE_SDS, SDS_REG03, RTL83XX_SOFT_RST, 0);
+}
+
 /* RTL838X */
 
 /* RTL838X SDS_MODE_SEL field values */
@@ -992,12 +1003,6 @@ static void rtpcs_838x_sds_patch_fiber(struct rtpcs_serdes *sds)
 	rtpcs_sds_write(sds, PAGE_FIB, 25, 0x303);
 	rtpcs_sds_write(sds, PAGE_SDS_EXT, 14, 0xf002);
 	rtpcs_sds_write(sds, PAGE_FIB, 27, 0x4bf);
-}
-
-static void rtpcs_838x_sds_reset(struct rtpcs_serdes *sds)
-{
-	rtpcs_sds_write_bits(sds, PAGE_SDS, 3, 6, 6, 0x1); /* REG3 SOFT_RST */
-	rtpcs_sds_write_bits(sds, PAGE_SDS, 3, 6, 6, 0x0); /* REG3 SOFT_RST */
 }
 
 static void rtpcs_838x_sds_fill_caps(struct rtpcs_serdes *sds)
@@ -1052,7 +1057,7 @@ static int rtpcs_838x_sds_activate(struct rtpcs_serdes *sds)
 {
 	int ret;
 
-	rtpcs_838x_sds_reset(sds);
+	rtpcs_83xx_sds_soft_reset(sds);
 
 	ret = rtpcs_sds_write_mask(sds, PAGE_FIB, MII_BMCR, BMCR_PDOWN, 0);
 	if (ret)
@@ -1244,13 +1249,8 @@ static void rtpcs_839x_sds_reset(struct rtpcs_serdes *sds)
 		rtpcs_sds_write_bits(sds, PAGE_ANA_1G2, 0x14, 9, 9, 0x0);
 	}
 
-	rtpcs_sds_write(even_sds, PAGE_SDS, 0x3, 0x7146);
-	msleep(100);
-	rtpcs_sds_write(even_sds, PAGE_SDS, 0x3, 0x7106);
-
-	rtpcs_sds_write(odd_sds, PAGE_SDS, 0x3, 0x7146);
-	msleep(100);
-	rtpcs_sds_write(odd_sds, PAGE_SDS, 0x3, 0x7106);
+	rtpcs_83xx_sds_soft_reset(even_sds);
+	rtpcs_83xx_sds_soft_reset(odd_sds);
 }
 
 static void rtpcs_839x_sds_fill_caps(struct rtpcs_serdes *sds)
