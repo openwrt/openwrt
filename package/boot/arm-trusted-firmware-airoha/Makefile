@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_VERSION:=2.10
-PKG_RELEASE:=4
+PKG_RELEASE:=5
 PKG_HASH:=88215a62291b9ba87da8e50b077741103cdc08fb6c9e1ebd34dfaace746d3201
 
 PKG_MAINTAINER:=Christian Marangi <ansuelsmth@gmail.com>
@@ -172,8 +172,8 @@ endif
 endef
 
 define Download/atf-airoha
-  SOURCE_DATE:=2026-09-09
-  SOURCE_VERSION:=82c1167a0df96465f0b9072e07b069acc6fd3614
+  SOURCE_DATE:=2026-09-19
+  SOURCE_VERSION:=32c23f83ffab83d5cd33c67e58658f4a71293d79
   URL:=https://sirherobrine23.com.br/airoha/atf-airoha.git
   PROTO:=git
   FILE:=atf-airoha-$$$$(subst -,.,$$$$(SOURCE_DATE))~$$$$(call version_abbrev,$$$$(SOURCE_VERSION)).tar.zst
@@ -196,6 +196,24 @@ define Download/mbedtls
   SOURCE_VERSION:=72718dd87e087215ce9155a826ee5a66cfbe9631
   MIRROR_HASH:=482e699edb915f8530c99f680ac69783036d96d461eebc95382d19a6064e906b
   SUBDIR:=$(MBEDTLS_SOURCE)
+endef
+
+# atf-airoha is a thin overlay (plat/ecnt + a handful of core files), not a
+# full trusted-firmware-a checkout, so the upstream v2.10.0 tree it overlays
+# onto has to be fetched separately -- Build/Prepare/Default (driven by the
+# generic PKG_VERSION/PKG_HASH via include/trusted-firmware-a.mk) turns out
+# to be a no-op here (PKG_SOURCE_PROTO ends up already set to "git" by the
+# time that file's `ifndef PKG_SOURCE_PROTO` guard runs, so it never fills in
+# PKG_SOURCE/PKG_SOURCE_URL, and PKG_UNPACK degrades to plain `true`), so
+# fetch it explicitly instead of relying on that mechanism.
+TFA_UPSTREAM_SOURCE:=trusted-firmware-a-v2.10.0
+
+define Download/trusted-firmware-a-upstream
+  FILE:=$(TFA_UPSTREAM_SOURCE).tar.zst
+  PROTO:=git
+  URL:=https://github.com/TrustedFirmware-A/trusted-firmware-a.git
+  SOURCE_VERSION:=43be12f34a131ee6b32dbf3d954c1ab943690fad
+  SUBDIR:=$(TFA_UPSTREAM_SOURCE)
 endef
 
 define Host/Prepare
@@ -226,11 +244,15 @@ define Build/Prepare
 		$(TAR) -C $(PKG_BUILD_DIR) -xf $(DL_DIR)/$(FILE)
 	)
 
-	$(call Build/Prepare/Default,)
+	$(eval $(call Download,trusted-firmware-a-upstream))
+	$(TAR) -C $(PKG_BUILD_DIR) --strip-components=1 -xf $(DL_DIR)/$(FILE)
 
 	$(eval $(call Download,mbedtls))
 	$(TAR) -C $(PKG_BUILD_DIR) -xf $(DL_DIR)/$(FILE)
 
+	# atf-airoha overlays plat/ecnt (and a few core files it customizes) on
+	# top of the pristine upstream checkout above -- this must run last so
+	# its files win over the matching upstream ones.
 	$(eval $(call Download,atf-airoha))
 	$(TAR) -C $(PKG_BUILD_DIR) --strip-components=1 -xf $(DL_DIR)/$(FILE)
 endef

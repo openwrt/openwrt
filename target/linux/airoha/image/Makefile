@@ -96,10 +96,15 @@ endef
 
 define Device/BootUboot
   DEVICE_PACKAGES += uboot-envtools
-  ARTIFACTS += bootloader.bin uboot-chainload.itb recovery.fip
-  ARTIFACT/recovery.fip := atf-recovery
-  ARTIFACT/bootloader.bin := bootloader-atf | fill-zero 0x100000
-  ARTIFACT/uboot-chainload.itb := uboot-chainloader tplink_xx230v-v1
+
+  ARTIFACTS += uboot-chainload.itb tcboot.bin recovery.fip bootloader.bin bootloader-bl31.fip
+
+  ARTIFACT/uboot-chainload.itb := uboot-chainloader
+
+  ARTIFACT/tcboot.bin := bootloader-atf | fill-zero 0x100000
+  ARTIFACT/recovery.fip := recovery-fip
+  ARTIFACT/bootloader.bin := atf-bl2
+  ARTIFACT/bootloader-bl31.fip := bootloader-bl31
 endef
 
 # Make image with new u-boot part version and ubi partion support
@@ -209,29 +214,44 @@ endef
 
 # Make bootloader replacer, same to tcboot.bin
 define Build/bootloader-atf
-  rm -f $@.tmp
+	rm -f $@.tmp $@.bl1
 	$(STAGING_DIR_HOST)/bin/fiptool create $@.tmp \
 		--align 1024 \
 		--tb-fw $(STAGING_DIR_IMAGE)/$(SUBTARGET)-bl2.bin \
 		--soc-fw $(STAGING_DIR_IMAGE)/$(SUBTARGET)-bl31.lzma \
 		--nt-fw $(STAGING_DIR_IMAGE)/$(SUBTARGET)_$(DEVICE_NAME)-u-boot.lzma
-	cat $(STAGING_DIR_IMAGE)/$(SUBTARGET)-bl1.bin $@.tmp > $@
-	rm -f $@.tmp
-endef
-
-define Build/bootloader-bl31
-  rm -f $@
-	$(STAGING_DIR_HOST)/bin/fiptool create $@ \
-		--soc-fw $(STAGING_DIR_IMAGE)/$(SUBTARGET)-bl31.lzma \
-		--nt-fw $(STAGING_DIR_IMAGE)/$(SUBTARGET)_$(DEVICE_NAME)-u-boot.lzma
+	cp $(STAGING_DIR_IMAGE)/$(SUBTARGET)-bl1.bin $@.bl1
+	truncate -s 2048 $@.bl1
+	cat $@.bl1 $@.tmp > $@
+	rm -f $@.tmp $@.bl1
 endef
 
 # make recovery fip for recovery with button gpio0 press
-define Build/atf-recovery
-  rm -f $@
+define Build/recovery-fip
+	rm -f $@
 	$(STAGING_DIR_HOST)/bin/fiptool create $@ \
 		--soc-fw $(STAGING_DIR_IMAGE)/$(SUBTARGET)-bl31.lzma \
 		--tb-fw $(STAGING_DIR_IMAGE)/$(SUBTARGET)-bl2.bin
+endef
+
+define Build/atf-bl2
+	rm -f $@.tmp $@.bl1
+	$(STAGING_DIR_HOST)/bin/fiptool create $@.tmp \
+		--align 1024 \
+		--tb-fw $(STAGING_DIR_IMAGE)/$(SUBTARGET)-bl2.bin
+	# BL1 must be exactly 2048 bytes before the FIP -- see Build/bootloader-atf.
+	cp $(STAGING_DIR_IMAGE)/$(SUBTARGET)-bl1.bin $@.bl1
+	truncate -s 2048 $@.bl1
+	cat $@.bl1 $@.tmp > $@
+	rm -f $@.tmp $@.bl1
+endef
+
+define Build/bootloader-bl31
+	rm -f $@
+	$(STAGING_DIR_HOST)/bin/fiptool create $@ \
+		--align 1024 \
+		--soc-fw $(STAGING_DIR_IMAGE)/$(SUBTARGET)-bl31.lzma \
+		--nt-fw $(STAGING_DIR_IMAGE)/$(SUBTARGET)_$(DEVICE_NAME)-u-boot.lzma
 endef
 
 include $(SUBTARGET).mk
