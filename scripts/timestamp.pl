@@ -8,6 +8,14 @@
 
 use strict;
 
+# The comparisons below are strict and the stamp file is scanned first, so a
+# file that shares a timestamp with the stamp counts as older and the caller
+# skips the work. Perl truncates the mtime of core stat to whole seconds, which
+# makes that tie reachable whenever two touches fall in the same second. Ask
+# Time::HiRes for the fractional mtime, and keep core stat where the module is
+# missing.
+BEGIN { eval { require Time::HiRes; Time::HiRes->import('stat') } }
+
 sub get_ts($$) {
 	my $path = shift;
 	my $options = shift;
