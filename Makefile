@@ -120,9 +120,20 @@ buildversion: FORCE
 feedsversion: FORCE
 	$(SCRIPT_DIR)/feeds list -fs > $(BIN_DIR)/feeds.buildinfo
 
+# diffconfig.sh runs the config parser over the whole tree twice, which takes
+# two seconds of every build. Skip it while neither .config nor a Kconfig file
+# is newer than the file it wrote last time. include/toplevel.mk guards the
+# sync check of .config the same way.
+DIFFCONFIG_FILES:=.config Config.in config target toolchain package feeds \
+	tmp/.config-package.in tmp/.config-target.in tmp/.config-feeds.in scripts/config/conf
+
 diffconfig: FORCE
 	mkdir -p $(BIN_DIR)
-	$(SCRIPT_DIR)/diffconfig.sh > $(BIN_DIR)/config.buildinfo
+	@[ -f $(BIN_DIR)/config.buildinfo ] && \
+		[ -z "$$(find $(DIFFCONFIG_FILES) -newer $(BIN_DIR)/config.buildinfo \
+			\( -name .config -o -name conf -o -name '*.in' -o -name 'Config.*' \) \
+			-print -quit 2>/dev/null)" ] || \
+		$(SCRIPT_DIR)/diffconfig.sh > $(BIN_DIR)/config.buildinfo
 
 buildinfo: FORCE
 	$(_SINGLE)$(SUBMAKE) -r diffconfig buildversion feedsversion
