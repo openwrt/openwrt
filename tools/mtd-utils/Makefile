@@ -17,6 +17,8 @@ PKG_CPE_ID:=cpe:/a:mtd-utils_project:mtd-utils
 
 PKG_FIXUP:=autoreconf
 
+HOST_BUILD_PARALLEL:=1
+
 include $(INCLUDE_DIR)/host-build.mk
 
 ifneq ($(HOST_OS),Linux)
