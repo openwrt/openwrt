@@ -55,6 +55,18 @@ ncm_wait_link() {
 	return 1
 }
 
+# Ask the modem for one identity string, e.g. CGMI for the manufacturer.
+ncm_query_id() {
+	local device="$1" script="$2" tag="$3"
+	local val
+
+	val=$(gcom -d "$device" -s "/etc/gcom/$script.gcom" | awk -v RS='\r?\n' -v tag="$tag" \
+		'NF && $0 !~ "AT\\+" tag { sub("\\+" tag ": ", ""); print tolower($1); exit; }')
+	[ "$val" = "error" ] && val=""
+
+	echo "$val"
+}
+
 # Pick the ncm.json entry: "<manufacturer>-<model>" wins over the plain
 # manufacturer one. json_is_a() avoids a warning when there is no such entry.
 ncm_select_modem() {
@@ -135,10 +147,7 @@ proto_ncm_setup() {
 
 	start=$(date +%s)
 	while true; do
-		manufacturer=$(gcom -d "$device" -s /etc/gcom/getcardinfo.gcom | awk -v RS='\r?\n' 'NF && $0 !~ /AT\+CGMI/ { sub(/\+CGMI: /,""); print tolower($1); exit; }')
-		[ "$manufacturer" = "error" ] && {
-			manufacturer=""
-		}
+		manufacturer=$(ncm_query_id "$device" getcardinfo CGMI)
 		[ -n "$manufacturer" ] && {
 			break
 		}
@@ -157,8 +166,7 @@ proto_ncm_setup() {
 		return 1
 	}
 
-	model=$(gcom -d "$device" -s /etc/gcom/getmodel.gcom | awk -v RS='\r?\n' 'NF && $0 !~ /AT\+CGMM/ { sub(/\+CGMM: /,""); print tolower($1); exit; }')
-	[ "$model" = "error" ] && model=""
+	model=$(ncm_query_id "$device" getmodel CGMM)
 	# drop the region/SKU suffix: EG060W-EAAA -> eg060w
 	model=${model%%-*}
 
@@ -319,15 +327,14 @@ proto_ncm_teardown() {
 	json_get_vars manufacturer model
 	[ $? -ne 0 -o -z "$manufacturer" ] && {
 		# Fallback to direct detect, for proper handle device replug.
-		manufacturer=$(gcom -d "$device" -s /etc/gcom/getcardinfo.gcom | awk -v RS='\r?\n' 'NF && $0 !~ /AT\+CGMI/ { sub(/\+CGMI: /,""); print tolower($1); exit; }')
+		manufacturer=$(ncm_query_id "$device" getcardinfo CGMI)
 		[ $? -ne 0 -o -z "$manufacturer" ] && {
 			echo "Failed to get modem information"
 			proto_notify_error "$interface" GETINFO_FAILED
 			return 1
 		}
 		# model too, or we fall back to the vendor entry on this path
-		model=$(gcom -d "$device" -s /etc/gcom/getmodel.gcom | awk -v RS='\r?\n' 'NF && $0 !~ /AT\+CGMM/ { sub(/\+CGMM: /,""); print tolower($1); exit; }')
-		[ "$model" = "error" ] && model=""
+		model=$(ncm_query_id "$device" getmodel CGMM)
 		model=${model%%-*}
 
 		json_add_string "manufacturer" "$manufacturer"
