@@ -22,7 +22,7 @@
 		regulator-name = "usb1-vbus";
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
-		gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
+		gpios = <&pinctrl 9 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 	};
 
@@ -32,7 +32,7 @@
 		regulator-name = "usb2-vbus";
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
-		gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
+		gpios = <&pinctrl 11 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 		regulator-boot-on;
 		regulator-always-on;
@@ -92,7 +92,11 @@
 	};
 };
 
-&gmac0 {
+&eth {
+	status = "okay";
+};
+
+&gdm1 {
 	status = "okay";
 	nvmem-cells = <&macaddr_bl 1>;
 	nvmem-cell-names = "mac-address";
@@ -122,112 +126,119 @@
 	status = "okay";
 };
 
-&nand {
-	status = "okay";
-	econet,bmt;
-	econet,bbt-table-size = <250>;
+&spi {
+	flash@0 {
+		compatible = "spi-nand";
+		reg = <0>;
+		spi-max-frequency = <40000000>;
+		spi-tx-bus-width = <1>;
+		spi-rx-bus-width = <2>;
 
-	partitions {
-		compatible = "fixed-partitions";
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		partition@0 {
-			label = "bootloader";
-			reg = <0x0 0x40000>;
-			read-only;
-
-			nvmem-layout {
-				compatible = "fixed-layout";
-				#address-cells = <1>;
-				#size-cells = <1>;
-
-				macaddr_bl: macaddr@3fe48 {
-					compatible = "mac-base";
-					reg = <0x3fe48 0x6>;
-					#nvmem-cell-cells = <1>;
+		econet,bmt;
+		econet,bbt-table-size = <250>;
+	
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+	
+			partition@0 {
+				label = "bootloader";
+				reg = <0x0 0x40000>;
+				read-only;
+	
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+	
+					macaddr_bl: macaddr@3fe48 {
+						compatible = "mac-base";
+						reg = <0x3fe48 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
 				};
 			};
-		};
-
-		partition@40000 {
-			label = "romfile";
-			reg = <0x40000 0x40000>;
-			read-only;
-		};
-
-		partition@80000 {
-			label = "tclinux";
-			reg = <0x80000 0x2800000>;
-			econet,enable-remap;
-		};
-
-		/* Nested inside of tclinux */
-		partition1@80000 {
-			label = "tclinux_kernel";
-			reg = <0x80000 0x400000>;
-			econet,enable-remap;
-		};
-
-		/* Concatenated with "unknown" to form the UBI volume */
-		rootA: partition1@480000 {
-			label = "tclinux_rootfs";
-			reg = <0x480000 0x2400000>;
-		};
-
-		partition@2880000 {
-			label = "tclinux_slave";
-			reg = <0x2880000 0x2800000>;
-		};
-
-		partition@5080000 {
-			label = "opt0";
-			reg = <0x5080000 0x800000>;
-		};
-
-		partition@5880000 {
-			label = "opt1";
-			reg = <0x5880000 0x800000>;
-		};
-
-		partition@6080000 {
-			label = "ubifs";
-			reg = <0x6080000 0x1a00000>;
-		};
-
-		partition@7a80000 {
-			label = "config";
-			reg = <0x7a80000 0x200000>;
-		};
-
-		partition@7c80000 {
-			label = "ubifs2";
-			reg = <0x7c80000 0x5a00000>;
-		};
-
-		/* Concatenated with tclinux_rootfs to form the UBI volume */
-		root1: partition@d680000 {
-			label = "unknown";
-			reg = <0xd680000 0x740000>;
-		};
-
-		partition@ddc0000 {
-			label = "reservearea";
-			reg = <0xddc0000 0x240000>;
-
-			nvmem-layout {
-				compatible = "fixed-layout";
-				#address-cells = <1>;
-				#size-cells = <1>;
-
-				/* 5GHz */
-				eeprom_reservearea_4b000: eeprom@4b000 {
-					reg = <0x4b000 0x4da8>;
-				};
-
-				/* 2.4GHz */
-				eeprom_reservearea_1c0000: eeprom@1c0000 {
-					reg = <0x1c0000 0x400>;
+	
+			partition@40000 {
+				label = "romfile";
+				reg = <0x40000 0x40000>;
+				read-only;
+			};
+	
+			partition@80000 {
+				label = "tclinux";
+				reg = <0x80000 0x2800000>;
+				econet,enable-remap;
+			};
+	
+			/* Nested inside of tclinux */
+			partition1@80000 {
+				label = "tclinux_kernel";
+				reg = <0x80000 0x400000>;
+				econet,enable-remap;
+			};
+	
+			/* Concatenated with "unknown" to form the UBI volume */
+			rootA: partition1@480000 {
+				label = "tclinux_rootfs";
+				reg = <0x480000 0x2400000>;
+			};
+	
+			partition@2880000 {
+				label = "tclinux_slave";
+				reg = <0x2880000 0x2800000>;
+			};
+	
+			partition@5080000 {
+				label = "opt0";
+				reg = <0x5080000 0x800000>;
+			};
+	
+			partition@5880000 {
+				label = "opt1";
+				reg = <0x5880000 0x800000>;
+			};
+	
+			partition@6080000 {
+				label = "ubifs";
+				reg = <0x6080000 0x1a00000>;
+			};
+	
+			partition@7a80000 {
+				label = "config";
+				reg = <0x7a80000 0x200000>;
+			};
+	
+			partition@7c80000 {
+				label = "ubifs2";
+				reg = <0x7c80000 0x5a00000>;
+			};
+	
+			/* Concatenated with tclinux_rootfs to form the UBI volume */
+			root1: partition@d680000 {
+				label = "unknown";
+				reg = <0xd680000 0x740000>;
+			};
+	
+			partition@ddc0000 {
+				label = "reservearea";
+				reg = <0xddc0000 0x240000>;
+	
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+	
+					/* 5GHz */
+					eeprom_reservearea_4b000: eeprom@4b000 {
+						reg = <0x4b000 0x4da8>;
+					};
+	
+					/* 2.4GHz */
+					eeprom_reservearea_1c0000: eeprom@1c0000 {
+						reg = <0x1c0000 0x400>;
+					};
 				};
 			};
 		};
