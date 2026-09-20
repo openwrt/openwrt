@@ -3024,6 +3024,15 @@ define Device/netcraze_nap-630
 endef
 TARGET_DEVICES += netcraze_nap-630
 
+define Device/netcraze_nc-1012
+  DEVICE_VENDOR := Netcraze
+  DEVICE_MODEL := NC-1012
+  DEVICE_DTS := mt7981b-netcraze-nc-1012
+  ZYIMAGE_ID := 0xC01012
+  $(call Device/keenetic_kn-1012-common)
+endef
+TARGET_DEVICES += netcraze_nc-1012
+
 define Device/netcraze_nc-1812
   DEVICE_VENDOR := Netcraze
   DEVICE_MODEL := NC-1812
