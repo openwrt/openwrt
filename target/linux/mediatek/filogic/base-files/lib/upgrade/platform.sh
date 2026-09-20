@@ -365,6 +365,11 @@ platform_do_upgrade() {
 		CI_ROOTPART="rootfs"
 		nand_do_upgrade "$1"
 		;;
+	tplink,tl-wr3012x-v1)
+		CI_UBIPART="ubi0"
+		fw_setenv tp_boot_idx 0
+		nand_do_upgrade "$1"
+		;;
 	teltonika,rutc50)
 		CI_UBIPART="$(cmdline_get_var ubi.mtd)"
 		nand_do_upgrade "$1"

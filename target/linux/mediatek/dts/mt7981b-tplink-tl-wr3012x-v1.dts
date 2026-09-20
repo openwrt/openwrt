@@ -1,0 +1,195 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/pinctrl/mt65xx.h>
+
+#include "mt7981b.dtsi"
+
+/ {
+	model = "TP-Link TL-WR3012X v1";
+	compatible = "tplink,tl-wr3012x-v1", "mediatek,mt7981";
+
+	aliases {
+		led-boot = &led_status_blue;
+		led-failsafe = &led_status_red;
+		led-running = &led_status_blue;
+		led-upgrade = &led_status_red;
+		serial0 = &uart0;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
+	memory@40000000 {
+		device_type = "memory";
+		reg = <0 0x40000000 0 0x20000000>;
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+
+		config {
+			label = "config";
+			linux,code = <BTN_2>;
+			gpios = <&pio 6 GPIO_ACTIVE_LOW>;
+		};
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&pio 0 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_status_red: led-0 {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&pio 34 GPIO_ACTIVE_LOW>;
+		};
+
+		led_status_blue: led-1 {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&pio 35 GPIO_ACTIVE_LOW>;
+		};
+
+		led_status_white: led-2 {
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&pio 7 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&eth {
+	pinctrl-names = "default";
+	pinctrl-0 = <&mdio_pins>;
+	status = "okay";
+
+	gmac0: mac@0 {
+		compatible = "mediatek,eth-mac";
+		reg = <0>;
+		phy-mode = "2500base-x";
+		phy-handle = <&phy5>;
+	};
+
+	gmac1: mac@1 {
+		compatible = "mediatek,eth-mac";
+		reg = <1>;
+		phy-mode = "gmii";
+		phy-handle = <&int_gbe_phy>;
+	};
+};
+
+&mdio_bus {
+	phy5: ethernet-phy@5 {
+		compatible = "ethernet-phy-id67c9.de0a";
+		reg = <5>;
+		reset-gpios = <&pio 1 GPIO_ACTIVE_LOW>;
+		reset-assert-us = <600>;
+		reset-deassert-us = <20000>;
+	};
+};
+
+&pio {
+	spi0_flash_pins: spi0-pins {
+		mux {
+			function = "spi";
+			groups = "spi0", "spi0_wp_hold";
+		};
+
+		conf-pu {
+			pins = "SPI0_CS", "SPI0_HOLD", "SPI0_WP";
+			drive-strength = <MTK_DRIVE_8mA>;
+			bias-pull-up = <MTK_PUPD_SET_R1R0_11>;
+		};
+
+		conf-pd {
+			pins = "SPI0_CLK", "SPI0_MOSI", "SPI0_MISO";
+			drive-strength = <MTK_DRIVE_8mA>;
+			bias-pull-down = <MTK_PUPD_SET_R1R0_11>;
+		};
+	};
+};
+
+&spi0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&spi0_flash_pins>;
+	status = "okay";
+
+	spi_nand: flash@0 {
+		compatible = "spi-nand";
+		reg = <0>;
+		spi-max-frequency = <52000000>;
+		spi-tx-bus-width = <4>;
+		spi-rx-bus-width = <4>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "boot";
+				reg = <0x0000000 0x0200000>;
+				read-only;
+			};
+
+			partition@200000 {
+				label = "u-boot-env";
+				reg = <0x0200000 0x0100000>;
+			};
+
+			partition@300000 {
+				label = "ubi0";
+				reg = <0x0300000 0x5a00000>;
+			};
+
+			partition@5d00000 {
+				label = "ubi1";
+				reg = <0x5d00000 0x5a00000>;
+				read-only;
+			};
+
+			partition@b700000 {
+				label = "userconfig";
+				reg = <0xb700000 0x0c00000>;
+				read-only;
+			};
+
+			partition@c300000 {
+				label = "tp_data";
+				reg = <0xc300000 0x1000000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&uart0 {
+	status = "okay";
+};
+
+&usb_phy {
+	status = "okay";
+};
+
+&watchdog {
+	status = "okay";
+};
+
+&wifi {
+	status = "okay";
+};
+
+&xhci {
+	status = "okay";
+};
