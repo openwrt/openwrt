@@ -18,6 +18,7 @@ proto_ncm_init_config() {
 	proto_config_add_string pincode
 	proto_config_add_string delay
 	proto_config_add_int linksettle
+	proto_config_add_int attachwait
 	proto_config_add_string mode
 	proto_config_add_string pdptype
 	proto_config_add_boolean sourcefilter
@@ -94,6 +95,40 @@ ncm_has_model_entry() {
 	return 1
 }
 
+# Wait for the modem to attach to the packet domain before dialling. A modem
+# that never reports an attach state is not held up - but only once the wait
+# is over, because a single probe can come back empty just from missing the
+# read window of runquery.gcom.
+ncm_wait_attach() {
+	local device="$1" deadline="$2"
+	local reply state answered=0
+
+	while :; do
+		reply=$(COMMAND="AT+CGATT?" gcom -d "$device" -s /etc/gcom/runquery.gcom)
+
+		# the modem rejects AT+CGATT?: there is nothing to wait for
+		case "$reply" in
+		*ERROR*|*"NOT SUPPORT"*) return 0 ;;
+		esac
+
+		state=$(echo "$reply" | awk -v RS='\r?\n' \
+			'/\+CGATT: [0-9]/ { sub(/.*\+CGATT: /, ""); print $1 + 0; exit }')
+		[ -n "$state" ] && answered=1
+		[ "$state" = 1 ] && return 0
+
+		[ "$(date +%s)" -lt "$deadline" ] || break
+		sleep 1
+	done
+
+	# it never said anything about the packet domain: do not hold up the dial
+	[ "$answered" = 0 ] && {
+		echo "Modem does not report an attach state, dialling anyway"
+		return 0
+	}
+
+	return 1
+}
+
 # Pick the ncm.json entry: "<manufacturer>-<model>" wins over the plain
 # manufacturer one. json_is_a() avoids a warning when there is no such entry.
 ncm_select_modem() {
@@ -111,13 +146,13 @@ ncm_select_modem() {
 proto_ncm_setup() {
 	local interface="$1"
 
-	local connect context_type devname devpath finalize ifpath initialize linkatfinalize manufacturer model setmode
+	local attachwait_default connect context_type devname devpath finalize ifpath initialize linkatfinalize manufacturer model setmode
 
 	local delegate ip4table ip6table mtu sourcefilter $PROTO_DEFAULT_OPTIONS
 	json_get_vars delegate ip4table ip6table mtu sourcefilter $PROTO_DEFAULT_OPTIONS
 
-	local apn auth delay device ifname linksettle mode password pdptype pincode profile username
-	json_get_vars apn auth delay device ifname linksettle mode password pdptype pincode profile username
+	local apn attachwait auth delay device ifname linksettle mode password pdptype pincode profile username
+	json_get_vars apn attachwait auth delay device ifname linksettle mode password pdptype pincode profile username
 
 	[ "$metric" = "" ] && metric="0"
 
@@ -249,6 +284,18 @@ proto_ncm_setup() {
 			}
 		}
 		json_select ..
+	}
+
+	# ncm.json sets the default for profiles that must not be gated
+	json_get_var attachwait_default attachwait
+
+	[ -n "$attachwait" ] || attachwait="${attachwait_default:-10}"
+	[ "$attachwait" -gt 0 ] && {
+		ncm_wait_attach "$device" $(($(date +%s) + attachwait)) || {
+			echo "Modem did not attach to the network"
+			proto_notify_error "$interface" NETWORK_REGISTRATION_FAILED
+			return 1
+		}
 	}
 
 	echo "Starting network $interface"
