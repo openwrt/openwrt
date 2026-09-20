@@ -12,9 +12,9 @@ PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/procd.git
-PKG_MIRROR_HASH:=b193107814e7b378fcbe519749aa1d92994f6d1cbc0c25faf0833f6b46811785
-PKG_SOURCE_DATE:=2026-09-26
-PKG_SOURCE_VERSION:=a6f9ffd4becffac99adf7368b26dde537c721f6f
+PKG_MIRROR_HASH:=6d336595493088058966b790837db75c5f9aa8cf8dd9151e2d1d554152f19891
+PKG_SOURCE_DATE:=2026-09-27
+PKG_SOURCE_VERSION:=675942be0e25fd4a4abb030820de432c1dd37a0a
 CMAKE_INSTALL:=1
 
 PKG_LICENSE:=GPL-2.0
@@ -113,7 +113,8 @@ SECCOMP=$(if $(CONFIG_PACKAGE_procd-seccomp),1,0)
 CMAKE_OPTIONS += -DSECCOMP_SUPPORT=$(SECCOMP) -DUTRACE_SUPPORT=$(SECCOMP)
 
 define Package/procd/install
-	$(INSTALL_DIR) $(1)/sbin $(1)/etc $(1)/lib/functions
+	$(INSTALL_DIR) $(1)/sbin $(1)/etc $(1)/etc/hotplug.json.d \
+		$(1)/etc/hotplug-preinit.json.d $(1)/lib/functions
 
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/{init,procd,askfirst,udevtrigger,upgraded} $(1)/sbin/
 	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/libsetlbf.so $(1)/lib

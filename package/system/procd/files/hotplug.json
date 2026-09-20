@@ -27,6 +27,7 @@
 							[ "return" ]
 						]
 					],
+					[ "include", "/etc/hotplug.json.d/*.json" ],
 					[ "if",
 						[ "regex", "DEVNAME", "^snd" ],
 						[ "makedev", "/dev/%DEVNAME%", "0660", "audio" ]
