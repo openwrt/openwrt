@@ -15,7 +15,6 @@ struct rtl838x_switch_priv;
 #define RTL838X_VLAN_PORT_EGR_FLTR		(0x3a84)
 #define RTL838X_VLAN_PORT_IGR_FLTR		(0x3a7c)
 #define RTL838X_VLAN_PROFILE_MAX		7
-#define RTL838X_VLAN_STP_CTRL			(0x3b20)
 
 #define RTL839X_VLAN_CTRL			(0x26d4)
 #define RTL839X_VLAN_PORT_EGR_FLTR		(0x27c4)
@@ -143,10 +142,5 @@ int rtldsa_vlan_del(struct dsa_switch *ds, int port, const struct switchdev_obj_
 int rtldsa_port_vlan_fast_age(struct dsa_switch *ds, int port, u16 vid);
 int rtldsa_vlan_msti_set(struct dsa_switch *ds, struct dsa_bridge bridge,
 			 const struct switchdev_vlan_msti *msti);
-
-bool rtldsa_mst_put_slot(struct rtl838x_switch_priv *priv, u16 mst_slot);
-int rtldsa_mst_replace(struct rtl838x_switch_priv *priv, u16 msti, u16 old_mst_slot);
-int rtldsa_port_get_stp_state(struct rtl838x_switch_priv *priv, int port);
-void rtldsa_port_stp_state_set(struct dsa_switch *ds, int port, u8 state);
 
 #endif /* _OTTO_VLAN_H */

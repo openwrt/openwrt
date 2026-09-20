@@ -12,6 +12,7 @@
 #include "stats.h"
 #include "tc.h"
 #include "vlan.h"
+#include "stp.h"
 
 /* Ethernet header, two stacked VLAN tags (802.1ad QinQ) and FCS */
 #define RTLDSA_FRAME_OVERHEAD		(ETH_HLEN + 2 * VLAN_HLEN + ETH_FCS_LEN)
@@ -33,9 +34,6 @@ static const u8 ipv6_all_hosts_mcast_addr_base[ETH_ALEN] = {
 static const u8 ipv6_all_hosts_mcast_addr_mask[ETH_ALEN] = {
 	0xff, 0xff, 0xff, 0xff, 0xff, 0xff
 };
-
-static void rtldsa_port_xstp_state_set(struct rtl838x_switch_priv *priv, int port,
-				       u8 state, u16 mst_slot);
 
 /* DSA callbacks */
 
@@ -616,217 +614,6 @@ static int rtldsa_set_ageing_time(struct dsa_switch *ds, unsigned int msec)
 	return 0;
 }
 
-/**
- * rtldsa_mst_init() - Initialize newly "allocated" MST HW slot
- * @priv: private data of rtldsa switch
- * @mst_slot: MST slot of MSTI
- */
-static void rtldsa_mst_init(struct rtl838x_switch_priv *priv, u16 mst_slot)
-			    __must_hold(&priv->reg_mutex)
-{
-	struct dsa_port *dp;
-	unsigned int port;
-	u8 state;
-
-	dsa_switch_for_each_user_port(dp, priv->ds) {
-		if (dp->bridge)
-			state = BR_STATE_DISABLED;
-		else
-			state = dp->stp_state;
-
-		port = dp->index;
-
-		rtldsa_port_xstp_state_set(priv, port, state, mst_slot);
-	}
-}
-
-/**
- * rtldsa_mst_find() - Find HW MST slot for MSTI (without reference counting)
- * @priv: private data of rtldsa switch
- * @msti: MSTI to search
- *
- * Return: found HW slot (unmodified reference count) or negative encoded error value
- */
-static int rtldsa_mst_find(struct rtl838x_switch_priv *priv, u16 msti)
-			   __must_hold(&priv->reg_mutex)
-{
-	unsigned int i;
-
-	/* CIST is always mapped to 0 */
-	if (msti == 0)
-		return 0;
-
-	if (msti > 4095)
-		return -EINVAL;
-
-	/* search for existing entry */
-	for (i = 0; i < priv->r->n_mst - 1; i++) {
-		if (priv->msts[i].msti != msti)
-			continue;
-
-		return i + 1;
-	}
-
-	return -ENOENT;
-}
-
-/**
- * rtldsa_mst_get() - Get (or allocate) HW MST slot for MSTI
- * @priv: private data of rtldsa switch
- * @msti: MSTI for which a HW slot is needed
- *
- * Return: allocated slot (with increased reference count) or negative encoded error value
- */
-static int rtldsa_mst_get(struct rtl838x_switch_priv *priv, u16 msti)
-			  __must_hold(&priv->reg_mutex)
-{
-	unsigned int i;
-	int ret;
-
-	ret = rtldsa_mst_find(priv, msti);
-
-	/* CIST doesn't need reference counting */
-	if (ret == 0)
-		return ret;
-
-	/* valid HW slot was found - refcount needs to be adjusted */
-	if (ret > 0) {
-		u16 index = ret - 1;
-
-		kref_get(&priv->msts[index].refcount);
-		return ret;
-	}
-
-	/* any error except "no entry found" cannot be handled */
-	if (ret != -ENOENT)
-		return ret;
-
-	/* search for free slot */
-	for (i = 0; i < priv->r->n_mst - 1; i++) {
-		if (priv->msts[i].msti != 0)
-			continue;
-
-		kref_init(&priv->msts[i].refcount);
-		priv->msts[i].msti = msti;
-
-		rtldsa_mst_init(priv, i + 1);
-		return i + 1;
-	}
-
-	return -ENOSPC;
-}
-
-/**
- * rtldsa_mst_recycle_slot() - Try to recycle old MST slot in case of -ENOSPC of rtldsa_mst_get()
- * @priv: private data of rtldsa switch
- * @msti: MSTI for which a HW slot is needed
- * @old_mst_slot: old mst slot which will be released "soon"
- *
- * If a VLAN should be moved from one MSTI to another one, it is possible that there are currently
- * not enough slots still available to perform a get+put operation. But if this slot is used
- * by a single VLAN anyway, it is not needed to really allocate a new slow - reassigning it to
- * the new MSTI is good enough.
- *
- * This is only allowed when holding the reg_mutex over both calls rtldsa_mst_get() and
- * rtldsa_mst_recycle(). After a rtldsa_mst_recycle() call, rtldsa_mst_put_slot() must no longer
- * be called for @old_mst_slot.
- *
- * Return: allocated slot (with increased reference count) or negative encoded error value
- */
-static int rtldsa_mst_recycle_slot(struct rtl838x_switch_priv *priv, u16 msti, u16 old_mst_slot)
-				   __must_hold(&priv->reg_mutex)
-{
-	u16 index;
-
-	/* CIST is always mapped to 0 */
-	if (msti == 0)
-		return 0;
-
-	if (old_mst_slot == 0)
-		return -ENOSPC;
-
-	if (msti > 4095)
-		return -EINVAL;
-
-	if (old_mst_slot >= priv->r->n_mst)
-		return -EINVAL;
-
-	index = old_mst_slot - 1;
-
-	/* this slot is unused - should not happen because rtldsa_mst_get() searches for it */
-	if (priv->msts[index].msti == 0)
-		return -EINVAL;
-
-	/* it is only allowed to swap when no other VLAN is using this MST slot */
-	if (kref_read(&priv->msts[index].refcount) != 1)
-		return -ENOSPC;
-
-	priv->msts[index].msti = msti;
-	return old_mst_slot;
-}
-
-static void rtldsa_mst_release_slot(struct kref *ref)
-{
-	struct rtldsa_mst *slot = container_of(ref, struct rtldsa_mst, refcount);
-
-	slot->msti = 0;
-}
-
-/**
- * rtldsa_mst_put_slot() - Decrement VLAN use counter for MST slot
- * @priv: private data of rtldsa switch
- * @mst_slot: MST slot which should be put
- *
- * Return: false when MST slot reference counter was only decreased or an invalid @mst_slot was
- * given, true when @mst_slot is now unused
- */
-bool rtldsa_mst_put_slot(struct rtl838x_switch_priv *priv, u16 mst_slot)
-				__must_hold(&priv->reg_mutex)
-{
-	unsigned int index;
-
-	/* CIST is always mapped to 0 and cannot be put */
-	if (mst_slot == 0)
-		return 0;
-
-	if (mst_slot >= priv->r->n_mst)
-		return 0;
-
-	index = mst_slot - 1;
-
-	/* this slot is unused and must not release a reference */
-	if (priv->msts[index].msti == 0)
-		return 0;
-
-	return kref_put(&priv->msts[index].refcount, rtldsa_mst_release_slot);
-}
-
-/**
- * rtldsa_mst_replace() - Get HW slot for @msti and drop old HW slot
- * @priv: private data of rtldsa switch
- * @msti: MSTI for which a HW slot is needed
- * @old_mst_slot: old mst slot which will no longer be assigned to VLAN
- *
- * Return: allocated slot (with increased reference count) or negative encoded error value
- */
-int rtldsa_mst_replace(struct rtl838x_switch_priv *priv, u16 msti, u16 old_mst_slot)
-			      __must_hold(&priv->reg_mutex)
-{
-	int mst_slot_new;
-
-	mst_slot_new = rtldsa_mst_get(priv, msti);
-	if (mst_slot_new == -ENOSPC)
-		return rtldsa_mst_recycle_slot(priv, msti, old_mst_slot);
-
-	/* directly return errors and don't free old slot */
-	if (mst_slot_new < 0)
-		return mst_slot_new;
-
-	rtldsa_mst_put_slot(priv, old_mst_slot);
-
-	return mst_slot_new;
-}
-
 static void rtldsa_update_port_member(struct rtl838x_switch_priv *priv, int port,
 				      const struct net_device *bridge_dev, bool join)
 				      __must_hold(&priv->reg_mutex)
@@ -873,7 +660,6 @@ static int rtldsa_port_bridge_join(struct dsa_switch *ds, int port, struct dsa_b
 				   bool *tx_fwd_offload, struct netlink_ext_ack *extack)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
-	unsigned int i;
 
 	pr_debug("%s %x: %d", __func__, (u32)priv, port);
 
@@ -889,8 +675,7 @@ static int rtldsa_port_bridge_join(struct dsa_switch *ds, int port, struct dsa_b
 		priv->r->set_static_move_action(port, false);
 
 	/* Set to disabled in all MSTs, common code will take care of CIST */
-	for (i = 1; i < priv->r->n_mst; i++)
-		rtldsa_port_xstp_state_set(priv, port, BR_STATE_DISABLED, i);
+	rtldsa_port_non_cist_states_set(priv, port, BR_STATE_DISABLED);
 
 	mutex_unlock(&priv->reg_mutex);
 
@@ -900,7 +685,6 @@ static int rtldsa_port_bridge_join(struct dsa_switch *ds, int port, struct dsa_b
 static void rtldsa_port_bridge_leave(struct dsa_switch *ds, int port, struct dsa_bridge bridge)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
-	unsigned int i;
 
 	pr_debug("%s %x: %d", __func__, (u32)priv, port);
 
@@ -912,81 +696,9 @@ static void rtldsa_port_bridge_leave(struct dsa_switch *ds, int port, struct dsa
 		priv->r->set_static_move_action(port, true);
 
 	/* Set to forwarding in all MSTs, common code will take care of CIST */
-	for (i = 1; i < priv->r->n_mst; i++)
-		rtldsa_port_xstp_state_set(priv, port, BR_STATE_FORWARDING, i);
+	rtldsa_port_non_cist_states_set(priv, port, BR_STATE_FORWARDING);
 
 	mutex_unlock(&priv->reg_mutex);
-}
-
-static void rtldsa_port_xstp_state_set(struct rtl838x_switch_priv *priv, int port,
-				       u8 state, u16 mst_slot)
-				       __must_hold(&priv->reg_mutex)
-{
-	int hw_state;
-
-	if (port >= priv->r->cpu_port)
-		return;
-
-	switch (state) {
-	case BR_STATE_DISABLED:
-		hw_state = 0;
-		break;
-	case BR_STATE_BLOCKING:
-	case BR_STATE_LISTENING:
-		hw_state = 1;
-		break;
-	case BR_STATE_LEARNING:
-		hw_state = 2;
-		break;
-	case BR_STATE_FORWARDING:
-		hw_state = 3;
-		break;
-	default:
-		dev_err(priv->dev, "stp state %d not supported\n", state);
-		return;
-	}
-
-	priv->r->stp_set(priv, mst_slot, port, hw_state);
-}
-
-void rtldsa_port_stp_state_set(struct dsa_switch *ds, int port, u8 state)
-{
-	struct rtl838x_switch_priv *priv = ds->priv;
-	struct dsa_port *dp = dsa_to_port(ds, port);
-	unsigned int i;
-
-	mutex_lock(&priv->reg_mutex);
-	rtldsa_port_xstp_state_set(priv, port, state, 0);
-
-	if (dp->bridge)
-		goto unlock;
-
-	/* for unbridged ports, also force the same state to the MSTIs */
-	for (i = 1; i < priv->r->n_mst; i++)
-		rtldsa_port_xstp_state_set(priv, port, state, i);
-
-unlock:
-	mutex_unlock(&priv->reg_mutex);
-}
-
-static int rtldsa_port_mst_state_set(struct dsa_switch *ds, int port,
-				     const struct switchdev_mst_state *st)
-{
-	struct rtl838x_switch_priv *priv = ds->priv;
-	int mst_slot;
-
-	mutex_lock(&priv->reg_mutex);
-
-	mst_slot = rtldsa_mst_find(priv, st->msti);
-	if (mst_slot < 0) {
-		mutex_unlock(&priv->reg_mutex);
-		return mst_slot;
-	}
-
-	rtldsa_port_xstp_state_set(priv, port, st->state, mst_slot);
-	mutex_unlock(&priv->reg_mutex);
-
-	return 0;
 }
 
 void rtldsa_port_fast_age(struct dsa_switch *ds, int port)

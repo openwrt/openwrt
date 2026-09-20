@@ -13,6 +13,7 @@
 #include "rtl-otto.h"
 #include "stats.h"
 #include "vlan.h"
+#include "stp.h"
 
 const struct rtldsa_mib_list_item rtldsa_838x_mib_list[] = {
 	MIB_LIST_ITEM("dot1dTpPortInDiscards", MIB_ITEM(MIB_REG_STD, 0xec, 1)),
@@ -133,34 +134,6 @@ static int rtldsa_838x_get_mirror_config(struct rtldsa_mirror_config *config,
 	config->val |= BIT(11);
 
 	return 0;
-}
-
-static int rtldsa_838x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, int port)
-{
-	int idx = 1 - (port / 16);
-	int bit = 2 * (port % 16);
-	/* port < priv->r->cpu_port (RTL838X_CPU_PORT == 28), so idx is 0 or 1 */
-	u32 buf[2];
-	int state;
-
-	otto_table_read(RTL8380_TBL_MSTI, msti, &buf);
-	state = (buf[idx] >> bit) & 0x3;
-
-	return state;
-}
-
-static void rtl838x_stp_set(struct rtl838x_switch_priv *priv, u16 msti, int port, int state)
-{
-	int tbl = otto_table_acquire(RTL8380_TBL_MSTI);
-	int idx = 1 - (port / 16);
-	int bit = 2 * (port % 16);
-	/* port < priv->r->cpu_port (RTL838X_CPU_PORT == 28), so idx is 0 or 1 */
-	u32 buf[2];
-
-	__otto_table_read(tbl, msti, &buf);
-	buf[idx] = (buf[idx] & ~(0x3 << bit)) | (state << bit);
-	__otto_table_write(tbl, msti, &buf);
-	otto_table_release(tbl);
 }
 
 static void rtl838x_traffic_set(int source, u64 dest_matrix)
@@ -302,7 +275,7 @@ static void rtldsa_838x_stat_init(struct rtl838x_switch_priv *priv)
 const struct rtldsa_config rtldsa_838x_cfg = {
 	.switch_ops = &rtldsa_83xx_switch_ops,
 	.phylink_mac_ops = &rtldsa_83xx_phylink_mac_ops,
-	.spanning_tree_ctrl = RTL838X_VLAN_STP_CTRL,
+	.stp_init = rtldsa_838x_stp_init,
 	.l2_bucket_size = 4,
 	.n_mst = 64,
 	.num_lag_ids = 8,

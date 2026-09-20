@@ -11,6 +11,7 @@
 #include "stats.h"
 #include "tc.h"
 #include "vlan.h"
+#include "stp.h"
 
 #define RTL931X_LED_CLK_SEL_MASK				GENMASK(16, 15)
 #define RTL931X_LED_CLK_SEL_800NS				0
@@ -115,34 +116,6 @@ const struct rtldsa_mib_desc rtldsa_931x_mib_desc = {
 	.list_count = ARRAY_SIZE(rtldsa_931x_mib_list),
 	.list = rtldsa_931x_mib_list
 };
-
-static int rtldsa_931x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, int port)
-{
-	int idx = 3 - ((port + 8) / 16);
-	int bit = 2 * ((port + 8) % 16);
-	/* port ranges 0..55 (RTL931x covers ports 0 to 55 only), so idx is 0..3 */
-	u32 buf[4];
-	int state;
-
-	otto_table_read(RTL9310_TBL_MSTI, msti, &buf);
-	state = (buf[idx] >> bit) & 0x3;
-
-	return state;
-}
-
-static void rtl931x_stp_set(struct rtl838x_switch_priv *priv, u16 msti, int port, int state)
-{
-	int tbl = otto_table_acquire(RTL9310_TBL_MSTI);
-	int idx = 3 - ((port + 8) / 16);
-	int bit = 2 * ((port + 8) % 16);
-	/* port ranges 0..55 (RTL931x covers ports 0 to 55 only), so idx is 0..3 */
-	u32 buf[4];
-
-	__otto_table_read(tbl, msti, &buf);
-	buf[idx] = (buf[idx] & ~(0x3 << bit)) | (state << bit);
-	__otto_table_write(tbl, msti, &buf);
-	otto_table_release(tbl);
-}
 
 static inline int rtl931x_mac_force_mode_ctrl(int p)
 {
@@ -504,7 +477,7 @@ static u64 rtldsa_931x_stat_port_table_read(int port, unsigned int mib_size,
 const struct rtldsa_config rtldsa_931x_cfg = {
 	.switch_ops = &rtldsa_93xx_switch_ops,
 	.phylink_mac_ops = &rtldsa_93xx_phylink_mac_ops,
-	.spanning_tree_ctrl = RTL931X_ST_CTRL,
+	.stp_init = rtldsa_931x_stp_init,
 	.l2_bucket_size = 8,
 	.n_mst = 128,
 	.num_lag_ids = 16,

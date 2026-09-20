@@ -13,6 +13,7 @@
 #include "stats.h"
 #include "tc.h"
 #include "vlan.h"
+#include "stp.h"
 
 #define RTL930X_LED_GLB_ACTIVE_LOW				BIT(22)
 #define RTL930X_LED_CLK_SEL_MASK				GENMASK(17, 16)
@@ -162,34 +163,6 @@ static int rtldsa_930x_get_mirror_config(struct rtldsa_mirror_config *config,
 	config->val |= BIT(4);
 
 	return 0;
-}
-
-static int rtldsa_930x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, int port)
-{
-	int idx = 1 - ((port + 3) / 16);
-	int bit = 2 * ((port + 3) % 16);
-	/* port ranges 0..RTL930X_CPU_PORT (28), so idx is always 0 or 1 */
-	u32 buf[2];
-	int state;
-
-	otto_table_read(RTL9300_TBL_MSTI, msti, &buf);
-	state = (buf[idx] >> bit) & 0x3;
-
-	return state;
-}
-
-static void rtl930x_stp_set(struct rtl838x_switch_priv *priv, u16 msti, int port, int state)
-{
-	int tbl = otto_table_acquire(RTL9300_TBL_MSTI);
-	int idx = 1 - ((port + 3) / 16);
-	int bit = 2 * ((port + 3) % 16);
-	/* port ranges 0..RTL930X_CPU_PORT (28), so idx is always 0 or 1 */
-	u32 buf[2];
-
-	__otto_table_read(tbl, msti, &buf);
-	buf[idx] = (buf[idx] & ~(0x3 << bit)) | (state << bit);
-	__otto_table_write(tbl, msti, &buf);
-	otto_table_release(tbl);
 }
 
 static inline int rtl930x_mac_force_mode_ctrl(int p)
@@ -728,7 +701,7 @@ static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
 const struct rtldsa_config rtldsa_930x_cfg = {
 	.switch_ops = &rtldsa_93xx_switch_ops,
 	.phylink_mac_ops = &rtldsa_93xx_phylink_mac_ops,
-	.spanning_tree_ctrl = RTL930X_ST_CTRL,
+	.stp_init = rtldsa_930x_stp_init,
 	.l2_bucket_size = 8,
 	.n_mst = 64,
 	.num_lag_ids = 16,

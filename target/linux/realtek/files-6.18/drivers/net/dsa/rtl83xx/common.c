@@ -18,21 +18,7 @@
 #include "l3.h"
 #include "rtl-otto.h"
 #include "tc.h"
-
-int rtldsa_port_get_stp_state(struct rtl838x_switch_priv *priv, int port)
-{
-	u32 msti = 0;
-	int state;
-
-	if (port >= priv->r->cpu_port)
-		return -EINVAL;
-
-	mutex_lock(&priv->reg_mutex);
-	state = priv->r->stp_get(priv, msti, port);
-	mutex_unlock(&priv->reg_mutex);
-
-	return state;
-}
+#include "stp.h"
 
 /* Port register accessor functions for the RTL838x and RTL930X SoCs */
 void rtl838x_mask_port_reg(u64 clear, u64 set, int reg)
@@ -669,7 +655,7 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 		return err;
 
 	priv->family_id = soc_info.family;
-	sw_w32(0, priv->r->spanning_tree_ctrl);
+	priv->r->stp_init();
 	priv->irq_mask = GENMASK_ULL(priv->r->cpu_port - 1, 0);
 
 	err = rtldsa_mdio_loaded();
