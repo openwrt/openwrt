@@ -345,7 +345,7 @@ define Device/dlink_dcs-930
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DCS-930
   DEVICE_PACKAGES := kmod-video-core kmod-video-uvc kmod-sound-core \
-	kmod-usb-audio kmod-usb-dwc2
+	kmod-usb-audio kmod-usb-dwc2 audio-support
   SUPPORTED_DEVICES += dcs-930
   DEFAULT := n
 endef
@@ -358,7 +358,7 @@ define Device/dlink_dcs-930l-b1
   DEVICE_MODEL := DCS-930L
   DEVICE_VARIANT := B1
   DEVICE_PACKAGES := kmod-video-core kmod-video-uvc kmod-sound-core \
-	kmod-usb-audio kmod-usb-ohci kmod-usb2
+	kmod-usb-audio kmod-usb-ohci kmod-usb2 audio-support
   SUPPORTED_DEVICES += dcs-930l-b1
   DEFAULT := n
 endef

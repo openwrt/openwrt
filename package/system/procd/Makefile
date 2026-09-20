@@ -43,7 +43,7 @@ define Package/procd/Default
   DEPENDS:=+ubusd +ubus +libjson-script +ubox +libubox +libudebug \
 	  +libubus +libblobmsg-json +libjson-c +jshn
   TITLE:=OpenWrt system process manager
-  USERID:=:dialout=20 :audio=29
+  USERID:=:dialout=20
 endef
 
 define Package/procd
