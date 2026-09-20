@@ -133,6 +133,11 @@ ifneq ($(CONFIG_USE_APK),)
 		mkdir -p $$d; \
 		cd $$d || continue; \
 		ls *.apk >/dev/null 2>&1 || continue; \
+		if [ -f packages.adb ] && [ -f index.json ] && \
+		   [ -z "$$(find . -maxdepth 1 \( -name '*.apk' -o -type d \) \
+				-newer index.json -print -quit 2>/dev/null)" ]; then \
+			continue; \
+		fi; \
 		$(STAGING_DIR_HOST)/bin/apk mkndx \
 			--root $(TOPDIR) \
 			--keys-dir $(TOPDIR) \
