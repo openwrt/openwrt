@@ -3816,6 +3816,19 @@ define Device/tplink_tl-7dr7250-v1
 endef
 TARGET_DEVICES += tplink_tl-7dr7250-v1
 
+define Device/tplink_tl-wr3012x-v1
+  DEVICE_VENDOR := TP-Link
+  DEVICE_MODEL := TL-WR3012X
+  DEVICE_VARIANT := v1
+  DEVICE_DTS := mt7981b-tplink-tl-wr3012x-v1
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-usb3 kmod-mt7915e kmod-mt7981-firmware \
+	mt7981-wo-firmware
+  KERNEL_INITRAMFS_SUFFIX := .itb
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += tplink_tl-wr3012x-v1
+
 define Device/tplink_tl-xdr-common
   DEVICE_VENDOR := TP-Link
   DEVICE_DTS_DIR := ../dts
