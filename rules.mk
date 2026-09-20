@@ -196,6 +196,16 @@ STAGING_DIR_IMAGE:=$(STAGING_DIR)/image
 BUILD_LOG_DIR:=$(if $(call qstrip,$(CONFIG_BUILD_LOG_DIR)),$(call qstrip,$(CONFIG_BUILD_LOG_DIR)),$(TOPDIR)/logs)
 PKG_INFO_DIR := $(STAGING_DIR)/pkginfo
 
+# Set BUILD_TIME_LOG=<file> in the environment to record a begin and an end
+# event for every prepare, configure, compile and install stage. Turn the log
+# into a report with scripts/build-time-report.pl.
+ifneq ($(BUILD_TIME_LOG),)
+  BUILD_TIME_LOG_FILE:=$(if $(filter /%,$(BUILD_TIME_LOG)),$(BUILD_TIME_LOG),$(TOPDIR)/$(BUILD_TIME_LOG))
+  BuildTimeLog = @$(SCRIPT_DIR)/build-time-log.sh $(BUILD_TIME_LOG_FILE) $(1) $(2) "$(if $(BUILD_SUBDIR),$(BUILD_SUBDIR),$(CURDIR))$(if $(BUILD_VARIANT),/$(BUILD_VARIANT))"
+else
+  BuildTimeLog =
+endif
+
 BUILD_DIR_HOST:=$(if $(IS_PACKAGE_BUILD),$(BUILD_DIR_BASE)/hostpkg,$(BUILD_DIR_BASE)/host)
 STAGING_DIR_HOST:=$(abspath $(STAGING_DIR)/../host)
 STAGING_DIR_HOSTPKG:=$(abspath $(STAGING_DIR)/../hostpkg)

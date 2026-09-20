@@ -90,12 +90,15 @@ define BuildKernel
 
   $(Kernel/Autoclean)
   $(STAMP_PREPARED): $(if $(LINUX_SITE),$(DL_DIR)/$(LINUX_SOURCE))
+	$(call BuildTimeLog,begin,prepare)
 	-rm -rf $(KERNEL_BUILD_DIR)
 	-mkdir -p $(KERNEL_BUILD_DIR)
 	$(Kernel/Prepare)
 	touch $$@
+	$(call BuildTimeLog,end,prepare)
 
   $(KERNEL_BUILD_DIR)/symtab.h: FORCE
+	$(call BuildTimeLog,begin,compile)
 	rm -f $(KERNEL_BUILD_DIR)/symtab.h
 	touch $(KERNEL_BUILD_DIR)/symtab.h
 	+$(KERNEL_MAKE) vmlinux
@@ -124,26 +127,33 @@ define BuildKernel
 			awk '{print "*(___ksymtab_gpl+" $$$$1 ") \\" }'; \
 		echo; \
 	) > $$@
+	$(call BuildTimeLog,end,compile)
 
   $(STAMP_CONFIGURED): $(STAMP_PREPARED) $(LINUX_KCONFIG_LIST) $(TOPDIR)/.config FORCE
+	$(call BuildTimeLog,begin,configure)
 	$(Kernel/Configure)
 	touch $$@
+	$(call BuildTimeLog,end,configure)
 
   $(LINUX_DIR)/.modules: export STAGING_PREFIX=$$(STAGING_DIR_HOST)
   $(LINUX_DIR)/.modules: export PKG_CONFIG_PATH=$$(STAGING_DIR_HOST)/lib/pkgconfig
   $(LINUX_DIR)/.modules: export PKG_CONFIG_LIBDIR=$$(STAGING_DIR_HOST)/lib/pkgconfig
   $(LINUX_DIR)/.modules: export FAIL_ON_UNCONFIGURED=1
   $(LINUX_DIR)/.modules: $(STAMP_CONFIGURED) $(LINUX_DIR)/.config FORCE
+	$(call BuildTimeLog,begin,compile)
 	$(Kernel/CompileModules)
 	touch $$@
+	$(call BuildTimeLog,end,compile)
 
   $(LINUX_DIR)/.image: export STAGING_PREFIX=$$(STAGING_DIR_HOST)
   $(LINUX_DIR)/.image: export PKG_CONFIG_PATH=$$(STAGING_DIR_HOST)/lib/pkgconfig
   $(LINUX_DIR)/.image: export PKG_CONFIG_LIBDIR=$$(STAGING_DIR_HOST)/lib/pkgconfig
   $(LINUX_DIR)/.image: $(STAMP_CONFIGURED) $(if $(CONFIG_STRIP_KERNEL_EXPORTS),$(KERNEL_BUILD_DIR)/symtab.h) FORCE
+	$(call BuildTimeLog,begin,compile)
 	$(Kernel/CompileImage)
 	$(Kernel/CollectDebug)
 	touch $$@
+	$(call BuildTimeLog,end,compile)
 	
   mostlyclean: FORCE
 	$(Kernel/Clean)

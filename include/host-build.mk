@@ -182,34 +182,42 @@ ifndef DUMP
   $(if $(DUMP),,$(call HostHost/Autoclean))
 
   $(HOST_STAMP_PREPARED):
+	$(call BuildTimeLog,begin,prepare)
 	@-rm -rf $(HOST_BUILD_DIR)
 	@mkdir -p $(HOST_BUILD_DIR)
 	$(foreach hook,$(Hooks/HostPrepare/Pre),$(call $(hook))$(sep))
 	$(call Host/Prepare)
 	$(foreach hook,$(Hooks/HostPrepare/Post),$(call $(hook))$(sep))
 	touch $$@
+	$(call BuildTimeLog,end,prepare)
 
   $(call Host/Exports,$(HOST_STAMP_CONFIGURED))
   $(HOST_STAMP_CONFIGURED): $(HOST_STAMP_PREPARED)
+	$(call BuildTimeLog,begin,configure)
 	$(foreach hook,$(Hooks/HostConfigure/Pre),$(call $(hook))$(sep))
 	$(call Host/Configure)
 	$(foreach hook,$(Hooks/HostConfigure/Post),$(call $(hook))$(sep))
 	touch $$@
+	$(call BuildTimeLog,end,configure)
 
   $(call Host/Exports,$(HOST_STAMP_BUILT))
   $(HOST_STAMP_BUILT): $(HOST_STAMP_CONFIGURED)
+		$(call BuildTimeLog,begin,compile)
 		$(foreach hook,$(Hooks/HostCompile/Pre),$(call $(hook))$(sep))
 		$(call Host/Compile)
 		$(foreach hook,$(Hooks/HostCompile/Post),$(call $(hook))$(sep))
 		touch $$@
+		$(call BuildTimeLog,end,compile)
 
   $(call Host/Exports,$(HOST_STAMP_INSTALLED))
   $(HOST_STAMP_INSTALLED): $(HOST_STAMP_BUILT) $(if $(FORCE_HOST_INSTALL),FORCE)
+		$(call BuildTimeLog,begin,install)
 		$(call Host/Install,$(HOST_BUILD_PREFIX))
 		$(foreach hook,$(Hooks/HostInstall/Post),$(call $(hook))$(sep))
 		mkdir -p $$(shell dirname $$@)
 		touch $(HOST_STAMP_BUILT)
 		touch $$@ $(HOST_STAMP_PROGRAMS)
+		$(call BuildTimeLog,end,install)
 
   $(call DefaultTargets,$(patsubst %,host-%,$(DEFAULT_SUBDIR_TARGETS)))
   ifndef STAMP_BUILT

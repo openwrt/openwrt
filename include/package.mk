@@ -247,6 +247,7 @@ define Build/CoreTargets
 
   $(STAMP_PREPARED) : export PATH=$$(TARGET_PATH_PKG)
   $(STAMP_PREPARED): $(STAMP_PREPARED_DEPENDS)
+	$(call BuildTimeLog,begin,prepare)
 	@-rm -rf $(PKG_BUILD_DIR)
 	@mkdir -p $(PKG_BUILD_DIR)
 	touch $$@_check
@@ -254,18 +255,22 @@ define Build/CoreTargets
 	$(Build/Prepare)
 	$(foreach hook,$(Hooks/Prepare/Post),$(call $(hook))$(sep))
 	touch $$@
+	$(call BuildTimeLog,end,prepare)
 
   $(call Build/Exports,$(STAMP_CONFIGURED))
   $(STAMP_CONFIGURED): $(STAMP_PREPARED) $(STAMP_CONFIGURED_DEPENDS)
+	$(call BuildTimeLog,begin,configure)
 	rm -f $(STAMP_CONFIGURED_WILDCARD)
 	$(CleanStaging)
 	$(foreach hook,$(Hooks/Configure/Pre),$(call $(hook))$(sep))
 	$(Build/Configure)
 	$(foreach hook,$(Hooks/Configure/Post),$(call $(hook))$(sep))
 	touch $$@
+	$(call BuildTimeLog,end,configure)
 
   $(call Build/Exports,$(STAMP_BUILT))
   $(STAMP_BUILT): $(STAMP_CONFIGURED) $(STAMP_BUILT_DEPENDS)
+	$(call BuildTimeLog,begin,compile)
 	rm -f $$@
 	touch $$@_check
 	$(foreach hook,$(Hooks/Compile/Pre),$(call $(hook))$(sep))
@@ -274,9 +279,11 @@ define Build/CoreTargets
 	$(Build/Install)
 	$(foreach hook,$(Hooks/Install/Post),$(call $(hook))$(sep))
 	touch $$@
+	$(call BuildTimeLog,end,compile)
 
   $(STAMP_INSTALLED) : export PATH=$$(TARGET_PATH_PKG)
   $(STAMP_INSTALLED): $(STAMP_BUILT)
+	$(call BuildTimeLog,begin,install)
 	rm -rf $(STAGING_TMP_DIR)
 	mkdir -p $(STAGING_TMP_DIR)/host $(STAGING_DIR)/packages
 	$(foreach hook,$(Hooks/InstallDev/Pre),\
@@ -300,6 +307,7 @@ define Build/CoreTargets
 	fi
 	rm -rf $(STAGING_TMP_DIR)
 	touch $$@
+	$(call BuildTimeLog,end,install)
 
   ifdef Build/InstallDev
     $(_pkg_target)compile: $(STAMP_INSTALLED)
