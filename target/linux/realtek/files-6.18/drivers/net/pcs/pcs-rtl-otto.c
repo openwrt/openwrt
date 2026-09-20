@@ -109,10 +109,6 @@
 #define RTPCS_931X_MAC_SERDES_MODE_CTRL(sds)	(0x136C + (((sds) << 2)))
 #define RTPCS_931X_ISR_SERDES_RXIDLE		(0x12f8)
 
-#define RTPCS_931X_SDS_PRE_AMP_MASK		GENMASK(4, 0)
-#define RTPCS_931X_SDS_MAIN_AMP_MASK		GENMASK(9, 5)
-#define RTPCS_931X_SDS_POST_AMP_MASK		GENMASK(14, 10)
-
 /* Paged SerDes registers */
 
 /*
@@ -173,10 +169,18 @@ enum rtpcs_page {
 #define  RTL838X_SDS_EN_RX		BIT(1)
 #define  RTL838X_SDS_EN_TX		BIT(0)
 
+#define SDS_REG04			0x04
+#define  RTL931X_CFG_EN_LINK_FIB1G	BIT(2)
+
 /* PAGE_SDS_EXT */
 
 #define SDS_EXT_REG03			0x03
 #define  RTL838X_REG_CML_SEL		BIT(1)
+
+/* PAGE_FIB_EXT */
+
+#define FIB_EXT_REG19			0x13
+#define  RTL931X_CFG_TX_MODE		GENMASK(15, 14)
 
 /* PAGE_TGR_STD_1 */
 
@@ -278,6 +282,8 @@ enum rtpcs_page {
 #define   RTL930X_DBGO_SEL_0_RXEQ_EVEN_LANE	0x2f
 #define   RTL930X_DBGO_SEL_0_RXEQ_ODD_LANE	0x31
 #define   RTL930X_DBGO_SEL_0_RX_STATUS		0x35
+#define   RTL931X_DBGO_SEL_0_RXEQ_EVEN_LANE	0x4b
+#define   RTL931X_DBGO_SEL_0_RXEQ_ODD_LANE	0x4c
 
 #define WDIG_REG09			0x09
 #define  RTL93XX_FRC_SDS_MD_VAL		GENMASK(11, 7)
@@ -307,6 +313,15 @@ enum rtpcs_page {
 
 /* PAGE_ANA_SPD - all ANA_SPD_XXXX pages share common layout */
 
+#define ANA_SPD_REG00			0x00
+#define  RTL931X_PRE_AMP_EN		BIT(1)
+#define  RTL931X_POST_AMP_EN		BIT(0)
+
+#define ANA_SPD_REG01			0x01
+#define  RTL931X_POST_AMP		GENMASK(14, 10)
+#define  RTL931X_MAIN_AMP		GENMASK(9, 5)
+#define  RTL931X_PRE_AMP		GENMASK(4, 0)
+
 #define ANA_SPD_REG19			0x13
 #define  RTL930X_VTHP_INIT		GENMASK(5, 3)
 #define  RTL930X_VTHN_INIT		GENMASK(2, 0)
@@ -314,6 +329,7 @@ enum rtpcs_page {
 #define ANA_SPD_REG21			0x15
 #define  RTL930X_RX_EN_TEST		BIT(9)
 #define  RTL930X_RX_EN_SELF		BIT(4)
+#define  RTL931X_RX_DEBUG_SEL		GENMASK(11, 10)
 
 /* PAGE_ANA_SPD_EXT */
 
@@ -3345,7 +3361,7 @@ static void rtpcs_931x_sds_clear_symerr(struct rtpcs_serdes *sds,
 }
 
 /*
- * rtpcs_931x_sds_set_debug() - Route a coefficient's debug readback.
+ * rtpcs_931x_sds_rxeq_set_debug() - Route a coefficient's debug readback.
  *
  * Vendor SDK: _phy_rtl9310_dbg_set(). Selects which lane of the even/odd
  * pair feeds the shared WDIG debug readback register, then selects
@@ -3355,12 +3371,14 @@ static void rtpcs_931x_sds_clear_symerr(struct rtpcs_serdes *sds,
  * 	 those settings and produce inconsistent results. Currently, this is
  * 	 achieved by the global PCS lock.
  */
-static int rtpcs_931x_sds_set_debug(struct rtpcs_serdes *sds, unsigned int dbg_sel)
+static int rtpcs_931x_sds_rxeq_set_debug(struct rtpcs_serdes *sds, unsigned int dbg_sel)
 {
 	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
 	int ret;
 
-	ret = rtpcs_sds_write(even_sds, PAGE_WDIG, 0x2, (sds == even_sds) ? 0x4b : 0x4c);
+	ret = rtpcs_sds_write_mask(even_sds, PAGE_WDIG, WDIG_REG02, RTL93XX_DBGO_SEL_0,
+				   (sds == even_sds) ? RTL931X_DBGO_SEL_0_RXEQ_EVEN_LANE
+						     : RTL931X_DBGO_SEL_0_RXEQ_ODD_LANE);
 	if (ret < 0)
 		return ret;
 
@@ -3368,7 +3386,9 @@ static int rtpcs_931x_sds_set_debug(struct rtpcs_serdes *sds, unsigned int dbg_s
 	if (ret < 0)
 		return ret;
 
-	return rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x15, 11, 10, dbg_sel);
+	return rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG21,
+				    RTL931X_RX_DEBUG_SEL,
+				    FIELD_PREP(RTL931X_RX_DEBUG_SEL, dbg_sel));
 }
 
 static int rtpcs_931x_sds_rxeq_leq_set_adapt(struct rtpcs_serdes *sds, bool enable)
@@ -3385,7 +3405,7 @@ static int rtpcs_931x_sds_rxeq_leq_get_coef(struct rtpcs_serdes *sds)
 {
 	int ret, gray;
 
-	ret = rtpcs_931x_sds_set_debug(sds, 0x1);
+	ret = rtpcs_931x_sds_rxeq_set_debug(sds, 0x1);
 	if (ret < 0)
 		return ret;
 
@@ -3467,7 +3487,7 @@ static int rtpcs_931x_sds_rxeq_vth_get(struct rtpcs_serdes *sds, unsigned int *v
 {
 	int ret, val;
 
-	ret = rtpcs_931x_sds_set_debug(sds, 0x2);
+	ret = rtpcs_931x_sds_rxeq_set_debug(sds, 0x2);
 	if (ret < 0)
 		return ret;
 
@@ -3889,20 +3909,22 @@ static int rtpcs_931x_sds_config_tx_amps(struct rtpcs_serdes *sds, u8 pre_amp, u
 	u16 cfg_val, en_val = 0;
 	int ret;
 
-	cfg_val = FIELD_PREP(RTPCS_931X_SDS_PRE_AMP_MASK, pre_amp) |
-		  FIELD_PREP(RTPCS_931X_SDS_MAIN_AMP_MASK, main_amp) |
-		  FIELD_PREP(RTPCS_931X_SDS_POST_AMP_MASK, post_amp);
-	ret = rtpcs_sds_write(sds, PAGE_ANA_10G, 0x1, cfg_val);
+	cfg_val = FIELD_PREP(RTL931X_POST_AMP, post_amp) |
+		  FIELD_PREP(RTL931X_MAIN_AMP, main_amp) |
+		  FIELD_PREP(RTL931X_PRE_AMP, pre_amp);
+	ret = rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG01,
+				   RTL931X_POST_AMP | RTL931X_MAIN_AMP | RTL931X_PRE_AMP, cfg_val);
 	if (ret < 0)
 		return ret;
 
 	/* enable/disable pre + post amp, main amp has no enable bit so seems always active */
 	if (post_amp)
-		en_val |= BIT(0);
+		en_val |= RTL931X_POST_AMP_EN;
 	if (pre_amp)
-		en_val |= BIT(1);
+		en_val |= RTL931X_PRE_AMP_EN;
 
-	return rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x0, 1, 0, en_val);
+	return rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG00,
+				    RTL931X_POST_AMP_EN | RTL931X_PRE_AMP_EN, en_val);
 }
 
 static int rtpcs_931x_sds_config_attachment(struct rtpcs_serdes *sds,
@@ -4035,12 +4057,13 @@ static int rtpcs_931x_sds_config_hw_mode(struct rtpcs_serdes *sds,
 		break;
 
 	case RTPCS_SDS_MODE_1000BASEX:
-		rtpcs_sds_write_bits(sds, DIGI_1(PAGE_FIB_EXT), 0x13, 15, 14, 0);
+		rtpcs_sds_write_mask(sds, DIGI_1(PAGE_FIB_EXT), FIB_EXT_REG19,
+				     RTL931X_CFG_TX_MODE, 0);
 
 		rtpcs_sds_write_mask(sds, DIGI_1(PAGE_FIB), MII_BMCR,
 				     BMCR_SPEED1000 | BMCR_SPEED100, BMCR_SPEED1000);
-		/* EN_LINK_FIB1G */
-		rtpcs_sds_write_bits(sds, DIGI_1(PAGE_SDS), 0x4, 2, 2, 1);
+		rtpcs_sds_write_mask(sds, DIGI_1(PAGE_SDS), SDS_REG04,
+				     RTL931X_CFG_EN_LINK_FIB1G, RTL931X_CFG_EN_LINK_FIB1G);
 		break;
 
 	case RTPCS_SDS_MODE_2500BASEX:
