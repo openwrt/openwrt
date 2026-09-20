@@ -76,6 +76,24 @@ ncm_query_id() {
 	echo "$val"
 }
 
+# Is there any "<manufacturer>-<model>" entry for this vendor at all? If not,
+# there is nothing to be gained by waiting for the model.
+ncm_has_model_entry() {
+	local manufacturer="$1"
+	local keys key
+
+	# json_get_keys reports the names with anything but a letter or a digit
+	# replaced, so "quectel-eg060w" arrives as "quectel_eg060w"
+	json_get_keys keys
+	for key in $keys; do
+		case "$key" in
+		"$manufacturer"-*|"$manufacturer"_*) return 0 ;;
+		esac
+	done
+
+	return 1
+}
+
 # Pick the ncm.json entry: "<manufacturer>-<model>" wins over the plain
 # manufacturer one. json_is_a() avoids a warning when there is no such entry.
 ncm_select_modem() {
@@ -154,38 +172,42 @@ proto_ncm_setup() {
 		return 1
 	}
 
-	start=$(date +%s)
+	# a modem that was just powered up takes a few seconds before it answers,
+	# so keep asking until it identifies itself
+	local deadline=$(($(date +%s) + ${delay:-20}))
 	while true; do
 		manufacturer=$(ncm_query_id "$device" getcardinfo CGMI)
-		[ -n "$manufacturer" ] && {
-			break
-		}
-		[ -z "$delay" ] && {
-			break
-		}
-		sleep 1
-		elapsed=$(($(date +%s) - start))
-		[ "$elapsed" -gt "$delay" ] && {
-			break
-		}
-	done
-	[ -z "$manufacturer" ] && {
-		echo "Failed to get modem information"
-		proto_notify_error "$interface" GETINFO_FAILED
-		return 1
-	}
+		model=$(ncm_query_id "$device" getmodel CGMM)
+		# drop the region/SKU suffix: EG060W-EAAA -> eg060w
+		model=${model%%-*}
 
-	model=$(ncm_query_id "$device" getmodel CGMM)
-	# drop the region/SKU suffix: EG060W-EAAA -> eg060w
-	model=${model%%-*}
+		json_load "$(cat /etc/gcom/ncm.json)"
+		if [ -n "$manufacturer" ]; then
+			if [ -n "$model" ] || ! ncm_has_model_entry "$manufacturer"; then
+				ncm_select_modem "$manufacturer" "$model" && break
+			fi
+		fi
 
-	json_load "$(cat /etc/gcom/ncm.json)"
-	ncm_select_modem "$manufacturer" "$model" || {
-		echo "Unsupported modem"
+		[ "$(date +%s)" -lt "$deadline" ] && {
+			sleep 1
+			continue
+		}
+
+		[ -n "$manufacturer" ] || {
+			echo "Failed to get modem information"
+			proto_notify_error "$interface" GETINFO_FAILED
+			return 1
+		}
+
+		# out of time: a modem that never reports a model still gets its
+		# manufacturer entry
+		ncm_select_modem "$manufacturer" "$model" && break
+
+		echo "Unsupported modem (manufacturer '$manufacturer', model '$model')"
 		proto_notify_error "$interface" UNSUPPORTED_MODEM
 		proto_set_available "$interface" 0
 		return 1
-	}
+	done
 
 	json_get_values initialize initialize
 	for i in $initialize; do
