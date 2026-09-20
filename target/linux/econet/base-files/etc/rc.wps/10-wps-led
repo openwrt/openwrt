@@ -1,0 +1,21 @@
+#!/bin/sh
+# Blink the WPS panel LED for hostapd's default PBC walk-time window (120s)
+# on any WPS button release, regardless of whether the handshake completes.
+# Runs before 40-wps_ap/50-wps_sta (alphabetically first) and must exit
+# non-zero so rc.button/wps's "run until one succeeds" loop reaches them.
+# Gated on the LED existing, not on board identity: any econet board whose
+# DTS declares a WPS LED (LED_FUNCTION_WPS) ends up with this same
+# "green:wps" sysfs name via the standard LED naming convention, and gets
+# this behavior for free -- confirmed at least one other board already
+# does (en7528_dasan_h660gm-a-airtel.dts).
+
+LED=/sys/class/leds/green:wps
+
+[ -d "$LED" ] && {
+	echo timer > "$LED/trigger" 2>/dev/null
+	echo 200 > "$LED/delay_on" 2>/dev/null
+	echo 200 > "$LED/delay_off" 2>/dev/null
+	( sleep 120; echo none > "$LED/trigger" 2>/dev/null; echo 0 > "$LED/brightness" 2>/dev/null ) &
+}
+
+exit 1

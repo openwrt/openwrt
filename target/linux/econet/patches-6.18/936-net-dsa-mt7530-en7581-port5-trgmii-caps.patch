@@ -1,0 +1,40 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Sergey Lebedev <sergey@lebedev.mobi>
+Date: Mon, 28 Jul 2026 23:30:00 +0000
+Subject: [PATCH] net: dsa: mt7530: model EN7581 port 5 as TRGMII-capable
+
+en7581_mac_port_get_caps() leaves port 5 with an empty
+supported_interfaces, so any DTS declaring a port@5 user port fails
+phylink creation with -EINVAL ("phylink: error: empty
+supported_interfaces" / "error -22 setting up PHY").
+
+On the ZTE H267A board, the SoC's own MCM switch uplinks to the
+external MT7530BU (the chip the jacks are physically wired to) over
+TRGMII on port 5 -- measured live 2026-07-28 (frames from the EXT chip
+count at MCM P5's RX MIB). Declare it TRGMII-capable, 1G-only (the
+link runs fixed-link 1000/full). Harmless for the other EN7581 boards,
+which declare no port@5 node.
+
+Signed-off-by: Sergey Lebedev <sergey@lebedev.mobi>
+---
+--- a/drivers/net/dsa/mt7530.c
++++ b/drivers/net/dsa/mt7530.c
+@@ -2819,6 +2819,18 @@
+ 		config->mac_capabilities |= MAC_10 | MAC_100 | MAC_1000FD;
+ 		break;
+ 
++	/* Port 5: board-level TRGMII uplink to the external switch (the
++	 * ZTE H267A wires its jacks to a second MT7530BU behind this
++	 * port). Unused on the other EN7581 boards, which declare no
++	 * port@5 node.
++	 */
++	case 5:
++		__set_bit(PHY_INTERFACE_MODE_TRGMII,
++			  config->supported_interfaces);
++
++		config->mac_capabilities |= MAC_1000FD;
++		break;
++
+ 	/* Port 6 is connected to SoC's XGMII MAC. There is no MII pinout. */
+ 	case 6:
+ 		__set_bit(PHY_INTERFACE_MODE_INTERNAL,

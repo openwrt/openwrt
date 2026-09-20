@@ -1,0 +1,96 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Sergey Lebedev <sergey@lebedev.mobi>
+Date: Thu, 13 Aug 2026 15:26:39 +0300
+Subject: [PATCH] mips: econet: add multi-vpe capability to EN751221
+
+Backport of upstream commit 8ae6e79ee0ce ("mips: econet: add multi-vpe
+capability to EN751221"), which landed in v7.3.
+
+EN751221 has no Coherence Manager, so register_cps_smp_ops() always fails
+on this SoC and device_tree_init() fell straight through to
+register_up_smp_ops() -- one CPU, even though the 34Kc core implements the
+MT ASE with two VPEs per MVPConf0.PVPE. Registering vsmp_smp_ops brings the
+second VPE up under SMVP, one TC per VPE.
+
+vsmp_smp_ops' generic init_secondary() unmasks IP0/IP1 plus either a GIC or
+Malta's cascading IP6/IP7 performance-counter lines. econet's INTC is
+neither, and unmasking anything past IP0/IP1/IP2 stops it delivering
+interrupts at all, so init_secondary is overridden to unmask only the two
+software-interrupt lines the generic IPI layer needs. Device IRQs do not go
+through Status.IM here: the INTC driver dispatches them per-vector via
+set_vi_handler().
+
+Adapted against this tree's EN7528 CPS probe in device_tree_init(), which
+upstream's base does not carry -- the CPS attempt stays first and the SMVP
+registration is tried only when it fails. The Kconfig hunk likewise only
+adds SYS_SUPPORTS_MULTITHREADING instead of replacing SMP/SMP_UP/
+SYS_SUPPORTS_SMP, since EN7528 still needs those here.
+
+Signed-off-by: Sergey Lebedev <sergey@lebedev.mobi>
+---
+--- a/arch/mips/econet/Kconfig
++++ b/arch/mips/econet/Kconfig
+@@ -19,6 +19,7 @@ choice
+ 		select PCI_DRIVERS_GENERIC
+ 		select SMP
+ 		select SMP_UP
++		select SYS_SUPPORTS_MULTITHREADING
+ 		select SYS_SUPPORTS_SMP
+ 		help
+ 		  The EN751221 family includes EN7512, RN7513, EN7521, EN7526.
+--- a/arch/mips/econet/init.c
++++ b/arch/mips/econet/init.c
+@@ -33,6 +33,41 @@ static void hw_reset(char *command)
+ 	iowrite32(RESET, CR_AHB_RSTCR);
+ }
+ 
++/*
++ * vsmp_init_secondary expects either GIC or cascading interrupt configuration.
++ * The EN751221 is a 34Kc with VEIC, but not GIC compatible. The cascading
++ * configuration enables lines 6 and 7 for performance counters, but when this
++ * is done on the EN751221 intc with VEIC enabled, it causes the whole intc to
++ * stop sending interrupts.
++ * Only unmask lines 0 and 1 (software interrupts) in init_secondary.
++ */
++#ifdef CONFIG_MIPS_MT_SMP
++extern const struct plat_smp_ops vsmp_smp_ops;
++static struct plat_smp_ops en75_smp_ops __ro_after_init;
++
++static void en751221_init_secondary(void)
++{
++	write_c0_status((read_c0_status() & ~ST0_IM) |
++		(STATUSF_IP0 | STATUSF_IP1));
++}
++
++static int __init en751221_register_vsmp_smp_ops(void)
++{
++	if (!cpu_has_mipsmt)
++		return -ENODEV;
++
++	en75_smp_ops = vsmp_smp_ops;
++	en75_smp_ops.init_secondary = en751221_init_secondary;
++	register_smp_ops(&en75_smp_ops);
++	return 0;
++}
++#else
++static int __init en751221_register_vsmp_smp_ops(void)
++{
++	return -ENODEV;
++}
++#endif /* CONFIG_MIPS_MT_SMP */
++
+ /* 1. Bring up early printk. */
+ void __init prom_init(void)
+ {
+@@ -68,6 +103,11 @@ void __init device_tree_init(void)
+ 	if (!register_cps_smp_ops())
+ 		return;
+ 
++	/* EN751221 dual-vpe */
++	if (!en751221_register_vsmp_smp_ops())
++		return;
++
++	/* EN751221 with MT_SMP disabled */
+ 	register_up_smp_ops();
+ }
+ 

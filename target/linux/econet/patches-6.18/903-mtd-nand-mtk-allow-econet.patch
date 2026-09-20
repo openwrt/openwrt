@@ -1,0 +1,33 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Sergey Lebedev <sergey@lebedev.mobi>
+Date: Sun, 12 Jul 2026 12:24:02 +0300
+Subject: [PATCH] mtd: nand: allow MediaTek NFI + ECC on EcoNet MIPS SoCs
+
+EN751221 (ARCH ECONET, MIPS) has the same MediaTek NFI parallel-NAND
+controller + HW-ECC (MT2701/MT7622 gen) that mtk_nand.c/ecc-mtk.c drive.
+Those symbols only allow ARCH_MEDIATEK or COMPILE_TEST; add ECONET.
+
+Signed-off-by: Sergey Lebedev <sergey@lebedev.mobi>
+---
+--- a/drivers/mtd/nand/Kconfig
++++ b/drivers/mtd/nand/Kconfig
+@@ -60,7 +60,7 @@ config MTD_NAND_ECC_MXIC
+ config MTD_NAND_ECC_MEDIATEK
+ 	tristate "Mediatek hardware ECC engine"
+ 	depends on HAS_IOMEM
+-	depends on ARCH_MEDIATEK || COMPILE_TEST
++	depends on ARCH_MEDIATEK || ECONET || COMPILE_TEST
+ 	select MTD_NAND_ECC
+ 	help
+ 	  This enables support for the hardware ECC engine from Mediatek.
+--- a/drivers/mtd/nand/raw/Kconfig
++++ b/drivers/mtd/nand/raw/Kconfig
+@@ -314,7 +314,7 @@ config MTD_NAND_QCOM
+ config MTD_NAND_MTK
+ 	tristate "MTK NAND controller"
+ 	depends on MTD_NAND_ECC_MEDIATEK
+-	depends on ARCH_MEDIATEK || COMPILE_TEST
++	depends on ARCH_MEDIATEK || ECONET || COMPILE_TEST
+ 	depends on HAS_IOMEM
+ 	help
+ 	  Enables support for NAND controller on MTK SoCs.
