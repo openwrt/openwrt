@@ -138,6 +138,42 @@ endef
 $(eval $(call KernelPackage,video-synopsys-hdmirx))
 
 
+define KernelPackage/video-dw-mipi-csi2rx
+  TITLE:=Synopsys DesignWare MIPI CSI-2 receiver
+  DEPENDS:=@TARGET_rockchip +kmod-video-fwnode
+  KCONFIG:=CONFIG_VIDEO_DW_MIPI_CSI2RX
+  FILES:=$(LINUX_DIR)/drivers/media/platform/synopsys/dw-mipi-csi2rx.ko
+  AUTOLOAD:=$(call AutoProbe,dw-mipi-csi2rx)
+  $(call AddDepends/video)
+endef
+
+define KernelPackage/video-dw-mipi-csi2rx/description
+  The CSI-2 receiver that feeds the video capture unit on RK3568 and
+  RK3588, taking its data from the MIPI D-PHY.
+endef
+
+$(eval $(call KernelPackage,video-dw-mipi-csi2rx))
+
+
+define KernelPackage/video-rockchip-cif
+  TITLE:=Rockchip Camera Interface (VICAP)
+  DEPENDS:=@TARGET_rockchip +kmod-video-dma-contig +kmod-video-fwnode \
+	+kmod-video-dw-mipi-csi2rx
+  KCONFIG:=CONFIG_VIDEO_ROCKCHIP_CIF
+  FILES:=$(LINUX_DIR)/drivers/media/platform/rockchip/rkcif/rockchip-cif.ko
+  AUTOLOAD:=$(call AutoProbe,rockchip-cif)
+  $(call AddDepends/video)
+endef
+
+define KernelPackage/video-rockchip-cif/description
+  Camera capture for the video input unit found on PX30, RK3568 and
+  RK3588. A camera also needs its sensor driver and a device tree that
+  describes the connection.
+endef
+
+$(eval $(call KernelPackage,video-rockchip-cif))
+
+
 define KernelPackage/sound-soc-rockchip-i2s
   TITLE:=Rockchip I2S support
   DEPENDS:=@TARGET_rockchip +kmod-sound-soc-core
