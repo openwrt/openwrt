@@ -80,6 +80,7 @@ define Build/cameo-headers
 endef
 
 define Build/7z
+	$(if $(SOURCE_DATE_EPOCH),touch -hcd "@$(SOURCE_DATE_EPOCH)" $@)
 	$(STAGING_DIR_HOST)/bin/7zr a $(@).new -t7z -m0=lzma $(@)
 	mv $@.new $@
 endef
