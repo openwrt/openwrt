@@ -1,0 +1,28 @@
+From: John Crispin <john@phrozen.org>
+Subject: [PATCH] tools: mxsimage: honour SOURCE_DATE_EPOCH
+
+sb_get_timestamp() reads the wall clock, and sb_prefill_image_header()
+writes the value to the timestamp of the boot image header. The header
+digest covers that field, so a .sb image built twice from the same input
+differs in both.
+
+Use imagetool_get_source_date(), which the other image tools already use,
+and keep the wall clock as the fallback.
+
+Signed-off-by: John Crispin <john@phrozen.org>
+---
+ tools/mxsimage.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/tools/mxsimage.c
++++ b/tools/mxsimage.c
+@@ -289,7 +289,8 @@ static time_t sb_get_timestamp(void)
+ 		.tm_year	= 100,	/* 2000 */
+ 	};
+ 	time_t seconds_to_2000 = mktime(&time_2000);
+-	time_t seconds_to_now = time(NULL);
++	time_t seconds_to_now = imagetool_get_source_date("mxsimage",
++							  time(NULL));
+
+ 	return seconds_to_now - seconds_to_2000;
+ }
