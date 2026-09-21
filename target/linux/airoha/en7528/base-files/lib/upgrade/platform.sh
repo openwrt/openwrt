@@ -12,6 +12,14 @@ platform_do_upgrade() {
     CI_KERNPART="tclinux_kernel"
     nand_do_upgrade "$1"
     ;;
+  tplink,xc220-g3v)
+    # Raw NOR, no UBI: the whole sysupgrade.bin (FIT kernel + squashfs
+    # rootfs + metadata) goes straight into the "firmware" MTD partition.
+    # nand_do_upgrade (the default below) assumes a NAND/UBI layout and
+    # will ubiformat this partition instead -- wrong for this device.
+    PART_NAME="firmware"
+    default_do_upgrade "$1"
+    ;;
   *)
     nand_do_upgrade "$1"
     ;;
