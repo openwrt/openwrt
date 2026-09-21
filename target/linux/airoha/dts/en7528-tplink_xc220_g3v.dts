@@ -156,10 +156,6 @@ model = "TP-Link xc220 g3v";
 						reg = <0x10000 0xff>;
 					};
 
-					gponsn: gponsn@40001 {
-						reg = <0x40001 0x10>;
-					};
-
 					eeprom2_4: eeprom@60000 {
 						reg = <0x60000 0x200>;
 					};
@@ -215,24 +211,30 @@ model = "TP-Link xc220 g3v";
 };
 
 &slot0 {
+	status = "okay";
+
 	wifi@0,0 {
 		/* 2,4 GHz: MT7592/MT7603 */
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
 
-		nvmem-cells = <&eeprom2_4>, <&macaddr 1>;
-		nvmem-cell-names = "eeprom", "mac-address";
+		nvmem-cells = <&macaddr 1>, <&eeprom2_4>;
+		nvmem-cell-names = "mac-address", "eeprom";
+		ieee80211-freq-limit = <2400000 2500000>;
 	};
 };
 
 &slot1 {
+	status = "okay";
+
 	wifi@0,0 {
 		/* Dual-band/5 GHz: MT7663 */
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
 
-		nvmem-cells = <&eeprom5>, <&macaddr 2>;
-		nvmem-cell-names = "eeprom", "mac-address";
+		nvmem-cells = <&macaddr 2>, <&eeprom5>;
+		nvmem-cell-names = "mac-address", "eeprom";
+		ieee80211-freq-limit = <5000000 6000000>;
 	};
 };
 
@@ -258,8 +260,8 @@ model = "TP-Link xc220 g3v";
 &xpon {
 	status = "okay";
 
-	nvmem-cells = <&gponsn>;
-	nvmem-cell-names = "gpon-serial-number";
+	airoha,gpon-serial-from-mac;
+	omci-vendor-id = "TPLG";
 
 	optical-frontends = <&en7571>;
 	optical-frontend-names = "pon";

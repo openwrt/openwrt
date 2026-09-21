@@ -1,0 +1,401 @@
+From 15d9fbeeac4e1a0b0fe2ea6a81eb66fd80afb200 Mon Sep 17 00:00:00 2001
+From: Cristian Papa <76759272+Cris7015@users.noreply.github.com>
+Date: Sun, 20 Sep 2026 13:42:29 -0300
+Subject: [PATCH] airoha: en751221: add TP-Link Archer XR500v v1
+
+EN7526G package of the EN751221 family: 256 MiB DDR, 128 MiB SPI-NAND
+(ESMT F50L1G41A), UART at 0x1fbf0000, the LEDs (power 6, xPON 2, WPS 7,
+USB 11, LOS 24, phone 25/26, internet 28) and keys (reset 0, wifi 4,
+wps 9) of the board. Same flash layout and environment as the Nokia
+G-240G-E: tcboot.bin in the first MiB, UBI after it with the
+environment in ubootenv/ubootenv2.
+
+The power LED is not wired to the supply: it is GPIO 6, active low
+(entry 77 of the OEM led.conf), and the OEM bootloader turns it on.
+After BootROM recovery nothing does, so the board would sit with only
+the Ethernet link LEDs lit. It is described with default-state = "on"
+so the LED uclass lights it while probing, and bootled points at it
+instead of the Internet LED. Checked on the board: with GPIO 6 put back
+to input first, U-Boot drives it as an output low and "led list" shows
+"green:power on".
+
+The format_ubi_part menu entry keeps the OEM misc partition (MACs at
++0xf100, EN7570 laser calibration at +0x20000, MT7662 EEPROM at
++0xe0000) and the OEM tcboot as static volumes, so the factory data and
+the way back to the stock bootloader survive the migration; the
+environment derives ethaddr from the misc volume before booting. Both
+are taken from dumps made under the OEM-aware Linux driver and served
+over TFTP (${miscfile}, ${oembootfile}), not read with "mtd read": the
+OEM kernel reaches its partitions through its own BMT, which U-Boot
+does not implement, so on this board mtd read returns 0xff or garbage
+and the migration would have stored that and then erased the only copy
+of the factory data. Nothing is erased unless the sizes match and the
+contents check out: a programmed MAC at 0xf100, the EN7570 calibration
+magic 0x07050700 at 0x20094, the MT7662 EEPROM id at 0xe0000 and the
+"6578" TCBoot magic at 0xc; upgrade_uboot also refuses an image without
+that magic. With the one-byte bad-block marker of the F50L1G41A a plain
+"mtd erase" skips only the chip's real bad blocks, so no .dontskipbad
+or re-marking is needed. Tested at the prompt: load_oem_backups accepts
+the real dumps and rejects a wrong file.
+
+The old hush parser has no "( ... )" grouping ("Unknown command '('")
+and bin2mac needs its size argument, so boot_openwrt and set_ethaddr
+use if/then/else and pass the size; without that, booting from flash
+never reached the "fit" volume and fell through to TFTP. bootfile
+follows the name of the OpenWrt profile for this layout
+(openwrt-airoha-en751221-tplink_archer-xr500v-v1-initramfs-kernel.bin,
+airoha/openwrt#67).
+
+CONFIG_SYS_BOOTM_LEN is 32 MiB: the OpenWrt initramfs kernels are
+uncompressed legacy uImages of about 9.3 MiB, above the 8 MiB default,
+and bootm fails with "Image too large: increase CONFIG_SYS_BOOTM_LEN"
+and resets. The kernel loads at 0x80020000 while images are staged at
+the default 0x82000000, so an image larger than ~31.9 MiB would still
+have to be staged higher.
+
+Tested on the board: migrated to this layout, U-Boot boots OpenWrt from
+NAND through "ubi read fit" and bootm, and a 9705156-byte initramfs
+fetched by TFTP boots through bootm as well.
+
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ arch/mips/dts/Makefile                        |   4 +-
+ ...conet,en751221-tplink_archer-xr500v-v1.dts | 156 ++++++++++++++++++
+ ...en751221_tplink_archer-xr500v-v1_defconfig |  77 +++++++++
+ defenvs/en751221_tplink_archer-xr500v-v1      |  61 +++++++
+ 4 files changed, 297 insertions(+), 1 deletion(-)
+ create mode 100644 arch/mips/dts/econet,en751221-tplink_archer-xr500v-v1.dts
+ create mode 100644 configs/en751221_tplink_archer-xr500v-v1_defconfig
+ create mode 100644 defenvs/en751221_tplink_archer-xr500v-v1
+
+diff --git a/arch/mips/dts/Makefile b/arch/mips/dts/Makefile
+index 0e5f636fc2e..ce04b12f5fb 100644
+--- a/arch/mips/dts/Makefile
++++ b/arch/mips/dts/Makefile
+@@ -6,7 +6,9 @@ dtb-$(CONFIG_TARGET_AP152) += ap152.dtb
+ dtb-$(CONFIG_TARGET_MALTA) += mti,malta.dtb
+ dtb-$(CONFIG_TARGET_PIC32MZDASK) += pic32mzda_sk.dtb
+ dtb-$(CONFIG_TARGET_XILFPGA) += nexys4ddr.dtb
+-dtb-$(CONFIG_TARGET_EN751221) += econet,en751221-reference.dtb
++dtb-$(CONFIG_TARGET_EN751221) += \
++	econet,en751221-reference.dtb \
++	econet,en751221-tplink_archer-xr500v-v1.dtb
+ dtb-$(CONFIG_TARGET_EN751627) += econet,en751627-reference.dtb
+ dtb-$(CONFIG_TARGET_EN7528) += \
+ 	econet,en7528-reference.dtb \
+diff --git a/arch/mips/dts/econet,en751221-tplink_archer-xr500v-v1.dts b/arch/mips/dts/econet,en751221-tplink_archer-xr500v-v1.dts
+new file mode 100644
+index 00000000000..74aabefcb80
+--- /dev/null
++++ b/arch/mips/dts/econet,en751221-tplink_archer-xr500v-v1.dts
+@@ -0,0 +1,156 @@
++// SPDX-License-Identifier: GPL-2.0+
++/dts-v1/;
++
++#include "econet,en751221.dtsi"
++
++/ {
++	model = "TP-Link Archer XR500v v1";
++	compatible = "tplink,archer-xr500v-v1", "econet,en751221";
++
++	/* EN7526G package of the EN751221 family, 256 MiB DDR, 128 MiB SPI-NAND. */
++
++	chosen {
++		stdout-path = "serial0:115200n8";
++	};
++
++	keys {
++		compatible = "gpio-keys-polled";
++
++		reset {
++			label = "reset";
++			linux,code = <KEY_RESTART>;
++			gpios = <&pinctrl 0 GPIO_ACTIVE_LOW>;
++			debounce-interval = <60>;
++		};
++
++		wifi {
++			label = "wifi";
++			linux,code = <KEY_RFKILL>;
++			gpios = <&pinctrl 4 GPIO_ACTIVE_LOW>;
++			debounce-interval = <60>;
++		};
++
++		wps {
++			label = "wps";
++			linux,code = <KEY_WPS_BUTTON>;
++			gpios = <&pinctrl 9 GPIO_ACTIVE_LOW>;
++			debounce-interval = <60>;
++		};
++	};
++
++	/* The power LED is wired to the rail, not to a GPIO. */
++	leds {
++		compatible = "gpio-leds";
++
++		/*
++		 * Power. Not hardwired: the OEM bootloader switches it on, so
++		 * after BootROM recovery it stays dark unless U-Boot does.
++		 */
++		led@6 {
++			color = <LED_COLOR_ID_GREEN>;
++			function = LED_FUNCTION_POWER;
++			gpios = <&pinctrl 6 GPIO_ACTIVE_LOW>;
++			default-state = "on";
++		};
++
++		/* xPON */
++		pon_led: led@2 {
++			color = <LED_COLOR_ID_GREEN>;
++			function = LED_FUNCTION_STATUS;
++			function-enumerator = <2>;
++			gpios = <&pinctrl 2 GPIO_ACTIVE_LOW>;
++		};
++
++		/* WPS */
++		led@7 {
++			color = <LED_COLOR_ID_GREEN>;
++			function = LED_FUNCTION_WPS;
++			function-enumerator = <7>;
++			gpios = <&pinctrl 7 GPIO_ACTIVE_LOW>;
++		};
++
++		/* USB */
++		led@11 {
++			color = <LED_COLOR_ID_GREEN>;
++			function = LED_FUNCTION_USB;
++			function-enumerator = <11>;
++			gpios = <&pinctrl 11 GPIO_ACTIVE_LOW>;
++		};
++
++		/* LOS */
++		pon_los: led@24 {
++			color = <LED_COLOR_ID_RED>;
++			function = LED_FUNCTION_STATUS;
++			function-enumerator = <24>;
++			gpios = <&pinctrl 24 GPIO_ACTIVE_LOW>;
++		};
++
++		/* Phone 1 */
++		led@25 {
++			color = <LED_COLOR_ID_GREEN>;
++			function = LED_FUNCTION_STATUS;
++			function-enumerator = <25>;
++			gpios = <&pinctrl 25 GPIO_ACTIVE_LOW>;
++		};
++
++		/* Phone 2 */
++		led@26 {
++			color = <LED_COLOR_ID_GREEN>;
++			function = LED_FUNCTION_STATUS;
++			function-enumerator = <26>;
++			gpios = <&pinctrl 26 GPIO_ACTIVE_LOW>;
++		};
++
++		/* Internet: free during boot, used as the boot indicator. */
++		internet_led: led@28 {
++			color = <LED_COLOR_ID_GREEN>;
++			function = LED_FUNCTION_STATUS;
++			function-enumerator = <28>;
++			gpios = <&pinctrl 28 GPIO_ACTIVE_LOW>;
++		};
++	};
++};
++
++&uart0 {
++	status = "okay";
++};
++
++&eth {
++	status = "okay";
++};
++
++&gdm1 {
++	status = "okay";
++};
++
++&switch0 {
++	status = "okay";
++};
++
++&spi0 {
++	status = "okay";
++
++	nand: nand@0 {
++		compatible = "spi-nand";
++		reg = <0>;
++		spi-max-frequency = <50000000>;
++		spi-tx-bus-width = <1>;
++		spi-rx-bus-width = <2>;
++
++		partitions {
++			compatible = "fixed-partitions";
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			partition@0 {
++				label = "u-boot";
++				reg = <0x000000 0x100000>;
++			};
++
++			partition@100000 {
++				label = "ubi";
++				reg = <0x100000 0x000000>;
++			};
++		};
++	};
++};
+diff --git a/configs/en751221_tplink_archer-xr500v-v1_defconfig b/configs/en751221_tplink_archer-xr500v-v1_defconfig
+new file mode 100644
+index 00000000000..87f590dacfb
+--- /dev/null
++++ b/configs/en751221_tplink_archer-xr500v-v1_defconfig
+@@ -0,0 +1,77 @@
++CONFIG_MIPS=y
++CONFIG_SKIP_LOWLEVEL_INIT=y
++CONFIG_NR_DRAM_BANKS=1
++CONFIG_ENV_SIZE=0x1000
++CONFIG_DM_GPIO=y
++CONFIG_DEFAULT_DEVICE_TREE="econet,en751221-tplink_archer-xr500v-v1"
++CONFIG_SYS_LOAD_ADDR=0x82000000
++CONFIG_SYS_BOOTM_LEN=0x2000000
++CONFIG_ARCH_ECONET=y
++CONFIG_SYS_MIPS_TIMER_FREQ=450000000
++CONFIG_MIPS_CACHE_SETUP=y
++CONFIG_MIPS_CACHE_DISABLE=y
++CONFIG_MIPS_RELOCATION_TABLE_SIZE=0xc000
++CONFIG_RESTORE_EXCEPTION_VECTOR_BASE=y
++CONFIG_MIPS_BOOT_FDT=y
++CONFIG_FIT=y
++CONFIG_FIT_VERBOSE=y
++CONFIG_BOOTDELAY=3
++CONFIG_OF_STDOUT_VIA_ALIAS=y
++CONFIG_DEFAULT_FDT_FILE="econet,en751221-tplink_archer-xr500v-v1.dtb"
++CONFIG_SYS_PBSIZE=1049
++CONFIG_SYS_CONSOLE_IS_IN_ENV=y
++CONFIG_DISPLAY_CPUINFO=y
++# CONFIG_DISPLAY_BOARDINFO is not set
++CONFIG_HUSH_PARSER=y
++CONFIG_SYS_PROMPT="U-Boot> "
++CONFIG_SYS_MAXARGS=8
++CONFIG_CMD_BOOTZ=y
++CONFIG_CMD_BOOTMENU=y
++# CONFIG_CMD_ELF is not set
++# CONFIG_CMD_XIMG is not set
++CONFIG_CMD_BIN2MAC=y
++CONFIG_CMD_MEMINFO=y
++CONFIG_CMD_BIND=y
++CONFIG_CMD_GPIO=y
++CONFIG_CMD_MTD=y
++# CONFIG_CMD_SETEXPR is not set
++CONFIG_CMD_DHCP=y
++CONFIG_CMD_MII=y
++CONFIG_CMD_PING=y
++CONFIG_CMD_EXT4=y
++CONFIG_CMD_FAT=y
++CONFIG_CMD_FS_GENERIC=y
++CONFIG_CMD_MTDPARTS=y
++CONFIG_CMD_LOG=y
++CONFIG_CMD_UBI=y
++CONFIG_ENV_OVERWRITE=y
++CONFIG_ENV_IS_IN_UBI=y
++CONFIG_ENV_REDUNDANT=y
++CONFIG_ENV_UBI_PART="ubi"
++CONFIG_ENV_UBI_VOLUME="ubootenv"
++CONFIG_ENV_UBI_VOLUME_REDUND="ubootenv2"
++CONFIG_ENV_RELOC_GD_ENV_ADDR=y
++CONFIG_ENV_USE_DEFAULT_ENV_TEXT_FILE=y
++CONFIG_ENV_DEFAULT_ENV_TEXT_FILE="defenvs/en751221_tplink_archer-xr500v-v1"
++CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
++CONFIG_NET_RANDOM_ETHADDR=y
++CONFIG_SYS_RX_ETH_BUFFER=16
++CONFIG_BUTTON=y
++CONFIG_BUTTON_GPIO=y
++CONFIG_DMA=y
++CONFIG_LED=y
++CONFIG_LED_BOOT=y
++CONFIG_LED_BLINK=y
++CONFIG_LED_SW_BLINK=y
++CONFIG_LED_GPIO=y
++CONFIG_MTD=y
++CONFIG_DM_MTD=y
++CONFIG_MTD_SPI_NAND=y
++CONFIG_UBI_BLOCK=y
++CONFIG_PHY=y
++CONFIG_RAM=y
++CONFIG_SPI=y
++CONFIG_DM_SPI=y
++CONFIG_AIROHA_SNFI_SPI=y
++# CONFIG_UBIFS_SILENCE_MSG is not set
++CONFIG_SHA512=y
+diff --git a/defenvs/en751221_tplink_archer-xr500v-v1 b/defenvs/en751221_tplink_archer-xr500v-v1
+new file mode 100644
+index 00000000000..fcfd1669c96
+--- /dev/null
++++ b/defenvs/en751221_tplink_archer-xr500v-v1
+@@ -0,0 +1,61 @@
++loadaddr=0x89400000
++ipaddr=192.168.1.1
++serverip=192.168.1.10
++bootled=green:power
++
++bootconf=config-1
++bootfile=openwrt-airoha-en751221-tplink_archer-xr500v-v1-initramfs-kernel.bin
++bootloaderfile=openwrt-airoha-en751221-tplink_archer-xr500v-v1-uboot-bootloader.bin
++
++boot_tftp=tftpboot $loadaddr $bootfile && bootm $loadaddr#$bootconf
++ubi_read_openwrt=ubi read $loadaddr fit && iminfo $loadaddr
++
++set_ethaddr=ubi read 0x89f00000 misc 0x480000 && bin2mac ethaddr 0x89f0f100 6
++
++boot_openwrt=led $bootled blink 255; run set_ethaddr; if run ubi_read_openwrt; then bootm $loadaddr#$bootconf; else echo Install openwrt; run boot_tftp; fi; led $bootled on
++boot_ubi=ubi part ubi && run boot_openwrt
++
++upgrade_uboot=\
++  mw.b 0x89400000 0xff 0x100000 && tftpboot 0x89400000 ${bootloaderfile} && \
++  itest.l *0x8940000c == 0x36353738 && \
++  mtd erase u-boot && mtd write u-boot 0x89400000
++
++# U-Boot's SPI-NAND driver cannot read the OEM partitions (the OEM kernel
++# maps them through its own BMT), so the factory data comes from dumps taken
++# under the OEM-aware Linux driver, fetched over TFTP and checked before
++# anything is erased:
++#   misc (4.5 MiB): MAC at 0xf100, EN7570 calibration magic 0x07050700 at
++#   0x20094, MT7662 EEPROM (0x7662) at 0xe0000; OEM bootloader: "6578" at 0xc.
++miscfile=xr500v-misc.bin
++oembootfile=xr500v-bootloader.bin
++load_oem_backups=\
++  tftpboot 0x89500000 ${miscfile} && itest ${filesize} == 480000 && \
++  itest.b *0x8950f100 != 0xff && itest.l *0x89520094 == 0x07050700 && \
++  itest.w *0x895e0000 == 0x6276 && \
++  tftpboot 0x89a00000 ${oembootfile} && itest ${filesize} == 40000 && \
++  itest.l *0x89a0000c == 0x36353738
++
++format_ubi_part=\
++  if run load_oem_backups; then \
++    mtd erase ubi && \
++    ubi part ubi && \
++    ubi create ubootenv 0x1f000 static && \
++    ubi create ubootenv2 0x1f000 static && \
++    ubi create misc 0x480000 static && ubi write 0x89500000 misc 0x480000 && \
++    ubi create tcboot_oem 0x40000 static && ubi write 0x89a00000 tcboot_oem 0x40000 && \
++    run upgrade_uboot; \
++  else \
++    echo "OEM backups missing or invalid: nothing erased"; \
++  fi
++
++bootcmd=run boot_ubi
++bootdelay=3
++bootmenu_confirm_return=askenv - Press ENTER to return to menu ; bootmenu 20
++bootmenu_default=0
++bootmenu_delay=3
++bootmenu_title=      34m( ( ( mOpenWrt34m ) ) )
++bootmenu_0=Run default boot command.=run boot_openwrt
++bootmenu_1=Boot system via TFTP.=run boot_tftp ; run bootmenu_confirm_return
++bootmenu_2=Format UBI partition (OEM misc and bootloader from TFTP backups).=run format_ubi_part
++bootmenu_4=Upgrade u-boot.=run upgrade_uboot
++bootmenu_5=Reboot.=reset
+-- 
+2.55.0
+

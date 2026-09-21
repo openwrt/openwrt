@@ -1,0 +1,115 @@
+From f80cc02e837654c35998a178cced199d96e85749 Mon Sep 17 00:00:00 2001
+From: Cristian Papa <76759272+Cris7015@users.noreply.github.com>
+Date: Sun, 20 Sep 2026 13:41:06 -0300
+Subject: [PATCH] mtd: spinand: esmt: support the F50L1G41A
+
+The TP-Link Archer XR500v carries an ESMT F50L1G41A. With READ-ID 9f
+followed by address 00 it answers c8:21:7f:7f:7f; the vendor bootloader
+prints "spi_nand_probe: mfr_id=0xc8, dev_id=0x21". The ESMT table did
+not know it, so the core fell through to the dummy-byte READ-ID method
+and GigaDevice matched the short c8:21 as a GD5F1GQ5RExxH ("GigaDevice
+SPI NAND was found"). Match the complete sequence as the Linux entry
+does.
+
+Same geometry as the F50L1G41LB (1 Gbit, 2 KiB pages, 64-byte spare,
+1 bit per 512 bytes on-die ECC). The spare area is four 16-byte
+sections: byte 0 reserved (byte 0 of section 0 is the bad-block
+marker), bytes 1-7 ECC, bytes 8-15 ECC-protected user metadata.
+
+Because each section starts with one reserved byte followed by seven
+bytes of on-die ECC, byte 1 of the spare area is ECC and only byte 0 is
+the bad-block marker, which the factory may put in the first or second
+page of a block. With the generic two-byte check, "mtd bad" on the
+XR500v reported 775 of 1024 blocks as bad: every block whose first page
+had been programmed. With SPINAND_BBM_1_BYTE | SPINAND_BBM_SECOND_PAGE
+it reports 13 blocks, all inside the pool the OEM BMT keeps at the top
+of the chip (blocks 968-1005). That is consistent with the 94-block
+reserve the OEM kernel reports, which it sizes as 81 good blocks plus
+the marked ones it finds while counting down from the last block.
+
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/mtd/nand/spi/esmt.c | 59 +++++++++++++++++++++++++++++++++++++
+ 1 file changed, 59 insertions(+)
+
+diff --git a/drivers/mtd/nand/spi/esmt.c b/drivers/mtd/nand/spi/esmt.c
+index 6a46f3a3bfc..802da3d25dd 100644
+--- a/drivers/mtd/nand/spi/esmt.c
++++ b/drivers/mtd/nand/spi/esmt.c
+@@ -112,6 +112,49 @@ static const struct mtd_ooblayout_ops f50l1g41lb_ooblayout = {
+ 	.rfree = f50l1g41lb_ooblayout_free,
+ };
+ 
++/*
++ * F50L1G41A: four 16-byte spare sections; byte 0 of each section is
++ * reserved (byte 0 of section 0 is the bad-block marker), bytes 1-7 hold
++ * the on-die ECC and bytes 8-15 are ECC-protected user metadata.
++ */
++#define F50L1G41A_OOB_SECTION_COUNT		4
++#define F50L1G41A_OOB_SECTION_SIZE		16
++#define F50L1G41A_OOB_ECC_OFFSET		1
++#define F50L1G41A_OOB_ECC_SIZE			7
++#define F50L1G41A_OOB_FREE_OFFSET		8
++#define F50L1G41A_OOB_FREE_SIZE			8
++
++static int f50l1g41a_ooblayout_ecc(struct mtd_info *mtd, int section,
++				   struct mtd_oob_region *region)
++{
++	if (section >= F50L1G41A_OOB_SECTION_COUNT)
++		return -ERANGE;
++
++	region->offset = section * F50L1G41A_OOB_SECTION_SIZE +
++			 F50L1G41A_OOB_ECC_OFFSET;
++	region->length = F50L1G41A_OOB_ECC_SIZE;
++
++	return 0;
++}
++
++static int f50l1g41a_ooblayout_free(struct mtd_info *mtd, int section,
++				    struct mtd_oob_region *region)
++{
++	if (section >= F50L1G41A_OOB_SECTION_COUNT)
++		return -ERANGE;
++
++	region->offset = section * F50L1G41A_OOB_SECTION_SIZE +
++			 F50L1G41A_OOB_FREE_OFFSET;
++	region->length = F50L1G41A_OOB_FREE_SIZE;
++
++	return 0;
++}
++
++static const struct mtd_ooblayout_ops f50l1g41a_ooblayout = {
++	.ecc = f50l1g41a_ooblayout_ecc,
++	.rfree = f50l1g41a_ooblayout_free,
++};
++
+ static int f50l1g41lb_otp_info(struct spinand_device *spinand, size_t len,
+ 			       struct otp_info *buf, size_t *retlen, bool user)
+ {
+@@ -190,6 +233,22 @@ static const struct spinand_fact_otp_ops f50l1g41lb_fact_otp_ops = {
+ };
+ 
+ static const struct spinand_info esmt_c8_spinand_table[] = {
++	/*
++	 * READ-ID 9f + address 00 returns c8:21:7f:7f:7f.  Match the whole
++	 * sequence: the short c8:21 is also what the GigaDevice
++	 * GD5F1GQ5RExxH answers to the dummy-byte READ-ID method, and the
++	 * generic fallback picked that part before.
++	 */
++	SPINAND_INFO("F50L1G41A",
++		     SPINAND_ID(SPINAND_READID_METHOD_OPCODE_ADDR, 0x21, 0x7f,
++				0x7f, 0x7f),
++		     NAND_MEMORG(1, 2048, 64, 64, 1024, 20, 1, 1, 1),
++		     NAND_ECCREQ(1, 512),
++		     SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
++					      &write_cache_variants,
++					      &update_cache_variants),
++		     SPINAND_BBM_1_BYTE | SPINAND_BBM_SECOND_PAGE,
++		     SPINAND_ECCINFO(&f50l1g41a_ooblayout, NULL)),
+ 	SPINAND_INFO("F50L1G41LB",
+ 		     SPINAND_ID(SPINAND_READID_METHOD_OPCODE_ADDR, 0x01, 0x7f,
+ 				0x7f, 0x7f),
+-- 
+2.55.0
+

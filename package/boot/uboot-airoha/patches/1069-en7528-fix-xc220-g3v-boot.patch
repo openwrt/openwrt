@@ -1,0 +1,26 @@
+From c2e31f4038cd212bdff72057fd5a0a555ab9c980 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Mon, 21 Sep 2026 14:16:47 -0300
+Subject: [PATCH] en7528: fix xc220-g3v boot
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ defenvs/en7528_xc220_g3v_env | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/defenvs/en7528_xc220_g3v_env b/defenvs/en7528_xc220_g3v_env
+index 6d753bacc45..b19211726bc 100644
+--- a/defenvs/en7528_xc220_g3v_env
++++ b/defenvs/en7528_xc220_g3v_env
+@@ -10,7 +10,7 @@ bootloaderfile=openwrt-airoha-en7528-tplink_xc220-g3v-uboot-bootloader.bin
+ boot_tftp=tftpboot $loadaddr $bootfile && bootm $loadaddr#$bootconf
+ nor_read_openwrt=mtd read firmware $loadaddr 0x0 0x800000 && iminfo $loadaddr
+ 
+-boot_openwrt=led $bootled_pwr blink 255; ( run nor_read_openwrt || echo Install openwrt ; run boot_tftp ) && bootm $loadaddr#$bootconf ; led $bootled_pwr on
++boot_openwrt=led $bootled_pwr blink 255; run nor_read_openwrt && bootm $loadaddr#$bootconf; echo Install openwrt ; run boot_tftp ; led $bootled_pwr on
+ 
+ upgrade_uboot=\
+   mw.b 0x89400000 0xff 0x100000 && tftpboot 0x89400000 ${bootloaderfile} && \
+-- 
+2.55.0
+

@@ -1,0 +1,39 @@
+From c4b6513d8a7ac4aff765a51415a6e08582e95518 Mon Sep 17 00:00:00 2001
+From: Cristian Papa <76759272+Cris7015@users.noreply.github.com>
+Date: Sun, 20 Sep 2026 20:51:17 -0300
+Subject: [PATCH] mips: econet: scope the EN751221 INTC handoff comment
+
+Describe the table as observed on the XR500v BootROM recovery path without attributing an unverified write to the OEM bootloader. Scope the dependency on bootloader initialization to older kernels; newer kernels initialize the table themselves. No executable change.
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ arch/mips/mach-econet/en751221/init.c | 13 +++++++------
+ 1 file changed, 7 insertions(+), 6 deletions(-)
+
+diff --git a/arch/mips/mach-econet/en751221/init.c b/arch/mips/mach-econet/en751221/init.c
+index 58168e19e7b..1b868a64024 100644
+--- a/arch/mips/mach-econet/en751221/init.c
++++ b/arch/mips/mach-econet/en751221/init.c
+@@ -39,12 +39,13 @@ static void en751221_clear_bootrom_recovery_latch(void)
+ #define EN751221_INTC_IPSR(n)	(0x10 + 4 * (n))
+ 
+ /*
+- * Interrupt priority table of the interrupt controller, as the BootROM leaves
+- * it on the XMODEM recovery path (the OEM bootloader programmed the same
+- * thing on the flash path). One byte per priority slot, each naming an
+- * interrupt source. Linux's en751221 intc driver never programs these
+- * registers; with the table left at zero no source reaches the CPU and the
+- * kernel stops in calibrate_delay(), waiting for its first timer tick.
++ * Interrupt priority table observed after BootROM XMODEM recovery on the
++ * XR500v. One byte per priority slot, each naming an interrupt source.
++ * Older Linux EN751221 interrupt-controller drivers rely on this table
++ * being initialized before handoff: with it left at zero, the tested kernel
++ * stops in calibrate_delay(), waiting for its first timer tick. Newer
++ * kernels initialize the table themselves. Keep this fallback for kernels
++ * that do not, without replacing an existing nonzero table.
+  */
+ static const u32 en751221_intc_ipsr[] = {
+ 	0x1f1e1d13, 0x16150111, 0x0008090a, 0x0b0c0d0f,
+-- 
+2.55.0
+

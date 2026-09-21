@@ -1,0 +1,81 @@
+From 66b41d947a91b3dadc4389b8be1cf8807ac8fa23 Mon Sep 17 00:00:00 2001
+From: Cristian Papa <76759272+Cris7015@users.noreply.github.com>
+Date: Sat, 19 Sep 2026 01:31:13 -0300
+Subject: [PATCH] mips: econet: en751221: program the interrupt priority table
+
+The EN751221 interrupt controller routes a source to the CPU through the
+priority table at 0x1fb40010..0x1fb4002c, one byte per slot naming a
+source. The BootROM fills it on the XMODEM recovery path and the OEM
+bootloader did so on the flash path; Linux's en751221 intc driver never
+touches it. After booting from flash through tcboot.bin (TPL, DDR stage,
+flash loader, U-Boot) the table is all zero: no interrupt reaches the
+CPU and Linux stops in calibrate_delay() waiting for its first tick. The
+same initramfs boots fine after BootROM recovery.
+
+When the table is empty, program the values the BootROM leaves there.
+Tested on the TP-Link Archer XR500v v1: booting from flash, the table
+reads zero under the old U-Boot and holds the BootROM values under this
+one, and an OpenWrt initramfs that stopped in calibrate_delay() now
+boots to a shell.
+
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ arch/mips/mach-econet/en751221/init.c | 31 +++++++++++++++++++++++++++
+ 1 file changed, 31 insertions(+)
+
+diff --git a/arch/mips/mach-econet/en751221/init.c b/arch/mips/mach-econet/en751221/init.c
+index 50d5aa4d571..58168e19e7b 100644
+--- a/arch/mips/mach-econet/en751221/init.c
++++ b/arch/mips/mach-econet/en751221/init.c
+@@ -4,6 +4,7 @@
+ #include <asm/global_data.h>
+ #include <asm/io.h>
+ #include <linux/bitops.h>
++#include <linux/kernel.h>
+ #include <linux/sizes.h>
+ #include <mach/en751221.h>
+ #include <soc/airoha/pkgids.h>
+@@ -34,9 +35,39 @@ static void en751221_clear_bootrom_recovery_latch(void)
+ 	(void)__raw_readl(reg);
+ }
+ 
++#define EN751221_INTC_BASE	((void __iomem *)CKSEG1ADDR(0x1fb40000))
++#define EN751221_INTC_IPSR(n)	(0x10 + 4 * (n))
++
++/*
++ * Interrupt priority table of the interrupt controller, as the BootROM leaves
++ * it on the XMODEM recovery path (the OEM bootloader programmed the same
++ * thing on the flash path). One byte per priority slot, each naming an
++ * interrupt source. Linux's en751221 intc driver never programs these
++ * registers; with the table left at zero no source reaches the CPU and the
++ * kernel stops in calibrate_delay(), waiting for its first timer tick.
++ */
++static const u32 en751221_intc_ipsr[] = {
++	0x1f1e1d13, 0x16150111, 0x0008090a, 0x0b0c0d0f,
++	0x10060e07, 0x12030217, 0x18191a1b, 0x1c050414,
++};
++
++static void en751221_intc_init_priorities(void)
++{
++	int i;
++
++	for (i = 0; i < ARRAY_SIZE(en751221_intc_ipsr); i++)
++		if (__raw_readl(EN751221_INTC_BASE + EN751221_INTC_IPSR(i)))
++			return;
++
++	for (i = 0; i < ARRAY_SIZE(en751221_intc_ipsr); i++)
++		__raw_writel(en751221_intc_ipsr[i],
++			     EN751221_INTC_BASE + EN751221_INTC_IPSR(i));
++}
++
+ int mach_cpu_init(void)
+ {
+ 	en751221_clear_bootrom_recovery_latch();
++	en751221_intc_init_priorities();
+ 
+ 	return 0;
+ }
+-- 
+2.55.0
+

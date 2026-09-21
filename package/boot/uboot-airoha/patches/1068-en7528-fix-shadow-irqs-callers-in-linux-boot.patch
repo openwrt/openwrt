@@ -1,0 +1,292 @@
+From fc295e3e1fe96984e6b3a2ab1535ac6ebf8afa39 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Mon, 21 Sep 2026 10:49:55 -0300
+Subject: [PATCH] en7528: fix shadow irqs callers in linux boot
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ arch/mips/mach-econet/Kconfig                 | 13 ++-
+ .../en7512 => airoha/en751221}/MAINTAINERS    |  4 +-
+ .../en7512 => airoha/en751221}/Makefile       |  0
+ .../en7512 => airoha/en751221}/board.c        |  0
+ board/{econet => airoha}/en7528/MAINTAINERS   |  4 +-
+ board/{econet => airoha}/en7528/Makefile      |  0
+ board/airoha/en7528/board.c                   | 93 +++++++++++++++++++
+ board/{econet => airoha}/en7580/MAINTAINERS   |  2 +-
+ board/{econet => airoha}/en7580/Makefile      |  0
+ .../{econet/en7528 => airoha/en7580}/board.c  |  0
+ board/econet/en7580/board.c                   |  8 --
+ configs/en7528_tplink_xc220_g3v_defconfig     |  1 -
+ doc/board/{econet => airoha}/en7512.rst       |  0
+ doc/board/{econet => airoha}/en751627.rst     |  0
+ doc/board/{econet => airoha}/index.rst        |  0
+ 15 files changed, 106 insertions(+), 19 deletions(-)
+ rename board/{econet/en7512 => airoha/en751221}/MAINTAINERS (78%)
+ rename board/{econet/en7512 => airoha/en751221}/Makefile (100%)
+ rename board/{econet/en7512 => airoha/en751221}/board.c (100%)
+ rename board/{econet => airoha}/en7528/MAINTAINERS (84%)
+ rename board/{econet => airoha}/en7528/Makefile (100%)
+ create mode 100644 board/airoha/en7528/board.c
+ rename board/{econet => airoha}/en7580/MAINTAINERS (89%)
+ rename board/{econet => airoha}/en7580/Makefile (100%)
+ rename board/{econet/en7528 => airoha/en7580}/board.c (100%)
+ delete mode 100644 board/econet/en7580/board.c
+ rename doc/board/{econet => airoha}/en7512.rst (100%)
+ rename doc/board/{econet => airoha}/en751627.rst (100%)
+ rename doc/board/{econet => airoha}/index.rst (100%)
+
+diff --git a/arch/mips/mach-econet/Kconfig b/arch/mips/mach-econet/Kconfig
+index fe4789713d7..8d859cc5671 100644
+--- a/arch/mips/mach-econet/Kconfig
++++ b/arch/mips/mach-econet/Kconfig
+@@ -42,21 +42,24 @@ config TARGET_EN7580
+ endchoice
+ 
+ config SYS_VENDOR
+-	default "econet"
++	default "airoha"
+ 
+ config SYS_SOC
+ 	default "en751221" if TARGET_EN751221
+-	default "en7528" if TARGET_EN7528 || TARGET_EN751627
++	default "en751627" if TARGET_EN751627
++	default "en7528" if TARGET_EN7528
+ 	default "en7580" if TARGET_EN7580
+ 
+ config SYS_BOARD
+ 	default "en7512" if TARGET_EN751221
+-	default "en7528" if TARGET_EN7528 || TARGET_EN751627
++	default "en751627" if TARGET_EN751627
++	default "en7528" if TARGET_EN7528
+ 	default "en7580" if TARGET_EN7580
+ 
+ config SYS_CONFIG_NAME
+ 	default "en7512" if TARGET_EN751221
+-	default "en7528" if TARGET_EN7528 || TARGET_EN751627
++	default "en751627" if TARGET_EN751627
++	default "en7528" if TARGET_EN7528
+ 	default "en7580" if TARGET_EN7580
+ 
+ config SYS_MALLOC_F_LEN
+@@ -78,6 +81,6 @@ config TEXT_BASE
+ 	default 0x81000000
+ 
+ config BUILD_TARGET
+-	default "u-boot.img"
++	default "u-boot.bin"
+ 
+ endmenu
+diff --git a/board/econet/en7512/MAINTAINERS b/board/airoha/en751221/MAINTAINERS
+similarity index 78%
+rename from board/econet/en7512/MAINTAINERS
+rename to board/airoha/en751221/MAINTAINERS
+index 8e06d84ab43..b011cac05fa 100644
+--- a/board/econet/en7512/MAINTAINERS
++++ b/board/airoha/en751221/MAINTAINERS
+@@ -1,8 +1,8 @@
+ EN7512 REFERENCE BOARD
+ S: Orphan
+ F: arch/mips/mach-econet/
+-F: board/econet/en7512/
++F: board/airoha/en751221/
+ F: configs/en7512_reference_defconfig
+ F: arch/mips/dts/econet,en751221-reference.dts
+-F: doc/board/econet/
++F: doc/board/airoha/
+ F: tools/en7512_image.py
+diff --git a/board/econet/en7512/Makefile b/board/airoha/en751221/Makefile
+similarity index 100%
+rename from board/econet/en7512/Makefile
+rename to board/airoha/en751221/Makefile
+diff --git a/board/econet/en7512/board.c b/board/airoha/en751221/board.c
+similarity index 100%
+rename from board/econet/en7512/board.c
+rename to board/airoha/en751221/board.c
+diff --git a/board/econet/en7528/MAINTAINERS b/board/airoha/en7528/MAINTAINERS
+similarity index 84%
+rename from board/econet/en7528/MAINTAINERS
+rename to board/airoha/en7528/MAINTAINERS
+index 9f489e9d420..1a7b7290645 100644
+--- a/board/econet/en7528/MAINTAINERS
++++ b/board/airoha/en7528/MAINTAINERS
+@@ -1,10 +1,10 @@
+ TP-LINK XC220-G3V EN7528 BOARD
+ M: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+ S: Maintained
+-F: board/econet/en7528/
++F: board/airoha/en7528/
+ F: configs/en7528_tplink_xc220_g3v_defconfig
+ F: arch/mips/dts/econet,en7528.dtsi
+ F: arch/mips/dts/econet,en7528-tplink-xc220-g3v.dts
+ F: include/configs/en7528.h
+-F: doc/board/econet/en7528.rst
++F: doc/board/airoha/en7528.rst
+ F: tools/build-en7528-xc220-g3v.sh
+diff --git a/board/econet/en7528/Makefile b/board/airoha/en7528/Makefile
+similarity index 100%
+rename from board/econet/en7528/Makefile
+rename to board/airoha/en7528/Makefile
+diff --git a/board/airoha/en7528/board.c b/board/airoha/en7528/board.c
+new file mode 100644
+index 00000000000..70cc2f90931
+--- /dev/null
++++ b/board/airoha/en7528/board.c
+@@ -0,0 +1,93 @@
++// SPDX-License-Identifier: GPL-2.0+
++
++#include <init.h>
++#include <asm/io.h>
++#include <asm/mipsregs.h>
++
++#define EN7528_GIC_VL_BASE				0xbf8c8000UL
++#define EN7528_GIC_VO_BASE				0xbf8cc000UL
++#define EN7528_GIC_VL_RMASK				(EN7528_GIC_VL_BASE + 0x000c)
++#define EN7528_GIC_VL_TIMER_MAP			(EN7528_GIC_VL_BASE + 0x0048)
++#define EN7528_GIC_VL_OTHER				(EN7528_GIC_VL_BASE + 0x0080)
++#define EN7528_GIC_VL_EIC_SHADOW_SET	(EN7528_GIC_VL_BASE + 0x0100)
++#define EN7528_GIC_VO_EIC_SHADOW_SET	(EN7528_GIC_VO_BASE + 0x0100)
++
++#define EN7528_GIC_LOCAL_IRQS			0x7fU
++#define EN7528_GIC_MAP_TO_PIN0			0x80000000U
++#define EN7528_GIC_NUM_EIC_VECTORS		64U
++#define EN7528_GIC_NUM_VPS				4U
++
++static void en7528_clear_eic_shadow_sets(void)
++{
++	u32 cur_vp = read_c0_ebase() & MIPS_EBASE_CPUNUM;
++	u32 i, vp;
++
++	/*
++	 * The vendor bootram does this after boot2: all 64 EIC vectors are
++	 * returned to shadow register set 0 on every VP.  boot2 itself does
++	 * not provide that final handoff cleanup.
++	 */
++	for (i = 0; i < EN7528_GIC_NUM_EIC_VECTORS; i++)
++		__raw_writel(0, (void __iomem *)(EN7528_GIC_VL_EIC_SHADOW_SET +
++					       i * sizeof(u32)));
++
++	for (vp = 0; vp < EN7528_GIC_NUM_VPS; vp++) {
++		if (vp == cur_vp)
++			continue;
++
++		__raw_writel(vp, (void __iomem *)EN7528_GIC_VL_OTHER);
++		asm volatile("sync" : : : "memory");
++
++		for (i = 0; i < EN7528_GIC_NUM_EIC_VECTORS; i++)
++			__raw_writel(0,
++				     (void __iomem *)(EN7528_GIC_VO_EIC_SHADOW_SET +
++						       i * sizeof(u32)));
++	}
++
++	/* Restore redirected local-register access to VP0, as the SDK does. */
++	__raw_writel(0, (void __iomem *)EN7528_GIC_VL_OTHER);
++	asm volatile("sync" : : : "memory");
++}
++
++static void en7528_quiesce_legacy_timer(void)
++{
++	/*
++	 * The vendor EN7528 boot2 leaves the CP0 Count/Compare interrupt
++	 * routable through the GIC and maps it to EIC pin 0x28 + VP ID.
++	 * Linux CPS/GIC does not use that firmware routing: it installs the
++	 * GIC dispatcher on EIC pin 0 and this board uses the external HPT as
++	 * its clockevent.
++	 *
++	 * U-Boot resets Count and Compare to zero during startup.  If U-Boot
++	 * stays up for a full Count wrap the CP0 timer therefore becomes
++	 * pending again.  Do not pass that pending legacy interrupt to Linux.
++	 */
++	__raw_writel(EN7528_GIC_LOCAL_IRQS,
++		     (void __iomem *)EN7528_GIC_VL_RMASK);
++	__raw_writel(EN7528_GIC_MAP_TO_PIN0,
++		     (void __iomem *)EN7528_GIC_VL_TIMER_MAP);
++	asm volatile("sync" : : : "memory");
++
++	/* Writing Compare clears Cause.TI.  Keep the next match far away. */
++	write_c0_count(0);
++	write_c0_compare(~0U);
++	asm volatile("ehb" : : : "memory");
++}
++
++int board_init(void)
++{
++	if (IS_ENABLED(CONFIG_TARGET_EN7528))
++		en7528_clear_eic_shadow_sets();
++
++ 	return 0;
++ }
++
++void board_quiesce_devices(void)
++{
++	if (!IS_ENABLED(CONFIG_TARGET_EN7528))
++		return;
++
++	/* Re-assert the SDK's clean EIC state immediately before Linux. */
++	en7528_clear_eic_shadow_sets();
++	en7528_quiesce_legacy_timer();
++}
+diff --git a/board/econet/en7580/MAINTAINERS b/board/airoha/en7580/MAINTAINERS
+similarity index 89%
+rename from board/econet/en7580/MAINTAINERS
+rename to board/airoha/en7580/MAINTAINERS
+index fc68c48edda..146475d57f8 100644
+--- a/board/econet/en7580/MAINTAINERS
++++ b/board/airoha/en7580/MAINTAINERS
+@@ -1,7 +1,7 @@
+ EN7580 XGZ030 BOARD
+ S: Experimental
+ F: arch/mips/mach-econet/en7580/
+-F: board/econet/en7580/
++F: board/airoha/en7580/
+ F: configs/en7580_xgz030_defconfig
+ F: arch/mips/dts/econet,en7580*.dts*
+ F: include/configs/en7580.h
+diff --git a/board/econet/en7580/Makefile b/board/airoha/en7580/Makefile
+similarity index 100%
+rename from board/econet/en7580/Makefile
+rename to board/airoha/en7580/Makefile
+diff --git a/board/econet/en7528/board.c b/board/airoha/en7580/board.c
+similarity index 100%
+rename from board/econet/en7528/board.c
+rename to board/airoha/en7580/board.c
+diff --git a/board/econet/en7580/board.c b/board/econet/en7580/board.c
+deleted file mode 100644
+index b324c020232..00000000000
+--- a/board/econet/en7580/board.c
++++ /dev/null
+@@ -1,8 +0,0 @@
+-// SPDX-License-Identifier: GPL-2.0+
+-
+-#include <init.h>
+-
+-int board_init(void)
+-{
+-	return 0;
+-}
+diff --git a/configs/en7528_tplink_xc220_g3v_defconfig b/configs/en7528_tplink_xc220_g3v_defconfig
+index e4357873534..dd97e23f438 100644
+--- a/configs/en7528_tplink_xc220_g3v_defconfig
++++ b/configs/en7528_tplink_xc220_g3v_defconfig
+@@ -8,7 +8,6 @@ CONFIG_SYS_BOOTM_LEN=0x08000000
+ CONFIG_SYS_LOAD_ADDR=0x82000000
+ CONFIG_ARCH_ECONET=y
+ CONFIG_TARGET_EN7528=y
+-CONFIG_BUILD_TARGET="u-boot.bin"
+ CONFIG_SYS_MIPS_TIMER_FREQ=200000000
+ CONFIG_MIPS_RELOCATION_TABLE_SIZE=0xc000
+ CONFIG_RESTORE_EXCEPTION_VECTOR_BASE=y
+diff --git a/doc/board/econet/en7512.rst b/doc/board/airoha/en7512.rst
+similarity index 100%
+rename from doc/board/econet/en7512.rst
+rename to doc/board/airoha/en7512.rst
+diff --git a/doc/board/econet/en751627.rst b/doc/board/airoha/en751627.rst
+similarity index 100%
+rename from doc/board/econet/en751627.rst
+rename to doc/board/airoha/en751627.rst
+diff --git a/doc/board/econet/index.rst b/doc/board/airoha/index.rst
+similarity index 100%
+rename from doc/board/econet/index.rst
+rename to doc/board/airoha/index.rst
+-- 
+2.55.0
+
