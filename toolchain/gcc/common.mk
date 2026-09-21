@@ -109,7 +109,7 @@ GCC_CONFIGURE:= \
 		$(call qstrip,$(CONFIG_EXTRA_GCC_CONFIG_OPTIONS)) \
 		$(if $(CONFIG_mips64)$(CONFIG_mips64el),--with-arch=mips64 \
 			--with-abi=$(call qstrip,$(CONFIG_MIPS64_ABI))) \
-		$(if $(CONFIG_powerpc64), $(if $(CONFIG_USE_MUSL),--with-abi=elfv2)) \
+		$(if $(CONFIG_powerpc64),--with-abi=elfv2) \
 		--with-system-zlib=$(STAGING_DIR_HOST) \
 		--with-zstd=$(STAGING_DIR_HOST) \
 		--with-gmp=$(STAGING_DIR_HOST) \
