@@ -1,4 +1,4 @@
-From 6f0408439fad0b2c17a0990c5d8467843adb0901 Mon Sep 17 00:00:00 2001
+From de86576eec647ac7df7fb2e11c7193d04f0f4a27 Mon Sep 17 00:00:00 2001
 From: Gabriel Rodriguez <lifehacksback@gmail.com>
 Date: Thu, 17 Sep 2026 20:15:28 -0700
 Subject: [PATCH] ARM: mvebu: add Armada 38x cpuidle support
@@ -6,8 +6,9 @@ Subject: [PATCH] ARM: mvebu: add Armada 38x cpuidle support
 Add deep CPU idle support for Marvell Armada 38x using the
 existing PMSU, coherency and SCU power-management infrastructure.
 
-Use reserved-memory shared-dma-pool with no-map for the suspend-context
-storage so the early MMU-off resume path sees alias-free memory.
+The MVEBU platform bus notifier marks platform devices DMA coherent.
+Override that setting for the private suspend-context device so
+its dma_alloc_coherent() allocation has a noncached CPU mapping.
 
 The deep-idle path prepares the PMSU, exits coherency, sets the SCU CPU
 power mode to power-off and enters WFI. The existing resume path restores
@@ -20,40 +21,14 @@ CPU hotplug remains disabled independently and is not changed here.
 
 Signed-off-by: Gabriel Rodriguez <lifehacksback@gmail.com>
 ---
- arch/arm/boot/dts/marvell/armada-38x.dtsi |  18 ++++++++++++++++++
- arch/arm/mach-mvebu/pmsu.c                | 151 ++++++++++++++++++++++++++++++++++++++++----
- 2 files changed, 156 insertions(+), 13 deletions(-)
+ arch/arm/mach-mvebu/pmsu.c | 137 +++++++++++++++++++++++++++++++++----
+ 1 file changed, 124 insertions(+), 13 deletions(-)
 
---- a/arch/arm/boot/dts/marvell/armada-38x.dtsi
-+++ b/arch/arm/boot/dts/marvell/armada-38x.dtsi
-@@ -21,6 +21,24 @@
- 	model = "Marvell Armada 38x family SoC";
- 	compatible = "marvell,armada380";
- 
-+	reserved-memory {
-+		#address-cells = <1>;
-+		#size-cells = <1>;
-+		ranges;
-+
-+		armada_38x_suspend_pool: suspend-context-pool {
-+			compatible = "shared-dma-pool";
-+			size = <0x1000>;
-+			alignment = <0x1000>;
-+			no-map;
-+		};
-+	};
-+
-+	armada-38x-suspend-context {
-+		compatible = "marvell,armada-38x-suspend-context";
-+		memory-region = <&armada_38x_suspend_pool>;
-+	};
-+
- 	aliases {
- 		gpio0 = &gpio0;
- 		gpio1 = &gpio1;
+diff --git a/arch/arm/mach-mvebu/pmsu.c b/arch/arm/mach-mvebu/pmsu.c
+index 79c5171..3a46680 100644
 --- a/arch/arm/mach-mvebu/pmsu.c
 +++ b/arch/arm/mach-mvebu/pmsu.c
-@@ -18,13 +18,17 @@
+@@ -18,10 +18,13 @@
  #include <linux/clk.h>
  #include <linux/cpu_pm.h>
  #include <linux/delay.h>
@@ -67,11 +42,7 @@ Signed-off-by: Gabriel Rodriguez <lifehacksback@gmail.com>
  #include <linux/mvebu-pmsu.h>
  #include <linux/of.h>
  #include <linux/of_address.h>
-+#include <linux/of_reserved_mem.h>
- #include <linux/platform_device.h>
- #include <linux/resource.h>
- #include <linux/slab.h>
-@@ -311,21 +315,62 @@ static int armada_370_xp_cpu_suspend(uns
+@@ -311,21 +314,62 @@ static int armada_370_xp_cpu_suspend(unsigned long deepidle)
  
  int armada_38x_do_cpu_suspend(unsigned long deepidle)
  {
@@ -139,7 +110,7 @@ Signed-off-by: Gabriel Rodriguez <lifehacksback@gmail.com>
  
  	return 1;
  }
-@@ -420,14 +465,92 @@ end:
+@@ -420,14 +464,79 @@ end:
  	return 0;
  }
  
@@ -152,13 +123,12 @@ Signed-off-by: Gabriel Rodriguez <lifehacksback@gmail.com>
 +static int __init armada_38x_suspend_context_init(void)
 +{
 +	struct device *dev;
-+	struct device_node *np;
 +	phys_addr_t phys;
 +	int ret;
 +
 +	/*
 +	 * cpu_resume() consumes this context with the MMU off.  Use a
-+	 * permanently allocated DMA-coherent mapping so saving the context
++	 * permanently allocated noncached DMA mapping so saving the context
 +	 * does not require PL310 range maintenance on every idle entry.
 +	 */
 +	armada_38x_suspend_ctx_pdev =
@@ -176,24 +146,14 @@ Signed-off-by: Gabriel Rodriguez <lifehacksback@gmail.com>
 +	if (ret)
 +		goto err_unregister;
 +
-+	np = of_find_compatible_node(NULL, NULL,
-+				     "marvell,armada-38x-suspend-context");
-+	if (!np) {
-+		ret = -ENODEV;
-+		goto err_unregister;
-+	}
-+
-+	ret = of_reserved_mem_device_init_by_idx(dev, np, 0);
-+	of_node_put(np);
-+	if (ret)
-+		goto err_unregister;
-+
++	/* The MVEBU bus notifier marks every platform device coherent. */
++	dev->dma_coherent = false;
 +	armada_38x_suspend_ctx =
 +		dma_alloc_coherent(dev, ARMADA_38X_SUSPEND_AREA_SIZE,
 +				   &armada_38x_suspend_ctx_dma, GFP_KERNEL);
 +	if (!armada_38x_suspend_ctx) {
 +		ret = -ENOMEM;
-+		goto err_release_rmem;
++		goto err_unregister;
 +	}
 +
 +	phys = dma_to_phys(dev, armada_38x_suspend_ctx_dma);
@@ -214,8 +174,6 @@ Signed-off-by: Gabriel Rodriguez <lifehacksback@gmail.com>
 +			  armada_38x_suspend_ctx,
 +			  armada_38x_suspend_ctx_dma);
 +	armada_38x_suspend_ctx = NULL;
-+err_release_rmem:
-+	of_reserved_mem_device_release(dev);
 +err_unregister:
 +	platform_device_unregister(armada_38x_suspend_ctx_pdev);
 +	armada_38x_suspend_ctx_pdev = NULL;
@@ -235,7 +193,7 @@ Signed-off-by: Gabriel Rodriguez <lifehacksback@gmail.com>
  
  	np = of_find_compatible_node(NULL, NULL,
  				     "marvell,armada-380-coherency-fabric");
-@@ -439,6 +562,12 @@ static __init int armada_38x_cpuidle_ini
+@@ -439,6 +548,12 @@ static __init int armada_38x_cpuidle_init(void)
  
  	of_node_put(np);
  
@@ -248,7 +206,7 @@ Signed-off-by: Gabriel Rodriguez <lifehacksback@gmail.com>
  	np = of_find_compatible_node(NULL, NULL,
  				     "marvell,armada-380-mpcore-soc-ctrl");
  	if (!np)
-@@ -499,11 +628,7 @@ static int __init mvebu_v7_cpu_pm_init(v
+@@ -499,11 +614,7 @@ static int __init mvebu_v7_cpu_pm_init(void)
  		return 0;
  	of_node_put(np);
  
@@ -261,3 +219,6 @@ Signed-off-by: Gabriel Rodriguez <lifehacksback@gmail.com>
  	if (of_machine_is_compatible("marvell,armada380")) {
  		cpu_hotplug_disable();
  		pr_warn("CPU hotplug support is currently broken on Armada 38x: disabling\n");
+-- 
+2.55.0
+
