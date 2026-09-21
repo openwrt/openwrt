@@ -1,0 +1,113 @@
+From 82cdee9be284af7f3aa2b2ba1fa61c410642cac4 Mon Sep 17 00:00:00 2001
+From: Guoniu Zhou <guoniu.zhou@oss.nxp.com>
+Date: Tue, 19 May 2026 10:07:41 +0800
+Subject: [PATCH] media: synopsys: Add PHY stopstate wait for i.MX93
+
+Implement waiting for D-PHY lanes to enter stop state on i.MX93. This
+ensures proper PHY initialization by verifying that the clock lane and
+all active data lanes have entered the stop state before proceeding with
+further operations.
+
+Reviewed-by: Frank Li <Frank.Li@nxp.com>
+Signed-off-by: Guoniu Zhou <guoniu.zhou@oss.nxp.com>
+Signed-off-by: Sakari Ailus <sakari.ailus@linux.intel.com>
+---
+ .../media/platform/synopsys/dw-mipi-csi2rx.c  | 36 +++++++++++++++++++
+ 1 file changed, 36 insertions(+)
+
+--- a/drivers/media/platform/synopsys/dw-mipi-csi2rx.c
++++ b/drivers/media/platform/synopsys/dw-mipi-csi2rx.c
+@@ -11,6 +11,7 @@
+ #include <linux/clk.h>
+ #include <linux/delay.h>
+ #include <linux/io.h>
++#include <linux/iopoll.h>
+ #include <linux/module.h>
+ #include <linux/of.h>
+ #include <linux/phy/phy.h>
+@@ -35,6 +36,8 @@
+ #define DW_REG_EXIST		BIT(31)
+ #define DW_REG(x)		(DW_REG_EXIST | (x))
+ 
++#define DPHY_STOPSTATE_CLK_LANE		BIT(16)
++
+ #define DPHY_TEST_CTRL0_TEST_CLR	BIT(0)
+ 
+ #define IPI_VCID_VC(x)			FIELD_PREP(GENMASK(1, 0), (x))
+@@ -65,6 +68,7 @@ enum dw_mipi_csi2rx_regs_index {
+ 	DW_MIPI_CSI2RX_PHY_TST_CTRL0,
+ 	DW_MIPI_CSI2RX_PHY_TST_CTRL1,
+ 	DW_MIPI_CSI2RX_PHY_SHUTDOWNZ,
++	DW_MIPI_CSI2RX_PHY_STOPSTATE,
+ 	DW_MIPI_CSI2RX_IPI_DATATYPE,
+ 	DW_MIPI_CSI2RX_IPI_MEM_FLUSH,
+ 	DW_MIPI_CSI2RX_IPI_MODE,
+@@ -87,6 +91,7 @@ struct dw_mipi_csi2rx_drvdata {
+ 	void (*dphy_assert_reset)(struct dw_mipi_csi2rx_device *csi2);
+ 	void (*dphy_deassert_reset)(struct dw_mipi_csi2rx_device *csi2);
+ 	void (*ipi_enable)(struct dw_mipi_csi2rx_device *csi2);
++	int (*wait_for_phy_stopstate)(struct dw_mipi_csi2rx_device *csi2);
+ };
+ 
+ struct dw_mipi_csi2rx_format {
+@@ -139,6 +144,7 @@ static const u32 imx93_regs[DW_MIPI_CSI2
+ 	[DW_MIPI_CSI2RX_PHY_SHUTDOWNZ] = DW_REG(0x40),
+ 	[DW_MIPI_CSI2RX_DPHY_RSTZ] = DW_REG(0x44),
+ 	[DW_MIPI_CSI2RX_PHY_STATE] = DW_REG(0x48),
++	[DW_MIPI_CSI2RX_PHY_STOPSTATE] = DW_REG(0x4c),
+ 	[DW_MIPI_CSI2RX_PHY_TST_CTRL0] = DW_REG(0x50),
+ 	[DW_MIPI_CSI2RX_PHY_TST_CTRL1] = DW_REG(0x54),
+ 	[DW_MIPI_CSI2RX_IPI_MODE] = DW_REG(0x80),
+@@ -556,10 +562,19 @@ static int dw_mipi_csi2rx_enable_streams
+ 	if (ret)
+ 		goto err_csi_stop;
+ 
++	if (!csi2->enabled_streams &&
++	    csi2->drvdata->wait_for_phy_stopstate) {
++		ret = csi2->drvdata->wait_for_phy_stopstate(csi2);
++		if (ret)
++			goto err_disable_streams;
++	}
++
+ 	csi2->enabled_streams |= streams_mask;
+ 
+ 	return 0;
+ 
++err_disable_streams:
++	v4l2_subdev_disable_streams(remote_sd, remote_pad->index, mask);
+ err_csi_stop:
+ 	/* Stop CSI hardware if no streams are enabled */
+ 	if (!csi2->enabled_streams)
+@@ -871,11 +886,32 @@ static void imx93_csi2rx_dphy_ipi_enable
+ 	dw_mipi_csi2rx_write(csi2, DW_MIPI_CSI2RX_IPI_MODE, val);
+ }
+ 
++static int imx93_csi2rx_wait_for_phy_stopstate(struct dw_mipi_csi2rx_device *csi2)
++{
++	struct device *dev = csi2->dev;
++	u32 stopstate_mask;
++	u32 val;
++	int ret;
++
++	stopstate_mask = DPHY_STOPSTATE_CLK_LANE | GENMASK(csi2->lanes_num - 1, 0);
++
++	ret = read_poll_timeout(dw_mipi_csi2rx_read, val,
++				(val & stopstate_mask) == stopstate_mask,
++				 10, 1000, true,
++				 csi2, DW_MIPI_CSI2RX_PHY_STOPSTATE);
++	if (ret)
++		dev_err(dev, "lanes are not in stop state: %#x, expected %#x\n",
++			val, stopstate_mask);
++
++	return ret;
++}
++
+ static const struct dw_mipi_csi2rx_drvdata imx93_drvdata = {
+ 	.regs = imx93_regs,
+ 	.dphy_assert_reset = imx93_csi2rx_dphy_assert_reset,
+ 	.dphy_deassert_reset = imx93_csi2rx_dphy_deassert_reset,
+ 	.ipi_enable = imx93_csi2rx_dphy_ipi_enable,
++	.wait_for_phy_stopstate = imx93_csi2rx_wait_for_phy_stopstate,
+ };
+ 
+ static const struct of_device_id dw_mipi_csi2rx_of_match[] = {

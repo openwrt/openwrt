@@ -1,0 +1,31 @@
+From 6c03c1c4e8a4d9873432134fb7d22f3c02df7226 Mon Sep 17 00:00:00 2001
+From: Frank Li <Frank.Li@nxp.com>
+Date: Mon, 16 Feb 2026 14:18:39 -0500
+Subject: [PATCH] media: synopsys: csi2rx: use
+ devm_reset_control_get_optional_exclusive()
+
+The DW MIPI CSI-2 RX is used on different SoCs, not all of which provide a
+reset controller. Switch to devm_reset_control_get_optional_exclusive()
+to support such platforms.
+
+Reset presence and numbering are validated by the DT binding.
+
+Reviewed-by: Michael Riesch <michael.riesch@collabora.com>
+Signed-off-by: Frank Li <Frank.Li@nxp.com>
+Signed-off-by: Sakari Ailus <sakari.ailus@linux.intel.com>
+Signed-off-by: Hans Verkuil <hverkuil+cisco@kernel.org>
+---
+ drivers/media/platform/synopsys/dw-mipi-csi2rx.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/media/platform/synopsys/dw-mipi-csi2rx.c
++++ b/drivers/media/platform/synopsys/dw-mipi-csi2rx.c
+@@ -639,7 +639,7 @@ static int dw_mipi_csi2rx_probe(struct p
+ 		return dev_err_probe(dev, PTR_ERR(csi2->phy),
+ 				     "failed to get MIPI CSI-2 PHY\n");
+ 
+-	csi2->reset = devm_reset_control_get_exclusive(dev, NULL);
++	csi2->reset = devm_reset_control_get_optional_exclusive(dev, NULL);
+ 	if (IS_ERR(csi2->reset))
+ 		return dev_err_probe(dev, PTR_ERR(csi2->reset),
+ 				     "failed to get reset\n");
