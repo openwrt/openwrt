@@ -123,6 +123,7 @@ struct otto_l3_ctrl {
 	unsigned long route_use_bm[MAX_ROUTES / 32];
 	unsigned long host_route_use_bm[MAX_HOST_ROUTES / 32];
 	struct otto_l3_intf interfaces[MAX_SMACS];
+	bool prefix_rows_stale;	/* a move failed, the rows are not where we say */
 	struct mutex *lock; /* protect register access */
 };
 
