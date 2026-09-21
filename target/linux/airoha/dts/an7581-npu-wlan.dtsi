@@ -6,31 +6,29 @@
  * needs the binary region alone to run its firmware and to offload flows.
  */
 
-/ {
-	reserved-memory {
-		#address-cells = <2>;
-		#size-cells = <2>;
-		ranges;
+&{/reserved-memory} {
+	#address-cells = <2>;
+	#size-cells = <2>;
+	ranges;
 
-		npu_pkt: npu-pkt@8a000000 {
-			no-map;
-			reg = <0x0 0x8a000000 0x0 0x2c00000>;
-		};
+	npu_pkt: npu-pkt@8a000000 {
+		no-map;
+		reg = <0x0 0x8a000000 0x0 0x2c00000>;
+	};
 
-		npu_txpkt: npu-txpkt@8cc00000 {
-			no-map;
-			reg = <0x0 0x8cc00000 0x0 0x4000000>;
-		};
+	npu_txpkt: npu-txpkt@8cc00000 {
+		no-map;
+		reg = <0x0 0x8cc00000 0x0 0x4000000>;
+	};
 
-		npu_txbufid: npu-txbufid@90c00000 {
-			no-map;
-			reg = <0x0 0x90c00000 0x0 0x6800>;
-		};
+	npu_txbufid: npu-txbufid@90c00000 {
+		no-map;
+		reg = <0x0 0x90c00000 0x0 0x6800>;
+	};
 
-		npu_ba: npu-ba@90c06800 {
-			no-map;
-			reg = <0x0 0x90c06800 0x0 0x200000>;
-		};
+	npu_ba: npu-ba@90c06800 {
+		no-map;
+		reg = <0x0 0x90c06800 0x0 0x200000>;
 	};
 };
 
