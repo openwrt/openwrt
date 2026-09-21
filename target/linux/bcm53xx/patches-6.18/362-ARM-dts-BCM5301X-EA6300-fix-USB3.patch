@@ -1,0 +1,25 @@
+From 8fc1b8ec68b98609b9665bde17f8ee99130179d4 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Sat, 25 Jul 2026 14:58:09 -0700
+Subject: [PATCH] ARM: dts: BCM5301X: EA6300: fix USB3
+
+USB3 needs to have a GPIO pulled HIGH in order to function. Add vcc-gpio
+to do so.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+Link: https://lore.kernel.org/r/20260725215809.9464-1-rosenp@gmail.com
+Signed-off-by: Florian Fainelli <florian.fainelli@broadcom.com>
+---
+ arch/arm/boot/dts/broadcom/bcm4708-linksys-ea6300-v1.dts | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/arch/arm/boot/dts/broadcom/bcm4708-linksys-ea6300-v1.dts
++++ b/arch/arm/boot/dts/broadcom/bcm4708-linksys-ea6300-v1.dts
+@@ -91,3 +91,7 @@
+ 		};
+ 	};
+ };
++
++&usb3 {
++	vcc-gpio = <&chipcommon 10 GPIO_ACTIVE_HIGH>;
++};

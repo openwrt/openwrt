@@ -1,14 +1,17 @@
-From 10610c5605390fddafca424618679e6007bbae8f Mon Sep 17 00:00:00 2001
+From 6de6732c4c784ce64e2457630ca800dfe5efb774 Mon Sep 17 00:00:00 2001
 From: Rosen Penev <rosenp@gmail.com>
-Date: Thu, 18 Jun 2026 16:30:00 -0700
-Subject: [PATCH] ARM: dts: BCM5301X: EA9200: fix nvram size
+Date: Sun, 28 Jun 2026 16:10:49 -0700
+Subject: [PATCH] ARM: dts: BCM5301X: EA9200: fix NVRAM size
 
 Fixes:
 
 [ 0.182121] WARNING: CPU: 0 PID: 1 at drivers/nvmem/brcm_nvram.c:85 brcm_nvram_probe+0x400/0x480
 [ 0.182159] Unexpected (big) NVRAM size: 1056112 B
 
+Fixes: 90a77291ac09 ("ARM: dts: BCM5301X: R8000 add NVRAM with MAC address for WAN port")
 Signed-off-by: Rosen Penev <rosenp@gmail.com>
+Link: https://lore.kernel.org/r/20260628231049.1248899-1-rosenp@gmail.com
+Signed-off-by: Florian Fainelli <florian.fainelli@broadcom.com>
 ---
  arch/arm/boot/dts/broadcom/bcm4709-linksys-ea9200.dts | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
