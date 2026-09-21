@@ -36,7 +36,7 @@ sub target_config_features(@) {
 		/^pinctrl$/ and $ret .= "\tselect PINCTRL_SUPPORT\n";
 		/^pm$/ and $ret .= "\tselect USES_PM\n";
 		/^powerpc64$/ and $ret .= "\tselect powerpc64\n";
-		/^pwm$/ and $ret .= "\select PWM_SUPPORT\n";
+		/^pwm$/ and $ret .= "\tselect PWM_SUPPORT\n";
 		/^ramdisk$/ and $ret .= "\tselect USES_INITRAMFS\n";
 		/^regulator$/ and $ret .= "\tselect REGULATOR_SUPPORT\n";
 		/^rfkill$/ and $ret .= "\tselect RFKILL_SUPPORT\n";
