@@ -114,6 +114,8 @@ define Build/cfe-jffs2
 	$(STAGING_DIR_HOST)/bin/mkfs.jffs2 \
 		--big-endian \
 		--pad \
+		--squash-uids \
+		--squash-perms \
 		--no-cleanmarkers \
 		--eraseblock=$(patsubst %k,%KiB,$(BLOCKSIZE)) \
 		--root=$(1) \
