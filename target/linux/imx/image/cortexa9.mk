@@ -22,12 +22,15 @@ define Build/boot-overlay
 		-d ./bootscript-$(if $(BOARD_NAME),$(BOARD_NAME),$(DEVICE_NAME)) \
 		$@.boot/6x_bootscript-$(if $(BOARD_NAME),$(BOARD_NAME),$(DEVICE_NAME))
 
+	$(if $(SOURCE_DATE_EPOCH),find $@.boot -exec touch -hcd "@$(SOURCE_DATE_EPOCH)" {} +)
+
 	$(STAGING_DIR_HOST)/bin/mkfs.ubifs \
 		--space-fixup --compr=zlib --squash-uids \
 		$(MKUBIFS_OPTS) -c 16248 \
 		-o $@.boot.ubifs -d $@.boot
 
-	$(TAR) -C $@.boot -cf $@.boot.tar .
+	$(TAR) -C $@.boot -cf $@.boot.tar \
+		--sort=name --numeric-owner --owner=0 --group=0 --mode=go-w .
 endef
 
 define Build/bootfs.tar.gz
@@ -36,7 +39,8 @@ define Build/bootfs.tar.gz
 
 	$(TAR) -C $@.boot -xf $(IMAGE_KERNEL).boot.tar
 	$(TAR) -C $@.boot \
-		--numeric-owner --owner=0 --group=0 --transform "s,./,./boot/," \
+		--sort=name --numeric-owner --owner=0 --group=0 --mode=go-w \
+		--transform "s,./,./boot/," \
 		-czvf $@ .
 endef
 
