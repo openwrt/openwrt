@@ -846,8 +846,15 @@ static int otto_l3_930x_setup(struct otto_l3_ctrl *ctrl)
 	pr_debug("L3_IPUC_ROUTE_CTRL %08x, IPMC_ROUTE %08x, IP6UC_ROUTE %08x, IP6MC_ROUTE %08x\n",
 		 sw_r32(RTL930X_L3_IPUC_ROUTE_CTRL), sw_r32(RTL930X_L3_IPMC_ROUTE_CTRL),
 		 sw_r32(RTL930X_L3_IP6UC_ROUTE_CTRL), sw_r32(RTL930X_L3_IP6MC_ROUTE_CTRL));
-	sw_w32(0x00002001, RTL930X_L3_IPUC_ROUTE_CTRL);
-	sw_w32(0x00014581, RTL930X_L3_IP6UC_ROUTE_CTRL);
+	/* A packet whose hop count runs out is answered, not dropped: the
+	 * action for it is TTL_FAIL_ACT at bit 17 and HL_FAIL_ACT at bit
+	 * 21, two bits each, and the Realtek GPL SDK lists the values as
+	 * drop, trap to CPU, trap to master CPU in that order
+	 * (dal_longan_l3.c, _actIpucRouteCtrlTtlFail and
+	 * _actIp6ucRouteCtrlHlFail).
+	 */
+	sw_w32(0x00022001, RTL930X_L3_IPUC_ROUTE_CTRL);
+	sw_w32(0x00214581, RTL930X_L3_IP6UC_ROUTE_CTRL);
 	sw_w32(0x00000501, RTL930X_L3_IPMC_ROUTE_CTRL);
 	sw_w32(0x00012881, RTL930X_L3_IP6MC_ROUTE_CTRL);
 
