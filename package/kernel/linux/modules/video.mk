@@ -1008,6 +1008,17 @@ endef
 
 $(eval $(call KernelPackage,video-fwnode))
 
+define KernelPackage/video-cci
+  TITLE:=V4L2 CCI register access helpers
+  HIDDEN:=1
+  KCONFIG:=CONFIG_V4L2_CCI_I2C
+  FILES:=$(LINUX_DIR)/drivers/media/v4l2-core/v4l2-cci.ko
+  $(call AddDepends/video)
+  AUTOLOAD:=$(call AutoProbe,v4l2-cci)
+endef
+
+$(eval $(call KernelPackage,video-cci))
+
 
 define KernelPackage/video-pwc
   TITLE:=Philips USB webcam support
@@ -1629,6 +1640,25 @@ define KernelPackage/video-ov5640/description
 endef
 
 $(eval $(call KernelPackage,video-ov5640))
+
+define KernelPackage/video-imx415
+  SUBMENU:=$(VIDEO_MENU)
+  DEPENDS:=+kmod-video-fwnode +kmod-video-async +kmod-video-cci
+  TITLE:=Sony IMX415 sensor support
+  KCONFIG:= \
+	CONFIG_VIDEO_CAMERA_SENSOR=y \
+	CONFIG_VIDEO_IMX415
+  FILES:=$(LINUX_DIR)/drivers/media/i2c/imx415.ko
+  AUTOLOAD:=$(call AutoProbe,imx415)
+  $(call AddDepends/video)
+endef
+
+define KernelPackage/video-imx415/description
+  This is a Video4Linux2 sensor driver for the Sony IMX415 camera
+  sensor with a MIPI CSI-2 interface.
+endef
+
+$(eval $(call KernelPackage,video-imx415))
 
 
 #
