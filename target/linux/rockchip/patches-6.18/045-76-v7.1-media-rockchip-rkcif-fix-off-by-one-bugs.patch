@@ -1,0 +1,50 @@
+From e4056b84af0fc18c84b4e5741df04ecd8ca17973 Mon Sep 17 00:00:00 2001
+From: Dan Carpenter <dan.carpenter@linaro.org>
+Date: Fri, 20 Feb 2026 09:15:07 +0100
+Subject: [PATCH] media: rockchip: rkcif: fix off by one bugs
+
+Change these comparisons from > vs >= to avoid accessing one element
+beyond the end of the arrays.
+While at it, use ARRAY_SIZE instead of the _MAX enum values.
+
+Fixes: 1f2353f5a1af ("media: rockchip: rkcif: add support for rk3568 vicap mipi capture")
+Cc: stable@kernel.org
+Signed-off-by: Dan Carpenter <dan.carpenter@linaro.org>
+Reviewed-by: Michael Riesch <michael.riesch@collabora.com>
+Reviewed-by: Paul Elder <paul.elder@ideasonboard.com>
+Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Tested-by: Chen-Yu Tsai <wens@kernel.org>
+[fix cosmetic issues]
+Signed-off-by: Michael Riesch <michael.riesch@collabora.com>
+Signed-off-by: Sakari Ailus <sakari.ailus@linux.intel.com>
+Signed-off-by: Mauro Carvalho Chehab <mchehab+huawei@kernel.org>
+---
+ .../media/platform/rockchip/rkcif/rkcif-capture-mipi.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+--- a/drivers/media/platform/rockchip/rkcif/rkcif-capture-mipi.c
++++ b/drivers/media/platform/rockchip/rkcif/rkcif-capture-mipi.c
+@@ -489,8 +489,8 @@ static inline unsigned int rkcif_mipi_ge
+ 
+ 	block = interface->index - RKCIF_MIPI_BASE;
+ 
+-	if (WARN_ON_ONCE(block > RKCIF_MIPI_MAX - RKCIF_MIPI_BASE) ||
+-	    WARN_ON_ONCE(index > RKCIF_MIPI_REGISTER_MAX))
++	if (WARN_ON_ONCE(block >= ARRAY_SIZE(rkcif->match_data->mipi->blocks)) ||
++	    WARN_ON_ONCE(index >= ARRAY_SIZE(rkcif->match_data->mipi->regs)))
+ 		return RKCIF_REGISTER_NOTSUPPORTED;
+ 
+ 	offset = rkcif->match_data->mipi->blocks[block].offset;
+@@ -510,9 +510,9 @@ static inline unsigned int rkcif_mipi_id
+ 	block = stream->interface->index - RKCIF_MIPI_BASE;
+ 	id = stream->id;
+ 
+-	if (WARN_ON_ONCE(block > RKCIF_MIPI_MAX - RKCIF_MIPI_BASE) ||
+-	    WARN_ON_ONCE(id > RKCIF_ID_MAX) ||
+-	    WARN_ON_ONCE(index > RKCIF_MIPI_ID_REGISTER_MAX))
++	if (WARN_ON_ONCE(block >= ARRAY_SIZE(rkcif->match_data->mipi->blocks)) ||
++	    WARN_ON_ONCE(id >= ARRAY_SIZE(rkcif->match_data->mipi->regs_id)) ||
++	    WARN_ON_ONCE(index >= ARRAY_SIZE(rkcif->match_data->mipi->regs_id[id])))
+ 		return RKCIF_REGISTER_NOTSUPPORTED;
+ 
+ 	offset = rkcif->match_data->mipi->blocks[block].offset;
