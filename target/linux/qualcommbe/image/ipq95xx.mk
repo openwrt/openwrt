@@ -24,7 +24,6 @@ define Device/askey_sbe1v1k
 	DEVICE_ALT1_VENDOR := Spectrum
 	DEVICE_ALT1_MODEL := SBE1V1K
 	DEVICE_DTS_CONFIG := config@rtq7300t-rev0
-	KERNEL_LOADADDR := 0x42080000
 	SOC := ipq9570
 	DEVICE_PACKAGES := ath12k-firmware-qcn9274 f2fsck ipq-wifi-askey_sbe1v1k kmod-ath12k \
 		kmod-hwmon-pwmfan kmod-phy-realtek mkf2fs rtl826x-firmware
