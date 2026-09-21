@@ -934,6 +934,28 @@ static int otto_l3_prefix_rows(struct otto_l3_ctrl *ctrl, int at_least)
 	return n;
 }
 
+/* A row move that fails leaves the block half shifted: some rows have moved,
+ * and the list still names the rows they were at. Every placement and every
+ * compaction after that is computed from those names, so the next route
+ * placed lands on a row that still holds a live one, and the copy an
+ * interrupted move left behind goes on forwarding after the route that made
+ * it is gone. The mover reports no progress to renumber from, and the engine
+ * that failed is the only way to undo it, so the table is declared unusable
+ * and left as it is: what is in it keeps working and can still be removed,
+ * and nothing new is placed until the driver is loaded again.
+ */
+static void otto_l3_rows_stale(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r,
+			       int row)
+{
+	if (ctrl->prefix_rows_stale)
+		return;
+
+	ctrl->prefix_rows_stale = true;
+	dev_err(ctrl->dev,
+		"prefix route %d: row %d not moved, no route will be placed again\n",
+		r->id, row);
+}
+
 /* Open the row this route belongs at, pushing everything below it down. */
 static int otto_l3_route_place(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r)
 {
@@ -943,6 +965,9 @@ static int otto_l3_route_place(struct otto_l3_ctrl *ctrl, struct otto_l3_route *
 	if (!ctrl->cfg->route_rows_move)
 		return r->id;
 
+	if (ctrl->prefix_rows_stale)
+		return -1;
+
 	row = FIRST_PREFIX_ROW + otto_l3_prefix_rows(ctrl, r->prefix_len);
 	last = FIRST_PREFIX_ROW + otto_l3_prefix_rows(ctrl, 0);
 
@@ -950,8 +975,10 @@ static int otto_l3_route_place(struct otto_l3_ctrl *ctrl, struct otto_l3_route *
 		/* A failed move leaves the block half shifted, and the rows the
 		 * list names would no longer be the rows that hold them.
 		 */
-		if (ctrl->cfg->route_rows_move(ctrl, row + 1, row, last - row))
+		if (ctrl->cfg->route_rows_move(ctrl, row + 1, row, last - row)) {
+			otto_l3_rows_stale(ctrl, r, row);
 			return -1;
+		}
 
 		list_for_each_entry(q, &ctrl->routes_list, list)
 			if (!q->is_host_route && q->row >= row)
@@ -967,15 +994,18 @@ static void otto_l3_route_compact(struct otto_l3_ctrl *ctrl, struct otto_l3_rout
 	struct otto_l3_route *q;
 	int last;
 
-	if (!ctrl->cfg->route_rows_move || r->row < FIRST_PREFIX_ROW)
+	if (!ctrl->cfg->route_rows_move || r->row < FIRST_PREFIX_ROW ||
+	    ctrl->prefix_rows_stale)
 		return;
 
 	last = FIRST_PREFIX_ROW + otto_l3_prefix_rows(ctrl, 0) - 1;
 	if (r->row >= last)
 		return;
 
-	if (ctrl->cfg->route_rows_move(ctrl, r->row, r->row + 1, last - r->row))
+	if (ctrl->cfg->route_rows_move(ctrl, r->row, r->row + 1, last - r->row)) {
+		otto_l3_rows_stale(ctrl, r, r->row);
 		return;
+	}
 
 	list_for_each_entry(q, &ctrl->routes_list, list)
 		if (!q->is_host_route && q->row > r->row)
