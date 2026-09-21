@@ -6,6 +6,7 @@ use metadata;
 use Getopt::Long;
 use Time::Piece;
 use JSON::PP;
+use Digest::MD5 qw(md5_hex);
 
 my %board;
 
@@ -701,12 +702,24 @@ sub image_manifest_packages($)
 sub dump_cyclonedxsbom_json {
 	my (@components) = @_;
 
+	my $json = JSON::PP->new->canonical(1);
+	my $epoch = $ENV{SOURCE_DATE_EPOCH};
+	my $timestamp;
+
+	if (defined($epoch) && $epoch ne '') {
+		$epoch =~ /^\d+$/ or die "SOURCE_DATE_EPOCH is not a number\n";
+		$timestamp = gmtime($epoch)->datetime . 'Z';
+	} else {
+		$timestamp = gmtime->datetime . 'Z';
+	}
+
+	my $digest = md5_hex($timestamp . $json->encode([@components]));
 	my $uuid = sprintf(
-	    "%04x%04x-%04x-%04x-%04x-%04x%04x%04x",
-	    rand(0xffff), rand(0xffff), rand(0xffff),
-	    rand(0x0fff) | 0x4000,
-	    rand(0x3fff) | 0x8000,
-	    rand(0xffff), rand(0xffff), rand(0xffff)
+	    "%s-%s-3%s-%x%s-%s",
+	    substr($digest, 0, 8), substr($digest, 8, 4),
+	    substr($digest, 13, 3),
+	    (hex(substr($digest, 16, 1)) & 0x3) | 0x8, substr($digest, 17, 3),
+	    substr($digest, 20, 12)
 	);
 
 	my $cyclonedx = {
@@ -715,12 +728,12 @@ sub dump_cyclonedxsbom_json {
 		serialNumber => "urn:uuid:$uuid",
 		version => 1,
 		metadata => {
-			timestamp => gmtime->datetime . 'Z',
+			timestamp => $timestamp,
 		},
 		"components" => [@components],
 	};
 
-	return encode_json($cyclonedx);
+	return $json->encode($cyclonedx);
 }
 
 sub gen_image_cyclonedxsbom() {

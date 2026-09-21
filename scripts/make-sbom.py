@@ -10,7 +10,23 @@
 import datetime
 import email.parser
 import json
+import os
+import sys
 import uuid
+
+
+def build_time() -> datetime.datetime:
+    epoch = os.environ.get("SOURCE_DATE_EPOCH")
+    if not epoch:
+        return datetime.datetime.now(datetime.timezone.utc)
+
+    try:
+        seconds = int(epoch)
+    except ValueError:
+        print("SOURCE_DATE_EPOCH is not a number", file=sys.stderr)
+        raise SystemExit(1)
+
+    return datetime.datetime.fromtimestamp(seconds, datetime.timezone.utc)
 
 
 def parse_args():
@@ -163,11 +179,14 @@ if __name__ == "__main__":
         print("Source format unknown")
         raise SystemExit
 
-    timestamp: str = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+    timestamp: str = build_time().strftime("%Y-%m-%dT%H:%M:%SZ")
+    serial: uuid.UUID = uuid.uuid5(
+        uuid.NAMESPACE_URL, timestamp + json.dumps(components, sort_keys=True)
+    )
     cyclonedx: dict = {
         "bomFormat": "CycloneDX",
         "specVersion": "1.4",
-        "serialNumber": "urn:uuid:" + str(uuid.uuid4()),
+        "serialNumber": "urn:uuid:" + str(serial),
         "version": 1,
         "metadata": {
             "timestamp": timestamp,
