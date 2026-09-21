@@ -122,7 +122,8 @@ define Build/dwl8610ap-image
 	cp $@ $@.tmptar/rootfs.bin
 	# Hash the rootfs.bin
 	cat $@.tmptar/rootfs.bin | md5sum > $@.tmptar/rootfs.md5
-	cd $@.tmptar && tar -c -f $@.new *
+	cd $@.tmptar && $(TAR) -c -f $@.new --sort=name --numeric-owner --owner=0 --group=0 --mode=go-w \
+		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") *
 	rm -rf $@.tmptar
 	mv $@.new $@
 endef

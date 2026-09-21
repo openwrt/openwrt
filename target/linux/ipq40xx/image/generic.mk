@@ -80,7 +80,8 @@ define Build/wac5xx-netgear-tar
 	md5sum $@.tmp/wac5xx-ubifs-root.img > $@.tmp/wac5xx-ubifs-root.md5sum
 	echo "WAC505 WAC510" > $@.tmp/metadata.txt
 	echo "WAC505_V9.9.9.9" > $@.tmp/version
-	tar -C $@.tmp/ -cf $@ .
+	$(TAR) -C $@.tmp/ -cf $@ --sort=name --numeric-owner --owner=0 --group=0 --mode=go-w \
+		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") .
 	rm -rf $@.tmp
 endef
 

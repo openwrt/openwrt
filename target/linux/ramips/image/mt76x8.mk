@@ -19,7 +19,9 @@ define Build/creality_wb-01-factory
 		echo 'mtd_write -o 0 -l $(kernel_size) write $$file Kernel'; \
 		echo 'mtd_write -r -o $(kernel_size) -l $$rootfs_size write $$file RootFS'; \
 	) > $(dir $@)install.sh
-	tar cjf $@ -C $(dir $@) factory.bin install.sh
+	$(TAR) -cjf $@ -C $(dir $@) --numeric-owner --owner=0 --group=0 --mode=go-w \
+		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") \
+		factory.bin install.sh
 endef
 
 define Build/elecom-header
