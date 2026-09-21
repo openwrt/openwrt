@@ -39,7 +39,7 @@ $(if $(filter no-$(1),$(PKG_BUILD_FLAGS)),0,$(if $(filter $(1),$(PKG_BUILD_FLAGS
 endef
 
 ifeq ($(call pkg_build_flag,iremap,1),1)
-  IREMAP_CFLAGS = $(call iremap,$(PKG_BUILD_DIR),$(notdir $(PKG_BUILD_DIR)))
+  IREMAP_CFLAGS = $(call iremap,$(PKG_BUILD_DIR),$(notdir $(PKG_BUILD_DIR))) $(IREMAP_STAGING_DIR)
   TARGET_CFLAGS += $(IREMAP_CFLAGS)
 endif
 ifdef CONFIG_USE_MIPS16

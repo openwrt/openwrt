@@ -181,6 +181,12 @@ ifeq ($(or $(CONFIG_EXTERNAL_TOOLCHAIN),$(CONFIG_TARGET_uml)),)
   iremap = -f$(if $(CONFIG_REPRODUCIBLE_DEBUG_INFO),file,macro)-prefix-map=$(1)=$(2)
 endif
 
+# A header taken from the staging directory reaches __FILE__ and the debug
+# information with its absolute path, which no other map covers. Keep the
+# staging_dir element, so that the result stays apart from the map of
+# BUILD_DIR, whose last element carries the same name.
+IREMAP_STAGING_DIR = $(call iremap,$(STAGING_DIR),staging_dir/$(notdir $(STAGING_DIR)))
+
 PACKAGE_DIR?=$(BIN_DIR)/packages
 PACKAGE_DIR_ALL?=$(TOPDIR)/staging_dir/packages/$(BOARD)
 BUILD_DIR:=$(BUILD_DIR_BASE)/$(TARGET_DIR_NAME)
