@@ -9,6 +9,8 @@ endif
 
 INITRAMFS_EXTRA_FILES ?= $(GENERIC_PLATFORM_DIR)/image/initramfs-base-files.txt
 
+INITRAMFS_INIT_FILE := $(GENERIC_PLATFORM_DIR)/other-files/init
+
 export HOST_EXTRACFLAGS=-I$(STAGING_DIR_HOST)/include
 
 # defined in quilt.mk
@@ -50,7 +52,8 @@ ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
 	{ \
 		grep -v -e INITRAMFS -e CONFIG_RD_ -e CONFIG_BLK_DEV_INITRD $(2)/.config.old > $(2)/.config; \
 		echo 'CONFIG_BLK_DEV_INITRD=y' >> $(2)/.config; \
-		echo 'CONFIG_INITRAMFS_SOURCE="$(strip $(1) $(INITRAMFS_EXTRA_FILES))"' >> $(2)/.config; \
+		echo 'file /init $(INITRAMFS_INIT_FILE) 0755 0 0' > $(2).init-cpio-list; \
+		echo 'CONFIG_INITRAMFS_SOURCE="$(strip $(1) $(2).init-cpio-list $(INITRAMFS_EXTRA_FILES))"' >> $(2)/.config; \
 	}
     endef
   else
@@ -209,6 +212,20 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 Kernel/CacheInitrd = $(CACHE_RUN) $(KERNEL_BUILD_DIR)/cache/initrd$(1).cpio.$(2) \
 	$(KERNEL_BUILD_DIR)/initrd$(1).cpio $(KERNEL_BUILD_DIR)/initrd$(1).cpio.$(2)
 
+# $1: Per Device Rootfs ID
+# The rootfs directory is shared with the image generation, so /init is
+# appended to the finished archive instead of being staged in it.
+define Kernel/AppendInitrdInit
+	rm -rf $(KERNEL_BUILD_DIR)/initrd-init$(1); \
+	mkdir -p $(KERNEL_BUILD_DIR)/initrd-init$(1); \
+	$(INSTALL_BIN) $(INITRAMFS_INIT_FILE) $(KERNEL_BUILD_DIR)/initrd-init$(1)/init; \
+	$(if $(SOURCE_DATE_EPOCH), \
+		touch -hcd "@$(SOURCE_DATE_EPOCH)" $(KERNEL_BUILD_DIR)/initrd-init$(1)/init;) \
+	( cd $(KERNEL_BUILD_DIR)/initrd-init$(1); echo ./init | \
+		$(STAGING_DIR_HOST)/bin/cpio --reproducible -o -H newc -R 0:0 \
+			-A -F $(KERNEL_BUILD_DIR)/initrd$(1).cpio )
+endef
+
 # $1: Custom TARGET_DIR. If omitted TARGET_DIR is used.
 # $2: If defined Generate Per Rootfs Kernel Directory and use it
 # For Separate Initramfs, the regular kernel is used as is, as its config
@@ -219,13 +236,12 @@ define Kernel/CompileImage/Initramfs
 		$(if $(CONFIG_TARGET_ROOTFS_INITRAMFS_SEPARATE),, \
 			$(call Kernel/Configure/Initramfs,$(if $(1),$(1),$(TARGET_DIR)),$(LINUX_DIR)$(2)); \
 			rm -rf $(LINUX_DIR)$(2)/usr/initramfs_data.cpio*;) \
-		$(CP) $(GENERIC_PLATFORM_DIR)/other-files/init $(if $(1),$(1),$(TARGET_DIR))/init; \
-		$(if $(SOURCE_DATE_EPOCH),touch -hcd "@$(SOURCE_DATE_EPOCH)" $(if $(1),$(1),$(TARGET_DIR)) $(if $(1),$(1),$(TARGET_DIR))/init;) \
 		$(if $(CONFIG_TARGET_ROOTFS_INITRAMFS_SEPARATE), \
 			$(call locked,{ \
 				$(if $(call qstrip,$(CONFIG_EXTERNAL_CPIO)), \
 					$(CP) $(CONFIG_EXTERNAL_CPIO) $(KERNEL_BUILD_DIR)/initrd$(2).cpio;,\
-					( cd $(if $(1),$(1),$(TARGET_DIR)); find . | LC_ALL=C sort | $(STAGING_DIR_HOST)/bin/cpio --reproducible -o -H newc -R 0:0 > $(KERNEL_BUILD_DIR)/initrd$(2).cpio );) \
+					( cd $(if $(1),$(1),$(TARGET_DIR)); find . | LC_ALL=C sort | $(STAGING_DIR_HOST)/bin/cpio --reproducible -o -H newc -R 0:0 > $(KERNEL_BUILD_DIR)/initrd$(2).cpio ); \
+					$(call Kernel/AppendInitrdInit,$(2));) \
 				$(if $(SOURCE_DATE_EPOCH), \
 					touch -hcd "@$(SOURCE_DATE_EPOCH)" $(KERNEL_BUILD_DIR)/initrd$(2).cpio;) \
 				$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_BZIP2), \
