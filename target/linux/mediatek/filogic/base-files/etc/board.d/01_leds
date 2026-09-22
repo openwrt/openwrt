@@ -109,6 +109,10 @@ cudy,wr3000p-v1-ubootmod)
 	ucidef_set_led_netdev "wan" "wan" "mdio-bus:06:white:wan" "wan" "link tx rx"
 	ucidef_set_led_netdev "internet" "internet" "white:wan-online" "wan" "link"
 	;;
+cudy,wr3000s-v1|\
+cudy,wr3000s-v1-ubootmod)
+	ucidef_set_led_netdev "internet" "internet" "white:wan-online" "wan" "link"
+	;;
 cudy,wr3000u-v1|\
 cudy,wbr3000uax-v1|\
 cudy,wbr3000uax-v1-ubootmod)
