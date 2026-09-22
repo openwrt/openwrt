@@ -1,6 +1,70 @@
+From 909c1d76c0011578acb293412d08588cb6fec43e Mon Sep 17 00:00:00 2001
+From: Robert Marko <robert.marko@sartura.hr>
+Date: Mon, 19 Jan 2026 13:10:45 +0100
+Subject: [PATCH 17/17] cmd: add imsz and imszb
+
+These are used to get the image sizes in OpenWrt.
+
+Signed-off-by: Robert Marko <robert.marko@sartura.hr>
+---
+ boot/image-fit.c | 41 ++++++++++++++++++++++++++++
+ cmd/bootm.c      | 70 ++++++++++++++++++++++++++++++++++++++++++++++++
+ include/image.h  |  1 +
+ 3 files changed, 112 insertions(+)
+
+--- a/boot/image-fit.c
++++ b/boot/image-fit.c
+@@ -2131,6 +2131,47 @@ static const char *fit_get_image_type_pr
+ 	return "unknown";
+ }
+ 
++size_t fit_get_totalsize(const void *fit)
++{
++	int ret, ndepth, noffset, images_noffset;
++	size_t data_size, hdrsize, img_total, max_size = 0;
++	const void *data;
++
++	ret = fdt_check_header(fit);
++	if (ret) {
++		debug("Wrong FIT format: not a flattened device tree (err=%d)\n",
++			  ret);
++		return 0;
++	}
++
++	hdrsize = fdt_totalsize(fit);
++
++	/* take care of simple FIT with internal images */
++	max_size = hdrsize;
++
++	images_noffset = fdt_path_offset(fit, FIT_IMAGES_PATH);
++	if (images_noffset < 0)
++		goto out;
++
++	for (ndepth = 0,
++	     noffset = fdt_next_node(fit, images_noffset, &ndepth);
++	     (noffset >= 0) && (ndepth > 0);
++	     noffset = fdt_next_node(fit, noffset, &ndepth)) {
++		if (ndepth == 1) {
++			ret = fit_image_get_data(fit, noffset, &data, &data_size);
++			if (ret)
++				goto out;
++
++			img_total = data_size + (data - fit);
++
++			max_size = (max_size > img_total) ? max_size : img_total;
++		}
++	}
++
++out:
++	return max_size;
++}
++
+ int fit_image_load(struct bootm_headers *images, ulong addr,
+ 		   const char **fit_unamep, const char **fit_uname_configp,
+ 		   int arch, int ph_type, int bootstage_id,
 --- a/cmd/bootm.c
 +++ b/cmd/bootm.c
-@@ -260,6 +260,76 @@ U_BOOT_CMD(
+@@ -257,6 +257,76 @@ U_BOOT_CMD(
  /* iminfo - print header info for a requested image */
  /*******************************************************************/
  #if defined(CONFIG_CMD_IMI)
@@ -77,59 +141,9 @@
  static int do_iminfo(struct cmd_tbl *cmdtp, int flag, int argc,
  		     char *const argv[])
  {
---- a/boot/image-fit.c
-+++ b/boot/image-fit.c
-@@ -2054,6 +2054,47 @@ static const char *fit_get_image_type_pr
- 	return "unknown";
- }
- 
-+size_t fit_get_totalsize(const void *fit)
-+{
-+	int ret, ndepth, noffset, images_noffset;
-+	size_t data_size, hdrsize, img_total, max_size = 0;
-+	const void *data;
-+
-+	ret = fdt_check_header(fit);
-+	if (ret) {
-+		debug("Wrong FIT format: not a flattened device tree (err=%d)\n",
-+			  ret);
-+		return 0;
-+	}
-+
-+	hdrsize = fdt_totalsize(fit);
-+
-+	/* take care of simple FIT with internal images */
-+	max_size = hdrsize;
-+
-+	images_noffset = fdt_path_offset(fit, FIT_IMAGES_PATH);
-+	if (images_noffset < 0)
-+		goto out;
-+
-+	for (ndepth = 0,
-+	     noffset = fdt_next_node(fit, images_noffset, &ndepth);
-+	     (noffset >= 0) && (ndepth > 0);
-+	     noffset = fdt_next_node(fit, noffset, &ndepth)) {
-+		if (ndepth == 1) {
-+			ret = fit_image_get_data(fit, noffset, &data, &data_size);
-+			if (ret)
-+				goto out;
-+
-+			img_total = data_size + (data - fit);
-+
-+			max_size = (max_size > img_total) ? max_size : img_total;
-+		}
-+	}
-+
-+out:
-+	return max_size;
-+}
-+
- int fit_image_load(struct bootm_headers *images, ulong addr,
- 		   const char **fit_unamep, const char **fit_uname_configp,
- 		   int arch, int ph_type, int bootstage_id,
 --- a/include/image.h
 +++ b/include/image.h
-@@ -1113,6 +1113,7 @@ int fit_parse_subimage(const char *spec,
+@@ -1213,6 +1213,7 @@ int fit_parse_subimage(const char *spec,
  		ulong *addr, const char **image_name);
  
  int fit_get_subimage_count(const void *fit, int images_noffset);

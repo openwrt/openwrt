@@ -1,0 +1,1517 @@
+From 5890dc7c9453bc8e97dbaaf66531c5de7e451c86 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robert.marko@sartura.hr>
+Date: Wed, 21 Jan 2026 11:34:22 +0100
+Subject: [PATCH 15/17] arm: microchipsw: add Novarq Tactical 1000
+
+Add support for Novarq Tactical 1000.
+
+Signed-off-by: Robert Marko <robert.marko@sartura.hr>
+---
+ arch/arm/dts/Makefile                  |    3 +-
+ arch/arm/dts/lan9696-tactical-1000.dts | 1401 ++++++++++++++++++++++++
+ configs/novarq_tactical_1000_defconfig |   82 ++
+ 3 files changed, 1485 insertions(+), 1 deletion(-)
+ create mode 100644 arch/arm/dts/lan9696-tactical-1000.dts
+ create mode 100644 configs/novarq_tactical_1000_defconfig
+
+--- a/arch/arm/dts/Makefile
++++ b/arch/arm/dts/Makefile
+@@ -1171,7 +1171,8 @@ dtb-$(CONFIG_TARGET_CORSTONE1000) += cor
+ 
+ dtb-$(CONFIG_TARGET_COREPRIMEVELTE) += pxa1908-samsung-coreprimevelte.dtb
+ 
+-dtb-$(CONFIG_ARCH_MICROCHIPSW) += lan9696-ev23x71a.dtb
++dtb-$(CONFIG_ARCH_MICROCHIPSW) += lan9696-ev23x71a.dtb \
++				  lan9696-tactical-1000.dtb
+ 
+ include $(srctree)/scripts/Makefile.dts
+ 
+--- /dev/null
++++ b/arch/arm/dts/lan9696-tactical-1000.dts
+@@ -0,0 +1,1401 @@
++// SPDX-License-Identifier: (GPL-2.0-or-later OR MIT)
++
++/dts-v1/;
++
++#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/input/input.h>
++#include <dt-bindings/leds/common.h>
++#include <dt-bindings/pwm/pwm.h>
++#include "lan9691.dtsi"
++
++/ {
++	model = "Novarq Tactical 1000";
++	compatible = "novarq,tactical-1000", "microchip,lan9696", "microchip,lan9691";
++
++	aliases {
++		serial0 = &usart0;
++	};
++
++	chosen {
++		stdout-path = "serial0:115200n8";
++	};
++
++	case_fan: case-gpio-fan {
++		compatible = "gpio-fan";
++		#cooling-cells = <2>;
++		gpios = <&gpio 59 GPIO_ACTIVE_HIGH>;
++		gpio-fan,speed-map = <0	0>,
++				     <2000 1>;
++	};
++
++	gpio-restart {
++		compatible = "gpio-restart";
++		gpios = <&gpio 60 GPIO_ACTIVE_LOW>;
++		open-source;
++		priority = <200>;
++	};
++
++	i2c-mux {
++		compatible = "i2c-mux-gpio";
++		#address-cells = <1>;
++		#size-cells = <0>;
++		i2c-parent = <&i2c3>;
++		idle-state = <0x8>;
++		mux-gpios = <&sgpio_out 0 1 GPIO_ACTIVE_HIGH>,
++			    <&sgpio_out 0 2 GPIO_ACTIVE_HIGH>,
++			    <&sgpio_out 0 3 GPIO_ACTIVE_HIGH>;
++		settle-time-us = <100>;
++
++		i2c_sfp2: i2c@0 {
++			reg = <0x0>;
++		};
++
++		i2c_sfp1: i2c@1 {
++			reg = <0x1>;
++		};
++
++		i2c_sfp0: i2c@2 {
++			reg = <0x2>;
++		};
++
++		i2c_sfp3: i2c@3 {
++			reg = <0x3>;
++		};
++
++		i2c_rtc: i2c@4 {
++			reg = <0x4>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			rtc@6f {
++				compatible = "microchip,mcp7940x";
++				reg = <0x6f>;
++			};
++		};
++
++		i2c_tmp: i2c@6 {
++			reg = <0x6>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			temperature-sensor@48 {
++				compatible = "ti,tmp1075";
++				reg = <0x48>;
++			};
++		};
++
++		i2c_poe: i2c@7 {
++			reg = <0x7>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			ethernet-pse@2c {
++				compatible = "microchip,pd77010";
++				reg = <0x2c>;
++				disable-ports-gpios = <&sgpio_out 0 0 GPIO_ACTIVE_LOW>;
++
++				managers {
++					#address-cells = <1>;
++					#size-cells = <0>;
++
++					pd7718t3_0: manager@0 {
++						reg = <0>;
++						#address-cells = <1>;
++						#size-cells = <0>;
++
++						phys0: port@0 {
++							reg = <0>;
++						};
++
++						phys1: port@1 {
++							reg = <1>;
++						};
++
++						phys2: port@2 {
++							reg = <2>;
++						};
++
++						phys3: port@3 {
++							reg = <3>;
++						};
++
++						phys4: port@4 {
++							reg = <4>;
++						};
++
++						phys5: port@5 {
++							reg = <5>;
++						};
++
++						phys6: port@6 {
++							reg = <6>;
++						};
++
++						phys7: port@7 {
++							reg = <7>;
++						};
++					};
++
++					pd7718t3_1: manager@1 {
++						reg = <1>;
++						#address-cells = <1>;
++						#size-cells = <0>;
++
++						phys8: port@0 {
++							reg = <0>;
++						};
++
++						phys9: port@1 {
++							reg = <1>;
++						};
++
++						phys10: port@2 {
++							reg = <2>;
++						};
++
++						phys11: port@3 {
++							reg = <3>;
++						};
++
++						phys12: port@4 {
++							reg = <4>;
++						};
++
++						phys13: port@5 {
++							reg = <5>;
++						};
++
++						phys14: port@6 {
++							reg = <6>;
++						};
++
++						phys15: port@7 {
++							reg = <7>;
++						};
++					};
++
++					pd7718t3_2: manager@2 {
++						reg = <2>;
++						#address-cells = <1>;
++						#size-cells = <0>;
++
++						phys16: port@0 {
++							reg = <0>;
++						};
++
++						phys17: port@1 {
++							reg = <1>;
++						};
++
++						phys18: port@2 {
++							reg = <2>;
++						};
++
++						phys19: port@3 {
++							reg = <3>;
++						};
++
++						phys20: port@4 {
++							reg = <4>;
++						};
++
++						phys21: port@5 {
++							reg = <5>;
++						};
++
++						phys22: port@6 {
++							reg = <6>;
++						};
++
++						phys23: port@7 {
++							reg = <7>;
++						};
++					};
++
++					pd7718t3_3: manager@3 {
++						reg = <3>;
++						#address-cells = <1>;
++						#size-cells = <0>;
++
++						phys24: port@0 {
++							reg = <0>;
++						};
++
++						phys25: port@1 {
++							reg = <1>;
++						};
++
++						phys26: port@2 {
++							reg = <2>;
++						};
++
++						phys27: port@3 {
++							reg = <3>;
++						};
++
++						phys28: port@4 {
++							reg = <4>;
++						};
++
++						phys29: port@5 {
++							reg = <5>;
++						};
++
++						phys30: port@6 {
++							reg = <6>;
++						};
++
++						phys31: port@7 {
++							reg = <7>;
++						};
++					};
++
++					pd7718t3_4: manager@4 {
++						reg = <4>;
++						#address-cells = <1>;
++						#size-cells = <0>;
++
++						phys32: port@0 {
++							reg = <0>;
++						};
++
++						phys33: port@1 {
++							reg = <1>;
++						};
++
++						phys34: port@2 {
++							reg = <2>;
++						};
++
++						phys35: port@3 {
++							reg = <3>;
++						};
++
++						phys36: port@4 {
++							reg = <4>;
++						};
++
++						phys37: port@5 {
++							reg = <5>;
++						};
++
++						phys38: port@6 {
++							reg = <6>;
++						};
++
++						phys39: port@7 {
++							reg = <7>;
++						};
++					};
++
++					pd7718t3_5: manager@5 {
++						reg = <5>;
++						#address-cells = <1>;
++						#size-cells = <0>;
++
++						phys40: port@0 {
++							reg = <0>;
++						};
++
++						phys41: port@1 {
++							reg = <1>;
++						};
++
++						phys42: port@2 {
++							reg = <2>;
++						};
++
++						phys43: port@3 {
++							reg = <3>;
++						};
++
++						phys44: port@4 {
++							reg = <4>;
++						};
++
++						phys45: port@5 {
++							reg = <5>;
++						};
++
++						phys46: port@6 {
++							reg = <6>;
++						};
++
++						phys47: port@7 {
++							reg = <7>;
++						};
++					};
++				};
++
++				pse-pis {
++					#address-cells = <1>;
++					#size-cells = <0>;
++
++					pse_pi0: pse-pi@0 {
++						reg = <0>;
++						#pse-cells = <0>;
++						pairset-names = "alternative-a", "alternative-b";
++						pairsets = <&phys0>, <&phys1>;
++						polarity-supported = "MDI-X", "S";
++						vpwr-supply = <&pd7718t3_0>;
++					};
++
++					pse_pi1: pse-pi@1 {
++						reg = <1>;
++						#pse-cells = <0>;
++						pairset-names = "alternative-a", "alternative-b";
++						pairsets = <&phys3>, <&phys2>;
++						polarity-supported = "MDI-X", "S";
++						vpwr-supply = <&pd7718t3_0>;
++					};
++
++					pse_pi2: pse-pi@2 {
++						reg = <2>;
++						#pse-cells = <0>;
++						pairset-names = "alternative-a", "alternative-b";
++						pairsets = <&phys4>, <&phys5>;
++						polarity-supported = "MDI-X", "S";
++						vpwr-supply = <&pd7718t3_0>;
++					};
++
++					pse_pi3: pse-pi@3 {
++						reg = <3>;
++						#pse-cells = <0>;
++						pairset-names = "alternative-a", "alternative-b";
++						pairsets = <&phys7>, <&phys6>;
++						polarity-supported = "MDI-X", "S";
++						vpwr-supply = <&pd7718t3_0>;
++					};
++
++					pse_pi4: pse-pi@4 {
++						reg = <4>;
++						#pse-cells = <0>;
++						pairset-names = "alternative-a", "alternative-b";
++						pairsets = <&phys8>, <&phys9>;
++						polarity-supported = "MDI-X", "S";
++						vpwr-supply = <&pd7718t3_1>;
++					};
++
++					pse_pi5: pse-pi@5 {
++						reg = <5>;
++						#pse-cells = <0>;
++						pairset-names = "alternative-a", "alternative-b";
++						pairsets = <&phys11>, <&phys10>;
++						polarity-supported = "MDI-X", "S";
++						vpwr-supply = <&pd7718t3_1>;
++					};
++
++					pse_pi6: pse-pi@6 {
++						reg = <6>;
++						#pse-cells = <0>;
++						pairset-names = "alternative-a", "alternative-b";
++						pairsets = <&phys12>, <&phys13>;
++						polarity-supported = "MDI-X", "S";
++						vpwr-supply = <&pd7718t3_1>;
++					};
++
++					pse_pi7: pse-pi@7 {
++						reg = <7>;
++						#pse-cells = <0>;
++						pairset-names = "alternative-a", "alternative-b";
++						pairsets = <&phys15>, <&phys14>;
++						polarity-supported = "MDI-X", "S";
++						vpwr-supply = <&pd7718t3_1>;
++					};
++
++					pse_pi8: pse-pi@8 {
++						reg = <8>;
++						#pse-cells = <0>;
++						pairset-names = "alternative-a", "alternative-b";
++						pairsets = <&phys16>, <&phys17>;
++						polarity-supported = "MDI-X", "S";
++						vpwr-supply = <&pd7718t3_2>;
++					};
++
++					pse_pi9: pse-pi@9 {
++						reg = <9>;
++						#pse-cells = <0>;
++						pairset-names = "alternative-a", "alternative-b";
++						pairsets = <&phys19>, <&phys18>;
++						polarity-supported = "MDI-X", "S";
++						vpwr-supply = <&pd7718t3_2>;
++					};
++
++					pse_pi10: pse-pi@10 {
++						reg = <10>;
++						#pse-cells = <0>;
++						pairset-names = "alternative-a", "alternative-b";
++						pairsets = <&phys20>, <&phys21>;
++						polarity-supported = "MDI-X", "S";
++						vpwr-supply = <&pd7718t3_2>;
++					};
++
++					pse_pi11: pse-pi@11 {
++						reg = <11>;
++						#pse-cells = <0>;
++						pairset-names = "alternative-a", "alternative-b";
++						pairsets = <&phys23>, <&phys22>;
++						polarity-supported = "MDI-X", "S";
++						vpwr-supply = <&pd7718t3_2>;
++					};
++
++					pse_pi12: pse-pi@12 {
++						reg = <12>;
++						#pse-cells = <0>;
++						pairset-names = "alternative-a", "alternative-b";
++						pairsets = <&phys24>, <&phys25>;
++						polarity-supported = "MDI-X", "S";
++						vpwr-supply = <&pd7718t3_3>;
++					};
++
++					pse_pi13: pse-pi@13 {
++						reg = <13>;
++						#pse-cells = <0>;
++						pairset-names = "alternative-a", "alternative-b";
++						pairsets = <&phys27>, <&phys26>;
++						polarity-supported = "MDI-X", "S";
++						vpwr-supply = <&pd7718t3_3>;
++					};
++
++					pse_pi14: pse-pi@14 {
++						reg = <14>;
++						#pse-cells = <0>;
++						pairset-names = "alternative-a", "alternative-b";
++						pairsets = <&phys28>, <&phys29>;
++						polarity-supported = "MDI-X", "S";
++						vpwr-supply = <&pd7718t3_3>;
++					};
++
++					pse_pi15: pse-pi@15 {
++						reg = <15>;
++						#pse-cells = <0>;
++						pairset-names = "alternative-a", "alternative-b";
++						pairsets = <&phys31>, <&phys30>;
++						polarity-supported = "MDI-X", "S";
++						vpwr-supply = <&pd7718t3_3>;
++					};
++
++					pse_pi16: pse-pi@16 {
++						reg = <16>;
++						#pse-cells = <0>;
++						pairset-names = "alternative-a", "alternative-b";
++						pairsets = <&phys32>, <&phys33>;
++						polarity-supported = "MDI-X", "S";
++						vpwr-supply = <&pd7718t3_4>;
++					};
++
++					pse_pi17: pse-pi@17 {
++						reg = <17>;
++						#pse-cells = <0>;
++						pairset-names = "alternative-a", "alternative-b";
++						pairsets = <&phys35>, <&phys34>;
++						polarity-supported = "MDI-X", "S";
++						vpwr-supply = <&pd7718t3_4>;
++					};
++
++					pse_pi18: pse-pi@18 {
++						reg = <18>;
++						#pse-cells = <0>;
++						pairset-names = "alternative-a", "alternative-b";
++						pairsets = <&phys36>, <&phys37>;
++						polarity-supported = "MDI-X", "S";
++						vpwr-supply = <&pd7718t3_4>;
++					};
++
++					pse_pi19: pse-pi@19 {
++						reg = <19>;
++						#pse-cells = <0>;
++						pairset-names = "alternative-a", "alternative-b";
++						pairsets = <&phys39>, <&phys38>;
++						polarity-supported = "MDI-X", "S";
++						vpwr-supply = <&pd7718t3_4>;
++					};
++
++					pse_pi20: pse-pi@20 {
++						reg = <20>;
++						#pse-cells = <0>;
++						pairset-names = "alternative-a", "alternative-b";
++						pairsets = <&phys40>, <&phys41>;
++						polarity-supported = "MDI-X", "S";
++						vpwr-supply = <&pd7718t3_5>;
++					};
++
++					pse_pi21: pse-pi@21 {
++						reg = <21>;
++						#pse-cells = <0>;
++						pairset-names = "alternative-a", "alternative-b";
++						pairsets = <&phys43>, <&phys42>;
++						polarity-supported = "MDI-X", "S";
++						vpwr-supply = <&pd7718t3_5>;
++					};
++
++					pse_pi22: pse-pi@22 {
++						reg = <22>;
++						#pse-cells = <0>;
++						pairset-names = "alternative-a", "alternative-b";
++						pairsets = <&phys44>, <&phys45>;
++						polarity-supported = "MDI-X", "S";
++						vpwr-supply = <&pd7718t3_5>;
++					};
++
++					pse_pi23: pse-pi@23 {
++						reg = <23>;
++						#pse-cells = <0>;
++						pairset-names = "alternative-a", "alternative-b";
++						pairsets = <&phys47>, <&phys46>;
++						polarity-supported = "MDI-X", "S";
++						vpwr-supply = <&pd7718t3_5>;
++					};
++				};
++			};
++		};
++	};
++
++	keys {
++		compatible = "gpio-keys";
++		pinctrl-0 = <&button_pins>;
++		pinctrl-names = "default";
++
++		key-reset {
++			label = "reset";
++			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_RESTART>;
++		};
++	};
++
++	leds {
++		compatible = "gpio-leds";
++
++		led-status {
++			color = <LED_COLOR_ID_GREEN>;
++			function = LED_FUNCTION_STATUS;
++			gpios = <&gpio 61 GPIO_ACTIVE_LOW>;
++			default-state = "on";
++		};
++
++		led-sfp1-green {
++			color = <LED_COLOR_ID_GREEN>;
++			function = LED_FUNCTION_LAN;
++			function-enumerator = <0>;
++			gpios = <&sgpio_out 6 0 GPIO_ACTIVE_LOW>;
++			default-state = "off";
++		};
++
++		led-sfp1-yellow {
++			color = <LED_COLOR_ID_YELLOW>;
++			function = LED_FUNCTION_LAN;
++			function-enumerator = <0>;
++			gpios = <&sgpio_out 6 1 GPIO_ACTIVE_LOW>;
++			default-state = "off";
++		};
++
++		led-sfp2-green {
++			color = <LED_COLOR_ID_GREEN>;
++			function = LED_FUNCTION_LAN;
++			function-enumerator = <1>;
++			gpios = <&sgpio_out 7 0 GPIO_ACTIVE_LOW>;
++			default-state = "off";
++		};
++
++		led-sfp2-yellow {
++			color = <LED_COLOR_ID_YELLOW>;
++			function = LED_FUNCTION_LAN;
++			function-enumerator = <1>;
++			gpios = <&sgpio_out 7 1 GPIO_ACTIVE_LOW>;
++			default-state = "off";
++		};
++
++		led-sfp3-green {
++			color = <LED_COLOR_ID_GREEN>;
++			function = LED_FUNCTION_LAN;
++			function-enumerator = <2>;
++			gpios = <&sgpio_out 8 0 GPIO_ACTIVE_LOW>;
++			default-state = "off";
++		};
++
++		led-sfp3-yellow {
++			color = <LED_COLOR_ID_YELLOW>;
++			function = LED_FUNCTION_LAN;
++			function-enumerator = <2>;
++			gpios = <&sgpio_out 8 1 GPIO_ACTIVE_LOW>;
++			default-state = "off";
++		};
++
++		led-sfp4-green {
++			color = <LED_COLOR_ID_GREEN>;
++			function = LED_FUNCTION_LAN;
++			function-enumerator = <3>;
++			gpios = <&sgpio_out 9 0 GPIO_ACTIVE_LOW>;
++			default-state = "off";
++		};
++
++		led-sfp4-yellow {
++			color = <LED_COLOR_ID_YELLOW>;
++			function = LED_FUNCTION_LAN;
++			function-enumerator = <3>;
++			gpios = <&sgpio_out 9 1 GPIO_ACTIVE_LOW>;
++			default-state = "off";
++		};
++	};
++
++	sfp0: sfp0 {
++		compatible = "sff,sfp";
++		i2c-bus = <&i2c_sfp0>;
++		tx-disable-gpios = <&sgpio_out 6 2 GPIO_ACTIVE_HIGH>;
++		los-gpios = <&sgpio_in 6 0 GPIO_ACTIVE_HIGH>;
++		mod-def0-gpios = <&sgpio_in 6 1 GPIO_ACTIVE_LOW>;
++		tx-fault-gpios = <&sgpio_in 6 2 GPIO_ACTIVE_HIGH>;
++		/* RS1 is internally tied to RS0 */
++		rate-select0-gpios = <&sgpio_out 6 3 GPIO_ACTIVE_HIGH>;
++	};
++
++	sfp1: sfp1 {
++		compatible = "sff,sfp";
++		i2c-bus = <&i2c_sfp1>;
++		tx-disable-gpios = <&sgpio_out 7 2 GPIO_ACTIVE_HIGH>;
++		los-gpios = <&sgpio_in 7 0 GPIO_ACTIVE_HIGH>;
++		mod-def0-gpios = <&sgpio_in 7 1 GPIO_ACTIVE_LOW>;
++		tx-fault-gpios = <&sgpio_in 7 2 GPIO_ACTIVE_HIGH>;
++		/* RS1 is internally tied to RS0 */
++		rate-select0-gpios = <&sgpio_out 7 3 GPIO_ACTIVE_HIGH>;
++	};
++
++	sfp2: sfp2 {
++		compatible = "sff,sfp";
++		i2c-bus = <&i2c_sfp2>;
++		tx-disable-gpios = <&sgpio_out 8 2 GPIO_ACTIVE_HIGH>;
++		los-gpios = <&sgpio_in 8 0 GPIO_ACTIVE_HIGH>;
++		mod-def0-gpios = <&sgpio_in 8 1 GPIO_ACTIVE_LOW>;
++		tx-fault-gpios = <&sgpio_in 8 2 GPIO_ACTIVE_HIGH>;
++		/* RS1 is internally tied to RS0 */
++		rate-select0-gpios = <&sgpio_out 8 3 GPIO_ACTIVE_HIGH>;
++	};
++
++	sfp3: sfp3 {
++		compatible = "sff,sfp";
++		i2c-bus = <&i2c_sfp3>;
++		tx-disable-gpios = <&sgpio_out 9 2 GPIO_ACTIVE_HIGH>;
++		los-gpios = <&sgpio_in 9 0 GPIO_ACTIVE_HIGH>;
++		mod-def0-gpios = <&sgpio_in 9 1 GPIO_ACTIVE_LOW>;
++		tx-fault-gpios = <&sgpio_in 9 2 GPIO_ACTIVE_HIGH>;
++		/* RS1 is internally tied to RS0 */
++		rate-select0-gpios = <&sgpio_out 9 3 GPIO_ACTIVE_HIGH>;
++	};
++
++	thermal-zones {
++		soc-thermal {
++			polling-delay-passive = <1000>;
++			polling-delay = <2000>;
++			thermal-sensors = <&tmon>;
++
++			trips {
++				fan_low_trip: fan-low-trip {
++					temperature = <60000>;
++					hysteresis = <5000>;
++					type = "active";
++				};
++
++				fan_mid_trip: fan-mid-trip {
++					temperature = <70000>;
++					hysteresis = <5000>;
++					type = "active";
++				};
++
++				fan_high_trip: fan-high-trip {
++					temperature = <80000>;
++					hysteresis = <5000>;
++					type = "active";
++				};
++
++				critical_trip: critical-trip {
++					temperature = <105000>;
++					hysteresis = <5000>;
++					type = "critical";
++				};
++			};
++
++			cooling-maps {
++				map0 {
++					trip = <&fan_low_trip>;
++					cooling-device = <&soc_fan 1 1>;
++				};
++
++				map1 {
++					trip = <&fan_mid_trip>;
++					cooling-device = <&soc_fan 2 2>;
++				};
++
++				map2 {
++					trip = <&fan_high_trip>;
++					cooling-device = <&soc_fan 3 3>;
++				};
++			};
++		};
++	};
++};
++
++&gpio {
++	button_pins: button-pins {
++		pins = "GPIO_2";
++		function = "gpio";
++	};
++
++	case_fan_pins: case-fan-pins {
++		pins = "GPIO_59";
++		function = "gpio";
++	};
++
++	emmc_sd_pins: emmc-sd-pins {
++		/* eMMC_SD - CMD, CLK, D0, D1, D2, D3, D4, D5, D6, D7, RSTN */
++		pins = "GPIO_14", "GPIO_15", "GPIO_16", "GPIO_17",
++		       "GPIO_18", "GPIO_19", "GPIO_20", "GPIO_21",
++		       "GPIO_22", "GPIO_23", "GPIO_24";
++		function = "emmc_sd";
++	};
++
++	fan_pins: fan-pins {
++		pins = "GPIO_25", "GPIO_26";
++		function = "fan";
++	};
++
++	fc0_pins: fc0-pins {
++		pins = "GPIO_3", "GPIO_4";
++		function = "fc";
++	};
++
++
++	fc2_pins: fc2-pins {
++		pins = "GPIO_65", "GPIO_66";
++		function = "fc";
++	};
++
++	fc3_pins: fc3-pins {
++		pins = "GPIO_55", "GPIO_56";
++		function = "fc";
++	};
++
++	mdio_pins: mdio-pins {
++		pins = "GPIO_9", "GPIO_10";
++		function = "miim";
++	};
++
++	mdio_irq_pins: mdio-irq-pins {
++		pins = "GPIO_11";
++		function = "miim_irq";
++	};
++
++	sgpio_pins: sgpio-pins {
++		/* SCK, D0, D1, LD */
++		pins = "GPIO_5", "GPIO_6", "GPIO_7", "GPIO_8";
++		function = "sgpio_a";
++	};
++
++	usb_ulpi_pins: usb-ulpi-pins {
++		pins = "GPIO_30", "GPIO_31", "GPIO_32", "GPIO_33",
++		       "GPIO_34", "GPIO_35", "GPIO_36", "GPIO_37",
++		       "GPIO_38", "GPIO_39", "GPIO_40", "GPIO_41";
++		function = "usb_ulpi";
++	};
++
++	usb_rst_pins: usb-rst-pins {
++		pins = "GPIO_12";
++		function = "usb2phy_rst";
++	};
++
++	usb_over_pins: usb-over-pins {
++		pins = "GPIO_13";
++		function = "usb_over_detect";
++	};
++
++	usb_power_pins: usb-power-pins {
++		pins = "GPIO_1";
++		function = "usb_power";
++	};
++};
++
++&flx0 {
++	atmel,flexcom-mode = <ATMEL_FLEXCOM_MODE_USART>;
++	status = "okay";
++};
++
++&flx2 {
++	atmel,flexcom-mode = <ATMEL_FLEXCOM_MODE_TWI>;
++	status = "okay";
++};
++
++&flx3 {
++	atmel,flexcom-mode = <ATMEL_FLEXCOM_MODE_TWI>;
++	status = "okay";
++};
++
++&i2c2 {
++	pinctrl-0 = <&fc2_pins>;
++	pinctrl-names = "default";
++	i2c-analog-filter;
++	i2c-digital-filter;
++	i2c-digital-filter-width-ns = <35>;
++	i2c-sda-hold-time-ns = <1500>;
++	status = "okay";
++
++	/* ATECC608C lives here on 0x60 */
++};
++
++&i2c3 {
++	pinctrl-0 = <&fc3_pins>;
++	pinctrl-names = "default";
++	i2c-analog-filter;
++	i2c-digital-filter;
++	i2c-digital-filter-width-ns = <35>;
++	i2c-sda-hold-time-ns = <1500>;
++	status = "okay";
++};
++
++&mdio0 {
++	pinctrl-0 = <&mdio_pins>, <&mdio_irq_pins>;
++	pinctrl-names = "default";
++	reset-gpios = <&gpio 62 GPIO_ACTIVE_LOW>;
++	status = "okay";
++
++	phy3: phy@3 {
++		compatible = "ethernet-phy-ieee802.3-c22";
++		reg = <3>;
++		interrupts = <11 IRQ_TYPE_LEVEL_LOW>;
++		interrupt-parent = <&gpio>;
++	};
++
++	phy4: phy@4 {
++		compatible = "ethernet-phy-ieee802.3-c22";
++		reg = <4>;
++		interrupts = <11 IRQ_TYPE_LEVEL_LOW>;
++		interrupt-parent = <&gpio>;
++		pses = <&pse_pi22>;
++	};
++
++	phy5: phy@5 {
++		compatible = "ethernet-phy-ieee802.3-c22";
++		reg = <5>;
++		interrupts = <11 IRQ_TYPE_LEVEL_LOW>;
++		interrupt-parent = <&gpio>;
++		pses = <&pse_pi23>;
++	};
++
++	phy6: phy@6 {
++		compatible = "ethernet-phy-ieee802.3-c22";
++		reg = <6>;
++		interrupts = <11 IRQ_TYPE_LEVEL_LOW>;
++		interrupt-parent = <&gpio>;
++		pses = <&pse_pi20>;
++	};
++
++	phy7: phy@7 {
++		compatible = "ethernet-phy-ieee802.3-c22";
++		reg = <7>;
++		interrupts = <11 IRQ_TYPE_LEVEL_LOW>;
++		interrupt-parent = <&gpio>;
++		pses = <&pse_pi21>;
++	};
++
++	phy8: phy@8 {
++		compatible = "ethernet-phy-ieee802.3-c22";
++		reg = <8>;
++		interrupts = <11 IRQ_TYPE_LEVEL_LOW>;
++		interrupt-parent = <&gpio>;
++		pses = <&pse_pi18>;
++	};
++
++	phy9: phy@9 {
++		compatible = "ethernet-phy-ieee802.3-c22";
++		reg = <9>;
++		interrupts = <11 IRQ_TYPE_LEVEL_LOW>;
++		interrupt-parent = <&gpio>;
++		pses = <&pse_pi19>;
++	};
++
++	phy10: phy@10 {
++		compatible = "ethernet-phy-ieee802.3-c22";
++		reg = <10>;
++		interrupts = <11 IRQ_TYPE_LEVEL_LOW>;
++		interrupt-parent = <&gpio>;
++		pses = <&pse_pi16>;
++	};
++
++	phy11: phy@11 {
++		compatible = "ethernet-phy-ieee802.3-c22";
++		reg = <11>;
++		interrupts = <11 IRQ_TYPE_LEVEL_LOW>;
++		interrupt-parent = <&gpio>;
++		pses = <&pse_pi17>;
++	};
++
++	phy12: phy@12 {
++		compatible = "ethernet-phy-ieee802.3-c22";
++		reg = <12>;
++		interrupts = <11 IRQ_TYPE_LEVEL_LOW>;
++		interrupt-parent = <&gpio>;
++		pses = <&pse_pi14>;
++	};
++
++	phy13: phy@13 {
++		compatible = "ethernet-phy-ieee802.3-c22";
++		reg = <13>;
++		interrupts = <11 IRQ_TYPE_LEVEL_LOW>;
++		interrupt-parent = <&gpio>;
++		pses = <&pse_pi15>;
++	};
++
++	phy14: phy@14 {
++		compatible = "ethernet-phy-ieee802.3-c22";
++		reg = <14>;
++		interrupts = <11 IRQ_TYPE_LEVEL_LOW>;
++		interrupt-parent = <&gpio>;
++		pses = <&pse_pi12>;
++	};
++
++	phy15: phy@15 {
++		compatible = "ethernet-phy-ieee802.3-c22";
++		reg = <15>;
++		interrupts = <11 IRQ_TYPE_LEVEL_LOW>;
++		interrupt-parent = <&gpio>;
++		pses = <&pse_pi13>;
++	};
++
++	phy16: phy@16 {
++		compatible = "ethernet-phy-ieee802.3-c22";
++		reg = <16>;
++		interrupts = <11 IRQ_TYPE_LEVEL_LOW>;
++		interrupt-parent = <&gpio>;
++		pses = <&pse_pi10>;
++	};
++
++	phy17: phy@17 {
++		compatible = "ethernet-phy-ieee802.3-c22";
++		reg = <17>;
++		interrupts = <11 IRQ_TYPE_LEVEL_LOW>;
++		interrupt-parent = <&gpio>;
++		pses = <&pse_pi11>;
++	};
++
++	phy18: phy@18 {
++		compatible = "ethernet-phy-ieee802.3-c22";
++		reg = <18>;
++		interrupts = <11 IRQ_TYPE_LEVEL_LOW>;
++		interrupt-parent = <&gpio>;
++		pses = <&pse_pi8>;
++	};
++
++	phy19: phy@19 {
++		compatible = "ethernet-phy-ieee802.3-c22";
++		reg = <19>;
++		interrupts = <11 IRQ_TYPE_LEVEL_LOW>;
++		interrupt-parent = <&gpio>;
++		pses = <&pse_pi9>;
++	};
++
++	phy20: phy@20 {
++		compatible = "ethernet-phy-ieee802.3-c22";
++		reg = <20>;
++		interrupts = <11 IRQ_TYPE_LEVEL_LOW>;
++		interrupt-parent = <&gpio>;
++		pses = <&pse_pi6>;
++	};
++
++	phy21: phy@21 {
++		compatible = "ethernet-phy-ieee802.3-c22";
++		reg = <21>;
++		interrupts = <11 IRQ_TYPE_LEVEL_LOW>;
++		interrupt-parent = <&gpio>;
++		pses = <&pse_pi7>;
++	};
++
++	phy22: phy@22 {
++		compatible = "ethernet-phy-ieee802.3-c22";
++		reg = <22>;
++		interrupts = <11 IRQ_TYPE_LEVEL_LOW>;
++		interrupt-parent = <&gpio>;
++		pses = <&pse_pi4>;
++	};
++
++	phy23: phy@23 {
++		compatible = "ethernet-phy-ieee802.3-c22";
++		reg = <23>;
++		interrupts = <11 IRQ_TYPE_LEVEL_LOW>;
++		interrupt-parent = <&gpio>;
++		pses = <&pse_pi5>;
++	};
++
++	phy24: phy@24 {
++		compatible = "ethernet-phy-ieee802.3-c22";
++		reg = <24>;
++		interrupts = <11 IRQ_TYPE_LEVEL_LOW>;
++		interrupt-parent = <&gpio>;
++		pses = <&pse_pi2>;
++	};
++
++	phy25: phy@25 {
++		compatible = "ethernet-phy-ieee802.3-c22";
++		reg = <25>;
++		interrupts = <11 IRQ_TYPE_LEVEL_LOW>;
++		interrupt-parent = <&gpio>;
++		pses = <&pse_pi3>;
++	};
++
++	phy26: phy@26 {
++		compatible = "ethernet-phy-ieee802.3-c22";
++		reg = <26>;
++		interrupts = <11 IRQ_TYPE_LEVEL_LOW>;
++		interrupt-parent = <&gpio>;
++		pses = <&pse_pi0>;
++	};
++
++	phy27: phy@27 {
++		compatible = "ethernet-phy-ieee802.3-c22";
++		reg = <27>;
++		interrupts = <11 IRQ_TYPE_LEVEL_LOW>;
++		interrupt-parent = <&gpio>;
++		pses = <&pse_pi1>;
++	};
++};
++
++&qspi0 {
++	status = "okay";
++
++	flash@0 {
++		compatible = "jedec,spi-nor";
++		reg = <0>;
++		spi-max-frequency = <104000000>;
++		#address-cells = <1>;
++		#size-cells = <1>;
++		spi-tx-bus-width = <1>;
++		spi-rx-bus-width = <4>;
++		m25p,fast-read;
++	};
++};
++
++&sdmmc0 {
++	pinctrl-0 = <&emmc_sd_pins>;
++	pinctrl-names = "default";
++	bus-width = <8>;
++	mmc-ddr-1_8v;
++	non-removable;
++	disable-wp;
++	status = "okay";
++};
++
++&serdes {
++	status = "okay";
++};
++
++&sgpio {
++	pinctrl-0 = <&sgpio_pins>;
++	pinctrl-names = "default";
++	microchip,sgpio-port-ranges = <0 1>, <6 9>;
++	status = "okay";
++
++	gpio@0 {
++		ngpios = <128>;
++	};
++	gpio@1 {
++		ngpios = <128>;
++	};
++};
++
++&switch {
++	status = "okay";
++
++	ethernet-ports {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		port0: port@0 {
++			reg = <0>;
++			phy-handle = <&phy4>;
++			phy-mode = "qsgmii";
++			phys = <&serdes 0>;
++			microchip,bandwidth = <1000>;
++			label = "lan4";
++		};
++
++		port1: port@1 {
++			reg = <1>;
++			phy-handle = <&phy5>;
++			phy-mode = "qsgmii";
++			phys = <&serdes 0>;
++			microchip,bandwidth = <1000>;
++			label = "lan3";
++		};
++
++		port2: port@2 {
++			reg = <2>;
++			phy-handle = <&phy6>;
++			phy-mode = "qsgmii";
++			phys = <&serdes 0>;
++			microchip,bandwidth = <1000>;
++			label = "lan2";
++		};
++
++		port3: port@3 {
++			reg = <3>;
++			phy-handle = <&phy7>;
++			phy-mode = "qsgmii";
++			phys = <&serdes 0>;
++			microchip,bandwidth = <1000>;
++			label = "lan1";
++		};
++
++		port4: port@4 {
++			reg = <4>;
++			phy-handle = <&phy8>;
++			phy-mode = "qsgmii";
++			phys = <&serdes 1>;
++			microchip,bandwidth = <1000>;
++			label = "lan8";
++		};
++
++		port5: port@5 {
++			reg = <5>;
++			phy-handle = <&phy9>;
++			phy-mode = "qsgmii";
++			phys = <&serdes 1>;
++			microchip,bandwidth = <1000>;
++			label = "lan7";
++		};
++
++		port6: port@6 {
++			reg = <6>;
++			phy-handle = <&phy10>;
++			phy-mode = "qsgmii";
++			phys = <&serdes 1>;
++			microchip,bandwidth = <1000>;
++			label = "lan6";
++		};
++
++		port7: port@7 {
++			reg = <7>;
++			phy-handle = <&phy11>;
++			phy-mode = "qsgmii";
++			phys = <&serdes 1>;
++			microchip,bandwidth = <1000>;
++			label = "lan5";
++		};
++
++		port8: port@8 {
++			reg = <8>;
++			phy-handle = <&phy12>;
++			phy-mode = "qsgmii";
++			phys = <&serdes 2>;
++			microchip,bandwidth = <1000>;
++			label = "lan12";
++		};
++
++		port9: port@9 {
++			reg = <9>;
++			phy-handle = <&phy13>;
++			phy-mode = "qsgmii";
++			phys = <&serdes 2>;
++			microchip,bandwidth = <1000>;
++			label = "lan11";
++		};
++
++		port10: port@10 {
++			reg = <10>;
++			phy-handle = <&phy14>;
++			phy-mode = "qsgmii";
++			phys = <&serdes 2>;
++			microchip,bandwidth = <1000>;
++			label = "lan10";
++		};
++
++		port11: port@11 {
++			reg = <11>;
++			phy-handle = <&phy15>;
++			phy-mode = "qsgmii";
++			phys = <&serdes 2>;
++			microchip,bandwidth = <1000>;
++			label = "lan9";
++		};
++
++		port12: port@12 {
++			reg = <12>;
++			phy-handle = <&phy16>;
++			phy-mode = "qsgmii";
++			phys = <&serdes 3>;
++			microchip,bandwidth = <1000>;
++			label = "lan16";
++		};
++
++		port13: port@13 {
++			reg = <13>;
++			phy-handle = <&phy17>;
++			phy-mode = "qsgmii";
++			phys = <&serdes 3>;
++			microchip,bandwidth = <1000>;
++			label = "lan15";
++		};
++
++		port14: port@14 {
++			reg = <14>;
++			phy-handle = <&phy18>;
++			phy-mode = "qsgmii";
++			phys = <&serdes 3>;
++			microchip,bandwidth = <1000>;
++			label = "lan14";
++		};
++
++		port15: port@15 {
++			reg = <15>;
++			phy-handle = <&phy19>;
++			phy-mode = "qsgmii";
++			phys = <&serdes 3>;
++			microchip,bandwidth = <1000>;
++			label = "lan13";
++		};
++
++		port16: port@16 {
++			reg = <16>;
++			phy-handle = <&phy20>;
++			phy-mode = "qsgmii";
++			phys = <&serdes 4>;
++			microchip,bandwidth = <1000>;
++			label = "lan20";
++		};
++
++		port17: port@17 {
++			reg = <17>;
++			phy-handle = <&phy21>;
++			phy-mode = "qsgmii";
++			phys = <&serdes 4>;
++			microchip,bandwidth = <1000>;
++			label = "lan19";
++		};
++
++		port18: port@18 {
++			reg = <18>;
++			phy-handle = <&phy22>;
++			phy-mode = "qsgmii";
++			phys = <&serdes 4>;
++			microchip,bandwidth = <1000>;
++			label = "lan18";
++		};
++
++		port19: port@19 {
++			reg = <19>;
++			phy-handle = <&phy23>;
++			phy-mode = "qsgmii";
++			phys = <&serdes 4>;
++			microchip,bandwidth = <1000>;
++			label = "lan17";
++		};
++
++		port20: port@20 {
++			reg = <20>;
++			phy-handle = <&phy24>;
++			phy-mode = "qsgmii";
++			phys = <&serdes 5>;
++			microchip,bandwidth = <1000>;
++			label = "lan24";
++		};
++
++		port21: port@21 {
++			reg = <21>;
++			phy-handle = <&phy25>;
++			phy-mode = "qsgmii";
++			phys = <&serdes 5>;
++			microchip,bandwidth = <1000>;
++			label = "lan23";
++		};
++
++		port22: port@22 {
++			reg = <22>;
++			phy-handle = <&phy26>;
++			phy-mode = "qsgmii";
++			phys = <&serdes 5>;
++			microchip,bandwidth = <1000>;
++			label = "lan22";
++		};
++
++		port23: port@23 {
++			reg = <23>;
++			phy-handle = <&phy27>;
++			phy-mode = "qsgmii";
++			phys = <&serdes 5>;
++			microchip,bandwidth = <1000>;
++			label = "lan21";
++		};
++
++		port24: port@24 {
++			reg = <24>;
++			phys = <&serdes 6>;
++			phy-mode = "10gbase-r";
++			sfp = <&sfp0>;
++			managed = "in-band-status";
++			microchip,bandwidth = <10000>;
++			microchip,sd-sgpio = <24>;
++			label = "sfp1";
++		};
++
++		port25: port@25 {
++			reg = <25>;
++			phys = <&serdes 7>;
++			phy-mode = "10gbase-r";
++			sfp = <&sfp1>;
++			managed = "in-band-status";
++			microchip,bandwidth = <10000>;
++			microchip,sd-sgpio = <28>;
++			label = "sfp2";
++		};
++
++		port26: port@26 {
++			reg = <26>;
++			phys = <&serdes 8>;
++			phy-mode = "10gbase-r";
++			sfp = <&sfp2>;
++			managed = "in-band-status";
++			microchip,bandwidth = <10000>;
++			microchip,sd-sgpio = <32>;
++			label = "sfp3";
++		};
++
++		port27: port@27 {
++			reg = <27>;
++			phys = <&serdes 9>;
++			phy-mode = "10gbase-r";
++			sfp = <&sfp3>;
++			managed = "in-band-status";
++			microchip,bandwidth = <10000>;
++			microchip,sd-sgpio = <36>;
++			label = "sfp4";
++		};
++
++		port29: port@29 {
++			reg = <29>;
++			phys = <&serdes 11>;
++			phy-handle = <&phy3>;
++			phy-mode = "rgmii-id";
++			microchip,bandwidth = <1000>;
++			label = "mgmt";
++		};
++	};
++};
++
++&tmon {
++	pinctrl-0 = <&fan_pins>;
++	pinctrl-names = "default";
++
++	soc_fan: fan {
++		pwms = <&tmon 40000 PWM_POLARITY_INVERTED>;
++		cooling-levels = <0 128 192 255>;
++		#cooling-cells = <2>;
++	};
++};
++
++&usart0 {
++	pinctrl-0 = <&fc0_pins>;
++	pinctrl-names = "default";
++	status = "okay";
++};
++
++&usb {
++	pinctrl-0 = <&usb_ulpi_pins>, <&usb_rst_pins>, <&usb_over_pins>, <&usb_power_pins>;
++	pinctrl-names = "default";
++	status = "okay";
++};
+--- /dev/null
++++ b/configs/novarq_tactical_1000_defconfig
+@@ -0,0 +1,82 @@
++CONFIG_ARM=y
++CONFIG_POSITION_INDEPENDENT=y
++# CONFIG_ARM64_SUPPORT_AARCH32 is not set
++CONFIG_ARCH_MICROCHIPSW=y
++CONFIG_TFABOOT=y
++CONFIG_ENV_SOURCE_FILE="lan969x"
++CONFIG_NR_DRAM_BANKS=3
++CONFIG_ENV_OFFSET=0x0
++CONFIG_DEFAULT_DEVICE_TREE="lan9696-tactical-1000"
++CONFIG_SYS_BOOTM_LEN=0x4000000
++CONFIG_SYS_LOAD_ADDR=0x64000000
++CONFIG_DEBUG_UART_BASE=0xe0040200
++CONFIG_DEBUG_UART_CLOCK=250000000
++CONFIG_DEBUG_UART=y
++# CONFIG_EFI_LOADER is not set
++# CONFIG_TIMESTAMP is not set
++CONFIG_FIT=y
++CONFIG_FIT_VERBOSE=y
++# CONFIG_LEGACY_IMAGE_FORMAT is not set
++CONFIG_HUSH_PARSER=y
++# CONFIG_HUSH_OLD_PARSER is not set
++CONFIG_HUSH_MODERN_PARSER=y
++CONFIG_CMD_CLK=y
++CONFIG_CMD_GPIO=y
++CONFIG_CMD_I2C=y
++CONFIG_CMD_MMC=y
++CONFIG_CMD_MTD=y
++CONFIG_CMD_PART=y
++CONFIG_CMD_USB=y
++CONFIG_CMD_WDT=y
++CONFIG_CMD_DHCP=y
++CONFIG_CMD_DNS=y
++CONFIG_CMD_MII=y
++CONFIG_CMD_PING=y
++CONFIG_CMD_WGET=y
++CONFIG_CMD_DATE=y
++CONFIG_EFI_PARTITION=y
++CONFIG_DEVICE_TREE_INCLUDES="lan969x-u-boot.dtsi lan9696-ev23x71a-u-boot.dtsi"
++CONFIG_ENV_IS_IN_MMC=y
++CONFIG_ENV_MMC_USE_SW_PARTITION=y
++CONFIG_ENV_MMC_SW_PARTITION="Env"
++CONFIG_PROT_TCP_SACK=y
++CONFIG_NET_RANDOM_ETHADDR=y
++CONFIG_CLK=y
++CONFIG_CLK_LAN966X=y
++CONFIG_DM_I2C=y
++CONFIG_SYS_I2C_AT91=y
++# CONFIG_INPUT is not set
++CONFIG_LED=y
++CONFIG_LED_GPIO=y
++CONFIG_MISC=y
++CONFIG_MICROCHIP_FLEXCOM=y
++CONFIG_MMC_SDHCI=y
++CONFIG_MMC_SDHCI_ATMEL=y
++CONFIG_MTD=y
++CONFIG_DM_MTD=y
++CONFIG_DM_SPI_FLASH=y
++CONFIG_SPI_FLASH_SFDP_SUPPORT=y
++CONFIG_SPI_FLASH_SST=y
++CONFIG_SPI_FLASH_MTD=y
++CONFIG_PHY_MICROCHIP=y
++CONFIG_DM_MDIO=y
++CONFIG_PHY_GIGE=y
++CONFIG_MSCC_LAN969X_SWITCH=y
++CONFIG_MDIO_MSCC_MIIM=y
++CONFIG_PINCTRL=y
++CONFIG_PINCTRL_LAN969X=y
++CONFIG_SERIAL_SEARCH_ALL=y
++CONFIG_DEBUG_UART_ANNOUNCE=y
++CONFIG_DEBUG_UART_SKIP_INIT=y
++CONFIG_ATMEL_USART=y
++CONFIG_SPI=y
++CONFIG_DM_SPI=y
++CONFIG_ATMEL_QSPI=y
++CONFIG_SYSRESET=y
++CONFIG_SYSRESET_GPIO=y
++CONFIG_USB=y
++CONFIG_USB_XHCI_HCD=y
++CONFIG_USB_DWC3=y
++CONFIG_USB_DWC3_GENERIC=y
++CONFIG_DESIGNWARE_WATCHDOG=y
++CONFIG_WDT=y

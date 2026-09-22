@@ -1,0 +1,26 @@
+From d57e2958dc7e70031eacaf04e813390815193666 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robert.marko@sartura.hr>
+Date: Tue, 30 Dec 2025 17:28:51 +0100
+Subject: [PATCH 06/17] mmc: atmel-sdhci: include arch specific clk.h only for
+ AT91
+
+Microchip LAN969x will not include any arch specific clk.h, so in order to
+support it only include <asm/arch/clk.h> when AT91 is selected.
+
+Signed-off-by: Robert Marko <robert.marko@sartura.hr>
+---
+ drivers/mmc/atmel_sdhci.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/mmc/atmel_sdhci.c
++++ b/drivers/mmc/atmel_sdhci.c
+@@ -8,7 +8,9 @@
+ #include <dm.h>
+ #include <malloc.h>
+ #include <sdhci.h>
++#if IS_ENABLED(CONFIG_ARCH_AT91)
+ #include <asm/arch/clk.h>
++#endif
+ #include <asm/global_data.h>
+ 
+ #define ATMEL_SDHC_MIN_FREQ	400000

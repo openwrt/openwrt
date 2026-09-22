@@ -1,0 +1,248 @@
+From a92e1d8da2de5e5ede7ec97a8df5603a6e6bfb72 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robert.marko@sartura.hr>
+Date: Fri, 5 Dec 2025 11:12:58 +0100
+Subject: [PATCH 03/17] clk: add Microchip LAN966x and LAN969x support
+
+Import clock driver for Microchip LAN966x and LAN969x SoC-s from the vendor
+U-Boot as it is based on the upstream Linux driver.
+
+Signed-off-by: Robert Marko <robert.marko@sartura.hr>
+---
+ drivers/clk/Makefile                |   2 +-
+ drivers/clk/microchip/Kconfig       |   7 +
+ drivers/clk/microchip/Makefile      |   3 +-
+ drivers/clk/microchip/clk-lan966x.c | 198 ++++++++++++++++++++++++++++
+ 4 files changed, 208 insertions(+), 2 deletions(-)
+ create mode 100644 drivers/clk/microchip/clk-lan966x.c
+
+--- a/drivers/clk/Makefile
++++ b/drivers/clk/Makefile
+@@ -39,7 +39,7 @@ obj-$(CONFIG_CLK_EXYNOS) += exynos/
+ obj-$(CONFIG_CLK_HSDK) += clk-hsdk-cgu.o
+ obj-$(CONFIG_CLK_K210) += clk_k210.o
+ obj-$(CONFIG_CLK_MPC83XX) += mpc83xx_clk.o
+-obj-$(CONFIG_CLK_MPFS) += microchip/
++obj-y += microchip/
+ obj-$(CONFIG_CLK_MVEBU) += mvebu/
+ obj-$(CONFIG_CLK_OCTEON) += clk_octeon.o
+ obj-$(CONFIG_CLK_OWL) += owl/
+--- a/drivers/clk/microchip/Kconfig
++++ b/drivers/clk/microchip/Kconfig
+@@ -1,3 +1,10 @@
++config CLK_LAN966X
++	bool "Microchip LAN966X and LAN969X clock support"
++	depends on ARCH_MICROCHIPSW
++	depends on CLK
++	help
++	  Clock driver for Microchip LAN969X platforms.
++
+ config CLK_MPFS
+ 	bool "Clock support for Microchip PolarFire SoC"
+ 	depends on CLK && CLK_CCF
+--- a/drivers/clk/microchip/Makefile
++++ b/drivers/clk/microchip/Makefile
+@@ -1 +1,2 @@
+-obj-y += mpfs_clk.o mpfs_clk_cfg.o mpfs_clk_periph.o mpfs_clk_msspll.o
++obj-$(CONFIG_CLK_LAN966X) += clk-lan966x.o
++obj-$(CONFIG_CLK_MPFS) += += mpfs_clk.o mpfs_clk_cfg.o mpfs_clk_periph.o mpfs_clk_msspll.o
+--- /dev/null
++++ b/drivers/clk/microchip/clk-lan966x.c
+@@ -0,0 +1,198 @@
++// SPDX-License-Identifier: GPL-2.0+
++
++#include <asm/io.h>
++#include <clk-uclass.h>
++#include <div64.h>
++#include <dm.h>
++#include <regmap.h>
++#include <syscon.h>
++#include <linux/bitfield.h>
++
++#define GCK_ENA         BIT(0)
++#define GCK_SRC_SEL     GENMASK(9, 8)
++#define GCK_PRESCALER   GENMASK(23, 16)
++
++struct lan966x_soc_clk_gate_desc {
++	const char *name;
++	int bit_idx;
++};
++
++static const struct lan966x_soc_clk_gate_desc lan966x_clk_gate_desc[] = {
++	{ "uhphs", 11 },
++	{ "udphs", 10 },
++	{ "mcramc", 9 },
++	{ "hmatrix", 8 },
++	{ }
++};
++
++static const struct lan966x_soc_clk_gate_desc lan969x_clk_gate_desc[] = {
++	{ "usb_drd", 10 },
++	{ "mcramc", 9 },
++	{ "hmatrix", 8 },
++	{ }
++};
++
++struct lan966x_clk {
++	void *base;
++	void *gate;
++	int clk_cnt;
++	int clk_gate_cnt;
++	const struct lan966x_soc_clk_gate_desc *clk_gate_desc;
++	ulong parent_rate;
++};
++
++struct lan966x_driver_data {
++	int clk_cnt;
++	int clk_gate_cnt;
++	const struct lan966x_soc_clk_gate_desc *clk_gate_desc;
++	ulong parent_rate;
++};
++
++static struct lan966x_driver_data lan966x_data = {
++	.clk_cnt = 14,
++	.clk_gate_cnt = 4,
++	.clk_gate_desc = lan966x_clk_gate_desc,
++	.parent_rate = 600000000,
++};
++
++static struct lan966x_driver_data lan969x_data = {
++	.clk_cnt = 12,
++	.clk_gate_cnt = 3,
++	.clk_gate_desc = lan969x_clk_gate_desc,
++	.parent_rate = 1000000000,
++};
++
++static void* lan966x_clk_ctlreg(struct lan966x_clk *gck, u8 id)
++{
++	return gck->base + (id * sizeof(u32));
++}
++
++static ulong lan966x_clk_set_rate(struct clk *clk, ulong rate)
++{
++	struct lan966x_clk *gck = dev_get_priv(clk->dev);
++	unsigned long parent_rate = gck->parent_rate;
++	u32 div;
++
++	if (clk->id >= gck->clk_cnt)
++		return -ENODEV;
++
++	if (rate == 0)
++		return -EINVAL;
++
++	/* Calc divisor */
++	div = DIV_ROUND_CLOSEST(parent_rate, rate);
++
++	/* Set src, prescaler */
++	clrsetbits_le32(lan966x_clk_ctlreg(gck, clk->id),
++			GCK_SRC_SEL | GCK_PRESCALER,
++			/* Select CPU_CLK as source always */
++			FIELD_PREP(GCK_SRC_SEL, 0x0) |
++			/* Divisor - 1 */
++			FIELD_PREP(GCK_PRESCALER, (div - 1)));
++
++	return 0;
++}
++
++static ulong lan966x_clk_get_rate(struct clk *clk)
++{
++	struct lan966x_clk *gck = dev_get_priv(clk->dev);
++	unsigned long parent_rate = gck->parent_rate;
++	u32 div, val;
++
++	if (clk->id >= gck->clk_cnt)
++		return -ENODEV;
++
++	val = readl(lan966x_clk_ctlreg(gck, clk->id));
++
++	div = 1 + FIELD_GET(GCK_PRESCALER, val);
++
++	return parent_rate / div;
++}
++
++static int lan966x_clk_enable(struct clk *clk)
++{
++	struct lan966x_clk *gck = dev_get_priv(clk->dev);
++
++	if (clk->id >= gck->clk_cnt) {
++		/* If there are no gate clock then this is not allowed */
++		if (gck->gate == NULL)
++			return -ENODEV;
++
++		if (clk->id >= gck->clk_cnt + gck->clk_gate_cnt)
++			return -ENODEV;
++
++		setbits_le32(gck->gate,
++			     BIT(gck->clk_gate_desc[clk->id - gck->clk_cnt].bit_idx));
++
++		return 0;
++	}
++
++	setbits_le32(lan966x_clk_ctlreg(gck, clk->id), GCK_ENA);
++
++	return 0;
++}
++
++static int lan966x_clk_disable(struct clk *clk)
++{
++	struct lan966x_clk *gck = dev_get_priv(clk->dev);
++
++	if (clk->id >= gck->clk_cnt) {
++		/* If there are no gate clock then this is not allowed */
++		if (gck->gate == NULL)
++			return -ENODEV;
++
++		if (clk->id >= gck->clk_cnt + gck->clk_gate_cnt)
++			return -ENODEV;
++
++		clrbits_le32(gck->gate, BIT(gck->clk_gate_desc[clk->id - gck->clk_cnt].bit_idx));
++
++		return 0;
++	}
++
++	clrbits_le32(lan966x_clk_ctlreg(gck, clk->id), GCK_ENA);
++
++	return 0;
++}
++
++static int lan966x_clk_probe(struct udevice *dev)
++{
++	struct lan966x_clk *priv = dev_get_priv(dev);
++	struct lan966x_driver_data *data;
++
++	priv->base = dev_remap_addr(dev);
++	if (IS_ERR(priv->base))
++		return PTR_ERR(priv->base);
++
++	priv->gate = dev_remap_addr_index(dev, 1);
++
++	/* Get clock count for target device */
++	data = (struct lan966x_driver_data*)dev_get_driver_data(dev);
++	priv->clk_cnt = data->clk_cnt;
++	priv->clk_gate_cnt = data->clk_gate_cnt;
++	priv->clk_gate_desc = data->clk_gate_desc;
++	priv->parent_rate = data->parent_rate;
++
++	return 0;
++}
++
++static struct clk_ops lan966x_clk_ops = {
++	.disable	= lan966x_clk_disable,
++	.enable		= lan966x_clk_enable,
++	.get_rate	= lan966x_clk_get_rate,
++	.set_rate	= lan966x_clk_set_rate,
++};
++
++static const struct udevice_id lan966x_clk_ids[] = {
++	{ .compatible = "microchip,lan966x-gck", .data = (unsigned long)&lan966x_data },
++	{ .compatible = "microchip,lan9691-gck", .data = (unsigned long)&lan969x_data },
++	{ }
++};
++
++U_BOOT_DRIVER(lan966x_clk) = {
++	.name		= "lan966x_clk",
++	.id		= UCLASS_CLK,
++	.of_match	= lan966x_clk_ids,
++	.priv_auto	= sizeof(struct lan966x_clk),
++	.ops		= &lan966x_clk_ops,
++	.probe		= lan966x_clk_probe,
++};
