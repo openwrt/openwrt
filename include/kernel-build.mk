@@ -81,6 +81,26 @@ ifeq ($(DUMP)$(filter prereq clean refresh update,$(MAKECMDGOALS)),)
   endif
 endif
 
+IMAGE_INSTALL_STAMP:=$(KERNEL_BUILD_DIR)/.image_install
+IMAGE_INSTALL_INPUTS:=$(LINUX_DIR) $(STAGING_DIR)/image \
+	$(STAGING_DIR_HOST)/bin $(CURDIR) $(INCLUDE_DIR) $(SCRIPT_DIR) $(TOPDIR)/.config
+IMAGE_INSTALL_PRUNE:=\( -path '$(LINUX_DIR)/.*' ! -path '$(LINUX_DIR)/.config' \)
+image_install_state = ( \
+		cd $(TARGET_DIR) && \
+		find . -printf '%P %y %m %U %G %s %l\n' | LC_ALL=C sort && \
+		find . -type f -print0 | LC_ALL=C sort -z | xargs -0 -r cat; \
+	) | $(MKHASH) sha256; \
+	find $(BIN_DIR) -maxdepth 1 -type f \
+		! -name sha256sums ! -name profiles.json ! -name '*.buildinfo' \
+		-printf '%f %s\n' 2>/dev/null | LC_ALL=C sort; \
+	find $(BUILD_DIR)/json_info_files -maxdepth 1 -type f \
+		-printf '%f %s\n' 2>/dev/null | LC_ALL=C sort
+image_install_newer = \
+	find $(KERNEL_BUILD_DIR) -maxdepth 1 ! -type d \
+		-newer $(IMAGE_INSTALL_STAMP) -print -quit 2>/dev/null; \
+	find $(IMAGE_INSTALL_INPUTS) $(IMAGE_INSTALL_PRUNE) -prune -o \
+		! -type d -newer $(IMAGE_INSTALL_STAMP) -print -quit 2>/dev/null
+
 define BuildKernel
   $(if $(QUILT),$(Build/Quilt))
   $(if $(LINUX_SITE),$(call Download,kernel))
@@ -184,7 +204,15 @@ define BuildKernel
 	$(call LINUX_RECONF_DIFF,$(LINUX_DIR)/.config) > $(LINUX_RECONFIG_TARGET)
 
   install: $(LINUX_DIR)/.image
-	+$(MAKE) -C image compile install TARGET_BUILD=
+	+{ \
+		state="$$$$( $(image_install_state) )"; \
+		[ "$$$$state" = "$$$$(cat $(IMAGE_INSTALL_STAMP) 2>/dev/null)" ] && \
+		[ -z "$$$$($(image_install_newer))" ] || { \
+			rm -f $(IMAGE_INSTALL_STAMP); \
+			$(MAKE) -C image compile install TARGET_BUILD= && \
+			{ $(image_install_state); } > $(IMAGE_INSTALL_STAMP); \
+		}; \
+	}
 
   clean: FORCE
 	rm -rf $(KERNEL_BUILD_DIR)
