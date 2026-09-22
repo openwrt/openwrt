@@ -64,6 +64,21 @@
 		   Assign them to led_set 1 to avoid shifting the others
 		   incorrectly. */
 		realtek,led-set1-force-port-mask = <0x01800000>;
+
+		/*
+		 * CLOUD and, on the PoE models, the PoE indicator, in the scan
+		 * slots after the copper ports. CLOUD is slot 23 LED 0.
+		 */
+		software-leds {
+			#address-cells = <2>;
+			#size-cells = <0>;
+
+			led@17,0 {
+				reg = <23 0>;
+				color = <LED_COLOR_ID_GREEN>;
+				function = "cloud";
+			};
+		};
 	};
 
 	keys {

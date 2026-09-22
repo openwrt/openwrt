@@ -22,6 +22,39 @@
 	};
 };
 
+&led_set {
+	/*
+	 * The PoE indicator, next to CLOUD:
+	 *   slot 23 LED 1: PoE blue, never used by the stock firmware
+	 *   slot 24 LED 0: PoE green
+	 *   slot 24 LED 1: PoE red, lit together with green for amber
+	 *
+	 * The copper port LEDs (slots 0-3 and 8-11) have their blue, green and
+	 * red elements at LED 0, 1 and 2. In its PoE display mode the stock
+	 * firmware takes those over as well and shows the PD class: yellow for
+	 * 802.3af, green for 802.3at, blue for 802.3bt.
+	 */
+	software-leds {
+		led@17,1 {
+			reg = <23 1>;
+			color = <LED_COLOR_ID_BLUE>;
+			function = "poe";
+		};
+
+		led@18,0 {
+			reg = <24 0>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = "poe";
+		};
+
+		led@18,1 {
+			reg = <24 1>;
+			color = <LED_COLOR_ID_RED>;
+			function = "poe";
+		};
+	};
+};
+
 &uart1 {
 	status = "okay";
 
