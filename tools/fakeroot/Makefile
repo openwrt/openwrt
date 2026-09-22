@@ -15,6 +15,8 @@ PKG_LICENSE:=GPL-3.0-or-later
 PKG_LICENSE_FILES:=COPYING
 PKG_FIXUP:=autoreconf
 
+HOST_CONFIGURE_CACHE:=1
+
 include $(INCLUDE_DIR)/host-build.mk
 
 HOST_CONFIGURE_VARS += \

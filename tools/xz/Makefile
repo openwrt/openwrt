@@ -17,6 +17,7 @@ PKG_HASH:=3340ae48f88665abc78d71dc43446fb3f7e70b48fd59844ac0e14958cef6e00b
 PKG_CPE_ID:=cpe:/a:tukaani:xz
 
 HOST_BUILD_PARALLEL:=1
+HOST_CONFIGURE_CACHE:=1
 
 include $(INCLUDE_DIR)/host-build.mk
 
