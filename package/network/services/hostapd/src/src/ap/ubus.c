@@ -1972,6 +1972,11 @@ hostapd_ubus_vlan_action(struct hostapd_data *hapd, struct hostapd_vlan *vlan,
 	void *c;
 	int i;
 
+	/* vlan_deinit() runs after hostapd_ubus_free_bss() may have dropped the
+	 * last reference and freed the shared context */
+	if (!ctx)
+		return;
+
 	if (!obj->has_subscribers)
 		return;
 
