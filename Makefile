@@ -105,8 +105,10 @@ prereq: $(target/stamp-prereq) tmp/.prereq_packages
 
 $(BIN_DIR)/profiles.json: FORCE
 	$(if $(CONFIG_JSON_OVERVIEW_IMAGE_INFO), \
+		mkdir -p $(BIN_DIR) $(TMP_DIR); \
 		WORK_DIR=$(BUILD_DIR)/json_info_files \
-			$(SCRIPT_DIR)/json_overview_image_info.py $@ \
+			$(SCRIPT_DIR)/json_overview_image_info.py $(TMP_DIR)/.profiles.json && \
+		$(call cp_if_changed,$(TMP_DIR)/.profiles.json,$@) \
 	)
 
 json_overview_image_info: $(BIN_DIR)/profiles.json
@@ -115,10 +117,14 @@ checksum: FORCE
 	$(call sha256sums,$(BIN_DIR),$(CONFIG_BUILDBOT))
 
 buildversion: FORCE
-	$(SCRIPT_DIR)/getver.sh > $(BIN_DIR)/version.buildinfo
+	mkdir -p $(BIN_DIR) $(TMP_DIR)
+	$(SCRIPT_DIR)/getver.sh > $(TMP_DIR)/.version.buildinfo
+	$(call cp_if_changed,$(TMP_DIR)/.version.buildinfo,$(BIN_DIR)/version.buildinfo)
 
 feedsversion: FORCE
-	$(SCRIPT_DIR)/feeds list -fs > $(BIN_DIR)/feeds.buildinfo
+	mkdir -p $(BIN_DIR) $(TMP_DIR)
+	$(SCRIPT_DIR)/feeds list -fs > $(TMP_DIR)/.feeds.buildinfo
+	$(call cp_if_changed,$(TMP_DIR)/.feeds.buildinfo,$(BIN_DIR)/feeds.buildinfo)
 
 # diffconfig.sh runs the config parser over the whole tree twice, which takes
 # two seconds of every build. Skip it while neither .config nor a Kconfig file

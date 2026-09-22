@@ -501,6 +501,17 @@ define file_copy
 endef
 
 ##@
+# @brief Copy a file over another one only when the content differs, so that
+#        the destination keeps its timestamp.
+#
+# @param 1: Source file.
+# @param 2: Destination file.
+##
+define cp_if_changed
+	{ cmp -s $(1) $(2) || cp $(1) $(2); }
+endef
+
+##@
 # @brief Calculate sha256sum of any plain file within a given directory.
 #
 # @param 1: Input directory.
