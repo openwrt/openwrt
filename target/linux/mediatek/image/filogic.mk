@@ -4174,6 +4174,24 @@ define Device/zbtlink_zbt-z8106ax-t
 endef
 TARGET_DEVICES += zbtlink_zbt-z8106ax-t
 
+define Device/zbtlink_zbt-z8107ax
+  DEVICE_VENDOR := Zbtlink
+  DEVICE_MODEL := ZBT-Z8107AX
+  DEVICE_DTS := mt7981b-zbtlink-zbt-z8107ax
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware kmod-usb3
+  SUPPORTED_DEVICES += zbtlink,z8107ax
+  KERNEL_IN_UBI := 1
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGE_SIZE := 65536k
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-ubi | check-size $$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += zbtlink_zbt-z8107ax
+
 define Device/zbtlink_zbt-z8803be
   DEVICE_VENDOR := Zbtlink
   DEVICE_MODEL := ZBT-Z8803BE

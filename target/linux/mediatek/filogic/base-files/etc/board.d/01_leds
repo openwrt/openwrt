@@ -410,6 +410,9 @@ zbtlink,zbt-z8106ax-t)
 	ucidef_set_led_netdev "wan" "wan" "amber:wan" "eth1" "link tx rx"
 	ucidef_set_led_netdev "mobile" "mobile" "green:mobile" "wwan" "link tx rx"
 	;;
+zbtlink,zbt-z8107ax)
+	ucidef_set_led_netdev "wan" "WAN" "blue:wan" "wan" "link tx rx"
+	;;
 zyxel,ex5601-t0-stock|\
 zyxel,ex5601-t0-ubootmod)
 	ucidef_set_led_netdev "lan1" "LAN1" "mdio-bus:05:green:lan" "lan1" "link tx rx"
