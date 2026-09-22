@@ -16,6 +16,7 @@ PKG_SOURCE_URL:= \
 PKG_HASH:=78e8bfc382fe388f9b55aa1daf8c563522a037779b5d4c349d1415e381f1243e
 
 HOST_BUILD_DIR:=$(BUILD_DIR_HOST)/u-boot-$(PKG_VERSION)
+HOST_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/host-build.mk
 
@@ -35,7 +36,7 @@ define Host/Configure
 endef
 
 define Host/Compile
-	$(MAKE) -C $(HOST_BUILD_DIR) \
+	+$(MAKE) $(HOST_JOBS) -C $(HOST_BUILD_DIR) \
 		HOSTCFLAGS="$(HOST_CFLAGS)" \
 		HOSTLDFLAGS="$(HOST_LDFLAGS)" \
 		PKG_CONFIG_EXTRAARGS="--static" \

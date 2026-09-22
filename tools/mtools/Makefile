@@ -23,7 +23,7 @@ HOST_CONFIGURE_VARS += \
 	ac_cv_header_iconv_h=no
 
 define Host/Compile
-	$(MAKE) -C $(HOST_BUILD_DIR) mcopy mmd
+	+$(MAKE) $(HOST_JOBS) -C $(HOST_BUILD_DIR) mcopy mmd
 endef
 
 define Host/Install
