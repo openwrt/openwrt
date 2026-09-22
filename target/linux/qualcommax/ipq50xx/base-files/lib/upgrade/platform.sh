@@ -205,7 +205,7 @@ platform_do_upgrade() {
 	iodata,wn-dax3000gr)
 		local delay
 
-		delay=$(fw_printenv bootdelay)
+		delay=$(fw_printenv -n bootdelay)
 		[ -z "$delay" ] || [ "$delay" -eq "0" ] && \
 			fw_setenv bootdelay 3
 
