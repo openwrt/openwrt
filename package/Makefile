@@ -50,14 +50,29 @@ PACKAGE_INSTALL_FILES:= \
 $(curdir)/cleanup: $(TMP_DIR)/.build
 	rm -rf $(STAGING_DIR_ROOT)
 
+PACKAGE_EXT:=$(if $(CONFIG_USE_APK),apk,ipk)
+PACKAGE_INDEX_FILE:=$(PACKAGE_DIR_ALL)/$(if $(CONFIG_USE_APK),packages.adb,Packages)
+PACKAGE_MERGE_LIST:=$(PACKAGE_DIR_ALL).list
+
+define package_merge_links
+	rm -rf $(PACKAGE_DIR_ALL); \
+	mkdir -p $(PACKAGE_DIR_ALL); \
+	$(foreach pdir,$(PACKAGE_SUBDIRS), \
+		$(if $(wildcard $(pdir)/*.$(PACKAGE_EXT)), \
+			ln -s $(pdir)/*.$(PACKAGE_EXT) $(PACKAGE_DIR_ALL) || true;))
+endef
+
 $(curdir)/merge:
-	rm -rf $(PACKAGE_DIR_ALL)
-	mkdir -p $(PACKAGE_DIR_ALL)
-ifneq ($(CONFIG_USE_APK),)
-	-$(foreach pdir,$(PACKAGE_SUBDIRS),$(if $(wildcard $(pdir)/*.apk),ln -s $(pdir)/*.apk $(PACKAGE_DIR_ALL);))
-else
-	-$(foreach pdir,$(PACKAGE_SUBDIRS),$(if $(wildcard $(pdir)/*.ipk),ln -s $(pdir)/*.ipk $(PACKAGE_DIR_ALL);))
-endif
+	mkdir -p $(dir $(PACKAGE_MERGE_LIST))
+	find $(PACKAGE_SUBDIRS) -maxdepth 1 -name '*.$(PACKAGE_EXT)' \
+		-printf '%p %s %T@\n' 2>/dev/null | LC_ALL=C sort > $(PACKAGE_MERGE_LIST).new
+	if cmp -s $(PACKAGE_MERGE_LIST).new $(PACKAGE_MERGE_LIST) && \
+	   [ -f $(PACKAGE_INDEX_FILE) ]; then \
+		rm -f $(PACKAGE_MERGE_LIST).new; \
+	else \
+		$(package_merge_links) \
+		mv $(PACKAGE_MERGE_LIST).new $(PACKAGE_MERGE_LIST); \
+	fi
 
 $(BUILD_KEY_APK_SEC):
 	$(STAGING_DIR_HOST)/bin/openssl ecparam -name prime256v1 -genkey -noout -out $(BUILD_KEY_APK_SEC)
@@ -67,6 +82,7 @@ $(BUILD_KEY_APK_PUB): $(BUILD_KEY_APK_SEC)
 
 $(curdir)/merge-index: $(curdir)/merge
 ifneq ($(CONFIG_USE_APK),)
+	[ -f $(PACKAGE_INDEX_FILE) ] || \
 	(cd $(PACKAGE_DIR_ALL) && $(STAGING_DIR_HOST)/bin/apk mkndx \
 			--root $(TOPDIR) \
 			--keys-dir $(TOPDIR) \
@@ -76,6 +92,7 @@ ifneq ($(CONFIG_USE_APK),)
 			*.apk; \
 	)
 else
+	[ -f $(PACKAGE_INDEX_FILE) ] || \
 	(cd $(PACKAGE_DIR_ALL) && $(SCRIPT_DIR)/ipkg-make-index.sh . 2>&1 > Packages; )
 endif
 
