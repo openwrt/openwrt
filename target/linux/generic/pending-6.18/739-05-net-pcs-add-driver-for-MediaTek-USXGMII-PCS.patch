@@ -10,11 +10,9 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 ---
  MAINTAINERS                       |   2 +
  drivers/net/pcs/Kconfig           |  13 +
- drivers/net/pcs/Kconfig.orig      |  55 ++++
  drivers/net/pcs/Makefile          |   1 +
  drivers/net/pcs/pcs-mtk-usxgmii.c | 490 ++++++++++++++++++++++++++++++
- 5 files changed, 561 insertions(+)
- create mode 100644 drivers/net/pcs/Kconfig.orig
+ 4 files changed, 506 insertions(+)
  create mode 100644 drivers/net/pcs/pcs-mtk-usxgmii.c
 
 --- a/MAINTAINERS
@@ -51,64 +49,6 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  config PCS_RZN1_MIIC
  	tristate "Renesas RZ/N1, RZ/N2H, RZ/T2H MII converter"
  	depends on OF
---- /dev/null
-+++ b/drivers/net/pcs/Kconfig.orig
-@@ -0,0 +1,55 @@
-+# SPDX-License-Identifier: GPL-2.0-only
-+#
-+# PCS Layer Configuration
-+#
-+
-+menu "PCS device drivers"
-+
-+config OF_PCS
-+	tristate
-+	depends on OF
-+	depends on PHYLINK
-+	help
-+		OpenFirmware PCS accessors
-+
-+config PCS_XPCS
-+	tristate "Synopsys DesignWare Ethernet XPCS"
-+	select PHYLINK
-+	help
-+	  This module provides a driver and helper functions for Synopsys
-+	  DesignWare XPCS controllers.
-+
-+config PCS_LYNX
-+	tristate
-+	help
-+	  This module provides helpers to phylink for managing the Lynx PCS
-+	  which is part of the Layerscape and QorIQ Ethernet SERDES.
-+
-+config PCS_MTK_LYNXI
-+	tristate
-+	select REGMAP
-+	help
-+	  This module provides helpers to phylink for managing the LynxI PCS
-+	  which is part of MediaTek's SoC and Ethernet switch ICs.
-+
-+config PCS_MTK_USXGMII
-+	tristate "MediaTek USXGMII PCS"
-+	select OF_PCS
-+	select PCS_MTK_LYNXI
-+	select PHY_MTK_PEXTP
-+	select PHYLINK
-+	help
-+	  This module provides a driver for MediaTek's USXGMII PCS supporting
-+	  10GBase-R, 5GBase-R and USXGMII interface modes.
-+	  1000Base-X, 2500Base-X and Cisco SGMII are supported on the same
-+	  differential pairs via an embedded LynxI PHY.
-+
-+config PCS_RZN1_MIIC
-+	tristate "Renesas RZ/N1 MII converter"
-+	depends on OF && (ARCH_RZN1 || COMPILE_TEST)
-+	help
-+	  This module provides a driver for the MII converter that is available
-+	  on RZ/N1 SoCs. This PCS converts MII to RMII/RGMII or can be set in
-+	  pass-through mode for MII.
-+
-+endmenu
 --- a/drivers/net/pcs/Makefile
 +++ b/drivers/net/pcs/Makefile
 @@ -8,4 +8,5 @@ pcs_xpcs-$(CONFIG_PCS_XPCS)	:= pcs-xpcs.
