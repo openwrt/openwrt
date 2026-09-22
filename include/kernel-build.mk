@@ -81,6 +81,11 @@ ifeq ($(DUMP)$(filter prereq clean refresh update,$(MAKECMDGOALS)),)
   endif
 endif
 
+KERNEL_CONFIG_CHECK:=$(LINUX_DIR)/.configured-check
+KERNEL_CONFIG_DEPENDS:=$(LINUX_KCONFIG_LIST) $(TOPDIR)/.config $(TMP_DIR)/.packageinfo \
+	$(SCRIPT_DIR)/kconfig.pl $(SCRIPT_DIR)/package-metadata.pl $(SCRIPT_DIR)/metadata.pm \
+	$(INCLUDE_DIR)/kernel-defaults.mk $(INCLUDE_DIR)/kernel-build.mk $(CURDIR)
+
 IMAGE_INSTALL_STAMP:=$(KERNEL_BUILD_DIR)/.image_install
 IMAGE_INSTALL_INPUTS:=$(LINUX_DIR) $(STAGING_DIR)/image \
 	$(STAGING_DIR_HOST)/bin $(CURDIR) $(INCLUDE_DIR) $(SCRIPT_DIR) $(TOPDIR)/.config
@@ -149,7 +154,14 @@ define BuildKernel
 	) > $$@
 	$(call BuildTimeLog,end,compile)
 
-  $(STAMP_CONFIGURED): $(STAMP_PREPARED) $(LINUX_KCONFIG_LIST) $(TOPDIR)/.config FORCE
+  $(KERNEL_CONFIG_CHECK): $(STAMP_PREPARED) $(LINUX_KCONFIG_LIST) $(TOPDIR)/.config FORCE
+	@mkdir -p $(LINUX_DIR)
+	@[ -f $(STAMP_CONFIGURED) ] && [ -d $(LINUX_DIR)/user_headers ] && \
+		[ -z "$$$$(find $(KERNEL_CONFIG_DEPENDS) ! -type d \
+			-newer $(STAMP_CONFIGURED) -print -quit 2>/dev/null)" ] || \
+		touch $$@
+
+  $(STAMP_CONFIGURED): $(KERNEL_CONFIG_CHECK)
 	$(call BuildTimeLog,begin,configure)
 	$(Kernel/Configure)
 	touch $$@
