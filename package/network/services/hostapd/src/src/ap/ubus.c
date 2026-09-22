@@ -1452,6 +1452,7 @@ hostapd_bss_tr_send(struct hostapd_data *hapd, u8 *addr, bool disassoc_imminent,
 	u8 req_mode = 0;
 	u8 mbo_buf[10];
 	size_t mbo_len = 0;
+	int ret = 0;
 
 	hapd = hostapd_ubus_sta_bss(hapd, addr, &sta);
 	if (!sta)
@@ -1486,8 +1487,8 @@ hostapd_bss_tr_send(struct hostapd_data *hapd, u8 *addr, bool disassoc_imminent,
 			*nr_cur++ = WLAN_EID_NEIGHBOR_REPORT;
 			*nr_cur++ = (u8) len;
 			if (hexstr2bin(blobmsg_data(cur), nr_cur, len)) {
-				free(nr);
-				return UBUS_STATUS_INVALID_ARGUMENT;
+				ret = UBUS_STATUS_INVALID_ARGUMENT;
+				goto out;
 			}
 
 			nr_cur += len;
@@ -1510,16 +1511,22 @@ hostapd_bss_tr_send(struct hostapd_data *hapd, u8 *addr, bool disassoc_imminent,
 	if (mbo) {
 		u8 *mbo_pos = mbo_buf;
 
-		if (mbo_reason > MBO_TRANSITION_REASON_PREMIUM_AP)
-			return UBUS_STATUS_INVALID_ARGUMENT;
+		if (mbo_reason > MBO_TRANSITION_REASON_PREMIUM_AP) {
+			ret = UBUS_STATUS_INVALID_ARGUMENT;
+			goto out;
+		}
 
 		if (cell_pref != MBO_CELL_PREF_EXCLUDED &&
 		    cell_pref != MBO_CELL_PREF_NO_USE &&
-		    cell_pref != MBO_CELL_PREF_USE)
-			return UBUS_STATUS_INVALID_ARGUMENT;
+		    cell_pref != MBO_CELL_PREF_USE) {
+			ret = UBUS_STATUS_INVALID_ARGUMENT;
+			goto out;
+		}
 
-		if (reassoc_delay > 65535 || (reassoc_delay && !disassoc_imminent))
-			return UBUS_STATUS_INVALID_ARGUMENT;
+		if (reassoc_delay > 65535 || (reassoc_delay && !disassoc_imminent)) {
+			ret = UBUS_STATUS_INVALID_ARGUMENT;
+			goto out;
+		}
 
 		*mbo_pos++ = MBO_ATTR_ID_TRANSITION_REASON;
 		*mbo_pos++ = 1;
@@ -1539,11 +1546,14 @@ hostapd_bss_tr_send(struct hostapd_data *hapd, u8 *addr, bool disassoc_imminent,
 	}
 #endif
 
+	/* wnm_send_bss_tm_req() copies the neighbor list into its own frame */
 	if (wnm_send_bss_tm_req(hapd, sta, req_mode, disassoc_timer, validity_period, NULL,
 				dialog_token, NULL, nr, nr_len, mbo_len ? mbo_buf : NULL, mbo_len))
-		return UBUS_STATUS_UNKNOWN_ERROR;
+		ret = UBUS_STATUS_UNKNOWN_ERROR;
 
-	return 0;
+out:
+	free(nr);
+	return ret;
 }
 
 enum {
