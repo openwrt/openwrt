@@ -39,11 +39,8 @@ uxc_preinst() {
 }
 
 uxc_postinst() {
-	local name="$1"
-
 	[ -n "$IPKG_INSTROOT" ] && return 0
-	uxc create "$name" 2>/dev/null
-	uxc start "$name" 2>/dev/null
+	ubus call service event '{"type":"uxc.bringup","data":{}}' 2>/dev/null
 
 	return 0
 }
@@ -53,6 +50,7 @@ uxc_prerm() {
 
 	[ -n "$IPKG_INSTROOT" ] && return 0
 	uxc kill "$name" 2>/dev/null
+	ubus call container delete "{\"name\":\"$name\"}" 2>/dev/null
 
 	return 0
 }
