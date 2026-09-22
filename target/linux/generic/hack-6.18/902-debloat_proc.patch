@@ -192,7 +192,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
 --- a/kernel/irq/proc.c
 +++ b/kernel/irq/proc.c
-@@ -331,6 +331,9 @@ void register_irq_proc(unsigned int irq,
+@@ -332,6 +332,9 @@ void register_irq_proc(unsigned int irq,
  	void __maybe_unused *irqp = (void *)(unsigned long) irq;
  	char name [MAX_NAMELEN];
  
@@ -202,7 +202,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (!root_irq_dir || (desc->irq_data.chip == &no_irq_chip))
  		return;
  
-@@ -384,6 +387,9 @@ void unregister_irq_proc(unsigned int ir
+@@ -385,6 +388,9 @@ void unregister_irq_proc(unsigned int ir
  {
  	char name [MAX_NAMELEN];
  
@@ -212,7 +212,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (!root_irq_dir || !desc->dir)
  		return;
  #ifdef CONFIG_SMP
-@@ -422,6 +428,9 @@ void init_irq_proc(void)
+@@ -423,6 +429,9 @@ void init_irq_proc(void)
  	unsigned int irq;
  	struct irq_desc *desc;
  
@@ -342,7 +342,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/ipv4/fib_trie.c
 +++ b/net/ipv4/fib_trie.c
-@@ -3010,11 +3010,13 @@ static const struct seq_operations fib_r
+@@ -3014,11 +3014,13 @@ static const struct seq_operations fib_r
  
  int __net_init fib_proc_init(struct net *net)
  {
@@ -358,7 +358,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			fib_triestat_seq_show, NULL))
  		goto out2;
  
-@@ -3025,17 +3027,21 @@ int __net_init fib_proc_init(struct net
+@@ -3029,17 +3031,21 @@ int __net_init fib_proc_init(struct net
  	return 0;
  
  out3:
