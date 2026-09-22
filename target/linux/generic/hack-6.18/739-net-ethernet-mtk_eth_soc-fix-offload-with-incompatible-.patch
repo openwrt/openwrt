@@ -41,7 +41,7 @@ Signed-off-by: Mieczyslaw Nalewaj <namiltd@yahoo.com>
 
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -5092,6 +5092,35 @@ static u16 mtk_select_queue(struct net_d
+@@ -5114,6 +5114,35 @@ static u16 mtk_select_queue(struct net_d
  	return queue;
  }
  
@@ -77,7 +77,7 @@ Signed-off-by: Mieczyslaw Nalewaj <namiltd@yahoo.com>
  static const struct ethtool_ops mtk_ethtool_ops = {
  	.get_link_ksettings	= mtk_get_link_ksettings,
  	.set_link_ksettings	= mtk_set_link_ksettings,
-@@ -5131,6 +5160,9 @@ static const struct net_device_ops mtk_n
+@@ -5153,6 +5182,9 @@ static const struct net_device_ops mtk_n
  	.ndo_bpf		= mtk_xdp,
  	.ndo_xdp_xmit		= mtk_xdp_xmit,
  	.ndo_select_queue	= mtk_select_queue,
