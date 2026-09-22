@@ -416,7 +416,8 @@ static void rtldsa_l2_uc_put_row(struct rtl838x_switch_priv *priv,
  * Called from the L3 layer
  * The index in the L2 hash table is filled into nh->l2_id;
  */
-int rtldsa_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop *nh)
+int rtldsa_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop *nh,
+			  bool require_existing)
 {
 	struct rtl838x_l2_entry e = {};
 	u64 seed = priv->r->l2_hash_seed(nh->mac, nh->rvid);
@@ -434,6 +435,21 @@ int rtldsa_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct otto_l3_nexth
 	if (idx < 0) {
 		pr_err("%s: No more L2 forwarding entries available\n", __func__);
 		return -1;
+	}
+
+	/* With a next hop that has no port, an RTL930x delivers every forwarded
+	 * frame twice, once from the switch and once from the Linux stack. A
+	 * row invented here would be static, and nothing would replace it:
+	 * dsa_user_fdb_event() drops an address the software bridge learns on
+	 * an offloaded port before the driver sees it. A caller that can trap
+	 * the route leaves the slot to the address, and lets the switch learn
+	 * it.
+	 */
+	if (require_existing && !e.valid) {
+		if (nh->l2_installed)
+			rtldsa_l2_uc_put_row(priv, nh);
+		nh->l2_installed = false;
+		return -ENOENT;
 	}
 
 	/* Found an existing (e->valid is true) or empty entry, make it a nexthop entry */
