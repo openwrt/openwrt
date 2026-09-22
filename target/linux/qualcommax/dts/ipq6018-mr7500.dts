@@ -323,6 +323,8 @@
 	aqr114c: ethernet-phy@8 {
 		reg = <8>;
 		reset-gpios = <&tlmm 77 GPIO_ACTIVE_LOW>;
+		reset-assert-us = <100000>;
+		reset-deassert-us = <250000>;
 		compatible = "ethernet-phy-ieee802.3-c45";
 		firmware-name = "marvell/AQR114C.cld";
 		nvmem-cells = <&aqr_fw>;
