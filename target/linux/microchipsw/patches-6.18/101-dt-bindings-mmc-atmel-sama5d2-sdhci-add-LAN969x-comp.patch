@@ -1,14 +1,15 @@
-From 4c5674bb953dbc3f1c5230a97fd1658d2ab34a3e Mon Sep 17 00:00:00 2001
+From 86e2fccea97d0c57e005dbb2a974fa32d31b9d35 Mon Sep 17 00:00:00 2001
 From: Robert Marko <robert.marko@sartura.hr>
 Date: Thu, 25 Sep 2025 22:23:20 +0200
-Subject: [PATCH 100/101] dt-bindings: mmc: atmel,sama5d2-sdhci: add LAN969x
+Subject: [PATCH 101/105] dt-bindings: mmc: atmel,sama5d2-sdhci: add LAN969x
  compatible
 
-The SDHCI controller in the LAN969x family is compatible with the
-SAM9X60 implementation. Add the microchip,lan9691-sdhci compatible
+The SDHCI controller in the LAN969x family uses the same register layout
+as the SAM9X60 implementation. Add the microchip,lan9691-sdhci compatible
 with microchip,sam9x60-sdhci as its fallback.
 
 Signed-off-by: Robert Marko <robert.marko@sartura.hr>
+Acked-by: Conor Dooley <conor.dooley@microchip.com>
 ---
  Documentation/devicetree/bindings/mmc/atmel,sama5d2-sdhci.yaml | 1 +
  1 file changed, 1 insertion(+)

@@ -1,0 +1,38 @@
+From d1a4ee26535e8a2282dce0890bd78e5f43e86613 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robert.marko@sartura.hr>
+Date: Mon, 7 Sep 2026 13:56:39 +0200
+Subject: [PATCH 102/105] mmc: sdhci-of-at91: add LAN969x support
+
+LAN969x uses the same internally generated base clock layout as SAM9X60,
+but its SDMMC controller stops responding when runtime PM gates its clocks.
+Software resets then fail to complete and the internal SDHCI clock never
+stabilises, causing subsequent I/O requests to time out.
+
+Add LAN969x-specific SoC data using the SAM9X60 clock layout and select the
+option to leave its clocks enabled across runtime suspend.
+
+Signed-off-by: Robert Marko <robert.marko@sartura.hr>
+---
+ drivers/mmc/host/sdhci-of-at91.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+--- a/drivers/mmc/host/sdhci-of-at91.c
++++ b/drivers/mmc/host/sdhci-of-at91.c
+@@ -160,9 +160,17 @@ static const struct sdhci_at91_soc_data
+ 	.pm_runtime_disable_clks = true,
+ };
+ 
++static const struct sdhci_at91_soc_data soc_data_lan969x = {
++	.pdata = &sdhci_sama5d2_pdata,
++	.baseclk_is_generated_internally = true,
++	.pm_runtime_disable_clks = false,
++	.divider_for_baseclk = 2,
++};
++
+ static const struct of_device_id sdhci_at91_dt_match[] = {
+ 	{ .compatible = "atmel,sama5d2-sdhci", .data = &soc_data_sama5d2 },
+ 	{ .compatible = "microchip,sam9x60-sdhci", .data = &soc_data_sam9x60 },
++	{ .compatible = "microchip,lan9691-sdhci", .data = &soc_data_lan969x },
+ 	{}
+ };
+ MODULE_DEVICE_TABLE(of, sdhci_at91_dt_match);

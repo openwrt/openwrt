@@ -1,18 +1,20 @@
-From b36ae1844cc47de82a1866538756c9dffa787e94 Mon Sep 17 00:00:00 2001
+From 6e4f685e6d97033d5fc0e3d4325a94ce430c5306 Mon Sep 17 00:00:00 2001
 From: Robert Marko <robert.marko@sartura.hr>
 Date: Mon, 24 Aug 2026 12:52:09 +0200
-Subject: [PATCH 103/103] arm64: dts: microchip: ev23x71a: enable eMMC
+Subject: [PATCH 105/105] arm64: dts: microchip: ev23x71a: enable eMMC
 
-Enable the eMMC connected to SDMMC0 in 8-bit DDR mode.
+Enable the non-removable eMMC connected to SDMMC0.
 
 Signed-off-by: Robert Marko <robert.marko@sartura.hr>
+Reviewed-by: Aubin Constans <aubin.constans@microchip.com>
+Reviewed-by: Claudiu Beznea <claudiu.beznea@tuxon.dev>
 ---
- arch/arm64/boot/dts/microchip/lan9696-ev23x71a.dts | 10 ++++++++++
- 1 file changed, 10 insertions(+)
+ arch/arm64/boot/dts/microchip/lan9696-ev23x71a.dts | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
 
 --- a/arch/arm64/boot/dts/microchip/lan9696-ev23x71a.dts
 +++ b/arch/arm64/boot/dts/microchip/lan9696-ev23x71a.dts
-@@ -478,6 +478,16 @@
+@@ -476,6 +476,18 @@
  	};
  };
  
@@ -22,6 +24,8 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
 +	bus-width = <8>;
 +	mmc-ddr-1_8v;
 +	non-removable;
++	no-sd;
++	no-sdio;
 +	disable-wp;
 +	status = "okay";
 +};
