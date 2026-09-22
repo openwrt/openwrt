@@ -1,0 +1,276 @@
+From 70e33fc39716c408f59718245267e0acee03ee91 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robert.marko@sartura.hr>
+Date: Tue, 22 Sep 2026 18:19:18 +0200
+Subject: [PATCH] plat: microchip: convert FWU scripts to Python
+
+Convert the JavaScript payload generator and HTML asset inliner used by
+the LAN966x and LAN969x firmware-update targets from Ruby to Python.
+
+This removes the Ruby runtime dependency while preserving the generated
+FWU artifacts and existing command-line interfaces.
+
+Assisted-by: GPT-5.6
+Signed-off-by: Robert Marko <robert.marko@sartura.hr>
+---
+ plat/microchip/lan966x/common/common.mk |  4 +-
+ plat/microchip/lan969x/common/common.mk |  4 +-
+ plat/microchip/scripts/html_inline.py   | 73 +++++++++++++++++++++++++
+ plat/microchip/scripts/html_inline.rb   | 60 --------------------
+ plat/microchip/scripts/mkjs.py          | 30 ++++++++++
+ plat/microchip/scripts/mkjs.rb          | 28 ----------
+ 6 files changed, 107 insertions(+), 92 deletions(-)
+ create mode 100755 plat/microchip/scripts/html_inline.py
+ delete mode 100755 plat/microchip/scripts/html_inline.rb
+ create mode 100755 plat/microchip/scripts/mkjs.py
+ delete mode 100755 plat/microchip/scripts/mkjs.rb
+
+diff --git a/plat/microchip/lan966x/common/common.mk b/plat/microchip/lan966x/common/common.mk
+index 88544d8d0..6064cf8fd 100644
+--- a/plat/microchip/lan966x/common/common.mk
++++ b/plat/microchip/lan966x/common/common.mk
+@@ -206,9 +206,9 @@ FWU_HTML := ${BUILD_PLAT}/fwu.html
+ FWU_JS   := ${BUILD_PLAT}/fwu_app.js
+ 
+ ${FWU_JS}: ${BUILD_PLAT}/${FWU_FIP_NAME}
+-	./plat/microchip/scripts/mkjs.rb -p ${PLAT} -o ${FWU_JS} $<
++	./plat/microchip/scripts/mkjs.py -p ${PLAT} -o ${FWU_JS} $<
+ 
+ ${FWU_HTML}: ${FWU_JS}
+-	./plat/microchip/scripts/html_inline.rb -i ${BUILD_PLAT} ./scripts/fwu/serial.html > ${FWU_HTML}
++	./plat/microchip/scripts/html_inline.py -i ${BUILD_PLAT} ./scripts/fwu/serial.html > ${FWU_HTML}
+ 
+ all: ${FWU_HTML}
+diff --git a/plat/microchip/lan969x/common/common.mk b/plat/microchip/lan969x/common/common.mk
+index 7261576e7..0043e5cfe 100644
+--- a/plat/microchip/lan969x/common/common.mk
++++ b/plat/microchip/lan969x/common/common.mk
+@@ -218,9 +218,9 @@ FWU_HTML := ${BUILD_PLAT}/fwu.html
+ FWU_JS   := ${BUILD_PLAT}/fwu_app.js
+ 
+ ${FWU_JS}: ${BUILD_PLAT}/${FWU_FIP_NAME}
+-	./plat/microchip/scripts/mkjs.rb -p ${PLAT} -o ${FWU_JS} $<
++	./plat/microchip/scripts/mkjs.py -p ${PLAT} -o ${FWU_JS} $<
+ 
+ ${FWU_HTML}: ${FWU_JS}
+-	./plat/microchip/scripts/html_inline.rb -i ${BUILD_PLAT} ./scripts/fwu/serial.html > ${FWU_HTML}
++	./plat/microchip/scripts/html_inline.py -i ${BUILD_PLAT} ./scripts/fwu/serial.html > ${FWU_HTML}
+ 
+ all: ${FWU_HTML}
+diff --git a/plat/microchip/scripts/html_inline.py b/plat/microchip/scripts/html_inline.py
+new file mode 100755
+index 000000000..b6d065ea7
+--- /dev/null
++++ b/plat/microchip/scripts/html_inline.py
+@@ -0,0 +1,73 @@
++#!/usr/bin/env python3
++# SPDX-License-Identifier: BSD-3-Clause
++
++"""Inline JavaScript, stylesheets, and images into an HTML document."""
++
++import argparse
++import base64
++import re
++from pathlib import Path
++
++
++SCRIPT_RE = re.compile(r'<script src="([^"]+)"></script>')
++HREF_RE = re.compile(r'href="([^"]+)"')
++SRC_RE = re.compile(r'src="([^"]+)"')
++
++
++def inline_file(tag: str, path: Path) -> None:
++    print(f"<{tag}>")
++    with path.open(encoding="utf-8", newline="") as source:
++        for line in source:
++            print(line, end="" if line.endswith(("\n", "\r")) else "\n")
++    print(f"</{tag}>")
++
++
++def inline_pic(path: Path) -> str:
++    image_type = path.suffix.lower().lstrip(".")
++    encoded = base64.b64encode(path.read_bytes()).decode("ascii")
++    data = "\n".join(encoded[start:start + 60]
++                     for start in range(0, len(encoded), 60)) + "\n"
++    return f"data:image/{image_type};base64,{data}"
++
++
++def main() -> None:
++    parser = argparse.ArgumentParser()
++    parser.add_argument("-i", "--include", dest="incdir", type=Path,
++                        help="Use include dir")
++    parser.add_argument("html_input", type=Path)
++    args = parser.parse_args()
++
++    if not args.html_input.is_file():
++        parser.error(f"cannot read '{args.html_input}'")
++
++    input_path = args.html_input.resolve()
++    input_dir = input_path.parent
++
++    with input_path.open(encoding="utf-8", newline="") as html:
++        for line in html:
++            script = SCRIPT_RE.search(line)
++            if script:
++                source = input_dir / script.group(1)
++                if args.incdir:
++                    include_source = args.incdir / script.group(1)
++                    if include_source.exists():
++                        source = include_source
++                inline_file("script", source)
++                continue
++
++            href = HREF_RE.search(line) if "<link" in line else None
++            if href:
++                inline_file("style", input_dir / href.group(1))
++                continue
++
++            src = SRC_RE.search(line) if "<img" in line else None
++            if src:
++                data = inline_pic(input_dir / src.group(1))
++                print(line.replace(src.group(0), f'src="{data}"'), end="")
++                continue
++
++            print(line, end="")
++
++
++if __name__ == "__main__":
++    main()
+diff --git a/plat/microchip/scripts/html_inline.rb b/plat/microchip/scripts/html_inline.rb
+deleted file mode 100755
+index 30e2f89a6..000000000
+--- a/plat/microchip/scripts/html_inline.rb
++++ /dev/null
+@@ -1,60 +0,0 @@
+-#!/bin/env ruby
+-
+-require 'pp'
+-require 'optparse'
+-require 'base64'
+-
+-def inline_file(tag, f)
+-    puts "<#{tag}>\n"
+-    File.readlines(f).each do |line|
+-        puts line
+-    end
+-    puts "</#{tag}>\n"
+-end
+-
+-def inline_pic(f)
+-    ext = File.extname(f).strip.downcase[1..-1]
+-    data = "data:image/#{ext};base64,#{Base64.encode64(IO.binread(f))}"
+-end
+-
+-$option = { :incdir => nil, }
+-
+-OptionParser.new do |opts|
+-    opts.banner = "Usage: $0 [options]"
+-    opts.version = 0.1
+-    opts.on("-i", "--include <dir>", "Use include dir") do |d|
+-        $option[:incdir] = d
+-    end
+-end.order!
+-
+-# Check for input file argument
+-if ARGV.length != 1 || !File.readable?(ARGV[0])
+-  puts %(Usage: #{File.basename(__FILE__)} html_input)
+-  exit(1)
+-end
+-
+-infilepath = File.expand_path(ARGV[0])
+-inp_dir = File.dirname(infilepath)
+-
+-File.readlines(infilepath).each do |line|
+-    if (f = line.match(/<script src="([^"]+)"><\/script>/))
+-        if $option[:incdir]
+-            ifile = $option[:incdir] + "/" + f[1]
+-            ifile = inp_dir + "/" + f[1] if !File.exist?(ifile)
+-            inline_file("script", ifile)
+-        else
+-            ifile = inp_dir + "/" + f[1]
+-            inline_file("script", ifile)
+-        end
+-    elsif line.match(/<link/) && (f = line.match(/href="([^"]+)"/))
+-        ifile = inp_dir + "/" + f[1]
+-        inline_file("style", ifile)
+-    elsif line.match(/<img/) && (f = line.match(/src="([^"]+)"/))
+-        data = inline_pic(inp_dir + "/" + f[1])
+-        puts line.gsub(f[0], "src=\"#{data}\"")
+-    else
+-        puts(line)
+-    end
+-end
+-
+-exit(0)
+diff --git a/plat/microchip/scripts/mkjs.py b/plat/microchip/scripts/mkjs.py
+new file mode 100755
+index 000000000..5b0b42ee0
+--- /dev/null
++++ b/plat/microchip/scripts/mkjs.py
+@@ -0,0 +1,30 @@
++#!/usr/bin/env python3
++# SPDX-License-Identifier: BSD-3-Clause
++
++"""Generate the JavaScript payload used by the firmware-update HTML page."""
++
++import argparse
++import base64
++from pathlib import Path
++
++
++def main() -> None:
++    parser = argparse.ArgumentParser()
++    parser.add_argument("-p", "--platform", default="lan966x_b0",
++                        help="Build for given platform")
++    parser.add_argument("-o", "--output", required=True, help="Output file")
++    parser.add_argument("fwu_fips", nargs="*", help="Firmware-update FIP files")
++    args = parser.parse_args()
++
++    with Path(args.output).open("w", encoding="utf-8") as output:
++        output.write(f'const bl2u_platform = "{args.platform}";\n')
++        output.write("const bl2u_app = [\n")
++        for fwu_fip in args.fwu_fips:
++            encoded = base64.b64encode(Path(fwu_fip).read_bytes()).decode("ascii")
++            for start in range(0, len(encoded), 60):
++                output.write(f'\t"{encoded[start:start + 60]}",\n')
++        output.write("]\n")
++
++
++if __name__ == "__main__":
++    main()
+diff --git a/plat/microchip/scripts/mkjs.rb b/plat/microchip/scripts/mkjs.rb
+deleted file mode 100755
+index e9cf4374d..000000000
+--- a/plat/microchip/scripts/mkjs.rb
++++ /dev/null
+@@ -1,28 +0,0 @@
+-#!/bin/env ruby
+-
+-require 'base64'
+-require 'optparse'
+-
+-$option = {
+-    :platform              => "lan966x_b0",
+-}
+-
+-OptionParser.new do |opts|
+-    opts.banner = "Usage: build.rb [options]"
+-    opts.version = 0.1
+-    opts.on("-p", "--platform <platform>", "Build for given platform") do |p|
+-        $option[:platform] = p
+-    end
+-    opts.on("-o", "--output <platform>", "Output file") do |o|
+-        $option[:out] = o
+-    end
+-end.order!
+-
+-File.open($option[:out], "w") { |f|
+-    f.write("const bl2u_platform = \"#{$option[:platform]}\";\n");
+-    f.write("const bl2u_app = [\n");
+-    ARGV.each do |fwu_fip|
+-        Base64.encode64(File.read(fwu_fip)).each_line { |l| l.chomp!; f.write("\t\"#{l}\",\n") }
+-    end
+-    f.write("]\n");
+-}
+-- 
+2.55.0
+
