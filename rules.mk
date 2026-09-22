@@ -220,8 +220,8 @@ endif
 #
 # The path covers everything that changes an answer: the toolchain for a target
 # package, the host compiler for a host package, and a hash of the configure
-# arguments and build flags for both. autoconf refuses a cache that it wrote
-# with different flags on top of that.
+# arguments and build flags for both. include/site/cache also starts from a
+# cold cache when the configure script or a precious variable changed.
 #
 # A package must opt in, because a cache is only correct for a configure script
 # that keeps its side effects outside the AC_CACHE_VAL body. ncurses appends
