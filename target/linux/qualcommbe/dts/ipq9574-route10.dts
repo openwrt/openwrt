@@ -1,0 +1,766 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR BSD-3-Clause)
+/*
+ * IPQ9574 Route10 board device tree source
+ *
+ * Copyright (c) 2020-2021 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2026 Skylar Folf
+ */
+
+/dts-v1/;
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/net/qcom,qca808x.h>
+#include <dt-bindings/clock/qcom,qca8k-nsscc.h>
+#include <dt-bindings/reset/qcom,qca8k-nsscc.h>
+#include <dt-bindings/clock/qcom,ipq-cmn-pll.h>
+#include "ipq9574.dtsi"
+
+/ {
+	model = "Alta Labs Route10";
+	compatible = "alta,route10", "qcom,ipq9574";
+
+	aliases {
+		serial0 = &blsp1_uart2;
+		serial1 = &blsp1_uart4;
+		serial2 = &blsp1_uart3;
+		ethernet0 = &xgmac1;
+		ethernet1 = &xgmac2;
+		ethernet2 = &xgmac3;
+		ethernet3 = &xgmac4;
+		ethernet4 = &xgmac5;
+		ethernet5 = &xgmac6;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		bootargs-append = " vmalloc=1G";
+	};
+
+	clocks {
+		qca8k_uniphy1_rx312p5m: qca8k-uniphy1-rx312p5m {
+			compatible = "fixed-clock";
+			clock-frequency = <312500000>;
+			#clock-cells = <0>;
+		};
+
+		qca8k_uniphy1_tx312p5m: qca8k-uniphy1-tx312p5m {
+			compatible = "fixed-clock";
+			clock-frequency = <312500000>;
+			#clock-cells = <0>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+		pinctrl-0 = <&button_pins>;
+		pinctrl-names = "default";
+
+		button-reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&tlmm 33 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-0 = <&sfp_leds>;
+		pinctrl-names = "default";
+
+		led-0 {
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <4>;
+			gpios = <&tlmm 61 GPIO_ACTIVE_LOW>;
+		};
+
+		led-1 {
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_WAN;
+			function-enumerator = <2>;
+			gpios = <&tlmm 62 GPIO_ACTIVE_LOW>;
+		};
+
+		led-2 {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <4>;
+			gpios = <&tlmm 63 GPIO_ACTIVE_LOW>;
+		};
+
+		led-3 {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WAN;
+			function-enumerator = <2>;
+			gpios = <&tlmm 64 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	/*
+	 * Each cage's i2c bus and presence/LOS GPIOs follow the UNIPHY SERDES
+	 * it is wired to, not pin adjacency: UNIPHY1 (wan2, port 5) uses
+	 * blsp1_i2c4 with gpio28/30/31, UNIPHY2 (lan4, port 6) uses blsp1_i2c1
+	 * with gpio23/24/25. Crossing them lets the driver manage one cage's
+	 * module while the SERDES carries the other, so the module is detected
+	 * but the host PCS never syncs.
+	 */
+	sfp5: sfp-5 {
+		compatible = "sff,sfp";
+		pinctrl-0 = <&sfp_pins_wan2>;
+		pinctrl-names = "default";
+		i2c-bus = <&blsp1_i2c4>;
+		mod-def0-gpios = <&tlmm 30 GPIO_ACTIVE_LOW>;
+		los-gpios = <&tlmm 31 GPIO_ACTIVE_HIGH>;
+		tx-disable-gpios = <&tlmm 28 GPIO_ACTIVE_HIGH>;
+	};
+
+	sfp6: sfp-6 {
+		compatible = "sff,sfp";
+		pinctrl-0 = <&sfp_pins_lan4>;
+		pinctrl-names = "default";
+		i2c-bus = <&blsp1_i2c1>;
+		mod-def0-gpios = <&tlmm 24 GPIO_ACTIVE_LOW>;
+		los-gpios = <&tlmm 25 GPIO_ACTIVE_HIGH>;
+		tx-disable-gpios = <&tlmm 23 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&sleep_clk {
+	clock-frequency = <32000>;
+};
+
+&usb_0_qmpphy {
+	status = "disabled";
+};
+
+&rpm_requests {
+	regulators {
+		compatible = "qcom,rpm-mp5496-regulators";
+
+		ipq9574_s1: s1 {
+			regulator-min-microvolt = <587500>;
+			regulator-max-microvolt = <1075000>;
+		};
+
+		ipq9574_s2: s2 {
+			regulator-min-microvolt = <700000>;
+			regulator-max-microvolt = <1000000>;
+		};
+	};
+};
+
+&tlmm {
+	button_pins: button-pins {
+		reset-button {
+			pins = "gpio33";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+
+	emmc_pins: emmc-pins {
+		emmc-clk {
+			pins = "gpio5";
+			function = "sdc_clk";
+			drive-strength = <8>;
+			bias-disable;
+		};
+
+		emmc-cmd {
+			pins = "gpio4";
+			function = "sdc_cmd";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		emmc-data {
+			pins = "gpio0", "gpio1", "gpio2",
+			       "gpio3", "gpio6", "gpio7",
+			       "gpio8", "gpio9";
+			function = "sdc_data";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		emmc-rclk {
+			pins = "gpio10";
+			function = "sdc_rclk";
+			drive-strength = <8>;
+			bias-pull-down;
+		};
+	};
+
+	sfp_leds: sfp-leds-pinmux {
+		led-en {
+			pins = "gpio43";
+			function = "gpio";
+			drive-strength = <2>;
+			bias-pull-down;
+			output-low;
+		};
+
+		sfp-white-lan4 {
+			pins = "gpio61";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		sfp-white-wan2 {
+			pins = "gpio62";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		sfp-blue-lan4 {
+			pins = "gpio63";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		sfp-blue-wan2 {
+			pins = "gpio64";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+
+	sfp_pins_wan2: sfp-pinmux-wan2 {
+		sfp-tx {
+			pins = "gpio28";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-down;
+			output-low;
+		};
+
+		sfp-modabs {
+			pins = "gpio30";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		sfp-rx {
+			pins = "gpio31";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-disable;
+		};
+	};
+
+	sfp_pins_lan4: sfp-pinmux-lan4 {
+		sfp-tx {
+			pins = "gpio23";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-down;
+			output-low;
+		};
+
+		sfp-modabs {
+			pins = "gpio24";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		sfp-rx {
+			pins = "gpio25";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-disable;
+		};
+	};
+
+	i2c_1_pins: i2c-1-pins {
+		pins = "gpio36", "gpio37";
+		function = "blsp1_i2c";
+		drive-strength = <8>;
+		bias-disable;
+	};
+
+	phy_reset_pins: phy-reset-pins {
+		pins = "gpio60";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	i2c_4_pins: i2c-4-pins {
+		pins = "gpio50", "gpio51";
+		function = "blsp4_i2c";
+		drive-strength = <8>;
+		bias-disable;
+	};
+};
+
+&mdio {
+	pinctrl-0 = <&mdio_pins>, <&phy_reset_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	/*
+	 * QCA8084 integrated clock & reset controller (NSS CC).
+	 * The reset GPIO lives on this node: the nsscc driver enables the
+	 * ETH0_50MHZ reference clock and then pulses the GPIO, which is the
+	 * only way the chip's internal reset actually takes effect.  Putting
+	 * reset-gpios on &mdio (pre-scan reset) pulses it before the ref
+	 * clock is running, so the chip is left half-initialized.
+	 */
+	qca8k_nsscc: clock-controller@18 {
+		compatible = "qcom,qca8084-nsscc";
+		reg = <0x18>;
+		reset-gpios = <&tlmm 60 GPIO_ACTIVE_LOW>;
+		clocks = <&cmn_pll ETH0_50MHZ_CLK>,
+			 <0>,
+			 <0>,
+			 <0>,
+			 <0>,
+			 <&qca8k_uniphy1_rx312p5m>,
+			 <&qca8k_uniphy1_tx312p5m>;
+		#clock-cells = <1>;
+		#reset-cells = <1>;
+	};
+
+	/* QCA8084 four-port PHY package, 10G-QXGMII to the SoC UNIPHY0 (pcs0) */
+	ethernet-phy-package@0 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "qcom,qca8084-package";
+		reg = <0>;
+
+		clocks = <&qca8k_nsscc NSS_CC_APB_BRIDGE_CLK>,
+			 <&qca8k_nsscc NSS_CC_AHB_CLK>,
+			 <&qca8k_nsscc NSS_CC_SEC_CTRL_AHB_CLK>,
+			 <&qca8k_nsscc NSS_CC_TLMM_CLK>,
+			 <&qca8k_nsscc NSS_CC_TLMM_AHB_CLK>,
+			 <&qca8k_nsscc NSS_CC_CNOC_AHB_CLK>,
+			 <&qca8k_nsscc NSS_CC_MDIO_AHB_CLK>;
+		clock-names = "apb_bridge",
+			      "ahb",
+			      "sec_ctrl_ahb",
+			      "tlmm",
+			      "tlmm_ahb",
+			      "cnoc_ahb",
+			      "mdio_ahb";
+		resets = <&qca8k_nsscc NSS_CC_GEPHY_FULL_ARES>;
+
+		/*
+		 * 10G-QXGMII: the package's own PCS1/XPCS carries all four
+		 * ports, so its internal PCS0 is unused. Not to be confused
+		 * with the SoC's pcs0 above, which is the link to the host.
+		 */
+		qcom,package-mode = <QCA808X_PCS1_10G_QXGMII_PCS0_UNUNSED>;
+		/* Remap PHY0-3 to MDIO 1-4, PCS0→5, SRDS1→6, XPCS→7 */
+		qcom,phy-addr-fixup = <1 2 3 4 5 6 7>;
+
+		phy0: ethernet-phy@1 {
+			compatible = "ethernet-phy-id004d.d180";
+			reg = <1>;
+			clocks = <&qca8k_nsscc NSS_CC_GEPHY0_SYS_CLK>;
+			resets = <&qca8k_nsscc NSS_CC_GEPHY0_SYS_ARES>;
+			qcom,xpcs-channel = <0>;
+		};
+
+		phy1: ethernet-phy@2 {
+			compatible = "ethernet-phy-id004d.d180";
+			reg = <2>;
+			clocks = <&qca8k_nsscc NSS_CC_GEPHY1_SYS_CLK>;
+			resets = <&qca8k_nsscc NSS_CC_GEPHY1_SYS_ARES>;
+			qcom,xpcs-channel = <1>;
+		};
+
+		phy2: ethernet-phy@3 {
+			compatible = "ethernet-phy-id004d.d180";
+			reg = <3>;
+			clocks = <&qca8k_nsscc NSS_CC_GEPHY2_SYS_CLK>;
+			resets = <&qca8k_nsscc NSS_CC_GEPHY2_SYS_ARES>;
+			qcom,xpcs-channel = <2>;
+		};
+
+		phy3: ethernet-phy@4 {
+			compatible = "ethernet-phy-id004d.d180";
+			reg = <4>;
+			clocks = <&qca8k_nsscc NSS_CC_GEPHY3_SYS_CLK>;
+			resets = <&qca8k_nsscc NSS_CC_GEPHY3_SYS_ARES>;
+			qcom,xpcs-channel = <3>;
+		};
+
+		/* SRDS1 / PCS1 (PCS component at MDIO 6) */
+		pcs-phy@6 {
+			compatible = "qcom,qca8k-pcs-phy";
+			reg = <6>;
+			clocks = <&qca8k_nsscc NSS_CC_SRDS1_SYS_CLK>,
+				 <&qca8k_uniphy1_tx312p5m>,
+				 <&qca8k_uniphy1_rx312p5m>;
+			clock-names = "pcs", "pcs_rx_root", "pcs_tx_root";
+			resets = <&qca8k_nsscc NSS_CC_SRDS1_SYS_ARES>;
+		};
+
+		/* XPCS (PCS1 XPCS component at MDIO 7), 4 channels for 10G-QXGMII */
+		xpcs-phy@7 {
+			compatible = "qcom,qca8k-xpcs-phy";
+			reg = <7>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			resets = <&qca8k_nsscc NSS_CC_XPCS_ARES>;
+
+			channel@0 {
+				reg = <0>;
+				clocks = <&qca8k_nsscc NSS_CC_MAC1_SRDS1_CH0_XGMII_TX_CLK>,
+					 <&qca8k_nsscc NSS_CC_MAC1_SRDS1_CH0_XGMII_RX_CLK>,
+					 <&qca8k_nsscc NSS_CC_MAC1_SRDS1_CH0_TX_CLK>,
+					 <&qca8k_nsscc NSS_CC_MAC1_SRDS1_CH0_RX_CLK>,
+					 <&qca8k_nsscc NSS_CC_MAC1_GEPHY0_RX_CLK>,
+					 <&qca8k_nsscc NSS_CC_MAC1_GEPHY0_TX_CLK>,
+					 <&qca8k_nsscc NSS_CC_MAC1_RX_CLK_SRC>,
+					 <&qca8k_nsscc NSS_CC_MAC1_TX_CLK_SRC>;
+				clock-names = "xgmii_rx", "xgmii_tx",
+					      "xpcs_rx", "xpcs_tx",
+					      "port_rx", "port_tx",
+					      "rx_src", "tx_src";
+				resets = <&qca8k_nsscc NSS_CC_MAC1_SRDS1_CH0_XGMII_TX_ARES>,
+					 <&qca8k_nsscc NSS_CC_MAC1_SRDS1_CH0_XGMII_RX_ARES>,
+					 <&qca8k_nsscc NSS_CC_MAC1_SRDS1_CH0_TX_ARES>,
+					 <&qca8k_nsscc NSS_CC_MAC1_SRDS1_CH0_RX_ARES>,
+					 <&qca8k_nsscc NSS_CC_MAC1_GEPHY0_RX_ARES>,
+					 <&qca8k_nsscc NSS_CC_MAC1_GEPHY0_TX_ARES>;
+				reset-names = "xgmii_rx", "xgmii_tx",
+					      "xpcs_rx", "xpcs_tx",
+					      "port_rx", "port_tx";
+			};
+
+			channel@1 {
+				reg = <1>;
+				clocks = <&qca8k_nsscc NSS_CC_MAC2_SRDS1_CH1_XGMII_TX_CLK>,
+					 <&qca8k_nsscc NSS_CC_MAC2_SRDS1_CH1_XGMII_RX_CLK>,
+					 <&qca8k_nsscc NSS_CC_MAC2_SRDS1_CH1_TX_CLK>,
+					 <&qca8k_nsscc NSS_CC_MAC2_SRDS1_CH1_RX_CLK>,
+					 <&qca8k_nsscc NSS_CC_MAC2_GEPHY1_RX_CLK>,
+					 <&qca8k_nsscc NSS_CC_MAC2_GEPHY1_TX_CLK>,
+					 <&qca8k_nsscc NSS_CC_MAC2_RX_CLK_SRC>,
+					 <&qca8k_nsscc NSS_CC_MAC2_TX_CLK_SRC>;
+				clock-names = "xgmii_rx", "xgmii_tx",
+					      "xpcs_rx", "xpcs_tx",
+					      "port_rx", "port_tx",
+					      "rx_src", "tx_src";
+				resets = <&qca8k_nsscc NSS_CC_MAC2_SRDS1_CH1_XGMII_TX_ARES>,
+					 <&qca8k_nsscc NSS_CC_MAC2_SRDS1_CH1_XGMII_RX_ARES>,
+					 <&qca8k_nsscc NSS_CC_MAC2_SRDS1_CH1_TX_ARES>,
+					 <&qca8k_nsscc NSS_CC_MAC2_SRDS1_CH1_RX_ARES>,
+					 <&qca8k_nsscc NSS_CC_MAC2_GEPHY1_RX_ARES>,
+					 <&qca8k_nsscc NSS_CC_MAC2_GEPHY1_TX_ARES>;
+				reset-names = "xgmii_rx", "xgmii_tx",
+					      "xpcs_rx", "xpcs_tx",
+					      "port_rx", "port_tx";
+			};
+
+			channel@2 {
+				reg = <2>;
+				clocks = <&qca8k_nsscc NSS_CC_MAC3_SRDS1_CH2_XGMII_TX_CLK>,
+					 <&qca8k_nsscc NSS_CC_MAC3_SRDS1_CH2_XGMII_RX_CLK>,
+					 <&qca8k_nsscc NSS_CC_MAC3_SRDS1_CH2_TX_CLK>,
+					 <&qca8k_nsscc NSS_CC_MAC3_SRDS1_CH2_RX_CLK>,
+					 <&qca8k_nsscc NSS_CC_MAC3_GEPHY2_RX_CLK>,
+					 <&qca8k_nsscc NSS_CC_MAC3_GEPHY2_TX_CLK>,
+					 <&qca8k_nsscc NSS_CC_MAC3_RX_CLK_SRC>,
+					 <&qca8k_nsscc NSS_CC_MAC3_TX_CLK_SRC>;
+				clock-names = "xgmii_rx", "xgmii_tx",
+					      "xpcs_rx", "xpcs_tx",
+					      "port_rx", "port_tx",
+					      "rx_src", "tx_src";
+				resets = <&qca8k_nsscc NSS_CC_MAC3_SRDS1_CH2_XGMII_TX_ARES>,
+					 <&qca8k_nsscc NSS_CC_MAC3_SRDS1_CH2_XGMII_RX_ARES>,
+					 <&qca8k_nsscc NSS_CC_MAC3_SRDS1_CH2_TX_ARES>,
+					 <&qca8k_nsscc NSS_CC_MAC3_SRDS1_CH2_RX_ARES>,
+					 <&qca8k_nsscc NSS_CC_MAC3_GEPHY2_RX_ARES>,
+					 <&qca8k_nsscc NSS_CC_MAC3_GEPHY2_TX_ARES>;
+				reset-names = "xgmii_rx", "xgmii_tx",
+					      "xpcs_rx", "xpcs_tx",
+					      "port_rx", "port_tx";
+			};
+
+			channel@3 {
+				reg = <3>;
+				clocks = <&qca8k_nsscc NSS_CC_MAC4_SRDS1_CH3_XGMII_TX_CLK>,
+					 <&qca8k_nsscc NSS_CC_MAC4_SRDS1_CH3_XGMII_RX_CLK>,
+					 <&qca8k_nsscc NSS_CC_MAC4_SRDS1_CH3_TX_CLK>,
+					 <&qca8k_nsscc NSS_CC_MAC4_SRDS1_CH3_RX_CLK>,
+					 <&qca8k_nsscc NSS_CC_MAC4_GEPHY3_RX_CLK>,
+					 <&qca8k_nsscc NSS_CC_MAC4_GEPHY3_TX_CLK>,
+					 <&qca8k_nsscc NSS_CC_MAC4_RX_CLK_SRC>,
+					 <&qca8k_nsscc NSS_CC_MAC4_TX_CLK_SRC>;
+				clock-names = "xgmii_rx", "xgmii_tx",
+					      "xpcs_rx", "xpcs_tx",
+					      "port_rx", "port_tx",
+					      "rx_src", "tx_src";
+				resets = <&qca8k_nsscc NSS_CC_MAC4_SRDS1_CH3_XGMII_TX_ARES>,
+					 <&qca8k_nsscc NSS_CC_MAC4_SRDS1_CH3_XGMII_RX_ARES>,
+					 <&qca8k_nsscc NSS_CC_MAC4_SRDS1_CH3_TX_ARES>,
+					 <&qca8k_nsscc NSS_CC_MAC4_SRDS1_CH3_RX_ARES>,
+					 <&qca8k_nsscc NSS_CC_MAC4_GEPHY3_RX_ARES>,
+					 <&qca8k_nsscc NSS_CC_MAC4_GEPHY3_TX_ARES>;
+				reset-names = "xgmii_rx", "xgmii_tx",
+					      "xpcs_rx", "xpcs_tx",
+					      "port_rx", "port_tx";
+			};
+		};
+	};
+};
+
+&qcom_ppe {
+	ethernet-ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		xgmac1: port@1 {
+			reg = <1>;
+			phy-mode = "10g-qxgmii";
+			nvmem-cells = <&macaddr_art_0>;
+			nvmem-cell-names = "mac-address";
+			label = "lan3";
+			phy-handle = <&phy0>;
+			pcs-handle = <&pcs0_ch0>;
+			clocks = <&nsscc NSS_CC_PORT1_MAC_CLK>,
+				 <&nsscc NSS_CC_PORT1_RX_CLK>,
+				 <&nsscc NSS_CC_PORT1_TX_CLK>;
+			clock-names = "mac", "rx", "tx";
+			resets = <&nsscc PORT1_MAC_ARES>,
+				 <&nsscc PORT1_RX_ARES>,
+				 <&nsscc PORT1_TX_ARES>;
+			reset-names = "mac", "rx", "tx";
+		};
+
+		xgmac2: port@2 {
+			reg = <2>;
+			phy-mode = "10g-qxgmii";
+			nvmem-cells = <&macaddr_art_6>;
+			nvmem-cell-names = "mac-address";
+			label = "lan2";
+			phy-handle = <&phy1>;
+			pcs-handle = <&pcs0_ch1>;
+			clocks = <&nsscc NSS_CC_PORT2_MAC_CLK>,
+				 <&nsscc NSS_CC_PORT2_RX_CLK>,
+				 <&nsscc NSS_CC_PORT2_TX_CLK>;
+			clock-names = "mac", "rx", "tx";
+			resets = <&nsscc PORT2_MAC_ARES>,
+				 <&nsscc PORT2_RX_ARES>,
+				 <&nsscc PORT2_TX_ARES>;
+			reset-names = "mac", "rx", "tx";
+		};
+
+		xgmac3: port@3 {
+			reg = <3>;
+			phy-mode = "10g-qxgmii";
+			nvmem-cells = <&macaddr_art_c>;
+			nvmem-cell-names = "mac-address";
+			label = "lan1";
+			phy-handle = <&phy2>;
+			pcs-handle = <&pcs0_ch2>;
+			clocks = <&nsscc NSS_CC_PORT3_MAC_CLK>,
+				 <&nsscc NSS_CC_PORT3_RX_CLK>,
+				 <&nsscc NSS_CC_PORT3_TX_CLK>;
+			clock-names = "mac", "rx", "tx";
+			resets = <&nsscc PORT3_MAC_ARES>,
+				 <&nsscc PORT3_RX_ARES>,
+				 <&nsscc PORT3_TX_ARES>;
+			reset-names = "mac", "rx", "tx";
+		};
+
+		xgmac4: port@4 {
+			reg = <4>;
+			phy-mode = "10g-qxgmii";
+			nvmem-cells = <&macaddr_art_12>;
+			nvmem-cell-names = "mac-address";
+			label = "wan1";
+			phy-handle = <&phy3>;
+			pcs-handle = <&pcs0_ch3>;
+			clocks = <&nsscc NSS_CC_PORT4_MAC_CLK>,
+				 <&nsscc NSS_CC_PORT4_RX_CLK>,
+				 <&nsscc NSS_CC_PORT4_TX_CLK>;
+			clock-names = "mac", "rx", "tx";
+			resets = <&nsscc PORT4_MAC_ARES>,
+				 <&nsscc PORT4_RX_ARES>,
+				 <&nsscc PORT4_TX_ARES>;
+			reset-names = "mac", "rx", "tx";
+		};
+
+		xgmac5: port@5 {
+			reg = <5>;
+			phy-mode = "usxgmii";
+			managed = "in-band-status";
+			nvmem-cells = <&macaddr_art_18>;
+			nvmem-cell-names = "mac-address";
+			label = "wan2";
+			sfp = <&sfp5>;
+			pcs-handle = <&pcs1_ch0>;
+			clocks = <&nsscc NSS_CC_PORT5_MAC_CLK>,
+				 <&nsscc NSS_CC_PORT5_RX_CLK>,
+				 <&nsscc NSS_CC_PORT5_TX_CLK>;
+			clock-names = "mac", "rx", "tx";
+			resets = <&nsscc PORT5_MAC_ARES>,
+				 <&nsscc PORT5_RX_ARES>,
+				 <&nsscc PORT5_TX_ARES>;
+			reset-names = "mac", "rx", "tx";
+		};
+
+		xgmac6: port@6 {
+			reg = <6>;
+			phy-mode = "usxgmii";
+			managed = "in-band-status";
+			nvmem-cells = <&macaddr_art_1e>;
+			nvmem-cell-names = "mac-address";
+			label = "lan4";
+			sfp = <&sfp6>;
+			pcs-handle = <&pcs2_ch0>;
+			clocks = <&nsscc NSS_CC_PORT6_MAC_CLK>,
+				 <&nsscc NSS_CC_PORT6_RX_CLK>,
+				 <&nsscc NSS_CC_PORT6_TX_CLK>;
+			clock-names = "mac", "rx", "tx";
+			resets = <&nsscc PORT6_MAC_ARES>,
+				 <&nsscc PORT6_RX_ARES>,
+				 <&nsscc PORT6_TX_ARES>;
+			reset-names = "mac", "rx", "tx";
+		};
+	};
+};
+
+&blsp1_uart2 {
+	pinctrl-0 = <&uart2_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&sdhc_1 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&emmc_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	card@0 {
+		compatible = "mmc-card";
+		reg = <0>;
+
+		block {
+			compatible = "block-device";
+
+			partitions {
+				block-partition-art {
+					partname = "0:ART";
+
+					nvmem-layout {
+						compatible = "fixed-layout";
+						#address-cells = <1>;
+						#size-cells = <1>;
+
+						macaddr_art_0: macaddr@0 {
+							reg = <0x00 0x6>;
+						};
+
+						macaddr_art_6: macaddr@6 {
+							reg = <0x06 0x6>;
+						};
+
+						macaddr_art_c: macaddr@c {
+							reg = <0x0c 0x6>;
+						};
+
+						macaddr_art_12: macaddr@12 {
+							reg = <0x12 0x6>;
+						};
+
+						macaddr_art_18: macaddr@18 {
+							reg = <0x18 0x6>;
+						};
+
+						macaddr_art_1e: macaddr@1e {
+							reg = <0x1e 0x6>;
+						};
+					};
+				};
+			};
+		};
+	};
+};
+
+&blsp1_i2c1 {
+	pinctrl-0 = <&i2c_1_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&blsp1_i2c4 {
+	pinctrl-0 = <&i2c_4_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+/*
+ * Clock tree: xo_clk (24 MHz) -> ref_48mhz_clk (x2 = 48 MHz, feeds CMN PLL)
+ *                              -> xo_board_clk (/2 = 24 MHz)
+ * cmn_pll needs a 48 MHz reference; without the ref_48mhz_clk multiplier the
+ * QCA8084 50 MHz feed is wrong and PCS calibration times out.
+ */
+&xo_clk {
+	clock-frequency = <24000000>;
+};
+
+&ref_48mhz_clk {
+	clock-div = <1>;
+	clock-mult = <2>;
+};
+
+&xo_board_clk {
+	clock-div = <2>;
+	clock-mult = <1>;
+};
+
+&pcs0_ch0 {
+	status = "okay";
+};
+
+&pcs0_ch1 {
+	status = "okay";
+};
+
+&pcs0_ch2 {
+	status = "okay";
+};
+
+&pcs0_ch3 {
+	status = "okay";
+};
+
+&pcs0 {
+	status = "okay";
+};
+
+&pcs1 {
+	status = "okay";
+};
+
+&pcs1_ch0 {
+	status = "okay";
+};
+
+&pcs2 {
+	status = "okay";
+};
+
+&pcs2_ch0 {
+	status = "okay";
+};
