@@ -228,6 +228,25 @@ define Device/iodata_wn-dax3000gr
 endef
 TARGET_DEVICES += iodata_wn-dax3000gr
 
+define Device/iodata_wn-dax5400qr
+	$(call Device/FitImageLzma)
+	DEVICE_VENDOR := I-O DATA
+	DEVICE_MODEL := WN-DAX5400QR
+	DEVICE_DTS_CONFIG := config@mp03.1
+	SOC := ipq5018
+	KERNEL_IN_UBI := 1
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	IMAGE_SIZE := 52480k
+	NAND_SIZE := 128m
+	IMAGES += factory.bin
+	IMAGE/factory.bin := append-ubi | qsdk-ipq-factory-nand | \
+		mstc-header 4.04(XZC.1)b90 0x480
+	DEVICE_PACKAGES := ath11k-firmware-ipq5018 ath11k-firmware-qcn9074 \
+		ipq-wifi-iodata_wn-dax5400qr kmod-ath11k-pci kmod-phy-realtek
+endef
+TARGET_DEVICES += iodata_wn-dax5400qr
+
 define Device/linksys_ipq50xx_mx_base
 	$(call Device/FitImageLzma)
 	DEVICE_VENDOR := Linksys
