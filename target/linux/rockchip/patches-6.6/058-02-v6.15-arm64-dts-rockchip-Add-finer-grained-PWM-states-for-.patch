@@ -1,0 +1,34 @@
+From 6ed35e6ff556626734c400fff5a636b38b91fe19 Mon Sep 17 00:00:00 2001
+From: Alexey Charkov <alchark@gmail.com>
+Date: Mon, 20 Jan 2025 23:22:46 +0400
+Subject: arm64: dts: rockchip: Add finer-grained PWM states for the fan on
+ Rock 5C
+
+Radxa Heatsink 6540B, which is the official cooling accessory for the
+Rock 5C board, includes a small 5V fan, which in my testing spins up
+reliably at a PWM setting of 24 (out of 255). It is also quite loud
+at the current minimum setting of 64, and noticeably less so at 24.
+
+Introduce two intermediate PWM states at the lower end of the fan's
+operating range to enable better balance between noise and cooling.
+
+Note further that, in my testing, having the fan run at 44 is enough
+to keep the system from thermal throttling with sustained 100% load
+on its 8 CPU cores (in 22C ambient temperature and no case)
+
+Signed-off-by: Alexey Charkov <alchark@gmail.com>
+Acked-by: Dragan Simic <dsimic@manjaro.org>
+Link: https://lore.kernel.org/r/20250120-rock-5c-fan-v1-1-5fb8446c981b@gmail.com
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+
+--- a/arch/arm64/boot/dts/rockchip/rk3588s-rock-5c.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3588s-rock-5c.dts
+@@ -71,7 +71,7 @@
+ 	fan {
+ 		compatible = "pwm-fan";
+ 		#cooling-cells = <2>;
+-		cooling-levels = <0 64 128 192 255>;
++		cooling-levels = <0 24 44 64 128 192 255>;
+ 		fan-supply = <&vcc_5v0>;
+ 		pwms = <&pwm3 0 10000 0>;
+ 	};

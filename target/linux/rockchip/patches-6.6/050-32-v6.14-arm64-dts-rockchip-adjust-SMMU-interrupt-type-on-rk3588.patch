@@ -1,0 +1,52 @@
+From 8546cfd08aa4b982acd2357403a1f15495d622ec Mon Sep 17 00:00:00 2001
+From: Patrick Wildt <patrick@blueri.se>
+Date: Mon, 10 Feb 2025 22:37:29 +0100
+Subject: [PATCH] arm64: dts: rockchip: adjust SMMU interrupt type on rk3588
+
+The SMMU architecture requires wired interrupts to be edge triggered,
+which does not align with the DT description for the RK3588.  This leads
+to interrupt storms, as the SMMU continues to hold the pin high and only
+pulls it down for a short amount when issuing an IRQ.  Update the DT
+description to be in line with the spec and perceived reality.
+
+Signed-off-by: Patrick Wildt <patrick@blueri.se>
+Fixes: cd81d3a0695c ("arm64: dts: rockchip: add rk3588 pcie and php IOMMUs")
+Reviewed-by: Niklas Cassel <cassel@kernel.org>
+Link: https://lore.kernel.org/r/Z6pxme2Chmf3d3uK@windev.fritz.box
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ arch/arm64/boot/dts/rockchip/rk3588-base.dtsi | 16 ++++++++--------
+ 1 file changed, 8 insertions(+), 8 deletions(-)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3588-base.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3588-base.dtsi
+@@ -549,10 +549,10 @@
+ 	mmu600_pcie: iommu@fc900000 {
+ 		compatible = "arm,smmu-v3";
+ 		reg = <0x0 0xfc900000 0x0 0x200000>;
+-		interrupts = <GIC_SPI 369 IRQ_TYPE_LEVEL_HIGH 0>,
+-			     <GIC_SPI 371 IRQ_TYPE_LEVEL_HIGH 0>,
+-			     <GIC_SPI 374 IRQ_TYPE_LEVEL_HIGH 0>,
+-			     <GIC_SPI 367 IRQ_TYPE_LEVEL_HIGH 0>;
++		interrupts = <GIC_SPI 369 IRQ_TYPE_EDGE_RISING 0>,
++			     <GIC_SPI 371 IRQ_TYPE_EDGE_RISING 0>,
++			     <GIC_SPI 374 IRQ_TYPE_EDGE_RISING 0>,
++			     <GIC_SPI 367 IRQ_TYPE_EDGE_RISING 0>;
+ 		interrupt-names = "eventq", "gerror", "priq", "cmdq-sync";
+ 		#iommu-cells = <1>;
+ 		status = "disabled";
+@@ -561,10 +561,10 @@
+ 	mmu600_php: iommu@fcb00000 {
+ 		compatible = "arm,smmu-v3";
+ 		reg = <0x0 0xfcb00000 0x0 0x200000>;
+-		interrupts = <GIC_SPI 381 IRQ_TYPE_LEVEL_HIGH 0>,
+-			     <GIC_SPI 383 IRQ_TYPE_LEVEL_HIGH 0>,
+-			     <GIC_SPI 386 IRQ_TYPE_LEVEL_HIGH 0>,
+-			     <GIC_SPI 379 IRQ_TYPE_LEVEL_HIGH 0>;
++		interrupts = <GIC_SPI 381 IRQ_TYPE_EDGE_RISING 0>,
++			     <GIC_SPI 383 IRQ_TYPE_EDGE_RISING 0>,
++			     <GIC_SPI 386 IRQ_TYPE_EDGE_RISING 0>,
++			     <GIC_SPI 379 IRQ_TYPE_EDGE_RISING 0>;
+ 		interrupt-names = "eventq", "gerror", "priq", "cmdq-sync";
+ 		#iommu-cells = <1>;
+ 		status = "disabled";

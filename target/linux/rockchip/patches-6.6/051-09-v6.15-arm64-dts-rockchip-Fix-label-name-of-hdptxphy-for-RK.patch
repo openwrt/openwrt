@@ -1,0 +1,26 @@
+From 2efdb041019fd6c58abefba3eb6fdc4d659e576c Mon Sep 17 00:00:00 2001
+From: Damon Ding <damon.ding@rock-chips.com>
+Date: Thu, 6 Feb 2025 11:03:30 +0800
+Subject: arm64: dts: rockchip: Fix label name of hdptxphy for RK3588
+
+The hdptxphy is a combo transmit-PHY for HDMI2.1 TMDS Link, FRL Link, DP
+and eDP Link. Therefore, it is better to name it hdptxphy0 other than
+hdptxphy_hdmi0, which will be referenced by both hdmi0 and edp0 nodes.
+
+Signed-off-by: Damon Ding <damon.ding@rock-chips.com>
+Link: https://lore.kernel.org/r/20250206030330.680424-3-damon.ding@rock-chips.com
+[added armsom-sige7, where hdmi-support was added recently and also
+ the hdptxphy0-as-dclk source I just added]
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+
+--- a/arch/arm64/boot/dts/rockchip/rk3588s-rock-5a.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3588s-rock-5a.dts
+@@ -334,7 +334,7 @@
+ 	};
+ };
+ 
+-&hdptxphy_hdmi0 {
++&hdptxphy0 {
+ 	status = "okay";
+ };
+ 
