@@ -1,0 +1,50 @@
+From 737e980e12983bb7420a2c00b981a1e607079a84 Mon Sep 17 00:00:00 2001
+From: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Date: Wed, 18 Mar 2026 19:45:13 +0200
+Subject: [PATCH] wifi: rtw88: TX QOS Null data the same way as Null data
+
+When filling out the TX descriptor, Null data frames are treated like
+management frames, but QOS Null data frames are treated like normal
+data frames. Somehow this causes a problem for the firmware.
+
+When connected to a network in the 2.4 GHz band, wpa_supplicant (or
+NetworkManager?) triggers a scan every five minutes. During these scans
+mac80211 transmits many QOS Null frames in quick succession. Because
+these frames are marked with IEEE80211_TX_CTL_REQ_TX_STATUS, rtw88
+asks the firmware to report the TX ACK status for each of these frames.
+Sometimes the firmware can't process the TX status requests quickly
+enough, they add up, it only processes some of them, and then marks
+every subsequent TX status report with the wrong number.
+
+The symptom is that after a while the warning "failed to get tx report
+from firmware" appears every five minutes.
+
+This problem apparently happens only with the older RTL8723D, RTL8821A,
+RTL8812A, and probably RTL8703B chips.
+
+Treat QOS Null data frames the same way as Null data frames. This seems
+to avoid the problem.
+
+Tested with RTL8821AU, RTL8723DU, RTL8811CU, and RTL8812BU.
+
+Signed-off-by: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Acked-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/2b53fb0d-b1ed-47b6-8caa-2bb9ae2acb80@gmail.com
+---
+ drivers/net/wireless/realtek/rtw88/tx.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/net/wireless/realtek/rtw88/tx.c b/drivers/net/wireless/realtek/rtw88/tx.c
+index 2ab440cb2d67bb..3106edb84fb477 100644
+--- a/drivers/net/wireless/realtek/rtw88/tx.c
++++ b/drivers/net/wireless/realtek/rtw88/tx.c
+@@ -421,7 +421,7 @@ void rtw_tx_pkt_info_update(struct rtw_dev *rtwdev,
+ 		pkt_info->mac_id = rtwvif->mac_id;
+ 	}
+ 
+-	if (ieee80211_is_mgmt(fc) || ieee80211_is_nullfunc(fc))
++	if (ieee80211_is_mgmt(fc) || ieee80211_is_any_nullfunc(fc))
+ 		rtw_tx_mgmt_pkt_info_update(rtwdev, pkt_info, sta, skb);
+ 	else if (ieee80211_is_data(fc))
+ 		rtw_tx_data_pkt_info_update(rtwdev, pkt_info, sta, skb);
