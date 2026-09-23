@@ -97,6 +97,34 @@
 	status = "okay";
 };
 
+&pcie0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie0_rst_pins>;
+	status = "okay";
+
+	pcie@0,0 {
+		reg = <0x0000 0 0 0 0>;
+		wifi@0,0 {
+			compatible = "mediatek,mt76";
+			reg = <0x0000 0 0 0 0>;
+		};
+	};
+};
+
+&pcie1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie1_rst_pins>;
+	status = "okay";
+
+	pcie@1,0 {
+		reg = <0x0800 0 0 0 0>;
+		wifi@1,0 {
+			compatible = "mediatek,mt76";
+			reg = <0x0000 0 0 0 0>;
+		};
+	};
+};
+
 &npu {
 	status = "okay";
 };
@@ -217,4 +245,14 @@
 
 	phy-handle = <&as21xx_1>;
 	phy-mode = "usxgmii";
+};
+
+&usb0 {
+	mediatek,u3p-dis-msk = <0x1>;
+	mediatek,u2p-dis-msk = <0x1>;
+	status = "okay";
+};
+
+&usb_phy {
+	status = "okay";
 };
