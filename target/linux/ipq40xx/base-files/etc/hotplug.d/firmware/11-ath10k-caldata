@@ -17,6 +17,10 @@ case "$FIRMWARE" in
 		/usr/bin/fritz_cal_extract -i 1 -s 0x3C800 -e 0x212 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader1") || \
 		/usr/bin/fritz_cal_extract -i 1 -s 0x3C000 -e 0x212 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader1")
 		;;
+	zyxel,wsq50)
+		caldata_extract "0:ART" 0x9000 0x2f20
+		ath10k_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) 2)
+		;;
 	esac
 	;;
 "ath10k/pre-cal-ahb-a000000.wifi.bin")
@@ -82,6 +86,10 @@ case "$FIRMWARE" in
 	zyxel,nbg6617|\
 	zyxel,wre6606)
 		caldata_extract "ART" 0x1000 0x2f20
+		ath10k_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) -2)
+		;;
+	zyxel,wsq50)
+		caldata_extract "0:ART" 0x1000 0x2f20
 		ath10k_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) -2)
 		;;
 	esac
@@ -150,6 +158,10 @@ case "$FIRMWARE" in
 	zyxel,nbg6617|\
 	zyxel,wre6606)
 		caldata_extract "ART" 0x5000 0x2f20
+		ath10k_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) -1)
+		;;
+	zyxel,wsq50)
+		caldata_extract "0:ART" 0x5000 0x2f20
 		ath10k_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) -1)
 		;;
 	esac

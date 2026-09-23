@@ -1,0 +1,402 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/*
+ * Device Tree Source for Zyxel WSQ50
+ */
+
+#include "qcom-ipq4019.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/soc/qcom,tcsr.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	model = "Zyxel WSQ50";
+	compatible = "zyxel,wsq50", "qcom,ipq4019";
+
+	aliases {
+		led-boot = &led_green;
+		led-failsafe = &led_red;
+		led-running = &led_green;
+		led-upgrade = &led_blue;
+		serial0 = &blsp1_uart1;
+		ethernet0 = &gmac;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		bootargs-append = " rootfstype=squashfs ro fstools_partname_fallback_scan=1 fstools_overlay_fstype=ext4";
+	};
+
+	soc {
+		tcsr@1949000 {
+			compatible = "qcom,tcsr";
+			reg = <0x1949000 0x100>;
+			qcom,wifi_glb_cfg = <TCSR_WIFI_GLB_CFG>;
+		};
+
+		tcsr@194b000 {
+			compatible = "qcom,tcsr";
+			reg = <0x194b000 0x100>;
+			qcom,usb-hsphy-mode-select = <TCSR_USB_HSPHY_HOST_MODE>;
+		};
+
+		ess_tcsr@1953000 {
+			compatible = "qcom,tcsr";
+			reg = <0x1953000 0x1000>;
+			qcom,ess-interface-select = <TCSR_ESS_PSGMII>;
+		};
+
+		tcsr@1957000 {
+			compatible = "qcom,tcsr";
+			reg = <0x1957000 0x100>;
+			qcom,wifi_noc_memtype_m0_m2 = <TCSR_WIFI_NOC_MEMTYPE_M0_M2>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&tlmm 18 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&prng {
+	status = "okay";
+};
+
+&tlmm {
+	status = "okay";
+
+	serial_0_pins: serial0-pinmux {
+		pins = "gpio16", "gpio17";
+		function = "blsp_uart0";
+		bias-disable;
+	};
+
+	spi_0_pins: spi-0-state {
+		spi0-pins {
+			pins = "gpio13", "gpio14", "gpio15";
+			function = "blsp_spi0";
+			drive-strength = <12>;
+			bias-disable;
+		};
+		spi0-cs-pins {
+			pins = "gpio12";
+			function = "gpio";
+			drive-strength = <2>;
+			bias-disable;
+			output-high;
+		};
+	};
+
+	mdio_pins: mdio_pinmux {
+		mux_1 {
+			pins = "gpio6";
+			function = "mdio";
+			bias-pull-up;
+		};
+		mux_2 {
+			pins = "gpio7";
+			function = "mdc";
+			bias-pull-up;
+		};
+	};
+
+	i2c_0_pins: i2c_0_pinmux {
+		pinmux {
+			pins = "gpio58", "gpio59";
+			function = "blsp_i2c0";
+			bias-disable;
+		};
+	};
+
+	sd_pins: sd_pins {
+		mux {
+			function = "sdio";
+			pins = "gpio23", "gpio24", "gpio25", "gpio26",
+				"gpio28", "gpio29", "gpio30", "gpio31";
+			drive-strength = <4>;
+		};
+
+		mux_sd_clk {
+			function = "sdio";
+			pins = "gpio27";
+			drive-strength = <16>;
+		};
+
+		mux_sd7 {
+			function = "sdio";
+			pins = "gpio32";
+			drive-strength = <4>;
+			bias-disable;
+		};
+	};
+};
+
+&vqmmc {
+	status = "okay";
+};
+
+&sdhci {
+	status = "okay";
+	pinctrl-0 = <&sd_pins>;
+	pinctrl-names = "default";
+	vqmmc-supply = <&vqmmc>;
+	non-removable;
+	cd-gpios = <&tlmm 22 GPIO_ACTIVE_LOW>;
+	sd-ldo-gpios = <&tlmm 33 GPIO_ACTIVE_LOW>;
+};
+
+&blsp_dma {
+	status = "okay";
+};
+
+&blsp1_spi1 {
+	pinctrl-0 = <&spi_0_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+	cs-gpios = <&tlmm 12 GPIO_ACTIVE_HIGH>;
+
+	flash@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		reg = <0>;
+		compatible = "jedec,spi-nor", "n25q128a11";
+		spi-max-frequency = <24000000>;
+		status = "okay";
+		m25p,fast-read;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition0@0 {
+				label = "0:SBL1";
+				reg = <0x00000000 0x00040000>;
+				read-only;
+			};
+			partition1@40000 {
+				label = "0:MIBIB";
+				reg = <0x00040000 0x00020000>;
+				read-only;
+			};
+			partition2@60000 {
+				label = "0:QSEE";
+				reg = <0x00060000 0x00060000>;
+				read-only;
+			};
+			partition3@c0000 {
+				label = "0:CDT";
+				reg = <0x000c0000 0x00010000>;
+				read-only;
+			};
+			partition4@d0000 {
+				label = "0:DDRPARAMS";
+				reg = <0x000d0000 0x00010000>;
+				read-only;
+			};
+			partition5@e0000 {
+				label = "0:APPSBL"; /* u-boot */
+				reg = <0x000e0000 0x00080000>;
+				read-only;
+			};
+			partition6@160000 {
+				label = "0:APPSBLENV"; /* u-boot env */
+				reg = <0x00160000 0x00010000>;
+			};
+			partition7@170000 {
+				/* make a backup of this partition! */
+				label = "0:ART";
+				reg = <0x00170000 0x00010000>;
+				read-only;
+			};
+			partition8@180000 {
+				label = "0:DUAL_FLAG";
+				reg = <0x00180000 0x00010000>;
+			};
+			partition9@190000 {
+				label = "0:CRT";
+				reg = <0x00190000 0x00010000>;
+				read-only;
+			};
+			partition10@1a0000 {
+				label = "0:RESERVED";
+				reg = <0x001a0000 0x00260000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&blsp1_i2c3 {
+	pinctrl-0 = <&i2c_0_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	lp5562@30 {
+		compatible = "ti,lp5562";
+		reg = <0x30>;
+		clock-mode = /bits/ 8 <1>;
+		status = "okay";
+		enable-gpios = <&tlmm 61 GPIO_ACTIVE_HIGH>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		led_red: led@0 {
+			reg = <0>;
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
+			chan-name = "red:status";
+			led-cur = /bits/ 8 <0xDF>;
+			max-cur = /bits/ 8 <0xFF>;
+		};
+
+		led_green: led@1 {
+			reg = <1>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			chan-name = "green:status";
+			led-cur = /bits/ 8 <0x5F>;
+			max-cur = /bits/ 8 <0xFF>;
+		};
+
+		led_blue: led@2 {
+			reg = <2>;
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_STATUS;
+			chan-name = "blue:status";
+			led-cur = /bits/ 8 <0x5F>;
+			max-cur = /bits/ 8 <0xFF>;
+		};
+	};
+};
+
+&blsp1_uart1 {
+	status = "okay";
+	pinctrl-0 = <&serial_0_pins>;
+	pinctrl-names = "default";
+};
+
+&watchdog {
+	status = "okay";
+};
+
+&pcie0 {
+	status = "okay";
+
+	perst-gpios = <&tlmm 38 GPIO_ACTIVE_LOW>;
+	wake-gpios = <&tlmm 50 GPIO_ACTIVE_LOW>;
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&gmac {
+	status = "okay";
+};
+
+&mdio {
+	status = "okay";
+	pinctrl-0 = <&mdio_pins>;
+	pinctrl-names = "default";
+	reset-gpios = <&tlmm 47 GPIO_ACTIVE_LOW>;
+	reset-delay-us = <2000>;
+	reset-post-delay-us = <5000>;
+};
+
+&usb3_ss_phy {
+	status = "okay";
+};
+
+&usb3_hs_phy {
+	status = "okay";
+};
+
+&usb3 {
+	status = "okay";
+};
+
+&usb3_dwc {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	usb3_port1: port@1 {
+		reg = <1>;
+		#trigger-source-cells = <0>;
+	};
+
+	usb3_port2: port@2 {
+		reg = <2>;
+		#trigger-source-cells = <0>;
+	};
+};
+
+&usb2_hs_phy {
+	status = "okay";
+};
+
+&usb2 {
+	status = "okay";
+
+	usb@6000000 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		usb2_port1: port@1 {
+			reg = <1>;
+			#trigger-source-cells = <0>;
+		};
+	};
+};
+
+&switch {
+	status = "okay";
+};
+
+&swport2 {
+	status = "okay";
+	label = "lan1";
+};
+
+&swport3 {
+	status = "okay";
+	label = "lan2";
+};
+
+&swport4 {
+	status = "okay";
+	label = "lan3";
+};
+
+&swport5 {
+	status = "okay";
+	label = "wan";
+};
+
+&wifi0 {
+	qcom,ath10k-calibration-variant = "Zyxel-WSQ50";
+	status = "okay";
+};
+
+&wifi1 {
+	ieee80211-freq-limit = <5170000 5330000>;
+	qcom,ath10k-calibration-variant = "Zyxel-WSQ50";
+	status = "okay";
+};
+
+&pcie_bridge0 {
+	wifi2: wifi@0,0 {
+		compatible = "qcom,ath10k";
+		reg = <0x00010000 0 0 0 0>;
+		ieee80211-freq-limit = <5490000 5835000>;
+		qcom,ath10k-calibration-variant = "Zyxel-WSQ50";
+		status = "okay";
+	};
+};
