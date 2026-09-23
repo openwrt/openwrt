@@ -281,7 +281,7 @@ static const struct of_device_id bcm6348_iudma_of_match[] = {
 	{ .compatible = "brcm,bcm6358-iudma", },
 	{ /* sentinel */ }
 };
-MODULE_DEVICE_TABLE(of, bcm6348_emac_of_match);
+MODULE_DEVICE_TABLE(of, bcm6348_iudma_of_match);
 
 static struct platform_driver bcm6348_iudma_driver = {
 	.driver = {
