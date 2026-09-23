@@ -7,9 +7,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_VERSION := 2025.04
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
-PKG_HASH := 439d3bef296effd54130be6a731c5b118be7fddd7fcc663ccbc5fb18294d8718
+PKG_HASH := d60836f86e69adecbade967ca8a0944911c2916a2f85855f2e678fc5698c1014
 
 PKG_MAINTAINER := Tomasz Maciej Nowak <tmn505@gmail.com>
 
