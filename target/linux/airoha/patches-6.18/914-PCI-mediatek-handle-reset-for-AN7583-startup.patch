@@ -1,0 +1,60 @@
+rom 666efff14cf32275f9a9788e80943601a0591f3f Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Fri, 5 Jun 2026 17:44:11 +0200
+Subject: [PATCH] PCI: mediatek: handle reset for AN7583 startup
+
+Handle reset from SCU register for AN7583 SoC in startup OP PCIe driver.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ drivers/pci/controller/pcie-mediatek.c | 25 +++++++++++++++++++++++++
+ 1 file changed, 25 insertions(+)
+
+--- a/drivers/pci/controller/pcie-mediatek.c
++++ b/drivers/pci/controller/pcie-mediatek.c
+@@ -31,6 +31,13 @@
+ 
+ #include "../pci.h"
+ 
++/* SCU */
++#define SCU_PCIC			0x88
++#define SCU_PCIC_PERSTOUT1		BIT(26)
++
++#define SCU_RSTCTRL1			0x834
++#define SCU_RSTCTRL1_PCIE1		BIT(27)
++
+ /* PCIe shared registers */
+ #define PCIE_SYS_CFG		0x00
+ #define PCIE_INT_ENABLE		0x0c
+@@ -234,6 +241,8 @@ struct mtk_pcie {
+ 
+ 	struct list_head ports;
+ 	const struct mtk_pcie_soc *soc;
++
++	struct regmap *scu;
+ };
+ 
+ static void mtk_pcie_subsys_powerdown(struct mtk_pcie *pcie)
+@@ -680,6 +689,22 @@ static int mtk_pcie_startup_port_v2(stru
+ 	u32 val;
+ 	int err;
+ 
++	if (device_is_compatible(pcie->dev, "airoha,an7583-pcie")) {
++		pcie->scu = syscon_regmap_lookup_by_phandle_optional(pcie->dev->of_node,
++								"airoha,scu");
++		if (pcie->scu) {
++			regmap_set_bits(pcie->scu, SCU_RSTCTRL1, SCU_RSTCTRL1_PCIE1);
++
++			regmap_clear_bits(pcie->scu, SCU_PCIC, SCU_PCIC_PERSTOUT1);
++
++			msleep(100);
++
++			regmap_set_bits(pcie->scu, SCU_PCIC, SCU_PCIC_PERSTOUT1);
++
++			regmap_clear_bits(pcie->scu, SCU_RSTCTRL1, SCU_RSTCTRL1_PCIE1);
++		}
++	}
++
+ 	entry = resource_list_first_type(&host->windows, IORESOURCE_MEM);
+ 	if (entry)
+ 		mem = entry->res;

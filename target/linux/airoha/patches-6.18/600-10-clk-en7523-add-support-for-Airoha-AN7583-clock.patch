@@ -178,7 +178,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  static const u16 en7581_rst_ofs[] = {
  	REG_RST_CTRL2,
  	REG_RST_CTRL1,
-@@ -369,6 +510,60 @@ static const u16 en7581_rst_map[] = {
+@@ -369,6 +510,64 @@ static const u16 en7581_rst_map[] = {
  	[EN7581_XPON_MAC_RST]		= RST_NR_PER_BANK + 31,
  };
  
@@ -234,6 +234,10 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +	[AN7583_CPU_TIMER_RST]		= RST_NR_PER_BANK + 28,
 +	[AN7583_PCIE_HB_RST]		= RST_NR_PER_BANK + 29,
 +	[AN7583_XPON_MAC_RST]		= RST_NR_PER_BANK + 31,
++
++	/* RST_PCIC */
++	[AN7583_PCIC_PERSTOUT0_RST]	= 2 * RST_NR_PER_BANK + 29,
++	[AN7583_PCIC_PERSTOUT1_RST]	= 2 * RST_NR_PER_BANK + 26,
 +};
 +
  static u32 en7523_get_base_rate(const struct en_clk_desc *desc, u32 val)

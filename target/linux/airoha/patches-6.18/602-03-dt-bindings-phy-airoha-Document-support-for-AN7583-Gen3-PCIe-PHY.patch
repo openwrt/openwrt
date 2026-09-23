@@ -1,0 +1,88 @@
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Tue,  1 Sep 2026 14:58:17 +0200
+Subject: [PATCH v3 1/2] dt-bindings: phy: airoha: Document support for AN7583
+ Gen3 PCIe PHY
+
+
+Document support for AN7583 PCIe PHY used to make the Gen3 PCIe port
+work. Add the required register to configure the PCIe PHY and provide an
+example for it.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ .../phy/airoha,an7583-pcie-gen3-phy.yaml      | 65 +++++++++++++++++++
+ 1 file changed, 65 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/phy/airoha,an7583-pcie-gen3-phy.yaml
+
+diff --git a/Documentation/devicetree/bindings/phy/airoha,an7583-pcie-gen3-phy.yaml b/Documentation/devicetree/bindings/phy/airoha,an7583-pcie-gen3-phy.yaml
+new file mode 100644
+index 000000000000..a8ec5ac781cc
+--- /dev/null
++++ b/Documentation/devicetree/bindings/phy/airoha,an7583-pcie-gen3-phy.yaml
+@@ -0,0 +1,65 @@
++# SPDX-License-Identifier: (GPL-2.0 OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/phy/airoha,an7583-pcie-gen3-phy.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: Airoha AN7583 PCI-Express PHY
++
++maintainers:
++  - Christian Marangi <ansuelsmth@gmail.com>
++
++description:
++  The PCIe PHY supports physical layer functionality for PCIe Gen2/Gen3 port.
++
++properties:
++  compatible:
++    const: airoha,an7583-pcie-gen3-phy
++
++  reg:
++    items:
++      - description: PCIE G3 analog base address
++      - description: PCIE G3 PMA base address
++      - description: PCIE detection time base address
++      - description: PCIE Rx AEQ base address
++
++  reg-names:
++    items:
++      - const: g3-ana
++      - const: g3-pma
++      - const: xr-dtime
++      - const: rx-aeq
++
++  phys:
++    items:
++      - description: phandle to QPHY phy for Gen2 support
++
++  "#phy-cells":
++    const: 0
++
++required:
++  - compatible
++  - reg
++  - reg-names
++  - phys
++  - "#phy-cells"
++
++additionalProperties: false
++
++examples:
++  - |
++    #include <dt-bindings/phy/phy.h>
++
++    phy@1fc7f000 {
++        compatible = "airoha,an7583-pcie-gen3-phy";
++        reg = <0x1fc7f000 0x1000>,
++              <0x1fc7e000 0x1000>,
++              <0x1fc30044 0x4>,
++              <0x1fc35030 0x4>;
++        reg-names = "g3-ana", "g3-pma",
++                    "xr-dtime", "rx-aeq";
++
++        phys = <&pcie1_phy PHY_TYPE_PCIE>;
++
++        #phy-cells = <0>;
++    };
+
