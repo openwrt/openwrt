@@ -1,0 +1,376 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+
+/dts-v1/;
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/pinctrl/mt65xx.h>
+#include <dt-bindings/regulator/richtek,rt5190a-regulator.h>
+
+#include "mt7988a.dtsi"
+
+/ {
+	model = "Zbtlink Z8802BE";
+	compatible = "zbtlink,zbt-z8802be", "mediatek,mt7988d";
+
+	aliases {
+		serial0 = &uart0;
+		label-mac-device = &gmac0;
+		led-boot = &led_sys_red;
+		led-failsafe = &led_sys_red;
+		led-running = &led_sys_green;
+		led-upgrade = &led_sys_red;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,115200n1 loglevel=8 earlycon=uart8250,mmio32,0x11000000 pci=pcie_bus_perf";
+	};
+
+	cpus {
+		/delete-node/ cpu@3;
+	};
+
+	memory {
+		reg = <0x0 0x40000000 0x0 0x10000000>;
+	};
+
+	gpio-export {
+		compatible = "gpio-export";
+		#size-cells = <0>;
+
+		5g {
+				gpio-export,name = "5g";
+				gpio-export,output = <0>;
+				gpios = <&pio 1 GPIO_ACTIVE_HIGH>;
+		};
+		5g2 {
+				gpio-export,name = "5g2";
+				gpio-export,output = <0>;
+				gpios = <&pio 61 GPIO_ACTIVE_HIGH>;
+		};
+    };
+
+	gpio-keys {
+		compatible = "gpio-keys";
+
+		button-mesh {
+			label = "mesh";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&pio 14 GPIO_ACTIVE_LOW>;
+		};
+
+		button-reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&pio 13 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		led_sys_red: system_red {
+			label = "red";
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&pio 3 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
+		};
+
+		led_sys_green: system_green {
+			label = "green";
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&pio 0 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		led_sys_blue: system_blue {
+			label = "blue";
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&pio 2 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		5g1 {
+			label = "5g1";
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&pio 58 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		5g2 {
+			label = "5g2";
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&pio 60 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+	};
+
+	gpio-watchdog {
+		compatible = "linux,wdt-gpio";
+		gpios = <&pio 6 GPIO_ACTIVE_HIGH>;
+		hw_algo = "toggle";
+		hw_margin_ms = <1000>;
+		always-running;
+	};
+};
+
+&cpu0 {
+	proc-supply = <&rt5190_buck3>;
+};
+
+&cpu1 {
+	proc-supply = <&rt5190_buck3>;
+};
+
+&cpu2 {
+	proc-supply = <&rt5190_buck3>;
+};
+
+&cci {
+	proc-supply = <&rt5190_buck3>;
+};
+
+&eth {
+	status = "okay";
+};
+
+&gmac0 {
+	nvmem-cells = <&macaddr_factory_ffff4>;
+	nvmem-cell-names = "mac-address";
+	status = "okay";
+};
+
+&gmac1 {
+	nvmem-cells = <&macaddr_factory_ffffa>;
+	nvmem-cell-names = "mac-address";
+	label = "wan";
+
+	phy-mode = "internal";
+	phy-connection-type = "internal";
+	phy = <&int_2p5g_phy>;
+
+	status = "okay";
+};
+
+&gsw_port0 {
+	label = "lan1";
+};
+
+&gsw_port1 {
+	label = "lan2";
+};
+
+&gsw_port2 {
+	label = "lan3";
+};
+
+&gsw_port3 {
+	label = "lan4";
+};
+
+&i2c0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c0_pins>;
+	status = "okay";
+
+	rt5190a_64: rt5190a@64 {
+		compatible = "richtek,rt5190a";
+		reg = <0x64>;
+		/*interrupts-extended = <&gpio26 0 IRQ_TYPE_LEVEL_LOW>;*/
+		vin2-supply = <&rt5190_buck1>;
+		vin3-supply = <&rt5190_buck1>;
+		vin4-supply = <&rt5190_buck1>;
+
+		regulators {
+			rt5190_buck1: buck1 {
+				regulator-name = "rt5190a-buck1";
+				regulator-min-microvolt = <5090000>;
+				regulator-max-microvolt = <5090000>;
+				regulator-allowed-modes = <RT5190A_OPMODE_AUTO RT5190A_OPMODE_FPWM>;
+				regulator-boot-on;
+				regulator-always-on;
+			};
+
+			buck2 {
+				regulator-name = "vcore";
+				regulator-min-microvolt = <600000>;
+				regulator-max-microvolt = <1400000>;
+				regulator-boot-on;
+				regulator-always-on;
+			};
+
+			rt5190_buck3: buck3 {
+				regulator-name = "vproc";
+				regulator-min-microvolt = <600000>;
+				regulator-max-microvolt = <1400000>;
+				regulator-boot-on;
+			};
+
+			buck4 {
+				regulator-name = "rt5190a-buck4";
+				regulator-min-microvolt = <850000>;
+				regulator-max-microvolt = <850000>;
+				regulator-allowed-modes = <RT5190A_OPMODE_AUTO RT5190A_OPMODE_FPWM>;
+				regulator-boot-on;
+				regulator-always-on;
+			};
+
+			ldo {
+				regulator-name = "rt5190a-ldo";
+				regulator-min-microvolt = <1200000>;
+				regulator-max-microvolt = <1200000>;
+				regulator-boot-on;
+				regulator-always-on;
+			};
+		};
+	};
+};
+
+&pcie0 {
+	reset-gpios = <&pio 7 GPIO_ACTIVE_HIGH>;
+	status = "okay";
+
+	pcie@0,0 {
+		reg = <0x0000 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+
+		mt7992@0,0 {
+			reg = <0x0000 0 0 0 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			nvmem-cells = <&eeprom_factory_0>;
+			nvmem-cell-names = "eeprom";
+
+			band@0 {
+				reg = <0>;
+				nvmem-cells = <&macaddr_factory_4>;
+				nvmem-cell-names = "mac-address";
+			};
+
+			/* FIXME: this does not work */
+			band@1 {
+				reg = <1>;
+				nvmem-cells = <&macaddr_factory_a>;
+				nvmem-cell-names = "mac-address";
+			};
+		};
+	};
+};
+
+&spi0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&spi0_flash_pins>;
+	status = "okay";
+
+	spi_nand: spi_nand@0 {
+		compatible = "spi-nand";
+		reg = <0>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		spi-cal-enable;
+		spi-cal-mode = "read-data";
+		spi-cal-datalen = <7>;
+		spi-cal-data = /bits/ 8 <0x53 0x50 0x49 0x4E 0x41 0x4E 0x44>;
+		spi-cal-addrlen = <5>;
+		spi-cal-addr = /bits/ 32 <0x0 0x0 0x0 0x0 0x0>;
+
+		spi-max-frequency = <52000000>;
+		spi-tx-bus-width = <4>;
+		spi-rx-bus-width = <4>;
+
+		mediatek,nmbm;
+		mediatek,bmt-max-ratio = <1>;
+		mediatek,bmt-max-reserved-blocks = <64>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "bl2";
+				reg = <0x0 0x100000>;
+				read-only;
+			};
+
+			partition@100000 {
+				label = "u-boot-env";
+				reg = <0x100000 0x80000>;
+				read-only;
+			};
+
+			partition@180000 {
+				label = "factory";
+				reg = <0x180000 0x400000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x1e00>;
+					};
+
+					macaddr_factory_4: mac-address@4 {
+						reg = <0x4 0x6>;
+					};
+
+					macaddr_factory_a: mac-address@a {
+						reg = <0xa 0x6>;
+					};
+
+					macaddr_factory_ffff4: macaddr@ffff4 {
+						reg = <0xffff4 0x6>;
+					};
+
+					macaddr_factory_ffffa: macaddr@ffffa {
+						reg = <0xffffa 0x6>;
+					};
+				};
+			};
+
+			partition@580000 {
+				label = "fip";
+				reg = <0x580000 0x200000>;
+				read-only;
+			};
+
+			partition@780000 {
+				label = "ubi";
+				reg = <0x780000 0x7080000>;
+			};
+		};
+	};
+};
+
+&ssusb0 {
+	status = "okay";
+};
+
+&ssusb1 {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+};
+
+&tphy {
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+};
+
+&watchdog {
+	status = "okay";
+};
+
+&xphy {
+	status = "okay";
+};
