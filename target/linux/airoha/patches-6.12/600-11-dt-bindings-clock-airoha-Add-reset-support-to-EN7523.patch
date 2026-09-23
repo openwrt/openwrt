@@ -17,7 +17,7 @@ Reviewed-by: Rob Herring (Arm) <robh@kernel.org>
 
 --- a/Documentation/devicetree/bindings/clock/airoha,en7523-scu.yaml
 +++ b/Documentation/devicetree/bindings/clock/airoha,en7523-scu.yaml
-@@ -64,8 +64,6 @@ allOf:
+@@ -65,8 +65,6 @@ allOf:
              - description: scu base address
              - description: misc scu base address
  
@@ -26,7 +26,7 @@ Reviewed-by: Rob Herring (Arm) <robh@kernel.org>
    - if:
        properties:
          compatible:
-@@ -89,6 +87,7 @@ examples:
+@@ -98,6 +96,7 @@ examples:
        reg = <0x1fa20000 0x400>,
              <0x1fb00000 0x1000>;
        #clock-cells = <1>;
