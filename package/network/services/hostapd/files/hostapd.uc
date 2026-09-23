@@ -352,13 +352,18 @@ function iface_macaddr_init(phydev, config, macaddr_list)
 // mld_add_bss() takes it from radio 0, so only a link on radio 0 can use it. A
 // link on another radio must keep the reservation, because the two links would
 // otherwise use one address.
-function bss_macaddr_next(phydev, macaddr_list, bss, idx)
+function bss_mld_addr(phydev, macaddr_list, bss)
 {
 	let mld_addr = bss.mld_bssid;
 	if (phydev.radio || macaddr_list[mld_addr] != -1)
-		mld_addr = null;
+		return null;
 
-	return phydev.macaddr_next(idx, mld_addr);
+	return mld_addr;
+}
+
+function bss_macaddr_next(phydev, macaddr_list, bss, idx)
+{
+	return phydev.macaddr_next(idx, bss_mld_addr(phydev, macaddr_list, bss));
 }
 
 function csa_timer_cancel(name)
@@ -404,11 +409,16 @@ function iface_restart(phydev, config, old_config)
 	// compares the link addresses in the association response with the
 	// addresses it learned. If the addresses differ, the non-AP MLD drops the
 	// association. Therefore a BSS that survives the restart keeps its address.
+	// A link that must carry the MLD address follows the MLD address instead.
 	for (let i = 0; i < length(config.bss); i++) {
 		let bss = config.bss[i];
 		let prev = prev_bssid[bss.ifname];
 
 		if (!bss.default_macaddr || !prev || macaddr_list[prev] != null)
+			continue;
+
+		let mld_addr = bss_mld_addr(phydev, macaddr_list, bss);
+		if (mld_addr && prev != mld_addr)
 			continue;
 
 		bss.bssid = prev;
@@ -873,6 +883,13 @@ function iface_reload_config(name, phydev, config, old_config)
 	// Step 2: if none were found, rename and preserve the first one
 	if (length(bss_list) == 0 && !first_bss_converts) {
 		// can't change the bssid of the first bss
+		let mld_addr = config.bss[0].default_macaddr &&
+			bss_mld_addr(phydev, macaddr_list, config.bss[0]);
+		if (mld_addr && old_config.bss[0].bssid != mld_addr) {
+			hostapd.printf(`MLD address of first interface changed: ${lc(old_config.bss[0].bssid)} -> ${lc(mld_addr)}`);
+			return false;
+		}
+
 		if (config.bss[0].bssid != old_config.bss[0].bssid) {
 			if (!config.bss[0].default_macaddr) {
 				hostapd.printf(`BSSID of first interface changed: ${lc(old_config.bss[0].bssid)} -> ${lc(config.bss[0].bssid)}`);
