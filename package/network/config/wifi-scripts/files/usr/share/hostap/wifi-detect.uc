@@ -236,7 +236,10 @@ function wiphy_detect() {
 				push(modes, "HE160");
 			if (eht_phy_cap && he_phy_cap & 0x18)
 				push(modes, "EHT160");
-
+			if ((band.vht_capa >> 2) & 0x2)
+				push(modes, "VHT80P80");
+			if (he_phy_cap & 0x10)
+				push(modes, "HE80P80");
 			if (eht_phy_cap & 2)
 				push(modes, "EHT320");
 		}
