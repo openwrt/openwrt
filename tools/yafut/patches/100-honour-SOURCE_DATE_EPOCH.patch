@@ -19,7 +19,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
 +++ b/src/yaffs_glue.c
 @@ -27,7 +27,21 @@ void yaffsfs_Unlock(void) {
  }
-
+ 
  u32 yaffsfs_CurrentTime(void) {
 -	return time(NULL);
 +	const char *source_date_epoch = getenv("SOURCE_DATE_EPOCH");
@@ -38,5 +38,5 @@ Signed-off-by: John Crispin <john@phrozen.org>
 +
 +	return epoch;
  }
-
+ 
  void yaffsfs_SetError(int err) {
