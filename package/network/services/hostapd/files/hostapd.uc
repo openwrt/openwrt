@@ -1727,6 +1727,31 @@ let main_obj = {
 			return ret;
 		}
 	},
+	mbo_assoc_disallow: {
+		args: {
+			iface: "",
+			reason: 0,
+		},
+		call: function(req) {
+			if (!req.args.iface)
+				return libubus.STATUS_INVALID_ARGUMENT;
+
+			// Every link of an AP MLD is a BSS of its own, and each builds
+			// its own Beacon.
+			let found = false;
+			for (let phy, bss_list in hostapd.bss) {
+				let bss = bss_list[req.args.iface];
+				if (!bss)
+					continue;
+
+				found = true;
+				if (bss.ctrl(`SET mbo_assoc_disallow ${+req.args.reason}`) != "OK")
+					return libubus.STATUS_UNKNOWN_ERROR;
+			}
+
+			return found ? 0 : libubus.STATUS_NOT_FOUND;
+		}
+	},
 	status: {
 		args: {},
 		call: function(req) {
