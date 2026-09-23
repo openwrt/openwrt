@@ -147,6 +147,11 @@ hostapd_common_add_device_config() {
 	hostapd_add_log_config
 }
 
+hostapd_config_file() {
+	(umask 077; touch "$1") &&
+		chown root:network "$1" && chmod 0640 "$1" || exit 1
+}
+
 hostapd_prepare_device_config() {
 	local config="$1"
 	local driver="$2"
@@ -273,6 +278,7 @@ hostapd_prepare_device_config() {
 		append base_cfg "$val" "$N"
 	done
 
+	hostapd_config_file "$config"
 	cat > "$config" <<EOF
 driver=$driver
 $base_cfg
@@ -453,6 +459,7 @@ hostapd_set_psk() {
 		psk|psk-sae) ;;
 		*) return ;;
 	esac
+	hostapd_config_file "/var/run/hostapd-${ifname}.psk"
 	for_each_station hostapd_set_psk_file ${ifname}
 }
 
@@ -479,6 +486,7 @@ hostapd_set_sae() {
 		sae|psk-sae) ;;
 		*) return ;;
 	esac
+	hostapd_config_file "/var/run/hostapd-${ifname}.sae"
 	for_each_station hostapd_set_sae_file ${ifname}
 }
 
@@ -708,12 +716,13 @@ hostapd_set_bss_options() {
 			fi
 			[ -z "$wpa_psk_file" ] && set_default wpa_psk_file /var/run/hostapd-$ifname.psk
 			[ -n "$wpa_psk_file" ] && [ "$auth_type" = "psk" -o "$auth_type" = "psk-sae" ] && {
-				[ -e "$wpa_psk_file" ] || touch "$wpa_psk_file"
+				[ -e "$wpa_psk_file" ] || hostapd_config_file "$wpa_psk_file"
 				append bss_conf "wpa_psk_file=$wpa_psk_file" "$N"
 			}
 			[ -z "$sae_password_file" ] && set_default sae_password_file /var/run/hostapd-$ifname.sae
 			[ -n "$sae_password_file" ] && [ "$auth_type" = "sae" -o "$auth_type" = "psk-sae" ] && {
-				[ -e "$sae_password_file" ] || touch "$sae_password_file"
+				[ -e "$sae_password_file" ] ||
+					hostapd_config_file "$sae_password_file"
 				append bss_conf "sae_password_file=$sae_password_file" "$N"
 			}
 			[ "$eapol_version" -ge "1" -a "$eapol_version" -le "2" ] && append bss_conf "eapol_version=$eapol_version" "$N"
@@ -990,7 +999,7 @@ hostapd_set_bss_options() {
 				if [ -z "$rxkh_file" ]; then
 					set_default rxkh_file /var/run/hostapd-$ifname.rxkh
 					[ -e "$rxkh_file" ] && rm -f "$rxkh_file"
-					touch "$rxkh_file"
+					hostapd_config_file "$rxkh_file"
 
 					for kh in $r0kh; do
 						append rxkhs "r0kh=${kh//,/ }" "$N"
@@ -1318,6 +1327,7 @@ wpa_supplicant_prepare_interface() {
 		[ -e "$multiap_flag_file" ] && rm "$multiap_flag_file"
 	fi
 	wpa_supplicant_teardown_interface "$ifname"
+	hostapd_config_file "$_config"
 	cat > "$_config" <<EOF
 ctrl_interface=$_rpath
 ${scan_list:+freq_list=$scan_list}
