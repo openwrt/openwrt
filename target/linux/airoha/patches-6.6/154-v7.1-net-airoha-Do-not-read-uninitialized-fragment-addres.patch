@@ -1,0 +1,64 @@
+From bde34e84edc8b5571fbde7e941e175a4293ee1eb Mon Sep 17 00:00:00 2001
+From: Lorenzo Bianconi <lorenzo@kernel.org>
+Date: Fri, 24 Apr 2026 11:00:28 +0200
+Subject: [PATCH] net: airoha: Do not read uninitialized fragment address in
+ airoha_dev_xmit()
+
+The transmit loop in airoha_dev_xmit() reads fragment address and length
+during its final iteration, when the loop index equals
+skb_shinfo(skb)->nr_frags, at which point the fragment data is
+uninitialized. While these values are never consumed, the read itself is
+unsafe and may trigger a page fault. Fix this by avoiding the fragment
+read on the last iteration.
+Additionally, move the skb pointer from the first to the last used packet
+descriptor, so that airoha_qdma_tx_napi_poll() defers freeing the skb
+until the final descriptor is processed.
+
+Fixes: 23020f0493270 ("net: airoha: Introduce ethernet support for EN7581 SoC")
+Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
+Link: https://patch.msgid.link/20260424-airoha-xmit-fix-read-frag-v1-1-fdc0a83c79e8@kernel.org
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -2007,8 +2007,8 @@ static netdev_tx_t airoha_dev_xmit(struc
+ 	struct netdev_queue *txq;
+ 	struct airoha_queue *q;
+ 	LIST_HEAD(tx_list);
++	int i = 0, qid;
+ 	void *data;
+-	int i, qid;
+ 	u16 index;
+ 	u8 fport;
+ 
+@@ -2067,7 +2067,7 @@ static netdev_tx_t airoha_dev_xmit(struc
+ 			     list);
+ 	index = e - q->entry;
+ 
+-	for (i = 0; i < nr_frags; i++) {
++	while (true) {
+ 		struct airoha_qdma_desc *desc = &q->desc[index];
+ 		skb_frag_t *frag = &skb_shinfo(skb)->frags[i];
+ 		dma_addr_t addr;
+@@ -2079,7 +2079,7 @@ static netdev_tx_t airoha_dev_xmit(struc
+ 			goto error_unmap;
+ 
+ 		list_move_tail(&e->list, &tx_list);
+-		e->skb = i ? NULL : skb;
++		e->skb = i == nr_frags - 1 ? skb : NULL;
+ 		e->dma_addr = addr;
+ 		e->dma_len = len;
+ 
+@@ -2098,6 +2098,9 @@ static netdev_tx_t airoha_dev_xmit(struc
+ 		WRITE_ONCE(desc->msg1, cpu_to_le32(msg1));
+ 		WRITE_ONCE(desc->msg2, cpu_to_le32(0xffff));
+ 
++		if (++i == nr_frags)
++			break;
++
+ 		data = skb_frag_address(frag);
+ 		len = skb_frag_size(frag);
+ 	}
