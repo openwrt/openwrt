@@ -481,8 +481,9 @@ static int rtl8218e_config_init(struct phy_device *phydev)
 	phy_write_paged(phydev, 0x400, 0x10, 0x1700);
 	phy_write_paged(phydev, 0x400, 0x10, 0x1703);
 
-	/* Disable SerDes 0 XSGMII autonegotiation. */
+	/* Disable XSGMII autonegotiation on both MAC-side channel groups. */
 	phy_modify_paged(phydev, 0x400, 0x12, GENMASK(9, 8), BIT(8));
+	phy_modify_paged(phydev, 0x500, 0x12, GENMASK(9, 8), BIT(8));
 
 restore:
 	phy_write(phydev, RTL821x_EXT_PAGE_SELECT, oldxpage);
