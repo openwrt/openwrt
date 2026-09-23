@@ -1,6 +1,6 @@
 include $(TOPDIR)/rules.mk
 
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_SOURCE_PROTO:=git
 PKG_VERSION:=2026.10-rc5
 PKG_SOURCE_URL:=https://git.u-boot-project.org/u-boot/u-boot.git

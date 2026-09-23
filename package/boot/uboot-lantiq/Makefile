@@ -9,9 +9,9 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=u-boot
 PKG_VERSION:=2013.10
-PKG_RELEASE:=68
+PKG_RELEASE:=69
 
-PKG_HASH:=0d71e62beb952b41ebafb20a7ee4df2f960db64c31b054721ceb79ff14014c55
+PKG_HASH:=16f36538ac9eebb3dc90b3deb7cc2ac66bf3f87cebc359224ae491bd16166dae
 
 FIRMWARE_LANTIQ_SOURCE:=$(TOPDIR)/package/firmware/lantiq/lantiq-gphy-firmware/files/
 

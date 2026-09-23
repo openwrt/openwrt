@@ -3,11 +3,8 @@ include $(INCLUDE_DIR)/prereq.mk
 PKG_NAME ?= u-boot
 
 ifndef PKG_SOURCE_PROTO
-PKG_SOURCE = $(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL = \
-	https://mirror.cyberbits.eu/u-boot \
-	https://ftp.denx.de/pub/u-boot \
-	ftp://ftp.denx.de/pub/u-boot
+PKG_SOURCE = $(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_SOURCE_URL = https://codeload.github.com/$(PKG_NAME)/$(PKG_NAME)/tar.gz/v$(PKG_VERSION)?
 endif
 
 PKG_BUILD_DIR = $(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
@@ -104,7 +101,7 @@ define Build/U-Boot/Target
       endif
     endif
     $(if $(DEFAULT),DEFAULT:=$(DEFAULT))
-    URL:=https://docs.u-boot.org/en/latest/
+    URL:=https://docs.u-boot-project.org/en/latest/
   endef
 
   define Package/u-boot-$(1)/install
