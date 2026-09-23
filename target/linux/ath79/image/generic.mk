@@ -1836,6 +1836,7 @@ define Device/huawei_ap5030dn
   DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct
   LOADER_TYPE := bin
   LOADER_FLASH_OFFS := 0x111DC0
+  LZMA_TEXT_START := 0x82800000
   KERNEL_SIZE := 15360k
   IMAGE_SIZE := 30720k
   COMPILE := loader-$(1).bin
@@ -1851,6 +1852,7 @@ define Device/huawei_ap6010dn
   DEVICE_MODEL := AP6010DN
   LOADER_TYPE := bin
   LOADER_FLASH_OFFS := 0x111DC0
+  LZMA_TEXT_START := 0x82800000
   KERNEL_SIZE := 15360k
   IMAGE_SIZE := 30720k
   COMPILE := loader-$(1).bin
