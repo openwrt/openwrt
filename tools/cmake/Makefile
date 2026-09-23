@@ -37,12 +37,12 @@ HOST_CONFIGURE_ARGS := \
 	--system-liblzma \
 	--system-zlib \
 	--system-zstd \
-	--generator=Ninja \
-	-- -DBUILD_TESTING=OFF
+	--generator=Ninja
 
 CMAKE_HOST_OPTIONS = \
 	-DZSTD_INCLUDE_DIR="$(STAGING_DIR_HOST)/include" \
-	-DZSTD_LIBRARY="$(STAGING_DIR_HOST)/lib/libzstd.a"
+	-DZSTD_LIBRARY="$(STAGING_DIR_HOST)/lib/libzstd.a" \
+	-DBUILD_TESTING=OFF
 
 define Host/Configure
 	$(call Host/Configure/Default,-- $(CMAKE_HOST_OPTIONS))
