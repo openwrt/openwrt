@@ -7,6 +7,11 @@ config NET_DSA_RTL83XX
 	help
 	  This driver adds support for Realtek RTL83xx series switching.
 
+config NET_DSA_RTL83XX_LEDS
+	def_bool y
+	depends on NET_DSA_RTL83XX
+	depends on LEDS_CLASS=y || LEDS_CLASS=NET_DSA_RTL83XX
+
 config NET_DSA_RTL83XX_RTL930X_L3_OFFLOAD
 	bool "Realtek RTL930x layer 3 offload (experimental)"
 	depends on NET_DSA_RTL83XX
