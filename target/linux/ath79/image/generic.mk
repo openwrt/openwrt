@@ -1854,7 +1854,7 @@ define Device/huawei_ap5030dn
   SOC := qca9550
   DEVICE_VENDOR := Huawei
   DEVICE_MODEL := AP5030DN
-  DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct
+  DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct kmod-phy-marvell
   LOADER_TYPE := bin
   LOADER_FLASH_OFFS := 0x111DC0
   LZMA_TEXT_START := 0x82800000
@@ -2945,7 +2945,7 @@ define Device/ruckus_gd11_common
   SOC := ar7161
   IMAGE_SIZE := 15616k
   BLOCKSIZE := 256k
-  DEVICE_PACKAGES := kmod-usb2 kmod-usb-chipidea2
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-chipidea2 kmod-phy-marvell
 endef
 
 define Device/ruckus_zf7341
