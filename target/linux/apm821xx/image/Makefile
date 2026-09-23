@@ -11,14 +11,23 @@ define Build/boot-img
 	$(CP) $(KDIR)/image-$(firstword $(DEVICE_DTS)).dtb $@.bootdir/boot/$(DEVICE_DTB)
 	$(CP) $(IMAGE_KERNEL) $@.bootdir/boot/uImage
 
+	$(TAR) -C $@.bootdir -cf $@.bootdir.tar --sort=name --numeric-owner \
+		--owner=0 --group=0 --mode=go-w \
+		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)" --clamp-mtime) \
+		boot
+
 	genext2fs --block-size $(BLOCKSIZE:%k=%Ki) \
 		--size-in-blocks $$((1024 * $(CONFIG_TARGET_KERNEL_PARTSIZE))) \
-		--root $@.bootdir $@.boot
+		--tarball $@.bootdir.tar $@.boot
 
-	# convert it to revision 1 - needed for u-boot ext2load
-	$(STAGING_DIR_HOST)/bin/tune2fs -O filetype $@.boot
+	$(STAGING_DIR_HOST)/bin/tune2fs -O filetype \
+		-U $(patsubst %00,%01,$(IMG_PART_DISKGUID)) \
+		$@.boot
 	# Ignore errors because file system was intentionally broken with tune2fs
-	-$(STAGING_DIR_HOST)/bin/e2fsck -pDf $@.boot > /dev/null
+	-$(if $(SOURCE_DATE_EPOCH),E2FSCK_TIME=$(SOURCE_DATE_EPOCH)) \
+		$(STAGING_DIR_HOST)/bin/e2fsck -pDf $@.boot > /dev/null
+
+	rm -rf $@.bootdir $@.bootdir.tar
 endef
 
 define Build/boot-script
