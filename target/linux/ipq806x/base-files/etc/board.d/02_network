@@ -54,7 +54,6 @@ ipq806x_setup_interfaces()
 		;;
 	fortinet,fap-421e|\
 	ignitenet,ss-w2-ac2600|\
-	ubnt,unifi-ac-hd|\
 	nokia,ac400i)
 		ucidef_set_interface_lan "eth0 eth1"
 		;;
@@ -71,6 +70,11 @@ ipq806x_setup_interfaces()
 		;;
 	qcom,ipq8064-db149)
 		ucidef_set_interface_lan "eth1 eth2 eth3 lan1 lan2 lan3 lan4" "wan"
+		;;
+	ubnt,unifi-ac-hd)
+		ucidef_set_network_device_path eth0 'platform/soc/37400000.ethernet'
+		ucidef_set_network_device_path eth1 'platform/soc/37200000.ethernet'
+		ucidef_set_interface_lan "eth0 eth1"
 		;;
 	*)
 		echo "Unsupported hardware. Network interfaces not intialized"
