@@ -1854,7 +1854,7 @@ define Device/huawei_ap5030dn
   SOC := qca9550
   DEVICE_VENDOR := Huawei
   DEVICE_MODEL := AP5030DN
-  DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct
+  DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct kmod-phy-broadcom
   LOADER_TYPE := bin
   LOADER_FLASH_OFFS := 0x111DC0
   LZMA_TEXT_START := 0x82800000
@@ -3023,6 +3023,7 @@ define Device/siemens_ws-ap3610
   COMPILE/loader-$(1).bin := loader-okli-compile
   KERNEL := kernel-bin | append-dtb | lzma | uImage lzma -M 0x4f4b4c49 | loader-okli $(1) 8128 | uImage none
   KERNEL_INITRAMFS := kernel-bin | append-dtb | uImage none
+  DEVICE_PACKAGES += kmod-phy-broadcom
 endef
 TARGET_DEVICES += siemens_ws-ap3610
 
