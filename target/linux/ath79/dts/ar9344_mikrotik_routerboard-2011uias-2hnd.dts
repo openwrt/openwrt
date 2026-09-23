@@ -165,9 +165,10 @@
 
 &mdio0 {
 	status = "okay";
-	switch@1f {
+
+	ethernet-switch@10 {
 		compatible = "qca,ar8327";
-		reg = <0x1f>;
+		reg = <0x10>;
 
 		qca,ar8327-initvals = <
 			0x04 0x07c00000 /* PORT0 PAD MODE CTRL: Mac0_rgmii_en | Mac0_rgmii_txclk_delay_en | Mac0_rgmii_rxclk_delay_en | Mac0_rgmii_txclk_delay_sel3 | Mac0_rgmii_rxclk_delay_sel0 */
