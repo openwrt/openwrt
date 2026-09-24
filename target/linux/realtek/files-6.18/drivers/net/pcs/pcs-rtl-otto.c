@@ -816,7 +816,7 @@ static int rtpcs_generic_sds_set_autoneg(struct rtpcs_serdes *sds, unsigned int 
 					 const unsigned long *advertising)
 {
 	enum rtpcs_page phy_page = sds->ctrl->cfg->phy_page;
-	u16 bmcr, adv, adv_old;
+	u16 bmcr, adv, adv_old, speed;
 	bool changed = false;
 	int ret;
 
@@ -846,6 +846,16 @@ static int rtpcs_generic_sds_set_autoneg(struct rtpcs_serdes *sds, unsigned int 
 	bmcr = neg_mode == PHYLINK_PCS_NEG_INBAND_ENABLED ? BMCR_ANENABLE : 0;
 
 	ret = rtpcs_sds_write_mask(sds, phy_page, MII_BMCR, BMCR_ANENABLE, bmcr);
+	if (ret < 0)
+		return ret;
+
+	if (sds->hw_mode == RTPCS_SDS_MODE_1000BASEX && !bmcr)
+		speed = BMCR_SPEED1000;
+	else
+		return changed;
+
+	ret = rtpcs_sds_write_mask(sds, phy_page, MII_BMCR,
+				   BMCR_SPEED1000 | BMCR_SPEED100, speed);
 	if (ret < 0)
 		return ret;
 
@@ -4023,9 +4033,6 @@ static int rtpcs_931x_sds_config_hw_mode(struct rtpcs_serdes *sds,
 	case RTPCS_SDS_MODE_1000BASEX:
 		rtpcs_sds_write_mask(sds, DIGI_1(PAGE_FIB_EXT), FIB_EXT_REG19,
 				     RTL931X_CFG_TX_MODE, 0);
-
-		rtpcs_sds_write_mask(sds, DIGI_1(PAGE_FIB), MII_BMCR,
-				     BMCR_SPEED1000 | BMCR_SPEED100, BMCR_SPEED1000);
 		rtpcs_sds_write_mask(sds, DIGI_1(PAGE_SDS), SDS_REG04,
 				     RTL931X_CFG_EN_LINK_FIB1G, RTL931X_CFG_EN_LINK_FIB1G);
 		break;
