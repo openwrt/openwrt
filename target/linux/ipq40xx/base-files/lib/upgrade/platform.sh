@@ -131,7 +131,8 @@ platform_do_upgrade() {
 	qxwlan,e2600ac-c2|\
 	wallys,dr40x9|\
 	zyxel,nwa1123acv3|\
-	zyxel,wac500)
+	zyxel,wac500|\
+	zyxel,wac500h)
 		nand_do_upgrade "$1"
 		;;
 	alfa-network,ap120c-ac)

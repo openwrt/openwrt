@@ -5,7 +5,8 @@ apply_bootconfig() {
 	zyxel,nwa110ax|\
 	zyxel,nwa210ax|\
 	zyxel,nwa1123acv3|\
-	zyxel,wac500)
+	zyxel,wac500|\
+	zyxel,wac500h)
 		status="$(zyxel-bootconfig-ipq807x-ipq40xx show | awk '/image0:/ {print $2}')"
 		[ "$status" != "selected" ] && zyxel-bootconfig-ipq807x-ipq40xx --force set image0
 		;;

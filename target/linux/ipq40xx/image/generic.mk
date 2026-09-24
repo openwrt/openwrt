@@ -1520,6 +1520,13 @@ define Device/zyxel_wac500
 endef
 TARGET_DEVICES += zyxel_wac500
 
+define Device/zyxel_wac500h
+	$(call Device/zyxel_wac500_common)
+	DEVICE_MODEL := WAC500H
+	ZYXEL_MODEL_ID := 64 e1
+endef
+TARGET_DEVICES += zyxel_wac500h
+
 define Device/zyxel_wre6606
 	$(call Device/FitImage)
 	DEVICE_VENDOR := Zyxel
