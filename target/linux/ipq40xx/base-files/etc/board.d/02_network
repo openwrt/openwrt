@@ -157,6 +157,9 @@ ipq40xx_setup_interfaces()
 		ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
 		ucidef_set_interface "wan" device "/dev/cdc-wdm0" protocol "qmi"
 		;;
+	zyxel,wac500h)
+		ucidef_set_interface_lan "uplink lan1 lan2"
+		;;
 	*)
 		echo "Unsupported hardware. Network interfaces not initialized"
 		;;
