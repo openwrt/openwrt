@@ -3298,6 +3298,7 @@ static int rtpcs_931x_sds_fiber_get_symerr(struct rtpcs_serdes *sds,
 	case RTPCS_SDS_MODE_10GBASER:
 		symerr = rtpcs_sds_read_bits(sds, PAGE_TGR_STD_1, 0x1, 7, 0);
 		break;
+	case RTPCS_SDS_MODE_100BASEX:
 	case RTPCS_SDS_MODE_1000BASEX:
 		rtpcs_sds_write_bits(sds, DIGI_1(PAGE_SDS_EXT), 0x18, 2, 0, 0x0);
 
@@ -3327,6 +3328,7 @@ static void rtpcs_931x_sds_clear_symerr(struct rtpcs_serdes *sds,
 		rtpcs_sds_xsg_write(sds, PAGE_SDS_EXT, 0x0, 0x0);
 		rtpcs_sds_xsg_write_bits(sds, PAGE_SDS_EXT, 0x1, 15, 8, 0x0);
 		break;
+	case RTPCS_SDS_MODE_100BASEX:
 	case RTPCS_SDS_MODE_1000BASEX:
 		rtpcs_sds_write_bits(sds, DIGI_1(PAGE_SDS_EXT), 0x18, 2, 0, 0x0);
 		rtpcs_sds_write_bits(sds, DIGI_1(PAGE_SDS_EXT), 0x3, 15, 8, 0x0);
@@ -4038,11 +4040,14 @@ static int rtpcs_931x_sds_config_hw_mode(struct rtpcs_serdes *sds,
 	case RTPCS_SDS_MODE_OFF:
 		break;
 
+	case RTPCS_SDS_MODE_100BASEX:
 	case RTPCS_SDS_MODE_1000BASEX:
 		rtpcs_sds_write_mask(sds, DIGI_1(PAGE_FIB_EXT), FIB_EXT_REG19,
 				     RTL931X_CFG_TX_MODE, 0);
 		rtpcs_sds_write_mask(sds, DIGI_1(PAGE_SDS), SDS_REG04,
-				     RTL931X_CFG_EN_LINK_FIB1G, RTL931X_CFG_EN_LINK_FIB1G);
+				     RTL931X_CFG_EN_LINK_FIB1G,
+				     hw_mode == RTPCS_SDS_MODE_1000BASEX ?
+				     RTL931X_CFG_EN_LINK_FIB1G : 0);
 		break;
 
 	case RTPCS_SDS_MODE_2500BASEX:
