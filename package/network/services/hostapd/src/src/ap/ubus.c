@@ -457,6 +457,47 @@ hostapd_notify_response(struct ubus_context *ctx, struct ubus_object *obj,
 }
 
 enum {
+	BTQ_ANSWER,
+	__BTQ_MAX
+};
+
+static const struct blobmsg_policy btq_policy[__BTQ_MAX] = {
+	[BTQ_ANSWER] = { "answer", BLOBMSG_TYPE_BOOL },
+};
+
+/* A subscriber that answers a BSS Transition Management Query itself, as an
+ * EasyMesh agent does, needs hostapd to send no BTM Request of its own.
+ * notify_response gives it that as well, but it also makes every probe,
+ * authentication and association notification wait for the subscriber. */
+static int
+hostapd_bss_transition_query_answer(struct ubus_context *ctx,
+				    struct ubus_object *obj,
+				    struct ubus_request_data *req,
+				    const char *method, struct blob_attr *msg)
+{
+	struct blob_attr *tb[__BTQ_MAX];
+	struct hostapd_data *hapd = get_hapd_from_object(obj);
+
+	blobmsg_parse(btq_policy, __BTQ_MAX, tb, blob_data(msg), blob_len(msg));
+
+	if (!tb[BTQ_ANSWER])
+		return UBUS_STATUS_INVALID_ARGUMENT;
+
+	hapd->ubus.answer_bss_transition_query = blobmsg_get_bool(tb[BTQ_ANSWER]);
+
+	return UBUS_STATUS_OK;
+}
+
+/* The flag belongs to the subscriber that set it. Once none is left, hostapd
+ * answers a query again, and a later subscriber has to ask for it itself. */
+static void
+hostapd_bss_subscribe_cb(struct ubus_context *ctx, struct ubus_object *obj)
+{
+	if (!obj->has_subscribers)
+		get_hapd_from_object(obj)->ubus.answer_bss_transition_query = false;
+}
+
+enum {
 	DEL_CLIENT_ADDR,
 	DEL_CLIENT_REASON,
 	DEL_CLIENT_DEAUTH,
@@ -1223,6 +1264,7 @@ enum {
 	BEACON_REQ_SSID,
 	BEACON_REQ_REPORTING_DETAIL,
 	BEACON_REQ_CHANNEL_REPORTS,
+	BEACON_REQ_ELEMENT_LIST,
 	__BEACON_REQ_MAX,
 };
 
@@ -1236,7 +1278,81 @@ static const struct blobmsg_policy beacon_req_policy[__BEACON_REQ_MAX] = {
 	[BEACON_REQ_SSID] = { "ssid", BLOBMSG_TYPE_STRING },
 	[BEACON_REQ_REPORTING_DETAIL] = { "reporting_detail", BLOBMSG_TYPE_INT32 },
 	[BEACON_REQ_CHANNEL_REPORTS] = { "channel_reports", BLOBMSG_TYPE_ARRAY },
+	[BEACON_REQ_ELEMENT_LIST] = { "element_list", BLOBMSG_TYPE_ARRAY },
 };
+
+enum {
+	BEACON_REQ_CR_OP_CLASS,
+	BEACON_REQ_CR_CHANNELS,
+	__BEACON_REQ_CR_MAX,
+};
+
+static const struct blobmsg_policy beacon_req_cr_policy[__BEACON_REQ_CR_MAX] = {
+	[BEACON_REQ_CR_OP_CLASS] = { "op_class", BLOBMSG_TYPE_UNSPEC },
+	[BEACON_REQ_CR_CHANNELS] = { "channels", BLOBMSG_TYPE_ARRAY },
+};
+
+static bool
+beacon_req_octet_valid(struct blob_attr *attr)
+{
+	switch (blobmsg_type(attr)) {
+	case BLOBMSG_TYPE_INT8:
+	case BLOBMSG_TYPE_INT16:
+	case BLOBMSG_TYPE_INT32:
+	case BLOBMSG_TYPE_INT64:
+		return blobmsg_cast_u64(attr) <= 255;
+	default:
+		return false;
+	}
+}
+
+/* One AP Channel Report subelement per operating class. A station answers a
+ * request on channel 255 by measuring the channels these name, and rejects it
+ * where neither the request nor the AP's Beacon carries a channel report
+ * (802.11-2024 11.10.9.1.1). With req NULL, only the length is returned, or
+ * -1 for a value that does not fit an octet. */
+static int
+hostapd_rrm_beacon_req_channel_reports(struct wpabuf *req,
+				       struct blob_attr *reports)
+{
+	struct blob_attr *tb[__BEACON_REQ_CR_MAX];
+	struct blob_attr *cur, *chan;
+	int rem, crem, n, len = 0;
+
+	blobmsg_for_each_attr(cur, reports, rem) {
+		if (blobmsg_type(cur) != BLOBMSG_TYPE_TABLE)
+			continue;
+
+		blobmsg_parse(beacon_req_cr_policy, __BEACON_REQ_CR_MAX, tb,
+			      blobmsg_data(cur), blobmsg_data_len(cur));
+		if (!tb[BEACON_REQ_CR_OP_CLASS] || !tb[BEACON_REQ_CR_CHANNELS])
+			continue;
+
+		if (!beacon_req_octet_valid(tb[BEACON_REQ_CR_OP_CLASS]))
+			return -1;
+
+		n = 0;
+		blobmsg_for_each_attr(chan, tb[BEACON_REQ_CR_CHANNELS], crem) {
+			if (!beacon_req_octet_valid(chan))
+				return -1;
+			n++;
+		}
+		if (!n || n > 254)
+			continue;
+
+		len += 3 + n;
+		if (!req)
+			continue;
+
+		wpabuf_put_u8(req, WLAN_BEACON_REQUEST_SUBELEM_AP_CHANNEL);
+		wpabuf_put_u8(req, 1 + n);
+		wpabuf_put_u8(req, blobmsg_cast_u64(tb[BEACON_REQ_CR_OP_CLASS]));
+		blobmsg_for_each_attr(chan, tb[BEACON_REQ_CR_CHANNELS], crem)
+			wpabuf_put_u8(req, blobmsg_cast_u64(chan));
+	}
+
+	return len;
+}
 
 static int
 hostapd_rrm_beacon_req(struct ubus_context *ctx, struct ubus_object *obj,
@@ -1245,13 +1361,15 @@ hostapd_rrm_beacon_req(struct ubus_context *ctx, struct ubus_object *obj,
 {
 	struct hostapd_data *hapd = container_of(obj, struct hostapd_data, ubus.obj);
 	struct blob_attr *tb[__BEACON_REQ_MAX];
-	struct blob_attr *cur;
+	struct blob_attr *cur, *elem;
 	struct wpabuf *req;
 	u8 bssid[ETH_ALEN] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 	u8 addr[ETH_ALEN];
 	int mode, rem, ret;
 	int buf_len = 13;
 	int reporting_detail = 255;
+	int n_elements = 0;
+	int cr_len;
 
 	blobmsg_parse(beacon_req_policy, __BEACON_REQ_MAX, tb, blob_data(msg), blob_len(msg));
 
@@ -1261,6 +1379,14 @@ hostapd_rrm_beacon_req(struct ubus_context *ctx, struct ubus_object *obj,
 
 	if (tb[BEACON_REQ_SSID])
 		buf_len += blobmsg_data_len(tb[BEACON_REQ_SSID]) + 2 - 1;
+
+	if (tb[BEACON_REQ_CHANNEL_REPORTS]) {
+		cr_len = hostapd_rrm_beacon_req_channel_reports(NULL,
+					tb[BEACON_REQ_CHANNEL_REPORTS]);
+		if (cr_len < 0)
+			return UBUS_STATUS_INVALID_ARGUMENT;
+		buf_len += cr_len;
+	}
 
 	mode = blobmsg_get_u32(tb[BEACON_REQ_MODE]);
 	if (hwaddr_aton(blobmsg_data(tb[BEACON_REQ_ADDR]), addr))
@@ -1273,8 +1399,23 @@ hostapd_rrm_beacon_req(struct ubus_context *ctx, struct ubus_object *obj,
 	if (tb[BEACON_REQ_REPORTING_DETAIL])
 		reporting_detail = blobmsg_get_u32(tb[BEACON_REQ_REPORTING_DETAIL]);
 
+	/* 802.11-2024 9.4.2.19.7 names the elements of the Reported Frame Body
+	 * with a Request subelement only where Reporting Detail equals 1. */
+	if (reporting_detail == 1 && tb[BEACON_REQ_ELEMENT_LIST])
+		blobmsg_for_each_attr(elem, tb[BEACON_REQ_ELEMENT_LIST], rem)
+			n_elements++;
+	if (n_elements > 255)
+		return UBUS_STATUS_INVALID_ARGUMENT;
+	if (n_elements)
+		buf_len += 2 + n_elements;
+
 	if (reporting_detail >= 0 && reporting_detail < 3)
 		buf_len += 3;
+
+	/* hostapd_send_beacon_req() puts 3 + this length into the one octet
+	 * Length of the Measurement Request element. */
+	if (buf_len > 252)
+		return UBUS_STATUS_INVALID_ARGUMENT;
 
 	req = wpabuf_alloc(buf_len);
 	if (!req)
@@ -1311,6 +1452,17 @@ hostapd_rrm_beacon_req(struct ubus_context *ctx, struct ubus_object *obj,
 		wpabuf_put_u8(req, 1);
 		wpabuf_put_u8(req, reporting_detail);
 	}
+
+	if (n_elements) {
+		wpabuf_put_u8(req, WLAN_BEACON_REQUEST_SUBELEM_REQUEST);
+		wpabuf_put_u8(req, n_elements);
+		blobmsg_for_each_attr(elem, tb[BEACON_REQ_ELEMENT_LIST], rem)
+			wpabuf_put_u8(req, blobmsg_cast_u64(elem));
+	}
+
+	if (tb[BEACON_REQ_CHANNEL_REPORTS])
+		hostapd_rrm_beacon_req_channel_reports(req,
+					tb[BEACON_REQ_CHANNEL_REPORTS]);
 
 	ret = hostapd_send_beacon_req(hapd, addr, 0, req);
 	wpabuf_free(req);
@@ -1801,6 +1953,7 @@ static const struct ubus_method bss_methods[] = {
 #endif
 	UBUS_METHOD("set_vendor_elements", hostapd_vendor_elements, ve_policy),
 	UBUS_METHOD("notify_response", hostapd_notify_response, notify_policy),
+	UBUS_METHOD("bss_transition_query_answer", hostapd_bss_transition_query_answer, btq_policy),
 	UBUS_METHOD("bss_mgmt_enable", hostapd_bss_mgmt_enable, bss_mgmt_enable_policy),
 	UBUS_METHOD_NOARG("rrm_nr_get_own", hostapd_rrm_nr_get_own),
 	UBUS_METHOD_NOARG("rrm_nr_list", hostapd_rrm_nr_list),
@@ -1926,6 +2079,7 @@ void hostapd_ubus_add_bss(struct hostapd_data *hapd)
 		obj->type = &bss_object_type;
 		obj->methods = bss_object_type.methods;
 		obj->n_methods = bss_object_type.n_methods;
+		obj->subscribe_cb = hostapd_bss_subscribe_cb;
 	}
 	ret = ubus_add_object(ctx, obj);
 	hostapd_ubus_ref_inc();
@@ -2286,6 +2440,13 @@ int hostapd_ubus_notify_bss_transition_query(
 	blobmsg_add_u32(&b, "dialog-token", dialog_token);
 	blobmsg_add_u32(&b, "reason", reason);
 	hostapd_ubus_notify_bss_transition_add_candidate_list(candidate_list, candidate_list_len);
+
+	/* On an AP MLD the subscribed object may be another link's, and the
+	 * subscriber set the flag through that object. */
+	if (get_hapd_from_object(obj)->ubus.answer_bss_transition_query) {
+		ubus_notify(ctx, obj, "bss-transition-query", b.head, -1);
+		return 1;
+	}
 
 	if (!hapd->ubus.notify_response) {
 		ubus_notify(ctx, obj, "bss-transition-query", b.head, -1);
