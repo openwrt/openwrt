@@ -791,6 +791,7 @@ static int rtpcs_sds_select_attachment(enum rtpcs_sds_mode hw_mode,
 	case RTPCS_SDS_MODE_OFF:
 		*attachment = RTPCS_SDS_ATTACH_NONE;
 		break;
+	case RTPCS_SDS_MODE_100BASEX:
 	case RTPCS_SDS_MODE_1000BASEX:
 	case RTPCS_SDS_MODE_2500BASEX:
 	case RTPCS_SDS_MODE_10GBASER:
@@ -875,6 +876,7 @@ static void rtpcs_generic_sds_restart_autoneg(struct rtpcs_serdes *sds)
 static int rtpcs_sds_select_pll_speed(enum rtpcs_sds_mode hw_mode, enum rtpcs_sds_pll_speed *speed)
 {
 	switch (hw_mode) {
+	case RTPCS_SDS_MODE_100BASEX:
 	case RTPCS_SDS_MODE_1000BASEX:
 	case RTPCS_SDS_MODE_SGMII:
 	case RTPCS_SDS_MODE_QSGMII:
