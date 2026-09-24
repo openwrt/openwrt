@@ -4335,7 +4335,8 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 	enum rtpcs_sds_attachment attachment;
 	enum rtpcs_sds_usxgmii_submode submode;
 	enum rtpcs_sds_mode hw_mode;
-	int ret;
+	bool mode_changed;
+	int changed, ret;
 
 	ret = rtpcs_sds_select_hw_mode(sds, interface, &hw_mode, &submode);
 	if (ret < 0) {
@@ -4345,7 +4346,8 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 	}
 
 	scoped_guard(mutex, &ctrl->lock) {
-		if (sds->hw_mode != hw_mode || sds->usxgmii_submode != submode) {
+		mode_changed = sds->hw_mode != hw_mode || sds->usxgmii_submode != submode;
+		if (mode_changed) {
 			ret = rtpcs_sds_config_polarity(sds, interface);
 			if (ret < 0) {
 				dev_err(ctrl->dev, "failed to configure polarity of SerDes %u\n",
@@ -4383,7 +4385,16 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 			ret = sds->ops->activate(sds);
 			if (ret < 0)
 				return ret;
+		} else {
+			dev_dbg(ctrl->dev, "SerDes %u already in mode %s, no change\n",
+				sds->id, phy_modes(interface));
+		}
 
+		changed = sds->ops->set_autoneg(sds, neg_mode, advertising);
+		if (changed < 0)
+			return changed;
+
+		if (mode_changed) {
 			if (sds->ops->post_config) {
 				ret = sds->ops->post_config(sds, hw_mode);
 				if (ret < 0)
@@ -4394,14 +4405,10 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 
 			dev_info(ctrl->dev, "SerDes %u configured for %s mode\n",
 				 sds->id, phy_modes(interface));
-		} else
-			dev_dbg(ctrl->dev, "SerDes %u already in mode %s, no change\n",
-				 sds->id, phy_modes(interface));
-
-		ret = sds->ops->set_autoneg(sds, neg_mode, advertising);
+		}
 	}
 
-	return ret;
+	return changed;
 }
 
 static void rtpcs_mdio_bus_put(void *data)
