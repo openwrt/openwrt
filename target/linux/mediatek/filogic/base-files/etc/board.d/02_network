@@ -64,6 +64,7 @@ mediatek_setup_interfaces()
 	globitel,bt-r320|\
 	huasifei,wh3000r-nand|\
 	jcg,q30-pro|\
+	jiorouter,ax3000-jidu6700|\
 	keenetic,kn-3711|\
 	keenetic,kn-3811|\
 	livinet,li320|\
@@ -311,6 +312,9 @@ mediatek_setup_macs()
 		lan_mac=$(macaddr_generate_from_mmc_cid mmcblk0)
 		wan_mac=$(macaddr_add "$lan_mac" 1)
 		label_mac=$wan_mac
+		;;
+	jiorouter,ax3000-jidu6700)
+		label_mac=$(mtd_get_mac_binary "MFG" 0x0)
 		;;
 	jiorouter,ax6000-jidu6101)
 		label_mac=$(mtd_get_mac_ascii u-boot-env mac)

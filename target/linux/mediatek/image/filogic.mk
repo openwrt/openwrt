@@ -2315,6 +2315,21 @@ define Device/jdcloud_re-cp-03
 endef
 TARGET_DEVICES += jdcloud_re-cp-03
 
+define Device/jiorouter_ax3000-jidu6700
+  DEVICE_VENDOR := JioRouter
+  DEVICE_MODEL := AX3000
+  DEVICE_VARIANT := JIDU6700
+  DEVICE_DTS := mt7981b-jiorouter-ax3000-jidu6700
+  DEVICE_DTS_DIR := ../dts
+  UBINIZE_OPTS := -E 5
+  UBOOTENV_IN_UBI := 1
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  DEVICE_PACKAGES := kmod-usb3 kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += jiorouter_ax3000-jidu6700
+
 define Device/jiorouter_ax6000-jidu6101
   DEVICE_VENDOR := JioRouter
   DEVICE_MODEL := AX6000
