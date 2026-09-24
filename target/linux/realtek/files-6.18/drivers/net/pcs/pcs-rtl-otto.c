@@ -2002,11 +2002,12 @@ static int rtpcs_930x_sds_op_xsg_write(struct rtpcs_serdes *sds, enum rtpcs_page
 	if ((sds->id != 2 && sds->id != 3) || page >= PAGE_TGR_STD_0)
 		return -ENOTSUPP;
 
-	ret = rtpcs_930x_sds_op_write(sds, page, regnum, bithigh, bitlow, value);
+	phys_sds_id = rtpcs_930x_sds_get_phys_sds_id(sds->id, page);
+	ret = __rtpcs_sds_write_raw(sds->ctrl, phys_sds_id, page, regnum, bithigh, bitlow,
+				    value);
 	if (ret)
 		return ret;
 
-	phys_sds_id = rtpcs_930x_sds_get_phys_sds_id(sds->id, page);
 	return __rtpcs_sds_write_raw(sds->ctrl, phys_sds_id + 1, page, regnum, bithigh, bitlow,
 				     value);
 }
