@@ -648,7 +648,7 @@ define Device/zyxel_nwa110ax
 	DEVICE_MODEL := NWA110AX
 	DEVICE_DTS_CONFIG := config@ac01
 	SOC := ipq8070
-	DEVICE_PACKAGES := ipq-wifi-zyxel_nwa110ax zyxel-bootconfig-ipq807x kmod-leds-lp5562
+	DEVICE_PACKAGES := ipq-wifi-zyxel_nwa110ax zyxel-bootconfig-ipq807x-ipq40xx kmod-leds-lp5562
 	ZYXEL_MODEL_ID := 59 e1
 endef
 TARGET_DEVICES += zyxel_nwa110ax
@@ -658,7 +658,7 @@ define Device/zyxel_nwa210ax
 	DEVICE_MODEL := NWA210AX
 	DEVICE_DTS_CONFIG := config@ac02
 	SOC := ipq8071
-	DEVICE_PACKAGES := ipq-wifi-zyxel_nwa210ax zyxel-bootconfig-ipq807x kmod-leds-lp5562
+	DEVICE_PACKAGES := ipq-wifi-zyxel_nwa210ax zyxel-bootconfig-ipq807x-ipq40xx kmod-leds-lp5562
 	ZYXEL_MODEL_ID := 5c e1
 endef
 TARGET_DEVICES += zyxel_nwa210ax

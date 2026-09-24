@@ -4,8 +4,8 @@ apply_bootconfig() {
 	case $(board_name) in
 	zyxel,nwa110ax|\
 	zyxel,nwa210ax)
-		status="$(zyxel-bootconfig-ipq807x show | awk '/image0:/ {print $2}')"
-		[ "$status" != "selected" ] && zyxel-bootconfig-ipq807x --force set image0
+		status="$(zyxel-bootconfig-ipq807x-ipq40xx show | awk '/image0:/ {print $2}')"
+		[ "$status" != "selected" ] && zyxel-bootconfig-ipq807x-ipq40xx --force set image0
 		;;
 	esac
 }
