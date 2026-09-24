@@ -194,6 +194,33 @@ New Maping:
 	};
 };
 
+&pcm0 {
+	/delete-property/ pinctrl-names;
+	/delete-property/ pinctrl-0;
+
+	airoha,dma-channel-mask = <0x01>;
+	airoha,pcm-swap-samples;
+	status = "okay";
+};
+
+&isi0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcm_spi_pins>;
+
+	status = "okay";
+
+	proslic@0 {
+		compatible = "silabs,si32192";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+		spi-cpol;
+		spi-cpha;
+
+		airoha,pcm = <&pcm0>;
+		airoha,pcm-channel = <0>;
+	};
+};
+
 &usb0 {
 	status = "okay";
 };
