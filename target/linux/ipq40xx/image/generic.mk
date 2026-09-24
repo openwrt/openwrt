@@ -4,10 +4,20 @@ DEVICE_VARS += RAS_BOARD RAS_ROOTFS_SIZE RAS_VERSION
 DEVICE_VARS += WRGG_DEVNAME WRGG_SIGNATURE
 DEVICE_VARS += SUPPORTED_TELTONIKA_DEVICES
 DEVICE_VARS += SUPPORTED_TELTONIKA_HW_MODS
+DEVICE_VARS += ZYXEL_MODEL_ID
 
 define Build/netgear-fit-padding
 	./netgear-fit-padding.py $@ $@.new
 	mv $@.new $@
+endef
+
+# Wrap the image in the outer FIT the stock firmware checks against the
+# device model ID before accepting it as a factory image.
+define Build/zyxel-ipq40xx-fit
+	$(TOPDIR)/scripts/mkits-zyxel-fit-filogic.sh \
+		$@.its $@ "$(ZYXEL_MODEL_ID) ff ff ff ff ff ff ff ff"
+	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $@.its $@.new
+	@mv $@.new $@
 endef
 
 define Device/FitImage
@@ -1481,6 +1491,34 @@ define Device/zyxel_nbg6617
 	DEVICE_PACKAGES := kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += zyxel_nbg6617
+
+define Device/zyxel_wac500_common
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Zyxel
+	SOC := qcom-ipq4018
+	DEVICE_DTS_CONFIG := config@ap.dk01.1-c2
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	IMAGE_SIZE := 53248k
+	IMAGES += factory.bin
+	IMAGE/factory.bin := append-ubi | check-size $$$$(IMAGE_SIZE) | zyxel-ipq40xx-fit
+	DEVICE_PACKAGES := uboot-envtools zyxel-bootconfig-ipq807x-ipq40xx
+endef
+
+define Device/zyxel_nwa1123acv3
+	$(call Device/zyxel_wac500_common)
+	DEVICE_MODEL := NWA1123ACv3
+	ZYXEL_MODEL_ID := 62 e1
+endef
+TARGET_DEVICES += zyxel_nwa1123acv3
+
+define Device/zyxel_wac500
+	$(call Device/zyxel_wac500_common)
+	DEVICE_MODEL := WAC500
+	ZYXEL_MODEL_ID := 63 e1
+endef
+TARGET_DEVICES += zyxel_wac500
 
 define Device/zyxel_wre6606
 	$(call Device/FitImage)
