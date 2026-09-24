@@ -2014,10 +2014,19 @@ static int rtpcs_930x_sds_op_xsg_write(struct rtpcs_serdes *sds, enum rtpcs_page
 static void rtpcs_930x_sds_rx_reset(struct rtpcs_serdes *sds,
 				    enum rtpcs_sds_mode hw_mode)
 {
-	enum rtpcs_page page = PAGE_ANA_10G; /* 10GR and USXGMII */
+	enum rtpcs_page page;
 
-	if (hw_mode == RTPCS_SDS_MODE_1000BASEX)
-		page = PAGE_ANA_1G2;
+	switch (hw_mode) {
+	case RTPCS_SDS_MODE_1000BASEX:
+	case RTPCS_SDS_MODE_XSGMII:
+	case RTPCS_SDS_MODE_USXGMII:
+	case RTPCS_SDS_MODE_10GBASER:
+		break;
+	default:
+		return;
+	}
+
+	page = rtpcs_93xx_sds_get_cmu_page(hw_mode);
 
 	rtpcs_sds_write_mask(sds, page, ANA_SPD_REG21, RTL930X_RX_EN_SELF,
 			     RTL930X_RX_EN_SELF);
