@@ -73,7 +73,15 @@ This patch makes it possible to set a custom image magic.
  		params.cmdname);
 --- a/tools/mkimage.c
 +++ b/tools/mkimage.c
-@@ -26,6 +26,7 @@ static struct image_tool_params params =
+@@ -13,6 +13,7 @@
+ #include <fit_common.h>
+ #include <getopt.h>
+ #include <image.h>
++#include <stdint.h>
+ #include <version.h>
+ #ifdef __linux__
+ #include <sys/ioctl.h>
+@@ -26,6 +27,7 @@ static struct image_tool_params params = {
  	.arch = IH_ARCH_PPC,
  	.type = IH_TYPE_KERNEL,
  	.comp = IH_COMP_GZIP,
@@ -81,7 +89,7 @@ This patch makes it possible to set a custom image magic.
  	.dtc = MKIMAGE_DEFAULT_DTC_OPTIONS,
  	.imagename = "",
  	.imagename2 = "",
-@@ -89,11 +90,12 @@ static void usage(const char *msg)
+@@ -89,11 +91,12 @@ static void usage(const char *msg)
  			 "          -q ==> quiet\n",
  		params.cmdname);
  	fprintf(stderr,
@@ -95,7 +103,7 @@ This patch makes it possible to set a custom image magic.
  		"          -a ==> set load address to 'addr' (hex)\n"
  		"          -e ==> set entry point to 'ep' (hex)\n"
  		"          -n ==> set image name to 'name'\n"
-@@ -164,7 +166,7 @@ static int add_content(int type, const c
+@@ -164,7 +167,7 @@ static int add_content(int type, const char *fname)
  }
  
  static const char optstring[] =
@@ -104,17 +112,26 @@ This patch makes it possible to set a custom image magic.
  
  static const struct option longopts[] = {
  	{ "load-address", required_argument, NULL, 'a' },
-@@ -312,6 +314,14 @@ static void process_args(int argc, char
+@@ -210,6 +213,7 @@ static const struct option longopts[] = {
+ static void process_args(int argc, char **argv)
+ {
+ 	char *ptr;
++	unsigned long long magic;
+ 	int type = IH_TYPE_INVALID;
+ 	char *datafile = NULL;
+ 	int opt;
+@@ -312,6 +316,15 @@ static void process_args(int argc, char **argv)
  		case 'l':
  			params.lflag = 1;
  			break;
 +		case 'M':
-+			params.magic = strtoull(optarg, &ptr, 16);
-+			if (*ptr) {
-+				fprintf(stderr,	"%s: invalid magic %s\n",
++			magic = strtoull(optarg, &ptr, 16);
++			if (*ptr || magic > UINT32_MAX) {
++				fprintf(stderr, "%s: invalid magic %s\n",
 +					params.cmdname, optarg);
 +				exit(EXIT_FAILURE);
 +			}
++			params.magic = magic;
 +			break;
  		case 'n':
  			params.imagename = optarg;
