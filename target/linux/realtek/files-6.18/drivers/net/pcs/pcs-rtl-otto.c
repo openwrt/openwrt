@@ -844,12 +844,16 @@ static int rtpcs_generic_sds_set_autoneg(struct rtpcs_serdes *sds, unsigned int 
 	}
 
 	bmcr = neg_mode == PHYLINK_PCS_NEG_INBAND_ENABLED ? BMCR_ANENABLE : 0;
+	if (sds->hw_mode == RTPCS_SDS_MODE_100BASEX)
+		bmcr = 0;
 
 	ret = rtpcs_sds_write_mask(sds, phy_page, MII_BMCR, BMCR_ANENABLE, bmcr);
 	if (ret < 0)
 		return ret;
 
-	if (sds->hw_mode == RTPCS_SDS_MODE_1000BASEX && !bmcr)
+	if (sds->hw_mode == RTPCS_SDS_MODE_100BASEX)
+		speed = BMCR_SPEED100;
+	else if (sds->hw_mode == RTPCS_SDS_MODE_1000BASEX && !bmcr)
 		speed = BMCR_SPEED1000;
 	else
 		return changed;
