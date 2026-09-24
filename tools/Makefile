@@ -135,7 +135,10 @@ $(curdir)/yafut/compile := $(curdir)/cmake/compile
 
 ifneq ($(HOST_OS),Linux)
   $(curdir)/coreutils/compile += $(curdir)/automake/compile $(curdir)/bison/compile $(curdir)/gnulib/compile
+  $(curdir)/elfutils/compile += $(curdir)/coreutils/compile
+  $(curdir)/findutils/compile += $(curdir)/coreutils/compile
   $(curdir)/squashfs4/compile += $(curdir)/coreutils/compile
+  $(curdir)/util-linux/compile += $(curdir)/coreutils/compile
   tools-y += coreutils
 endif
 ifeq ($(HOST_OS),Darwin)
