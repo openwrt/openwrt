@@ -82,6 +82,7 @@
 
 #define RTPCS_93XX_SDS_MODE_SGMII		0x02
 #define RTPCS_93XX_SDS_MODE_1000BASEX		0x04
+#define RTPCS_93XX_SDS_MODE_100BASEX		0x05
 #define RTPCS_93XX_SDS_MODE_QSGMII		0x06
 #define RTPCS_93XX_SDS_MODE_USXGMII		0x0d
 #define RTPCS_93XX_SDS_MODE_XSGMII		0x10
@@ -1452,6 +1453,7 @@ static const s16 rtpcs_93xx_sds_hw_mode_vals[RTPCS_SDS_MODE_MAX] = {
 	[0 ... RTPCS_SDS_MODE_MAX - 1]		= -1,
 	[RTPCS_SDS_MODE_OFF]			= RTPCS_93XX_SDS_MODE_OFF,
 	[RTPCS_SDS_MODE_SGMII]			= RTPCS_93XX_SDS_MODE_SGMII,
+	[RTPCS_SDS_MODE_100BASEX]		= RTPCS_93XX_SDS_MODE_100BASEX,
 	[RTPCS_SDS_MODE_1000BASEX]		= RTPCS_93XX_SDS_MODE_1000BASEX,
 	[RTPCS_SDS_MODE_2500BASEX]		= RTPCS_93XX_SDS_MODE_2500BASEX,
 	[RTPCS_SDS_MODE_10GBASER]		= RTPCS_93XX_SDS_MODE_10GBASER,
@@ -1866,6 +1868,7 @@ static void rtpcs_93xx_sds_fill_caps(struct rtpcs_serdes *sds)
 		__set_bit(RTPCS_SDS_MODE_XSGMII, sds->supported_modes);
 		__set_bit(RTPCS_SDS_MODE_USXGMII, sds->supported_modes);
 
+		__set_bit(RTPCS_SDS_MODE_100BASEX, sds->supported_modes);
 		__set_bit(RTPCS_SDS_MODE_1000BASEX, sds->supported_modes);
 		__set_bit(RTPCS_SDS_MODE_2500BASEX, sds->supported_modes);
 		__set_bit(RTPCS_SDS_MODE_10GBASER, sds->supported_modes);
@@ -1880,6 +1883,7 @@ static int rtpcs_93xx_sds_get_cmu_page(enum rtpcs_sds_mode hw_mode)
 {
 	switch (hw_mode) {
 	case RTPCS_SDS_MODE_SGMII:
+	case RTPCS_SDS_MODE_100BASEX:
 	case RTPCS_SDS_MODE_1000BASEX:
 		return PAGE_ANA_1G2;
 	case RTPCS_SDS_MODE_2500BASEX:
