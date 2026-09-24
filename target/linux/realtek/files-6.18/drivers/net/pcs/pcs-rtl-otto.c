@@ -2157,6 +2157,7 @@ static int rtpcs_930x_sds_set_mode(struct rtpcs_serdes *sds, enum rtpcs_sds_mode
 
 	switch (hw_mode) {
 	case RTPCS_SDS_MODE_SGMII:
+	case RTPCS_SDS_MODE_100BASEX:
 	case RTPCS_SDS_MODE_1000BASEX:
 	case RTPCS_SDS_MODE_2500BASEX:
 	case RTPCS_SDS_MODE_10GBASER:
@@ -3089,6 +3090,7 @@ static int rtpcs_930x_sds_config_hw_mode(struct rtpcs_serdes *sds, enum rtpcs_sd
 		return ret;
 
 	switch (hw_mode) {
+	case RTPCS_SDS_MODE_100BASEX:
 	case RTPCS_SDS_MODE_1000BASEX:
 	case RTPCS_SDS_MODE_SGMII:
 		ret = rtpcs_sds_apply_config(sds, rtpcs_930x_sds_cfg_ana_1g,
