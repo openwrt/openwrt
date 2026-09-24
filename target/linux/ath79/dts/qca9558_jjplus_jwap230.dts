@@ -108,9 +108,9 @@
 &mdio0 {
 	status = "okay";
 
-	ethernet-switch@10 {
+	phy0: ethernet-phy@0 {
 		compatible = "qca,ar8327";
-		reg = <0x10>;
+		reg = <0>;
 
 		qca,ar8327-initvals = <
 			0x04 0x07600000 /* PORT0 PAD MODE CTRL */
@@ -126,15 +126,13 @@
 &eth0 {
 	status = "okay";
 
+	phy-handle = <&phy0>;
+	phy-mode = "rgmii";
+
 	nvmem-cells = <&macaddr_art_wan>;
 	nvmem-cell-names = "mac-address";
 
 	pll-data = <0xae000000 0x80000101 0x80001313>;
-
-	fixed-link {
-		speed = <1000>;
-		full-duplex;
-	};
 
 	gmac_config: gmac-config {
 		device = <&gmac>;

@@ -166,9 +166,9 @@
 &mdio0 {
 	status = "okay";
 
-	ethernet-switch@10 {
+	phy0: ethernet-phy@0 {
 		compatible = "qca,ar8327";
-		reg = <0x10>;
+		reg = <0>;
 
 		qca,ar8327-initvals = <
 			0x04 0x07c00000 /* PORT0 PAD MODE CTRL: Mac0_rgmii_en | Mac0_rgmii_txclk_delay_en | Mac0_rgmii_rxclk_delay_en | Mac0_rgmii_txclk_delay_sel3 | Mac0_rgmii_rxclk_delay_sel0 */
@@ -288,15 +288,11 @@
 	/* default for ar934x, except for 1000M */
 	pll-data = <0x6f000000 0x00000101 0x00001616>;
 
+	phy-handle = <&phy0>;
 	phy-mode = "rgmii";
 
 	nvmem-cells = <&macaddr_hardconfig_10 0>;
 	nvmem-cell-names = "mac-address";
-
-	fixed-link {
-		speed = <1000>;
-		full-duplex;
-	};
 
 	gmac-config {
 		device = <&gmac>;

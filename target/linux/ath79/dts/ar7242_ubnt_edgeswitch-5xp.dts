@@ -44,9 +44,9 @@
 &mdio0 {
 	status = "okay";
 
-	phy0: ethernet-switch@10 {
+	phy0: ethernet-phy@0 {
 		compatible = "qca,ar8327";
-		reg = <0x10>;
+		reg = <0>;
 
 		qca,ar8327-initvals = <
 			0x04 0x05100000 /* PORT0 PAD MODE CTRL */
@@ -69,9 +69,4 @@
 
 	nvmem-cells = <&macaddr_art_0>;
 	nvmem-cell-names = "mac-address";
-
-	fixed-link {
-		speed = <1000>;
-		full-duplex;
-	};
 };
