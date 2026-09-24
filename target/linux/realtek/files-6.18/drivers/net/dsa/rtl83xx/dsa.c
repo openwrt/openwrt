@@ -213,6 +213,8 @@ static void rtldsa_phylink_get_caps(struct dsa_switch *ds, int port,
 
 	/* TODO: This needs to take into account the MAC to SERDES mapping */
 	config->mac_capabilities = caps;
+	if (caps & MAC_100)
+		__set_bit(PHY_INTERFACE_MODE_100BASEX, config->supported_interfaces);
 	if (caps & MAC_1000FD) {
 		__set_bit(PHY_INTERFACE_MODE_1000BASEX, config->supported_interfaces);
 		__set_bit(PHY_INTERFACE_MODE_SGMII, config->supported_interfaces);
