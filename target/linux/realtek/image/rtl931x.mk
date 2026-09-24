@@ -24,6 +24,18 @@ define Device/hasivo_s1300wp-8xgt-4s-plus
 endef
 TARGET_DEVICES += hasivo_s1300wp-8xgt-4s-plus
 
+define Device/hasivo_s5800w-24gt-6s-plus
+  SOC := rtl9313
+  UIMAGE_MAGIC := 0x93000000
+  DEVICE_VENDOR := Hasivo
+  DEVICE_MODEL := S5800W-24GT-6S+
+  IMAGE_SIZE := 14848k
+  $(Device/kernel-lzma)
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | append-rootfs | pad-rootfs | check-size
+endef
+TARGET_DEVICES += hasivo_s5800w-24gt-6s-plus
+
 define Device/horaco_zx-swtgw2c48ns
   SOC := rtl9313
   DEVICE_VENDOR := Horaco
