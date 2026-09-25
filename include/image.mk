@@ -15,6 +15,14 @@ ifndef IB
   endif
 endif
 
+ifeq ($(CONFIG_TARGET_IMAGES_PIGZ),y)
+  $(eval $(call SetupHostCommand,pigz,Please install 'pigz', \
+    pigz --version 2>&1 | grep pigz))
+  GZIPCMD:=pigz
+else
+  GZIPCMD:=gzip
+endif
+
 include $(INCLUDE_DIR)/feeds.mk
 include $(INCLUDE_DIR)/rootfs.mk
 
@@ -188,7 +196,7 @@ endef
 ifdef CONFIG_TARGET_IMAGES_GZIP
   define Image/Gzip
 	rm -f $(1).gz
-	gzip -9n $(1)
+	$(GZIPCMD) -9n $(1)
   endef
 endif
 
@@ -378,7 +386,7 @@ ifdef CONFIG_TARGET_ROOTFS_TARGZ
   define Image/Build/targz
 	$(TAR) -cp --numeric-owner --owner=0 --group=0 --mode=a-s --sort=name \
 		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") \
-		-C $(TARGET_DIR)/ . | gzip -9n > $(BIN_DIR)/$(IMG_PREFIX)$(if $(PROFILE_SANITIZED),-$(PROFILE_SANITIZED))-rootfs.tar.gz
+		-C $(TARGET_DIR)/ . | $(GZIPCMD) -9n > $(BIN_DIR)/$(IMG_PREFIX)$(if $(PROFILE_SANITIZED),-$(PROFILE_SANITIZED))-rootfs.tar.gz
   endef
 endif
 endif
@@ -386,7 +394,7 @@ endif
 ifeq ($(filter-out cpiogz,$(ROOTFS_FILESYSTEM)),)
 ifdef CONFIG_TARGET_ROOTFS_CPIOGZ
   define Image/Build/cpiogz
-	( cd $(TARGET_DIR); find . | $(STAGING_DIR_HOST)/bin/cpio -o -H newc -R 0:0 | gzip -9n >$(BIN_DIR)/$(IMG_ROOTFS).cpio.gz )
+	( cd $(TARGET_DIR); find . | $(STAGING_DIR_HOST)/bin/cpio -o -H newc -R 0:0 | $(GZIPCMD) -9n >$(BIN_DIR)/$(IMG_ROOTFS).cpio.gz )
   endef
 endif
 endif
@@ -786,7 +794,7 @@ define Device/Build/image
   .IGNORE: $(BIN_DIR)/$(call DEVICE_IMG_NAME,$(1),$(2))
 
   $(BIN_DIR)/$(call DEVICE_IMG_NAME,$(1),$(2)).gz: $(KDIR)/tmp/$(call DEVICE_IMG_NAME,$(1),$(2))
-	gzip -c -9n $$^ > $$@
+	$(GZIPCMD) -c -9n $$^ > $$@
 
   $(BIN_DIR)/$(call DEVICE_IMG_NAME,$(1),$(2)): $(KDIR)/tmp/$(call DEVICE_IMG_NAME,$(1),$(2))
 	cp $$^ $$@
