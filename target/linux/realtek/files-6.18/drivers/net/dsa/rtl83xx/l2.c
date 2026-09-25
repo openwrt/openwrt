@@ -1471,11 +1471,14 @@ static void rtldsa_l2_dump_entry(struct seq_file *m, struct rtl838x_switch_priv 
 
 		seq_printf(m, "  port %d age %d", e->port, e->age);
 		if (e->is_trunk) {
-			seq_printf(m, "  trunk %d trunk_members: 0x%08llx non-primary: 0x%08llx primary-port: %d",
-				   e->trunk,
-				   priv->lags_port_members[e->trunk],
-				   priv->lag_non_primary,
-				   priv->lag_primary[e->trunk]);
+			if (e->trunk < ARRAY_SIZE(priv->lags_port_members))
+				seq_printf(m, "  trunk %d trunk_members: 0x%08llx non-primary: 0x%08llx primary-port: %d",
+					   e->trunk,
+					   priv->lags_port_members[e->trunk],
+					   priv->lag_non_primary,
+					   priv->lag_primary[e->trunk]);
+			else
+				seq_printf(m, "  trunk %d (out of range)", e->trunk);
 		}
 		if (e->is_static)
 			seq_puts(m, " static");
