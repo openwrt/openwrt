@@ -1,0 +1,868 @@
+From 1a80aa560ff0384804dda4124392443a4d3010f9 Mon Sep 17 00:00:00 2001
+From: Devon Openheim <devopenm@proton.me>
+Date: Tue, 18 Aug 2026 13:53:59 +0100
+Subject: [PATCH] clk: add ASR1802S clock controller driver
+
+Add the COMMON_CLK_ASR1802S driver (drivers/clk/mmp/clk-asr1802s.c)
+recovered by reverse-engineering the vendor Marvell 3.10.33 kernel
+that ships on Ooredoo R291 v2 / Notion R291 (ASR1802S, "KAGU")
+gateways, plus its DT bindings and dt-bindings header.
+
+The driver matches both "asr,asr1802s-clock" (used by the in-tree
+DTS) and the legacy "marvell,asr1802s-clock" string.
+
+Reference: https://github.com/devopnem/r291-asr1802s-findings
+Reference: https://github.com/devopnem/linux-asr1802s-rfc
+
+Signed-off-by: Devon Openheim <devopenm@proton.me>
+
+---
+
+--- /dev/null
++++ b/Documentation/devicetree/bindings/clock/asr,asr1802s-clock.yaml
+@@ -0,0 +1,95 @@
++# SPDX-License-Identifier: GPL-2.0-only OR BSD-2-Clause
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/clock/asr,asr1802s-clock.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: Marvell ASR1802S Clock Controller
++
++maintainers:
++  - Devon Openheim <devopenm@proton.me>
++
++description: |
++  The ASR1802S (PXA1826 family) clock controller programs the CPU PLL
++  mux and dividers (pclk, l2clk, pdclk, baclk, periphclk), the DDR clock
++  and the AXI clock.
++
++  The register layout and the frequency-change (GO/FC) sequence were
++  recovered by reverse-engineering the vendor kernel that ships on
++  Ooredoo R291 v2 / ASR 1826s ("KAGU") gateways, since no public hardware
++  manual exists.
++
++  Clock identifiers are defined in
++  <include/dt-bindings/clock/asr,asr1802s.h>.
++
++properties:
++  compatible:
++    enum:
++    - asr,asr1802s-clock
++    - marvell,asr1802s-clock
++
++  reg:
++    description:
++      Base and size of the clock controller register file.
++      The controller lives in the SoC "dmcu" (clock management unit)
++      at 0xc0100000 and spans 0x880 bytes.
++    maxItems: 1
++
++  reg-names:
++    description:
++      Logical name of the register window.
++    const: dmcu
++
++  '#clock-cells':
++    description:
++      The clock cell indexes the clock identifier in
++      marvell,asr1802s.h.  Consumers should use the symbolic
++      ASR1802S_CLK_* defines rather than hard-coded numbers.
++    const: 1
++
++  clocks:
++    description:
++      Optional external parent clocks (PLLs / references) if the
++      controller is fed by discrete sources.
++    maxItems: 1
++
++  clock-names:
++    maxItems: 1
++
++required:
++  - compatible
++  - reg
++  - '#clock-cells'
++
++additionalProperties: false
++
++examples:
++  - |
++    clocks {
++        #address-cells = <1>;
++        #size-cells = <1>;
++
++        clk_apb: clock-controller@c0100000 {
++            compatible = "asr,asr1802s-clock";
++            reg = <0xc0100000 0x880>;
++            reg-names = "dmcu";
++            #clock-cells = <1>;
++        };
++    };
++
++    // GPIO consumes the back-door (APB) clock domain:
++    gpio: gpio@d4019000 {
++        compatible = "marvell,mmp-gpio";
++        reg = <0xd4019000 0x1000>;
++        clocks = <&clk_apb ASR1802S_CLK_BACLK>;
++        gpio-controller;
++        #gpio-cells = <2>;
++    };
++//</devicetree>
++
++description-parsed-note: |
++  On the live Ooredoo R291 v2 (vendor 3.10.33) clk_summary reports the
++  boot frequencies as: cpu 1248 MHz (sel 6), ddr 533 MHz (idx 1, parent
++  dpll_1066), axi 312 MHz (sel 1, div 0).  After cpufreq/thermal governor
++  downclock the cpu shows 312 MHz (sel 1) -- the driver re-reads 0x110 on
++  every recalc so /sys/kernel/debug/clk/clk_summary reflects it.
+--- a/drivers/clk/Kconfig
++++ b/drivers/clk/Kconfig
+@@ -443,6 +443,16 @@ config COMMON_CLK_MMP2_AUDIO
+         help
+           This driver supports clocks for Audio subsystem on MMP2 SoC.
+ 
++config COMMON_CLK_ASR1802S
++	bool "Clock driver for ASR Microelectronics ASR1802S"
++	depends on ARCH_ASR || ARCH_MMP || COMPILE_TEST
++	depends on OF
++	default y if ARCH_ASR
++	help
++	  Support for the clock controller on the ASR Microelectronics
++	  ASR1802S (PXA1826 / Notion R291 "KAGU") SoC.  The register
++	  layout was recovered from the vendor kernel (no public manual).
++
+ config COMMON_CLK_BD718XX
+ 	tristate "Clock driver for 32K clk gates on ROHM PMICs"
+ 	depends on MFD_ROHM_BD718XX || MFD_ROHM_BD71828
+--- a/drivers/clk/mmp/Makefile
++++ b/drivers/clk/mmp/Makefile
+@@ -12,3 +12,4 @@ obj-$(CONFIG_COMMON_CLK_MMP2) += clk-of-
+ obj-$(CONFIG_COMMON_CLK_MMP2_AUDIO) += clk-audio.o
+ 
+ obj-y += clk-of-pxa1928.o
++obj-$(CONFIG_COMMON_CLK_ASR1802S) += clk-asr1802s.o
+--- /dev/null
++++ b/drivers/clk/mmp/clk-asr1802s.c
+@@ -0,0 +1,667 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * Marvell ASR1802S Clock Controller Driver
++ *
++ * The ASR1802S (PXA1826 family) clock controller programs the CPU PLL
++ * mux/dividers (pclk, l2clk, pdclk, baclk, periphclk), the DDR clock and
++ * the AXI clock.  The register layout and the switching sequence were
++ * recovered by disassembling the vendor kernel (no public documentation
++ * exists).  The driver mirrors the vendor firmware behaviour 1:1.
++ *
++ * Registers (relative to controller base, 0xc0100000):
++ *   0x0a0  CPU/DDR frequency-change busy flag, bit 1 (clear before switch)
++ *   0x0b0  DDR FCCR: divider field (dclk = 1066 MHz / (div + 2)),
++ *          bit 24 = GO
++ *   0x110  CPU FCCR: PLL select [0:2], l2div [3:5], pddiv [6:8],
++ *          baclkdiv [9:11], bit 12 = GO
++ *   0x15c  DDR OPP table index [0:3]
++ *   0x144  AXI FCCR: source select bit 0 (0 = 208 MHz, 1 = 312 MHz),
++ *          divider [1:3] (aclk = src / (div + 1)), bit 4 = GO
++ *   0x400  DDR OPP select (1 << idx)
++ *
++ * Switching sequence (as done by the vendor firmware):
++ *   1. clear 0x0a0 bit 1
++ *   2. write the FCCR value including the GO bit
++ *   3. wait until the completion bit gets set (fc_wait, ~1000 retries)
++ * Completion bits: the CPU switch completes on 0x0b0 bit 24, the DDR
++ * switch on 0x110 bit 12, the AXI switch on its own 0x144 bit 4.
++ */
++
++#include <linux/clk-provider.h>
++#include <linux/io.h>
++#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/platform_device.h>
++#include <linux/spinlock.h>
++
++#include <dt-bindings/clock/asr,asr1802s.h>
++
++#define ASR1802S_CPU_BUSY		0x0a0
++#define ASR1802S_DDR_FCCR		0x0b0
++#define ASR1802S_CPU_FCCR		0x110
++#define ASR1802S_AXI_FCCR		0x144
++#define ASR1802S_FCCR_EXT		0x15c
++#define ASR1802S_DDR_OPP_SEL		0x400
++
++#define ASR1802S_CPU_BUSY_BIT		BIT(1)
++#define ASR1802S_CPU_FCCR_GO		BIT(12)
++#define ASR1802S_DDR_FCCR_GO		BIT(24)
++#define ASR1802S_AXI_FCCR_GO		BIT(4)
++
++#define ASR1802S_CPU_SEL_SHIFT		0
++#define ASR1802S_CPU_SEL_WIDTH		3
++#define ASR1802S_L2DIV_SHIFT		3
++#define ASR1802S_PDDIV_SHIFT		6
++#define ASR1802S_BACLKDIV_SHIFT		9
++#define ASR1802S_DIV_WIDTH		3
++
++#define ASR1802S_AXI_SEL_SHIFT		0
++#define ASR1802S_AXI_DIV_SHIFT		1
++#define ASR1802S_AXI_DIV_WIDTH		3
++
++/* The DDR divider field position inside 0x0b0 was not fully recovered
++ * from the vendor binary (it lives in a static descriptor in .rodata).
++ * The firmware only ever writes 0 and 4; bits [0:7] are wide enough and
++ * keep the GO bit at 24.  TODO: confirm on hardware.
++ */
++#define ASR1802S_DDR_DIV_SHIFT		0
++#define ASR1802S_DDR_DIV_WIDTH		8
++
++#define ASR1802S_DDR_TBLIDX_SHIFT	0
++#define ASR1802S_DDR_TBLIDX_WIDTH	4
++
++#define ASR1802S_FC_RETRIES		1000
++
++struct asr1802s_clk_unit {
++	void __iomem *base;
++	spinlock_t lock;
++};
++
++/* ------------------------------------------------------------------ */
++/* frequency-change wait, mirrors fc_wait() in the vendor kernel       */
++/* ------------------------------------------------------------------ */
++
++static int asr1802s_fc_wait(void __iomem *base, u32 reg_off, u32 bit)
++{
++	int timeout = ASR1802S_FC_RETRIES;
++
++	while (timeout--) {
++		if (readl(base + reg_off) & bit)
++			return 0;
++	}
++
++	pr_err("asr1802s-clock: FC timeout on register %#x\n", reg_off);
++	return -EBUSY;
++}
++
++/* ------------------------------------------------------------------ */
++/* CPU clock (pclk PLL mux + l2/pd/baclk dividers in one FCCR)         */
++/* ------------------------------------------------------------------ */
++
++struct asr1802s_cpu_clk {
++	struct clk_hw hw;
++	struct asr1802s_clk_unit *unit;
++};
++
++/* rate, PLL select, l2div, pddiv, baclkdiv (from vendor boot table) */
++static const struct asr1802s_cpu_opp {
++	unsigned long rate;
++	u8 sel;
++	u8 l2div;
++	u8 pddiv;
++	u8 baclkdiv;
++} asr1802s_cpu_opps[] = {
++	{  312000000, 1, 0, 1, 1 },
++	{  416000000, 2, 0, 1, 1 },
++	{  624000000, 0, 0, 1, 2 },
++	{  832000000, 4, 0, 1, 3 },
++	{ 1248000000, 6, 0, 1, 3 },
++};
++
++/* PLL select value -> parent index (sels 3, 5, 7 are unused) */
++static const int asr1802s_cpu_sel_to_parent[] = { 0, 1, 2, -1, 3, -1, 4, -1 };
++
++static const char * const asr1802s_cpu_parents[] = {
++	"pll0", "pll1", "pll2", "pll4", "pll6",
++};
++
++#define to_cpu_clk(_hw)	container_of(_hw, struct asr1802s_cpu_clk, hw)
++
++static const struct asr1802s_cpu_opp *asr1802s_cpu_find_opp(unsigned long rate)
++{
++	int i;
++
++	for (i = 0; i < ARRAY_SIZE(asr1802s_cpu_opps); i++)
++		if (asr1802s_cpu_opps[i].rate == rate)
++			return &asr1802s_cpu_opps[i];
++
++	return NULL;
++}
++
++static u8 asr1802s_cpu_get_parent(struct clk_hw *hw)
++{
++	struct asr1802s_cpu_clk *clk = to_cpu_clk(hw);
++	u8 sel = readl(clk->unit->base + ASR1802S_CPU_FCCR) &
++			((1 << ASR1802S_CPU_SEL_WIDTH) - 1);
++
++	return asr1802s_cpu_sel_to_parent[sel] >= 0 ?
++		asr1802s_cpu_sel_to_parent[sel] : 0;
++}
++
++/*
++ * recalc reads the live PLL select from the FCCR so that a cpufreq /
++ * thermal downclock (which rewrites 0x110) is reflected by clk_summary,
++ * matching the vendor (which stores cur_cpu_op on every switch).
++ */
++static unsigned long asr1802s_cpu_recalc_rate(struct clk_hw *hw,
++					      unsigned long parent_rate)
++{
++	struct asr1802s_cpu_clk *clk = to_cpu_clk(hw);
++	u32 fccr = readl(clk->unit->base + ASR1802S_CPU_FCCR);
++	u8 sel = fccr & ((1 << ASR1802S_CPU_SEL_WIDTH) - 1);
++	int i;
++
++	for (i = 0; i < ARRAY_SIZE(asr1802s_cpu_opps); i++)
++		if (asr1802s_cpu_opps[i].sel == sel)
++			return asr1802s_cpu_opps[i].rate;
++
++	return parent_rate;
++}
++
++static int asr1802s_cpu_set_rate(struct clk_hw *hw, unsigned long rate,
++				 unsigned long parent_rate)
++{
++	struct asr1802s_cpu_clk *clk = to_cpu_clk(hw);
++	void __iomem *base = clk->unit->base;
++	const struct asr1802s_cpu_opp *opp = asr1802s_cpu_find_opp(rate);
++	unsigned long flags;
++	u32 val;
++	int ret;
++
++	if (!opp)
++		return -EINVAL;
++
++	spin_lock_irqsave(&clk->unit->lock, flags);
++
++	/* clear the busy flag before a frequency change */
++	val = readl(base + ASR1802S_CPU_BUSY);
++	if (val & ASR1802S_CPU_BUSY_BIT) {
++		val &= ~ASR1802S_CPU_BUSY_BIT;
++		writel(val, base + ASR1802S_CPU_BUSY);
++	}
++
++	/* program PLL select, dividers and the GO bit in one write */
++	val = readl(base + ASR1802S_CPU_FCCR);
++	val &= ~(0x7 << ASR1802S_CPU_SEL_SHIFT);
++	val &= ~(0x7 << ASR1802S_L2DIV_SHIFT);
++	val &= ~(0x7 << ASR1802S_PDDIV_SHIFT);
++	val &= ~(0x7 << ASR1802S_BACLKDIV_SHIFT);
++	val |= opp->sel << ASR1802S_CPU_SEL_SHIFT;
++	val |= opp->l2div << ASR1802S_L2DIV_SHIFT;
++	val |= opp->pddiv << ASR1802S_PDDIV_SHIFT;
++	val |= opp->baclkdiv << ASR1802S_BACLKDIV_SHIFT;
++	val |= ASR1802S_CPU_FCCR_GO;
++	writel(val, base + ASR1802S_CPU_FCCR);
++
++	/* completion is signalled on the DDR FCCR GO bit (vendor quirk) */
++	ret = asr1802s_fc_wait(base, ASR1802S_DDR_FCCR, ASR1802S_DDR_FCCR_GO);
++
++	spin_unlock_irqrestore(&clk->unit->lock, flags);
++
++	return ret;
++}
++
++static long asr1802s_cpu_round_rate(struct clk_hw *hw, unsigned long rate,
++				    unsigned long *parent_rate)
++{
++	int i;
++
++	for (i = 0; i < ARRAY_SIZE(asr1802s_cpu_opps); i++)
++		if (rate <= asr1802s_cpu_opps[i].rate)
++			return asr1802s_cpu_opps[i].rate;
++
++	return asr1802s_cpu_opps[ARRAY_SIZE(asr1802s_cpu_opps) - 1].rate;
++}
++
++static const struct clk_ops asr1802s_cpu_ops = {
++	.get_parent = asr1802s_cpu_get_parent,
++	.recalc_rate = asr1802s_cpu_recalc_rate,
++	.round_rate = asr1802s_cpu_round_rate,
++	.set_rate = asr1802s_cpu_set_rate,
++};
++
++/* ------------------------------------------------------------------ */
++/* CPU sub-clock dividers (l2clk, pdclk, baclk) — recalc only, they    */
++/* are programmed together with the CPU FCCR                          */
++/* ------------------------------------------------------------------ */
++
++struct asr1802s_div_clk {
++	struct clk_hw hw;
++	struct asr1802s_clk_unit *unit;
++	u32 reg_off;
++	u8 shift;
++	u8 width;
++};
++
++#define to_div_clk(_hw)	container_of(_hw, struct asr1802s_div_clk, hw)
++
++static unsigned long asr1802s_div_recalc_rate(struct clk_hw *hw,
++					      unsigned long parent_rate)
++{
++	struct asr1802s_div_clk *clk = to_div_clk(hw);
++	u32 val = readl(clk->unit->base + clk->reg_off);
++	u32 div = ((val >> clk->shift) & ((1 << clk->width) - 1)) + 1;
++
++	return DIV_ROUND_UP(parent_rate, div);
++}
++
++static const struct clk_ops asr1802s_div_ops = {
++	.recalc_rate = asr1802s_div_recalc_rate,
++};
++
++/* ------------------------------------------------------------------ */
++/* DDR clock                                                           */
++/* ------------------------------------------------------------------ */
++
++struct asr1802s_ddr_clk {
++	struct clk_hw hw;
++	struct asr1802s_clk_unit *unit;
++};
++
++/* rate, 0x0b0 divider field, OPP table index (from vendor boot table) */
++static const struct asr1802s_ddr_opp {
++	unsigned long rate;
++	u8 div;
++	u8 idx;
++} asr1802s_ddr_opps[] = {
++	{ 266000000, 4, 0 },
++	{ 533000000, 0, 1 },
++};
++
++#define to_ddr_clk(_hw)	container_of(_hw, struct asr1802s_ddr_clk, hw)
++
++static const struct asr1802s_ddr_opp *asr1802s_ddr_find_opp(unsigned long rate)
++{
++	int i;
++
++	for (i = 0; i < ARRAY_SIZE(asr1802s_ddr_opps); i++)
++		if (asr1802s_ddr_opps[i].rate == rate)
++			return &asr1802s_ddr_opps[i];
++
++	return NULL;
++}
++
++/*
++ * recalc matches the live OPP by reading the table-select register
++ * (0x400 = 1 << idx) back, the same scheme the vendor tracks via
++ * cur_ddraxi_op.  clk_summary on the live device shows
++ *   ddr 533000000 (parent dpll_1066)  -> idx 1 -> opps[1].rate.
++ */
++static unsigned long asr1802s_ddr_recalc_rate(struct clk_hw *hw,
++					      unsigned long parent_rate)
++{
++	struct asr1802s_ddr_clk *clk = to_ddr_clk(hw);
++	u32 sel = readl(clk->unit->base + ASR1802S_DDR_OPP_SEL);
++	int i;
++
++	for (i = 0; i < ARRAY_SIZE(asr1802s_ddr_opps); i++)
++		if ((1u << asr1802s_ddr_opps[i].idx) == sel)
++			return asr1802s_ddr_opps[i].rate;
++
++	return parent_rate;
++}
++
++static int asr1802s_ddr_set_rate(struct clk_hw *hw, unsigned long rate,
++				 unsigned long parent_rate)
++{
++	struct asr1802s_ddr_clk *clk = to_ddr_clk(hw);
++	void __iomem *base = clk->unit->base;
++	const struct asr1802s_ddr_opp *opp = asr1802s_ddr_find_opp(rate);
++	unsigned long flags;
++	u32 val;
++	int ret;
++
++	if (!opp)
++		return -EINVAL;
++
++	spin_lock_irqsave(&clk->unit->lock, flags);
++
++	/* clear the busy flag before a frequency change */
++	val = readl(base + ASR1802S_CPU_BUSY);
++	if (val & ASR1802S_CPU_BUSY_BIT) {
++		val &= ~ASR1802S_CPU_BUSY_BIT;
++		writel(val, base + ASR1802S_CPU_BUSY);
++	}
++
++	/* select the OPP table index */
++	writel(1 << opp->idx, base + ASR1802S_DDR_OPP_SEL);
++
++	/* program the divider (without GO yet) */
++	val = readl(base + ASR1802S_DDR_FCCR);
++	val &= ~(((1 << ASR1802S_DDR_DIV_WIDTH) - 1) << ASR1802S_DDR_DIV_SHIFT);
++	val |= opp->div << ASR1802S_DDR_DIV_SHIFT;
++	writel(val, base + ASR1802S_DDR_FCCR);
++
++	/* store the table index, then raise GO */
++	val = readl(base + ASR1802S_FCCR_EXT);
++	val &= ~(((1 << ASR1802S_DDR_TBLIDX_WIDTH) - 1) <<
++		 ASR1802S_DDR_TBLIDX_SHIFT);
++	val |= opp->idx << ASR1802S_DDR_TBLIDX_SHIFT;
++	writel(val, base + ASR1802S_FCCR_EXT);
++
++	val = readl(base + ASR1802S_DDR_FCCR);
++	val |= ASR1802S_DDR_FCCR_GO;
++	writel(val, base + ASR1802S_DDR_FCCR);
++
++	/* completion is signalled on the CPU FCCR GO bit (vendor quirk) */
++	ret = asr1802s_fc_wait(base, ASR1802S_CPU_FCCR, ASR1802S_CPU_FCCR_GO);
++
++	spin_unlock_irqrestore(&clk->unit->lock, flags);
++
++	return ret;
++}
++
++static long asr1802s_ddr_round_rate(struct clk_hw *hw, unsigned long rate,
++				    unsigned long *parent_rate)
++{
++	int i;
++
++	for (i = 0; i < ARRAY_SIZE(asr1802s_ddr_opps); i++)
++		if (rate <= asr1802s_ddr_opps[i].rate)
++			return asr1802s_ddr_opps[i].rate;
++
++	return asr1802s_ddr_opps[ARRAY_SIZE(asr1802s_ddr_opps) - 1].rate;
++}
++
++static const struct clk_ops asr1802s_ddr_ops = {
++	.recalc_rate = asr1802s_ddr_recalc_rate,
++	.round_rate = asr1802s_ddr_round_rate,
++	.set_rate = asr1802s_ddr_set_rate,
++};
++
++/* ------------------------------------------------------------------ */
++/* AXI clock                                                           */
++/* ------------------------------------------------------------------ */
++
++struct asr1802s_axi_clk {
++	struct clk_hw hw;
++	struct asr1802s_clk_unit *unit;
++};
++
++/* rate, source select, divider (aclk = src / (div + 1)) */
++static const struct asr1802s_axi_opp {
++	unsigned long rate;
++	u8 sel;
++	u8 div;
++} asr1802s_axi_opps[] = {
++	{ 156000000, 1, 1 },
++	{ 208000000, 0, 0 },
++	{ 312000000, 1, 0 },
++};
++
++static const char * const asr1802s_axi_parents[] = {
++	"axi_src0", "axi_src1",
++};
++
++#define to_axi_clk(_hw)	container_of(_hw, struct asr1802s_axi_clk, hw)
++
++static const struct asr1802s_axi_opp *asr1802s_axi_find_opp(unsigned long rate)
++{
++	int i;
++
++	for (i = 0; i < ARRAY_SIZE(asr1802s_axi_opps); i++)
++		if (asr1802s_axi_opps[i].rate == rate)
++			return &asr1802s_axi_opps[i];
++
++	return NULL;
++}
++
++static u8 asr1802s_axi_get_parent(struct clk_hw *hw)
++{
++	struct asr1802s_axi_clk *clk = to_axi_clk(hw);
++
++	return readl(clk->unit->base + ASR1802S_AXI_FCCR) & 1;
++}
++
++/*
++ * recalc matches the live OPP by reading PLL-select + divider back from
++ * the FCCR (sel & 1, div [1:3]) the vendor tracks via cur_axi_op.
++ * clk_summary: axi 208 (sel 0, div 0), 312 (sel 1, div 0), 156 (sel 1, div 1).
++ */
++static unsigned long asr1802s_axi_recalc_rate(struct clk_hw *hw,
++					      unsigned long parent_rate)
++{
++	struct asr1802s_axi_clk *clk = to_axi_clk(hw);
++	u32 val = readl(clk->unit->base + ASR1802S_AXI_FCCR);
++	u8 sel = val & 1;
++	u8 div = (val >> ASR1802S_AXI_DIV_SHIFT) &
++		 ((1 << ASR1802S_AXI_DIV_WIDTH) - 1);
++	int i;
++
++	for (i = 0; i < ARRAY_SIZE(asr1802s_axi_opps); i++)
++		if (asr1802s_axi_opps[i].sel == sel &&
++		    asr1802s_axi_opps[i].div == div)
++			return asr1802s_axi_opps[i].rate;
++
++	return parent_rate;
++}
++
++static int asr1802s_axi_set_rate(struct clk_hw *hw, unsigned long rate,
++				 unsigned long parent_rate)
++{
++	struct asr1802s_axi_clk *clk = to_axi_clk(hw);
++	void __iomem *base = clk->unit->base;
++	const struct asr1802s_axi_opp *opp = asr1802s_axi_find_opp(rate);
++	unsigned long flags;
++	u32 val;
++	int ret;
++
++	if (!opp)
++		return -EINVAL;
++
++	spin_lock_irqsave(&clk->unit->lock, flags);
++
++	val = readl(base + ASR1802S_AXI_FCCR);
++	val &= ~1;
++	val &= ~(((1 << ASR1802S_AXI_DIV_WIDTH) - 1) << ASR1802S_AXI_DIV_SHIFT);
++	val |= opp->sel << ASR1802S_AXI_SEL_SHIFT;
++	val |= opp->div << ASR1802S_AXI_DIV_SHIFT;
++	val |= ASR1802S_AXI_FCCR_GO;
++	writel(val, base + ASR1802S_AXI_FCCR);
++
++	ret = asr1802s_fc_wait(base, ASR1802S_AXI_FCCR, ASR1802S_AXI_FCCR_GO);
++
++	spin_unlock_irqrestore(&clk->unit->lock, flags);
++
++	return ret;
++}
++
++static long asr1802s_axi_round_rate(struct clk_hw *hw, unsigned long rate,
++				    unsigned long *parent_rate)
++{
++	int i;
++
++	for (i = 0; i < ARRAY_SIZE(asr1802s_axi_opps); i++)
++		if (rate <= asr1802s_axi_opps[i].rate)
++			return asr1802s_axi_opps[i].rate;
++
++	return asr1802s_axi_opps[ARRAY_SIZE(asr1802s_axi_opps) - 1].rate;
++}
++
++static const struct clk_ops asr1802s_axi_ops = {
++	.get_parent = asr1802s_axi_get_parent,
++	.recalc_rate = asr1802s_axi_recalc_rate,
++	.round_rate = asr1802s_axi_round_rate,
++	.set_rate = asr1802s_axi_set_rate,
++};
++
++/* ------------------------------------------------------------------ */
++/* registration                                                        */
++/* ------------------------------------------------------------------ */
++
++static struct clk_hw_onecell_data asr1802s_clk_data = {
++	.hws = {
++		[0 ... ASR1802S_CLK_NR_CLKS - 1] = NULL,
++	},
++	.num = ASR1802S_CLK_NR_CLKS,
++};
++
++static int asr1802s_clk_probe(struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++	struct asr1802s_clk_unit *unit;
++	struct asr1802s_cpu_clk *cpu_clk;
++	struct asr1802s_div_clk *div_clk;
++	struct asr1802s_ddr_clk *ddr_clk;
++	struct asr1802s_axi_clk *axi_clk;
++	struct clk_init_data init = { 0 };
++	struct clk *clk;
++	int i, ret;
++
++	unit = devm_kzalloc(dev, sizeof(*unit), GFP_KERNEL);
++	if (!unit)
++		return -ENOMEM;
++
++	unit->base = devm_platform_ioremap_resource(pdev, 0);
++	if (IS_ERR(unit->base))
++		return PTR_ERR(unit->base);
++
++	spin_lock_init(&unit->lock);
++
++	/* fixed PLLs and internal sources (rates from the vendor boot table) */
++	static const struct {
++		unsigned int id;
++		const char *name;
++		unsigned long rate;
++	} plls[] = {
++		{ ASR1802S_CLK_PLL0,     "pll0",      624000000 },
++		{ ASR1802S_CLK_PLL1,     "pll1",      312000000 },
++		{ ASR1802S_CLK_PLL2,     "pll2",      416000000 },
++		{ ASR1802S_CLK_PLL4,     "pll4",      832000000 },
++		{ ASR1802S_CLK_PLL6,     "pll6",     1248000000 },
++		{ ASR1802S_CLK_DDR_SRC,  "pll_ddr",  1066000000 },
++		{ ASR1802S_CLK_AXI_SRC0, "axi_src0",  208000000 },
++		{ ASR1802S_CLK_AXI_SRC1, "axi_src1",  312000000 },
++	};
++
++	for (i = 0; i < ARRAY_SIZE(plls); i++) {
++		clk = clk_register_fixed_rate(NULL, plls[i].name, NULL, 0,
++					      plls[i].rate);
++		if (IS_ERR(clk))
++			return PTR_ERR(clk);
++		asr1802s_clk_data.hws[plls[i].id] = __clk_get_hw(clk);
++	}
++
++	/* CPU clock */
++	cpu_clk = devm_kzalloc(dev, sizeof(*cpu_clk), GFP_KERNEL);
++	if (!cpu_clk)
++		return -ENOMEM;
++	cpu_clk->unit = unit;
++	init.name = "cpu";
++	init.ops = &asr1802s_cpu_ops;
++	init.parent_names = asr1802s_cpu_parents;
++	init.num_parents = ARRAY_SIZE(asr1802s_cpu_parents);
++	init.flags = CLK_GET_RATE_NOCACHE;
++	cpu_clk->hw.init = &init;
++	clk = clk_register(dev, &cpu_clk->hw);
++	if (IS_ERR(clk))
++		return PTR_ERR(clk);
++	asr1802s_clk_data.hws[ASR1802S_CLK_CPU] = &cpu_clk->hw;
++
++	/* CPU sub-clock dividers (recalc only, programmed with the CPU) */
++	static const struct {
++		unsigned int id;
++		const char *name;
++		u8 shift;
++	} divs[] = {
++		{ ASR1802S_CLK_L2,    "l2clk", ASR1802S_L2DIV_SHIFT },
++		{ ASR1802S_CLK_PD,    "pdclk", ASR1802S_PDDIV_SHIFT },
++		{ ASR1802S_CLK_BACLK, "baclk", ASR1802S_BACLKDIV_SHIFT },
++	};
++
++	for (i = 0; i < ARRAY_SIZE(divs); i++) {
++		div_clk = devm_kzalloc(dev, sizeof(*div_clk), GFP_KERNEL);
++		if (!div_clk)
++			return -ENOMEM;
++		div_clk->unit = unit;
++		div_clk->reg_off = ASR1802S_CPU_FCCR;
++		div_clk->shift = divs[i].shift;
++		div_clk->width = ASR1802S_DIV_WIDTH;
++		init.name = divs[i].name;
++		init.ops = &asr1802s_div_ops;
++		init.parent_names = &(const char *){ "cpu" };
++		init.num_parents = 1;
++		init.flags = CLK_GET_RATE_NOCACHE;
++		div_clk->hw.init = &init;
++		clk = clk_register(dev, &div_clk->hw);
++		if (IS_ERR(clk))
++			return PTR_ERR(clk);
++		asr1802s_clk_data.hws[divs[i].id] = &div_clk->hw;
++	}
++
++	/* periphclk follows pclk 1:1 (its divider register is unknown) */
++	clk = clk_register_fixed_factor(dev, "periphclk", "cpu", 0, 1, 1);
++	if (IS_ERR(clk))
++		return PTR_ERR(clk);
++	asr1802s_clk_data.hws[ASR1802S_CLK_PERIPH] = __clk_get_hw(clk);
++
++	/* DDR clock */
++	ddr_clk = devm_kzalloc(dev, sizeof(*ddr_clk), GFP_KERNEL);
++	if (!ddr_clk)
++		return -ENOMEM;
++	ddr_clk->unit = unit;
++	init.name = "ddr";
++	init.ops = &asr1802s_ddr_ops;
++	init.parent_names = &(const char *){ "pll_ddr" };
++	init.num_parents = 1;
++	init.flags = CLK_GET_RATE_NOCACHE;
++	ddr_clk->hw.init = &init;
++	clk = clk_register(dev, &ddr_clk->hw);
++	if (IS_ERR(clk))
++		return PTR_ERR(clk);
++	asr1802s_clk_data.hws[ASR1802S_CLK_DDR] = &ddr_clk->hw;
++
++	/* AXI clock */
++	axi_clk = devm_kzalloc(dev, sizeof(*axi_clk), GFP_KERNEL);
++	if (!axi_clk)
++		return -ENOMEM;
++	axi_clk->unit = unit;
++	init.name = "axi";
++	init.ops = &asr1802s_axi_ops;
++	init.parent_names = asr1802s_axi_parents;
++	init.num_parents = ARRAY_SIZE(asr1802s_axi_parents);
++	init.flags = CLK_GET_RATE_NOCACHE;
++	axi_clk->hw.init = &init;
++	clk = clk_register(dev, &axi_clk->hw);
++	if (IS_ERR(clk))
++		return PTR_ERR(clk);
++	asr1802s_clk_data.hws[ASR1802S_CLK_AXI] = &axi_clk->hw;
++
++	ret = devm_of_clk_add_hw_provider(dev, of_clk_hw_onecell_get,
++					  &asr1802s_clk_data);
++	if (ret)
++		return ret;
++
++	dev_info(dev, "ASR1802S clock controller registered\n");
++	return 0;
++}
++
++static const struct of_device_id asr1802s_clk_match_table[] = {
++	{ .compatible = "asr,asr1802s-clock" },
++	{ .compatible = "marvell,asr1802s-clock" },
++	{ }
++};
++MODULE_DEVICE_TABLE(of, asr1802s_clk_match_table);
++
++static struct platform_driver asr1802s_clk_driver = {
++	.probe = asr1802s_clk_probe,
++	.driver = {
++		.name = "asr1802s-clock",
++		.of_match_table = asr1802s_clk_match_table,
++	},
++};
++module_platform_driver(asr1802s_clk_driver);
++
++MODULE_AUTHOR("Devon Openheim <devopenm@proton.me>");
++MODULE_DESCRIPTION("Marvell ASR1802S Clock Controller Driver");
++MODULE_LICENSE("GPL");
+--- /dev/null
++++ b/include/dt-bindings/clock/asr,asr1802s.h
+@@ -0,0 +1,51 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++#ifndef __DT_BINDINGS_CLOCK_ASR_ASR1802S_H
++#define __DT_BINDINGS_CLOCK_ASR_ASR1802S_H
++
++/*
++ * ASR1802S clock identifiers.
++ *
++ * The CPU FCCR (reg +0x110) carries the PLL mux (sel [0:2]) plus the
++ * l2clk / pdclk / baclk divider fields and a GO bit.  These four clocks
++ * are therefore one "fccr" clock whose rate is derived from a selectable
++ * PLL.  The derived dividers are exposed as separate clocks so that
++ * consumers can reference them individually.
++ *
++ *   0  - PLL0       624 MHz
++ *   1  - PLL1       312 MHz
++ *   2  - PLL2       416 MHz
++ *   3  - PLL4       832 MHz
++ *   4  - PLL6      1248 MHz
++ *   5  - cpu (pclk)
++ *   6  - l2clk       (pclk / (l2div + 1))
++ *   7  - pdclk       (pclk / (pddiv + 1))
++ *   8  - baclk       (pclk / (baclkdiv + 1))   -> APB domain
++ *   9  - periphclk   (pclk, divider register unknown, fixed 1:1 for now)
++ *  10  - ddr
++ *  11  - axi
++ *
++ * Cells 12-14 are internal fixed sources consumed only by the driver:
++ *   12  - pll_ddr   1066 MHz  (DDR parent)
++ *  13  - axi_src0  208 MHz    (AXI parent, sel = 0)
++ *  14  - axi_src1  312 MHz    (AXI parent, sel = 1)
++ */
++
++#define ASR1802S_CLK_PLL0		0
++#define ASR1802S_CLK_PLL1		1
++#define ASR1802S_CLK_PLL2		2
++#define ASR1802S_CLK_PLL4		3
++#define ASR1802S_CLK_PLL6		4
++#define ASR1802S_CLK_CPU		5
++#define ASR1802S_CLK_L2			6
++#define ASR1802S_CLK_PD			7
++#define ASR1802S_CLK_BACLK		8
++#define ASR1802S_CLK_PERIPH		9
++#define ASR1802S_CLK_DDR		10
++#define ASR1802S_CLK_AXI		11
++#define ASR1802S_CLK_DDR_SRC	12
++#define ASR1802S_CLK_AXI_SRC0	13
++#define ASR1802S_CLK_AXI_SRC1	14
++
++#define ASR1802S_CLK_NR_CLKS		15
++
++#endif /* __DT_BINDINGS_CLOCK_ASR_ASR1802S_H */
