@@ -1,0 +1,202 @@
+// SPDX-License-Identifier: GPL-2.0-only OR BSD-2-Clause
+
+#include <dt-bindings/clock/qcom,gcc-mdm9607.h>
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+#include <dt-bindings/interrupt-controller/irq.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	compatible = "qcom,mdm9607";
+	interrupt-parent = <&intc>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			compatible = "arm,cortex-a7";
+			device_type = "cpu";
+			reg = <0>;
+		};
+	};
+
+	memory@80000000 {
+		device_type = "memory";
+		reg = <0x80000000 0x10000000>;
+	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		modem_firmware: modem-firmware@82a00000 {
+			reg = <0x82a00000 0x05480000>;
+			no-map;
+		};
+
+		smem_region: smem@87e80000 {
+			reg = <0x87e80000 0x000c0000>;
+			no-map;
+		};
+
+		modem-shared@87f40000 {
+			reg = <0x87f40000 0x000c0000>;
+			no-map;
+		};
+	};
+
+	rpm: remoteproc {
+		compatible = "qcom,mdm9607-rpm-proc", "qcom,rpm-proc";
+
+		smd-edge {
+			interrupts = <GIC_SPI 168 IRQ_TYPE_EDGE_RISING>;
+			mboxes = <&apcs 0>;
+			qcom,smd-edge = <15>;
+
+			rpm_requests: rpm-requests {
+				compatible = "qcom,rpm-mdm9607", "qcom,smd-rpm";
+				qcom,smd-channels = "rpm_requests";
+
+				rpmcc: clock-controller {
+					compatible = "qcom,rpmcc-mdm9607",
+						     "qcom,rpmcc";
+					#clock-cells = <1>;
+					clocks = <&xo_board>;
+					clock-names = "xo";
+				};
+			};
+		};
+	};
+
+	xo_board: xo-board {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <19200000>;
+	};
+
+	sleep_clk: sleep-clk {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <32768>;
+	};
+
+	soc: soc {
+		compatible = "simple-bus";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		rpm_msg_ram: sram@60000 {
+			compatible = "qcom,rpm-msg-ram";
+			reg = <0x00060000 0x8000>;
+		};
+
+		restart@4ab000 {
+			compatible = "qcom,pshold";
+			reg = <0x004ab000 0x4>;
+		};
+
+		imem: syscon@8600000 {
+			compatible = "syscon", "simple-mfd";
+			reg = <0x08600000 0x1000>;
+
+			reboot-mode {
+				compatible = "syscon-reboot-mode";
+				offset = <0x65c>;
+				mode-bootloader = <0x77665500>;
+				mode-normal = <0x77665501>;
+				mode-recovery = <0x77665502>;
+			};
+		};
+
+		smem: smem@193d000 {
+			compatible = "qcom,smem";
+			reg = <0x0193d000 0x8>;
+			reg-names = "target-info";
+			memory-region = <&smem_region>;
+			qcom,rpm-msg-ram = <&rpm_msg_ram>;
+			hwlocks = <&sfpb_mutex 3>;
+		};
+
+		sfpb_mutex: hwlock@1905000 {
+			compatible = "qcom,mdm9607-sfpb-mutex";
+			reg = <0x01905000 0x8000>;
+			#hwlock-cells = <1>;
+		};
+
+		apcs: mailbox@b011000 {
+			compatible = "qcom,mdm9607-apcs-kpss-global", "syscon";
+			reg = <0x0b011000 0x1000>;
+			#mbox-cells = <1>;
+		};
+
+		intc: interrupt-controller@b000000 {
+			compatible = "qcom,msm-qgic2";
+			interrupt-controller;
+			#address-cells = <0>;
+			#interrupt-cells = <3>;
+			reg = <0x0b000000 0x1000>,
+			      <0x0b002000 0x1000>;
+		};
+
+		timer@b020000 {
+			compatible = "arm,armv7-timer-mem";
+			reg = <0x0b020000 0x1000>;
+			clock-frequency = <19200000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+
+			frame@b021000 {
+				frame-number = <0>;
+				reg = <0x0b021000 0x1000>,
+				      <0x0b022000 0x1000>;
+				interrupts = <GIC_SPI 7 IRQ_TYPE_LEVEL_HIGH>,
+					     <GIC_SPI 6 IRQ_TYPE_LEVEL_HIGH>;
+			};
+		};
+
+		gcc: clock-controller@1800000 {
+			compatible = "qcom,gcc-mdm9607";
+			reg = <0x01800000 0x80000>;
+			clocks = <&xo_board>, <&sleep_clk>;
+			clock-names = "xo", "sleep_clk";
+			#clock-cells = <1>;
+			#reset-cells = <1>;
+			#power-domain-cells = <1>;
+		};
+
+		tlmm: pinctrl@1000000 {
+			compatible = "qcom,mdm9607-tlmm";
+			reg = <0x01000000 0x300000>;
+			interrupts = <GIC_SPI 208 IRQ_TYPE_LEVEL_HIGH>;
+			gpio-controller;
+			gpio-ranges = <&tlmm 0 0 80>;
+			#gpio-cells = <2>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+
+			uart5_default: uart5-default-state {
+				pins = "gpio8", "gpio9";
+				function = "blsp_uart5";
+				drive-strength = <2>;
+				bias-pull-down;
+			};
+		};
+
+		uart5: serial@78b3000 {
+			compatible = "qcom,msm-lsuart-v14";
+			reg = <0x078b3000 0x200>;
+			interrupts = <GIC_SPI 121 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&gcc GCC_BLSP1_UART5_APPS_CLK>,
+				 <&gcc GCC_BLSP1_AHB_CLK>;
+			clock-names = "core", "iface";
+			pinctrl-names = "default";
+			pinctrl-0 = <&uart5_default>;
+			status = "okay";
+		};
+	};
+};
