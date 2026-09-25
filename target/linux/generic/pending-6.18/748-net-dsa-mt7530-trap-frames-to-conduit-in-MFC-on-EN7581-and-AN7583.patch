@@ -1,0 +1,36 @@
+From d7c6c0fd5fc46e1a0b01395d9c6c517f617753e4 Mon Sep 17 00:00:00 2001
+From: Tao Gong <gongtao0607@gmail.com>
+Date: Sat, 19 Sep 2026 02:56:58 +0000
+Subject: [PATCH] net: dsa: mt7530: trap frames to conduit in MFC on EN7581 and AN7583
+
+On MT7531 and MT7988 switches, trapped frames forwarding is directed to
+CPU ports specified in the MT7531_CFC (0x04) CPU_PMAP bitmap. When support
+for EN7581 was introduced, it was assumed to follow the MT7531 model.
+
+However, on Airoha EN7581 and AN7583 switch IP, setting MT7531_CFC alone
+is not sufficient for trapped control frames (such as STP BPDUs) to exit
+towards the CPU port. The switch forwarding hardware also requires the
+MT7530_CPU_EN bit and MT7530_CPU_PORT field to be enabled in MT753X_MFC
+(0x10). Without this, trapped frames are dropped by the switch forwarding
+logic and never reach the CPU conduit.
+
+Include ID_EN7581 and ID_AN7583 in mt753x_conduit_state_change() to set
+MT7530_CPU_EN and MT7530_CPU_PORT in MT753X_MFC when the conduit becomes
+operational, matching the handling for MT7530, MT7621, and EN7528.
+
+Fixes: 2b0229f67932 ("net: dsa: mt7530: Add EN7581 support")
+Link: https://lore.kernel.org/netdev/20260919065214.31604-3-gongtao0607@gmail.com/
+Signed-off-by: Tao Gong <gongtao0607@gmail.com>
+---
+--- a/drivers/net/dsa/mt7530.c
++++ b/drivers/net/dsa/mt7530.c
+@@ -3164,7 +3164,8 @@ mt753x_conduit_state_change(struct dsa_switch *ds,
+ 	 * forwarded to the numerically smallest CPU port whose conduit
+ 	 * interface is up.
+ 	 */
+-	if (priv->id != ID_MT7530 && priv->id != ID_MT7621)
++	if (priv->id != ID_MT7530 && priv->id != ID_MT7621 &&
++	    priv->id != ID_EN7581 && priv->id != ID_AN7583)
+ 		return;
+ 
+ 	mask = BIT(cpu_dp->index);
