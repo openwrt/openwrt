@@ -15,6 +15,13 @@ platform_do_upgrade() {
 		CI_ROOTPART="rootfs"
 		emmc_do_upgrade "$1"
 		;;
+	alta,route10)
+		# Install into the B bank so the vendor firmware in 0:HLOS and
+		# rootfs is left intact; bootcmd selects which bank boots.
+		CI_KERNPART="0:HLOS_1"
+		CI_ROOTPART="rootfs_1"
+		emmc_do_upgrade "$1"
+		;;
 	askey,sbe1v1k)
 		CI_KERNPART="0:HLOS"
 		CI_ROOTPART="rootfs"
@@ -30,6 +37,7 @@ platform_do_upgrade() {
 platform_copy_config() {
 	case "$(board_name)" in
 	8devices,kiwi-dvk|\
+	alta,route10|\
 	askey,sbe1v1k)
 		emmc_copy_config
 		;;
