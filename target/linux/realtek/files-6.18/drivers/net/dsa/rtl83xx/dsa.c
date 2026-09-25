@@ -987,19 +987,16 @@ out:
 static int rtldsa_port_fdb_dump(struct dsa_switch *ds, int port,
 				dsa_fdb_dump_cb_t *cb, void *data)
 {
-	struct rtl838x_l2_entry e;
 	struct rtl838x_switch_priv *priv = ds->priv;
 
 	mutex_lock(&priv->reg_mutex);
 
 	for (int i = 0; i < priv->r->fib_entries; i++) {
+		struct rtl838x_l2_entry e = {};
+
 		priv->r->read_l2_entry_using_hash(i >> 2, i & 0x3, &e);
 
-		if (!e.valid)
-			continue;
-
-		// Ignore trunk fdb entries
-		if (e.is_trunk)
+		if (!e.valid || e.type != L2_UNICAST || e.is_trunk)
 			continue;
 
 		if (e.port == port || e.port == RTL930X_PORT_IGNORE)
@@ -1010,13 +1007,11 @@ static int rtldsa_port_fdb_dump(struct dsa_switch *ds, int port,
 	}
 
 	for (int i = 0; i < 64; i++) {
+		struct rtl838x_l2_entry e = {};
+
 		priv->r->read_cam(i, &e);
 
-		if (!e.valid)
-			continue;
-
-		// Ignore trunk fdb entries
-		if (e.is_trunk)
+		if (!e.valid || e.type != L2_UNICAST || e.is_trunk)
 			continue;
 
 		if (e.port == port)
