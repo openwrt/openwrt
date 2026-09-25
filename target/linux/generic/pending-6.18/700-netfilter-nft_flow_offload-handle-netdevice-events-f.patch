@@ -1,3 +1,4 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Pablo Neira Ayuso <pablo@netfilter.org>
 Date: Thu, 25 Jan 2018 12:58:55 +0100
 Subject: [PATCH] netfilter: nft_flow_offload: handle netdevice events from
@@ -55,7 +56,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  }
 --- a/net/netfilter/nft_flow_offload.c
 +++ b/net/netfilter/nft_flow_offload.c
-@@ -234,47 +234,14 @@ static struct nft_expr_type nft_flow_off
+@@ -248,47 +248,14 @@ static struct nft_expr_type nft_flow_off
  	.owner		= THIS_MODULE,
  };
  
