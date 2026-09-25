@@ -18,33 +18,33 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  3 files changed, 73 insertions(+)
  create mode 100644 include/dt-bindings/reset/airoha,an7583-reset.h
 
-# diff --git a/Documentation/devicetree/bindings/clock/airoha,en7523-scu.yaml b/Documentation/devicetree/bindings/clock/airoha,en7523-scu.yaml
-# index bce77a14c938..be9759b86fdc 100644
-# --- a/Documentation/devicetree/bindings/clock/airoha,en7523-scu.yaml
-# +++ b/Documentation/devicetree/bindings/clock/airoha,en7523-scu.yaml
-# @@ -32,6 +32,7 @@ properties:
-#        - enum:
-#            - airoha,en7523-scu
-#            - airoha,en7581-scu
-# +          - airoha,an7583-scu
+diff --git a/Documentation/devicetree/bindings/clock/airoha,en7523-scu.yaml b/Documentation/devicetree/bindings/clock/airoha,en7523-scu.yaml
+index bce77a14c938..be9759b86fdc 100644
+--- a/Documentation/devicetree/bindings/clock/airoha,en7523-scu.yaml
++++ b/Documentation/devicetree/bindings/clock/airoha,en7523-scu.yaml
+@@ -32,6 +32,7 @@ properties:
+       - enum:
+           - airoha,en7523-scu
+           - airoha,en7581-scu
++          - airoha,an7583-scu
  
-#    reg:
-#      items:
-# @@ -82,6 +83,14 @@ allOf:
-#          reg:
-#            maxItems: 1
+   reg:
+     items:
+@@ -82,6 +83,14 @@ allOf:
+         reg:
+           maxItems: 1
  
-# +  - if:
-# +      properties:
-# +        compatible:
-# +          const: airoha,an7583-scu
-# +    then:
-# +      required:
-# +        - airoha,chip-scu
-# +
-#  additionalProperties: false
++  - if:
++      properties:
++        compatible:
++          const: airoha,an7583-scu
++    then:
++      required:
++        - airoha,chip-scu
++
+ additionalProperties: false
  
-#  examples:
+ examples:
 --- a/include/dt-bindings/clock/en7523-clk.h
 +++ b/include/dt-bindings/clock/en7523-clk.h
 @@ -14,4 +14,7 @@
@@ -57,7 +57,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  #endif /* _DT_BINDINGS_CLOCK_AIROHA_EN7523_H_ */
 --- /dev/null
 +++ b/include/dt-bindings/reset/airoha,an7583-reset.h
-@@ -0,0 +1,62 @@
+@@ -0,0 +1,65 @@
 +/* SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause) */
 +/*
 + * Copyright (c) 2024 AIROHA Inc
@@ -118,5 +118,8 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +#define AN7583_CPU_TIMER_RST		46
 +#define AN7583_PCIE_HB_RST		47
 +#define AN7583_XPON_MAC_RST		48
++/* RST_PCIC */
++#define AN7583_PCIC_PERSTOUT0_RST	49
++#define AN7583_PCIC_PERSTOUT1_RST	50
 +
 +#endif /* __DT_BINDINGS_RESET_CONTROLLER_AIROHA_AN7583_H_ */

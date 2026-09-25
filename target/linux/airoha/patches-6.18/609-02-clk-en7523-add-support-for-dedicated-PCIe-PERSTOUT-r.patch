@@ -41,7 +41,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  };
  
  static const u16 an7583_rst_map[] = {
-@@ -960,9 +966,7 @@ static int en7581_pci_enable(struct clk_
+@@ -964,9 +970,7 @@ static int en7581_pci_enable(struct clk_
  	struct regmap *map = cg->map;
  	u32 mask;
  
@@ -52,7 +52,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	regmap_set_bits(map, REG_PCI_CONTROL, mask);
  
  	return 0;
-@@ -974,9 +978,7 @@ static void en7581_pci_disable(struct cl
+@@ -978,9 +982,7 @@ static void en7581_pci_disable(struct cl
  	struct regmap *map = cg->map;
  	u32 mask;
  
@@ -63,7 +63,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	regmap_clear_bits(map, REG_PCI_CONTROL, mask);
  	usleep_range(1000, 2000);
  }
-@@ -1027,9 +1029,16 @@ static int en7523_reset_update(struct re
+@@ -1031,9 +1033,16 @@ static int en7523_reset_update(struct re
  {
  	struct en_rst_data *rst_data = container_of(rcdev, struct en_rst_data, rcdev);
  	u32 addr = rst_data->bank_ofs[id / RST_NR_PER_BANK];
@@ -81,7 +81,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  
  	return 0;
  }
-@@ -1051,10 +1060,16 @@ static int en7523_reset_status(struct re
+@@ -1055,10 +1064,16 @@ static int en7523_reset_status(struct re
  {
  	struct en_rst_data *rst_data = container_of(rcdev, struct en_rst_data, rcdev);
  	u32 addr = rst_data->bank_ofs[id / RST_NR_PER_BANK];

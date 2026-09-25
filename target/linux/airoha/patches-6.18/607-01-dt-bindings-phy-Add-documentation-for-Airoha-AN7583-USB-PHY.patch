@@ -1,25 +1,38 @@
 From b1810200bbd5021c1a00643ea5dd8516ad9c1c1b Mon Sep 17 00:00:00 2001
 From: Vitaliy Sochnev <sochnev.v.74@gmail.com>
-Date: Sat, 8 Aug 2026 10:00:00 +0100
-Subject: [PATCH] dt-bindings: phy: Add documentation for Airoha AN7583 USB PHY
+Date: Tue,  1 Sep 2026 14:39:31 +0200
+Subject: [PATCH v4 1/3] dt-bindings: phy: airoha: Document support for AN7583
+ USB PHY
 
-Add documentation for the Airoha AN7583 USB PHY.
+Add documentation for Airoha AN7583 USB PHY that describe the USB PHY
+for the USB controller.
 
-Unlike AN7581, where each USB port has its own PHY node, the AN7583 SoC
-has a single PHY block driving two USB 2.0 ports and one USB 3.0 port.
-Each port is described by a child node of the PHY block: USB 2.0 children
-carry their offset in the "phy" register region and the oscillator to use
-for Slew Rate calibration, while the USB 3.0 child carries a phandle to
-the SCU, needed to switch the shared Serdes between USB and HSGMII mode.
+Airoha AN7583 SoC support a maximum of 2 USB port. The USB 2.0 mode is
+always supported. The USB 3.0 mode is optional and depends on the Serdes
+mode currently configured on the system for the relevant USB port.
 
-The AIROHA_USB2_MONCLK_SEL* defines are reused from the AN7581 binding
-header, as the values are identical on AN7583.
+To correctly calibrate, the USB 2.0 port require correct value in
+"airoha,usb2-monitor-clk-sel" property. Both the 2 USB 2.0 port permit
+selecting one of the 4 monitor clock for calibration (internal clock not
+exposed to the system) but each port have only one of the 4 actually
+connected in HW hence the correct value needs to be specified in DT
+based on board and the physical port. Normally it's monitor clock 1 for
+USB1 and monitor clock 2 for USB2.
 
-Signed-off-by: Vitaliy Sochnev <sochnev.v.74@gmail.com>
+To correctly setup the Serdes mode attached to the USB 3.0 mode, a phys
+property is required with the phandle pointing to the correct Serdes port
+provided by the SCU node. Providing the phys property is optional if USB
+3.0 is not used.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 ---
+ .../bindings/phy/airoha,an7583-usb-phy.yaml   | 133 ++++++++++++++++++
+ 1 file changed, 133 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/phy/airoha,an7583-usb-phy.yaml
+
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/phy/airoha,an7583-usb-phy.yaml
-@@ -0,0 +1,132 @@
+@@ -0,0 +1,133 @@
 +# SPDX-License-Identifier: GPL-2.0-only OR BSD-2-Clause
 +%YAML 1.2
 +---
@@ -32,23 +45,26 @@ Signed-off-by: Vitaliy Sochnev <sochnev.v.74@gmail.com>
 +  - Christian Marangi <ansuelsmth@gmail.com>
 +
 +description: >
-+  The Airoha AN7583 SoC USB PHY describes the USB PHY for the USB controller.
++  The Airoha AN7583 SoC USB PHY describes the USB PHY for the USB controller..
 +
-+  Unlike AN7581, where each USB port has its own PHY node, the AN7583 SoC has
-+  a single PHY block driving two USB 2.0 ports and one USB 3.0 port. Each port
-+  is described by a child node of the PHY block.
++  Airoha AN7583 SoC support a maximum of 2 USB port. The USB 2.0 mode is
++  always supported. The USB 3.0 mode is optional and depends on the Serdes
++  mode currently configured on the system for the relevant USB port.
 +
-+  USB 2.0 child nodes carry their offset in the "phy" register region and the
-+  oscillator to use for Slew Rate calibration. The USB 3.0 child node carries
-+  a phandle to the SCU, needed to switch the shared Serdes between USB and
-+  HSGMII mode.
++  On Airoha AN7583 there is an unified PHY implementation where a single
++  PHY provide support for both the 2 USB 2.0 port and
++  optionally one 3.0 USB.
 +
 +properties:
 +  compatible:
 +    const: airoha,an7583-usb-phy
 +
 +  reg:
-+    maxItems: 4
++    items:
++      - description: phy register
++      - description: ana register
++      - description: pma register
++      - description: dig register
 +
 +  reg-names:
 +    items:
@@ -63,17 +79,32 @@ Signed-off-by: Vitaliy Sochnev <sochnev.v.74@gmail.com>
 +  '#size-cells':
 +    const: 0
 +
++  usb3-phy:
++    type: object
++
++    properties:
++      phys:
++        items:
++          - description: phandle to Serdes PHY
++
++      '#phy-cells':
++        description: The cell contains the mode, PHY_TYPE_USB2 or PHY_TYPE_USB3,
++          as defined in dt-bindings/phy/phy.h.
++        const: 1
++
++    required:
++      - phys
++      - '#phy-cells'
++
++    additionalProperties: false
++
 +patternProperties:
 +  '^usb2-phy@[0-9a-f]+$':
 +    type: object
-+    additionalProperties: false
-+
-+    description: USB 2.0 port of the PHY block.
 +
 +    properties:
 +      reg:
-+        maxItems: 1
-+        description: Offset of the port registers in the "phy" region.
++        enum: [0x0, 0x1000]
 +
 +      airoha,usb2-monitor-clk-sel:
 +        description: Describe what oscillator across the available 4
@@ -82,6 +113,8 @@ Signed-off-by: Vitaliy Sochnev <sochnev.v.74@gmail.com>
 +        enum: [0, 1, 2, 3]
 +
 +      '#phy-cells':
++        description: The cell contains the mode, PHY_TYPE_USB2 or PHY_TYPE_USB3,
++          as defined in dt-bindings/phy/phy.h.
 +        const: 1
 +
 +    required:
@@ -89,24 +122,7 @@ Signed-off-by: Vitaliy Sochnev <sochnev.v.74@gmail.com>
 +      - airoha,usb2-monitor-clk-sel
 +      - '#phy-cells'
 +
-+  '^usb3-phy$':
-+    type: object
 +    additionalProperties: false
-+
-+    description: USB 3.0 port of the PHY block.
-+
-+    properties:
-+      airoha,scu:
-+        description: Phandle to the SCU node, used to switch the shared
-+          Serdes between USB and HSGMII mode.
-+        $ref: /schemas/types.yaml#/definitions/phandle
-+
-+      '#phy-cells':
-+        const: 1
-+
-+    required:
-+      - airoha,scu
-+      - '#phy-cells'
 +
 +required:
 +  - compatible
@@ -115,18 +131,16 @@ Signed-off-by: Vitaliy Sochnev <sochnev.v.74@gmail.com>
 +  - '#address-cells'
 +  - '#size-cells'
 +
-+additionalProperties: false
++unevaluatedProperties: false
 +
 +examples:
 +  - |
-+    #include <dt-bindings/phy/airoha,an7581-usb-phy.h>
-+
 +    phy@1fac0000 {
 +        compatible = "airoha,an7583-usb-phy";
-+        reg = <0x1fac0000 0x2000>,
-+              <0x1fa6f000 0x1000>,
-+              <0x1fa6e000 0x1000>,
-+              <0x1fa6a000 0x1000>;
++        reg = <0x1fac0000 0x1200>,
++              <0x1fa6f000 0x100>,
++              <0x1fa6e000 0x400>,
++              <0x1fa6a000 0x900>;
 +        reg-names = "phy", "ana", "pma", "dig";
 +
 +        #address-cells = <1>;
@@ -134,31 +148,21 @@ Signed-off-by: Vitaliy Sochnev <sochnev.v.74@gmail.com>
 +
 +        usb2-phy@0 {
 +            reg = <0x0>;
-+            airoha,usb2-monitor-clk-sel = <AIROHA_USB2_MONCLK_SEL1>;
++            airoha,usb2-monitor-clk-sel = <0>;
 +
 +            #phy-cells = <1>;
 +        };
 +
 +        usb2-phy@1000 {
 +            reg = <0x1000>;
-+            airoha,usb2-monitor-clk-sel = <AIROHA_USB2_MONCLK_SEL2>;
++            airoha,usb2-monitor-clk-sel = <1>;
 +
 +            #phy-cells = <1>;
 +        };
 +
 +        usb3-phy {
-+            airoha,scu = <&scu>;
++            phys = <&serdes_phy>;
 +
 +            #phy-cells = <1>;
 +        };
 +    };
---- a/MAINTAINERS
-+++ b/MAINTAINERS
-@@ -776,6 +776,7 @@ M:	Christian Marangi <ansuelsmth@gmail.c
- L:	linux-arm-kernel@lists.infradead.org (moderated for non-subscribers)
- S:	Maintained
- F:	Documentation/devicetree/bindings/phy/airoha,an7581-usb-phy.yaml
-+F:	Documentation/devicetree/bindings/phy/airoha,an7583-usb-phy.yaml
- F:	drivers/phy/airoha/phy-airoha-usb.c
- F:	include/dt-bindings/phy/airoha,an7581-usb-phy.h
- 

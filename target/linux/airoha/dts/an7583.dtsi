@@ -3,8 +3,8 @@
 #include <dt-bindings/interrupt-controller/irq.h>
 #include <dt-bindings/interrupt-controller/arm-gic.h>
 #include <dt-bindings/clock/en7523-clk.h>
-#include <dt-bindings/phy/airoha,an7581-usb-phy.h>
 #include <dt-bindings/phy/phy.h>
+#include <dt-bindings/soc/airoha,scu-ssr.h>
 #include <dt-bindings/reset/airoha,an7583-reset.h>
 #include <dt-bindings/leds/common.h>
 #include <dt-bindings/thermal/thermal.h>
@@ -374,6 +374,7 @@
 
 			#clock-cells = <1>;
 			#reset-cells = <1>;
+			#phy-cells = <1>;
 
 			airoha,chip-scu = <&chip_scu>;
 
@@ -568,28 +569,27 @@
 			      <0x0 0x1fa6e000 0x0 0x1000>,
 			      <0x0 0x1fa6a000 0x0 0x1000>;
 			reg-names = "phy", "ana", "pma", "dig";
-
-			status = "disabled";
-
 			#address-cells = <1>;
 			#size-cells = <0>;
 
+			status = "disabled";
+
 			usb0_u2: usb2-phy@0 {
 				reg = <0x0>;
-				airoha,usb2-monitor-clk-sel = <AIROHA_USB2_MONCLK_SEL1>;
+				airoha,usb2-monitor-clk-sel = <1>;
 
 				#phy-cells = <1>;
 			};
 
 			usb1_u2: usb2-phy@1000 {
 				reg = <0x1000>;
-				airoha,usb2-monitor-clk-sel = <AIROHA_USB2_MONCLK_SEL2>;
+				airoha,usb2-monitor-clk-sel = <2>;
 
 				#phy-cells = <1>;
 			};
 
 			usb0_u3: usb3-phy {
-				airoha,scu = <&scuclk>;
+				phys = <&scuclk AIROHA_SCU_SERDES_USB1>;
 
 				#phy-cells = <1>;
 			};
@@ -600,6 +600,105 @@
 			reg = <0x0 0x1fb70000 0x0 0x1000>;
 
 			interrupts = <GIC_SPI 44 IRQ_TYPE_LEVEL_HIGH>;
+		};
+
+		pciephy: phy@1fc7f000 {
+			compatible = "airoha,an7583-pcie-gen3-phy";
+			reg = <0x0 0x1fc7f000 0x0 0xfff>,
+			      <0x0 0x1fc7e000 0x0 0xfff>,
+			      <0x0 0x1fc30044 0x0 0x4>,
+			      <0x0 0x1fc35030 0x0 0x4>;
+			reg-names = "g3-ana", "g3-pma",
+				    "xr-dtime", "rx-aeq";
+
+			phys = <&pcie1_phy PHY_TYPE_PCIE>;
+
+			#phy-cells = <0>;
+		};
+
+		pcie0: pcie@1fc20000 {
+			compatible = "airoha,an7583-pcie-gen3";
+			device_type = "pci";
+			linux,pci-domain = <0>;
+			#address-cells = <3>;
+			#size-cells = <2>;
+
+			reg = <0x0 0x1fc20000 0x0 0x1670>;
+			reg-names = "pcie-mac";
+
+			clocks = <&scuclk EN7523_CLK_PCIE>;
+			clock-names = "sys-ck";
+
+			phys = <&pciephy>;
+			phy-names = "pcie-phy";
+
+			ranges = <0x02000000 0 0x20000000 0x0 0x20000000 0 0x4000000>;
+
+			resets = <&scuclk AN7583_PCIE0_RST>, <&scuclk AN7583_PCIC_PERSTOUT0_RST>;
+			reset-names = "phy-lane0", "perstout";
+
+			mediatek,pbus-csr = <&pbus_csr 0x0 0x4>;
+
+			interrupts = <GIC_SPI 39 IRQ_TYPE_LEVEL_HIGH>;
+			bus-range = <0x00 0xff>;
+			#interrupt-cells = <1>;
+			interrupt-map-mask = <0 0 0 7>;
+			interrupt-map = <0 0 0 1 &pcie_intc0 0>,
+					<0 0 0 2 &pcie_intc0 1>,
+					<0 0 0 3 &pcie_intc0 2>,
+					<0 0 0 4 &pcie_intc0 3>;
+
+			status = "disabled";
+
+			pcie_intc0: interrupt-controller {
+				interrupt-controller;
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
+			};
+		};
+
+		pcie1: pcie@1fa92000 {
+			compatible = "airoha,an7583-pcie";
+			device_type = "pci";
+			linux,pci-domain = <1>;
+			#address-cells = <3>;
+			#size-cells = <2>;
+
+			reg = <0x0 0x1fa92000 0x0 0x1670>;
+			reg-names = "port1";
+
+			clocks = <&scuclk EN7523_CLK_PCIE>;
+			clock-names = "sys_ck1";
+
+			phys = <&pciephy>;
+			phy-names = "pcie-phy1";
+
+			ranges = <0x02000000 0 0x24000000 0x0 0x24000000 0 0x4000000>;
+
+			resets = <&scuclk AN7583_PCIE1_RST>;
+			reset-names = "pcie-rst1";
+
+			mediatek,pbus-csr = <&pbus_csr 0x8 0xc>;
+
+			airoha,scu = <&scuclk>;
+
+			interrupts = <GIC_SPI 40 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-names = "pcie_irq";
+			bus-range = <0x00 0xff>;
+			#interrupt-cells = <1>;
+			interrupt-map-mask = <0 0 0 7>;
+			interrupt-map = <0 0 0 1 &pcie_intc1 0>,
+					<0 0 0 2 &pcie_intc1 1>,
+					<0 0 0 3 &pcie_intc1 2>,
+					<0 0 0 4 &pcie_intc1 3>;
+
+			status = "disabled";
+
+			pcie_intc1: interrupt-controller {
+				interrupt-controller;
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
+			};
 		};
 
 		npu: npu@1e900000 {
@@ -671,6 +770,19 @@
 			airoha,scu = <&scuclk>;
 
 			#pcs-cells = <0>;
+		};
+
+		pcie1_phy: phy@1fa5f000 {
+			compatible = "airoha,an7583-pcie-gen2-phy";
+
+			reg = <0x0 0x1fa5f000 0x0 0xff>,
+			      <0x0 0x1fa5e000 0x0 0x3ff>,
+			      <0x0 0x1fa5a000 0x0 0x8ff>;
+			reg-names = "ana", "pma", "dig";
+
+			phys = <&scuclk AIROHA_SCU_SERDES_USB2>;
+
+			#phy-cells = <1>;
 		};
 
 		eth: ethernet@1fb50000 {

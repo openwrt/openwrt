@@ -1,0 +1,343 @@
+From e43490f73907a2d48a4338d302ac846363682ea9 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Tue, 19 May 2026 23:14:03 +0200
+Subject: [PATCH 2/5] clk: en7523: Add support for selecting the Serdes port in
+ SCU
+
+In the SCU register for clock and reset, there are also some register to
+select the Serdes port mode. The Airoha AN7581 SoC have 4 different Serdes
+that can switch between PCIe, USB or Ethernet mode.
+
+Add a simple PHY provider that expose the .set_mode OP to toggle the
+requested mode for the Serdes port.
+
+Reviewed-by: Brian Masney <bmasney@redhat.com>
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ drivers/clk/Kconfig      |   1 +
+ drivers/clk/clk-en7523.c | 218 ++++++++++++++++++++++++++++++++++++++-
+ 2 files changed, 216 insertions(+), 3 deletions(-)
+
+--- a/drivers/clk/Kconfig
++++ b/drivers/clk/Kconfig
+@@ -221,6 +221,7 @@ config COMMON_CLK_EN7523
+ 	bool "Clock driver for Airoha EN7523 SoC system clocks"
+ 	depends on OF
+ 	depends on ARCH_AIROHA || COMPILE_TEST
++	select GENERIC_PHY
+ 	default ARCH_AIROHA
+ 	help
+ 	  This driver provides the fixed clocks and gates present on Airoha
+--- a/drivers/clk/clk-en7523.c
++++ b/drivers/clk/clk-en7523.c
+@@ -7,13 +7,17 @@
+ #include <linux/mfd/syscon.h>
+ #include <linux/of_platform.h>
+ #include <linux/platform_device.h>
++#include <linux/phy.h>
++#include <linux/phy/phy.h>
+ #include <linux/property.h>
+ #include <linux/regmap.h>
+ #include <linux/reset-controller.h>
++#include <linux/spinlock.h>
+ #include <dt-bindings/clock/en7523-clk.h>
+ #include <dt-bindings/reset/airoha,en7523-reset.h>
+ #include <dt-bindings/reset/airoha,en7581-reset.h>
+ #include <dt-bindings/reset/airoha,an7583-reset.h>
++#include <dt-bindings/soc/airoha,scu-ssr.h>
+ 
+ #define RST_NR_PER_BANK			32
+ 
+@@ -39,14 +43,29 @@
+ /* EN7581 */
+ #define REG_NP_SCU_PCIC			0x88
+ #define REG_PCIE_CTRL			GENMASK(7, 0)
++#define REG_NP_SCU_SSR3			0x94
++#define REG_SSUSB_HSGMII_SEL_MASK	BIT(29)
++#define REG_SSUSB_HSGMII_SEL_HSGMII	FIELD_PREP_CONST(REG_SSUSB_HSGMII_SEL_MASK, 0x0)
++#define REG_SSUSB_HSGMII_SEL_USB	FIELD_PREP_CONST(REG_SSUSB_HSGMII_SEL_MASK, 0x1)
+ #define REG_NP_SCU_SSTR			0x9c
+ #define REG_PCIE_XSI0_SEL_MASK		GENMASK(14, 13)
++#define REG_PCIE_XSI0_SEL_PCIE		FIELD_PREP_CONST(REG_PCIE_XSI0_SEL_MASK, 0x0)
++#define REG_PCIE_XSI0_SEL_XFI		FIELD_PREP_CONST(REG_PCIE_XSI0_SEL_MASK, 0x1)
++#define REG_PCIE_XSI0_SEL_HSGMII	FIELD_PREP_CONST(REG_PCIE_XSI0_SEL_MASK, 0x2)
+ #define REG_PCIE_XSI1_SEL_MASK		GENMASK(12, 11)
++#define REG_PCIE_XSI1_SEL_PCIE		FIELD_PREP_CONST(REG_PCIE_XSI1_SEL_MASK, 0x0)
++#define REG_PCIE_XSI1_SEL_XFI		FIELD_PREP_CONST(REG_PCIE_XSI1_SEL_MASK, 0x1)
++#define REG_PCIE_XSI1_SEL_HSGMII	FIELD_PREP_CONST(REG_PCIE_XSI1_SEL_MASK, 0x2)
++#define REG_USB_PCIE_SEL_MASK		BIT(3)
++#define REG_USB_PCIE_SEL_PCIE		FIELD_PREP_CONST(REG_USB_PCIE_SEL_MASK, 0x0)
++#define REG_USB_PCIE_SEL_USB		FIELD_PREP_CONST(REG_USB_PCIE_SEL_MASK, 0x1)
+ #define REG_CRYPTO_CLKSRC2		0x20c
+ 
+ #define REG_RST_CTRL2			0x830
+ #define REG_RST_CTRL1			0x834
+ 
++#define EN_SERDES_PHY_NUM		4
++
+ struct en_clk_desc {
+ 	int id;
+ 	const char *name;
+@@ -85,6 +104,18 @@ struct en_rst_data {
+ 	struct reset_controller_dev rcdev;
+ };
+ 
++struct en_serdes_phy_instance {
++	struct phy *phy;
++	unsigned int serdes_port;
++};
++
++struct en_clk_priv {
++	void __iomem *base;
++	/* protect SCU register */
++	spinlock_t lock;
++	struct en_serdes_phy_instance *serdes_phys[EN_SERDES_PHY_NUM];
++};
++
+ struct en_clk_soc_data {
+ 	bool probe_child;
+ 	u32 num_clocks;
+@@ -1117,10 +1148,176 @@ static int en7581_reset_register(struct
+ 	return devm_reset_controller_register(dev, &rst_data->rcdev);
+ }
+ 
++static int en7581_serdes_phy_set_mode(struct phy *phy, enum phy_mode mode,
++				      int submode)
++{
++	struct en_serdes_phy_instance *instance = phy_get_drvdata(phy);
++	struct en_clk_priv *priv = dev_get_drvdata(phy->dev.parent);
++	u32 reg, mask, sel, val;
++	unsigned long flags;
++
++	switch (instance->serdes_port) {
++	case AIROHA_SCU_SERDES_PCIE1:
++		reg = REG_NP_SCU_SSTR;
++		mask = REG_PCIE_XSI0_SEL_MASK;
++
++		if (mode != PHY_MODE_ETHERNET && mode != PHY_MODE_PCIE)
++			return -EINVAL;
++
++		if (mode == PHY_MODE_ETHERNET) {
++			switch (submode) {
++			case PHY_INTERFACE_MODE_USXGMII:
++			case PHY_INTERFACE_MODE_10GBASER:
++				sel = REG_PCIE_XSI0_SEL_XFI;
++				break;
++			case PHY_INTERFACE_MODE_SGMII:
++			case PHY_INTERFACE_MODE_1000BASEX:
++			case PHY_INTERFACE_MODE_2500BASEX:
++				sel = REG_PCIE_XSI0_SEL_HSGMII;
++				break;
++			default:
++				return -EINVAL;
++			}
++		} else {
++			sel = REG_PCIE_XSI0_SEL_PCIE;
++		}
++
++		break;
++	case AIROHA_SCU_SERDES_PCIE2:
++		reg = REG_NP_SCU_SSTR;
++		mask = REG_PCIE_XSI1_SEL_MASK;
++
++		if (mode != PHY_MODE_ETHERNET && mode != PHY_MODE_PCIE)
++			return -EINVAL;
++
++		if (mode == PHY_MODE_ETHERNET) {
++			switch (submode) {
++			case PHY_INTERFACE_MODE_USXGMII:
++			case PHY_INTERFACE_MODE_10GBASER:
++				sel = REG_PCIE_XSI1_SEL_XFI;
++				break;
++			case PHY_INTERFACE_MODE_SGMII:
++			case PHY_INTERFACE_MODE_1000BASEX:
++			case PHY_INTERFACE_MODE_2500BASEX:
++				sel = REG_PCIE_XSI1_SEL_HSGMII;
++				break;
++			default:
++				return -EINVAL;
++			}
++		} else {
++			sel = REG_PCIE_XSI1_SEL_PCIE;
++		}
++
++		break;
++	case AIROHA_SCU_SERDES_USB1:
++		reg = REG_NP_SCU_SSR3;
++		mask = REG_SSUSB_HSGMII_SEL_MASK;
++
++		if (mode != PHY_MODE_ETHERNET && mode != PHY_MODE_USB_DEVICE &&
++		    mode != PHY_MODE_USB_DEVICE_SS)
++			return -EINVAL;
++
++		if (mode == PHY_MODE_ETHERNET)
++			sel = REG_SSUSB_HSGMII_SEL_HSGMII;
++		else
++			sel = REG_SSUSB_HSGMII_SEL_USB;
++
++		break;
++	case AIROHA_SCU_SERDES_USB2:
++		reg = REG_NP_SCU_SSTR;
++		mask = REG_USB_PCIE_SEL_MASK;
++
++		if (mode != PHY_MODE_PCIE && mode != PHY_MODE_USB_DEVICE &&
++		    mode != PHY_MODE_USB_DEVICE_SS)
++			return -EINVAL;
++
++		if (mode == PHY_MODE_PCIE)
++			sel = REG_USB_PCIE_SEL_PCIE;
++		else
++			sel = REG_USB_PCIE_SEL_USB;
++
++		break;
++	default:
++		return -EINVAL;
++	}
++
++	spin_lock_irqsave(&priv->lock, flags);
++	val = readl(priv->base + reg);
++	val &= ~mask;
++	val |= sel;
++	writel(val, priv->base + reg);
++	spin_unlock_irqrestore(&priv->lock, flags);
++
++	return 0;
++}
++
++static const struct phy_ops en7581_serdes_phy_ops = {
++	.set_mode	= en7581_serdes_phy_set_mode,
++	.owner		= THIS_MODULE,
++};
++
++static struct phy *en7581_serdes_phy_xlate(struct device *dev,
++					   const struct of_phandle_args *args)
++{
++	struct en_clk_priv *priv = dev_get_drvdata(dev);
++	struct en_serdes_phy_instance *instance;
++	unsigned int serdes_port;
++
++	if (args->args_count != 1) {
++		dev_err(dev, "invalid number of cells in 'phy' property\n");
++		return ERR_PTR(-EINVAL);
++	}
++
++	serdes_port = args->args[0];
++	if (serdes_port >= EN_SERDES_PHY_NUM) {
++		dev_err(dev, "invalid serdes port: %d\n", serdes_port);
++		return ERR_PTR(-EINVAL);
++	}
++
++	instance = priv->serdes_phys[serdes_port];
++	if (!instance) {
++		dev_err(dev, "failed to find appropriate serdes phy\n");
++		return ERR_PTR(-EINVAL);
++	}
++
++	return instance->phy;
++}
++
++static int en7581_serdes_phy_register(struct device *dev)
++{
++	struct en_clk_priv *priv = dev_get_drvdata(dev);
++	struct phy_provider *phy_provider;
++	int i;
++
++	for (i = 0; i < EN_SERDES_PHY_NUM; i++) {
++		struct en_serdes_phy_instance *instance;
++
++		instance = devm_kzalloc(dev, sizeof(*instance),
++					GFP_KERNEL);
++		if (!instance)
++			return -ENOMEM;
++
++		instance->phy = devm_phy_create(dev, NULL,
++						&en7581_serdes_phy_ops);
++		if (IS_ERR(instance->phy))
++			return dev_err_probe(dev, PTR_ERR(instance->phy), "failed to create phy\n");
++
++		instance->serdes_port = i;
++		priv->serdes_phys[i] = instance;
++
++		phy_set_drvdata(instance->phy, instance);
++	}
++
++	phy_provider = devm_of_phy_provider_register(dev, en7581_serdes_phy_xlate);
++
++	return PTR_ERR_OR_ZERO(phy_provider);
++}
++
+ static int en7581_clk_hw_init(struct platform_device *pdev,
+ 			      const struct en_clk_soc_data *soc_data,
+ 			      struct clk_hw_onecell_data *clk_data)
+ {
++	struct en_clk_priv *priv = platform_get_drvdata(pdev);
+ 	struct device *dev = &pdev->dev;
+ 	struct regmap *map, *clk_map;
+ 	void __iomem *base;
+@@ -1142,6 +1339,8 @@ static int en7581_clk_hw_init(struct pla
+ 	if (IS_ERR(clk_map))
+ 		return PTR_ERR(clk_map);
+ 
++	priv->base = base;
++
+ 	err = en75xx_register_clocks(&pdev->dev, soc_data, clk_data, map, clk_map);
+ 	if (err)
+ 		return err;
+@@ -1151,14 +1350,19 @@ static int en7581_clk_hw_init(struct pla
+ 	regmap_update_bits(clk_map, REG_NP_SCU_PCIC, REG_PCIE_CTRL,
+ 			   FIELD_PREP(REG_PCIE_CTRL, 3));
+ 
+-	return en7581_reset_register(&pdev->dev, clk_map, en7581_rst_map,
+-				     ARRAY_SIZE(en7581_rst_map));
++	err = en7581_reset_register(&pdev->dev, clk_map, en7581_rst_map,
++				    ARRAY_SIZE(en7581_rst_map));
++	if (err)
++		return err;
++
++	return en7581_serdes_phy_register(&pdev->dev);
+ }
+ 
+ static int an7583_clk_hw_init(struct platform_device *pdev,
+ 			      const struct en_clk_soc_data *soc_data,
+ 			      struct clk_hw_onecell_data *clk_data)
+ {
++	struct en_clk_priv *priv = platform_get_drvdata(pdev);
+ 	struct device *dev = &pdev->dev;
+ 	struct regmap *map, *clk_map;
+ 	void __iomem *base;
+@@ -1176,6 +1380,8 @@ static int an7583_clk_hw_init(struct pla
+ 	if (IS_ERR(clk_map))
+ 		return PTR_ERR(clk_map);
+ 
++	priv->base = base;
++
+ 	err = en75xx_register_clocks(dev, soc_data, clk_data, map, clk_map);
+ 	if (err)
+ 		return err;
+@@ -1194,10 +1400,17 @@ static int en7523_clk_probe(struct platf
+ 	const struct en_clk_soc_data *soc_data;
+ 	struct clk_hw_onecell_data *clk_data;
+ 	struct device *dev = &pdev->dev;
++	struct en_clk_priv *priv;
+ 	int err;
+ 
+ 	soc_data = device_get_match_data(dev);
+ 
++	priv = devm_kzalloc(&pdev->dev, sizeof(*priv), GFP_KERNEL);
++	if (!priv)
++		return -ENOMEM;
++
++	spin_lock_init(&priv->lock);
++
+ 	clk_data = devm_kzalloc(dev,
+ 				struct_size(clk_data, hws,
+ 					    soc_data->num_clocks),
+@@ -1205,6 +1418,8 @@ static int en7523_clk_probe(struct platf
+ 	if (!clk_data)
+ 		return -ENOMEM;
+ 
++	platform_set_drvdata(pdev, priv);
++
+ 	clk_data->num = soc_data->num_clocks;
+ 	err = soc_data->hw_init(pdev, soc_data, clk_data);
+ 	if (err)
