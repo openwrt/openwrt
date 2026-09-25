@@ -3,12 +3,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=elfutils
-PKG_VERSION:=0.192
+PKG_VERSION:=0.196
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=https://sourceware.org/$(PKG_NAME)/ftp/$(PKG_VERSION)
-PKG_HASH:=616099beae24aba11f9b63d86ca6cc8d566d968b802391334c91df54eab416b4
+PKG_HASH:=fd5cc6b77ad6773cac93cb3f415f9318ac3b3455eecf801f6b4a742c4f6c7209
 
 PKG_LICENSE:=GPL-3.0-or-later
 PKG_LICENSE_FILES:=COPYING COPYING-GPLV2 COPYING-LGPLV3
@@ -27,6 +27,7 @@ PKG_SUBDIRS := \
 	libebl \
 	libdwelf \
 	libdwfl \
+	libdwfl_stacktrace \
 	libdw \
 	src
 
@@ -95,7 +96,7 @@ ifeq ($(HOST_OS),Darwin)
   HOST_CFLAGS += -I/opt/homebrew/include
 endif
 
-HOST_CFLAGS += -Wno-error -fPIC -std=gnu17
+HOST_CFLAGS += -I. -Wno-error -fPIC -std=gnu17
 
 HOST_CONFIGURE_ARGS += \
 	--enable-maintainer-mode \

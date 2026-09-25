@@ -8,5 +8,5 @@
 +AM_CPPFLAGS = -iquote . -iquote $(srcdir) -I$(top_srcdir)/lib \
 +	    -I$(srcdir)/../libelf -I$(srcdir)/../libebl \
  	    -I$(srcdir)/../libdw -I$(srcdir)/../libdwelf \
- 	    -I$(srcdir)/../libdwfl -I$(srcdir)/../libasm -I../debuginfod
- 
+ 	    -I$(srcdir)/../libdwfl -I$(srcdir)/../libdwfl_stacktrace \
+ 	    -I$(srcdir)/../libasm -I../debuginfod
