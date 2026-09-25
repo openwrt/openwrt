@@ -76,8 +76,8 @@ define Device/Default
   KERNEL := kernel-bin
   KERNEL_IMG := kernel.img
   IMAGES := factory.img.gz sysupgrade.img.gz
-  IMAGE/sysupgrade.img.gz := boot-common | boot-2708 | sdcard-img | gzip | append-metadata
-  IMAGE/factory.img.gz := boot-common | boot-2708 | sdcard-img | gzip
+  IMAGE/sysupgrade.img.gz := boot-common | boot-2708 | sdcard-img | libdeflate-gzip | append-metadata
+  IMAGE/factory.img.gz := boot-common | boot-2708 | sdcard-img | libdeflate-gzip
 endef
 
 define Device/rpi
@@ -137,8 +137,8 @@ define Device/rpi-2
 	$(WIFI_43430_FW) \
 	$(WIFI_43455_FW) \
 	$(BRCM_WIFI_DRIVER)
-  IMAGE/sysupgrade.img.gz := boot-common | boot-2708 | boot-2711 | sdcard-img | gzip | append-metadata
-  IMAGE/factory.img.gz := boot-common | boot-2708 | boot-2711 | sdcard-img | gzip
+  IMAGE/sysupgrade.img.gz := boot-common | boot-2708 | boot-2711 | sdcard-img | libdeflate-gzip | append-metadata
+  IMAGE/factory.img.gz := boot-common | boot-2708 | boot-2711 | sdcard-img | libdeflate-gzip
 endef
 ifeq ($(SUBTARGET),bcm2709)
   TARGET_DEVICES += rpi-2
@@ -193,8 +193,8 @@ define Device/rpi-4
 	$(WIFI_43455_FW) \
 	$(BRCM_WIFI_DRIVER) \
 	$(LAN_DRIVERS)
-  IMAGE/sysupgrade.img.gz := boot-common | boot-2711 | sdcard-img | gzip | append-metadata
-  IMAGE/factory.img.gz := boot-common | boot-2711 | sdcard-img | gzip
+  IMAGE/sysupgrade.img.gz := boot-common | boot-2711 | sdcard-img | libdeflate-gzip | append-metadata
+  IMAGE/factory.img.gz := boot-common | boot-2711 | sdcard-img | libdeflate-gzip
 endef
 ifeq ($(SUBTARGET),bcm2711)
   TARGET_DEVICES += rpi-4
@@ -221,8 +221,8 @@ define Device/rpi-5
 	$(BRCM_WIFI_DRIVER) \
 	$(LAN_DRIVERS) \
 	kmod-hwmon-pwmfan kmod-thermal
-  IMAGE/sysupgrade.img.gz := boot-common | sdcard-img | gzip | append-metadata
-  IMAGE/factory.img.gz := boot-common | sdcard-img | gzip
+  IMAGE/sysupgrade.img.gz := boot-common | sdcard-img | libdeflate-gzip | append-metadata
+  IMAGE/factory.img.gz := boot-common | sdcard-img | libdeflate-gzip
 endef
 ifeq ($(SUBTARGET),bcm2712)
   TARGET_DEVICES += rpi-5

@@ -552,7 +552,7 @@ define Device/zyxel_nbg6716
   IMAGE/sysupgrade.tar/squashfs := append-rootfs | pad-to $$$$(BLOCKSIZE) | \
 	sysupgrade-tar rootfs=$$$$@ | append-metadata
   IMAGE/sysupgrade-4M-Kernel.bin/squashfs := append-kernel | \
-	pad-to $$$$(KERNEL_SIZE) | append-ubi | pad-to 263192576 | gzip
+	pad-to $$$$(KERNEL_SIZE) | append-ubi | pad-to 263192576 | libdeflate-gzip
   IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | \
 	zyxel-factory
   UBINIZE_OPTS := -E 5
