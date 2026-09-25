@@ -23,8 +23,12 @@ def get_titles():
     for prefix in ["", "ALT0_", "ALT1_", "ALT2_", "ALT3_", "ALT4_", "ALT5_"]:
         title = {}
         for var in ["vendor", "model", "variant"]:
-            if getenv("DEVICE_{}{}".format(prefix, var.upper())):
-                title[var] = getenv("DEVICE_{}{}".format(prefix, var.upper()))
+            value = getenv("DEVICE_{}{}".format(prefix, var.upper()))
+            if not value and prefix != "" and var == "variant":
+                value = getenv("DEVICE_VARIANT")
+
+            if value:
+                title[var] = value
 
         if title:
             titles.append(title)
