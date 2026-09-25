@@ -280,6 +280,7 @@ sub parse_package_metadata($) {
 		/^Hidden: \s*(.+)\s*$/ and $pkg->{hidden} = 1;
 		/^Build-Variant: \s*([\w\-]+)\s*/ and $pkg->{variant} = $1;
 		/^Default-Variant: .*/ and $pkg->{variant_default} = 1;
+		/^Default-Provider: .*/ and $pkg->{default_provider} = 1;
 		/^Build-Only: \s*(.+)\s*$/ and $pkg->{buildonly} = 1;
 		/^Repository:\s*(.+?)\s*$/ and $pkg->{repository} = $1;
 		/^Category: \s*(.+)\s*$/ and do {
