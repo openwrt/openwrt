@@ -24,7 +24,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  #include <dt-bindings/interconnect/qcom,ipq9574.h>
  #include <dt-bindings/interrupt-controller/arm-gic.h>
  #include <dt-bindings/reset/qcom,ipq9574-gcc.h>
-@@ -1253,12 +1254,12 @@
+@@ -1254,12 +1255,12 @@
  				 <&cmn_pll NSS_1200MHZ_CLK>,
  				 <&cmn_pll PPE_353MHZ_CLK>,
  				 <&gcc GPLL0_OUT_AUX>,
@@ -43,7 +43,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  				 <&gcc GCC_NSSCC_CLK>;
  			clock-names = "xo",
  				      "nss_1200",
-@@ -1275,6 +1276,93 @@
+@@ -1276,6 +1277,93 @@
  			#reset-cells = <1>;
  			#interconnect-cells = <1>;
  		};
