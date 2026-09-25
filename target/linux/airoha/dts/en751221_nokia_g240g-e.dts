@@ -180,6 +180,38 @@
 	};
 };
 
+/*
+ * One PEF32002/DXS102 provides both FXS ports.
+ * Audio uses PCM1; control transactions are transported over ZSI.
+ */
+&pcm0 {
+	airoha,dma-channel-mask = <0x3>;
+	// status = "okay";
+};
+
+&zsi0 {
+	/*
+	 * Replaces the platform-style Zarlink ZSI bus with the ZSI-to-SPI
+	 * controller required by drv_tapi_dxs.
+	 */
+	compatible = "econet,en751221-zsi-spi";
+	// status = "okay";
+
+	dxs0: slic@0 {
+		compatible = "maxlinear,pef32002";
+		reg = <0>;
+
+		spi-max-frequency = <2000000>;
+		spi-cpol;
+		spi-cpha;
+
+		/*
+		 * Start in polling mode. Add interrupts only after confirming
+		 * the physical DXS interrupt routing.
+		 */
+	};
+};
+
 &i2c0 {
 	status = "okay";
 
@@ -189,7 +221,6 @@
 
 		nvmem-cells = <&cal_l98>;
 		nvmem-cell-names = "calibration";
-		tx-disable-gpios = <&pinctrl 16 GPIO_ACTIVE_HIGH>;
 
 		#optical-frontend-cells = <0>;
 	};
@@ -197,6 +228,9 @@
 
 &xpon_phy {
 	status = "okay";
+
+	/* Needs confirm in hardware, in `led.conf` contains `42  27  1   0   1` */
+	vcc-disable-gpios = <&pinctrl 27 GPIO_ACTIVE_HIGH>;
 
 	airoha,rx-sd-inverted;
 };

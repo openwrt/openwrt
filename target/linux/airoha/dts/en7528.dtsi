@@ -570,6 +570,9 @@
 			interrupts = <GIC_SHARED 27 IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-names = "phy";
 			airoha,scu = <&scuclk>;
+
+			tx-disable-gpios = <&pinctrl 16 GPIO_ACTIVE_HIGH>;
+
 			#phy-cells = <0>;
 
 			status = "disabled";

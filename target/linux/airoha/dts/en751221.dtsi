@@ -474,6 +474,8 @@
 		airoha,scu = <&scuclk>;
 		airoha,chip-scu = <&chip_scu>;
 
+		tx-disable-gpios = <&pinctrl 16 GPIO_ACTIVE_HIGH>;
+
 		#phy-cells = <0>;
 
 		status = "disabled";
