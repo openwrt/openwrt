@@ -80,6 +80,30 @@
 			gpios = <&pinctrl 28 GPIO_ACTIVE_LOW>;
 			default-state = "off";
 		};
+
+		led-lan1 {
+			label = "green:lan1";
+			gpios = <&switch1 12 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		led-lan2 {
+			label = "green:lan2";
+			gpios = <&switch1 9 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		led-lan3 {
+			label = "green:lan3";
+			gpios = <&switch1 6 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		led-lan4 {
+			label = "green:lan4";
+			gpios = <&switch1 3 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
 	};
 
 	keys {
@@ -144,6 +168,13 @@
  */
 &switch1 {
 	status = "okay";
+	/*
+	 * The LAN LEDs hang off LED0 of each MCM port. Expose the LED pins as
+	 * GPIOs (LED0 of port p = GPIO 3p) so Linux can drive them per port;
+	 * this turns off their hardware link/activity mode.
+	 */
+	gpio-controller;
+	#gpio-cells = <2>;
 };
 
 &gsw_port1 {
