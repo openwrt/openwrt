@@ -98,9 +98,11 @@ define Device/glinet_gl-b3000
 	NAND_SIZE := 128m
 	DEVICE_DTS_CONFIG := config@mp03.5-c1
 	SUPPORTED_DEVICES += b3000
-	BOOT_SCRIPT:= glinet_gl-b3000.bootscript
+	BOOT_SCRIPT := glinet_qsdk.bootscript
 	IMAGES := factory.img sysupgrade.bin
-	IMAGE/factory.img := append-ubi | gl-qsdk-factory | append-metadata
+	IMAGE/factory.img := append-ubi | \
+		gl-qsdk-factory ubi_offset=0x00800000 ubi_size=0x07800000 | \
+		append-metadata
 	DEVICE_PACKAGES := \
 		ath11k-firmware-ipq5018-qcn6122 \
 		ipq-wifi-glinet_gl-b3000 \
