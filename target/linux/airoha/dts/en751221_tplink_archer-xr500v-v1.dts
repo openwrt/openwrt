@@ -113,7 +113,7 @@
  * The pin floats high (supply disabled) unless driven low; the OEM firmware
  * drives it low right after the transmitter is disabled. Without it the laser
  * only survives short bursts and upstream stalls at ~60 Mbit/s. GPIO 16
- * (TX_DISABLE) is left to the optical driver.
+ * (TX_DISABLE) belongs to the optical frontend below.
  */
 &pinctrl {
 	pon-vcc-enable-hog {
@@ -277,6 +277,10 @@
 		phy-names = "xpon";
 		nvmem-cells = <&en7570_cal>;
 		nvmem-cell-names = "calibration";
+		/* High asserts TX_DISABLE: the laser is off. */
+		tx-disable-gpios = <&pinctrl 16 GPIO_ACTIVE_HIGH>;
+
+		#optical-frontend-cells = <0>;
 	};
 };
 
@@ -291,11 +295,15 @@
 	/* Order consumed by airoha-xpon: GPON status, then LOS. */
 	leds = <&led_pon>, <&led_los>;
 	led-names = "pon", "los";
+
+	optical-frontends = <&en7570>;
+	optical-frontend-names = "pon";
 };
 
 &gdm2 {
 	status = "okay";
 	phy-mode = "internal";
+	airoha,xpon-managed;
 
 	nvmem-cells = <&macaddr_misc_f100 1>;
 	nvmem-cell-names = "mac-address";
