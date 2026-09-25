@@ -1,0 +1,72 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Fil Dunsky <filipp.dunsky@gmail.com>
+Date: Sat, 05 Sep 2026 07:30:20 +0300
+Subject: [PATCH] cortina: add Kconfig and Makefile entries for CS75xx GPIO, RTC and I2C
+
+Add the GPIO_CS75XX, RTC_DRV_CS75XX and I2C_CS75XX build options for the
+Cortina CS75xx (Goldengate) GPIO banks, RTC and BIW I2C master, and hook
+the drivers into the corresponding Makefiles.
+
+Signed-off-by: Fil Dunsky <filipp.dunsky@gmail.com>
+---
+--- a/drivers/gpio/Kconfig
++++ b/drivers/gpio/Kconfig
+@@ -2062,3 +2062,11 @@ endif
+ 
+ config DEV_SYNC_PROBE
+ 	tristate
++
++config GPIO_CS75XX
++	bool "Cortina CS75xx GPIO support"
++	depends on ARCH_CORTINA_CS75XX || COMPILE_TEST
++	depends on OF_GPIO
++	select GPIOLIB_IRQCHIP
++	help
++	  GPIO banks of Cortina CS75xx (Goldengate) SoCs.
+--- a/drivers/gpio/Makefile
++++ b/drivers/gpio/Makefile
+@@ -218,3 +218,4 @@ obj-$(CONFIG_GPIO_XTENSA)		+= gpio-xtens
+ obj-$(CONFIG_GPIO_ZEVIO)		+= gpio-zevio.o
+ obj-$(CONFIG_GPIO_ZYNQ)			+= gpio-zynq.o
+ obj-$(CONFIG_GPIO_ZYNQMP_MODEPIN)	+= gpio-zynqmp-modepin.o
++obj-$(CONFIG_GPIO_CS75XX)		+= gpio-cs75xx.o
+--- a/drivers/rtc/Kconfig
++++ b/drivers/rtc/Kconfig
+@@ -2142,4 +2142,10 @@ config RTC_DRV_HID_SENSOR_TIME
+ 	  If this driver is compiled as a module, it will be named
+ 	  rtc-hid-sensor-time.
+ 
++config RTC_DRV_CS75XX
++	tristate "Cortina CS75xx RTC"
++	depends on ARCH_CORTINA_CS75XX || COMPILE_TEST
++	help
++	  RTC of Cortina CS75xx (Goldengate) SoCs.
++
+ endif # RTC_CLASS
+--- a/drivers/rtc/Makefile
++++ b/drivers/rtc/Makefile
+@@ -197,3 +197,4 @@ obj-$(CONFIG_RTC_DRV_WM8350)	+= rtc-wm83
+ obj-$(CONFIG_RTC_DRV_X1205)	+= rtc-x1205.o
+ obj-$(CONFIG_RTC_DRV_XGENE)	+= rtc-xgene.o
+ obj-$(CONFIG_RTC_DRV_ZYNQMP)	+= rtc-zynqmp.o
++obj-$(CONFIG_RTC_DRV_CS75XX)	+= rtc-cs75xx.o
+--- a/drivers/i2c/busses/Kconfig
++++ b/drivers/i2c/busses/Kconfig
+@@ -1596,4 +1596,10 @@ config I2C_VIRTIO
+           This driver can also be built as a module. If so, the module
+           will be called i2c-virtio.
+ 
++config I2C_CS75XX
++	tristate "Cortina CS75xx I2C (BIW) controller"
++	depends on ARCH_CORTINA_CS75XX || COMPILE_TEST
++	help
++	  I2C master of Cortina CS75xx (Goldengate) SoCs.
++
+ endmenu
+--- a/drivers/i2c/busses/Makefile
++++ b/drivers/i2c/busses/Makefile
+@@ -163,3 +163,4 @@ obj-$(CONFIG_I2C_FSI)		+= i2c-fsi.o
+ obj-$(CONFIG_I2C_VIRTIO)	+= i2c-virtio.o
+ 
+ ccflags-$(CONFIG_I2C_DEBUG_BUS) := -DDEBUG
++obj-$(CONFIG_I2C_CS75XX)	+= i2c-cs75xx.o
