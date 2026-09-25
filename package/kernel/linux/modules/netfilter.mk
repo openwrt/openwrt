@@ -843,6 +843,23 @@ endef
 $(eval $(call KernelPackage,ipt-nfqueue))
 
 
+define KernelPackage/ipt-nfacct
+  TITLE:=Module for extended accounting
+  KCONFIG:=CONFIG_NETFILTER_XT_MATCH_NFACCT
+  FILES:=$(LINUX_DIR)/net/netfilter/xt_nfacct.ko
+  AUTOLOAD:=$(call AutoProbe,xt_nfacct)
+  $(call AddDepends/ipt,+kmod-nfnetlink-acct)
+endef
+
+define KernelPackage/ipt-nfacct/description
+ Netfilter module for extended accounting via NFNETLINK
+ Includes:
+ - nfacct
+endef
+
+$(eval $(call KernelPackage,ipt-nfacct))
+
+
 define KernelPackage/ipt-debug
   TITLE:=Module for debugging/development
   KCONFIG:=$(KCONFIG_IPT_DEBUG)
@@ -1186,6 +1203,23 @@ define AddDepends/nfnetlink
   SUBMENU:=$(NF_MENU)
   DEPENDS+=+kmod-nfnetlink $(1)
 endef
+
+
+define KernelPackage/nfnetlink-acct
+  TITLE:=Netfilter NFACCT over NFNETLINK interface
+  FILES:=$(LINUX_DIR)/net/netfilter/nfnetlink_acct.ko
+  KCONFIG:= \
+	CONFIG_NETFILTER_ADVANCED=y \
+	CONFIG_NETFILTER_NETLINK_ACCT
+  AUTOLOAD:=$(call AutoProbe,nfnetlink_acct)
+  $(call AddDepends/nfnetlink)
+endef
+
+define KernelPackage/nfnetlink-acct/description
+ Kernel modules support for extended accounting via NFNETLINK
+endef
+
+$(eval $(call KernelPackage,nfnetlink-acct))
 
 
 define KernelPackage/nfnetlink-log
