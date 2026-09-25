@@ -1,0 +1,111 @@
+From: Kenneth Kasilag <kenneth@kasilag.me>
+Subject: [PATCH] net: ethernet: qualcomm: ppe: fix Rx skb ownership bugs
+
+The Rx reaping loop keeps the skb belonging to the next descriptor in
+next_skb, but only the paths that deliver the current frame reload it.
+When a frame is dropped because its source port resolves to no net
+device, the loop jumps to the next descriptor with next_skb still
+pointing at the skb it just freed: the following iteration processes
+that freed skb as the next descriptor's buffer. If that frame is
+dropped too, the skb is freed a second time, tripping the slub
+double-free detection; if it is delivered, a freed skb is handed up
+the stack. The descriptor's real buffer leaks either way.
+
+The drop path is unreachable while every source the hardware delivers
+from has a registered net device, which is why it went unnoticed; any
+frame arriving with an unmapped source port hits it on every packet.
+
+Load next_skb together with the next descriptor, ahead of the paths
+that consume the current frame, so every path advances it.
+
+The page-mode scatter path has two independent ownership bugs as well.
+After transferring the final page fragment it frees that descriptor's skb,
+then writes the checksum result through the freed pointer.  Make final
+segment processing operate only on the live head skb.  Finally, leave a
+linear skb rejected by pskb_may_pull() owned by the reap loop; freeing it
+in both the helper and its caller otherwise double-frees it.
+
+Signed-off-by: Kenneth Kasilag <kenneth@kasilag.me>
+---
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_rx.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_rx.c
+@@ -150,8 +150,7 @@ static inline uint8_t edma_rx_checksum_v
+ }
+ 
+ static void edma_rx_process_last_segment(struct edma_rxdesc_ring *rxdesc_ring,
+-					 struct edma_rxdesc_pri *rxdesc_pri,
+-					 struct sk_buff *skb)
++					 struct edma_rxdesc_pri *rxdesc_pri)
+ {
+ 	bool page_mode = rxdesc_ring->rxfill->page_mode;
+ 	struct edma_port_pcpu_stats *pcpu_stats;
+@@ -168,7 +167,7 @@ static void edma_rx_process_last_segment
+ 
+ 	/* Check Rx checksum offload status. */
+ 	if (likely(dev->features & NETIF_F_RXCSUM))
+-		skb->ip_summed = edma_rx_checksum_verify(rxdesc_pri, skb_head);
++		skb_head->ip_summed = edma_rx_checksum_verify(rxdesc_pri, skb_head);
+ 
+ 	/* Get stats for the netdevice. */
+ 	port_dev = netdev_priv(dev);
+@@ -270,7 +269,7 @@ static void edma_rx_handle_frag_list(str
+ 	if (EDMA_RXDESC_MORE_BIT_GET(rxdesc_pri))
+ 		return;
+ 
+-	edma_rx_process_last_segment(rxdesc_ring, rxdesc_pri, skb);
++	edma_rx_process_last_segment(rxdesc_ring, rxdesc_pri);
+ }
+ 
+ static void edma_rx_handle_nr_frags(struct edma_rxdesc_ring *rxdesc_ring,
+@@ -312,7 +311,7 @@ static void edma_rx_handle_nr_frags(stru
+ 	if (EDMA_RXDESC_MORE_BIT_GET(rxdesc_pri))
+ 		return;
+ 
+-	edma_rx_process_last_segment(rxdesc_ring, rxdesc_pri, skb);
++	edma_rx_process_last_segment(rxdesc_ring, rxdesc_pri);
+ }
+ 
+ static bool edma_rx_handle_linear_packets(struct edma_rxdesc_ring *rxdesc_ring,
+@@ -347,8 +346,6 @@ static bool edma_rx_handle_linear_packet
+ 		u64_stats_update_begin(&rx_stats->syncp);
+ 		rx_stats->rx_nr_frag_headroom_err++;
+ 		u64_stats_update_end(&rx_stats->syncp);
+-		dev_kfree_skb_any(skb);
+-
+ 		return false;
+ 	}
+ 
+@@ -499,8 +496,13 @@ static int edma_rx_reap(struct edma_rxde
+ 		/* Update consumer index. */
+ 		cons_idx = (cons_idx + 1) & EDMA_RX_RING_SIZE_MASK;
+ 
+-		/* Get the next Rx descriptor. */
++		/* Get the next Rx descriptor and its skb. The skb must advance
++		 * together with the descriptor on every path through this loop:
++		 * a path that consumes the current skb without reloading it
++		 * would reuse a freed skb on the next iteration.
++		 */
+ 		next_rxdesc_pri = EDMA_RXDESC_PRI_DESC(rxdesc_ring, cons_idx);
++		next_skb = (struct sk_buff *)EDMA_RXDESC_OPAQUE_GET(next_rxdesc_pri);
+ 
+ 		/* Handle linear packets or initial segments first. */
+ 		if (likely(!(rxdesc_ring->head))) {
+@@ -516,9 +518,6 @@ static int edma_rx_reap(struct edma_rxde
+ 
+ 			/* Handle linear packets. */
+ 			if (likely(!EDMA_RXDESC_MORE_BIT_GET(rxdesc_pri))) {
+-				next_skb =
+-					(struct sk_buff *)EDMA_RXDESC_OPAQUE_GET(next_rxdesc_pri);
+-
+ 				if (unlikely(!
+ 					     edma_rx_handle_linear_packets(rxdesc_ring,
+ 									   rxdesc_pri, skb)))
+@@ -528,8 +527,6 @@ static int edma_rx_reap(struct edma_rxde
+ 			}
+ 		}
+ 
+-		next_skb = (struct sk_buff *)EDMA_RXDESC_OPAQUE_GET(next_rxdesc_pri);
+-
+ 		/* Handle scatter frame processing for first/middle/last segments. */
+ 		page_mode ? edma_rx_handle_nr_frags(rxdesc_ring, rxdesc_pri, skb) :
+ 			edma_rx_handle_frag_list(rxdesc_ring, rxdesc_pri, skb);
