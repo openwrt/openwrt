@@ -1,0 +1,399 @@
+From: OpenWrt build system
+Subject: ProgramStore: build and run correctly as a native host binary
+
+The original ProgramStore Makefile forces a 32-bit static host binary.
+That requires 32-bit host C++ headers and libraries, which are not part
+of a normal OpenWrt build dependency set. Let the OpenWrt host toolchain
+select the host ABI and link mode instead.
+
+ProgramStore was written for a 32-bit host ABI. Building it as a native
+64-bit host binary also exposes several assumptions:
+
+- the on-disk BcmProgramHeader uses unsigned long fields, changing both
+  field offsets and sizeof(BcmProgramHeader) on LP64 hosts;
+- the bundled 7z portability header maps UINT32 to unsigned long, which
+  turns the LZMA range coder into a 64-bit implementation and produces
+  invalid tiny output;
+- the LZMA input window passes -1 through a UINT32 offset and relies on
+  32-bit pointer wraparound to move pointers back by one byte;
+- the LZMA match and output windows use unsigned expressions for negative
+  history-window indexes such as i - distance;
+- ProgramStore passes an unsigned long compressed-size variable to APIs
+  expecting an unsigned int reference/pointer.
+
+Use fixed-width 32-bit types for the image format and bundled 7z code,
+cast pointer offsets where the old code passed -1, and copy compressed sizes
+through temporary unsigned int variables.
+
+--- a/ProgramStore/Makefile
++++ b/ProgramStore/Makefile
+@@ -21,7 +21,7 @@ OBJS = \
+         WindowIn.o      \
+         WindowOut.o
+ 
+-CPPFLAGS += -DGNU -I7z -fpermissive -m32
++CPPFLAGS += -DGNU -I7z -fpermissive
+ 
+ VPATH += 7z decompress
+ 
+@@ -40,7 +40,7 @@ all: $(OBJS)
+ 
+ else
+ 
+-    CPPFLAGS += -m32 -static -O2
++    CPPFLAGS += -O2
+ 
+ all: $(OBJS)
+ 	$(CXX) $(OBJS) $(CPPFLAGS) -o ProgramStore -Wl,-Map -Wl,ps.map
+--- a/ProgramStore/ProgramStore.h
++++ b/ProgramStore/ProgramStore.h
+@@ -16,34 +16,36 @@
+ #ifndef PROGRAMSTORE_H
+ #define PROGRAMSTORE_H
+ 
+-typedef struct _BcmProgramHeader 
++#include <stdint.h>
++
++typedef struct __attribute__((packed)) _BcmProgramHeader
+ 	{
+-	unsigned short usSignature; 	// the unique signature may be specified as a command
++	uint16_t usSignature; 		// the unique signature may be specified as a command
+ 									// line option: The default is: 0x3350
+ 
+-	unsigned short usControl;		// Control flags: currently defined lsb=1 for compression
++	uint16_t usControl;		// Control flags: currently defined lsb=1 for compression
+ 									// remaining bits are currently reserved
+ 
+-	unsigned short usMajorRevision; // Major SW Program Revision
+-	unsigned short usMinorRevision; // Minor SW Program Revision
++	uint16_t usMajorRevision; // Major SW Program Revision
++	uint16_t usMinorRevision; // Minor SW Program Revision
+ 									// From a command line option this is specified as xxx.xxx
+ 									// for the Major.Minor revision (note: Minor Revision is 3 digits)
+ 
+-	unsigned long ulcalendarTime;	// calendar time of this build (expressed as seconds since Jan 1 1970)
++	uint32_t ulcalendarTime;	// calendar time of this build (expressed as seconds since Jan 1 1970)
+ 
+-	unsigned long ulTotalCompressedLength;	// length of Program portion of file
++	uint32_t ulTotalCompressedLength;	// length of Program portion of file
+ 
+-	unsigned long ulProgramLoadAddress; // Address where program should be loaded (virtual, uncached)
++	uint32_t ulProgramLoadAddress; // Address where program should be loaded (virtual, uncached)
+ 
+ 	char cFilename[48]; 			// NULL terminated filename only (not pathname)
+     char pad[8];                    // For future use
+ 
+-    unsigned long ulCompressedLength1; // When doing a dual-compression for Linux,
+-    unsigned long ulCompressedLength2; // it's necessary to save both lengths.
++    uint32_t ulCompressedLength1; // When doing a dual-compression for Linux,
++    uint32_t ulCompressedLength2; // it's necessary to save both lengths.
+ 
+-	unsigned short usHcs;			// 16-bit crc Header checksum (CRC_CCITT) over the header [usSignature through cFilename]
+-	unsigned short reserved;		// reserved
+-	unsigned long ulcrc;			// CRC-32 of Program portion of file (following the header)
++	uint16_t usHcs;			// 16-bit crc Header checksum (CRC_CCITT) over the header [usSignature through cFilename]
++	uint16_t reserved;		// reserved
++	uint32_t ulcrc;			// CRC-32 of Program portion of file (following the header)
+ 
+ 	} BcmProgramHeader;
+ 
+--- a/ProgramStore/7z/Portable.h
++++ b/ProgramStore/7z/Portable.h
+@@ -1,27 +1,24 @@
+ #ifndef __PORTABLE_H
+ #define __PORTABLE_H
+ 
++#include <stdint.h>
+ #include <string.h>
+ 
+-typedef signed char INT8;
+-typedef unsigned char UINT8;
+-typedef short INT16;
+-typedef unsigned short UINT16;
+-typedef long INT32;
+-typedef unsigned long UINT32;
+-#if GNU
+-typedef long long INT64;
+-typedef unsigned long long UINT64;
+-#else
+-typedef __int64 INT64;
+-typedef unsigned __int64 UINT64;
+-#endif
++typedef int8_t INT8;
++typedef uint8_t UINT8;
++typedef int16_t INT16;
++typedef uint16_t UINT16;
++typedef int32_t INT32;
++typedef uint32_t UINT32;
++typedef int64_t INT64;
++typedef uint64_t UINT64;
+ 
+ typedef UINT8 BYTE;
+ typedef UINT16 WORD;
+ typedef UINT32 DWORD;
+ 
+-typedef unsigned UINT_PTR;
++typedef uintptr_t UINT_PTR;
++typedef int32_t INT;
+ 
+ typedef int BOOL;
+ #define FALSE 0
+ #define TRUE 1
+--- a/ProgramStore/7z/WindowIn.h
++++ b/ProgramStore/7z/WindowIn.h
+@@ -68,9 +68,9 @@ public:
+       if ((m_Pos + aIndex) + aLimit > m_StreamPos)
+         aLimit = m_StreamPos - (m_Pos + aIndex);
+       aBack++;
+-      BYTE *pby = m_Buffer + m_Pos + aIndex;
++      BYTE *pby = m_Buffer + (m_Pos + aIndex);
+       UINT32 i;
+-      for(i = 0; i < aLimit && pby[i] == pby[i - aBack]; i++);
++      for(i = 0; i < aLimit && pby[i] == pby[(INT32)i - (INT32)aBack]; i++);
+       return i;
+   }
+ 
+@@ -79,4 +79,4 @@ public:
+  void ReduceOffsets(UINT32 aSubValue)
+  {
+-    m_Buffer += aSubValue;
++    m_Buffer += (INT32)aSubValue;
+    m_PosLimit -= aSubValue;
+--- a/ProgramStore/7z/BinTree.h
++++ b/ProgramStore/7z/BinTree.h
+@@ -56,5 +56,5 @@ public:
+   {
+     CIn::ReduceOffsets(aSubValue);
+-    m_Son += aSubValue;
++    m_Son += (INT32)aSubValue;
+   }
+ };
+--- a/ProgramStore/7z/LZMAEncoder.cpp
++++ b/ProgramStore/7z/LZMAEncoder.cpp
+@@ -458,7 +458,7 @@ UINT32 CEncoder::GetOptimum(UINT32 &aBa
+     // BYTE aMatchByte = m_MatchFinder.GetIndexByte(0 - aReps[0] - 1 - 1);
+     const BYTE *aData = m_MatchFinder.GetPointerToCurrentPos() - 1;
+     BYTE aCurrentByte = *aData;
+-    BYTE aMatchByte = aData[0 - aReps[0] - 1];
++    BYTE aMatchByte = aData[-(INT32)aReps[0] - 1];
+ 
+     UINT32 aPosState = (aPosition & m_PosStateMask);
+ 
+@@ -509,7 +509,7 @@ UINT32 CEncoder::GetOptimum(UINT32 &aBa
+       UINT32 aBackOffset = aReps[0] + 1;
+       UINT32 aTemp;
+       for (aTemp = 1; aTemp < aNumAvailableBytes; aTemp++)
+-        if (aData[aTemp] != aData[aTemp - aBackOffset])
++        if (aData[aTemp] != aData[(INT32)aTemp - (INT32)aBackOffset])
+           break;
+       UINT32 aLenTest2 = aTemp - 1;
+       if (aLenTest2 >= 2)
+@@ -544,7 +544,7 @@ UINT32 CEncoder::GetOptimum(UINT32 &aBa
+       UINT32 aBackOffset = aReps[aRepIndex] + 1;
+       UINT32 aLenTest;
+       for (aLenTest = 0; aLenTest < aNumAvailableBytes; aLenTest++)
+-        if (aData[aLenTest] != aData[aLenTest - aBackOffset])
++        if (aData[aLenTest] != aData[(INT32)aLenTest - (INT32)aBackOffset])
+           break;
+       for(; aLenTest >= 2; aLenTest--)
+       {
+@@ -565,7 +565,7 @@ UINT32 CEncoder::GetOptimum(UINT32 &aBa
+           UINT32 aBackOffset = aReps[aRepIndex] + 1;
+           UINT32 aTemp;
+           for (aTemp = aLenTest + 1; aTemp < aNumAvailableBytes; aTemp++)
+-            if (aData[aTemp] != aData[aTemp - aBackOffset])
++            if (aData[aTemp] != aData[(INT32)aTemp - (INT32)aBackOffset])
+               break;
+           UINT32 aLenTest2 = aTemp - (aLenTest + 1);
+           if (aLenTest2 >= 2)
+@@ -576,7 +576,7 @@ UINT32 CEncoder::GetOptimum(UINT32 &aBa
+             UINT32 aCurAndLenCharPrice = aCurAndLenPrice + 
+                 m_MainChoiceEncoders[aState2.m_Index][aPosStateNext].GetPrice(kMainChoiceLiteralIndex) +
+                 m_LiteralEncoder.GetPrice(aPosition + aLenTest, aData[aLenTest - 1], 
+-                true, aData[aLenTest - aBackOffset], aData[aLenTest]);
++                true, aData[(INT32)aLenTest - (INT32)aBackOffset], aData[aLenTest]);
+             aState2.UpdateChar();
+             aPosStateNext = (aPosition + aLenTest + 1) & m_PosStateMask;
+            UINT32 aNextMatchPrice = aCurAndLenCharPrice + m_MainChoiceEncoders[aState2.m_Index][aPosStateNext].GetPrice(kMainChoiceMatchIndex);
+@@ -637,7 +637,7 @@ UINT32 CEncoder::GetOptimum(UINT32 &aBa
+           UINT32 aBackOffset = aCurBack + 1;
+           UINT32 aTemp;
+           for (aTemp = aLenTest + 1; aTemp < aNumAvailableBytes; aTemp++)
+-            if (aData[aTemp] != aData[aTemp - aBackOffset])
++            if (aData[aTemp] != aData[(INT32)aTemp - (INT32)aBackOffset])
+               break;
+           UINT32 aLenTest2 = aTemp - (aLenTest + 1);
+           if (aLenTest2 >= 2)
+@@ -648,7 +648,7 @@ UINT32 CEncoder::GetOptimum(UINT32 &aBa
+             UINT32 aCurAndLenCharPrice = aCurAndLenPrice + 
+                m_MainChoiceEncoders[aState2.m_Index][aPosStateNext].GetPrice(kMainChoiceLiteralIndex) +
+                 m_LiteralEncoder.GetPrice(aPosition + aLenTest, aData[aLenTest - 1], 
+-                true, aData[aLenTest - aBackOffset], aData[aLenTest]);
++                true, aData[(INT32)aLenTest - (INT32)aBackOffset], aData[aLenTest]);
+             aState2.UpdateChar();
+             aPosStateNext = (aPosition + aLenTest + 1) & m_PosStateMask;
+            UINT32 aNextMatchPrice = aCurAndLenCharPrice + m_MainChoiceEncoders[aState2.m_Index][aPosStateNext].GetPrice(kMainChoiceMatchIndex);
+--- a/ProgramStore/7z/WindowOut.h
++++ b/ProgramStore/7z/WindowOut.h
+@@ -47,5 +47,5 @@ public:
+     BYTE *p = m_Buffer + m_Pos;
+     aDistance++;
+     for(UINT32 i = 0; i < aLen; i++)
+-      p[i] = p[i - aDistance];
++      p[i] = p[(INT32)i - (INT32)aDistance];
+     m_Pos += aLen;
+--- a/ProgramStore/decompress/decompress.cpp
++++ b/ProgramStore/decompress/decompress.cpp
+@@ -135,11 +135,11 @@ static void PrintProgramHeader( BcmProg
+     printf("   Minor Rev: %04x\n",      pProgramHeader->usMinorRevision);
+     printf("  Build Time: ");
+     printctime((unsigned int)pProgramHeader->ulcalendarTime);
+-    printf(" File Length: %ld bytes\n", pProgramHeader->ulTotalCompressedLength);
+-    printf("Load Address: %08lx\n",     pProgramHeader->ulProgramLoadAddress);
++    printf(" File Length: %u bytes\n",  (unsigned int)pProgramHeader->ulTotalCompressedLength);
++    printf("Load Address: %08x\n",      (unsigned int)pProgramHeader->ulProgramLoadAddress);
+     printf("    Filename: %s\n",          pProgramHeader->cFilename);
+     printf("         HCS: %04x\n",      pProgramHeader->usHcs);
+-    printf("         CRC: %08lx\n\n",     pProgramHeader->ulcrc);
++    printf("         CRC: %08x\n\n",    (unsigned int)pProgramHeader->ulcrc);
+ } 
+ 
+ 
+@@ -291,7 +291,7 @@ bool DecompressFile( BcmProgramHeader *
+             *pDecompressSize = Decompression( pucSrc, 
+                                   pucDst, 
+                                   compressedLength );
+-            printf("Decompressed length: %ld\n", *pDecompressSize);
++            printf("Decompressed length: %d\n", *pDecompressSize);
+         }
+         else if ( compressionType == PGM_CONTROL_COMPRESSED_IMAGE_MINILZO )
+         {
+@@ -306,7 +306,7 @@ bool DecompressFile( BcmProgramHeader *
+                                              NULL);
+             if ( r == LZO_E_OK )
+             {
+-                printf("Decompressed length: %ld\n", *pDecompressSize);
++                printf("Decompressed length: %d\n", *pDecompressSize);
+             }
+             else
+             {
+@@ -325,7 +325,7 @@ bool DecompressFile( BcmProgramHeader *
+                                       (unsigned int*)        pDecompressSize);
+             if ( r == UCL_E_OK )
+             {
+-                printf("Decompressed length: %ld\n", *pDecompressSize);
++                printf("Decompressed length: %d\n", *pDecompressSize);
+             }
+             else
+             {
+@@ -361,7 +361,7 @@ bool DecompressFile( BcmProgramHeader *
+             // uncompressed image
+             printf( "Loading non-compressed image...\n" );
+ //            printf( "Target Address: 0x%08X\n", (UINT) pucDst );
+-            printf( "Length: %ld\n", compressedLength );
++            printf( "Length: %d\n", compressedLength );
+             pulSrc = (uint32 *)pucImage;
+             pulDst = (uint32 *)pucDst;
+             for ( i=0; i<(compressedLength/4)+1; i++ )
+@@ -372,7 +372,7 @@ bool DecompressFile( BcmProgramHeader *
+     }
+     else
+     {
+-        printf( "Image %d CRC failed!\n" );
++        printf( "Image CRC failed!\n" );
+     }
+     return false;
+ }
+--- a/ProgramStore/ProgramStore.cpp
++++ b/ProgramStore/ProgramStore.cpp
+@@ -31,6 +31,8 @@
+ #include <string.h>
+ #include <time.h>
+ #include <stdlib.h>
++#define __STDC_FORMAT_MACROS
++#include <inttypes.h>
+ 
+ #include "ProgramStore.h"
+ #include "minilzo.h"
+@@ -328,7 +330,10 @@ int main(int argc, char* argv[])
+                             // Read in the time as an ulong representing time since epoch
+                             //   as from `date +%s`
+                             //   e.g. 1406750554  // represents Wed Jul 30 20:02:34 UTC 2014
+-                            sscanf( argv[i], "%lu", &(proghead.ulcalendarTime) );
++                            if (sscanf( argv[i], "%" SCNu32, &(proghead.ulcalendarTime) ) != 1)
++                            {
++                                fail ( "Invalid timestamp for the -t option.\n\r" );
++                            }
+                         }
+                         else
+                         {
+@@ -339,7 +344,10 @@ int main(int argc, char* argv[])
+                     case CLI_ARG_LOAD_ADDRESS :
+                         if (++i < argc)
+                         {
+-                            sscanf( argv[i], "%lx", &(proghead.ulProgramLoadAddress) );
++                            if (sscanf( argv[i], "%" SCNx32, &(proghead.ulProgramLoadAddress) ) != 1)
++                            {
++                                fail( "Invalid load address for -a option.\n\r" );
++                            }
+                         }
+                         else
+                         {
+@@ -722,14 +734,16 @@ static unsigned long CompressFile( FILE
+     else if (compressionType == UseminiLZOCompression)
+     {
++        unsigned int out_len = (unsigned int)complength;
+         result = lzo1x_1_compress((unsigned char*)indata,
+                                              infilelength,
+                              (unsigned char*)compdata,
+-                             (unsigned int *)&complength,
++                                             &out_len,
+                                              wrkmem);
+         if (result != LZO_E_OK)
+         {
+             /* this should NEVER happen */
+             printf("internal error - compression failed: %d\n", result);
+             exit(2);
+         }
++        complength = out_len;
+     }
+@@ -736,17 +750,19 @@ static unsigned long CompressFile( FILE
+     else if (compressionType == UseNRV2D99Compression)
+     {
++        unsigned int out_len = (unsigned int)complength;
+         result = ucl_nrv2d_99_compress((unsigned char *)indata,
+                                   infilelength,
+                                   (unsigned char*)compdata,
+-                                  (unsigned int *)&complength,
++                                  &out_len,
+                                   0,
+                                   nrv2d99_compression_level,
+                                   NULL,
+                                   NULL);
+         if (result != UCL_E_OK)
+         {
+             /* this should NEVER happen */
+             printf("internal error - compression failed: %d\n", result);
+             exit(2);
+         }
++        complength = out_len;
+     }
+@@ -796,13 +812,16 @@ static unsigned long CompressFile( FILE
+             default :
+                 fail( "Invalid LZMA compression level." );
+         }
+ 
++        unsigned lzma_outsize = (unsigned)complength;
+         bresult = compress_lzma_7z((const unsigned char*) indata,
+                                    (unsigned)             infilelength,
+                                    (unsigned char*)       compdata,
+-                                   (unsigned &)           complength,
++                                   lzma_outsize,
+                                    lzma_algo,
+                                    lzma_dictsize,
+                                    lzma_fastbytes);
++        complength = lzma_outsize;
++
+         if (bresult != true)
+         {
+             /* this should NEVER happen */
