@@ -195,6 +195,12 @@ ltc,vl7m19k)
 	ucidef_set_led_netdev "wlan5g" "WLAN5G" "green:wlan-5ghz" "phy0.1-ap0" "link tx rx"
 	ucidef_set_led_netdev "wlan6g" "WLAN6G" "green:wlan-6ghz" "phy0.2-ap0" "link tx rx"
 	;;
+mercusys,h90x-v1|\
+mercusys,h90x-v1-ubi)
+	ucidef_set_led_netdev "lan-1" "lan-1" "green:lan-1" "lan1" "link tx rx"
+	ucidef_set_led_netdev "lan-2" "lan-2" "green:lan-2" "lan2" "link tx rx"
+	ucidef_set_led_netdev "wan" "wan" "green:wan" "eth1" "link tx rx"
+	;;
 mercusys,mr80x-v3|\
 mercusys,mr85x|\
 mercusys,mr85x-ubi)
