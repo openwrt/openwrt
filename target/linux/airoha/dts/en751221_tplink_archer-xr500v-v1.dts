@@ -13,6 +13,23 @@
 		reg = <0x00000000 0x10000000>;
 	};
 
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		/*
+		 * The boot firmware leaves the QDMA SLM bypassed, so the WAN
+		 * forwarding pool lives in DRAM. Without this region the driver
+		 * falls back to 256 x 2048-byte buffers and the reduced
+		 * congestion profile, and bursty WiFi upstream is tail-dropped.
+		 */
+		qdma1_buf: qdma1-buf@d400000 {
+			reg = <0x0d400000 0x00800000>;
+			no-map;
+		};
+	};
+
 	chosen {
 		stdout-path = "/serial@1fbf0000:115200";
 		rootdisk = <&firmware>;
@@ -149,6 +166,8 @@
 };
 
 &eth {
+	memory-region = <&qdma1_buf>;
+	memory-region-names = "qdma1-buf";
 	status = "okay";
 };
 
