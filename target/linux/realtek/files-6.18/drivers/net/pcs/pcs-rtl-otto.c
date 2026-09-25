@@ -1490,11 +1490,7 @@ static int rtpcs_93xx_sds_set_autoneg(struct rtpcs_serdes *sds, unsigned int neg
 		return rtpcs_sds_xsg_write_bits(sds, PAGE_SDS, 0x2, 9, 8, en_val);
 
 	case RTPCS_SDS_MODE_USXGMII:
-		/*
-		 * QHSG_AN_EN_CHX: bits [3:0] enable AN on channels 3..0
-		 *
-		 * forced USXGMII link not supported yet, always activate USXGMII-AN
-		 */
+		/* forced USXGMII link not supported yet, always turn on USXGMII-AN */
 		an_en = RTL93XX_CFG_QHSG_AN_EN_CH0 | RTL93XX_CFG_QHSG_AN_EN_CH1 |
 			RTL93XX_CFG_QHSG_AN_EN_CH2 | RTL93XX_CFG_QHSG_AN_EN_CH3;
 		return rtpcs_sds_write_mask(sds, PAGE_TGR_PRO_1, TGR_PRO_1_REG17,
