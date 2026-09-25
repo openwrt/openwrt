@@ -1,0 +1,458 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+#include "an7581.dtsi"
+#include "an7581-npu-mt7992.dtsi"
+
+/ {
+	model = "TP-Link XB432v";
+	compatible = "tplink,xb432v", "airoha,an7581", "airoha,en7581";
+
+	aliases {
+        label-mac-device = &gdm1;
+
+        led-boot = &status_led;
+        led-failsafe = &status_led;
+        led-running = &status_led;
+        led-upgrade = &status_led;
+
+		serial0 = &uart1;
+	};
+
+	chosen {
+		bootargs-append = "console=ttyS0,115200 earlycon root=/dev/ubiblock0_0";
+		stdout-path = "serial0:115200n8";
+		linux,usable-memory-range = <0x0 0x80200000 0x0 0x3fe00000>;
+	};
+
+	memory@80000000 {
+		device_type = "memory";
+		reg = <0x0 0x80000000 0x0 0x40000000>;
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+
+		key-reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&en7581_pinctrl 0 GPIO_ACTIVE_LOW>;
+		};
+
+		key-wifi {
+			label = "wifi";
+			linux,code = <KEY_WLAN>;
+			gpios = <&en7581_pinctrl 23 GPIO_ACTIVE_LOW>;
+		};
+
+		key-wps {
+			label = "wps";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&en7581_pinctrl 4 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		status_led: led-power {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&en7581_pinctrl 17 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+
+		led-fiber-blue {
+			color = <LED_COLOR_ID_BLUE>;
+			function = "fiber";
+			gpios = <&en7581_pinctrl 18 GPIO_ACTIVE_LOW>;
+		};
+
+		led-fiber-red {
+			color = <LED_COLOR_ID_RED>;
+			function = "fiber";
+			gpios = <&en7581_pinctrl 19 GPIO_ACTIVE_LOW>;
+		};
+
+		led-internet-blue {
+			color = <LED_COLOR_ID_BLUE>;
+			function = "internet";
+			gpios = <&en7581_pinctrl 20 GPIO_ACTIVE_LOW>;
+		};
+
+		led-lan {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_LAN;
+			gpios = <&en7581_pinctrl 15 GPIO_ACTIVE_LOW>;
+		};
+
+		led-wlan {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WLAN;
+			gpios = <&en7581_pinctrl 16 GPIO_ACTIVE_LOW>;
+		};
+
+		led-phone-blue {
+			color = <LED_COLOR_ID_BLUE>;
+			function = "phone";
+			gpios = <&en7581_pinctrl 24 GPIO_ACTIVE_LOW>;
+		};
+
+		led-usb {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_USB;
+			gpios = <&en7581_pinctrl 13 GPIO_ACTIVE_LOW>;
+		};
+
+		led-wan {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WAN;
+			gpios = <&en7581_pinctrl 27 GPIO_ACTIVE_LOW>;
+		};
+
+		led-lan3 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <3>;
+			gpios = <&en7581_pinctrl 46 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	reg_3p3v: regulator-3p3v {
+		compatible = "regulator-fixed";
+		regulator-name = "fixed-3.3V";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		regulator-boot-on;
+		regulator-always-on;
+	};
+
+	reg_5v: regulator-5v {
+		compatible = "regulator-fixed";
+		regulator-name = "fixed-5V";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		regulator-boot-on;
+		regulator-always-on;
+	};
+};
+
+&en7581_pinctrl {
+	gpio-ranges = <&en7581_pinctrl 0 13 50>;
+
+	mdio_pins: mdio-pins {
+		mux {
+			function = "mdio";
+			groups = "mdio";
+		};
+
+		conf {
+			pins = "gpio2";
+			output-high;
+		};
+	};
+
+	pcie0_rst_pins: pcie0-rst-pins {
+		conf {
+			pins = "pcie_reset0";
+			drive-open-drain = <1>;
+		};
+	};
+
+	pcie1_rst_pins: pcie1-rst-pins {
+		conf {
+			pins = "pcie_reset1";
+			drive-open-drain = <1>;
+		};
+	};
+
+	gswp2_led0_pins: gswp2-led0-pins {
+		mux {
+			function = "phy2_led0";
+			pins = "gpio44";
+		};
+	};
+
+	gswp3_led0_pins: gswp3-led0-pins {
+		mux {
+			function = "phy3_led0";
+			pins = "gpio45";
+		};
+	};
+
+	wan-enable-hog {
+		gpio-hog;
+		gpios = <42 GPIO_ACTIVE_LOW>;
+		output-high;
+		line-name = "wan-enable";
+	};
+};
+
+&snfi {
+	status = "okay";
+};
+
+&spi_nand {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "boot";
+			reg = <0x0 0xc0000>;
+			read-only;
+		};
+
+		partition@c0000 {
+			label = "art";
+			reg = <0xc0000 0x380000>;
+			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				wifi_eeprom: eeprom@40000 {
+					reg = <0x40000 0x1e00>;
+				};
+			};
+		};
+
+		partition@440000 {
+			label = "misc";
+			reg = <0x440000 0x400000>;
+			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				base_mac: macaddr@8f100 {
+					compatible = "mac-base";
+					reg = <0x8f100 0x6>;
+					#nvmem-cell-cells = <1>;
+				};
+			};
+		};
+
+		partition@840000 {
+			label = "kernel";
+			reg = <0x840000 0xa00000>;
+		};
+
+		partition@1240000 {
+			label = "ubi";
+			reg = <0x1240000 0x3bc0000>;
+		};
+
+		partition@4e00000 {
+			label = "kernel_slave";
+			reg = <0x4e00000 0xa00000>;
+			read-only;
+		};
+
+		partition@5800000 {
+			label = "rootfs_slave";
+			reg = <0x5800000 0x3bc0000>;
+			read-only;
+		};
+
+		partition@9bc0000 {
+			label = "boot_flag";
+			reg = <0x9bc0000 0x40000>;
+		};
+
+		partition@1d740000 {
+			label = "rawb_reserved";
+			reg = <0x1d740000 0x2880000>;
+			read-only;
+		};
+
+		partition@1ffc0000 {
+			label = "bmt_reserved";
+			reg = <0x1ffc0000 0x40000>;
+			read-only;
+		};
+	};
+};
+
+&pcie0 {
+	status = "okay";
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie0_rst_pins>;
+};
+
+&pcie1 {
+	status = "okay";
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie1_rst_pins>;
+
+	pcie@1,0 {
+		reg = <0x0000 0 0 0 0>;
+		device_type = "pci";
+		#address-cells = <3>;
+		#size-cells = <2>;
+
+		wifi@0,0 {
+			compatible = "mediatek,mt76";
+			reg = <0x0000 0 0 0 0>;
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			airoha,npu = <&npu>;
+			airoha,eth = <&eth>;
+
+			nvmem-cells = <&wifi_eeprom>;
+			nvmem-cell-names = "eeprom";
+
+			band@0 {
+				reg = <0>;
+
+				nvmem-cells = <&base_mac 3>;
+				nvmem-cell-names = "mac-address";
+			};
+
+			band@1 {
+				reg = <1>;
+
+				nvmem-cells = <&base_mac 4>;
+				nvmem-cell-names = "mac-address";
+			};
+		};
+	};
+};
+
+&npu {
+	status = "okay";
+};
+
+&eth {
+	status = "okay";
+};
+
+&gdm1 {
+	status = "okay";
+
+	nvmem-cells = <&base_mac 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&switch {
+	status = "okay";
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&mdio_pins>;
+};
+
+&mdio {
+	phy_wan_2g5: ethernet-phy@e {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <0xe>;
+
+		reset-gpios = <&en7581_pinctrl 34 GPIO_ACTIVE_LOW>;
+	};
+
+	phy_lan_2g5: ethernet-phy@f {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <0xf>;
+
+		reset-gpios = <&en7581_pinctrl 31 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&gsw_port2 {
+	status = "okay";
+
+	label = "lan2";
+};
+
+&gsw_phy2 {
+	status = "okay";
+
+	interrupts = <2>;
+
+	pinctrl-names = "gbe-led";
+	pinctrl-0 = <&gswp2_led0_pins>;
+};
+
+&gsw_phy2_led0 {
+	status = "okay";
+
+	color = <LED_COLOR_ID_GREEN>;
+	function = LED_FUNCTION_LAN;
+	function-enumerator = <2>;
+	active-low;
+};
+
+&gsw_port3 {
+	status = "okay";
+
+	label = "lan1";
+};
+
+&gsw_phy3 {
+	status = "okay";
+
+	interrupts = <3>;
+
+	pinctrl-names = "gbe-led";
+	pinctrl-0 = <&gswp3_led0_pins>;
+};
+
+&gsw_phy3_led0 {
+	status = "okay";
+
+	color = <LED_COLOR_ID_GREEN>;
+	function = LED_FUNCTION_LAN;
+	function-enumerator = <1>;
+	active-low;
+};
+
+&pon_pcs {
+	status = "okay";
+};
+
+&gdm2 {
+	status = "okay";
+
+	openwrt,netdev-name = "wan";
+
+	phy-handle = <&phy_wan_2g5>;
+	phy-mode = "2500base-x";
+
+	nvmem-cells = <&base_mac 2>;
+	nvmem-cell-names = "mac-address";
+};
+
+&eth_pcs {
+	status = "okay";
+};
+
+&gdm4 {
+	status = "okay";
+
+	openwrt,netdev-name = "lan3";
+
+	phy-handle = <&phy_lan_2g5>;
+	phy-mode = "2500base-x";
+
+	nvmem-cells = <&base_mac 1>;
+	nvmem-cell-names = "mac-address";
+};
+
+&usb0 {
+	status = "okay";
+
+	vusb33-supply = <&reg_3p3v>;
+	vbus-supply = <&reg_5v>;
+};
