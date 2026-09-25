@@ -1407,7 +1407,8 @@ static inline struct rtldsa_l2_uc *rtldsa_l2_uc_lookup(struct rtl838x_switch_pri
 	return &priv->l2_uc_map[idx];
 }
 
-int rtldsa_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop *nh);
+int rtldsa_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop *nh,
+			  bool learned_only);
 int rtldsa_l2_nexthop_del(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop *nh);
 
 #endif /* _RTL838X_H */
