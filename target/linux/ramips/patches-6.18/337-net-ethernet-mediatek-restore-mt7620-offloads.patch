@@ -1,0 +1,61 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Gleb Pesin <dormancygrace@gmail.com>
+Date: Fri, 7 Aug 2026 18:10:00 +0000
+Subject: [PATCH] net: ethernet: mediatek: restore MT7620 offloads
+
+The legacy Ralink driver enabled IPv4 transmit and receive checksum offload
+on every MT7620 revision. Silicon from ECO 5 also supports scatter-gather,
+TSO, TSO6 and IPv6 transmit checksum offload.
+
+The generic MediaTek paths already program and parse the corresponding DMA
+descriptor bits, including the MT7620 legacy PDMA descriptor
+consumed by the hardware. Restore the features with the original
+silicon-revision guard.
+
+Keep hardware VLAN insertion disabled until it is validated independently.
+
+Signed-off-by: Gleb Pesin <dormancygrace@gmail.com>
+---
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -36,6 +36,8 @@
+ #include <linux/genalloc.h>
+ #include <linux/soc/mediatek/mt7620-gsw.h>
+ 
++#include <asm/mach-ralink/ralink_regs.h>
++#include <asm/mach-ralink/mt7620.h>
+ #include "mtk_eth_soc.h"
+ #include "mtk_wed.h"
+ 
+@@ -5371,6 +5373,7 @@ static int mtk_fill_available_pcs(struct
+ 
+ static int mtk_add_mac(struct mtk_eth *eth, struct device_node *np)
+ {
++	netdev_features_t hw_features = eth->soc->hw_features;
+ 	const __be32 *_id = of_get_property(np, "reg", NULL);
+ 	phy_interface_t phy_mode;
+ 	struct phylink *phylink;
+@@ -5564,13 +5567,20 @@ no_pcs:
+ 	eth->netdev[id]->netdev_ops = &mtk_netdev_ops;
+ 	eth->netdev[id]->base_addr = (unsigned long)eth->base;
+ 
+-	eth->netdev[id]->hw_features = eth->soc->hw_features;
++	if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7620)) {
++		hw_features |= NETIF_F_IP_CSUM | NETIF_F_RXCSUM;
++		if (mt7620_get_eco() >= 5)
++			hw_features |= NETIF_F_SG | NETIF_F_TSO |
++				       NETIF_F_TSO6 | NETIF_F_IPV6_CSUM;
++	}
++
++	eth->netdev[id]->hw_features = hw_features;
+ 	if (eth->hwlro)
+ 		eth->netdev[id]->hw_features |= NETIF_F_LRO;
+ 
+-	eth->netdev[id]->vlan_features = eth->soc->hw_features &
++	eth->netdev[id]->vlan_features = hw_features &
+ 		~NETIF_F_HW_VLAN_CTAG_TX;
+-	eth->netdev[id]->features |= eth->soc->hw_features;
++	eth->netdev[id]->features |= hw_features;
+ 	eth->netdev[id]->ethtool_ops = &mtk_ethtool_ops;
+ 
+ 	eth->netdev[id]->irq = eth->irq[MTK_FE_IRQ_SHARED];
