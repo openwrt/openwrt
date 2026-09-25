@@ -12,6 +12,7 @@ GCC_CONFIGURE += \
 
 define Host/Compile
 	+$(GCC_MAKE) $(HOST_JOBS) -C $(GCC_BUILD_DIR) \
+		$(GCC_CONFIGURE_VARS) \
 		all-build-libiberty \
 		all-gcc \
 		all-target-libgcc
@@ -19,6 +20,7 @@ endef
 
 define Host/Install
 	+$(GCC_MAKE) $(HOST_JOBS) -C $(GCC_BUILD_DIR) \
+		$(GCC_CONFIGURE_VARS) \
 		install-gcc \
 		install-target-libgcc
 
