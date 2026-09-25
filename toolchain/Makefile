@@ -31,6 +31,12 @@ $(curdir)/builddirs := $(if $(CONFIG_GDB),gdb) $(if $(CONFIG_EXTERNAL_TOOLCHAIN)
 
 # builddir dependencies
 ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
+  # Part of the GCC version string, computed on first use by a GCC build.
+  toolchain_hash=$(eval toolchain_hash:=$(shell find toolchain -type f ! -path '*/.*' \
+	! -name '*.orig' ! -name '*.rej' ! -name '*~' -exec $(MKHASH) -n md5 {} + | \
+	LC_ALL=C sort | $(MKHASH) md5 | cut -c1-10))$(toolchain_hash)
+  $(curdir)/gcc/%: export TOOLCHAIN_HASH=$(toolchain_hash)
+
   ifdef CONFIG_USE_MUSL
     $(curdir)/gcc/initial/compile:=$(curdir)/binutils/compile
     $(curdir)/kernel-headers/compile:=$(curdir)/gcc/initial/compile
