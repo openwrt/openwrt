@@ -159,8 +159,6 @@
 };
 
 &eth0 {
-	#address-cells = <1>;
-	#size-cells = <0>;
 	status = "okay";
 
 	/* default for ar934x, except for 1000M */
@@ -171,45 +169,6 @@
 
 	phy-mode = "rgmii";
 	phy-handle = <&phy0>;
-
-	aliases {
-		ag0 = &eth1;
-	};
-
-	port@0 {
-		compatible = "swconfig,port";
-		reg = <0>;
-		swconfig,segment = "lan";
-		swconfig,portmap = <1 1>;
-	};
-
-	port@1 {
-		compatible = "swconfig,port";
-		reg = <1>;
-		swconfig,segment = "lan";
-		swconfig,portmap = <2 2>;
-	};
-
-	port@2 {
-		compatible = "swconfig,port";
-		reg = <2>;
-		swconfig,segment = "lan";
-		swconfig,portmap = <3 3>;
-	};
-
-	port@3 {
-		compatible = "swconfig,port";
-		reg = <3>;
-		swconfig,segment = "lan";
-		swconfig,portmap = <4 4>;
-	};
-
-	port@4 {
-		compatible = "swconfig,port";
-		reg = <4>;
-		swconfig,segment = "wan";
-		swconfig,portmap = <5 5>;
-	};
 };
 
 &wmac {
