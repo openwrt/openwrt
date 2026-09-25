@@ -2,26 +2,57 @@
 
 '''A program for manipulating tplink2022 images.
 
-A tplink2022 is an image format encountered on TP-Link devices around the year
-2022. This was seen at least on the EAP610-Outdoor. The format is a container
-for a rootfs, and has optional fields for the "software" version. It also
- requires a "support" string that describes the list of compatible devices.
+Original: 2022-08-07 robimarko@gmail.com
+------------------------------------------
+A tplink2022 is an image format encountered on TP-Link devices around the year 2022. This was
+seen at least on the EAP610-Outdoor. The format is a container for a rootfs, and has optional
+fields for the "software" version. It also requires a "support" string that describes the list
+of compatible devices.
 
-This module is intended for creating such images with an OpenWRT UBI image, but
-also supports analysis and extraction of vendor images. Altough tplink2022
-images can be signed, this program does not support signing image.
+This module is intended for creating such images with an OpenWRT UBI image, but also supports
+analysis and extraction of vendor images. Although tplink2022 images can be signed, this program
+does not support signing images.
 
-To get an explanation of the commandline arguments, run this program with the
-"--help" argument.
+To get an explanation of the commandline arguments, run this program with the "--help" argument.
+
+Modified: 2026-01-04 drvertigo@gmail.com Github:Tahutipai
+------------------------------------------
+Updated to allow installation of OpenWRT on EAP610-Outdoor v1.2 and above.
+
+1. Added optional --hwver parameter to modify the "AddiHardwareVer" field. 
+   Original script hardcoded this to 1. But the nvrammanager firmware verification procedure 
+   checks the existing HW version on the device (/tp_data/manu_data/add-hardver).
+   The HW version in the firmware must be >= the device HW version, or the
+   firmware will be rejected. (Use --hwver 2 for "EAP610-Outdoor v1.2" devices.)
+
+2. TSLS note: Some devices including EAP610-Outdoor v1.2 require a "|TS1" suffix in the
+   support-list strings. 
+   User must set --support parameter manually.
+   Example: --support "SupportList: EAP610-Outdoor(TP-Link|CA|AX1800-D|TS1):1.0"
+
+   Without "|TS1", devices with TSLS=TS1 in their product-info will reject the firmware.
+
+3. For EAP610-Outdoor v1.2 users seeking a simple solution the following script 
+   will automatically download & patch the firmware:
+   https://gist.github.com/Tahutipai/d21090f4309f58bdc93f0779646a20e4
+
+TP Link Firmware verification check procedure (obtained via reverse engineering factory binaries):
+
+1) RSA+MD5 signature: skipped if folder '/tmp/stopcs/' exists (create via 'cliclientd stopcs')
+2) File size: must be between 6KB and ~64MB
+3) Support-list: must contain device's exact model string (including |TS1 if required)
+4) Version: firmware version must be < or > currently installed version (only equal is rejected)
+5) AddiHardwareVer: firmware hwver must be >= device's stored hwver
+6) Partition table: max 40 partitions, no overlaps, sizes match declared values,
+   must include support-list and soft-version partitions
+7) Filename: firmware name and path must be < 64 characters
 '''
 
 import argparse
 import hashlib
 import os
 import pprint
-import re
 import struct
-
 
 def decode_header(datafile):
     '''Read the tplink2022 image header anbd decode it into a dictionary'''
@@ -133,11 +164,21 @@ def write_image(output_image, header):
         out_file.seek(0)
         out_file.write(struct.pack('>I16s', size, md5_sum.digest()))
 
-def encode_soft_verson():
-    '''Not sure of the meaning of version. Also doesn't appear to be needed.'''
-    return struct.pack('>4B1I2I', 0xff, 1, 0 ,0, 0x2020202, 30000, 1)
+def encode_soft_version(hwver=1):
+    '''Encode soft-version partition data.
 
-def create_image(output_image, root, support):
+    Structure (16 bytes, big-endian):
+      Bytes 0-3:   Flags [0xff, 1, 0, 0]
+      Bytes 4-7:   Build version (0x2020202)
+      Bytes 8-11:  Release number (30000)
+      Bytes 12-15: AddiHardwareVer (hwver parameter)
+
+    The AddiHardwareVer field must be >= the device's hardware revision.
+    Devices with hardware revision 2 require hwver=2 or higher.
+    '''
+    return struct.pack('>4B1I2I', 0xff, 1, 0, 0, 0x2020202, 30000, hwver)
+
+def create_image(output_image, root, support, hwver=1):
     '''Create an image with a ubi "root" and a "support" string.'''
     header = {}
 
@@ -153,7 +194,7 @@ def create_image(output_image, root, support):
 
     support_list = {}
     support_list['name'] = 'support-list'
-    support_list['data'] = re.sub("\\\\r\\\\n ?", "\r\n", support).encode("utf-8")
+    support_list['data'] = support.replace(" ", "\r\n").encode('utf-8')
     support_list['offset'] = header['rootfs_size']
     support_list['size'] = len(support_list['data'])
     header['items'].append(support_list)
@@ -161,7 +202,7 @@ def create_image(output_image, root, support):
     sw_version = {}
     sw_version['name'] = 'soft-version'
     sw_version['type'] = 1
-    sw_version['data'] = encode_soft_verson()
+    sw_version['data'] = encode_soft_version(hwver)
     sw_version['offset'] = support_list['offset'] + support_list['size']
     sw_version['size'] = len(sw_version['data'])
     header['items'].append(sw_version)
@@ -177,7 +218,7 @@ def main(args):
     elif args.create:
         if not args.rootfs or not args.support:
             raise ValueError('To create an image, specify rootfs and support list')
-        create_image(args.image, args.rootfs, args.support)
+        create_image(args.image, args.rootfs, args.support, args.hwver)
     else:
         with open(args.image, 'rb') as image:
             header = decode_header(image)
@@ -186,15 +227,17 @@ def main(args):
             pretty.pprint(header)
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='EAP extractor')
+    parser = argparse.ArgumentParser(description='TP-Link 2022 image tool')
     parser.add_argument('--info', action='store_true')
     parser.add_argument('--extract', action='store_true')
     parser.add_argument('--create', action='store_true')
     parser.add_argument('image', type=str,
                     help='Name of image to create or decode')
     parser.add_argument('--rootfs', type=str,
-                    help='When creating an EAP image, UBI image with rootfs and kernel')
+                    help='UBI image with rootfs and kernel')
     parser.add_argument('--support', type=str,
                     help='String for the "support-list" section')
+    parser.add_argument('--hwver', type=int, default=1,
+                    help='AddiHardwareVer value (default: 1)')
 
     main(parser.parse_args())
