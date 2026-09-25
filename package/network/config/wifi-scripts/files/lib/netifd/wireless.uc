@@ -7,7 +7,7 @@ import {
 	parse_attribute_list, parse_bool, parse_array,
 	TYPE_ARRAY, TYPE_STRING, TYPE_INT, TYPE_BOOL
 } from "./utils.uc";
-import { find_phy } from "wifi.utils";
+import { find_phy, macaddr_random } from "wifi.utils";
 import * as wdev from "./wireless-device.uc";
 
 let wireless = netifd.wireless = {
@@ -55,6 +55,16 @@ function supplicant_update_mlo()
 function mlo_vif_create(config, radio_config, vif_idx, mlo_vifs)
 {
 	let mlo_config = { ...config };
+
+	/*
+	 * The MLD netdev is created by hostapd from this config, which never
+	 * passes through iface.prepare(), so 'random' would reach nl80211
+	 * verbatim and the MLD would fail to come up.  Resolve it here, and
+	 * only for the MLD: the first link BSS keeps the literal value so that
+	 * prepare() draws its address and marks it random_macaddr.
+	 */
+	if (mlo_config.macaddr == 'random')
+		mlo_config.macaddr = macaddr_random();
 
 	if (config.wds)
 		mlo_config['4addr'] = config.wds;
