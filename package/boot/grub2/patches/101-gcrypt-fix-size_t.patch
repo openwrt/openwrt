@@ -1,0 +1,32 @@
+From 282f1c23e8451e62483491cee7a88f33ec10fb51 Mon Sep 17 00:00:00 2001
+From: Nick Hainke <vincent@systemli.org>
+Date: Sat, 18 Apr 2026 00:30:02 +0200
+Subject: [PATCH] grub2: fix size_t conflict in gcrypt.h on musl/x86_64
+
+When importing gcrypt.h from libgcrypt, <sys/types.h> was not stripped
+like other system headers. This causes a type conflict between size_t
+(64-bit on x86_64 host toolchain) and grub_size_t (32-bit in GRUB's
+type system) for functions like _gcry_kdf_open(), _gcry_kdf_final() and
+_gcry_sexp_build(), which are declared with size_t in gcrypt.h but with
+grub_size_t in crypto.h.
+
+Replace <sys/types.h> with <grub/types.h> and alias size_t to
+grub_size_t. Also define __DEFINED_size_t to prevent GCC's stddef.h
+from re-expanding the macro into a conflicting typedef when posix_wrap
+headers are pulled in via the _GCRYPT_IN_LIBGCRYPT internal block.
+
+Signed-off-by: Nick Hainke <vincent@systemli.org>
+---
+--- a/include/grub/gcrypt/gcrypt.h
++++ b/include/grub/gcrypt/gcrypt.h
+@@ -28,7 +28,9 @@
+ 
+ #include <grub/gcrypt/gpg-error.h>
+ 
+-#include <sys/types.h>
++#include <grub/types.h>
++#define size_t grub_size_t
++#define __DEFINED_size_t
+ 
+ #if defined _WIN32 || defined __WIN32__
+ # ifndef __GNUC__
