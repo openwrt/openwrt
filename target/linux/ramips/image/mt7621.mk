@@ -529,7 +529,7 @@ define Device/asus_4g-ax56
   IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | \
 	check-size
   DEVICE_PACKAGES := kmod-mt7915-firmware kmod-usb3 kmod-usb-serial-option \
-	kmod-usb-net-cdc-ncm
+	kmod-usb-net-cdc-ncm comgt-ncm
 endef
 TARGET_DEVICES += asus_4g-ax56
 

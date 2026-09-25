@@ -6,6 +6,10 @@ board_config_update
 board=$(board_name)
 
 case "$board" in
+asus,4g-ax56)
+	ucidef_add_gpio_switch "modem_reboot" "Modem reboot" "reboot:modem" "1"
+	ucidef_add_gpio_switch "modem_reset" "Modem reset" "reset:modem" "1"
+	;;
 mikrotik,routerboard-760igs)
 	ucidef_add_gpio_switch "poe_passthrough" "PoE Passthrough" "529"
 	;;
