@@ -814,9 +814,14 @@ static int rtldsa_find_l2_cam_entry(struct rtl838x_switch_priv *priv, u64 seed,
 				    bool must_exist, struct rtl838x_l2_entry *e)
 {
 	int idx = -1;
+	int cam_rows;
 	u64 entry;
 
-	for (int i = 0; i < 64; i++) {
+	cam_rows = otto_table_rows(priv->r->l2_cam_tbl);
+	if (cam_rows < 0)
+		return -1;
+
+	for (int i = 0; i < cam_rows; i++) {
 		entry = priv->r->read_cam(i, e);
 		if (!must_exist && !e->valid) {
 			if (idx < 0) /* First empty entry? */
@@ -988,10 +993,19 @@ static int rtldsa_port_fdb_dump(struct dsa_switch *ds, int port,
 				dsa_fdb_dump_cb_t *cb, void *data)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
+	int uc_rows, cam_rows;
+
+	uc_rows = otto_table_rows(priv->r->l2_uc_tbl);
+	if (uc_rows < 0)
+		return uc_rows;
+
+	cam_rows = otto_table_rows(priv->r->l2_cam_tbl);
+	if (cam_rows < 0)
+		return cam_rows;
 
 	mutex_lock(&priv->reg_mutex);
 
-	for (int i = 0; i < priv->r->fib_entries; i++) {
+	for (int i = 0; i < uc_rows; i++) {
 		struct rtl838x_l2_entry e = {};
 
 		priv->r->read_l2_entry_using_hash(i >> 2, i & 0x3, &e);
@@ -1006,7 +1020,7 @@ static int rtldsa_port_fdb_dump(struct dsa_switch *ds, int port,
 			cond_resched();
 	}
 
-	for (int i = 0; i < 64; i++) {
+	for (int i = 0; i < cam_rows; i++) {
 		struct rtl838x_l2_entry e = {};
 
 		priv->r->read_cam(i, &e);
