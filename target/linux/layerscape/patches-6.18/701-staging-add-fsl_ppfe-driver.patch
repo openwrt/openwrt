@@ -4541,7 +4541,7 @@ Signed-off-by: Dong Aisheng <aisheng.dong@nxp.com>
 +	struct mii_bus *bus = mdio_priv->mii_bus;
 +	u16 value = 0;
 +
-+	if (eth_priv->einfo->mii_config == PHY_INTERFACE_MODE_2500SGMII)
++	if (eth_priv->einfo->mii_config == PHY_INTERFACE_MODE_2500BASEX)
 +		sgmii_2500 = 1;
 +
 +	netif_info(eth_priv, drv, ndev, "%s\n", __func__);
@@ -4600,7 +4600,7 @@ Signed-off-by: Dong Aisheng <aisheng.dong@nxp.com>
 +	netif_info(priv, drv, ndev, "%s: %s\n", __func__, phy_id);
 +	interface = priv->einfo->mii_config;
 +	if ((interface == PHY_INTERFACE_MODE_SGMII) ||
-+	    (interface == PHY_INTERFACE_MODE_2500SGMII)) {
++	    (interface == PHY_INTERFACE_MODE_2500BASEX)) {
 +		/*Configure SGMII PCS */
 +		if (pfe->scfg) {
 +			/* Config MDIO from serdes */
