@@ -1230,6 +1230,7 @@ define Device/dlink_dir-825-b1
   DEVICE_VARIANT := B1
   DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport \
 	kmod-owl-loader kmod-switch-rtl8366s
+  SUPPORTED_DEVICES += dir-825-b1
   IMAGE_SIZE := 7808k
   FACTORY_SIZE := 6144k
 # IMAGES += factory.bin
