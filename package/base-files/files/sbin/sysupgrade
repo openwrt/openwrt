@@ -450,5 +450,12 @@ else
 	[ $USE_CURR_PART -eq 1 ] && json_add_boolean use_curr_part 1
 	json_close_object
 
+	[ -x /etc/init.d/network ] && /etc/init.d/network shutdown
+
 	ubus call system sysupgrade "$(json_dump)"
+	upgrade_rc=$?
+
+	[ -x /etc/init.d/network ] && /etc/init.d/network restart
+
+	exit $upgrade_rc
 fi
