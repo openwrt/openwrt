@@ -58,6 +58,11 @@ wifire,s1500-nbn)
 belkin,rt1800)
 	ucidef_set_led_netdev "wan" "wan" "white:wan" "wan"
 	;;
+comfast,cf-e455ac-v2)
+	ucidef_set_led_netdev "lan" "lan" "green:lan" "lan"
+	ucidef_set_led_netdev "wan" "wan" "red:wan" "wan"
+	ucidef_set_led_wlan "wlan" "wlan" "blue:wlan" "phy0tpt"
+	;;
 cudy,ap1300-outdoor-v1)
 	ucidef_set_led_netdev "lan" "lan" "green:lan" "lan"
 	;;
