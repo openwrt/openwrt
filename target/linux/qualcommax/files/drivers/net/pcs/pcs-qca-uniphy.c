@@ -856,8 +856,33 @@ static int uniphy_link_up_usxgmii(struct phylink_pcs *pcs, int speed)
 	if (ret)
 		return ret;
 
-	/* XPCS adapter reset */
-	return regmap_set_bits(uniphy->regmap, XPCS_DIG_CTRL, XPCS_USXG_ADPT_RESET);
+	/*
+	 * XPCS adapter reset. phylink polls pcs_get_state() on a timer,
+	 * and without waiting for this reset to clear first, a poll
+	 * landing mid-reset can report a stale NO-CARRIER that only
+	 * clears on a physical replug or a full network restart.
+	 */
+	ret = regmap_set_bits(uniphy->regmap, XPCS_DIG_CTRL, XPCS_USXG_ADPT_RESET);
+	if (ret)
+		return ret;
+
+	/*
+	 * Confirmed self-clearing on NBG7815 (IPQ8074) across cable
+	 * replug and PC sleep/wake cycles that previously reproduced
+	 * the NO-CARRIER/no-DHCP-lease symptom this fix addresses; no
+	 * timeout observed. If some other qca_uniphy-based board
+	 * never clears it, don't fail an otherwise-working link-up
+	 * over it -- just note it for visibility.
+	 */
+	if (regmap_read_poll_timeout(uniphy->regmap, XPCS_DIG_CTRL, val,
+				      !(val & XPCS_USXG_ADPT_RESET),
+				      XPCS_USXG_ADPT_RESET_POLL_US,
+				      XPCS_USXG_ADPT_RESET_TIMEOUT_US))
+		dev_dbg(uniphy->dev,
+			"XPCS adapter reset did not clear within %u us\n",
+			XPCS_USXG_ADPT_RESET_TIMEOUT_US);
+
+	return 0;
 }
 
 static void qca_uniphy_pcs_link_up(struct phylink_pcs *pcs,
