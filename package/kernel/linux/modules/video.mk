@@ -544,6 +544,112 @@ endef
 
 $(eval $(call KernelPackage,drm-vram-helper))
 
+
+define KernelPackage/drm-gpuvm
+  SUBMENU:=$(VIDEO_MENU)
+  HIDDEN:=1
+  TITLE:=GPU virtual address space manager
+  DEPENDS:=@DISPLAY_SUPPORT +kmod-drm-exec
+  KCONFIG:=CONFIG_DRM_GPUVM
+  FILES:=$(LINUX_DIR)/drivers/gpu/drm/drm_gpuvm.ko
+  AUTOLOAD:=$(call AutoProbe,drm_gpuvm)
+endef
+
+define KernelPackage/drm-gpuvm/description
+  GPU virtual address space manager used by drivers with a GPU MMU.
+endef
+
+$(eval $(call KernelPackage,drm-gpuvm))
+
+
+define KernelPackage/drm-dp-aux-bus
+  SUBMENU:=$(VIDEO_MENU)
+  HIDDEN:=1
+  TITLE:=DisplayPort AUX bus support
+  DEPENDS:=@DISPLAY_SUPPORT +kmod-drm
+  KCONFIG:=CONFIG_DRM_DISPLAY_DP_AUX_BUS
+  FILES:=$(LINUX_DIR)/drivers/gpu/drm/display/drm_dp_aux_bus.ko
+  AUTOLOAD:=$(call AutoProbe,drm_dp_aux_bus)
+endef
+
+$(eval $(call KernelPackage,drm-dp-aux-bus))
+
+
+define KernelPackage/drm-analogix-dp
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=Analogix DisplayPort bridge support
+  DEPENDS:=@DISPLAY_SUPPORT +kmod-drm-display-helper +kmod-drm-dp-aux-bus
+  KCONFIG:=CONFIG_DRM_ANALOGIX_DP
+  FILES:=$(LINUX_DIR)/drivers/gpu/drm/bridge/analogix/analogix_dp.ko
+  AUTOLOAD:=$(call AutoProbe,analogix_dp)
+endef
+
+define KernelPackage/drm-analogix-dp/description
+  Core driver for the Analogix DisplayPort and eDP transmitters found
+  in Rockchip and Samsung SoCs.
+endef
+
+$(eval $(call KernelPackage,drm-analogix-dp))
+
+
+define KernelPackage/drm-dw-dp
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=Synopsys DesignWare DisplayPort bridge support
+  DEPENDS:=@DISPLAY_SUPPORT +kmod-drm-display-helper
+  KCONFIG:=CONFIG_DRM_DW_DP
+  FILES:=$(LINUX_DIR)/drivers/gpu/drm/bridge/synopsys/dw-dp.ko
+  AUTOLOAD:=$(call AutoProbe,dw-dp)
+endef
+
+$(eval $(call KernelPackage,drm-dw-dp))
+
+
+define KernelPackage/drm-dw-hdmi-qp
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=Synopsys DesignWare HDMI QP bridge support
+  DEPENDS:=@DISPLAY_SUPPORT +kmod-drm-display-helper +kmod-sound-soc-hdmi-codec
+  KCONFIG:=CONFIG_DRM_DW_HDMI_QP
+  FILES:=$(LINUX_DIR)/drivers/gpu/drm/bridge/synopsys/dw-hdmi-qp.ko
+  AUTOLOAD:=$(call AutoProbe,dw-hdmi-qp)
+endef
+
+define KernelPackage/drm-dw-hdmi-qp/description
+  Synopsys DesignWare HDMI 2.1 Quad-Pixel transmitter bridge with audio
+  through the HDMI codec.
+endef
+
+$(eval $(call KernelPackage,drm-dw-hdmi-qp))
+
+
+define KernelPackage/drm-dw-mipi-dsi2
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=Synopsys DesignWare MIPI DSI2 bridge support
+  DEPENDS:=@DISPLAY_SUPPORT +kmod-drm-kms-helper
+  KCONFIG:=CONFIG_DRM_DW_MIPI_DSI2
+  FILES:=$(LINUX_DIR)/drivers/gpu/drm/bridge/synopsys/dw-mipi-dsi2.ko
+  AUTOLOAD:=$(call AutoProbe,dw-mipi-dsi2)
+endef
+
+$(eval $(call KernelPackage,drm-dw-mipi-dsi2))
+
+
+define KernelPackage/drm-panthor
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=Panthor (ARM Mali CSF GPU) DRM support
+  DEPENDS:=@DISPLAY_SUPPORT @TARGET_rockchip +kmod-drm-sched +kmod-drm-exec \
+	+kmod-drm-gpuvm +kmod-drm-shmem-helper +panthor-firmware
+  KCONFIG:=CONFIG_DRM_PANTHOR
+  FILES:=$(LINUX_DIR)/drivers/gpu/drm/panthor/panthor.ko
+  AUTOLOAD:=$(call AutoProbe,panthor)
+endef
+
+define KernelPackage/drm-panthor/description
+  Direct Rendering Manager (DRM) support for ARM Mali GPUs with a
+  command stream front end (Mali-G310, G510, G610, G710 and later).
+endef
+
+$(eval $(call KernelPackage,drm-panthor))
+
 define KernelPackage/drm-amdgpu
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=AMDGPU DRM support
@@ -807,15 +913,16 @@ $(eval $(call KernelPackage,drm-radeon))
 define KernelPackage/video-core
   SUBMENU:=$(VIDEO_MENU)
   TITLE=Video4Linux support
-  DEPENDS:=+PACKAGE_kmod-i2c-core:kmod-i2c-core +kmod-media-controller
+  DEPENDS:=+PACKAGE_kmod-i2c-core:kmod-i2c-core +kmod-media-controller +kmod-lib-rational
   KCONFIG:= \
 	CONFIG_MEDIA_CAMERA_SUPPORT=y \
 	CONFIG_VIDEO_DEV \
 	CONFIG_V4L_PLATFORM_DRIVERS=y \
 	CONFIG_MEDIA_PLATFORM_DRIVERS=y
   FILES:= \
-	$(LINUX_DIR)/drivers/media/v4l2-core/videodev.ko
-  AUTOLOAD:=$(call AutoLoad,60,videodev)
+	$(LINUX_DIR)/drivers/media/v4l2-core/videodev.ko \
+	$(LINUX_DIR)/drivers/media/v4l2-core/v4l2-dv-timings.ko
+  AUTOLOAD:=$(call AutoLoad,60,videodev v4l2-dv-timings)
 endef
 
 define KernelPackage/video-core/description
@@ -900,6 +1007,17 @@ define KernelPackage/video-fwnode
 endef
 
 $(eval $(call KernelPackage,video-fwnode))
+
+define KernelPackage/video-cci
+  TITLE:=V4L2 CCI register access helpers
+  HIDDEN:=1
+  KCONFIG:=CONFIG_V4L2_CCI_I2C
+  FILES:=$(LINUX_DIR)/drivers/media/v4l2-core/v4l2-cci.ko
+  $(call AddDepends/video)
+  AUTOLOAD:=$(call AutoProbe,v4l2-cci)
+endef
+
+$(eval $(call KernelPackage,video-cci))
 
 
 define KernelPackage/video-pwc
@@ -1523,6 +1641,25 @@ endef
 
 $(eval $(call KernelPackage,video-ov5640))
 
+define KernelPackage/video-imx415
+  SUBMENU:=$(VIDEO_MENU)
+  DEPENDS:=+kmod-video-fwnode +kmod-video-async +kmod-video-cci
+  TITLE:=Sony IMX415 sensor support
+  KCONFIG:= \
+	CONFIG_VIDEO_CAMERA_SENSOR=y \
+	CONFIG_VIDEO_IMX415
+  FILES:=$(LINUX_DIR)/drivers/media/i2c/imx415.ko
+  AUTOLOAD:=$(call AutoProbe,imx415)
+  $(call AddDepends/video)
+endef
+
+define KernelPackage/video-imx415/description
+  This is a Video4Linux2 sensor driver for the Sony IMX415 camera
+  sensor with a MIPI CSI-2 interface.
+endef
+
+$(eval $(call KernelPackage,video-imx415))
+
 
 #
 # Video Processing
@@ -1582,17 +1719,53 @@ endef
 
 $(eval $(call KernelPackage,video-dma-sg))
 
+define KernelPackage/video-v4l2-h264
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=V4L2 H.264 helpers
+  HIDDEN:=1
+  KCONFIG:=CONFIG_V4L2_H264
+  FILES:=$(LINUX_DIR)/drivers/media/v4l2-core/v4l2-h264.ko
+  AUTOLOAD:=$(call AutoProbe,v4l2-h264)
+  $(call AddDepends/video)
+endef
+
+$(eval $(call KernelPackage,video-v4l2-h264))
+
+define KernelPackage/video-v4l2-vp9
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=V4L2 VP9 helpers
+  HIDDEN:=1
+  KCONFIG:=CONFIG_V4L2_VP9
+  FILES:=$(LINUX_DIR)/drivers/media/v4l2-core/v4l2-vp9.ko
+  AUTOLOAD:=$(call AutoProbe,v4l2-vp9)
+  $(call AddDepends/video)
+endef
+
+$(eval $(call KernelPackage,video-v4l2-vp9))
+
+define KernelPackage/video-v4l2-jpeg
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=V4L2 JPEG helpers
+  HIDDEN:=1
+  KCONFIG:=CONFIG_V4L2_JPEG_HELPER
+  FILES:=$(LINUX_DIR)/drivers/media/v4l2-core/v4l2-jpeg.ko
+  AUTOLOAD:=$(call AutoProbe,v4l2-jpeg)
+  $(call AddDepends/video)
+endef
+
+$(eval $(call KernelPackage,video-v4l2-jpeg))
+
 define KernelPackage/video-coda
   TITLE:=i.MX VPU support
-  DEPENDS:=@(TARGET_imx&&TARGET_imx_cortexa9) +kmod-video-mem2mem +kmod-video-dma-contig +kmod-video-vmalloc
+  DEPENDS:=@(TARGET_imx&&TARGET_imx_cortexa9) +kmod-video-mem2mem +kmod-video-dma-contig +kmod-video-vmalloc \
+	+kmod-video-v4l2-jpeg
   KCONFIG:= \
   	CONFIG_VIDEO_CODA \
   	CONFIG_VIDEO_IMX_VDOA
   FILES:= \
 	$(LINUX_DIR)/drivers/media/platform/chips-media/coda/coda-vpu.ko \
-	$(LINUX_DIR)/drivers/media/platform/chips-media/coda/imx-vdoa.ko \
-	$(LINUX_DIR)/drivers/media/v4l2-core/v4l2-jpeg.ko
-  AUTOLOAD:=$(call AutoProbe,coda-vpu imx-vdoa v4l2-jpeg)
+	$(LINUX_DIR)/drivers/media/platform/chips-media/coda/imx-vdoa.ko
+  AUTOLOAD:=$(call AutoProbe,coda-vpu imx-vdoa)
   $(call AddDepends/video)
 endef
 
@@ -1601,6 +1774,31 @@ define KernelPackage/video-coda/description
 endef
 
 $(eval $(call KernelPackage,video-coda))
+
+define KernelPackage/video-hantro
+  TITLE:=Hantro VPU support
+  DEPENDS:=@(TARGET_imx||TARGET_rockchip||TARGET_stm32||TARGET_sunxi) \
+	+kmod-video-mem2mem +kmod-video-dma-contig +kmod-video-vmalloc \
+	+kmod-video-v4l2-h264 +kmod-video-v4l2-vp9 +kmod-video-v4l2-jpeg
+  KCONFIG:= \
+	CONFIG_VIDEO_HANTRO \
+	CONFIG_VIDEO_HANTRO_HEVC_RFC=n \
+	CONFIG_VIDEO_HANTRO_IMX8M=y \
+	CONFIG_VIDEO_HANTRO_ROCKCHIP=y \
+	CONFIG_VIDEO_HANTRO_SAMA5D4=y \
+	CONFIG_VIDEO_HANTRO_STM32MP25=y \
+	CONFIG_VIDEO_HANTRO_SUNXI=y
+  FILES:=$(LINUX_DIR)/drivers/media/platform/verisilicon/hantro-vpu.ko
+  AUTOLOAD:=$(call AutoProbe,hantro-vpu)
+  $(call AddDepends/video)
+endef
+
+define KernelPackage/video-hantro/description
+  Stateless V4L2 driver for the Hantro (Verisilicon) video codecs found
+  in i.MX8M, Rockchip, Allwinner, Microchip and ST SoCs.
+endef
+
+$(eval $(call KernelPackage,video-hantro))
 
 define KernelPackage/video-pxp
   TITLE:=i.MX PXP support
