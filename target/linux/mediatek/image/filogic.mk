@@ -2547,6 +2547,32 @@ define Device/konka_komi-a31
 endef
 TARGET_DEVICES += konka_komi-a31
 
+define Device/kuwfi_t960
+  DEVICE_VENDOR := KuWFi
+  DEVICE_MODEL := T960
+  DEVICE_DTS := mt7981b-kuwfi-t960
+  DEVICE_DTS_DIR := ../dts
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_IN_UBI := 1
+  UBOOTENV_IN_UBI := 1
+  IMAGES := sysupgrade.itb
+  KERNEL_INITRAMFS_SUFFIX := -recovery.itb
+  KERNEL := kernel-bin | libdeflate-gzip
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  IMAGE/sysupgrade.itb := append-kernel | \
+	fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | \
+	append-metadata
+  DEVICE_PACKAGES := -wpad-basic-mbedtls kmod-usb3 kmod-usb-net-cdc-ether \
+	kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi
+  ARTIFACTS := preloader.bin bl31-uboot.fip
+  ARTIFACT/preloader.bin := mt7981-bl2 spim-nand-ddr3
+  ARTIFACT/bl31-uboot.fip := mt7981-bl31-uboot kuwfi_t960
+endef
+TARGET_DEVICES += kuwfi_t960
+
 define Device/livinet_li320
   DEVICE_VENDOR := Livinet
   DEVICE_MODEL := Li320

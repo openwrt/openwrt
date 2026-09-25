@@ -211,6 +211,9 @@ mediatek_setup_interfaces()
 	netcraze,nc-1812)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 lan5" "wan"
 		;;
+	kuwfi,t960)
+		ucidef_set_interfaces_lan_wan lan eth1
+		;;
 	ltc,vl7m19k)
 		ucidef_set_interfaces_lan_wan "lan0 lan1 lan2 lan3 eth1" eth2
 		;;
