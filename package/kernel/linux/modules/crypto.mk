@@ -48,22 +48,6 @@ endef
 $(eval $(call KernelPackage,crypto-aead))
 
 
-define KernelPackage/crypto-arc4
-  TITLE:=ARC4 cipher CryptoAPI module
-  DEPENDS:=+kmod-crypto-user
-  KCONFIG:= \
-	  CONFIG_CRYPTO_ARC4 \
-	  CONFIG_CRYPTO_USER_API_ENABLE_OBSOLETE=y
-  FILES:= \
-	  $(LINUX_DIR)/crypto/arc4.ko \
-	  $(LINUX_DIR)/lib/crypto/libarc4.ko
-  AUTOLOAD:=$(call AutoLoad,09,arc4)
-  $(call AddDepends/crypto)
-endef
-
-$(eval $(call KernelPackage,crypto-arc4))
-
-
 define KernelPackage/crypto-authenc
   TITLE:=Combined mode wrapper for IPsec
   DEPENDS:=+kmod-crypto-manager +kmod-crypto-null
@@ -1081,23 +1065,11 @@ $(eval $(call KernelPackage,crypto-test))
 
 
 define KernelPackage/crypto-user
-  TITLE:=CryptoAPI userspace interface
+  TITLE:=CryptoAPI userspace configuration interface
   DEPENDS:=+kmod-crypto-hash +kmod-crypto-manager +kmod-crypto-rng
-  KCONFIG:= \
-	CONFIG_CRYPTO_USER \
-	CONFIG_CRYPTO_USER_API \
-	CONFIG_CRYPTO_USER_API_AEAD \
-	CONFIG_CRYPTO_USER_API_HASH \
-	CONFIG_CRYPTO_USER_API_RNG \
-	CONFIG_CRYPTO_USER_API_SKCIPHER
-  FILES:= \
-	$(LINUX_DIR)/crypto/af_alg.ko \
-	$(LINUX_DIR)/crypto/algif_aead.ko \
-	$(LINUX_DIR)/crypto/algif_hash.ko \
-	$(LINUX_DIR)/crypto/algif_rng.ko \
-	$(LINUX_DIR)/crypto/algif_skcipher.ko \
-	$(LINUX_DIR)/crypto/crypto_user.ko
-  AUTOLOAD:=$(call AutoLoad,09,af_alg algif_aead algif_hash algif_rng algif_skcipher crypto_user)
+  KCONFIG:=CONFIG_CRYPTO_USER
+  FILES:=$(LINUX_DIR)/crypto/crypto_user.ko
+  AUTOLOAD:=$(call AutoLoad,09,crypto_user)
   $(call AddDepends/crypto)
 endef
 
