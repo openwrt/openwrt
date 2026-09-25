@@ -929,6 +929,16 @@ define Device/bazis_ax3000wm
 endef
 TARGET_DEVICES += bazis_ax3000wm
 
+define Device/benton_sn-r1
+  DEVICE_VENDOR := Benton
+  DEVICE_MODEL := SN-R1
+  DEVICE_DTS := mt7981b-benton-sn-r1
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += benton_sn-r1
+
 define Device/buffalo_wsr-3000ax4p
   DEVICE_VENDOR := BUFFALO
   DEVICE_MODEL := WSR-3000AX4P
