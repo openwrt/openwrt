@@ -9,6 +9,7 @@ use JSON::PP;
 use Digest::MD5 qw(md5_hex);
 
 my %board;
+my $LINUX_KERNEL_CPE = "cpe:/o:linux:linux_kernel";
 
 sub version_to_num($) {
 	my $str = shift;
@@ -736,6 +737,17 @@ sub dump_cyclonedxsbom_json {
 	return $json->encode($cyclonedx);
 }
 
+sub cyclonedxsbom_component_cpe($$) {
+	my ($name, $cpe_id) = @_;
+
+	# Kmods inherit PKG_CPE_ID from the kernel Makefile; the SBOM
+	# already lists a 'kernel' component with the same CPE.
+	return undef unless $cpe_id;
+	return undef if $name =~ /^kmod-/
+		and $cpe_id eq $LINUX_KERNEL_CPE;
+	return $cpe_id;
+}
+
 sub gen_image_cyclonedxsbom() {
 	my $pkginfo = shift @ARGV;
 	my $imgmanifest = shift @ARGV;
@@ -748,7 +760,7 @@ sub gen_image_cyclonedxsbom() {
 
 	$package{"kernel"} = {
 		license => "GPL-2.0",
-		cpe_id  => "cpe:/o:linux:linux_kernel",
+		cpe_id  => $LINUX_KERNEL_CPE,
 		name    => "kernel",
 		category  => "operating-system",
 	};
@@ -800,11 +812,13 @@ sub gen_image_cyclonedxsbom() {
 			$version = $1;
 		}
 
+		my $cpe = cyclonedxsbom_component_cpe($pkg->{name}, $pkg->{cpe_id});
+
 		push @components, {
 			name => $pkg->{name},
 			version => $version,
 			@licenses > 0 ? (licenses => [ @licenses ]) : (),
-			$pkg->{cpe_id} ? (cpe => $pkg->{cpe_id}.":".$version) : (),
+			$cpe ? (cpe => $cpe.":".$version) : (),
 			$type ? (type => $type) : (),
 			$version ? (version => $version) : (),
 		};
@@ -853,11 +867,13 @@ sub gen_package_cyclonedxsbom() {
 			$version = $1;
 		}
 
+		my $cpe = cyclonedxsbom_component_cpe($name, $pkg->{cpe_id});
+
 		push @components, {
 			name => $name,
 			version => $version,
 			@licenses > 0 ? (licenses => [ @licenses ]) : (),
-			$pkg->{cpe_id} ? (cpe => $pkg->{cpe_id}.":".$version) : (),
+			$cpe ? (cpe => $cpe.":".$version) : (),
 			$type ? (type => $type) : (),
 			$version ? (version => $version) : (),
 		};
