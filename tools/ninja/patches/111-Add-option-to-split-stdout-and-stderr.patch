@@ -1,0 +1,837 @@
+From f7535fe9ccf6c25f37e19cd31107dc5f4b24326b Mon Sep 17 00:00:00 2001
+From: Daniel Levin <dendy.ua@gmail.com>
+Date: Tue, 3 Feb 2015 03:14:31 -0500
+Subject: [PATCH 2/2] Add option to split stdout and stderr
+
+When enabled ninja prints rule output into
+appropriate stream: either stdout or stderr. Previously both outputs
+were always concatenated into single buffer to be printed to stdout
+when rule is finished.
+
+When enabled behavior is next:
+
+Subprocess sequentially appends rule output into internal buffer
+looking at the source channel of incoming output. When channel
+changes already collected buffer is printed and cleared.
+---
+ src/build.cc              |  10 +++-
+ src/build.h               |   2 +
+ src/eval_env.cc           |   3 +-
+ src/graph.cc              |  11 ++++
+ src/graph.h               |   1 +
+ src/line_printer.cc       |  15 +++--
+ src/line_printer.h        |  10 +++-
+ src/status.cc             |  38 ++++++++++---
+ src/status.h              |   5 +-
+ src/subprocess-posix.cc   | 114 ++++++++++++++++++++++++++------------
+ src/subprocess-win32.cc   | 106 +++++++++++++++++++++--------------
+ src/subprocess.h          |  36 ++++++++----
+ src/tokenpool-gnu-make.cc |   2 +-
+ 13 files changed, 243 insertions(+), 110 deletions(-)
+
+--- a/src/build.cc
++++ b/src/build.cc
+@@ -683,7 +683,7 @@ bool RealCommandRunner::AcquireToken() {
+ 
+ bool RealCommandRunner::StartCommand(Edge* edge) {
+   string command = edge->EvaluateCommand();
+-  Subprocess* subproc = subprocs_.Add(command, edge->use_console());
++  Subprocess* subproc = subprocs_.Add(command, edge->use_console(), edge->use_stderr());
+   if (!subproc)
+     return false;
+   if (tokens_)
+@@ -713,8 +713,10 @@ bool RealCommandRunner::WaitForCommand(R
+   if (tokens_)
+     tokens_->Release();
+ 
++  result->use_stderr = subproc->UseStdErr();
+   result->status = subproc->Finish();
+   result->output = subproc->GetOutput();
++  result->error = subproc->GetError();
+ 
+   map<const Subprocess*, Edge*>::iterator e = subproc_to_edge_.find(subproc);
+   result->edge = e->second;
+@@ -1001,7 +1003,9 @@ bool Builder::FinishCommand(CommandRunne
+         result->success()) {
+       if (!result->output.empty())
+         result->output.append("\n");
+-      result->output.append(extract_err);
++      if (!result->error.empty())
++        result->error.append("\n");
++      (result->use_stderr ? result->error : result->output).append(extract_err);
+       result->status = ExitFailure;
+     }
+   }
+@@ -1013,7 +1017,7 @@ bool Builder::FinishCommand(CommandRunne
+   running_edges_.erase(it);
+ 
+   status_->BuildEdgeFinished(edge, start_time_millis, end_time_millis,
+-                             result->success(), result->output);
++                             result->success(), result->output, result->error);
+ 
+   // The rest of this function only applies to successful commands.
+   if (!result->success()) {
+--- a/src/build.h
++++ b/src/build.h
+@@ -156,8 +156,10 @@ struct CommandRunner {
+   struct Result {
+     Result() : edge(NULL) {}
+     Edge* edge;
++    bool use_stderr;
+     ExitStatus status;
+     std::string output;
++    std::string error;
+     bool success() const { return status == ExitSuccess; }
+   };
+   /// Wait for a command to complete, or return false if interrupted.
+--- a/src/eval_env.cc
++++ b/src/eval_env.cc
+@@ -75,7 +75,8 @@ bool Rule::IsReservedBinding(const strin
+       var == "restat" ||
+       var == "rspfile" ||
+       var == "rspfile_content" ||
+-      var == "msvc_deps_prefix";
++      var == "msvc_deps_prefix" ||
++      var == "stderr";
+ }
+ 
+ const map<string, const Rule*>& BindingEnv::GetRules() const {
+--- a/src/graph.cc
++++ b/src/graph.cc
+@@ -579,6 +579,17 @@ bool Edge::use_console() const {
+   return pool() == &State::kConsolePool;
+ }
+ 
++static bool s_use_stderr()
++{
++    const char* const use_string = getenv("NINJA_USE_STDERR");
++    return !use_string || strcmp(use_string, "0") != 0;
++}
++
++bool Edge::use_stderr() const {
++    static const bool use = s_use_stderr();
++    return use;
++}
++
+ bool Edge::maybe_phonycycle_diagnostic() const {
+   // CMake 2.8.12.x and 3.0.x produced self-referencing phony rules
+   // of the form "build a: phony ... a ...".   Restrict our
+--- a/src/graph.h
++++ b/src/graph.h
+@@ -263,6 +263,7 @@ struct Edge {
+ 
+   bool is_phony() const;
+   bool use_console() const;
++  bool use_stderr() const;
+   bool maybe_phonycycle_diagnostic() const;
+ 
+   // Historical info: how long did this edge take last time,
+--- a/src/line_printer.cc
++++ b/src/line_printer.cc
+@@ -32,7 +32,7 @@
+ 
+ using namespace std;
+ 
+-LinePrinter::LinePrinter() : have_blank_line_(true), console_locked_(false) {
++LinePrinter::LinePrinter(bool out) : out_(out), have_blank_line_(true), console_locked_(false) {
+   const char* term = getenv("TERM");
+ #ifndef _WIN32
+   smart_terminal_ = isatty(1) && term && string(term) != "dumb";
+@@ -128,7 +128,14 @@ void LinePrinter::PrintOrBuffer(const ch
+   } else {
+     // Avoid printf and C strings, since the actual output might contain null
+     // bytes like UTF-16 does (yuck).
+-    fwrite(data, 1, size, stdout);
++    fwrite(data, 1, size, file());
++  }
++}
++
++void LinePrinter::CompleteLine() {
++  if (!have_blank_line_) {
++    PrintOrBuffer("\n", 1);
++    have_blank_line_ = false;
+   }
+ }
+ 
+@@ -138,9 +145,7 @@ void LinePrinter::PrintOnNewLine(const s
+     output_buffer_.append(1, '\n');
+     line_buffer_.clear();
+   }
+-  if (!have_blank_line_) {
+-    PrintOrBuffer("\n", 1);
+-  }
++  CompleteLine();
+   if (!to_print.empty()) {
+     PrintOrBuffer(&to_print[0], to_print.size());
+   }
+--- a/src/line_printer.h
++++ b/src/line_printer.h
+@@ -16,12 +16,13 @@
+ #define NINJA_LINE_PRINTER_H_
+ 
+ #include <stddef.h>
++#include <stdio.h>
+ #include <string>
+ 
+ /// Prints lines of text, possibly overprinting previously printed lines
+ /// if the terminal supports it.
+ struct LinePrinter {
+-  LinePrinter();
++  LinePrinter(bool out);
+ 
+   bool is_smart_terminal() const { return smart_terminal_; }
+   void set_smart_terminal(bool smart) { smart_terminal_ = smart; }
+@@ -36,6 +37,9 @@ struct LinePrinter {
+   /// one line.
+   void Print(std::string to_print, LineType type);
+ 
++  /// Prints line break if needed.
++  void CompleteLine();
++
+   /// Prints a string on a new line, not overprinting previous output.
+   void PrintOnNewLine(const std::string& to_print);
+ 
+@@ -44,6 +48,10 @@ struct LinePrinter {
+   void SetConsoleLocked(bool locked);
+ 
+  private:
++  FILE* file() const { return out_ ? stdout : stderr; }
++
++  const bool out_;
++
+   /// Whether we can do fancy terminal control codes.
+   bool smart_terminal_;
+ 
+--- a/src/status.cc
++++ b/src/status.cc
+@@ -37,7 +37,7 @@ using namespace std;
+ 
+ StatusPrinter::StatusPrinter(const BuildConfig& config)
+     : config_(config), started_edges_(0), finished_edges_(0), total_edges_(0),
+-      running_edges_(0), progress_status_format_(NULL),
++      running_edges_(0), printer_(true), err_printer_(false), progress_status_format_(NULL),
+       current_rate_(config.parallelism) {
+   // Don't do anything fancy in verbose mode.
+   if (config_.verbosity != BuildConfig::NORMAL)
+@@ -85,8 +85,10 @@ void StatusPrinter::BuildEdgeStarted(con
+   if (edge->use_console() || printer_.is_smart_terminal())
+     PrintStatus(edge, start_time_millis);
+ 
+-  if (edge->use_console())
++  if (edge->use_console()) {
+     printer_.SetConsoleLocked(true);
++    err_printer_.SetConsoleLocked(true);
++  }
+ }
+ 
+ void StatusPrinter::RecalculateProgressPrediction() {
+@@ -170,7 +172,7 @@ void StatusPrinter::RecalculateProgressP
+ 
+ void StatusPrinter::BuildEdgeFinished(Edge* edge, int64_t start_time_millis,
+                                       int64_t end_time_millis, bool success,
+-                                      const string& output) {
++                                      const string& output, const std::string& error) {
+   time_millis_ = end_time_millis;
+   ++finished_edges_;
+ 
+@@ -185,8 +187,10 @@ void StatusPrinter::BuildEdgeFinished(Ed
+   } else
+     --eta_unpredictable_edges_remaining_;
+ 
+-  if (edge->use_console())
++  if (edge->use_console()) {
+     printer_.SetConsoleLocked(false);
++    err_printer_.SetConsoleLocked(false);
++  }
+ 
+   if (config_.verbosity == BuildConfig::QUIET)
+     return;
+@@ -203,12 +207,14 @@ void StatusPrinter::BuildEdgeFinished(Ed
+          o != edge->outputs_.end(); ++o)
+       outputs += (*o)->path() + " ";
+ 
+-    if (printer_.supports_color()) {
+-        printer_.PrintOnNewLine("\x1B[31m" "FAILED: " "\x1B[0m" + outputs + "\n");
++    printer_.CompleteLine();
++
++    if (err_printer_.supports_color()) {
++        err_printer_.PrintOnNewLine("\x1B[31m" "FAILED: " "\x1B[0m" + outputs + "\n");
+     } else {
+-        printer_.PrintOnNewLine("FAILED: " + outputs + "\n");
++        err_printer_.PrintOnNewLine("FAILED: " + outputs + "\n");
+     }
+-    printer_.PrintOnNewLine(edge->EvaluateCommand() + "\n");
++    err_printer_.PrintOnNewLine(edge->EvaluateCommand() + "\n");
+   }
+ 
+   if (!output.empty()) {
+@@ -240,6 +246,22 @@ void StatusPrinter::BuildEdgeFinished(Ed
+     _setmode(_fileno(stdout), _O_TEXT);  // End Windows extra CR fix
+ #endif
+   }
++
++  if (!error.empty()) {
++    string::size_type begin = 0;
++    while (true) {
++      const std::string::size_type crpos = error.find('\xd', begin);
++      if (crpos == string::npos) {
++        fwrite(error.c_str() + begin, error.size() - begin, 1, stderr);
++        break;
++      }
++      const std::string::size_type size = crpos - begin;
++      if (size != 0)
++        fwrite(error.c_str() + begin, crpos - begin, 1, stderr);
++      begin = crpos + 1;
++    }
++    fflush(stderr);
++  }
+ }
+ 
+ void StatusPrinter::BuildLoadDyndeps() {
+--- a/src/status.h
++++ b/src/status.h
+@@ -30,7 +30,7 @@ struct Status {
+                                 int64_t start_time_millis) = 0;
+   virtual void BuildEdgeFinished(Edge* edge, int64_t start_time_millis,
+                                  int64_t end_time_millis, bool success,
+-                                 const std::string& output) = 0;
++                                 const std::string& output, const std::string& error) = 0;
+   virtual void BuildLoadDyndeps() = 0;
+   virtual void BuildStarted() = 0;
+   virtual void BuildFinished() = 0;
+@@ -54,7 +54,7 @@ struct StatusPrinter : Status {
+   virtual void BuildEdgeStarted(const Edge* edge, int64_t start_time_millis);
+   virtual void BuildEdgeFinished(Edge* edge, int64_t start_time_millis,
+                                  int64_t end_time_millis, bool success,
+-                                 const std::string& output);
++                                 const std::string& output, const std::string& error);
+   virtual void BuildLoadDyndeps();
+   virtual void BuildStarted();
+   virtual void BuildFinished();
+@@ -106,6 +106,7 @@ struct StatusPrinter : Status {
+ 
+   /// Prints progress output.
+   LinePrinter printer_;
++  LinePrinter err_printer_;
+ 
+   /// The custom progress status format to use.
+   const char* progress_status_format_;
+--- a/src/subprocess-posix.cc
++++ b/src/subprocess-posix.cc
+@@ -37,13 +37,16 @@ extern char** environ;
+ 
+ using namespace std;
+ 
+-Subprocess::Subprocess(bool use_console) : fd_(-1), pid_(-1),
+-                                           use_console_(use_console) {
++Subprocess::Subprocess(bool use_console, bool use_stderr) : pid_(-1),
++                                                            use_console_(use_console),
++                                                            use_stderr_(use_stderr) {
+ }
+ 
+ Subprocess::~Subprocess() {
+-  if (fd_ >= 0)
+-    close(fd_);
++  if (out_.fd >= 0)
++    close(out_.fd);
++  if (err_.fd >= 0)
++    close(err_.fd);
+   // Reap child if forgotten.
+   if (pid_ != -1)
+     Finish();
+@@ -53,14 +56,26 @@ bool Subprocess::Start(SubprocessSet* se
+   int output_pipe[2];
+   if (pipe(output_pipe) < 0)
+     Fatal("pipe: %s", strerror(errno));
+-  fd_ = output_pipe[0];
++  out_.fd = output_pipe[0];
++
++  int error_pipe[2];
++  if (use_stderr_) {
++    if (pipe(error_pipe) < 0)
++      Fatal("error pipe: %s", strerror(errno));
++    err_.fd = error_pipe[0];
++  }
++
+ #if !defined(USE_PPOLL)
+   // If available, we use ppoll in DoWork(); otherwise we use pselect
+   // and so must avoid overly-large FDs.
+-  if (fd_ >= static_cast<int>(FD_SETSIZE))
++  if (out_.fd >= static_cast<int>(FD_SETSIZE))
+     Fatal("pipe: %s", strerror(EMFILE));
++  if (use_stderr_ && err_.fd >= static_cast<int>(FD_SETSIZE))
++    Fatal("error pipe: %s", strerror(EMFILE));
+ #endif  // !USE_PPOLL
+-  SetCloseOnExec(fd_);
++  SetCloseOnExec(out_.fd);
++  if (use_stderr_)
++    SetCloseOnExec(err_.fd);
+ 
+   posix_spawn_file_actions_t action;
+   int err = posix_spawn_file_actions_init(&action);
+@@ -71,6 +86,11 @@ bool Subprocess::Start(SubprocessSet* se
+   if (err != 0)
+     Fatal("posix_spawn_file_actions_addclose: %s", strerror(err));
+ 
++  if (use_stderr_) {
++    if (posix_spawn_file_actions_addclose(&action, error_pipe[0]) != 0)
++      Fatal("posix_spawn_file_actions_addclose: %s", strerror(errno));
++  }
++
+   posix_spawnattr_t attr;
+   err = posix_spawnattr_init(&attr);
+   if (err != 0)
+@@ -101,12 +121,18 @@ bool Subprocess::Start(SubprocessSet* se
+     err = posix_spawn_file_actions_adddup2(&action, output_pipe[1], 1);
+     if (err != 0)
+       Fatal("posix_spawn_file_actions_adddup2: %s", strerror(err));
+-    err = posix_spawn_file_actions_adddup2(&action, output_pipe[1], 2);
++    err = posix_spawn_file_actions_adddup2(&action, use_stderr_ ?
++                                           error_pipe[1] : output_pipe[1], 2);
+     if (err != 0)
+       Fatal("posix_spawn_file_actions_adddup2: %s", strerror(err));
+     err = posix_spawn_file_actions_addclose(&action, output_pipe[1]);
+     if (err != 0)
+       Fatal("posix_spawn_file_actions_addclose: %s", strerror(err));
++    if (use_stderr_) {
++      err = posix_spawn_file_actions_addclose(&action, error_pipe[1]);
++      if (err != 0)
++        Fatal("posix_spawn_file_actions_addclose: %s", strerror(err));
++    }
+     // In the console case, output_pipe is still inherited by the child and
+     // closed when the subprocess finishes, which then notifies ninja.
+   }
+@@ -132,19 +158,21 @@ bool Subprocess::Start(SubprocessSet* se
+     Fatal("posix_spawn_file_actions_destroy: %s", strerror(err));
+ 
+   close(output_pipe[1]);
++  if (use_stderr_)
++    close(error_pipe[1]);
+   return true;
+ }
+ 
+-void Subprocess::OnPipeReady() {
++void Subprocess::OnPipeReady(Pipe& pipe) {
+   char buf[4 << 10];
+-  ssize_t len = read(fd_, buf, sizeof(buf));
++  ssize_t len = read(pipe.fd, buf, sizeof(buf));
+   if (len > 0) {
+-    buf_.append(buf, len);
++    pipe.buf.append(buf, static_cast<size_t>(len));
+   } else {
+     if (len < 0)
+       Fatal("read: %s", strerror(errno));
+-    close(fd_);
+-    fd_ = -1;
++    close(pipe.fd);
++    pipe.fd = -1;
+   }
+ }
+ 
+@@ -178,11 +206,15 @@ ExitStatus Subprocess::Finish() {
+ }
+ 
+ bool Subprocess::Done() const {
+-  return fd_ == -1;
++  return out_.fd == -1 && err_.fd == -1;
+ }
+ 
+ const string& Subprocess::GetOutput() const {
+-  return buf_;
++  return out_.buf;
++}
++
++const string& Subprocess::GetError() const {
++  return err_.buf;
+ }
+ 
+ int SubprocessSet::interrupted_;
+@@ -239,8 +271,8 @@ SubprocessSet::~SubprocessSet() {
+     Fatal("sigprocmask: %s", strerror(errno));
+ }
+ 
+-Subprocess *SubprocessSet::Add(const string& command, bool use_console) {
+-  Subprocess *subprocess = new Subprocess(use_console);
++Subprocess *SubprocessSet::Add(const string& command, bool use_console, bool use_stderr) {
++  Subprocess *subprocess = new Subprocess(use_console, use_stderr);
+   if (!subprocess->Start(this, command)) {
+     delete subprocess;
+     return 0;
+@@ -256,11 +288,14 @@ bool SubprocessSet::DoWork(TokenPool* to
+ 
+   for (vector<Subprocess*>::iterator i = running_.begin();
+        i != running_.end(); ++i) {
+-    int fd = (*i)->fd_;
+-    if (fd >= 0) {
+-      pollfd pfd = { fd, POLLIN | POLLPRI, 0 };
+-      fds.push_back(pfd);
+-      ++nfds;
++    Subprocess::Pipe* const pipes[2] = { &(*i)->out_, &(*i)->err_ };
++    for (int pipe_i = 0; pipe_i < 2; ++pipe_i) {
++      const Subprocess::Pipe& pipe = *pipes[pipe_i];
++      if (pipe.fd >= 0) {
++        pollfd pfd = { pipe.fd, POLLIN | POLLPRI, 0 };
++        fds.push_back(pfd);
++        ++nfds;
++      }
+     }
+   }
+ 
+@@ -287,11 +322,13 @@ bool SubprocessSet::DoWork(TokenPool* to
+   nfds_t cur_nfd = 0;
+   for (vector<Subprocess*>::iterator i = running_.begin();
+        i != running_.end(); ) {
+-    int fd = (*i)->fd_;
+-    if (fd >= 0) {
+-      assert(fd == fds[cur_nfd].fd);
+-      if (fds[cur_nfd++].revents) {
+-        (*i)->OnPipeReady();
++    Subprocess::Pipe* const pipes[2] = { &(*i)->out_, &(*i)->err_ };
++    for (int pipe_i = 0; pipe_i < 2; ++pipe_i) {
++      Subprocess::Pipe& pipe = *pipes[pipe_i];
++      if (pipe.fd >= 0) {
++        assert(pipe.fd == fds[cur_nfd].fd);
++        if (fds[cur_nfd++].revents)
++          (*i)->OnPipeReady(pipe);
+       }
+     }
+     if ((*i)->Done()) {
+@@ -322,11 +359,15 @@ bool SubprocessSet::DoWork(TokenPool* to
+ 
+   for (vector<Subprocess*>::iterator i = running_.begin();
+        i != running_.end(); ++i) {
+-    int fd = (*i)->fd_;
+-    if (fd >= 0) {
+-      FD_SET(fd, &set);
+-      if (nfds < fd+1)
+-        nfds = fd+1;
++    assert(!(*i)->Done());
++    Subprocess::Pipe* const pipes[2] = { &(*i)->out_, &(*i)->err_ };
++    for (int pipeIndex = 0; pipeIndex < 2; ++pipeIndex) {
++      Subprocess::Pipe& pipe = *pipes[pipeIndex];
++      if (pipe.fd >= 0) {
++        FD_SET(pipe.fd, &set);
++        if (nfds < pipe.fd+1)
++          nfds = pipe.fd+1;
++        }
+     }
+   }
+ 
+@@ -353,9 +394,12 @@ bool SubprocessSet::DoWork(TokenPool* to
+ 
+   for (vector<Subprocess*>::iterator i = running_.begin();
+        i != running_.end(); ) {
+-    int fd = (*i)->fd_;
+-    if (fd >= 0 && FD_ISSET(fd, &set)) {
+-      (*i)->OnPipeReady();
++    assert(!(*i)->Done());
++    Subprocess::Pipe* const pipes[2] = { &(*i)->out_, &(*i)->err_ };
++    for (int pipeIndex = 0; pipeIndex < 2; ++pipeIndex) {
++      Subprocess::Pipe& pipe = *pipes[pipeIndex];
++      if (pipe.fd >= 0 && FD_ISSET(pipe.fd, &set))
++        (*i)->OnPipeReady(pipe);
+     }
+     if ((*i)->Done()) {
+       finished_.push(*i);
+--- a/src/subprocess-win32.cc
++++ b/src/subprocess-win32.cc
+@@ -24,39 +24,47 @@
+ 
+ using namespace std;
+ 
+-Subprocess::Subprocess(bool use_console) : child_(NULL) , overlapped_(),
+-                                           is_reading_(false),
+-                                           use_console_(use_console) {
++Subprocess::Subprocess(bool use_console, bool use_stderr) : child_(NULL),
++                                                            use_console_(use_console),
++                                                            use_stderr_(use_stderr) {
+ }
+ 
+ Subprocess::~Subprocess() {
+-  if (pipe_) {
+-    if (!CloseHandle(pipe_))
++  if (out_.handle) {
++    if (!CloseHandle(out_.handle))
+       Win32Fatal("CloseHandle");
+   }
++  if (use_stderr_) {
++    if (err_.handle) {
++      if (!CloseHandle(err_.handle))
++        Win32Fatal("CloseHandle");
++    }
++  }
+   // Reap child if forgotten.
+   if (child_)
+     Finish();
+ }
+ 
+-HANDLE Subprocess::SetupPipe(HANDLE ioport) {
++HANDLE Subprocess::SetupPipe(HANDLE ioport, Pipe& pipe, bool out) {
+   char pipe_name[100];
+   snprintf(pipe_name, sizeof(pipe_name),
+-           "\\\\.\\pipe\\ninja_pid%lu_sp%p", GetCurrentProcessId(), this);
++           "\\\\.\\pipe\\ninja_pid%lu_sp%p%s", GetCurrentProcessId(), this, out ? "out" : "err");
++
++  pipe.subprocess = this;
+ 
+-  pipe_ = ::CreateNamedPipeA(pipe_name,
++  pipe.handle = ::CreateNamedPipeA(pipe_name,
+                              PIPE_ACCESS_INBOUND | FILE_FLAG_OVERLAPPED,
+                              PIPE_TYPE_BYTE,
+                              PIPE_UNLIMITED_INSTANCES,
+                              0, 0, INFINITE, NULL);
+-  if (pipe_ == INVALID_HANDLE_VALUE)
++  if (pipe.handle == INVALID_HANDLE_VALUE)
+     Win32Fatal("CreateNamedPipe");
+ 
+-  if (!CreateIoCompletionPort(pipe_, ioport, (ULONG_PTR)this, 0))
++  if (!CreateIoCompletionPort(pipe.handle, ioport, (ULONG_PTR)&pipe, 0))
+     Win32Fatal("CreateIoCompletionPort");
+ 
+-  memset(&overlapped_, 0, sizeof(overlapped_));
+-  if (!ConnectNamedPipe(pipe_, &overlapped_) &&
++  memset(&pipe.overlapped, 0, sizeof(pipe.overlapped));
++  if (!ConnectNamedPipe(pipe.handle, &pipe.overlapped) &&
+       GetLastError() != ERROR_IO_PENDING) {
+     Win32Fatal("ConnectNamedPipe");
+   }
+@@ -76,7 +84,8 @@ HANDLE Subprocess::SetupPipe(HANDLE iopo
+ }
+ 
+ bool Subprocess::Start(SubprocessSet* set, const string& command) {
+-  HANDLE child_pipe = SetupPipe(set->ioport_);
++  HANDLE out_child_pipe = SetupPipe(set->ioport_, out_, true);
++  HANDLE err_child_pipe = use_stderr_ ? SetupPipe(set->ioport_, err_, false) : nullptr;
+ 
+   SECURITY_ATTRIBUTES security_attributes;
+   memset(&security_attributes, 0, sizeof(SECURITY_ATTRIBUTES));
+@@ -96,8 +105,8 @@ bool Subprocess::Start(SubprocessSet* se
+   if (!use_console_) {
+     startup_info.dwFlags = STARTF_USESTDHANDLES;
+     startup_info.hStdInput = nul;
+-    startup_info.hStdOutput = child_pipe;
+-    startup_info.hStdError = child_pipe;
++    startup_info.hStdOutput = out_child_pipe;
++    startup_info.hStdError = use_stderr_ ? err_child_pipe : out_child_pipe;
+   }
+   // In the console case, child_pipe is still inherited by the child and closed
+   // when the subprocess finishes, which then notifies ninja.
+@@ -118,13 +127,16 @@ bool Subprocess::Start(SubprocessSet* se
+     if (error == ERROR_FILE_NOT_FOUND) {
+       // File (program) not found error is treated as a normal build
+       // action failure.
+-      if (child_pipe)
+-        CloseHandle(child_pipe);
+-      CloseHandle(pipe_);
++      if (out_child_pipe)
++        CloseHandle(out_child_pipe);
++      CloseHandle(out_.handle);
++      if (err_child_pipe)
++          CloseHandle(err_child_pipe);
+       CloseHandle(nul);
+-      pipe_ = NULL;
++      out_.handle = NULL;
++      err_.handle = NULL;
+       // child_ is already NULL;
+-      buf_ = "CreateProcess failed: The system cannot find the file "
++      (use_stderr_ ? out_.buf : err_.buf) = "CreateProcess failed: The system cannot find the file "
+           "specified.\n";
+       return true;
+     } else {
+@@ -145,8 +157,10 @@ bool Subprocess::Start(SubprocessSet* se
+   }
+ 
+   // Close pipe channel only used by the child.
+-  if (child_pipe)
+-    CloseHandle(child_pipe);
++  if (out_child_pipe)
++    CloseHandle(out_child_pipe);
++  if (err_child_pipe)
++    CloseHandle(err_child_pipe);
+   CloseHandle(nul);
+ 
+   CloseHandle(process_info.hThread);
+@@ -155,27 +169,27 @@ bool Subprocess::Start(SubprocessSet* se
+   return true;
+ }
+ 
+-void Subprocess::OnPipeReady() {
++void Subprocess::OnPipeReady(Pipe& pipe) {
+   DWORD bytes;
+-  if (!GetOverlappedResult(pipe_, &overlapped_, &bytes, TRUE)) {
++  if (!GetOverlappedResult(pipe.handle, &pipe.overlapped, &bytes, TRUE)) {
+     if (GetLastError() == ERROR_BROKEN_PIPE) {
+-      CloseHandle(pipe_);
+-      pipe_ = NULL;
++      CloseHandle(pipe.handle);
++      pipe.handle = NULL;
+       return;
+     }
+     Win32Fatal("GetOverlappedResult");
+   }
+ 
+-  if (is_reading_ && bytes)
+-    buf_.append(overlapped_buf_, bytes);
++  if (pipe.is_reading && bytes)
++    pipe.buf.append(pipe.overlapped_buf, bytes);
+ 
+-  memset(&overlapped_, 0, sizeof(overlapped_));
+-  is_reading_ = true;
+-  if (!::ReadFile(pipe_, overlapped_buf_, sizeof(overlapped_buf_),
+-                  &bytes, &overlapped_)) {
++  memset(&pipe.overlapped, 0, sizeof(pipe.overlapped));
++  pipe.is_reading = true;
++  if (!::ReadFile(pipe.handle, pipe.overlapped_buf, sizeof(pipe.overlapped_buf),
++                  &bytes, &pipe.overlapped)) {
+     if (GetLastError() == ERROR_BROKEN_PIPE) {
+-      CloseHandle(pipe_);
+-      pipe_ = NULL;
++      CloseHandle(pipe.handle);
++      pipe.handle = NULL;
+       return;
+     }
+     if (GetLastError() != ERROR_IO_PENDING)
+@@ -205,11 +219,15 @@ ExitStatus Subprocess::Finish() {
+ }
+ 
+ bool Subprocess::Done() const {
+-  return pipe_ == NULL;
++  return out_.handle == NULL && err_.handle == NULL;
+ }
+ 
+ const string& Subprocess::GetOutput() const {
+-  return buf_;
++  return out_.buf;
++}
++
++const string& Subprocess::GetError() const {
++  return err_.buf;
+ }
+ 
+ HANDLE SubprocessSet::ioport_;
+@@ -239,8 +257,8 @@ BOOL WINAPI SubprocessSet::NotifyInterru
+   return FALSE;
+ }
+ 
+-Subprocess *SubprocessSet::Add(const string& command, bool use_console) {
+-  Subprocess *subprocess = new Subprocess(use_console);
++Subprocess *SubprocessSet::Add(const string& command, bool use_console, bool use_stderr) {
++  Subprocess *subprocess = new Subprocess(use_console, use_stderr);
+   if (!subprocess->Start(this, command)) {
+     delete subprocess;
+     return 0;
+@@ -254,20 +272,20 @@ Subprocess *SubprocessSet::Add(const str
+ 
+ bool SubprocessSet::DoWork(TokenPool* tokens) {
+   DWORD bytes_read;
+-  Subprocess* subproc;
+   OVERLAPPED* overlapped;
++  Subprocess::Pipe* pipe;
+ 
+   if (tokens)
+     tokens->WaitForTokenAvailability(ioport_);
+ 
+-  if (!GetQueuedCompletionStatus(ioport_, &bytes_read, (PULONG_PTR)&subproc,
++  if (!GetQueuedCompletionStatus(ioport_, &bytes_read, (PULONG_PTR)&pipe,
+                                  &overlapped, INFINITE)) {
+     if (GetLastError() != ERROR_BROKEN_PIPE)
+       Win32Fatal("GetQueuedCompletionStatus");
+   }
+ 
+-  if (!subproc) // A NULL subproc indicates that we were interrupted and is
+-                // delivered by NotifyInterrupted above.
++  if (!pipe) // A NULL indicates that we were interrupted and is
++             // delivered by NotifyInterrupted above.
+     return true;
+ 
+   if (tokens && tokens->TokenIsAvailable((ULONG_PTR)subproc)) {
+@@ -275,7 +293,9 @@ bool SubprocessSet::DoWork(TokenPool* to
+     return false;
+   }
+ 
+-  subproc->OnPipeReady();
++  Subprocess* subproc = pipe->subprocess;
++
++  subproc->OnPipeReady(*pipe);
+ 
+   if (subproc->Done()) {
+     vector<Subprocess*>::iterator end =
+--- a/src/subprocess.h
++++ b/src/subprocess.h
+@@ -46,32 +46,46 @@ struct Subprocess {
+   /// the process was interrupted, ExitFailure if it otherwise failed.
+   ExitStatus Finish();
+ 
++  bool UseStdErr() const { return use_stderr_; }
+   bool Done() const;
+ 
+   const std::string& GetOutput() const;
++  const std::string& GetError() const;
+ 
+  private:
+-  Subprocess(bool use_console);
++  struct Pipe;
++  Subprocess(bool use_console, bool use_stderr);
+   bool Start(struct SubprocessSet* set, const std::string& command);
+-  void OnPipeReady();
+-
+-  std::string buf_;
++  void OnPipeReady(Pipe& pipe);
+ 
+ #ifdef _WIN32
++  struct Pipe {
++    HANDLE handle = NULL;
++    OVERLAPPED overlapped{};
++    char overlapped_buf[4 << 10];
++    bool is_reading = false;
++    Subprocess* subprocess;
++    std::string buf;
++  };
++
+   /// Set up pipe_ as the parent-side pipe of the subprocess; return the
+   /// other end of the pipe, usable in the child process.
+-  HANDLE SetupPipe(HANDLE ioport);
++  HANDLE SetupPipe(HANDLE ioport, Pipe & pipe, bool out);
+ 
+   HANDLE child_;
+-  HANDLE pipe_;
+-  OVERLAPPED overlapped_;
+-  char overlapped_buf_[4 << 10];
+-  bool is_reading_;
++  Pipe out_, err_;
+ #else
+-  int fd_;
++  struct Pipe {
++    Pipe() : fd(-1) {}
++    int fd;
++    std::string buf;
++  };
++
++  Pipe out_, err_;
+   pid_t pid_;
+ #endif
+   bool use_console_;
++  bool use_stderr_;
+ 
+   friend struct SubprocessSet;
+ };
+@@ -85,7 +99,7 @@ struct SubprocessSet {
+   SubprocessSet();
+   ~SubprocessSet();
+ 
+-  Subprocess* Add(const std::string& command, bool use_console = false);
++  Subprocess* Add(const std::string& command, bool use_console = false, bool use_stderr = false);
+   bool DoWork(TokenPool* tokens);
+   Subprocess* NextFinished();
+   void Clear();
+--- a/src/tokenpool-gnu-make.cc
++++ b/src/tokenpool-gnu-make.cc
+@@ -41,7 +41,7 @@ bool GNUmakeTokenPool::Setup(bool ignore
+     // GNU make => 4.2
+     jobserver = strstr(value, "--jobserver-auth=");
+   if (jobserver) {
+-    LinePrinter printer;
++    LinePrinter printer(true);
+ 
+     if (ignore) {
+       printer.PrintOnNewLine("ninja: warning: -jN forced on command line; ignoring GNU make jobserver.\n");

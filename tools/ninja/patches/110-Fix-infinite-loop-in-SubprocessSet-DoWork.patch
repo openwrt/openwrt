@@ -1,0 +1,83 @@
+From 15d93bcb8faf6b829362cd55768d56cd0df77814 Mon Sep 17 00:00:00 2001
+From: Daniel Levin <dendy.ua@gmail.com>
+Date: Tue, 3 Feb 2015 03:58:43 -0500
+Subject: [PATCH 1/2] Fix infinite loop in SubprocessSet::DoWork()
+
+In case fd is invalid loop will be infinite because iterator is not
+incremented.
+
+Make loop consistent between both variants of SubprocessSet::DoWork()
+(with and withoug USE_PPOLL) by removing 'continue' and always advancing
+iterator in the end of the cycle.
+---
+ src/subprocess-posix.cc | 42 ++++++++++++++++++++---------------------
+ 1 file changed, 21 insertions(+), 21 deletions(-)
+
+--- a/src/subprocess-posix.cc
++++ b/src/subprocess-posix.cc
+@@ -257,11 +257,11 @@ bool SubprocessSet::DoWork(TokenPool* to
+   for (vector<Subprocess*>::iterator i = running_.begin();
+        i != running_.end(); ++i) {
+     int fd = (*i)->fd_;
+-    if (fd < 0)
+-      continue;
+-    pollfd pfd = { fd, POLLIN | POLLPRI, 0 };
+-    fds.push_back(pfd);
+-    ++nfds;
++    if (fd >= 0) {
++      pollfd pfd = { fd, POLLIN | POLLPRI, 0 };
++      fds.push_back(pfd);
++      ++nfds;
++    }
+   }
+ 
+   if (tokens) {
+@@ -288,18 +288,18 @@ bool SubprocessSet::DoWork(TokenPool* to
+   for (vector<Subprocess*>::iterator i = running_.begin();
+        i != running_.end(); ) {
+     int fd = (*i)->fd_;
+-    if (fd < 0)
+-      continue;
+-    assert(fd == fds[cur_nfd].fd);
+-    if (fds[cur_nfd++].revents) {
+-      (*i)->OnPipeReady();
+-      if ((*i)->Done()) {
+-        finished_.push(*i);
+-        i = running_.erase(i);
+-        continue;
++    if (fd >= 0) {
++      assert(fd == fds[cur_nfd].fd);
++      if (fds[cur_nfd++].revents) {
++        (*i)->OnPipeReady();
+       }
+     }
+-    ++i;
++    if ((*i)->Done()) {
++      finished_.push(*i);
++      i = running_.erase(i);
++    } else {
++      ++i;
++    }
+   }
+ 
+   if (tokens) {
+@@ -356,13 +356,13 @@ bool SubprocessSet::DoWork(TokenPool* to
+     int fd = (*i)->fd_;
+     if (fd >= 0 && FD_ISSET(fd, &set)) {
+       (*i)->OnPipeReady();
+-      if ((*i)->Done()) {
+-        finished_.push(*i);
+-        i = running_.erase(i);
+-        continue;
+-      }
+     }
+-    ++i;
++    if ((*i)->Done()) {
++      finished_.push(*i);
++      i = running_.erase(i);
++    } else {
++      ++i;
++    }
+   }
+ 
+   if (tokens) {
