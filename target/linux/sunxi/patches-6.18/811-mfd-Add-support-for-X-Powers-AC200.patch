@@ -1,0 +1,899 @@
+From 6537ffc8d73e2c5e77d8368b39751162bde817fc Mon Sep 17 00:00:00 2001
+From: Jernej Skrabec <jernej.skrabec@gmail.com>
+Date: Fri, 16 Aug 2019 16:38:21 +0200
+Subject: [PATCH 5037/5039] mfd: Add support for X-Powers AC200
+
+The X-Powers AC200 is a mixed signal multi-purpose chip, which provides
+audio DAC/ADCs, a CVBS video encoder, a 100Mbit/s Ethernet PHY and a
+real-time clock. Its control registers can be accessed via I2C or
+Allwinner's RSB bus.
+
+This chip is co-packaged with Allwinner H6 and H616 SoCs, which use its
+audio, video and PHY functionality.
+
+This includes:
+- MFD_AC200 core driver (ac200.c)
+- MFD_AC200_SUNXI driver (sunxi-ac200.c) with EPHY and RTC support
+- AC200 EPHY driver (ac200-phy.c)
+- AC200 header definitions (ac200.h)
+
+Signed-off-by: Jernej Skrabec <jernej.skrabec@gmail.com>
+Signed-off-by: Andre Przywara <andre.przywara@arm.com>
+---
+ drivers/mfd/Kconfig         |  22 +++
+ drivers/mfd/Makefile        |   2 +
+ drivers/mfd/ac200.c         | 190 ++++++++++++++++++++++++
+ drivers/mfd/sunxi-ac200.c   | 289 ++++++++++++++++++++++++++++++++++++
+ drivers/net/phy/Kconfig     |  15 ++
+ drivers/net/phy/Makefile    |   2 +
+ drivers/net/phy/ac200-phy.c |  82 ++++++++++
+ include/linux/mfd/ac200.h   | 213 ++++++++++++++++++++++++++
+ 8 files changed, 815 insertions(+)
+ create mode 100644 drivers/mfd/ac200.c
+ create mode 100644 drivers/mfd/sunxi-ac200.c
+ create mode 100644 drivers/net/phy/ac200-phy.c
+ create mode 100644 include/linux/mfd/ac200.h
+
+--- a/drivers/mfd/Kconfig
++++ b/drivers/mfd/Kconfig
+@@ -204,6 +204,28 @@ config MFD_AC100
+ 	  This driver include only the core APIs. You have to select individual
+ 	  components like codecs or RTC under the corresponding menus.
+ 
++config MFD_AC200
++	tristate "X-Powers AC200"
++	select MFD_CORE
++	select REGMAP_I2C
++	depends on COMMON_CLK
++	depends on I2C
++	depends on OF
++	help
++	  If you say Y here you get support for the X-Powers AC200 IC.
++	  This driver include only the core APIs. You have to select individual
++	  components like Ethernet PHY or codec under the corresponding menus.
++
++config MFD_AC200_SUNXI
++	tristate "X-Powers AC200 (Sunxi)"
++	select MFD_CORE
++	depends on I2C
++	depends on PWM_SUNXI_ENHANCE
++	help
++	  If you say Y here you get support for the X-Powers AC200 IC.
++	  This driver include only the core APIs. You have to select individual
++	  components like Ethernet PHY or RTC under the corresponding menus.
++
+ config MFD_AXP20X
+ 	tristate
+ 	select MFD_CORE
+--- a/drivers/mfd/Makefile
++++ b/drivers/mfd/Makefile
+@@ -149,6 +149,8 @@ obj-$(CONFIG_MFD_DA9052_SPI)	+= da9052-s
+ obj-$(CONFIG_MFD_DA9052_I2C)	+= da9052-i2c.o
+ 
+ obj-$(CONFIG_MFD_AC100)		+= ac100.o
++obj-$(CONFIG_MFD_AC200)		+= ac200.o
++obj-$(CONFIG_MFD_AC200_SUNXI)		+= sunxi-ac200.o
+ obj-$(CONFIG_MFD_AXP20X)	+= axp20x.o
+ obj-$(CONFIG_MFD_AXP20X_I2C)	+= axp20x-i2c.o
+ obj-$(CONFIG_MFD_AXP20X_RSB)	+= axp20x-rsb.o
+--- /dev/null
++++ b/drivers/mfd/ac200.c
+@@ -0,0 +1,190 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * MFD core driver for X-Powers' AC200 IC
++ *
++ * The AC200 is a chip which is co-packaged with Allwinner H6 SoC and
++ * includes analog audio codec, analog TV encoder, ethernet PHY, eFuse
++ * and RTC.
++ *
++ * Copyright (c) 2019 Jernej Skrabec <jernej.skrabec@gmail.com>
++ *
++ * Based on AC100 driver with following copyrights:
++ * Copyright (2016) Chen-Yu Tsai
++ */
++
++#include <linux/clk.h>
++#include <linux/delay.h>
++#include <linux/i2c.h>
++#include <linux/kernel.h>
++#include <linux/mfd/core.h>
++#include <linux/module.h>
++#include <linux/nvmem-consumer.h>
++#include <linux/of.h>
++#include <linux/regmap.h>
++
++struct ac200_dev {
++	struct clk	*clk;
++	struct regmap	*regmap;
++};
++
++#define AC200_SYS_CONTROL	0x0002
++#define AC200_SYS_BG_CTL	0x0050
++
++/* interface register (can be accessed from any page) */
++#define AC200_TWI_REG_ADDR_H	0xFE
++
++#define AC200_MAX_REG		0xA1F2
++
++static const struct regmap_range_cfg ac200_range_cfg[] = {
++	{
++		.range_max = AC200_MAX_REG,
++		.selector_reg = AC200_TWI_REG_ADDR_H,
++		.selector_mask = 0xff,
++		.selector_shift = 0,
++		.window_start = 0,
++		.window_len = 256,
++	}
++};
++
++static const struct regmap_config ac200_regmap_config = {
++	.name		= "AC200",
++	.reg_bits	= 8,
++	.reg_stride	= 2,
++	.val_bits	= 16,
++	.ranges		= ac200_range_cfg,
++	.num_ranges	= ARRAY_SIZE(ac200_range_cfg),
++	.max_register	= AC200_MAX_REG,
++};
++
++static struct mfd_cell ac200_cells[] = {
++	{
++		.name		= "ac200-codec",
++		.of_compatible	= "x-powers,ac200-codec",
++	}, {
++		.name		= "ac200-ephy-ctl",
++		.of_compatible	= "x-powers,ac200-ephy-ctl",
++	},
++};
++
++static int ac200_i2c_probe(struct i2c_client *i2c)
++{
++	struct device *dev = &i2c->dev;
++	struct nvmem_cell *bgcell;
++	struct ac200_dev *ac200;
++	u16 *bgdata, bgval;
++	size_t bglen;
++	int ret;
++
++	ac200 = devm_kzalloc(dev, sizeof(*ac200), GFP_KERNEL);
++	if (!ac200)
++		return -ENOMEM;
++
++	i2c_set_clientdata(i2c, ac200);
++
++	ac200->clk = devm_clk_get(dev, NULL);
++	if (IS_ERR(ac200->clk))
++		return dev_err_probe(dev, PTR_ERR(ac200->clk),
++				     "Can't obtain the clock\n");
++
++	ac200->regmap = devm_regmap_init_i2c(i2c, &ac200_regmap_config);
++	if (IS_ERR(ac200->regmap)) {
++		ret = PTR_ERR(ac200->regmap);
++		dev_err(dev, "Regmap init failed: %d\n", ret);
++		return ret;
++	}
++
++	bgcell = devm_nvmem_cell_get(dev, "bandgap");
++	if (IS_ERR(bgcell))
++		return dev_err_probe(dev, PTR_ERR(bgcell),
++				     "Unable to find bandgap data!\n");
++
++	bgdata = nvmem_cell_read(bgcell, &bglen);
++	if (IS_ERR(bgdata)) {
++		dev_err(dev, "Unable to read bandgap data!\n");
++		return PTR_ERR(bgdata);
++	}
++
++	if (bglen != 2) {
++		dev_err(dev, "Invalid nvmem bandgap length!\n");
++		kfree(bgdata);
++		return -EINVAL;
++	}
++
++	bgval = *bgdata;
++	kfree(bgdata);
++
++	ret = clk_prepare_enable(ac200->clk);
++	if (ret)
++		return ret;
++
++	/*
++	 * There is no documentation on how long we have to wait before
++	 * executing first operation. Vendor driver sleeps for 40 ms.
++	 */
++	msleep(40);
++
++	ret = regmap_write(ac200->regmap, AC200_SYS_CONTROL, 0);
++	if (ret)
++		goto err;
++
++	ret = regmap_write(ac200->regmap, AC200_SYS_CONTROL, 1);
++	if (ret)
++		goto err;
++
++	if (bgval) {
++		/* bandgap register is not documented */
++		ret = regmap_write(ac200->regmap, AC200_SYS_BG_CTL,
++				   0x8280 | bgval);
++		if (ret)
++			goto err;
++	}
++
++	ret = devm_mfd_add_devices(dev, PLATFORM_DEVID_NONE, ac200_cells,
++				   ARRAY_SIZE(ac200_cells), NULL, 0, NULL);
++	if (ret) {
++		dev_err(dev, "Failed to add MFD devices: %d\n", ret);
++		goto err;
++	}
++
++	return 0;
++
++err:
++	clk_disable_unprepare(ac200->clk);
++	return ret;
++}
++
++static void ac200_i2c_remove(struct i2c_client *i2c)
++{
++	struct ac200_dev *ac200 = i2c_get_clientdata(i2c);
++
++	regmap_write(ac200->regmap, AC200_SYS_CONTROL, 0);
++
++	clk_disable_unprepare(ac200->clk);
++}
++
++static const struct i2c_device_id ac200_ids[] = {
++	{ "ac200", },
++	{ }
++};
++MODULE_DEVICE_TABLE(i2c, ac200_ids);
++
++static const struct of_device_id ac200_of_match[] = {
++	{ .compatible = "x-powers,ac200" },
++	{ }
++};
++MODULE_DEVICE_TABLE(of, ac200_of_match);
++
++static struct i2c_driver ac200_i2c_driver = {
++	.driver = {
++		.name	= "ac200",
++		.of_match_table	= of_match_ptr(ac200_of_match),
++	},
++	.probe	= ac200_i2c_probe,
++	.remove = ac200_i2c_remove,
++	.id_table = ac200_ids,
++};
++module_i2c_driver(ac200_i2c_driver);
++
++MODULE_DESCRIPTION("MFD core driver for AC200");
++MODULE_AUTHOR("Jernej Skrabec <jernej.skrabec@gmail.com>");
++MODULE_LICENSE("GPL v2");
+--- /dev/null
++++ b/drivers/mfd/sunxi-ac200.c
+@@ -0,0 +1,289 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * MFD core driver for X-Powers' AC200 IC
++ *
++ * The AC200 is a chip which is co-packaged with Allwinner H6 SoC and
++ * includes analog audio codec, analog TV encoder, ethernet PHY, eFuse
++ * and RTC.
++ *
++ * Copyright (c) 2020 Jernej Skrabec <jernej.skrabec@siol.net>
++ */
++
++#include <linux/i2c.h>
++#include <linux/interrupt.h>
++#include <linux/kernel.h>
++#include <linux/mfd/core.h>
++#include <linux/mfd/ac200.h>
++#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/nvmem-consumer.h>
++
++#define SUNXI_AC300_KEY	(0x1 << 8)
++
++/* Interrupts */
++#define AC200_IRQ_RTC  0
++#define AC200_IRQ_EPHY 1
++#define AC200_IRQ_TVE  2
++
++/* IRQ enable register */
++#define AC200_SYS_IRQ_ENABLE_OUT_EN BIT(15)
++#define AC200_SYS_IRQ_ENABLE_RTC    BIT(12)
++#define AC200_SYS_IRQ_ENABLE_EPHY   BIT(8)
++#define AC200_SYS_IRQ_ENABLE_TVE    BIT(4)
++
++static const struct regmap_range_cfg ac200_range_cfg[] = {
++	{
++		.range_min = AC200_SYS_VERSION,
++		.range_max = AC200_IC_CHARA1,
++		.selector_reg = AC200_TWI_REG_ADDR_H,
++		.selector_mask = 0xff,
++		.selector_shift = 0,
++		.window_start = 0,
++		.window_len = 256,
++	}
++};
++
++static const struct regmap_config ac200_regmap_config = {
++	.name = "ac200",
++	.reg_bits	= 8,
++	.val_bits	= 16,
++	.ranges		= ac200_range_cfg,
++	.num_ranges	= ARRAY_SIZE(ac200_range_cfg),
++	.max_register	= AC200_IC_CHARA1,
++};
++
++static const struct regmap_irq ac200_regmap_irqs[] = {
++	REGMAP_IRQ_REG(AC200_IRQ_RTC,  0, AC200_SYS_IRQ_ENABLE_RTC),
++	REGMAP_IRQ_REG(AC200_IRQ_EPHY, 0, AC200_SYS_IRQ_ENABLE_EPHY),
++	REGMAP_IRQ_REG(AC200_IRQ_TVE,  0, AC200_SYS_IRQ_ENABLE_TVE),
++};
++
++static const struct regmap_irq_chip ac200_regmap_irq_chip = {
++	.name			= "ac200_irq_chip",
++	.status_base		= AC200_SYS_IRQ_STATUS,
++	.mask_base		= AC200_SYS_IRQ_ENABLE,
++	.irqs			= ac200_regmap_irqs,
++	.num_irqs		= ARRAY_SIZE(ac200_regmap_irqs),
++	.num_regs		= 1,
++};
++
++static const struct resource ephy_resource[] = {
++	DEFINE_RES_IRQ(AC200_IRQ_EPHY),
++};
++
++static const struct mfd_cell ac200_cells[] = {
++	{
++		.name		= "ac200-ephy-sunxi",
++		.num_resources	= ARRAY_SIZE(ephy_resource),
++		.resources	= ephy_resource,
++		.of_compatible	= "x-powers,ac200-ephy-sunxi",
++	},
++	{
++		.name = "acx00-codec",
++		.of_compatible	= "x-powers,ac200-codec-sunxi",
++	},
++};
++
++atomic_t ac200_en;
++
++int ac200_enable(void)
++{
++    return atomic_read(&ac200_en);
++}
++
++EXPORT_SYMBOL(ac200_enable);
++
++static uint16_t ephy_caldata = 0;
++
++static int sun50i_ephy_get_calibrate(struct device *dev)
++{
++	struct nvmem_cell *calcell;
++	uint16_t *caldata;
++	size_t callen;
++	int ret = 0;
++
++	calcell = devm_nvmem_cell_get(dev, "calibration");
++	if (IS_ERR(calcell)) {
++		dev_err_probe(dev, PTR_ERR(calcell),
++			      "Failed to get calibration nvmem cell (%pe)\n",
++			      calcell);
++
++		if (PTR_ERR(calcell) == -EPROBE_DEFER)
++			return -EPROBE_DEFER;
++		goto out;
++	}
++
++	caldata = nvmem_cell_read(calcell, &callen);
++	if (IS_ERR(caldata)) {
++		ret = PTR_ERR(caldata);
++		dev_err(dev, "Failed to read calibration data (%pe)\n",
++			caldata);
++		goto out;
++	}
++
++    ephy_caldata = *caldata;
++	kfree(caldata);
++out:
++	return ret;
++}
++
++uint16_t sun50i_ephy_calibrate_value(void)
++{
++    return ephy_caldata;
++}
++
++EXPORT_SYMBOL(sun50i_ephy_calibrate_value);
++
++static int ac200_i2c_probe(struct i2c_client *i2c)
++{
++    struct device *dev = &i2c->dev;
++    struct ac200_dev *ac200;
++    uint32_t ephy_cal;
++    int ret;
++
++    // 24Mhz clock for both ac200 and ac300 devices
++    ac200 = devm_kzalloc(dev, sizeof(*ac200), GFP_KERNEL);
++    if (!ac200)
++        return -ENOMEM;
++
++    ac200->clk = devm_clk_get(dev, NULL);
++    if (IS_ERR(ac200->clk)) {
++        dev_err(dev, "Can't obtain the clock!\n");
++        return PTR_ERR(ac200->clk);
++    }
++
++    ret = clk_prepare_enable(ac200->clk);
++    if (ret) {
++        dev_err(dev, "rclk_prepare_enable failed! \n");
++        return ret;
++    }
++
++    ret = sun50i_ephy_get_calibrate(dev);
++	if (ret) {
++        dev_err(dev, "sun50i get ephy id failed\n");
++        return ret;
++    }
++    ephy_cal = sun50i_ephy_calibrate_value();
++
++    if (ephy_cal & SUNXI_AC300_KEY) {
++        pr_warn("it's ac300, skip the ac200 init!\n");
++        return -EINVAL;
++    } else {
++        pr_warn("it's ac200, ac200 init start!\n");
++    }
++
++    i2c_set_clientdata(i2c, ac200);
++
++    ac200->regmap = devm_regmap_init_i2c(i2c, &ac200_regmap_config);
++    if (IS_ERR(ac200->regmap))
++    {
++        ret = PTR_ERR(ac200->regmap);
++        dev_err(dev, "regmap init failed: %d\n", ret);
++        return ret;
++    }
++
++    /* do a reset to put chip in a known state */
++    ret = regmap_write(ac200->regmap, AC200_SYS_CONTROL, 0);
++    if (ret)
++    {
++        dev_err(dev, "AC200_SYS_CONTROL 0 failed! \n");
++        return ret;
++    }
++	atomic_set(&ac200_en, 0);
++
++    ret = regmap_write(ac200->regmap, AC200_SYS_CONTROL, 1);
++    if (ret)
++    {
++        dev_err(dev, "AC200_SYS_CONTROL 1 failed! \n");
++        return ret;
++    }
++	atomic_set(&ac200_en, 1);
++
++    ret = devm_mfd_add_devices(dev, PLATFORM_DEVID_NONE, ac200_cells,
++                               ARRAY_SIZE(ac200_cells), NULL, 0, NULL);
++    if (ret)
++    {
++        dev_err(dev, "failed to add MFD devices: %d\n", ret);
++        return ret;
++    }
++    else
++    {
++        dev_err(dev, "add MFD devices success! \n");
++    }
++
++    return 0;
++}
++
++static void ac200_i2c_remove(struct i2c_client *i2c)
++{
++	struct ac200_dev *ac200 = i2c_get_clientdata(i2c);
++
++	regmap_write(ac200->regmap, AC200_SYS_CONTROL, 0);
++	mfd_remove_devices(&i2c->dev);
++}
++
++static void ac200_i2c_shutdown(struct i2c_client *i2c)
++{
++    struct ac200_dev *ac200 = i2c_get_clientdata(i2c);
++
++    regmap_write(ac200->regmap, AC200_SYS_CONTROL, 0);
++}
++
++static int ac200_i2c_suspend(struct device *dev)
++{
++	struct ac200_dev *ac200 = dev_get_drvdata(dev);
++
++	if (!IS_ERR_OR_NULL(ac200->clk))
++		clk_disable_unprepare(ac200->clk);
++
++	atomic_set(&ac200_en, 0);
++	return 0;
++}
++
++static int ac200_i2c_resume(struct device *dev)
++{
++	struct ac200_dev *ac200 = dev_get_drvdata(dev);
++
++	if (!IS_ERR_OR_NULL(ac200->clk))
++		clk_prepare_enable(ac200->clk);
++
++	atomic_set(&ac200_en, 0);
++	msleep(40);
++    regmap_write(ac200->regmap, AC200_SYS_CONTROL, 1);
++	atomic_set(&ac200_en, 1);
++	return 0;
++}
++
++static const struct dev_pm_ops ac200_core_pm_ops = {
++	.suspend_late = ac200_i2c_suspend,
++	.resume_early = ac200_i2c_resume,
++};
++
++static const struct i2c_device_id ac200_ids[] = {
++	{ "ac200", },
++	{ /* sentinel */ }
++};
++MODULE_DEVICE_TABLE(i2c, ac200_ids);
++
++static const struct of_device_id ac200_of_match[] = {
++	{ .compatible = "x-powers,ac200-sunxi" },
++	{ /* sentinel */ }
++};
++MODULE_DEVICE_TABLE(of, ac200_of_match);
++
++static struct i2c_driver ac200_i2c_driver = {
++	.driver = {
++		.name	= "ac200-sunxi",
++		.of_match_table	= of_match_ptr(ac200_of_match),
++        .pm = &ac200_core_pm_ops,
++	},
++	.probe	= ac200_i2c_probe,
++	.remove = ac200_i2c_remove,
++	.shutdown = ac200_i2c_shutdown,
++	.id_table = ac200_ids,
++};
++module_i2c_driver(ac200_i2c_driver);
++
++MODULE_DESCRIPTION("MFD core driver for AC200");
++MODULE_AUTHOR("Jernej Skrabec <jernej.skrabec@siol.net>");
++MODULE_LICENSE("GPL v2");
+--- a/drivers/net/phy/Kconfig
++++ b/drivers/net/phy/Kconfig
+@@ -176,6 +176,21 @@ config AIR_EN8811H_PHY
+ 	help
+ 	  Currently supports the Airoha EN8811H PHY.
+ 
++config AC200_PHY
++	tristate "AC200 EPHY"
++	depends on NVMEM
++	depends on OF
++	help
++	  Fast ethernet PHY as found in X-Powers AC200 multi-function device.
++
++config AC200_PHY_SUNXI
++	tristate "AC200 EPHY(Sunxi)"
++	depends on NVMEM
++	depends on OF
++	depends on MFD_AC200_SUNXI
++	help
++	  Fast ethernet PHY as found in X-Powers AC200(Sunxi) multi-function device.
++
+ config AMD_PHY
+ 	tristate "AMD and Altima PHYs"
+ 	help
+--- a/drivers/net/phy/Makefile
++++ b/drivers/net/phy/Makefile
+@@ -42,6 +42,8 @@ obj-$(CONFIG_SFP)		+= sfp.o
+ sfp-obj-$(CONFIG_SFP)		+= sfp-bus.o
+ obj-y				+= $(sfp-obj-y) $(sfp-obj-m)
+ 
++obj-$(CONFIG_AC200_PHY)		+= ac200-phy.o
++obj-$(CONFIG_AC200_PHY_SUNXI)		+= sunxi-ephy.o
+ obj-$(CONFIG_ADIN_PHY)		+= adin.o
+ obj-$(CONFIG_ADIN1100_PHY)	+= adin1100.o
+ obj-$(CONFIG_AIR_EN8811H_PHY)   += air_en8811h.o
+--- /dev/null
++++ b/drivers/net/phy/ac200-phy.c
+@@ -0,0 +1,82 @@
++// SPDX-License-Identifier: GPL-2.0+
++/**
++ * Driver for AC200 Ethernet PHY
++ *
++ * Copyright (c) 2019 Jernej Skrabec <jernej.skrabec@gmail.com>
++ */
++
++#include <linux/clk.h>
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/phy.h>
++
++#define AC200_EPHY_ID			0x00441400
++#define AC200_EPHY_ID_MASK		0x0ffffff0
++
++static int ac200_ephy_config_init(struct phy_device *phydev)
++{
++	phy_write(phydev, 0x1f, 0x0100);	/* Switch to Page 1 */
++	phy_write(phydev, 0x12, 0x4824);	/* Disable APS */
++
++	phy_write(phydev, 0x1f, 0x0200);	/* Switch to Page 2 */
++	phy_write(phydev, 0x18, 0x0000);	/* PHYAFE TRX optimization */
++
++	phy_write(phydev, 0x1f, 0x0600);	/* Switch to Page 6 */
++	phy_write(phydev, 0x14, 0x708f);	/* PHYAFE TX optimization */
++	phy_write(phydev, 0x13, 0xF000);	/* PHYAFE RX optimization */
++	phy_write(phydev, 0x15, 0x1530);
++
++	phy_write(phydev, 0x1f, 0x0800);	/* Switch to Page 8 */
++	phy_write(phydev, 0x18, 0x00bc);	/* PHYAFE TRX optimization */
++
++	phy_write(phydev, 0x1f, 0x0100);	/* switch to page 1 */
++	phy_clear_bits(phydev, 0x17, BIT(3));	/* disable intelligent EEE */
++
++	/* disable 802.3az EEE */
++	phy_write(phydev, 0x1f, 0x0200);	/* switch to page 2 */
++	phy_write(phydev, 0x18, 0x0000);
++	phy_write(phydev, 0x1f, 0x0000);	/* switch to page 0 */
++	phy_clear_bits_mmd(phydev, 0x7, 0x3c, BIT(1));
++
++	/* FIXME: This is probably H6 specific */
++	phy_set_bits(phydev, 0x13, BIT(12));
++
++	return 0;
++}
++
++static int ac200_ephy_probe(struct phy_device *phydev)
++{
++	struct device *dev = &phydev->mdio.dev;
++	struct clk *clk;
++
++	clk = devm_clk_get_optional_enabled(dev, NULL);
++	if (IS_ERR(clk))
++		return dev_err_probe(dev, PTR_ERR(clk),
++				     "Failed to request clock\n");
++
++	return 0;
++}
++
++static struct phy_driver ac200_ephy_driver[] = {
++	{
++		.phy_id		= AC200_EPHY_ID,
++		.phy_id_mask	= AC200_EPHY_ID_MASK,
++		.name		= "Allwinner AC200 EPHY",
++		.soft_reset	= genphy_soft_reset,
++		.config_init	= ac200_ephy_config_init,
++		.probe		= ac200_ephy_probe,
++		.suspend	= genphy_suspend,
++		.resume		= genphy_resume,
++	}
++};
++module_phy_driver(ac200_ephy_driver);
++
++MODULE_AUTHOR("Jernej Skrabec <jernej.skrabec@gmail.com>");
++MODULE_DESCRIPTION("AC200 Ethernet PHY driver");
++MODULE_LICENSE("GPL");
++
++static const struct mdio_device_id __maybe_unused ac200_ephy_phy_tbl[] = {
++	{ AC200_EPHY_ID, AC200_EPHY_ID_MASK },
++	{ }
++};
++MODULE_DEVICE_TABLE(mdio, ac200_ephy_phy_tbl);
+--- /dev/null
++++ b/include/linux/mfd/ac200.h
+@@ -0,0 +1,213 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++/*
++ * AC200 register list
++ *
++ * Copyright (C) 2019 Jernej Skrabec <jernej.skrabec@siol.net>
++ */
++
++#ifndef __LINUX_MFD_AC200_H
++#define __LINUX_MFD_AC200_H
++
++#include <linux/regmap.h>
++#include <linux/clk.h>
++
++/* interface registers (can be accessed from any page) */
++#define AC200_TWI_CHANGE_TO_RSB		0x3E
++#define AC200_TWI_PAD_DELAY		0xC4
++#define AC200_TWI_REG_ADDR_H		0xFE
++
++/* General registers */
++#define AC200_SYS_VERSION		0x0000
++#define AC200_SYS_CONTROL		0x0002
++#define AC200_SYS_IRQ_ENABLE		0x0004
++#define AC200_SYS_IRQ_STATUS		0x0006
++#define AC200_SYS_CLK_CTL		0x0008
++#define AC200_SYS_DLDO_OSC_CTL		0x000A
++#define AC200_SYS_PLL_CTL0		0x000C
++#define AC200_SYS_PLL_CTL1		0x000E
++#define AC200_SYS_AUDIO_CTL0		0x0010
++#define AC200_SYS_AUDIO_CTL1		0x0012
++#define AC200_SYS_EPHY_CTL0		0x0014
++#define AC200_SYS_EPHY_CTL1		0x0016
++#define AC200_SYS_TVE_CTL0		0x0018
++#define AC200_SYS_TVE_CTL1		0x001A
++
++/* Audio Codec registers */
++#define AC200_AC_SYS_CLK_CTL		0x2000
++#define AC200_SYS_MOD_RST		0x2002
++#define AC200_SYS_SAMP_CTL		0x2004
++#define AC200_I2S_CTL			0x2100
++#define AC200_I2S_CLK			0x2102
++#define AC200_I2S_FMT0			0x2104
++#define AC200_I2S_FMT1			0x2108
++#define AC200_I2S_MIX_SRC		0x2114
++#define AC200_I2S_MIX_GAIN		0x2116
++#define AC200_I2S_DACDAT_DVC		0x2118
++#define AC200_I2S_ADCDAT_DVC		0x211A
++#define AC200_AC_DAC_DPC		0x2200
++#define AC200_AC_DAC_MIX_SRC		0x2202
++#define AC200_AC_DAC_MIX_GAIN		0x2204
++#define AC200_DACA_OMIXER_CTRL		0x2220
++#define AC200_OMIXER_SR			0x2222
++#define AC200_LINEOUT_CTRL		0x2224
++#define AC200_AC_ADC_DPC		0x2300
++#define AC200_MBIAS_CTRL		0x2310
++#define AC200_ADC_MIC_CTRL		0x2320
++#define AC200_ADCMIXER_SR		0x2322
++#define AC200_ANALOG_TUNING0		0x232A
++#define AC200_ANALOG_TUNING1		0x232C
++#define AC200_AC_AGC_SEL		0x2480
++#define AC200_ADC_DAPLCTRL		0x2500
++#define AC200_ADC_DAPRCTRL		0x2502
++#define AC200_ADC_DAPLSTA		0x2504
++#define AC200_ADC_DAPRSTA		0x2506
++#define AC200_ADC_DAPLTL		0x2508
++#define AC200_ADC_DAPRTL		0x250A
++#define AC200_ADC_DAPLHAC		0x250C
++#define AC200_ADC_DAPLLAC		0x250E
++#define AC200_ADC_DAPRHAC		0x2510
++#define AC200_ADC_DAPRLAC		0x2512
++#define AC200_ADC_DAPLDT		0x2514
++#define AC200_ADC_DAPLAT		0x2516
++#define AC200_ADC_DAPRDT		0x2518
++#define AC200_ADC_DAPRAT		0x251A
++#define AC200_ADC_DAPNTH		0x251C
++#define AC200_ADC_DAPLHNAC		0x251E
++#define AC200_ADC_DAPLLNAC		0x2520
++#define AC200_ADC_DAPRHNAC		0x2522
++#define AC200_ADC_DAPRLNAC		0x2524
++#define AC200_AC_DAPHHPFC		0x2526
++#define AC200_AC_DAPLHPFC		0x2528
++#define AC200_AC_DAPOPT			0x252A
++#define AC200_AC_DAC_DAPCTRL		0x3000
++#define AC200_AC_DRC_HHPFC		0x3002
++#define AC200_AC_DRC_LHPFC		0x3004
++#define AC200_AC_DRC_CTRL		0x3006
++#define AC200_AC_DRC_LPFHAT		0x3008
++#define AC200_AC_DRC_LPFLAT		0x300A
++#define AC200_AC_DRC_RPFHAT		0x300C
++#define AC200_AC_DRC_RPFLAT		0x300E
++#define AC200_AC_DRC_LPFHRT		0x3010
++#define AC200_AC_DRC_LPFLRT		0x3012
++#define AC200_AC_DRC_RPFHRT		0x3014
++#define AC200_AC_DRC_RPFLRT		0x3016
++#define AC200_AC_DRC_LRMSHAT		0x3018
++#define AC200_AC_DRC_LRMSLAT		0x301A
++#define AC200_AC_DRC_RRMSHAT		0x301C
++#define AC200_AC_DRC_RRMSLAT		0x301E
++#define AC200_AC_DRC_HCT		0x3020
++#define AC200_AC_DRC_LCT		0x3022
++#define AC200_AC_DRC_HKC		0x3024
++#define AC200_AC_DRC_LKC		0x3026
++#define AC200_AC_DRC_HOPC		0x3028
++#define AC200_AC_DRC_LOPC		0x302A
++#define AC200_AC_DRC_HLT		0x302C
++#define AC200_AC_DRC_LLT		0x302E
++#define AC200_AC_DRC_HKI		0x3030
++#define AC200_AC_DRC_LKI		0x3032
++#define AC200_AC_DRC_HOPL		0x3034
++#define AC200_AC_DRC_LOPL		0x3036
++#define AC200_AC_DRC_HET		0x3038
++#define AC200_AC_DRC_LET		0x303A
++#define AC200_AC_DRC_HKE		0x303C
++#define AC200_AC_DRC_LKE		0x303E
++#define AC200_AC_DRC_HOPE		0x3040
++#define AC200_AC_DRC_LOPE		0x3042
++#define AC200_AC_DRC_HKN		0x3044
++#define AC200_AC_DRC_LKN		0x3046
++#define AC200_AC_DRC_SFHAT		0x3048
++#define AC200_AC_DRC_SFLAT		0x304A
++#define AC200_AC_DRC_SFHRT		0x304C
++#define AC200_AC_DRC_SFLRT		0x304E
++#define AC200_AC_DRC_MXGHS		0x3050
++#define AC200_AC_DRC_MXGLS		0x3052
++#define AC200_AC_DRC_MNGHS		0x3054
++#define AC200_AC_DRC_MNGLS		0x3056
++#define AC200_AC_DRC_EPSHC		0x3058
++#define AC200_AC_DRC_EPSLC		0x305A
++#define AC200_AC_DRC_HPFHGAIN		0x305E
++#define AC200_AC_DRC_HPFLGAIN		0x3060
++#define AC200_AC_DRC_BISTCR		0x3100
++#define AC200_AC_DRC_BISTST		0x3102
++
++/* TVE registers */
++#define AC200_TVE_CTL0			0x4000
++#define AC200_TVE_CTL1			0x4002
++#define AC200_TVE_MOD0			0x4004
++#define AC200_TVE_MOD1			0x4006
++#define AC200_TVE_DAC_CFG0		0x4008
++#define AC200_TVE_DAC_CFG1		0x400A
++#define AC200_TVE_YC_DELAY		0x400C
++#define AC200_TVE_YC_FILTER		0x400E
++#define AC200_TVE_BURST_FRQ0		0x4010
++#define AC200_TVE_BURST_FRQ1		0x4012
++#define AC200_TVE_FRONT_PORCH		0x4014
++#define AC200_TVE_BACK_PORCH		0x4016
++#define AC200_TVE_TOTAL_LINE		0x401C
++#define AC200_TVE_FIRST_ACTIVE		0x401E
++#define AC200_TVE_BLACK_LEVEL		0x4020
++#define AC200_TVE_BLANK_LEVEL		0x4022
++#define AC200_TVE_PLUG_EN		0x4030
++#define AC200_TVE_PLUG_IRQ_EN		0x4032
++#define AC200_TVE_PLUG_IRQ_STA		0x4034
++#define AC200_TVE_PLUG_STA		0x4038
++#define AC200_TVE_PLUG_DEBOUNCE		0x4040
++#define AC200_TVE_DAC_TEST		0x4042
++#define AC200_TVE_PLUG_PULSE_LEVEL	0x40F4
++#define AC200_TVE_PLUG_PULSE_START	0x40F8
++#define AC200_TVE_PLUG_PULSE_PERIOD	0x40FA
++#define AC200_TVE_IF_CTL		0x5000
++#define AC200_TVE_IF_TIM0		0x5008
++#define AC200_TVE_IF_TIM1		0x500A
++#define AC200_TVE_IF_TIM2		0x500C
++#define AC200_TVE_IF_TIM3		0x500E
++#define AC200_TVE_IF_SYNC0		0x5010
++#define AC200_TVE_IF_SYNC1		0x5012
++#define AC200_TVE_IF_SYNC2		0x5014
++#define AC200_TVE_IF_TIM4		0x5016
++#define AC200_TVE_IF_STATUS		0x5018
++
++/* EPHY registers */
++#define AC200_EPHY_CTL			0x6000
++#define AC200_EPHY_BIST			0x6002
++
++/* eFuse registers (0x8000 - 0x9FFF, layout unknown) */
++
++/* RTC registers */
++#define AC200_LOSC_CTRL0		0xA000
++#define AC200_LOSC_CTRL1		0xA002
++#define AC200_LOSC_AUTO_SWT_STA		0xA004
++#define AC200_INTOSC_CLK_PRESCAL	0xA008
++#define AC200_RTC_YY_MM_DD0		0xA010
++#define AC200_RTC_YY_MM_DD1		0xA012
++#define AC200_RTC_HH_MM_SS0		0xA014
++#define AC200_RTC_HH_MM_SS1		0xA016
++#define AC200_ALARM0_CUR_VLU0		0xA024
++#define AC200_ALARM0_CUR_VLU1		0xA026
++#define AC200_ALARM0_ENABLE		0xA028
++#define AC200_ALARM0_IRQ_EN		0xA02C
++#define AC200_ALARM0_IRQ_STA		0xA030
++#define AC200_ALARM1_WK_HH_MM_SS0	0xA040
++#define AC200_ALARM1_WK_HH_MM_SS1	0xA042
++#define AC200_ALARM1_ENABLE		0xA044
++#define AC200_ALARM1_IRQ_EN		0xA048
++#define AC200_ALARM1_IRQ_STA		0xA04C
++#define AC200_ALARM_CONFIG		0xA050
++#define AC200_LOSC_OUT_GATING		0xA060
++#define AC200_GP_DATA(x)		(0xA100 + (x) * 2)
++#define AC200_RTC_DEB			0xA170
++#define AC200_GPL_HOLD_OUTPUT		0xA180
++#define AC200_VDD_RTC			0xA190
++#define AC200_IC_CHARA0			0xA1F0
++#define AC200_IC_CHARA1			0xA1F2
++
++struct ac200_dev {
++	struct clk			*clk;
++	struct regmap			*regmap;
++	struct regmap_irq_chip_data	*regmap_irqc;
++};
++
++extern int ac200_enable(void);
++extern uint16_t sun50i_ephy_calibrate_value(void);
++
++#endif /* __LINUX_MFD_AC200_H */
