@@ -1,0 +1,213 @@
+
+--- a/drivers/net/wireless/ath/ath10k/core.c	
++++ b/drivers/net/wireless/ath/ath10k/core.c	
+@@ -2355,9 +2355,9 @@ static void ath10k_core_set_coverage_cla
+ {
+ 	struct ath10k *ar = container_of(work, struct ath10k,
+ 					 set_coverage_class_work);
+-
++	
+ 	if (ar->hw_params.hw_ops->set_coverage_class)
+-		ar->hw_params.hw_ops->set_coverage_class(ar, -1);
++		ar->hw_params.hw_ops->set_coverage_class(ar, ar->fw_coverage.coverage_class);
+ }
+ 
+ static int ath10k_core_init_firmware_features(struct ath10k *ar)
+
+--- a/drivers/net/wireless/ath/ath10k/core.h	
++++ b/drivers/net/wireless/ath/ath10k/core.h	
+@@ -1039,6 +1039,8 @@ struct ath10k {
+ 	bool nlo_enabled;
+ 	bool p2p;
+ 
++	u8 slottime;	
++	
+ 	struct {
+ 		enum ath10k_bus bus;
+ 		const struct ath10k_hif_ops *ops;
+@@ -1265,7 +1267,7 @@ struct ath10k {
+ 	struct {
+ 		/* writing also protected by data_lock */
+ 		s16 coverage_class;
+-
++		s16 ack_timeout_set;
+ 		u32 reg_phyclk;
+ 		u32 reg_slottime_conf;
+ 		u32 reg_slottime_orig;
+
+--- a/drivers/net/wireless/ath/ath10k/hw.c	
++++ b/drivers/net/wireless/ath/ath10k/hw.c	
+@@ -3,6 +3,7 @@
+  * Copyright (c) 2014-2017 Qualcomm Atheros, Inc.
+  */
+ 
++#include <linux/delay.h>
+ #include <linux/types.h>
+ #include <linux/bitops.h>
+ #include <linux/bitfield.h>
+@@ -584,6 +585,70 @@ void ath10k_hw_fill_survey_time(struct a
+ 	survey->time_busy = CCNT_TO_MSEC(ar, rcc);
+ }
+ 
++/* Wireless firmware version 10.4 supports setting Coverage Class by 
++ * setting via wmi tx_ack_timeout; chipsets a.o. ipq40xx, qca99xx
++*/
++static void ath10k_hw_qca99xx_set_coverage_class(struct ath10k *ar,
++						 s16 value)
++{
++	u32 timeout;
++	int ret;
++	
++	mutex_lock(&ar->conf_mutex);
++
++	/* Only modify registers if the core is started. */
++	if ((ar->state != ATH10K_STATE_ON) &&
++		(ar->state != ATH10K_STATE_RESTARTED)) {
++				spin_lock_bh(&ar->data_lock);
++			ath10k_warn(ar, "ath10k core not yet started");
++			/* Store config value for setting when the core is ready */
++			ar->fw_coverage.coverage_class = value;
++			/* some magic number to signal that nothing got set yet */
++			ar->fw_coverage.ack_timeout_set = -12345;
++			spin_unlock_bh(&ar->data_lock);
++			goto unlock;
++	}
++
++	/* Core is ready; was there a setting given while not ready? */
++	if (ar->fw_coverage.ack_timeout_set == -12345) {
++		value = ar->fw_coverage.coverage_class;
++	}
++
++	/* WIP: it appears that one wmi timeout unit accounts for 3 C.Class units
++	 * so we need an integer divide by three; feedback welcome for distances
++	 * 10-20 km; tested at 7 km */
++	timeout = 0x0;
++	if (value > 0) {
++		timeout += (value >> 2);		// div by 4
++		timeout += (value >> 1); 		// div by 2
++		timeout >>= 1; 					// div sum by 2 for average
++		timeout += 1;					// add a unit to be on safe side
++		timeout = timeout > 0xbf ? 0xbf : timeout;	
++	}
++	timeout += 0x40;					// timeout range 0x40 - 0xff
++	
++	/* Already set to requested value? Once is enough */
++	if (ar->fw_coverage.ack_timeout_set == timeout)
++		goto unlock;
++
++	/* set Coverage Class via wmi */
++	ret = ath10k_wmi_pdev_set_param(ar, ar->wmi.pdev_param->tx_ack_timeout, 
++		timeout);
++	if (ret) {
++		ath10k_warn(ar, "failed to set tx-acktimeout: %d, timeout: 0x%x\n"
++		, ret, timeout);
++	}
++	else {
++		ar->fw_coverage.coverage_class = value;
++		ar->fw_coverage.ack_timeout_set = timeout;
++		ath10k_warn(ar, "coverage class: %d timeout: 0x%x\n"
++		, value, timeout);
++	}
++	
++unlock:
++	mutex_unlock(&ar->conf_mutex);
++}
++
+ /* The firmware does not support setting the coverage class. Instead this
+  * function monitors and modifies the corresponding MAC registers.
+  */
+@@ -1147,6 +1212,7 @@ static bool ath10k_qca99x0_rx_desc_msdu_
+ }
+ 
+ const struct ath10k_hw_ops qca99x0_ops = {
++	.set_coverage_class = ath10k_hw_qca99xx_set_coverage_class,
+ 	.rx_desc_get_l3_pad_bytes = ath10k_qca99x0_rx_desc_get_l3_pad_bytes,
+ 	.rx_desc_get_msdu_limit_error = ath10k_qca99x0_rx_desc_msdu_limit_error,
+ 	.is_rssi_enable = ath10k_htt_tx_rssi_enable,
+
+--- a/drivers/net/wireless/ath/ath10k/mac.c	
++++ b/drivers/net/wireless/ath/ath10k/mac.c	
+@@ -6005,17 +6005,17 @@ static void ath10k_bss_info_changed(stru
+ 
+ 	if (changed & BSS_CHANGED_ERP_SLOT) {
+ 		if (info->use_short_slot)
+-			slottime = WMI_VDEV_SLOT_TIME_SHORT; /* 9us */
++			ar->slottime = WMI_VDEV_SLOT_TIME_SHORT; /* 9us */
+ 
+ 		else
+-			slottime = WMI_VDEV_SLOT_TIME_LONG; /* 20us */
++			ar->slottime = WMI_VDEV_SLOT_TIME_LONG; /* 20us */
+ 
+ 		ath10k_dbg(ar, ATH10K_DBG_MAC, "mac vdev %d slot_time %d\n",
+ 			   arvif->vdev_id, slottime);
+ 
+ 		vdev_param = ar->wmi.vdev_param->slot_time;
+ 		ret = ath10k_wmi_vdev_set_param(ar, arvif->vdev_id, vdev_param,
+-						slottime);
++						ar->slottime);
+ 		if (ret)
+ 			ath10k_warn(ar, "failed to set erp slot for vdev %d: %i\n",
+ 				    arvif->vdev_id, ret);
+
+--- a/drivers/net/wireless/ath/ath10k/wmi.c	
++++ b/drivers/net/wireless/ath/ath10k/wmi.c	
+@@ -1158,6 +1158,7 @@ static struct wmi_pdev_param_map wmi_pde
+ 	.arp_srcaddr = WMI_PDEV_PARAM_UNSUPPORTED,
+ 	.arp_dstaddr = WMI_PDEV_PARAM_UNSUPPORTED,
+ 	.enable_btcoex = WMI_PDEV_PARAM_UNSUPPORTED,
++	.tx_ack_timeout = WMI_PDEV_PARAM_UNSUPPORTED,
+ };
+ 
+ static struct wmi_pdev_param_map wmi_10x_pdev_param_map = {
+@@ -1254,6 +1255,7 @@ static struct wmi_pdev_param_map wmi_10x
+ 	.arp_srcaddr = WMI_PDEV_PARAM_UNSUPPORTED,
+ 	.arp_dstaddr = WMI_PDEV_PARAM_UNSUPPORTED,
+ 	.enable_btcoex = WMI_PDEV_PARAM_UNSUPPORTED,
++	.tx_ack_timeout = WMI_PDEV_PARAM_UNSUPPORTED,
+ };
+ 
+ static struct wmi_pdev_param_map wmi_10_2_4_pdev_param_map = {
+@@ -1351,6 +1353,7 @@ static struct wmi_pdev_param_map wmi_10_
+ 	.arp_srcaddr = WMI_PDEV_PARAM_UNSUPPORTED,
+ 	.arp_dstaddr = WMI_PDEV_PARAM_UNSUPPORTED,
+ 	.enable_btcoex = WMI_PDEV_PARAM_UNSUPPORTED,
++	.tx_ack_timeout = WMI_PDEV_PARAM_UNSUPPORTED,
+ };
+ 
+ /* firmware 10.2 specific mappings */
+@@ -1611,6 +1614,7 @@ static struct wmi_pdev_param_map wmi_10_
+ 	.arp_srcaddr = WMI_10_4_PDEV_PARAM_ARP_SRCADDR,
+ 	.arp_dstaddr = WMI_10_4_PDEV_PARAM_ARP_DSTADDR,
+ 	.enable_btcoex = WMI_10_4_PDEV_PARAM_ENABLE_BTCOEX,
++	.tx_ack_timeout = WMI_10_4_PDEV_PARAM_TX_ACK_TIMEOUT,
+ };
+ 
+ static const u8 wmi_key_cipher_suites[] = {
+
+--- a/drivers/net/wireless/ath/ath10k/wmi.h	
++++ b/drivers/net/wireless/ath/ath10k/wmi.h	
+@@ -205,7 +205,6 @@ enum wmi_service {
+ 	WMI_SERVICE_SUPPORT_EXTEND_ADDRESS,
+ 	WMI_SERVICE_PEER_TID_CONFIGS_SUPPORT,
+ 	WMI_SERVICE_EXT_PEER_TID_CONFIGS_SUPPORT,
+-
+ 	/* Remember to add the new value to wmi_service_name()! */
+ 
+ 	/* keep last */
+@@ -3811,6 +3810,7 @@ struct wmi_pdev_param_map {
+ 	u32 rfkill_config;
+ 	u32 rfkill_enable;
+ 	u32 peer_stats_info_enable;
++	u32 tx_ack_timeout;
+ };
+ 
+ #define WMI_PDEV_PARAM_UNSUPPORTED 0
+@@ -4131,6 +4131,8 @@ enum wmi_10_4_pdev_param {
+ 	WMI_10_4_PDEV_PARAM_ATF_DYNAMIC_ENABLE,
+ 	WMI_10_4_PDEV_PARAM_ATF_SSID_GROUP_POLICY,
+ 	WMI_10_4_PDEV_PARAM_ENABLE_BTCOEX,
++	/* TX acknowledge timeout. Advised range: 0x40 - 0xFF microsec. */
++	WMI_10_4_PDEV_PARAM_TX_ACK_TIMEOUT = 0x68,
+ };
+ 
+ struct wmi_pdev_set_param_cmd {
