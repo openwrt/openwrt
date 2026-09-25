@@ -46,6 +46,15 @@ define Build/an7581-chainloader
   cat $(STAGING_DIR_IMAGE)/an7581_$1-chainload-u-boot.itb >> $@
 endef
 
+define Build/tplink-xb432v-kernel-header
+	dd if=/dev/zero of=$@.hdr bs=1 count=512 2>/dev/null
+	printf '\003\000\000\003' | dd of=$@.hdr bs=1 seek=0 conv=notrunc 2>/dev/null
+	printf '\000\376\237\003' | dd of=$@.hdr bs=1 seek=120 conv=notrunc 2>/dev/null
+	cat $@ >> $@.hdr
+	mv $@.hdr $@
+	rm -rf $@.hdr
+endef
+
 define Device/FitImageLzma
 	KERNEL_SUFFIX := -uImage.itb
 	KERNEL = kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(DEVICE_DTS).dtb
@@ -219,3 +228,24 @@ define Device/quantum_q1000k-ubi
   SOC := an7581
 endef
 TARGET_DEVICES += quantum_q1000k-ubi
+
+define Device/tplink_xb432v
+  $(call Device/FitImageLzma)
+  DEVICE_VENDOR := TP-Link
+  DEVICE_MODEL := XB432v
+  DEVICE_DTS := an7581-tplink-xb432v
+  DEVICE_DTS_CONFIG := config@1
+  DEVICE_PACKAGES := airoha-en7581-npu-firmware airoha-en8811h-firmware \
+    kmod-mt7992-firmware kmod-phy-airoha-en8811h kmod-usb3 \
+    kmod-usb-ledtrig-usbport wpad-basic-mbedtls
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 256k
+  PAGESIZE := 4096
+  IMAGE_SIZE := 61184k
+  KERNEL_SIZE := 10240k
+  KERNEL := kernel-bin | lzma | \
+    fit lzma $$(KDIR)/image-$$(DEVICE_DTS).dtb | \
+    tplink-xb432v-kernel-header
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += tplink_xb432v
