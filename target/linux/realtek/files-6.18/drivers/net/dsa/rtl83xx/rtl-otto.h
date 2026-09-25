@@ -1148,6 +1148,8 @@ struct rtldsa_config {
 	u8 l2_bucket_size;
 	u16 n_mst;
 	u32 fib_entries;
+	enum otto_table_id l2_uc_tbl;
+	enum otto_table_id l2_cam_tbl;
 	int trk_ctrl;
 	int trk_hash_ctrl;
 	void (*stp_init)(void);
