@@ -274,41 +274,55 @@ sub add_implicit_provides_conflicts {
 		my $providers = $vpackage{$provide};
 		next unless $providers && @$providers > 1;
 
-		my $default_pkg;
-		my @non_defaults;
-
+		# One implicit-conflict star per variant family: each source
+		# elects its own home, from its variant_default bearer,
+		# among its providers of this provide; no edges cross
+		# families.
+		my %by_src;
 		foreach my $pkg (@$providers) {
 			next if $pkg->{buildonly};
-			if ($pkg->{variant_default}) {
-				$default_pkg = $pkg;
-			} else {
-				push @non_defaults, $pkg;
-			}
+			$by_src{$pkg->{src}{name}} ||= [];
+			push @{$by_src{$pkg->{src}{name}}}, $pkg;
 		}
 
-		next unless $default_pkg && @non_defaults;
+		foreach my $src (keys %by_src) {
+			my @family = @{$by_src{$src}};
+			next unless @family > 1;
 
-		my %existing_conflicts;
-		if ($default_pkg->{conflicts}) {
-			%existing_conflicts = map { $_ => 1 } @{$default_pkg->{conflicts}};
-		}
-
-		foreach my $non_default (@non_defaults) {
-			next if $existing_conflicts{$non_default->{name}};
-
-			my $already_conflicts = 0;
-			if ($non_default->{conflicts}) {
-				foreach my $c (@{$non_default->{conflicts}}) {
-					if ($c eq $default_pkg->{name}) {
-						$already_conflicts = 1;
-						last;
-					}
+			my $default_pkg;
+			my @non_defaults;
+			foreach my $pkg (@family) {
+				if ($pkg->{variant_default}) {
+					$default_pkg = $pkg;
+				} else {
+					push @non_defaults, $pkg;
 				}
 			}
-			next if $already_conflicts;
 
-			$default_pkg->{conflicts} ||= [];
-			push @{$default_pkg->{conflicts}}, $non_default->{name};
+			next unless $default_pkg && @non_defaults;
+
+			my %existing_conflicts;
+			if ($default_pkg->{conflicts}) {
+				%existing_conflicts = map { $_ => 1 } @{$default_pkg->{conflicts}};
+			}
+
+			foreach my $non_default (@non_defaults) {
+				next if $existing_conflicts{$non_default->{name}};
+
+				my $already_conflicts = 0;
+				if ($non_default->{conflicts}) {
+					foreach my $c (@{$non_default->{conflicts}}) {
+						if ($c eq $default_pkg->{name}) {
+							$already_conflicts = 1;
+							last;
+						}
+					}
+				}
+				next if $already_conflicts;
+
+				$default_pkg->{conflicts} ||= [];
+				push @{$default_pkg->{conflicts}}, $non_default->{name};
+			}
 		}
 	}
 }
