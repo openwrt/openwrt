@@ -1,0 +1,52 @@
+From 8d6034872bdc153e70ee50f2d42589b3be88692c Mon Sep 17 00:00:00 2001
+From: Judith Mendez <jm@ti.com>
+Date: Mon, 27 Jul 2026 00:00:00 +0000
+Subject: [PATCH] PENDING: arm64: dts: ti: k3-am62: Set MMC clock pins as
+ OUTPUT
+
+MMC clock pins must be configured as OUTPUT-only per TRM specification [0]
+with receiver disabled (RXACTIVE bit = 0). Change MMC CLK pins from
+PIN_INPUT to PIN_OUTPUT across AM62x family device trees.
+
+[0] https://www.ti.com/lit/pdf/spruiv7 Rev. C: Table 12-246. MMCSDi I/O Signals
+Signed-off-by: Judith Mendez <jm@ti.com>
+
+Backported from
+https://github.com/beagleboard/mirror-ti-linux-kernel/commit/8d6034872bdc153e70ee50f2d42589b3be88692c
+(marked PENDING upstream at the time of this backport), narrowed here
+to only the BeaglePlay board's own devicetree file.
+
+Signed-off-by: Sayooj K Karun <sayooj@aerlync.com>
+---
+ arch/arm64/boot/dts/ti/k3-am625-beagleplay.dts | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- a/arch/arm64/boot/dts/ti/k3-am625-beagleplay.dts
++++ b/arch/arm64/boot/dts/ti/k3-am625-beagleplay.dts
+@@ -323,7 +323,7 @@
+ 		bootph-all;
+ 		pinctrl-single,pins = <
+ 			AM62X_IOPAD(0x0220, PIN_INPUT, 0) /* (Y3) MMC0_CMD */
+-			AM62X_IOPAD(0x0218, PIN_INPUT, 0) /* (AB1) MMC0_CLK */
++			AM62X_IOPAD(0x0218, PIN_OUTPUT, 0) /* (AB1) MMC0_CLK */
+ 			AM62X_IOPAD(0x0214, PIN_INPUT, 0) /* (AA2) MMC0_DAT0 */
+ 			AM62X_IOPAD(0x0210, PIN_INPUT, 0) /* (AA1) MMC0_DAT1 */
+ 			AM62X_IOPAD(0x020c, PIN_INPUT, 0) /* (AA3) MMC0_DAT2 */
+@@ -346,7 +346,7 @@
+ 		bootph-all;
+ 		pinctrl-single,pins = <
+ 			AM62X_IOPAD(0x023c, PIN_INPUT, 0) /* (A21) MMC1_CMD */
+-			AM62X_IOPAD(0x0234, PIN_INPUT, 0) /* (B22) MMC1_CLK */
++			AM62X_IOPAD(0x0234, PIN_OUTPUT, 0) /* (B22) MMC1_CLK */
+ 			AM62X_IOPAD(0x0230, PIN_INPUT, 0) /* (A22) MMC1_DAT0 */
+ 			AM62X_IOPAD(0x022c, PIN_INPUT, 0) /* (B21) MMC1_DAT1 */
+ 			AM62X_IOPAD(0x0228, PIN_INPUT, 0) /* (C21) MMC1_DAT2 */
+@@ -358,7 +358,7 @@
+ 	wifi_pins_default: wifi-default-pins {
+ 		pinctrl-single,pins = <
+ 			AM62X_IOPAD(0x0120, PIN_INPUT, 0) /* (C24) MMC2_CMD */
+-			AM62X_IOPAD(0x0118, PIN_INPUT, 0) /* (D25) MMC2_CLK */
++			AM62X_IOPAD(0x0118, PIN_OUTPUT, 0) /* (D25) MMC2_CLK */
+ 			AM62X_IOPAD(0x0114, PIN_INPUT, 0) /* (B24) MMC2_DAT0 */
+ 			AM62X_IOPAD(0x0110, PIN_INPUT, 0) /* (C25) MMC2_DAT1 */
+ 			AM62X_IOPAD(0x010c, PIN_INPUT, 0) /* (E23) MMC2_DAT2 */
