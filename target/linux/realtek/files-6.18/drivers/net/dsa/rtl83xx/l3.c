@@ -1652,7 +1652,7 @@ static int otto_l3_netevent_notifier(struct notifier_block *this, unsigned long 
 	struct otto_l3_net_event_work *net_work;
 	struct neighbour *n = ptr;
 	struct net_device *dev;
-	int err, port;
+	int port;
 
 	switch (event) {
 	case NETEVENT_NEIGH_UPDATE:
@@ -1682,8 +1682,6 @@ static int otto_l3_netevent_notifier(struct notifier_block *this, unsigned long 
 		dev_dbg(ctrl->dev, "updating neighbour on port %d, mac %016llx\n",
 			port, net_work->mac);
 		queue_work(priv->wq, &net_work->work);
-		if (err)
-			netdev_warn(dev, "failed to handle neigh update (err %d)\n", err);
 		break;
 	}
 
