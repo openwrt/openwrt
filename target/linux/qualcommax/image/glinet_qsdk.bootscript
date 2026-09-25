@@ -32,9 +32,9 @@ fi
 failreason='error: failed on image extraction'
 imxtract $imgaddr ubi || setenv stdout serial && echo "$failedmsg" && echo "$failreason" && exit 1
 failreason='error: failed on partition erase'
-nand device 0 && nand erase 0x00800000 0x07800000 || setenv stdout serial && echo "$failedmsg" && echo "$failreason" && exit 1
+nand device 0 && nand erase @UBI_OFFSET@ @UBI_SIZE@ || setenv stdout serial && echo "$failedmsg" && echo "$failreason" && exit 1
 failreason='error: failed on partition write'
-nand write $fileaddr 0x00800000 rootfs_size || setenv stdout serial && echo "$failedmsg" && echo "$failreason" && exit 1
+nand write $fileaddr @UBI_OFFSET@ @ROOTFS_SIZE@ || setenv stdout serial && echo "$failedmsg" && echo "$failreason" && exit 1
 if test "x$verbose" = "x"; then
     setenv stdout serial
     echo '[ done ]'
