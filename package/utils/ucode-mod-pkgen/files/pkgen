@@ -1,17 +1,14 @@
 #!/usr/bin/env ucode
 'use strict';
 
-import { basename, readfile, writefile, stdin } from "fs";
+import { basename, readfile, writefile } from "fs";
 let pk = require("pkgen");
 let valid_from = "20240101000000";
 let valid_to = "21001231235959";
-let subject, password, password_stdin;
+let subject;
 let keytype = "ec";
 let keylen = 2048;
-let keyexp = 65537;
 let keycurve = "secp256r1";
-let no_ca;
-let legacy;
 
 const usage_message = `Usage: ${basename(sourcepath())} [<options>] <command> [<arguments>]
 
@@ -22,29 +19,18 @@ Commands:
   cert <ca.pem> <cert.pem>:		Create a new certificate/key using the CA
 					from ca.pem. (creates cert.pem and ca.key)
 
-  cert_p12 <ca.pem> <cert.p12>:		Create a new PKCS#12 certificate/key
-					using the CA from ca.pem. (creates ca.p12)
-
   selfsigned <cert.pem>:		Create a self-signed certificate
 					(creates cert.pem)
 
 Options:
   -C <curve>				Set EC curve type (default: ${keycurve})
 					Possible values: secp521r1, secp384r1, secp256r1,
-					secp256k1, secp224r1, secp224k1, secp192r1,
-					secp192k1
-  -E <exponent>				Set RSA key exponent (default: ${keyexp})
+					secp256k1
   -L <len>				Set RSA key length (default: ${keylen})
-  -N					Omit CA certificate for PKCS#12 files
-  -p <password>				Set PKCS#12 password to <password>
-  -P					Read PKCS#12 password from stdin
-					(default: random password, printed to stdout)
   -s <name>				Set subject for generated certificate to <name>.
   -t rsa|ec				Set key type to rsa or ec (default: ec)
   -V <from> <to>			Set validity for generated certificates.
 					(default: ${valid_from} ${valid_to})
-  -W					Use weaker PKCS#12 encryption for
-					compatibility with Windows and Apple systems
 
 `;
 
@@ -68,13 +54,11 @@ function check_pem_path(pem_file) {
 	return pem_file;
 }
 
-
 function gen_key() {
 	let key = pk.generate_key({
 		type: keytype,
 		curve: keycurve,
 		size: keylen,
-		exponent: keyexp,
 	});
 
 	if (!key)
@@ -156,29 +140,6 @@ let cmds = {
 		writefile(crt_file, cert);
 	},
 
-	cert_p12: function (args) {
-		let ca_file = check_pem_path(shift(args));
-		let p12_file = shift(args);
-		if (!p12_file)
-			usage();
-
-		let key = gen_key();
-		let ca_data = readfile(ca_file);
-		let cert = gen_client_cert(ca_file, ca_data, key);
-
-		if (password_stdin)
-			password = rtrim(stdin.read("line"));
-		else if (!password)
-			print((password = hexenc(readfile("/dev/urandom", 8))) + "\n");
-
-		let p12 = pk.generate_pkcs12({
-			password, cert, key, legacy,
-			extra: no_ca ? null : [ ca_data ],
-		});
-
-		writefile(p12_file, p12);
-	},
-
 	selfsigned: function(args) {
 		let crt_file = check_pem_path(shift(args));
 		let crt_base = substr(crt_file, 0, -4);
@@ -204,19 +165,6 @@ while (substr(ARGV[0], 0, 1) == "-") {
 	case 'L':
 		keylen = +shift(ARGV);
 		break;
-	case 'N':
-		no_ca = true;
-		break;
-	case 'p':
-		password = shift(ARGV);
-		if (password_stdin)
-			usage();
-		break;
-	case 'P':
-		password_stdin = true;
-		if (password)
-			usage();
-		break;
 	case 's':
 		subject = shift(ARGV);
 		break;
@@ -230,9 +178,6 @@ while (substr(ARGV[0], 0, 1) == "-") {
 	case 'V':
 		valid_from = shift(ARGV);
 		valid_to = shift(ARGV);
-		break;
-	case 'W':
-		legacy = true;
 		break;
 	default:
 		usage();
