@@ -1,0 +1,60 @@
+From 5d90b28238ff122eb40dae6ab54d8b1caf9aab40 Mon Sep 17 00:00:00 2001
+From: Pasquale Giordano <pa93gi@gmail.com>
+Date: Wed, 26 Aug 2026 09:20:00 +0000
+Subject: [PATCH] uboot-mediatek: bpi-r4: clarify eMMC install menu text
+
+On the Bananapi BPI-R4, the SD and eMMC share the same physical
+controller and are electrically mutually exclusive depending on the
+SW3 boot-select switch: U-Boot cannot see the eMMC while booted from
+SD, and vice versa. Because of this, the eMMC cannot be provisioned
+directly from the SD boot menu; the SPI-NAND (on a separate SPI bus,
+reachable regardless of the SW3 position) is used as an intermediate
+carrier for the eMMC installer payload.
+
+This two-step requirement (SD -> "Install to NAND" -> reboot with
+SW3 on NAND -> "Install to eMMC") is not documented anywhere and the
+existing menu text gives no hint that "Install to NAND" is also a
+prerequisite step for eMMC installation, or that the eMMC install
+option only appears after that first step has run. Users who only
+want eMMC and skip straight to looking for an "install to eMMC" menu
+entry from SD will not find one, with no indication why.
+
+Rename the two menu entries to state their place in the sequence
+explicitly, so the correct order is discoverable directly from the
+boot menu without external documentation.
+
+Signed-off-by: Pasquale Giordano <pa93gi@gmail.com>
+---
+ defenvs/bananapi_bpi-r4_sdmmc_env | 2 +-
+ defenvs/bananapi_bpi-r4_snand_env | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/defenvs/bananapi_bpi-r4_sdmmc_env b/defenvs/bananapi_bpi-r4_sdmmc_env
+index 02ca127..8446054 100644
+--- a/defenvs/bananapi_bpi-r4_sdmmc_env
++++ b/defenvs/bananapi_bpi-r4_sdmmc_env
+@@ -23,7 +23,7 @@ bootmenu_2=Boot production system from SD card.=run boot_production ; run bootme
+ bootmenu_3=Boot recovery system from SD card.=run boot_recovery ; run bootmenu_confirm_return
+ bootmenu_4=Load production system via TFTP then write to SD card.=setenv noboot 1 ; setenv replacevol 1 ; run boot_tftp_production ; setenv noboot ; setenv replacevol ; run bootmenu_confirm_return
+ bootmenu_5=Load recovery system via TFTP then write to SD card.=setenv noboot 1 ; setenv replacevol 1 ; run boot_tftp_recovery ; setenv noboot ; setenv replacevol ; run bootmenu_confirm_return
+-bootmenu_6=[31mInstall bootloader, recovery and production to NAND.[0m=if nand info ; then run ubi_init ; else echo "NAND not detected" ; fi ; run bootmenu_confirm_return
++bootmenu_6=[31mInstall bootloader, recovery and production to NAND (step 1/2, required before eMMC install).[0m=if nand info ; then run ubi_init ; else echo "NAND not detected" ; fi ; run bootmenu_confirm_return
+ bootmenu_7=Reboot.=reset
+ bootmenu_8=Reset all settings to factory defaults.=run reset_factory ; reset
+ boot_first=if button reset ; then led $bootled_rec on ; run boot_tftp_recovery ; setenv flag_recover 1 ; run boot_default ; fi ; bootmenu
+diff --git a/defenvs/bananapi_bpi-r4_snand_env b/defenvs/bananapi_bpi-r4_snand_env
+index dd2f42b..8c15777 100644
+--- a/defenvs/bananapi_bpi-r4_snand_env
++++ b/defenvs/bananapi_bpi-r4_snand_env
+@@ -25,7 +25,7 @@ bootmenu_4=Load production system via TFTP then write to NAND.=setenv noboot 1 ;
+ bootmenu_5=Load recovery system via TFTP then write to NAND.=setenv noboot 1 ; setenv replacevol 1 ; run boot_tftp_recovery ; setenv noboot ; setenv replacevol ; run bootmenu_confirm_return
+ bootmenu_6=[31mLoad BL31+U-Boot FIP via TFTP then write to NAND.[0m=run boot_tftp_write_fip ; run bootmenu_confirm_return
+ bootmenu_7=[31mLoad BL2 preloader via TFTP then write to NAND.[0m=run boot_tftp_write_bl2 ; run bootmenu_confirm_return
+-bootmenu_8=[31mInstall bootloader, recovery and production to eMMC.[0m=if mmc partconf 0 ; then run emmc_init ; else echo "eMMC not detected" ; fi ; run bootmenu_confirm_return
++bootmenu_8=[31mInstall bootloader, recovery and production to eMMC (step 2/2, run Install to NAND from SD first).[0m=if mmc partconf 0 ; then run emmc_init ; else echo "eMMC not detected" ; fi ; run bootmenu_confirm_return
+ bootmenu_9=Reboot.=reset
+ bootmenu_10=Reset all settings to factory defaults.=run reset_factory ; reset
+ boot_first=if button reset ; then led $bootled_rec on ; run boot_tftp_recovery ; setenv flag_recover 1 ; run boot_default ; fi ; bootmenu
+-- 
+2.43.0
+
