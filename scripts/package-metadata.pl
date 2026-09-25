@@ -71,7 +71,7 @@ sub gen_kconfig_overrides() {
 	while (<FILE>) {
 		/^Package:\s*(.+?)\s*$/ and $package = $1;
 		/^Kernel-Config:\s*(.+?)\s*$/ and do {
-			my @config = split /\s+/, $1;
+			my @config = $1 =~ /(?:[^\s"]+|"[^"]*")+/g;
 			foreach my $config (version_filter_list($patchver, @config)) {
 				my $val = 'm';
 				my $override;
