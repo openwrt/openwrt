@@ -60,7 +60,7 @@ function handle_link(dev, data, up)
 		wireless_ap: ap,
 	};
 
-	if (ap && config.multicast_to_unicast != null)
+	if (ap)
 		dev_data.multicast_to_unicast = config.multicast_to_unicast ? 1 : 0;
 
 	if (data.type == "vif" && config.mode == "ap") {
