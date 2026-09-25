@@ -1,0 +1,24 @@
+This makes it possible to select CONFIG_REGMAP and CONFIG_REGMAP_I2C.
+This is needed to compile this into the kernel and make use of it
+from out of tree drivers like hwmon-isl28022.
+
+--- a/drivers/base/regmap/Kconfig
++++ b/drivers/base/regmap/Kconfig
+@@ -6,7 +6,7 @@
+ config REGMAP
+ 	select IRQ_DOMAIN if REGMAP_IRQ
+ 	select MDIO_BUS if REGMAP_MDIO
+-	tristate
++	tristate "select REGMAP"
+ 
+ config REGCACHE_COMPRESSED
+ 	select LZO_COMPRESS
+@@ -19,7 +19,7 @@ config REGMAP_AC97
+ 
+ config REGMAP_I2C
+ 	select REGMAP
+-	tristate
++	tristate "select REGMAP_I2C"
+ 	depends on I2C
+ 
+ config REGMAP_SLIMBUS
