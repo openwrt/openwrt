@@ -233,6 +233,21 @@
 
 #define RTL8367B_INTERNAL_PHY_REG(_a, _r)	(0x2000 + 32 * (_a) + (_r))
 
+#define RTL8367B_LED_SYS_CONFIG_REG		0x1b00
+#define RTL8367B_LED_MODE_REG			0x1b02
+#define   RTL8367B_LED_MODE_RATE_M		0x7
+#define   RTL8367B_LED_MODE_RATE_S		1
+
+#define RTL8367B_LED_CONFIG_REG			0x1b03
+#define   RTL8367B_LED_CONFIG_DATA_S		12
+#define   RTL8367B_LED_CONFIG_DATA_M		0x3
+#define   RTL8367B_LED_CONFIG_SEL		BIT(14)
+#define   RTL8367B_LED_CONFIG_LED_CFG_M		0xf
+
+#define RTL8367B_PARA_LED_IO_EN1_REG		0x1b24
+#define RTL8367B_PARA_LED_IO_EN2_REG		0x1b25
+#define   RTL8367B_PARA_LED_IO_EN_PMASK		0xff
+
 #define RTL8367B_NUM_MIB_COUNTERS	58
 
 #define RTL8367B_CPU_PORT_NUM		5
@@ -810,6 +825,75 @@ static int rtl8367b_extif_init(struct rtl8366_smi *smi, int id,
 	return 0;
 }
 
+static int rtl8367b_led_group_set_ports(struct rtl8366_smi *smi,
+					unsigned int group, u16 port_mask)
+{
+	u32 shift = (group % 2) * 8;
+	u32 reg = RTL8367B_PARA_LED_IO_EN1_REG + (group / 2);
+	int err;
+
+	port_mask &= RTL8367B_PARA_LED_IO_EN_PMASK;
+	REG_RMW(smi, reg, RTL8367B_PARA_LED_IO_EN_PMASK << shift,
+		port_mask << shift);
+
+	return 0;
+}
+
+static int rtl8367b_led_group_set_mode(struct rtl8366_smi *smi,
+				       unsigned int mode)
+{
+	u16 mask = (RTL8367B_LED_CONFIG_DATA_M <<
+		    RTL8367B_LED_CONFIG_DATA_S) | RTL8367B_LED_CONFIG_SEL;
+	u16 set = ((mode & RTL8367B_LED_CONFIG_DATA_M) <<
+		   RTL8367B_LED_CONFIG_DATA_S) | RTL8367B_LED_CONFIG_SEL;
+	int err;
+
+	REG_RMW(smi, RTL8367B_LED_CONFIG_REG, mask, set);
+
+	return 0;
+}
+
+static int rtl8367b_led_group_set_config(struct rtl8366_smi *smi,
+					 unsigned int group, unsigned int config)
+{
+	u16 mask = (RTL8367B_LED_CONFIG_LED_CFG_M << (group * 4)) |
+		   RTL8367B_LED_CONFIG_SEL;
+	u16 set = (config & RTL8367B_LED_CONFIG_LED_CFG_M) << (group * 4);
+	int err;
+
+	REG_RMW(smi, RTL8367B_LED_CONFIG_REG, mask, set);
+
+	return 0;
+}
+
+static int rtl8367b_led_setup(struct rtl8366_smi *smi)
+{
+	u16 mask = RTL8367B_LED_MODE_RATE_M << RTL8367B_LED_MODE_RATE_S;
+	u16 set = 1 << RTL8367B_LED_MODE_RATE_S;
+	int group;
+	int err;
+
+	REG_WR(smi, RTL8367B_LED_SYS_CONFIG_REG, 0x1472);
+	REG_RMW(smi, RTL8367B_LED_MODE_REG, mask, set);
+
+	err = rtl8367b_led_group_set_mode(smi, 0);
+	if (err)
+		return err;
+
+	for (group = 0; group < 3; group++) {
+		err = rtl8367b_led_group_set_ports(smi, group,
+						   RTL8367B_PORTS_ALL);
+		if (err)
+			return err;
+
+		err = rtl8367b_led_group_set_config(smi, group, 2);
+		if (err)
+			return err;
+	}
+
+	return 0;
+}
+
 static int rtl8367b_extif_init_of(struct rtl8366_smi *smi,
 				  const char *name)
 {
@@ -925,6 +1009,10 @@ static int rtl8367b_setup(struct rtl8366_smi *smi)
 				RTL8367B_PORT_MISC_CFG_EGRESS_MODE_SHIFT,
 			RTL8367B_PORT_MISC_CFG_EGRESS_MODE_ORIGINAL <<
 				RTL8367B_PORT_MISC_CFG_EGRESS_MODE_SHIFT);
+
+	if (of_property_read_bool(smi->parent->of_node,
+				  "realtek,led-link-activity"))
+		return rtl8367b_led_setup(smi);
 
 	return 0;
 }

@@ -5,7 +5,7 @@
 
 ramips_setup_interfaces()
 {
-	local board="$1"
+	local board="$1" role
 
 	case $board in
 	aigale,ai-br100|\
@@ -289,6 +289,23 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch1" \
 			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "7t@eth0"
 		;;
+	zyxel,keenetic-extra)
+		ucidef_add_switch "switch0"
+		json_select_object switch
+		json_select_object switch0
+		json_select_array roles
+		for role in lan wan; do
+			json_add_object
+			json_add_string role "$role"
+			json_add_string ports "5t 6t"
+			json_close_object
+		done
+		json_select ..
+		json_select ..
+		json_select ..
+		ucidef_add_switch "switch1" \
+			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "6t@eth0"
+		;;
 	esac
 }
 
@@ -451,6 +468,7 @@ ramips_setup_macs()
 		;;
 	zyxel,keenetic-omni|\
 	zyxel,keenetic-omni-ii|\
+	zyxel,keenetic-extra|\
 	zyxel,keenetic-viva)
 		wan_mac=$(mtd_get_mac_binary factory 0x28)
 		;;
