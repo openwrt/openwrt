@@ -35,7 +35,7 @@ Reviewed-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
  &usbphy0 {
 --- a/arch/arm64/boot/dts/qcom/ipq5018.dtsi
 +++ b/arch/arm64/boot/dts/qcom/ipq5018.dtsi
-@@ -580,16 +580,9 @@
+@@ -598,16 +598,9 @@
  			status = "disabled";
  		};
  
@@ -55,7 +55,7 @@ Reviewed-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
  
  			clocks = <&gcc GCC_USB0_MASTER_CLK>,
  				 <&gcc GCC_SYS_NOC_USB0_AXI_CLK>,
-@@ -599,30 +592,32 @@
+@@ -617,30 +610,32 @@
  				      "iface",
  				      "sleep",
  				      "mock_utmi";

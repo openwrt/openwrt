@@ -302,9 +302,6 @@
 &mdio1 {
 	status = "okay";
 
-	pinctrl-0 = <&mdio1_pins>;
-	pinctrl-names = "default";
-
 	/*
 	 * RTL8367S (OEM labels it "qca83xx"), MDIO-connected (realtek-mdio) at
 	 * address 29. The switch RESET is GPIO33, not the OEM-labelled GPIO39 -
@@ -471,22 +468,6 @@
 		function = "gpio";
 		drive-strength = <2>;
 		bias-disable;
-	};
-
-	mdio1_pins: mdio1-state {
-		mdc-pins {
-			pins = "gpio36";
-			function = "mdc";
-			drive-strength = <8>;
-			bias-pull-up;
-		};
-
-		mdio-pins {
-			pins = "gpio37";
-			function = "mdio";
-			drive-strength = <8>;
-			bias-pull-up;
-		};
 	};
 
 	qpic_pins: qpic-state {
