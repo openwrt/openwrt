@@ -1,0 +1,34 @@
+From 6c21f63d2847b81ad34f772c0cfeb2a3f33e7742 Mon Sep 17 00:00:00 2001
+From: Ziyang Huang <hzyitc@outlook.com>
+Date: Sun, 16 Aug 2026 17:33:57 +0800
+Subject: [PATCH] spi: spi-qpic-snand: reject when no enough OOB space
+
+Print a clear error when the flash doesn't have enough space, instand of
+return -EBADMSG silently in read or write functions.
+
+ECC4 requires 64B OOB space.
+ECC8 requires 80B OOB space.
+
+Signed-off-by: Ziyang Huang <hzyitc@outlook.com>
+---
+ drivers/spi/spi-qpic-snand.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+--- a/drivers/spi/spi-qpic-snand.c
++++ b/drivers/spi/spi-qpic-snand.c
+@@ -323,6 +323,15 @@ static int qcom_spi_ecc_init_ctx_pipelin
+ 	ecc_cfg->cw_size = ecc_cfg->cw_data + ecc_cfg->bytes;
+ 	bad_block_byte = mtd->writesize - ecc_cfg->cw_size * (cwperpage - 1) + 1;
+ 
++	if ((ecc_cfg->cw_size * cwperpage) > (mtd->writesize + mtd->oobsize)) {
++		dev_err(snandc->dev,
++			"Current ECC settings require %d bytes, but the flash only has %d+%d bytes.\n",
++			(ecc_cfg->cw_size * cwperpage), mtd->writesize,
++			mtd->oobsize);
++		ret = -EINVAL;
++		goto err_free_ecc_cfg;
++	}
++
+ 	mtd_set_ooblayout(mtd, &qcom_spi_ooblayout);
+ 
+ 	/*
