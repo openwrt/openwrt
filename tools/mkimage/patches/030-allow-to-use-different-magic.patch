@@ -42,7 +42,7 @@ This patch makes it possible to set a custom image magic.
  			break;
 +		case 'M':
 +			magic = strtoull(optarg, &ptr, 16);
-+			if (*ptr || magic > UINT32_MAX) {
++			if (ptr == optarg || *ptr || magic > UINT32_MAX) {
 +				fprintf(stderr, "%s: invalid magic %s\n",
 +					params.cmdname, optarg);
 +				exit(EXIT_FAILURE);
@@ -126,7 +126,7 @@ This patch makes it possible to set a custom image magic.
  			break;
 +		case 'M':
 +			magic = strtoull(optarg, &ptr, 16);
-+			if (*ptr || magic > UINT32_MAX) {
++			if (ptr == optarg || *ptr || magic > UINT32_MAX) {
 +				fprintf(stderr, "%s: invalid magic %s\n",
 +					params.cmdname, optarg);
 +				exit(EXIT_FAILURE);
