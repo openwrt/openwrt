@@ -1,0 +1,60 @@
+From 2cfae284310731888f4899a01d147baf08a58ffd Mon Sep 17 00:00:00 2001
+From: Luo Jie <jie.luo@oss.qualcomm.com>
+Date: Wed, 2 Sep 2026 03:22:48 -0700
+Subject: arm64: dts: qcom: ipq5018: Add pinctrl for MDIO bus
+
+The external MDIO bus (mdio1) needs its MDC/MDIO lines configured via
+TLMM pinctrl; without this the pins are left in their default state and
+the bus does not function on boards that enable it.
+
+The MDIO pin configuration is identical across all IPQ5018 RDP boards,
+so add it to the shared SoC dtsi.
+
+Add a mdio_pins pinctrl state for gpio36 (mdc) and gpio37 (mdio) with
+8mA drive strength and pull-up, and reference it from the mdio1 node
+via pinctrl-0/pinctrl-names.
+
+Reviewed-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Signed-off-by: Luo Jie <jie.luo@oss.qualcomm.com>
+Link: https://lore.kernel.org/r/20260902-qcom_ipq5018_mdio_pinctrl-v3-1-629c7bb05c44@oss.qualcomm.com
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
+---
+ arch/arm64/boot/dts/qcom/ipq5018.dtsi | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+
+(limited to 'arch/arm64/boot/dts/qcom/ipq5018.dtsi')
+
+--- a/arch/arm64/boot/dts/qcom/ipq5018.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq5018.dtsi
+@@ -241,6 +241,8 @@
+ 			reg = <0x00090000 0x64>;
+ 			#address-cells = <1>;
+ 			#size-cells = <0>;
++			pinctrl-0 = <&mdio_pins>;
++			pinctrl-names = "default";
+ 
+ 			clocks = <&gcc GCC_MDIO1_AHB_CLK>;
+ 			clock-names = "gcc_mdio_ahb_clk";
+@@ -421,6 +423,22 @@
+ 			interrupt-controller;
+ 			#interrupt-cells = <2>;
+ 
++			mdio_pins: mdio-state {
++				mdc-pins {
++					pins = "gpio36";
++					function = "mdc";
++					drive-strength = <8>;
++					bias-pull-up;
++				};
++
++				mdio-pins {
++					pins = "gpio37";
++					function = "mdio";
++					drive-strength = <8>;
++					bias-pull-up;
++				};
++			};
++
+ 			uart1_pins: uart1-state {
+ 				pins = "gpio31", "gpio32", "gpio33", "gpio34";
+ 				function = "blsp1_uart1";
