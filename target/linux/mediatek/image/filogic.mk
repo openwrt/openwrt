@@ -2396,6 +2396,93 @@ define Device/keenetic_kap-630
 endef
 TARGET_DEVICES += keenetic_kap-630
 
+# Chainloader in front of the kernel FIT, at the load address the stock
+# kernel FIT uses. The ITS is written out here because the stock loader
+# only ran a payload shaped like the vendor image, kernel@1 / fdt@1 /
+# config@1 with the "Linux 4.9" description included, and mkits.sh
+# hardcodes its description strings. The stock loader boots only when a
+# squashfs follows the FIT it loads, so an empty one sits right behind the
+# chainloader FIT inside the pad, not at the end of the kernel partition.
+kn1012_uboot_pad := 1024k
+
+define Build/kn1012-prepend-uboot
+	$(STAGING_DIR_HOST)/bin/lzma e \
+		$(STAGING_DIR_IMAGE)/mt7981_keenetic_kn-1012-u-boot.bin $@.uboot.lzma
+	( \
+		printf '/dts-v1/;\n\n/ {\n'; \
+		printf '\tdescription = "FIT";\n'; \
+		printf '\t#address-cells = <1>;\n\n\timages {\n'; \
+		printf '\t\tkernel@1 {\n'; \
+		printf '\t\t\tdescription = "Linux 4.9";\n'; \
+		printf '\t\t\tdata = /incbin/("$@.uboot.lzma");\n'; \
+		printf '\t\t\ttype = "kernel";\n\t\t\tarch = "arm64";\n'; \
+		printf '\t\t\tos = "linux";\n\t\t\tcompression = "lzma";\n'; \
+		printf '\t\t\tload = <0x48080000>;\n'; \
+		printf '\t\t\tentry = <0x48080000>;\n'; \
+		printf '\t\t\thash@1 { algo = "crc32"; };\n'; \
+		printf '\t\t\thash@2 { algo = "sha1"; };\n\t\t};\n'; \
+		printf '\t\tfdt@1 {\n'; \
+		printf '\t\t\tdescription = "$(DEVICE_MODEL) DTB";\n'; \
+		printf '\t\t\tdata = /incbin/("$(KDIR)/image-$(word 1,$(DEVICE_DTS)).dtb");\n'; \
+		printf '\t\t\ttype = "flat_dt";\n\t\t\tarch = "arm64";\n'; \
+		printf '\t\t\tcompression = "none";\n'; \
+		printf '\t\t\thash@1 { algo = "crc32"; };\n'; \
+		printf '\t\t\thash@2 { algo = "sha1"; };\n\t\t};\n'; \
+		printf '\t};\n\n\tconfigurations {\n'; \
+		printf '\t\tdefault = "config@1";\n'; \
+		printf '\t\tconfig@1 {\n'; \
+		printf '\t\t\tdescription = "NDMS";\n'; \
+		printf '\t\t\tkernel = "kernel@1";\n'; \
+		printf '\t\t\tfdt = "fdt@1";\n\t\t};\n'; \
+		printf '\t};\n};\n'; \
+	) > $@.uboot.its
+	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $@.uboot.its $@.uboot.itb
+	mv $@ $@.payload
+	mv $@.uboot.itb $@
+	$(call Build/append-squashfs4-fakeroot)
+	test $$(wc -c < $@) -le $$(( $(call exp_units,$(kn1012_uboot_pad)) )) || { \
+		echo "chainloader does not fit in the $(kn1012_uboot_pad) it is padded to" >&2; \
+		false; \
+	}
+	$(call Build/pad-to,$(kn1012_uboot_pad))
+	cat $@ $@.payload > $@.new
+	@mv $@.new $@
+	@rm -rf $@.payload $@.uboot.lzma $@.uboot.its $@.fakefs $@.fakesquashfs
+endef
+
+define Device/keenetic_kn-1012-common
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware \
+		kmod-usb3 kmod-phy-airoha-en8811h kmod-sfp
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  # 1 MiB chainloader plus the 7 MiB kernel_size its environment reads
+  KERNEL_SIZE := 8192k
+  # first firmware slot, where the stock recovery writes the factory image
+  IMAGE_SIZE := 59392k
+  DEVICE_DTS_OVERLAY := mt7981b-keenetic-kn-1012-copper mt7981b-keenetic-kn-1012-sfp
+  DEVICE_DTC_FLAGS := --pad 4096
+  DEVICE_DTS_LOADADDR := 0x43f00000
+  KERNEL := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb | kn1012-prepend-uboot
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | \
+	append-ubi | check-size | zyimage -d $$(ZYIMAGE_ID) -v "$$(DEVICE_MODEL)"
+endef
+
+define Device/keenetic_kn-1012
+  DEVICE_VENDOR := Keenetic
+  DEVICE_MODEL := KN-1012
+  DEVICE_DTS := mt7981b-keenetic-kn-1012
+  ZYIMAGE_ID := 0x801012
+  $(call Device/keenetic_kn-1012-common)
+endef
+TARGET_DEVICES += keenetic_kn-1012
+
 define Device/keenetic_kn-1812-common
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7992-firmware kmod-usb3 \
@@ -2936,6 +3023,15 @@ define Device/netcraze_nap-630
   $(call Device/keenetic_kap-630-common)
 endef
 TARGET_DEVICES += netcraze_nap-630
+
+define Device/netcraze_nc-1012
+  DEVICE_VENDOR := Netcraze
+  DEVICE_MODEL := NC-1012
+  DEVICE_DTS := mt7981b-netcraze-nc-1012
+  ZYIMAGE_ID := 0xC01012
+  $(call Device/keenetic_kn-1012-common)
+endef
+TARGET_DEVICES += netcraze_nc-1012
 
 define Device/netcraze_nc-1812
   DEVICE_VENDOR := Netcraze
