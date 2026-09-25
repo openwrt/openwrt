@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
+#include <linux/cleanup.h>
+#include <linux/debugfs.h>
 #include <linux/etherdevice.h>
+#include <linux/seq_file.h>
 
 #include "l2.h"
 #include "rtl-otto.h"
@@ -1452,4 +1455,141 @@ int rtldsa_931x_fast_age(struct rtl838x_switch_priv *priv, int port, int vid)
 	do { } while (sw_r32(RTL931X_L2_TBL_FLUSH_CTRL) & BIT(28));
 
 	return 0;
+}
+
+static void rtldsa_l2_dump_entry(struct seq_file *m, struct rtl838x_switch_priv *priv,
+				 struct rtl838x_l2_entry *e)
+{
+	u64 portmask;
+
+	if (e->type == L2_UNICAST) {
+		seq_puts(m, "L2_UNICAST\n");
+
+		seq_printf(m, "  mac %02x:%02x:%02x:%02x:%02x:%02x vid %u rvid %u\n",
+			   e->mac[0], e->mac[1], e->mac[2], e->mac[3], e->mac[4], e->mac[5],
+			   e->vid, e->rvid);
+
+		seq_printf(m, "  port %d age %d", e->port, e->age);
+		if (e->is_trunk) {
+			seq_printf(m, "  trunk %d trunk_members: 0x%08llx non-primary: 0x%08llx primary-port: %d",
+				   e->trunk,
+				   priv->lags_port_members[e->trunk],
+				   priv->lag_non_primary,
+				   priv->lag_primary[e->trunk]);
+		}
+		if (e->is_static)
+			seq_puts(m, " static");
+		if (e->block_da)
+			seq_puts(m, " block_da");
+		if (e->block_sa)
+			seq_puts(m, " block_sa");
+		if (e->suspended)
+			seq_puts(m, " suspended");
+		if (e->next_hop)
+			seq_printf(m, " next_hop route_id %u", e->nh_route_id);
+		seq_puts(m, "\n");
+
+	} else {
+		if (e->type == L2_MULTICAST) {
+			seq_puts(m, "L2_MULTICAST\n");
+
+			seq_printf(m, "  mac %02x:%02x:%02x:%02x:%02x:%02x vid %u rvid %u\n",
+				   e->mac[0], e->mac[1], e->mac[2], e->mac[3], e->mac[4], e->mac[5],
+				   e->vid, e->rvid);
+		}
+
+		if (e->type == IP4_MULTICAST || e->type == IP6_MULTICAST) {
+			seq_puts(m, (e->type == IP4_MULTICAST) ?
+				 "IP4_MULTICAST\n" : "IP6_MULTICAST\n");
+
+			seq_printf(m, "  gip %08x sip %08x vid %u rvid %u\n",
+				   e->mc_gip, e->mc_sip, e->vid, e->rvid);
+		}
+
+		portmask = priv->r->read_mcast_pmask(e->mc_portmask_index);
+		seq_printf(m, "  index %u ports", e->mc_portmask_index);
+		for (int i = 0; i < 64; i++) {
+			if (portmask & BIT_ULL(i))
+				seq_printf(m, " %d", i);
+		}
+		seq_puts(m, "\n");
+	}
+
+	seq_puts(m, "\n");
+}
+
+static int rtldsa_l2_fdb_show(struct seq_file *m, void *v)
+{
+	struct rtl838x_switch_priv *priv = m->private;
+	int uc_rows, cam_rows;
+
+	uc_rows = otto_table_rows(priv->r->l2_uc_tbl);
+	if (uc_rows < 0)
+		return uc_rows;
+
+	cam_rows = otto_table_rows(priv->r->l2_cam_tbl);
+	if (cam_rows < 0)
+		return cam_rows;
+
+	guard(mutex)(&priv->reg_mutex);
+
+	/* With a position below 4, read_l2_entry_using_hash() reads row
+	 * (bucket << 2 | pos) on every family, so this walk visits each row
+	 * once, the second hash block of RTL930x/RTL931x included.
+	 */
+	for (int i = 0; i < uc_rows; i++) {
+		struct rtl838x_l2_entry e = {};
+
+		priv->r->read_l2_entry_using_hash(i >> 2, i & 0x3, &e);
+
+		if (e.valid) {
+			seq_printf(m, "Hash table bucket %d index %d ", i >> 2, i & 0x3);
+			rtldsa_l2_dump_entry(m, priv, &e);
+		}
+
+		if (!((i + 1) % 64))
+			cond_resched();
+	}
+
+	for (int i = 0; i < cam_rows; i++) {
+		struct rtl838x_l2_entry e = {};
+
+		priv->r->read_cam(i, &e);
+
+		if (!e.valid)
+			continue;
+
+		seq_printf(m, "CAM index %d ", i);
+		rtldsa_l2_dump_entry(m, priv, &e);
+	}
+
+	return 0;
+}
+DEFINE_SHOW_ATTRIBUTE(rtldsa_l2_fdb);
+
+static void rtldsa_l2_dbgfs_remove(void *data)
+{
+	debugfs_remove_recursive(data);
+}
+
+#define RTLDSA_L2_DBG_ROOT_DIR	"realtek_otto_l2"
+
+void rtldsa_l2_dbgfs_init(struct rtl838x_switch_priv *priv)
+{
+	struct device *dev = priv->dev;
+	struct dentry *root;
+
+	root = debugfs_create_dir(RTLDSA_L2_DBG_ROOT_DIR, NULL);
+	if (IS_ERR(root)) {
+		/* -ENODEV is a kernel built without debugfs, not a failure */
+		if (PTR_ERR(root) != -ENODEV)
+			dev_warn(dev, "could not create %s debugfs directory\n",
+				 RTLDSA_L2_DBG_ROOT_DIR);
+		return;
+	}
+
+	if (devm_add_action_or_reset(dev, rtldsa_l2_dbgfs_remove, root))
+		return;
+
+	debugfs_create_file("fdb", 0400, root, priv, &rtldsa_l2_fdb_fops);
 }

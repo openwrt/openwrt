@@ -15,6 +15,7 @@
 #include <linux/of_net.h>
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 
+#include "l2.h"
 #include "l3.h"
 #include "rtl-otto.h"
 #include "tc.h"
@@ -734,6 +735,8 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 		rtl930x_dbgfs_init(priv);
 		break;
 	}
+
+	rtldsa_l2_dbgfs_init(priv);
 
 	if (priv->r->lag_switch_init)
 		priv->r->lag_switch_init(priv);
