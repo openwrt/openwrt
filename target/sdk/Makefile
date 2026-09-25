@@ -149,14 +149,13 @@ $(BIN_DIR)/$(SDK_NAME).tar.zst: clean
 		$(SDK_BUILD_DIR)/target/linux/*/files* \
 		$(SDK_BUILD_DIR)/target/linux/*/patches*
 	./convert-config.pl $(TOPDIR)/.config > $(SDK_BUILD_DIR)/Config-build.in
-	$(CP) -L \
+	$(CP) \
+		./files/* \
+		$(TOPDIR)/.gitattributes \
+		$(TOPDIR)/.gitignore \
 		$(TOPDIR)/LICENSES \
 		$(TOPDIR)/COPYING \
 		$(TOPDIR)/rules.mk \
-		./files/Config.in \
-		./files/Makefile \
-		./files/include/prepare.mk \
-		./files/README.md \
 		$(SDK_BUILD_DIR)/
 	mkdir -p $(SDK_BUILD_DIR)/package/kernel
 	$(CP) \
