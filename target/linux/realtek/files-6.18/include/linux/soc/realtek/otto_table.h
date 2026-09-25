@@ -181,6 +181,36 @@ enum otto_table_id {
 	OTTO_TBL_END
 };
 
+/*
+ * enum otto_table_l2_method - look-up method for read queries of L2 table
+ * @OTTO_TABLE_L2_METHOD_MAC: look-up by source MAC address and FID (or VID)
+ * @OTTO_TABLE_L2_METHOD_ADDR: look-up by entry address
+ * @OTTO_TABLE_L2_METHOD_ADDR_NEXT: look-up next entry starting from the
+ *   supplied address
+ * @OTTO_TABLE_L2_METHOD_ADDR_NEXT_UC: same as ADDR_NEXT but search only
+ *   unicast addresses
+ * @OTTO_TABLE_L2_METHOD_ADDR_NEXT_MC: same as ADDR_NEXT but search only
+ *   multicast addresses
+ * @OTTO_TABLE_L2_METHOD_ADDR_NEXT_MC_L3: same as ADDR_NEXT_MC but search only
+ *   L2 IP multicast addresses
+ * @OTTO_TABLE_L2_METHOD_ADDR_NEXT_UC_PORT: same as ADDR_NEXT_UC but
+ *   search only entries with matching source port
+ *
+ * NOTE: Don't change the enum values.
+ */
+enum otto_table_l2_method {
+	OTTO_TABLE_L2_METHOD_MAC = 0,
+	OTTO_TABLE_L2_METHOD_ADDR = 1,
+	OTTO_TABLE_L2_METHOD_ADDR_NEXT = 2,
+	OTTO_TABLE_L2_METHOD_ADDR_NEXT_UC = 3,
+	OTTO_TABLE_L2_METHOD_ADDR_NEXT_MC = 4,
+	OTTO_TABLE_L2_METHOD_ADDR_NEXT_MC_L3 = 5,
+	/*
+	 * OTTO_TABLE_L2_METHOD_ADDR_NEXT_MC_L2L3 = 6,
+	 */
+	OTTO_TABLE_L2_METHOD_ADDR_NEXT_UC_PORT = 7,
+};
+
 #define OTTO_TBL_COUNT		OTTO_TBL_HANDLE(OTTO_TBL_END)
 
 /* Size of the object p points at. A bare array is refused: the whole-entry
@@ -202,6 +232,13 @@ enum otto_table_id {
 #define otto_table_offset_read(id, idx, p, word_offset) \
 	otto_table_read_bytes((id), (idx), (p), (word_offset), otto_table_size(p))
 
+#define otto_table_l2_read(id, idx, p, port, method) \
+	otto_table_l2_query((id), (idx), (p), false, otto_table_size(p), \
+			    (port), (method))
+#define otto_table_l2_write(id, idx, p, port, method) \
+	otto_table_l2_query((id), (idx), (p), true, otto_table_size(p), \
+			    (port), (method))
+
 /* How many rows a table has, so that a caller sweeping one does not have to
  * carry its own copy of the size. Negative errno for an id that does not name
  * a table.
@@ -220,6 +257,13 @@ void otto_table_release(int handle);
 #define __otto_table_write(handle, idx, p) \
 	__otto_table_write_bytes((handle), (idx), (p), otto_table_size(p))
 
+#define __otto_table_l2_read(handle, idx, p, port, method) \
+	__otto_table_l2_query((handle), (idx), (p), false, otto_table_size(p), \
+			      (port), (method))
+#define __otto_table_l2_write(handle, idx, p, port, method) \
+	__otto_table_l2_query((handle), (idx), (p), true, otto_table_size(p), \
+			      (port), (method))
+
 /* What the macros above expand to. A read takes size bytes starting at word of
  * the entry and has to end inside it; the whole-entry forms start at word zero.
  * A write always moves the whole entry, because the command commits the whole
@@ -234,5 +278,31 @@ int otto_table_write_bytes(enum otto_table_id id, int idx, const void *buf, size
 int __otto_table_read_bytes(int handle, int idx, void *buf, int word_offset,
 			    size_t size);
 int __otto_table_write_bytes(int handle, int idx, const void *buf, size_t size);
+
+/*
+ * otto_table_l2_query - read from or write to a L2 table
+ * @id: target table from enum otto_table_id
+ * @idx: table address. For L2 read queries, it is ignored as input for
+ *       MAC-based lookup methods and used as input for address-based
+ *       lookup methods. On successful L2 queries, it is updated with
+ *       the matched entry address.
+ * @buf: data buffer used to read from or write to the table. For L2 MAC
+ *       lookups, this buffer provides the lookup key and recieves the
+ *       matched entry contents on success.
+ * @is_write: read or write operation
+ * @size: size of @buf in bytes. The caller must ensure that @size matches the
+ *        target table's entry size.
+ * @port: for L2 read queries using method
+ *        %OTTO_TABLE_L2_METHOD_ADDR_NEXT_UC_PORT, restrict the search
+ *        to entries associated with this source port. Ignored otherwise.
+ * @method: L2 table lookup method, see &enum otto_table_l2_method.
+ *          Ignored for non-L2 tables.
+ */
+int otto_table_l2_query(enum otto_table_id id, int *idx, void *buf,
+			bool is_write, size_t size, int port,
+			enum otto_table_l2_method method);
+int __otto_table_l2_query(int handle, int *idx, void *buf, bool is_write,
+			  size_t size, int port,
+			  enum otto_table_l2_method method);
 
 #endif /* _OTTO_TABLE_H */
