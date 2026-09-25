@@ -2886,10 +2886,8 @@ static u32 rtpcs_930x_sds_sym_err_get(struct rtpcs_serdes *sds,
 	} else if (hw_mode == RTPCS_SDS_MODE_USXGMII &&
 		   sds->usxgmii_submode == RTPCS_SDS_USXGMII_SM_10GQXGMII) {
 		/* no known symbol error count for USXGMII QXGMII */
-	} else if (hw_mode == RTPCS_SDS_MODE_1000BASEX || hw_mode == RTPCS_SDS_MODE_SGMII ||
-		   hw_mode == RTPCS_SDS_MODE_10GBASER ||
-		   (hw_mode == RTPCS_SDS_MODE_USXGMII &&
-		    sds->usxgmii_submode == RTPCS_SDS_USXGMII_SM_10GSXGMII)) {
+	} else if (hw_mode == RTPCS_SDS_MODE_10GBASER || (hw_mode == RTPCS_SDS_MODE_USXGMII &&
+		   sds->usxgmii_submode == RTPCS_SDS_USXGMII_SM_10GSXGMII)) {
 		v = rtpcs_sds_read(sds, PAGE_TGR_STD_1, 0x1);
 		v &= 0xff;
 	} else {
