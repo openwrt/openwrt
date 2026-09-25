@@ -5,7 +5,7 @@ CFG=/etc/board.json
 . /usr/share/libubox/jshn.sh
 . /lib/functions/ipv4.sh
 
-[ -s $CFG ] || /bin/board_detect || exit 1
+[ -s $CFG ] && [ -f /etc/.board.json.stamp ] || /bin/board_detect || exit 1
 [ -s /etc/config/network -a -s /etc/config/system ] && exit 0
 
 generate_bridge() {
