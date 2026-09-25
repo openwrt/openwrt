@@ -14,6 +14,7 @@ ipq95xx_setup_interfaces()
 	8devices,kiwi-dvk)
 		ucidef_set_interfaces_lan_wan "lan1 lan2" "wan"
 		;;
+	askey,ebe1v1k|\
 	askey,sbe1v1k)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
 		;;
@@ -35,6 +36,7 @@ ipq95xx_setup_wlan()
 	local board="$1"
 
 	case "$board" in
+	askey,ebe1v1k|\
 	askey,sbe1v1k)
 		ucidef_add_wlan "$DEV_PATH_PCIE0" "$DEV_PATH_PCIE1" "$DEV_PATH_PCIE2"
 		;;
