@@ -2946,11 +2946,8 @@ static int rtpcs_930x_sds_10g_idle(struct rtpcs_serdes *sds)
 		rtpcs_sds_write_mask(even_sds, PAGE_WDIG, WDIG_REG02, RTL93XX_DBGO_SEL_0,
 				     RTL930X_DBGO_SEL_0_RX_STATUS);
 		busy = rtpcs_sds_read_bits(even_sds, PAGE_WDIG, 0x14, bit, bit);
-		if (busy < 0)
+		if (busy <= 0)
 			return busy;
-
-		if (!busy)
-			return 0;
 
 		usleep_range(100, 200); /* wait ~100 usecs before retry */
 	} while (ktime_before(ktime_get(), timeout));
