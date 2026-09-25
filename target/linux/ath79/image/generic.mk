@@ -737,9 +737,12 @@ define Device/buffalo_wzr-450hp2
   DEVICE_MODEL := WZR-450HP2
   DEVICE_ALT0_VENDOR := Buffalo
   DEVICE_ALT0_MODEL := WZR-450HP2D
+  DEVICE_PACKAGES := kmod-dsa-qca8k kmod-phy-qca83xx -swconfig
   BUFFALO_PRODUCT := WZR-450HP2
   IMAGE_SIZE := 15936k
   SUPPORTED_DEVICES += wzr-450hp2
+  DEVICE_COMPAT_VERSION := 1.1
+  DEVICE_COMPAT_MESSAGE := Config cannot be migrated from swconfig to DSA
 endef
 TARGET_DEVICES += buffalo_wzr-450hp2
 
