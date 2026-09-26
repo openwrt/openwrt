@@ -20,6 +20,7 @@ include $(INCLUDE_DIR)/target.mk
 KERNELNAME := zImage dtbs
 
 DEFAULT_PACKAGES += e2fsprogs mkf2fs partx-utils
+DEFAULT_PACKAGES += video-support
 
 define Target/Description
 	Build firmware image for NVIDIA Tegra SoC devices.

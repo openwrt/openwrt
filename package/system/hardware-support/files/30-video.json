@@ -1,0 +1,17 @@
+[
+	[ "if",
+		[ "eq", "SUBSYSTEM", "drm" ],
+		[
+			[ "if",
+				[ "regex", "DEVNAME", "^dri/renderD" ],
+				[ "return" ]
+			],
+			[ "makedev", "/dev/%DEVNAME%", "0660", "video" ],
+			[ "return" ]
+		]
+	],
+	[ "if",
+		[ "eq", "SUBSYSTEM", [ "video4linux", "media" ] ],
+		[ "makedev", "/dev/%DEVNAME%", "0660", "video-capture" ]
+	]
+]

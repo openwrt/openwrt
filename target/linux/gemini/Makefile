@@ -26,5 +26,6 @@ DEFAULT_PACKAGES += \
 	kmod-usb-ledtrig-usbport \
 	kmod-leds-gpio \
 	kmod-input-gpio-keys
+DEFAULT_PACKAGES += video-support
 
 $(eval $(call BuildTarget))

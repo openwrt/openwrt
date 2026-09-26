@@ -45,6 +45,23 @@ define Package/audio-support/install
 	$(call InstallFragment,$(1),20-audio.json)
 endef
 
+define Package/video-support
+  $(call Package/hardware-support/Default)
+  TITLE:=Video device support
+  USERID:=:video=40 :video-capture=36
+endef
+
+define Package/video-support/description
+ Feature gate for display and video capture devices. Allocates the video
+ and video-capture groups and installs the hotplug rules which put the DRM
+ and V4L2 character devices into them. Kernel modules exposing such devices
+ and userspace using those groups depend on this package.
+endef
+
+define Package/video-support/install
+	$(call InstallFragment,$(1),30-video.json)
+endef
+
 define Build/Prepare
 endef
 
@@ -55,3 +72,4 @@ define Build/Compile
 endef
 
 $(eval $(call BuildPackage,audio-support))
+$(eval $(call BuildPackage,video-support))

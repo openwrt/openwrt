@@ -14,5 +14,6 @@ KERNEL_PATCHVER:=6.12
 include $(INCLUDE_DIR)/target.mk
 
 DEFAULT_PACKAGES += uboot-envtools mkf2fs e2fsprogs blkid
+DEFAULT_PACKAGES += video-support
 
 $(eval $(call BuildTarget))

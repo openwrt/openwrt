@@ -19,5 +19,6 @@ include $(INCLUDE_DIR)/target.mk
 
 DEFAULT_PACKAGES += \
 	partx-utils blkid e2fsprogs grub2-efi-loongarch64
+DEFAULT_PACKAGES += video-support
 
 $(eval $(call BuildTarget))
