@@ -66,15 +66,28 @@
 	};
 
 	gpio-keys {
-		compatible = "gpio-keys";
+		compatible = "gpio-keys-polled";
 		pinctrl-0 = <&gpio_keys_default>;
 		pinctrl-names = "default";
+		poll-interval = <100>;
 
 		button-wps {
 			label = "wps";
 			linux,code = <KEY_WPS_BUTTON>;
-			gpios = <&tlmm 37 GPIO_ACTIVE_LOW>;
+			gpios = <&tlmm 19 GPIO_ACTIVE_LOW>;
 			debounce-interval = <60>;
+		};
+
+		button-wifi {
+			label = "rfkill";
+			linux,code = <KEY_RFKILL>;
+			gpios = <&tlmm 43 GPIO_ACTIVE_LOW>;
+		};
+
+		button-led {
+			label = "lights_toggle";
+			linux,code = <KEY_LIGHTS_TOGGLE>;
+			gpios = <&tlmm 64 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -82,14 +95,6 @@
 		compatible = "gpio-leds";
 		pinctrl-0 = <&gpio_leds_default>;
 		pinctrl-names = "default";
-
-		led-0 {
-			color = <LED_COLOR_ID_GREEN>;
-			function = LED_FUNCTION_WLAN;
-			gpios = <&tlmm 64 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy0tx";
-			default-state = "off";
-		};
 
 		led-usb {
 			function = LED_FUNCTION_USB;
@@ -178,14 +183,14 @@
 	};
 
 	gpio_keys_default: gpio-keys-default-state {
-		pins = "gpio37";
+		pins = "gpio19", "gpio43", "gpio64";
 		function = "gpio";
 		drive-strength = <8>;
 		bias-pull-up;
 	};
 
 	gpio_leds_default: gpio-leds-default-state {
-		pins = "gpio64", "gpio63", "gpio40";
+		pins = "gpio63", "gpio40";
 		function = "gpio";
 		drive-strength = <8>;
 		bias-pull-up;
