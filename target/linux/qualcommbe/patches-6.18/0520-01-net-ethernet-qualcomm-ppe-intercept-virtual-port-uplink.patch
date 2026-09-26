@@ -1,0 +1,1182 @@
+From: Kenneth Kasilag <kenneth@kasilag.me>
+Date: Mon, 06 Jul 2026 00:00:00 +0000
+Subject: [PATCH] net: ethernet: qualcomm: ppe: intercept a virtual port's uplink
+
+Drive the uplink inject. The previous patch added the primitive that
+tags a received frame with a virtual port as its source and pushes it
+into the PPE; this hooks the wireless receive path so real packets
+reach it, completing the wireless-to-wired offload.
+
+The interception is a netfilter ingress hook on the bound device, not
+a netdev_rx_handler. The device a virtual port binds is a wireless VAP
+that is a port of the software bridge, and the bridge already owns its
+rx_handler; a second rx_handler cannot be registered, and the bind
+runs in the flowtable offload work context without the rtnl lock a
+handler registration needs. A NETDEV_INGRESS hook runs earlier on the
+receive path, coexists with the bridge, is per-device, and registers
+under netfilter's own lock. The driver requires CONFIG_NETFILTER,
+CONFIG_NETFILTER_INGRESS and CONFIG_INET so every supported build includes
+the hook and Internet protocol infrastructure used by this datapath.
+
+The hook injects only IPv4/IPv6 TCP/UDP unicast addressed to the router
+whose exact original tuple belongs to a successfully installed hardware
+flow for that ingress VP. The flowtable publishes the tuple after making
+the hardware row valid and removes it before hardware deletion. New
+connections, local traffic and failed offloads therefore remain entirely
+on the software path. An unexpected miss atomically disables injection
+for the VP before returning its packet to software, so fallback needs no
+private skb metadata. Each uplink flow retains its own ingress-VP reference
+independently of the reverse destination-VP flow.
+
+Register each per-device ingress hook at the originating flowtable
+priority. If another offloaded rule needs the same device at a different
+priority, keep that rule in software instead of changing hook ordering.
+
+At the ingress point the receive path has pulled the L2 header and, for a
+routed frame crossing a bridged VAP, has not yet reclassified pkt_type.
+The decision consequently uses the L2/L3 headers and tuple; L2 is restored
+before injection because the PPE parses it to route. The cached bridge MAC
+keeps intra-LAN switched traffic on the bridge. A routed VAP without a
+bridge master omits that MAC test.
+
+A source-tagged frame whose destination is another virtual port is a
+legitimate wireless-to-wireless result and is transmitted out the
+destination's bound device. Destination CPU plus source VP is anomalous
+after tuple gating. It still takes the VP-specific scatter completion path,
+then trips the persistent VP circuit breaker before returning to software.
+
+The hook is registered when possible when a virtual port is first bound
+and removed on release, device unregister, or teardown, mirroring the
+slot lifecycle. Hook failure does not tear down the independently useful
+destination VP. Teardown takes the slot lock so a late release cannot
+unregister the same hook twice. Hardware-disable failure poisons the slot
+rather than allowing unsafe reuse. This completes the virtual-port uplink;
+the whole wireless path - both directions of a routed, NAT'd flow - is
+now offloaded.
+
+The VP-to-device mapping is published before its ingress hook goes live,
+bridge MAC changes refresh the cached interception address, and removal
+quiesces all VP ingress hooks before freeing the physical net devices
+borrowed as injection carriers.
+
+The driver now depends on NETFILTER, NETFILTER_INGRESS and INET. The
+PPE and Wi-Fi datapaths are part of the same platform integration, so
+shipping the driver without its virtual-port ingress path is not a
+useful configuration.
+Hook registration can still fail at runtime; that failure remains fail-open
+and leaves the independently useful destination VP active.
+
+Signed-off-by: Kenneth Kasilag <kenneth@kasilag.me>
+---
+--- a/drivers/net/ethernet/qualcomm/Kconfig
++++ b/drivers/net/ethernet/qualcomm/Kconfig
+@@ -65,6 +65,7 @@ config QCOM_PPE
+ 	depends on COMMON_CLK && HAS_IOMEM && OF
+ 	depends on ARCH_QCOM || COMPILE_TEST
+ 	depends on BRIDGE || BRIDGE=n
++	depends on NETFILTER && NETFILTER_INGRESS && INET
+ 	select REGMAP_MMIO
+ 	select PHYLINK
+ 	select PCS_QCOM_IPQ9574
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_flowtable.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_flowtable.c
+@@ -28,6 +28,7 @@
+ #include <linux/rhashtable.h>
+ #include <linux/rtnetlink.h>
+ #include <linux/seq_file.h>
++#include <linux/tc_act/tc_csum.h>
+ #include <net/flow_offload.h>
+ #include <net/ip6_tunnel.h>
+ #include <net/ip6_route.h>
+@@ -175,6 +176,8 @@ struct ppe_ft_flow {
+ 	int vlan;
+ 	int tunnel;
+ 	int vp;
++	int ivp;
++	struct ppe_vp_flow vp_flow;
+ 	u8 eport;
+ 	u32 packets;
+ 	u64 bytes;
+@@ -1140,13 +1143,14 @@ static bool ppe_ft_lwt_encap(const struc
+ static bool ppe_ft_lwt_decap(const struct flow_rule *rule,
+ 			     const struct flow_action_entry *act,
+ 			     struct in6_addr *local,
+-			     struct in6_addr *remote)
++			     struct in6_addr *remote, u8 *hop_limit)
+ {
++	struct in6_addr info_local, info_remote;
+ 	struct flow_match_enc_keyid keyid;
+ 	struct flow_match_ipv6_addrs ipv6;
+ 	struct flow_match_control control;
+ 
+-	if (act->tunnel_type != LWTUNNEL_ENCAP_IP6 ||
++	if (!ppe_ft_lwt_encap(act, &info_local, &info_remote, hop_limit) ||
+ 	    !flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_ENC_CONTROL) ||
+ 	    !flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_ENC_KEYID) ||
+ 	    !flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_ENC_IPV6_ADDRS))
+@@ -1167,7 +1171,8 @@ static bool ppe_ft_lwt_decap(const struc
+ 	*remote = ipv6.key->src;
+ 	*local = ipv6.key->dst;
+ 
+-	return true;
++	return ipv6_addr_equal(local, &info_local) &&
++	       ipv6_addr_equal(remote, &info_remote);
+ }
+ 
+ static int ppe_ft_tunnel_underlay_get(struct ppe_flowtable *ft, int port,
+@@ -1409,18 +1414,24 @@ out_dst:
+ 	return ret;
+ }
+ 
+-static bool ppe_ft_tunnel_match(const struct ppe_ft_tunnel *tunnel,
+-				const struct in6_addr *local,
+-				const struct in6_addr *remote,
+-				const struct ppe_ft_tunnel *path)
++static bool ppe_ft_tunnel_identity_match(const struct ppe_ft_tunnel *tunnel,
++					 const struct in6_addr *local,
++					 const struct in6_addr *remote)
+ {
+ 	return tunnel->ref.refcnt && !tunnel->poisoned &&
+ 	       ipv6_addr_equal(&tunnel->local, local) &&
+-	       ipv6_addr_equal(&tunnel->remote, remote) &&
+-	       tunnel->underlay_port == path->underlay_port &&
++	       ipv6_addr_equal(&tunnel->remote, remote);
++}
++
++static bool ppe_ft_tunnel_match(const struct ppe_ft_tunnel *tunnel,
++				const struct ppe_ft_tunnel *path)
++{
++	return tunnel->underlay_port == path->underlay_port &&
+ 	       tunnel->vlan_proto == path->vlan_proto &&
+ 	       tunnel->vlan_id == path->vlan_id &&
+ 	       tunnel->pppoe == path->pppoe &&
++	       tunnel->hop_limit == path->hop_limit &&
++	       tunnel->mtu == path->mtu &&
+ 	       ether_addr_equal(tunnel->local_mac, path->local_mac) &&
+ 	       ether_addr_equal(tunnel->remote_mac, path->remote_mac);
+ }
+@@ -1455,11 +1466,17 @@ static int ppe_ft_tunnel_get(struct ppe_
+ 	ret = ppe_ft_tunnel_resolve(ft, dev, link, local, remote, &path);
+ 	if (ret)
+ 		return ret;
++	path.hop_limit = hop_limit ?: 64;
++	path.mtu = mtu;
+ 
+ 	for (i = 0; i < PPE_FT_TUNNELS; i++) {
+-		if (!ppe_ft_tunnel_match(&ft->tunnels[i], local, remote,
+-					 &path))
++		if (!ppe_ft_tunnel_identity_match(&ft->tunnels[i], local,
++						  remote))
+ 			continue;
++		if (!ppe_ft_tunnel_match(&ft->tunnels[i], &path)) {
++			ppe_ft_tunnel_path_put(ft, &path);
++			return -EEXIST;
++		}
+ 		ppe_ft_tunnel_path_put(ft, &path);
+ 		ft->tunnels[i].ref.refcnt++;
+ 		return i;
+@@ -1478,8 +1495,8 @@ static int ppe_ft_tunnel_get(struct ppe_
+ 	tunnel->dev = dev;
+ 	tunnel->local = *local;
+ 	tunnel->remote = *remote;
+-	tunnel->hop_limit = hop_limit ?: 64;
+-	tunnel->mtu = mtu;
++	tunnel->hop_limit = path.hop_limit;
++	tunnel->mtu = path.mtu;
+ 	tunnel->encap_id = -1;
+ 	tunnel->decap_index = -1;
+ 	tunnel->vp = -1;
+@@ -1711,9 +1728,10 @@ static bool ppe_ft_flow_hw_del(struct pp
+ 	return false;
+ }
+ 
+-/* Retain an undeletable table row and all resources it references. Clearing
+- * VALID is a best-effort containment step; the row remains quarantined
+- * because deletion did not prove the index reusable.
++/* Keep an undeletable entry and all of its dependencies identifiable until
++ * driver teardown. Best-effort clearing of VALID contains stale forwarding;
++ * the object remains on the quarantine list even when that succeeds because
++ * the table row was not proven reusable.
+  */
+ static void ppe_ft_flow_quarantine(struct ppe_flowtable *ft,
+ 				   struct ppe_ft_flow *flow)
+@@ -1745,7 +1763,9 @@ static int ppe_ft_flow_replace(struct pp
+ 	struct in6_addr lwt_local = {}, lwt_remote = {};
+ 	u8 lwt_hop_limit = 0;
+ 	bool tunnel_flow, tunnel_encap = false, lwt_tunnel = false;
+-	int i, nexthop, ret, redirects = 0, iport = -1, imtu = 0;
++	int i, nexthop, ret, redirects = 0, vlan_pushes = 0;
++	int pppoe_pushes = 0, csums = 0;
++	int iport = -1, imtu = 0;
+ 
+ 	/* nf_flow_offload_refresh() re-sends FLOW_CLS_REPLACE for as long
+ 	 * as the flow's packets traverse the software path, and the core
+@@ -1768,6 +1788,13 @@ static int ppe_ft_flow_replace(struct pp
+ 	if (tunnel_flow && !ft->ppe_dev->variant->has_tunnel_engine)
+ 		return -EOPNOTSUPP;
+ 
++	/* Match keys outside the supported set must reject the rule,
++	 * not be skipped: offloading a partially matched rule as a
++	 * plain routed flow would misforward the packets. The TCP
++	 * flags key is a knowing exception: the hardware forwards
++	 * FIN/RST packets instead of punting them, which only delays
++	 * the flow teardown until the flow idles out.
++	 */
+ 	if (rule->match.dissector->used_keys &
+ 	    ~(BIT_ULL(FLOW_DISSECTOR_KEY_META) |
+ 	      BIT_ULL(FLOW_DISSECTOR_KEY_CONTROL) |
+@@ -1791,6 +1818,7 @@ static int ppe_ft_flow_replace(struct pp
+ 	flow->vlan = -1;
+ 	flow->tunnel = -1;
+ 	flow->vp = -1;
++	flow->ivp = -1;
+ 	nh.vid = -1;
+ 	data.pppoe_sid = -1;
+ 	data.ingress_vid = -1;
+@@ -1835,6 +1863,7 @@ static int ppe_ft_flow_replace(struct pp
+ 			ret = -EOPNOTSUPP;
+ 			goto err_free;
+ 		}
++
+ 		flow_rule_match_ipv6_addrs(rule, &match);
+ 		if (memchr_inv(&match.mask->src, 0xff,
+ 			       sizeof(match.mask->src)) ||
+@@ -1852,6 +1881,7 @@ static int ppe_ft_flow_replace(struct pp
+ 			ret = -EOPNOTSUPP;
+ 			goto err_free;
+ 		}
++
+ 		flow_rule_match_ipv4_addrs(rule, &match);
+ 		if (match.mask->src != htonl(0xffffffff) ||
+ 		    match.mask->dst != htonl(0xffffffff)) {
+@@ -1875,6 +1905,9 @@ static int ppe_ft_flow_replace(struct pp
+ 		flow->entry.dport = match.key->dst;
+ 	}
+ 
++	/* A VLAN key means the flow ingresses tagged: the ingress port
++	 * needs a VLAN uplink slot, resolved from the META key below.
++	 */
+ 	if (flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_VLAN)) {
+ 		struct flow_match_vlan match;
+ 
+@@ -1887,7 +1920,9 @@ static int ppe_ft_flow_replace(struct pp
+ 			ret = -EOPNOTSUPP;
+ 			goto err_free;
+ 		}
++
+ 		data.ingress_vid = match.key->vlan_id;
++
+ 		if (!flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_META)) {
+ 			ret = -EOPNOTSUPP;
+ 			goto err_free;
+@@ -1908,11 +1943,12 @@ static int ppe_ft_flow_replace(struct pp
+ 
+ 	if (flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_CONTROL)) {
+ 		struct flow_match_control match;
++		u16 addr_type = flow->entry.is_ipv6 ?
++			FLOW_DISSECTOR_KEY_IPV6_ADDRS :
++			FLOW_DISSECTOR_KEY_IPV4_ADDRS;
+ 
+ 		flow_rule_match_control(rule, &match);
+-		if (match.key->addr_type != (flow->entry.is_ipv6 ?
+-		    FLOW_DISSECTOR_KEY_IPV6_ADDRS :
+-		    FLOW_DISSECTOR_KEY_IPV4_ADDRS) ||
++		if (match.key->addr_type != addr_type ||
+ 		    match.mask->addr_type != 0xffff || match.mask->thoff ||
+ 		    match.mask->flags) {
+ 			ret = -EOPNOTSUPP;
+@@ -1977,7 +2013,8 @@ static int ppe_ft_flow_replace(struct pp
+ 				goto err_free;
+ 			break;
+ 		case FLOW_ACTION_VLAN_PUSH:
+-			if (act->vlan.proto != htons(ETH_P_8021Q) ||
++			if (vlan_pushes++ ||
++			    act->vlan.proto != htons(ETH_P_8021Q) ||
+ 			    nh.vid >= 0) {
+ 				ret = -EOPNOTSUPP;
+ 				goto err_free;
+@@ -1991,10 +2028,25 @@ static int ppe_ft_flow_replace(struct pp
+ 			}
+ 			break;
+ 		case FLOW_ACTION_PPPOE_PUSH:
++			if (pppoe_pushes++) {
++				ret = -EOPNOTSUPP;
++				goto err_free;
++			}
+ 			data.pppoe_sid = act->pppoe.sid;
+ 			break;
+-		case FLOW_ACTION_CSUM:
++		case FLOW_ACTION_CSUM: {
++			u32 flags = TCA_CSUM_UPDATE_FLAG_IPV4HDR;
++
++			flags |= flow->entry.proto == PPE_FLOW_PROTOCOL_TCP ?
++				 TCA_CSUM_UPDATE_FLAG_TCP :
++				 TCA_CSUM_UPDATE_FLAG_UDP;
++			if (csums++ || flow->entry.is_ipv6 ||
++			    act->csum_flags != flags) {
++				ret = -EOPNOTSUPP;
++				goto err_free;
++			}
+ 			break;
++		}
+ 		case FLOW_ACTION_TUNNEL_ENCAP:
+ 			if (lwt_tunnel ||
+ 			    !ppe_ft_lwt_encap(act, &lwt_local, &lwt_remote,
+@@ -2008,7 +2060,7 @@ static int ppe_ft_flow_replace(struct pp
+ 		case FLOW_ACTION_TUNNEL_DECAP:
+ 			if (lwt_tunnel ||
+ 			    !ppe_ft_lwt_decap(rule, act, &lwt_local,
+-					      &lwt_remote)) {
++					      &lwt_remote, &lwt_hop_limit)) {
+ 				ret = -EOPNOTSUPP;
+ 				goto err_free;
+ 			}
+@@ -2052,7 +2104,8 @@ static int ppe_ft_flow_replace(struct pp
+ 			dev_hold(tdev);
+ 	}
+ 
+-	if (!odev || (vlan_pops && data.ingress_vid < 0) ||
++	if (!odev || redirects != 1 ||
++	    (vlan_pops && data.ingress_vid < 0) ||
+ 	    is_zero_ether_addr(data.eth.dst)) {
+ 		ret = -EOPNOTSUPP;
+ 		goto err_tdev;
+@@ -2072,16 +2125,19 @@ static int ppe_ft_flow_replace(struct pp
+ 		goto err_tdev;
+ 	}
+ 
+-	/* Tagged ingress must arrive on a PPE port to be classified by
+-	 * a VLAN uplink.
++	/* Resolve the ingress identity. Tagged physical ingress needs a VLAN
++	 * uplink. Wireless ingress takes its own VP reference so the mapping
++	 * and interception hook live for this direction independently of the
++	 * reverse, destination-VP flow.
+ 	 */
+-	if (data.ingress_vid >= 0) {
++	if (data.ingress_ifindex) {
+ 		struct net_device *idev;
++		int vp_ret = 0;
+ 
+ 		idev = dev_get_by_index(dev_net(odev), data.ingress_ifindex);
+ 		if (!idev) {
+ 			ret = -EOPNOTSUPP;
+-			goto err_free;
++			goto err_prelock_ivp;
+ 		}
+ 
+ 		if (edma_port_dev_check(idev)) {
+@@ -2089,12 +2145,23 @@ static int ppe_ft_flow_replace(struct pp
+ 
+ 			iport = ipriv->ppe_port->port_id;
+ 			imtu = idev->mtu;
++		} else if (ft->ppe_dev->variant->has_vports &&
++			   idev->type == ARPHRD_ETHER && idev->ieee80211_ptr) {
++			vp_ret = ppe_vp_get(ft->ppe_dev, idev,
++					    f->common.prio);
++			if (vp_ret >= 0)
++				flow->ivp = vp_ret;
+ 		}
+ 		dev_put(idev);
+ 
+-		if (iport < 0) {
++		if (vp_ret < 0) {
++			ret = vp_ret;
++			goto err_prelock_ivp;
++		}
++
++		if (data.ingress_vid >= 0 && iport < 0) {
+ 			ret = -EOPNOTSUPP;
+-			goto err_free;
++			goto err_prelock_ivp;
+ 		}
+ 	}
+ 
+@@ -2104,9 +2171,10 @@ static int ppe_ft_flow_replace(struct pp
+ 			nh.port = port_priv->ppe_port->port_id;
+ 			nh.l3_if = nh.port;
+ 		} else {
+-			ret = ppe_vp_get(ft->ppe_dev, odev);
++			ret = ppe_vp_get(ft->ppe_dev, odev,
++					 f->common.prio);
+ 			if (ret < 0)
+-				goto err_tdev;
++				goto err_prelock_ivp;
+ 			flow->vp = ret;
+ 			nh.port = ret;
+ 			nh.l3_if = ppe_ft_vp_l3_if(ft, ret);
+@@ -2115,6 +2183,22 @@ static int ppe_ft_flow_replace(struct pp
+ 		ether_addr_copy(nh.mac, data.eth.dst);
+ 	}
+ 
++	if (flow->ivp >= 0) {
++		flow->vp_flow.key.is_ipv6 = flow->entry.is_ipv6;
++		flow->vp_flow.key.protocol =
++			flow->entry.proto == PPE_FLOW_PROTOCOL_TCP ?
++			IPPROTO_TCP : IPPROTO_UDP;
++		flow->vp_flow.key.sport = flow->entry.sport;
++		flow->vp_flow.key.dport = flow->entry.dport;
++		if (flow->entry.is_ipv6) {
++			flow->vp_flow.key.sip.ip6 = flow->entry.sip.ip6;
++			flow->vp_flow.key.dip.ip6 = flow->entry.dip.ip6;
++		} else {
++			flow->vp_flow.key.sip.ip4 = flow->entry.sip.ip4;
++			flow->vp_flow.key.dip.ip4 = flow->entry.dip.ip4;
++		}
++	}
++
+ 	if (tunnel_flow && !lwt_tunnel) {
+ 		struct ip6_tnl_flow_offload_key key = {
+ 			.addr = tunnel_encap ? flow->entry.dip.ip4 :
+@@ -2324,6 +2408,16 @@ static int ppe_ft_flow_replace(struct pp
+ 	if (ret)
+ 		goto err_hw_flow;
+ 
++	if (flow->ivp >= 0) {
++		ret = ppe_vp_flow_add(ft->ppe_dev, flow->ivp,
++				      &flow->vp_flow);
++		if (ret) {
++			rhashtable_remove_fast(&ft->flows, &flow->node,
++					       ppe_ft_params);
++			goto err_hw_flow;
++		}
++	}
++
+ 	set_bit(nexthop, ft->nexthop_used);
+ 	mutex_unlock(&ft->lock);
+ 	if (tdev)
+@@ -2357,12 +2451,20 @@ err_pub_ip:
+ err_vp:
+ 	if (flow->vp >= 0)
+ 		ppe_vp_put(ft->ppe_dev, flow->vp);
++	if (flow->ivp >= 0)
++		ppe_vp_put(ft->ppe_dev, flow->ivp);
+ err_unlock:
+ 	ppe_ft_tunnel_put(ft, flow ? flow->tunnel : -1);
+ 	mutex_unlock(&ft->lock);
+ err_tdev:
+ 	if (tdev)
+ 		dev_put(tdev);
++	goto err_free;
++err_prelock_ivp:
++	if (flow->ivp >= 0)
++		ppe_vp_put(ft->ppe_dev, flow->ivp);
++	if (tdev)
++		dev_put(tdev);
+ err_free:
+ 	kfree_rcu(flow, rcu);
+ 
+@@ -2383,6 +2485,7 @@ static int ppe_ft_flow_destroy(struct pp
+ 	}
+ 
+ 	rhashtable_remove_fast(&ft->flows, &flow->node, ppe_ft_params);
++	ppe_vp_flow_del(ft->ppe_dev, flow->ivp, &flow->vp_flow);
+ 
+ 	if (ppe_ft_flow_hw_del(ft, flow)) {
+ 		ppe_ft_host_put(ft, &flow->entry);
+@@ -2393,6 +2496,7 @@ static int ppe_ft_flow_destroy(struct pp
+ 		ppe_ft_pub_ip_put(ft, flow->pub_ip);
+ 		ppe_ft_tunnel_put(ft, flow->tunnel);
+ 		ppe_vp_put(ft->ppe_dev, flow->vp);
++		ppe_vp_put(ft->ppe_dev, flow->ivp);
+ 	} else {
+ 		ppe_ft_flow_quarantine(ft, flow);
+ 		flow = NULL;
+@@ -3233,11 +3337,17 @@ int ppe_flowtable_setup(struct ppe_devic
+ 		return -ENOMEM;
+ 
+ 	ft->ppe_dev = ppe_dev;
++
++	/* The reserved L3 interface regions have compile-time sizes on
++	 * a runtime base (the port count); refuse a layout that would
++	 * overrun the interface tables.
++	 */
+ 	if (WARN_ON(ppe_ft_vp_l3_if(ft, PPE_VP_PORT_BASE + PPE_VP_SLOTS) >
+ 		    PPE_IN_L3_IF_TBL_ENTRIES)) {
+ 		kfree(ft);
+ 		return -ERANGE;
+ 	}
++
+ 	mutex_init(&ft->lock);
+ 	INIT_LIST_HEAD(&ft->block_cb_list);
+ 	INIT_LIST_HEAD(&ft->zombies);
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_vp.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_vp.c
+@@ -9,22 +9,43 @@
+  * entry points its physical port at the CPU and its unicast queue at
+  * the CPU port's queue, so the packet lands on an EDMA ring already
+  * NAT'd and rewritten, and the EDMA receive path transmits it out the
+- * bound device (edma_rx.c). Only the wired->wireless direction is
+- * offloaded; the reverse stays on the software path (see Documentation/networking/).
++ * bound device (edma_rx.c). The reverse direction is offloaded by the
++ * source-tagged ingress injection described below.
+  *
+  * The address of a wireless station is owned by the software bridge,
+  * so a VP does no learning of its own - the same assisted-learning
+  * split the rest of the series uses for foreign ports.
++ *
++ * The reverse (wireless->wired) direction is offloaded too: a netfilter
++ * ingress hook on the bound device injects a received frame into the PPE
++ * tagged with the virtual port as its source (edma_tx_vp_inject), so the
++ * hardware routes and NATs the uplink. The ingress hook is used rather
++ * than a netdev_rx_handler because the bound VAP is a bridge port and the
++ * bridge already owns its rx_handler; the ingress hook runs before the
++ * bridge and coexists with it. If netfilter ingress hooks are unavailable,
++ * registration fails open and the independently useful downlink VP remains.
+  */
+ 
++#include <linux/atomic.h>
+ #include <linux/bitfield.h>
++#include <linux/etherdevice.h>
++#include <linux/if_ether.h>
++#include <linux/ip.h>
++#include <linux/ipv6.h>
+ #include <linux/kernel.h>
+ #include <linux/mutex.h>
+ #include <linux/netdevice.h>
++#include <linux/netfilter.h>
+ #include <linux/rcupdate.h>
++#include <linux/rhashtable.h>
++#include <linux/rtnetlink.h>
+ #include <linux/regmap.h>
++#include <linux/skbuff.h>
++
++#include <net/ip.h>
+ 
+ #include "edma.h"
++#include "edma_tx.h"
+ #include "ppe.h"
+ #include "ppe_config.h"
+ #include "ppe_flowtable.h"
+@@ -36,16 +57,32 @@
+ 
+ struct ppe_vp_slot {
+ 	struct net_device __rcu *dev;
++	struct rhashtable flows;
++	atomic_t nflows;
++	struct nf_hook_ops nf_ops;
++	u64 host_mac;		/* router (bridge) MAC; zero = inject all unicast */
++	int vp;			/* PPE port id, read by the ingress hook */
+ 	int refcnt;
++	bool hook_registered;
++	bool poisoned;
++	bool miss_disabled;
+ };
+ 
+ struct ppe_vp {
+ 	struct ppe_device *ppe_dev;
+ 	struct mutex lock;		/* serialises slot allocation */
+ 	struct notifier_block notifier;
++	bool inject_disabled;
+ 	struct ppe_vp_slot slots[PPE_VP_SLOTS];
+ };
+ 
++static const struct rhashtable_params ppe_vp_flow_params = {
++	.head_offset = offsetof(struct ppe_vp_flow, node),
++	.key_offset = offsetof(struct ppe_vp_flow, key),
++	.key_len = sizeof(struct ppe_vp_flow_key),
++	.automatic_shrinking = true,
++};
++
+ /* Program or tear down the L2_VP_PORT_TBL entry and unicast queue map
+  * of a virtual port. The field set mirrors the vendor driver's
+  * ppe_drv_port_alloc() for a wireless virtual port.
+@@ -103,10 +140,213 @@ static int ppe_vp_hw_set(struct ppe_devi
+ 					EDMA_CPU_PORT_PROFILE_ID);
+ }
+ 
++/* Netfilter ingress hook on a virtual port's bound device: offload the
++ * wireless->wired uplink. It runs on the receive path before the bridge,
++ * so it sees the frame with its L2 header already pulled and, for a routed
++ * frame crossing a bridged VAP, pkt_type still PACKET_OTHERHOST (the bridge
++ * reclassifies later) - so the decision keys on the L2/L3 headers, not
++ * pkt_type.
++ *
++ * Only a unicast IPv4/IPv6 packet whose exact original tuple is present in
++ * the slot's installed-flow table is injected. New connections, local
++ * traffic and any rule which failed hardware installation therefore stay on
++ * the software path. An unexpected miss trips a persistent per-VP fail-open
++ * circuit before its packet is returned to this device's receive stack.
++ */
++static unsigned int ppe_vp_ingress(void *priv, struct sk_buff *skb,
++				   const struct nf_hook_state *state)
++{
++	struct ppe_vp_slot *slot = priv;
++	struct ppe_vp_flow_key key = {};
++	struct ppe_vp_flow *flow;
++	const struct ethhdr *eth;
++	__be16 ports[2];
++	unsigned int offset;
++	int mac_len;
++
++	/* A hardware miss trips this VP's persistent fail-open circuit
++	 * breaker before its packet is returned to this receive path.
++	 */
++	if (smp_load_acquire(&slot->miss_disabled))
++		return NF_ACCEPT;
++
++	/* Nothing is offloaded on this virtual port: skip the header
++	 * parse, key build and hash of a guaranteed lookup miss.
++	 */
++	if (!atomic_read(&slot->nflows))
++		return NF_ACCEPT;
++
++	if (skb->protocol != htons(ETH_P_IP) &&
++	    skb->protocol != htons(ETH_P_IPV6))
++		return NF_ACCEPT;
++
++	eth = eth_hdr(skb);
++	if (is_multicast_ether_addr(eth->h_dest))
++		return NF_ACCEPT;
++
++	/* Route only frames addressed to us; leave L2-switched intra-LAN
++	 * traffic to the bridge. Skipped for a VAP with no bridge master.
++	 */
++	if (READ_ONCE(slot->host_mac) &&
++	    ether_addr_to_u64(eth->h_dest) != READ_ONCE(slot->host_mac))
++		return NF_ACCEPT;
++
++	if (skb->protocol == htons(ETH_P_IP)) {
++		const struct iphdr *iph;
++
++		if (!pskb_may_pull(skb, sizeof(*iph)))
++			return NF_ACCEPT;
++		iph = ip_hdr(skb);
++		if (iph->ihl < 5 || ip_is_fragment(iph) ||
++		    (iph->protocol != IPPROTO_TCP &&
++		     iph->protocol != IPPROTO_UDP))
++			return NF_ACCEPT;
++		key.sip.ip4 = iph->saddr;
++		key.dip.ip4 = iph->daddr;
++		key.protocol = iph->protocol;
++		offset = iph->ihl * 4;
++	} else {
++		const struct ipv6hdr *ip6h;
++
++		if (!pskb_may_pull(skb, sizeof(*ip6h)))
++			return NF_ACCEPT;
++		ip6h = ipv6_hdr(skb);
++		if (ip6h->nexthdr != IPPROTO_TCP &&
++		    ip6h->nexthdr != IPPROTO_UDP)
++			return NF_ACCEPT;
++		key.sip.ip6 = ip6h->saddr;
++		key.dip.ip6 = ip6h->daddr;
++		key.protocol = ip6h->nexthdr;
++		key.is_ipv6 = true;
++		offset = sizeof(*ip6h);
++	}
++
++	if (skb_copy_bits(skb, offset, ports, sizeof(ports)))
++		return NF_ACCEPT;
++	key.sport = ports[0];
++	key.dport = ports[1];
++
++	rcu_read_lock();
++	flow = rhashtable_lookup_fast(&slot->flows, &key,
++				      ppe_vp_flow_params);
++	if (!flow) {
++		rcu_read_unlock();
++		return NF_ACCEPT;
++	}
++	rcu_read_unlock();
++
++	/* The PPE parses the ethernet header to route, so restore the L2
++	 * header the receive path pulled before handing the frame over.
++	 */
++	mac_len = skb->data - skb_mac_header(skb);
++	skb_push(skb, mac_len);
++
++	/* On success the transmit path owns the frame (freed at Tx
++	 * completion) and it must not continue up the stack. On any failure
++	 * restore the L2 header and let it fall back to the software path.
++	 */
++	if (edma_tx_vp_inject(slot->vp, skb) == 0)
++		return NF_STOLEN;
++
++	skb_pull(skb, mac_len);
++
++	return NF_ACCEPT;
++}
++
++/* Register or remove the ingress hook that drives a virtual port's uplink.
++ * nf_register_net_hook() serialises on its own mutex (no rtnl needed), so
++ * this is safe from the slot-allocation path; the hook is lockless and
++ * never takes the slot mutex, so registering it under that mutex cannot
++ * deadlock against a packet arriving the moment it goes live.
++ */
++static u64 ppe_vp_host_mac(struct net_device *dev)
++{
++	struct net_device *master;
++	u64 mac = 0;
++
++	rcu_read_lock();
++	master = netdev_master_upper_dev_get_rcu(dev);
++	if (master)
++		mac = ether_addr_to_u64(master->dev_addr);
++	rcu_read_unlock();
++
++	return mac;
++}
++
++static bool ppe_vp_master_is(struct net_device *dev,
++			     struct net_device *master)
++{
++	bool match;
++
++	rcu_read_lock();
++	match = netdev_master_upper_dev_get_rcu(dev) == master;
++	rcu_read_unlock();
++
++	return match;
++}
++
++static int ppe_vp_hook_register(struct ppe_vp_slot *slot,
++				struct net_device *dev, int vp, int priority)
++{
++	int ret;
++
++	if (!IS_ENABLED(CONFIG_NETFILTER_INGRESS))
++		return -EOPNOTSUPP;
++
++	slot->vp = vp;
++	WRITE_ONCE(slot->host_mac, ppe_vp_host_mac(dev));
++	slot->nf_ops.hook = ppe_vp_ingress;
++	slot->nf_ops.pf = NFPROTO_NETDEV;
++	slot->nf_ops.hooknum = NF_NETDEV_INGRESS;
++	/* Match the nft flowtable hook which admitted these tuples, so
++	 * interception preserves the user's ingress-policy ordering.
++	 */
++	slot->nf_ops.priority = priority;
++	slot->nf_ops.dev = dev;
++	slot->nf_ops.priv = slot;
++
++	ret = nf_register_net_hook(dev_net(dev), &slot->nf_ops);
++	if (!ret)
++		slot->hook_registered = true;
++	return ret;
++}
++
++static void ppe_vp_hook_unregister(struct ppe_vp_slot *slot,
++				   struct net_device *dev)
++{
++	if (!slot->hook_registered)
++		return;
++
++	nf_unregister_net_hook(dev_net(dev), &slot->nf_ops);
++	slot->hook_registered = false;
++}
++
++/* Release virtual port slot @i: remove its ingress hook, turn the
++ * hardware port off and clear the bound device pointer. The caller holds
++ * vp->lock and has confirmed the slot still has a device.
++ */
++static void ppe_vp_slot_release(struct ppe_device *ppe_dev,
++				struct ppe_vp *vp, int i)
++{
++	struct net_device *dev = rcu_access_pointer(vp->slots[i].dev);
++	int ret;
++
++	ppe_vp_hook_unregister(&vp->slots[i], dev);
++	ret = ppe_vp_hw_set(ppe_dev, PPE_VP_PORT_BASE + i, false);
++	if (ret) {
++		vp->slots[i].poisoned = true;
++		dev_err(ppe_dev->dev,
++			"failed to disable VP %d, quarantining slot: %d\n",
++			PPE_VP_PORT_BASE + i, ret);
++	}
++	rcu_assign_pointer(vp->slots[i].dev, NULL);
++}
++
+ /**
+  * ppe_vp_get - Get a virtual port for a net device
+  * @ppe_dev: PPE device
+  * @dev: net device to bind
++ * @priority: netfilter priority of the flowtable installing the flow
+  *
+  * Return the PPE port id of a virtual port bound to @dev, allocating
+  * and programming one on first use and refcounting shared use. Must be
+@@ -115,7 +355,8 @@ static int ppe_vp_hw_set(struct ppe_devi
+  * Return: PPE port id (>= PPE_VP_PORT_BASE) on success, negative error
+  * code on failure.
+  */
+-int ppe_vp_get(struct ppe_device *ppe_dev, struct net_device *dev)
++int ppe_vp_get(struct ppe_device *ppe_dev, struct net_device *dev,
++	       int priority)
+ {
+ 	struct ppe_vp *vp = ppe_dev->vp;
+ 	int free = -1, i, ret;
+@@ -124,14 +365,27 @@ int ppe_vp_get(struct ppe_device *ppe_de
+ 		return -EOPNOTSUPP;
+ 
+ 	mutex_lock(&vp->lock);
++	if (vp->inject_disabled) {
++		mutex_unlock(&vp->lock);
++		return -ESHUTDOWN;
++	}
+ 
+ 	for (i = 0; i < PPE_VP_SLOTS; i++) {
+ 		if (rcu_access_pointer(vp->slots[i].dev) == dev) {
++			/* One hook cannot represent two differently ordered
++			 * flowtables. Keep the later rule in software.
++			 */
++			if (vp->slots[i].hook_registered &&
++			    vp->slots[i].nf_ops.priority != priority) {
++				mutex_unlock(&vp->lock);
++				return -EOPNOTSUPP;
++			}
+ 			vp->slots[i].refcnt++;
+ 			mutex_unlock(&vp->lock);
+ 			return PPE_VP_PORT_BASE + i;
+ 		}
+-		if (free < 0 && !rcu_access_pointer(vp->slots[i].dev) &&
++		if (free < 0 && !vp->slots[i].poisoned &&
++		    !rcu_access_pointer(vp->slots[i].dev) &&
+ 		    !vp->slots[i].refcnt)
+ 			free = i;
+ 	}
+@@ -147,8 +401,19 @@ int ppe_vp_get(struct ppe_device *ppe_de
+ 		return ret;
+ 	}
+ 
++	/* Publish the mapping before its optional ingress hook goes live. */
+ 	vp->slots[free].refcnt = 1;
++	WRITE_ONCE(vp->slots[free].miss_disabled, false);
+ 	rcu_assign_pointer(vp->slots[free].dev, dev);
++
++	ret = ppe_vp_hook_register(&vp->slots[free], dev,
++				   PPE_VP_PORT_BASE + free, priority);
++	if (ret) {
++		/* Uplink interception is optional. Keep the independently useful
++		 * destination VP alive when the software hook is unavailable.
++		 */
++		netdev_warn(dev, "VP uplink interception unavailable: %d\n", ret);
++	}
+ 	mutex_unlock(&vp->lock);
+ 
+ 	/* Seed the carrier state so a flow to a down VAP is not reported
+@@ -179,23 +444,110 @@ void ppe_vp_put(struct ppe_device *ppe_d
+ 	mutex_lock(&vpt->lock);
+ 
+ 	/* Drop a reference. The device may already have unregistered (dev NULL,
+-	 * hardware already off); the slot stays reserved until its last flow
+-	 * releases it, so its id is never reused underneath a flow that still
+-	 * points at it.
++	 * hardware already off and hook removed); the slot stays reserved until
++	 * its last flow releases it, so its id is never reused underneath a flow
++	 * that still points at it.
+ 	 */
+ 	if (!vpt->slots[i].refcnt || --vpt->slots[i].refcnt) {
+ 		mutex_unlock(&vpt->lock);
+ 		return;
+ 	}
+ 
+-	if (rcu_access_pointer(vpt->slots[i].dev)) {
+-		ppe_vp_hw_set(ppe_dev, vp, false);
+-		rcu_assign_pointer(vpt->slots[i].dev, NULL);
+-	}
++	if (rcu_access_pointer(vpt->slots[i].dev))
++		ppe_vp_slot_release(ppe_dev, vpt, i);
+ 	mutex_unlock(&vpt->lock);
+ }
+ 
+ /**
++ * ppe_vp_rx_fallback - Fail a VP uplink open after a hardware flow miss
++ * @ppe_dev: PPE device
++ * @vp: source virtual port of the punt
++ * @skb: complete punted frame, Ethernet header first
++ *
++ * Tuple gating makes a miss anomalous: software installed the flow but the
++ * hardware did not match it. Disable further injection for the whole VP
++ * before returning this packet to the VAP. The persistent slot state, unlike
++ * skb control-buffer metadata, survives every receive layer and makes this
++ * packet and subsequent traffic take the software path without a loop.
++ *
++ * Return: true if the software receive path consumed the frame.
++ */
++bool ppe_vp_rx_fallback(struct ppe_device *ppe_dev, int vp, struct sk_buff *skb)
++{
++	struct ppe_vp *vpt = ppe_dev->vp;
++	struct net_device *dev;
++	int i = vp - PPE_VP_PORT_BASE;
++
++	if (!vpt || i < 0 || i >= PPE_VP_SLOTS)
++		return false;
++
++	rcu_read_lock();
++	dev = rcu_dereference(vpt->slots[i].dev);
++	if (unlikely(!dev)) {
++		rcu_read_unlock();
++		return false;
++	}
++
++	/* Publish the circuit breaker before netif_receive_skb() can run the
++	 * ingress hook again, including after an RPS hand-off.
++	 */
++	ppe_vp_miss_disable(ppe_dev, vp);
++	skb->protocol = eth_type_trans(skb, dev);
++	netif_receive_skb(skb);
++	rcu_read_unlock();
++
++	return true;
++}
++
++void ppe_vp_miss_disable(struct ppe_device *ppe_dev, int vp)
++{
++	struct ppe_vp *vpt = ppe_dev->vp;
++	int i = vp - PPE_VP_PORT_BASE;
++
++	if (!vpt || i < 0 || i >= PPE_VP_SLOTS)
++		return;
++
++	/* Pairs with the hook's acquire load: publish fail-open state before
++	 * any punt is submitted back to the receive path.
++	 */
++	smp_store_release(&vpt->slots[i].miss_disabled, true);
++}
++
++int ppe_vp_flow_add(struct ppe_device *ppe_dev, int vp,
++		    struct ppe_vp_flow *flow)
++{
++	struct ppe_vp *vpt = ppe_dev->vp;
++	int i = vp - PPE_VP_PORT_BASE;
++	int ret;
++
++	if (!vpt || i < 0 || i >= PPE_VP_SLOTS)
++		return -EINVAL;
++
++	ret = rhashtable_insert_fast(&vpt->slots[i].flows, &flow->node,
++				     ppe_vp_flow_params);
++	if (!ret) {
++		flow->inserted = true;
++		atomic_inc(&vpt->slots[i].nflows);
++	}
++	return ret;
++}
++
++void ppe_vp_flow_del(struct ppe_device *ppe_dev, int vp,
++		     struct ppe_vp_flow *flow)
++{
++	struct ppe_vp *vpt = ppe_dev->vp;
++	int i = vp - PPE_VP_PORT_BASE;
++
++	if (!flow->inserted || !vpt || i < 0 || i >= PPE_VP_SLOTS)
++		return;
++
++	rhashtable_remove_fast(&vpt->slots[i].flows, &flow->node,
++			       ppe_vp_flow_params);
++	flow->inserted = false;
++	atomic_dec(&vpt->slots[i].nflows);
++}
++
++/**
+  * ppe_vp_dev - Resolve a virtual port to its net device
+  * @ppe_dev: PPE device
+  * @vp: PPE port id of a virtual port
+@@ -225,6 +577,8 @@ static int ppe_vp_netdev_event(struct no
+ 	switch (event) {
+ 	case NETDEV_UNREGISTER:
+ 	case NETDEV_CHANGE:
++	case NETDEV_CHANGEADDR:
++	case NETDEV_CHANGEUPPER:
+ 	case NETDEV_UP:
+ 	case NETDEV_DOWN:
+ 		break;
+@@ -234,20 +588,29 @@ static int ppe_vp_netdev_event(struct no
+ 
+ 	mutex_lock(&vp->lock);
+ 	for (i = 0; i < PPE_VP_SLOTS; i++) {
+-		if (rcu_access_pointer(vp->slots[i].dev) != dev)
++		struct net_device *bound;
++
++		bound = rcu_access_pointer(vp->slots[i].dev);
++		if (!bound)
+ 			continue;
+ 
++		/* A bridge MAC change affects every VAP below that master. */
++		if (bound != dev) {
++			if (event == NETDEV_CHANGEADDR &&
++			    ppe_vp_master_is(bound, dev))
++				WRITE_ONCE(vp->slots[i].host_mac,
++					   ppe_vp_host_mac(bound));
++			continue;
++		}
++
+ 		if (event == NETDEV_UNREGISTER) {
+-			/* The device is going away. Drop it and turn the
+-			 * hardware off, but keep the refcount: the slot stays
+-			 * reserved (dev NULL) until its last flow's put releases
+-			 * it, so its id is not reused underneath those flows.
+-			 */
+-			ppe_vp_hw_set(vp->ppe_dev, PPE_VP_PORT_BASE + i, false);
+-			rcu_assign_pointer(vp->slots[i].dev, NULL);
++			ppe_vp_slot_release(vp->ppe_dev, vp, i);
+ 			cleared = true;
+ 			carrier = PPE_VP_PORT_BASE + i;
+ 		} else {
++			if (event == NETDEV_CHANGEUPPER)
++				WRITE_ONCE(vp->slots[i].host_mac,
++					   ppe_vp_host_mac(bound));
+ 			carrier = PPE_VP_PORT_BASE + i;
+ 			carrier_up = netif_carrier_ok(dev);
+ 		}
+@@ -255,16 +618,8 @@ static int ppe_vp_netdev_event(struct no
+ 	}
+ 	mutex_unlock(&vp->lock);
+ 
+-	/* Update the flowtable carrier outside the slot lock (it only
+-	 * touches an atomic bitmap, but keep the lock scopes disjoint).
+-	 */
+ 	if (carrier >= 0)
+-		ppe_flowtable_port_carrier(vp->ppe_dev, carrier,
+-					   carrier_up);
+-
+-	/* Ensure the receive path has dropped the stale pointer before
+-	 * the device can be freed.
+-	 */
++		ppe_flowtable_port_carrier(vp->ppe_dev, carrier, carrier_up);
+ 	if (cleared)
+ 		synchronize_rcu();
+ 
+@@ -274,7 +629,7 @@ static int ppe_vp_netdev_event(struct no
+ int ppe_vp_setup(struct ppe_device *ppe_dev)
+ {
+ 	struct ppe_vp *vp;
+-	int ret;
++	int i, ret;
+ 
+ 	/* Virtual ports are an APPE feature; nothing to do without them. */
+ 	if (!ppe_dev->variant->has_vports)
+@@ -287,16 +642,45 @@ int ppe_vp_setup(struct ppe_device *ppe_
+ 	vp->ppe_dev = ppe_dev;
+ 	mutex_init(&vp->lock);
+ 	vp->notifier.notifier_call = ppe_vp_netdev_event;
++	for (i = 0; i < PPE_VP_SLOTS; i++) {
++		ret = rhashtable_init(&vp->slots[i].flows,
++				      &ppe_vp_flow_params);
++		if (ret)
++			goto err_flows;
++	}
+ 
+ 	ret = register_netdevice_notifier(&vp->notifier);
+-	if (ret) {
+-		mutex_destroy(&vp->lock);
+-		return ret;
+-	}
++	if (ret)
++		goto err_flows;
+ 
+ 	ppe_dev->vp = vp;
+ 
+ 	return 0;
++
++err_flows:
++	while (i--)
++		rhashtable_destroy(&vp->slots[i].flows);
++	mutex_destroy(&vp->lock);
++	return ret;
++}
++
++void ppe_vp_inject_disable(struct ppe_device *ppe_dev)
++{
++	struct ppe_vp *vp = ppe_dev->vp;
++	int i;
++
++	if (!vp)
++		return;
++
++	mutex_lock(&vp->lock);
++	vp->inject_disabled = true;
++	for (i = 0; i < PPE_VP_SLOTS; i++) {
++		struct net_device *dev = rcu_access_pointer(vp->slots[i].dev);
++
++		if (dev)
++			ppe_vp_hook_unregister(&vp->slots[i], dev);
++	}
++	mutex_unlock(&vp->lock);
+ }
+ 
+ void ppe_vp_teardown(struct ppe_device *ppe_dev)
+@@ -310,13 +694,23 @@ void ppe_vp_teardown(struct ppe_device *
+ 	ppe_dev->vp = NULL;
+ 	unregister_netdevice_notifier(&vp->notifier);
+ 
++	/* The PPE port net devices are already unregistered, which flushed
++	 * the offloaded flows and unbound the flow blocks; no ppe_vp_get()
++	 * or ppe_vp_put() can be in flight here, and the notifier above is
++	 * quiesced by its unregistration. Hold the lock anyway so the slot
++	 * walk is unconditionally safe.
++	 */
++	mutex_lock(&vp->lock);
+ 	for (i = 0; i < PPE_VP_SLOTS; i++) {
+-		if (rcu_access_pointer(vp->slots[i].dev)) {
+-			ppe_vp_hw_set(ppe_dev, PPE_VP_PORT_BASE + i, false);
+-			rcu_assign_pointer(vp->slots[i].dev, NULL);
+-		}
++		struct net_device *dev = rcu_access_pointer(vp->slots[i].dev);
++
++		if (dev)
++			ppe_vp_slot_release(ppe_dev, vp, i);
+ 	}
++	mutex_unlock(&vp->lock);
+ 
+ 	synchronize_rcu();
++	for (i = 0; i < PPE_VP_SLOTS; i++)
++		rhashtable_destroy(&vp->slots[i].flows);
+ 	mutex_destroy(&vp->lock);
+ }
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_vp.h
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_vp.h
+@@ -6,8 +6,33 @@
+ #ifndef __PPE_VP_H__
+ #define __PPE_VP_H__
+ 
++#include <linux/in6.h>
++#include <linux/rhashtable.h>
++
+ struct ppe_device;
+ struct net_device;
++struct sk_buff;
++
++/* An installed VP-uplink flow is the authority for source-tagged
++ * injection. The flowtable embeds this object in its flow lifetime; the
++ * receive hook performs an RCU lookup of the original, pre-NAT tuple.
++ */
++struct ppe_vp_flow_key {
++	union {
++		__be32 ip4;
++		struct in6_addr ip6;
++	} sip, dip;
++	__be16 sport;
++	__be16 dport;
++	u8 protocol;
++	bool is_ipv6;
++};
++
++struct ppe_vp_flow {
++	struct rhash_head node;
++	struct ppe_vp_flow_key key;
++	bool inserted;
++};
+ 
+ /* Virtual ports bind a non-PPE net device (a wireless VAP) to a PPE
+  * port number, so the L3 flow engine can forward to it and the packet
+@@ -23,10 +48,19 @@ struct net_device;
+ #define PPE_VP_SLOTS		8
+ 
+ int ppe_vp_setup(struct ppe_device *ppe_dev);
++void ppe_vp_inject_disable(struct ppe_device *ppe_dev);
+ void ppe_vp_teardown(struct ppe_device *ppe_dev);
+ 
+-int ppe_vp_get(struct ppe_device *ppe_dev, struct net_device *dev);
++int ppe_vp_get(struct ppe_device *ppe_dev, struct net_device *dev,
++	       int priority);
+ void ppe_vp_put(struct ppe_device *ppe_dev, int vp);
+ struct net_device *ppe_vp_dev(struct ppe_device *ppe_dev, int vp);
++bool ppe_vp_rx_fallback(struct ppe_device *ppe_dev, int vp,
++			struct sk_buff *skb);
++void ppe_vp_miss_disable(struct ppe_device *ppe_dev, int vp);
++int ppe_vp_flow_add(struct ppe_device *ppe_dev, int vp,
++		    struct ppe_vp_flow *flow);
++void ppe_vp_flow_del(struct ppe_device *ppe_dev, int vp,
++		     struct ppe_vp_flow *flow);
+ 
+ #endif

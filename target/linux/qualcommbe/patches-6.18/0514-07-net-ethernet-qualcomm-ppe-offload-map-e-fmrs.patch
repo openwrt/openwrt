@@ -1,0 +1,115 @@
+From: Kenneth Kasilag <kenneth@kasilag.me>
+Date: Wed, 15 Jul 2026 10:20:00 +0800
+Subject: [PATCH] net: ethernet: qualcomm: ppe: offload MAP-E FMR flows
+
+Derive per-flow MAP-E remote IPv6 endpoints from the inner IPv4 address,
+transport port and matching FMR.  Validate every prefix, EA-bit and PSID
+boundary before programming hardware and fail closed for malformed or
+unmatched rules.
+
+Signed-off-by: Kenneth Kasilag <kenneth@kasilag.me>
+
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_flowtable.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_flowtable.c
+@@ -1083,13 +1083,13 @@ static void ppe_ft_tunnel_underlay_put(s
+ 
+ static int ppe_ft_tunnel_resolve(struct ppe_flowtable *ft,
+ 				 const struct net_device *tdev,
++				 int link,
+ 				 const struct in6_addr *local,
+ 				 const struct in6_addr *remote,
+ 				 struct ppe_ft_tunnel *tunnel)
+ {
+-	const struct ip6_tnl *ip6tnl = netdev_priv(tdev);
+ 	struct flowi6 fl6 = {
+-		.flowi6_oif = ip6tnl->parms.link,
++		.flowi6_oif = link,
+ 		.saddr = *local,
+ 		.daddr = *remote,
+ 	};
+@@ -1148,11 +1148,11 @@ static void ppe_ft_tunnel_put(struct ppe
+ 
+ static int ppe_ft_tunnel_get(struct ppe_flowtable *ft, struct net_device *dev,
+ 			     const struct in6_addr *local,
+-			     const struct in6_addr *remote)
++			     const struct in6_addr *remote,
++			     int link, u8 hop_limit, u16 mtu)
+ {
+ 	struct ppe_tunnel_decap_entry decap, readback;
+ 	struct ppe_tunnel_encap_entry encap;
+-	const struct ip6_tnl *ip6tnl = netdev_priv(dev);
+ 	struct ppe_tunnel_ipip6 ipip6;
+ 	struct ppe_ft_tunnel *tunnel;
+ 	int i, ret, err, cleanup_ret = 0, l3_if;
+@@ -1175,13 +1175,13 @@ static int ppe_ft_tunnel_get(struct ppe_
+ 	tunnel->dev = dev;
+ 	tunnel->local = *local;
+ 	tunnel->remote = *remote;
+-	tunnel->hop_limit = ip6tnl->parms.hop_limit ?: 64;
+-	tunnel->mtu = dev->mtu;
++	tunnel->hop_limit = hop_limit ?: 64;
++	tunnel->mtu = mtu;
+ 	tunnel->encap_id = -1;
+ 	tunnel->decap_index = -1;
+ 	tunnel->vp = -1;
+ 
+-	ret = ppe_ft_tunnel_resolve(ft, dev, local, remote, tunnel);
++	ret = ppe_ft_tunnel_resolve(ft, dev, link, local, remote, tunnel);
+ 	if (ret)
+ 		goto err_clear;
+ 	l3_if = ppe_ft_tunnel_underlay_get(ft, tunnel->underlay_port);
+@@ -1430,6 +1430,7 @@ static int ppe_ft_flow_replace(struct pp
+ 	struct flow_action_entry *act;
+ 	struct net_device *odev = NULL;
+ 	struct net_device *tdev = NULL;
++	struct ip6_tnl_flow_offload_info tnl_info;
+ 	struct ppe_flow_nexthop nh = {};
+ 	struct ppe_ft_data data = {};
+ 	struct ppe_ft_flow *flow;
+@@ -1767,6 +1768,24 @@ static int ppe_ft_flow_replace(struct pp
+ 		ether_addr_copy(nh.mac, data.eth.dst);
+ 	}
+ 
++	if (tunnel_flow) {
++		struct ip6_tnl_flow_offload_key key = {
++			.addr = tunnel_encap ? flow->entry.dip.ip4 :
++					       flow->entry.sip.ip4,
++			.port = tunnel_encap ? flow->entry.dport :
++					       flow->entry.sport,
++		};
++
++		rtnl_lock();
++		ret = dev_ip6_tnl_flow_offload(tdev, &key, &tnl_info);
++		rtnl_unlock();
++		if (ret || ipv6_addr_any(&tnl_info.local) ||
++		    ipv6_addr_any(&tnl_info.remote)) {
++			ret = -EOPNOTSUPP;
++			goto err_tdev;
++		}
++	}
++
+ 	/* The hardware rewrites one direction per flow: the translated
+ 	 * source of SNAT comes from the public IP table, the translated
+ 	 * destination of DNAT from the next hop, and the translated L4
+@@ -1774,16 +1793,12 @@ static int ppe_ft_flow_replace(struct pp
+ 	 */
+ 	mutex_lock(&ft->lock);
+ 	if (tunnel_flow) {
+-		const struct ip6_tnl *ip6tnl = netdev_priv(tdev);
+-
+-		if (ipv6_addr_any(&ip6tnl->parms.laddr) ||
+-		    ipv6_addr_any(&ip6tnl->parms.raddr)) {
+-			ret = -EOPNOTSUPP;
+-			goto err_unlock;
+-		}
+ 		flow->tunnel = ppe_ft_tunnel_get(ft, tdev,
+-						 &ip6tnl->parms.laddr,
+-						 &ip6tnl->parms.raddr);
++						 &tnl_info.local,
++						 &tnl_info.remote,
++						 tnl_info.link,
++						 tnl_info.hop_limit,
++						 tnl_info.mtu);
+ 		if (flow->tunnel < 0) {
+ 			ret = flow->tunnel;
+ 			goto err_unlock;
