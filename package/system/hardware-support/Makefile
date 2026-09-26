@@ -110,6 +110,21 @@ define Package/dvb-support/install
 	$(call InstallFragment,$(1),45-dvb.json)
 endef
 
+define Package/kvm-support
+  $(call Package/hardware-support/Default)
+  TITLE:=KVM device support
+  USERID:=:kvm=34
+endef
+
+define Package/kvm-support/description
+ Feature gate for hardware virtualisation. Allocates the kvm group and
+ installs the hotplug rule which puts /dev/kvm into it.
+endef
+
+define Package/kvm-support/install
+	$(call InstallFragment,$(1),50-kvm.json)
+endef
+
 define Build/Prepare
 endef
 
@@ -124,3 +139,4 @@ $(eval $(call BuildPackage,video-support))
 $(eval $(call BuildPackage,accel-support))
 $(eval $(call BuildPackage,input-support))
 $(eval $(call BuildPackage,dvb-support))
+$(eval $(call BuildPackage,kvm-support))
