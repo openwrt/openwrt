@@ -1,0 +1,31 @@
+From 5c8009f3c1885d5d996acdcd7e884aff25ac26a4 Mon Sep 17 00:00:00 2001
+From: Aleksander Jan Bajkowski <olek2@wp.pl>
+Date: Fri, 20 Mar 2026 22:19:23 +0100
+Subject: [PATCH] crypto: inside-secure/eip93 - make it selectable for
+ ECONET
+
+Econet SoCs feature an integrated EIP93 in revision 3.0p1. It is identical
+to the one used by the Airoha AN7581 and the MediaTek MT7621. Ahmed reports
+that the EN7528 passes testmgr's self-tests. This driver should also work
+on other little endian Econet SoCs.
+
+CC: Ahmed Naseef <naseefkm@gmail.com>
+Signed-off-by: Aleksander Jan Bajkowski <olek2@wp.pl>
+Reviewed-by: Antoine Tenart <atenart@kernel.org>
+Tested-by: Ahmed Naseef <naseefkm@gmail.com>
+Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
+---
+ drivers/crypto/inside-secure/eip93/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/crypto/inside-secure/eip93/Kconfig
++++ b/drivers/crypto/inside-secure/eip93/Kconfig
+@@ -1,7 +1,7 @@
+ # SPDX-License-Identifier: GPL-2.0
+ config CRYPTO_DEV_EIP93
+ 	tristate "Support for EIP93 crypto HW accelerators"
+-	depends on SOC_MT7621 || ARCH_AIROHA ||COMPILE_TEST
++	depends on SOC_MT7621 || ARCH_AIROHA || ECONET || COMPILE_TEST
+ 	select CRYPTO_LIB_AES
+ 	select CRYPTO_LIB_DES
+ 	select CRYPTO_SKCIPHER
