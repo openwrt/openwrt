@@ -125,6 +125,22 @@ define Package/kvm-support/install
 	$(call InstallFragment,$(1),50-kvm.json)
 endef
 
+define Package/printer-support
+  $(call Package/hardware-support/Default)
+  TITLE:=Printer device support
+  USERID:=:lp=7
+endef
+
+define Package/printer-support/description
+ Feature gate for printers. Allocates the lp group and installs the
+ hotplug rules which put the USB and parallel port printer character
+ devices into it.
+endef
+
+define Package/printer-support/install
+	$(call InstallFragment,$(1),55-printer.json)
+endef
+
 define Build/Prepare
 endef
 
@@ -140,3 +156,4 @@ $(eval $(call BuildPackage,accel-support))
 $(eval $(call BuildPackage,input-support))
 $(eval $(call BuildPackage,dvb-support))
 $(eval $(call BuildPackage,kvm-support))
+$(eval $(call BuildPackage,printer-support))

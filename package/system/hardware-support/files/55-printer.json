@@ -1,0 +1,16 @@
+[
+	[ "if",
+		[ "eq", "SUBSYSTEM", [ "printer", "usbmisc" ] ],
+		[
+			[ "if",
+				[ "regex", "DEVNAME", "^(usb/)?lp[0-9]" ],
+				[ "makedev", "/dev/%DEVNAME%", "0660", "lp" ]
+			],
+			[ "return" ]
+		]
+	],
+	[ "if",
+		[ "eq", "SUBSYSTEM", "ppdev" ],
+		[ "makedev", "/dev/%DEVNAME%", "0660", "lp" ]
+	]
+]

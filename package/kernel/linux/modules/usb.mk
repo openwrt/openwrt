@@ -652,6 +652,7 @@ $(eval $(call KernelPackage,usb-audio))
 
 define KernelPackage/usb-printer
   TITLE:=Support for printers
+  DEPENDS:=printer-support
   KCONFIG:=CONFIG_USB_PRINTER
   FILES:=$(LINUX_DIR)/drivers/usb/class/usblp.ko
   AUTOLOAD:=$(call AutoProbe,usblp)
