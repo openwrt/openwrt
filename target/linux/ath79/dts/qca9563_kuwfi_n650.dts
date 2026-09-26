@@ -144,9 +144,9 @@
 &mdio0 {
 	status = "okay";
 
-	phy0: ethernet-phy@0 {
-		reg = <0>;
-		phy-mode = "sgmii";
+	ethernet-switch@10 {
+		compatible = "qca,ar8327";
+		reg = <0x10>;
 		reset-gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
 		qca,mib-poll-interval = <500>;
 
@@ -162,8 +162,12 @@
 
 	nvmem-cells = <&macaddr_art_0 0>;
 	nvmem-cell-names = "mac-address";
-	phy-handle = <&phy0>;
 	phy-mode = "sgmii";
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
 };
 
 &pcie {
