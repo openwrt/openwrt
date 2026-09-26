@@ -62,6 +62,22 @@ define Package/video-support/install
 	$(call InstallFragment,$(1),30-video.json)
 endef
 
+define Package/accel-support
+  $(call Package/hardware-support/Default)
+  TITLE:=Render and compute device support
+  USERID:=:render=43
+endef
+
+define Package/accel-support/description
+ Feature gate for GPU render and compute devices. Allocates the render
+ group and installs the hotplug rules which put the DRM render, accel and
+ kfd character devices into it.
+endef
+
+define Package/accel-support/install
+	$(call InstallFragment,$(1),35-accel.json)
+endef
+
 define Build/Prepare
 endef
 
@@ -73,3 +89,4 @@ endef
 
 $(eval $(call BuildPackage,audio-support))
 $(eval $(call BuildPackage,video-support))
+$(eval $(call BuildPackage,accel-support))
