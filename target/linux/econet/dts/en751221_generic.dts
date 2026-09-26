@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0
 /dts-v1/;
 
-#include "en751221.dtsi"
+#include "en751221g.dtsi"
 
 / {
 	model = "Generic EN751221";
@@ -53,4 +53,25 @@
 
 &gmac0 {
 	status = "okay";
+};
+
+&gsw_port0 {
+	status = "okay";
+	label = "lan0";
+};
+&gsw_port1 {
+	status = "okay";
+	label = "lan1";
+};
+&gsw_port2 {
+	status = "okay";
+	label = "lan2";
+};
+&gsw_port3 {
+	status = "okay";
+	label = "lan3";
+};
+&gsw_port4 {
+	status = "okay";
+	label = "lan4";
 };
