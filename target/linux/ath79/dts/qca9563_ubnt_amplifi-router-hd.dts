@@ -150,9 +150,9 @@
 &mdio0 {
 	status = "okay";
 
-	phy0: ethernet-phy@0 {
-		reg = <0>;
-		phy-mode = "sgmii";
+	ethernet-switch@10 {
+		compatible = "qca,ar8327";
+		reg = <0x10>;
 
 		qca,ar8327-initvals = <
 			0x04 0x00000080 /* AR8327_REG_PAD0_MODE */
@@ -175,10 +175,14 @@
 	pll-data = <0x03000101 0x00000101 0x00001919>;
 
 	phy-mode = "sgmii";
-	phy-handle = <&phy0>;
 
 	nvmem-cells = <&macaddr_art_0 0>;
 	nvmem-cell-names = "mac-address";
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
 };
 
 &wmac {
