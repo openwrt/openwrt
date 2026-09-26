@@ -1,0 +1,89 @@
+From d5bb21c26b5eb8c70c68c4bd3ad6e3cbaeea9dbd Mon Sep 17 00:00:00 2001
+From: Cristian Papa <pcristian292@gmail.com>
+Date: Tue, 22 Sep 2026 18:09:26 -0300
+Subject: [PATCH 1/3] wifi: mt76: mt7603: don't drop short frames looped back
+ on PS entry
+
+When a station enters power save, mt7603 has the PSE redirect the frames
+still queued for it back to the host, and mt7603_rx_loopback_skb() parks
+them until the station wakes up.
+
+The handler rejects every frame shorter than a four-address header
+(sizeof(struct ieee80211_hdr), 30 bytes) before looking at it. A
+BlockAck request is 20 bytes and a QoS-Null 26, so both are freed
+without a trace. Since commit b473c0e47f04 ("wifi: mt76: mt7603: fix tx
+queue of loopback packets"), a BAR would also be freed later as a frame
+that is not a bufferable MMPDU, although mac80211 buffers BARs for a
+sleeping station like any other unicast frame.
+
+mac80211 queues the BAR with IEEE80211_TX_CTL_REQ_TX_STATUS, so it only
+learns about the loss when the tx status times out, and the recipient
+keeps waiting on its reorder window until then.
+
+Check the length against the header length of the actual frame, and
+park a BlockAck request on the queue of its TID, behind the data frames
+it refers to.
+
+Found on a TP-Link Archer XR500v (MT7603E) with a client whose Bluetooth
+coexistence toggles PM every ~15 ms under load. To test the change on
+its own, a temporary debugfs switch flipped between the old and the new
+checks every 30 seconds during a bidirectional TCP test, with counters
+on the loop-back path and on the tx status of BARs. With the old check,
+all 92 BARs that came back were freed, and 91 of the 544 BARs queued in
+those phases never got a tx status from the hardware. With this change,
+all 129 BARs that came back were parked and sent again, and 11 of 411
+got no tx status. Throughput was the same with both checks.
+
+Fixes: e004b7006600 ("mt76: mt7603: notify mac80211 about buffered frames in ps queue")
+Assisted-by: LLM
+Signed-off-by: Cristian Papa <pcristian292@gmail.com>
+---
+ mt7603/dma.c | 18 +++++++++++++++++-
+ 1 file changed, 17 insertions(+), 1 deletion(-)
+
+diff --git a/mt7603/dma.c b/mt7603/dma.c
+index 477a9b7..491c8c9 100644
+--- a/mt7603/dma.c
++++ b/mt7603/dma.c
+@@ -34,7 +34,7 @@ mt7603_rx_loopback_skb(struct mt7603_dev *dev, struct sk_buff *skb)
+ 	int idx;
+ 	u32 val;
+ 
+-	if (skb->len < MT_TXD_SIZE + sizeof(struct ieee80211_hdr))
++	if (skb->len < MT_TXD_SIZE + 2)
+ 		goto free;
+ 
+ 	val = le32_to_cpu(txd[1]);
+@@ -52,6 +52,9 @@ mt7603_rx_loopback_skb(struct mt7603_dev *dev, struct sk_buff *skb)
+ 	sta = container_of(priv, struct ieee80211_sta, drv_priv);
+ 	hdr = (struct ieee80211_hdr *)&skb->data[MT_TXD_SIZE];
+ 
++	if (skb->len < MT_TXD_SIZE + ieee80211_hdrlen(hdr->frame_control))
++		goto free;
++
+ 	hwq = wmm_queue_map[IEEE80211_AC_BE];
+ 	if (ieee80211_is_data_qos(hdr->frame_control)) {
+ 		tid = *ieee80211_get_qos_ctl(hdr) &
+@@ -62,6 +65,19 @@ mt7603_rx_loopback_skb(struct mt7603_dev *dev, struct sk_buff *skb)
+ 	} else if (ieee80211_is_data(hdr->frame_control)) {
+ 		skb_set_queue_mapping(skb, IEEE80211_AC_BE);
+ 		hwq = wmm_queue_map[IEEE80211_AC_BE];
++	} else if (ieee80211_is_back_req(hdr->frame_control)) {
++		struct ieee80211_bar *bar = (struct ieee80211_bar *)hdr;
++
++		if (skb->len < MT_TXD_SIZE + sizeof(*bar))
++			goto free;
++
++		tid = (le16_to_cpu(bar->control) &
++		       IEEE80211_BAR_CTRL_TID_INFO_MASK) >>
++		      IEEE80211_BAR_CTRL_TID_INFO_SHIFT;
++		tid &= IEEE80211_QOS_CTL_TAG1D_MASK;
++		qid = tid_to_ac[tid];
++		hwq = wmm_queue_map[qid];
++		skb_set_queue_mapping(skb, qid);
+ 	} else {
+ 		skb_pull(skb, MT_TXD_SIZE);
+ 		if (!ieee80211_is_bufferable_mmpdu(skb))
+-- 
+2.47.3
+
