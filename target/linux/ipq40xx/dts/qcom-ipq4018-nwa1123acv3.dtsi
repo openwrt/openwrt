@@ -1,0 +1,36 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qcom-ipq4018-zyxel-wac500.dtsi"
+
+/ {
+	aliases {
+		led-boot = &led_status_green;
+		led-failsafe = &led_status_red;
+		led-running = &led_status_green;
+		led-upgrade = &led_status_red;
+		ethernet0 = &gmac;
+		label-mac-device = &swport4;
+	};
+};
+
+&swport4 {
+	status = "okay";
+
+	label = "lan";
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_mrd_fff8 0>;
+};
+
+&wifi0 {
+	status = "okay";
+	nvmem-cell-names = "pre-calibration", "mac-address";
+	nvmem-cells = <&precal_art_1000>, <&macaddr_mrd_fff8 1>;
+	qcom,ath10k-calibration-variant = "Zyxel-NWA1123ACv3";
+};
+
+&wifi1 {
+	status = "okay";
+	nvmem-cell-names = "pre-calibration", "mac-address";
+	nvmem-cells = <&precal_art_5000>, <&macaddr_mrd_fff8 2>;
+	qcom,ath10k-calibration-variant = "Zyxel-NWA1123ACv3";
+};
