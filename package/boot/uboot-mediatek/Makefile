@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_VERSION:=2026.07
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 PKG_HASH:=78e8bfc382fe388f9b55aa1daf8c563522a037779b5d4c349d1415e381f1243e
 PKG_BUILD_DEPENDS:=!(TARGET_ramips||TARGET_mediatek_mt7623):arm-trusted-firmware-tools/host
 PKG_PARALLEL_VARIANTS:=1
@@ -859,6 +859,18 @@ define U-Boot/mt7986_acer_predator-w6x
   DEPENDS:=+trusted-firmware-a-mt7986-spim-nand-ddr4
 endef
 
+define U-Boot/mt7986_asus_rt-ax59u
+  NAME:=ASUS RT-AX59U
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=asus_rt-ax59u-ubi
+  UBOOT_CONFIG:=mt7986_asus_rt-ax59u
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand-ubi-1m
+  BL2_SOC:=mt7986
+  BL2_DDRTYPE:=ddr4
+  DEPENDS:=+trusted-firmware-a-mt7986-spim-nand-ubi-1m-ddr4
+endef
+
 define U-Boot/mt7986_bananapi_bpi-r3-emmc
   NAME:=BananaPi BPi-R3
   BUILD_SUBTARGET:=filogic
@@ -1449,6 +1461,7 @@ UBOOT_TARGETS := \
 	mt7981_xiaomi_mi-router-ax3000t \
 	mt7981_xiaomi_mi-router-wr30u \
 	mt7986_acer_predator-w6x \
+	mt7986_asus_rt-ax59u \
 	mt7986_bananapi_bpi-r3-emmc \
 	mt7986_bananapi_bpi-r3-sdmmc \
 	mt7986_bananapi_bpi-r3-snand \

@@ -9,7 +9,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=arm-trusted-firmware-mediatek
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=https://github.com/mtk-openwrt/arm-trusted-firmware.git
@@ -41,6 +41,7 @@ define Trusted-Firmware-A/Default
   USE_UBI:=
   FIP_OFFSET:=
   FIP_SIZE:=
+  UBI_START_ADDR:=
 endef
 
 define Trusted-Firmware-A/mt7622-nor-1ddr
@@ -92,6 +93,7 @@ define Trusted-Firmware-A/mt7622-snand-ubi-1ddr
   PLAT:=mt7622
   BOOT_DEVICE:=snand
   USE_UBI:=1
+  UBI_START_ADDR:=0x80000
 endef
 
 define Trusted-Firmware-A/mt7622-snand-2ddr
@@ -109,6 +111,7 @@ define Trusted-Firmware-A/mt7622-snand-ubi-2ddr
   BOOT_DEVICE:=snand
   DDR3_FLYBY:=1
   USE_UBI:=1
+  UBI_START_ADDR:=0x80000
 endef
 
 define Trusted-Firmware-A/mt7622-emmc-1ddr
@@ -262,6 +265,7 @@ define Trusted-Firmware-A/mt7981-spim-nand-ubi-ddr3-1866
   DDR_TYPE:=ddr3
   DDR3_FREQ_1866:=1
   USE_UBI:=1
+  UBI_START_ADDR:=0x100000
 endef
 
 define Trusted-Firmware-A/mt7981-spim-nand-ubi-ddr4
@@ -271,6 +275,7 @@ define Trusted-Firmware-A/mt7981-spim-nand-ubi-ddr4
   PLAT:=mt7981
   DDR_TYPE:=ddr4
   USE_UBI:=1
+  UBI_START_ADDR:=0x100000
 endef
 
 define Trusted-Firmware-A/mt7981-cudy-ddr3
@@ -346,6 +351,17 @@ define Trusted-Firmware-A/mt7986-spim-nand-ddr4
   NAND_TYPE:=spim:2k+64
 endef
 
+define Trusted-Firmware-A/mt7986-spim-nand-ubi-1m-ddr4
+  NAME:=MediaTek MT7986 (SPI-NAND via SPIM using UBI 1MB offset, DDR4)
+  BOOT_DEVICE:=spim-nand
+  BUILD_SUBTARGET:=filogic
+  PLAT:=mt7986
+  DDR_TYPE:=ddr4
+  NAND_TYPE:=spim:2k+64
+  USE_UBI:=1
+  UBI_START_ADDR:=0x100000
+endef
+
 define Trusted-Firmware-A/mt7986-spim-nand-ubi-ddr4
   NAME:=MediaTek MT7986 (SPI-NAND via SPIM using UBI, DDR4)
   BOOT_DEVICE:=spim-nand
@@ -354,6 +370,7 @@ define Trusted-Firmware-A/mt7986-spim-nand-ubi-ddr4
   DDR_TYPE:=ddr4
   NAND_TYPE:=spim:2k+64
   USE_UBI:=1
+  UBI_START_ADDR:=0x200000
 endef
 
 define Trusted-Firmware-A/mt7986-spim-nand-4k-ddr4
@@ -423,6 +440,7 @@ define Trusted-Firmware-A/mt7986-spim-nand-ubi-ddr3
   PLAT:=mt7986
   DDR_TYPE:=ddr3
   USE_UBI:=1
+  UBI_START_ADDR:=0x200000
 endef
 
 define Trusted-Firmware-A/mt7986-spim-nand-4k-ddr3
@@ -746,6 +764,7 @@ TFA_TARGETS:= \
 	mt7986-sdmmc-ddr4 \
 	mt7986-snand-ddr4 \
 	mt7986-spim-nand-ddr4 \
+	mt7986-spim-nand-ubi-1m-ddr4 \
 	mt7986-spim-nand-ubi-ddr4 \
 	mt7986-spim-nand-4k-ddr4 \
 	mt7987-emmc-comb \
@@ -793,9 +812,7 @@ TFA_MAKE_FLAGS += \
 	$(if $(DDR4_4BG_MODE),DDR4_4BG_MODE=1) \
 	$(if $(DRAM_USE_COMB),DRAM_USE_COMB=1) \
 	$(if $(RAM_BOOT_UART_DL),RAM_BOOT_UART_DL=1) \
-	$(if $(USE_UBI),UBI=1 $(if $(findstring mt7622,$(PLAT)),OVERRIDE_UBI_START_ADDR=0x80000)) \
-	$(if $(USE_UBI),UBI=1 $(if $(findstring mt7981,$(PLAT)),OVERRIDE_UBI_START_ADDR=0x100000)) \
-	$(if $(USE_UBI),UBI=1 $(if $(findstring mt7986,$(PLAT)),OVERRIDE_UBI_START_ADDR=0x200000)) \
+	$(if $(USE_UBI),UBI=1 $(if $(UBI_START_ADDR),OVERRIDE_UBI_START_ADDR=$(UBI_START_ADDR))) \
 	$(if $(FIP_OFFSET),OVERRIDE_FIP_BASE=$(FIP_OFFSET)) \
 	$(if $(FIP_SIZE),OVERRIDE_FIP_SIZE=$(FIP_SIZE)) \
 	$(if $(USE_SPI2),SPIM_NAND_PREFER_SPI2=1) \
