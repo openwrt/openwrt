@@ -75,4 +75,6 @@ void rtl931x_write_mcast_pmask(int idx, u64 portmask);
 int rtl931x_set_ageing_time(unsigned long msec);
 int rtldsa_931x_fast_age(struct rtl838x_switch_priv *priv, int port, int vid);
 
+void rtldsa_l2_dbgfs_init(struct rtl838x_switch_priv *priv);
+
 #endif /* _OTTO_L2_H */
