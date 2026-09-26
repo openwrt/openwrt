@@ -1,0 +1,224 @@
+From de86576eec647ac7df7fb2e11c7193d04f0f4a27 Mon Sep 17 00:00:00 2001
+From: Gabriel Rodriguez <lifehacksback@gmail.com>
+Date: Thu, 17 Sep 2026 20:15:28 -0700
+Subject: [PATCH] ARM: mvebu: add Armada 38x cpuidle support
+
+Add deep CPU idle support for Marvell Armada 38x using the
+existing PMSU, coherency and SCU power-management infrastructure.
+
+The MVEBU platform bus notifier marks platform devices DMA coherent.
+Override that setting for the private suspend-context device so
+its dma_alloc_coherent() allocation has a noncached CPU mapping.
+
+The deep-idle path prepares the PMSU, exits coherency, sets the SCU CPU
+power mode to power-off and enters WFI. The existing resume path restores
+the CPU and returns through the generic ARM suspend machinery.
+
+If WFI returns without power-down, restore SCU power mode, ACTLR.SMP,
+the local TLB state and SCTLR.C before returning to C code.
+
+CPU hotplug remains disabled independently and is not changed here.
+
+Signed-off-by: Gabriel Rodriguez <lifehacksback@gmail.com>
+---
+ arch/arm/mach-mvebu/pmsu.c | 137 +++++++++++++++++++++++++++++++++----
+ 1 file changed, 124 insertions(+), 13 deletions(-)
+
+diff --git a/arch/arm/mach-mvebu/pmsu.c b/arch/arm/mach-mvebu/pmsu.c
+index 79c5171..3a46680 100644
+--- a/arch/arm/mach-mvebu/pmsu.c
++++ b/arch/arm/mach-mvebu/pmsu.c
+@@ -18,10 +18,13 @@
+ #include <linux/clk.h>
+ #include <linux/cpu_pm.h>
+ #include <linux/delay.h>
++#include <linux/dma-direct.h>
++#include <linux/dma-mapping.h>
+ #include <linux/init.h>
+ #include <linux/io.h>
+ #include <linux/kernel.h>
+ #include <linux/mbus.h>
++#include <linux/mm.h>
+ #include <linux/mvebu-pmsu.h>
+ #include <linux/of.h>
+ #include <linux/of_address.h>
+@@ -311,21 +314,62 @@ static int armada_370_xp_cpu_suspend(unsigned long deepidle)
+ 
+ int armada_38x_do_cpu_suspend(unsigned long deepidle)
+ {
++	register void __iomem *scu_reg asm("r7");
++	void __iomem *scu = mvebu_get_scu_base();
+ 	unsigned long flags = 0;
+ 
+ 	if (deepidle)
+ 		flags |= PMSU_PREPARE_DEEP_IDLE;
+ 
+ 	mvebu_v7_pmsu_idle_prepare(flags);
++	scu_reg = scu;
+ 	/*
+ 	 * Already flushed cache, but do it again as the outer cache
+ 	 * functions dirty the cache with spinlocks
+ 	 */
+-	v7_exit_coherency_flush(louis);
+-
+-	scu_power_mode(mvebu_get_scu_base(), SCU_PM_POWEROFF);
+-
+-	cpu_do_idle();
++	asm volatile(
++		".arch armv7-a\n\t"
++		"mrc p15, 0, r0, c1, c0, 0\n\t"
++		"bic r0, r0, #" __stringify(CR_C) "\n\t"
++		"mcr p15, 0, r0, c1, c0, 0\n\t"
++		"isb\n\t"
++		"bl v7_flush_dcache_louis\n\t"
++		"mrc p15, 0, r0, c1, c0, 1\n\t"
++		"bic r0, r0, #(1 << 6)\n\t"
++		"mcr p15, 0, r0, c1, c0, 1\n\t"
++		"isb\n\t"
++		"dsb\n\t"
++		"mrc p15, 0, r3, c0, c0, 5\n\t"
++		"and r4, r3, #3\n\t"
++		"add r4, r4, #8\n\t"
++		"ldrb r3, [%[scu], r4]\n\t"
++		"bic r3, r3, #3\n\t"
++		"orr r3, r3, #3\n\t"
++		"strb r3, [%[scu], r4]\n\t"
++		"dsb\n\t"
++		"wfi\n\t" /* WFI */
++		/* Restore SCU power mode if power-down did not complete. */
++		"ldrb r3, [%[scu], r4]\n\t"
++		"bic r3, r3, #3\n\t"
++		"strb r3, [%[scu], r4]\n\t"
++		"dsb\n\t"
++		/* Rejoin coherency before enabling the D-cache. */
++		"mrc p15, 0, r0, c1, c0, 1\n\t"
++		"orr r0, r0, #(1 << 6)\n\t"
++		"mcr p15, 0, r0, c1, c0, 1\n\t"
++		"isb\n\t"
++		/* TLBs may be stale after running outside coherency. */
++		"mov r0, #0\n\t"
++		"mcr p15, 0, r0, c8, c7, 0\n\t"
++		"dsb\n\t"
++		"isb\n\t"
++		"mrc p15, 0, r0, c1, c0, 0\n\t"
++		"orr r0, r0, #" __stringify(CR_C) "\n\t"
++		"mcr p15, 0, r0, c1, c0, 0\n\t"
++		"isb\n\t"
++		: : [scu] "r" (scu_reg)
++		: "r0", "r1", "r2", "r3", "r4", "r5", "r6",
++		  "r8", "r9", "r10", "r11", "ip", "lr", "memory");
+ 
+ 	return 1;
+ }
+@@ -420,14 +464,79 @@ end:
+ 	return 0;
+ }
+ 
++#define ARMADA_38X_SUSPEND_AREA_SIZE	PAGE_SIZE
++
++static struct platform_device *armada_38x_suspend_ctx_pdev;
++static void *armada_38x_suspend_ctx;
++static dma_addr_t armada_38x_suspend_ctx_dma;
++
++static int __init armada_38x_suspend_context_init(void)
++{
++	struct device *dev;
++	phys_addr_t phys;
++	int ret;
++
++	/*
++	 * cpu_resume() consumes this context with the MMU off.  Use a
++	 * permanently allocated noncached DMA mapping so saving the context
++	 * does not require PL310 range maintenance on every idle entry.
++	 */
++	armada_38x_suspend_ctx_pdev =
++		platform_device_register_simple("armada-38x-suspend-context",
++						PLATFORM_DEVID_NONE, NULL, 0);
++	if (IS_ERR(armada_38x_suspend_ctx_pdev)) {
++		ret = PTR_ERR(armada_38x_suspend_ctx_pdev);
++		armada_38x_suspend_ctx_pdev = NULL;
++		return ret;
++	}
++
++	dev = &armada_38x_suspend_ctx_pdev->dev;
++
++	ret = dma_coerce_mask_and_coherent(dev, DMA_BIT_MASK(32));
++	if (ret)
++		goto err_unregister;
++
++	/* The MVEBU bus notifier marks every platform device coherent. */
++	dev->dma_coherent = false;
++	armada_38x_suspend_ctx =
++		dma_alloc_coherent(dev, ARMADA_38X_SUSPEND_AREA_SIZE,
++				   &armada_38x_suspend_ctx_dma, GFP_KERNEL);
++	if (!armada_38x_suspend_ctx) {
++		ret = -ENOMEM;
++		goto err_unregister;
++	}
++
++	phys = dma_to_phys(dev, armada_38x_suspend_ctx_dma);
++
++	ret = cpu_suspend_set_noncached_area(armada_38x_suspend_ctx, phys,
++					     ARMADA_38X_SUSPEND_AREA_SIZE);
++	if (ret)
++		goto err_free;
++
++	pr_info("Armada 38x noncached suspend context: dma=%pad phys=%pa size=%lu\n",
++		&armada_38x_suspend_ctx_dma, &phys,
++		(unsigned long)ARMADA_38X_SUSPEND_AREA_SIZE);
++
++	return 0;
++
++err_free:
++	dma_free_coherent(dev, ARMADA_38X_SUSPEND_AREA_SIZE,
++			  armada_38x_suspend_ctx,
++			  armada_38x_suspend_ctx_dma);
++	armada_38x_suspend_ctx = NULL;
++err_unregister:
++	platform_device_unregister(armada_38x_suspend_ctx_pdev);
++	armada_38x_suspend_ctx_pdev = NULL;
++
++	return ret;
++}
++
+ static __init int armada_38x_cpuidle_init(void)
+ {
+ 	struct device_node *np;
+ 	void __iomem *mpsoc_base;
+ 	u32 reg;
+-
+-	pr_warn("CPU idle is currently broken on Armada 38x: disabling\n");
+-	return 0;
++	int ret;
+ 
+ 	np = of_find_compatible_node(NULL, NULL,
+ 				     "marvell,armada-380-coherency-fabric");
+@@ -439,6 +548,12 @@ static __init int armada_38x_cpuidle_init(void)
+ 
+ 	of_node_put(np);
+ 
++	ret = armada_38x_suspend_context_init();
++	if (ret) {
++		pr_err("failed to set up noncached suspend context: %d\n", ret);
++		return ret;
++	}
++
+ 	np = of_find_compatible_node(NULL, NULL,
+ 				     "marvell,armada-380-mpcore-soc-ctrl");
+ 	if (!np)
+@@ -499,11 +614,7 @@ static int __init mvebu_v7_cpu_pm_init(void)
+ 		return 0;
+ 	of_node_put(np);
+ 
+-	/*
+-	 * Currently the CPU idle support for Armada 38x is broken, as
+-	 * the CPU hotplug uses some of the CPU idle functions it is
+-	 * broken too, so let's disable it
+-	 */
++	/* CPU hotplug support remains broken independently of CPU idle. */
+ 	if (of_machine_is_compatible("marvell,armada380")) {
+ 		cpu_hotplug_disable();
+ 		pr_warn("CPU hotplug support is currently broken on Armada 38x: disabling\n");
+-- 
+2.55.0
+

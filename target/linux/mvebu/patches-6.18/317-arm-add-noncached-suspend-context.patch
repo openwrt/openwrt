@@ -1,0 +1,167 @@
+From 28a4de80028eb375d1facad3cb4b49a5954ff097 Mon Sep 17 00:00:00 2001
+From: Gabriel Rodriguez <lifehacksback@gmail.com>
+Date: Thu, 17 Sep 2026 20:15:28 -0700
+Subject: [PATCH] ARM: suspend: support noncached context storage
+
+The ARM resume path retrieves the physical address of the saved
+CPU context before the MMU and normal kernel mappings are restored.
+
+Allow a platform to provide noncached storage for this early-resume
+handoff. Platforms that do not provide alternate storage retain the
+existing behavior.
+
+This allows systems with cache aliasing or coherency constraints to
+keep the resume context pointer in memory with a single safe mapping.
+
+If the noncached context cannot hold the saved state, clean the original
+cacheable context to DRAM before returning. Skip cache maintenance on
+the noncached pointer stash.
+
+Signed-off-by: Gabriel Rodriguez <lifehacksback@gmail.com>
+---
+ arch/arm/include/asm/suspend.h |   3 +++
+ arch/arm/kernel/suspend.c      |  96 ++++++++++++++++++++++++++++++++++++++++--
+ 2 files changed, 97 insertions(+), 2 deletions(-)
+
+--- a/arch/arm/include/asm/suspend.h
++++ b/arch/arm/include/asm/suspend.h
+@@ -13,6 +13,9 @@ extern void cpu_resume(void);
+ extern void cpu_resume_no_hyp(void);
+ extern void cpu_resume_arm(void);
+ extern int cpu_suspend(unsigned long, int (*)(unsigned long));
++
++extern int cpu_suspend_set_noncached_area(void *vaddr, phys_addr_t paddr,
++					  size_t size);
+ extern void __cpu_suspend_save(u32 *ptr, u32 ptrsz, u32 sp, u32 *save_ptr);
+ 
+ #endif
+--- a/arch/arm/kernel/suspend.c
++++ b/arch/arm/kernel/suspend.c
+@@ -1,11 +1,14 @@
+ // SPDX-License-Identifier: GPL-2.0
+ #include <linux/ftrace.h>
+ #include <linux/init.h>
++#include <linux/kernel.h>
++#include <linux/string.h>
+ #include <linux/slab.h>
+ #include <linux/mm_types.h>
+ #include <linux/pgtable.h>
+ 
+ #include <asm/bugs.h>
++#include <asm/barrier.h>
+ #include <asm/cacheflush.h>
+ #include <asm/idmap.h>
+ #include <asm/page.h>
+@@ -16,6 +19,13 @@
+ 
+ extern int __cpu_suspend(unsigned long, int (*)(unsigned long), u32 cpuid);
+ extern void cpu_resume_mmu(void);
++extern struct sleep_save_sp sleep_save_sp;
++
++static u8 *cpu_suspend_nc_ctx;
++static phys_addr_t cpu_suspend_nc_ctx_phys;
++static size_t cpu_suspend_nc_ctx_stride;
++static unsigned int cpu_suspend_nc_slots;
++static bool cpu_suspend_nc_enabled;
+ 
+ #ifdef CONFIG_MMU
+ int cpu_suspend(unsigned long arg, int (*fn)(unsigned long))
+@@ -105,14 +115,96 @@ void __cpu_suspend_save(u32 *ptr, u32 pt
+ 	 * to main memory using "area" cache primitives.
+ 	*/
+ 	__cpuc_flush_dcache_area(ctx, ptrsz);
+-	__cpuc_flush_dcache_area(save_ptr, sizeof(*save_ptr));
+ 
++	/*
++	 * A context copied to an uncached suspend area and its uncached
++	 * pointer stash do not require cache maintenance.
++	 */
++	if (unlikely(cpu_suspend_nc_enabled)) {
++		unsigned int idx;
++		u8 *dst;
++		phys_addr_t dst_phys;
++
++		idx = save_ptr - sleep_save_sp.save_ptr_stash;
++
++		if (WARN_ON_ONCE(idx >= cpu_suspend_nc_slots ||
++				 ptrsz > cpu_suspend_nc_ctx_stride)) {
++			/* Resume will use the original cacheable context. */
++			outer_clean_range(*save_ptr, *save_ptr + ptrsz);
++			dsb();
++			return;
++		}
++
++		dst = cpu_suspend_nc_ctx + idx * cpu_suspend_nc_ctx_stride;
++		dst_phys = cpu_suspend_nc_ctx_phys +
++			   idx * cpu_suspend_nc_ctx_stride;
++
++		memcpy(dst, ctx, ptrsz);
++		*save_ptr = (u32)dst_phys;
++
++		dsb();
++		return;
++	}
++	__cpuc_flush_dcache_area(save_ptr, sizeof(*save_ptr));
+ 	outer_clean_range(*save_ptr, *save_ptr + ptrsz);
+ 	outer_clean_range(virt_to_phys(save_ptr),
+ 			  virt_to_phys(save_ptr) + sizeof(*save_ptr));
+ }
+ 
+-extern struct sleep_save_sp sleep_save_sp;
++int cpu_suspend_set_noncached_area(void *vaddr, phys_addr_t paddr,
++				   size_t size)
++{
++	unsigned int slots = mpidr_hash_size();
++	u32 *old_stash;
++	size_t stash_size;
++	size_t stride;
++	u8 *base = vaddr;
++
++	if (!vaddr || !slots)
++		return -EINVAL;
++	if (cpu_suspend_nc_enabled)
++		return -EBUSY;
++
++	stash_size = ALIGN(slots * sizeof(u32), 64);
++
++	if (size <= stash_size)
++		return -EINVAL;
++
++	stride = (size - stash_size) / slots;
++	stride &= ~63UL;
++
++	if (stride < 256)
++		return -ENOSPC;
++
++	if (upper_32_bits(paddr + size - 1))
++		return -ERANGE;
++
++	old_stash = sleep_save_sp.save_ptr_stash;
++	memset(vaddr, 0, size);
++
++	sleep_save_sp.save_ptr_stash = (u32 *)base;
++	sleep_save_sp.save_ptr_stash_phys = (u32)paddr;
++
++	cpu_suspend_nc_ctx = base + stash_size;
++	cpu_suspend_nc_ctx_phys = paddr + stash_size;
++	cpu_suspend_nc_ctx_stride = stride;
++	cpu_suspend_nc_slots = slots;
++
++	/*
++	 * cpu_resume reads sleep_save_sp itself with the MMU off, so this
++	 * one-time change must be committed before any suspend attempt.
++	 */
++	sync_cache_w(&sleep_save_sp);
++	dsb();
++
++	cpu_suspend_nc_enabled = true;
++	kfree(old_stash);
++
++	pr_info("ARM: noncached suspend area phys=%pa size=%zu slots=%u stride=%zu\n",
++		&paddr, size, slots, stride);
++
++	return 0;
++}
+ 
+ static int cpu_suspend_alloc_sp(void)
+ {
