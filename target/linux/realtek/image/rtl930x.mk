@@ -43,6 +43,23 @@ define Device/sirivision_sr-st3808f
 endef
 TARGET_DEVICES += sirivision_sr-st3808f
 
+define Device/goodtop_gt-swtxg8fm
+  SOC := rtl9303
+  UIMAGE_MAGIC := 0x83800000
+  DEVICE_VENDOR := GoodTop
+  DEVICE_MODEL := GT-SWTXG8FM
+  IMAGE_SIZE := 12288k
+  $(Device/kernel-lzma)
+  IMAGES += factory.bix
+  IMAGE/factory.bix := \
+    append-kernel | \
+    pad-to 64k | \
+    append-rootfs | \
+    pad-rootfs | \
+    check-size
+endef
+TARGET_DEVICES += goodtop_gt-swtxg8fm
+
 define Device/hasivo_f1100w-4sx-4xgt-common
   SOC := rtl9303
   DEVICE_VENDOR := Hasivo
