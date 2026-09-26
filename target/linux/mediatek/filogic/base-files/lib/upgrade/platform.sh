@@ -343,6 +343,7 @@ platform_do_upgrade() {
 	tplink,archer-ax80-v1|\
 	tplink,archer-ax80-v1-eu|\
 	tplink,be450|\
+	tplink,deco-x50-poe-v2|\
 	tplink,re6000xd)
 		CI_UBIPART="ubi0"
 		nand_do_upgrade "$1"
