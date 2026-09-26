@@ -1,0 +1,355 @@
+From 184dc09e941ca3c83c9799b0dc9290c9bf6fb72d Mon Sep 17 00:00:00 2001
+From: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+Date: Sat, 20 Sep 2026 12:00:00 +0200
+Subject: [PATCH] net: dsa: realtek: rtl8365mb: bring the SerDes up once the
+ conduit is up
+
+On the TP-Link Archer AX55 v1 (IPQ5018 + RTL8367S, CPU port on a
+2500base-x fixed link) the trunk sometimes comes up broken after a cold
+start: every frame the CPU sends reaches the switch CPU port with a bad
+FCS, or the port counts no octets while the conduit keeps transmitting.
+A reboot may or may not clear it: two soft reboots in a row have left it
+dead here, with a power cycle needed to recover, while on another
+occasion the second soft reboot was enough.
+The same failure reproduces on the Mercusys MR80X v2 (same SoC and
+switch): 2 of 12 boots at 2500base-x came up with the CPU port counting
+nothing while eth0 transmitted.
+
+The two ends of the trunk are configured in the wrong order: phylink
+configures the switch end when the switch is set up, seconds before the
+conduit MAC configures its own end, and on the IPQ5018 that step resets
+and recalibrates the UNIPHY PLL. The vendor bootloader brings the SoC
+end up first and the switch end afterwards.
+
+Do the same: when the conduit behind the SerDes CPU port is not up at
+pcs_config() time, hold the bring-up back and run it from
+conduit_state_change() once DSA reports the conduit operational, which
+is after its MAC and PCS are configured. Nothing needs the trunk before
+then. The SerDes mux is parked at DISABLE before the mode is written, so
+a bring-up on a mux that already holds the mode still produces the edge
+the receiver latches on.
+
+This is done only when the conduit is an IPQ5018 GMAC, the only SoC this
+was seen on; other boards keep the current order.
+
+The bring-up is held back once per boot. The UNIPHY resets and
+recalibrates its PLL only when its interface mode changes, which on a
+fixed link happens once, so a later conduit down/up does not repeat it.
+
+Tested on TP-Link Archer AX55 v1: 5 boots without a single broken
+trunk, three of them cold starts, the last two after ten hours and
+overnight without power; an earlier version of the same logic ran 17
+boots, 8 of them cold, with none broken, against 2 of 9 broken without
+the change. On the Mercusys MR80X v2 (Johan Alvarado) this version gave
+16 of 16 clean boots, against 2 of 12 broken without it; two earlier
+revisions, one stacked on another pending rtl8365mb series and one on
+its own, gave 16 of 16 and 17 of 17.
+
+Tested-by: Johan Alvarado <contact@c127.dev>
+Co-developed-by: Stanislaw Pal <kuncy7@gmail.com>
+Signed-off-by: Stanislaw Pal <kuncy7@gmail.com>
+Signed-off-by: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+---
+ drivers/net/dsa/realtek/rtl8365mb_main.c | 218 +++++++++++++++++++++--
+ 1 file changed, 208 insertions(+), 10 deletions(-)
+
+--- a/drivers/net/dsa/realtek/rtl8365mb_main.c
++++ b/drivers/net/dsa/realtek/rtl8365mb_main.c
+@@ -935,6 +935,15 @@ struct rtl8365mb_port {
+  * @pcs: PCS for the SerDes external interface
+  * @sds_supported: SerDes tuning parameters match the chip option, so the
+  *                 SerDes interface modes can be advertised
++ * @sds_defer_lock: serializes the SerDes bring-up and the deferral state below
++ * @sds_defer_needed: the SerDes bring-up is held back until the conduit behind
++ *                    the SerDes CPU port is up, see
++ *                    rtl8365mb_conduit_state_change()
++ * @sds_deferred: a bring-up requested by pcs_config() is pending
++ * @sds_link_deferred: pcs_link_up() was called while the bring-up was pending
++ * @sds_interface: interface mode of the last pcs_config() request
++ * @sds_speed: speed of the pending pcs_link_up()
++ * @sds_duplex: duplex of the pending pcs_link_up()
+  *
+  * Private data for this driver.
+  */
+@@ -956,6 +965,14 @@ struct rtl8365mb {
+ 	unsigned long sds_relatch_last;		/* throttle timestamp */
+ 	unsigned int sds_relatch_count;		/* attempts this episode */
+ 	u32 sds_misc_target_val;
++	/* serializes the SerDes bring-up and the sds_* fields below */
++	struct mutex sds_defer_lock;
++	bool sds_defer_needed;
++	bool sds_deferred;
++	bool sds_link_deferred;
++	phy_interface_t sds_interface;
++	int sds_speed;
++	int sds_duplex;
+ };
+ 
+ #define pcs_to_rtl8365mb(_pcs) container_of((_pcs), struct rtl8365mb, pcs)
+@@ -1466,20 +1483,22 @@ static int rtl8365mb_sds_raise_rate_limi
+ 				  RTL8365MB_PORT6_EGRESSBW_CTRL1_MASK);
+ }
+ 
+-static int rtl8365mb_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
+-				phy_interface_t interface,
+-				const unsigned long *advertising,
+-				bool permit_pause_to_mac)
++/* The hardware half of pcs_config(): tune and mux the SerDes for the
++ * interface mode, take it out of reset and clear the data path. It runs from
++ * rtl8365mb_pcs_config(), or from rtl8365mb_conduit_state_change() when the
++ * conduit was not up yet at pcs_config() time.
++ */
++static int rtl8365mb_sds_config(struct rtl8365mb *mb, phy_interface_t interface)
+ {
+ 	const int id = RTL8365MB_SDS_EXT_INTERFACE_ID;
+ 	const struct rtl8365mb_jam_tbl_entry *sds_jam;
+-	struct rtl8365mb *mb = pcs_to_rtl8365mb(pcs);
+ 	struct realtek_priv *priv = mb->priv;
+ 	size_t sds_jam_size;
+ 	u32 misc_mask;
+ 	u32 misc_val;
+ 	u32 sds_mode;
+ 	u8 sds_index;
++	bool parked;
+ 	bool is_d;
+ 	u16 val;
+ 	int ret;
+@@ -1593,6 +1612,25 @@ static int rtl8365mb_pcs_config(struct p
+ 
+ 		WRITE_ONCE(mb->sds_misc_target_val, misc_val);
+ 	} else {
++		/* Where the bring-up is held back, park the mux first: the
++		 * receiver latches on the DISABLE -> mode edge, so a bring-up
++		 * run on a mux that already holds the mode - the deferred one
++		 * after a first pcs_config() - would otherwise be a write that
++		 * update_bits skips, and produce no edge at all. Other boards
++		 * keep the plain update below.
++		 */
++		if (mb->sds_defer_needed) {
++			mutex_lock(&mb->sds_lock);
++			ret = regmap_update_bits_check(priv->map, RTL8365MB_SDS_MISC_REG,
++						       misc_mask, 0, &parked);
++			mutex_unlock(&mb->sds_lock);
++			if (ret)
++				return ret;
++
++			if (parked)
++				usleep_range(20000, 21000);
++		}
++
+ 		mutex_lock(&mb->sds_lock);
+ 		ret = regmap_update_bits(priv->map, RTL8365MB_SDS_MISC_REG,
+ 					 misc_mask, misc_val);
+@@ -1864,12 +1902,11 @@ static void rtl8365mb_pcs_get_state(stru
+ 	}
+ }
+ 
+-static void rtl8365mb_pcs_link_up(struct phylink_pcs *pcs,
+-				  unsigned int neg_mode,
+-				  phy_interface_t interface, int speed,
+-				  int duplex)
++/* The hardware half of pcs_link_up(): force the SerDes link parameters.
++ * Deferred together with rtl8365mb_sds_config() when the conduit is not up.
++ */
++static void rtl8365mb_sds_link_up(struct rtl8365mb *mb, int speed, int duplex)
+ {
+-	struct rtl8365mb *mb = pcs_to_rtl8365mb(pcs);
+ 	struct realtek_priv *priv = mb->priv;
+ 	u32 mask = RTL8365MB_SDS_MISC_SGMII_FDUP_MASK |
+ 		   RTL8365MB_SDS_MISC_SGMII_LINK_MASK |
+@@ -1920,6 +1957,156 @@ static void rtl8365mb_pcs_link_up(struct
+ 	}
+ }
+ 
++/* The CPU port behind the SerDes external interface, or NULL when the SerDes
++ * is not a CPU port on this board - nothing to wait for then.
++ */
++static struct dsa_port *rtl8365mb_sds_cpu_port(struct rtl8365mb *mb)
++{
++	struct dsa_switch *ds = &mb->priv->ds;
++	int i;
++
++	for (i = 0; i < RTL8365MB_MAX_NUM_EXTINTS; i++) {
++		const struct rtl8365mb_extint *extint =
++			&mb->chip_info->extints[i];
++
++		/* Match the SerDes interface by what it can carry rather than
++		 * by its id: the id indexes the chip's digital interface, and
++		 * nothing ties the SerDes to a particular one.
++		 */
++		if (!(extint->supported_interfaces &
++		      (RTL8365MB_PHY_INTERFACE_MODE_SGMII |
++		       RTL8365MB_PHY_INTERFACE_MODE_HSGMII)))
++			continue;
++
++		if (!dsa_is_cpu_port(ds, extint->port))
++			return NULL;
++
++		return dsa_to_port(ds, extint->port);
++	}
++
++	return NULL;
++}
++
++/* Bring the SerDes up only once the conduit is up.
++ *
++ * phylink configures the switch end of a SerDes CPU port as soon as the
++ * switch is set up, seconds before the conduit MAC configures its own end.
++ * On an IPQ5018 conduit that later step resets the UNIPHY analog PLL and
++ * recalibrates it, and a switch receiver that latched on a far end which was
++ * not there yet sometimes comes out of it counting nothing or FCS errors
++ * only (TP-Link Archer AX55 v1 and Mercusys MR80X v2, both RTL8367S on a
++ * 2500base-x trunk). The vendor bootloader avoids this by bringing the SoC
++ * end up first and the switch end afterwards; this does the same. When the
++ * conduit is not up at pcs_config() time the bring-up is recorded and run
++ * from rtl8365mb_conduit_state_change() once DSA reports the conduit
++ * operational, which is after its MAC and PCS are configured. Nothing needs
++ * the trunk before then.
++ *
++ * This has only been seen with an IPQ5018 GMAC as the conduit, so the
++ * bring-up is held back only there; other boards keep the current order.
++ */
++static bool rtl8365mb_sds_defer_needed(struct rtl8365mb *mb)
++{
++	struct dsa_port *dp;
++	struct net_device *conduit;
++
++	if (rtl8365mb_get_family(mb->priv) == RTL8365MB_FAMILY_D)
++		return false;
++
++	dp = rtl8365mb_sds_cpu_port(mb);
++	conduit = dp ? dp->conduit : NULL;
++
++	return conduit && conduit->dev.parent &&
++	       of_device_is_compatible(conduit->dev.parent->of_node,
++				       "qcom,ipq5018-gmac");
++}
++
++static int rtl8365mb_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
++				phy_interface_t interface,
++				const unsigned long *advertising,
++				bool permit_pause_to_mac)
++{
++	struct rtl8365mb *mb = pcs_to_rtl8365mb(pcs);
++	struct dsa_port *dp;
++	int ret;
++
++	mutex_lock(&mb->sds_defer_lock);
++	mb->sds_interface = interface;
++	mb->sds_link_deferred = false;
++	dp = mb->sds_defer_needed ? rtl8365mb_sds_cpu_port(mb) : NULL;
++	/* Same predicate DSA uses for the operational flag that drives
++	 * conduit_state_change(), so the two can never disagree.
++	 */
++	if (dp && !dsa_port_conduit_is_operational(dp)) {
++		mb->sds_deferred = true;
++		dev_dbg(mb->priv->dev, "SerDes bring-up held until %s is up\n",
++			dp->conduit->name);
++		ret = 0;
++	} else {
++		mb->sds_deferred = false;
++		ret = rtl8365mb_sds_config(mb, interface);
++	}
++	mutex_unlock(&mb->sds_defer_lock);
++
++	return ret;
++}
++
++static void rtl8365mb_pcs_link_up(struct phylink_pcs *pcs,
++				  unsigned int neg_mode,
++				  phy_interface_t interface, int speed,
++				  int duplex)
++{
++	struct rtl8365mb *mb = pcs_to_rtl8365mb(pcs);
++
++	if (mb->sds_defer_needed) {
++		mutex_lock(&mb->sds_defer_lock);
++		if (mb->sds_deferred) {
++			mb->sds_speed = speed;
++			mb->sds_duplex = duplex;
++			mb->sds_link_deferred = true;
++			mutex_unlock(&mb->sds_defer_lock);
++			return;
++		}
++		mutex_unlock(&mb->sds_defer_lock);
++	}
++
++	rtl8365mb_sds_link_up(mb, speed, duplex);
++}
++
++static void rtl8365mb_conduit_state_change(struct dsa_switch *ds,
++					   const struct net_device *conduit,
++					   bool operational)
++{
++	struct realtek_priv *priv = ds->priv;
++	struct rtl8365mb *mb = priv->chip_data;
++	struct dsa_port *dp;
++	int ret;
++
++	if (!operational || !mb->sds_defer_needed)
++		return;
++
++	mutex_lock(&mb->sds_defer_lock);
++	dp = rtl8365mb_sds_cpu_port(mb);
++	if (!mb->sds_deferred || !dp || dp->conduit != conduit) {
++		mutex_unlock(&mb->sds_defer_lock);
++		return;
++	}
++
++	ret = rtl8365mb_sds_config(mb, mb->sds_interface);
++	if (!ret) {
++		if (mb->sds_link_deferred)
++			rtl8365mb_sds_link_up(mb, mb->sds_speed, mb->sds_duplex);
++		mb->sds_deferred = false;
++		mb->sds_link_deferred = false;
++
++		dev_info(priv->dev, "SerDes brought up after %s link up\n",
++			 conduit->name);
++	} else {
++		dev_err(priv->dev, "SerDes bring-up after %s link up failed: %pe\n",
++			conduit->name, ERR_PTR(ret));
++	}
++}
++
+ static const struct phylink_pcs_ops rtl8365mb_pcs_ops = {
+ 	.pcs_inband_caps = rtl8365mb_pcs_inband_caps,
+ 	.pcs_config = rtl8365mb_pcs_config,
+@@ -3429,6 +3616,7 @@ static int rtl8365mb_setup(struct dsa_sw
+ 	 * (in-band mode with autonegotiation disabled).
+ 	 */
+ 	mb->pcs.poll = true;
++	mb->sds_defer_needed = rtl8365mb_sds_defer_needed(mb);
+ 
+ 	if (rtl8365mb_get_family(priv) == RTL8365MB_FAMILY_D)
+ 		INIT_DELAYED_WORK(&mb->sds_relatch,
+@@ -3620,6 +3808,11 @@ static void rtl8365mb_teardown(struct ds
+ 	struct realtek_priv *priv = ds->priv;
+ 	struct rtl8365mb *mb = priv->chip_data;
+ 
++	mutex_lock(&mb->sds_defer_lock);
++	mb->sds_deferred = false;
++	mb->sds_link_deferred = false;
++	mutex_unlock(&mb->sds_defer_lock);
++
+ 	if (rtl8365mb_get_family(priv) == RTL8365MB_FAMILY_D)
+ 		cancel_delayed_work_sync(&mb->sds_relatch);
+ 
+@@ -3696,6 +3889,10 @@ static int rtl8365mb_detect(struct realt
+ 	if (ret)
+ 		return ret;
+ 
++	ret = devm_mutex_init(priv->dev, &mb->sds_defer_lock);
++	if (ret)
++		return ret;
++
+ 	mb->priv = priv;
+ 	mb->cpu.trap_port = RTL8365MB_MAX_NUM_PORTS;
+ 	mb->cpu.insert = RTL8365MB_CPU_INSERT_TO_ALL;
+@@ -3719,6 +3916,7 @@ static const struct dsa_switch_ops rtl83
+ 	.setup = rtl8365mb_setup,
+ 	.teardown = rtl8365mb_teardown,
+ 	.phylink_get_caps = rtl8365mb_phylink_get_caps,
++	.conduit_state_change = rtl8365mb_conduit_state_change,
+ 	.port_bridge_join = rtl83xx_port_bridge_join,
+ 	.port_bridge_leave = rtl83xx_port_bridge_leave,
+ 	.port_pre_bridge_flags = rtl8365mb_port_pre_bridge_flags,
