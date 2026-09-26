@@ -10,11 +10,9 @@ sub target_config_features(@) {
 
 	while ($_ = shift @_) {
 		/^arm_v(\w+)$/ and $ret .= "\tselect arm_v$1\n";
-		/^audio$/ and $ret .= "\tselect AUDIO_SUPPORT\n";
 		/^boot-part$/ and $ret .= "\tselect USES_BOOT_PART\n";
 		/^broken$/ and $ret .= "\tdepends on BROKEN\n";
 		/^cpiogz$/ and $ret .= "\tselect USES_CPIOGZ\n";
-		/^display$/ and $ret .= "\tselect DISPLAY_SUPPORT\n";
 		/^dt$/ and $ret .= "\tselect USES_DEVICETREE\n";
 		/^dt-overlay$/ and $ret .= "\tselect HAS_DT_OVERLAY_SUPPORT\n";
 		/^emmc$/ and $ret .= "\tselect EMMC_SUPPORT\n";
