@@ -1,0 +1,135 @@
+From 8fbe9ebfc51cec6819459619831f3336373841c6 Mon Sep 17 00:00:00 2001
+From: Semih Baskan <strst.gs@gmail.com>
+Date: Tue, 29 Sep 2026 07:35:29 +0300
+Subject: [PATCH] ARM: dts: BCM5301X: add the USB VBUS switch on four more
+ boards
+
+The RT-AC56U, RT-AC68U, RT-AC87U and WZR-900DHP switch USB VBUS with a
+GPIO, but their DTs do not describe it, so the ports keep the power the
+bootloader gave them. After a power cycle, some USB 3.0 sticks in the
+USB 3.0 port come up on the EHCI at USB 2.0 speed and stay there.
+
+Describe each switch as a fixed regulator without regulator-boot-on and
+make it the vbus-supply of both USB cores, as on the R7000 and R8000,
+since the USB 2.0 lines of the USB 3.0 port go to the EHCI. The GPIOs
+come from the vendor firmware: GPIO 9, active high, on the three Asus
+boards, and GPIO 10, active low, on the WZR-900DHP.
+
+Signed-off-by: Semih Baskan <strst.gs@gmail.com>
+---
+ .../boot/dts/broadcom/bcm4708-asus-rt-ac56u.dts | 17 +++++++++++++++++
+ .../boot/dts/broadcom/bcm4708-asus-rt-ac68u.dts | 17 +++++++++++++++++
+ .../broadcom/bcm47081-buffalo-wzr-900dhp.dts    | 16 ++++++++++++++++
+ .../boot/dts/broadcom/bcm4709-asus-rt-ac87u.dts | 17 +++++++++++++++++
+ 4 files changed, 67 insertions(+)
+
+--- a/arch/arm/boot/dts/broadcom/bcm4708-asus-rt-ac56u.dts
++++ b/arch/arm/boot/dts/broadcom/bcm4708-asus-rt-ac56u.dts
+@@ -87,6 +87,23 @@
+ 			gpios = <&chipcommon 15 GPIO_ACTIVE_LOW>;
+ 		};
+ 	};
++
++	usb_power: regulator-usb {
++		compatible = "regulator-fixed";
++		regulator-name = "usb-vcc";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		gpios = <&chipcommon 9 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
++};
++
++&usb2 {
++	vbus-supply = <&usb_power>;
++};
++
++&usb3 {
++	vbus-supply = <&usb_power>;
+ };
+ 
+ &usb3_phy {
+--- a/arch/arm/boot/dts/broadcom/bcm4708-asus-rt-ac68u.dts
++++ b/arch/arm/boot/dts/broadcom/bcm4708-asus-rt-ac68u.dts
+@@ -78,6 +78,23 @@
+ 			gpios = <&chipcommon 15 GPIO_ACTIVE_LOW>;
+ 		};
+ 	};
++
++	usb_power: regulator-usb {
++		compatible = "regulator-fixed";
++		regulator-name = "usb-vcc";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		gpios = <&chipcommon 9 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
++};
++
++&usb2 {
++	vbus-supply = <&usb_power>;
++};
++
++&usb3 {
++	vbus-supply = <&usb_power>;
+ };
+ 
+ &usb3_phy {
+--- a/arch/arm/boot/dts/broadcom/bcm47081-buffalo-wzr-900dhp.dts
++++ b/arch/arm/boot/dts/broadcom/bcm47081-buffalo-wzr-900dhp.dts
+@@ -102,6 +102,22 @@
+ 			gpios = <&chipcommon 11 GPIO_ACTIVE_LOW>;
+ 		};
+ 	};
++
++	usb_power: regulator-usb {
++		compatible = "regulator-fixed";
++		regulator-name = "usb-vcc";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		gpios = <&chipcommon 10 GPIO_ACTIVE_LOW>;
++	};
++};
++
++&usb2 {
++	vbus-supply = <&usb_power>;
++};
++
++&usb3 {
++	vbus-supply = <&usb_power>;
+ };
+ 
+ &usb3_phy {
+--- a/arch/arm/boot/dts/broadcom/bcm4709-asus-rt-ac87u.dts
++++ b/arch/arm/boot/dts/broadcom/bcm4709-asus-rt-ac87u.dts
+@@ -69,6 +69,15 @@
+ 			gpios = <&chipcommon 11 GPIO_ACTIVE_LOW>;
+ 		};
+ 	};
++
++	usb_power: regulator-usb {
++		compatible = "regulator-fixed";
++		regulator-name = "usb-vcc";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		gpios = <&chipcommon 9 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
+ };
+ 
+ &gmac0 {
+@@ -76,6 +85,14 @@
+ 	nvmem-cell-names = "mac-address";
+ };
+ 
++&usb2 {
++	vbus-supply = <&usb_power>;
++};
++
++&usb3 {
++	vbus-supply = <&usb_power>;
++};
++
+ &usb3_phy {
+ 	status = "okay";
+ };

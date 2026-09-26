@@ -1,7 +1,7 @@
-From 8e404616a5106688e9406e557ae7a5013fda7ac9 Mon Sep 17 00:00:00 2001
+From 83820c51470137d6f54d4c144a61c2721ce97f96 Mon Sep 17 00:00:00 2001
 From: Rosen Penev <rosenp@gmail.com>
 Date: Sun, 20 Sep 2026 12:35:19 -0700
-Subject: [PATCH] usb: bcma: add regulator support
+Subject: [PATCH] USB: bcma: add regulator support
 
 bcma-hcd drives the USB power line by grabbing the undocumented
 "vcc-gpio" from the controller node and poking it through gpiolib.
@@ -11,16 +11,21 @@ both the USB2 and USB3 cores: the two controllers each request that
 GPIO exclusively, so the second one fails with -EBUSY and its port
 stays dead.
 
-Add support for the standard regulator interface. Each core obtains its
-(shared) VBUS supply through devm_regulator_get() and the regulator core
-reference-counts the enable/disable requests, allowing both controllers to
-drive one GPIO without conflicts.
+Add support for the standard regulator interface. VBUS is fetched with
+devm_regulator_get() so existing boards keep working. Those with
+"vcc-gpio" are unchanged. A dummy regulator warning is now emitted to
+encourage migration to the new regulator setup.
+
+Both mechanisms now start with VBUS off and enable it only after the
+host controller has been set up, so a SuperSpeed device no longer falls
+back to high-speed because EHCI started with VBUS already on. VBUS is
+dropped again on suspend, shutdown and remove.
 
 Assisted-by: LLM
 Signed-off-by: Rosen Penev <rosenp@gmail.com>
 ---
- drivers/usb/host/bcma-hcd.c | 55 +++++++++++++++++++++++++++++--------
- 1 file changed, 43 insertions(+), 12 deletions(-)
+ drivers/usb/host/bcma-hcd.c | 38 ++++++++++++++++++++++++++++++-------
+ 1 file changed, 31 insertions(+), 7 deletions(-)
 
 --- a/drivers/usb/host/bcma-hcd.c
 +++ b/drivers/usb/host/bcma-hcd.c
@@ -40,7 +45,7 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
  };
  
  /* Wait for bitmask in a register to get set or cleared.
-@@ -280,14 +282,23 @@ static int bcma_hcd_usb20_ns_init(struct
+@@ -280,14 +282,18 @@ static int bcma_hcd_usb20_ns_init(struct
  	return 0;
  }
  
@@ -48,82 +53,49 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
 +static int bcma_hci_platform_power(struct bcma_device *dev, bool on)
  {
  	struct bcma_hcd_device *usb_dev = bcma_get_drvdata(dev);
-+	int err;
-+
-+	if (usb_dev->gpio_desc)
-+		return gpiod_set_value(usb_dev->gpio_desc, on);
++	int err = 0;
  
 -	if (!usb_dev->gpio_desc)
 -		return;
-+	if (!usb_dev->regulator)
-+		return 0;
++	if (usb_dev->gpio_desc)
++		err = gpiod_set_value(usb_dev->gpio_desc, on);
++	if (err)
++		return err;
  
 -	gpiod_set_value(usb_dev->gpio_desc, val);
-+	if (on)
-+		err = regulator_enable(usb_dev->regulator);
-+	else
-+		err = regulator_disable(usb_dev->regulator);
-+
-+	return err;
++	return on ? regulator_enable(usb_dev->regulator) :
++		    regulator_disable(usb_dev->regulator);
  }
  
  static const struct usb_ehci_pdata ehci_pdata = {
-@@ -395,12 +406,12 @@ static int bcma_hcd_usb30_init(struct bc
- static int bcma_hcd_probe(struct bcma_device *core)
- {
- 	int err;
-+	struct device *dev = &core->dev;
- 	struct bcma_hcd_device *usb_dev;
- 
- 	/* TODO: Probably need checks here; is the core connected? */
- 
--	usb_dev = devm_kzalloc(&core->dev, sizeof(struct bcma_hcd_device),
--			       GFP_KERNEL);
-+	usb_dev = devm_kzalloc(dev, sizeof(*usb_dev), GFP_KERNEL);
- 	if (!usb_dev)
- 		return -ENOMEM;
- 	usb_dev->core = core;
-@@ -409,7 +420,15 @@ static int bcma_hcd_probe(struct bcma_de
- 						     GPIOD_OUT_HIGH);
- 	if (IS_ERR(usb_dev->gpio_desc))
+@@ -416,6 +422,11 @@ static int bcma_hcd_probe(struct bcma_de
  		return dev_err_probe(&core->dev, PTR_ERR(usb_dev->gpio_desc),
--				     "error obtaining VCC GPIO");
-+				     "error obtaining VBUS GPIO");
-+
-+	usb_dev->regulator = devm_regulator_get(dev, "vbus");
-+	if (IS_ERR(usb_dev->regulator))
-+		return dev_err_probe(dev, PTR_ERR(usb_dev->regulator), "error obtaining VBUS regulator");
-+
-+	err = regulator_enable(usb_dev->regulator);
-+	if (err)
-+		return dev_err_probe(dev, err, "error enabling VBUS regulator");
+ 				     "error obtaining VCC GPIO");
  
++	usb_dev->regulator = devm_regulator_get(&core->dev, "vbus");
++	if (IS_ERR(usb_dev->regulator))
++		return dev_err_probe(&core->dev, PTR_ERR(usb_dev->regulator),
++				     "error obtaining VBUS regulator");
++
  	switch (core->id.id) {
  	case BCMA_CORE_USB20_HOST:
-@@ -427,13 +446,16 @@ static int bcma_hcd_probe(struct bcma_de
- 		err = bcma_hcd_usb30_init(usb_dev);
- 		break;
- 	default:
--		return -ENODEV;
-+		err = -ENODEV;
- 	}
+ 		if (IS_ENABLED(CONFIG_ARM))
+@@ -437,6 +448,10 @@ static int bcma_hcd_probe(struct bcma_de
  	if (err)
--		return err;
-+		goto error;
+ 		return err;
  
++	err = regulator_enable(usb_dev->regulator);
++	if (err)
++		return dev_err_probe(&core->dev, err, "error enabling VBUS");
++
  	bcma_set_drvdata(core, usb_dev);
  	return 0;
-+error:
-+	regulator_disable(usb_dev->regulator);
-+	return err;
  }
- 
- static void bcma_hcd_remove(struct bcma_device *dev)
-@@ -447,12 +469,13 @@ static void bcma_hcd_remove(struct bcma_
+@@ -452,12 +467,13 @@ static void bcma_hcd_remove(struct bcma_
  	if (ehci_dev)
  		platform_device_unregister(ehci_dev);
  
-+	regulator_disable(usb_dev->regulator);
++	bcma_hci_platform_power(dev, false);
  	bcma_core_disable(dev, 0);
  }
  
@@ -134,7 +106,7 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
  	bcma_core_disable(dev, 0);
  }
  
-@@ -460,7 +483,11 @@ static void bcma_hcd_shutdown(struct bcm
+@@ -465,7 +481,11 @@ static void bcma_hcd_shutdown(struct bcm
  
  static int bcma_hcd_suspend(struct bcma_device *dev)
  {
@@ -147,7 +119,7 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
  	bcma_core_disable(dev, 0);
  
  	return 0;
-@@ -468,7 +495,11 @@ static int bcma_hcd_suspend(struct bcma_
+@@ -473,7 +493,11 @@ static int bcma_hcd_suspend(struct bcma_
  
  static int bcma_hcd_resume(struct bcma_device *dev)
  {
