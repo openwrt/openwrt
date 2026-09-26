@@ -1,0 +1,188 @@
+From f29bc37dfc4ad7570d78f8cd482d4b83c3caffdf Mon Sep 17 00:00:00 2001
+From: Vivek Sahu <vivek.sahu@oss.qualcomm.com>
+Date: Tue, 10 Feb 2026 17:31:01 +0530
+Subject: [PATCH] Bluetooth: qca: Refactor code on the basis of chipset names
+
+Whenever new chipset support is added to the driver code,
+we ended up adding chipset name to the last of the switch case
+arising code readability issue because of improper sorting of
+the chipset names in various places of the code.
+
+Refactor code such a way that new chipset can be added easily
+in the code without compromising code readability.
+
+Signed-off-by: Vivek Sahu <vivek.sahu@oss.qualcomm.com>
+Reviewed-by: Dmitry Baryshkov <dmitry.baryshkov@oss.qualcomm.com>
+Signed-off-by: Luiz Augusto von Dentz <luiz.von.dentz@intel.com>
+---
+ drivers/bluetooth/btqca.c   | 37 +++++++++++++++++++------------------
+ drivers/bluetooth/hci_qca.c | 30 +++++++++++++++---------------
+ 2 files changed, 34 insertions(+), 33 deletions(-)
+
+--- a/drivers/bluetooth/btqca.c
++++ b/drivers/bluetooth/btqca.c
+@@ -818,6 +818,14 @@ int qca_uart_setup(struct hci_dev *hdev,
+ 		snprintf(config.fwname, sizeof(config.fwname), "qca/%s", rampatch_name);
+ 	} else {
+ 		switch (soc_type) {
++		case QCA_QCA2066:
++			snprintf(config.fwname, sizeof(config.fwname),
++				 "qca/hpbtfw%02x.tlv", rom_ver);
++			break;
++		case QCA_QCA6390:
++			snprintf(config.fwname, sizeof(config.fwname),
++				 "qca/htbtfw%02x.tlv", rom_ver);
++			break;
+ 		case QCA_WCN3950:
+ 			snprintf(config.fwname, sizeof(config.fwname),
+ 				 "qca/cmbtfw%02x.tlv", rom_ver);
+@@ -832,14 +840,6 @@ int qca_uart_setup(struct hci_dev *hdev,
+ 			snprintf(config.fwname, sizeof(config.fwname),
+ 				 "qca/apbtfw%02x.tlv", rom_ver);
+ 			break;
+-		case QCA_QCA2066:
+-			snprintf(config.fwname, sizeof(config.fwname),
+-				 "qca/hpbtfw%02x.tlv", rom_ver);
+-			break;
+-		case QCA_QCA6390:
+-			snprintf(config.fwname, sizeof(config.fwname),
+-				 "qca/htbtfw%02x.tlv", rom_ver);
+-			break;
+ 		case QCA_WCN6750:
+ 			/* Choose mbn file by default.If mbn file is not found
+ 			 * then choose tlv file
+@@ -887,6 +887,16 @@ int qca_uart_setup(struct hci_dev *hdev,
+ 		}
+ 	} else {
+ 		switch (soc_type) {
++		case QCA_QCA2066:
++			qca_get_nvm_name_by_board(config.fwname,
++						  sizeof(config.fwname),
++						  "hpnv", soc_type, ver,
++						  rom_ver, boardid);
++			break;
++		case QCA_QCA6390:
++			snprintf(config.fwname, sizeof(config.fwname),
++				 "qca/htnv%02x.bin", rom_ver);
++			break;
+ 		case QCA_WCN3950:
+ 			if (le32_to_cpu(ver.soc_id) == QCA_WCN3950_SOC_ID_T)
+ 				variant = "t";
+@@ -909,15 +919,6 @@ int qca_uart_setup(struct hci_dev *hdev,
+ 			snprintf(config.fwname, sizeof(config.fwname),
+ 				 "qca/apnv%02x.bin", rom_ver);
+ 			break;
+-		case QCA_QCA2066:
+-			qca_get_nvm_name_by_board(config.fwname,
+-				sizeof(config.fwname), "hpnv", soc_type, ver,
+-				rom_ver, boardid);
+-			break;
+-		case QCA_QCA6390:
+-			snprintf(config.fwname, sizeof(config.fwname),
+-				 "qca/htnv%02x.bin", rom_ver);
+-			break;
+ 		case QCA_WCN6750:
+ 			snprintf(config.fwname, sizeof(config.fwname),
+ 				 "qca/msnv%02x.bin", rom_ver);
+@@ -944,9 +945,9 @@ int qca_uart_setup(struct hci_dev *hdev,
+ 	}
+ 
+ 	switch (soc_type) {
+-	case QCA_WCN3991:
+ 	case QCA_QCA2066:
+ 	case QCA_QCA6390:
++	case QCA_WCN3991:
+ 	case QCA_WCN6750:
+ 	case QCA_WCN6855:
+ 	case QCA_WCN7850:
+--- a/drivers/bluetooth/hci_qca.c
++++ b/drivers/bluetooth/hci_qca.c
+@@ -1851,6 +1851,7 @@ static int qca_power_on(struct hci_dev *
+ 		return 0;
+ 
+ 	switch (soc_type) {
++	case QCA_QCA6390:
+ 	case QCA_WCN3950:
+ 	case QCA_WCN3988:
+ 	case QCA_WCN3990:
+@@ -1859,7 +1860,6 @@ static int qca_power_on(struct hci_dev *
+ 	case QCA_WCN6750:
+ 	case QCA_WCN6855:
+ 	case QCA_WCN7850:
+-	case QCA_QCA6390:
+ 		ret = qca_regulator_init(hu);
+ 		break;
+ 
+@@ -2098,6 +2098,18 @@ static const struct hci_uart_proto qca_p
+ 	.dequeue	= qca_dequeue,
+ };
+ 
++static const struct qca_device_data qca_soc_data_qca2066 __maybe_unused = {
++	.soc_type = QCA_QCA2066,
++	.num_vregs = 0,
++	.capabilities = QCA_CAP_WIDEBAND_SPEECH | QCA_CAP_VALID_LE_STATES |
++			QCA_CAP_HFP_HW_OFFLOAD,
++};
++
++static const struct qca_device_data qca_soc_data_qca6390 __maybe_unused = {
++	.soc_type = QCA_QCA6390,
++	.num_vregs = 0,
++};
++
+ static const struct qca_device_data qca_soc_data_wcn3950 __maybe_unused = {
+ 	.soc_type = QCA_WCN3950,
+ 	.vregs = (struct qca_vreg []) {
+@@ -2154,17 +2166,6 @@ static const struct qca_device_data qca_
+ 	.num_vregs = 4,
+ };
+ 
+-static const struct qca_device_data qca_soc_data_qca2066 __maybe_unused = {
+-	.soc_type = QCA_QCA2066,
+-	.num_vregs = 0,
+-	.capabilities = QCA_CAP_WIDEBAND_SPEECH | QCA_CAP_VALID_LE_STATES,
+-};
+-
+-static const struct qca_device_data qca_soc_data_qca6390 __maybe_unused = {
+-	.soc_type = QCA_QCA6390,
+-	.num_vregs = 0,
+-};
+-
+ static const struct qca_device_data qca_soc_data_wcn6750 __maybe_unused = {
+ 	.soc_type = QCA_WCN6750,
+ 	.vregs = (struct qca_vreg []) {
+@@ -2401,6 +2402,7 @@ static int qca_serdev_probe(struct serde
+ 		qcadev->btsoc_type = QCA_ROME;
+ 
+ 	switch (qcadev->btsoc_type) {
++	case QCA_QCA6390:
+ 	case QCA_WCN3950:
+ 	case QCA_WCN3988:
+ 	case QCA_WCN3990:
+@@ -2409,7 +2411,6 @@ static int qca_serdev_probe(struct serde
+ 	case QCA_WCN6750:
+ 	case QCA_WCN6855:
+ 	case QCA_WCN7850:
+-	case QCA_QCA6390:
+ 		qcadev->bt_power = devm_kzalloc(&serdev->dev,
+ 						sizeof(struct qca_power),
+ 						GFP_KERNEL);
+@@ -2421,9 +2422,9 @@ static int qca_serdev_probe(struct serde
+ 	}
+ 
+ 	switch (qcadev->btsoc_type) {
++	case QCA_WCN6750:
+ 	case QCA_WCN6855:
+ 	case QCA_WCN7850:
+-	case QCA_WCN6750:
+ 		if (!device_property_present(&serdev->dev, "enable-gpios")) {
+ 			/*
+ 			 * Backward compatibility with old DT sources. If the
+@@ -2518,7 +2519,7 @@ static int qca_serdev_probe(struct serde
+ 			return PTR_ERR(qcadev->susclk);
+ 		}
+ 	}
+-	
++
+ 	err = hci_uart_register_device(&qcadev->serdev_hu, &qca_proto);
+ 	if (err) {
+ 		BT_ERR("serdev registration failed");
