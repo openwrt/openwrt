@@ -146,26 +146,11 @@
 		 * During kernel bootup, the SoC runs at 800MHz with 875mV set by the bootloaders.
 		 * During regulator registration, kernel not knowing the initial voltage,
 		 * considers it as zero and brings up the regulators with minimum supported voltage.
-		 * Update the regulator-min-microvolt with SVS voltage of 725mV so that
-		 * the regulators are brought up with 725mV which is sufficient for all the
-		 * corner parts to operate at 800MHz
+		 * Keep the OEM minimum (587.5mV) so the regulator is brought up at the
+		 * lowest supported voltage during registration.
 		 */
 			regulator-min-microvolt = <587500>;
 			regulator-max-microvolt = <1075000>;
-		};
-
-		mp5496_l2: l2 {
-			regulator-min-microvolt = <850000>;
-			regulator-max-microvolt = <850000>;
-			regulator-always-on;
-			regulator-boot-on;
-		};
-
-		mp5496_l5: l5 {
-			regulator-min-microvolt = <1800000>;
-			regulator-max-microvolt = <1800000>;
-			regulator-always-on;
-			regulator-boot-on;
 		};
 	};
 };
@@ -223,7 +208,6 @@
 };
 
 &usb_0_qmpphy {
-	/*vdda-pll-supply = <&mp5496_l5>;*/
 	vdda-phy-supply = <&regulator_fixed_0p925>;
 
 	status = "okay";
@@ -231,7 +215,6 @@
 
 &usb_0_qusbphy {
 	vdd-supply = <&regulator_fixed_0p925>;
-	/*vdda-pll-supply = <&mp5496_l5>;*/
 	vdda-phy-dpdm-supply = <&regulator_fixed_3p3>;
 
 	status = "okay";
