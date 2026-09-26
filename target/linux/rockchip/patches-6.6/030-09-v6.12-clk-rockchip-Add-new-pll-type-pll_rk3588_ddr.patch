@@ -19,7 +19,7 @@ Signed-off-by: Heiko Stuebner <heiko@sntech.de>
 
 --- a/drivers/clk/rockchip/clk-pll.c
 +++ b/drivers/clk/rockchip/clk-pll.c
-@@ -914,7 +914,10 @@ static unsigned long rockchip_rk3588_pll
+@@ -921,7 +921,10 @@ static unsigned long rockchip_rk3588_pll
  	}
  	rate64 = rate64 >> cur.s;
  
@@ -31,7 +31,7 @@ Signed-off-by: Heiko Stuebner <heiko@sntech.de>
  }
  
  static int rockchip_rk3588_pll_set_params(struct rockchip_clk_pll *pll,
-@@ -1167,6 +1170,7 @@ struct clk *rockchip_clk_register_pll(st
+@@ -1174,6 +1177,7 @@ struct clk *rockchip_clk_register_pll(st
  		break;
  	case pll_rk3588:
  	case pll_rk3588_core:

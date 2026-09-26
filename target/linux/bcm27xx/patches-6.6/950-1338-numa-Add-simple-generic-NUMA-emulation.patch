@@ -77,7 +77,7 @@ Cc: “Rafael J. Wysocki" <rafael@kernel.org>
  
  	return 0;
  }
-@@ -471,6 +475,8 @@ void __init arch_numa_init(void)
+@@ -483,6 +487,8 @@ void __init arch_numa_init(void)
  			return;
  		if (acpi_disabled && !numa_init(of_numa_init))
  			return;

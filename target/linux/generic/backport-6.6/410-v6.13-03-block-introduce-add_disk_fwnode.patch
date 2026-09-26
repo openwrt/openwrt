@@ -57,7 +57,7 @@ Signed-off-by: Jens Axboe <axboe@kernel.dk>
  	if (!(disk->flags & GENHD_FL_HIDDEN))
  		ddev->devt = MKDEV(disk->major, disk->first_minor);
  	ret = device_add(ddev);
-@@ -552,6 +556,22 @@ out_exit_elevator:
+@@ -559,6 +563,22 @@ out_exit_elevator:
  		elevator_exit(disk->queue);
  	return ret;
  }
