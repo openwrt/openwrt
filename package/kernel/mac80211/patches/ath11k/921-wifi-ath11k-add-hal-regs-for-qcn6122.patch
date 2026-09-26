@@ -1,23 +1,34 @@
+From 86697d86b1b5e581155afe4078f6213d81a5f773 Mon Sep 17 00:00:00 2001
 From: George Moussalem <george.moussalem@outlook.com>
-Date: Wed, 27 Oct 2024 16:34:11 +0400
-Subject: [PATCH] wifi: ath11k: add hal regs for QCN6122
+Date: Thu, 17 Sep 2026 17:51:20 +0400
+Subject: [PATCH ath-next 12/16] wifi: ath11k: add hal regs for QCN6122
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+Message-Id: <20260917-ipq5018-qcn6122-mpd-v1-12-ca1168c321a2@outlook.com>
 
-Add HAL changes required to support QCN6122. Offsets are similar to those of 
-WCN6750 but QCN6122 does not use the hal_shadow_base_addr, so add platform 
-specific ath11k_hw_regs and register them in hw params.
+Add HAL changes required to support QCN6122. While offsets for QCN6122
+are similar to those of WCN6750, QCN6122 does not support shadow regs
+and the PCIE PCS/Serdes tuning register offsets do not apply to QCN6122.
+So add its own HAL register offsets.
 
 Signed-off-by: George Moussalem <george.moussalem@outlook.com>
 ---
+ drivers/net/wireless/ath/ath11k/core.c |  1 +
+ drivers/net/wireless/ath/ath11k/hw.c   | 75 ++++++++++++++++++++++++++++++++++
+ drivers/net/wireless/ath/ath11k/hw.h   |  1 +
+ 3 files changed, 77 insertions(+)
+
 --- a/drivers/net/wireless/ath/ath11k/core.c
 +++ b/drivers/net/wireless/ath/ath11k/core.c
-@@ -939,6 +939,7 @@ static struct ath11k_hw_params ath11k_hw
+@@ -949,6 +949,7 @@ static struct ath11k_hw_params ath11k_hw
  		.bdf_addr = 0x4D200000,
  		.hw_ops = &ipq5018_ops,
- 		.hal_desc_sz = sizeof(struct hal_rx_desc_qcn9074),
+ 		.internal_sleep_clock = false,
 +		.regs = &qcn6122_regs,
  		.qmi_service_ins_id = ATH11K_QMI_WLFW_SERVICE_INS_ID_V01_QCN6122,
- 		.interface_modes = BIT(NL80211_IFTYPE_STATION) |
- 					BIT(NL80211_IFTYPE_AP) |
+ 		.host_ce_config = ath11k_host_ce_config_qcn9074,
+ 		.ce_count = CE_CNT_5018,
 --- a/drivers/net/wireless/ath/ath11k/hw.c
 +++ b/drivers/net/wireless/ath/ath11k/hw.c
 @@ -2836,6 +2836,81 @@ const struct ath11k_hw_hal_params ath11k
@@ -104,7 +115,7 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
  	.tcl2wbm_rbm_map = ath11k_hw_tcl2wbm_rbm_map_ipq8074,
 --- a/drivers/net/wireless/ath/ath11k/hw.h
 +++ b/drivers/net/wireless/ath/ath11k/hw.h
-@@ -430,6 +430,7 @@ extern const struct ath11k_hw_regs qcn90
+@@ -438,6 +438,7 @@ extern const struct ath11k_hw_regs qcn90
  extern const struct ath11k_hw_regs wcn6855_regs;
  extern const struct ath11k_hw_regs wcn6750_regs;
  extern const struct ath11k_hw_regs ipq5018_regs;
