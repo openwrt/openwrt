@@ -3662,6 +3662,21 @@ define Device/tplink_fr365-v1
 endef
 TARGET_DEVICES += tplink_fr365-v1
 
+define Device/tplink_tl-wr3012x-v1
+  DEVICE_VENDOR := TP-Link
+  DEVICE_MODEL := TL-WR3012X
+  DEVICE_VARIANT := v1
+  DEVICE_DTS := mt7981b-tplink-tl-wr3012x-v1
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-usb3 kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_INITRAMFS_SUFFIX := .itb
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += tplink_tl-wr3012x-v1
+
 define Device/tplink_tl-xdr-common
   DEVICE_VENDOR := TP-Link
   DEVICE_DTS_DIR := ../dts

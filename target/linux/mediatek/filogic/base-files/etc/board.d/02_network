@@ -185,7 +185,8 @@ mediatek_setup_interfaces()
 	glinet,gl-x3000|\
 	glinet,gl-xe3000|\
 	openembed,som7981|\
-	openwrt,one)
+	openwrt,one|\
+	tplink,tl-wr3012x-v1)
 		ucidef_set_interfaces_lan_wan eth1 eth0
 		;;
 	dlink,aquila-pro-ai-e30-a1|\
@@ -342,7 +343,8 @@ mediatek_setup_macs()
 		lan_mac=$(macaddr_add "$label_mac" 1)
 		;;
 	mercusys,mr80x-v3|\
-	mercusys,mr85x)
+	mercusys,mr85x|\
+	tplink,tl-wr3012x-v1)
 		mac_dirty=$(cat "/tmp/tp_data/default-mac" | sed -n 's/^'"MAC"'://p')
 		label_mac=$(macaddr_canonicalize "$mac_dirty")
 		lan_mac=$label_mac
