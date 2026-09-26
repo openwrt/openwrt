@@ -1,0 +1,36 @@
+From: Paul Spooren <mail@aparcar.org>
+Subject: dlink-sge-image: initialize the signature length
+
+EVP_PKEY_sign() takes the size of the signature buffer in *siglen and
+fails if it is too small. siglen is not initialized, so the result
+depends on whatever the stack holds: with some builds both signatures
+are written, with others signing fails and the image carries 1024 zero
+bytes instead. The same firmware thus differs between build hosts.
+
+Set siglen to the size of the buffer before each call. The signatures
+are deterministic PKCS#1 v1.5 signatures, so they match the ones of
+images built where signing happened to work.
+
+Signed-off-by: Paul Spooren <mail@aparcar.org>
+---
+ src/dlink-sge-image.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/src/dlink-sge-image.c
++++ b/src/dlink-sge-image.c
+@@ -179,6 +179,7 @@ void image_encrypt(void)
+ 	fwrite(&sigret[0], 1, RSA_KEY_LENGTH_BYTES, output_file);
+ 
+ 	// sign md_before
++	siglen = sizeof(sigret);
+ 	EVP_PKEY_sign(rsa_ctx, &sigret[0], &siglen, &md_before[0], SHA512_DIGEST_LENGTH);
+ 	printf("\nsigned before:\n");
+ 	for (i = 0; i < RSA_KEY_LENGTH_BYTES; i++)
+@@ -186,6 +187,7 @@ void image_encrypt(void)
+ 	fwrite(&sigret[0], 1, RSA_KEY_LENGTH_BYTES, output_file);
+ 
+ 	// sign md_post
++	siglen = sizeof(sigret);
+ 	EVP_PKEY_sign(rsa_ctx, &sigret[0], &siglen, &md_post[0], SHA512_DIGEST_LENGTH);
+ 	printf("\nsigned post:\n");
+ 	for (i = 0; i < RSA_KEY_LENGTH_BYTES; i++)
