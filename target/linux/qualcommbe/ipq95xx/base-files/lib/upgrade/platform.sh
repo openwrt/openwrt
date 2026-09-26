@@ -1,11 +1,22 @@
 PART_NAME=firmware
 REQUIRE_IMAGE_METADATA=1
 
-RAMFS_COPY_BIN='fw_printenv fw_setenv head'
+RAMFS_COPY_BIN='fw_printenv fw_setenv head cmp sha256sum tr mktemp'
 RAMFS_COPY_DATA='/etc/fw_env.config /var/lock/fw_printenv.lock'
 
 platform_check_image() {
-	return 0;
+	case "$(board_name)" in
+	linksys,ln6001)
+		ln6001_preflight "$1" || {
+			echo "LN6001 A/B preflight failed" >&2
+			return 1
+		}
+		return 0
+		;;
+	*)
+		return 0
+		;;
+	esac
 }
 
 platform_do_upgrade() {
@@ -20,6 +31,9 @@ platform_do_upgrade() {
 		CI_ROOTPART="rootfs"
 		CI_DATAPART="rootfs_data"
 		emmc_do_upgrade "$1"
+		;;
+	linksys,ln6001)
+		ln6001_do_upgrade "$1" || return 1
 		;;
 	*)
 		default_do_upgrade "$1"
