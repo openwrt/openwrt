@@ -16,7 +16,6 @@
 #define PCIE_MDIO_CTRL_PHY_ADDR_MASK	GENMASK(12, 8)
 #define PCIE_MDIO_CTRL_PHY_STATUS_MASK	GENMASK(6, 5)
 #define PCIE_MDIO_CTRL_PHY_STATUS_DONE	FIELD_PREP(PCIE_MDIO_CTRL_PHY_STATUS_MASK, 1)
-#define PCIE_MDIO_CTRL_PHY_READY	BIT(4)
 #define PCIE_MDIO_CTRL_PHY_WRITE	BIT(0)
 #define PCIE_MDIO_CTRL_PHY_READ		0
 
@@ -36,6 +35,16 @@
 
 #define PHY_ADDR_0X09			0x09
 #define REG_0X09_FORCE_CALIBRATION	BIT(9)
+
+/*
+ * From various observations, it was discovered that mdio needs a delay after
+ * the status mask reports DONE. The ready bit is always set and appears to
+ * have no relation to this "after completion" delay whatsoever. The delay is
+ * required for both when the command is completed and when the register is
+ * read afterwards for data retrieval after read operation, somehow.
+ * The delay of 10 us seems to be enough to stop PCIe link up failures.
+ */
+#define MDIO_AFTER_COMPLETION_DELAY_US	10
 
 struct phy_data {
 	u8 page;
@@ -60,14 +69,21 @@ struct rtk_phy {
 	struct reset_control *phy_rst;
 };
 
-static int rtk_phy_wait_done_and_ready(struct regmap *regmap)
+static int rtk_phy_poll_done_and_delay(struct regmap *regmap)
 {
 	u32 val, cond;
+	int ret;
 
-	cond = PCIE_MDIO_CTRL_PHY_STATUS_DONE | PCIE_MDIO_CTRL_PHY_READY;
+	cond = PCIE_MDIO_CTRL_PHY_STATUS_DONE;
 
-	return regmap_read_poll_timeout(regmap, PCIE_MDIO_CTRL_PHY_REG, val,
-					(val & cond) == cond, 10, 2000);
+	ret = regmap_read_poll_timeout(regmap, PCIE_MDIO_CTRL_PHY_REG, val,
+				       (val & cond) == cond, 10, 2000);
+	if (ret)
+		return ret;
+
+	fsleep(MDIO_AFTER_COMPLETION_DELAY_US);
+
+	return 0;
 }
 
 static int rtk_phy_write(struct rtk_phy *rtk_phy, u8 page, u8 addr, u16 data)
@@ -82,7 +98,7 @@ static int rtk_phy_write(struct rtk_phy *rtk_phy, u8 page, u8 addr, u16 data)
 	if (ret)
 		return ret;
 
-	return rtk_phy_wait_done_and_ready(rtk_phy->regmap);
+	return rtk_phy_poll_done_and_delay(rtk_phy->regmap);
 }
 
 static int rtk_phy_read(struct rtk_phy *rtk_phy, u8 page, u8 addr, u16 *data)
@@ -97,7 +113,7 @@ static int rtk_phy_read(struct rtk_phy *rtk_phy, u8 page, u8 addr, u16 *data)
 	if (ret)
 		return ret;
 
-	ret = rtk_phy_wait_done_and_ready(rtk_phy->regmap);
+	ret = rtk_phy_poll_done_and_delay(rtk_phy->regmap);
 	if (ret)
 		return ret;
 
@@ -106,6 +122,8 @@ static int rtk_phy_read(struct rtk_phy *rtk_phy, u8 page, u8 addr, u16 *data)
 		return ret;
 
 	*data = FIELD_GET(PCIE_MDIO_CTRL_PHY_DATA_MASK, val);
+
+	fsleep(MDIO_AFTER_COMPLETION_DELAY_US);
 
 	return 0;
 }
