@@ -108,6 +108,11 @@ function iface_auth_type(config, band) {
 			config.rsn_override_mfp_2 = 2;
 	}
 
+	/* Easy Connect 3.0 8.4.2: PMF for every association with the DPP AKM.
+	 * Optional keeps the other AKM open to stations without PMF. */
+	if (config.dpp && !config.ieee80211w)
+		config.ieee80211w = 1;
+
 	if (config.auth_type == 'owe') {
 		set_default(config, 'owe_groups', '19 20 21');
 		set_default(config, 'owe_ptk_workaround', 1);

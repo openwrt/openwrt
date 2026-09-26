@@ -67,6 +67,12 @@ function setup_sta(data, config) {
 		config.ieee80211w = 2;
 	else if (config.auth_type in [ 'psk-sae' ] && !config.ieee80211w)
 		config.ieee80211w = 1;
+
+	/* Easy Connect 3.0 8.4.2: PMF for every association with the DPP AKM,
+	 * which wpa_supplicant does not enable on its own (wpas_get_ssid_pmf()). */
+	if (config.dpp && !config.ieee80211w)
+		config.ieee80211w = 1;
+
 	if ((wildcard(data.htmode, 'EHT*') || wildcard(data.htmode, 'HE*')) &&
 		config.rsn_override)
 		config.rsn_overriding = 1;

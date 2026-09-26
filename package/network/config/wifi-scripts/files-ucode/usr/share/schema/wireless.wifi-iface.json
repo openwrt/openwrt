@@ -271,9 +271,21 @@
 			"default": true
 		},
 		"dpp": {
-			"description": "Enable the DPP AKM in addition to the one selected by encryption",
+			"description": "Enable the DPP AKM in addition to the one selected by encryption. Sets ieee80211w to 1 (optional) if it is 0 or not set, also an explicit 0 and sae-compat outside 6 GHz, whose base RSNE then advertises PMF",
 			"type": "boolean",
 			"default": false
+		},
+		"dpp_connector": {
+			"description": "DPP Connector (signedConnector) for DPP Network Introduction",
+			"type": "string"
+		},
+		"dpp_csign": {
+			"description": "DPP C-sign-key of the Configurator, hex-encoded DER",
+			"type": "string"
+		},
+		"dpp_netaccesskey": {
+			"description": "DPP netAccessKey, hex-encoded DER",
+			"type": "string"
 		},
 		"domain_match": {
 			"type": "array",
