@@ -96,7 +96,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
 --- a/net/core/sock.c
 +++ b/net/core/sock.c
-@@ -2616,7 +2616,7 @@ void sk_setup_caps(struct sock *sk, stru
+@@ -2617,7 +2617,7 @@ void sk_setup_caps(struct sock *sk, stru
  		icsk->icsk_ack.dst_quick_ack = dst_metric(dst, RTAX_QUICKACK);
  	}
  	if (sk->sk_route_caps & NETIF_F_GSO)
@@ -107,7 +107,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (sk_can_gso(sk)) {
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -2083,7 +2083,7 @@ void ieee80211_color_collision_detection
+@@ -2092,7 +2092,7 @@ void ieee80211_color_collision_detection
  /* interface handling */
  #define MAC80211_SUPPORTED_FEATURES_TX	(NETIF_F_IP_CSUM | NETIF_F_IPV6_CSUM | \
  					 NETIF_F_HW_CSUM | NETIF_F_SG | \
