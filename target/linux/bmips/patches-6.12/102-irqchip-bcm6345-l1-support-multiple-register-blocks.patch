@@ -1,0 +1,352 @@
+From 60aa3bd6e0e10099b09a671d83f6cb3eb1148fc4 Mon Sep 17 00:00:00 2001
+From: OpenWrt Developer <openwrt-devel@openwrt.org>
+Date: Wed, 5 Aug 2026 22:55:00 +1000
+Subject: [PATCH] irqchip: bcm6345-l1: support multiple register blocks
+
+BCM3384 exposes the Zephyr-side peripheral interrupts as two parallel
+mask/status blocks sharing the same MIPS CPU interrupt line:
+
+  - INT_PER PeriphIRQMASK/STATUS[1,3] for logical IRQs 0..31
+  - INT_EXT_PER PeriphIRQMASK/STATUS[1,3]_2 for logical IRQs 32..63
+
+The existing bcm6345-l1 binding assumes one contiguous register range per
+parent interrupt. Add an optional brcm,reg-blocks-per-interrupt property
+to describe how many reg entries belong to each parent interrupt. When
+this property is absent, preserve the existing one-reg-range-per-parent
+behavior.
+
+Signed-off-by: OpenWrt Developer <openwrt-devel@openwrt.org>
+---
+--- a/Documentation/devicetree/bindings/interrupt-controller/brcm,bcm6345-l1-intc.txt	2026-06-19 21:42:39.000000000 +1000
++++ b/Documentation/devicetree/bindings/interrupt-controller/brcm,bcm6345-l1-intc.txt	2026-08-06 17:45:39.228582831 +1000
+@@ -37,6 +37,15 @@
+ /proc/irq/ interface.  In the simplest possible configuration, only one
+ reg range and one interrupt-parent is needed.
+ 
++Optional properties:
++
++- brcm,reg-blocks-per-interrupt: number of reg ranges consumed by each
++  interrupts entry. Defaults to 1. This is used by SoCs where one CPU
++  interrupt line covers multiple non-contiguous enable/status register ranges.
++  Each range length must be a multiple of 8 bytes, and all ranges must
++  have the same length. Larger contiguous ranges are split into 8-byte
++  enable/status word pairs internally.
++
+ The driver operates in native CPU endian by default, there is no support for
+ specifying an alternative endianness.
+ 
+@@ -53,3 +62,14 @@
+         interrupt-parent = <&cpu_intc>;
+         interrupts = <2>, <3>;
+ };
++
++periph_intc: interrupt-controller@14e00038 {
++        compatible = "brcm,bcm6345-l1-intc";
++        reg = <0x14e00038 0x8>, <0x14e00340 0x8>,
++              <0x14e00048 0x8>, <0x14e00350 0x8>;
++        brcm,reg-blocks-per-interrupt = <2>;
++        interrupt-controller;
++        #interrupt-cells = <1>;
++        interrupt-parent = <&cpu_intc>;
++        interrupts = <4>, <3>;
++};
+--- a/drivers/irqchip/irq-bcm6345-l1.c	2026-06-19 21:42:39.000000000 +1000
++++ b/drivers/irqchip/irq-bcm6345-l1.c	2026-08-06 17:45:39.230445145 +1000
+@@ -41,6 +41,22 @@
+  *   0x1000_0058: CPU1_W2_STATUS	IRQs 32-63
+  *   0x1000_005c: CPU1_W3_STATUS	IRQs 0-31
+  *
++ * BCM3384:
++ *   CPU0 / MIPS CAUSE IP4:
++ *   0x14e0_0038: CPU0_W0_ENABLE	IRQs 0-31
++ *   0x14e0_003c: CPU0_W0_STATUS
++ *   0x14e0_0340: CPU0_W1_ENABLE	IRQs 32-63
++ *   0x14e0_0344: CPU0_W1_STATUS
++ *
++ *   CPU1 / MIPS CAUSE IP3:
++ *   0x14e0_0048: CPU1_W0_ENABLE	IRQs 0-31
++ *   0x14e0_004c: CPU1_W0_STATUS
++ *   0x14e0_0350: CPU1_W1_ENABLE	IRQs 32-63
++ *   0x14e0_0354: CPU1_W1_STATUS
++ *
++ * The second BCM3384 word for each CPU lives in a separate register block,
++ * so it must be described with brcm,reg-blocks-per-interrupt = <2>.
++ *
+  * IRQs are numbered in CPU native endian order
+  * (which is big-endian in these examples)
+  */
+@@ -75,35 +91,40 @@
+ struct bcm6345_l1_chip {
+ 	raw_spinlock_t		lock;
+ 	unsigned int		n_words;
++	unsigned int		n_reg_blocks;
+ 	struct irq_domain	*domain;
+ 	struct cpumask		cpumask;
+ 	struct bcm6345_l1_cpu	*cpus[NR_CPUS];
+ };
+ 
++struct bcm6345_l1_irq_word {
++	void __iomem		*enable_base;
++	void __iomem		*status_base;
++	u32			enable_cache;
++};
++
+ struct bcm6345_l1_cpu {
+ 	struct bcm6345_l1_chip	*intc;
+-	void __iomem		*map_base;
++	void __iomem		**map_base;
+ 	unsigned int		parent_irq;
+-	u32			enable_cache[];
++	struct bcm6345_l1_irq_word irq_words[];
+ };
+ 
+-static inline unsigned int reg_enable(struct bcm6345_l1_chip *intc,
+-					   unsigned int word)
++static inline unsigned int reg_enable(unsigned int n_words, unsigned int word)
+ {
+ #ifdef __BIG_ENDIAN
+-	return (1 * intc->n_words - word - 1) * sizeof(u32);
++	return (1 * n_words - word - 1) * sizeof(u32);
+ #else
+-	return (0 * intc->n_words + word) * sizeof(u32);
++	return (0 * n_words + word) * sizeof(u32);
+ #endif
+ }
+ 
+-static inline unsigned int reg_status(struct bcm6345_l1_chip *intc,
+-				      unsigned int word)
++static inline unsigned int reg_status(unsigned int n_words, unsigned int word)
+ {
+ #ifdef __BIG_ENDIAN
+-	return (2 * intc->n_words - word - 1) * sizeof(u32);
++	return (2 * n_words - word - 1) * sizeof(u32);
+ #else
+-	return (1 * intc->n_words + word) * sizeof(u32);
++	return (1 * n_words + word) * sizeof(u32);
+ #endif
+ }
+ 
+@@ -113,6 +134,26 @@
+ 	return cpumask_first_and(&intc->cpumask, irq_data_get_affinity_mask(d));
+ }
+ 
++static void bcm6345_l1_free_one(struct bcm6345_l1_chip *intc, unsigned int idx)
++{
++	struct bcm6345_l1_cpu *cpu = intc->cpus[idx];
++	unsigned int i;
++
++	if (!cpu)
++		return;
++
++	if (cpu->map_base) {
++		for (i = 0; i < intc->n_reg_blocks; i++) {
++			if (cpu->map_base[i])
++				iounmap(cpu->map_base[i]);
++		}
++	}
++
++	kfree(cpu->map_base);
++	kfree(cpu);
++	intc->cpus[idx] = NULL;
++}
++
+ static void bcm6345_l1_irq_handle(struct irq_desc *desc)
+ {
+ 	struct bcm6345_l1_cpu *cpu = irq_desc_get_handler_data(desc);
+@@ -127,8 +168,8 @@
+ 		unsigned long pending;
+ 		irq_hw_number_t hwirq;
+ 
+-		pending = __raw_readl(cpu->map_base + reg_status(intc, idx));
+-		pending &= __raw_readl(cpu->map_base + reg_enable(intc, idx));
++		pending = __raw_readl(cpu->irq_words[idx].status_base);
++		pending &= __raw_readl(cpu->irq_words[idx].enable_base);
+ 
+ 		for_each_set_bit(hwirq, &pending, IRQS_PER_WORD) {
+ 			if (generic_handle_domain_irq(intc->domain, base + hwirq))
+@@ -145,10 +186,11 @@
+ 	u32 word = d->hwirq / IRQS_PER_WORD;
+ 	u32 mask = BIT(d->hwirq % IRQS_PER_WORD);
+ 	unsigned int cpu_idx = cpu_for_irq(intc, d);
++	struct bcm6345_l1_cpu *cpu = intc->cpus[cpu_idx];
+ 
+-	intc->cpus[cpu_idx]->enable_cache[word] |= mask;
+-	__raw_writel(intc->cpus[cpu_idx]->enable_cache[word],
+-		intc->cpus[cpu_idx]->map_base + reg_enable(intc, word));
++	cpu->irq_words[word].enable_cache |= mask;
++	__raw_writel(cpu->irq_words[word].enable_cache,
++		     cpu->irq_words[word].enable_base);
+ }
+ 
+ static inline void __bcm6345_l1_mask(struct irq_data *d)
+@@ -157,10 +199,11 @@
+ 	u32 word = d->hwirq / IRQS_PER_WORD;
+ 	u32 mask = BIT(d->hwirq % IRQS_PER_WORD);
+ 	unsigned int cpu_idx = cpu_for_irq(intc, d);
++	struct bcm6345_l1_cpu *cpu = intc->cpus[cpu_idx];
+ 
+-	intc->cpus[cpu_idx]->enable_cache[word] &= ~mask;
+-	__raw_writel(intc->cpus[cpu_idx]->enable_cache[word],
+-		intc->cpus[cpu_idx]->map_base + reg_enable(intc, word));
++	cpu->irq_words[word].enable_cache &= ~mask;
++	__raw_writel(cpu->irq_words[word].enable_cache,
++		     cpu->irq_words[word].enable_base);
+ }
+ 
+ static void bcm6345_l1_unmask(struct irq_data *d)
+@@ -203,7 +246,7 @@
+ 
+ 	raw_spin_lock_irqsave(&intc->lock, flags);
+ 	if (old_cpu != new_cpu) {
+-		enabled = intc->cpus[old_cpu]->enable_cache[word] & mask;
++		enabled = intc->cpus[old_cpu]->irq_words[word].enable_cache & mask;
+ 		if (enabled)
+ 			__bcm6345_l1_mask(d);
+ 		irq_data_update_affinity(d, dest);
+@@ -226,45 +269,83 @@
+ 	struct resource res;
+ 	resource_size_t sz;
+ 	struct bcm6345_l1_cpu *cpu;
+-	unsigned int i, n_words;
++	unsigned int i, total_words;
++	int ret = -ENOMEM;
+ 
+-	if (of_address_to_resource(dn, idx, &res))
+-		return -EINVAL;
+-	sz = resource_size(&res);
+-	n_words = sz / REG_BYTES_PER_IRQ_WORD;
+-
+-	if (!intc->n_words)
+-		intc->n_words = n_words;
+-	else if (intc->n_words != n_words)
+-		return -EINVAL;
++	for (i = 0; i < intc->n_reg_blocks; i++) {
++		unsigned int reg_idx = idx * intc->n_reg_blocks + i;
++		unsigned int n_words;
++
++		if (of_address_to_resource(dn, reg_idx, &res))
++			return -EINVAL;
++
++		sz = resource_size(&res);
++		if (!sz || sz % REG_BYTES_PER_IRQ_WORD)
++			return -EINVAL;
++
++		n_words = sz / REG_BYTES_PER_IRQ_WORD;
++		if (!intc->n_words)
++			intc->n_words = n_words * intc->n_reg_blocks;
++		else if (n_words != intc->n_words / intc->n_reg_blocks)
++			return -EINVAL;
++	}
+ 
+-	cpu = intc->cpus[idx] = kzalloc(struct_size(cpu, enable_cache, n_words),
+-					GFP_KERNEL);
++	cpu = kzalloc(struct_size(cpu, irq_words, intc->n_words), GFP_KERNEL);
+ 	if (!cpu)
+ 		return -ENOMEM;
+ 
++	intc->cpus[idx] = cpu;
+ 	cpu->intc = intc;
+-	cpu->map_base = ioremap(res.start, sz);
++	cpu->map_base = kcalloc(intc->n_reg_blocks, sizeof(*cpu->map_base),
++				GFP_KERNEL);
+ 	if (!cpu->map_base)
+-		return -ENOMEM;
++		goto out_free_cpu;
+ 
+-	if (!request_mem_region(res.start, sz, res.name))
+-		pr_err("failed to request intc memory");
++	total_words = 0;
++	for (i = 0; i < intc->n_reg_blocks; i++) {
++		unsigned int reg_idx = idx * intc->n_reg_blocks + i;
++		unsigned int n_words, word;
++
++		of_address_to_resource(dn, reg_idx, &res);
++		sz = resource_size(&res);
++		n_words = sz / REG_BYTES_PER_IRQ_WORD;
++
++		cpu->map_base[i] = ioremap(res.start, sz);
++		if (!cpu->map_base[i])
++			goto out_free_cpu;
++
++		if (!request_mem_region(res.start, sz, res.name))
++			pr_err("failed to request intc memory");
++
++		for (word = 0; word < n_words; word++) {
++			unsigned int global_word = total_words + word;
++
++			cpu->irq_words[global_word].enable_base =
++				cpu->map_base[i] + reg_enable(n_words, word);
++			cpu->irq_words[global_word].status_base =
++				cpu->map_base[i] + reg_status(n_words, word);
++			cpu->irq_words[global_word].enable_cache = 0;
++			__raw_writel(0,
++				     cpu->irq_words[global_word].enable_base);
++		}
+ 
+-	for (i = 0; i < n_words; i++) {
+-		cpu->enable_cache[i] = 0;
+-		__raw_writel(0, cpu->map_base + reg_enable(intc, i));
++		total_words += n_words;
+ 	}
+ 
+ 	cpu->parent_irq = irq_of_parse_and_map(dn, idx);
+ 	if (!cpu->parent_irq) {
+ 		pr_err("failed to map parent interrupt %d\n", cpu->parent_irq);
+-		return -EINVAL;
++		ret = -EINVAL;
++		goto out_free_cpu;
+ 	}
+ 	irq_set_chained_handler_and_data(cpu->parent_irq,
+-						bcm6345_l1_irq_handle, cpu);
++					 bcm6345_l1_irq_handle, cpu);
+ 
+ 	return 0;
++
++out_free_cpu:
++	bcm6345_l1_free_one(intc, idx);
++	return ret;
+ }
+ 
+ static struct irq_chip bcm6345_l1_irq_chip = {
+@@ -300,6 +381,15 @@
+ 	if (!intc)
+ 		return -ENOMEM;
+ 
++	if (of_property_read_u32(dn, "brcm,reg-blocks-per-interrupt",
++				 &intc->n_reg_blocks))
++		intc->n_reg_blocks = 1;
++
++	if (!intc->n_reg_blocks) {
++		ret = -EINVAL;
++		goto out_free;
++	}
++
+ 	for_each_possible_cpu(idx) {
+ 		ret = bcm6345_l1_init_one(dn, idx, intc);
+ 		if (ret)
+@@ -324,8 +414,8 @@
+ 		goto out_unmap;
+ 	}
+ 
+-	pr_info("registered BCM6345 L1 intc (IRQs: %d)\n",
+-			IRQS_PER_WORD * intc->n_words);
++	pr_info("registered BCM6345 L1 intc (IRQs: %d, blocks: %d)\n",
++		IRQS_PER_WORD * intc->n_words, intc->n_reg_blocks);
+ 	for_each_cpu(idx, &intc->cpumask) {
+ 		struct bcm6345_l1_cpu *cpu = intc->cpus[idx];
+ 
+@@ -336,13 +426,7 @@
+ 
+ out_unmap:
+ 	for_each_possible_cpu(idx) {
+-		struct bcm6345_l1_cpu *cpu = intc->cpus[idx];
+-
+-		if (cpu) {
+-			if (cpu->map_base)
+-				iounmap(cpu->map_base);
+-			kfree(cpu);
+-		}
++		bcm6345_l1_free_one(intc, idx);
+ 	}
+ out_free:
+ 	kfree(intc);

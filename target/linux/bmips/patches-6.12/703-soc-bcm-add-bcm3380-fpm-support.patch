@@ -1,0 +1,34 @@
+--- a/drivers/soc/bcm/Kconfig
++++ b/drivers/soc/bcm/Kconfig
+@@ -1,6 +1,24 @@
+ # SPDX-License-Identifier: GPL-2.0-only
+ menu "Broadcom SoC drivers"
+ 
++config BCM3380_FPM
++	tristate "Broadcom BCM3380 Free Pool Manager support"
++	depends on BMIPS_GENERIC || COMPILE_TEST
++	depends on HAS_IOMEM
++	default y if BCM3380_UNIMAC
++	help
++	  This driver manages the Free Pool Manager block used by BCM3380
++	  packet DMA clients.
++
++config BCM3380_MSP
++	tristate "Broadcom BCM3380 MSP IOPROC support"
++	depends on BMIPS_GENERIC || COMPILE_TEST
++	depends on HAS_IOMEM
++	default y if BCM3380_UNIMAC
++	help
++	  This driver manages the MSP IOPROC Incoming, Outgoing, Message ID,
++	  and DQM register blocks used by BCM3380 packet DMA clients.
++
+ config SOC_BRCMSTB
+ 	bool "Broadcom STB SoC drivers"
+ 	depends on ARCH_BRCMSTB || BMIPS_GENERIC || COMPILE_TEST
+--- a/drivers/soc/bcm/Makefile
++++ b/drivers/soc/bcm/Makefile
+@@ -1,2 +1,4 @@
+ # SPDX-License-Identifier: GPL-2.0-only
++obj-$(CONFIG_BCM3380_FPM)	+= bcm3380-fpm.o
++obj-$(CONFIG_BCM3380_MSP)	+= bcm3380-msp.o
+ obj-$(CONFIG_SOC_BRCMSTB)	+= brcmstb/

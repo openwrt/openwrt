@@ -1,0 +1,28 @@
+--- a/drivers/nvmem/layouts/Kconfig
++++ b/drivers/nvmem/layouts/Kconfig
+@@ -8,6 +8,15 @@ if NVMEM_LAYOUTS
+ 
+ menu "Layout Types"
+ 
++config NVMEM_LAYOUT_ECOS_NONVOL
++	tristate "Broadcom eCos Permanent NonVol layout"
++	depends on BMIPS_GENERIC || COMPILE_TEST
++	default y if BCM3380_UNIMAC
++	help
++	  Say Y here to expose selected cells from Broadcom eCos Permanent
++	  NonVol flash settings.  This layout currently only parses
++	  DT-described MAC cells.
++
+ config NVMEM_LAYOUT_SL28_VPD
+ 	tristate "Kontron sl28 VPD layout"
+ 	select CRC8
+--- a/drivers/nvmem/layouts/Makefile
++++ b/drivers/nvmem/layouts/Makefile
+@@ -3,6 +3,7 @@
+ #
+ obj-$(CONFIG_NVMEM_LAYOUTS) += nvmem_layouts.o
+ 
++obj-$(CONFIG_NVMEM_LAYOUT_ECOS_NONVOL) += ecos-nonvol.o
+ obj-$(CONFIG_NVMEM_LAYOUT_SL28_VPD) += sl28vpd.o
+ obj-$(CONFIG_NVMEM_LAYOUT_ONIE_TLV) += onie-tlv.o
+ obj-$(CONFIG_NVMEM_LAYOUT_U_BOOT_ENV) += u-boot-env.o

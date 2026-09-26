@@ -1,0 +1,220 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+#include "bcm3383.dtsi"
+
+/ {
+	model = "Netgear CG3000-2STAUS";
+	compatible = "netgear,cg3000-2staus", "brcm,bcm3383";
+};
+
+&uart0 {
+	status = "okay";
+};
+
+&fpm {
+	status = "okay";
+};
+
+&msp {
+	status = "okay";
+};
+
+&unimac_mbdma {
+	status = "okay";
+};
+
+&unimac0 {
+	nvmem-cells = <&unimac0_ip_stack5_mac>;
+	nvmem-cell-names = "mac-address";
+	phy-mode = "rgmii-id";
+	status = "okay";
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+		asym-pause;
+		pause;
+	};
+};
+
+&unimac1 {
+	nvmem-cells = <&unimac1_ip_stack3_mac>;
+	nvmem-cell-names = "mac-address";
+	status = "okay";
+};
+
+&pcie0 {
+	status = "okay";
+};
+
+&usb {
+	status = "okay";
+};
+
+&leds {
+	status = "okay";
+	brcm,serial-dat-low;
+	brcm,serial-shift-inv;
+
+	gmac0_activity@5 {
+		reg = <5>;
+		brcm,hardware-controlled;
+		brcm,activity-signal-sources = <4>;
+	};
+};
+
+&hsspi {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <25000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "bootloader";
+				reg = <0x00000 0x10000>;
+				read-only;
+			};
+
+			partition@10000 {
+				label = "permnonvol";
+				reg = <0x10000 0x10000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "brcm,ecos-nonvol-perm";
+					brcm,slot-size = <0x4000>;
+					brcm,section-offset = <0xca>;
+
+					unimac0_ip_stack5_mac: mac-address-lan {
+						/*
+						 * section + 0x0a -> CMAp
+						 * CMAp + 0xb2 -> HAL IP Stack5 MAC
+						 */
+						brcm,record-path = <0x0a 0xb2>;
+					};
+
+					unimac1_ip_stack3_mac: mac-address-wan {
+						/*
+						 * section + 0x0a -> CMAp
+						 * CMAp + 0x5c -> HAL IP Stack3 MAC
+						 */
+						brcm,record-path = <0x0a 0x5c>;
+					};
+				};
+			};
+
+			partition@20000 {
+				label = "vendor-nonvol";
+				reg = <0x20000 0x10000>;
+				read-only;
+			};
+
+			partition@30000 {
+				label = "vendor-nonvol-2";
+				reg = <0x30000 0x10000>;
+				read-only;
+			};
+
+			partition@c0000 {
+				label = "dynnonvol";
+				reg = <0xc0000 0x40000>;
+				read-only;
+			};
+		};
+	};
+
+	switch@2 {
+		compatible = "brcm,bcm53125";
+		reg = <2>;
+		spi-max-frequency = <781000>;
+		spi-cpha;
+		spi-cpol;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_hsspi_cs2>;
+		reset-gpios = <&gpio0 32 GPIO_ACTIVE_LOW>;
+		status = "okay";
+
+		dsa,member = <0 0>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@1 {
+				reg = <1>;
+				label = "lan1";
+			};
+
+			port@2 {
+				reg = <2>;
+				label = "lan2";
+			};
+
+			port@3 {
+				reg = <3>;
+				label = "lan3";
+			};
+
+			port@4 {
+				reg = <4>;
+				label = "lan4";
+			};
+
+			port@8 {
+				reg = <8>;
+				ethernet = <&unimac0>;
+				phy-mode = "rgmii-id";
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+					asym-pause;
+					pause;
+				};
+			};
+		};
+	};
+};
+
+&nand {
+	status = "okay";
+
+	nandcs@0 {
+		compatible = "brcm,nandcs";
+		reg = <0>;
+		brcm,nand-ecc-use-strap;
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "linuxapps";
+				reg = <0x00000000 0x1f40000>;
+				read-only;
+			};
+
+			partition@1f40000 {
+				label = "image1";
+				reg = <0x01f40000 0x00900000>;
+			};
+
+			partition@2840000 {
+				compatible = "linux,ubi";
+				label = "image2";
+				reg = <0x02840000 0x057c0000>;
+			};
+		};
+	};
+};

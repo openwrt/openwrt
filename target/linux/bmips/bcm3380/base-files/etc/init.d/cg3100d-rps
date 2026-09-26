@@ -1,0 +1,32 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+
+set_cg3100d_rps() {
+	for queue in /sys/class/net/eth0/queues/rx-*/rps_cpus; do
+		[ -e "$queue" ] || continue
+		echo 2 > "$queue"
+	done
+
+	for queue in /sys/class/net/eth0/queues/tx-*/xps_cpus; do
+		[ -e "$queue" ] || continue
+		echo 1 > "$queue"
+	done
+}
+
+set_cg3100d_rps_late() {
+	local i
+
+	for i in $(seq 1 20); do
+		set_cg3100d_rps
+		sleep 1
+	done
+}
+
+start() {
+	set_cg3100d_rps_late &
+}
+
+reload() {
+	set_cg3100d_rps_late &
+}

@@ -1,0 +1,26 @@
+--- a/drivers/soc/bcm/Kconfig
++++ b/drivers/soc/bcm/Kconfig
+@@ -37,6 +37,16 @@ config BCM3383_USB
+ 	  This driver configures the BCM3383 USB wrapper for host mode and
+ 	  instantiates the EHCI/OHCI core children.
+ 
++config BCM3384_PMC
++	tristate "Broadcom BCM3384 PMC command mailbox support"
++	depends on BMIPS_GENERIC || COMPILE_TEST
++	depends on HAS_IOMEM
++	default y if BMIPS_GENERIC
++	help
++	  This driver exposes the BCM3384 Power Management Controller command
++	  mailbox used by platform drivers to power on hardware blocks that are
++	  normally started by the stock bootloader or eCos.
++
+ config SOC_BRCMSTB
+ 	bool "Broadcom STB SoC drivers"
+ 	depends on ARCH_BRCMSTB || BMIPS_GENERIC || COMPILE_TEST
+--- a/drivers/soc/bcm/Makefile
++++ b/drivers/soc/bcm/Makefile
+@@ -4,3 +4,4 @@ obj-$(CONFIG_BCM3380_MSP)	+= bcm3380-ms
+ obj-$(CONFIG_BCM3380_USB)	+= bcm3380-usb.o
+ obj-$(CONFIG_BCM3383_USB)	+= bcm3383-usb.o
++obj-$(CONFIG_BCM3384_PMC)	+= bcm3384-pmc.o
+ obj-$(CONFIG_SOC_BRCMSTB)	+= brcmstb/

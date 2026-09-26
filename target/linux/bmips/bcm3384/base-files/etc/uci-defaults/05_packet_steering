@@ -1,0 +1,11 @@
+#!/bin/sh
+
+. /lib/functions.sh
+
+case "$(board_name)" in
+netgear,c6300bd-1tlaus)
+	uci -q set network.@globals[0].packet_steering='0'
+	;;
+esac
+
+exit 0

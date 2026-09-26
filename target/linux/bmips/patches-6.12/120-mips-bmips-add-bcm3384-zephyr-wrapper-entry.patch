@@ -1,0 +1,47 @@
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -987,6 +987,10 @@ config CAVIUM_OCTEON_SOC
+ 
+ endchoice
+ 
++config BMIPS_ZEPHYR_WRAPPER
++	bool "BCM3384 Viper-to-Zephyr boot wrapper"
++	depends on BMIPS_GENERIC && CPU_BMIPS5000 && BOOT_RAW
++
+ config FIT_IMAGE_FDT_EPM5
+ 	bool "Include FDT for Mobileye EyeQ5 development platforms"
+ 	depends on MACH_EYEQ5
+--- a/arch/mips/kernel/Makefile
++++ b/arch/mips/kernel/Makefile
+@@ -52,4 +52,5 @@ obj-$(CONFIG_SMP_UP)		+= smp-up.o
+ obj-$(CONFIG_CPU_BMIPS)		+= smp-bmips.o bmips_vec.o bmips_5xxx_init.o
++obj-$(CONFIG_BMIPS_ZEPHYR_WRAPPER) += bcm3384-zephyr-wrapper.o bcm3384-zephyr-low-trampoline.o
+ 
+ obj-$(CONFIG_MIPS_MT)		+= mips-mt.o
+ obj-$(CONFIG_MIPS_MT_FPAFF)	+= mips-mt-fpaff.o
+--- a/arch/mips/kernel/head.S
++++ b/arch/mips/kernel/head.S
+@@ -24,6 +24,10 @@
+ 
+ #include <kernel-entry-init.h>
+ 
++#ifdef CONFIG_BMIPS_ZEPHYR_WRAPPER
++#include "bcm3384-zephyr-entry.S"
++#endif
++
+ 	/*
+ 	 * For the moment disable interrupts, mark the kernel mode and
+ 	 * set ST0_KX so that the CPU does not spit fire when using
+@@ -67,7 +71,11 @@ EXPORT(_stext)
+ 	 * kernel load address.	 This is needed because this platform does
+ 	 * not have a ELF loader yet.
+ 	 */
+ FEXPORT(__kernel_entry)
++#ifdef CONFIG_BMIPS_ZEPHYR_WRAPPER
++	bcm3384_zephyr_wrapper_entry kernel_entry
++#else
+ 	j	kernel_entry
++#endif
+ #endif /* CONFIG_BOOT_RAW */
+ 
+ 	__REF
