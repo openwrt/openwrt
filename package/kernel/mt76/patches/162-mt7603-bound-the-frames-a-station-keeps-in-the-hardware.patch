@@ -1,0 +1,342 @@
+From 0cf98153975a21490c43e359944e7ebef8792d18 Mon Sep 17 00:00:00 2001
+From: Cristian Papa <pcristian292@gmail.com>
+Date: Wed, 23 Sep 2026 09:56:00 -0300
+Subject: [PATCH 3/3] wifi: mt76: mt7603: bound the frames a station keeps in
+ the hardware
+
+mt7603 completes a frame to mac80211 once DMA has copied it into the
+hardware, so AQL does not see the frames the hardware still holds for a
+station. With one client downloading, the hardware held about 200 frames
+for it, nearly the whole 256-entry tx ring, and up to about 750 under
+bidirectional load, when frames also wait in the PSE.
+
+Each time the station enters power save, the PSE loops all of them back
+to the host. The PS queue keeps at most 64 of them and frees the oldest
+to make room. A client that toggles PM often, like a phone with
+Bluetooth coexistence, turns this into a steady loss of data frames:
+with one client downloading, the frames freed per second roughly
+matched its TCP retransmissions per second.
+
+Count, per station, the frames queued to the hardware that still owe a
+TX status: counted when queued, settled by the TX status or by the
+loop-back return. Hold the station's tx queues with MT_WCID_FLAG_TX_HOLD
+at 96 frames and release them at 48, and let the PS queue keep up to the
+tx ring size minus 64 frames, so that what the hardware loops back fits
+and is sent again on wake-up. Either change alone makes bursts of PM
+toggling worse: without the cap, a larger queue lets the hardware loop
+back hundreds of frames over and over, and with the cap, the smaller
+queue still frees the frames above 64.
+
+The marks can be changed, or the cap turned off with 0, in debugfs
+(hw_cap_high, hw_cap_low); hw_cap shows the count per station.
+
+Every frame counted ends in a TX status or a loop-back return. If a held
+station sees neither for a second, reset its count and release it rather
+than keep it on hold.
+
+In a 30 minute bidirectional test that cycled through the four
+combinations every minute, the cap with the larger queue freed no
+frames from the PS queue (92 per second without either change), and
+the downlink stalled for 10 seconds (45), with 3 TCP retransmissions per
+second (15) and 0.1% of pings lost (6%).
+
+Assisted-by: LLM
+---
+--- a/mt7603/debugfs.c
++++ b/mt7603/debugfs.c
+@@ -93,6 +93,34 @@
+ 
+ DEFINE_SHOW_ATTRIBUTE(mt7603_ampdu_stat);
+ 
++static int
++mt7603_hw_cap_read(struct seq_file *s, void *data)
++{
++	struct mt7603_dev *dev = dev_get_drvdata(s->private);
++	int i;
++
++	seq_printf(s, "high %u low %u resync %u\n",
++		   READ_ONCE(dev->hw_cap_high), READ_ONCE(dev->hw_cap_low),
++		   READ_ONCE(dev->hw_cap_resync));
++
++	rcu_read_lock();
++	for (i = 0; i < MT7603_WTBL_STA; i++) {
++		struct mt76_wcid *wcid = mt76_wcid_ptr(dev, i);
++		struct mt7603_sta *msta;
++
++		if (!wcid || !wcid->sta)
++			continue;
++
++		msta = container_of(wcid, struct mt7603_sta, wcid);
++		seq_printf(s, "wcid %d pending %d hold %d\n", i,
++			   atomic_read(&msta->hw_pending),
++			   test_bit(MT_WCID_FLAG_TX_HOLD, &wcid->flags));
++	}
++	rcu_read_unlock();
++
++	return 0;
++}
++
+ void mt7603_init_debugfs(struct mt7603_dev *dev)
+ {
+ 	struct dentry *dir;
+@@ -115,4 +143,8 @@
+ 			    &dev->sensitivity_limit);
+ 	debugfs_create_bool("dynamic_sensitivity", 0600, dir,
+ 			    &dev->dynamic_sensitivity);
++	debugfs_create_u32("hw_cap_high", 0600, dir, &dev->hw_cap_high);
++	debugfs_create_u32("hw_cap_low", 0600, dir, &dev->hw_cap_low);
++	debugfs_create_devm_seqfile(dev->mt76.dev, "hw_cap", dir,
++				    mt7603_hw_cap_read);
+ }
+--- a/mt7603/dma.c
++++ b/mt7603/dma.c
+@@ -49,6 +49,11 @@
+ 
+ 	priv = msta = container_of(wcid, struct mt7603_sta, wcid);
+ 
++	/* The frame left the hardware: its TX status will not arrive. */
++	if (wcid->sta &&
++	    FIELD_GET(MT_TXD5_PID, le32_to_cpu(txd[5])) != MT_PACKET_ID_NO_ACK)
++		mt7603_hw_pending_dec(dev, msta);
++
+ 	sta = container_of(priv, struct ieee80211_sta, drv_priv);
+ 	hdr = (struct ieee80211_hdr *)&skb->data[MT_TXD_SIZE];
+ 
+@@ -97,7 +102,7 @@
+ 
+ 	spin_lock_bh(&dev->ps_lock);
+ 	__skb_queue_tail(&msta->psq, skb);
+-	if (skb_queue_len(&msta->psq) >= 64) {
++	if (skb_queue_len(&msta->psq) >= MT7603_PSQ_MAX) {
+ 		skb = __skb_dequeue(&msta->psq);
+ 		dev_kfree_skb(skb);
+ 	}
+--- a/mt7603/init.c
++++ b/mt7603/init.c
+@@ -559,6 +559,8 @@
+ 	dev->slottime = 9;
+ 	dev->sensitivity_limit = 28;
+ 	dev->dynamic_sensitivity = true;
++	dev->hw_cap_high = MT7603_HW_CAP_HIGH;
++	dev->hw_cap_low = MT7603_HW_CAP_LOW;
+ 
+ 	ret = mt7603_init_hardware(dev);
+ 	if (ret)
+--- a/mt7603/mac.c
++++ b/mt7603/mac.c
+@@ -1095,6 +1095,10 @@
+ 
+ 	pid = mt76_tx_status_skb_add(mdev, wcid, tx_info->skb);
+ 
++	/* Owed until its TX status arrives or a loop-back returns it. */
++	if (sta && pid != MT_PACKET_ID_NO_ACK)
++		mt7603_hw_pending_inc(dev, msta);
++
+ 	if (info->flags & IEEE80211_TX_CTL_RATE_CTRL_PROBE) {
+ 		spin_lock_bh(&dev->mt76.lock);
+ 		mt7603_wtbl_set_rates(dev, msta, &info->control.rates[0],
+@@ -1300,6 +1304,9 @@
+ 	sta = wcid_to_sta(wcid);
+ 	mt76_wcid_add_poll(&dev->mt76, &msta->wcid);
+ 
++	if (wcid->sta)
++		mt7603_hw_pending_dec(dev, msta);
++
+ 	if (mt7603_mac_add_txs_skb(dev, msta, pid, txs_data))
+ 		goto out;
+ 
+@@ -1878,6 +1885,56 @@
+ 	rcu_read_unlock();
+ }
+ 
++/* Lift the hold on a station's tx queues and get the scheduler going. */
++void mt7603_hw_release(struct mt7603_dev *dev, struct mt7603_sta *msta)
++{
++	struct ieee80211_sta *sta;
++	int i;
++
++	if (!test_and_clear_bit(MT_WCID_FLAG_TX_HOLD, &msta->wcid.flags))
++		return;
++
++	sta = container_of((void *)msta, struct ieee80211_sta, drv_priv);
++	for (i = 0; i < ARRAY_SIZE(sta->txq); i++)
++		if (sta->txq[i])
++			ieee80211_schedule_txq(mt76_hw(dev), sta->txq[i]);
++	mt76_worker_schedule(&dev->mt76.tx_worker);
++}
++
++/*
++ * Every frame counted ends in a TX status or a loop-back return. If a held
++ * station saw neither for a second, its count is off: start over instead
++ * of keeping it on hold. Turning the cap off releases every hold.
++ */
++static void
++mt7603_hw_cap_check(struct mt7603_dev *dev)
++{
++	bool enabled = READ_ONCE(dev->hw_cap_high);
++	int i;
++
++	rcu_read_lock();
++	for (i = 0; i < MT7603_WTBL_STA; i++) {
++		struct mt76_wcid *wcid = mt76_wcid_ptr(dev, i);
++		struct mt7603_sta *msta;
++
++		if (!wcid || !wcid->sta ||
++		    !test_bit(MT_WCID_FLAG_TX_HOLD, &wcid->flags))
++			continue;
++
++		msta = container_of(wcid, struct mt7603_sta, wcid);
++		if (enabled &&
++		    time_before(jiffies, READ_ONCE(msta->hw_settled) + HZ))
++			continue;
++
++		if (enabled) {
++			atomic_set(&msta->hw_pending, 0);
++			dev->hw_cap_resync++;
++		}
++		mt7603_hw_release(dev, msta);
++	}
++	rcu_read_unlock();
++}
++
+ void mt7603_mac_work(struct work_struct *work)
+ {
+ 	struct mt7603_dev *dev = container_of(work, struct mt7603_dev,
+@@ -1893,6 +1950,7 @@
+ 	mt76_update_survey(&dev->mphy);
+ 	mt7603_edcca_check(dev);
+ 	mt7603_mac_ps_check(dev);
++	mt7603_hw_cap_check(dev);
+ 
+ 	for (i = 0, idx = 0; i < 2; i++) {
+ 		u32 val = mt76_rr(dev, MT_TX_AGG_CNT(i));
+--- a/mt7603/main.c
++++ b/mt7603/main.c
+@@ -339,6 +339,8 @@
+ 
+ 	INIT_LIST_HEAD(&msta->wcid.poll_list);
+ 	__skb_queue_head_init(&msta->psq);
++	atomic_set(&msta->hw_pending, 0);
++	msta->hw_settled = jiffies;
+ 	msta->ps = ~0;
+ 	msta->smps = ~0;
+ 	msta->wcid.sta = 1;
+@@ -391,14 +393,22 @@
+ }
+ 
+ static void
+-mt7603_ps_tx_list(struct mt7603_dev *dev, struct sk_buff_head *list)
++mt7603_ps_tx_list(struct mt7603_dev *dev, struct mt7603_sta *msta,
++		  struct sk_buff_head *list)
+ {
+ 	struct sk_buff *skb;
+ 
+ 	while ((skb = __skb_dequeue(list)) != NULL) {
+ 		int qid = skb_get_queue_mapping(skb);
++		bool txs = le32_get_bits(((__le32 *)skb->data)[5],
++					 MT_TXD5_PID) != MT_PACKET_ID_NO_ACK;
+ 
+-		mt76_tx_queue_skb_raw(dev, dev->mphy.q_tx[qid], skb, 0);
++		/* Count it before the TX status can arrive. */
++		if (txs)
++			mt7603_hw_pending_inc(dev, msta);
++		if (mt76_tx_queue_skb_raw(dev, dev->mphy.q_tx[qid], skb, 0) &&
++		    txs)
++			mt7603_hw_pending_dec(dev, msta);
+ 	}
+ }
+ 
+@@ -420,7 +430,7 @@
+ 	skb_queue_splice_tail_init(&msta->psq, &list);
+ 	spin_unlock_bh(&dev->ps_lock);
+ 
+-	mt7603_ps_tx_list(dev, &list);
++	mt7603_ps_tx_list(dev, msta, &list);
+ }
+ 
+ static struct ieee80211_hdr *
+@@ -529,7 +539,7 @@
+ 		    !ieee80211_is_data_qos(mt7603_ps_skb_hdr(last)->frame_control);
+ 	last_tid = __fls(tids);
+ 
+-	mt7603_ps_tx_list(dev, &list);
++	mt7603_ps_tx_list(dev, msta, &list);
+ 
+ 	if (eosp_null)
+ 		ieee80211_send_eosp_nullfunc(sta, last_tid);
+--- a/mt7603/mt7603.h
++++ b/mt7603/mt7603.h
+@@ -20,6 +20,19 @@
+ #define MT7603_TX_RING_SIZE	256
+ #define MT7603_PSD_RING_SIZE	128
+ 
++/*
++ * Frames a station may have in the hardware (tx ring and PSE) before its
++ * tx queues are held, and the count at which they are released.
++ */
++#define MT7603_HW_CAP_HIGH	96
++#define MT7603_HW_CAP_LOW	48
++
++/*
++ * Frames looped back by the PSE for a sleeping station. They are sent again
++ * on wake-up, so leave room in the tx ring for other traffic.
++ */
++#define MT7603_PSQ_MAX		(MT7603_TX_RING_SIZE - 64)
++
+ #define MT7603_FIRMWARE_E1	"mt7603_e1.bin"
+ #define MT7603_FIRMWARE_E2	"mt7603_e2.bin"
+ #define MT7628_FIRMWARE_E1	"mt7628_e1.bin"
+@@ -81,6 +94,14 @@
+ 
+ 	u8 ps;
+ 	u8 ps_sleeping;
++
++	/*
++	 * Frames queued to the hardware that still owe a TX status. The
++	 * hardware completes frames to mac80211 once DMA has copied them, so
++	 * AQL cannot bound how many it holds for the station.
++	 */
++	atomic_t hw_pending;
++	unsigned long hw_settled;
+ };
+ 
+ struct mt7603_vif {
+@@ -157,7 +178,37 @@
+ 	u32 reset_test;
+ 
+ 	unsigned int reset_cause[__RESET_CAUSE_MAX];
+-};
++
++	/* per-station cap on frames in the hardware, 0 = off (debugfs) */
++	u32 hw_cap_high;
++	u32 hw_cap_low;
++	u32 hw_cap_resync;
++};
++
++void mt7603_hw_release(struct mt7603_dev *dev, struct mt7603_sta *msta);
++
++static inline void
++mt7603_hw_pending_inc(struct mt7603_dev *dev, struct mt7603_sta *msta)
++{
++	int pending = atomic_inc_return(&msta->hw_pending);
++	u32 high = READ_ONCE(dev->hw_cap_high);
++
++	if (high && pending >= high &&
++	    !test_and_set_bit(MT_WCID_FLAG_TX_HOLD, &msta->wcid.flags))
++		WRITE_ONCE(msta->hw_settled, jiffies);
++}
++
++static inline void
++mt7603_hw_pending_dec(struct mt7603_dev *dev, struct mt7603_sta *msta)
++{
++	WRITE_ONCE(msta->hw_settled, jiffies);
++	if (!atomic_add_unless(&msta->hw_pending, -1, 0))
++		return;
++
++	if (test_bit(MT_WCID_FLAG_TX_HOLD, &msta->wcid.flags) &&
++	    atomic_read(&msta->hw_pending) <= READ_ONCE(dev->hw_cap_low))
++		mt7603_hw_release(dev, msta);
++}
+ 
+ extern const struct mt76_driver_ops mt7603_drv_ops;
+ extern const struct ieee80211_ops mt7603_ops;

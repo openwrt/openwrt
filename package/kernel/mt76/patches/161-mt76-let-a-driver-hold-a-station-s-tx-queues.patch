@@ -1,0 +1,63 @@
+From 698938cb670d7d9e0909a1cdf4ff6d6e79df4b10 Mon Sep 17 00:00:00 2001
+From: Cristian Papa <pcristian292@gmail.com>
+Date: Tue, 22 Sep 2026 23:33:19 -0300
+Subject: [PATCH 2/3] wifi: mt76: let a driver hold a station's tx queues
+
+Some drivers know how many frames a station has inside the hardware
+better than AQL does. mt7603 completes a frame to mac80211 as soon as
+DMA has copied it, so AQL releases its airtime right away while the
+hardware may keep hundreds of frames for the station.
+
+Add MT_WCID_FLAG_TX_HOLD. While it is set, the tx scheduler leaves the
+station's queues alone, like it does for a station at the non-AQL limit,
+and stops a burst that filled the hardware. The driver clears the flag
+and schedules the queues again when the hardware has drained.
+
+No functional change for drivers that do not set the flag.
+
+Assisted-by: LLM
+---
+ mt76.h | 1 +
+ tx.c   | 7 +++++++
+ 2 files changed, 8 insertions(+)
+
+diff --git a/mt76.h b/mt76.h
+index 1d8da72..b5c5c1c 100644
+--- a/mt76.h
++++ b/mt76.h
+@@ -370,6 +370,7 @@ enum mt76_wcid_flags {
+ 	MT_WCID_FLAG_4ADDR,
+ 	MT_WCID_FLAG_HDR_TRANS,
+ 	MT_WCID_FLAG_TDLS_PEER,
++	MT_WCID_FLAG_TX_HOLD,
+ };
+ 
+ #define MT76_N_WCIDS 1088
+diff --git a/tx.c b/tx.c
+index 963fcaf..5d42004 100644
+--- a/tx.c
++++ b/tx.c
+@@ -538,6 +538,10 @@ mt76_txq_send_burst(struct mt76_phy *phy, struct mt76_queue *q,
+ 		if (stop || mt76_txq_stopped(q))
+ 			break;
+ 
++		/* The previous frame may have filled the hardware. */
++		if (test_bit(MT_WCID_FLAG_TX_HOLD, &wcid->flags))
++			break;
++
+ 		skb = mt76_txq_dequeue(phy, mtxq);
+ 		if (!skb)
+ 			break;
+@@ -622,6 +626,9 @@ mt76_txq_schedule_list(struct mt76_phy *phy, enum mt76_txq_id qid)
+ 		if (atomic_read(&mt76_wcid_primary(wcid)->non_aql_packets) >=
+ 		    MT_MAX_NON_AQL_PKT)
+ 			continue;
++		/* The driver schedules the queues again when it lifts the hold. */
++		if (test_bit(MT_WCID_FLAG_TX_HOLD, &wcid->flags))
++			continue;
+ 		if (dev->queue_ops->tx_cleanup &&
+ 		    q->queued + 2 * MT_TXQ_FREE_THR >= q->ndesc) {
+ 			dev->queue_ops->tx_cleanup(dev, q, false);
+-- 
+2.47.3
+
