@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: GPL-2.0-only
+config NET_DSA_RTL960X
+	tristate "Realtek RTL960X ethernet switch support"
+	depends on NET_DSA && RTL960X
+	select NET_DSA_TAG_RTL_OTTO
+	help
+	  This enables support for the switch core built into the Realtek
+	  RTL960x (RTL9607C family) SoCs. The switch is reached through the
+	  memory-mapped switch-core registers and uses the RTL960x GMAC as
+	  the DSA conduit with the rtl_otto tag protocol. The internal PHYs
+	  are reached through the RTL960x MDIO driver
+	  (MDIO_REALTEK_OTTO_RTL960X), which is enabled by default on these
+	  SoCs.
