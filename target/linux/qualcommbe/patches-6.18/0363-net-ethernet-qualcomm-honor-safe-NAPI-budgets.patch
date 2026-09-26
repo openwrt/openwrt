@@ -1,0 +1,96 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Yang Zhengguo <yangzhgg@gmail.com>
+Date: Sun, 16 Aug 2026 00:41:53 +0800
+Subject: [PATCH] net: ethernet: qualcomm: honor safe NAPI budgets
+
+The EDMA module parameters are validated and reported, but the NAPI instances
+are registered with the fixed values from edma_hw_info instead.  On IPQ9574
+the TX value is 512, which makes the networking core emit a warning because
+it exceeds NAPI_POLL_WEIGHT.
+
+Use the validated module parameters when registering RX and TX NAPI, limit
+them to the networking core's standard budget, and make the IPQ9574 fallback
+safe as well.
+
+Signed-off-by: Yang Zhengguo <yangzhgg@gmail.com>
+Signed-off-by: Jackie Han <jackie.han@gmail.com>
+
+--- a/drivers/net/ethernet/qualcomm/ppe/edma.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma.c
+@@ -41,11 +41,11 @@ MODULE_PARM_DESC(rx_buff_size, "Rx Buffer size for Jumbo MRU value (default:0)")
+ 
+ int edma_rx_napi_budget = EDMA_RX_NAPI_WORK_DEF;
+ module_param(edma_rx_napi_budget, int, 0444);
+-MODULE_PARM_DESC(edma_rx_napi_budget, "Rx NAPI budget (default:128, min:16, max:512)");
++MODULE_PARM_DESC(edma_rx_napi_budget, "Rx NAPI budget (default:64, min:16, max:64)");
+ 
+ int edma_tx_napi_budget = EDMA_TX_NAPI_WORK_DEF;
+ module_param(edma_tx_napi_budget, int, 0444);
+-MODULE_PARM_DESC(edma_tx_napi_budget, "Tx NAPI budget (default:512 for ipq95xx, min:16, max:512)");
++MODULE_PARM_DESC(edma_tx_napi_budget, "Tx NAPI budget (default:64, min:16, max:64)");
+ 
+ int edma_rx_mitigation_pkt_cnt = EDMA_RX_MITIGATION_PKT_CNT_DEF;
+ module_param(edma_rx_mitigation_pkt_cnt, int, 0444);
+@@ -122,7 +122,7 @@ static struct edma_hw_info ipq9574_hw_info = {
+ 	.txcmpl = &ipq9574_txcmpl_ring_info,
+ 	.max_ports = 6,
+ 	.napi_budget_rx = 32,
+-	.napi_budget_tx = 512,
++	.napi_budget_tx = 64,
+ };
+ 
+ static int edma_clock_set_and_enable(struct device *dev,
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_cfg_rx.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_cfg_rx.c
+@@ -978,7 +978,7 @@ void edma_cfg_rx_napi_add(void)
+ 		struct edma_rxdesc_ring *rxdesc_ring = &edma_ctx->rx_rings[i];
+ 
+ 		netif_napi_add_weight(edma_ctx->dummy_dev, &rxdesc_ring->napi,
+-				      edma_rx_napi_poll, hw_info->napi_budget_rx);
++				      edma_rx_napi_poll, edma_rx_napi_budget);
+ 		rxdesc_ring->napi_added = true;
+ 	}
+ 
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_cfg_rx.h
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_cfg_rx.h
+@@ -6,13 +6,13 @@
+ #define __EDMA_CFG_RX__
+ 
+ /* Rx default NAPI budget */
+-#define EDMA_RX_NAPI_WORK_DEF		128
++#define EDMA_RX_NAPI_WORK_DEF		64
+ 
+ /* RX minimum NAPI budget */
+ #define EDMA_RX_NAPI_WORK_MIN		16
+ 
+ /* Rx maximum NAPI budget */
+-#define EDMA_RX_NAPI_WORK_MAX		512
++#define EDMA_RX_NAPI_WORK_MAX		64
+ 
+ /* SKB payload size used in page mode */
+ #define EDMA_RX_PAGE_MODE_SKB_SIZE	256
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_cfg_tx.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_cfg_tx.c
+@@ -664,7 +664,7 @@ void edma_cfg_tx_napi_add(struct net_device *netdev, u32 port_id)
+ 		ring_idx = ((port_id - 1) * num_possible_cpus()) + i;
+ 		txcmpl_ring = &edma_ctx->txcmpl_rings[ring_idx];
+ 		netif_napi_add_weight(netdev, &txcmpl_ring->napi,
+-				      edma_tx_napi_poll, hw_info->napi_budget_tx);
++				      edma_tx_napi_poll, edma_tx_napi_budget);
+ 		txcmpl_ring->napi_added = true;
+ 		netdev_dbg(netdev, "Napi added for Tx cmpl ring: %u\n", txcmpl_ring->id);
+ 	}
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_cfg_tx.h
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_cfg_tx.h
+@@ -5,9 +5,9 @@
+ #ifndef __EDMA_CFG_TX__
+ #define __EDMA_CFG_TX__
+ 
+-#define EDMA_TX_NAPI_WORK_DEF	512
++#define EDMA_TX_NAPI_WORK_DEF	64
+ #define EDMA_TX_NAPI_WORK_MIN	16
+-#define EDMA_TX_NAPI_WORK_MAX	512
++#define EDMA_TX_NAPI_WORK_MAX	64
+ 
+ /* Tx mitigation timer's default value. */
+ #define EDMA_TX_MITIGATION_TIMER_DEF	250
