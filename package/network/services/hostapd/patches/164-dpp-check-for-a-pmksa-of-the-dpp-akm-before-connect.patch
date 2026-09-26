@@ -1,0 +1,56 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 26 Sep 2026 21:30:00 +0200
+Subject: [PATCH] DPP: require a PMKSA of the DPP AKM before skipping Network
+ Introduction
+
+wpas_dpp_check_connect() skips the Network Introduction protocol when
+wpa_sm_pmksa_exists() finds a PMKSA for the BSS. That lookup ignores the
+AKM, so a PMKSA from an SAE association, made while the AP did not offer
+the DPP AKM, counts as one for DPP. Once the AP offers DPP again, the
+station associates with the DPP AKM without a PMKID, and the AP rejects
+the Association Request with status 53 (invalid PMKID), because
+wpa_validate_wpa_ie() requires a PMKSA for DPP.
+
+Look up a PMKSA of the DPP AKM instead. For an AP MLD, also require the
+entry under the AP MLD address, which is the one an MLD association looks
+up and which the Peer Discovery Response handler stores beside the
+per-link entry.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/wpa_supplicant/dpp_supplicant.c
++++ b/wpa_supplicant/dpp_supplicant.c
+@@ -4564,6 +4564,23 @@ static int wpas_dpp_start_private_peer_i
+ #endif /* CONFIG_DPP3 */
+ 
+ 
++static bool wpas_dpp_pmksa_exists(struct wpa_supplicant *wpa_s,
++				  struct wpa_ssid *ssid, struct wpa_bss *bss)
++{
++	if (!wpa_sm_pmksa_cache_get(wpa_s->wpa, bss->bssid, NULL, ssid,
++				    WPA_KEY_MGMT_DPP))
++		return false;
++
++	/* An MLD association looks up the PMKSA by the AP MLD address. */
++	if (!is_zero_ether_addr(bss->mld_addr) &&
++	    !wpa_sm_pmksa_cache_get(wpa_s->wpa, bss->mld_addr, NULL, ssid,
++				    WPA_KEY_MGMT_DPP))
++		return false;
++
++	return true;
++}
++
++
+ int wpas_dpp_check_connect(struct wpa_supplicant *wpa_s, struct wpa_ssid *ssid,
+ 			   struct wpa_bss *bss)
+ {
+@@ -4580,7 +4597,7 @@ int wpas_dpp_check_connect(struct wpa_su
+ 	if (rsn && wpa_parse_wpa_ie(rsn, 2 + rsn[1], &ied) == 0 &&
+ 	    !(ied.key_mgmt & WPA_KEY_MGMT_DPP))
+ 		return 0; /* AP does not support DPP AKM - continue */
+-	if (wpa_sm_pmksa_exists(wpa_s->wpa, bss->bssid, wpa_s->own_addr, ssid))
++	if (wpas_dpp_pmksa_exists(wpa_s, ssid, bss))
+ 		return 0; /* PMKSA exists for DPP AKM - continue */
+ 
+ 	if (!ssid->dpp_connector || !ssid->dpp_netaccesskey ||
