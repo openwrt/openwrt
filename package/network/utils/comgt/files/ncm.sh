@@ -18,6 +18,7 @@ proto_ncm_init_config() {
 	proto_config_add_string pincode
 	proto_config_add_string delay
 	proto_config_add_int linksettle
+	proto_config_add_int attachwait
 	proto_config_add_string mode
 	proto_config_add_string pdptype
 	proto_config_add_boolean sourcefilter
@@ -55,6 +56,79 @@ ncm_wait_link() {
 	return 1
 }
 
+# Ask the modem for one identity string, e.g. CGMI for the manufacturer.
+ncm_query_id() {
+	local device="$1" script="$2" tag="$3"
+	local val
+
+	val=$(gcom -d "$device" -s "/etc/gcom/$script.gcom" | awk -v RS='\r?\n' -v tag="$tag" '
+		# echo of any AT command; remember whether it was the one we sent
+		$1 ~ /^AT[+*^#$]/ { seen = ($0 ~ ("AT\\+" tag)); next }
+		sub(("\\+" tag ": "), "") { print tolower($1); done = 1; exit }
+		# unsolicited result codes and bare status lines are not an answer
+		($1 ~ /^[+*^]/ || $1 == "OK" || $1 == "ERROR" || $1 == "RDY") { next }
+		NF {
+			if (seen) { print tolower($1); done = 1; exit }
+			if (fallback == "") fallback = tolower($1)
+		}
+		# no echo (ATE0): fall back to the first line that looked like an answer
+		END { if (!done && fallback != "") print fallback }')
+
+	echo "$val"
+}
+
+# Is there any "<manufacturer>-<model>" entry for this vendor at all? If not,
+# there is nothing to be gained by waiting for the model.
+ncm_has_model_entry() {
+	local manufacturer="$1"
+	local keys key
+
+	# json_get_keys reports the names with anything but a letter or a digit
+	# replaced, so "quectel-eg060w" arrives as "quectel_eg060w"
+	json_get_keys keys
+	for key in $keys; do
+		case "$key" in
+		"$manufacturer"-*|"$manufacturer"_*) return 0 ;;
+		esac
+	done
+
+	return 1
+}
+
+# Wait for the modem to attach to the packet domain before dialling. A modem
+# that never reports an attach state is not held up - but only once the wait
+# is over, because a single probe can come back empty just from missing the
+# read window of runquery.gcom.
+ncm_wait_attach() {
+	local device="$1" deadline="$2"
+	local reply state answered=0
+
+	while :; do
+		reply=$(COMMAND="AT+CGATT?" gcom -d "$device" -s /etc/gcom/runquery.gcom)
+
+		# the modem rejects AT+CGATT?: there is nothing to wait for
+		case "$reply" in
+		*ERROR*|*"NOT SUPPORT"*) return 0 ;;
+		esac
+
+		state=$(echo "$reply" | awk -v RS='\r?\n' \
+			'/\+CGATT: [0-9]/ { sub(/.*\+CGATT: /, ""); print $1 + 0; exit }')
+		[ -n "$state" ] && answered=1
+		[ "$state" = 1 ] && return 0
+
+		[ "$(date +%s)" -lt "$deadline" ] || break
+		sleep 1
+	done
+
+	# it never said anything about the packet domain: do not hold up the dial
+	[ "$answered" = 0 ] && {
+		echo "Modem does not report an attach state, dialling anyway"
+		return 0
+	}
+
+	return 1
+}
+
 # Pick the ncm.json entry: "<manufacturer>-<model>" wins over the plain
 # manufacturer one. json_is_a() avoids a warning when there is no such entry.
 ncm_select_modem() {
@@ -72,13 +146,13 @@ ncm_select_modem() {
 proto_ncm_setup() {
 	local interface="$1"
 
-	local connect context_type devname devpath finalize ifpath initialize linkatfinalize manufacturer model setmode
+	local attachwait_default connect context_type devname devpath finalize ifpath initialize linkatfinalize manufacturer model setmode
 
 	local delegate ip4table ip6table mtu sourcefilter $PROTO_DEFAULT_OPTIONS
 	json_get_vars delegate ip4table ip6table mtu sourcefilter $PROTO_DEFAULT_OPTIONS
 
-	local apn auth delay device ifname linksettle mode password pdptype pincode profile username
-	json_get_vars apn auth delay device ifname linksettle mode password pdptype pincode profile username
+	local apn attachwait auth delay device ifname linksettle mode password pdptype pincode profile username
+	json_get_vars apn attachwait auth delay device ifname linksettle mode password pdptype pincode profile username
 
 	[ "$metric" = "" ] && metric="0"
 
@@ -133,42 +207,42 @@ proto_ncm_setup() {
 		return 1
 	}
 
-	start=$(date +%s)
+	# a modem that was just powered up takes a few seconds before it answers,
+	# so keep asking until it identifies itself
+	local deadline=$(($(date +%s) + ${delay:-20}))
 	while true; do
-		manufacturer=$(gcom -d "$device" -s /etc/gcom/getcardinfo.gcom | awk -v RS='\r?\n' 'NF && $0 !~ /AT\+CGMI/ { sub(/\+CGMI: /,""); print tolower($1); exit; }')
-		[ "$manufacturer" = "error" ] && {
-			manufacturer=""
-		}
-		[ -n "$manufacturer" ] && {
-			break
-		}
-		[ -z "$delay" ] && {
-			break
-		}
-		sleep 1
-		elapsed=$(($(date +%s) - start))
-		[ "$elapsed" -gt "$delay" ] && {
-			break
-		}
-	done
-	[ -z "$manufacturer" ] && {
-		echo "Failed to get modem information"
-		proto_notify_error "$interface" GETINFO_FAILED
-		return 1
-	}
+		manufacturer=$(ncm_query_id "$device" getcardinfo CGMI)
+		model=$(ncm_query_id "$device" getmodel CGMM)
+		# drop the region/SKU suffix: EG060W-EAAA -> eg060w
+		model=${model%%-*}
 
-	model=$(gcom -d "$device" -s /etc/gcom/getmodel.gcom | awk -v RS='\r?\n' 'NF && $0 !~ /AT\+CGMM/ { sub(/\+CGMM: /,""); print tolower($1); exit; }')
-	[ "$model" = "error" ] && model=""
-	# drop the region/SKU suffix: EG060W-EAAA -> eg060w
-	model=${model%%-*}
+		json_load "$(cat /etc/gcom/ncm.json)"
+		if [ -n "$manufacturer" ]; then
+			if [ -n "$model" ] || ! ncm_has_model_entry "$manufacturer"; then
+				ncm_select_modem "$manufacturer" "$model" && break
+			fi
+		fi
 
-	json_load "$(cat /etc/gcom/ncm.json)"
-	ncm_select_modem "$manufacturer" "$model" || {
-		echo "Unsupported modem"
+		[ "$(date +%s)" -lt "$deadline" ] && {
+			sleep 1
+			continue
+		}
+
+		[ -n "$manufacturer" ] || {
+			echo "Failed to get modem information"
+			proto_notify_error "$interface" GETINFO_FAILED
+			return 1
+		}
+
+		# out of time: a modem that never reports a model still gets its
+		# manufacturer entry
+		ncm_select_modem "$manufacturer" "$model" && break
+
+		echo "Unsupported modem (manufacturer '$manufacturer', model '$model')"
 		proto_notify_error "$interface" UNSUPPORTED_MODEM
 		proto_set_available "$interface" 0
 		return 1
-	}
+	done
 
 	json_get_values initialize initialize
 	for i in $initialize; do
@@ -210,6 +284,18 @@ proto_ncm_setup() {
 			}
 		}
 		json_select ..
+	}
+
+	# ncm.json sets the default for profiles that must not be gated
+	json_get_var attachwait_default attachwait
+
+	[ -n "$attachwait" ] || attachwait="${attachwait_default:-10}"
+	[ "$attachwait" -gt 0 ] && {
+		ncm_wait_attach "$device" $(($(date +%s) + attachwait)) || {
+			echo "Modem did not attach to the network"
+			proto_notify_error "$interface" NETWORK_REGISTRATION_FAILED
+			return 1
+		}
 	}
 
 	echo "Starting network $interface"
@@ -319,15 +405,14 @@ proto_ncm_teardown() {
 	json_get_vars manufacturer model
 	[ $? -ne 0 -o -z "$manufacturer" ] && {
 		# Fallback to direct detect, for proper handle device replug.
-		manufacturer=$(gcom -d "$device" -s /etc/gcom/getcardinfo.gcom | awk -v RS='\r?\n' 'NF && $0 !~ /AT\+CGMI/ { sub(/\+CGMI: /,""); print tolower($1); exit; }')
+		manufacturer=$(ncm_query_id "$device" getcardinfo CGMI)
 		[ $? -ne 0 -o -z "$manufacturer" ] && {
 			echo "Failed to get modem information"
 			proto_notify_error "$interface" GETINFO_FAILED
 			return 1
 		}
 		# model too, or we fall back to the vendor entry on this path
-		model=$(gcom -d "$device" -s /etc/gcom/getmodel.gcom | awk -v RS='\r?\n' 'NF && $0 !~ /AT\+CGMM/ { sub(/\+CGMM: /,""); print tolower($1); exit; }')
-		[ "$model" = "error" ] && model=""
+		model=$(ncm_query_id "$device" getmodel CGMM)
 		model=${model%%-*}
 
 		json_add_string "manufacturer" "$manufacturer"
