@@ -22,8 +22,8 @@ define Device/aerohive_hiveap-330
   KERNEL_NAME := simpleImage.hiveap-330
   KERNEL_SIZE := 16m
   IMAGES := sysupgrade.bin
-  KERNEL_ENTRY := 0x1500000
-  KERNEL_LOADADDR := 0x1500000
+  KERNEL_ENTRY := 0x3000000
+  KERNEL_LOADADDR := 0x3000000
   # append-dtb is still needed, as otherwise u-boot bootm complains
   # about not having a FDT to edit.
   IMAGE/sysupgrade.bin := append-dtb | pad-to 256k | append-kernel | \
