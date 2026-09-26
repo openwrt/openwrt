@@ -38,7 +38,7 @@ Subject: [PATCH] hostapd: make rfkill support optional
  ifdef NEED_RADIOTAP
 --- a/src/drivers/rfkill.h
 +++ b/src/drivers/rfkill.h
-@@ -18,8 +18,24 @@ struct rfkill_config {
+@@ -18,8 +18,25 @@ struct rfkill_config {
  	void (*unblocked_cb)(void *ctx);
  };
  
@@ -49,7 +49,8 @@ Subject: [PATCH] hostapd: make rfkill support optional
 +#else
 +static inline struct rfkill_data * rfkill_init(struct rfkill_config *cfg)
 +{
-+	return (void *) 1;
++	/* callers release the config only on a NULL return */
++	return NULL;
 +}
 +
 +static inline void rfkill_deinit(struct rfkill_data *rfkill)

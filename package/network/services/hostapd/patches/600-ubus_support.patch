@@ -320,7 +320,16 @@ probe/assoc/auth requests via object subscribe.
  		wpa_printf(MSG_DEBUG, "RRM action %u is not supported",
 --- a/src/ap/sta_info.c
 +++ b/src/ap/sta_info.c
-@@ -621,6 +621,7 @@ void ap_handle_timer(void *eloop_ctx, vo
+@@ -361,6 +361,8 @@ void ap_free_sta(struct hostapd_data *ha
+ 	sta->probe_ie_taxonomy = NULL;
+ 	wpabuf_free(sta->assoc_ie_taxonomy);
+ 	sta->assoc_ie_taxonomy = NULL;
++	wpabuf_free(sta->assoc_frame_taxonomy);
++	sta->assoc_frame_taxonomy = NULL;
+ #endif /* CONFIG_TAXONOMY */
+ 
+ 	ht40_intolerant_remove(hapd->iface, sta);
+@@ -621,6 +623,7 @@ void ap_handle_timer(void *eloop_ctx, vo
  		hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_IEEE80211,
  			       HOSTAPD_LEVEL_INFO, "deauthenticated due to "
  			       "local deauth request");
@@ -328,7 +337,7 @@ probe/assoc/auth requests via object subscribe.
  		ap_free_sta(hapd, sta);
  		return;
  	}
-@@ -789,6 +790,7 @@ skip_poll:
+@@ -789,6 +792,7 @@ skip_poll:
  		mlme_deauthenticate_indication(
  			hapd, sta,
  			WLAN_REASON_PREV_AUTH_NOT_VALID);
@@ -336,7 +345,7 @@ probe/assoc/auth requests via object subscribe.
  		ap_free_sta(hapd, sta);
  		break;
  	}
-@@ -1793,17 +1795,30 @@ void ap_sta_set_authorized_event(struct
+@@ -1793,17 +1797,30 @@ void ap_sta_set_authorized_event(struct
  		os_snprintf(buf, sizeof(buf), MACSTR, MAC2STR(sta->addr));
  
  	if (authorized) {
@@ -367,7 +376,7 @@ probe/assoc/auth requests via object subscribe.
  
  #ifdef CONFIG_P2P
  		if (wpa_auth_get_ip_addr(sta->wpa_sm, ip_addr_buf) == 0) {
-@@ -1815,6 +1830,13 @@ void ap_sta_set_authorized_event(struct
+@@ -1815,6 +1832,13 @@ void ap_sta_set_authorized_event(struct
  		}
  #endif /* CONFIG_P2P */
  
@@ -381,7 +390,7 @@ probe/assoc/auth requests via object subscribe.
  		keyid = ap_sta_wpa_get_keyid(hapd, sta);
  		if (keyid) {
  			os_snprintf(keyid_buf, sizeof(keyid_buf),
-@@ -1839,17 +1861,19 @@ void ap_sta_set_authorized_event(struct
+@@ -1839,17 +1863,19 @@ void ap_sta_set_authorized_event(struct
  				    " vlanid=%u", sta->vlan_id);
  #endif /* CONFIG_NO_VLAN */
  
