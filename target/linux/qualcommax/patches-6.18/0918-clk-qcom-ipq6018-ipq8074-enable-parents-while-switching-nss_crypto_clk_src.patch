@@ -1,0 +1,37 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Subject: clk: qcom: ipq6018/ipq8074: enable parents while switching nss_crypto_clk_src
+
+An RCG whose root is enabled does not switch to a source that is not
+running. The NSS crypto PLL has no other consumer and is off at boot,
+so when the bootloader leaves the crypto RCG root enabled,
+assigned-clock-rates on the PPE node switches it to the stopped PLL and
+the update times out:
+
+  nss_crypto_clk_src: rcg didn't update its configuration.
+
+Set CLK_OPS_PARENT_ENABLE so the clock core runs the parents across the
+switch, as gcc-sc7180 does for gcc_sdcc2_apps_clk_src.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+--- a/drivers/clk/qcom/gcc-ipq6018.c
++++ b/drivers/clk/qcom/gcc-ipq6018.c
+@@ -971,6 +971,7 @@ static struct clk_rcg2 nss_crypto_clk_sr
+ 		.name = "nss_crypto_clk_src",
+ 		.parent_data = gcc_xo_nss_crypto_pll_gpll0,
+ 		.num_parents = 3,
++		.flags = CLK_OPS_PARENT_ENABLE,
+ 		.ops = &clk_rcg2_ops,
+ 	},
+ };
+--- a/drivers/clk/qcom/gcc-ipq8074.c
++++ b/drivers/clk/qcom/gcc-ipq8074.c
+@@ -1198,6 +1198,7 @@ static struct clk_rcg2 nss_crypto_clk_sr
+ 		.name = "nss_crypto_clk_src",
+ 		.parent_data = gcc_xo_nss_crypto_pll_gpll0,
+ 		.num_parents = ARRAY_SIZE(gcc_xo_nss_crypto_pll_gpll0),
++		.flags = CLK_OPS_PARENT_ENABLE,
+ 		.ops = &clk_rcg2_ops,
+ 	},
+ };
