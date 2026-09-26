@@ -1001,6 +1001,8 @@ static int otto_l3_nexthop_update(struct otto_l3_ctrl *ctrl, __be32 ip_addr, u64
 	}
 
 	rhl_for_each_entry_rcu(r, tmp, list, linkage) {
+		bool no_port;
+
 		dev_dbg(ctrl->dev, "%s: Setting up fwding: ip %pI4, GW mac %016llx\n",
 			__func__, &ip_addr, mac);
 
@@ -1016,11 +1018,23 @@ static int otto_l3_nexthop_update(struct otto_l3_ctrl *ctrl, __be32 ip_addr, u64
 			ctrl->cfg->set_egress_mac(ctrl, r->id, mac);
 
 		/* Update ROUTING table: map gateway-mac and switch-mac id to route id */
-		if (!rtldsa_l2_nexthop_add(priv, &r->nh))
+		if (!rtldsa_l2_nexthop_add(priv, &r->nh, ctrl->cfg->use_l3_tables))
 			r->nh.l2_installed = true;
 
+		/* A next hop with no port delivers the frame twice, so where the
+		 * route entry can trap, let the CPU route it alone until an update
+		 * brings one, the way otto_l3_fib_add_v4() treats a host route
+		 * with no gateway. A family that routes through a PIE rule keeps
+		 * the rule it had.
+		 */
+		no_port = ctrl->cfg->use_l3_tables &&
+			  r->nh.port == priv->r->port_ignore;
+		if (no_port && r->attr.action != ROUTE_ACT_TRAP2CPU)
+			dev_info(ctrl->dev, "no port for %pI4, routing %pI4/%d in software\n",
+				 &ip_addr, &r->dst_ip, r->prefix_len);
+
 		r->attr.valid = true;
-		r->attr.action = ROUTE_ACT_FORWARD;
+		r->attr.action = no_port ? ROUTE_ACT_TRAP2CPU : ROUTE_ACT_FORWARD;
 		r->attr.type = ROUTE_TYPE_IP4UC;
 		r->attr.hit = false; /* Reset route-used indicator */
 
