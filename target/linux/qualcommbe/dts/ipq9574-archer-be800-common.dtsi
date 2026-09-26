@@ -119,6 +119,13 @@
 	status = "okay";
 };
 
+/* Front-panel LED matrix controllers (0x50/0x53/0x5c) */
+&blsp1_i2c3 {
+	pinctrl-0 = <&i2c3_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &blsp1_uart2 {
 	pinctrl-0 = <&uart2_pins>;
 	pinctrl-names = "default";
@@ -189,6 +196,13 @@
 		function = "blsp4_i2c";
 		drive-strength = <8>;
 		bias-pull-up;
+	};
+
+	i2c3_default: i2c3-default-state {
+		pins = "gpio15", "gpio16";
+		function = "blsp3_i2c";
+		drive-strength = <8>;
+		bias-disable;
 	};
 
 	sfp0_default: sfp0-default-state {
