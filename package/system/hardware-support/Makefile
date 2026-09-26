@@ -95,6 +95,21 @@ define Package/input-support/install
 	$(call InstallFragment,$(1),40-input.json)
 endef
 
+define Package/dvb-support
+  $(call Package/hardware-support/Default)
+  TITLE:=DVB device support
+  USERID:=:dvb=49
+endef
+
+define Package/dvb-support/description
+ Feature gate for DVB devices. Allocates the dvb group and installs the
+ hotplug rules which put the DVB adapter character devices into it.
+endef
+
+define Package/dvb-support/install
+	$(call InstallFragment,$(1),45-dvb.json)
+endef
+
 define Build/Prepare
 endef
 
@@ -108,3 +123,4 @@ $(eval $(call BuildPackage,audio-support))
 $(eval $(call BuildPackage,video-support))
 $(eval $(call BuildPackage,accel-support))
 $(eval $(call BuildPackage,input-support))
+$(eval $(call BuildPackage,dvb-support))
