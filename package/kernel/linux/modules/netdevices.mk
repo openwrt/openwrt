@@ -54,7 +54,7 @@ define KernelPackage/ag71xx-legacy
 	CONFIG_AG71XX_LEGACY_DEBUG_FS=y
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/atheros/ag71xx/ag71xx_legacy.ko \
 	 $(LINUX_DIR)/drivers/net/ethernet/atheros/ag71xx/ag71xx_legacy_mdio.ko
-  AUTOLOAD:=$(call AutoLoad,50,ag71xx-legacy ag71xx-legacy-mdio,1)
+  AUTOLOAD:=$(call AutoLoad,50,ag71xx-legacy-mdio ag71xx-legacy,1)
 endef
 
 $(eval $(call KernelPackage,ag71xx-legacy))
