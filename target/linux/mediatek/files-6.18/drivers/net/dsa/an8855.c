@@ -1198,6 +1198,10 @@ static u32 en8855_get_phy_flags(struct dsa_switch *ds, int port)
 {
 	struct an8855_priv *priv = ds->priv;
 
+	/* Shared ports previously received no PHY flags. */
+	if (!dsa_is_user_port(ds, port))
+		return 0;
+
 	/* PHY doesn't need calibration */
 	if (!priv->phy_require_calib)
 		return 0;
