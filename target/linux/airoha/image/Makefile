@@ -3,6 +3,7 @@ include $(INCLUDE_DIR)/image.mk
 
 loadaddr-$(CONFIG_TARGET_airoha_an7581) := 0x80200000
 loadaddr-$(CONFIG_TARGET_airoha_an7583) := 0x80200000
+loadaddr-$(CONFIG_TARGET_airoha_an7589) := 0x80200000
 loadaddr-$(CONFIG_TARGET_airoha_en7523) := 0x80200000
 
 # default all platform image(fit) build

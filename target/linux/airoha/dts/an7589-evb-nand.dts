@@ -1,0 +1,365 @@
+// SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+/dts-v1/;
+
+/* Bootloader installs ATF here */
+/memreserve/ 0x80000000 0x200000;
+
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include "an7589.dtsi"
+
+/ {
+	model = "Airoha AN7589 Evaluation Board";
+	compatible = "airoha,an7589-evb";
+
+	aliases {
+		serial0 = &uart1;
+		serial1 = &uart2;
+		serial2 = &uart3;
+		serial3 = &uart4;
+		serial4 = &uart5;
+		serial5 = &uart6;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,115200 earlycon";
+		stdout-path = "serial0:115200n8";
+		linux,usable-memory-range = <0x0 0x80200000 0x0 0x7fe00000>;
+	};
+
+	memory@80000000 {
+		device_type = "memory";
+		reg = <0x0 0x80000000 0x2 0x00000000>;
+	};
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		poll-interval = <100>;
+		btn0 {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&an7589_pinctrl 0 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	bob_nvm {
+		compatible = "airoha,airoha-bob";
+
+		nvmem-cells = <&bob_factory>, <&onu_type_factory>, <&board_config_factory>;
+		nvmem-cell-names = "bob_data", "onu_type", "board_config";
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led-0 {
+			label = "power";
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&an7589_pinctrl 3 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+
+		led-2 {
+			label = "internet";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&an7589_pinctrl 15 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+	};
+
+	sound: sound {
+		compatible = "airoha,an7581-wm8960-sound";
+
+		status = "disabled";
+
+		platform {
+			sound-dai = <&afe>;
+		};
+	};
+
+};
+
+&scuclk {
+	mdio_0: mdio-bus@c8 {
+		clock-frequency = <12500000>;
+
+		as22xx_1: ethernet-phy@1c {
+			reg = <0x1c>;
+			trd-swap = <1>;
+			compatible = "ethernet-phy-ieee802.3-c45";
+			firmware-name = "as22x1x_fw.bin";
+			reset-deassert-us = <350000>;
+			reset-assert-us = <200000>;
+			reset-gpios = <&an7589_pinctrl 25 GPIO_ACTIVE_LOW>;
+			status = "disabled";
+		};
+		as22xx_2: ethernet-phy@19 {
+			reg = <0x19>;
+			trd-swap = <1>;
+			compatible = "ethernet-phy-ieee802.3-c45";
+			firmware-name = "as22x1x_fw.bin";
+			reset-deassert-us = <350000>;
+			reset-assert-us = <200000>;
+			reset-gpios = <&an7589_pinctrl 26 GPIO_ACTIVE_LOW>;
+			status = "disabled";
+		};
+		as22xx_3: ethernet-phy@1f {
+			reg = <0x1f>;
+			trd-swap = <1>;
+			compatible = "ethernet-phy-ieee802.3-c45";
+			firmware-name = "as22x1x_fw.bin";
+			reset-deassert-us = <350000>;
+			reset-assert-us = <200000>;
+			reset-gpios = <&an7589_pinctrl 27 GPIO_ACTIVE_LOW>;
+			status = "disabled";
+		};
+		as22xx_4: ethernet-phy@1b {
+			reg = <0x1b>;
+			trd-swap = <1>;
+			compatible = "ethernet-phy-ieee802.3-c45";
+			firmware-name = "as22x1x_fw.bin";
+			reset-deassert-us = <350000>;
+			reset-assert-us = <200000>;
+			reset-gpios = <&an7589_pinctrl 28 GPIO_ACTIVE_LOW>;
+			status = "disabled";
+		};
+		as22xx_5: ethernet-phy@1d {
+			reg = <0x1d>;
+			trd-swap = <1>;
+			compatible = "ethernet-phy-ieee802.3-c45";
+			firmware-name = "as22x1x_fw.bin";
+			reset-deassert-us = <350000>;
+			reset-assert-us = <200000>;
+			reset-gpios = <&an7589_pinctrl 43 GPIO_ACTIVE_LOW>;
+			status = "disabled";
+		};
+	};
+};
+
+&switch {
+	mdio-bus = <&mdio_0>;
+};
+
+&npu {
+	firmware-name = "airoha/an7589_MT7999_npu_rv32.bin",
+			"airoha/an7589_MT7999_npu_data.bin";
+	status = "okay";
+};
+
+&i2c0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c0_pins>;
+	status = "okay";
+};
+
+&i2c3 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c3_pins>;
+	status = "okay";
+};
+
+&uart2 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart2_pins>;
+	status = "disabled";
+};
+
+&uart3 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart3_pins>;
+	status = "disabled";
+};
+
+&uart4 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart4_pins>;
+	status = "disabled";
+};
+
+&uart5 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart5_pins>;
+	status = "disabled";
+};
+
+&uart6 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart6_pins>;
+	status = "disabled";
+};
+
+&usb0 {
+	status = "okay";
+};
+
+&usb1 {
+	status = "okay";
+};
+
+&an7589_port1 {
+	status = "disabled";
+};
+
+&an7589_port2 {
+	status = "disabled";
+};
+
+&an7589_port3 {
+	status = "disabled";
+};
+
+&an7589_port4 {
+	status = "disabled";
+};
+
+&an7589_port5 {
+	status = "disabled";
+};
+
+&an7589_port9 {
+	status = "disabled";
+};
+
+&an7589_port10 {
+	status = "disabled";
+};
+
+&an7589_port11 {
+	status = "disabled";
+};
+
+&ups {
+	status = "okay";
+	nvmem-cells = <&onu_type_factory>, <&mac_factory>;
+	nvmem-cell-names = "onu_type", "mac";
+};
+
+&sound {
+	audio-routing = "Left Input Mixer", "MICB",
+			"Left Input Mixer", "LINPUT1",
+			"Left ADC", "Left Input Mixer",
+			"Capture", "Left ADC",
+
+			"Right Input Mixer", "MICB",
+			"Right Input Mixer", "RINPUT1",
+			"Right ADC", "Right Input Mixer",
+			"Capture", "Right ADC",
+
+			"Left DAC", "Playback",
+			"Left Output Mixer", "Left DAC",
+			"LOUT1 PGA", "Left Output Mixer",
+			"SPK_LP", "LOUT1 PGA",
+			"SPK_LN", "LOUT1 PGA",
+
+			"Right DAC", "Playback",
+			"Right Output Mixer", "Right DAC",
+			"ROUT1 PGA", "Right Output Mixer",
+			"SPK_RP", "ROUT1 PGA",
+			"SPK_RN", "ROUT1 PGA";
+	dai-format = "i2s";
+	mediatek,clk-provider = "codec";
+	status = "disabled";
+};
+
+&afe {
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2s_pins>;
+	status = "disabled";
+};
+
+&pcm {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcm1_pins>;
+	status = "okay";
+};
+
+&snfi {
+	status = "okay";
+};
+
+&spi_nand {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		bl2@0 {
+			label = "bl2";
+			reg = <0x0 0x200000>;
+		};
+
+		ubi@200000 {
+			label = "ubi";
+			compatible = "linux,ubi";
+			reg = <0x200000 0x0>;
+			volumes {
+				ubi_fip: ubi-volume-fip {
+					volname = "fip";
+				};
+				ubi_ubootenv: ubi-volume-ubootenv {
+					volname = "ubootenv";
+				};
+				ubi_ubootenv2: ubi-volume-ubootenv2 {
+					volname = "ubootenv2";
+				};
+				ubi_art: ubi-volume-art {
+					volname = "art";
+				};
+				ubi_kernel: ubi-volume-kernel {
+					volname = "kernel";
+				};
+				ubi_rootfs: ubi-volume-rootfs {
+					volname = "rootfs";
+				};
+				ubi_kernel_alt: ubi-volume-kernel_alt {
+					volname = "kernel_alt";
+				};
+				ubi_rootfs_alt: ubi-volume-rootfs_alt {
+					volname = "rootfs_alt";
+				};
+				ubi_rootfs_data: ubi-volume-rootfs_data {
+					volname = "rootfs_data";
+				};
+			};
+		};
+	};
+};
+
+&ubi_art {
+	nvmem-layout {
+		compatible = "fixed-layout";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		eeprom_factory: eeprom@40000 {
+			reg = <0x40000 0x1e00>;
+		};
+
+		bob_factory: bob_factory@260000 {
+			reg = <0x260000 0x800>;
+		};
+
+		mac_factory: mac@2c0000 {
+			reg = <0x2c0000 0x6>;
+		};
+
+		onu_type_factory: onu_type@2e0000 {
+			reg = <0x2e0000 0x10>;
+		};
+
+		board_config_factory: board_config@2e0010 {
+			reg = <0x2e0010 0x4>;
+		};
+
+		disable_voip_factory: disable_voip@2e1400 {
+			reg = <0x2e1400 0x2>;
+		};
+
+		wifi8_eeprom_factory: wifi8_eeprom@2e2000 {
+			reg = <0x2e2000 0x6400>;
+		};
+	};
+};

@@ -1,0 +1,34 @@
+Document support for Airoha AN7589 clock. Like AN7583, AN7589 is based
+on the EN7523 clock schema and requires the "airoha,chip-scu" phandle
+to be present.
+
+Signed-off-by: Zhengping Zhang <zhengping.zhang@airoha.com>
+---
+ .../bindings/clock/airoha,en7523-scu.yaml     |  9 ++++++++
+ 1 file changed, 9 insertions(+)
+
+--- a/Documentation/devicetree/bindings/clock/airoha,en7523-scu.yaml
++++ b/Documentation/devicetree/bindings/clock/airoha,en7523-scu.yaml
+@@ -32,6 +32,7 @@ properties:
+       - enum:
+           - airoha,en7523-scu
+           - airoha,en7581-scu
++          - airoha,an7583-scu
+           - airoha,an7589-scu
+
+   reg:
+@@ -82,6 +83,14 @@ allOf:
+         reg:
+           maxItems: 1
+
++  - if:
++      properties:
++        compatible:
++          const: airoha,an7589-scu
++    then:
++      required:
++        - airoha,chip-scu
++
+   additionalProperties: false
+
+   examples:
