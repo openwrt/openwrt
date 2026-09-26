@@ -1,0 +1,16 @@
+--- a/drivers/crypto/Kconfig
++++ b/drivers/crypto/Kconfig
+@@ -878,4 +878,6 @@ source "drivers/crypto/starfive/Kconfig"
+ source "drivers/crypto/inside-secure/eip93/Kconfig"
+ source "drivers/crypto/ti/Kconfig"
+ 
++source "drivers/crypto/al/Kconfig"
++
+ endif # CRYPTO_HW
+--- a/drivers/crypto/Makefile
++++ b/drivers/crypto/Makefile
+@@ -50,3 +50,4 @@ obj-y += intel/
+ obj-y += starfive/
+ obj-y += cavium/
+ obj-y += ti/
++obj-$(CONFIG_CRYPTO_DEV_AL_CRYPTO) += al/
