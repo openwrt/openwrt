@@ -1,0 +1,14 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-or-later
+# First boot / install: if the user hasn't configured modemsignal-leds and a
+# profile ships for this board, install it as the default config. Devices that
+# are auto-discoverable (single modem, *:mobile-* LEDs) need no profile.
+board=$(cat /tmp/sysinfo/board_name 2>/dev/null)
+prof="/usr/share/modemsignal-leds/profiles/$board"
+
+# leave any existing user config untouched
+uci -q show modemsignal-leds 2>/dev/null | grep -q '=modem$' && exit 0
+[ -n "$board" ] && [ -f "$prof" ] || exit 0
+
+cp "$prof" /etc/config/modemsignal-leds
+exit 0
