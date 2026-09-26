@@ -78,6 +78,23 @@ define Package/accel-support/install
 	$(call InstallFragment,$(1),35-accel.json)
 endef
 
+define Package/input-support
+  $(call Package/hardware-support/Default)
+  TITLE:=Input device support
+  USERID:=:input=41
+endef
+
+define Package/input-support/description
+ Feature gate for input devices. Allocates the input group and installs
+ the hotplug rules which put the evdev character devices into it. Kernel
+ modules exposing input devices and userspace using the group depend on
+ this package.
+endef
+
+define Package/input-support/install
+	$(call InstallFragment,$(1),40-input.json)
+endef
+
 define Build/Prepare
 endef
 
@@ -90,3 +107,4 @@ endef
 $(eval $(call BuildPackage,audio-support))
 $(eval $(call BuildPackage,video-support))
 $(eval $(call BuildPackage,accel-support))
+$(eval $(call BuildPackage,input-support))

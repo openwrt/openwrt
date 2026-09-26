@@ -104,7 +104,7 @@ $(eval $(call KernelPackage,input-core))
 define KernelPackage/input-evdev
   SUBMENU:=$(INPUT_MODULES_MENU)
   TITLE:=Input event device
-  DEPENDS:=+kmod-input-core
+  DEPENDS:=input-support +kmod-input-core
   KCONFIG:=CONFIG_INPUT_EVDEV
   FILES:=$(LINUX_DIR)/drivers/input/evdev.ko
   AUTOLOAD:=$(call AutoLoad,60,evdev)
@@ -196,7 +196,7 @@ $(eval $(call KernelPackage,input-matrix-keypad))
 define KernelPackage/input-joydev
   SUBMENU:=$(INPUT_MODULES_MENU)
   TITLE:=Joystick device support
-  DEPENDS:=+kmod-input-core
+  DEPENDS:=input-support +kmod-input-core
   KCONFIG:=CONFIG_INPUT_JOYDEV
   FILES:=$(LINUX_DIR)/drivers/input/joydev.ko
   AUTOLOAD:=$(call AutoProbe,joydev)

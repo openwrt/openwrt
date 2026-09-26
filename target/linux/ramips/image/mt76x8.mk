@@ -737,7 +737,8 @@ define Device/qding_qc202
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := Qding
   DEVICE_MODEL := QC202
-  DEVICE_PACKAGES := kmod-i2c-mt7628 kmod-gpio-beeper kmod-input-matrix-keypad kmod-input-evdev uboot-envtools
+  DEVICE_PACKAGES := kmod-i2c-mt7628 kmod-gpio-beeper kmod-input-matrix-keypad kmod-input-evdev \
+	input-support uboot-envtools
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | qding-header qc202
 endef
