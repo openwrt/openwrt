@@ -112,6 +112,16 @@ define Device/friendlyarm_nanopi-r2c-plus
 endef
 TARGET_DEVICES += friendlyarm_nanopi-r2c-plus
 
+define Device/friendlyarm_nanopi-neo3
+  $(Device/rk3328)
+  DEVICE_VENDOR := FriendlyARM
+  DEVICE_MODEL := NanoPi NEO3
+  DEVICE_DTS := rk3328-nanopi-neo3-rev02
+  UBOOT_DEVICE_NAME := nanopi-r2s-rk3328
+  SUPPORTED_DEVICES := friendlyarm,nanopi-neo3 friendlyelec,nanopi-neo3
+endef
+TARGET_DEVICES += friendlyarm_nanopi-neo3
+
 define Device/friendlyarm_nanopi-r2s
   $(Device/rk3328)
   DEVICE_VENDOR := FriendlyARM
