@@ -97,11 +97,11 @@ define Device/tplink_archer-be800
 	DEVICE_VARIANT := RJ45
 	SUPPORTED_DEVICES += tplink,archer-be800-sfp
 endef
-TARGET_DEVICES += tplink_archer-be800-rj45
+TARGET_DEVICES += tplink_archer-be800
 
 define Device/tplink_archer-be800-sfp
 	$(call Device/tplink_archer-be800-common)
 	DEVICE_VARIANT := SFP
-	SUPPORTED_DEVICES += tplink,archer-be800-rj45
+	SUPPORTED_DEVICES += tplink,archer-be800
 endef
 TARGET_DEVICES += tplink_archer-be800-sfp
