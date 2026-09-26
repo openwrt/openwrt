@@ -1,0 +1,651 @@
+From f3ee12aca79d77b3e6708b85ca04bb1deb1f973b Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.com>
+Date: Wed, 2 Sep 2026 21:29:42 +0100
+Subject: [PATCH] overlays: Add gpclk and gpclk-pi5 overlays
+
+Add a generic overlay for routing a GPCLK output onto a GPIO pin and
+setting its rate: gpclk for the BCM2835 GP0/GP1/GP2 clocks, and its Pi 5
+counterpart gpclk-pi5 for the RP1 GP0-GP5 clocks, selected automatically
+via overlay_map.dts.
+
+Both overlays hold their clock open with a clk-hog device, so it stays
+enabled for as long as the overlay is loaded, with no other consumer
+required.
+
+Every legal pin+clock combination is also exposed as its own named
+override (gpclk0_4, gpclk0_20, gpclk1_5, ...), which sets the pin mux
+and clock index together in one go. The RP1 pinctrl driver accepts the
+same legacy numeric brcm,pins/brcm,function declarations as
+pinctrl-bcm2835, so gpclk-pi5 is written the same way and shares
+override names with gpclk for every combination the two chips have in
+common - a line such as "dtoverlay=gpclk,gpclk0_20" has the same effect
+on any Pi. RP1's extra GPCLK3-GPCLK5, and pins with no equivalent
+BCM283x ALT function, are exposed the same way but only exist in
+gpclk-pi5.
+
+Assisted-by: Claude:claude-opus-5
+Signed-off-by: Phil Elwell <phil@raspberrypi.com>
+---
+ arch/arm/boot/dts/overlays/Makefile           |   2 +
+ arch/arm/boot/dts/overlays/README             |  67 ++++
+ arch/arm/boot/dts/overlays/gpclk-overlay.dts  | 212 +++++++++++++
+ .../boot/dts/overlays/gpclk-pi5-overlay.dts   | 290 ++++++++++++++++++
+ arch/arm/boot/dts/overlays/overlay_map.dts    |  10 +
+ 5 files changed, 581 insertions(+)
+ create mode 100644 arch/arm/boot/dts/overlays/gpclk-overlay.dts
+ create mode 100644 arch/arm/boot/dts/overlays/gpclk-pi5-overlay.dts
+
+--- a/arch/arm/boot/dts/overlays/Makefile
++++ b/arch/arm/boot/dts/overlays/Makefile
+@@ -78,6 +78,8 @@ dtbo-$(CONFIG_ARCH_BCM2835) += \
+ 	ghost-amp.dtbo \
+ 	goodix.dtbo \
+ 	googlevoicehat-soundcard.dtbo \
++	gpclk.dtbo \
++	gpclk-pi5.dtbo \
+ 	gpio-charger.dtbo \
+ 	gpio-fan.dtbo \
+ 	gpio-hog.dtbo \
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -1584,6 +1584,73 @@ Load:   dtoverlay=googlevoicehat-soundca
+ Params: <None>
+ 
+ 
++Name:   gpclk
++Info:   Configure a general purpose clock (GPCLK0, GPCLK1 or GPCLK2) output
++        on a GPIO pin, and set its rate. The clock is held open by a
++        clk-hog device (see drivers/clk/clk-hog.c, CONFIG_CLK_HOG), so it
++        stays enabled for as long as the overlay is loaded, with no other
++        consumer required.
++        Legal pin,function combinations, and the override that selects
++        each one directly:
++          GPCLK0: 4,4(Alt0)/gpclk0_4   20,2(Alt5)/gpclk0_20
++                  32,4(Alt0)/gpclk0_32 34,4(Alt0)/gpclk0_34
++          GPCLK1: 5,4(Alt0)/gpclk1_5   21,2(Alt5)/gpclk1_21
++                  42,4(Alt0)/gpclk1_42 44,4(Alt0)/gpclk1_44
++          GPCLK2: 6,4(Alt0)/gpclk2_6   43,4(Alt0)/gpclk2_43
++        N.B.: Check the chosen pin and clock aren't already used by the
++        firmware, other overlays, or onboard hardware.
++Load:   dtoverlay=gpclk,<param>=<val>
++Params: freq                    Output frequency in Hz (default 500000)
++        gpclk0_4                Output GPCLK0 on GPIO4 (Alt0) - the default
++        gpclk0_20               Output GPCLK0 on GPIO20 (Alt5)
++        gpclk0_32               Output GPCLK0 on GPIO32 (Alt0)
++        gpclk0_34               Output GPCLK0 on GPIO34 (Alt0)
++        gpclk1_5                Output GPCLK1 on GPIO5 (Alt0)
++        gpclk1_21               Output GPCLK1 on GPIO21 (Alt5)
++        gpclk1_42               Output GPCLK1 on GPIO42 (Alt0)
++        gpclk1_44               Output GPCLK1 on GPIO44 (Alt0)
++        gpclk2_6                Output GPCLK2 on GPIO6 (Alt0)
++        gpclk2_43               Output GPCLK2 on GPIO43 (Alt0)
++
++
++Name:   gpclk-pi5
++Info:   Configure an RP1 general purpose clock (GPCLK0-GPCLK5) output on a
++        GPIO pin, and set its rate. This is the Pi 5 counterpart of gpclk,
++        selected automatically when gpclk is requested on a Pi 5. As with
++        gpclk, the clock is held open by a clk-hog device (see
++        drivers/clk/clk-hog.c, CONFIG_CLK_HOG), so it stays enabled for as
++        long as the overlay is loaded, with no other consumer required.
++        Legal pin,clock combinations, and the override that selects each
++        one directly:
++          GPCLK0: gpio4/gpclk0_4    gpio20/gpclk0_20
++          GPCLK1: gpio5/gpclk1_5    gpio18/gpclk1_18   gpio21/gpclk1_21
++          GPCLK2: gpio6/gpclk2_6
++          GPCLK3: gpio32/gpclk3_32  gpio34/gpclk3_34   gpio46/gpclk3_46
++          GPCLK4: gpio33/gpclk4_33  gpio43/gpclk4_43
++          GPCLK5: gpio42/gpclk5_42  gpio44/gpclk5_44   gpio47/gpclk5_47
++        GPCLK0-GPCLK2 on pins 4/20, 5/21 and 6 are the combinations in
++        common with gpclk (see above); the rest (GPCLK1 on pin 18, and
++        GPCLK3-GPCLK5) only exist on RP1, so aren't offered by gpclk.
++        N.B.: Check the chosen pin and clock aren't already used by the
++        firmware, other overlays, or onboard hardware.
++Load:   dtoverlay=gpclk-pi5,<param>=<val>
++Params: freq                    Output frequency in Hz (default 500000)
++        gpclk0_4                Output GPCLK0 on GPIO4 - the default
++        gpclk0_20               Output GPCLK0 on GPIO20
++        gpclk1_5                Output GPCLK1 on GPIO5
++        gpclk1_18               Output GPCLK1 on GPIO18
++        gpclk1_21               Output GPCLK1 on GPIO21
++        gpclk2_6                Output GPCLK2 on GPIO6
++        gpclk3_32               Output GPCLK3 on GPIO32
++        gpclk3_34               Output GPCLK3 on GPIO34
++        gpclk3_46               Output GPCLK3 on GPIO46
++        gpclk4_33               Output GPCLK4 on GPIO33
++        gpclk4_43               Output GPCLK4 on GPIO43
++        gpclk5_42               Output GPCLK5 on GPIO42
++        gpclk5_44               Output GPCLK5 on GPIO44
++        gpclk5_47               Output GPCLK5 on GPIO47
++
++
+ Name:   gpio-charger
+ Info:   This is a generic overlay for detecting charger with GPIO.
+ Load:   dtoverlay=gpio-charger,<param>=<val>
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/gpclk-overlay.dts
+@@ -0,0 +1,212 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * gpclk-overlay.dts
++ *
++ * Route one of the BCM283x/BCM2711 general-purpose clocks (GPCLK0/1/2) to
++ * a GPIO pin, set its output frequency, and keep it running via a clk-hog
++ * device (see clk-hog.c) so it stays enabled with no other consumer.
++ *
++ * Legal pin,function combinations, and the override that selects each one
++ * directly (see gpclk-pi5-overlay.dts for the RP1/Pi 5 equivalents - the
++ * combinations in common between the two use identical override names):
++ *   GPCLK0: 4(gpclk0_4)  20(gpclk0_20)  32(gpclk0_32)  34(gpclk0_34)
++ *   GPCLK1: 5(gpclk1_5)  21(gpclk1_21)  42(gpclk1_42)  44(gpclk1_44)
++ *   GPCLK2: 6(gpclk2_6)  43(gpclk2_43)
++ *
++ * N.B. Some pins/GPCLKs may already be in use by the firmware, other
++ * overlays, or onboard hardware (e.g. pin 4 defaults to GPCLK0 and is
++ * used by several HATs) - check for conflicts before choosing a pin.
++ */
++
++/dts-v1/;
++/plugin/;
++
++#include <dt-bindings/clock/bcm2835.h>
++#include <dt-bindings/pinctrl/bcm2835.h>
++
++/ {
++	compatible = "brcm,bcm2835";
++
++	fragment@0 {
++		target-path = "/";
++		__overlay__ {
++			clk_hog: gpclk_hog@4 {
++				compatible = "clk-hog";
++
++				clocks = <&clocks BCM2835_CLOCK_GP0>;
++				assigned-clocks = <&clocks BCM2835_CLOCK_GP0>;
++				assigned-clock-rates = <500000>;
++
++				pinctrl-names = "default";
++				pinctrl-0 = <&gpclk0_4>;
++			};
++		};
++	};
++
++	/* Each pin's pinctrl node lives in its own fragment, numbered by
++	 * pin number, so that only one is ever instantiated at a time -
++	 * the kernel rejects an overlay that tries to create a gpio node
++	 * that already exists in the live Device Tree, which would happen
++	 * if two gpclk overlay instances both carried, say, the gpclk1_5
++	 * node. gpclk0_4 is the default and so is the only one enabled
++	 * (__overlay__) from the start; the rest start __dormant__ and are
++	 * swapped in by the relevant override, which also disables
++	 * gpclk0_4's fragment.
++	 */
++	fragment@4 {
++		target = <&gpio>;
++		__overlay__ {
++			gpclk0_4: gpclk0_4 {
++				brcm,pins = <4>;
++				brcm,function = <BCM2835_FSEL_ALT0>;
++			};
++		};
++	};
++
++	fragment@5 {
++		target = <&gpio>;
++		__dormant__ {
++			gpclk1_5: gpclk1_5 {
++				brcm,pins = <5>;
++				brcm,function = <BCM2835_FSEL_ALT0>;
++			};
++		};
++	};
++
++	fragment@6 {
++		target = <&gpio>;
++		__dormant__ {
++			gpclk2_6: gpclk2_6 {
++				brcm,pins = <6>;
++				brcm,function = <BCM2835_FSEL_ALT0>;
++			};
++		};
++	};
++
++	fragment@20 {
++		target = <&gpio>;
++		__dormant__ {
++			gpclk0_20: gpclk0_20 {
++				brcm,pins = <20>;
++				brcm,function = <BCM2835_FSEL_ALT5>;
++			};
++		};
++	};
++
++	fragment@21 {
++		target = <&gpio>;
++		__dormant__ {
++			gpclk1_21: gpclk1_21 {
++				brcm,pins = <21>;
++				brcm,function = <BCM2835_FSEL_ALT5>;
++			};
++		};
++	};
++
++	fragment@32 {
++		target = <&gpio>;
++		__dormant__ {
++			gpclk0_32: gpclk0_32 {
++				brcm,pins = <32>;
++				brcm,function = <BCM2835_FSEL_ALT0>;
++			};
++		};
++	};
++
++	fragment@34 {
++		target = <&gpio>;
++		__dormant__ {
++			gpclk0_34: gpclk0_34 {
++				brcm,pins = <34>;
++				brcm,function = <BCM2835_FSEL_ALT0>;
++			};
++		};
++	};
++
++	fragment@42 {
++		target = <&gpio>;
++		__dormant__ {
++			gpclk1_42: gpclk1_42 {
++				brcm,pins = <42>;
++				brcm,function = <BCM2835_FSEL_ALT0>;
++			};
++		};
++	};
++
++	fragment@43 {
++		target = <&gpio>;
++		__dormant__ {
++			gpclk2_43: gpclk2_43 {
++				brcm,pins = <43>;
++				brcm,function = <BCM2835_FSEL_ALT0>;
++			};
++		};
++	};
++
++	fragment@44 {
++		target = <&gpio>;
++		__dormant__ {
++			gpclk1_44: gpclk1_44 {
++				brcm,pins = <44>;
++				brcm,function = <BCM2835_FSEL_ALT0>;
++			};
++		};
++	};
++
++	__overrides__ {
++		freq    = <&clk_hog>,"assigned-clock-rates:0";
++
++		/* Named pin+clock combinations: each sets the pin mux and
++		 * the clock together, in one go.
++		 */
++		gpclk0_4  = <&clk_hog>,"pinctrl-0:0=",<&gpclk0_4>,
++			    <&clk_hog>,"clocks:4=", <BCM2835_CLOCK_GP0>,
++			    <&clk_hog>,"assigned-clocks:4=", <BCM2835_CLOCK_GP0>,
++			    <&clk_hog>,"reg:0=4";
++		gpclk0_20 = <0>,"-4+20",
++			    <&clk_hog>,"pinctrl-0:0=",<&gpclk0_20>,
++			    <&clk_hog>,"clocks:4=", <BCM2835_CLOCK_GP0>,
++			    <&clk_hog>,"assigned-clocks:4=", <BCM2835_CLOCK_GP0>,
++			    <&clk_hog>,"reg:0=20";
++		gpclk0_32 = <0>,"-4+32",
++			    <&clk_hog>,"pinctrl-0:0=",<&gpclk0_32>,
++			    <&clk_hog>,"clocks:4=", <BCM2835_CLOCK_GP0>,
++			    <&clk_hog>,"assigned-clocks:4=", <BCM2835_CLOCK_GP0>,
++			    <&clk_hog>,"reg:0=32";
++		gpclk0_34 = <0>,"-4+34",
++			    <&clk_hog>,"pinctrl-0:0=",<&gpclk0_34>,
++			    <&clk_hog>,"clocks:4=", <BCM2835_CLOCK_GP0>,
++			    <&clk_hog>,"assigned-clocks:4=", <BCM2835_CLOCK_GP0>,
++			    <&clk_hog>,"reg:0=34";
++		gpclk1_5  = <0>,"-4+5",
++			    <&clk_hog>,"pinctrl-0:0=",<&gpclk1_5>,
++			    <&clk_hog>,"clocks:4=", <BCM2835_CLOCK_GP1>,
++			    <&clk_hog>,"assigned-clocks:4=", <BCM2835_CLOCK_GP1>,
++			    <&clk_hog>,"reg:0=5";
++		gpclk1_21 = <0>,"-4+21",
++			    <&clk_hog>,"pinctrl-0:0=",<&gpclk1_21>,
++			    <&clk_hog>,"clocks:4=", <BCM2835_CLOCK_GP1>,
++			    <&clk_hog>,"assigned-clocks:4=", <BCM2835_CLOCK_GP1>,
++			    <&clk_hog>,"reg:0=21";
++		gpclk1_42 = <0>,"-4+42",
++			    <&clk_hog>,"pinctrl-0:0=",<&gpclk1_42>,
++			    <&clk_hog>,"clocks:4=", <BCM2835_CLOCK_GP1>,
++			    <&clk_hog>,"assigned-clocks:4=", <BCM2835_CLOCK_GP1>,
++			    <&clk_hog>,"reg:0=42";
++		gpclk1_44 = <0>,"-4+44",
++			    <&clk_hog>,"pinctrl-0:0=",<&gpclk1_44>,
++			    <&clk_hog>,"clocks:4=", <BCM2835_CLOCK_GP1>,
++			    <&clk_hog>,"assigned-clocks:4=", <BCM2835_CLOCK_GP1>,
++			    <&clk_hog>,"reg:0=44";
++		gpclk2_6  = <0>,"-4+6",
++			    <&clk_hog>,"pinctrl-0:0=",<&gpclk2_6>,
++			    <&clk_hog>,"clocks:4=", <BCM2835_CLOCK_GP2>,
++			    <&clk_hog>,"assigned-clocks:4=", <BCM2835_CLOCK_GP2>,
++			    <&clk_hog>,"reg:0=6";
++		gpclk2_43 = <0>,"-4+43",
++			    <&clk_hog>,"pinctrl-0:0=",<&gpclk2_43>,
++			    <&clk_hog>,"clocks:4=", <BCM2835_CLOCK_GP2>,
++			    <&clk_hog>,"assigned-clocks:4=", <BCM2835_CLOCK_GP2>,
++			    <&clk_hog>,"reg:0=43";
++	};
++};
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/gpclk-pi5-overlay.dts
+@@ -0,0 +1,290 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * gpclk-pi5-overlay.dts
++ *
++ * Route one of the RP1 general-purpose clocks (GPCLK0-GPCLK5) to a GPIO
++ * pin, set its output frequency, and keep it running via a clk-hog
++ * device (see clk-hog.c) so it stays enabled with no other consumer.
++ * This is the Pi 5 / RP1 counterpart of gpclk-overlay.dts (which targets
++ * the BCM2835 GPCLKs on earlier Pis).
++ *
++ * The RP1 pinctrl driver still accepts the old-style numeric brcm,pins
++ * property for pin selection, but functions are selected by name rather
++ * than by BCM283x ALT number (RP1 has three more GPCLKs, and not every
++ * pin's gpclkN alternate function lines up with a BCM283x ALT number
++ * anyway), so rather than trying to make a single numeric "func" value
++ * mean the same thing on both chips, each legal pin+clock combination is
++ * exposed as its own named override, using the same names as
++ * gpclk-overlay.dts for the combinations the two chips have in common.
++ * That means a line such as "dtoverlay=gpclk,gpclk0_20" has the same
++ * effect on any Pi, whichever of the two overlays it resolves to.
++ *
++ * Legal pin,clock combinations, and the override that selects each one:
++ *   GPCLK0: gpio4(gpclk0_4)  gpio20(gpclk0_20)
++ *   GPCLK1: gpio5(gpclk1_5)  gpio18(gpclk1_18)  gpio21(gpclk1_21)
++ *   GPCLK2: gpio6(gpclk2_6)
++ *   GPCLK3: gpio32(gpclk3_32)  gpio34(gpclk3_34)  gpio46(gpclk3_46)
++ *   GPCLK4: gpio33(gpclk4_33)  gpio43(gpclk4_43)
++ *   GPCLK5: gpio42(gpclk5_42)  gpio44(gpclk5_44)  gpio47(gpclk5_47)
++ *
++ * GPCLK0-GPCLK2 on pins 4/20, 5/21 and 6 are the combinations in common
++ * with gpclk-overlay.dts; the rest (GPCLK1 on pin18, and GPCLK3-GPCLK5)
++ * only exist on RP1.
++ *
++ * N.B. Some pins/GPCLKs may already be in use by the firmware, other
++ * overlays, or onboard hardware - check for conflicts before choosing a
++ * pin.
++ */
++
++/dts-v1/;
++/plugin/;
++
++#include <dt-bindings/clock/rp1.h>
++
++/ {
++	compatible = "brcm,bcm2712";
++
++	fragment@0 {
++		target-path = "/";
++		__overlay__ {
++			clk_hog: gpclk_hog@4 {
++				compatible = "clk-hog";
++
++				clocks = <&rp1_clocks RP1_CLK_GP0>;
++				assigned-clocks = <&rp1_clocks RP1_CLK_GP0>;
++				assigned-clock-rates = <500000>;
++
++				pinctrl-names = "default";
++				pinctrl-0 = <&gpclk0_4>;
++			};
++		};
++	};
++
++	/* Each pin's pinctrl node lives in its own fragment, numbered by
++	 * pin number, so that only one is ever instantiated at a time -
++	 * the kernel rejects an overlay that tries to create a gpio node
++	 * that already exists in the live Device Tree, which would happen
++	 * if two gpclk overlay instances both carried, say, the gpclk1_5
++	 * node. gpclk0_4 is the default and so is the only one enabled
++	 * (__overlay__) from the start; the rest start __dormant__ and are
++	 * swapped in by the relevant override, which also disables
++	 * gpclk0_4's fragment.
++	 */
++
++	fragment@4 {
++		target = <&gpio>;
++		__overlay__ {
++			gpclk0_4: gpclk0_4 {
++				brcm,pins = <4>;
++				function = "gpclk0";
++			};
++		};
++	};
++
++	fragment@5 {
++		target = <&gpio>;
++		__dormant__ {
++			gpclk1_5: gpclk1_5 {
++				brcm,pins = <5>;
++				function = "gpclk1";
++			};
++		};
++	};
++
++	fragment@6 {
++		target = <&gpio>;
++		__dormant__ {
++			gpclk2_6: gpclk2_6 {
++				brcm,pins = <6>;
++				function = "gpclk2";
++			};
++		};
++	};
++
++	fragment@20 {
++		target = <&gpio>;
++		__dormant__ {
++			gpclk0_20: gpclk0_20 {
++				brcm,pins = <20>;
++				function = "gpclk0";
++			};
++		};
++	};
++
++	fragment@21 {
++		target = <&gpio>;
++		__dormant__ {
++			gpclk1_21: gpclk1_21 {
++				brcm,pins = <21>;
++				function = "gpclk1";
++			};
++		};
++	};
++
++	fragment@18 {
++		target = <&gpio>;
++		__dormant__ {
++			gpclk1_18: gpclk1_18 {
++				brcm,pins = <18>;
++				function = "gpclk1";
++			};
++		};
++	};
++
++	fragment@32 {
++		target = <&gpio>;
++		__dormant__ {
++			gpclk3_32: gpclk3_32 {
++				brcm,pins = <32>;
++				function = "gpclk3";
++			};
++		};
++	};
++
++	fragment@33 {
++		target = <&gpio>;
++		__dormant__ {
++			gpclk4_33: gpclk4_33 {
++				brcm,pins = <33>;
++				function = "gpclk4";
++			};
++		};
++	};
++
++	fragment@34 {
++		target = <&gpio>;
++		__dormant__ {
++			gpclk3_34: gpclk3_34 {
++				brcm,pins = <34>;
++				function = "gpclk3";
++			};
++		};
++	};
++
++	fragment@42 {
++		target = <&gpio>;
++		__dormant__ {
++			gpclk5_42: gpclk5_42 {
++				brcm,pins = <42>;
++				function = "gpclk5";
++			};
++		};
++	};
++
++	fragment@43 {
++		target = <&gpio>;
++		__dormant__ {
++			gpclk4_43: gpclk4_43 {
++				brcm,pins = <43>;
++				function = "gpclk4";
++			};
++		};
++	};
++
++	fragment@44 {
++		target = <&gpio>;
++		__dormant__ {
++			gpclk5_44: gpclk5_44 {
++				brcm,pins = <44>;
++				function = "gpclk5";
++			};
++		};
++	};
++
++	fragment@46 {
++		target = <&gpio>;
++		__dormant__ {
++			gpclk3_46: gpclk3_46 {
++				brcm,pins = <46>;
++				function = "gpclk3";
++			};
++		};
++	};
++
++	fragment@47 {
++		target = <&gpio>;
++		__dormant__ {
++			gpclk5_47: gpclk5_47 {
++				brcm,pins = <47>;
++				function = "gpclk5";
++			};
++		};
++	};
++
++	__overrides__ {
++		/* Named pin+clock combinations - the recommended way to
++		 * select a legal combination in one go.
++		 */
++		gpclk0_4  = <&clk_hog>,"pinctrl-0:0=",<&gpclk0_4>,
++			    <&clk_hog>,"clocks:4=", <RP1_CLK_GP0>,
++			    <&clk_hog>,"assigned-clocks:4=", <RP1_CLK_GP0>,
++			    <&clk_hog>,"reg:0=4";
++		gpclk0_20 = <0>,"-4+20",
++			    <&clk_hog>,"pinctrl-0:0=",<&gpclk0_20>,
++			    <&clk_hog>,"clocks:4=", <RP1_CLK_GP0>,
++			    <&clk_hog>,"assigned-clocks:4=", <RP1_CLK_GP0>,
++			    <&clk_hog>,"reg:0=20";
++		gpclk1_5  = <0>,"-4+5",
++			    <&clk_hog>,"pinctrl-0:0=",<&gpclk1_5>,
++			    <&clk_hog>,"clocks:4=", <RP1_CLK_GP1>,
++			    <&clk_hog>,"assigned-clocks:4=", <RP1_CLK_GP1>,
++			    <&clk_hog>,"reg:0=5";
++		gpclk1_18 = <0>,"-4+18",
++			    <&clk_hog>,"pinctrl-0:0=",<&gpclk1_18>,
++			    <&clk_hog>,"clocks:4=", <RP1_CLK_GP1>,
++			    <&clk_hog>,"assigned-clocks:4=", <RP1_CLK_GP1>,
++			    <&clk_hog>,"reg:0=18";
++		gpclk1_21 = <0>,"-4+21",
++			    <&clk_hog>,"pinctrl-0:0=",<&gpclk1_21>,
++			    <&clk_hog>,"clocks:4=", <RP1_CLK_GP1>,
++			    <&clk_hog>,"assigned-clocks:4=", <RP1_CLK_GP1>,
++			    <&clk_hog>,"reg:0=21";
++		gpclk2_6  = <0>,"-4+6",
++			    <&clk_hog>,"pinctrl-0:0=",<&gpclk2_6>,
++			    <&clk_hog>,"clocks:4=", <RP1_CLK_GP2>,
++			    <&clk_hog>,"assigned-clocks:4=", <RP1_CLK_GP2>,
++			    <&clk_hog>,"reg:0=6";
++		gpclk3_32 = <0>,"-4+32",
++			    <&clk_hog>,"pinctrl-0:0=",<&gpclk3_32>,
++			    <&clk_hog>,"clocks:4=", <RP1_CLK_GP3>,
++			    <&clk_hog>,"assigned-clocks:4=", <RP1_CLK_GP3>,
++			    <&clk_hog>,"reg:0=32";
++		gpclk3_34 = <0>,"-4+34",
++			    <&clk_hog>,"pinctrl-0:0=",<&gpclk3_34>,
++			    <&clk_hog>,"clocks:4=", <RP1_CLK_GP3>,
++			    <&clk_hog>,"assigned-clocks:4=", <RP1_CLK_GP3>,
++			    <&clk_hog>,"reg:0=34";
++		gpclk3_46 = <0>,"-4+46",
++			    <&clk_hog>,"pinctrl-0:0=",<&gpclk3_46>,
++			    <&clk_hog>,"clocks:4=", <RP1_CLK_GP3>,
++			    <&clk_hog>,"assigned-clocks:4=", <RP1_CLK_GP3>,
++			    <&clk_hog>,"reg:0=46";
++		gpclk4_33 = <0>,"-4+33",
++			    <&clk_hog>,"pinctrl-0:0=",<&gpclk4_33>,
++			    <&clk_hog>,"clocks:4=", <RP1_CLK_GP4>,
++			    <&clk_hog>,"assigned-clocks:4=", <RP1_CLK_GP4>,
++			    <&clk_hog>,"reg:0=33";
++		gpclk4_43 = <0>,"-4+43",
++			    <&clk_hog>,"pinctrl-0:0=",<&gpclk4_43>,
++			    <&clk_hog>,"clocks:4=", <RP1_CLK_GP4>,
++			    <&clk_hog>,"assigned-clocks:4=", <RP1_CLK_GP4>,
++			    <&clk_hog>,"reg:0=43";
++		gpclk5_42 = <0>,"-4+42",
++			    <&clk_hog>,"pinctrl-0:0=",<&gpclk5_42>,
++			    <&clk_hog>,"clocks:4=", <RP1_CLK_GP5>,
++			    <&clk_hog>,"assigned-clocks:4=", <RP1_CLK_GP5>,
++			    <&clk_hog>,"reg:0=42";
++		gpclk5_44 = <0>,"-4+44",
++			    <&clk_hog>,"pinctrl-0:0=",<&gpclk5_44>,
++			    <&clk_hog>,"clocks:4=", <RP1_CLK_GP5>,
++			    <&clk_hog>,"assigned-clocks:4=", <RP1_CLK_GP5>,
++			    <&clk_hog>,"reg:0=44";
++		gpclk5_47 = <0>,"-4+47",
++			    <&clk_hog>,"pinctrl-0:0=",<&gpclk5_47>,
++			    <&clk_hog>,"clocks:4=", <RP1_CLK_GP5>,
++			    <&clk_hog>,"assigned-clocks:4=", <RP1_CLK_GP5>,
++			    <&clk_hog>,"reg:0=47";
++
++		freq = <&clk_hog>,"assigned-clock-rates:0";
++	};
++};
+--- a/arch/arm/boot/dts/overlays/overlay_map.dts
++++ b/arch/arm/boot/dts/overlays/overlay_map.dts
+@@ -76,6 +76,16 @@
+ 		renamed = "dwc-otg-deprecated";
+ 	};
+ 
++	gpclk {
++		bcm2835;
++		bcm2711;
++		bcm2712 = "gpclk-pi5";
++	};
++
++	gpclk-pi5 {
++		bcm2712;
++	};
++
+ 	hifiberry-adc8x {
+ 		bcm2712;
+ 	};

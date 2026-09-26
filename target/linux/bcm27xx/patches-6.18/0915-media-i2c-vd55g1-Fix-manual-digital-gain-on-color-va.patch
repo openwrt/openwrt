@@ -1,0 +1,50 @@
+From 31c79ff393830ebc4322219a8f40d8017dae5161 Mon Sep 17 00:00:00 2001
+From: Benjamin Mugnier <benjamin.mugnier@foss.st.com>
+Date: Mon, 29 Jun 2026 12:51:48 +0200
+Subject: [PATCH] media: i2c: vd55g1: Fix manual digital gain on color variant
+
+Commit 113a84d6ba739d333eef2a595e3ccd4f97a306c2 upstream
+
+Apply digital gain to all channels, each channel representing a color.
+
+Cc: stable@vger.kernel.org
+Fixes: e138e7f00042 ("media: i2c: vd55g1: Add support for vd65g4 RGB variant")
+Reviewed-by: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+Signed-off-by: Benjamin Mugnier <benjamin.mugnier@foss.st.com>
+---
+ drivers/media/i2c/vd55g1.c | 16 +++++++++++++---
+ 1 file changed, 13 insertions(+), 3 deletions(-)
+
+--- a/drivers/media/i2c/vd55g1.c
++++ b/drivers/media/i2c/vd55g1.c
+@@ -60,7 +60,10 @@
+ #define VD55G1_PATGEN_ENABLE				BIT(0)
+ #define VD55G1_REG_MANUAL_ANALOG_GAIN			CCI_REG8(0x0501)
+ #define VD55G1_REG_MANUAL_COARSE_EXPOSURE		CCI_REG16_LE(0x0502)
+-#define VD55G1_REG_MANUAL_DIGITAL_GAIN			CCI_REG16_LE(0x0504)
++#define VD55G1_REG_MANUAL_DIGITAL_GAIN_CH0		CCI_REG16_LE(0x0504)
++#define VD55G1_REG_MANUAL_DIGITAL_GAIN_CH1		CCI_REG16_LE(0x0506)
++#define VD55G1_REG_MANUAL_DIGITAL_GAIN_CH2		CCI_REG16_LE(0x0508)
++#define VD55G1_REG_MANUAL_DIGITAL_GAIN_CH3		CCI_REG16_LE(0x050a)
+ #define VD55G1_REG_APPLIED_COARSE_EXPOSURE		CCI_REG16_LE(0x00e8)
+ #define VD55G1_REG_APPLIED_ANALOG_GAIN			CCI_REG16_LE(0x00ea)
+ #define VD55G1_REG_APPLIED_DIGITAL_GAIN			CCI_REG16_LE(0x00ec)
+@@ -849,9 +852,16 @@ static int vd55g1_update_expo_cluster(st
+ 		vd55g1_write(sensor, VD55G1_REG_MANUAL_ANALOG_GAIN,
+ 			     sensor->again_ctrl->val, &ret);
+ 
+-	if (!is_auto && sensor->dgain_ctrl->is_new)
+-		vd55g1_write(sensor, VD55G1_REG_MANUAL_DIGITAL_GAIN,
++	if (!is_auto && sensor->dgain_ctrl->is_new) {
++		vd55g1_write(sensor, VD55G1_REG_MANUAL_DIGITAL_GAIN_CH0,
+ 			     sensor->dgain_ctrl->val, &ret);
++		vd55g1_write(sensor, VD55G1_REG_MANUAL_DIGITAL_GAIN_CH1,
++			     sensor->dgain_ctrl->val, &ret);
++		vd55g1_write(sensor, VD55G1_REG_MANUAL_DIGITAL_GAIN_CH2,
++			     sensor->dgain_ctrl->val, &ret);
++		vd55g1_write(sensor, VD55G1_REG_MANUAL_DIGITAL_GAIN_CH3,
++			     sensor->dgain_ctrl->val, &ret);
++	}
+ 
+ 	return ret;
+ }

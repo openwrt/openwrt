@@ -1,0 +1,27 @@
+From 2d8d5b93b93917a9c96add209511aa0b3a9dd2e5 Mon Sep 17 00:00:00 2001
+From: Joshua Covington <joshuacov@gmail.com>
+Date: Fri, 21 Aug 2026 12:51:28 +0000
+Subject: [PATCH] cmake: disable splashasm
+
+splashasm is a small tool to compile .splash files that describe
+i2c & spi dumps for spitting out during start.elf.
+
+Not needed for the OpenWrt build at this time, so disable it in
+CMakeLists.txt.
+
+Signed-off-by: Joshua Covington <joshuacov@gmail.com>
+---
+ CMakeLists.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -21,7 +21,7 @@ add_subdirectory(rpi-gpu-usage)
+ add_subdirectory(vcgencmd)
+ add_subdirectory(vclog)
+ add_subdirectory(vcmailbox)
+-add_subdirectory(splashasm)
++#add_subdirectory(splashasm)
+ 
+ # Only build rpifwcrypto if OpenSSL is available
+ find_package(OpenSSL QUIET)

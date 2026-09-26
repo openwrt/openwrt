@@ -1,27 +1,52 @@
-From fc43ae46c05acfcc4d5ce74162bb171989db2c20 Mon Sep 17 00:00:00 2001
+From 96d0ca810fea0b349e758b9ffb1dd385a5684d70 Mon Sep 17 00:00:00 2001
 From: Joshua Covington <joshuacov@gmail.com>
-Date: Mon, 8 Jun 2026 22:46:43 +0000
-Subject: [PATCH 2/2] piolib: make piolib a shared library
+Date: Mon, 27 Jul 2026 23:41:43 +0000
+Subject: [PATCH] piolib: make piolib a shared library
 
-Make PIOlib/libPIO a shared library.
+Build libpio as a shared library (libpio.so) rather than static,
+so it can be packaged and linked against independently of the
+executables in piolib/examples. Unlike other subprojects, piolib
+is always built shared regardless of BUILD_SHARED_LIBS, since
+downstream packaging ships libpio.so as its own component.
+
+- add_library(pio SHARED ...) instead of following
+  BUILD_SHARED_LIBS.
+- install(): add LIBRARY DESTINATION alongside ARCHIVE
+  DESTINATION so the .so is actually installed.
+- README.md: drop piolib from the BUILD_SHARED_LIBS-controlled
+  list and note that it is always shared.
 
 Signed-off-by: Joshua Covington <joshuacov@gmail.com>
 ---
- piolib/CMakeLists.txt | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ README.md             | 2 +-
+ piolib/CMakeLists.txt | 7 +++++--
+ 2 files changed, 6 insertions(+), 3 deletions(-)
 
+--- a/README.md
++++ b/README.md
+@@ -42,6 +42,6 @@ A collection of scripts and simple appli
+ Install the prerequisites with "sudo sh prerequisites.sh" - you need at least version 3.10 of cmake. Run the following commands to build and install everything, or see the README files in the subdirectories to just build utilities individually:
+ 
+  - *cmake .*
+-    N.B. Use *cmake -DBUILD_SHARED_LIBS=1 .* to build the libraries in the subprojects (libdtovl, gpiolib and piolib) as shared (as opposed to static) libraries. Add -DCMAKE_INSTALL_PREFIX=/usr to override the default install path of /usr/local.
++    Use *cmake -DBUILD_SHARED_LIBS=1 .* to build the libraries in the subprojects (libdtovl and gpiolib) as shared (as opposed to static) libraries. piolib is always built as a shared library. Add -DCMAKE_INSTALL_PREFIX=/usr to override the default install path of /usr/local.
+  - *make*
+  - *sudo make install*
 --- a/piolib/CMakeLists.txt
 +++ b/piolib/CMakeLists.txt
-@@ -19,7 +19,7 @@ if (CMAKE_COMPILER_IS_GNUCC)
+@@ -19,7 +19,10 @@ if (CMAKE_COMPILER_IS_GNUCC)
     add_definitions (-ffunction-sections)
  endif ()
  
 -add_library (pio piolib.c library_piochips.c pio_rp1.c)
++# Always built as a shared library (unlike other subprojects, which follow
++# BUILD_SHARED_LIBS) since downstream packaging ships libpio.so as its own
++# runtime component.
 +add_library (pio SHARED piolib.c library_piochips.c pio_rp1.c)
  target_include_directories(pio PUBLIC include)
  set_target_properties(pio PROPERTIES SOVERSION 0)
  
-@@ -34,7 +34,7 @@ set(INCLUDE_FILES
+@@ -34,7 +37,7 @@ set(INCLUDE_FILES
      "pico/stdlib.h"
  )
  
