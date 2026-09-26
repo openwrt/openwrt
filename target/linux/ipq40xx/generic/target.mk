@@ -1,3 +1,3 @@
 BOARDNAME:=Generic
-FEATURES+=display emmc nand
+FEATURES+=emmc nand
 DEFAULT_PACKAGES += ath10k-board-qca4019

@@ -8,7 +8,7 @@ BOARDNAME:=MT7623
 CPU_TYPE:=cortex-a7
 CPU_SUBTYPE:=neon-vfpv4
 KERNELNAME:=Image dtbs zImage
-FEATURES+=display usbgadget
+FEATURES+=usbgadget
 DEFAULT_PACKAGES+=fitblk kmod-crypto-hw-safexcel uboot-envtools video-support
 
 define Target/Description
