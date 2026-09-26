@@ -1,0 +1,55 @@
+From: Ryan Leung <untilscour@protonmail.com>
+Date: Fri, 21 Aug 2026 09:00:01 +0000
+Subject: [PATCH mt76 v2] wifi: mt76: mt7915: publish wcid before MCU add commands
+
+mt7915_add_interface() enables the BSS/STA in firmware via
+mt7915_mcu_add_bss_info() and mt7915_mcu_add_sta() before publishing
+dev->mt76.wcid[idx] with rcu_assign_pointer(). Firmware can start
+generating tx-status/tx-free events referencing that wcid as soon as it
+processes those MCU commands, but mt76's rx/tx-free handlers (e.g.
+mt7915_mac_tx_free()) look up dev->mt76.wcid[idx] to service them, and
+won't find it published yet. This can lead to memory corruption and
+kernel crashes shortly after an AP interface is brought up.
+
+This ordering was introduced by commit 8e3e7567b8c1 ("mt76: mt7915: add
+sta_rec with EXTRA_INFO_NEW for the first time only"):
+mt7915_mcu_add_sta() derived its "newly added" flag from
+!rcu_access_pointer(dev->mt76.wcid[idx]), so the publish had to happen
+after that call. Commit 33eb14f10290 ("wifi: mt76: mt7915: use mac80211
+.sta_state op") later replaced that flag with a caller-supplied `newly`
+argument to mt7915_mcu_add_sta(), now simply hardcoded to true, so the
+ordering is no longer required.
+
+Move the rcu_assign_pointer() before the MCU add_bss_info/add_sta
+calls, so that the wcid is visible to lookups before firmware is told
+it's live. This makes the ordering symmetric with
+mt7915_remove_interface(), which keeps the pointer published until
+after the MCU disable commands have been issued.
+
+Closes: https://github.com/openwrt/openwrt/issues/24594
+Fixes: 8e3e7567b8c1 ("mt76: mt7915: add sta_rec with EXTRA_INFO_NEW for the first time only")
+Link: https://patch.msgid.link/20260821-mt7915-wcid-publish-order-v2-1-acf0b7f32cbd@protonmail.com
+Signed-off-by: Ryan Leung <untilscour@protonmail.com>
+---
+Changes in v2:
+- Reword the mt7915_remove_interface() comparison in the commit message
+  to correctly state that the wcid stays published until after the MCU
+  disable calls (not before).
+- Link to v1: https://patch.msgid.link/20260820-mt7915-wcid-publish-order-v1-1-79d2bc981d8b@protonmail.com
+---
+ mt7915/main.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/mt7915/main.c
++++ b/mt7915/main.c
+@@ -273,9 +273,9 @@ static int mt7915_add_interface(struct ieee80211_hw *hw,
+ 	mt7915_init_bitrate_mask(vif);
+ 	memset(&mvif->cap, -1, sizeof(mvif->cap));
+ 
++	rcu_assign_pointer(dev->mt76.wcid[idx], &mvif->sta.wcid);
+ 	mt7915_mcu_add_bss_info(phy, vif, true);
+ 	mt7915_mcu_add_sta(dev, vif, NULL, CONN_STATE_PORT_SECURE, true);
+-	rcu_assign_pointer(dev->mt76.wcid[idx], &mvif->sta.wcid);
+ 
+ 	mutex_unlock(&dev->mt76.mutex);
+ 
