@@ -1,0 +1,65 @@
+From 02f86dfa392b336fd8d6d3e8dfd76bb92edb7da4 Mon Sep 17 00:00:00 2001
+From: Josef Schlehofer <pepe.schlehofer@gmail.com>
+Date: Tue, 22 Sep 2026 21:02:38 +0200
+Subject: [PATCH v2 1/6] media: az6007: fix CAM status polling after disconnect
+
+az6007_ci_poll_slot_status() returns -EIO when the status request fails.
+dvb_ca_en50221 treats the return value as a bitmask, so -EIO is
+interpreted as CAM_PRESENT|CAM_CHANGED. The CA state machine then
+handles a CAM change for every failed poll, without sleeping in between.
+
+After an unplug, every poll fails this way and the CA thread can spin
+forever in dvb_ca_en50221_thread_state_machine(), preventing the USB
+disconnect from completing. This happened when unplugging a TechniSat
+CableStar Combo HD CI with a CAM inserted, and rcu_sched reported a
+stall.
+
+Report no CAM when the status request or buffer allocation fails, and
+only inspect the status byte when the request returned data. A read
+error while a CAM is present is then treated as a removal and the CAM is
+reinitialised after the next successful poll.
+
+Fixes: 962f8f67e486 ("[media] Add CI support to az6007 driver")
+Cc: stable@vger.kernel.org
+Signed-off-by: Josef Schlehofer <pepe.schlehofer@gmail.com>
+Link: https://lore.kernel.org/all/20261004100741.71711-2-pepe.schlehofer@gmail.com/
+---
+ drivers/media/usb/dvb-usb-v2/az6007.c | 16 +++++++++-------
+ 1 file changed, 9 insertions(+), 7 deletions(-)
+
+--- a/drivers/media/usb/dvb-usb-v2/az6007.c
++++ b/drivers/media/usb/dvb-usb-v2/az6007.c
+@@ -526,7 +526,7 @@ static int az6007_ci_poll_slot_status(st
+ 
+ 	b = kmalloc(12, GFP_KERNEL);
+ 	if (!b)
+-		return -ENOMEM;
++		return 0;
+ 	mutex_lock(&state->ca_mutex);
+ 
+ 	req = 0xC5;
+@@ -535,16 +535,18 @@ static int az6007_ci_poll_slot_status(st
+ 	blen = 1;
+ 
+ 	ret = az6007_read(d, req, value, index, b, blen);
+-	if (ret < 0) {
++	if (ret < 0)
+ 		pr_warn("usb in operation failed. (%d)\n", ret);
+-		ret = -EIO;
+-	} else
+-		ret = 0;
+ 
+-	if (!ret && b[0] == 1) {
++	/*
++	 * The return value is a mask of DVB_CA_EN50221_POLL_* flags, not an
++	 * error code, so report no CAM when the status cannot be read.
++	 */
++	if (ret > 0 && b[0] == 1)
+ 		ret = DVB_CA_EN50221_POLL_CAM_PRESENT |
+ 		      DVB_CA_EN50221_POLL_CAM_READY;
+-	}
++	else
++		ret = 0;
+ 
+ 	mutex_unlock(&state->ca_mutex);
+ 	kfree(b);

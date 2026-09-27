@@ -1,0 +1,73 @@
+From 4adfca54a6311b801eea0ca9ef83e689831a11f5 Mon Sep 17 00:00:00 2001
+From: Josef Schlehofer <pepe.schlehofer@gmail.com>
+Date: Tue, 22 Sep 2026 21:02:38 +0200
+Subject: [PATCH v2 3/6] media: drxk: stop retrying after disconnect
+
+drxk's wait loops retry I2C transfers on every error. In
+dvbt_sc_command(), read16() can leave cur_cmd unchanged when the read
+fails, so the loop can either exit early or retry until the maximum when
+the device has disappeared.
+
+Stop retrying on -ENODEV and return the error instead of continuing with
+the command. In power_up_device(), check the final transfer status after
+the shortened loop.
+
+-ENODEV is only returned here after a USB device has been disconnected,
+so this does not change behaviour while the device is present.
+
+Signed-off-by: Josef Schlehofer <pepe.schlehofer@gmail.com>
+Link: https://lore.kernel.org/all/20261004100741.71711-4-pepe.schlehofer@gmail.com/
+---
+ drivers/media/dvb-frontends/drxk_hard.c | 19 ++++++++++++-------
+ 1 file changed, 12 insertions(+), 7 deletions(-)
+
+--- a/drivers/media/dvb-frontends/drxk_hard.c
++++ b/drivers/media/dvb-frontends/drxk_hard.c
+@@ -467,9 +467,9 @@ static int power_up_device(struct drxk_s
+ 				continue;
+ 			status = i2c_read1(state, state->demod_address,
+ 					   &data);
+-		} while (status < 0 &&
++		} while (status < 0 && status != -ENODEV &&
+ 			 (retry_count < DRXK_MAX_RETRIES_POWERUP));
+-		if (status < 0 && retry_count >= DRXK_MAX_RETRIES_POWERUP)
++		if (status < 0)
+ 			goto error;
+ 	}
+ 
+@@ -992,7 +992,8 @@ static int hi_command(struct drxk_state
+ 			retry_count += 1;
+ 			status = read16(state, SIO_HI_RA_RAM_CMD__A,
+ 					  &wait_cmd);
+-		} while ((status < 0 || wait_cmd) && (retry_count < DRXK_MAX_RETRIES));
++		} while ((status < 0 || wait_cmd) && status != -ENODEV &&
++			 (retry_count < DRXK_MAX_RETRIES));
+ 		if (status < 0)
+ 			goto error;
+ 		status = read16(state, SIO_HI_RA_RAM_RES__A, p_result);
+@@ -3199,8 +3200,10 @@ static int dvbt_sc_command(struct drxk_s
+ 		usleep_range(1000, 2000);
+ 		status = read16(state, OFDM_SC_RA_RAM_CMD__A, &cur_cmd);
+ 		retry_cnt++;
+-	} while ((cur_cmd != 0) && (retry_cnt < DRXK_MAX_RETRIES));
+-	if (retry_cnt >= DRXK_MAX_RETRIES && (status < 0))
++	} while ((cur_cmd != 0) && status != -ENODEV &&
++		 (retry_cnt < DRXK_MAX_RETRIES));
++	if (status == -ENODEV ||
++	    (retry_cnt >= DRXK_MAX_RETRIES && status < 0))
+ 		goto error;
+ 
+ 	/* Write sub-command */
+@@ -3252,8 +3255,10 @@ static int dvbt_sc_command(struct drxk_s
+ 		usleep_range(1000, 2000);
+ 		status = read16(state, OFDM_SC_RA_RAM_CMD__A, &cur_cmd);
+ 		retry_cnt++;
+-	} while ((cur_cmd != 0) && (retry_cnt < DRXK_MAX_RETRIES));
+-	if (retry_cnt >= DRXK_MAX_RETRIES && (status < 0))
++	} while ((cur_cmd != 0) && status != -ENODEV &&
++		 (retry_cnt < DRXK_MAX_RETRIES));
++	if (status == -ENODEV ||
++	    (retry_cnt >= DRXK_MAX_RETRIES && status < 0))
+ 		goto error;
+ 
+ 	/* Check for illegal cmd */
