@@ -304,9 +304,9 @@ probe/assoc/auth requests via object subscribe.
  		return;
  	wpa_msg(hapd->msg_ctx, MSG_INFO, BEACON_RESP_RX MACSTR " %u %02x %s",
  		MAC2STR(addr), token, rep_mode, report);
-+	if (len < sizeof(struct rrm_measurement_beacon_report))
++	if (len && len < sizeof(struct rrm_measurement_beacon_report))
 +		return;
-+	hostapd_ubus_notify_beacon_report(hapd, addr, token, pos[-3], rep_mode, (struct rrm_measurement_beacon_report*) pos, len);
++	hostapd_ubus_notify_beacon_report(hapd, addr, token, pos[-3], rep_mode, len ? (struct rrm_measurement_beacon_report*) pos : NULL, len);
  }
  
  
