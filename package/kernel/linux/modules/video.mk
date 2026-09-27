@@ -777,6 +777,27 @@ endef
 $(eval $(call KernelPackage,drm-radeon))
 
 
+define KernelPackage/drm-xen-frontend
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=Xen para-virtualised frontend DRM support
+  DEPENDS:=@(TARGET_x86_64||TARGET_x86_generic||TARGET_layerscape_armv8_64b) \
+	video-support +kmod-drm-kms-helper
+  KCONFIG:=CONFIG_DRM_XEN_FRONTEND
+  FILES:= \
+	$(LINUX_DIR)/drivers/xen/xen-front-pgdir-shbuf.ko \
+	$(LINUX_DIR)/drivers/gpu/drm/xen/drm_xen_front.ko
+  AUTOLOAD:=$(call AutoProbe,xen-front-pgdir-shbuf drm_xen_front)
+endef
+
+define KernelPackage/drm-xen-frontend/description
+  Direct Rendering Manager (DRM) support for the Xen para-virtualised
+  display device, the vdispl xenbus device carrying the displif protocol.
+  A Xen guest only sees such a device where the host or a driver domain
+  runs a displif backend; the classic vfb display of the libxl toolstack
+  speaks a different protocol and has no DRM driver.
+endef
+
+$(eval $(call KernelPackage,drm-xen-frontend))
 
 #
 # Video Capture
