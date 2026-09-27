@@ -10,7 +10,7 @@ PKG_VERSION:=2.16
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
-PKG_SOURCE_URL:=https://gitlab.freedesktop.org/api/v4/projects/26558/packages/generic/source-assets/grub-$(PKG_VERSION)
+PKG_SOURCE_URL:=https://gitlab.freedesktop.org/api/v4/projects/26558/packages/generic/source-assets/$(PKG_NAME)-$(PKG_VERSION)
 PKG_HASH:=f0db0104927df0b9a48bc41b735c702936190d17eb2d73d3018fa77474a0cabe
 
 PKG_LICENSE:=GPL-3.0-or-later
@@ -26,6 +26,7 @@ endif
 
 PKG_FLAGS:=nonshared
 PKG_BUILD_FLAGS:=no-gc-sections no-lto no-mold
+RSTRIP:=:
 
 include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/package.mk
@@ -43,6 +44,36 @@ Package/grub2=$(call Package/grub2/Default,x86,pc)
 Package/grub2-efi=$(call Package/grub2/Default,x86,efi)
 Package/grub2-efi-arm=$(call Package/grub2/Default,armsr,efi)
 Package/grub2-efi-loongarch64=$(call Package/grub2/Default,loongarch64,efi)
+
+define Package/grub2-efi-mods
+  CATEGORY:=Utilities
+  SECTION:=utils
+  SUBMENU:=Boot Loaders
+  TITLE:=Minimal set of modules for grub2 efi
+  URL:=http://www.gnu.org/software/grub/
+  DEPENDS:=+grub2-efi
+  VARIANT:=efi
+endef
+
+define Package/grub2-efi-mods/description
+	Minimal set of modules for grub2-efi which are need to boot a live linux iso
+	image directly from the grub menu.
+endef
+
+define Package/grub2-pc-mods
+  CATEGORY:=Utilities
+  SECTION:=utils
+  SUBMENU:=Boot Loaders
+  TITLE:=Minimal set of modules for grub2 i386
+  URL:=http://www.gnu.org/software/grub/
+  DEPENDS:=+grub2
+  VARIANT:=pc
+endef
+
+define Package/grub2-pc-mods/description
+	Minimal set of modules for grub2 which are need to boot a live linux iso
+	image directly from the grub menu.
+endef
 
 define Package/grub2-editenv
   CATEGORY:=Utilities
@@ -213,6 +244,20 @@ define Package/grub2-editenv/install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/grub-editenv $(1)/usr/sbin/
 endef
 
+define Package/grub2-efi-mods/install
+	$(INSTALL_DIR) $(1)/boot/grub/x86_64-efi
+	for mod in ext2.mod iso9660.mod loopback.mod part_gpt.mod search.mod search_fs_file.mod search_fs_uuid.mod search_label.mod ; do \
+		$(CP) $(BUILD_DIR)/linux-x86_64/grub-efi/$(PKG_NAME)-$(PKG_VERSION)/grub-core/$$$$mod $(1)/boot/grub/x86_64-efi/ ; \
+	done
+endef
+
+define Package/grub2-pc-mods/install
+	$(INSTALL_DIR) $(1)/boot/grub/i386-pc
+	for mod in ext2.mod iso9660.mod loopback.mod part_gpt.mod search.mod search_fs_file.mod search_fs_uuid.mod search_label.mod ; do \
+		$(CP) $(BUILD_DIR)/linux-x86_64/grub-pc/$(PKG_NAME)-$(PKG_VERSION)/grub-core/$$$$mod $(1)/boot/grub/i386-pc/ ; \
+	done
+endef
+
 define Package/grub2-bios-setup/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/grub-bios-setup $(1)/usr/sbin/
@@ -220,6 +265,8 @@ endef
 
 $(eval $(call HostBuild))
 $(eval $(call BuildPackage,grub2))
+$(eval $(call BuildPackage,grub2-pc-mods))
+$(eval $(call BuildPackage,grub2-efi-mods))
 $(eval $(call BuildPackage,grub2-efi))
 $(eval $(call BuildPackage,grub2-efi-arm))
 $(eval $(call BuildPackage,grub2-efi-loongarch64))
