@@ -52,7 +52,8 @@ int hostapd_ubus_handle_event(struct hostapd_data *hapd, struct hostapd_ubus_req
 void hostapd_ubus_handle_link_measurement(struct hostapd_data *hapd, const u8 *data, size_t len);
 void hostapd_ubus_notify(struct hostapd_data *hapd, const char *type, const u8 *mac);
 void hostapd_ubus_notify_beacon_report(struct hostapd_data *hapd,
-				       const u8 *addr, u8 token, u8 rep_mode,
+				       const u8 *addr, u8 token, u8 meas_token,
+				       u8 rep_mode,
 				       struct rrm_measurement_beacon_report *rep,
 				       size_t len);
 void hostapd_ubus_notify_radar_detected(struct hostapd_iface *iface, int frequency,
@@ -119,7 +120,7 @@ static inline void hostapd_ubus_notify(struct hostapd_data *hapd, const char *ty
 
 static inline void hostapd_ubus_notify_beacon_report(struct hostapd_data *hapd,
 						     const u8 *addr, u8 token,
-						     u8 rep_mode,
+						     u8 meas_token, u8 rep_mode,
 						     struct rrm_measurement_beacon_report *rep,
 						     size_t len)
 {
