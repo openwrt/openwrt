@@ -403,6 +403,7 @@ sub gen_package_config() {
 	if (scalar glob "package/feeds/*/*/image-config.in") {
 	    print "source \"package/feeds/*/*/image-config.in\"\n";
 	}
+	print_package_config_category 'Hardware support';
 	print_package_config_category 'Base system';
 	foreach my $cat (sort {uc($a) cmp uc($b)} keys %category) {
 		print_package_config_category $cat;
