@@ -18,7 +18,6 @@ define Package/fbtest
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=Frame buffer device testing tool
-  DEPENDS:=@DISPLAY_SUPPORT
 endef
 
 define Build/Configure

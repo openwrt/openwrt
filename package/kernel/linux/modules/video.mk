@@ -59,7 +59,7 @@ $(eval $(call KernelPackage,acpi-video))
 define KernelPackage/backlight
 	SUBMENU:=$(VIDEO_MENU)
 	TITLE:=Backlight support
-	DEPENDS:=@DISPLAY_SUPPORT video-support +LINUX_6_12:kmod-fb
+	DEPENDS:=video-support +LINUX_6_12:kmod-fb
 	HIDDEN:=1
 	KCONFIG:=CONFIG_BACKLIGHT_CLASS_DEVICE \
 		CONFIG_BACKLIGHT_LCD_SUPPORT=y \
@@ -113,7 +113,7 @@ $(eval $(call KernelPackage,backlight-pwm))
 define KernelPackage/fb
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Framebuffer and framebuffer console support
-  DEPENDS:=@DISPLAY_SUPPORT video-support +PACKAGE_kmod-backlight:kmod-backlight
+  DEPENDS:=video-support +PACKAGE_kmod-backlight:kmod-backlight
   KCONFIG:= \
 	CONFIG_FB \
 	CONFIG_FB_DEVICE=y \
@@ -330,7 +330,7 @@ $(eval $(call KernelPackage,drm))
 define KernelPackage/drm-buddy
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=A page based buddy allocator
-  DEPENDS:=@DISPLAY_SUPPORT video-support +kmod-drm
+  DEPENDS:=video-support +kmod-drm
   HIDDEN:=1
   KCONFIG:=CONFIG_DRM_BUDDY
   FILES:= $(LINUX_DIR)/drivers/gpu/drm/drm_buddy.ko
@@ -347,7 +347,7 @@ $(eval $(call KernelPackage,drm-buddy))
 define KernelPackage/drm-client-lib
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=DRM client library setup helper
-  DEPENDS:=@DISPLAY_SUPPORT video-support @LINUX_6_18 +kmod-drm +kmod-drm-kms-helper
+  DEPENDS:=video-support @LINUX_6_18 +kmod-drm +kmod-drm-kms-helper
   KCONFIG:=CONFIG_DRM_CLIENT_LIB
   FILES:= $(LINUX_DIR)/drivers/gpu/drm/clients/drm_client_lib.ko
   AUTOLOAD:=$(call AutoProbe,drm_client_lib)
@@ -363,7 +363,7 @@ $(eval $(call KernelPackage,drm-client-lib))
 define KernelPackage/drm-display-helper
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=DRM helpers for display adapters drivers
-  DEPENDS:=@DISPLAY_SUPPORT video-support +kmod-drm-kms-helper +LINUX_6_18:kmod-cec-core
+  DEPENDS:=video-support +kmod-drm-kms-helper +LINUX_6_18:kmod-cec-core
   HIDDEN:=1
   KCONFIG:=CONFIG_DRM_DISPLAY_HELPER
   FILES:=$(LINUX_DIR)/drivers/gpu/drm/display/drm_display_helper.ko
@@ -380,7 +380,7 @@ define KernelPackage/drm-exec
   SUBMENU:=$(VIDEO_MENU)
   HIDDEN:=1
   TITLE:=Execution context for command submissions
-  DEPENDS:=@DISPLAY_SUPPORT video-support +kmod-drm
+  DEPENDS:=video-support +kmod-drm
   KCONFIG:=CONFIG_DRM_EXEC
   FILES:=$(LINUX_DIR)/drivers/gpu/drm/drm_exec.ko
   AUTOLOAD:=$(call AutoProbe,drm_exec)
@@ -396,7 +396,7 @@ define KernelPackage/drm-dma-helper
   SUBMENU:=$(VIDEO_MENU)
   HIDDEN:=1
   TITLE:=GEM DMA helper functions
-  DEPENDS:=@DISPLAY_SUPPORT video-support +kmod-drm-kms-helper
+  DEPENDS:=video-support +kmod-drm-kms-helper
   KCONFIG:=CONFIG_DRM_GEM_DMA_HELPER
   FILES:=$(LINUX_DIR)/drivers/gpu/drm/drm_dma_helper.ko
   AUTOLOAD:=$(call AutoProbe,drm_dma_helper)
@@ -413,7 +413,7 @@ define KernelPackage/drm-shmem-helper
   SUBMENU:=$(VIDEO_MENU)
   HIDDEN:=1
   TITLE:=GEM SHMEM helper functions
-  DEPENDS:=@DISPLAY_SUPPORT video-support +kmod-drm-kms-helper
+  DEPENDS:=video-support +kmod-drm-kms-helper
   KCONFIG:=CONFIG_DRM_GEM_SHMEM_HELPER
   FILES:=$(LINUX_DIR)/drivers/gpu/drm/drm_shmem_helper.ko
   AUTOLOAD:=$(call AutoProbe,drm_shmem_helper)
@@ -430,7 +430,7 @@ define KernelPackage/drm-mipi-dbi
   SUBMENU:=$(VIDEO_MENU)
   HIDDEN:=1
   TITLE:=MIPI DBI helpers
-  DEPENDS:=@DISPLAY_SUPPORT video-support +kmod-backlight +kmod-drm-kms-helper \
+  DEPENDS:=video-support +kmod-backlight +kmod-drm-kms-helper \
     +LINUX_6_18:kmod-drm-client-lib
   KCONFIG:=CONFIG_DRM_MIPI_DBI
   FILES:=$(LINUX_DIR)/drivers/gpu/drm/drm_mipi_dbi.ko
@@ -448,7 +448,7 @@ define KernelPackage/drm-sched
   SUBMENU:=$(VIDEO_MENU)
   HIDDEN:=1
   TITLE:=GPU scheduler
-  DEPENDS:=@DISPLAY_SUPPORT video-support +kmod-drm
+  DEPENDS:=video-support +kmod-drm
   KCONFIG:=CONFIG_DRM_SCHED
   FILES:=$(LINUX_DIR)/drivers/gpu/drm/scheduler/gpu-sched.ko
   AUTOLOAD:=$(call AutoProbe,gpu-sched)
@@ -465,7 +465,7 @@ $(eval $(call KernelPackage,drm-sched))
 define KernelPackage/drm-ttm
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=GPU memory management subsystem
-  DEPENDS:=@DISPLAY_SUPPORT video-support +kmod-drm
+  DEPENDS:=video-support +kmod-drm
   KCONFIG:=CONFIG_DRM_TTM
   FILES:=$(LINUX_DIR)/drivers/gpu/drm/ttm/ttm.ko
   AUTOLOAD:=$(call AutoProbe,ttm)
@@ -483,7 +483,7 @@ define KernelPackage/drm-ttm-helper
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Helpers for ttm-based gem objects
   HIDDEN:=1
-  DEPENDS:=@DISPLAY_SUPPORT video-support +kmod-drm-ttm +kmod-drm-kms-helper
+  DEPENDS:=video-support +kmod-drm-ttm +kmod-drm-kms-helper
   KCONFIG:=CONFIG_DRM_TTM_HELPER \
 	   CONFIG_DRM_DISPLAY_HELPER_CEC=n
   FILES:=$(LINUX_DIR)/drivers/gpu/drm/drm_ttm_helper.ko
@@ -496,7 +496,7 @@ $(eval $(call KernelPackage,drm-ttm-helper))
 define KernelPackage/drm-kms-helper
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=CRTC helpers for KMS drivers
-  DEPENDS:=@DISPLAY_SUPPORT video-support +kmod-drm +kmod-fb +kmod-fb-sys-fops +kmod-fb-cfb-copyarea \
+  DEPENDS:=video-support +kmod-drm +kmod-fb +kmod-fb-sys-fops +kmod-fb-cfb-copyarea \
 	+kmod-fb-cfb-fillrect +kmod-fb-cfb-imgblt +kmod-fb-sys-ram
   KCONFIG:= \
     CONFIG_DRM_KMS_HELPER \
@@ -515,7 +515,7 @@ define KernelPackage/drm-suballoc-helper
   SUBMENU:=$(VIDEO_MENU)
   HIDDEN:=1
   TITLE:=DRM suballocation helper
-  DEPENDS:=@DISPLAY_SUPPORT video-support +kmod-drm
+  DEPENDS:=video-support +kmod-drm
   KCONFIG:=CONFIG_DRM_SUBALLOC_HELPER
   FILES:=$(LINUX_DIR)/drivers/gpu/drm/drm_suballoc_helper.ko
   AUTOLOAD:=$(call AutoProbe,drm_suballoc_helper)
@@ -531,7 +531,7 @@ define KernelPackage/drm-vram-helper
   SUBMENU:=$(VIDEO_MENU)
   HIDDEN:=1
   TITLE:=DRM helpers for VRAM memory management
-  DEPENDS:=@DISPLAY_SUPPORT video-support \
+  DEPENDS:=video-support \
     +kmod-drm-kms-helper +kmod-drm-ttm-helper
   KCONFIG:=CONFIG_DRM_VRAM_HELPER
   FILES:=$(LINUX_DIR)/drivers/gpu/drm/drm_vram_helper.ko
@@ -547,7 +547,7 @@ $(eval $(call KernelPackage,drm-vram-helper))
 define KernelPackage/drm-amdgpu
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=AMDGPU DRM support
-  DEPENDS:=@TARGET_x86||TARGET_loongarch64 @DISPLAY_SUPPORT video-support +kmod-backlight +kmod-drm-ttm \
+  DEPENDS:=@TARGET_x86||TARGET_loongarch64 video-support +kmod-backlight +kmod-drm-ttm \
 	+kmod-drm-ttm-helper +kmod-drm-kms-helper +kmod-i2c-algo-bit +amdgpu-firmware \
 	+kmod-drm-display-helper +kmod-drm-buddy +kmod-acpi-video \
 	+kmod-drm-exec +kmod-drm-suballoc-helper +kmod-drm +kmod-drm-panel-backlight-quirks
@@ -579,7 +579,7 @@ define KernelPackage/drm-i915
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Intel i915 DRM support
   DEPENDS:=@(TARGET_x86_64||TARGET_x86_generic||TARGET_x86_legacy) \
-	@DISPLAY_SUPPORT video-support +kmod-backlight +kmod-drm-ttm \
+	video-support +kmod-backlight +kmod-drm-ttm \
 	+kmod-drm-ttm-helper +kmod-drm-kms-helper +kmod-i2c-algo-bit +i915-firmware-dmc \
 	+kmod-drm-display-helper +kmod-drm-buddy +kmod-acpi-video \
 	+kmod-drm-exec +kmod-drm-suballoc-helper
@@ -785,7 +785,7 @@ $(eval $(call KernelPackage,drm-panel-tc358762))
 define KernelPackage/drm-radeon
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Radeon DRM support
-  DEPENDS:=@TARGET_x86 @DISPLAY_SUPPORT video-support +kmod-backlight +kmod-drm-kms-helper \
+  DEPENDS:=@TARGET_x86 video-support +kmod-backlight +kmod-drm-kms-helper \
 	+kmod-drm-ttm +kmod-drm-ttm-helper +kmod-i2c-algo-bit +radeon-firmware \
 	+kmod-drm-display-helper +kmod-acpi-video +kmod-drm-suballoc-helper \
 	+kmod-fb-io-fops +kmod-drm-exec
