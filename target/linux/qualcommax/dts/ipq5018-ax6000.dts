@@ -503,48 +503,48 @@
 	};
 };
 
+&pcie0 {
+	status = "okay";
+};
+
 &pcie0_phy {
 	status = "okay";
 };
 
-&pcie0 {
-	status = "okay";
+&pcie0_port0 {
+	reset-gpios = <&tlmm 15 GPIO_ACTIVE_LOW>;
 
-	perst-gpios = <&tlmm 15 GPIO_ACTIVE_LOW>;
+	wifi@0,0 {
+		status = "okay";
 
-	pcie@0 {
-		wifi@0,0 {
-			status = "okay";
+		/* QCN9074: ath11k lacks DT compatible for PCI cards */
+		compatible = "pci17cb,1104";
+		reg = <0x00010000 0 0 0 0>;
 
-			/* QCN9074: ath11k lacks DT compatible for PCI cards */
-			compatible = "pci17cb,1104";
-			reg = <0x00010000 0 0 0 0>;
-
-			qcom,ath11k-calibration-variant = "Xiaomi-AX6000";
-		};
+		qcom,ath11k-calibration-variant = "Xiaomi-AX6000";
 	};
+};
+
+&pcie1 {
+	status = "okay";
 };
 
 &pcie1_phy {
 	status = "okay";
 };
 
-&pcie1 {
-	status = "okay";
+&pcie1_port0 {
+	reset-gpios = <&tlmm 18 GPIO_ACTIVE_HIGH>;
 
-	perst-gpios = <&tlmm 18 GPIO_ACTIVE_HIGH>;
+	wifi@0,0 {
+		status = "okay";
 
-	pcie@0 {
-		wifi@0,0 {
-			status = "okay";
+		compatible = "qcom,ath10k";
+		reg = <0x00010000 0 0 0 0>;
 
-			compatible = "qcom,ath10k";
-			reg = <0x00010000 0 0 0 0>;
-
-			qcom,ath10k-calibration-variant = "Xiaomi-AX6000";
-			nvmem-cell-names = "calibration";
-			nvmem-cells = <&caldata_qca9889>;
-		};
+		qcom,ath10k-calibration-variant = "Xiaomi-AX6000";
+		nvmem-cell-names = "calibration";
+		nvmem-cells = <&caldata_qca9889>;
 	};
 };
 

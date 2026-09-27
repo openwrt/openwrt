@@ -353,28 +353,23 @@
 	status = "okay";
 };
 
+&pcie0 {
+	status = "okay";
+};
+
 &pcie0_phy {
 	status = "okay";
 };
 
-&pcie0 {
-	status = "okay";
+&pcie0_port0 {
+	reset-gpios = <&tlmm 15 GPIO_ACTIVE_LOW>;
 
-	perst-gpios = <&tlmm 15 GPIO_ACTIVE_LOW>;
-
-	bridge@0,0 {
-		reg = <0x00000000 0 0 0 0>;
-		#address-cells = <3>;
-		#size-cells = <2>;
-		ranges;
-
-		wifi@1,0 {
-			status = "okay";
-			/* QCN9074: ath11k lacks DT compatible for PCI cards */
-			compatible = "pci17cb,1104";
-			reg = <0x00010000 0 0 0 0>;
-			qcom,ath11k-calibration-variant = "Yuncore-AX850";
-		};
+	wifi@0,0 {
+		status = "okay";
+		/* QCN9074: ath11k lacks DT compatible for PCI cards */
+		compatible = "pci17cb,1104";
+		reg = <0x00010000 0 0 0 0>;
+		qcom,ath11k-calibration-variant = "Yuncore-AX850";
 	};
 };
 

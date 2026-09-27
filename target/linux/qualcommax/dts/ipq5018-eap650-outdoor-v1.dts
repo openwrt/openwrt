@@ -303,26 +303,26 @@
 	};
 };
 
+&pcie0 {
+	status = "okay";
+};
+
 &pcie0_phy {
 	status = "okay";
 };
 
-&pcie0 {
-	status = "okay";
+&pcie0_port0 {
+	reset-gpios = <&tlmm 15 GPIO_ACTIVE_LOW>;
 
-	perst-gpios = <&tlmm 15 GPIO_ACTIVE_LOW>;
+	wifi@0,0 {
+		status = "okay";
 
-	pcie@0 {
-		wifi@0,0 {
-			status = "okay";
+		// QCN6024: ath11k lacks DT compatible for PCI cards
+		compatible = "pci17cb,1104";
+		reg = <0x00010000 0 0 0 0>;
 
-			// QCN6024: ath11k lacks DT compatible for PCI cards
-			compatible = "pci17cb,1104";
-			reg = <0x00010000 0 0 0 0>;
-
-			qcom,ath11k-calibration-variant = "TP-Link-EAP650-Outdoor-v1";
-			qcom,ath11k-fw-memory-mode = <1>;
-		};
+		qcom,ath11k-calibration-variant = "TP-Link-EAP650-Outdoor-v1";
+		qcom,ath11k-fw-memory-mode = <1>;
 	};
 };
 
