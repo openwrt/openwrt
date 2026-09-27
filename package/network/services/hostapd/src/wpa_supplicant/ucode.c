@@ -137,7 +137,8 @@ void wpas_ucode_event(struct wpa_supplicant *wpa_s, int event, union wpa_event_d
 	const char *state;
 	uc_value_t *val;
 
-	if (event != EVENT_CH_SWITCH_STARTED)
+	if (event != EVENT_CH_SWITCH_STARTED &&
+	    event != EVENT_LINK_CH_SWITCH_STARTED)
 		return;
 
 	val = wpa_ucode_registry_get(iface_registry, wpa_s->ucode.idx);
@@ -153,13 +154,13 @@ void wpas_ucode_event(struct wpa_supplicant *wpa_s, int event, union wpa_event_d
 	val = ucv_object_new(vm);
 	uc_value_push(ucv_get(val));
 
-	if (event == EVENT_CH_SWITCH_STARTED) {
-		ucv_object_add(val, "csa_count", ucv_int64_new(data->ch_switch.count));
-		ucv_object_add(val, "frequency", ucv_int64_new(data->ch_switch.freq));
-		ucv_object_add(val, "sec_chan_offset", ucv_int64_new(data->ch_switch.ch_offset));
-		ucv_object_add(val, "center_freq1", ucv_int64_new(data->ch_switch.cf1));
-		ucv_object_add(val, "center_freq2", ucv_int64_new(data->ch_switch.cf2));
-	}
+	ucv_object_add(val, "csa_count", ucv_int64_new(data->ch_switch.count));
+	ucv_object_add(val, "frequency", ucv_int64_new(data->ch_switch.freq));
+	ucv_object_add(val, "sec_chan_offset", ucv_int64_new(data->ch_switch.ch_offset));
+	ucv_object_add(val, "center_freq1", ucv_int64_new(data->ch_switch.cf1));
+	ucv_object_add(val, "center_freq2", ucv_int64_new(data->ch_switch.cf2));
+	if (event == EVENT_LINK_CH_SWITCH_STARTED)
+		ucv_object_add(val, "link_id", ucv_int64_new(data->ch_switch.link_id));
 
 	ucv_put(wpa_ucode_call(4));
 }

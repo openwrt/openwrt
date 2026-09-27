@@ -1154,7 +1154,7 @@ return {
 		}
 	},
 	event: function(ifname, iface, ev, info) {
-		if (ev == "CH_SWITCH_STARTED")
+		if (ev == "CH_SWITCH_STARTED" || ev == "LINK_CH_SWITCH_STARTED")
 			iface_channel_switch(ifname, iface, info);
 	},
 	wps_credentials: function(ifname, iface, cred) {
