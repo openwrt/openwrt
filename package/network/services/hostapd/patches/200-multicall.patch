@@ -71,7 +71,7 @@ This allows building both hostapd and wpa_supplicant as a single binary
  	@$(E) "  LD " $@
 --- a/hostapd/main.c
 +++ b/hostapd/main.c
-@@ -749,6 +749,11 @@ fail:
+@@ -759,6 +759,11 @@ fail:
  	return -1;
  }
  
@@ -83,7 +83,7 @@ This allows building both hostapd and wpa_supplicant as a single binary
  
  #ifdef CONFIG_WPS
  static int gen_uuid(const char *txt_addr)
-@@ -873,6 +878,8 @@ int main(int argc, char *argv[])
+@@ -883,6 +888,8 @@ int main(int argc, char *argv[])
  		return -1;
  #endif /* CONFIG_DPP */
  
