@@ -27,6 +27,10 @@
 #define RTETH_838X_QM_PKT2CPU_INTPRI_CNT	3
 #define RTETH_838X_RMA_CTRL_0			(0x4300)
 #define RTETH_838X_RMA_CTRL_1			(0x4304)
+#define RTETH_838X_TAG1_PROTO_MASK		GENMASK(15, 8)
+#define RTETH_838X_TAG1_PROTO			0x04
+/* TX CPU tag: bypass the egress spanning-tree port state and egress VLAN filtering */
+#define RTETH_838X_TAG1_BP_FLTR2		BIT(4)
 
 #define RTETH_839X_CPU_PORT			52
 #define RTETH_839X_DMA_IF_CTRL			(0x786c)

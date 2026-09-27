@@ -32,7 +32,8 @@
 static void rteth_838x_create_tx_header(struct rteth_frag *frag, unsigned int port, int prio)
 {
 	/* cpu_tag[0] is reserved on the RTL83XX SoCs */
-	frag->cpu_tag[1] = 0x0400;  /* BIT 10: RTL8380_CPU_TAG */
+	frag->cpu_tag[1] = FIELD_PREP(RTETH_838X_TAG1_PROTO_MASK, RTETH_838X_TAG1_PROTO) |
+			   RTETH_838X_TAG1_BP_FLTR2;
 	frag->cpu_tag[2] = 0x0200;  /* Set only AS_DPM, to enable DPM settings below */
 	frag->cpu_tag[3] = 0x0000;
 	frag->cpu_tag[4] = BIT(port) >> 16;
