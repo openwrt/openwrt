@@ -141,6 +141,24 @@ define Package/printer-support/install
 	$(call InstallFragment,$(1),55-printer.json)
 endef
 
+define Package/scanner-support
+  $(call Package/hardware-support/Default)
+  TITLE:=Scanner device support
+  USERID:=:scanner=47
+endef
+
+define Package/scanner-support/description
+ Feature gate for scanners. Allocates the scanner group, so that the id
+ is the same on every image and one package owns it. Ships no hotplug
+ rule: a USB scanner is matched by vendor and product id against a
+ database of supported devices, which only the driver package has, so
+ the rule granting access to a particular scanner stays there.
+endef
+
+define Package/scanner-support/install
+	$(INSTALL_DIR) $(1)
+endef
+
 define Build/Prepare
 endef
 
@@ -157,3 +175,4 @@ $(eval $(call BuildPackage,input-support))
 $(eval $(call BuildPackage,dvb-support))
 $(eval $(call BuildPackage,kvm-support))
 $(eval $(call BuildPackage,printer-support))
+$(eval $(call BuildPackage,scanner-support))
