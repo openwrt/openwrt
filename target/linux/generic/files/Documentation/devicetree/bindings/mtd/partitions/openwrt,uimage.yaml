@@ -14,10 +14,8 @@ description: |
   modified or extended by device vendors. This defines a few optional
   properties which can be used to describe such modifications.
 
-# partition.txt defines common properties, but has not yet been
-# converted to YAML
-#allOf:
-#  - $ref: ../partition.yaml#
+allOf:
+  - $ref: partition.yaml#
 
 properties:
   compatible:
@@ -58,8 +56,7 @@ required:
   - compatible
   - reg
 
-#unevaluatedProperties: false
-additionalProperties: false
+unevaluatedProperties: false
 
 examples:
   - |

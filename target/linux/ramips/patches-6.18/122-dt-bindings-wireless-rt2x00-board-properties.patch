@@ -1,0 +1,92 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nickolay Savchenko <n.savchenko@axioma.lv>
+Date: Thu, 16 Jul 2026 03:35:29 +0300
+Subject: [PATCH] dt-bindings: net: wireless: document rt2x00 board properties
+
+Document the board transmit-stream limit and direct LED controls used by
+RT3091 PCI functions with RT5392 radios.
+
+Signed-off-by: Nickolay Savchenko <n.savchenko@axioma.lv>
+---
+--- /dev/null
++++ b/Documentation/devicetree/bindings/net/wireless/ralink,rt2x00-pci.yaml
+@@ -0,0 +1,79 @@
++# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/net/wireless/ralink,rt2x00-pci.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: Ralink rt2x00 PCI wireless board properties
++
++maintainers:
++  - Nickolay Savchenko <n.savchenko@axioma.lv>
++
++description: |
++  Board-specific properties for the Ralink RT3091 PCI function with an RT5392
++  radio handled by the rt2x00 driver.
++
++select:
++  properties:
++    compatible:
++      contains:
++        const: pci1814,3091
++  required:
++    - compatible
++
++allOf:
++  - $ref: ieee80211.yaml#
++
++properties:
++  compatible:
++    const: pci1814,3091
++
++  reg:
++    maxItems: 1
++
++  nvmem-cells:
++    minItems: 1
++    maxItems: 2
++
++  nvmem-cell-names:
++    minItems: 1
++    items:
++      - const: eeprom
++      - const: mac-address
++
++  ralink,2ghz:
++    $ref: /schemas/types.yaml#/definitions/uint32
++    const: 0
++    description:
++      Set to 0 to disable the 2.4 GHz band on this radio.
++
++  ralink,5ghz:
++    $ref: /schemas/types.yaml#/definitions/uint32
++    const: 0
++    description:
++      Set to 0 to disable the 5 GHz band on this radio.
++
++  ralink,max-tx-streams:
++    $ref: /schemas/types.yaml#/definitions/uint32
++    minimum: 1
++    maximum: 2
++    description: |
++      Maximum number of simultaneous transmit spatial streams supported by
++      the board RF path. This does not change the number of physical TX
++      chains and does not preclude one-stream STBC transmission across two
++      chains.
++
++  ralink,direct-led-control:
++    type: boolean
++    description: |
++      Program the RT5392 GPIO and LED registers directly instead of using MCU
++      LED commands. This is required by boards whose radio LED is connected to
++      the direct GPIO1 and LED_CFG path.
++
++required:
++  - compatible
++  - reg
++
++unevaluatedProperties: false
++
++...
