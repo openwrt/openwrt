@@ -91,7 +91,11 @@ define Device/bananapi_bpi-r2
   DEVICE_VENDOR := Bananapi
   DEVICE_MODEL := BPi-R2
   DEVICE_DTS := mt7623n-bananapi-bpi-r2
-  DEVICE_PACKAGES := mkf2fs e2fsprogs kmod-usb3 kmod-ata-ahci
+  DEVICE_DTS_OVERLAY := mt7623n-bananapi-bpi-r2-ds3231
+  # Match U-Boot's dtaddr and leave writable space for overlay application.
+  DEVICE_DTC_FLAGS := --pad 4096
+  DEVICE_DTS_LOADADDR := 0x83f00000
+  DEVICE_PACKAGES := mkf2fs e2fsprogs kmod-usb3 kmod-ata-ahci kmod-rtc-ds1307
   UBOOT_OFFSET := 320k
   UBOOT_TARGET := mt7623n_bpir2
   UBOOT_IMAGE := u-boot.bin

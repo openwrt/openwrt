@@ -1,0 +1,82 @@
+. /lib/functions.sh
+
+[ "$(board_name)" = "bananapi,bpi-r2" ] || exit 0
+
+# Keep this migration pending rather than guessing defaults for an
+# unreadable environment.
+fw_printenv -n bootcmd >/dev/null 2>&1 || exit 1
+
+changes="/tmp/bpi-r2-fit-selectors.env"
+rm -f "$changes"
+
+queue_change() {
+	printf '%s %s\n' "$1" "$2" >> "$changes"
+}
+
+if ! fw_printenv -n bootconf >/dev/null 2>&1; then
+	queue_change bootconf config-1
+fi
+
+if ! fw_printenv -n bootconf_ds3231 >/dev/null 2>&1; then
+	queue_change bootconf_ds3231 config-1#mt7623n-bananapi-bpi-r2-ds3231
+fi
+
+if ! fw_printenv -n bootconf_recovery >/dev/null 2>&1; then
+	queue_change bootconf_recovery config-1
+fi
+
+if loadaddr="$(fw_printenv -n loadaddr 2>/dev/null)"; then
+	if [ "$loadaddr" = "0x88000000" ]; then
+		bootaddr='$loadaddr'
+	else
+		bootaddr=0x88000000
+	fi
+else
+	queue_change loadaddr 0x88000000
+	bootaddr='$loadaddr'
+fi
+
+value="$(fw_printenv -n boot_production 2>/dev/null)"
+case "$value" in
+'led bpi-r2:pio:blue off ; led bpi-r2:pio:green on ; run sdmmc_read_production && bootm 0x88000000 ; led bpi-r2:pio:green off')
+	queue_change boot_production "led bpi-r2:pio:blue off ; led bpi-r2:pio:green on ; run sdmmc_read_production && bootm $bootaddr#\$bootconf ; led bpi-r2:pio:green off"
+	;;
+'led bpi-r2:pio:blue off ; led bpi-r2:pio:green on ; run emmc_read_production && bootm 0x88000000 ; led bpi-r2:pio:green off')
+	queue_change boot_production "led bpi-r2:pio:blue off ; led bpi-r2:pio:green on ; run emmc_read_production && bootm $bootaddr#\$bootconf ; led bpi-r2:pio:green off"
+	;;
+esac
+
+value="$(fw_printenv -n boot_recovery 2>/dev/null)"
+case "$value" in
+'led bpi-r2:pio:green off ; led bpi-r2:pio:blue on ; run sdmmc_read_recovery && bootm 0x88000000 ; led bpi-r2:pio:blue off')
+	queue_change boot_recovery "led bpi-r2:pio:green off ; led bpi-r2:pio:blue on ; run sdmmc_read_recovery && bootm $bootaddr#\$bootconf_recovery ; led bpi-r2:pio:blue off"
+	;;
+'led bpi-r2:pio:green off ; led bpi-r2:pio:blue on ; run emmc_read_recovery && bootm 0x88000000 ; led bpi-r2:pio:blue off')
+	queue_change boot_recovery "led bpi-r2:pio:green off ; led bpi-r2:pio:blue on ; run emmc_read_recovery && bootm $bootaddr#\$bootconf_recovery ; led bpi-r2:pio:blue off"
+	;;
+esac
+
+value="$(fw_printenv -n boot_tftp_production 2>/dev/null)"
+if [ "$value" = 'tftpboot $loadaddr $bootfile_upg && env exists replacevol && iminfo $loadaddr && run mmc_write_production ; if env exists noboot ; then else bootm $loadaddr ; fi' ]; then
+	queue_change boot_tftp_production 'tftpboot $loadaddr $bootfile_upg && env exists replacevol && iminfo $loadaddr && run mmc_write_production ; if env exists noboot ; then else bootm $loadaddr#$bootconf ; fi'
+fi
+
+value="$(fw_printenv -n boot_tftp_recovery 2>/dev/null)"
+if [ "$value" = 'tftpboot $loadaddr $bootfile && env exists replacevol && iminfo $loadaddr && run mmc_write_recovery ; if env exists noboot ; then else bootm $loadaddr ; fi' ]; then
+	queue_change boot_tftp_recovery 'tftpboot $loadaddr $bootfile && env exists replacevol && iminfo $loadaddr && run mmc_write_recovery ; if env exists noboot ; then else bootm $loadaddr#$bootconf_recovery ; fi'
+fi
+
+value="$(fw_printenv -n boot_tftp 2>/dev/null)"
+if [ "$value" = 'tftpboot $loadaddr $bootfile && bootm $loadaddr' ]; then
+	queue_change boot_tftp 'tftpboot $loadaddr $bootfile && bootm $loadaddr#$bootconf_recovery'
+fi
+
+[ -s "$changes" ] || exit 0
+fw_setenv -s "$changes" || exit 1
+
+while read -r name value; do
+	[ "$(fw_printenv -n "$name" 2>/dev/null)" = "$value" ] || exit 1
+done < "$changes"
+
+rm -f "$changes"
+exit 0
