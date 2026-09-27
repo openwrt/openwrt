@@ -159,6 +159,24 @@ define Package/scanner-support/install
 	$(INSTALL_DIR) $(1)
 endef
 
+define Package/hidraw-support
+  $(call Package/hardware-support/Default)
+  TITLE:=Raw HID device support
+  USERID:=:hidraw=48
+endef
+
+define Package/hidraw-support/description
+ Feature gate for raw HID devices. Allocates the hidraw group and
+ installs the hotplug rules which put the hidraw character devices into
+ it. These are the HID devices a driver hands to userspace whole, such
+ as a UPS, a relay board or a programmable keypad, as opposed to the
+ evdev nodes covered by input-support.
+endef
+
+define Package/hidraw-support/install
+	$(call InstallFragment,$(1),60-hidraw.json)
+endef
+
 define Build/Prepare
 endef
 
@@ -176,3 +194,4 @@ $(eval $(call BuildPackage,dvb-support))
 $(eval $(call BuildPackage,kvm-support))
 $(eval $(call BuildPackage,printer-support))
 $(eval $(call BuildPackage,scanner-support))
+$(eval $(call BuildPackage,hidraw-support))
