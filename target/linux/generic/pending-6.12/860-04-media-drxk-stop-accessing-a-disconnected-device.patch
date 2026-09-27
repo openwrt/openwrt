@@ -1,0 +1,88 @@
+From 7363715570b795fd86f19cf00b39576fd071af68 Mon Sep 17 00:00:00 2001
+From: Josef Schlehofer <pepe.schlehofer@gmail.com>
+Date: Tue, 22 Sep 2026 21:02:39 +0200
+Subject: [PATCH 4/6] media: drxk: stop accessing a disconnected device
+
+drxk continues frontend status polling after its USB device disappears.
+read_status() keeps issuing I2C accesses, and drxk_get_stats() ignores
+the error from get_lock_status(), so callers see "no signal".
+
+Enter DRXK_NO_DEV when an I2C transfer returns -ENODEV and reject
+further hardware accesses in that state. Propagate -ENODEV from
+drxk_get_stats() so read_status() reports the disconnect.
+
+Also check the state after the tuner's gate control in
+drxk_set_parameters() before continuing demodulator setup.
+
+Signed-off-by: Josef Schlehofer <pepe.schlehofer@gmail.com>
+Link: https://lore.kernel.org/all/20260923001410.30297-5-pepe.schlehofer@gmail.com/
+---
+ drivers/media/dvb-frontends/drxk_hard.c | 29 ++++++++++++++++++++++---
+ drivers/media/dvb-frontends/drxk_hard.h |  2 +-
+ 2 files changed, 27 insertions(+), 4 deletions(-)
+
+--- a/drivers/media/dvb-frontends/drxk_hard.c
++++ b/drivers/media/dvb-frontends/drxk_hard.c
+@@ -208,10 +208,27 @@ static void drxk_i2c_unlock(struct drxk_
+ static int drxk_i2c_transfer(struct drxk_state *state, struct i2c_msg *msgs,
+ 			     unsigned len)
+ {
++	int status;
++
++	/* Don't touch the bus once the device is known to be gone */
++	if (state->m_drxk_state == DRXK_NO_DEV)
++		return -ENODEV;
++
+ 	if (state->drxk_i2c_exclusive_lock)
+-		return __i2c_transfer(state->i2c, msgs, len);
++		status = __i2c_transfer(state->i2c, msgs, len);
+ 	else
+-		return i2c_transfer(state->i2c, msgs, len);
++		status = i2c_transfer(state->i2c, msgs, len);
++
++	/*
++	 * -ENODEV from the I2C adapter means that the device is gone for
++	 * good, e.g. an unplugged USB bridge. Stop accessing it from now on.
++	 */
++	if (status == -ENODEV) {
++		state->m_drxk_state = DRXK_NO_DEV;
++		pr_warn("device is gone, stopping all I2C access\n");
++	}
++
++	return status;
+ }
+ 
+ static int i2c_read1(struct drxk_state *state, u8 adr, u8 *val)
+@@ -6319,6 +6336,10 @@ static int drxk_set_parameters(struct dv
+ 	if (fe->ops.i2c_gate_ctrl)
+ 		fe->ops.i2c_gate_ctrl(fe, 0);
+ 
++	/* The device may have disappeared while the tuner was programmed */
++	if (state->m_drxk_state == DRXK_NO_DEV)
++		return -ENODEV;
++
+ 	old_delsys = state->props.delivery_system;
+ 	state->props = *p;
+ 
+@@ -6488,7 +6509,9 @@ static int drxk_get_stats(struct dvb_fro
+ 
+ 	/* get status */
+ 	state->fe_status = 0;
+-	get_lock_status(state, &stat);
++	status = get_lock_status(state, &stat);
++	if (status == -ENODEV)
++		return status;
+ 	if (stat == MPEG_LOCK)
+ 		state->fe_status |= 0x1f;
+ 	if (stat == FEC_LOCK)
+--- a/drivers/media/dvb-frontends/drxk_hard.h
++++ b/drivers/media/dvb-frontends/drxk_hard.h
+@@ -106,7 +106,7 @@ enum e_drxk_state {
+ 	DRXK_DTV_STARTED,
+ 	DRXK_ATV_STARTED,
+ 	DRXK_POWERED_DOWN,
+-	DRXK_NO_DEV			/* If drxk init failed */
++	DRXK_NO_DEV			/* drxk init failed or device gone */
+ };
+ 
+ enum e_drxk_coef_array_index {

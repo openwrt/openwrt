@@ -1,0 +1,94 @@
+From 1025e0f8dcefdb018cb38289e09744cfa370eeef Mon Sep 17 00:00:00 2001
+From: Josef Schlehofer <pepe.schlehofer@gmail.com>
+Date: Wed, 23 Sep 2026 00:08:41 +0200
+Subject: [PATCH 6/6] media: dvb-core: wake up CA users on release
+
+dvb_ca_en50221_release() sets ca->exit and waits for open users to close
+the CA device, but read, write, poll and ioctl can continue and blocked
+readers and pollers are not woken.
+
+Return -ENODEV from CA read, write and ioctl operations and EPOLLERR
+from poll after ca->exit is set, and wake the corresponding wait queues.
+Keep the release wait so the existing lifetime protection remains in
+place.
+
+tvheadend keeps the CA device open and waits for it with epoll, so it
+needs to observe the disconnect before it can close the device.
+
+Fixes: 280a8ab81733 ("media: dvb-core: Fix use-after-free due to race condition at dvb_ca_en50221")
+Cc: stable@vger.kernel.org
+Signed-off-by: Josef Schlehofer <pepe.schlehofer@gmail.com>
+Link: https://lore.kernel.org/all/20260923001410.30297-7-pepe.schlehofer@gmail.com/
+---
+ drivers/media/dvb-core/dvb_ca_en50221.c | 24 +++++++++++++++++++++++-
+ 1 file changed, 23 insertions(+), 1 deletion(-)
+
+--- a/drivers/media/dvb-core/dvb_ca_en50221.c
++++ b/drivers/media/dvb-core/dvb_ca_en50221.c
+@@ -1353,6 +1353,9 @@ static int dvb_ca_en50221_io_do_ioctl(st
+ 
+ 	dprintk("%s\n", __func__);
+ 
++	if (ca->exit)
++		return -ENODEV;
++
+ 	if (mutex_lock_interruptible(&ca->ioctl_mutex))
+ 		return -ERESTARTSYS;
+ 
+@@ -1460,6 +1463,9 @@ static ssize_t dvb_ca_en50221_io_write(s
+ 
+ 	dprintk("%s\n", __func__);
+ 
++	if (ca->exit)
++		return -ENODEV;
++
+ 	/*
+ 	 * Incoming packet has a 2 byte header.
+ 	 * hdr[0] = slot_id, hdr[1] = connection_id
+@@ -1618,6 +1624,9 @@ static ssize_t dvb_ca_en50221_io_read(st
+ 
+ 	dprintk("%s\n", __func__);
+ 
++	if (ca->exit)
++		return -ENODEV;
++
+ 	/*
+ 	 * Outgoing packet has a 2 byte header.
+ 	 * hdr[0] = slot_id, hdr[1] = connection_id
+@@ -1635,8 +1644,11 @@ static ssize_t dvb_ca_en50221_io_read(st
+ 		/* wait for some data */
+ 		status = wait_event_interruptible(ca->wait_queue,
+ 						  dvb_ca_en50221_io_read_condition
+-						  (ca, &result, &slot));
++						  (ca, &result, &slot) ||
++						  ca->exit);
+ 	}
++	if (ca->exit)
++		return -ENODEV;
+ 	if ((status < 0) || (result < 0)) {
+ 		if (result)
+ 			return result;
+@@ -1819,6 +1831,9 @@ static __poll_t dvb_ca_en50221_io_poll(s
+ 
+ 	poll_wait(file, &ca->wait_queue, wait);
+ 
++	if (ca->exit)
++		return EPOLLERR;
++
+ 	if (dvb_ca_en50221_io_read_condition(ca, &result, &slot) == 1)
+ 		mask |= EPOLLIN;
+ 
+@@ -1966,6 +1981,13 @@ void dvb_ca_en50221_release(struct dvb_c
+ 	ca->exit = 1;
+ 	mutex_unlock(&ca->remove_mutex);
+ 
++	/*
++	 * Wake up everyone blocked in read() or poll() on the CA device, so
++	 * that they see the error and close it. The wait below cannot finish
++	 * before the last user has closed the device.
++	 */
++	wake_up_interruptible_all(&ca->wait_queue);
++
+ 	if (ca->dvbdev->users < 1)
+ 		wait_event(ca->dvbdev->wait_queue,
+ 				ca->dvbdev->users == 1);
