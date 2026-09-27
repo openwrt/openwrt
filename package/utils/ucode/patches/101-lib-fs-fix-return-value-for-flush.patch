@@ -1,0 +1,21 @@
+From afe4be60628aee70c26896d346a8c102aac38f16 Mon Sep 17 00:00:00 2001
+From: "Leon M. Busch-George" <leon@georgemail.eu>
+Date: Wed, 26 Nov 2025 22:13:33 +0100
+Subject: [PATCH] lib/fs: fix return value for flush
+
+Signed-off-by: Leon M. Busch-George <leon@georgemail.eu>
+---
+ lib/fs.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/lib/fs.c
++++ b/lib/fs.c
+@@ -273,7 +273,7 @@ uc_fs_flush_common(uc_vm_t *vm, size_t n
+ 	if (!fp || !*fp)
+ 		err_return(EBADF);
+ 
+-	if (fflush(*fp) != EOF)
++	if (fflush(*fp) == EOF)
+ 		err_return(errno);
+ 
+ 	return ucv_boolean_new(true);
