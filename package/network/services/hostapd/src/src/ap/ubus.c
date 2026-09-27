@@ -1455,6 +1455,12 @@ hostapd_rrm_beacon_req(struct ubus_context *ctx, struct ubus_object *obj,
 	if (ret < 0)
 		return -ret;
 
+	/* The station answers with this Dialog Token (802.11-2024 9.6.6.3),
+	 * which is what ties a beacon-report to the request. */
+	blob_buf_init(&b, 0);
+	blobmsg_add_u32(&b, "dialog_token", ret);
+	ubus_send_reply(ctx, ureq, b.head);
+
 	return 0;
 }
 
