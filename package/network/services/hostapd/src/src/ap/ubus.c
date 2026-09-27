@@ -2323,6 +2323,7 @@ void hostapd_ubus_notify_beacon_report(
 	blobmsg_add_macaddr(&b, "address", addr);
 	blobmsg_add_u32(&b, "token", token);
 	blobmsg_add_u32(&b, "measurement-token", meas_token);
+	blobmsg_add_string(&b, "ifname", hapd->conf->iface);
 	blobmsg_add_u16(&b, "op-class", rep->op_class);
 	blobmsg_add_u16(&b, "channel", rep->channel);
 	blobmsg_add_u64(&b, "start-time", rep->start_time);
