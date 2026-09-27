@@ -30,23 +30,51 @@
 			gpios = <&gpio1 31 GPIO_ACTIVE_LOW>;
 		};
 	};
-};
 
-&gpio1 {
-	poe-enable {
-		gpio-hog;
-		gpios = <10 GPIO_ACTIVE_HIGH>;
-		output-high;
-		line-name = "poe-enable";
+	/* The PoE MCU (Nuvoton M05xx in front of a BCM59121) answers only on this bus, not on UART */
+	i2c_poe: i2c-poe {
+		compatible = "i2c-gpio";
+		sda-gpios = <&gpio0 5 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&gpio0 4 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		i2c-gpio,delay-us = <5>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		pse: ethernet-pse@20 {
+			compatible = "netgear,gs310tp-v1-pse", "realtek,pse-mcu-gen1-smbus";
+			reg = <0x20>;
+			/* RTL8231 pin 10 gates all ports; the bootloader leaves it asserted, the driver releases it once the MCU has answered, as the vendor firmware does */
+			disable-ports-gpios = <&gpio1 10 GPIO_ACTIVE_LOW>;
+
+			pse-pis {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				PSE_PI(0)
+				PSE_PI(1)
+				PSE_PI(2)
+				PSE_PI(3)
+				PSE_PI(4)
+				PSE_PI(5)
+				PSE_PI(6)
+				PSE_PI(7)
+			};
+		};
 	};
 };
 
+/* Copper ports lan1..lan8 (phy8..phy15) -> MCU PoE ports 0..7 */
+&phy8  { pses = <&pse_pi0>; };
+&phy9  { pses = <&pse_pi1>; };
+&phy10 { pses = <&pse_pi2>; };
+&phy11 { pses = <&pse_pi3>; };
+&phy12 { pses = <&pse_pi4>; };
+&phy13 { pses = <&pse_pi5>; };
+&phy14 { pses = <&pse_pi6>; };
+&phy15 { pses = <&pse_pi7>; };
+
 &firmware {
 	openwrt,ih-magic = <0x4e474335>;
-};
-
-&uart1 {
-	status = "okay";
 };
 
 &switch0 {

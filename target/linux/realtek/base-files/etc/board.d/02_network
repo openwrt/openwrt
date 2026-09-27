@@ -236,9 +236,6 @@ realtek_setup_poe()
 	netgear,gs110tup-v1)
 		ucidef_set_poe 240 "$(filter_port_list "$lan_list" "lan9 lan10")"
 		;;
-	netgear,gs310tp-v1)
-		ucidef_set_poe 55 "$(filter_port_list "$lan_list" "lan9 lan10")"
-		;;
 	zyxel,gs1900-24ep-a1)
 		ucidef_set_poe 130 "lan1 lan2 lan3 lan4 lan5 lan6 lan7 lan8 lan9 lan10 lan11 lan12"
 		;;
