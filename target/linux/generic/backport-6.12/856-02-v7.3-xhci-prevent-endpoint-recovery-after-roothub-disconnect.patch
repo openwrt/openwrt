@@ -1,0 +1,75 @@
+From 042aad8d0db6607ac9789fc43b6221909bd6a3bc Mon Sep 17 00:00:00 2001
+From: Mathias Nyman <mathias.nyman@linux.intel.com>
+Date: Thu, 6 Aug 2026 17:21:00 +0300
+Subject: [PATCH 2/3] xhci: prevent endpoint recovery after roothub disconnect
+
+Prevent transfer retry and endpoint recovery if the device or its parent
+disconnected from the roothub. Just like link error case.
+
+There is a suspicion some xHC controllers may stop processing endpoint
+related commands after the last USB device disconnects from the host.
+
+Disconnect often causes transaction errors, xhci driver tries to (soft)
+reset and restart the endpoint to recover it.
+Hub driver again will cancel all pending URBs once disconnect is detected,
+stopping the endpoint right after (soft) reset restarted it.
+xHC controller sometimes fail to complete the stop endpoint command,
+leading to driver timing out, and tearing down xhci
+
+Prevent extra endpoint (soft) reset after xhci driver is aware of the
+parent roothub port disconnect.
+
+Tested-by: Xu Rao <raoxu@uniontech.com>
+Signed-off-by: Mathias Nyman <mathias.nyman@linux.intel.com>
+Link: https://patch.msgid.link/20260806142113.2436238-5-mathias.nyman@linux.intel.com
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+Backported to 6.12: context only. This tree predates the PORTSC
+accessor (xhci_portsc_readl) and the BIT() conversion of the endpoint
+state flags, and still carries max_ports in handle_port_status().
+No functional change from upstream.
+---
+--- a/drivers/usb/host/xhci.h
++++ b/drivers/usb/host/xhci.h
+@@ -1458,6 +1458,7 @@ struct xhci_port {
+ 	struct xhci_hub		*rhub;
+ 	struct xhci_port_cap	*port_cap;
+ 	unsigned int		link_inactive:1;
++	unsigned int		connected:1;
+ 	unsigned int		lpm_incapable:1;
+ 	unsigned long		resume_timestamp;
+ 	bool			rexit_active;
+--- a/drivers/usb/host/xhci-ring.c
++++ b/drivers/usb/host/xhci-ring.c
+@@ -917,14 +917,16 @@ static int xhci_handle_halted_endpoint(s
+ 				struct xhci_td *td,
+ 				enum xhci_ep_reset_type reset_type)
+ {
++	struct xhci_port *rhub_port = ep->vdev->rhub_port;
+ 	unsigned int slot_id = ep->vdev->slot_id;
+ 	int err;
+ 
+ 	/*
+-	 * Avoid resetting endpoint if link is inactive. Can cause host hang.
+-	 * Device will be reset soon to recover the link so don't do anything
++	 * Avoid resetting endpoint if link is inactive or device disonnected.
++	 * Can cause host hang.
++	 * Device will be reset to recover an inactive link, so don't do anything
+ 	 */
+-	if (ep->vdev->rhub_port->link_inactive)
++	if (rhub_port->link_inactive || !rhub_port->connected)
+ 		return -ENODEV;
+ 
+ 	/* add td to cancelled list and let reset ep handler take care of it */
+@@ -2014,8 +2016,10 @@ static void handle_port_status(struct xh
+ 	 * Tag broken links to avoid retries while hub driver sorts it out.
+ 	 * Link status is not relible while port is in reset.
+ 	 */
+-	if (!(portsc & PORT_RESET))
++	if (!(portsc & PORT_RESET)) {
+ 		port->link_inactive = (pls == XDEV_INACTIVE);
++		port->connected = !!(portsc & PORT_CONNECT);
++	}
+ 
+ 	if ((portsc & PORT_PLC) && (portsc & PORT_PLS_MASK) == XDEV_RESUME) {
+ 		xhci_dbg(xhci, "port resume event for port %d\n", port_id);
