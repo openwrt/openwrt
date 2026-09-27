@@ -68,6 +68,13 @@ properties:
       table and before the external interface is configured. This permits
       board-specific post-initialization without changing other switches.
 
+  realtek,led-link-activity:
+    type: boolean
+    description:
+      Configure all three parallel LED groups to indicate link and activity
+      for the switch ports. This is disabled unless explicitly requested by
+      the board.
+
 required:
   - compatible
   - realtek,extif
@@ -92,4 +99,5 @@ examples:
         realtek,extif = <6 1 2 1 1 1 1 1 1 2>;
         realtek,init-regs = <0x1301 0x0778>,
                             <0x1302 0x7777>;
+        realtek,led-link-activity;
     };
