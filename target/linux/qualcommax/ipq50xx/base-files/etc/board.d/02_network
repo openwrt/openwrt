@@ -38,12 +38,19 @@ ipq50xx_setup_interfaces()
 		ucidef_set_network_device_conduit "lan3" "eth1"
 		ucidef_set_network_device_conduit "wan" "eth0"
 		;;
+	zte,t5400)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "eth0"
+		ucidef_set_network_device_conduit "lan1" "eth1"
+		ucidef_set_network_device_conduit "lan2" "eth1"
+		ucidef_set_network_device_conduit "lan3" "eth1"
+		;;
 	esac
 }
 
 ipq50xx_setup_macs()
 {
 	local board="$1"
+	local lan_mac=""
 	local label_mac=""
 
 	case $board in
@@ -58,6 +65,12 @@ ipq50xx_setup_macs()
 		# gmac1 has no nvmem MAC source, so stmmac would randomise the
 		# DSA conduit's address on every boot - pin it to the label MAC
 		ucidef_set_network_device_mac "eth0" "$label_mac"
+		;;
+	zte,t5400)
+		lan_mac=$(mtd_get_mac_binary "mac" 0)
+		[ -n "$lan_mac" ] || return
+		ucidef_set_interface_macaddr "lan" "$lan_mac"
+		ucidef_set_label_macaddr "$lan_mac"
 		;;
 	esac
 }
