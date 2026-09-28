@@ -826,7 +826,6 @@ uc_hostapd_bss_rename(uc_vm_t *vm, size_t nargs)
 	char prev_ifname[IFNAMSIZ + 1];
 	struct sta_info *sta;
 	const char *ifname;
-	int ret = 0;
 
 	if (!hapd || ucv_type(ifname_arg) != UC_STRING)
 		return NULL;
@@ -834,15 +833,13 @@ uc_hostapd_bss_rename(uc_vm_t *vm, size_t nargs)
 	os_strlcpy(prev_ifname, hapd->conf->iface, sizeof(prev_ifname));
 	ifname = ucv_string_get(ifname_arg);
 
+	if (!ucv_is_truish(skip_rename) &&
+	    hostapd_drv_if_rename(hapd, WPA_IF_AP_BSS, NULL, ifname))
+		return NULL;
+
 	hostapd_ubus_free_bss(hapd);
 	if (interfaces->ctrl_iface_deinit)
 		interfaces->ctrl_iface_deinit(hapd);
-
-	if (!ucv_is_truish(skip_rename)) {
-		ret = hostapd_drv_if_rename(hapd, WPA_IF_AP_BSS, NULL, ifname);
-		if (ret)
-			goto out;
-	}
 
 	for (sta = hapd->sta_list; sta; sta = sta->next) {
 		char cur_name[IFNAMSIZ + 1], new_name[IFNAMSIZ + 1];
@@ -863,11 +860,10 @@ uc_hostapd_bss_rename(uc_vm_t *vm, size_t nargs)
 
 	hostapd_ucode_update_interfaces();
 	hostapd_owe_update_trans(hapd->iface);
-out:
 	if (interfaces->ctrl_iface_init)
 		interfaces->ctrl_iface_init(hapd);
 
-	return ret ? NULL : ucv_boolean_new(true);
+	return ucv_boolean_new(true);
 }
 
 int hostapd_ucode_sta_auth(struct hostapd_data *hapd, struct sta_info *sta)
