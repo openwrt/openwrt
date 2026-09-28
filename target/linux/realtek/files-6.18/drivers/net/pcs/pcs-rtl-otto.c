@@ -1202,10 +1202,10 @@ static int rtpcs_838x_sds_post_config(struct rtpcs_serdes *sds, enum rtpcs_sds_m
 	 * Of course this is totally wrong here and should be part of the DSA driver. But
 	 * implementing it over there requires more tricks than this (e.g. delayed work).
 	 */
-	if (sds->first_start)
-		regmap_write(sds->ctrl->map, RTPCS_838X_RST_GLB_CTRL_0, 0x4);
+	if (!sds->first_start)
+		return 0;
 
-	return 0;
+	return regmap_write(sds->ctrl->map, RTPCS_838X_RST_GLB_CTRL_0, 0x4);
 }
 
 /* RTL839X */
