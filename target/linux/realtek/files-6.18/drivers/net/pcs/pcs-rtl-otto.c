@@ -1409,7 +1409,7 @@ static int rtpcs_839x_sds_probe(struct rtpcs_serdes *sds)
 static int rtpcs_839x_init(struct rtpcs_ctrl *ctrl)
 {
 	/* reset all SerDes once after patching has been applied before */
-	for (int sds_id = 0; sds_id < ctrl->cfg->serdes_count; sds_id++)
+	for (int sds_id = 0; sds_id < ctrl->cfg->serdes_count; sds_id += 2)
 		rtpcs_839x_sds_reset(&ctrl->serdes[sds_id]);
 
 	return 0;
