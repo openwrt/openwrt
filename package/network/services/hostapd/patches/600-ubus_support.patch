@@ -53,7 +53,7 @@ probe/assoc/auth requests via object subscribe.
  	}
 --- a/src/ap/beacon.c
 +++ b/src/ap/beacon.c
-@@ -1479,6 +1479,12 @@ void handle_probe_req(struct hostapd_dat
+@@ -1492,6 +1492,12 @@ void handle_probe_req(struct hostapd_dat
  	int mld_id;
  	u16 links;
  #endif /* CONFIG_IEEE80211BE */
@@ -66,7 +66,7 @@ probe/assoc/auth requests via object subscribe.
  
  	if (hapd->iconf->rssi_ignore_probe_request && ssi_signal &&
  	    ssi_signal < hapd->iconf->rssi_ignore_probe_request)
-@@ -1686,6 +1692,12 @@ void handle_probe_req(struct hostapd_dat
+@@ -1699,6 +1705,12 @@ void handle_probe_req(struct hostapd_dat
  	}
  #endif /* CONFIG_P2P */
  
@@ -126,7 +126,7 @@ probe/assoc/auth requests via object subscribe.
  		if (is_dfs0 > 0 &&
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -525,6 +525,7 @@ void hostapd_free_hapd_data(struct hosta
+@@ -577,6 +577,7 @@ void hostapd_free_hapd_data(struct hosta
  	hapd->beacon_set_done = 0;
  
  	wpa_printf(MSG_DEBUG, "%s(%s)", __func__, hapd->conf->iface);
@@ -134,7 +134,7 @@ probe/assoc/auth requests via object subscribe.
  	accounting_deinit(hapd);
  	hostapd_deinit_wpa(hapd);
  	vlan_deinit(hapd);
-@@ -1383,6 +1384,8 @@ static int hostapd_start_beacon(struct h
+@@ -1430,6 +1431,8 @@ static int hostapd_start_beacon(struct h
  	if (hapd->driver && hapd->driver->set_operstate)
  		hapd->driver->set_operstate(hapd->drv_priv, 1);
  
@@ -143,7 +143,7 @@ probe/assoc/auth requests via object subscribe.
  	return 0;
  }
  
-@@ -2626,6 +2629,7 @@ static int hostapd_setup_interface_compl
+@@ -2673,6 +2676,7 @@ static int hostapd_setup_interface_compl
  	if (err)
  		goto fail;
  
@@ -151,7 +151,7 @@ probe/assoc/auth requests via object subscribe.
  	wpa_printf(MSG_DEBUG, "Completing interface initialization");
  	if (iface->freq) {
  #ifdef NEED_AP_MLME
-@@ -2855,6 +2859,7 @@ dfs_offload:
+@@ -2902,6 +2906,7 @@ dfs_offload:
  
  fail:
  	wpa_printf(MSG_ERROR, "Interface initialization failed");
@@ -159,7 +159,7 @@ probe/assoc/auth requests via object subscribe.
  
  	if (iface->is_no_ir) {
  		hostapd_set_state(iface, HAPD_IFACE_NO_IR);
-@@ -3605,6 +3610,7 @@ void hostapd_interface_deinit_free(struc
+@@ -3652,6 +3657,7 @@ void hostapd_interface_deinit_free(struc
  		   (unsigned int) iface->conf->num_bss);
  	driver = iface->bss[0]->driver;
  	drv_priv = iface->bss[0]->drv_priv;

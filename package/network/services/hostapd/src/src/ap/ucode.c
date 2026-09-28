@@ -583,6 +583,26 @@ uc_hostapd_bss_ctrl(uc_vm_t *vm, size_t nargs)
 	return ucv_string_new_length(reply, reply_len);
 }
 
+#ifdef CONFIG_IEEE80211BE
+static uc_value_t *
+uc_hostapd_bss_link_remove(uc_vm_t *vm, size_t nargs)
+{
+	struct hostapd_data *hapd = uc_fn_thisval("hostapd.bss");
+	uc_value_t *count_arg = uc_fn_arg(0);
+	int64_t count;
+
+	if (!hapd || ucv_type(count_arg) != UC_INTEGER)
+		return NULL;
+
+	count = ucv_int64_get(count_arg);
+	if (count < 0 || count > UINT32_MAX || hostapd_link_remove(hapd, count))
+		return NULL;
+
+	return ucv_int64_new((int64_t) hapd->eht_mld_link_removal_count *
+			     TU_TO_USEC(hapd->iconf->beacon_int) / 1000);
+}
+#endif /* CONFIG_IEEE80211BE */
+
 static void
 uc_hostapd_disable_iface(struct hostapd_iface *iface)
 {
@@ -1271,6 +1291,9 @@ int hostapd_ucode_init(struct hapd_interfaces *ifaces)
 		{ "set_config", uc_hostapd_bss_set_config },
 		{ "rename", uc_hostapd_bss_rename },
 		{ "delete", uc_hostapd_bss_delete },
+#ifdef CONFIG_IEEE80211BE
+		{ "link_remove", uc_hostapd_bss_link_remove },
+#endif /* CONFIG_IEEE80211BE */
 #ifdef CONFIG_DPP
 		{ "dpp_send_action", uc_hostapd_bss_dpp_send_action },
 		{ "dpp_send_gas_resp", uc_hostapd_bss_dpp_send_gas_resp },

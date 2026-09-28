@@ -1826,6 +1826,30 @@ let main_obj = {
 			return found ? 0 : libubus.STATUS_NOT_FOUND;
 		}
 	},
+	mld_link_remove: {
+		args: {
+			phy: "",
+			radio: 0,
+			iface: "",
+			count: 0,
+		},
+		call: function(req) {
+			let phy = phy_name(req.args.phy, req.args.radio);
+			if (!phy || !req.args.iface || !req.args.count ||
+			    req.args.count < 0 || req.args.count > 0xffff)
+				return libubus.STATUS_INVALID_ARGUMENT;
+
+			let bss = hostapd.bss[phy]?.[req.args.iface];
+			if (!bss)
+				return libubus.STATUS_NOT_FOUND;
+
+			let removal_ms = bss.link_remove?.(req.args.count);
+			if (removal_ms == null)
+				return libubus.STATUS_NOT_SUPPORTED;
+
+			return { removal_ms };
+		}
+	},
 	status: {
 		args: {},
 		call: function(req) {
