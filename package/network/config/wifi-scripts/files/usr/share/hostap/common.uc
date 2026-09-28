@@ -322,12 +322,16 @@ const phy_proto = {
 		});
 	},
 
-	for_each_wdev: function(cb) {
-		let wdevs = nl80211.request(
+	wdev_list: function() {
+		return nl80211.request(
 			nl80211.const.NL80211_CMD_GET_INTERFACE,
 			nl80211.const.NLM_F_DUMP,
 			{ wiphy: this.idx }
-		);
+		) ?? [];
+	},
+
+	for_each_wdev: function(cb) {
+		let wdevs = this.wdev_list();
 
 		let mac_wdev = {};
 		for (let wdev in wdevs) {

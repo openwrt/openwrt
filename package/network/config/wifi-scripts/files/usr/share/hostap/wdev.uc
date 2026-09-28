@@ -81,12 +81,36 @@ function iface_cb(new_if, old_if)
 		iface_start(new_if);
 }
 
-function drop_inactive(config)
+function wdev_on_radio(wdev)
 {
+	let mask = wdev.vif_radio_mask;
+
+	return phydev.radio == null || !mask || (mask & (1 << phydev.radio));
+}
+
+// A name in the state file can belong to another owner by now, so match
+// the wdev ids. A state file of an older version has names only.
+function drop_inactive(config, wdev_ids)
+{
+	let wdevs = {};
+	for (let wdev in phydev.wdev_list())
+		wdevs[wdev.ifname] = wdev;
+
 	for (let key in config) {
-		if (!readfile(`/sys/class/net/${key}/ifindex`))
+		let wdev = wdevs[key];
+		if (!wdev || !wdev_on_radio(wdev) || (wdev_ids && wdev_ids[key] != wdev.wdev))
 			delete config[key];
 	}
+}
+
+function wdev_ids_get(config)
+{
+	let wdev_ids = {};
+	for (let wdev in phydev.wdev_list())
+		if (config[wdev.ifname])
+			wdev_ids[wdev.ifname] = wdev.wdev;
+
+	return wdev_ids;
 }
 
 function add_ifname(config)
@@ -115,6 +139,7 @@ Commands:
 const commands = {
 	set_config: function(args) {
 		let statefile = `/var/run/wdev-${phy_name}.json`;
+		let idfile = `/var/run/wdev-${phy_name}.id.json`;
 
 		let new_config = shift(args);
 		for (let dev in ARGV)
@@ -137,8 +162,12 @@ const commands = {
 		if (type(old_config) == "object")
 			config.data = old_config;
 
+		let wdev_ids = readfile(idfile);
+		if (wdev_ids)
+			wdev_ids = json(wdev_ids);
+
 		add_ifname(config.data);
-		drop_inactive(config.data);
+		drop_inactive(config.data, type(wdev_ids) == "object" ? wdev_ids : null);
 
 		let ubus = libubus.connect();
 		let data = ubus.call("hostapd", "config_get_macaddr_list", { phy: phydev.phy });
@@ -154,6 +183,7 @@ const commands = {
 		drop_inactive(config.data);
 		delete_ifname(config.data);
 		writefile(statefile, sprintf("%J", config.data));
+		writefile(idfile, sprintf("%J", wdev_ids_get(config.data)));
 	},
 	get_macaddr: function(args) {
 		let data = {};
