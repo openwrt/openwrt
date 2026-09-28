@@ -1861,7 +1861,8 @@ let main_obj = {
 
 				let is_pending = !!hostapd.data.pending_config[phy_name];
 				let iface = hostapd.interfaces[phy_name];
-				let is_running = iface && iface.state() == "ENABLED" && !is_pending;
+				let state = iface?.state();
+				let is_running = iface && state == "ENABLED" && !is_pending;
 
 				for (let bss in config.bss) {
 					let ifname = bss.ifname;
@@ -1881,6 +1882,7 @@ let main_obj = {
 							macaddr: bss.bssid,
 							running: is_running,
 							pending: is_pending,
+							state,
 						};
 					} else {
 						entry = {
@@ -1888,6 +1890,7 @@ let main_obj = {
 							macaddr: bss.bssid,
 							running: is_running,
 							pending: is_pending,
+							state,
 						};
 						if (config.radio_idx != null && config.radio_idx >= 0)
 							entry.radio = config.radio_idx;
