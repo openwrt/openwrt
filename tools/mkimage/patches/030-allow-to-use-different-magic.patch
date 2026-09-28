@@ -81,7 +81,7 @@ This patch makes it possible to set a custom image magic.
  #include <version.h>
  #ifdef __linux__
  #include <sys/ioctl.h>
-@@ -26,6 +27,7 @@ static struct image_tool_params params = {
+@@ -26,6 +27,7 @@ static struct image_tool_params params =
  	.arch = IH_ARCH_PPC,
  	.type = IH_TYPE_KERNEL,
  	.comp = IH_COMP_GZIP,
@@ -103,7 +103,7 @@ This patch makes it possible to set a custom image magic.
  		"          -a ==> set load address to 'addr' (hex)\n"
  		"          -e ==> set entry point to 'ep' (hex)\n"
  		"          -n ==> set image name to 'name'\n"
-@@ -164,7 +167,7 @@ static int add_content(int type, const char *fname)
+@@ -164,7 +167,7 @@ static int add_content(int type, const c
  }
  
  static const char optstring[] =
@@ -112,7 +112,7 @@ This patch makes it possible to set a custom image magic.
  
  static const struct option longopts[] = {
  	{ "load-address", required_argument, NULL, 'a' },
-@@ -210,6 +213,7 @@ static const struct option longopts[] = {
+@@ -210,6 +213,7 @@ static const struct option longopts[] =
  static void process_args(int argc, char **argv)
  {
  	char *ptr;
@@ -120,7 +120,7 @@ This patch makes it possible to set a custom image magic.
  	int type = IH_TYPE_INVALID;
  	char *datafile = NULL;
  	int opt;
-@@ -312,6 +316,15 @@ static void process_args(int argc, char **argv)
+@@ -312,6 +316,15 @@ static void process_args(int argc, char
  		case 'l':
  			params.lflag = 1;
  			break;
