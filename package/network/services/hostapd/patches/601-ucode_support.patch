@@ -173,11 +173,12 @@ as adding/removing interfaces.
  	wpa_msg_register_cb(hostapd_ctrl_iface_msg_cb);
  
  	return 0;
-@@ -6177,6 +6178,7 @@ fail:
+@@ -6177,6 +6178,8 @@ fail:
  	os_free(fname);
  
  	interface->global_ctrl_sock = s;
 +	interface->ctrl_iface_recv = hostapd_ctrl_iface_receive_process;
++	interface->ctrl_iface_path = hostapd_ctrl_iface_path;
  	eloop_register_read_sock(s, hostapd_global_ctrl_iface_receive,
  				 interface, NULL);
  
@@ -388,7 +389,7 @@ as adding/removing interfaces.
  
  #define OCE_STA_CFON_ENABLED(hapd) \
  	((hapd->conf->oce & OCE_STA_CFON) && \
-@@ -53,6 +54,10 @@ struct hapd_interfaces {
+@@ -53,6 +54,11 @@ struct hapd_interfaces {
  	struct hostapd_config * (*config_read_cb)(const char *config_fname);
  	int (*ctrl_iface_init)(struct hostapd_data *hapd);
  	void (*ctrl_iface_deinit)(struct hostapd_data *hapd);
@@ -396,10 +397,11 @@ as adding/removing interfaces.
 +			       char *buf, char *reply, int reply_size,
 +			       struct sockaddr_storage *from,
 +			       socklen_t fromlen);
++	char * (*ctrl_iface_path)(struct hostapd_data *hapd);
  	int (*for_each_interface)(struct hapd_interfaces *interfaces,
  				  int (*cb)(struct hostapd_iface *iface,
  					    void *ctx), void *ctx);
-@@ -213,6 +218,7 @@ struct hostapd_data {
+@@ -213,6 +219,7 @@ struct hostapd_data {
  	struct hostapd_config *iconf;
  	struct hostapd_bss_config *conf;
  	struct hostapd_ubus_bss ubus;
@@ -407,7 +409,7 @@ as adding/removing interfaces.
  	int interface_added; /* virtual interface added for this BSS */
  	unsigned int started:1;
  	unsigned int disabled:1;
-@@ -595,6 +601,7 @@ struct hostapd_mld {
+@@ -595,6 +602,7 @@ struct hostapd_mld {
   */
  struct hostapd_iface {
  	struct hapd_interfaces *interfaces;
@@ -415,7 +417,7 @@ as adding/removing interfaces.
  	void *owner;
  	char *config_fname;
  	struct hostapd_config *conf;
-@@ -833,11 +840,16 @@ struct hostapd_iface * hostapd_init(stru
+@@ -833,11 +841,16 @@ struct hostapd_iface * hostapd_init(stru
  struct hostapd_iface *
  hostapd_interface_init_bss(struct hapd_interfaces *interfaces, const char *phy,
  			   const char *config_fname, int debug);
@@ -432,7 +434,7 @@ as adding/removing interfaces.
  int hostapd_enable_iface(struct hostapd_iface *hapd_iface);
  int hostapd_reload_iface(struct hostapd_iface *hapd_iface);
  int hostapd_reload_bss_only(struct hostapd_data *bss);
-@@ -863,6 +875,7 @@ hostapd_switch_channel_fallback(struct h
+@@ -863,6 +876,7 @@ hostapd_switch_channel_fallback(struct h
  void hostapd_cleanup_cs_params(struct hostapd_data *hapd);
  void hostapd_periodic_iface(struct hostapd_iface *iface);
  int hostapd_owe_trans_get_info(struct hostapd_data *hapd);

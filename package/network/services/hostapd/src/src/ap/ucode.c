@@ -817,6 +817,54 @@ uc_hostapd_iface_csa_in_progress(uc_vm_t *vm, size_t nargs)
 	return ucv_boolean_new(hostapd_csa_in_progress(iface));
 }
 
+static int
+hostapd_ucode_bss_set_iface(struct hostapd_data *hapd, const char *ifname)
+{
+	os_strlcpy(hapd->conf->iface, ifname, sizeof(hapd->conf->iface));
+
+	return hostapd_set_ctrl_sock_iface(hapd);
+}
+
+static char *
+hostapd_ucode_ctrl_iface_path(struct hostapd_data *hapd, const char *ifname)
+{
+	char cur_ifname[IFNAMSIZ + 1];
+	char *path = NULL;
+
+	os_strlcpy(cur_ifname, hapd->conf->iface, sizeof(cur_ifname));
+	if (!hostapd_ucode_bss_set_iface(hapd, ifname))
+		path = interfaces->ctrl_iface_path(hapd);
+	hostapd_ucode_bss_set_iface(hapd, cur_ifname);
+
+	return path;
+}
+
+/*
+ * Keep the control socket, to which attached monitors are connected, and
+ * move its name.
+ */
+static bool
+hostapd_ucode_ctrl_iface_move(struct hostapd_data *hapd, const char *ifname)
+{
+	char *prev_path, *path;
+	bool ret = false;
+
+	if (hapd->ctrl_sock < 0 || !interfaces->ctrl_iface_path)
+		return false;
+
+	prev_path = interfaces->ctrl_iface_path(hapd);
+	path = hostapd_ucode_ctrl_iface_path(hapd, ifname);
+	if (prev_path && path && !link(prev_path, path)) {
+		unlink(prev_path);
+		ret = true;
+	}
+
+	os_free(prev_path);
+	os_free(path);
+
+	return ret;
+}
+
 static uc_value_t *
 uc_hostapd_bss_rename(uc_vm_t *vm, size_t nargs)
 {
@@ -826,6 +874,7 @@ uc_hostapd_bss_rename(uc_vm_t *vm, size_t nargs)
 	char prev_ifname[IFNAMSIZ + 1];
 	struct sta_info *sta;
 	const char *ifname;
+	bool moved;
 	int ret;
 
 	if (!hapd || ucv_type(ifname_arg) != UC_STRING)
@@ -839,7 +888,8 @@ uc_hostapd_bss_rename(uc_vm_t *vm, size_t nargs)
 		return NULL;
 
 	hostapd_ubus_free_bss(hapd);
-	if (interfaces->ctrl_iface_deinit)
+	moved = hostapd_ucode_ctrl_iface_move(hapd, ifname);
+	if (!moved && interfaces->ctrl_iface_deinit)
 		interfaces->ctrl_iface_deinit(hapd);
 
 	for (sta = hapd->sta_list; sta; sta = sta->next) {
@@ -855,13 +905,12 @@ uc_hostapd_bss_rename(uc_vm_t *vm, size_t nargs)
 
 	if (!strncmp(hapd->conf->ssid.vlan, hapd->conf->iface, sizeof(hapd->conf->ssid.vlan)))
 		os_strlcpy(hapd->conf->ssid.vlan, ifname, sizeof(hapd->conf->ssid.vlan));
-	os_strlcpy(hapd->conf->iface, ifname, sizeof(hapd->conf->iface));
-	ret = hostapd_set_ctrl_sock_iface(hapd);
+	ret = hostapd_ucode_bss_set_iface(hapd, ifname);
 	hostapd_ubus_add_bss(hapd);
 
 	hostapd_ucode_update_interfaces();
 	hostapd_owe_update_trans(hapd->iface);
-	if (!ret && interfaces->ctrl_iface_init)
+	if (!ret && !moved && interfaces->ctrl_iface_init)
 		ret = interfaces->ctrl_iface_init(hapd);
 	if (ret) {
 		wpa_printf(MSG_ERROR, "Failed to setup control interface for %s",
