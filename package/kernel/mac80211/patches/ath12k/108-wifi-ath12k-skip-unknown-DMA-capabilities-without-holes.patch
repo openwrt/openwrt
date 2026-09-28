@@ -1,0 +1,83 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Satoshi Ikeuchi <satosan.ikm@gmail.com>
+Date: Sun, 27 Sep 2026 13:00:00 +0900
+Subject: [PATCH] wifi: ath12k: skip unknown direct buffer capabilities
+
+Firmware can advertise optional direct buffer ring module IDs which the
+driver does not implement. Rejecting the whole capability event prevents
+startup even though the driver will not configure those ring types.
+
+Skip unknown module IDs, retaining known capabilities in a compact array.
+Publish only the retained count so a skipped, zero-initialized slot cannot
+match a later spectral capability lookup. Free an all-unknown array to
+avoid leaking it when a subsequent capability event is processed.
+
+Malformed TLV and allocation failures still propagate. This does not enable
+new ring types, change firmware selection or relax calibration checks.
+
+Based on the public unknown-module handling proposal in OpenWrt PR #23001.
+Rebased for backports 7.2 and extended with compaction and empty-result
+cleanup.
+
+Based-on-patch-by: Nazar Mokrynskyi <nazar@mokrynskyi.com>
+Link: https://github.com/openwrt/openwrt/pull/23001
+Signed-off-by: Satoshi Ikeuchi <satosan.ikm@gmail.com>
+---
+ drivers/net/wireless/ath/ath12k/wmi.c | 31 ++++++++++++++++---------------
+ 1 file changed, 16 insertions(+), 15 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath12k/wmi.c b/drivers/net/wireless/ath/ath12k/wmi.c
+--- a/drivers/net/wireless/ath/ath12k/wmi.c
++++ b/drivers/net/wireless/ath/ath12k/wmi.c
+@@ -4917,7 +4917,7 @@ static int ath12k_wmi_dma_ring_caps(struct ath12k_base *ab,
+ 	struct ath12k_wmi_dma_ring_caps_params *dma_caps;
+ 	struct ath12k_dbring_cap *dir_buff_caps;
+ 	int ret;
+-	u32 i;
++	u32 i, j;
+ 
+ 	dma_caps_parse->n_dma_ring_caps = 0;
+ 	dma_caps = (struct ath12k_wmi_dma_ring_caps_params *)ptr;
+@@ -4942,27 +4942,28 @@ static int ath12k_wmi_dma_ring_caps(struct ath12k_base *ab,
+ 		return ret;
+ 
+ 	dir_buff_caps = ab->db_caps;
+-	for (i = 0; i < dma_caps_parse->n_dma_ring_caps; i++) {
++	for (i = 0, j = 0; i < dma_caps_parse->n_dma_ring_caps; i++) {
+ 		if (le32_to_cpu(dma_caps[i].module_id) >= WMI_DIRECT_BUF_MAX) {
+-			ath12k_warn(ab, "Invalid module id %d\n",
+-				    le32_to_cpu(dma_caps[i].module_id));
+-			ret = -EINVAL;
+-			goto free_dir_buff;
++			ath12k_dbg(ab, ATH12K_DBG_WMI,
++				   "skipping unknown direct buffer module id %u\n",
++				   le32_to_cpu(dma_caps[i].module_id));
++			continue;
+ 		}
+ 
+-		dir_buff_caps[i].id = le32_to_cpu(dma_caps[i].module_id);
+-		dir_buff_caps[i].pdev_id =
++		dir_buff_caps[j].id = le32_to_cpu(dma_caps[i].module_id);
++		dir_buff_caps[j].pdev_id =
+ 			DP_HW2SW_MACID(le32_to_cpu(dma_caps[i].pdev_id));
+-		dir_buff_caps[i].min_elem = le32_to_cpu(dma_caps[i].min_elem);
+-		dir_buff_caps[i].min_buf_sz = le32_to_cpu(dma_caps[i].min_buf_sz);
+-		dir_buff_caps[i].min_buf_align = le32_to_cpu(dma_caps[i].min_buf_align);
++		dir_buff_caps[j].min_elem = le32_to_cpu(dma_caps[i].min_elem);
++		dir_buff_caps[j].min_buf_sz = le32_to_cpu(dma_caps[i].min_buf_sz);
++		dir_buff_caps[j].min_buf_align = le32_to_cpu(dma_caps[i].min_buf_align);
++		j++;
+ 	}
+ 
++	ab->num_db_cap = j;
++	if (!j)
++		ath12k_wmi_free_dbring_caps(ab);
++
+ 	return 0;
+-
+-free_dir_buff:
+-	ath12k_wmi_free_dbring_caps(ab);
+-	return ret;
+ }
+ 
+ static void
