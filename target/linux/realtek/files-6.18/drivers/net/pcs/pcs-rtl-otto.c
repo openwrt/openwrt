@@ -3050,15 +3050,13 @@ static const struct rtpcs_sds_config rtpcs_930x_sds_cfg_usxgmii_xsgmii[] = {
 	{PAGE_ANA_10G_EXT, 0x02, 0x1017}, {PAGE_ANA_10G_EXT, 0x07, 0x8104}
 };
 
-static const struct rtpcs_sds_config rtpcs_930x_sds_cfg_5g_qsgmii[] =
-{
+static const struct rtpcs_sds_config rtpcs_930x_sds_cfg_5g_qsgmii[] = {
 	{PAGE_ANA_COM, 0x00, 0x3C91}, {PAGE_ANA_COM, 0x02, 0xB602},
 	{PAGE_ANA_COM, 0x07, 0xFA66}, {PAGE_ANA_COM, 0x0A, 0xDF40},
 	{PAGE_ANA_5G0, 0x02, 0x35A1}, {PAGE_ANA_5G0, 0x03, 0x6960},
 };
 
-static const struct rtpcs_sds_config rtpcs_930x_sds_cfg_final_even[] =
-{
+static const struct rtpcs_sds_config rtpcs_930x_sds_cfg_final_even[] = {
 	{PAGE_ANA_5G0_EXT, 0x13, 0x0050}, {PAGE_ANA_5G0_EXT, 0x18, 0x8E88},
 	{PAGE_ANA_5G0_EXT, 0x19, 0x4902}, {PAGE_ANA_5G0_EXT, 0x1D, 0x2501},
 
@@ -3070,8 +3068,7 @@ static const struct rtpcs_sds_config rtpcs_930x_sds_cfg_final_even[] =
 	{PAGE_ANA_10G_EXT, 0x19, 0x4902}, {PAGE_ANA_10G_EXT, 0x1D, 0x66E1},
 };
 
-static const struct rtpcs_sds_config rtpcs_930x_sds_cfg_final_odd[] =
-{
+static const struct rtpcs_sds_config rtpcs_930x_sds_cfg_final_odd[] = {
 	{PAGE_ANA_5G0_EXT, 0x13, 0x3D87}, {PAGE_ANA_5G0_EXT, 0x14, 0x3108},
 	{PAGE_ANA_6G2_EXT, 0x13, 0x3C87}, {PAGE_ANA_6G2_EXT, 0x14, 0x1808}
 };
