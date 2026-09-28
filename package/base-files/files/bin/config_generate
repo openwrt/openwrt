@@ -2,10 +2,15 @@
 
 CFG=/etc/board.json
 
+FORCE=
+[ "$1" = "-f" ] && FORCE=-f
+
 . /usr/share/libubox/jshn.sh
 . /lib/functions/ipv4.sh
 
-[ -s $CFG ] || /bin/board_detect || exit 1
+if [ -n "$FORCE" ] || [ ! -s $CFG ]; then
+	/bin/board_detect $FORCE || exit 1
+fi
 [ -s /etc/config/network -a -s /etc/config/system ] && exit 0
 
 generate_bridge() {
