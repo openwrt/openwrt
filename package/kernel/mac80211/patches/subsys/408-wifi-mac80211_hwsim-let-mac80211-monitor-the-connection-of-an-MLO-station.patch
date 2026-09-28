@@ -14,7 +14,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 --- a/drivers/net/wireless/virtual/mac80211_hwsim_main.c
 +++ b/drivers/net/wireless/virtual/mac80211_hwsim_main.c
-@@ -5915,7 +5915,6 @@ static int mac80211_hwsim_new_radio(stru
+@@ -6040,7 +6040,6 @@ static int mac80211_hwsim_new_radio(stru
  		hw->wiphy->flags |= WIPHY_FLAG_SUPPORTS_MLO;
  		ieee80211_hw_set(hw, HAS_RATE_CONTROL);
  		ieee80211_hw_set(hw, SUPPORTS_DYNAMIC_PS);
