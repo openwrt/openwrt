@@ -490,11 +490,17 @@ uc_hostapd_iface_add_bss(uc_vm_t *vm, size_t nargs)
 	goto out;
 
 deinit_ctrl:
+	hostapd_bss_link_deinit(hapd);
 	if (interfaces->ctrl_iface_deinit)
 		interfaces->ctrl_iface_deinit(hapd);
 free_hapd:
 	hostapd_free_hapd_data(hapd);
+#ifdef CONFIG_IEEE80211BE
+	if (hapd->mld)
+		hapd->mld->refcount--;
+#endif
 	os_free(hapd);
+	hostapd_cleanup_unused_mlds(iface->interfaces);
 out:
 	hostapd_config_free(conf);
 	return ret;
