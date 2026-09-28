@@ -826,6 +826,7 @@ uc_hostapd_bss_rename(uc_vm_t *vm, size_t nargs)
 	char prev_ifname[IFNAMSIZ + 1];
 	struct sta_info *sta;
 	const char *ifname;
+	int ret;
 
 	if (!hapd || ucv_type(ifname_arg) != UC_STRING)
 		return NULL;
@@ -855,13 +856,18 @@ uc_hostapd_bss_rename(uc_vm_t *vm, size_t nargs)
 	if (!strncmp(hapd->conf->ssid.vlan, hapd->conf->iface, sizeof(hapd->conf->ssid.vlan)))
 		os_strlcpy(hapd->conf->ssid.vlan, ifname, sizeof(hapd->conf->ssid.vlan));
 	os_strlcpy(hapd->conf->iface, ifname, sizeof(hapd->conf->iface));
-	hostapd_set_ctrl_sock_iface(hapd);
+	ret = hostapd_set_ctrl_sock_iface(hapd);
 	hostapd_ubus_add_bss(hapd);
 
 	hostapd_ucode_update_interfaces();
 	hostapd_owe_update_trans(hapd->iface);
-	if (interfaces->ctrl_iface_init)
-		interfaces->ctrl_iface_init(hapd);
+	if (!ret && interfaces->ctrl_iface_init)
+		ret = interfaces->ctrl_iface_init(hapd);
+	if (ret) {
+		wpa_printf(MSG_ERROR, "Failed to setup control interface for %s",
+			   hapd->conf->iface);
+		return NULL;
+	}
 
 	return ucv_boolean_new(true);
 }
