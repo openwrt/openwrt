@@ -1,0 +1,342 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Navid Ghahremani <ghahramani.navid@gmail.com>
+Date: Mon, 28 Sep 2026 00:00:00 +0100
+Subject: [PATCH] PCI: dwc: add the ZTE ZX279128S PCIe host controller
+
+Add a DesignWare based host driver for the two PCIe ports of the
+ZX279128S, which connect the MT7915 Wi-Fi on the ZTE ZXHN H3600.
+
+Signed-off-by: Navid Ghahremani <ghahramani.navid@gmail.com>
+---
+--- a/drivers/pci/controller/dwc/Kconfig
++++ b/drivers/pci/controller/dwc/Kconfig
+@@ -518,4 +518,14 @@ config PCIE_VISCONTI_HOST
+ 	  Say Y here if you want PCIe controller support on Toshiba Visconti SoC.
+ 	  This driver supports TMPV7708 SoC.
+ 
++config PCIE_ZX279128
++	bool "ZTE ZX279128S PCIe controller"
++	depends on OF
++	select PCIE_DW_HOST
++	default y
++	help
++	  Say Y here to enable PCIe support for ZTE/Sanechips ZX279128S SoC.
++	  This driver supports the DesignWare-based PCIe host controller with
++	  ZTE-specific PHY and link initialization.
++
+ endmenu
+--- a/drivers/pci/controller/dwc/Makefile
++++ b/drivers/pci/controller/dwc/Makefile
+@@ -33,6 +33,7 @@ obj-$(CONFIG_PCIE_VISCONTI_HOST) += pcie
+ obj-$(CONFIG_PCIE_RCAR_GEN4) += pcie-rcar-gen4.o
+ obj-$(CONFIG_PCIE_STM32_HOST) += pcie-stm32.o
+ obj-$(CONFIG_PCIE_STM32_EP) += pcie-stm32-ep.o
++obj-$(CONFIG_PCIE_ZX279128) += pcie-zx279128.o
+ 
+ # The following drivers are for devices that use the generic ACPI
+ # pci_root.c driver but don't support standard ECAM config access.
+--- /dev/null
++++ b/drivers/pci/controller/dwc/pcie-zx279128.c
+@@ -0,0 +1,302 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * ZTE ZX279128S PCIe Host Controller Driver
++ *
++ * Copyright (C) 2026 OpenWrt.org
++ */
++
++#include <linux/delay.h>
++#include <linux/gpio/consumer.h>
++#include <linux/init.h>
++#include <linux/interrupt.h>
++#include <linux/io.h>
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/pci.h>
++#include <linux/platform_device.h>
++#include <linux/resource.h>
++
++#include "pcie-designware.h"
++
++struct zx_pcie {
++	struct dw_pcie		pci;
++	void __iomem		*topcrm1;	/* 0x94000000: Top CRM 1 (PLL / PHY ctrl) */
++	void __iomem		*topcrm2;	/* 0x94100000: Top CRM 2 (clocks & resets) */
++	void __iomem		*topcrm3;	/* 0x94200000: Top CRM 3 (GPIO CRM) */
++	void __iomem		*ctrl_base;	/* 0x09500000 (P0) or 0x09600000 (P1) */
++	struct gpio_desc	*reset_gpio;
++	struct gpio_desc	*enable_gpio;
++	int			port_id;
++};
++
++#define to_zx_pcie(x)	dev_get_drvdata((x)->dev)
++
++static bool zx_board_reset_done;
++
++static void zx279128_pcie_init_hw(struct zx_pcie *pcie)
++{
++	struct dw_pcie *pci = &pcie->pci;
++	struct device *dev = pci->dev;
++
++	if (!zx_board_reset_done) {
++		zx_board_reset_done = true;
++		dev_info(dev, "asserting MT7915 board reset (GPIO 53 and 55 LOW = 0V)\n");
++		if (pcie->reset_gpio)
++			gpiod_direction_output_raw(pcie->reset_gpio, 0);
++		if (pcie->enable_gpio)
++			gpiod_direction_output_raw(pcie->enable_gpio, 0);
++		msleep(100);
++
++		dev_info(dev, "releasing MT7915 board reset (GPIO 53 and 55 HIGH = 3.3V)\n");
++		if (pcie->reset_gpio)
++			gpiod_set_raw_value_cansleep(pcie->reset_gpio, 1);
++		if (pcie->enable_gpio)
++			gpiod_set_raw_value_cansleep(pcie->enable_gpio, 1);
++		msleep(200);
++	}
++
++	dev_info(dev, "pcie%d: configuring CRM registers\n", pcie->port_id);
++
++	if (pcie->port_id == 0) {
++		/* Port 0 setting sequence from ZTE firmware */
++		/* 1. Top CRM 2 (0x94100000): ungate PCIe 0 clock */
++		writel(readl(pcie->topcrm2 + 0x70) | 0xb5, pcie->topcrm2 + 0x70);
++		udelay(50);
++
++		/* 2. Top CRM 1 (0x94000000): PCIe 0 PHY/PLL configuration */
++		writel(readl(pcie->topcrm1 + 0x08) | 0x8000, pcie->topcrm1 + 0x08);
++		udelay(50);
++		writel(readl(pcie->topcrm1 + 0x08) | 0x2000, pcie->topcrm1 + 0x08);
++		udelay(50);
++		writel(readl(pcie->topcrm1 + 0x08) | 0x4000, pcie->topcrm1 + 0x08);
++		udelay(50);
++
++		/* 3. Top CRM 2 (0x94100000): release PCIe 0 reset bit 0 */
++		writel(readl(pcie->topcrm2 + 0x74) & ~1, pcie->topcrm2 + 0x74);
++		udelay(50);
++
++		/* 4. Top CRM 3 (0x94200000): GPIO CRM */
++		if (pcie->topcrm3)
++			writel(readl(pcie->topcrm3 + 0x0c) & ~0x4000, pcie->topcrm3 + 0x0c);
++		udelay(500);
++
++		/* 5. Top CRM 1 (0x94000000): bit 26 clear */
++		writel(readl(pcie->topcrm1 + 0x24) & ~0x4000000, pcie->topcrm1 + 0x24);
++		udelay(50);
++
++		/* 6. Top CRM 2 (0x94100000): deassert resets */
++		writel(readl(pcie->topcrm2 + 0x74) | 1, pcie->topcrm2 + 0x74);
++		writel(readl(pcie->topcrm2 + 0x70) & ~0x100, pcie->topcrm2 + 0x70);
++		writel(0x3f, pcie->topcrm2 + 0x74);
++
++		/* 7. Controller wrapper (0x09500000): enable bit 0x20 */
++		writel(readl(pcie->ctrl_base + 0x00) | 0x20, pcie->ctrl_base + 0x00);
++	} else {
++		/* Port 1 setting sequence from ZTE firmware */
++		/* 1. Top CRM 2 (0x94100000): ungate PCIe 1 clock */
++		writel(readl(pcie->topcrm2 + 0x70) | 0x1aa00, pcie->topcrm2 + 0x70);
++		udelay(50);
++
++		/* 2. Top CRM 1 (0x94000000): PCIe 1 PHY/PLL configuration & calibration */
++		writel(readl(pcie->topcrm1 + 0x08) | 0x8000000, pcie->topcrm1 + 0x08);
++		udelay(50);
++		writel(0x00202d5a, pcie->topcrm1 + 0x1b4);
++		writel(0x0046c24a, pcie->topcrm1 + 0x1b0);
++		writel(readl(pcie->topcrm1 + 0x08) | 0x2000000, pcie->topcrm1 + 0x08);
++		udelay(50);
++		writel(readl(pcie->topcrm1 + 0x08) | 0x4000000, pcie->topcrm1 + 0x08);
++		udelay(50);
++
++		/* 3. Top CRM 2 (0x94100000): release PCIe 1 reset bit 3 */
++		writel(readl(pcie->topcrm2 + 0x74) & ~8, pcie->topcrm2 + 0x74);
++		udelay(50);
++
++		/* 4. Top CRM 3 (0x94200000): GPIO CRM */
++		if (pcie->topcrm3)
++			writel(readl(pcie->topcrm3 + 0x0c) & ~0x0002, pcie->topcrm3 + 0x0c);
++		udelay(50);
++
++		/* 5. Top CRM 1 (0x94000000): bit 26 clear */
++		writel(readl(pcie->topcrm1 + 0x24) & ~0x4000000, pcie->topcrm1 + 0x24);
++		udelay(50);
++
++		/* 6. Top CRM 2 (0x94100000): deassert resets */
++		writel(readl(pcie->topcrm2 + 0x74) | 8, pcie->topcrm2 + 0x74);
++		writel(readl(pcie->topcrm2 + 0x70) & ~0x20000, pcie->topcrm2 + 0x70);
++		writel(0x3f, pcie->topcrm2 + 0x74);
++
++		/* 7. Controller wrapper (0x09600000): enable bit 0x20 */
++		writel(readl(pcie->ctrl_base + 0x00) | 0x20, pcie->ctrl_base + 0x00);
++	}
++
++	/* 8. Link capabilities: set max link width = 1 & retrain */
++	writel((readl(pcie->pci.dbi_base + 0xa0) & ~0xf) | 1, pcie->pci.dbi_base + 0xa0);
++	writel(readl(pcie->pci.dbi_base + 0x80) | 0x20, pcie->pci.dbi_base + 0x80);
++
++	dev_info(dev, "pcie%d: CRM initialized successfully\n", pcie->port_id);
++}
++
++static int zx_pcie_start_link(struct dw_pcie *pci)
++{
++	struct zx_pcie *pcie = to_zx_pcie(pci);
++	u32 val;
++	int retries = 2000;
++
++	/* Configure target link width = 1 and trigger link retrain */
++	dw_pcie_dbi_ro_wr_en(pci);
++	writel((readl(pci->dbi_base + 0xa0) & ~0xf) | 1, pci->dbi_base + 0xa0);
++	writel(readl(pci->dbi_base + 0x80) | 0x20, pci->dbi_base + 0x80);
++	dw_pcie_dbi_ro_wr_dis(pci);
++
++	while (retries--) {
++		val = readl(pcie->ctrl_base + 0xdc);
++		if (((val >> 17) & 0x3f) == 0x11) {
++			u32 link_stat = readl(pci->dbi_base + 0x80);
++			u32 speed = (link_stat >> 16) & 0xf;
++			dev_info(pci->dev, "pcie%d link up, gen%u (LTSSM L0, stat 0x%08x)\n",
++				 pcie->port_id, speed ? 2 : 1, val);
++			return 0;
++		}
++		udelay(100);
++	}
++
++	val = readl(pcie->ctrl_base + 0xdc);
++	dev_warn(pci->dev, "pcie%d link timeout (LTSSM: 0x%02x, ctrl 0xdc: 0x%08x)\n",
++		 pcie->port_id, (val >> 17) & 0x3f, val);
++	return 0;
++}
++
++static bool zx_pcie_link_up(struct dw_pcie *pci)
++{
++	struct zx_pcie *pcie = to_zx_pcie(pci);
++	u32 val = readl(pcie->ctrl_base + 0xdc);
++
++	return ((val >> 17) & 0x3f) == 0x11;
++}
++
++static const struct dw_pcie_ops zx_dw_pcie_ops = {
++	.link_up	= zx_pcie_link_up,
++	.start_link	= zx_pcie_start_link,
++};
++
++static int zx_pcie_host_init(struct dw_pcie_rp *pp)
++{
++	return 0;
++}
++
++static int zx_pcie_msi_init(struct dw_pcie_rp *pp)
++{
++	/* ZTE ZX279128 uses legacy INTx via GIC SPI interrupts */
++	return 0;
++}
++
++static const struct dw_pcie_host_ops zx_pcie_host_ops = {
++	.init = zx_pcie_host_init,
++	.msi_init = zx_pcie_msi_init,
++};
++
++static int zx_pcie_probe(struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++	struct zx_pcie *pcie;
++	struct dw_pcie *pci;
++	struct resource *res;
++	int ret;
++
++	pcie = devm_kzalloc(dev, sizeof(*pcie), GFP_KERNEL);
++	if (!pcie)
++		return -ENOMEM;
++
++	pci = &pcie->pci;
++	pci->dev = dev;
++	pci->ops = &zx_dw_pcie_ops;
++	pci->pp.ops = &zx_pcie_host_ops;
++
++	/* Determine port ID (0 or 1) */
++	if (of_property_read_u32(dev->of_node, "port-id", &pcie->port_id))
++		pcie->port_id = 0;
++
++	dev_info(dev, "Probing ZTE ZX279128S PCIe port %d...\n", pcie->port_id);
++
++	/* Map DBI registers */
++	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "dbi");
++	if (!res) {
++		dev_err(dev, "Missing dbi resource\n");
++		return -EINVAL;
++	}
++	pci->dbi_base = devm_pci_remap_cfg_resource(dev, res);
++	if (IS_ERR(pci->dbi_base))
++		return PTR_ERR(pci->dbi_base);
++	pci->dbi_phys_addr = res->start;
++
++	/* Map Controller registers */
++	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "ctrl");
++	if (!res) {
++		dev_err(dev, "Missing ctrl resource\n");
++		return -EINVAL;
++	}
++	pcie->ctrl_base = devm_ioremap_resource(dev, res);
++	if (IS_ERR(pcie->ctrl_base))
++		return PTR_ERR(pcie->ctrl_base);
++
++	/* Map Top CRM 1 (0x94000000: PLL & PHY ctrl) */
++	pcie->topcrm1 = devm_ioremap(dev, 0x94000000, 0x1000);
++	if (!pcie->topcrm1) {
++		dev_err(dev, "Failed to map Top CRM 1\n");
++		return -ENOMEM;
++	}
++
++	/* Map Top CRM 2 (0x94100000: Clocks & Resets) */
++	pcie->topcrm2 = devm_ioremap(dev, 0x94100000, 0x1000);
++	if (!pcie->topcrm2) {
++		dev_err(dev, "Failed to map Top CRM 2\n");
++		return -ENOMEM;
++	}
++
++	/* Map Top CRM 3 (0x94200000: GPIO CRM) */
++	pcie->topcrm3 = devm_ioremap(dev, 0x94200000, 0x1000);
++
++	/* Reset and enable GPIOs */
++	pcie->reset_gpio = devm_gpiod_get_optional(dev, "reset", GPIOD_ASIS);
++	if (IS_ERR(pcie->reset_gpio))
++		return dev_err_probe(dev, PTR_ERR(pcie->reset_gpio), "Failed to get reset GPIO\n");
++
++	pcie->enable_gpio = devm_gpiod_get_optional(dev, "enable", GPIOD_ASIS);
++	if (IS_ERR(pcie->enable_gpio))
++		return dev_err_probe(dev, PTR_ERR(pcie->enable_gpio), "Failed to get enable GPIO\n");
++
++	platform_set_drvdata(pdev, pcie);
++
++	/* Initialize hardware clocks, resets, and wrapper BEFORE DWC host init */
++	zx279128_pcie_init_hw(pcie);
++
++	ret = dw_pcie_host_init(&pci->pp);
++	if (ret) {
++		dev_err(dev, "dw_pcie_host_init failed: %d\n", ret);
++		return ret;
++	}
++
++	dev_info(dev, "ZTE ZX279128S PCIe port %d probed successfully\n", pcie->port_id);
++	return 0;
++}
++
++static const struct of_device_id zx_pcie_of_match[] = {
++	{ .compatible = "zte,zx279128s-pcie" },
++	{ .compatible = "zte,ZX279127-pcie" },
++	{},
++};
++MODULE_DEVICE_TABLE(of, zx_pcie_of_match);
++
++static struct platform_driver zx_pcie_driver = {
++	.driver = {
++		.name	= "zx279128-pcie",
++		.of_match_table = zx_pcie_of_match,
++		.suppress_bind_attrs = true,
++	},
++	.probe = zx_pcie_probe,
++};
++builtin_platform_driver(zx_pcie_driver);
++
++MODULE_DESCRIPTION("ZTE ZX279128S PCIe Host Controller Driver");
++MODULE_LICENSE("GPL");

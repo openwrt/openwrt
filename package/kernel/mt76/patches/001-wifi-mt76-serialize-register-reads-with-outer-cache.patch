@@ -1,0 +1,110 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Navid Ghahremani <ghahramani.navid@gmail.com>
+Date: Mon, 28 Sep 2026 00:00:00 +0100
+Subject: [PATCH] wifi: mt76: serialize register reads with outer cache
+ maintenance where required
+
+Some SoCs deadlock when a PCIe read from the device is still outstanding
+while an L2 cache maintenance or sync operation runs (ZTE/Sanechips
+ZX279128S with an L2C-310, see CONFIG_CACHE_L2X0_IO_LOCK).  The vendor
+driver for this platform reads every register through a helper that
+takes the platform lock.
+
+Route the direct device reads of mt76 through a small mt76_readl()
+helper that takes outer_io_lock() when CONFIG_CACHE_L2X0_IO_LOCK is
+enabled, and is a plain readl() everywhere else.
+
+Signed-off-by: Navid Ghahremani <ghahramani.navid@gmail.com>
+---
+--- a/dma.h
++++ b/dma.h
+@@ -107,7 +107,7 @@ mt76_dma_handle_write(struct mt76_queue
+ 	u32 _offset = offsetof(struct mt76_queue_regs, _field);		\
+ 	u32 _val;							\
+ 	if (!mt76_dma_handle_read(_q, _offset, &_val))			\
+-		_val = readl(&(_q)->regs->_field);			\
++		_val = mt76_readl(&(_q)->regs->_field);		\
+ 	_val;								\
+ })
+ 
+--- a/mmio.c
++++ b/mmio.c
+@@ -11,7 +11,7 @@ static u32 mt76_mmio_rr(struct mt76_dev
+ {
+ 	u32 val;
+ 
+-	val = readl(dev->mmio.regs + offset);
++	val = mt76_readl(dev->mmio.regs + offset);
+ 	trace_reg_rr(dev, offset, val);
+ 
+ 	return val;
+@@ -53,13 +53,13 @@ static void mt76_mmio_read_copy(struct m
+ 	int i;
+ 
+ 	for (i = 0; i + 4 <= len; i += 4)
+-		put_unaligned_le32(readl(dev->mmio.regs + offset + i),
++		put_unaligned_le32(mt76_readl(dev->mmio.regs + offset + i),
+ 				   data + i);
+ 
+ 	if (i < len) {
+ 		u8 tmp[4];
+ 
+-		put_unaligned_le32(readl(dev->mmio.regs + offset + i), tmp);
++		put_unaligned_le32(mt76_readl(dev->mmio.regs + offset + i), tmp);
+ 		memcpy(data + i, tmp, len - i);
+ 	}
+ }
+--- a/mt76.h
++++ b/mt76.h
+@@ -25,6 +25,29 @@
+ #include "util.h"
+ #include "testmode.h"
+ 
++#ifdef CONFIG_CACHE_L2X0_IO_LOCK
++#include <asm/outercache.h>
++#endif
++
++/*
++ * Some SoCs deadlock when an outer cache maintenance operation runs while a
++ * PCIe read is outstanding (see CONFIG_CACHE_L2X0_IO_LOCK).  On those, take
++ * the platform lock around device register reads.
++ */
++static inline u32 mt76_readl(const void __iomem *addr)
++{
++#ifdef CONFIG_CACHE_L2X0_IO_LOCK
++	unsigned long flags = outer_io_lock();
++	u32 val = readl(addr);
++
++	outer_io_unlock(flags);
++
++	return val;
++#else
++	return readl(addr);
++#endif
++}
++
+ #define MT_MCU_RING_SIZE	32
+ #define MT_RX_BUF_SIZE		2048
+ #define MT_SKB_HEAD_LEN		256
+--- a/mt76x02_mmio.c
++++ b/mt76x02_mmio.c
+@@ -357,7 +357,7 @@ static bool mt76x02_tx_hang(struct mt76x
+ 		q = dev->mphy.q_tx[i];
+ 
+ 		prev_dma_idx = dev->mt76.tx_dma_idx[i];
+-		dma_idx = readl(&q->regs->dma_idx);
++		dma_idx = mt76_readl(&q->regs->dma_idx);
+ 		dev->mt76.tx_dma_idx[i] = dma_idx;
+ 
+ 		if (!q->queued || prev_dma_idx != dma_idx) {
+--- a/mt7915/pci.c
++++ b/mt7915/pci.c
+@@ -36,7 +36,7 @@ static struct mt7915_hif *mt7915_pci_get
+ 	spin_lock_bh(&hif_lock);
+ 
+ 	list_for_each_entry(hif, &hif_list, list) {
+-		val = readl(hif->regs + MT_PCIE_RECOG_ID);
++		val = mt76_readl(hif->regs + MT_PCIE_RECOG_ID);
+ 		val &= MT_PCIE_RECOG_ID_MASK;
+ 		if (val != idx)
+ 			continue;

@@ -1,0 +1,9 @@
+#!/bin/sh
+# Settings for /etc/init.d/hw_switching: hardware LAN switching, off by default
+
+[ -e /etc/config/hw_switching ] || touch /etc/config/hw_switching
+uci -q get hw_switching.settings >/dev/null && exit 0
+uci set hw_switching.settings=hw_switching
+uci set hw_switching.settings.enabled='0'
+uci commit hw_switching
+exit 0

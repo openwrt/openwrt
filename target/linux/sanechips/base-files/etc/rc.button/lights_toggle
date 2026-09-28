@@ -1,0 +1,25 @@
+#!/bin/sh
+
+# LED on/off button: switch every LED off, and on the next press restore
+# the configured LED triggers and the power LED's status colour.
+
+OFF=/tmp/.lights_off
+
+case "$ACTION" in
+released)
+	if [ -e "$OFF" ]; then
+		rm -f "$OFF"
+		/etc/init.d/led restart
+		. /etc/diag.sh
+		set_state done
+	else
+		touch "$OFF"
+		for led in /sys/class/leds/*; do
+			echo none > "$led/trigger" 2>/dev/null
+			echo 0 > "$led/brightness"
+		done
+	fi
+;;
+esac
+
+return 0

@@ -1,0 +1,135 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Navid Ghahremani <ghahramani.navid@gmail.com>
+Date: Mon, 28 Sep 2026 00:00:00 +0100
+Subject: [PATCH] serial: amba-pl011: add the ZTE ZX279128S UART
+
+The ZX279128S UART is a PL011 with the register layout of the ZTE ZX
+SoCs, 32-bit register access and a 16-byte FIFO.  Add a vendor entry for
+its peripheral ID and deassert its optional reset line at probe.
+
+Signed-off-by: Navid Ghahremani <ghahramani.navid@gmail.com>
+---
+--- a/drivers/tty/serial/amba-pl011.c
++++ b/drivers/tty/serial/amba-pl011.c
+@@ -38,6 +38,7 @@
+ #include <linux/types.h>
+ #include <linux/of.h>
+ #include <linux/pinctrl/consumer.h>
++#include <linux/reset.h>
+ #include <linux/sizes.h>
+ #include <linux/io.h>
+ #include <linux/acpi.h>
+@@ -201,6 +202,39 @@ static unsigned int get_fifosize_st(stru
+ 	return 64;
+ }
+ 
++
++static const u16 pl011_zte_offsets[REG_ARRAY_SIZE] = {
++	[REG_DR] = ZX_UART011_DR,
++	[REG_FR] = ZX_UART011_FR,
++	[REG_LCRH_RX] = ZX_UART011_LCRH,
++	[REG_LCRH_TX] = ZX_UART011_LCRH,
++	[REG_IBRD] = ZX_UART011_IBRD,
++	[REG_FBRD] = ZX_UART011_FBRD,
++	[REG_CR] = ZX_UART011_CR,
++	[REG_IFLS] = ZX_UART011_IFLS,
++	[REG_IMSC] = ZX_UART011_IMSC,
++	[REG_RIS] = ZX_UART011_RIS,
++	[REG_MIS] = ZX_UART011_MIS,
++	[REG_ICR] = ZX_UART011_ICR,
++	[REG_DMACR] = ZX_UART011_DMACR,
++};
++
++static unsigned int get_fifosize_zte(struct amba_device *dev)
++{
++	return 16;
++}
++
++static struct vendor_data vendor_zte = {
++	.reg_offset		= pl011_zte_offsets,
++	.ifls			= UART011_IFLS_RX4_8 | UART011_IFLS_TX4_8,
++	.fr_busy		= ZX_UART01x_FR_BUSY,
++	.fr_dsr			= ZX_UART01x_FR_DSR,
++	.fr_cts			= ZX_UART01x_FR_CTS,
++	.fr_ri			= ZX_UART011_FR_RI,
++	.access_32b		= true,
++	.get_fifosize		= get_fifosize_zte,
++};
++
+ static struct vendor_data vendor_st = {
+ 	.reg_offset		= pl011_st_offsets,
+ 	.ifls			= UART011_IFLS_RX_HALF | UART011_IFLS_TX_HALF,
+@@ -2670,6 +2704,31 @@ static void pl011_putc(struct uart_port
+ 		cpu_relax();
+ }
+ 
++
++static void zte_pl011_early_putc(struct uart_port *port, unsigned char c)
++{
++	while (readl(port->membase + ZX_UART011_FR) & UART01x_FR_TXFF)
++		cpu_relax();
++	writel(c, port->membase + ZX_UART011_DR);
++}
++
++static void zte_pl011_early_write(struct console *con, const char *s, unsigned int n)
++{
++	struct earlycon_device *dev = con->data;
++
++	uart_console_write(&dev->port, s, n, zte_pl011_early_putc);
++}
++
++static int __init zte_pl011_early_console_setup(struct earlycon_device *device,
++						const char *opt)
++{
++	if (!device->port.membase)
++		return -ENODEV;
++
++	device->con->write = zte_pl011_early_write;
++	return 0;
++}
++
+ static void pl011_early_write(struct console *con, const char *s, unsigned int n)
+ {
+ 	struct earlycon_device *dev = con->data;
+@@ -2736,6 +2795,12 @@ OF_EARLYCON_DECLARE(pl011, "arm,pl011",
+ 
+ OF_EARLYCON_DECLARE(pl011, "arm,sbsa-uart", pl011_early_console_setup);
+ 
++/* Keep this after the fallbacks: this object emits the table in reverse order. */
++OF_EARLYCON_DECLARE(zteuart, "zte,zx279133-uart", zte_pl011_early_console_setup);
++OF_EARLYCON_DECLARE(zteuart, "zte,ZX279127-uart", zte_pl011_early_console_setup);
++
++EARLYCON_DECLARE(zteuart, zte_pl011_early_console_setup);
++
+ /*
+  * On Qualcomm Datacenter Technologies QDF2400 SOCs affected by
+  * Erratum 44, traditional earlycon can be enabled by specifying
+@@ -2912,6 +2977,15 @@ static int pl011_probe(struct amba_devic
+ 	if (!uap)
+ 		return -ENOMEM;
+ 
++	if (vendor == &vendor_zte) {
++		struct reset_control *rst;
++
++		rst = devm_reset_control_get_optional_shared_deasserted(&dev->dev, NULL);
++		if (IS_ERR(rst))
++			return dev_err_probe(&dev->dev, PTR_ERR(rst),
++					     "failed to deassert reset\n");
++	}
++
+ 	uap->clk = devm_clk_get(&dev->dev, NULL);
+ 	if (IS_ERR(uap->clk))
+ 		return PTR_ERR(uap->clk);
+@@ -3129,6 +3203,12 @@ static const struct amba_id pl011_ids[]
+ 		.mask	= 0x00ffffff,
+ 		.data	= &vendor_st,
+ 	},
++	{
++		.id	= 0x001feffe,
++		.mask	= 0x00ffffff,
++		.data	= &vendor_zte,
++	},
++
+ 	{ 0, 0 },
+ };
+ 

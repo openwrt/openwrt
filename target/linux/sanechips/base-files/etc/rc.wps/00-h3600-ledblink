@@ -1,0 +1,16 @@
+#!/bin/sh
+# Starts the WPS LED blinking for the duration of the pushbutton window.
+# Always exits non-zero so /etc/rc.button/wps's dispatch loop continues on
+# to any real WPS-trigger script - this only handles the LED side.
+
+WPS_LED=/sys/class/leds/h3600:wps
+WPS_WINDOW=120
+
+if [ -e "$WPS_LED/trigger" ]; then
+	echo timer > "$WPS_LED/trigger"
+	echo 200 > "$WPS_LED/delay_on"
+	echo 200 > "$WPS_LED/delay_off"
+	( sleep "$WPS_WINDOW"; echo none > "$WPS_LED/trigger" 2>/dev/null; echo 0 > "$WPS_LED/brightness" 2>/dev/null ) &
+fi
+
+exit 1

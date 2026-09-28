@@ -1,0 +1,56 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Navid Ghahremani <ghahramani.navid@gmail.com>
+Date: Mon, 28 Sep 2026 00:00:00 +0100
+Subject: [PATCH] clocksource: make the ARM global timer selectable
+
+The ZX279128S (dual Cortex-A9) uses the ARM global timer as its clock
+source and sched_clock.  The target builds with ARCH_VIRT, which does
+not select it: make ARM_GLOBAL_TIMER user selectable and let ARCH_VIRT
+(and, as a workaround, ARCH_AIROHA and SOC_SP7021) select it and the
+TWD timer.  A proper ARCH_ZX279128S platform entry should replace this.
+
+Signed-off-by: Navid Ghahremani <ghahramani.navid@gmail.com>
+---
+--- a/arch/arm/Kconfig.platforms
++++ b/arch/arm/Kconfig.platforms
+@@ -66,6 +66,9 @@ config ARCH_VIRT
+ 	select ARM_GIC_V3_ITS if PCI
+ 	select ARM_PSCI
+ 	select HAVE_ARM_ARCH_TIMER
++	select ARM_GLOBAL_TIMER
++	select CLKSRC_ARM_GLOBAL_TIMER_SCHED_CLOCK
++	select HAVE_ARM_TWD if SMP
+ 
+ config ARCH_AIROHA
+ 	bool "Airoha SoC Support"
+@@ -75,6 +78,9 @@ config ARCH_AIROHA
+ 	select ARM_GIC_V3
+ 	select ARM_PSCI
+ 	select HAVE_ARM_ARCH_TIMER
++	select ARM_GLOBAL_TIMER
++	select CLKSRC_ARM_GLOBAL_TIMER_SCHED_CLOCK
++	select HAVE_ARM_TWD if SMP
+ 	help
+ 	  Support for Airoha EN7523 SoCs
+ 
+@@ -178,6 +184,9 @@ config SOC_SP7021
+ 	bool "Sunplus SP7021 SoC support"
+ 	default ARCH_SUNPLUS
+ 	select HAVE_ARM_ARCH_TIMER
++	select ARM_GLOBAL_TIMER
++	select CLKSRC_ARM_GLOBAL_TIMER_SCHED_CLOCK
++	select HAVE_ARM_TWD if SMP
+ 	select ARM_GIC
+ 	select ARM_PSCI
+ 	select PINCTRL
+--- a/drivers/clocksource/Kconfig
++++ b/drivers/clocksource/Kconfig
+@@ -388,7 +388,7 @@ config SUN50I_ERRATUM_UNKNOWN1
+ 	  allwinner,erratum-unknown1 property is found in the timer node.
+ 
+ config ARM_GLOBAL_TIMER
+-	bool "Support for the ARM global timer" if COMPILE_TEST
++	bool "Support for the ARM global timer"
+ 	select TIMER_OF if OF
+ 	depends on ARM
+ 	help

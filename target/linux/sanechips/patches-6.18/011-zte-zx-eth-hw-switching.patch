@@ -1,0 +1,470 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Navid Ghahremani <ghahramani.navid@gmail.com>
+Date: Mon, 28 Sep 2026 00:00:00 +0100
+Subject: [PATCH] net: ethernet: zte: zx279128: optional hardware LAN switching
+
+The switch's bridge block can forward unicast between its ports at line
+rate, but only through its VLAN table, which the driver leaves empty: all
+traffic between LAN ports goes through the Linux bridge on the CPU.
+
+Add a "hw_switching" attribute (off by default).  When set, the ports that
+are in the same Linux bridge switch between each other in hardware: they
+become untagged members of the port VLAN, may only send to the other ports
+of their bridge and learn source addresses, and the IPv4/IPv6 ethertype
+traps and the TCP-without-payload class are turned off.  Ports outside a
+bridge (normally the WAN) get an empty egress mask, so nothing is switched
+to or from them.  Frames for the router, broadcast, multicast and unknown
+unicast still go to the CPU, so hosts on other bridge ports (Wi-Fi) stay
+reachable through Linux.
+
+To keep a host reachable after it moves, a port's hardware entries are
+dropped when its link goes down, and a MAC is dropped from the switch
+table as soon as the Linux bridge learns it on a non-switch port (switchdev
+FDB notification).  Bridge membership changes are followed through netdev
+notifications.
+
+Signed-off-by: Navid Ghahremani <ghahramani.navid@gmail.com>
+---
+--- a/drivers/net/ethernet/zte/zx279128-eth.c
++++ b/drivers/net/ethernet/zte/zx279128-eth.c
+@@ -43,6 +43,9 @@
+ #include <linux/mutex.h>
+ #include <linux/rhashtable.h>
+ #include <net/flow_offload.h>
++#include <linux/bitfield.h>
++#include <linux/workqueue.h>
++#include <net/switchdev.h>
+ 
+ #define DRV_NAME		"zx279128-eth"
+ 
+@@ -60,6 +63,23 @@
+ #define ZX_SPA_ONU_MAC		0x1d4120	/* 16 x 8 bytes: our MACs, routed */
+ #define ZX_SPA_REG_PKT_TCP_ACK	BIT(4)		/* word 2: TCP without payload */
+ 
++/* Bridge block (sbrg); its ports: 0 PON side, 1-5 switch ports 0-4 */
++#define ZX_BRPORT(p)		((p) + 1)
++#define ZX_SBRG_PORT_CTRL	0x388004
++#define ZX_SBRG_FLUSH_PORTS	GENMASK(15, 8)	/* drop the entries of these */
++#define ZX_SBRG_FLUSH		BIT(16)
++#define ZX_SBRG_IND_CMD		0x388014	/* 27: read, 26-22: memory, 11-0: entry */
++#define ZX_SBRG_IND_READ	BIT(27)
++#define ZX_SBRG_IND_DONE	0x388018
++#define ZX_SBRG_IND_DATA(i)	(0x38801c + 4 * (i))
++#define ZX_SBRG_TABLE_SEL	0x388184	/* source table: 4 RAMs of 1024/256/512 */
++#define ZX_SBRG_LEARN		0x3881c0	/* ports that learn source MACs */
++#define ZX_SBRG_EGRESS(bp)	(0x3883c0 + 4 * (bp))	/* ports bp may send to */
++#define ZX_SBRG_MEM_VLAN	4		/* 1 word per VID */
++#define ZX_SBRG_VLAN_VALID	BIT(0)
++#define ZX_SBRG_VLAN_UNTAG(bp)	(1 << (2 * (bp) + 1))
++#define ZX_SW_FDB_QUEUE		16
++
+ /* Packet processor tables, reached through an indirect access window:
+  * command (index | table << 22 | read << 27), status bit 0 = idle, data.
+  * The classifier (CLA) has 17 data words, the packet modifier (PM) 8.
+@@ -240,6 +260,24 @@ struct zx_eth_adapter {
+ 	u32			ppe_add_skip;	/* flows the hardware cannot take */
+ 	u32			ppe_add_fail;	/* no free entry, access timeout */
+ 
++	/* Hardware LAN switching between the ports of one Linux bridge */
++	spinlock_t		trap_lock;	/* zx_update_traps() */
++	struct mutex		sw_lock;
++	bool			sw_ready;	/* bridge notifications registered */
++	bool			sw_enabled;
++	u8			sw_members;	/* bridge ports that switch */
++	struct work_struct	sw_work;
++	spinlock_t		sw_fdb_lock;	/* the fields below */
++	struct net_device	*sw_bridge[ZX_NUM_PORTS];
++	bool			sw_recompute;
++	u8			sw_flush;	/* bridge ports to flush */
++	bool			sw_fdb_overflow;
++	unsigned int		sw_fdb_count;
++	u8			sw_fdb_mac[ZX_SW_FDB_QUEUE][ETH_ALEN];
++	u32			sw_fdb_deleted;
++	struct notifier_block	sw_netdev_nb;
++	struct notifier_block	sw_switchdev_nb;
++
+ 	/* ports 0-3 internal LAN PHYs, port 4 external WAN PHY (ZX5201) */
+ 	struct phy_device	*phydev[ZX_NUM_PORTS];
+ 	bool			link_state[ZX_NUM_PORTS];
+@@ -402,6 +440,8 @@ static void zx_port_enable(struct zx_eth
+ 
+ /* ---- PHY link callbacks -------------------------------------------- */
+ 
++static void zx_sw_port_down(struct zx_eth_adapter *adapter, int port);
++
+ static void zx_adjust_link(struct net_device *netdev)
+ {
+ 	struct zx_eth_priv *priv = netdev_priv(netdev);
+@@ -430,6 +470,7 @@ static void zx_adjust_link(struct net_de
+ 		zx_port_enable(adapter, p, false);
+ 		netdev_info(netdev, "link down\n");
+ 		netif_carrier_off(netdev);
++		zx_sw_port_down(adapter, p);
+ 	}
+ }
+ 
+@@ -1654,15 +1695,20 @@ static const u32 zx_ppe_reg_vals[4] = {
+  * payload (trap reason 0x2c), which would send every pure ACK of an
+  * offloaded connection through the software path.  Both are off while
+  * offload is active.  SYN, FIN and RST still reach the CPU, so conntrack
+- * sees connections open and close.
++ * sees connections open and close.  Hardware LAN switching also needs the
++ * IPv6 trap off.  Frames for the router, broadcast, multicast and unknown
++ * unicast still reach the CPU through the other traps.
+  */
+ static void zx_update_traps(struct zx_eth_adapter *adapter)
+ {
+ 	void __iomem *base = adapter->base;
+-	bool fwd = adapter->ppe_active;
++	bool sw, fwd;
+ 	u32 val;
+ 
+-	writel((fwd ? 0 : ETH_P_IP << 16) | ETH_P_IPV6,
++	spin_lock(&adapter->trap_lock);
++	sw = READ_ONCE(adapter->sw_members);
++	fwd = READ_ONCE(adapter->ppe_active) || sw;
++	writel((fwd ? 0 : ETH_P_IP << 16) | (sw ? 0 : ETH_P_IPV6),
+ 	       base + ZX_SPA_TRAP_ETH_TYPE);
+ 	val = readl(base + ZX_SPA_UP_REG_PKT_EN + 8);
+ 	if (fwd)
+@@ -1670,6 +1716,7 @@ static void zx_update_traps(struct zx_et
+ 	else
+ 		val |= ZX_SPA_REG_PKT_TCP_ACK;
+ 	writel(val, base + ZX_SPA_UP_REG_PKT_EN + 8);
++	spin_unlock(&adapter->trap_lock);
+ }
+ 
+ static int zx_ppe_start(struct zx_eth_adapter *adapter)
+@@ -1877,6 +1924,255 @@ static const struct ethtool_ops zx_ethto
+ 
+ /* ---- probe / remove ------------------------------------------------ */
+ 
++/* ---- Hardware LAN switching ---------------------------------------- */
++
++/*
++ * The bridge block forwards a unicast frame from one switch port to another
++ * when its source table knows the destination and both ports are members
++ * of the port VLAN (1).  Normally learning is off and the VLAN table empty,
++ * so every frame goes to the Linux bridge.  With hw_switching set, ports of
++ * the same Linux bridge switch between each other in hardware:
++ * - VLAN 1 has them as untagged members, each may send only to the other
++ *   ports of its bridge (egress mask 0 for all other ports, so nothing is
++ *   switched to or from the WAN unless it is bridged), and only they learn;
++ * - the IPv4 and IPv6 ethertype traps are off (zx_update_traps()).  Frames
++ *   for the router, broadcast, multicast and unknown unicast still reach
++ *   the CPU, so hosts on other bridge ports (Wi-Fi) stay reachable through
++ *   the Linux bridge.
++ * A host that moves loses its hardware entry: the entries of a port are
++ * dropped when its link goes down, and a MAC is dropped as soon as the
++ * Linux bridge learns it on a port that is not a switch port.
++ */
++static int zx_sbrg_ind(struct zx_eth_adapter *adapter, u32 cmd)
++{
++	u32 val;
++
++	writel(cmd, adapter->base + ZX_SBRG_IND_CMD);
++	return readl_poll_timeout_atomic(adapter->base + ZX_SBRG_IND_DONE, val,
++					 val & 1, 0, 1000);
++}
++
++static void zx_sbrg_flush(struct zx_eth_adapter *adapter, u8 brports)
++{
++	void __iomem *reg = adapter->base + ZX_SBRG_PORT_CTRL;
++	u32 val = readl(reg) & ~(ZX_SBRG_FLUSH_PORTS | ZX_SBRG_FLUSH);
++
++	writel(val | FIELD_PREP(ZX_SBRG_FLUSH_PORTS, brports) | ZX_SBRG_FLUSH, reg);
++	usleep_range(1000, 2000);
++	writel(val, reg);
++}
++
++/* Remove one MAC from the source table: scan the four RAMs */
++static void zx_sbrg_fdb_del(struct zx_eth_adapter *adapter, const u8 *mac)
++{
++	static const int sizes[4] = { 1024, 256, 512, 512 };
++	void __iomem *base = adapter->base;
++	u32 hi = mac[0] << 16 | mac[1] << 8 | mac[2];
++	u32 lo = mac[3] << 24 | mac[4] << 16 | mac[5] << 8;
++	int n = sizes[readl(base + ZX_SBRG_TABLE_SEL) & 3];
++	int ram, i;
++
++	for (ram = 0; ram < 4; ram++) {
++		for (i = 0; i < n; i++) {
++			if (zx_sbrg_ind(adapter, ZX_SBRG_IND_READ | ram << 22 | i))
++				return;
++			if (!(readl(base + ZX_SBRG_IND_DATA(2)) & 0xf0) ||
++			    (readl(base + ZX_SBRG_IND_DATA(1)) & 0xffffff) != hi ||
++			    (readl(base + ZX_SBRG_IND_DATA(0)) & 0xffffff00) != lo)
++				continue;
++			if (zx_sbrg_ind(adapter, ram << 22 | i))
++				return;
++			writel(0, base + ZX_SBRG_IND_DATA(2));
++			writel(0, base + ZX_SBRG_IND_DATA(1));
++			writel(0, base + ZX_SBRG_IND_DATA(0));
++			adapter->sw_fdb_deleted++;
++		}
++	}
++}
++
++static void zx_sw_apply(struct zx_eth_adapter *adapter)
++{
++	struct net_device *br[ZX_NUM_PORTS] = {};
++	void __iomem *base = adapter->base;
++	u8 egress[ZX_NUM_PORTS] = {};
++	u8 members = 0;
++	u32 vlan = 0;
++	int i, j;
++
++	lockdep_assert_held(&adapter->sw_lock);
++
++	rtnl_lock();
++	for (i = 0; i < ZX_NUM_PORTS; i++) {
++		struct net_device *dev = adapter->ports[i];
++
++		if (adapter->sw_enabled && dev && netif_is_bridge_port(dev))
++			br[i] = netdev_master_upper_dev_get(dev);
++	}
++	rtnl_unlock();
++
++	for (i = 0; i < ZX_NUM_PORTS; i++)
++		for (j = 0; j < ZX_NUM_PORTS; j++)
++			if (j != i && br[i] && br[j] == br[i])
++				egress[i] |= BIT(ZX_BRPORT(j));
++	for (i = 0; i < ZX_NUM_PORTS; i++) {
++		if (!egress[i]) {
++			br[i] = NULL;
++			continue;
++		}
++		members |= BIT(ZX_BRPORT(i));
++		vlan |= ZX_SBRG_VLAN_UNTAG(ZX_BRPORT(i));
++	}
++
++	spin_lock_bh(&adapter->sw_fdb_lock);
++	memcpy(adapter->sw_bridge, br, sizeof(br));
++	spin_unlock_bh(&adapter->sw_fdb_lock);
++
++	/* traps back on before the tables go, off once they are in place */
++	if (!members) {
++		WRITE_ONCE(adapter->sw_members, 0);
++		zx_update_traps(adapter);
++	}
++
++	/* no learning while the tables change, then start empty */
++	writel(0, base + ZX_SBRG_LEARN);
++	if (zx_sbrg_ind(adapter, ZX_SBRG_MEM_VLAN << 22 | 1))
++		dev_warn(adapter->dev, "bridge VLAN table access timed out\n");
++	else
++		writel(members ? vlan | ZX_SBRG_VLAN_VALID : 0,
++		       base + ZX_SBRG_IND_DATA(0));
++	/* the reset value lets a port send to every other port */
++	for (i = 0; i < ZX_NUM_PORTS; i++)
++		writel(members ? egress[i] : (u8)~BIT(ZX_BRPORT(i)),
++		       base + ZX_SBRG_EGRESS(ZX_BRPORT(i)));
++	zx_sbrg_flush(adapter, 0xff);
++	writel(members, base + ZX_SBRG_LEARN);
++	if (members) {
++		WRITE_ONCE(adapter->sw_members, members);
++		zx_update_traps(adapter);
++	}
++	dev_info(adapter->dev, "hardware LAN switching %s (bridge ports %#x)\n",
++		 members ? "on" : "off", members);
++}
++
++static void zx_sw_work(struct work_struct *work)
++{
++	struct zx_eth_adapter *adapter = container_of(work, struct zx_eth_adapter,
++						      sw_work);
++	u8 macs[ZX_SW_FDB_QUEUE][ETH_ALEN];
++	bool recompute, overflow;
++	unsigned int n, i;
++	u8 flush;
++
++	spin_lock_bh(&adapter->sw_fdb_lock);
++	recompute = adapter->sw_recompute;
++	overflow = adapter->sw_fdb_overflow;
++	flush = adapter->sw_flush;
++	n = adapter->sw_fdb_count;
++	memcpy(macs, adapter->sw_fdb_mac, n * ETH_ALEN);
++	adapter->sw_recompute = false;
++	adapter->sw_fdb_overflow = false;
++	adapter->sw_flush = 0;
++	adapter->sw_fdb_count = 0;
++	spin_unlock_bh(&adapter->sw_fdb_lock);
++
++	mutex_lock(&adapter->sw_lock);
++	if (recompute) {
++		zx_sw_apply(adapter);
++	} else if (adapter->sw_enabled) {
++		if (overflow)
++			flush = 0xff;
++		if (flush)
++			zx_sbrg_flush(adapter, flush);
++		for (i = 0; !overflow && i < n; i++)
++			zx_sbrg_fdb_del(adapter, macs[i]);
++	}
++	mutex_unlock(&adapter->sw_lock);
++}
++
++static void zx_sw_port_down(struct zx_eth_adapter *adapter, int port)
++{
++	if (!READ_ONCE(adapter->sw_enabled))
++		return;
++	spin_lock_bh(&adapter->sw_fdb_lock);
++	adapter->sw_flush |= BIT(ZX_BRPORT(port));
++	spin_unlock_bh(&adapter->sw_fdb_lock);
++	schedule_work(&adapter->sw_work);
++}
++
++static bool zx_sw_is_port(struct zx_eth_adapter *adapter,
++			  const struct net_device *dev)
++{
++	int i;
++
++	for (i = 0; i < ZX_NUM_PORTS; i++)
++		if (adapter->ports[i] && adapter->ports[i] == dev)
++			return true;
++	return false;
++}
++
++/* a switch port joined or left a bridge */
++static int zx_sw_netdev_event(struct notifier_block *nb, unsigned long event,
++			      void *ptr)
++{
++	struct zx_eth_adapter *adapter = container_of(nb, struct zx_eth_adapter,
++						      sw_netdev_nb);
++	struct net_device *dev = netdev_notifier_info_to_dev(ptr);
++
++	if (event != NETDEV_CHANGEUPPER || !READ_ONCE(adapter->sw_enabled) ||
++	    !zx_sw_is_port(adapter, dev))
++		return NOTIFY_DONE;
++	spin_lock_bh(&adapter->sw_fdb_lock);
++	adapter->sw_recompute = true;
++	spin_unlock_bh(&adapter->sw_fdb_lock);
++	schedule_work(&adapter->sw_work);
++	return NOTIFY_DONE;
++}
++
++/* the Linux bridge learned a MAC; if it is on a non-switch port of a
++ * switching bridge (Wi-Fi), the host left its switch port
++ */
++static int zx_sw_switchdev_event(struct notifier_block *nb,
++				 unsigned long event, void *ptr)
++{
++	struct zx_eth_adapter *adapter = container_of(nb, struct zx_eth_adapter,
++						      sw_switchdev_nb);
++	struct net_device *dev = switchdev_notifier_info_to_dev(ptr);
++	struct switchdev_notifier_fdb_info *fdb;
++	struct net_device *br;
++	bool queued = false;
++	int i;
++
++	if (event != SWITCHDEV_FDB_ADD_TO_DEVICE || !READ_ONCE(adapter->sw_enabled) ||
++	    zx_sw_is_port(adapter, dev))
++		return NOTIFY_DONE;
++	fdb = container_of(ptr, struct switchdev_notifier_fdb_info, info);
++	if (fdb->is_local)
++		return NOTIFY_DONE;
++
++	rcu_read_lock();
++	br = netdev_master_upper_dev_get_rcu(dev);
++	rcu_read_unlock();
++	if (!br)
++		return NOTIFY_DONE;
++
++	spin_lock_bh(&adapter->sw_fdb_lock);
++	for (i = 0; i < ZX_NUM_PORTS; i++) {
++		if (adapter->sw_bridge[i] != br)
++			continue;
++		if (adapter->sw_fdb_count < ZX_SW_FDB_QUEUE)
++			memcpy(adapter->sw_fdb_mac[adapter->sw_fdb_count++],
++			       fdb->addr, ETH_ALEN);
++		else
++			adapter->sw_fdb_overflow = true;
++		queued = true;
++		break;
++	}
++	spin_unlock_bh(&adapter->sw_fdb_lock);
++	if (queued)
++		schedule_work(&adapter->sw_work);
++	return NOTIFY_DONE;
++}
++
+ static int zx_eth_probe(struct platform_device *pdev)
+ {
+ 	struct device *dev = &pdev->dev;
+@@ -1910,6 +2206,10 @@ static int zx_eth_probe(struct platform_
+ 	spin_lock_init(&adapter->tx_lock);
+ 	spin_lock_init(&adapter->bmu_free_lock);
+ 	mutex_init(&adapter->ppe_lock);
++	spin_lock_init(&adapter->trap_lock);
++	mutex_init(&adapter->sw_lock);
++	spin_lock_init(&adapter->sw_fdb_lock);
++	INIT_WORK(&adapter->sw_work, zx_sw_work);
+ 	ret = rhashtable_init(&adapter->ppe_flows, &zx_ppe_ht_params);
+ 	if (ret)
+ 		return ret;
+@@ -2030,6 +2330,14 @@ static int zx_eth_probe(struct platform_
+ 	}
+ 
+ 	platform_set_drvdata(pdev, adapter);
++
++	adapter->sw_netdev_nb.notifier_call = zx_sw_netdev_event;
++	adapter->sw_switchdev_nb.notifier_call = zx_sw_switchdev_event;
++	adapter->sw_ready = !register_netdevice_notifier(&adapter->sw_netdev_nb) &&
++			    !register_switchdev_notifier(&adapter->sw_switchdev_nb);
++	if (!adapter->sw_ready)
++		dev_warn(dev, "no bridge notifications: hardware LAN switching unavailable\n");
++
+ 	dev_info(dev, "initialized, LAN MAC %pM, WAN MAC %pM\n",
+ 		 adapter->lan_addr, adapter->wan_addr);
+ 	return 0;
+@@ -2086,6 +2394,9 @@ static ssize_t dma_state_show(struct dev
+ 	n += sysfs_emit_at(buf, n, "ppe_active=%u ppe_flows=%u ppe_add_skip=%u ppe_add_fail=%u\n",
+ 			   adapter->ppe_active, adapter->ppe_count, adapter->ppe_add_skip,
+ 			   adapter->ppe_add_fail);
++	n += sysfs_emit_at(buf, n, "sw_enabled=%u sw_members=%#x sw_fdb_deleted=%u\n",
++			   adapter->sw_enabled, adapter->sw_members,
++			   adapter->sw_fdb_deleted);
+ 	n += sysfs_emit_at(buf, n,
+ 			   "bmu_alloc_fail=%u bmu_alloc_late=%u bmu_free_fail=%u bmu_free_slots=%u\n",
+ 			   adapter->bmu_alloc_fail, adapter->bmu_alloc_late,
+@@ -2124,8 +2435,40 @@ static ssize_t dma_state_show(struct dev
+ }
+ static DEVICE_ATTR_RO(dma_state);
+ 
++/* Hardware LAN switching between the ports of a Linux bridge (0/1) */
++static ssize_t hw_switching_show(struct device *dev,
++				 struct device_attribute *attr, char *buf)
++{
++	struct zx_eth_adapter *adapter = dev_get_drvdata(dev);
++
++	return sysfs_emit(buf, "%d\n", READ_ONCE(adapter->sw_enabled));
++}
++
++static ssize_t hw_switching_store(struct device *dev,
++				  struct device_attribute *attr,
++				  const char *buf, size_t count)
++{
++	struct zx_eth_adapter *adapter = dev_get_drvdata(dev);
++	bool on;
++
++	if (kstrtobool(buf, &on))
++		return -EINVAL;
++	if (on && !adapter->sw_ready)
++		return -EOPNOTSUPP;
++
++	mutex_lock(&adapter->sw_lock);
++	if (on != adapter->sw_enabled) {
++		WRITE_ONCE(adapter->sw_enabled, on);
++		zx_sw_apply(adapter);
++	}
++	mutex_unlock(&adapter->sw_lock);
++	return count;
++}
++static DEVICE_ATTR_RW(hw_switching);
++
+ static struct attribute *zx_eth_attrs[] = {
+ 	&dev_attr_dma_state.attr,
++	&dev_attr_hw_switching.attr,
+ 	NULL,
+ };
+ ATTRIBUTE_GROUPS(zx_eth);

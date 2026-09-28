@@ -1,0 +1,26 @@
+#!/bin/sh /etc/rc.common
+# Hardware LAN switching of the ZX279128 switch (off by default):
+# hw_switching.settings.enabled, LuCI Network -> Firewall.
+
+START=25
+USE_PROCD=1
+
+SYSFS=/sys/devices/platform/soc/92000000.ethernet/hw_switching
+
+start_service() {
+	reload_service
+}
+
+service_triggers() {
+	procd_add_reload_trigger "hw_switching"
+}
+
+reload_service() {
+	local on="$(uci -q get hw_switching.settings.enabled)"
+
+	[ -w "$SYSFS" ] || return 0
+	case "$on" in
+	1|on|true|yes|enabled) echo 1 > "$SYSFS" ;;
+	*) echo 0 > "$SYSFS" ;;
+	esac
+}
