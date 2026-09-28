@@ -1180,10 +1180,14 @@ static int rtpcs_838x_sds_probe(struct rtpcs_serdes *sds)
 
 static int rtpcs_838x_init(struct rtpcs_ctrl *ctrl)
 {
+	int ret;
+
 	/* power off and reset all SerDes */
-	regmap_write(ctrl->map, RTPCS_838X_SDS_CFG_REG, 0x3f);
-	regmap_write(ctrl->map, RTPCS_838X_RST_GLB_CTRL_0, 0x10); /* SW_SERDES_RST */
-	return 0;
+	ret = regmap_write(ctrl->map, RTPCS_838X_SDS_CFG_REG, 0x3f);
+	if (ret)
+		return ret;
+
+	return regmap_write(ctrl->map, RTPCS_838X_RST_GLB_CTRL_0, 0x10); /* SW_SERDES_RST */
 }
 
 static int rtpcs_838x_sds_post_config(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode)
