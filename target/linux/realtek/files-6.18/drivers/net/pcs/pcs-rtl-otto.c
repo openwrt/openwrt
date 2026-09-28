@@ -4597,7 +4597,9 @@ static int rtpcs_probe(struct platform_device *pdev)
 	if (!ctrl)
 		return -ENOMEM;
 
-	mutex_init(&ctrl->lock);
+	ret = devm_mutex_init(dev, &ctrl->lock);
+	if (ret)
+		return ret;
 
 	ctrl->dev = dev;
 	ctrl->cfg = device_get_match_data(ctrl->dev);
