@@ -7,7 +7,7 @@ let libubus = require("ubus");
 let keep_devices = {};
 let phy_name = shift(ARGV);
 let command = shift(ARGV);
-let phy, phydev;
+let phydev;
 
 function iface_stop(wdev)
 {
@@ -162,12 +162,11 @@ const commands = {
 	},
 };
 
-if (!phy_name || !command | !commands[command])
+if (!phy_name || !command || !commands[command])
 	usage();
 
 let phy_split = split(phy_name, ":");
 phydev = phy_open(phy_split[0], phy_split[1]);
-phy = phydev.phy;
 if (!phydev) {
 	warn(`PHY ${phy_name} does not exist\n`);
 	exit(1);
