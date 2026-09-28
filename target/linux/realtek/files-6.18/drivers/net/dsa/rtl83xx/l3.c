@@ -1405,12 +1405,27 @@ static int otto_l3_fib_check_v4(struct otto_l3_ctrl *ctrl,
 
 static int otto_l3_fib_add_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifier_info *info)
 {
-	struct net_device *ndev = fib_info_nh(info->fi, 0)->fib_nh_dev;
-	int vlan = is_vlan_dev(ndev) ? vlan_dev_vlan_id(ndev) : 0;
 	struct rtl838x_switch_priv *priv = ctrl->priv;
-	struct fib_nh *nh = fib_info_nh(info->fi, 0);
 	struct otto_l3_route *route;
-	int port;
+	struct net_device *ndev;
+	struct fib_nh *nh;
+	int port, vlan;
+
+	/* A route through a nexthop object is not offloaded and has no
+	 * nexthop array to read, but it can replace a route that is.
+	 */
+	if (info->fi->nh) {
+		dev_dbg(ctrl->dev, "route through a nexthop object, not offloaded\n");
+		route = otto_l3_route_find(ctrl, info->tb_id, ROUTE_TYPE_IP4UC, info->dst,
+					   NULL, info->dst_len);
+		if (route)
+			otto_l3_route_teardown(ctrl, route);
+		return 0;
+	}
+
+	nh = fib_info_nh(info->fi, 0);
+	ndev = nh->fib_nh_dev;
+	vlan = is_vlan_dev(ndev) ? vlan_dev_vlan_id(ndev) : 0;
 
 	if (otto_l3_fib_check_v4(ctrl, info, FIB_EVENT_ENTRY_ADD))
 		return 0;
@@ -1626,11 +1641,10 @@ static int otto_l3_fib_notifier(struct notifier_block *this, unsigned long event
 		if (info->family == AF_INET) {
 			struct fib_entry_notifier_info *fen_info = ptr;
 
-			/* A route through a nexthop object keeps no nexthop
-			 * array of its own, and everything below reads one.
+			/* A route through a nexthop object is never offloaded,
+			 * and the delete path reads a nexthop array it lacks.
 			 */
-			if (fen_info->fi->nh) {
-				dev_dbg(ctrl->dev, "route through a nexthop object, not offloaded\n");
+			if (fen_info->fi->nh && event == FIB_EVENT_ENTRY_DEL) {
 				kfree(fib_work);
 				return NOTIFY_DONE;
 			}
