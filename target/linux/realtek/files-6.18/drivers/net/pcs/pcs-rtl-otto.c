@@ -6,7 +6,6 @@
 #include <linux/mfd/syscon.h>
 #include <linux/of.h>
 #include <linux/of_mdio.h>
-#include <linux/of_platform.h>
 #include <linux/pcs/pcs-provider.h>
 #include <linux/phy.h>
 #include <linux/phy/phy-common-props.h>
