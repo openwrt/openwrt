@@ -2083,7 +2083,7 @@ static int rtpcs_930x_sds_reset_cmu(struct rtpcs_serdes *sds, enum rtpcs_sds_pll
 static int rtpcs_930x_sds_wait_clock_ready(struct rtpcs_serdes *sds)
 {
 	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
-	int i, ready, ready_cnt = 0, bit = (sds == even_sds) ? 4 : 5;
+	int i, ready, ret, ready_cnt = 0, bit = (sds == even_sds) ? 4 : 5;
 
 	/*
 	 * While reconfiguring a SerDes it might take some time until its clock is in sync with
@@ -2094,9 +2094,14 @@ static int rtpcs_930x_sds_wait_clock_ready(struct rtpcs_serdes *sds)
 	for (i = 0; i < 20; i++) {
 		usleep_range(10000, 15000);
 
-		rtpcs_sds_write_mask(even_sds, PAGE_WDIG, WDIG_REG02, RTL93XX_DBGO_SEL_0,
-				     RTL930X_DBGO_SEL_0_RX_STATUS);
+		ret = rtpcs_sds_write_mask(even_sds, PAGE_WDIG, WDIG_REG02,
+					   RTL93XX_DBGO_SEL_0, RTL930X_DBGO_SEL_0_RX_STATUS);
+		if (ret)
+			return ret;
+
 		ready = rtpcs_sds_read_bits(even_sds, PAGE_WDIG, 0x14, bit, bit);
+		if (ready < 0)
+			return ready;
 
 		ready_cnt = ready ? ready_cnt + 1 : 0;
 		if (ready_cnt >= 3)
