@@ -178,7 +178,6 @@ function setup() {
 	data.ifname_prefix = data.config.ifname_prefix;
 	if (!data.ifname_prefix)
 		data.ifname_prefix = data.phy + data.vif_phy_suffix + "-";
-	let active_ifnames = [];
 
 	log('Starting');
 
@@ -221,12 +220,10 @@ function setup() {
 
 		if (!v.config.ifname)
 			v.config.ifname = data.ifname_prefix + mode + mode_idx;
-		push(active_ifnames, v.config.ifname);
 
 		if (v.config.encryption == 'owe' && v.config.owe_transition) {
 			mode_idx = idx[mode]++;
 			v.config.owe_transition_ifname = data.ifname_prefix + mode + mode_idx;
-			push(active_ifnames, v.config.ifname);
 		}
 
 		switch (mode) {
@@ -296,15 +293,10 @@ function setup() {
 		wdev_data[v.config.ifname] = config;
 	}
 
-	for (let ifname in active_ifnames) {
-		if (!wdev_data[ifname])
-			continue;
-
-		let if_config = {
-			[ifname]: wdev_data[ifname]
-		};
-		system(`ucode /usr/share/hostap/wdev.uc ${data.phy}${data.phy_suffix} set_config '${if_config}'`);
-	}
+	system([
+		"ucode", "/usr/share/hostap/wdev.uc", data.phy + data.phy_suffix, "set_config",
+		sprintf("%J", wdev_data),
+	]);
 
 	if (fs.access('/usr/sbin/wpa_supplicant', 'x'))
 		supplicant.setup(supplicant_data, data);
