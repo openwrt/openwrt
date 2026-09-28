@@ -832,6 +832,7 @@ uc_hostapd_bss_rename(uc_vm_t *vm, size_t nargs)
 	if (!strncmp(hapd->conf->ssid.vlan, hapd->conf->iface, sizeof(hapd->conf->ssid.vlan)))
 		os_strlcpy(hapd->conf->ssid.vlan, ifname, sizeof(hapd->conf->ssid.vlan));
 	os_strlcpy(hapd->conf->iface, ifname, sizeof(hapd->conf->iface));
+	hostapd_set_ctrl_sock_iface(hapd);
 	hostapd_ubus_add_bss(hapd);
 
 	hostapd_ucode_update_interfaces();
