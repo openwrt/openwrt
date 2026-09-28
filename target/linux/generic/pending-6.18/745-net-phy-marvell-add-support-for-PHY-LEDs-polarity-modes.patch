@@ -1,0 +1,99 @@
+From 7bdfb46381b697352e3c202e1cfadc847fb7fbbb Mon Sep 17 00:00:00 2001
+From: Aleksander Jan Bajkowski <olek2@wp.pl>
+Date: Wed, 23 Sep 2026 22:45:24 +0200
+Subject: [PATCH] net: phy: marvell: add support for PHY LEDs polarity modes
+
+Add the led_polarity_set callback for setting LED polarity. Implement
+this callback for the 88E1318 and 88E1510 PHYs. This should also work on
+other Marvell PHYs, but I do not have access to the TRM or the hardware.
+
+Tested on Adapteva Paralella board with Marvell 88E1318 PHY.
+
+Signed-off-by: Aleksander Jan Bajkowski <olek2@wp.pl>
+---
+ drivers/net/phy/marvell.c | 39 ++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 38 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/phy/marvell.c
++++ b/drivers/net/phy/marvell.c
+@@ -149,6 +149,9 @@
+ #define MII_88E1318S_PHY_LED_FUNC_ON		(0x9)
+ #define MII_88E1318S_PHY_LED_FUNC_HI_Z		(0xa)
+ #define MII_88E1318S_PHY_LED_FUNC_BLINK		(0xb)
++#define MII_88E1318S_PHY_LED_POL		0x11
++#define MII_88E1318S_PHY_LED_POL_ACT_HIGH(idx)	BIT(2 * (idx))
++#define MII_88E1318S_PHY_LED_POL_HIGH_IMP(idx)	BIT(2 * (idx) + 1)
+ #define MII_88E1318S_PHY_LED_TCR		0x12
+ #define MII_88E1318S_PHY_LED_TCR_FORCE_INT	BIT(15)
+ #define MII_88E1318S_PHY_LED_TCR_INTn_ENABLE	BIT(7)
+@@ -304,6 +307,8 @@
+ #define NB_FIBER_STATS	1
+ #define NB_STAT_MAX	3
+ 
++#define M88E1318S_MAX_LEDS	3
++
+ MODULE_DESCRIPTION("Marvell PHY driver");
+ MODULE_AUTHOR("Andy Fleming");
+ MODULE_LICENSE("GPL");
+@@ -3572,7 +3577,7 @@ static int m88e1318_led_hw_control_get(s
+ {
+ 	int mode, reg;
+ 
+-	if (index > 2)
++	if (index >= M88E1318S_MAX_LEDS)
+ 		return -EINVAL;
+ 
+ 	reg = phy_read_paged(phydev, MII_MARVELL_LED_PAGE,
+@@ -3585,6 +3590,36 @@ static int m88e1318_led_hw_control_get(s
+ 	return marvell_get_led_rules(index, rules, mode);
+ }
+ 
++static int m88e1318_led_polarity_set(struct phy_device *phydev, int index,
++				     unsigned long modes)
++{
++	u16 val = 0;
++	u32 mode;
++
++	if (index >= M88E1318S_MAX_LEDS)
++		return -EINVAL;
++
++	for_each_set_bit(mode, &modes, __PHY_LED_MODES_NUM) {
++		switch (mode) {
++		case PHY_LED_ACTIVE_LOW:
++			break;
++		case PHY_LED_ACTIVE_HIGH:
++			val |= MII_88E1318S_PHY_LED_POL_ACT_HIGH(index);
++			break;
++		case PHY_LED_INACTIVE_HIGH_IMPEDANCE:
++			val |= MII_88E1318S_PHY_LED_POL_HIGH_IMP(index);
++			break;
++		default:
++			return -EINVAL;
++		}
++	}
++
++	return phy_modify_paged(phydev, MII_MARVELL_LED_PAGE,
++				MII_88E1318S_PHY_LED_POL,
++				MII_88E1318S_PHY_LED_POL_ACT_HIGH(index) |
++				MII_88E1318S_PHY_LED_POL_HIGH_IMP(index), val);
++}
++
+ static int marvell_probe(struct phy_device *phydev)
+ {
+ 	struct marvell_priv *priv;
+@@ -3862,6 +3897,7 @@ static struct phy_driver marvell_drivers
+ 		.led_hw_is_supported = m88e1318_led_hw_is_supported,
+ 		.led_hw_control_set = m88e1318_led_hw_control_set,
+ 		.led_hw_control_get = m88e1318_led_hw_control_get,
++		.led_polarity_set = m88e1318_led_polarity_set,
+ 	},
+ 	{
+ 		.phy_id = MARVELL_PHY_ID_88E1145,
+@@ -3976,6 +4012,7 @@ static struct phy_driver marvell_drivers
+ 		.led_hw_is_supported = m88e1318_led_hw_is_supported,
+ 		.led_hw_control_set = m88e1318_led_hw_control_set,
+ 		.led_hw_control_get = m88e1318_led_hw_control_get,
++		.led_polarity_set = m88e1318_led_polarity_set,
+ 	},
+ 	{
+ 		.phy_id = MARVELL_PHY_ID_88E1540,
