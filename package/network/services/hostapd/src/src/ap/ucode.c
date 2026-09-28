@@ -800,7 +800,7 @@ uc_hostapd_bss_rename(uc_vm_t *vm, size_t nargs)
 	char prev_ifname[IFNAMSIZ + 1];
 	struct sta_info *sta;
 	const char *ifname;
-	int ret;
+	int ret = 0;
 
 	if (!hapd || ucv_type(ifname_arg) != UC_STRING)
 		return NULL;
