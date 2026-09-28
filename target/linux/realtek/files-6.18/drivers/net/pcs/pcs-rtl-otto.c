@@ -3297,16 +3297,16 @@ static int rtpcs_930x_sds_probe(struct rtpcs_serdes *sds)
  * page ranges accordingly.
  */
 static int rtpcs_931x_sds_op_xsg_write(struct rtpcs_serdes *sds, enum rtpcs_page page, int regnum,
-                                       int bithigh, int bitlow, u16 value)
+				       int bithigh, int bitlow, u16 value)
 {
-        int ret;
+	int ret;
 
-        ret = __rtpcs_sds_write_raw(sds->ctrl, sds->id, DIGI_1(page), regnum, bithigh, bitlow,
+	ret = __rtpcs_sds_write_raw(sds->ctrl, sds->id, DIGI_1(page), regnum, bithigh, bitlow,
 				    value);
-        if (ret)
-                return ret;
+	if (ret)
+		return ret;
 
-        return __rtpcs_sds_write_raw(sds->ctrl, sds->id, DIGI_2(page), regnum, bithigh, bitlow,
+	return __rtpcs_sds_write_raw(sds->ctrl, sds->id, DIGI_2(page), regnum, bithigh, bitlow,
 				     value);
 }
 
