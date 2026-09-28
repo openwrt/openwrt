@@ -726,7 +726,6 @@ out:
 
 	for (i = 0; i < iface->num_bss; i++) {
 		struct hostapd_data *hapd = iface->bss[i];
-		int ret;
 
 		hostapd_set_freq(hapd, conf->hw_mode, iface->freq,
 				 conf->channel,
@@ -991,7 +990,6 @@ void hostapd_ucode_sta_connected(struct hostapd_data *hapd, struct sta_info *sta
 {
 	char addr[sizeof(MACSTR)];
 	uc_value_t *val, *cur;
-	int ret = 0;
 
 	if (wpa_ucode_call_prepare("sta_connected"))
 		return;
@@ -1359,7 +1357,6 @@ int hostapd_ucode_init(struct hapd_interfaces *ifaces)
 		{ "switch_channel", uc_hostapd_iface_switch_channel },
 		{ "csa_in_progress", uc_hostapd_iface_csa_in_progress },
 	};
-	uc_value_t *data, *proto;
 
 	interfaces = ifaces;
 	vm = wpa_ucode_create_vm();
