@@ -2204,7 +2204,9 @@ static int rtpcs_930x_sds_deactivate(struct rtpcs_serdes *sds)
 	int ret;
 
 	/* Power down the SerDes core analog block. */
-	rtpcs_930x_sds_set_power(sds, false);
+	ret = rtpcs_930x_sds_set_power(sds, false);
+	if (ret)
+		return ret;
 
 	/* Force MAC and IP mode registers to OFF, leaving the SerDes inert. */
 	ret = rtpcs_93xx_sds_set_mac_mode(sds, RTPCS_SDS_MODE_OFF);
@@ -2234,7 +2236,10 @@ static int rtpcs_930x_sds_activate(struct rtpcs_serdes *sds)
 	int ret;
 
 	/* Power up the SerDes core analog block and reset its RX path. */
-	rtpcs_930x_sds_set_power(sds, true);
+	ret = rtpcs_930x_sds_set_power(sds, true);
+	if (ret)
+		return ret;
+
 	rtpcs_930x_sds_rx_reset(sds, sds->hw_mode);
 
 	/* Enable fiber RX. */
