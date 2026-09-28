@@ -30,8 +30,19 @@ function iface_start(wdev)
 		wdev_config[key] = wdev[key];
 	if (!wdev_config.macaddr && wdev.mode != "monitor")
 		wdev_config.macaddr = phydev.macaddr_next();
-	phydev.wdev_add(ifname, wdev_config);
-	wdev_set_up(ifname, true);
+	let err = phydev.wdev_add(ifname, wdev_config);
+	if (err) {
+		warn(`Failed to create ${ifname}: ${err}\n`);
+		return;
+	}
+
+	err = wdev_set_up(ifname, true);
+	if (err) {
+		warn(`Failed to bring up ${ifname}: ${err}\n`);
+		wdev_remove(ifname);
+		return;
+	}
+
 	let htmode = wdev.htmode || "NOHT";
 	if (wdev.freq)
 		system(`iw dev ${ifname} set freq ${wdev.freq} ${htmode}`);

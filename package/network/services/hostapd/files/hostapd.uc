@@ -1091,9 +1091,16 @@ function bss_check_mld(phydev, iface_name, bss)
 		macaddr: mld_data.macaddr,
 		radio_mask: mld_data.radio_mask,
 	});
-	wdev_set_up(bss.ifname, true);
 	if (err) {
 		hostapd.printf(`Failed to create MLD ${bss.ifname} on phy ${phydev.name}: ${err}`);
+		delete mld_data.iface[iface_name];
+		return;
+	}
+
+	err = wdev_set_up(bss.ifname, true);
+	if (err) {
+		hostapd.printf(`Failed to bring up MLD ${bss.ifname} on phy ${phydev.name}: ${err}`);
+		wdev_remove(bss.ifname);
 		delete mld_data.iface[iface_name];
 		return;
 	}

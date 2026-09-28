@@ -48,12 +48,21 @@ function iface_start(phydev, iface, macaddr_list)
 	if (!wdev_config.macaddr)
 		wdev_config.macaddr = phydev.macaddr_next();
 
-	wpas.data.iface_phy[ifname] = phy;
 	wdev_remove(ifname);
 	let ret = phydev.wdev_add(ifname, wdev_config);
-	if (ret)
+	if (ret) {
 		wpas.printf(`Failed to create device ${ifname}: ${ret}`);
-	wdev_set_up(ifname, true);
+		return;
+	}
+
+	ret = wdev_set_up(ifname, true);
+	if (ret) {
+		wpas.printf(`Failed to bring up device ${ifname}: ${ret}`);
+		wdev_remove(ifname);
+		return;
+	}
+
+	wpas.data.iface_phy[ifname] = phy;
 	wpas.add_iface(iface.config);
 	iface.running = true;
 }
@@ -210,12 +219,20 @@ function mld_add(data, phy_list)
 	if (!wdev_config.macaddr)
 		wdev_config.macaddr = phydev.macaddr_next();
 	let ret = phydev.wdev_add(name, wdev_config);
-	if (ret)
+	if (ret) {
 		wpas.printf(`Failed to create device ${name}: ${ret}`);
+		return;
+	}
 
 	let first_config = data.phy_config[radio];
 
-	wdev_set_up(name, true);
+	ret = wdev_set_up(name, true);
+	if (ret) {
+		wpas.printf(`Failed to bring up device ${name}: ${ret}`);
+		wdev_remove(name);
+		return;
+	}
+
 	wpas.add_iface(first_config);
 
 	let iface = wpas.interfaces[name];
