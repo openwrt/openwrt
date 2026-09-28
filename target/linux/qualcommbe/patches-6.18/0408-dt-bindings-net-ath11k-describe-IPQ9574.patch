@@ -1,0 +1,154 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Satoshi Ikeuchi <satosan.ikm@gmail.com>
+Date: Fri, 25 Sep 2026 09:00:00 +0900
+Subject: [PATCH] dt-bindings: net: ath11k: describe IPQ9574 interrupt layout
+
+Add the IPQ9574 compatible proposed for ath11k support. Describe its
+interrupt layout separately from IPQ8074 and IPQ6018: the observed
+IPQ9574-family interface omits the watchdog interrupt and provides a
+fourth transmit-completion ring. Both layouts contain 52 interrupts.
+
+Keep the existing SoC schemas unchanged and require named interrupts
+for the IPQ9574 interface.
+
+Link: https://lists.infradead.org/pipermail/ath11k/2026-January/008112.html
+Signed-off-by: Satoshi Ikeuchi <satosan.ikm@gmail.com>
+---
+ .../bindings/net/wireless/qcom,ath11k.yaml | 119 +++++++++++++++++++++
+ 1 file changed, 119 insertions(+)
+
+--- a/Documentation/devicetree/bindings/net/wireless/qcom,ath11k.yaml
++++ b/Documentation/devicetree/bindings/net/wireless/qcom,ath11k.yaml
+@@ -18,6 +18,7 @@ properties:
+   compatible:
+     enum:
+       - qcom,ipq8074-wifi
++      - qcom,ipq9574-wifi
+       - qcom,ipq6018-wifi
+       - qcom,wcn6750-wifi
+       - qcom,ipq5018-wifi
+@@ -217,6 +218,124 @@ allOf:
+ 
+   - if:
+       properties:
++        compatible:
++          contains:
++            const: qcom,ipq9574-wifi
++    then:
++      properties:
++        interrupts:
++          items:
++            - description: misc-pulse1 interrupt events
++            - description: misc-latch interrupt events
++            - description: sw exception interrupt events
++            - description: interrupt event for ring CE0
++            - description: interrupt event for ring CE1
++            - description: interrupt event for ring CE2
++            - description: interrupt event for ring CE3
++            - description: interrupt event for ring CE4
++            - description: interrupt event for ring CE5
++            - description: interrupt event for ring CE6
++            - description: interrupt event for ring CE7
++            - description: interrupt event for ring CE8
++            - description: interrupt event for ring CE9
++            - description: interrupt event for ring CE10
++            - description: interrupt event for ring CE11
++            - description: interrupt event for ring host2wbm-desc-feed
++            - description: interrupt event for ring host2reo-re-injection
++            - description: interrupt event for ring host2reo-command
++            - description: interrupt event for ring host2rxdma-monitor-ring3
++            - description: interrupt event for ring host2rxdma-monitor-ring2
++            - description: interrupt event for ring host2rxdma-monitor-ring1
++            - description: interrupt event for ring reo2ost-exception
++            - description: interrupt event for ring wbm2host-rx-release
++            - description: interrupt event for ring reo2host-status
++            - description: interrupt event for ring reo2host-destination-ring4
++            - description: interrupt event for ring reo2host-destination-ring3
++            - description: interrupt event for ring reo2host-destination-ring2
++            - description: interrupt event for ring reo2host-destination-ring1
++            - description: interrupt event for ring rxdma2host-monitor-destination-mac3
++            - description: interrupt event for ring rxdma2host-monitor-destination-mac2
++            - description: interrupt event for ring rxdma2host-monitor-destination-mac1
++            - description: interrupt event for ring ppdu-end-interrupts-mac3
++            - description: interrupt event for ring ppdu-end-interrupts-mac2
++            - description: interrupt event for ring ppdu-end-interrupts-mac1
++            - description: interrupt event for ring rxdma2host-monitor-status-ring-mac3
++            - description: interrupt event for ring rxdma2host-monitor-status-ring-mac2
++            - description: interrupt event for ring rxdma2host-monitor-status-ring-mac1
++            - description: interrupt event for ring host2rxdma-host-buf-ring-mac3
++            - description: interrupt event for ring host2rxdma-host-buf-ring-mac2
++            - description: interrupt event for ring host2rxdma-host-buf-ring-mac1
++            - description: interrupt event for ring rxdma2host-destination-ring-mac3
++            - description: interrupt event for ring rxdma2host-destination-ring-mac2
++            - description: interrupt event for ring rxdma2host-destination-ring-mac1
++            - description: interrupt event for ring host2tcl-input-ring4
++            - description: interrupt event for ring host2tcl-input-ring3
++            - description: interrupt event for ring host2tcl-input-ring2
++            - description: interrupt event for ring host2tcl-input-ring1
++            - description: interrupt event for ring wbm2host-tx-completions-ring4
++            - description: interrupt event for ring wbm2host-tx-completions-ring3
++            - description: interrupt event for ring wbm2host-tx-completions-ring2
++            - description: interrupt event for ring wbm2host-tx-completions-ring1
++            - description: interrupt event for ring tcl2host-status-ring
++        interrupt-names:
++          items:
++            - const: misc-pulse1
++            - const: misc-latch
++            - const: sw-exception
++            - const: ce0
++            - const: ce1
++            - const: ce2
++            - const: ce3
++            - const: ce4
++            - const: ce5
++            - const: ce6
++            - const: ce7
++            - const: ce8
++            - const: ce9
++            - const: ce10
++            - const: ce11
++            - const: host2wbm-desc-feed
++            - const: host2reo-re-injection
++            - const: host2reo-command
++            - const: host2rxdma-monitor-ring3
++            - const: host2rxdma-monitor-ring2
++            - const: host2rxdma-monitor-ring1
++            - const: reo2ost-exception
++            - const: wbm2host-rx-release
++            - const: reo2host-status
++            - const: reo2host-destination-ring4
++            - const: reo2host-destination-ring3
++            - const: reo2host-destination-ring2
++            - const: reo2host-destination-ring1
++            - const: rxdma2host-monitor-destination-mac3
++            - const: rxdma2host-monitor-destination-mac2
++            - const: rxdma2host-monitor-destination-mac1
++            - const: ppdu-end-interrupts-mac3
++            - const: ppdu-end-interrupts-mac2
++            - const: ppdu-end-interrupts-mac1
++            - const: rxdma2host-monitor-status-ring-mac3
++            - const: rxdma2host-monitor-status-ring-mac2
++            - const: rxdma2host-monitor-status-ring-mac1
++            - const: host2rxdma-host-buf-ring-mac3
++            - const: host2rxdma-host-buf-ring-mac2
++            - const: host2rxdma-host-buf-ring-mac1
++            - const: rxdma2host-destination-ring-mac3
++            - const: rxdma2host-destination-ring-mac2
++            - const: rxdma2host-destination-ring-mac1
++            - const: host2tcl-input-ring4
++            - const: host2tcl-input-ring3
++            - const: host2tcl-input-ring2
++            - const: host2tcl-input-ring1
++            - const: wbm2host-tx-completions-ring4
++            - const: wbm2host-tx-completions-ring3
++            - const: wbm2host-tx-completions-ring2
++            - const: wbm2host-tx-completions-ring1
++            - const: tcl2host-status-ring
++      required:
++        - interrupt-names
++
++  - if:
++      properties:
+         compatible:
+           contains:
+             enum:
