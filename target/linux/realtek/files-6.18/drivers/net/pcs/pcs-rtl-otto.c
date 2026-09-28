@@ -4673,7 +4673,7 @@ static int rtpcs_probe(struct platform_device *pdev)
 	return 0;
 }
 
-static const struct phylink_pcs_ops rtpcs_838x_pcs_ops = {
+static const struct phylink_pcs_ops rtpcs_pcs_ops = {
 	.pcs_an_restart		= rtpcs_pcs_an_restart,
 	.pcs_config		= rtpcs_pcs_config,
 	.pcs_get_state		= rtpcs_pcs_get_state,
@@ -4701,18 +4701,12 @@ static const struct rtpcs_config rtpcs_838x_cfg = {
 	.mac_rx_pause_sts	= RTPCS_838X_MAC_RX_PAUSE_STS,
 	.mac_tx_pause_sts	= RTPCS_838X_MAC_TX_PAUSE_STS,
 	.serdes_count		= RTPCS_838X_SERDES_CNT,
-	.pcs_ops		= &rtpcs_838x_pcs_ops,
+	.pcs_ops		= &rtpcs_pcs_ops,
 	.sds_ops		= &rtpcs_838x_sds_ops,
 	.phy_page		= PAGE_FIB,
 	.sds_hw_mode_vals	= rtpcs_838x_sds_hw_mode_vals,
 	.init			= rtpcs_838x_init,
 	.sds_probe		= rtpcs_838x_sds_probe,
-};
-
-static const struct phylink_pcs_ops rtpcs_839x_pcs_ops = {
-	.pcs_an_restart		= rtpcs_pcs_an_restart,
-	.pcs_config		= rtpcs_pcs_config,
-	.pcs_get_state		= rtpcs_pcs_get_state,
 };
 
 static const struct rtpcs_sds_ops rtpcs_839x_sds_ops = {
@@ -4736,18 +4730,12 @@ static const struct rtpcs_config rtpcs_839x_cfg = {
 	.mac_rx_pause_sts	= RTPCS_839X_MAC_RX_PAUSE_STS,
 	.mac_tx_pause_sts	= RTPCS_839X_MAC_TX_PAUSE_STS,
 	.serdes_count		= RTPCS_839X_SERDES_CNT,
-	.pcs_ops		= &rtpcs_839x_pcs_ops,
+	.pcs_ops		= &rtpcs_pcs_ops,
 	.sds_ops		= &rtpcs_839x_sds_ops,
 	.phy_page		= PAGE_FIB,
 	.sds_hw_mode_vals	= rtpcs_839x_sds_hw_mode_vals,
 	.init			= rtpcs_839x_init,
 	.sds_probe		= rtpcs_839x_sds_probe,
-};
-
-static const struct phylink_pcs_ops rtpcs_930x_pcs_ops = {
-	.pcs_an_restart		= rtpcs_pcs_an_restart,
-	.pcs_config		= rtpcs_pcs_config,
-	.pcs_get_state		= rtpcs_pcs_get_state,
 };
 
 static const struct rtpcs_sds_ops rtpcs_930x_sds_ops = {
@@ -4779,18 +4767,12 @@ static const struct rtpcs_config rtpcs_930x_cfg = {
 	.mac_rx_pause_sts	= RTPCS_930X_MAC_RX_PAUSE_STS,
 	.mac_tx_pause_sts	= RTPCS_930X_MAC_TX_PAUSE_STS,
 	.serdes_count		= RTPCS_930X_SERDES_CNT,
-	.pcs_ops		= &rtpcs_930x_pcs_ops,
+	.pcs_ops		= &rtpcs_pcs_ops,
 	.sds_ops		= &rtpcs_930x_sds_ops,
 	.phy_page		= PAGE_FIB,
 	.sds_hw_mode_vals	= rtpcs_93xx_sds_hw_mode_vals,
 	.init			= rtpcs_93xx_init,
 	.sds_probe		= rtpcs_930x_sds_probe,
-};
-
-static const struct phylink_pcs_ops rtpcs_931x_pcs_ops = {
-	.pcs_an_restart		= rtpcs_pcs_an_restart,
-	.pcs_config		= rtpcs_pcs_config,
-	.pcs_get_state		= rtpcs_pcs_get_state,
 };
 
 static const struct rtpcs_sds_ops rtpcs_931x_sds_ops = {
@@ -4821,7 +4803,7 @@ static const struct rtpcs_config rtpcs_931x_cfg = {
 	.mac_rx_pause_sts	= RTPCS_931X_MAC_RX_PAUSE_STS,
 	.mac_tx_pause_sts	= RTPCS_931X_MAC_TX_PAUSE_STS,
 	.serdes_count		= RTPCS_931X_SERDES_CNT,
-	.pcs_ops		= &rtpcs_931x_pcs_ops,
+	.pcs_ops		= &rtpcs_pcs_ops,
 	.sds_ops		= &rtpcs_931x_sds_ops,
 	.phy_page		= DIGI_1(PAGE_FIB),
 	.sds_hw_mode_vals	= rtpcs_93xx_sds_hw_mode_vals,
