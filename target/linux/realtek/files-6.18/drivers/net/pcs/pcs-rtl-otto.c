@@ -3221,6 +3221,7 @@ static int rtpcs_930x_sds_config_attachment(struct rtpcs_serdes *sds,
 
 static int rtpcs_930x_sds_post_config(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode)
 {
+	bool calib_failed;
 	int calib_tries = 0;
 
 	if (hw_mode == RTPCS_SDS_MODE_QSGMII)
@@ -3231,8 +3232,9 @@ static int rtpcs_930x_sds_post_config(struct rtpcs_serdes *sds, enum rtpcs_sds_m
 		rtpcs_930x_sds_do_rx_calibration(sds, hw_mode);
 		calib_tries++;
 		msleep(50);
-	} while (rtpcs_930x_sds_check_calibration(sds, hw_mode) && calib_tries < 3);
-	if (calib_tries >= 3)
+		calib_failed = rtpcs_930x_sds_check_calibration(sds, hw_mode);
+	} while (calib_failed && calib_tries < 3);
+	if (calib_failed)
 		dev_warn(sds->ctrl->dev, "SerDes %u: RX calibration failed\n", sds->id);
 
 	return 0;
