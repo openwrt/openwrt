@@ -1,0 +1,114 @@
+From: Cristian Papa <pcristian292@gmail.com>
+Subject: [PATCH] mt7603: drive optional board LED through chip GPIOs
+
+The Archer XR500v 2.4 GHz panel LED is wired to the MT7603 internal GPIO12
+and GPIO13 rather than a MAC LED pad.  Add a DT-gated path that selects those
+pads as active-low GPIO outputs and uses software blinking.
+
+Signed-off-by: Cristian Papa <pcristian292@gmail.com>
+--- a/mt7603/mt7603.h
++++ b/mt7603/mt7603.h
+@@ -137,6 +137,7 @@ struct mt7603_dev {
+ 	u8 ed_strong_signal;
+ 
+ 	bool dynamic_sensitivity;
++	bool gpio_led;
+ 	s8 sensitivity;
+ 	u8 sensitivity_limit;
+ 
+--- a/mt7603/regs.h
++++ b/mt7603/regs.h
+@@ -601,6 +601,15 @@
+ #define MT_LED_STATUS_ON		GENMASK(23, 16)
+ #define MT_LED_STATUS_DURATION		GENMASK(15, 0)
+ 
++/* Chip-internal GPIO block, reached through the PCIe remap-2 window. */
++#define MT_GPIO_PINMUX_SEL2		0x80023084
++#define MT_GPIO_PINMUX_SEL2_G12		GENMASK(18, 16)
++#define MT_GPIO_PINMUX_SEL2_G13		GENMASK(22, 20)
++#define MT_GPIO_OE1_SET			0x80023034
++#define MT_GPIO_DOUT1_SET		0x80023024
++#define MT_GPIO_DOUT1_RESET		0x80023028
++#define MT_GPIO_LED_MASK		(BIT(12) | BIT(13))
++
+ #define MT_CLIENT_BASE_PHYS_ADDR	0x800c0000
+ 
+ #define MT_CLIENT_TMAC_INFO_TEMPLATE	0x040
+--- a/mt7603/init.c
++++ b/mt7603/init.c
+@@ -1,6 +1,7 @@
+ // SPDX-License-Identifier: BSD-3-Clause-Clear
+ 
+ #include <linux/etherdevice.h>
++#include <linux/of.h>
+ #include "mt7603.h"
+ #include "mac.h"
+ #include "eeprom.h"
+@@ -343,6 +344,42 @@ static const struct ieee80211_iface_comb
+ 	}
+ };
+ 
++static void mt7603_gpio_led_init(struct mt7603_dev *dev)
++{
++	u32 addr, val;
++
++	/* Select GPIO function 2 for the two active-low panel LED pads. */
++	addr = mt7603_reg_map(dev, MT_GPIO_PINMUX_SEL2);
++	val = mt76_rr(dev, addr);
++	val &= ~(MT_GPIO_PINMUX_SEL2_G12 | MT_GPIO_PINMUX_SEL2_G13);
++	val |= FIELD_PREP(MT_GPIO_PINMUX_SEL2_G12, 0x2) |
++	       FIELD_PREP(MT_GPIO_PINMUX_SEL2_G13, 0x2);
++	mt76_wr(dev, addr, val);
++
++	addr = mt7603_reg_map(dev, MT_GPIO_OE1_SET);
++	mt76_wr(dev, addr, MT_GPIO_LED_MASK);
++}
++
++static void mt7603_gpio_led_set(struct mt7603_dev *dev, bool on)
++{
++	u32 addr;
++
++	/* Active-low: drive low to illuminate the LED. */
++	if (on)
++		addr = mt7603_reg_map(dev, MT_GPIO_DOUT1_RESET);
++	else
++		addr = mt7603_reg_map(dev, MT_GPIO_DOUT1_SET);
++	mt76_wr(dev, addr, MT_GPIO_LED_MASK);
++}
++
++static int mt7603_gpio_led_set_blink(struct led_classdev *led_cdev,
++				     unsigned long *delay_on,
++				     unsigned long *delay_off)
++{
++	/* The MAC LED pad is not routed, so fall back to software blinking. */
++	return -EINVAL;
++}
++
+ static void mt7603_led_set_config(struct mt76_phy *mphy, u8 delay_on,
+ 				  u8 delay_off)
+ {
+@@ -365,6 +402,9 @@ static void mt7603_led_set_config(struct
+ 		val |= MT_LED_CTRL_POLARITY(mphy->leds.pin);
+ 	addr = mt7603_reg_map(dev, MT_LED_CTRL);
+ 	mt76_wr(dev, addr, val);
++
++	if (dev->gpio_led)
++		mt7603_gpio_led_set(dev, delay_on != 0);
+ }
+ 
+ static int mt7603_led_set_blink(struct led_classdev *led_cdev,
+@@ -552,6 +592,14 @@ int mt7603_register_device(struct mt7603
+ 	if (IS_ENABLED(CONFIG_MT76_LEDS)) {
+ 		dev->mphy.leds.cdev.brightness_set = mt7603_led_set_brightness;
+ 		dev->mphy.leds.cdev.blink_set = mt7603_led_set_blink;
++
++		if (of_property_read_bool(dev->mt76.dev->of_node,
++					  "mediatek,gpio-led")) {
++			dev->gpio_led = true;
++			dev->mphy.leds.cdev.blink_set = mt7603_gpio_led_set_blink;
++			mt7603_gpio_led_init(dev);
++			mt7603_gpio_led_set(dev, false);
++		}
+ 	}
+ 
+ 	wiphy->reg_notifier = mt7603_regd_notifier;
