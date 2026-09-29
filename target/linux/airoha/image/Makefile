@@ -94,7 +94,7 @@ define Device/RouterBoot
   DEVICE_PACKAGES += yafut mtd-utils
 endef
 
-define Device/BootUboot
+define Device/FipBootUboot
   DEVICE_PACKAGES += uboot-envtools
 
   ARTIFACTS += uboot-chainload.itb tcboot.bin recovery.fip bootloader.bin bootloader-bl31.fip
@@ -107,10 +107,20 @@ define Device/BootUboot
   ARTIFACT/bootloader-bl31.fip := bootloader-bl31
 endef
 
+define Device/EconetBootUboot
+  DEVICE_PACKAGES += uboot-envtools
+
+  ARTIFACTS += bootext.bin uboot.bin tcboot.bin
+
+  ARTIFACT/bootext.bin := staging-copy-file $(SUBTARGET)_bootext.bin
+  ARTIFACT/uboot.bin := staging-copy-file $(DEVICE_NAME)-u-boot.bin
+  ARTIFACT/tcboot.bin := econet-tcboot | fill-zero 0x100000
+endef
+
 # Make image with new u-boot part version and ubi partion support
 define Device/Uboot-FitImage
   $(Device/FitImage)
-  $(Device/BootUboot)
+  $(Device/FipBootUboot)
   UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
@@ -252,6 +262,16 @@ define Build/bootloader-bl31
 		--align 1024 \
 		--soc-fw $(STAGING_DIR_IMAGE)/$(SUBTARGET)-bl31.lzma \
 		--nt-fw $(STAGING_DIR_IMAGE)/$(SUBTARGET)_$(DEVICE_NAME)-u-boot.lzma
+endef
+
+define Build/econet-tcboot
+	rm -f $@
+	$(STAGING_DIR_HOST)/bin/econet-image tcboot \
+		--boot $(STAGING_DIR_IMAGE)/$(SUBTARGET)-tcboot.bin \
+		--payload $(STAGING_DIR_IMAGE)/$(SUBTARGET)_$(DEVICE_NAME)-u-boot.bin \
+		--load $(KERNEL_LOADADDR) \
+		--entry $(KERNEL_LOADADDR) \
+		--output $@
 endef
 
 include $(SUBTARGET).mk
