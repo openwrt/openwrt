@@ -821,6 +821,28 @@ define Build/tplink-v2-image
 	&& cat $@.new >> $@ && rm -rf $@.new || rm -f $@
 endef
 
+define Build/tplink-v2-okli-factory
+	cp $(IMAGE_KERNEL) $(IMAGE_ROOTFS).okli
+	cat $(IMAGE_ROOTFS) >> $(IMAGE_ROOTFS).okli
+	$(STAGING_DIR_HOST)/bin/mktplinkfw2 -e \
+		-H $(TPLINK_HWID) -W $(TPLINK_HWREV) -w $(TPLINK_HWREVADD) \
+		-F "$(TPLINK_FLASHLAYOUT)" -T $(TPLINK_HVERSION) -V "ver. 2.0" \
+		-L $(LZMA_TEXT_START) -E $(LZMA_TEXT_START) -R 0xfe00 \
+		-k "$(KDIR)/loader-$(1).$(LOADER_TYPE)" \
+		-r $(IMAGE_ROOTFS).okli -s -o $(IMAGE_ROOTFS).okli.inner
+	dd if=/dev/zero of=$(IMAGE_ROOTFS).okli.prefix bs=127488 count=1 2>/dev/null
+	cat $(IMAGE_ROOTFS).okli.inner >> $(IMAGE_ROOTFS).okli.prefix
+	$(STAGING_DIR_HOST)/bin/mktplinkfw2 \
+		-H $(TPLINK_HWID) -W $(TPLINK_HWREV) \
+		-w $(TPLINK_HWREVADD) -F "$(TPLINK_FLASHLAYOUT)" \
+		-T $(TPLINK_HVERSION) -V "ver. 2.0" -a 0x4 -j \
+		-L $(LZMA_TEXT_START) -E $(LZMA_TEXT_START) \
+		-k "$(KDIR)/loader-$(1).$(LOADER_TYPE)" \
+		-r $(IMAGE_ROOTFS).okli.prefix -o $@.new -e
+	cat $@.new >> $@
+	rm -f $@.new $(IMAGE_ROOTFS).okli $(IMAGE_ROOTFS).okli.inner $(IMAGE_ROOTFS).okli.prefix
+endef
+
 define Build/uImage
 	$(if $(UIMAGE_TIME),SOURCE_DATE_EPOCH="$(UIMAGE_TIME)") \
 	mkimage \
