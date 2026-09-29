@@ -5,7 +5,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=hardware-support
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_LICENSE:=GPL-2.0-only
 PKG_MAINTAINER:=Daniel Golle <daniel@makrotopia.org>
@@ -48,18 +48,29 @@ endef
 define Package/video-support
   $(call Package/hardware-support/Default)
   TITLE:=Video device support
+  DEPENDS+=+libubox +libblobmsg-json
   USERID:=:video=40 :video-capture=36
+  PKGARCH:=$(ARCH_PACKAGES)
 endef
 
 define Package/video-support/description
- Feature gate for display and video capture devices. Allocates the video
- and video-capture groups and installs the hotplug rules which put the DRM
- and V4L2 character devices into them. Kernel modules exposing such devices
- and userspace using those groups depend on this package.
+ Feature gate for display and video devices. Allocates the video and
+ video-capture groups and installs the hotplug rules which put the DRM
+ character devices into video.
+
+ A uevent carries no device capabilities, so a V4L2 node is created
+ without a group and handed to v4l-id, which asks the driver and moves
+ it into video-capture when it can capture video, or into video when it
+ cannot. A stateless codec is therefore reachable by a media player
+ holding video, while a camera or an HDMI receiver needs video-capture.
+ A node whose capabilities could not be established stays owned by root,
+ so a failure costs a working decoder rather than exposing a camera.
 endef
 
 define Package/video-support/install
 	$(call InstallFragment,$(1),30-video.json)
+	$(INSTALL_DIR) $(1)/usr/libexec
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/v4l-id $(1)/usr/libexec/v4l-id
 endef
 
 define Package/accel-support
@@ -178,12 +189,17 @@ define Package/hidraw-support/install
 endef
 
 define Build/Prepare
+	mkdir -p $(PKG_BUILD_DIR)
+	$(CP) ./src/. $(PKG_BUILD_DIR)/
 endef
 
 define Build/Configure
 endef
 
 define Build/Compile
+	$(TARGET_CC) $(TARGET_CFLAGS) $(TARGET_CPPFLAGS) $(TARGET_LDFLAGS) \
+		-o $(PKG_BUILD_DIR)/v4l-id $(PKG_BUILD_DIR)/v4l-id.c \
+		-lubox -lblobmsg_json
 endef
 
 $(eval $(call BuildPackage,audio-support))
