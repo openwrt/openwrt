@@ -1,0 +1,21 @@
+--- a/arch/arm/Kconfig.platforms
++++ b/arch/arm/Kconfig.platforms
+@@ -58,6 +58,18 @@
+ 
+ endmenu
+ 
++config ARCH_ZX279128
++	bool "ZTE ZX279128 SoC support"
++	depends on ARCH_MULTI_V7 && USE_OF
++	select ARM_GIC
++	select ARM_GLOBAL_TIMER
++	select CLKSRC_ARM_GLOBAL_TIMER_SCHED_CLOCK
++	select SERIAL_CORE
++	select SERIAL_CORE_CONSOLE
++	help
++	  Enable the interrupt controller and global timer for RAM-only
++	  ZX279128 bring-up using a bootloader-initialized fixed timer clock.
++
+ config ARCH_VIRT
+ 	bool "Dummy Virtual Machine"
+ 	depends on ARCH_MULTI_V7

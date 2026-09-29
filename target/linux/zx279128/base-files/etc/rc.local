@@ -1,0 +1,67 @@
+#!/bin/sh
+# SPI-NAND read gate - runs automatically at initramfs boot (S95done -> rc.local).
+# Verifies the zx279128-spifc driver reads byte-exact against canonical dumps.
+# READ-ONLY: never writes or erases flash.
+
+LOG=/tmp/readgate.log
+# procd pipes init-script stdout to ulogd, not the serial console, so emit
+# results to /dev/console explicitly as well as the log file.
+exec >"$LOG" 2>&1
+
+# Insurance: initramfs boots never auto-mount devtmpfs in the kernel
+# (DEVTMPFS_MOUNT only applies to real root mounts); procd normally mounts
+# it early, but if /dev is still the empty tmpfs dir, mount it here.
+mount -t devtmpfs devtmpfs /dev 2>/dev/null
+echo "devtmpfs mount attempt: rc=$? ($(mount | grep ' /dev ' || echo 'already mounted by procd'))"
+
+GATE_BOOTLOADER=a9601f95b75b1a4038fa558b85089a254e0c21b8b37cc2161fbc260c8434c23c
+GATE_DEFCFG=a6e5fdbe78bdca17998123088414fe5628fe6632976531fea8ce694084d4b8d8
+GATE_KERNEL1=435c5a400a42fe9a56d3ada40889be591148e862ec61a87b991ca15dae026756
+
+echo "=================================================="
+echo " SPI-NAND READ GATE  $(date)"
+echo "=================================================="
+
+echo
+echo "--- dmesg: spifc probe ---"
+dmesg | grep -i spifc
+
+echo
+echo "--- /proc/mtd ---"
+cat /proc/mtd
+
+# Resolve a partition label to its /dev node from /proc/mtd. The index is NOT
+# stable: with CONFIG_MTD_PARTITIONED_MASTER off the first partition is mtd0,
+# so hard-coding "mtd1" would check "tag" instead of "bootloader".
+node_of() {
+    awk -v want="$1" '$0 ~ "\""want"\"" {gsub(/:/,"",$1); print "mtd" substr($1,4); exit}' \
+        /proc/mtd
+}
+
+check() {
+    label="$1"; want="$2"
+    node=$(node_of "$label")
+    if [ -z "$node" ]; then
+        echo "FAIL  $label (no such partition)"
+        return
+    fi
+    got=$(sha256sum "/dev/$node" | awk '{print $1}')
+    if [ "$got" = "$want" ]; then
+        echo "PASS  $label = /dev/$node  $got"
+    else
+        echo "FAIL  $label = /dev/$node"
+        echo "      want $want"
+        echo "      got  $got"
+    fi
+}
+
+echo
+echo "--- byte-exact gate (3 partitions) ---"
+check bootloader "$GATE_BOOTLOADER"
+check defcfg "$GATE_DEFCFG"
+check kernel1 "$GATE_KERNEL1"
+
+echo
+echo "=== READ GATE COMPLETE ==="
+# surface the whole report on the serial console too
+cat "$LOG" > /dev/console 2>/dev/null

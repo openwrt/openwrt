@@ -1,0 +1,11 @@
+--- a/drivers/tty/serial/Makefile
++++ b/drivers/tty/serial/Makefile
+@@ -6,6 +6,8 @@
+ obj-$(CONFIG_SERIAL_CORE) += serial_base.o
+ serial_base-y := serial_core.o serial_base_bus.o serial_ctrl.o serial_port.o
++obj-$(CONFIG_SERIAL_CORE) += zx279128-uart.o
+ 
+ obj-$(CONFIG_SERIAL_EARLYCON) += earlycon.o
++obj-$(CONFIG_SERIAL_EARLYCON) += zx279128-earlycon.o
+ obj-$(CONFIG_SERIAL_EARLYCON_SEMIHOST) += earlycon-semihost.o
+ obj-$(CONFIG_SERIAL_EARLYCON_RISCV_SBI) += earlycon-riscv-sbi.o
