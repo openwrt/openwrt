@@ -1367,6 +1367,10 @@ function mld_add_bss(name, data, phy_list, i)
 // name. All remaining fields are BSS level and reach hostapd through the per PHY
 // config file, so a change to them must not destroy the netdev and all BSSes
 // attached to it.
+//
+// A radio that leaves the MLD removes only its own link. A radio that joins
+// gets a new netdev, as mt7996 keeps the state of a removed link until the
+// netdev goes.
 function mld_config_matches(data, config)
 {
 	if (!data.ifname || !data.config)
@@ -1375,7 +1379,7 @@ function mld_config_matches(data, config)
 	if (data.config.phy != config.phy)
 		return false;
 
-	if (data.radio_mask != mld_radio_mask(config.radios))
+	if (mld_radio_mask(config.radios) & ~mld_radio_mask(data.config.radios))
 		return false;
 
 	if (config.macaddr)
@@ -1409,6 +1413,11 @@ function mld_set_config(config)
 	for (let name, data in config) {
 		let prev = prev_mld[name];
 		if (prev && mld_config_matches(prev, data)) {
+			let mask = mld_radio_mask(data.radios);
+			if (mask != mld_radio_mask(prev.config.radios))
+				hostapd.printf(`Keep MLD interface ${name}, radios ${mask} of mask ${prev.radio_mask}`);
+			if (!prev.has_wdev)
+				prev.radio_mask = mask;
 			prev.config = data;
 			new_mld[name] = prev;
 			delete prev_mld[name];

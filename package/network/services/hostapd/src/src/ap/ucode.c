@@ -378,6 +378,12 @@ uc_hostapd_bss_delete(uc_vm_t *vm, size_t nargs)
 	hostapd_drv_set_first_bss(iface->bss[0]);
 	hapd->interface_added = 1;
 
+#ifdef CONFIG_IEEE80211BE
+	/* The link STOP_AP flushes every station that holds the link */
+	if (hapd->conf->mld_ap)
+		hostapd_free_link_stas(hapd);
+#endif /* CONFIG_IEEE80211BE */
+
 	hostapd_drv_stop_ap(hapd);
 	hostapd_bss_deinit(hapd);
 	/* deinit skips these for a bss that never started; both are idempotent */
