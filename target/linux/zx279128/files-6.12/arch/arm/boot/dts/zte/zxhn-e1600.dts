@@ -1,0 +1,190 @@
+/dts-v1/;
+
+/ {
+    #address-cells = <1>;
+    #size-cells = <1>;
+
+    model = "ZTE ZXHN E1600";
+    compatible = "zte,zxhn-e1600", "zte,zx279128s";
+
+    chosen {
+        stdout-path = "serial0:115200n8";
+    };
+
+    aliases {
+        serial0 = &uart0;
+    };
+
+    memory@40000000 {
+        device_type = "memory";
+        reg = <0x40000000 0x10000000>;
+    };
+
+    cpus {
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        cpu@0 {
+            device_type = "cpu";
+            compatible = "arm,cortex-a9";
+            reg = <0>;
+        };
+
+        cpu@1 {
+            device_type = "cpu";
+            compatible = "arm,cortex-a9";
+            reg = <1>;
+            enable-method = "zte,zx279128-smp";
+        };
+    };
+
+    intc: interrupt-controller@801000 {
+        compatible = "arm,cortex-a9-gic";
+        #address-cells = <1>;
+        #size-cells = <1>;
+        #interrupt-cells = <3>;
+        interrupt-controller;
+        reg = <0x00801000 0x1000>, <0x00800100 0x100>;
+    };
+
+    timer@800200 {
+        compatible = "arm,cortex-a9-global-timer";
+        reg = <0x00800200 0x20>;
+        interrupts = <1 11 4>;
+        interrupt-parent = <&intc>;
+        clocks = <&timer_clk>;
+    };
+
+    timer_clk: timer-clk {
+        compatible = "fixed-clock";
+        #clock-cells = <0>;
+        clock-frequency = <500000000>;
+    };
+
+    /* 24998400 Hz derived from live IBRD=13/FBRD=36 readback at 115200n8:
+     * UARTCLK = 115200 * 16 * (13 + 36/64) = 24998400 (~25 MHz osc). */
+    uart_clk: uart-clk {
+        compatible = "fixed-clock";
+        #clock-cells = <0>;
+        clock-frequency = <24998400>;
+    };
+
+    uart0: serial@94404000 {
+        compatible = "zte,ZX279127-uart";
+        reg = <0x94404000 0x1000>;
+        interrupts = <0 11 4>;
+        interrupt-parent = <&intc>;
+        clocks = <&uart_clk>, <&uart_clk>;
+        clock-names = "uartclk", "apb_pclk";
+        status = "okay";
+    };
+
+    /* Warm-reset path recovered from U-Boot's `reset` command (do_reset ->
+     * routine at file 0x21040): it writes 1 to topcrm+0x44.
+     *   mov r3,#0x94000000 ; mov r2,#1 ; str r2,[r3,#0x44] ; bx lr
+     * topcrm@94000000 is the vendor "zte,ZX279127-topcrm","syscon" block.
+     * Exposing it as a syscon + syscon-reboot child gives machine_restart()
+     * a real register-write reset so `reboot`/`echo b > /proc/sysrq-trigger`
+     * work instead of falling back to soft_restart(0) (which halts here). */
+    topcrm: syscon@94000000 {
+        compatible = "syscon", "simple-mfd";
+        reg = <0x94000000 0x1000>;
+
+        reboot: reboot {
+            compatible = "syscon-reboot";
+            regmap = <&topcrm>;
+            offset = <0x44>;
+            value = <0x1>;
+        };
+    };
+
+    /* SPIFC runs from the 25 MHz nandflash clock family (stock debug tree
+     * reports lb_nandflash_100m_wclk = 25 MHz with nand_wclk_sel = 25 MHz).
+     * This is deliberately a separate fixed clock: uart_clk is the same
+     * nominal rate but must not be shared with the flash controller. */
+    spifc_clk: spifc-clk {
+        compatible = "fixed-clock";
+        #clock-cells = <0>;
+        clock-frequency = <25000000>;
+    };
+
+    spifc: spifc@94406000 {
+        compatible = "zte,ZX279127-spifc";
+        reg = <0x94406000 0x1000>;
+        clocks = <&spifc_clk>;
+
+        partitions {
+            compatible = "fixed-partitions";
+            #address-cells = <1>;
+            #size-cells = <1>;
+
+            partition@0 {
+                label = "bootloader";
+                reg = <0x00000000 0x00100000>;
+                read-only;
+            };
+
+            partition@100000 {
+                label = "tag";
+                reg = <0x00100000 0x00100000>;
+                read-only;
+            };
+
+            partition@200000 {
+                label = "wifi";
+                reg = <0x00200000 0x00100000>;
+                read-only;
+            };
+
+            partition@300000 {
+                label = "usercfg";
+                reg = <0x00300000 0x00200000>;
+            };
+
+            partition@500000 {
+                label = "defcfg";
+                reg = <0x00500000 0x00200000>;
+                read-only;
+            };
+
+            partition@700000 {
+                label = "kernel1";
+                reg = <0x00700000 0x00380000>;
+                read-only;
+            };
+
+            partition@a80000 {
+                label = "rootfs";
+                reg = <0x00a80000 0x01280000>;
+                read-only;
+            };
+
+            partition@2000000 {
+                label = "kernel2";
+                reg = <0x02000000 0x00380000>;
+                read-only;
+            };
+
+            partition@6200000 {
+                label = "plugin";
+                reg = <0x06200000 0x00800000>;
+            };
+
+            partition@6a00000 {
+                label = "ipks";
+                reg = <0x06a00000 0x00400000>;
+                read-only;
+            };
+
+            partition@6e00000 {
+                label = "ctcap";
+                reg = <0x06e00000 0x00c00000>;
+            };
+
+            partition@7a00000 {
+                label = "status";
+                reg = <0x07a00000 0x00500000>;
+            };
+        };
+    };
+};
