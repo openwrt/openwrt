@@ -1382,6 +1382,10 @@ function mld_config_matches(data, config)
 	if (mld_radio_mask(config.radios) & ~mld_radio_mask(data.config.radios))
 		return false;
 
+	// cfg80211 refuses a link with another SSID while a link beacons
+	if (data.config.ssid != config.ssid)
+		return false;
+
 	if (config.macaddr)
 		return data.macaddr == config.macaddr;
 
