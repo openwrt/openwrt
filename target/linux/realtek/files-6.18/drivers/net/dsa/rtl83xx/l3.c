@@ -1199,12 +1199,23 @@ static struct otto_l3_route *otto_l3_route_find(struct otto_l3_ctrl *ctrl, u32 t
 	return NULL;
 }
 
+static void otto_l3_route_free(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r)
+{
+	if (rhltable_remove(&ctrl->routes, &r->linkage, otto_l3_route_ht_params))
+		dev_warn(ctrl->dev, "Could not remove route\n");
+
+	if (r->is_host_route)
+		clear_bit(r->id - MAX_ROUTES, ctrl->host_route_use_bm);
+	else
+		clear_bit(r->id, ctrl->route_use_bm);
+
+	list_del(&r->list);
+	kfree(r);
+}
+
 static void otto_l3_route_remove(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r)
 {
 	int id;
-
-	if (rhltable_remove(&ctrl->routes, &r->linkage, otto_l3_route_ht_params))
-		dev_warn(ctrl->dev, "Could not remove route\n");
 
 	if (r->is_host_route) {
 		id = ctrl->cfg->find_slot(ctrl, r, true);
@@ -1216,7 +1227,6 @@ static void otto_l3_route_remove(struct otto_l3_ctrl *ctrl, struct otto_l3_route
 			dev_err(ctrl->dev, "Host route %pI4 was not in hardware\n",
 				&r->dst_ip);
 		}
-		clear_bit(r->id - MAX_ROUTES, ctrl->host_route_use_bm);
 	} else {
 		/* If there is a HW representation of the route, delete it */
 		if (ctrl->cfg->route_lookup_hw && r->row >= FIRST_PREFIX_ROW) {
@@ -1251,11 +1261,9 @@ static void otto_l3_route_remove(struct otto_l3_ctrl *ctrl, struct otto_l3_route
 			r->row = id;
 			otto_l3_route_compact(ctrl, r);
 		}
-		clear_bit(r->id, ctrl->route_use_bm);
 	}
 
-	list_del(&r->list);
-	kfree(r);
+	otto_l3_route_free(ctrl, r);
 }
 
 static void otto_l3_route_teardown(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r)
@@ -1426,6 +1434,7 @@ static void otto_l3_host_route_trap(struct otto_l3_ctrl *ctrl,
 
 	if (slot < 0) {
 		dev_err(ctrl->dev, "no slot for host route %pI4\n", &route->dst_ip);
+		otto_l3_route_free(ctrl, route);
 		return;
 	}
 
@@ -1546,6 +1555,7 @@ static int otto_l3_fib_add_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 
 out_free_rmac:
 out_free_rt:
+	otto_l3_route_free(ctrl, route);
 	return 0;
 }
 
