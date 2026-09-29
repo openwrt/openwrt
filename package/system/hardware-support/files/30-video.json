@@ -11,7 +11,18 @@
 		]
 	],
 	[ "if",
-		[ "eq", "SUBSYSTEM", [ "video4linux", "media" ] ],
-		[ "makedev", "/dev/%DEVNAME%", "0660", "video-capture" ]
+		[ "eq", "SUBSYSTEM", "media" ],
+		[
+			[ "makedev", "/dev/%DEVNAME%", "0660", "video" ],
+			[ "return" ]
+		]
+	],
+	[ "if",
+		[ "eq", "SUBSYSTEM", "video4linux" ],
+		[
+			[ "makedev", "/dev/%DEVNAME%", "0660" ],
+			[ "exec", "/usr/libexec/v4l-id", "/dev/%DEVNAME%",
+				"video_capture,video_capture_mplane:video-capture;*:video" ]
+		]
 	]
 ]
