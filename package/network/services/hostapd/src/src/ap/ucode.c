@@ -995,6 +995,7 @@ uc_wpa_rkh_derive_key(uc_vm_t *vm, size_t nargs)
 static struct hostapd_data *
 hostapd_dpp_freq_bss(struct hostapd_data *hapd, unsigned int freq)
 {
+#ifdef CONFIG_IEEE80211BE
 	struct hostapd_data *link;
 
 	if (!hapd->conf->mld_ap)
@@ -1003,6 +1004,7 @@ hostapd_dpp_freq_bss(struct hostapd_data *hapd, unsigned int freq)
 	for_each_mld_link(link, hapd)
 		if (link->iface->freq == (int)freq)
 			return link;
+#endif /* CONFIG_IEEE80211BE */
 
 	return hapd;
 }
