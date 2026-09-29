@@ -2082,7 +2082,8 @@ void hostapd_ubus_add_bss(struct hostapd_data *hapd)
 		obj->subscribe_cb = hostapd_bss_subscribe_cb;
 	}
 	ret = ubus_add_object(ctx, obj);
-	hostapd_ubus_ref_inc();
+	if (!ret)
+		hostapd_ubus_ref_inc();
 }
 
 void hostapd_ubus_free_bss(struct hostapd_data *hapd)
