@@ -997,7 +997,7 @@ __hostapd_bss_mgmt_enable_f(struct hostapd_data *hapd, int flag)
 			WLAN_RRM_CAPS_BEACON_REPORT_ACTIVE |
 			WLAN_RRM_CAPS_BEACON_REPORT_TABLE;
 
-		if (bss->radio_measurements[0] & flags == flags)
+		if ((bss->radio_measurements[0] & flags) == flags)
 			return false;
 
 		bss->radio_measurements[0] |= (u8) flags;
@@ -1005,7 +1005,7 @@ __hostapd_bss_mgmt_enable_f(struct hostapd_data *hapd, int flag)
 	case BSS_MGMT_EN_LINK_MEASUREMENT:
 		flags = WLAN_RRM_CAPS_LINK_MEASUREMENT;
 
-		if (bss->radio_measurements[0] & flags == flags)
+		if ((bss->radio_measurements[0] & flags) == flags)
 			return false;
 
 		bss->radio_measurements[0] |= (u8) flags;
