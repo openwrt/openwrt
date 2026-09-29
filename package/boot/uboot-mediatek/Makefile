@@ -835,6 +835,19 @@ define U-Boot/mt7981_xiaomi_mi-router-wr30u
   DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3
 endef
 
+define U-Boot/mt7981_urant_u28_ax3000
+  BUILD_SUBTARGET:=filogic
+  NAME:=URANT U28-AX3000
+  BUILD_DEVICES:=urant_u28_ax3000
+  UBOOT_CONFIG:=mt7981_urant_u28_ax3000
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=nor
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr3
+  FIP_COMPRESS:=1
+  DEPENDS:=+trusted-firmware-a-mt7981-nor-ddr3
+endef
+
 define U-Boot/mt7986_rfb
   NAME:=MT7986 Reference Board
   BUILD_SUBTARGET:=filogic
@@ -1492,7 +1505,8 @@ UBOOT_TARGETS := \
 	mt7988_rfb-nor \
 	mt7988_rfb-emmc \
 	mt7988_rfb-sd \
-	mt7988_tplink_be450
+	mt7988_tplink_be450 \
+	mt7981_urant_u28_ax3000
 
 UBOOT_CUSTOMIZE_CONFIG := \
 	--disable TOOLS_KWBIMAGE \
