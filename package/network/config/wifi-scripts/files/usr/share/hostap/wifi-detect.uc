@@ -1,6 +1,6 @@
 #!/usr/bin/env ucode
 'use strict';
-import { readfile, writefile, realpath, glob, basename, unlink, open, rename } from "fs";
+import { readfile, writefile, realpath, glob, basename, unlink, open, rename, stat } from "fs";
 import { is_equal } from "/usr/share/hostap/common.uc";
 let nl = require("nl80211");
 
@@ -28,14 +28,30 @@ function phy_path(name) {
 	return devpath;
 }
 
-function cleanup() {
-	let wlan = board_data.wlan;
+function dev_has_driver(path) {
+	let dev = replace(path, /\+[0-9]+$/, "");
 
-	for (let name in wlan)
+	return !!(stat(`/sys/devices/${dev}/driver`) || stat(`/sys/devices/platform/${dev}/driver`));
+}
+
+function cleanup(phys) {
+	let wlan = board_data.wlan;
+	let paths = map(filter(phys, (phy) => phy), (phy) => phy_path(phy.wiphy_name));
+
+	for (let name in wlan) {
+		let entry_paths = type(wlan[name].path) == "array" ? wlan[name].path : [ wlan[name].path ];
+
+		// A phy whose device has a driver (bound or still probing) but
+		// is not in the dump yet is still being set up: keep its entry.
+		if (!length(filter(entry_paths, (path) => index(paths, path) >= 0)) &&
+		    length(filter(entry_paths, (path) => path && dev_has_driver(path))))
+			continue;
+
 		if (substr(name, 0, 3) == "phy")
 			delete wlan[name];
 		else
 			delete wlan[name].info;
+	}
 }
 
 function wiphy_path_match(entry_path, path) {
@@ -89,11 +105,7 @@ function freq_range_match(ranges, freq) {
 	return false;
 }
 
-function wiphy_detect() {
-	let phys = nl.request(nl.const.NL80211_CMD_GET_WIPHY, nl.const.NLM_F_DUMP, { split_wiphy_dump: true });
-	if (!phys)
-		return;
-
+function wiphy_detect(phys) {
 	for (let phy in phys) {
 		if (!phy)
 			continue;
@@ -253,8 +265,17 @@ function wiphy_detect() {
 	}
 }
 
-cleanup();
-wiphy_detect();
+let phys = nl.request(nl.const.NL80211_CMD_GET_WIPHY, nl.const.NLM_F_DUMP, { split_wiphy_dump: true });
+// the dump fails while cfg80211 is not loaded yet, e.g. when
+// /etc/init.d/boot runs "wifi config" before kmodloader. Keep
+// board.json as it is instead of writing it without any phy.
+// An empty dump also returns null, but without an error.
+if (!phys && nl.error())
+	exit(0);
+
+phys ??= [];
+cleanup(phys);
+wiphy_detect(phys);
 if (!is_equal(prev_board_data, board_data)) {
 	let new_file = board_file + ".new";
 	unlink(new_file);
