@@ -105,15 +105,99 @@ uc_hostapd_add_iface(uc_vm_t *vm, size_t nargs)
 	return ucv_int64_new(ret);
 }
 
+static struct hostapd_data *
+uc_hostapd_mld_partner(struct hostapd_data *hapd)
+{
+#ifdef CONFIG_IEEE80211BE
+	struct hostapd_data *link_bss;
+
+	if (!hapd->conf->mld_ap || !hapd->mld)
+		return NULL;
+
+	for_each_mld_link(link_bss, hapd)
+		if (link_bss->iface != hapd->iface)
+			return link_bss;
+#endif /* CONFIG_IEEE80211BE */
+
+	return NULL;
+}
+
+static size_t
+uc_hostapd_iface_mld_partners(const char *name,
+			      struct hostapd_data ***partners)
+{
+	struct hostapd_iface *iface = NULL;
+	struct hostapd_data *partner;
+	size_t i, j, first = 0, last = 0, n = 0;
+
+	*partners = NULL;
+	for (i = 0; i < interfaces->count; i++) {
+		struct hostapd_iface *cur = interfaces->iface[i];
+
+		if (!cur)
+			break;
+
+		if (!os_strcmp(cur->phy, name) ||
+		    !os_strcmp(cur->conf->bss[0]->iface, name)) {
+			iface = cur;
+			last = cur->num_bss;
+			break;
+		}
+
+		for (j = 1; j < cur->num_bss && !iface; j++) {
+			if (os_strcmp(cur->conf->bss[j]->iface, name))
+				continue;
+
+			iface = cur;
+			first = j;
+			last = j + 1;
+		}
+
+		if (iface)
+			break;
+	}
+
+	if (!iface)
+		return 0;
+
+	*partners = os_calloc(last - first, sizeof(**partners));
+	if (!*partners)
+		return 0;
+
+	for (i = first; i < last; i++) {
+		partner = uc_hostapd_mld_partner(iface->bss[i]);
+		if (partner)
+			(*partners)[n++] = partner;
+	}
+
+	return n;
+}
+
+static void
+uc_hostapd_mld_beacons_update(struct hostapd_data **partners, size_t n)
+{
+#ifdef CONFIG_IEEE80211BE
+	size_t i;
+
+	for (i = 0; i < n; i++)
+		hostapd_mld_beacons_update(partners[i]);
+#endif /* CONFIG_IEEE80211BE */
+}
+
 static uc_value_t *
 uc_hostapd_remove_iface(uc_vm_t *vm, size_t nargs)
 {
 	uc_value_t *iface = uc_fn_arg(0);
+	struct hostapd_data **partners;
+	size_t n;
 
 	if (ucv_type(iface) != UC_STRING)
 		return NULL;
 
+	n = uc_hostapd_iface_mld_partners(ucv_string_get(iface), &partners);
 	hostapd_remove_iface(interfaces, ucv_string_get(iface));
+	uc_hostapd_mld_beacons_update(partners, n);
+	os_free(partners);
 	hostapd_ucode_update_interfaces();
 
 	return NULL;
@@ -386,6 +470,10 @@ uc_hostapd_bss_delete(uc_vm_t *vm, size_t nargs)
 
 	hostapd_drv_stop_ap(hapd);
 	hostapd_bss_deinit(hapd);
+#ifdef CONFIG_IEEE80211BE
+	if (hapd->conf->mld_ap && hapd->mld)
+		hostapd_mld_beacons_update(hapd);
+#endif /* CONFIG_IEEE80211BE */
 	/* deinit skips these for a bss that never started; both are idempotent */
 	hostapd_ucode_free_bss(hapd);
 	hostapd_ubus_free_bss(hapd);
@@ -595,6 +683,7 @@ uc_hostapd_bss_link_remove(uc_vm_t *vm, size_t nargs)
 {
 	struct hostapd_data *hapd = uc_fn_thisval("hostapd.bss");
 	uc_value_t *count_arg = uc_fn_arg(0);
+	uc_value_t *ret;
 	int64_t count;
 
 	if (!hapd || ucv_type(count_arg) != UC_INTEGER)
@@ -604,8 +693,13 @@ uc_hostapd_bss_link_remove(uc_vm_t *vm, size_t nargs)
 	if (count < 0 || count > UINT32_MAX || hostapd_link_remove(hapd, count))
 		return NULL;
 
-	return ucv_int64_new((int64_t) hapd->eht_mld_link_removal_count *
-			     TU_TO_USEC(hapd->iconf->beacon_int) / 1000);
+	ret = ucv_object_new(vm);
+	ucv_object_add(ret, "removal_ms",
+		       ucv_int64_new(hostapd_link_remove_ms(hapd)));
+	ucv_object_add(ret, "expiry_ms",
+		       ucv_int64_new(hostapd_link_remove_expiry_ms(hapd)));
+
+	return ret;
 }
 #endif /* CONFIG_IEEE80211BE */
 

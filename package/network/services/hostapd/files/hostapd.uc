@@ -1145,6 +1145,42 @@ function iface_config_remove(name, old_config)
 	return iface_remove(old_config);
 }
 
+// No fallback to a PHY restart, which would take the other BSSes down.
+function mld_link_bss_remove(phy, name)
+{
+	let config = hostapd.data.config[phy];
+	let bss = hostapd.bss[phy]?.[name];
+	if (!config || !bss)
+		return;
+
+	let idx = index(map(config.bss, (b) => b.ifname), name);
+	if (idx < 0)
+		return;
+
+	hostapd.printf(`Remove expired link of MLD ${name} on phy '${phy}'`);
+
+	let mld_data = hostapd.data.mld[name];
+	if (mld_data?.iface)
+		delete mld_data.iface[phy];
+	if (mld_data?.config?.radios)
+		mld_data.config = {
+			...mld_data.config,
+			radios: filter(mld_data.config.radios, (r) => r != config.radio_idx),
+		};
+
+	config.orig_bss = filter(config.orig_bss ?? config.bss, (b) => b.ifname != name);
+
+	if (length(config.bss) == 1) {
+		delete hostapd.data.config[phy];
+		iface_config_remove(phy, config);
+		return;
+	}
+
+	let bss_config = config.bss[idx];
+	splice(config.bss, idx, 1);
+	bss_remove(phy, bss, bss_config);
+}
+
 function iface_set_config(name, config)
 {
 	let old_config = hostapd.data.config[name];
@@ -1856,11 +1892,11 @@ let main_obj = {
 			if (!bss)
 				return libubus.STATUS_NOT_FOUND;
 
-			let removal_ms = bss.link_remove?.(req.args.count);
-			if (removal_ms == null)
+			let removal = bss.link_remove?.(req.args.count);
+			if (removal == null)
 				return libubus.STATUS_NOT_SUPPORTED;
 
-			return { removal_ms };
+			return removal;
 		}
 	},
 	status: {
@@ -1972,6 +2008,9 @@ return {
 	bss_remove: function(phy, name, obj) {
 		delete hostapd.data.dpp_hooks[name];
 		bss_event("remove", name);
+	},
+	bss_link_removed: function(phy, name, obj) {
+		mld_link_bss_remove(phy, name);
 	},
 	sta_auth: function(iface, sta) {
 		let msg = { iface, sta };
