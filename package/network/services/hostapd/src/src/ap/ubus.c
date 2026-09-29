@@ -2096,10 +2096,7 @@ void hostapd_ubus_free_bss(struct hostapd_data *hapd)
 		return;
 #endif
 
-	if (!ctx)
-		return;
-
-	if (obj->id) {
+	if (ctx && obj->id) {
 		ubus_remove_object(ctx, obj);
 		hostapd_ubus_ref_dec();
 	}
