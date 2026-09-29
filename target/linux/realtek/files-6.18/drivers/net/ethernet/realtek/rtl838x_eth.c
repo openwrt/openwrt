@@ -198,7 +198,8 @@ static bool rteth_838x_decode_tag(struct rteth_frag *frag, struct rteth_dsa_tag 
 	t->crc_error = t->reason == 13;
 
 	pr_debug("Reason: %d\n", t->reason);
-	if (t->reason != 6) /* NIC_RX_REASON_SPECIAL_TRAP */
+	if (t->reason != 2 && /* NIC_RX_REASON_RMA */
+	    t->reason != 6)   /* NIC_RX_REASON_SPECIAL_TRAP */
 		t->l2_offloaded = 1;
 	else
 		t->l2_offloaded = 0;
