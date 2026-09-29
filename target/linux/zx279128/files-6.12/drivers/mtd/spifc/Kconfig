@@ -1,0 +1,10 @@
+config MTD_NAND_ZTE_SPIFC
+	bool "ZTE ZX27912x SPIFC SPI-NAND controller"
+	depends on MTD
+	help
+	  Support for the ZTE ZX27912x SPI Flash Controller (SPIFC) attached
+	  to an SPI-NAND chip. This bring-up driver implements chip
+	  identification and page reads only; program and erase are not
+	  implemented, so the resulting MTD device is read-only.
+
+	  If unsure, say N.

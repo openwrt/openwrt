@@ -1,0 +1,22 @@
+--- a/drivers/mtd/Makefile	2026-09-27 23:14:22.678328605 +0300
++++ b/drivers/mtd/Makefile	2026-09-27 23:14:47.558657399 +0300
+@@ -11,6 +11,8 @@
+ 
+ obj-$(CONFIG_MTD_SPLIT)		+= mtdsplit/
+ 
++obj-$(CONFIG_MTD_NAND_ZTE_SPIFC)       += spifc/
++
+ # 'Users' - code which presents functionality to userspace.
+ obj-$(CONFIG_MTD_BLKDEVS)	+= mtd_blkdevs.o
+ obj-$(CONFIG_MTD_BLOCK)		+= mtdblock.o
+--- a/drivers/mtd/Kconfig	2026-09-27 23:14:22.682328658 +0300
++++ b/drivers/mtd/Kconfig	2026-09-27 23:14:22.694328813 +0300
+@@ -29,6 +29,8 @@
+ 
+ source "drivers/mtd/mtdsplit/Kconfig"
+ 
++source "drivers/mtd/spifc/Kconfig"
++
+ endmenu
+ 
+ config MTD_TESTS
