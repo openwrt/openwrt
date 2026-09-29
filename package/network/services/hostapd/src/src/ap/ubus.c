@@ -107,21 +107,33 @@ static void
 hostapd_bss_del_ban(void *eloop_data, void *user_ctx)
 {
 	struct ubus_banned_client *ban = eloop_data;
-	struct hostapd_data *hapd = user_ctx;
+	struct hostapd_ubus_bss *ubus = user_ctx;
 
-	avl_delete(&hapd->ubus.banned, &ban->avl);
+	avl_delete(&ubus->banned, &ban->avl);
 	free(ban);
+}
+
+static void
+hostapd_bss_flush_bans(struct hostapd_ubus_bss *ubus)
+{
+	struct ubus_banned_client *ban, *tmp;
+
+	avl_for_each_element_safe(&ubus->banned, ban, avl, tmp) {
+		eloop_cancel_timeout(hostapd_bss_del_ban, ban, ubus);
+		hostapd_bss_del_ban(ban, ubus);
+	}
 }
 
 static void
 hostapd_bss_ban_client(struct hostapd_data *hapd, u8 *addr, int time)
 {
+	struct hostapd_ubus_bss *ubus = &hapd->ubus;
 	struct ubus_banned_client *ban;
 
 	if (time < 0)
 		time = 0;
 
-	ban = avl_find_element(&hapd->ubus.banned, addr, ban, avl);
+	ban = avl_find_element(&ubus->banned, addr, ban, avl);
 	if (!ban) {
 		if (!time)
 			return;
@@ -129,16 +141,16 @@ hostapd_bss_ban_client(struct hostapd_data *hapd, u8 *addr, int time)
 		ban = os_zalloc(sizeof(*ban));
 		memcpy(ban->addr, addr, sizeof(ban->addr));
 		ban->avl.key = ban->addr;
-		avl_insert(&hapd->ubus.banned, &ban->avl);
+		avl_insert(&ubus->banned, &ban->avl);
 	} else {
-		eloop_cancel_timeout(hostapd_bss_del_ban, ban, hapd);
+		eloop_cancel_timeout(hostapd_bss_del_ban, ban, ubus);
 		if (!time) {
-			hostapd_bss_del_ban(ban, hapd);
+			hostapd_bss_del_ban(ban, ubus);
 			return;
 		}
 	}
 
-	eloop_register_timeout(0, time * 1000, hostapd_bss_del_ban, ban, hapd);
+	eloop_register_timeout(0, time * 1000, hostapd_bss_del_ban, ban, ubus);
 }
 
 static int
@@ -2092,6 +2104,9 @@ void hostapd_ubus_free_bss(struct hostapd_data *hapd)
 		ubus_remove_object(ctx, obj);
 		hostapd_ubus_ref_dec();
 	}
+
+	if (name)
+		hostapd_bss_flush_bans(&hapd->ubus);
 
 	free(name);
 	obj->name = NULL;
