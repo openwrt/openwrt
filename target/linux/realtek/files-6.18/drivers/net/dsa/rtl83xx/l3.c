@@ -571,7 +571,8 @@ static int otto_l3_930x_route_lookup_hw(struct otto_l3_ctrl *ctrl, struct otto_l
 /* Move count prefix route rows from src to dst. The rows are copied as they
  * are: re-encoding them would rebuild the entries from driver state, which
  * does not carry the hit bit, and would lose the multicast rows the driver
- * cannot decode.
+ * cannot decode. Returns -EAGAIN when no row was written and the table is as
+ * it was, and -EIO when the block may be half shifted.
  */
 __maybe_unused
 static int otto_l3_930x_route_rows_move(struct otto_l3_ctrl *ctrl, int dst, int src, int count)
@@ -582,7 +583,7 @@ static int otto_l3_930x_route_rows_move(struct otto_l3_ctrl *ctrl, int dst, int 
 	handle = otto_table_acquire(RTL9300_TBL_L3_PREFIX_ROUTE_IPUC);
 	if (handle < 0) {
 		dev_err(ctrl->dev, "cannot move prefix route rows: %d\n", handle);
-		return handle;
+		return -EAGAIN;
 	}
 
 	/* The ranges overlap by one row per insertion or removal, so the copy
@@ -591,13 +592,16 @@ static int otto_l3_930x_route_rows_move(struct otto_l3_ctrl *ctrl, int dst, int 
 	 */
 	for (int n = 0; n < count; n++) {
 		int i = dst > src ? count - 1 - n : n;
+		bool unread;
 
 		err = __otto_table_read(handle, src + i, &data);
+		unread = err;
 		if (!err)
 			err = __otto_table_write(handle, dst + i, &data);
 		if (err) {
 			dev_err(ctrl->dev, "prefix route row %d not moved to %d: %d\n",
 				src + i, dst + i, err);
+			err = unread && !n ? -EAGAIN : -EIO;
 			break;
 		}
 	}
