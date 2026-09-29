@@ -1403,14 +1403,62 @@ static int otto_l3_fib_check_v4(struct otto_l3_ctrl *ctrl,
 	return 0;
 }
 
+static void otto_l3_host_route_trap(struct otto_l3_ctrl *ctrl,
+				    struct fib_entry_notifier_info *info)
+{
+	struct otto_l3_route *route;
+	int slot;
+
+	route = otto_l3_host_route_alloc(ctrl, 0);
+	if (!route)
+		return;
+
+	route->dst_ip = info->dst;
+	route->prefix_len = info->dst_len;
+	route->tb_id = info->tb_id;
+	route->attr.valid = true;
+	route->attr.action = ROUTE_ACT_TRAP2CPU;
+	route->attr.type = ROUTE_TYPE_IP4UC;
+
+	slot = ctrl->cfg->find_slot(ctrl, route, true);
+	if (slot < 0)
+		slot = ctrl->cfg->find_slot(ctrl, route, false);
+
+	if (slot < 0) {
+		dev_err(ctrl->dev, "no slot for host route %pI4\n", &route->dst_ip);
+		return;
+	}
+
+	ctrl->cfg->host_route_write(ctrl, slot, route);
+}
+
 static int otto_l3_fib_add_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifier_info *info)
 {
-	struct net_device *ndev = fib_info_nh(info->fi, 0)->fib_nh_dev;
-	int vlan = is_vlan_dev(ndev) ? vlan_dev_vlan_id(ndev) : 0;
 	struct rtl838x_switch_priv *priv = ctrl->priv;
-	struct fib_nh *nh = fib_info_nh(info->fi, 0);
 	struct otto_l3_route *route;
-	int port;
+	struct net_device *ndev;
+	struct fib_nh *nh;
+	int port, vlan;
+
+	/* A route through a nexthop object is not offloaded and has no
+	 * nexthop array to read, but it can replace a route that is. An
+	 * offloaded shorter prefix would forward its traffic, so trap it where
+	 * the host table can hold it.
+	 */
+	if (info->fi->nh) {
+		dev_dbg(ctrl->dev, "route through a nexthop object, not offloaded\n");
+		route = otto_l3_route_find(ctrl, info->tb_id, ROUTE_TYPE_IP4UC, info->dst,
+					   NULL, info->dst_len);
+		if (route)
+			otto_l3_route_teardown(ctrl, route);
+		if (info->dst_len == 32 && ctrl->cfg->host_route_write)
+			otto_l3_host_route_trap(ctrl, info);
+		return 0;
+	}
+
+	nh = fib_info_nh(info->fi, 0);
+	ndev = nh->fib_nh_dev;
+	vlan = is_vlan_dev(ndev) ? vlan_dev_vlan_id(ndev) : 0;
 
 	if (otto_l3_fib_check_v4(ctrl, info, FIB_EVENT_ENTRY_ADD))
 		return 0;
@@ -1503,10 +1551,21 @@ out_free_rt:
 
 static int otto_l3_fib_del_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifier_info *info)
 {
-	struct fib_nh *nh = fib_info_nh(info->fi, 0);
 	struct rhlist_head *tmp, *list;
 	struct otto_l3_route *route;
 	bool found = false;
+	struct fib_nh *nh;
+
+	/* A route through a nexthop object holds at most a trap entry */
+	if (info->fi->nh) {
+		route = otto_l3_route_find(ctrl, info->tb_id, ROUTE_TYPE_IP4UC, info->dst,
+					   NULL, info->dst_len);
+		if (route)
+			otto_l3_route_teardown(ctrl, route);
+		return 0;
+	}
+
+	nh = fib_info_nh(info->fi, 0);
 
 	if (otto_l3_fib_check_v4(ctrl, info, FIB_EVENT_ENTRY_DEL))
 		return 0;
