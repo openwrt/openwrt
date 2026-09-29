@@ -1,0 +1,33 @@
+From 3dfc3c078fc5525f3a30332aeb685d055b736385 Mon Sep 17 00:00:00 2001
+From: Jernej Skrabec <jernej.skrabec@gmail.com>
+Date: Mon, 27 Oct 2025 20:18:59 +0100
+Subject: [PATCH 2/8] feat(gicv2): Make IRQ groups optional
+
+Not all platforms define Group 0 interrupts. Make G0 and G1S groups
+optional so such platforms can use generic driver.
+
+Signed-off-by: Jernej Skrabec <jernej.skrabec@gmail.com>
+---
+ drivers/arm/gic/v2/gicv2_base.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/drivers/arm/gic/v2/gicv2_base.c b/drivers/arm/gic/v2/gicv2_base.c
+index c51c1955f..d61ab509d 100644
+--- a/drivers/arm/gic/v2/gicv2_base.c
++++ b/drivers/arm/gic/v2/gicv2_base.c
+@@ -20,8 +20,12 @@
+  * interrupts.
+  *****************************************************************************/
+ static const interrupt_prop_t arm_interrupt_props[] = {
++#ifdef PLAT_ARM_G1S_IRQ_PROPS
+ 	PLAT_ARM_G1S_IRQ_PROPS(GICV2_INTR_GROUP0),
++#endif
++#ifdef PLAT_ARM_G0_IRQ_PROPS
+ 	PLAT_ARM_G0_IRQ_PROPS(GICV2_INTR_GROUP0)
++#endif
+ };
+ 
+ static unsigned int target_mask_array[PLATFORM_CORE_COUNT];
+-- 
+2.39.5
+
