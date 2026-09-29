@@ -453,7 +453,7 @@ hostapd_bss_get_status(struct ubus_context *ctx, struct ubus_object *obj,
 	blob_buf_init(&b, 0);
 	blobmsg_add_string(&b, "driver", hapd->driver->name);
 	blobmsg_add_string(&b, "status", hostapd_state_text(hapd->iface->state));
-	blobmsg_printf(&b, "bssid", MACSTR, MAC2STR(hapd->conf->bssid));
+	blobmsg_printf(&b, "bssid", MACSTR, MAC2STR(hapd->own_addr));
 
 	memset(ssid, 0, SSID_MAX_LEN + 1);
 	memcpy(ssid, hapd->conf->ssid.ssid, ssid_len);
@@ -2757,7 +2757,7 @@ void hostapd_ubus_notify_csa(struct hostapd_data *hapd, int freq)
 	blob_buf_init(&b, 0);
 	blobmsg_add_string(&b, "ifname", hapd->conf->iface);
 	blobmsg_add_u32(&b, "freq", freq);
-	blobmsg_printf(&b, "bssid", MACSTR, MAC2STR(hapd->conf->bssid));
+	blobmsg_printf(&b, "bssid", MACSTR, MAC2STR(hapd->own_addr));
 
 	ubus_notify(ctx, obj, "channel-switch", b.head, -1);
 }
