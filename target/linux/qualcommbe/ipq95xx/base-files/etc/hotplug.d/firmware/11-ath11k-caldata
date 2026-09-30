@@ -1,0 +1,18 @@
+#!/bin/sh
+
+. /lib/functions/caldata.sh
+
+board=$(board_name)
+
+case "$FIRMWARE" in
+"ath11k/IPQ9574/hw1.0/cal-ahb-c000000.wifi.bin")
+	case "$board" in
+	linksys,ln6001)
+		caldata_extract_mmc "0:ART" 0x1000 0x20000
+		;;
+	esac
+	;;
+*)
+	exit 1
+	;;
+esac
