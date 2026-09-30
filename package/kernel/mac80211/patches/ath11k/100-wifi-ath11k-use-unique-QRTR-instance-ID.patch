@@ -93,8 +93,8 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  	default:
  		return "UNKNOWN";
  	}
-@@ -286,6 +316,9 @@ static void ath11k_mhi_op_status_cb(stru
- 			queue_work(ab->workqueue_aux, &ab->reset_work);
+@@ -288,6 +318,9 @@ static void ath11k_mhi_op_status_cb(stru
+ 		spin_unlock_bh(&ab->base_lock);
  
  		break;
 +	case MHI_CB_EE_SBL_MODE:
@@ -103,7 +103,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  	default:
  		break;
  	}
-@@ -293,22 +326,6 @@ static void ath11k_mhi_op_status_cb(stru
+@@ -295,22 +328,6 @@ static void ath11k_mhi_op_status_cb(stru
  	ab_pci->mhi_pre_cb = cb;
  }
  
@@ -140,7 +140,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  int ath11k_mhi_register(struct ath11k_pci *ar_pci);
 --- a/drivers/net/wireless/ath/ath11k/pci.c
 +++ b/drivers/net/wireless/ath/ath11k/pci.c
-@@ -394,13 +394,20 @@ static void ath11k_pci_sw_reset(struct a
+@@ -398,13 +398,20 @@ static void ath11k_pci_sw_reset(struct a
  static void ath11k_pci_init_qmi_ce_config(struct ath11k_base *ab)
  {
  	struct ath11k_qmi_ce_cfg *cfg = &ab->qmi.ce_cfg;

@@ -41,7 +41,7 @@ Signed-off-by: Jeff Johnson <jeff.johnson@oss.qualcomm.com>
 
 --- a/drivers/net/wireless/ath/ath12k/core.c
 +++ b/drivers/net/wireless/ath/ath12k/core.c
-@@ -857,11 +857,22 @@ static int ath12k_core_pdev_create(struc
+@@ -832,11 +832,22 @@ static int ath12k_core_pdev_create(struc
  		return ret;
  	}
  
@@ -64,7 +64,7 @@ Signed-off-by: Jeff Johnson <jeff.johnson@oss.qualcomm.com>
  	ath12k_dp_pdev_free(ab);
  }
  
-@@ -1350,6 +1361,7 @@ static int ath12k_core_reconfigure_on_cr
+@@ -1325,6 +1336,7 @@ static int ath12k_core_reconfigure_on_cr
  	int ret, total_vdev;
  
  	mutex_lock(&ab->core_lock);
@@ -72,7 +72,7 @@ Signed-off-by: Jeff Johnson <jeff.johnson@oss.qualcomm.com>
  	ath12k_dp_pdev_free(ab);
  	ath12k_ce_cleanup_pipes(ab);
  	ath12k_wmi_detach(ab);
-@@ -1491,6 +1503,7 @@ static void ath12k_core_pre_reconfigure_
+@@ -1466,6 +1478,7 @@ static void ath12k_core_pre_reconfigure_
  			complete(&ar->vdev_delete_done);
  			complete(&ar->bss_survey_done);
  			complete_all(&ar->regd_update_completed);
@@ -101,7 +101,7 @@ Signed-off-by: Jeff Johnson <jeff.johnson@oss.qualcomm.com>
  struct ath12k_hw {
 --- a/drivers/net/wireless/ath/ath12k/mac.c
 +++ b/drivers/net/wireless/ath/ath12k/mac.c
-@@ -14063,6 +14063,10 @@ static void ath12k_mac_setup(struct ath1
+@@ -14132,6 +14132,10 @@ static void ath12k_mac_setup(struct ath1
  	init_completion(&ar->mlo_setup_done);
  	init_completion(&ar->completed_11d_scan);
  	init_completion(&ar->regd_update_completed);
@@ -294,7 +294,7 @@ Signed-off-by: Jeff Johnson <jeff.johnson@oss.qualcomm.com>
 +#endif /* _ATH12K_THERMAL_ */
 --- a/drivers/net/wireless/ath/ath12k/wmi.c
 +++ b/drivers/net/wireless/ath/ath12k/wmi.c
-@@ -6673,31 +6673,6 @@ static int ath12k_pull_peer_assoc_conf_e
+@@ -6675,31 +6675,6 @@ static int ath12k_pull_peer_assoc_conf_e
  	return 0;
  }
  
@@ -326,7 +326,7 @@ Signed-off-by: Jeff Johnson <jeff.johnson@oss.qualcomm.com>
  static void ath12k_wmi_op_ep_tx_credits(struct ath12k_base *ab)
  {
  	/* try to send pending beacons first. they take priority */
-@@ -8712,25 +8687,45 @@ static void
+@@ -8714,25 +8689,45 @@ static void
  ath12k_wmi_pdev_temperature_event(struct ath12k_base *ab,
  				  struct sk_buff *skb)
  {
