@@ -469,6 +469,9 @@ void rtl930x_vlan_tables_read(u32 vlan, struct rtldsa_vlan_info *info)
 	info->untagged_ports = v >> 3;
 }
 
+/* Group mask bits for the IGMP and MLD actions of VLAN_APP_PKT_CTRL */
+#define RTLDSA_93XX_VLAN_GROUP_IGMP_MLD	(BIT(2) | BIT(3))
+
 void rtl930x_vlan_set_tagged(u32 vlan, struct rtldsa_vlan_info *info)
 {
 	u32 v, w;
@@ -481,6 +484,7 @@ void rtl930x_vlan_set_tagged(u32 vlan, struct rtldsa_vlan_info *info)
 	w |= info->hash_mc_fid ? BIT(27) : 0;
 	w |= info->hash_uc_fid ? BIT(28) : 0;
 	w |= info->profile_id << 24;
+	w |= RTLDSA_93XX_VLAN_GROUP_IGMP_MLD << 16;
 
 	buf[0] = v;
 	buf[1] = w;
@@ -688,7 +692,7 @@ void rtl931x_vlan_set_tagged(u32 vlan, struct rtldsa_vlan_info *info)
 	x |= info->hash_mc_fid ? BIT(30) : 0;
 	x |= ((u32)info->if_id & 0x3ff) << 20;
 	x |= (info->profile_id & 0xf) << 16;
-	x |= info->multicast_grp_mask & 0xffff;
+	x |= (info->multicast_grp_mask | RTLDSA_93XX_VLAN_GROUP_IGMP_MLD) & 0xffff;
 	if (info->l2_tunnel_list_id >= 0) {
 		y = info->l2_tunnel_list_id << 18;
 		y |= BIT(31);

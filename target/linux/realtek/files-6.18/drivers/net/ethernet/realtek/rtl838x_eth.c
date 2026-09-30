@@ -231,7 +231,7 @@ static bool rteth_93xx_decode_tag(struct rteth_frag *frag, struct rteth_dsa_tag 
 	t->queue = (frag->cpu_tag[2] >> 11) & 0x1f;
 	t->reason = frag->cpu_tag[7] & 0x3f;
 	t->crc_error = frag->cpu_tag[1] & BIT(6);
-	t->l2_offloaded = (t->reason >= 19 && t->reason <= 28) ? 0 : 1;
+	t->l2_offloaded = (t->reason >= 19 && t->reason <= 28) || t->reason == 55 ? 0 : 1;
 
 	if (t->reason != 63)
 		pr_debug("%s: Reason %d, port %d, queue %d\n", __func__, t->reason, t->port, t->queue);
@@ -778,16 +778,20 @@ static void rteth_839x_hw_init(struct rteth_ctrl *ctrl)
 
 static void rteth_930x_hw_init(struct rteth_ctrl *ctrl)
 {
-	/* Trap MLD and IGMP messages to CPU_PORT */
-	regmap_write(ctrl->map, RTETH_930X_VLAN_APP_PKT_CTRL, 0x12);
+	/* Trap IGMP and MLD to the CPU (IGMP_ACT = MLD_ACT = 1) in every VLAN
+	 * whose group mask selects them
+	 */
+	regmap_write(ctrl->map, RTETH_930X_VLAN_APP_PKT_CTRL, 0x9);
 	/* Flush learned FDB entries on link down of a port */
 	regmap_set_bits(ctrl->map, RTETH_930X_L2_CTRL, BIT(7));
 }
 
 static void rteth_931x_hw_init(struct rteth_ctrl *ctrl)
 {
-	/* Trap MLD and IGMP messages to CPU_PORT */
-	regmap_write(ctrl->map, RTETH_931X_VLAN_APP_PKT_CTRL, 0x12);
+	/* Trap IGMP and MLD to the CPU (IGMP_ACT = MLD_ACT = 1) in every VLAN
+	 * whose group mask selects them
+	 */
+	regmap_write(ctrl->map, RTETH_931X_VLAN_APP_PKT_CTRL, 0x9);
 	/* Set PCIE_PWR_DOWN */
 	regmap_set_bits(ctrl->map, RTETH_931X_PS_SOC_CTRL, BIT(1));
 }
