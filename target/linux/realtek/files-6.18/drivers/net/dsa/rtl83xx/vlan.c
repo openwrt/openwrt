@@ -822,6 +822,8 @@ int otto_vlan_port_add(struct dsa_switch *ds, int port,
 {
 	struct otto_vlan_info info;
 	struct rtl838x_switch_priv *priv = ds->priv;
+	struct net_device *bridge_dev;
+	u16 proto;
 
 	pr_debug("%s port %d, vid %d, flags %x\n",
 		 __func__, port, vlan->vid, vlan->flags);
@@ -833,6 +835,19 @@ int otto_vlan_port_add(struct dsa_switch *ds, int port,
 	if (vlan->vid >= MAX_VLANS) {
 		dev_err(priv->dev, "VLAN out of range: %d", vlan->vid);
 		return -ENOTSUPP;
+	}
+
+	/*
+	 * The hardware can handle 802.1ad. The driver just does not program
+	 * the inner and outer tag handling for it yet. A host VLAN arrives on
+	 * the CPU port, which has no bridge, and names the bridge itself.
+	 */
+	bridge_dev = vlan->obj.orig_dev;
+	if (!bridge_dev || !netif_is_bridge_master(bridge_dev))
+		bridge_dev = dsa_port_bridge_dev_get(dsa_to_port(ds, port));
+	if (bridge_dev && !br_vlan_get_proto(bridge_dev, &proto) && proto != ETH_P_8021Q) {
+		NL_SET_ERR_MSG_MOD(extack, "802.1ad bridges are not supported");
+		return -EINVAL;
 	}
 
 	mutex_lock(&priv->reg_mutex);
