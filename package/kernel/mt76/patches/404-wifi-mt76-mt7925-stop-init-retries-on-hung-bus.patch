@@ -1,0 +1,44 @@
+From 3d763c6a311b0f2145046d8d9e628d8d709f9def Mon Sep 17 00:00:00 2001
+From: Sean Wang <sean.wang@mediatek.com>
+Date: Sat, 13 Jun 2026 17:41:26 -0500
+Subject: [PATCH] wifi: mt76: mt7925: stop init retries on hung bus
+
+Stop retrying hardware init once the bus is marked hung.
+
+The control path is no longer usable at that point, so more retries only
+issue failing device accesses, including MCU commands or register
+operations, and delay teardown. Exit early and let the failed device be
+torn down quickly.
+
+Signed-off-by: Sean Wang <sean.wang@mediatek.com>
+Link: https://patch.msgid.link/20260613224131.2396026-2-sean.wang@kernel.org
+---
+ mt7925/init.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/mt7925/init.c b/mt7925/init.c
+index 36f7e98f..a6642767 100644
+--- a/mt7925/init.c
++++ b/mt7925/init.c
+@@ -126,10 +126,18 @@ static int mt7925_init_hardware(struct mt792x_dev *dev)
+ 	set_bit(MT76_STATE_INITIALIZED, &dev->mphy.state);
+ 
+ 	for (i = 0; i < MT792x_MCU_INIT_RETRY_COUNT; i++) {
++		if (atomic_read(&dev->mt76.bus_hung)) {
++			ret = -EIO;
++			break;
++		}
++
+ 		ret = __mt7925_init_hardware(dev);
+ 		if (!ret)
+ 			break;
+ 
++		if (atomic_read(&dev->mt76.bus_hung))
++			break;
++
+ 		mt792x_init_reset(dev);
+ 	}
+ 
+-- 
+2.54.0 (Apple Git-157)
+
