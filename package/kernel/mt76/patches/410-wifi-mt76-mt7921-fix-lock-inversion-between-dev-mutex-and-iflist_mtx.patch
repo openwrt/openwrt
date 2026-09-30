@@ -1,0 +1,55 @@
+From 5d68813ec03807c8cd9c405ad97051ab7bbf7871 Mon Sep 17 00:00:00 2001
+From: Devin Wittmayer <lucid_duck@justthetip.ca>
+Date: Sun, 9 Aug 2026 21:53:37 -0700
+Subject: [PATCH] wifi: mt76: mt7921: fix lock inversion between dev->mutex and
+ iflist_mtx
+
+mt7921_config() holds dev->mutex across
+ieee80211_iterate_active_interfaces(), which takes local->iflist_mtx.
+mac80211 uses the opposite order: ieee80211_del_virtual_monitor() holds
+iflist_mtx while calling drv_unassign_vif_chanctx(), and
+mt792x_unassign_vif_chanctx() takes dev->mutex.
+
+Deleting a monitor interface that has a channel assigned reaches the
+second order and lockdep reports the cycle. The driver side of it:
+
+  -> #1 (&local->iflist_mtx){+.+.}-{4:4}:
+         __mutex_lock+0xda/0x1070
+         ieee80211_iterate_interfaces+0x34/0x70 [mac80211]
+         mt7921_config+0xb8/0xe0 [mt7921_common]
+         drv_config+0x63/0x1d0 [mac80211]
+
+.config is only reached through drv_config(), which asserts the wiphy
+mutex, so ieee80211_iterate_active_interfaces_mtx() can be used. It walks
+the same list under the wiphy mutex and never takes iflist_mtx, which
+drops the driver's dev->mutex -> iflist_mtx edge.
+
+Fixes: cbaa0a404f8d ("mt76: mt7921: fix up the monitor mode")
+Link: https://lore.kernel.org/linux-wireless/20260730053916.109426-1-lucid_duck@justthetip.ca/
+Signed-off-by: Devin Wittmayer <lucid_duck@justthetip.ca>
+Link: https://patch.msgid.link/20260810045338.118923-2-lucid_duck@justthetip.ca
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ mt7921/main.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/mt7921/main.c b/mt7921/main.c
+index 5312e1dd..0f02a04a 100644
+--- a/mt7921/main.c
++++ b/mt7921/main.c
+@@ -647,9 +647,9 @@ static int mt7921_config(struct ieee80211_hw *hw, u32 changed)
+ 	}
+ 
+ 	if (changed & IEEE80211_CONF_CHANGE_MONITOR) {
+-		ieee80211_iterate_active_interfaces(hw,
+-						    IEEE80211_IFACE_ITER_RESUME_ALL,
+-						    mt7921_sniffer_interface_iter, dev);
++		ieee80211_iterate_active_interfaces_mtx(hw,
++							IEEE80211_IFACE_ITER_RESUME_ALL,
++							mt7921_sniffer_interface_iter, dev);
+ 	}
+ 
+ out:
+-- 
+2.54.0 (Apple Git-157)
+
