@@ -299,6 +299,8 @@ export function generate(config_list, data, interface) {
 		return 1;
 	}
 
+	/* RECONFIGURE drops a control interface that the file does not name */
+	interface.config.ctrl_interface = '/var/run/wpa_supplicant';
 	interface.config.country = data.config.country_code;
 	interface.config.beacon_int = data.config.beacon_int;
 	if (!data.config.scan_list)
@@ -307,7 +309,7 @@ export function generate(config_list, data, interface) {
 	if (data.config.scan_list)
 		interface.config.freq_list = join(" ", data.config.scan_list);
 
-	append_vars(interface.config, [ 'country', 'beacon_int', 'freq_list' ]);
+	append_vars(interface.config, [ 'ctrl_interface', 'country', 'beacon_int', 'freq_list' ]);
 
 	setup_sta(data.config, interface.config);
 
@@ -318,7 +320,7 @@ export function generate(config_list, data, interface) {
 
 	let config = {
 		mode: interface.config.mode,
-		ctrl: '/var/run/wpa_supplicant',
+		ctrl: interface.config.ctrl_interface,
 		iface: interface.config.ifname,
 		config: file_name,
 		'4addr': !!interface.config.wds,
