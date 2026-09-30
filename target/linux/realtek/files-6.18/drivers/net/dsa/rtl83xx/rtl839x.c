@@ -8,6 +8,7 @@
 #include "l3.h"
 #include "pie.h"
 #include "qos.h"
+#include "mirror.h"
 #include "rtl-otto.h"
 #include "stats.h"
 #include "vlan.h"
@@ -127,20 +128,6 @@ static inline int rtl839x_mac_force_mode_ctrl(int p)
 static inline int rtl839x_mac_port_ctrl(int p)
 {
 	return RTL839X_MAC_PORT_CTRL(p);
-}
-
-static int rtldsa_839x_get_mirror_config(struct rtldsa_mirror_config *config,
-					 int group, int port)
-{
-	config->ctrl = RTL839X_MIR_CTRL + group * 4;
-	config->spm = RTL839X_MIR_SPM_CTRL + group * 8;
-	config->dpm = RTL839X_MIR_DPM_CTRL + group * 8;
-
-	/* Enable mirroring to destination port */
-	config->val = BIT(0);
-	config->val |= port << 4;
-
-	return 0;
 }
 
 static void rtl839x_traffic_set(int source, u64 dest_matrix)

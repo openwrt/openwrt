@@ -8,6 +8,7 @@
 
 #include <linux/soc/realtek/otto_table.h>
 
+#include "mirror.h"
 #include "stats.h"
 #include "stp.h"
 #include "vlan.h"
@@ -1074,23 +1075,6 @@ struct pie_rule {
 };
 
 struct rtl838x_switch_priv;
-
-/**
- * struct rtldsa_mirror_config - Mirror configuration for specific group and port
- */
-struct rtldsa_mirror_config {
-	/** @ctrl: control register for mirroring group */
-	int ctrl;
-
-	/** @spm: register for the destination port members */
-	int spm;
-
-	/** @dpm: register for the source port members */
-	int dpm;
-
-	/** @val: @ctrl register settings to enable mirroring */
-	u32 val;
-};
 
 struct rtldsa_config {
 	const struct dsa_switch_ops *switch_ops;

@@ -9,6 +9,7 @@
 #include "l3.h"
 #include "pie.h"
 #include "qos.h"
+#include "mirror.h"
 #include "rtl-otto.h"
 #include "stats.h"
 #include "tc.h"
@@ -139,30 +140,6 @@ void rtldsa_930x_print_matrix(void)
 		pr_debug("> %08x\n", v);
 	}
 	otto_table_release(tbl);
-}
-
-static int rtldsa_930x_get_mirror_config(struct rtldsa_mirror_config *config,
-					 int group, int port)
-{
-	config->ctrl = RTL930X_MIR_CTRL + group * 4;
-	config->spm = RTL930X_MIR_SPM_CTRL + group * 4;
-	config->dpm = RTL930X_MIR_DPM_CTRL + group * 4;
-
-	/* Enable mirroring to destination port */
-	config->val = BIT(0);
-	config->val |= port << 9;
-
-	/* mirror mode: let mirrored packets follow TX settings of
-	 * mirroring port
-	 */
-	config->val |= BIT(5);
-
-	/* direction of traffic to be mirrored when a packet
-	 * hits both SPM and DPM ports: prefer egress
-	 */
-	config->val |= BIT(4);
-
-	return 0;
 }
 
 static inline int rtl930x_mac_force_mode_ctrl(int p)
