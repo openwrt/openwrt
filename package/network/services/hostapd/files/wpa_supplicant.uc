@@ -67,10 +67,74 @@ function iface_start(phydev, iface, macaddr_list)
 	iface.running = true;
 }
 
+// a change of these lines needs no new netdev
+const network_update_keys = [
+	"ssid", "psk", "sae_password", "key_mgmt", "ieee80211w", "sae_pwe",
+	"proto", "pairwise", "group",
+];
+// the options of a station MLD that only produce those lines
+const mld_network_keys = [
+	"ssid", "key", "encryption", "ieee80211w", "sae_pwe", "sae_ext_key",
+];
+const config_line_re = /^(\t?)([a-z0-9_]+)=/;
+
+function config_equal_except(config_a, config_b, keys)
+{
+	let rest_a = { ...config_a };
+	let rest_b = { ...config_b };
+
+	for (let key in keys) {
+		delete rest_a[key];
+		delete rest_b[key];
+	}
+
+	return is_equal(rest_a, rest_b);
+}
+
+// every radio of a station MLD writes its own freq_list into the shared file
+function config_line_keep(line)
+{
+	let m = match(line, config_line_re);
+	if (!m)
+		return true;
+	if (!m[1])
+		return m[2] != "freq_list";
+
+	return index(network_update_keys, m[2]) < 0;
+}
+
+function config_data_strip(config_data)
+{
+	return filter(split(config_data ?? "", "\n"), config_line_keep);
+}
+
+function iface_network_apply(ifname, old_data, new_data, freq_list)
+{
+	let iface = wpas.interfaces[ifname];
+	if (!iface ||
+	    !is_equal(config_data_strip(old_data), config_data_strip(new_data)) ||
+	    !iface.network_update())
+		return false;
+
+	wpas.printf(`Update network of interface ${ifname} in place`);
+	if (length(freq_list) > 0)
+		iface.config('freq_list', freq_list);
+
+	return true;
+}
+
 function iface_cb(new_if, old_if)
 {
 	if (old_if && new_if && is_equal(old_if.config, new_if.config)) {
 		new_if.running = old_if.running;
+		return;
+	}
+
+	if (old_if?.running && new_if && new_if.config.mode == "sta" &&
+	    config_equal_except(old_if.config, new_if.config, [ "config_data" ]) &&
+	    iface_network_apply(old_if.config.iface, old_if.config.config_data,
+				new_if.config.config_data)) {
+		new_if.running = true;
 		return;
 	}
 
@@ -233,6 +297,7 @@ function mld_add(data, phy_list)
 		return;
 	}
 
+	data.config_data = readfile(first_config?.config);
 	wpas.add_iface(first_config);
 
 	let iface = wpas.interfaces[name];
@@ -262,6 +327,21 @@ function mld_add_links(data)
 	mld_add(data);
 }
 
+function mld_reload(data, phy_list)
+{
+	let first_config = data.phy_config[mld_first_phy(data)];
+	let config_data = readfile(first_config?.config);
+
+	if (iface_network_apply(data.name, data.config_data, config_data,
+				data.freq_list)) {
+		data.config_data = config_data;
+		return;
+	}
+
+	mld_remove(data);
+	mld_add(data, phy_list);
+}
+
 function mld_set_config(config)
 {
 	let prev_mld = { ...wpas.data.mld };
@@ -274,6 +354,15 @@ function mld_set_config(config)
 	for (let name, data in config) {
 		let prev = prev_mld[name];
 		if (prev && is_equal(prev.config, data)) {
+			new_mld[name] = prev;
+			delete prev_mld[name];
+			continue;
+		}
+
+		if (prev && config_equal_except(prev.config, data, mld_network_keys)) {
+			wpas.printf(`Update network of MLD interface ${name}`);
+			prev.config = data;
+			prev.reload = true;
 			new_mld[name] = prev;
 			delete prev_mld[name];
 			continue;
@@ -360,7 +449,12 @@ function mld_start() {
 	let phy_list = {};
 	for (let name, data in wpas.data.mld) {
 		wpas.printf(`MLD interface ${name} present=${data.radio_mask_present} up=${data.radio_mask_up}`);
+		let reload = data.reload;
+		delete data.reload;
+
 		let add_mask = data.radio_mask_present & ~data.radio_mask_up;
+		if (!add_mask && reload && data.radio_mask_up)
+			mld_reload(data, phy_list);
 		if (!add_mask)
 			continue;
 
