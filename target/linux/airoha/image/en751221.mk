@@ -102,11 +102,10 @@ TARGET_DEVICES += mitrarstar_gpt-2741gnac-n1
 
 define Device/nokia_g240g-e
   $(Device/FitImageVmlinuz)
+  $(Device/EconetBootUboot)
   DEVICE_VENDOR := Nokia
   DEVICE_MODEL := G-240G-E
   DEVICE_DTS := en751221_nokia_g240g-e
-  IMAGES := tclinux.trx
-  IMAGE/tclinux.trx := append-kernel | lzma | tclinux-trx
   DEVICE_PACKAGES := kmod-usb3
 endef
 TARGET_DEVICES += nokia_g240g-e
