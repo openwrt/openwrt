@@ -67,7 +67,6 @@ define Device/hasivo_f1100w-4sx-4xgt-common
   DEVICE_ALT0_VENDOR := Hasivo
   DEVICE_ALT0_MODEL := F1100W-4SX-4XGT-SE
   DEVICE_PACKAGES := \
-    kmod-hasivo-mcu-sensor kmod-hasivo-mcu-wdt kmod-mfd-hasivo-stc8 \
     kmod-phy-realtek rtl826x-firmware uboot-envtools
   IMAGE_SIZE := 29696k
   $(Device/kernel-lzma)
