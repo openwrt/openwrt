@@ -1526,13 +1526,14 @@ static int otto_l3_fib_add_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 	struct fib_nh *nh;
 	int port, vlan;
 
-	/* A route through a nexthop object is not offloaded and has no
-	 * nexthop array to read, but it can replace a route that is. An
-	 * offloaded shorter prefix would forward its traffic, so trap it where
-	 * the host table can hold it.
+	/* A route through a nexthop object has no nexthop array to read, and a
+	 * blackhole, unreachable or prohibit route has no device behind its
+	 * nexthop. Neither is offloaded, but either can replace a route that
+	 * is. An offloaded shorter prefix would forward its traffic, so trap
+	 * it where the host table can hold it.
 	 */
-	if (info->fi->nh) {
-		dev_dbg(ctrl->dev, "route through a nexthop object, not offloaded\n");
+	if (info->fi->nh || !fib_info_nh(info->fi, 0)->fib_nh_dev) {
+		dev_dbg(ctrl->dev, "route not offloaded: no device or a nexthop object\n");
 		route = otto_l3_route_find(ctrl, info->tb_id, ROUTE_TYPE_IP4UC, info->dst,
 					   NULL, info->dst_len);
 		if (route)
@@ -1646,8 +1647,10 @@ static int otto_l3_fib_del_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 	struct in6_addr gw;
 	struct fib_nh *nh;
 
-	/* A route through a nexthop object holds at most a trap entry */
-	if (info->fi->nh) {
+	/* A route through a nexthop object or without a device holds at most a
+	 * trap entry
+	 */
+	if (info->fi->nh || !fib_info_nh(info->fi, 0)->fib_nh_dev) {
 		route = otto_l3_route_find(ctrl, info->tb_id, ROUTE_TYPE_IP4UC, info->dst,
 					   NULL, info->dst_len);
 		if (route)
