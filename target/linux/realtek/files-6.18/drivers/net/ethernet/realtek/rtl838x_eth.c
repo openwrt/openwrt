@@ -1182,6 +1182,7 @@ static struct sk_buff *rteth_create_skb(struct rteth_ctrl *ctrl, int ring, int s
 	struct page_pool *pool = ctrl->rx_info[ring].pool;
 	struct net_device *dev = ctrl->dev;
 	unsigned int len = frag->len;
+	struct metadata_dst *md_dst;
 	struct rteth_dsa_tag tag;
 	struct sk_buff *skb;
 
@@ -1198,8 +1199,10 @@ static struct sk_buff *rteth_create_skb(struct rteth_ctrl *ctrl, int ring, int s
 
 	ctrl->cfg->decode_tag(frag, &tag);
 	if (netdev_uses_dsa(dev)) {
-		if (tag.port < ctrl->cfg->cpu_port)
-			skb_dst_set_noref(skb, &ctrl->dsa_meta[tag.port]->dst);
+		if (tag.port < ctrl->cfg->cpu_port) {
+			md_dst = tag.l2_offloaded ? ctrl->dsa_meta[tag.port] : ctrl->dsa_meta_trapped[tag.port];
+			skb_dst_set_noref(skb, &md_dst->dst);
+		}
 		if (tag.l2_offloaded)
 			skb->offload_fwd_mark = 1;
 	}
@@ -1765,17 +1768,26 @@ static const struct ethtool_ops rteth_ethtool_ops = {
 	.set_link_ksettings	= rteth_set_link_ksettings,
 };
 
+static struct metadata_dst *rteth_metadata_dst(unsigned int port, bool trapped)
+{
+	struct metadata_dst *md_dst = metadata_dst_alloc(0, METADATA_HW_PORT_MUX, GFP_KERNEL);
+
+	if (!md_dst)
+		return NULL;
+
+	md_dst->u.port_info.port_id = port;
+	md_dst->u.port_info.trapped = trapped;
+
+	return md_dst;
+}
+
 static int rteth_metadata_dst_alloc(struct rteth_ctrl *ctrl)
 {
-	struct metadata_dst *md_dst;
-
 	for (int i = 0; i < ARRAY_SIZE(ctrl->dsa_meta); i++) {
-		md_dst = metadata_dst_alloc(0, METADATA_HW_PORT_MUX, GFP_KERNEL);
-		if (!md_dst)
+		ctrl->dsa_meta[i] = rteth_metadata_dst(i, false);
+		ctrl->dsa_meta_trapped[i] = rteth_metadata_dst(i, true);
+		if (!ctrl->dsa_meta[i] || !ctrl->dsa_meta_trapped[i])
 			return -ENOMEM;
-
-		md_dst->u.port_info.port_id = i;
-		ctrl->dsa_meta[i] = md_dst;
 	}
 
 	return 0;
@@ -1784,10 +1796,10 @@ static int rteth_metadata_dst_alloc(struct rteth_ctrl *ctrl)
 static void rteth_metadata_dst_free(struct rteth_ctrl *ctrl)
 {
 	for (int i = 0; i < ARRAY_SIZE(ctrl->dsa_meta); i++) {
-		if (!ctrl->dsa_meta[i])
-			continue;
-
-		metadata_dst_free(ctrl->dsa_meta[i]);
+		if (ctrl->dsa_meta[i])
+			metadata_dst_free(ctrl->dsa_meta[i]);
+		if (ctrl->dsa_meta_trapped[i])
+			metadata_dst_free(ctrl->dsa_meta_trapped[i]);
 	}
 }
 

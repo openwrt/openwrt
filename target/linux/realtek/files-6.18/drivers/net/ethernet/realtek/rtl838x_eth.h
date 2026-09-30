@@ -304,6 +304,7 @@ struct rteth_ctrl {
 	struct phylink_config	phylink_config;
 	u32			lastEvent;
 	struct metadata_dst	*dsa_meta[RTETH_931X_CPU_PORT];
+	struct metadata_dst	*dsa_meta_trapped[RTETH_931X_CPU_PORT];
 	/* receive handling */
 	dma_addr_t		rx_dma;
 	spinlock_t		rx_lock;
