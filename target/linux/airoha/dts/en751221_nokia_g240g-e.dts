@@ -229,9 +229,7 @@
 &xpon_phy {
 	status = "okay";
 
-	/* Needs confirm in hardware, in `led.conf` contains `42  27  1   0   1` */
 	vcc-disable-gpios = <&pinctrl 27 GPIO_ACTIVE_HIGH>;
-
 	airoha,rx-sd-inverted;
 };
 
@@ -240,6 +238,9 @@
 
 	airoha,gpon-serial-from-mac;
 	omci-vendor-id = "ALCL";
+
+	omci-type = "sfu";
+	omci-ethernets = <&gsw_port1>, <&gsw_port2>, <&gsw_port3>, <&gsw_port4>;
 
 	optical-frontends = <&gn25l98>;
 	optical-frontend-names = "pon";
@@ -275,11 +276,6 @@
 };
 
 &switch1 {
-	status = "okay";
-};
-
-&gsw_port0 {
-	label = "lan0";
 	status = "okay";
 };
 
@@ -321,16 +317,20 @@
 
 &gsw_phy1_led0 {
 	status = "okay";
+	color = <LED_COLOR_ID_GREEN>;
 };
 
 &gsw_phy2_led0 {
 	status = "okay";
+	color = <LED_COLOR_ID_GREEN>;
 };
 
 &gsw_phy3_led0 {
 	status = "okay";
+	color = <LED_COLOR_ID_GREEN>;
 };
 
 &gsw_phy4_led0 {
 	status = "okay";
+	color = <LED_COLOR_ID_GREEN>;
 };
