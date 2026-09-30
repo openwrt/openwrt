@@ -25,7 +25,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 --- a/drivers/net/wireless/virtual/mac80211_hwsim_main.c
 +++ b/drivers/net/wireless/virtual/mac80211_hwsim_main.c
-@@ -2101,6 +2101,124 @@ static int mac80211_hwsim_set_key(struct
+@@ -2132,6 +2132,124 @@ static int mac80211_hwsim_set_key(struct
  	return 0;
  }
  
@@ -150,7 +150,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static void mac80211_hwsim_tx(struct ieee80211_hw *hw,
  			      struct ieee80211_tx_control *control,
  			      struct sk_buff *skb)
-@@ -2111,6 +2229,8 @@ static void mac80211_hwsim_tx(struct iee
+@@ -2143,6 +2261,8 @@ static void mac80211_hwsim_tx(struct iee
  	struct ieee80211_chanctx_conf *chanctx_conf;
  	struct ieee80211_channel *channel;
  	struct ieee80211_vif *vif = txi->control.vif;
@@ -159,7 +159,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	bool ack, unicast_data;
  	enum nl80211_chan_width confbw = NL80211_CHAN_WIDTH_20_NOHT;
  	u32 _portid, i;
-@@ -2171,6 +2291,9 @@ static void mac80211_hwsim_tx(struct iee
+@@ -2203,6 +2323,9 @@ static void mac80211_hwsim_tx(struct iee
  								 hdr, &link_sta);
  		}
  
@@ -169,7 +169,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		if (unlikely(!bss_conf)) {
  			/* if it's an MLO STA, it might have deactivated all
  			 * links temporarily - but we don't handle real PS in
-@@ -2231,6 +2354,8 @@ static void mac80211_hwsim_tx(struct iee
+@@ -2265,6 +2388,8 @@ static void mac80211_hwsim_tx(struct iee
  		return;
  	}
  

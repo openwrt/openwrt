@@ -20,7 +20,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 --- a/drivers/net/wireless/virtual/mac80211_hwsim_main.c
 +++ b/drivers/net/wireless/virtual/mac80211_hwsim_main.c
-@@ -5629,6 +5629,14 @@ static const u8 iftypes_ext_capa_ap[] =
+@@ -5665,6 +5665,14 @@ static const u8 iftypes_ext_capa_ap[] =
  	 [9] = WLAN_EXT_CAPA10_TWT_RESPONDER_SUPPORT,
  };
  
@@ -35,7 +35,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #define MAC80211_HWSIM_MLD_CAPA_OPS				\
  	FIELD_PREP_CONST(IEEE80211_MLD_CAP_OP_TID_TO_LINK_MAP_NEG_SUPP, \
  			 IEEE80211_MLD_CAP_OP_TID_TO_LINK_MAP_NEG_SUPP_SAME) | \
-@@ -5644,6 +5652,14 @@ static const struct wiphy_iftype_ext_cap
+@@ -5680,6 +5688,14 @@ static const struct wiphy_iftype_ext_cap
  		.eml_capabilities = IEEE80211_EML_CAP_EMLSR_SUPP |
  				    IEEE80211_EML_CAP_EMLMR_SUPPORT,
  		.mld_capa_and_ops = MAC80211_HWSIM_MLD_CAPA_OPS,
