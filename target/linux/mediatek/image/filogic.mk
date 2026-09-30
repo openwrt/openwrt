@@ -1,6 +1,7 @@
 DTS_DIR := $(DTS_DIR)/mediatek
 DEVICE_VARS += SUPPORTED_TELTONIKA_DEVICES
 DEVICE_VARS += SUPPORTED_TELTONIKA_HW_MODS
+DEVICE_VARS += ZYXEL_MODEL_IDS
 
 define Image/Prepare
 	# For UBI we want only one extra block
@@ -117,9 +118,9 @@ define Build/mstc-header
   mv $@.new $@
 endef
 
-define Build/zyxel-nwa-fit-filogic
+define Build/zyxel-fit-filogic
 	$(TOPDIR)/scripts/mkits-zyxel-fit-filogic.sh \
-		$@.its $@ "80e1 81e1"
+		$@.its $@ "$(ZYXEL_MODEL_IDS)"
 	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $@.its $@.new
 	@mv $@.new $@
 endef
@@ -4540,12 +4541,8 @@ define Device/zyxel_ex5700-telenor
 endef
 TARGET_DEVICES += zyxel_ex5700-telenor
 
-define Device/zyxel_nwa50ax-pro
+define Device/zyxel_filogic_common
   DEVICE_VENDOR := Zyxel
-  DEVICE_MODEL := NWA50AX Pro
-  DEVICE_ALT0_VENDOR := Zyxel
-  DEVICE_ALT0_MODEL := NWA90AX Pro
-  DEVICE_DTS := mt7981b-zyxel-nwa50ax-pro
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware zyxel-bootconfig
   DEVICE_DTS_LOADADDR := 0x44000000
@@ -4555,8 +4552,18 @@ define Device/zyxel_nwa50ax-pro
   IMAGE_SIZE := 51200k
   KERNEL_IN_UBI := 1
   IMAGES += factory.bin
-  IMAGE/factory.bin := append-ubi | check-size $$$$(IMAGE_SIZE) | zyxel-nwa-fit-filogic
+  IMAGE/factory.bin := append-ubi | check-size $$$$(IMAGE_SIZE) | zyxel-fit-filogic
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  ZYXEL_MODEL_IDS :=
+endef
+
+define Device/zyxel_nwa50ax-pro
+  $(call Device/zyxel_filogic_common)
+  DEVICE_MODEL := NWA50AX Pro
+  DEVICE_ALT0_VENDOR := Zyxel
+  DEVICE_ALT0_MODEL := NWA90AX Pro
+  DEVICE_DTS := mt7981b-zyxel-nwa50ax-pro
+  ZYXEL_MODEL_IDS := 80e1 81e1
 endef
 TARGET_DEVICES += zyxel_nwa50ax-pro
 
