@@ -7,7 +7,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=mips
 BOARD:=econet
 BOARDNAME:=EcoNet EN75xx MIPS
-FEATURES:=dt source-only squashfs nand usb
+FEATURES:=dt squashfs nand usb
 SUBTARGETS:=en751221
 
 KERNEL_PATCHVER:=6.12

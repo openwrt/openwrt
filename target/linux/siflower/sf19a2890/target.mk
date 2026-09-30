@@ -1,7 +1,7 @@
 ARCH:=mipsel
 SUBTARGET:=sf19a2890
 BOARDNAME:=Siflower SF19A2890 based boards
-FEATURES+=fpu source-only
+FEATURES+=fpu
 CPU_TYPE:=24kc
 CPU_SUBTYPE:=24kf
 
