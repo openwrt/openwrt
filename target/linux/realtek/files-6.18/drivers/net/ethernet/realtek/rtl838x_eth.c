@@ -1005,7 +1005,10 @@ static void rteth_930x_set_rx_mode(struct net_device *dev)
 {
 	struct rteth_ctrl *ctrl = netdev_priv(dev);
 
-	/* Flood all classes of RMA addresses (01-80-C2-00-00-{01..2F})
+	/* Trap all classes of RMA addresses (01-80-C2-00-00-{01..2F}) to the
+	 * CPU. On RTL93xx, 3 in an RMA action field traps to the master CPU,
+	 * which on a standalone switch is this one; unlike RTL838x, there is
+	 * no flood action for these addresses.
 	 * CTRL_0_FULL = GENMASK(31, 2) = 0xFFFFFFFC
 	 * Lower two bits are reserved, corresponding to RMA 01-80-C2-00-00-00
 	 * CTRL_1_FULL = CTRL_2_FULL = GENMASK(31, 0)
@@ -1025,7 +1028,10 @@ static void rteth_931x_set_rx_mode(struct net_device *dev)
 {
 	struct rteth_ctrl *ctrl = netdev_priv(dev);
 
-	/* Flood all classes of RMA addresses (01-80-C2-00-00-{01..2F})
+	/* Trap all classes of RMA addresses (01-80-C2-00-00-{01..2F}) to the
+	 * CPU. On RTL93xx, 3 in an RMA action field traps to the master CPU,
+	 * which on a standalone switch is this one; unlike RTL838x, there is
+	 * no flood action for these addresses.
 	 * CTRL_0_FULL = GENMASK(31, 2) = 0xFFFFFFFC
 	 * Lower two bits are reserved, corresponding to RMA 01-80-C2-00-00-00.
 	 * CTRL_1_FULL = CTRL_2_FULL = GENMASK(31, 0)
