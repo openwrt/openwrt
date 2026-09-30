@@ -1422,19 +1422,19 @@ static int rtldsa_port_lag_join(struct dsa_switch *ds,
 
 	pr_info("port_lag_join: group %d, port %d\n", group, port);
 
+	err = otto_lag_add(priv->ds, group, port, info);
+	if (err) {
+		err = -EINVAL;
+		goto out;
+	}
+
 	if (priv->lag_primary[group] == -1)
 		priv->lag_primary[group] = port;
 	else
 		priv->lag_non_primary |= BIT_ULL(port);
 
 	priv->lagmembers |= BIT_ULL(port);
-
 	pr_debug("lag_members = %llX\n", priv->lagmembers);
-	err = otto_lag_add(priv->ds, group, port, info);
-	if (err) {
-		err = -EINVAL;
-		goto out;
-	}
 
 out:
 	mutex_unlock(&priv->reg_mutex);
@@ -1466,12 +1466,12 @@ static int rtldsa_port_lag_leave(struct dsa_switch *ds, int port,
 		goto out;
 	}
 
-	/* To re-elect primary interface, just remove the first interface in
-	 * this-group's interfaces from non-primary
-	 */
-	if (priv->lags_port_members[group]) {
-		priv->lag_primary[group] = fls64(priv->lags_port_members[group]);
-		priv->lag_non_primary &= ~BIT_ULL(priv->lag_primary[group]);
+	if (priv->lag_primary[group] == port) {
+		u64 members = priv->lags_port_members[group];
+
+		priv->lag_primary[group] = members ? __ffs64(members) : -1;
+		if (members)
+			priv->lag_non_primary &= ~BIT_ULL(priv->lag_primary[group]);
 	}
 
 	/* No need to update fdb entries since they make use of trunk_id for entry.
