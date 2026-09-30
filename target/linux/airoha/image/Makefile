@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-DEVICE_VARS += TRX_MODEL TRX_LOADADDR
+DEVICE_VARS += TRX_MODEL TRX_LOADADDR TCBOOT_LOADADDR TCBOOT_ENTRYADDR
 
 loadaddr-$(CONFIG_TARGET_airoha_an7581) := 0x80200000
 loadaddr-$(CONFIG_TARGET_airoha_an7583) := 0x80200000
@@ -110,11 +110,14 @@ endef
 define Device/EconetBootUboot
   DEVICE_PACKAGES += uboot-envtools
 
+  TCBOOT_LOADADDR := 0x81000000
+  TCBOOT_ENTRYADDR :=
+
   ARTIFACTS += bootext.bin uboot.bin tcboot.bin
 
-  ARTIFACT/bootext.bin := staging-copy-file $(SUBTARGET)_bootext.bin
-  ARTIFACT/uboot.bin := staging-copy-file $(DEVICE_NAME)-u-boot.bin
-  ARTIFACT/tcboot.bin := econet-tcboot | fill-zero 0x100000
+  ARTIFACT/bootext.bin := staging-copy-file bootext.bin
+  ARTIFACT/uboot.bin := staging-copy-file $$(DEVICE_NAME)-u-boot.bin
+  ARTIFACT/tcboot.bin := econet-tcboot
 endef
 
 # Make image with new u-boot part version and ubi partion support
@@ -269,8 +272,8 @@ define Build/econet-tcboot
 	$(STAGING_DIR_HOST)/bin/econet-image tcboot \
 		--boot $(STAGING_DIR_IMAGE)/$(SUBTARGET)-tcboot.bin \
 		--payload $(STAGING_DIR_IMAGE)/$(SUBTARGET)_$(DEVICE_NAME)-u-boot.bin \
-		--load $(KERNEL_LOADADDR) \
-		--entry $(KERNEL_LOADADDR) \
+		--load $(TCBOOT_LOADADDR) \
+		--entry $(if $(TCBOOT_ENTRYADDR),$(TCBOOT_ENTRYADDR),$(TCBOOT_LOADADDR)) \
 		--output $@
 endef
 
