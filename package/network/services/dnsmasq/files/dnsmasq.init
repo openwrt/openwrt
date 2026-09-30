@@ -1406,9 +1406,36 @@ start_service() {
 	fi
 }
 
+dnsmasq_config_sum()
+{
+	local sum
+
+	sum=$(md5sum "${BASECONFIGFILE}.$1" 2>/dev/null)
+	echo "${sum%% *}"
+}
+
+# procd starts or restarts an instance that is not running or whose
+# config changed, and the new process reads every file at start. A
+# SIGHUP that arrives before the new process installs its handler
+# kills it, so signal only an instance that keeps running with the
+# same config.
 reload_service() {
+	local instance entry sums=""
+
+	config_load dhcp
+	for instance in ${1:-$(config_foreach echo dnsmasq)}; do
+		procd_running dnsmasq "$instance" || continue
+		sums="$sums $instance=$(dnsmasq_config_sum "$instance")"
+	done
+
 	rc_procd start_service "$@"
-	procd_send_signal dnsmasq "$@"
+
+	for entry in $sums; do
+		instance="${entry%%=*}"
+		if [ "${entry#*=}" = "$(dnsmasq_config_sum "$instance")" ]; then
+			procd_send_signal dnsmasq "$instance"
+		fi
+	done
 }
 
 stop_service() {
