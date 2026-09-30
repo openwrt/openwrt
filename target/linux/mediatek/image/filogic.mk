@@ -4486,6 +4486,14 @@ define Device/zyxel_nwa50ax-pro
 endef
 TARGET_DEVICES += zyxel_nwa50ax-pro
 
+define Device/zyxel_wax300h
+  $(call Device/zyxel_filogic_common)
+  DEVICE_MODEL := WAX300H
+  DEVICE_DTS := mt7981b-zyxel-wax300h
+  ZYXEL_MODEL_ID_0 := 84 e1
+endef
+TARGET_DEVICES += zyxel_wax300h
+
 define Device/zyxel_wx5600-t0-ubootmod
   DEVICE_VENDOR := Zyxel
   DEVICE_MODEL := WX5600-T0

@@ -38,6 +38,10 @@ set_preinit_iface() {
 		ip link set eth0 up
 		ifname=lan4
 		;;
+	zyxel,wax300h)
+		ip link set eth0 up
+		ifname=uplink
+		;;
 	zyxel,wx5600-t0-ubootmod)
 		ifname=lan1
 		;;
