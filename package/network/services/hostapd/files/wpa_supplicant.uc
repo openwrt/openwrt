@@ -1069,9 +1069,10 @@ function iface_ubus_add(ifname)
 
 return {
 	shutdown: function() {
-		for (let phy in wpas.data.config)
-			set_config(phy, []);
-		wpas.ubus.disconnect();
+		for (let name, phy in wpas.data.config)
+			set_config(name, phy.name, phy.radio, phy.num_global_macaddr, phy.macaddr_base, []);
+		wpas.udebug_set(null);
+		wpas.data.ubus.disconnect();
 	},
 	bss_allowed: function(ifname, bss) {
 		let mld = wpas.data.mld[ifname];

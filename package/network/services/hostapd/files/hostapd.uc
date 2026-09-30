@@ -1903,7 +1903,7 @@ return {
 		for (let phy in hostapd.data.config)
 			iface_set_config(phy);
 		hostapd.udebug_set(null);
-		hostapd.ubus.disconnect();
+		hostapd.data.ubus.disconnect();
 	},
 	bss_create: function(phy, name, obj) {
 		phy = hostapd.data.config[phy];
