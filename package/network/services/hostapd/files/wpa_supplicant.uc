@@ -346,8 +346,6 @@ function mld_set_config(config)
 {
 	let prev_mld = { ...wpas.data.mld };
 	let new_mld = {};
-	let phy_list = {};
-	let new_config = !length(prev_mld);
 
 	wpas.printf(`Set MLD config: ${keys(config)}`);
 
