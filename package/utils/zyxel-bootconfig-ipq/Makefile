@@ -19,7 +19,7 @@ define Package/zyxel-bootconfig-ipq
 	CATEGORY:=Base system
 	TITLE:=Utility for handling Zyxel bootconfig settings on Qualcomm IPQ devices
 	MAINTAINER:=Pascal Beleiu <pascal@beleiu.de>
-	DEPENDS:=@TARGET_qualcommax_ipq807x
+	DEPENDS:=@(TARGET_qualcommax_ipq807x||TARGET_ipq40xx)
 endef
 
 define Package/zyxel-bootconfig-ipq/description
