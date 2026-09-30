@@ -4487,6 +4487,14 @@ define Device/zyxel_nwa50ax-pro
 endef
 TARGET_DEVICES += zyxel_nwa50ax-pro
 
+define Device/zyxel_nwa55ax-ptp
+  $(call Device/zyxel_filogic_common)
+  DEVICE_MODEL := NWA55AX PTP
+  DEVICE_DTS := mt7981b-zyxel-nwa55ax-ptp
+  ZYXEL_MODEL_ID_0 := a4 e1
+endef
+TARGET_DEVICES += zyxel_nwa55ax-ptp
+
 define Device/zyxel_wx5600-t0-ubootmod
   DEVICE_VENDOR := Zyxel
   DEVICE_MODEL := WX5600-T0
