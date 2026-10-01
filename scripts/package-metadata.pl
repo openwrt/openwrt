@@ -808,7 +808,9 @@ sub gen_image_cyclonedxsbom() {
 			name => $pkg->{name},
 			version => $version,
 			@licenses > 0 ? (licenses => [ @licenses ]) : (),
-			$pkg->{cpe_id} ? (cpe => $pkg->{cpe_id}.":".$version) : (),
+			# prevent kmods from duplicating the inherited kernel CPE
+			# but a manually specified CPE_ID still gets emitted
+			($pkg->{cpe_id} && !($name =~ /^kmod-/ && $pkg->{cpe_id} eq "cpe:/o:linux:linux_kernel")) ? (cpe => $pkg->{cpe_id}.":".$version) : (),
 			$type ? (type => $type) : (),
 			$version ? (version => $version) : (),
 		};
@@ -884,7 +886,9 @@ sub gen_package_cyclonedxsbom() {
 			name => $name,
 			version => $version,
 			@licenses > 0 ? (licenses => [ @licenses ]) : (),
-			$pkg->{cpe_id} ? (cpe => $pkg->{cpe_id}.":".$version) : (),
+			# prevent kmods from duplicating the inherited kernel CPE
+			# but a manually specified CPE_ID still gets emitted
+			($pkg->{cpe_id} && !($name =~ /^kmod-/ && $pkg->{cpe_id} eq "cpe:/o:linux:linux_kernel")) ? (cpe => $pkg->{cpe_id}.":".$version) : (),
 			$type ? (type => $type) : (),
 			$version ? (version => $version) : (),
 		};
