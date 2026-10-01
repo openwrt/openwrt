@@ -10,6 +10,8 @@ use Digest::MD5 qw(md5_hex);
 
 my %board;
 
+my ($sbom_version_number, $sbom_version_code, $sbom_version_dist);
+
 sub version_to_num($) {
 	my $str = shift;
 	my $num = 0;
@@ -701,7 +703,7 @@ sub image_manifest_packages($)
 }
 
 sub dump_cyclonedxsbom_json {
-	my (@components) = @_;
+	my ($metadata_component, @components) = @_;
 
 	my $json = JSON::PP->new->canonical(1);
 	my $epoch = $ENV{SOURCE_DATE_EPOCH};
@@ -730,6 +732,7 @@ sub dump_cyclonedxsbom_json {
 		version => 1,
 		metadata => {
 			timestamp => $timestamp,
+			$metadata_component ? (component => $metadata_component) : (),
 		},
 		"components" => [@components],
 	};
@@ -811,7 +814,30 @@ sub gen_image_cyclonedxsbom() {
 		};
 	}
 
-	print dump_cyclonedxsbom_json(@components);
+	my $metadata_component;
+	if ($sbom_version_number) {
+		# snapshots have no release number so emit the generic
+		# OpenWrt CPE
+		my $openwrt_cpe = "cpe:/o:openwrt:openwrt";
+		$openwrt_cpe .= ":$sbom_version_number"
+			unless $sbom_version_number =~ /SNAPSHOT/;
+
+		$metadata_component = {
+			type => "operating-system",
+			name => $sbom_version_dist || "OpenWrt",
+			version => $sbom_version_code,
+			cpe => $openwrt_cpe,
+		};
+
+		push @components, {
+			type => "operating-system",
+			name => "OpenWrt",
+			version => $sbom_version_number,
+			cpe => $openwrt_cpe,
+		};
+	}
+
+	print dump_cyclonedxsbom_json($metadata_component, @components);
 }
 
 sub gen_package_cyclonedxsbom() {
@@ -864,11 +890,14 @@ sub gen_package_cyclonedxsbom() {
 		};
 	}
 
-	print dump_cyclonedxsbom_json(@components);
+	print dump_cyclonedxsbom_json(undef, @components);
 }
 
 sub parse_command() {
-	GetOptions("ignore=s", \@ignore);
+	GetOptions("ignore=s", \@ignore,
+		"version-number=s", \$sbom_version_number,
+		"version-code=s", \$sbom_version_code,
+		"version-dist=s", \$sbom_version_dist);
 	my $cmd = shift @ARGV;
 	for ($cmd) {
 		/^mk$/ and return gen_package_mk();
