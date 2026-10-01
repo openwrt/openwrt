@@ -35,7 +35,16 @@
 		 * Create a UBI block device for the stock root volume name and
 		 * make the later root= override win.
 		 */
-		bootargs-append = " ubi.block=0,ubi_rootfs root=/dev/ubiblock0_1";
+		bootargs-append = " ubi.block=0,ubi_rootfs root=/dev/ubiblock0_1 cpufreq.default_governor=powersave ubi.mtd=overlay mtdoops.mtddev=crash mtdoops.record_size=65536";
+	};
+
+	regulator_fixed_1p8: s1800 {
+		compatible = "regulator-fixed";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		regulator-boot-on;
+		regulator-always-on;
+		regulator-name = "fixed_1p8";
 	};
 
 	regulator_fixed_3p3: s3300 {
@@ -149,6 +158,13 @@
 		qcn9224_pcie2_region: qcn9224-pcie2@54100000 {
 			no-map;
 			reg = <0x0 0x54100000 0x0 0x3200000>;
+		};
+
+		/* MLO global memory for the QCN9274 dual-MAC firmware (5 GHz
+		 * split), like stock mlo_global_mem_0 */
+		mlo_global_mem: mlo-global-mem@57300000 {
+			no-map;
+			reg = <0x0 0x57300000 0x0 0xc00000>;
 		};
 	};
 };
@@ -306,13 +322,6 @@
 			regulator-min-microvolt = <725000>;
 			regulator-max-microvolt = <1075000>;
 		};
-
-		mp5496_l2: l2 {
-			regulator-min-microvolt = <1800000>;
-			regulator-max-microvolt = <1800000>;
-			regulator-always-on;
-			regulator-boot-on;
-		};
 	};
 };
 
@@ -344,7 +353,7 @@
 			qcom,num-radios = <1>;
 			nvmem-cells = <&macaddr_art_0 5>;
 			nvmem-cell-names = "mac-address";
-			memory-region = <&qcn9224_pcie2_region>;
+			memory-region = <&qcn9224_pcie2_region>, <&mlo_global_mem>;
 		};
 	};
 };
@@ -931,7 +940,7 @@
 };
 
 &usb_0_qmpphy {
-	vdda-pll-supply = <&mp5496_l2>;
+	vdda-pll-supply = <&regulator_fixed_1p8>;
 	vdda-phy-supply = <&regulator_fixed_0p925>;
 
 	status = "okay";
@@ -939,7 +948,7 @@
 
 &usb_0_qusbphy {
 	vdd-supply = <&regulator_fixed_0p925>;
-	vdda-pll-supply = <&mp5496_l2>;
+	vdda-pll-supply = <&regulator_fixed_1p8>;
 	vdda-phy-dpdm-supply = <&regulator_fixed_3p3>;
 
 	status = "okay";
@@ -979,4 +988,32 @@
 
 &pcs2 {
 	status = "disabled";
+};
+
+/* 5 GHz RF routing, TLMM6/TLMM7. Stock single-phy mode drives 6 low and
+ * 7 high; without it the 5 GHz radio has severely weak reception. The 5 GHz
+ * split (two radios) needs 6 high and 7 low, like stock set_5g_split, so the
+ * lines are set by a config-only pinctrl state instead of gpio-hogs: hogs
+ * would keep the lines requested, this leaves them to be7000-5g-split,
+ * which flips them through sysfs. No function here, the TLMM pinmux is
+ * strict and a mux owner would block the GPIO request. */
+&tlmm {
+	pinctrl-0 = <&wifi_5g_rf_default>;
+	pinctrl-names = "default";
+
+	wifi_5g_rf_default: wifi-5g-rf-default-state {
+		rf-select0-pins {
+			pins = "gpio6";
+			drive-strength = <8>;
+			bias-pull-up;
+			output-low;
+		};
+
+		rf-select1-pins {
+			pins = "gpio7";
+			drive-strength = <8>;
+			bias-pull-up;
+			output-high;
+		};
+	};
 };

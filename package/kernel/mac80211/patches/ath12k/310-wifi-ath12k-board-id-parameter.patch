@@ -1,0 +1,96 @@
+From: Timofey Maykov <itnitro@gmail.com>
+Subject: wifi: ath12k: board_id module parameter for the 5 GHz split
+
+Let a module parameter override the PCI board id (DT and OTP) for both
+the dual-MAC firmware choice and the board data lookup, and skip the DT
+num-radios cap when the dual-MAC bit is set. The BE7000 DT keeps the
+single-MAC board id 0x02; writing 0x1008 to
+/sys/module/ath12k/parameters/board_id and rebinding the PCI device
+brings the QCN9274 up as two 5 GHz radios, 0 switches back.
+
+--- a/drivers/net/wireless/ath/ath12k/core.c
++++ b/drivers/net/wireless/ath/ath12k/core.c
+@@ -27,6 +27,14 @@
+ module_param_named(debug_mask, ath12k_debug_mask, uint, 0644);
+ MODULE_PARM_DESC(debug_mask, "Debugging mask");
+ 
++/* 0 = use the board id from DT/OTP. Set it (e.g. 0x1008 on the Xiaomi
++ * BE7000 for the 5 GHz split) and rebind the PCI device to switch the
++ * QCN9274 between the single- and dual-MAC firmware without a DT change.
++ */
++unsigned int ath12k_board_id_override;
++module_param_named(board_id, ath12k_board_id_override, uint, 0644);
++MODULE_PARM_DESC(board_id, "Override the PCI board id (bit 0x1000 selects the dual-MAC firmware)");
++
+ bool ath12k_ftm_mode;
+ module_param_named(ftm_mode, ath12k_ftm_mode, bool, 0444);
+ MODULE_PARM_DESC(ftm_mode, "Boots up in factory test mode");
+--- a/drivers/net/wireless/ath/ath12k/core.h
++++ b/drivers/net/wireless/ath/ath12k/core.h
+@@ -1036,6 +1036,14 @@
+ };
+ 
+ /* Master structure to hold the hw data which may be used in core module */
++extern unsigned int ath12k_board_id_override;
++
++/* dual-MAC split requested through the board_id parameter */
++static inline bool ath12k_board_id_split(void)
++{
++	return ath12k_board_id_override & 0x1000;
++}
++
+ struct ath12k_base {
+ 	enum ath12k_hw_rev hw_rev;
+ 	struct platform_device *pdev;
+--- a/drivers/net/wireless/ath/ath12k/mhi.c
++++ b/drivers/net/wireless/ath/ath12k/mhi.c
+@@ -349,7 +349,12 @@
+ 	 * (qcom,board_id, see the QMI board-id override). Let the same value
+ 	 * pick the dual-MAC image, as the vendor cnss2 bdf_pci2 does.
+ 	 */
+-	if (ab->dev->of_node &&
++	if (ath12k_board_id_override) {
++		board_id = ath12k_board_id_override;
++		dualmac = !!(board_id & OTP_VALID_DUALMAC_BOARD_ID_MASK);
++		ath12k_info(ab, "board id 0x%x from module parameter, %s firmware image\n",
++			    board_id, dualmac ? "dual-MAC" : "single-MAC");
++	} else if (ab->dev->of_node &&
+ 	    (!of_property_read_u32(ab->dev->of_node, "qcom,board_id", &board_id) ||
+ 	     !of_property_read_u32(ab->dev->of_node, "qcom,board-id", &board_id))) {
+ 		dualmac = !!(board_id & OTP_VALID_DUALMAC_BOARD_ID_MASK);
+--- a/drivers/net/wireless/ath/ath12k/qmi.c
++++ b/drivers/net/wireless/ath/ath12k/qmi.c
+@@ -1098,6 +1098,13 @@
+ {
+ 	u32 board_id;
+ 
++	if (ath12k_board_id_override && ab->hif.bus == ATH12K_BUS_PCI) {
++		ath12k_info(ab, "overriding QMI board_id 0x%x with parameter board_id 0x%x\n",
++			    ab->qmi.target.board_id, ath12k_board_id_override);
++		ab->qmi.target.board_id = ath12k_board_id_override;
++		return;
++	}
++
+ 	if (!ab->dev->of_node)
+ 		return;
+ 
+@@ -2261,7 +2268,7 @@
+ {
+ 	u32 num_radios;
+ 
+-	if (!ab->dev->of_node)
++	if (!ab->dev->of_node || ath12k_board_id_split())
+ 		return;
+ 
+ 	if (of_property_read_u32(ab->dev->of_node, "qcom,num-radios", &num_radios))
+--- a/drivers/net/wireless/ath/ath12k/htc.c
++++ b/drivers/net/wireless/ath/ath12k/htc.c
+@@ -750,7 +750,7 @@
+ {
+ 	u32 num_radios;
+ 
+-	if (!ab->dev->of_node)
++	if (!ab->dev->of_node || ath12k_board_id_split())
+ 		return;
+ 
+ 	if (of_property_read_u32(ab->dev->of_node, "qcom,num-radios", &num_radios))

@@ -1,0 +1,39 @@
+From: Timofey Maykov <itnitro@gmail.com>
+Subject: wifi: ath12k: let the DT board id select the dual-MAC firmware
+
+The Xiaomi BE7000 QCN9274 has no usable board id in OTP, the board id
+comes from DT (qcom,board_id, patch 301). The dual-MAC firmware image is
+chosen in mhi.c from the OTP board id only, so a DT board id with the
+dual-MAC bit (0x1000, e.g. 0x1008 as stock's cnss2 bdf_pci2 in 5 GHz
+split mode) still booted the single-MAC image. Use the DT value there
+as well.
+
+--- a/drivers/net/wireless/ath/ath12k/mhi.c
++++ b/drivers/net/wireless/ath/ath12k/mhi.c
+@@ -7,6 +7,7 @@
+ #include <linux/msi.h>
+ #include <linux/pci.h>
+ #include <linux/firmware.h>
++#include <linux/of.h>
+ 
+ #include "core.h"
+ #include "debug.h"
+@@ -344,6 +345,18 @@
+ 		}
+ 	}
+ 
++	/* Boards whose QCN9274 OTP carries no usable board id set it in DT
++	 * (qcom,board_id, see the QMI board-id override). Let the same value
++	 * pick the dual-MAC image, as the vendor cnss2 bdf_pci2 does.
++	 */
++	if (ab->dev->of_node &&
++	    (!of_property_read_u32(ab->dev->of_node, "qcom,board_id", &board_id) ||
++	     !of_property_read_u32(ab->dev->of_node, "qcom,board-id", &board_id))) {
++		dualmac = !!(board_id & OTP_VALID_DUALMAC_BOARD_ID_MASK);
++		ath12k_info(ab, "DT board id 0x%x, %s firmware image\n", board_id,
++			    dualmac ? "dual-MAC" : "single-MAC");
++	}
++
+ 	if (dualmac) {
+ 		if (ab->fw.amss_dualmac_data && ab->fw.amss_dualmac_len > 0) {
+ 			/* use MHI firmware file from firmware-N.bin */

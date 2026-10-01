@@ -66,7 +66,7 @@ define Device/xiaomi_be7000
 	KERNEL_SIZE := 6096k
 	IMAGE_SIZE := 32116k
 	DEVICE_PACKAGES := ath11k-firmware-ipq9574 \
-					kmod-ath12k ath12k-firmware-qcn9274 \
+					kmod-ath11k-ahb kmod-ath12k ath12k-firmware-qcn9274 \
 					kmod-qrtr-smd \
 					kmod-usb-storage be7000-nfc-i2ctransfer \
 					luci luci-app-be7000-nfc luci-proto-wireguard \

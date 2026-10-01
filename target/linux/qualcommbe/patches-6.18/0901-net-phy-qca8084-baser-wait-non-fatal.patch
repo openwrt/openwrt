@@ -1,0 +1,26 @@
+From: Timofey Maykov <itnitro@gmail.com>
+Subject: [PATCH] net: phy: qca8084: make BaseR wait non fatal
+
+On boards where the bootloader leaves the SoC UNIPHY unconfigured (IPQ9554
+BE7000 units) the BaseR link cannot come up before the port is opened.
+Warn instead of failing the PHY probe.
+
+Signed-off-by: Timofey Maykov <itnitro@gmail.com>
+---
+--- a/drivers/net/phy/qcom/qca8084_serdes.c
++++ b/drivers/net/phy/qcom/qca8084_serdes.c
+@@ -429,8 +429,12 @@
+ 				xpcs_mdiodev,
+ 				MDIO_MMD_PCS, PCS_STATUS1);
+ 	if (ret) {
+-		dev_err(&xpcs_mdiodev->dev, "BaseR link failed!\n");
+-		return ret;
++		/* The BaseR link needs the SoC PCS to transmit, which only
++		 * happens once the port is opened. Do not fail the PHY
++		 * probe: the link comes up later.
++		 */
++		dev_warn(&xpcs_mdiodev->dev,
++			 "BaseR link not up yet (%d), continuing\n", ret);
+ 	}
+ 
+ 	/* Enable USXGMII mode */

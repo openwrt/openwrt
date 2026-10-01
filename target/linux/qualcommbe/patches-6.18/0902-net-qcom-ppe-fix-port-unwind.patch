@@ -1,0 +1,41 @@
+From: Timofey Maykov <itnitro@gmail.com>
+Subject: [PATCH] net: qcom ppe: fix port unwind walking before the ports array
+
+On an EDMA port setup failure ppe_port_mac_init() decremented i and then
+looped 'while (i >= 0)', leaving i == -1; the following 'while (i)' in
+err_port_clk is true for -1 and dereferences port[-2], port[-3], ...
+(oops on a garbage pointer). Unwind explicitly and keep i >= 0.
+
+Signed-off-by: Timofey Maykov <itnitro@gmail.com>
+---
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_port.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_port.c
+@@ -1396,7 +1396,6 @@
+ 		ret = edma_port_setup(&ppe_ports->port[i]);
+ 		if (ret) {
+ 			dev_err(ppe_dev->dev, "QCOM EDMA port setup failed\n");
+-			i--;
+ 			goto err_port_setup;
+ 		}
+ 
+@@ -1407,10 +1406,17 @@
+ 	return 0;
+ 
+ err_port_setup:
+-	/* Destroy edma ports created till now */
+-	while (i >= 0) {
+-		edma_port_destroy(&ppe_ports->port[i]);
++	/* Clocks of the port whose EDMA setup failed */
++	ppe_port_clock_deinit(&ppe_ports->port[i]);
++
++	/* Destroy the EDMA ports created so far and release their clocks.
++	 * Do not let 'i' go negative: the err_port_clk loop below tests
++	 * 'while (i)' and would otherwise walk before the ports array.
++	 */
++	while (i > 0) {
+ 		i--;
++		edma_port_destroy(&ppe_ports->port[i]);
++		ppe_port_clock_deinit(&ppe_ports->port[i]);
+ 	}
+ 
+ err_port_clk:

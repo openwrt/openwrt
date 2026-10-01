@@ -1,0 +1,165 @@
+From: Timofey Maykov <itnitro@gmail.com>
+Subject: [PATCH] net: phy: qca8084: redo the XPCS setup once BaseR locks
+
+The QCA8084 package is set up from config_init, when the PHY is attached
+at MAC probe time. The 10G-QXGMII setup waits for the XPCS to see a
+locked 10GBASE-R stream from the MAC side, but on IPQ9574 the MAC side
+PCS is only configured when the port is opened, many seconds later. On
+boards where the bootloader left the SoC UNIPHY running this does not
+matter. On boards where it did not, BaseR cannot lock (patch 0901 turned
+that from a probe error into a warning), and the USXGMII/QXGMII mode, AM
+interval and XPCS reset done without a lock leave the PHY to MAC
+direction dead for good: the MAC counts no received frame on any port,
+while transmit looks fine. Seen on several BE7000 boards.
+
+Remember whether BaseR was locked at attach time. If it was not, run the
+XPCS part of the setup again on the first link up, when the MAC side PCS
+is running, waiting up to a second for the lock, and restore the channel
+speed of ports that were already up. The force_xpcs_redo parameter
+exercises the same path on boards that lock at attach time.
+
+---
+--- a/drivers/net/phy/qcom/qca8084_serdes.c
++++ b/drivers/net/phy/qcom/qca8084_serdes.c
+@@ -621,6 +621,46 @@
+ 	return 0;
+ }
+ 
++/* True when the XPCS receives a locked 10GBASE-R stream from the MAC side
++ * PCS (10GBASE-R receive link status, not latched).
++ */
++bool qca8084_qxgmii_baser_up(struct mdio_device *xpcs_mdiodev)
++{
++	int val;
++
++	val = mdiodev_c45_read(xpcs_mdiodev, MDIO_MMD_PCS, PCS_STATUS1);
++
++	return val >= 0 && (val & PCS_BASER_UP);
++}
++
++/* Run the XPCS part of the 10G-QXGMII setup again, once BaseR is locked.
++ *
++ * The package is set up from config_init, when the PHY is attached at MAC
++ * probe time. The MAC side PCS on IPQ9574 is only configured when the port
++ * is opened, many seconds later, so at attach time nothing transmits towards
++ * the XPCS yet unless the bootloader left the SoC UNIPHY running. On boards
++ * where it did not, BaseR cannot lock, and the USXGMII/QXGMII mode, AM
++ * interval and XPCS reset done without a lock leave the PHY to MAC direction
++ * dead: the MAC never receives a frame on any port while TX looks fine. Done
++ * again with the MAC side running, the same sequence works.
++ */
++int qca8084_qxgmii_xpcs_redo(struct mdio_device *xpcs_mdiodev)
++{
++	int ret, val;
++
++	/* The MAC side PCS is configured right before the first link up,
++	 * give the lock up to a second to settle.
++	 */
++	ret = read_poll_timeout(mdiodev_c45_read, val,
++				val >= 0 && (val & PCS_BASER_UP),
++				10000, 1000000, true, xpcs_mdiodev,
++				MDIO_MMD_PCS, PCS_STATUS1);
++	if (ret)
++		return ret;
++
++	return qca8084_xpcs_set_mode(xpcs_mdiodev);
++}
++
+ int qca8084_qxgmii_set_mode(struct mdio_device *xpcs_mdiodev,
+ 			    struct mdio_device *pcs_mdiodev)
+ {
+--- a/drivers/net/phy/qcom/qca8084_serdes.h
++++ b/drivers/net/phy/qcom/qca8084_serdes.h
+@@ -17,6 +17,8 @@
+ 					 struct mdio_device *pcs_mdiodev);
+ int qca8084_qxgmii_set_mode(struct mdio_device *xpcs_mdiodev,
+ 			    struct mdio_device *pcs_mdiodev);
++bool qca8084_qxgmii_baser_up(struct mdio_device *xpcs_mdiodev);
++int qca8084_qxgmii_xpcs_redo(struct mdio_device *xpcs_mdiodev);
+ void qca8084_qxgmii_set_speed(struct mdio_device *xpcs_mdiodev,
+ 			      struct mdio_device *pcs_mdiodev,
+ 			      int channel, int speed);
+--- a/drivers/net/phy/qcom/qca808x.c
++++ b/drivers/net/phy/qcom/qca808x.c
+@@ -232,8 +232,23 @@
+ 	int package_mode;
+ 	struct clk *clk[PACKAGE_CLK_MAX];
+ 	struct mdio_device *mdiodev[2];	/* PCS and XPCS mdio device */
++	/* 10G-QXGMII XPCS was set up without a BaseR lock, see
++	 * qca8084_qxgmii_xpcs_redo(); per channel speed to restore after.
++	 */
++	bool xpcs_redo;
++	int ch_speed[4];
+ };
+ 
++/* Serialises the XPCS redo between the four PHYs of a package. */
++static DEFINE_MUTEX(qca8084_xpcs_redo_lock);
++
++/* Testing only: redo the XPCS setup on the first link up even when BaseR
++ * was already locked at attach time.
++ */
++static bool force_xpcs_redo;
++module_param(force_xpcs_redo, bool, 0444);
++MODULE_PARM_DESC(force_xpcs_redo, "Always set the QCA8084 XPCS up again on first link up");
++
+ static const char *const qca8084_package_clk_name[PACKAGE_CLK_MAX] = {
+ 	[APB_BRIDGE_CLK] =	"apb_bridge",
+ 	[AHB_CLK] =		"ahb",
+@@ -1069,10 +1084,20 @@
+ 
+ 	/* Configure PCS working on 10G-QXGMII mode */
+ 	if (phydev->interface == PHY_INTERFACE_MODE_10G_QXGMII) {
++		int i;
++
+ 		ret = qca8084_qxgmii_set_mode(shared_priv->mdiodev[1],
+ 					      shared_priv->mdiodev[0]);
+ 		if (ret)
+ 			return ret;
++
++		for (i = 0; i < ARRAY_SIZE(shared_priv->ch_speed); i++)
++			shared_priv->ch_speed[i] = SPEED_UNKNOWN;
++
++		shared_priv->xpcs_redo = force_xpcs_redo ||
++			!qca8084_qxgmii_baser_up(shared_priv->mdiodev[1]);
++		if (shared_priv->xpcs_redo)
++			phydev_info(phydev, "QXGMII XPCS set up without BaseR lock, will redo it on first link up\n");
+ 	}
+ 
+ 	/* Initialize the PHY package clock and reset, which is the
+@@ -1171,6 +1196,36 @@
+ 			       phydev->speed == SPEED_1000 ?
+ 			       QCA8084_IPG_10_TO_11_EN : 0);
+ 
++		mutex_lock(&qca8084_xpcs_redo_lock);
++		if (phydev->link && shared_priv->xpcs_redo) {
++			int i;
++
++			ret = qca8084_qxgmii_xpcs_redo(shared_priv->mdiodev[1]);
++			if (ret) {
++				phydev_warn(phydev, "QXGMII BaseR still not locked (%d), nothing will be received on this package yet\n",
++					    ret);
++			} else {
++				shared_priv->xpcs_redo = false;
++				phydev_info(phydev, "QXGMII BaseR locked, XPCS set up again\n");
++				/* The XPCS reset cleared the channel setup of
++				 * ports that were already up.
++				 */
++				for (i = 0; i < ARRAY_SIZE(shared_priv->ch_speed); i++) {
++					if (i == priv->channel_id ||
++					    shared_priv->ch_speed[i] == SPEED_UNKNOWN)
++						continue;
++					qca8084_qxgmii_set_speed(shared_priv->mdiodev[1],
++								 shared_priv->mdiodev[0],
++								 i, shared_priv->ch_speed[i]);
++				}
++			}
++		}
++		if (priv->channel_id >= 0 &&
++		    priv->channel_id < ARRAY_SIZE(shared_priv->ch_speed))
++			shared_priv->ch_speed[priv->channel_id] =
++				phydev->link ? phydev->speed : SPEED_UNKNOWN;
++		mutex_unlock(&qca8084_xpcs_redo_lock);
++
+ 		qca8084_qxgmii_set_speed(shared_priv->mdiodev[1],
+ 					 shared_priv->mdiodev[0],
+ 					 priv->channel_id,

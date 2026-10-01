@@ -1,0 +1,10 @@
+#!/bin/sh
+
+uci -q get luci.themes.Nimbus >/dev/null || uci set luci.themes.Nimbus=/luci-static/nimbus
+
+if [ "$PKG_UPGRADE" != 1 ]; then
+	uci set luci.main.mediaurlbase=/luci-static/nimbus
+fi
+
+uci commit luci
+exit 0

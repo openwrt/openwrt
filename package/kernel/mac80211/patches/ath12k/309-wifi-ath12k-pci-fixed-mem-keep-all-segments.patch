@@ -1,0 +1,86 @@
+From: Timofey Maykov <itnitro@gmail.com>
+Subject: wifi: ath12k: keep every firmware memory segment in the fixed PCI reply
+
+The fixed PCI memory path (patch 306) dropped segments of types it does
+not place, so the reply to the firmware carried fewer segments than
+requested. The QCN9274 dual-MAC image asks for six (HOST DDR, CALDB,
+pageable, M3, MLO global and one more small region) and never answers
+a shorter reply. Place the extra ones in a second DT memory-region
+(stock has mlo_global_mem for this), lay several HOST DDR chunks out one
+after another, and log the requested segments.
+
+--- a/drivers/net/wireless/ath/ath12k/qmi.c
++++ b/drivers/net/wireless/ath/ath12k/qmi.c
+@@ -2762,12 +2762,19 @@
+ 	struct reserved_mem *rmem;
+ 	size_t avail_rmem_size;
+ 	int i, idx, ret;
++	u32 ddr_off = 0, extra_off = 0;
+ 
+ 	for (i = 0, idx = 0; i < ab->qmi.mem_seg_count; i++) {
+ 		if (ab->hif.bus == ATH12K_BUS_PCI) {
+ 			switch (ab->qmi.target_mem[i].type) {
+ 			case HOST_DDR_REGION_TYPE:
+-				ret = ath12k_qmi_assign_pci_fixed_mem_chunk(ab, idx, i, 0);
++				/* the dual-MAC image asks for more than one HOST DDR
++				 * chunk: lay them out one after another
++				 */
++				ret = ath12k_qmi_assign_pci_fixed_mem_chunk(ab, idx, i, ddr_off);
++				ath12k_info(ab, "qmi HOST DDR chunk %d size 0x%x at offset 0x%x: %d\n",
++					    i, ab->qmi.target_mem[i].size, ddr_off, ret);
++				ddr_off += ALIGN(ab->qmi.target_mem[i].size, SZ_64K);
+ 				break;
+ 			case M3_DUMP_REGION_TYPE:
+ 				ret = ath12k_qmi_assign_pci_fixed_mem_chunk(ab, idx, i,
+@@ -2782,11 +2789,35 @@
+ 									    ATH12K_QMI_QCN9224_PAGEABLE_OFFSET);
+ 				break;
+ 			default:
+-				ath12k_dbg(ab, ATH12K_DBG_QMI,
+-					   "qmi ignore unsupported mem req type %u size %u index %d\n",
+-					   ab->qmi.target_mem[i].type,
+-					   ab->qmi.target_mem[i].size, i);
+-				continue;
++				/* Keep the segment in the reply with a NULL address,
++				 * as the dynamic path does: the firmware copes with
++				 * that, but a reply with fewer segments than it asked
++				 * for is never answered (the dual-MAC image asks for
++				 * MLO global memory and one more small region).
++				 */
++				/* MLO global memory and the other extra segments
++				 * of the dual-MAC image come from the second DT
++				 * memory-region, like stock's mlo_global_mem.
++				 */
++				rmem = ath12k_core_get_reserved_mem(ab, 1);
++				ab->qmi.target_mem[idx].paddr = 0;
++				ab->qmi.target_mem[idx].v.ioaddr = NULL;
++				if (rmem && extra_off + ab->qmi.target_mem[i].size <= rmem->size) {
++					ab->qmi.target_mem[idx].paddr = rmem->base + extra_off;
++					ab->qmi.target_mem[idx].v.ioaddr =
++						ioremap(ab->qmi.target_mem[idx].paddr,
++							ab->qmi.target_mem[i].size);
++					if (ab->qmi.target_mem[idx].v.ioaddr)
++						memset_io(ab->qmi.target_mem[idx].v.ioaddr, 0,
++							  ab->qmi.target_mem[i].size);
++					extra_off += ALIGN(ab->qmi.target_mem[i].size, SZ_64K);
++				}
++				ath12k_info(ab, "qmi mem req type %u size 0x%x index %d at %pad\n",
++					    ab->qmi.target_mem[i].type,
++					    ab->qmi.target_mem[i].size, i,
++					    &ab->qmi.target_mem[idx].paddr);
++				ret = 0;
++				break;
+ 			}
+ 			if (ret)
+ 				goto out;
+@@ -3766,8 +3797,8 @@
+ 	for (i = 0; i < qmi->mem_seg_count ; i++) {
+ 		ab->qmi.target_mem[i].type = msg->mem_seg[i].type;
+ 		ab->qmi.target_mem[i].size = msg->mem_seg[i].size;
+-		ath12k_dbg(ab, ATH12K_DBG_QMI, "qmi mem seg type %d size %d\n",
+-			   msg->mem_seg[i].type, msg->mem_seg[i].size);
++		ath12k_info(ab, "qmi mem seg %d type %d size 0x%x\n", i,
++			    msg->mem_seg[i].type, msg->mem_seg[i].size);
+ 	}
+ 
+ 	if (test_bit(ATH12K_FLAG_FIXED_MEM_REGION, &ab->dev_flags)) {

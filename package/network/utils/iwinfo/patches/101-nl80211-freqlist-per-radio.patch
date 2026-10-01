@@ -1,0 +1,143 @@
+From: Timofey Maykov <itnitro@gmail.com>
+Subject: nl80211: channel list per radio of a multi-radio wiphy
+
+A wiphy with several radios (QCN9274 on the Xiaomi BE7000 with the 5 GHz
+split: 36-64 and 144-177) reports one channel list for all of them, so
+LuCI offered channel 149 for the lower radio, where hostapd cannot start.
+For a wifi-device with a "radio" option, or an interface bound to one
+radio, keep only the channels inside that radio frequency ranges
+(NL80211_ATTR_WIPHY_RADIOS). Other wiphys are unchanged.
+
+--- a/iwinfo_nl80211.c
++++ b/iwinfo_nl80211.c
+@@ -3285,10 +3285,115 @@
+ 	return NL_SKIP;
+ }
+ 
++/*
++ * A wiphy with several radios (e.g. a QCN9274 split into 5 GHz low and
++ * high) reports one channel list for the whole wiphy. For a wifi-device
++ * with a "radio" option, or an interface bound to one radio, keep only
++ * the channels inside that radio's frequency ranges.
++ */
++#define NL80211_MAX_RADIO_RANGES 8
++
++struct nl80211_freqlist_ctx {
++	struct nl80211_array_buf arr;
++	int radio_idx;
++	int nranges;
++	uint32_t start[NL80211_MAX_RADIO_RANGES];	/* kHz */
++	uint32_t end[NL80211_MAX_RADIO_RANGES];
++};
++
++static int nl80211_get_radio_idx(const char *name)
++{
++	struct nl80211_if_data data;
++	struct uci_section *s;
++	const char *opt;
++	char *end;
++	long idx = -1;
++
++	if (nl80211_is_ifname(name))
++		return nl80211_get_if_data(name, &data) ? -1 : data.radio_idx;
++
++	s = iwinfo_uci_get_radio(name, "mac80211");
++	if (s) {
++		opt = uci_lookup_option_string(uci_ctx, s, "radio");
++		if (opt && *opt) {
++			idx = strtol(opt, &end, 10);
++			if (*end || idx < 0 || idx > 31)
++				idx = -1;
++		}
++	}
++	iwinfo_uci_free();
++
++	return idx;
++}
++
++static int nl80211_get_freqlist_radio_cb(struct nl_msg *msg, void *arg)
++{
++	struct nl80211_freqlist_ctx *ctx = arg;
++	struct nlattr **attr;
++	struct nlattr *tb[NL80211_WIPHY_RADIO_ATTR_MAX + 1];
++	struct nlattr *fr[NL80211_WIPHY_RADIO_FREQ_ATTR_MAX + 1];
++	struct nlattr *radio, *cur;
++	int rem, rem2;
++
++	nl80211_get_freqlist_cb(msg, &ctx->arr);
++
++	attr = nl80211_parse(msg);
++	if (ctx->radio_idx < 0 || !attr[NL80211_ATTR_WIPHY_RADIOS])
++		return NL_SKIP;
++
++	nla_for_each_nested(radio, attr[NL80211_ATTR_WIPHY_RADIOS], rem) {
++		nla_parse(tb, NL80211_WIPHY_RADIO_ATTR_MAX,
++			  nla_data(radio), nla_len(radio), NULL);
++		if (!tb[NL80211_WIPHY_RADIO_ATTR_INDEX] ||
++		    nla_get_u32(tb[NL80211_WIPHY_RADIO_ATTR_INDEX]) != ctx->radio_idx)
++			continue;
++
++		nla_for_each_nested(cur, radio, rem2) {
++			if (nla_type(cur) != NL80211_WIPHY_RADIO_ATTR_FREQ_RANGE ||
++			    ctx->nranges >= NL80211_MAX_RADIO_RANGES)
++				continue;
++			nla_parse(fr, NL80211_WIPHY_RADIO_FREQ_ATTR_MAX,
++				  nla_data(cur), nla_len(cur), NULL);
++			if (!fr[NL80211_WIPHY_RADIO_FREQ_ATTR_START] ||
++			    !fr[NL80211_WIPHY_RADIO_FREQ_ATTR_END])
++				continue;
++			ctx->start[ctx->nranges] = nla_get_u32(fr[NL80211_WIPHY_RADIO_FREQ_ATTR_START]);
++			ctx->end[ctx->nranges] = nla_get_u32(fr[NL80211_WIPHY_RADIO_FREQ_ATTR_END]);
++			ctx->nranges++;
++		}
++	}
++
++	return NL_SKIP;
++}
++
++static void nl80211_freqlist_filter(struct nl80211_freqlist_ctx *ctx)
++{
++	struct iwinfo_freqlist_entry *e = (struct iwinfo_freqlist_entry *)ctx->arr.buf;
++	int i, r, n = 0;
++	uint32_t khz;
++
++	if (!ctx->nranges)
++		return;
++
++	for (i = 0; i < ctx->arr.count; i++) {
++		khz = e[i].mhz * 1000;
++		for (r = 0; r < ctx->nranges; r++)
++			if (khz >= ctx->start[r] && khz <= ctx->end[r])
++				break;
++		if (r < ctx->nranges)
++			e[n++] = e[i];
++	}
++
++	ctx->arr.count = n;
++}
++
+ static int nl80211_get_freqlist(const char *ifname, char *buf, int *len)
+ {
+ 	struct nl80211_msg_conveyor *cv;
+-	struct nl80211_array_buf arr = { .buf = buf, .count = 0 };
++	struct nl80211_freqlist_ctx ctx = {
++		.arr = { .buf = buf, .count = 0 },
++		.radio_idx = nl80211_get_radio_idx(ifname),
++	};
+ 	uint32_t features = nl80211_get_protocol_features(ifname);
+ 	int flags;
+ 
+@@ -3298,10 +3403,11 @@
+ 		goto out;
+ 
+ 	NLA_PUT_FLAG(cv->msg, NL80211_ATTR_SPLIT_WIPHY_DUMP);
+-	if (nl80211_send(cv, nl80211_get_freqlist_cb, &arr))
++	if (nl80211_send(cv, nl80211_get_freqlist_radio_cb, &ctx))
+ 		goto out;
+ 
+-	*len = arr.count * sizeof(struct iwinfo_freqlist_entry);
++	nl80211_freqlist_filter(&ctx);
++	*len = ctx.arr.count * sizeof(struct iwinfo_freqlist_entry);
+ 	return 0;
+ 
+ nla_put_failure:

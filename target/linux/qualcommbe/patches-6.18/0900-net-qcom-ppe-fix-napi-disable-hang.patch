@@ -1,0 +1,38 @@
+From: Timofey Maykov <itnitro@gmail.com>
+Subject: [PATCH] net: qcom ppe: do not double-disable NAPI on delete
+
+napi_disable() on a NAPI that is already disabled (or never enabled) waits
+forever. edma_cfg_{rx,tx}_napi_delete() called it unconditionally, so any
+probe error (or module removal) after the NAPI was created hung in
+napi_disable_locked() with RTNL held, blocking the rest of the boot.
+
+Signed-off-by: Timofey Maykov <itnitro@gmail.com>
+---
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_cfg_tx.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_cfg_tx.c
+@@ -633,7 +633,12 @@
+ 		if (!txcmpl_ring->napi_added)
+ 			continue;
+ 
+-		napi_disable(&txcmpl_ring->napi);
++		/* NAPI is created disabled and edma_cfg_tx_napi_disable() may
++		 * already have run: a second napi_disable() would then wait
++		 * forever (NAPI_STATE_SCHED never clears).
++		 */
++		if (!test_bit(NAPI_STATE_SCHED, &txcmpl_ring->napi.state))
++			napi_disable(&txcmpl_ring->napi);
+ 		netif_napi_del(&txcmpl_ring->napi);
+ 		txcmpl_ring->napi_added = false;
+ 	}
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_cfg_rx.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_cfg_rx.c
+@@ -922,7 +922,8 @@
+ 		if (!rxdesc_ring->napi_added)
+ 			continue;
+ 
+-		napi_disable(&rxdesc_ring->napi);
++		if (!test_bit(NAPI_STATE_SCHED, &rxdesc_ring->napi.state))
++			napi_disable(&rxdesc_ring->napi);
+ 		netif_napi_del(&rxdesc_ring->napi);
+ 		rxdesc_ring->napi_added = false;
+ 	}

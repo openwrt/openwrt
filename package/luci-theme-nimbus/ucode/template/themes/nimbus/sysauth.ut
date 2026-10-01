@@ -1,0 +1,78 @@
+{#
+ Nimbus theme for LuCI - login page
+ Licensed to the public under the Apache License 2.0.
+-#}
+
+{%
+	const board = ubus.call('system', 'board');
+	const ru = (index(dispatcher.lang ?? '', 'ru') == 0);
+-%}
+
+{% include('header', { blank_page: true }) %}
+
+<div class="nb-login">
+	<div class="nb-login-glow" aria-hidden="true"></div>
+	<form method="post" class="nb-login-card" autocomplete="on">
+		<div class="nb-login-head">
+			<img class="nb-login-logo" src="{{ media }}/logo.svg" alt="" width="56" height="56">
+			<h1>{{ striptags(board?.hostname ?? 'OpenWrt') }}</h1>
+			{% if (board?.model): %}<p>{{ striptags(board.model) }}</p>{% endif %}
+		</div>
+
+		{% if (auth_message): %}
+		<div class="alert-message{% if (auth_plugin): %} warning{% endif %}">{{ auth_message }}</div>
+		{% elif (fuser): %}
+		<div class="alert-message error">{{ _('Invalid username and/or password! Please try again.') }}</div>
+		{% endif %}
+
+		<label class="nb-login-field">
+			<span>{{ _('Username') }}</span>
+			<input name="luci_username" id="luci_username" type="text" autocomplete="username" autocapitalize="off" spellcheck="false" value="{{ entityencode(duser, true) }}">
+		</label>
+		<label class="nb-login-field">
+			<span>{{ _('Password') }}</span>
+			<input name="luci_password" id="luci_password" type="password" autocomplete="current-password" autofocus>
+		</label>
+
+		{% if (auth_fields): %}
+			{% for (let field in auth_fields): %}
+			<label class="nb-login-field">
+				<span>{{ _(field.label ?? field.name) }}</span>
+				<input
+					name="{{ field.name }}"
+					id="{{ field.name }}"
+					type="{{ field.type ?? 'text' }}"
+					{% if (field.placeholder): %}placeholder="{{ field.placeholder }}"{% endif %}
+					{% if (field.inputmode): %}inputmode="{{ field.inputmode }}"{% endif %}
+					{% if (field.pattern): %}pattern="{{ field.pattern }}"{% endif %}
+					{% if (field.maxlength): %}maxlength="{{ field.maxlength }}"{% endif %}
+					{% if (field.autocomplete): %}autocomplete="{{ field.autocomplete }}"{% endif %}
+					{% if (field.required): %}required{% endif %}
+				>
+			</label>
+			{% endfor %}
+		{% endif %}
+		{% if (auth_html): %}
+			<div class="nb-login-extra">{{ auth_html }}</div>
+		{% endif %}
+		{% if (auth_assets): %}
+			{% for (let asset in auth_assets): %}
+				{% if (asset.type == 'script'): %}
+					<script src="{{ asset.src }}"></script>
+				{% endif %}
+			{% endfor %}
+		{% endif %}
+
+		<button type="submit" class="nb-login-submit">{{ _('Log in') }}</button>
+		<p class="nb-login-foot">{{ ru ? 'Панель управления роутером' : 'Router control panel' }}</p>
+	</form>
+</div>
+<script>
+	document.querySelector('.nb-login-card').addEventListener('submit', function() {
+		var b = this.querySelector('.nb-login-submit');
+		b.classList.add('spinning');
+		b.disabled = true;
+	});
+</script>
+
+{% include('footer', { blank_page: true }) %}
