@@ -26,7 +26,8 @@ platform_do_upgrade() {
 	qcom,ipq8064-ap161)
 		nand_do_upgrade "$1"
 		;;
-	aruba,ap-32x)
+	aruba,ap-32x|\
+	aruba,ap-32x-256m)
 		# The bootloader on this device unfortunately enforces a particular set of UBI volumes,
 		# and will mess with the partitioning if it doesn't find it.
 		# Therefore, we have to make do with the stock layout, which is a set of three
