@@ -91,7 +91,7 @@ Signed-off-by: Heiko Stuebner <heiko@sntech.de>
  			RK3568_CLKSEL_CON(10), 0, 2, DFLAGS,
 --- a/drivers/clk/rockchip/clk-rk3576.c
 +++ b/drivers/clk/rockchip/clk-rk3576.c
-@@ -1678,13 +1678,13 @@ static struct rockchip_clk_branch rk3576
+@@ -1679,13 +1679,13 @@ static struct rockchip_clk_branch rk3576
  
  	/* phy ref */
  	MUXGRF(CLK_PHY_REF_SRC, "clk_phy_ref_src", clk_phy_ref_src_p,  0,
@@ -109,7 +109,7 @@ Signed-off-by: Heiko Stuebner <heiko@sntech.de>
  
  	/* secure ns */
  	COMPOSITE_NODIV(ACLK_SECURE_NS, "aclk_secure_ns", mux_350m_175m_116m_24m_p, CLK_IS_CRITICAL,
-@@ -1727,13 +1727,14 @@ static void __init rk3576_clk_init(struc
+@@ -1728,13 +1728,14 @@ static void __init rk3576_clk_init(struc
  	struct rockchip_clk_provider *ctx;
  	unsigned long clk_nr_clks;
  	void __iomem *reg_base;
@@ -127,7 +127,7 @@ Signed-off-by: Heiko Stuebner <heiko@sntech.de>
  		pr_err("%s: could not get PMU0 GRF syscon\n", __func__);
  		return;
  	}
-@@ -1747,11 +1748,16 @@ static void __init rk3576_clk_init(struc
+@@ -1748,11 +1749,16 @@ static void __init rk3576_clk_init(struc
  	ctx = rockchip_clk_init(np, reg_base, clk_nr_clks);
  	if (IS_ERR(ctx)) {
  		pr_err("%s: rockchip clk init failed\n", __func__);
@@ -147,7 +147,7 @@ Signed-off-by: Heiko Stuebner <heiko@sntech.de>
  
  	rockchip_clk_register_plls(ctx, rk3576_pll_clks,
  				   ARRAY_SIZE(rk3576_pll_clks),
-@@ -1774,6 +1780,12 @@ static void __init rk3576_clk_init(struc
+@@ -1775,6 +1781,12 @@ static void __init rk3576_clk_init(struc
  	rockchip_register_restart_notifier(ctx, RK3576_GLB_SRST_FST, NULL);
  
  	rockchip_clk_of_add_provider(np, ctx);
