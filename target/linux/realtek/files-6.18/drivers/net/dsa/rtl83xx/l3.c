@@ -29,6 +29,7 @@ struct otto_l3_net_event_work {
 	u64 mac;
 	struct in6_addr gw_addr;
 	int ifindex;
+	bool valid;
 };
 
 struct otto_l3_fib_event_work {
@@ -1147,9 +1148,41 @@ static void otto_l3_route_update_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_ro
 	}
 }
 
+/* The hardware would go on forwarding to the address the gateway last
+ * answered from. The CPU resolves it again or reports it unreachable, and the
+ * next update with a valid neighbour gives the route back. A family that
+ * routes through a PIE rule keeps the rule it had.
+ */
+static void otto_l3_route_trap_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r)
+{
+	int slot = r->row;
+
+	if (!ctrl->cfg->use_l3_tables || r->attr.action == ROUTE_ACT_TRAP2CPU)
+		return;
+
+	if (r->is_host_route)
+		slot = ctrl->cfg->find_slot(ctrl, r, true);
+
+	/* Not in the hardware, so nothing forwards to the old address */
+	if (slot < 0)
+		return;
+
+	dev_info(ctrl->dev, "no valid neighbour for %pI4, routing %pI4/%d in software\n",
+		 &r->gw_ip.s6_addr32[3], &r->dst_ip, r->prefix_len);
+
+	r->attr.action = ROUTE_ACT_TRAP2CPU;
+	r->attr.ttl_dec = false;
+	r->attr.ttl_check = false;
+
+	if (r->is_host_route)
+		ctrl->cfg->host_route_write(ctrl, slot, r);
+	else
+		ctrl->cfg->route_write(ctrl, slot, r);
+}
+
 /* Updates an L3 next hop entry in the ROUTING table */
 static int otto_l3_nexthop_update(struct otto_l3_ctrl *ctrl, u8 type, int ifindex,
-				  const struct in6_addr *gw, u64 mac)
+				  const struct in6_addr *gw, u64 mac, bool valid)
 {
 	struct otto_l3_route *r;
 	bool known;
@@ -1177,7 +1210,10 @@ static int otto_l3_nexthop_update(struct otto_l3_ctrl *ctrl, u8 type, int ifinde
 		    !ipv6_addr_equal(&r->gw_ip, gw))
 			continue;
 
-		otto_l3_route_update_hw(ctrl, r, mac);
+		if (valid)
+			otto_l3_route_update_hw(ctrl, r, mac);
+		else
+			otto_l3_route_trap_hw(ctrl, r);
 	}
 
 	return 0;
@@ -1206,7 +1242,7 @@ static int otto_l3_port_ipv4_resolve(struct otto_l3_ctrl *ctrl,
 		mac = ether_addr_to_u64(n->ha);
 		dev_info(ctrl->dev, "resolved mac: %016llx\n", mac);
 		ipv6_addr_set_v4mapped(ip_addr, &gw);
-		otto_l3_nexthop_update(ctrl, ROUTE_TYPE_IP4UC, dev->ifindex, &gw, mac);
+		otto_l3_nexthop_update(ctrl, ROUTE_TYPE_IP4UC, dev->ifindex, &gw, mac, true);
 	} else {
 		dev_info(ctrl->dev, "need to wait\n");
 		neigh_event_send(n, NULL);
@@ -1827,7 +1863,7 @@ static void otto_l3_net_event_work_do(struct work_struct *work)
 		container_of(work, struct otto_l3_net_event_work, work);
 
 	otto_l3_nexthop_update(net_work->ctrl, ROUTE_TYPE_IP4UC, net_work->ifindex,
-			       &net_work->gw_addr, net_work->mac);
+			       &net_work->gw_addr, net_work->mac, net_work->valid);
 
 	kfree(net_work);
 }
@@ -1851,8 +1887,8 @@ static int otto_l3_netevent_notifier(struct notifier_block *this, unsigned long 
 			return NOTIFY_DONE;
 		dev = n->dev;
 		port = otto_l3_port_dev_lower_find(dev, ctrl);
-		if (port < 0 || !(n->nud_state & NUD_VALID)) {
-			dev_dbg(ctrl->dev, "Neigbour invalid, not updating\n");
+		if (port < 0) {
+			dev_dbg(ctrl->dev, "Neighbour not on a switch port, not updating\n");
 			return NOTIFY_DONE;
 		}
 
@@ -1863,7 +1899,13 @@ static int otto_l3_netevent_notifier(struct notifier_block *this, unsigned long 
 		INIT_WORK(&net_work->work, otto_l3_net_event_work_do);
 		net_work->ctrl = ctrl;
 
+		/* A neighbour taken out of the table is marked dead, and keeps a
+		 * NUD_VALID state if it had one
+		 */
+		read_lock_bh(&n->lock);
+		net_work->valid = (n->nud_state & NUD_VALID) && !n->dead;
 		net_work->mac = ether_addr_to_u64(n->ha);
+		read_unlock_bh(&n->lock);
 		net_work->ifindex = dev->ifindex;
 		ipv6_addr_set_v4mapped(*(__be32 *)n->primary_key, &net_work->gw_addr);
 
