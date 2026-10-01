@@ -1,0 +1,74 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Quinn O'Shea <qoshea@gmail.com>
+Date: Wed, 30 Sep 2026 20:09:42 -0500
+Subject: net: dsa: pass bridge VLAN protocol changes to drivers
+
+A bridge announces a change of its VLAN protocol with
+SWITCHDEV_ATTR_ID_BRIDGE_VLAN_PROTOCOL, but DSA has no handler for it and
+returns -EOPNOTSUPP, which the bridge takes as acceptance. A switch whose
+ports are already offloaded keeps classifying and tagging with the old
+TPID while the bridge runs the new protocol.
+
+Add an optional port_vlan_protocol operation and call it for that
+attribute, so a driver can follow the change or refuse it. Drivers that
+do not implement it behave as before.
+
+Signed-off-by: Quinn O'Shea <qoshea@gmail.com>
+---
+--- a/include/net/dsa.h
++++ b/include/net/dsa.h
+@@ -1070,6 +1070,8 @@ struct dsa_switch_ops {
+ 	int	(*port_vlan_filtering)(struct dsa_switch *ds, int port,
+ 				       bool vlan_filtering,
+ 				       struct netlink_ext_ack *extack);
++	int	(*port_vlan_protocol)(struct dsa_switch *ds, int port, u16 proto,
++				      struct netlink_ext_ack *extack);
+ 	int	(*port_vlan_add)(struct dsa_switch *ds, int port,
+ 				 const struct switchdev_obj_port_vlan *vlan,
+ 				 struct netlink_ext_ack *extack);
+--- a/net/dsa/port.c
++++ b/net/dsa/port.c
+@@ -872,6 +872,17 @@ bool dsa_port_skip_vlan_configuration(st
+ 	return !ds->configure_vlan_while_not_filtering && !br_vlan_enabled(br);
+ }
+ 
++int dsa_port_vlan_protocol(struct dsa_port *dp, u16 proto,
++			   struct netlink_ext_ack *extack)
++{
++	struct dsa_switch *ds = dp->ds;
++
++	if (!ds->ops->port_vlan_protocol)
++		return -EOPNOTSUPP;
++
++	return ds->ops->port_vlan_protocol(ds, dp->index, proto, extack);
++}
++
+ int dsa_port_ageing_time(struct dsa_port *dp, clock_t ageing_clock)
+ {
+ 	unsigned long ageing_jiffies = clock_t_to_jiffies(ageing_clock);
+--- a/net/dsa/port.h
++++ b/net/dsa/port.h
+@@ -39,6 +39,8 @@ void dsa_port_pre_lag_leave(struct dsa_p
+ void dsa_port_lag_leave(struct dsa_port *dp, struct net_device *lag_dev);
+ int dsa_port_vlan_filtering(struct dsa_port *dp, bool vlan_filtering,
+ 			    struct netlink_ext_ack *extack);
++int dsa_port_vlan_protocol(struct dsa_port *dp, u16 proto,
++			   struct netlink_ext_ack *extack);
+ bool dsa_port_skip_vlan_configuration(struct dsa_port *dp);
+ int dsa_port_ageing_time(struct dsa_port *dp, clock_t ageing_clock);
+ int dsa_port_mst_enable(struct dsa_port *dp, bool on,
+--- a/net/dsa/user.c
++++ b/net/dsa/user.c
+@@ -612,6 +612,12 @@ static int dsa_user_port_attr_set(struct
+ 		ret = dsa_port_vlan_filtering(dp, attr->u.vlan_filtering,
+ 					      extack);
+ 		break;
++	case SWITCHDEV_ATTR_ID_BRIDGE_VLAN_PROTOCOL:
++		if (!dsa_port_offloads_bridge_dev(dp, attr->orig_dev))
++			return -EOPNOTSUPP;
++
++		ret = dsa_port_vlan_protocol(dp, attr->u.vlan_protocol, extack);
++		break;
+ 	case SWITCHDEV_ATTR_ID_BRIDGE_AGEING_TIME:
+ 		if (!dsa_port_offloads_bridge_dev(dp, attr->orig_dev))
+ 			return -EOPNOTSUPP;
