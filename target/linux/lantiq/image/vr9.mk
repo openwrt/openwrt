@@ -304,6 +304,24 @@ define Device/avm_fritz7490-micron
 endef
 TARGET_DEVICES += avm_fritz7490-micron
 
+define Device/bintec_rs123
+  $(Device/dsa-migration)
+  DEVICE_VENDOR := bintec elmeg
+  DEVICE_MODEL := RS123
+  BINTEC_BOARD := rs123
+  # Only the kernel sits behind the BOSS header, so the bootmonitor's CRC check
+  # covers data that never changes once flashed. The rootfs follows behind it.
+  KERNEL := kernel-bin | append-dtb | lzma | bintec-loader | bintec-cev | \
+	bintec-boss-header
+  KERNEL_INITRAMFS := $$(KERNEL)
+  IMAGES := sysupgrade.bin factory.cev
+  IMAGE/factory.cev := append-kernel | append-rootfs | pad-rootfs | check-size
+  IMAGE_SIZE := 32000k
+  DEVICE_PACKAGES := kmod-usb-dwc2 kmod-usb-ledtrig-usbport kmod-i2c-gpio \
+	kmod-rtc-s35390a kmod-sfp xrx200-rev1.2-phy11g-firmware
+endef
+TARGET_DEVICES += bintec_rs123
+
 define Device/bt_homehub-v5a
   $(Device/dsa-migration)
   $(Device/NAND)
