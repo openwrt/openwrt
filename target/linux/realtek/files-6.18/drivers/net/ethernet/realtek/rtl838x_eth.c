@@ -1108,18 +1108,6 @@ static int rteth_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	struct rteth_frag *frag;
 	dma_addr_t packet_dma;
 
-	port = rteth_get_dsa_port(skb, dev);
-	if (port < 0)
-		len += ETH_FCS_LEN; /* No reusable 4 byte tag, add space for 4 byte layer 2 FCS */
-
-	len = max(ETH_ZLEN + ETH_FCS_LEN, len);
-	if (unlikely(skb_put_padto(skb, len))) {
-		dev->stats.tx_errors++;
-		netdev_warn(dev, "skb pad failed\n");
-
-		return NETDEV_TX_OK;
-	}
-
 	slot = ctrl->tx_info[ring].send_count & (RTETH_TX_RING_SIZE - 1);
 	frag = &ctrl->tx_data[ring].frag[slot];
 	packet_dma = ctrl->tx_data[ring].ring[slot];
@@ -1131,6 +1119,18 @@ static int rteth_start_xmit(struct sk_buff *skb, struct net_device *dev)
 			netdev_warn(dev, "tx ring %d busy, waiting for slot %d\n", ring, slot);
 
 		return NETDEV_TX_BUSY;
+	}
+
+	port = rteth_get_dsa_port(skb, dev);
+	if (port < 0)
+		len += ETH_FCS_LEN; /* No reusable 4 byte tag, add space for 4 byte layer 2 FCS */
+
+	len = max(ETH_ZLEN + ETH_FCS_LEN, len);
+	if (unlikely(skb_put_padto(skb, len))) {
+		dev->stats.tx_errors++;
+		netdev_warn(dev, "skb pad failed\n");
+
+		return NETDEV_TX_OK;
 	}
 
 	if (unlikely(*packet_skb))
