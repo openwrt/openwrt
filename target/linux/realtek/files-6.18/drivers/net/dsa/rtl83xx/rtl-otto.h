@@ -83,6 +83,7 @@ struct rtldsa_port {
 	bool enable:1;
 	bool phy:1;
 	bool isolated:1;
+	bool qinq:1;
 	unsigned long rate_police_egress;
 	unsigned long rate_police_ingress;
 	unsigned long cached_flags;
@@ -528,6 +529,9 @@ struct otto_dsa_priv {
 	 * first/primary port which needs to be added in the port matrix
 	 */
 	u64 lag_non_primary;
+
+	/** @vlan_proto: bridge VLAN protocol (ETH_P_*) owning each VID, 0 if none */
+	u16 vlan_proto[MAX_VLANS];
 
 	/** @lagmembers: Port (bit) is part of any LAG */
 	u64 lagmembers;

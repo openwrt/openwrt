@@ -932,20 +932,32 @@ int otto_vlan_port_add(struct dsa_switch *ds, int port,
 		return -ENOTSUPP;
 	}
 
-	/*
-	 * The hardware can handle 802.1ad. The driver just does not program
-	 * the inner and outer tag handling for it yet. A host VLAN arrives on
-	 * the CPU port, which has no bridge, and names the bridge itself.
-	 */
+	/* A host VLAN arrives on the CPU port, which has no bridge, and names the bridge itself. */
+	proto = ETH_P_8021Q;
 	bridge_dev = vlan->obj.orig_dev;
 	if (!bridge_dev || !netif_is_bridge_master(bridge_dev))
 		bridge_dev = dsa_port_bridge_dev_get(dsa_to_port(ds, port));
-	if (bridge_dev && !br_vlan_get_proto(bridge_dev, &proto) && proto != ETH_P_8021Q) {
+	if (bridge_dev)
+		br_vlan_get_proto(bridge_dev, &proto);
+	if (proto != ETH_P_8021Q && (proto != ETH_P_8021AD || !priv->r->vlan_port_qinq_set)) {
 		NL_SET_ERR_MSG_MOD(extack, "802.1ad bridges are not supported");
 		return -EINVAL;
 	}
 
 	mutex_lock(&priv->reg_mutex);
+
+	if (dsa_is_user_port(ds, port)) {
+		priv->r->vlan_tables_read(vlan->vid, &info);
+		if (!(info.member_ports & ~BIT_ULL(priv->r->cpu_port)))
+			priv->vlan_proto[vlan->vid] = 0;
+
+		if (priv->vlan_proto[vlan->vid] && priv->vlan_proto[vlan->vid] != proto) {
+			mutex_unlock(&priv->reg_mutex);
+			NL_SET_ERR_MSG_MOD(extack, "VLAN is in use by a bridge with another VLAN protocol");
+			return -EBUSY;
+		}
+		priv->vlan_proto[vlan->vid] = proto;
+	}
 
 	/*
 	 * Realtek switches copy frames as-is to/from the CPU. For a proper
@@ -1025,6 +1037,9 @@ int otto_vlan_port_del(struct dsa_switch *ds, int port,
 	/* remove port from both tables */
 	info.untagged_ports &= (~BIT_ULL(port));
 	info.member_ports &= (~BIT_ULL(port));
+
+	if (!(info.member_ports & ~BIT_ULL(priv->r->cpu_port)))
+		priv->vlan_proto[vlan->vid] = 0;
 
 	/* VLANs without members are set back (implicitly) to CIST by DSA */
 	if (!info.member_ports) {
