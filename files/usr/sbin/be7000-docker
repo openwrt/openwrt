@@ -1,9 +1,10 @@
 #!/bin/sh
 # 在此路由器上设置 Docker。
 #
-# 这里容易让人踩坑的地方是镜像存放位置。dockerd 默认将 data-root 设为 /opt/docker，
-# 它位于 overlay 上：在这块板子上大约只有 19 MB，如果备用分区留给了原厂固件则只有 7 MB。
-# 一个镜像就能把它填满。因此本脚本会选择一个真实磁盘，并让 dockerd 指向它。
+# 这里容易踩坑的地方是镜像存放位置。dockerd 默认把 data-root 设为
+# /opt/docker，它位于 overlay 上：在这块板子上约 19 MB，如果备用分区
+# 留给了原厂固件则只有 7 MB。一个镜像就能填满。因此本脚本选择一个真实
+# 磁盘，让 dockerd 指向它。
 #
 # 用法：
 #   be7000-docker status
@@ -16,6 +17,16 @@ PKGS="dockerd docker docker-compose luci-app-dockerman"
 MIN_FREE_MB=1024
 
 die() { echo "$*" >&2; exit 1; }
+
+# 消息跟随 LuCI 语言：zh* 用中文，en* 用英文，其他回退到中文
+L=zh
+case "$(uci -q get luci.main.lang)" in
+	en*) L=en ;;
+	zh*) L=zh ;;
+	*)   L=zh ;;
+esac
+# t <中文> <英文>
+t() { [ "$L" = en ] && echo "$2" || echo "$1"; }
 
 data_root_now() {
 	uci -q get dockerd.globals.data_root || echo "/opt/docker/"
@@ -45,22 +56,22 @@ suggest_data_root() {
 
 cmd_status() {
 	if installed; then
-		echo "dockerd：已安装，$(dockerd --version 2>/dev/null | head -1)"
+		echo "dockerd: $(t "已安装" "installed"), $(dockerd --version 2>/dev/null | head -1)"
 	else
-		echo "dockerd：未安装"
+		echo "dockerd: $(t "未安装" "not installed")"
 	fi
 	local dr free
 	dr="$(data_root_now)"
 	free="$(free_mb_of "$dr")"
-	echo "数据目录：$dr"
-	echo "该处可用空间：${free:-?} MB"
+	echo "$(t "数据目录" "data"): $dr"
+	echo "$(t "该处可用空间：${free:-?} MB" "free there: ${free:-?} MB")"
 	if [ -n "$free" ] && [ "$free" -lt "$MIN_FREE_MB" ]; then
 		echo
-		echo "这太少了。Docker 镜像动辄数百 MB。"
-		echo "请连接磁盘并运行：be7000-docker setup"
+		t "这太少了。Docker 镜像动辄数百 MB。" "That is not enough. Docker images take hundreds of megabytes."
+		t "请连接磁盘并运行：be7000-docker setup" "Plug in a disk and run: be7000-docker setup"
 	fi
 	echo
-	echo "服务：$(/etc/init.d/dockerd status 2>/dev/null || echo '未运行')"
+	echo "$(t "服务" "service"): $(/etc/init.d/dockerd status 2>/dev/null || t '未运行' 'not running')"
 }
 
 cmd_setup() {
@@ -69,33 +80,34 @@ cmd_setup() {
 	if [ -n "$want" ]; then
 		dr="$want"
 	else
-		dr="$(suggest_data_root)" || die "未找到已连接的、可用空间至少 ${MIN_FREE_MB} MB 的磁盘。
-请连接磁盘、挂载它并指定路径：be7000-docker setup --data-root /mnt/sda1/docker"
+		dr="$(suggest_data_root)" || die "$(t "未找到已连接的、可用空间至少 ${MIN_FREE_MB} MB 的磁盘。
+请连接磁盘、挂载它并指定路径：be7000-docker setup --data-root /mnt/sda1/docker" "No mounted disk with at least ${MIN_FREE_MB} MB free found.
+Plug in a disk, mount it and give the path: be7000-docker setup --data-root /mnt/sda1/docker")"
 	fi
 
 	free="$(free_mb_of "$dr")"
-	[ -n "$free" ] || die "无法确定 $dr 的可用空间"
+	[ -n "$free" ] || die "$(t "无法确定 $dr 的可用空间" "Could not find out the free space for $dr")"
 	if [ "$free" -lt "$MIN_FREE_MB" ]; then
-		echo "总共只有 ${free} MB 可用，这对 Docker 来说太少了。" >&2
-		[ "$yes" = 1 ] || die "如果确定，请加上 --yes 重试"
+		t "总共只有 ${free} MB 可用，这对 Docker 来说太少了。" "Only ${free} MB free, that is not enough for Docker." >&2
+		[ "$yes" = 1 ] || die "$(t "如果确定，请加上 --yes 重试" "If you are sure, repeat with --yes")"
 	fi
 
 	if [ "$yes" != 1 ]; then
-		echo "将安装：$PKGS"
-		echo "Docker 数据将存放在：$dr（可用 ${free} MB）"
-		echo "请加上 --yes 以执行。"
+		echo "$(t "将安装" "Will install"): $PKGS"
+		t "Docker 数据将存放在：$dr（可用 ${free} MB）" "Docker data will live in: $dr (${free} MB free)"
+		t "请加上 --yes 以执行。" "Repeat with --yes to do it."
 		exit 1
 	fi
 
 	if ! installed; then
-		echo "正在安装软件包"
+		t "正在安装软件包" "Installing packages"
 		apk update >/dev/null 2>&1 || true
 		# shellcheck disable=SC2086
-		apk add $PKGS || die "无法安装软件包。请检查 apk update。"
+		apk add $PKGS || die "$(t "无法安装软件包。请检查 apk update。" "Could not install the packages. Check apk update.")"
 	fi
 
 	mkdir -p "$dr"
-	echo "正在设置 data-root"
+	t "正在设置 data-root" "Setting data-root"
 	uci -q set dockerd.globals.data_root="$dr"
 	uci -q commit dockerd
 
@@ -103,17 +115,17 @@ cmd_setup() {
 	/etc/init.d/dockerd restart
 
 	echo
-	echo "完成。在 LuCI 中管理：服务，Dockerman。"
-	echo "那里有容器、镜像、网络、卷、日志以及进入容器的控制台。"
+	t "完成。在 LuCI 中管理：服务，Dockerman。" "Done. Manage it in LuCI: Services, Dockerman."
+	t "那里有容器、镜像、网络、卷、日志以及进入容器的控制台。" "Containers, images, networks, volumes, logs and a console into containers are there."
 }
 
 cmd_portainer() {
 	local yes="$1"
-	installed || die "请先运行 be7000-docker setup"
+	installed || die "$(t "请先运行 be7000-docker setup" "Run be7000-docker setup first")"
 	if [ "$yes" != 1 ]; then
-		echo "将以容器方式启动 Portainer CE，Web 界面在 https 的 9443 端口。"
-		echo "这是 Docker 之上的独立界面，支持堆栈和 compose。"
-		echo "请加上 --yes 重试。"
+		t "将以容器方式启动 Portainer CE，Web 界面在 https 的 9443 端口。" "Will start Portainer CE as a container, web interface on port 9443 over https."
+		t "这是 Docker 之上的独立界面，支持堆栈和 compose。" "It is a separate interface on top of Docker, with stacks and compose."
+		t "请加上 --yes 重试。" "Repeat with --yes."
 		exit 1
 	fi
 	docker volume create portainer_data >/dev/null
@@ -122,7 +134,7 @@ cmd_portainer() {
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		-v portainer_data:/data \
 		portainer/portainer-ce:latest
-	echo "Portainer 已启动。请打开 https://<路由器地址>:9443 并设置密码。"
+	t "Portainer 已启动。请打开 https://<路由器地址>:9443 并设置密码。" "Portainer is up. Open https://<router address>:9443 and set a password."
 }
 
 ACTION="$1"

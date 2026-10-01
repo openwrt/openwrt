@@ -1,0 +1,262 @@
+#!/bin/sh
+# 5 GHz split, like 5G-1 and 5G-2 on stock: the QCN9274 runs its dual-MAC
+# firmware as two radios, 36-64 and 149-165.
+#
+#   be7000-5g-split status | on | off
+#
+# The ath12k board_id parameter picks the firmware (0x1008 split, 0 = the
+# single-MAC board id from DT), the PCI device is rebound to apply it, and
+# the wireless config gets a second 5 GHz radio with copies of the networks
+# of the first one. Like stock set_5g_split, the split also flips the RF
+# select lines TLMM6/TLMM7 (single 0/1, split 1/0) and uses its own
+# calibration from ART (single 0x65000, split 0x33000). The choice is kept
+# in /etc/config/be7000; /etc/init.d/be7000-5g-split sets lines, calibration
+# and the ath12k board_id option at boot, before the module loads.
+
+SPLIT_ID=0x1008
+PARAM=/sys/module/ath12k/parameters/board_id
+DRV=/sys/bus/pci/drivers/ath12k_pci
+CAL_DIR=/lib/firmware/ath12k/QCN9274/hw2.0
+CAL_LEN=0x2d000
+
+pci_dev() {
+	for d in $DRV/0*; do [ -e "$d" ] && { basename "$d"; return; }; done
+	for d in /sys/bus/pci/devices/*; do
+		[ "$(cat $d/vendor 2>/dev/null):$(cat $d/device 2>/dev/null)" = "0x17cb:0x1109" ] && { basename "$d"; return; }
+	done
+}
+
+tlmm_gpio() {
+	local c
+	for c in /sys/class/gpio/gpiochip*; do
+		[ "$(cat $c/label 2>/dev/null)" = 1000000.pinctrl ] && { echo $(( $(cat $c/base) + $1 )); return; }
+	done
+}
+
+# <tlmm pin> <0|1>
+gpio_out() {
+	local n="$(tlmm_gpio $1)" v
+	[ -n "$n" ] || { echo "no TLMM gpiochip" >&2; return 1; }
+	[ -d /sys/class/gpio/gpio$n ] || echo $n > /sys/class/gpio/export || return 1
+	if [ "$2" = 1 ]; then v=high; else v=low; fi
+	echo $v > /sys/class/gpio/gpio$n/direction
+}
+
+rf_select() {
+	if [ "$1" = split ]; then
+		gpio_out 6 1 && gpio_out 7 0
+	else
+		gpio_out 6 0 && gpio_out 7 1
+	fi
+}
+
+# copy the calibration of the mode from ART into the file ath12k asks for;
+# the file lives on the overlay, so rewrite it only when it differs
+write_cal() {
+	local off dev="$(pci_dev)" mtd f t=/tmp/be7000-cal.$$
+	[ "$1" = split ] && off=0x33000 || off=0x65000
+	[ -n "$dev" ] || dev=0002:01:00.0
+	mtd="$(sed -n 's/^\(mtd[0-9]*\):.*"0:art"$/\1/p' /proc/mtd)"
+	[ -n "$mtd" ] || { echo "no ART partition" >&2; return 1; }
+	dd if=/dev/$mtd of=$t bs=4096 skip=$((off / 4096)) count=$((CAL_LEN / 4096)) 2>/dev/null
+	[ "$(wc -c < $t)" -eq $((CAL_LEN)) ] || { rm -f $t; echo "short ART read" >&2; return 1; }
+	f=$CAL_DIR/cal-pci-$dev.bin
+	if ! cmp -s $t $f; then
+		mkdir -p $CAL_DIR
+		cp $t $f
+	fi
+	rm -f $t
+}
+
+# board_id option for ath12k at module load (kmodloader reads modules.conf)
+mod_option() {
+	local want=""
+	[ "$1" = split ] && want="options ath12k board_id=$(printf %d $SPLIT_ID)"
+	[ "$(grep '^options ath12k board_id=' /etc/modules.conf 2>/dev/null)" = "$want" ] && return 0
+	sed -i '/^options ath12k board_id=/d' /etc/modules.conf 2>/dev/null
+	[ -n "$want" ] && echo "$want" >> /etc/modules.conf
+	return 0
+}
+
+prepare() {
+	rf_select $1 || return 1
+	write_cal $1 || return 1
+	mod_option $1
+}
+
+# the 5 GHz wifi-device of the PCI radio without a radio index, or with index 1
+main_radio() {
+	local s
+	for s in $(uci -q show wireless | sed -n "s/^wireless\.\([^.=]*\)=wifi-device$/\1/p"); do
+		[ "$(uci -q get wireless.$s.band)" = 5g ] || continue
+		case "$(uci -q get wireless.$s.path)" in *pci*) ;; *) continue ;; esac
+		case "$(uci -q get wireless.$s.radio)" in ""|1) echo $s; return ;; esac
+	done
+}
+
+low_radio() {
+	local s path="$(uci -q get wireless.$1.path)"
+	for s in $(uci -q show wireless | sed -n "s/^wireless\.\([^.=]*\)=wifi-device$/\1/p"); do
+		[ "$(uci -q get wireless.$s.path)" = "$path" ] && [ "$(uci -q get wireless.$s.radio)" = 0 ] && { echo $s; return; }
+	done
+}
+
+ifaces_of() {
+	uci -q show wireless | sed -n "s/^wireless\.\([^.]*\)\.device='$1'$/\1/p"
+}
+
+mode_of() {
+	[ $(($1 & 0x1000)) -ne 0 ] && echo split || echo single
+}
+
+apply_fw() {
+	local dev="$(pci_dev)"
+	[ -n "$dev" ] || { echo "no QCN9274 on PCI" >&2; return 1; }
+	[ -w "$PARAM" ] || { echo "ath12k has no board_id parameter" >&2; return 1; }
+	if [ "$(cat $PARAM)" = "$(printf %d $1)" ] && [ -e "$DRV/$dev" ]; then
+		prepare $(mode_of $1)
+		return
+	fi
+	[ -e "$DRV/$dev" ] && echo "$dev" > $DRV/unbind
+	prepare $(mode_of $1) || return 1
+	echo "$(printf %d $1)" > $PARAM
+	sleep 2
+	echo "$dev" > $DRV/bind
+	# wait for the phy to come back
+	i=0; while [ $i -lt 60 ] && ! ls /sys/bus/pci/devices/$dev/ieee80211 >/dev/null 2>&1; do sleep 1; i=$((i+1)); done
+	ls /sys/bus/pci/devices/$dev/ieee80211 >/dev/null 2>&1
+}
+
+# number of radios the 5 GHz phy reports (2 in split mode)
+radios() {
+	local dev="$(pci_dev)" phy
+	phy="$(ls /sys/bus/pci/devices/$dev/ieee80211 2>/dev/null | head -1)"
+	[ -n "$phy" ] || { echo 0; return; }
+	iw phy "$phy" info 2>/dev/null | grep -c '^[[:space:]]*\* Idx '
+}
+
+# drop wifi-devices on the same PCI path other than the given ones (left
+# by the hotplug wifi-detect when it saw the new radios first)
+drop_extra() {
+	local s path="$(uci -q get wireless.$1.path)" i
+	for s in $(uci -q show wireless | sed -n "s/^wireless\.\([^.=]*\)=wifi-device$/\1/p"); do
+		[ "$s" = "$1" ] || [ "$s" = "$2" ] && continue
+		[ "$(uci -q get wireless.$s.path)" = "$path" ] || continue
+		for i in $(ifaces_of $s); do uci -q delete wireless.$i; done
+		uci -q delete wireless.$s
+	done
+}
+
+config_on() {
+	local r="$(main_radio)" low ch
+	[ -n "$r" ] || { echo "no 5 GHz radio in /etc/config/wireless" >&2; return 1; }
+	uci set wireless.$r.radio=1
+	# the upper radio covers 144-177; ACS right after the firmware switch
+	# is unreliable, so start on fixed channels
+	ch="$(uci -q get wireless.$r.channel)"
+	case "$ch" in [0-9]*) [ "$ch" -ge 144 ] || uci set wireless.$r.channel=149 ;; *) uci set wireless.$r.channel=149 ;; esac
+	low="$(low_radio $r)"
+	if [ -z "$low" ]; then
+		low=${r}_low
+		uci set wireless.$low=wifi-device
+		for o in type path band htmode country cell_density num_global_macaddr; do
+			v="$(uci -q get wireless.$r.$o)" && uci set wireless.$low.$o="$v"
+		done
+		uci set wireless.$low.radio=0
+		uci set wireless.$low.channel=36
+		for i in $(ifaces_of $r); do
+			n=${i}_low
+			uci set wireless.$n=wifi-iface
+			uci -q show wireless.$i | sed -n "s/^wireless\.$i\.\([^=]*\)=\(.*\)$/\1 \2/p" | while read o v; do
+				[ "$o" = device ] && continue
+				eval "uci set wireless.$n.$o=$v"
+			done
+			uci set wireless.$n.device=$low
+		done
+	fi
+	uci -q delete wireless.$low.disabled
+	drop_extra $r $low
+	uci commit wireless
+}
+
+config_off() {
+	local r="$(main_radio)" low i
+	[ -n "$r" ] || return 0
+	low="$(low_radio $r)"
+	if [ -n "$low" ]; then
+		for i in $(ifaces_of $low); do uci -q delete wireless.$i; done
+		uci -q delete wireless.$low
+	fi
+	uci -q delete wireless.$r.radio
+	drop_extra $r
+	uci commit wireless
+}
+
+save() {
+	[ -f /etc/config/be7000 ] || touch /etc/config/be7000
+	uci -q get be7000.wifi >/dev/null || uci set be7000.wifi=wifi
+	uci set be7000.wifi.split_5g=$1
+	uci commit be7000
+}
+
+case "$1" in
+	status)
+		p="$(cat $PARAM 2>/dev/null)"
+		if [ -n "$p" ] && [ "$p" -ne 0 ] && [ $((p & 0x1000)) -ne 0 ]; then echo on; else echo off; fi
+		;;
+	on)
+		save 1
+		config_on || exit 1
+		if ! apply_fw $SPLIT_ID || [ "$(radios)" -lt 2 ]; then
+			# the dual-MAC firmware did not come up (board data missing,
+			# old driver): go back so 5 GHz keeps working
+			echo "the 5 GHz module did not start as two radios, back to one radio" >&2
+			save 0
+			config_off
+			apply_fw 0
+			sleep 5
+			wifi reload
+			exit 1
+		fi
+		sleep 5
+		wifi reload
+		echo "5 GHz split on: two radios, 36-64 and 149-165"
+		;;
+	off)
+		save 0
+		config_off
+		apply_fw 0 || exit 1
+		sleep 5
+		wifi reload
+		echo "5 GHz split off: one radio for the whole band"
+		;;
+	boot)
+		if [ "$(uci -q get be7000.wifi.split_5g)" = 1 ]; then mode=split; id=$SPLIT_ID; else mode=single; id=0; fi
+		if [ -e "$PARAM" ]; then
+			# ath12k is already in: switch it by a rebind
+			apply_fw $id || exit 0
+		else
+			# the normal case, S09 before kmodloader: RF lines, calibration
+			# and the board_id option, ath12k then loads in the right mode
+			prepare $mode || logger -t be7000-5g-split "could not prepare $mode mode"
+		fi
+		[ $mode = split ] || exit 0
+		# once the phy is there, check that the dual-MAC firmware gave two
+		# radios; if not, go back to one radio so 5 GHz keeps working
+		(
+			i=0
+			while [ $i -lt 90 ] && [ "$(radios)" -eq 0 ]; do sleep 1; i=$((i+1)); done
+			if [ "$(radios)" -lt 2 ]; then
+				logger -t be7000-5g-split "dual-MAC firmware did not start, 5 GHz back to one radio"
+				config_off
+				apply_fw 0
+				wifi reload
+			fi
+		) </dev/null >/dev/null 2>&1 &
+		exit 0
+		;;
+	*)
+		echo "usage: $0 status|on|off" >&2
+		exit 1
+		;;
+esac

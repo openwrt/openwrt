@@ -15,55 +15,55 @@ var callPull = rpc.declare({ object: 'be7000-docker', method: 'stack_pull', para
 var callLogs = rpc.declare({ object: 'be7000-docker', method: 'stack_logs', params: ['name'] });
 var callRemove = rpc.declare({ object: 'be7000-docker', method: 'stack_remove', params: ['name'] });
 
-// 为人们实际在路由器上运行的东西准备的现成堆栈。每个都是一个普通的 compose 文件，
-// 因此部署后仍然可以编辑。
+// Ready-made stacks for the things people actually run on a router. Each one
+// is a plain compose file, so it stays editable after deployment.
 var TEMPLATES = [
 	{
 		name: 'portainer',
 		title: 'Portainer CE',
-		hint: '在独立的 Web 界面中全面管理 Docker，端口 9443',
+		hint: _('在独立的 Web 界面中全面管理 Docker，端口 9443'),
 		compose: 'services:\n  portainer:\n    image: portainer/portainer-ce:latest\n    container_name: portainer\n    restart: always\n    ports:\n      - "9443:9443"\n    volumes:\n      - /var/run/docker.sock:/var/run/docker.sock\n      - portainer_data:/data\n\nvolumes:\n  portainer_data:\n'
 	},
 	{
 		name: 'adguard',
 		title: 'AdGuard Home',
-		hint: '广告拦截和自有 DNS，Web 界面在 3000 端口',
+		hint: _('广告拦截和自有 DNS，Web 界面在 3000 端口'),
 		compose: 'services:\n  adguard:\n    image: adguard/adguardhome:latest\n    container_name: adguard\n    restart: always\n    ports:\n      - "3000:3000"\n      - "5353:53/udp"\n    volumes:\n      - adguard_work:/opt/adguardhome/work\n      - adguard_conf:/opt/adguardhome/conf\n\nvolumes:\n  adguard_work:\n  adguard_conf:\n'
 	},
 	{
 		name: 'uptime-kuma',
 		title: 'Uptime Kuma',
-		hint: '服务可用性监控，端口 3001',
+		hint: _('服务可用性监控，端口 3001'),
 		compose: 'services:\n  uptime-kuma:\n    image: louislam/uptime-kuma:1\n    container_name: uptime-kuma\n    restart: always\n    ports:\n      - "3001:3001"\n    volumes:\n      - kuma_data:/app/data\n\nvolumes:\n  kuma_data:\n'
 	},
 	{
 		name: 'vaultwarden',
 		title: 'Vaultwarden',
-		hint: '自建密码管理器，兼容 Bitwarden 客户端，端口 8080',
+		hint: _('自建密码管理器，兼容 Bitwarden 客户端，端口 8080'),
 		compose: 'services:\n  vaultwarden:\n    image: vaultwarden/server:latest\n    container_name: vaultwarden\n    restart: always\n    environment:\n      - WEBSOCKET_ENABLED=true\n    ports:\n      - "8080:80"\n    volumes:\n      - vw_data:/data\n\nvolumes:\n  vw_data:\n'
 	},
 	{
 		name: 'qbittorrent',
 		title: 'qBittorrent',
-		hint: '带 Web 界面的 BT 客户端，端口 8081，下载到 /mnt',
+		hint: _('带 Web 界面的 BT 客户端，端口 8081，下载到 /mnt'),
 		compose: 'services:\n  qbittorrent:\n    image: lscr.io/linuxserver/qbittorrent:latest\n    container_name: qbittorrent\n    restart: always\n    environment:\n      - PUID=0\n      - PGID=0\n      - WEBUI_PORT=8081\n    ports:\n      - "8081:8081"\n      - "6881:6881"\n      - "6881:6881/udp"\n    volumes:\n      - qbt_config:/config\n      - /mnt:/downloads\n\nvolumes:\n  qbt_config:\n'
 	},
 	{
 		name: 'nginx-proxy-manager',
 		title: 'Nginx Proxy Manager',
-		hint: '一键申请证书的反向代理，面板在 81 端口',
+		hint: _('一键申请证书的反向代理，面板在 81 端口'),
 		compose: 'services:\n  npm:\n    image: jc21/nginx-proxy-manager:latest\n    container_name: npm\n    restart: always\n    ports:\n      - "8880:80"\n      - "8443:443"\n      - "81:81"\n    volumes:\n      - npm_data:/data\n      - npm_ssl:/etc/letsencrypt\n\nvolumes:\n  npm_data:\n  npm_ssl:\n'
 	},
 	{
 		name: 'homeassistant',
 		title: 'Home Assistant',
-		hint: '智能家居，使用主机网络运行',
+		hint: _('智能家居，使用主机网络运行'),
 		compose: 'services:\n  homeassistant:\n    image: ghcr.io/home-assistant/home-assistant:stable\n    container_name: homeassistant\n    restart: always\n    network_mode: host\n    volumes:\n      - ha_config:/config\n      - /etc/localtime:/etc/localtime:ro\n\nvolumes:\n  ha_config:\n'
 	},
 	{
 		name: 'watchtower',
 		title: 'Watchtower',
-		hint: '自动将运行中的容器更新到最新镜像',
+		hint: _('自动将运行中的容器更新到最新镜像'),
 		compose: 'services:\n  watchtower:\n    image: containrrr/watchtower:latest\n    container_name: watchtower\n    restart: always\n    command: --cleanup --interval 86400\n    volumes:\n      - /var/run/docker.sock:/var/run/docker.sock\n'
 	}
 ];
@@ -141,7 +141,11 @@ return view.extend({
 							return;
 						}
 						ui.hideModal();
-						callWrite(n, ta.value).then(function() {
+						callWrite(n, ta.value).then(function(res) {
+							if (!res || !res.ok) {
+								ui.addNotification(null, E('pre', { 'style': 'white-space:pre-wrap' }, (res && res.output) || _('保存失败')), 'error');
+								return;
+							}
 							busy(_('启动中'), callUp(n), function() { self.refresh(); });
 						});
 					}
@@ -225,7 +229,11 @@ return view.extend({
 					E('button', { 'class': 'btn', 'click': function() { self.editor(t.name, t.compose, true); } }, _('查看并修改')),
 					' ',
 					E('button', { 'class': 'btn cbi-button-action', 'click': function() {
-						callWrite(t.name, t.compose).then(function() {
+						callWrite(t.name, t.compose).then(function(res) {
+							if (!res || !res.ok) {
+								ui.addNotification(null, E('pre', { 'style': 'white-space:pre-wrap' }, (res && res.output) || _('保存失败')), 'error');
+								return;
+							}
 							busy(_('部署 %s 中').format(t.title), callUp(t.name), function() { self.refresh(); });
 						});
 					} }, _('部署'))

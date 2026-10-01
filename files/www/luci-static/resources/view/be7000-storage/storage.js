@@ -8,19 +8,37 @@ var callStatus = rpc.declare({ object: 'be7000-storage', method: 'status' });
 var callList = rpc.declare({ object: 'be7000-storage', method: 'list' });
 var callUse = rpc.declare({ object: 'be7000-storage', method: 'use', params: ['device'] });
 var callRevert = rpc.declare({ object: 'be7000-storage', method: 'revert' });
+var callJob = rpc.declare({ object: 'be7000-storage', method: 'job' });
+
+// "use" only starts the job; wait for it here, polling every 2 s.
+function waitJob() {
+	return new Promise(function(resolve) {
+		var tick = function() {
+			callJob().then(function(res) {
+				if (res && res.done)
+					resolve(res);
+				else
+					window.setTimeout(tick, 2000);
+			}).catch(function() {
+				window.setTimeout(tick, 2000);
+			});
+		};
+		window.setTimeout(tick, 2000);
+	});
+}
 
 function mb(kb) {
 	if (!kb)
 		return '—';
-	return (kb / 1024).toFixed(1) + ' MB';
+	return _('%.1f MB').format(kb / 1024);
 }
 
 function gb(sizeMb) {
 	if (!sizeMb)
 		return '—';
 	if (sizeMb >= 1024)
-		return (sizeMb / 1024).toFixed(1) + ' GB';
-	return sizeMb + ' MB';
+		return _('%.1f GB').format(sizeMb / 1024);
+	return _('%d MB').format(sizeMb);
 }
 
 return view.extend({
@@ -44,7 +62,7 @@ return view.extend({
 	handleUse: function(dev, label) {
 		var self = this;
 		ui.showModal(_('将 /overlay 迁移到 %s').format(dev), [
-			E('p', {}, _('磁盘将被格式化，其所有内容都会丢失。')),
+			E('p', {}, _('磁盘将被格式化，所有内容都将丢失。')),
 			E('p', {}, _('当前设置和已安装的软件包将迁移到该磁盘。更改将在重启后生效。')),
 			E('p', { 'class': 'alert-message warning' }, label || dev),
 			E('div', { 'class': 'right' }, [
@@ -53,8 +71,10 @@ return view.extend({
 				E('button', {
 					'class': 'btn cbi-button-negative',
 					'click': function() {
-						ui.showModal(_('正在迁移'), [E('p', { 'class': 'spinning' }, _('正在格式化和复制，这可能需要一分钟'))]);
+						ui.showModal(_('正在迁移'), [E('p', { 'class': 'spinning' }, _('正在格式化和复制，可能需要一分钟'))]);
 						callUse(dev).then(function(res) {
+							return (res && res.started) ? waitJob() : res;
+						}).then(function(res) {
 							ui.hideModal();
 							if (res && res.ok) {
 								ui.addNotification(null, E('p', {}, _('完成。请重启路由器，以便 /overlay 迁移。')), 'info');

@@ -1,8 +1,9 @@
 #!/bin/sh
 # 将 /overlay 移动到外部磁盘（extroot）。
 #
-# 路由器在重启之间保留的所有内容都位于 /overlay 中：已安装的软件包、设置、列表。
-# 在这块板子上，用于它的内置空间很小，所以 USB 磁盘是获得空间的方式。
+# 路由器在重启之间保留的所有内容都位于 /overlay 中：已安装的软件包、
+# 设置、列表。在这块板子上，用于它的内置空间很小，因此 USB 磁盘是
+# 获得空间的方式。
 #
 # 用法：
 #   be7000-extroot status
@@ -17,13 +18,68 @@ MNT=/tmp/extroot.$$
 
 die() { echo "$*" >&2; exit 1; }
 
+# fstools 只从插槽自身 rootfs_data 卷中的 fstab 读取 extroot 条目，仅一层。
+# 在这块板子上 /overlay 通常位于 mtd28（bigoverlay）上的共享卷，所以
+# 简单的 `uci commit fstab` 会写到那里，fstools 永远看不到。条目必须
+# 也写入 rootfs_data。
+rootfs_data_dev() {
+	local n
+	for n in /sys/class/ubi/ubi*_*/name; do
+		[ -e "$n" ] || continue
+		[ "$(cat "$n")" = rootfs_data ] && { echo "/dev/$(basename "$(dirname "$n")")"; return 0; }
+	done
+	return 1
+}
+
+# mtd28（bigoverlay）上的共享设置卷：原厂的 "cfg"，或者传统的 "overlay_data"。
+bigoverlay_dev() {
+	local n want
+	for want in cfg overlay_data; do
+		for n in /sys/class/ubi/ubi1_*/name; do
+			[ -e "$n" ] || continue
+			[ "$(cat "$n")" = "$want" ] && { echo "/dev/$(basename "$(dirname "$n")")"; return 0; }
+		done
+	done
+	return 1
+}
+
+# 在 overlay 卷 <dev> 的配置目录上运行 "uci -c <dir> batch"。当 /overlay
+# 就是该卷时，它就是实时的 /etc/config。
+with_volume_config() {
+	local dev="$1" dir mnt="" rc=0
+	if [ "$dev" = "$(current_overlay_device)" ]; then
+		uci -q batch
+		return $?
+	fi
+	dir="$(mount | awk -v d="$dev" '$1 == d { print $3; exit }')"
+	if [ -z "$dir" ]; then
+		mnt=/tmp/extroot-vol.$$
+		mkdir -p "$mnt"
+		mount -t ubifs "$dev" "$mnt" || { rmdir "$mnt"; echo "无法挂载 $dev" >&2; return 1; }
+		dir="$mnt"
+	fi
+	mkdir -p "$dir/upper/etc/config"
+	[ -f "$dir/upper/etc/config/fstab" ] || cp /rom/etc/config/fstab "$dir/upper/etc/config/fstab" 2>/dev/null || : > "$dir/upper/etc/config/fstab"
+	uci -q -c "$dir/upper/etc/config" batch || rc=1
+	sync
+	[ -n "$mnt" ] && { umount "$mnt"; rmdir "$mnt"; }
+	return $rc
+}
+
+with_rootfs_data() {
+	local dev
+	dev="$(rootfs_data_dev)" || { echo "未找到 rootfs_data 卷" >&2; return 1; }
+	with_volume_config "$dev"
+}
+
 current_overlay_device() {
 	mount | awk '$3 == "/overlay" { print $1; exit }'
 }
 
 
-# 整块磁盘都在使用中的分区是不安全去碰的：磁盘重新分区后，内核可能仍会暴露过期的分区节点，
-# 这些节点现在与一个正在使用的文件系统重叠，格式化其中之一会毁掉整块磁盘。
+# 整块磁盘都在使用中的分区不安全去碰：磁盘重新分区后，内核可能仍暴露过期
+# 的分区节点，这些节点现在与正在使用的文件系统重叠，格式化其中之一会
+# 毁掉磁盘。
 parent_busy() {
 	local dev="$1" parent
 	case "$dev" in
@@ -44,7 +100,7 @@ cmd_status() {
 	echo "fstab 中的配置："
 	if uci -q get fstab.extroot >/dev/null; then
 		local where
-		where="$(uci -q get fstab.extroot.device)"
+		where="$(uci -q get fstab.extroot.device || true)"
 		[ -n "$where" ] || where="UUID $(uci -q get fstab.extroot.uuid)"
 		echo "  $where"
 		echo "  已启用 $(uci -q get fstab.extroot.enabled)"
@@ -99,8 +155,8 @@ cmd_status_json() {
 	dev="$(current_overlay_device)"
 	set -- $(df -k /overlay | tail -1)
 	total="$2"; avail="$4"
-	uuid="$(uci -q get fstab.extroot.uuid)"
-	enabled="$(uci -q get fstab.extroot.enabled)"
+	uuid="$(uci -q get fstab.extroot.uuid || true)"
+	enabled="$(uci -q get fstab.extroot.enabled || true)"
 	[ -n "$enabled" ] || enabled=""
 	printf '{"device":"%s","total_kb":%s,"available_kb":%s,"extroot_uuid":"%s","extroot_enabled":"%s"}\n' \
 		"${dev:-}" "${total:-0}" "${avail:-0}" "$uuid" "$enabled"
@@ -131,18 +187,10 @@ cmd_use() {
 	mkdir -p "$MNT"
 	mount "$dev" "$MNT" || die "无法挂载 $dev"
 
-	echo "正在复制当前 overlay 的内容"
-	# /overlay 包含 upper/ 和 work/；复制内容，而不是挂载点。
-	cp -a /overlay/. "$MNT"/ 2>/dev/null || true
-	mkdir -p "$MNT/upper" "$MNT/work"
-	sync
-	umount "$MNT"
-	rmdir "$MNT"
-
 	uuid="$(block info "$dev" 2>/dev/null | sed -n 's/.*UUID="\([^"]*\)".*/\1/p')"
 	[ -n "$uuid" ] || die "无法读取 $dev 的 UUID"
 
-	echo "正在将 /overlay 指向 $dev（UUID $uuid）"
+	# 先写设置，这样磁盘上的副本已经带有它的 fstab 条目。
 	uci -q batch <<-EOT
 		set fstab.extroot=mount
 		set fstab.extroot.target='/overlay'
@@ -152,15 +200,40 @@ cmd_use() {
 		set fstab.extroot.enabled='1'
 		commit fstab
 	EOT
-	# 内置备用分区，如果之前在使用，不能让它优先于磁盘。
-	uci -q get fstab.bigoverlay >/dev/null && {
-		uci -q set fstab.bigoverlay.enabled='0'
-		uci -q commit fstab
+	# USB 磁盘需要几秒钟才能在 preinit 中出现。
+	[ "$(uci -q get fstab.@global[0].delay_root)" -ge 15 ] 2>/dev/null || {
+		uci -q set fstab.@global[0].delay_root='15' && uci -q commit fstab
 	}
-	uci -q set bigoverlay.main.enabled='0' 2>/dev/null && uci -q commit bigoverlay
+	echo "正在复制当前 overlay 的内容"
+	# /overlay 包含 upper/ 和 work/；复制内容，而不是挂载点。
+	cp -a /overlay/. "$MNT"/ 2>/dev/null || true
+	mkdir -p "$MNT/upper" "$MNT/work"
+	# 在磁盘上 bigoverlay 必须关闭，否则它的启动脚本会重启以
+	# "把 /overlay 切回" mtd28。只在那里如此：内部设置保持用户所选的。
+	mkdir -p "$MNT/upper/etc/config"
+	[ -f "$MNT/upper/etc/config/bigoverlay" ] || cp /rom/etc/config/bigoverlay "$MNT/upper/etc/config/" 2>/dev/null || true
+	uci -q -c "$MNT/upper/etc/config" set bigoverlay.main.enabled='0' && uci -q -c "$MNT/upper/etc/config" commit bigoverlay || true
+	sync
+	umount "$MNT"
+	rmdir "$MNT"
+
+	echo "正在将 /overlay 指向 $dev（UUID $uuid）"
+	# 这是 fstools 在启动时实际读取的 fstab。extroot 条目排序在
+	# bigoverlay 之前（UUID 相对于 "ubi1_*"），所以磁盘存在时它胜出；
+	# 没有磁盘时路由器从插槽的小 overlay 启动。
+	with_rootfs_data <<-EOT || die "无法将 extroot 条目写入 rootfs_data"
+		set fstab.extroot=mount
+		set fstab.extroot.target='/overlay'
+		set fstab.extroot.uuid='$uuid'
+		set fstab.extroot.fstype='ext4'
+		set fstab.extroot.options='rw,noatime'
+		set fstab.extroot.enabled='1'
+		set fstab.@global[0].delay_root='15'
+		commit fstab
+	EOT
 
 	echo "完成。更改将在下次启动时生效。"
-	[ "$do_reboot" = 1 ] && { sync; reboot; }
+	if [ "$do_reboot" = 1 ]; then sync; reboot; fi
 }
 
 cmd_revert() {
@@ -173,8 +246,16 @@ cmd_revert() {
 	fi
 	uci -q delete fstab.extroot
 	uci -q commit fstab
+	printf 'delete fstab.extroot\ncommit fstab\n' | with_rootfs_data || die "无法从 rootfs_data 移除 extroot 条目"
+	# use 还把条目写入了 mtd28 上的共享卷；从磁盘回退时该卷不是 /etc，
+	# 所以也在这里清理。
+	local vol
+	if vol="$(bigoverlay_dev)"; then
+		printf 'delete fstab.extroot\ncommit fstab\n' | with_volume_config "$vol" ||
+			echo "注意：无法清理 $vol 上的设置" >&2
+	fi
 	echo "已移除。更改将在下次启动时生效。"
-	[ "$do_reboot" = 1 ] && { sync; reboot; }
+	if [ "$do_reboot" = 1 ]; then sync; reboot; fi
 }
 
 YES=0
@@ -197,7 +278,7 @@ for a in "$@"; do [ "$a" = "--json" ] && JSON=1; done
 case "$ACTION" in
 status) [ $JSON = 1 ] && cmd_status_json || cmd_status ;;
 list)   [ $JSON = 1 ] && cmd_list_json || cmd_list ;;
-use)    cmd_use "$DEV" "$YES" "$REBOOT" ;;
+use)    cmd_use "$DEV" 1 "$REBOOT" ;;
 revert) cmd_revert "$YES" "$REBOOT" ;;
 *)
 	echo "用法：be7000-extroot {status|list|use <device> [--yes] [--reboot]|revert [--yes] [--reboot]}"
