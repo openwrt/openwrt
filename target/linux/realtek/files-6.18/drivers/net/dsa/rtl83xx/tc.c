@@ -24,7 +24,6 @@ struct rtl83xx_flow {
 
 #define RTL930X_BANDWIDTH_CTRL_EGRESS(port)	(0x7660 + (port * 16))
 #define RTL930X_BANDWIDTH_CTRL_INGRESS(port)	(0x8068 + (port * 4))
-#define RTL930X_BANDWIDTH_CTRL_MAX_BURST	(64 * 1000)
 #define RTL930X_BANDWIDTH_CTRL_INGRESS_BURST_HIGH_ON(port) \
 						(0x80DC + (port * 8))
 #define RTL930X_BANDWIDTH_CTRL_INGRESS_BURST_HIGH_OFF(port) \
@@ -671,6 +670,7 @@ int otto_tc_930x_port_rate_police_add(struct dsa_switch *ds, int port,
 				      const struct flow_action_entry *act,
 				      bool ingress)
 {
+	struct rtl838x_switch_priv *priv = ds->priv;
 	u32 burst;
 	u64 rate;
 	u32 addr;
@@ -703,7 +703,8 @@ int otto_tc_930x_port_rate_police_add(struct dsa_switch *ds, int port,
 		sw_w32_mask(0, RTL930X_INGRESS_FC_CTRL_EN(port),
 			    RTL930X_INGRESS_FC_CTRL(port));
 	} else {
-		burst = min_t(u32, act->police.burst, RTL930X_BANDWIDTH_CTRL_MAX_BURST);
+		/* the bucket is 16 bit wide and has to hold the burst and one frame */
+		burst = min_t(u32, act->police.burst, U16_MAX - priv->r->max_frame);
 
 		sw_w32(burst, addr + 4);
 	}
