@@ -114,7 +114,7 @@ define Device/arris_tr4400-v2
 endef
 TARGET_DEVICES += arris_tr4400-v2
 
-define Device/aruba_ap-32x
+define Device/aruba_ap-32x-common
 	$(call Device/LegacyImage)
 	DEVICE_VENDOR := Aruba
 	DEVICE_MODEL := AP-325
@@ -135,7 +135,19 @@ define Device/aruba_ap-32x
 	DEVICE_PACKAGES := ath10k-firmware-qca99x0-ct kmod-i2c-gpio kmod-tpm-i2c-atmel \
 		apboot-aruba-ipq806x
 endef
+
+define Device/aruba_ap-32x
+	$(call Device/aruba_ap-32x-common)
+endef
 TARGET_DEVICES += aruba_ap-32x
+
+define Device/aruba_ap-32x-256m
+	$(call Device/aruba_ap-32x-common)
+	DEVICE_VARIANT := 256MB
+	DEVICE_ALT0_VARIANT := 256MB
+	DEVICE_ALT1_VARIANT := 256MB
+endef
+TARGET_DEVICES += aruba_ap-32x-256m
 
 define Device/askey_rt4230w-rev6
 	$(call Device/LegacyImage)
