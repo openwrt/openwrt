@@ -1040,12 +1040,117 @@ static void otto_l3_route_compact(struct otto_l3_ctrl *ctrl, struct otto_l3_rout
 	ctrl->cfg->route_write(ctrl, last, r);
 }
 
+static void otto_l3_route_update_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r,
+				    u64 mac)
+{
+	struct rtl838x_switch_priv *priv = ctrl->priv;
+	bool require_existing = ctrl->cfg->use_l3_tables;
+	bool no_port;
+
+	dev_dbg(ctrl->dev, "setting up fwding: gw %pI6c, mac %016llx\n",
+		&r->gw_ip, mac);
+
+	dev_dbg(ctrl->dev, "Route with id %d to %pI4 / %d\n",
+		r->id, &r->dst_ip, r->prefix_len);
+
+	r->nh.mac = r->nh.gw = mac;
+	r->nh.port = priv->r->port_ignore;
+	r->nh.id = r->id;
+
+	/* Do we need to explicitly add a DMAC entry with the route's nh index? */
+	if (ctrl->cfg->set_egress_mac)
+		ctrl->cfg->set_egress_mac(ctrl, r->id, mac);
+
+	/* Update ROUTING table: map gateway-mac and switch-mac id to route id */
+	if (!rtldsa_l2_nexthop_add(priv, &r->nh, require_existing))
+		r->nh.l2_installed = true;
+
+	/* A next hop with no port delivers the frame twice, so where the
+	 * route entry can trap, let the CPU route it alone until an update
+	 * brings one, the way otto_l3_fib_add_v4() treats a host route
+	 * with no gateway. A family that routes through a PIE rule keeps
+	 * the rule it had.
+	 */
+	no_port = ctrl->cfg->use_l3_tables &&
+		  r->nh.port == priv->r->port_ignore;
+	if (no_port && r->attr.action != ROUTE_ACT_TRAP2CPU)
+		dev_info(ctrl->dev, "no port for %pI4, routing %pI4/%d in software\n",
+			 &r->gw_ip.s6_addr32[3], &r->dst_ip, r->prefix_len);
+
+	r->attr.valid = true;
+	r->attr.action = no_port ? ROUTE_ACT_TRAP2CPU : ROUTE_ACT_FORWARD;
+	r->attr.hit = false; /* Reset route-used indicator */
+
+	/* Forwarding a packet is what makes this a hop, and a hop
+	 * spends one of the packet's. The two bits are what the SDK
+	 * asks for on an entry it creates with no flags of its own.
+	 * A route trapped for want of a port does not forward, so it
+	 * keeps them clear.
+	 */
+	r->attr.ttl_dec = !no_port;
+	r->attr.ttl_check = !no_port;
+
+	if (r->attr.type == ROUTE_TYPE_IP4UC) {
+		/* Add PIE entry with dst_ip and prefix_len */
+		r->pr.dip = r->dst_ip;
+		r->pr.dip_m = inet_make_mask(r->prefix_len);
+	}
+
+	if (r->is_host_route) {
+		int slot = ctrl->cfg->find_slot(ctrl, r, true);
+
+		if (slot < 0)
+			slot = ctrl->cfg->find_slot(ctrl, r, false);
+
+		if (slot < 0) {
+			dev_err(ctrl->dev, "no slot for host route %pI4\n",
+				&r->dst_ip);
+			return;
+		}
+
+		dev_info(ctrl->dev, "Got slot for route: %d\n", slot);
+		ctrl->cfg->host_route_write(ctrl, slot, r);
+	} else {
+		if (r->row < 0)
+			r->row = otto_l3_route_place(ctrl, r);
+
+		if (r->row < 0)
+			return;
+
+		ctrl->cfg->route_write(ctrl, r->row, r);
+		r->pr.fwd_sel = true;
+		r->pr.fwd_data = r->nh.l2_id;
+		r->pr.fwd_act = PIE_ACT_ROUTE_UC;
+	}
+
+	if (ctrl->cfg->set_nexthop)
+		ctrl->cfg->set_nexthop(ctrl, r->nh.id, r->nh.l2_id, r->nh.if_id);
+
+	if (ctrl->cfg->use_l3_tables)
+		return;
+
+	if (r->pr.id < 0) {
+		r->pr.packet_cntr = rtldsa_packet_cntr_alloc(priv);
+		if (r->pr.packet_cntr >= 0) {
+			dev_info(ctrl->dev, "Using packet counter %d\n",
+				 r->pr.packet_cntr);
+			r->pr.log_sel = true;
+			r->pr.log_data = r->pr.packet_cntr;
+		}
+		priv->r->pie_rule_add(priv, &r->pr);
+	} else {
+		int pkts = priv->r->packet_cntr_read(priv, r->pr.packet_cntr);
+
+		dev_dbg(ctrl->dev, "total packets: %d\n", pkts);
+
+		priv->r->pie_rule_write(priv, r->pr.id, &r->pr);
+	}
+}
+
 /* Updates an L3 next hop entry in the ROUTING table */
 static int otto_l3_nexthop_update(struct otto_l3_ctrl *ctrl, u8 type, int ifindex,
 				  const struct in6_addr *gw, u64 mac)
 {
-	struct rtl838x_switch_priv *priv = ctrl->priv;
-	bool require_existing = ctrl->cfg->use_l3_tables;
 	struct otto_l3_route *r;
 	bool known;
 
@@ -1065,8 +1170,6 @@ static int otto_l3_nexthop_update(struct otto_l3_ctrl *ctrl, u8 type, int ifinde
 		return -ENOENT;
 
 	list_for_each_entry(r, &ctrl->routes_list, list) {
-		bool no_port;
-
 		/* An IPv4 gateway written v4-mapped is a valid IPv6 one, so
 		 * the key alone does not say whose route this is.
 		 */
@@ -1074,104 +1177,7 @@ static int otto_l3_nexthop_update(struct otto_l3_ctrl *ctrl, u8 type, int ifinde
 		    !ipv6_addr_equal(&r->gw_ip, gw))
 			continue;
 
-		dev_dbg(ctrl->dev, "setting up fwding: gw %pI6c, mac %016llx\n",
-			gw, mac);
-
-		dev_dbg(ctrl->dev, "Route with id %d to %pI4 / %d\n",
-			r->id, &r->dst_ip, r->prefix_len);
-
-		r->nh.mac = r->nh.gw = mac;
-		r->nh.port = priv->r->port_ignore;
-		r->nh.id = r->id;
-
-		/* Do we need to explicitly add a DMAC entry with the route's nh index? */
-		if (ctrl->cfg->set_egress_mac)
-			ctrl->cfg->set_egress_mac(ctrl, r->id, mac);
-
-		/* Update ROUTING table: map gateway-mac and switch-mac id to route id */
-		if (!rtldsa_l2_nexthop_add(priv, &r->nh, require_existing))
-			r->nh.l2_installed = true;
-
-		/* A next hop with no port delivers the frame twice, so where the
-		 * route entry can trap, let the CPU route it alone until an update
-		 * brings one, the way otto_l3_fib_add_v4() treats a host route
-		 * with no gateway. A family that routes through a PIE rule keeps
-		 * the rule it had.
-		 */
-		no_port = ctrl->cfg->use_l3_tables &&
-			  r->nh.port == priv->r->port_ignore;
-		if (no_port && r->attr.action != ROUTE_ACT_TRAP2CPU)
-			dev_info(ctrl->dev, "no port for %pI4, routing %pI4/%d in software\n",
-				 &gw->s6_addr32[3], &r->dst_ip, r->prefix_len);
-
-		r->attr.valid = true;
-		r->attr.action = no_port ? ROUTE_ACT_TRAP2CPU : ROUTE_ACT_FORWARD;
-		r->attr.hit = false; /* Reset route-used indicator */
-
-		/* Forwarding a packet is what makes this a hop, and a hop
-		 * spends one of the packet's. The two bits are what the SDK
-		 * asks for on an entry it creates with no flags of its own.
-		 * A route trapped for want of a port does not forward, so it
-		 * keeps them clear.
-		 */
-		r->attr.ttl_dec = !no_port;
-		r->attr.ttl_check = !no_port;
-
-		if (r->attr.type == ROUTE_TYPE_IP4UC) {
-			/* Add PIE entry with dst_ip and prefix_len */
-			r->pr.dip = r->dst_ip;
-			r->pr.dip_m = inet_make_mask(r->prefix_len);
-		}
-
-		if (r->is_host_route) {
-			int slot = ctrl->cfg->find_slot(ctrl, r, true);
-
-			if (slot < 0)
-				slot = ctrl->cfg->find_slot(ctrl, r, false);
-
-			if (slot < 0) {
-				dev_err(ctrl->dev, "no slot for host route %pI4\n",
-					&r->dst_ip);
-				continue;
-			}
-
-			dev_info(ctrl->dev, "Got slot for route: %d\n", slot);
-			ctrl->cfg->host_route_write(ctrl, slot, r);
-		} else {
-			if (r->row < 0)
-				r->row = otto_l3_route_place(ctrl, r);
-
-			if (r->row < 0)
-				continue;
-
-			ctrl->cfg->route_write(ctrl, r->row, r);
-			r->pr.fwd_sel = true;
-			r->pr.fwd_data = r->nh.l2_id;
-			r->pr.fwd_act = PIE_ACT_ROUTE_UC;
-		}
-
-		if (ctrl->cfg->set_nexthop)
-			ctrl->cfg->set_nexthop(ctrl, r->nh.id, r->nh.l2_id, r->nh.if_id);
-
-		if (ctrl->cfg->use_l3_tables)
-			continue;
-
-		if (r->pr.id < 0) {
-			r->pr.packet_cntr = rtldsa_packet_cntr_alloc(priv);
-			if (r->pr.packet_cntr >= 0) {
-				dev_info(ctrl->dev, "Using packet counter %d\n",
-					 r->pr.packet_cntr);
-				r->pr.log_sel = true;
-				r->pr.log_data = r->pr.packet_cntr;
-			}
-			priv->r->pie_rule_add(priv, &r->pr);
-		} else {
-			int pkts = priv->r->packet_cntr_read(priv, r->pr.packet_cntr);
-
-			dev_dbg(ctrl->dev, "total packets: %d\n", pkts);
-
-			priv->r->pie_rule_write(priv, r->pr.id, &r->pr);
-		}
+		otto_l3_route_update_hw(ctrl, r, mac);
 	}
 
 	return 0;
