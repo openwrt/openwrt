@@ -1,0 +1,10 @@
+#!/bin/sh /etc/rc.common
+# Copy of the boot log into crash_syslog taken when the system is up. The
+# periodic copies from /lib/preinit/02_be7000_bootlog keep coming for ten
+# minutes after this one. See /lib/functions/be7000-bootlog.sh for what is in it.
+START=98
+
+start() {
+	. /lib/functions/be7000-bootlog.sh
+	be7000_bootlog_write "boot done"
+}

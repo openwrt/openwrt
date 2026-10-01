@@ -1,0 +1,10 @@
+# The generic aarch64_cortex-a73 feeds are deliberately not listed here.
+#
+# The official mirror builds qualcommbe as aarch64_cortex-a53, so there is no
+# aarch64_cortex-a73 directory on it at all: every one of those URLs answers
+# 404 and apk prints a wget error for each on every update. Packages for this
+# CPU type come from the feed in customfeeds.list instead.
+#
+# The target feed below does exist and is kept: it carries packages this
+# firmware does not build itself.
+https://downloads.openwrt.org/snapshots/targets/qualcommbe/ipq95xx/packages/packages.adb

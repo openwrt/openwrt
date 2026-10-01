@@ -1,0 +1,171 @@
+'use strict';
+
+import { popen, access, readfile, writefile, mkdir, lsdir, unlink, rmdir, stat } from 'fs';
+
+const HELPER = '/usr/sbin/be7000-docker';
+const STACKS = '/etc/be7000-docker/stacks';
+
+function shellquote(s) {
+	return `'${replace(s, "'", "'\\''")}'`;
+}
+
+function sh(cmd) {
+	let fd = popen(`(${cmd}) 2>&1; echo __EXIT:$?`, 'r');
+	let all = fd ? fd.read('all') : '';
+	if (fd) fd.close();
+	let m = match(all, /__EXIT:(\d+)\s*$/);
+	let code = m ? int(m[1]) : 1;
+	return { ok: code == 0, code, output: trim(replace(all, /__EXIT:\d+\s*$/, '')) };
+}
+
+function docker(args) {
+	return sh(`docker ${join(' ', map(args, shellquote))}`);
+}
+
+function have_docker() {
+	return sh('command -v docker').ok;
+}
+
+// A stack is a directory with a compose file, which is how compose itself
+// wants to be driven: the directory name becomes the project name.
+function stack_dir(name) {
+	if (!match(name, /^[a-zA-Z0-9_-]{1,40}$/))
+		return null;
+	return `${STACKS}/${name}`;
+}
+
+function compose(name, verb) {
+	let dir = stack_dir(name);
+	if (!dir) return { ok: false, output: 'bad stack name' };
+	return sh(`cd ${shellquote(dir)} && docker compose -p ${shellquote(name)} ${verb}`);
+}
+
+function method_status() {
+	return {
+		call: function() {
+			let res = sh(`${shellquote(HELPER)} status`);
+			let running = sh('docker info --format "{{.ServerVersion}}"');
+			return {
+				ok: true,
+				data: {
+					installed: have_docker(),
+					daemon_ok: running.ok,
+					version: running.ok ? running.output : '',
+					helper: res.output
+				}
+			};
+		}
+	};
+}
+
+function method_df() {
+	return {
+		call: function() {
+			if (!have_docker()) return { ok: false, output: 'docker not installed' };
+			let r = docker(['system', 'df']);
+			return { ok: r.ok, output: r.output };
+		}
+	};
+}
+
+function method_prune() {
+	return {
+		args: { what: '' },
+		call: function(req) {
+			if (!have_docker()) return { ok: false, output: 'docker not installed' };
+			let what = req.args?.what ?? '';
+			let r;
+			if (what == 'images') r = docker(['image', 'prune', '-a', '-f']);
+			else if (what == 'volumes') r = docker(['volume', 'prune', '-f']);
+			else if (what == 'builder') r = docker(['builder', 'prune', '-a', '-f']);
+			else r = docker(['system', 'prune', '-f']);
+			return { ok: r.ok, output: r.output };
+		}
+	};
+}
+
+function method_stacks() {
+	return {
+		call: function() {
+			let out = [];
+			let names = lsdir(STACKS) ?? [];
+			for (let n in names) {
+				let dir = `${STACKS}/${n}`;
+				let st = stat(`${dir}/docker-compose.yml`);
+				if (!st) continue;
+				let ps = have_docker() ? sh(`docker compose -p ${shellquote(n)} ps --format '{{.Name}} {{.State}}' 2>/dev/null`) : { output: '' };
+				push(out, { name: n, size: st.size, state: trim(ps.output) });
+			}
+			return { ok: true, data: out };
+		}
+	};
+}
+
+function method_stack_read() {
+	return {
+		args: { name: '' },
+		call: function(req) {
+			let dir = stack_dir(req.args?.name ?? '');
+			if (!dir) return { ok: false, output: 'bad stack name' };
+			let body = readfile(`${dir}/docker-compose.yml`) ?? '';
+			return { ok: true, data: { name: req.args.name, compose: body } };
+		}
+	};
+}
+
+function method_stack_write() {
+	return {
+		args: { name: '', compose: '' },
+		call: function(req) {
+			let name = req.args?.name ?? '';
+			let dir = stack_dir(name);
+			if (!dir) return { ok: false, output: 'bad stack name' };
+			mkdir(STACKS, 0o755);
+			mkdir(dir, 0o755);
+			writefile(`${dir}/docker-compose.yml`, req.args?.compose ?? '');
+			return { ok: true, output: `saved ${name}` };
+		}
+	};
+}
+
+function method_stack_action(verb) {
+	return {
+		args: { name: '' },
+		call: function(req) {
+			if (!have_docker()) return { ok: false, output: 'docker not installed' };
+			let r = compose(req.args?.name ?? '', verb);
+			return { ok: r.ok, output: r.output };
+		}
+	};
+}
+
+function method_stack_remove() {
+	return {
+		args: { name: '' },
+		call: function(req) {
+			let name = req.args?.name ?? '';
+			let dir = stack_dir(name);
+			if (!dir) return { ok: false, output: 'bad stack name' };
+			if (have_docker()) compose(name, 'down -v');
+			unlink(`${dir}/docker-compose.yml`);
+			rmdir(dir);
+			return { ok: true, output: `removed ${name}` };
+		}
+	};
+}
+
+return {
+	'be7000-docker': {
+		status: method_status(),
+		df: method_df(),
+		prune: method_prune(),
+		stacks: method_stacks(),
+		stack_read: method_stack_read(),
+		stack_write: method_stack_write(),
+		stack_up: method_stack_action('up -d'),
+		stack_down: method_stack_action('down'),
+		stack_pull: method_stack_action('pull'),
+		stack_logs: method_stack_action('logs --tail 200'),
+		stack_remove: method_stack_remove()
+	}
+};

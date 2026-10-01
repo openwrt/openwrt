@@ -1,0 +1,16 @@
+#!/bin/sh
+# An empty /etc/board.json blocks everything downstream: board_detect skips a
+# file that exists, config_generate then has no ports, wifi config has no
+# radios. Seen once on a router whose overlay outlived a sysupgrade; how the
+# file got truncated is not known, so this just makes the next boot heal it.
+# Runs after mount_root and before 82_config_generate.
+
+be7000_board_json_check() {
+	[ -e /etc/board.json ] && [ ! -s /etc/board.json ] && {
+		echo "- be7000: /etc/board.json is empty, removing it so it gets regenerated -"
+		rm -f /etc/board.json
+	}
+	return 0
+}
+
+boot_hook_add preinit_main be7000_board_json_check

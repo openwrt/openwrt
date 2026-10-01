@@ -1,0 +1,94 @@
+#!/bin/sh /etc/rc.common
+# Reconcile apk's idea of what is installed with the image that is running.
+#
+# With /overlay on its own partition the overlay outlives a sysupgrade, and
+# the first apk add ever run copied /lib/apk/db into it. After an upgrade that
+# copy still describes the previous image: apk believes the old kernel and old
+# package versions are installed, refuses modules for the running kernel, and
+# reports packages as present whose files were in the old ROM. Plain OpenWrt
+# never meets this because sysupgrade wipes rootfs_data.
+#
+# So on every boot: if the overlay's database names a different kernel than
+# the ROM's, the image changed. Remember which packages the user had added on
+# top of the old image (world minus the old ROM's world is not available any
+# more, so: world minus the new ROM's world), drop the overlay's copy of the
+# database so the ROM's shows through, and reinstall those packages once the
+# network is up. Their files may already be in the overlay from before; apk
+# simply writes them again.
+START=13
+
+DB=/lib/apk/db
+DB_ROM=/rom/lib/apk/db
+WORLD=/etc/apk/world
+WORLD_ROM=/rom/etc/apk/world
+PENDING=/etc/be7000-reinstall
+
+kernel_of() {
+	grep -oE 'kernel=[0-9.]+~[0-9a-f]{32}' "$1" 2>/dev/null | head -1 | sed 's/.*~//'
+}
+
+# package names only: world pins base-files and kernel to the image's own
+# versions, and those pins must follow the image, not the user
+names_of() {
+	sed -e 's/[=<>~].*//' -e '/^$/d' -e '/^kernel$/d' -e '/^base-files$/d' "$1" 2>/dev/null | sort -u
+}
+
+reconcile() {
+	local rom_k cur_k
+	rom_k=$(kernel_of "$DB_ROM/installed")
+	cur_k=$(kernel_of "$DB/installed")
+	[ -n "$rom_k" ] && [ -n "$cur_k" ] || return 0
+	[ "$rom_k" = "$cur_k" ] && return 0
+
+	local extras
+	names_of "$WORLD_ROM" > /tmp/be7000-romsync.rom
+	extras=$(names_of "$WORLD" | grep -vxFf /tmp/be7000-romsync.rom)
+	rm -f /tmp/be7000-romsync.rom
+	logger -t be7000-romsync "image changed (kernel $cur_k -> $rom_k), resetting apk database; user packages: $(echo $extras)"
+
+	# Overwrite through the merged path, not by deleting the overlay's copy:
+	# overlayfs keeps serving the deleted upper file until the next mount.
+	local f
+	for f in installed scripts.tar.gz triggers; do
+		[ -e "$DB_ROM/$f" ] && cp -f "$DB_ROM/$f" "$DB/$f"
+	done
+	rm -f "$DB/lock"
+	# world = what the new image ships + what the user had added
+	{ cat "$WORLD_ROM"; echo "$extras"; } | grep -v '^$' > "$WORLD"
+	[ -n "$extras" ] && printf '%s\n' $extras > "$PENDING"
+	return 0
+}
+
+reinstall_pending() {
+	[ -s "$PENDING" ] || return 0
+	(
+		# wait for a route to the outside, give up quietly after ten minutes
+		local i=0
+		while [ $i -lt 60 ]; do
+			ip route show default 2>/dev/null | grep -q default && break
+			sleep 10; i=$((i + 1))
+		done
+		sleep 15
+		# downloads from GitHub Pages occasionally get reset mid-way; a few
+		# tries are cheap, apk skips what is already there
+		local n=0 ok=0
+		while [ $n -lt 5 ]; do
+			n=$((n + 1))
+			if apk update >/dev/null 2>&1 && apk add $(cat "$PENDING") >/tmp/be7000-reinstall.log 2>&1; then
+				ok=1; break
+			fi
+			sleep 20
+		done
+		if [ $ok = 1 ]; then
+			logger -t be7000-romsync "reinstalled after image change: $(cat "$PENDING" | tr '\n' ' ')"
+			rm -f "$PENDING"
+		else
+			logger -t be7000-romsync "reinstall failed after $n tries, will retry next boot: $(tail -1 /tmp/be7000-reinstall.log)"
+		fi
+	) </dev/null >/dev/null 2>&1 &
+}
+
+start() {
+	reconcile
+	reinstall_pending
+}

@@ -1,0 +1,56 @@
+#!/bin/sh
+# Keep kernel modules from a previous image out of the way.
+#
+# With /overlay on its own partition the overlay outlives a sysupgrade. Every
+# kmod ever installed with apk sits there under /lib/modules/<version>, built
+# for the kernel that was running at the time. A new image with the same
+# kernel version string but a different build (the 32-hex hash apk appends
+# to the kernel version) ships different binaries under the same names, and
+# the overlay copies shadow them. OpenWrt does not check module versions, so
+# they load anyway and the kernel dies somewhere later in boot: seen on a
+# BE7000 that rebooted about 25 seconds in, six times, until the bootloader
+# fell back to the other slot.
+#
+# This runs before mount_root, mounts each overlay volume on its own, and
+# when the apk database copy in it names a different kernel than the ROM
+# does, moves lib/modules/<version> to lib/modules.stale-<oldhash>. Nothing
+# is lost: be7000-romsync reinstalls the user's packages from the feed for
+# the new kernel once the network is up.
+
+be7000_stale_modules_vol() {
+	local dev="$1" mnt=/tmp/be7000-stale-modules
+	local kver rom_k ov_k dir stale
+	kver=$(uname -r)
+	mkdir -p "$mnt"
+	mount -t ubifs -o noatime "$dev" "$mnt" 2>/dev/null || return 0
+	dir="$mnt/upper/lib/modules/$kver"
+	if [ -d "$dir" ]; then
+		rom_k=$(grep -oE 'kernel=[0-9.]+~[0-9a-f]{32}' /lib/apk/db/installed 2>/dev/null | head -1)
+		ov_k=$(grep -oE 'kernel=[0-9.]+~[0-9a-f]{32}' "$mnt/upper/lib/apk/db/installed" 2>/dev/null | head -1)
+		if [ -n "$rom_k" ] && [ -n "$ov_k" ] && [ "$rom_k" != "$ov_k" ]; then
+			echo "- be7000: modules in overlay ($dev) were built for kernel ${ov_k##*~}, this ROM has ${rom_k##*~}; setting them aside -"
+			rm -rf "$mnt"/upper/lib/modules.stale-*
+			stale="$mnt/upper/lib/modules.stale-${ov_k##*~}"
+			mkdir -p "$stale" && mv "$dir" "$stale/"
+			rmdir "$mnt/upper/lib/modules" 2>/dev/null
+			sync
+		fi
+	fi
+	umount "$mnt"
+	rmdir "$mnt" 2>/dev/null
+}
+
+be7000_stale_modules() {
+	local n name
+	for n in /sys/class/ubi/ubi*_*/name; do
+		[ -e "$n" ] || continue
+		name=$(cat "$n")
+		case "$name" in
+		rootfs_data|overlay_data|cfg)
+			be7000_stale_modules_vol "/dev/$(basename "$(dirname "$n")")"
+			;;
+		esac
+	done
+}
+
+[ "$INITRAMFS" = "1" ] || boot_hook_add preinit_main be7000_stale_modules

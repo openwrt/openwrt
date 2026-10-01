@@ -1,0 +1,11 @@
+#!/bin/sh
+# Beam WRT: the stock default hostname OpenWrt becomes BeamWRT (LuCI page
+# titles, the shell prompt, DHCP). A hostname the user set stays as it is.
+
+[ "$(uci -q get system.@system[0].hostname)" = "OpenWrt" ] || exit 0
+
+uci set system.@system[0].hostname='BeamWRT'
+uci commit system
+echo BeamWRT > /proc/sys/kernel/hostname
+
+exit 0

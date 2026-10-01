@@ -1,0 +1,206 @@
+#!/bin/sh
+# 将 /overlay 移动到外部磁盘（extroot）。
+#
+# 路由器在重启之间保留的所有内容都位于 /overlay 中：已安装的软件包、设置、列表。
+# 在这块板子上，用于它的内置空间很小，所以 USB 磁盘是获得空间的方式。
+#
+# 用法：
+#   be7000-extroot status
+#   be7000-extroot list
+#   be7000-extroot use <device> [--yes] [--reboot]
+#   be7000-extroot revert [--yes] [--reboot]
+
+set -e
+
+LABEL=be7000_overlay
+MNT=/tmp/extroot.$$
+
+die() { echo "$*" >&2; exit 1; }
+
+current_overlay_device() {
+	mount | awk '$3 == "/overlay" { print $1; exit }'
+}
+
+
+# 整块磁盘都在使用中的分区是不安全去碰的：磁盘重新分区后，内核可能仍会暴露过期的分区节点，
+# 这些节点现在与一个正在使用的文件系统重叠，格式化其中之一会毁掉整块磁盘。
+parent_busy() {
+	local dev="$1" parent
+	case "$dev" in
+	/dev/sd[a-z][0-9]*) parent="$(echo "$dev" | sed 's/[0-9]*$//')" ;;
+	/dev/mmcblk[0-9]p[0-9]*) parent="$(echo "$dev" | sed 's/p[0-9]*$//')" ;;
+	*) return 1 ;;
+	esac
+	mount | grep -q "^$parent " && return 0
+	return 1
+}
+
+cmd_status() {
+	local dev
+	dev="$(current_overlay_device)"
+	echo "/overlay 位于：${dev:-未知}"
+	df -h /overlay | tail -1
+	echo
+	echo "fstab 中的配置："
+	if uci -q get fstab.extroot >/dev/null; then
+		local where
+		where="$(uci -q get fstab.extroot.device)"
+		[ -n "$where" ] || where="UUID $(uci -q get fstab.extroot.uuid)"
+		echo "  $where"
+		echo "  已启用 $(uci -q get fstab.extroot.enabled)"
+	else
+		echo "  无 extroot 条目"
+	fi
+}
+
+# 候选设备是当前未挂载、且不是运行系统所在位置的整块磁盘或分区。
+cmd_list() {
+	local found=0 d name size model
+	for d in /dev/sd[a-z] /dev/sd[a-z][0-9]* /dev/mmcblk[0-9]p[0-9]*; do
+		[ -b "$d" ] || continue
+		name="$(basename "$d")"
+		size="$(awk -v n="$name" '$4 == n { printf "%.1f GB", $3/1024/1024 }' /proc/partitions)"
+		model=""
+		[ -r "/sys/class/block/$name/device/model" ] && model="$(cat "/sys/class/block/$name/device/model")"
+		if mount | grep -q "^$d "; then
+			echo "$d  ${size:-?}  $model  （已挂载，跳过）"
+		elif parent_busy "$d"; then
+			echo "$d  ${size:-?}  $model  （整块磁盘在使用中，跳过）"
+		else
+			echo "$d  ${size:-?}  $model"
+			found=1
+		fi
+	done
+	[ "$found" = 1 ] || echo "未找到可用磁盘；请将一个插入 USB 端口后重试"
+}
+
+# 与 cmd_list 相同的调查，以 JSON 格式输出，供 LuCI 页面使用。
+cmd_list_json() {
+	local first=1 d name size model mounted
+	printf '['
+	for d in /dev/sd[a-z] /dev/sd[a-z][0-9]* /dev/mmcblk[0-9]p[0-9]*; do
+		[ -b "$d" ] || continue
+		name="$(basename "$d")"
+		size="$(awk -v n="$name" '$4 == n { printf "%.0f", $3/1024 }' /proc/partitions)"
+		model=""
+		[ -r "/sys/class/block/$name/device/model" ] && model="$(tr -d '\r' < "/sys/class/block/$name/device/model" | sed 's/[[:space:]]*$//' | sed 's/"/\\"/g')"
+		mounted=false
+		mount | grep -q "^$d " && mounted=true
+		parent_busy "$d" && mounted=true
+		[ $first = 1 ] || printf ','
+		first=0
+		printf '{"device":"%s","size_mb":%s,"model":"%s","mounted":%s}' "$d" "${size:-0}" "$model" "$mounted"
+	done
+	printf ']\n'
+}
+
+cmd_status_json() {
+	local dev total avail uuid enabled
+	dev="$(current_overlay_device)"
+	set -- $(df -k /overlay | tail -1)
+	total="$2"; avail="$4"
+	uuid="$(uci -q get fstab.extroot.uuid)"
+	enabled="$(uci -q get fstab.extroot.enabled)"
+	[ -n "$enabled" ] || enabled=""
+	printf '{"device":"%s","total_kb":%s,"available_kb":%s,"extroot_uuid":"%s","extroot_enabled":"%s"}\n' \
+		"${dev:-}" "${total:-0}" "${avail:-0}" "$uuid" "$enabled"
+}
+
+cmd_use() {
+	local dev="$1" yes="$2" do_reboot="$3" uuid
+	[ -n "$dev" ] || die "用法：be7000-extroot use <device> [--yes] [--reboot]"
+	[ -b "$dev" ] || die "$dev 不是块设备"
+	mount | grep -q "^$dev " && die "$dev 已挂载，请先卸载它"
+	parent_busy "$dev" && die "此分区所在的整块磁盘已挂载，因此该节点可能已过期；请先卸载它"
+	case "$dev" in
+	/dev/ubi*|/dev/mtd*) die "$dev 是内部闪存，不是外部磁盘" ;;
+	esac
+	[ "$dev" = "$(current_overlay_device)" ] && die "$dev 已经承载了 /overlay"
+
+	if [ "$yes" != 1 ]; then
+		echo "这将擦除 $dev 上的所有内容，并将 /overlay 移动到它上面。"
+		echo "重新运行并加上 --yes 以继续。"
+		exit 1
+	fi
+
+	command -v mkfs.ext4 >/dev/null || die "缺少 mkfs.ext4"
+
+	echo "正在格式化 $dev"
+	mkfs.ext4 -q -F -L "$LABEL" "$dev"
+
+	mkdir -p "$MNT"
+	mount "$dev" "$MNT" || die "无法挂载 $dev"
+
+	echo "正在复制当前 overlay 的内容"
+	# /overlay 包含 upper/ 和 work/；复制内容，而不是挂载点。
+	cp -a /overlay/. "$MNT"/ 2>/dev/null || true
+	mkdir -p "$MNT/upper" "$MNT/work"
+	sync
+	umount "$MNT"
+	rmdir "$MNT"
+
+	uuid="$(block info "$dev" 2>/dev/null | sed -n 's/.*UUID="\([^"]*\)".*/\1/p')"
+	[ -n "$uuid" ] || die "无法读取 $dev 的 UUID"
+
+	echo "正在将 /overlay 指向 $dev（UUID $uuid）"
+	uci -q batch <<-EOT
+		set fstab.extroot=mount
+		set fstab.extroot.target='/overlay'
+		set fstab.extroot.uuid='$uuid'
+		set fstab.extroot.fstype='ext4'
+		set fstab.extroot.options='rw,noatime'
+		set fstab.extroot.enabled='1'
+		commit fstab
+	EOT
+	# 内置备用分区，如果之前在使用，不能让它优先于磁盘。
+	uci -q get fstab.bigoverlay >/dev/null && {
+		uci -q set fstab.bigoverlay.enabled='0'
+		uci -q commit fstab
+	}
+	uci -q set bigoverlay.main.enabled='0' 2>/dev/null && uci -q commit bigoverlay
+
+	echo "完成。更改将在下次启动时生效。"
+	[ "$do_reboot" = 1 ] && { sync; reboot; }
+}
+
+cmd_revert() {
+	local yes="$1" do_reboot="$2"
+	uci -q get fstab.extroot >/dev/null || die "没有可移除的 extroot 条目"
+	if [ "$yes" != 1 ]; then
+		echo "这将把 /overlay 恢复到内部闪存。存储在磁盘上的任何内容都会保留在那里，但不再被使用。"
+		echo "重新运行并加上 --yes 以继续。"
+		exit 1
+	fi
+	uci -q delete fstab.extroot
+	uci -q commit fstab
+	echo "已移除。更改将在下次启动时生效。"
+	[ "$do_reboot" = 1 ] && { sync; reboot; }
+}
+
+YES=0
+REBOOT=0
+ACTION="$1"
+[ $# -gt 0 ] && shift
+DEV=""
+for a in "$@"; do
+	case "$a" in
+	--yes) YES=1 ;;
+	--reboot) REBOOT=1 ;;
+	--json) ;;
+	*) DEV="$a" ;;
+	esac
+done
+
+JSON=0
+for a in "$@"; do [ "$a" = "--json" ] && JSON=1; done
+
+case "$ACTION" in
+status) [ $JSON = 1 ] && cmd_status_json || cmd_status ;;
+list)   [ $JSON = 1 ] && cmd_list_json || cmd_list ;;
+use)    cmd_use "$DEV" "$YES" "$REBOOT" ;;
+revert) cmd_revert "$YES" "$REBOOT" ;;
+*)
+	echo "用法：be7000-extroot {status|list|use <device> [--yes] [--reboot]|revert [--yes] [--reboot]}"
+	exit 1
+	;;
+esac

@@ -1,0 +1,14 @@
+# Packages built from the same tree as this firmware, for aarch64_cortex-a73.
+#
+# The official mirror builds qualcommbe as aarch64_cortex-a53, so its generic
+# feeds return 404 here and nothing can be installed from them. These indexes
+# are signed with the key the image already trusts.
+https://timofey-maykov.github.io/be7000-openwrt/feed/aarch64_cortex-a73/base/packages.adb
+https://timofey-maykov.github.io/be7000-openwrt/feed/aarch64_cortex-a73/packages/packages.adb
+https://timofey-maykov.github.io/be7000-openwrt/feed/aarch64_cortex-a73/luci/packages.adb
+https://timofey-maykov.github.io/be7000-openwrt/feed/aarch64_cortex-a73/awg/packages.adb
+
+# Kernel modules built against the kernel this firmware ships. The mirror's
+# own target feed is built against a newer kernel and cannot satisfy the
+# dependency, so the modules have to come from here.
+https://timofey-maykov.github.io/be7000-openwrt/feed/targets/qualcommbe/ipq95xx/packages/packages.adb

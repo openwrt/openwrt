@@ -1,0 +1,8 @@
+#!/bin/sh /etc/rc.common
+# SSH greeting with the credits, in the LuCI language, rebuilt on every boot
+
+START=96
+
+boot() {
+	[ -x /usr/libexec/be7000-banner ] && /usr/libexec/be7000-banner
+}

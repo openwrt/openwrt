@@ -1,0 +1,9 @@
+config bigoverlay 'main'
+	# Move /overlay onto the spare "overlay" partition (28 MB) instead of the
+	# 8 MB left inside the firmware slot.
+	#
+	# The stock firmware keeps its own settings on that partition, and taking
+	# it over erases them: stock still boots after a rollback, it just comes
+	# up factory fresh. Set this to 0 before the first boot to keep the small
+	# in-slot overlay and leave the stock settings alone.
+	option enabled '1'

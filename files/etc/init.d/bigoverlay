@@ -1,0 +1,215 @@
+#!/bin/sh /etc/rc.common
+# Put /overlay on the spare "overlay" partition, inside the stock firmware's
+# own settings volume.
+#
+# The kernel attaches the partition as ubi1 (ubi.mtd=overlay on the command
+# line). Stock keeps its settings there in a UBIFS volume called "cfg" that
+# spans the whole partition, mounted as /data. Stock's preinit deletes any
+# UBI volume it does not know, but it never touches directories it does not
+# know inside its own volume, and it only wipes the partition on a factory
+# reset. So we share the volume: our overlayfs upper/ and work/ live next to
+# stock's etc/ and userdisk/, and a rollback to stock finds its settings and
+# its SSH root exactly as they were. Versions 1.2 to 1.2.5 formatted the
+# partition instead and created a volume "overlay_data"; that volume is
+# renamed to "cfg" on the first boot after the upgrade, and because it holds
+# no stock settings, rollback-to-stock.sh then asks stock to repopulate
+# /data/etc from its ROM (flag_format_overlay), as before.
+#
+# The first boot after a sysupgrade or after the installer runs on the slot's
+# own small overlay; this script copies it into the volume once (fresh
+# install) and reboots so that fstools mounts the volume as /overlay. See
+# /etc/config/bigoverlay to opt out.
+START=11
+
+STATE=/etc/bigoverlay.failed
+# stock's volume name (lib/preinit/00_preinit.conf: pi_overlay_partitions="cfg:/data:")
+STOCK_VOLNAME=cfg
+# what bigoverlay 1.2 to 1.2.5 created after formatting the partition
+LEGACY_VOLNAME=overlay_data
+# Written into the volume once the settings have been copied in. An existing
+# volume is NOT enough to call it done: an empty one mounted as /overlay comes
+# up with factory defaults and looks like the router lost its configuration.
+STAMP=.bigoverlay_migrated
+# How many reboots we already spent trying to get fstools to mount the volume.
+SWITCH_TRIES=.bigoverlay_switch_tries
+
+# The volume to live in: stock's, else the legacy one, else whatever is there.
+volume_dev() {
+	local n name first=""
+	for n in /sys/class/ubi/ubi1_*/name; do
+		[ -e "$n" ] || continue
+		name="$(cat "$n")"
+		[ -z "$first" ] && first="/dev/$(basename "$(dirname "$n")")"
+		[ "$name" = "$STOCK_VOLNAME" ] && { echo "/dev/$(basename "$(dirname "$n")")"; return 0; }
+	done
+	for n in /sys/class/ubi/ubi1_*/name; do
+		[ -e "$n" ] || continue
+		[ "$(cat "$n")" = "$LEGACY_VOLNAME" ] && { echo "/dev/$(basename "$(dirname "$n")")"; return 0; }
+	done
+	[ -n "$first" ] && { echo "$first"; return 0; }
+	return 1
+}
+
+volume_name() {
+	cat "/sys/class/ubi/$(basename "$1")/name" 2>/dev/null
+}
+
+migrated() {
+	local dev="$1" rc=1
+	mkdir -p /tmp/bigoverlay.check
+	mount -t ubifs "$dev" /tmp/bigoverlay.check 2>/dev/null || return 1
+	[ -f "/tmp/bigoverlay.check/$STAMP" ] && rc=0
+	umount /tmp/bigoverlay.check
+	rmdir /tmp/bigoverlay.check 2>/dev/null
+	return $rc
+}
+
+# Copy the slot's overlay into the volume, next to whatever stock keeps there.
+migrate() {
+	local dev="$1"
+	mkdir -p /tmp/bigoverlay
+	mount -t ubifs "$dev" /tmp/bigoverlay || { logger -t bigoverlay "mount failed"; return 1; }
+	mkdir -p /tmp/bigoverlay/upper /tmp/bigoverlay/work
+	cp -a /overlay/upper/. /tmp/bigoverlay/upper/ 2>/dev/null
+	: > "/tmp/bigoverlay/$STAMP"
+	sync
+	umount /tmp/bigoverlay
+	return 0
+}
+
+# A volume left by bigoverlay 1.2 to 1.2.5 gets stock's name, so that stock
+# keeps it (and our data in it) instead of deleting it on a rollback. Only
+# possible while the volume is not mounted, which is the case here.
+rename_legacy() {
+	local dev="$1"
+	[ "$(volume_name "$dev")" = "$LEGACY_VOLNAME" ] || return 0
+	if ubirename /dev/ubi1 "$LEGACY_VOLNAME" "$STOCK_VOLNAME" 2>/dev/null; then
+		logger -t bigoverlay "renamed volume $LEGACY_VOLNAME to $STOCK_VOLNAME so stock leaves it alone"
+	else
+		logger -t bigoverlay "could not rename volume $LEGACY_VOLNAME, stock will replace it on a rollback"
+	fi
+}
+
+# fstab is what makes fstools mount the volume as /overlay on the next boot.
+# uci-defaults write it on a fresh install; after a sysupgrade it comes back
+# from the config backup, but only into the slot's own overlay, which is why
+# the switch never happens on the first boot after a flash.
+#
+# The device is whatever volume we found, not a fixed /dev/ubi1_0: stock
+# creates its "cfg" volume with volume id 1 (ubimkvol -n 1), so on a board
+# coming straight from stock the volume is /dev/ubi1_1. With the wrong path
+# fstools retries for fifteen seconds and falls back to the slot's own
+# overlay on every boot, and the shared volume is never used.
+ensure_fstab() {
+	local dev="$1"
+	[ -n "$dev" ] || dev=/dev/ubi1_0
+	if [ -z "$(uci -q get fstab.bigoverlay)" ]; then
+		uci -q batch <<-EOT
+			set fstab.bigoverlay=mount
+			set fstab.bigoverlay.target='/overlay'
+			set fstab.bigoverlay.device='$dev'
+			set fstab.bigoverlay.fstype='ubifs'
+			set fstab.bigoverlay.options='rw,noatime'
+			set fstab.bigoverlay.enabled='1'
+			commit fstab
+		EOT
+	elif [ "$(uci -q get fstab.bigoverlay.device)" != "$dev" ]; then
+		logger -t bigoverlay "fstab pointed at $(uci -q get fstab.bigoverlay.device), the volume is $dev, fixing"
+		uci -q set fstab.bigoverlay.device="$dev"
+		uci -q commit fstab
+	fi
+}
+
+# Reboot so that fstools picks the volume up as /overlay.
+#
+# The installer hands this slot to the bootloader as a one-shot try
+# (flag_ota_reboot=1); the bootloader clears flag_boot_success on the way in
+# and expects the system to confirm before the next boot. We reboot here on
+# purpose, long before be7000-bootconfirm (START=99) gets a chance, and
+# without the re-arm the bootloader would treat that reboot as a failed try
+# and go back to stock. flag_last_success stays on stock, so a boot that
+# really fails still falls back, and the confirm service settles it once the
+# switched-over system is up.
+#
+# A counter inside the volume stops this from looping if the switch never
+# takes for some reason.
+switch_reboot() {
+	local dev="$1" why="$2" n=0
+	ensure_fstab "$dev"
+	mkdir -p /tmp/bigoverlay.sw
+	if mount -t ubifs "$dev" /tmp/bigoverlay.sw 2>/dev/null; then
+		[ -f /tmp/bigoverlay.sw/$SWITCH_TRIES ] && n=$(cat /tmp/bigoverlay.sw/$SWITCH_TRIES)
+		n=$((n + 1))
+		echo "$n" > /tmp/bigoverlay.sw/$SWITCH_TRIES
+		sync
+		umount /tmp/bigoverlay.sw
+	fi
+	rmdir /tmp/bigoverlay.sw 2>/dev/null
+	if [ "$n" -gt 2 ]; then
+		logger -t bigoverlay "$why, but /overlay did not switch after $((n - 1)) reboots, giving up"
+		: > "$STATE"
+		return 0
+	fi
+	if [ "$(fw_printenv -n flag_ota_reboot 2>/dev/null)" = "1" ]; then
+		fw_setenv flag_boot_success 1 || logger -t bigoverlay "could not re-arm flag_boot_success"
+	fi
+	logger -t bigoverlay "$why, rebooting to switch /overlay over"
+	sync
+	reboot
+}
+
+# Only when the partition carries no UBI at all (the kernel could not attach
+# it, or it is attached but empty): nothing is there to preserve. Create the
+# volume under stock's name and tell stock to repopulate /data/etc from its
+# ROM when it next boots, the same way stock itself handles a blank partition.
+make_volume() {
+	local mtdnum
+	mtdnum="$(grep '"overlay"' /proc/mtd | cut -d: -f1 | tr -dc '0-9')"
+	[ -n "$mtdnum" ] || { logger -t bigoverlay "no overlay partition in /proc/mtd"; return 1; }
+	if [ ! -d /sys/class/ubi/ubi1 ]; then
+		logger -t bigoverlay "mtd$mtdnum carries no UBI, formatting it"
+		ubiformat "/dev/mtd$mtdnum" -y -q || { logger -t bigoverlay "ubiformat failed"; return 1; }
+		ubiattach -m "$mtdnum" >/dev/null 2>&1 || { logger -t bigoverlay "ubiattach failed"; return 1; }
+	fi
+	ubimkvol /dev/ubi1 -N "$STOCK_VOLNAME" -m >/dev/null 2>&1 || { logger -t bigoverlay "ubimkvol failed"; return 1; }
+	fw_setenv flag_format_overlay 1 2>/dev/null || logger -t bigoverlay "could not set flag_format_overlay"
+	return 0
+}
+
+boot() {
+	[ "$(uci -q get bigoverlay.main.enabled)" = "1" ] || return 0
+	# Already serving as /overlay: nothing left to do, forget any switch tries.
+	case "$(mount | grep ' on /overlay ')" in
+	/dev/ubi1_*)
+		rm -f "/overlay/$SWITCH_TRIES"
+		ensure_fstab "$(mount | grep ' on /overlay ' | cut -d' ' -f1)"
+		return 0 ;;
+	esac
+	[ -f "$STATE" ] && {
+		logger -t bigoverlay "previous attempt failed, not retrying"
+		return 0
+	}
+
+	local dev
+	dev="$(volume_dev)"
+	if [ -z "$dev" ]; then
+		: > "$STATE"
+		make_volume || return 0
+		rm -f "$STATE"
+		dev="$(volume_dev)" || { logger -t bigoverlay "volume missing after creation"; return 0; }
+	fi
+
+	rename_legacy "$dev"
+
+	if migrated "$dev"; then
+		# Prepared earlier, but this boot runs on the slot's own overlay:
+		# the first boot after a sysupgrade, or after the installer.
+		switch_reboot "$dev" "settings partition is ready"
+		return 0
+	fi
+	logger -t bigoverlay "copying the settings into the shared volume on mtd28 ($(volume_name "$dev"))"
+	: > "$STATE"
+	migrate "$dev" || return 0
+	rm -f "$STATE"
+	switch_reboot "$dev" "settings copied"
+}

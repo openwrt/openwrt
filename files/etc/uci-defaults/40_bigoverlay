@@ -1,0 +1,22 @@
+#!/bin/sh
+# Tell fstools to mount the spare partition as /overlay. Harmless until the
+# volume exists: when the mount fails, fstools falls back to the in-slot
+# overlay and the router comes up as before.
+[ -n "$(uci -q get fstab.bigoverlay)" ] && exit 0
+# stock's own volume is "cfg" and usually has volume id 1, not 0
+dev=""
+for n in /sys/class/ubi/ubi1_*/name; do
+	[ -e "$n" ] || continue
+	case "$(cat "$n")" in cfg|overlay_data) dev="/dev/$(basename "$(dirname "$n")")"; break ;; esac
+done
+[ -n "$dev" ] || dev=/dev/ubi1_0
+uci -q batch <<-EOT
+	set fstab.bigoverlay=mount
+	set fstab.bigoverlay.target='/overlay'
+	set fstab.bigoverlay.device='$dev'
+	set fstab.bigoverlay.fstype='ubifs'
+	set fstab.bigoverlay.options='rw,noatime'
+	set fstab.bigoverlay.enabled='1'
+	commit fstab
+EOT
+exit 0

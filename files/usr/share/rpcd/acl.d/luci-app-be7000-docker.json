@@ -1,0 +1,18 @@
+{
+	"luci-app-be7000-docker": {
+		"description": "Docker stacks and maintenance",
+		"read": {
+			"ubus": {
+				"be7000-docker": [ "status", "df", "stacks", "stack_read" ]
+			}
+		},
+		"write": {
+			"file": {
+				"/usr/sbin/be7000-docker": [ "exec" ]
+			},
+			"ubus": {
+				"be7000-docker": [ "prune", "stack_write", "stack_up", "stack_down", "stack_pull", "stack_logs", "stack_remove" ]
+			}
+		}
+	}
+}

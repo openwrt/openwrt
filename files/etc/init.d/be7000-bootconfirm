@@ -1,0 +1,54 @@
+#!/bin/sh /etc/rc.common
+# Tell the bootloader that this slot actually came up.
+#
+# The stock U-Boot bumps flag_try_sys{N}_failed on every single boot and
+# switches slots once it passes 5; only the running system can zero it. Stock
+# does that in its own init, so a native image has to do the same or it walks
+# itself back to the stock slot after seven boots. On the first boot after the
+# installer (flag_ota_reboot=1) this is also what turns the one-shot try into
+# the permanent choice: last_success moves to this slot and ota_reboot drops.
+#
+# Writing only on change keeps the environment partition from being rewritten
+# on every single boot.
+START=99
+
+slot_from_cmdline() {
+	local arg
+	# Matched word by word: the image passes a second ubi.mtd= for the spare
+	# overlay partition, and a greedy match would return that one instead.
+	for arg in $(cat /proc/cmdline); do
+		case "$arg" in
+		ubi.mtd=rootfs)   echo 0; return 0 ;;
+		ubi.mtd=rootfs_1) echo 1; return 0 ;;
+		esac
+	done
+	return 1
+}
+
+set_if_changed() {
+	[ "$(fw_printenv -n "$1" 2>/dev/null)" = "$2" ] && return 0
+	fw_setenv "$1" "$2" 2>/dev/null || { logger -t bootconfirm "could not set $1=$2"; return 1; }
+	[ "$(fw_printenv -n "$1" 2>/dev/null)" = "$2" ] || {
+		logger -t bootconfirm "$1 did not stick at $2"; return 1
+	}
+}
+
+start() {
+	local slot
+	# Without a usable environment we cannot confirm anything. Say so loudly:
+	# the installer leaves the boot marked as unconfirmed on purpose, and a
+	# router that can never confirm will keep falling back to the stock slot.
+	if ! fw_printenv -n flag_boot_rootfs >/dev/null 2>&1; then
+		logger -t bootconfirm "fw_printenv does not work here, cannot confirm the boot; check /etc/fw_env.config"
+		return 0
+	fi
+	slot=$(slot_from_cmdline) || {
+		logger -t bootconfirm "no ubi.mtd=rootfs* on the command line, leaving the boot flags alone"
+		return 0
+	}
+	set_if_changed flag_last_success "$slot"
+	set_if_changed flag_boot_success 1
+	set_if_changed flag_ota_reboot 0
+	set_if_changed flag_try_sys1_failed 0
+	set_if_changed flag_try_sys2_failed 0
+}

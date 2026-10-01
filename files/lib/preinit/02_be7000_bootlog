@@ -1,0 +1,42 @@
+#!/bin/sh
+# Save the boot log into the crash_syslog partition, so a board that never
+# gets as far as the network can still be diagnosed: boot stock afterwards and
+# read it back with
+#   dd if=/dev/mtd27 bs=64k 2>/dev/null | strings > bootlog.txt
+# (crash_syslog is mtd27 on both stock and this image, 512 KiB).
+#
+# One copy is taken here, at the start of preinit, then a background loop
+# rewrites it every 15 seconds for five minutes and once more at seven and
+# ten minutes. A boot that hangs in preinit still has a live kernel, so the
+# loop keeps going and the last copy shows the hung-task traces the kernel
+# prints after two minutes. /etc/init.d/be7000-bootlog takes another copy at
+# the end of boot. Kernel panics go to the neighbouring "crash" partition
+# through mtdoops, see the bootargs.
+#
+# The copy carries everything that has been needed so far to tell a dead
+# board from a dead cable: dmesg, the kernel command line, the bootloader
+# flags, port link state and MAC counters, interrupts, addresses, routes,
+# neighbours, the network/wireless/dhcp/fstab configs, the nftables ruleset,
+# the process list and the system log. busybox ip has no -br, plain ip is
+# used. The dmesg part is cut at 200 KiB, the whole file at 480 KiB.
+
+. /lib/functions/be7000-bootlog.sh 2>/dev/null || {
+	# kept inline so the hook works even if the library is missing
+	be7000_bootlog_write() { :; }
+}
+
+be7000_bootlog_early() {
+	be7000_bootlog_write preinit
+	(
+		i=0
+		while [ $i -lt 20 ]; do
+			sleep 15
+			i=$((i + 1))
+			be7000_bootlog_write "periodic $i"
+		done
+		sleep 120; be7000_bootlog_write "7min"
+		sleep 180; be7000_bootlog_write "10min"
+	) </dev/null >/dev/null 2>&1 &
+}
+
+boot_hook_add preinit_main be7000_bootlog_early

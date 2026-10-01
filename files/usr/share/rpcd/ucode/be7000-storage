@@ -1,0 +1,69 @@
+'use strict';
+
+import { popen, access } from 'fs';
+
+const BIN = '/usr/sbin/be7000-extroot';
+
+function shellquote(s) {
+	return `'${replace(s, "'", "'\\''")}'`;
+}
+
+// The wizard is a shell tool rather than a daemon: moving /overlay has to work
+// on a router where nothing else is installed.
+function run(args) {
+	if (access(BIN) != true)
+		return { ok: false, code: 127, output: 'be7000-extroot not found' };
+
+	let cmd = join(' ', map(args, (a) => shellquote(a)));
+	cmd = `${shellquote(BIN)} ${cmd}`;
+
+	let fd = popen(`(${cmd}) 2>&1; echo __EXIT:$?`, 'r');
+	let all = fd ? fd.read('all') : '';
+	if (fd)
+		fd.close();
+
+	let m = match(all, /__EXIT:(\d+)\s*$/);
+	let code = m ? int(m[1]) : 1;
+	let output = trim(replace(all, /__EXIT:\d+\s*$/, ''));
+
+	return { ok: code == 0, code, output };
+}
+
+function query(sub) {
+	return {
+		call: function() {
+			let res = run([sub, '--json']);
+			if (!res.ok)
+				return { ok: false, output: res.output };
+			try {
+				return { ok: true, data: json(res.output) };
+			}
+			catch (err) {
+				return { ok: false, output: res.output };
+			}
+		}
+	};
+}
+
+return {
+	'be7000-storage': {
+		status: query('status'),
+		list: query('list'),
+		use: {
+			args: { device: '' },
+			call: function(req) {
+				let dev = req.args?.device ?? '';
+				if (!length(dev))
+					return { ok: false, output: 'device is required' };
+				let res = run(['use', dev, '--yes']);
+				return { ok: res.ok, output: res.output };
+			}
+		},
+		revert: {
+			call: function() {
+				let res = run(['revert', '--yes']);
+				return { ok: res.ok, output: res.output };
+			}
+		}
+	}
+};
