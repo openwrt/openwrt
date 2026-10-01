@@ -39,6 +39,11 @@ function iface_setup(config, phy, num_global_macaddr, macaddr_base) {
 	else
 		config.wds_sta = true;
 
+	/* hostapd copies bridge= into an empty wds_bridge, so wds_bridge= must
+	 * follow bridge= in append_vars() */
+	if (config.bridge)
+		set_default(config, 'wds_bridge', '');
+
 	if (!config.idx)
 		append('interface', config.ifname);
 	else
