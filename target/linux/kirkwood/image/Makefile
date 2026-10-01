@@ -37,6 +37,7 @@ define Build/ctera-firmware
 		> $@.tmp/trailer
 
 	tar $(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") \
+		--numeric-owner --owner=0 --group=0 \
 		-H gnu -C $@.tmp -cf $@.tar header kernel trailer
 
 	# Prepare header and trailer file for fake romdisk
@@ -58,6 +59,7 @@ define Build/ctera-firmware
 		> $@.tmp/trailer
 
 	tar $(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") \
+		--numeric-owner --owner=0 --group=0 \
 		-H gnu -C $@.tmp -rf $@.tar header romdisk trailer
 
 	mv $@.tar $@
