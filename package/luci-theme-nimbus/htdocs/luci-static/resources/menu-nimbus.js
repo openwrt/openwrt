@@ -21,10 +21,15 @@ const ICONS = {
 };
 
 const STRINGS = {
+	zh: {
+		search: '搜索', placeholder: '跳转到页面或设置…', empty: '未找到结果',
+		auto: '自动', light: '浅色', dark: '深色', theme: '外观', logout: '退出',
+		go: '打开', move: '移动', close: '关闭'
+	},
 	ru: {
-		search: 'Поиск', placeholder: 'Найти страницу или настройку…', empty: 'Ничего не найдено',
-		auto: 'Авто', light: 'Светлая', dark: 'Тёмная', theme: 'Оформление', logout: 'Выйти',
-		go: 'открыть', move: 'выбор', close: 'закрыть'
+		search: '搜索', placeholder: '跳转到页面或设置…', empty: '未找到结果',
+		auto: '自动', light: '浅色', dark: '深色', theme: '外观', logout: '退出',
+		go: '打开', move: '移动', close: '关闭'
 	},
 	en: {
 		search: 'Search', placeholder: 'Jump to a page or setting…', empty: 'Nothing found',
@@ -52,7 +57,10 @@ function storeSet(key, val) {
 return baseclass.extend({
 	__init__() {
 		const lang = (document.documentElement.getAttribute('lang') || 'en').toLowerCase();
-		this.t = STRINGS[lang.indexOf('ru') === 0 ? 'ru' : 'en'];
+		let key = 'en';
+		if (lang.indexOf('zh') === 0) key = 'zh';
+		else if (lang.indexOf('ru') === 0) key = 'ru';
+		this.t = STRINGS[key];
 		this.pages = [];
 
 		this.bindShell();
