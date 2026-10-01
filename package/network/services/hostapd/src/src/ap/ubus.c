@@ -16,6 +16,7 @@
 #include "neighbor_db.h"
 #include "wps_hostapd.h"
 #include "sta_info.h"
+#include "ieee802_11.h"
 #include "ubus.h"
 #include "ap_drv_ops.h"
 #include "beacon.h"
@@ -297,6 +298,49 @@ hostapd_parse_capab_blobmsg(struct sta_info *sta)
 	blobmsg_close_table(&b, v);
 }
 
+static void
+blobmsg_add_macaddr(struct blob_buf *buf, const char *name, const u8 *addr)
+{
+	char *s;
+
+	s = blobmsg_alloc_string_buffer(buf, name, 20);
+	sprintf(s, MACSTR, MAC2STR(addr));
+	blobmsg_add_string_buffer(buf);
+}
+
+/* The accepted links are read from the station of the association link */
+static void
+hostapd_ubus_sta_mld_add(struct hostapd_data *hapd, struct sta_info *sta)
+{
+#ifdef CONFIG_IEEE80211BE
+	struct hostapd_data *assoc_hapd;
+	struct sta_info *assoc_sta;
+	void *links, *l;
+	unsigned int i;
+
+	assoc_sta = hostapd_ml_get_assoc_sta(hapd, sta, &assoc_hapd);
+	if (!assoc_sta || !hapd->mld)
+		return;
+
+	blobmsg_add_macaddr(&b, "ap_mld_address", hapd->mld->mld_addr);
+	blobmsg_add_u32(&b, "assoc_link_id", assoc_sta->mld_assoc_link_id);
+	links = blobmsg_open_array(&b, "links");
+	for (i = 0; i < MAX_NUM_MLD_LINKS; i++) {
+		struct mld_link_info *link = &assoc_sta->mld_info.links[i];
+
+		if (!link->valid || link->status != WLAN_STATUS_SUCCESS)
+			continue;
+
+		l = blobmsg_open_table(&b, NULL);
+		blobmsg_add_u32(&b, "link_id", i);
+		blobmsg_add_macaddr(&b, "address", link->peer_addr);
+		blobmsg_add_macaddr(&b, "bssid", link->local_addr);
+		blobmsg_close_table(&b, l);
+	}
+	blobmsg_close_array(&b, links);
+#endif /* CONFIG_IEEE80211BE */
+}
+
 /* A non-AP MLD is listed once, with the station of its association link. */
 static void
 hostapd_bss_clients_add(struct hostapd_data *hapd)
@@ -383,6 +427,7 @@ hostapd_bss_clients_add(struct hostapd_data *hapd)
 		}
 
 		hostapd_parse_capab_blobmsg(sta);
+		hostapd_ubus_sta_mld_add(hapd, sta);
 
 		blobmsg_close_table(&b, c);
 	}
@@ -699,16 +744,6 @@ hostapd_bss_del_client(struct ubus_context *ctx, struct ubus_object *obj,
 				       blobmsg_get_u32(tb[DEL_CLIENT_BAN_TIME]));
 
 	return 0;
-}
-
-static void
-blobmsg_add_macaddr(struct blob_buf *buf, const char *name, const u8 *addr)
-{
-	char *s;
-
-	s = blobmsg_alloc_string_buffer(buf, name, 20);
-	sprintf(s, MACSTR, MAC2STR(addr));
-	blobmsg_add_string_buffer(buf);
 }
 
 static int
@@ -2539,8 +2574,24 @@ void hostapd_ubus_notify_authorized(struct hostapd_data *hapd, struct sta_info *
 		blobmsg_add_u32(&b, "", sta->bandwidth[1]);
 		blobmsg_close_array(&b, r);
 	}
+	hostapd_ubus_sta_mld_add(hapd, sta);
 
 	ubus_notify(ctx, obj, "sta-authorized", b.head, -1);
+}
+
+void hostapd_ubus_notify_sta_links(struct hostapd_data *hapd, struct sta_info *sta)
+{
+	struct ubus_object *obj = hostapd_ubus_notify_obj(hapd);
+
+	if (!obj->has_subscribers)
+		return;
+
+	blob_buf_init(&b, 0);
+	blobmsg_add_macaddr(&b, "address", hostapd_ubus_sta_addr(hapd, sta));
+	blobmsg_add_string(&b, "ifname", hapd->conf->iface);
+	hostapd_ubus_sta_mld_add(hapd, sta);
+
+	ubus_notify(ctx, obj, "sta-links-changed", b.head, -1);
 }
 
 static void

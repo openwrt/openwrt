@@ -320,7 +320,7 @@ probe/assoc/auth requests via object subscribe.
  		wpa_printf(MSG_DEBUG, "RRM action %u is not supported",
 --- a/src/ap/sta_info.c
 +++ b/src/ap/sta_info.c
-@@ -636,6 +636,7 @@ void ap_handle_timer(void *eloop_ctx, vo
+@@ -668,6 +668,7 @@ void ap_handle_timer(void *eloop_ctx, vo
  		hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_IEEE80211,
  			       HOSTAPD_LEVEL_INFO, "deauthenticated due to "
  			       "local deauth request");
@@ -328,7 +328,7 @@ probe/assoc/auth requests via object subscribe.
  		ap_free_sta(hapd, sta);
  		return;
  	}
-@@ -804,6 +805,7 @@ skip_poll:
+@@ -836,6 +837,7 @@ skip_poll:
  		mlme_deauthenticate_indication(
  			hapd, sta,
  			WLAN_REASON_PREV_AUTH_NOT_VALID);
@@ -336,7 +336,7 @@ probe/assoc/auth requests via object subscribe.
  		ap_free_sta(hapd, sta);
  		break;
  	}
-@@ -1808,17 +1810,30 @@ void ap_sta_set_authorized_event(struct
+@@ -1840,17 +1842,30 @@ void ap_sta_set_authorized_event(struct
  		os_snprintf(buf, sizeof(buf), MACSTR, MAC2STR(sta->addr));
  
  	if (authorized) {
@@ -367,7 +367,7 @@ probe/assoc/auth requests via object subscribe.
  
  #ifdef CONFIG_P2P
  		if (wpa_auth_get_ip_addr(sta->wpa_sm, ip_addr_buf) == 0) {
-@@ -1830,6 +1845,13 @@ void ap_sta_set_authorized_event(struct
+@@ -1862,6 +1877,13 @@ void ap_sta_set_authorized_event(struct
  		}
  #endif /* CONFIG_P2P */
  
@@ -381,7 +381,7 @@ probe/assoc/auth requests via object subscribe.
  		keyid = ap_sta_wpa_get_keyid(hapd, sta);
  		if (keyid) {
  			os_snprintf(keyid_buf, sizeof(keyid_buf),
-@@ -1854,17 +1876,19 @@ void ap_sta_set_authorized_event(struct
+@@ -1886,17 +1908,19 @@ void ap_sta_set_authorized_event(struct
  				    " vlanid=%u", sta->vlan_id);
  #endif /* CONFIG_NO_VLAN */
  
