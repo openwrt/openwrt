@@ -1418,7 +1418,7 @@ static int rtldsa_port_lag_join(struct dsa_switch *ds,
 		goto out;
 	}
 
-	group = dsa_lag_id(ds->dst, lag.dev);
+	group = lag.id;
 
 	pr_info("port_lag_join: group %d, port %d\n", group, port);
 
@@ -1450,12 +1450,7 @@ static int rtldsa_port_lag_leave(struct dsa_switch *ds, int port,
 
 	mutex_lock(&priv->reg_mutex);
 
-	group = dsa_lag_id(ds->dst, lag.dev);
-	if (group == -1) {
-		pr_info("port_lag_leave: group %d not set\n", port);
-		err = -EINVAL;
-		goto out;
-	}
+	group = lag.id;
 
 	if (port >= priv->r->cpu_port) {
 		err = -EINVAL;
