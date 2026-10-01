@@ -27,7 +27,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/wireless/nl80211.c
 +++ b/net/wireless/nl80211.c
-@@ -8321,6 +8321,7 @@ static void cfg80211_sta_set_mld_sinfo(s
+@@ -8295,6 +8295,7 @@ static void cfg80211_sta_set_mld_sinfo(s
  	struct link_station_info *link_sinfo;
  	int link_id, init = 0;
  	u32 link_inactive_time;
@@ -35,7 +35,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	sinfo->signal = -99;
  
-@@ -8447,31 +8448,27 @@ static void cfg80211_sta_set_mld_sinfo(s
+@@ -8421,31 +8422,27 @@ static void cfg80211_sta_set_mld_sinfo(s
  		/* Update MLO rates as per last updated link rate */
  		if ((link_sinfo->filled &
  		     BIT_ULL(NL80211_STA_INFO_TX_BITRATE)) &&
