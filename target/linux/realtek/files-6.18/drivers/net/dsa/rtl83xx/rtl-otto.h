@@ -463,6 +463,8 @@ struct rtldsa_config {
 	u64 (*read_mcast_pmask)(int idx);
 	void (*write_mcast_pmask)(int idx, u64 portmask);
 	void (*vlan_fwd_on_inner)(struct otto_dsa_priv *priv, int port, bool is_set);
+	void (*vlan_qinq_setup)(struct otto_dsa_priv *priv);
+	void (*vlan_port_qinq_set)(struct otto_dsa_priv *priv, int port, bool enable);
 	void (*pie_init)(struct otto_dsa_priv *priv);
 	int (*pie_rule_read)(struct otto_dsa_priv *priv, int idx, struct  pie_rule *pr);
 	int (*pie_rule_write)(struct otto_dsa_priv *priv, int idx, struct pie_rule *pr);

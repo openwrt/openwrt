@@ -129,6 +129,8 @@ void otto_vlan_930x_port_forward_on_inner(struct otto_dsa_priv *priv, int port, 
 void otto_vlan_930x_profile_setup(struct otto_dsa_priv *priv, int profile);
 void otto_vlan_930x_port_keep_tag_set(struct otto_dsa_priv *priv, int port, bool keep_outer,
 				      bool keep_inner);
+void otto_vlan_930x_qinq_setup(struct otto_dsa_priv *priv);
+void otto_vlan_930x_port_qinq_set(struct otto_dsa_priv *priv, int port, bool enable);
 void otto_vlan_930x_port_pvid_mode_set(struct otto_dsa_priv *priv, int port, enum pbvlan_type type,
 				       enum pbvlan_mode mode);
 void otto_vlan_930x_port_pvid_set(struct otto_dsa_priv *priv, int port, enum pbvlan_type type,
