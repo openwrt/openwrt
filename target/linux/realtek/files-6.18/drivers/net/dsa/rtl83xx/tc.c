@@ -645,6 +645,34 @@ otto_tc_rate_policy_extract(struct flow_cls_offload *cls)
 	return &rule->action.entries[0];
 }
 
+static bool otto_tc_flower_matches_all(struct flow_cls_offload *cls)
+{
+	struct flow_rule *rule = flow_cls_offload_flow_rule(cls);
+	struct flow_match_control control;
+	struct flow_match_basic basic;
+
+	if (cls->common.chain_index || cls->common.protocol != htons(ETH_P_ALL))
+		return false;
+
+	if (rule->match.dissector->used_keys &
+	    ~(BIT_ULL(FLOW_DISSECTOR_KEY_CONTROL) | BIT_ULL(FLOW_DISSECTOR_KEY_BASIC)))
+		return false;
+
+	if (flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_BASIC)) {
+		flow_rule_match_basic(rule, &basic);
+		if (basic.mask->n_proto || basic.mask->ip_proto)
+			return false;
+	}
+
+	if (flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_CONTROL)) {
+		flow_rule_match_control(rule, &control);
+		if (control.mask->addr_type || control.mask->flags)
+			return false;
+	}
+
+	return true;
+}
+
 static bool otto_tc_port_rate_police_validate(const struct flow_action_entry *act)
 {
 	if (!act)
@@ -784,11 +812,11 @@ int otto_tc_cls_flower_add(struct dsa_switch *ds, int port,
 	const struct flow_action_entry *act;
 	int ret;
 
-	/* a single rate/bandwidth limiter action is handled as port policing */
+	/* a single rate/bandwidth limiter action on all frames is handled as port policing */
 	act = otto_tc_rate_policy_extract(cls);
 
 	/* everything else is offloaded to the PIE engine */
-	if (!otto_tc_port_rate_police_validate(act))
+	if (!otto_tc_port_rate_police_validate(act) || !otto_tc_flower_matches_all(cls))
 		return otto_tc_pie_cls_flower_add(priv, port, cls, ingress);
 
 	if (!priv->r->port_rate_police_add)
@@ -812,9 +840,9 @@ int otto_tc_cls_flower_add(struct dsa_switch *ds, int port,
 		goto unlock;
 
 	if (ingress)
-		p->rate_police_ingress = true;
+		p->rate_police_ingress = cls->cookie;
 	else
-		p->rate_police_egress = true;
+		p->rate_police_egress = cls->cookie;
 
 unlock:
 	mutex_unlock(&priv->reg_mutex);
@@ -843,14 +871,19 @@ int otto_tc_cls_flower_del(struct dsa_switch *ds, int port,
 
 	mutex_lock(&priv->reg_mutex);
 
+	if ((ingress ? p->rate_police_ingress : p->rate_police_egress) != cls->cookie) {
+		ret = -ENOENT;
+		goto unlock;
+	}
+
 	ret = priv->r->port_rate_police_del(ds, port, cls, ingress);
 	if (ret < 0)
 		goto unlock;
 
 	if (ingress)
-		p->rate_police_ingress = false;
+		p->rate_police_ingress = 0;
 	else
-		p->rate_police_egress = false;
+		p->rate_police_egress = 0;
 
 unlock:
 	mutex_unlock(&priv->reg_mutex);

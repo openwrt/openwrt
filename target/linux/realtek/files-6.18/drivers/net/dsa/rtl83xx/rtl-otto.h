@@ -83,8 +83,8 @@ struct rtldsa_port {
 	bool enable:1;
 	bool phy:1;
 	bool isolated:1;
-	bool rate_police_egress:1;
-	bool rate_police_ingress:1;
+	unsigned long rate_police_egress;
+	unsigned long rate_police_ingress;
 	unsigned long cached_flags;
 	u64 pm;
 	u16 pvid;
