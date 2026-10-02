@@ -577,6 +577,23 @@ endef
 $(eval $(call KernelPackage,usb-dwc3-octeon))
 
 
+define KernelPackage/usb-dwc3-generic-plat
+  TITLE:=DWC3 generic platform glue
+  DEPENDS:=@USB_SUPPORT +kmod-usb-dwc3
+  KCONFIG:= CONFIG_USB_DWC3_GENERIC_PLAT
+  FILES:= $(LINUX_DIR)/drivers/usb/dwc3/dwc3-generic-plat.ko
+  AUTOLOAD:=$(call AutoProbe,dwc3-generic-plat,1)
+  $(call AddDepends/usb)
+endef
+
+define KernelPackage/usb-dwc3-generic-plat/description
+  This driver supports DesignWare USB3 controllers in simple SoC
+  integrations that only need their clocks and resets enabled.
+endef
+
+$(eval $(call KernelPackage,usb-dwc3-generic-plat))
+
+
 define KernelPackage/usb-dwc3-qcom
   TITLE:=DWC3 Qualcomm USB driver
   DEPENDS:=@(TARGET_ipq40xx||TARGET_ipq806x||TARGET_qualcommax||TARGET_qualcommbe) +kmod-usb-dwc3
