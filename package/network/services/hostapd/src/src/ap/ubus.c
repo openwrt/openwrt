@@ -723,7 +723,7 @@ hostapd_bss_del_client(struct ubus_context *ctx, struct ubus_object *obj,
 	struct hostapd_data *sta_bss;
 	struct sta_info *sta;
 	bool deauth = false;
-	int reason;
+	int reason = WLAN_REASON_UNSPECIFIED;
 	u8 addr[ETH_ALEN];
 
 	blobmsg_parse(del_policy, __DEL_CLIENT_MAX, tb, blob_data(msg), blob_len(msg));
