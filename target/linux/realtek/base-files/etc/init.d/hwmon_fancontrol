@@ -2,37 +2,68 @@
 
 START=18
 
-plasmacloud_common() {
-	# configuring onboard temp/fan controller to run the fan on its own
-	# for more information, please read https://www.kernel.org/doc/Documentation/hwmon/sysfs-interface
+# Print the hwmon directory of the single ADT747x fan controller, on whichever
+# I2C bus it sits.
+adt747x_hwmon() {
+	local dev found
 
-	local path_to_hwmon="$(find /sys/bus/i2c/devices/4-002e/hwmon/ -type d -maxdepth 1 -mindepth 1 -name 'hwmon*')"
+	for dev in /sys/bus/i2c/devices/*; do
+		case "$(cat "$dev/name" 2>/dev/null)" in
+		adt7473|adt7475|adt7476|adt7490)
+			[ -z "$found" ] || return 1
+			found="$dev"
+			;;
+		esac
+	done
 
-	# adt7476 fan control chip
-	# 3 temp sensors. Set to lowest speed at 35C and max speed at 70C
-	# set critical temp to 80 as per the datasheet
-	echo 7 > "$path_to_hwmon/pwm2_auto_channels_temp"
-	echo 1 > "$path_to_hwmon/pwm2_auto_point1_pwm"
-	echo 255 > "$path_to_hwmon/pwm2_auto_point2_pwm"
-	echo 22500 > "$path_to_hwmon/pwm2_freq"
+	for dev in "$found"/hwmon/hwmon*; do
+		[ -d "$dev" ] && echo "$dev" && return 0
+	done
 
-	echo 80000 > "$path_to_hwmon/temp1_crit"
-	echo 80000 > "$path_to_hwmon/temp2_crit"
-	echo 80000 > "$path_to_hwmon/temp3_crit"
+	return 1
+}
 
-	echo 75000 > "$path_to_hwmon/temp1_crit_hyst"
-	echo 75000 > "$path_to_hwmon/temp2_crit_hyst"
-	echo 75000 > "$path_to_hwmon/temp3_crit_hyst"
+# Let an ADT747x run fan <pwm> on its own, from all three temperature sensors.
+# For more information, see Documentation/hwmon/sysfs-interface.rst.
+#  $1  PWM output (1-3)
+#  $2  duty cycle at the lower temperature point (0-255); full duty at the upper
+#  $3  lower temperature point (millidegrees C)
+#  $4  upper temperature point; the chip rounds it to its own steps
+#  $5  critical temperature
+#  $6  critical temperature hysteresis
+#  $7  1: keep the fan at the lower duty below the lower point, not off
+#  $8  PWM frequency in Hz (optional)
+adt747x_fancontrol() {
+	local pwm="$1"
+	local path_to_hwmon
+	local i
 
-	echo 50000 > "$path_to_hwmon/temp1_auto_point1_temp"
-	echo 50000 > "$path_to_hwmon/temp2_auto_point1_temp"
-	echo 50000 > "$path_to_hwmon/temp3_auto_point1_temp"
+	path_to_hwmon="$(adt747x_hwmon)" || {
+		logger -t hwmon_fancontrol "ADT747x fan controller not found"
+		return 1
+	}
 
-	echo 70000 > "$path_to_hwmon/temp1_auto_point2_temp"
-	echo 70000 > "$path_to_hwmon/temp2_auto_point2_temp"
-	echo 70000 > "$path_to_hwmon/temp3_auto_point2_temp"
+	echo 7 > "$path_to_hwmon/pwm${pwm}_auto_channels_temp"
+	echo "$2" > "$path_to_hwmon/pwm${pwm}_auto_point1_pwm"
+	echo 255 > "$path_to_hwmon/pwm${pwm}_auto_point2_pwm"
+	[ -n "$8" ] && echo "$8" > "$path_to_hwmon/pwm${pwm}_freq"
 
-	echo 2 > "$path_to_hwmon/pwm2_enable"
+	for i in 1 2 3; do
+		echo "$5" > "$path_to_hwmon/temp${i}_crit"
+	done
+	for i in 1 2 3; do
+		echo "$6" > "$path_to_hwmon/temp${i}_crit_hyst"
+	done
+	for i in 1 2 3; do
+		echo "$3" > "$path_to_hwmon/temp${i}_auto_point1_temp"
+	done
+	for i in 1 2 3; do
+		echo "$4" > "$path_to_hwmon/temp${i}_auto_point2_temp"
+	done
+
+	[ "$7" = 1 ] && echo 1 > "$path_to_hwmon/pwm${pwm}_stall_disable"
+
+	echo 2 > "$path_to_hwmon/pwm${pwm}_enable"
 }
 
 dlink_dgs_1210() {
@@ -125,7 +156,9 @@ boot() {
 	case $(board_name) in
 	plasmacloud,esx28|\
 	plasmacloud,psx28)
-		plasmacloud_common
+		# Lowest speed at 50 C, full speed at 70 C; critical at 80 C, as
+		# per the datasheet.
+		adt747x_fancontrol 2 1 50000 70000 80000 75000 0 22500
 		;;
 	d-link,dgs-1210-28p-f|\
 	d-link,dgs-1210-28mp-f)
@@ -133,6 +166,11 @@ boot() {
 		;;
 	d-link,dgs-1250-28x)
 		dlink_dgs_1250
+		;;
+	horaco,zx-swtgw2c48ns)
+		# Duty 40 (the stock idle speed) from 45 C, full speed at 71.67 C;
+		# the fan is not stable at lower duty.
+		adt747x_fancontrol 1 40 45000 71670 85000 80000 1
 		;;
 	linksys,lgs328mpc-v2)
 		linksys_lgs328mpc_v2
