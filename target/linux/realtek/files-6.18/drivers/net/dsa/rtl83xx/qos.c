@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
+#include <net/dcbnl.h>
 #include <net/dsa.h>
 #include <linux/delay.h>
 #include <linux/regmap.h>
@@ -37,13 +38,6 @@
 #define RTL838X_SCHED_P_TYPE_CTRL(p)		(0xC04C + (((p) << 7)))
 #define RTL838X_SCHED_LB_CTRL(p)		(0xC004 + (((p) << 7)))
 #define RTL838X_FC_P_EGR_DROP_CTRL(p)		(0x6B1C + (((p) << 2)))
-
-#define RTL930X_REMAP_DSCP(p)			(0x9B04 + (((p) / 10) * 4))
-#define RTL931X_REMAP_DSCP(p)			(0x9034 + (((p) / 10) * 4))
-#define RTL93XX_REMAP_DSCP_INTPRI_DSCP_OFFSET(p) \
-						(((p) % 10) * 3)
-#define RTL93XX_REMAP_DSCP_INTPRI_DSCP_MASK(index) \
-						(0x7 << RTL93XX_REMAP_DSCP_INTPRI_DSCP_OFFSET(index))
 
 #define RTL930X_PORT_TBL_IDX_CTRL(port)		(0x9B20 + (((port) / 16) * 4))
 #define RTL931X_PORT_TBL_IDX_CTRL(port)		(0x9064 + (((port) / 16) * 4))
@@ -491,20 +485,6 @@ static void otto_qos_930x_set_group_selector(struct otto_dsa_priv *priv, int por
 			  RTL93XX_PORT_TBL_IDX_CTRL_IDX_MASK(port) | val, val);
 }
 
-static void otto_qos_930x_setup_default_dscp2queue_map(struct otto_dsa_priv *priv)
-{
-	u32 queue;
-
-	/* The default mapping between dscp and queue is based on
-	 * the first 3 bits indicate the precedence (prio = dscp >> 3).
-	 */
-	for (int i = 0; i < DSCP_MAP_MAX; i++) {
-		queue = (i >> 3) << RTL93XX_REMAP_DSCP_INTPRI_DSCP_OFFSET(i);
-		regmap_write_bits(priv->map, RTL930X_REMAP_DSCP(i),
-				  RTL93XX_REMAP_DSCP_INTPRI_DSCP_MASK(i), queue);
-	}
-}
-
 static void otto_qos_930x_prio2queue_matrix(struct otto_dsa_priv *priv, int *min_queues)
 {
 	u32 v = 0;
@@ -589,7 +569,6 @@ void otto_qos_930x_init(struct otto_dsa_priv *priv)
 
 	regmap_write(priv->map, RTL930X_PRI_SEL_TBL_CTRL(0), v);
 
-	otto_qos_930x_setup_default_dscp2queue_map(priv);
 	otto_qos_930x_set_scheduling_queue_weights(priv);
 	otto_qos_930x_set_fc_thresholds(priv);
 }
@@ -666,4 +645,112 @@ void otto_qos_931x_init(struct otto_dsa_priv *priv)
 
 	otto_qos_931x_setup_default_dscp2queue_map(priv);
 	otto_qos_931x_set_scheduling_queue_weights(priv);
+}
+
+static u32 otto_qos_prio_get(struct otto_dsa_priv *priv, int base, int index)
+{
+	u32 v = 0;
+
+	regmap_read(priv->map, base + (index / 10) * 4, &v);
+
+	return (v >> ((index % 10) * 3)) & 0x7;
+}
+
+static void otto_qos_prio_set(struct otto_dsa_priv *priv, int base, int index, u8 prio)
+{
+	regmap_update_bits(priv->map, base + (index / 10) * 4,
+			   0x7 << ((index % 10) * 3), prio << ((index % 10) * 3));
+}
+
+/* DSA reads the DSCP map when it creates the user ports, which is before qos_init() */
+void otto_qos_setup(struct dsa_switch *ds)
+{
+	struct otto_dsa_priv *priv = ds->priv;
+
+	if (!priv->r->pri_sel_remap_dscp)
+		return;
+
+	for (int dscp = 0; dscp < DSCP_MAP_MAX; dscp++)
+		otto_qos_prio_set(priv, priv->r->pri_sel_remap_dscp, dscp, dscp >> 3);
+
+	ds->dscp_prio_mapping_is_global = true;
+}
+
+int otto_qos_port_get_default_prio(struct dsa_switch *ds, int port)
+{
+	struct otto_dsa_priv *priv = ds->priv;
+
+	if (!priv->r->pri_sel_port_pri)
+		return 0;
+
+	return otto_qos_prio_get(priv, priv->r->pri_sel_port_pri, port);
+}
+
+int otto_qos_port_set_default_prio(struct dsa_switch *ds, int port, u8 prio)
+{
+	struct otto_dsa_priv *priv = ds->priv;
+
+	if (!priv->r->pri_sel_port_pri)
+		return -EOPNOTSUPP;
+
+	if (prio >= MAX_PRIOS)
+		return -EINVAL;
+
+	mutex_lock(&priv->reg_mutex);
+	otto_qos_prio_set(priv, priv->r->pri_sel_port_pri, port, prio);
+	mutex_unlock(&priv->reg_mutex);
+
+	return 0;
+}
+
+int otto_qos_port_get_dscp_prio(struct dsa_switch *ds, int port, u8 dscp)
+{
+	struct otto_dsa_priv *priv = ds->priv;
+
+	if (!priv->r->pri_sel_remap_dscp)
+		return -EOPNOTSUPP;
+
+	return otto_qos_prio_get(priv, priv->r->pri_sel_remap_dscp, dscp);
+}
+
+int otto_qos_port_add_dscp_prio(struct dsa_switch *ds, int port, u8 dscp, u8 prio)
+{
+	struct otto_dsa_priv *priv = ds->priv;
+
+	if (!priv->r->pri_sel_remap_dscp)
+		return -EOPNOTSUPP;
+
+	if (prio >= MAX_PRIOS)
+		return -EINVAL;
+
+	mutex_lock(&priv->reg_mutex);
+	otto_qos_prio_set(priv, priv->r->pri_sel_remap_dscp, dscp, prio);
+	mutex_unlock(&priv->reg_mutex);
+
+	return 0;
+}
+
+/* A replace adds the new entry first, so only an entry that still holds @prio may change */
+int otto_qos_port_del_dscp_prio(struct dsa_switch *ds, int port, u8 dscp, u8 prio)
+{
+	struct dcb_app app = {
+		.selector = IEEE_8021QAZ_APP_SEL_DSCP,
+		.protocol = dscp,
+	};
+	struct otto_dsa_priv *priv = ds->priv;
+	u8 mask = 0;
+
+	if (!priv->r->pri_sel_remap_dscp)
+		return -EOPNOTSUPP;
+
+	if (IS_ENABLED(CONFIG_DCB))
+		mask = dcb_ieee_getapp_mask(dsa_to_port(ds, port)->user, &app);
+
+	mutex_lock(&priv->reg_mutex);
+	if (otto_qos_prio_get(priv, priv->r->pri_sel_remap_dscp, dscp) == prio)
+		otto_qos_prio_set(priv, priv->r->pri_sel_remap_dscp, dscp,
+				  mask ? __fls(mask) : dscp >> 3);
+	mutex_unlock(&priv->reg_mutex);
+
+	return 0;
 }
