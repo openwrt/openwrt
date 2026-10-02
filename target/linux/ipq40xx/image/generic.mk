@@ -1,5 +1,5 @@
 DTS_DIR := $(DTS_DIR)/qcom
-DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_HW_ID
+DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_HW_ID NETGEAR_FLASH_SCRIPT
 DEVICE_VARS += RAS_BOARD RAS_ROOTFS_SIZE RAS_VERSION
 DEVICE_VARS += WRGG_DEVNAME WRGG_SIGNATURE
 DEVICE_VARS += SUPPORTED_TELTONIKA_DEVICES
@@ -1043,6 +1043,35 @@ define Device/netgear_rbs40
 	NETGEAR_BOARD_ID := RBS40
 endef
 TARGET_DEVICES += netgear_rbs40
+
+define Build/netgear-rbs40v-qsdk-ipq-factory
+	$(CP) $(NETGEAR_FLASH_SCRIPT) $(KDIR_TMP)/
+
+	echo "VERSION : V8.0.0.0_$(LINUX_VERSION)" > $@.metadata
+	echo "MODEL_ID : $(DEVICE_MODEL)" >> $@.metadata
+
+	$(TOPDIR)/scripts/mkits-qsdk-ipq-image.sh $@.its $(NETGEAR_FLASH_SCRIPT) txt $@.metadata ubi $@
+	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $@.its $@.new
+	@mv $@.new $@
+endef
+
+define Device/netgear_rbs40v
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	SOC := qcom-ipq4019
+	DEVICE_VENDOR := NETGEAR
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	NETGEAR_FLASH_SCRIPT := netgear_rbs40v.bootscript
+	DEVICE_MODEL := RBS40V
+	NETGEAR_BOARD_ID := U12H380T01_NETGEAR
+	DEVICE_DTS_CONFIG := config@ap.dk07.1-c1
+	DEVICE_PACKAGES := ipq-wifi-netgear_rbs40v ath10k-firmware-qca9888-ct kmod-usb-audio audio-support kmod-input-core kmod-media-controller kmod-sound-core kmod-leds-lp5562
+	IMAGES += factory.chk
+	IMAGE/factory.chk := append-ubi | netgear-rbs40v-qsdk-ipq-factory | \
+		netgear-chk
+endef
+TARGET_DEVICES += netgear_rbs40v
 
 define Device/netgear_rbx50
 	$(call Device/netgear_orbi)
