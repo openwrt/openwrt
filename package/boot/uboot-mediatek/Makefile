@@ -278,6 +278,18 @@ define U-Boot/mt7981_cudy_tr3000-v1
   DEPENDS:=+trusted-firmware-a-mt7981-cudy-tr3000-v1
 endef
 
+define U-Boot/mt7981_cudy_wr3000p-v1
+  NAME:=Cudy WR3000P v1
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=cudy_wr3000p-v1-ubootmod
+  UBOOT_CONFIG:=mt7981_cudy_wr3000p-v1
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=cudy
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr4
+  DEPENDS:=+trusted-firmware-a-mt7981-cudy-ddr4
+endef
+
 define U-Boot/mt7981_glinet_gl-x3000
   NAME:=GL.iNet GL-X3000
   BUILD_SUBTARGET:=filogic
@@ -883,6 +895,7 @@ UBOOT_TARGETS := \
 	mt7981_cmcc_rax3000m-emmc \
 	mt7981_cmcc_rax3000m-nand \
 	mt7981_cudy_tr3000-v1 \
+	mt7981_cudy_wr3000p-v1 \
 	mt7981_gatonetworks_gdsp \
 	mt7981_glinet_gl-x3000 \
 	mt7981_glinet_gl-xe3000 \
