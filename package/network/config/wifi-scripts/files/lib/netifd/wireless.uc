@@ -9,6 +9,7 @@ import {
 } from "./utils.uc";
 import { find_phy } from "wifi.utils";
 import * as wdev from "./wireless-device.uc";
+import * as macaddr from "./wireless-macaddr.uc";
 
 let wireless = netifd.wireless = {
 	handlers: {},
@@ -84,15 +85,64 @@ function mlo_vif_macaddr(config, dev_names, dev_name)
 		config.macaddr = macaddr;
 }
 
+// hostapd and wpa_supplicant compare lower-case addresses
+function config_macaddr_lc(config)
+{
+	if (type(config) != "object")
+		return;
+
+	for (let field in [ "macaddr", "macaddr_base" ])
+		if (type(config[field]) == "string")
+			config[field] = lc(config[field]);
+
+	if (type(config.radio_macaddr) == "array")
+		config.radio_macaddr = map(config.radio_macaddr,
+			(addr) => type(addr) == "string" ? lc(addr) : addr);
+}
+
+function config_macaddr_list(list, config)
+{
+	push(list, config.macaddr);
+	if (type(config.radio_macaddr) == "array")
+		push(list, ...config.radio_macaddr);
+}
+
+function macaddr_reserved_update(new_devices, mlo_vifs)
+{
+	let list = [];
+
+	for (let name, dev in new_devices)
+		for (let vif in dev.vif)
+			config_macaddr_list(list, vif.config);
+
+	for (let name, mlo_vif in mlo_vifs)
+		config_macaddr_list(list, mlo_vif);
+
+	macaddr.reserved_set(list);
+}
+
 function update_config(new_devices, mlo_vifs)
 {
+	for (let name, dev in new_devices) {
+		config_macaddr_lc(dev.config);
+		for (let vif in dev.vif)
+			config_macaddr_lc(vif.config);
+	}
+	for (let name, mlo_vif in mlo_vifs)
+		config_macaddr_lc(mlo_vif);
+
+	macaddr_reserved_update(new_devices, mlo_vifs);
+
 	wireless.mlo = mlo_vifs;
 	hostapd_update_mlo();
 	supplicant_update_mlo();
 
-	for (let name, dev in wireless.devices)
-		if (!new_devices[name])
-			dev.destroy();
+	for (let name, dev in wireless.devices) {
+		if (new_devices[name])
+			continue;
+
+		dev.destroy();
+	}
 
 	for (let name, dev in new_devices) {
 		let cur_dev = wireless.devices[name];
@@ -556,6 +606,56 @@ const ubus_obj = {
 			return ret;
 		}
 	},
+	macaddr_get: {
+		args: {
+			phy: "",
+			radio: 0,
+			owner: "",
+			name: "",
+			group: "",
+			ifname: "",
+			macaddr: "",
+			static: false,
+			share: "",
+			any_radio: false,
+			num_global: 0,
+			macaddr_base: "",
+			mbssid: 0,
+		},
+		call: function(req) {
+			return macaddr.macaddr_get(req.args) ?? ubus.STATUS_INVALID_ARGUMENT;
+		}
+	},
+	macaddr_sync: {
+		args: {
+			owner: "",
+			group: "",
+			macaddr: {},
+			num_global: 0,
+			macaddr_base: "",
+			mbssid: 0,
+		},
+		call: function(req) {
+			return macaddr.macaddr_sync(req.args) ?? ubus.STATUS_INVALID_ARGUMENT;
+		}
+	},
+	macaddr_release: {
+		args: {
+			owner: "",
+			name: "",
+		},
+		call: function(req) {
+			return macaddr.macaddr_release(req.args) ?? ubus.STATUS_INVALID_ARGUMENT;
+		}
+	},
+	macaddr_list: {
+		args: {
+			phy: "",
+		},
+		call: function(req) {
+			return macaddr.macaddr_list(req.args);
+		}
+	},
 };
 
 
@@ -578,6 +678,10 @@ wireless.listener = ubus.listener("ubus.object.add", (event, msg) => {
 		hostapd_update_mlo();
 	else if (msg.path == "wpa_supplicant")
 		supplicant_update_mlo();
+});
+wireless.owner_listener = ubus.listener("ubus.object.remove", (event, msg) => {
+	if (msg.path == "hostapd" || msg.path == "wpa_supplicant")
+		macaddr.owner_gone(msg.path);
 });
 
 return {
