@@ -77,7 +77,7 @@ endef
 define Build/wac5xx-netgear-tar
 	mkdir $@.tmp
 	mv $@ $@.tmp/wac5xx-ubifs-root.img
-	md5sum $@.tmp/wac5xx-ubifs-root.img > $@.tmp/wac5xx-ubifs-root.md5sum
+	(cd $@.tmp && md5sum wac5xx-ubifs-root.img) > $@.tmp/wac5xx-ubifs-root.md5sum
 	echo "WAC505 WAC510" > $@.tmp/metadata.txt
 	echo "WAC505_V9.9.9.9" > $@.tmp/version
 	$(TAR) -C $@.tmp/ -cf $@ --sort=name --numeric-owner --owner=0 --group=0 --mode=go-w \
