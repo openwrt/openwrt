@@ -77,6 +77,8 @@ export function parse_encryption(config, dev_config, phy_features) {
 			config.rsn_override_pairwise = 'CCMP';
 		if (config.gcmp256 && phy_features?.cipher_gcmp256)
 			config.rsn_override_pairwise_2 = 'GCMP-256';
+		else if (config.sae_ext_key)
+			config.rsn_override_pairwise_2 = 'CCMP';
 		break;
 
 	case 'wpa':
