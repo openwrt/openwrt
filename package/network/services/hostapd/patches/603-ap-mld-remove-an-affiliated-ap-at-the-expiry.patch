@@ -458,7 +458,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  u8 hostapd_get_mld_id(struct hostapd_data *hapd);
 --- a/src/ap/ieee802_11.c
 +++ b/src/ap/ieee802_11.c
-@@ -9118,10 +9118,16 @@ void ieee802_11_mgmt_cb(struct hostapd_d
+@@ -9122,10 +9122,16 @@ void ieee802_11_mgmt_cb(struct hostapd_d
  	case WLAN_FC_STYPE_DEAUTH:
  		wpa_printf(MSG_DEBUG, "mgmt::deauth cb");
  		handle_deauth_cb(hapd, mgmt, len, ok);

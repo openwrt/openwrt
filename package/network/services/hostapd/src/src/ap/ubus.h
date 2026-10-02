@@ -15,6 +15,17 @@ enum hostapd_ubus_event_type {
 	HOSTAPD_UBUS_TYPE_MAX
 };
 
+/* RSN Error: the frame in which the RSN procedure failed */
+enum hostapd_ubus_rsn_error {
+	HOSTAPD_UBUS_RSN_ERROR_AUTH = 1,
+	HOSTAPD_UBUS_RSN_ERROR_ASSOC = 2,
+	HOSTAPD_UBUS_RSN_ERROR_EAPOL_M2 = 3,
+	HOSTAPD_UBUS_RSN_ERROR_EAPOL_M4 = 4,
+	HOSTAPD_UBUS_RSN_ERROR_FILS = 5,
+	HOSTAPD_UBUS_RSN_ERROR_PASN = 6,
+	HOSTAPD_UBUS_RSN_ERROR_STA_DEAUTH = 7,
+};
+
 struct hostapd_ubus_request {
 	enum hostapd_ubus_event_type type;
 	const struct ieee80211_mgmt *mgmt_frame;
@@ -54,6 +65,9 @@ void hostapd_ubus_remove_vlan(struct hostapd_data *hapd, struct hostapd_vlan *vl
 int hostapd_ubus_handle_event(struct hostapd_data *hapd, struct hostapd_ubus_request *req);
 void hostapd_ubus_handle_link_measurement(struct hostapd_data *hapd, const u8 *data, size_t len);
 void hostapd_ubus_notify(struct hostapd_data *hapd, const char *type, const u8 *mac);
+void hostapd_ubus_notify_key_mismatch(struct hostapd_data *hapd, const u8 *addr,
+				      enum hostapd_ubus_rsn_error rsn_error,
+				      const u8 *frame, size_t len);
 void hostapd_ubus_notify_beacon_report(struct hostapd_data *hapd,
 				       const u8 *addr, u8 token, u8 meas_token,
 				       u8 rep_mode,
@@ -122,6 +136,13 @@ static inline void hostapd_ubus_handle_link_measurement(struct hostapd_data *hap
 }
 
 static inline void hostapd_ubus_notify(struct hostapd_data *hapd, const char *type, const u8 *mac)
+{
+}
+
+static inline void
+hostapd_ubus_notify_key_mismatch(struct hostapd_data *hapd, const u8 *addr,
+				 enum hostapd_ubus_rsn_error rsn_error,
+				 const u8 *frame, size_t len)
 {
 }
 

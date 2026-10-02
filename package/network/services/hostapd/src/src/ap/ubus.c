@@ -308,6 +308,22 @@ blobmsg_add_macaddr(struct blob_buf *buf, const char *name, const u8 *addr)
 	blobmsg_add_string_buffer(buf);
 }
 
+static int
+blobmsg_add_hex(struct blob_buf *buf, const char *name, const u8 *data,
+		size_t len)
+{
+	char *s;
+
+	s = blobmsg_alloc_string_buffer(buf, name, 2 * len + 1);
+	if (!s)
+		return -1;
+
+	wpa_snprintf_hex(s, 2 * len + 1, data, len);
+	blobmsg_add_string_buffer(buf);
+
+	return 0;
+}
+
 /* The accepted links are read from the station of the association link */
 static void
 hostapd_ubus_sta_mld_add(struct hostapd_data *hapd, struct sta_info *sta)
@@ -1083,7 +1099,6 @@ hostapd_rrm_print_nr(struct hostapd_neighbor_entry *nr)
 {
 	const u8 *data;
 	char *str;
-	int len;
 
 	blobmsg_printf(&b, "", MACSTR, MAC2STR(nr->bssid));
 
@@ -1092,10 +1107,7 @@ hostapd_rrm_print_nr(struct hostapd_neighbor_entry *nr)
 	str[nr->ssid.ssid_len] = 0;
 	blobmsg_add_string_buffer(&b);
 
-	len = wpabuf_len(nr->nr);
-	str = blobmsg_alloc_string_buffer(&b, "", 2 * len + 1);
-	wpa_snprintf_hex(str, 2 * len + 1, wpabuf_head_u8(nr->nr), len);
-	blobmsg_add_string_buffer(&b);
+	blobmsg_add_hex(&b, "", wpabuf_head_u8(nr->nr), wpabuf_len(nr->nr));
 }
 
 enum {
@@ -2537,6 +2549,29 @@ void hostapd_ubus_notify(struct hostapd_data *hapd, const char *type, const u8 *
 	ubus_notify(ctx, obj, type, b.head, -1);
 }
 
+/* `frame`: the body of the frame that rsn_error names */
+void hostapd_ubus_notify_key_mismatch(struct hostapd_data *hapd, const u8 *addr,
+				      enum hostapd_ubus_rsn_error rsn_error,
+				      const u8 *frame, size_t len)
+{
+	struct ubus_object *obj = hostapd_ubus_notify_obj(hapd);
+
+	if (!obj->has_subscribers)
+		return;
+
+	if (!addr)
+		return;
+
+	blob_buf_init(&b, 0);
+	blobmsg_add_macaddr(&b, "address", addr);
+	blobmsg_add_string(&b, "ifname", hapd->conf->iface);
+	blobmsg_add_u32(&b, "rsn_error", rsn_error);
+	if (frame && len && blobmsg_add_hex(&b, "frame", frame, len))
+		return;
+
+	ubus_notify(ctx, obj, "key-mismatch", b.head, -1);
+}
+
 /* A non-AP MLD is known by its MLD MAC address, which is what get_clients and
  * the station table report, while the entry held by an affiliated link carries
  * the address of that link alone. Name the station the same way everywhere. */
@@ -2759,7 +2794,6 @@ void hostapd_ubus_notify_action_frame(struct hostapd_data *hapd,
 				      const u8 *body, size_t body_len)
 {
 	struct ubus_object *obj = hostapd_ubus_notify_obj(hapd);
-	char *hex;
 
 	if (!obj->has_subscribers)
 		return;
@@ -2771,12 +2805,8 @@ void hostapd_ubus_notify_action_frame(struct hostapd_data *hapd,
 	blobmsg_add_macaddr(&b, "address", addr);
 	blobmsg_add_string(&b, "ifname", hapd->conf->iface);
 	blobmsg_add_string(&b, "type", type);
-
-	hex = blobmsg_alloc_string_buffer(&b, "frame", 2 * body_len + 1);
-	if (!hex)
+	if (blobmsg_add_hex(&b, "frame", body, body_len))
 		return;
-	wpa_snprintf_hex(hex, 2 * body_len + 1, body, body_len);
-	blobmsg_add_string_buffer(&b);
 
 	ubus_notify(ctx, obj, "action-frame", b.head, -1);
 }
