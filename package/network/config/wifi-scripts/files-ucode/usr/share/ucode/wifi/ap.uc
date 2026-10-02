@@ -285,11 +285,14 @@ function iface_ppsk(config) {
 	append('macaddr_acl', '2');
 }
 
-function iface_wps(config) {
+function iface_wps(config, band) {
 	push_config(config, 'config_methods', 'wps_pushbutton', 'push_button');
 	push_config(config, 'config_methods', 'wps_label', 'label');
 
 	if (config.multi_ap == 1)
+		config.wps_possible = false;
+
+	if (band == '6g')
 		config.wps_possible = false;
 
 	if (config.wps_possible && length(config.config_methods)) {
@@ -631,7 +634,7 @@ export function generate(interface, data, config, vlans, stas, phy_features) {
 
 	iface_ppsk(config);
 
-	iface_wps(config);
+	iface_wps(config, data.config.band);
 
 	iface_rrm(config);
 
