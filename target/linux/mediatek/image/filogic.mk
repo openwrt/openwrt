@@ -10,10 +10,12 @@ endef
 
 define Build/fit-with-netgear-top-level-rootfs-node
 	$(call Build/fit-its,$(1))
-	$(TOPDIR)/scripts/gen_netgear_rootfs_node.sh $(KERNEL_BUILD_DIR)/root.squashfs$(if $(TARGET_PER_DEVICE_ROOTFS),+pkg=$(ROOTFS_ID/$(DEVICE_NAME))) > $@.rootfs
-	awk '/configurations/ { system("cat $@.rootfs") } 1' $@.its > $@.its.tmp
-	@mv -f $@.its.tmp $@.its
-	@rm -f $@.rootfs
+	$(if $(wildcard $(KERNEL_BUILD_DIR)/root.squashfs$(if $(TARGET_PER_DEVICE_ROOTFS),+pkg=$(ROOTFS_ID/$(DEVICE_NAME)))),
+		$(TOPDIR)/scripts/gen_netgear_rootfs_node.sh $(KERNEL_BUILD_DIR)/root.squashfs$(if $(TARGET_PER_DEVICE_ROOTFS),+pkg=$(ROOTFS_ID/$(DEVICE_NAME))) > $@.rootfs
+		awk '/configurations/ { system("cat $@.rootfs") } 1' $@.its > $@.its.tmp
+		@mv -f $@.its.tmp $@.its
+		@rm -f $@.rootfs
+	)
 	$(call Build/fit-image,$(1))
 endef
 
