@@ -13,6 +13,7 @@
 #include "mirror.h"
 #include "mac.h"
 #include "l2.h"
+#include "qos.h"
 #include "rtl-otto.h"
 #include "stats.h"
 #include "tc.h"
@@ -223,6 +224,8 @@ static int rtldsa_93xx_setup(struct dsa_switch *ds)
 	}
 
 	priv->r->led_init(priv);
+
+	otto_qos_setup(ds);
 
 	return 0;
 }
@@ -1519,4 +1522,10 @@ const struct dsa_switch_ops rtldsa_93xx_switch_ops = {
 	.cls_flower_add		= otto_tc_cls_flower_add,
 	.cls_flower_del		= otto_tc_cls_flower_del,
 	.cls_flower_stats	= otto_tc_cls_flower_stats,
+
+	.port_get_default_prio	= otto_qos_port_get_default_prio,
+	.port_set_default_prio	= otto_qos_port_set_default_prio,
+	.port_get_dscp_prio	= otto_qos_port_get_dscp_prio,
+	.port_add_dscp_prio	= otto_qos_port_add_dscp_prio,
+	.port_del_dscp_prio	= otto_qos_port_del_dscp_prio,
 };
