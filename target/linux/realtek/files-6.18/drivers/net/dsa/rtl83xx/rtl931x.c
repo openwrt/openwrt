@@ -85,6 +85,14 @@
 #define RTL931X_LED_CLK_SEL_200NS				2
 #define RTL931X_LED_CLK_SEL_100NS				3
 
+/*
+ * Chassis system LED controls. This is a chip-global hardware LED rather than
+ * a per-port LED or GPIO.
+ */
+#define RTL931X_LED_GLB_SYS_LED_MODE				GENMASK(13, 12)
+#define RTL931X_LED_GLB_SYS_LED_MODE_LIGHT			0x3
+#define RTL931X_MAC_L2_SYS_LED_EN				BIT(8)
+
 static inline int rtl931x_mac_force_mode_ctrl(int p)
 {
 	return RTL931X_MAC_FORCE_MODE_CTRL + (p << 2);
@@ -264,6 +272,9 @@ static void rtldsa_931x_led_init(struct rtl838x_switch_priv *priv)
 	struct device *dev = priv->dev;
 	struct device_node *node;
 	u8 leds_in_set[4] = {};
+	bool num_ctrl_direct;
+	bool sys_led_program;
+	u32 led_scan_mode;
 	u32 clk_freq;
 	int ret;
 
@@ -272,6 +283,28 @@ static void rtldsa_931x_led_init(struct rtl838x_switch_priv *priv)
 		dev_dbg(dev, "No compatible LED node found\n");
 		return;
 	}
+
+	/*
+	 * Optionally encode LED_PORT_NUM_CTRL as the direct LED count. Some
+	 * RTL9313 boards expect the direct count: with count-minus-one their
+	 * per-port LEDs land one position off along the scan chain. Boards
+	 * without the property retain the existing count-minus-one encoding.
+	 */
+	num_ctrl_direct = of_property_read_bool(node, "realtek,led-num-ctrl-direct");
+
+	/*
+	 * LED interface mode. Some RTL9313 boards need single-scan: serial
+	 * mode leaves their per-port LEDs dark. Boards without the property
+	 * retain serial mode.
+	 */
+	led_scan_mode = 1;
+	of_property_read_u32(node, "realtek,led-scan-mode", &led_scan_mode);
+
+	/*
+	 * Optionally program the chassis system LED. Boards without the property
+	 * retain the bootloader-provided state.
+	 */
+	sys_led_program = of_property_read_bool(node, "realtek,led-sys-enable");
 
 	ret = of_property_read_u32(node, "clock-frequency", &clk_freq);
 	if (!ret) {
@@ -355,8 +388,10 @@ static void rtldsa_931x_led_init(struct rtl838x_switch_priv *priv)
 		if (forced_leds_per_port[i] > 0)
 			priv->ports[i].leds_on_this_port = forced_leds_per_port[i];
 
-		/* 0x0 = 1 led, 0x1 = 2 leds, 0x2 = 3 leds, 0x3 = 4 leds per port */
-		sw_w32_mask(0x3 << pos, (priv->ports[i].leds_on_this_port - 1) << pos,
+		/* Encode the LED count according to the board-selected convention. */
+		sw_w32_mask(0x3 << pos,
+			    ((num_ctrl_direct ? priv->ports[i].leds_on_this_port
+					      : priv->ports[i].leds_on_this_port - 1) & 0x3) << pos,
 			    RTL931X_LED_PORT_NUM_CTRL(i));
 
 		if (priv->ports[i].phy)
@@ -369,8 +404,20 @@ static void rtldsa_931x_led_init(struct rtl838x_switch_priv *priv)
 		sw_w32_mask(0, set << pos, RTL931X_LED_PORT_FIB_SET_SEL_CTRL(i));
 	}
 
-	/* Set LED mode to serial (0x1) */
-	sw_w32_mask(0x3, 0x1, RTL931X_LED_GLB_CTRL);
+	/* Set the board-selected LED interface mode. */
+	sw_w32_mask(0x3, led_scan_mode & 0x3, RTL931X_LED_GLB_CTRL);
+
+	/*
+	 * Program the board-opted chassis system LED policy. Other boards retain
+	 * the bootloader-provided state.
+	 */
+	if (sys_led_program) {
+		sw_w32_mask(RTL931X_LED_GLB_SYS_LED_MODE,
+			    FIELD_PREP(RTL931X_LED_GLB_SYS_LED_MODE,
+				       RTL931X_LED_GLB_SYS_LED_MODE_LIGHT),
+			    RTL931X_LED_GLB_CTRL);
+		sw_w32_mask(0, RTL931X_MAC_L2_SYS_LED_EN, RTL931X_MAC_L2_GLOBAL_CTRL2);
+	}
 
 	if (of_property_read_bool(node, "active-low"))
 		sw_w32_mask(RTL931X_LED_GLB_ACTIVE_LOW, 0, RTL931X_LED_GLB_CTRL);
