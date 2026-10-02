@@ -123,7 +123,7 @@ function iface_accounting_server(config) {
 	append_list(config, [ 'radius_acct_req_attr' ]);
 }
 
-function iface_auth_type(config, band) {
+function iface_auth_type(config, band, eht) {
 	if (config.auth_type in [ 'sae', 'owe', 'eap2', 'eap192', 'dpp' ])
 		config.ieee80211w = 2;
 
@@ -133,6 +133,10 @@ function iface_auth_type(config, band) {
 	/* IEEE 802.11-2024 12.12.2: MFPR on 6 GHz */
 	if (band == '6g' && config.wpa)
 		config.ieee80211w = 2;
+
+	/* IEEE 802.11be-2024 12.12.9: beacon protection on EHT, which needs PMF */
+	if (eht && (config.wpa & 2) && config.auth_type != 'psk-sae-compat')
+		set_default(config, 'ieee80211w', 1);
 
 	if (config.auth_type == 'psk-sae-compat') {
 		if (band != '6g') {
@@ -621,7 +625,7 @@ export function generate(interface, data, config, vlans, stas, phy_features) {
 
 	iface_rates(data.config);
 
-	iface_auth_type(config, data.config.band);
+	iface_auth_type(config, data.config.band, wildcard(data.config.htmode ?? '', 'EHT*'));
 
 	iface_accounting_server(config);
 

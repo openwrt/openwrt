@@ -464,7 +464,7 @@
 			"type": "boolean"
 		},
 		"ieee80211w": {
-			"description": "Enables MFP (802.11w) support (0 = disabled, 1 = optional, 2 = required). Requires the 'full' version of wpad/hostapd and support from the Wi-Fi driver. In the 6 GHz band, an AP with WPA2 or later always uses 2, also with an explicit value, as IEEE 802.11-2024 12.12.2 requires",
+			"description": "Enables MFP (802.11w) support (0 = disabled, 1 = optional, 2 = required). Requires the 'full' version of wpad/hostapd and support from the Wi-Fi driver. In the 6 GHz band, an AP with WPA2 or later always uses 2, also with an explicit value, as IEEE 802.11-2024 12.12.2 requires. With an EHT htmode, an AP with WPA2 or later defaults to 1, because IEEE 802.11be-2024 12.12.9 requires beacon protection; sae-compat outside 6 GHz keeps 0 in its base RSNE (WPA3 Specification v3.5 2.4) unless mbo, ocv or dpp needs PMF",
 			"type": "number",
 			"enum": [ 0, 1, 2 ]
 		},
