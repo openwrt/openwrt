@@ -238,7 +238,7 @@ function setup() {
 			if (mode != "ap")
 				data.config.noscan = true;
 			validate('iface', v.config);
-			iface.prepare(v.config, data.phy + data.phy_suffix, data.config.num_global_macaddr, data.config.macaddr_base);
+			iface.prepare(v.config);
 			netifd.set_vif(k, v.config.ifname);
 			break;
 		}
@@ -296,6 +296,8 @@ function setup() {
 	system([
 		"ucode", "/usr/share/hostap/wdev.uc", data.phy + data.phy_suffix, "set_config",
 		sprintf("%J", wdev_data),
+		`num_global=${data.config.num_global_macaddr ?? ""}`,
+		`macaddr_base=${data.config.macaddr_base ?? ""}`,
 	]);
 
 	if (fs.access('/usr/sbin/wpa_supplicant', 'x'))

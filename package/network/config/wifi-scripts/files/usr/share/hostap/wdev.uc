@@ -1,13 +1,15 @@
 #!/usr/bin/env ucode
 'use strict';
-import { vlist_new, is_equal, wdev_set_mesh_params, wdev_remove, wdev_set_up, phy_open } from "/usr/share/hostap/common.uc";
+import { vlist_new, is_equal, wdev_set_mesh_params, wdev_remove, wdev_set_up, phy_open, macaddr_keep, macaddr_sync } from "/usr/share/hostap/common.uc";
 import { readfile, writefile, basename, readlink, glob } from "fs";
 let libubus = require("ubus");
 
 let keep_devices = {};
+let macaddr_options = {};
 let phy_name = shift(ARGV);
 let command = shift(ARGV);
 let phydev;
+let ubus;
 
 function iface_stop(wdev)
 {
@@ -17,19 +19,56 @@ function iface_stop(wdev)
 	wdev_remove(wdev.ifname);
 }
 
+function netdev_macaddr(ifname)
+{
+	let addr = readfile(`/sys/class/net/${ifname}/address`);
+
+	return addr ? trim(addr) : null;
+}
+
+function iface_macaddr(wdev)
+{
+	let ifname = wdev.ifname;
+	let ret = { error: "ubus is not reachable", transport: true };
+
+	if (ubus)
+		ret = phydev.macaddr_get(ubus, "wdev", ifname, {
+			...macaddr_options,
+			group: phydev.name,
+			ifname,
+			macaddr: wdev.macaddr,
+			static: !!wdev.macaddr,
+		});
+
+	if (ret.macaddr)
+		return ret.macaddr;
+
+	let prev = ret.transport ? (wdev.macaddr ?? netdev_macaddr(ifname)) : null;
+	warn(`No MAC address from netifd for ${ifname}: ${ret.error}${prev ? ", using " + prev : ""}\n`);
+
+	return prev;
+}
+
 function iface_start(wdev)
 {
 	let ifname = wdev.ifname;
+	let macaddr;
+
+	if (wdev.mode != "monitor")
+		macaddr = iface_macaddr(wdev);
 
 	if (readfile(`/sys/class/net/${ifname}/ifindex`)) {
 		wdev_set_up(ifname, false);
 		wdev_remove(ifname);
 	}
+	if (!macaddr && wdev.mode != "monitor")
+		return;
+
 	let wdev_config = {};
 	for (let key in wdev)
 		wdev_config[key] = wdev[key];
-	if (!wdev_config.macaddr && wdev.mode != "monitor")
-		wdev_config.macaddr = phydev.macaddr_next();
+	if (macaddr)
+		wdev_config.macaddr = macaddr;
 	let err = phydev.wdev_add(ifname, wdev_config);
 	if (err) {
 		warn(`Failed to create ${ifname}: ${err}\n`);
@@ -130,20 +169,59 @@ function usage()
 	warn(`Usage: ${basename(sourcepath())} <phy> <command> [<arguments>]
 
 Commands:
-	set_config <config> [<device]...] - set phy configuration
-	get_macaddr <id>		  - get phy MAC address for vif index <id>
+	set_config <config> [<option>=<value>|<device>]...
+					  - set phy configuration; options:
+					    num_global, macaddr_base
+	reset				  - remove the interfaces of the phy
 `);
 	exit(1);
 }
 
+const statefile = `/var/run/wdev-${phy_name}.json`;
+const idfile = `/var/run/wdev-${phy_name}.id.json`;
+
+function state_load()
+{
+	let config = readfile(statefile);
+	if (config)
+		config = json(config);
+	if (type(config) != "object")
+		config = {};
+
+	let wdev_ids = readfile(idfile);
+	if (wdev_ids)
+		wdev_ids = json(wdev_ids);
+
+	add_ifname(config);
+	drop_inactive(config, type(wdev_ids) == "object" ? wdev_ids : null);
+
+	return config;
+}
+
+function state_save(config)
+{
+	writefile(statefile, sprintf("%J", config));
+	writefile(idfile, sprintf("%J", wdev_ids_get(config)));
+}
+
+function macaddr_prune(config)
+{
+	let names = filter(keys(config), (ifname) => config[ifname].mode != "monitor");
+
+	if (!macaddr_sync(ubus, "wdev", phydev.name, macaddr_keep(names), macaddr_options))
+		warn(`Could not release the MAC addresses of removed interfaces: ${ubus.error()}\n`);
+}
+
 const commands = {
 	set_config: function(args) {
-		let statefile = `/var/run/wdev-${phy_name}.json`;
-		let idfile = `/var/run/wdev-${phy_name}.id.json`;
-
 		let new_config = shift(args);
-		for (let dev in ARGV)
-			keep_devices[dev] = true;
+		for (let arg in args) {
+			let val = split(arg, "=", 2);
+			if (length(val) < 2)
+				keep_devices[arg] = true;
+			else if (index([ "num_global", "macaddr_base" ], val[0]) >= 0 && val[1] != "")
+				macaddr_options[val[0]] = val[1];
+		}
 
 		if (!new_config)
 			usage();
@@ -154,52 +232,26 @@ const commands = {
 			exit(1);
 		}
 
-		let old_config = readfile(statefile);
-		if (old_config)
-			old_config = json(old_config);
-
 		let config = vlist_new(iface_cb);
-		if (type(old_config) == "object")
-			config.data = old_config;
+		config.data = state_load();
 
-		let wdev_ids = readfile(idfile);
-		if (wdev_ids)
-			wdev_ids = json(wdev_ids);
-
-		add_ifname(config.data);
-		drop_inactive(config.data, type(wdev_ids) == "object" ? wdev_ids : null);
-
-		let ubus = libubus.connect();
-		let data = ubus.call("hostapd", "config_get_macaddr_list", { phy: phydev.phy });
-		let macaddr_list = [];
-		if (type(data) == "object" && data.macaddr)
-			macaddr_list = data.macaddr;
-		ubus.disconnect();
-		phydev.macaddr_init(macaddr_list);
+		ubus = libubus.connect();
+		macaddr_prune(new_config);
 
 		add_ifname(new_config);
 		config.update(new_config);
+		ubus?.disconnect();
 
 		drop_inactive(config.data);
 		delete_ifname(config.data);
-		writefile(statefile, sprintf("%J", config.data));
-		writefile(idfile, sprintf("%J", wdev_ids_get(config.data)));
+		state_save(config.data);
 	},
-	get_macaddr: function(args) {
-		let data = {};
+	// netifd waits for this at startup and cannot answer ubus calls
+	reset: function(args) {
+		for (let ifname in state_load())
+			wdev_remove(ifname);
 
-		for (let arg in args) {
-			arg = split(arg, "=", 2);
-			data[arg[0]] = arg[1];
-		}
-
-		let macaddr = phydev.macaddr_generate(data);
-		if (!macaddr) {
-			warn(`Could not get MAC address for phy ${phy_name}\n`);
-			exit(1);
-		}
-
-		print(macaddr + "\n");
+		state_save({});
 	},
 };
 

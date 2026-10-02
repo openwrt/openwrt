@@ -82,6 +82,18 @@ function wdev_set_radio_mask(name, mask)
 	});
 }
 
+// a driver without ndo_set_mac_address keeps the old address
+function netdev_macaddr_set(name, macaddr)
+{
+	let cur = readfile(`/sys/class/net/${name}/address`);
+	if (cur && lc(trim(cur)) == lc(macaddr))
+		return;
+
+	if (!rtnl.request(rtnl.const.RTM_SETLINK, 0, { dev: name, change: 1, flags: 0 }) ||
+	    !rtnl.request(rtnl.const.RTM_SETLINK, 0, { dev: name, address: macaddr }))
+		warn(`Could not set MAC address ${macaddr} on ${name}: ${rtnl.error()}\n`);
+}
+
 function wdev_create(phy, name, data)
 {
 	let phyidx = int(readfile(`/sys/class/ieee80211/${phy}/index`));
@@ -90,6 +102,9 @@ function wdev_create(phy, name, data)
 
 	if (!iftypes[data.mode])
 		return `Invalid mode: ${data.mode}`;
+
+	if (!data.macaddr && data.mode != "monitor")
+		return `No MAC address for ${name}`;
 
 	let req = {
 		wiphy: phyidx,
@@ -108,6 +123,7 @@ function wdev_create(phy, name, data)
 
 	nl80211.error();
 
+	let reused;
 	let reuse_ifname = find_reusable_wdev(phyidx);
 	if (reuse_ifname &&
 	    (reuse_ifname == name ||
@@ -115,6 +131,7 @@ function wdev_create(phy, name, data)
 		req.dev = req.ifname;
 		delete req.ifname;
 		nl80211.request(nl80211.const.NL80211_CMD_SET_INTERFACE, 0, req);
+		reused = true;
 	} else {
 		nl80211.request(
 			nl80211.const.NL80211_CMD_NEW_INTERFACE,
@@ -125,6 +142,10 @@ function wdev_create(phy, name, data)
 	let error = nl80211.error();
 	if (error)
 		return error;
+
+	// nl80211_set_interface() ignores NL80211_ATTR_MAC
+	if (reused && data.macaddr)
+		netdev_macaddr_set(name, data.macaddr);
 
 	if (data.powersave != null) {
 		nl80211.request(nl80211.const.NL80211_CMD_SET_POWER_SAVE, 0,
@@ -163,156 +184,95 @@ function wdev_set_up(name, up)
 	return null;
 }
 
-function phy_sysfs_file(phy, name)
+// netifd rejects null fields and fields of a mismatched type
+function macaddr_args(data)
 {
-	return trim(readfile(`/sys/class/ieee80211/${phy}/${name}`));
+	let args = {};
+
+	for (let key, val in data) {
+		if (val == null)
+			continue;
+
+		switch (key) {
+		case "radio":
+		case "num_global":
+		case "mbssid":
+			val = int(val);
+			if (val != val)
+				continue;
+			break;
+		case "static":
+		case "any_radio":
+			val = !!val;
+			break;
+		default:
+			val = "" + val;
+			break;
+		}
+
+		args[key] = val;
+	}
+
+	return args;
 }
 
-function macaddr_split(str)
+function macaddr_keep(names)
 {
-	return map(split(str, ":"), (val) => hex(val));
+	let list = {};
+
+	for (let name in names)
+		list[name] = "";
+
+	return list;
 }
 
-function macaddr_join(addr)
+function macaddr_sync_args(owner, group, list, options)
 {
-	return join(":", map(addr, (val) => sprintf("%02x", val)));
+	return {
+		...macaddr_args(options ?? {}),
+		owner, group,
+		macaddr: list,
+	};
 }
 
-function wdev_macaddr(wdev)
+function macaddr_sync(ubus, owner, group, list, options)
 {
-	return trim(readfile(`/sys/class/net/${wdev}/address`));
+	return ubus.call("network.wireless", "macaddr_sync",
+			 macaddr_sync_args(owner, group, list, options));
+}
+
+function macaddr_sync_defer(ubus, owner, group, list, options)
+{
+	ubus.defer("network.wireless", "macaddr_sync",
+		   macaddr_sync_args(owner, group, list, options));
 }
 
 const phy_proto = {
-	macaddr_init: function(used, options) {
-		this.macaddr_options = options ?? {};
-		this.macaddr_list = {};
-
-		if (type(used) == "object")
-			for (let addr in used)
-				this.macaddr_list[addr] = used[addr];
-		else
-			for (let addr in used)
-				this.macaddr_list[addr] = -1;
-
-		this.for_each_wdev((wdev) => {
-			let macaddr = wdev_macaddr(wdev);
-			this.macaddr_list[macaddr] ??= -1;
+	macaddr_get: function(ubus, owner, name, data) {
+		let args = macaddr_args({
+			...data,
+			phy: this.phy,
+			radio: this.radio ?? -1,
+			owner, name,
 		});
 
-		return this.macaddr_list;
+		let ret = ubus.call("network.wireless", "macaddr_get", args);
+		if (type(ret) == "object")
+			return ret;
+
+		return {
+			error: ubus.error() ?? "no reply",
+			transport: true,
+		};
 	},
 
-	macaddr_generate: function(data) {
-		let phy = this.phy;
-		let radio_idx = this.radio;
-		let idx = int(data.id ?? 0);
-		let mbssid = int(data.mbssid ?? 0) > 0;
-		let num_global = int(data.num_global ?? 1);
-		let use_global = !mbssid && idx < num_global;
-
-		let base_addr = phy_sysfs_file(phy, "macaddress");
-		if (!base_addr)
-			return null;
-
-		let base_mask = phy_sysfs_file(phy, "address_mask");
-		if (!base_mask)
-			return null;
-
-		if (base_mask == "00:00:00:00:00:00")
-			base_mask = "ff:ff:ff:ff:ff:ff";
-
-		if (data.macaddr_base)
-			base_addr = data.macaddr_base;
-		else if (base_mask == "ff:ff:ff:ff:ff:ff" &&
-		    (radio_idx > 0 || idx >= num_global)) {
-			let addrs = split(phy_sysfs_file(phy, "addresses"), "\n");
-
-			if (radio_idx != null) {
-				if (radio_idx && radio_idx < length(addrs))
-					base_addr = addrs[radio_idx];
-				else
-					idx += radio_idx * 16;
-			} else {
-				if (idx < length(addrs))
-					return addrs[idx];
-			}
-		}
-
-		if (!idx && !mbssid)
-			return base_addr;
-
-		let addr = macaddr_split(base_addr);
-		let mask = macaddr_split(base_mask);
-		let type;
-
-		if (mbssid)
-			type = "b5";
-		else if (use_global)
-			type = "add";
-		else if (mask[0] > 0)
-			type = "b1";
-		else if (mask[5] < 0xff)
-			type = "b5";
-		else
-			type = "add";
-
-		switch (type) {
-		case "b1":
-			if (!(addr[0] & 2))
-				idx--;
-			addr[0] |= 2;
-			addr[0] ^= idx << 2;
-			break;
-		case "b5":
-			if (mbssid)
-				addr[0] |= 2;
-			addr[5] ^= idx;
-			break;
-		default:
-			for (let i = 5; i > 0; i--) {
-				addr[i] += idx;
-				if (addr[i] < 256)
-					break;
-				addr[i] %= 256;
-			}
-			break;
-		}
-
-		return macaddr_join(addr);
-	},
-
-	macaddr_next: function(val, reuse) {
-		let data = this.macaddr_options ?? {};
-		let list = this.macaddr_list;
-		let addr;
-
-		for (let i = 0; i < 32; i++) {
-			data.id = i;
-
-			let mac = this.macaddr_generate(data);
-			if (!mac)
-				break;
-
-			if (mac == reuse) {
-				addr = mac;
-				break;
-			}
-
-			if (addr != null || list[mac] != null)
-				continue;
-
-			addr = mac;
-			if (reuse == null)
-				break;
-		}
-
-		if (addr == null)
-			return null;
-
-		list[addr] = val != null ? val : -1;
-
-		return addr;
+	macaddr_sync_entry: function(macaddr, data) {
+		return macaddr_args({
+			...data,
+			macaddr,
+			phy: this.phy,
+			radio: this.radio ?? -1,
+		});
 	},
 
 	wdev_add: function(name, data) {
@@ -329,27 +289,6 @@ const phy_proto = {
 			{ wiphy: this.idx }
 		) ?? [];
 	},
-
-	for_each_wdev: function(cb) {
-		let wdevs = this.wdev_list();
-
-		let mac_wdev = {};
-		for (let wdev in wdevs) {
-			if (wdev.iftype == nl80211.const.NL80211_IFTYPE_AP_VLAN)
-				continue;
-			if (this.radio != null && wdev.vif_radio_mask != null &&
-			    !(wdev.vif_radio_mask & (1 << this.radio)))
-				continue;
-			mac_wdev[wdev.mac] = wdev;
-		}
-
-		for (let wdev in wdevs) {
-			if (!mac_wdev[wdev.mac])
-				continue;
-
-			cb(wdev.ifname);
-		}
-	}
 };
 
 function phy_open(phy, radio)
@@ -361,8 +300,10 @@ function phy_open(phy, radio)
 	let name = phy;
 	if (radio === "" || radio < 0)
 		radio = null;
-	if (radio != null)
+	if (radio != null) {
+		radio = int(radio);
 		name += "." + radio;
+	}
 
 	return proto({
 		phy, name, radio,
@@ -441,4 +382,4 @@ function vlist_new(cb) {
 	}, vlist_proto);
 }
 
-export { wdev_remove, wdev_create, wdev_set_mesh_params, wdev_set_radio_mask, wdev_set_up, is_equal, vlist_new, phy_is_fullmac, phy_open };
+export { wdev_remove, wdev_create, wdev_set_mesh_params, wdev_set_radio_mask, wdev_set_up, is_equal, vlist_new, phy_is_fullmac, phy_open, macaddr_keep, macaddr_sync, macaddr_sync_defer };

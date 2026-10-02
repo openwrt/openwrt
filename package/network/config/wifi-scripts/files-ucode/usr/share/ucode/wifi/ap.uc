@@ -8,7 +8,7 @@ import { append, append_raw, append_value, append_vars, append_list, append_stri
 import * as netifd from 'wifi.netifd';
 import * as iface from 'wifi.iface';
 
-function iface_setup(config, phy, num_global_macaddr, macaddr_base) {
+function iface_setup(config) {
 	switch(config.fixup) {
 	case 'owe':
 		config.ignore_broadcast_ssid = true;
@@ -26,7 +26,7 @@ function iface_setup(config, phy, num_global_macaddr, macaddr_base) {
 		config.macaddr = null;
 		delete config.default_macaddr;
 		delete config.random_macaddr;
-		iface.prepare(config, phy, num_global_macaddr, macaddr_base);
+		iface.prepare(config);
 		break;
 	}
 
@@ -574,7 +574,7 @@ export function generate(interface, data, config, vlans, stas, phy_features) {
 	config.ctrl_interface = '/var/run/hostapd';
 
 	config.start_disabled = data.ap_start_disabled;
-	iface_setup(config, data.phy + data.phy_suffix, data.config.num_global_macaddr, data.config.macaddr_base);
+	iface_setup(config);
 
 	iface.parse_encryption(config, data.config, phy_features);
 	if (data.config.band == '6g') {

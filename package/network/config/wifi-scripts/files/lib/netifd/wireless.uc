@@ -1,7 +1,7 @@
 'use strict';
 
 import * as ubus from "ubus";
-import { realpath } from "fs";
+import { realpath, lsdir } from "fs";
 import {
 	handler_load, handler_attributes,
 	parse_attribute_list, parse_bool, parse_array,
@@ -671,6 +671,37 @@ handler_load(wireless.path, (script, data) => {
 		handler[kind] = handler_attributes(data[kind], attr, validate);
 	}
 });
+
+function wpad_reset()
+{
+	let conn = ubus.connect(null, 3);
+	if (!conn) {
+		netifd.log(netifd.L_WARNING, `wireless: no ubus connection for the reset: ${ubus.error()}\n`);
+		return;
+	}
+
+	for (let obj in [ "hostapd", "wpa_supplicant" ]) {
+		conn.call(obj, "config_reset", {});
+		let err = conn.error(true);
+		if (err && err != ubus.STATUS_NOT_FOUND)
+			netifd.log(netifd.L_WARNING, `wireless: reset of ${obj} failed: ubus status ${err}\n`);
+	}
+	conn.disconnect();
+}
+
+// The allocation table does not survive a restart of netifd.
+function wifi_reset()
+{
+	wpad_reset();
+
+	for (let file in lsdir("/var/run", /^wdev-.*\.json$/)) {
+		let phy = match(file, /^wdev-(.*)\.json$/)[1];
+		if (!match(phy, /\.id$/))
+			system([ "ucode", "/usr/share/hostap/wdev.uc", phy, "reset" ]);
+	}
+}
+
+wifi_reset();
 
 wireless.obj = ubus.publish("network.wireless", ubus_obj);
 wireless.listener = ubus.listener("ubus.object.add", (event, msg) => {
