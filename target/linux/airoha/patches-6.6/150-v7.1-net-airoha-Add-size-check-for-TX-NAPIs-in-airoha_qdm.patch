@@ -1,0 +1,57 @@
+From 4b91cb65789b794bfc8d50554b8994f8e0f16309 Mon Sep 17 00:00:00 2001
+From: Lorenzo Bianconi <lorenzo@kernel.org>
+Date: Mon, 20 Apr 2026 10:07:48 +0200
+Subject: [PATCH] net: airoha: Add size check for TX NAPIs in
+ airoha_qdma_cleanup()
+
+If airoha_qdma_init routine fails before airoha_qdma_tx_irq_init() runs
+successfully for all TX NAPIs, airoha_qdma_cleanup() will
+unconditionally runs netif_napi_del() on TX NAPIs, triggering a NULL
+pointer dereference. Fix the issue relying on q_tx_irq size value to
+check if the TX NAPIs is properly initialized in airoha_qdma_cleanup().
+Moreover, run netif_napi_add_tx() just if irq_q queue is properly
+allocated.
+
+Fixes: 23020f049327 ("net: airoha: Introduce ethernet support for EN7581 SoC")
+Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
+Link: https://patch.msgid.link/20260420-airoha_qdma_init_rx_queue-fix-v2-2-d99347e5c18d@kernel.org
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c | 11 ++++++++---
+ 1 file changed, 8 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -1020,8 +1020,6 @@ static int airoha_qdma_tx_irq_init(struc
+ 	struct airoha_eth *eth = qdma->eth;
+ 	dma_addr_t dma_addr;
+ 
+-	netif_napi_add_tx(eth->napi_dev, &irq_q->napi,
+-			  airoha_qdma_tx_napi_poll);
+ 	irq_q->q = dmam_alloc_coherent(eth->dev, size * sizeof(u32),
+ 				       &dma_addr, GFP_KERNEL);
+ 	if (!irq_q->q)
+@@ -1031,6 +1029,9 @@ static int airoha_qdma_tx_irq_init(struc
+ 	irq_q->size = size;
+ 	irq_q->qdma = qdma;
+ 
++	netif_napi_add_tx(eth->napi_dev, &irq_q->napi,
++			  airoha_qdma_tx_napi_poll);
++
+ 	airoha_qdma_wr(qdma, REG_TX_IRQ_BASE(id), dma_addr);
+ 	airoha_qdma_rmw(qdma, REG_TX_IRQ_CFG(id), TX_IRQ_DEPTH_MASK,
+ 			FIELD_PREP(TX_IRQ_DEPTH_MASK, size));
+@@ -1450,8 +1451,12 @@ static void airoha_qdma_cleanup(struct a
+ 		}
+ 	}
+ 
+-	for (i = 0; i < ARRAY_SIZE(qdma->q_tx_irq); i++)
++	for (i = 0; i < ARRAY_SIZE(qdma->q_tx_irq); i++) {
++		if (!qdma->q_tx_irq[i].size)
++			continue;
++
+ 		netif_napi_del(&qdma->q_tx_irq[i].napi);
++	}
+ 
+ 	for (i = 0; i < ARRAY_SIZE(qdma->q_tx); i++) {
+ 		if (!qdma->q_tx[i].ndesc)

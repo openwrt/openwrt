@@ -1,0 +1,75 @@
+From e070aac63b42bf81f4dc565f9f841ff47e6c992f Mon Sep 17 00:00:00 2001
+From: Lorenzo Bianconi <lorenzo@kernel.org>
+Date: Tue, 21 Apr 2026 10:53:33 +0200
+Subject: [PATCH] net: airoha: Do not wake all netdev TX queues in
+ airoha_qdma_wake_netdev_txqs()
+
+Do not wake every netdev TX queue across all ports sharing the QDMA
+running netif_tx_wake_all_queues routine in airoha_qdma_wake_netdev_txqs()
+but only the ones that are mapped the specific QDMA stopped hw TX queue.
+This patch can potentially avoid waking already stopped netdev TX queues
+that are mapped to a different QDMA hw TX queue.
+Introduce airoha_qdma_get_txq utility routine.
+
+Fixes: b94769eb2f30 ("net: airoha: Fix possible TX queue stall in airoha_qdma_tx_napi_poll()")
+Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
+Link: https://patch.msgid.link/20260421-airoha-wake_netdev_txqs-optmization-v1-1-e0be95115d53@kernel.org
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c | 19 +++++++++++++++----
+ drivers/net/ethernet/airoha/airoha_eth.h |  5 +++++
+ 2 files changed, 20 insertions(+), 4 deletions(-)
+
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -847,13 +847,24 @@ static void airoha_qdma_wake_netdev_txqs
+ {
+ 	struct airoha_qdma *qdma = q->qdma;
+ 	struct airoha_eth *eth = qdma->eth;
+-	int i;
++	int i, qid = q - &qdma->q_tx[0];
+ 
+ 	for (i = 0; i < ARRAY_SIZE(eth->ports); i++) {
+ 		struct airoha_gdm_port *port = eth->ports[i];
++		int j;
+ 
+-		if (port && port->qdma == qdma)
+-			netif_tx_wake_all_queues(port->dev);
++		if (!port)
++			continue;
++
++		if (port->qdma != qdma)
++			continue;
++
++		for (j = 0; j < port->dev->num_tx_queues; j++) {
++			if (airoha_qdma_get_txq(qdma, j) != qid)
++				continue;
++
++			netif_wake_subqueue(port->dev, j);
++		}
+ 	}
+ 	q->txq_stopped = false;
+ }
+@@ -2001,7 +2012,7 @@ static netdev_tx_t airoha_dev_xmit(struc
+ 	u16 index;
+ 	u8 fport;
+ 
+-	qid = skb_get_queue_mapping(skb) % ARRAY_SIZE(qdma->q_tx);
++	qid = airoha_qdma_get_txq(qdma, skb_get_queue_mapping(skb));
+ 	tag = airoha_get_dsa_tag(skb, dev);
+ 
+ 	msg0 = FIELD_PREP(QDMA_ETH_TXMSG_CHAN_MASK,
+--- a/drivers/net/ethernet/airoha/airoha_eth.h
++++ b/drivers/net/ethernet/airoha/airoha_eth.h
+@@ -631,6 +631,11 @@ u32 airoha_rmw(void __iomem *base, u32 o
+ #define airoha_qdma_clear(qdma, offset, val)			\
+ 	airoha_rmw((qdma)->regs, (offset), (val), 0)
+ 
++static inline u16 airoha_qdma_get_txq(struct airoha_qdma *qdma, u16 qid)
++{
++	return qid % ARRAY_SIZE(qdma->q_tx);
++}
++
+ static inline bool airoha_is_lan_gdm_port(struct airoha_gdm_port *port)
+ {
+ 	/* GDM1 port on EN7581 SoC is connected to the lan dsa switch.

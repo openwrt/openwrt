@@ -1,0 +1,63 @@
+From f3206328bb52c2787197d80d7cbd687946047d5f Mon Sep 17 00:00:00 2001
+From: Lorenzo Bianconi <lorenzo@kernel.org>
+Date: Tue, 14 Apr 2026 16:08:52 +0200
+Subject: [PATCH] net: airoha: Wait for NPU PPE configuration to complete in
+ airoha_ppe_offload_setup()
+
+In order to properly enable flowtable hw offloading, poll
+REG_PPE_FLOW_CFG register in airoha_ppe_offload_setup routine and
+wait for NPU PPE configuration triggered by ppe_init callback to complete
+before running airoha_ppe_hw_init().
+
+Fixes: 00a7678310fe3 ("net: airoha: Introduce flowtable offload support")
+Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
+Link: https://patch.msgid.link/20260414-airoha-wait-for-npu-config-offload-setup-v2-1-5a9bf6d43aee@kernel.org
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/ethernet/airoha/airoha_ppe.c | 28 ++++++++++++++++++++++++
+ 1 file changed, 28 insertions(+)
+
+--- a/drivers/net/ethernet/airoha/airoha_ppe.c
++++ b/drivers/net/ethernet/airoha/airoha_ppe.c
+@@ -1354,6 +1354,29 @@ static struct airoha_npu *airoha_ppe_npu
+ 	return npu;
+ }
+ 
++static int airoha_ppe_wait_for_npu_init(struct airoha_eth *eth)
++{
++	int err;
++	u32 val;
++
++	/* PPE_FLOW_CFG default register value is 0. Since we reset FE
++	 * during the device probe we can just check the configured value
++	 * is not 0 here.
++	 */
++	err = read_poll_timeout(airoha_fe_rr, val, val, USEC_PER_MSEC,
++				100 * USEC_PER_MSEC, false, eth,
++				REG_PPE_PPE_FLOW_CFG(0));
++	if (err)
++		return err;
++
++	if (airoha_ppe_is_enabled(eth, 1))
++		err = read_poll_timeout(airoha_fe_rr, val, val, USEC_PER_MSEC,
++					100 * USEC_PER_MSEC, false, eth,
++					REG_PPE_PPE_FLOW_CFG(1));
++
++	return err;
++}
++
+ static int airoha_ppe_offload_setup(struct airoha_eth *eth)
+ {
+ 	struct airoha_npu *npu = airoha_ppe_npu_get(eth);
+@@ -1367,6 +1390,11 @@ static int airoha_ppe_offload_setup(stru
+ 	if (err)
+ 		goto error_npu_put;
+ 
++	/* Wait for NPU PPE configuration to complete */
++	err = airoha_ppe_wait_for_npu_init(eth);
++	if (err)
++		goto error_npu_put;
++
+ 	ppe_num_stats_entries = airoha_ppe_get_total_num_stats_entries(ppe);
+ 	if (ppe_num_stats_entries > 0) {
+ 		err = npu->ops.ppe_init_stats(npu, ppe->foe_stats_dma,

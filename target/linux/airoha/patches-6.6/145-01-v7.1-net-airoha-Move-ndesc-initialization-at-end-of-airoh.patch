@@ -1,0 +1,55 @@
+From f329924bb49458c65297f1361f545816a5b90998 Mon Sep 17 00:00:00 2001
+From: Lorenzo Bianconi <lorenzo@kernel.org>
+Date: Fri, 17 Apr 2026 08:36:31 +0200
+Subject: [PATCH 1/2] net: airoha: Move ndesc initialization at end of
+ airoha_qdma_init_tx()
+
+If queue entry list allocation fails in airoha_qdma_init_tx_queue routine,
+airoha_qdma_cleanup_tx_queue() will trigger a NULL pointer dereference
+accessing the queue entry array. The issue is due to the early ndesc
+initialization in airoha_qdma_init_tx_queue(). Fix the issue moving ndesc
+initialization at end of airoha_qdma_init_tx routine.
+
+Fixes: 3f47e67dff1f7 ("net: airoha: Add the capability to consume out-of-order DMA tx descriptors")
+Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
+Link: https://patch.msgid.link/20260417-airoha_qdma_cleanup_tx_queue-fix-net-v4-1-e04bcc2c9642@kernel.org
+Reviewed-by: Simon Horman <horms@kernel.org>
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -954,27 +954,27 @@ static int airoha_qdma_init_tx_queue(str
+ 	dma_addr_t dma_addr;
+ 
+ 	spin_lock_init(&q->lock);
+-	q->ndesc = size;
+ 	q->qdma = qdma;
+ 	q->free_thr = 1 + MAX_SKB_FRAGS;
+ 	INIT_LIST_HEAD(&q->tx_list);
+ 
+-	q->entry = devm_kzalloc(eth->dev, q->ndesc * sizeof(*q->entry),
++	q->entry = devm_kzalloc(eth->dev, size * sizeof(*q->entry),
+ 				GFP_KERNEL);
+ 	if (!q->entry)
+ 		return -ENOMEM;
+ 
+-	q->desc = dmam_alloc_coherent(eth->dev, q->ndesc * sizeof(*q->desc),
++	q->desc = dmam_alloc_coherent(eth->dev, size * sizeof(*q->desc),
+ 				      &dma_addr, GFP_KERNEL);
+ 	if (!q->desc)
+ 		return -ENOMEM;
+ 
+-	for (i = 0; i < q->ndesc; i++) {
++	for (i = 0; i < size; i++) {
+ 		u32 val = FIELD_PREP(QDMA_DESC_DONE_MASK, 1);
+ 
+ 		list_add_tail(&q->entry[i].list, &q->tx_list);
+ 		WRITE_ONCE(q->desc[i].ctrl, cpu_to_le32(val));
+ 	}
++	q->ndesc = size;
+ 
+ 	/* xmit ring drop default setting */
+ 	airoha_qdma_set(qdma, REG_TX_RING_BLOCKING(qid),

@@ -1,0 +1,36 @@
+From 4ca01292ea2f2363660610a65ba0285d7c3309ed Mon Sep 17 00:00:00 2001
+From: Lorenzo Bianconi <lorenzo@kernel.org>
+Date: Tue, 28 Apr 2026 08:53:16 +0200
+Subject: [PATCH] net: airoha: Do not return err in ndo_stop() callback
+
+Always complete the airoha_dev_stop() routine regardless of the
+airoha_set_vip_for_gdm_port() return value, since errors from
+ndo_stop() are ignored by the networking stack and the interface is
+always considered down after the call.
+
+Fixes: 23020f049327 ("net: airoha: Introduce ethernet support for EN7581 SoC")
+Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
+Link: https://patch.msgid.link/20260428-airoha-ndo-stop-not-err-v1-1-674506d29a91@kernel.org
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c | 7 ++-----
+ 1 file changed, 2 insertions(+), 5 deletions(-)
+
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -1747,13 +1747,10 @@ static int airoha_dev_stop(struct net_de
+ {
+ 	struct airoha_gdm_port *port = netdev_priv(dev);
+ 	struct airoha_qdma *qdma = port->qdma;
+-	int i, err;
++	int i;
+ 
+ 	netif_tx_disable(dev);
+-	err = airoha_set_vip_for_gdm_port(port, false);
+-	if (err)
+-		return err;
+-
++	airoha_set_vip_for_gdm_port(port, false);
+ 	for (i = 0; i < dev->num_tx_queues; i++)
+ 		netdev_tx_reset_subqueue(dev, i);
+ 
