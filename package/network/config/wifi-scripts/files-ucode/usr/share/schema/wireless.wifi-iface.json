@@ -632,7 +632,7 @@
 			"default": "max_num_sta"
 		},
 		"mbo": {
-			"description": "Multiband Operation",
+			"description": "Multiband Operation. On a BSS with WPA2 or later, sets ieee80211w to 1 (optional) if it is 0 or not set, because hostapd requires PMF for MBO with WPA2",
 			"type": "boolean"
 		},
 		"mcast_rate": {
@@ -805,7 +805,7 @@
 			"type": "boolean"
 		},
 		"ocv": {
-			"description": "Operating Channel Validation",
+			"description": "Operating Channel Validation. Requires PMF: on a BSS with WPA2 or later, sets ieee80211w to 1 (optional) if it is 0 or not set. Ignored on a BSS without WPA2, which cannot use PMF",
 			"type": "number",
 			"minimum": 0,
 			"maximum": 15

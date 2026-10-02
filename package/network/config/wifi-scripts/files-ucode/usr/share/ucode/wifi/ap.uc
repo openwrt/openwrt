@@ -70,7 +70,7 @@ function iface_setup(config) {
 		'disassoc_low_ack', 'skip_inactivity_poll', 'ignore_broadcast_ssid', 'uapsd_advertisement_enabled',
 		'utf8_ssid', 'multi_ap', 'multi_ap_vlanid', 'multi_ap_profile', 'tdls_prohibit', 'bridge',
 		'wds_sta', 'wds_bridge', 'snoop_iface', 'vendor_elements', 'nas_identifier', 'radius_acct_interim_interval',
-		'ocv', 'spp_amsdu', 'multicast_to_unicast', 'preamble', 'proxy_arp', 'per_sta_vif', 'mbo',
+		'spp_amsdu', 'multicast_to_unicast', 'preamble', 'proxy_arp', 'per_sta_vif', 'mbo',
 		'bss_transition', 'wnm_sleep_mode', 'wnm_sleep_mode_no_keys', 'qos_map_set', 'max_listen_int',
 		'dtim_period', 'wmm_enabled', 'start_disabled', 'na_mcast_to_ucast', 'no_probe_resp_if_max_sta',
 	]);
@@ -116,6 +116,10 @@ function iface_auth_type(config, band) {
 	/* Easy Connect 3.0 8.4.2: PMF for every association with the DPP AKM.
 	 * Optional keeps the other AKM open to stations without PMF. */
 	if (config.dpp && !config.ieee80211w)
+		config.ieee80211w = 1;
+
+	/* hostapd_config_check_bss() refuses MBO with WPA2 and OCV without PMF */
+	if ((config.mbo || config.ocv) && (config.wpa & 2) && !config.ieee80211w)
 		config.ieee80211w = 1;
 
 	if (config.auth_type == 'owe') {
@@ -469,7 +473,7 @@ function iface_mfp(config) {
 	set_default(config, 'beacon_prot', 1);
 
 	append_vars(config, [
-		'ieee80211w', 'group_mgmt_cipher', 'beacon_prot',
+		'ieee80211w', 'group_mgmt_cipher', 'beacon_prot', 'ocv',
 		'assoc_sa_query_max_timeout', 'assoc_sa_query_retry_timeout'
 	]);
 }
