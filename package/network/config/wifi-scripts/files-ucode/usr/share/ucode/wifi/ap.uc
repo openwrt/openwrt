@@ -19,16 +19,17 @@ const encryption_6g = {
 	'wpa': 'wpa3',
 	'wpa2': 'wpa3',
 	'wpa-mixed': 'wpa3',
+	'none': 'owe',
 	'psk': 'sae',
 	'psk2': 'sae',
 	'psk-mixed': 'sae',
 };
 
 function encryption_band(encryption, band) {
-	if (band != '6g' || !encryption)
+	if (band != '6g')
 		return encryption;
 
-	let enc = split(encryption, '+', 2);
+	let enc = split(encryption ?? 'none', '+', 2);
 	if (!encryption_6g[enc[0]])
 		return encryption;
 
