@@ -30,6 +30,9 @@ endef
 define Build/package-kernel-ubifs
 	mkdir $@.kernelubifs
 	cp $@ $@.kernelubifs/kernel
+	$(if $(SOURCE_DATE_EPOCH), \
+		touch -hcd "@$(SOURCE_DATE_EPOCH)" \
+		$@.kernelubifs $@.kernelubifs/kernel)
 	$(STAGING_DIR_HOST)/bin/mkfs.ubifs \
 		$(KERNEL_UBIFS_OPTS) \
 		-r $@.kernelubifs $@
