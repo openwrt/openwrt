@@ -1771,6 +1771,7 @@ hostapd_bss_tr_send(struct hostapd_data *hapd, u8 *addr, bool disassoc_imminent,
 	struct sta_info *sta;
 	int nr_len = 0;
 	int rem;
+	int ret;
 	u8 *nr = NULL;
 	u8 req_mode = 0;
 	u8 mbo_buf[10];
@@ -1779,52 +1780,6 @@ hostapd_bss_tr_send(struct hostapd_data *hapd, u8 *addr, bool disassoc_imminent,
 	hapd = hostapd_ubus_sta_bss(hapd, addr, &sta);
 	if (!sta)
 		return UBUS_STATUS_NOT_FOUND;
-
-	if (neighbors) {
-		u8 *nr_cur;
-
-		if (blobmsg_check_array(neighbors,
-					BLOBMSG_TYPE_STRING) < 0)
-			return UBUS_STATUS_INVALID_ARGUMENT;
-
-		blobmsg_for_each_attr(cur, neighbors, rem) {
-			int len = strlen(blobmsg_get_string(cur));
-
-			if (len % 2)
-				return UBUS_STATUS_INVALID_ARGUMENT;
-
-			nr_len += (len / 2) + 2;
-		}
-
-		if (nr_len) {
-			nr = os_zalloc(nr_len);
-			if (!nr)
-				return UBUS_STATUS_UNKNOWN_ERROR;
-		}
-
-		nr_cur = nr;
-		blobmsg_for_each_attr(cur, neighbors, rem) {
-			int len = strlen(blobmsg_get_string(cur)) / 2;
-
-			*nr_cur++ = WLAN_EID_NEIGHBOR_REPORT;
-			*nr_cur++ = (u8) len;
-			if (hexstr2bin(blobmsg_data(cur), nr_cur, len)) {
-				free(nr);
-				return UBUS_STATUS_INVALID_ARGUMENT;
-			}
-
-			nr_cur += len;
-		}
-	}
-
-	if (nr)
-		req_mode |= WNM_BSS_TM_REQ_PREF_CAND_LIST_INCLUDED;
-
-	if (abridged)
-		req_mode |= WNM_BSS_TM_REQ_ABRIDGED;
-
-	if (disassoc_imminent)
-		req_mode |= WNM_BSS_TM_REQ_DISASSOC_IMMINENT;
 
 #ifdef CONFIG_MBO
 	/* Only describe the transition in MBO terms when the caller asked for
@@ -1862,11 +1817,57 @@ hostapd_bss_tr_send(struct hostapd_data *hapd, u8 *addr, bool disassoc_imminent,
 	}
 #endif
 
-	if (wnm_send_bss_tm_req(hapd, sta, req_mode, disassoc_timer, validity_period, NULL,
-				dialog_token, NULL, nr, nr_len, mbo_len ? mbo_buf : NULL, mbo_len))
-		return UBUS_STATUS_UNKNOWN_ERROR;
+	if (neighbors) {
+		u8 *nr_cur;
 
-	return 0;
+		if (blobmsg_check_array(neighbors,
+					BLOBMSG_TYPE_STRING) < 0)
+			return UBUS_STATUS_INVALID_ARGUMENT;
+
+		blobmsg_for_each_attr(cur, neighbors, rem) {
+			int len = strlen(blobmsg_get_string(cur));
+
+			if (len % 2)
+				return UBUS_STATUS_INVALID_ARGUMENT;
+
+			nr_len += (len / 2) + 2;
+		}
+
+		if (nr_len) {
+			nr = os_zalloc(nr_len);
+			if (!nr)
+				return UBUS_STATUS_UNKNOWN_ERROR;
+		}
+
+		nr_cur = nr;
+		blobmsg_for_each_attr(cur, neighbors, rem) {
+			int len = strlen(blobmsg_get_string(cur)) / 2;
+
+			*nr_cur++ = WLAN_EID_NEIGHBOR_REPORT;
+			*nr_cur++ = (u8) len;
+			if (hexstr2bin(blobmsg_data(cur), nr_cur, len)) {
+				os_free(nr);
+				return UBUS_STATUS_INVALID_ARGUMENT;
+			}
+
+			nr_cur += len;
+		}
+	}
+
+	if (nr)
+		req_mode |= WNM_BSS_TM_REQ_PREF_CAND_LIST_INCLUDED;
+
+	if (abridged)
+		req_mode |= WNM_BSS_TM_REQ_ABRIDGED;
+
+	if (disassoc_imminent)
+		req_mode |= WNM_BSS_TM_REQ_DISASSOC_IMMINENT;
+
+	ret = wnm_send_bss_tm_req(hapd, sta, req_mode, disassoc_timer, validity_period, NULL,
+				  dialog_token, NULL, nr, nr_len, mbo_len ? mbo_buf : NULL, mbo_len);
+	os_free(nr);
+
+	return ret ? UBUS_STATUS_UNKNOWN_ERROR : 0;
 }
 
 enum {
