@@ -1765,7 +1765,7 @@ static int
 hostapd_bss_tr_send(struct hostapd_data *hapd, u8 *addr, bool disassoc_imminent, bool abridged,
 		    u16 disassoc_timer, u8 validity_period, u8 dialog_token,
 		    struct blob_attr *neighbors, bool mbo, u8 mbo_reason, u8 cell_pref,
-		    u8 reassoc_delay)
+		    u16 reassoc_delay)
 {
 	struct blob_attr *cur;
 	struct sta_info *sta;
@@ -1841,7 +1841,7 @@ hostapd_bss_tr_send(struct hostapd_data *hapd, u8 *addr, bool disassoc_imminent,
 		    cell_pref != MBO_CELL_PREF_USE)
 			return UBUS_STATUS_INVALID_ARGUMENT;
 
-		if (reassoc_delay > 65535 || (reassoc_delay && !disassoc_imminent))
+		if (reassoc_delay && !disassoc_imminent)
 			return UBUS_STATUS_INVALID_ARGUMENT;
 
 		*mbo_pos++ = MBO_ATTR_ID_TRANSITION_REASON;
@@ -1914,9 +1914,9 @@ hostapd_bss_transition_request(struct ubus_context *ctx, struct ubus_object *obj
 	bool abridged;
 	bool da_imminent;
 	bool mbo = false;
-	u8 mbo_reason = MBO_TRANSITION_REASON_UNSPECIFIED;
-	u8 cell_pref = MBO_CELL_PREF_NO_USE;
-	u8 reassoc_delay = 0;
+	u32 mbo_reason = MBO_TRANSITION_REASON_UNSPECIFIED;
+	u32 cell_pref = MBO_CELL_PREF_NO_USE;
+	u32 reassoc_delay = 0;
 
 	blobmsg_parse(bss_tr_policy, __BSS_TR_DISASSOC_MAX, tb, blob_data(msg), blob_len(msg));
 
@@ -1953,7 +1953,13 @@ hostapd_bss_transition_request(struct ubus_context *ctx, struct ubus_object *obj
 		reassoc_delay = blobmsg_get_u32(tb[BSS_TR_REASSOC_DELAY]);
 		mbo = true;
 	}
+
+	if (mbo_reason > 0xff || cell_pref > 0xff || reassoc_delay > 0xffff)
+		return UBUS_STATUS_INVALID_ARGUMENT;
 #endif
+
+	if (dialog_token > 0xff || valid_period > 0xff || da_timer > 0xffff)
+		return UBUS_STATUS_INVALID_ARGUMENT;
 
 	return hostapd_bss_tr_send(hapd, addr, da_imminent, abridged, da_timer, valid_period,
 				   dialog_token, tb[BSS_TR_NEIGHBORS], mbo, mbo_reason, cell_pref,
