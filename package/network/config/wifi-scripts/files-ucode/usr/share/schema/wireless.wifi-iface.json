@@ -464,7 +464,7 @@
 			"type": "boolean"
 		},
 		"ieee80211w": {
-			"description": "Enables MFP (802.11w) support (0 = disabled, 1 = optional, 2 = required). Requires the 'full' version of wpad/hostapd and support from the Wi-Fi driver",
+			"description": "Enables MFP (802.11w) support (0 = disabled, 1 = optional, 2 = required). Requires the 'full' version of wpad/hostapd and support from the Wi-Fi driver. In the 6 GHz band, an AP with WPA2 or later always uses 2, also with an explicit value, as IEEE 802.11-2024 12.12.2 requires",
 			"type": "number",
 			"enum": [ 0, 1, 2 ]
 		},

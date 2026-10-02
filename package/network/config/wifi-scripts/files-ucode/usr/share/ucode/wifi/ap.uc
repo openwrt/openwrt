@@ -129,10 +129,12 @@ function iface_auth_type(config, band) {
 	if (config.auth_type in [ 'psk-sae', 'eap-eap2' ])
 		set_default(config, 'ieee80211w', 1);
 
+	/* IEEE 802.11-2024 12.12.2: MFPR on 6 GHz */
+	if (band == '6g' && config.wpa)
+		config.ieee80211w = 2;
+
 	if (config.auth_type == 'psk-sae-compat') {
-		if (band == '6g') {
-			set_default(config, 'ieee80211w', 2);
-		} else {
+		if (band != '6g') {
 			set_default(config, 'ieee80211w', 0);
 			config.rsn_override_mfp = 2;
 			config.rsn_override_omit_rsnxe = 1;
