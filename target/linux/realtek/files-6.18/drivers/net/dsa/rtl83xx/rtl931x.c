@@ -8,6 +8,7 @@
 #include "pie.h"
 #include "qos.h"
 #include "mirror.h"
+#include "mac.h"
 #include "rtl-otto.h"
 #include "stats.h"
 #include "tc.h"
@@ -38,6 +39,12 @@
 
 #define RTL931X_FORCE_EN			BIT(9)
 #define RTL931X_FORCE_LINK_EN			BIT(0)
+
+/* Per-port TX/RX EEE enable: 1 bit per port, 32 ports per 32-bit word
+ * (ports 0-31 in word 0, ports 32-55 in word 1).
+ */
+#define RTL931X_EEE_PORT_TX_EN			(0x5644)
+#define RTL931X_EEE_PORT_RX_EN			(0x564C)
 
 #define RTL931X_TRK_HASH_CTRL			(0xBA70)
 #define RTL931X_TRK_CTRL			(0xBA78)
@@ -415,6 +422,57 @@ static u64 rtldsa_931x_stat_port_table_read(int port, unsigned int mib_size,
 	return val[0];
 }
 
+/* Enable or disable MAC EEE capability for a port. */
+static void rtldsa_931x_set_mac_eee(struct rtl838x_switch_priv *priv, int port, bool enable)
+{
+	int word = port / 32;
+	u32 bit = BIT(port % 32);
+
+	pr_debug("In %s: setting port %d to %d\n", __func__, port, enable);
+
+	/*
+	 * Publish the requested state before updating the shared force-mode
+	 * register. A subsequent phylink configuration then preserves the EEE
+	 * bits instead of reverting the ethtool request.
+	 */
+	WRITE_ONCE(priv->ports[port].eee_enabled, enable);
+
+	/*
+	 * Enable/disable EEE for every speed the MAC supports in the per-port
+	 * force-mode register. The RTL931x (Mango) EEE speed-enable bits sit at
+	 * 100M@18, 1000M@20, 2.5G@21, 5G@22, 10G@23 (bit 19 reserved) - a
+	 * different layout from the RTL930x sibling, which packs them at [15:10].
+	 */
+	sw_w32_mask(RTL931X_MAC_FORCE_EEE_MASK,
+		    enable ? RTL931X_MAC_FORCE_EEE_MASK : 0,
+		    rtl931x_mac_force_mode_ctrl(port));
+
+	/*
+	 * Per-port TX/RX EEE enable. These are 1-bit-per-port bitmask registers
+	 * (32 ports per 32-bit word), so ports 32..55 land in the second word.
+	 */
+	if (enable) {
+		sw_w32_mask(0, bit, RTL931X_EEE_PORT_TX_EN + (word << 2));
+		sw_w32_mask(0, bit, RTL931X_EEE_PORT_RX_EN + (word << 2));
+	} else {
+		sw_w32_mask(bit, 0, RTL931X_EEE_PORT_TX_EN + (word << 2));
+		sw_w32_mask(bit, 0, RTL931X_EEE_PORT_RX_EN + (word << 2));
+	}
+}
+
+static void rtl931x_init_eee(struct rtl838x_switch_priv *priv, bool enable)
+{
+	pr_debug("Setting up EEE, state: %d\n", enable);
+
+	/*
+	 * RTL931x has no global EEE switch to initialise: its controls are all
+	 * per-port. Keep this callback side-effect free so the first ethtool
+	 * request does not alter every PHY-backed port. The common DSA path calls
+	 * set_mac_eee() for the requested port immediately afterwards.
+	 */
+	priv->eee_enabled = enable;
+}
+
 const struct rtldsa_config rtldsa_931x_cfg = {
 	.switch_ops = &rtldsa_93xx_switch_ops,
 	.phylink_mac_ops = &rtldsa_93xx_phylink_mac_ops,
@@ -466,6 +524,8 @@ const struct rtldsa_config rtldsa_931x_cfg = {
 	.stp_set = rtl931x_stp_set,
 	.mac_force_mode_mask = RTL931X_FORCE_EN | RTL931X_FORCE_LINK_EN,
 	.mac_force_mode_ctrl = rtl931x_mac_force_mode_ctrl,
+	.init_eee = rtl931x_init_eee,
+	.set_mac_eee = rtldsa_931x_set_mac_eee,
 	.mac_link_sts = RTL931X_MAC_LINK_STS,
 	.mac_port_ctrl = rtl931x_mac_port_ctrl,
 	.mac_capabilities = MAC_ASYM_PAUSE | MAC_SYM_PAUSE | MAC_10 | MAC_100 |

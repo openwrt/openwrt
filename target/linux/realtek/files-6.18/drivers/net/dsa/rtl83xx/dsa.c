@@ -323,8 +323,18 @@ static void rtldsa_93xx_phylink_mac_config(struct phylink_config *config,
 	if (port == priv->r->cpu_port)
 		return;
 
-	/* Disable MAC completely */
-	sw_w32(0, priv->r->mac_force_mode_ctrl(port));
+	/*
+	 * Disable forced link state while retaining independently configured
+	 * per-port EEE capability. RTL931x keeps those controls in the same
+	 * register, so clearing the complete register would silently undo an
+	 * ethtool EEE request whenever phylink reconfigures the port.
+	 */
+	if (priv->family_id == RTL9310_FAMILY_ID &&
+	    READ_ONCE(priv->ports[port].eee_enabled))
+		sw_w32(RTL931X_MAC_FORCE_EEE_MASK,
+			priv->r->mac_force_mode_ctrl(port));
+	else
+		sw_w32(0, priv->r->mac_force_mode_ctrl(port));
 }
 
 static void rtldsa_phylink_mac_link_down(struct phylink_config *config,
