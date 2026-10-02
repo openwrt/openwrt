@@ -731,6 +731,7 @@ const struct rtldsa_config rtldsa_930x_cfg = {
 	.qos_init = otto_qos_930x_init,
 	.pri_sel_port_pri = RTL930X_PRI_SEL_PORT_PRI(0),
 	.pri_sel_remap_dscp = RTL930X_REMAP_DSCP(0),
+	.pri_sel_port_tbl_idx = RTL930X_PORT_TBL_IDX_CTRL(0),
 	.trk_ctrl = RTL930X_TRK_CTRL,
 	.trk_hash_ctrl = RTL930X_TRK_HASH_CTRL,
 	.prepare_lag_fdb = otto_lag_93xx_prepare_fdb,
