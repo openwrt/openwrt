@@ -66,6 +66,8 @@
 #define RTETH_930X_MAC_L2_CPU_MAX_LEN_CTRL	(0xa3a0)
 #define RTETH_930X_MAC_L2_PORT_CTRL		(0x3268 + RTETH_930X_CPU_PORT * 64)
 #define RTETH_930X_MAC_L2_PORT_MAX_LEN_CTRL	(0x326c + RTETH_930X_CPU_PORT * 64)
+#define RTETH_930X_QM_CPUQID2QID_CTRL		(0xa324)
+#define RTETH_930X_QM_CPUQID2XGQID_CTRL		(0xa334)
 #define RTETH_930X_QM_RSN2CPUQID_CTRL_0		(0xa344)
 #define RTETH_930X_QM_RSN2CPUQID_CTRL_CNT	11
 #define RTETH_930X_RMA_CTRL_0			(0x9e60)
@@ -313,6 +315,7 @@ struct rteth_cfg {
 	int dma_tx_base;
 	int rst_glb_ctrl;
 	int skb_headroom;
+	bool tx_queue_from_priority;
 	u32 mac_reg[RTETH_MAX_MAC_REGS];
 	int l2_tbl_flush_ctrl;
 	void (*confirm_disable_irqs)(struct rteth_ctrl *ctrl, unsigned long *rings);
