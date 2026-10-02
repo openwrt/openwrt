@@ -1,0 +1,67 @@
+From 5fe28131726131ad7b72ceca06c98ca3f4590f6e Mon Sep 17 00:00:00 2001
+From: Sean Wang <sean.wang@mediatek.com>
+Date: Sat, 13 Jun 2026 17:41:31 -0500
+Subject: [PATCH] wifi: mt76: mt792x: quiesce USB paths on disconnect
+
+USB disconnect can leave reset/init work, TX worker, and MCU waiters active
+while the device is being removed. Stop those paths before unregistering
+the device to avoid teardown waiting on firmware or queue activity after
+disconnect.
+
+Run WFSYS reset after USB queue deinit so removal does not issue the reset
+while USB traffic may still be queued.
+
+Signed-off-by: Sean Wang <sean.wang@mediatek.com>
+Link: https://patch.msgid.link/20260613224131.2396026-7-sean.wang@kernel.org
+---
+ mt792x_usb.c | 20 +++++++++++++++++---
+ 1 file changed, 17 insertions(+), 3 deletions(-)
+
+diff --git a/mt792x_usb.c b/mt792x_usb.c
+index ff763f51..0fcab63e 100644
+--- a/mt792x_usb.c
++++ b/mt792x_usb.c
+@@ -230,9 +230,9 @@ EXPORT_SYMBOL_GPL(mt792xu_mcu_power_on);
+ static void mt792xu_cleanup(struct mt792x_dev *dev)
+ {
+ 	clear_bit(MT76_STATE_INITIALIZED, &dev->mphy.state);
+-	mt792xu_wfsys_reset(dev);
+ 	skb_queue_purge(&dev->mt76.mcu.res_q);
+ 	mt76u_queues_deinit(&dev->mt76);
++	mt792xu_wfsys_reset(dev);
+ }
+ 
+ static u32 mt792xu_uhw_rr(struct mt76_dev *dev, u32 addr)
+@@ -494,13 +494,27 @@ void mt792xu_disconnect(struct usb_interface *usb_intf)
+ {
+ 	struct mt792x_dev *dev = usb_get_intfdata(usb_intf);
+ 
+-	mt792xu_reset_work_cleanup(dev);
++	if (!dev)
++		return;
++
++	set_bit(MT76_RESET, &dev->mphy.state);
++	set_bit(MT76_MCU_RESET, &dev->mphy.state);
++	clear_bit(MT76_STATE_RUNNING, &dev->mphy.state);
++	wake_up(&dev->mt76.mcu.wait);
++	skb_queue_purge(&dev->mt76.mcu.res_q);
++
++	cancel_work_sync(&dev->reset_work);
+ 	cancel_work_sync(&dev->init_work);
+-	if (!test_bit(MT76_STATE_INITIALIZED, &dev->mphy.state))
++	mt76_worker_disable(&dev->mt76.tx_worker);
++	mt792xu_reset_work_cleanup(dev);
++	if (!test_bit(MT76_STATE_INITIALIZED, &dev->mphy.state)) {
++		set_bit(MT76_REMOVED, &dev->mphy.state);
+ 		return;
++	}
+ 
+ 	mt76_unregister_device(&dev->mt76);
+ 	mt792xu_cleanup(dev);
++	set_bit(MT76_REMOVED, &dev->mphy.state);
+ 
+ 	usb_set_intfdata(usb_intf, NULL);
+ 	usb_put_dev(interface_to_usbdev(usb_intf));
+-- 
+2.54.0 (Apple Git-157)
+

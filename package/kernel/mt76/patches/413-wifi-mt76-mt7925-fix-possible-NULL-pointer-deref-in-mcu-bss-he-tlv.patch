@@ -1,0 +1,33 @@
+From 3a95f5d6c8268a468bb3b13882a3bdcca38496f1 Mon Sep 17 00:00:00 2001
+From: Lorenzo Bianconi <lorenzo@kernel.org>
+Date: Sun, 21 Jun 2026 15:25:00 +0200
+Subject: [PATCH] wifi: mt76: mt7925: fix possible NULL-pointer deref in
+ mt7925_mcu_bss_he_tlv()
+
+mt76_connac_get_he_phy_cap routine can theoretically return NULL so
+check cap pointer before dereferencing it.
+
+Fixes: c948b5da6bbec ("wifi: mt76: mt7925: add Mediatek Wi-Fi7 driver for mt7925 chips")
+Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
+Link: https://patch.msgid.link/20260621-mt76_connac_get_he_phy_cap-fix-v1-2-ed4ccf7a0363@kernel.org
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ mt7925/mcu.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/mt7925/mcu.c b/mt7925/mcu.c
+index bd38807e..8872e58a 100644
+--- a/mt7925/mcu.c
++++ b/mt7925/mcu.c
+@@ -2701,6 +2701,8 @@ mt7925_mcu_bss_he_tlv(struct sk_buff *skb, struct ieee80211_bss_conf *link_conf,
+ 	struct tlv *tlv;
+ 
+ 	cap = mt76_connac_get_he_phy_cap(phy->mt76, link_conf->vif);
++	if (!cap)
++		return;
+ 
+ 	tlv = mt76_connac_mcu_add_tlv(skb, UNI_BSS_INFO_HE_BASIC, sizeof(*he));
+ 
+-- 
+2.54.0 (Apple Git-157)
+

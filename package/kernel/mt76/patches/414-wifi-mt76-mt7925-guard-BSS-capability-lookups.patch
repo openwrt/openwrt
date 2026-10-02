@@ -1,0 +1,82 @@
+From f9b5f7c0d93eece30f47da5fea0596b176cbdef9 Mon Sep 17 00:00:00 2001
+From: Sean Wang <sean.wang@mediatek.com>
+Date: Wed, 24 Jun 2026 19:18:27 -0500
+Subject: [PATCH] wifi: mt76: mt7925: guard BSS capability lookups
+
+mt7925 BSS setup may dereference missing channel data or query HE 6 GHz
+capabilities for an iftype without HE support.
+
+Guard both lookups before adding NAN paths that can use partially
+configured BSS state.
+
+Co-developed-by: Stella Liu <yu-ching.liu@mediatek.com>
+Signed-off-by: Stella Liu <yu-ching.liu@mediatek.com>
+Co-developed-by: Jeremy Yu <chengwei.yu@mediatek.com>
+Signed-off-by: Jeremy Yu <chengwei.yu@mediatek.com>
+Signed-off-by: Sean Wang <sean.wang@mediatek.com>
+Link: https://patch.msgid.link/20260625001834.475094-3-sean.wang@kernel.org
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ mt7925/mcu.c | 26 ++++++++++++++++++++------
+ 1 file changed, 20 insertions(+), 6 deletions(-)
+
+diff --git a/mt7925/mcu.c b/mt7925/mcu.c
+index 8872e58a..43c1caa3 100644
+--- a/mt7925/mcu.c
++++ b/mt7925/mcu.c
+@@ -2286,11 +2286,18 @@ void mt7925_mcu_bss_rlm_tlv(struct sk_buff *skb, struct mt76_phy *phy,
+ {
+ 	struct cfg80211_chan_def *chandef = ctx ? &ctx->def :
+ 						  &link_conf->chanreq.oper;
+-	int freq1 = chandef->center_freq1, freq2 = chandef->center_freq2;
+-	enum nl80211_band band = chandef->chan->band;
+ 	struct bss_rlm_tlv *req;
++	enum nl80211_band band;
++	int freq1, freq2;
+ 	struct tlv *tlv;
+ 
++	if (WARN_ON_ONCE(!chandef || !chandef->chan))
++		return;
++
++	freq1 = chandef->center_freq1;
++	freq2 = chandef->center_freq2;
++	band = chandef->chan->band;
++
+ 	tlv = mt76_connac_mcu_add_tlv(skb, UNI_BSS_INFO_RLM, sizeof(*req));
+ 	req = (struct bss_rlm_tlv *)tlv;
+ 	req->control_channel = chandef->chan->hw_value;
+@@ -2424,8 +2431,8 @@ mt7925_get_phy_mode_ext(struct mt76_phy *phy, struct ieee80211_vif *vif,
+ 			enum nl80211_band band,
+ 			struct ieee80211_link_sta *link_sta)
+ {
+-	struct ieee80211_he_6ghz_capa *he_6ghz_capa;
+-	const struct ieee80211_sta_eht_cap *eht_cap;
++	struct ieee80211_he_6ghz_capa *he_6ghz_capa = NULL;
++	const struct ieee80211_sta_eht_cap *eht_cap = NULL;
+ 	__le16 capa = 0;
+ 	u8 mode = 0;
+ 
+@@ -2433,11 +2440,18 @@ mt7925_get_phy_mode_ext(struct mt76_phy *phy, struct ieee80211_vif *vif,
+ 		he_6ghz_capa = &link_sta->he_6ghz_capa;
+ 		eht_cap = &link_sta->eht_cap;
+ 	} else {
++		const struct ieee80211_sta_he_cap *he_cap;
+ 		struct ieee80211_supported_band *sband;
+ 
+ 		sband = phy->hw->wiphy->bands[band];
+-		capa = ieee80211_get_he_6ghz_capa(sband, vif->type);
+-		he_6ghz_capa = (struct ieee80211_he_6ghz_capa *)&capa;
++
++		he_cap = (band == NL80211_BAND_6GHZ) ?
++			 ieee80211_get_he_iftype_cap(sband, vif->type) : NULL;
++
++		if (he_cap) {
++			capa = ieee80211_get_he_6ghz_capa(sband, vif->type);
++			he_6ghz_capa = (struct ieee80211_he_6ghz_capa *)&capa;
++		}
+ 
+ 		eht_cap = ieee80211_get_eht_iftype_cap(sband, vif->type);
+ 	}
+-- 
+2.54.0 (Apple Git-157)
+
