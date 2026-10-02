@@ -44,6 +44,19 @@
 	led_set {
 		compatible = "realtek,rtl9300-leds";
 		/*
+		 * This board encodes the number of LEDs directly rather than as
+		 * count minus one.
+		 */
+		realtek,led-num-ctrl-direct;
+		/*
+		 * The chassis is wired for single-scan mode.
+		 */
+		realtek,led-scan-mode = <2>;
+		/*
+		 * Enable the chassis system LED during switch initialization.
+		 */
+		realtek,led-sys-enable;
+		/*
 		 * No active-low property, deliberately: the shared led_init
 		 * sets the polarity bit exactly when the property is absent,
 		 * which is the state this board needs. Adding it inverts every
