@@ -117,7 +117,7 @@ define Device/EconetBootUboot
 
   ARTIFACT/bootext.bin := staging-copy-file bootext.bin
   ARTIFACT/uboot.bin := staging-copy-file $$(DEVICE_NAME)-u-boot.bin
-  ARTIFACT/tcboot.bin := econet-tcboot
+  ARTIFACT/tcboot.bin := econet-tcboot | pad-to 1024k | check-size 1024k
 endef
 
 # Make image with new u-boot part version and ubi partion support

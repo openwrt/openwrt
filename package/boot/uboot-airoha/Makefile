@@ -169,6 +169,16 @@ define U-Boot/en751221_nokia_g240g-e
 endef
 UBOOT_TARGETS += en751221_nokia_g240g-e
 
+define U-Boot/en751221_tplink_archer-xr500v-v1
+  NAME:=TP-Link Archer XR500v v1
+  UBOOT_IMAGE:=u-boot.bin
+  UBOOT_CONFIG:=en751221_tplink_archer-xr500v-v1
+  BUILD_SUBTARGET:=en751221
+  BUILD_DEVICES:=tplink_archer-xr500v-v1
+  DEPENDS:=+airoha-dramc
+endef
+UBOOT_TARGETS += en751221_tplink_archer-xr500v-v1
+
 define U-Boot/en7528_reference
   NAME:=Genric en7528
   UBOOT_IMAGE:=u-boot.bin

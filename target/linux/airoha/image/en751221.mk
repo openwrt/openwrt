@@ -150,6 +150,7 @@ TARGET_DEVICES += tplink_archer-vr1200v-v2
 # only the latter carries chosen/u-boot,version, which fitblk needs.
 define Device/tplink_archer-xr500v-v1
   $(Device/FitImageVmlinuz)
+  $(Device/EconetBootUboot)
   DEVICE_VENDOR := TP-Link
   DEVICE_MODEL := Archer XR500v
   DEVICE_VARIANT := v1
