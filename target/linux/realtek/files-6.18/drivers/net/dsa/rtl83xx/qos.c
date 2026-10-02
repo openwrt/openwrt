@@ -62,6 +62,8 @@
 /* port: 52-55, index: 0-11 */
 #define RTL931X_SCHED_PORT_Q_CTRL_SET1(port, index) \
 						((0x2F08 + ((port) - 52) * 48) + ((index) * 4))
+#define RTL931X_SCHED_Q_STRICT			BIT(8)
+#define RTL931X_SCHED_Q_WEIGHT			GENMASK(6, 0)
 
 #define RTL930X_QM_INTPRI2QID_CTRL		(0xA320)
 #define RTL931X_QM_INTPRI2QID_CTRL		(0xA9D0)
@@ -750,21 +752,23 @@ static void otto_qos_931x_prio2queue_matrix(struct otto_dsa_priv *priv, int *min
 	regmap_write(priv->map, RTL931X_QM_INTPRI2QID_CTRL, v);
 }
 
+void otto_qos_931x_queue_sched_set(struct otto_dsa_priv *priv, int port, int queue, u32 weight,
+				   bool strict)
+{
+	u32 v = FIELD_PREP(RTL931X_SCHED_Q_WEIGHT, weight) | (strict ? RTL931X_SCHED_Q_STRICT : 0);
+
+	if (port < 52)
+		regmap_write(priv->map, RTL931X_SCHED_PORT_Q_CTRL_SET0(port, queue), v);
+	else
+		regmap_write(priv->map, RTL931X_SCHED_PORT_Q_CTRL_SET1(port, queue), v);
+}
+
 static void otto_qos_931x_set_scheduling_queue_weights(struct otto_dsa_priv *priv)
 {
 	struct dsa_port *dp;
-	u32 addr;
 
-	dsa_switch_for_each_user_port(dp, priv->ds) {
-		for (int q = 0; q < 8; q++) {
-			if (dp->index < 51)
-				addr = RTL931X_SCHED_PORT_Q_CTRL_SET0(dp->index, q);
-			else
-				addr = RTL931X_SCHED_PORT_Q_CTRL_SET1(dp->index, q);
-
-			regmap_write(priv->map, addr, otto_qos_default_queue_weights[q]);
-		}
-	}
+	dsa_switch_for_each_user_port(dp, priv->ds)
+		otto_qos_queue_sched_reset(priv, dp->index);
 }
 
 void otto_qos_931x_init(struct otto_dsa_priv *priv)
