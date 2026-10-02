@@ -582,9 +582,6 @@ hostapd_notify_response(struct ubus_context *ctx, struct ubus_object *obj,
 			struct blob_attr *msg)
 {
 	struct blob_attr *tb[__NOTIFY_MAX];
-	struct wpabuf *elems;
-	const char *pos;
-	size_t len;
 
 	blobmsg_parse(notify_policy, __NOTIFY_MAX, tb,
 		      blob_data(msg), blob_len(msg));
@@ -819,7 +816,6 @@ hostapd_bss_wps_status(struct ubus_context *ctx, struct ubus_object *obj,
 			struct ubus_request_data *req, const char *method,
 			struct blob_attr *msg)
 {
-	int rc;
 	struct hostapd_data *hapd = get_hapd_from_object(obj);
 
 	blob_buf_init(&b, 0);
@@ -1097,7 +1093,6 @@ hostapd_vendor_elements(struct ubus_context *ctx, struct ubus_object *obj,
 static void
 hostapd_rrm_print_nr(struct hostapd_neighbor_entry *nr)
 {
-	const u8 *data;
 	char *str;
 
 	blobmsg_printf(&b, "", MACSTR, MAC2STR(nr->bssid));
@@ -1220,10 +1215,8 @@ hostapd_bss_mgmt_enable(struct ubus_context *ctx, struct ubus_object *obj,
 {
 	struct hostapd_data *hapd = get_hapd_from_object(obj);
 	struct blob_attr *tb[__BSS_MGMT_EN_MAX];
-	struct blob_attr *cur;
 	uint32_t flags = 0;
 	int i;
-	bool neigh = false, beacon = false;
 
 	blobmsg_parse(bss_mgmt_enable_policy, __BSS_MGMT_EN_MAX, tb, blob_data(msg), blob_len(msg));
 
@@ -1551,7 +1544,7 @@ hostapd_rrm_beacon_req(struct ubus_context *ctx, struct ubus_object *obj,
 	struct wpabuf *req;
 	u8 bssid[ETH_ALEN] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 	u8 addr[ETH_ALEN];
-	int mode, rem, ret;
+	int rem, ret;
 	int buf_len = 13;
 	int reporting_detail = 255;
 	int n_elements = 0;
@@ -1574,7 +1567,6 @@ hostapd_rrm_beacon_req(struct ubus_context *ctx, struct ubus_object *obj,
 		buf_len += cr_len;
 	}
 
-	mode = blobmsg_get_u32(tb[BEACON_REQ_MODE]);
 	if (hwaddr_aton(blobmsg_data(tb[BEACON_REQ_ADDR]), addr))
 		return UBUS_STATUS_INVALID_ARGUMENT;
 
@@ -1915,7 +1907,6 @@ hostapd_bss_transition_request(struct ubus_context *ctx, struct ubus_object *obj
 {
 	struct hostapd_data *hapd = get_hapd_from_object(obj);
 	struct blob_attr *tb[__BSS_TR_DISASSOC_MAX];
-	struct sta_info *sta;
 	u32 da_timer = 0;
 	u32 valid_period = 0;
 	u8 addr[ETH_ALEN];
@@ -2158,7 +2149,6 @@ hostapd_wired_get_clients(struct ubus_context *ctx, struct ubus_object *obj,
 			  struct blob_attr *msg)
 {
 	struct hostapd_data *hapd = get_hapd_from_object(obj);
-	struct hostap_sta_driver_data sta_driver_data;
 	struct sta_info *sta;
 	void *list, *c;
 	char mac_buf[20];
@@ -2172,7 +2162,6 @@ hostapd_wired_get_clients(struct ubus_context *ctx, struct ubus_object *obj,
 	blob_buf_init(&b, 0);
 	list = blobmsg_open_table(&b, "clients");
 	for (sta = hapd->sta_list; sta; sta = sta->next) {
-		void *r;
 		int i;
 
 		sprintf(mac_buf, MACSTR, MAC2STR(sta->addr));
@@ -2724,7 +2713,6 @@ void hostapd_ubus_notify_bss_transition_response(
 {
 #ifdef CONFIG_WNM_AP
 	struct ubus_object *obj = hostapd_ubus_notify_obj(hapd);
-	u16 i;
 
 	if (!obj->has_subscribers)
 		return;
@@ -2753,8 +2741,6 @@ int hostapd_ubus_notify_bss_transition_query(
 #ifdef CONFIG_WNM_AP
 	struct ubus_object *obj = hostapd_ubus_notify_obj(hapd);
 	struct ubus_event_req ureq = {};
-	char *cl_str;
-	u16 i;
 
 	if (!obj->has_subscribers)
 		return 0;
