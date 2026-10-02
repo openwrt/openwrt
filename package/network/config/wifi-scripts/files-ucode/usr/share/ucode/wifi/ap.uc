@@ -8,6 +8,34 @@ import { append, append_raw, append_value, append_vars, append_list, append_stri
 import * as netifd from 'wifi.netifd';
 import * as iface from 'wifi.iface';
 
+/*
+ * The 6 GHz band allows WPA3 and OWE only (IEEE 802.11-2024 12.12.2,
+ * WPA3 Specification v3.5 11.2).
+ */
+const encryption_6g = {
+	'sae-mixed': 'sae',
+	'psk3-mixed': 'sae',
+	'wpa3-mixed': 'wpa3',
+	'wpa': 'wpa3',
+	'wpa2': 'wpa3',
+	'wpa-mixed': 'wpa3',
+	'psk': 'sae',
+	'psk2': 'sae',
+	'psk-mixed': 'sae',
+};
+
+function encryption_band(encryption, band) {
+	if (band != '6g' || !encryption)
+		return encryption;
+
+	let enc = split(encryption, '+', 2);
+	if (!encryption_6g[enc[0]])
+		return encryption;
+
+	enc[0] = encryption_6g[enc[0]];
+	return join('+', enc);
+}
+
 function iface_setup(config) {
 	switch(config.fixup) {
 	case 'owe':
@@ -580,13 +608,8 @@ export function generate(interface, data, config, vlans, stas, phy_features) {
 	config.start_disabled = data.ap_start_disabled;
 	iface_setup(config);
 
+	config.encryption = encryption_band(config.encryption, data.config.band);
 	iface.parse_encryption(config, data.config, phy_features);
-	if (data.config.band == '6g') {
-		if (config.auth_type in ['psk', 'psk-sae'])
-			config.auth_type = 'sae';
-		if (config.auth_type in ['eap', 'eap-eap2'])
-			config.auth_type = 'eap2';
-	}
 
 	if (config.auth_type in [ 'psk', 'psk-sae', 'psk-sae-compat' ] && data.config.band != '6g')
 		iface_wpa_stations(config, stas);
