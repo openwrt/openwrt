@@ -209,8 +209,6 @@ export function wpa_key_mgmt(config, band) {
 			}
 		} else {
 			append_value(config, 'wpa_key_mgmt', 'WPA-PSK');
-			if (config.ieee80211w)
-				append_value(config, 'wpa_key_mgmt', 'WPA-PSK-SHA256');
 			if (config.ieee80211r)
 				append_value(config, 'wpa_key_mgmt', 'FT-PSK');
 
