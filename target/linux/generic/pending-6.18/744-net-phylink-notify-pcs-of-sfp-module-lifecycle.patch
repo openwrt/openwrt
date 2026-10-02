@@ -1,0 +1,180 @@
+From: Kaloyan Naumov <knaumov@gmail.com>
+Subject: [PATCH] net: phylink: notify PCS drivers about SFP module lifecycle
+
+Some PCS hardware needs the physical medium type in addition to the host
+interface mode. 10GBASE-R direct-attach copper and optical modules use the
+same host interface, but can require different analog transmitter and
+receiver configuration.
+
+The SFP core provides insertion and removal notifications to phylink, while
+the PCS interface only exposes configuration validation. Using
+pcs_validate() as an insertion notification is incorrect because validation
+is a repeatable capability query and the link-mode bitmap is not module
+identity.
+
+Add optional PCS module lifecycle callbacks. Select the PCS after phylink
+has chosen the module interface and notify it with the parsed module
+capabilities.
+A PCS can request an initial configuration when an insertion changes
+hardware state. Remember the notified PCS so removal reaches it even when
+phylink is stopped, and forget it without a callback when its provider is
+released. The pointer follows pl->pcs: no reference is held, and it is
+changed under state_mutex.
+
+---
+--- a/drivers/net/phy/phylink.c
++++ b/drivers/net/phy/phylink.c
+@@ -100,6 +100,8 @@ struct phylink {
+ 	u8 mac_rx_clk_stop_blocked;
+ 
+ 	struct sfp_bus *sfp_bus;
++	/* PCS notified of the current SFP module; under RTNL and state_mutex */
++	struct phylink_pcs *sfp_pcs;
+ 	bool sfp_may_have_phy;
+ 	DECLARE_PHY_INTERFACE_MASK(sfp_interfaces);
+ 	__ETHTOOL_DECLARE_LINK_MODE_MASK(sfp_support);
+@@ -1997,6 +1999,14 @@ static void phylink_del_pcs(struct phyli
+ 	pcs->phylink = NULL;
+ 
+ 	/*
++	 * The provider is going away: forget the SFP module notification
++	 * without calling back into it, so a later module removal does not
++	 * reach a released PCS.
++	 */
++	if (pl->sfp_pcs == pcs)
++		pl->sfp_pcs = NULL;
++
++	/*
+ 	 * Check if we are removing the PCS currently
+ 	 * in use by this phylink instance. If this is the case,
+ 	 * tear down the link, force phylink resolve to reconfigure the
+@@ -3956,6 +3966,62 @@ static phy_interface_t phylink_choose_sf
+ 	return interface;
+ }
+ 
++static struct phylink_pcs *phylink_sfp_select_pcs(struct phylink *pl,
++						  phy_interface_t interface)
++{
++	struct phylink_pcs *pcs = NULL;
++
++	if (pl->mac_ops->mac_select_pcs) {
++		pcs = pl->mac_ops->mac_select_pcs(pl->config, interface);
++		if (IS_ERR(pcs))
++			return pcs;
++	} else if (test_bit(interface, pl->config->pcs_interfaces)) {
++		list_for_each_entry(pcs, &pl->pcs_list, list)
++			if (!phylink_validate_pcs_interface(pcs, interface))
++				return pcs;
++
++		return ERR_PTR(-ENODEV);
++	}
++
++	return pcs;
++}
++
++static void phylink_sfp_pcs_module_remove(struct phylink *pl)
++{
++	struct phylink_pcs *pcs;
++
++	mutex_lock(&pl->state_mutex);
++	pcs = pl->sfp_pcs;
++	pl->sfp_pcs = NULL;
++	if (pcs && pcs->ops->pcs_module_remove)
++		pcs->ops->pcs_module_remove(pcs);
++	mutex_unlock(&pl->state_mutex);
++}
++
++static int phylink_sfp_pcs_module_insert(struct phylink *pl,
++					 phy_interface_t interface,
++					 const struct sfp_module_caps *caps)
++{
++	struct phylink_pcs *pcs;
++	int ret = 0;
++
++	/* Balance a notification left over from an earlier insertion. */
++	phylink_sfp_pcs_module_remove(pl);
++
++	mutex_lock(&pl->state_mutex);
++	pcs = phylink_sfp_select_pcs(pl, interface);
++	if (IS_ERR(pcs)) {
++		ret = PTR_ERR(pcs);
++	} else if (pcs && pcs->ops->pcs_module_insert) {
++		ret = pcs->ops->pcs_module_insert(pcs, caps);
++		if (ret >= 0)
++			pl->sfp_pcs = pcs;
++	}
++	mutex_unlock(&pl->state_mutex);
++
++	return ret;
++}
++
+ static void phylink_sfp_set_config(struct phylink *pl, unsigned long *supported,
+ 				   struct phylink_link_state *state,
+ 				   bool changed)
+@@ -4046,6 +4112,7 @@ static int phylink_sfp_config_phy(struct
+ 
+ static int phylink_sfp_config_optical(struct phylink *pl)
+ {
++	const struct sfp_module_caps *caps;
+ 	__ETHTOOL_DECLARE_LINK_MODE_MASK(support);
+ 	struct phylink_link_state config;
+ 	enum inband_type inband_type;
+@@ -4129,9 +4196,14 @@ static int phylink_sfp_config_optical(st
+ 		return ret;
+ 	}
+ 
++	caps = sfp_get_module_caps(pl->sfp_bus);
++	ret = phylink_sfp_pcs_module_insert(pl, interface, caps);
++	if (ret < 0)
++		return ret;
++
+ 	pl->link_port = pl->sfp_port;
+ 
+-	phylink_sfp_set_config(pl, pl->sfp_support, &config, false);
++	phylink_sfp_set_config(pl, pl->sfp_support, &config, ret > 0);
+ 
+ 	return 0;
+ }
+@@ -4161,6 +4233,7 @@ static void phylink_sfp_module_remove(vo
+ {
+ 	struct phylink *pl = upstream;
+ 
++	phylink_sfp_pcs_module_remove(pl);
+ 	phy_interface_zero(pl->sfp_interfaces);
+ }
+ 
+--- a/include/linux/phylink.h
++++ b/include/linux/phylink.h
+@@ -456,6 +456,7 @@ int mac_enable_tx_lpi(struct phylink_con
+ #endif
+ 
+ struct phylink_pcs_ops;
++struct sfp_module_caps;
+ 
+ /**
+  * struct phylink_pcs - PHYLINK PCS instance
+@@ -489,6 +490,14 @@ struct phylink_pcs {
+ /**
+  * struct phylink_pcs_ops - MAC PCS operations structure.
+  * @pcs_validate: validate the link configuration.
++ * @pcs_module_insert: notify the PCS that an SFP module was inserted. Called
++ *                    under the RTNL lock. @caps is valid only for the duration
++ *                    of the call. Return 1 to force PCS reconfiguration, 0 if
++ *                    no reconfiguration is needed, or a negative errno.
++ * @pcs_module_remove: notify the PCS that the previously inserted SFP module
++ *                    was removed. Called under the RTNL lock and paired only
++ *                    with a successful @pcs_module_insert call. Not called
++ *                    if the PCS provider is released first.
+  * @pcs_inband_caps: query inband support for interface mode.
+  * @pcs_enable: enable the PCS.
+  * @pcs_disable: disable the PCS.
+@@ -510,6 +519,9 @@ struct phylink_pcs {
+ struct phylink_pcs_ops {
+ 	int (*pcs_validate)(struct phylink_pcs *pcs, unsigned long *supported,
+ 			    const struct phylink_link_state *state);
++	int (*pcs_module_insert)(struct phylink_pcs *pcs,
++				 const struct sfp_module_caps *caps);
++	void (*pcs_module_remove)(struct phylink_pcs *pcs);
+ 	unsigned int (*pcs_inband_caps)(struct phylink_pcs *pcs,
+ 					phy_interface_t interface);
+ 	int (*pcs_enable)(struct phylink_pcs *pcs);
