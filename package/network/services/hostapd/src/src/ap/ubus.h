@@ -17,6 +17,7 @@ enum hostapd_ubus_event_type {
 
 /* RSN Error: the frame in which the RSN procedure failed */
 enum hostapd_ubus_rsn_error {
+	HOSTAPD_UBUS_RSN_ERROR_NONE = 0,
 	HOSTAPD_UBUS_RSN_ERROR_AUTH = 1,
 	HOSTAPD_UBUS_RSN_ERROR_ASSOC = 2,
 	HOSTAPD_UBUS_RSN_ERROR_EAPOL_M2 = 3,

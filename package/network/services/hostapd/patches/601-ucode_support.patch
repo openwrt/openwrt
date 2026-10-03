@@ -546,7 +546,7 @@ as adding/removing interfaces.
  	char *radius_cui; /* Chargeable-User-Identity from RADIUS */
 --- a/src/ap/wpa_auth_glue.c
 +++ b/src/ap/wpa_auth_glue.c
-@@ -488,6 +488,7 @@ static const u8 * hostapd_wpa_auth_get_p
+@@ -489,6 +489,7 @@ static const u8 * hostapd_wpa_auth_get_p
  	struct sta_info *sta = ap_get_sta(hapd, addr);
  	const u8 *psk;
  
@@ -554,7 +554,7 @@ as adding/removing interfaces.
  	if (vlan_id)
  		*vlan_id = 0;
  	if (psk_len)
-@@ -538,13 +539,18 @@ static const u8 * hostapd_wpa_auth_get_p
+@@ -539,13 +540,18 @@ static const u8 * hostapd_wpa_auth_get_p
  	 * returned psk which should not be returned again.
  	 * logic list (all hostapd_get_psk; all sta->psk)
  	 */
@@ -574,7 +574,7 @@ as adding/removing interfaces.
  			if (pos->is_passphrase) {
  				if (pbkdf2_sha1(pos->passphrase,
  						hapd->conf->ssid.ssid,
-@@ -558,9 +564,13 @@ static const u8 * hostapd_wpa_auth_get_p
+@@ -559,9 +565,13 @@ static const u8 * hostapd_wpa_auth_get_p
  			}
  			if (pos->psk == prev_psk) {
  				psk = pos->next ? pos->next->psk : NULL;

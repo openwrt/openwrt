@@ -526,11 +526,12 @@ probe/assoc/auth requests via object subscribe.
  		return 0;
 --- a/src/ap/wpa_auth_glue.c
 +++ b/src/ap/wpa_auth_glue.c
-@@ -416,6 +416,7 @@ static void hostapd_wpa_auth_psk_failure
+@@ -416,6 +416,8 @@ static void hostapd_wpa_auth_psk_failure
  	struct hostapd_data *hapd = ctx;
  	wpa_msg(hapd->msg_ctx, MSG_INFO, AP_STA_POSSIBLE_PSK_MISMATCH MACSTR,
  		MAC2STR(addr));
-+	hostapd_ubus_notify(hapd, "key-mismatch", addr);
++	hostapd_ubus_notify_key_mismatch(hapd, addr,
++					 HOSTAPD_UBUS_RSN_ERROR_NONE, NULL, 0);
  }
  
  

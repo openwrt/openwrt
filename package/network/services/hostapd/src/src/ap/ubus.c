@@ -2561,7 +2561,13 @@ void hostapd_ubus_notify_key_mismatch(struct hostapd_data *hapd, const u8 *addr,
 	blob_buf_init(&b, 0);
 	blobmsg_add_macaddr(&b, "address", addr);
 	blobmsg_add_string(&b, "ifname", hapd->conf->iface);
-	blobmsg_add_u32(&b, "rsn_error", rsn_error);
+	blobmsg_add_macaddr(&b, "bssid", hapd->own_addr);
+#ifdef CONFIG_IEEE80211BE
+	if (hapd->conf->mld_ap)
+		blobmsg_add_u32(&b, "link_id", hapd->mld_link_id);
+#endif /* CONFIG_IEEE80211BE */
+	if (rsn_error != HOSTAPD_UBUS_RSN_ERROR_NONE)
+		blobmsg_add_u32(&b, "rsn_error", rsn_error);
 	if (frame && len && blobmsg_add_hex(&b, "frame", frame, len))
 		return;
 
