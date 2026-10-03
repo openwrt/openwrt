@@ -1,0 +1,53 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7620a_asus_rt-ac5x.dtsi"
+
+/ {
+	compatible = "asus,rt-ac52u-b1", "ralink,mt7620a-soc";
+	model = "Asus RT-AC52U B1";
+
+	chosen {
+		bootargs = "console=ttyS0,115200";
+	};
+
+	rtl8367rb {
+		compatible = "realtek,rtl8367b";
+		realtek,extif = <6 1 0 1 1 1 1 1 1 2>;
+		mii-bus = <&mdio0>;
+	};
+};
+
+&state_default {
+	gpio {
+		groups = "i2c", "uartf", "wled", "ephy", "spi refclk";
+		function = "gpio";
+	};
+};
+
+&ethernet {
+	pinctrl-names = "default";
+	pinctrl-0 = <&rgmii1_pins &mdio_pins>;
+
+	port@5 {
+		status = "okay";
+		mediatek,fixed-link = <1000 1 1 1>;
+		phy-mode = "rgmii";
+	};
+
+	mdio0: mdio-bus {
+		status = "okay";
+	};
+};
+
+&gsw {
+	mediatek,ephy-base = /bits/ 8 <8>;
+};
+
+&pcie0 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&eeprom_factory_8000>;
+		nvmem-cell-names = "eeprom";
+	};
+};
