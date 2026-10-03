@@ -3,7 +3,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mipi-dbi
-PKG_RELEASE:=3
+PKG_RELEASE:=4
 
 PKG_LICENSE:=GPL-2.0-or-later
 PKG_LICENSE_FILES:=
@@ -20,6 +20,7 @@ define Package/mipi-dbi-default
   SECTION:=firmware
   CATEGORY:=Firmware
   PKGARCH:=all
+  DEPENDS:=+kmod-drm-panel-mipi-dbi
 endef
 
 define Build/Compile
@@ -31,7 +32,7 @@ endef
 define Package/mipi-dbi-ubnt-utr
   $(Package/mipi-dbi-default)
   TITLE:=MIPI DBI LCD init sequence for Ubiquiti UniFi Travel Router
-  DEPENDS:=@TARGET_ipq40xx
+  DEPENDS+=@TARGET_ipq40xx
 endef
 
 define Package/mipi-dbi-ubnt-utr/install
