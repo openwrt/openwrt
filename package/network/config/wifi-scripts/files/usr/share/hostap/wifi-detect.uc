@@ -263,5 +263,8 @@ if (!is_equal(prev_board_data, board_data)) {
 		exit(1);
 	f.write(sprintf("%.J\n", board_data));
 	f.close();
+	// flush the data before the rename, otherwise a power cut can leave
+	// an empty board.json behind (e.g. on UBIFS)
+	system([ "fsync", new_file ]);
 	rename(new_file, board_file);
 }
