@@ -1,7 +1,7 @@
 let libubus = require("ubus");
 import * as uloop from "uloop";
 import { open, readfile } from "fs";
-import { wdev_create, wdev_set_mesh_params, wdev_remove, is_equal, wdev_set_up, vlist_new, phy_open, macaddr_keep, macaddr_sync_defer } from "common";
+import { wdev_create, wdev_set_mesh_params, wdev_remove, is_equal, wdev_set_up, vlist_new, phy_open, macaddr_keep, macaddr_sync_defer, macaddr_sync_entry, mld_prev_match } from "common";
 
 let ubus = libubus.connect();
 
@@ -348,10 +348,35 @@ function mld_reload(data, phy_list)
 	mld_add(data, phy_list);
 }
 
+function mld_macaddr_list(new_mld, added, prev_mld)
+{
+	let list = macaddr_keep(keys(new_mld));
+	let news = {};
+	let prevs = {};
+
+	for (let name, config in added)
+		if (!config.macaddr)
+			news[name] = config;
+	for (let name, data in prev_mld)
+		if (data.macaddr && !data.config.macaddr)
+			prevs[name] = data.config;
+
+	for (let name, from in mld_prev_match(news, prevs)) {
+		new_mld[name].macaddr = prev_mld[from].macaddr;
+		if (from != name)
+			list[name] = macaddr_sync_entry(new_mld[name].phy, -1, prev_mld[from].macaddr, {
+				any_radio: true,
+			});
+	}
+
+	return list;
+}
+
 function mld_set_config(config)
 {
 	let prev_mld = { ...wpas.data.mld };
 	let new_mld = {};
+	let added = {};
 
 	wpas.printf(`Set MLD config: ${keys(config)}`);
 
@@ -387,14 +412,14 @@ function mld_set_config(config)
 			radio_mask_up: 0,
 			radio_mask_present: 0,
 		};
+		added[name] = data;
 	}
 
 	for (let name, data in prev_mld)
 		mld_remove(data);
 
 	wpas.data.mld = new_mld;
-	macaddr_sync_defer(ubus, "wpa_supplicant", "mld", macaddr_keep(keys(new_mld)));
-
+	macaddr_sync_defer(ubus, "wpa_supplicant", "mld", mld_macaddr_list(new_mld, added, prev_mld));
 }
 
 function mld_set_iface_config(name, data, radio, config)
