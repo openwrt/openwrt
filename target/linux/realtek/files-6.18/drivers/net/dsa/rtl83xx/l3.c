@@ -1909,18 +1909,22 @@ static int otto_l3_fib_del_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
  * The IPv4 twin of this narrates every event at info level. IPv6 routes
  * arrive in numbers IPv4 ones do not - every router advertisement brings
  * some - so this one speaks at debug level instead.
+ *
+ * The members are the ones the notifier counted. The route's own sibling
+ * count is read later, and a member deleted in between has had it cleared,
+ * so it would pass for a route of its own.
  */
 static int otto_l3_fib_check_v6(struct otto_l3_ctrl *ctrl, struct fib6_info *rt,
-				unsigned int nsiblings)
+				unsigned int members)
 {
-	dev_dbg(ctrl->dev, "IPv6 route %pI6c/%d, type %d, flags %x, siblings %u\n",
+	dev_dbg(ctrl->dev, "IPv6 route %pI6c/%d, type %d, flags %x, members %u\n",
 		&rt->fib6_dst.addr, rt->fib6_dst.plen, rt->fib6_type,
-		rt->fib6_flags, nsiblings);
+		rt->fib6_flags, members);
 
 	if (rt->nh)
 		return -EOPNOTSUPP;
 
-	if (rt->fib6_src.plen || nsiblings || rt->fib6_nsiblings)
+	if (rt->fib6_src.plen || members > 1)
 		return -EOPNOTSUPP;
 
 	if (rt->fib6_type != RTN_UNICAST || rt->fib6_flags & RTF_REJECT)
@@ -2102,7 +2106,7 @@ static int otto_l3_fib_add_v6(struct otto_l3_ctrl *ctrl, struct fib6_entry_notif
 		otto_l3_route_teardown(ctrl, route);
 	}
 
-	if (otto_l3_fib_check_v6(ctrl, rt, info->nsiblings))
+	if (otto_l3_fib_check_v6(ctrl, rt, members))
 		goto not_offloaded;
 
 	gw = &rt->fib6_nh->fib_nh_gw6;
@@ -2222,7 +2226,7 @@ static int otto_l3_fib_del_v6(struct otto_l3_ctrl *ctrl, struct fib6_entry_notif
 		return 0;
 	}
 
-	if (otto_l3_fib_check_v6(ctrl, rt, info->nsiblings))
+	if (otto_l3_fib_check_v6(ctrl, rt, members))
 		return 0;
 
 	/* Several FIB entries can share a destination and differ only in their
