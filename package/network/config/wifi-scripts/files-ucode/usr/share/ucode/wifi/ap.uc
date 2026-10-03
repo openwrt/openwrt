@@ -37,6 +37,17 @@ function encryption_band(encryption, band) {
 	return join('+', enc);
 }
 
+function key_kind(key) {
+	const n = length(key);
+
+	if (n == 64)
+		return 'psk';
+	if (n >= 8 && n <= 63)
+		return 'passphrase';
+
+	return n ? 'invalid' : null;
+}
+
 function iface_setup(config) {
 	switch(config.fixup) {
 	case 'owe':
@@ -209,9 +220,9 @@ function iface_auth_type(config, band, eht) {
 			iface_authentication_server(config);
 			config.macaddr_acl = 2;
 			config.wpa_psk_radius = 2;
-		} else if (length(config.key) == 64) {
+		} else if (key_kind(config.key) == 'psk') {
 			config.wpa_psk = config.key;
-		} else if (length(config.key) >= 8 && length(config.key) <= 63) {
+		} else if (key_kind(config.key) == 'passphrase') {
 			config.wpa_passphrase = config.key;
 		} else if (config.key) {
 			 netifd.setup_failed('INVALID_WPA_PSK');
@@ -304,9 +315,9 @@ function iface_wps(config, band) {
 
 		if (config.multi_ap && config.multi_ap_backhaul_ssid) {
 			append_string_vars(config, [ 'multi_ap_backhaul_ssid' ]);
-			if (length(config.multi_ap_backhaul_key) == 64)
+			if (key_kind(config.multi_ap_backhaul_key) == 'psk')
 				append('multi_ap_backhaul_wpa_psk', config.multi_ap_backhaul_key);
-			else if (length(config.multi_ap_backhaul_key) > 8)
+			else if (key_kind(config.multi_ap_backhaul_key) == 'passphrase')
 				append('multi_ap_backhaul_wpa_passphrase', config.multi_ap_backhaul_key);
 			else
 				netifd.setup_failed('INVALID_WPA_PSK');
