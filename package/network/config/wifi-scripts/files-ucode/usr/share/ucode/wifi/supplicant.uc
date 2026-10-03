@@ -68,7 +68,7 @@ function setup_sta(data, config) {
 
 	if (config.auth_type in [ 'sae', 'owe', 'eap2', 'eap192', 'dpp' ])
 		config.ieee80211w = 2;
-	else if (config.auth_type in [ 'psk-sae' ] && !config.ieee80211w)
+	else if (config.auth_type in [ 'psk-sae', 'eap-eap2' ] && !config.ieee80211w)
 		config.ieee80211w = 1;
 
 	/* Easy Connect 3.0 8.4.2: PMF for every association with the DPP AKM,
@@ -162,6 +162,7 @@ function setup_sta(data, config) {
 
 	case 'eap':
 	case 'eap2':
+	case 'eap-eap2':
 	case 'eap192':
 		iface.wpa_key_mgmt(config);
 		set_default(config, 'erp', config.fils);
