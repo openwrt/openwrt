@@ -74,6 +74,10 @@ yuncore,ax880)
 zbtlink,zbt-z800ax)
 	ucidef_set_led_netdev "internet" "Internet" "green:wan-online" "wan"
 	;;
+zyxel,nbg7815)
+	ucidef_set_led_default "led7" "LED7" "nbg7815:led7" "1"
+	ucidef_set_led_colors "led7" red 255 green 255 blue 255
+	;;
 esac
 
 board_config_flush
