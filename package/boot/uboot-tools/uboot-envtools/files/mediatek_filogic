@@ -72,6 +72,9 @@ xiaomi,mi-router-wr30u-ubootmod|\
 xiaomi,redmi-router-ax6000-ubootmod)
 	ubootenv_add_ubi_default
 	;;
+urant,u28-ax3000)
+	ubootenv_add_mtd "u-boot-env" "0x0" "0x4000" "0x10000"
+	;;
 acer,predator-w6|\
 acer,predator-w6d|\
 acer,vero-w6m|\
