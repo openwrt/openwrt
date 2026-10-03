@@ -1,0 +1,191 @@
+// SPDX-License-Identifier: GPL-2.0-only OR BSD-2-Clause
+
+#include <dt-bindings/clock/qcom,rpmcc.h>
+
+#include "qcom-mdm9607-zte-mf283v.dtsi"
+
+/delete-node/ &modem_firmware;
+
+/ {
+	model = "ZTE MF283V";
+
+	reserved-memory {
+		mpss_mem: mpss@82a00000 {
+			reg = <0x82a00000 0x05000000>;
+			no-map;
+		};
+
+		modem_firmware_tail: reserved@87a00000 {
+			reg = <0x87a00000 0x00480000>;
+			no-map;
+		};
+
+		mba_mem: mba@8f900000 {
+			reg = <0x8f900000 0x00100000>;
+			no-map;
+		};
+	};
+
+	smp2p-modem {
+		compatible = "qcom,smp2p";
+		qcom,smem = <435>, <428>;
+		interrupts = <GIC_SPI 27 IRQ_TYPE_EDGE_RISING>;
+		mboxes = <&apcs 14>;
+		qcom,local-pid = <0>;
+		qcom,remote-pid = <1>;
+
+		smp2p_modem_out: master-kernel {
+			qcom,entry-name = "master-kernel";
+			#qcom,smem-state-cells = <1>;
+		};
+
+		smp2p_modem_in: slave-kernel {
+			qcom,entry-name = "slave-kernel";
+			interrupt-controller;
+			#interrupt-cells = <2>;
+		};
+	};
+
+	smsm {
+		compatible = "qcom,smsm";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		mboxes = <0>, <&apcs 13>;
+
+		apps_smsm: apps@0 {
+			reg = <0>;
+			#qcom,smem-state-cells = <1>;
+		};
+
+		modem_smsm: modem@1 {
+			reg = <1>;
+			interrupts = <GIC_SPI 26 IRQ_TYPE_EDGE_RISING>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+		};
+	};
+};
+
+&pm8019_regulators {
+	pm8019_s3_level: s3-level {
+		regulator-name = "pm8019-s3-level";
+		regulator-min-microvolt = <384>;
+		regulator-max-microvolt = <384>;
+	};
+
+	pm8019_l12_level: l12-level {
+		regulator-name = "pm8019-l12-level";
+		regulator-min-microvolt = <384>;
+		regulator-max-microvolt = <384>;
+	};
+};
+
+&soc {
+	tcsr_mss: syscon@194f000 {
+		compatible = "syscon";
+		reg = <0x0194f000 0x2010>;
+	};
+
+	bam_dmux_dma: dma-controller@4044000 {
+		compatible = "qcom,bam-v1.7.0";
+		reg = <0x04044000 0x19000>;
+		interrupts = <GIC_SPI 29 IRQ_TYPE_EDGE_RISING>;
+		#dma-cells = <1>;
+		qcom,ee = <0>;
+		num-channels = <6>;
+		qcom,num-ees = <1>;
+		qcom,powered-remotely;
+	};
+
+	mpss: remoteproc@4080000 {
+		compatible = "qcom,mdm9607-mss-pil";
+		reg = <0x04080000 0x100>,
+		      <0x04020000 0x40>;
+		reg-names = "qdsp6", "rmb";
+
+		interrupts-extended = <&intc GIC_SPI 24 IRQ_TYPE_EDGE_RISING>,
+				      <&smp2p_modem_in 0 IRQ_TYPE_EDGE_RISING>,
+				      <&smp2p_modem_in 1 IRQ_TYPE_EDGE_RISING>,
+				      <&smp2p_modem_in 2 IRQ_TYPE_EDGE_RISING>,
+				      <&smp2p_modem_in 3 IRQ_TYPE_EDGE_RISING>;
+		interrupt-names = "wdog", "fatal", "ready", "handover",
+				  "stop-ack";
+
+		clocks = <&gcc GCC_MSS_CFG_AHB_CLK>,
+			 <&gcc GCC_MSS_Q6_BIMC_AXI_CLK>,
+			 <&gcc GCC_BOOT_ROM_AHB_CLK>,
+			 <&rpmcc RPM_SMD_XO_CLK_SRC>;
+		clock-names = "iface", "bus", "mem", "xo";
+
+		cx-supply = <&pm8019_s3_level>;
+		mx-supply = <&pm8019_l12_level>;
+		pll-supply = <&pm8019_l3>;
+
+		resets = <&gcc GCC_MSS_RESTART>;
+		reset-names = "mss_restart";
+		qcom,halt-regs = <&tcsr_mss 0x0 0x1000 0x2000>;
+
+		qcom,smem-states = <&smp2p_modem_out 0>;
+		qcom,smem-state-names = "stop";
+		memory-region = <&mba_mem>, <&mpss_mem>;
+		firmware-name = "mba.mbn", "modem.mdt";
+
+		smd-edge {
+			interrupts = <GIC_SPI 25 IRQ_TYPE_EDGE_RISING>;
+			mboxes = <&apcs 12>;
+			qcom,smd-edge = <0>;
+			qcom,remote-pid = <1>;
+			label = "modem";
+		};
+
+		bam-dmux {
+			compatible = "qcom,bam-dmux";
+			interrupt-parent = <&modem_smsm>;
+			interrupts = <1 IRQ_TYPE_EDGE_BOTH>,
+				     <11 IRQ_TYPE_EDGE_BOTH>;
+			interrupt-names = "pc", "pc-ack";
+			qcom,smem-states = <&apps_smsm 1>, <&apps_smsm 11>;
+			qcom,smem-state-names = "pc", "pc-ack";
+			dmas = <&bam_dmux_dma 4>, <&bam_dmux_dma 5>;
+			dma-names = "tx", "rx";
+			qcom,initial-channels = <0>;
+		};
+	};
+
+	qpic_bam: dma-controller@7984000 {
+		compatible = "qcom,bam-v1.7.0";
+		reg = <0x07984000 0x1a000>;
+		interrupts = <GIC_SPI 132 IRQ_TYPE_LEVEL_HIGH>;
+		clocks = <&rpmcc RPM_SMD_QPIC_CLK>;
+		clock-names = "bam_clk";
+		#dma-cells = <1>;
+		qcom,ee = <0>;
+		qcom,controlled-remotely;
+	};
+
+	qpic_nand: nand-controller@79b0000 {
+		compatible = "qcom,mdm9607-nand";
+		reg = <0x079b0000 0x1000>;
+		clocks = <&rpmcc RPM_SMD_QPIC_CLK>;
+		clock-names = "core";
+		dmas = <&qpic_bam 0>, <&qpic_bam 1>, <&qpic_bam 2>;
+		dma-names = "tx", "rx", "cmd";
+		qcom,bam-command-lock-group = <1>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		nand@0 {
+			reg = <0>;
+			nand-bus-width = <8>;
+			nand-ecc-strength = <4>;
+			nand-ecc-step-size = <512>;
+
+			partitions {
+				compatible = "fixed-partitions";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+			};
+		};
+	};
+};
