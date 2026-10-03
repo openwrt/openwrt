@@ -4,7 +4,10 @@ import * as libuci from 'uci';
 import { md5 } from 'digest';
 import * as fs from 'fs';
 
-import { append, append_raw, append_value, append_vars, append_list, append_string_vars, comment, push_config, set_default, touch_file } from 'wifi.common';
+import {
+	append, append_raw, append_value, append_vars, append_list, append_string_vars, comment, config_mark,
+	config_rewind, push_config, set_default, touch_file
+} from 'wifi.common';
 import * as netifd from 'wifi.netifd';
 import * as iface from 'wifi.iface';
 
@@ -46,6 +49,35 @@ function key_kind(key) {
 		return 'passphrase';
 
 	return n ? 'invalid' : null;
+}
+
+const WPS_AUTH_TYPES = [ 'none', 'owe', 'psk', 'psk2', 'sae', 'psk-sae', 'psk-sae-compat' ];
+
+function wps_enabled(config, band) {
+	return band != '6g' && config.multi_ap != 1 && (config.auth_type in WPS_AUTH_TYPES) &&
+		!!(length(config.config_methods) || config.wps_pushbutton || config.wps_label);
+}
+
+function ft_psk_local_default(config) {
+	return config.auth_type == 'psk';
+}
+
+function bss_refusal(config, band) {
+	const personal = config.auth_type in [ 'psk', 'psk2', 'sae', 'psk-sae', 'psk-sae-compat' ];
+
+	if (personal && !config.ppsk && key_kind(config.key) == 'invalid')
+		return 'INVALID_WPA_PSK';
+
+	if (wps_enabled(config, band) && config.multi_ap && config.multi_ap_backhaul_ssid &&
+	    index([ 'psk', 'passphrase' ], key_kind(config.multi_ap_backhaul_key)) < 0)
+		return 'INVALID_WPA_PSK';
+
+	if (config.ieee80211r && config.wpa >= 2 &&
+	    !(config.ft_psk_generate_local ?? ft_psk_local_default(config)) &&
+	    (!config.r0kh || !config.r1kh) && !config.auth_secret && !config.key)
+		return 'FT_KEY_CANT_BE_DERIVED';
+
+	return null;
 }
 
 function iface_setup(config) {
@@ -193,7 +225,6 @@ function iface_auth_type(config, band, eht) {
 	switch(config.auth_type) {
 	case 'none':
 	case 'owe':
-		config.wps_possible = 1;
 		config.wps_state = 1;
 
 		append_string_vars(config, [ 'owe_transition_ssid' ]);
@@ -214,7 +245,6 @@ function iface_auth_type(config, band, eht) {
 	case 'psk-sae':
 	case 'psk-sae-compat':
 		config.vlan_possible = 1;
-		config.wps_possible = 1;
 
 		if (config.ppsk) {
 			iface_authentication_server(config);
@@ -224,8 +254,6 @@ function iface_auth_type(config, band, eht) {
 			config.wpa_psk = config.key;
 		} else if (key_kind(config.key) == 'passphrase') {
 			config.wpa_passphrase = config.key;
-		} else if (config.key) {
-			 netifd.setup_failed('INVALID_WPA_PSK');
 		}
 
 		if (config.auth_type in [ 'psk', 'psk-sae', 'psk-sae-compat' ] && band != '6g') {
@@ -300,13 +328,7 @@ function iface_wps(config, band) {
 	push_config(config, 'config_methods', 'wps_pushbutton', 'push_button');
 	push_config(config, 'config_methods', 'wps_label', 'label');
 
-	if (config.multi_ap == 1)
-		config.wps_possible = false;
-
-	if (band == '6g')
-		config.wps_possible = false;
-
-	if (config.wps_possible && length(config.config_methods)) {
+	if (wps_enabled(config, band)) {
 		config.eap_server = 1;
 		set_default(config, 'wps_state', 2);
 
@@ -317,10 +339,8 @@ function iface_wps(config, band) {
 			append_string_vars(config, [ 'multi_ap_backhaul_ssid' ]);
 			if (key_kind(config.multi_ap_backhaul_key) == 'psk')
 				append('multi_ap_backhaul_wpa_psk', config.multi_ap_backhaul_key);
-			else if (key_kind(config.multi_ap_backhaul_key) == 'passphrase')
-				append('multi_ap_backhaul_wpa_passphrase', config.multi_ap_backhaul_key);
 			else
-				netifd.setup_failed('INVALID_WPA_PSK');
+				append('multi_ap_backhaul_wpa_passphrase', config.multi_ap_backhaul_key);
 		}
 
 		append_vars(config, [
@@ -466,14 +486,11 @@ function iface_roaming(config) {
 		return;
 
 	set_default(config, 'mobility_domain', substr(md5(config.ssid + '\n'), 0, 4));
-	set_default(config, 'ft_psk_generate_local', config.auth_type == 'psk');
+	set_default(config, 'ft_psk_generate_local', ft_psk_local_default(config));
 	set_default(config, 'ft_iface', config.network_ifname);
 
 	if (!config.ft_psk_generate_local) {
 		if (!config.r0kh || !config.r1kh) {
-			if (!config.auth_secret && !config.key)
-				netifd.setup_failed('FT_KEY_CANT_BE_DERIVED');
-
 			let ft_key = md5(`${config.mobility_domain}/${config.auth_secret ?? config.key}`);
 
 			set_default(config, 'r0kh', [ 'ff:ff:ff:ff:ff:ff,*,' + ft_key ]);
@@ -632,6 +649,10 @@ export function generate(interface, data, config, vlans, stas, phy_features) {
 	config.encryption = encryption_band(config.encryption, data.config.band);
 	iface.parse_encryption(config, data.config, phy_features);
 
+	const refusal = bss_refusal(config, data.config.band);
+	if (refusal)
+		return refusal;
+
 	if (config.auth_type in [ 'psk', 'psk-sae', 'psk-sae-compat' ] && data.config.band != '6g')
 		iface_wpa_stations(config, stas);
 	if (config.auth_type in [ 'sae', 'psk-sae', 'psk-sae-compat' ])
@@ -708,4 +729,16 @@ export function generate(interface, data, config, vlans, stas, phy_features) {
 		append_raw('#default_macaddr');
 	else if (config.random_macaddr)
 		append_raw('#random_macaddr');
+};
+
+export function bss_add(interface, data, config, vlans, stas, phy_features) {
+	const mark = config_mark();
+	const refusal = generate(interface, data, config, vlans, stas, phy_features);
+
+	if (!refusal)
+		return true;
+
+	config_rewind(mark);
+	netifd.bss_failed(interface, config.ifname, refusal);
+	return false;
 };

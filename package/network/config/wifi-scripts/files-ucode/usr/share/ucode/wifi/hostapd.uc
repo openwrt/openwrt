@@ -562,8 +562,13 @@ let iface_idx = 0;
 function setup_interface(interface, data, config, vlans, stas, phy_features, fixup) {
 	config = { ...config, fixup };
 
-	config.idx = iface_idx++;
-	ap.generate(interface, data, config, vlans, stas, phy_features);
+	/* idx 0 writes the `interface=` line, so a BSS left out keeps its idx */
+	config.idx = iface_idx;
+	if (!ap.bss_add(interface, data, config, vlans, stas, phy_features))
+		return false;
+
+	iface_idx++;
+	return true;
 }
 
 export function setup(data) {
@@ -597,7 +602,8 @@ export function setup(data) {
 
 		let owe = interface.config.encryption == 'owe' && interface.config.owe_transition;
 
-		setup_interface(k, data, interface.config, interface.vlans, interface.stas, phy_features, owe ? 'owe' : null );
+		if (!setup_interface(k, data, interface.config, interface.vlans, interface.stas, phy_features, owe ? 'owe' : null))
+			continue;
 		if (owe)
 			setup_interface(k, data, interface.config, interface.vlans, interface.stas, phy_features, 'owe-transition');
 		has_ap = true;
