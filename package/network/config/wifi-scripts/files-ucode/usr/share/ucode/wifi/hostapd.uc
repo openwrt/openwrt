@@ -600,7 +600,7 @@ export function setup(data) {
 		interface.config.network_bridge = interface.bridge;
 		interface.config.network_ifname = interface['bridge-ifname'];
 
-		let owe = interface.config.encryption == 'owe' && interface.config.owe_transition;
+		let owe = ap.owe_transition(interface.config, data.config.band);
 
 		if (!setup_interface(k, data, interface.config, interface.vlans, interface.stas, phy_features, owe ? 'owe' : null))
 			continue;

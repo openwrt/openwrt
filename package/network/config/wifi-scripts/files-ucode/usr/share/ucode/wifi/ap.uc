@@ -672,6 +672,10 @@ function iface_rates(config) {
 		append(key, map(config[key], x => x / 100))
 }
 
+export function owe_transition(config, band) {
+	return config.encryption == 'owe' && !!config.owe_transition && band != '6g';
+};
+
 export function generate(interface, data, config, vlans, stas, phy_features) {
 	config.ctrl_interface = '/var/run/hostapd';
 
