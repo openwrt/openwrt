@@ -45,6 +45,12 @@ redmi,ax6)
 tcl,linkhub-hh500v)
 	ucidef_set_led_wlan "wlan5g" "WiFi 5GHz" "blue:wlan" "phy0radio"
 	;;
+tplink,tl-er2260t)
+	ucidef_set_led_netdev "sfp1-1g" "SFP1-1G" "amber:sfp1-1gbps" "10GE1" "link_1000 link_2500"
+	ucidef_set_led_netdev "sfp1-10g" "SFP1-10G" "green:sfp1-10gbps" "10GE1" "link_10000"
+	ucidef_set_led_netdev "sfp2-1g" "SFP2-1G" "amber:sfp2-1gbps" "10GE2" "link_1000 link_2500"
+	ucidef_set_led_netdev "sfp2-10g" "SFP2-10G" "green:sfp2-10gbps" "10GE2" "link_10000"
+	;;
 xiaomi,ax3600)
 	ucidef_set_led_netdev "wan-port-link" "WAN-PORT-LINK" "90000.mdio-1:01:green:wan" "wan" "tx rx link_10 link_100 link_1000"
 	ucidef_set_led_netdev "lan1-port-link" "LAN1-PORT-LINK" "90000.mdio-1:02:green:lan" "lan1" "tx rx link_10 link_100 link_1000"

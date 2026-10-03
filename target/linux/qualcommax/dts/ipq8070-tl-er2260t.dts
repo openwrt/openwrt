@@ -1,0 +1,455 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/* Copyright (c) 2023-2026, Chukun Pan <amadeus@jmu.edu.cn> */
+
+/dts-v1/;
+
+#include "ipq8074.dtsi"
+#include "ipq8074-ac-cpu.dtsi"
+#include "ipq8074-ess.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	model = "TP-Link TL-ER2260T";
+	compatible = "tplink,tl-er2260t", "qcom,ipq8074";
+
+	aliases {
+		led-boot = &led_sys;
+		led-failsafe = &led_sys;
+		led-running = &led_sys;
+		led-upgrade = &led_sys;
+		serial0 = &blsp1_uart5;
+		label-mac-device = &lan4;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		bootargs-append = " ubi.mtd=rootfs root=/dev/ubiblock0_1";
+	};
+
+	i2c-mux {
+		compatible = "i2c-mux-gpio";
+		i2c-parent = <&blsp1_i2c2>;
+		mux-gpios = <&tlmm 29 GPIO_ACTIVE_HIGH>,
+			    <&tlmm 30 GPIO_ACTIVE_HIGH>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		idle-state = <2>;
+
+		i2c_sfp2: i2c@1 {
+			reg = <1>;
+		};
+
+		i2c_sfp1: i2c@2 {
+			reg = <2>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&tlmm 50 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		/* gpio 65 low - hw blink */
+		led_sys: sys {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&tlmm 21 GPIO_ACTIVE_HIGH>;
+		};
+
+		usb {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_USB;
+			gpios = <&tlmm 22 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "usbport";
+			trigger-sources = <&usb_port1>;
+		};
+
+		/*
+		 * 10GE1 Link/Act LED
+		 * gpio 52 and 54 low - off
+		 * gpio 52 or 54 high, gpio 51 high - on
+		 * gpio 52 or 54 high, gpio 51 low - hw blink
+		 */
+		sfp1-link {
+			color = <LED_COLOR_ID_GREEN>;
+			function = "sfp1-link";
+			gpios = <&tlmm 51 GPIO_ACTIVE_LOW>;
+		};
+
+		sfp1-10gbps {
+			color = <LED_COLOR_ID_GREEN>;
+			function = "sfp1-10gbps";
+			gpios = <&tlmm 52 GPIO_ACTIVE_HIGH>;
+		};
+
+		sfp1-1gbps {
+			color = <LED_COLOR_ID_AMBER>;
+			function = "sfp1-1gbps";
+			gpios = <&tlmm 54 GPIO_ACTIVE_HIGH>;
+		};
+
+		/*
+		 * 10GE2 Link/Act LED
+		 * gpio 56 and 64 low - off
+		 * gpio 56 or 64 high, gpio 55 high - on
+		 * gpio 56 or 64 high, gpio 55 low - hw blink
+		 */
+		sfp2-link {
+			color = <LED_COLOR_ID_GREEN>;
+			function = "sfp2-link";
+			gpios = <&tlmm 55 GPIO_ACTIVE_LOW>;
+		};
+
+		sfp2-10gbps {
+			color = <LED_COLOR_ID_GREEN>;
+			function = "sfp2-10gbps";
+			gpios = <&tlmm 56 GPIO_ACTIVE_HIGH>;
+		};
+
+		sfp2-1gbps {
+			color = <LED_COLOR_ID_AMBER>;
+			function = "sfp2-1gbps";
+			gpios = <&tlmm 64 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	sfp1: sfp1 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c_sfp1>;
+		los-gpios = <&tlmm 32 GPIO_ACTIVE_HIGH>;
+		mod-def0-gpios = <&tlmm 33 GPIO_ACTIVE_LOW>;
+		tx-disable-gpios = <&tlmm 31 GPIO_ACTIVE_HIGH>;
+	};
+
+	sfp2: sfp2 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c_sfp2>;
+		los-gpios = <&tlmm 60 GPIO_ACTIVE_HIGH>;
+		mod-def0-gpios = <&tlmm 57 GPIO_ACTIVE_LOW>;
+		tx-disable-gpios = <&tlmm 59 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&tlmm {
+	mdio_pins: mdio-pins {
+		mdc {
+			pins = "gpio68";
+			function = "mdc";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		mdio {
+			pins = "gpio69";
+			function = "mdio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+
+	sys-hw-blink {
+		gpio-hog;
+		output-high;
+		gpios = <65 GPIO_ACTIVE_HIGH>;
+		line-name = "sys hw blink";
+	};
+};
+
+&blsp1_i2c2 {
+	status = "okay";
+};
+
+&blsp1_uart5 {
+	status = "okay";
+};
+
+&cmn_pll_ref_clk {
+	clock-frequency = <50000000>;
+};
+
+&edma {
+	status = "okay";
+};
+
+&m3_dump_region {
+	status = "disabled";
+};
+
+&mdio {
+	status = "okay";
+
+	pinctrl-0 = <&mdio_pins>;
+	pinctrl-names = "default";
+	reset-gpios = <&tlmm 37 GPIO_ACTIVE_LOW>;
+
+	ethernet-phy-package@0 {
+		compatible = "qcom,qca8075-package";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0>;
+
+		qcom,package-mode = "qsgmii";
+
+		qca8075_0: ethernet-phy@0 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <0>;
+		};
+
+		qca8075_1: ethernet-phy@1 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <1>;
+		};
+
+		qca8075_2: ethernet-phy@2 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <2>;
+		};
+
+		qca8075_3: ethernet-phy@3 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <3>;
+		};
+	};
+};
+
+&prng {
+	status = "okay";
+};
+
+&q6v5_wcss {
+	status = "disabled";
+};
+
+&q6_etr_region {
+	status = "disabled";
+};
+
+&q6_region {
+	status = "disabled";
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&qpic_nand {
+	status = "okay";
+
+	nand@0 {
+		reg = <0>;
+		nand-ecc-strength = <4>;
+		nand-ecc-step-size = <512>;
+		nand-bus-width = <8>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "0:sbl1";
+				reg = <0x000000 0x0080000>;
+				read-only;
+			};
+
+			partition@80000 {
+				label = "0:mibib";
+				reg = <0x080000 0x0080000>;
+				read-only;
+			};
+
+			partition@100000 {
+				label = "0:qsee";
+				reg = <0x100000 0x0200000>;
+				read-only;
+			};
+
+			partition@300000 {
+				label = "0:devcfg";
+				reg = <0x300000 0x0020000>;
+				read-only;
+			};
+
+			partition@320000 {
+				label = "0:rpm";
+				reg = <0x320000 0x0040000>;
+				read-only;
+			};
+
+			partition@360000 {
+				label = "0:cdt";
+				reg = <0x360000 0x0020000>;
+				read-only;
+			};
+
+			partition@380000 {
+				label = "0:appsbl";
+				reg = <0x380000 0x0180000>;
+				read-only;
+			};
+
+			partition@500000 {
+				label = "0:ethphyfw";
+				reg = <0x500000 0x0080000>;
+			};
+
+			partition@580000 {
+				label = "0:appsblenv";
+				reg = <0x580000 0x0080000>;
+			};
+
+			partition@600000 {
+				label = "0:wififw";
+				reg = <0x600000 0x0100000>;
+			};
+
+			partition@700000 {
+				label = "factory";
+				reg = <0x700000 0x0020000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_d: macaddr@d {
+						compatible = "mac-base";
+						reg = <0xd 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
+
+			partition@720000 {
+				label = "rootfs";
+				reg = <0x720000 0x7000000>;
+				linux,rootfs;
+			};
+		};
+	};
+};
+
+&qusb_phy_0 {
+	status = "okay";
+};
+
+&ssphy_0 {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port@0 {
+			reg = <0>;
+			ethernet = <&edma>;
+			phy-mode = "internal";
+
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
+		};
+
+		port@1 {
+			reg = <1>;
+			label = "GE1";
+			phy-mode = "qsgmii";
+			phy-handle = <&qca8075_0>;
+			pcs-handle = <&uniphy0 0>;
+			nvmem-cells = <&macaddr_d 1>;
+			nvmem-cell-names = "mac-address";
+		};
+
+		port@2 {
+			reg = <2>;
+			label = "GE2";
+			phy-mode = "qsgmii";
+			phy-handle = <&qca8075_1>;
+			pcs-handle = <&uniphy0 1>;
+			nvmem-cells = <&macaddr_d 2>;
+			nvmem-cell-names = "mac-address";
+		};
+
+		port@3 {
+			reg = <3>;
+			label = "GE3";
+			phy-mode = "qsgmii";
+			phy-handle = <&qca8075_2>;
+			pcs-handle = <&uniphy0 2>;
+			nvmem-cells = <&macaddr_d 3>;
+			nvmem-cell-names = "mac-address";
+		};
+
+		lan4: port@4 {
+			reg = <4>;
+			label = "GE4";
+			phy-mode = "qsgmii";
+			phy-handle = <&qca8075_3>;
+			pcs-handle = <&uniphy0 3>;
+			nvmem-cells = <&macaddr_d 0>;
+			nvmem-cell-names = "mac-address";
+		};
+
+		port@5 {
+			reg = <5>;
+			sfp = <&sfp2>;
+			label = "10GE2";
+			phy-mode = "10gbase-r";
+			pcs-handle = <&uniphy1 0>;
+			managed = "in-band-status";
+			nvmem-cells = <&macaddr_d 5>;
+			nvmem-cell-names = "mac-address";
+		};
+
+		port@6 {
+			reg = <6>;
+			sfp = <&sfp1>;
+			label = "10GE1";
+			phy-mode = "10gbase-r";
+			pcs-handle = <&uniphy2 0>;
+			managed = "in-band-status";
+			nvmem-cells = <&macaddr_d 4>;
+			nvmem-cell-names = "mac-address";
+		};
+	};
+};
+
+&uniphy0 {
+	status = "okay";
+};
+
+&uniphy1 {
+	status = "okay";
+};
+
+&uniphy2 {
+	status = "okay";
+};
+
+&usb_0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	dr_mode = "host";
+	status = "okay";
+
+	usb_port1: port@1 {
+		reg = <1>;
+		#trigger-source-cells = <0>;
+	};
+};

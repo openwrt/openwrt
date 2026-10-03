@@ -1,0 +1,38 @@
+From afe6660827635f41479f67cf4b5986efaf3c5c70 Mon Sep 17 00:00:00 2001
+From: Chukun Pan <amadeus@jmu.edu.cn>
+Date: Thu, 10 Sep 2026 16:05:36 +0800
+Subject: [PATCH] clk: qcom: ipq8074: set BRANCH_HALT_VOTED flag for usb
+ master clocks
+
+Currently, on some boards with older versions of U-Boot, attempting
+to disable usb master clocks results in a "stuck at on" warning:
+
+[    3.005088] gcc_usb1_master_clk status stuck at 'on'
+[    3.187119] gcc_usb0_master_clk status stuck at 'on'
+
+The USB master clocks of IPQ5332 and IPQ5424 have the BRANCH_HALT_VOTED
+flag set, so let's do the same to fix the issue.
+
+Signed-off-by: Chukun Pan <amadeus@jmu.edu.cn>
+---
+ drivers/clk/qcom/gcc-ipq8074.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/clk/qcom/gcc-ipq8074.c
++++ b/drivers/clk/qcom/gcc-ipq8074.c
+@@ -2612,6 +2612,7 @@ static struct clk_branch gcc_sys_noc_usb
+ 
+ static struct clk_branch gcc_usb0_master_clk = {
+ 	.halt_reg = 0x3e000,
++	.halt_check = BRANCH_HALT_VOTED,
+ 	.clkr = {
+ 		.enable_reg = 0x3e000,
+ 		.enable_mask = BIT(0),
+@@ -2725,6 +2726,7 @@ static struct clk_branch gcc_sys_noc_usb
+ 
+ static struct clk_branch gcc_usb1_master_clk = {
+ 	.halt_reg = 0x3f000,
++	.halt_check = BRANCH_HALT_VOTED,
+ 	.clkr = {
+ 		.enable_reg = 0x3f000,
+ 		.enable_mask = BIT(0),
