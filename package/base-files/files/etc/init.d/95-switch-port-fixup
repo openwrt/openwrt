@@ -1,0 +1,43 @@
+#!/bin/sh /etc/rc.common
+# Re-enable switch ports that may have been left disabled by the
+# hardware-level portdisable devicetree property, once VLAN
+# isolation is confirmed active. Runs early (right after network
+# setup) rather than at the very end of boot, to restore wired
+# client connectivity as soon as it is safe to do so.
+
+START=21
+
+reenable_switch_ports() {
+	local cfg="$1"
+	local device vlan ports
+
+	config_get device "$cfg" device
+	config_get vlan "$cfg" vlan
+	config_get ports "$cfg" ports
+
+	[ -n "$device" ] || return
+
+	# Wait up to ~10s for swconfig to confirm this VLAN/port
+	# assignment is actually active before re-enabling, so we
+	# never open a port ahead of its isolation being in effect.
+	local tries=0
+	while [ "$tries" -lt 10 ]; do
+		if swconfig dev "$device" vlan "$vlan" show 2>/dev/null | grep -q "ports: ${ports} "; then
+			break
+		fi
+		sleep 1
+		tries=$((tries + 1))
+	done
+
+	for p in $ports; do
+		swconfig dev "$device" port "${p%%[a-z]*}" set disable 0
+	done
+	swconfig dev "$device" set apply
+}
+
+boot() {
+	[ -x /sbin/swconfig ] || return
+	. /lib/functions.sh
+	config_load network
+	config_foreach reenable_switch_ports switch_vlan
+}
