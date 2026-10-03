@@ -211,7 +211,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  
  		macb_writel(bp, NCR, ctrl | MACB_BIT(RE));
  
-@@ -2033,8 +2055,9 @@ static irqreturn_t macb_interrupt(int ir
+@@ -2030,8 +2052,9 @@ static irqreturn_t macb_interrupt(int ir
  				queue_writel(queue, ISR, MACB_BIT(TCOMP) |
  							 MACB_BIT(TXUBR));
  
@@ -222,7 +222,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  				wmb(); // ensure softirq can see update
  			}
  
-@@ -2490,6 +2513,11 @@ static netdev_tx_t macb_start_xmit(struc
+@@ -2484,6 +2507,11 @@ static netdev_tx_t macb_start_xmit(struc
  	skb_tx_timestamp(skb);
  
  	spin_lock(&bp->lock);
@@ -234,7 +234,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	macb_writel(bp, NCR, macb_readl(bp, NCR) | MACB_BIT(TSTART));
  	spin_unlock(&bp->lock);
  
-@@ -2919,6 +2947,37 @@ static void macb_configure_dma(struct ma
+@@ -2913,6 +2941,37 @@ static void macb_configure_dma(struct ma
  	}
  }
  
@@ -272,7 +272,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  static void macb_init_hw(struct macb *bp)
  {
  	u32 config;
-@@ -2947,6 +3006,11 @@ static void macb_init_hw(struct macb *bp
+@@ -2941,6 +3000,11 @@ static void macb_init_hw(struct macb *bp
  	if (bp->caps & MACB_CAPS_JUMBO)
  		bp->rx_frm_len_mask = MACB_RX_JFRMLEN_MASK;
  
@@ -284,7 +284,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	macb_configure_dma(bp);
  
  	/* Enable RX partial store and forward and set watermark */
-@@ -3314,6 +3378,52 @@ static void gem_get_ethtool_strings(stru
+@@ -3308,6 +3372,52 @@ static void gem_get_ethtool_strings(stru
  	}
  }
  
@@ -337,7 +337,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  static struct net_device_stats *macb_get_stats(struct net_device *dev)
  {
  	struct macb *bp = netdev_priv(dev);
-@@ -3901,6 +4011,8 @@ static const struct ethtool_ops macb_eth
+@@ -3895,6 +4005,8 @@ static const struct ethtool_ops macb_eth
  };
  
  static const struct ethtool_ops gem_ethtool_ops = {
@@ -346,7 +346,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	.get_regs_len		= macb_get_regs_len,
  	.get_regs		= macb_get_regs,
  	.get_wol		= macb_get_wol,
-@@ -3910,6 +4022,8 @@ static const struct ethtool_ops gem_etht
+@@ -3904,6 +4016,8 @@ static const struct ethtool_ops gem_etht
  	.get_ethtool_stats	= gem_get_ethtool_stats,
  	.get_strings		= gem_get_ethtool_strings,
  	.get_sset_count		= gem_get_sset_count,
@@ -355,7 +355,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	.get_link_ksettings     = macb_get_link_ksettings,
  	.set_link_ksettings     = macb_set_link_ksettings,
  	.get_ringparam		= macb_get_ringparam,
-@@ -5231,6 +5345,11 @@ static int macb_probe(struct platform_de
+@@ -5225,6 +5339,11 @@ static int macb_probe(struct platform_de
  			}
  		}
  	}
@@ -366,8 +366,8 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
 +
  	spin_lock_init(&bp->lock);
  	spin_lock_init(&bp->stats_lock);
- 
-@@ -5291,6 +5410,21 @@ static int macb_probe(struct platform_de
+ 	spin_lock_init(&bp->tsu_clk_lock);
+@@ -5286,6 +5405,21 @@ static int macb_probe(struct platform_de
  	else
  		bp->phy_interface = interface;
  

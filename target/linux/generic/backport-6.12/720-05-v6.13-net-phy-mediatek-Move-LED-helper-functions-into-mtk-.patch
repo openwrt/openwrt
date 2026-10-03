@@ -24,7 +24,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -14433,7 +14433,9 @@ M:	SkyLake Huang <SkyLake.Huang@mediatek
+@@ -14434,7 +14434,9 @@ M:	SkyLake Huang <SkyLake.Huang@mediatek
  L:	netdev@vger.kernel.org
  S:	Maintained
  F:	drivers/net/phy/mediatek/mtk-ge-soc.c
@@ -226,7 +226,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  }
  
  static const unsigned long supported_triggers =
-@@ -1269,155 +1176,26 @@ static const unsigned long supported_tri
+@@ -1269,162 +1176,26 @@ static const unsigned long supported_tri
  static int mt798x_phy_led_hw_is_supported(struct phy_device *phydev, u8 index,
  					  unsigned long rules)
  {
@@ -288,17 +288,24 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 -	if (!rules)
 -		return 0;
 -
--	if (on & MTK_PHY_LED_ON_LINK)
+-	/* TRIGGER_NETDEV_LINK must not be reported together with any of the
+-	 * per-speed rules, the netdev trigger rejects that combination.
+-	 * MTK_PHY_LED_ON_LINK holds every speed this LED can indicate and is what
+-	 * mt798x_phy_led_hw_control_set() programs for TRIGGER_NETDEV_LINK, so
+-	 * report the speed independent rule only when they are all on.
+-	 */
+-	if ((on & MTK_PHY_LED_ON_LINK) == MTK_PHY_LED_ON_LINK) {
 -		*rules |= BIT(TRIGGER_NETDEV_LINK);
+-	} else {
+-		if (on & MTK_PHY_LED_ON_LINK10)
+-			*rules |= BIT(TRIGGER_NETDEV_LINK_10);
 -
--	if (on & MTK_PHY_LED_ON_LINK10)
--		*rules |= BIT(TRIGGER_NETDEV_LINK_10);
+-		if (on & MTK_PHY_LED_ON_LINK100)
+-			*rules |= BIT(TRIGGER_NETDEV_LINK_100);
 -
--	if (on & MTK_PHY_LED_ON_LINK100)
--		*rules |= BIT(TRIGGER_NETDEV_LINK_100);
--
--	if (on & MTK_PHY_LED_ON_LINK1000)
--		*rules |= BIT(TRIGGER_NETDEV_LINK_1000);
+-		if (on & MTK_PHY_LED_ON_LINK1000)
+-			*rules |= BIT(TRIGGER_NETDEV_LINK_1000);
+-	}
 -
 -	if (on & MTK_PHY_LED_ON_FDX)
 -		*rules |= BIT(TRIGGER_NETDEV_FULL_DUPLEX);
@@ -393,7 +400,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  };
  
  static bool mt7988_phy_led_get_polarity(struct phy_device *phydev, int led_num)
-@@ -1492,14 +1270,6 @@ static int mt7988_phy_probe_shared(struc
+@@ -1499,14 +1270,6 @@ static int mt7988_phy_probe_shared(struc
  	return 0;
  }
  
@@ -408,7 +415,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  static int mt7988_phy_probe(struct phy_device *phydev)
  {
  	struct mtk_socphy_shared *shared;
-@@ -1525,7 +1295,7 @@ static int mt7988_phy_probe(struct phy_d
+@@ -1532,7 +1295,7 @@ static int mt7988_phy_probe(struct phy_d
  
  	phydev->priv = priv;
  
@@ -417,7 +424,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	err = mt7988_phy_fix_leds_polarities(phydev);
  	if (err)
-@@ -1552,7 +1322,7 @@ static int mt7981_phy_probe(struct phy_d
+@@ -1559,7 +1322,7 @@ static int mt7981_phy_probe(struct phy_d
  
  	phydev->priv = priv;
  
@@ -428,7 +435,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  }
 --- /dev/null
 +++ b/drivers/net/phy/mediatek/mtk-phy-lib.c
-@@ -0,0 +1,254 @@
+@@ -0,0 +1,261 @@
 +// SPDX-License-Identifier: GPL-2.0
 +#include <linux/phy.h>
 +#include <linux/module.h>
@@ -498,20 +505,27 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 +	if (!rules)
 +		return 0;
 +
-+	if (on & on_set)
++	/* TRIGGER_NETDEV_LINK must not be reported together with any of the
++	 * per-speed rules, the netdev trigger rejects that combination.
++	 * on_set holds every speed this LED can indicate and is what
++	 * mtk_phy_led_hw_ctrl_set() programs for TRIGGER_NETDEV_LINK, so
++	 * report the speed independent rule only when they are all on.
++	 */
++	if ((on & on_set) == on_set) {
 +		*rules |= BIT(TRIGGER_NETDEV_LINK);
++	} else {
++		if (on & MTK_PHY_LED_ON_LINK10)
++			*rules |= BIT(TRIGGER_NETDEV_LINK_10);
 +
-+	if (on & MTK_PHY_LED_ON_LINK10)
-+		*rules |= BIT(TRIGGER_NETDEV_LINK_10);
++		if (on & MTK_PHY_LED_ON_LINK100)
++			*rules |= BIT(TRIGGER_NETDEV_LINK_100);
 +
-+	if (on & MTK_PHY_LED_ON_LINK100)
-+		*rules |= BIT(TRIGGER_NETDEV_LINK_100);
++		if (on & MTK_PHY_LED_ON_LINK1000)
++			*rules |= BIT(TRIGGER_NETDEV_LINK_1000);
 +
-+	if (on & MTK_PHY_LED_ON_LINK1000)
-+		*rules |= BIT(TRIGGER_NETDEV_LINK_1000);
-+
-+	if (on & MTK_PHY_LED_ON_LINK2500)
-+		*rules |= BIT(TRIGGER_NETDEV_LINK_2500);
++		if (on & MTK_PHY_LED_ON_LINK2500)
++			*rules |= BIT(TRIGGER_NETDEV_LINK_2500);
++	}
 +
 +	if (on & MTK_PHY_LED_ON_FDX)
 +		*rules |= BIT(TRIGGER_NETDEV_FULL_DUPLEX);

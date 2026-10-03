@@ -303,7 +303,7 @@ Link: https://lore.kernel.org/all/20241002141630.433502-2-steven.price@arm.com
  	kfree(its_dev);
  }
  
-@@ -5162,8 +5249,9 @@ static int __init its_probe_one(struct i
+@@ -5171,8 +5258,9 @@ static int __init its_probe_one(struct i
  		}
  	}
  
@@ -315,7 +315,7 @@ Link: https://lore.kernel.org/all/20241002141630.433502-2-steven.price@arm.com
  	if (!page) {
  		err = -ENOMEM;
  		goto out_unmap_sgir;
-@@ -5227,7 +5315,7 @@ static int __init its_probe_one(struct i
+@@ -5238,7 +5326,7 @@ out_free_collection:
  out_free_tables:
  	its_free_tables(its);
  out_free_cmd:
@@ -324,7 +324,7 @@ Link: https://lore.kernel.org/all/20241002141630.433502-2-steven.price@arm.com
  out_unmap_sgir:
  	if (its->sgir_base)
  		iounmap(its->sgir_base);
-@@ -5713,6 +5801,10 @@ int __init its_init(struct fwnode_handle
+@@ -5728,6 +5816,10 @@ int __init its_init(struct fwnode_handle
  	bool has_v4_1 = false;
  	int err;
  

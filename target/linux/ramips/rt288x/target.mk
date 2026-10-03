@@ -4,7 +4,7 @@
 
 SUBTARGET:=rt288x
 BOARDNAME:=RT288x based boards
-FEATURES+=small_flash source-only
+FEATURES+=small_flash
 CPU_TYPE:=24kc
 
 DEFAULT_PACKAGES += kmod-rt2800-soc wpad-basic-mbedtls swconfig
