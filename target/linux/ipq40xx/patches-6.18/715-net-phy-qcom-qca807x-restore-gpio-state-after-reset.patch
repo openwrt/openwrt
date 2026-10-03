@@ -1,0 +1,245 @@
+From ba9f68b22f10bfa52601dc14caacfd72000130b5 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Fri, 10 Jul 2026 16:11:58 -0700
+Subject: [PATCH] net: phy: qcom: qca807x: restore GPIO output state after PHY
+ reset
+
+The QCA807x "GPIO" pins are virtual - they are driven by writing the
+PHY's MMD7 LED_FORCE_CTRL registers. A GPIO hog (e.g. USB power enable
+on the FB4040) sets the desired output at gpiochip registration time.
+
+However, the PHY driver performs a software reset (.soft_reset) as well
+as a package-wide analog reset (qca807x_phy_package_config_init_once)
+during switch/port bring-up. Both of these clear the MMD7 LED_FORCE_CTRL
+registers, reverting the hog pin to its hardware default and dropping the
+output. Since gpiolib hogs are only applied once at gpiochip_add, the
+output stays lost until something else writes the register.
+
+Track the desired output state of each GPIO line and re-apply it from
+config_init (which runs after every soft reset / package init) and from
+resume. This fixes the FB4040 USB power being switched off during boot.
+
+Assisted-by: opencode:hy3-free
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ drivers/net/phy/qcom/qca807x.c | 110 ++++++++++++++++++++++++++++-----
+ 1 file changed, 93 insertions(+), 17 deletions(-)
+
+--- a/drivers/net/phy/qcom/qca807x.c
++++ b/drivers/net/phy/qcom/qca807x.c
+@@ -104,6 +104,7 @@
+ 
+ #define QCA807X_COMBO_ADDR_OFFSET			4
+ #define QCA807X_PQSGMII_ADDR_OFFSET			5
++#define QCA807X_GPIO_COUNT				2
+ #define SERDES_RESET_SLEEP				100
+ 
+ enum qca807x_global_phy {
+@@ -118,12 +119,15 @@ struct qca807x_shared_priv {
+ 
+ struct qca807x_gpio_priv {
+ 	struct phy_device *phy;
++	u8 out_state;
++	u8 out_val;
+ };
+ 
+ struct qca807x_priv {
+ 	bool dac_full_amplitude;
+ 	bool dac_full_bias_current;
+ 	bool dac_disable_bias_current_tweak;
++	struct qca807x_gpio_priv *gpio_priv;
+ 	struct qcom_phy_hw_stats hw_stats;
+ };
+ 
+@@ -373,19 +377,21 @@ static int qca807x_gpio_get(struct gpio_
+ 
+ 	reg = QCA807X_MMD7_LED_FORCE_CTRL(offset);
+ 	val = phy_read_mmd(priv->phy, MDIO_MMD_AN, reg);
++	if (val < 0)
++		return val;
+ 
+ 	return !!FIELD_GET(QCA807X_GPIO_FORCE_MODE_MASK, val);
+ }
+ 
+-static int qca807x_gpio_set(struct gpio_chip *gc, unsigned int offset, int value)
++static int qca807x_gpio_apply(struct phy_device *phydev, unsigned int offset,
++			      int value)
+ {
+-	struct qca807x_gpio_priv *priv = gpiochip_get_data(gc);
+ 	u16 reg;
+ 	int val;
+ 
+ 	reg = QCA807X_MMD7_LED_FORCE_CTRL(offset);
+ 
+-	val = phy_read_mmd(priv->phy, MDIO_MMD_AN, reg);
++	val = phy_read_mmd(phydev, MDIO_MMD_AN, reg);
+ 	if (val < 0)
+ 		return val;
+ 
+@@ -393,7 +399,25 @@ static int qca807x_gpio_set(struct gpio_
+ 	val |= QCA807X_GPIO_FORCE_EN;
+ 	val |= FIELD_PREP(QCA807X_GPIO_FORCE_MODE_MASK, value);
+ 
+-	return phy_write_mmd(priv->phy, MDIO_MMD_AN, reg, val);
++	return phy_write_mmd(phydev, MDIO_MMD_AN, reg, val);
++}
++
++static int qca807x_gpio_set(struct gpio_chip *gc, unsigned int offset, int value)
++{
++	struct qca807x_gpio_priv *priv = gpiochip_get_data(gc);
++	int ret;
++
++	ret = qca807x_gpio_apply(priv->phy, offset, value);
++	if (ret)
++		return ret;
++
++	priv->out_state |= BIT(offset);
++	if (value)
++		priv->out_val |= BIT(offset);
++	else
++		priv->out_val &= ~BIT(offset);
++
++	return 0;
+ }
+ 
+ static int qca807x_gpio_dir_out(struct gpio_chip *gc, unsigned int offset, int value)
+@@ -401,17 +425,42 @@ static int qca807x_gpio_dir_out(struct g
+ 	return qca807x_gpio_set(gc, offset, value);
+ }
+ 
+-static int qca807x_gpio(struct phy_device *phydev)
++static int qca807x_gpio_restore(struct phy_device *phydev)
++{
++	struct qca807x_priv *priv = phydev->priv;
++	struct qca807x_gpio_priv *gpriv;
++	unsigned int i;
++	int ret;
++
++	if (!priv->gpio_priv)
++		return 0;
++
++	gpriv = priv->gpio_priv;
++
++	for (i = 0; i < QCA807X_GPIO_COUNT; i++) {
++		if (gpriv->out_state & BIT(i)) {
++			ret = qca807x_gpio_apply(phydev, i,
++						 !!(gpriv->out_val & BIT(i)));
++			if (ret)
++				return ret;
++		}
++	}
++
++	return 0;
++}
++
++static int qca807x_gpio(struct phy_device *phydev, struct qca807x_priv *priv)
+ {
+ 	struct device *dev = &phydev->mdio.dev;
+-	struct qca807x_gpio_priv *priv;
++	struct qca807x_gpio_priv *gpriv;
+ 	struct gpio_chip *gc;
+ 
+-	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
+-	if (!priv)
++	gpriv = devm_kzalloc(dev, sizeof(*gpriv), GFP_KERNEL);
++	if (!gpriv)
+ 		return -ENOMEM;
+ 
+-	priv->phy = phydev;
++	gpriv->phy = phydev;
++	priv->gpio_priv = gpriv;
+ 
+ 	gc = devm_kzalloc(dev, sizeof(*gc), GFP_KERNEL);
+ 	if (!gc)
+@@ -419,7 +468,7 @@ static int qca807x_gpio(struct phy_devic
+ 
+ 	gc->label = dev_name(dev);
+ 	gc->base = -1;
+-	gc->ngpio = 2;
++	gc->ngpio = QCA807X_GPIO_COUNT;
+ 	gc->parent = dev;
+ 	gc->owner = THIS_MODULE;
+ 	gc->can_sleep = true;
+@@ -428,7 +477,7 @@ static int qca807x_gpio(struct phy_devic
+ 	gc->get = qca807x_gpio_get;
+ 	gc->set = qca807x_gpio_set;
+ 
+-	return devm_gpiochip_add_data(dev, gc, priv);
++	return devm_gpiochip_add_data(dev, gc, gpriv);
+ }
+ 
+ static int qca807x_read_fiber_status(struct phy_device *phydev)
+@@ -733,7 +782,7 @@ static int qca807x_probe(struct phy_devi
+ 
+ 	/* Do not register a GPIO controller unless flagged for it */
+ 	if (IS_ENABLED(CONFIG_GPIOLIB) && of_property_read_bool(node, "gpio-controller")) {
+-		ret = qca807x_gpio(phydev);
++		ret = qca807x_gpio(phydev, priv);
+ 		if (ret)
+ 			return ret;
+ 	}
+@@ -777,9 +826,19 @@ static int qca807x_config_init(struct ph
+ 		control_dac |= QCA807X_CONTROL_DAC_DSP_BIAS_CURRENT;
+ 	if (!priv->dac_disable_bias_current_tweak)
+ 		control_dac |= QCA807X_CONTROL_DAC_BIAS_CURRENT_TWEAK;
+-	return phy_write_mmd(phydev, MDIO_MMD_AN,
+-			     QCA807X_MMD7_1000BASE_T_POWER_SAVE_PER_CABLE_LENGTH,
+-			     control_dac);
++	ret = phy_write_mmd(phydev, MDIO_MMD_AN,
++			    QCA807X_MMD7_1000BASE_T_POWER_SAVE_PER_CABLE_LENGTH,
++			    control_dac);
++	if (ret)
++		return ret;
++
++	if (IS_ENABLED(CONFIG_GPIOLIB)) {
++		ret = qca807x_gpio_restore(phydev);
++		if (ret)
++			return ret;
++	}
++
++	return 0;
+ }
+ 
+ static int qca807x_update_stats(struct phy_device *phydev)
+@@ -798,6 +857,23 @@ static void qca807x_get_phy_stats(struct
+ 	qcom_phy_get_stats(stats, priv->hw_stats);
+ }
+ 
++static int qca807x_resume(struct phy_device *phydev)
++{
++	int ret;
++
++	ret = genphy_resume(phydev);
++	if (ret)
++		return ret;
++
++	if (IS_ENABLED(CONFIG_GPIOLIB)) {
++		ret = qca807x_gpio_restore(phydev);
++		if (ret)
++			return ret;
++	}
++
++	return 0;
++}
++
+ static struct phy_driver qca807x_drivers[] = {
+ 	{
+ 		PHY_ID_MATCH_EXACT(PHY_ID_QCA8072),
+@@ -812,7 +888,7 @@ static struct phy_driver qca807x_drivers
+ 		.soft_reset	= genphy_soft_reset,
+ 		.get_tunable	= at803x_get_tunable,
+ 		.set_tunable	= at803x_set_tunable,
+-		.resume		= genphy_resume,
++		.resume		= qca807x_resume,
+ 		.suspend	= genphy_suspend,
+ 		.cable_test_start	= qca807x_cable_test_start,
+ 		.cable_test_get_status	= qca808x_cable_test_get_status,
+@@ -834,7 +910,7 @@ static struct phy_driver qca807x_drivers
+ 		.soft_reset	= genphy_soft_reset,
+ 		.get_tunable	= at803x_get_tunable,
+ 		.set_tunable	= at803x_set_tunable,
+-		.resume		= genphy_resume,
++		.resume		= qca807x_resume,
+ 		.suspend	= genphy_suspend,
+ 		.cable_test_start	= qca807x_cable_test_start,
+ 		.cable_test_get_status	= qca808x_cable_test_get_status,
