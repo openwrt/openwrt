@@ -388,36 +388,45 @@
 /*
  * SFP+ SerDes lanes (panels 5-12).
  *
- * The SFP+ TX pairs are polarity-inverted.
+ * The SFP+ TX pairs are polarity-inverted. DAC detection selects the
+ * medium-specific transmitter configuration and receiver calibration.
  */
 &serdes6 {
 	tx-polarity = <PHY_POL_INVERT>;
+	realtek,sfp-dac-detect;
 };
 
 &serdes7 {
 	tx-polarity = <PHY_POL_INVERT>;
+	realtek,sfp-dac-detect;
 };
 
 &serdes8 {
 	tx-polarity = <PHY_POL_INVERT>;
+	realtek,sfp-dac-detect;
 };
 
 &serdes9 {
 	tx-polarity = <PHY_POL_INVERT>;
+	realtek,sfp-dac-detect;
 };
 
 &serdes10 {
 	tx-polarity = <PHY_POL_INVERT>;
+	realtek,sfp-dac-detect;
 };
 
 &serdes11 {
 	tx-polarity = <PHY_POL_INVERT>;
+	realtek,sfp-dac-detect;
 };
 
 &serdes12 {
 	tx-polarity = <PHY_POL_INVERT>;
+	realtek,sfp-dac-detect;
 };
 
 &serdes13 {
 	tx-polarity = <PHY_POL_INVERT>;
+	realtek,sfp-dac-detect;
 };
