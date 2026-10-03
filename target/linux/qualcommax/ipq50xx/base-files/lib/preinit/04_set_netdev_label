@@ -2,21 +2,29 @@ set_netdev_labels() {
 	local dir
 	local label
 	local netdev
+	local phase
 
-	for dir in /sys/class/net/*; do
-		[ -r "$dir/device/of_node/label" ] || continue
-		read -r label < "$dir/device/of_node/label"
-		netdev="${dir##*/}"
-		[ "$netdev" = "$label" ] && continue
-		ip link set "$netdev" name "$label"
-	done
+	# park: move every mislabelled interface to a temporary name first,
+	# so that swaps (e.g. eth0 <-> eth1) cannot collide
+	# rename: give every interface its final name
+	for phase in park rename; do
+		for dir in /sys/class/net/*; do
+			label=
+			[ -r "$dir/device/of_node/label" ] && \
+				read -r label < "$dir/device/of_node/label"
+			[ -r "$dir/device/of_node/openwrt,netdev-name" ] && \
+				read -r label < "$dir/device/of_node/openwrt,netdev-name"
+			[ -n "$label" ] || continue
 
-	for dir in /sys/class/net/*; do
-		[ -r "$dir/device/of_node/openwrt,netdev-name" ] || continue
-		read -r label < "$dir/device/of_node/openwrt,netdev-name"
-		netdev="${dir##*/}"
-		[ "$netdev" = "$label" ] && continue
-		ip link set "$netdev" name "$label"
+			netdev="${dir##*/}"
+			[ "$netdev" = "$label" ] && continue
+
+			if [ "$phase" = "park" ]; then
+				ip link set "$netdev" name "tmp-$label"
+			else
+				ip link set "$netdev" name "$label"
+			fi
+		done
 	done
 }
 
