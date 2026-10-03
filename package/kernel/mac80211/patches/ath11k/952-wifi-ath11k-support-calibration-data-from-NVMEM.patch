@@ -1,0 +1,114 @@
+From: Robert Marko <robimarko@gmail.com>
+Date: Tue, 22 Sep 2026 12:00:00 +0200
+Subject: [PATCH] wifi: ath11k: support calibration data from NVMEM
+
+Allow ath11k devices to supply calibration data through a Device Tree
+NVMEM cell named "calibration". This mirrors ath10k's calibration cell
+support and lets boards use the in-flash calibration data directly,
+without creating a firmware file in userspace.
+
+The NVMEM cell is preferred to the existing per-device and generic
+calibration files. If it is absent (or cannot be read), retain the
+existing fallback behaviour. Propagate -EPROBE_DEFER so that the driver
+waits for an NVMEM provider which has not yet been probed.
+
+Signed-off-by: Robert Marko <robimarko@gmail.com>
+---
+ drivers/net/wireless/ath/ath11k/qmi.c | 51 +++++++++++++++++++++++++++++++--
+ 1 file changed, 48 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/qmi.c
++++ b/drivers/net/wireless/ath/ath11k/qmi.c
+@@ -15,6 +15,7 @@
+ #include <linux/of_reserved_mem.h>
+ #include <linux/ioport.h>
+ #include <linux/firmware.h>
++#include <linux/nvmem-consumer.h>
+ #include <linux/of_irq.h>
+ 
+ #define SLEEP_CLOCK_SELECT_INTERNAL_BIT	0x02
+@@ -2431,14 +2432,44 @@ err_free_req:
+ 	return ret;
+ }
+ 
++static int ath11k_qmi_get_caldata_nvmem(struct ath11k_base *ab,
++					 void **data, u32 *len)
++{
++	struct nvmem_cell *cell;
++	size_t cell_len;
++	void *buf;
++
++	cell = devm_nvmem_cell_get(ab->dev, "calibration");
++	if (IS_ERR(cell))
++		return PTR_ERR(cell);
++
++	buf = nvmem_cell_read(cell, &cell_len);
++	if (IS_ERR(buf))
++		return PTR_ERR(buf);
++
++	if (cell_len > ab->hw_params.fw.board_size) {
++		ath11k_warn(ab,
++			    "invalid calibration data length in nvmem-cell 'calibration': %zu > %zu\n",
++			    cell_len, ab->hw_params.fw.board_size);
++		kfree(buf);
++		return -EMSGSIZE;
++	}
++
++	*data = buf;
++	*len = cell_len;
++
++	return 0;
++}
++
+ static int ath11k_qmi_load_bdf_qmi(struct ath11k_base *ab,
+ 				   bool regdb)
+ {
+ 	struct device *dev = ab->dev;
+ 	char filename[ATH11K_QMI_MAX_BDF_FILE_NAME_SIZE];
+-	const struct firmware *fw_entry;
+ 	struct ath11k_board_data bd;
+ 	u32 fw_size, file_type;
++	const struct firmware *fw_entry = NULL;
++	void *caldata = NULL;
+ 	int ret = 0, bdf_type;
+ 	const u8 *tmp;
+ 
+@@ -2482,6 +2513,18 @@ static int ath11k_qmi_load_bdf_qmi(struc
+ 		fw_size = ATH11K_QMI_MAX_BDF_FILE_NAME_SIZE;
+ 	} else {
+ 		file_type = ATH11K_QMI_FILE_TYPE_CALDATA;
++		ret = ath11k_qmi_get_caldata_nvmem(ab, &caldata, &fw_size);
++		if (!ret) {
++			tmp = caldata;
++			goto load_caldata;
++		}
++
++		if (ret == -EPROBE_DEFER)
++			goto out;
++
++		ath11k_dbg(ab, ATH11K_DBG_QMI,
++			   "failed to load calibration data from nvmem-cell: %d, try file next\n",
++			   ret);
+ 
+ 		/* cal-<bus>-<id>.bin */
+ 		snprintf(filename, sizeof(filename), "cal-%s-%s.bin",
+@@ -2511,6 +2554,7 @@ success:
+ 		tmp = fw_entry->data;
+ 	}
+ 
++load_caldata:
+ 	ret = ath11k_qmi_load_file_target_mem(ab, tmp, fw_size, file_type);
+ 	if (ret < 0) {
+ 		ath11k_warn(ab, "qmi failed to load caldata\n");
+@@ -2520,9 +2564,10 @@ success:
+ 	ath11k_dbg(ab, ATH11K_DBG_QMI, "caldata type: %u\n", file_type);
+ 
+ out_qmi_cal:
+-	if (!ab->qmi.target.eeprom_caldata)
++	if (fw_entry)
+ 		release_firmware(fw_entry);
+ out:
++	kfree(caldata);
+ 	ath11k_core_free_bdf(ab, &bd);
+ 	ath11k_dbg(ab, ATH11K_DBG_QMI, "BDF download sequence completed\n");
+ 
