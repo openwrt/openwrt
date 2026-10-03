@@ -39,4 +39,16 @@ define Package/mipi-dbi-ubnt-utr/install
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/ubnt,utr-lcd.bin $(1)/lib/firmware/
 endef
 
+define Package/mipi-dbi-ph240240t004-zar
+  $(Package/mipi-dbi-default)
+  TITLE:=MIPI DBI LCD init sequence for PH240240T004-ZAR
+  DEPENDS+=@TARGET_mediatek_filogic
+endef
+
+define Package/mipi-dbi-ph240240t004-zar/install
+	$(INSTALL_DIR) $(1)/lib/firmware
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/ph240240t004-zar.bin $(1)/lib/firmware/
+endef
+
 $(eval $(call BuildPackage,mipi-dbi-ubnt-utr))
+$(eval $(call BuildPackage,mipi-dbi-ph240240t004-zar))
