@@ -14,6 +14,9 @@ econet_setup_interfaces()
 	jiofiber,jcow414)
 		ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
 		;;
+	zyxel,ex3301-t0)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
+		;;
 	*)
 		# The remaining boards have no DSA switch driver yet.
 		ucidef_set_interface_lan "eth0"
@@ -38,6 +41,11 @@ econet_setup_macs()
 		lan_mac=$(get_mac_ascii "$conffile" brmac)
 		wan_mac=$(get_mac_ascii "$conffile" internetmac)
 		label_mac=$wan_mac
+		;;
+	zyxel,ex3301-t0)
+		lan_mac=$(mtd_get_mac_binary "factory" 0x0)
+		[ -n "$lan_mac" ] && wan_mac="$(macaddr_add $lan_mac 1)"
+		label_mac=$lan_mac
 		;;
 	esac
 

@@ -327,6 +327,19 @@ static int reserve_block_count(const struct en75_bmt_m *ctx)
 	return ctx->mtk->total_blks - ctx->reserve_area_begin;
 }
 
+static bool is_block_in_bmt_or_bbt(const struct en75_bmt_m *ctx, u16 block)
+{
+	for (int i = 0; i < ctx->bmt.header.size; i++) {
+		if (ctx->bmt.table[i].from == block || ctx->bmt.table[i].to == block)
+			return true;
+	}
+	for (int i = 0; i < ctx->bbt.header.size; i++) {
+		if (ctx->bbt.table[i] == block)
+			return true;
+	}
+	return false;
+}
+
 /* return a block_info or error pointer */
 static struct block_info *find_available_block(const struct en75_bmt_m *ctx, bool start_from_end)
 {
@@ -343,7 +356,8 @@ static struct block_info *find_available_block(const struct en75_bmt_m *ctx, boo
 		d = -1;
 	}
 	for (; i < limit && i >= 0; i += d) {
-		if (ctx->rblocks[i].status == BS_AVAILABLE)
+		if (ctx->rblocks[i].status == BS_AVAILABLE &&
+		    !is_block_in_bmt_or_bbt(ctx, ctx->rblocks[i].index.index))
 			return &ctx->rblocks[i];
 	}
 	return ERR_PTR(-ENOSPC);
@@ -590,6 +604,7 @@ static int w_sync_tables(struct en75_bmt_m *ctx)
 			log_pfx, new_bmt_block->index.index);
 		mark_for_erasure(ctx, BS_BMT);
 		new_bmt_block->status = BS_BMT;
+		w_erase_pending(ctx);
 
 		ctx->bmt_dirty -= dirty;
 		WARN_ON(ctx->bmt_dirty);
@@ -1006,6 +1021,8 @@ static int r_scan_reserve(struct en75_bmt_m *ctx)
 	int rblock = 0;
 	int rblocks_available = 0;
 	u8 fdm[4];
+	bool found_bmt = false;
+	bool found_bbt = false;
 
 	for (; cursor > 0; cursor--) {
 		int ret;
@@ -1042,11 +1059,25 @@ static int r_scan_reserve(struct en75_bmt_m *ctx)
 			pr_debug("%s: found mapped block %d\n", log_pfx, cursor);
 			bif.status = BS_MAPPED;
 		} else if (!try_parse_bbt(&ctx->bbt, data_buf, pg_size, ctx->bbt_table_size)) {
-			pr_info("%s: found BBT in block %d\n", log_pfx, cursor);
-			bif.status = BS_BBT;
+			if (found_bbt) {
+				pr_info("%s: skipping older BBT in block %d, marking for erase\n",
+					log_pfx, cursor);
+				bif.status = BS_NEED_ERASE;
+			} else {
+				pr_info("%s: found BBT in block %d\n", log_pfx, cursor);
+				bif.status = BS_BBT;
+				found_bbt = true;
+			}
 		} else if (!try_parse_bmt(&ctx->bmt, data_buf, pg_size)) {
-			pr_info("%s: found BMT in block %d\n", log_pfx, cursor);
-			bif.status = BS_BMT;
+			if (found_bmt) {
+				pr_info("%s: skipping older BMT in block %d, marking for erase\n",
+					log_pfx, cursor);
+				bif.status = BS_NEED_ERASE;
+			} else {
+				pr_info("%s: found BMT in block %d\n", log_pfx, cursor);
+				bif.status = BS_BMT;
+				found_bmt = true;
+			}
 		} else if (block_is_erased(data_buf, pg_size, fdm, sizeof(fdm))) {
 			pr_debug("%s: found available block %d\n", log_pfx, cursor);
 			bif.status = BS_AVAILABLE;
@@ -1330,6 +1361,25 @@ static int w_init(struct en75_bmt_m *ctx, struct device_node *np)
 					      factory_badblocks_count);
 		if (ret)
 			return ret;
+	}
+
+	{
+		int rblocks = reserve_block_count(ctx);
+
+		for (int i = 0; i < ctx->bmt.header.size; i++) {
+			for (int j = 0; j < rblocks; j++) {
+				if (ctx->rblocks[j].index.index == ctx->bmt.table[i].to)
+					ctx->rblocks[j].status = BS_MAPPED;
+				if (ctx->rblocks[j].index.index == ctx->bmt.table[i].from)
+					ctx->rblocks[j].status = BS_BAD;
+			}
+		}
+		for (int i = 0; i < ctx->bbt.header.size; i++) {
+			for (int j = 0; j < rblocks; j++) {
+				if (ctx->rblocks[j].index.index == ctx->bbt.table[i])
+					ctx->rblocks[j].status = BS_BAD;
+			}
+		}
 	}
 
 	pr_info("%s: blocks: total: %d, user: %d, factory_bad: %d, worn: %d reserve: %d\n",
