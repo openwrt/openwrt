@@ -138,7 +138,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  struct yt8521_priv {
  	/* combo_advertising is used for case of YT8521 in combo mode,
  	 * this means that yt8521 may work in utp or fiber mode which depends
-@@ -2249,6 +2328,572 @@ static int yt8521_get_features(struct ph
+@@ -2248,6 +2327,572 @@ static int yt8521_get_features(struct ph
  	return ret;
  }
  
@@ -711,7 +711,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  static struct phy_driver motorcomm_phy_drvs[] = {
  	{
  		PHY_ID_MATCH_EXACT(PHY_ID_YT8511),
-@@ -2304,11 +2949,28 @@ static struct phy_driver motorcomm_phy_d
+@@ -2303,11 +2948,28 @@ static struct phy_driver motorcomm_phy_d
  		.suspend	= yt8521_suspend,
  		.resume		= yt8521_resume,
  	},
@@ -741,7 +741,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  MODULE_AUTHOR("Peter Geis");
  MODULE_AUTHOR("Frank");
  MODULE_LICENSE("GPL");
-@@ -2318,6 +2980,7 @@ static const struct mdio_device_id __may
+@@ -2317,6 +2979,7 @@ static const struct mdio_device_id __may
  	{ PHY_ID_MATCH_EXACT(PHY_ID_YT8521) },
  	{ PHY_ID_MATCH_EXACT(PHY_ID_YT8531) },
  	{ PHY_ID_MATCH_EXACT(PHY_ID_YT8531S) },
