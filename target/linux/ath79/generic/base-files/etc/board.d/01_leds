@@ -134,6 +134,13 @@ avm,fritzdvbc)
 	ucidef_set_led_rssi "rssimediumhigh" "RSSIMEDIUMHIGH" "green:rssimediumhigh" "wlan1" "60" "100"
 	ucidef_set_led_rssi "rssihigh" "RSSIHIGH" "green:rssihigh" "wlan1" "80" "100"
 	;;
+buffalo,wzr-450hp2)
+	ucidef_set_led_netdev "lan1" "LAN1" "qca8k-0.0:00:green:lan" "lan1" "link_10 link_100 link_1000 tx rx"
+	ucidef_set_led_netdev "lan2" "LAN2" "qca8k-0.0:01:green:lan" "lan2" "link_10 link_100 link_1000 tx rx"
+	ucidef_set_led_netdev "lan3" "LAN3" "qca8k-0.0:02:green:lan" "lan3" "link_10 link_100 link_1000 tx rx"
+	ucidef_set_led_netdev "lan4" "LAN4" "qca8k-0.0:03:green:lan" "lan4" "link_10 link_100 link_1000 tx rx"
+	ucidef_set_led_netdev "wan" "WAN" "qca8k-0.0:04:green:wan" "wan" "link_10 link_100 link_1000 tx rx"
+	;;
 buffalo,wzr-hp-g300nh-rb|\
 buffalo,wzr-hp-g300nh-s)
 	ucidef_set_led_netdev "router" "Router" "green:router" "eth1"
