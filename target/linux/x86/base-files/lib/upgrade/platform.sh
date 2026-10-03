@@ -81,7 +81,7 @@ platform_do_upgrade_onie() {
 }
 
 platform_check_image() {
-	local diskdev partdev diff
+	local diskdev partdev diff extra_parts
 	[ "$#" -gt 1 ] && return 1
 
 	if is_onie_install; then
@@ -119,13 +119,40 @@ platform_check_image() {
 	#compare tables
 	diff="$(grep -F -x -v -f /tmp/partmap.bootdisk /tmp/partmap.image)"
 
+	# Detect partitions beyond the two defaults
+	extra_parts="$(awk '$1 > 2 { printf "%s ", $1 }' /tmp/partmap.bootdisk)"
+
 	rm -f /tmp/image.bs /tmp/partmap.bootdisk /tmp/partmap.image
 
 	if [ -n "$diff" ]; then
-		v "Partition layout has changed. Full image will be written."
-		ask_bool 0 "Abort" && exit 1
-		return 0
+		# Applying a changed layout requires rewriting the whole disk. If
+		# non-default partitions exist, that destroys them, so refuse
+		# unless the user opted in with -p (SAVE_PARTITIONS=0). The refusal
+		# marks the image invalid-but-forceable, so sysupgrade aborts
+		# unless -p or -F/--force is given.
+		#
+		# SAVE_PARTITIONS is exported by sysupgrade so it reaches this
+		# (validate_firmware_image child) process. If it is unset, this is
+		# not a sysupgrade run (e.g. a GUI image check), so default to the
+		# safe choice and refuse: "$SAVE_PARTITIONS" != "0" is then true.
+		if [ -n "$extra_parts" ] && [ "$SAVE_PARTITIONS" != "0" ]; then
+			# Report the reason to GUI/RPC callers, which only see the
+			# JSON test results and not the messages printed below.
+			notify_firmware_test_result "partition_layout" 0
+			v "Partition layout changed; refusing to erase non-default partition(s): ${extra_parts}"
+			echo "The new image uses a different partition layout than the one"       >&2
+			echo "currently installed. Applying it requires rewriting the partition"  >&2
+			echo "table, which will DESTROY these non-default partition(s) and all"   >&2
+			echo "data on them: ${extra_parts}"                                        >&2
+			echo "Re-run sysupgrade with -p to proceed and erase them."                >&2
+			return 1
+		fi
+		# Either only the default partitions are present or the user opted in with -p.
+		notify_firmware_test_result "partition_layout" 1
+		v "Partition layout has changed, full image will be written."
 	fi
+
+	return 0
 }
 
 platform_copy_config() {
