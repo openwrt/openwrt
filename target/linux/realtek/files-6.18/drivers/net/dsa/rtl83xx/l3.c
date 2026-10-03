@@ -1789,14 +1789,10 @@ static int otto_l3_fib_add_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 	if (otto_l3_fib_check_v4(ctrl, info, FIB_EVENT_ENTRY_ADD))
 		return 0;
 
-	port = otto_l3_port_dev_lower_find(ndev, ctrl);
-	if (port < 0) {
-		dev_err(ctrl->dev, "lower interface %s not found\n", ndev->name);
-		return -ENODEV;
-	}
-
 	/* Every add that reaches the driver arrives as a replace, so a route
-	 * for this destination may already be programmed. Take it out first.
+	 * for this destination may already be programmed. Take it out first,
+	 * before anything can turn the new one down: deleting the programmed
+	 * route arrives as a replace too, carrying its successor.
 	 */
 	route = otto_l3_route_find(ctrl, info->tb_id, ROUTE_TYPE_IP4UC, info->dst, NULL,
 				   info->dst_len);
@@ -1804,6 +1800,12 @@ static int otto_l3_fib_add_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 		dev_dbg(ctrl->dev, "replacing route %pI4/%d, id %d\n",
 			&info->dst, info->dst_len, route->id);
 		otto_l3_route_teardown(ctrl, route);
+	}
+
+	port = otto_l3_port_dev_lower_find(ndev, ctrl);
+	if (port < 0) {
+		dev_err(ctrl->dev, "lower interface %s not found\n", ndev->name);
+		return -ENODEV;
 	}
 
 	/* Allocate route or host-route entry (if hardware supports this) */
