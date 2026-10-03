@@ -1,0 +1,423 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+/*
+ * Horaco ZX-SWTGW2C48NS
+ *
+ * Realtek RTL9313 with four RTL8264B 10GBASE-T ports and eight SFP+ cages.
+ * The board is also marketed as the HRUI HR-SWTGW2C48NS and SODOLA
+ * SL-SWTGW2C48NS.
+ *
+ * The copper/SFP+ media assignment is the inverse of the in-tree Hasivo
+ * F5800W-12S-Plus (which carries SFP+ on the low MACs), so that board is not
+ * a template for this one. The MAC-to-SerDes pairing is silicon-fixed.
+ */
+/dts-v1/;
+
+#include "rtl931x.dtsi"
+
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/phy/phy.h>
+
+/ {
+	compatible = "horaco,zx-swtgw2c48ns", "realtek,rtl9313-soc";
+	model = "Horaco ZX-SWTGW2C48NS";
+
+	aliases {
+		label-mac-device = &ethernet0;
+	};
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x00000000 0x10000000>, /* 256 MiB lowmem  */
+		      <0x90000000 0x10000000>; /* 256 MiB highmem */
+	};
+
+	chosen {
+		/* The kernel console runs 38400n8; U-Boot itself talks 115200. */
+		stdout-path = "serial0:38400n8";
+	};
+
+	/*
+	 * Copper ports use LED set 1; SFP+ ports use LED set 3.
+	 */
+	led_set {
+		compatible = "realtek,rtl9300-leds";
+		/*
+		 * This board encodes the number of LEDs directly rather than as
+		 * count minus one.
+		 */
+		realtek,led-num-ctrl-direct;
+		/*
+		 * The chassis is wired for single-scan mode.
+		 */
+		realtek,led-scan-mode = <2>;
+		/*
+		 * Enable the chassis system LED during switch initialization.
+		 */
+		realtek,led-sys-enable;
+		/*
+		 * No active-low property, deliberately: the shared led_init
+		 * sets the polarity bit exactly when the property is absent,
+		 * which is the state this board needs. Adding it inverts every
+		 * port LED (empty cages light, active ports go dark).
+		 */
+		/*
+		 * The driver maps entry 0 to LED1 and entry 1 to LED0.
+		 */
+		led_set1 = <
+		( /* LED1: sub-10G link and activity */
+			RTL93XX_LED_SET_5G |
+			RTL93XX_LED_SET_2P5G |
+			RTL93XX_LED_SET_1G |
+			RTL93XX_LED_SET_100M |
+			RTL93XX_LED_SET_LINK |
+			RTL93XX_LED_SET_ACT
+		)
+		( /* LED0: 10G link and activity */
+			RTL93XX_LED_SET_10G |
+			RTL93XX_LED_SET_LINK |
+			RTL93XX_LED_SET_ACT
+		)>;
+		/*
+		 * SFP+ ports omit the copper-only 5G speed indication.
+		 */
+		led_set3 = <
+		( /* LED1: sub-10G link and activity */
+			RTL93XX_LED_SET_2P5G |
+			RTL93XX_LED_SET_1G |
+			RTL93XX_LED_SET_100M |
+			RTL93XX_LED_SET_LINK |
+			RTL93XX_LED_SET_ACT
+		)
+		( /* LED0: 10G link and activity */
+			RTL93XX_LED_SET_10G |
+			RTL93XX_LED_SET_LINK |
+			RTL93XX_LED_SET_ACT
+		)>;
+	};
+
+	/*
+	 * Unpopulated system I2C bus on GPIO lines 4 and 3.
+	 */
+	i2c_sys: i2c-system {
+		compatible = "i2c-gpio";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinmux_disable_jtag>;
+
+		scl-gpios = <&gpio0 4 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		sda-gpios = <&gpio0 3 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		i2c-gpio,delay-us = <28>;
+	};
+
+	/*
+	 * SFP+ cages, front panel 5-12.
+	 *
+	 * Cages 5-10 use I2C master 1; cages 11-12 use master 2. LOS GPIOs are
+	 * omitted because their board-level routing is not established.
+	 */
+	sfp5: sfp-p5 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c1_sda0>;
+		mod-def0-gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
+		tx-disable-gpios = <&gpio0 10 GPIO_ACTIVE_HIGH>;
+	};
+
+	sfp6: sfp-p6 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c1_sda1>;
+		mod-def0-gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
+		tx-disable-gpios = <&gpio0 27 GPIO_ACTIVE_HIGH>;
+	};
+
+	sfp7: sfp-p7 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c1_sda2>;
+		mod-def0-gpios = <&gpio0 29 GPIO_ACTIVE_LOW>;
+		tx-disable-gpios = <&gpio0 30 GPIO_ACTIVE_HIGH>;
+	};
+
+	sfp8: sfp-p8 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c1_sda3>;
+		mod-def0-gpios = <&gpio1 0 GPIO_ACTIVE_LOW>;
+		tx-disable-gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;
+	};
+
+	sfp9: sfp-p9 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c1_sda4>;
+		mod-def0-gpios = <&gpio1 3 GPIO_ACTIVE_LOW>;
+		tx-disable-gpios = <&gpio1 6 GPIO_ACTIVE_HIGH>;
+	};
+
+	sfp10: sfp-p10 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c1_sda5>;
+		mod-def0-gpios = <&gpio1 8 GPIO_ACTIVE_LOW>;
+		tx-disable-gpios = <&gpio1 9 GPIO_ACTIVE_HIGH>;
+	};
+
+	sfp11: sfp-p11 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c2_sda6>;
+		mod-def0-gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
+		tx-disable-gpios = <&gpio1 12 GPIO_ACTIVE_HIGH>;
+	};
+
+	sfp12: sfp-p12 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c2_sda7>;
+		mod-def0-gpios = <&gpio1 32 GPIO_ACTIVE_LOW>;
+		tx-disable-gpios = <&gpio1 33 GPIO_ACTIVE_HIGH>;
+	};
+
+	/*
+	 * Front-panel reset button, active low.
+	 */
+	keys {
+		compatible = "gpio-keys";
+
+		button-reset {
+			label = "reset";
+			gpios = <&gpio0 26 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+};
+
+/* 32 MiB SPI NOR. */
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0000000 0x00e0000>;
+				read-only;
+			};
+
+			/*
+			 * The primary U-Boot environment contains the factory MAC address.
+			 */
+			partition@e0000 {
+				label = "u-boot-env";
+				reg = <0x00e0000 0x0010000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "u-boot,env";
+
+					macaddr_ubootenv_ethaddr: ethaddr {
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
+
+			partition@f0000 {
+				label = "u-boot-env2";
+				reg = <0x00f0000 0x0010000>;
+				read-only;
+			};
+
+			partition@100000 {
+				label = "jffs";
+				reg = <0x0100000 0x0100000>;
+				read-only;
+			};
+
+			partition@200000 {
+				label = "jffs2";
+				reg = <0x0200000 0x0100000>;
+				read-only;
+			};
+
+			partition@300000 {
+				label = "firmware";
+				compatible = "openwrt,uimage", "denx,uimage";
+				reg = <0x0300000 0x1c00000>;
+				/*
+				 * The vendor bootloader and the stock web updater
+				 * expect the Realtek SDK image magic, so images for
+				 * this board carry it in place of the standard uImage
+				 * one. Tell the splitter, or it stops at the header
+				 * and never finds the rootfs behind the kernel.
+				 */
+				openwrt,ih-magic = <0x83800000>;
+			};
+
+			partition@1f00000 {
+				label = "oeminfo";
+				reg = <0x1f00000 0x0100000>;
+				read-only;
+			};
+		};
+	};
+};
+
+/*
+ * SFP I2C channels, one per cage.
+ */
+&i2c_mst1 {
+	status = "okay";
+
+	i2c1_sda0: i2c@0 { reg = <0>; };
+	i2c1_sda1: i2c@1 { reg = <1>; };
+	i2c1_sda2: i2c@2 { reg = <2>; };
+	i2c1_sda3: i2c@3 { reg = <3>; };
+	i2c1_sda4: i2c@4 { reg = <4>; };
+	i2c1_sda5: i2c@5 { reg = <5>; };
+};
+
+&i2c_mst2 {
+	status = "okay";
+
+	i2c2_sda6: i2c@6 { reg = <6>; };
+	i2c2_sda7: i2c@7 { reg = <7>; };
+
+	/*
+	 * ADT7476 hardware monitor and fan controller on channel 8.
+	 */
+	i2c2_fan: i2c@8 {
+		reg = <8>;
+
+		adt7476@2c {
+			compatible = "adi,adt7476";
+			reg = <0x2c>;
+		};
+	};
+};
+
+/*
+ * RTL8231 GPIO expander for SFP module-detect and TX-disable signals.
+ */
+&mdio_aux {
+	status = "okay";
+
+	gpio1: gpio@0 {
+		compatible = "realtek,rtl8231";
+		reg = <0>;
+
+		gpio-controller;
+		#gpio-cells = <2>;
+		gpio-ranges = <&gpio1 0 0 37>;
+
+		led-controller {
+			compatible = "realtek,rtl8231-leds";
+			status = "disabled";
+		};
+	};
+};
+
+&ethernet0 {
+	nvmem-cells = <&macaddr_ubootenv_ethaddr 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&mdio_ctrl {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinmux_enable_mdc_mdio_0>;
+};
+
+&mdio_bus0 {
+	/*
+	 * RTL8264B quad 10GBASE-T PHY for front-panel ports 1-4.
+	 */
+	ethernet-phy-package@0 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0>;
+
+		PHY_C45(0, 0)
+		PHY_C45(8, 1)
+		PHY_C45(16, 2)
+		PHY_C45(24, 3)
+	};
+};
+
+&switch0 {
+	ethernet-ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		/*
+		 * Front-panel ports 1-4: RTL8264B over USXGMII, LED set 1.
+		 */
+		SWITCH_PORT_LED(0,  1, 2, 0, 1, usxgmii)
+		SWITCH_PORT_LED(8,  2, 3, 0, 1, usxgmii)
+		SWITCH_PORT_LED(16, 3, 4, 0, 1, usxgmii)
+		SWITCH_PORT_LED(24, 4, 5, 0, 1, usxgmii)
+
+		/*
+		 * Front-panel ports 5-12: SFP+ cages, LED set 3.
+		 */
+		SWITCH_PORT_SFP(32, 5,  6,  3, 5)
+		SWITCH_PORT_SFP(40, 6,  7,  3, 6)
+		SWITCH_PORT_SFP(48, 7,  8,  3, 7)
+		SWITCH_PORT_SFP(50, 8,  9,  3, 8)
+		SWITCH_PORT_SFP(52, 9,  10, 3, 9)
+		SWITCH_PORT_SFP(53, 10, 11, 3, 10)
+		SWITCH_PORT_SFP(54, 11, 12, 3, 11)
+		SWITCH_PORT_SFP(55, 12, 13, 3, 12)
+
+		/* CPU port */
+		port@56 {
+			ethernet = <&ethernet0>;
+			reg = <56>;
+			phy-mode = "internal";
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
+		};
+	};
+};
+
+/*
+ * SFP+ SerDes lanes (panels 5-12).
+ *
+ * The SFP+ TX pairs are polarity-inverted.
+ */
+&serdes6 {
+	tx-polarity = <PHY_POL_INVERT>;
+};
+
+&serdes7 {
+	tx-polarity = <PHY_POL_INVERT>;
+};
+
+&serdes8 {
+	tx-polarity = <PHY_POL_INVERT>;
+};
+
+&serdes9 {
+	tx-polarity = <PHY_POL_INVERT>;
+};
+
+&serdes10 {
+	tx-polarity = <PHY_POL_INVERT>;
+};
+
+&serdes11 {
+	tx-polarity = <PHY_POL_INVERT>;
+};
+
+&serdes12 {
+	tx-polarity = <PHY_POL_INVERT>;
+};
+
+&serdes13 {
+	tx-polarity = <PHY_POL_INVERT>;
+};
