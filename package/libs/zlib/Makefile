@@ -8,16 +8,17 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=zlib
-PKG_VERSION:=1.3.2
+PKG_VERSION:=2.3.3
 PKG_RELEASE:=1
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
-PKG_SOURCE_URL:=https://github.com/madler/zlib/releases/download/v$(PKG_VERSION)
-PKG_HASH:=d7a0654783a4da529d1bb793b7ad9c3318020af77667bcae35f95d0e42a792f3
+PKG_SOURCE:=zlib-ng-$(PKG_VERSION).tar.gz
+PKG_SOURCE_URL:=https://codeload.github.com/zlib-ng/zlib-ng/tar.gz/$(PKG_VERSION)?
+PKG_HASH:=f9c65aa9c852eb8255b636fd9f07ce1c406f061ec19a2e7d508b318ca0c907d1
+PKG_BUILD_DIR:=$(BUILD_DIR)/zlib-ng-$(PKG_VERSION)
 
 PKG_LICENSE:=Zlib
-PKG_LICENSE_FILES:=LICENSE
-PKG_CPE_ID:=cpe:/a:zlib:zlib
+PKG_LICENSE_FILES:=LICENSE.md
+PKG_CPE_ID:=cpe:/a:zlib-ng:zlib-ng
 
 PKG_CONFIG_DEPENDS:= CONFIG_ZLIB_OPTIMIZE_SPEED
 
@@ -28,7 +29,7 @@ define Package/zlib
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=Library implementing the deflate compression method
-  URL:=https://www.zlib.net/
+  URL:=https://github.com/zlib-ng/zlib-ng
 endef
 
 define Package/zlib-dev
@@ -41,11 +42,13 @@ endef
 
 define Package/zlib/description
  zlib is a lossless data-compression library.
+ This package builds zlib-ng with the zlib-compatible API and ABI.
  This package includes the shared library.
 endef
 
 define Package/zlib-dev/description
  zlib is a lossless data-compression library.
+ This package builds zlib-ng with the zlib-compatible API and ABI.
  This package includes the development support files.
 endef
 
@@ -60,11 +63,13 @@ ifeq ($(CONFIG_ZLIB_OPTIMIZE_SPEED),y)
 endif
 
 CMAKE_OPTIONS += \
-	-DARMv8=$$$$(echo -e '\#ifdef __ARM_NEON__\nON\n\#else\nOFF\n\#endif' | $$(TARGET_CC) $$(TARGET_CFLAGS) -x c -E - | grep -xE 'ON|OFF')
+	-DZLIB_COMPAT=ON \
+	-DBUILD_TESTING=OFF \
+	-DWITH_NEW_STRATEGIES=OFF
 
 define Build/InstallDev
 	mkdir -p $(1)/usr/include
-	$(CP)	$(PKG_INSTALL_DIR)/usr/include/z{conf,lib}.h \
+	$(CP)	$(PKG_INSTALL_DIR)/usr/include/{zconf,zlib,zlib_name_mangling}.h \
 		$(1)/usr/include/
 	mkdir -p $(1)/usr/lib
 	$(CP)	$(PKG_INSTALL_DIR)/usr/lib/libz.{a,so*} \
@@ -86,6 +91,8 @@ define Package/zlib-dev/install
 	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/include/zconf.h \
 	  $(1)/usr/include/
 	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/include/zlib.h \
+	  $(1)/usr/include/
+	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/include/zlib_name_mangling.h \
 	  $(1)/usr/include/
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libz.a $(1)/usr/lib/
