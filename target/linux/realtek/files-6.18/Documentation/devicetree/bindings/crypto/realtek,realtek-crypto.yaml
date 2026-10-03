@@ -1,0 +1,51 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/crypto/realtek,realtek-crypto.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Realtek crypto engine bindings
+
+maintainers:
+  - Markus Stockhausen <markus.stockhausen@gmx.de>
+
+description: |
+  The Realtek crypto engine provides hardware accelerated AES, SHA1 & MD5
+  algorithms. It is included in SoCs of the RTL838x series, such as RTL8380,
+  RTL8381, RTL8382, as well as SoCs from the RTL930x series, such as RTL9301,
+  RTL9302 and RTL9303.
+
+properties:
+  compatible:
+    const: realtek,realtek-crypto
+
+  reg:
+    minItems: 1
+    maxItems: 1
+
+  interrupt-parent:
+    minItems: 1
+    maxItems: 1
+
+  interrupts:
+    minItems: 1
+    maxItems: 1
+
+required:
+  - compatible
+  - reg
+  - interrupt-parent
+  - interrupts
+
+additionalProperties: false
+
+examples:
+  - |
+    crypto0: crypto@c000 {
+      compatible = "realtek,realtek-crypto";
+      reg = <0xc000 0x10>;
+      interrupt-parent = <&intc>;
+      interrupts = <22 3>;
+    };
+
+...
