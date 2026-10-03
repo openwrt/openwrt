@@ -1,0 +1,36 @@
+From: chris <379716266@qq.com>
+Subject: [PATCH] mmc: core: skip SD ext reg probe for MT7628/MT7688 mtk-mmc
+
+The SD 7.0 extension register probe (sd_read_ext_regs, added in v6.6)
+issues CMD48 with a 512-byte data transfer.  The MT7628/MT7688 vendor
+mtk-mmc DMA engine cannot complete this transfer (xfer_done timeout,
+error -145 / -ETIMEDOUT), which aborts SD card enumeration before
+/dev/mmcblk0 appears.
+
+Clear SD_SCR_CMD48_SUPPORT in mmc_decode_scr() so sd_read_ext_regs()
+returns early via its existing check.  This matches pre-6.6 kernels
+where the probe did not exist; only optional SD 7.0 extension features
+(power management, cache, performance registers) are lost, normal block
+I/O is unaffected.
+
+Signed-off-by: chris <379716266@qq.com>
+---
+ drivers/mmc/core/sd.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+--- a/drivers/mmc/core/sd.c
++++ b/drivers/mmc/core/sd.c
+@@ -241,6 +241,13 @@ int mmc_decode_scr(struct mmc_card *card)
+ 	else if (scr->sda_spec3)
+ 		scr->cmds = unstuff_bits(resp, 32, 2);
+ 
++	/*
++	 * The SD extension register probe (CMD48) issues a 512-byte data transfer
++	 * that the MT7628/MT7688 mtk-mmc DMA engine cannot complete.  Clear CMD48
++	 * support so sd_read_ext_regs() bails out via its existing check; only
++	 * optional SD 7.0 extension features are lost, the card stays usable.
++	 */
++	scr->cmds &= ~SD_SCR_CMD48_SUPPORT;
+ 	/* SD Spec says: any SD Card shall set at least bits 0 and 2 */
+ 	if (!(scr->bus_widths & SD_SCR_BUS_WIDTH_1) ||
+ 	    !(scr->bus_widths & SD_SCR_BUS_WIDTH_4)) {
