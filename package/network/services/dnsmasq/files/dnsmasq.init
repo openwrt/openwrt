@@ -1194,7 +1194,7 @@ dnsmasq_start()
 	echo >> "$CONFIGFILE_TMP"
 
 	config_get_bool dhcpbogushostname "$cfg" dhcpbogushostname 1
-	[ "$dhcpbogushostname" -gt 0 ] && {
+	[ "$dhcpbogushostname" -gt 0 ] && ! dnsmasq_ignore_opt dhcp-name-match && {
 		xappend "--dhcp-ignore-names=tag:dhcp_bogus_hostname"
 		[ -r "$DHCPBOGUSHOSTNAMEFILE" ] && xappend "--conf-file=$DHCPBOGUSHOSTNAMEFILE"
 	}
