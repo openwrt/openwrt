@@ -8,6 +8,8 @@
 
 VIDEO_MENU:=Video Support
 
+FBDEV_TARGETS:=@(TARGET_bcm27xx||TARGET_sunxi||TARGET_x86_legacy||TARGET_x86_geode)
+
 #
 # Media
 #
@@ -59,7 +61,7 @@ $(eval $(call KernelPackage,acpi-video))
 define KernelPackage/backlight
 	SUBMENU:=$(VIDEO_MENU)
 	TITLE:=Backlight support
-	DEPENDS:=video-support +LINUX_6_12:kmod-fb
+	DEPENDS:=video-support
 	HIDDEN:=1
 	KCONFIG:=CONFIG_BACKLIGHT_CLASS_DEVICE \
 		CONFIG_BACKLIGHT_LCD_SUPPORT=y \
@@ -113,7 +115,7 @@ $(eval $(call KernelPackage,backlight-pwm))
 define KernelPackage/fb
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Framebuffer and framebuffer console support
-  DEPENDS:=video-support +PACKAGE_kmod-backlight:kmod-backlight
+  DEPENDS:=video-support $(FBDEV_TARGETS) +PACKAGE_kmod-backlight:kmod-backlight
   KCONFIG:= \
 	CONFIG_FB \
 	CONFIG_FB_DEVICE=y \
@@ -205,6 +207,7 @@ $(eval $(call KernelPackage,fb-cfb-imgblt))
 define KernelPackage/fb-io-fops
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Fbdev helpers for framebuffers in I/O memory
+  DEPENDS:=$(FBDEV_TARGETS) +kmod-fb
   HIDDEN:=1
   KCONFIG:=CONFIG_FB_IOMEM_FOPS
   FILES:=$(LINUX_DIR)/drivers/video/fbdev/core/fb_io_fops.ko
@@ -257,7 +260,7 @@ define KernelPackage/fb-tft
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Support for small TFT LCD display modules
   DEPENDS:= \
-	  @GPIO_SUPPORT +kmod-backlight \
+	  @GPIO_SUPPORT @TARGET_bcm27xx +kmod-backlight \
 	  +kmod-fb +kmod-fb-sys-fops +kmod-fb-sys-ram +kmod-spi-bitbang
   KCONFIG:= \
        CONFIG_FB_BACKLIGHT=y \
@@ -312,8 +315,7 @@ define KernelPackage/drm
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Direct Rendering Manager (DRM) support
   HIDDEN:=1
-  DEPENDS:=+kmod-dma-buf +kmod-i2c-core +PACKAGE_kmod-backlight:kmod-backlight \
-	+kmod-fb
+  DEPENDS:=+kmod-dma-buf +kmod-i2c-core +PACKAGE_kmod-backlight:kmod-backlight
   KCONFIG:=CONFIG_DRM
   FILES:= \
 	$(LINUX_DIR)/drivers/gpu/drm/drm.ko \
@@ -342,22 +344,6 @@ define KernelPackage/drm-buddy/description
 endef
 
 $(eval $(call KernelPackage,drm-buddy))
-
-
-define KernelPackage/drm-client-lib
-  SUBMENU:=$(VIDEO_MENU)
-  TITLE:=DRM client library setup helper
-  DEPENDS:=video-support @LINUX_6_18 +kmod-drm +kmod-drm-kms-helper
-  KCONFIG:=CONFIG_DRM_CLIENT_LIB
-  FILES:= $(LINUX_DIR)/drivers/gpu/drm/clients/drm_client_lib.ko
-  AUTOLOAD:=$(call AutoProbe,drm_client_lib)
-endef
-
-define KernelPackage/drm-client-lib/description
-  DRM client library setup helper
-endef
-
-$(eval $(call KernelPackage,drm-client-lib))
 
 
 define KernelPackage/drm-display-helper
@@ -430,8 +416,7 @@ define KernelPackage/drm-mipi-dbi
   SUBMENU:=$(VIDEO_MENU)
   HIDDEN:=1
   TITLE:=MIPI DBI helpers
-  DEPENDS:=video-support +kmod-backlight +kmod-drm-kms-helper \
-    +LINUX_6_18:kmod-drm-client-lib
+  DEPENDS:=video-support +kmod-backlight +kmod-drm-kms-helper
   KCONFIG:=CONFIG_DRM_MIPI_DBI
   FILES:=$(LINUX_DIR)/drivers/gpu/drm/drm_mipi_dbi.ko
   AUTOLOAD:=$(call AutoProbe,drm_mipi_dbi)
@@ -496,11 +481,8 @@ $(eval $(call KernelPackage,drm-ttm-helper))
 define KernelPackage/drm-kms-helper
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=CRTC helpers for KMS drivers
-  DEPENDS:=video-support +kmod-drm +kmod-fb +kmod-fb-sys-fops +kmod-fb-cfb-copyarea \
-	+kmod-fb-cfb-fillrect +kmod-fb-cfb-imgblt +kmod-fb-sys-ram
-  KCONFIG:= \
-    CONFIG_DRM_KMS_HELPER \
-    CONFIG_DRM_KMS_FB_HELPER=y
+  DEPENDS:=video-support +kmod-drm
+  KCONFIG:=CONFIG_DRM_KMS_HELPER
   FILES:=$(LINUX_DIR)/drivers/gpu/drm/drm_kms_helper.ko
   AUTOLOAD:=$(call AutoProbe,drm_kms_helper)
 endef
@@ -606,8 +588,7 @@ define KernelPackage/drm-i915
 	CONFIG_DRM_I915_TIMESLICE_DURATION=1 \
 	CONFIG_DRM_I915_USERFAULT_AUTOSUSPEND=250 \
 	CONFIG_DRM_I915_USERPTR=y \
-	CONFIG_DRM_I915_WERROR=n \
-	CONFIG_FB_INTEL=n
+	CONFIG_DRM_I915_WERROR=n
   FILES:=$(LINUX_DIR)/drivers/gpu/drm/i915/i915.ko
   AUTOLOAD:=$(call AutoProbe,i915)
 endef
@@ -638,15 +619,12 @@ define KernelPackage/drm-imx
   TITLE:=Freescale i.MX DRM support
   DEPENDS:=@TARGET_imx +kmod-drm-kms-helper
   KCONFIG:=CONFIG_DRM_IMX \
-	CONFIG_DRM_FBDEV_EMULATION=y \
-	CONFIG_DRM_FBDEV_OVERALLOC=100 \
 	CONFIG_IMX_IPUV3_CORE \
 	CONFIG_RESET_CONTROLLER=y \
 	CONFIG_DRM_IMX_IPUV3 \
 	CONFIG_IMX_IPUV3 \
 	CONFIG_DRM_GEM_CMA_HELPER=y \
 	CONFIG_DRM_KMS_CMA_HELPER=y \
-	CONFIG_DRM_IMX_FB_HELPER \
 	CONFIG_DRM_IMX_PARALLEL_DISPLAY=n \
 	CONFIG_DRM_IMX_TVE=n \
 	CONFIG_DRM_IMX_LDB=n \
@@ -712,9 +690,7 @@ define KernelPackage/drm-panel-mipi-dbi
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Generic MIPI DBI LCD panel
   DEPENDS:=+kmod-drm-mipi-dbi +kmod-drm-dma-helper
-  KCONFIG:=CONFIG_DRM_PANEL_MIPI_DBI \
-	CONFIG_DRM_FBDEV_EMULATION=y \
-	CONFIG_DRM_FBDEV_OVERALLOC=100
+  KCONFIG:=CONFIG_DRM_PANEL_MIPI_DBI
   FILES:= \
 	$(LINUX_DIR)/drivers/gpu/drm/tiny/panel-mipi-dbi.ko
   AUTOLOAD:=$(call AutoProbe,panel-mipi-dbi)
@@ -788,7 +764,7 @@ define KernelPackage/drm-radeon
   DEPENDS:=@TARGET_x86 video-support +kmod-backlight +kmod-drm-kms-helper \
 	+kmod-drm-ttm +kmod-drm-ttm-helper +kmod-i2c-algo-bit +radeon-firmware \
 	+kmod-drm-display-helper +kmod-acpi-video +kmod-drm-suballoc-helper \
-	+kmod-fb-io-fops +kmod-drm-exec
+	+kmod-drm-exec
   KCONFIG:=CONFIG_DRM_RADEON
   FILES:=$(LINUX_DIR)/drivers/gpu/drm/radeon/radeon.ko
   AUTOLOAD:=$(call AutoProbe,radeon)
@@ -799,6 +775,29 @@ define KernelPackage/drm-radeon/description
 endef
 
 $(eval $(call KernelPackage,drm-radeon))
+
+
+define KernelPackage/drm-xen-frontend
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=Xen para-virtualised frontend DRM support
+  DEPENDS:=@(TARGET_x86_64||TARGET_x86_generic||TARGET_layerscape_armv8_64b) \
+	video-support +kmod-drm-kms-helper
+  KCONFIG:=CONFIG_DRM_XEN_FRONTEND
+  FILES:= \
+	$(LINUX_DIR)/drivers/xen/xen-front-pgdir-shbuf.ko \
+	$(LINUX_DIR)/drivers/gpu/drm/xen/drm_xen_front.ko
+  AUTOLOAD:=$(call AutoProbe,xen-front-pgdir-shbuf drm_xen_front)
+endef
+
+define KernelPackage/drm-xen-frontend/description
+  Direct Rendering Manager (DRM) support for the Xen para-virtualised
+  display device, the vdispl xenbus device carrying the displif protocol.
+  A Xen guest only sees such a device where the host or a driver domain
+  runs a displif backend; the classic vfb display of the libxl toolstack
+  speaks a different protocol and has no DRM driver.
+endef
+
+$(eval $(call KernelPackage,drm-xen-frontend))
 
 #
 # Video Capture
