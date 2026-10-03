@@ -1,0 +1,88 @@
+From 2e00cbd648a680362c76ae3d0024073101c203e9 Mon Sep 17 00:00:00 2001
+From: Josef Schlehofer <pepe.schlehofer@gmail.com>
+Date: Tue, 22 Sep 2026 21:02:39 +0200
+Subject: [PATCH 5/6] media: dvb-core: dmxdev: wake up readers on release
+
+dvb_dmxdev_release() sets dmxdev->exit and waits for open demux and DVR
+files to close, but readers blocked in dvb_dmxdev_buffer_read() wait
+only for data or buffer->error. Setting exit therefore does not wake a
+blocked read or epoll wait. The release, for example on a USB
+disconnect, then waits forever.
+
+Set -ENODEV on the DVR buffer and open filter buffers, wake their wait
+queues, and return -ENODEV from dvb_demux_read() once exit is set. Do
+not flush buffers when consuming -ENODEV so all readers see the error.
+
+Blocking DMX_DQBUF waiters are not covered.
+
+Fixes: 57861b432bda ("V4L/DVB (5511): Fix 2/3 for bug 7819: demux and dvr")
+Cc: stable@vger.kernel.org
+Signed-off-by: Josef Schlehofer <pepe.schlehofer@gmail.com>
+Link: https://lore.kernel.org/all/20260923001410.30297-6-pepe.schlehofer@gmail.com/
+---
+ drivers/media/dvb-core/dmxdev.c | 31 +++++++++++++++++++++++++++++--
+ 1 file changed, 29 insertions(+), 2 deletions(-)
+
+--- a/drivers/media/dvb-core/dmxdev.c
++++ b/drivers/media/dvb-core/dmxdev.c
+@@ -63,7 +63,9 @@ static ssize_t dvb_dmxdev_buffer_read(st
+ 
+ 	if (src->error) {
+ 		ret = src->error;
+-		dvb_ringbuffer_flush(src);
++		/* -ENODEV: the demux is gone for good, keep it for all readers */
++		if (ret != -ENODEV)
++			dvb_ringbuffer_flush(src);
+ 		return ret;
+ 	}
+ 
+@@ -81,7 +83,8 @@ static ssize_t dvb_dmxdev_buffer_read(st
+ 
+ 		if (src->error) {
+ 			ret = src->error;
+-			dvb_ringbuffer_flush(src);
++			if (ret != -ENODEV)
++				dvb_ringbuffer_flush(src);
+ 			break;
+ 		}
+ 
+@@ -1015,6 +1018,9 @@ dvb_demux_read(struct file *file, char _
+ 	struct dmxdev_filter *dmxdevfilter = file->private_data;
+ 	int ret;
+ 
++	if (dmxdevfilter->dev->exit)
++		return -ENODEV;
++
+ 	if (mutex_lock_interruptible(&dmxdevfilter->mutex))
+ 		return -ERESTARTSYS;
+ 
+@@ -1456,8 +1462,29 @@ EXPORT_SYMBOL(dvb_dmxdev_init);
+ 
+ void dvb_dmxdev_release(struct dmxdev *dmxdev)
+ {
++	int i;
++
+ 	mutex_lock(&dmxdev->mutex);
+ 	dmxdev->exit = 1;
++
++	/*
++	 * Wake up everyone blocked in read() or poll() on the demux and dvr
++	 * devices, so that they see the error, close their file handles and
++	 * let the waits below finish.
++	 */
++	spin_lock_irq(&dmxdev->lock);
++	dmxdev->dvr_buffer.error = -ENODEV;
++	for (i = 0; i < dmxdev->filternum; i++) {
++		if (dmxdev->filter[i].state >= DMXDEV_STATE_ALLOCATED)
++			dmxdev->filter[i].buffer.error = -ENODEV;
++	}
++	spin_unlock_irq(&dmxdev->lock);
++
++	wake_up_all(&dmxdev->dvr_buffer.queue);
++	for (i = 0; i < dmxdev->filternum; i++) {
++		if (dmxdev->filter[i].state >= DMXDEV_STATE_ALLOCATED)
++			wake_up_all(&dmxdev->filter[i].buffer.queue);
++	}
+ 	mutex_unlock(&dmxdev->mutex);
+ 
+ 	if (dmxdev->dvbdev->users > 1) {
