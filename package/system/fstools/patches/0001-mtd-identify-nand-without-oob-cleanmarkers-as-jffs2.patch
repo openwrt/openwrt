@@ -1,0 +1,21 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Navid Ghahremani <ghahramani.navid@gmail.com>
+Date: Sun, 27 Sep 2026 22:20:00 +0100
+Subject: [PATCH] libfstools: identify NAND without OOB cleanmarkers as JFFS2
+
+Treat erased raw NAND starting with 0xffffffff as JFFS2 volume even when
+OOB cleanmarkers are absent (required for on-die ECC SPI-NAND).
+
+Signed-off-by: Navid Ghahremani <ghahramani.navid@gmail.com>
+---
+--- a/libfstools/mtd.c
++++ b/libfstools/mtd.c
+@@ -221,7 +221,7 @@ static int mtd_volume_identify(struct vo
+ 	    __be16_to_cpu(deadc0de >> 16) == 0x1985)
+ 		return FS_JFFS2;
+
+-	if (v->type == UBIVOLUME && deadc0de == 0xffffffff) {
++	if ((v->type == UBIVOLUME || v->type == NANDFLASH) && deadc0de == 0xffffffff) {
+ 		return FS_JFFS2;
+ 	}
+
