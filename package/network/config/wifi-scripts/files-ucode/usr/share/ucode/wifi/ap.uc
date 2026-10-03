@@ -29,8 +29,9 @@ function wps_enabled(config, band) {
 		!!(length(config.config_methods) || config.wps_pushbutton || config.wps_label);
 }
 
+/* local generation covers FT-PSK only */
 function ft_psk_local_default(config) {
-	return config.auth_type == 'psk';
+	return config.auth_type == 'psk' && !config.rsno2_sae;
 }
 
 function sae_password_option(config) {
@@ -54,11 +55,14 @@ function bss_refusal(config, band) {
 	/* SAE needs a passphrase or sae_password entries: a 64 hex digit key is
 	 * a raw PSK */
 	const sae_only = config.auth_type == 'sae' || (config.auth_type == 'psk-sae-compat' && band == '6g');
+	const mld_sae = config.auth_type == 'psk' && config.rsno2_sae;
 	const sae_password = config.ppsk || kind == 'passphrase' || config.sae_station_passwords ||
 		sae_password_option(config);
 
 	if (personal && sae_only && !sae_password)
 		return 'SAE_NO_PASSWORD';
+	if (personal && mld_sae && !sae_password)
+		return 'MLD_SAE_NO_PASSWORD';
 
 	if (wps_enabled(config, band) && config.multi_ap && config.multi_ap_backhaul_ssid &&
 	    index([ 'psk', 'passphrase' ], key_kind(config.multi_ap_backhaul_key)) < 0)
@@ -211,7 +215,7 @@ function iface_auth_type(config, band, eht) {
 		set_default(config, 'owe_ptk_workaround', 1);
 	}
 
-	if (config.auth_type in [ 'sae', 'psk-sae', 'psk-sae-compat' ]) {
+	if (config.auth_type in [ 'sae', 'psk-sae', 'psk-sae-compat' ] || config.rsno2_sae) {
 		config.sae_require_mfp = 1;
 		set_default(config, 'sae_groups', '19 20 21');
 		if (!config.ppsk) {
@@ -267,7 +271,7 @@ function iface_auth_type(config, band, eht) {
 			touch_file(config.wpa_psk_file);
 		}
 
-		if (config.auth_type in [ 'sae', 'psk-sae', 'psk-sae-compat' ]) {
+		if (config.auth_type in [ 'sae', 'psk-sae', 'psk-sae-compat' ] || config.rsno2_sae) {
 			set_default(config, 'sae_password_file', `/var/run/hostapd-${config.ifname}.sae`);
 			touch_file(config.sae_password_file);
 		}
@@ -598,7 +602,8 @@ function iface_key_caching(config) {
 			'rsn_preauth', 'rsn_preauth_interfaces'
 		]);
 	} else {
-		set_default(config, 'okc', (config.auth_type in  [ 'sae', 'psk-sae', 'psk-sae-compat', 'owe' ]));
+		set_default(config, 'okc', (config.auth_type in  [ 'sae', 'psk-sae', 'psk-sae-compat', 'owe' ]) ||
+			!!config.rsno2_sae);
 	}
 
 	if (!config.okc && !config.fils)
@@ -659,7 +664,7 @@ export function generate(interface, data, config, vlans, stas, phy_features) {
 	config.sae_station_passwords = station_password_count(stas);
 
 	config.encryption = iface.encryption_band(config.encryption, data.config.band,
-		config.mlo ? config.mlo_bands : null);
+		config.mlo ? (config.mlo_bands ?? []) : null);
 	iface.parse_encryption(config, data.config, phy_features);
 
 	const refusal = bss_refusal(config, data.config.band);
@@ -668,7 +673,7 @@ export function generate(interface, data, config, vlans, stas, phy_features) {
 
 	if (config.auth_type in [ 'psk', 'psk-sae', 'psk-sae-compat' ] && data.config.band != '6g')
 		iface_wpa_stations(config, stas);
-	if (config.auth_type in [ 'sae', 'psk-sae', 'psk-sae-compat' ])
+	if (config.auth_type in [ 'sae', 'psk-sae', 'psk-sae-compat' ] || config.rsno2_sae)
 		iface_sae_stations(config, stas);
 
 	iface_rates(data.config);

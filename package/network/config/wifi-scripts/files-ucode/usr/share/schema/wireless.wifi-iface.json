@@ -726,7 +726,7 @@
 			"type": "number"
 		},
 		"mlo": {
-			"description": "Multi-Link Operation. If the AP MLD has a 6 GHz link, its other links use a mode that shares an AKM with the 6 GHz link: none becomes owe, wpa and wpa-mixed become wpa2",
+			"description": "Multi-Link Operation. On an AP MLD, psk and psk-mixed become psk2; psk2 keeps PSK in the RSNE of the 2.4 and 5 GHz links for single-link stations and offers SAE in the RSNE Override 2 element of every link, which multi-link associations use. The 6 GHz link uses SAE. If the AP MLD has a 6 GHz link, none becomes owe and wpa and wpa-mixed become wpa2 on the other links",
 			"type": "boolean"
 		},
 		"mlo_bands": {

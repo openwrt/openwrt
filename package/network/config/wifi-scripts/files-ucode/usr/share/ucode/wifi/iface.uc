@@ -20,19 +20,32 @@ const encryption_6g = {
 	'psk-mixed': 'sae',
 };
 
+/*
+ * An AP MLD needs RSN on every link. parse_encryption() adds SAE in the
+ * RSNE Override 2 element for multi-link associations.
+ */
+const encryption_mld = {
+	'psk': 'psk2',
+	'psk-mixed': 'psk2',
+};
+
 /* IEEE 802.11be-2024 12.6.2: all links of an AP MLD share an AKM */
 const encryption_mld_6g = {
+	...encryption_mld,
 	'none': 'owe',
 	'wpa': 'wpa2',
 	'wpa-mixed': 'wpa2',
 };
 
+/* mld_bands: null for a single-link BSS, else the bands of the AP MLD */
 export function encryption_band(encryption, band, mld_bands) {
 	let modes;
 	if (band == '6g')
 		modes = encryption_6g;
 	else if (index(mld_bands ?? [], '6g') >= 0)
 		modes = encryption_mld_6g;
+	else if (mld_bands != null)
+		modes = encryption_mld;
 	else
 		return encryption;
 
@@ -68,7 +81,8 @@ export function parse_encryption(config, dev_config, phy_features) {
 	 */
 	let eht = wildcard(dev_config?.htmode ?? '', 'EHT*');
 	let compat = (config.auth_type == 'sae-compat');
-	let rsno2_mode = config.auth_type in [ 'sae', 'psk3', 'sae-mixed', 'psk3-mixed' ];
+	let rsno2_mode = config.auth_type in [ 'sae', 'psk3', 'sae-mixed', 'psk3-mixed' ] ||
+		(!!config.mlo && config.auth_type == 'psk2');
 	config.rsno2_sae = eht && rsno2_mode && config.sae_ext_key !== false;
 	let rsno2_gcmp256 = config.gcmp256 !== false && phy_features?.cipher_gcmp256;
 	config.gcmp256 ??= compat && eht;
