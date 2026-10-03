@@ -1,3 +1,4 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Alexander Zaguzin <st7105@gmail.com>
 Date: Fri, 4 Sep 2026 00:00:00 +0300
 Subject: [PATCH] fix cfg80211 API for backports 7.2
@@ -14,8 +15,8 @@ Link: https://git.kernel.org/linus/033fe322f5852d5144a85978e880e01b1787fd0d
 Link: https://git.kernel.org/linus/4dbd1829045ee4146ae16b0e1ad122d855a694cb
 Signed-off-by: Alexander Zaguzin <st7105@gmail.com>
 ---
- os_dep/linux/ioctl_cfg80211.c | 30 ++++++++++++++++++------------
- 1 file changed, 18 insertions(+), 12 deletions(-)
+ os_dep/linux/ioctl_cfg80211.c | 31 +++++++++++++++++++------------
+ 1 file changed, 19 insertions(+), 12 deletions(-)
 
 --- a/os_dep/linux/ioctl_cfg80211.c
 +++ b/os_dep/linux/ioctl_cfg80211.c
@@ -45,7 +46,15 @@ Signed-off-by: Alexander Zaguzin <st7105@gmail.com>
  #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,37)) || defined(COMPAT_KERNEL_RELEASE)
                                  int link_id,
                                  u8 key_index, bool pairwise, const u8 *mac_addr,
-@@ -1562,7 +1563,7 @@ static int cfg80211_rtw_get_key(struct w
+@@ -1539,6 +1540,7 @@ static int cfg80211_rtw_get_key(struct w
+                                 void (*callback)(void *cookie,
+                                         struct key_params*))
+ {
++	struct net_device *ndev = wdev_to_ndev(wdev);
+ #if 0
+ 	struct iwm_priv *iwm = ndev_to_iwm(ndev);
+ 	struct iwm_key *key = &iwm->keys[key_index];
+@@ -1562,7 +1564,7 @@ static int cfg80211_rtw_get_key(struct w
  	return 0;
  }
  
@@ -54,7 +63,7 @@ Signed-off-by: Alexander Zaguzin <st7105@gmail.com>
  #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,37)) || defined(COMPAT_KERNEL_RELEASE)
                                  int link_id,
                                  u8 key_index, bool pairwise, const u8 *mac_addr)
-@@ -1570,6 +1571,7 @@ static int cfg80211_rtw_del_key(struct w
+@@ -1570,6 +1572,7 @@ static int cfg80211_rtw_del_key(struct w
                                  u8 key_index, const u8 *mac_addr)
  #endif	// (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,37))
  {
@@ -62,7 +71,7 @@ Signed-off-by: Alexander Zaguzin <st7105@gmail.com>
  	_adapter *padapter = (_adapter *)rtw_netdev_priv(ndev);
  	struct security_priv *psecuritypriv = &padapter->securitypriv;
  
-@@ -1623,7 +1625,7 @@ static int cfg80211_rtw_set_default_key(
+@@ -1623,7 +1626,7 @@ static int cfg80211_rtw_set_default_key(
  }
  
  static int cfg80211_rtw_get_station(struct wiphy *wiphy,
@@ -71,7 +80,7 @@ Signed-off-by: Alexander Zaguzin <st7105@gmail.com>
  #if (LINUX_VERSION_CODE < KERNEL_VERSION(3,16,0))
                                      u8 *mac,
  #else
-@@ -1631,6 +1633,7 @@ static int cfg80211_rtw_get_station(stru
+@@ -1631,6 +1634,7 @@ static int cfg80211_rtw_get_station(stru
  #endif
                                      struct station_info *sinfo)
  {
@@ -79,7 +88,7 @@ Signed-off-by: Alexander Zaguzin <st7105@gmail.com>
  	int ret = 0;
  	_adapter *padapter = (_adapter *)rtw_netdev_priv(ndev);
  	struct mlme_priv *pmlmepriv = &padapter->mlmepriv;
-@@ -3350,7 +3353,7 @@ void rtw_cfg80211_indicate_sta_assoc(_ad
+@@ -3350,7 +3354,7 @@ void rtw_cfg80211_indicate_sta_assoc(_ad
  #endif
  		sinfo.assoc_req_ies = pmgmt_frame + WLAN_HDR_A3_LEN + ie_offset;
  		sinfo.assoc_req_ies_len = frame_len - WLAN_HDR_A3_LEN - ie_offset;
@@ -88,7 +97,7 @@ Signed-off-by: Alexander Zaguzin <st7105@gmail.com>
  	}
  #else /* defined(RTW_USE_CFG80211_STA_EVENT) */
  	channel = pmlmeext->cur_channel;
-@@ -3396,7 +3399,7 @@ void rtw_cfg80211_indicate_sta_disassoc(
+@@ -3396,7 +3400,7 @@ void rtw_cfg80211_indicate_sta_disassoc(
  	DBG_871X(FUNC_ADPT_FMT"\n", FUNC_ADPT_ARG(padapter));
  
  #if defined(RTW_USE_CFG80211_STA_EVENT) || defined(COMPAT_KERNEL_RELEASE)
@@ -97,7 +106,7 @@ Signed-off-by: Alexander Zaguzin <st7105@gmail.com>
  #else /* defined(RTW_USE_CFG80211_STA_EVENT) */
  	channel = pmlmeext->cur_channel;
  	if (channel <= RTW_CH_MAX_2G_CHANNEL)
-@@ -4044,13 +4047,14 @@ static int cfg80211_rtw_stop_ap(struct w
+@@ -4044,13 +4048,14 @@ static int cfg80211_rtw_stop_ap(struct w
  
  #endif //(LINUX_VERSION_CODE < KERNEL_VERSION(3,4,0))
  
@@ -113,7 +122,7 @@ Signed-off-by: Alexander Zaguzin <st7105@gmail.com>
  	int ret = 0;
  #ifdef CONFIG_TDLS
  	_adapter *padapter = (_adapter *)rtw_netdev_priv(ndev);
-@@ -4074,7 +4078,7 @@ exit:
+@@ -4074,7 +4079,7 @@ exit:
  	return ret;
  }
  
@@ -122,7 +131,7 @@ Signed-off-by: Alexander Zaguzin <st7105@gmail.com>
  #if (LINUX_VERSION_CODE >= KERNEL_VERSION(4,1,0))
  		struct station_del_parameters *params)
  {
-@@ -4088,6 +4092,7 @@ static int	cfg80211_rtw_del_station(stru
+@@ -4088,6 +4093,7 @@ static int	cfg80211_rtw_del_station(stru
  {
  #endif
  #endif
@@ -130,7 +139,7 @@ Signed-off-by: Alexander Zaguzin <st7105@gmail.com>
  	int ret=0;
  	_irqL irqL;
  	_list	*phead, *plist;
-@@ -4168,7 +4173,7 @@ static int	cfg80211_rtw_del_station(stru
+@@ -4168,7 +4174,7 @@ static int	cfg80211_rtw_del_station(stru
  
  }
  
@@ -139,7 +148,7 @@ Signed-off-by: Alexander Zaguzin <st7105@gmail.com>
  #if (LINUX_VERSION_CODE < KERNEL_VERSION(3,16,0))
                                          u8 *mac,
  #else
-@@ -4176,6 +4181,7 @@ static int	cfg80211_rtw_change_station(s
+@@ -4176,6 +4182,7 @@ static int	cfg80211_rtw_change_station(s
  #endif
                                          struct station_parameters *params)
  {
@@ -147,7 +156,7 @@ Signed-off-by: Alexander Zaguzin <st7105@gmail.com>
  	DBG_871X(FUNC_NDEV_FMT"\n", FUNC_NDEV_ARG(ndev));
  
  	return 0;
-@@ -4200,10 +4206,10 @@ struct sta_info *rtw_sta_info_get_by_idx
+@@ -4200,10 +4207,10 @@ struct sta_info *rtw_sta_info_get_by_idx
  	return psta;
  }
  
@@ -160,7 +169,7 @@ Signed-off-by: Alexander Zaguzin <st7105@gmail.com>
  	int ret = 0;
  	_irqL irqL;
  	_adapter *padapter = (_adapter *)rtw_netdev_priv(ndev);
-@@ -4644,7 +4650,7 @@ static s32 cfg80211_rtw_remain_on_channel
+@@ -4644,7 +4651,7 @@ static s32 cfg80211_rtw_remain_on_channel
  #if (LINUX_VERSION_CODE < KERNEL_VERSION(3,8,0))
          enum nl80211_channel_type channel_type,
  #endif
