@@ -711,3 +711,75 @@ define KernelPackage/sound-dynamic-minors/description
 endef
 
 $(eval $(call KernelPackage,sound-dynamic-minors))
+
+
+define KernelPackage/sound-soc-simple-card-utils
+  TITLE:=ASoC simple card utilities
+  HIDDEN:=1
+  KCONFIG:=CONFIG_SND_SIMPLE_CARD_UTILS
+  FILES:=$(LINUX_DIR)/sound/soc/generic/snd-soc-simple-card-utils.ko
+  DEPENDS:=+kmod-sound-soc-core
+  AUTOLOAD:=$(call AutoProbe,snd-soc-simple-card-utils)
+  $(call AddDepends/sound)
+endef
+
+$(eval $(call KernelPackage,sound-soc-simple-card-utils))
+
+
+define KernelPackage/sound-soc-simple-card
+  TITLE:=ASoC simple sound card support
+  KCONFIG:=CONFIG_SND_SIMPLE_CARD
+  FILES:=$(LINUX_DIR)/sound/soc/generic/snd-soc-simple-card.ko
+  DEPENDS:=+kmod-sound-soc-simple-card-utils
+  AUTOLOAD:=$(call AutoProbe,snd-soc-simple-card)
+  $(call AddDepends/sound)
+endef
+
+define KernelPackage/sound-soc-simple-card/description
+ Generic sound card driver described by the simple-audio-card device
+ tree binding.
+endef
+
+$(eval $(call KernelPackage,sound-soc-simple-card))
+
+
+define KernelPackage/sound-soc-audio-graph-card
+  TITLE:=ASoC audio graph sound card support
+  KCONFIG:=CONFIG_SND_AUDIO_GRAPH_CARD
+  FILES:=$(LINUX_DIR)/sound/soc/generic/snd-soc-audio-graph-card.ko
+  DEPENDS:=+kmod-sound-soc-simple-card-utils
+  AUTOLOAD:=$(call AutoProbe,snd-soc-audio-graph-card)
+  $(call AddDepends/sound)
+endef
+
+define KernelPackage/sound-soc-audio-graph-card/description
+ Generic sound card driver described by the audio-graph-card device
+ tree binding (OF graph).
+endef
+
+$(eval $(call KernelPackage,sound-soc-audio-graph-card))
+
+
+define KernelPackage/sound-soc-hdmi-codec
+  TITLE:=ASoC HDMI codec support
+  HIDDEN:=1
+  KCONFIG:=CONFIG_SND_SOC_HDMI_CODEC
+  FILES:=$(LINUX_DIR)/sound/soc/codecs/snd-soc-hdmi-codec.ko
+  DEPENDS:=+kmod-sound-soc-core
+  AUTOLOAD:=$(call AutoProbe,snd-soc-hdmi-codec)
+  $(call AddDepends/sound)
+endef
+
+$(eval $(call KernelPackage,sound-soc-hdmi-codec))
+
+
+define KernelPackage/sound-soc-es8316
+  TITLE:=Everest Semi ES8316 codec support
+  KCONFIG:=CONFIG_SND_SOC_ES8316
+  FILES:=$(LINUX_DIR)/sound/soc/codecs/snd-soc-es8316.ko
+  DEPENDS:=+kmod-sound-soc-core +kmod-i2c-core +kmod-regmap-i2c
+  AUTOLOAD:=$(call AutoProbe,snd-soc-es8316)
+  $(call AddDepends/sound)
+endef
+
+$(eval $(call KernelPackage,sound-soc-es8316))

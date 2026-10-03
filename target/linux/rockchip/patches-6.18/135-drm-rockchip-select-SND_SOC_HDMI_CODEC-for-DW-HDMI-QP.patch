@@ -1,0 +1,27 @@
+From b637fd0a7292aaf0e2139790693bcabfb30827c7 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Tue, 8 Sep 2026 20:45:07 +0100
+Subject: [PATCH] drm/rockchip: select SND_SOC_HDMI_CODEC for DW HDMI QP
+
+The DW HDMI QP bridge exposes its audio path through the DRM HDMI audio
+helper, which registers an hdmi-audio-codec platform device. Nothing on
+that path selects the codec driver, so a configuration with
+ROCKCHIP_DW_HDMI_QP and SND_SOC has no HDMI audio unless another
+selector happens to pull SND_SOC_HDMI_CODEC in.
+
+Select it from DRM_ROCKCHIP, guarded the way the CDN DP option already
+is. ROCKCHIP_DW_HDMI_QP is a bool, so a select placed there would force
+the codec tristate to y whenever SND_SOC=y, even where DRM_ROCKCHIP is
+a module.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+--- a/drivers/gpu/drm/rockchip/Kconfig
++++ b/drivers/gpu/drm/rockchip/Kconfig
+@@ -18,6 +18,7 @@ config DRM_ROCKCHIP
+ 	select GENERIC_PHY if ROCKCHIP_DW_MIPI_DSI
+ 	select GENERIC_PHY_MIPI_DPHY if ROCKCHIP_DW_MIPI_DSI
+ 	select SND_SOC_HDMI_CODEC if ROCKCHIP_CDN_DP && SND_SOC
++	select SND_SOC_HDMI_CODEC if ROCKCHIP_DW_HDMI_QP && SND_SOC
+ 	help
+ 	  Choose this option if you have a Rockchip soc chipset.
+ 	  This driver provides kernel mode setting and buffer

@@ -1,0 +1,72 @@
+From 796b5c6d4f1615d59d5d8fe5a38fae6bfdfe878e Mon Sep 17 00:00:00 2001
+From: Michael Bommarito <michael.bommarito@gmail.com>
+Date: Wed, 27 May 2026 15:47:36 -0400
+Subject: [PATCH] media: v4l2-ctrls: validate HEVC EXT SPS RPS counts
+
+The HEVC SPS control carries the short-term and long-term RPS counts
+that decoder drivers use to walk the matching EXT SPS dynamic arrays.
+Reject SPS values that exceed the HEVC limits of 64 short-term sets and
+32 long-term references so drivers cannot later index beyond those
+controls.
+
+Also reject EXT SPS ST RPS entries whose negative or positive picture
+counts exceed the 16-entry arrays, or whose combined delta-POC count
+exceeds the HEVC DPB maximum.
+
+Fixes: c9a59dc2acc7 ("media: rkvdec: Add HEVC support for the VDPU381 variant")
+Cc: stable@vger.kernel.org
+Suggested-by: Detlev Casanova <detlev.casanova@collabora.com>
+Assisted-by: Claude:claude-opus-4-7
+Signed-off-by: Michael Bommarito <michael.bommarito@gmail.com>
+Reviewed-by: Nicolas Dufresne <nicolas.dufresne@collabora.com>
+Signed-off-by: Nicolas Dufresne <nicolas.dufresne@collabora.com>
+Signed-off-by: Hans Verkuil <hverkuil+cisco@kernel.org>
+---
+ drivers/media/v4l2-core/v4l2-ctrls-core.c | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+
+--- a/drivers/media/v4l2-core/v4l2-ctrls-core.c
++++ b/drivers/media/v4l2-core/v4l2-ctrls-core.c
+@@ -16,6 +16,9 @@
+ 
+ static const union v4l2_ctrl_ptr ptr_null;
+ 
++#define V4L2_HEVC_MAX_SHORT_TERM_REF_PIC_SETS	64
++#define V4L2_HEVC_MAX_LONG_TERM_REF_PICS_SPS	32
++
+ static void fill_event(struct v4l2_event *ev, struct v4l2_ctrl *ctrl,
+ 		       u32 changes)
+ {
+@@ -1214,6 +1217,10 @@ static int std_validate_compound(const s
+ 	case V4L2_CTRL_TYPE_HEVC_SPS:
+ 		p_hevc_sps = p;
+ 
++		if (p_hevc_sps->num_short_term_ref_pic_sets >
++		    V4L2_HEVC_MAX_SHORT_TERM_REF_PIC_SETS)
++			return -EINVAL;
++
+ 		if (!(p_hevc_sps->flags & V4L2_HEVC_SPS_FLAG_PCM_ENABLED)) {
+ 			p_hevc_sps->pcm_sample_bit_depth_luma_minus1 = 0;
+ 			p_hevc_sps->pcm_sample_bit_depth_chroma_minus1 = 0;
+@@ -1224,6 +1231,9 @@ static int std_validate_compound(const s
+ 		if (!(p_hevc_sps->flags &
+ 		      V4L2_HEVC_SPS_FLAG_LONG_TERM_REF_PICS_PRESENT))
+ 			p_hevc_sps->num_long_term_ref_pics_sps = 0;
++		else if (p_hevc_sps->num_long_term_ref_pics_sps >
++			 V4L2_HEVC_MAX_LONG_TERM_REF_PICS_SPS)
++			return -EINVAL;
+ 		break;
+ 
+ 	case V4L2_CTRL_TYPE_HEVC_PPS:
+@@ -1280,6 +1290,11 @@ static int std_validate_compound(const s
+ 
+ 		if (p_hevc_st_rps->flags & ~V4L2_HEVC_EXT_SPS_ST_RPS_FLAG_INTER_REF_PIC_SET_PRED)
+ 			return -EINVAL;
++		if (p_hevc_st_rps->num_negative_pics > 16 ||
++		    p_hevc_st_rps->num_positive_pics > 16 ||
++		    p_hevc_st_rps->num_negative_pics +
++		    p_hevc_st_rps->num_positive_pics > 16)
++			return -EINVAL;
+ 		break;
+ 
+ 	case V4L2_CTRL_TYPE_HEVC_EXT_SPS_LT_RPS:
