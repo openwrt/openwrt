@@ -1421,6 +1421,14 @@ define U-Boot/mt7988_rfb-sd
   DEPENDS:=+trusted-firmware-a-mt7988-sdmmc-comb
 endef
 
+define U-Boot/mt7988_tplink_archer-be805
+  NAME:=TP-Link Archer BE805 Chainloader
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=tplink_archer-be805-v1 tplink_archer-be805-v1.20
+  UBOOT_CONFIG:=mt7988a_tplink_archer-be805
+  UBOOT_IMAGE:=u-boot.bin
+endef
+
 define U-Boot/mt7988_tplink_be450
   NAME:=TP-Link BE450 (UBI)
   BUILD_SUBTARGET:=filogic
@@ -1589,6 +1597,7 @@ UBOOT_TARGETS := \
 	mt7988_rfb-nor \
 	mt7988_rfb-emmc \
 	mt7988_rfb-sd \
+	mt7988_tplink_archer-be805 \
 	mt7988_tplink_be450 \
 	mt7988_tplink_tl-7dr7230-v1 \
 	mt7988_tplink_tl-7dr7230-v2 \
