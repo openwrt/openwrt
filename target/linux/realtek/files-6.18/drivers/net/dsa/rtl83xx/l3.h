@@ -85,6 +85,7 @@ struct otto_l3_route {
 	int id;				/* ID number of this route */
 	int row;			/* Row it occupies in the prefix route table */
 	unsigned int members;		/* FIB entries a trap row stands for */
+	struct list_head srcs;		/* source-specific routes a trap row stands for */
 	struct rhlist_head linkage;
 	struct list_head list;		/* all routes, for lookups by destination */
 	u32 tb_id;			/* routing table the route came from */
