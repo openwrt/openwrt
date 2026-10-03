@@ -18,6 +18,9 @@ case "$board" in
 fsl,T4240RDB)
 	ucidef_set_interfaces_lan_wan "eth1" "eth0"
 	;;
+watchguard,firebox-m200)
+	ucidef_set_interfaces_lan_wan "eth1 eth2 sweth3 sweth4 sweth5 sweth6 sweth7" "eth0"
+	;;
 watchguard,firebox-m300)
 	ucidef_set_interfaces_lan_wan "eth1" "eth0"
 	wg_set_opt_interface "eth2" "2"

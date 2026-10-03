@@ -9,7 +9,7 @@ BOARD:=qoriq
 BOARDNAME:=NXP QorIQ (PowerPC)
 CPU_TYPE:=e5500
 FEATURES:=boot-part ext4 fpu legacy-sdcard powerpc64 ramdisk rootfs-part rtc squashfs
-SUBTARGETS:=generic
+SUBTARGETS:=generic e5500
 
 KERNEL_PATCHVER:=6.18
 
