@@ -60,7 +60,13 @@ export function ratelist(rates) {
 	return join(",", map(rates, (rate) => ratestr(rate)));
 };
 
+const sae_compat_re = /^sae-compat/;
+
 function setup_sta(data, config) {
+	/* WPA3 Specification v3.5 2.4: no separate Compatibility Mode for STAs */
+	if (config.mode == 'sta' && config.encryption)
+		config.encryption = replace(config.encryption, sae_compat_re, 'sae-mixed');
+
 	/* use what a 6 GHz AP with the same configuration offers */
 	if (config.mode == 'sta')
 		config.encryption = iface.encryption_band(config.encryption, data.band);
