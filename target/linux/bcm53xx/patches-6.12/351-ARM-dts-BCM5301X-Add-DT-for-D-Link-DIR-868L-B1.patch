@@ -1,0 +1,225 @@
+From: Piotr Nielacny <piotr.nielacny@gmail.com>
+Subject: [PATCH] ARM: dts: BCM5301X: Add DT for D-Link DIR-868L B1
+
+Add device tree for D-Link DIR-868L B1 wireless router based on
+BCM47081 SoC.
+
+Specifications:
+- SoC: Broadcom BCM47081 (ARM Cortex-A9, single core, 800 MHz)
+- RAM: 256 MB DDR2
+- Flash: 128 MB NAND (Spansion S34ML01G, BCH8 ECC) + 2 MB SPI NOR
+- WiFi: BCM4331 (2.4 GHz) + BCM4360 (5 GHz)
+- Ethernet: 5x GbE (4 LAN + 1 WAN) via integrated SRAB switch
+- USB: 1x USB 3.0
+- Firmware format: SEAMA
+
+Signed-off-by: Piotr Nielacny <piotr.nielacny@gmail.com>
+---
+
+--- a/arch/arm/boot/dts/broadcom/Makefile
++++ b/arch/arm/boot/dts/broadcom/Makefile
+@@ -61,6 +61,7 @@ dtb-$(CONFIG_ARCH_BCM_5301X) += \
+ 	bcm47081-asus-rt-n18u.dtb \
+ 	bcm47081-buffalo-wzr-600dhp2.dtb \
+ 	bcm47081-buffalo-wzr-900dhp.dtb \
++	bcm47081-dlink-dir-868l-b1.dtb \
+ 	bcm47081-luxul-xap-1410.dtb \
+ 	bcm47081-luxul-xwr-1200.dtb \
+ 	bcm47081-tplink-archer-c5-v2.dtb \
+--- /dev/null
++++ b/arch/arm/boot/dts/broadcom/bcm47081-dlink-dir-868l-b1.dts
+@@ -0,0 +1,194 @@
++// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
++
++/dts-v1/;
++
++#include "bcm47081.dtsi"
++#include "bcm5301x-nand-cs0-bch8.dtsi"
++
++/ {
++	compatible = "dlink,dir-868l-b1", "brcm,bcm47081", "brcm,bcm4708";
++	model = "D-Link DIR-868L B1";
++
++	chosen {
++		bootargs = "console=ttyS0,115200";
++	};
++
++	memory@0 {
++		device_type = "memory";
++		reg = <0x00000000 0x08000000>,
++		      <0x88000000 0x08000000>;
++	};
++
++	leds {
++		compatible = "gpio-leds";
++
++		led-power-green {
++			label = "green:power";
++			gpios = <&chipcommon 2 GPIO_ACTIVE_LOW>;
++			linux,default-trigger = "default-on";
++		};
++
++		led-power-amber {
++			label = "amber:power";
++			gpios = <&chipcommon 0 GPIO_ACTIVE_LOW>;
++		};
++
++		led-wan-amber {
++			label = "amber:wan";
++			gpios = <&chipcommon 1 GPIO_ACTIVE_LOW>;
++		};
++
++		led-wan-green {
++			label = "green:wan";
++			gpios = <&chipcommon 3 GPIO_ACTIVE_LOW>;
++		};
++
++		led-usb {
++			label = "white:usb";
++			gpios = <&chipcommon 10 GPIO_ACTIVE_LOW>;
++			trigger-sources = <&ohci_port1>, <&ehci_port1>,
++					  <&xhci_port1>;
++			linux,default-trigger = "usbport";
++		};
++	};
++
++	gpio-keys {
++		compatible = "gpio-keys";
++
++		button-wps {
++			label = "WPS";
++			linux,code = <KEY_WPS_BUTTON>;
++			gpios = <&chipcommon 7 GPIO_ACTIVE_LOW>;
++		};
++
++		button-restart {
++			label = "Reset";
++			linux,code = <KEY_RESTART>;
++			gpios = <&chipcommon 11 GPIO_ACTIVE_LOW>;
++		};
++	};
++
++	nvram@1e1f0000 {
++		compatible = "brcm,nvram";
++		reg = <0x1e1f0000 0x10000>;
++
++		et0macaddr: et0macaddr {
++			#nvmem-cell-cells = <1>;
++		};
++	};
++};
++
++&spi_nor {
++	status = "okay";
++
++	partitions {
++		compatible = "fixed-partitions";
++		#address-cells = <1>;
++		#size-cells = <1>;
++
++		partition@0 {
++			label = "u-boot";
++			reg = <0x00000000 0x00040000>;
++			read-only;
++		};
++
++		partition@40000 {
++			label = "devconf";
++			reg = <0x00040000 0x00010000>;
++			read-only;
++		};
++
++		partition@50000 {
++			label = "devdata";
++			reg = <0x00050000 0x00010000>;
++			read-only;
++		};
++
++		partition@60000 {
++			label = "mydlink";
++			reg = <0x00060000 0x00170000>;
++			read-only;
++		};
++
++		partition@1d0000 {
++			label = "langpack";
++			reg = <0x001d0000 0x00020000>;
++			read-only;
++		};
++
++		partition@1f0000 {
++			label = "nvram";
++			reg = <0x001f0000 0x00010000>;
++		};
++	};
++};
++
++&nandcs {
++	partitions {
++		compatible = "fixed-partitions";
++		#address-cells = <1>;
++		#size-cells = <1>;
++
++		partition@0 {
++			compatible = "seama";
++			label = "firmware";
++			reg = <0x00000000 0x08000000>;
++		};
++	};
++};
++
++&usb3 {
++	status = "okay";
++};
++
++&usb3_phy {
++	status = "okay";
++};
++
++&pcie0 {
++	/delete-property/ ranges;
++};
++
++&pcie1 {
++	/delete-property/ ranges;
++};
++
++&pcie2 {
++	/delete-property/ ranges;
++};
++
++&srab {
++	status = "okay";
++
++	ports {
++		port@0 {
++			label = "lan1";
++		};
++
++		port@1 {
++			label = "lan2";
++		};
++
++		port@2 {
++			label = "lan3";
++		};
++
++		port@3 {
++			label = "lan4";
++		};
++
++		port@4 {
++			label = "wan";
++		};
++
++		port@5 {
++			label = "cpu";
++			ethernet = <&gmac0>;
++
++			fixed-link {
++				speed = <1000>;
++				full-duplex;
++			};
++		};
++	};
++};

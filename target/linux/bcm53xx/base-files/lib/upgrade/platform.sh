@@ -37,6 +37,7 @@ platform_expected_image() {
 	local machine=$(board_name)
 
 	case "$machine" in
+		"dlink,dir-868l-b1")	echo "seamaseal wrgac02_dlink.2013gui_dir868lb"; return;;
 		"dlink,dir-885l")	echo "seamaseal wrgac42_dlink.2015_dir885l"; return;;
 		"dlink,dir-890l")	echo "seamaseal wrgac36_dlink.2013gui_dir890"; return;;
 		"luxul,abr-4500-v1")	echo "lxl ABR-4500"; return;;
