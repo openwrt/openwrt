@@ -1,0 +1,48 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Gleb Pesin <dormancygrace@gmail.com>
+Date: Thu, 1 Oct 2026 20:35:55 +0000
+Subject: [PATCH] net: ethernet: mediatek: allocate DSA metadata before open
+
+Backport the DSA metadata allocation ordering from the Linux
+preparation. Metadata allocation can fail. Do it before PHY connection,
+DMA startup, NAPI and queue activation so an allocation error leaves the
+conduit closed. The later block still disables hardware tagging for a
+non-DSA or XDP path.
+
+Keep the original NETSYS generation condition: newer NETSYS devices
+return before using these metadata destinations and must remain
+independent of allocation failures for unused destinations.
+
+Assisted-by: Codex (OpenAI GPT-6)
+Signed-off-by: Gleb Pesin <dormancygrace@gmail.com>
+---
+
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -4140,6 +4140,13 @@ static int mtk_open(struct net_device *d
+ 
+ 	ppe_num = eth->soc->ppe_num;
+ 
++	if (!mtk_is_netsys_v2_or_greater(eth) &&
++	    (mtk_uses_dsa(dev) || mtk_uses_ralink_dsa(dev)) && !eth->prog) {
++		err = mtk_dsa_metadata_init(eth);
++		if (err)
++			return err;
++	}
++
+ 	err = phylink_of_phy_connect(mac->phylink, mac->of_node, 0);
+ 	if (err) {
+ 		netdev_err(dev, "%s: could not attach PHY: %d\n", __func__,
+@@ -4202,11 +4209,7 @@ static int mtk_open(struct net_device *d
+ 	if (mtk_is_netsys_v2_or_greater(eth))
+ 		return 0;
+ 
+-	if ((mtk_uses_dsa(dev) || mtk_uses_ralink_dsa(dev)) && !eth->prog) {
+-		err = mtk_dsa_metadata_init(eth);
+-		if (err)
+-			return err;
+-	} else {
++	if ((!mtk_uses_dsa(dev) && !mtk_uses_ralink_dsa(dev)) || eth->prog) {
+ 		/* Hardware DSA untagging and VLAN RX offloading need to be
+ 		 * disabled if at least one MAC does not use DSA.
+ 		 */
