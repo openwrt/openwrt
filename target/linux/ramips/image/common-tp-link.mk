@@ -68,6 +68,18 @@ define Device/tplink-v2
 	append-metadata
 endef
 
+define Device/tplink-v2-okli
+  $(Device/tplink-v2)
+  LOADER_TYPE := bin
+  LZMA_TEXT_START := 0x80a00000
+  COMPILE := loader-$(1).bin
+  COMPILE/loader-$(1).bin := loader-okli-compile | pad-to 64k | lzma | pad-to 3584
+  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma -M 0x4f4b4c49 | pad-to 64k
+  IMAGE/factory.bin := tplink-v2-okli-factory $(1)
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | \
+	check-size | append-metadata
+endef
+
 define Device/tplink-safeloader
   DEVICE_VENDOR := TP-Link
   TPLINK_BOARD_ID :=
