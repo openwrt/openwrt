@@ -194,6 +194,10 @@ fremap = -ffile-prefix-map=$(1)=$(2)
 remap_staging_dir = $(call $(1),$(STAGING_DIR),staging_dir/$(notdir $(STAGING_DIR)))
 IREMAP_STAGING_DIR = $(call remap_staging_dir,iremap)
 
+# The compiler's own headers, e.g. larchintrin.h which the LoongArch kernel
+# includes, come with the absolute path of the toolchain directory.
+IREMAP_TOOLCHAIN_DIR = $(call iremap,$(TOOLCHAIN_DIR),staging_dir/$(notdir $(TOOLCHAIN_DIR)))
+
 PACKAGE_DIR?=$(BIN_DIR)/packages
 PACKAGE_DIR_ALL?=$(TOPDIR)/staging_dir/packages/$(BOARD)
 BUILD_DIR:=$(BUILD_DIR_BASE)/$(TARGET_DIR_NAME)
