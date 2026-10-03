@@ -236,6 +236,10 @@ $(curdir)/ := .config prereq
 $(curdir)/install: $(curdir)/compile
 
 tools_enabled = $(foreach tool,$(sort $(tools-y) $(tools-)),$(if $(filter $(tool),$(tools-y)),y,n))
+
+ifeq ($(SDK),)
 $(eval $(call stampfile,$(curdir),tools,compile,,_$(subst $(space),,$(tools_enabled)),$(STAGING_DIR_HOST)))
 $(eval $(call stampfile,$(curdir),tools,check,$(TMP_DIR)/.build,,$(STAGING_DIR_HOST)))
+endif
+
 $(eval $(call subdir,$(curdir)))
