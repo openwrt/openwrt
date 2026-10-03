@@ -1,0 +1,61 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 3 Oct 2026 22:30:00 +0200
+Subject: [PATCH] AP: restore BSS Color Disabled when no colour change starts
+
+hostapd_switch_color_timeout_handler() sets he_bss_color_disabled
+before it starts the colour change of each BSS, so that the CCA beacons
+and any beacon rebuilt during the countdown carry BSS Color Disabled.
+hostapd_fill_cca_settings() builds the beacons with the previous state
+again, and the driver installs the CCA beacons only for a change it
+starts. Where hostapd_drv_switch_color() fails, or the settings cannot
+be built, for every BSS of the radio, no beacon carries the disabled
+state, but the configuration keeps it: a later beacon rebuild disables
+BSS Color without a colour change, and get_status reports -1 for a
+colour the beacons still use.
+
+Count the colour changes that started, and where none did, restore the
+state BSS Color Disabled had before, which also resumes the ageing of
+the OBSS colours that the disabled state paused.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -5403,7 +5403,8 @@ void hostapd_switch_color_timeout_handle
+ {
+ 	struct hostapd_data *hapd = (struct hostapd_data *) eloop_data;
+ 	os_time_t delta_t;
+-	unsigned int b;
++	unsigned int b, started = 0;
++	u8 was_disabled;
+ 	u64 avoided;
+ 	int i, r;
+ 
+@@ -5421,6 +5422,7 @@ void hostapd_switch_color_timeout_handle
+ 	 * hostapd_fill_cca_settings()) and any incidental beacon rebuild
+ 	 * during the CCA countdown carry the correct Disabled=1 state.
+ 	 */
++	was_disabled = hapd->iface->conf->he_op.he_bss_color_disabled;
+ 	hapd->iface->conf->he_op.he_bss_color_disabled = 1;
+ 	hostapd_bss_colors_in_use_update(hapd->iface);
+ 
+@@ -5463,12 +5465,19 @@ void hostapd_switch_color_timeout_handle
+ 		ret = hostapd_drv_switch_color(bss, &settings);
+ 		if (ret)
+ 			hostapd_cleanup_cca_params(bss);
++		else
++			started++;
+ 
+ 		free_beacon_data(&settings.beacon_cca);
+ 		free_beacon_data(&settings.beacon_after);
+ 		os_free(settings.ubpr.unsol_bcast_probe_resp_tmpl);
+ 	}
+ 
++	if (!started) {
++		hapd->iface->conf->he_op.he_bss_color_disabled = was_disabled;
++		hostapd_bss_colors_in_use_update(hapd->iface);
++	}
++
+ 	hostapd_ubus_notify_bss_color(hapd);
+ }
+ 
