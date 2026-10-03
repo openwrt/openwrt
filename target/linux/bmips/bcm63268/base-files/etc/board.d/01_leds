@@ -27,6 +27,10 @@ sagem,fast-3864-op)
 	ucidef_set_led_netdev "wan_link" "WAN_LINK" "amber:wan" "wan" "link"
 	ucidef_set_led_netdev "wan_act" "WAN_ACT" "green:wan" "wan" "rx tx"
 	;;
+sagem,fast-4353-cfe-spi-nor |\
+sagem,fast-4353-uboot-nand)
+	ucidef_set_led_netdev "wan_link" "WAN_LINK" "amber:wan" "wan" "link"
+	;;
 esac
 
 board_config_flush
