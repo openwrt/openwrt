@@ -157,6 +157,7 @@ define BuildKernel
   $(KERNEL_CONFIG_CHECK): $(STAMP_PREPARED) $(LINUX_KCONFIG_LIST) $(TOPDIR)/.config FORCE
 	@mkdir -p $(LINUX_DIR)
 	@[ -f $(STAMP_CONFIGURED) ] && [ -d $(LINUX_DIR)/user_headers ] && \
+		[ -f $(LINUX_DIR)/.config.prev ] && \
 		[ -z "$$$$(find $(KERNEL_CONFIG_DEPENDS) ! -type d \
 			-newer $(STAMP_CONFIGURED) -print -quit 2>/dev/null)" ] || \
 		touch $$@
