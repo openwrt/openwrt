@@ -1,0 +1,22 @@
+#
+# Copyright (C) 2026 OpenWrt.org
+#
+
+. /lib/functions/uci-defaults.sh
+
+board_config_update
+
+board=$(board_name)
+
+case "$board" in
+hardkernel,odroid-c2)
+	ucidef_set_interface_lan "eth0" "dhcp"
+	;;
+*)
+	ucidef_set_interface_lan "eth0"
+	;;
+esac
+
+board_config_flush
+
+exit 0

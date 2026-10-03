@@ -684,7 +684,6 @@ endef
 
 $(eval $(call KernelPackage,drm-imx-hdmi))
 
-
 define KernelPackage/drm-imx-ldb
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Freescale i.MX LVDS DRM support
@@ -707,6 +706,34 @@ define KernelPackage/drm-imx-ldb/description
 endef
 
 $(eval $(call KernelPackage,drm-imx-ldb))
+
+
+define KernelPackage/drm-meson
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=Amlogic Meson DRM support
+  DEPENDS:=@TARGET_meson +kmod-drm +kmod-drm-kms-helper +kmod-drm-display-helper \
+	+kmod-drm-dma-helper +kmod-drm-client-lib +kmod-fb-sys-fops +kmod-fb-sys-ram
+  KCONFIG:=CONFIG_DRM_MESON \
+	CONFIG_DRM_MESON_DW_HDMI \
+	CONFIG_DRM_MESON_DW_MIPI_DSI=n \
+	CONFIG_DRM_DW_HDMI \
+	CONFIG_DRM_DISPLAY_CONNECTOR \
+	CONFIG_MESON_CANVAS
+  FILES:= \
+	$(LINUX_DIR)/drivers/soc/amlogic/meson-canvas.ko \
+	$(LINUX_DIR)/drivers/gpu/drm/meson/meson-drm.ko \
+	$(LINUX_DIR)/drivers/gpu/drm/meson/meson_dw_hdmi.ko \
+	$(LINUX_DIR)/drivers/gpu/drm/bridge/synopsys/dw-hdmi.ko \
+	$(LINUX_DIR)/drivers/gpu/drm/bridge/display-connector.ko
+  AUTOLOAD:=$(call AutoProbe,meson-canvas display-connector meson-drm meson-dw-hdmi dw-hdmi)
+endef
+
+define KernelPackage/drm-meson/description
+  Direct Rendering Manager (DRM) support for Amlogic Meson SoCs.
+endef
+
+$(eval $(call KernelPackage,drm-meson))
+
 
 define KernelPackage/drm-panel-mipi-dbi
   SUBMENU:=$(VIDEO_MENU)
