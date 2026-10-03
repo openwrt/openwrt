@@ -1512,22 +1512,20 @@ static int rteth_set_link_ksettings(struct net_device *dev,
 	return phylink_ethtool_ksettings_set(ctrl->phylink, cmd);
 }
 
-static int rteth_83xx_set_features(struct net_device *dev, netdev_features_t features)
+static void rteth_set_rx_mode(struct net_device *dev)
 {
 	struct rteth_ctrl *ctrl = netdev_priv(dev);
 
-	if ((features ^ dev->features) & NETIF_F_RXCSUM)
-		regmap_assign_bits(ctrl->map, ctrl->cfg->mac_l2_port_ctrl, BIT(3), features & NETIF_F_RXCSUM);
-
-	return 0;
+	ctrl->cfg->set_rx_mode(dev);
 }
 
-static int rteth_93xx_set_features(struct net_device *dev, netdev_features_t features)
+static int rteth_set_features(struct net_device *dev, netdev_features_t features)
 {
 	struct rteth_ctrl *ctrl = netdev_priv(dev);
 
 	if ((features ^ dev->features) & NETIF_F_RXCSUM)
-		regmap_assign_bits(ctrl->map, ctrl->cfg->mac_l2_port_ctrl, BIT(4), features & NETIF_F_RXCSUM);
+		regmap_assign_bits(ctrl->map, ctrl->cfg->mac_l2_port_ctrl,
+				   ctrl->cfg->rx_csum_mask, features & NETIF_F_RXCSUM);
 
 	return 0;
 }
@@ -1549,16 +1547,16 @@ static int rteth_setup_tc(struct net_device *dev, enum tc_setup_type type, void 
 	return ds->ops->port_setup_tc(ds, dp->index, type, type_data);
 }
 
-static const struct net_device_ops rteth_838x_netdev_ops = {
+static const struct net_device_ops rteth_netdev_ops = {
 	.ndo_open		= rteth_open,
 	.ndo_stop		= rteth_stop,
 	.ndo_change_mtu		= rteth_change_mtu,
 	.ndo_start_xmit		= rteth_start_xmit,
 	.ndo_set_mac_address	= rteth_set_mac_address,
 	.ndo_validate_addr	= eth_validate_addr,
-	.ndo_set_rx_mode	= rteth_838x_set_rx_mode,
+	.ndo_set_rx_mode	= rteth_set_rx_mode,
 	.ndo_tx_timeout		= rteth_tx_timeout,
-	.ndo_set_features	= rteth_83xx_set_features,
+	.ndo_set_features	= rteth_set_features,
 	.ndo_setup_tc		= rteth_setup_tc,
 };
 
@@ -1598,20 +1596,8 @@ static const struct rteth_cfg rteth_838x_cfg = {
 	.init_mac		= rteth_838x_init_mac,
 	.set_hol		= rteth_83xx_set_hol,
 	.set_max_packet_length	= rteth_838x_set_max_packet_length,
-	.netdev_ops		= &rteth_838x_netdev_ops,
-};
-
-static const struct net_device_ops rteth_839x_netdev_ops = {
-	.ndo_open		= rteth_open,
-	.ndo_stop		= rteth_stop,
-	.ndo_change_mtu		= rteth_change_mtu,
-	.ndo_start_xmit		= rteth_start_xmit,
-	.ndo_set_mac_address	= rteth_set_mac_address,
-	.ndo_validate_addr	= eth_validate_addr,
-	.ndo_set_rx_mode	= rteth_839x_set_rx_mode,
-	.ndo_tx_timeout		= rteth_tx_timeout,
-	.ndo_set_features	= rteth_83xx_set_features,
-	.ndo_setup_tc		= rteth_setup_tc,
+	.set_rx_mode		= rteth_838x_set_rx_mode,
+	.rx_csum_mask		= BIT(3),
 };
 
 static const struct rteth_cfg rteth_839x_cfg = {
@@ -1649,20 +1635,8 @@ static const struct rteth_cfg rteth_839x_cfg = {
 	.set_hol		= rteth_83xx_set_hol,
 	.set_max_packet_length	= rteth_839x_set_max_packet_length,
 	.setup_notify_buffer	= rteth_839x_setup_notify_buffer,
-	.netdev_ops		= &rteth_839x_netdev_ops,
-};
-
-static const struct net_device_ops rteth_930x_netdev_ops = {
-	.ndo_open		= rteth_open,
-	.ndo_stop		= rteth_stop,
-	.ndo_change_mtu		= rteth_change_mtu,
-	.ndo_start_xmit		= rteth_start_xmit,
-	.ndo_set_mac_address	= rteth_set_mac_address,
-	.ndo_validate_addr	= eth_validate_addr,
-	.ndo_set_rx_mode	= rteth_930x_set_rx_mode,
-	.ndo_tx_timeout		= rteth_tx_timeout,
-	.ndo_set_features	= rteth_93xx_set_features,
-	.ndo_setup_tc		= rteth_setup_tc,
+	.set_rx_mode		= rteth_839x_set_rx_mode,
+	.rx_csum_mask		= BIT(3),
 };
 
 static const struct rteth_cfg rteth_930x_cfg = {
@@ -1700,20 +1674,8 @@ static const struct rteth_cfg rteth_930x_cfg = {
 	.init_mac		= rteth_930x_init_mac,
 	.set_hol		= rteth_93xx_set_hol,
 	.set_max_packet_length	= rteth_930x_set_max_packet_length,
-	.netdev_ops		= &rteth_930x_netdev_ops,
-};
-
-static const struct net_device_ops rteth_931x_netdev_ops = {
-	.ndo_open		= rteth_open,
-	.ndo_stop		= rteth_stop,
-	.ndo_change_mtu		= rteth_change_mtu,
-	.ndo_start_xmit		= rteth_start_xmit,
-	.ndo_set_mac_address	= rteth_set_mac_address,
-	.ndo_validate_addr	= eth_validate_addr,
-	.ndo_set_rx_mode	= rteth_931x_set_rx_mode,
-	.ndo_tx_timeout		= rteth_tx_timeout,
-	.ndo_set_features	= rteth_93xx_set_features,
-	.ndo_setup_tc		= rteth_setup_tc,
+	.set_rx_mode		= rteth_930x_set_rx_mode,
+	.rx_csum_mask		= BIT(4),
 };
 
 static const struct rteth_cfg rteth_931x_cfg = {
@@ -1751,7 +1713,8 @@ static const struct rteth_cfg rteth_931x_cfg = {
 	.init_mac		= rteth_931x_init_mac,
 	.set_hol		= rteth_93xx_set_hol,
 	.set_max_packet_length	= rteth_931x_set_max_packet_length,
-	.netdev_ops		= &rteth_931x_netdev_ops,
+	.set_rx_mode		= rteth_931x_set_rx_mode,
+	.rx_csum_mask		= BIT(4),
 };
 
 static const struct phylink_mac_ops rteth_mac_ops = {
@@ -1867,7 +1830,7 @@ static int rteth_probe(struct platform_device *pdev)
 	dev->max_mtu = ctrl->cfg->max_mtu;
 	dev->features = NETIF_F_RXCSUM;
 	dev->hw_features = NETIF_F_RXCSUM;
-	dev->netdev_ops = ctrl->cfg->netdev_ops;
+	dev->netdev_ops = &rteth_netdev_ops;
 
 	/* Obtain device IRQ number */
 	dev->irq = platform_get_irq(pdev, 0);
