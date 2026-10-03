@@ -1,0 +1,42 @@
+// SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+/dts-v1/;
+/plugin/;
+
+#include <dt-bindings/phy/phy.h>
+#include "an7581-npu-mt7992.dtsi"
+
+&{/} {
+	model = "Airoha AN7581 Evaluation Board (eMMC + Kite)";
+	compatible = "airoha,an7581-evb", "airoha,an7581", "airoha,en7581";
+};
+
+&afe {
+	status = "okay";
+};
+
+&sound {
+	status = "okay";
+};
+
+&usb0 {
+	status = "okay";
+};
+
+&usb1 {
+	status = "okay";
+
+	mediatek,u3p-dis-msk = <0x1>;
+	phys = <&usb1_phy PHY_TYPE_USB2>;
+};
+
+&i2c0 {
+	status = "okay";
+};
+
+&mmc0 {
+	status = "okay";
+};
+
+&gdm4 {
+	status = "okay";
+};

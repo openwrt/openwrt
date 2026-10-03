@@ -1,26 +1,41 @@
 // SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
 /dts-v1/;
+/plugin/;
 
-#include "an7581-evb-emmc.dtsi"
+#include <dt-bindings/phy/phy.h>
+#include <dt-bindings/reset/airoha,en7581-reset.h>
 #include "an7581-npu-mt7996.dtsi"
 
-/ {
+&{/} {
 	model = "Airoha AN7581 Evaluation Board (eMMC + Eagle)";
 	compatible = "airoha,an7581-evb", "airoha,an7581", "airoha,en7581";
+};
 
-	aliases {
-		serial0 = &uart1;
-	};
+&afe {
+	status = "okay";
+};
 
-	chosen {
-		bootargs = "console=ttyS0,115200 earlycon";
-		stdout-path = "serial0:115200n8";
-	};
+&sound {
+	status = "okay";
+};
 
-	memory@80000000 {
-		device_type = "memory";
-		reg = <0x0 0x80000000 0x2 0x00000000>;
-	};
+&usb0 {
+	status = "okay";
+};
+
+&usb1 {
+	status = "okay";
+
+	mediatek,u3p-dis-msk = <0x1>;
+	phys = <&usb1_phy PHY_TYPE_USB2>;
+};
+
+&i2c0 {
+	status = "okay";
+};
+
+&mmc0 {
+	status = "okay";
 };
 
 &pcie0 {
@@ -57,4 +72,8 @@
 			drive-open-drain = <1>;
 		};
 	};
+};
+
+&gdm4 {
+	status = "okay";
 };
