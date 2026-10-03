@@ -1,0 +1,33 @@
+From 0fe2995196a5973e226f506c9ec705f0dccec82f Mon Sep 17 00:00:00 2001
+From: Kathiravan Thirumoorthy <kathiravan.thirumoorthy@oss.qualcomm.com>
+Date: Mon, 21 Sep 2026 11:49:34 +0530
+Subject: [PATCH] clk: qcom: ipq5018: add 24MHz rate for USB UTMI clock
+
+The USB UTMI reference clock must operate at 24 MHz, as recommended
+by the hardware team, for reliable USB operation.
+
+Validation showed that USB 3.2 hub enumeration with USB 2.0 devices
+fails when the UTMI reference clock is not configured to the required
+24 MHz rate. Configuring the UTMI reference clock to 24 MHz to resolve
+the enumeration failure and ensure successful device detection.
+
+Cc: stable@vger.kernel.org
+Fixes: e3fdbef1bab8 ("clk: qcom: Add Global Clock controller (GCC) driver for IPQ5018")
+Signed-off-by: Kathiravan Thirumoorthy <kathiravan.thirumoorthy@oss.qualcomm.com>
+Reviewed-by: Abel Vesa <abel.vesa@oss.qualcomm.com>
+Link: https://patch.msgid.link/20260921-ipq_clk_changes-v1-1-d242e3d49648@oss.qualcomm.com
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
+---
+ drivers/clk/qcom/gcc-ipq5018.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/clk/qcom/gcc-ipq5018.c
++++ b/drivers/clk/qcom/gcc-ipq5018.c
+@@ -1279,6 +1279,7 @@ static struct clk_rcg2 usb0_master_clk_s
+ };
+ 
+ static const struct freq_tbl ftbl_usb0_mock_utmi_clk_src[] = {
++	F(24000000, P_XO, 1, 0, 0),
+ 	F(60000000, P_GPLL4, 10, 1, 2),
+ 	{ }
+ };

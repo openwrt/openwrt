@@ -1,0 +1,89 @@
+From a95758e9718ad686e9e7e8addcc181bea853e5a2 Mon Sep 17 00:00:00 2001
+From: Kathiravan Thirumoorthy <kathiravan.thirumoorthy@oss.qualcomm.com>
+Date: Tue, 14 Jul 2026 10:11:22 +0530
+Subject: [PATCH] arm64: dts: qcom: ipq5018: move PCIe phys and PERST# to port
+ node
+
+To align with the newer style of binding, move the phys, PERST# to the
+port node.
+
+Reviewed-by: Manivannan Sadhasivam <mani@kernel.org>
+Reviewed-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Signed-off-by: Kathiravan Thirumoorthy <kathiravan.thirumoorthy@oss.qualcomm.com>
+Link: https://lore.kernel.org/r/20260714-pcie_move_to_new_binding-v1-3-6bb25887a0dc@oss.qualcomm.com
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
+---
+ arch/arm64/boot/dts/qcom/ipq5018-rdp432-c2.dts |  8 +++++---
+ arch/arm64/boot/dts/qcom/ipq5018.dtsi          | 12 +++++-------
+ 2 files changed, 10 insertions(+), 10 deletions(-)
+
+--- a/arch/arm64/boot/dts/qcom/ipq5018-rdp432-c2.dts
++++ b/arch/arm64/boot/dts/qcom/ipq5018-rdp432-c2.dts
+@@ -34,9 +34,6 @@
+ 	pinctrl-0 = <&pcie0_default>;
+ 	pinctrl-names = "default";
+ 
+-	perst-gpios = <&tlmm 15 GPIO_ACTIVE_LOW>;
+-	wake-gpios = <&tlmm 16 GPIO_ACTIVE_LOW>;
+-
+ 	status = "okay";
+ };
+ 
+@@ -44,6 +41,11 @@
+ 	status = "okay";
+ };
+ 
++&pcie0_port0 {
++	reset-gpios = <&tlmm 15 GPIO_ACTIVE_LOW>;
++	wake-gpios = <&tlmm 16 GPIO_ACTIVE_LOW>;
++};
++
+ &sdhc_1 {
+ 	pinctrl-0 = <&sdc_default_state>;
+ 	pinctrl-names = "default";
+--- a/arch/arm64/boot/dts/qcom/ipq5018.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq5018.dtsi
+@@ -758,9 +758,6 @@
+ 			/* The controller supports Gen3, but the connected PHY is Gen2-capable */
+ 			max-link-speed = <2>;
+ 
+-			phys = <&pcie1_phy>;
+-			phy-names = "pciephy";
+-
+ 			ranges = <0x01000000 0 0x00000000 0x80200000 0 0x00100000>,
+ 				 <0x02000000 0 0x80300000 0x80300000 0 0x10000000>;
+ 
+@@ -829,6 +826,8 @@
+ 				reg = <0x0 0x0 0x0 0x0 0x0>;
+ 				bus-range = <0x01 0xff>;
+ 
++				phys = <&pcie1_phy>;
++
+ 				#address-cells = <3>;
+ 				#size-cells = <2>;
+ 				ranges;
+@@ -859,9 +858,6 @@
+ 			/* The controller supports Gen3, but the connected PHY is Gen2-capable */
+ 			max-link-speed = <2>;
+ 
+-			phys = <&pcie0_phy>;
+-			phy-names = "pciephy";
+-
+ 			ranges = <0x01000000 0 0x00000000 0xa0200000 0 0x00100000>,
+ 				 <0x02000000 0 0xa0300000 0xa0300000 0 0x10000000>;
+ 
+@@ -925,11 +921,13 @@
+ 
+ 			status = "disabled";
+ 
+-			pcie@0 {
++			pcie0_port0: pcie@0 {
+ 				device_type = "pci";
+ 				reg = <0x0 0x0 0x0 0x0 0x0>;
+ 				bus-range = <0x01 0xff>;
+ 
++				phys = <&pcie0_phy>;
++
+ 				#address-cells = <3>;
+ 				#size-cells = <2>;
+ 				ranges;

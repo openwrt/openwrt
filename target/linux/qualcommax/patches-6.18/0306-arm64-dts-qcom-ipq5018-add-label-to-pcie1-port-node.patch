@@ -1,0 +1,36 @@
+From 7000e5f12181868f75e3c54aaa817056c6c6bafb Mon Sep 17 00:00:00 2001
+From: George Moussalem <george.moussalem@outlook.com>
+Date: Sun, 27 Sep 2026 08:43:23 +0400
+Subject: [PATCH] arm64: dts: qcom: ipq5018: add label to PCIe1 port node
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+Message-Id: <20260927-ipq5018-pcie1-label-v2-1-19e766697614@outlook.com>
+X-Change-ID: 20260927-ipq5018-pcie1-label-d7d405caf28f
+
+Commit a95758e9718a ("arm64: dts: qcom: ipq5018: move PCIe phys and
+PERST# to port node") added a label to the PCIe0 port node but not to
+that of PCIe1. Boards that have a device connected over PCIe1 need to
+reference the port node in the board dts files, so add a label for it.
+
+Signed-off-by: George Moussalem <george.moussalem@outlook.com>
+---
+Changes in v2:
+- EDITME: describe what is new in this series revision.
+- EDITME: use bulletpoints and terse descriptions.
+- Link to v1: https://lore.kernel.org/r/20260927-ipq5018-pcie1-label-v1-1-41f7d42f9a7b@outlook.com
+---
+ arch/arm64/boot/dts/qcom/ipq5018.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/arm64/boot/dts/qcom/ipq5018.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq5018.dtsi
+@@ -892,7 +892,7 @@
+ 
+ 			status = "disabled";
+ 
+-			pcie@0 {
++			pcie1_port0: pcie@0 {
+ 				device_type = "pci";
+ 				reg = <0x0 0x0 0x0 0x0 0x0>;
+ 				bus-range = <0x01 0xff>;

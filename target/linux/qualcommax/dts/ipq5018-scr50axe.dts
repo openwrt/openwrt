@@ -164,14 +164,9 @@
 	};
 };
 
-&mdio0 {
-	status = "okay";
-};
-
 &mdio1 {
 	status = "okay";
-	pinctrl-0 = <&mdio1_pins>;
-	pinctrl-names = "default";
+
 	reset-gpios = <&tlmm 39 GPIO_ACTIVE_LOW>;
 
 	qca8337_0: ethernet-phy@0 {
@@ -299,22 +294,6 @@
 };
 
 &tlmm {
-	mdio1_pins: mdio-state {
-		mdc-pins {
-			pins = "gpio36";
-			function = "mdc";
-			drive-strength = <8>;
-			bias-pull-up;
-		};
-
-		mdio-pins {
-			pins = "gpio37";
-			function = "mdio";
-			drive-strength = <8>;
-			bias-pull-up;
-		};
-	};
-
 	leds_pins: leds-pins {
 		pins = "gpio26", "gpio35", "gpio32", "gpio25", "gpio34",
 		       "gpio24", "gpio31", "gpio33", "gpio30", "gpio10",
