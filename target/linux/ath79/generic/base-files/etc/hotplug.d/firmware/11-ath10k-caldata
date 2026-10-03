@@ -17,6 +17,17 @@ case "$FIRMWARE" in
 		ln -sf /lib/firmware/ath10k/pre-cal-pci-0000\:00\:00.0.bin \
 			/lib/firmware/ath10k/QCA9888/hw2.0/board.bin
 		;;
+
+	tplink,deco-m4r-v1)
+		caldata_extract "art" 0x5000 0x2f20
+		ln -sf /lib/firmware/ath10k/pre-cal-pci-0000\:00\:00.0.bin \
+			/lib/firmware/ath10k/QCA9888/hw2.0/board.bin
+		# overwite board-2.bin, it contains bmi board which matches deco m4r but is not correct for this board
+		# we need to keep file to survive firmware upgrades
+		# this will cause `found invalid board magic` during load unfortunetely
+		ln -sf /lib/firmware/ath10k/pre-cal-pci-0000\:00\:00.0.bin \
+			/lib/firmware/ath10k/QCA9888/hw2.0/board-2.bin
+		;;
 	esac
 	;;
 *)
