@@ -1,0 +1,74 @@
+From 737ca96e70491f2e29ac8528fa065fa54e224cd5 Mon Sep 17 00:00:00 2001
+From: Nilanka de Silva <nilankadsilva@gmail.com>
+Date: Tue, 22 Sep 2026 17:52:59 +0200
+Subject: [PATCH] AP MLD: Break the mutual ACS deferral between partner links
+
+hostapd_driver_scan() refuses to start an ACS scan while any ML partner
+link's interface is in HAPD_IFACE_ACS state. When two links of the same
+MLD are configured with channel=0 they enter that state at the same
+time, each sees the other "in ACS", and both return -EBUSY. acs.c retries
+every ACS_SCAN_RETRY_INTERVAL until ACS_SCAN_RETRY_MAX_COUNT, then one
+link fails ("ACS: Failed to request initial scan (all re-attempts
+failed)") and is disabled, leaving a single-link MLD. Nothing ever
+breaks the tie, because the state check does not distinguish a partner
+that is scanning from a partner that is also waiting to scan.
+
+Observed on MT7996 (one wiphy, 5 GHz + 6 GHz AP MLD links): both links
+log "ACS in progress in a partner link - try to scan later" and "Failed
+to request acs scan ret=-16 (Resource busy)" in lock step for the whole
+retry window. The behaviour is the same under different regulatory
+domains (NL, SA); a separate non-MLD BSS on the same wiphy completes ACS
+normally.
+
+Only defer while the partner really has a scan in flight (scan_cb set).
+When both links are still waiting to start, let the link with the lowest
+mld_link_id go first so the two ACS runs serialise.
+
+Tested on MT7996 with both MLD links on ACS: the second link logs
+"Partner link 1 starts ACS first - try to scan later", the first link
+completes ACS, then the second runs its own; both links are up about
+50 s after start, on a reload and on a cold boot.
+
+Signed-off-by: Nilanka de Silva <nilankadsilva@gmail.com>
+---
+ src/ap/ap_drv_ops.c | 20 ++++++++++++++++++--
+ 1 file changed, 18 insertions(+), 2 deletions(-)
+
+diff --git a/src/ap/ap_drv_ops.c b/src/ap/ap_drv_ops.c
+index 0b83a67..5ab76d9 100644
+--- a/src/ap/ap_drv_ops.c
++++ b/src/ap/ap_drv_ops.c
+@@ -837,12 +837,28 @@ int hostapd_driver_scan(struct hostapd_data *hapd,
+ 
+ 			h_hapd = h_iface->bss[0];
+ 
+-			if (hostapd_is_ml_partner(hapd, h_hapd) &&
+-			    h_hapd->iface->state == HAPD_IFACE_ACS) {
++			if (!hostapd_is_ml_partner(hapd, h_hapd) ||
++			    h_hapd->iface->state != HAPD_IFACE_ACS)
++				continue;
++
++			/* The partner has a scan in flight: wait for it. */
++			if (h_hapd->iface->scan_cb) {
+ 				wpa_printf(MSG_INFO,
+ 					   "ACS in progress in a partner link - try to scan later");
+ 				return -EBUSY;
+ 			}
++
++			/*
++			 * Both links are still waiting to start their ACS scan:
++			 * let the lowest link id go first so the scans serialise
++			 * instead of deferring to each other forever.
++			 */
++			if (h_hapd->mld_link_id < hapd->mld_link_id) {
++				wpa_printf(MSG_INFO,
++					   "Partner link %d starts ACS first - try to scan later",
++					   h_hapd->mld_link_id);
++				return -EBUSY;
++			}
+ 		}
+ 	}
+ #endif /* CONFIG_IEEE80211BE */
+-- 
+2.54.0 (Apple Git-157)
+
