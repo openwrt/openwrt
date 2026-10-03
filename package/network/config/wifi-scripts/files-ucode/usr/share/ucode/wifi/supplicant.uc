@@ -62,7 +62,7 @@ export function ratelist(rates) {
 
 const sae_compat_re = /^sae-compat/;
 
-function setup_sta(data, config) {
+function setup_sta(data, config, phy_features) {
 	/* WPA3 Specification v3.5 2.4: no separate Compatibility Mode for STAs */
 	if (config.mode == 'sta' && config.encryption)
 		config.encryption = replace(config.encryption, sae_compat_re, 'sae-mixed');
@@ -71,11 +71,19 @@ function setup_sta(data, config) {
 	if (config.mode == 'sta')
 		config.encryption = iface.encryption_band(config.encryption, data.band);
 
-	/* WPA3 Specification v3.5 2.5 items 9 and 10 */
-	if (wildcard(data.htmode ?? '', 'EHT*'))
+	/* WPA3 Specification v3.5 2.5 items 9 and 10: "A STA that enables EHT
+	 * or MLO shall, in its Network Profile, allow AKM suite selector
+	 * 00-0F-AC:24" and "allow GCMP-256 to be selected as a pairwise cipher" */
+	let eht = wildcard(data.htmode ?? '', 'EHT*');
+	if (eht)
 		set_default(config, 'sae_ext_key', true);
+	let sta_gcmp256 = eht && config.mode == 'sta' && config.gcmp256 !== false &&
+		phy_features?.cipher_gcmp256;
 
-	iface.parse_encryption(config, data);
+	iface.parse_encryption(config, data, phy_features);
+
+	if (sta_gcmp256 && (config.wpa & 2) && config.wpa_pairwise == 'CCMP')
+		config.wpa_pairwise = 'CCMP GCMP-256';
 
 	if (config.auth_type in [ 'sae', 'owe', 'eap2', 'eap192', 'dpp' ])
 		config.ieee80211w = 2;
@@ -326,7 +334,11 @@ export function generate(config_list, data, interface) {
 
 	append_vars(interface.config, [ 'ctrl_interface', 'country', 'beacon_int', 'freq_list' ]);
 
-	setup_sta(data.config, interface.config);
+	let phy_features = {};
+	if (wildcard(data.config.htmode ?? '', 'EHT*'))
+		phy_features.cipher_gcmp256 = iface.phy_cipher_gcmp256(wiphy_info(data.phy));
+
+	setup_sta(data.config, interface.config, phy_features);
 
 	let file_name = `/var/run/wpa-supplicant-${interface.config.ifname}.conf`;
 	if (fs.stat(file_name))

@@ -3,6 +3,12 @@
 import { append_value, log } from 'wifi.common';
 import * as fs from 'fs';
 
+const WLAN_CIPHER_SUITE_GCMP_256 = 0x000fac09;
+
+export function phy_cipher_gcmp256(phy) {
+	return WLAN_CIPHER_SUITE_GCMP_256 in (phy?.cipher_suites ?? []);
+};
+
 /*
  * The 6 GHz band allows WPA3 and OWE only (IEEE 802.11-2024 12.12.2,
  * WPA3 Specification v3.5 11.2).
