@@ -1,0 +1,35 @@
+From: Alexander Astrovsky <astrouski@google.com>
+Date: Mon, 24 Aug 2026 10:41:00 +0000
+Subject: [PATCH] AP: MLD: sync MFP and SPP-AMSDU flags to partner links
+
+Partner link stations do not re-run full WPA IE validation because
+security handshakes operate at the MLD level. As a result, partner link
+sta_info entries lacked WLAN_STA_MFP and WLAN_STA_SPP_AMSDU flags.
+
+Propagate these flags from the primary association link's assoc_wpa_sm
+to all partner link station entries so that driver hardware encryption
+state is consistent across all affiliated radios.
+
+Signed-off-by: Alexander Astrovsky <astrouski@google.com>
+---
+Index: hostapd-2026.08.07~831364bf/src/ap/ieee802_11.c
+===================================================================
+--- hostapd-2026.08.07~831364bf.orig/src/ap/ieee802_11.c
++++ hostapd-2026.08.07~831364bf/src/ap/ieee802_11.c
+@@ -6008,6 +6008,16 @@ skip_pmkid_update:
+ 			ieee802_11_rsnx_capab_len(
+ 				elems->rsnxe, elems->rsnxe_len,
+ 				WLAN_RSNX_CAPAB_SSID_PROTECTION));
++	} else if (assoc_wpa_sm) {
++		if (wpa_auth_uses_mfp(assoc_wpa_sm))
++			sta->flags |= WLAN_STA_MFP;
++		else
++			sta->flags &= ~WLAN_STA_MFP;
++
++		if (wpa_auth_uses_spp_amsdu(assoc_wpa_sm))
++			sta->flags |= WLAN_STA_SPP_AMSDU;
++		else
++			sta->flags &= ~WLAN_STA_SPP_AMSDU;
+ 	} else
+ 		wpa_auth_sta_no_wpa(sta->wpa_sm);
+ 
