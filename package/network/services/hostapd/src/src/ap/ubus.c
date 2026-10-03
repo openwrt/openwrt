@@ -2892,3 +2892,21 @@ void hostapd_ubus_notify_csa(struct hostapd_data *hapd, int freq)
 
 	ubus_notify(ctx, obj, "channel-switch", b.head, -1);
 }
+
+void hostapd_ubus_notify_bss_color(struct hostapd_data *hapd)
+{
+	struct ubus_object *obj = hostapd_ubus_notify_obj(hapd);
+
+	if (!obj->has_subscribers)
+		return;
+
+	blob_buf_init(&b, 0);
+	blobmsg_add_string(&b, "ifname", hapd->conf->iface);
+	blobmsg_printf(&b, "bssid", MACSTR, MAC2STR(hapd->own_addr));
+#ifdef CONFIG_IEEE80211BE
+	if (hapd->conf->mld_ap)
+		blobmsg_add_u32(&b, "link_id", hapd->mld_link_id);
+#endif /* CONFIG_IEEE80211BE */
+
+	ubus_notify(ctx, obj, "bss-color-change", b.head, -1);
+}
