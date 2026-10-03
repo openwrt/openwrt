@@ -2312,6 +2312,20 @@ static void otto_l3_fib6_event_work_do(struct work_struct *work)
 }
 
 
+/* The switch has a single routing table. A route from any table but these two
+ * would be written to it as if the kernel looked it up for every packet.
+ */
+static bool otto_l3_fib_table_ok(struct otto_l3_ctrl *ctrl, unsigned long event, u32 tb_id)
+{
+	if (tb_id == RT_TABLE_MAIN || tb_id == RT_TABLE_LOCAL)
+		return true;
+
+	if (event != FIB_EVENT_ENTRY_DEL)
+		dev_warn_ratelimited(ctrl->dev, "routes in table %u are not offloaded\n", tb_id);
+
+	return false;
+}
+
 /* Called with rcu_read_lock() */
 static int otto_l3_fib_notifier(struct notifier_block *this, unsigned long event, void *ptr)
 {
@@ -2343,6 +2357,11 @@ static int otto_l3_fib_notifier(struct notifier_block *this, unsigned long event
 		if (info->family == AF_INET) {
 			struct fib_entry_notifier_info *fen_info = ptr;
 
+			if (!otto_l3_fib_table_ok(ctrl, event, fen_info->tb_id)) {
+				kfree(fib_work);
+				return NOTIFY_DONE;
+			}
+
 			if (fen_info->fi->fib_nh_is_v6) {
 				NL_SET_ERR_MSG_MOD(info->extack,
 						   "IPv6 gateway with IPv4 route is not supported");
@@ -2358,6 +2377,13 @@ static int otto_l3_fib_notifier(struct notifier_block *this, unsigned long event
 			INIT_WORK(&fib_work->work, otto_l3_fib_event_work_do);
 		} else if (info->family == AF_INET6 && IS_REACHABLE(CONFIG_IPV6) &&
 			   ctrl->cfg->use_l3_tables) {
+			struct fib6_entry_notifier_info *fen6_info = ptr;
+
+			if (!otto_l3_fib_table_ok(ctrl, event, fen6_info->rt->fib6_table->tb6_id)) {
+				kfree(fib_work);
+				return NOTIFY_DONE;
+			}
+
 			memcpy(&fib_work->fen6_info, ptr, sizeof(fib_work->fen6_info));
 			fib6_info_hold(fib_work->fen6_info.rt);
 			INIT_WORK(&fib_work->work, otto_l3_fib6_event_work_do);
