@@ -27,14 +27,14 @@ const encryption_6g = {
 const encryption_mld = {
 	'psk': 'psk2',
 	'psk-mixed': 'psk2',
+	'wpa': 'wpa2',
+	'wpa-mixed': 'wpa2',
 };
 
 /* IEEE 802.11be-2024 12.6.2: all links of an AP MLD share an AKM */
 const encryption_mld_6g = {
 	...encryption_mld,
 	'none': 'owe',
-	'wpa': 'wpa2',
-	'wpa-mixed': 'wpa2',
 };
 
 /* mld_bands: null for a single-link BSS, else the bands of the AP MLD */
