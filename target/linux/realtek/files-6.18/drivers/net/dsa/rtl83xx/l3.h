@@ -108,6 +108,7 @@ struct otto_l3_route {
 	struct otto_l3_nexthop nh;
 	struct pie_rule pr;
 	struct fib_info *fi;
+	bool hw_forward;
 	dscp_t dscp;
 	u8 fib_type;
 	struct otto_l3_route_attr attr;

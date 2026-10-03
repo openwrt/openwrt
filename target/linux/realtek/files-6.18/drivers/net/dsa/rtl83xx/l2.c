@@ -326,6 +326,19 @@ int otto_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop
 	return 0;
 }
 
+bool otto_l2_nexthop_current(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop *nh)
+{
+	struct rtl838x_l2_entry e = {};
+
+	if (!nh->l2_installed)
+		return false;
+
+	guard(mutex)(&priv->reg_mutex);
+
+	return otto_l2_find_hash_entry(priv, nh->l2_seed, true, &e) == nh->l2_id &&
+	       e.next_hop && e.port == nh->port;
+}
+
 /* Removes a Layer 2 next hop entry in the forwarding database
  * If it was static, the entire entry is removed, otherwise the nexthop bit is cleared
  * and we wait until the entry ages out
