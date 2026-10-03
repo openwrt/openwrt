@@ -1186,6 +1186,46 @@ static const char *otto_l3_route_dst(struct otto_l3_route *r, char *buf, size_t 
 	return buf;
 }
 
+/* The host table holds one entry per address, and the local table is looked up
+ * before main: while an address is the switch's own, the entry is the local
+ * route's, and a host route from main for that address keeps out of it.
+ */
+static bool otto_l3_host_shadowed(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r)
+{
+	struct otto_l3_route *q;
+
+	if (!r->is_host_route || r->tb_id == RT_TABLE_LOCAL)
+		return false;
+
+	list_for_each_entry(q, &ctrl->routes_list, list)
+		if (q != r && q->is_host_route && q->tb_id == RT_TABLE_LOCAL &&
+		    q->attr.type == r->attr.type && q->dst_ip == r->dst_ip)
+			return true;
+
+	return false;
+}
+
+/* The address is the switch's no longer: a host route from main for it gets
+ * the entry back, as it last wrote it
+ */
+static void otto_l3_host_unshadow(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r)
+{
+	struct otto_l3_route *q;
+	int slot;
+
+	list_for_each_entry(q, &ctrl->routes_list, list) {
+		if (q == r || !q->is_host_route || q->tb_id == RT_TABLE_LOCAL ||
+		    q->attr.type != r->attr.type || q->dst_ip != r->dst_ip ||
+		    !q->attr.valid)
+			continue;
+
+		slot = ctrl->cfg->find_slot(ctrl, q, false);
+		if (slot >= 0)
+			ctrl->cfg->host_route_write(ctrl, slot, q);
+		return;
+	}
+}
+
 static void otto_l3_route_update_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r,
 				    u64 mac)
 {
@@ -1249,7 +1289,10 @@ static void otto_l3_route_update_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_ro
 		r->pr.dip_m = inet_make_mask(r->prefix_len);
 	}
 
-	if (r->is_host_route) {
+	if (otto_l3_host_shadowed(ctrl, r)) {
+		dev_dbg(ctrl->dev, "%pI4 is an address of the switch, its entry stays\n",
+			&r->dst_ip);
+	} else if (r->is_host_route) {
 		int slot = ctrl->cfg->find_slot(ctrl, r, true);
 
 		if (slot < 0)
@@ -1333,6 +1376,9 @@ static void otto_l3_route_trap_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_rout
 	r->attr.action = ROUTE_ACT_TRAP2CPU;
 	r->attr.ttl_dec = false;
 	r->attr.ttl_check = false;
+
+	if (otto_l3_host_shadowed(ctrl, r))
+		return;
 
 	if (r->is_host_route)
 		ctrl->cfg->host_route_write(ctrl, slot, r);
@@ -1546,7 +1592,9 @@ static void otto_l3_route_remove(struct otto_l3_ctrl *ctrl, struct otto_l3_route
 	char dst[INET6_ADDRSTRLEN + sizeof("/128")];
 	int id;
 
-	if (r->is_host_route) {
+	if (otto_l3_host_shadowed(ctrl, r)) {
+		/* The entry for the address is the local route's */
+	} else if (r->is_host_route) {
 		id = ctrl->cfg->find_slot(ctrl, r, true);
 		if (id >= 0) {
 			dev_dbg(ctrl->dev, "Got id for host route: %d\n", id);
@@ -1556,6 +1604,9 @@ static void otto_l3_route_remove(struct otto_l3_ctrl *ctrl, struct otto_l3_route
 			dev_err(ctrl->dev, "Host route %pI4 was not in hardware\n",
 				&r->dst_ip);
 		}
+
+		if (r->tb_id == RT_TABLE_LOCAL)
+			otto_l3_host_unshadow(ctrl, r);
 	} else {
 		/* If there is a HW representation of the route, delete it */
 		if (ctrl->cfg->route_lookup_hw && r->row >= FIRST_PREFIX_ROW) {
@@ -1763,6 +1814,9 @@ static void otto_l3_host_route_trap(struct otto_l3_ctrl *ctrl,
 	route->attr.action = ROUTE_ACT_TRAP2CPU;
 	route->attr.type = ROUTE_TYPE_IP4UC;
 
+	if (otto_l3_host_shadowed(ctrl, route))
+		return;
+
 	slot = ctrl->cfg->find_slot(ctrl, route, true);
 	if (slot < 0)
 		slot = ctrl->cfg->find_slot(ctrl, route, false);
@@ -1826,6 +1880,9 @@ static void otto_l3_route_trap_new(struct otto_l3_ctrl *ctrl, struct otto_l3_rou
 
 	r->attr.valid = true;
 	r->attr.action = ROUTE_ACT_TRAP2CPU;
+
+	if (otto_l3_host_shadowed(ctrl, r))
+		return;
 
 	if (r->is_host_route) {
 		slot = ctrl->cfg->find_slot(ctrl, r, true);
@@ -1950,6 +2007,9 @@ static int otto_l3_fib_add_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 			route->attr.action = ROUTE_ACT_TRAP2CPU;
 			route->attr.type = ROUTE_TYPE_IP4UC;
 
+			if (otto_l3_host_shadowed(ctrl, route))
+				goto resolve;
+
 			slot = ctrl->cfg->find_slot(ctrl, route, true);
 			if (slot < 0)
 				slot = ctrl->cfg->find_slot(ctrl, route, false);
@@ -1974,6 +2034,7 @@ static int otto_l3_fib_add_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 	if (ctrl->cfg->use_l3_tables && (nh->fib_nh_gw4 || !route->is_host_route))
 		otto_l3_route_trap_new(ctrl, route);
 
+resolve:
 	/* We need to resolve the mac address of the GW */
 	if (nh->fib_nh_gw4)
 		otto_l3_port_gw_resolve(ctrl, ndev, &arp_tbl, &gw);
