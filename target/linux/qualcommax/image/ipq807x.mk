@@ -83,6 +83,7 @@ TARGET_DEVICES += arcadyan_aw1000
 define Device/asus_rt-ax89x
 	DEVICE_VENDOR := Asus
 	DEVICE_MODEL := RT-AX89X
+	DEVICE_VARIANT := B2
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	DEVICE_DTS_CONFIG := config@hk01
@@ -109,6 +110,12 @@ endif
 endif
 endef
 TARGET_DEVICES += asus_rt-ax89x
+
+define Device/asus_rt-ax89x-b1
+	$(call Device/asus_rt-ax89x)
+	DEVICE_VARIANT := B1
+endef
+TARGET_DEVICES += asus_rt-ax89x-b1
 
 define Device/buffalo_wxr-5950ax12
 	$(call Device/FitImage)
