@@ -185,14 +185,6 @@ define Image/BuildKernel/MkuImage
 		-n '$(call toupper,$(ARCH)) $(VERSION_DIST) Linux-$(LINUX_VERSION)' -d $(4) $(5)
 endef
 
-ifdef CONFIG_TARGET_IMAGES_GZIP
-  define Image/Gzip
-	rm -f $(1).gz
-	gzip -9n $(1)
-  endef
-endif
-
-
 # Disable noisy checks by default as in upstream
 DTC_WARN_FLAGS := \
   -Wno-interrupt_provider \
@@ -220,10 +212,6 @@ endef
 ifeq ($(DUMP),)
 ROOTFS_PARTSIZE=$(shell echo $$(($(CONFIG_TARGET_ROOTFS_PARTSIZE)*1024*1024)))
 endif
-
-define Image/pad-root-squashfs
-	$(call Image/pad-to,$(KDIR)/root.squashfs,$(if $(1),$(1),$(ROOTFS_PARTSIZE)))
-endef
 
 # $(1) source dts file
 # $(2) target dtb file
@@ -355,23 +343,6 @@ ifneq ($(CONFIG_JSON_CYCLONEDX_SBOM),)
 		$(BIN_DIR)/$(IMG_PREFIX)$(if $(PROFILE_SANITIZED),-$(PROFILE_SANITIZED)).manifest > \
 		$(BIN_DIR)/$(IMG_PREFIX)$(if $(PROFILE_SANITIZED),-$(PROFILE_SANITIZED)).bom.cdx.json
 endif
-endef
-
-define Image/gzip-ext4-padded-squashfs
-
-  define Image/Build/squashfs
-    $(call Image/pad-root-squashfs)
-  endef
-
-  ifneq ($(CONFIG_TARGET_IMAGES_GZIP),)
-    define Image/Build/gzip/ext4
-      $(call Image/Build/gzip,ext4)
-    endef
-    define Image/Build/gzip/squashfs
-      $(call Image/Build/gzip,squashfs)
-    endef
-  endif
-
 endef
 
 ifeq ($(filter-out targz,$(ROOTFS_FILESYSTEM)),)
