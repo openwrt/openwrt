@@ -1,0 +1,26 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Anatoliy Shulika <shulikaa@icloud.com>
+Date: Thu, 6 Aug 2026 12:00:00 +0200
+Subject: [PATCH] devices: add Broadcom BCM4366
+
+The 5 GHz radio of the TP-Link Archer C2300 v1 identifies as a BCM4366
+(14e4:4365): brcmfmac selects brcmfmac4366c-pcie firmware for it and the
+firmware banner reports "BCM43666/4". Without an entry here iwinfo falls
+back to the generic "Generic MAC80211 802.11ac/n" string, which is what
+LuCI then shows.
+
+14e4:4365 is one of four device IDs the kernel's brcm80211 documentation
+lists for this chip; the BCM4365 uses a separate set (14e4:43ca-43cc).
+
+Signed-off-by: Anatoliy Shulika <shulikaa@icloud.com>
+---
+--- a/devices.txt
++++ b/devices.txt
+@@ -198,6 +198,7 @@
+ 0x14c3 0x7990 0x14C3 0x6639    0      0  "MediaTek" "MT7996E"
+ 0x14c3 0x7992 0x14c3 0x7992    0      0  "MediaTek" "MT7992E"
++0x14e4 0x4365 0x14e4 0x4365    0      0  "Broadcom" "BCM4366"
+ 0x14e4 0xaa52 0x14e4 0xaa52    0      0  "Broadcom" "BCM43602"
+ 0x02d0 0xa9a6 0x0000 0x0000    0      0  "Cypress"  "CYW43455"
+ 0x02d0 0x4345 0x0000 0x0000    0      0  "Cypress"  "CYW43455"
+ 0x1ae9 0x0310 0x1ae9 0x0000    0      0  "Wilocity" "Wil6210"
