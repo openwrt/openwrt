@@ -1,0 +1,197 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Navid Ghahremani <ghahramani.navid@gmail.com>
+Date: Mon, 28 Sep 2026 00:00:00 +0100
+Subject: [PATCH] ARM: l2c: optionally serialize device reads with L2C-310
+ maintenance
+
+On the ZTE/Sanechips ZX279128S a CPU read from a PCIe endpoint that is
+still outstanding when an L2C-310 range or sync operation is issued
+deadlocks the SoC.  Both CPUs stall on their next device access, no
+completion timeout fires, and only a watchdog reset recovers.  With an
+MT7915 behind the PCIe root port this hits within seconds of firmware
+download, because every chunk is DMA-mapped (L2 clean + sync) on one CPU
+while the other one reads the interrupt and ring registers.
+
+The vendor kernel avoids it by holding one spinlock around the L2C
+maintenance operations and around every PCIe register read of its Wi-Fi
+driver (fixed_pci_read_u32()).  Do the same here, opt-in through the
+"zte,l2c-io-read-lock" property on the cache controller node:
+
+ - wrap the L2C-310 inv/clean/flush range and sync operations with a
+   raw spinlock, and
+ - export outer_io_lock()/outer_io_unlock() so drivers can take the same
+   lock around their device reads.  Without CONFIG_CACHE_L2X0_IO_LOCK
+   these are empty inline stubs.
+
+Both kinds of operation need the lock.  In a firmware download stress
+test (MT7915 module reloaded 30 times per round, watchdog-guarded) the
+board froze within 1-9 reloads without the lock, froze in the first
+round with only the range operations locked, froze in the third round
+with only the standalone sync (wmb()/mb()) locked, and completed 240
+reloads without a freeze with both locked.
+
+Signed-off-by: Navid Ghahremani <ghahramani.navid@gmail.com>
+---
+--- a/arch/arm/include/asm/outercache.h
++++ b/arch/arm/include/asm/outercache.h
+@@ -117,4 +117,26 @@ static inline void outer_resume(void) {
+ 
+ #endif
+ 
++#ifdef CONFIG_CACHE_L2X0_IO_LOCK
++/**
++ * outer_io_lock - serialize a device read with outer cache maintenance
++ *
++ * On some SoCs a device read that is still outstanding while an outer
++ * cache range or sync operation is issued deadlocks the interconnect.
++ * Drivers for devices behind such a bus take this lock around their
++ * register reads.  It is a no-op unless the platform enabled it.
++ *
++ * Returns the saved interrupt flags to pass to outer_io_unlock().
++ */
++unsigned long outer_io_lock(void);
++void outer_io_unlock(unsigned long flags);
++#else
++static inline unsigned long outer_io_lock(void)
++{
++	return 0;
++}
++
++static inline void outer_io_unlock(unsigned long flags) { }
++#endif
++
+ #endif	/* __ASM_OUTERCACHE_H */
+--- a/arch/arm/mm/cache-l2x0.c
++++ b/arch/arm/mm/cache-l2x0.c
+@@ -48,6 +48,7 @@ struct l2x0_regs l2x0_saved_regs;
+ 
+ static bool l2x0_bresp_disable;
+ static bool l2x0_flz_disable;
++static bool l2x0_io_lock_enable;
+ 
+ /*
+  * Common code for all cache controllers.
+@@ -778,6 +779,81 @@ static const struct l2c_init_data l2c310
+ 	},
+ };
+ 
++#ifdef CONFIG_CACHE_L2X0_IO_LOCK
++/*
++ * On some SoCs (e.g. the ZTE/Sanechips ZX279128S) a CPU read from a PCIe
++ * endpoint that is still outstanding when an L2C maintenance or sync
++ * operation is issued deadlocks the interconnect: both CPUs stall and only
++ * a watchdog reset recovers.  The vendor kernel avoids this by holding one
++ * spinlock around the L2C operations and around the drivers' device reads.
++ * Do the same when the cache node asks for it.  Drivers take the lock
++ * around their device reads with outer_io_lock()/outer_io_unlock().
++ */
++static DEFINE_RAW_SPINLOCK(l2x0_io_lock);
++static struct outer_cache_fns l2x0_io_fns __ro_after_init;
++static bool l2x0_io_lock_active __ro_after_init;
++
++unsigned long outer_io_lock(void)
++{
++	unsigned long flags = 0;
++
++	if (l2x0_io_lock_active)
++		raw_spin_lock_irqsave(&l2x0_io_lock, flags);
++	return flags;
++}
++EXPORT_SYMBOL_GPL(outer_io_lock);
++
++void outer_io_unlock(unsigned long flags)
++{
++	if (l2x0_io_lock_active)
++		raw_spin_unlock_irqrestore(&l2x0_io_lock, flags);
++}
++EXPORT_SYMBOL_GPL(outer_io_unlock);
++
++#define L2C_IO_LOCKED_RANGE_OP(op)					\
++static void l2c_io_locked_##op(unsigned long start, unsigned long end)	\
++{									\
++	unsigned long flags;						\
++									\
++	raw_spin_lock_irqsave(&l2x0_io_lock, flags);			\
++	l2x0_io_fns.op(start, end);					\
++	raw_spin_unlock_irqrestore(&l2x0_io_lock, flags);		\
++}
++
++L2C_IO_LOCKED_RANGE_OP(inv_range)
++L2C_IO_LOCKED_RANGE_OP(clean_range)
++L2C_IO_LOCKED_RANGE_OP(flush_range)
++
++static void l2c_io_locked_sync(void)
++{
++	unsigned long flags;
++
++	raw_spin_lock_irqsave(&l2x0_io_lock, flags);
++	l2x0_io_fns.sync();
++	raw_spin_unlock_irqrestore(&l2x0_io_lock, flags);
++}
++
++static void __init l2c_io_lock_install(struct outer_cache_fns *fns)
++{
++	l2x0_io_fns = *fns;
++	if (fns->inv_range)
++		fns->inv_range = l2c_io_locked_inv_range;
++	if (fns->clean_range)
++		fns->clean_range = l2c_io_locked_clean_range;
++	if (fns->flush_range)
++		fns->flush_range = l2c_io_locked_flush_range;
++	if (fns->sync)
++		fns->sync = l2c_io_locked_sync;
++	l2x0_io_lock_active = true;
++	pr_info("L2C: serializing device reads with maintenance operations\n");
++}
++#else
++static void __init l2c_io_lock_install(struct outer_cache_fns *fns)
++{
++	pr_warn("L2C: io read lock requested but CONFIG_CACHE_L2X0_IO_LOCK is disabled\n");
++}
++#endif
++
+ static int __init __l2c_init(const struct l2c_init_data *data,
+ 			     u32 aux_val, u32 aux_mask, u32 cache_id, bool nosync)
+ {
+@@ -859,6 +935,8 @@ static int __init __l2c_init(const struc
+ 		pr_info("L2C: disabling outer sync\n");
+ 		fns.sync = NULL;
+ 	}
++	if (l2x0_io_lock_enable)
++		l2c_io_lock_install(&fns);
+ 
+ 	/*
+ 	 * Check if l2x0 controller is already enabled.  If we are booting
+@@ -1198,6 +1276,9 @@ static void __init l2c310_of_parse(const
+ 	if (of_property_read_bool(np, "arm,full-line-zero-disable"))
+ 		l2x0_flz_disable = true;
+ 
++	if (of_property_read_bool(np, "zte,l2c-io-read-lock"))
++		l2x0_io_lock_enable = true;
++
+ 	prefetch = l2x0_saved_regs.prefetch_ctrl;
+ 
+ 	ret = of_property_read_u32(np, "arm,double-linefill", &val);
+--- a/arch/arm/mm/Kconfig
++++ b/arch/arm/mm/Kconfig
+@@ -992,6 +992,20 @@ config CACHE_L2X0
+ 	help
+ 	  This option enables the L2x0 PrimeCell.
+ 
++config CACHE_L2X0_IO_LOCK
++	bool "Serialize device reads with L2C-310 maintenance operations"
++	depends on CACHE_L2X0
++	help
++	  On some SoCs, for example the ZTE/Sanechips ZX279128S, issuing an
++	  L2C-310 range or sync operation while a CPU read from a PCIe
++	  endpoint is still outstanding deadlocks the interconnect.  This
++	  option lets the L2C-310 maintenance operations take a spinlock
++	  that drivers also hold around their device reads, through
++	  outer_io_lock()/outer_io_unlock().  It is only active when the
++	  cache controller node has the "zte,l2c-io-read-lock" property.
++
++	  If unsure, say N.
++
+ config CACHE_L2X0_PMU
+ 	bool "L2x0 performance monitor support" if CACHE_L2X0
+ 	depends on PERF_EVENTS

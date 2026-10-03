@@ -1,0 +1,1091 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Navid Ghahremani <ghahramani.navid@gmail.com>
+Date: Mon, 28 Sep 2026 00:00:00 +0100
+Subject: [PATCH] mtd: devices: add the ZTE ZX279128S SPI-NAND controller
+
+Add an MTD driver for the SPI flash controller of the ZX279128S with
+the HeYangTek HYF1GQ4UDACAE SPI-NAND of the ZTE ZXHN H3600.  Like the
+bootloader, it skips bad blocks and exposes a logical address space,
+and it supports reading, writing and erasing including the OOB area.
+
+Signed-off-by: Navid Ghahremani <ghahramani.navid@gmail.com>
+---
+--- a/drivers/mtd/devices/Kconfig
++++ b/drivers/mtd/devices/Kconfig
+@@ -224,4 +224,11 @@ config BCH_CONST_T
+ 	default 4
+ endif
+ 
++config MTD_ZX279128S_SPINAND
++	bool "ZTE ZX279128S SPI NAND flash controller"
++	default y
++	help
++	  MTD driver for the SPI NAND flash controller (SPIFC)
++	  integrated into the ZTE / Sanechips ZX279128S SoC.
++
+ endmenu
+--- a/drivers/mtd/devices/Makefile
++++ b/drivers/mtd/devices/Makefile
+@@ -19,6 +19,7 @@ obj-$(CONFIG_MTD_BCM47XXSFLASH)	+= bcm47
+ obj-$(CONFIG_MTD_ST_SPI_FSM)    += st_spi_fsm.o
+ obj-$(CONFIG_MTD_POWERNV_FLASH)	+= powernv_flash.o
+ obj-$(CONFIG_MTD_INTEL_DG)	+= mtd_intel_dg.o
++obj-$(CONFIG_MTD_ZX279128S_SPINAND)	+= zx279128s-spinand.o
+ 
+ 
+ CFLAGS_docg3.o			+= -I$(src)
+--- /dev/null
++++ b/drivers/mtd/devices/zx279128s-spinand.c
+@@ -0,0 +1,1052 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * MTD driver for the SPI NAND flash controller (SPIFC)
++ * integrated into the ZTE / Sanechips ZX279128S SoC.
++ *
++ * The attached flash is SPI NAND (HY HYF1GQ4UDACAE, 128 MiB,
++ * manufacturer ID 0xc9, device ID 0x21).
++ */
++
++#include <linux/delay.h>
++#include <linux/io.h>
++#include <linux/module.h>
++#include <linux/mtd/mtd.h>
++#include <linux/mutex.h>
++#include <linux/of.h>
++#include <linux/platform_device.h>
++#include <linux/bitmap.h>
++
++#define SPIFC_TRIGGER		0x04
++#define SPIFC_ACK		0x08
++#define SPIFC_XFER_CFG		0x0c
++#define SPIFC_FMT0		0x10
++#define SPIFC_FMT1		0x14
++#define SPIFC_LEN		0x18
++#define SPIFC_ADDR		0x1c
++#define SPIFC_OPCODE		0x20
++#define SPIFC_REG24		0x24
++#define SPIFC_STATUS		0x2c
++#define SPIFC_BURST		0x30
++#define SPIFC_FIFO_STATUS	0x34
++#define SPIFC_FIFO_DATA		0x38
++
++#define SPIFC_FIFO_STATUS_READY		0x1f00
++#define SPIFC_FIFO_STATUS_TX_READY	0x1f0000
++
++#define SPINAND_OP_RESET		0xff
++#define SPINAND_OP_READID		0x9f
++#define SPINAND_OP_GET_FEATURE		0x0f
++#define SPINAND_OP_PAGE_READ		0x13
++#define SPINAND_OP_READ_FROM_CACHE	0x3b
++#define SPINAND_OP_WR_ENABLE		0x06
++#define SPINAND_OP_BLOCK_ERASE		0xd8
++#define SPINAND_OP_PROGRAM_LOAD		0x02
++#define SPINAND_OP_PROGRAM_EXEC		0x10
++
++#define SPINAND_FEATURE_STATUS		0xc0
++#define SPINAND_STATUS_OIP		BIT(0)
++#define SPINAND_STATUS_WEL		BIT(1)
++#define SPINAND_STATUS_E_FAIL		BIT(2)
++#define SPINAND_STATUS_P_FAIL		BIT(3)
++#define SPINAND_STATUS_ECC(s)		(((s) >> 4) & 3)
++
++#define SPINAND_FMT0_ID_FEATURE		0x12
++#define SPINAND_FMT1_ID_FEATURE		0x0
++#define SPINAND_FMT0_PAGE_READ		0x10
++#define SPINAND_FMT1_PAGE_READ		0x40
++#define SPINAND_FMT0_PAGE_CACHE		0x16
++#define SPINAND_FMT1_PAGE_CACHE		0x1024
++#define SPINAND_FMT0_ERASE_EXEC		0x10
++#define SPINAND_FMT1_ERASE_EXEC		0x40
++#define SPINAND_FMT0_PROG_LOAD		0x11
++#define SPINAND_FMT1_PROG_LOAD		0x20
++
++#define SPINAND_MANUFACTURER_ID		0xc9
++#define SPINAND_DEVICE_ID		0x21
++
++#define SPINAND_PAGE_SIZE		2048
++#define SPINAND_OOB_SIZE		64
++#define SPINAND_PAGES_PER_BLOCK		64
++#define SPINAND_ERASE_SIZE		(128 * 1024)
++#define SPINAND_TOTAL_BLOCKS		1024
++#define SPINAND_TOTAL_PAGES		(SPINAND_TOTAL_BLOCKS * SPINAND_PAGES_PER_BLOCK)
++#define SPINAND_TOTAL_SIZE		(128 * 1024 * 1024)
++
++#define SPIFC_POLL_ITERATIONS		20000
++#define SPINAND_OIP_POLL_ITERATIONS	2000
++#define SPINAND_OIP_POLL_DELAY_US	50
++
++struct zx_spinand {
++	void __iomem *base;
++	struct mtd_info mtd;
++	struct mutex lock;
++	u8 *pagebuf;
++	u8 *writebuf;
++	u8 *oobbuf;
++	unsigned long bad_blocks[BITS_TO_LONGS(SPINAND_TOTAL_BLOCKS)];
++	u32 good_blocks;
++};
++
++static void zx_spinand_uboot_ack(struct zx_spinand *sn)
++{
++	u32 a = readl(sn->base + SPIFC_ACK);
++	if (!(a & BIT(1)))
++		writel(a | BIT(0), sn->base + SPIFC_ACK);
++}
++
++static void zx_spinand_ack_and_trigger(struct zx_spinand *sn)
++{
++	zx_spinand_uboot_ack(sn);
++	writel(readl(sn->base + SPIFC_XFER_CFG) | 0x1c440, sn->base + SPIFC_XFER_CFG);
++	writel(0x3f, sn->base + SPIFC_BURST);
++	writel(readl(sn->base + SPIFC_TRIGGER) | BIT(0), sn->base + SPIFC_TRIGGER);
++}
++
++static int zx_spinand_wait_done(struct zx_spinand *sn)
++{
++	int i;
++
++	for (i = 0; i < SPIFC_POLL_ITERATIONS; i++) {
++		if (readl(sn->base + SPIFC_STATUS) & BIT(0))
++			return 0;
++		udelay(1);
++	}
++	return -ETIMEDOUT;
++}
++
++static int zx_spinand_drain_fifo(struct zx_spinand *sn, u32 *buf, unsigned int words)
++{
++	unsigned int i;
++	int j;
++
++	for (i = 0; i < words; i++) {
++		for (j = 0; j < SPIFC_POLL_ITERATIONS; j++) {
++			if (readl(sn->base + SPIFC_FIFO_STATUS) & SPIFC_FIFO_STATUS_READY)
++				break;
++			udelay(1);
++		}
++		if (j == SPIFC_POLL_ITERATIONS)
++			return -ETIMEDOUT;
++		buf[i] = readl(sn->base + SPIFC_FIFO_DATA);
++	}
++	return 0;
++}
++
++static int zx_spinand_feed_fifo(struct zx_spinand *sn, const u32 *buf, unsigned int words)
++{
++	unsigned int i = 0;
++	int j;
++
++	/* Preload FIFO up to depth before triggering */
++	while (i < words && (readl(sn->base + SPIFC_FIFO_STATUS) & SPIFC_FIFO_STATUS_TX_READY))
++		writel(buf[i++], sn->base + SPIFC_FIFO_DATA);
++
++	/* Trigger transmission only (do not call ack_and_trigger which clears FIFO) */
++	writel(readl(sn->base + SPIFC_TRIGGER) | BIT(0), sn->base + SPIFC_TRIGGER);
++
++	/* Feed remaining words as FIFO drains */
++	for (; i < words; i++) {
++		for (j = 0; j < SPIFC_POLL_ITERATIONS; j++) {
++			if (readl(sn->base + SPIFC_FIFO_STATUS) & SPIFC_FIFO_STATUS_TX_READY)
++				break;
++			udelay(1);
++		}
++		if (j == SPIFC_POLL_ITERATIONS)
++			return -ETIMEDOUT;
++		writel(buf[i], sn->base + SPIFC_FIFO_DATA);
++	}
++	return 0;
++}
++
++static int zx_spinand_get_feature(struct zx_spinand *sn, u8 feature_addr, u8 *val)
++{
++	int ret;
++
++	zx_spinand_uboot_ack(sn);
++	writel(SPINAND_OP_GET_FEATURE, sn->base + SPIFC_OPCODE);
++	writel(SPINAND_FMT0_ID_FEATURE, sn->base + SPIFC_FMT0);
++	writel(SPINAND_FMT1_ID_FEATURE, sn->base + SPIFC_FMT1);
++	writel(0, sn->base + SPIFC_LEN);
++	writel(feature_addr, sn->base + SPIFC_ADDR);
++	zx_spinand_ack_and_trigger(sn);
++
++	ret = zx_spinand_wait_done(sn);
++	if (ret)
++		return ret;
++
++	*val = readl(sn->base + SPIFC_FIFO_DATA) & 0xff;
++	zx_spinand_uboot_ack(sn);
++	return 0;
++}
++
++static int zx_spinand_wait_oip_clear(struct zx_spinand *sn)
++{
++	u8 status;
++	int ret, i;
++
++	for (i = 0; i < SPINAND_OIP_POLL_ITERATIONS; i++) {
++		ret = zx_spinand_get_feature(sn, SPINAND_FEATURE_STATUS, &status);
++		if (ret)
++			return ret;
++		if (!(status & SPINAND_STATUS_OIP))
++			return 0;
++		udelay(SPINAND_OIP_POLL_DELAY_US);
++	}
++	return -ETIMEDOUT;
++}
++
++static int zx_spinand_write_enable(struct zx_spinand *sn)
++{
++	u8 status;
++	int ret;
++
++	zx_spinand_uboot_ack(sn);
++	writel(SPINAND_OP_WR_ENABLE, sn->base + SPIFC_OPCODE);
++	writel(0, sn->base + SPIFC_FMT0);
++	writel(0, sn->base + SPIFC_FMT1);
++	writel(0, sn->base + SPIFC_LEN);
++	writel(0, sn->base + SPIFC_ADDR);
++	zx_spinand_ack_and_trigger(sn);
++
++	ret = zx_spinand_wait_done(sn);
++	if (ret)
++		return ret;
++	zx_spinand_uboot_ack(sn);
++
++	ret = zx_spinand_get_feature(sn, SPINAND_FEATURE_STATUS, &status);
++	if (ret)
++		return ret;
++	if (!(status & SPINAND_STATUS_WEL)) {
++		pr_err("zx_spinand: write enable failed (status 0x%02x)\n", status);
++		return -EIO;
++	}
++
++	return 0;
++}
++
++static int zx_spinand_reset(struct zx_spinand *sn)
++{
++	int ret;
++
++	zx_spinand_uboot_ack(sn);
++	writel(SPINAND_OP_RESET, sn->base + SPIFC_OPCODE);
++	writel(0, sn->base + SPIFC_FMT0);
++	writel(0, sn->base + SPIFC_FMT1);
++	writel(0, sn->base + SPIFC_LEN);
++	writel(0, sn->base + SPIFC_ADDR);
++	zx_spinand_ack_and_trigger(sn);
++
++	ret = zx_spinand_wait_done(sn);
++	if (ret)
++		return ret;
++	zx_spinand_uboot_ack(sn);
++
++	udelay(500);
++
++	return zx_spinand_wait_oip_clear(sn);
++}
++
++static int zx_spinand_read_id(struct zx_spinand *sn, u8 *maker, u8 *device)
++{
++	u32 words[2] = { 0 };
++	int ret;
++
++	zx_spinand_uboot_ack(sn);
++	writel(SPINAND_OP_READID, sn->base + SPIFC_OPCODE);
++	writel(SPINAND_FMT0_ID_FEATURE, sn->base + SPIFC_FMT0);
++	writel(SPINAND_FMT1_ID_FEATURE, sn->base + SPIFC_FMT1);
++	writel(4, sn->base + SPIFC_LEN);
++	writel(0, sn->base + SPIFC_ADDR);
++	zx_spinand_ack_and_trigger(sn);
++
++	ret = zx_spinand_wait_done(sn);
++	if (ret)
++		return ret;
++
++	words[0] = readl(sn->base + SPIFC_FIFO_DATA);
++	words[1] = readl(sn->base + SPIFC_FIFO_DATA);
++	zx_spinand_uboot_ack(sn);
++
++	*maker = words[0] & 0xff;
++	*device = (words[0] >> 8) & 0xff;
++	return 0;
++}
++
++/* Bad block marker: OOB byte 0 of a page, read raw (not ECC protected) */
++static int zx_spinand_read_bbm(struct zx_spinand *sn, u32 page, u8 *bbm)
++{
++	u32 word = 0;
++	int ret;
++
++	zx_spinand_uboot_ack(sn);
++	writel(SPINAND_OP_PAGE_READ, sn->base + SPIFC_OPCODE);
++	writel(SPINAND_FMT0_PAGE_READ, sn->base + SPIFC_FMT0);
++	writel(SPINAND_FMT1_PAGE_READ, sn->base + SPIFC_FMT1);
++	writel(0, sn->base + SPIFC_LEN);
++	writel(page, sn->base + SPIFC_ADDR);
++	zx_spinand_ack_and_trigger(sn);
++
++	ret = zx_spinand_wait_done(sn);
++	if (ret)
++		return ret;
++	zx_spinand_uboot_ack(sn);
++
++	ret = zx_spinand_wait_oip_clear(sn);
++	if (ret)
++		return ret;
++
++	zx_spinand_uboot_ack(sn);
++	writel(SPINAND_OP_READ_FROM_CACHE, sn->base + SPIFC_OPCODE);
++	writel(SPINAND_FMT0_PAGE_CACHE, sn->base + SPIFC_FMT0);
++	writel(SPINAND_FMT1_PAGE_CACHE, sn->base + SPIFC_FMT1);
++	writel(3, sn->base + SPIFC_LEN);
++	writel(SPINAND_PAGE_SIZE, sn->base + SPIFC_ADDR);
++	zx_spinand_ack_and_trigger(sn);
++
++	ret = zx_spinand_drain_fifo(sn, &word, 1);
++	zx_spinand_wait_done(sn);
++	zx_spinand_uboot_ack(sn);
++
++	*bbm = word & 0xff;
++	return ret;
++}
++
++/*
++ * A factory bad block carries a non-0xff marker in OOB byte 0 of its first
++ * or second page (the bad blocks of the H3600 carry 0x00 in both).  The
++ * bootloader skips the same blocks, which keeps the logical layout in
++ * step with it.
++ */
++static bool zx_spinand_is_block_bad(struct zx_spinand *sn, u32 block)
++{
++	u32 page = block * SPINAND_PAGES_PER_BLOCK;
++	int i;
++
++	for (i = 0; i < 2; i++) {
++		u8 bbm;
++
++		if (zx_spinand_read_bbm(sn, page + i, &bbm))
++			return false;
++		if (bbm != 0xff)
++			return true;
++	}
++	return false;
++}
++
++static u32 zx_spinand_map_page(struct zx_spinand *sn, u32 lpage)
++{
++	u32 lblock = lpage / SPINAND_PAGES_PER_BLOCK;
++	u32 poff = lpage % SPINAND_PAGES_PER_BLOCK;
++	u32 pblock = 0;
++	u32 good = 0;
++
++	while (pblock < SPINAND_TOTAL_BLOCKS) {
++		if (!test_bit(pblock, sn->bad_blocks)) {
++			if (good == lblock)
++				return pblock * SPINAND_PAGES_PER_BLOCK + poff;
++			good++;
++		}
++		pblock++;
++	}
++	return lpage;
++}
++
++static int zx_spinand_read_page(struct zx_spinand *sn, u32 page, u8 *ecc)
++{
++	u32 phys_page = zx_spinand_map_page(sn, page);
++	u8 status;
++	int ret;
++
++	/* Step 1: Page Read to Cache (op 0x13) */
++	zx_spinand_uboot_ack(sn);
++	writel(SPINAND_OP_PAGE_READ, sn->base + SPIFC_OPCODE);
++	writel(SPINAND_FMT0_PAGE_READ, sn->base + SPIFC_FMT0);
++	writel(SPINAND_FMT1_PAGE_READ, sn->base + SPIFC_FMT1);
++	writel(0, sn->base + SPIFC_LEN);
++	writel(phys_page, sn->base + SPIFC_ADDR);
++	zx_spinand_ack_and_trigger(sn);
++
++	ret = zx_spinand_wait_done(sn);
++	if (ret)
++		return ret;
++	zx_spinand_uboot_ack(sn);
++
++	ret = zx_spinand_wait_oip_clear(sn);
++	if (ret)
++		return ret;
++
++	/* On-die ECC result of the page read (feature C0h bits 5:4) */
++	ret = zx_spinand_get_feature(sn, SPINAND_FEATURE_STATUS, &status);
++	if (ret)
++		return ret;
++	*ecc = SPINAND_STATUS_ECC(status);
++
++	/* Step 2: Read from Cache (op 0x3b, Dual SPI, 2048 bytes) */
++	zx_spinand_uboot_ack(sn);
++	writel(SPINAND_OP_READ_FROM_CACHE, sn->base + SPIFC_OPCODE);
++	writel(SPINAND_FMT0_PAGE_CACHE, sn->base + SPIFC_FMT0);
++	writel(SPINAND_FMT1_PAGE_CACHE, sn->base + SPIFC_FMT1);
++	writel(SPINAND_PAGE_SIZE - 1, sn->base + SPIFC_LEN);
++	writel(0, sn->base + SPIFC_ADDR);
++	zx_spinand_ack_and_trigger(sn);
++
++	/* Drain FIFO while transfer is running */
++	ret = zx_spinand_drain_fifo(sn, (u32 *)sn->pagebuf, SPINAND_PAGE_SIZE / 4);
++	if (ret)
++		return ret;
++
++	ret = zx_spinand_wait_done(sn);
++	zx_spinand_uboot_ack(sn);
++	return ret;
++}
++
++static int zx_spinand_write_page(struct zx_spinand *sn, u32 page, const u8 *buf)
++{
++	u32 phys_page = zx_spinand_map_page(sn, page);
++	const u32 *src = (const u32 *)buf;
++	u8 status;
++	int ret;
++
++	/* Step 1: Write Enable */
++	ret = zx_spinand_write_enable(sn);
++	if (ret)
++		return ret;
++
++	/* Step 2: Program Load (op 0x02, column 0) */
++	zx_spinand_uboot_ack(sn);
++	writel(SPINAND_OP_PROGRAM_LOAD, sn->base + SPIFC_OPCODE);
++	writel(SPINAND_FMT0_PROG_LOAD, sn->base + SPIFC_FMT0);
++	writel(SPINAND_FMT1_PROG_LOAD, sn->base + SPIFC_FMT1);
++	writel(SPINAND_PAGE_SIZE - 1, sn->base + SPIFC_LEN);
++	writel(0, sn->base + SPIFC_ADDR);
++
++	/* Configure XFER_CFG and BURST before writing data to FIFO */
++	writel(readl(sn->base + SPIFC_XFER_CFG) | 0x1c440, sn->base + SPIFC_XFER_CFG);
++	writel(0x3f, sn->base + SPIFC_BURST);
++
++	ret = zx_spinand_feed_fifo(sn, src, SPINAND_PAGE_SIZE / 4);
++	if (ret) {
++		zx_spinand_uboot_ack(sn);
++		return ret;
++	}
++
++	ret = zx_spinand_wait_done(sn);
++	zx_spinand_uboot_ack(sn);
++	if (ret)
++		return ret;
++
++	/* Step 3: Write Enable before Program Execute */
++	ret = zx_spinand_write_enable(sn);
++	if (ret)
++		return ret;
++
++	/* Step 4: Program Execute (op 0x10, row address = phys_page) */
++	zx_spinand_uboot_ack(sn);
++	writel(SPINAND_OP_PROGRAM_EXEC, sn->base + SPIFC_OPCODE);
++	writel(SPINAND_FMT0_ERASE_EXEC, sn->base + SPIFC_FMT0);
++	writel(SPINAND_FMT1_ERASE_EXEC, sn->base + SPIFC_FMT1);
++	writel(0, sn->base + SPIFC_LEN);
++	writel(phys_page, sn->base + SPIFC_ADDR);
++	zx_spinand_ack_and_trigger(sn);
++
++	ret = zx_spinand_wait_done(sn);
++	zx_spinand_uboot_ack(sn);
++	if (ret)
++		return ret;
++
++	/* Step 5: Wait for NAND array programming to finish */
++	ret = zx_spinand_wait_oip_clear(sn);
++	if (ret)
++		return ret;
++
++	/* Check for Program Failure */
++	ret = zx_spinand_get_feature(sn, SPINAND_FEATURE_STATUS, &status);
++	if (ret)
++		return ret;
++	if (status & SPINAND_STATUS_P_FAIL) {
++		pr_err("zx_spinand: write page %u (phys %u) failed (status 0x%02x)\n",
++		       page, phys_page, status);
++		return -EIO;
++	}
++
++	return 0;
++}
++
++static int zx_spinand_erase_block(struct zx_spinand *sn, u32 pblock)
++{
++	u32 phys_page = pblock * SPINAND_PAGES_PER_BLOCK;
++	u8 status;
++	int ret;
++
++	/* Step 1: Write Enable */
++	ret = zx_spinand_write_enable(sn);
++	if (ret)
++		return ret;
++
++	/* Step 2: Block Erase (op 0xd8, row address = phys_page) */
++	zx_spinand_uboot_ack(sn);
++	writel(SPINAND_OP_BLOCK_ERASE, sn->base + SPIFC_OPCODE);
++	writel(SPINAND_FMT0_ERASE_EXEC, sn->base + SPIFC_FMT0);
++	writel(SPINAND_FMT1_ERASE_EXEC, sn->base + SPIFC_FMT1);
++	writel(0, sn->base + SPIFC_LEN);
++	writel(phys_page, sn->base + SPIFC_ADDR);
++	zx_spinand_ack_and_trigger(sn);
++
++	ret = zx_spinand_wait_done(sn);
++	zx_spinand_uboot_ack(sn);
++	if (ret)
++		return ret;
++
++	/* Step 3: Wait for Erase operation in progress to clear */
++	ret = zx_spinand_wait_oip_clear(sn);
++	if (ret)
++		return ret;
++
++	/* Step 4: Check for Erase Failure */
++	ret = zx_spinand_get_feature(sn, SPINAND_FEATURE_STATUS, &status);
++	if (ret)
++		return ret;
++	if (status & SPINAND_STATUS_E_FAIL) {
++		pr_err("zx_spinand: erase block %u (phys %u) failed (status 0x%02x)\n",
++		       pblock, phys_page / SPINAND_PAGES_PER_BLOCK, status);
++		return -EIO;
++	}
++
++	return 0;
++}
++
++static int hyf1gq4_ooblayout_ecc(struct mtd_info *mtd, int section,
++				 struct mtd_oob_region *region)
++{
++	if (section > 3)
++		return -ERANGE;
++
++	region->offset = (16 * section) + 8;
++	region->length = 8;
++	return 0;
++}
++
++/*
++ * In each 16-byte OOB section the on-die ECC covers bytes 4-7 and keeps its
++ * parity in bytes 8-15 (not readable, they read back as 0xff); bytes 0-3 are
++ * not protected.  Only offer the unprotected bytes as free: JFFS2 programs
++ * its cleanmarker into the free bytes of an erased block's first page and
++ * the data into the same page later.  A protected byte in that first
++ * program leaves the page with parity that matches neither program, the
++ * page reads back as uncorrectable and the die may "correct" good bits.
++ */
++static int hyf1gq4_ooblayout_free(struct mtd_info *mtd, int section,
++				  struct mtd_oob_region *region)
++{
++	if (section > 3)
++		return -ERANGE;
++
++	if (section) {
++		region->offset = 16 * section;
++		region->length = 4;
++	} else {
++		/* byte 0 is bad block marker */
++		region->offset = 1;
++		region->length = 3;
++	}
++	return 0;
++}
++
++static const struct mtd_ooblayout_ops hyf1gq4_ooblayout = {
++	.ecc = hyf1gq4_ooblayout_ecc,
++	.free = hyf1gq4_ooblayout_free,
++};
++
++static int zx_spinand_read_oob_raw(struct zx_spinand *sn, u32 page, u8 *oobbuf)
++{
++	u32 phys_page = zx_spinand_map_page(sn, page);
++	int ret;
++
++	/* Step 1: Page Read to Cache (op 0x13) */
++	zx_spinand_uboot_ack(sn);
++	writel(SPINAND_OP_PAGE_READ, sn->base + SPIFC_OPCODE);
++	writel(SPINAND_FMT0_PAGE_READ, sn->base + SPIFC_FMT0);
++	writel(SPINAND_FMT1_PAGE_READ, sn->base + SPIFC_FMT1);
++	writel(0, sn->base + SPIFC_LEN);
++	writel(phys_page, sn->base + SPIFC_ADDR);
++	zx_spinand_ack_and_trigger(sn);
++
++	ret = zx_spinand_wait_done(sn);
++	if (ret)
++		return ret;
++	zx_spinand_uboot_ack(sn);
++
++	ret = zx_spinand_wait_oip_clear(sn);
++	if (ret)
++		return ret;
++
++	/* Step 2: Read from Cache starting at column SPINAND_PAGE_SIZE (2048) */
++	zx_spinand_uboot_ack(sn);
++	writel(SPINAND_OP_READ_FROM_CACHE, sn->base + SPIFC_OPCODE);
++	writel(SPINAND_FMT0_PAGE_CACHE, sn->base + SPIFC_FMT0);
++	writel(SPINAND_FMT1_PAGE_CACHE, sn->base + SPIFC_FMT1);
++	writel(SPINAND_OOB_SIZE - 1, sn->base + SPIFC_LEN);
++	writel(SPINAND_PAGE_SIZE, sn->base + SPIFC_ADDR);
++	zx_spinand_ack_and_trigger(sn);
++
++	ret = zx_spinand_drain_fifo(sn, (u32 *)oobbuf, SPINAND_OOB_SIZE / 4);
++	if (ret)
++		return ret;
++
++	ret = zx_spinand_wait_done(sn);
++	zx_spinand_uboot_ack(sn);
++	return ret;
++}
++
++static int zx_spinand_write_oob_raw(struct zx_spinand *sn, u32 page, const u8 *oobbuf)
++{
++	u32 phys_page = zx_spinand_map_page(sn, page);
++	const u32 *src = (const u32 *)oobbuf;
++	u8 status;
++	int ret;
++
++	/* Step 1: Write Enable */
++	ret = zx_spinand_write_enable(sn);
++	if (ret)
++		return ret;
++
++	/* Step 2: Program Load (op 0x02, column SPINAND_PAGE_SIZE = 2048) */
++	zx_spinand_uboot_ack(sn);
++	writel(SPINAND_OP_PROGRAM_LOAD, sn->base + SPIFC_OPCODE);
++	writel(SPINAND_FMT0_PROG_LOAD, sn->base + SPIFC_FMT0);
++	writel(SPINAND_FMT1_PROG_LOAD, sn->base + SPIFC_FMT1);
++	writel(SPINAND_OOB_SIZE - 1, sn->base + SPIFC_LEN);
++	writel(SPINAND_PAGE_SIZE, sn->base + SPIFC_ADDR);
++
++	writel(readl(sn->base + SPIFC_XFER_CFG) | 0x1c440, sn->base + SPIFC_XFER_CFG);
++	writel(0x3f, sn->base + SPIFC_BURST);
++
++	ret = zx_spinand_feed_fifo(sn, src, SPINAND_OOB_SIZE / 4);
++	if (ret) {
++		zx_spinand_uboot_ack(sn);
++		return ret;
++	}
++
++	ret = zx_spinand_wait_done(sn);
++	zx_spinand_uboot_ack(sn);
++	if (ret)
++		return ret;
++
++	/* Step 3: Write Enable before Program Execute */
++	ret = zx_spinand_write_enable(sn);
++	if (ret)
++		return ret;
++
++	/* Step 4: Program Execute (op 0x10, row address = phys_page) */
++	zx_spinand_uboot_ack(sn);
++	writel(SPINAND_OP_PROGRAM_EXEC, sn->base + SPIFC_OPCODE);
++	writel(SPINAND_FMT0_ERASE_EXEC, sn->base + SPIFC_FMT0);
++	writel(SPINAND_FMT1_ERASE_EXEC, sn->base + SPIFC_FMT1);
++	writel(0, sn->base + SPIFC_LEN);
++	writel(phys_page, sn->base + SPIFC_ADDR);
++	zx_spinand_ack_and_trigger(sn);
++
++	ret = zx_spinand_wait_done(sn);
++	zx_spinand_uboot_ack(sn);
++	if (ret)
++		return ret;
++
++	/* Step 5: Wait for NAND array programming to finish */
++	ret = zx_spinand_wait_oip_clear(sn);
++	if (ret)
++		return ret;
++
++	/* Check for Program Failure */
++	ret = zx_spinand_get_feature(sn, SPINAND_FEATURE_STATUS, &status);
++	if (ret)
++		return ret;
++	if (status & SPINAND_STATUS_P_FAIL) {
++		pr_err("zx_spinand: write oob page %u (phys %u) failed (status 0x%02x)\n",
++		       page, phys_page, status);
++		return -EIO;
++	}
++
++	return 0;
++}
++
++static int zx_spinand_mtd_read_oob(struct mtd_info *mtd, loff_t from,
++				   struct mtd_oob_ops *ops)
++{
++	struct zx_spinand *sn = mtd->priv;
++	unsigned int max_bitflips = 0;
++	bool ecc_failed = false;
++	int ret = 0;
++	u8 ecc;
++
++	ops->retlen = 0;
++	ops->oobretlen = 0;
++
++	if (from < 0 || from >= mtd->size)
++		return -EINVAL;
++
++	mutex_lock(&sn->lock);
++
++	/* Data read */
++	if (ops->datbuf) {
++		u8 *dst = ops->datbuf;
++		size_t len = ops->len;
++		u32 addr = (u32)from;
++
++		while (len > 0) {
++			u32 page = addr / SPINAND_PAGE_SIZE;
++			u32 page_off = addr % SPINAND_PAGE_SIZE;
++			size_t chunk = min_t(size_t, SPINAND_PAGE_SIZE - page_off, len);
++
++			ret = zx_spinand_read_page(sn, page, &ecc);
++			if (ret)
++				break;
++			switch (ecc) {
++			case 0:
++				break;
++			case 1:		/* corrected, below the refresh threshold */
++				mtd->ecc_stats.corrected += mtd->ecc_strength / 2;
++				max_bitflips = max(max_bitflips, mtd->ecc_strength / 2);
++				break;
++			case 3:		/* corrected, refresh recommended */
++				mtd->ecc_stats.corrected += mtd->ecc_strength;
++				max_bitflips = max(max_bitflips, mtd->ecc_strength);
++				break;
++			default:	/* uncorrectable: pass the data on as read */
++				mtd->ecc_stats.failed++;
++				ecc_failed = true;
++				break;
++			}
++			memcpy(dst, sn->pagebuf + page_off, chunk);
++			dst += chunk;
++			addr += chunk;
++			len -= chunk;
++			ops->retlen += chunk;
++		}
++	}
++
++	/* OOB read */
++	if (!ret && ops->oobbuf) {
++		u8 *oobdst = ops->oobbuf;
++		size_t ooblen = ops->ooblen;
++		u32 page = (u32)from / SPINAND_PAGE_SIZE;
++		size_t oobavail = mtd_oobavail(mtd, ops);
++		uint32_t ooboffs = ops->ooboffs;
++
++		while (ooblen > 0 && page < SPINAND_TOTAL_PAGES) {
++			size_t toread = min_t(size_t, ooblen, oobavail - ooboffs);
++
++			ret = zx_spinand_read_oob_raw(sn, page, sn->oobbuf);
++			if (ret)
++				break;
++
++			if (ops->mode == MTD_OPS_AUTO_OOB) {
++				ret = mtd_ooblayout_get_databytes(mtd, oobdst, sn->oobbuf,
++								  ooboffs, toread);
++				if (ret)
++					break;
++			} else {
++				memcpy(oobdst, sn->oobbuf + ooboffs, toread);
++			}
++
++			oobdst += toread;
++			ooblen -= toread;
++			ops->oobretlen += toread;
++			ooboffs = 0;
++			page++;
++		}
++	}
++
++	mutex_unlock(&sn->lock);
++	if (ret)
++		return ret;
++	/* The OOB free bytes are not ECC protected: only data reads report */
++	return ecc_failed ? -EBADMSG : max_bitflips;
++}
++
++static int zx_spinand_mtd_write_oob(struct mtd_info *mtd, loff_t to,
++				    struct mtd_oob_ops *ops)
++{
++	struct zx_spinand *sn = mtd->priv;
++	int ret = 0;
++
++	ops->retlen = 0;
++	ops->oobretlen = 0;
++
++	if (to < 0 || to >= mtd->size)
++		return -EINVAL;
++
++	/* Safety boundary: protect bootloader (< 0x00700000) and Slot 1 (>= 0x02200000) */
++	if (to < 0x00700000 || (to + ops->len) > 0x02200000) {
++		pr_err("zx_spinand: write outside Slot 0 (0x%llx - 0x%llx) rejected\n",
++		       (u64)to, (u64)(to + ops->len));
++		return -EPERM;
++	}
++
++	mutex_lock(&sn->lock);
++
++	/* Data write */
++	if (ops->datbuf) {
++		const u8 *src = ops->datbuf;
++		size_t len = ops->len;
++		u32 addr = (u32)to;
++
++		while (len > 0) {
++			u32 page = addr / SPINAND_PAGE_SIZE;
++			u32 page_off = addr % SPINAND_PAGE_SIZE;
++			size_t chunk = min_t(size_t, SPINAND_PAGE_SIZE - page_off, len);
++
++			/*
++			 * A page is programmed once per erase: merging into a
++			 * programmed page would program it again and break its
++			 * on-die ECC parity.
++			 */
++			if (page_off != 0 || chunk != SPINAND_PAGE_SIZE) {
++				ret = -EINVAL;
++				break;
++			}
++			memcpy(sn->writebuf, src, SPINAND_PAGE_SIZE);
++			ret = zx_spinand_write_page(sn, page, sn->writebuf);
++
++			if (ret)
++				break;
++			src += chunk;
++			addr += chunk;
++			len -= chunk;
++			ops->retlen += chunk;
++		}
++	}
++
++	/* OOB write */
++	if (!ret && ops->oobbuf) {
++		const u8 *oobsrc = ops->oobbuf;
++		size_t ooblen = ops->ooblen;
++		u32 page = (u32)to / SPINAND_PAGE_SIZE;
++		size_t oobavail = mtd_oobavail(mtd, ops);
++		uint32_t ooboffs = ops->ooboffs;
++
++		while (ooblen > 0 && page < SPINAND_TOTAL_PAGES) {
++			size_t towrite = min_t(size_t, ooblen, oobavail - ooboffs);
++
++			memset(sn->oobbuf, 0xff, SPINAND_OOB_SIZE);
++			if (ops->mode == MTD_OPS_AUTO_OOB) {
++				ret = mtd_ooblayout_set_databytes(mtd, oobsrc, sn->oobbuf,
++								  ooboffs, towrite);
++				if (ret)
++					break;
++			} else {
++				memcpy(sn->oobbuf + ooboffs, oobsrc, towrite);
++			}
++
++			ret = zx_spinand_write_oob_raw(sn, page, sn->oobbuf);
++			if (ret)
++				break;
++
++			oobsrc += towrite;
++			ooblen -= towrite;
++			ops->oobretlen += towrite;
++			ooboffs = 0;
++			page++;
++		}
++	}
++
++	mutex_unlock(&sn->lock);
++	return ret;
++}
++
++static int zx_spinand_mtd_read(struct mtd_info *mtd, loff_t from, size_t len,
++				size_t *retlen, u_char *buf)
++{
++	struct mtd_oob_ops ops = {
++		.len = len,
++		.datbuf = buf,
++	};
++	int ret = zx_spinand_mtd_read_oob(mtd, from, &ops);
++	*retlen = ops.retlen;
++	return ret;
++}
++
++static int zx_spinand_mtd_write(struct mtd_info *mtd, loff_t to, size_t len,
++				size_t *retlen, const u_char *buf)
++{
++	struct mtd_oob_ops ops = {
++		.len = len,
++		.datbuf = (u8 *)buf,
++	};
++	int ret = zx_spinand_mtd_write_oob(mtd, to, &ops);
++	*retlen = ops.retlen;
++	return ret;
++}
++
++static int zx_spinand_mtd_erase(struct mtd_info *mtd, struct erase_info *instr)
++{
++	struct zx_spinand *sn = mtd->priv;
++	u32 addr, len;
++	int ret = 0;
++
++	if (instr->addr > mtd->size || instr->len > mtd->size ||
++	    instr->addr + instr->len > mtd->size)
++		return -EINVAL;
++
++	addr = (u32)instr->addr;
++	len = (u32)instr->len;
++
++	if (addr % mtd->erasesize || len % mtd->erasesize)
++		return -EINVAL;
++
++	/* Safety boundary: protect bootloader (< 0x00700000) and Slot 1 (>= 0x02200000) */
++	if (addr < 0x00700000 || (addr + len) > 0x02200000) {
++		pr_err("zx_spinand: erase outside Slot 0 (0x%08x - 0x%08x) rejected\n",
++		       addr, addr + len);
++		return -EPERM;
++	}
++
++	mutex_lock(&sn->lock);
++	while (len > 0) {
++		u32 lpage = addr / SPINAND_PAGE_SIZE;
++		u32 phys_page = zx_spinand_map_page(sn, lpage);
++		u32 pblock = phys_page / SPINAND_PAGES_PER_BLOCK;
++
++		ret = zx_spinand_erase_block(sn, pblock);
++		if (ret) {
++			instr->fail_addr = addr;
++			break;
++		}
++		addr += mtd->erasesize;
++		len -= mtd->erasesize;
++	}
++	mutex_unlock(&sn->lock);
++
++	return ret;
++}
++
++static int zx_spinand_mtd_block_isbad(struct mtd_info *mtd, loff_t ofs)
++{
++	struct zx_spinand *sn = mtd->priv;
++	u32 lblock = ofs / SPINAND_ERASE_SIZE;
++
++	if (lblock >= SPINAND_TOTAL_BLOCKS)
++		return -EINVAL;
++	/*
++	 * Offsets are logical: zx_spinand_map_page() already skips the bad
++	 * blocks, so every logical block below the good-block count maps to a
++	 * good one.  Only the tail that has no good block left is bad.
++	 */
++	return lblock >= sn->good_blocks;
++}
++
++static int zx_spinand_probe(struct platform_device *pdev)
++{
++	struct zx_spinand *sn;
++	u8 maker, device;
++	u32 reg24, b;
++	int ret;
++
++	sn = devm_kzalloc(&pdev->dev, sizeof(*sn), GFP_KERNEL);
++	if (!sn)
++		return -ENOMEM;
++
++	sn->base = devm_platform_ioremap_resource(pdev, 0);
++	if (IS_ERR(sn->base))
++		return PTR_ERR(sn->base);
++
++	sn->pagebuf = devm_kzalloc(&pdev->dev, SPINAND_PAGE_SIZE, GFP_KERNEL);
++	if (!sn->pagebuf)
++		return -ENOMEM;
++
++	sn->writebuf = devm_kzalloc(&pdev->dev, SPINAND_PAGE_SIZE, GFP_KERNEL);
++	if (!sn->writebuf)
++		return -ENOMEM;
++
++	sn->oobbuf = devm_kzalloc(&pdev->dev, SPINAND_OOB_SIZE, GFP_KERNEL);
++	if (!sn->oobbuf)
++		return -ENOMEM;
++
++	mutex_init(&sn->lock);
++
++	/* Set timing/sampling bit 16 in SPIFC_REG24 as U-Boot does */
++	reg24 = readl(sn->base + SPIFC_REG24);
++	writel((reg24 & ~0x30000) | 0x10000, sn->base + SPIFC_REG24);
++
++	ret = zx_spinand_reset(sn);
++	if (ret)
++		return dev_err_probe(&pdev->dev, ret, "RESET transaction failed\n");
++
++	ret = zx_spinand_read_id(sn, &maker, &device);
++	if (ret)
++		return dev_err_probe(&pdev->dev, ret, "READID transaction failed\n");
++	if (maker != SPINAND_MANUFACTURER_ID || device != SPINAND_DEVICE_ID)
++		return dev_err_probe(&pdev->dev, -ENODEV,
++				      "unexpected SPI NAND ID %02x:%02x (expected %02x:%02x)\n",
++				      maker, device, SPINAND_MANUFACTURER_ID, SPINAND_DEVICE_ID);
++
++	/* Identify bad blocks and build bad block map */
++	bitmap_zero(sn->bad_blocks, SPINAND_TOTAL_BLOCKS);
++	for (b = 0; b < SPINAND_TOTAL_BLOCKS; b++) {
++		if (zx_spinand_is_block_bad(sn, b)) {
++			set_bit(b, sn->bad_blocks);
++			dev_info(&pdev->dev, "Skipping bad block %u (0x%08x)\n",
++				 b, b * SPINAND_ERASE_SIZE);
++		}
++	}
++	sn->good_blocks = SPINAND_TOTAL_BLOCKS -
++			  bitmap_weight(sn->bad_blocks, SPINAND_TOTAL_BLOCKS);
++
++	sn->mtd.name = "zx279128s-spinand";
++	sn->mtd.type = MTD_NANDFLASH;
++	sn->mtd.flags = MTD_CAP_NANDFLASH;
++	sn->mtd.size = SPINAND_TOTAL_SIZE;
++	sn->mtd.erasesize = SPINAND_ERASE_SIZE;
++	sn->mtd.writesize = SPINAND_PAGE_SIZE;
++	sn->mtd.oobsize = SPINAND_OOB_SIZE;
++	sn->mtd.owner = THIS_MODULE;
++	sn->mtd.priv = sn;
++	sn->mtd._read = zx_spinand_mtd_read;
++	sn->mtd._write = zx_spinand_mtd_write;
++	sn->mtd._read_oob = zx_spinand_mtd_read_oob;
++	sn->mtd._write_oob = zx_spinand_mtd_write_oob;
++	sn->mtd._erase = zx_spinand_mtd_erase;
++	sn->mtd._block_isbad = zx_spinand_mtd_block_isbad;
++	mtd_set_ooblayout(&sn->mtd, &hyf1gq4_ooblayout);
++	sn->mtd.oobavail = mtd_ooblayout_count_freebytes(&sn->mtd);
++	sn->mtd.ecc_strength = 4;
++	sn->mtd.ecc_step_size = 512;
++	sn->mtd.bitflip_threshold = 3;
++	sn->mtd.dev.parent = &pdev->dev;
++	mtd_set_of_node(&sn->mtd, pdev->dev.of_node);
++
++	ret = mtd_device_register(&sn->mtd, NULL, 0);
++	if (ret)
++		return dev_err_probe(&pdev->dev, ret, "failed to register mtd device\n");
++
++	platform_set_drvdata(pdev, sn);
++	dev_info(&pdev->dev, "ZX279128S SPI NAND registered (%llu MiB, id %02x:%02x, write/erase enabled)\n",
++		 sn->mtd.size >> 20, maker, device);
++
++	return 0;
++}
++
++static void zx_spinand_remove(struct platform_device *pdev)
++{
++	struct zx_spinand *sn = platform_get_drvdata(pdev);
++
++	mtd_device_unregister(&sn->mtd);
++}
++
++static const struct of_device_id zx_spinand_of_match[] = {
++	{ .compatible = "zte,zx279128s-spinand" },
++	{ }
++};
++MODULE_DEVICE_TABLE(of, zx_spinand_of_match);
++
++static struct platform_driver zx_spinand_driver = {
++	.probe = zx_spinand_probe,
++	.remove = zx_spinand_remove,
++	.driver = {
++		.name = "zx279128s-spinand",
++		.of_match_table = zx_spinand_of_match,
++	},
++};
++module_platform_driver(zx_spinand_driver);
++
++MODULE_LICENSE("GPL");
++MODULE_DESCRIPTION("SPI NAND driver for ZTE ZX279128S SPIFC with bad-block skipping and write/erase support");

@@ -1,0 +1,160 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Navid Ghahremani <ghahramani.navid@gmail.com>
+Date: Mon, 28 Sep 2026 00:00:00 +0100
+Subject: [PATCH] soc: zte: add ZX279128S SMP bring-up
+
+The bootloader parks the second Cortex-A9 in WFE and sends it to IRAM
+address 0x200800 on SEV.  Write a trampoline to secondary_startup there,
+enable the SCU and wake the core.
+
+Signed-off-by: Navid Ghahremani <ghahramani.navid@gmail.com>
+---
+--- a/arch/arm/Kconfig.platforms
++++ b/arch/arm/Kconfig.platforms
+@@ -64,6 +64,7 @@ config ARCH_VIRT
+ 	select ARM_GIC_V2M if PCI
+ 	select ARM_GIC_V3
+ 	select ARM_GIC_V3_ITS if PCI
++	select HAVE_ARM_SCU
+ 	select ARM_PSCI
+ 	select HAVE_ARM_ARCH_TIMER
+ 	select ARM_GLOBAL_TIMER
+--- a/drivers/soc/Kconfig
++++ b/drivers/soc/Kconfig
+@@ -31,5 +31,6 @@ source "drivers/soc/ux500/Kconfig"
+ source "drivers/soc/versatile/Kconfig"
+ source "drivers/soc/vt8500/Kconfig"
+ source "drivers/soc/xilinx/Kconfig"
++source "drivers/soc/zte/Kconfig"
+ 
+ endmenu
+--- a/drivers/soc/Makefile
++++ b/drivers/soc/Makefile
+@@ -37,3 +37,4 @@ obj-$(CONFIG_ARCH_U8500)	+= ux500/
+ obj-y				+= versatile/
+ obj-y				+= vt8500/
+ obj-y				+= xilinx/
++obj-y				+= zte/
+--- /dev/null
++++ b/drivers/soc/zte/Kconfig
+@@ -0,0 +1,12 @@
++# SPDX-License-Identifier: GPL-2.0-only
++
++config ZX279128S_SMP
++	bool "ZTE ZX279128S SMP support"
++	depends on SMP && OF
++	select HAVE_ARM_SCU
++	default y
++	help
++	  Enables SMP boot support for the ZTE/Sanechips ZX279128S SoC
++	  (dual Cortex-A9). The secondary CPU is brought up by writing a
++	  trampoline to IRAM at 0x200800 and issuing a SEV to wake the
++	  WFE-parked core.
+--- /dev/null
++++ b/drivers/soc/zte/Makefile
+@@ -0,0 +1,2 @@
++# SPDX-License-Identifier: GPL-2.0-only
++obj-$(CONFIG_ZX279128S_SMP)	+= platsmp-zx279128.o
+--- /dev/null
++++ b/drivers/soc/zte/platsmp-zx279128.c
+@@ -0,0 +1,100 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * ZTE ZX279128S SMP boot support
++ *
++ * The secondary Cortex-A9 core is parked in WFE by U-Boot and jumps
++ * to IRAM 0x200800 when woken by SEV. The kernel writes a two-word
++ * trampoline there:
++ *   [0] = 0xe51ff004   (ldr pc, [pc, #-4])
++ *   [4] = __pa_symbol(secondary_startup)
++ *
++ * The SCU must be enabled before booting the secondary core.
++ */
++
++#include <linux/io.h>
++#include <linux/of.h>
++#include <linux/of_address.h>
++#include <linux/smp.h>
++
++#include <asm/cacheflush.h>
++#include <asm/smp_plat.h>
++#include <asm/smp_scu.h>
++#include <asm/smp.h>
++
++static void __iomem *scu_base;
++static void __iomem *iram_base;
++
++#define ZX_TRAMPOLINE_INST	0xe51ff004	/* ldr pc, [pc, #-4] */
++
++static int zx279128_boot_secondary(unsigned int cpu, struct task_struct *idle)
++{
++	if (!iram_base)
++		return -ENODEV;
++
++	/*
++	 * Write trampoline to IRAM:
++	 *   [0] = ldr pc, [pc, #-4]   -> loads word at [4]
++	 *   [4] = physical address of secondary_startup
++	 */
++	writel(ZX_TRAMPOLINE_INST, iram_base);
++	writel(__pa_symbol(secondary_startup), iram_base + 4);
++
++	/* Ensure the trampoline is visible to the secondary core */
++	flush_cache_all();
++	outer_clean_range(__pa(iram_base), __pa(iram_base) + 8);
++	smp_wmb();
++
++	/* Wake the secondary core from WFE */
++	dsb_sev();
++
++	return 0;
++}
++
++static void __init zx279128_smp_prepare_cpus(unsigned int max_cpus)
++{
++	struct device_node *np;
++
++	/* Map SCU from device tree */
++	np = of_find_compatible_node(NULL, NULL, "arm,cortex-a9-scu");
++	if (np) {
++		scu_base = of_iomap(np, 0);
++		of_node_put(np);
++	} else {
++		/* Fallback: read periphbase from CP15 */
++		unsigned long base;
++
++		asm("mrc p15, 4, %0, c15, c0, 0" : "=r" (base));
++		scu_base = ioremap(base, SZ_256);
++	}
++
++	if (!scu_base) {
++		pr_err("%s: failed to map SCU\n", __func__);
++		return;
++	}
++
++	/* Map IRAM (boot vector for secondary CPU) */
++	np = of_find_compatible_node(NULL, NULL, "zte,iram");
++	if (!np) {
++		pr_err("%s: failed to find iram node\n", __func__);
++		iounmap(scu_base);
++		scu_base = NULL;
++		return;
++	}
++
++	iram_base = of_iomap(np, 0);
++	of_node_put(np);
++	if (!iram_base) {
++		pr_err("%s: failed to map iram\n", __func__);
++		iounmap(scu_base);
++		scu_base = NULL;
++		return;
++	}
++
++	scu_enable(scu_base);
++}
++
++static const struct smp_operations zx279128_smp_ops __initconst = {
++	.smp_prepare_cpus	= zx279128_smp_prepare_cpus,
++	.smp_boot_secondary	= zx279128_boot_secondary,
++};
++CPU_METHOD_OF_DECLARE(zx279128_smp, "zte,zx279128-smp", &zx279128_smp_ops);

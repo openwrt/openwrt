@@ -1,0 +1,17 @@
+. /lib/functions/uci-defaults.sh
+
+board_config_update
+
+board=$(board_name)
+
+case "$board" in
+zte,zxhn-h3600)
+	ucidef_set_led_netdev "wifi2g" "wifi2g" "h3600:wifi2g" "phy0-ap0" "link"
+	ucidef_set_led_netdev "wifi5g" "wifi5g" "h3600:green:wifi5g" "phy1-ap0" "link"
+	ucidef_set_led_netdev "internet" "internet" "h3600:green:internet" "wan" "link tx rx"
+	;;
+esac
+
+board_config_flush
+
+exit 0

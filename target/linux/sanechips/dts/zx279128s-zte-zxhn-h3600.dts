@@ -1,0 +1,632 @@
+// SPDX-License-Identifier: GPL-2.0-only OR BSD-2-Clause
+/*
+ * ZTE ZXHN H3600 / H1600 (Sanechips ZX279128S, dual Cortex-A9)
+ * OpenWrt Device Tree for RAM initramfs bring-up
+ */
+
+/dts-v1/;
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+	model = "ZTE ZXHN H3600 / H1600";
+	compatible = "zte,zxhn-h3600", "zte,zx279128s";
+
+	chosen {
+		bootargs = "earlycon=zteuart,0x94404000 console=ttyAMA0,115200n8 root=/dev/mtdblock6 rootfstype=squashfs";
+		/* WAN TX mode hardcoded to 3 (directed egress) in driver */
+		stdout-path = "serial0:115200n8";
+	};
+
+	aliases {
+		serial0 = &serial0;
+		serial1 = &serial1;
+		ethernet0 = &gmac;
+		led-boot = &led_power_red;
+		led-failsafe = &led_power_red;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_red;
+	};
+
+	memory@40000000 {
+		device_type = "memory";
+		reg = <0x40000000 0x20000000>; /* 512 MiB DDR3 */
+	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		/*
+		 * The stock kernel reserves the top 38 MiB for the packet
+		 * processor (ZX_RESERVE_MEM_SIZE 0x2600000).  Keep Linux,
+		 * and in particular CMA / DMA-coherent buffers, out of it.
+		 */
+		pp_reserved: pp@5da00000 {
+			reg = <0x5da00000 0x2600000>;
+			no-map;
+		};
+	};
+
+	uartclk: clock-uart {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <25000000>;
+	};
+
+	apbclk: clock-apb {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <100000000>;
+	};
+
+	periphclk: clock-periph {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <500000000>;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		enable-method = "zte,zx279128-smp";
+
+		cpu@0 {
+			compatible = "arm,cortex-a9";
+			device_type = "cpu";
+			next-level-cache = <&l2cc>;
+			reg = <0>;
+		};
+
+		cpu@1 {
+			compatible = "arm,cortex-a9";
+			device_type = "cpu";
+			next-level-cache = <&l2cc>;
+			reg = <1>;
+		};
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+		interrupt-parent = <&gic>;
+		ranges;
+
+		scu: scu@800000 {
+			compatible = "arm,cortex-a9-scu";
+			reg = <0x00800000 0x100>;
+		};
+
+		gic: interrupt-controller@801000 {
+			compatible = "arm,cortex-a9-gic";
+			#interrupt-cells = <3>;
+			interrupt-controller;
+			reg = <0x00801000 0x1000>,
+			      <0x00800100 0x0100>;
+		};
+
+		timer@800200 {
+			compatible = "arm,cortex-a9-global-timer";
+			reg = <0x00800200 0x20>;
+			interrupts = <GIC_PPI 11 0x301>;
+			clocks = <&periphclk>;
+		};
+
+		twd_timer: timer@800600 {
+			compatible = "arm,cortex-a9-twd-timer";
+			reg = <0x00800600 0x20>;
+			interrupts = <GIC_PPI 13 0x301>;
+			clocks = <&periphclk>;
+		};
+
+		watchdog@800620 {
+			compatible = "arm,cortex-a9-twd-wdt";
+			reg = <0x00800620 0x20>;
+			interrupts = <GIC_PPI 14 0x104>;
+			clocks = <&periphclk>;
+			status = "disabled";
+		};
+
+		/* Reset trigger traced from U-Boot's own working "reset" command
+		 * (do_reset -> reset_cpu -> writel(1, 0x94000044)); this is the
+		 * vendor's own tested mechanism, not a guess. */
+		sysctrl: syscon@94000000 {
+			compatible = "syscon";
+			reg = <0x94000000 0x100>;
+		};
+
+		reboot {
+			compatible = "syscon-reboot";
+			regmap = <&sysctrl>;
+			offset = <0x44>;
+			mask = <0x1>;
+			value = <0x1>;
+		};
+
+		l2cc: cache-controller@c00000 {
+			compatible = "arm,pl310-cache";
+			reg = <0x00c00000 0x1000>;
+			cache-unified;
+			cache-level = <2>;
+			arm,data-latency = <2 2 2>;
+			arm,tag-latency = <2 2 2>;
+			/*
+			 * Match the stock firmware (AUX_CTRL 0x76430001).  Without
+			 * shared-override the PL310 turns normal non-cacheable
+			 * shared accesses (dma_alloc_coherent buffers) into
+			 * cacheable ones, so devices and CPUs see stale data.
+			 */
+			arm,shared-override;
+			prefetch-data = <1>;
+			prefetch-instr = <1>;
+			arm,double-linefill = <1>;
+			arm,double-linefill-incr = <0>;
+			/*
+			 * A PCIe read that is still outstanding while an L2
+			 * maintenance or sync operation runs deadlocks this SoC
+			 * (the vendor kernel serializes the two with one lock).
+			 */
+			zte,l2c-io-read-lock;
+		};
+
+		iram@200800 {
+			compatible = "zte,iram";
+			reg = <0x00200800 0x1000>;
+			status = "okay";
+		};
+
+		serial0: serial@94404000 {
+			compatible = "zte,ZX279127-uart", "arm,pl011", "arm,primecell";
+			arm,primecell-periphid = <0x001feffe>;
+			reg = <0x94404000 0x1000>;
+			interrupts = <GIC_SPI 11 0x04>;
+			clocks = <&uartclk>, <&apbclk>;
+			clock-names = "uartclk", "apb_pclk";
+			status = "okay";
+		};
+
+		serial1: serial@94405000 {
+			compatible = "zte,ZX279127-uart", "arm,pl011", "arm,primecell";
+			arm,primecell-periphid = <0x001feffe>;
+			reg = <0x94405000 0x1000>;
+			interrupts = <GIC_SPI 12 0x04>;
+			clocks = <&uartclk>, <&apbclk>;
+			clock-names = "uartclk", "apb_pclk";
+			status = "okay";
+		};
+
+		gpio0: gpio@94407000 {
+			compatible = "zte,zx279128s-gpio";
+			reg = <0x94407000 0x40>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			interrupts = <GIC_SPI 17 0x04>;
+		};
+
+		gpio1: gpio@94407040 {
+			compatible = "zte,zx279128s-gpio";
+			reg = <0x94407040 0x40>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			interrupts = <GIC_SPI 18 0x04>;
+		};
+
+		gpio2: gpio@94407080 {
+			compatible = "zte,zx279128s-gpio";
+			reg = <0x94407080 0x40>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			interrupts = <GIC_SPI 19 0x04>;
+		};
+
+		gpio3: gpio@944070c0 {
+			compatible = "zte,zx279128s-gpio";
+			reg = <0x944070c0 0x40>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			interrupts = <GIC_SPI 20 0x04>;
+		};
+
+		gpio4: gpio@94407100 {
+			compatible = "zte,zx279128s-gpio";
+			reg = <0x94407100 0x40>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			interrupts = <GIC_SPI 21 0x04>;
+		};
+
+		gpio5: gpio@94407140 {
+			compatible = "zte,zx279128s-gpio";
+			reg = <0x94407140 0x40>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			interrupts = <GIC_SPI 22 0x04>;
+		};
+
+		/* USB2 host DesignWare HS OTG controller - disabled until CRM driver enabled */
+		usb0: usb@9000000 {
+			compatible = "zte,ZX279127-dwc2", "snps,dwc2";
+			reg = <0x09000000 0x10000>;
+			interrupts = <GIC_SPI 44 0x04>;
+			dr_mode = "host";
+			status = "disabled";
+		};
+
+		/* USB3 host DesignWare DWC3 - disabled until CRM driver enabled */
+		usb1: usb@9100000 {
+			compatible = "snps,dwc3";
+			reg = <0x09100000 0x100000>;
+			interrupts = <GIC_SPI 50 0x04>;
+			dr_mode = "host";
+			status = "disabled";
+		};
+
+		/* The flash chip is SPI NAND (HY HYF1GQ4UDACAE, manuid=0xc9
+		 * devid=0x21), not parallel/raw NAND - the Denali binding that
+		 * used to be here was never tested and confirmed wrong via
+		 * live disassembly + register-level tracing of the vendor
+		 * U-Boot. This is the real controller (register protocol
+		 * validated live: READID and page-read-to-cache both
+		 * confirmed against known-good values on real hardware). */
+		spifc: spifc@94406000 {
+			compatible = "zte,zx279128s-spinand";
+			reg = <0x94406000 0x1000>;
+			status = "okay";
+
+			partitions {
+				compatible = "fixed-partitions";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				partition@0 {
+					label = "bootloader";
+					reg = <0x0000000 0x0100000>;
+					read-only;
+				};
+
+				partition@100000 {
+					label = "tag";
+					reg = <0x0100000 0x0100000>;
+					read-only;
+
+					nvmem-layout {
+						compatible = "fixed-layout";
+						#address-cells = <1>;
+						#size-cells = <1>;
+
+						/* LAN MAC of the stock firmware; the
+						 * next address is its 5 GHz radio's */
+						macaddr_tag_1e: macaddr@1e {
+							compatible = "mac-base";
+							reg = <0x1e 0x6>;
+							#nvmem-cell-cells = <1>;
+						};
+					};
+				};
+
+				partition@200000 {
+					label = "wifi";
+					reg = <0x0200000 0x0100000>;
+					read-only;
+				};
+
+				partition@300000 {
+					label = "usercfg";
+					reg = <0x0300000 0x0200000>;
+				};
+
+				partition@500000 {
+					label = "defcfg";
+					reg = <0x0500000 0x0200000>;
+				};
+
+				partition@700000 {
+					label = "kernel";
+					reg = <0x0700000 0x0360000>;
+				};
+
+				partition@a60000 {
+					label = "rootfs";
+					reg = <0x0a60000 0x1620000>;
+				};
+
+				partition@2080000 {
+					label = "trailer";
+					reg = <0x2080000 0x0020000>;
+				};
+
+				/*
+				 * The rest of the stock firmware's slot 0, up to
+				 * its slot 1 at 0x2700000 on the chip.  OpenWrt
+				 * does not use it, but the stock firmware may
+				 * leave its own slot-0 header here, which hides
+				 * ours from the bootloader; sysupgrade clears it.
+				 */
+				partition@20a0000 {
+					label = "trailer_gap";
+					reg = <0x20a0000 0x0640000>;
+				};
+			};
+		};
+
+		/*
+		 * PCIe Port 0 - MT7915 Wi-Fi 6 (2.4 GHz)
+		 * DBI at 0x0f000000, ctrl at 0x09500000, config space at 0x1c000000
+		 * Outbound memory window at 0x10000000 (128 MiB)
+		 * Reset GPIO: gpio3 pin 5 (GPIO 53)
+		 */
+		pcie0: pcie@f000000 {
+			compatible = "zte,zx279128s-pcie";
+			reg = <0x0f000000 0x4000>,   /* DBI registers */
+			      <0x09500000 0x1000>,   /* ctrl registers */
+			      <0x1c000000 0x200000>; /* config & PHY registers */
+			reg-names = "dbi", "ctrl", "config";
+			#address-cells = <3>;
+			#size-cells = <2>;
+			device_type = "pci";
+			bus-range = <0x00 0xff>;
+			ranges = <0x82000000 0 0x10000000  0x10000000  0 0x08000000>;
+			dma-ranges = <0x43000000 0x0 0x40000000  0x40000000  0 0x20000000>;
+			interrupts = <GIC_SPI 63 0x04>;
+			#interrupt-cells = <1>;
+			interrupt-map-mask = <0 0 0 7>;
+			interrupt-map = <0 0 0 1 &gic GIC_SPI 63 0x04>,
+					<0 0 0 2 &gic GIC_SPI 63 0x04>,
+					<0 0 0 3 &gic GIC_SPI 63 0x04>,
+					<0 0 0 4 &gic GIC_SPI 63 0x04>;
+			linux,pci-domain = <0>;
+			port-id = <0>;
+			reset-gpios = <&gpio3 5 GPIO_ACTIVE_HIGH>;
+			enable-gpios = <&gpio3 7 GPIO_ACTIVE_HIGH>;
+			status = "okay";
+		};
+
+		/*
+		 * PCIe Port 1 - MT7915 Wi-Fi 6 (5 GHz)
+		 * DBI at 0x0f100000, ctrl at 0x09600000, config space at 0x2c000000
+		 * Outbound memory window at 0x20000000 (128 MiB)
+		 * Reset is handled jointly by pcie0 (GPIO 53 and 55)
+		 */
+		pcie1: pcie@f100000 {
+			compatible = "zte,zx279128s-pcie";
+			reg = <0x0f100000 0x4000>,   /* DBI registers */
+			      <0x09600000 0x1000>,   /* ctrl registers */
+			      <0x2c000000 0x200000>; /* config & PHY registers */
+			reg-names = "dbi", "ctrl", "config";
+			#address-cells = <3>;
+			#size-cells = <2>;
+			device_type = "pci";
+			bus-range = <0x00 0xff>;
+			ranges = <0x82000000 0 0x20000000  0x20000000  0 0x08000000>;
+			dma-ranges = <0x43000000 0x0 0x40000000  0x40000000  0 0x20000000>;
+			interrupts = <GIC_SPI 78 0x04>;
+			#interrupt-cells = <1>;
+			interrupt-map-mask = <0 0 0 7>;
+			interrupt-map = <0 0 0 1 &gic GIC_SPI 78 0x04>,
+					<0 0 0 2 &gic GIC_SPI 78 0x04>,
+					<0 0 0 3 &gic GIC_SPI 78 0x04>,
+					<0 0 0 4 &gic GIC_SPI 78 0x04>;
+			linux,pci-domain = <1>;
+			port-id = <1>;
+			status = "okay";
+		};
+
+		mdio: mdio@9a101000 {
+			compatible = "zte,zx279128s-mdio";
+			reg = <0x9a101000 0x18>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "okay";
+
+			phy8: ethernet-phy@8 {
+				reg = <8>;
+			};
+
+			phy10: ethernet-phy@10 {
+				reg = <10>;
+			};
+
+			phy11: ethernet-phy@11 {
+				reg = <11>;
+			};
+
+			phy12: ethernet-phy@12 {
+				reg = <12>;
+			};
+
+			phy13: ethernet-phy@13 {
+				reg = <13>;
+			};
+		};
+
+		gmac: ethernet@92000000 {
+			compatible = "zte,zx279128s-gmac";
+			reg = <0x92000000 0x400000>;
+			nvmem-cells = <&macaddr_tag_1e 0>;
+			nvmem-cell-names = "mac-address";
+			status = "okay";
+
+			/* One netdev per port; the switch does not forward
+			 * between ports.  reg is the switch port, label the
+			 * front panel name. */
+			ethernet-ports {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				port@0 {
+					reg = <0>;
+					label = "lan1";
+					phy-handle = <&phy10>;
+				};
+
+				port@1 {
+					reg = <1>;
+					label = "lan2";
+					phy-handle = <&phy11>;
+				};
+
+				port@2 {
+					reg = <2>;
+					label = "lan3";
+					phy-handle = <&phy12>;
+				};
+
+				port@3 {
+					reg = <3>;
+					label = "lan4";
+					phy-handle = <&phy13>;
+				};
+
+				port@4 {
+					reg = <4>;
+					label = "wan";
+					phy-handle = <&phy8>;
+				};
+			};
+		};
+	};
+
+	/* LED GPIO mapping confirmed live by physically watching the front
+	 * panel while toggling each candidate GPIO one at a time - not
+	 * inferred from any schematic. All lines active-low (driving the
+	 * line low turns the LED on). No default triggers set - matches
+	 * every LED's real power-on state (off) and lets normal OpenWrt
+	 * userspace (/etc/config/system) assign triggers later, same as
+	 * any other device. Colors only asserted where directly confirmed;
+	 * the rest are left without a color-coded label. */
+	leds {
+		compatible = "gpio-leds";
+
+		/* Power LED, two elements: red on U-Boot gpio 38 and green on
+		 * gpio 39, both active low (both on shows orange). The stock
+		 * firmware boots red and turns green when it is up; the
+		 * led-boot/led-running aliases do the same. Confirmed on the
+		 * front panel. */
+		led_power_red: led-power-red {
+			label = "h3600:red:power";
+			gpios = <&gpio2 6 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+
+		led_power_green: led-power-green {
+			label = "h3600:green:power";
+			gpios = <&gpio2 7 GPIO_ACTIVE_LOW>;
+		};
+
+		led-wifi2g {
+			label = "h3600:wifi2g";
+			gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
+		};
+
+		led-broadband {
+			label = "h3600:broadband";
+			gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
+		};
+
+		led-phone1 {
+			label = "h3600:green:phone1";
+			gpios = <&gpio1 12 GPIO_ACTIVE_LOW>;
+		};
+
+		led-phone2 {
+			label = "h3600:green:phone2";
+			gpios = <&gpio1 13 GPIO_ACTIVE_LOW>;
+		};
+
+		led-wifi5g {
+			label = "h3600:green:wifi5g";
+			gpios = <&gpio2 8 GPIO_ACTIVE_LOW>;
+		};
+
+		led-usb {
+			label = "h3600:green:usb";
+			gpios = <&gpio2 9 GPIO_ACTIVE_LOW>;
+		};
+
+		led-internet-red {
+			label = "h3600:red:internet";
+			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
+		};
+
+		led-internet-green {
+			label = "h3600:green:internet";
+			gpios = <&gpio3 1 GPIO_ACTIVE_LOW>;
+		};
+
+		led-wps {
+			label = "h3600:wps";
+			gpios = <&gpio3 2 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	/* Button GPIO mapping confirmed live by press-and-hold with the
+	 * user while polling every input candidate for a transition. Three
+	 * other candidate lines (uboot gpio 5, 15, 47) never transitioned
+	 * for any button the unit actually has and are deliberately left
+	 * unmodeled rather than guessed at.
+	 *
+	 * Polled rather than interrupt-driven: the custom zx279133-gpio
+	 * IRQ chip (003-zte-zx-gpio.patch) is unvalidated on real hardware,
+	 * and a live test wiring these same lines through gpio-keys (irq
+	 * mode) triggered an RCU stall / full lockup on first button press
+	 * (root-caused to that IRQ chip, not to gpio-button-hotplug, which
+	 * requests a standard IRQF_ONESHOT threaded edge-both interrupt).
+	 * Polling avoids the untested IRQ path entirely; 50ms is plenty
+	 * responsive for physical buttons. */
+	keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <50>;
+
+		key-reset {
+			label = "reset";
+			gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+			debounce-interval = <60>;
+		};
+
+		key-wps {
+			label = "wps";
+			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+			debounce-interval = <60>;
+		};
+
+		key-wifi {
+			label = "rfkill";
+			gpios = <&gpio3 12 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RFKILL>;
+			debounce-interval = <60>;
+		};
+
+		key-led {
+			label = "led";
+			gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_LIGHTS_TOGGLE>;
+			debounce-interval = <60>;
+		};
+	};
+};

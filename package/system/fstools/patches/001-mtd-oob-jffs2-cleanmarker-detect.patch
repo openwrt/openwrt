@@ -1,0 +1,48 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Navid Ghahremani <ghahramani.navid@gmail.com>
+Date: Mon, 28 Sep 2026 00:00:00 +0100
+Subject: [PATCH] libfstools: read the JFFS2 cleanmarker from the OOB free bytes
+
+On NAND, JFFS2 stores the cleanmarker of an erased block in the OOB free
+bytes (MTD_OPS_AUTO_OOB), and they do not start at OOB byte 0 on every
+chip: the HeYangTek HYF1GQ4UDACAE SPI-NAND of the ZTE ZXHN H3600 keeps
+the bad block marker in byte 0 and exposes only the bytes its on-die
+ECC does not cover (1-3, 16-19, ...).  mtd_volume_identify() reads the
+first four raw OOB bytes and misses the cleanmarker there.  When the
+first block of the overlay holds no node, only the cleanmarker, the
+volume is reported as FS_NONE: mount_root boots on a tmpfs overlay and
+"mount_root done" copies that tmpfs over the JFFS2 volume, so the saved
+configuration is not used.
+
+Read the free bytes with MEMREAD in MTD_OPS_AUTO_OOB mode, and fall back
+to the raw read on kernels without MEMREAD.
+
+Signed-off-by: Navid Ghahremani <ghahramani.navid@gmail.com>
+---
+--- a/libfstools/mtd.c
++++ b/libfstools/mtd.c
+@@ -206,7 +206,23 @@
+ 			.ptr = (void *)&deadc0de,
+ 		};
+ 
+-		ioctl(p->fd, MEMREADOOB, &oob);
++#ifdef MEMREAD
++		/*
++		 * JFFS2 keeps the cleanmarker of an erased block in the OOB
++		 * free bytes (MTD_OPS_AUTO_OOB), and they do not start at OOB
++		 * byte 0 on every NAND.  Read them that way, and fall back to
++		 * the raw first OOB bytes on kernels without MEMREAD.
++		 */
++		struct mtd_read_req req = {
++			.start = 0,
++			.ooblen = sizeof(deadc0de),
++			.usr_oob = (unsigned long)&deadc0de,
++			.mode = MTD_OPS_AUTO_OOB,
++		};
++
++		if (ioctl(p->fd, MEMREAD, &req))
++#endif
++			ioctl(p->fd, MEMREADOOB, &oob);
+ 	}
+ 
+ 	if (deadc0de == __be32_to_cpu(0x4f575254))

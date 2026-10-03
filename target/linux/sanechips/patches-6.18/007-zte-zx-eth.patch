@@ -1,0 +1,1389 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Navid Ghahremani <ghahramani.navid@gmail.com>
+Date: Mon, 28 Sep 2026 00:00:00 +0100
+Subject: [PATCH] net: ethernet: add the ZTE ZX279128S Ethernet driver
+
+Add a driver for the integrated 5-port gigabit switch and DMA engine
+of the ZX279128S.  It programs the packet processor, buffer manager,
+traffic manager and DMA rings, and exposes the four LAN ports as eth0
+and the WAN port as eth1.
+
+Signed-off-by: Navid Ghahremani <ghahramani.navid@gmail.com>
+---
+--- a/drivers/net/ethernet/Kconfig
++++ b/drivers/net/ethernet/Kconfig
+@@ -203,5 +203,6 @@ source "drivers/net/ethernet/wangxun/Kco
+ source "drivers/net/ethernet/wiznet/Kconfig"
+ source "drivers/net/ethernet/xilinx/Kconfig"
+ source "drivers/net/ethernet/xircom/Kconfig"
++source "drivers/net/ethernet/zte/Kconfig"
+ 
+ endif # ETHERNET
+--- a/drivers/net/ethernet/Makefile
++++ b/drivers/net/ethernet/Makefile
+@@ -108,3 +108,4 @@ obj-$(CONFIG_NET_VENDOR_XIRCOM) += xirco
+ obj-$(CONFIG_NET_VENDOR_SYNOPSYS) += synopsys/
+ obj-$(CONFIG_NET_VENDOR_PENSANDO) += pensando/
+ obj-$(CONFIG_OA_TC6) += oa_tc6.o
++obj-$(CONFIG_NET_VENDOR_ZTE) += zte/
+--- /dev/null
++++ b/drivers/net/ethernet/zte/Kconfig
+@@ -0,0 +1,18 @@
++# SPDX-License-Identifier: GPL-2.0-only
++config NET_VENDOR_ZTE
++	bool "ZTE Ethernet devices"
++	default y
++	help
++	  If you have a network (Ethernet) device belonging to this class, say Y.
++
++if NET_VENDOR_ZTE
++
++config ZX279128_ETH
++	bool "ZTE ZX279128S Gigabit Ethernet driver"
++	select PHYLIB
++	default y
++	help
++	  This driver supports the internal Gigabit Ethernet switch and packet
++	  processor found on the ZTE / Sanechips ZX279128S SoC.
++
++endif # NET_VENDOR_ZTE
+--- /dev/null
++++ b/drivers/net/ethernet/zte/Makefile
+@@ -0,0 +1,2 @@
++# SPDX-License-Identifier: GPL-2.0-only
++obj-$(CONFIG_ZX279128_ETH) += zx279128-eth.o
+--- /dev/null
++++ b/drivers/net/ethernet/zte/zx279128-eth.c
+@@ -0,0 +1,1332 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * Gigabit Ethernet Switch and DMA driver for ZTE ZX279128S SoC
++ *
++ * Copyright (C) 2026 Navid & Antigravity
++ *
++ * Hardware: ZTE ZXHN H3600/H1600, Sanechips ZX279128S (dual Cortex-A9)
++ * The SoC contains an internal 5-port Gigabit switch, a Traffic Manager (TM),
++ * a Buffer Management Unit (BMU), and a DMA engine.  U-Boot sets up the
++ * hardware using fixed physical addresses; this Linux driver reprograms all
++ * hardware tables with dynamically allocated DMA memory, preserving the
++ * relative layout observed in the bootloader backup.
++ *
++ * Architecture:
++ * - Dual netdevice: eth0 (LAN, physical ports 0-3) and eth1 (WAN, physical port 4).
++ * - Shared 16 MiB DMA arena allocated once on first open and kept until reboot.
++ * - RX demuxing: hardware ingress descriptor byte 6 bits [7:3] contains (port + 1).
++ *   port == 4 -> routed to eth1 (WAN netdev).
++ *   port < 4  -> routed to eth0 (LAN netdev).
++ * - TX routing:
++ *   eth1 (WAN): desc[0] = 0x80 | (44 << 20) -> directed egress queue 44 (Port 4).
++ *   eth0 (LAN): desc[0] = 0x80 -> hardware L2 switch forwarding across LAN ports.
++ */
++
++#include <linux/module.h>
++#include <linux/kernel.h>
++#include <linux/netdevice.h>
++#include <linux/etherdevice.h>
++#include <linux/platform_device.h>
++#include <linux/dma-mapping.h>
++#include <linux/io.h>
++#include <linux/of.h>
++#include <linux/of_net.h>
++#include <linux/of_mdio.h>
++#include <linux/phy.h>
++#include <linux/delay.h>
++#include <linux/hrtimer.h>
++#include <linux/iopoll.h>
++#include <linux/rtnetlink.h>
++
++#define DRV_NAME		"zx279128-eth"
++
++/* Register offsets from GMAC base (0x92000000) */
++#define ZX_MAC_BASE		0x200000
++#define ZX_PORT_STRIDE		0x040000
++#define ZX_TM_BASE		0x340000
++
++/* Switch port attributes (stock tm.ko "spa") */
++#define ZX_SPA_UP_REG_PKT_EN	0x1d4000
++#define ZX_SPA_DN_REG_PKT_EN	0x1d4040
++#define ZX_SPA_TRAP_DMAC	0x1d41a0	/* 8 bytes per entry */
++#define ZX_SPA_TRAP_PROTO	0x1d41c0
++#define ZX_SPA_TRAP_ETH_TYPE	0x1d41c4	/* 4 x 16 bits, big end first */
++
++#define ZX_TM_CONFIG_START	(ZX_TM_BASE + 0x04)
++#define ZX_TM_TAB0_ADDR		(ZX_TM_BASE + 0xe8)
++#define ZX_TM_TAB1_ADDR		(ZX_TM_BASE + 0xec)
++#define ZX_TM_BUF_F0		(ZX_TM_BASE + 0xf0)
++#define ZX_TM_BUF_START		(ZX_TM_BASE + 0xf4)
++#define ZX_TM_BUF_END		(ZX_TM_BASE + 0xf8)
++#define ZX_TM_TAB_LIMIT		(ZX_TM_BASE + 0xfc)
++
++#define ZX_RX_REL_CTRL		(ZX_TM_BASE + 0x4064)
++#define ZX_RX_REL_DATA		(ZX_TM_BASE + 0x4068)
++
++#define ZX_BMU_BASE		(ZX_TM_BASE + 0x8000)
++#define ZX_BMU_CTRL		(ZX_BMU_BASE + 0x00)
++#define ZX_BMU_CFG1		(ZX_BMU_BASE + 0x04)
++#define ZX_BMU_CFG2		(ZX_BMU_BASE + 0x08)
++#define ZX_BMU_BUF_ID		(ZX_BMU_BASE + 0x0c)
++#define ZX_BMU_BUF_FREE		(ZX_BMU_BASE + 0x10)
++#define ZX_BMU_BUF_ALLOC	(ZX_BMU_BASE + 0x14)
++#define ZX_BMU_FREE_STATUS	(ZX_BMU_BASE + 0xdc)
++#define ZX_BMU_THRES1		(ZX_BMU_BASE + 0x48)
++#define ZX_BMU_THRES2		(ZX_BMU_BASE + 0x4c)
++#define ZX_BMU_LIMIT1		(ZX_BMU_BASE + 0x58)
++#define ZX_BMU_LIMIT2		(ZX_BMU_BASE + 0x5c)
++
++#define ZX_DMA_BASE		(ZX_TM_BASE + 0x10000)
++#define ZX_DMA_CTRL		(ZX_DMA_BASE + 0x00)
++#define ZX_DMA_RING_CFG		(ZX_DMA_BASE + 0x3c)
++#define ZX_DMA_TX_RING_BASE	(ZX_DMA_BASE + 0x50)
++#define ZX_DMA_RX_RING_BASE	(ZX_DMA_BASE + 0x60)
++#define ZX_DMA_TX_START		(ZX_DMA_BASE + 0x64)
++#define ZX_DMA_RX_QUEUE_CNT(q)	(ZX_DMA_BASE + 0x100 + ((q) * 4))
++
++/* DMA buffer pool: 2048 buffers x 2048 bytes = 4 MiB */
++#define ZX_NUM_BUFFERS		4096
++#define ZX_BUF_SIZE		2048
++#define ZX_BUF_POOL_SIZE	(ZX_NUM_BUFFERS * ZX_BUF_SIZE)
++
++/* Free-index tables (written big-endian u16 per U-Boot convention) */
++#define ZX_TAB0_ENTRIES		ZX_NUM_BUFFERS
++#define ZX_TAB0_SIZE		(ZX_TAB0_ENTRIES * sizeof(u16))
++#define ZX_TAB1_ENTRIES		512
++#define ZX_TAB1_SIZE		(ZX_TAB1_ENTRIES * sizeof(u16))
++
++/* DMA descriptor rings */
++#define ZX_NUM_TX_DESC		1024
++#define ZX_TX_QUEUE_LIMIT	256
++#define ZX_NUM_RX_DESC		1024
++#define ZX_RX_DESC_RESET_BASE	0
++#define ZX_DESC_SIZE		16	/* bytes per descriptor */
++
++#define ZX_DMA_ARENA_SIZE       0x1000000
++#define ZX_TAB0_OFFSET          0x800000
++#define ZX_TAB1_OFFSET          0x808000
++#define ZX_RX_OFFSET            0xa00000
++#define ZX_DMA50_OFFSET         0xb00000
++#define ZX_TX_OFFSET            0xc00000
++/* RX ring of queue q at ZX_RX_OFFSET + q * 16 KiB (1024 descriptors) */
++#define ZX_RX_QUEUE_STRIDE      0x4000
++#define ZX_RX_QUEUES            8
++#define ZX_DMA_TX_DONE          (ZX_DMA_BASE + 0x68)
++
++struct zx_eth_adapter;
++
++/* One net_device per switch port: ports 0-3 LAN, port 4 WAN */
++#define ZX_NUM_PORTS		5
++#define ZX_WAN_PORT		4
++/* TM egress queue of switch port p (as in the vendor driver) */
++#define ZX_PORT_TX_QUEUE(p)	(40 + (p))
++
++struct zx_eth_priv {
++	struct net_device	*netdev;
++	struct zx_eth_adapter	*adapter;
++	int			port;
++};
++
++struct zx_eth_adapter {
++	struct device		*dev;
++	void __iomem		*base;
++	struct napi_struct	napi;
++	struct hrtimer		poll_timer;
++
++	struct net_device	*ports[ZX_NUM_PORTS];
++	u8			lan_addr[ETH_ALEN];
++	u8			wan_addr[ETH_ALEN];
++	int			open_count;
++
++	/* DMA arena remains allocated across down/up */
++	void			*buffer_pool;
++	dma_addr_t		buf_pool_dma;
++	void			*tx_ring;
++	dma_addr_t		tx_ring_dma;
++	void			*rx_ring;
++	dma_addr_t		rx_ring_dma;
++	void			*tab0;
++	dma_addr_t		tab0_dma;
++	void			*tab1;
++	dma_addr_t		tab1_dma;
++
++	u32			tx_cur_idx;
++	u32			tx_pending;
++	u32			tx_complete_cnt;
++	u32			tx_done_excess;
++	u32			bmu_free_slots;
++	u32			bmu_alloc_fail;
++	u32			bmu_alloc_late;		/* buffers of timed-out requests */
++	bool			bmu_alloc_pending;
++	u32			bmu_free_fail;
++	u32			rx_cur_idx[ZX_RX_QUEUES];
++	bool			rx_synced[ZX_RX_QUEUES];
++	u32			rx_resync_cnt;
++	u32			rx_alias_cnt;
++	u32			rx_nobuf_cnt;
++	u32			rx_rel_fail;
++	u32			rx_bad_cnt;
++
++	/* Per-queue, per-protocol RX stats */
++	u64			rx_queue_pkts[ZX_RX_QUEUES];
++	u64			rx_queue_tcp[ZX_RX_QUEUES];
++	u64			rx_queue_udp[ZX_RX_QUEUES];
++	u64			rx_queue_icmp[ZX_RX_QUEUES];
++	u64			rx_queue_arp[ZX_RX_QUEUES];
++	u64			rx_queue_other[ZX_RX_QUEUES];
++	u64			rx_invalid_desc[ZX_RX_QUEUES];
++
++	bool			initialized;
++	bool			rx_fault;
++	spinlock_t		tx_lock;
++	spinlock_t		bmu_free_lock;
++
++	/* ports 0-3 internal LAN PHYs, port 4 external WAN PHY (ZX5201) */
++	struct phy_device	*phydev[ZX_NUM_PORTS];
++	bool			link_state[ZX_NUM_PORTS];
++	int			speed[ZX_NUM_PORTS];
++	int			duplex[ZX_NUM_PORTS];
++};
++
++/* ---- BMU helpers --------------------------------------------------- */
++
++/*
++ * Allocate a buffer from the BMU (caller holds tx_lock).  A request that
++ * does not complete in time stays with the BMU, which hands out its
++ * buffer later: keep it pending and collect that buffer on the next call,
++ * as the vendor driver does.  Starting a new request instead lost one
++ * buffer for good with every timeout.
++ */
++static int zx_bmu_alloc_bp(struct zx_eth_adapter *adapter)
++{
++	void __iomem *base = adapter->base;
++	u32 val;
++	int ret;
++
++	if (adapter->bmu_alloc_pending) {
++		if (readl(base + ZX_BMU_BUF_ALLOC) & 1) {
++			adapter->bmu_alloc_fail++;
++			return -EBUSY;
++		}
++		adapter->bmu_alloc_pending = false;
++		val = readl(base + ZX_BMU_BUF_ID);
++		if (val & BIT(31)) {
++			adapter->bmu_alloc_late++;
++			return val & 0xffff;
++		}
++	}
++
++	val = readl(base + ZX_BMU_BUF_ALLOC);
++	writel(val | 1, base + ZX_BMU_BUF_ALLOC);
++	ret = readl_poll_timeout_atomic(base + ZX_BMU_BUF_ALLOC, val,
++					!(val & 3), 1, 1000);
++	if (!ret) {
++		val = readl(base + ZX_BMU_BUF_ID);
++		if (val & BIT(31))
++			return val & 0xffff;
++		ret = -ENOSPC;
++	}
++
++	adapter->bmu_alloc_pending = true;
++	adapter->bmu_alloc_fail++;
++	return ret;
++}
++
++static int zx_bmu_free_bp(struct zx_eth_adapter *adapter, u16 bp)
++{
++	u32 val;
++	int ret = 0;
++
++	spin_lock_bh(&adapter->bmu_free_lock);
++	if (!adapter->bmu_free_slots) {
++		ret = readl_poll_timeout_atomic(adapter->base + ZX_BMU_FREE_STATUS,
++						val, val & 0x1f8, 1, 5000);
++		if (ret) {
++			adapter->bmu_free_fail++;
++			goto out;
++		}
++		adapter->bmu_free_slots = (val >> 3) & 0x3f;
++	}
++
++	adapter->bmu_free_slots--;
++	writel(bp, adapter->base + ZX_BMU_BUF_FREE);
++out:
++	spin_unlock_bh(&adapter->bmu_free_lock);
++	return ret;
++}
++
++/* ---- RX descriptor release ----------------------------------------- */
++
++/*
++ * Hand @n consumed slots of RX queue @q back to the hardware with one
++ * command, as the vendor driver does (count in bits 13:4, ring B), instead
++ * of two register polls and two writes per frame.
++ *
++ * The traffic manager counts each frame it hands to the CPU against the
++ * class in descriptor byte 6 bit 0, and a release only returns slots of the
++ * class it names.  Releasing a class-1 slot as class 0 leaves the frame
++ * counted in the CPU queue for good: after 1024 frames the queue's reserved
++ * space is used up.  So count the slots per class and release each class
++ * separately, as the vendor driver does.
++ */
++static int zx_rx_release(struct zx_eth_adapter *adapter, int q, int class,
++			 u32 n)
++{
++	u32 val;
++	int ret;
++
++	ret = readl_poll_timeout_atomic(adapter->base + ZX_RX_REL_CTRL,
++					val, !(val & 1), 1, 5000);
++	if (ret)
++		return ret;
++	writel((n & 0x3ff) << 4 | (class & 1) << 3 | (q & 7),
++	       adapter->base + ZX_RX_REL_DATA);
++	writel(1, adapter->base + ZX_RX_REL_CTRL);
++	return 0;
++}
++
++/*
++ * Clear a consumed descriptor.  All cleared descriptors must be visible
++ * before their slots are released: with a full ring the hardware refills a
++ * slot as soon as it is released, and clearing it afterwards would wipe
++ * the new descriptor.
++ */
++static void zx_rx_clear_desc(__le32 *desc)
++{
++	desc[0] = 0; desc[1] = 0; desc[2] = 0; desc[3] = 0;
++}
++
++/* Count a consumed slot for its release class, then clear it. */
++static void zx_rx_consume(__le32 *desc, u32 rel[2])
++{
++	rel[((u8 *)desc)[6] & 1]++;
++	zx_rx_clear_desc(desc);
++}
++
++/* ---- MAC port helpers ---------------------------------------------- */
++
++static void zx_port_set_speed(struct zx_eth_adapter *adapter, int port,
++			       int speed, int duplex)
++{
++	void __iomem *pb = adapter->base + ZX_MAC_BASE + (port * ZX_PORT_STRIDE);
++	u32 val = readl(pb);
++
++	if (speed == SPEED_1000) {
++		val &= ~0xc000;
++		val |=  0x2000;
++	} else {
++		if (duplex == DUPLEX_FULL)
++			val |= 0xa000;
++		else {
++			val &= ~0x2000;
++			val |=  0x8000;
++		}
++		if (speed == SPEED_100)
++			val |=  0x4000;
++		else
++			val &= ~0x4000;
++	}
++	writel(val, pb);
++}
++
++static void zx_port_enable(struct zx_eth_adapter *adapter, int port, bool enable)
++{
++	void __iomem *pb = adapter->base + ZX_MAC_BASE + (port * ZX_PORT_STRIDE);
++	u32 val = readl(pb);
++
++	if (enable)
++		val |= 3;
++	else
++		val &= ~3;
++	writel(val, pb);
++}
++
++/* ---- PHY link callbacks -------------------------------------------- */
++
++static void zx_adjust_link(struct net_device *netdev)
++{
++	struct zx_eth_priv *priv = netdev_priv(netdev);
++	struct zx_eth_adapter *adapter = priv->adapter;
++	struct phy_device *phydev = adapter->phydev[priv->port];
++	int p = priv->port;
++
++	if (!phydev)
++		return;
++
++	if (phydev->link) {
++		if (!adapter->link_state[p] ||
++		    adapter->speed[p]  != phydev->speed ||
++		    adapter->duplex[p] != phydev->duplex) {
++			adapter->link_state[p] = true;
++			adapter->speed[p]      = phydev->speed;
++			adapter->duplex[p]     = phydev->duplex;
++			zx_port_set_speed(adapter, p, phydev->speed, phydev->duplex);
++			zx_port_enable(adapter, p, true);
++			netdev_info(netdev, "link up (%dMbps/%s)\n", phydev->speed,
++				    phydev->duplex == DUPLEX_FULL ? "Full" : "Half");
++		}
++		netif_carrier_on(netdev);
++	} else if (adapter->link_state[p]) {
++		adapter->link_state[p] = false;
++		zx_port_enable(adapter, p, false);
++		netdev_info(netdev, "link down\n");
++		netif_carrier_off(netdev);
++	}
++}
++
++/*
++ * Frames addressed to one of our MAC addresses go to the CPU, whatever
++ * their type (the ethertype traps below cover the common ones).
++ */
++static void zx_set_trap_dmac(struct zx_eth_adapter *adapter, int idx,
++			     const u8 *mac)
++{
++	writel(mac[2] << 24 | mac[3] << 16 | mac[4] << 8 | mac[5],
++	       adapter->base + ZX_SPA_TRAP_DMAC + idx * 8);
++	writel(mac[0] << 8 | mac[1], adapter->base + ZX_SPA_TRAP_DMAC + idx * 8 + 4);
++}
++
++static void zx_dma_enable(struct zx_eth_adapter *adapter, bool enable)
++{
++	u32 val = readl(adapter->base + ZX_DMA_CTRL);
++
++	val &= ~0x000f0000;
++	val |= enable ? 0x002f0000 : 0x00200000;
++	writel(val, adapter->base + ZX_DMA_CTRL);
++	readl(adapter->base + ZX_DMA_CTRL);
++}
++
++static int zx_tm_write(struct zx_eth_adapter *adapter, u32 table, u32 index,
++		       const u32 data[4])
++{
++	void __iomem *tm = adapter->base + ZX_TM_BASE + 0x4000;
++	u32 val;
++	int i, ret;
++
++	ret = readl_poll_timeout(tm + 0x18, val, val & 1, 1, 1000);
++	if (ret)
++		return ret;
++	writel(index | (table << 22), tm + 0x14);
++	for (i = 3; i >= 0; i--)
++		writel(data[i], tm + 0x1c + i * 4);
++	return 0;
++}
++
++static int zx_tm_read0(struct zx_eth_adapter *adapter, u32 table, u32 index,
++		       u32 *data)
++{
++	void __iomem *tm = adapter->base + ZX_TM_BASE + 0x4000;
++	u32 val;
++	int ret;
++
++	ret = readl_poll_timeout(tm + 0x18, val, val & 1, 1, 1000);
++	if (ret)
++		return ret;
++	writel(index | (table << 22) | BIT(27), tm + 0x14);
++	ret = readl_poll_timeout(tm + 0x18, val, val & 1, 1, 1000);
++	if (ret)
++		return ret;
++	*data = readl(tm + 0x1c);
++	return 0;
++}
++
++/* Queue, RED and scheduler tables.  The RED profiles use the vendor
++ * pon_tm_red_init() value.
++ *
++ * Queue word 0 is the reserved space (bits 10:0) plus the shared space
++ * (bits 25:11), in buffers.  Queues 0-15 feed the CPU.  They get 1023
++ * reserved and no shared buffers, as in the stock firmware: a frame stays
++ * counted in its queue until the driver releases its RX slot, so the
++ * traffic manager never has more than 1023 frames in the 1024-slot RX
++ * ring and drops the excess itself.  With more, a burst faster than the
++ * driver drains the ring makes the DMA overwrite slots that were not read
++ * yet, and those frames and their buffers are lost.
++ *
++ * The queue usage in table 1 survives the reset.  U-Boot receives a TFTP
++ * download on CPU queue 0 and never returns the slots, so after a TFTP
++ * boot the queue starts with up to 1024 frames counted that will never be
++ * released, and a 1023 limit would drop every frame.  Raise the limit of
++ * each CPU queue by what is left counted in it.
++ */
++static int zx_tm_init(struct zx_eth_adapter *adapter)
++{
++	static const u32 queue[4] = { 0x00800400, 0, 0, 0 };
++	static const u32 red[4] = { 0x00200020, 0, 0, 0 };
++	static const u32 scheduler[4] = {
++		0xff803fff, 0x0100ff80, 0x00100200, 32
++	};
++	u32 cpu_queue[4] = { 0, 0, 0, 0 };
++	u32 used, limit;
++	int i, ret;
++
++	for (i = 0; i < 16; i++) {
++		ret = zx_tm_read0(adapter, 1, i, &used);
++		if (ret)
++			return ret;
++		used = (used & 0x7ff) + ((used >> 11) & 0x7fff);
++		if (used)
++			dev_info(adapter->dev,
++				 "CPU queue %d: %u frames left counted by the bootloader\n",
++				 i, used);
++		limit = 1023 + used;
++		cpu_queue[0] = min(limit, 0x7ffU) | (limit - min(limit, 0x7ffU)) << 11;
++		ret = zx_tm_write(adapter, 0, i, cpu_queue);
++		if (ret)
++			return ret;
++	}
++	for (i = 16; i < 400; i++) {
++		ret = zx_tm_write(adapter, 0, i, queue);
++		if (ret)
++			return ret;
++	}
++	for (i = 0; i < 384; i++) {
++		ret = zx_tm_write(adapter, 2, i, red);
++		if (ret)
++			return ret;
++		ret = zx_tm_write(adapter, 4, i, scheduler);
++		if (ret)
++			return ret;
++	}
++	return 0;
++}
++
++/* ---- Hardware initialisation --------------------------------------- */
++
++static void zx_pp_init(struct zx_eth_adapter *adapter)
++{
++	void __iomem *base = adapter->base;
++
++	/* Mode-2 TX goes through the packet processor bridge.  The bootloader
++	 * initializes it for TFTP, but not when booting directly from NAND.
++	 * Initialize it ourselves, while DMA and the MACs are quiesced.  These
++	 * are the H3600 bootloader's PP reset, bridge and classifier settings.
++	 */
++	writel(2, base + 0x380000);
++	usleep_range(1000, 2000);
++
++	writel(0x000200ff, base + 0x388004);
++	/* Stock firmware value.  With the reset value 0x00010000 the bridge
++	 * steered IPv6 unicast arriving on WAN to a queue the driver never
++	 * services, and each frame kept a BMU buffer: about one leaked
++	 * buffer per background WAN frame on an IPv6 network.
++	 */
++	writel(0x0000dfdf, base + 0x388008);
++	/* The bridge would forward a frame between ports only through VLAN
++	 * table entries, which the driver does not program, so it drops what
++	 * the traps leave.  Frames between two LAN ports must reach the Linux
++	 * bridge instead.  Turn off source address learning, so that every
++	 * unicast destination is unknown, and send unknown unicast arriving on
++	 * a switch port (bridge ports 1-5) to the CPU.  Without this, lifting
++	 * the IPv4 trap for flow offload loses IPv4 between two LAN hosts.
++	 */
++	writel(0x00000000, base + 0x3881c0);
++	writel(0xff5ffdff, base + 0x388340);
++	writel(0x0000003e, base + 0x388344);
++	writel(0x0000003f, base + 0x388380);
++	writel(0xaaaaaaaa, base + 0x38863c);
++	writel(0x00005555, base + 0x3881c4);
++	writel(0x000bf874, base + 0x388188);
++	writel(0x000000ff, base + 0x3882c0);
++	writel(0x0000ffff, base + 0x388300);
++	writel(0x0000003e, base + 0x388304);
++
++	writel(0x0000309a, base + 0x38c080);
++	writel(0, base + 0x38c088);
++	writel(1, base + 0x38c0cc);
++	writel(0, base + 0x3a0010);
++	writel(0, base + 0x3a0014);
++}
++
++static int zx_hw_init(struct zx_eth_adapter *adapter)
++{
++	void __iomem *base = adapter->base;
++	static const int port_to_sw_idx[8] = { 0, 1, 2, 3, 4, -1, 5, 6 };
++	__be16 *tab;
++	u32 val;
++	int i, ret;
++
++	/* 0. Master reset pulse */
++	writel(0, base + 0x8);
++	udelay(10);
++	writel(0xffffffff, base + 0x8);
++
++	/* Quiesce all 5 ports */
++	for (i = 0; i < 5; i++)
++		zx_port_enable(adapter, i, false);
++	zx_dma_enable(adapter, false);
++	writel(0, base + ZX_BMU_CTRL);
++	msleep(20);
++
++	/* 1. Clock gating: enable clocks for ports 0..4 (bits 0..4 = 31) */
++	writel(readl(base + 0x40018) & ~3, base + 0x40018);
++	writel(31, base + 0x4001c);
++	zx_pp_init(adapter);
++
++	/* 2. Free-buffer index tables */
++	tab = adapter->tab0;
++	for (i = 0; i < ZX_TAB0_ENTRIES; i++)
++		tab[i] = cpu_to_be16(i);
++
++	tab = adapter->tab1;
++	for (i = 0; i < ZX_TAB1_ENTRIES; i++)
++		tab[i] = cpu_to_be16(i);
++
++	dma_wmb();
++	ret = zx_tm_init(adapter);
++	if (ret)
++		return dev_err_probe(adapter->dev, ret, "TM table setup timed out\n");
++
++	/* 3. Traffic Manager buffer pool */
++	writel((u32)adapter->tab0_dma, base + ZX_TM_TAB0_ADDR);
++	writel((u32)adapter->tab1_dma, base + ZX_TM_TAB1_ADDR);
++	writel(0x08000800, base + ZX_TM_TAB_LIMIT);
++	writel((u32)adapter->buf_pool_dma, base + ZX_TM_BUF_START);
++	writel((u32)adapter->buf_pool_dma + ZX_BUF_POOL_SIZE, base + ZX_TM_BUF_END);
++	writel((u32)adapter->rx_ring_dma, base + ZX_TM_BUF_F0);
++	writel(16, base + ZX_TM_CONFIG_START);
++
++	/* DMA and TM control values from the vendor pon_tm_dma_init() and
++	 * the stock firmware, programmed before the BMU is configured.
++	 */
++	writel(1,      base + ZX_DMA_BASE + 0x28);
++	writel(1,      base + ZX_DMA_BASE + 0x2c);
++	writel(50000,  base + ZX_DMA_BASE + 0x30);
++	writel(64,     base + ZX_DMA_BASE + 0x34);
++	writel(0x7f,   base + ZX_DMA_BASE + 0x04);
++	writel(32,     base + ZX_DMA_BASE + 0x20);
++	writel(32,     base + ZX_DMA_BASE + 0x24);
++	/* The bootloader leaves 0x00131213 here, the stock firmware runs with
++	 * 0x00131217.
++	 */
++	writel(0x00131217, base + ZX_DMA_BASE + 0x388);
++	writel(readl(base + ZX_TM_BASE) | 0x40, base + ZX_TM_BASE);
++
++	/* 4. Buffer Management Unit */
++	writel(0,          base + ZX_BMU_CTRL);
++	writel(0x0104c040, base + ZX_BMU_CFG1);
++	writel(0x0104c040, base + ZX_BMU_CFG2);
++	/* Pool size in units of 32 buffers.  With a 2048-buffer pool the BMU
++	 * never fills its external free list (BPPE) after a cold NAND boot and
++	 * runs on its ~64-entry internal cache only.  4096 works.
++	 */
++	writel(ZX_NUM_BUFFERS / 32 - 1, base + ZX_BMU_LIMIT1);
++	writel(15,         base + ZX_BMU_LIMIT2);
++	writel(ZX_NUM_BUFFERS << 16, base + ZX_BMU_THRES1);
++	writel(0x2000000,  base + ZX_BMU_THRES2);
++	writel(0,          base + ZX_BMU_BUF_ALLOC);
++	writel(1,          base + ZX_BMU_CTRL);
++
++	writel(17, base + 0x3a00e0);
++
++	/* 5. DMA descriptor rings */
++	memset(adapter->tx_ring, 0, ZX_NUM_TX_DESC * ZX_DESC_SIZE);
++	memset(adapter->rx_ring, 0, ZX_RX_QUEUES * ZX_RX_QUEUE_STRIDE);
++	adapter->tx_cur_idx = 0;
++	for (i = 0; i < ZX_RX_QUEUES; i++) {
++		adapter->rx_cur_idx[i] = ZX_RX_DESC_RESET_BASE % ZX_NUM_RX_DESC;
++		adapter->rx_synced[i] = false;
++	}
++	adapter->tx_pending = 0;
++	adapter->tx_complete_cnt = 0;
++	adapter->tx_done_excess = 0;
++	adapter->bmu_free_slots = 0;
++
++	writel((u32)adapter->buf_pool_dma + ZX_DMA50_OFFSET,
++	       base + ZX_DMA_TX_RING_BASE);
++	writel((u32)adapter->tx_ring_dma, base + ZX_DMA_RX_RING_BASE);
++	writel(0x00400040,             base + ZX_DMA_RING_CFG);
++	readl(base + ZX_DMA_TX_DONE);
++
++	dma_wmb();
++
++	/* 6. Switch: enable forwarding */
++	writel(17, base + 0x1cc000);
++
++	for (i = 0; i < 8; i++) {
++		int idx = port_to_sw_idx[i];
++		if (idx >= 0)
++			writel(1, base + 0x1d428c + (idx * 4));
++	}
++
++	/*
++	 * Enable every class of packets the switch can hand to the CPU, up
++	 * and down direction, as the stock firmware does.  With only a few
++	 * classes enabled, IPv6 neighbour discovery never reached the CPU.
++	 */
++	writel(0xffffffff, base + ZX_SPA_UP_REG_PKT_EN);
++	writel(0xffffffff, base + ZX_SPA_UP_REG_PKT_EN + 4);
++	writel(0xffffffff, base + ZX_SPA_DN_REG_PKT_EN);
++	writel(0xffffffff, base + ZX_SPA_DN_REG_PKT_EN + 4);
++
++	/*
++	 * The switch never forwards from port to port and hands the CPU only
++	 * the frames a trap matches; the Linux bridge forwards between the
++	 * port netdevs.  So trap the common ethertypes whatever their
++	 * destination (IPv4, IPv6, ARP, VLAN tagged).  This also covers what
++	 * the IPv4 protocol trap (TCP, UDP, ICMP) did, so clear that one.
++	 */
++	writel(ETH_P_IP << 16 | ETH_P_IPV6, base + ZX_SPA_TRAP_ETH_TYPE);
++	writel(ETH_P_ARP << 16 | ETH_P_8021Q, base + ZX_SPA_TRAP_ETH_TYPE + 4);
++	writel(0, base + ZX_SPA_TRAP_PROTO);
++
++	/* Clear port filter bits for ports 0-4 */
++	for (i = 0; i < 5; i++) {
++		val  = readl(base + 0x1c0060 + (i * 4));
++		val &= ~0x3800000;
++		writel(val, base + 0x1c0060 + (i * 4));
++	}
++
++	/* 7. MAC ports 0-4 */
++	for (i = 0; i < 5; i++) {
++		void __iomem *pb = base + ZX_MAC_BASE + (i * ZX_PORT_STRIDE);
++
++		writel(0x00bbe000, pb + 0x00);
++		writel(0x80000001, pb + 0x08);
++		writel(0x0000fffe, pb + 0x04);
++		writel(0x00011200, pb + 0xe0);
++		writel(50,         pb + 0xd00);
++		writel(168,        pb + 0xd30);
++		writel(0x00300002, pb + 0x70);
++		writel(0x4000,     pb + 0xb4);
++		writel(0x0010ff11, pb + 0xb00);
++
++		zx_port_set_speed(adapter, i, SPEED_1000, DUPLEX_FULL);
++		zx_port_enable(adapter, i, false);
++	}
++
++	return 0;
++}
++
++static void zx_tx_reclaim(struct zx_eth_adapter *adapter)
++{
++	u32 done = readl(adapter->base + ZX_DMA_TX_DONE) & 0xffff;
++	u32 n = min(done, adapter->tx_pending);
++
++	if (unlikely(done > adapter->tx_pending))
++		adapter->tx_done_excess += done - adapter->tx_pending;
++	adapter->tx_complete_cnt += n;
++	adapter->tx_pending -= n;
++	if (adapter->tx_pending < ZX_TX_QUEUE_LIMIT) {
++		int p;
++
++		for (p = 0; p < ZX_NUM_PORTS; p++)
++			if (adapter->ports[p] && netif_queue_stopped(adapter->ports[p]))
++				netif_wake_queue(adapter->ports[p]);
++	}
++}
++
++/* ---- TX path ------------------------------------------------------- */
++
++static netdev_tx_t zx_eth_xmit(struct sk_buff *skb, struct net_device *netdev)
++{
++	struct zx_eth_priv *priv = netdev_priv(netdev);
++	struct zx_eth_adapter *adapter = priv->adapter;
++	void __iomem *base = adapter->base;
++	unsigned int len = skb->len;
++	u32 tx_idx, *desc;
++	u8 *buf_ptr;
++	int bp;
++
++	if (len > 1536) {
++		dev_kfree_skb_any(skb);
++		netdev->stats.tx_dropped++;
++		return NETDEV_TX_OK;
++	}
++
++	spin_lock_bh(&adapter->tx_lock);
++	zx_tx_reclaim(adapter);
++	if (adapter->tx_pending >= ZX_TX_QUEUE_LIMIT) {
++		netif_stop_queue(netdev);
++		spin_unlock_bh(&adapter->tx_lock);
++		return NETDEV_TX_BUSY;
++	}
++	if (skb_put_padto(skb, ETH_ZLEN)) {
++		spin_unlock_bh(&adapter->tx_lock);
++		netdev->stats.tx_dropped++;
++		return NETDEV_TX_OK;
++	}
++	len = skb->len;
++	bp = zx_bmu_alloc_bp(adapter);
++	if (bp < 0 || bp >= ZX_NUM_BUFFERS) {
++		spin_unlock_bh(&adapter->tx_lock);
++		netdev->stats.tx_dropped++;
++		dev_kfree_skb_any(skb);
++		return NETDEV_TX_OK;
++	}
++
++	buf_ptr = (u8 *)adapter->buffer_pool + ((u32)bp * ZX_BUF_SIZE) + 16;
++	if (skb_copy_bits(skb, 0, buf_ptr, len)) {
++		zx_bmu_free_bp(adapter, bp);
++		spin_unlock_bh(&adapter->tx_lock);
++		netdev->stats.tx_dropped++;
++		dev_kfree_skb_any(skb);
++		return NETDEV_TX_OK;
++	}
++
++	tx_idx = adapter->tx_cur_idx % ZX_NUM_TX_DESC;
++	desc   = (u32 *)adapter->tx_ring + tx_idx * (ZX_DESC_SIZE / sizeof(u32));
++
++	/*
++	 * Directed egress to the port's TM queue.  The switch does not
++	 * forward between ports: the Linux bridge does, one netdev per port.
++	 */
++	desc[0] = cpu_to_le32(0x80 | (ZX_PORT_TX_QUEUE(priv->port) << 20));
++	desc[3] = cpu_to_le32(0x3 | ((len & 0x3fff) << 2));
++	desc[1] = cpu_to_le32(0x10000);
++	desc[2] = cpu_to_le32(0x21000000 | ((len & 0x3fff) << 9));
++
++	((u8 *)desc)[7] = (u8)((bp & 0x7f) << 1);
++	((u8 *)desc)[8] = (u8)(bp >> 7);
++
++	dma_wmb();
++	writel(1, base + ZX_DMA_TX_START);
++
++	adapter->tx_cur_idx++;
++	adapter->tx_pending++;
++	if (adapter->tx_pending >= ZX_TX_QUEUE_LIMIT) {
++		int p;
++
++		for (p = 0; p < ZX_NUM_PORTS; p++)
++			if (adapter->ports[p])
++				netif_stop_queue(adapter->ports[p]);
++	}
++	spin_unlock_bh(&adapter->tx_lock);
++	netdev->stats.tx_packets++;
++	netdev->stats.tx_bytes += len;
++	dev_kfree_skb_any(skb);
++	return NETDEV_TX_OK;
++}
++
++/* ---- RX path ------------------------------------------------------- */
++
++static int zx_eth_rx(struct zx_eth_adapter *adapter, int budget)
++{
++	int work_done = 0, q;
++
++	for (q = ZX_RX_QUEUES - 1; q >= 0 && work_done < budget; q--) {
++		u32 avail = readl(adapter->base + ZX_DMA_RX_QUEUE_CNT(q)) & 0xffff;
++		u32 rel[2] = { 0, 0 };
++
++		while (avail && work_done < budget) {
++			u32 idx = adapter->rx_cur_idx[q] % ZX_NUM_RX_DESC;
++			__le32 *desc = adapter->rx_ring + q * ZX_RX_QUEUE_STRIDE +
++				       idx * ZX_DESC_SIZE;
++			u16 bp, len;
++			int port;
++			struct sk_buff *skb;
++			struct net_device *dest_dev;
++
++			dma_rmb();
++			bp = (((u8 *)desc)[7] >> 1) | ((u16)((u8 *)desc)[8] << 7);
++			len = (le32_to_cpu(desc[3]) >> 2) & 0x3fff;
++			port = (((u8 *)desc)[6] >> 3) ? ((((u8 *)desc)[6] >> 3) - 1) : 0;
++
++			if (bp >= ZX_NUM_BUFFERS || len < ETH_HLEN || len > 1536) {
++				u32 scan, idx2, found = 0;
++
++				if (adapter->rx_synced[q]) {
++					/*
++					 * The hardware counted this slot but it
++					 * holds no frame: it can leave a slot
++					 * empty (e.g. when it had no buffer).
++					 * Consume it as the vendor driver does.
++					 * Waiting for it would leave our index
++					 * behind the hardware's for good.
++					 */
++					adapter->rx_bad_cnt++;
++					if (net_ratelimit())
++						dev_warn(adapter->dev,
++							 "rxq%d: skipping slot %u (%08x %08x %08x %08x), %u pending\n",
++							 q, idx, le32_to_cpu(desc[0]),
++							 le32_to_cpu(desc[1]),
++							 le32_to_cpu(desc[2]),
++							 le32_to_cpu(desc[3]), avail);
++					zx_rx_consume(desc, rel);
++					adapter->rx_cur_idx[q]++;
++					work_done++;
++					avail--;
++					if (bp && bp < ZX_NUM_BUFFERS &&
++					    zx_bmu_free_bp(adapter, bp))
++						adapter->bmu_free_fail++;
++					continue;
++				}
++
++				for (scan = 1; scan < ZX_NUM_RX_DESC; scan++) {
++					__le32 *d2;
++					u16 bp2, len2;
++
++					idx2 = (idx + scan) % ZX_NUM_RX_DESC;
++					d2 = adapter->rx_ring + q * ZX_RX_QUEUE_STRIDE +
++					     idx2 * ZX_DESC_SIZE;
++					dma_rmb();
++					bp2 = (((u8 *)d2)[7] >> 1) |
++					      ((u16)((u8 *)d2)[8] << 7);
++					len2 = (le32_to_cpu(d2[3]) >> 2) & 0x3fff;
++					if (bp2 < ZX_NUM_BUFFERS &&
++					    len2 >= ETH_HLEN && len2 <= 1536) {
++						found = 1;
++						break;
++					}
++				}
++				if (!found)
++					break;
++				adapter->rx_cur_idx[q] = idx2;
++				adapter->rx_resync_cnt++;
++				continue;
++			}
++			adapter->rx_synced[q] = true;
++
++			if (bp == 0) {
++				adapter->rx_nobuf_cnt++;
++				zx_rx_consume(desc, rel);
++				adapter->rx_cur_idx[q]++;
++				work_done++;
++				avail--;
++				continue;
++			}
++
++			/* Aliasing detector: checks both LAN and WAN source MAC addresses */
++			if (len >= ETH_HLEN) {
++				u8 *d = adapter->buffer_pool + bp * ZX_BUF_SIZE + 16;
++				bool is_alias = false;
++
++				if (ether_addr_equal(d + 6, adapter->lan_addr) ||
++				    ether_addr_equal(d + 6, adapter->wan_addr))
++					is_alias = true;
++
++				if (is_alias) {
++					adapter->rx_alias_cnt++;
++					zx_rx_consume(desc, rel);
++					adapter->rx_cur_idx[q]++;
++					work_done++;
++					avail--;
++					/*
++					 * A frame of our own that the switch
++					 * sent back still has an RX buffer of
++					 * its own: return it, or every such
++					 * frame leaks one BMU buffer.
++					 */
++					if (zx_bmu_free_bp(adapter, bp))
++						adapter->bmu_free_fail++;
++					continue;
++				}
++			}
++
++			if (len >= ETH_HLEN + 20) {
++				u8 *data = adapter->buffer_pool + bp * ZX_BUF_SIZE + 16;
++				u16 eth_type = (data[12] << 8) | data[13];
++
++				if (eth_type == 0x0800) {
++					u8 proto = data[23];
++					if (proto == 6)
++						adapter->rx_queue_tcp[q]++;
++					else if (proto == 17)
++						adapter->rx_queue_udp[q]++;
++					else if (proto == 1)
++						adapter->rx_queue_icmp[q]++;
++					else
++						adapter->rx_queue_other[q]++;
++				} else if (eth_type == 0x0806) {
++					adapter->rx_queue_arp[q]++;
++				} else {
++					adapter->rx_queue_other[q]++;
++				}
++			}
++			adapter->rx_queue_pkts[q]++;
++
++			/* Deliver to the netdev of the ingress port */
++			dest_dev = port < ZX_NUM_PORTS ? adapter->ports[port] : NULL;
++
++			skb = napi_alloc_skb(&adapter->napi, len);
++			if (skb && dest_dev && (dest_dev->flags & IFF_UP)) {
++				dma_rmb();
++				memcpy(skb_put(skb, len), adapter->buffer_pool +
++				       bp * ZX_BUF_SIZE + 16, len);
++				skb->dev = dest_dev;
++				skb->protocol = eth_type_trans(skb, dest_dev);
++				napi_gro_receive(&adapter->napi, skb);
++				dest_dev->stats.rx_packets++;
++				dest_dev->stats.rx_bytes += len;
++			} else {
++				if (skb)
++					dev_kfree_skb_any(skb);
++				if (dest_dev)
++					dest_dev->stats.rx_dropped++;
++			}
++
++			zx_rx_consume(desc, rel);
++			adapter->rx_cur_idx[q]++;
++			work_done++;
++			avail--;
++			if (zx_bmu_free_bp(adapter, bp))
++				adapter->bmu_free_fail++;
++		}
++		if (rel[0] || rel[1])
++			dma_wmb();
++		if (rel[0] && zx_rx_release(adapter, q, 0, rel[0]))
++			adapter->rx_rel_fail++;
++		if (rel[1] && zx_rx_release(adapter, q, 1, rel[1]))
++			adapter->rx_rel_fail++;
++	}
++	return work_done;
++}
++
++/* ---- NAPI poll + hrtimer ------------------------------------------- */
++
++static int zx_eth_poll(struct napi_struct *napi, int budget)
++{
++	struct zx_eth_adapter *adapter =
++		container_of(napi, struct zx_eth_adapter, napi);
++	int work_done;
++
++	spin_lock_bh(&adapter->tx_lock);
++	zx_tx_reclaim(adapter);
++	spin_unlock_bh(&adapter->tx_lock);
++	work_done = budget ? zx_eth_rx(adapter, budget) : 0;
++
++	if (work_done < budget)
++		napi_complete_done(napi, work_done);
++
++	return work_done;
++}
++
++static enum hrtimer_restart zx_eth_poll_timer(struct hrtimer *timer)
++{
++	struct zx_eth_adapter *adapter =
++		container_of(timer, struct zx_eth_adapter, poll_timer);
++
++	napi_schedule(&adapter->napi);
++	hrtimer_forward_now(timer, ms_to_ktime(1));
++	return HRTIMER_RESTART;
++}
++
++/* ---- ndo_open / ndo_stop ------------------------------------------- */
++
++static int zx_eth_open(struct net_device *netdev)
++{
++	struct zx_eth_priv *priv = netdev_priv(netdev);
++	struct zx_eth_adapter *adapter = priv->adapter;
++
++	if (adapter->open_count == 0) {
++		napi_enable(&adapter->napi);
++		hrtimer_start(&adapter->poll_timer, ms_to_ktime(1), HRTIMER_MODE_REL);
++	}
++	adapter->open_count++;
++
++	adapter->link_state[priv->port] = false;
++	if (adapter->phydev[priv->port])
++		phy_start(adapter->phydev[priv->port]);
++
++	netif_start_queue(netdev);
++	return 0;
++}
++
++static int zx_eth_stop(struct net_device *netdev)
++{
++	struct zx_eth_priv *priv = netdev_priv(netdev);
++	struct zx_eth_adapter *adapter = priv->adapter;
++
++	netif_tx_disable(netdev);
++
++	if (adapter->phydev[priv->port])
++		phy_stop(adapter->phydev[priv->port]);
++	zx_port_enable(adapter, priv->port, false);
++	adapter->link_state[priv->port] = false;
++
++	netif_carrier_off(netdev);
++	adapter->open_count--;
++
++	if (adapter->open_count == 0) {
++		hrtimer_cancel(&adapter->poll_timer);
++		napi_disable(&adapter->napi);
++	}
++
++	return 0;
++}
++
++/* ---- net_device_ops ------------------------------------------------ */
++
++static const struct net_device_ops zx_netdev_ops = {
++	.ndo_open		= zx_eth_open,
++	.ndo_stop		= zx_eth_stop,
++	.ndo_start_xmit		= zx_eth_xmit,
++	.ndo_set_mac_address	= eth_mac_addr,
++	.ndo_validate_addr	= eth_validate_addr,
++};
++
++static const struct ethtool_ops zx_ethtool_ops = {
++	.get_link		= ethtool_op_get_link,
++	.get_link_ksettings	= phy_ethtool_get_link_ksettings,
++	.set_link_ksettings	= phy_ethtool_set_link_ksettings,
++	.nway_reset		= phy_ethtool_nway_reset,
++};
++
++/* ---- probe / remove ------------------------------------------------ */
++
++static int zx_eth_probe(struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++	struct zx_eth_adapter *adapter;
++	struct device_node *ports_np, *np;
++	u8 lan_addr[ETH_ALEN];
++	int i, ret;
++
++	/*
++	 * The MAC address can come from an nvmem cell on a flash partition
++	 * that is not registered yet.  Get it before the hardware is set up,
++	 * so that deferring the probe leaves no DMA running.
++	 */
++	ret = of_get_mac_address(dev->of_node, lan_addr);
++	if (ret == -EPROBE_DEFER)
++		return ret;
++	if (ret)
++		eth_random_addr(lan_addr);
++
++	ret = dma_set_mask_and_coherent(dev, DMA_BIT_MASK(32));
++	if (ret) {
++		dev_err(dev, "Failed to set DMA mask\n");
++		return ret;
++	}
++
++	adapter = devm_kzalloc(dev, sizeof(*adapter), GFP_KERNEL);
++	if (!adapter)
++		return -ENOMEM;
++
++	adapter->dev = dev;
++	spin_lock_init(&adapter->tx_lock);
++	spin_lock_init(&adapter->bmu_free_lock);
++
++	adapter->base = devm_platform_ioremap_resource(pdev, 0);
++	if (IS_ERR(adapter->base)) {
++		dev_err(dev, "Failed to ioremap GMAC registers: %ld\n",
++			PTR_ERR(adapter->base));
++		return PTR_ERR(adapter->base);
++	}
++
++	adapter->buffer_pool = dma_alloc_coherent(dev, ZX_DMA_ARENA_SIZE,
++						  &adapter->buf_pool_dma, GFP_KERNEL);
++	if (!adapter->buffer_pool)
++		return -ENOMEM;
++	adapter->tab0 = adapter->buffer_pool + ZX_TAB0_OFFSET;
++	adapter->tab0_dma = adapter->buf_pool_dma + ZX_TAB0_OFFSET;
++	adapter->tab1 = adapter->buffer_pool + ZX_TAB1_OFFSET;
++	adapter->tab1_dma = adapter->buf_pool_dma + ZX_TAB1_OFFSET;
++	adapter->rx_ring = adapter->buffer_pool + ZX_RX_OFFSET;
++	adapter->rx_ring_dma = adapter->buf_pool_dma + ZX_RX_OFFSET;
++	adapter->tx_ring = adapter->buffer_pool + ZX_TX_OFFSET;
++	adapter->tx_ring_dma = adapter->buf_pool_dma + ZX_TX_OFFSET;
++	dev_info(dev, "DMA arena %pad, RX %pad, TX %pad\n",
++		 &adapter->buf_pool_dma, &adapter->rx_ring_dma, &adapter->tx_ring_dma);
++
++	ret = zx_hw_init(adapter);
++	if (ret)
++		return ret;
++	adapter->initialized = true;
++	zx_dma_enable(adapter, true);
++
++	ether_addr_copy(adapter->lan_addr, lan_addr);
++	ether_addr_copy(adapter->wan_addr, lan_addr);
++	adapter->wan_addr[5] ^= 0x01;	/* base + 1 */
++
++	/* One netdev per port, named by the port's label */
++	ports_np = of_get_child_by_name(dev->of_node, "ethernet-ports");
++	if (!ports_np)
++		return dev_err_probe(dev, -ENODEV, "no ethernet-ports node\n");
++
++	for_each_available_child_of_node(ports_np, np) {
++		struct net_device *netdev;
++		struct zx_eth_priv *priv;
++		struct device_node *phy_np;
++		const char *label;
++		u32 port;
++
++		if (of_property_read_u32(np, "reg", &port) || port >= ZX_NUM_PORTS ||
++		    adapter->ports[port]) {
++			dev_warn(dev, "%pOF: bad or duplicate reg\n", np);
++			continue;
++		}
++
++		netdev = devm_alloc_etherdev(dev, sizeof(struct zx_eth_priv));
++		if (!netdev) {
++			ret = -ENOMEM;
++			of_node_put(np);
++			goto err_disconnect;
++		}
++		SET_NETDEV_DEV(netdev, dev);
++		if (!of_property_read_string(np, "label", &label)) {
++			strscpy(netdev->name, label, IFNAMSIZ);
++			netdev->name_assign_type = NET_NAME_PREDICTABLE;
++		}
++		eth_hw_addr_set(netdev, port == ZX_WAN_PORT ?
++				adapter->wan_addr : adapter->lan_addr);
++		netdev->netdev_ops = &zx_netdev_ops;
++		netdev->ethtool_ops = &zx_ethtool_ops;
++		netdev->min_mtu    = 68;
++		netdev->max_mtu    = 1500;
++		priv = netdev_priv(netdev);
++		priv->netdev  = netdev;
++		priv->adapter = adapter;
++		priv->port    = port;
++		adapter->ports[port] = netdev;
++
++		phy_np = of_parse_phandle(np, "phy-handle", 0);
++		if (phy_np) {
++			adapter->phydev[port] = of_phy_connect(netdev, phy_np,
++							       &zx_adjust_link, 0,
++							       PHY_INTERFACE_MODE_GMII);
++			of_node_put(phy_np);
++			if (!adapter->phydev[port])
++				dev_warn(dev, "port %u: PHY connect failed\n", port);
++		}
++	}
++	of_node_put(ports_np);
++
++	for (i = 0; i < ZX_NUM_PORTS && !adapter->ports[i]; i++)
++		;
++	if (i == ZX_NUM_PORTS) {
++		ret = dev_err_probe(dev, -ENODEV, "no usable port\n");
++		goto err_disconnect;
++	}
++
++	zx_set_trap_dmac(adapter, 0, adapter->lan_addr);
++	zx_set_trap_dmac(adapter, 1, adapter->wan_addr);
++
++	/* One NAPI context serves all ports */
++	netif_napi_add(adapter->ports[i], &adapter->napi, zx_eth_poll);
++	hrtimer_setup(&adapter->poll_timer, zx_eth_poll_timer,
++		      CLOCK_MONOTONIC, HRTIMER_MODE_REL);
++
++	for (i = 0; i < ZX_NUM_PORTS; i++) {
++		if (!adapter->ports[i])
++			continue;
++		ret = register_netdev(adapter->ports[i]);
++		if (ret) {
++			dev_err(dev, "port %d: register_netdev failed: %d\n", i, ret);
++			while (--i >= 0)
++				if (adapter->ports[i])
++					unregister_netdev(adapter->ports[i]);
++			goto err_napi;
++		}
++	}
++
++	platform_set_drvdata(pdev, adapter);
++	dev_info(dev, "initialized, LAN MAC %pM, WAN MAC %pM\n",
++		 adapter->lan_addr, adapter->wan_addr);
++	return 0;
++
++err_napi:
++	netif_napi_del(&adapter->napi);
++err_disconnect:
++	for (i = 0; i < ZX_NUM_PORTS; i++)
++		if (adapter->phydev[i])
++			phy_disconnect(adapter->phydev[i]);
++	return ret;
++}
++
++/* Read-only diagnostics */
++static ssize_t dma_state_show(struct device *dev,
++			      struct device_attribute *attr, char *buf)
++{
++	struct zx_eth_adapter *adapter = dev_get_drvdata(dev);
++	static const u32 regs[] = {
++		ZX_TM_TAB0_ADDR, ZX_TM_TAB1_ADDR, ZX_TM_BUF_F0,
++		ZX_TM_BUF_START, ZX_TM_BUF_END, ZX_BMU_CTRL,
++		ZX_BMU_FREE_STATUS,
++		ZX_DMA_CTRL, ZX_DMA_RING_CFG,
++		ZX_DMA_TX_RING_BASE, ZX_DMA_RX_RING_BASE,
++		ZX_DMA_TX_START,
++		ZX_RX_REL_CTRL, ZX_RX_REL_DATA,
++		0x200000, 0x240000, 0x280000, 0x2c0000, 0x300000,
++		0x1cc000,
++		0x1d4000, 0x1d4004,
++		0x1d4040, 0x1d4044,
++		0x1d4080, 0x1d4084,
++		0x1d40c0, 0x1d40c4,
++		0x1d4100, 0x1d4104,
++		0x1d41c0,
++		0x1d428c, 0x1d4290, 0x1d4294, 0x1d4298,
++		0x1d429c, 0x1d42a4,
++	};
++	int n = 0, i;
++
++	if (!adapter)
++		return 0;
++
++	rtnl_lock();
++	n += sysfs_emit_at(buf, n, "initialized=%u rx_fault=%u arena=%pad open_count=%d\n",
++			   adapter->initialized, adapter->rx_fault, &adapter->buf_pool_dma, adapter->open_count);
++	n += sysfs_emit_at(buf, n,
++			   "tx_submitted=%u tx_completed=%u tx_pending=%u tx_done_excess=%u rx_resync=%u\n",
++			   adapter->tx_cur_idx, adapter->tx_complete_cnt,
++			   adapter->tx_pending, adapter->tx_done_excess,
++			   adapter->rx_resync_cnt);
++	n += sysfs_emit_at(buf, n, "rx_alias=%u rx_nobuf=%u rx_rel_fail=%u rx_bad=%u\n",
++			   adapter->rx_alias_cnt, adapter->rx_nobuf_cnt, adapter->rx_rel_fail,
++			   adapter->rx_bad_cnt);
++	n += sysfs_emit_at(buf, n,
++			   "bmu_alloc_fail=%u bmu_alloc_late=%u bmu_free_fail=%u bmu_free_slots=%u\n",
++			   adapter->bmu_alloc_fail, adapter->bmu_alloc_late,
++			   adapter->bmu_free_fail, adapter->bmu_free_slots);
++
++	for (i = 0; i < 0x100; i += 4)
++		n += sysfs_emit_at(buf, n, "bmu+%03x=%08x\n", i,
++				   readl(adapter->base + ZX_BMU_BASE + i));
++	for (i = 0; i < 0x120; i += 4) {
++		if (i == 0x68)
++			continue;
++		n += sysfs_emit_at(buf, n, "dma+%03x=%08x\n", i,
++				   readl(adapter->base + ZX_DMA_BASE + i));
++	}
++
++	for (i = 0; i < ZX_RX_QUEUES; i++) {
++		n += sysfs_emit_at(buf, n, "rxq%d: pkts=%llu tcp=%llu udp=%llu icmp=%llu arp=%llu other=%llu inv=%llu\n",
++			   i, adapter->rx_queue_pkts[i], adapter->rx_queue_tcp[i],
++			   adapter->rx_queue_udp[i], adapter->rx_queue_icmp[i],
++			   adapter->rx_queue_arp[i], adapter->rx_queue_other[i],
++			   adapter->rx_invalid_desc[i]);
++	}
++
++	for (i = 0; i < ARRAY_SIZE(regs); i++)
++		n += sysfs_emit_at(buf, n, "%08x=%08x\n", 0x92000000 + regs[i],
++				   readl(adapter->base + regs[i]));
++
++	for (i = 0; i < ZX_RX_QUEUES; i++) {
++		n += sysfs_emit_at(buf, n, "rxq%d count=%u consumed=%u\n", i,
++				   readl(adapter->base + ZX_DMA_RX_QUEUE_CNT(i)) & 0xffff,
++				   READ_ONCE(adapter->rx_cur_idx[i]));
++	}
++
++	rtnl_unlock();
++	return n;
++}
++static DEVICE_ATTR_RO(dma_state);
++
++static struct attribute *zx_eth_attrs[] = {
++	&dev_attr_dma_state.attr,
++	NULL,
++};
++ATTRIBUTE_GROUPS(zx_eth);
++
++/* ---- module glue --------------------------------------------------- */
++
++static const struct of_device_id zx_eth_dt_ids[] = {
++	{ .compatible = "zte,zx279128s-gmac" },
++	{ .compatible = "zte,zx-gmac" },
++	{ /* sentinel */ }
++};
++MODULE_DEVICE_TABLE(of, zx_eth_dt_ids);
++
++static struct platform_driver zx_eth_driver = {
++	.probe  = zx_eth_probe,
++	.driver = {
++		.name           = DRV_NAME,
++		.of_match_table = zx_eth_dt_ids,
++		.suppress_bind_attrs = true,
++		.dev_groups = zx_eth_groups,
++	},
++};
++module_platform_driver(zx_eth_driver);
++
++MODULE_AUTHOR("Antigravity");
++MODULE_DESCRIPTION("ZTE ZX279128S Gigabit Ethernet Switch and DMA driver");
++MODULE_LICENSE("GPL");
