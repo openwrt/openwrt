@@ -1,0 +1,538 @@
+From b236877f43b73aa6b45c8308386d0c4f4dcdb9a9 Mon Sep 17 00:00:00 2001
+From: Nick Hainke <vincent@systemli.org>
+Date: Sat, 3 Oct 2026 20:40:55 +0200
+Subject: [PATCH 2/3] ujail: add VRF support
+
+Add '-v <vrf>' to bind all AF_INET/AF_INET6 sockets of the jailed
+process to a Linux VRF device, like 'ip vrf exec <vrf>' does, without
+depending on iproute2, libbpf or libnl.
+
+The VRF is resolved with an RTM_GETLINK request, which also checks the
+device really is a VRF. ujail then creates the cgroup "vrf/<vrf>" below
+its own cgroup (procd's per-instance cgroup), attaches a
+BPF_PROG_TYPE_CGROUP_SOCK program at BPF_CGROUP_INET_SOCK_CREATE which
+sets sk_bound_dev_if to the VRF's ifindex, and moves the jailed process
+into that cgroup. This is the same mechanism iproute2 uses.
+
+The jailed process joins the VRF in exec_jail(), right after joining
+namespaces given with -j, so the VRF is looked up in the network
+namespace the process ends up in. The cgroup directory is opened before
+those joins, since joining a mount namespace may replace
+/sys/fs/cgroup, and the join happens before a joined user namespace
+drops the privileges needed for cgroup and BPF setup.
+
+Combinations which can't work are refused up front:
+ - an OCI bundle (-J): ujail moves the process into the bundle's
+   cgroup after the VRF cgroup was joined
+ - a new network namespace (-N): it contains no VRF device yet
+ - a new user namespace (-f) created by clone(): the process is
+   unprivileged in the initial user namespace from the start
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Nick Hainke <vincent@systemli.org>
+---
+ CMakeLists.txt     |   2 +-
+ jail/cgroups-bpf.c |  55 +++++++++++
+ jail/cgroups-bpf.h |   1 +
+ jail/jail.c        |  47 +++++++++-
+ jail/vrf.c         | 222 +++++++++++++++++++++++++++++++++++++++++++++
+ jail/vrf.h         |  32 +++++++
+ 6 files changed, 355 insertions(+), 4 deletions(-)
+ create mode 100644 jail/vrf.c
+ create mode 100644 jail/vrf.h
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index ef67f48..cbc0578 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -106,7 +106,7 @@ SET(SOURCES_JAIL_TRACE jail/seccomp-trace.c)
+ ENDIF()
+ 
+ IF(JAIL_SUPPORT)
+-ADD_EXECUTABLE(ujail jail/jail.c jail/cgroups.c jail/cgroups-bpf.c jail/elf.c jail/fs.c jail/capabilities.c jail/landlock.c jail/netifd.c ${SOURCES_OCI_SECCOMP} ${SOURCES_JAIL_TRACE})
++ADD_EXECUTABLE(ujail jail/jail.c jail/cgroups.c jail/cgroups-bpf.c jail/vrf.c jail/elf.c jail/fs.c jail/capabilities.c jail/landlock.c jail/netifd.c ${SOURCES_OCI_SECCOMP} ${SOURCES_JAIL_TRACE})
+ TARGET_LINK_LIBRARIES(ujail ${ubox} ${ubus} ${uci} ${blobmsg_json})
+ INSTALL(TARGETS ujail
+ 	RUNTIME DESTINATION ${CMAKE_INSTALL_SBINDIR}
+diff --git a/jail/cgroups-bpf.c b/jail/cgroups-bpf.c
+index f1bbeff..df8bf8a 100644
+--- a/jail/cgroups-bpf.c
++++ b/jail/cgroups-bpf.c
+@@ -18,6 +18,10 @@
+  */
+ 
+ #include <assert.h>
++#include <errno.h>
++#include <stddef.h>
++#include <stdint.h>
++#include <unistd.h>
+ #include <linux/bpf.h>
+ #ifdef __GLIBC__
+ #include <sys/cdefs.h>
+@@ -52,6 +56,10 @@ syscall_bpf (int cmd, union bpf_attr *attr, unsigned int size)
+ 	((struct bpf_insn){                    \
+ 		.code = BPF_LDX | BPF_SIZE (SIZE) | BPF_MEM, .dst_reg = DST, .src_reg = SRC, .off = OFF, .imm = 0 })
+ 
++#define BPF_STX_MEM(SIZE, DST, SRC, OFF) \
++	((struct bpf_insn){                    \
++		.code = BPF_STX | BPF_SIZE (SIZE) | BPF_MEM, .dst_reg = DST, .src_reg = SRC, .off = OFF, .imm = 0 })
++
+ #define BPF_MOV64_REG(DST, SRC) \
+ 	((struct bpf_insn){ .code = BPF_ALU64 | BPF_MOV | BPF_X, .dst_reg = DST, .src_reg = SRC, .off = 0, .imm = 0 })
+ 
+@@ -453,3 +461,50 @@ int attach_cgroups_ebpf(int cgroup_dirfd) {
+ 
+ 	return syscall_bpf(BPF_PROG_ATTACH, &attach_attr, sizeof (attach_attr));
+ }
++
++/*
++ * attach eBPF program binding all AF_INET/AF_INET6 sockets created in the
++ * cgroup to the VRF device vrf_ifindex, the program 'ip vrf exec' uses
++ */
++int attach_vrf_ebpf(int cgroup_dirfd, int vrf_ifindex)
++{
++	struct bpf_insn prog[] = {
++		/* r1 = struct bpf_sock *; r1->bound_dev_if = vrf_ifindex */
++		BPF_MOV64_IMM(BPF_REG_3, vrf_ifindex),
++		BPF_STX_MEM(BPF_W, BPF_REG_1, BPF_REG_3,
++			    offsetof(struct bpf_sock, bound_dev_if)),
++		/* allow */
++		BPF_MOV64_IMM(BPF_REG_0, 1),
++		BPF_EXIT_INSN(),
++	};
++	union bpf_attr load_attr = {
++		.prog_type = BPF_PROG_TYPE_CGROUP_SOCK,
++		.expected_attach_type = BPF_CGROUP_INET_SOCK_CREATE,
++		.license   = (uint64_t)(uintptr_t)license,
++		.insns     = (uint64_t)(uintptr_t)prog,
++		.insn_cnt  = ARRAY_SIZE(prog),
++	};
++	int prog_fd, ret = 0;
++
++	prog_fd = syscall_bpf(BPF_PROG_LOAD, &load_attr, sizeof(load_attr));
++	if (prog_fd < 0) {
++		ret = -errno;
++		ERROR("vrf: BPF_PROG_LOAD: %m\n");
++		return ret;
++	}
++
++	union bpf_attr attach_attr = {
++		.attach_type = BPF_CGROUP_INET_SOCK_CREATE,
++		.target_fd = cgroup_dirfd,
++		.attach_bpf_fd = prog_fd,
++	};
++
++	/* replaces a program attached by an earlier start of the instance */
++	if (syscall_bpf(BPF_PROG_ATTACH, &attach_attr, sizeof(attach_attr))) {
++		ret = -errno;
++		ERROR("vrf: BPF_PROG_ATTACH: %m\n");
++	}
++
++	close(prog_fd);
++	return ret;
++}
+diff --git a/jail/cgroups-bpf.h b/jail/cgroups-bpf.h
+index 7f33d85..08c6459 100644
+--- a/jail/cgroups-bpf.h
++++ b/jail/cgroups-bpf.h
+@@ -16,5 +16,6 @@
+ 
+ int parseOCIlinuxcgroups_devices(struct blob_attr *msg);
+ int attach_cgroups_ebpf(int cgroup_dirfd);
++int attach_vrf_ebpf(int cgroup_dirfd, int vrf_ifindex);
+ 
+ #endif
+diff --git a/jail/jail.c b/jail/jail.c
+index 4204ee2..3ba4e7c 100644
+--- a/jail/jail.c
++++ b/jail/jail.c
+@@ -74,6 +74,7 @@
+ #include "seccomp-trace.h"
+ #include "cgroups.h"
+ #include "netifd.h"
++#include "vrf.h"
+ #include "../stdio-fds.h"
+ 
+ #include <libubox/blobmsg.h>
+@@ -102,7 +103,7 @@
+ #define PR_MDWE_NO_INHERIT (1UL << 1)
+ #endif
+ 
+-#define OPT_ARGS	"a:A:b:cC:d:De:EfFG:h:iI:j:J:k:lm:M:n:NoO:pP:r:R:sS:uU:V:w:x:t:T:yY:Z"
++#define OPT_ARGS	"a:A:b:cC:d:De:EfFG:h:iI:j:J:k:lm:M:n:NoO:pP:r:R:sS:uU:v:V:w:x:t:T:yY:Z"
+ 
+ #define JAIL_MAX_CREDENTIALS	16
+ static const char *cred_targets[JAIL_MAX_CREDENTIALS];
+@@ -135,6 +136,7 @@ static struct {
+ 	char **jail_argv;
+ 	char *cwd;
+ 	char *seccomp;
++	char *vrf;
+ 	struct sock_fprog *ociseccomp;
+ 	struct sock_fprog *ociseccomp_linker;
+ 	struct sock_fprog *ociseccomp_init;
+@@ -2392,6 +2394,7 @@ static void usage(void)
+ 	fprintf(stderr, "  -n <name>\tthe name of the jail\n");
+ 	fprintf(stderr, "  -e <var>\timport environment variable\n");
+ 	fprintf(stderr, "  -x <file>\tappend KEY=VALUE lines from <file> to the container env\n");
++	fprintf(stderr, "  -v <vrf>\tbind all sockets to VRF device <vrf> (like 'ip vrf exec')\n");
+ 	fprintf(stderr, "namespace jail options:\n");
+ 	fprintf(stderr, "  -h <hostname>\tchange the hostname of the jail\n");
+ 	fprintf(stderr, "  -N\t\tjail has network namespace\n");
+@@ -3116,6 +3119,7 @@ static int exec_jail(void *arg)
+ 	char tag;
+ 	int recv_fds[JAIL_IDMAP_MAX_FDS];
+ 	int nrecv;
++	int vrf_cgroup_fd = -1;
+ 	int ret;
+ 
+ 	exit_from_child = true;
+@@ -3138,6 +3142,15 @@ static int exec_jail(void *arg)
+ 		close(userns_pipe[3]);
+ 	}
+ 
++	/* before joining a mount namespace, which can hide our cgroup */
++	if (opts.vrf) {
++		vrf_cgroup_fd = cgroups_open_current();
++		if (vrf_cgroup_fd < 0) {
++			ERROR("can't open own cgroup: %m\n");
++			return EXIT_FAILURE;
++		}
++	}
++
+ 	ret = setns_open(CLONE_NEWNET);
+ 	if (!ret)
+ 		ret = setns_open(CLONE_NEWNS);
+@@ -3154,6 +3167,16 @@ static int exec_jail(void *arg)
+ 		return EXIT_FAILURE;
+ 	}
+ 
++	/* in the final netns, before a joined userns drops our privileges */
++	if (opts.vrf) {
++		ret = vrf_join(vrf_cgroup_fd, opts.vrf);
++		close(vrf_cgroup_fd);
++		if (ret) {
++			ERROR("failed to join VRF %s: %s\n", opts.vrf, strerror(-ret));
++			return EXIT_FAILURE;
++		}
++	}
++
+ 	if ((opts.namespace & CLONE_NEWNS) && isolate_mountns()) {
+ 		ERROR("mount propagation failed: %m\n");
+ 		return EXIT_FAILURE;
+@@ -6668,6 +6691,13 @@ int main(int argc, char **argv)
+ 			if (n_cred_targets < JAIL_MAX_CREDENTIALS)
+ 				cred_targets[n_cred_targets++] = strdup(tmp);
+ 			break;
++		case 'v':
++			if (!vrf_name_valid(optarg)) {
++				ERROR("invalid VRF name: %s\n", optarg);
++				return -1;
++			}
++			opts.vrf = optarg;
++			break;
+ 		case 'V':
+ 			tmp = strchr(optarg, ':');
+ 			if (!tmp) {
+@@ -6875,6 +6905,17 @@ int main(int argc, char **argv)
+ 		}
+ 	}
+ 
++	/*
++	 * The OCI cgroup is joined after the VRF cgroup, a new netns has no VRF
++	 * device and a cloned userns is unprivileged before vrf_join().
++	 */
++	if (opts.vrf && (opts.ocibundle || (opts.namespace & CLONE_NEWNET) ||
++	    ((opts.namespace & CLONE_NEWUSER) && !userns_deferred()))) {
++		ERROR("VRF can't be used with -J, -N or -f without -j\n");
++		ret=EXIT_FAILURE;
++		goto errout;
++	}
++
+ 
+ 	if (!opts.extroot && (opts.user || opts.group)) {
+ 		int precheck_uid, precheck_gid, precheck_grgid;
+@@ -6906,7 +6947,7 @@ int main(int argc, char **argv)
+ 		ret=EXIT_FAILURE;
+ 		goto errout;
+ 	}
+-	if (!(opts.ocibundle||opts.namespace||opts.capabilities||opts.seccomp||
++	if (!(opts.ocibundle||opts.namespace||opts.capabilities||opts.seccomp||opts.vrf||
+ 		(opts.seccomp_mode != SECCOMP_MODE_ENFORCE) ||
+ 		(opts.setns.net != -1) ||
+ 		(opts.setns.ns != -1) ||
+@@ -6914,7 +6955,7 @@ int main(int argc, char **argv)
+ 		(opts.setns.uts != -1) ||
+ 		(opts.setns.user != -1) ||
+ 		(opts.setns.cgroup != -1))) {
+-		ERROR("Not using namespaces, capabilities or seccomp !!!\n\n");
++		ERROR("Not using namespaces, capabilities, seccomp or a VRF !!!\n\n");
+ 		usage();
+ 		ret=EXIT_FAILURE;
+ 		goto errout;
+diff --git a/jail/vrf.c b/jail/vrf.c
+new file mode 100644
+index 0000000..53c8e41
+--- /dev/null
++++ b/jail/vrf.c
+@@ -0,0 +1,222 @@
++/*
++ * Copyright (C) 2026 Nick Hainke <vincent@systemli.org>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU Lesser General Public License version 2.1
++ * as published by the Free Software Foundation
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * Native 'ip vrf exec': look the VRF device up via rtnetlink and bind all
++ * sockets of the process to it with a cgroup BPF program, without libbpf,
++ * libnl or iproute2.
++ */
++
++#define _GNU_SOURCE
++#include <errno.h>
++#include <fcntl.h>
++#include <stdbool.h>
++#include <stdio.h>
++#include <string.h>
++#include <unistd.h>
++
++#include <sys/socket.h>
++#include <sys/stat.h>
++
++#include <linux/if.h>
++#include <linux/if_link.h>
++#include <linux/netlink.h>
++#include <linux/rtnetlink.h>
++
++#include <libubox/blobmsg.h>
++
++#include "cgroups-bpf.h"
++#include "log.h"
++#include "vrf.h"
++
++#define VRF_CGROUP_DIR "vrf"
++
++/*
++ * Same rules as the kernel's dev_valid_name(). The name is also used as a
++ * cgroup directory name, so this must reject anything containing '/'.
++ */
++bool vrf_name_valid(const char *name)
++{
++	size_t len = strlen(name);
++	size_t i;
++
++	if (len == 0 || len >= IFNAMSIZ)
++		return false;
++
++	if (!strcmp(name, ".") || !strcmp(name, ".."))
++		return false;
++
++	for (i = 0; i < len; i++) {
++		unsigned char c = name[i];
++
++		if (c == '/' || c == ':' || c <= ' ' || c == 0x7f)
++			return false;
++	}
++
++	return true;
++}
++
++static bool vrf_linkinfo_is_vrf(struct rtattr *linkinfo)
++{
++	struct rtattr *rta = RTA_DATA(linkinfo);
++	int len = RTA_PAYLOAD(linkinfo);
++
++	for (; RTA_OK(rta, len); rta = RTA_NEXT(rta, len))
++		if (rta->rta_type == IFLA_INFO_KIND)
++			return RTA_PAYLOAD(rta) >= strlen("vrf") &&
++			       !strncmp(RTA_DATA(rta), "vrf", RTA_PAYLOAD(rta));
++
++	return false;
++}
++
++/* look vrf_name up in the current network namespace, returns its ifindex */
++static int vrf_get_ifindex(const char *vrf_name)
++{
++	struct {
++		struct nlmsghdr hdr;
++		struct ifinfomsg ifi;
++		char attrbuf[RTA_SPACE(IFNAMSIZ)];
++	} req = { 0 };
++	size_t namelen = strlen(vrf_name) + 1;
++	struct nlmsghdr *nh;
++	struct ifinfomsg *ifi;
++	struct rtattr *rta;
++	bool is_vrf = false;
++	char buf[16384];
++	int sock, len, ret;
++	ssize_t n;
++
++	req.hdr.nlmsg_len = NLMSG_LENGTH(sizeof(req.ifi));
++	req.hdr.nlmsg_type = RTM_GETLINK;
++	req.hdr.nlmsg_flags = NLM_F_REQUEST;
++	req.hdr.nlmsg_seq = 1;
++	req.ifi.ifi_family = AF_UNSPEC;
++
++	rta = (struct rtattr *)((char *)&req + NLMSG_ALIGN(req.hdr.nlmsg_len));
++	rta->rta_type = IFLA_IFNAME;
++	rta->rta_len = RTA_LENGTH(namelen);
++	memcpy(RTA_DATA(rta), vrf_name, namelen);
++	req.hdr.nlmsg_len = NLMSG_ALIGN(req.hdr.nlmsg_len) + RTA_ALIGN(rta->rta_len);
++
++	sock = socket(AF_NETLINK, SOCK_RAW | SOCK_CLOEXEC, NETLINK_ROUTE);
++	if (sock < 0) {
++		ret = -errno;
++		ERROR("vrf: socket(AF_NETLINK): %m\n");
++		return ret;
++	}
++
++	if (send(sock, &req, req.hdr.nlmsg_len, 0) < 0) {
++		ERROR("vrf: send: %m\n");
++		close(sock);
++		return -EIO;
++	}
++
++	n = recv(sock, buf, sizeof(buf), 0);
++	close(sock);
++	if (n < 0) {
++		ERROR("vrf: recv: %m\n");
++		return -EIO;
++	}
++
++	nh = (struct nlmsghdr *)buf;
++	if (!NLMSG_OK(nh, (size_t)n)) {
++		ERROR("vrf: short or malformed nlmsg (%zd bytes)\n", n);
++		return -EIO;
++	}
++
++	if (nh->nlmsg_type == NLMSG_ERROR) {
++		struct nlmsgerr *err = NLMSG_DATA(nh);
++
++		ERROR("vrf: interface %s: %s\n", vrf_name, strerror(-err->error));
++		return err->error ? err->error : -EIO;
++	}
++
++	if (nh->nlmsg_type != RTM_NEWLINK || nh->nlmsg_len < NLMSG_LENGTH(sizeof(*ifi))) {
++		ERROR("vrf: unexpected nlmsg type %d\n", nh->nlmsg_type);
++		return -EIO;
++	}
++
++	ifi = NLMSG_DATA(nh);
++	len = IFLA_PAYLOAD(nh);
++	for (rta = IFLA_RTA(ifi); RTA_OK(rta, len); rta = RTA_NEXT(rta, len))
++		if (rta->rta_type == IFLA_LINKINFO)
++			is_vrf = vrf_linkinfo_is_vrf(rta);
++
++	if (!is_vrf) {
++		ERROR("vrf: interface %s is not a VRF device\n", vrf_name);
++		return -EINVAL;
++	}
++
++	return ifi->ifi_index;
++}
++
++static int vrf_mkdirat(int dirfd, const char *name)
++{
++	if (mkdirat(dirfd, name, 0700) && errno != EEXIST) {
++		int ret = -errno;
++
++		ERROR("vrf: can't create cgroup %s: %m\n", name);
++		return ret;
++	}
++
++	return 0;
++}
++
++int vrf_join(int cgroup_dirfd, const char *vrf_name)
++{
++	char sub[sizeof(VRF_CGROUP_DIR "/") + IFNAMSIZ];
++	int ifindex, dirfd, fd, ret;
++
++	if (!vrf_name_valid(vrf_name))
++		return -EINVAL;
++
++	ifindex = vrf_get_ifindex(vrf_name);
++	if (ifindex < 0)
++		return ifindex;
++
++	/* named after the VRF, so restarts of the instance reuse it */
++	snprintf(sub, sizeof(sub), VRF_CGROUP_DIR "/%s", vrf_name);
++
++	ret = vrf_mkdirat(cgroup_dirfd, VRF_CGROUP_DIR);
++	if (!ret)
++		ret = vrf_mkdirat(cgroup_dirfd, sub);
++	if (ret)
++		return ret;
++
++	dirfd = openat(cgroup_dirfd, sub, O_RDONLY | O_DIRECTORY | O_CLOEXEC);
++	if (dirfd < 0) {
++		ret = -errno;
++		ERROR("vrf: can't open cgroup %s: %m\n", sub);
++		return ret;
++	}
++
++	ret = attach_vrf_ebpf(dirfd, ifindex);
++	if (ret)
++		goto out;
++
++	fd = openat(dirfd, "cgroup.procs", O_WRONLY | O_CLOEXEC);
++	if (fd < 0) {
++		ret = -errno;
++		ERROR("vrf: can't open %s/cgroup.procs: %m\n", sub);
++		goto out;
++	}
++
++	/* "0" is the writing process, also inside a PID namespace */
++	if (write(fd, "0", 1) < 0) {
++		ret = -errno;
++		ERROR("vrf: can't join cgroup %s: %m\n", sub);
++	}
++	close(fd);
++
++out:
++	close(dirfd);
++	return ret;
++}
+diff --git a/jail/vrf.h b/jail/vrf.h
+new file mode 100644
+index 0000000..6ec9375
+--- /dev/null
++++ b/jail/vrf.h
+@@ -0,0 +1,32 @@
++/*
++ * Copyright (C) 2026 Nick Hainke <vincent@systemli.org>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU Lesser General Public License version 2.1
++ * as published by the Free Software Foundation
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ */
++
++#ifndef _JAIL_VRF_H
++#define _JAIL_VRF_H
++
++#include <stdbool.h>
++
++bool vrf_name_valid(const char *name);
++
++/*
++ * Bind all AF_INET/AF_INET6 sockets the calling process creates from now on
++ * to the VRF device vrf_name, like 'ip vrf exec': create the cgroup
++ * "vrf/<vrf_name>" below cgroup_dirfd, attach a BPF program setting
++ * sk_bound_dev_if to it and move the calling process into it.
++ *
++ * The VRF is looked up in the current network namespace. Returns 0 or a
++ * negative errno.
++ */
++int vrf_join(int cgroup_dirfd, const char *vrf_name);
++
++#endif

@@ -1,0 +1,302 @@
+From 7766fa1ebf5a167e0ef7763c8b2777077c3f3d15 Mon Sep 17 00:00:00 2001
+From: Nick Hainke <vincent@systemli.org>
+Date: Sat, 3 Oct 2026 20:42:42 +0200
+Subject: [PATCH 3/3] service: add per-instance 'vrf' option
+
+Add a 'vrf' instance attribute which binds all sockets of the service
+to a Linux VRF device, using ujail's new -v option.
+
+Since ujail does the binding, setting 'vrf' starts the instance through
+ujail even without a 'jail' table. Running the service outside of the
+VRF could expose it to, or let it talk to, the wrong network, so the
+instance fails to start if ujail is missing or 'trace' is set, which
+bypasses ujail.
+
+The ujail arguments for options outside the jail table (env, seccomp,
+capabilities, user, ...) used to be counted in instance_jail_parse(),
+which only runs if there is a jail table. Count them separately for
+every jailed instance, otherwise an instance jailed only because of
+'vrf' would overflow the argv array allocated in instance_run().
+
+ujail creates the VRF cgroup below the instance cgroup, which then
+can't be removed anymore. Remove empty child cgroups before removing
+the instance cgroup.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Nick Hainke <vincent@systemli.org>
+---
+ service/instance.c | 115 ++++++++++++++++++++++++++++++++++++++-------
+ service/instance.h |   1 +
+ 2 files changed, 99 insertions(+), 17 deletions(-)
+
+diff --git a/service/instance.c b/service/instance.c
+index 7c91fae..689cc10 100644
+--- a/service/instance.c
++++ b/service/instance.c
+@@ -27,6 +27,7 @@
+ #include <fcntl.h>
+ #include <pwd.h>
+ #include <libgen.h>
++#include <dirent.h>
+ #include <unistd.h>
+ #define SYSLOG_NAMES
+ #include <syslog.h>
+@@ -67,6 +68,7 @@ enum {
+ 	INSTANCE_ATTR_SECCOMP_MODE,
+ 	INSTANCE_ATTR_SECCOMP_LOG,
+ 	INSTANCE_ATTR_CAPABILITIES,
++	INSTANCE_ATTR_VRF,
+ 	INSTANCE_ATTR_PIDFILE,
+ 	INSTANCE_ATTR_RELOADSIG,
+ 	INSTANCE_ATTR_TERMTIMEOUT,
+@@ -102,6 +104,7 @@ static const struct blobmsg_policy instance_attr[__INSTANCE_ATTR_MAX] = {
+ 	[INSTANCE_ATTR_SECCOMP_MODE] = { "seccomp_mode", BLOBMSG_TYPE_STRING },
+ 	[INSTANCE_ATTR_SECCOMP_LOG] = { "seccomp_log", BLOBMSG_TYPE_STRING },
+ 	[INSTANCE_ATTR_CAPABILITIES] = { "capabilities", BLOBMSG_TYPE_STRING },
++	[INSTANCE_ATTR_VRF] = { "vrf", BLOBMSG_TYPE_STRING },
+ 	[INSTANCE_ATTR_PIDFILE] = { "pidfile", BLOBMSG_TYPE_STRING },
+ 	[INSTANCE_ATTR_RELOADSIG] = { "reload_signal", BLOBMSG_TYPE_INT32 },
+ 	[INSTANCE_ATTR_TERMTIMEOUT] = { "term_timeout", BLOBMSG_TYPE_INT32 },
+@@ -364,6 +367,11 @@ jail_run(struct service_instance *in, char **argv)
+ 		argv[argc++] = in->capabilities;
+ 	}
+ 
++	if (in->vrf) {
++		argv[argc++] = "-v";
++		argv[argc++] = in->vrf;
++	}
++
+ 	if (in->no_new_privs)
+ 		argv[argc++] = "-c";
+ 
+@@ -692,18 +700,52 @@ instance_kill_cgroup(const char *service, const char *instance)
+ 	close(fd);
+ }
+ 
++/* remove empty child cgroups, e.g. the VRF cgroups of ujail */
++static void
++instance_rmdir_cgroup_children(int dirfd)
++{
++	struct dirent *e;
++	DIR *dir;
++	int fd;
++
++	dir = fdopendir(dirfd);
++	if (!dir) {
++		close(dirfd);
++		return;
++	}
++
++	while ((e = readdir(dir)) != NULL) {
++		if (e->d_type != DT_DIR || !strcmp(e->d_name, ".") ||
++		    !strcmp(e->d_name, ".."))
++			continue;
++
++		fd = openat(dirfd, e->d_name, O_RDONLY | O_DIRECTORY | O_CLOEXEC);
++		if (fd < 0)
++			continue;
++
++		instance_rmdir_cgroup_children(fd);
++		unlinkat(dirfd, e->d_name, AT_REMOVEDIR);
++	}
++
++	closedir(dir);
++}
++
+ static void
+ instance_rmdir_cgroup(const char *service, const char *instance)
+ {
+ 	char cgnamebuf[256];
+ 	char *sep;
+-	int ret;
++	int fd, ret;
+ 
+ 	ret = snprintf(cgnamebuf, sizeof(cgnamebuf), "%s/%s/%s", CGROUP_BASEDIR,
+ 		       service, instance);
+ 	if (ret >= (int)sizeof(cgnamebuf))
+ 		return;
+ 
++	fd = open(cgnamebuf, O_RDONLY | O_DIRECTORY | O_CLOEXEC);
++	if (fd >= 0)
++		instance_rmdir_cgroup_children(fd);
++
+ 	if (rmdir(cgnamebuf) && errno == EBUSY)
+ 		ULOG_WARN("failed to remove busy cgroup of %s::%s\n", service,
+ 			  instance);
+@@ -1349,6 +1391,9 @@ instance_config_changed(struct service_instance *in, struct service_instance *in
+ 	if (string_changed(in->capabilities, in_new->capabilities))
+ 		return true;
+ 
++	if (string_changed(in->vrf, in_new->vrf))
++		return true;
++
+ 	if (!blobmsg_list_equal(&in->limits, &in_new->limits))
+ 		return true;
+ 
+@@ -1495,12 +1540,11 @@ instance_jail_parse(struct service_instance *in, struct blob_attr *attr)
+ {
+ 	struct blob_attr *tb[__JAIL_ATTR_MAX];
+ 	struct jail *jail = &in->jail;
+-	struct blobmsg_list_node *var;
+ 
+ 	blobmsg_parse(jail_attr, __JAIL_ATTR_MAX, tb,
+ 		blobmsg_data(attr), blobmsg_data_len(attr));
+ 
+-	jail->argc = 6;
++	jail->argc = 0;
+ 
+ 	if (tb[JAIL_ATTR_REQUIREJAIL] && blobmsg_get_bool(tb[JAIL_ATTR_REQUIREJAIL])) {
+ 		in->require_jail = true;
+@@ -1601,43 +1645,59 @@ instance_jail_parse(struct service_instance *in, struct blob_attr *attr)
+ 		instance_fill_array(&jail->mount, tb[JAIL_ATTR_MOUNT], NULL, false);
+ 	}
+ 
++	return true;
++}
++
++/*
++ * Number of argv entries jail_run() adds for options outside of the jail
++ * table. They are passed to ujail whether or not the instance has one.
++ */
++static int
++instance_jail_common_argc(struct service_instance *in)
++{
++	struct blobmsg_list_node *var;
++	int argc = 6; /* ujail -t <timeout> -A <incarnation> -- */
++
+ 	blobmsg_list_for_each(&in->env, var)
+-		jail->argc += 2;
++		argc += 2;
+ 
+ 	if (in->seccomp)
+-		jail->argc += 2;
++		argc += 2;
+ 
+ 	if (in->seccomp_mode)
+-		jail->argc += 2;
++		argc += 2;
+ 
+ 	if (in->seccomp_log)
+-		jail->argc += 2;
++		argc += 2;
+ 
+ 	if (in->capabilities)
+-		jail->argc += 2;
++		argc += 2;
++
++	if (in->vrf)
++		argc += 2;
+ 
+ 	if (in->user)
+-		jail->argc += 2;
++		argc += 2;
+ 
+ 	if (in->group)
+-		jail->argc += 2;
++		argc += 2;
+ 
+ 	if (in->extroot)
+-		jail->argc += 2;
++		argc += 2;
+ 
+ 	if (in->overlaydir)
+-		jail->argc += 2;
++		argc += 2;
+ 
+ 	if (in->tmpoverlaysize)
+-		jail->argc += 2;
++		argc += 2;
+ 
+ 	if (in->no_new_privs)
+-		jail->argc++;
++		argc++;
+ 
+ 	if (in->bundle)
+-		jail->argc += 2;
++		argc += 2;
+ 
+-	return true;
++	return argc;
+ }
+ 
+ static bool
+@@ -1754,6 +1814,9 @@ instance_config_parse(struct service_instance *in)
+ 	if (tb[INSTANCE_ATTR_CAPABILITIES])
+ 		in->capabilities = strdup(blobmsg_get_string(tb[INSTANCE_ATTR_CAPABILITIES]));
+ 
++	if (tb[INSTANCE_ATTR_VRF] && *blobmsg_get_string(tb[INSTANCE_ATTR_VRF]))
++		in->vrf = strdup(blobmsg_get_string(tb[INSTANCE_ATTR_VRF]));
++
+ 	if (tb[INSTANCE_ATTR_EXTROOT])
+ 		in->extroot = strdup(blobmsg_get_string(tb[INSTANCE_ATTR_EXTROOT]));
+ 
+@@ -1839,10 +1902,20 @@ instance_config_parse(struct service_instance *in)
+ 	if (!in->trace && tb[INSTANCE_ATTR_JAIL])
+ 		in->has_jail = instance_jail_parse(in, tb[INSTANCE_ATTR_JAIL]);
+ 
++	/* ujail binds to the VRF, never run the service outside of it */
++	if (in->vrf) {
++		if (in->trace) {
++			ERROR("Cannot trace service %s::%s with vrf %s\n",
++					in->srv->name, in->name, in->vrf);
++			return false;
++		}
++		in->has_jail = true;
++	}
++
+ 	if (in->has_jail) {
+ 		r = stat(UJAIL_BIN_PATH, &s);
+ 		if (r < 0) {
+-			if (in->require_jail) {
++			if (in->require_jail || in->vrf) {
+ 				ERROR("Cannot jail service %s::%s. %s: %m (%d)\n",
+ 						in->srv->name, in->name, UJAIL_BIN_PATH, r);
+ 				return false;
+@@ -1852,6 +1925,9 @@ instance_config_parse(struct service_instance *in)
+ 		}
+ 	}
+ 
++	if (in->has_jail)
++		in->jail.argc += instance_jail_common_argc(in);
++
+ 	return true;
+ }
+ 
+@@ -1928,6 +2004,7 @@ instance_config_move(struct service_instance *in, struct service_instance *in_sr
+ 	instance_config_move_strdup(&in->seccomp_mode, in_src->seccomp_mode);
+ 	instance_config_move_strdup(&in->seccomp_log, in_src->seccomp_log);
+ 	instance_config_move_strdup(&in->capabilities, in_src->capabilities);
++	instance_config_move_strdup(&in->vrf, in_src->vrf);
+ 	instance_config_move_strdup(&in->bundle, in_src->bundle);
+ 	instance_config_move_strdup(&in->extroot, in_src->extroot);
+ 	instance_config_move_strdup(&in->overlaydir, in_src->overlaydir);
+@@ -2054,6 +2131,7 @@ instance_free(struct service_instance *in)
+ 	free(in->seccomp_mode);
+ 	free(in->seccomp_log);
+ 	free(in->capabilities);
++	free(in->vrf);
+ 	free(in->pidfile);
+ 	free(in);
+ }
+@@ -2196,6 +2274,9 @@ void instance_dump(struct blob_buf *b, struct service_instance *in, int verbose)
+ 	if (in->capabilities)
+ 		blobmsg_add_string(b, "capabilities", in->capabilities);
+ 
++	if (in->vrf)
++		blobmsg_add_string(b, "vrf", in->vrf);
++
+ 	if (in->pidfile)
+ 		blobmsg_add_string(b, "pidfile", in->pidfile);
+ 
+diff --git a/service/instance.h b/service/instance.h
+index d5df8bd..727575f 100644
+--- a/service/instance.h
++++ b/service/instance.h
+@@ -98,6 +98,7 @@ struct service_instance {
+ 	char *seccomp_mode;
+ 	char *seccomp_log;
+ 	char *capabilities;
++	char *vrf;
+ 	char *pidfile;
+ 	char *extroot;
+ 	char *overlaydir;
