@@ -1,0 +1,140 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Alexandru Gagniuc <mr.nuke.me@gmail.com>
+Date: Thu, 8 Jan 2026 22:33:39 -0600
+Subject: [PATCH] dt-bindings: remoteproc: describe native IPQ9574 WCSS
+
+Describe the IPQ9574 native clock/reset resources from the public WCSS
+proposal. Limit this backport to IPQ9574 without changing the existing
+IPQ8074 or QCS404 bindings. Require the reset resources used by the driver
+and constrain both shared-memory state specifiers.
+
+Link: https://lore.kernel.org/r/20260109043352.3072933-3-mr.nuke.me@gmail.com/
+Link: https://lore.kernel.org/r/20260109043352.3072933-5-mr.nuke.me@gmail.com/
+Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
+Signed-off-by: Satoshi Ikeuchi <satosan.ikm@gmail.com>
+---
+ Documentation/devicetree/bindings/remoteproc/qcom,ipq9574-wcss-pil.yaml | 118 ++++++++++++++++++++
+ 1 file changed, 118 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/remoteproc/qcom,ipq9574-wcss-pil.yaml
+
+--- /dev/null
++++ b/Documentation/devicetree/bindings/remoteproc/qcom,ipq9574-wcss-pil.yaml
+@@ -0,0 +1,118 @@
++# SPDX-License-Identifier: (GPL-2.0 OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/remoteproc/qcom,ipq9574-wcss-pil.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: Qualcomm IPQ9574 WCSS Peripheral Image Loader
++
++maintainers:
++  - Bjorn Andersson <andersson@kernel.org>
++  - Alexandru Gagniuc <mr.nuke.me@gmail.com>
++
++description:
++  The IPQ9574 WCSS peripheral image loader starts the Qualcomm Q6 processor
++  through native clock and reset control. Startup is requested by ath11k.
++
++properties:
++  compatible:
++    const: qcom,ipq9574-wcss-pil
++
++  reg:
++    maxItems: 2
++
++  reg-names:
++    items:
++      - const: qdsp6
++      - const: rmb
++
++  interrupts:
++    maxItems: 5
++
++  interrupt-names:
++    items:
++      - const: wdog
++      - const: fatal
++      - const: ready
++      - const: handover
++      - const: stop-ack
++
++  resets:
++    maxItems: 3
++
++  reset-names:
++    items:
++      - const: wcss_aon_reset
++      - const: wcss_reset
++      - const: wcss_q6_reset
++
++  clocks:
++    maxItems: 13
++
++  clock-names:
++    items:
++      - const: anoc_wcss_axi_m
++      - const: q6_ahb
++      - const: q6_ahb_s
++      - const: q6_axim
++      - const: q6ss_boot
++      - const: mem_noc_q6_axi
++      - const: sys_noc_wcss_ahb
++      - const: wcss_acmt
++      - const: wcss_ecahb
++      - const: wcss_q6_tbu
++      - const: q6_axim2
++      - const: wcss_ahb_s
++      - const: wcss_axi_m
++
++  memory-region:
++    maxItems: 1
++
++  qcom,halt-regs:
++    $ref: /schemas/types.yaml#/definitions/phandle-array
++    description:
++      Reference to the TCSR syscon followed by the Q6, WCSS and non-core
++      halt register offsets within that syscon.
++    items:
++      - items:
++          - description: TCSR syscon phandle
++          - description: Q6 halt register offset
++          - description: WCSS halt register offset
++          - description: Non-core halt register offset
++
++  qcom,smem-states:
++    $ref: /schemas/types.yaml#/definitions/phandle-array
++    description: States used by the application processor to signal WCSS
++    items:
++      - items:
++          - description: State provider phandle
++          - description: Shutdown state bit
++      - items:
++          - description: State provider phandle
++          - description: Stop state bit
++
++  qcom,smem-state-names:
++    description: Names of the shared-memory states used to signal WCSS
++    items:
++      - const: shutdown
++      - const: stop
++
++  glink-edge:
++    $ref: /schemas/remoteproc/qcom,glink-edge.yaml#
++
++required:
++  - compatible
++  - reg
++  - reg-names
++  - interrupts
++  - interrupt-names
++  - resets
++  - reset-names
++  - clocks
++  - clock-names
++  - memory-region
++  - qcom,halt-regs
++  - qcom,smem-states
++  - qcom,smem-state-names
++
++additionalProperties: false

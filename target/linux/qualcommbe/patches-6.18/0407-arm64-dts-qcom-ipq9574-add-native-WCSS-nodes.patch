@@ -1,0 +1,144 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Manikanta Mylavarapu <manikanta.mylavarapu@oss.qualcomm.com>
+Date: Mon, 3 Aug 2026 16:16:12 +0530
+Subject: [PATCH] arm64: dts: qcom: ipq9574: add native WCSS nodes
+
+Describe the IPQ9574 WCSS memory, interrupts and shared-memory transport,
+using the native clock/reset resources. Keep the remote processor disabled
+until a board enables it. Describe the final resources directly instead
+of adding secure-start properties and overriding them in a board include.
+
+Adapt the public resource description to native startup. The resulting
+LN6001 device tree retains the same registers, clocks, resets, interrupts,
+memory reservation and shared-memory state mapping.
+
+Link: https://lore.kernel.org/r/20260803-rproc-v14-6-a1f87b0b0ad2@oss.qualcomm.com
+Link: https://lore.kernel.org/r/20260109043352.3072933-5-mr.nuke.me@gmail.com/
+Signed-off-by: Manikanta Mylavarapu <manikanta.mylavarapu@oss.qualcomm.com>
+Signed-off-by: Gokul Sriram Palanisamy <gokul.sriram.p@oss.qualcomm.com>
+Signed-off-by: George Moussalem <george.moussalem@outlook.com>
+Signed-off-by: Varadarajan Narayanan <varadarajan.narayanan@oss.qualcomm.com>
+[Adapt the WCSS node to the native clock/reset binding.]
+Signed-off-by: Satoshi Ikeuchi <satosan.ikm@gmail.com>
+---
+--- a/arch/arm64/boot/dts/qcom/ipq9574.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq9574.dtsi
+@@ -3,7 +3,7 @@
+  * IPQ9574 SoC device tree source
+  *
+  * Copyright (c) 2020-2021 The Linux Foundation. All rights reserved.
+- * Copyright (c) 2023-2024, Qualcomm Innovation Center, Inc. All rights reserved.
++ * Copyright (c) 2023-2025, Qualcomm Innovation Center, Inc. All rights reserved.
+  */
+ 
+ #include <dt-bindings/clock/qcom,apss-ipq.h>
+@@ -228,6 +228,35 @@
+ 			hwlocks = <&tcsr_mutex 3>;
+ 			no-map;
+ 		};
++
++		q6_region: wcss@4ab00000 {
++			reg = <0x0 0x4ab00000 0x0 0x2b00000>;
++			no-map;
++		};
++	};
++
++	wcss: smp2p-wcss {
++		compatible = "qcom,smp2p";
++		qcom,smem = <435>, <428>;
++
++		interrupt-parent = <&intc>;
++		interrupts = <GIC_SPI 322 IRQ_TYPE_EDGE_RISING>;
++
++		mboxes = <&apcs_glb 9>;
++
++		qcom,local-pid = <0>;
++		qcom,remote-pid = <1>;
++
++		smp2p_wcss_out: master-kernel {
++			qcom,entry-name = "master-kernel";
++			#qcom,smem-state-cells = <1>;
++		};
++
++		smp2p_wcss_in: slave-kernel {
++			qcom,entry-name = "slave-kernel";
++			interrupt-controller;
++			#interrupt-cells = <2>;
++		};
+ 	};
+ 
+ 	soc: soc@0 {
+@@ -934,6 +963,73 @@
+ 			};
+ 		};
+ 
++		q6v5_wcss: remoteproc@cd00000 {
++			compatible = "qcom,ipq9574-wcss-pil";
++			reg = <0x0cd00000 0x4040>,
++			      <0x004ab000 0x20>;
++			reg-names = "qdsp6", "rmb";
++
++			resets = <&gcc GCC_WCSSAON_RESET>,
++				 <&gcc GCC_WCSS_BCR>,
++				 <&gcc GCC_WCSS_Q6_BCR>;
++			reset-names = "wcss_aon_reset",
++				      "wcss_reset",
++				      "wcss_q6_reset";
++
++			clocks = <&gcc GCC_ANOC_WCSS_AXI_M_CLK>,
++				 <&gcc GCC_Q6_AHB_CLK>,
++				 <&gcc GCC_Q6_AHB_S_CLK>,
++				 <&gcc GCC_Q6_AXIM_CLK>,
++				 <&gcc GCC_Q6SS_BOOT_CLK>,
++				 <&gcc GCC_MEM_NOC_Q6_AXI_CLK>,
++				 <&gcc GCC_SYS_NOC_WCSS_AHB_CLK>,
++				 <&gcc GCC_WCSS_ACMT_CLK>,
++				 <&gcc GCC_WCSS_ECAHB_CLK>,
++				 <&gcc GCC_WCSS_Q6_TBU_CLK>,
++				 <&gcc GCC_Q6_AXIM2_CLK>,
++				 <&gcc GCC_WCSS_AHB_S_CLK>,
++				 <&gcc GCC_WCSS_AXI_M_CLK>;
++			clock-names = "anoc_wcss_axi_m",
++				      "q6_ahb",
++				      "q6_ahb_s",
++				      "q6_axim",
++				      "q6ss_boot",
++				      "mem_noc_q6_axi",
++				      "sys_noc_wcss_ahb",
++				      "wcss_acmt",
++				      "wcss_ecahb",
++				      "wcss_q6_tbu",
++				      "q6_axim2",
++				      "wcss_ahb_s",
++				      "wcss_axi_m";
++
++			qcom,halt-regs = <&tcsr 0x18000 0x1b000 0xe000>;
++
++			interrupts-extended = <&intc GIC_SPI 325 IRQ_TYPE_EDGE_RISING>,
++					      <&smp2p_wcss_in 0 IRQ_TYPE_NONE>,
++					      <&smp2p_wcss_in 1 IRQ_TYPE_NONE>,
++					      <&smp2p_wcss_in 2 IRQ_TYPE_NONE>,
++					      <&smp2p_wcss_in 3 IRQ_TYPE_NONE>;
++			interrupt-names = "wdog",
++					  "fatal",
++					  "ready",
++					  "handover",
++					  "stop-ack";
++
++			qcom,smem-states = <&smp2p_wcss_out 0>, <&smp2p_wcss_out 1>;
++			qcom,smem-state-names = "shutdown", "stop";
++			memory-region = <&q6_region>;
++
++			status = "disabled";
++
++			glink-edge {
++				interrupts = <GIC_SPI 321 IRQ_TYPE_EDGE_RISING>;
++				label = "rtr";
++				qcom,remote-pid = <1>;
++				mboxes = <&apcs_glb 8>;
++			};
++		};
++
+ 		pcie1: pcie@10000000 {
+ 			compatible = "qcom,pcie-ipq9574";
+ 			reg = <0x10000000 0xf1d>,
