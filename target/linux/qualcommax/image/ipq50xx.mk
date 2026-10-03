@@ -334,6 +334,14 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 endif
 endef
 
+define Device/xiaomi_ax3000tv2
+	$(call Device/xiaomi_ipq50xx_ax_base)
+	DEVICE_MODEL := AX3000T
+	DEVICE_VARIANT := v2
+	DEVICE_DTS_CONFIG := config@mp03.3
+endef
+TARGET_DEVICES += xiaomi_ax3000tv2
+
 define Device/xiaomi_ax6000
 	$(call Device/xiaomi_ipq50xx_ax_base)
 	DEVICE_MODEL := AX6000
