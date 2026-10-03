@@ -32,14 +32,11 @@
 #include <stdbool.h>
 #include <errno.h>
 
-#include <mbedtls/bignum.h>
-#include <mbedtls/entropy.h>
 #include <mbedtls/x509_crt.h>
-#include <mbedtls/ecp.h>
-#include <mbedtls/rsa.h>
 #include <mbedtls/pk.h>
 #include <mbedtls/asn1.h>
 #include <mbedtls/oid.h>
+#include <psa/crypto.h>
 
 #define SET_OID(x, oid) \
 	do { x.len = MBEDTLS_OID_SIZE(oid); x.p = (unsigned char *) oid; } while (0)
@@ -49,17 +46,6 @@
 #define PX5G_LICENSE "Licensed under the GNU Lesser General Public License v2.1"
 
 static char buf[16384];
-
-static int _urandom(void *ctx, unsigned char *out, size_t len)
-{
-	ssize_t ret;
-
-	ret = getrandom(out, len, 0);
-	if (ret < 0 || (size_t)ret != len)
-		return MBEDTLS_ERR_ENTROPY_SOURCE_FAILED;
-
-	return 0;
-}
 
 static void write_file(const char *path, size_t len, bool pem, bool cert)
 {
@@ -102,21 +88,51 @@ static void write_file(const char *path, size_t len, bool pem, bool cert)
 		close(fd);
 }
 
-static mbedtls_ecp_group_id ecp_curve(const char *name)
-{
-	const mbedtls_ecp_curve_info *curve_info;
+static const struct {
+	const char *name;
+	psa_ecc_family_t family;
+	size_t bits;
+} ecp_curves[] = {
+#if defined(PSA_WANT_ECC_SECP_R1_256)
+	{ "P-256", PSA_ECC_FAMILY_SECP_R1, 256 },
+	{ "secp256r1", PSA_ECC_FAMILY_SECP_R1, 256 },
+#endif
+#if defined(PSA_WANT_ECC_SECP_R1_384)
+	{ "P-384", PSA_ECC_FAMILY_SECP_R1, 384 },
+	{ "secp384r1", PSA_ECC_FAMILY_SECP_R1, 384 },
+#endif
+#if defined(PSA_WANT_ECC_SECP_R1_521)
+	{ "P-521", PSA_ECC_FAMILY_SECP_R1, 521 },
+	{ "secp521r1", PSA_ECC_FAMILY_SECP_R1, 521 },
+#endif
+#if defined(PSA_WANT_ECC_SECP_K1_256)
+	{ "secp256k1", PSA_ECC_FAMILY_SECP_K1, 256 },
+#endif
+#if defined(PSA_WANT_ECC_BRAINPOOL_P_R1_256)
+	{ "brainpoolP256r1", PSA_ECC_FAMILY_BRAINPOOL_P_R1, 256 },
+#endif
+#if defined(PSA_WANT_ECC_BRAINPOOL_P_R1_384)
+	{ "brainpoolP384r1", PSA_ECC_FAMILY_BRAINPOOL_P_R1, 384 },
+#endif
+#if defined(PSA_WANT_ECC_BRAINPOOL_P_R1_512)
+	{ "brainpoolP512r1", PSA_ECC_FAMILY_BRAINPOOL_P_R1, 512 },
+#endif
+	{ NULL, 0, 0 },
+};
 
-	if (!strcmp(name, "P-256"))
-		return MBEDTLS_ECP_DP_SECP256R1;
-	else if (!strcmp(name, "P-384"))
-		return MBEDTLS_ECP_DP_SECP384R1;
-	else if (!strcmp(name, "P-521"))
-		return MBEDTLS_ECP_DP_SECP521R1;
-	curve_info = mbedtls_ecp_curve_info_from_name(name);
-	if (curve_info == NULL)
-		return MBEDTLS_ECP_DP_NONE;
-	else
-		return curve_info->grp_id;
+static int ecp_curve(const char *name, psa_ecc_family_t *family, size_t *bits)
+{
+	size_t i;
+
+	for (i = 0; ecp_curves[i].name; i++) {
+		if (!strcmp(name, ecp_curves[i].name)) {
+			*family = ecp_curves[i].family;
+			*bits = ecp_curves[i].bits;
+			return 0;
+		}
+	}
+
+	return -1;
 }
 
 static void write_key(mbedtls_pk_context *key, const char *path, bool pem)
@@ -135,40 +151,66 @@ static void write_key(mbedtls_pk_context *key, const char *path, bool pem)
 	write_file(path, len, pem, false);
 }
 
-static void gen_key(mbedtls_pk_context *key, bool rsa, int ksize, int exp,
-		    mbedtls_ecp_group_id curve, bool pem)
+static void gen_key(mbedtls_pk_context *key, bool rsa, int ksize,
+		    psa_ecc_family_t family, size_t bits)
 {
-	mbedtls_pk_init(key);
+	psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
+	mbedtls_svc_key_id_t key_id = MBEDTLS_SVC_KEY_ID_INIT;
+	psa_status_t status;
+
+	if (!rsa && !family) {
+		fprintf(stderr, "error: no EC curves enabled in this build\n");
+		exit(1);
+	}
+
 	if (rsa) {
 		fprintf(stderr, "Generating RSA private key, %i bit long modulus\n", ksize);
-		mbedtls_pk_setup(key, mbedtls_pk_info_from_type(MBEDTLS_PK_RSA));
-		if (!mbedtls_rsa_gen_key(mbedtls_pk_rsa(*key), _urandom, NULL, ksize, exp))
-			return;
+		psa_set_key_type(&attr, PSA_KEY_TYPE_RSA_KEY_PAIR);
+		psa_set_key_bits(&attr, ksize);
+		psa_set_key_algorithm(&attr, PSA_ALG_RSA_PKCS1V15_SIGN(PSA_ALG_SHA_256));
 	} else {
 		fprintf(stderr, "Generating EC private key\n");
-		mbedtls_pk_setup(key, mbedtls_pk_info_from_type(MBEDTLS_PK_ECKEY));
-		if (!mbedtls_ecp_gen_key(curve, mbedtls_pk_ec(*key), _urandom, NULL))
-			return;
+		psa_set_key_type(&attr, PSA_KEY_TYPE_ECC_KEY_PAIR(family));
+		psa_set_key_bits(&attr, bits);
+		psa_set_key_algorithm(&attr, PSA_ALG_ECDSA(PSA_ALG_SHA_256));
 	}
-	fprintf(stderr, "error: key generation failed\n");
-	exit(1);
+	psa_set_key_usage_flags(&attr, PSA_KEY_USAGE_SIGN_HASH | PSA_KEY_USAGE_EXPORT);
+
+	status = psa_generate_key(&attr, &key_id);
+	if (status == PSA_ERROR_NOT_SUPPORTED) {
+		fprintf(stderr, "error: key type or size not supported in this build\n");
+		exit(1);
+	}
+	if (status != PSA_SUCCESS) {
+		fprintf(stderr, "error: key generation failed (%d)\n", (int) status);
+		exit(1);
+	}
+
+	mbedtls_pk_init(key);
+	if (mbedtls_pk_copy_from_psa(key_id, key) != 0) {
+		fprintf(stderr, "error: key import failed\n");
+		psa_destroy_key(key_id);
+		exit(1);
+	}
+	psa_destroy_key(key_id);
 }
 
 int dokey(bool rsa, char **arg)
 {
 	mbedtls_pk_context key;
 	unsigned int ksize = 512;
-	int exp = 65537;
 	char *path = NULL;
 	bool pem = true;
-	mbedtls_ecp_group_id curve = MBEDTLS_ECP_DP_SECP256R1;
+	psa_ecc_family_t family = ecp_curves[0].family;
+	size_t bits = ecp_curves[0].bits;
 
 	while (*arg && **arg == '-') {
 		if (!strcmp(*arg, "-out") && arg[1]) {
 			path = arg[1];
 			arg++;
-		} else if (!strcmp(*arg, "-3")) {
-			exp = 3;
+		} else if (rsa && !strcmp(*arg, "-3")) {
+			fprintf(stderr, "error: -3 is not supported, RSA keys use exponent 65537\n");
+			return 1;
 		} else if (!strcmp(*arg, "-der")) {
 			pem = false;
 		}
@@ -178,18 +220,15 @@ int dokey(bool rsa, char **arg)
 	if (*arg && rsa) {
 		ksize = (unsigned int)atoi(*arg);
 	} else if (*arg) {
-		curve = ecp_curve((const char *)*arg);
-		if (curve == MBEDTLS_ECP_DP_NONE) {
+		if (ecp_curve((const char *)*arg, &family, &bits)) {
 			fprintf(stderr, "error: invalid curve name: %s\n", *arg);
 			return 1;
 		}
 	}
 
-	gen_key(&key, rsa, ksize, exp, curve, pem);
+	gen_key(&key, rsa, ksize, family, bits);
 	write_key(&key, path, pem);
-
 	mbedtls_pk_free(&key);
-
 	return 0;
 }
 
@@ -197,7 +236,7 @@ int selfsigned(char **arg)
 {
 	mbedtls_pk_context key;
 	mbedtls_x509write_cert cert;
-	mbedtls_mpi serial;
+	unsigned char serial[8];
 	mbedtls_x509_san_list *san_list = NULL, *san_prev = NULL, *san_cur = NULL;
 	/*support
 	- MBEDTLS_X509_SAN_DNS_NAME
@@ -211,15 +250,15 @@ int selfsigned(char **arg)
 
 	char *subject = "";
 	unsigned int ksize = 512;
-	int exp = 65537;
 	unsigned int days = 30;
 	char *keypath = NULL, *certpath = NULL;
 	bool pem = true;
 	time_t from = time(NULL), to;
-	char fstr[20], tstr[20], sstr[17];
+	char fstr[20], tstr[20];
 	int len;
 	bool rsa = true;
-	mbedtls_ecp_group_id curve = MBEDTLS_ECP_DP_SECP256R1;
+	psa_ecc_family_t family = ecp_curves[0].family;
+	size_t bits = ecp_curves[0].bits;
 
 	while (*arg && **arg == '-') {
 		if (!strcmp(*arg, "-der")) {
@@ -243,8 +282,7 @@ int selfsigned(char **arg)
 				fprintf(stderr, "error: invalid pkey option: %s\n", arg[1]);
 				return 1;
 			}
-			curve = ecp_curve((const char *)(arg[1] + 18));
-			if (curve == MBEDTLS_ECP_DP_NONE) {
+			if (ecp_curve((const char *)(arg[1] + 18), &family, &bits)) {
 				fprintf(stderr, "error: invalid curve name: %s\n", arg[1] + 18);
 				return 1;
 			}
@@ -333,7 +371,8 @@ int selfsigned(char **arg)
 		}
 		san_prev = san_cur;
 	}
-	gen_key(&key, rsa, ksize, exp, curve, pem);
+
+	gen_key(&key, rsa, ksize, family, bits);
 
 	if (keypath)
 		write_key(&key, keypath, pem);
@@ -361,23 +400,21 @@ int selfsigned(char **arg)
 	mbedtls_x509write_crt_set_subject_alternative_name(&cert, san_list);
 	mbedtls_x509write_crt_set_ext_key_usage(&cert, ext_key_usage);
 
-	_urandom(NULL, (void *) buf, 8);
-	for (len = 0; len < 8; len++)
-		sprintf(sstr + len*2, "%02x", (unsigned char) buf[len]);
-
-	mbedtls_mpi_init(&serial);
-	mbedtls_mpi_read_string(&serial, 16, sstr);
-	mbedtls_x509write_crt_set_serial(&cert, &serial);
+	if (getrandom(serial, sizeof(serial), 0) != (ssize_t) sizeof(serial)) {
+		fprintf(stderr, "error: failed to generate serial number\n");
+		return 1;
+	}
+	mbedtls_x509write_crt_set_serial_raw(&cert, serial, sizeof(serial));
 
 	if (pem) {
-		if (mbedtls_x509write_crt_pem(&cert, (void *) buf, sizeof(buf), _urandom, NULL) < 0) {
+		if (mbedtls_x509write_crt_pem(&cert, (void *) buf, sizeof(buf)) < 0) {
 			fprintf(stderr, "Failed to generate certificate\n");
 			return 1;
 		}
 
 		len = strlen(buf);
 	} else {
-		len = mbedtls_x509write_crt_der(&cert, (void *) buf, sizeof(buf), _urandom, NULL);
+		len = mbedtls_x509write_crt_der(&cert, (void *) buf, sizeof(buf));
 		if (len < 0) {
 			fprintf(stderr, "Failed to generate certificate: %d\n", len);
 			return 1;
@@ -386,7 +423,6 @@ int selfsigned(char **arg)
 	write_file(certpath, len, pem, true);
 
 	mbedtls_x509write_crt_free(&cert);
-	mbedtls_mpi_free(&serial);
 	mbedtls_pk_free(&key);
 
 	return 0;
@@ -394,6 +430,11 @@ int selfsigned(char **arg)
 
 int main(int argc, char *argv[])
 {
+	if (psa_crypto_init() != PSA_SUCCESS) {
+		fprintf(stderr, "error: failed to initialize PSA crypto\n");
+		return 1;
+	}
+
 	if (!argv[1]) {
 		//Usage
 	} else if (!strcmp(argv[1], "eckey")) {
