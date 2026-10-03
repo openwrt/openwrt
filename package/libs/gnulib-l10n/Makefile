@@ -1,7 +1,6 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=gnulib-l10n
-PKG_CPE_ID:=cpe:/a:gnu:$(PKG_NAME)
 PKG_VERSION:=20241231
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
