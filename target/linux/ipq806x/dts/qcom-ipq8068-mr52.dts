@@ -81,6 +81,8 @@
 	phy-mode = "sgmii";
 	phy-handle = <&phy0>;
 
+	openwrt,netdev-name = "eth0";
+
 	nvmem-cells = <&mac_address 0>;
 	nvmem-cell-names = "mac-address";
 };
@@ -92,6 +94,8 @@
 
 	phy-mode = "sgmii";
 	phy-handle = <&phy4>;
+
+	openwrt,netdev-name = "eth1";
 
 	nvmem-cells = <&mac_address 1>;
 	nvmem-cell-names = "mac-address";
