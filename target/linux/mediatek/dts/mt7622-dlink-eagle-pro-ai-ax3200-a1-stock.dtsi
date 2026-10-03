@@ -1,0 +1,130 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7622-dlink-eagle-pro-ai-ax3200-a1-common.dtsi"
+
+/ {
+	chosen {
+		bootargs = "earlycon=uart8250,mmio32,0x11002000 console=ttyS0,115200n8 swiotlb=512";
+	};
+};
+
+&snand {
+	mediatek,bmt-table-size = <0x1000>;
+	mediatek,bmt-v2;
+
+	partitions {
+		partition@0 {
+			label = "Preloader";
+		};
+
+		partition@80000 {
+			label = "ATF";
+			reg = <0x80000 0x40000>;
+			read-only;
+		};
+
+		partition@c0000 {
+			label = "Bootloader";
+			reg = <0xc0000 0x80000>;
+			read-only;
+		};
+
+		partition@140000 {
+			label = "BootConfig";
+			reg = <0x140000 0x40000>;
+		};
+
+		partition@180000 {
+			label = "Odm";
+			reg = <0x180000 0x40000>;
+			read-only;
+			odm_nvmem: nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
+		};
+
+		partition@1c0000 {
+			label = "Config1";
+			reg = <0x1c0000 0x80000>;
+			read-only;
+		};
+
+		partition@240000 {
+			label = "Config2";
+			reg = <0x240000 0x80000>;
+			read-only;
+		};
+
+		partition@2c0000 {
+			compatible = "denx,fit";
+			reg = <0x2c0000 0x2d00000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			label = "Kernel1";
+			openwrt,cmdline-match = "boot_part=Kernel1";
+
+			partition@0 {
+				label = "kernel";
+				reg = <0x0 0x800000>;
+			};
+
+			partition@800000 {
+				label = "ubi";
+				reg = <0x800000 0x2500000>;
+			};
+		};
+
+		partition@2fc0000 {
+			compatible = "denx,fit";
+			reg = <0x2fc0000 0x2d00000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			label = "Kernel2";
+			openwrt,cmdline-match = "boot_part=Kernel2";
+
+			partition@0 {
+				label = "kernel";
+				reg = <0x0 0x800000>;
+			};
+
+			partition@800000 {
+				label = "ubi";
+				reg = <0x800000 0x2500000>;
+			};
+		};
+
+		partition@5cc0000 {
+			label = "Factory";
+			reg = <0x5cc0000 0x100000>;
+			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				eeprom_factory_0: eeprom@0 {
+					reg = <0x0 0x4da8>;
+				};
+
+				eeprom_factory_5000: eeprom@5000 {
+					reg = <0x5000 0xe00>;
+				};
+			};
+		};
+
+		partition@5dc0000 {
+			label = "Mydlink";
+			reg = <0x5dc0000 0x200000>;
+			read-only;
+		};
+
+		partition@5fc0000 {
+			label = "Storage";
+			reg = <0x5fc0000 0x300000>;
+			read-only;
+		};
+	};
+};
