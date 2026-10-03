@@ -3,7 +3,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mipi-dbi
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_LICENSE:=GPL-2.0-or-later
 PKG_LICENSE_FILES:=
@@ -15,6 +15,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/mipi-dbi-default
   SECTION:=firmware
   CATEGORY:=Firmware
+  PKGARCH:=all
 endef
 
 define Build/Compile
