@@ -61,6 +61,9 @@ export function ratelist(rates) {
 };
 
 function setup_sta(data, config) {
+	/* use what a 6 GHz AP with the same configuration offers */
+	if (config.mode == 'sta')
+		config.encryption = iface.encryption_band(config.encryption, data.band);
 	iface.parse_encryption(config, data);
 
 	if (config.auth_type in [ 'sae', 'owe', 'eap2', 'eap192', 'dpp' ])

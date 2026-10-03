@@ -3,6 +3,35 @@
 import { append_value, log } from 'wifi.common';
 import * as fs from 'fs';
 
+/*
+ * The 6 GHz band allows WPA3 and OWE only (IEEE 802.11-2024 12.12.2,
+ * WPA3 Specification v3.5 11.2).
+ */
+const encryption_6g = {
+	'sae-mixed': 'sae',
+	'psk3-mixed': 'sae',
+	'wpa3-mixed': 'wpa3',
+	'wpa': 'wpa3',
+	'wpa2': 'wpa3',
+	'wpa-mixed': 'wpa3',
+	'none': 'owe',
+	'psk': 'sae',
+	'psk2': 'sae',
+	'psk-mixed': 'sae',
+};
+
+export function encryption_band(encryption, band) {
+	if (band != '6g')
+		return encryption;
+
+	let enc = split(encryption ?? 'none', '+', 2);
+	if (!encryption_6g[enc[0]])
+		return encryption;
+
+	enc[0] = encryption_6g[enc[0]];
+	return join('+', enc);
+};
+
 export function parse_encryption(config, dev_config, phy_features) {
 	if (!config.encryption)
 		config.encryption = 'none';

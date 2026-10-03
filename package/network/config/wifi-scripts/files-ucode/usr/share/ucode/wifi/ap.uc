@@ -11,35 +11,6 @@ import {
 import * as netifd from 'wifi.netifd';
 import * as iface from 'wifi.iface';
 
-/*
- * The 6 GHz band allows WPA3 and OWE only (IEEE 802.11-2024 12.12.2,
- * WPA3 Specification v3.5 11.2).
- */
-const encryption_6g = {
-	'sae-mixed': 'sae',
-	'psk3-mixed': 'sae',
-	'wpa3-mixed': 'wpa3',
-	'wpa': 'wpa3',
-	'wpa2': 'wpa3',
-	'wpa-mixed': 'wpa3',
-	'none': 'owe',
-	'psk': 'sae',
-	'psk2': 'sae',
-	'psk-mixed': 'sae',
-};
-
-function encryption_band(encryption, band) {
-	if (band != '6g')
-		return encryption;
-
-	let enc = split(encryption ?? 'none', '+', 2);
-	if (!encryption_6g[enc[0]])
-		return encryption;
-
-	enc[0] = encryption_6g[enc[0]];
-	return join('+', enc);
-}
-
 function key_kind(key) {
 	const n = length(key);
 
@@ -684,7 +655,7 @@ export function generate(interface, data, config, vlans, stas, phy_features) {
 
 	config.sae_station_passwords = station_password_count(stas);
 
-	config.encryption = encryption_band(config.encryption, data.config.band);
+	config.encryption = iface.encryption_band(config.encryption, data.config.band);
 	iface.parse_encryption(config, data.config, phy_features);
 
 	const refusal = bss_refusal(config, data.config.band);
