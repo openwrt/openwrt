@@ -1,0 +1,18 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+
+. /lib/functions/uci-defaults.sh
+
+board_config_update
+
+case "$(board_name)" in
+dlink,dap-2690-a1)
+	ucidef_set_led_netdev "lan" "LAN" "green:lan" "lan" "link tx rx"
+	ucidef_set_led_wlan "wlan2g" "WLAN 2.4 GHz" "green:wlan-2ghz" "phy0tpt"
+	ucidef_set_led_wlan "wlan5g" "WLAN 5 GHz" "green:wlan-5ghz" "phy1tpt"
+	;;
+esac
+
+board_config_flush
+
+exit 0
