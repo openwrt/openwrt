@@ -1,0 +1,63 @@
+From 80e6b8d6c56e86068768f783b1ff60fb76d33f6d Mon Sep 17 00:00:00 2001
+From: Til Kaiser <mail@tk154.de>
+Date: Wed, 22 Apr 2026 13:00:00 +0200
+Subject: [PATCH] block: fitblk: support inline data subimages
+
+Inline FIT images store subimage payloads in the "data" property.
+The current fitblk parser only accepts external-data layouts using
+"data-offset" or "data-position", so it sees the configuration but
+never maps any filesystem subimages from an inline FIT.
+
+Accept "data" payloads as well and derive image position and length
+from that property when needed.
+
+Signed-off-by: Til Kaiser <mail@tk154.de>
+---
+ drivers/block/fitblk.c | 17 +++++++++++++----
+ 1 file changed, 13 insertions(+), 4 deletions(-)
+
+--- a/drivers/block/fitblk.c
++++ b/drivers/block/fitblk.c
+@@ -323,6 +323,8 @@ static int parse_fit_on_dev(struct devic
+ 	u64 dsize, dsectors, imgmaxsect = 0;
+ 	u32 size, image_pos, image_len;
+ 	const __be32 *image_offset_be, *image_len_be, *image_pos_be;
++	const void *image_data;
++	int image_data_len;
+ 	int ret = 0, node, images, config;
+ 	const char *image_name, *image_type, *image_description,
+ 		*config_default, *config_description, *config_loadables;
+@@ -492,15 +494,21 @@ static int parse_fit_on_dev(struct devic
+ 	fdt_for_each_subnode(node, fit, images) {
+ 		image_name = fdt_get_name(fit, node, &image_name_len);
+ 		image_type = fdt_getprop(fit, node, FIT_TYPE_PROP, &image_type_len);
++		image_data = fdt_getprop(fit, node, FIT_DATA_PROP, &image_data_len);
+ 		image_offset_be = fdt_getprop(fit, node, FIT_DATA_OFFSET_PROP, NULL);
+ 		image_pos_be = fdt_getprop(fit, node, FIT_DATA_POSITION_PROP, NULL);
+ 		image_len_be = fdt_getprop(fit, node, FIT_DATA_SIZE_PROP, NULL);
+ 
+-		if (!image_name || !image_type || !image_len_be ||
+-		    !image_name_len || !image_type_len)
++		if (!image_name || !image_type || !image_name_len || !image_type_len)
++			continue;
++
++		if (image_len_be)
++			image_len = be32_to_cpu(*image_len_be);
++		else if (image_data && image_data_len > 0)
++			image_len = image_data_len;
++		else
+ 			continue;
+ 
+-		image_len = be32_to_cpu(*image_len_be);
+ 		if (!image_len)
+ 			continue;
+ 
+@@ -508,6 +516,8 @@ static int parse_fit_on_dev(struct devic
+ 			image_pos = be32_to_cpu(*image_offset_be) + size;
+ 		else if (image_pos_be)
+ 			image_pos = be32_to_cpu(*image_pos_be);
++		else if (image_data)
++			image_pos = (const char *)image_data - (const char *)fit;
+ 		else
+ 			continue;
+ 

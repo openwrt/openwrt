@@ -1,0 +1,41 @@
+#
+# Copyright (c) 2015 The Linux Foundation. All rights reserved.
+# Copyright (c) 2011-2015 OpenWrt.org
+#
+
+. /lib/functions/uci-defaults.sh
+. /lib/functions/system.sh
+
+ipq53xx_setup_interfaces()
+{
+	local board="$1"
+
+	case "$board" in
+	ubnt,u7-pro-xgs)
+		ucidef_set_interface_lan "lan"
+		;;
+	*)
+		echo "Unsupported hardware. Network interfaces not initialized"
+		;;
+	esac
+}
+
+ipq53xx_setup_wlan()
+{
+	local board="$1"
+
+	case "$board" in
+	ubnt,u7-pro-xgs)
+		ucidef_add_wlan "soc@0/18000000.pcie/pci0001:00/0001:00:00.0/0001:01:00.0" \
+			"soc@0/10000000.pcie/pci0002:00/0002:00:00.0/0002:01:00.0"
+		;;
+	esac
+}
+
+board_config_update
+board=$(board_name)
+ipq53xx_setup_interfaces "$board"
+ipq53xx_setup_wlan "$board"
+board_config_flush
+
+exit 0
