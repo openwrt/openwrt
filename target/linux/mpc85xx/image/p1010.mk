@@ -22,8 +22,8 @@ define Device/aerohive_br200-wp
   KERNEL_NAME := simpleImage.br200-wp
   KERNEL := kernel-bin | uImage none
   KERNEL_INITRAMFS := kernel-bin | uImage none
-  KERNEL_ENTRY := 0x1500000
-  KERNEL_LOADADDR := 0x1500000
+  KERNEL_ENTRY := 0x3000000
+  KERNEL_LOADADDR := 0x3000000
   KERNEL_SIZE := 8m
   IMAGES := fdt.bin sysupgrade.bin
   IMAGE/fdt.bin := append-dtb
@@ -41,8 +41,8 @@ define Device/enterasys_ws-ap3715i
   DEVICE_PACKAGES := kmod-phy-at803x
   BLOCKSIZE := 64k
   KERNEL_NAME := simpleImage.ws-ap3715i
-  KERNEL_ENTRY := 0x1500000
-  KERNEL_LOADADDR := 0x1500000
+  KERNEL_ENTRY := 0x3000000
+  KERNEL_LOADADDR := 0x3000000
   KERNEL = kernel-bin | libdeflate-gzip | uImage gzip
   IMAGES := sysupgrade.bin
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
