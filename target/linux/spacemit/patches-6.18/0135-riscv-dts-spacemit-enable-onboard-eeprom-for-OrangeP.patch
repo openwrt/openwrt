@@ -1,0 +1,124 @@
+From dd459ba73344d9f763edf261be50547e583da12d Mon Sep 17 00:00:00 2001
+From: Chukun Pan <amadeus@jmu.edu.cn>
+Date: Tue, 1 Sep 2026 16:00:10 +0800
+Subject: [PATCH] riscv: dts: spacemit: enable onboard eeprom for OrangePi
+
+Enable the i2c2 bus and add the connected GT24C02B EEPROM.
+
+[   6.766] TlvInfo Header:
+[   6.766]    Id String:    TlvInfo
+[   6.769]    Version:      1
+[   6.772]    Total Length: 38
+[   6.775] TLV Name             Code Len Value
+[   6.779] -------------------- ---- --- -----
+[   6.783] Base MAC Address     0x24   6 .....
+[   6.788] MAC Addresses        0x2A   2 2
+[   6.792] Product Name         0x21  15 x1_orangepi-r2s
+[   6.797] Unknown              0x41   1  0x01
+[   6.801] CRC-32               0xFE   4 0xE5A74B18
+[   6.806] Checksum is valid.
+
+Signed-off-by: Chukun Pan <amadeus@jmu.edu.cn>
+Tested-by: Gong Shuai <gsh517025@gmail.com> # OrangePi-RV2
+Reviewed-by: Yixun Lan <dlan@kernel.org>
+Link: https://patch.msgid.link/20260901080010.95040-1-amadeus@jmu.edu.cn
+Signed-off-by: Yixun Lan <dlan@kernel.org>
+(cherry picked from commit ac436e6879f5bf25e971d80f96f9392b61ff54c6)
+---
+ .../boot/dts/spacemit/k1-orangepi-r2s.dts     | 30 ++++++++++++++++++
+ .../boot/dts/spacemit/k1-orangepi-rv2.dts     | 31 +++++++++++++++++++
+ 2 files changed, 61 insertions(+)
+
+--- a/arch/riscv/boot/dts/spacemit/k1-orangepi-r2s.dts
++++ b/arch/riscv/boot/dts/spacemit/k1-orangepi-r2s.dts
+@@ -13,6 +13,7 @@
+ 	compatible = "xunlong,orangepi-r2s", "spacemit,k1";
+ 
+ 	aliases {
++		i2c2 = &i2c2;
+ 		i2c8 = &i2c8;
+ 		serial0 = &uart0;
+ 		ethernet0 = &eth0;
+@@ -111,6 +112,35 @@
+ 		};
+ 	};
+ };
++
++&i2c2 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2c2_0_cfg>;
++	status = "okay";
++
++	eeprom@50 {
++		compatible = "atmel,24c02";
++		reg = <0x50>;
++		pagesize = <16>;
++		size = <256>;
++		read-only;
++		vcc-supply = <&buck3_1v8>;
++
++		nvmem-layout {
++			compatible = "onie,tlv-layout";
++
++			mac-address {
++				#nvmem-cell-cells = <1>;
++			};
++
++			num-macs {
++			};
++
++			product-name {
++			};
++		};
++	};
++};
+ 
+ &i2c8 {
+ 	pinctrl-names = "default";
+--- a/arch/riscv/boot/dts/spacemit/k1-orangepi-rv2.dts
++++ b/arch/riscv/boot/dts/spacemit/k1-orangepi-rv2.dts
+@@ -17,6 +17,8 @@
+ 		serial0 = &uart0;
+ 		ethernet0 = &eth0;
+ 		ethernet1 = &eth1;
++		i2c2 = &i2c2;
++		i2c8 = &i2c8;
+ 		mmc0 = &emmc;
+ 		mmc1 = &sdhci0;
+ 	};
+@@ -137,6 +139,35 @@
+ 		};
+ 	};
+ };
++
++&i2c2 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2c2_0_cfg>;
++	status = "okay";
++
++	eeprom@50 {
++		compatible = "atmel,24c02";
++		reg = <0x50>;
++		pagesize = <16>;
++		size = <256>;
++		read-only;
++		vcc-supply = <&buck3_1v8>;
++
++		nvmem-layout {
++			compatible = "onie,tlv-layout";
++
++			mac-address {
++				#nvmem-cell-cells = <1>;
++			};
++
++			num-macs {
++			};
++
++			product-name {
++			};
++		};
++	};
++};
+ 
+ &i2c8 {
+ 	pinctrl-names = "default";
