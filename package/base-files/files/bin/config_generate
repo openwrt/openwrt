@@ -92,7 +92,7 @@ generate_static_network() {
 
 addr_offset=2
 generate_network() {
-	local ports device macaddr protocol type ipaddr netmask vlan
+	local ports device macaddr protocol type ipaddr netmask vlan portmacaddr
 	local bridge=$2
 
 	json_select network
@@ -117,15 +117,21 @@ generate_network() {
 			set network.@device[-1].type='bridge'
 		EOF
 		for port in $ports; do uci add_list network.@device[-1].ports="$port"; done
-		[ -n "$macaddr" ] && {
+
+		json_select network_device
 			for port in $ports; do
-				uci -q batch <<-EOF
-					add network device
-					set network.@device[-1].name='$port'
-					set network.@device[-1].macaddr='$macaddr'
-				EOF
+				json_select "$port" && json_get_var portmacaddr macaddr && json_select ..
+				[ -n "$portmacaddr" ] || portmacaddr="$macaddr"
+				if [ -n "$portmacaddr" ]; then
+					uci -q batch <<-EOF
+						add network device
+						set network.@device[-1].name='$port'
+						set network.@device[-1].macaddr='$macaddr'
+					EOF
+				fi
 			done
-		}
+		json_select ..
+
 		device=br-$1
 		type=
 		macaddr=""
