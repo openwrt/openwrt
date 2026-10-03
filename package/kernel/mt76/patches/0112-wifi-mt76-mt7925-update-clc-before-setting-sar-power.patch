@@ -1,0 +1,42 @@
+From 383bb0511dfe6500c498d85a329d0abfeb892d46 Mon Sep 17 00:00:00 2001
+From: "Jared.Huang" <jared.huang@mediatek.com>
+Date: Wed, 17 Jun 2026 15:13:05 +0800
+Subject: [PATCH 112/170] wifi: mt76: mt7925: update clc before setting sar
+ power table
+
+[ Upstream commit 8a27c5c764040fbc990cc416a927b1d7eadf559f ]
+
+Fix the power table update sequence to ensure CLC is loaded before
+setting SAR power table.
+
+The firmware requires CLC baseline to be established first
+to properly calculate the final power limit as min(clc_limit, rate_limit,sar_limit).
+
+Fixes: 9557b6fe0c8b ("wifi: mt76: mt7925: refine the txpower initialization flow")
+Signed-off-by: Jared.Huang <jared.huang@mediatek.com>
+Link: https://patch.msgid.link/20260617071305.1808394-1-jb.tsai@mediatek.com
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ mt7925/main.c | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+--- a/mt7925/main.c
++++ b/mt7925/main.c
+@@ -1793,9 +1793,15 @@ static int mt7925_set_sar_specs(struct i
+ 	int err;
+ 
+ 	mt792x_mutex_acquire(dev);
++	err = mt7925_mcu_set_clc(dev, dev->mt76.alpha2,
++			 dev->country_ie_env);
++	if (err < 0)
++		goto out;
++
+ 	err = mt7925_set_tx_sar_pwr(hw, sar);
+-	mt792x_mutex_release(dev);
+ 
++out:
++	mt792x_mutex_release(dev);
+ 	return err;
+ }
+ 

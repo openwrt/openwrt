@@ -1,0 +1,116 @@
+From 0ead464cb43ef47f5c2bfbf94c8e024e91e900a2 Mon Sep 17 00:00:00 2001
+From: Javier Tia <floss@jetm.me>
+Date: Sat, 25 Apr 2026 14:49:55 -0500
+Subject: [PATCH 156/170] wifi: mt76: mt7925: advertise EHT 320MHz capabilities
+ for 6GHz band
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+[ Upstream commit 77833c57a33450c0409e4b90d7721d255ea23a9e ]
+
+mt7925_init_eht_caps() only populates EHT MCS/NSS maps for BW <= 80
+and BW = 160, but never sets BW = 320. This means iw phy shows no
+320MHz MCS map entries even though the hardware supports 320MHz
+operation in the 6GHz band.
+
+Add the missing 320MHz capability bits for 6GHz:
+  - PHY_CAP0: IEEE80211_EHT_PHY_CAP0_320MHZ_IN_6GHZ
+  - PHY_CAP1: beamformee SS for 320MHz
+  - PHY_CAP2: sounding dimensions for 320MHz
+  - PHY_CAP6: MCS15 support for 320MHz width
+  - MCS/NSS: populate bw._320 maps for 6GHz band
+
+Introduce is_320mhz_supported() to gate 320MHz on MT7927 only, since
+MT7925 does not support 320MHz operation.
+
+Tested-by: Marcin FM <marcin@lgic.pl>
+Tested-by: Cristian-Florin Radoi <radoi.chris@gmail.com>
+Tested-by: George Salukvadze <giosal90@gmail.com>
+Tested-by: Evgeny Kapusta <3193631@gmail.com>
+Tested-by: Samu Toljamo <samu.toljamo@gmail.com>
+Tested-by: Ariel Rosenfeld <ariel.rosenfeld.750@gmail.com>
+Tested-by: Chapuis Dario <chapuisdario4@gmail.com>
+Tested-by: Thibaut François <tibo@humeurlibre.fr>
+Tested-by: 张旭涵 <Loong.0x00@gmail.com>
+Reviewed-by: Sean Wang <sean.wang@mediatek.com>
+Signed-off-by: Javier Tia <floss@jetm.me>
+Link: https://patch.msgid.link/20260425195011.790265-6-sean.wang@kernel.org
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Stable-dep-of: 404c4e564f6b ("wifi: mt76: mt7925: Fix EHT Beamformee SS subfields to meet 802.11be minimum")
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ .../net/wireless/mediatek/mt76/mt76_connac.h  |  5 +++++
+ .../net/wireless/mediatek/mt76/mt7925/main.c  | 22 ++++++++++++++++++-
+ 2 files changed, 26 insertions(+), 1 deletion(-)
+
+--- a/mt76_connac.h
++++ b/mt76_connac.h
+@@ -182,6 +182,11 @@ static inline bool is_mt7925(struct mt76
+ 	return mt76_chip(dev) == 0x7925;
+ }
+ 
++static inline bool is_320mhz_supported(struct mt76_dev *dev)
++{
++	return mt76_chip(dev) == 0x7927;
++}
++
+ static inline bool is_mt7920(struct mt76_dev *dev)
+ {
+ 	return mt76_chip(dev) == 0x7920;
+--- a/mt7925/main.c
++++ b/mt7925/main.c
+@@ -183,6 +183,10 @@ mt7925_init_eht_caps(struct mt792x_phy *
+ 		IEEE80211_EHT_PHY_CAP0_SU_BEAMFORMER |
+ 		IEEE80211_EHT_PHY_CAP0_SU_BEAMFORMEE;
+ 
++	if (band == NL80211_BAND_6GHZ && is_320mhz_supported(&phy->dev->mt76))
++		eht_cap_elem->phy_cap_info[0] |=
++			IEEE80211_EHT_PHY_CAP0_320MHZ_IN_6GHZ;
++
+ 	eht_cap_elem->phy_cap_info[0] |=
+ 		u8_encode_bits(u8_get_bits(sts - 1, BIT(0)),
+ 			       IEEE80211_EHT_PHY_CAP0_BEAMFORMEE_SS_80MHZ_MASK);
+@@ -193,10 +197,20 @@ mt7925_init_eht_caps(struct mt792x_phy *
+ 		u8_encode_bits(sts - 1,
+ 			       IEEE80211_EHT_PHY_CAP1_BEAMFORMEE_SS_160MHZ_MASK);
+ 
++	if (band == NL80211_BAND_6GHZ && is_320mhz_supported(&phy->dev->mt76))
++		eht_cap_elem->phy_cap_info[1] |=
++			u8_encode_bits(sts - 1,
++				       IEEE80211_EHT_PHY_CAP1_BEAMFORMEE_SS_320MHZ_MASK);
++
+ 	eht_cap_elem->phy_cap_info[2] =
+ 		u8_encode_bits(sts - 1, IEEE80211_EHT_PHY_CAP2_SOUNDING_DIM_80MHZ_MASK) |
+ 		u8_encode_bits(sts - 1, IEEE80211_EHT_PHY_CAP2_SOUNDING_DIM_160MHZ_MASK);
+ 
++	if (band == NL80211_BAND_6GHZ && is_320mhz_supported(&phy->dev->mt76))
++		eht_cap_elem->phy_cap_info[2] |=
++			u8_encode_bits(sts - 1,
++				       IEEE80211_EHT_PHY_CAP2_SOUNDING_DIM_320MHZ_MASK);
++
+ 	eht_cap_elem->phy_cap_info[3] =
+ 		IEEE80211_EHT_PHY_CAP3_NG_16_SU_FEEDBACK |
+ 		IEEE80211_EHT_PHY_CAP3_NG_16_MU_FEEDBACK |
+@@ -217,7 +231,8 @@ mt7925_init_eht_caps(struct mt792x_phy *
+ 		u8_encode_bits(u8_get_bits(0x11, GENMASK(1, 0)),
+ 			       IEEE80211_EHT_PHY_CAP5_MAX_NUM_SUPP_EHT_LTF_MASK);
+ 
+-	val = width == NL80211_CHAN_WIDTH_160 ? 0x7 :
++	val = width == NL80211_CHAN_WIDTH_320 ? 0xf :
++	      width == NL80211_CHAN_WIDTH_160 ? 0x7 :
+ 	      width == NL80211_CHAN_WIDTH_80 ? 0x3 : 0x1;
+ 	eht_cap_elem->phy_cap_info[6] =
+ 		u8_encode_bits(u8_get_bits(0x11, GENMASK(4, 2)),
+@@ -239,6 +254,11 @@ mt7925_init_eht_caps(struct mt792x_phy *
+ 	eht_nss->bw._160.rx_tx_mcs9_max_nss = val;
+ 	eht_nss->bw._160.rx_tx_mcs11_max_nss = val;
+ 	eht_nss->bw._160.rx_tx_mcs13_max_nss = val;
++	if (band == NL80211_BAND_6GHZ && is_320mhz_supported(&phy->dev->mt76)) {
++		eht_nss->bw._320.rx_tx_mcs9_max_nss = val;
++		eht_nss->bw._320.rx_tx_mcs11_max_nss = val;
++		eht_nss->bw._320.rx_tx_mcs13_max_nss = val;
++	}
+ }
+ 
+ int mt7925_init_mlo_caps(struct mt792x_phy *phy)

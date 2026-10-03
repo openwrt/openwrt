@@ -1,0 +1,56 @@
+From 80818e72aec4d82875b922d4cb8fac460d577e2b Mon Sep 17 00:00:00 2001
+From: Jose Ignacio Tornos Martinez <jtornosm@redhat.com>
+Date: Thu, 2 Jul 2026 12:43:37 +0200
+Subject: [PATCH 160/170] wifi: mt76: mt7996: remove beacon_int_min_gcd from
+ ADHOC interface combinations
+
+[ Upstream commit 4df22710a77d2365e56d720bc4106e54c1dfa2ff ]
+
+The driver fails to register with error -22 (EINVAL) due to a cfg80211
+validation failure in wiphy_verify_iface_combinations().
+
+Commit 5ef0e8e2653b ("wifi: mt76: mt7996: fix iface combination for
+different chipsets") added beacon_int_min_gcd to if_comb_global and
+if_comb_global_7992, but these combinations include ADHOC (IBSS)
+interface type. This violates a cfg80211 rule from commit 56271da29c52
+("cfg80211: disallow beacon_int_min_gcd with IBSS") that explicitly
+forbids combining ADHOC with beacon_int_min_gcd.
+
+The restriction exists because beacon_int_min_gcd requires static,
+predictable beacon intervals to coordinate multiple beaconing interfaces,
+but ADHOC interfaces have dynamic beacon intervals that change when
+joining different networks, making the GCD constraint unenforceable.
+
+Remove beacon_int_min_gcd from the interface combinations that include
+ADHOC because they are not necessary for ADHOC operation. The if_comb
+combination (AP/MESH/STA only, without ADHOC) correctly retains
+beacon_int_min_gcd for multi-AP coordination.
+
+Fixes: 5ef0e8e2653b ("wifi: mt76: mt7996: fix iface combination for different chipsets")
+Signed-off-by: Jose Ignacio Tornos Martinez <jtornosm@redhat.com>
+Tested-by: Alex Gavin <alex.gavin@candelatech.com>
+Link: https://patch.msgid.link/20260702104337.679536-1-jtornosm@redhat.com
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ mt7996/init.c | 2 --
+ 1 file changed, 2 deletions(-)
+
+--- a/mt7996/init.c
++++ b/mt7996/init.c
+@@ -34,7 +34,6 @@ static const struct ieee80211_iface_comb
+ 			       BIT(NL80211_CHAN_WIDTH_40) |
+ 			       BIT(NL80211_CHAN_WIDTH_80) |
+ 			       BIT(NL80211_CHAN_WIDTH_160),
+-	.beacon_int_min_gcd = 100,
+ };
+ 
+ static const struct ieee80211_iface_combination if_comb_global_7992 = {
+@@ -47,7 +46,6 @@ static const struct ieee80211_iface_comb
+ 			       BIT(NL80211_CHAN_WIDTH_40) |
+ 			       BIT(NL80211_CHAN_WIDTH_80) |
+ 			       BIT(NL80211_CHAN_WIDTH_160),
+-	.beacon_int_min_gcd = 100,
+ };
+ 
+ static const struct ieee80211_iface_limit if_limits[] = {

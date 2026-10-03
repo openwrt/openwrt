@@ -1,0 +1,30 @@
+From cde306add3bf9c544e211cc059e189a0a4a4aa83 Mon Sep 17 00:00:00 2001
+From: Devin Wittmayer <lucid_duck@justthetip.ca>
+Date: Wed, 27 May 2026 07:47:35 -0700
+Subject: [PATCH 165/170] wifi: mt76: mt7925: add Netgear A8500 USB device ID
+
+[ Upstream commit 291b067a02b9c1fd272057ebf47c365260955fd2 ]
+
+Add USB device ID for the Netgear A8500 (0846:9050) which uses
+the mt7925 chipset.
+
+Signed-off-by: Devin Wittmayer <lucid_duck@justthetip.ca>
+Link: https://patch.msgid.link/20260527144735.10254-1-lucid_duck@justthetip.ca
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ mt7925/usb.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/mt7925/usb.c
++++ b/mt7925/usb.c
+@@ -12,6 +12,9 @@
+ static const struct usb_device_id mt7925u_device_table[] = {
+ 	{ USB_DEVICE_AND_INTERFACE_INFO(0x0e8d, 0x7925, 0xff, 0xff, 0xff),
+ 		.driver_info = (kernel_ulong_t)MT7925_FIRMWARE_WM },
++	/* Netgear, Inc. A8500 */
++	{ USB_DEVICE_AND_INTERFACE_INFO(0x0846, 0x9050, 0xff, 0xff, 0xff),
++		.driver_info = (kernel_ulong_t)MT7925_FIRMWARE_WM },
+ 	/* Netgear, Inc. A9000 */
+ 	{ USB_DEVICE_AND_INTERFACE_INFO(0x0846, 0x9072, 0xff, 0xff, 0xff),
+ 		.driver_info = (kernel_ulong_t)MT7925_FIRMWARE_WM },

@@ -1,0 +1,37 @@
+From efc57983a1d4689212deb7d2f815df9a8f278052 Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@nbd.name>
+Date: Fri, 24 Jul 2026 12:47:58 +0000
+Subject: [PATCH 142/170] wifi: mt76: only consume the WO drop bit on WED v2
+ devices
+
+[ Upstream commit 1df54335590bb025c3bd706a9ba9c6e73a1d3000 ]
+
+The RX path is handled by the WO MCU only on WED v2 hardware. On WED
+v3 the same buf1 bit does not carry drop information, so evaluating it
+there causes spurious RX drops.
+
+Fixes: e4d2b8bcac11 ("wifi: mt76: drop the incorrect scatter and gather frame")
+Link: https://patch.msgid.link/20260724124813.3961474-14-nbd@nbd.name
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ dma.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+--- a/dma.c
++++ b/dma.c
+@@ -547,8 +547,13 @@ mt76_dma_get_buf(struct mt76_dev *dev, s
+ 		t->ptr = NULL;
+ 
+ 		mt76_put_rxwi(dev, t);
+-		if (drop)
++#ifdef CONFIG_NET_MEDIATEK_SOC_WED
++		/* the WO MCU owns the RX path only on WED v2, on newer
++		 * versions this buf1 bit carries no drop information
++		 */
++		if (drop && dev->mmio.wed.version == 2)
+ 			*drop |= !!(buf1 & MT_DMA_CTL_WO_DROP);
++#endif
+ 	} else {
+ 		dma_sync_single_for_cpu(dev->dma_dev, e->dma_addr[0],
+ 				SKB_WITH_OVERHEAD(q->buf_size),

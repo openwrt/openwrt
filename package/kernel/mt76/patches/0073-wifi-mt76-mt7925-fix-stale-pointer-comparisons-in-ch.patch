@@ -1,0 +1,52 @@
+From b8bf7c221b36451e9a88a33daa0bbbadcb73ad54 Mon Sep 17 00:00:00 2001
+From: Javier Tia <floss@jetm.me>
+Date: Sat, 25 Apr 2026 14:49:51 -0500
+Subject: [PATCH 073/170] wifi: mt76: mt7925: fix stale pointer comparisons in
+ change_vif_links
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+[ Upstream commit 9f1accf3069a0cd42c14ca6c7d44d5b17cc48a80 ]
+
+In the error path of mt7925_change_vif_links(), the free: label iterates
+over link_ids to clean up, but compares against `mconf` and `mlink`
+which hold stale values from the last loop iteration rather than the
+current link_id being freed.
+
+Use array-indexed access (mconfs[link_id] / mlinks[link_id]) to compare
+against the correct per-link pointers.
+
+Fixes: 69acd6d910b0 ("wifi: mt76: mt7925: add mt7925_change_vif_links")
+Tested-by: Marcin FM <marcin@lgic.pl>
+Tested-by: Cristian-Florin Radoi <radoi.chris@gmail.com>
+Tested-by: George Salukvadze <giosal90@gmail.com>
+Tested-by: Evgeny Kapusta <3193631@gmail.com>
+Tested-by: Samu Toljamo <samu.toljamo@gmail.com>
+Tested-by: Ariel Rosenfeld <ariel.rosenfeld.750@gmail.com>
+Tested-by: Chapuis Dario <chapuisdario4@gmail.com>
+Tested-by: Thibaut François <tibo@humeurlibre.fr>
+Tested-by: 张旭涵 <Loong.0x00@gmail.com>
+Reviewed-by: Sean Wang <sean.wang@mediatek.com>
+Signed-off-by: Javier Tia <floss@jetm.me>
+Link: https://patch.msgid.link/20260425195011.790265-2-sean.wang@kernel.org
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ mt7925/main.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/mt7925/main.c
++++ b/mt7925/main.c
+@@ -2182,9 +2182,9 @@ free:
+ 		rcu_assign_pointer(mvif->link_conf[link_id], NULL);
+ 		rcu_assign_pointer(mvif->sta.link[link_id], NULL);
+ 
+-		if (mconf != &mvif->bss_conf)
++		if (mconfs[link_id] != &mvif->bss_conf)
+ 			devm_kfree(dev->mt76.dev, mconfs[link_id]);
+-		if (mlink != &mvif->sta.deflink)
++		if (mlinks[link_id] != &mvif->sta.deflink)
+ 			devm_kfree(dev->mt76.dev, mlinks[link_id]);
+ 	}
+ 

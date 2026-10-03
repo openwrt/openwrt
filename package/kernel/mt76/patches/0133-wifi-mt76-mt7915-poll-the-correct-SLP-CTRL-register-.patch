@@ -1,0 +1,31 @@
+From 31faa92cd50742b70c234e20dcad03d9d0c458e4 Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@nbd.name>
+Date: Wed, 22 Jul 2026 08:26:10 +0000
+Subject: [PATCH 133/170] wifi: mt76: mt7915: poll the correct SLP CTRL
+ register for the second adie
+
+[ Upstream commit dd59a6126a8f1bd52bf6bd057bf0c8307f76a74b ]
+
+The clock enable path for the second adie sets MT_ADIE_SLP_CTRL_CK0(1)
+but polled the busy bit of MT_ADIE_SLP_CTRL_CK0(0), so dual-adie
+bring-up could proceed before the adie1 clock was stable.
+
+Fixes: 99ad32a4ca3a ("mt76: mt7915: add support for MT7986")
+Link: https://patch.msgid.link/20260722082610.2699628-18-nbd@nbd.name
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ mt7915/soc.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/mt7915/soc.c
++++ b/mt7915/soc.c
+@@ -914,7 +914,7 @@ static void mt7986_wmac_clock_enable(str
+ 
+ 		read_poll_timeout(mt76_rr, cur, !(cur & MT_SLP_CTRL_BSY_MASK),
+ 				  USEC_PER_MSEC, 50 * USEC_PER_MSEC, false,
+-				  dev, MT_ADIE_SLP_CTRL_CK0(0));
++				  dev, MT_ADIE_SLP_CTRL_CK0(1));
+ 	}
+ 	mt76_wmac_spi_unlock(dev);
+ 

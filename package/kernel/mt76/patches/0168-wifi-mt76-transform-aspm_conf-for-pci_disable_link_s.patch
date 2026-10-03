@@ -1,0 +1,42 @@
+From 7d177cad4df5c2a047aeaee33ff3f4baba641bca Mon Sep 17 00:00:00 2001
+From: Jiajia Liu <liujiajia@kylinos.cn>
+Date: Tue, 2 Jun 2026 13:43:49 +0800
+Subject: [PATCH 168/170] wifi: mt76: transform aspm_conf for
+ pci_disable_link_state
+
+[ Upstream commit 2dd78856223484895306351df1f903a4b75d213f ]
+
+commit b478e162f227 ("PCI/ASPM: Consolidate link state defines") changed
+PCIE_LINK_STATE_L0S (1) to (BIT(0) | BIT(1)). PCI_EXP_LNKCTL_ASPM_L0S (1)
+and PCI_EXP_LNKCTL_ASPM_L1 (2) are no longer matched with
+PCIE_LINK_STATE_L0S (3) and PCIE_LINK_STATE_L1 (4).
+
+On the platform enabling ASPM L0s and L1, mt76_pci_disable_aspm is not able
+to disable L1. Fix this by transforming aspm_conf to pcie link state.
+
+Signed-off-by: Jiajia Liu <liujiajia@kylinos.cn>
+Link: https://patch.msgid.link/20260602054349.42429-1-liujia6264@gmail.com
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ pci.c | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+--- a/pci.c
++++ b/pci.c
+@@ -30,8 +30,14 @@ void mt76_pci_disable_aspm(struct pci_de
+ 
+ 	if (IS_ENABLED(CONFIG_PCIEASPM)) {
+ 		int err;
++		int state = 0;
+ 
+-		err = pci_disable_link_state(pdev, aspm_conf);
++		if (aspm_conf & PCI_EXP_LNKCTL_ASPM_L0S)
++			state |= PCIE_LINK_STATE_L0S;
++		if (aspm_conf & PCI_EXP_LNKCTL_ASPM_L1)
++			state |= PCIE_LINK_STATE_L1;
++
++		err = pci_disable_link_state(pdev, state);
+ 		if (!err)
+ 			return;
+ 	}

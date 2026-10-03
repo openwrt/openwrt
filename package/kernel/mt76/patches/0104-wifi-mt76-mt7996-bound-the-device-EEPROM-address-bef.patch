@@ -1,0 +1,49 @@
+From 13b3c29a782033ce4a230be9e5618032813dbcd4 Mon Sep 17 00:00:00 2001
+From: Bryam Vargas <hexlabsecurity@proton.me>
+Date: Thu, 25 Jun 2026 07:10:27 -0500
+Subject: [PATCH] wifi: mt76: mt7996: bound the device EEPROM address before
+ the EFUSE copy
+
+mt7996_mcu_get_eeprom() derives the destination of the EFUSE/EXT block
+copy from the address reported by the MCU response (event->addr, a
+device-controlled __le32) and clamps only the copy length, never the
+destination offset into dev->mt76.eeprom.data. A malicious or
+malfunctioning device can report an arbitrary address and drive an
+out-of-bounds write of up to MT7996_EXT_EEPROM_BLOCK_SIZE bytes past
+eeprom.data.
+
+Reject a response whose address would place the copy outside eeprom.data
+before deriving the destination pointer. Devices that echo the requested
+in-bounds offset are unaffected.
+
+Fixes: 98686cd21624 ("wifi: mt76: mt7996: add driver for MediaTek Wi-Fi 7 (802.11be) devices")
+Cc: stable@vger.kernel.org
+Signed-off-by: Bryam Vargas <hexlabsecurity@proton.me>
+Link: https://patch.msgid.link/20260625-b4-disp-16f99062-v1-2-aee52ecf61b9@proton.me
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ mt7996/mcu.c | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+--- a/mt7996/mcu.c
++++ b/mt7996/mcu.c
+@@ -4275,11 +4275,18 @@ int mt7996_mcu_get_eeprom(struct mt7996_
+ 	event = (struct mt7996_mcu_eeprom_access_event *)skb->data;
+ 	if (event->valid) {
+ 		u32 ret_len = le32_to_cpu(event->eeprom.ext_eeprom.data_len);
++		u32 block = mode == EEPROM_MODE_EXT ? MT7996_EXT_EEPROM_BLOCK_SIZE :
++						      MT7996_EEPROM_BLOCK_SIZE;
+ 
+ 		addr = le32_to_cpu(event->addr);
+ 
+-		if (!buf)
++		if (!buf) {
++			if (addr > dev->mt76.eeprom.size - block) {
++				dev_kfree_skb(skb);
++				return -EINVAL;
++			}
+ 			buf = (u8 *)dev->mt76.eeprom.data + addr;
++		}
+ 
+ 		switch (mode) {
+ 		case EEPROM_MODE_EFUSE:

@@ -1,0 +1,52 @@
+From ddf6a17d8e3d0dbb841c13c10d7c1340a138a80d Mon Sep 17 00:00:00 2001
+From: Eason Lai <Eason.Lai@mediatek.com>
+Date: Fri, 3 Jul 2026 08:59:45 +0800
+Subject: [PATCH 114/170] wifi: mt76: mt792x: Fix memory leak in SDIO TX path
+
+[ Upstream commit 808f2767d4217a5b96f674288573b9b89d432eed ]
+
+When tx_prepare_skb() returns an error in the SDIO TX path, the
+skb is not freed, leading to a memory leak. This can occur when
+zero-length frames (such as WNM NULL frames) are dropped to prevent
+potential hardware TX hangs.
+
+Fix this by properly releasing the skb with ieee80211_tx_status_ext()
+when tx_prepare_skb() fails.
+
+Fixes: b747fa343817 ("mt76: mt7915: drop zero-length packet to avoid Tx hang")
+Signed-off-by: Eason Lai <Eason.Lai@mediatek.com>
+Link: https://patch.msgid.link/20260703005945.2244533-1-eason.lai@mediatek.com
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ sdio.c | 11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
+
+--- a/sdio.c
++++ b/sdio.c
+@@ -519,6 +519,10 @@ mt76s_tx_queue_skb(struct mt76_phy *phy,
+ 		   enum mt76_txq_id qid, struct sk_buff *skb,
+ 		   struct mt76_wcid *wcid, struct ieee80211_sta *sta)
+ {
++	struct ieee80211_tx_status status = {
++		.sta = sta,
++	};
++
+ 	struct mt76_tx_info tx_info = {
+ 		.skb = skb,
+ 	};
+@@ -531,8 +535,13 @@ mt76s_tx_queue_skb(struct mt76_phy *phy,
+ 
+ 	skb->prev = skb->next = NULL;
+ 	err = dev->drv->tx_prepare_skb(dev, NULL, qid, wcid, sta, &tx_info);
+-	if (err < 0)
++	if (err < 0) {
++		status.skb = tx_info.skb;
++		spin_lock_bh(&dev->rx_lock);
++		ieee80211_tx_status_ext(dev->hw, &status);
++		spin_unlock_bh(&dev->rx_lock);
+ 		return err;
++	}
+ 
+ 	q->entry[q->head].skb = tx_info.skb;
+ 	q->entry[q->head].buf_sz = len;

@@ -1,0 +1,43 @@
+From 17d6b89e09eac2d90272fceeba3644e92212e02f Mon Sep 17 00:00:00 2001
+From: Devin Wittmayer <lucid_duck@justthetip.ca>
+Date: Fri, 12 Jun 2026 17:25:43 -0700
+Subject: [PATCH 106/170] wifi: mt76: mt76x02: do not WARN on invalid rx
+ descriptor length
+
+[ Upstream commit 81497634d9f872fd3e8b03aada55574afff6f174 ]
+
+The MPDU length in the rx descriptor comes from the hardware. In
+monitor mode with the fcsfail filter enabled, the hardware passes up
+corrupted frames, and a corrupted frame can report a length larger
+than the received buffer. The bounds check correctly discards such
+frames, but its WARN_ON_ONCE wrapper means any over-the-air garbage
+frame taints the kernel, and panics it on the first such frame when
+panic_on_warn is set.
+
+Drop the WARN and discard the frame silently, matching what
+commit c2d4c8723dbf ("mt76x2: remove some harmless WARN_ONs in tx
+status and rx path") did for the neighboring rx and tx status paths.
+
+Observed immediately on rx with an MT7612U in fcsfail monitor mode
+on a busy channel.
+
+Fixes: 7bc04215a66b ("mt76: add driver code for MT76x2e")
+Signed-off-by: Devin Wittmayer <lucid_duck@justthetip.ca>
+Link: https://patch.msgid.link/20260613002544.27750-2-lucid_duck@justthetip.ca
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ mt76x02_mac.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/mt76x02_mac.c
++++ b/mt76x02_mac.c
+@@ -848,7 +848,7 @@ int mt76x02_mac_process_rx(struct mt76x0
+ 		}
+ 	}
+ 
+-	if (WARN_ON_ONCE(len > skb->len))
++	if (len > skb->len)
+ 		return -EINVAL;
+ 
+ 	if (pskb_trim(skb, len))
