@@ -1,0 +1,105 @@
+From: Alexander Astrovsky <astrouski@google.com>
+Date: Mon, 31 Aug 2026 17:30:00 +0000
+Subject: [PATCH] hostapd: fix EHT MCS validation for narrower bandwidth STAs
+
+When an AP is configured for 160 MHz or 320 MHz operation,
+check_valid_eht_mcs() unconditionally sets mcs_count based solely on the
+AP's operating channel width. However, an EHT STA may only support a
+narrower channel width (e.g., an 80 MHz-only STA on a 160/320 MHz BSS,
+or a 160 MHz STA on a 320 MHz BSS). For such STAs, the EHT Capabilities
+element contains fewer MCS maps (1 map for <= 80 MHz, 2 maps for 160 MHz,
+3 maps for 320 MHz). When mcs_count exceeds the number of maps supported
+by the STA, check_valid_eht_mcs_nss() attempts to access non-existent MCS
+maps, reading past the end of the station's advertised MCS map and
+failing association.
+
+In addition, check_valid_eht_mcs_nss() improperly accumulated pointer
+offsets in-place (ap_mcs += i * 3; sta_mcs += i * 3;) inside the outer
+loop with a hardcoded stride of 3. The offsets accumulate, so the third
+iteration starts at offset 9 instead of 6, past the end of the 9-byte
+EHT MCS/NSS set even when map_len is 3.
+
+Fix this by:
+1. Passing the station's HE capabilities into check_valid_eht_mcs().
+2. Only incrementing mcs_count for 160 MHz and 320 MHz if the station
+   actually advertises 160 MHz (in HE PHY capabilities) and 320 MHz (in
+   6 GHz EHT PHY capabilities) support.
+3. In check_valid_eht_mcs_nss(), using direct 2D index calculation
+   (idx = i * map_len + j) without mutating the base pointers.
+
+Signed-off-by: Alexander Astrovsky <astrouski@google.com>
+---
+--- a/src/ap/ieee802_11_eht.c
++++ b/src/ap/ieee802_11_eht.c
+@@ -279,14 +279,13 @@ static bool check_valid_eht_mcs_nss(stru
+ 	unsigned int i, j;
+ 
+ 	for (i = 0; i < mcs_count; i++) {
+-		ap_mcs += i * 3;
+-		sta_mcs += i * 3;
+-
+ 		for (j = 0; j < map_len; j++) {
+-			if (((ap_mcs[j] >> 4) & 0xFF) == 0)
++			unsigned int idx = i * map_len + j;
++
++			if (((ap_mcs[idx] >> 4) & 0xFF) == 0)
+ 				continue;
+ 
+-			if ((sta_mcs[j] & 0xFF) == 0)
++			if ((sta_mcs[idx] & 0xFF) == 0)
+ 				continue;
+ 
+ 			return true;
+@@ -300,11 +299,14 @@ static bool check_valid_eht_mcs_nss(stru
+ 
+ 
+ static bool check_valid_eht_mcs(struct hostapd_data *hapd,
++				const u8 *sta_he_capab,
+ 				const u8 *sta_eht_capab,
+ 				enum ieee80211_op_mode opmode)
+ {
+ 	struct hostapd_hw_modes *mode;
++	const struct ieee80211_he_capabilities *he_capab;
+ 	const struct ieee80211_eht_capabilities *capab;
++	const u8 *he_phy_cap;
+ 	const u8 *ap_mcs, *sta_mcs;
+ 	u8 mcs_count = 1;
+ 
+@@ -313,6 +315,8 @@ static bool check_valid_eht_mcs(struct h
+ 		return true;
+ 
+ 	ap_mcs = mode->eht_capab[opmode].mcs;
++	he_capab = (const struct ieee80211_he_capabilities *) sta_he_capab;
++	he_phy_cap = he_capab->he_phy_capab_info;
+ 	capab = (const struct ieee80211_eht_capabilities *) sta_eht_capab;
+ 	sta_mcs = capab->optional;
+ 
+@@ -326,11 +330,17 @@ static bool check_valid_eht_mcs(struct h
+ 
+ 	switch (hapd->iface->conf->eht_oper_chwidth) {
+ 	case CONF_OPER_CHWIDTH_320MHZ:
+-		mcs_count++;
++		if (is_6ghz_op_class(hapd->iconf->op_class) &&
++		    (capab->phy_cap[EHT_PHYCAP_320MHZ_IN_6GHZ_SUPPORT_IDX] &
++		     EHT_PHYCAP_320MHZ_IN_6GHZ_SUPPORT_MASK))
++			mcs_count++;
+ 		/* fall through */
+ 	case CONF_OPER_CHWIDTH_80P80MHZ:
+ 	case CONF_OPER_CHWIDTH_160MHZ:
+-		mcs_count++;
++		if (he_phy_cap[HE_PHYCAP_CHANNEL_WIDTH_SET_IDX] &
++		    (HE_PHYCAP_CHANNEL_WIDTH_SET_160MHZ_IN_5G |
++		     HE_PHYCAP_CHANNEL_WIDTH_SET_80PLUS80MHZ_IN_5G))
++			mcs_count++;
+ 		break;
+ 	default:
+ 		break;
+@@ -385,7 +395,7 @@ u16 copy_sta_eht_capab(struct hostapd_da
+ 	    ieee80211_invalid_eht_cap_size(mode, hapd->iconf->op_class,
+ 					   he_capab, eht_capab,
+ 					   eht_capab_len) ||
+-	    !check_valid_eht_mcs(hapd, eht_capab, opmode) ||
++	    !check_valid_eht_mcs(hapd, he_capab, eht_capab, opmode) ||
+ 	    !(sta->flags & WLAN_STA_HE)) {
+ 		sta->flags &= ~WLAN_STA_EHT;
+ 		os_free(sta->eht_capab);
