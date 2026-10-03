@@ -1199,13 +1199,9 @@ static struct sk_buff *rteth_create_skb(struct rteth_ctrl *ctrl, int ring, int s
 	skb_put(skb, len);
 
 	ctrl->cfg->decode_tag(frag, &tag);
-	if (netdev_uses_dsa(dev)) {
-		if (tag.port < ctrl->cfg->cpu_port) {
-			md_dst = tag.l2_offloaded ? ctrl->dsa_meta[tag.port] : ctrl->dsa_meta_trapped[tag.port];
-			skb_dst_set_noref(skb, &md_dst->dst);
-		}
-		if (tag.l2_offloaded)
-			skb->offload_fwd_mark = 1;
+	if (netdev_uses_dsa(dev) && tag.port < ctrl->cfg->cpu_port) {
+		md_dst = tag.l2_offloaded ? ctrl->dsa_meta[tag.port] : ctrl->dsa_meta_trapped[tag.port];
+		skb_dst_set_noref(skb, &md_dst->dst);
 	}
 
 	if (dev->features & NETIF_F_RXCSUM) {
