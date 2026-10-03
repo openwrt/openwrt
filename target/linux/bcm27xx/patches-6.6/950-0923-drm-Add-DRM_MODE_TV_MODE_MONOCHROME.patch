@@ -65,7 +65,7 @@ Signed-off-by: Nick Hollinghurst <nick.hollinghurst@raspberrypi.com>
  
 --- a/drivers/gpu/drm/drm_probe_helper.c
 +++ b/drivers/gpu/drm/drm_probe_helper.c
-@@ -1267,8 +1267,9 @@ int drm_connector_helper_tv_get_modes(st
+@@ -1294,8 +1294,9 @@ int drm_connector_helper_tv_get_modes(st
  	for (i = 0; i < tv_mode_property->num_values; i++)
  		supported_tv_modes |= BIT(tv_mode_property->values[i]);
  
