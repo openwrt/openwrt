@@ -8,6 +8,23 @@ boot() {
 		[ -n "$(fw_printenv bootcount bootchanged 2>/dev/null)" ] &&\
 			echo -e "bootcount\nbootchanged\n" | /usr/sbin/fw_setenv -s -
 		;;
+	tuoshi,lt22m)
+		# The stock loader may copy slot B over A while A is marked unstable.
+		# Only modify this environment with the verified original boot block.
+		local digest stable tries
+		digest="$(sha256sum /dev/mtd0 2>/dev/null)" || return 0
+		[ "${digest%% *}" = '45eb1fbce7dbd5ede73054e5d1870c5e131f1cd8f0b641844889afae2421542b' ] || return 0
+		stable="$(fw_printenv -n Image1Stable 2>/dev/null)" || return 0
+		tries="$(fw_printenv -n Image1Try 2>/dev/null)" || return 0
+		case "$stable:$tries" in
+		1:0) return 0 ;;
+		0:*|1:*) ;;
+		*) return 0 ;;
+		esac
+		case "$tries" in ''|*[!0-9]*) return 0 ;; esac
+		printf 'Image1Stable 1\nImage1Try 0\n' | fw_setenv -s - ||
+			logger -t bootcount 'LT22M: could not confirm stock boot success'
+		;;
 	xiaomi,mi-router-4c|\
 	xiaomi,miwifi-3a|\
 	xiaomi,miwifi-nano)
