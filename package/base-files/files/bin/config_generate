@@ -425,6 +425,16 @@ generate_led() {
 			EOF
 		;;
 
+		network)
+			local family mode
+			json_get_vars family mode
+			uci -q batch <<-EOF
+				set system.$cfg.trigger='network'
+				set system.$cfg.mode='$mode'
+				set system.$cfg.family='$family'
+			EOF
+		;;
+
 		usb)
 			local device
 			json_get_vars device

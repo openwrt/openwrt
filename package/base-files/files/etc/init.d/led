@@ -45,6 +45,7 @@ load_led() {
 	local sysfs
 	local trigger
 	local dev
+	local family
 	local ports
 	local mode
 	local default
@@ -57,6 +58,7 @@ load_led() {
 	config_get name $1 name "$sysfs"
 	config_get trigger $1 trigger "none"
 	config_get dev $1 dev
+	config_get family $1 family
 	config_get ports $1 port
 	config_get mode $1 mode
 	config_get_bool default $1 default "0"
@@ -132,6 +134,16 @@ load_led() {
 						echo 1 > /sys/class/leds/${sysfs}/$m
 				done
 				echo $interval > /sys/class/leds/${sysfs}/interval 2>/dev/null
+			}
+			;;
+
+		"network")
+			[ -n "$family" ] && {
+				echo $family > /sys/class/leds/${sysfs}/family
+				for m in $mode; do
+					[ -e "/sys/class/leds/${sysfs}/$m" ] && \
+						echo 1 > /sys/class/leds/${sysfs}/$m
+				done
 			}
 			;;
 
