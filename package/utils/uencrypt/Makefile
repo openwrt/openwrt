@@ -4,7 +4,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=uencrypt
-PKG_RELEASE:=5
+PKG_RELEASE:=6
 
 PKG_LICENSE:=GPL-2.0-or-later
 PKG_MAINTAINER:=Eneas U de Queiroz <cotequeiroz@gmail.com>
@@ -17,6 +17,8 @@ ifeq ($(BUILD_VARIANT),mbedtls)
   CMAKE_OPTIONS+=-DUSE_MBEDTLS=1
 else ifeq ($(BUILD_VARIANT),wolfssl)
   CMAKE_OPTIONS+=-DUSE_WOLFSSL=1
+else ifeq ($(BUILD_VARIANT),kernel)
+  CMAKE_OPTIONS+=-DUSE_KERNEL=1
 endif
 
 TARGET_CFLAGS+=-Wall
@@ -72,6 +74,16 @@ endef
 Package/uencrypt-wolfssl/description= \
   $(call Package/uencrypt/default/description,wolfSSL)
 
+define Package/uencrypt-kernel
+  $(Package/uencrypt/default)
+  VARIANT:=kernel
+  TITLE+= using in-kernel crypto libraries
+  CONFLICTS:=uencrypt-wolfssl uencrypt-openssl uencrypt-mbedtls
+endef
+
+Package/uencrypt-kernel/description= \
+  $(call Package/uencrypt/default/description,kernel)
+
 define Package/uencrypt/default/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/uencrypt $(1)/usr/bin
@@ -79,7 +91,9 @@ endef
 Package/uencrypt-openssl/install = $(Package/uencrypt/default/install)
 Package/uencrypt-wolfssl/install = $(Package/uencrypt/default/install)
 Package/uencrypt-mbedtls/install = $(Package/uencrypt/default/install)
+Package/uencrypt-kernel/install = $(Package/uencrypt/default/install)
 
 $(eval $(call BuildPackage,uencrypt-mbedtls))
 $(eval $(call BuildPackage,uencrypt-openssl))
 $(eval $(call BuildPackage,uencrypt-wolfssl))
+$(eval $(call BuildPackage,uencrypt-kernel))
