@@ -1,0 +1,6 @@
+[ "$ACTION" = ifup ] || exit 0
+[ "$INTERFACE" = loopback ] && exit 0
+[ -f /var/state/ntpd-synced ] && exit 0
+/etc/init.d/sysntpd enabled || exit 0
+/etc/init.d/sysntpd running || exit 0
+/etc/init.d/sysntpd restart >/dev/null 2>&1 &
