@@ -49,9 +49,9 @@ dos_dircopy() {
 [ -n "$PADDING" ] && dd if=/dev/zero of="$OUTPUT" bs=512 seek="$ROOTFSOFFSET" conv=notrunc count="$ROOTFSSIZE"
 dd if="$ROOTFSIMAGE" of="$OUTPUT" bs=512 seek="$ROOTFSOFFSET" conv=notrunc
 
-if [ -n "$GUID" ]; then
-    [ -n "$PADDING" ] && dd if=/dev/zero of="$OUTPUT" bs=512 seek="$((ROOTFSOFFSET + ROOTFSSIZE))" conv=notrunc count="$sect"
-    mkfs.fat --invariant -n kernel -C "$OUTPUT.kernel" -S 512 "$((KERNELSIZE / 1024))"
+if [ -n "$GUID" ] || [ -n "$KERNELFATFS" ]; then
+    [ -n "$GUID" ] && [ -n "$PADDING" ] && dd if=/dev/zero of="$OUTPUT" bs=512 seek="$((ROOTFSOFFSET + ROOTFSSIZE))" conv=notrunc count="$sect"
+    mkfs.fat --invariant -n kernel -C "$OUTPUT.kernel" -S 512 ${KERNELFATBITS:+-F "$KERNELFATBITS"} "$((KERNELSIZE / 1024))"
     LC_ALL=C dos_dircopy "$KERNELDIR" /
 else
     make_ext4fs -J -L kernel -l "$KERNELSIZE" ${SOURCE_DATE_EPOCH:+-T ${SOURCE_DATE_EPOCH}} "$OUTPUT.kernel" "$KERNELDIR"

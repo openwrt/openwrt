@@ -1,0 +1,21 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Copyright (c) 2026 Aerlync Labs Inc.
+
+. /lib/functions/uci-defaults.sh
+. /lib/functions/system.sh
+
+board_config_update
+
+board=$(board_name)
+
+case "$board" in
+beagle,am625-beagleplay)
+	ucidef_set_interface_lan "eth0"
+	;;
+esac
+
+board_config_flush
+
+exit 0

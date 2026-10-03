@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Copyright (c) 2026 Aerlync Labs Inc.
+
+. /lib/upgrade/common.sh
+
+move_config() {
+	local partdev
+
+	export_bootdevice && export_partdevice partdev 1 || return 0
+
+	insmod nls_cp437
+	insmod nls_iso8859-1
+	insmod fat
+	insmod vfat
+
+	mount -t vfat -o rw,noatime "/dev/$partdev" /mnt || return 0
+	[ -f "/mnt/$BACKUP_FILE" ] && mv -f "/mnt/$BACKUP_FILE" /
+	umount /mnt
+}
+
+boot_hook_add preinit_mount_root move_config
