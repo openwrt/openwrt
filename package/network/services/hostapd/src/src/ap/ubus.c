@@ -490,6 +490,47 @@ hostapd_bss_get_features(struct ubus_context *ctx, struct ubus_object *obj,
 	return 0;
 }
 
+static void
+hostapd_bss_color_add(struct hostapd_data *hapd)
+{
+#ifdef CONFIG_IEEE80211AX
+	blobmsg_add_u32(&b, "bss_color", hapd->iface->conf->he_op.he_bss_color_disabled ? -1 :
+					 hapd->iface->conf->he_op.he_bss_color);
+#else
+	blobmsg_add_u32(&b, "bss_color", -1);
+#endif
+}
+
+static void
+hostapd_bss_status_links_add(struct ubus_object *obj)
+{
+#ifdef CONFIG_IEEE80211BE
+	struct hostapd_ubus_mld *umld;
+	void *links, *l;
+	unsigned int i;
+
+	if (!hostapd_ubus_obj_state(obj)->mld)
+		return;
+
+	umld = container_of(hostapd_ubus_obj_state(obj), struct hostapd_ubus_mld, ubus);
+	links = blobmsg_open_array(&b, "links");
+	for (i = 0; i < MAX_NUM_MLD_LINKS; i++) {
+		struct hostapd_data *link_bss = umld->links[i];
+
+		if (!link_bss)
+			continue;
+
+		l = blobmsg_open_table(&b, NULL);
+		blobmsg_add_u32(&b, "link_id", link_bss->mld_link_id);
+		blobmsg_printf(&b, "bssid", MACSTR, MAC2STR(link_bss->own_addr));
+		blobmsg_add_u32(&b, "freq", link_bss->iface->freq);
+		hostapd_bss_color_add(link_bss);
+		blobmsg_close_table(&b, l);
+	}
+	blobmsg_close_array(&b, links);
+#endif /* CONFIG_IEEE80211BE */
+}
+
 static int
 hostapd_bss_get_status(struct ubus_context *ctx, struct ubus_object *obj,
 		       struct ubus_request_data *req, const char *method,
@@ -524,12 +565,8 @@ hostapd_bss_get_status(struct ubus_context *ctx, struct ubus_object *obj,
 	blobmsg_add_u32(&b, "channel", channel);
 	blobmsg_add_u32(&b, "op_class", op_class);
 	blobmsg_add_u32(&b, "beacon_interval", hapd->iconf->beacon_int);
-#ifdef CONFIG_IEEE80211AX
-	blobmsg_add_u32(&b, "bss_color", hapd->iface->conf->he_op.he_bss_color_disabled ? -1 :
-					 hapd->iface->conf->he_op.he_bss_color);
-#else
-	blobmsg_add_u32(&b, "bss_color", -1);
-#endif
+	hostapd_bss_color_add(hapd);
+	hostapd_bss_status_links_add(obj);
 
 	snprintf(phy_name, 17, "%s", hapd->iface->phy);
 	blobmsg_add_string(&b, "phy", phy_name);
