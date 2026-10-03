@@ -1,0 +1,452 @@
+// SPDX-License-Identifier: MIT, GPL-2.0 or later
+
+/dts-v1/;
+
+#include "ipq6018.dtsi"
+#include "ipq6018-cp-cpu.dtsi"
+#include "ipq6018-ess.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	model = "EdgeCore EAP101";
+	compatible = "edgecore,eap101", "qcom,ipq6018";
+
+	aliases {
+		serial0 = &blsp1_uart3;
+		serial1 = &blsp1_uart2;
+		led-boot = &led_system_green;
+		led-failsafe = &led_system_green;
+		led-running = &led_system_green;
+		led-upgrade = &led_system_green;
+		/* Aliases as required by u-boot to patch MAC addresses */
+		ethernet0 = &dp5;
+		ethernet1 = &dp4;
+		ethernet2 = &dp3;
+		label-mac-device = &dp5;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		bootargs-append = " root=/dev/ubiblock0_1";
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&tlmm 19 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	gpio_export {
+		compatible = "gpio-export";
+		#size-cells = <0>;
+
+		ble_reset {
+			gpio-export,name = "ble_reset";
+			gpio-export,output = <0>;
+			gpios = <&tlmm 79 GPIO_ACTIVE_HIGH>;
+		};
+
+		ble_backdoor {
+			gpio-export,name = "ble_backdoor";
+			gpio-export,output = <1>;
+			gpios = <&tlmm 34 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_wlan2g {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN_2GHZ;
+			gpios = <&tlmm 37 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy1radio";
+		};
+
+		led_wlan5g {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN_5GHZ;
+			gpios = <&tlmm 35 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy0radio";
+		};
+
+		led_wanpoe {
+			label = "green:wanpoe";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WAN;
+			gpios = <&tlmm 62 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_lan1  {
+			label = "green:lan1";
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <0>;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&tlmm 61 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_lan2  {
+			label = "green:lan2";
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <1>;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&tlmm 63 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_system_green: led_system {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&tlmm 74 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&blsp1_uart2 {
+	pinctrl-0 = <&hsuart_pins &btcoex_pins>;
+	pinctrl-names = "default";
+	dmas = <&blsp_dma 2>, <&blsp_dma 3>;
+	dma-names = "tx", "rx";
+	status = "okay";
+};
+
+&tlmm {
+	spi_0_pins: spi-0-pins {
+		pins = "gpio38", "gpio39", "gpio40", "gpio41";
+		function = "blsp0_spi";
+		drive-strength = <8>;
+		bias-pull-down;
+	};
+
+	mdio_pins: mdio-pins {
+		mdc {
+			pins = "gpio64";
+			function = "mdc";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		mdio {
+			pins = "gpio65";
+			function = "mdio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+
+	hsuart_pins: hsuart_pins {
+		pins = "gpio71", "gpio72", "gpio69", "gpio70";
+		function = "blsp1_uart";
+		drive-strength = <8>;
+		bias-disable;
+	};
+
+	btcoex_pins: btcoex_pins {
+		mux_0 {
+			pins = "gpio51";
+			function = "pta1_1";
+			drive-strength = <6>;
+			bias-pull-down;
+		};
+		mux_1 {
+			pins = "gpio53";
+			function = "pta1_0";
+			drive-strength = <6>;
+			bias-pull-down;
+		};
+		mux_2 {
+			pins = "gpio52";
+			function = "pta1_2";
+			drive-strength = <6>;
+			bias-pull-down;
+		};
+	};
+};
+
+&blsp1_uart3 {
+	pinctrl-0 = <&serial_3_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&prng {
+	status = "okay";
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&qusb_phy_1 {
+	status = "okay";
+};
+
+&usb2 {
+	status = "okay";
+};
+
+&qusb_phy_0 {
+	status = "okay";
+};
+
+&ssphy_0 {
+	status = "okay";
+};
+
+&usb3 {
+	status = "okay";
+};
+
+
+&qpic_nand {
+	status = "okay";
+
+	/*
+	 * Bootloader will find the NAND DT node by the compatible and
+	 * then "fixup" it by adding the partitions from the SMEM table
+	 * using the legacy bindings thus making it impossible for us
+	 * to change the partition table or utilize NVMEM for calibration.
+	 * So add a dummy partitions node that bootloader will populate
+	 * and set it as disabled so the kernel ignores it instead of
+	 * printing warnings due to the broken way bootloader adds the
+	 * partitions.
+	 */
+	partitions {
+		status = "disabled";
+	};
+
+	nand@0 {
+		reg = <0>;
+		nand-ecc-strength = <8>;
+		nand-ecc-step-size = <512>;
+		nand-bus-width = <8>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "rootfs1";
+				reg = <0x0000000 0x3c00000>;
+			};
+
+			partition@3c00000 {
+				label = "rootfs2";
+				reg = <0x3c00000 0x3c00000>;
+			};
+
+		};
+	};
+};
+
+&mdio {
+	status = "okay";
+	pinctrl-0 = <&mdio_pins>;
+	pinctrl-names = "default";
+	reset-gpios = <&tlmm 75 GPIO_ACTIVE_LOW>;
+	reset-delay-us = <10000>;
+	reset-post-delay-us = <50000>;
+
+	ethernet-phy-package@0 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "qcom,qca8075-package";
+		reg = <0>;
+
+		qcom,package-mode = "psgmii";
+
+		qca8075_0: ethernet-phy@3 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <3>;
+		};
+
+		qca8075_1: ethernet-phy@4 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <4>;
+		};
+	};
+
+	qca8081: ethernet-phy@28 {
+		compatible = "ethernet-phy-id004d.d101";
+		reg = <28>;
+		reset-gpios = <&tlmm 77 GPIO_ACTIVE_LOW>;
+		reset-assert-us = <10000>;
+		reset-deassert-us = <50000>;
+	};
+};
+
+&switch {
+	status = "okay";
+
+	switch_lan_bmp = <(ESS_PORT3 | ESS_PORT4)>;
+	switch_wan_bmp = <ESS_PORT5>;
+	switch_mac_mode = <MAC_MODE_PSGMII>;
+	switch_mac_mode1 = <MAC_MODE_SGMII_PLUS>;
+	port3_pcs_channel = <4>;
+
+	qcom,port_phyinfo {
+		port@3 {
+			port_id = <3>;
+			phy_address = <4>;
+		};
+		port@4 {
+			port_id = <4>;
+			phy_address = <3>;
+		};
+		port@5 {
+			port_id = <5>;
+			phy_address = <28>;
+			port_mac_sel = "QGMAC_PORT";
+		};
+	};
+};
+
+&edma {
+	status = "okay";
+};
+
+&blsp1_spi1 {
+	pinctrl-0 = <&spi_0_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	flash@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		reg = <0>;
+		compatible = "jedec,spi-nor";
+		spi-max-frequency = <50000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "0:SBL1";
+				reg = <0x0 0xc0000>;
+				read-only;
+			};
+
+			partition@c0000 {
+				label = "0:MIBIB";
+				reg = <0xc0000 0x10000>;
+				read-only;
+			};
+
+			partition@d0000 {
+				label = "0:BOOTCONFIG";
+				reg = <0xd0000 0x20000>;
+				read-only;
+			};
+
+			partition@f0000 {
+				label = "0:BOOTCONFIG1";
+				reg = <0xf0000 0x20000>;
+				read-only;
+			};
+
+			partition@110000 {
+				label = "0:QSEE";
+				reg = <0x110000 0x1a0000>;
+				read-only;
+			};
+
+			partition@2b0000 {
+				label = "0:QSEE_1";
+				reg = <0x2b0000 0x1a0000>;
+				read-only;
+			};
+
+			partition@450000 {
+				label = "0:DEVCFG";
+				reg = <0x450000 0x10000>;
+				read-only;
+			};
+
+			partition@460000 {
+				label = "mfginfo";
+				reg = <0x460000 0x10000>;
+				read-only;
+			};
+
+			partition@470000 {
+				label = "0:RPM";
+				reg = <0x470000 0x40000>;
+				read-only;
+			};
+
+			partition@4b0000 {
+				label = "0:RPM_1";
+				reg = <0x4b0000 0x40000>;
+				read-only;
+			};
+
+			partition@4f0000 {
+				label = "0:CDT";
+				reg = <0x4f0000 0x10000>;
+				read-only;
+			};
+
+			partition@500000 {
+				label = "0:CDT_1";
+				reg = <0x500000 0x10000>;
+				read-only;
+			};
+
+			partition@510000 {
+				label = "0:APPSBLENV";
+				reg = <0x510000 0x10000>;
+			};
+
+			partition@520000 {
+				label = "0:APPSBL";
+				reg = <0x520000 0xa0000>;
+				read-only;
+			};
+
+			partition@5c0000 {
+				label = "0:APPSBL_1";
+				reg = <0x5c0000 0xa0000>;
+				read-only;
+			};
+
+			partition@660000 {
+				label = "0:ART";
+				reg = <0x660000 0x80000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&dp3 {
+	status = "okay";
+	phy-handle = <&qca8075_1>;
+	label = "lan2";
+};
+
+&dp4 {
+	status = "okay";
+	phy-handle = <&qca8075_0>;
+	label = "lan1";
+};
+
+&dp5 {
+	status = "okay";
+	phy-mode = "sgmii";
+	phy-handle = <&qca8081>;
+	label = "wan";
+};
+
+&wifi {
+	status = "okay";
+
+	qcom,ath11k-calibration-variant = "edgecore-eap101";
+};
