@@ -15,8 +15,8 @@
 #  define CRYPT_BUF_SIZE MAX_BLOCK_LENGTH
 # endif
 
-unsigned char *hexstr2buf(const char* str, long *len);
-
+#elif defined(USE_KERNEL)
+// no external libraries for kernel-only mode
 #else /* USE_MBEDTLS */
 # ifdef USE_WOLFSSL
 #  include <wolfssl/options.h>
@@ -34,6 +34,10 @@ unsigned char *hexstr2buf(const char* str, long *len);
 # define hexstr2buf OPENSSL_hexstr2buf
 
 #endif /* USE_MBEDTLS */
+
+#ifndef hexstr2buf
+# define hexstr2buf uencrypt_hexstr2buf
+#endif
 
 typedef void cipher_t;
 typedef void ctx_t;
