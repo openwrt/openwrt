@@ -20,7 +20,7 @@
 					],
 					[ "if",
 						[ "eq", "DEVNAME",
-							[ "full", "ptmx", "zero", "tty", "net", "random", "urandom" ]
+							[ "full", "ptmx", "zero", "tty", "net", "net/tun", "random", "urandom" ]
 						],
 						[
 							[ "makedev", "/dev/%DEVNAME%", "0666" ],
