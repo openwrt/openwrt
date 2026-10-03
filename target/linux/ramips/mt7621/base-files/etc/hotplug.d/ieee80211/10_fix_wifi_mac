@@ -66,6 +66,13 @@ case "$board" in
 			macaddr_setbit_la "$base_mac" > /sys${DEVPATH}/macaddress
 		fi
 		;;
+	dlink,dir-853-r3)
+		if [ "$PHYNBR" = "0" ]; then
+			base_mac="$(mtd_get_mac_binary factory 0x4)"
+			macaddr_setbit_la "$(macaddr_setbit "$base_mac" 27)" \
+				> /sys${DEVPATH}/macaddress
+		fi
+		;;
 	edup,ep-rt2960s|\
 	haier,har-20s2u1|\
 	jcg,y2|\
