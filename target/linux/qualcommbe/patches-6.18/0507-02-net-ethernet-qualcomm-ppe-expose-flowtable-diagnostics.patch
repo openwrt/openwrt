@@ -1,0 +1,651 @@
+From: Kenneth Kasilag <kenneth@kasilag.me>
+Date: Sat, 04 Jul 2026 00:10:00 +0000
+Subject: [PATCH] net: ethernet: qualcomm: ppe: expose flowtable diagnostics
+
+Expose the flow-block bind state, callback counters, quarantined-row count
+and live hardware flow rows through debugfs.  Add a separate detailed view
+which snapshots and decodes each flow's host, next-hop, L3 interface,
+router-MAC and public-IP dependencies while holding the resource lock.  It
+also reports the global flow-key and host-hash controls, making a zero-hit
+row diagnosable without ad-hoc MMIO access.
+
+Add a pipeline-ordered snapshot of the global L3 policy, every physical
+port's complete L3 row and port MAC, the L3 interface selected by each
+port, and all router-MAC slots.  This exposes the state that precedes flow
+lookup and keeps the table payload widths explicit.
+
+Read and label all three FLOW_CTRL1 packet-type rows. Add a separate
+reason-counter view over the three-word CPU/drop table: it prints every
+nonzero row and always reports the host-mismatch, no-route,
+invalid-next-hop and flow-miss watchpoints needed for before/after packet
+snapshots.
+
+Keeping the expensive dependency dump separate preserves the lightweight
+flows view and gives the following activation patch observable state from
+its first use.
+
+Signed-off-by: Kenneth Kasilag <kenneth@kasilag.me>
+---
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_debugfs.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_debugfs.c
+@@ -17,6 +17,7 @@
+ #include "ppe.h"
+ #include "ppe_config.h"
+ #include "ppe_debugfs.h"
++#include "ppe_flowtable.h"
+ #include "ppe_regs.h"
+ 
+ #define PPE_PKT_CNT_TBL_SIZE				3
+@@ -831,6 +832,8 @@ void ppe_debugfs_setup(struct ppe_device
+ 		return;
+ 	}
+ 
++	ppe_flowtable_debugfs_init(ppe_dev);
++
+ 	for (i = 0; i < ARRAY_SIZE(debugfs_files); i++) {
+ 		entry = devm_kzalloc(ppe_dev->dev, sizeof(*entry), GFP_KERNEL);
+ 		if (!entry)
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_flowtable.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_flowtable.c
+@@ -14,6 +14,7 @@
+  */
+ 
+ #include <linux/atomic.h>
++#include <linux/debugfs.h>
+ #include <linux/etherdevice.h>
+ #include <linux/hashtable.h>
+ #include <linux/if_vlan.h>
+@@ -22,6 +23,7 @@
+ #include <linux/rcupdate.h>
+ #include <linux/regmap.h>
+ #include <linux/rhashtable.h>
++#include <linux/seq_file.h>
+ #include <net/flow_offload.h>
+ #include <net/ipv6.h>
+ #include <net/tcp.h>
+@@ -130,6 +132,10 @@ struct ppe_flowtable {
+ 	struct mutex lock;
+ 	struct rhashtable flows;
+ 	struct list_head zombies;
++	struct dentry *debugfs;
++	struct dentry *debugfs_rows;
++	struct dentry *debugfs_pipeline;
++	struct dentry *debugfs_reasons;
+ 	atomic_long_t replace_calls;
+ 	atomic_long_t replace_unsupported;
+ 	atomic_long_t replace_failed;
+@@ -741,12 +747,12 @@ static int ppe_ft_flow_replace(struct pp
+ 		if (ret)
+ 			goto err_my_mac;
+ 
+-		ret = ppe_l3_if_my_mac_set(ft->ppe_dev, nh.l3_if,
+-					   flow->my_mac, true);
++		ret = ppe_port_l3_if_set(ft->ppe_dev, nh.port, nh.l3_if);
+ 		if (ret)
+ 			goto err_my_mac;
+ 
+-		ret = ppe_port_l3_if_set(ft->ppe_dev, nh.port, nh.l3_if);
++		ret = ppe_l3_if_my_mac_set(ft->ppe_dev, nh.l3_if,
++					   flow->my_mac, true);
+ 		if (ret)
+ 			goto err_my_mac;
+ 	}
+@@ -917,6 +923,488 @@ static int ppe_ft_flow_stats(struct ppe_
+ 	return ret;
+ }
+ 
++static void ppe_ft_debug_words(struct seq_file *seq, const char *name,
++			       const u32 *words, int count)
++{
++	int i;
++
++	seq_printf(seq, "  %s:", name);
++	for (i = 0; i < count; i++)
++		seq_printf(seq, " %08x", words[i]);
++	seq_putc(seq, '\n');
++}
++
++static void ppe_ft_port_mac_decode(u8 *mac, const u32 *row)
++{
++	mac[0] = (row[3] & BIT(0)) << 7 | (row[2] >> 25 & 0x7f);
++	mac[1] = row[2] >> 17;
++	mac[2] = row[2] >> 9;
++	mac[3] = row[2] >> 1;
++	mac[4] = (row[2] & BIT(0)) << 7 | (row[1] >> 25 & 0x7f);
++	mac[5] = row[1] >> 17;
++}
++
++static const char *ppe_ft_reason_name(bool cpu, int code)
++{
++	if (cpu) {
++		switch (code) {
++		case 148:
++			return "L3 route host mismatch action";
++		case 162:
++			return "L3 no-route action";
++		case 163:
++			return "L3 no-route next-hop invalid action";
++		case 167:
++			return "L3 flow miss action";
++		default:
++			return NULL;
++		}
++	}
++
++	switch (code) {
++	case 73:
++		return "L3 no-route action drop";
++	case 74:
++		return "L3 no-route next-hop invalid action drop";
++	case 77:
++		return "L3 flow action drop";
++	case 78:
++		return "L3 flow miss action drop";
++	case 80:
++		return "L2 MTU checking fail drop";
++	default:
++		return NULL;
++	}
++}
++
++static int ppe_ft_reason_counters_show(struct seq_file *seq, void *data)
++{
++	struct ppe_flowtable *ft = seq->private;
++	int index;
++
++	for (index = 0; index < PPE_DROP_CPU_CNT_TBL_ENTRIES; index++) {
++		u32 row[PPE_DROP_CPU_CNT_TBL_WORDS] = {};
++		u32 reg = PPE_DROP_CPU_CNT_TBL_ADDR +
++			  index * PPE_DROP_CPU_CNT_TBL_INC;
++		bool cpu = index < PPE_CPU_CODE_CNT_ENTRIES;
++		int offset = index - PPE_CPU_CODE_CNT_ENTRIES;
++		int code = cpu ? index : offset / PPE_DROP_CODE_PORTS;
++		int port = cpu ? -1 : offset % PPE_DROP_CODE_PORTS;
++		const char *name = ppe_ft_reason_name(cpu, code);
++		u64 bytes;
++		int err;
++
++		err = regmap_bulk_read(ft->ppe_dev->regmap, reg, row,
++				       ARRAY_SIZE(row));
++		bytes = (u64)row[2] << 32 | row[1];
++		if (!err && !row[0] && !bytes && !name)
++			continue;
++
++		if (cpu) {
++			seq_printf(seq, "cpu code:%d read:%d packets:%u",
++				   code, err, row[0]);
++			seq_printf(seq, " bytes:%llu name:%s\n",
++				   (unsigned long long)bytes,
++				   name ?: "unlabelled");
++		} else {
++			seq_printf(seq,
++				   "drop code:%d port:%d index:%d read:%d packets:%u",
++				   code, port, index, err, row[0]);
++			seq_printf(seq, " bytes:%llu name:%s\n",
++				   (unsigned long long)bytes,
++				   name ?: "unlabelled");
++		}
++	}
++
++	return 0;
++}
++DEFINE_SHOW_ATTRIBUTE(ppe_ft_reason_counters);
++
++static void ppe_ft_flow_ctrl1_show(struct seq_file *seq,
++				   struct ppe_flowtable *ft)
++{
++	static const char * const names[PPE_FLOW_CTRL1_ENTRIES] = {
++		"ipv4_unicast", "ipv6_unicast", "multicast",
++	};
++	int type;
++
++	for (type = 0; type < PPE_FLOW_CTRL1_ENTRIES; type++) {
++		u32 value = 0;
++		int err;
++
++		err = regmap_read(ft->ppe_dev->regmap,
++				  PPE_FLOW_CTRL1_ADDR + type * PPE_FLOW_CTRL1_INC,
++				  &value);
++		seq_printf(seq, "flow_ctrl1 type:%d name:%s read:%d raw:%08x\n",
++			   type, names[type], err, value);
++	}
++}
++
++/* A pipeline-ordered, read-only snapshot of global routing controls and the
++ * physical port state which exists independently of an installed flow.
++ */
++static int ppe_ft_pipeline_state_show(struct seq_file *seq, void *data)
++{
++	struct ppe_flowtable *ft = seq->private;
++	u32 route = 0, route_ext = 0, ctrl0 = 0, ctrl1 = 0;
++	int route_err, route_ext_err, ctrl0_err, ctrl1_err;
++	int port;
++
++	route_err = regmap_read(ft->ppe_dev->regmap,
++				PPE_L3_ROUTE_CTRL_ADDR, &route);
++	route_ext_err = regmap_read(ft->ppe_dev->regmap,
++				    PPE_L3_ROUTE_CTRL_EXT_ADDR, &route_ext);
++	ctrl0_err = regmap_read(ft->ppe_dev->regmap,
++				PPE_FLOW_CTRL0_ADDR, &ctrl0);
++	ctrl1_err = regmap_read(ft->ppe_dev->regmap,
++				PPE_FLOW_CTRL1_ADDR, &ctrl1);
++	ppe_ft_flow_ctrl1_show(seq, ft);
++	seq_printf(seq,
++		   "global l3_route:%08x route_ext:%08x flow_ctrl0:%08x flow_ctrl1_l3uc:%08x read:%d/%d/%d/%d route_mismatch:%lu host_hash0:%lu host_hash1:%lu\n",
++		   route, route_ext, ctrl0, ctrl1, route_err, route_ext_err,
++		   ctrl0_err, ctrl1_err,
++		   FIELD_GET(PPE_L3_ROUTE_CTRL_EXT_ROUTE_MISMATCH,
++			     route_ext),
++		   FIELD_GET(PPE_L3_ROUTE_CTRL_EXT_HOST_HASH_MODE_0,
++			     route_ext),
++		   FIELD_GET(PPE_L3_ROUTE_CTRL_EXT_HOST_HASH_MODE_1,
++			     route_ext));
++
++	mutex_lock(&ft->lock);
++	for (port = 0; port < ft->ppe_dev->num_ports; port++) {
++		u32 port_row[4] = {}, in_l3[3] = {}, eg_l3[3] = {};
++		u32 reg;
++		u8 mac[ETH_ALEN], l3_if;
++		int port_err, in_err = 0, eg_err = 0;
++
++		reg = PPE_L3_VP_PORT_TBL_ADDR +
++			PPE_L3_VP_PORT_TBL_INC * port;
++		port_err = regmap_bulk_read(ft->ppe_dev->regmap, reg,
++					    port_row, ARRAY_SIZE(port_row));
++		l3_if = FIELD_GET(PPE_L3_VP_PORT_W0_L3_IF_INDEX,
++				  port_row[0]);
++		ppe_ft_port_mac_decode(mac, port_row);
++		seq_printf(seq,
++			   "port index:%d read:%d l3_valid:%u l3_if:%u vsi_valid:%u vsi:%lu mac_valid:%u mac:%pM\n",
++			   port, port_err,
++			   !!(port_row[0] & PPE_L3_VP_PORT_W0_L3_IF_VALID),
++			   l3_if,
++			   !!(port_row[1] & PPE_L3_VP_PORT_W1_VSI_VALID),
++			   FIELD_GET(PPE_L3_VP_PORT_W1_VSI, port_row[1]),
++			   !!(port_row[1] & PPE_L3_VP_PORT_W1_MAC_VALID), mac);
++		ppe_ft_debug_words(seq, "l3_vp_port_raw", port_row,
++				   ARRAY_SIZE(port_row));
++
++		if (port_err ||
++		    !(port_row[0] & PPE_L3_VP_PORT_W0_L3_IF_VALID))
++			continue;
++
++		reg = PPE_IN_L3_IF_TBL_ADDR + PPE_IN_L3_IF_TBL_INC * l3_if;
++		in_err = regmap_bulk_read(ft->ppe_dev->regmap, reg, in_l3,
++					  ARRAY_SIZE(in_l3));
++		reg = PPE_EG_L3_IF_TBL_ADDR + PPE_EG_L3_IF_TBL_INC * l3_if;
++		eg_err = regmap_bulk_read(ft->ppe_dev->regmap, reg, eg_l3,
++					  ARRAY_SIZE(eg_l3));
++		ppe_ft_debug_words(seq, "in_l3_raw", in_l3,
++				   ARRAY_SIZE(in_l3));
++		ppe_ft_debug_words(seq, "eg_l3_raw", eg_l3,
++				   ARRAY_SIZE(eg_l3));
++		seq_printf(seq,
++			   "  l3 read:%d/%d v4_route:%u v6_route:%u ttl_deaccel:%u mac_bitmap:%02lx dmac_check:%u udp_csm0:%lu\n",
++			   in_err, eg_err,
++			   !!(in_l3[0] & PPE_IN_L3_IF_W0_IPV4_UC_ROUTE_EN),
++			   !!(in_l3[0] & PPE_IN_L3_IF_W0_IPV6_UC_ROUTE_EN),
++			   !!(in_l3[1] & PPE_IN_L3_IF_W1_TTL_EXCEED_DEACCEL),
++			   FIELD_GET(PPE_IN_L3_IF_W1_MAC_BITMAP, in_l3[1]),
++			   !(in_l3[1] & PPE_IN_L3_IF_W1_DMAC_CHECK_DIS),
++			   FIELD_GET(PPE_IN_L3_IF_W2_UDP_CSM0_CMD, in_l3[2]));
++	}
++
++	for (port = 0; port < PPE_MY_MAC_TBL_ENTRIES; port++) {
++		u32 row[2] = {};
++		u32 reg = PPE_MY_MAC_TBL_ADDR + PPE_MY_MAC_TBL_INC * port;
++		int err;
++
++		err = regmap_bulk_read(ft->ppe_dev->regmap, reg, row,
++				       ARRAY_SIZE(row));
++		seq_printf(seq, "my_mac index:%d read:%d valid:%u\n", port,
++			   err, !!(row[1] & PPE_MY_MAC_W1_VALID));
++		ppe_ft_debug_words(seq, "my_mac_raw", row, ARRAY_SIZE(row));
++	}
++	mutex_unlock(&ft->lock);
++
++	return 0;
++}
++DEFINE_SHOW_ATTRIBUTE(ppe_ft_pipeline_state);
++
++static int ppe_ft_flow_rows_show(struct seq_file *seq, void *data)
++{
++	struct ppe_flowtable *ft = seq->private;
++	struct rhashtable_iter iter;
++	struct ppe_ft_flow *flow;
++	u32 ctrl0 = 0, ctrl1 = 0, route_ext = 0;
++
++	regmap_read(ft->ppe_dev->regmap, PPE_FLOW_CTRL0_ADDR, &ctrl0);
++	regmap_read(ft->ppe_dev->regmap, PPE_FLOW_CTRL1_ADDR, &ctrl1);
++	ppe_ft_flow_ctrl1_show(seq, ft);
++	regmap_read(ft->ppe_dev->regmap, PPE_L3_ROUTE_CTRL_EXT_ADDR,
++		    &route_ext);
++	seq_printf(seq,
++		   "global flow_ctrl0:%08x flow_ctrl1_l3uc:%08x route_ctrl_ext:%08x host_hash0:%u host_hash1:%u\n",
++		   ctrl0, ctrl1, route_ext,
++		   FIELD_GET(PPE_L3_ROUTE_CTRL_EXT_HOST_HASH_MODE_0,
++			     route_ext),
++		   FIELD_GET(PPE_L3_ROUTE_CTRL_EXT_HOST_HASH_MODE_1,
++			     route_ext));
++
++	/* Unlike the lightweight flows view, this diagnostic snapshot holds
++	 * the resource lock so a flow, host and next hop cannot be torn down
++	 * between their individual table reads.
++	 */
++	mutex_lock(&ft->lock);
++	rhashtable_walk_enter(&ft->flows, &iter);
++	rhashtable_walk_start(&iter);
++	while ((flow = rhashtable_walk_next(&iter))) {
++		u32 f[PPE_FLOW_TBL_WORDS] = {};
++		u32 h[4] = {}, nh[4] = {}, in_l3[4] = {}, eg_l3[4] = {};
++		u32 my_mac[2] = {}, pub_ip = 0, packets = 0;
++		u32 reg;
++		u16 hw_host, hw_nh, sport, dport;
++		u64 bytes = 0;
++		__be32 host_ip, inline_ip, dnat_ip;
++		u8 dmac[ETH_ALEN];
++		int flow_err, host_err, nh_err, in_err, eg_err;
++		int my_mac_err = 0, pub_ip_err = 0;
++		u8 l3_if;
++
++		if (IS_ERR(flow)) {
++			if (PTR_ERR(flow) == -EAGAIN)
++				continue;
++			break;
++		}
++
++		reg = PPE_FLOW_TBL_ADDR + PPE_FLOW_TBL_INC * flow->index;
++		flow_err = regmap_bulk_read(ft->ppe_dev->regmap, reg, f,
++					    ARRAY_SIZE(f));
++		hw_host = FIELD_GET(PPE_FLOW_W0_HOST_INDEX, f[0]);
++		reg = PPE_HOST_TBL_ADDR + PPE_HOST_TBL_INC * hw_host;
++		host_err = regmap_bulk_read(ft->ppe_dev->regmap, reg, h,
++					    ARRAY_SIZE(h));
++		hw_nh = FIELD_GET(PPE_FLOW_W1_NEXT_HOP, f[1]);
++		reg = PPE_NEXTHOP_TBL_ADDR + PPE_NEXTHOP_TBL_INC * hw_nh;
++		nh_err = regmap_bulk_read(ft->ppe_dev->regmap, reg, nh,
++					  ARRAY_SIZE(nh));
++		l3_if = FIELD_GET(PPE_NEXTHOP_W0_POST_L3_IF, nh[0]);
++		reg = PPE_IN_L3_IF_TBL_ADDR + PPE_IN_L3_IF_TBL_INC * l3_if;
++		in_err = regmap_bulk_read(ft->ppe_dev->regmap, reg, in_l3,
++					  ARRAY_SIZE(in_l3));
++		reg = PPE_EG_L3_IF_TBL_ADDR + PPE_EG_L3_IF_TBL_INC * l3_if;
++		eg_err = regmap_bulk_read(ft->ppe_dev->regmap, reg, eg_l3,
++					  ARRAY_SIZE(eg_l3));
++		if (flow->my_mac >= 0) {
++			reg = PPE_MY_MAC_TBL_ADDR +
++				PPE_MY_MAC_TBL_INC * flow->my_mac;
++			my_mac_err = regmap_bulk_read(ft->ppe_dev->regmap,
++						      reg, my_mac,
++						  ARRAY_SIZE(my_mac));
++		}
++		if (flow->pub_ip >= 0) {
++			reg = PPE_PUB_IP_TBL_ADDR +
++				PPE_PUB_IP_TBL_INC * flow->pub_ip;
++			pub_ip_err = regmap_read(ft->ppe_dev->regmap, reg,
++						 &pub_ip);
++		}
++		ppe_flow_stats_get(ft->ppe_dev, flow->index, &packets, &bytes);
++
++		host_ip = cpu_to_be32(h[1]);
++		inline_ip = cpu_to_be32(FIELD_GET(PPE_FLOW_W2_IP_ADDR_LO,
++						  f[2]) |
++				 FIELD_GET(PPE_FLOW_W3_IP_ADDR_HI, f[3]) << 20);
++		sport = FIELD_GET(PPE_FLOW_W3_L4_SPORT, f[3]);
++		dport = FIELD_GET(PPE_FLOW_W3_L4_DPORT_LO, f[3]) |
++			FIELD_GET(PPE_FLOW_W4_L4_DPORT_HI, f[4]) << 4;
++		dmac[0] = nh[2] >> 24;
++		dmac[1] = nh[2] >> 16;
++		dmac[2] = nh[2] >> 8;
++		dmac[3] = nh[2];
++		dmac[4] = nh[1] >> 24;
++		dmac[5] = nh[1] >> 16;
++		dnat_ip = cpu_to_be32(nh[3]);
++
++		seq_printf(seq,
++			   "flow cookie:%lx sw:%pI4:%u->%pI4:%u proto:%u fwd:%u index:%d host:%u nexthop:%u my_mac:%d pub_ip:%d packets:%u bytes:%llu\n",
++			   flow->cookie, &flow->entry.sip,
++			   be16_to_cpu(flow->entry.sport), &flow->entry.dip,
++			   be16_to_cpu(flow->entry.dport), flow->entry.proto,
++			   flow->entry.fwd_type, flow->index,
++			   flow->entry.host_index, flow->nexthop,
++			   flow->my_mac, flow->pub_ip, packets,
++			   (unsigned long long)bytes);
++		ppe_ft_debug_words(seq, "flow_raw", f, ARRAY_SIZE(f));
++		seq_printf(seq,
++			   "  flow_dec read:%d valid:%u type:%u host_dst:%u host:%u proto:%lu age:%lu src_l3_valid:%u src_l3:%lu fwd:%lu nexthop:%u nat_l4:%lu service:%lu inline:%pI4 sport:%u dport:%u key_match:%u\n",
++			   flow_err, !!(f[0] & PPE_FLOW_W0_VALID),
++			   !!(f[0] & PPE_FLOW_W0_ENTRY_TYPE),
++			   !!(f[0] & PPE_FLOW_W0_HOST_INDEX_TYPE), hw_host,
++			   FIELD_GET(PPE_FLOW_W0_PROTOCOL_TYPE, f[0]),
++			   FIELD_GET(PPE_FLOW_W0_AGE, f[0]),
++			   !!(f[0] & PPE_FLOW_W0_SRC_L3_IF_VALID),
++			   FIELD_GET(PPE_FLOW_W0_SRC_L3_IF, f[0]),
++			   FIELD_GET(PPE_FLOW_W0_FWD_TYPE, f[0]), hw_nh,
++			   FIELD_GET(PPE_FLOW_W1_L4_PORT, f[1]),
++			   FIELD_GET(PPE_FLOW_W2_SERVICE_CODE, f[2]),
++			   &inline_ip, sport, dport,
++			   !flow_err && !host_err &&
++			   hw_host == flow->entry.host_index &&
++			   !(f[0] & PPE_FLOW_W0_HOST_INDEX_TYPE) &&
++			   host_ip == flow->entry.sip &&
++			   inline_ip == flow->entry.dip &&
++			   sport == be16_to_cpu(flow->entry.sport) &&
++			   dport == be16_to_cpu(flow->entry.dport) &&
++			   FIELD_GET(PPE_FLOW_W0_PROTOCOL_TYPE, f[0]) ==
++				flow->entry.proto);
++		ppe_ft_debug_words(seq, "host_raw", h, ARRAY_SIZE(h));
++		seq_printf(seq,
++			   "  host_dec read:%d index:%u valid:%u key_type:%lu fwd_cmd:%lu dst_info:%lu lan_wan:%u addr:%pI4 source_match:%u\n",
++			   host_err, hw_host, !!(h[0] & PPE_HOST_W0_VALID),
++			   FIELD_GET(PPE_HOST_W0_KEY_TYPE, h[0]),
++			   FIELD_GET(PPE_HOST_W0_FWD_CMD, h[0]),
++			   FIELD_GET(PPE_HOST_W0_DST_INFO, h[0]),
++			   !!(h[0] & PPE_HOST_W0_LAN_WAN), &host_ip,
++			   !host_err && host_ip == flow->entry.sip);
++		ppe_ft_debug_words(seq, "nexthop_raw", nh, ARRAY_SIZE(nh));
++		seq_printf(seq,
++			   "  nexthop_dec read:%d index:%u index_match:%u type:%u port:%lu l3_if:%u ctag:%u cvid:%lu pub_ip:%lu dmac:%pM dnat:%pI4\n",
++			   nh_err, hw_nh, hw_nh == flow->nexthop,
++			   !!(nh[0] & PPE_NEXTHOP_W0_TYPE),
++			   FIELD_GET(PPE_NEXTHOP_W0_PORT, nh[0]), l3_if,
++			   !!(nh[0] & PPE_NEXTHOP_W0_CTAG_FMT),
++			   FIELD_GET(PPE_NEXTHOP_W1_CVID, nh[1]),
++			   FIELD_GET(PPE_NEXTHOP_W1_PUB_IP_INDEX, nh[1]),
++			   dmac, &dnat_ip);
++		ppe_ft_debug_words(seq, "in_l3_raw", in_l3,
++				   ARRAY_SIZE(in_l3));
++		ppe_ft_debug_words(seq, "eg_l3_raw", eg_l3,
++				   ARRAY_SIZE(eg_l3));
++		seq_printf(seq,
++			   "  l3_dec in_read:%d eg_read:%d index:%u v4_route:%u v6_route:%u\n",
++			   in_err, eg_err, l3_if,
++			   !!(in_l3[0] & PPE_IN_L3_IF_W0_IPV4_UC_ROUTE_EN),
++			   !!(in_l3[0] & PPE_IN_L3_IF_W0_IPV6_UC_ROUTE_EN));
++		if (flow->my_mac >= 0) {
++			ppe_ft_debug_words(seq, "my_mac_raw", my_mac,
++					   ARRAY_SIZE(my_mac));
++			seq_printf(seq, "  my_mac_dec read:%d index:%d valid:%u\n",
++				   my_mac_err, flow->my_mac,
++				   !!(my_mac[1] & PPE_MY_MAC_W1_VALID));
++		}
++		if (flow->pub_ip >= 0)
++			seq_printf(seq,
++				   "  pub_ip read:%d index:%d raw:%08x addr:%pI4\n",
++				   pub_ip_err, flow->pub_ip, pub_ip,
++				   &((__be32){ cpu_to_be32(pub_ip) }));
++	}
++	rhashtable_walk_stop(&iter);
++	rhashtable_walk_exit(&iter);
++	mutex_unlock(&ft->lock);
++
++	return 0;
++}
++DEFINE_SHOW_ATTRIBUTE(ppe_ft_flow_rows);
++
++/* Read-only debugfs view of the offloaded flows: the offload callback
++ * counters and block-bind state, then one line per installed flow with
++ * its hardware row index, the live VALID bit and the hit counters read
++ * back from the hardware. The walk runs under RCU (flows are freed
++ * through kfree_rcu) and the reads use the non-sleeping MMIO regmap,
++ * so nothing here can block the offload paths.
++ */
++static int ppe_ft_flows_show(struct seq_file *seq, void *data)
++{
++	struct ppe_flowtable *ft = seq->private;
++	struct rhashtable_iter iter;
++	struct ppe_ft_flow *flow;
++	struct list_head *pos;
++	int zombies = 0;
++
++	mutex_lock(&ft->lock);
++	list_for_each(pos, &ft->zombies)
++		zombies++;
++	mutex_unlock(&ft->lock);
++
++	seq_printf(seq,
++		   "bound:%d replace:%ld unsupported:%ld failed:%ld destroy:%ld zombies:%d\n",
++		   !list_empty(&ft->block_cb_list),
++		   atomic_long_read(&ft->replace_calls),
++		   atomic_long_read(&ft->replace_unsupported),
++		   atomic_long_read(&ft->replace_failed),
++		   atomic_long_read(&ft->destroy_calls), zombies);
++
++	rhashtable_walk_enter(&ft->flows, &iter);
++	rhashtable_walk_start(&iter);
++	while ((flow = rhashtable_walk_next(&iter))) {
++		u32 w0 = 0, packets = 0;
++		u64 bytes = 0;
++
++		if (IS_ERR(flow)) {
++			if (PTR_ERR(flow) == -EAGAIN)
++				continue;
++			break;
++		}
++
++		regmap_read(ft->ppe_dev->regmap,
++			    PPE_FLOW_TBL_ADDR + PPE_FLOW_TBL_INC * flow->index,
++			    &w0);
++		ppe_flow_stats_get(ft->ppe_dev, flow->index, &packets, &bytes);
++
++		seq_printf(seq, "%pI4:%u -> %pI4:%u",
++			   &flow->entry.sip,
++			   be16_to_cpu(flow->entry.sport),
++			   &flow->entry.dip,
++			   be16_to_cpu(flow->entry.dport));
++		seq_printf(seq,
++			   " proto:%u index:%d valid:%u host:%u host_dst:%u nexthop:%u packets:%u bytes:%llu\n",
++			   flow->entry.proto, flow->index,
++			   !!(w0 & PPE_FLOW_W0_VALID), flow->entry.host_index,
++			   !!(w0 & PPE_FLOW_W0_HOST_INDEX_TYPE), flow->nexthop,
++			   packets, (unsigned long long)bytes);
++	}
++	rhashtable_walk_stop(&iter);
++	rhashtable_walk_exit(&iter);
++
++	return 0;
++}
++DEFINE_SHOW_ATTRIBUTE(ppe_ft_flows);
++
++/**
++ * ppe_flowtable_debugfs_init - Expose the flowtable state in debugfs
++ * @ppe_dev: PPE device
++ *
++ * Called by the PPE debugfs setup once the root directory exists.
++ * ppe_flowtable_destroy() removes the file again before the flowtable
++ * is freed, ahead of the recursive root removal.
++ */
++void ppe_flowtable_debugfs_init(struct ppe_device *ppe_dev)
++{
++	struct ppe_flowtable *ft = ppe_dev->flowtable;
++
++	if (!ft)
++		return;
++
++	ft->debugfs = debugfs_create_file("flows", 0400,
++					  ppe_dev->debugfs_root, ft,
++					  &ppe_ft_flows_fops);
++	ft->debugfs_rows = debugfs_create_file("flow_rows", 0400,
++					       ppe_dev->debugfs_root, ft,
++					       &ppe_ft_flow_rows_fops);
++	ft->debugfs_pipeline = debugfs_create_file("pipeline_state", 0400,
++						   ppe_dev->debugfs_root, ft,
++						   &ppe_ft_pipeline_state_fops);
++	ft->debugfs_reasons = debugfs_create_file("reason_counters", 0400,
++						  ppe_dev->debugfs_root, ft,
++						  &ppe_ft_reason_counters_fops);
++}
++
+ static int ppe_ft_block_cb(enum tc_setup_type type, void *type_data,
+ 			   void *cb_priv)
+ {
+@@ -1058,6 +1546,10 @@ void ppe_flowtable_destroy(struct ppe_de
+ 	WARN_ON(!list_empty(&ft->block_cb_list));
+ 	ppe_ft_flow_drain(ft);
+ 
++	debugfs_remove(ft->debugfs_reasons);
++	debugfs_remove(ft->debugfs_pipeline);
++	debugfs_remove(ft->debugfs_rows);
++	debugfs_remove(ft->debugfs);
+ 	ppe_dev->flowtable = NULL;
+ 	rhashtable_free_and_destroy(&ft->flows, ppe_ft_flow_free, NULL);
+ 	list_for_each_entry_safe(flow, flow_tmp, &ft->zombies, zombie_node) {
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_flowtable.h
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_flowtable.h
+@@ -12,4 +12,5 @@ struct ppe_device;
+ int ppe_flowtable_setup(struct ppe_device *ppe_dev);
+ void ppe_flowtable_destroy(struct ppe_device *ppe_dev);
+ int ppe_flowtable_setup_tc(struct net_device *dev, void *type_data);
++void ppe_flowtable_debugfs_init(struct ppe_device *ppe_dev);
+ #endif
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_regs.h
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_regs.h
+@@ -533,19 +533,6 @@
+ #define PPE_MY_MAC_W1_MAC_ADDR_HI		GENMASK(15, 0)
+ #define PPE_MY_MAC_W1_VALID			BIT(16)
+ 
+-/* Global L3 failure policy. */
+-#define PPE_L3_ROUTE_CTRL_ADDR			0x200480
+-#define PPE_L3_ROUTE_CTRL_IP_MRU_FAIL		GENMASK(1, 0)
+-#define PPE_L3_ROUTE_CTRL_IP_MRU_DEACCEL	BIT(2)
+-#define PPE_L3_ROUTE_CTRL_IP_MTU_FAIL		GENMASK(4, 3)
+-#define PPE_L3_ROUTE_CTRL_IP_MTU_DEACCEL	BIT(5)
+-#define PPE_L3_ROUTE_CTRL_IP_MTU_DF_FAIL	GENMASK(7, 6)
+-
+-#define PPE_L3_ROUTE_CTRL_EXT_ADDR		0x200494
+-#define PPE_L3_ROUTE_CTRL_EXT_ROUTE_MISMATCH	GENMASK(1, 0)
+-#define PPE_L3_ROUTE_CTRL_EXT_HOST_HASH_MODE_0	GENMASK(4, 3)
+-#define PPE_L3_ROUTE_CTRL_EXT_HOST_HASH_MODE_1	GENMASK(6, 5)
+-
+ /* Global control of the L3 flow engine. The aging timer applies to the
+  * age field of the flow entries; it is left disabled, the flow table
+  * users manage the entry lifetime themselves.
+@@ -566,6 +553,28 @@
+ 						 BIT(17) | BIT(23) | \
+ 						 BIT(29))
+ 
++/* CPU-code rows 0..255, then 128 drop reasons interleaved by port. */
++#define PPE_DROP_CPU_CNT_TBL_ADDR		0x160000
++#define PPE_DROP_CPU_CNT_TBL_ENTRIES		1280
++#define PPE_DROP_CPU_CNT_TBL_INC			0x10
++#define PPE_DROP_CPU_CNT_TBL_WORDS		3
++#define PPE_CPU_CODE_CNT_ENTRIES			256
++#define PPE_DROP_CODE_PORTS			8
++
++/* Global L3 failure policy. */
++#define PPE_L3_ROUTE_CTRL_ADDR			0x200480
++#define PPE_L3_ROUTE_CTRL_IP_MRU_FAIL		GENMASK(1, 0)
++#define PPE_L3_ROUTE_CTRL_IP_MRU_DEACCEL	BIT(2)
++#define PPE_L3_ROUTE_CTRL_IP_MTU_FAIL		GENMASK(4, 3)
++#define PPE_L3_ROUTE_CTRL_IP_MTU_DEACCEL	BIT(5)
++#define PPE_L3_ROUTE_CTRL_IP_MTU_DF_FAIL	GENMASK(7, 6)
++
++/* Host-table hash policy and route-mismatch handling. */
++#define PPE_L3_ROUTE_CTRL_EXT_ADDR		0x200494
++#define PPE_L3_ROUTE_CTRL_EXT_ROUTE_MISMATCH	GENMASK(1, 0)
++#define PPE_L3_ROUTE_CTRL_EXT_HOST_HASH_MODE_0	GENMASK(4, 3)
++#define PPE_L3_ROUTE_CTRL_EXT_HOST_HASH_MODE_1	GENMASK(6, 5)
++
+ /* Public IP addresses used as the translated source of SNAT flows,
+  * referenced by index from the next hop entries.
+  */

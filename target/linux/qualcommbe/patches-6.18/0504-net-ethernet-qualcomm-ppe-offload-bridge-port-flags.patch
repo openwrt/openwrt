@@ -1,0 +1,319 @@
+From: Kenneth Kasilag <kenneth@kasilag.me>
+Date: Fri, 03 Jul 2026 00:00:00 +0000
+Subject: [PATCH] net: ethernet: qualcomm: ppe: offload bridge port flags
+
+Support the bridge port flags which map directly onto the hardware:
+BR_LEARNING controls the source address learning bits of the port
+bridge control register, and BR_FLOOD, BR_MCAST_FLOOD and
+BR_BCAST_FLOOD control the presence of the port in the unknown
+unicast, unknown multicast and broadcast flood bitmaps of its VSI.
+
+The VSI member configuration takes the four bitmaps separately now,
+computed from the offloaded flags of the member ports; the CPU port
+stays a member and a flood target of every bitmap. A joining port
+starts with all supported flags set, matching the defaults of a new
+bridge port, and leaving restores hardware learning, so disabled
+flags do not leak into a later bridge membership or the standalone
+state. Unsupported flags are still refused, so the bridge keeps
+handling them in software.
+
+Signed-off-by: Kenneth Kasilag <kenneth@kasilag.me>
+---
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_bridge.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_bridge.c
+@@ -45,13 +45,21 @@ struct ppe_bridge_vsi {
+  * is not offloaded.
+  * @dev: Net device of the port, valid while the port is offloaded.
+  * @vsi: VSI ID the port is bound to, negative when not offloaded.
++ * @flags: Offloaded bridge port flags of the port.
+  */
+ struct ppe_bridge_port {
+ 	struct net_device *bridge;
+ 	struct net_device *dev;
+ 	int vsi;
++	unsigned long flags;
+ };
+ 
++/* The bridge port flags the offload supports, matching the defaults of
++ * a newly added bridge port.
++ */
++#define PPE_BRIDGE_SUPPORTED_FLAGS	(BR_LEARNING | BR_FLOOD | \
++					 BR_MCAST_FLOOD | BR_BCAST_FLOOD)
++
+ /**
+  * struct ppe_bridge - Global PPE bridge offload state.
+  * @ppe_dev: Back pointer to the PPE device.
+@@ -153,19 +161,34 @@ static int ppe_bridge_vsi_get(struct ppe
+ 	return vsi;
+ }
+ 
+-/* The CPU port is a member of every VSI, so that packets without a hit
+- * on a hardware FDB entry are flooded to the CPU as well.
++/* Compute the member bitmap of a VSI and the flood bitmaps derived
++ * from the bridge port flags of its member ports. The CPU port is
++ * always a member and a flood target, so that packets without a hit
++ * on a hardware FDB entry reach the software ports of the bridge.
+  */
+-static unsigned int ppe_bridge_vsi_port_bitmap(struct ppe_bridge *pb, int vsi)
++static void ppe_bridge_vsi_bitmaps(struct ppe_bridge *pb, int vsi,
++				   unsigned int *member, unsigned int *uuc,
++				   unsigned int *umc, unsigned int *bc)
+ {
+-	unsigned int bitmap = BIT(0);
+ 	int i;
+ 
+-	for (i = 1; i < pb->ppe_dev->num_ports; i++)
+-		if (pb->ports[i].vsi == vsi)
+-			bitmap |= BIT(i);
++	*member = BIT(0);
++	*uuc = BIT(0);
++	*umc = BIT(0);
++	*bc = BIT(0);
+ 
+-	return bitmap;
++	for (i = 1; i < pb->ppe_dev->num_ports; i++) {
++		if (pb->ports[i].vsi != vsi)
++			continue;
++
++		*member |= BIT(i);
++		if (pb->ports[i].flags & BR_FLOOD)
++			*uuc |= BIT(i);
++		if (pb->ports[i].flags & BR_MCAST_FLOOD)
++			*umc |= BIT(i);
++		if (pb->ports[i].flags & BR_BCAST_FLOOD)
++			*bc |= BIT(i);
++	}
+ }
+ 
+ /* Update the per-port egress tag modes of a VSI. The VSI of a
+@@ -335,8 +358,8 @@ static int ppe_bridge_port_join(struct p
+ 				struct netlink_ext_ack *extack)
+ {
+ 	struct ppe_device *ppe_dev = pb->ppe_dev;
++	unsigned int member, uuc, umc, bc;
+ 	int port = ppe_bridge_port_id(dev);
+-	unsigned int bitmap;
+ 	int vsi, ret;
+ 
+ 	/* Failure to back the bridge with a VSI is not an error, the
+@@ -355,9 +378,14 @@ static int ppe_bridge_port_join(struct p
+ 		return 0;
+ 	}
+ 
+-	bitmap = ppe_bridge_vsi_port_bitmap(pb, vsi);
++	/* A newly joined port floods all traffic types, matching the
++	 * default bridge port flags.
++	 */
++	ppe_bridge_vsi_bitmaps(pb, vsi, &member, &uuc, &umc, &bc);
+ 
+-	ret = ppe_vsi_members_set(ppe_dev, vsi, bitmap | BIT(port));
++	ret = ppe_vsi_members_set(ppe_dev, vsi, member | BIT(port),
++				  uuc | BIT(port), umc | BIT(port),
++				  bc | BIT(port));
+ 	if (ret)
+ 		return ret;
+ 
+@@ -391,6 +419,7 @@ static int ppe_bridge_port_join(struct p
+ 	pb->ports[port].bridge = br;
+ 	pb->ports[port].dev = dev;
+ 	pb->ports[port].vsi = vsi;
++	pb->ports[port].flags = PPE_BRIDGE_SUPPORTED_FLAGS;
+ 
+ 	queue_delayed_work(pb->fdb_wq, &pb->fdb_sync,
+ 			   PPE_BRIDGE_FDB_SYNC_INTERVAL);
+@@ -403,7 +432,7 @@ err_txmac:
+ err_vsi:
+ 	ppe_port_vsi_set(ppe_dev, port, -1);
+ err_members:
+-	ppe_vsi_members_set(ppe_dev, vsi, bitmap);
++	ppe_vsi_members_set(ppe_dev, vsi, member, uuc, umc, bc);
+ 
+ 	return ret;
+ }
+@@ -412,6 +441,7 @@ static void ppe_bridge_port_leave(struct
+ 				  struct net_device *dev)
+ {
+ 	struct ppe_device *ppe_dev = pb->ppe_dev;
++	unsigned int member, uuc, umc, bc;
+ 	int port = ppe_bridge_port_id(dev);
+ 	int vsi = pb->ports[port].vsi;
+ 
+@@ -426,12 +456,18 @@ static void ppe_bridge_port_leave(struct
+ 	ppe_port_bridge_txmac_set(ppe_dev, port, false);
+ 	ppe_port_vsi_set(ppe_dev, port, -1);
+ 
++	/* Restore hardware learning, disabled bridge port flags do not
++	 * outlive the bridge membership.
++	 */
++	ppe_port_bridge_learning_set(ppe_dev, port, true);
++
+ 	pb->ports[port].bridge = NULL;
+ 	pb->ports[port].dev = NULL;
+ 	pb->ports[port].vsi = -1;
++	pb->ports[port].flags = 0;
+ 
+-	ppe_vsi_members_set(ppe_dev, vsi,
+-			    ppe_bridge_vsi_port_bitmap(pb, vsi));
++	ppe_bridge_vsi_bitmaps(pb, vsi, &member, &uuc, &umc, &bc);
++	ppe_vsi_members_set(ppe_dev, vsi, member, uuc, umc, bc);
+ 
+ 	pb->vsis[vsi].num_ports--;
+ 	if (!pb->vsis[vsi].num_ports)
+@@ -491,6 +527,47 @@ static int ppe_bridge_stp_state_set(stru
+ 	return ret;
+ }
+ 
++static int ppe_bridge_flags_set(struct ppe_bridge *pb,
++				struct net_device *dev,
++				struct switchdev_brport_flags flags)
++{
++	struct ppe_device *ppe_dev = pb->ppe_dev;
++	unsigned int member, uuc, umc, bc;
++	int port = ppe_bridge_port_id(dev);
++	int vsi = pb->ports[port].vsi;
++	unsigned long old_flags;
++	int ret;
++
++	old_flags = pb->ports[port].flags;
++	pb->ports[port].flags &= ~flags.mask;
++	pb->ports[port].flags |= flags.val & flags.mask;
++
++	if (flags.mask & BR_LEARNING) {
++		ret = ppe_port_bridge_learning_set(ppe_dev, port,
++						   flags.val & BR_LEARNING);
++		if (ret) {
++			pb->ports[port].flags = old_flags;
++			return ret;
++		}
++	}
++
++	if (flags.mask & (BR_FLOOD | BR_MCAST_FLOOD | BR_BCAST_FLOOD)) {
++		ppe_bridge_vsi_bitmaps(pb, vsi, &member, &uuc, &umc, &bc);
++		ret = ppe_vsi_members_set(ppe_dev, vsi, member, uuc, umc, bc);
++		if (ret) {
++			pb->ports[port].flags = old_flags;
++			ppe_bridge_vsi_bitmaps(pb, vsi, &member, &uuc, &umc, &bc);
++			ppe_vsi_members_set(ppe_dev, vsi, member, uuc, umc, bc);
++			if (flags.mask & BR_LEARNING)
++				ppe_port_bridge_learning_set(ppe_dev, port,
++							     old_flags & BR_LEARNING);
++			return ret;
++		}
++	}
++
++	return 0;
++}
++
+ static int ppe_bridge_attr_set(struct net_device *dev, const void *ctx,
+ 			       const struct switchdev_attr *attr,
+ 			       struct netlink_ext_ack *extack)
+@@ -506,10 +583,11 @@ static int ppe_bridge_attr_set(struct ne
+ 	case SWITCHDEV_ATTR_ID_PORT_STP_STATE:
+ 		return ppe_bridge_stp_state_set(pb, dev, attr->u.stp_state);
+ 	case SWITCHDEV_ATTR_ID_PORT_PRE_BRIDGE_FLAGS:
+-		/* Changing the bridge port flags away from the defaults
+-		 * is not supported yet.
+-		 */
+-		return attr->u.brport_flags.mask ? -EINVAL : 0;
++		if (attr->u.brport_flags.mask & ~PPE_BRIDGE_SUPPORTED_FLAGS)
++			return -EINVAL;
++		return 0;
++	case SWITCHDEV_ATTR_ID_PORT_BRIDGE_FLAGS:
++		return ppe_bridge_flags_set(pb, dev, attr->u.brport_flags);
+ 	case SWITCHDEV_ATTR_ID_BRIDGE_VLAN_FILTERING:
+ 		/* Refuse enabling VLAN filtering on a bridge which is
+ 		 * already offloaded as a VLAN-unaware bridge.
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_config.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_config.c
+@@ -1472,16 +1472,22 @@ int ppe_ring_queue_map_set(struct ppe_de
+  * ppe_vsi_members_set - Set the member ports of the PPE VSI
+  * @ppe_dev: PPE device
+  * @vsi: VSI ID to configure
+- * @port_bitmap: Bitmap of the PPE ports joined to the VSI
+- *
+- * Set the port members of the VSI (virtual switch instance) for the
+- * forwarding of known unicast, unknown unicast, unknown multicast and
+- * broadcast packets, with hardware FDB learning enabled on the VSI.
++ * @member_bitmap: Bitmap of the PPE ports joined to the VSI
++ * @uuc_bitmap: Bitmap of the ports receiving unknown unicast floods
++ * @umc_bitmap: Bitmap of the ports receiving unknown multicast floods
++ * @bc_bitmap: Bitmap of the ports receiving broadcast floods
++ *
++ * Set the port members of the VSI (virtual switch instance) and the
++ * per-traffic-type flood bitmaps, with hardware FDB learning enabled
++ * on the VSI. The flood bitmaps must be subsets of the members.
+  *
+  * Return: 0 on success, negative error code on failure.
+  */
+ int ppe_vsi_members_set(struct ppe_device *ppe_dev, int vsi,
+-			unsigned int port_bitmap)
++			unsigned int member_bitmap,
++			unsigned int uuc_bitmap,
++			unsigned int umc_bitmap,
++			unsigned int bc_bitmap)
+ {
+ 	u32 reg, vsi_cfg[2];
+ 	int ret;
+@@ -1492,10 +1498,10 @@ int ppe_vsi_members_set(struct ppe_devic
+ 	if (ret)
+ 		return ret;
+ 
+-	PPE_VSI_SET_MEMBER_PORT_BITMAP(vsi_cfg, port_bitmap);
+-	PPE_VSI_SET_UUC_BITMAP(vsi_cfg, port_bitmap);
+-	PPE_VSI_SET_UMC_BITMAP(vsi_cfg, port_bitmap);
+-	PPE_VSI_SET_BC_BITMAP(vsi_cfg, port_bitmap);
++	PPE_VSI_SET_MEMBER_PORT_BITMAP(vsi_cfg, member_bitmap);
++	PPE_VSI_SET_UUC_BITMAP(vsi_cfg, uuc_bitmap);
++	PPE_VSI_SET_UMC_BITMAP(vsi_cfg, umc_bitmap);
++	PPE_VSI_SET_BC_BITMAP(vsi_cfg, bc_bitmap);
+ 	PPE_VSI_SET_NEW_ADDR_LRN_EN(vsi_cfg, true);
+ 	PPE_VSI_SET_NEW_ADDR_FWD_CMD(vsi_cfg, PPE_ACTION_FORWARD);
+ 	PPE_VSI_SET_STATION_MOVE_LRN_EN(vsi_cfg, true);
+@@ -1582,6 +1588,27 @@ int ppe_port_bridge_txmac_set(struct ppe
+ }
+ 
+ /**
++ * ppe_port_bridge_learning_set - Control hardware FDB learning of a port
++ * @ppe_dev: PPE device
++ * @port: PPE port to configure
++ * @enable: Enable or disable source address learning on the port
++ *
++ * Control the learning of new addresses and of station moves on the
++ * port. Learned packets are still forwarded.
++ *
++ * Return: 0 on success, negative error code on failure.
++ */
++int ppe_port_bridge_learning_set(struct ppe_device *ppe_dev, int port,
++				 bool enable)
++{
++	u32 reg = PPE_PORT_BRIDGE_CTRL_ADDR + PPE_PORT_BRIDGE_CTRL_INC * port;
++	u32 mask = PPE_PORT_BRIDGE_NEW_LRN_EN | PPE_PORT_BRIDGE_STA_MOVE_LRN_EN;
++
++	return regmap_update_bits(ppe_dev->regmap, reg, mask,
++				  enable ? mask : 0);
++}
++
++/**
+  * ppe_port_stp_state_set - Set the spanning tree state of a PPE port
+  * @ppe_dev: PPE device
+  * @port: PPE port to configure
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_config.h
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_config.h
+@@ -323,11 +323,16 @@ struct ppe_fdb_entry {
+ 
+ int ppe_hw_config(struct ppe_device *ppe_dev);
+ int ppe_vsi_members_set(struct ppe_device *ppe_dev, int vsi,
+-			unsigned int port_bitmap);
++			unsigned int member_bitmap,
++			unsigned int uuc_bitmap,
++			unsigned int umc_bitmap,
++			unsigned int bc_bitmap);
+ int ppe_port_vsi_set(struct ppe_device *ppe_dev, int port, int vsi);
+ int ppe_vsi_eg_mode_set(struct ppe_device *ppe_dev, int vsi, u32 port_modes);
+ int ppe_port_bridge_txmac_set(struct ppe_device *ppe_dev, int port,
+ 			      bool enable);
++int ppe_port_bridge_learning_set(struct ppe_device *ppe_dev, int port,
++				 bool enable);
+ int ppe_port_stp_state_set(struct ppe_device *ppe_dev, int port,
+ 			   enum ppe_stp_state state);
+ int ppe_fdb_entry_add(struct ppe_device *ppe_dev,

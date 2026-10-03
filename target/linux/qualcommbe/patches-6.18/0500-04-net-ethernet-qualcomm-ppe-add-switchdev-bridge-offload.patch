@@ -1,0 +1,543 @@
+From: Kenneth Kasilag <kenneth@kasilag.me>
+Date: Fri, 03 Jul 2026 00:00:00 +0000
+Subject: [PATCH] net: ethernet: qualcomm: ppe: add switchdev based bridge offload
+
+Offload software bridging of the PPE port net devices to the PPE L2
+bridge. Each offloaded VLAN-unaware bridge is backed by a VSI (virtual
+switch instance): ports joined to the bridge are bound to its VSI, and
+the hardware then learns and forwards within the VSI on its own.
+
+The PPE core already initializes all VSIs to a parked state which only
+punts to the CPU port, and leaves every port unbound, so an unbridged
+port keeps working as a plain NIC through the invalid-VSI redirect.
+Joining flips the port to its bridge VSI, sets the egress tag modes of
+the VSI to leave packets unmodified, and enables the bridge TX MAC of
+the port, which gates FDB-forwarded egress and is disabled out of
+reset (CPU-transmitted packets carry an explicit destination port and
+bypass it). Leaving reverts the port and flushes its FDB entries. The
+spanning tree state of the bridge port applies to the CST state of the
+port, with forwarding restored when a port leaves its bridge.
+
+The CPU port stays a member of every VSI, so unknown unicast, unknown
+multicast and broadcast packets are still flooded to the CPU and reach
+the software ports of the bridge.
+
+VLAN-aware bridges are left in software for now and refuse a later
+vlan_filtering toggle while offloaded; bridge port flag changes away
+from the defaults are refused as well. FDB event handling, assisted
+learning for software ports and VLAN offload follow in later patches.
+
+Signed-off-by: Kenneth Kasilag <kenneth@kasilag.me>
+---
+--- a/drivers/net/ethernet/qualcomm/Kconfig
++++ b/drivers/net/ethernet/qualcomm/Kconfig
+@@ -64,9 +64,11 @@ config QCOM_PPE
+ 	tristate "Qualcomm Technologies, Inc. PPE Ethernet support"
+ 	depends on COMMON_CLK && HAS_IOMEM && OF
+ 	depends on ARCH_QCOM || COMPILE_TEST
++	depends on BRIDGE || BRIDGE=n
+ 	select REGMAP_MMIO
+ 	select PHYLINK
+ 	select PCS_QCOM_IPQ9574
++	select NET_SWITCHDEV
+ 	help
+ 	  This driver supports the Qualcomm Technologies, Inc. packet
+ 	  process engine (PPE) available with IPQ SoC. The PPE includes
+--- a/drivers/net/ethernet/qualcomm/ppe/Makefile
++++ b/drivers/net/ethernet/qualcomm/ppe/Makefile
+@@ -4,7 +4,7 @@
+ #
+ 
+ obj-$(CONFIG_QCOM_PPE) += qcom-ppe.o
+-qcom-ppe-objs := ppe.o ppe_config.o ppe_debugfs.o ppe_port.o ppe_api.o
++qcom-ppe-objs := ppe.o ppe_config.o ppe_debugfs.o ppe_port.o ppe_api.o ppe_bridge.o
+ 
+ #EDMA
+ qcom-ppe-objs += edma.o edma_cfg_rx.o edma_cfg_tx.o edma_debugfs.o edma_port.o edma_rx.o edma_tx.o edma_ethtool.o
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe.c
+@@ -17,6 +17,7 @@
+ 
+ #include "edma.h"
+ #include "ppe.h"
++#include "ppe_bridge.h"
+ #include "ppe_config.h"
+ #include "ppe_debugfs.h"
+ #include "ppe_port.h"
+@@ -222,6 +223,14 @@ static int qcom_ppe_probe(struct platfor
+ 				     "PPE Port MAC initialization failed\n");
+ 	}
+ 
++	ret = ppe_bridge_setup(ppe_dev);
++	if (ret) {
++		ppe_port_mac_deinit(ppe_dev);
++		edma_destroy(ppe_dev);
++		return dev_err_probe(dev, ret,
++				     "PPE bridge offload setup failed\n");
++	}
++
+ 	ppe_debugfs_setup(ppe_dev);
+ 	platform_set_drvdata(pdev, ppe_dev);
+ 
+@@ -234,6 +243,7 @@ static void qcom_ppe_remove(struct platf
+ 
+ 	ppe_dev = platform_get_drvdata(pdev);
+ 	ppe_port_mac_deinit(ppe_dev);
++	ppe_bridge_destroy(ppe_dev);
+ 	ppe_debugfs_teardown(ppe_dev);
+ 	edma_destroy(ppe_dev);
+ }
+--- /dev/null
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_bridge.c
+@@ -0,0 +1,435 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/* Copyright (c) 2026 Kenneth Kasilag <kenneth@kasilag.me>
++ */
++
++/* switchdev based offload of software bridges to the PPE L2 bridge.
++ *
++ * Each offloaded software bridge is backed by a VSI (virtual switch
++ * instance) of the PPE. PPE ports joined to a VLAN-unaware bridge are
++ * bound to its VSI, which makes the hardware learn, age and forward
++ * within the VSI autonomously. The CPU port is a member of every VSI,
++ * so that unknown unicast, multicast and broadcast packets are flooded
++ * to the CPU and reach software ports (such as wireless interfaces) of
++ * the bridge.
++ */
++
++#include <linux/if_bridge.h>
++#include <linux/netdevice.h>
++#include <linux/notifier.h>
++#include <linux/slab.h>
++#include <net/switchdev.h>
++
++#include "edma_port.h"
++#include "ppe.h"
++#include "ppe_bridge.h"
++#include "ppe_config.h"
++#include "ppe_regs.h"
++
++/**
++ * struct ppe_bridge_vsi - State of a VSI backing an offloaded bridge.
++ * @br: Bridge device the VSI backs, NULL when the VSI is free.
++ * @num_ports: Number of PPE ports joined to the VSI.
++ */
++struct ppe_bridge_vsi {
++	struct net_device *br;
++	unsigned int num_ports;
++};
++
++/**
++ * struct ppe_bridge_port - Bridge state of a PPE port.
++ * @bridge: Bridge device the port is offloaded to, NULL when the port
++ * is not offloaded.
++ * @vsi: VSI ID the port is bound to, negative when not offloaded.
++ */
++struct ppe_bridge_port {
++	struct net_device *bridge;
++	int vsi;
++};
++
++/**
++ * struct ppe_bridge - Global PPE bridge offload state.
++ * @ppe_dev: Back pointer to the PPE device.
++ * @netdev_nb: Notifier for bridge join and leave events of the ports.
++ * @switchdev_nb: Notifier for atomic switchdev events (FDB).
++ * @switchdev_blocking_nb: Notifier for blocking switchdev events.
++ * @vsis: State of the PPE VSIs.
++ * @ports: Bridge state of the PPE ports, indexed by port ID.
++ *
++ * All state is protected by RTNL: bridge join and leave events run
++ * under RTNL, and deferred switchdev attribute events are processed
++ * under RTNL as well.
++ */
++struct ppe_bridge {
++	struct ppe_device *ppe_dev;
++	struct notifier_block netdev_nb;
++	struct notifier_block switchdev_nb;
++	struct notifier_block switchdev_blocking_nb;
++	struct ppe_bridge_vsi vsis[PPE_VSI_TBL_ENTRIES];
++	struct ppe_bridge_port ports[];
++};
++
++static int ppe_bridge_port_id(struct net_device *dev)
++{
++	struct edma_port_priv *port_priv = netdev_priv(dev);
++
++	return port_priv->ppe_port->port_id;
++}
++
++/* Get the VSI backing the bridge, or a free VSI to back it with. */
++static int ppe_bridge_vsi_get(struct ppe_bridge *pb, struct net_device *br)
++{
++	int i, vsi = -1;
++
++	for (i = 0; i < ARRAY_SIZE(pb->vsis); i++) {
++		if (pb->vsis[i].br == br)
++			return i;
++		if (vsi < 0 && !pb->vsis[i].br)
++			vsi = i;
++	}
++
++	return vsi;
++}
++
++/* The CPU port is a member of every VSI, so that packets without a hit
++ * on a hardware FDB entry are flooded to the CPU as well.
++ */
++static unsigned int ppe_bridge_vsi_port_bitmap(struct ppe_bridge *pb, int vsi)
++{
++	unsigned int bitmap = BIT(0);
++	int i;
++
++	for (i = 1; i < pb->ppe_dev->num_ports; i++)
++		if (pb->ports[i].vsi == vsi)
++			bitmap |= BIT(i);
++
++	return bitmap;
++}
++
++/* Update the per-port egress tag modes of a VSI. The VSI of a
++ * VLAN-unaware bridge leaves packets unmodified on all ports: the VSI
++ * tag modes apply out of hardware reset, and the default mode would
++ * strip VLAN tags on egress.
++ */
++static int ppe_bridge_vsi_eg_update(struct ppe_bridge *pb, int vsi)
++{
++	u32 modes = 0;
++	int i;
++
++	for (i = 0; i < pb->ppe_dev->num_ports; i++)
++		modes |= PPE_EG_VLAN_MODE_UNMODIFIED << (i * 2);
++
++	return ppe_vsi_eg_mode_set(pb->ppe_dev, vsi, modes);
++}
++
++static void ppe_bridge_port_offload_mark_set(struct net_device *dev,
++					     bool offloaded)
++{
++	struct edma_port_priv *port_priv = netdev_priv(dev);
++
++	WRITE_ONCE(port_priv->br_offload, offloaded);
++}
++
++static int ppe_bridge_port_join(struct ppe_bridge *pb,
++				struct net_device *dev,
++				struct net_device *br,
++				struct netlink_ext_ack *extack)
++{
++	struct ppe_device *ppe_dev = pb->ppe_dev;
++	int port = ppe_bridge_port_id(dev);
++	unsigned int bitmap;
++	int vsi, ret;
++
++	/* Failure to back the bridge with a VSI is not an error, the
++	 * bridge stays a software bridge for all its ports.
++	 */
++	if (br_vlan_enabled(br)) {
++		NL_SET_ERR_MSG_MOD(extack,
++				   "VLAN-aware bridges are not offloaded");
++		return 0;
++	}
++
++	vsi = ppe_bridge_vsi_get(pb, br);
++	if (vsi < 0) {
++		NL_SET_ERR_MSG_MOD(extack,
++				   "No free VSI to offload the bridge");
++		return 0;
++	}
++
++	bitmap = ppe_bridge_vsi_port_bitmap(pb, vsi);
++
++	ret = ppe_vsi_members_set(ppe_dev, vsi, bitmap | BIT(port));
++	if (ret)
++		return ret;
++
++	ret = ppe_bridge_vsi_eg_update(pb, vsi);
++	if (ret)
++		goto err_members;
++
++	ret = ppe_port_vsi_set(ppe_dev, port, vsi);
++	if (ret)
++		goto err_members;
++
++	/* The bridge TX MAC gates packets forwarded to the port by the
++	 * hardware bridge, it is kept disabled while a port is not
++	 * offloaded.
++	 */
++	ret = ppe_port_bridge_txmac_set(ppe_dev, port, true);
++	if (ret)
++		goto err_vsi;
++
++	ppe_bridge_port_offload_mark_set(dev, true);
++
++	ret = switchdev_bridge_port_offload(dev, dev, pb,
++					    &pb->switchdev_nb,
++					    &pb->switchdev_blocking_nb,
++					    false, extack);
++	if (ret)
++		goto err_txmac;
++
++	pb->vsis[vsi].br = br;
++	pb->vsis[vsi].num_ports++;
++	pb->ports[port].bridge = br;
++	pb->ports[port].vsi = vsi;
++
++	return 0;
++
++err_txmac:
++	ppe_bridge_port_offload_mark_set(dev, false);
++	ppe_port_bridge_txmac_set(ppe_dev, port, false);
++err_vsi:
++	ppe_port_vsi_set(ppe_dev, port, -1);
++err_members:
++	ppe_vsi_members_set(ppe_dev, vsi, bitmap);
++
++	return ret;
++}
++
++static void ppe_bridge_port_leave(struct ppe_bridge *pb,
++				  struct net_device *dev)
++{
++	struct ppe_device *ppe_dev = pb->ppe_dev;
++	int port = ppe_bridge_port_id(dev);
++	int vsi = pb->ports[port].vsi;
++
++	if (vsi < 0)
++		return;
++
++	switchdev_bridge_port_unoffload(dev, pb,
++					&pb->switchdev_nb,
++					&pb->switchdev_blocking_nb);
++
++	ppe_bridge_port_offload_mark_set(dev, false);
++	ppe_port_bridge_txmac_set(ppe_dev, port, false);
++	ppe_port_vsi_set(ppe_dev, port, -1);
++
++	pb->ports[port].bridge = NULL;
++	pb->ports[port].vsi = -1;
++
++	ppe_vsi_members_set(ppe_dev, vsi,
++			    ppe_bridge_vsi_port_bitmap(pb, vsi));
++
++	pb->vsis[vsi].num_ports--;
++	if (!pb->vsis[vsi].num_ports)
++		pb->vsis[vsi].br = NULL;
++
++	/* The bridge leaves the port in the disabled spanning tree
++	 * state, restore the forwarding of the now standalone port.
++	 */
++	ppe_port_stp_state_set(ppe_dev, port, PPE_STP_STATE_FORWARDING);
++
++	ppe_fdb_port_flush(ppe_dev, port);
++}
++
++static int ppe_bridge_stp_state_set(struct ppe_bridge *pb,
++				    struct net_device *dev, u8 state)
++{
++	struct ppe_device *ppe_dev = pb->ppe_dev;
++	int port = ppe_bridge_port_id(dev);
++	enum ppe_stp_state stp_state;
++	int ret;
++
++	switch (state) {
++	case BR_STATE_DISABLED:
++		stp_state = PPE_STP_STATE_DISABLED;
++		break;
++	case BR_STATE_BLOCKING:
++	case BR_STATE_LISTENING:
++		stp_state = PPE_STP_STATE_BLOCKING;
++		break;
++	case BR_STATE_LEARNING:
++		stp_state = PPE_STP_STATE_LEARNING;
++		break;
++	case BR_STATE_FORWARDING:
++		stp_state = PPE_STP_STATE_FORWARDING;
++		break;
++	default:
++		return -EINVAL;
++	}
++
++	ret = ppe_port_stp_state_set(ppe_dev, port, stp_state);
++	if (ret)
++		return ret;
++
++	if (stp_state != PPE_STP_STATE_FORWARDING)
++		ret = ppe_fdb_port_flush(ppe_dev, port);
++
++	return ret;
++}
++
++static int ppe_bridge_attr_set(struct net_device *dev, const void *ctx,
++			       const struct switchdev_attr *attr,
++			       struct netlink_ext_ack *extack)
++{
++	struct edma_port_priv *port_priv = netdev_priv(dev);
++	struct ppe_bridge *pb = port_priv->ppe_port->ppe_dev->bridge;
++	int port = ppe_bridge_port_id(dev);
++
++	if (pb->ports[port].vsi < 0)
++		return -EOPNOTSUPP;
++
++	switch (attr->id) {
++	case SWITCHDEV_ATTR_ID_PORT_STP_STATE:
++		return ppe_bridge_stp_state_set(pb, dev, attr->u.stp_state);
++	case SWITCHDEV_ATTR_ID_PORT_PRE_BRIDGE_FLAGS:
++		/* Changing the bridge port flags away from the defaults
++		 * is not supported yet.
++		 */
++		return attr->u.brport_flags.mask ? -EINVAL : 0;
++	case SWITCHDEV_ATTR_ID_BRIDGE_VLAN_FILTERING:
++		/* Refuse enabling VLAN filtering on a bridge which is
++		 * already offloaded as a VLAN-unaware bridge.
++		 */
++		return attr->u.vlan_filtering ? -EOPNOTSUPP : 0;
++	default:
++		return -EOPNOTSUPP;
++	}
++}
++
++static int ppe_bridge_netdev_event(struct notifier_block *nb,
++				   unsigned long event, void *ptr)
++{
++	struct ppe_bridge *pb = container_of(nb, struct ppe_bridge,
++					     netdev_nb);
++	struct net_device *dev = netdev_notifier_info_to_dev(ptr);
++	struct netdev_notifier_changeupper_info *info;
++	int ret = 0;
++
++	if (!edma_port_dev_check(dev))
++		return NOTIFY_DONE;
++
++	switch (event) {
++	case NETDEV_CHANGEUPPER:
++		info = ptr;
++		if (!netif_is_bridge_master(info->upper_dev))
++			break;
++
++		if (info->linking)
++			ret = ppe_bridge_port_join(pb, dev, info->upper_dev,
++						   netdev_notifier_info_to_extack(&info->info));
++		else
++			ppe_bridge_port_leave(pb, dev);
++		break;
++	}
++
++	return notifier_from_errno(ret);
++}
++
++/* FDB entries of the offloaded ports are learned and aged by the
++ * hardware, the switchdev FDB events are not consumed yet.
++ */
++static int ppe_bridge_switchdev_event(struct notifier_block *nb,
++				      unsigned long event, void *ptr)
++{
++	return NOTIFY_DONE;
++}
++
++static int ppe_bridge_switchdev_blocking_event(struct notifier_block *nb,
++					       unsigned long event, void *ptr)
++{
++	struct net_device *dev = switchdev_notifier_info_to_dev(ptr);
++	int ret;
++
++	switch (event) {
++	case SWITCHDEV_PORT_ATTR_SET:
++		ret = switchdev_handle_port_attr_set(dev, ptr,
++						     edma_port_dev_check,
++						     ppe_bridge_attr_set);
++		return notifier_from_errno(ret);
++	}
++
++	return NOTIFY_DONE;
++}
++
++/**
++ * ppe_bridge_setup - Set up the bridge offload of the PPE ports
++ * @ppe_dev: PPE device
++ *
++ * Register the notifiers which offload the software bridging between
++ * the PPE port net devices to the PPE L2 bridge.
++ *
++ * Return: 0 on success, negative error code on failure.
++ */
++int ppe_bridge_setup(struct ppe_device *ppe_dev)
++{
++	struct ppe_bridge *pb;
++	int i, ret;
++
++	pb = kzalloc(struct_size(pb, ports, ppe_dev->num_ports),
++		     GFP_KERNEL);
++	if (!pb)
++		return -ENOMEM;
++
++	pb->ppe_dev = ppe_dev;
++	for (i = 0; i < ppe_dev->num_ports; i++)
++		pb->ports[i].vsi = -1;
++
++	pb->netdev_nb.notifier_call = ppe_bridge_netdev_event;
++	ret = register_netdevice_notifier(&pb->netdev_nb);
++	if (ret)
++		goto err_free;
++
++	pb->switchdev_nb.notifier_call = ppe_bridge_switchdev_event;
++	ret = register_switchdev_notifier(&pb->switchdev_nb);
++	if (ret)
++		goto err_netdev_nb;
++
++	pb->switchdev_blocking_nb.notifier_call = ppe_bridge_switchdev_blocking_event;
++	ret = register_switchdev_blocking_notifier(&pb->switchdev_blocking_nb);
++	if (ret)
++		goto err_switchdev_nb;
++
++	ppe_dev->bridge = pb;
++
++	return 0;
++
++err_switchdev_nb:
++	unregister_switchdev_notifier(&pb->switchdev_nb);
++err_netdev_nb:
++	unregister_netdevice_notifier(&pb->netdev_nb);
++err_free:
++	kfree(pb);
++
++	return ret;
++}
++
++/**
++ * ppe_bridge_destroy - Tear down the bridge offload of the PPE ports
++ * @ppe_dev: PPE device
++ *
++ * Unregister the bridge offload notifiers. The PPE port net devices
++ * are already unregistered, which made them leave their bridges and
++ * release their offload state beforehand.
++ */
++void ppe_bridge_destroy(struct ppe_device *ppe_dev)
++{
++	struct ppe_bridge *pb = ppe_dev->bridge;
++
++	if (!pb)
++		return;
++
++	unregister_switchdev_blocking_notifier(&pb->switchdev_blocking_nb);
++	unregister_switchdev_notifier(&pb->switchdev_nb);
++	unregister_netdevice_notifier(&pb->netdev_nb);
++	ppe_dev->bridge = NULL;
++	kfree(pb);
++}
+--- /dev/null
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_bridge.h
+@@ -0,0 +1,13 @@
++/* SPDX-License-Identifier: GPL-2.0-only
++ *
++ * Copyright (c) 2026 Kenneth Kasilag <kenneth@kasilag.me>
++ */
++
++#ifndef __PPE_BRIDGE_H__
++#define __PPE_BRIDGE_H__
++
++struct ppe_device;
++
++int ppe_bridge_setup(struct ppe_device *ppe_dev);
++void ppe_bridge_destroy(struct ppe_device *ppe_dev);
++#endif

@@ -1,0 +1,1262 @@
+From: Kenneth Kasilag <kenneth@kasilag.me>
+Date: Sat, 04 Jul 2026 00:00:00 +0000
+Subject: [PATCH] net: ethernet: qualcomm: ppe: offload netfilter flowtables
+
+Add the PPE resource manager and rule translator used by netfilter
+flowtable offload.  A later patch publishes it through the PPE port
+netdevices' ndo_setup_tc callback.
+
+An offloaded rule maps to a next hop entry carrying the egress port,
+the destination MAC rewrite, the egress VLAN of a VLAN push action and
+the NAT addresses, plus a flow entry carrying the 5-tuple and the
+translated L4 port. The router MAC table is maintained from the source
+MAC rewrite of the rules: the egress source MAC of one direction is
+the MAC the reverse direction ingresses on, so a connection offloaded
+in both directions installs all the router MACs it needs. The egress
+L3 interfaces, indexed by port, provide the source MAC rewrite and the
+routing enable of each port, keyed off the same rewrite action.
+
+Only IPv4 TCP and UDP flows with at most one NAT direction are
+offloaded; everything else, including VLAN-tagged ingress, stays on
+the software flowtable path, as do flow misses of offloaded
+connections. Public SNAT addresses and router MACs are refcounted
+scarce resources (16 and 8 entries); exhaustion falls back to
+software. Both tables are backed by a common refcounted-table helper,
+struct ppe_ft_ref, which keeps the entry scan and the reference
+bookkeeping in one place. Before a flow is inserted, the host table
+entry of its source is added or referenced and its hardware index
+is copied into the flow. It is deleted only with the last referencing
+flow, after that flow has been deleted. Flow statistics
+come from the per-flow hit counters, keeping the flowtable entries
+alive while traffic flows in hardware.
+
+Teardown explicitly drains rules which survive flow-block unbind
+through the ordinary destroy transaction. This keeps hardware deletion
+and every resource release in the normal FLOW_CLS_DESTROY path.
+
+A repeated FLOW_CLS_REPLACE for an already-installed cookie reports
+success without touching hardware. The core re-sends REPLACE from
+flow_offload_refresh() for as long as a flow's packets traverse the
+software path, so treating it as a fresh installation would program a
+duplicate row for the same tuple and leak a next hop slot on every
+refresh until the table is exhausted.
+
+Tuple masks and mangle offsets are validated against forms the hardware can
+represent.  Ethernet rewrite admission intentionally follows the forms seen
+from netfilter, including partial or duplicate L2 rewrites; unsupported
+mixed-NAT rules still fall back to software.
+
+A flow whose hardware delete fails retains its host, next hop and address
+table slots. The driver clears VALID as a best-effort containment step and
+keeps the indexed flow on a quarantine list until driver teardown, rather
+than forgetting a row which may still forward.
+
+Signed-off-by: Kenneth Kasilag <kenneth@kasilag.me>
+---
+--- a/drivers/net/ethernet/qualcomm/ppe/Makefile
++++ b/drivers/net/ethernet/qualcomm/ppe/Makefile
+@@ -4,7 +4,7 @@
+ #
+ 
+ obj-$(CONFIG_QCOM_PPE) += qcom-ppe.o
+-qcom-ppe-objs := ppe.o ppe_config.o ppe_debugfs.o ppe_port.o ppe_api.o ppe_bridge.o ppe_flow.o
++qcom-ppe-objs := ppe.o ppe_config.o ppe_debugfs.o ppe_port.o ppe_api.o ppe_bridge.o ppe_flow.o ppe_flowtable.o
+ 
+ #EDMA
+ qcom-ppe-objs += edma.o edma_cfg_rx.o edma_cfg_tx.o edma_debugfs.o edma_port.o edma_rx.o edma_tx.o edma_ethtool.o
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_port.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_port.c
+@@ -325,7 +325,8 @@ static int edma_port_set_mac_address(str
+ 
+ 	ret = ppe_port_set_mac_address(port_priv->ppe_port, addr->sa_data);
+ 	if (ret) {
+-		netdev_err(netdev, "set mac address failed for dev: %s\n", netdev->name);
++		netdev_err(netdev, "set mac address failed for dev: %s\n",
++			   netdev->name);
+ 		return ret;
+ 	}
+ 
+@@ -473,7 +474,8 @@ int edma_port_setup(struct ppe_port *por
+ 			    port_id, netdev->dev_addr);
+ 	}
+ 
+-	ret = ppe_l3_if_set(ppe_dev, port_id, netdev->dev_addr, netdev->mtu);
++	ret = ppe_l3_if_set(ppe_dev, port_id, netdev->dev_addr,
++			    netdev->mtu);
+ 	if (ret)
+ 		goto l3_setup_fail;
+ 
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe.c
+@@ -21,6 +21,7 @@
+ #include "ppe_config.h"
+ #include "ppe_debugfs.h"
+ #include "ppe_flow.h"
++#include "ppe_flowtable.h"
+ #include "ppe_port.h"
+ 
+ #define PPE_PORT_MAX		8
+@@ -236,6 +237,15 @@ static int qcom_ppe_probe(struct platfor
+ 				     "PPE bridge offload setup failed\n");
+ 	}
+ 
++	ret = ppe_flowtable_setup(ppe_dev);
++	if (ret) {
++		ppe_port_mac_deinit(ppe_dev);
++		ppe_bridge_destroy(ppe_dev);
++		edma_destroy(ppe_dev);
++		return dev_err_probe(dev, ret,
++				     "PPE flowtable offload setup failed\n");
++	}
++
+ 	ppe_debugfs_setup(ppe_dev);
+ 	platform_set_drvdata(pdev, ppe_dev);
+ 
+@@ -248,6 +258,12 @@ static void qcom_ppe_remove(struct platf
+ 
+ 	ppe_dev = platform_get_drvdata(pdev);
+ 	ppe_port_mac_deinit(ppe_dev);
++
++	/* Netdevice teardown unbinds the flow blocks and quiesces their
++	 * callbacks. Explicitly drain surviving rules while their virtual
++	 * ports still exist.
++	 */
++	ppe_flowtable_destroy(ppe_dev);
+ 	ppe_bridge_destroy(ppe_dev);
+ 	ppe_debugfs_teardown(ppe_dev);
+ 	edma_destroy(ppe_dev);
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe.h
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe.h
+@@ -16,6 +16,7 @@ struct dentry;
+ 
+ struct ppe_ports;
+ struct ppe_bridge;
++struct ppe_flowtable;
+ 
+ /* Per-SoC PPE parameters. The PPE register layer is shared between the
+  * HPPE (IPQ807x) and APPE (IPQ9574) generations; this collects the few
+@@ -58,6 +59,7 @@ struct ppe_variant {
+  * @debugfs_root: Debugfs root entry.
+  * @ports: PPE MAC ports.
+  * @bridge: PPE bridge offload private data.
++ * @flowtable: PPE flowtable offload private data.
+  * @fdb_lock: Lock to serialize the hardware FDB operation registers.
+  * @fdb_cmd_id: Rolling command ID of the last issued FDB operation.
+  * @flow_lock: Lock to serialize the L3 flow operation registers.
+@@ -78,7 +80,7 @@ struct ppe_device {
+ 	struct dentry *debugfs_root;
+ 	struct ppe_ports *ports;
+ 	struct ppe_bridge *bridge;
+-	/* Serialize indirect FDB table operations. */
++	struct ppe_flowtable *flowtable;
+ 	struct mutex fdb_lock;
+ 	u8 fdb_cmd_id;
+ 	/* Serialize the L3 flow operation registers. */
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_flow.h
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_flow.h
+@@ -64,8 +64,8 @@ int ppe_my_mac_set(struct ppe_device *pp
+ 		   bool valid);
+ int ppe_l3_if_set(struct ppe_device *ppe_dev, int index, const u8 *addr,
+ 		  int mtu);
+-int ppe_l3_if_my_mac_set(struct ppe_device *ppe_dev, int index, int my_mac,
+-			 bool enable);
++int ppe_l3_if_my_mac_set(struct ppe_device *ppe_dev, int index,
++			 int my_mac, bool enable);
+ int ppe_l3_if_clear(struct ppe_device *ppe_dev, int index);
+ int ppe_port_l3_if_set(struct ppe_device *ppe_dev, int port, int l3_if);
+ int ppe_pub_ip_set(struct ppe_device *ppe_dev, int index, __be32 addr);
+--- /dev/null
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_flowtable.c
+@@ -0,0 +1,1074 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/* Copyright (c) 2026 Kenneth Kasilag <kenneth@kasilag.me> */
++
++/* Offload of netfilter flowtables to the PPE L3 flow engine.
++ *
++ * The PPE port net devices accept flow block bindings through
++ * ndo_setup_tc(TC_SETUP_FT). Offloaded rules translate to a next hop
++ * entry (egress port, MAC rewrites, VLAN, NAT addresses) and a flow
++ * entry (the 5-tuple and the translated L4 port). The router MAC
++ * table is maintained from the source MAC rewrite of the rules: the
++ * egress source MAC of one direction is the MAC the reverse direction
++ * ingresses on. Flows the hardware cannot express fall back to the
++ * software flowtable path.
++ */
++
++#include <linux/atomic.h>
++#include <linux/etherdevice.h>
++#include <linux/hashtable.h>
++#include <linux/if_vlan.h>
++#include <linux/ip.h>
++#include <linux/netdevice.h>
++#include <linux/rcupdate.h>
++#include <linux/regmap.h>
++#include <linux/rhashtable.h>
++#include <net/flow_offload.h>
++#include <net/ipv6.h>
++#include <net/tcp.h>
++
++#include "edma_port.h"
++#include "ppe.h"
++#include "ppe_config.h"
++#include "ppe_flow.h"
++#include "ppe_flowtable.h"
++#include "ppe_regs.h"
++
++/**
++ * struct ppe_ft_ref - Common head of a refcounted hardware-entry table.
++ * @refcnt: Number of flows using the entry, 0 when free.
++ *
++ * A refcounted table backs hardware entries shared by many flows: a
++ * flow takes a reference on the entry matching its key, a free entry
++ * is programmed on first use, and the hardware entry is released when
++ * the last reference drops. The scan and the reference bookkeeping
++ * live in ppe_ft_ref_get() and ppe_ft_ref_put(); the key match and
++ * the hardware programming stay with each table. Every entry type
++ * embeds this as its first member.
++ */
++struct ppe_ft_ref {
++	unsigned int refcnt;
++};
++
++/**
++ * struct ppe_ft_my_mac - A refcounted router MAC slot.
++ * @ref: Reference count of the slot.
++ * @addr: MAC address of the slot.
++ * @poisoned: The hardware row could not be invalidated.
++ */
++struct ppe_ft_my_mac {
++	struct ppe_ft_ref ref;
++	u8 addr[ETH_ALEN];
++	bool poisoned;
++};
++
++static_assert(offsetof(struct ppe_ft_my_mac, ref) == 0);
++
++/**
++ * struct ppe_ft_pub_ip - A refcounted public IP slot.
++ * @ref: Reference count of the slot.
++ * @ip: IPv4 address of the slot.
++ */
++struct ppe_ft_pub_ip {
++	struct ppe_ft_ref ref;
++	__be32 ip;
++};
++
++static_assert(offsetof(struct ppe_ft_pub_ip, ref) == 0);
++
++/**
++ * struct ppe_ft_flow - An offloaded flow.
++ * @node: Hash table node, keyed by the flow cookie.
++ * @cookie: Flow cookie of the rule.
++ * @index: Hardware flow table index.
++ * @entry: The flow, kept for the delete command.
++ * @nexthop: Next hop index of the flow.
++ * @my_mac: Router MAC slot held by the flow, negative when none.
++ * @pub_ip: Public IP slot held by the flow, negative when none.
++ * @packets: Hit packet count at the last stats read.
++ * @bytes: Hit byte count at the last stats read.
++ */
++struct ppe_ft_flow {
++	struct rhash_head node;
++	struct list_head zombie_node;
++	struct rcu_head rcu;
++	unsigned long cookie;
++	int index;
++	struct ppe_flow_entry entry;
++	u16 nexthop;
++	int my_mac;
++	int pub_ip;
++	u32 packets;
++	u64 bytes;
++};
++
++#define PPE_FT_HOST_HASH_BITS	8
++
++/* Refcounted hardware host entry. Its hardware-selected index is
++ * carried explicitly by every flow which references it.
++ */
++struct ppe_ft_host {
++	struct hlist_node node;
++	__be32 sip;
++	int index;
++	unsigned int refcnt;
++};
++
++/**
++ * struct ppe_flowtable - Flowtable offload state of the PPE.
++ * @ppe_dev: Back pointer to the PPE device.
++ * @lock: Serializes rule installation, removal and the allocators.
++ * @flows: Offloaded flows, keyed by flow cookie.
++ * @nexthop_used: Allocation bitmap of the next hop entries.
++ * @my_macs: Refcounted router MAC slots.
++ * @pub_ips: Refcounted public IP slots.
++ * @block_cb_list: Flow block callbacks bound to the PPE ports.
++ * @hosts: Refcount of the flows sharing a source host entry.
++ */
++struct ppe_flowtable {
++	struct ppe_device *ppe_dev;
++	/* Serialize rule and resource state. */
++	struct mutex lock;
++	struct rhashtable flows;
++	struct list_head zombies;
++	atomic_long_t replace_calls;
++	atomic_long_t replace_unsupported;
++	atomic_long_t replace_failed;
++	atomic_long_t destroy_calls;
++	DECLARE_HASHTABLE(hosts, PPE_FT_HOST_HASH_BITS);
++	DECLARE_BITMAP(nexthop_used, PPE_NEXTHOP_TBL_ENTRIES);
++	struct ppe_ft_my_mac my_macs[PPE_MY_MAC_TBL_ENTRIES];
++	struct ppe_ft_pub_ip pub_ips[PPE_PUB_IP_TBL_ENTRIES];
++	struct list_head block_cb_list;
++};
++
++static const struct rhashtable_params ppe_ft_params = {
++	.head_offset = offsetof(struct ppe_ft_flow, node),
++	.key_offset = offsetof(struct ppe_ft_flow, cookie),
++	.key_len = sizeof(unsigned long),
++	.automatic_shrinking = true,
++};
++
++/* The mangle words of an offloaded rule, collected before translation.
++ * The Ethernet buffer overlays the destination and source addresses as
++ * they appear in the header.
++ */
++struct ppe_ft_data {
++	struct {
++		u8 dst[ETH_ALEN];
++		u8 src[ETH_ALEN];
++	} eth;
++	__be32 sip;
++	__be32 dip;
++	__be16 sport;
++	__be16 dport;
++};
++
++static int ppe_ft_mangle_eth(const struct flow_action_entry *act, void *eth)
++{
++	const void *src = &act->mangle.val;
++	void *dest = eth + act->mangle.offset;
++
++	/* A mangle mask leaves half of a shared word untouched: the eth
++	 * rewrite splits the middle word into eth_dst[4:5] and eth_src[0:1].
++	 * Copy only the half the mask writes, or a full-word mangle of one
++	 * half zeroes the other.
++	 */
++	switch (act->mangle.mask) {
++	case 0xffff0000:
++		if (act->mangle.offset != 4)
++			return -EOPNOTSUPP;
++		memcpy(dest, src, 2);
++		break;
++	case 0x0000ffff:
++		if (act->mangle.offset != 4)
++			return -EOPNOTSUPP;
++		memcpy(dest + 2, src + 2, 2);
++		break;
++	case 0:
++		if (act->mangle.offset != 0 && act->mangle.offset != 8)
++			return -EOPNOTSUPP;
++		memcpy(dest, src, 4);
++		break;
++	default:
++		return -EOPNOTSUPP;
++	}
++
++	return 0;
++}
++
++static int ppe_ft_mangle_ipv4(const struct flow_action_entry *act,
++			      struct ppe_ft_data *data)
++{
++	__be32 val = (__force __be32)act->mangle.val;
++
++	if (act->mangle.mask)
++		return -EOPNOTSUPP;
++
++	switch (act->mangle.offset) {
++	case offsetof(struct iphdr, saddr):
++		data->sip = val;
++		break;
++	case offsetof(struct iphdr, daddr):
++		data->dip = val;
++		break;
++	default:
++		return -EOPNOTSUPP;
++	}
++
++	return 0;
++}
++
++static int ppe_ft_mangle_ports(const struct flow_action_entry *act,
++			       struct ppe_ft_data *data)
++{
++	u32 val = ntohl(act->mangle.val);
++
++	if (act->mangle.offset)
++		return -EOPNOTSUPP;
++
++	if (act->mangle.mask == ~htonl(0xffff))
++		data->dport = cpu_to_be16(val);
++	else if (act->mangle.mask == ~htonl(0xffff0000))
++		data->sport = cpu_to_be16(val >> 16);
++	else
++		return -EOPNOTSUPP;
++
++	return 0;
++}
++
++/* Return entry @index of a refcounted table whose entries are @esize
++ * bytes each and embed struct ppe_ft_ref as their first member.
++ */
++static void *ppe_ft_ref_entry(void *table, size_t esize, int index)
++{
++	return (char *)table + index * esize;
++}
++
++/* Take a reference on the table entry matching the key, returning its
++ * index. A free entry's index is returned with *is_new set instead
++ * when no entry matches: the caller programs the hardware and commits
++ * the entry with its first reference. -ENOSPC when the table is full.
++ * Must be called with the flowtable lock held.
++ */
++static int ppe_ft_ref_get(void *table, size_t esize, int num,
++			  bool (*match)(const void *entry, const void *key),
++			  const void *key, bool *is_new)
++{
++	int i, free = -1;
++
++	*is_new = false;
++
++	for (i = 0; i < num; i++) {
++		struct ppe_ft_ref *ref = ppe_ft_ref_entry(table, esize, i);
++
++		if (!ref->refcnt) {
++			if (free < 0)
++				free = i;
++			continue;
++		}
++
++		if (match(ref, key)) {
++			ref->refcnt++;
++			return i;
++		}
++	}
++
++	if (free < 0)
++		return -ENOSPC;
++
++	*is_new = true;
++	return free;
++}
++
++/* Drop a reference; true when the last one went and the caller must
++ * release the hardware entry. Must be called with the flowtable lock
++ * held.
++ */
++static bool ppe_ft_ref_put(void *table, size_t esize, int index)
++{
++	struct ppe_ft_ref *ref;
++
++	if (index < 0)
++		return false;
++
++	ref = ppe_ft_ref_entry(table, esize, index);
++	if (!ref->refcnt || --ref->refcnt)
++		return false;
++
++	return true;
++}
++
++static bool ppe_ft_my_mac_match(const void *entry, const void *key)
++{
++	const struct ppe_ft_my_mac *slot = entry;
++
++	return !slot->poisoned && ether_addr_equal(slot->addr, key);
++}
++
++/* Get a refcounted router MAC slot for the address, programming the
++ * hardware entry on first use. Must be called with the flowtable lock
++ * held.
++ */
++static int ppe_ft_my_mac_get(struct ppe_flowtable *ft, const u8 *addr)
++{
++	bool is_new;
++	int i, ret;
++
++	i = ppe_ft_ref_get(ft->my_macs, sizeof(*ft->my_macs),
++			   PPE_MY_MAC_TBL_ENTRIES, ppe_ft_my_mac_match,
++			   addr, &is_new);
++	if (i < 0 || !is_new)
++		return i;
++
++	ret = ppe_my_mac_set(ft->ppe_dev, i, addr, true);
++	if (ret)
++		return ret;
++
++	ether_addr_copy(ft->my_macs[i].addr, addr);
++	ft->my_macs[i].ref.refcnt = 1;
++
++	return i;
++}
++
++static void ppe_ft_my_mac_put(struct ppe_flowtable *ft, int index)
++{
++	struct ppe_ft_my_mac *slot;
++	int ret;
++
++	if (!ppe_ft_ref_put(ft->my_macs, sizeof(*ft->my_macs), index))
++		return;
++
++	slot = &ft->my_macs[index];
++	ret = ppe_my_mac_set(ft->ppe_dev, index, slot->addr, false);
++	if (ret) {
++		slot->poisoned = true;
++		slot->ref.refcnt = 1;
++		dev_err(ft->ppe_dev->dev,
++			"quarantining MY_MAC slot %d: %d\n",
++			index, ret);
++		return;
++	}
++
++	memset(slot, 0, sizeof(*slot));
++}
++
++static bool ppe_ft_pub_ip_match(const void *entry, const void *key)
++{
++	const struct ppe_ft_pub_ip *slot = entry;
++
++	return slot->ip == *(const __be32 *)key;
++}
++
++/* Get a refcounted public IP slot for the address, programming the
++ * hardware entry on first use. Must be called with the flowtable lock
++ * held.
++ */
++static int ppe_ft_pub_ip_get(struct ppe_flowtable *ft, __be32 ip)
++{
++	bool is_new;
++	int i, ret;
++
++	i = ppe_ft_ref_get(ft->pub_ips, sizeof(*ft->pub_ips),
++			   PPE_PUB_IP_TBL_ENTRIES, ppe_ft_pub_ip_match,
++			   &ip, &is_new);
++	if (i < 0 || !is_new)
++		return i;
++
++	ret = ppe_pub_ip_set(ft->ppe_dev, i, ip);
++	if (ret)
++		return ret;
++
++	ft->pub_ips[i].ip = ip;
++	ft->pub_ips[i].ref.refcnt = 1;
++
++	return i;
++}
++
++/* Only router MAC slots have a validity bit to clear: a stale public
++ * IP is unreachable once no next hop references it.
++ */
++static void ppe_ft_pub_ip_put(struct ppe_flowtable *ft, int index)
++{
++	ppe_ft_ref_put(ft->pub_ips, sizeof(*ft->pub_ips), index);
++}
++
++/* Hash key of a flow's source IP for the host refcount table. */
++static u32 ppe_ft_host_key(const struct ppe_flow_entry *flow)
++{
++	return (__force u32)flow->sip;
++}
++
++static bool ppe_ft_host_match(const struct ppe_ft_host *host,
++			      const struct ppe_flow_entry *flow)
++{
++	return host->sip == flow->sip;
++}
++
++/* Add or reference the source host before inserting its flow. */
++static int ppe_ft_host_get(struct ppe_flowtable *ft,
++			   struct ppe_flow_entry *flow)
++{
++	u32 key = ppe_ft_host_key(flow);
++	struct ppe_ft_host *host;
++	int ret;
++
++	hash_for_each_possible(ft->hosts, host, node, key)
++		if (ppe_ft_host_match(host, flow)) {
++			host->refcnt++;
++			flow->host_index = host->index;
++			return 0;
++		}
++
++	host = kzalloc(sizeof(*host), GFP_KERNEL);
++	if (!host)
++		return -ENOMEM;
++	host->sip = flow->sip;
++	ret = ppe_host_entry_add(ft->ppe_dev, flow);
++	if (ret < 0) {
++		kfree(host);
++		return ret;
++	}
++	host->index = ret;
++	host->refcnt = 1;
++	flow->host_index = ret;
++	hash_add(ft->hosts, &host->node, key);
++	return 0;
++}
++
++static void ppe_ft_host_put(struct ppe_flowtable *ft,
++			    const struct ppe_flow_entry *flow)
++{
++	u32 key = ppe_ft_host_key(flow);
++	struct ppe_ft_host *host;
++	int ret;
++
++	hash_for_each_possible(ft->hosts, host, node, key)
++		if (ppe_ft_host_match(host, flow)) {
++			if (--host->refcnt)
++				return;
++			ret = ppe_host_entry_del(ft->ppe_dev, host->index);
++			if (ret && ret != -ENOENT) {
++				/* Keep a phantom reference so a live hardware host
++				 * index is never forgotten or reused inconsistently.
++				 */
++				host->refcnt = 1;
++				WARN_ONCE(1, "leaking an undeletable PPE host entry\n");
++				return;
++			}
++			hash_del(&host->node);
++			kfree(host);
++			return;
++		}
++}
++
++/* Delete a flow by the index returned by its add operation. */
++static bool ppe_ft_flow_hw_del(struct ppe_flowtable *ft,
++			       struct ppe_ft_flow *flow)
++{
++	int ret = ppe_flow_entry_del(ft->ppe_dev, flow->index);
++
++	if (!ret || ret == -ENOENT)
++		return true;
++	WARN_ONCE(1, "leaking the resources of an undeletable PPE flow\n");
++	return false;
++}
++
++/* Retain an undeletable table row and all resources it references. Clearing
++ * VALID is a best-effort containment step; the row remains quarantined
++ * because deletion did not prove the index reusable.
++ */
++static void ppe_ft_flow_quarantine(struct ppe_flowtable *ft,
++				   struct ppe_ft_flow *flow)
++{
++	int ret;
++
++	ret = ppe_flow_entry_enable(ft->ppe_dev, flow->index, false);
++	if (ret)
++		dev_err(ft->ppe_dev->dev,
++			"failed to disable quarantined flow %d: %d\n",
++			flow->index, ret);
++
++	list_add_tail(&flow->zombie_node, &ft->zombies);
++}
++
++static int ppe_ft_flow_replace(struct ppe_flowtable *ft,
++			       struct flow_cls_offload *f)
++{
++	struct flow_rule *rule = flow_cls_offload_flow_rule(f);
++	struct edma_port_priv *port_priv;
++	struct flow_action_entry *act;
++	struct net_device *odev = NULL;
++	struct ppe_flow_nexthop nh = {};
++	struct ppe_ft_data data = {};
++	struct ppe_ft_flow *flow;
++	int i, nexthop, ret, redirects = 0;
++
++	/* nf_flow_offload_refresh() re-sends FLOW_CLS_REPLACE for as long
++	 * as the flow's packets traverse the software path, and the core
++	 * runs at most one offload work per flow. An entry for this cookie
++	 * therefore means the rule is already installed: report success
++	 * instead of programming a duplicate row and leaking a second set
++	 * of resources.
++	 */
++	if (rhashtable_lookup_fast(&ft->flows, &f->cookie, ppe_ft_params))
++		return 0;
++
++	if (!flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_BASIC) ||
++	    !flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_IPV4_ADDRS) ||
++	    !flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_PORTS))
++		return -EOPNOTSUPP;
++
++	/* VLAN-tagged ingress is not translated to a flow key yet. */
++	if (flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_VLAN))
++		return -EOPNOTSUPP;
++
++	if (rule->match.dissector->used_keys &
++	    ~(BIT_ULL(FLOW_DISSECTOR_KEY_META) |
++	      BIT_ULL(FLOW_DISSECTOR_KEY_CONTROL) |
++	      BIT_ULL(FLOW_DISSECTOR_KEY_BASIC) |
++	      BIT_ULL(FLOW_DISSECTOR_KEY_IPV4_ADDRS) |
++	      BIT_ULL(FLOW_DISSECTOR_KEY_TCP) |
++	      BIT_ULL(FLOW_DISSECTOR_KEY_PORTS)))
++		return -EOPNOTSUPP;
++
++	flow = kzalloc(sizeof(*flow), GFP_KERNEL);
++	if (!flow)
++		return -ENOMEM;
++
++	flow->cookie = f->cookie;
++	flow->my_mac = -1;
++	flow->pub_ip = -1;
++	nh.vid = -1;
++
++	{
++		struct flow_match_basic match;
++
++		flow_rule_match_basic(rule, &match);
++		if (match.key->n_proto != htons(ETH_P_IP) ||
++		    match.mask->n_proto != htons(0xffff) ||
++		    match.mask->ip_proto != 0xff) {
++			ret = -EOPNOTSUPP;
++			goto err_free;
++		}
++
++		switch (match.key->ip_proto) {
++		case IPPROTO_TCP:
++			flow->entry.proto = PPE_FLOW_PROTOCOL_TCP;
++			break;
++		case IPPROTO_UDP:
++			flow->entry.proto = PPE_FLOW_PROTOCOL_UDP;
++			break;
++		default:
++			ret = -EOPNOTSUPP;
++			goto err_free;
++		}
++	}
++
++	{
++		struct flow_match_ipv4_addrs match;
++
++		flow_rule_match_ipv4_addrs(rule, &match);
++		if (match.mask->src != htonl(0xffffffff) ||
++		    match.mask->dst != htonl(0xffffffff)) {
++			ret = -EOPNOTSUPP;
++			goto err_free;
++		}
++		flow->entry.sip = match.key->src;
++		flow->entry.dip = match.key->dst;
++	}
++
++	{
++		struct flow_match_ports match;
++
++		flow_rule_match_ports(rule, &match);
++		if (match.mask->src != htons(0xffff) ||
++		    match.mask->dst != htons(0xffff)) {
++			ret = -EOPNOTSUPP;
++			goto err_free;
++		}
++		flow->entry.sport = match.key->src;
++		flow->entry.dport = match.key->dst;
++	}
++
++	if (flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_META)) {
++		struct flow_match_meta match;
++
++		flow_rule_match_meta(rule, &match);
++		if (match.mask->ingress_ifindex != -1 ||
++		    match.mask->ingress_iftype || match.mask->l2_miss) {
++			ret = -EOPNOTSUPP;
++			goto err_free;
++		}
++	}
++
++	if (flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_CONTROL)) {
++		struct flow_match_control match;
++
++		flow_rule_match_control(rule, &match);
++		if (match.key->addr_type != FLOW_DISSECTOR_KEY_IPV4_ADDRS ||
++		    match.mask->addr_type != 0xffff || match.mask->thoff ||
++		    match.mask->flags) {
++			ret = -EOPNOTSUPP;
++			goto err_free;
++		}
++	}
++
++	if (flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_TCP)) {
++		struct flow_match_tcp match;
++		__be16 flags = cpu_to_be16(be32_to_cpu(TCP_FLAG_RST |
++							 TCP_FLAG_FIN) >> 16);
++
++		flow_rule_match_tcp(rule, &match);
++		if (match.key->flags || match.mask->flags != flags) {
++			ret = -EOPNOTSUPP;
++			goto err_free;
++		}
++	}
++
++	data.sip = flow->entry.sip;
++	data.dip = flow->entry.dip;
++	data.sport = flow->entry.sport;
++	data.dport = flow->entry.dport;
++
++	flow_action_for_each(i, act, &rule->action) {
++		switch (act->id) {
++		case FLOW_ACTION_REDIRECT:
++			if (redirects++) {
++				ret = -EOPNOTSUPP;
++				goto err_free;
++			}
++			odev = act->dev;
++			break;
++		case FLOW_ACTION_MANGLE:
++			switch (act->mangle.htype) {
++			case FLOW_ACT_MANGLE_HDR_TYPE_ETH:
++				ret = ppe_ft_mangle_eth(act, &data.eth);
++				break;
++			case FLOW_ACT_MANGLE_HDR_TYPE_IP4:
++				ret = ppe_ft_mangle_ipv4(act, &data);
++				break;
++			case FLOW_ACT_MANGLE_HDR_TYPE_TCP:
++			case FLOW_ACT_MANGLE_HDR_TYPE_UDP:
++				if ((act->mangle.htype == FLOW_ACT_MANGLE_HDR_TYPE_TCP &&
++				     flow->entry.proto != PPE_FLOW_PROTOCOL_TCP) ||
++				    (act->mangle.htype == FLOW_ACT_MANGLE_HDR_TYPE_UDP &&
++				     flow->entry.proto != PPE_FLOW_PROTOCOL_UDP)) {
++					ret = -EOPNOTSUPP;
++					break;
++				}
++				ret = ppe_ft_mangle_ports(act, &data);
++				break;
++			default:
++				ret = -EOPNOTSUPP;
++				goto err_free;
++			}
++			if (ret)
++				goto err_free;
++			break;
++		case FLOW_ACTION_VLAN_PUSH:
++			if (act->vlan.proto != htons(ETH_P_8021Q) ||
++			    nh.vid >= 0) {
++				ret = -EOPNOTSUPP;
++				goto err_free;
++			}
++			nh.vid = act->vlan.vid;
++			break;
++		case FLOW_ACTION_CSUM:
++			break;
++		default:
++			ret = -EOPNOTSUPP;
++			goto err_free;
++		}
++	}
++
++	if (!odev || !edma_port_dev_check(odev) ||
++	    is_zero_ether_addr(data.eth.dst)) {
++		ret = -EOPNOTSUPP;
++		goto err_free;
++	}
++
++	port_priv = netdev_priv(odev);
++	nh.port = port_priv->ppe_port->port_id;
++	nh.l3_if = nh.port;
++	ether_addr_copy(nh.mac, data.eth.dst);
++
++	/* The hardware rewrites one direction per flow: the translated
++	 * source of SNAT comes from the public IP table, the translated
++	 * destination of DNAT from the next hop, and the translated L4
++	 * port from the flow entry itself.
++	 */
++	mutex_lock(&ft->lock);
++
++	if ((data.sip != flow->entry.sip ||
++	     data.sport != flow->entry.sport) &&
++	    (data.dip != flow->entry.dip ||
++	     data.dport != flow->entry.dport)) {
++		ret = -EOPNOTSUPP;
++		goto err_unlock;
++	} else if (data.sip != flow->entry.sip ||
++		   data.sport != flow->entry.sport) {
++		flow->entry.fwd_type = PPE_FLOW_FWD_TYPE_SNAT;
++		flow->entry.nat_port = data.sport;
++
++		flow->pub_ip = ppe_ft_pub_ip_get(ft, data.sip);
++		if (flow->pub_ip < 0) {
++			ret = flow->pub_ip;
++			goto err_unlock;
++		}
++		nh.pub_ip_index = flow->pub_ip;
++	} else if (data.dip != flow->entry.dip ||
++		   data.dport != flow->entry.dport) {
++		flow->entry.fwd_type = PPE_FLOW_FWD_TYPE_DNAT;
++		flow->entry.nat_port = data.dport;
++		nh.dnat_ip = data.dip;
++	} else {
++		flow->entry.fwd_type = PPE_FLOW_FWD_TYPE_ROUTE;
++	}
++
++	/* The source MAC of this direction is the router MAC the
++	 * reverse direction ingresses on; the egress L3 interface of
++	 * the port provides the rewrite.
++	 */
++	if (!is_zero_ether_addr(data.eth.src)) {
++		flow->my_mac = ppe_ft_my_mac_get(ft, data.eth.src);
++		if (flow->my_mac < 0) {
++			ret = flow->my_mac;
++			goto err_pub_ip;
++		}
++
++		ret = ppe_l3_if_set(ft->ppe_dev, nh.l3_if, data.eth.src,
++				    odev->mtu);
++		if (ret)
++			goto err_my_mac;
++
++		ret = ppe_l3_if_my_mac_set(ft->ppe_dev, nh.l3_if,
++					   flow->my_mac, true);
++		if (ret)
++			goto err_my_mac;
++
++		ret = ppe_port_l3_if_set(ft->ppe_dev, nh.port, nh.l3_if);
++		if (ret)
++			goto err_my_mac;
++	}
++
++	nexthop = find_first_zero_bit(ft->nexthop_used,
++				      PPE_NEXTHOP_TBL_ENTRIES);
++	if (nexthop >= PPE_NEXTHOP_TBL_ENTRIES) {
++		ret = -ENOSPC;
++		goto err_my_mac;
++	}
++
++	ret = ppe_nexthop_set(ft->ppe_dev, nexthop, &nh);
++	if (ret)
++		goto err_my_mac;
++
++	flow->nexthop = nexthop;
++	flow->entry.nexthop = nexthop;
++
++	ret = ppe_ft_host_get(ft, &flow->entry);
++	if (ret)
++		goto err_my_mac;
++
++	ret = ppe_flow_entry_add(ft->ppe_dev, &flow->entry);
++	if (ret < 0)
++		goto err_host;
++	flow->index = ret;
++
++	ret = ppe_flow_entry_enable(ft->ppe_dev, flow->index, true);
++	if (ret)
++		goto err_hw_flow;
++
++	ret = rhashtable_lookup_insert_fast(&ft->flows, &flow->node,
++					    ppe_ft_params);
++	if (ret)
++		goto err_hw_flow;
++
++	set_bit(nexthop, ft->nexthop_used);
++	mutex_unlock(&ft->lock);
++
++	return 0;
++
++err_hw_flow:
++	if (!ppe_ft_flow_hw_del(ft, flow)) {
++		/* The hardware flow could not be removed and keeps forwarding
++		 * through its next hop; reserve that next-hop index so it is not
++		 * reused underneath the leaked flow.
++		 */
++		set_bit(flow->nexthop, ft->nexthop_used);
++		ppe_ft_flow_quarantine(ft, flow);
++		flow = NULL;
++		goto err_unlock;
++	}
++	ppe_ft_host_put(ft, &flow->entry);
++	goto err_my_mac;
++err_host:
++	ppe_ft_host_put(ft, &flow->entry);
++err_my_mac:
++	ppe_ft_my_mac_put(ft, flow->my_mac);
++err_pub_ip:
++	ppe_ft_pub_ip_put(ft, flow->pub_ip);
++err_unlock:
++	mutex_unlock(&ft->lock);
++err_free:
++	kfree_rcu(flow, rcu);
++
++	return ret;
++}
++
++static int ppe_ft_flow_destroy(struct ppe_flowtable *ft,
++			       struct flow_cls_offload *f)
++{
++	struct ppe_ft_flow *flow;
++
++	mutex_lock(&ft->lock);
++
++	flow = rhashtable_lookup_fast(&ft->flows, &f->cookie, ppe_ft_params);
++	if (!flow) {
++		mutex_unlock(&ft->lock);
++		return -ENOENT;
++	}
++
++	rhashtable_remove_fast(&ft->flows, &flow->node, ppe_ft_params);
++
++	if (ppe_ft_flow_hw_del(ft, flow)) {
++		ppe_ft_host_put(ft, &flow->entry);
++		clear_bit(flow->nexthop, ft->nexthop_used);
++		ppe_ft_my_mac_put(ft, flow->my_mac);
++		ppe_ft_pub_ip_put(ft, flow->pub_ip);
++	} else {
++		ppe_ft_flow_quarantine(ft, flow);
++		flow = NULL;
++	}
++
++	mutex_unlock(&ft->lock);
++	kfree_rcu(flow, rcu);
++
++	return 0;
++}
++
++/* Destroy every rule which survived flow-block unbind. The ordinary
++ * destroy path owns the complete, patch-level-specific dependency
++ * release transaction, so teardown cannot drift from it as new resources
++ * are added.
++ */
++static void ppe_ft_flow_drain(struct ppe_flowtable *ft)
++{
++	struct rhashtable_iter iter;
++	struct ppe_ft_flow *flow;
++
++	rhashtable_walk_enter(&ft->flows, &iter);
++	rhashtable_walk_start(&iter);
++	while ((flow = rhashtable_walk_next(&iter))) {
++		struct flow_cls_offload f = {};
++		int ret;
++
++		if (IS_ERR(flow)) {
++			if (PTR_ERR(flow) == -EAGAIN)
++				continue;
++			break;
++		}
++
++		f.cookie = flow->cookie;
++		ret = ppe_ft_flow_destroy(ft, &f);
++		if (ret && ret != -ENOENT)
++			dev_err(ft->ppe_dev->dev,
++				"failed to drain flow cookie %lx: %d\n",
++				f.cookie, ret);
++	}
++	rhashtable_walk_stop(&iter);
++	rhashtable_walk_exit(&iter);
++}
++
++static int ppe_ft_flow_stats(struct ppe_flowtable *ft,
++			     struct flow_cls_offload *f)
++{
++	struct ppe_ft_flow *flow;
++	u32 packets;
++	u64 bytes;
++	int ret;
++
++	/* No flowtable lock: the flow table core issues at most one
++	 * operation per flow at a time, so the counter snapshot below is
++	 * unraced, and the RCU read side keeps the flow alive across a
++	 * concurrent destroy of another flow. The regmap is MMIO with
++	 * fast_io, so the read does not sleep.
++	 */
++	rcu_read_lock();
++
++	flow = rhashtable_lookup_fast(&ft->flows, &f->cookie, ppe_ft_params);
++	if (!flow) {
++		rcu_read_unlock();
++		return -ENOENT;
++	}
++
++	ret = ppe_flow_stats_get(ft->ppe_dev, flow->index, &packets, &bytes);
++	if (!ret && (packets != flow->packets || bytes != flow->bytes)) {
++		/* The hardware byte counter is 40 bits wide and wraps. */
++		flow_stats_update(&f->stats,
++				  (bytes - flow->bytes) & GENMASK_ULL(39, 0),
++				  packets - flow->packets, 0, jiffies,
++				  FLOW_ACTION_HW_STATS_DELAYED);
++		flow->packets = packets;
++		flow->bytes = bytes;
++	}
++
++	rcu_read_unlock();
++
++	return ret;
++}
++
++static int ppe_ft_block_cb(enum tc_setup_type type, void *type_data,
++			   void *cb_priv)
++{
++	struct ppe_flowtable *ft = cb_priv;
++	struct flow_cls_offload *f = type_data;
++	int ret;
++
++	if (type != TC_SETUP_CLSFLOWER)
++		return -EOPNOTSUPP;
++
++	switch (f->command) {
++	case FLOW_CLS_REPLACE:
++		ret = ppe_ft_flow_replace(ft, f);
++		atomic_long_inc(&ft->replace_calls);
++		if (ret == -EOPNOTSUPP)
++			atomic_long_inc(&ft->replace_unsupported);
++		else if (ret)
++			atomic_long_inc(&ft->replace_failed);
++		return ret;
++	case FLOW_CLS_DESTROY:
++		atomic_long_inc(&ft->destroy_calls);
++		return ppe_ft_flow_destroy(ft, f);
++	case FLOW_CLS_STATS:
++		return ppe_ft_flow_stats(ft, f);
++	default:
++		return -EOPNOTSUPP;
++	}
++}
++
++/**
++ * ppe_flowtable_setup_tc - Bind a flow block to a PPE port
++ * @dev: PPE port net device
++ * @type_data: Flow block offload request
++ *
++ * Return: 0 on success, negative error code on failure.
++ */
++int ppe_flowtable_setup_tc(struct net_device *dev, void *type_data)
++{
++	struct edma_port_priv *port_priv = netdev_priv(dev);
++	struct ppe_flowtable *ft = port_priv->ppe_port->ppe_dev->flowtable;
++	struct flow_block_offload *f = type_data;
++	struct flow_block_cb *block_cb;
++
++	if (!ft)
++		return -EOPNOTSUPP;
++
++	if (f->binder_type != FLOW_BLOCK_BINDER_TYPE_CLSACT_INGRESS)
++		return -EOPNOTSUPP;
++
++	f->driver_block_list = &ft->block_cb_list;
++
++	switch (f->command) {
++	case FLOW_BLOCK_BIND:
++		block_cb = flow_block_cb_lookup(f->block, ppe_ft_block_cb,
++						ft);
++		if (block_cb) {
++			flow_block_cb_incref(block_cb);
++			return 0;
++		}
++
++		block_cb = flow_block_cb_alloc(ppe_ft_block_cb, ft, ft, NULL);
++		if (IS_ERR(block_cb))
++			return PTR_ERR(block_cb);
++
++		flow_block_cb_incref(block_cb);
++		flow_block_cb_add(block_cb, f);
++		list_add_tail(&block_cb->driver_list, &ft->block_cb_list);
++		return 0;
++	case FLOW_BLOCK_UNBIND:
++		block_cb = flow_block_cb_lookup(f->block, ppe_ft_block_cb, ft);
++		if (!block_cb)
++			return -ENOENT;
++
++		if (!flow_block_cb_decref(block_cb)) {
++			flow_block_cb_remove(block_cb, f);
++			list_del(&block_cb->driver_list);
++		}
++		return 0;
++	default:
++		return -EOPNOTSUPP;
++	}
++}
++
++/**
++ * ppe_flowtable_setup - Set up the flowtable offload state
++ * @ppe_dev: PPE device
++ *
++ * Return: 0 on success, negative error code on failure.
++ */
++int ppe_flowtable_setup(struct ppe_device *ppe_dev)
++{
++	struct ppe_flowtable *ft;
++	int ret;
++
++	ft = kzalloc(sizeof(*ft), GFP_KERNEL);
++	if (!ft)
++		return -ENOMEM;
++
++	ft->ppe_dev = ppe_dev;
++	mutex_init(&ft->lock);
++	INIT_LIST_HEAD(&ft->block_cb_list);
++	INIT_LIST_HEAD(&ft->zombies);
++
++	ret = rhashtable_init(&ft->flows, &ppe_ft_params);
++	if (ret) {
++		kfree(ft);
++		return ret;
++	}
++
++	hash_init(ft->hosts);
++	ppe_dev->flowtable = ft;
++
++	return 0;
++}
++
++static void ppe_ft_flow_free(void *ptr, void *arg)
++{
++	kfree(ptr);
++}
++
++/**
++ * ppe_flowtable_destroy - Tear down the flowtable offload state
++ * @ppe_dev: PPE device
++ *
++ * Flow blocks must already be unbound. Drain any rules which survived
++ * unbind through the ordinary destroy transaction before releasing tables.
++ */
++void ppe_flowtable_destroy(struct ppe_device *ppe_dev)
++{
++	struct ppe_flowtable *ft = ppe_dev->flowtable;
++	struct ppe_ft_flow *flow, *flow_tmp;
++	struct ppe_ft_host *host;
++	struct hlist_node *tmp;
++	int i;
++
++	if (!ft)
++		return;
++
++	WARN_ON(!list_empty(&ft->block_cb_list));
++	ppe_ft_flow_drain(ft);
++
++	ppe_dev->flowtable = NULL;
++	rhashtable_free_and_destroy(&ft->flows, ppe_ft_flow_free, NULL);
++	list_for_each_entry_safe(flow, flow_tmp, &ft->zombies, zombie_node) {
++		list_del(&flow->zombie_node);
++		kfree(flow);
++	}
++
++	hash_for_each_safe(ft->hosts, i, tmp, host, node) {
++		hash_del(&host->node);
++		kfree(host);
++	}
++
++	kfree(ft);
++}
+--- /dev/null
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_flowtable.h
+@@ -0,0 +1,15 @@
++/* SPDX-License-Identifier: GPL-2.0-only
++ *
++ * Copyright (c) 2026 Kenneth Kasilag <kenneth@kasilag.me>
++ */
++
++#ifndef __PPE_FLOWTABLE_H__
++#define __PPE_FLOWTABLE_H__
++
++struct net_device;
++struct ppe_device;
++
++int ppe_flowtable_setup(struct ppe_device *ppe_dev);
++void ppe_flowtable_destroy(struct ppe_device *ppe_dev);
++int ppe_flowtable_setup_tc(struct net_device *dev, void *type_data);
++#endif

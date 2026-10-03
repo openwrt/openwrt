@@ -1,0 +1,133 @@
+From: Kenneth Kasilag <kenneth@kasilag.me>
+Date: Sun, 05 Jul 2026 00:00:00 +0000
+Subject: [PATCH] net: ethernet: qualcomm: ppe: recognize tunnel flow rules
+
+Recognize both lightweight-route tunnel metadata and the ip6tnl
+redirect/META forms used by DS-Lite and MAP-E. Dispatch them to a dedicated
+handler which remains fail-closed until the shared tunnel lifecycle exists.
+
+This prevents an encapsulated route from falling through to the ordinary L3
+translator and makes the Linux rule contract independently reviewable from
+the hardware transaction implementation. HPPE continues to reject the
+APPE-only path.
+
+Behavior is unchanged: tunnel rules were already rejected by key, action or
+redirect-device validation.
+
+Signed-off-by: Kenneth Kasilag <kenneth@kasilag.me>
+---
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_flowtable.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_flowtable.c
+@@ -29,6 +29,7 @@
+ #include <linux/rtnetlink.h>
+ #include <linux/seq_file.h>
+ #include <net/flow_offload.h>
++#include <net/ip6_tunnel.h>
+ #include <net/ipv6.h>
+ #include <net/tcp.h>
+ 
+@@ -909,6 +910,94 @@ static void ppe_ft_vlan_put(struct ppe_f
+ 	memset(slot, 0, sizeof(*slot));
+ }
+ 
++/* Lightweight-route tunnels expose their endpoints as ENC_* keys and
++ * TUNNEL_{ENCAP,DECAP} actions. DS-Lite and MAP-E instead redirect to an
++ * ordinary ip6tnl netdevice; its fixed endpoints or FMR list live in the
++ * netdevice's struct ip6_tnl and never appear as ENC_* keys.
++ */
++#define PPE_FT_TUNNEL_KEYS	(BIT_ULL(FLOW_DISSECTOR_KEY_ENC_CONTROL) | \
++				 BIT_ULL(FLOW_DISSECTOR_KEY_ENC_KEYID) | \
++				 BIT_ULL(FLOW_DISSECTOR_KEY_ENC_IPV4_ADDRS) | \
++				 BIT_ULL(FLOW_DISSECTOR_KEY_ENC_IPV6_ADDRS))
++
++static bool ppe_ft_ipip6_dev(const struct net_device *dev)
++{
++	const struct ip6_tnl *tunnel;
++
++	if (!dev || !dev->rtnl_link_ops || !dev->rtnl_link_ops->kind ||
++	    strcmp(dev->rtnl_link_ops->kind, "ip6tnl"))
++		return false;
++
++	tunnel = netdev_priv(dev);
++
++	return tunnel->parms.proto == IPPROTO_IPIP;
++}
++
++static bool ppe_ft_rule_is_tunnel(const struct flow_rule *rule)
++{
++	const struct flow_action_entry *act;
++	const struct net_device *odev = NULL;
++	struct net_device *idev;
++	struct flow_match_meta meta;
++	bool is_tunnel;
++	int i;
++
++	if (rule->match.dissector->used_keys & PPE_FT_TUNNEL_KEYS)
++		return true;
++
++	flow_action_for_each(i, act, &rule->action) {
++		switch (act->id) {
++		case FLOW_ACTION_TUNNEL_ENCAP:
++		case FLOW_ACTION_TUNNEL_DECAP:
++			return true;
++		case FLOW_ACTION_REDIRECT:
++			if (ppe_ft_ipip6_dev(act->dev))
++				return true;
++			odev = act->dev;
++			break;
++		default:
++			break;
++		}
++	}
++
++	/* The decapsulation rule redirects to the inner destination. Its only
++	 * tunnel identity is the ip6tnl ingress ifindex in the META key.
++	 */
++	if (!odev ||
++	    !flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_META))
++		return false;
++
++	flow_rule_match_meta(rule, &meta);
++	if (meta.mask->ingress_ifindex != -1)
++		return false;
++
++	idev = dev_get_by_index(dev_net(odev), meta.key->ingress_ifindex);
++	if (!idev)
++		return false;
++
++	is_tunnel = ppe_ft_ipip6_dev(idev);
++	dev_put(idev);
++
++	return is_tunnel;
++}
++
++/* Tunneled flows stay on the software path for now. The SoC carries a
++ * tunnel engine that could take them: the tunnel lookup block (which
++ * already hosts the PPPoE session table) terminates encapsulations
++ * into tunnel L3 interfaces, and the tunnel fields of the egress L3
++ * interfaces generate them. A fixed IPIP6 implementation must derive
++ * its endpoints from the redirect netdevice and program a shared
++ * tunnel-port lifecycle before publishing either direction.
++ */
++static int ppe_ft_tunnel_replace(struct ppe_flowtable *ft,
++				 struct flow_cls_offload *f)
++{
++	if (!ft->ppe_dev->variant->has_tunnel_engine)
++		return -EOPNOTSUPP;
++
++	return -EOPNOTSUPP;	/* TODO: program the tunnel engine */
++}
++
+ /* Hash key of a flow's source IP for the host refcount table. */
+ static u32 ppe_ft_host_key(const struct ppe_flow_entry *flow)
+ {
+@@ -1052,6 +1141,9 @@ static int ppe_ft_flow_replace(struct pp
+ 	    !flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_IPV6_ADDRS))
+ 		return -EOPNOTSUPP;
+ 
++	if (ppe_ft_rule_is_tunnel(rule))
++		return ppe_ft_tunnel_replace(ft, f);
++
+ 	if (rule->match.dissector->used_keys &
+ 	    ~(BIT_ULL(FLOW_DISSECTOR_KEY_META) |
+ 	      BIT_ULL(FLOW_DISSECTOR_KEY_CONTROL) |

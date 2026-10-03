@@ -1,0 +1,115 @@
+From: Kenneth Kasilag <kenneth@kasilag.me>
+Date: Sun, 05 Jul 2026 00:00:00 +0000
+Subject: [PATCH] net: ethernet: qualcomm: ppe: track virtual port device events
+
+Register a net device notifier for the virtual ports. When a bound
+device unregisters, force its virtual port down and clear the registry
+so the receive path drops the stale pointer before the device is
+freed; any flows still referencing the port release it harmlessly once
+they are torn down. When a bound device's link changes, update the
+flowtable carrier so a flow to a down device stops refreshing its
+conntrack, the same stuck-flow guard the physical ports use.
+
+Signed-off-by: Kenneth Kasilag <kenneth@kasilag.me>
+---
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_vp.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_vp.c
+@@ -42,6 +42,7 @@ struct ppe_vp_slot {
+ struct ppe_vp {
+ 	struct ppe_device *ppe_dev;
+ 	struct mutex lock;		/* serialises slot allocation */
++	struct notifier_block notifier;
+ 	struct ppe_vp_slot slots[PPE_VP_SLOTS];
+ };
+ 
+@@ -213,9 +214,67 @@ struct net_device *ppe_vp_dev(struct ppe
+ 	return rcu_dereference(vpt->slots[i].dev);
+ }
+ 
++static int ppe_vp_netdev_event(struct notifier_block *nb, unsigned long event,
++			       void *ptr)
++{
++	struct net_device *dev = netdev_notifier_info_to_dev(ptr);
++	struct ppe_vp *vp = container_of(nb, struct ppe_vp, notifier);
++	bool cleared = false, carrier_up = false;
++	int carrier = -1, i;
++
++	switch (event) {
++	case NETDEV_UNREGISTER:
++	case NETDEV_CHANGE:
++	case NETDEV_UP:
++	case NETDEV_DOWN:
++		break;
++	default:
++		return NOTIFY_DONE;
++	}
++
++	mutex_lock(&vp->lock);
++	for (i = 0; i < PPE_VP_SLOTS; i++) {
++		if (rcu_access_pointer(vp->slots[i].dev) != dev)
++			continue;
++
++		if (event == NETDEV_UNREGISTER) {
++			/* The device is going away. Drop it and turn the
++			 * hardware off, but keep the refcount: the slot stays
++			 * reserved (dev NULL) until its last flow's put releases
++			 * it, so its id is not reused underneath those flows.
++			 */
++			ppe_vp_hw_set(vp->ppe_dev, PPE_VP_PORT_BASE + i, false);
++			rcu_assign_pointer(vp->slots[i].dev, NULL);
++			cleared = true;
++			carrier = PPE_VP_PORT_BASE + i;
++		} else {
++			carrier = PPE_VP_PORT_BASE + i;
++			carrier_up = netif_carrier_ok(dev);
++		}
++		break;
++	}
++	mutex_unlock(&vp->lock);
++
++	/* Update the flowtable carrier outside the slot lock (it only
++	 * touches an atomic bitmap, but keep the lock scopes disjoint).
++	 */
++	if (carrier >= 0)
++		ppe_flowtable_port_carrier(vp->ppe_dev, carrier,
++					   carrier_up);
++
++	/* Ensure the receive path has dropped the stale pointer before
++	 * the device can be freed.
++	 */
++	if (cleared)
++		synchronize_rcu();
++
++	return NOTIFY_DONE;
++}
++
+ int ppe_vp_setup(struct ppe_device *ppe_dev)
+ {
+ 	struct ppe_vp *vp;
++	int ret;
+ 
+ 	/* Virtual ports are an APPE feature; nothing to do without them. */
+ 	if (!ppe_dev->variant->has_vports)
+@@ -227,6 +286,14 @@ int ppe_vp_setup(struct ppe_device *ppe_
+ 
+ 	vp->ppe_dev = ppe_dev;
+ 	mutex_init(&vp->lock);
++	vp->notifier.notifier_call = ppe_vp_netdev_event;
++
++	ret = register_netdevice_notifier(&vp->notifier);
++	if (ret) {
++		mutex_destroy(&vp->lock);
++		return ret;
++	}
++
+ 	ppe_dev->vp = vp;
+ 
+ 	return 0;
+@@ -241,6 +308,7 @@ void ppe_vp_teardown(struct ppe_device *
+ 		return;
+ 
+ 	ppe_dev->vp = NULL;
++	unregister_netdevice_notifier(&vp->notifier);
+ 
+ 	for (i = 0; i < PPE_VP_SLOTS; i++) {
+ 		if (rcu_access_pointer(vp->slots[i].dev)) {
