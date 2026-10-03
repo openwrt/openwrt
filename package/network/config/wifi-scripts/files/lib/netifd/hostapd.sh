@@ -435,13 +435,15 @@ hostapd_set_psk_file() {
 	local ifname="$1"
 	local vlan="$2"
 	local vlan_id=""
+	local key_name=""
 
-	json_get_vars vid key
+	json_get_vars vid key name
 	json_get_values mac_list mac
 	set_default mac_list "00:00:00:00:00:00"
 	[ -n "$vid" ] && vlan_id="vlanid=$vid "
+	[ -n "$name" ] && key_name="keyid=$name "
 	for mac in $mac_list; do
-		echo "${vlan_id} ${mac} ${key}" >> /var/run/hostapd-${ifname}.psk
+		echo "${vlan_id}${key_name}${mac} ${key}" >> /var/run/hostapd-${ifname}.psk
 	done
 }
 
