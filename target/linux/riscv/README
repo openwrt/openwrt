@@ -1,0 +1,75 @@
+This RISC-V target is intended to be used with the QEMU emulator. It can be used
+to prototype an OpenWrt firmware for RISC-V processors. One could also use it to
+troubleshoot RISC-V applications without access to real hardware.
+
+The target supports three boot modes:
+
+1. Initramfs (quick testing, no persistence)
+2. NOR flash with U-Boot (realistic embedded boot, sysupgrade capable)
+3. Virtio block device (simple rootfs, no flash emulation)
+
+
+Boot mode 1: Initramfs
+-----------------------
+
+qemu-system-riscv64 -machine virt -nographic -bios default \
+  -kernel bin/targets/riscv/64/openwrt-riscv-64-generic-initramfs-kernel.bin \
+  -m 256
+
+Or using the qemustart script:
+
+  ./scripts/qemustart riscv 64
+
+
+Boot mode 2: NOR flash with U-Boot
+-----------------------------------
+
+This is the recommended mode. It boots OpenSBI -> U-Boot -> Linux, matching the
+boot flow of real RISC-V embedded devices. The sysupgrade.bin firmware image is
+loaded onto QEMU's pflash1 (32MB CFI NOR flash), and U-Boot copies the kernel
+from flash to RAM before booting.
+
+qemu-system-riscv64 -machine virt -nographic -bios default \
+  -kernel bin/targets/riscv/64/u-boot-riscv-qemu.bin \
+  -drive if=pflash,file=firmware.pflash,format=raw,unit=1 \
+  -m 256
+
+The pflash image must be exactly 32MB. To create it from a sysupgrade.bin:
+
+  cp bin/targets/riscv/64/openwrt-riscv-64-generic-squashfs-sysupgrade.bin firmware.pflash
+  truncate -s 32M firmware.pflash
+
+Or using the qemustart script (auto-detects sysupgrade.bin and pads to 32MB):
+
+  ./scripts/qemustart riscv 64 \
+    --rootfs bin/targets/riscv/64/openwrt-riscv-64-generic-squashfs-sysupgrade.bin
+
+Linux sees the flash as an MTD device. The firmware partition is auto-split into
+kernel and rootfs sub-partitions. JFFS2 overlay provides persistent storage.
+
+
+Boot mode 3: Virtio block device
+---------------------------------
+
+qemu-system-riscv64 -machine virt -nographic -bios default \
+  -kernel bin/targets/riscv/64/openwrt-riscv-64-generic-kernel.bin \
+  -drive file=bin/targets/riscv/64/openwrt-riscv-64-generic-ext4-rootfs.img,format=raw,if=none,id=hd0 \
+  -device virtio-blk-device,drive=hd0 \
+  -append "root=/dev/vda rootwait" \
+  -m 256
+
+Or using the qemustart script:
+
+  ./scripts/qemustart riscv 64 \
+    --rootfs bin/targets/riscv/64/openwrt-riscv-64-generic-ext4-rootfs.img
+
+
+Networking
+----------
+
+Add -n to the qemustart script to enable bridged networking (requires host
+bridge setup, see script comments):
+
+  ./scripts/qemustart riscv 64 -n
+  ./scripts/qemustart riscv 64 -n \
+    --rootfs bin/targets/riscv/64/openwrt-riscv-64-generic-squashfs-sysupgrade.bin
