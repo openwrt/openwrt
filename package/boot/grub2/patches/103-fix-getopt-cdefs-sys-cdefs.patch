@@ -1,0 +1,27 @@
+From b5e3798d37d71053f3d9f119307b1134bc09439f Mon Sep 17 00:00:00 2001
+From: Nick Hainke <vincent@systemli.org>
+Date: Sat, 18 Apr 2026 11:07:15 +0200
+Subject: [PATCH] grub-core/lib/gnulib: fix build failure on musl due to
+ missing sys/cdefs.h
+
+In GRUB 2.14 the gnulib-generated getopt-cdefs.h changed the include
+guard for sys/cdefs.h from '#if 0' to '#if 1'. sys/cdefs.h is a
+glibc/BSD-specific header not present in musl, causing a fatal build
+error when compiling host utilities (grub2-editenv, grub2-bios-setup).
+
+Revert the guard to '#if 0'. The fallback macro definitions that follow
+in the file are sufficient.
+
+Signed-off-by: Nick Hainke <vincent@systemli.org>
+---
+--- a/grub-core/lib/gnulib/getopt-cdefs.h
++++ b/grub-core/lib/gnulib/getopt-cdefs.h
+@@ -28,7 +28,7 @@
+ /* getopt-core.h and getopt-ext.h are shared with GNU libc, and expect
+    a number of the internal macros supplied to GNU libc's headers by
+    sys/cdefs.h.  Provide fallback definitions for all of them.  */
+-#if 1
++#if 0
+ # include <sys/cdefs.h>
+ #endif
+ 
