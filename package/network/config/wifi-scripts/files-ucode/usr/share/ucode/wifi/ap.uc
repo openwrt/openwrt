@@ -455,52 +455,54 @@ function iface_vlan(interface, config, vlans) {
 	]);
 }
 
-function iface_wpa_stations(config, stas) {
-	let path = `/var/run/hostapd-${config.ifname}.psk`;
+/* hostapd uses only the last wpa_psk_file line, and the hostapd service
+ * hashes one file per option, so the user's file is copied */
+function station_file_write(config, option, path, lines) {
+	const user_entries = config[option] ? fs.readfile(config[option]) : null;
 
-	let file = fs.open(path, 'w');
-	for (let k, sta in stas)
-		if (sta.config.mac && sta.config.key) {
-			for (let mac in sta.config.mac) {
-				let station = `${mac} ${sta.config.key}\n`;
-				if (sta.config.vid)
-					station = `vlanid=${sta.config.vid} ` + station;
-				file.write(station);
-			}
-		}
-	file.close();
-
-	set_default(config, 'wpa_psk_file', path);
-}
-
-/* the hostapd service hashes one file per option, so the user's file is
- * copied */
-function iface_sae_stations(config, stas) {
-	let path = `/var/run/hostapd-${config.ifname}.sae`;
-	let user_entries = config.sae_password_file ? fs.readfile(config.sae_password_file) : null;
-
-	if (config.sae_password_file && user_entries == null)
+	if (config[option] && user_entries == null)
 		return;
 
 	let file = fs.open(path, 'w');
 	if (length(user_entries))
 		file.write(rtrim(user_entries, '\n') + '\n');
-	for (let k, sta in stas)
-		if (sta.config.mac && sta.config.key) {
-			for (let mac in sta.config.mac) {
-				if (mac == '00:00:00:00:00:00')
-					mac = 'ff:ff:ff:ff:ff:ff';
-
-				let station = `${sta.config.key}|mac=${mac}`;
-				if (sta.config.vid)
-					station = station + `|vlanid=${sta.config.vid}`;
-				station = station + '\n';
-				file.write(station);
-			}
-		}
+	for (let line in lines)
+		file.write(line + '\n');
 	file.close();
 
-	config.sae_password_file = path;
+	config[option] = path;
+}
+
+function iface_wpa_stations(config, stas) {
+	let lines = [];
+
+	for (let k, sta in stas) {
+		if (!sta.config.mac || !sta.config.key)
+			continue;
+
+		for (let mac in sta.config.mac)
+			push(lines, (sta.config.vid ? `vlanid=${sta.config.vid} ` : '') + `${mac} ${sta.config.key}`);
+	}
+
+	station_file_write(config, 'wpa_psk_file', `/var/run/hostapd-${config.ifname}.psk`, lines);
+}
+
+function iface_sae_stations(config, stas) {
+	let lines = [];
+
+	for (let k, sta in stas) {
+		if (!sta.config.mac || !sta.config.key)
+			continue;
+
+		for (let mac in sta.config.mac) {
+			if (mac == '00:00:00:00:00:00')
+				mac = 'ff:ff:ff:ff:ff:ff';
+
+			push(lines, `${sta.config.key}|mac=${mac}` + (sta.config.vid ? `|vlanid=${sta.config.vid}` : ''));
+		}
+	}
+
+	station_file_write(config, 'sae_password_file', `/var/run/hostapd-${config.ifname}.sae`, lines);
 }
 
 function iface_eap_server(config) {
