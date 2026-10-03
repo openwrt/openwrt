@@ -1,0 +1,20 @@
+--- a/r8152.c
++++ b/r8152.c
+@@ -32618,7 +32618,7 @@ static int rtltool_ioctl(struct r8152 *t
+ 	if (copy_from_user(&my_cmd, myptr, sizeof(my_cmd)))
+ 		return -EFAULT;
+ 
+-	if (unlikely(compat && upper_32_bits((__u64)my_cmd.buf))) {
++	if (unlikely(compat && upper_32_bits((__u64)(uintptr_t)my_cmd.buf))) {
+ 		netif_err(tp, drv, netdev,
+ 			  "Bad address, the upper 4 bytes should be zero\n");
+ 		return -EFAULT;
+@@ -32628,7 +32628,7 @@ static int rtltool_ioctl(struct r8152 *t
+ 		  "%s: compat=%d cmd=%u offset=0x%x "
+ 		  "byteen=0x%x data=0x%x buf=0x%llx\n",
+ 		  __func__, compat, my_cmd.cmd, my_cmd.offset, my_cmd.byteen,
+-		  my_cmd.data, (__u64)my_cmd.buf);
++		  my_cmd.data, (__u64)(uintptr_t)my_cmd.buf);
+ 
+ 	ret = 0;
+ 
