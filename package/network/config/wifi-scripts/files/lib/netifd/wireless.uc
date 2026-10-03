@@ -53,6 +53,13 @@ function supplicant_update_mlo()
 	wpad_update_mlo("wpa_supplicant", "sta");
 }
 
+// the security mode of a link depends on the bands of the other links
+function mlo_bands(radio_config)
+{
+	let enabled = filter(radio_config, (v) => v && !v.disabled);
+	return uniq(filter(map(enabled, (v) => v.band), (v) => v != null));
+}
+
 function mlo_vif_create(config, radio_config, vif_idx, mlo_vifs)
 {
 	let mlo_config = { ...config };
@@ -232,6 +239,8 @@ function config_init(uci)
 
 			let config = parse_attribute_list(data, handler.iface);
 			config.radios = radios;
+			if (mlo_vif)
+				config.mlo_bands = mlo_bands(radio_config);
 
 			if (mlo_vif && !mlo_created) {
 				ifname = mlo_vif_create(config, radio_config, vif_idx, mlo_vifs);
@@ -379,7 +388,7 @@ function config_init(uci)
 							if (!dev)
 								continue;
 
-							let vif_config = ifname ? { ...config, ifname, radios } : config;
+							let vif_config = ifname ? { ...config, ifname, radios, mlo_bands: mlo_bands(radio_config) } : config;
 							if (ifname)
 								mlo_vif_macaddr(vif_config, devs, device);
 

@@ -726,8 +726,15 @@
 			"type": "number"
 		},
 		"mlo": {
-			"description": "Multi-Link Operation",
+			"description": "Multi-Link Operation. If the AP MLD has a 6 GHz link, its other links use a mode that shares an AKM with the 6 GHz link: none becomes owe, wpa and wpa-mixed become wpa2",
 			"type": "boolean"
+		},
+		"mlo_bands": {
+			"description": "Bands of all radios of the AP MLD, set by netifd",
+			"type": "array",
+			"items": {
+				"type": "string"
+			}
 		},
 		"mobility_domain": {
 			"description": "DID is used to indicate a group of APs between which a STA can use Fast BSS Transition.",

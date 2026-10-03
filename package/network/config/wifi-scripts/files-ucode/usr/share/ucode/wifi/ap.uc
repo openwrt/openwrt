@@ -657,7 +657,8 @@ export function generate(interface, data, config, vlans, stas, phy_features) {
 
 	config.sae_station_passwords = station_password_count(stas);
 
-	config.encryption = iface.encryption_band(config.encryption, data.config.band);
+	config.encryption = iface.encryption_band(config.encryption, data.config.band,
+		config.mlo ? config.mlo_bands : null);
 	iface.parse_encryption(config, data.config, phy_features);
 
 	const refusal = bss_refusal(config, data.config.band);

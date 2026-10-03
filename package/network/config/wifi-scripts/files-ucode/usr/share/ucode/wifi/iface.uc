@@ -20,15 +20,27 @@ const encryption_6g = {
 	'psk-mixed': 'sae',
 };
 
-export function encryption_band(encryption, band) {
-	if (band != '6g')
+/* IEEE 802.11be-2024 12.6.2: all links of an AP MLD share an AKM */
+const encryption_mld_6g = {
+	'none': 'owe',
+	'wpa': 'wpa2',
+	'wpa-mixed': 'wpa2',
+};
+
+export function encryption_band(encryption, band, mld_bands) {
+	let modes;
+	if (band == '6g')
+		modes = encryption_6g;
+	else if (index(mld_bands ?? [], '6g') >= 0)
+		modes = encryption_mld_6g;
+	else
 		return encryption;
 
 	let enc = split(encryption ?? 'none', '+', 2);
-	if (!encryption_6g[enc[0]])
+	if (!modes[enc[0]])
 		return encryption;
 
-	enc[0] = encryption_6g[enc[0]];
+	enc[0] = modes[enc[0]];
 	return join('+', enc);
 };
 
