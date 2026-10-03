@@ -473,10 +473,18 @@ function iface_wpa_stations(config, stas) {
 	set_default(config, 'wpa_psk_file', path);
 }
 
+/* the hostapd service hashes one file per option, so the user's file is
+ * copied */
 function iface_sae_stations(config, stas) {
 	let path = `/var/run/hostapd-${config.ifname}.sae`;
+	let user_entries = config.sae_password_file ? fs.readfile(config.sae_password_file) : null;
+
+	if (config.sae_password_file && user_entries == null)
+		return;
 
 	let file = fs.open(path, 'w');
+	if (length(user_entries))
+		file.write(rtrim(user_entries, '\n') + '\n');
 	for (let k, sta in stas)
 		if (sta.config.mac && sta.config.key) {
 			for (let mac in sta.config.mac) {
@@ -492,7 +500,7 @@ function iface_sae_stations(config, stas) {
 		}
 	file.close();
 
-	set_default(config, 'sae_password_file', path);
+	config.sae_password_file = path;
 }
 
 function iface_eap_server(config) {
