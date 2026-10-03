@@ -1,0 +1,144 @@
+From 73f804296d538587464a63e16ca9baee22390079 Mon Sep 17 00:00:00 2001
+From: Timofey Maykov <itnitro@gmail.com>
+Date: Sat, 3 Oct 2026 12:33:50 +0000
+Subject: [PATCH] net: ethernet: qualcomm: ppe: fix NAPI disable hang
+
+edma_cfg_rx_napi_delete() and edma_cfg_tx_napi_delete() call
+napi_disable() unconditionally. A NAPI context is created disabled, and
+the callers disable it again before deleting it (the rx error path and
+edma_deinit() call edma_cfg_rx_napi_disable() right before the delete,
+a stopped port has already run edma_cfg_tx_napi_disable()). A second
+napi_disable() on a disabled NAPI waits for NAPI_STATE_SCHED to clear
+and never returns, so a probe error or a module removal hangs with the
+RTNL lock held and the boot does not continue.
+
+Remember in the ring whether NAPI is enabled and only disable it when
+it is. The same flag keeps a repeated enable or disable from doing it
+twice.
+
+Signed-off-by: Timofey Maykov <itnitro@gmail.com>
+---
+ drivers/net/ethernet/qualcomm/ppe/edma_cfg_rx.c | 12 +++++++++---
+ drivers/net/ethernet/qualcomm/ppe/edma_cfg_tx.c | 12 +++++++++---
+ drivers/net/ethernet/qualcomm/ppe/edma_rx.h     |  2 ++
+ drivers/net/ethernet/qualcomm/ppe/edma_tx.h     |  2 ++
+ 4 files changed, 22 insertions(+), 6 deletions(-)
+
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_cfg_rx.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_cfg_rx.c
+@@ -899,10 +899,11 @@ void edma_cfg_rx_napi_disable(void)
+ 
+ 		rxdesc_ring = &edma_ctx->rx_rings[i];
+ 
+-		if (!rxdesc_ring->napi_added)
++		if (!rxdesc_ring->napi_added || !rxdesc_ring->napi_enabled)
+ 			continue;
+ 
+ 		napi_disable(&rxdesc_ring->napi);
++		rxdesc_ring->napi_enabled = false;
+ 	}
+ }
+ 
+@@ -922,10 +923,11 @@ void edma_cfg_rx_napi_enable(void)
+ 
+ 		rxdesc_ring = &edma_ctx->rx_rings[i];
+ 
+-		if (!rxdesc_ring->napi_added)
++		if (!rxdesc_ring->napi_added || rxdesc_ring->napi_enabled)
+ 			continue;
+ 
+ 		napi_enable(&rxdesc_ring->napi);
++		rxdesc_ring->napi_enabled = true;
+ 	}
+ }
+ 
+@@ -948,7 +950,11 @@ void edma_cfg_rx_napi_delete(void)
+ 		if (!rxdesc_ring->napi_added)
+ 			continue;
+ 
+-		napi_disable(&rxdesc_ring->napi);
++		/* napi_disable() on a NAPI that is already disabled never returns */
++		if (rxdesc_ring->napi_enabled) {
++			napi_disable(&rxdesc_ring->napi);
++			rxdesc_ring->napi_enabled = false;
++		}
+ 		netif_napi_del(&rxdesc_ring->napi);
+ 		rxdesc_ring->napi_added = false;
+ 	}
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_cfg_tx.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_cfg_tx.c
+@@ -586,10 +586,11 @@ void edma_cfg_tx_napi_enable(u32 port_id
+ 	for_each_possible_cpu(i) {
+ 		ring_idx = ((port_id - 1) * num_possible_cpus()) + i;
+ 		txcmpl_ring = &edma_ctx->txcmpl_rings[ring_idx];
+-		if (!txcmpl_ring->napi_added)
++		if (!txcmpl_ring->napi_added || txcmpl_ring->napi_enabled)
+ 			continue;
+ 
+ 		napi_enable(&txcmpl_ring->napi);
++		txcmpl_ring->napi_enabled = true;
+ 	}
+ }
+ 
+@@ -608,10 +609,11 @@ void edma_cfg_tx_napi_disable(u32 port_i
+ 	for_each_possible_cpu(i) {
+ 		ring_idx = ((port_id - 1) * num_possible_cpus()) + i;
+ 		txcmpl_ring = &edma_ctx->txcmpl_rings[ring_idx];
+-		if (!txcmpl_ring->napi_added)
++		if (!txcmpl_ring->napi_added || !txcmpl_ring->napi_enabled)
+ 			continue;
+ 
+ 		napi_disable(&txcmpl_ring->napi);
++		txcmpl_ring->napi_enabled = false;
+ 	}
+ }
+ 
+@@ -633,7 +635,11 @@ void edma_cfg_tx_napi_delete(u32 port_id
+ 		if (!txcmpl_ring->napi_added)
+ 			continue;
+ 
+-		napi_disable(&txcmpl_ring->napi);
++		/* napi_disable() on a NAPI that is already disabled never returns */
++		if (txcmpl_ring->napi_enabled) {
++			napi_disable(&txcmpl_ring->napi);
++			txcmpl_ring->napi_enabled = false;
++		}
+ 		netif_napi_del(&txcmpl_ring->napi);
+ 		txcmpl_ring->napi_added = false;
+ 	}
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_rx.h
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_rx.h
+@@ -260,6 +260,7 @@ struct edma_rxfill_ring {
+  * @rxdesc_stats: Rx descriptor ring statistics
+  * @rxfill: RxFill ring used
+  * @napi_added: Flag to indicate NAPI add status
++ * @napi_enabled: Flag to indicate NAPI is enabled
+  * @pdma: Primary descriptor ring physical address
+  * @sdma: Secondary descriptor ring physical address
+  * @head: Head of the skb list in case of scatter-gather frame
+@@ -277,6 +278,7 @@ struct edma_rxdesc_ring {
+ 	struct edma_rxdesc_stats rxdesc_stats;
+ 	struct edma_rxfill_ring *rxfill;
+ 	bool napi_added;
++	bool napi_enabled;
+ 	dma_addr_t pdma;
+ 	dma_addr_t sdma;
+ 	struct sk_buff *head;
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_tx.h
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_tx.h
+@@ -275,6 +275,7 @@ struct edma_txdesc_ring {
+  * @dma: Descriptor ring physical address
+  * @count: Number of descriptors in the ring
+  * @napi_added: Flag to indicate NAPI add status
++ * @napi_enabled: Flag to indicate NAPI is enabled
+  */
+ struct edma_txcmpl_ring {
+ 	struct napi_struct napi;
+@@ -286,6 +287,7 @@ struct edma_txcmpl_ring {
+ 	dma_addr_t dma;
+ 	u32 count;
+ 	bool napi_added;
++	bool napi_enabled;
+ };
+ 
+ extern int edma_tx_napi_budget;
