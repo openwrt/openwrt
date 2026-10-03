@@ -1,0 +1,488 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Sergey Lebedev <sergey@lebedev.mobi>
+Date: Tue, 11 Aug 2026 20:13:32 +0300
+Subject: [PATCH] mtd: nand: mtk: en751221: software BCH ECC on the raw NFI
+ path
+
+This SoC's ECC engine has never completed an operation: hardware-ECC page
+reads stall the PIO port, and an ECC_DMA_MODE encode attempt times out on
+every page. Everything therefore goes through the raw PIO path, which laid
+down no parity at all -- the bootloader's own BCH check prints hundreds of
+"UnCorrectable at PageAddr" lines every boot, and nothing Linux wrote could
+survive a marginal cell. Do the ECC in software instead, in three parts.
+
+1. Hand out the parity on raw reads.
+
+mtk_nfc_read_page_raw() de-interleaved only the FDM bytes per sector into
+chip->oob_poi, leaving the ECC-area bytes mtk_nfc_ooblayout_ecc() declares
+holding stale buffer contents instead of the parity that was already read
+off the flash into nfc->buffer. `nanddump -o` printed that stale memory as
+flash content. Hand out the parity bytes too, with the per-sector length
+derived from mtk_nfc_ooblayout_ecc() and clamped against spare_per_sector.
+
+2. Encode on the write path.
+
+Parameters recovered from the vendor's ECC_ENCCNFG programming and confirmed
+against real flash: lib/bch's bch_init(13, 4, 0x201b, swap_bits=true)
+reproduces the stored parity byte-for-byte on both bootloader- and
+stock-Linux-written sectors, so both share one ECC configuration. No
+copying is needed: nfc->buffer already holds each sector's main data and
+FDM contiguously, so the 520-byte codeword is encoded in place.
+
+Two details match the vendor exactly: the leftover 4 bits of the 7-byte
+parity field are OR'd to 1 (the controller leaves them unprogrammed, and
+lib/bch emits 0s there); and parity is only written when main data is
+(an OOB-only write, e.g. a jffs2 cleanmarker, deliberately leaves the
+parity area erased, since NAND bits only go 1 -> 0 and a later data write
+to the same page couldn't reprogram it).
+
+That leftover point is the one structural conflict between this
+controller's FDM-covering codeword and jffs2. nand_ecc_write mode 2 closes
+it from the other side: read the page's existing FDM back, AND it with
+what the caller asked for, and encode over what will actually be on the
+flash -- one extra page read per write, since this controller has no
+random-data-out path.
+
+The write side is gated on a runtime module parameter, mirroring the
+vendor driver's own /proc/driver/nand toggles:
+
+	/sys/module/mtk_nand/parameters/nand_ecc_write
+	  0 = off (no parity written)
+	  1 = software BCH over the FDM as handed to us
+	  2 = as 1, plus the FDM read-modify-write   [default]
+
+so one boot can measure all three against the bootloader's UnCorrectable
+count without reflashing. CONFIG_BCH is already enabled in this target via
+CONFIG_MTD_NAND_ECC_SW_BCH.
+
+3. Decode on the read path.
+
+bch_decode() against the same parameters and codeword the encoder uses,
+correcting bitflips in place before the page reaches its caller. Two things
+are new relative to the encoder: the 4 phantom 1-bits in the stored parity
+are masked back to 0 on a local copy before decoding (lib/bch's load_ecc8()
+would otherwise feed them in as syndrome input and corrupt every sector's
+decode); and a sector whose stored parity is all 0xFF never had parity
+written, so it's skipped rather than reported as a decode failure.
+
+Correction happens in memory only; mtd->ecc_stats.corrected/failed are
+updated and the per-page max bitflip count is returned, which is what
+nand_do_read_ops()/mtd_read_oob() need to derive -EBADMSG/-EUCLEAN. No page
+is rewritten to flash, and there's no module parameter on this side since a
+read never risks the on-flash format.
+
+ecc.read_page and ecc.read_page_raw were the same function while neither
+corrected anything; that stops being safe once decode exists, since
+MTD_OPS_RAW callers depend on ecc.read_page_raw returning untouched bytes.
+The de-interleave loop moves into a shared helper, read_page_raw keeps its
+exact old behaviour, and a new mtk_nfc_read_page() runs decode in between.
+write_page_raw()'s mode-2 read-modify-write still calls read_page_raw
+directly, since it needs the true on-flash FDM bits for its AND.
+
+Read retries are structurally absent on this SoC (ONFI parameter-page
+detection is skipped, so read_retries stays 0), so -EBADMSG/-EUCLEAN from a
+genuinely uncorrectable sector are final, not retried.
+
+Signed-off-by: Sergey Lebedev <sergey@lebedev.mobi>
+---
+--- a/drivers/mtd/nand/raw/mtk_nand.c
++++ b/drivers/mtd/nand/raw/mtk_nand.c
+@@ -17,6 +17,7 @@
+ #include <linux/iopoll.h>
+ #include <linux/of.h>
+ #include <linux/mtd/nand-ecc-mtk.h>
++#include <linux/bch.h>
+ 
+ /* NAND controller register definition */
+ #define NFI_CNFG		(0x00)
+@@ -164,6 +165,9 @@
+ 
+ 	u8 *buffer;
+ 
++	/* software BCH encoder for the write path; see nand_ecc_write */
++	struct bch_control *bch;
++
+ 	unsigned long assigned_cs;
+ 
+ 	/*
+@@ -194,6 +198,31 @@
+ 	16, 26, 27, 28
+ };
+ 
++/*
++ * Software BCH on the write path: 0 = off, 1 = compute parity over the
++ * FDM as handed to us, 2 = as 1 but read-modify-write the FDM first so
++ * parity covers what will actually be on the flash (the jffs2
++ * cleanmarker case below). Runtime-switchable at
++ * /sys/module/mtk_nand/parameters/nand_ecc_write, mirroring the vendor
++ * driver's own /proc/driver/nand toggles. Default 2: jffs2 writes
++ * cleanmarkers during boot, before anything could write to sysfs.
++ */
++static int nand_ecc_write = 2;
++module_param(nand_ecc_write, int, 0644);
++MODULE_PARM_DESC(nand_ecc_write,
++		 "EN751221 software BCH on write: 0=off, 1=on, 2=on with FDM read-modify-write");
++
++/*
++ * BCH parameters, recovered from the vendor's ECC_ENCCNFG programming and
++ * confirmed byte-for-byte against real flash (both bootloader- and
++ * stock-Linux-written sectors). 0x201b is lib/bch's built-in default for
++ * m=13; swap_bits matches the controller's bit-reversed parity convention.
++ */
++#define MTK_BCH_M	13
++#define MTK_BCH_T	4
++#define MTK_BCH_PRIM	0x201b
++#define MTK_BCH_SWAP	true
++
+ static inline struct mtk_nfc_nand_chip *to_mtk_nand(struct nand_chip *nand)
+ {
+ 	return container_of(nand, struct mtk_nfc_nand_chip, nand);
+@@ -246,6 +275,31 @@
+ 	return nfc->buffer + i * mtk_data_len(chip) + chip->ecc.size;
+ }
+ 
++/*
++ * Number of BCH parity bytes the controller lays down per sector, and
++ * where sector @i's copy belongs in chip->oob_poi. Of each sector's 16
++ * spare bytes the vendor writes 8 FDM, 7 BCH parity and 1 pad; derive the
++ * length from mtk_nfc_ooblayout_ecc()'s own declared span so this can
++ * never write past oob_poi's mtd->oobsize bytes.
++ */
++static inline u32 mtk_ecc_oob_len(struct nand_chip *chip)
++{
++	struct mtk_nfc_nand_chip *mtk_nand = to_mtk_nand(chip);
++	struct mtd_info *mtd = nand_to_mtd(chip);
++	u32 avail = mtd->oobsize - mtk_nand->fdm.reg_size * chip->ecc.steps;
++
++	return min_t(u32, mtk_nand->spare_per_sector - mtk_nand->fdm.reg_size,
++		     avail / chip->ecc.steps);
++}
++
++static inline u8 *mtk_ecc_oob_ptr(struct nand_chip *chip, int i)
++{
++	struct mtk_nfc_nand_chip *mtk_nand = to_mtk_nand(chip);
++
++	return chip->oob_poi + mtk_nand->fdm.reg_size * chip->ecc.steps +
++	       i * mtk_ecc_oob_len(chip);
++}
++
+ static inline void nfi_writel(struct mtk_nfc *nfc, u32 val, u32 reg)
+ {
+ 	writel(val, nfc->regs + reg);
+@@ -1005,13 +1059,102 @@
+ 	return nand_prog_page_end_op(chip);
+ }
+ 
++static int mtk_nfc_read_page_raw(struct nand_chip *chip, u8 *buf, int oob_on,
++				 int page);
++
++/*
++ * Fill in each sector's BCH parity in the already-formatted page buffer.
++ * nfc->buffer holds the page exactly as it goes to the flash, so a
++ * sector's main data and its FDM are already contiguous and the 520-byte
++ * codeword can be handed to bch_encode() in place, with no copying.
++ */
++static int mtk_nfc_sw_bch_encode(struct nand_chip *chip)
++{
++	struct mtk_nfc *nfc = nand_get_controller_data(chip);
++	struct mtk_nfc_nand_chip *mtk_nand = to_mtk_nand(chip);
++	struct mtk_nfc_fdm *fdm = &mtk_nand->fdm;
++	u32 eccbytes;
++	int i;
++
++	if (!nfc->bch) {
++		nfc->bch = bch_init(MTK_BCH_M, MTK_BCH_T, MTK_BCH_PRIM,
++				    MTK_BCH_SWAP);
++		if (!nfc->bch) {
++			dev_err(nfc->dev, "bch_init failed\n");
++			return -ENOMEM;
++		}
++		dev_info(nfc->dev,
++			 "sw BCH on write: m=%u t=%u ecc_bits=%u ecc_bytes=%u mode=%d\n",
++			 nfc->bch->m, nfc->bch->t, nfc->bch->ecc_bits,
++			 nfc->bch->ecc_bytes, nand_ecc_write);
++	}
++
++	eccbytes = nfc->bch->ecc_bytes;
++	if (fdm->reg_size + eccbytes > mtk_nand->spare_per_sector)
++		return -EINVAL;
++
++	for (i = 0; i < chip->ecc.steps; i++) {
++		u8 *sec = mtk_data_ptr(chip, i);
++		u8 *spare = mtk_oob_ptr(chip, i);
++		u8 ecc[MTK_BCH_M * MTK_BCH_T / 8 + 1];
++
++		/* bch_encode() accumulates, so it must start zeroed */
++		memset(ecc, 0, sizeof(ecc));
++		bch_encode(nfc->bch, sec, chip->ecc.size + fdm->reg_size, ecc);
++		memcpy(spare + fdm->reg_size, ecc, eccbytes);
++
++		/*
++		 * 52 parity bits do not fill 7 bytes. The controller leaves
++		 * the leftover 4 unprogrammed, reading back as 1s; lib/bch
++		 * emits 0s there, so OR them back to match the vendor.
++		 */
++		spare[fdm->reg_size + eccbytes - 1] |= 0xf0;
++	}
++
++	return 0;
++}
++
+ static int mtk_nfc_write_page_raw(struct nand_chip *chip, const u8 *buf,
+ 				  int oob_on, int pg)
+ {
+ 	struct mtd_info *mtd = nand_to_mtd(chip);
+ 	struct mtk_nfc *nfc = nand_get_controller_data(chip);
++	int ret;
++
++	/*
++	 * Parity is only laid down when main data is being written. An
++	 * OOB-only write (buf == NULL, e.g. a jffs2 cleanmarker) leaves the
++	 * parity area erased instead, since NAND bits only go 1 -> 0 and a
++	 * later data write to the same page couldn't reprogram it. Mode 2
++	 * closes that gap from the other side.
++	 */
++	if (nand_ecc_write >= 2 && buf) {
++		u8 *want = kmemdup(chip->oob_poi, mtd->oobsize, GFP_KERNEL);
++		u32 i;
++
++		if (!want)
++			return -ENOMEM;
++		/* read_page_raw() overwrites chip->oob_poi with the flash's
++		 * copy; AND the two, since NAND bits only ever go 1 -> 0.
++		 */
++		ret = mtk_nfc_read_page_raw(chip, NULL, 1, pg);
++		if (ret < 0) {
++			kfree(want);
++			return ret;
++		}
++		for (i = 0; i < mtd->oobsize; i++)
++			chip->oob_poi[i] &= want[i];
++		kfree(want);
++	}
+ 
+ 	mtk_nfc_format_page(mtd, buf);
++
++	if (nand_ecc_write >= 1 && buf) {
++		ret = mtk_nfc_sw_bch_encode(chip);
++		if (ret)
++			return ret;
++	}
++
+ 	return mtk_nfc_write_page(mtd, chip, nfc->buffer, pg, 1);
+ }
+ 
+@@ -1100,23 +1243,114 @@
+ 	return bitflips;
+ }
+ 
+-static int mtk_nfc_read_page_raw(struct nand_chip *chip, u8 *buf, int oob_on,
+-				 int page)
++/*
++ * Decode each sector's BCH parity into the just-read raw page buffer,
++ * correcting bitflips in place before the caller de-interleaves it into
++ * buf/oob_poi. Mirrors mtk_nfc_sw_bch_encode(): main data and FDM are the
++ * same contiguous 520-byte codeword the encoder computed parity over.
++ *
++ * A sector whose stored parity is all 0xFF never had parity written --
++ * skip it rather than reporting it as an ECC failure.
++ */
++static int mtk_nfc_sw_bch_decode(struct nand_chip *chip)
+ {
+ 	struct mtd_info *mtd = nand_to_mtd(chip);
+-	struct mtk_nfc_nand_chip *mtk_nand = to_mtk_nand(chip);
+ 	struct mtk_nfc *nfc = nand_get_controller_data(chip);
++	struct mtk_nfc_nand_chip *mtk_nand = to_mtk_nand(chip);
+ 	struct mtk_nfc_fdm *fdm = &mtk_nand->fdm;
+-	int i, ret;
++	u32 eccbytes, msglen;
++	int i, max_bitflips = 0;
+ 
+-	memset(nfc->buffer, 0xff, mtd->writesize + mtd->oobsize);
+-	ret = mtk_nfc_read_subpage(mtd, chip, 0, mtd->writesize, nfc->buffer,
+-				   page, 1);
+-	if (ret < 0)
+-		return ret;
++	if (!nfc->bch) {
++		nfc->bch = bch_init(MTK_BCH_M, MTK_BCH_T, MTK_BCH_PRIM,
++				    MTK_BCH_SWAP);
++		if (!nfc->bch) {
++			dev_err(nfc->dev, "bch_init failed\n");
++			return -ENOMEM;
++		}
++		dev_info(nfc->dev,
++			 "sw BCH on read: m=%u t=%u ecc_bits=%u ecc_bytes=%u\n",
++			 nfc->bch->m, nfc->bch->t, nfc->bch->ecc_bits,
++			 nfc->bch->ecc_bytes);
++	}
++
++	eccbytes = nfc->bch->ecc_bytes;
++	if (fdm->reg_size + eccbytes > mtk_nand->spare_per_sector)
++		return -EINVAL;
++
++	msglen = chip->ecc.size + fdm->reg_size;	/* 520: main + FDM */
++
++	for (i = 0; i < chip->ecc.steps; i++) {
++		u8 *sec = mtk_data_ptr(chip, i);	/* 520B main+FDM, contiguous */
++		u8 *stored_ecc = mtk_oob_ptr(chip, i) + fdm->reg_size;
++		u8 calc_ecc[MTK_BCH_M * MTK_BCH_T / 8 + 1];
++		u8 recv_ecc[MTK_BCH_M * MTK_BCH_T / 8 + 1];
++		unsigned int errloc[MTK_BCH_T];
++		int count, b;
++
++		/*
++		 * Never programmed (erased, or written before software BCH
++		 * existed / with nand_ecc_write=0): nothing to decode, not a
++		 * failure.
++		 */
++		if (!memchr_inv(stored_ecc, 0xff, eccbytes))
++			continue;
++
++		/*
++		 * Undo mtk_nfc_sw_bch_encode()'s `spare[..] |= 0xf0`: the 4
++		 * phantom 1-bits would otherwise corrupt the decode syndrome.
++		 * Masked on a copy -- stored_ecc itself must stay byte-for-byte
++		 * what's on flash, since mtk_nfc_read_page_deinterleave() hands
++		 * it out verbatim afterwards.
++		 */
++		memcpy(recv_ecc, stored_ecc, eccbytes);
++		recv_ecc[eccbytes - 1] &= 0x0f;
++
++		memset(calc_ecc, 0, sizeof(calc_ecc));
++		bch_encode(nfc->bch, sec, msglen, calc_ecc);
++
++		count = bch_decode(nfc->bch, NULL, msglen, recv_ecc, calc_ecc,
++				   NULL, errloc);
++		if (count < 0) {
++			mtd->ecc_stats.failed++;
++			continue;
++		}
++
++		for (b = 0; b < count; b++) {
++			if (errloc[b] < msglen * 8)
++				sec[errloc[b] >> 3] ^= 1 << (errloc[b] & 7);
++			/* else: flip is in the ECC area itself, nothing to correct */
++		}
++
++		if (count > 0) {
++			mtd->ecc_stats.corrected += count;
++			max_bitflips = max(max_bitflips, count);
++		}
++	}
++
++	return max_bitflips;
++}
++
++/*
++ * Hand out the BCH parity bytes as well, not just the FDM. Copying only
++ * fdm->reg_size per sector left the ECC-area bytes mtk_nfc_ooblayout_ecc()
++ * declares holding stale buffer contents instead of the parity already
++ * read off the flash into nfc->buffer. Shared by mtk_nfc_read_page_raw()
++ * and mtk_nfc_read_page().
++ */
++static void mtk_nfc_read_page_deinterleave(struct nand_chip *chip, u8 *buf)
++{
++	struct mtd_info *mtd = nand_to_mtd(chip);
++	struct mtk_nfc_nand_chip *mtk_nand = to_mtk_nand(chip);
++	struct mtk_nfc *nfc = nand_get_controller_data(chip);
++	struct mtk_nfc_fdm *fdm = &mtk_nand->fdm;
++	int i;
+ 
+ 	for (i = 0; i < chip->ecc.steps; i++) {
+ 		memcpy(oob_ptr(chip, i), mtk_oob_ptr(chip, i), fdm->reg_size);
++		memcpy(mtk_ecc_oob_ptr(chip, i),
++		       mtk_oob_ptr(chip, i) + fdm->reg_size,
++		       mtk_ecc_oob_len(chip));
+ 
+ 		if (i == mtk_nand->bad_mark.sec)
+ 			mtk_nand->bad_mark.bm_swap(mtd, nfc->buffer, 1);
+@@ -1125,10 +1359,59 @@
+ 			memcpy(data_ptr(chip, buf, i), mtk_data_ptr(chip, i),
+ 			       chip->ecc.size);
+ 	}
++}
++
++/*
++ * True raw read: no software BCH decode. MTD_OPS_RAW callers (nanddump
++ * --noecc/-o, external BCH verifiers) depend on untouched on-flash bytes,
++ * and mtk_nfc_write_page_raw()'s mode-2 read-modify-write needs the true
++ * raw FDM bits for its AND.
++ */
++static int mtk_nfc_read_page_raw(struct nand_chip *chip, u8 *buf, int oob_on,
++				 int page)
++{
++	struct mtd_info *mtd = nand_to_mtd(chip);
++	struct mtk_nfc *nfc = nand_get_controller_data(chip);
++	int ret;
++
++	memset(nfc->buffer, 0xff, mtd->writesize + mtd->oobsize);
++	ret = mtk_nfc_read_subpage(mtd, chip, 0, mtd->writesize, nfc->buffer,
++				   page, 1);
++	if (ret < 0)
++		return ret;
++
++	mtk_nfc_read_page_deinterleave(chip, buf);
+ 
+ 	return ret;
+ }
+ 
++/*
++ * Ordinary read: raw I/O, then software BCH decode/correct in place, then
++ * de-interleave the corrected buffer -- decode must run before the copy-out
++ * or the corrected bytes never reach buf/oob_poi. Wired to ecc.read_page.
++ */
++static int mtk_nfc_read_page(struct nand_chip *chip, u8 *buf, int oob_on,
++			     int page)
++{
++	struct mtd_info *mtd = nand_to_mtd(chip);
++	struct mtk_nfc *nfc = nand_get_controller_data(chip);
++	int ret, bitflips;
++
++	memset(nfc->buffer, 0xff, mtd->writesize + mtd->oobsize);
++	ret = mtk_nfc_read_subpage(mtd, chip, 0, mtd->writesize, nfc->buffer,
++				   page, 1);
++	if (ret < 0)
++		return ret;
++
++	bitflips = mtk_nfc_sw_bch_decode(chip);
++	if (bitflips < 0)
++		return bitflips;
++
++	mtk_nfc_read_page_deinterleave(chip, buf);
++
++	return bitflips;
++}
++
+ static int mtk_nfc_read_oob_std(struct nand_chip *chip, int page)
+ {
+ 	return mtk_nfc_read_page_raw(chip, NULL, 1, page);
+@@ -1489,13 +1772,16 @@
+ 	/*
+ 	 * EN751221 has no working NFI flash DMA, and CNFG_HW_ECC_EN routes the
+ 	 * data path to that (absent) DMA sink -- so HW-ECC-assisted reads stall
+-	 * and can never work on this SoC. Read every page RAW instead:
+-	 * bootbase-flashed data is ECC-encoded but
+-	 * bitflip-free, so the uncorrected main data is correct. (No subpage-ecc
+-	 * read for the same reason; NAND_SUBPAGE_READ cleared above.)
++	 * and can never work on this SoC. Read every page via PIO instead. (No
++	 * subpage-ecc read for the same reason; NAND_SUBPAGE_READ cleared
++	 * above.)
++	 *
++	 * ecc.read_page_raw stays the true, uncorrected raw reader; ecc.read_page
++	 * additionally runs software BCH decode/correction against the parity
++	 * the write path now lays down.
+ 	 */
+ 	nand->ecc.read_page_raw = mtk_nfc_read_page_raw;
+-	nand->ecc.read_page = mtk_nfc_read_page_raw;
++	nand->ecc.read_page = mtk_nfc_read_page;
+ 	nand->ecc.read_oob_raw = mtk_nfc_read_oob_std;
+ 	nand->ecc.read_oob = mtk_nfc_read_oob_std;
+ 
+@@ -1687,6 +1973,7 @@
+ 
+ 	mtk_nfc_nand_chips_cleanup(nfc);
+ 	mtk_ecc_release(nfc->ecc);
++	bch_free(nfc->bch);
+ }
+ 
+ #ifdef CONFIG_PM_SLEEP

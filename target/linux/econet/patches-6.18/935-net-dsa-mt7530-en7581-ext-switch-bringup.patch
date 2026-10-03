@@ -1,0 +1,328 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Sergey Lebedev <sergey@lebedev.mobi>
+Date: Sat, 25 Jul 2026 12:00:00 +0000
+Subject: [PATCH] net: dsa: mt7530: replicate vendor bring-up for a two-chip
+ TRGMII switch topology
+
+Some EN7581-based boards wire a second, external MT7530-family switch
+chip (EXT) behind the SoC's own in-package MCM switch, connected over a
+TRGMII link on MCM port 5 -- the ZTE ZXHN H267A is the first board in
+this tree with that topology. Both chips need vendor-equivalent bring-up
+that nothing in mainline's mt7531_setup_common()/mt7988_setup() path
+does for a two-chip arrangement, and the vendor's own bootloader only
+performs it on its boot-mode menu path -- a genuine cold boot skips it
+entirely, leaving the EXT chip's jack PHYs untrained and the MCM/EXT
+TRGMII link unconfigured. This patch replicates the vendor's
+setup_ext_mt7530() and per-port ePhyInit() unconditionally at DSA setup
+time, gated on this board's compatible string since the exact register
+values are this vendor's own board-specific bring-up sequence, so cold
+boot and RAM/failsafe boot both end up in the same working state.
+
+Two helper transports, taken from the vendor's raeth.ko:
+
+ - mt7530_ext_pbus_{read,write}(): a third indirect-access scheme that
+   reaches the EXT chip's wider "P-bus" register space through PHY
+   address 31 as a pseudo-device.
+ - mt7530_ext_mmd_write(): the standard clause-45-over-clause-22 indirect
+   access dance for per-port MMD (vendor-extension) registers.
+
+Bring-up sequence, in order: MFC (CPU forwarding control) set directly
+with CPU_EN=1, CPU_PORT=6, since the EN7581 DSA path sets CFC but never
+MFC; vendor-MMD analog/bias calibration on the MCM's representative port
+(0) and WAN-facing PHY (12); TRGMII PLL/calibration on both ends of the
+MCM<->EXT link together (the MCM's RCK trainer needs the EXT's TX line
+live while it converges, so RX_RST is held on both sides while TX_RST is
+pulsed on both -- pulsing only one leaves the other stuck asserted and the
+MCM trains against silence); PMCR_P(5)/PMCR_P(6) forced to the
+bootloader's own known-working values, with phylink re-managing P5 later;
+a final block of vendor pokes replicated verbatim, including setting the
+EXT's own MFC to flood-all (a narrower CPU_PORT-only value blocks
+SoC-to-jack broadcasts); and the conduit's MAC mirrored into the switch's
+CPU-port MAC registers, matching the bootloader's own write (econet_eth's
+en75_set_macaddr() already covers the GDM half; the switch half was never
+implemented after MAC ownership moved to DSA).
+
+Per-port bring-up of the EXT chip's five jack PHYs
+(mt7530_ext_phy_init_one()): BMCR reset, then, for ports reporting ID2
+0x9412 (EPHY_ID_7530Ge_7512Fe) only, the vendor's own MMD calibration
+table recovered from the vendor SDK source (tcetherphy_7512.c's
+ePhyInit() -> mt7530GePhyCfgLoad(), the "E4.0" table), then autoneg
+enable+restart as an RMW matching the vendor's own convention. Any other
+responding PHY (e.g. the WAN jack's PHY) gets only reset + AN restart.
+This is deliberately not the SoC's on-die FE PHY calibration sequence --
+the two chips report different PHY IDs and the vendor handles them with
+different routines. A working per-jack-phy-handle configuration needed no
+such calibration beyond mainline's generic PDOWN-clear + ANRESTART, so
+this is not strictly required for link-up, but it's what the vendor does
+and is replicated for parity. Re-adding per-jack DSA user ports to get
+this from phylib for free was rejected: the SoC's own MCM ports 0-4 are
+physically unwired on this board, so a per-jack DSA port map would
+misroute every DSA tag.
+
+Signed-off-by: Sergey Lebedev <sergey@lebedev.mobi>
+---
+--- a/drivers/net/dsa/mt7530.c
++++ b/drivers/net/dsa/mt7530.c
+@@ -3253,6 +3253,103 @@
+ 	}
+ }
+ 
++/* Vendor raeth.ko's gswPbusWrite()/gswPbusRead(): a third indirect-access
++ * scheme (distinct from both the direct 0x1fb58000 switch MMIO block and
++ * the normal per-port PHY_IAC addressing) that reaches a wider "P-bus"
++ * register space through PHY address 31 (0x1F) as a pseudo-device, using
++ * three ordinary clause-22 register writes: reg 31 carries pbus_reg>>6,
++ * one of regs 0-15 (selected by bits 2-5 of pbus_reg) carries the low 16
++ * bits of the value, and reg 16 always carries the high 16 bits.
++ */
++static void mt7530_ext_pbus_write(struct mt7530_priv *priv, u32 reg, u32 val)
++{
++	mt7531_ind_c22_phy_write(priv, 31, 31, reg >> 6);
++	mt7531_ind_c22_phy_write(priv, 31, (reg >> 2) & 0xf, val & 0xffff);
++	mt7531_ind_c22_phy_write(priv, 31, 16, val >> 16);
++}
++
++static u32 mt7530_ext_pbus_read(struct mt7530_priv *priv, u32 reg)
++{
++	u32 lo, hi;
++
++	mt7531_ind_c22_phy_write(priv, 31, 31, reg >> 6);
++	lo = mt7531_ind_c22_phy_read(priv, 31, (reg >> 2) & 0xf) & 0xffff;
++	hi = mt7531_ind_c22_phy_read(priv, 31, 16) & 0xffff;
++	return (hi << 16) | lo;
++}
++
++/* Vendor raeth.ko's mtEMiiRegWrite() -> tcMiiExtStationWrite_CL22(): the
++ * standard clause-45-over-clause-22 indirect access dance (reg 31 reset,
++ * then the MII_MMD_CTRL(13)/MII_MMD_DATA(14) address+data steps).
++ */
++static void mt7530_ext_mmd_write(struct mt7530_priv *priv, int port, int devad,
++				 u16 regaddr, u16 val)
++{
++	mt7531_ind_c22_phy_write(priv, port, 31, 0);
++	mt7531_ind_c22_phy_write(priv, port, 13, devad);
++	mt7531_ind_c22_phy_write(priv, port, 14, regaddr);
++	mt7531_ind_c22_phy_write(priv, port, 13, devad | 0x4000);
++	mt7531_ind_c22_phy_write(priv, port, 14, val);
++}
++
++/* Vendor tcetherphy_7512.c mt7530GePhyCfgLoad() "E4.0" table for the
++ * external MT7530BU's GE PHYs (ID2 0x9412), applied per port in order.
++ * This is NOT the mt7510FE (ID2 0x940f) sequence, which targets
++ * different silicon.
++ */
++static const struct {
++	u8 dev;
++	u16 reg;
++	u16 val;
++} mt7530_ext_phy_calib[] = {
++	{ 31, 0x0417, 0x7775 },	/* gdata: VEND2 (allen_20150206) */
++	{ 31, 0x027b, 0x1157 },	/* gdata: VEND2 (allen_20160803) */
++	{ 30, 0x0045, 0x0404 },	/* ldata */
++	{ 30, 0x0046, 0x0404 },	/* ldata */
++	{  7, 0x003c, 0x0000 },	/* ldata: EEE advertisement = none */
++	{ 30, 0x00a6, 0x0350 },	/* ldata */
++};
++
++/* Vendor ePhyInit() for one EXT PHY at MDIO address `port`: BMCR reset,
++ * the calibration above (ID2 0x9412 only), then autoneg enable+restart.
++ * Runs at DSA setup time on every boot path, since the bootloader only
++ * ever does this on its boot-mode menu path.
++ */
++static void mt7530_ext_phy_init_one(struct mt7530_priv *priv, int port)
++{
++	int bmcr, id2, i;
++
++	bmcr = mt7531_ind_c22_phy_read(priv, port, MII_BMCR);
++	id2  = mt7531_ind_c22_phy_read(priv, port, MII_PHYSID2);
++	if (bmcr < 0 || id2 < 0)
++		return;
++
++	mt7531_ind_c22_phy_write(priv, port, MII_BMCR, BMCR_RESET);
++	for (i = 0; i < 50; i++) {
++		bmcr = mt7531_ind_c22_phy_read(priv, port, MII_BMCR);
++		if (bmcr >= 0 && !(bmcr & BMCR_RESET))
++			break;
++		usleep_range(10000, 10100);
++	}
++
++	if (id2 == 0x9412) {
++		for (i = 0; i < ARRAY_SIZE(mt7530_ext_phy_calib); i++)
++			mt7530_ext_mmd_write(priv, port, mt7530_ext_phy_calib[i].dev,
++					     mt7530_ext_phy_calib[i].reg,
++					     mt7530_ext_phy_calib[i].val);
++		/* 1KTCR: manual gigabit master + advertise 1000F/H */
++		mt7531_ind_c22_phy_write(priv, port, MII_CTRL1000, 0x1e00);
++	}
++
++	/* MIIDR_AUTO_NEGOTIATE, as an RMW like the vendor ("always boot-up
++	 * with AN-enable ... avoid changing H/W default setting").
++	 */
++	bmcr = mt7531_ind_c22_phy_read(priv, port, MII_BMCR);
++	if (bmcr >= 0)
++		mt7531_ind_c22_phy_write(priv, port, MII_BMCR,
++					 bmcr | BMCR_ANENABLE | BMCR_ANRESTART);
++}
++
+ static int mt7988_setup(struct dsa_switch *ds)
+ {
+ 	struct mt7530_priv *priv = ds->priv;
+@@ -3276,6 +3373,158 @@
+ 	/* Reset the switch PHYs */
+ 	mt7530_write(priv, MT7530_SYS_CTRL, SYS_CTRL_PHY_RST);
+ 
++	if (of_machine_is_compatible("zte,zxhn-h267a")) {
++		u32 v;
++		int i;
++
++		/* Full replication of raeth.ko's macSetGSW() ->
++		 * setup_ext_mt7530(); every value taken directly from
++		 * disassembly.
++		 */
++		mt7530_write(priv, MT753X_PMCR_P(6), 0x0005e30b);
++
++		/* MFC: the EN7581 DSA path sets CFC for CPU port mapping but
++		 * not MFC, so frames destined for CPU are never forwarded
++		 * without this.
++		 */
++		mt7530_write(priv, MT753X_MFC, 0x404040e0);
++
++		v = mt7530_ext_pbus_read(priv, 0x1fe0);
++		mt7530_ext_pbus_write(priv, 0x1fe0, v & 0x7fffffff);
++		mt7530_ext_pbus_write(priv, 0x30f0, 0x1e02);
++		mt7530_ext_pbus_write(priv, MT7530_TOP_SIG_CTRL, 0);
++		mt7530_ext_pbus_write(priv, MT753X_MTRAP, 0x01017e8f);
++		mt7530_ext_pbus_write(priv, MT7530_TOP_SIG_CTRL, 1);
++		mt7530_write(priv, MT753X_MTRAP, 0);
++		mt7530_write(priv, MT753X_MTRAP, 0x01017e8f);
++		mt7530_write(priv, MT7530_TOP_SIG_CTRL, 1);
++
++		/* Vendor-MMD (31) analog/bias calibration on ports 0 (this
++		 * on-die switch's own representative address) and 12
++		 * (the WAN-facing PHY).
++		 */
++		for (i = 0; i < 2; i++) {
++			int port = i == 0 ? 0 : 12;
++
++			mt7530_ext_mmd_write(priv, port, 31, 0x404, 0x1d00);
++			mt7530_ext_mmd_write(priv, port, 31, 0x409, 0x57);
++			mt7530_ext_mmd_write(priv, port, 31, 0x40a, 0x57);
++		}
++		usleep_range(5000, 5100);
++		mt7530_ext_mmd_write(priv, 0, 31, 0x403, 0x1800);
++		usleep_range(5000, 5100);
++		mt7530_ext_mmd_write(priv, 0, 31, 0x403, 0x1c00);
++		mt7530_ext_mmd_write(priv, 0, 31, 0x401, 0xc020);
++		mt7530_ext_mmd_write(priv, 0, 31, 0x406, 0xa038);
++		mt7530_ext_mmd_write(priv, 0, 31, 0x410, 0x3);
++		mt7530_ext_mmd_write(priv, 12, 31, 0x403, 0x1800);
++		usleep_range(5000, 5100);
++		mt7530_ext_mmd_write(priv, 12, 31, 0x403, 0x1c00);
++		mt7530_ext_mmd_write(priv, 12, 31, 0x401, 0xc020);
++		mt7530_ext_mmd_write(priv, 12, 31, 0x406, 0xa038);
++		mt7530_ext_mmd_write(priv, 12, 31, 0x410, 0x3);
++		usleep_range(49000, 49100);
++
++		/* PMCR_P(5)/PMCR_P(6): CPU-facing internal ports. MCM P5 is
++		 * its TRGMII uplink to the EXT chip; force it to the value
++		 * the bootloader leaves live on a working link. phylink
++		 * re-manages it later when the "lan" user port comes up.
++		 */
++		mt7530_write(priv, MT753X_PMCR_P(5), 0x0005e30b);
++		mt7530_ext_pbus_write(priv, MT753X_PMCR_P(6), 0x0009a30a);
++		usleep_range(5000, 5100);
++
++		/* TRGMII PLL/calibration, both ends together: the MCM's RCK
++		 * trainer needs the EXT's TX live while it converges. Assert
++		 * RX_RST on both ends, program TD_ODT/taps while held, pulse
++		 * TX_RST on both ends (pulsing only one leaves the other's
++		 * TX_RST stuck asserted, so the MCM trains against silence),
++		 * then release RX_RST on both.
++		 */
++		v = mt7530_ext_pbus_read(priv, 0x7a00);
++		mt7530_ext_pbus_write(priv, 0x7a00, v | BIT(31));
++		v = mt7530_ext_pbus_read(priv, 0x7a40);
++		mt7530_ext_pbus_write(priv, 0x7a40, v | BIT(28));
++		usleep_range(5000, 5100);
++		mt7530_rmw(priv, 0x7a40, BIT(28), BIT(28));
++		mt7530_rmw(priv, 0x7a40, BIT(28), 0);
++		v = mt7530_read(priv, 0x7a00);
++		mt7530_write(priv, 0x7a00, v | BIT(31));
++		for (i = 0; i < NUM_TRGMII_CTRL; i++)
++			mt7530_ext_pbus_write(priv, MT7530_TRGMII_TD_ODT(i), 0x44);
++		mt7530_ext_pbus_write(priv, 0x7a7c, 0x77);
++		for (i = 0; i < NUM_TRGMII_CTRL; i++)
++			mt7530_write(priv, MT7530_TRGMII_TD_ODT(i), 0x44);
++		mt7530_write(priv, 0x7a7c, 0x77);
++
++		/* RX tap delay, SoC side: 0 on this board, matching the
++		 * bootloader's own proven-working link. mt7530_rmw, not
++		 * mt7530_write: a bare write would zero BSLIP_EN/EDGE_CHK
++		 * in the same register.
++		 */
++		for (i = 0; i < NUM_TRGMII_CTRL; i++)
++			mt7530_rmw(priv, MT7530_TRGMII_RD(i), RD_TAP_MASK,
++				   RD_TAP(0));
++		mt7530_ext_pbus_write(priv, 0x7830, 1);
++		/* MCM side stays 0: the MCM TRGMII port is P5, not P6 --
++		 * putting the GDM-facing P6 in TRGMII mode is wrong here.
++		 */
++		mt7530_write(priv, 0x7830, 0);
++		usleep_range(5000, 5100);
++		v = mt7530_ext_pbus_read(priv, 0x7a40);
++		mt7530_ext_pbus_write(priv, 0x7a40, v & ~BIT(28));
++		usleep_range(1000, 1100);
++		v = mt7530_ext_pbus_read(priv, 0x7a00);
++		mt7530_ext_pbus_write(priv, 0x7a00, v & ~BIT(31));
++		v = mt7530_read(priv, 0x7a00);
++		mt7530_write(priv, 0x7a00, v & ~BIT(31));
++
++		mt7530_write(priv, MT753X_PMCR_P(5), 0x0005e30b);
++		mt7530_ext_pbus_write(priv, MT753X_PMCR_P(6), 0x0009a30b);
++		mt7530_write(priv, MT753X_PMCR_P(5), 0x0005e30b);
++		mt7530_ext_pbus_write(priv, MT753X_PMCR_P(6), 0x0009e30b);
++
++		/* Final pokes, replicated verbatim */
++		mt7530_rmw(priv, 0x7840, 0, 0xf);
++		mt7530_write(priv, 0x250c, 0xfff10);
++		mt7530_write(priv, 0x260c, 0xfff10);
++		mt7530_rmw(priv, 0x2504, 0x00ff0000, BIT(22));
++		mt7530_rmw(priv, 0x2404, 0x00ff0000, BIT(22));
++		mt7530_rmw(priv, 0x240c, 0, BIT(4));
++
++		/* tcPhyInit() tail: unconditional gswPbusWrite pokes. MFC on
++		 * the EXT must be flood-all (0xffffffe0): a narrower
++		 * CPU_PORT-only value blocks SoC->jack broadcasts.
++		 */
++		mt7530_ext_pbus_write(priv, 0x10, 0xffffffe0);
++		mt7530_ext_pbus_write(priv, 0x1c,
++				      (mt7530_ext_pbus_read(priv, 0x1c) & 0x8ff88ff8) |
++				      0x60066006);
++
++		/* Mirror the conduit's MAC into the switch's own CPU-port MAC
++		 * registers (switch + 0x30e4/0x30e8), matching what the
++		 * bootloader writes. The GDM half is already handled by
++		 * econet_eth's en75_set_macaddr(); the switch half was left
++		 * unset when econet-eth moved MAC ownership to DSA. This
++		 * closes that gap. dsa_to_port(ds, 6)->conduit is valid here:
++		 * DSA assigns the conduit at tree-parse time, well before
++		 * setup().
++		 */
++		{
++			const u8 *m = dsa_to_port(ds, 6)->conduit->dev_addr;
++
++			mt7530_write(priv, 0x30e4, (m[2] << 24) | (m[3] << 16) |
++						   (m[4] << 8) | m[5]);
++			mt7530_write(priv, 0x30e8, (m[0] << 8) | m[1]);
++		}
++
++		/* Cold-boot bring-up of the EXT chip's jack PHYs (MDIO
++		 * 0-4) -- see mt7530_ext_phy_init_one().
++		 */
++		for (i = 0; i < 5; i++)
++			mt7530_ext_phy_init_one(priv, i);
++	}
++
+ 	return mt7531_setup_common(ds);
+ }
+ 

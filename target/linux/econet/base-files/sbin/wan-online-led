@@ -1,0 +1,69 @@
+#!/bin/sh
+# WAN-online status panel LED driver.
+#
+# Polls WAN reachability and sets the bicolour Internet LED
+# (LED_FUNCTION_WAN_ONLINE in the DTS):
+#   carrier + internet reachable    -> steady GREEN
+#   carrier, internet NOT reachable -> steady RED
+#   no carrier                      -> off
+#
+# PROBES are internet addresses, not the gateway, so "router alive but
+# internet down" shows red; multiple probes avoid a false red from one
+# provider's outage, and the last-successful probe is tried first each
+# cycle. FAIL_THRESHOLD adds hysteresis so a single dropped ping doesn't
+# flicker the LED.
+#
+# The Broadband/WAN LED is untouched: it's driven directly by the PHY with
+# no software override available on this board.
+PROBES="${PROBES:-1.1.1.1 8.8.8.8 9.9.9.9 77.88.8.8}"
+DELAY="${DELAY:-5}"
+FAIL_THRESHOLD="${FAIL_THRESHOLD:-2}"
+G=/sys/class/leds/green:wan-online
+R=/sys/class/leds/red:wan-online
+state=""
+fails=0
+last_good=""
+
+echo none > $G/trigger
+echo none > $R/trigger
+
+set_leds() { # $1 = off|red|green
+	[ "$state" = "$1" ] && return
+	state=$1
+	case "$1" in
+	off)   echo 0 > $G/brightness; echo 0 > $R/brightness ;;
+	red)   echo 0 > $G/brightness; echo 1 > $R/brightness ;;
+	green) echo 0 > $R/brightness; echo 1 > $G/brightness ;;
+	esac
+}
+
+check_internet() {
+	if [ -n "$last_good" ] && ping -c 1 -W 2 "$last_good" >/dev/null 2>&1; then
+		return 0
+	fi
+	for ip in $PROBES; do
+		[ "$ip" = "$last_good" ] && continue
+		if ping -c 1 -W 2 "$ip" >/dev/null 2>&1; then
+			last_good=$ip
+			return 0
+		fi
+	done
+	last_good=""
+	return 1
+}
+
+set_leds off
+
+while :; do
+	if [ "$(cat /sys/class/net/wan/carrier 2>/dev/null)" != "1" ]; then
+		set_leds off
+		fails=0
+	elif check_internet; then
+		fails=0
+		set_leds green
+	else
+		fails=$((fails + 1))
+		[ "$fails" -ge "$FAIL_THRESHOLD" ] && set_leds red
+	fi
+	sleep $DELAY
+done
