@@ -25,7 +25,8 @@ fi
 part uuid ${devtype} ${devnum}:2 uuid
 
 setenv console "console=ttyMV0,115200 earlycon=ar3700_uart,0xd0012000"
-setenv bootargs "root=PARTUUID=${uuid} rw rootwait ${console}"
+setenv cpufreq "cpufreq.default_governor=performance"
+setenv bootargs "root=PARTUUID=${uuid} rw rootwait ${console} ${cpufreq}"
 
 echo "Booting Linux from ${devtype} ${devnum} with args: ${bootargs}"
 load ${devtype} ${devnum}:1 ${fdt_addr_r} @DTB@.dtb
