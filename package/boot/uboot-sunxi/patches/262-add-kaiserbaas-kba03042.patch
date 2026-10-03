@@ -1,0 +1,255 @@
+From 15c18726d46ffe5e2d42fcfc6d0e8e4915703f06 Mon Sep 17 00:00:00 2001
+From: Jianni Minicozzi <photonican@gmail.com>
+Date: Thu, 25 Dec 2025 21:14:31 +1030
+Subject: [PATCH] sunxi: add support for Kaiser Baas KBA03042
+
+Signed-off-by: Jianni Minicozzi <photonican@gmail.com>
+---
+ arch/arm/dts/Makefile                         |   1 +
+ .../arm/dts/sun7i-a20-kaiserbaas-kba03042.dts | 189 ++++++++++++++++++
+ configs/kaiserbaas_kba03042_defconfig         |  25 +++
+ 3 files changed, 215 insertions(+)
+ create mode 100644 arch/arm/dts/sun7i-a20-kaiserbaas-kba03042.dts
+ create mode 100644 configs/kaiserbaas_kba03042_defconfig
+
+diff --git a/arch/arm/dts/Makefile b/arch/arm/dts/Makefile
+index 6ad59aeed5f..4e3b1a4aaca 100644
+--- a/arch/arm/dts/Makefile
++++ b/arch/arm/dts/Makefile
+@@ -616,6 +616,7 @@ dtb-$(CONFIG_MACH_SUN7I) += \
+ 	sun7i-a20-icnova-swac.dtb \
+ 	sun7i-a20-itead-ibox.dtb \
+ 	sun7i-a20-lamobo-r1.dtb \
++	sun7i-a20-kaiserbaas-kba03042.dtb \
+ 	sun7i-a20-linutronix-testbox-v2.dtb \
+ 	sun7i-a20-m3.dtb \
+ 	sun7i-a20-m5.dtb \
+diff --git a/arch/arm/dts/sun7i-a20-kaiserbaas-kba03042.dts b/arch/arm/dts/sun7i-a20-kaiserbaas-kba03042.dts
+new file mode 100644
+index 00000000000..1ebcbecd0a8
+--- /dev/null
++++ b/arch/arm/dts/sun7i-a20-kaiserbaas-kba03042.dts
+@@ -0,0 +1,189 @@
++/dts-v1/;
++
++/* SPDX-FileCopyrightText: 2013 Maxime Ripard <maxime.ripard@free-electrons.com>
++ * SPDX-FileCopyrightText: 2025 Jianni Minicozzi <photonican@gmail.com>
++ * SPDX-License-Identifier: GPL-2.0-or-later OR X11
++ * Based on sun7i-a20-cubieboard2.dts
++ */
++
++#include "sun7i-a20.dtsi"
++#include "sunxi-common-regulators.dtsi"
++
++#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/interrupt-controller/irq.h>
++
++/ {
++	model = "Kaiser Baas Smart Media Player KBA03042";
++	compatible = "kaiserbaas,kba03042", "allwinner,sun7i-a20";
++
++	aliases {
++		serial0 = &uart0;
++	};
++
++	chosen {
++		stdout-path = "serial0:115200n8";
++	};
++
++	hdmi-connector {
++		compatible = "hdmi-connector";
++		type = "a";
++
++		port {
++			hdmi_con_in: endpoint {
++				remote-endpoint = <&hdmi_out_con>;
++			};
++		};
++	};
++
++	leds {
++		compatible = "gpio-leds";
++
++		/* standby-led {
++			label  = "kba03042:red:standby";
++			// gpios = ???????
++		}; */
++
++		power-led {
++			label = "kba03042:blue:power";
++			gpios = <&pio 7 20 GPIO_ACTIVE_HIGH>; /* PH20 */
++			default-state = "on";
++		};
++	};
++};
++
++&codec {
++	status = "okay";
++};
++
++&cpu0 {
++	cpu-supply = <&reg_dcdc2>;
++};
++
++&de {
++	status = "okay";
++};
++
++&ehci0 {
++	status = "okay";
++};
++
++&ehci1 {
++	status = "okay";
++};
++
++&gmac {
++	pinctrl-names = "default";
++	pinctrl-0 = <&gmac_mii_pins>;
++	phy-handle = <&phy1>;
++	phy-mode = "mii";
++	status = "okay";
++};
++
++&hdmi {
++	status = "okay";
++};
++
++&hdmi_out {
++	hdmi_out_con: endpoint {
++		remote-endpoint = <&hdmi_con_in>;
++	};
++};
++
++&i2c0 {
++	status = "okay";
++
++axp209: pmic@34 {
++		reg = <0x34>;
++		interrupt-parent = <&nmi_intc>;
++		interrupts = <0 IRQ_TYPE_LEVEL_LOW>;
++	};
++};
++
++&i2c1 {
++	status = "okay";
++};
++
++&spdif {
++	pinctrl-names = "default";
++	pinctrl-0 = <&spdif_tx_pin>;
++	status = "okay";
++};
++
++&ir0 {
++	/* No IR events detected via cat /dev/input/event1. Incorrect rx pin assignment ?*/
++	pinctrl-names = "default";
++	pinctrl-0 = <&ir0_rx_pin>;
++	status = "okay";
++};
++
++&mmc0 {
++	vmmc-supply = <&reg_vcc3v3>;
++	bus-width = <4>;
++	cd-gpios = <&pio 7 1 GPIO_ACTIVE_LOW>; /* PH1 */
++	status = "okay";
++};
++
++&gmac_mdio {
++phy1: ethernet-phy@1 {
++	      reg = <1>;
++      };
++};
++
++&ohci0 {
++	status = "okay";
++};
++
++&ohci1 {
++	status = "okay";
++};
++
++&otg_sram {
++	status = "okay";
++};
++
++#include "axp209.dtsi"
++
++&ac_power_supply {
++	status = "okay";
++};
++
++&reg_dcdc2 {
++	regulator-always-on;
++	regulator-min-microvolt = <1000000>;
++	regulator-max-microvolt = <1400000>;
++	regulator-name = "vdd-cpu";
++};
++
++&reg_dcdc3 {
++	regulator-always-on;
++	regulator-min-microvolt = <1000000>;
++	regulator-max-microvolt = <1400000>;
++	regulator-name = "vdd-int-dll";
++};
++
++&reg_ldo1 {
++	regulator-name = "vdd-rtc";
++};
++
++&reg_ldo2 {
++	regulator-always-on;
++	regulator-min-microvolt = <3000000>;
++	regulator-max-microvolt = <3000000>;
++	regulator-name = "avcc";
++};
++
++&uart0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&uart0_pb_pins>;
++	status = "okay";
++};
++
++&usb_otg {
++	dr_mode = "host"; /* Right hand side USB-A socket wired to OTG so set to host mode */
++	status = "okay";
++};
++
++&usbphy {
++	/* USB VBUS tied to DC5V. Always on. */
++	status = "okay";
++};
+diff --git a/configs/kaiserbaas_kba03042_defconfig b/configs/kaiserbaas_kba03042_defconfig
+new file mode 100644
+index 00000000000..5806f1e2843
+--- /dev/null
++++ b/configs/kaiserbaas_kba03042_defconfig
+@@ -0,0 +1,25 @@
++CONFIG_ARM=y
++CONFIG_ARCH_SUNXI=y
++CONFIG_DEFAULT_DEVICE_TREE="sun7i-a20-kaiserbaas-kba03042"
++CONFIG_SPL=y
++CONFIG_MACH_SUN7I=y
++CONFIG_DRAM_CLK=480
++CONFIG_AHCI=y
++# CONFIG_SYS_MALLOC_CLEAR_ON_INIT is not set
++CONFIG_SPL_I2C=y
++CONFIG_SCSI_AHCI=y
++CONFIG_SYS_64BIT_LBA=y
++CONFIG_SYS_I2C_MVTWSI=y
++CONFIG_SYS_I2C_SLAVE=0x7f
++CONFIG_SYS_I2C_SPEED=400000
++CONFIG_PHY_REALTEK=y
++CONFIG_ETH_DESIGNWARE=y
++CONFIG_MII=y
++CONFIG_SUN7I_GMAC=y
++CONFIG_SCSI=y
++CONFIG_USB_EHCI_HCD=y
++CONFIG_USB_OHCI_HCD=y
++# CONFIG_USB_MUSB_SUNXI is not set
++# CONFIG_USB_MUSB_HOST is not set
++# CONFIG_NETCONSOLE is not set
++# CONFIG_DM_REGULATOR_FIXED is not set
+-- 
+2.43.0
+
