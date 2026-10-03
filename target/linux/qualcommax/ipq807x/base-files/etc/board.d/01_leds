@@ -11,7 +11,8 @@ arcadyan,aw1000)
 	ucidef_set_led_netdev "wan" "WAN" "green:internet" "wan"
 	ucidef_set_led_netdev "wan-port-link" "WAN-PORT-LINK" "90000.mdio-1:1c:green:wan" "wan" "tx rx link_10 link_100 link_1000 link_2500"
 	;;
-asus,rt-ax89x)
+asus,rt-ax89x-b1|\
+asus,rt-ax89x-b2)
 	ucidef_set_led_netdev "aqr" "AQR" "white:aqr10g" "10g-copper"
 	ucidef_set_led_netdev "sfp" "SFP" "white:sfp" "10g-sfp"
 	ucidef_set_led_netdev "wan" "WAN" "white:wan" "wan"
