@@ -70,6 +70,11 @@ function setup_sta(data, config) {
 	/* use what a 6 GHz AP with the same configuration offers */
 	if (config.mode == 'sta')
 		config.encryption = iface.encryption_band(config.encryption, data.band);
+
+	/* WPA3 Specification v3.5 2.5 items 9 and 10 */
+	if (wildcard(data.htmode ?? '', 'EHT*'))
+		set_default(config, 'sae_ext_key', true);
+
 	iface.parse_encryption(config, data);
 
 	if (config.auth_type in [ 'sae', 'owe', 'eap2', 'eap192', 'dpp' ])

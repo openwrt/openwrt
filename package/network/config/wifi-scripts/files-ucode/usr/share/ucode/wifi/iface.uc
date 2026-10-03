@@ -61,17 +61,20 @@ export function parse_encryption(config, dev_config, phy_features) {
 	config.auth_type = encryption[0] ?? 'none';
 
 	/*
-	 * GCMP-256 and the SAE-EXT-KEY (SAE-GDH) AKM are only mandatory for
-	 * EHT/MLO and break interoperability with many clients, so only default
-	 * them on where they are both required and safe to offer: on Compatibility
-	 * mode (sae-compat) BSSes that run an EHT htmode, which carry them in a
-	 * separate RSN Override element that legacy clients ignore. They stay off
-	 * for WPA3-Personal (sae) and Transition (sae-mixed) mode and on non-EHT
-	 * BSSes. Explicit gcmp256 and sae_ext_key options override this per BSS.
+	 * WPA3 Specification v3.5 2.5 requires SAE-EXT-KEY and GCMP-256 with
+	 * EHT or MLO. Some clients fail when these are offered in the RSNE, so on
+	 * EHT they go into the RSNE Override 2 element. Explicit sae_ext_key and
+	 * gcmp256 options apply to the RSNE; 0 also keeps them out of RSNO2.
 	 */
+	let eht = wildcard(dev_config?.htmode ?? '', 'EHT*');
 	let compat = (config.auth_type == 'sae-compat');
-	config.gcmp256 ??= compat && wildcard(dev_config?.htmode ?? '', 'EHT*');
-	config.sae_ext_key ??= compat && wildcard(dev_config?.htmode ?? '', 'EHT*');
+	let rsno2_mode = config.auth_type in [ 'sae', 'psk3', 'sae-mixed', 'psk3-mixed' ];
+	config.rsno2_sae = eht && rsno2_mode && config.sae_ext_key !== false;
+	let rsno2_gcmp256 = config.gcmp256 !== false && phy_features?.cipher_gcmp256;
+	config.gcmp256 ??= compat && eht;
+	config.sae_ext_key ??= compat && eht;
+	if (config.rsno2_sae)
+		config.rsn_override_pairwise_2 = rsno2_gcmp256 ? 'GCMP-256' : 'CCMP';
 
 	switch(config.auth_type) {
 	case 'owe':
@@ -274,6 +277,12 @@ export function wpa_key_mgmt(config, band) {
 	case 'dpp':
 		append_value(config, 'wpa_key_mgmt', 'DPP');
 		break;
+	}
+
+	if (config.rsno2_sae) {
+		append_value(config, 'rsn_override_key_mgmt_2', 'SAE-EXT-KEY');
+		if (config.ieee80211r)
+			append_value(config, 'rsn_override_key_mgmt_2', 'FT-SAE-EXT-KEY');
 	}
 
 	if (config.dpp && config.auth_type != 'dpp')

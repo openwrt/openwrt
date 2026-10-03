@@ -397,7 +397,7 @@
 			"type": "string"
 		},
 		"gcmp256": {
-			"description": "Advertise the GCMP-256 pairwise cipher on HE/EHT BSSes (alongside CCMP for sae/sae-mixed, in the RSNE Override 2 element for sae-compat). Mandatory for EHT, recommended otherwise. Defaults off for sae and sae-mixed because some clients and chipsets misbehave when GCMP-256 is offered, and on for sae-compat BSSes using an EHT htmode (where GCMP-256 is mandatory), carried in a separate RSN Override element that legacy clients ignore. Only advertised when the driver supports the GCMP-256 cipher.",
+			"description": "Advertise the GCMP-256 pairwise cipher on HE/EHT BSSes (alongside CCMP for sae/sae-mixed, in the RSNE Override 2 element for sae-compat). Mandatory for EHT (WPA3 Specification v3.5 2.5), recommended otherwise. Off by default, because some clients and chipsets misbehave when GCMP-256 is offered. With an EHT htmode, sae, sae-mixed and sae-compat BSSes offer GCMP-256 in the RSNE Override 2 element unless this option is 0; 1 also offers it in the RSNE. Only advertised when the driver supports the GCMP-256 cipher.",
 			"type": "boolean"
 		},
 		"hidden": {
@@ -1017,7 +1017,7 @@
 			"type": "boolean"
 		},
 		"sae_ext_key": {
-			"description": "Advertise the SAE-EXT-KEY AKM (SAE using a group-dependent hash) alongside plain SAE. Mandatory for EHT, recommended otherwise. Defaults off for sae and sae-mixed because some clients misbehave when SAE-EXT-KEY is offered, and on for sae-compat BSSes using an EHT htmode (where SAE-EXT-KEY is mandatory), carried in a separate RSN Override element that legacy clients ignore.",
+			"description": "Advertise the SAE-EXT-KEY AKM (SAE using a group-dependent hash) alongside plain SAE. Mandatory for EHT (WPA3 Specification v3.5 2.5), recommended otherwise. Off by default in the RSNE, because some clients misbehave when SAE-EXT-KEY is offered there. With an EHT htmode, sae, sae-mixed and sae-compat BSSes offer it in the RSNE Override 2 element unless this option is 0; 1 also offers it in the RSNE (not for sae-compat).",
 			"type": "boolean"
 		},
 		"sae_password_file": {

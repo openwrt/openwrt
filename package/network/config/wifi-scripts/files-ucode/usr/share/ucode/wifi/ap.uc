@@ -192,9 +192,10 @@ function iface_auth_type(config, band, eht) {
 			if (config.mlo)
 				config.rsn_override_mlo_compat = 1;
 		}
-		if (config.rsn_override_pairwise_2)
-			config.rsn_override_mfp_2 = 2;
 	}
+
+	if (config.rsn_override_pairwise_2)
+		config.rsn_override_mfp_2 = 2;
 
 	/* Easy Connect 3.0 8.4.2: PMF for every association with the DPP AKM.
 	 * Optional keeps the other AKM open to stations without PMF. */
