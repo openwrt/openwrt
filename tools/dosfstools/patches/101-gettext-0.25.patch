@@ -1,0 +1,48 @@
+From abd60046e3836dc1c2842072c6b00b44313c29ac Mon Sep 17 00:00:00 2001
+From: Alyssa Ross <hi@alyssa.is>
+Date: Wed, 2 Jul 2025 12:03:53 +0200
+Subject: [PATCH] Fix autoreconf with gettext 0.25
+
+This fixes the following error that appeared when running autoreconf
+after updating to gettext 0.25:
+
+	configure.ac:76: error: possibly undefined macro: AM_ICONV
+	      If this token and others are legitimate, please use m4_pattern_allow.
+	      See the Autoconf documentation.
+	autoreconf: error: /nix/store/dvpiwvz7an7icljfscdi76h11c03cma4-autoconf-2.72/bin/autoconf failed with exit status: 1
+
+It also means that, with any version of gettext, autoreconf should now
+be able to figure out that config.rpath is required, so the custom
+autogen.sh script should no longer be necessary.
+
+The version of gettext given in AM_GNU_GETTEXT_VERSION() is picked
+quite arbitrarily based on what's likely to be available in distros,
+since gettext itself is not actually used here, just some supporting
+stuff from it.
+---
+ Makefile.am  |  2 --
+ configure.ac |  3 +++
+ 2 files changed, 3 insertions(+), 2 deletions(-)
+
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -9,5 +9,3 @@ dist_doc_DATA = doc/ANNOUNCE.mkdosfs \
+ 		doc/README.mkdosfs \
+ 		doc/TODO.dosfstools-2.x \
+ 		COPYING ChangeLog NEWS README
+-
+-EXTRA_DIST = autogen.sh
+--- a/configure.ac
++++ b/configure.ac
+@@ -15,8 +15,11 @@
+ # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ 
+ AC_INIT([dosfstools], [4.2])
++AC_CONFIG_MACRO_DIRS([m4])
+ AC_SUBST([RELEASE_DATE], [2021-01-31])
+ AM_INIT_AUTOMAKE([1.11 foreign subdir-objects parallel-tests])
++AM_GNU_GETTEXT_VERSION([0.20])
++AM_GNU_GETTEXT([external])
+ 
+ AC_ARG_ENABLE([compat-symlinks],
+ 	[AS_HELP_STRING([--enable-compat-symlinks],
