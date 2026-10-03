@@ -2,6 +2,7 @@
 
 #include <linux/bitfield.h>
 #include <linux/delay.h>
+#include <linux/jiffies.h>
 #include <linux/mdio.h>
 #include <linux/mfd/syscon.h>
 #include <linux/of.h>
@@ -13,9 +14,38 @@
 #include <linux/platform_device.h>
 #include <linux/property.h>
 #include <linux/regmap.h>
+#include <linux/rtnetlink.h>
+#include <linux/sfp.h>
+#include <linux/workqueue.h>
 
 #define RTPCS_SDS_CNT				14
 #define RTPCS_MAX_LINKS_PER_SDS			8
+
+/*
+ * Bounded repair attempts use exponential backoff. Each attempt resets the
+ * receiver and drops any link, so the bound and backoff keep an
+ * uncalibratable cable from flapping the port.
+ */
+#define RTPCS_DAC_REPAIR_TRIES			3
+#define RTPCS_DAC_REPAIR_DELAY_MS		1000
+#define RTPCS_DAC_REPAIR_TRANSIENT_MS		250
+#define RTPCS_DAC_REPAIR_LINK_SETTLE_MS		50
+#define RTPCS_DAC_MAC_LINK_CHECK_MS		2000
+#define RTPCS_RX_RECOVERY_TRIES			3
+#define RTPCS_RX_RECOVERY_DELAY_MS		10000
+#define RTPCS_DAC_FLOOR_INITIAL_MS		(RTPCS_RX_RECOVERY_DELAY_MS << 2)
+#define RTPCS_DAC_TERMINAL_RETRY_MS		300000
+
+/* LEQ convergence window at the calibration loop's 10 ms cadence. */
+#define RTPCS_DAC_LEQ_SETTLE_POLLS		100
+#define RTPCS_DAC_LEQ_SETTLE_STABLE		8
+
+/*
+ * VTH preset used to identify a calibration performed without input signal:
+ * adaptation against a live peer pulls VTH to about half this value, while
+ * without signal it stays exactly at the preset.
+ */
+#define RTPCS_931X_VTH_RESET			0xa
 
 #define RTPCS_SPEED_10				0
 #define RTPCS_SPEED_100				1
@@ -477,6 +507,43 @@ struct rtpcs_serdes {
 	u8 id;
 	u8 num_of_links;
 	bool first_start;
+	/* realtek,sfp-dac-detect from the firmware node, read once at probe. */
+	bool dac_detect;
+	/* Medium classification from an unambiguous module link-mode mask. */
+	bool sfp_passive_copper;
+	bool sfp_medium_valid;
+	bool sfp_present;
+	/* Set only by the SFP lifecycle callback; consumed by pcs_config(). */
+	bool module_changed;
+
+	/*
+	 * Bounded DAC RX calibration repair, all guarded by ctrl->lock.
+	 * See rtpcs_931x_rx_recovery_work().
+	 */
+	struct delayed_work rx_recovery_work;
+	bool rx_recovery_armed;
+	bool dac_floor_armed;
+	bool dac_repair_armed;
+
+	/* Boot-calibration repair state, guarded by ctrl->lock. */
+	bool dac_cal_unverified;		/* last calibration did not verify */
+	bool dac_cal_silence;			/* calibration had no input signal */
+	bool dac_leq_handed_back;		/* gave up; LEQ left auto-adapting */
+	bool dac_terminal_latched;		/* recovery budget reached terminal */
+	bool dac_reopen_used;			/* terminal recovery reopened once */
+	bool dac_repair_expected_link_down;	/* one repair-induced transient */
+	bool dac_mac_link_warned;		/* PCS/MAC link mismatch reported */
+	bool dac_floor_reported;		/* floor calibration logged */
+	unsigned long dac_repair_transient_until;
+	unsigned int dac_repair_tries;		/* attempts for this module/config */
+	unsigned int rx_recovery_tries;		/* no-link resets for this module */
+	u32 media_epoch;
+	u32 recovery_epoch;
+
+	/* One-shot PCS/MAC link consistency check, guarded by ctrl->lock. */
+	struct delayed_work mac_link_check_work;
+	bool mac_link_check_armed;
+	u32 mac_link_check_epoch;
 };
 
 struct rtpcs_ctrl {
@@ -486,9 +553,11 @@ struct rtpcs_ctrl {
 	const struct rtpcs_config *cfg;
 	struct rtpcs_serdes serdes[RTPCS_SDS_CNT];
 	struct mutex lock;
+	struct workqueue_struct *rx_recovery_wq;
 
 	/* meaning and source may be family-specific */
 	enum rtpcs_chip_version chip_version;
+
 };
 
 struct rtpcs_link {
@@ -783,17 +852,35 @@ static int rtpcs_sds_select_hw_mode(struct rtpcs_serdes *sds, phy_interface_t if
 	return 0;
 }
 
-static int rtpcs_sds_select_attachment(enum rtpcs_sds_mode hw_mode,
+static int rtpcs_sds_select_attachment(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode,
 				       enum rtpcs_sds_attachment *attachment)
 {
 	switch (hw_mode) {
 	case RTPCS_SDS_MODE_OFF:
 		*attachment = RTPCS_SDS_ATTACH_NONE;
 		break;
+	case RTPCS_SDS_MODE_10GBASER:
+		/*
+		 * DAC handling is enabled explicitly per SerDes in the firmware
+		 * node: the DAC paths change the TX configuration and the RX
+		 * calibration for the whole cage, which is validated per board,
+		 * so an undeclared SerDes keeps the pre-existing fiber
+		 * treatment.
+		 */
+		if (sds->sfp_passive_copper && sds->dac_detect) {
+			/*
+			 * SFF-8472 cable length is not exposed through phylink, so
+			 * use the higher-loss profile for all DACs. It covers cables
+			 * at or above the 3 m boundary. Select DAC_SHORT when module
+			 * length becomes available here.
+			 */
+			*attachment = RTPCS_SDS_ATTACH_DAC_LONG;
+			break;
+		}
+		fallthrough;
 	case RTPCS_SDS_MODE_100BASEX:
 	case RTPCS_SDS_MODE_1000BASEX:
 	case RTPCS_SDS_MODE_2500BASEX:
-	case RTPCS_SDS_MODE_10GBASER:
 		*attachment = RTPCS_SDS_ATTACH_FIBER;
 		break;
 	default:
@@ -2725,9 +2812,10 @@ static void rtpcs_930x_sds_rxcal_leq_adapt_lock(struct rtpcs_serdes *sds)
 	avg10 = (sum10 / 10) + (((sum10 % 10) >= 5) ? 1 : 0);
 
 	/*
-	 * Empirical correction based on attachment type.
-	 * Direct SerDes connections get a base offset of +3; DAC cables add further
-	 * correction for their attenuation. PHY-attached needs none.
+	 * Apply the attachment-specific correction from the vendor RX
+	 * calibration procedure. Direct SerDes connections use a base offset;
+	 * DAC cables add compensation for cable loss. PHY-attached links need no
+	 * correction because the external PHY equalizes its receive path.
 	 */
 	switch (sds->attachment) {
 	case RTPCS_SDS_ATTACH_FIBER:
@@ -3351,7 +3439,7 @@ static void rtpcs_931x_sds_clear_symerr(struct rtpcs_serdes *sds,
 		rtpcs_sds_write_bits(sds, DIGI_1(PAGE_SDS_EXT), 0x2, 15, 0, 0x0);
 		break;
 	case RTPCS_SDS_MODE_10GBASER:
-		/* to be verified: clear on read? */
+		/* Clause 45 errored-block counter, clear on read. */
 		rtpcs_sds_read_bits(sds, PAGE_TGR_STD_1, 0x1, 7, 0);
 		break;
 	case RTPCS_SDS_MODE_OFF:
@@ -3522,30 +3610,48 @@ static int rtpcs_931x_sds_rxeq_vth_get(struct rtpcs_serdes *sds, unsigned int *v
  */
 static int rtpcs_931x_sds_reset_leq_dfe(struct rtpcs_serdes *sds)
 {
-	rtpcs_931x_sds_rxeq_leq_set_adapt(sds, false);
-	rtpcs_931x_sds_rxeq_leq_set_coef(sds, 0);
+	int ret;
+
+	ret = rtpcs_931x_sds_rxeq_leq_set_adapt(sds, false);
+	if (ret)
+		return ret;
+
+	ret = rtpcs_931x_sds_rxeq_leq_set_coef(sds, 0);
+	if (ret)
+		return ret;
+
 	/* bits [1:0] are undocumented but part of the known-good reset value */
-	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xd, 1, 0, 0x0);
+	ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xd, 1, 0, 0x0);
+	if (ret)
+		return ret;
 
 	/*
 	 * Force manual mode before writing values - not after like the vendor
 	 * SDK does - to prevent the adapt engine from overwriting '0' in the
 	 * short timeframe.
 	 */
-	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xf, 12, 6, 0x7f);
+	ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xf, 12, 6, 0x7f);
+	if (ret)
+		return ret;
 
-	rtpcs_931x_sds_rxeq_tap_set_value(sds, 0, 0x1e, 0);
-	rtpcs_931x_sds_rxeq_tap_set_value(sds, 1, 0, 0);
-	rtpcs_931x_sds_rxeq_tap_set_value(sds, 2, 0, 0);
-	rtpcs_931x_sds_rxeq_tap_set_value(sds, 3, 0, 0);
-	rtpcs_931x_sds_rxeq_tap_set_value(sds, 4, 0, 0);
+	for (int i = 0; i <= 4; i++) {
+		ret = rtpcs_931x_sds_rxeq_tap_set_value(sds, i,
+							 i ? 0 : 0x1e, 0);
+		if (ret)
+			return ret;
+	}
 
-	rtpcs_931x_sds_rxeq_vth_set_value(sds, 0xa, 0xa);
+	ret = rtpcs_931x_sds_rxeq_vth_set_value(sds, RTPCS_931X_VTH_RESET,
+					       RTPCS_931X_VTH_RESET);
+	if (ret)
+		return ret;
+
 	/* bits [15:12] and [3:0] are undocumented but part of the known-good reset value */
-	rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x12, 15, 12, 0x0);
-	rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x12, 3, 0, 0xa);
+	ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x12, 15, 12, 0x0);
+	if (ret)
+		return ret;
 
-	return 0;
+	return rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x12, 3, 0, 0xa);
 }
 
 /*
@@ -3644,33 +3750,63 @@ static int rtpcs_931x_sds_activate(struct rtpcs_serdes *sds)
 	return rtpcs_931x_sds_power(sds, true);
 }
 
-static void rtpcs_931x_sds_10g_ana_pre(struct rtpcs_serdes *sds)
+static int rtpcs_931x_sds_10g_ana_pre(struct rtpcs_serdes *sds)
 {
-	rtpcs_sds_write(sds, PAGE_ANA_10G, 0x12, 0x2740);
-	rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x0, 15, 12, 0x0);
-	rtpcs_sds_write(sds, PAGE_ANA_10G_EXT, 0x2, 0x2010);
+	int ret;
+
+	ret = rtpcs_sds_write(sds, PAGE_ANA_10G, 0x12, 0x2740);
+	if (ret)
+		return ret;
+
+	ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x0, 15, 12, 0x0);
+	if (ret)
+		return ret;
+
+	return rtpcs_sds_write(sds, PAGE_ANA_10G_EXT, 0x2, 0x2010);
 }
 
-static void rtpcs_931x_sds_10g_ana_post(struct rtpcs_serdes *sds)
+static int rtpcs_931x_sds_10g_ana_post(struct rtpcs_serdes *sds)
 {
-	rtpcs_sds_write(sds, PAGE_ANA_10G, 0x12, 0x27c0);
-	rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x0, 15, 12, 0xc);
-	rtpcs_sds_write(sds, PAGE_ANA_10G_EXT, 0x2, 0x6010);
+	int ret;
+
+	ret = rtpcs_sds_write(sds, PAGE_ANA_10G, 0x12, 0x27c0);
+	if (ret)
+		return ret;
+
+	ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x0, 15, 12, 0xc);
+	if (ret)
+		return ret;
+
+	return rtpcs_sds_write(sds, PAGE_ANA_10G_EXT, 0x2, 0x6010);
 }
 
-static void rtpcs_931x_sds_rx_reset(struct rtpcs_serdes *sds)
+static int rtpcs_931x_sds_rx_reset(struct rtpcs_serdes *sds)
 {
+	int ret;
+
 	if (sds->type != RTPCS_SDS_TYPE_10G)
-		return;
+		return 0;
 
-	rtpcs_931x_sds_10g_ana_pre(sds);
-	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, ANA_MISC_REG00, RTL93XX_FRC_RX_EN,
-			     RTL93XX_FRC_RX_EN_FORCE_OFF);
+	ret = rtpcs_931x_sds_10g_ana_pre(sds);
+	if (ret)
+		return ret;
 
-	rtpcs_931x_sds_10g_ana_post(sds);
-	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, ANA_MISC_REG00, RTL93XX_FRC_RX_EN,
-			     RTL93XX_FRC_RX_EN_FORCE_ON);
+	ret = rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, ANA_MISC_REG00, RTL93XX_FRC_RX_EN,
+				   RTL93XX_FRC_RX_EN_FORCE_OFF);
+	if (ret)
+		return ret;
+
+	ret = rtpcs_931x_sds_10g_ana_post(sds);
+	if (ret)
+		return ret;
+
+	ret = rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, ANA_MISC_REG00, RTL93XX_FRC_RX_EN,
+				   RTL93XX_FRC_RX_EN_FORCE_ON);
+	if (ret)
+		return ret;
+
 	msleep(50);
+	return 0;
 }
 
 /*
@@ -3706,14 +3842,8 @@ static void rtpcs_931x_sds_rxcal_leq_adapt(struct rtpcs_serdes *sds)
  * Only used for 10GBase-R fiber; calibration not needed for fiber running
  * on slower speeds.
  *
- * Deviates from the vendor SDK's retry shape which is considerably tighter
- * (3 symbol error rechecks, 150ms delay, exact-0 target). symErr's field
- * (8 bits wide) has been observed reading a saturated 0xff right after
- * rx_reset(), which looks like "link hasn't relocked yet" rather than a
- * genuine error count. Thus, recheck more times with more patience per
- * check instead (no reset in between, so a settling link isn't interrupted),
- * and tolerate a small nonzero symbol-error count rather than requiring
- * exactly 0.
+ * Allow the PCS to relock after reset before evaluating the 8-bit symbol-error
+ * counter, and accept a small non-zero count during convergence.
  */
 static void rtpcs_931x_sds_rxcal_fiber_adapt(struct rtpcs_serdes *sds)
 {
@@ -3793,6 +3923,850 @@ static void rtpcs_931x_sds_rxcal_fiber_adapt(struct rtpcs_serdes *sds)
 	else
 		dev_warn(dev, "SerDes %u fiber RX calibration failed after %d symErr checks\n",
 			 sds->id, i);
+}
+
+/*
+ * Wait until the LEQ coefficient is non-zero and stable within one step.
+ * Zero is the reset value rather than a convergence: a lossy cable cannot be
+ * carried at coefficient 0, which is what the DAC path exists for.
+ * A timeout is not an I/O error; report it through @settled so PCS
+ * configuration remains bounded without input.
+ */
+static int rtpcs_931x_sds_leq_wait_settled(struct rtpcs_serdes *sds, bool *settled)
+{
+	int prev = -1, stable = 0;
+	unsigned int i;
+
+	*settled = false;
+	for (i = 0; i < RTPCS_DAC_LEQ_SETTLE_POLLS; i++) {
+		int val = rtpcs_931x_sds_rxeq_leq_get_coef(sds);
+
+		if (val < 0)
+			return val;
+
+		if (val > 0 && prev > 0 && abs(val - prev) <= 1) {
+			if (++stable >= RTPCS_DAC_LEQ_SETTLE_STABLE) {
+				*settled = true;
+				return 0;
+			}
+		} else {
+			stable = 0;
+		}
+
+		prev = val;
+		usleep_range(10000, 11000);
+	}
+
+	return 0;
+}
+
+/*
+ * Calibrate the RTL931x 10G DAC receiver.
+ *
+ * Allow LEQ, VTH and TAP0 to adapt, lock the settled values, and leave the
+ * remaining DFE taps adaptive. Verification is bounded because pcs_config()
+ * runs before phylink has established a durable link.
+ */
+static int rtpcs_931x_sds_rxcal_dac_adapt(struct rtpcs_serdes *sds)
+{
+	unsigned int vth_p = 0, vth_n = 0, sum_p = 0, sum_n = 0;
+	unsigned int leq_offset, leq_sum = 0, leq;
+	int i, link = 0, ret, symerr = -1;
+	struct device *dev = sds->ctrl->dev;
+	bool ever_linked = false, measured_silence, settled;
+
+	/* Direct-attachment baseline plus the cable-loss profile. */
+	leq_offset = (sds->attachment == RTPCS_SDS_ATTACH_DAC_SHORT) ? 4 : 6;
+
+	dev_dbg(dev, "SerDes %u DAC RX calibration...\n", sds->id);
+
+	/* Per-port calibration offset in the SDK; kept at zero here. */
+	ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xc, 14, 10, 0x0);
+	if (ret)
+		return ret;
+
+	ret = rtpcs_931x_sds_reset_leq_dfe(sds);
+	if (ret)
+		return ret;
+
+	/* Prepare LEQ adaptation. */
+	ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xd, 13, 13, 0x0);
+	if (ret)
+		return ret;
+
+	ret = rtpcs_931x_sds_rxeq_dfe_disable_5g(sds);
+	if (ret)
+		return ret;
+
+	ret = rtpcs_931x_sds_rx_reset(sds);
+	if (ret)
+		return ret;
+
+	/* Allow LEQ, VTH and TAP0 to settle before sampling. */
+	ret = rtpcs_931x_sds_rxeq_leq_set_adapt(sds, true);
+	if (ret)
+		return ret;
+
+	ret = rtpcs_931x_sds_rxeq_tap_set_adapt(sds, 0, true);
+	if (ret)
+		return ret;
+
+	ret = rtpcs_931x_sds_rxeq_vth_set_adapt(sds, true);
+	if (ret)
+		return ret;
+
+	msleep(200);
+	/* Exclude the convergence transient from the average. */
+	ret = rtpcs_931x_sds_leq_wait_settled(sds, &settled);
+	if (ret)
+		return ret;
+
+	if (!settled)
+		dev_warn(dev, "SerDes %u LEQ did not settle in %d ms, sampling anyway\n",
+			 sds->id, RTPCS_DAC_LEQ_SETTLE_POLLS * 10);
+	/*
+	 * Sample LEQ and VTH in separate loops: reading either reprograms the
+	 * shared debug selector, so interleaving them would have each read
+	 * racing the other's selector write.
+	 */
+	for (i = 0; i < 10; i++) {
+		ret = rtpcs_931x_sds_rxeq_leq_get_coef(sds);
+		if (ret < 0)
+			return ret;
+
+		leq_sum += ret;
+		usleep_range(10000, 11000);
+	}
+
+	leq = DIV_ROUND_CLOSEST(leq_sum, 10) + leq_offset;
+
+	/* The LEQ coefficient field is five bits wide. */
+	leq = min(leq, 31u);
+
+	for (i = 0; i < 10; i++) {
+		unsigned int p, n;
+
+		ret = rtpcs_931x_sds_rxeq_vth_get(sds, &p, &n);
+		if (ret)
+			return ret;
+
+		sum_p += p;
+		sum_n += n;
+		usleep_range(10000, 11000);
+	}
+
+	vth_p = DIV_ROUND_CLOSEST(sum_p, 10);
+	vth_n = DIV_ROUND_CLOSEST(sum_n, 10);
+
+	dev_info(dev, "SerDes %u DAC RX calibration: LEQ = %u (offset %u), VTH = %#x/%#x\n",
+		 sds->id, leq, leq_offset, vth_p, vth_n);
+
+	measured_silence = !settled && leq == leq_offset &&
+			   vth_p == RTPCS_931X_VTH_RESET &&
+			   vth_n == RTPCS_931X_VTH_RESET;
+
+	ret = rtpcs_931x_sds_rxeq_tap_set_value(sds, 0, 31, 0);
+	if (ret)
+		return ret;
+
+	ret = rtpcs_931x_sds_rxeq_tap_set_adapt(sds, 0, false);
+	if (ret)
+		return ret;
+
+	ret = rtpcs_931x_sds_rxeq_vth_set_value(sds, vth_p, vth_n);
+	if (ret)
+		return ret;
+
+	ret = rtpcs_931x_sds_rxeq_vth_set_adapt(sds, false);
+	if (ret)
+		return ret;
+
+	/* lock the LEQ at the value the cable adapted to */
+	ret = rtpcs_931x_sds_rxeq_leq_set_adapt(sds, false);
+	if (ret)
+		return ret;
+
+	ret = rtpcs_931x_sds_rxeq_leq_set_coef(sds, leq);
+	if (ret)
+		return ret;
+
+	ret = rtpcs_931x_sds_rx_reset(sds);
+	if (ret)
+		return ret;
+
+	/* Leave DFE taps 1-4 adaptive. */
+	for (i = 1; i <= 4; i++) {
+		ret = rtpcs_931x_sds_rxeq_tap_set_adapt(sds, i, true);
+		if (ret)
+			return ret;
+	}
+
+	for (i = 0; i < 8; i++) {
+		ret = rtpcs_931x_sds_fiber_get_symerr(sds, RTPCS_SDS_MODE_10GBASER);
+		if (ret < 0)
+			return ret;
+
+		msleep(300);
+		symerr = rtpcs_931x_sds_fiber_get_symerr(sds, RTPCS_SDS_MODE_10GBASER);
+		if (symerr < 0)
+			return symerr;
+
+		link = rtpcs_sds_read_bits(sds, PAGE_TGR_STD_1, 0x0, 12, 12);
+		if (link < 0)
+			return link;
+
+		ever_linked |= link == 1;
+		dev_dbg(dev, "SerDes %u symErr check %d: linkUp=%d symErr=0x%x\n", sds->id,
+			i + 1, link == 1, symerr);
+		/* A zero error count is meaningful only while receive link is up. */
+		if (link == 1 && symerr <= 5) {
+			if (measured_silence) {
+				sds->dac_cal_unverified = true;
+				sds->dac_cal_silence = false;
+				dev_warn(dev, "SerDes %u peer arrived while verifying a measurement of silence, keeping LEQ %u unverified\n",
+					 sds->id, leq);
+				return 0;
+			}
+
+			sds->dac_cal_unverified = false;
+			sds->dac_cal_silence = false;
+			dev_info(dev, "SerDes %u DAC RX calibration OK (check %d, LEQ %u)\n",
+				 sds->id, i + 1, leq);
+			return 0;
+		}
+	}
+
+	/*
+	 * Keep the locked value pending a bounded repair pass: on a lossy DAC
+	 * free adaptation settles well above the error rate a locked LEQ
+	 * achieves, so handing the LEQ back is only the terminal fallback.
+	 */
+	sds->dac_cal_unverified = true;
+
+	/*
+	 * Identify the reset-state signature produced without receive signal.
+	 * All four conditions are required, so a doubtful measurement is
+	 * charged as an attempt on the cable.
+	 */
+	sds->dac_cal_silence = measured_silence && !ever_linked;
+	if (sds->dac_cal_silence) {
+		ret = rtpcs_931x_sds_rxeq_leq_set_adapt(sds, true);
+		if (ret)
+			return ret;
+	}
+
+	if (!ever_linked)
+		dev_warn(dev, "SerDes %u DAC RX calibration: link did not come up within %d symErr checks, keeping LEQ %u unverified\n",
+			 sds->id, i, leq);
+	else
+		dev_warn(dev, "SerDes %u DAC RX calibration: no clean link after %d symErr checks (linkUp=%d symErr=%#x), keeping LEQ %u unverified\n",
+			 sds->id, i, link == 1, symerr, leq);
+
+	return 0;
+}
+
+/* Return whether the DAC calibration needs a bounded repair pass. */
+static bool rtpcs_931x_dac_repair_due(struct rtpcs_serdes *sds)
+{
+	if (sds->attachment != RTPCS_SDS_ATTACH_DAC_SHORT &&
+	    sds->attachment != RTPCS_SDS_ATTACH_DAC_LONG)
+		return false;
+
+	if (sds->hw_mode != RTPCS_SDS_MODE_10GBASER)
+		return false;
+
+	if (sds->dac_leq_handed_back)
+		return false;
+
+	return sds->dac_cal_unverified;
+}
+
+/* Queue one bounded repair on the controller-owned ordered workqueue. */
+static void rtpcs_931x_dac_repair_arm(struct rtpcs_serdes *sds)
+{
+	unsigned int shift;
+
+	if (!rtpcs_931x_dac_repair_due(sds) || sds->dac_cal_silence ||
+	    !sds->ctrl->rx_recovery_wq)
+		return;
+
+	/* A link event supersedes a pending no-link probe, but not a repair. */
+	if (sds->rx_recovery_armed && !sds->dac_repair_armed) {
+		sds->rx_recovery_armed = false;
+		sds->dac_floor_armed = false;
+		cancel_delayed_work(&sds->rx_recovery_work);
+	}
+
+	sds->rx_recovery_armed = true;
+	sds->dac_repair_armed = true;
+	sds->recovery_epoch = sds->media_epoch;
+
+	shift = min(sds->dac_repair_tries, RTPCS_DAC_REPAIR_TRIES - 1U);
+	/* Keep the first deadline: link flaps must not starve this repair. */
+	queue_delayed_work(sds->ctrl->rx_recovery_wq, &sds->rx_recovery_work,
+			   msecs_to_jiffies(RTPCS_DAC_REPAIR_DELAY_MS << shift));
+}
+
+static int rtpcs_931x_1000basex_link_up(struct rtpcs_serdes *sds, bool *up)
+{
+	int link;
+
+	/* BMSR link status is latch-low, so use the second read. */
+	link = rtpcs_sds_read_bits(sds, DIGI_1(PAGE_FIB), MII_BMSR, 2, 2);
+	if (link < 0)
+		return link;
+
+	link = rtpcs_sds_read_bits(sds, DIGI_1(PAGE_FIB), MII_BMSR, 2, 2);
+	if (link < 0)
+		return link;
+
+	*up = link == 1;
+	return 0;
+}
+
+static void rtpcs_931x_rx_recovery_arm(struct rtpcs_serdes *sds)
+{
+	unsigned int shift;
+
+	if (!sds->sfp_present || !sds->ctrl->rx_recovery_wq ||
+	    sds->rx_recovery_tries >= RTPCS_RX_RECOVERY_TRIES ||
+	    sds->dac_repair_armed)
+		return;
+
+	sds->rx_recovery_armed = true;
+	sds->recovery_epoch = sds->media_epoch;
+	shift = min(sds->rx_recovery_tries, RTPCS_RX_RECOVERY_TRIES - 1U);
+	/* Keep the first deadline: repeated link events must not defer recovery. */
+	queue_delayed_work(sds->ctrl->rx_recovery_wq, &sds->rx_recovery_work,
+			   msecs_to_jiffies(RTPCS_RX_RECOVERY_DELAY_MS << shift));
+}
+
+static int rtpcs_931x_1000basex_recover(struct rtpcs_serdes *sds)
+{
+	int ret;
+
+	/*
+	 * Mirror the SDK link-down recovery rather than replaying pcs_config():
+	 * clear the media selector, restore the RX equalizer baseline, reset the
+	 * receiver, then restart Base-X negotiation.  Replaying attachment setup
+	 * here would also rewrite registers shared with the neighbouring lane.
+	 */
+	ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xe, 13, 11, 0x0);
+	if (ret)
+		return ret;
+
+	ret = rtpcs_931x_sds_reset_leq_dfe(sds);
+	if (ret)
+		return ret;
+
+	ret = rtpcs_931x_sds_rx_reset(sds);
+	if (ret)
+		return ret;
+
+	sds->ops->restart_autoneg(sds);
+	return 0;
+}
+
+/* Enter the terminal adaptive state. Scheduling is kept side-effect free. */
+static void rtpcs_931x_dac_terminal_latch(struct rtpcs_serdes *sds)
+{
+	struct rtpcs_ctrl *ctrl = sds->ctrl;
+	int ret;
+
+	if (sds->dac_terminal_latched)
+		return;
+
+	if (!sds->dac_leq_handed_back) {
+		ret = rtpcs_931x_sds_rxeq_leq_set_adapt(sds, true);
+		if (ret) {
+			dev_err(ctrl->dev,
+				"SerDes %u failed to leave DAC LEQ adapting: %pe\n",
+				sds->id, ERR_PTR(ret));
+		} else {
+			sds->dac_leq_handed_back = true;
+		}
+	}
+
+	sds->dac_terminal_latched = true;
+	dev_warn(ctrl->dev,
+		 "SerDes %u DAC recovery terminal for this module epoch, leaving LEQ auto-adapting\n",
+		 sds->id);
+}
+
+static void
+rtpcs_931x_dac_floor_arm(struct rtpcs_serdes *sds, u32 epoch, unsigned int delay_ms)
+{
+	/* Existing work owns its earlier deadline and must not change type. */
+	if (sds->rx_recovery_armed)
+		return;
+
+	sds->dac_floor_armed = true;
+	sds->rx_recovery_armed = true;
+	sds->recovery_epoch = epoch;
+	/* Keep the first deadline: link events must not defer recovery. */
+	if (!queue_delayed_work(sds->ctrl->rx_recovery_wq, &sds->rx_recovery_work,
+				msecs_to_jiffies(delay_ms))) {
+		sds->dac_floor_armed = false;
+		sds->rx_recovery_armed = false;
+	}
+}
+
+static void rtpcs_931x_dac_floor_arm_initial(struct rtpcs_serdes *sds, u32 epoch)
+{
+	rtpcs_931x_dac_floor_arm(sds, epoch, RTPCS_DAC_FLOOR_INITIAL_MS);
+}
+
+/* Check once, shortly after a retained calibration, that the MAC saw the link. */
+static void rtpcs_931x_mac_link_check_arm(struct rtpcs_serdes *sds)
+{
+	if (!sds->ctrl->rx_recovery_wq || sds->mac_link_check_armed)
+		return;
+
+	sds->mac_link_check_armed = true;
+	sds->mac_link_check_epoch = sds->media_epoch;
+	if (!queue_delayed_work(sds->ctrl->rx_recovery_wq,
+				&sds->mac_link_check_work,
+				msecs_to_jiffies(RTPCS_DAC_MAC_LINK_CHECK_MS)))
+		sds->mac_link_check_armed = false;
+}
+
+static void rtpcs_931x_mac_link_check_work(struct work_struct *work)
+{
+	struct rtpcs_serdes *sds = container_of(to_delayed_work(work),
+						struct rtpcs_serdes,
+						mac_link_check_work);
+	struct rtpcs_ctrl *ctrl = sds->ctrl;
+	bool mac_up = true;
+
+	guard(mutex)(&ctrl->lock);
+
+	if (!sds->mac_link_check_armed ||
+	    sds->mac_link_check_epoch != sds->media_epoch)
+		return;
+	sds->mac_link_check_armed = false;
+
+	if (!sds->sfp_present || sds->hw_mode != RTPCS_SDS_MODE_10GBASER ||
+	    (sds->attachment != RTPCS_SDS_ATTACH_DAC_SHORT &&
+	     sds->attachment != RTPCS_SDS_ATTACH_DAC_LONG))
+		return;
+
+	if (!rtpcs_93xx_sds_10gr_link_up(sds))
+		return;
+
+	for (int i = 0; i < sds->num_of_links; i++) {
+		int port = sds->link_port[i];
+		int linkup = 0;
+
+		if (port < 0)
+			continue;
+
+		/* The MAC link status may be latched low; use the second read. */
+		for (int j = 0; j < 2; j++)
+			linkup = rtpcs_regmap_read_bits(ctrl, ctrl->cfg->mac_link_sts,
+							port, port);
+		if (!linkup)
+			mac_up = false;
+	}
+
+	if (mac_up) {
+		sds->dac_mac_link_warned = false;
+		return;
+	}
+
+	if (sds->dac_mac_link_warned)
+		return;
+
+	sds->dac_mac_link_warned = true;
+	dev_warn(ctrl->dev, "SerDes %u: PCS link up but MAC link down\n", sds->id);
+}
+
+/* Run one serialized receiver recovery transaction. */
+static void rtpcs_931x_rx_recovery_work(struct work_struct *work)
+{
+	struct rtpcs_serdes *sds = container_of(to_delayed_work(work),
+						struct rtpcs_serdes, rx_recovery_work);
+	struct rtpcs_ctrl *ctrl = sds->ctrl;
+	u32 epoch;
+	bool floor_work, link_up, repair_work;
+	int link, ret;
+
+	guard(mutex)(&ctrl->lock);
+
+	if (!sds->rx_recovery_armed || sds->recovery_epoch != sds->media_epoch)
+		return;
+	repair_work = sds->dac_repair_armed;
+	floor_work = sds->dac_floor_armed;
+	sds->rx_recovery_armed = false;
+	sds->dac_floor_armed = false;
+	sds->dac_repair_armed = false;
+	epoch = sds->media_epoch;
+
+	if (sds->sfp_present && sds->attachment == RTPCS_SDS_ATTACH_FIBER &&
+	    sds->hw_mode == RTPCS_SDS_MODE_1000BASEX) {
+		ret = rtpcs_931x_1000basex_link_up(sds, &link_up);
+		if (ret) {
+			sds->rx_recovery_tries++;
+			dev_err(ctrl->dev, "SerDes %u failed to read 1000BASE-X link state: %pe\n",
+				sds->id, ERR_PTR(ret));
+			rtpcs_931x_rx_recovery_arm(sds);
+			return;
+		}
+
+		if (link_up) {
+			sds->rx_recovery_tries = 0;
+			return;
+		}
+
+		sds->rx_recovery_tries++;
+		dev_info(ctrl->dev,
+			 "SerDes %u recovering 1000BASE-X receiver (attempt %u of %u)\n",
+			 sds->id, sds->rx_recovery_tries, RTPCS_RX_RECOVERY_TRIES);
+		ret = rtpcs_931x_1000basex_recover(sds);
+		if (ret) {
+			dev_err(ctrl->dev, "SerDes %u 1000BASE-X recovery failed: %pe\n",
+				sds->id, ERR_PTR(ret));
+			rtpcs_931x_rx_recovery_arm(sds);
+			return;
+		}
+
+		if (epoch == sds->media_epoch && sds->sfp_present)
+			rtpcs_931x_rx_recovery_arm(sds);
+		return;
+	}
+
+	if (sds->attachment != RTPCS_SDS_ATTACH_DAC_SHORT &&
+	    sds->attachment != RTPCS_SDS_ATTACH_DAC_LONG)
+		return;
+
+	if (sds->hw_mode != RTPCS_SDS_MODE_10GBASER)
+		return;
+	if (floor_work && !repair_work) {
+		/*
+		 * A total per-epoch reopen bound can strand a receiver that does not
+		 * reacquire link from the adaptive state.  Probe it at the observer's
+		 * low rate.  Check for a recovered link before disturbing the receiver;
+		 * otherwise one full retry every five minutes is the recovery floor.
+		 */
+		link = rtpcs_sds_read_bits(sds, PAGE_TGR_STD_1, 0x0, 12, 12);
+		if (link < 0) {
+			dev_err(ctrl->dev,
+				"SerDes %u terminal DAC observer failed to read link: %pe\n",
+				sds->id, ERR_PTR(link));
+			rtpcs_931x_dac_floor_arm(sds, epoch,
+						 RTPCS_DAC_TERMINAL_RETRY_MS);
+			return;
+		}
+		if (link == 1 && !sds->dac_cal_unverified) {
+			rtpcs_931x_mac_link_check_arm(sds);
+			return;
+		}
+
+		if (!sds->dac_floor_reported) {
+			dev_info(ctrl->dev,
+				 "SerDes %u running one DAC recovery-floor calibration\n",
+				 sds->id);
+			sds->dac_floor_reported = true;
+		} else {
+			dev_dbg(ctrl->dev,
+				"SerDes %u running one DAC recovery-floor calibration\n",
+				sds->id);
+		}
+
+		ret = rtpcs_931x_sds_rxcal_dac_adapt(sds);
+		if (ret) {
+			dev_err(ctrl->dev,
+				"SerDes %u terminal DAC observer failed: %pe\n",
+				sds->id, ERR_PTR(ret));
+			ret = rtpcs_931x_sds_rxeq_leq_set_adapt(sds, true);
+			sds->dac_leq_handed_back = !ret;
+			rtpcs_931x_dac_floor_arm(sds, epoch,
+						 RTPCS_DAC_TERMINAL_RETRY_MS);
+			return;
+		}
+
+		if (sds->dac_cal_silence) {
+			sds->dac_leq_handed_back = true;
+			rtpcs_931x_dac_floor_arm(sds, epoch,
+						 RTPCS_DAC_TERMINAL_RETRY_MS);
+			return;
+		}
+
+		if (sds->dac_terminal_latched && !sds->dac_reopen_used)
+			sds->dac_reopen_used = true;
+		sds->dac_terminal_latched = false;
+		sds->dac_leq_handed_back = false;
+		sds->rx_recovery_tries = 0;
+		if (!sds->dac_cal_unverified) {
+			sds->dac_repair_tries = 0;
+			sds->dac_repair_expected_link_down = true;
+			sds->dac_repair_transient_until =
+				jiffies + msecs_to_jiffies(RTPCS_DAC_REPAIR_TRANSIENT_MS);
+			return;
+		}
+
+		ret = rtpcs_931x_sds_rxeq_leq_set_adapt(sds, true);
+		if (ret)
+			dev_err(ctrl->dev,
+				"SerDes %u recovery floor failed to restore adaptive LEQ: %pe\n",
+				sds->id, ERR_PTR(ret));
+		else
+			sds->dac_leq_handed_back = true;
+		rtpcs_931x_dac_floor_arm(sds, epoch, RTPCS_DAC_TERMINAL_RETRY_MS);
+		return;
+	}
+
+	link = rtpcs_sds_read_bits(sds, PAGE_TGR_STD_1, 0x0, 12, 12);
+	if (link < 0) {
+		dev_err(ctrl->dev, "SerDes %u failed to read DAC link state: %pe\n",
+			sds->id, ERR_PTR(link));
+		goto io_fallback;
+	}
+
+	if (link != 1) {
+		/*
+		 * A long DAC can acquire link from the adaptive state and lose it
+		 * before the delayed verification runs.  The SDK's RX watchdog
+		 * re-enters calibration for this live-but-unlocked state.  Bound
+		 * the no-link probes separately from calibration attempts: a
+		 * measurement of silence must not spend the calibration budget.
+		 */
+		if (sds->rx_recovery_tries >= RTPCS_RX_RECOVERY_TRIES) {
+			/*
+			 * Calibration is expensive, but a link-state read is not. Leave
+			 * the receiver adapting before watching it: a late peer can then
+			 * establish link, and pcs_link_up() reopens the bounded calibration
+			 * budget. Do not require an uncalibrated receiver to report link
+			 * while its last measured LEQ remains pinned.
+			 */
+			rtpcs_931x_dac_terminal_latch(sds);
+			rtpcs_931x_dac_floor_arm_initial(sds, epoch);
+			return;
+		}
+
+		sds->rx_recovery_tries++;
+		dev_info(ctrl->dev,
+			 "SerDes %u recovering unlocked DAC receiver (probe %u of %u)\n",
+			 sds->id, sds->rx_recovery_tries, RTPCS_RX_RECOVERY_TRIES);
+		ret = rtpcs_931x_sds_rxcal_dac_adapt(sds);
+		if (ret)
+			goto io_fallback;
+
+		if (sds->dac_cal_silence) {
+			if (epoch == sds->media_epoch && sds->sfp_present) {
+				if (sds->rx_recovery_tries >= RTPCS_RX_RECOVERY_TRIES) {
+					rtpcs_931x_dac_terminal_latch(sds);
+					rtpcs_931x_dac_floor_arm_initial(sds, epoch);
+				} else {
+					rtpcs_931x_rx_recovery_arm(sds);
+				}
+			}
+			return;
+		}
+
+		if (!sds->dac_cal_unverified) {
+			sds->rx_recovery_tries = 0;
+			/* Retain this verified value across its reset-induced transient. */
+			sds->dac_repair_expected_link_down = true;
+			sds->dac_repair_transient_until =
+				jiffies + msecs_to_jiffies(RTPCS_DAC_REPAIR_TRANSIENT_MS);
+			return;
+		}
+
+		/* Stay on the 10/20/40-second no-link backoff until link exists. */
+		if (sds->rx_recovery_tries >= RTPCS_RX_RECOVERY_TRIES) {
+			rtpcs_931x_dac_terminal_latch(sds);
+			rtpcs_931x_dac_floor_arm_initial(sds, epoch);
+		} else {
+			rtpcs_931x_rx_recovery_arm(sds);
+		}
+		return;
+	}
+	if (sds->dac_repair_tries >= RTPCS_DAC_REPAIR_TRIES) {
+		dev_warn(ctrl->dev,
+			 "SerDes %u DAC calibration failed after %u attempts, leaving LEQ auto-adapting\n",
+			 sds->id, sds->dac_repair_tries);
+		rtpcs_931x_dac_terminal_latch(sds);
+		rtpcs_931x_dac_floor_arm_initial(sds, epoch);
+		return;
+	}
+
+	sds->dac_repair_tries++;
+	sds->dac_repair_expected_link_down = false;
+	dev_info(ctrl->dev,
+		 "SerDes %u repairing DAC calibration (attempt %u of %u)\n",
+		 sds->id, sds->dac_repair_tries, RTPCS_DAC_REPAIR_TRIES);
+
+	ret = rtpcs_931x_sds_rxcal_dac_adapt(sds);
+	if (ret) {
+		sds->dac_repair_tries--;
+		dev_err(ctrl->dev, "SerDes %u DAC calibration I/O failure: %pe\n",
+			sds->id, ERR_PTR(ret));
+		goto io_fallback;
+	}
+
+	if (sds->dac_cal_silence) {
+		sds->dac_repair_tries--;
+		dev_info(ctrl->dev,
+			 "SerDes %u DAC calibration measured silence; waiting with LEQ adapting\n",
+			 sds->id);
+		/* A link-down may have requested the floor while this repair owned work. */
+		if (sds->dac_reopen_used)
+			rtpcs_931x_dac_floor_arm_initial(sds, epoch);
+		return;
+	}
+	sds->rx_recovery_tries = 0;
+
+	if (rtpcs_931x_dac_repair_due(sds)) {
+		rtpcs_931x_dac_repair_arm(sds);
+	} else if (!sds->dac_cal_unverified) {
+		/*
+		 * Resetting the receiver during a successful repair produces one
+		 * short link-down notification after the calibration has verified.
+		 * Mark only that immediate transient; link-down confirms that the
+		 * PCS recovered before preserving the verified result.
+		 */
+		sds->dac_repair_expected_link_down = true;
+		sds->dac_terminal_latched = false;
+		sds->dac_repair_transient_until =
+			jiffies + msecs_to_jiffies(RTPCS_DAC_REPAIR_TRANSIENT_MS);
+		sds->dac_repair_tries = 0;
+	}
+	return;
+
+io_fallback:
+	ret = rtpcs_931x_sds_rxeq_leq_set_adapt(sds, true);
+	if (ret)
+		dev_err(ctrl->dev, "SerDes %u failed to leave DAC LEQ adapting: %pe\n",
+			sds->id, ERR_PTR(ret));
+	else
+		sds->dac_leq_handed_back = true;
+	/* I/O failure must degrade to a recovery floor without spending the reopen. */
+	rtpcs_931x_dac_floor_arm_initial(sds, epoch);
+}
+
+/* Re-arm a pending calibration after phylink reports link-up. */
+static void rtpcs_931x_rx_recovery_start(struct rtpcs_serdes *sds)
+{
+	if (sds->attachment == RTPCS_SDS_ATTACH_FIBER &&
+	    sds->hw_mode == RTPCS_SDS_MODE_1000BASEX) {
+		sds->rx_recovery_armed = false;
+		sds->dac_floor_armed = false;
+		sds->dac_repair_armed = false;
+		cancel_delayed_work(&sds->rx_recovery_work);
+		sds->rx_recovery_tries = 0;
+		return;
+	}
+
+	if (sds->attachment != RTPCS_SDS_ATTACH_DAC_SHORT &&
+	    sds->attachment != RTPCS_SDS_ATTACH_DAC_LONG)
+		return;
+
+	if (sds->hw_mode != RTPCS_SDS_MODE_10GBASER)
+		return;
+
+	/* A real link event may reopen the bounded recovery budgets once. */
+	sds->rx_recovery_tries = 0;
+	if (sds->dac_leq_handed_back && sds->dac_cal_unverified) {
+		if (sds->dac_terminal_latched) {
+			if (sds->dac_reopen_used) {
+				rtpcs_931x_dac_floor_arm_initial(sds, sds->media_epoch);
+				return;
+			}
+
+			sds->dac_reopen_used = true;
+			sds->dac_terminal_latched = false;
+			sds->dac_repair_tries = 0;
+		}
+
+		sds->dac_leq_handed_back = false;
+		sds->dac_cal_silence = false;
+	}
+
+	if (!rtpcs_931x_dac_repair_due(sds))
+		return;
+
+	sds->dac_cal_silence = false;
+	rtpcs_931x_dac_repair_arm(sds);
+}
+
+/* Stop queued repair. Needs ctrl->lock; final teardown uses _sync(). */
+static void rtpcs_931x_rx_recovery_stop(struct rtpcs_serdes *sds)
+{
+	sds->rx_recovery_armed = false;
+	sds->dac_floor_armed = false;
+	sds->dac_repair_armed = false;
+	cancel_delayed_work(&sds->rx_recovery_work);
+	sds->mac_link_check_armed = false;
+	cancel_delayed_work(&sds->mac_link_check_work);
+}
+
+/* Restore an adaptive receiver while no peer is available. */
+static void rtpcs_931x_rx_recovery_link_down(struct rtpcs_serdes *sds)
+{
+	bool repair_pending = sds->dac_repair_armed;
+	bool expected = false;
+	int ret;
+
+	if (!repair_pending)
+		rtpcs_931x_rx_recovery_stop(sds);
+	if (sds->dac_detect && sds->sfp_present &&
+	    sds->attachment == RTPCS_SDS_ATTACH_FIBER &&
+	    sds->hw_mode == RTPCS_SDS_MODE_1000BASEX) {
+		rtpcs_931x_rx_recovery_arm(sds);
+		return;
+	}
+
+	if (sds->attachment != RTPCS_SDS_ATTACH_DAC_SHORT &&
+	    sds->attachment != RTPCS_SDS_ATTACH_DAC_LONG)
+		return;
+
+	/* The repair-transient marker is consumed by the first link-down. */
+	if (sds->dac_repair_expected_link_down) {
+		sds->dac_repair_expected_link_down = false;
+		expected = time_before(jiffies, sds->dac_repair_transient_until);
+		/* The repair's receiver reset is still settling; let it relink. */
+		if (expected)
+			msleep(RTPCS_DAC_REPAIR_LINK_SETTLE_MS);
+	}
+
+	/*
+	 * Keep a verified calibration while the PCS still reports link. A
+	 * link-down raised from the MAC side (administrative down, or the
+	 * repair's own transient) leaves the receiver locked; recalibrating
+	 * on the next link-up would only reset it again. A lost peer or cable
+	 * takes the PCS link down and still invalidates the calibration.
+	 */
+	if (!sds->dac_cal_unverified &&
+	    sds->hw_mode == RTPCS_SDS_MODE_10GBASER &&
+	    rtpcs_93xx_sds_10gr_link_up(sds)) {
+		dev_dbg(sds->ctrl->dev,
+			"SerDes %u retained verified DAC calibration across %s link-down\n",
+			sds->id, expected ? "repair transient" : "MAC-side");
+		/* Only after the repair relink is the port expected to come back. */
+		if (expected)
+			rtpcs_931x_mac_link_check_arm(sds);
+		return;
+	}
+	sds->dac_cal_unverified = true;
+	sds->dac_cal_silence = true;
+	if (sds->dac_reopen_used) {
+		rtpcs_931x_dac_floor_arm_initial(sds, sds->media_epoch);
+		return;
+	}
+
+	/*
+	 * A pending repair owns a fixed deadline and will reset the receiver.
+	 * Do not repeatedly release LEQ while the link flaps before it runs.
+	 */
+	if (repair_pending)
+		return;
+
+	ret = rtpcs_931x_sds_rxeq_leq_set_adapt(sds, true);
+	if (ret)
+		dev_err(sds->ctrl->dev, "SerDes %u failed to release DAC LEQ on link-down: %pe\n",
+			sds->id, ERR_PTR(ret));
+
+	rtpcs_931x_rx_recovery_arm(sds);
 }
 
 static int rtpcs_931x_sds_get_pll_select(struct rtpcs_serdes *sds, enum rtpcs_sds_pll_type *pll)
@@ -3962,6 +4936,17 @@ static int rtpcs_931x_sds_config_attachment(struct rtpcs_serdes *sds,
 	is_10g = (hw_mode == RTPCS_SDS_MODE_10GBASER ||
 		  hw_mode == RTPCS_SDS_MODE_XSGMII ||
 		  hw_mode == RTPCS_SDS_MODE_USXGMII);
+	/*
+	 * Select the SDK media profile only on SerDes that opt into module
+	 * handling; other boards keep the cleared selector written above.
+	 */
+	if (is_10g && (is_dac || attachment == RTPCS_SDS_ATTACH_FIBER) &&
+	    sds->dac_detect) {
+		ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xe, 13, 11,
+					   is_dac ? 0x2 : 0x1);
+		if (ret)
+			return ret;
+	}
 
 	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, ANA_MISC_REG00, RTL93XX_FRC_CMU_EN,
 			     RTL93XX_FRC_CMU_EN_UNFORCED);
@@ -4041,8 +5026,41 @@ static int rtpcs_931x_sds_post_config(struct rtpcs_serdes *sds, enum rtpcs_sds_m
 			rtpcs_931x_sds_rxcal_fiber_adapt(sds);
 		break;
 
+	case RTPCS_SDS_ATTACH_DAC_SHORT:
+	case RTPCS_SDS_ATTACH_DAC_LONG:
+		if (hw_mode == RTPCS_SDS_MODE_10GBASER) {
+			int ret;
+
+			/* Reset the bounded repair state for this bring-up. */
+			sds->dac_repair_tries = 0;
+			sds->dac_leq_handed_back = false;
+			sds->dac_terminal_latched = false;
+			sds->dac_reopen_used = false;
+			sds->dac_cal_unverified = true;
+			ret = rtpcs_931x_sds_rxcal_dac_adapt(sds);
+			if (ret) {
+				int fallback_ret;
+
+				fallback_ret =
+					rtpcs_931x_sds_rxeq_leq_set_adapt(sds, true);
+				if (fallback_ret)
+					dev_err(sds->ctrl->dev,
+						"SerDes %u failed to restore adaptive DAC LEQ: %pe\n",
+						sds->id, ERR_PTR(fallback_ret));
+				return ret;
+			}
+
+			/*
+			 * Arm repair after calibration when a live signal was measured.
+			 * A calibration against silence waits for pcs_link_up() before
+			 * scheduling. A live-signal calibration that completed without a
+			 * confirming link remains owed until pcs_link_up() starts repair.
+			 */
+			rtpcs_931x_dac_repair_arm(sds);
+		}
+		break;
+
 	default:
-		/* TODO: DAC RX calibration */
 		break;
 	}
 
@@ -4337,6 +5355,131 @@ static void rtpcs_pcs_an_restart(struct phylink_pcs *pcs)
 	mutex_unlock(&ctrl->lock);
 }
 
+/* Link callbacks drive attachment-specific receiver recovery. */
+static void rtpcs_pcs_link_up(struct phylink_pcs *pcs, unsigned int neg_mode,
+			      phy_interface_t interface, int speed, int duplex)
+{
+	struct rtpcs_link *link = rtpcs_phylink_pcs_to_link(pcs);
+	struct rtpcs_ctrl *ctrl = link->ctrl;
+
+	guard(mutex)(&ctrl->lock);
+	rtpcs_931x_rx_recovery_start(link->sds);
+}
+
+static void rtpcs_pcs_link_down(struct phylink_pcs *pcs)
+{
+	struct rtpcs_link *link = rtpcs_phylink_pcs_to_link(pcs);
+	struct rtpcs_ctrl *ctrl = link->ctrl;
+
+	guard(mutex)(&ctrl->lock);
+	rtpcs_931x_rx_recovery_link_down(link->sds);
+}
+
+/* Record the medium for the physical module insertion being configured. */
+static int rtpcs_pcs_module_insert(struct phylink_pcs *pcs,
+				   const struct sfp_module_caps *caps)
+{
+	struct rtpcs_link *link = rtpcs_phylink_pcs_to_link(pcs);
+	struct rtpcs_ctrl *ctrl = link->ctrl;
+	struct rtpcs_serdes *sds = link->sds;
+	bool copper, optical;
+
+	if (!sds->dac_detect)
+		return 0;
+
+	if (!caps)
+		return -EINVAL;
+
+	copper = linkmode_test_bit(ETHTOOL_LINK_MODE_10000baseCR_Full_BIT,
+				   caps->link_modes);
+	optical = linkmode_test_bit(ETHTOOL_LINK_MODE_10000baseSR_Full_BIT,
+				    caps->link_modes) ||
+		  linkmode_test_bit(ETHTOOL_LINK_MODE_10000baseLR_Full_BIT,
+				    caps->link_modes) ||
+		  linkmode_test_bit(ETHTOOL_LINK_MODE_10000baseLRM_Full_BIT,
+				    caps->link_modes) ||
+		  linkmode_test_bit(ETHTOOL_LINK_MODE_10000baseER_Full_BIT,
+				    caps->link_modes);
+
+	guard(mutex)(&ctrl->lock);
+	rtpcs_931x_rx_recovery_stop(sds);
+	sds->dac_repair_expected_link_down = false;
+
+	sds->sfp_passive_copper = copper && !optical;
+	sds->sfp_medium_valid = copper != optical;
+	sds->sfp_present = true;
+	sds->module_changed = true;
+	sds->media_epoch++;
+	sds->dac_mac_link_warned = false;
+	sds->dac_floor_reported = false;
+	sds->dac_repair_tries = 0;
+	sds->rx_recovery_tries = 0;
+	sds->dac_leq_handed_back = false;
+	sds->dac_terminal_latched = false;
+	sds->dac_reopen_used = false;
+	dev_dbg(ctrl->dev, "SerDes %u SFP module inserted (%s)\n",
+		sds->id, sds->sfp_passive_copper ? "passive copper" : "optical/other");
+
+	return 1;
+}
+
+static void rtpcs_pcs_module_remove(struct phylink_pcs *pcs)
+{
+	struct rtpcs_link *link = rtpcs_phylink_pcs_to_link(pcs);
+	struct rtpcs_ctrl *ctrl = link->ctrl;
+	struct rtpcs_serdes *sds = link->sds;
+	int ret;
+
+	if (!sds->dac_detect)
+		return;
+
+	guard(mutex)(&ctrl->lock);
+	rtpcs_931x_rx_recovery_stop(sds);
+	sds->dac_repair_expected_link_down = false;
+
+	if (sds->attachment == RTPCS_SDS_ATTACH_DAC_SHORT ||
+	    sds->attachment == RTPCS_SDS_ATTACH_DAC_LONG) {
+		ret = rtpcs_931x_sds_rxeq_leq_set_adapt(sds, true);
+		if (ret)
+			dev_err(ctrl->dev,
+				"SerDes %u failed to release DAC LEQ on module removal: %pe\n",
+				sds->id, ERR_PTR(ret));
+	}
+	ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xe, 13, 11, 0x0);
+	if (ret)
+		dev_err(ctrl->dev, "SerDes %u failed to clear SFP media selector: %pe\n",
+			sds->id, ERR_PTR(ret));
+
+	sds->sfp_passive_copper = false;
+	sds->sfp_medium_valid = false;
+	sds->sfp_present = false;
+	sds->module_changed = false;
+	sds->media_epoch++;
+	sds->dac_cal_unverified = false;
+	sds->dac_cal_silence = true;
+	sds->dac_leq_handed_back = false;
+	sds->dac_terminal_latched = false;
+	sds->dac_reopen_used = false;
+	sds->dac_repair_tries = 0;
+	sds->rx_recovery_tries = 0;
+	dev_dbg(ctrl->dev, "SerDes %u SFP module removed\n", sds->id);
+}
+
+/* Return whether the current module requires a different analog attachment. */
+static bool rtpcs_sds_wrong_medium(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode)
+{
+	enum rtpcs_sds_attachment attachment;
+
+	if (!sds->module_changed || !sds->sfp_medium_valid ||
+	    !sds->ops->config_attachment)
+		return false;
+
+	if (rtpcs_sds_select_attachment(sds, hw_mode, &attachment) < 0)
+		return false;
+
+	return attachment != sds->attachment;
+}
+
 static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 			    phy_interface_t interface, const unsigned long *advertising,
 			    bool permit_pause_to_mac)
@@ -4347,7 +5490,7 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 	enum rtpcs_sds_attachment attachment;
 	enum rtpcs_sds_usxgmii_submode submode;
 	enum rtpcs_sds_mode hw_mode;
-	bool mode_changed;
+	bool module_changed, rebuild, wrong_medium, mode_changed;
 	int changed, ret;
 
 	ret = rtpcs_sds_select_hw_mode(sds, interface, &hw_mode, &submode);
@@ -4358,8 +5501,27 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 	}
 
 	scoped_guard(mutex, &ctrl->lock) {
-		mode_changed = sds->hw_mode != hw_mode || sds->usxgmii_submode != submode;
-		if (mode_changed) {
+		/*
+		 * Rebuild the powered-down SerDes when the medium changes.
+		 * Reconfiguring the attachment alone would write transmitter
+		 * registers the SerDes pair shares outside a power-down.
+		 */
+		mode_changed = sds->hw_mode != hw_mode ||
+			       sds->usxgmii_submode != submode;
+		module_changed = sds->module_changed;
+		wrong_medium = rtpcs_sds_wrong_medium(sds, hw_mode);
+
+		rebuild = mode_changed || wrong_medium || module_changed;
+
+		if (rebuild) {
+			/*
+			 * The SerDes is about to be powered down and rebuilt. Cancel
+			 * any queued repair so it cannot race the reconfiguration;
+			 * pcs_link_up() re-arms an unverified calibration afterward.
+			 */
+			rtpcs_931x_rx_recovery_stop(sds);
+			sds->dac_repair_expected_link_down = false;
+
 			ret = rtpcs_sds_config_polarity(sds, interface);
 			if (ret < 0) {
 				dev_err(ctrl->dev, "failed to configure polarity of SerDes %u\n",
@@ -4376,7 +5538,7 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 				return ret;
 
 			if (sds->ops->config_attachment) {
-				ret = rtpcs_sds_select_attachment(hw_mode, &attachment);
+				ret = rtpcs_sds_select_attachment(sds, hw_mode, &attachment);
 				if (ret < 0)
 					return ret;
 
@@ -4406,7 +5568,7 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 		if (changed < 0)
 			return changed;
 
-		if (mode_changed) {
+		if (rebuild) {
 			if (sds->ops->post_config) {
 				ret = sds->ops->post_config(sds, hw_mode);
 				if (ret < 0)
@@ -4414,9 +5576,21 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 			}
 
 			sds->first_start = false;
+			sds->module_changed = false;
+			if (sds->dac_detect && sds->sfp_present &&
+			    sds->attachment == RTPCS_SDS_ATTACH_FIBER &&
+			    sds->hw_mode == RTPCS_SDS_MODE_1000BASEX)
+				rtpcs_931x_rx_recovery_arm(sds);
 
-			dev_info(ctrl->dev, "SerDes %u configured for %s mode\n",
-				 sds->id, phy_modes(interface));
+			/*
+			 * Add the suffix only when a module change, rather than a
+			 * mode change, caused the rebuild.
+			 */
+			dev_info(ctrl->dev, "SerDes %u configured for %s mode%s\n",
+				 sds->id, phy_modes(interface),
+				 mode_changed && module_changed ?
+				 " after a module and mode change" :
+				 module_changed ? " after a module change" : "");
 		}
 	}
 
@@ -4476,13 +5650,8 @@ static struct rtpcs_serdes *rtpcs_find_serdes(struct rtpcs_ctrl *ctrl,
 }
 
 /*
- * Walk the sibling switch's ethernet-ports subtree to learn which MAC port
- * each (SerDes, link_idx) pair serves. Same "backwards" topology lookup the
- * sibling MDIO driver does for phy-handle: the DT already encodes the
- * mapping via per-port pcs-handle properties, so the driver doesn't need a
- * parallel per-SoC table. pcs_get_state still needs the port number to
- * index MAC-side link status registers; it reads link_port[] populated
- * here.
+ * Resolve MAC-port mappings from the switch's pcs-handle properties rather
+ * than duplicating the firmware topology in a per-SoC table.
  */
 static int rtpcs_map_links(struct device *dev, struct rtpcs_ctrl *ctrl)
 {
@@ -4584,12 +5753,38 @@ static struct phylink_pcs *rtpcs_pcs_get(struct fwnode_reference_args *pcsspec, 
 	return &sds->link[link_idx]->pcs;
 }
 
+static void rtpcs_rx_recovery_teardown(void *data)
+{
+	struct rtpcs_ctrl *ctrl = data;
+
+	for (int i = 0; i < ctrl->cfg->serdes_count; i++) {
+		struct rtpcs_serdes *sds = &ctrl->serdes[i];
+
+		scoped_guard(mutex, &ctrl->lock) {
+			sds->rx_recovery_armed = false;
+			sds->dac_repair_armed = false;
+			sds->mac_link_check_armed = false;
+		}
+
+		cancel_delayed_work_sync(&sds->rx_recovery_work);
+		cancel_delayed_work_sync(&sds->mac_link_check_work);
+	}
+}
+
+static void rtpcs_rx_recovery_wq_destroy(void *data)
+{
+	struct rtpcs_ctrl *ctrl = data;
+
+	destroy_workqueue(ctrl->rx_recovery_wq);
+}
+
 static int rtpcs_probe(struct platform_device *pdev)
 {
 	struct device_node *np = pdev->dev.of_node;
 	struct device *dev = &pdev->dev;
 	struct rtpcs_serdes *sds;
 	struct rtpcs_ctrl *ctrl;
+	bool dac_capable = false;
 	u32 sds_id;
 	int i, ret;
 
@@ -4621,6 +5816,16 @@ static int rtpcs_probe(struct platform_device *pdev)
 		for (int j = 0; j < RTPCS_MAX_LINKS_PER_SDS; j++)
 			sds->link_port[j] = -1;
 
+		/*
+		 * Initialised for every SerDes, not only the ones that can end
+		 * up DAC-attached, so that the teardown and the stop path can
+		 * cancel unconditionally.
+		 */
+		INIT_DELAYED_WORK(&sds->rx_recovery_work,
+				  rtpcs_931x_rx_recovery_work);
+		INIT_DELAYED_WORK(&sds->mac_link_check_work,
+				  rtpcs_931x_mac_link_check_work);
+
 		ret = ctrl->cfg->sds_probe(sds);
 		if (ret)
 			return ret;
@@ -4637,6 +5842,30 @@ static int rtpcs_probe(struct platform_device *pdev)
 		sds = &ctrl->serdes[sds_id];
 		sds->fwnode = fwnode_handle_get(child);
 		ret = devm_add_action_or_reset(dev, rtpcs_sds_put_fwnode, sds);
+		if (ret)
+			return ret;
+
+		sds->dac_detect = fwnode_property_read_bool(child,
+							    "realtek,sfp-dac-detect");
+		dac_capable |= sds->dac_detect;
+	}
+
+	if (dac_capable) {
+		ctrl->rx_recovery_wq =
+			alloc_ordered_workqueue("%s-rx-recovery",
+						WQ_FREEZABLE,
+						dev_name(dev));
+		if (!ctrl->rx_recovery_wq)
+			return -ENOMEM;
+
+		ret = devm_add_action_or_reset(dev,
+					       rtpcs_rx_recovery_wq_destroy, ctrl);
+		if (ret)
+			return ret;
+
+		/* Registered second so cancellation precedes workqueue destruction. */
+		ret = devm_add_action_or_reset(dev, rtpcs_rx_recovery_teardown,
+					       ctrl);
 		if (ret)
 			return ret;
 	}
@@ -4772,6 +6001,16 @@ static const struct rtpcs_config rtpcs_930x_cfg = {
 	.sds_probe		= rtpcs_930x_sds_probe,
 };
 
+static const struct phylink_pcs_ops rtpcs_931x_pcs_ops = {
+	.pcs_an_restart		= rtpcs_pcs_an_restart,
+	.pcs_module_insert	= rtpcs_pcs_module_insert,
+	.pcs_module_remove	= rtpcs_pcs_module_remove,
+	.pcs_config		= rtpcs_pcs_config,
+	.pcs_get_state		= rtpcs_pcs_get_state,
+	.pcs_link_up		= rtpcs_pcs_link_up,
+	.pcs_link_down		= rtpcs_pcs_link_down,
+};
+
 static const struct rtpcs_sds_ops rtpcs_931x_sds_ops = {
 	.read			= rtpcs_generic_sds_op_read,
 	.write			= rtpcs_generic_sds_op_write,
@@ -4800,7 +6039,7 @@ static const struct rtpcs_config rtpcs_931x_cfg = {
 	.mac_rx_pause_sts	= RTPCS_931X_MAC_RX_PAUSE_STS,
 	.mac_tx_pause_sts	= RTPCS_931X_MAC_TX_PAUSE_STS,
 	.serdes_count		= RTPCS_931X_SERDES_CNT,
-	.pcs_ops		= &rtpcs_pcs_ops,
+	.pcs_ops		= &rtpcs_931x_pcs_ops,
 	.sds_ops		= &rtpcs_931x_sds_ops,
 	.phy_page		= DIGI_1(PAGE_FIB),
 	.sds_hw_mode_vals	= rtpcs_93xx_sds_hw_mode_vals,

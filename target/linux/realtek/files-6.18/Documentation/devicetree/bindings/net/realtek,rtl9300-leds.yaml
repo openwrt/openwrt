@@ -1,0 +1,115 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/net/realtek,rtl9300-leds.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Realtek RTL93xx switch on-chip port LED engine
+
+maintainers:
+  - Kaloyan Naumov <knaumov@gmail.com>
+
+description: >
+  The Realtek RTL930x (Longan) and RTL931x (Mango) switch SoCs drive the
+  front-panel port LEDs from an on-chip serial LED engine, independent of any
+  per-PHY LED pins. Up to four "LED sets" describe the per-speed link/activity
+  encoding; each port selects one set, and copper vs fibre ports select through
+  separate copper/fibre set-select registers.
+
+  This node configures the engine globally. Per-port set selection is expressed
+  through the "led-set" property on each switch port node.
+
+properties:
+  compatible:
+    const: realtek,rtl9300-leds
+
+  clock-frequency:
+    description:
+      Serial LED shift clock. Selects the engine's LED_CLK_SEL divider.
+    enum: [1250000, 2500000, 5000000, 10000000]
+
+  active-low:
+    type: boolean
+    description: >
+      Selects the LED output polarity. Documented here as the driver has long
+      implemented it, for both RTL930x and RTL931x: the engine's ACTIVE_LOW bit
+      is cleared when this property is present and set when it is absent. Boards
+      that need the bit set therefore omit the property. Verify the resulting
+      polarity against the board rather than assuming from the property name.
+
+  active-high:
+    type: boolean
+    deprecated: true
+    description:
+      Not read by the driver; only active-low affects the polarity. Accepted
+      so that existing device trees validate.
+
+  realtek,led-mode:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description:
+      RTL930x (Longan) LED interface mode written to LED_GLB_CTRL. Not used on
+      RTL931x, which uses "realtek,led-scan-mode" instead.
+
+  realtek,led-num-ctrl-direct:
+    type: boolean
+    description:
+      RTL931x (Mango) only. Program the per-port LED_PORT_NUM_CTRL field as the
+      DIRECT LED count (e.g. a 2-LED port -> 0b10) instead of the default
+      (count - 1) encoding. Required on Mango silicon whose scan chain expects
+      the direct count; boards that omit it keep the (count - 1) default.
+
+  realtek,led-scan-mode:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description:
+      RTL931x (Mango) only. LED interface/scan mode (LED_GLB_CTRL bits[1:0]).
+      1 = serial (default), 2 = single-scan. Some Mango boards require
+      single-scan or every per-port LED stays dark.
+    enum: [1, 2]
+    default: 1
+
+  realtek,led-sys-enable:
+    type: boolean
+    description:
+      RTL931x (Mango) only. Program the chassis SYS LED to steady-on at init
+      (SYS_LED_MODE = light + SYS_LED_EN). The SYS LED policy is board-specific;
+      boards that omit this leave the SYS LED at its bootloader-latched state.
+
+required:
+  - compatible
+
+patternProperties:
+  "^led_set[0-3]$":
+    $ref: /schemas/types.yaml#/definitions/uint32-array
+    minItems: 1
+    maxItems: 4
+    description:
+      Per-speed link/activity encoding for one LED set. Each entry is one
+      physical LED's 16-bit LED_SEL field (link/activity/speed selectors). A
+      port on this set drives its LEDs from these entries.
+
+  "^realtek,led-set[0-3]-force-port-mask$":
+    $ref: /schemas/types.yaml#/definitions/uint32-array
+    minItems: 1
+    maxItems: 2
+    description:
+      Bitmask of ports forced onto the matching LED set even when the port has
+      no PHY or PCS handle (e.g. ports whose LEDs are engine-driven but which
+      auto-detect as absent). One cell (32 bits) on RTL930x; two cells, a
+      64-bit value with the high word first, on RTL931x.
+
+additionalProperties: false
+
+examples:
+  - |
+    leds {
+        compatible = "realtek,rtl9300-leds";
+        realtek,led-num-ctrl-direct;
+        realtek,led-scan-mode = <2>;
+        realtek,led-sys-enable;
+
+        /* copper set (entry[0]=sub-10G, entry[1]=10G link/act) */
+        led_set1 = <0x0aaa 0x0a01>;
+        /* fibre set (as copper but without the 5G bit) */
+        led_set3 = <0x0aa8 0x0a01>;
+    };
+...
