@@ -1078,6 +1078,22 @@ endef
 
 $(eval $(call KernelPackage,tpm))
 
+define KernelPackage/tpm-crb
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=TCG CRB 2.0 TPM Interface
+  DEPENDS:=@(TARGET_x86||TARGET_armsr) +kmod-tpm
+  KCONFIG:=CONFIG_TCG_CRB
+  FILES:=$(LINUX_DIR)/drivers/char/tpm/tpm_crb.ko
+  AUTOLOAD:=$(call AutoLoad,15,tpm_crb,1)
+endef
+
+define KernelPackage/tpm-crb/description
+  This device driver implements the TPM interface as defined in
+  the TCG CRB 2.0 TPM specification.
+endef
+
+$(eval $(call KernelPackage,tpm-crb))
+
 define KernelPackage/tpm-ftpm-tee
   SUBMENU:=$(OTHER_MENU)
   TITLE:=TEE based firmware TPM (fTPM)
