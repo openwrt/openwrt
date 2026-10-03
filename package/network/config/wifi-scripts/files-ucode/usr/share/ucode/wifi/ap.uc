@@ -62,11 +62,32 @@ function ft_psk_local_default(config) {
 	return config.auth_type == 'psk';
 }
 
+function sae_password_option(config) {
+	if (config.sae_password_file)
+		return true;
+
+	for (let option in config.hostapd_bss_options)
+		if (wildcard(option, 'sae_password=*') || wildcard(option, 'sae_password_file=*'))
+			return true;
+
+	return false;
+}
+
 function bss_refusal(config, band) {
 	const personal = config.auth_type in [ 'psk', 'psk2', 'sae', 'psk-sae', 'psk-sae-compat' ];
+	const kind = key_kind(config.key);
 
-	if (personal && !config.ppsk && key_kind(config.key) == 'invalid')
+	if (personal && !config.ppsk && kind == 'invalid')
 		return 'INVALID_WPA_PSK';
+
+	/* SAE needs a passphrase or sae_password entries: a 64 hex digit key is
+	 * a raw PSK */
+	const sae_only = config.auth_type == 'sae' || (config.auth_type == 'psk-sae-compat' && band == '6g');
+	const sae_password = config.ppsk || kind == 'passphrase' || config.sae_station_passwords ||
+		sae_password_option(config);
+
+	if (personal && sae_only && !sae_password)
+		return 'SAE_NO_PASSWORD';
 
 	if (wps_enabled(config, band) && config.multi_ap && config.multi_ap_backhaul_ssid &&
 	    index([ 'psk', 'passphrase' ], key_kind(config.multi_ap_backhaul_key)) < 0)
@@ -78,6 +99,17 @@ function bss_refusal(config, band) {
 		return 'FT_KEY_CANT_BE_DERIVED';
 
 	return null;
+}
+
+/* the entries iface_sae_stations() writes */
+function station_password_count(stas) {
+	let n = 0;
+
+	for (let k, sta in stas)
+		if (sta.config.mac && sta.config.key)
+			n += length(sta.config.mac);
+
+	return n;
 }
 
 function iface_setup(config) {
@@ -645,6 +677,8 @@ export function generate(interface, data, config, vlans, stas, phy_features) {
 
 	config.start_disabled = data.ap_start_disabled;
 	iface_setup(config);
+
+	config.sae_station_passwords = station_password_count(stas);
 
 	config.encryption = encryption_band(config.encryption, data.config.band);
 	iface.parse_encryption(config, data.config, phy_features);
