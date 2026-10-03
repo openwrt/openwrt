@@ -1,0 +1,46 @@
+From 310edc8f3f56ba67cb256e4c5a108adca608633d Mon Sep 17 00:00:00 2001
+From: Michael-CY Lee <michael-cy.lee@mediatek.com>
+Date: Wed, 22 Jul 2026 08:25:57 +0000
+Subject: [PATCH 123/170] wifi: mt76: assign link_id when sending probe request
+ during scan
+
+[ Upstream commit f137fabc1313427e08af06a414d929ebd9fd37d6 ]
+
+The link_id in info->control.flags is required by mt7996 to select the
+correct mt76_wcid for transmission.
+
+Not assigning the link_id in info->control.flags is equivalent to
+assigning the link_id to 0, causing mt7996 to select link_id 0 for
+transmission, so probe requests sent on behalf of an MLD vif scanning
+via a different link were transmitted with the wrong per-link wcid.
+
+Fixes: 31083e38548f ("wifi: mt76: add code for emulating hardware scanning")
+Signed-off-by: Michael-CY Lee <michael-cy.lee@mediatek.com>
+Link: https://patch.msgid.link/20260722082610.2699628-5-nbd@nbd.name
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ scan.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/scan.c
++++ b/scan.c
+@@ -48,6 +48,7 @@ mt76_scan_send_probe(struct mt76_dev *de
+ 	struct mt76_phy *phy = dev->scan.phy;
+ 	struct ieee80211_tx_info *info;
+ 	struct sk_buff *skb;
++	u8 link_id;
+ 
+ 	skb = ieee80211_probereq_get(phy->hw, vif->addr, ssid->ssid,
+ 				     ssid->ssid_len, req->ie_len);
+@@ -77,6 +78,10 @@ mt76_scan_send_probe(struct mt76_dev *de
+ 		info->flags |= IEEE80211_TX_CTL_NO_CCK_RATE;
+ 	info->control.flags |= IEEE80211_TX_CTRL_DONT_USE_RATE_MASK;
+ 
++	link_id = mvif->wcid ? mvif->wcid->link_id : IEEE80211_LINK_UNSPECIFIED;
++	info->control.flags &= ~IEEE80211_TX_CTRL_MLO_LINK;
++	info->control.flags |= u32_encode_bits(link_id, IEEE80211_TX_CTRL_MLO_LINK);
++
+ 	mt76_tx(phy, NULL, mvif->wcid, skb);
+ 
+ out:

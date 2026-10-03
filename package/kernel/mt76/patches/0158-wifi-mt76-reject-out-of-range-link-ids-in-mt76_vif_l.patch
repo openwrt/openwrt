@@ -1,0 +1,38 @@
+From 13f6a9c786022d5213e84d494cc8717c378f5395 Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 1 Aug 2026 14:53:33 +0000
+Subject: [PATCH 158/170] wifi: mt76: reject out-of-range link ids in
+ mt76_vif_link()
+
+[ Upstream commit 9ba744a28c26eaa5cae930688a22e01888395308 ]
+
+mt76_vif_link() indexes mvif->link[] without validating link_id, but
+callers pass mvif->deflink_id / msta->deflink_id, which hold
+IEEE80211_LINK_UNSPECIFIED (0xf) until the first link has been added.
+Since IEEE80211_MLD_MAX_NUM_LINKS is 15, that reads one element past the
+end of the array, aliasing mt76_vif_data.offchannel_link.
+
+Reachable via mt7996_set_tsf()/mt7996_offset_tsf() and
+mt7996_net_fill_forward_path(). Bounds check link_id and return NULL,
+matching mt7996_sta_link() and mt7996_sta_link_protected().
+
+Fixes: a9384b36a42a ("wifi: mt76: mt7996: rework set/get_tsf callabcks to support MLO")
+Link: https://patch.msgid.link/20260801145334.1166751-9-nbd@nbd.name
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ mt76.h | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/mt76.h
++++ b/mt76.h
+@@ -2135,6 +2135,9 @@ mt76_vif_link(struct mt76_dev *dev, stru
+ 	if (!link_id)
+ 		return mlink;
+ 
++	if (link_id >= IEEE80211_MLD_MAX_NUM_LINKS)
++		return NULL;
++
+ 	return mt76_dereference(mvif->link[link_id], dev);
+ }
+ 

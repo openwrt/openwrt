@@ -1,0 +1,39 @@
+From 856fa6a21586f86c4db058a7e7aeff36f9254231 Mon Sep 17 00:00:00 2001
+From: Sean Wang <sean.wang@mediatek.com>
+Date: Sat, 25 Apr 2026 09:46:48 -0500
+Subject: [PATCH 075/170] wifi: mt76: mt792x: skip MLD header rewrite for 802.3
+ encap TX
+
+[ Upstream commit a1152244702bb31b64650e5ca8308142286c0e4a ]
+
+mt792x_tx() rewrites addr1/addr2/addr3 by treating skb->data as
+an 802.11 header for MLD traffic.
+
+That is only valid for native 802.11 frames. Direct 802.3 TX can also
+reach this path with IEEE80211_TX_CTL_HW_80211_ENCAP set, where
+skb->data is not an 802.11 header.
+
+Skip the MLD header rewrite for HW-encap packets to avoid corrupting
+802.3 frame contents.
+
+Fixes: ebb1406813c6 ("wifi: mt76: mt7925: add link handling to txwi")
+Signed-off-by: Sean Wang <sean.wang@mediatek.com>
+Link: https://patch.msgid.link/20260425144648.734030-1-sean.wang@kernel.org
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ mt792x_core.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/mt792x_core.c
++++ b/mt792x_core.c
+@@ -105,7 +105,8 @@ void mt792x_tx(struct ieee80211_hw *hw,
+ 		wcid = &mvif->sta.deflink.wcid;
+ 	}
+ 
+-	if (vif && control->sta && ieee80211_vif_is_mld(vif)) {
++	if (vif && control->sta && ieee80211_vif_is_mld(vif) &&
++	    !(info->flags & IEEE80211_TX_CTL_HW_80211_ENCAP)) {
+ 		struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
+ 		struct ieee80211_link_sta *link_sta;
+ 		struct ieee80211_bss_conf *conf;

@@ -1,0 +1,59 @@
+From 0d0c637410df620a2626bf8272a5204c1b24823b Mon Sep 17 00:00:00 2001
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Fri, 12 Jun 2026 22:13:19 +0200
+Subject: [PATCH 163/170] wifi: mt76: fix airoha_npu dependency tracking
+
+commit 7cd57ff6c6263519e6e463cbc2e0898828a70c42 upstream.
+
+There is a new build failure with MT7996E=m MT76_CORE=y and NET_AIROHA_NPU=m:
+
+ld.lld: error: undefined symbol: airoha_npu_get
+ld.lld: error: undefined symbol: airoha_npu_put
+>>> referenced by npu.c
+>>>               npu.o:(mt76_npu_init) in archive vmlinux.a
+
+Fix this by reworking the dependency for the MT7996_NPU to only
+allow enabling that when mt76_core can link against the npu driver.
+
+To make sure this gets caught more easily in the future when additional
+mt76 variants need the same dependency, also turn CONFIG_MT76_NPU into
+a tristate symbol that has the same dependency.
+
+Fixes: 7fb554b1b623 ("wifi: mt76: Introduce the NPU generic layer")
+Acked-by: Lorenzo Bianconi <lorenzo@kernel.org>
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+Link: https://patch.msgid.link/20260612201519.4054683-1-arnd@kernel.org
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ Kconfig  | 4 ++--
+ Makefile | 6 +++++-
+ mt76.h   | 2 +-
+ 3 files changed, 8 insertions(+), 4 deletions(-)
+
+--- a/Makefile
++++ b/Makefile
+@@ -13,7 +13,11 @@ mt76-y := \
+ 	mmio.o util.o trace.o dma.o mac80211.o debugfs.o eeprom.o \
+ 	tx.o agg-rx.o mcu.o wed.o scan.o channel.o
+ 
+-mt76-$(CONFIG_MT76_NPU) += npu.o
++ifdef CONFIG_MT76_NPU
++# CONFIG_MT76_NPU is tristate to simplify dependency tracking,
++# but it behaves as a bool symbol here.
++mt76-y += npu.o
++endif
+ mt76-$(CONFIG_PCI) += pci.o
+ mt76-$(CONFIG_NL80211_TESTMODE) += testmode.o
+ 
+--- a/mt76.h
++++ b/mt76.h
+@@ -1658,7 +1658,7 @@ int mt76_testmode_dump(struct ieee80211_
+ int mt76_testmode_set_state(struct mt76_phy *phy, enum mt76_testmode_state state);
+ int mt76_testmode_alloc_skb(struct mt76_phy *phy, u32 len);
+ 
+-#ifdef CONFIG_MT76_NPU
++#if IS_ENABLED(CONFIG_MT76_NPU)
+ void mt76_npu_check_ppe(struct mt76_dev *dev, struct sk_buff *skb,
+ 			u32 info);
+ int mt76_npu_dma_add_buf(struct mt76_phy *phy, struct mt76_queue *q,

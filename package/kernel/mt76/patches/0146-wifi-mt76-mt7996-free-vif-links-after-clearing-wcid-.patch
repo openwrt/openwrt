@@ -1,0 +1,39 @@
+From 2b10eb3636d0c4cb6b763e045ec1294dbd70f5ad Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@nbd.name>
+Date: Fri, 24 Jul 2026 12:48:09 +0000
+Subject: [PATCH 146/170] wifi: mt76: mt7996: free vif links after clearing
+ wcid entries on full reset
+
+[ Upstream commit 7e4208e9f6a876c2b7d28fdb6b86dff3b05db2f7 ]
+
+mt7996_mac_reset_vif_iter() queues non-default vif links for kfree_rcu
+while dev->wcid[] still holds pointers to the wcid embedded in each
+freed link; mt76_reset_device() then dereferences those entries and
+runs mt76_wcid_cleanup() on them. If a grace period elapses in between,
+the cleanup operates on freed memory.
+
+Run mt76_reset_device() first, so the wcid entries are cleaned up and
+cleared while the links are still valid.
+
+Fixes: ace5d3b6b49e ("wifi: mt76: mt7996: improve hardware restart reliability")
+Link: https://patch.msgid.link/20260724124813.3961474-25-nbd@nbd.name
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ mt7996/mac.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/mt7996/mac.c
++++ b/mt7996/mac.c
+@@ -2511,10 +2511,10 @@ mt7996_mac_full_reset(struct mt7996_dev
+ 		phy->omac_mask = 0;
+ 
+ 	ieee80211_iterate_stations_atomic(hw, mt7996_mac_reset_sta_iter, dev);
++	mt76_reset_device(&dev->mt76);
+ 	ieee80211_iterate_active_interfaces_atomic(hw,
+ 						   IEEE80211_IFACE_SKIP_SDATA_NOT_IN_DRIVER,
+ 						   mt7996_mac_reset_vif_iter, dev);
+-	mt76_reset_device(&dev->mt76);
+ 
+ 	INIT_LIST_HEAD(&dev->sta_rc_list);
+ 	INIT_LIST_HEAD(&dev->twt_list);

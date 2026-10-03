@@ -1,0 +1,87 @@
+From 3896be051e928c891922d91de94c99519d215dff Mon Sep 17 00:00:00 2001
+From: Laxman Acharya Padhya <acharyalaxman8848@gmail.com>
+Date: Tue, 21 Jul 2026 10:17:40 +0000
+Subject: [PATCH 169/170] wifi: mt76: mt7921: validate CLC firmware records
+
+[ Upstream commit 9417c5818a0146980c2608fda94c908e604eb033 ]
+
+The CLC region is supplied by firmware, but the loader trusts the
+region count and each record length. A malformed image can make the
+region table pointer precede the firmware buffer, make the record loop
+fail to advance, or index phy->clc past its end. Validate the table and
+record bounds before dereferencing or copying.
+
+Fixes: 23bdc5d8cadf ("wifi: mt76: mt7921: introduce Country Location Control support")
+Signed-off-by: Laxman Acharya Padhya <acharyalaxman8848@gmail.com>
+Link: https://patch.msgid.link/CAMyXUJmh=WfwC4_KHupNxYR5e2Gy5QhBDL5TSG6XEW-XLa+X4Q@mail.gmail.com
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ .../net/wireless/mediatek/mt76/mt7921/mcu.c   | 28 ++++++++++++++++---
+ 1 file changed, 24 insertions(+), 4 deletions(-)
+
+--- a/mt7921/mcu.c
++++ b/mt7921/mcu.c
+@@ -418,7 +418,8 @@ static int mt7921_load_clc(struct mt792x
+ 	struct mt76_dev *mdev = &dev->mt76;
+ 	struct mt792x_phy *phy = &dev->phy;
+ 	const struct firmware *fw;
+-	int ret, i, len, offset = 0;
++	size_t clc_len, fw_data_len, len, offset = 0;
++	int ret, i;
+ 	u8 *clc_base = NULL, hw_encap = 0;
+ 
+ 	dev->phy.clc_chan_conf = 0xff;
+@@ -444,13 +445,21 @@ static int mt7921_load_clc(struct mt792x
+ 	}
+ 
+ 	hdr = (const void *)(fw->data + fw->size - sizeof(*hdr));
++	if (hdr->n_region > (fw->size - sizeof(*hdr)) / sizeof(*region)) {
++		dev_err(mdev->dev, "Invalid firmware region table\n");
++		ret = -EINVAL;
++		goto out;
++	}
++	fw_data_len = fw->size - sizeof(*hdr) -
++		      hdr->n_region * sizeof(*region);
++
+ 	for (i = 0; i < hdr->n_region; i++) {
+ 		region = (const void *)((const u8 *)hdr -
+ 					(hdr->n_region - i) * sizeof(*region));
+ 		len = le32_to_cpu(region->len);
+ 
+ 		/* check if we have valid buffer size */
+-		if (offset + len > fw->size) {
++		if (len > fw_data_len - offset) {
+ 			dev_err(mdev->dev, "Invalid firmware region\n");
+ 			ret = -EINVAL;
+ 			goto out;
+@@ -467,8 +476,19 @@ static int mt7921_load_clc(struct mt792x
+ 	if (!clc_base)
+ 		goto out;
+ 
+-	for (offset = 0; offset < len; offset += le32_to_cpu(clc->len)) {
++	for (offset = 0; offset < len; offset += clc_len) {
++		if (len - offset < sizeof(*clc)) {
++			ret = -EINVAL;
++			goto out;
++		}
++
+ 		clc = (const struct mt7921_clc *)(clc_base + offset);
++		clc_len = le32_to_cpu(clc->len);
++		if (clc_len < sizeof(*clc) || clc_len > len - offset ||
++		    clc->idx >= ARRAY_SIZE(phy->clc)) {
++			ret = -EINVAL;
++			goto out;
++		}
+ 
+ 		/* do not init buf again if chip reset triggered */
+ 		if (phy->clc[clc->idx])
+@@ -480,7 +500,7 @@ static int mt7921_load_clc(struct mt792x
+ 			continue;
+ 
+ 		phy->clc[clc->idx] = devm_kmemdup(mdev->dev, clc,
+-						  le32_to_cpu(clc->len),
++						  clc_len,
+ 						  GFP_KERNEL);
+ 
+ 		if (!phy->clc[clc->idx]) {

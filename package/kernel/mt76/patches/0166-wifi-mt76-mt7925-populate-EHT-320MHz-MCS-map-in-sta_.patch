@@ -1,0 +1,48 @@
+From cfde1b6d67a7f9ce973a91b25dbd4281cec36327 Mon Sep 17 00:00:00 2001
+From: Javier Tia <floss@jetm.me>
+Date: Sat, 25 Apr 2026 14:49:54 -0500
+Subject: [PATCH 166/170] wifi: mt76: mt7925: populate EHT 320MHz MCS map in
+ sta_rec
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+[ Upstream commit e7bbd3d8b4f01473676da3aa8be17099e1604459 ]
+
+The sta_rec_eht structure has a mcs_map_bw320 field, and the channel
+width mapping includes NL80211_CHAN_WIDTH_320, but the 320MHz MCS/NSS
+map was never copied from the station's EHT capabilities to the MCU TLV.
+This prevents negotiation of 320MHz channel width even when both the
+hardware and firmware advertise support for it.
+
+Add the missing memcpy for the 320MHz MCS map, matching the existing
+pattern for BW20, BW80, and BW160.
+
+Tested-by: Marcin FM <marcin@lgic.pl>
+Tested-by: Cristian-Florin Radoi <radoi.chris@gmail.com>
+Tested-by: George Salukvadze <giosal90@gmail.com>
+Tested-by: Evgeny Kapusta <3193631@gmail.com>
+Tested-by: Samu Toljamo <samu.toljamo@gmail.com>
+Tested-by: Ariel Rosenfeld <ariel.rosenfeld.750@gmail.com>
+Tested-by: Chapuis Dario <chapuisdario4@gmail.com>
+Tested-by: Thibaut François <tibo@humeurlibre.fr>
+Tested-by: 张旭涵 <Loong.0x00@gmail.com>
+Reviewed-by: Sean Wang <sean.wang@mediatek.com>
+Signed-off-by: Javier Tia <floss@jetm.me>
+Link: https://patch.msgid.link/20260425195011.790265-5-sean.wang@kernel.org
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ mt7925/mcu.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/mt7925/mcu.c
++++ b/mt7925/mcu.c
+@@ -1667,6 +1667,7 @@ mt7925_mcu_sta_eht_tlv(struct sk_buff *s
+ 		memcpy(eht->mcs_map_bw20, &mcs_map->only_20mhz, sizeof(eht->mcs_map_bw20));
+ 	memcpy(eht->mcs_map_bw80, &mcs_map->bw._80, sizeof(eht->mcs_map_bw80));
+ 	memcpy(eht->mcs_map_bw160, &mcs_map->bw._160, sizeof(eht->mcs_map_bw160));
++	memcpy(eht->mcs_map_bw320, &mcs_map->bw._320, sizeof(eht->mcs_map_bw320));
+ }
+ 
+ static void

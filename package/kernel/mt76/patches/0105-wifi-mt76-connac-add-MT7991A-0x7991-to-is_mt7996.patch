@@ -1,0 +1,36 @@
+From 0340bd33b4e21d08e07f34e9ac53c161ae1676c1 Mon Sep 17 00:00:00 2001
+From: Dmitry Gomzyakov <nicerok11@gmail.com>
+Date: Sun, 10 May 2026 15:29:10 +0500
+Subject: [PATCH 105/170] wifi: mt76: connac: add MT7991A (0x7991) to
+ is_mt7996()
+
+[ Upstream commit 574bd79955d166c00c2b1531fed591ee70b6ba04 ]
+
+The MT7991A chipset uses PCI device ID 0x7991 (MT7996_DEVICE_ID_2),
+but is_mt7996() only checks for 0x7990. This causes MT7991A devices
+to use incorrect chip-specific settings, such as:
+- MSDU_CNT_V2 instead of MSDU_CNT in TX descriptors
+- Wrong WTBL BMC size (32 instead of 64)
+- Incorrect prefetch depth for MCU queues
+
+Fixes: 7014fe535860 ("wifi: mt76: mt7996: add macros for pci device ids")
+Signed-off-by: Dmitry Gomzyakov <nicerok11@gmail.com>
+Link: https://patch.msgid.link/20260510102911.1883849-2-kyoto1337@protonmail.com
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ mt76_connac.h | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/mt76_connac.h
++++ b/mt76_connac.h
+@@ -230,7 +230,8 @@ static inline bool is_mt798x(struct mt76
+ 
+ static inline bool is_mt7996(struct mt76_dev *dev)
+ {
+-	return mt76_chip(dev) == 0x7990;
++	u16 chip = mt76_chip(dev);
++	return chip == 0x7990 || chip == 0x7991;
+ }
+ 
+ static inline bool is_mt7992(struct mt76_dev *dev)
