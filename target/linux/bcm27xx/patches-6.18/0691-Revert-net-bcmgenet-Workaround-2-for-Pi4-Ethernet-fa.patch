@@ -20,7 +20,7 @@ This reverts commit dfad8d6677d4c11a5b6d599f81802486f5c1d973.
  
  static inline void bcmgenet_writel(u32 value, void __iomem *offset)
  {
-@@ -2571,11 +2568,6 @@ static void reset_umac(struct bcmgenet_p
+@@ -2574,11 +2571,6 @@ static void reset_umac(struct bcmgenet_p
  	bcmgenet_rbuf_ctrl_set(priv, 0);
  	udelay(10);
  

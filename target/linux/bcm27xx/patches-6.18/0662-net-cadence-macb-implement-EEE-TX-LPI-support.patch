@@ -257,7 +257,7 @@ Signed-off-by: Nicolai Buchwitz <nb@tipi-net.de>
  
  	/* TSTART write might get dropped, so make the IRQ retrigger a buffer read */
  	if (macb_readl(bp, TSR) & MACB_BIT(TGO))
-@@ -3219,6 +3339,8 @@ static int macb_close(struct net_device
+@@ -3229,6 +3349,8 @@ static int macb_close(struct net_device
  		netdev_tx_reset_queue(netdev_get_tx_queue(dev, q));
  	}
  
@@ -266,7 +266,7 @@ Signed-off-by: Nicolai Buchwitz <nb@tipi-net.de>
  	phylink_stop(bp->phylink);
  	phylink_disconnect_phy(bp->phylink);
  
-@@ -5869,6 +5991,7 @@ static int macb_probe(struct platform_de
+@@ -5879,6 +6001,7 @@ static int macb_probe(struct platform_de
  	}
  
  	INIT_WORK(&bp->hresp_err_bh_work, macb_hresp_error_task);
@@ -274,7 +274,7 @@ Signed-off-by: Nicolai Buchwitz <nb@tipi-net.de>
  
  	netdev_info(dev, "Cadence %s rev 0x%08x at 0x%08lx irq %d (%pM)\n",
  		    macb_is_gem(bp) ? "GEM" : "MACB", macb_readl(bp, MID),
-@@ -5918,6 +6041,7 @@ static void macb_remove(struct platform_
+@@ -5928,6 +6051,7 @@ static void macb_remove(struct platform_
  		}
  
  		device_set_wakeup_enable(&bp->pdev->dev, 0);
