@@ -1046,7 +1046,12 @@ static int otto_l3_route_place(struct otto_l3_ctrl *ctrl, struct otto_l3_route *
 	if (ctrl->prefix_rows_stale)
 		return -1;
 
-	below = otto_l3_prefix_rows(ctrl, r->attr.type, r->prefix_len);
+	/* The local table is looked up before main, so its entries go ahead of
+	 * main's of the same length: the hardware answers with the first row
+	 * that matches.
+	 */
+	below = otto_l3_prefix_rows(ctrl, r->attr.type,
+				    r->prefix_len + (r->tb_id == RT_TABLE_LOCAL));
 	rows = otto_l3_prefix_rows(ctrl, r->attr.type, 0);
 
 	if (r->attr.type == ROUTE_TYPE_IP6UC) {
