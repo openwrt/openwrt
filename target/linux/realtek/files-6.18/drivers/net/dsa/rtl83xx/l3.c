@@ -3173,6 +3173,41 @@ void otto_l3_remove(struct rtl838x_switch_priv *priv)
 	}
 }
 
+struct otto_l3_flush_work {
+	struct work_struct work;
+	struct otto_l3_ctrl *ctrl;
+};
+
+static void otto_l3_fib_flush_work_do(struct work_struct *work)
+{
+	struct otto_l3_flush_work *fw = container_of(work, struct otto_l3_flush_work, work);
+	struct otto_l3_route *r, *tmp;
+
+	rtnl_lock();
+	list_for_each_entry_safe(r, tmp, &fw->ctrl->routes_list, list)
+		if (r->tb_id)
+			otto_l3_route_teardown(fw->ctrl, r);
+	rtnl_unlock();
+}
+
+/* A dump that raced a change to the FIB leaves programmed what it saw, and the
+ * events in between never arrived. The kernel unregisters the notifier, calls
+ * this and dumps again, so every route the last dump brought goes - all but
+ * the catch-all rows, which no table owns - once the work it queued has run.
+ * The teardown runs on the same single threaded queue, so nothing else walks
+ * the routes meanwhile.
+ */
+static void otto_l3_fib_dump_flush(struct notifier_block *nb)
+{
+	struct otto_l3_ctrl *ctrl = container_of(nb, struct otto_l3_ctrl, fib_nb);
+	struct otto_l3_flush_work fw = { .ctrl = ctrl };
+
+	INIT_WORK_ONSTACK(&fw.work, otto_l3_fib_flush_work_do);
+	queue_work(ctrl->priv->wq, &fw.work);
+	flush_work(&fw.work);
+	destroy_work_on_stack(&fw.work);
+}
+
 int otto_l3_probe(struct device *dev, struct rtl838x_switch_priv *priv)
 {
 	const struct of_device_id *match;
@@ -3225,11 +3260,10 @@ int otto_l3_probe(struct device *dev, struct rtl838x_switch_priv *priv)
 
 	/*
 	 * Register Forwarding Information Base notifier to offload routes where possible. Only
-	 * FIBs pointing to our own netdevs are programmed into the device, so no need to pass a
-	 * callback.
+	 * FIBs pointing to our own netdevs are programmed into the device.
 	 */
 	ctrl->fib_nb.notifier_call = otto_l3_fib_notifier;
-	err = register_fib_notifier(&init_net, &ctrl->fib_nb, NULL, NULL);
+	err = register_fib_notifier(&init_net, &ctrl->fib_nb, otto_l3_fib_dump_flush, NULL);
 	if (err) {
 		ctrl->fib_nb.notifier_call = NULL;
 		otto_l3_remove(priv);
