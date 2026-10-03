@@ -189,6 +189,8 @@ function iface_auth_type(config, band, eht) {
 			set_default(config, 'ieee80211w', 0);
 			config.rsn_override_mfp = 2;
 			config.rsn_override_omit_rsnxe = 1;
+			if (config.mlo)
+				config.rsn_override_mlo_compat = 1;
 		}
 		if (config.rsn_override_pairwise_2)
 			config.rsn_override_mfp_2 = 2;
@@ -723,6 +725,8 @@ export function generate(interface, data, config, vlans, stas, phy_features) {
 	if (config.rsn_override_omit_rsnxe) {
 		append_vars(config, ['rsn_override_omit_rsnxe']);
 	}
+
+	append_vars(config, [ 'rsn_override_mlo_compat' ]);
 
 	/* raw options */
 	for (let raw in config.hostapd_bss_options)
