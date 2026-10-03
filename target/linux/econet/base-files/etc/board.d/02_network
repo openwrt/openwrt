@@ -17,6 +17,9 @@ econet_setup_interfaces()
 	zyxel,ex3301-t0)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
 		;;
+	zyxel,wx3100-t0)
+		ucidef_set_interface_lan "lan1 lan2"
+		;;
 	*)
 		# The remaining boards have no DSA switch driver yet.
 		ucidef_set_interface_lan "eth0"
@@ -45,6 +48,10 @@ econet_setup_macs()
 	zyxel,ex3301-t0)
 		lan_mac=$(mtd_get_mac_binary "factory" 0x0)
 		[ -n "$lan_mac" ] && wan_mac="$(macaddr_add $lan_mac 1)"
+		label_mac=$lan_mac
+		;;
+	zyxel,wx3100-t0)
+		lan_mac=$(mtd_get_mac_binary "factory" 0x0)
 		label_mac=$lan_mac
 		;;
 	esac

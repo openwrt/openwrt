@@ -48,6 +48,11 @@ zyxel,ex3301-t0)
 	ucidef_set_led_netdev "lan4" "LAN4" "mt7530-0:08:green:lan-4" "lan4" "link tx rx"
 	ucidef_set_led_netdev "wan-port" "WAN Port" "mt7530-0:0c:green:wan" "wan" "link tx rx"
 	;;
+zyxel,wx3100-t0)
+	ucidef_set_led_default "power" "Power" "green:power" "1"
+	ucidef_set_led_netdev "link" "Link" "green:link" "br-lan" "link tx rx"
+	ucidef_set_led_wlan "wifi" "Wi-Fi" "green:wifi" "phy0tpt"
+	;;
 esac
 
 board_config_flush
