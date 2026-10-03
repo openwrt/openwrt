@@ -1609,9 +1609,14 @@ wpa_supplicant_add_network() {
 		;;
 	esac
 
-	[ "$wpa_cipher" = GCMP ] && {
-		append network_data "pairwise=GCMP" "$N$T"
-		append network_data "group=GCMP" "$N$T"
+	[ -n "$wpa_cipher" ] && {
+		append network_data "pairwise=$wpa_cipher" "$N$T"
+
+		case "$wpa_cipher" in
+			*GCMP*|*CCMP-256*)
+				append network_data "group=$wpa_cipher" "$N$T"
+			;;
+		esac
 	}
 
 	[ "$mode" = mesh ] || {
