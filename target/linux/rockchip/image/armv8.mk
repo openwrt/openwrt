@@ -52,6 +52,16 @@ define Device/rk3588s
   KERNEL_LOADADDR := 0x03000000
 endef
 
+define Device/armsom_sige5
+  $(Device/rk3576)
+  DEVICE_VENDOR := ArmSoM
+  DEVICE_MODEL := Sige5
+  DEVICE_ALT0_VENDOR := Bananapi
+  DEVICE_ALT0_MODEL := BPi-M5 Pro
+  DEVICE_DTS := rk3576-armsom-sige5
+endef
+TARGET_DEVICES += armsom_sige5
+
 define Device/armsom_sige7
   $(Device/rk3588)
   DEVICE_VENDOR := ArmSoM
