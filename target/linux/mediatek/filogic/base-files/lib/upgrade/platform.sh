@@ -231,6 +231,7 @@ platform_do_upgrade() {
 	acer,vero-w6m|\
 	airpi,ap3000m|\
 	arcadyan,mozart|\
+	edgepi,e87n|\
 	glinet,gl-mt2500|\
 	glinet,gl-mt2500-airoha|\
 	glinet,gl-mt6000|\
@@ -478,6 +479,7 @@ platform_check_image() {
 		;;
 	creatlentem,clt-r30b1|\
 	creatlentem,clt-r30b1-112m|\
+	edgepi,e87n|\
 	hiveton,h5000m|\
 	nradio,c8-668gl)
 		# tar magic `ustar`
@@ -521,6 +523,7 @@ platform_copy_config() {
 	acer,vero-w6m|\
 	airpi,ap3000m|\
 	arcadyan,mozart|\
+	edgepi,e87n|\
 	glinet,gl-mt2500|\
 	glinet,gl-mt2500-airoha|\
 	glinet,gl-mt6000|\
