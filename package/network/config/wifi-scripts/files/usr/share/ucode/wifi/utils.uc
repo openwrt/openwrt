@@ -1,6 +1,6 @@
 'use strict';
 
-import { readfile, realpath, lsdir } from "fs";
+import { open, readfile, realpath, lsdir } from "fs";
 import * as nl80211 from "nl80211";
 
 function phy_filename(phy, name) {
@@ -131,4 +131,22 @@ export function find_phy(config, rename) {
 	return find_phy_by_path(phys, config.path) ??
 	       find_phy_by_macaddr(phys, config.macaddr) ??
 	       find_phy_by_name(phys, config.phy, rename);
+};
+
+/* Draw a random, locally administered MAC address. */
+export function macaddr_random() {
+	let f = open("/dev/urandom", "r");
+	if (!f)
+		return null;
+
+	let addr = map(split(f.read(6), ""), (v) => ord(v));
+	f.close();
+
+	if (length(addr) != 6)
+		return null;
+
+	addr[0] &= ~1;
+	addr[0] |= 2;
+
+	return join(":", map(addr, (v) => sprintf("%02x", v)));
 };
