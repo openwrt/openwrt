@@ -1,0 +1,132 @@
+From 2791c16ecb63a77e9855a7c1c69872879e4078ea Mon Sep 17 00:00:00 2001
+From: Alexandru Gagniuc <mr.nuke.me@gmail.com>
+Date: Sat, 6 Dec 2025 16:02:57 -0600
+Subject: [PATCH] remoteproc: qcom_q6v5_wcss: support q6 + m3 firmweare
+
+IPQ8074, IPQ6018, and IPQ9574 support an m3 firmware image in addtion
+to the main q6 firmware. Support loading the m3 firmware image.
+
+Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
+---
+ drivers/remoteproc/qcom_q6v5_wcss.c | 46 +++++++++++++++++++++++++----
+ 1 file changed, 41 insertions(+), 5 deletions(-)
+
+--- a/drivers/remoteproc/qcom_q6v5_wcss.c
++++ b/drivers/remoteproc/qcom_q6v5_wcss.c
+@@ -101,7 +101,8 @@ enum {
+ };
+ 
+ struct wcss_data {
+-	const char *firmware_name;
++	const char *q6_firmware_name;
++	const char *m3_firmware_name;
+ 	unsigned int crash_reason_smem;
+ 	u32 version;
+ 	bool aon_reset_required;
+@@ -155,6 +156,7 @@ struct q6v5_wcss {
+ 	unsigned int crash_reason_smem;
+ 	u32 version;
+ 	bool requires_force_stop;
++	const char *m3_firmware_name;
+ 
+ 	struct qcom_rproc_glink glink_subdev;
+ 	struct qcom_rproc_pdm pdm_subdev;
+@@ -914,11 +916,40 @@ static void *q6v5_wcss_da_to_va(struct r
+ 	return wcss->mem_region + offset;
+ }
+ 
++static int q6v5_wcss_load_aux(struct q6v5_wcss *wcss, const char *fw_name)
++{
++	const struct firmware *extra_fw;
++	int ret;
++
++	dev_info(wcss->dev, "loading additional firmware image %s\n", fw_name);
++
++	ret = request_firmware(&extra_fw, fw_name, wcss->dev);
++	if (ret)
++		return 0;
++
++	ret = qcom_mdt_load_no_init(wcss->dev, extra_fw, fw_name,
++				    wcss->mem_region, wcss->mem_phys,
++				    wcss->mem_size, &wcss->mem_reloc);
++
++	release_firmware(extra_fw);
++
++	if (ret)
++		dev_err(wcss->dev, "can't load %s\n", fw_name);
++
++	return ret;
++}
++
+ static int q6v5_wcss_load(struct rproc *rproc, const struct firmware *fw)
+ {
+ 	struct q6v5_wcss *wcss = rproc->priv;
+ 	int ret;
+ 
++	if (wcss->m3_firmware_name) {
++		ret = q6v5_wcss_load_aux(wcss, wcss->m3_firmware_name);
++		if (ret)
++			return ret;
++	}
++
+ 	ret = qcom_mdt_load_no_init(wcss->dev, fw, rproc->firmware,
+ 				    wcss->mem_region, wcss->mem_phys,
+ 				    wcss->mem_size, &wcss->mem_reloc);
+@@ -1130,9 +1161,11 @@ static int ipq9574_probe_clocks(struct q
+ 	const char *clks[] = { "q6_axim2", "wcss_ahb_s", "wcss_axi_m" };
+ 	int i, ret;
+ 
++
+ 	wcss->num_clks = ARRAY_SIZE(clks);
+ 	wcss->num_q6_clks = ARRAY_SIZE(q6_clks);
+ 
++
+ 	wcss->q6_clks = devm_kcalloc(wcss->dev, wcss->num_q6_clks,
+ 				     sizeof(*wcss->q6_clks), GFP_KERNEL);
+ 	if (!wcss->q6_clks)
+@@ -1169,7 +1202,7 @@ static int q6v5_wcss_probe(struct platfo
+ 		return -EINVAL;
+ 
+ 	rproc = devm_rproc_alloc(&pdev->dev, pdev->name, desc->ops,
+-				 desc->firmware_name, sizeof(*wcss));
++				 desc->q6_firmware_name, sizeof(*wcss));
+ 	if (!rproc) {
+ 		dev_err(&pdev->dev, "failed to allocate rproc\n");
+ 		return -ENOMEM;
+@@ -1180,6 +1213,7 @@ static int q6v5_wcss_probe(struct platfo
+ 
+ 	wcss->version = desc->version;
+ 	wcss->requires_force_stop = desc->requires_force_stop;
++	wcss->m3_firmware_name = desc->m3_firmware_name;
+ 
+ 	ret = q6v5_wcss_init_mmio(wcss, pdev);
+ 	if (ret)
+@@ -1257,7 +1291,8 @@ static void q6v5_wcss_remove(struct plat
+ }
+ 
+ static const struct wcss_data wcss_ipq8074_res_init = {
+-	.firmware_name = "IPQ8074/q6_fw.mdt",
++	.q6_firmware_name = "IPQ8074/q6_fw.mdt",
++	.m3_firmware_name = "IPQ8074/m3_fw.mdt",
+ 	.crash_reason_smem = WCSS_CRASH_REASON,
+ 	.aon_reset_required = true,
+ 	.ops = &q6v5_wcss_ipq8074_ops,
+@@ -1266,7 +1301,8 @@ static const struct wcss_data wcss_ipq80
+ 
+ 
+ static const struct wcss_data wcss_ipq9574_res_init = {
+-	.firmware_name = "IPQ9574/q6_fw.mdt",
++	.q6_firmware_name = "IPQ9574/q6_fw.mdt",
++	.m3_firmware_name = "IPQ9574/m3_fw.mdt",
+ 	.version = WCSS_IPQ9574,
+ 	.crash_reason_smem = WCSS_CRASH_REASON,
+ 	.aon_reset_required = true,
+@@ -1277,7 +1313,7 @@ static const struct wcss_data wcss_ipq95
+ 
+ static const struct wcss_data wcss_qcs404_res_init = {
+ 	.crash_reason_smem = WCSS_CRASH_REASON,
+-	.firmware_name = "wcnss.mdt",
++	.q6_firmware_name = "wcnss.mdt",
+ 	.version = WCSS_QCS404,
+ 	.aon_reset_required = false,
+ 	.ssr_name = "mpss",

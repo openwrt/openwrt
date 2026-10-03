@@ -1,0 +1,7 @@
+[ "$INTERFACE" = wan ] || exit 0
+
+case "$ACTION" in
+ifup|ifdown)
+	/etc/init.d/ledbar reload
+	;;
+esac

@@ -1,0 +1,26 @@
+From 6670672e53b0ca305ce1163d651dc2f0543b8c7d Mon Sep 17 00:00:00 2001
+From: Alexandru Gagniuc <mr.nuke.me@gmail.com>
+Date: Sat, 6 Dec 2025 22:40:07 -0600
+Subject: [PATCH] ath11k: ipq9574: there can be only one pdev_idx
+
+So mark all the others as ATH11K_INVALID_HW_MAC_ID.
+---
+ drivers/net/wireless/ath/ath11k/hw.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/ath/ath11k/hw.c
++++ b/drivers/net/wireless/ath/ath11k/hw.c
+@@ -37,7 +37,12 @@ static u8 ath11k_hw_ipq6018_mac_from_pde
+ static u8 ath11k_hw_ipq9574_mac_from_pdev_id(int pdev_idx)
+ {
+ 	/* ipq9574 is a single PHY radio which maps to PHY B(mac3) */
+-	return 2;
++	switch (pdev_idx) {
++	case 0:
++		return 2;
++	default:
++		return ATH11K_INVALID_HW_MAC_ID;
++	}
+ }
+ 
+ static void ath11k_hw_ipq8074_tx_mesh_enable(struct ath11k_base *ab,

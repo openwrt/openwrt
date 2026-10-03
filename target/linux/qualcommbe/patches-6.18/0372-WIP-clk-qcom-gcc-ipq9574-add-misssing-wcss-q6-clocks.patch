@@ -1,0 +1,117 @@
+From cd87ebe62de90b9feb6ccedf986af3f8fdf5c077 Mon Sep 17 00:00:00 2001
+From: Alexandru Gagniuc <mr.nuke.me@gmail.com>
+Date: Thu, 27 Nov 2025 10:22:17 -0600
+Subject: [PATCH] [WIP] clk: qcom: gcc-ipq9574: add misssing wcss/q6 clocks
+
+Currently experimenting with remoteproc bringup on a TPLink BE550
+which uses a wifi-6 chip for the 2.4 GHz band. Might need these
+clocks, so add them.
+
+Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
+---
+ drivers/clk/qcom/gcc-ipq9574.c               | 52 ++++++++++++++++++++
+ include/dt-bindings/clock/qcom,ipq9574-gcc.h |  4 ++
+ 2 files changed, 56 insertions(+)
+
+--- a/drivers/clk/qcom/gcc-ipq9574.c
++++ b/drivers/clk/qcom/gcc-ipq9574.c
+@@ -2815,6 +2815,23 @@ static struct clk_branch gcc_wcss_acmt_c
+ 	},
+ };
+ 
++
++static struct clk_branch gcc_wcss_ahb_s_clk = {
++	.halt_reg = 0x25060,
++	.clkr = {
++		.enable_reg = 0x25060,
++		.enable_mask = BIT(0),
++		.hw.init = &(struct clk_init_data) {
++			.name = "gcc_wcss_ahb_s_clk",
++			.parent_hws = (const struct clk_hw *[]) {
++					&wcss_ahb_clk_src.clkr.hw },
++			.num_parents = 1,
++			.flags = CLK_SET_RATE_PARENT,
++			.ops = &clk_branch2_ops,
++		},
++	},
++};
++
+ static struct clk_branch gcc_sys_noc_wcss_ahb_clk = {
+ 	.halt_reg = 0x2e030,
+ 	.clkr = {
+@@ -2852,6 +2869,22 @@ static struct clk_rcg2 wcss_axi_m_clk_sr
+ 	},
+ };
+ 
++static struct clk_branch gcc_wcss_axi_m_clk = {
++	.halt_reg = 0x25064,
++	.clkr = {
++		.enable_reg = 0x25064,
++		.enable_mask = BIT(0),
++		.hw.init = &(struct clk_init_data) {
++			.name = "gcc_wcss_axi_m_clk",
++			.parent_hws = (const struct clk_hw *[]) {
++					&wcss_axi_m_clk_src.clkr.hw },
++			.num_parents = 1,
++			.flags = CLK_SET_RATE_PARENT,
++			.ops = &clk_branch2_ops,
++		},
++	},
++};
++
+ static struct clk_branch gcc_anoc_wcss_axi_m_clk = {
+ 	.halt_reg = 0x2e0a8,
+ 	.clkr = {
+@@ -3631,6 +3664,22 @@ static struct clk_rcg2 q6_axim2_clk_src
+ 	},
+ };
+ 
++static struct clk_branch gcc_q6_axim2_clk = {
++	.halt_reg = 0x25010,
++	.clkr = {
++		.enable_reg = 0x25010,
++		.enable_mask = BIT(0),
++		.hw.init = &(struct clk_init_data) {
++			.name = "gcc_q6_axim2_clk",
++			.parent_hws = (const struct clk_hw *[]) {
++					&q6_axim2_clk_src.clkr.hw },
++			.num_parents = 1,
++			.flags = CLK_SET_RATE_PARENT,
++			.ops = &clk_branch2_ops,
++		},
++	},
++};
++
+ static const struct freq_tbl ftbl_nssnoc_memnoc_bfdcd_clk_src[] = {
+ 	F(533333333, P_GPLL0, 1.5, 0, 0),
+ 	{ }
+@@ -4159,8 +4208,10 @@ static struct clk_regmap *gcc_ipq9574_cl
+ 	[GCC_Q6_AHB_S_CLK] = &gcc_q6_ahb_s_clk.clkr,
+ 	[GCC_WCSS_ECAHB_CLK] = &gcc_wcss_ecahb_clk.clkr,
+ 	[GCC_WCSS_ACMT_CLK] = &gcc_wcss_acmt_clk.clkr,
++	[GCC_WCSS_AHB_S_CLK] = &gcc_wcss_ahb_s_clk.clkr,
+ 	[GCC_SYS_NOC_WCSS_AHB_CLK] = &gcc_sys_noc_wcss_ahb_clk.clkr,
+ 	[WCSS_AXI_M_CLK_SRC] = &wcss_axi_m_clk_src.clkr,
++	[GCC_WCSS_AXI_M_CLK] = &gcc_wcss_axi_m_clk.clkr,
+ 	[GCC_ANOC_WCSS_AXI_M_CLK] = &gcc_anoc_wcss_axi_m_clk.clkr,
+ 	[QDSS_AT_CLK_SRC] = &qdss_at_clk_src.clkr,
+ 	[GCC_Q6SS_ATBM_CLK] = &gcc_q6ss_atbm_clk.clkr,
+@@ -4199,6 +4250,7 @@ static struct clk_regmap *gcc_ipq9574_cl
+ 	[GCC_WCSS_Q6_TBU_CLK] = &gcc_wcss_q6_tbu_clk.clkr,
+ 	[GCC_MEM_NOC_Q6_AXI_CLK] = &gcc_mem_noc_q6_axi_clk.clkr,
+ 	[Q6_AXIM2_CLK_SRC] = &q6_axim2_clk_src.clkr,
++	[GCC_Q6_AXIM2_CLK] = &gcc_q6_axim2_clk.clkr,
+ 	[NSSNOC_MEMNOC_BFDCD_CLK_SRC] = &nssnoc_memnoc_bfdcd_clk_src.clkr,
+ 	[GCC_NSSNOC_MEMNOC_CLK] = &gcc_nssnoc_memnoc_clk.clkr,
+ 	[GCC_NSSNOC_MEM_NOC_1_CLK] = &gcc_nssnoc_mem_noc_1_clk.clkr,
+--- a/include/dt-bindings/clock/qcom,ipq9574-gcc.h
++++ b/include/dt-bindings/clock/qcom,ipq9574-gcc.h
+@@ -221,4 +221,8 @@
+ #define GCC_PCIE2_PIPE_CLK				212
+ #define GCC_PCIE3_PIPE_CLK				213
+ #define GPLL0_OUT_AUX					214
++#define GCC_WCSS_AHB_S_CLK				215
++#define GCC_WCSS_AXI_M_CLK				216
++#define GCC_Q6_AXIM2_CLK				217
++
+ #endif

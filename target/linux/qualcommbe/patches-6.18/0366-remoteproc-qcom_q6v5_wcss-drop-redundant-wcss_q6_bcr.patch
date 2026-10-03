@@ -1,0 +1,84 @@
+From f84630ad9cc4906ecce14a9ca56df9b93f9a8dbe Mon Sep 17 00:00:00 2001
+From: Alexandru Gagniuc <mr.nuke.me@gmail.com>
+Date: Tue, 25 Nov 2025 21:14:19 -0600
+Subject: [PATCH] remoteproc: qcom_q6v5_wcss: drop redundant wcss_q6_bcr_reset
+
+The wcss_q6_bcr_reset used on QCS404, and wcss_q6_reset used on IPQ
+are the same. "BCR reset" is redundant, and likely a mistake. Use the
+documented "wcss_q6_reset" instead. Drop ".wcss_q6_reset_required"
+from the descriptor, since all targets now need it.
+
+Fixes: 0af65b9b915e ("remoteproc: qcom: wcss: Add non pas wcss Q6 support for QCS404")
+
+Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
+---
+ drivers/remoteproc/qcom_q6v5_wcss.c | 23 +++++------------------
+ 1 file changed, 5 insertions(+), 18 deletions(-)
+
+--- a/drivers/remoteproc/qcom_q6v5_wcss.c
++++ b/drivers/remoteproc/qcom_q6v5_wcss.c
+@@ -96,7 +96,6 @@ struct wcss_data {
+ 	unsigned int crash_reason_smem;
+ 	u32 version;
+ 	bool aon_reset_required;
+-	bool wcss_q6_reset_required;
+ 	const char *ssr_name;
+ 	const char *sysmon_name;
+ 	int ssctl_id;
+@@ -134,7 +133,6 @@ struct q6v5_wcss {
+ 	struct reset_control *wcss_aon_reset;
+ 	struct reset_control *wcss_reset;
+ 	struct reset_control *wcss_q6_reset;
+-	struct reset_control *wcss_q6_bcr_reset;
+ 
+ 	struct qcom_q6v5 q6v5;
+ 
+@@ -309,7 +307,7 @@ static int q6v5_wcss_qcs404_power_on(str
+ 		return ret;
+ 
+ 	/* Remove reset to the WCNSS QDSP6SS */
+-	reset_control_deassert(wcss->wcss_q6_bcr_reset);
++	reset_control_deassert(wcss->wcss_q6_reset);
+ 
+ 	/* Enable Q6SSTOP_AHBFABRIC_CBCR clock */
+ 	ret = clk_prepare_enable(wcss->ahbfabric_cbcr_clk);
+@@ -803,19 +801,10 @@ static int q6v5_wcss_init_reset(struct q
+ 		return PTR_ERR(wcss->wcss_reset);
+ 	}
+ 
+-	if (desc->wcss_q6_reset_required) {
+-		wcss->wcss_q6_reset = devm_reset_control_get_exclusive(dev, "wcss_q6_reset");
+-		if (IS_ERR(wcss->wcss_q6_reset)) {
+-			dev_err(wcss->dev, "unable to acquire wcss_q6_reset\n");
+-			return PTR_ERR(wcss->wcss_q6_reset);
+-		}
+-	}
+-
+-	wcss->wcss_q6_bcr_reset = devm_reset_control_get_optional_exclusive(dev,
+-							"wcss_q6_bcr_reset");
+-	if (IS_ERR(wcss->wcss_q6_bcr_reset)) {
+-		dev_err(wcss->dev, "unable to acquire wcss_q6_bcr_reset\n");
+-		return PTR_ERR(wcss->wcss_q6_bcr_reset);
++	wcss->wcss_q6_reset = devm_reset_control_get_exclusive(dev, "wcss_q6_reset");
++	if (IS_ERR(wcss->wcss_q6_reset)) {
++		dev_err(wcss->dev, "unable to acquire wcss_q6_reset\n");
++		return PTR_ERR(wcss->wcss_q6_reset);
+ 	}
+ 
+ 	return 0;
+@@ -1067,7 +1056,6 @@ static const struct wcss_data wcss_ipq80
+ 	.firmware_name = "IPQ8074/q6_fw.mdt",
+ 	.crash_reason_smem = WCSS_CRASH_REASON,
+ 	.aon_reset_required = true,
+-	.wcss_q6_reset_required = true,
+ 	.ops = &q6v5_wcss_ipq8074_ops,
+ 	.requires_force_stop = true,
+ };
+@@ -1077,7 +1065,6 @@ static const struct wcss_data wcss_qcs40
+ 	.firmware_name = "wcnss.mdt",
+ 	.version = WCSS_QCS404,
+ 	.aon_reset_required = false,
+-	.wcss_q6_reset_required = false,
+ 	.ssr_name = "mpss",
+ 	.sysmon_name = "wcnss",
+ 	.ssctl_id = 0x12,
