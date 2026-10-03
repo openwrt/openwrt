@@ -1,0 +1,56 @@
+From 81ccb9faf3c43a82be55716eb5c3dde38fbef7fc Mon Sep 17 00:00:00 2001
+From: "shengwei.lu" <shengwei.lu@mediatek.com>
+Date: Thu, 23 Jul 2026 11:11:08 +0800
+Subject: [PATCH 157/170] wifi: mt76: mt7925: Fix EHT Beamformee SS subfields
+ to meet 802.11be minimum
+
+[ Upstream commit 404c4e564f6b1eeffd10bf2b2d3b86620f5794c3 ]
+
+Per IEEE 802.11be, the Beamformee SS <= 80/160/320 MHz 3-bit subfields
+in the EHT PHY Capabilities are encoded as (Nss - 1) and are required
+to be >= 3 (i.e. at least 4 SS receive capability) whenever SU
+Beamformee is advertised.
+
+MT7925 is a 2x2 STA (sts = 2), so directly filling (sts - 1) = 1
+violates the spec minimum. Clamp the encoded value to 3 when sts <= 3,
+otherwise use (sts - 1). This is applied consistently to the
+BEAMFORMEE_SS <= 80 MHz (split across phy_cap_info[0]/[1]), <= 160 MHz
+and <= 320 MHz (6 GHz only) subfields.
+
+Fixes: c948b5da6bbe ("wifi: mt76: mt7925: add Mediatek Wi-Fi7 driver for mt7925 chips")
+Signed-off-by: shengwei.lu <shengwei.lu@mediatek.com>
+Link: https://patch.msgid.link/20260723031108.2017653-1-jb.tsai@mediatek.com
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ mt7925/main.c | 10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
+
+--- a/mt7925/main.c
++++ b/mt7925/main.c
+@@ -187,19 +187,21 @@ mt7925_init_eht_caps(struct mt792x_phy *
+ 		eht_cap_elem->phy_cap_info[0] |=
+ 			IEEE80211_EHT_PHY_CAP0_320MHZ_IN_6GHZ;
+ 
++	val = (sts > 3) ? sts - 1 : 3;
++
+ 	eht_cap_elem->phy_cap_info[0] |=
+-		u8_encode_bits(u8_get_bits(sts - 1, BIT(0)),
++		u8_encode_bits(u8_get_bits(val, BIT(0)),
+ 			       IEEE80211_EHT_PHY_CAP0_BEAMFORMEE_SS_80MHZ_MASK);
+ 
+ 	eht_cap_elem->phy_cap_info[1] =
+-		u8_encode_bits(u8_get_bits(sts - 1, GENMASK(2, 1)),
++		u8_encode_bits(u8_get_bits(val, GENMASK(2, 1)),
+ 			       IEEE80211_EHT_PHY_CAP1_BEAMFORMEE_SS_80MHZ_MASK) |
+-		u8_encode_bits(sts - 1,
++		u8_encode_bits(val,
+ 			       IEEE80211_EHT_PHY_CAP1_BEAMFORMEE_SS_160MHZ_MASK);
+ 
+ 	if (band == NL80211_BAND_6GHZ && is_320mhz_supported(&phy->dev->mt76))
+ 		eht_cap_elem->phy_cap_info[1] |=
+-			u8_encode_bits(sts - 1,
++			u8_encode_bits(val,
+ 				       IEEE80211_EHT_PHY_CAP1_BEAMFORMEE_SS_320MHZ_MASK);
+ 
+ 	eht_cap_elem->phy_cap_info[2] =

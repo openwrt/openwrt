@@ -1,0 +1,42 @@
+From fc7fae55255ccbde009232e84b102d2782a69ecf Mon Sep 17 00:00:00 2001
+From: Michael-CY Lee <michael-cy.lee@mediatek.com>
+Date: Wed, 22 Jul 2026 08:25:56 +0000
+Subject: [PATCH 122/170] wifi: mt76: fix non-AQL packet accounting for MLO
+ stations
+
+[ Upstream commit 8ae659743ba936b22ecb4620815887728e2820d6 ]
+
+__mt76_tx_queue_skb() overrides the wcid passed by the driver with
+sta->drv_priv, so the wcid might incorrectly be changed after TX,
+causing wcid->non_aql_packets to be counted on the wrong wcid. For
+example, on the AP side, if a station's setup link is the 5G link and
+the station uses 2G to transmit a frame, the value of non_aql_packets
+is increased on the 5G wcid but decreased on the 2G wcid. Once the
+inflated counter exceeds MT_MAX_NON_AQL_PKT, the TX scheduler
+permanently refuses to service the station.
+
+Drop the reassignment and account on the wcid used for transmission.
+This also records the actual wcid in the queue entry.
+
+Fixes: e1378e5228aa ("mt76: rely on AQL for burst size limits on tx queueing")
+Signed-off-by: Michael-CY Lee <michael-cy.lee@mediatek.com>
+Link: https://patch.msgid.link/20260722082610.2699628-4-nbd@nbd.name
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ tx.c | 4 ----
+ 1 file changed, 4 deletions(-)
+
+--- a/tx.c
++++ b/tx.c
+@@ -324,10 +324,6 @@ __mt76_tx_queue_skb(struct mt76_phy *phy
+ 	if (idx < 0 || !sta)
+ 		return idx;
+ 
+-	wcid = (struct mt76_wcid *)sta->drv_priv;
+-	if (!wcid->sta)
+-		return idx;
+-
+ 	q->entry[idx].wcid = wcid->idx;
+ 
+ 	if (!non_aql)

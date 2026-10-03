@@ -1,0 +1,42 @@
+From 7ec839c7c0bc10ccb7a17ac4fada0910b674c5a4 Mon Sep 17 00:00:00 2001
+From: Ryder Lee <ryder.lee@mediatek.com>
+Date: Fri, 5 Jun 2026 04:33:06 -0700
+Subject: [PATCH 085/170] wifi: mt76: mt7996: fix potential tx_retries
+ underflow
+
+[ Upstream commit 4d8bba99d645bcb46a442b18eb42402610cba03a ]
+
+When FIELD_GET returns 0 for the retry count, subtracting 1 causes
+an unsigned integer underflow, resulting in tx_retries becoming a
+very large value (0xFFFFFFFF for u32).
+
+Fix by checking if count is non-zero before subtracting 1.
+
+Fixes: 2461599f835e ("wifi: mt76: mt7996: get tx_retries and tx_failed from txfree")
+Signed-off-by: Ryder Lee <ryder.lee@mediatek.com>
+Link: https://patch.msgid.link/20260605113306.3485554-4-ryder.lee@mediatek.com
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ mt7996/mac.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- a/mt7996/mac.c
++++ b/mt7996/mac.c
+@@ -1359,13 +1359,13 @@ next:
+ 				cur_info++;
+ 			continue;
+ 		} else if (info & MT_TXFREE_INFO_HEADER) {
+-			u32 tx_retries = 0, tx_failed = 0;
++			u32 tx_retries = 0, tx_failed = 0, count;
+ 
+ 			if (!wcid)
+ 				continue;
+ 
+-			tx_retries =
+-				FIELD_GET(MT_TXFREE_INFO_COUNT, info) - 1;
++			count = FIELD_GET(MT_TXFREE_INFO_COUNT, info);
++			tx_retries = count ? count - 1 : 0;
+ 			tx_failed = tx_retries +
+ 				!!FIELD_GET(MT_TXFREE_INFO_STAT, info);
+ 

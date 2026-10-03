@@ -1,0 +1,31 @@
+From c058786b09cfab080125bc3ee7928a181dcbd37a Mon Sep 17 00:00:00 2001
+From: Lorenzo Bianconi <lorenzo@kernel.org>
+Date: Sun, 21 Jun 2026 15:24:59 +0200
+Subject: [PATCH 088/170] wifi: mt76: connac: fix possible NULL-pointer deref
+ in mt76_connac_mcu_uni_bss_he_tlv()
+
+[ Upstream commit 2c1fb2335f5e3afb34f91bc07ecb63517c328090 ]
+
+mt76_connac_get_he_phy_cap routine can theoretically return NULL so
+check cap pointer before dereferencing it.
+
+Fixes: d0e274af2f2e4 ("mt76: mt76_connac: create mcu library")
+Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
+Link: https://patch.msgid.link/20260621-mt76_connac_get_he_phy_cap-fix-v1-1-ed4ccf7a0363@kernel.org
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ mt76_connac_mcu.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/mt76_connac_mcu.c
++++ b/mt76_connac_mcu.c
+@@ -1446,6 +1446,8 @@ mt76_connac_mcu_uni_bss_he_tlv(struct mt
+ 	struct bss_info_uni_he *he;
+ 
+ 	cap = mt76_connac_get_he_phy_cap(phy, vif);
++	if (!cap)
++		return;
+ 
+ 	he = (struct bss_info_uni_he *)tlv;
+ 	he->he_pe_duration = vif->bss_conf.htc_trig_based_pkt_ext;

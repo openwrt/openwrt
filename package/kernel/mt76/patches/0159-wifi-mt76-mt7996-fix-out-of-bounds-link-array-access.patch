@@ -1,0 +1,70 @@
+From 637bb99cc766a858d744905e46638459ca128b6c Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 1 Aug 2026 14:53:34 +0000
+Subject: [PATCH 159/170] wifi: mt76: mt7996: fix out-of-bounds link array
+ access in mt7996_tx()
+
+[ Upstream commit 4330a0ef9f75a54fde3548432a9a698f06bab635 ]
+
+When mac80211 leaves the link unspecified, mt7996_tx() substitutes the
+primary link id of the station or vif. That value is
+IEEE80211_LINK_UNSPECIFIED (0xf) until the first link has been added,
+and it is then used unchecked to index vif->link_conf[],
+mvif->mt76.link[] and sta->link[], all of which hold
+IEEE80211_MLD_MAX_NUM_LINKS (15) entries.
+
+Clamp the primary link id to the default link before using it, and use
+the clamped value for the link_sta fallback as well.
+
+Fixes: 1609b014aa29 ("wifi: mt76: mt7996: Overwrite unspecified link_id in mt7996_tx()")
+Link: https://patch.msgid.link/20260801145334.1166751-10-nbd@nbd.name
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ .../net/wireless/mediatek/mt76/mt7996/main.c  | 20 ++++++++++++-------
+ 1 file changed, 13 insertions(+), 7 deletions(-)
+
+--- a/mt7996/main.c
++++ b/mt7996/main.c
+@@ -1430,20 +1430,26 @@ static void mt7996_tx(struct ieee80211_h
+ 	struct ieee80211_vif *vif = info->control.vif;
+ 	struct mt7996_vif *mvif = vif ? (void *)vif->drv_priv : NULL;
+ 	struct mt76_wcid *wcid = &dev->mt76.global_wcid;
++	u8 deflink_id = IEEE80211_LINK_UNSPECIFIED;
+ 	u8 link_id = u32_get_bits(info->control.flags,
+ 				  IEEE80211_TX_CTRL_MLO_LINK);
+ 
+ 	rcu_read_lock();
+ 
++	if (msta)
++		deflink_id = msta->deflink_id;
++	else if (mvif)
++		deflink_id = mvif->mt76.deflink_id;
++
++	/* the primary link is unset until the first link has been added */
++	if (deflink_id >= IEEE80211_MLD_MAX_NUM_LINKS)
++		deflink_id = 0;
++
+ 	/* Use primary link_id if the value from mac80211 is set to
+ 	 * IEEE80211_LINK_UNSPECIFIED.
+ 	 */
+-	if (link_id == IEEE80211_LINK_UNSPECIFIED) {
+-		if (msta)
+-			link_id = msta->deflink_id;
+-		else if (mvif)
+-			link_id = mvif->mt76.deflink_id;
+-	}
++	if (link_id == IEEE80211_LINK_UNSPECIFIED)
++		link_id = deflink_id;
+ 
+ 	if (vif && ieee80211_vif_is_mld(vif)) {
+ 		struct ieee80211_bss_conf *link_conf;
+@@ -1453,7 +1459,7 @@ static void mt7996_tx(struct ieee80211_h
+ 
+ 			link_sta = rcu_dereference(sta->link[link_id]);
+ 			if (!link_sta)
+-				link_sta = rcu_dereference(sta->link[msta->deflink_id]);
++				link_sta = rcu_dereference(sta->link[deflink_id]);
+ 
+ 			if (link_sta) {
+ 				memcpy(hdr->addr1, link_sta->addr, ETH_ALEN);

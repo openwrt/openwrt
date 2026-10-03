@@ -1,0 +1,44 @@
+From c386e90a7ce8ddec9f038e9437661a2821b0ce89 Mon Sep 17 00:00:00 2001
+From: Aviel Zohar <avielzohar123@gmail.com>
+Date: Mon, 13 Apr 2026 06:31:34 +0300
+Subject: [PATCH 076/170] wifi: mt76: mt7925: validate skb length in testmode
+ query
+
+[ Upstream commit c7369a00860a0704461d440e7c3bf9b49bfdbaee ]
+
+In mt7925_tm_query(), the response skb from mt76_mcu_send_and_get_msg()
+is used in a memcpy without validating its length:
+
+  memcpy(evt_resp, skb->data + 8, MT7925_EVT_RSP_LEN);
+
+where MT7925_EVT_RSP_LEN is 512. If the firmware returns a response
+shorter than 520 bytes (8 + 512), this reads beyond the skb data
+buffer. The over-read data is then returned to userspace via nla_put()
+in mt7925_testmode_dump().
+
+Add a length check before the memcpy to ensure the skb contains
+sufficient data.
+
+Fixes: c948b5da6bbe ("wifi: mt76: mt7925: add Mediatek Wi-Fi7 driver for mt7925 chips")
+Signed-off-by: Aviel Zohar <avielzohar123@gmail.com>
+Link: https://patch.msgid.link/20260413033136.5417-2-avielzohar123@gmail.com
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ mt7925/testmode.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/mt7925/testmode.c
++++ b/mt7925/testmode.c
+@@ -108,6 +108,11 @@ mt7925_tm_query(struct mt792x_dev *dev,
+ 
+ 	evt = (struct uni_cmd_testmode_evt *)skb->data;
+ 
++	if (skb->len < MT7925_EVT_RSP_LEN + 8) {
++		ret = -EINVAL;
++		goto out;
++	}
++
+ 	memcpy((char *)evt_resp, (char *)skb->data + 8, MT7925_EVT_RSP_LEN);
+ 
+ out:

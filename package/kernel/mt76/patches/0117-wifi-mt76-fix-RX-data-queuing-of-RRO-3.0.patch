@@ -1,0 +1,48 @@
+From 62aea1d45b524cde9e02d1e7f65d2c4fd60871b8 Mon Sep 17 00:00:00 2001
+From: Rex Lu <rex.lu@mediatek.com>
+Date: Wed, 22 Jul 2026 08:25:53 +0000
+Subject: [PATCH 117/170] wifi: mt76: fix RX data queuing of RRO 3.0
+
+[ Upstream commit 86897f106669c07eea4c34b54c3268d448d41426 ]
+
+For RRO 3.0, RX data released from a RRO data queue should be put to
+the indicator queue. The frames are processed and completed in the
+context of the indicator queue NAPI, which only polls skbs queued on
+the MT_RXQ_RRO_IND list; frames queued under the data queue id are
+left sitting on that list until the data queue NAPI happens to run,
+stalling and reordering RX data.
+
+Fixes: b1e58e137b61 ("wifi: mt76: mt7996: Introduce RRO MSDU callbacks")
+Signed-off-by: Rex Lu <rex.lu@mediatek.com>
+Signed-off-by: Shayne Chen <shayne.chen@mediatek.com>
+Link: https://patch.msgid.link/20260722082610.2699628-1-nbd@nbd.name
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ mac80211.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+--- a/mac80211.c
++++ b/mac80211.c
+@@ -886,6 +886,7 @@ static void mt76_rx_release_amsdu(struct
+ 	struct sk_buff *skb = phy->rx_amsdu[q].head;
+ 	struct mt76_rx_status *status = (struct mt76_rx_status *)skb->cb;
+ 	struct mt76_dev *dev = phy->dev;
++	struct mt76_queue *rxq = &dev->q_rx[q];
+ 
+ 	phy->rx_amsdu[q].head = NULL;
+ 	phy->rx_amsdu[q].tail = NULL;
+@@ -914,6 +915,13 @@ static void mt76_rx_release_amsdu(struct
+ 			return;
+ 		}
+ 	}
++
++	/* RRO 3.0 data queue skbs are processed and completed in the context
++	 * of the indicator queue NAPI, which only polls its own skb list
++	 */
++	if (mt76_queue_is_wed_rro_data(rxq) && dev->hwrro_mode == MT76_HWRRO_V3)
++		q = MT_RXQ_RRO_IND;
++
+ 	__skb_queue_tail(&dev->rx_skb[q], skb);
+ }
+ 

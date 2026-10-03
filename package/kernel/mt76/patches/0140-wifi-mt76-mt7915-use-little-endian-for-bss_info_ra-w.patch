@@ -1,0 +1,53 @@
+From b93d0f07ed040013fd0a44b837adec52f13fcee1 Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@nbd.name>
+Date: Fri, 24 Jul 2026 12:47:56 +0000
+Subject: [PATCH 140/170] wifi: mt76: mt7915: use little-endian for bss_info_ra
+ wire fields
+
+[ Upstream commit 04280d0a56be4264720e7b205daaa332c715e5ec ]
+
+train_up_high_thres, train_up_rule_rssi and low_traffic_thres were
+declared as host-native short in a firmware-facing TLV and assigned
+host-order constants, so on a big-endian host the firmware received
+byte-swapped rate-adaptation thresholds. Declare them __le16 and convert
+with cpu_to_le16().
+
+Fixes: e57b7901469f ("mt76: add mac80211 driver for MT7915 PCIe-based chipsets")
+Link: https://patch.msgid.link/20260724124813.3961474-12-nbd@nbd.name
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ mt7915/mcu.c | 6 +++---
+ mt7915/mcu.h | 6 +++---
+ 2 files changed, 6 insertions(+), 6 deletions(-)
+
+--- a/mt7915/mcu.c
++++ b/mt7915/mcu.c
+@@ -576,9 +576,9 @@ mt7915_mcu_bss_ra_tlv(struct sk_buff *sk
+ 	ra->rx_streams = max_nss;
+ 	ra->algo = 4;
+ 	ra->train_up_rule = 2;
+-	ra->train_up_high_thres = 110;
+-	ra->train_up_rule_rssi = -70;
+-	ra->low_traffic_thres = 2;
++	ra->train_up_high_thres = cpu_to_le16(110);
++	ra->train_up_rule_rssi = cpu_to_le16(-70);
++	ra->low_traffic_thres = cpu_to_le16(2);
+ 	ra->phy_cap = cpu_to_le32(0xfdf);
+ 	ra->interval = cpu_to_le32(500);
+ 	ra->fast_interval = cpu_to_le32(100);
+--- a/mt7915/mcu.h
++++ b/mt7915/mcu.h
+@@ -319,9 +319,9 @@ struct bss_info_ra {
+ 	u8 antenna_idx;
+ 	u8 train_up_rule;
+ 	u8 rsv[3];
+-	unsigned short train_up_high_thres;
+-	short train_up_rule_rssi;
+-	unsigned short low_traffic_thres;
++	__le16 train_up_high_thres;
++	__le16 train_up_rule_rssi;
++	__le16 low_traffic_thres;
+ 	__le16 max_phyrate;
+ 	__le32 phy_cap;
+ 	__le32 interval;

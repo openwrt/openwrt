@@ -1,0 +1,55 @@
+From 1c7ad1236bc6f7eb11e87f3d311e1c9d438ae3d1 Mon Sep 17 00:00:00 2001
+From: Rex Lu <rex.lu@mediatek.com>
+Date: Wed, 22 Jul 2026 08:25:54 +0000
+Subject: [PATCH 134/170] wifi: mt76: check txfree done event on the WED hw
+ path
+
+[ Upstream commit 3310e71a74b176d3613dfb42b6bc630d99e90cbb ]
+
+Check the txfree done event DW1 bit 15 when WED is enabled, to avoid
+the driver reading a txfree done event before WED has finished reading
+it. No need to check this flag on WED v2, otherwise SER will occur.
+
+The bit position was previously defined as MT_DMA_CTL_BURST, which is
+unused; rename it to match its function on the txfree ring.
+
+Fixes: 83eafc9251d6 ("wifi: mt76: mt7996: add wed tx support")
+Signed-off-by: Rex Lu <rex.lu@mediatek.com>
+Signed-off-by: Shayne Chen <shayne.chen@mediatek.com>
+Link: https://patch.msgid.link/20260722082610.2699628-2-nbd@nbd.name
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ dma.c | 9 +++++++++
+ dma.h | 2 +-
+ 2 files changed, 10 insertions(+), 1 deletion(-)
+
+--- a/dma.c
++++ b/dma.c
+@@ -608,6 +608,15 @@ mt76_dma_dequeue(struct mt76_dev *dev, s
+ 			q->desc[idx].ctrl |= cpu_to_le32(MT_DMA_CTL_DMA_DONE);
+ 		else if (!(q->desc[idx].ctrl & cpu_to_le32(MT_DMA_CTL_DMA_DONE)))
+ 			return NULL;
++#ifdef CONFIG_NET_MEDIATEK_SOC_WED
++		/* on WED v3 the M_DONE bit signals that WED is done reading
++		 * the txfree descriptor; WED v2 does not set it
++		 */
++		else if (dev->mmio.wed.version > 2 &&
++			 mt76_queue_is_wed_tx_free(q) &&
++			 !(q->desc[idx].ctrl & cpu_to_le32(MT_DMA_CTL_M_DONE)))
++			return NULL;
++#endif
+ 	}
+ done:
+ 	q->tail = (q->tail + 1) % q->ndesc;
+--- a/dma.h
++++ b/dma.h
+@@ -11,7 +11,7 @@
+ 
+ #define MT_DMA_CTL_SD_LEN1		GENMASK(13, 0)
+ #define MT_DMA_CTL_LAST_SEC1		BIT(14)
+-#define MT_DMA_CTL_BURST		BIT(15)
++#define MT_DMA_CTL_M_DONE		BIT(15)
+ #define MT_DMA_CTL_SD_LEN0		GENMASK(29, 16)
+ #define MT_DMA_CTL_LAST_SEC0		BIT(30)
+ #define MT_DMA_CTL_DMA_DONE		BIT(31)

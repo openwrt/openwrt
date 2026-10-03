@@ -1,0 +1,47 @@
+From a7fd3bae8e11a7c00df6a5021d9ef248ae9f9bf5 Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@nbd.name>
+Date: Mon, 27 Jul 2026 15:04:22 +0000
+Subject: [PATCH 149/170] wifi: mt76: mt7915: fix ext PHY use-after-free on
+ register error path
+
+[ Upstream commit 15b960014f24dce5388d4a2e7274e6490cb3c421 ]
+
+After mt7915_register_ext_phy() succeeded, a failure of the main PHY
+mt7915_init_debugfs() or mt7915_coredump_register() unwound through
+free_phy2, which called ieee80211_free_hw() on the ext PHY hw while it
+was still registered with mac80211, since mt76_unregister_device() only
+unregisters the main hw. Unregister the ext PHY (thermal + phy + hw)
+first and skip the redundant free.
+
+Fixes: 7b8e1ae886e4 ("mt76: mt7915: rework hardware/phy initialization")
+Link: https://patch.msgid.link/20260727150434.1778520-3-nbd@nbd.name
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ mt7915/init.c | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+--- a/mt7915/init.c
++++ b/mt7915/init.c
+@@ -1275,14 +1275,19 @@ int mt7915_register_device(struct mt7915
+ 
+ 	ret = mt7915_init_debugfs(&dev->phy);
+ 	if (ret)
+-		goto unreg_thermal;
++		goto unreg_ext_phy;
+ 
+ 	ret = mt7915_coredump_register(dev);
+ 	if (ret)
+-		goto unreg_thermal;
++		goto unreg_ext_phy;
+ 
+ 	return 0;
+ 
++unreg_ext_phy:
++	if (phy2) {
++		mt7915_unregister_ext_phy(dev);
++		phy2 = NULL;
++	}
+ unreg_thermal:
+ 	mt7915_unregister_thermal(&dev->phy);
+ unreg_dev:

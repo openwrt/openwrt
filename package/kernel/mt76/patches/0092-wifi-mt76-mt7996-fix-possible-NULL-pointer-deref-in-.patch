@@ -1,0 +1,44 @@
+From d5628f39fccc107dca00b98a491d9848898599f7 Mon Sep 17 00:00:00 2001
+From: Lorenzo Bianconi <lorenzo@kernel.org>
+Date: Sun, 21 Jun 2026 15:25:02 +0200
+Subject: [PATCH 092/170] wifi: mt76: mt7996: fix possible NULL-pointer deref
+ in mt7996_mcu_sta_bfer_eht()
+
+[ Upstream commit 2fffc472bec490c8357defcee9c075ca74467352 ]
+
+mt76_connac_get_eht_phy_cap routine can theoretically return NULL so
+check cap pointer before dereferencing it.
+
+Fixes: ba01944adee9f ("wifi: mt76: mt7996: add EHT beamforming support")
+Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
+Link: https://patch.msgid.link/20260621-mt76_connac_get_he_phy_cap-fix-v1-4-ed4ccf7a0363@kernel.org
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ mt7996/mcu.c | 10 +++++++---
+ 1 file changed, 7 insertions(+), 3 deletions(-)
+
+--- a/mt7996/mcu.c
++++ b/mt7996/mcu.c
+@@ -1920,14 +1920,18 @@ mt7996_mcu_sta_bfer_eht(struct ieee80211
+ 	struct ieee80211_sta_eht_cap *pc = &link_sta->eht_cap;
+ 	struct ieee80211_eht_cap_elem_fixed *pe = &pc->eht_cap_elem;
+ 	struct ieee80211_eht_mcs_nss_supp *eht_nss = &pc->eht_mcs_nss_supp;
+-	const struct ieee80211_sta_eht_cap *vc =
+-		mt76_connac_get_eht_phy_cap(phy->mt76, vif);
+-	const struct ieee80211_eht_cap_elem_fixed *ve = &vc->eht_cap_elem;
+ 	u8 nss_mcs = u8_get_bits(eht_nss->bw._80.rx_tx_mcs9_max_nss,
+ 				 IEEE80211_EHT_MCS_NSS_RX) - 1;
++	const struct ieee80211_eht_cap_elem_fixed *ve;
++	const struct ieee80211_sta_eht_cap *vc;
+ 	u8 snd_dim, sts;
+ 
++	vc = mt76_connac_get_eht_phy_cap(phy->mt76, vif);
++	if (!vc)
++		return;
++
+ 	bf->tx_mode = MT_PHY_TYPE_EHT_MU;
++	ve = &vc->eht_cap_elem;
+ 
+ 	mt7996_mcu_sta_sounding_rate(bf, phy);
+ 

@@ -1,0 +1,115 @@
+From 1a399103cacc902058888e1254578c0c9f340f5b Mon Sep 17 00:00:00 2001
+From: Lorenzo Bianconi <lorenzo@kernel.org>
+Date: Sun, 31 May 2026 10:55:04 +0200
+Subject: [PATCH 079/170] wifi: mt76: mt7996: fix reading zeroed
+ info->control.flags after mt76_tx_status_skb_add()
+
+[ Upstream commit 729c83a3330c0a56662cd0d8e40db96d41c00a54 ]
+
+mt76_tx_status_skb_add() zeroes the mt76_tx_cb struct stored at
+info->status.status_driver_data via memset(). Since info->control and
+info->status are members of the same union in ieee80211_tx_info,
+this overwrites info->control.flags.
+In mt7996_tx_prepare_skb(), mt76_tx_status_skb_add() is called before
+mt7996_mac_write_txwi(), which re-reads info->control.flags to extract
+IEEE80211_TX_CTRL_MLO_LINK. Because the field has been zeroed, the
+link_id always resolves to 0 for frames using global_wcid, leading to
+incorrect TXWI configuration.
+Fix this by passing link_id as an explicit parameter to
+mt7996_mac_write_txwi(). In mt7996_tx_prepare_skb(), the link_id is
+already extracted from info->control.flags before the destructive
+mt76_tx_status_skb_add() call. For the beacon and inband discovery
+callers in mcu.c, use link_conf->link_id directly.
+
+Fixes: f0b0b239b8f36 ("wifi: mt76: mt7996: rework mt7996_mac_write_txwi() for MLO support")
+Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
+Link: https://patch.msgid.link/20260531-mt76_tx_status_skb_add-overwrite-fix-v2-1-b73c4b4a9798@kernel.org
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ mt7996/mac.c    | 14 ++++----------
+ mt7996/mcu.c    |  5 +++--
+ mt7996/mt7996.h |  3 ++-
+ 3 files changed, 9 insertions(+), 13 deletions(-)
+
+--- a/mt7996/mac.c
++++ b/mt7996/mac.c
+@@ -857,7 +857,8 @@ mt7996_mac_write_txwi_80211(struct mt799
+ void mt7996_mac_write_txwi(struct mt7996_dev *dev, __le32 *txwi,
+ 			   struct sk_buff *skb, struct mt76_wcid *wcid,
+ 			   struct ieee80211_key_conf *key, int pid,
+-			   enum mt76_txq_id qid, u32 changed)
++			   enum mt76_txq_id qid, u32 changed,
++			   unsigned int link_id)
+ {
+ 	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
+ 	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
+@@ -867,7 +868,6 @@ void mt7996_mac_write_txwi(struct mt7996
+ 	bool is_8023 = info->flags & IEEE80211_TX_CTL_HW_80211_ENCAP;
+ 	struct mt76_vif_link *mlink = NULL;
+ 	struct mt7996_vif *mvif;
+-	unsigned int link_id;
+ 	u16 tx_count = 15;
+ 	u32 val;
+ 	bool inband_disc = !!(changed & (BSS_CHANGED_UNSOL_BCAST_PROBE_RESP |
+@@ -875,17 +875,11 @@ void mt7996_mac_write_txwi(struct mt7996
+ 	bool beacon = !!(changed & (BSS_CHANGED_BEACON |
+ 				    BSS_CHANGED_BEACON_ENABLED)) && (!inband_disc);
+ 
+-	if (wcid != &dev->mt76.global_wcid)
+-		link_id = wcid->link_id;
+-	else
+-		link_id = u32_get_bits(info->control.flags,
+-				       IEEE80211_TX_CTRL_MLO_LINK);
+-
+ 	mvif = vif ? (struct mt7996_vif *)vif->drv_priv : NULL;
+ 	if (mvif) {
+ 		if (wcid->offchannel)
+ 			mlink = rcu_dereference(mvif->mt76.offchannel_link);
+-		if (!mlink)
++		if (!mlink && link_id != IEEE80211_LINK_UNSPECIFIED)
+ 			mlink = rcu_dereference(mvif->mt76.link[link_id]);
+ 	}
+ 
+@@ -1097,7 +1091,7 @@ int mt7996_tx_prepare_skb(struct mt76_de
+ 	/* Transmit non qos data by 802.11 header and need to fill txd by host*/
+ 	if (!is_8023 || pid >= MT_PACKET_ID_FIRST)
+ 		mt7996_mac_write_txwi(dev, txwi_ptr, tx_info->skb, wcid, key,
+-				      pid, qid, 0);
++				      pid, qid, 0, link_id);
+ 
+ 	/* MT7996 and MT7992 require driver to provide the MAC TXP for AddBA
+ 	 * req
+--- a/mt7996/mcu.c
++++ b/mt7996/mcu.c
+@@ -3032,7 +3032,7 @@ mt7996_mcu_beacon_cont(struct mt7996_dev
+ 
+ 	buf = (u8 *)bcn + sizeof(*bcn);
+ 	mt7996_mac_write_txwi(dev, (__le32 *)buf, skb, wcid, NULL, 0, 0,
+-			      BSS_CHANGED_BEACON);
++			      BSS_CHANGED_BEACON, link_conf->link_id);
+ 
+ 	memcpy(buf + MT_TXD_SIZE, skb->data, skb->len);
+ }
+@@ -3176,7 +3176,8 @@ int mt7996_mcu_beacon_inband_discov(stru
+ 
+ 	buf = (u8 *)tlv + sizeof(*discov);
+ 
+-	mt7996_mac_write_txwi(dev, (__le32 *)buf, skb, wcid, NULL, 0, 0, changed);
++	mt7996_mac_write_txwi(dev, (__le32 *)buf, skb, wcid, NULL, 0, 0,
++			      changed, link_conf->link_id);
+ 
+ 	memcpy(buf + MT_TXD_SIZE, skb->data, skb->len);
+ 
+--- a/mt7996/mt7996.h
++++ b/mt7996/mt7996.h
+@@ -868,7 +868,8 @@ void mt7996_mac_enable_nf(struct mt7996_
+ void mt7996_mac_write_txwi(struct mt7996_dev *dev, __le32 *txwi,
+ 			   struct sk_buff *skb, struct mt76_wcid *wcid,
+ 			   struct ieee80211_key_conf *key, int pid,
+-			   enum mt76_txq_id qid, u32 changed);
++			   enum mt76_txq_id qid, u32 changed,
++			   unsigned int link_id);
+ void mt7996_mac_update_beacons(struct mt7996_phy *phy);
+ void mt7996_mac_set_coverage_class(struct mt7996_phy *phy);
+ void mt7996_mac_work(struct work_struct *work);
