@@ -41,6 +41,13 @@ ifeq ($(ARCH),mips64)
   endif
 endif
 
+ifeq ($(CONFIG_GLIBC_TUNE_MALLOC_ARENA),y)
+  TARGET_CFLAGS += \
+    -DOPENWRT_TUNE_MALLOC_ARENA=1 \
+    -DOPENWRT_MALLOC_ARENA_PERCORE_MULT=$(CONFIG_GLIBC_MALLOC_ARENA_PERCORE_MULT) \
+    -DOPENWRT_MALLOC_ARENA_CORE_LIMIT=$(CONFIG_GLIBC_MALLOC_ARENA_CORE_LIMIT)
+endif
+
 # -Os miscompiles w. 2.24 gcc5/gcc6
 # only -O2 tested by upstream changeset
 # "Optimize i386 syscall inlining for GCC 5"
