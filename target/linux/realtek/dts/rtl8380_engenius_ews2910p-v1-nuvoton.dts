@@ -1,0 +1,28 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+#include "rtl8380_engenius_ews2910p.dtsi"
+
+/ {
+	compatible = "engenius,ews2910p-v1-nuvoton", "engenius,ews2910p-v1", "realtek,rtl838x-soc";
+	model = "EnGenius EWS2910P v1 (Nuvoton)";
+};
+
+&firmware_partition_1 {
+	compatible = "openwrt,uimage";
+	openwrt,ih-magic = <0x03802910>;
+};
+
+&pse {
+	compatible = "engenius,ews2910p-v1-pse", "realtek,pse-mcu-gen1";
+	current-speed = <19200>;
+};
+
+/* Copper ports lan1..lan8 (phy8..phy15) -> MCU PoE ports 7,6,5,4,0,1,2,3 */
+&phy8  { pses = <&pse_pi7>; };
+&phy9  { pses = <&pse_pi6>; };
+&phy10 { pses = <&pse_pi5>; };
+&phy11 { pses = <&pse_pi4>; };
+&phy12 { pses = <&pse_pi0>; };
+&phy13 { pses = <&pse_pi1>; };
+&phy14 { pses = <&pse_pi2>; };
+&phy15 { pses = <&pse_pi3>; };

@@ -104,16 +104,27 @@ define Device/datto_l8
 endef
 TARGET_DEVICES += datto_l8
 
-define Device/engenius_ews2910p-v1
+define Device/engenius_ews2910p-v1-nuvoton
   $(Device/engenius_ews2910p)
   SOC := rtl8380
   DEVICE_MODEL := EWS2910P
-  DEVICE_VARIANT := v1
+  DEVICE_VARIANT := v1 (Nuvoton)
   DEVICE_PACKAGES += kmod-pse-realtek-mcu-uart
   UIMAGE_MAGIC := 0x03802910
-  SUPPORTED_DEVICES += engenius,ews2910p
+  SUPPORTED_DEVICES += engenius,ews2910p engenius,ews2910p-v1
 endef
-TARGET_DEVICES += engenius_ews2910p-v1
+TARGET_DEVICES += engenius_ews2910p-v1-nuvoton
+
+define Device/engenius_ews2910p-v1-stm
+  $(Device/engenius_ews2910p)
+  SOC := rtl8380
+  DEVICE_MODEL := EWS2910P
+  DEVICE_VARIANT := v1 (STMicro)
+  DEVICE_PACKAGES += kmod-pse-realtek-mcu-uart
+  UIMAGE_MAGIC := 0x03802910
+  SUPPORTED_DEVICES += engenius,ews2910p engenius,ews2910p-v1
+endef
+TARGET_DEVICES += engenius_ews2910p-v1-stm
 
 define Device/engenius_ews2910p-v3
   $(Device/engenius_ews2910p)
