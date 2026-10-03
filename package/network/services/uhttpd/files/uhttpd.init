@@ -122,6 +122,13 @@ start_instance()
 	procd_set_param stderr 1
 	procd_set_param command "$UHTTPD_BIN" -f
 
+	[ -x /sbin/ujail -a -e /etc/capabilities/uhttpd.json ] && {
+		procd_append_param command -Z uhttpd
+		procd_add_jail uhttpd
+		procd_set_param capabilities /etc/capabilities/uhttpd.json
+		procd_set_param no_new_privs 1
+	}
+
 	config_get config "$cfg" config
 	if [ -z "$config" ]; then
 		mkdir -p /var/etc/uhttpd
