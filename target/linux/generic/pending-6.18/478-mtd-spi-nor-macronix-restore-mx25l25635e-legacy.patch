@@ -1,0 +1,30 @@
+From: Zhenxiao Wang <85195433@qq.com>
+Date: Tue, 18 Aug 2026 16:00:00 +0800
+Subject: [PATCH] mtd: spi-nor: macronix: restore MX25L25635E legacy parameters
+
+Linux v6.12 described the MX25L25635E with a name, size and legacy read
+capabilities. These parameters were lost while retaining the JEDEC ID and
+chip fixups.
+
+Without a size, spi_nor_needs_sfdp() requires SFDP. Some MX25L25635E chips
+expose a BFPT which cannot be parsed, causing probing to fail. Restore the
+v6.12 parameters so SFDP is optional and the core can use the known 32 MiB
+geometry and read capabilities when BFPT parsing fails.
+
+Signed-off-by: Zhenxiao Wang <85195433@qq.com>
+---
+ drivers/mtd/spi-nor/macronix.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/drivers/mtd/spi-nor/macronix.c
++++ b/drivers/mtd/spi-nor/macronix.c
+@@ -136,6 +136,9 @@ static const struct flash_info macronix_
+ 	}, {
+ 		/* MX25L25635E, MX25L25645G */
+ 		.id = SNOR_ID(0xc2, 0x20, 0x19),
++		.name = "mx25l25635e",
++		.size = SZ_32M,
++		.no_sfdp_flags = SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ,
+ 		.fixups = &mx25l25635_fixups
+ 	}, {
+ 		/* MX66L51235F */
