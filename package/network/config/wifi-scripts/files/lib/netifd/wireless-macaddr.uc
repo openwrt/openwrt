@@ -534,8 +534,25 @@ export function macaddr_release(args)
 		return null;
 
 	let key = entry_key(args.owner, args.name);
-	if (entries[key])
-		entry_release(key);
+	let entry = entries[key];
+	if (!entry)
+		return {};
+
+	entry_release(key);
+
+	let to_key = args.to ? entry_key(args.owner, args.to) : null;
+	if (!entries[key] || !to_key)
+		return {};
+	if (entries[to_key] && !(args.replace && entries[to_key].stale))
+		return {};
+
+	delete entries[key];
+	entries[to_key] = {
+		...entry,
+		name: args.to,
+		ifname: args.ifname ?? entry.ifname,
+		share: entry.share != null ? (args.share ?? entry.share) : null,
+	};
 
 	return {};
 };

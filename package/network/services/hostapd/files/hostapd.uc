@@ -1,7 +1,7 @@
 let libubus = require("ubus");
 import * as uloop from "uloop";
 import { open, readfile, access } from "fs";
-import { wdev_remove, is_equal, vlist_new, phy_is_fullmac, phy_open, wdev_set_radio_mask, wdev_set_up, macaddr_keep, macaddr_sync, macaddr_sync_defer } from "common";
+import { wdev_remove, is_equal, vlist_new, phy_is_fullmac, phy_open, wdev_set_radio_mask, wdev_set_up, macaddr_keep, macaddr_sync, macaddr_sync_defer, macaddr_sync_entry, macaddr_release_defer, mld_prev_match } from "common";
 
 let ubus = libubus.connect(null, 60);
 
@@ -1512,6 +1512,81 @@ function mld_reload_interface(name)
 	iface_set_config(name, config);
 }
 
+function mld_prev_set(new_mld, prev_mld)
+{
+	let news = {};
+	let prevs = {};
+
+	for (let name, data in new_mld)
+		if (!data.ifname && !data.config.macaddr)
+			news[name] = data.config;
+	for (let name, data in prev_mld)
+		if (data.default_macaddr && data.macaddr)
+			prevs[name] = data.config;
+
+	for (let name, from in mld_prev_match(news, prevs))
+		new_mld[name].prev_name = from;
+}
+
+// The links of a removed MLD give up their entries on every radio, and
+// those of a continued MLD move to the links of the new MLD. A move needs
+// a target name without a live entry; in a cycle of renames the entries
+// stay stale and the links claim them by name.
+function mld_links_release(new_mld, prev_mld)
+{
+	let next = {};
+	for (let name, data in new_mld)
+		if (data.prev_name)
+			next[data.prev_name] = name;
+
+	let order = [];
+	let seen = {};
+	let visit;
+	visit = function(name) {
+		if (seen[name])
+			return;
+
+		seen[name] = true;
+		if (next[name] && prev_mld[next[name]])
+			visit(next[name]);
+		push(order, name);
+	};
+	for (let name in prev_mld)
+		visit(name);
+
+	for (let group, config in hostapd.data.config) {
+		if (!config)
+			continue;
+
+		for (let name in order)
+			macaddr_release_defer(ubus, "hostapd", bss_macaddr_name(group, { ifname: name }),
+				next[name] && next[name] != name ? {
+					to: bss_macaddr_name(group, { ifname: next[name] }),
+					ifname: next[name],
+					share: next[name],
+					replace: !prev_mld[next[name]],
+				} : null);
+	}
+}
+
+function mld_macaddr_list(new_mld, prev_mld)
+{
+	let list = {};
+
+	for (let name, data in new_mld) {
+		let prev = prev_mld[data.prev_name];
+		list[name] = "";
+		if (data.ifname || !prev || data.prev_name == name)
+			continue;
+
+		list[name] = macaddr_sync_entry(data.config.phy, -1, prev.macaddr, {
+			any_radio: true,
+		});
+	}
+
+	return list;
+}
+
 function mld_set_config(config)
 {
 	let prev_mld = { ...hostapd.data.mld };
@@ -1565,12 +1640,15 @@ function mld_set_config(config)
 		wdev_remove(name);
 	}
 
+	mld_prev_set(new_mld, prev_mld);
+	mld_links_release(new_mld, prev_mld);
+
 	// add new interfaces
 	hostapd.data.mld = new_mld;
-	macaddr_sync_defer(ubus, "hostapd", "mld", macaddr_keep(keys(new_mld)));
+	macaddr_sync_defer(ubus, "hostapd", "mld", mld_macaddr_list(new_mld, prev_mld));
 	for (let name, data in new_mld)
 		if (!data.ifname)
-			mld_add_bss(name, data, phy_list, prev_mld[name]);
+			mld_add_bss(name, data, phy_list, prev_mld[data.prev_name ?? name]);
 
 	if (!new_config)
 		return;

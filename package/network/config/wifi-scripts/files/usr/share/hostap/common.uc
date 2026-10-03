@@ -203,6 +203,7 @@ function macaddr_args(data)
 			break;
 		case "static":
 		case "any_radio":
+		case "replace":
 			val = !!val;
 			break;
 		default:
@@ -247,6 +248,67 @@ function macaddr_sync_defer(ubus, owner, group, list, options)
 		   macaddr_sync_args(owner, group, list, options));
 }
 
+function macaddr_sync_entry(phy, radio, macaddr, data)
+{
+	return macaddr_args({
+		...data,
+		macaddr, phy,
+		radio: radio ?? -1,
+	});
+}
+
+function macaddr_release_defer(ubus, owner, name, move)
+{
+	ubus.defer("network.wireless", "macaddr_release",
+		   macaddr_args({ ...(move ?? {}), owner, name }));
+}
+
+function radio_list_mask(radios)
+{
+	let mask = 0;
+
+	for (let radio in radios)
+		if (radio != null)
+			mask |= 1 << radio;
+
+	return mask;
+}
+
+function mld_prev_pass(ret, news, free, match)
+{
+	for (let name in sort(keys(news))) {
+		if (ret[name])
+			continue;
+
+		let cur = filter(free, (prev) => match(name, prev))[0];
+		if (!cur)
+			continue;
+
+		ret[name] = cur;
+		splice(free, index(free, cur), 1);
+	}
+}
+
+// Map each new MLD that continues a removed one, first by SSID and radios,
+// then by SSID, to the previous name. The MLD takes over its address.
+function mld_prev_match(news, prevs)
+{
+	let ret = {};
+	let free = sort(keys(prevs));
+	let same_phy = (name, prev) => prevs[prev].phy == news[name].phy;
+	let same_ssid = (name, prev) => news[name].ssid != null &&
+					prevs[prev].ssid == news[name].ssid;
+	let same_radios = (name, prev) =>
+		radio_list_mask(prevs[prev].radios) == radio_list_mask(news[name].radios);
+
+	mld_prev_pass(ret, news, free, (name, prev) =>
+		same_phy(name, prev) && same_ssid(name, prev) && same_radios(name, prev));
+	mld_prev_pass(ret, news, free, (name, prev) =>
+		same_phy(name, prev) && same_ssid(name, prev));
+
+	return ret;
+}
+
 const phy_proto = {
 	macaddr_get: function(ubus, owner, name, data) {
 		let args = macaddr_args({
@@ -267,12 +329,7 @@ const phy_proto = {
 	},
 
 	macaddr_sync_entry: function(macaddr, data) {
-		return macaddr_args({
-			...data,
-			macaddr,
-			phy: this.phy,
-			radio: this.radio ?? -1,
-		});
+		return macaddr_sync_entry(this.phy, this.radio, macaddr, data);
 	},
 
 	wdev_add: function(name, data) {
@@ -382,4 +439,4 @@ function vlist_new(cb) {
 	}, vlist_proto);
 }
 
-export { wdev_remove, wdev_create, wdev_set_mesh_params, wdev_set_radio_mask, wdev_set_up, is_equal, vlist_new, phy_is_fullmac, phy_open, macaddr_keep, macaddr_sync, macaddr_sync_defer };
+export { wdev_remove, wdev_create, wdev_set_mesh_params, wdev_set_radio_mask, wdev_set_up, is_equal, vlist_new, phy_is_fullmac, phy_open, macaddr_keep, macaddr_sync, macaddr_sync_defer, macaddr_sync_entry, macaddr_release_defer, mld_prev_match };

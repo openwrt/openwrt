@@ -643,6 +643,10 @@ const ubus_obj = {
 		args: {
 			owner: "",
 			name: "",
+			to: "",
+			ifname: "",
+			share: "",
+			replace: false,
 		},
 		call: function(req) {
 			return macaddr.macaddr_release(req.args) ?? ubus.STATUS_INVALID_ARGUMENT;
