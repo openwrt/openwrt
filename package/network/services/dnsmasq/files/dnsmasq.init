@@ -255,7 +255,7 @@ dhcp_subscrid_add() {
 	config_get subscriberid "$cfg" subscriberid
 	[ -n "$subscriberid" ] || return 0
 
-	xappend "--dhcp-subscrid=set:$networkid,$subscriberid"
+	xappend "--dhcp-subscrid=tag:$networkid,$subscriberid"
 
 	config_get_bool force "$cfg" force 0
 
@@ -271,7 +271,7 @@ dhcp_remoteid_add() {
 	config_get remoteid "$cfg" remoteid
 	[ -n "$remoteid" ] || return 0
 
-	xappend "--dhcp-remoteid=set:$networkid,$remoteid"
+	xappend "--dhcp-remoteid=tag:$networkid,$remoteid"
 
 	config_get_bool force "$cfg" force 0
 
@@ -288,7 +288,7 @@ dhcp_circuitid_add() {
 	config_get circuitid "$cfg" circuitid
 	[ -n "$circuitid" ] || return 0
 
-	xappend "--dhcp-circuitid=set:$networkid,$circuitid"
+	xappend "--dhcp-circuitid=tag:$networkid,$circuitid"
 
 	config_get_bool force "$cfg" force 0
 
@@ -304,7 +304,7 @@ dhcp_userclass_add() {
 	config_get userclass "$cfg" userclass
 	[ -n "$userclass" ] || return 0
 
-	xappend "--dhcp-userclass=set:$networkid,$userclass"
+	xappend "--dhcp-userclass=tag:$networkid,$userclass"
 
 	config_get_bool force "$cfg" force 0
 
@@ -321,7 +321,7 @@ dhcp_vendorclass_add() {
 	config_get vendorclass "$cfg" vendorclass
 	[ -n "$vendorclass" ] || return 0
 
-	xappend "--dhcp-vendorclass=set:$networkid,$vendorclass"
+	xappend "--dhcp-vendorclass=tag:$networkid,$vendorclass"
 
 	config_get_bool force "$cfg" force 0
 
@@ -337,7 +337,7 @@ dhcp_match_add() {
 	config_get match "$cfg" match
 	[ -n "$match" ] || return 0
 
-	xappend "--dhcp-match=set:$networkid,$match"
+	xappend "--dhcp-match=tag:$networkid,$match"
 
 	config_get_bool force "$cfg" force 0
 
@@ -408,7 +408,7 @@ dhcp_host_add() {
 
 	[ "$broadcast" = "0" ] && broadcast= || broadcast=",set:needs-broadcast"
 
-	hosttag="${networkid:+,set:${networkid}}${tags:+,set:${tags}}$broadcast"
+	hosttag="${networkid:+,tag:${networkid}}${tags:+,set:${tags}}$broadcast"
 	nametime="${name:+,$name}${leasetime:+,$leasetime}"
 
 	if [ $DNSMASQ_DHCP_VER -eq 6 ]; then
@@ -596,7 +596,7 @@ dhcp_add() {
 	}
 	config_list_foreach "$cfg" tag add_tag
 
-	nettag="${networkid:+set:${networkid},}"
+	nettag="${networkid:+tag:${networkid},}"
 
 	# make sure the DHCP range is not empty
 	if [ "$dhcpv4" != "disabled" ]; then
