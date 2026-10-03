@@ -1,0 +1,94 @@
+OpenWrt @VERSION@ USB overlay/swap install package for @MODEL@
+
+Purpose:
+  Install OpenWrt by bootloader TFTP recovery, prepare a USB drive for overlay
+  and swap, then verify that the router booted with USB overlay and USB swap.
+
+Contents:
+  firmware/@FIRMWARE_IMAGE@
+  firmware/SHA256SUMS
+  install.sh
+  scripts/upload_firmware_tftp.sh
+  scripts/prepare_usb_overlay_swap.sh
+  scripts/verify_router_overlay_swap.sh
+
+Firmware profile:
+  This image includes light LuCI web administration, web attended sysupgrade
+  support, USB storage, ext4, block-mount and USB swap support. It intentionally
+  does not include the LuCI package manager. The firmware contains the default
+  USB overlay/swap boot policy for labels overlay and swap.
+
+Default USB layout:
+  partition 1: 512 MiB ext4, label overlay, router overlay
+  partition 2: 128 MiB swap, label swap, router swap
+  partition 3: remaining space ext4, label data, user data
+
+Requirements:
+  - Linux host connected by Ethernet to a router LAN port.
+  - Host wired Ethernet configured with static IPv4 192.168.1.2/24 for
+    bootloader TFTP recovery.
+  - USB flash drive visible as a whole /dev/sdX disk on the host.
+  - Prepared USB flash inserted before booting the flashed firmware.
+  - SSH access to the freshly booted router. The default target is
+    root@192.168.1.1 and can be changed with --router.
+
+List required host commands:
+  ./install.sh --get-deps
+
+Recommended one-command install:
+  ./install.sh --usb /dev/sdX
+
+All install.sh options:
+  --get-deps                  list required host commands
+  --firmware FILE             firmware image to upload by TFTP
+  --usb /dev/sdX              host USB disk to format
+  --tftp-host 192.168.1.1     bootloader TFTP host
+  --tftp-client-ip CIDR       host IPv4 CIDR for TFTP recovery
+  --overlay-mib N             overlay partition size, default 512
+  --swap-mib N                swap partition size, default 128
+  --router root@192.168.1.1   router SSH target
+  --url http://192.168.1.1    router web URL opened at the end when possible
+
+The one-command helper runs these scripts in order:
+  1. scripts/upload_firmware_tftp.sh
+     Requires and verifies firmware/SHA256SUMS, then uploads firmware by TFTP.
+     The script waits until the configured host IPv4 is present. It does not
+     change host network settings.
+     If no firmware file is provided, it uses the single entry listed in
+     firmware/SHA256SUMS and stops on zero, multiple or missing entries.
+
+  2. scripts/prepare_usb_overlay_swap.sh
+     Partitions and formats the USB drive on the host.
+
+  3. scripts/verify_router_overlay_swap.sh
+     Verifies that the firmware boot policy mounted USB overlay and enabled
+     USB swap.
+
+The prepared USB flash must be inserted before the router boots the flashed
+firmware. Delayed insertion is not part of the normal install flow.
+
+Run the scripts manually only if you need to repeat or debug one step.
+
+Expected router result:
+  /dev/sda1 mounted at /overlay
+  overlayfs:/overlay mounted at /
+  /dev/sda2 active in /proc/swaps
+  LuCI reachable at the configured router web URL
+
+Upgrade note:
+  This image is intended to be maintainable through image-based upgrades.
+  Use the web attended sysupgrade page or SSH-based tools for upgrades.
+  Avoid using the LuCI package manager on this hardware; it is memory-heavy
+  for a 32 MiB RAM router.
+
+Safety:
+  - Do not run install.sh with sudo or as root. Helper scripts ask for sudo
+    only when they need to write the USB disk layout.
+  - The scripts do not change host network settings.
+  - Replace /dev/sdX with the whole USB disk, not a partition.
+  - The USB preparation step destroys all existing data on that USB disk.
+  - USB formatting starts only after you type FORMAT at the prompt.
+  - Do not disconnect power while the router is flashing.
+  - Old routers can need several minutes during flashing, first boot and reboot.
+  - Do not unplug the USB flash from a running router after USB overlay or swap
+    is active.
