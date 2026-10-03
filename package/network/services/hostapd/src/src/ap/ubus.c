@@ -103,22 +103,6 @@ void hostapd_ubus_free_iface(struct hostapd_iface *iface)
 		return;
 }
 
-static void hostapd_notify_ubus(struct ubus_object *obj, char *bssname, char *event)
-{
-	char *event_type;
-
-	if (!ctx || !obj)
-		return;
-
-	if (asprintf(&event_type, "bss.%s", event) < 0)
-		return;
-
-	blob_buf_init(&b, 0);
-	blobmsg_add_string(&b, "name", bssname);
-	ubus_notify(ctx, obj, event_type, b.head, -1);
-	free(event_type);
-}
-
 static void
 hostapd_bss_del_ban(void *eloop_data, void *user_ctx)
 {
@@ -1035,6 +1019,8 @@ __hostapd_bss_mgmt_enable_f(struct hostapd_data *hapd, int flag)
 		return true;
 #endif
 	}
+
+	return false;
 }
 
 static void
