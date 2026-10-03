@@ -552,6 +552,9 @@ define Device/Init
   SUPPORTED_DEVICES := $(subst _,$(comma),$(1))
   IMAGE_METADATA :=
 
+  ##@ Filesystems to build images for.
+  # Set FILESYSTEMS/<image> to build an image for only some of them.
+  ##
   FILESYSTEMS := $(TARGET_FILESYSTEMS)
 
   UBOOT_PATH :=  $(STAGING_DIR_IMAGE)/uboot-$(1)
@@ -899,7 +902,8 @@ define Device/Build
     $$(call Device/Build/compile,$$(compile),$(1))))
 
   $$(eval $$(foreach image,$$(IMAGES), \
-    $$(foreach fs,$$(filter $$(filter-out targz,$(TARGET_FILESYSTEMS)),$$(FILESYSTEMS)), \
+    $$(foreach fs,$$(filter $$(filter-out targz,$(TARGET_FILESYSTEMS)), \
+        $$(filter $$(or $$(FILESYSTEMS/$$(image)),$$(FILESYSTEMS)),$$(FILESYSTEMS))), \
       $$(call Device/Build/image,$$(fs),$$(image),$(1)))))
 
   $(if $(CONFIG_TARGET_ROOTFS_TARGZ), \
