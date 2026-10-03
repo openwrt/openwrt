@@ -193,6 +193,11 @@ append_notinterface() {
 	xappend "--except-interface=$ifname"
 }
 
+append_no_dhcp_interface() {
+	network_get_device ifname "$1" || ifname="$1"
+	xappend "--no-dhcp-interface=$ifname"
+}
+
 ismounted() {
 	local filename="$1"
 	local dirname
@@ -1053,6 +1058,7 @@ dnsmasq_start()
 	[ -n "$BOOT" ] || {
 		config_list_foreach "$cfg" "interface" append_interface
 		config_list_foreach "$cfg" "notinterface" append_notinterface
+		config_list_foreach "$cfg" "no_dhcp_interface" append_no_dhcp_interface
 	}
 	config_get_bool ignore_hosts_dir "$cfg" ignore_hosts_dir 0
 	if [ "$ignore_hosts_dir" = "1" ]; then
