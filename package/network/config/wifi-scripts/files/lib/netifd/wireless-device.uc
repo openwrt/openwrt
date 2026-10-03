@@ -599,6 +599,8 @@ function get_status_data(wdev, vif, parent_vif)
 	};
 	if (hdata && hdata.ifname)
 		data.ifname = hdata.ifname;
+	if (hdata?.error)
+		data.error = hdata.error;
 	return data;
 }
 
