@@ -11,11 +11,13 @@ import {
 import * as netifd from 'wifi.netifd';
 import * as iface from 'wifi.iface';
 
+const PSK_HEX = /^[0-9a-fA-F]{64}$/;
+
 function key_kind(key) {
 	const n = length(key);
 
 	if (n == 64)
-		return 'psk';
+		return match(key, PSK_HEX) ? 'psk' : 'invalid';
 	if (n >= 8 && n <= 63)
 		return 'passphrase';
 
