@@ -1,0 +1,56 @@
+From aa564c9fde8a44a79d930ece1f56fec0f31e4780 Mon Sep 17 00:00:00 2001
+From: George Moussalem <george.moussalem@outlook.com>
+Date: Thu, 17 Sep 2026 17:51:17 +0400
+Subject: [PATCH ath-next 09/16] wifi: ath11k: Power down userPD
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+Message-Id: <20260917-ipq5018-qcn6122-mpd-v1-9-ca1168c321a2@outlook.com>
+
+Set the stop bit in SMEM to stop the userPD. Wait for stop-ack IRQ to
+indicate power down completion.
+
+For IPQ5018 wifi specifically, invoke an SCM call to power down the
+radio.
+
+Signed-off-by: George Moussalem <george.moussalem@outlook.com>
+---
+ drivers/net/wireless/ath/ath11k/ahb.c | 25 ++++++++++++++++++++++++-
+ 1 file changed, 24 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/ath/ath11k/ahb.c
++++ b/drivers/net/wireless/ath/ath11k/ahb.c
+@@ -492,9 +492,32 @@ static int ath11k_ahb_power_up(struct at
+ 	return 0;
+ }
+ 
++static void ath11k_ahb_stop_user_pd(struct ath11k_base *ab)
++{
++	struct ath11k_ahb *ab_ahb = ath11k_ahb_priv(ab);
++	unsigned long time_left;
++
++	qcom_smem_state_update_bits(ab_ahb->stop_state, BIT(ab_ahb->stop_bit),
++				    BIT(ab_ahb->stop_bit));
++
++	time_left = wait_for_completion_timeout(&ab_ahb->userpd_stopped,
++						ATH11K_USERPD_STOP_TIMEOUT);
++	if (!time_left)
++		ath11k_warn(ab, "UserPD stop wait timed out\n");
++
++	qcom_smem_state_update_bits(ab_ahb->stop_state, BIT(ab_ahb->stop_bit), 0);
++
++	if (ab->hw_rev == ATH11K_HW_IPQ5018_HW10)
++		qcom_scm_pas_set_wifi_power_mode(MPD_WCNSS_PAS_ID, false);
++}
++
+ static void ath11k_ahb_power_down(struct ath11k_base *ab, bool is_suspend)
+ {
+-	return;
++	struct ath11k_ahb *ab_ahb = ath11k_ahb_priv(ab);
++
++	if (ab_ahb->userpd_id > 0 &&
++	    ab_ahb->userpd_id < ATH11K_AHB_USERPD_ID_MAX)
++		ath11k_ahb_stop_user_pd(ab);
+ }
+ 
+ static void ath11k_ahb_init_qmi_ce_config(struct ath11k_base *ab)

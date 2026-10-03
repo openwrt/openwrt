@@ -27,7 +27,7 @@ Signed-off-by: Jeff Johnson <jeff.johnson@oss.qualcomm.com>
 
 --- a/drivers/net/wireless/ath/ath11k/ahb.c
 +++ b/drivers/net/wireless/ath/ath11k/ahb.c
-@@ -400,12 +400,17 @@ static void ath11k_ahb_ext_irq_disable(s
+@@ -425,12 +425,17 @@ static void ath11k_ahb_ext_irq_disable(s
  	ath11k_ahb_sync_ext_irqs(ab);
  }
  
@@ -46,7 +46,7 @@ Signed-off-by: Jeff Johnson <jeff.johnson@oss.qualcomm.com>
  	timer_delete_sync(&ab->rx_replenish_retry);
  	ath11k_ce_cleanup_pipes(ab);
  }
-@@ -795,6 +800,8 @@ static const struct ath11k_hif_ops ath11
+@@ -888,6 +893,8 @@ static const struct ath11k_hif_ops ath11
  	.map_service_to_pipe = ath11k_ahb_map_service_to_pipe,
  	.power_down = ath11k_ahb_power_down,
  	.power_up = ath11k_ahb_power_up,
@@ -54,4 +54,4 @@ Signed-off-by: Jeff Johnson <jeff.johnson@oss.qualcomm.com>
 +	.ce_irq_disable = ath11k_ahb_ce_irq_disable_sync,
  };
  
- static const struct ath11k_hif_ops ath11k_ahb_hif_ops_wcn6750 = {
+ static const struct ath11k_hif_ops ath11k_ahb_hif_ops_qcn6122 = {

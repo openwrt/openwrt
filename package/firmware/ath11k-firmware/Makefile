@@ -80,10 +80,13 @@ define Package/ath11k-firmware-ipq5018-qcn6122/install
 	$(INSTALL_DATA) \
 		$(BUILD_DIR)/$(ATH11K_LEGACY_FW_SUBDIR)/ath11k-firmware/IPQ5018_QCN6122_QCN6122/hw1.0/2.7.0.1/WLAN.HK.2.7.0.1-01744-QCAHKSWPL_SILICONZ-1/*.* \
 		$(1)/lib/firmware/ath11k/IPQ5018/hw1.0/
+	$(LN) ./m3_fw.mdt $(1)/lib/firmware/ath11k/IPQ5018/hw1.0/m3_fw.mbn
+	$(LN) ./q6_fw.mdt $(1)/lib/firmware/ath11k/IPQ5018/hw1.0/q6_fw.mbn
 	$(INSTALL_DIR) $(1)/lib/firmware/ath11k/QCN6122/hw1.0
 	$(INSTALL_DATA) \
 		$(BUILD_DIR)/$(ATH11K_LEGACY_FW_SUBDIR)/ath11k-firmware/IPQ5018_QCN6122_QCN6122/hw1.0/2.7.0.1/WLAN.HK.2.7.0.1-01744-QCAHKSWPL_SILICONZ-1/qcn6122/*.* \
 		$(1)/lib/firmware/ath11k/QCN6122/hw1.0/
+	$(LN) ./m3_fw.mdt $(1)/lib/firmware/ath11k/QCN6122/hw1.0/m3_fw.mbn
 endef
 
 define Package/ath11k-firmware-ipq6018/install
