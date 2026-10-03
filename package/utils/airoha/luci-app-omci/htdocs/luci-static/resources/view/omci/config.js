@@ -21,18 +21,24 @@ return view.extend({
 		o.datatype = 'uinteger';
 		o.default = '0';
 
+		/* omci.agent applies only the options present in UCI, and a flag
+		 * left at its default would be removed: write them all. */
 		o = s.option(form.Flag, 'enabled', _('Enable baseline agent'));
 		o.default = o.enabled;
+		o.rmempty = false;
 
 		o = s.option(form.Flag, 'permissive', _('Permissive mode'));
 		o.default = o.enabled;
+		o.rmempty = false;
 		o.description = _('Allow interoperability fallbacks for OLT behavior not covered by the strict standard path.');
 
 		o = s.option(form.Flag, 'fake_omci', _('Fake unsupported OMCI responses'));
 		o.default = o.disabled;
+		o.rmempty = false;
 
 		o = s.option(form.Flag, 'dying_gasp', _('Dying gasp'));
 		o.default = o.enabled;
+		o.rmempty = false;
 
 		o = s.option(form.ListValue, 'olt_profile', _('OLT profile'));
 		[ ['auto', _('Auto detect')], ['generic', _('Generic')], ['nokia-alcl', _('Nokia / Alcatel-Lucent')],
