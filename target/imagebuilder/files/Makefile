@@ -54,6 +54,8 @@ image:
 	make image ADD_LOCAL_KEY=1 # store locally generated signing key in built images
 	make image ROOTFS_PARTSIZE="<size>" # override the default rootfs partition size in MegaBytes
 	make image ROOTFS_FILESYSTEM="<fs>" # restrict images to one filesystem (e.g. squashfs, ext4, jffs2)
+	make image VERSION_DIST="<string>" # Replace the default firmware name (sanitized)
+	make image VERSION_NUMBER="<string>" # Replace the default firmware version number (sanitized)
 
 manifest:
 	List "all" packages which get installed into the image.
@@ -293,17 +295,16 @@ else
 endif
 	$(call prepare_rootfs,$(TARGET_DIR),$(USER_FILES),$(DISABLED_SERVICES))
 
+PROFILE_DIR:=$(shell [ -d "target/linux/feeds/$(BOARD)" ] && \
+	echo target/linux/feeds/$(BOARD)/image || \
+	echo target/linux/$(BOARD)/image)
+
 build_image: FORCE
 	@echo
 	@echo Building images...
 	rm -rf $(BUILD_DIR)/json_info_files/
-	if [ -d "target/linux/feeds/$(BOARD)" ]; then \
-		$(NO_TRACE_MAKE) -C target/linux/feeds/$(BOARD)/image install TARGET_BUILD=1 IB=1 EXTRA_IMAGE_NAME="$(EXTRA_IMAGE_NAME)" \
-			$(if $(USER_PROFILE),PROFILE="$(USER_PROFILE)"); \
-	else \
-		$(NO_TRACE_MAKE) -C target/linux/$(BOARD)/image install TARGET_BUILD=1 IB=1 EXTRA_IMAGE_NAME="$(EXTRA_IMAGE_NAME)" \
-			$(if $(USER_PROFILE),PROFILE="$(USER_PROFILE)"); \
-	fi
+	$(NO_TRACE_MAKE) -C "$(PROFILE_DIR)" install TARGET_BUILD=1 IB=1 EXTRA_IMAGE_NAME="$(EXTRA_IMAGE_NAME)" \
+		$(if $(USER_PROFILE),PROFILE="$(USER_PROFILE)");
 
 $(BIN_DIR)/profiles.json: FORCE
 	$(if $(CONFIG_JSON_OVERVIEW_IMAGE_INFO), \
@@ -388,7 +389,9 @@ image:
 		$(if $(BIN_DIR),BIN_DIR="$(BIN_DIR)") \
 		$(if $(DISABLED_SERVICES),DISABLED_SERVICES="$(DISABLED_SERVICES)") \
 		$(if $(ROOTFS_PARTSIZE),CONFIG_TARGET_ROOTFS_PARTSIZE="$(ROOTFS_PARTSIZE)") \
-		$(if $(ROOTFS_FILESYSTEM),ROOTFS_FILESYSTEM="$(ROOTFS_FILESYSTEM)"))
+		$(if $(ROOTFS_FILESYSTEM),ROOTFS_FILESYSTEM="$(ROOTFS_FILESYSTEM)") \
+		$(if $(VERSION_DIST),VERSION_DIST="$(VERSION_DIST)") \
+		$(if $(VERSION_NUMBER),VERSION_NUMBER="$(VERSION_NUMBER)"))
 
 manifest: FORCE
 	$(MAKE) -s _check_profile
