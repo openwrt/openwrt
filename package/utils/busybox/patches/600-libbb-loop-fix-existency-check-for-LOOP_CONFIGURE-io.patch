@@ -1,0 +1,13 @@
+diff --git a/libbb/loop.c b/libbb/loop.c
+index a0c5d0259..b603d0daa 100644
+--- a/libbb/loop.c
++++ b/libbb/loop.c
+@@ -158,7 +158,7 @@ static int set_loopdev_params(int lfd,
+ 		if (rc == 0)
+ 			return rc; /* SUCCESS! */
+ # if ENABLE_TRY_LOOP_CONFIGURE
+-		if (errno != EINVAL)
++		if (errno != EINVAL && errno != ENOTTY)
+ 			return rc; /* error other than old kernel */
+ 		/* Old kernel, fall through into old way to do it: */
+ # endif
