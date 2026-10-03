@@ -1,0 +1,172 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+#include "mt7620n.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/mtd/partitions/uimage.h>
+
+/ {
+	compatible = "zyxel,lte3302", "ralink,mt7620n-soc";
+	model = "Zyxel LTE3302-M432";
+
+	aliases {
+		led-boot = &led_sstrengthg;
+		led-failsafe = &led_onliney;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		wps {
+			label = "wps";
+			gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+
+		reset {
+			label = "reset";
+			gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led-0 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WAN_ONLINE;
+			gpios = <&gpio1 15 GPIO_ACTIVE_LOW>;
+		};
+
+		led_onliney: led-1 {
+			color = <LED_COLOR_ID_YELLOW>;
+			function = LED_FUNCTION_WAN_ONLINE;
+			gpios = <&gpio2 3 GPIO_ACTIVE_LOW>;
+		};
+
+		led_sstrengthg: led-2 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_MOBILE;
+			gpios = <&gpio2 0 GPIO_ACTIVE_LOW>;
+		};
+
+		led-3 {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_MOBILE;
+			gpios = <&gpio2 1 GPIO_ACTIVE_LOW>;
+		};
+
+		led-4 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-5 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN;
+			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+	};
+
+	gpio_export {
+		compatible = "gpio-export";
+
+		lte_modem_enable {
+			gpio-export,name = "lte_modem_enable";
+			gpio-export,output = <1>;
+			gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&gpio3 {
+	status = "okay";
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <48000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "jboot";
+				reg = <0x0 0x10000>;
+				read-only;
+			};
+
+			partition@10000 {
+				compatible = "openwrt,uimage", "denx,uimage";
+				openwrt,ih-magic = <IH_MAGIC_OKLI>; 
+				openwrt,offset = <0x10000>;
+				label = "firmware";
+				reg = <0x10000 0xfe0000>;
+			};
+			
+			partition@ff0000 {
+				label = "config";
+				reg = <0xff0000 0x10000>;
+				read-only;
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_config: eeprom@e07c {
+						reg = <0xe07c 0x200>;
+					};
+
+					macaddr_config: macaddr@e2cd {
+						compatible = "mac-base";
+						reg = <0xc2cd 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
+		};
+	};
+};
+
+&ehci {
+	status = "okay";
+};
+
+&ohci {
+	status = "okay";
+};
+
+&wmac {
+	nvmem-cells = <&eeprom_config>;
+	nvmem-cell-names = "eeprom";
+};
+
+&ethernet {
+	nvmem-cells = <&macaddr_config 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&state_default {
+	default {
+		groups = "spi refclk", "i2c", "ephy", "wled";
+		function = "gpio";
+	};
+};
