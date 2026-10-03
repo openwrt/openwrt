@@ -15,3 +15,24 @@ config IB_STANDALONE
 	  Disabling this option will cause the ImageBuilder to embed only
 	  toolchain and kmod packages while all other ipk archives will be
 	  fetched from online repositories.
+
+config IB_ONLY_SELECTED_DEVICES
+	bool "Only build selected devices"
+	default n
+	depends on IB
+	help
+	  By default, enabling the Image Builder causes the build system to
+	  compile the kernel image of every device of the current
+	  target/subtarget and embed it into the Image Builder archive, so
+	  that any device profile can later be built from it with
+	  'make image PROFILE=...'.
+
+	  Enabling this option restricts the Image Builder to only compile
+	  and embed the devices that are actually selected under
+	  "Target Devices" in this configuration. This can significantly
+	  reduce build time if the Image Builder is only ever going to be
+	  used for a known, fixed set of devices.
+
+	  Note: the resulting Image Builder archive will then only be able
+	  to build images for the devices selected here, not for the full
+	  set of devices of this target/subtarget.

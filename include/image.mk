@@ -602,6 +602,11 @@ define merge_packages
   )
 endef
 
+# When CONFIG_IB_ONLY_SELECTED_DEVICES is set, do not force-compile every
+# device of the target when the Image Builder is enabled; only the devices
+# actually selected via CONFIG_TARGET_DEVICE_... are used instead.
+IB_FORCE_ALL_DEVICES := $(if $(CONFIG_IB_ONLY_SELECTED_DEVICES),,$(CONFIG_IB))
+
 define Device/Check/Common
   _PROFILE_SET = $$(strip $$(foreach profile,$$(PROFILES) DEVICE_$(1),$$(call DEVICE_CHECK_PROFILE,$$(profile))))
   # Check if device is disabled and if so do not mark to be installed when ImageBuilder is used
@@ -625,7 +630,7 @@ define Device/Check
   KDIR_KERNEL_IMAGE := $(KDIR)/$(1)$$(KERNEL_SUFFIX)
   _TARGET := $$(if $$(_PROFILE_SET),install-images,install-disabled)
   ifndef IB
-    _COMPILE_TARGET := $$(if $(CONFIG_IB)$$(_PROFILE_SET),compile,compile-disabled)
+    _COMPILE_TARGET := $$(if $(IB_FORCE_ALL_DEVICES)$$(_PROFILE_SET),compile,compile-disabled)
   endif
 endef
 
@@ -732,18 +737,18 @@ endef
 endif
 
 define Device/Build/kernel
-  $$(eval $$(foreach dts,$$(DEVICE_DTS), \
+  $$(if $(IB_FORCE_ALL_DEVICES)$$(_PROFILE_SET),$$(eval $$(foreach dts,$$(DEVICE_DTS), \
 	$$(call Device/Build/dtb,$$(notdir $$(dts)), \
 		$$(if $$(DEVICE_DTS_DIR),$$(DEVICE_DTS_DIR),$$(DTS_DIR)), \
 		$$(dts) \
 	) \
-  ))
-  $$(eval $$(foreach dtso,$$(DEVICE_DTS_OVERLAY), \
+  )))
+  $$(if $(IB_FORCE_ALL_DEVICES)$$(_PROFILE_SET),$$(eval $$(foreach dtso,$$(DEVICE_DTS_OVERLAY), \
 	$$(call Device/Build/dtbo,$$(notdir $$(dtso)), \
 		$$(if $$(DEVICE_DTS_DIR),$$(DEVICE_DTS_DIR),$$(DTS_DIR)), \
 		$$(dtso) \
 	) \
-  ))
+  )))
 
   $(KDIR)/$$(KERNEL_NAME):: image_prepare
   $$(_TARGET): $$(if $$(KERNEL_INSTALL),$(BIN_DIR)/$$(KERNEL_IMAGE))
@@ -752,7 +757,7 @@ define Device/Build/kernel
 	cp $$^ $$@
   ifndef IB
     ifdef CONFIG_IB
-      install: $$(KDIR_KERNEL_IMAGE)
+      install: $$(if $(IB_FORCE_ALL_DEVICES),$$(if $$(_PROFILE_SET),$$(KDIR_KERNEL_IMAGE)),$$(KDIR_KERNEL_IMAGE))
     endif
     $$(KDIR_KERNEL_IMAGE): $(KDIR)/$$(KERNEL_NAME) $(CURDIR)/Makefile $$(KERNEL_DEPENDS) image_prepare
 	@rm -f $$@
