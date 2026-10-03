@@ -120,8 +120,8 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 +	{
  		PHY_ID_MATCH_EXACT(MTK_GPHY_ID_AN7581),
  		.name		= "Airoha AN7581 PHY",
- 		.probe		= an7581_phy_probe,
-@@ -1535,6 +1569,7 @@ module_phy_driver(mtk_socphy_driver);
+ 		.config_intr	= genphy_no_config_intr,
+@@ -1537,6 +1571,7 @@ module_phy_driver(mtk_socphy_driver);
  static const struct mdio_device_id __maybe_unused mtk_socphy_tbl[] = {
  	{ PHY_ID_MATCH_EXACT(MTK_GPHY_ID_MT7981) },
  	{ PHY_ID_MATCH_EXACT(MTK_GPHY_ID_MT7988) },

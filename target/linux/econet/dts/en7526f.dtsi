@@ -27,3 +27,21 @@
 &pcie1 {
 	status = "disabled";
 };
+
+&switch0 {
+	dsa,member = <0 0>;
+};
+
+/* 3 FE PHYS and one Gigabit PHY */
+&fsw_phy1 {
+	status = "okay";
+};
+&fsw_phy2 {
+	status = "okay";
+};
+&fsw_phy3 {
+	status = "okay";
+};
+&fsw_phy4 {
+	status = "okay";
+};

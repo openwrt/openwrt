@@ -1,0 +1,109 @@
+From ec9ef7620888e23437a7df7dab23188cd7c09f09 Mon Sep 17 00:00:00 2001
+From: Caleb James DeLisle <cjd@cjdns.fr>
+Date: Tue, 25 Aug 2026 18:54:40 +0000
+Subject: [PATCH v2 net-next 2/3] net: phy: mediatek: bug fixes to
+ airoha-ge-soc.c
+
+Fix crash bug from unconfigured shared, potential namespace collision
+in devm_phy_package_join() and typo in Kconfig.
+Also make calibration tables const.
+
+Signed-off-by: Caleb James DeLisle <cjd@cjdns.fr>
+---
+ drivers/net/phy/mediatek/Kconfig         |  2 +-
+ drivers/net/phy/mediatek/airoha-ge-soc.c | 21 ++++++++++++---------
+ 2 files changed, 13 insertions(+), 10 deletions(-)
+
+--- a/drivers/net/phy/mediatek/Kconfig
++++ b/drivers/net/phy/mediatek/Kconfig
+@@ -9,7 +9,7 @@ config AIROHA_GE_SOC_PHY
+ 	  Supports Airoha SoC built-in Gigabit Ethernet PHYs.
+ 
+ 	  Include support for built-in Ethernet PHYs which are present in
+-	  the AN7581 and AN7583 SoCs. These PHYs d will dynamically
++	  the AN7581 and AN7583 SoCs. These PHYs will dynamically
+ 	  calibrate during startup.
+ 
+ config MEDIATEK_2P5GE_PHY
+--- a/drivers/net/phy/mediatek/airoha-ge-soc.c
++++ b/drivers/net/phy/mediatek/airoha-ge-soc.c
+@@ -50,8 +50,8 @@ struct airoha_socphy_shared {
+ 	enum airoha_transformer_type transformer_type[4];
+ 	enum airoha_mdi_resister_type mdi_resister_type;
+ 	bool rext_sw_calib_done;
+-	int (*tx_amp_compensation_tbl)[TRANSFORMER_TYPE_MAX][MDI_TYPE_MAX][CALIB_CONST_TYPE_MAX][4];
+-	u8 *r50_cal_tbl;
++	const int (*tx_amp_compensation_tbl)[TRANSFORMER_TYPE_MAX][MDI_TYPE_MAX][CALIB_CONST_TYPE_MAX][4];
++	const u8 *r50_cal_tbl;
+ };
+ 
+ /*
+@@ -61,7 +61,7 @@ struct airoha_socphy_shared {
+  * TX AMP test/TX AMP 1G/TX AMP 100M/TX AMP 10M/R50
+  * 4 PHY
+  */
+-static int an7581_tx_amp_compensation_tbl[2][TRANSFORMER_TYPE_MAX][MDI_TYPE_MAX][CALIB_CONST_TYPE_MAX][4] = {
++static const int an7581_tx_amp_compensation_tbl[2][TRANSFORMER_TYPE_MAX][MDI_TYPE_MAX][CALIB_CONST_TYPE_MAX][4] = {
+ 	{ /* IC version 1 */
+ 		[TXMR] = {
+ 			{ },
+@@ -152,7 +152,7 @@ static int an7581_tx_amp_compensation_tb
+ 	},
+ };
+ 
+-static u8 an7581_zcal_to_r45ohm[64] = {
++static const u8 an7581_zcal_to_r45ohm[64] = {
+ 	127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127,
+ 	127, 127, 127, 127, 127, 127, 127, 127, 123, 119, 115, 112, 108, 104, 100,  96,
+ 	 94,  92,  88,  85,  82,  80,  76,  74,  72,  68,  66,  64,  62,  60,  56,  55,
+@@ -166,7 +166,7 @@ static u8 an7581_zcal_to_r45ohm[64] = {
+  * TX AMP test/TX AMP 1G/TX AMP 100M/TX AMP 10M/R50
+  * 4 PHY
+  */
+-static int an7583_tx_amp_compensation_tbl[TRANSFORMER_TYPE_MAX][MDI_TYPE_MAX][CALIB_CONST_TYPE_MAX][4] = {
++static const int an7583_tx_amp_compensation_tbl[TRANSFORMER_TYPE_MAX][MDI_TYPE_MAX][CALIB_CONST_TYPE_MAX][4] = {
+ 	[TXMR] = {
+ 		[MDI_0R] = {
+ 			[TX_AMP_TEST_A] = { -3, -3, -3, -3 },
+@@ -245,14 +245,14 @@ static int an7583_tx_amp_compensation_tb
+ 	},
+ };
+ 
+-static u8 an7583_zcal_to_r50ohm_0R[64] = {
++static const u8 an7583_zcal_to_r50ohm_0R[64] = {
+ 	127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127,
+ 	127, 127, 127, 122, 118, 114, 110, 106, 102,  98,  96,  92,  88,  85,  82,  80,
+ 	 76,  72,  70,  68,  64,  62,  60,  57,  55,  52,  50,  48,  46,  44,  41,  40,
+ 	 38,  36,  33,  32,  30,  28,  26,  24,  24,  22,  20,  18,  16,  16,  14,  12,
+ };
+ 
+-static u8 an7583_zcal_to_r50ohm_5R[64] = {
++static const u8 an7583_zcal_to_r50ohm_5R[64] = {
+ 	127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127,
+ 	127, 127, 127, 127, 127, 127, 127, 127, 127, 124, 120, 116, 112, 110, 106, 102,
+ 	 99,  96,  93,  90,  88,  84,  81,  79,  76,  73,  71,  68,  66,  64,  61,  59,
+@@ -1142,7 +1142,7 @@ static int airoha_phy_tx_amp_compensatio
+ 	int r50_high_limit = 0x88;
+ 
+ 	bool overflow;
+-	int (*tx_amp_table)[CALIB_CONST_TYPE_MAX][4];
++	const int (*tx_amp_table)[CALIB_CONST_TYPE_MAX][4];
+ 	int transformer_type, mdi_resister_type;
+ 
+ 	phydev_p0 = shared->phydev_p0;
+@@ -1596,11 +1596,14 @@ static int an7581_phy_probe(struct phy_d
+ 		dev_err(&phydev->mdio.bus->dev,
+ 			"Failed to setup PHY LED pinctrl\n");
+ 
+-	ret = devm_phy_package_join(&phydev->mdio.dev, phydev, 0,
++	ret = devm_phy_package_join(&phydev->mdio.dev, phydev,
++				    AIROHA_DEFAULT_PORT0_ADDR,
+ 				    sizeof(struct airoha_socphy_shared));
+ 	if (ret)
+ 		return ret;
+ 
++	shared = phy_package_get_priv(phydev);
++
+ 	priv = devm_kzalloc(&phydev->mdio.dev, sizeof(*priv), GFP_KERNEL);
+ 	if (!priv)
+ 		return -ENOMEM;
