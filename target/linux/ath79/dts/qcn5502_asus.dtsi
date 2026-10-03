@@ -17,18 +17,22 @@
 	pll-data = <0x03000101 0x00000101 0x00001919>;
 
 	phy-mode = "sgmii";
-	phy-handle = <&phy0>;
 
 	nvmem-cells = <&macaddr_factory_1002>;
 	nvmem-cell-names = "mac-address";
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
 };
 
 &mdio0 {
 	status = "okay";
 
-	phy0: ethernet-phy@0 {
-		reg = <0>;
-		phy-mode = "sgmii";
+	ethernet-switch@10 {
+		compatible = "qca,ar8327";
+		reg = <0x10>;
 		qca,mib-poll-interval = <500>;
 
 		qca,ar8327-initvals = <
