@@ -356,7 +356,8 @@ struct rteth_cfg {
 	void (*set_max_packet_length)(struct rteth_ctrl *ctrl, int len);
 	void (*setup_notify_buffer)(struct rteth_ctrl *ctrl);
 	void (*update_counter)(struct rteth_ctrl *ctrl, int ring, int released);
-	const struct net_device_ops *netdev_ops;
+	void (*set_rx_mode)(struct net_device *dev);
+	u32 rx_csum_mask;
 };
 
 
