@@ -10,11 +10,69 @@
 #include "pie.h"
 #include "qos.h"
 #include "mirror.h"
+#include "mac.h"
 #include "rtl-otto.h"
 #include "stats.h"
 #include "tc.h"
 #include "vlan.h"
 #include "stp.h"
+
+#define RTL930X_MAC_L2_PORT_CTRL(port)		(0x3268 + (((port) << 6)))
+
+/* MAC maximum packet length (jumbo frame) control.
+ *
+ * The switch MAC drops frames whose L2 length exceeds the configured maximum.
+ * A family holds either one register per user port or a single one for the
+ * whole switch. The length is a direct byte value held in two 14-bit fields
+ * (high-speed links in [13:0], 10/100M links in [27:14]); bit 28 selects
+ * whether VLAN tag bytes count towards the limit.
+ */
+
+/* RTL930x holds one register per user port, inside the 64-byte MAC block of
+ * the port. The CPU port has a row of its own, which the ethernet driver owns
+ * and programs from the conduit MTU. Register offsets taken from the
+ * reverse-engineered Realtek register maps at https://svanheule.net/realtek/
+ */
+#define RTL930X_MAC_L2_PORT_MAX_LEN_CTRL(port)	(0x326C + (((port) << 6)))
+
+/* Largest frame each family switches; the length field would allow 16383 */
+#define RTL930X_MAX_FRAME			12288
+
+#define RTL930X_MAC_FORCE_MODE_CTRL		(0xCA1C)
+
+#define RTL930X_MAC_LINK_STS			(0xCB10)
+
+#define RTL930X_EEE_CTRL(p)			(0x3274 + ((p) << 6))
+
+#define RTL930X_TRK_HASH_CTRL			(0x9F80)
+#define RTL930X_TRK_CTRL			(0x9F88)
+
+#define RTL930X_RMA_BPDU_FLD_PMSK		(0x9F18)
+
+#define RTL930X_IMR_GLB				(0xC628)
+#define RTL930X_IMR_PORT_LINK_STS_CHG		(0xC62C)
+#define RTL930X_ISR_GLB				(0xC658)
+#define RTL930X_ISR_PORT_LINK_STS_CHG		(0xC660)
+
+#define RTL930X_LED_GLB_CTRL			(0xCC00)
+
+#define RTL930X_RMA_BPDU_CTRL			(0x9E7C)
+
+#define RTL930X_RMA_PTP_CTRL			(0x9E88)
+
+#define RTL930X_RMA_LLDP_CTRL			(0x9EFC)
+
+#define RTL930X_RMA_EAPOL_CTRL			(0x9F08)
+#define RTL930X_SPCL_TRAP_PORT_CTRL		(0xA1A0)
+
+/* Port LED Control */
+#define RTL930X_LED_PORT_NUM_CTRL(p)		(0xCC04 + (((p >> 4) << 2)))
+#define RTL930X_LED_SET0_0_CTRL			(0xCC28)
+#define RTL930X_LED_PORT_COPR_SET_SEL_CTRL(p)	(0xCC2C + (((p >> 4) << 2)))
+#define RTL930X_LED_PORT_FIB_SET_SEL_CTRL(p)	(0xCC34 + (((p >> 4) << 2)))
+#define RTL930X_LED_PORT_COPR_MASK_CTRL		(0xCC3C)
+#define RTL930X_LED_PORT_FIB_MASK_CTRL		(0xCC40)
+#define RTL930X_LED_PORT_COMBO_MASK_CTRL	(0xCC44)
 
 #define RTL930X_LED_GLB_ACTIVE_LOW				BIT(22)
 #define RTL930X_LED_CLK_SEL_MASK				GENMASK(17, 16)

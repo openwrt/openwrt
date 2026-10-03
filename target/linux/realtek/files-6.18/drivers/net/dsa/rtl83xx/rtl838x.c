@@ -11,10 +11,66 @@
 #include "pie.h"
 #include "qos.h"
 #include "mirror.h"
+#include "mac.h"
 #include "rtl-otto.h"
 #include "stats.h"
 #include "vlan.h"
 #include "stp.h"
+
+/* Register definition */
+#define RTL838X_MAC_PORT_CTRL(port)		(0xd560 + (((port) << 7)))
+
+/* MAC maximum packet length (jumbo frame) control.
+ *
+ * The switch MAC drops frames whose L2 length exceeds the configured maximum.
+ * A family holds either one register per user port or a single one for the
+ * whole switch. The length is a direct byte value held in two 14-bit fields
+ * (high-speed links in [13:0], 10/100M links in [27:14]); bit 28 selects
+ * whether VLAN tag bytes count towards the limit.
+ */
+
+/* RTL838x and RTL839x hold one limit for the whole switch instead, bounding
+ * the CPU port with it. RTL838x mirrors it in a second register, and the
+ * vendor SDK writes both (dal_maple_switch_maxPktLenLinkSpeed_set()).
+ */
+#define RTL838X_MAC_MAX_LEN_CTRL		(0xa9e0)
+#define RTL838X_MAC_MAX_LEN_CTRL_DUP		(0x6b00)
+
+/* RTL838x stops at what its datasheet gives, below the vendor SDK value */
+#define RTL838X_MAX_FRAME			10000
+
+/* MAC handling */
+#define RTL838X_MAC_LINK_STS			(0xa188)
+
+#define RTL838X_EEE_PORT_TX_EN			(0x014c)
+#define RTL838X_EEE_PORT_RX_EN			(0x0150)
+#define RTL838X_EEE_TX_TIMER_GIGA_CTRL		(0xaa04)
+#define RTL838X_EEE_TX_TIMER_GELITE_CTRL	(0xaa08)
+
+/* L2 functionality */
+#define RTL838X_L2_CTRL_0			(0x3200)
+
+#define RTL838X_L2_TBL_FLUSH_CTRL		(0x3370)
+
+/* 802.1X */
+#define RTL838X_RMA_BPDU_FLD_PMSK		(0x4348)
+
+#define RTL838X_SPCL_TRAP_EAPOL_CTRL		(0x6988)
+#define RTL838X_SPCL_TRAP_SWITCH_MAC_CTRL	(0x6998)
+
+/* Switch interrupts */
+#define RTL838X_IMR_GLB				(0x1100)
+#define RTL838X_IMR_PORT_LINK_STS_CHG		(0x1104)
+#define RTL838X_ISR_GLB_SRC			(0x1148)
+#define RTL838X_ISR_PORT_LINK_STS_CHG		(0x114C)
+
+#define RTL838X_SMI_GLB_CTRL			(0xa100) /* used by RTL838x EEE setup */
+
+#define RTL838X_RMA_BPDU_CTRL			(0x4330)
+
+#define RTL838X_RMA_PTP_CTRL			(0x4338)
+
+#define RTL838X_RMA_LLDP_CTRL			(0x4340)
 
 void rtldsa_838x_print_matrix(void)
 {

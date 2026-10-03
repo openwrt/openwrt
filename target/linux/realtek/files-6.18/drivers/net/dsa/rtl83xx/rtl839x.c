@@ -9,10 +9,59 @@
 #include "pie.h"
 #include "qos.h"
 #include "mirror.h"
+#include "mac.h"
 #include "rtl-otto.h"
 #include "stats.h"
 #include "vlan.h"
 #include "stp.h"
+
+#define RTL839X_MAC_PORT_CTRL(port)		(0x8004 + (((port) << 7)))
+
+/* MAC maximum packet length (jumbo frame) control.
+ *
+ * The switch MAC drops frames whose L2 length exceeds the configured maximum.
+ * A family holds either one register per user port or a single one for the
+ * whole switch. The length is a direct byte value held in two 14-bit fields
+ * (high-speed links in [13:0], 10/100M links in [27:14]); bit 28 selects
+ * whether VLAN tag bytes count towards the limit.
+ */
+
+#define RTL839X_MAC_MAX_LEN_CTRL		(0x02b0)
+
+#define RTL839X_MAX_FRAME			12288
+
+#define RTL839X_MAC_FORCE_MODE_CTRL		(0x02bc)
+
+#define RTL839X_PORT_ISO_CTRL(port)		(0x1400 + ((port) << 3))
+
+#define RTL839X_TBL_ACCESS_CTRL_2		(0x611C)
+
+#define RTL839X_MAC_LINK_STS			(0x0390)
+
+#define RTL839X_EEE_TX_TIMER_GELITE_CTRL	(0x042C)
+#define RTL839X_EEE_TX_TIMER_GIGA_CTRL		(0x0430)
+#define RTL839X_EEE_TX_TIMER_10G_CTRL		(0x0434)
+#define RTL839X_EEE_CTRL(p)			(0x8008 + ((p) << 7))
+
+#define RTL839X_L2_CTRL_0			(0x3800)
+
+#define RTL839X_L2_TBL_FLUSH_CTRL		(0x3ba0)
+
+#define RTL839X_RMA_BPDU_FLD_PMSK		(0x125C)
+
+#define RTL839X_SPCL_TRAP_EAPOL_CTRL		(0x105C)
+#define RTL839X_SPCL_TRAP_SWITCH_MAC_CTRL	(0x1068)
+
+#define RTL839X_IMR_GLB				(0x0064)
+#define RTL839X_IMR_PORT_LINK_STS_CHG		(0x0068)
+#define RTL839X_ISR_GLB_SRC			(0x009c)
+#define RTL839X_ISR_PORT_LINK_STS_CHG		(0x00a0)
+
+#define RTL839X_RMA_BPDU_CTRL			(0x122C)
+
+#define RTL839X_RMA_PTP_CTRL			(0x123C)
+
+#define RTL839X_RMA_LLDP_CTRL			(0x124C)
 
 void rtldsa_839x_print_matrix(void)
 {

@@ -17,6 +17,7 @@
 
 #include "l2.h"
 #include "l3.h"
+#include "pie.h"
 #include "rtl-otto.h"
 #include "tc.h"
 #include "stp.h"

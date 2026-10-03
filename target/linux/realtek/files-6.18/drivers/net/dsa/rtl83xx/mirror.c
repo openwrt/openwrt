@@ -7,6 +7,14 @@
 #include "mirror.h"
 #include "rtl-otto.h"
 
+#define RTL930X_MIR_CTRL			(0xA2A0)
+#define RTL930X_MIR_DPM_CTRL			(0xA2C0)
+#define RTL930X_MIR_SPM_CTRL			(0xA2B0)
+
+#define RTL931X_MIR_CTRL			(0xAF00)
+#define RTL931X_MIR_DPM_CTRL			(0xAF30)
+#define RTL931X_MIR_SPM_CTRL			(0xAF10)
+
 int rtldsa_838x_get_mirror_config(struct rtldsa_mirror_config *config, int group, int port)
 {
 	config->ctrl = RTL838X_MIR_CTRL + group * 4;

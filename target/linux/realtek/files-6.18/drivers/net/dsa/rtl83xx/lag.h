@@ -2,7 +2,14 @@
 #ifndef _OTTO_LAG_H
 #define _OTTO_LAG_H
 
-#include "rtl-otto.h"
+#include <linux/types.h>
+
+struct dsa_switch;
+struct netdev_lag_upper_info;
+struct rtl838x_switch_priv;
+struct rtldsa_93xx_lag_entry;
+
+#define MAX_LAGS 16
 
 int rtldsa_lag_add(struct dsa_switch *ds, int group, int port, struct netdev_lag_upper_info *info);
 int rtldsa_lag_del(struct dsa_switch *ds, int group, int port);

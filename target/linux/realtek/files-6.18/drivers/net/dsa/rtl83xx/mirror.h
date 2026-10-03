@@ -5,6 +5,15 @@
 
 #include <linux/types.h>
 
+/* Port Mirroring */
+#define RTL838X_MIR_CTRL			(0x5D00)
+#define RTL838X_MIR_DPM_CTRL			(0x5D20)
+#define RTL838X_MIR_SPM_CTRL			(0x5D10)
+
+#define RTL839X_MIR_CTRL			(0x2500)
+#define RTL839X_MIR_DPM_CTRL			(0x2530)
+#define RTL839X_MIR_SPM_CTRL			(0x2510)
+
 struct dsa_switch;
 struct dsa_mall_mirror_tc_entry;
 struct netlink_ext_ack;

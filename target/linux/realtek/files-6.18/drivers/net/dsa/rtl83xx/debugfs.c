@@ -4,9 +4,33 @@
 #include <linux/kernel.h>
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 
+#include "mac.h"
+#include "l2.h"
 #include "rtl-otto.h"
 #include "vlan.h"
 #include "stp.h"
+
+#define RTL838X_STORM_CTRL_PORT_UC(p)		(0x4718 + (((p) << 2)))
+#define RTL838X_STORM_CTRL_PORT_MC(p)		(0x478c + (((p) << 2)))
+#define RTL838X_STORM_CTRL_PORT_BC(p)		(0x4800 + (((p) << 2)))
+#define RTL839X_STORM_CTRL_PORT_UC_0(p)		(0x185C + (((p) << 3)))
+#define RTL839X_STORM_CTRL_PORT_MC_0(p)		(0x19FC + (((p) << 3)))
+#define RTL839X_STORM_CTRL_PORT_BC_0(p)		(0x1B9C + (((p) << 3)))
+
+#define RTL838X_LED_GLB_CTRL			(0xA000)
+
+/* LED control by switch */
+#define RTL838X_LED_MODE_SEL			(0x1004)
+#define RTL838X_LED_MODE_CTRL			(0xA004)
+#define RTL838X_LED_P_EN_CTRL			(0xA008)
+
+/* LED control by software */
+#define RTL838X_LED_SW_CTRL			(0xA00C)
+#define RTL838X_LED0_SW_P_EN_CTRL		(0xA010)
+#define RTL838X_LED1_SW_P_EN_CTRL		(0xA014)
+#define RTL838X_LED2_SW_P_EN_CTRL		(0xA018)
+#define RTL838X_LED_SW_P_CTRL			(0xA01C)
+#define RTL838X_LED_SW_P_CTRL_PORT(p)		(RTL838X_LED_SW_P_CTRL + (((p) << 2)))
 
 #define RTL838X_DRIVER_NAME "rtl838x"
 
@@ -436,7 +460,6 @@ static const struct file_operations rtldsa_vlan_table_raw_fops = {
 	.llseek = seq_lseek,
 	.release = single_release,
 };
-
 
 static int rtldsa_vlan_table_show(struct seq_file *m, void *v)
 {

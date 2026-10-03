@@ -9,6 +9,7 @@
 #include <linux/rhashtable.h>
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 
+#include "pie.h"
 #include "rtl-otto.h"
 #include "tc.h"
 

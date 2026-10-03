@@ -14,6 +14,71 @@
 #include "vlan.h"
 #include "stp.h"
 
+#define RTL931X_MAC_L2_PORT_CTRL		(0x6000)
+
+/* MAC maximum packet length (jumbo frame) control.
+ *
+ * The switch MAC drops frames whose L2 length exceeds the configured maximum.
+ * A family holds either one register per user port or a single one for the
+ * whole switch. The length is a direct byte value held in two 14-bit fields
+ * (high-speed links in [13:0], 10/100M links in [27:14]); bit 28 selects
+ * whether VLAN tag bytes count towards the limit.
+ */
+
+/* RTL931x covers ports 0 to 55 only, one word each. The CPU port has no row:
+ * the word that would follow the array is MAC_DBG_SEL_CTRL.
+ */
+#define RTL931X_MAC_L2_PORT_MAX_LEN_CTRL	(0x5554)
+
+#define RTL931X_MAX_FRAME			12288
+
+#define RTL931X_MAC_FORCE_MODE_CTRL		(0x0DCC)
+
+#define RTL931X_MAC_LINK_STS			(0x0EC0)
+
+#define RTL931X_FORCE_EN			BIT(9)
+#define RTL931X_FORCE_LINK_EN			BIT(0)
+
+#define RTL931X_TRK_HASH_CTRL			(0xBA70)
+#define RTL931X_TRK_CTRL			(0xBA78)
+
+#define RTL931X_RMA_BPDU_FLD_PMSK		(0x8950)
+
+/* IMR_GLB does not exit on RTL931X */
+#define RTL931X_IMR_PORT_LINK_STS_CHG		(0x126C)
+#define RTL931X_ISR_GLB_SRC			(0x12B4)
+#define RTL931X_ISR_PORT_LINK_STS_CHG		(0x12B8)
+
+#define RTL931X_LED_GLB_CTRL			(0x0600)
+
+#define RTL931X_RMA_BPDU_CTRL			(0x881C)
+
+#define RTL931X_RMA_PTP_CTRL			(0x8834)
+
+#define RTL931X_RMA_LLDP_CTRL			(0x8918)
+
+#define RTL931X_RMA_EAPOL_CTRL			(0x8930)
+#define RTL931X_TRAP_ARP_GRAT_PORT_ACT		(0x8C04)
+
+#define RTL931X_LED_PORT_NUM_CTRL(p)		(0x0604 + (((p >> 4) << 2)))
+#define RTL931X_LED_SET0_0_CTRL			(0x0630)
+#define RTL931X_LED_PORT_COPR_SET_SEL_CTRL(p)	(0x0634 + (((p >> 4) << 2)))
+#define RTL931X_LED_PORT_FIB_SET_SEL_CTRL(p)	(0x0644 + (((p >> 4) << 2)))
+#define RTL931X_LED_PORT_COPR_MASK_CTRL		(0x0654)
+#define RTL931X_LED_PORT_FIB_MASK_CTRL		(0x065c)
+#define RTL931X_LED_PORT_COMBO_MASK_CTRL	(0x0664)
+
+#define RTL931X_LED_GLB_ACTIVE_LOW BIT(21)
+
+#define RTL931X_LED_SETX_0_CTRL(x) (RTL931X_LED_SET0_0_CTRL - (x * 8))
+#define RTL931X_LED_SETX_1_CTRL(x) (RTL931X_LED_SETX_0_CTRL(x) - 4)
+
+/* get register for given set and led in the set */
+#define RTL931X_LED_SETX_LEDY(x, y) (RTL931X_LED_SETX_0_CTRL(x) - 4 * (y / 2))
+
+/* get shift for given led in any set */
+#define RTL931X_LED_SET_LEDX_SHIFT(x) (16 * (x % 2))
+
 #define RTL931X_LED_CLK_SEL_MASK				GENMASK(16, 15)
 #define RTL931X_LED_CLK_SEL_800NS				0
 #define RTL931X_LED_CLK_SEL_400NS				1

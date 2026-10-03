@@ -3,10 +3,12 @@
 #ifndef _OTTO_L3_H
 #define _OTTO_L3_H
 
+#include "l3_limits.h"
 #include "rtl-otto.h"
 
 struct fib6_info;
 
+#define MAX_SMACS 64
 #define MAX_HOST_ROUTES		1536
 #define MAX_ROUTES		512
 
