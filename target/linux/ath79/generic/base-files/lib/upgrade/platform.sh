@@ -56,6 +56,7 @@ platform_do_upgrade() {
 	engenius,enstationac-v1|\
 	engenius,ews660ap|\
 	watchguard,ap100|\
+	watchguard,ap120|\
 	watchguard,ap200|\
 	watchguard,ap300)
 		ENV_SCRIPT="/tmp/fw_env"
