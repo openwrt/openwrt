@@ -1078,7 +1078,8 @@ int main (int argc, char **argv)
 				mtd_unlock(device);
 			break;
 		case CMD_VERIFY:
-			mtd_verify(device, imagefile);
+			if (mtd_verify(device, imagefile))
+				exit(1);
 			break;
 		case CMD_DUMP:
 			mtd_dump(device, offset, dump_len);
