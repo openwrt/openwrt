@@ -1799,6 +1799,38 @@ static void otto_l3_fib_trap_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_noti
 	ctrl->cfg->route_write(ctrl, route->row, route);
 }
 
+static void otto_l3_route_trap_new(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r)
+{
+	char dst[INET6_ADDRSTRLEN + sizeof("/128")];
+	int slot;
+
+	r->attr.valid = true;
+	r->attr.action = ROUTE_ACT_TRAP2CPU;
+
+	if (r->is_host_route) {
+		slot = ctrl->cfg->find_slot(ctrl, r, true);
+		if (slot < 0)
+			slot = ctrl->cfg->find_slot(ctrl, r, false);
+		if (slot < 0) {
+			dev_err(ctrl->dev, "no slot for host route %pI4\n", &r->dst_ip);
+			return;
+		}
+
+		ctrl->cfg->host_route_write(ctrl, slot, r);
+		return;
+	}
+
+	r->row = otto_l3_route_place(ctrl, r);
+	if (r->row < FIRST_PREFIX_ROW) {
+		r->row = -1;
+		dev_err(ctrl->dev, "no row for prefix route %s\n",
+			otto_l3_route_dst(r, dst, sizeof(dst)));
+		return;
+	}
+
+	ctrl->cfg->route_write(ctrl, r->row, r);
+}
+
 static int otto_l3_fib_add_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifier_info *info)
 {
 	struct rtl838x_switch_priv *priv = ctrl->priv;
@@ -1912,6 +1944,15 @@ static int otto_l3_fib_add_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 			ctrl->cfg->host_route_write(ctrl, slot, route);
 		}
 	}
+
+	/* Until the gateway answers, or for good where there is none, a shorter
+	 * prefix in hardware would forward this destination. The route takes
+	 * its entry now, trapping to the CPU, and otto_l3_route_update_hw()
+	 * turns it into a forwarding one once the gateway resolves. The next
+	 * hop index stays zero until then, as on any entry that only traps.
+	 */
+	if (ctrl->cfg->use_l3_tables && (nh->fib_nh_gw4 || !route->is_host_route))
+		otto_l3_route_trap_new(ctrl, route);
 
 	/* We need to resolve the mac address of the GW */
 	if (nh->fib_nh_gw4)
