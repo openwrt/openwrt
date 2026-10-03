@@ -1,0 +1,49 @@
+From c2cdef41e0b4d8ed23a5b41e6ad4e64594e055e4 Mon Sep 17 00:00:00 2001
+From: Aleksei Sviridkin <f@lex.la>
+Date: Fri, 18 Sep 2026 04:50:19 +0300
+Subject: [PATCH] net: dsa: mt7530: fix NULL dereference on unbind of MT7531
+ and MT7621
+
+The core and io supplies are only requested for ID_MT7530: both the
+devm_regulator_get() in probe and the regulator_enable() in
+mt7530_setup() are guarded by the switch id, but mt7530_remove()
+disables them unconditionally. On an MT7621 or an MT7531 both pointers
+are still NULL from devm_kzalloc(), so rmmod or a sysfs unbind calls
+regulator_disable() on NULL.
+
+Fixes: ddda1ac116c8 ("net: dsa: mt7530: support the 7530 switch on the Mediatek MT7621 SoC")
+Signed-off-by: Aleksei Sviridkin <f@lex.la>
+Link: https://patch.msgid.link/20260918015020.2518315-2-f@lex.la
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/dsa/mt7530-mdio.c | 18 ++++++++++--------
+ 1 file changed, 10 insertions(+), 8 deletions(-)
+
+--- a/drivers/net/dsa/mt7530-mdio.c
++++ b/drivers/net/dsa/mt7530-mdio.c
+@@ -227,15 +227,17 @@ mt7530_remove(struct mdio_device *mdiode
+ 	if (!priv)
+ 		return;
+ 
+-	ret = regulator_disable(priv->core_pwr);
+-	if (ret < 0)
+-		dev_err(priv->dev,
+-			"Failed to disable core power: %d\n", ret);
++	if (priv->id == ID_MT7530) {
++		ret = regulator_disable(priv->core_pwr);
++		if (ret < 0)
++			dev_err(priv->dev,
++				"Failed to disable core power: %d\n", ret);
+ 
+-	ret = regulator_disable(priv->io_pwr);
+-	if (ret < 0)
+-		dev_err(priv->dev, "Failed to disable io pwr: %d\n",
+-			ret);
++		ret = regulator_disable(priv->io_pwr);
++		if (ret < 0)
++			dev_err(priv->dev, "Failed to disable io pwr: %d\n",
++				ret);
++	}
+ 
+ 	mt7530_remove_common(priv);
+ 
