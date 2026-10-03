@@ -1,0 +1,42 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Navid Ghahremani <ghahramani.navid@gmail.com>
+Date: Sun, 27 Sep 2026 22:20:00 +0100
+Subject: [PATCH] net: dsa: mt7530: skip reset pulse in mt7988_setup for EN751627
+
+Skip hardware reset pulse in mt7988_setup for EN751627 to retain bootloader PHY state.
+
+Signed-off-by: Navid Ghahremani <ghahramani.navid@gmail.com>
+---
+--- a/drivers/net/dsa/mt7530.c
++++ b/drivers/net/dsa/mt7530.c
+@@ -3298,10 +3298,12 @@ static int mt7988_setup(struct dsa_switc
+ 	struct mt7530_priv *priv = ds->priv;
+
+ 	/* Reset the switch */
+-	reset_control_assert(priv->rstc);
+-	usleep_range(20, 50);
+-	reset_control_deassert(priv->rstc);
+-	usleep_range(20, 50);
++	if (priv->id != ID_EN751627) {
++		reset_control_assert(priv->rstc);
++		usleep_range(20, 50);
++		reset_control_deassert(priv->rstc);
++		usleep_range(20, 50);
++	}
+
+ 	/* AN7583 require additional tweak to CONN_CFG */
+ 	if (priv->id == ID_AN7583)
+@@ -3315,7 +3317,12 @@ static int mt7988_setup(struct dsa_switc
+ 			   FIELD_PREP(AN7583_CSR_ETHER_AFE_PWD, 0));
+
+ 	/* Reset the switch PHYs */
+-	mt7530_write(priv, MT7530_SYS_CTRL, SYS_CTRL_PHY_RST);
++	if (priv->id != ID_EN751627) {
++		mt7530_write(priv, MT7530_SYS_CTRL, SYS_CTRL_PHY_RST);
++	} else {
++		mt7530_write(priv, MT7530_LED_EN, 0x77777);
++		mt7530_write(priv, MT7530_LED_IO_MODE, 0x77777);
++	}
+
+ 	return mt7531_setup_common(ds);
+ }

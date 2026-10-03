@@ -1,0 +1,26 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Navid Ghahremani <ghahramani.navid@gmail.com>
+Date: Sun, 27 Sep 2026 22:20:00 +0100
+Subject: [PATCH] econet-eth: mask non-DONE IRQ purposes after they fire
+
+Mask non-DONE IRQs after servicing to prevent an interrupt storm on hardware errors.
+
+Signed-off-by: Navid Ghahremani <ghahramani.navid@gmail.com>
+---
+--- a/econet_qdma.c
++++ b/econet_qdma.c
+@@ -408,11 +408,12 @@ static irqreturn_t en75_irq_handler(int irq_num, void *dev_instance)
+ 				disable_int |= BIT(bit);
+ 				continue;
+ 			}
+-			dev_dbg_ratelimited(qdma->dev,
+-					    "%s IRQ from %s[%d]\n",
++			dev_warn_ratelimited(qdma->dev,
++					    "%s IRQ from %s[%d], masking\n",
+ 					    en75_irq_purpose_type_str(p.type),
+ 					    en75_irq_purpose_source_str(p.source),
+ 					    p.chain);
++			disable_int |= BIT(bit);
+ 		}
+
+ 		irq->irqmask[i] &= ~disable_int;

@@ -1,0 +1,66 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Navid Ghahremani <ghahramani.navid@gmail.com>
+Date: Sun, 27 Sep 2026 22:20:00 +0100
+Subject: [PATCH] jffs2: treat NAND without OOB cleanmarkers as NAND and skip bad blocks on scan
+
+On SPI-NAND flash with on-die ECC covering spare bytes, in-band cleanmarkers
+are used instead of OOB cleanmarkers. Ensure JFFS2 still executes NAND-specific
+setup, cleanup, and eraseblock scanning when c->cleanmarker_size != 0 by checking
+c->mtd->type == MTD_NANDFLASH, and skip bad blocks during eraseblock scanning.
+
+Signed-off-by: Navid Ghahremani <ghahramani.navid@gmail.com>
+---
+--- a/fs/jffs2/fs.c
++++ b/fs/jffs2/fs.c
+@@ -687,7 +687,7 @@ struct jffs2_inode_info *jffs2_gc_fetch_
+ static int jffs2_flash_setup(struct jffs2_sb_info *c) {
+ 	int ret = 0;
+
+-	if (jffs2_cleanmarker_oob(c)) {
++	if (c->mtd->type == MTD_NANDFLASH) {
+ 		/* NAND flash... do setup accordingly */
+ 		ret = jffs2_nand_flash_setup(c);
+ 		if (ret)
+@@ -720,7 +720,7 @@ static int jffs2_flash_setup(struct jffs
+
+ void jffs2_flash_cleanup(struct jffs2_sb_info *c) {
+
+-	if (jffs2_cleanmarker_oob(c)) {
++	if (c->mtd->type == MTD_NANDFLASH) {
+ 		jffs2_nand_flash_cleanup(c);
+ 	}
+
+--- a/fs/jffs2/erase.c
++++ b/fs/jffs2/erase.c
+@@ -173,7 +173,7 @@ static void jffs2_erase_failed(struct jf
+ {
+ 	/* For NAND, if the failure did not occur at the device level for a
+ 	   specific physical page, don't bother updating the bad block table. */
+-	if (jffs2_cleanmarker_oob(c) && (bad_offset != (uint32_t)MTD_FAIL_ADDR_UNKNOWN)) {
++	if ((c->mtd->type == MTD_NANDFLASH || mtd_can_have_bb(c->mtd)) && (bad_offset != (uint32_t)MTD_FAIL_ADDR_UNKNOWN)) {
+ 		/* We had a device-level failure to erase.  Let's see if we've
+ 		   failed too many times. */
+ 		if (!jffs2_write_nand_badblock(c, jeb, bad_offset)) {
+--- a/fs/jffs2/scan.c
++++ b/fs/jffs2/scan.c
+@@ -113,7 +113,7 @@ int jffs2_scan_medium(struct jffs2_sb_in
+ 	if (!flashbuf) {
+ 		/* For NAND it's quicker to read a whole eraseblock at a time,
+ 		   apparently */
+-		if (jffs2_cleanmarker_oob(c))
++		if (c->mtd->type == MTD_NANDFLASH)
+ 			try_size = c->sector_size;
+ 		else
+ 			try_size = PAGE_SIZE;
+@@ -469,6 +469,11 @@ static int jffs2_scan_eraseblock (struct
+
+ 	jffs2_dbg(1, "%s(): Scanning block at 0x%x\n", __func__, ofs);
+
++	if (c->mtd->type == MTD_NANDFLASH || mtd_can_have_bb(c->mtd)) {
++		if (mtd_block_isbad(c->mtd, jeb->offset))
++			return BLK_STATE_BADBLOCK;
++	}
++
+ #ifdef CONFIG_JFFS2_FS_WRITEBUFFER
+ 	if (jffs2_cleanmarker_oob(c)) {
+ 		int ret;
