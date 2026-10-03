@@ -1,8 +1,8 @@
 include $(TOPDIR)/rules.mk
 
 PKG_VERSION:=2024.04
-PKG_HASH:=18a853fe39fad7ad03a90cc2d4275aeaed6da69735defac3492b80508843dd4a
-PKG_RELEASE:=1
+PKG_HASH:=d6b57ce574a0a0504a5b6596644ceacb7f77bde9353779bcf2fde07c4b9a2b92
+PKG_RELEASE:=2
 
 include $(INCLUDE_DIR)/u-boot.mk
 include $(INCLUDE_DIR)/package.mk
