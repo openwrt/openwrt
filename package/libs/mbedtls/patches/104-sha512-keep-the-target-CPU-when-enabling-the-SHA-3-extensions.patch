@@ -1,0 +1,35 @@
+From 4c699eb4a554821befef0b5a96ba1caee049ce1b Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Tue, 6 Oct 2026 00:03:48 +0200
+Subject: [PATCH] sha512: keep the target CPU when enabling the SHA-3
+ extensions
+
+On AArch64, "arch=armv8.2-a+sha3" replaces the -mcpu/-march of the
+build with plain Armv8.2-A. For a CPU with more extensions, such as
+-mcpu=cortex-a76, GCC then refuses to inline always_inline functions
+compiled for the full target, such as a fortified memset().
+
+Use "+sha3" with GCC 13 or later, which adds the extension to the build
+target. Before GCC 13, the SHA-512 intrinsics are themselves compiled for
+Armv8.2-A, so keep "arch=armv8.2-a+sha3" there.
+
+Link: https://github.com/Mbed-TLS/mbedtls/pull/10986
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+--- a/library/sha512.c
++++ b/library/sha512.c
+@@ -91,7 +91,12 @@
+ #          error "A more recent GCC is required for MBEDTLS_SHA512_USE_A64_CRYPTO_*"
+ #        else
+ #          pragma GCC push_options
+-#          pragma GCC target ("arch=armv8.2-a+sha3")
++/* Before GCC 13, the SHA-512 intrinsics require Armv8.2-A. */
++#          if __GNUC__ < 13
++#            pragma GCC target ("arch=armv8.2-a+sha3")
++#          else
++#            pragma GCC target ("+sha3")
++#          endif
+ #          define MBEDTLS_POP_TARGET_PRAGMA
+ #        endif
+ #      else
