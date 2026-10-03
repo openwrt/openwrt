@@ -1,0 +1,185 @@
+EcoNet devices use a dual-firmware layout. Each rootfs partition should
+carry an `econet,boot-flag-value` property. If the value matches the
+boot flag, the partition is activated by renaming it to `ubi`.
+
+Boot flag source is defined via an `econet,boot-flag` phandle + offset
+on the `partitions` node. The target node type is auto-detected:
+
+* Reserved memory (`no-map`): read via memremap(). The bootloader stores
+  the boot flag (0 or 1) at a known RAM address, usually right before
+  the kernel load address.
+
+* Flash partition: read via mtd_read(). For devices whose bootloader
+  does not set the RAM flag.
+
+Generic bootflag mechanism should be preferred over this, should that be
+available. This patch is inspired by `mvebu/400-find_active_root.patch`.
+
+Suggested-by: Ahmed Naseef <naseefkm@gmail.com>
+Signed-off-by: David Yang <mmyangfl@gmail.com>
+
+--- a/drivers/mtd/parsers/ofpart_core.c
++++ b/drivers/mtd/parsers/ofpart_core.c
+@@ -11,7 +11,9 @@
+ 
+ #include <linux/module.h>
+ #include <linux/init.h>
++#include <linux/io.h>
+ #include <linux/of.h>
++#include <linux/of_address.h>
+ #include <linux/mtd/mtd.h>
+ #include <linux/slab.h>
+ #include <linux/mtd/partitions.h>
+@@ -38,6 +40,104 @@ static bool node_has_compatible(struct d
+ 	return of_get_property(pp, "compatible", NULL);
+ }
+ 
++static int econet_read_boot_flag_mmap(struct of_phandle_args *args, u8 *flagp)
++{
++	u32 offset = args->args[0];
++	struct resource res;
++	u8 *addr;
++	int ret;
++
++	ret = of_address_to_resource(args->np, 0, &res);
++	if (ret)
++		return ret;
++
++	if (offset >= resource_size(&res))
++		return -EINVAL;
++
++	addr = memremap(res.start, resource_size(&res), MEMREMAP_WB);
++	if (!addr)
++		return -ENOMEM;
++
++	*flagp = addr[offset];
++	memunmap(addr);
++	return 0;
++}
++
++static int econet_read_boot_flag_mtd(struct mtd_info *master,
++				     struct device_node *pp,
++				     struct of_phandle_args *args, u8 *flagp)
++{
++	u32 offset = args->args[0];
++	struct mtd_info *part_mtd;
++	size_t retlen;
++	int ret;
++
++	part_mtd = of_get_mtd_device_by_node(args->np);
++	if (!IS_ERR(part_mtd)) {
++		ret = mtd_read(part_mtd, offset, 1, &retlen, flagp);
++		put_mtd_device(part_mtd);
++	} else if (PTR_ERR(part_mtd) != -EPROBE_DEFER) {
++		return PTR_ERR(part_mtd);
++	} else {
++		struct device_node *parent_np;
++		u32 part_base;
++		bool is_our_partition;
++
++		parent_np = of_get_parent(args->np);
++		if (!parent_np)
++			return -ENOENT;
++		is_our_partition = parent_np == pp;
++		of_node_put(parent_np);
++
++		if (!is_our_partition)
++			return -EPROBE_DEFER;
++
++		if (of_property_read_u32_index(args->np, "reg", 0, &part_base))
++			return -EINVAL;
++
++		ret = mtd_read(master, part_base + offset, 1, &retlen, flagp);
++	}
++
++	if (ret)
++		return ret;
++	if (retlen != 1)
++		return -EIO;
++	return 0;
++}
++
++static int econet_read_boot_flag(struct mtd_info *master,
++				 struct device_node *pp, u8 *flagp)
++{
++	struct of_phandle_args args;
++	int ret;
++
++	ret = of_parse_phandle_with_fixed_args(pp, "econet,boot-flag", 1, 0,
++					       &args);
++	if (ret) {
++		/* Not EcoNet partitions; ignore - pick something that cannot match */
++		*flagp = U8_MAX;
++		return 0;
++	}
++
++	if (of_property_read_bool(args.np, "no-map"))
++		/* Reserved memory */
++		ret = econet_read_boot_flag_mmap(&args, flagp);
++	else
++		/* Flash partition */
++		ret = econet_read_boot_flag_mtd(master, pp, &args, flagp);
++
++	of_node_put(args.np);
++
++	if (ret) {
++		if (ret != -EPROBE_DEFER)
++			pr_warn("EcoNet: Failed to read boot flag, %d\n", ret);
++		return ret;
++	}
++
++	pr_info_once("EcoNet: Using slot 0x%02x\n", *flagp);
++	return 0;
++}
++
+ static int parse_fixed_partitions(struct mtd_info *master,
+ 				  const struct mtd_partition **pparts,
+ 				  struct mtd_part_parser_data *data)
+@@ -51,6 +151,7 @@ static int parse_fixed_partitions(struct
+ 	struct device_node *pp;
+ 	int nr_parts, i, ret = 0;
+ 	bool dedicated = true;
++	u8 boot_flag;
+ 
+ 	/* Pull of_node from the master device node */
+ 	mtd_node = mtd_get_of_node(master);
+@@ -98,6 +199,13 @@ static int parse_fixed_partitions(struct
+ 		return 0;
+ 	}
+ 
++	ret = econet_read_boot_flag(master, ofpart_node, &boot_flag);
++	if (ret) {
++		if (dedicated)
++			of_node_put(ofpart_node);
++		return ret;
++	}
++
+ 	parts = kcalloc(nr_parts, sizeof(*parts), GFP_KERNEL);
+ 	if (!parts) {
+ 		if (dedicated)
+@@ -110,6 +218,7 @@ static int parse_fixed_partitions(struct
+ 		const __be32 *reg;
+ 		int len;
+ 		int a_cells, s_cells;
++		u32 flag_value;
+ 
+ 		if (!dedicated && node_has_compatible(pp))
+ 			continue;
+@@ -159,9 +268,14 @@ static int parse_fixed_partitions(struct
+ 		parts[i].size = of_read_number(reg + a_cells, s_cells);
+ 		parts[i].of_node = pp;
+ 
+-		partname = of_get_property(pp, "label", &len);
+-		if (!partname)
+-			partname = of_get_property(pp, "name", &len);
++		if (!of_property_read_u32(pp, "econet,boot-flag-value", &flag_value) &&
++		    flag_value == boot_flag) {
++			partname = "ubi";
++		} else {
++			partname = of_get_property(pp, "label", &len);
++			if (!partname)
++				partname = of_get_property(pp, "name", &len);
++		}
+ 		parts[i].name = partname;
+ 
+ 		if (of_property_read_bool(pp, "read-only"))
