@@ -1,0 +1,436 @@
+#!/bin/sh /etc/rc.common
+# Apply the PPE hardware QoS classifiers: the DSCP-to-priority maps and the
+# driver's small-packet priority on every switch port, and the marking rules
+# that put a DSCP on a flow in the first place. Idempotent; reload reapplies
+# the whole config.
+#
+# Marking is done by the switch's own ACL engine, reached through tc flower:
+# a flow the PPE has offloaded never returns to the CPU, so an nftables mangle
+# rule would only ever see the packets before the offload took over. A flower
+# filter with a pedit of the IP traffic class becomes an ACL entry, which is
+# applied to every packet including the offloaded ones.
+
+START=25
+
+PARAM_DIR=/sys/module/qca_ppe/parameters
+
+# Our own filter priorities, so that a reload removes what this script put on a
+# shared ingress block and leaves anything else alone. The switch ranks a rule
+# by the preference it was given and holds nine bits of it, so the range sits
+# inside that and high, where a rule this script installs by default yields to
+# anything the user placed deliberately. It stops one short of the last
+# preference the switch holds, so a rule placed there - a download mark from
+# whatever owns the shaper - outranks every rule here.
+PREF_BASE=256
+PREF_MAX=510
+
+# The classifier holds 512 entries for the whole switch. A rule's address and
+# port lists become a filter per combination, so the product of four lists can
+# ask for arbitrarily many; past the engine's capacity every one is refused and
+# still costs a fork and a netlink round trip.
+ACL_MAX=512
+
+# Class name -> DSCP value, RFC 4594 service classes.
+class_to_dscp() {
+	local d
+
+	case "$1" in
+	cs0) echo 0 ;;  cs1) echo 8 ;;  cs2) echo 16 ;; cs3) echo 24 ;;
+	cs4) echo 32 ;; cs5) echo 40 ;; cs6) echo 48 ;; cs7) echo 56 ;;
+	af11) echo 10 ;; af12) echo 12 ;; af13) echo 14 ;;
+	af21) echo 18 ;; af22) echo 20 ;; af23) echo 22 ;;
+	af31) echo 26 ;; af32) echo 28 ;; af33) echo 30 ;;
+	af41) echo 34 ;; af42) echo 36 ;; af43) echo 38 ;;
+	ef) echo 46 ;; va) echo 44 ;; le) echo 1 ;;
+	# The leading zero goes here rather than at the reader: the shell reads
+	# a padded value as octal in arithmetic, and the priority map is keyed
+	# on the unpadded number.
+	[0-9]|[0-9][0-9]) [ "$1" -le 63 ] && { d="${1#0}"; echo "${d:-0}"; } ;;
+	*) return 1 ;;
+	esac
+}
+
+# The priority the dscp map gives a mark; empty where it maps none, which
+# leaves the flow in the bulk queue the way an unlisted DSCP does.
+prio_of() {
+	local e
+	for e in $PRIO_MAP; do
+		[ "${e%%:*}" = "$1" ] && { echo "${e#*:}"; return 0; }
+	done
+}
+
+# Trust boundary: /etc/config/ppe-qos is writable by any LuCI role holding the
+# ppe-qos ACL, and its values are pasted into the tc command lines below, which
+# run as root. The LuCI form's datatype checks run in the browser only, so
+# re-validate here - none of these fields legitimately holds a shell
+# metacharacter.
+valid_addrs() {		# space/comma separated addresses or CIDRs; empty = any
+	local t
+	for t in $(echo "$1" | tr ',' ' '); do
+		case "$t" in *[!0-9A-Fa-f:./]*) return 1 ;; esac
+	done
+	return 0
+}
+valid_ports() {		# space/comma separated ports or ranges; empty = any
+	local t
+	for t in $(echo "$1" | tr ',' ' '); do
+		case "$t" in ''|*[!0-9-]*) return 1 ;; esac
+	done
+	return 0
+}
+
+# Every DSA user port of the switch, from what is present rather than from a
+# name or a count - the port set differs across boards.
+switch_ports() {
+	local d
+	for d in /sys/class/net/*/phys_switch_id ; do
+		[ -s "$d" ] || continue
+		d="${d%/phys_switch_id}"
+		echo "${d##*/}"
+	done
+}
+
+# The switch port the uplink rides, so that a rule can be applied to the
+# direction it actually matches on each side. network.wan.device names the
+# device the interface sits on ('wan.7' for a VLAN, 'wan' bare); the switch
+# knows only the port, so take the part before any VLAN id.
+wan_port() {
+	local dev
+	config_get dev global wan_port
+	[ -z "$dev" ] && dev=$(uci -q get network.wan.device)
+	dev="${dev%%.*}"
+	[ -n "$dev" ] && [ -s "/sys/class/net/$dev/phys_switch_id" ] && echo "$dev"
+}
+
+# One flower filter. $1=port $2=protocol $3=ip_proto $4=match $5=tos byte
+#                    $6=internal priority, empty where the map has none
+add_filter() {
+	local mangle prio=""
+
+	case "$2" in
+	ip) mangle="munge ip tos set $5" ;;
+	*)  mangle="munge ip6 traffic_class set $5" ;;
+	esac
+
+	# The mark alone does not pick the queue: the engine ranks the ACL above
+	# the DSCP map, and the map reads the header as it arrived - bleached, on
+	# the download half this rule exists for. The rule that matched carries
+	# the priority itself, as a tc handle - base 16, so a decimal 10 would
+	# reach the driver as 16 and lose the whole filter, mark included.
+	[ -n "$6" ] && prio="action skbedit priority $(printf '%x' "$6")"
+
+	# skip_sw: if the switch cannot take the rule, fail here rather than
+	# quietly classifying on the CPU, which an offloaded flow never reaches.
+	if tc filter add dev "$1" parent ffff: pref $PREF protocol "$2" flower \
+		skip_sw ip_proto "$3" $4 \
+		action pedit ex $mangle $prio >/dev/null 2>&1 ; then
+		INSTALLED=$((INSTALLED + 1))
+	else
+		SKIPPED=$((SKIPPED + 1))
+		logger -t ppe-qos "port $1: switch refused $2/$3 $4"
+	fi
+}
+
+# Address list restricted to one family; a list with no member of that family
+# excludes the rule from it.
+addrs_of() {
+	local a out=""
+	for a in $(echo "$1" | tr ',' ' '); do
+		case "$a" in
+		*:*) [ "$2" = ipv6 ] && out="$out $a" ;;
+		*)   [ "$2" = ip ] && out="$out $a" ;;
+		esac
+	done
+	echo $out
+}
+
+# Emit both directions of one rule for one family and one L4 protocol.
+#  as written, a LAN port sees the flow leaving: match the destination
+#  mirrored, the uplink port sees it coming back: match the source
+emit() {
+	local fam="$1" l4="$2" tos="$3" sip="$4" dip="$5" sport="$6" dport="$7"
+	local prio="$8"
+	local fsip fdip p sa da sp dp m
+
+	fsip=$(addrs_of "$sip" "$fam")
+	fdip=$(addrs_of "$dip" "$fam")
+	[ -n "$sip" ] && [ -z "$fsip" ] && return 0
+	[ -n "$dip" ] && [ -z "$fdip" ] && return 0
+
+	# One filter per combination: flower matches a single prefix and a single
+	# port or range per key, so a list becomes a filter each.
+	for sa in ${fsip:-any}; do
+	for da in ${fdip:-any}; do
+	for sp in ${sport:-any}; do
+	for dp in ${dport:-any}; do
+		[ $((INSTALLED + SKIPPED)) -lt $ACL_MAX ] || {
+			SKIPPED=$((SKIPPED + 1))
+			return 0
+		}
+
+		# As written, on the ports a client sits behind: the service is
+		# the destination.
+		m=""
+		[ "$sa" = any ] || m="$m src_ip $sa"
+		[ "$da" = any ] || m="$m dst_ip $da"
+		[ "$sp" = any ] || m="$m src_port $sp"
+		[ "$dp" = any ] || m="$m dst_port $dp"
+		for p in $MARK_PORTS; do
+			add_filter "$p" "$fam" "$l4" "$m" "$tos" "$prio"
+		done
+
+		# Mirrored, on the uplink port: the same connection coming back,
+		# so source and destination swap.
+		[ -n "$WAN_PORT" ] || continue
+		m=""
+		[ "$da" = any ] || m="$m src_ip $da"
+		[ "$sa" = any ] || m="$m dst_ip $sa"
+		[ "$dp" = any ] || m="$m src_port $dp"
+		[ "$sp" = any ] || m="$m dst_port $sp"
+		add_filter "$WAN_PORT" "$fam" "$l4" "$m" "$tos" "$prio"
+	done
+	done
+	done
+	done
+}
+
+apply_rule() {
+	local cfg="$1" enabled name proto class sip dip sport dport dscp tos fam l4
+	local prio
+
+	config_get_bool enabled "$cfg" enabled 0
+	[ "$enabled" = 1 ] || return 0
+
+	config_get name "$cfg" name "$cfg"
+	config_get proto "$cfg" proto tcpudp
+	config_get class "$cfg" class
+	config_get sip "$cfg" src_ip
+	config_get dip "$cfg" dest_ip
+	config_get sport "$cfg" src_port
+	config_get dport "$cfg" dest_port
+
+	dscp=$(class_to_dscp "$class") || {
+		logger -t ppe-qos "rule '$name': unknown class '$class', skipped"
+		return 0
+	}
+	valid_addrs "$sip" && valid_addrs "$dip" &&
+	valid_ports "${sport:-0}" && valid_ports "${dport:-0}" || {
+		logger -t ppe-qos "rule '$name': address or port list rejected, skipped"
+		return 0
+	}
+
+	# The engine rewrites the whole traffic-class byte or none of it, so the
+	# two ECN bits go to zero with the mark. Nothing here negotiates ECN.
+	tos=$((dscp * 4))
+
+	# What the dscp map would resolve this mark to, taken here because the
+	# map cannot do it itself for traffic that arrives unmarked.
+	prio=$(prio_of "$dscp")
+
+	for l4 in $(echo "$proto" | sed 's/tcpudp/tcp udp/'); do
+		case "$l4" in tcp|udp) ;; *) continue ;; esac
+		for fam in ip ipv6; do
+			PREF=$((PREF_BASE + PREF_N))
+			[ $PREF -gt $PREF_MAX ] && return 0
+			PREF_N=$((PREF_N + 1))
+			emit "$fam" "$l4" "$tos" "$sip" "$dip" "$sport" \
+			     "$dport" "$prio"
+		done
+	done
+}
+
+# Remove only what this script put on a shared ingress block: the prefs it
+# owns, read back from the block rather than swept blindly, since the range is
+# a thousand wide and every delete is a netlink round trip.
+flush_filters() {
+	local p n
+	for p in $(switch_ports); do
+		for n in $(tc filter show dev "$p" parent ffff: 2>/dev/null |
+			   sed -n 's/.* pref \([0-9]*\) .*/\1/p' | sort -u); do
+			[ "$n" -ge $PREF_BASE ] && [ "$n" -le $PREF_MAX ] &&
+				tc filter del dev "$p" parent ffff: pref "$n" \
+					>/dev/null 2>&1
+		done
+	done
+}
+
+wifi_devs() {
+	local d
+	for d in /sys/class/ieee80211/*/device/net/* ; do
+		[ -e "$d" ] || continue
+		echo "${d##*/}"
+	done
+}
+
+# u32 takes its offsets from the network header, which puts the length field
+# at 2 for IPv4 and at 4 for IPv6. The egress block is shared, so these carry
+# the same prefs the ingress half owns.
+wifi_small_pkt() {
+	local dev="$1" prio="$2"
+
+	tc qdisc add dev "$dev" clsact 2>/dev/null
+
+	# u32 has no handle here, so a replace appends a second node rather
+	# than standing in for the first; the pref is cleared to keep a reload
+	# from growing the block.
+	wifi_clear "$dev"
+
+	tc filter add dev "$dev" egress pref $PREF_BASE protocol ip u32 \
+		match u16 0x0000 0xff00 at 2 \
+		action skbedit priority $(printf '%x' $((256 + prio))) 2>/dev/null
+	tc filter add dev "$dev" egress pref $((PREF_BASE + 1)) \
+		protocol ipv6 u32 match u16 0x0000 0xff00 at 4 \
+		action skbedit priority $(printf '%x' $((256 + prio))) 2>/dev/null
+}
+
+wifi_clear() {
+	tc filter del dev "$1" egress pref $PREF_BASE >/dev/null 2>&1
+	tc filter del dev "$1" egress pref $((PREF_BASE + 1)) >/dev/null 2>&1
+}
+
+apply() {
+	local len prio pairs="" port dev
+
+	config_load ppe-qos
+	config_get_bool ENABLED global enabled 1
+	config_get len global small_pkt_len 1000
+	config_get prio global small_pkt_prio 5
+
+	# Everything below arms a classifier, so an off config takes the same
+	# path as stop rather than programming half of it.
+	[ "$ENABLED" = 1 ] || { teardown; return 0; }
+
+	if [ -w "$PARAM_DIR/small_pkt_len" ]; then
+		echo "$prio" > "$PARAM_DIR/small_pkt_prio"
+		echo "$len" > "$PARAM_DIR/small_pkt_len"
+	fi
+
+	# The same policy, on the one egress the switch classifier cannot reach.
+	# A frame to a Wi-Fi client leaves by the CPU port and is then queued by
+	# mac80211, which picks its access category from skb->priority - a value
+	# nothing on the way from the switch has set. So the small-packet rule
+	# stops at the CPU port and the frame contends as best effort.
+	#
+	# cfg80211_classify8021d() takes skb->priority in 256..263 as a direct
+	# 802.1d tag, and sch_handle_egress() runs before the queue is picked, so
+	# a clsact filter on the AP netdev is enough. Matching the high byte of
+	# the length field for zero is the cheapest "small" test u32 can do; the
+	# exact threshold matters far less than the frame not being best effort.
+	for dev in $(wifi_devs); do
+		if [ "$len" -gt 0 ]; then
+			wifi_small_pkt "$dev" "$prio"
+		else
+			wifi_clear "$dev"
+		fi
+	done
+
+	add_pair() {
+		local d p
+		config_get d "$1" dscp
+		config_get p "$1" prio
+		[ -n "$d" ] && [ -n "$p" ] || return 0
+		case "$d$p" in *[!0-9]*)
+			logger -t ppe-qos "dscp map '$d:$p' is not numeric, skipped"
+			return 0 ;;
+		esac
+		pairs="$pairs dscp-prio $d:$p"
+		PRIO_MAP="$PRIO_MAP $d:$p"
+	}
+	PRIO_MAP=""
+	config_foreach add_pair dscp
+
+	# Every DSA user port classifies on ingress; the set is derived from
+	# what is present, never hardcoded.
+	for port in $(switch_ports); do
+		dcb app flush dev "$port" dscp-prio 2>/dev/null
+		[ -n "$pairs" ] && dcb app add dev "$port" $pairs
+	done
+
+	flush_filters
+
+	WAN_PORT=$(wan_port)
+	[ -n "$WAN_PORT" ] ||
+		logger -t ppe-qos "the uplink is not a switch port; every rule's download half is skipped - set ppe-qos.global.wan_port"
+
+	# The uplink port carries the download half of every rule, which is what
+	# a mark is actually worth here: it picks the egress queue toward the
+	# client and it is what mac80211 reads for its Wi-Fi access category.
+	#
+	# The upload half needs a rule on each port a client sits behind, so it
+	# costs as many classifier entries as there are ports - and it buys
+	# little, because sparse upload traffic already takes the priority band
+	# through small_pkt_len without any marking, and the DSCP that leaves
+	# toward the ISP is routinely bleached on the way. Off by default; turn
+	# it on if something downstream of this router acts on the mark.
+	config_get_bool MARK_UPLOAD global mark_upload 0
+	MARK_PORTS=""
+	if [ "$MARK_UPLOAD" = 1 ]; then
+		for port in $(switch_ports); do
+			[ "$port" = "$WAN_PORT" ] || MARK_PORTS="$MARK_PORTS $port"
+		done
+	fi
+
+	# The marking filters share the ingress qdisc with sqm's meter, so the
+	# qdisc is only ever added, never replaced.
+	for port in $(switch_ports); do
+		tc qdisc add dev "$port" handle ffff: ingress 2>/dev/null
+	done
+
+	PREF_N=0
+	INSTALLED=0
+	SKIPPED=0
+	config_foreach apply_rule rule
+
+	# The classifier is a fixed 512 entries shared by every port, and a rule
+	# costs one entry per port it is installed on - more where it matches an
+	# IPv6 address, which does not fit in a single entry. Say what fitted, so
+	# that a rule quietly missing from half the ports is visible.
+	logger -t ppe-qos "marking rules: $INSTALLED filters installed, $SKIPPED refused"
+	[ "$SKIPPED" = 0 ] ||
+		logger -t ppe-qos "the switch classifier is full; disable rules or narrow their port lists"
+}
+
+EXTRA_COMMANDS="wifi_dev"
+EXTRA_HELP="\twifi_dev <netdev>  apply the small-packet egress stamp to one Wi-Fi netdev"
+
+start() {
+	apply
+}
+
+# A Wi-Fi netdev does not exist when this service starts - hostapd creates it a
+# moment later - so the egress stamp has to be applied when the interface
+# appears as well as at start. The hotplug hook calls this for one device.
+wifi_dev() {
+	local dev="$1" len prio
+
+	[ -n "$dev" ] || return 1
+	config_load ppe-qos
+	config_get_bool ENABLED global enabled 1
+	config_get len global small_pkt_len 1000
+	config_get prio global small_pkt_prio 5
+	[ "$ENABLED" = 1 ] && [ "$len" -gt 0 ] || return 0
+	wifi_small_pkt "$dev" "$prio"
+}
+
+reload() {
+	apply
+}
+
+# The egress block on an AP netdev is shared with whatever else is on the
+# interface, so only the prefs this script owns are removed.
+teardown() {
+	local dev
+
+	flush_filters
+	[ -w "$PARAM_DIR/small_pkt_len" ] && echo 0 > "$PARAM_DIR/small_pkt_len"
+	for dev in $(switch_ports); do
+		dcb app flush dev "$dev" dscp-prio 2>/dev/null
+	done
+	for dev in $(wifi_devs); do
+		wifi_clear "$dev"
+	done
+}
+
+stop() {
+	teardown
+}

@@ -44,7 +44,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		return -EEXIST;
  
  	if (flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_META)) {
-@@ -522,8 +523,8 @@ mtk_flow_offload_destroy(struct mtk_eth
+@@ -523,8 +524,8 @@ mtk_flow_offload_destroy(struct mtk_eth
  {
  	struct mtk_flow_entry *entry;
  
@@ -55,7 +55,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	if (!entry)
  		return -ENOENT;
  
-@@ -544,8 +545,8 @@ mtk_flow_offload_stats(struct mtk_eth *e
+@@ -545,8 +546,8 @@ mtk_flow_offload_stats(struct mtk_eth *e
  	u64 packets, bytes;
  	int idle;
  
