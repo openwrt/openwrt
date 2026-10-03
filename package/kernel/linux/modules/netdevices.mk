@@ -45,16 +45,27 @@ endef
 $(eval $(call KernelPackage,ag71xx))
 
 
+define KernelPackage/ag71xx-legacy-mdio
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Downstream Atheros AR7XXX/AR9XXX ethernet MDIO support
+  DEPENDS:=@TARGET_ath79 +kmod-libphy +kmod-mdio-devres
+  HIDDEN:=1
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/atheros/ag71xx/ag71xx_legacy_mdio.ko
+  AUTOLOAD:=$(call AutoLoad,49,ag71xx-legacy-mdio,1)
+endef
+
+$(eval $(call KernelPackage,ag71xx-legacy-mdio))
+
+
 define KernelPackage/ag71xx-legacy
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Downstream Atheros AR7XXX/AR9XXX ethernet mac support
-  DEPENDS:=@TARGET_ath79 +kmod-libphy +kmod-mdio-devres
+  DEPENDS:=@TARGET_ath79 +kmod-ag71xx-legacy-mdio
   KCONFIG:=CONFIG_AG71XX_LEGACY \
 	CONFIG_AG71XX_LEGACY_DEBUG=n \
 	CONFIG_AG71XX_LEGACY_DEBUG_FS=y
-  FILES:=$(LINUX_DIR)/drivers/net/ethernet/atheros/ag71xx/ag71xx_legacy.ko \
-	 $(LINUX_DIR)/drivers/net/ethernet/atheros/ag71xx/ag71xx_legacy_mdio.ko
-  AUTOLOAD:=$(call AutoLoad,50,ag71xx-legacy ag71xx-legacy-mdio,1)
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/atheros/ag71xx/ag71xx_legacy.ko
+  AUTOLOAD:=$(call AutoLoad,50,ag71xx-legacy,1)
 endef
 
 $(eval $(call KernelPackage,ag71xx-legacy))
