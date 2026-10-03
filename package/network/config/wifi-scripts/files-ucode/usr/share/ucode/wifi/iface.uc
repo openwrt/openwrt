@@ -89,7 +89,8 @@ export function parse_encryption(config, dev_config, phy_features) {
 	let compat = (config.auth_type == 'sae-compat');
 	let rsno2_mode = config.auth_type in [ 'sae', 'psk3', 'sae-mixed', 'psk3-mixed' ] ||
 		(!!config.mlo && config.auth_type == 'psk2');
-	config.rsno2_sae = eht && rsno2_mode && config.sae_ext_key !== false;
+	/* all links of an AP MLD must reach the same decision */
+	config.rsno2_sae = (eht || !!config.mlo) && rsno2_mode && config.sae_ext_key !== false;
 	let rsno2_gcmp256 = config.gcmp256 !== false && phy_features?.cipher_gcmp256;
 	config.gcmp256 ??= compat && eht;
 	config.sae_ext_key ??= compat && eht;

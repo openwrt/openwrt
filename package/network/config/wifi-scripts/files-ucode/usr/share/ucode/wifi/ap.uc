@@ -87,6 +87,21 @@ function station_password_count(stas) {
 	return n;
 }
 
+/* a refusal on any band refuses every link of the AP MLD */
+function mld_refusal(link_config, dev_config, phy_features) {
+	for (let band in link_config.mlo_bands) {
+		let config = { ...link_config };
+		config.encryption = iface.encryption_band(config.encryption, band, config.mlo_bands);
+		iface.parse_encryption(config, { ...dev_config, band }, phy_features);
+
+		const reason = bss_refusal(config, band);
+		if (reason)
+			return reason;
+	}
+
+	return null;
+}
+
 function iface_setup(config) {
 	switch(config.fixup) {
 	case 'owe':
@@ -662,12 +677,14 @@ export function generate(interface, data, config, vlans, stas, phy_features) {
 	iface_setup(config);
 
 	config.sae_station_passwords = station_password_count(stas);
+	const link_config = { ...config };
 
 	config.encryption = iface.encryption_band(config.encryption, data.config.band,
 		config.mlo ? (config.mlo_bands ?? []) : null);
 	iface.parse_encryption(config, data.config, phy_features);
 
-	const refusal = bss_refusal(config, data.config.band);
+	const refusal = (config.mlo && length(config.mlo_bands)) ?
+		mld_refusal(link_config, data.config, phy_features) : bss_refusal(config, data.config.band);
 	if (refusal)
 		return refusal;
 
