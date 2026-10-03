@@ -1,0 +1,205 @@
+accompanies the prior patch, since keeping the symbols but not the headers
+breaks things that test link tests but then expect header symbols.
+--
+From c3fdda71bb1733081b72a244cbaef03a33d84531 Mon Sep 17 00:00:00 2001
+From: psykose <alice@ayaya.dev>
+Date: Tue, 11 Apr 2023 21:28:51 +0200
+Subject: [PATCH] Revert "remove LFS64 programming interfaces (macro-only) from
+ _GNU_SOURCE"
+
+This reverts commit 25e6fee27f4a293728dd15b659170e7b9c7db9bc.
+---
+ include/aio.h          | 2 +-
+ include/dirent.h       | 2 +-
+ include/fcntl.h        | 2 +-
+ include/ftw.h          | 2 +-
+ include/glob.h         | 2 +-
+ include/stdio.h        | 2 +-
+ include/stdlib.h       | 2 +-
+ include/sys/mman.h     | 2 +-
+ include/sys/resource.h | 2 +-
+ include/sys/sendfile.h | 2 +-
+ include/sys/stat.h     | 2 +-
+ include/sys/statfs.h   | 2 +-
+ include/sys/statvfs.h  | 2 +-
+ include/sys/types.h    | 2 +-
+ include/sys/uio.h      | 2 +-
+ include/unistd.h       | 2 +-
+ 16 files changed, 16 insertions(+), 16 deletions(-)
+
+--- a/include/aio.h
++++ b/include/aio.h
+@@ -49,7 +49,7 @@ int aio_fsync(int, struct aiocb *);
+ 
+ int lio_listio(int, struct aiocb *__restrict const *__restrict, int, struct sigevent *__restrict);
+ 
+-#if defined(_LARGEFILE64_SOURCE)
++#if defined(_LARGEFILE64_SOURCE) || defined(_GNU_SOURCE)
+ #define aiocb64 aiocb
+ #define aio_read64 aio_read
+ #define aio_write64 aio_write
+--- a/include/dirent.h
++++ b/include/dirent.h
+@@ -56,7 +56,7 @@ int getdents(int, struct dirent *, size_
+ int versionsort(const struct dirent **, const struct dirent **);
+ #endif
+ 
+-#if defined(_LARGEFILE64_SOURCE)
++#if defined(_LARGEFILE64_SOURCE) || defined(_GNU_SOURCE)
+ #define dirent64 dirent
+ #define readdir64 readdir
+ #define readdir64_r readdir_r
+--- a/include/fcntl.h
++++ b/include/fcntl.h
+@@ -195,7 +195,7 @@ ssize_t tee(int, int, size_t, unsigned);
+ #define loff_t off_t
+ #endif
+ 
+-#if defined(_LARGEFILE64_SOURCE)
++#if defined(_LARGEFILE64_SOURCE) || defined(_GNU_SOURCE)
+ #define F_GETLK64 F_GETLK
+ #define F_SETLK64 F_SETLK
+ #define F_SETLKW64 F_SETLKW
+--- a/include/ftw.h
++++ b/include/ftw.h
+@@ -37,7 +37,7 @@ struct FTW {
+ int ftw(const char *, int (*)(const char *, const struct stat *, int), int);
+ int nftw(const char *, int (*)(const char *, const struct stat *, int, struct FTW *), int, int);
+ 
+-#if defined(_LARGEFILE64_SOURCE)
++#if defined(_LARGEFILE64_SOURCE) || defined(_GNU_SOURCE)
+ #define ftw64 ftw
+ #define nftw64 nftw
+ #endif
+--- a/include/glob.h
++++ b/include/glob.h
+@@ -39,7 +39,7 @@ void globfree(glob_t *);
+ #define GLOB_NOMATCH 3
+ #define GLOB_NOSYS   4
+ 
+-#if defined(_LARGEFILE64_SOURCE)
++#if defined(_LARGEFILE64_SOURCE) || defined(_GNU_SOURCE)
+ #define glob64 glob
+ #define globfree64 globfree
+ #define glob64_t glob_t
+--- a/include/stdio.h
++++ b/include/stdio.h
+@@ -205,7 +205,7 @@ typedef struct _IO_cookie_io_functions_t
+ FILE *fopencookie(void *, const char *, cookie_io_functions_t);
+ #endif
+ 
+-#if defined(_LARGEFILE64_SOURCE)
++#if defined(_LARGEFILE64_SOURCE) || defined(_GNU_SOURCE)
+ #define tmpfile64 tmpfile
+ #define fopen64 fopen
+ #define freopen64 freopen
+--- a/include/stdlib.h
++++ b/include/stdlib.h
+@@ -163,7 +163,7 @@ double strtod_l(const char *__restrict,
+ long double strtold_l(const char *__restrict, char **__restrict, struct __locale_struct *);
+ #endif
+ 
+-#if defined(_LARGEFILE64_SOURCE)
++#if defined(_LARGEFILE64_SOURCE) || defined(_GNU_SOURCE)
+ #define mkstemp64 mkstemp
+ #define mkostemp64 mkostemp
+ #if defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
+--- a/include/sys/mman.h
++++ b/include/sys/mman.h
+@@ -141,7 +141,7 @@ int mincore (void *, size_t, unsigned ch
+ int shm_open (const char *, int, mode_t);
+ int shm_unlink (const char *);
+ 
+-#if defined(_LARGEFILE64_SOURCE)
++#if defined(_LARGEFILE64_SOURCE) || defined(_GNU_SOURCE)
+ #define mmap64 mmap
+ #define off64_t off_t
+ #endif
+--- a/include/sys/resource.h
++++ b/include/sys/resource.h
+@@ -95,7 +95,7 @@ int prlimit(pid_t, int, const struct rli
+ 
+ #define RLIM_NLIMITS RLIMIT_NLIMITS
+ 
+-#if defined(_LARGEFILE64_SOURCE)
++#if defined(_LARGEFILE64_SOURCE) || defined(_GNU_SOURCE)
+ #define RLIM64_INFINITY RLIM_INFINITY
+ #define RLIM64_SAVED_CUR RLIM_SAVED_CUR
+ #define RLIM64_SAVED_MAX RLIM_SAVED_MAX
+--- a/include/sys/sendfile.h
++++ b/include/sys/sendfile.h
+@@ -10,7 +10,7 @@ extern "C" {
+ 
+ ssize_t sendfile(int, int, off_t *, size_t);
+ 
+-#if defined(_LARGEFILE64_SOURCE)
++#if defined(_LARGEFILE64_SOURCE) || defined(_GNU_SOURCE)
+ #define sendfile64 sendfile
+ #define off64_t off_t
+ #endif
+--- a/include/sys/stat.h
++++ b/include/sys/stat.h
+@@ -98,7 +98,7 @@ int lchmod(const char *, mode_t);
+ #define S_IEXEC S_IXUSR
+ #endif
+ 
+-#if defined(_LARGEFILE64_SOURCE)
++#if defined(_LARGEFILE64_SOURCE) || defined(_GNU_SOURCE)
+ #define stat64 stat
+ #define fstat64 fstat
+ #define lstat64 lstat
+--- a/include/sys/statfs.h
++++ b/include/sys/statfs.h
+@@ -18,7 +18,7 @@ typedef struct __fsid_t {
+ int statfs (const char *, struct statfs *);
+ int fstatfs (int, struct statfs *);
+ 
+-#if defined(_LARGEFILE64_SOURCE)
++#if defined(_LARGEFILE64_SOURCE) || defined(_GNU_SOURCE)
+ #define statfs64 statfs
+ #define fstatfs64 fstatfs
+ #define fsblkcnt64_t fsblkcnt_t
+--- a/include/sys/statvfs.h
++++ b/include/sys/statvfs.h
+@@ -42,7 +42,7 @@ int fstatvfs (int, struct statvfs *);
+ #define ST_NODIRATIME  2048
+ #define ST_RELATIME    4096
+ 
+-#if defined(_LARGEFILE64_SOURCE)
++#if defined(_LARGEFILE64_SOURCE) || defined(_GNU_SOURCE)
+ #define statvfs64 statvfs
+ #define fstatvfs64 fstatvfs
+ #define fsblkcnt64_t fsblkcnt_t
+--- a/include/sys/types.h
++++ b/include/sys/types.h
+@@ -71,7 +71,7 @@ typedef unsigned long long u_quad_t;
+ #include <sys/select.h>
+ #endif
+ 
+-#if defined(_LARGEFILE64_SOURCE)
++#if defined(_LARGEFILE64_SOURCE) || defined(_GNU_SOURCE)
+ #define blkcnt64_t blkcnt_t
+ #define fsblkcnt64_t fsblkcnt_t
+ #define fsfilcnt64_t fsfilcnt_t
+--- a/include/sys/uio.h
++++ b/include/sys/uio.h
+@@ -29,7 +29,7 @@ ssize_t writev (int, const struct iovec
+ #if defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
+ ssize_t preadv (int, const struct iovec *, int, off_t);
+ ssize_t pwritev (int, const struct iovec *, int, off_t);
+-#if defined(_LARGEFILE64_SOURCE)
++#if defined(_LARGEFILE64_SOURCE) || defined(_GNU_SOURCE)
+ #define preadv64 preadv
+ #define pwritev64 pwritev
+ #define off64_t off_t
+--- a/include/unistd.h
++++ b/include/unistd.h
+@@ -198,7 +198,7 @@ ssize_t copy_file_range(int, off_t *, in
+ pid_t gettid(void);
+ #endif
+ 
+-#if defined(_LARGEFILE64_SOURCE)
++#if defined(_LARGEFILE64_SOURCE) || defined(_GNU_SOURCE)
+ #define lseek64 lseek
+ #define pread64 pread
+ #define pwrite64 pwrite
