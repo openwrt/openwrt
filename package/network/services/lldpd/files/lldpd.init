@@ -460,9 +460,6 @@ start_service() {
 
 	[ -n "$ifnames" ] && procd_append_param command -C "$ifnames"
 
-    # Overwrite default configuration locations processed by lldpcli at start
-	procd_append_param command -O "$LLDPD_CONF"
-
 	local restart_hash
 	get_config_restart_hash restart_hash
 	echo -n "$restart_hash" > "$LLDPD_RESTART_HASH"
