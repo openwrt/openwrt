@@ -55,7 +55,7 @@ define Device/evaluation-dtb
   $(Device/evaluation)
   $(Device/dtb)
   KERNEL_SUFFIX := -fit-zImage.itb
-  KERNEL = kernel-bin | gzip | fit gzip $$(KDIR)/image-$$(DEVICE_DTS).dtb
+  KERNEL = kernel-bin | libdeflate-gzip | fit gzip $$(KDIR)/image-$$(DEVICE_DTS).dtb
 endef
 
 define Device/evaluation-fit

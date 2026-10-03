@@ -11,7 +11,7 @@ endef
 
 ### Image scripts ###
 define Build/boot-common
-	# This creates a new folder copies the dtb (as rockchip.dtb) 
+	# This creates a new folder copies the dtb (as rockchip.dtb)
 	# and the kernel image (as kernel.img)
 	rm -fR $@.boot
 	mkdir -p $@.boot
@@ -25,10 +25,10 @@ define Build/boot-script
 endef
 
 define Build/pine64-img
-	# Creates the final SD/eMMC images, 
+	# Creates the final SD/eMMC images,
 	# combining boot partition, root partition as well as the u-boot bootloader
 
-	# Generate a new partition table in $@ with 32 MiB of 
+	# Generate a new partition table in $@ with 32 MiB of
 	# alignment padding for the u-boot-rockchip.bin (idbloader + u-boot) to fit:
 	# http://opensource.rock-chips.com/wiki_Boot_option#Boot_flow
 	#
@@ -50,7 +50,7 @@ define Device/Default
   KERNEL_LOADADDR :=
   BOOT_SCRIPT :=
   IMAGES := sysupgrade.img.gz
-  IMAGE/sysupgrade.img.gz = boot-common | boot-script $$(BOOT_SCRIPT) | pine64-img | gzip | append-metadata
+  IMAGE/sysupgrade.img.gz = boot-common | boot-script $$(BOOT_SCRIPT) | pine64-img | libdeflate-gzip | append-metadata
   DEVICE_DTS_DIR = $$(DTS_DIR)/rockchip
   DEVICE_DTS = $$(SOC)-$(lastword $(subst _, ,$(1)))
   UBOOT_DEVICE_NAME = $(lastword $(subst _, ,$(1)))-$$(SOC)
