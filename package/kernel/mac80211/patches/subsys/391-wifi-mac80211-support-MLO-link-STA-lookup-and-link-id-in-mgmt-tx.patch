@@ -1,0 +1,71 @@
+From: Alexander Astrovsky <astrouski@google.com>
+Date: Sun, 23 Aug 2026 21:40:00 +0000
+Subject: [PATCH] wifi: mac80211: support MLO link STA lookup and link_id in
+ mgmt_tx
+
+In an AP MLD, management frames (such as Action frames, BSS Transition,
+and TWT frames) are frequently sent to a peer station's Link MAC address
+rather than its MLD MAC address.
+
+Previously, ieee80211_mgmt_tx() only called sta_info_get_bss(sdata, mgmt->da),
+which only looks up stations by MLD MAC address. When mgmt->da is a link
+address, sta lookup failed (sta == NULL), causing mlo_sta to evaluate to
+false.
+
+Fix this by:
+1. Adding a fallback to link_sta_info_get_bss(sdata, mgmt->da) when
+   sta_info_get_bss() fails, and defaulting link_id to link_sta->link_id
+   when params->link_id is not explicitly specified.
+2. In the link selection loop, guarding the transmission from the AP's
+   MLD address with ieee80211_vif_is_mld(&sdata->vif) rather than requiring
+   mlo_sta, and honoring params->link_id when explicitly requested by
+   user-space.
+
+Signed-off-by: Alexander Astrovsky <astrouski@google.com>
+---
+ net/mac80211/offchannel.c | 20 +++++++++++++++++---
+ 1 file changed, 17 insertions(+), 3 deletions(-)
+
+--- a/net/mac80211/offchannel.c
++++ b/net/mac80211/offchannel.c
+@@ -894,6 +894,16 @@ int ieee80211_mgmt_tx(struct wiphy *wiph
+ 
+ 		rcu_read_lock();
+ 		sta = sta_info_get_bss(sdata, mgmt->da);
++		if (!sta) {
++			struct link_sta_info *link_sta;
++
++			link_sta = link_sta_info_get_bss(sdata, mgmt->da);
++			if (link_sta) {
++				sta = link_sta->sta;
++				if (params->link_id < 0)
++					link_id = link_sta->link_id;
++			}
++		}
+ 		mlo_sta = sta && sta->sta.mlo;
+ 
+ 		if (!ieee80211_is_action(mgmt->frame_control) ||
+@@ -913,7 +923,8 @@ int ieee80211_mgmt_tx(struct wiphy *wiph
+ 			rcu_read_unlock();
+ 			return -ENOLINK;
+ 		}
+-		link_id = params->link_id;
++		if (params->link_id >= 0)
++			link_id = params->link_id;
+ 		rcu_read_unlock();
+ 		break;
+ 	case NL80211_IFTYPE_STATION:
+@@ -972,8 +983,11 @@ int ieee80211_mgmt_tx(struct wiphy *wiph
+ 			if (!chanctx_conf)
+ 				continue;
+ 
+-			if (mlo_sta && params->chan == chanctx_conf->def.chan &&
+-			    ether_addr_equal(sdata->vif.addr, mgmt->sa)) {
++			if (ieee80211_vif_is_mld(&sdata->vif) &&
++			    ether_addr_equal(sdata->vif.addr, mgmt->sa) &&
++			    params->chan == chanctx_conf->def.chan) {
++				if (params->link_id >= 0 && params->link_id != i)
++					continue;
+ 				link_id = i;
+ 				break;
+ 			}
