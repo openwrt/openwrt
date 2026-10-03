@@ -993,6 +993,18 @@ define Device/dlink_dir_nand_128m
 	check-size
 endef
 
+define Device/dlink_dir-1260-r1
+  $(Device/nand)
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DIR-1260
+  DEVICE_VARIANT := R1
+  IMAGE_SIZE := 129280k
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | check-size
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap kmod-usb3
+endef
+TARGET_DEVICES += dlink_dir-1260-r1
+
 define Device/dlink_dir-1360-a1
   $(Device/dlink_dir_nand_128m)
   DEVICE_VENDOR := D-Link
