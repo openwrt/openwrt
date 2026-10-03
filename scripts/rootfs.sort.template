@@ -1,0 +1,32 @@
+# 1. Kernel Modules (converted from lib/modules/**/*.ko)
+@ ^lib/modules/.*\.ko 1000
+
+# 2. Shared Objects (merged and converted to regex)
+@ ^usr/lib/.*\.so 500
+@ ^usr/lib/.*\.so\..* 500
+@ ^lib/.*\.so 500
+@ ^lib/.*\.so\..* 500
+
+# 3. Any other ELF files not caught above
+! executable 400
+
+# 4. Firmware files
+@ ^lib/firmware/.* 300
+
+# 5. Images (glob **/*.png became .*\.png)
+@ .*\.png 250
+
+# 6. Web and Config assets
+@ .*\.json 200
+@ .*\.uc 200
+@ .*\.ut 200
+@ www/cgi-bin/luci 200
+@ .*\.js 200
+@ .*\.css 200
+@ .*\.svg 199
+
+# 7. Shell scripts (not caught by previous rules)
+@ .*\.sh 100
+! shell_script 100
+
+@ .*\.conf 99
