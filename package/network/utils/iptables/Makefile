@@ -470,6 +470,16 @@ define Package/iptables-mod-checksum/description
 iptables extension for the CHECKSUM calculation target
 endef
 
+define Package/iptables-mod-devgroup
+$(call Package/iptables/Module, +kmod-ipt-devgroup)
+  TITLE:=devgroup match extension
+endef
+
+define Package/iptables-mod-devgroup/description
+iptables extension for the devgroup match, which allows to match on the
+device group a network device is assigned to.
+endef
+
 define Package/ip6tables-zz-legacy
 $(call Package/iptables/Default)
   DEPENDS:=@IPV6 +kmod-ip6tables +xtables-legacy
@@ -770,6 +780,7 @@ $(eval $(call BuildPlugin,iptables-mod-nflog,$(IPT_NFLOG-m)))
 $(eval $(call BuildPlugin,iptables-mod-trace,$(IPT_DEBUG-m)))
 $(eval $(call BuildPlugin,iptables-mod-nfqueue,$(IPT_NFQUEUE-m)))
 $(eval $(call BuildPlugin,iptables-mod-checksum,$(IPT_CHECKSUM-m)))
+$(eval $(call BuildPlugin,iptables-mod-devgroup,$(IPT_DEVGROUP-m)))
 $(eval $(call BuildPackage,ip6tables-nft))
 $(eval $(call BuildPackage,ip6tables-zz-legacy))
 $(eval $(call BuildPlugin,ip6tables-extra,$(IPT_IPV6_EXTRA-m)))

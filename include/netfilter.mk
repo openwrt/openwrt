@@ -257,6 +257,10 @@ $(eval $(call nf_add,NFNETLINK_QUEUE,CONFIG_NETFILTER_NETLINK_QUEUE, $(P_XT)nfne
 
 $(eval $(if $(NF_KMOD),$(call nf_add,NF_CONNCOUNT,CONFIG_NETFILTER_CONNCOUNT, $(P_XT)nf_conncount),))
 
+# devgroup
+
+$(eval $(call nf_add,IPT_DEVGROUP,CONFIG_NETFILTER_XT_MATCH_DEVGROUP, $(P_XT)xt_devgroup))
+
 #
 # ebtables
 #
