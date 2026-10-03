@@ -1,0 +1,175 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+# Owns all six LED channels. No WPS or Internet reachability checks.
+
+. /lib/functions.sh
+. /usr/share/libubox/jshn.sh
+
+LED_ROOT=/sys/class/leds
+NET_ROOT=/sys/class/net
+LEDS='red:status green:status red:indicator-1 green:indicator-1 green:indicator-2 green:indicator-3'
+
+brightness() {
+	local path="$LED_ROOT/$1/brightness" value
+	read -r value < "$path" || return
+	[ "$value" = "$2" ] || echo "$2" > "$path"
+}
+
+clear_leds() {
+	local led
+	for led in $LEDS; do brightness "$led" 0; done
+}
+
+station_config() {
+	local mode disabled
+	config_get mode "$1" mode
+	config_get_bool disabled "$1" disabled 0
+	[ "$mode" = sta ] && [ "$disabled" = 0 ] || return 0
+	[ -z "$requested" ] || [ "$requested" = "$1" ] || return 0
+	sta_count=$((sta_count + 1))
+	sta_section="$1"
+}
+
+load_settings() {
+	config_load dap1620-leds || return 1
+	config_get mode main mode auto
+	config_get ethernet main ethernet lan
+	config_get requested main station
+	config_get fair main fair -75
+	config_get good main good -65
+	config_get best main best -55
+	case "$mode" in auto|ethernet|repeater) ;; *) return 1;; esac
+	case "$ethernet" in ''|*[!a-zA-Z0-9_.-]*) return 1;; esac
+	local v
+	for v in "$fair" "$good" "$best"; do
+		case "$v" in -[0-9]|-[0-9][0-9]|-1[0-9][0-9]) ;; *) return 1;; esac
+	done
+	[ "$fair" -lt "$good" ] && [ "$good" -lt "$best" ] || return 1
+	sta_count=0
+	sta_section=
+
+	if [ "$mode" != ethernet ]; then
+		config_load wireless || return 1
+		config_foreach station_config wifi-iface
+	fi
+
+	if [ "$mode" = auto ]; then
+		# An enabled STA selects repeater mode even while its radio is down.
+		# Never mistake a wired client for the uplink in repeater mode.
+		if [ "$sta_count" -gt 0 ] || [ -n "$requested" ]; then
+			mode=repeater
+		else
+			mode=ethernet
+		fi
+	fi
+}
+
+station_ifname() {
+	local data radios radio entries entry section ifname
+	data="$(ubus call network.wireless status 2>/dev/null)" || return 1
+	json_load "$data" || return 1
+	json_get_keys radios
+	for radio in $radios; do
+		json_select "$radio" || continue
+		if json_select interfaces; then
+			json_get_keys entries
+			for entry in $entries; do
+				json_select "$entry" || continue
+				json_get_var section section
+				json_get_var ifname ifname
+				if [ "$section" = "$sta_section" ] && [ -n "$ifname" ]; then
+					printf '%s\n' "$ifname"
+					return 0
+				fi
+				json_select ..
+			done
+			json_select ..
+		fi
+		json_select ..
+	done
+	return 1
+}
+
+sample_uplink() {
+	local iface station carrier
+	up=0
+	level=0
+	[ "$settings_valid" = 1 ] || return 0
+	if [ "$mode" = ethernet ]; then
+		read -r carrier 2>/dev/null < "$NET_ROOT/$ethernet/carrier" || carrier=0
+		[ "$carrier" = 1 ] && up=1
+		return 0
+	fi
+	# Ambiguous configurations fail closed until a station is selected.
+	[ "$sta_count" = 1 ] || return 0
+	iface="$(station_ifname)" || return 0
+	# Confirm the live interface is a STA, not an AP serving local clients.
+	iw dev "$iface" info 2>/dev/null | awk '
+		$1 == "type" && $2 == "managed" { ok = 1 }
+		END { exit !ok }
+	' || return 0
+	station="$(iw dev "$iface" station dump 2>/dev/null)" || return 0
+	# AUTHORIZED confirms the controlled port is open, beyond association.
+	# Require exactly one peer; do not combine different peers' attributes.
+	signal="$(printf '%s\n' "$station" | awk '
+		$1 == "Station" { peers++ }
+		$1 == "authorized:" && $2 == "yes" { authorized = 1 }
+		$1 == "signal:" { signal = $2 }
+		END {
+			if (peers != 1 || !authorized) exit 1
+			if (signal ~ /^-[0-9]+$/) print signal
+		}
+	')" || return 0
+	up=1
+	# Missing RSSI is unknown, not the strongest or weakest signal level.
+	[ -n "$signal" ] || return 0
+	level=1
+	[ "$signal" -ge "$fair" ] && level=2
+	[ "$signal" -ge "$good" ] && level=3
+	[ "$signal" -ge "$best" ] && level=4
+	return 0
+}
+
+show_leds() {
+	local phase="$1" red=0 green=0 second=0 third=0
+	if [ "$up" = 1 ]; then
+		brightness red:status 0
+		brightness green:status 1
+	else
+		# Drive both channels together; visually verify amber on hardware.
+		brightness red:status "$phase"
+		brightness green:status "$phase"
+	fi
+	case "$level" in
+		1) red=1; green=1;;
+		2) green=1;;
+		3) green=1; second=1;;
+		4) green=1; second=1; third=1;;
+	esac
+	brightness red:indicator-1 "$red"
+	brightness green:indicator-1 "$green"
+	brightness green:indicator-2 "$second"
+	brightness green:indicator-3 "$third"
+}
+
+main() {
+	local led
+	for led in $LEDS; do
+		[ -w "$LED_ROOT/$led/brightness" ] || return 1
+	done
+	for led in $LEDS; do echo none > "$LED_ROOT/$led/trigger"; done
+	trap 'clear_leds; exit 0' TERM INT
+	settings_valid=0
+	if load_settings; then
+		settings_valid=1
+	fi
+	while :; do
+		sample_uplink
+		show_leds 1
+		sleep 1
+		show_leds 0
+		sleep 1
+	done
+}
+
+main "$@"
