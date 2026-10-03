@@ -1,0 +1,674 @@
+Add clock driver support for Airoha AN7589 series SoC.
+
+Signed-off-by: Zhengping Zhang <zhengping.zhang@airoha.com>
+---
+ drivers/clk/clk-en7523.c                        |  477 +++++++++++++++++++++++++++++++++++++++++++++++++-
+ include/dt-bindings/clock/en7523-clk.h          |   16 ++
+ include/dt-bindings/reset/airoha,an7589-reset.h |   71 ++++++++++
+ 3 files changed, 562 insertions(+), 2 deletions(-)
+
+--- a/drivers/clk/clk-en7523.c
++++ b/drivers/clk/clk-en7523.c
+@@ -14,6 +14,7 @@
+ #include <dt-bindings/reset/airoha,en7523-reset.h>
+ #include <dt-bindings/reset/airoha,en7581-reset.h>
+ #include <dt-bindings/reset/airoha,an7583-reset.h>
++#include <dt-bindings/reset/airoha,an7589-reset.h>
+ 
+ #define RST_NR_PER_BANK			32
+ 
+@@ -43,13 +44,17 @@
+ #define REG_PCIE_XSI0_SEL_MASK		GENMASK(14, 13)
+ #define REG_PCIE_XSI1_SEL_MASK		GENMASK(12, 11)
+ #define REG_CRYPTO_CLKSRC2		0x20c
++#define REG_PM_UPS_CLKSRC		0x210
+ 
+ #define REG_RST_CTRL2			0x830
+ #define REG_RST_CTRL1			0x834
++#define REG_RST_CTRL3			0x838
++#define REG_RST_CTRL4			0x83c
+ 
+ struct en_clk_desc {
+ 	int id;
+ 	const char *name;
++	const char *parent_name;
+ 	u32 base_reg;
+ 	u8 base_bits;
+ 	u8 base_shift;
+@@ -114,6 +119,23 @@ static const u32 spi7583_base[] = { 4000
+ static const u32 npu7583_base[] = { 666000000, 800000000, 720000000, 600000000 };
+ static const u32 crypto7583_base[] = { 540672000, 400000000 };
+ static const u32 emmc7583_base[] = { 150000000, 200000000 };
++/* AN7589 */
++static const u32 emi7589_base[] = { 400000000, 540672000, 480000000, 600000000, 685000000, 720000000, 800000000, 800000000};
++static const u32 bus7589_base[] = { 540672000, 600000000, 720000000, 800000000, 850000000, 960000000, 960000000, 960000000};
++static const u32 sbus_spim7589_base[] = { 100000000, 200000000 };
++static const u32 spim7589_base[] = { 40000000, 180000000, 200000000, 200000000 };
++static const u32 npu7589_base[] = { 540000000, 685000000, 720000000, 800000000, 850000000, 600000000, 960000000, 960000000 };
++static const u32 crypto7589_base[] = { 480000000, 720000000, 960000000, 850000000 };
++static const u32 emmc7589_base[] = { 360000000, 400000000 };
++static const u32 soe7589_base[] = { 425000000, 600000000, 720000000, 800000000, 850000000, 850000000, 850000000, 850000000 };
++static const u32 todgen7589_base[] = { 600000000, 300000000};
++static const u32 efuse7589_base[] = { 200000000, 100000000};
++static const u32 tinynpu7589_base[] = { 425000000, 480000000, 540000000, 720000000};
++static const u32 ecc7589_base[] = { 300000000, 600000000};
++static const u32 pm_ups7589_base[] = { 400000000, 480000000};
++static const u32 dq_ups7589_base[] = { 200000000, 270000000, 480000000, 540000000};
++static const u32 tm_ups7589_base[] = { 400000000, 540000000, 720000000, 800000000, 720000000, 850000000, 600000000, 685000000};
++static const u32 acp7589_base[] = { 480000000, 720000000};
+ 
+ static const struct en_clk_desc en7523_base_clks[] = {
+ 	{
+@@ -454,6 +476,293 @@ static const u16 en7581_rst_ofs[] = {
+ 	REG_NP_SCU_PCIC,
+ };
+ 
++static const struct en_clk_desc an7589_base_clks[] = {
++	{
++		.id = EN7523_CLK_GSW,
++		.name = "gsw",
++
++		.base_reg = REG_GSW_CLK_DIV_SEL,
++		.base_bits = 0,
++		.base_shift = 0,
++		.base_values = gsw_base,
++		.n_base_values = ARRAY_SIZE(gsw_base),
++
++		.div_bits = 0,
++		.div_shift = 0,
++		.div_step = 0,
++		.div_offset = 0,
++	}, 	{
++		.id = EN7523_CLK_EMI,
++		.name = "emi",
++
++		.base_reg = REG_EMI_CLK_DIV_SEL,
++		.base_bits = 3,
++		.base_shift = 8,
++		.base_values = emi7589_base,
++		.n_base_values = ARRAY_SIZE(emi7589_base),
++
++		.div_bits = 3,
++		.div_shift = 0,
++		.div_step = 1,
++		.div_offset = 1,
++	}, {
++		.id = EN7523_CLK_BUS,
++		.name = "bus",
++
++		.base_reg = REG_BUS_CLK_DIV_SEL,
++		.base_bits = 3,
++		.base_shift = 8,
++		.base_values = bus7589_base,
++		.n_base_values = ARRAY_SIZE(bus7589_base),
++
++		.div_bits = 3,
++		.div_shift = 0,
++		.div_step = 1,
++		.div_offset = 1,
++	}, {
++		.id = EN7523_CLK_SLIC,
++		.name = "slic",
++
++		.base_reg = REG_SPI_CLK_FREQ_SEL,
++		.base_bits = 1,
++		.base_shift = 0,
++		.base_values = slic_base,
++		.n_base_values = ARRAY_SIZE(slic_base),
++
++		.div_reg = REG_SPI_CLK_DIV_SEL,
++		.div_bits = 5,
++		.div_shift = 24,
++		.div_val0 = 20,
++		.div_step = 2,
++	}, {
++		.id = EN7523_CLK_SPI,
++		.name = "spi",
++
++		.base_reg = REG_SPI_CLK_FREQ_SEL,
++		.base_bits = 1,
++		.base_shift = 1,
++		.base_values = spi7583_base,
++		.n_base_values = ARRAY_SIZE(spi7583_base),
++
++		.div_reg = REG_SPI_CLK_DIV_SEL,
++		.div_bits = 5,
++		.div_shift = 8,
++		.div_val0 = 40,
++		.div_step = 2,
++	}, {
++		.id = EN7523_CLK_NPU,
++		.name = "npu",
++
++		.base_reg = REG_NPU_CLK_DIV_SEL,
++		.base_bits = 3,
++		.base_shift = 9,
++		.base_values = npu7589_base,
++		.n_base_values = ARRAY_SIZE(npu7589_base),
++
++		.div_bits = 3,
++		.div_shift = 0,
++		.div_step = 1,
++		.div_offset = 1,
++	}, {
++		.id = EN7523_CLK_CRYPTO,
++		.name = "crypto",
++
++		.base_reg = REG_CRYPTO_CLKSRC2,
++		.base_bits = 2,
++		.base_shift = 0,
++		.base_values = crypto7589_base,
++		.n_base_values = ARRAY_SIZE(crypto7589_base),
++	}, {
++		.id = EN7581_CLK_EMMC,
++		.name = "emmc",
++
++		.base_reg = REG_CRYPTO_CLKSRC2,
++		.base_bits = 1,
++		.base_shift = 16,
++		.base_values = emmc7589_base,
++		.n_base_values = ARRAY_SIZE(emmc7589_base),
++	}, {
++		.id = AN7583_CLK_MDIO0,
++		.name = "mdio0",
++
++		.base_reg = REG_CRYPTO_CLKSRC2,
++
++		.base_value = 25000000,
++
++		.div_bits = 4,
++		.div_shift = 18,
++		.div_step = 1,
++		.div_offset = 1,
++	}, {
++		.id = AN7583_CLK_MDIO1,
++		.name = "mdio1",
++
++		.base_reg = REG_CRYPTO_CLKSRC2,
++
++		.base_value = 25000000,
++
++		.div_bits = 4,
++		.div_shift = 22,
++		.div_step = 1,
++		.div_offset = 1,
++	}, {
++		.id = AN7589_CLK_MDIO2,
++		.name = "mdio2",
++
++		.base_reg = REG_NPU_CLK_DIV_SEL,
++
++		.base_value = 25000000,
++
++		.div_bits = 4,
++		.div_shift = 16,
++		.div_step = 1,
++		.div_offset = 1,
++	}, {
++		.id = AN7589_CLK_SOE,
++		.name = "soe",
++
++		.base_reg = REG_CRYPTO_CLKSRC2,
++
++		.base_bits = 2,
++		.base_shift = 9,
++		.base_values = soe7589_base,
++		.n_base_values = ARRAY_SIZE(soe7589_base),
++
++		.div_bits = 3,
++		.div_shift = 0,
++		.div_step = 1,
++		.div_offset = 1,
++	}, {
++		.id = AN7589_CLK_TODGEN,
++		.name = "todgen",
++
++		.base_reg = REG_CRYPTO_CLKSRC2,
++
++		.base_bits = 2,
++		.base_shift = 7,
++		.base_values = todgen7589_base,
++		.n_base_values = ARRAY_SIZE(todgen7589_base),
++
++		.div_bits = 4,
++		.div_shift = 26,
++		.div_step = 1,
++		.div_offset = 1,
++	}, {
++		.id = AN7589_CLK_EFUSE,
++		.name = "efuse",
++
++		.base_reg = REG_CRYPTO_CLKSRC2,
++
++		.base_bits = 1,
++		.base_shift = 6,
++		.base_values = efuse7589_base,
++		.n_base_values = ARRAY_SIZE(efuse7589_base),
++	}, {
++		.id = AN7589_CLK_TINY_NPU,
++		.name = "tinynpu",
++
++		.base_reg = REG_PM_UPS_CLKSRC,
++
++		.base_bits = 2,
++		.base_shift = 14,
++		.base_values = tinynpu7589_base,
++		.n_base_values = ARRAY_SIZE(tinynpu7589_base),
++	}, {
++		.id = AN7589_CLK_ECC,
++		.name = "ecc",
++
++		.base_reg = REG_PM_UPS_CLKSRC,
++
++		.base_bits = 1,
++		.base_shift = 8,
++		.base_values = ecc7589_base,
++		.n_base_values = ARRAY_SIZE(ecc7589_base),
++	}, {
++		.id = AN7589_CLK_PM_UPS,
++		.name = "pm_ups",
++
++		.base_reg = REG_PM_UPS_CLKSRC,
++
++		.base_bits = 1,
++		.base_shift = 0,
++		.base_values = pm_ups7589_base,
++		.n_base_values = ARRAY_SIZE(pm_ups7589_base),
++	}, {
++		.id = AN7589_CLK_DQ_UPS,
++		.name = "dq_ups",
++
++		.base_reg = REG_PM_UPS_CLKSRC,
++
++		.base_bits = 2,
++		.base_shift = 1,
++		.base_values = dq_ups7589_base,
++		.n_base_values = ARRAY_SIZE(dq_ups7589_base),
++	}, {
++		.id = AN7589_CLK_TM_UPS,
++		.name = "tm_ups",
++
++		.base_reg = REG_PM_UPS_CLKSRC,
++
++		.base_bits = 3,
++		.base_shift = 3,
++		.base_values = tm_ups7589_base,
++		.n_base_values = ARRAY_SIZE(tm_ups7589_base),
++	}, {
++		.id = AN7589_CLK_ACP,
++		.name = "acp",
++
++		.base_reg = REG_PM_UPS_CLKSRC,
++
++		.base_bits = 1,
++		.base_shift = 7,
++		.base_values = acp7589_base,
++		.n_base_values = ARRAY_SIZE(acp7589_base),
++	}, {
++		.id = AN7589_CLK_TOP_CB_M_D2,
++		.name = "clk_top_cb_m_d2",
++
++		.base_reg = REG_PM_UPS_CLKSRC,
++		.base_value = 200000000,
++	}, {
++		.id = AN7589_CLK_TOP_SPI2_SEL,
++		.name = "spi2_sel",
++		.parent_name = "clk_top_cb_m_d2",
++
++		.base_reg = REG_PM_UPS_CLKSRC,
++		.base_bits = 2,
++		.base_shift = 20,
++		.base_values = spim7589_base,
++		.n_base_values = ARRAY_SIZE(spim7589_base),
++	}, {
++		.id = AN7589_CLK_INFRA_104M_SPI2,
++		.name = "spi2",
++		.parent_name = "spi2_sel",
++
++		.base_reg = REG_PM_UPS_CLKSRC,
++		.base_bits = 2,
++		.base_shift = 20,
++		.base_values = spim7589_base,
++		.n_base_values = ARRAY_SIZE(spim7589_base),
++	}, {
++		.id = AN7589_CLK_INFRA_66M_SPI2_HCK,
++		.name = "spi2_hclk",
++
++		.base_reg = REG_PM_UPS_CLKSRC,
++		.base_bits = 1,
++		.base_shift = 24,
++		.base_values = sbus_spim7589_base,
++		.n_base_values = ARRAY_SIZE(sbus_spim7589_base),
++	}
++};
++
++static const u16 an7589_rst_ofs[] = {
++	REG_RST_CTRL2,
++	REG_RST_CTRL1,
++	REG_RST_CTRL3,
++	REG_RST_CTRL4,
++};
++
++
+ static const u16 en7523_rst_map[] = {
+ 	/* RST_CTRL2 */
+ 	[EN7523_XPON_PHY_RST]		= 0,
+@@ -618,6 +927,68 @@ static const u16 an7583_rst_map[] = {
+ 	[AN7583_XPON_MAC_RST]		= RST_NR_PER_BANK + 31,
+ };
+ 
++static const u16 an7589_rst_map[] = {
++	/* RST_CTRL2 */
++	[AN7589_XPON_PHY_RST]		= 0,
++	[AN7589_GPON_OLT_RST]		= 1,
++	[AN7589_CPU_TIMER2_RST]		= 2,
++	[AN7589_HSUART_RST]		= 3,
++	[AN7589_UART4_RST]		= 4,
++	[AN7589_UART5_RST]		= 5,
++	[AN7589_I2C2_RST]		= 6,
++	[AN7589_XSI_MAC_RST]		= 7,
++	[AN7589_XSI_PHY_RST]		= 8,
++	[AN7589_NPU_RST]		= 9,
++	[AN7589_TRNG_MSTART_RST]	= 12,
++	[AN7589_DUAL_HSI0_RST]		= 13,
++	[AN7589_DUAL_HSI1_RST]		= 14,
++	[AN7589_DUAL_HSI0_MAC_RST]	= 16,
++	[AN7589_DUAL_HSI1_MAC_RST]	= 17,
++	[AN7589_XPON_XFI_RST]		= 18,
++	[AN7589_WDMA_RST]		= 19,
++	[AN7589_WOE0_RST]		= 20,
++	[AN7589_HSDMA_RST]		= 22,
++	[AN7589_TDMA_RST]		= 24,
++	[AN7589_EMMC_RST]		= 25,
++	[AN7589_SOE_RST]		= 26,
++	[AN7589_XFP_MAC_RST]		= 28,
++	[AN7589_MDIO0]			= 30,
++	[AN7589_MDIO1]			= 31,
++	[AN7589_I2S_RST]		= 10,
++	[AN7589_PCIE2_RST]		= 27,
++	/* RST_CTRL1 */
++	[AN7589_PCM1_ZSI_ISI_RST]	= RST_NR_PER_BANK + 0,
++	[AN7589_FE_PDMA_RST]		= RST_NR_PER_BANK + 1,
++	[AN7589_FE_QDMA_RST]		= RST_NR_PER_BANK + 2,
++	[AN7589_PCM_SPIWP_RST]		= RST_NR_PER_BANK + 4,
++	[AN7589_CRYPTO_RST]		= RST_NR_PER_BANK + 6,
++	[AN7589_TIMER_RST]		= RST_NR_PER_BANK + 8,
++	[AN7589_PCM1_RST]		= RST_NR_PER_BANK + 11,
++	[AN7589_UART_RST]		= RST_NR_PER_BANK + 12,
++	[AN7589_GPIO_RST]		= RST_NR_PER_BANK + 13,
++	[AN7589_GDMA_RST]		= RST_NR_PER_BANK + 14,
++	[AN7589_I2C_MASTER_RST]		= RST_NR_PER_BANK + 16,
++	[AN7589_PCM2_ZSI_ISI_RST]	= RST_NR_PER_BANK + 17,
++	[AN7589_SFC_RST]		= RST_NR_PER_BANK + 18,
++	[AN7589_UART2_RST]		= RST_NR_PER_BANK + 19,
++	[AN7589_GDMP_RST]		= RST_NR_PER_BANK + 20,
++	[AN7589_FE_RST]			= RST_NR_PER_BANK + 21,
++	[AN7589_USB_HOST_P0_RST]	= RST_NR_PER_BANK + 22,
++	[AN7589_GSW_RST]		= RST_NR_PER_BANK + 23,
++	[AN7589_SFC2_PCM_RST]		= RST_NR_PER_BANK + 25,
++	[AN7589_PCIE0_RST]		= RST_NR_PER_BANK + 26,
++	[AN7589_PCIE1_RST]		= RST_NR_PER_BANK + 27,
++	[AN7589_CPU_TIMER_RST]		= RST_NR_PER_BANK + 28,
++	[AN7589_PCIE_HB_RST]		= RST_NR_PER_BANK + 29,
++	[AN7589_XPON_MAC_RST]		= RST_NR_PER_BANK + 31,
++	/* RST_CTRL3 */
++	[AN7589_I2C3_RST]	= (RST_NR_PER_BANK * 2) + 0,
++	[AN7589_I2C4_RST]		= (RST_NR_PER_BANK * 2) + 1,
++	[AN7589_I2C5_RST]		= (RST_NR_PER_BANK * 2) + 2,
++	[AN7589_OPTL_SYS_RST]		= (RST_NR_PER_BANK * 2) + 3,
++	[AN7589_MDIO2]      = (RST_NR_PER_BANK * 2) + 13,
++};
++
+ static int en7581_reset_register(struct device *dev, struct regmap *map,
+ 				 const u16 *rst_map, int nr_resets);
+ 
+@@ -926,6 +1297,10 @@ static int en75xx_register_clocks(struct
+ 			return -ENOMEM;
+ 
+ 		init.name = desc->name;
++		if (desc->parent_name) {
++			init.parent_names = &desc->parent_name;
++			init.num_parents = 1;
++		}
+ 
+ 		en_clk->map = map;
+ 		en_clk->desc = desc;
+@@ -983,6 +1358,23 @@ static void en7581_pci_disable(struct cl
+ 	usleep_range(1000, 2000);
+ }
+ 
++static int an7589_pci_is_enabled(struct clk_hw *hw)
++{
++	struct en_clk_gate *cg = container_of(hw, struct en_clk_gate, hw);
++	u32 val, mask;
++	mask = REG_PCI_CONTROL_REFCLK_EN0 | REG_PCI_CONTROL_REFCLK_EN1;
++	regmap_read(cg->map, REG_PCI_CONTROL, &val);
++	return (val & mask) == mask;
++}
++static int an7589_pci_enable(struct clk_hw *hw)
++{
++	/*7589 PCIe device reset(PERST) uses mac reg 0x148 instead of scu reg 0x1fb0_0088*/
++	return 0;
++}
++static void an7589_pci_disable(struct clk_hw *hw)
++{
++	/*7589 PCIe device reset(PERST) uses mac reg 0x148 instead of scu reg 0x1fb0_0088*/
++}
+ static const struct regmap_config en7523_clk_regmap_config = {
+ 	.reg_bits = 32,
+ 	.val_bits = 32,
+@@ -1015,7 +1407,6 @@ static int en7523_clk_hw_init(struct pla
+ 	if (IS_ERR(clk_map))
+ 		return PTR_ERR(clk_map);
+ 
+-
+ 	err = en75xx_register_clocks(&pdev->dev, soc_data, clk_data, map, clk_map);
+ 	if (err)
+ 		return err;
+@@ -1164,7 +1555,12 @@ static int an7583_clk_hw_init(struct pla
+ 	void __iomem *base;
+ 	int err;
+ 
+-	map = syscon_regmap_lookup_by_phandle(dev->of_node, "airoha,chip-scu");
++	if (of_property_present(dev->of_node, "airoha,chip-scu"))
++		map = syscon_regmap_lookup_by_phandle(dev->of_node,
++						      "airoha,chip-scu");
++	else
++		map = syscon_regmap_lookup_by_compatible("airoha,en7581-chip-scu");
++
+ 	if (IS_ERR(map))
+ 		return PTR_ERR(map);
+ 
+@@ -1189,6 +1585,69 @@ static int an7583_clk_hw_init(struct pla
+ 				     ARRAY_SIZE(an7583_rst_map));
+ }
+ 
++static int an7589_reset_register(struct device *dev, struct regmap *map,
++				 const u16 *rst_map, int nr_resets)
++{
++	struct en_rst_data *rst_data;
++
++	rst_data = devm_kzalloc(dev, sizeof(*rst_data), GFP_KERNEL);
++	if (!rst_data)
++		return -ENOMEM;
++
++	rst_data->bank_ofs = an7589_rst_ofs;
++	rst_data->idx_map = rst_map;
++	rst_data->map = map;
++
++	rst_data->rcdev.nr_resets = nr_resets;
++	rst_data->rcdev.of_xlate = en7523_reset_xlate;
++	rst_data->rcdev.ops = &en7581_reset_ops;
++	rst_data->rcdev.of_node = dev->of_node;
++	rst_data->rcdev.of_reset_n_cells = 1;
++	rst_data->rcdev.owner = THIS_MODULE;
++	rst_data->rcdev.dev = dev;
++
++	return devm_reset_controller_register(dev, &rst_data->rcdev);
++}
++
++static int an7589_clk_hw_init(struct platform_device *pdev,
++			      const struct en_clk_soc_data *soc_data,
++			      struct clk_hw_onecell_data *clk_data)
++{
++	struct device *dev = &pdev->dev;
++	struct regmap *map, *clk_map;
++	void __iomem *base;
++	int err;
++
++	if (of_property_present(dev->of_node, "airoha,chip-scu"))
++		map = syscon_regmap_lookup_by_phandle(dev->of_node,
++						      "airoha,chip-scu");
++	else
++		map = syscon_regmap_lookup_by_compatible("airoha,an7589-chip-scu");
++
++	if (IS_ERR(map))
++		return PTR_ERR(map);
++
++	base = devm_platform_ioremap_resource(pdev, 0);
++	if (IS_ERR(base))
++		return PTR_ERR(base);
++
++	clk_map = devm_regmap_init_mmio(&pdev->dev, base, &en7523_clk_regmap_config);
++	if (IS_ERR(clk_map))
++		return PTR_ERR(clk_map);
++
++	err = en75xx_register_clocks(dev, soc_data, clk_data, map, clk_map);
++	if (err)
++		return err;
++
++	regmap_clear_bits(clk_map, REG_NP_SCU_SSTR,
++			  REG_PCIE_XSI0_SEL_MASK | REG_PCIE_XSI1_SEL_MASK);
++	regmap_update_bits(clk_map, REG_NP_SCU_PCIC, REG_PCIE_CTRL,
++			   FIELD_PREP(REG_PCIE_CTRL, 3));
++
++	return an7589_reset_register(dev, clk_map, an7589_rst_map,
++				     ARRAY_SIZE(an7589_rst_map));
++}
++
+ static int en7523_clk_probe(struct platform_device *pdev)
+ {
+ 	const struct en_clk_soc_data *soc_data;
+@@ -1261,10 +1720,24 @@ static const struct en_clk_soc_data an75
+ 	.hw_init = an7583_clk_hw_init,
+ };
+ 
++static const struct en_clk_soc_data an7589_data = {
++	.probe_child = true,
++	.base_clks = an7589_base_clks,
++	/* We increment num_clocks by 1 to account for additional PCIe clock */
++	.num_clocks = ARRAY_SIZE(an7589_base_clks) + 1,
++	.pcie_ops = {
++		.is_enabled = an7589_pci_is_enabled,
++		.enable = an7589_pci_enable,
++		.disable = an7589_pci_disable,
++	},
++	.hw_init = an7589_clk_hw_init,
++};
++
+ static const struct of_device_id of_match_clk_en7523[] = {
+ 	{ .compatible = "airoha,en7523-scu", .data = &en7523_data },
+ 	{ .compatible = "airoha,en7581-scu", .data = &en7581_data },
+ 	{ .compatible = "airoha,an7583-scu", .data = &an7583_data },
++	{ .compatible = "airoha,an7589-scu", .data = &an7589_data },
+ 	{ /* sentinel */ }
+ };
+ 
+--- a/include/dt-bindings/clock/en7523-clk.h
++++ b/include/dt-bindings/clock/en7523-clk.h
+@@ -17,4 +17,20 @@
+ #define AN7583_CLK_MDIO0	9
+ #define AN7583_CLK_MDIO1	10
+ 
++#define AN7589_CLK_SOE		11
++#define AN7589_CLK_TODGEN	12
++#define AN7589_CLK_EFUSE	13
++#define AN7589_CLK_TINY_NPU	14
++#define AN7589_CLK_ECC		15
++#define AN7589_CLK_PM_UPS	16
++#define AN7589_CLK_DQ_UPS	17
++#define AN7589_CLK_TM_UPS	18
++#define AN7589_CLK_ACP		19
++#define AN7589_CLK_MDIO2	20
++
++#define AN7589_CLK_TOP_CB_M_D2		21
++#define AN7589_CLK_TOP_SPI2_SEL		22
++#define AN7589_CLK_INFRA_104M_SPI2	23
++#define AN7589_CLK_INFRA_66M_SPI2_HCK	24
++
+ #endif /* _DT_BINDINGS_CLOCK_AIROHA_EN7523_H_ */
+--- /dev/null
++++ b/include/dt-bindings/reset/airoha,an7589-reset.h
+@@ -0,0 +1,72 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++/*
++ * Copyright (c) 2026 AIROHA Inc
++ * Author: Cassia Lin <cassialin@airoha.com>
++ * Author: Zhengping Zhang <zhengping.zhang@airoha.com>
++ */
++
++#ifndef __DT_BINDINGS_RESET_CONTROLLER_AIROHA_AN7589_H_
++#define __DT_BINDINGS_RESET_CONTROLLER_AIROHA_AN7589_H_
++
++/* RST_CTRL2 */
++#define AN7589_XPON_PHY_RST		 0
++#define AN7589_GPON_OLT_RST		 1
++#define AN7589_CPU_TIMER2_RST		 2
++#define AN7589_HSUART_RST		 3
++#define AN7589_UART4_RST		 4
++#define AN7589_UART5_RST		 5
++#define AN7589_I2C2_RST			 6
++#define AN7589_XSI_MAC_RST		 7
++#define AN7589_XSI_PHY_RST		 8
++#define AN7589_NPU_RST			 9
++#define AN7589_TRNG_MSTART_RST		10
++#define AN7589_DUAL_HSI0_RST		11
++#define AN7589_DUAL_HSI1_RST		12
++#define AN7589_DUAL_HSI0_MAC_RST	13
++#define AN7589_DUAL_HSI1_MAC_RST	14
++#define AN7589_XPON_XFI_RST			15
++#define AN7589_WDMA_RST			16
++#define AN7589_WOE0_RST			17
++#define AN7589_HSDMA_RST		18
++#define AN7589_TDMA_RST			19
++#define AN7589_EMMC_RST			20
++#define AN7589_SOE_RST			21
++#define AN7589_XFP_MAC_RST		22
++#define AN7589_MDIO0                    23
++#define AN7589_MDIO1                    24
++/* RST_CTRL1 */
++#define AN7589_PCM1_ZSI_ISI_RST		25
++#define AN7589_FE_PDMA_RST		26
++#define AN7589_FE_QDMA_RST		27
++#define AN7589_PCM_SPIWP_RST		28
++#define AN7589_CRYPTO_RST		29
++#define AN7589_TIMER_RST		30
++#define AN7589_PCM1_RST			31
++#define AN7589_UART_RST			32
++#define AN7589_GPIO_RST			33
++#define AN7589_GDMA_RST			34
++#define AN7589_I2C_MASTER_RST		35
++#define AN7589_PCM2_ZSI_ISI_RST		36
++#define AN7589_SFC_RST			37
++#define AN7589_UART2_RST		38
++#define AN7589_GDMP_RST			39
++#define AN7589_FE_RST			40
++#define AN7589_USB_HOST_P0_RST		41
++#define AN7589_GSW_RST			42
++#define AN7589_SFC2_PCM_RST		43
++#define AN7589_PCIE0_RST		44
++#define AN7589_PCIE1_RST		45
++#define AN7589_CPU_TIMER_RST		46
++#define AN7589_PCIE_HB_RST		47
++#define AN7589_XPON_MAC_RST		48
++
++/* RST_CTRL3 */
++#define AN7589_I2C3_RST		49
++#define AN7589_I2C4_RST		50
++#define AN7589_I2C5_RST		51
++#define AN7589_OPTL_SYS_RST		52
++#define AN7589_MDIO2		53
++#define AN7589_I2S_RST		54
++#define AN7589_PCIE2_RST		55
++
++#endif /* __DT_BINDINGS_RESET_CONTROLLER_AIROHA_AN7589_H_ */
