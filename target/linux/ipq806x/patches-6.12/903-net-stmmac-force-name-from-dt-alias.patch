@@ -1,0 +1,61 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+Date: Sat, 12 Sep 2026 06:12:44 +0200
+Subject: [PATCH] net: stmmac: force netdev name from DT ethernet alias
+
+Interface naming currently depends on registration order between
+stmmac instances, which is non-deterministic when multiple probes
+race at boot (e.g. two independent GMACs with no shared switch).
+This causes eth0/eth1 to swap randomly across reboots on some
+platforms.
+
+Force the netdev name to match the "ethernetN" DT alias when one is
+present. plat->bus_id cannot be used for this: stmmac_platform.c
+falls back to a driver-global counter when of_alias_get_id() finds
+no alias, so plat->bus_id is never negative and every stmmac netdev
+would be forced, including boards with no alias at all. Re-read the
+alias directly from the device's OF node instead, and only force the
+name when it actually resolves. Fall back to the original
+auto-numbering template if the forced name collides.
+
+Signed-off-by: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+---
+ drivers/net/ethernet/stmicro/stmmac/stmmac_main.c | 20 +++++++++++++++++++-
+ 1 files changed, 19 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
++++ b/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
+@@ -7492,6 +7492,7 @@ int stmmac_dvr_probe(struct device *devi
+ {
+ 	struct net_device *ndev = NULL;
+ 	struct stmmac_priv *priv;
++	int alias_id;
+ 	u32 rxq;
+ 	int i, ret = 0;
+ 
+@@ -7767,7 +7768,24 @@ int stmmac_dvr_probe(struct device *devi
+ 		goto error_phy_setup;
+ 	}
+ 
+-	ret = register_netdev(ndev);
++	/* Force name from DT alias instead of registration order,
++	 * which is non-deterministic across reboots.
++	 */
++	alias_id = of_alias_get_id(dev_of_node(priv->device), "ethernet");
++	if (alias_id >= 0) {
++		char orig_name[IFNAMSIZ];
++
++		strscpy(orig_name, ndev->name, IFNAMSIZ);
++		scnprintf(ndev->name, IFNAMSIZ, "eth%d", alias_id);
++		ret = register_netdev(ndev);
++		if (ret == -EEXIST) {
++			/* Name taken, fall back to auto-numbering */
++			strscpy(ndev->name, orig_name, IFNAMSIZ);
++			ret = register_netdev(ndev);
++		}
++	} else {
++		ret = register_netdev(ndev);
++	}
+ 	if (ret) {
+ 		dev_err(priv->device, "%s: ERROR %i registering the device\n",
+ 			__func__, ret);
