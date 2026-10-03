@@ -4393,7 +4393,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
 +#endif
 --- /dev/null
 +++ b/src/crypto/tls_mbedtls.c
-@@ -0,0 +1,3313 @@
+@@ -0,0 +1,3321 @@
 +/*
 + * SSL/TLS interface functions for mbed TLS
 + *
@@ -5014,6 +5014,9 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
 +	}
 +
 +	mbedtls_ssl_set_bio(&conn->ssl, conn, tls_push_func, tls_pull_func, NULL);
++	/* Avoid MBEDTLS_ERR_SSL_CERTIFICATE_VERIFICATION_WITHOUT_HOSTNAME
++	 * on Mbed TLS 2.28.10 or newer / 3.6.3 or newer. */
++	mbedtls_ssl_set_hostname(&conn->ssl, NULL);
 +  #if MBEDTLS_VERSION_NUMBER >= 0x03000000 /* mbedtls 3.0.0 */
 +	mbedtls_ssl_set_export_keys_cb(
 +	    &conn->ssl, tls_connection_export_keys_cb, conn);
@@ -5639,9 +5642,13 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
 +                    blen -= 4;
 +                }
 +            }
++            /* Some mbedtls cipher names carry a trailing "-SHA256" that the
++             * openssl name omits (treating SHA-256 as the implied default
++             * hash), e.g. openssl "ECDHE-RSA-CHACHA20-POLY1305" for mbedtls
++             * "TLS-ECDHE-RSA-WITH-CHACHA20-POLY1305-SHA256". */
 +            if (blen >= clen && os_memcmp(ciphers, buf, clen) == 0
 +                && (blen == clen
-+                    || (blen == clen+7 && os_memcmp(buf+clen, "-SHA256", 7)))) {
++                    || (blen == clen+7 && os_memcmp(buf+clen, "-SHA256", 7) == 0))) {
 +                if (1 >= idsz - (nids + 1)) {
 +                    emsg(MSG_ERROR,
 +                         "error: too many ciphers during list expand");
@@ -7238,6 +7245,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
 +		tok = os_strchr(s, '/');
 +		list[nlist].oid = NULL;
 +		list[nlist].olen = 0;
++		list[nlist].prefix = 0;
 +		list[nlist].n = tok ? (size_t)(tok - s) : os_strlen(s);
 +		e = memchr(s, '=', list[nlist].n);
 +		if (e == NULL) {
