@@ -100,7 +100,7 @@ tmpinfo_gen=[ $(1) -nt tmp/.packageinfo ] && [ $(1) -nt scripts/package-metadata
 
 prepare-tmpinfo: FORCE
 	@+$(MAKE) -r -s $(STAGING_DIR_HOST)/.prereq-build $(PREP_MK)
-	mkdir -p tmp/info feeds
+	mkdir -p tmp/info feeds target/linux/feeds
 	[ -e $(TOPDIR)/feeds/base ] || ln -sf ../package $(TOPDIR)/feeds/base
 	+$(call scan_unchanged,packageinfo,package,5) || { \
 		$(_SINGLE)$(NO_TRACE_MAKE) -j1 -r -s -f include/scan.mk SCAN_TARGET="packageinfo" SCAN_DIR="package" SCAN_NAME="package" SCAN_DEPTH=5 SCAN_EXTRA="" && \
