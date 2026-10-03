@@ -32,7 +32,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (hapd == NULL || hapd == HAPD_BROADCAST)
  		return;
  
-@@ -2702,7 +2702,8 @@ void wpa_supplicant_event(void *ctx, enu
+@@ -2704,7 +2704,8 @@ void wpa_supplicant_event(void *ctx, enu
  		hapd = switch_link_hapd(hapd, data->rx_from_unknown.link_id);
  		hostapd_rx_from_unknown_sta(hapd, data->rx_from_unknown.bssid,
  					    data->rx_from_unknown.addr,

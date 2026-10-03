@@ -212,7 +212,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
 --- a/src/ap/hostapd.h
 +++ b/src/ap/hostapd.h
-@@ -517,9 +517,9 @@ struct hostapd_data {
+@@ -516,9 +516,9 @@ struct hostapd_data {
  	 * total, additional 7 characters required. */
  	char ctrl_sock_iface[IFNAMSIZ + 7 + 1];
  
@@ -225,7 +225,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #endif /* CONFIG_IEEE80211BE */
  
  #ifdef CONFIG_NAN_USD
-@@ -938,6 +938,7 @@ int hostapd_mbssid_get_bss_index(struct
+@@ -951,6 +951,7 @@ int hostapd_mbssid_get_bss_index(struct
  struct hostapd_data * hostapd_mld_get_link_bss(struct hostapd_data *hapd,
  					       u8 link_id);
  int hostapd_link_remove(struct hostapd_data *hapd, u32 count);

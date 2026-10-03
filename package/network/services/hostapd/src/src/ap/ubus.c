@@ -490,12 +490,26 @@ hostapd_bss_get_features(struct ubus_context *ctx, struct ubus_object *obj,
 	return 0;
 }
 
+/* bss_color is -1 while BSS Color is disabled; he_bss_color holds the
+ * colour in either case. */
 static void
 hostapd_bss_color_add(struct hostapd_data *hapd)
 {
 #ifdef CONFIG_IEEE80211AX
-	blobmsg_add_u32(&b, "bss_color", hapd->iface->conf->he_op.he_bss_color_disabled ? -1 :
-					 hapd->iface->conf->he_op.he_bss_color);
+	struct hostapd_iface *iface = hapd->iface;
+	void *colors;
+	int i;
+
+	blobmsg_add_u32(&b, "bss_color", iface->conf->he_op.he_bss_color_disabled ? -1 :
+					 iface->conf->he_op.he_bss_color);
+	blobmsg_add_u32(&b, "he_bss_color", iface->conf->he_op.he_bss_color);
+	blobmsg_add_u8(&b, "bss_color_partial", !!iface->conf->he_op.he_bss_color_partial);
+
+	colors = blobmsg_open_array(&b, "bss_colors_in_use");
+	for (i = 1; i < 64; i++)
+		if (iface->bss_colors_in_use & BIT_ULL(i))
+			blobmsg_add_u32(&b, NULL, i);
+	blobmsg_close_array(&b, colors);
 #else
 	blobmsg_add_u32(&b, "bss_color", -1);
 #endif

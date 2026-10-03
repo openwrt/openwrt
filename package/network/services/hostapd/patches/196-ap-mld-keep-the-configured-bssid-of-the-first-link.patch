@@ -34,7 +34,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -1604,12 +1604,17 @@ static int hostapd_setup_bss(struct host
+@@ -1607,12 +1607,17 @@ static int hostapd_setup_bss(struct host
  			os_memcpy(hapd->own_addr, if_addr, ETH_ALEN);
  
  #ifdef CONFIG_IEEE80211BE

@@ -134,7 +134,7 @@ probe/assoc/auth requests via object subscribe.
  	accounting_deinit(hapd);
  	hostapd_deinit_wpa(hapd);
  	vlan_deinit(hapd);
-@@ -1433,6 +1434,8 @@ static int hostapd_start_beacon(struct h
+@@ -1436,6 +1437,8 @@ static int hostapd_start_beacon(struct h
  	if (hapd->driver && hapd->driver->set_operstate)
  		hapd->driver->set_operstate(hapd->drv_priv, 1);
  
@@ -143,7 +143,7 @@ probe/assoc/auth requests via object subscribe.
  	return 0;
  }
  
-@@ -2681,6 +2684,7 @@ static int hostapd_setup_interface_compl
+@@ -2684,6 +2687,7 @@ static int hostapd_setup_interface_compl
  	if (err)
  		goto fail;
  
@@ -151,7 +151,7 @@ probe/assoc/auth requests via object subscribe.
  	wpa_printf(MSG_DEBUG, "Completing interface initialization");
  	if (iface->freq) {
  #ifdef NEED_AP_MLME
-@@ -2910,6 +2914,7 @@ dfs_offload:
+@@ -2913,6 +2917,7 @@ dfs_offload:
  
  fail:
  	wpa_printf(MSG_ERROR, "Interface initialization failed");
@@ -159,7 +159,7 @@ probe/assoc/auth requests via object subscribe.
  
  	if (iface->is_no_ir) {
  		hostapd_set_state(iface, HAPD_IFACE_NO_IR);
-@@ -3660,6 +3665,7 @@ void hostapd_interface_deinit_free(struc
+@@ -3663,6 +3668,7 @@ void hostapd_interface_deinit_free(struc
  		   (unsigned int) iface->conf->num_bss);
  	driver = iface->bss[0]->driver;
  	drv_priv = iface->bss[0]->drv_priv;
@@ -185,7 +185,7 @@ probe/assoc/auth requests via object subscribe.
  	int interface_added; /* virtual interface added for this BSS */
  	unsigned int started:1;
  	unsigned int disabled:1;
-@@ -822,6 +824,7 @@ hostapd_alloc_bss_data(struct hostapd_if
+@@ -829,6 +831,7 @@ hostapd_alloc_bss_data(struct hostapd_if
  		       struct hostapd_bss_config *bss);
  int hostapd_setup_interface(struct hostapd_iface *iface);
  int hostapd_setup_interface_complete(struct hostapd_iface *iface, int err);
@@ -505,7 +505,7 @@ probe/assoc/auth requests via object subscribe.
  	wpa_hexdump(MSG_DEBUG, "WNM: BSS Transition Candidate List Entries",
  		    pos, end - pos);
  }
-@@ -816,6 +822,9 @@ int ieee802_11_rx_wnm_action_ap(struct h
+@@ -815,6 +821,9 @@ int ieee802_11_rx_wnm_action_ap(struct h
  		return 0;
  	case WNM_BSS_TRANS_MGMT_QUERY:
  		hapd->openwrt_stats.wnm.bss_transition_query_rx++;
@@ -515,7 +515,7 @@ probe/assoc/auth requests via object subscribe.
  		ieee802_11_rx_bss_trans_mgmt_query(hapd, mgmt->sa, payload,
  						   plen);
  		return 0;
-@@ -828,6 +837,8 @@ int ieee802_11_rx_wnm_action_ap(struct h
+@@ -827,6 +836,8 @@ int ieee802_11_rx_wnm_action_ap(struct h
  		ieee802_11_rx_wnmsleep_req(hapd, mgmt->sa, payload, plen);
  		return 0;
  	case WNM_NOTIFICATION_REQ:
