@@ -495,8 +495,8 @@ generate_gpioswitch() {
 
 	json_select gpioswitch
 		json_select "$cfg"
-			local name pin default
-			json_get_vars name pin default
+			local name pin default shutdown
+			json_get_vars name pin default shutdown
 			uci -q batch <<-EOF
 				delete system.$cfg
 				set system.$cfg='gpio_switch'
@@ -504,6 +504,8 @@ generate_gpioswitch() {
 				set system.$cfg.gpio_pin='$pin'
 				set system.$cfg.value='$default'
 			EOF
+			[ -n "$shutdown" ] &&
+				uci -q set system.$cfg.shutdown_value="$shutdown"
 		json_select ..
 	json_select ..
 }
