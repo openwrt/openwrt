@@ -165,6 +165,19 @@ endef
 $(eval $(call KernelPackage,crypto-crc32c))
 
 
+define KernelPackage/crypto-crct10dif
+  TITLE:=CRC-T10DIF CRC module
+  DEPENDS:=@LINUX_6_12 +kmod-crypto-hash
+  KCONFIG:=CONFIG_CRYPTO_CRCT10DIF
+  FILES:=$(LINUX_DIR)/crypto/crct10dif_common.ko \
+	$(LINUX_DIR)/crypto/crct10dif_generic.ko
+  AUTOLOAD:=$(call AutoLoad,04,crct10dif_common crct10dif_generic,1)
+  $(call AddDepends/crypto)
+endef
+
+$(eval $(call KernelPackage,crypto-crct10dif))
+
+
 define KernelPackage/crypto-ctr
   TITLE:=Counter Mode CryptoAPI module
   DEPENDS:=+kmod-crypto-manager +kmod-crypto-seqiv
