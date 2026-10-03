@@ -720,6 +720,21 @@ define Device/comfast_cf-e390ax
 endef
 TARGET_DEVICES += comfast_cf-e390ax
 
+define Device/comfast_cf-e455ac-v2
+    $(Device/dsa-migration)
+    $(Device/uimage-lzma-loader)
+    IMAGE_SIZE := 15808k
+    DEVICE_VENDOR := COMFAST
+    DEVICE_MODEL := CF-E455AC V2
+    DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap \
+        -uboot-envtools
+    IMAGES += factory.bin
+    IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | \
+        check-size | append-metadata
+    IMAGE/factory.bin := append-kernel | append-rootfs | pad-rootfs | check-size
+endef
+TARGET_DEVICES += comfast_cf-e455ac-v2
+
 define Device/comfast_cf-ew72-v2
     $(Device/dsa-migration)
     $(Device/uimage-lzma-loader)
