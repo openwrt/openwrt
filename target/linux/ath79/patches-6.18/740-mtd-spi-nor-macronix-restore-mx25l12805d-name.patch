@@ -1,0 +1,46 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Salah Ahmed <haddad2inc@gmail.com>
+Date: Tue, 29 Sep 2026 00:00:00 +0000
+Subject: [PATCH] ath79: mtd: spi-nor: macronix: restore the MX25L12805D part name
+
+947c86e481a0 ("mtd: spi-nor: macronix: Drop the redundant flash info
+fields") removed .name, .size and .no_sfdp_flags from the
+SNOR_ID(0xc2, 0x20, 0x18) entry. The last two were restored by
+01739ccea21b ("mtd: spi-nor: macronix: Restore fallback parameters for
+MX25L12805D"), which fixes the probe failure on the legacy part; .name
+was not restored.
+
+Its two siblings in the same table still carry all three fields
+(.name/.size/.no_sfdp_flags for mx25l3205d and mx25l6405d), so this is
+now the only unnamed entry among them. Without a name the spi-nor sysfs
+partname attribute reads empty and the chip cannot be named in any
+kernel message, which is awkward for this id in particular: 0xc22018 is
+shared by the legacy MX25L12805D (no SFDP) and by the newer MX25L12833F
+and MX25L12845G (SFDP capable), and telling those apart is exactly what
+you need when a board fails to probe.
+
+Restore the name. This is a data-only change and does not affect
+probing: needs_sfdp() keys off .size, which is already set, so the
+geometry keeps coming from the static parameters.
+
+Tested on a COMFAST CF-WA350 (QCA9563, 16 MiB Macronix, jedec_id
+c22018, Linux 6.18.52): before this patch
+/sys/bus/spi/devices/spi0.0/spi-nor/partname reads empty, after it
+reads "mx25l12805d", and the board boots with the mtd layout and the
+jffs2 overlay intact.
+
+Signed-off-by: Salah Ahmed <haddad2inc@gmail.com>
+---
+ drivers/mtd/spi-nor/macronix.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/mtd/spi-nor/macronix.c
++++ b/drivers/mtd/spi-nor/macronix.c
+@@ -143,6 +143,7 @@ static const struct flash_info macronix_
+ 	}, {
+ 		/* MX25L12805D */
+ 		.id = SNOR_ID(0xc2, 0x20, 0x18),
++		.name = "mx25l12805d",
+ 		.size = SZ_16M,
+ 		.flags = SPI_NOR_HAS_LOCK | SPI_NOR_4BIT_BP,
+ 		.no_sfdp_flags = SECT_4K,
