@@ -1,0 +1,254 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7621.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	compatible = "buffalo,wex-1800ax4", "mediatek,mt7621-soc";
+	model = "Buffalo WEX-1800AX4";
+
+	aliases {
+		label-mac-device = &gmac0;
+		led-boot = &led_power_green;
+		led-failsafe = &led_power_orange;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_green;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,115200n8 ubi.block=0,rootfs root=/dev/ubiblock0_0";
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_power_orange: led-0 {
+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_ORANGE>;
+			function = LED_FUNCTION_POWER;
+		};
+
+		/* Wi-Fi upstream (AP-Extender) */
+		led-1 {
+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WAN;
+		};
+
+		led_power_green: led-2 {
+			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
+		};
+
+		led-3 {
+			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WPS;
+		};
+
+		/* Wi-Fi upstream (AP-Extender) */
+		led-4 {
+			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_ORANGE>;
+			function = LED_FUNCTION_WAN;
+		};
+
+		/* Wi-Fi downstream (Extender-Client) */
+		led-5 {
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		button-wps {
+			label = "wps";
+			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+
+		/*
+		 * Wi-Fi bands between AP and extender
+		 * - AUTO (GPIO:high): 2.4GHz or 5GHz
+		 * - 5GHz (GPIO:low) : only 5GHz
+		 */
+		switch-auto {
+			label = "auto";
+			gpios = <&gpio 4 GPIO_ACTIVE_HIGH>;
+			linux,code = <BTN_0>;
+			linux,input-type = <EV_SW>;
+		};
+
+		button-reset {
+			label = "reset";
+			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+};
+
+&gmac0 {
+	nvmem-cells = <&macaddr_bdata_mac 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&switch0 {
+	ports {
+		port@0 {
+			status = "okay";
+			label = "lan";
+		};
+	};
+};
+
+&nand {
+	status = "okay";
+	pinctrl-0 = <&nand_pins>;
+	pinctrl-names = "default";
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "u-boot";
+			reg = <0x0 0x80000>;
+			read-only;
+		};
+
+		partition@80000 {
+			label = "u-boot-env";
+			reg = <0x80000 0x80000>;
+			read-only;
+		};
+
+		partition@100000 {
+			label = "factory";
+			reg = <0x100000 0x80000>;
+			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				eeprom_factory_0: eeprom@0 {
+					reg = <0x0 0xe00>;
+				};
+
+				precal_factory_e10: precal@e10 {
+					reg = <0xe10 0x19c10>;
+				};
+			};
+		};
+
+		/* stock: "Kernel" */
+		partition@180000 {
+			label = "kernel";
+			reg = <0x180000 0x1800000>;
+		};
+
+		partition@1980000 {
+			label = "Kernel2";
+			reg = <0x1980000 0x1800000>;
+		};
+
+		partition@3180000 {
+			label = "glbcfg";
+			reg = <0x3180000 0x200000>;
+			read-only;
+		};
+
+		partition@3380000 {
+			label = "board_data";
+			reg = <0x3380000 0x200000>;
+			read-only;
+
+			nvmem-layout {
+				compatible = "ascii-eq-delim-env";
+
+				macaddr_bdata_mac: mac {
+					compatible = "mac-base";
+					#nvmem-cell-cells = <1>;
+				};
+			};
+		};
+
+		/* stock: "User_data" */
+		partition@3580000 {
+			label = "ubi";
+			reg = <0x3580000 0x1800000>;
+		};
+
+		partition@4d80000 {
+			label = "glbcfg2";
+			reg = <0x4d80000 0x200000>;
+			read-only;
+		};
+
+		partition@4f80000 {
+			label = "board_data2";
+			reg = <0x4f80000 0x200000>;
+			read-only;
+		};
+	};
+};
+
+/*
+ * pcie0: MT7915D HIF (14c3,7916)
+ * pcie1: MT7915D     (14c3,7915)
+ */
+&pcie {
+	status = "okay";
+};
+
+&pcie1 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&eeprom_factory_0>, <&precal_factory_e10>;
+		nvmem-cell-names = "eeprom", "precal";
+		mediatek,disable-radar-background;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		band@0 {
+			reg = <0>;
+			nvmem-cells = <&macaddr_bdata_mac 1>;
+			nvmem-cell-names = "mac-address";
+		};
+
+		band@1 {
+			reg = <1>;
+			nvmem-cells = <&macaddr_bdata_mac 8>;
+			nvmem-cell-names = "mac-address";
+		};
+	};
+};
+
+&pcie2 {
+	status = "disabled";
+};
+
+&state_default {
+	gpio {
+		groups = "i2c", "jtag", "uart3", "wdt";
+		function = "gpio";
+	};
+};
+
+&usb_phy {
+	status = "disabled";
+};
+
+&xhci {
+	status = "disabled";
+};
