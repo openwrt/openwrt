@@ -1,0 +1,118 @@
+From 774cd4a53dc72b9df48edf739739d2c85726e01e Mon Sep 17 00:00:00 2001
+From: Devon Openheim <devopenm@proton.me>
+Date: Tue, 18 Aug 2026 13:54:16 +0100
+Subject: [PATCH] dt-bindings: spi: add ASR1802S QSPI controller binding
+
+Document the ASR1802S QSPI controller (M1) used to talk to the
+on-board F35UQA001G SPI-NAND.
+
+Signed-off-by: Devon Openheim <devopenm@proton.me>
+
+---
+
+--- /dev/null
++++ b/Documentation/devicetree/bindings/spi/asr,asr1802s-qspi.yaml
+@@ -0,0 +1,103 @@
++# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/spi/asr,asr1802s-qspi.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: ASR1802S Quad Serial Peripheral Interface (QSPI) controller
++
++maintainers:
++  - Devon Openheim <devopenm@proton.me>
++
++description: |
++  The ASR1802S QSPI controller is a Freescale Vybrid VF610 QuadSPI compatible
++  IP used to talk to SPI-NOR and SPI-NAND flash (e.g. F35UQA001G). It exposes two
++  register windows: an MMIO control window ("reg-map") and an AHB/XIP memory
++  mapped window ("memory-map") used for direct-mapped reads.
++
++properties:
++  compatible:
++    const: asr,asr1802s-qspi
++
++  reg:
++    minItems: 2
++    maxItems: 2
++
++  reg-names:
++    items:
++      - const: reg-map
++      - const: memory-map
++
++  interrupts:
++    maxItems: 1
++
++  clocks:
++    maxItems: 1
++
++  clock-names:
++    const: qspi
++
++  qspi-cs:
++    description: chip select number used by the controller
++    $ref: /schemas/types.yaml#/definitions/uint32
++    default: 0
++
++  qspi-txmode:
++    description: TX bus mode (1/2/4 lines)
++    $ref: /schemas/types.yaml#/definitions/uint32
++    default: 4
++
++  qspi-rxmode:
++    description: RX bus mode (1/2/4 lines)
++    $ref: /schemas/types.yaml#/definitions/uint32
++    default: 4
++
++  qspi-max_freq_mhz:
++    description: maximum SCLK frequency in MHz
++    $ref: /schemas/types.yaml#/definitions/uint32
++    default: 52
++
++  dma-tx-drcmr:
++    description: PXA DMA request-channel router register for TX
++    $ref: /schemas/types.yaml#/definitions/uint32
++
++  dma-rx-drcmr:
++    description: PXA DMA request-channel router register for RX
++    $ref: /schemas/types.yaml#/definitions/uint32
++
++allOf:
++  - $ref: spi-controller.yaml#
++
++required:
++  - compatible
++  - reg
++  - reg-names
++  - interrupts
++
++unevaluatedProperties: false
++
++examples:
++  - |
++    #include <dt-bindings/interrupt-controller/irq.h>
++    qspi: qspi@d420b000 {
++        compatible = "asr,asr1802s-qspi";
++        reg = <0xd420b000 0x500>, <0x80000000 0x8000000>;
++        reg-names = "reg-map", "memory-map";
++        interrupts = <45>;
++        clocks = <&gcc 0>;
++        clock-names = "qspi";
++        qspi-cs = <0>;
++        qspi-txmode = <4>;
++        qspi-rxmode = <4>;
++        qspi-max_freq_mhz = <52>;
++        dma-tx-drcmr = <0x63>;
++        dma-rx-drcmr = <0x61>;
++        #address-cells = <1>;
++        #size-cells = <0>;
++
++        flash@0 {
++            compatible = "spi-nand";
++            reg = <0>;
++            spi-max-frequency = <52000000>;
++        };
++    };

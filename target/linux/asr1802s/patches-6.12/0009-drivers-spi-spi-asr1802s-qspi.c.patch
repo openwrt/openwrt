@@ -1,0 +1,413 @@
+From c9e1a2b3d4f5e6a7b8c9d0e1f2a3b4c5d6e7f8a9 Mon Sep 17 00:00:00 2001
+From: Devon Openheim <devopenm@proton.me>
+Date: Tue, 18 Aug 2026 13:54:16 +0100
+Subject: [PATCH] spi: add ASR1802S QSPI controller driver
+
+Add the QSPI controller driver needed to talk to the on-board
+F35UQA001G SPI-NAND. Models the controller on the Freescale VF610
+QuadSPI IP.
+
+Signed-off-by: Devon Openheim <devopenm@proton.me>
+
+---
+
+--- a/drivers/spi/Kconfig
++++ b/drivers/spi/Kconfig
+@@ -129,6 +129,15 @@ config SPI_ASPEED_SMC
+ 	  controller (SPI) for the host firmware. The implementation
+ 	  only supports SPI NOR.
+ 
++config SPI_ASR1802S_QSPI
++	tristate "ASR1802S QSPI controller"
++	depends on ARCH_ASR || COMPILE_TEST
++	depends on OF
++	help
++	  This enables support for the QSPI controller found in the
++	  ASR1802S (Notion R291 / Ooredoo R291 v2) SoC, used to talk to
++	  SPI-NOR and SPI-NAND flash devices.
++
+ config SPI_ATMEL
+ 	tristate "Atmel SPI Controller"
+ 	depends on ARCH_AT91 || COMPILE_TEST
+--- a/drivers/spi/Makefile
++++ b/drivers/spi/Makefile
+@@ -22,6 +22,7 @@ obj-$(CONFIG_SPI_AMLOGIC_SPIFC_A1)	+= sp
+ obj-$(CONFIG_SPI_AR934X)		+= spi-ar934x.o
+ obj-$(CONFIG_SPI_ARMADA_3700)		+= spi-armada-3700.o
+ obj-$(CONFIG_SPI_ASPEED_SMC)		+= spi-aspeed-smc.o
++obj-$(CONFIG_SPI_ASR1802S_QSPI)		+= spi-asr1802s-qspi.o
+ obj-$(CONFIG_SPI_ATMEL)			+= spi-atmel.o
+ obj-$(CONFIG_SPI_ATMEL_QUADSPI)		+= atmel-quadspi.o
+ obj-$(CONFIG_SPI_AT91_USART)		+= spi-at91-usart.o
+--- /dev/null
++++ b/drivers/spi/spi-asr1802s-qspi.c
+@@ -0,0 +1,369 @@
++// SPDX-License-Identifier: GPL-2.0
++//
++// ASR1802S (Notion R291 / Ooredoo R291 v2) QSPI SPI-NAND controller driver.
++//
++// The hardware is a Marvell/ASR-derivative of the Freescale Vybrid VF610
++// QuadSPI controller: the register block (MCR/IPCR/FLSHCR/BUF*/SFAR/RBCT/
++// SFAxAD and the LUT at 0x310) matches VF610 almost 1:1, with only the
++// status/flag/trigger/data registers relocated. The verified register map was
++// recovered by Thumb-2 disassembly of the vendor kernel Image (see
++// porting_workspace/qspi/RE_NOTES.md). A few bitfields (IP command trigger
++// word at 0x164 and the command-descriptor words at 0x150/0x154/0x158) are
++// reconstructed from that disassembly and may need tuning on real hardware.
++
++#include <linux/clk.h>
++#include <linux/interrupt.h>
++#include <linux/iopoll.h>
++#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/platform_device.h>
++#include <linux/pm_runtime.h>
++#include <linux/spi/spi.h>
++#include <linux/spi/spi-mem.h>
++
++/* ---- register offsets (relative to the 0xd420b000 MMIO window) ---------- */
++#define QSPI_MCR		0x00	/* module config / reset */
++#define QSPI_IPCR		0x08	/* command/opcode register */
++#define QSPI_FLSHCR		0x0c	/* flash config (vendor writes 0x202) */
++#define QSPI_BUF0CR		0x10	/* buffer/timing (vendor writes 14) */
++#define QSPI_BUF1CR		0x14
++#define QSPI_SFAR		0x100	/* serial flash address register */
++#define QSPI_SMPR		0x104	/* reset/busy-clear (write 0, poll 0) */
++#define QSPI_MODE		0x108	/* mode (0 or 0x20) */
++#define QSPI_RBCT		0x110	/* read-buffer / burst count */
++#define QSPI_IPCMD0		0x150	/* IP command descriptor word 0 */
++#define QSPI_IPCMD1		0x154	/* IP command descriptor word 1 */
++#define QSPI_IPCMD2		0x158	/* IP command descriptor word 2 */
++#define QSPI_SR		0x15c	/* status: bit0 = controller busy */
++#define QSPI_FR		0x160	/* flag/int-status: bit6 (0x40) = done/err */
++#define QSPI_IPTRIG		0x164	/* IP command trigger */
++#define QSPI_SPTRCLR		0x16c	/* sequence pointer clear */
++#define QSPI_SFA1AD		0x180	/* AHB window flash addr 1 */
++#define QSPI_SFA2AD		0x184
++#define QSPI_SFB1AD		0x188
++#define QSPI_SFB2AD		0x18c
++#define QSPI_RBDR		0x1e0	/* RX/TX data port (FIFO) */
++#define QSPI_LUT_BASE		0x310	/* look-up table (0x310 .. 0x418) */
++
++/* MCR */
++#define QSPI_MCR_SWRST		BIT(0)
++#define QSPI_MCR_EN		BIT(1)	/* controller enable (reconstructed) */
++
++/* SR */
++#define QSPI_SR_BUSY		BIT(0)	/* busy: wait until clear */
++
++/* FR */
++#define QSPI_FR_CMDDONE		BIT(6)	/* command done / error flag (0x40) */
++
++/* IPCR / IP trigger */
++#define QSPI_IPCR_SEQID_SHIFT	16
++#define QSPI_IPTRIG_START	BIT(0)	/* start the IP command (reconstructed) */
++
++/* FIFO: the controller moves up to 4 bytes per read/write of the data port */
++#define QSPI_FIFO_WIDTH		4
++
++/* AHB / XIP memory-mapped window size from the DT "memory-map" region */
++#define QSPI_AHB_WIN_SIZE	SZ_128M
++
++#define QSPI_MAX_NORChip	2
++
++struct asr_qspi {
++	struct spi_controller	*ctlr;
++	struct device		*dev;
++	void __iomem		*iobase;
++	void __iomem		*ahb_base;
++	u32			ahb_size;
++	struct clk		*clk;
++	int			irq;
++	/* the SPI-NOR/NAND chip currently mapped into the AHB window */
++	u32			cur_cs;
++};
++
++static int asr_qspi_wait_idle(struct asr_qspi *q)
++{
++	u32 val;
++	/* STATUS bit0 clears when the IP command finishes */
++	return readl_poll_timeout(q->iobase + QSPI_SR, val, !(val & QSPI_SR_BUSY),
++				  10, 100000);
++}
++
++static void asr_qspi_clear_flags(struct asr_qspi *q)
++{
++	u32 fr = readl(q->iobase + QSPI_FR);
++	/* write back the latched flags to clear them */
++	writel(fr, q->iobase + QSPI_FR);
++}
++
++static void asr_qspi_read_fifo(struct asr_qspi *q, u8 *buf, unsigned int len)
++{
++	unsigned int i, words = len / QSPI_FIFO_WIDTH;
++	u32 tmp;
++
++	for (i = 0; i < words; i++) {
++		tmp = readl(q->iobase + QSPI_RBDR);
++		memcpy(buf + i * QSPI_FIFO_WIDTH, &tmp, QSPI_FIFO_WIDTH);
++	}
++	/* tail */
++	len -= words * QSPI_FIFO_WIDTH;
++	if (len) {
++		tmp = readl(q->iobase + QSPI_RBDR);
++		memcpy(buf + words * QSPI_FIFO_WIDTH, &tmp, len);
++	}
++}
++
++static void asr_qspi_write_fifo(struct asr_qspi *q, const u8 *buf, unsigned int len)
++{
++	unsigned int i, words = len / QSPI_FIFO_WIDTH;
++	u32 tmp;
++
++	for (i = 0; i < words; i++) {
++		memcpy(&tmp, buf + i * QSPI_FIFO_WIDTH, QSPI_FIFO_WIDTH);
++		writel(tmp, q->iobase + QSPI_RBDR);
++	}
++	len -= words * QSPI_FIFO_WIDTH;
++	if (len) {
++		tmp = 0;
++		memcpy(&tmp, buf + words * QSPI_FIFO_WIDTH, len);
++		writel(tmp, q->iobase + QSPI_RBDR);
++	}
++}
++
++static int asr_qspi_run_cmd(struct asr_qspi *q, const struct spi_mem_op *op)
++{
++	u32 ipcr;
++	int ret;
++
++	/* opcode */
++	writel(op->cmd.opcode, q->iobase + QSPI_IPCR);
++
++	/* address */
++	if (op->addr.nbytes)
++		writel(op->addr.val, q->iobase + QSPI_SFAR);
++
++	/*
++	 * Reconstructed command descriptor (mirrors the vendor qspi_start_cmd
++	 * sequence that writes 0x150/0x154/0x158 then triggers at 0x164).
++	 * IPCMD0: opcode + address width; IPCMD1: dummy cycles; IPCMD2: data
++	 * width/direction. Exact bit layout is bring-up tuning.
++	 */
++	writel((op->addr.nbytes & 0x7) |
++	       ((op->cmd.buswidth - 1) << 8),
++	       q->iobase + QSPI_IPCMD0);
++	writel(op->dummy.nbytes * 8, q->iobase + QSPI_IPCMD1);
++	writel((op->data.nbytes ? 1 : 0) |
++	       ((op->data.dir == SPI_MEM_DATA_IN) ? 0 : BIT(1)),
++	       q->iobase + QSPI_IPCMD2);
++
++	/* data count */
++	if (op->data.nbytes)
++		writel(op->data.nbytes, q->iobase + QSPI_RBCT);
++
++	/* trigger the IP command */
++	ipcr = (op->cmd.opcode << QSPI_IPCR_SEQID_SHIFT) | QSPI_IPTRIG_START;
++	writel(ipcr, q->iobase + QSPI_IPTRIG);
++
++	ret = asr_qspi_wait_idle(q);
++	if (ret) {
++		asr_qspi_clear_flags(q);
++		return ret;
++	}
++
++	if (op->data.nbytes) {
++		if (op->data.dir == SPI_MEM_DATA_IN)
++			asr_qspi_read_fifo(q, op->data.buf.in, op->data.nbytes);
++		else
++			asr_qspi_write_fifo(q, op->data.buf.out, op->data.nbytes);
++	}
++
++	asr_qspi_clear_flags(q);
++	return 0;
++}
++
++static bool asr_qspi_supports_op(struct spi_mem *mem,
++				 const struct spi_mem_op *op)
++{
++	if (op->data.buswidth > 4 || op->addr.buswidth > 4 ||
++	    op->cmd.buswidth > 4 || op->dummy.buswidth > 4)
++		return false;
++
++	/* PIO path handles any op up to the FIFO; AHB path handles reads */
++	if (op->data.nbytes > (QSPI_AHB_WIN_SIZE))
++		return false;
++
++	return true;
++}
++
++static int asr_qspi_exec_op(struct spi_mem *mem, const struct spi_mem_op *op)
++{
++	struct asr_qspi *q = spi_controller_get_devdata(mem->spi->controller);
++
++	return asr_qspi_run_cmd(q, op);
++}
++
++/* ---- AHB / XIP direct-mapped reads ------------------------------------- */
++static int asr_qspi_dirmap_create(struct spi_mem_dirmap_desc *desc)
++{
++	struct asr_qspi *q = spi_controller_get_devdata(desc->mem->spi->controller);
++
++	if (desc->info.op_tmpl.data.dir != SPI_MEM_DATA_IN)
++		return -ENOTSUPP;
++
++	/* map this chip into the AHB window at its flash base (CS offset) */
++	writel(q->ahb_size * desc->mem->spi->chip_select[0],
++	       q->iobase + QSPI_SFA1AD);
++	return 0;
++}
++
++static ssize_t asr_qspi_dirmap_read(struct spi_mem_dirmap_desc *desc,
++				   u64 off, size_t len, void *buf)
++{
++	struct asr_qspi *q = spi_controller_get_devdata(desc->mem->spi->controller);
++	u8 __iomem *src;
++
++	if (off + len > q->ahb_size)
++		len = q->ahb_size - off;
++
++	src = q->ahb_base + off;
++	memcpy_fromio(buf, src, len);
++	return len;
++}
++
++static const struct spi_controller_mem_ops asr_qspi_mem_ops = {
++	.supports_op = asr_qspi_supports_op,
++	.exec_op = asr_qspi_exec_op,
++	.dirmap_create = asr_qspi_dirmap_create,
++	.dirmap_read = asr_qspi_dirmap_read,
++};
++
++static irqreturn_t asr_qspi_irq(int irq, void *dev_id)
++{
++	struct asr_qspi *q = dev_id;
++
++	asr_qspi_clear_flags(q);
++	return IRQ_HANDLED;
++}
++
++static void asr_qspi_init_hw(struct asr_qspi *q)
++{
++	u32 val;
++
++	/* software reset: write 0 to SMPR (0x104) and wait until it reads back 0,
++	 * matching the vendor qspi_host_init sequence (write 0, poll until 0). */
++	writel(0, q->iobase + QSPI_SMPR);
++	readl_poll_timeout(q->iobase + QSPI_SMPR, val, val == 0, 10, 100000);
++
++	/* enable + flash config (vendor writes 0x202 to FLSHCR) */
++	writel(0x202, q->iobase + QSPI_FLSHCR);
++	writel(14, q->iobase + QSPI_BUF0CR);
++	writel(14, q->iobase + QSPI_BUF1CR);
++
++	/* AHB window bases: map flash into 0x80000000 .. 0x98000000 */
++	writel(0x80000000, q->iobase + QSPI_SFA1AD);
++	writel(0x88000000, q->iobase + QSPI_SFA2AD);
++	writel(0x90000000, q->iobase + QSPI_SFB1AD);
++	writel(0x98000000, q->iobase + QSPI_SFB2AD);
++
++	/* controller enable */
++	writel(QSPI_MCR_EN, q->iobase + QSPI_MCR);
++}
++
++static int asr_qspi_probe(struct platform_device *pdev)
++{
++	struct asr_qspi *q;
++	struct spi_controller *ctlr;
++	struct resource *res;
++	int ret;
++
++	ctlr = spi_alloc_host(&pdev->dev, sizeof(*q));
++	if (!ctlr)
++		return -ENOMEM;
++	q = spi_controller_get_devdata(ctlr);
++	q->ctlr = ctlr;
++	q->dev = &pdev->dev;
++
++	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "reg-map");
++	if (!res)
++		res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	q->iobase = devm_ioremap_resource(&pdev->dev, res);
++	if (IS_ERR(q->iobase))
++		return PTR_ERR(q->iobase);
++
++	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "memory-map");
++	if (res) {
++		q->ahb_size = resource_size(res);
++		q->ahb_base = devm_ioremap(&pdev->dev, res->start, q->ahb_size);
++		if (IS_ERR(q->ahb_base))
++			q->ahb_base = NULL;
++	} else {
++		q->ahb_size = QSPI_AHB_WIN_SIZE;
++	}
++
++	q->clk = devm_clk_get_optional(&pdev->dev, NULL);
++	if (IS_ERR(q->clk))
++		return PTR_ERR(q->clk);
++	if (q->clk) {
++		ret = clk_prepare_enable(q->clk);
++		if (ret)
++			return ret;
++	}
++
++	q->irq = platform_get_irq(pdev, 0);
++	if (q->irq > 0) {
++		ret = devm_request_irq(&pdev->dev, q->irq, asr_qspi_irq,
++				       0, dev_name(&pdev->dev), q);
++		if (ret)
++			q->irq = 0;
++	}
++
++	asr_qspi_init_hw(q);
++
++	q->ctlr = spi_alloc_host(&pdev->dev, sizeof(*q));
++	if (!q->ctlr)
++		return -ENOMEM;
++	spi_controller_set_devdata(q->ctlr, q);
++
++	q->ctlr->mode_bits = SPI_RX_QUAD | SPI_TX_QUAD | SPI_RX_DUAL |
++			     SPI_TX_DUAL | SPI_RX_OCTAL | SPI_TX_OCTAL;
++	q->ctlr->bits_per_word_mask = SPI_BPW_MASK(8);
++	q->ctlr->mem_ops = &asr_qspi_mem_ops;
++	q->ctlr->num_chipselect = QSPI_MAX_NORChip;
++	q->ctlr->dev.of_node = pdev->dev.of_node;
++
++	ret = devm_spi_register_controller(&pdev->dev, q->ctlr);
++	if (ret) {
++		dev_err(&pdev->dev, "failed to register SPI controller: %d\n", ret);
++		return ret;
++	}
++
++	platform_set_drvdata(pdev, q);
++	dev_info(&pdev->dev, "ASR1802S QSPI SPI-NAND controller probed\n");
++	return 0;
++}
++
++static void asr_qspi_remove(struct platform_device *pdev)
++{
++	struct asr_qspi *q = platform_get_drvdata(pdev);
++
++	if (q->clk)
++		clk_disable_unprepare(q->clk);
++}
++
++static const struct of_device_id asr_qspi_dt_ids[] = {
++	{ .compatible = "asr,asr1802s-qspi" },
++	{ /* sentinel */ }
++};
++MODULE_DEVICE_TABLE(of, asr_qspi_dt_ids);
++
++static struct platform_driver asr_qspi_driver = {
++	.driver = {
++		.name = "asr-qspi",
++		.of_match_table = asr_qspi_dt_ids,
++	},
++	.probe = asr_qspi_probe,
++	.remove = asr_qspi_remove,
++};
++module_platform_driver(asr_qspi_driver);
++
++MODULE_AUTHOR("ASR1802S porting");
++MODULE_DESCRIPTION("ASR1802S QSPI SPI-NAND controller driver");
++MODULE_LICENSE("GPL v2");
