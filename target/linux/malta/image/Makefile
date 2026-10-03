@@ -20,7 +20,7 @@ define Device/Default
   ARTIFACTS := uImage-lzma uImage-gzip
   ARTIFACT/uImage-lzma := kernel-bin | lzma | uImage lzma
   ARTIFACT/uImage-gzip := kernel-bin | gzip | uImage gzip
-  SUPPORTED_DEVICES :=
+  SUPPORTED_DEVICES := generic
 endef
 
 define Device/generic

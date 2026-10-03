@@ -173,7 +173,7 @@ define Device/Default
   endif
   IMAGES := $$(IMAGES-y)
   ARTIFACTS := $$(ARTIFACTS-y)
-  SUPPORTED_DEVICES :=
+  SUPPORTED_DEVICES := generic
 endef
 
 include $(SUBTARGET).mk
