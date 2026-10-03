@@ -1,0 +1,121 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# RBS50 and RBR50 ship with eMMC, and the unused ~1.39GB "reserved"
+# partition (mmcblk0p23) on it dwarfs the ~28MB rootfs_data loop overlay
+# OpenWrt normally uses on these boards via netgear.sh. One-time migrate
+# /overlay onto that partition instead, preserving the live config, when
+# /overlay is currently on the small loop device and the partition is
+# completely blank.
+#
+# Never touches the partition if it already has any filesystem on it --
+# it may have been repurposed by the user for something unrelated after
+# flashing OpenWrt, and this must never clobber that. The "block" utility
+# (blkid-tiny) has been observed to segfault unpredictably, in bursts of
+# a dozen+ consecutive calls, on these boards, so it cannot be trusted
+# alone for this decision -- a crash must never be misread as "no
+# filesystem found". The primary safety gate is therefore a raw
+# byte-level scan: a partition is only ever considered blank if its
+# first megabyte is entirely 0x00 or entirely 0xFF (the two states real,
+# unformatted flash is actually found in). "block info" is consulted
+# only as an extra, best-effort check layered on top -- if it cleanly
+# reports a filesystem type, that is also grounds for refusal, but its
+# failure/crash is never treated as evidence of blankness.
+
+. /lib/functions.sh
+
+case "$(board_name)" in
+netgear,rbs50|netgear,rbr50)
+	;;
+*)
+	exit 0
+	;;
+esac
+
+OVERLAY_PART="/dev/mmcblk0p23"
+SCRATCH="/tmp/.overlay-migrate-check"
+
+# Already running from the target partition? Nothing to do.
+[ "$(mount | awk '$3=="/overlay"{print $1}')" = "$OVERLAY_PART" ] && exit 0
+
+[ -b "$OVERLAY_PART" ] || exit 0
+
+is_raw_blank() {
+	dd if="$OVERLAY_PART" bs=4096 count=256 2>/dev/null > "${SCRATCH}.dev"
+	dd if=/dev/zero bs=4096 count=256 2>/dev/null > "${SCRATCH}.zero"
+	if cmp -s "${SCRATCH}.dev" "${SCRATCH}.zero"; then
+		rm -f "${SCRATCH}.dev" "${SCRATCH}.zero"
+		return 0
+	fi
+	tr '\0' '\377' < "${SCRATCH}.zero" > "${SCRATCH}.ff"
+	if cmp -s "${SCRATCH}.dev" "${SCRATCH}.ff"; then
+		rm -f "${SCRATCH}.dev" "${SCRATCH}.zero" "${SCRATCH}.ff"
+		return 0
+	fi
+	rm -f "${SCRATCH}.dev" "${SCRATCH}.zero" "${SCRATCH}.ff"
+	return 1
+}
+
+if ! is_raw_blank; then
+	logger -t overlay-migrate "Refusing to use ${OVERLAY_PART}: first MB is not blank (raw byte scan found existing data). Leaving /overlay on rootfs_data."
+	exit 0
+fi
+
+# Best-effort secondary check: if blkid can cleanly identify a filesystem
+# here too, that's extra confirmation to refuse. A crash here is ignored
+# (not treated as "blank") since the raw scan above is already the gate.
+block_out="$(block info 2>/dev/null)"
+if [ $? -eq 0 ]; then
+	existing_type="$(printf '%s\n' "$block_out" | grep "^${OVERLAY_PART}:" | grep -o 'TYPE="[^"]*"')"
+	if [ -n "$existing_type" ]; then
+		logger -t overlay-migrate "Refusing to use ${OVERLAY_PART}: blkid reports ($existing_type) despite blank raw scan. Leaving /overlay on rootfs_data."
+		exit 0
+	fi
+fi
+
+logger -t overlay-migrate "Found blank ${OVERLAY_PART}; migrating /overlay to it."
+
+new_uuid="$(cat /proc/sys/kernel/random/uuid 2>/dev/null)"
+if [ -z "$new_uuid" ]; then
+	logger -t overlay-migrate "Could not generate a UUID for ${OVERLAY_PART}, aborting migration."
+	exit 1
+fi
+
+mkfs.ext4 -F -U "$new_uuid" -L overlay "$OVERLAY_PART" || {
+	logger -t overlay-migrate "mkfs.ext4 on ${OVERLAY_PART} failed, aborting migration."
+	exit 1
+}
+
+# Commit the new UUID into the *currently active* overlay (still the
+# small loop device at this point) BEFORE the rsync below. This way the
+# snapshot copied onto the new partition already contains its own
+# correct, self-referential fstab -- otherwise the copy would carry the
+# stale pre-migration UUID, and a second reboot would fail to match it
+# back to this partition and silently fall back to the small overlay.
+uci set fstab.@mount[0].uuid="$new_uuid"
+uci set fstab.@mount[0].enabled='1'
+uci -q delete fstab.storage
+uci commit fstab
+
+mkdir -p /tmp/new_overlay
+mount -t ext4 "$OVERLAY_PART" /tmp/new_overlay || {
+	logger -t overlay-migrate "mount of ${OVERLAY_PART} failed, aborting migration."
+	exit 1
+}
+
+mkdir -p /tmp/new_overlay/upper /tmp/new_overlay/work
+ln -sf 2 /tmp/new_overlay/.fs_state
+
+if command -v rsync >/dev/null; then
+	rsync -ax /overlay/upper/ /tmp/new_overlay/upper/
+else
+	cp -a /overlay/upper/. /tmp/new_overlay/upper/
+fi
+
+umount /tmp/new_overlay
+
+logger -t overlay-migrate "Migration complete (UUID=${new_uuid}). Rebooting to activate ${OVERLAY_PART} as /overlay."
+sync
+reboot
+
+exit 0
