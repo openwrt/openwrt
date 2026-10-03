@@ -1,0 +1,23 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "ipq8074-rt-ax89x.dts"
+
+/ {
+	model = "Asus RT-AX89X B1";
+	compatible = "asus,rt-ax89x-b1", "qcom,ipq8074";
+};
+
+&mdio {
+	aqr107: ethernet-phy@7 {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <7>;
+	};
+};
+
+&mdio1 {
+	status = "disabled";
+};
+
+&port_10g_copper {
+	phy-handle = <&aqr107>;
+};
