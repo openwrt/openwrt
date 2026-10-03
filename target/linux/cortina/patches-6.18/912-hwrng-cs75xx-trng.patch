@@ -1,0 +1,36 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Fil Dunsky <filipp.dunsky@gmail.com>
+Date: Thu, 01 Oct 2026 02:00:00 +0300
+Subject: [PATCH] hwrng: add Kconfig and Makefile entries for the CS75xx TRNG
+
+Add the HW_RANDOM_CS75XX build option for the TRNG block of Cortina
+CS75xx (Goldengate) SoCs and hook the driver into the Makefile.
+
+Signed-off-by: Fil Dunsky <filipp.dunsky@gmail.com>
+---
+--- a/drivers/char/hw_random/Kconfig
++++ b/drivers/char/hw_random/Kconfig
+@@ -21,6 +21,13 @@ menuconfig HW_RANDOM
+ 
+ if HW_RANDOM
+ 
++config HW_RANDOM_CS75XX
++	tristate "Cortina CS75xx True Random Number Generator support"
++	depends on ARCH_CORTINA_CS75XX || COMPILE_TEST
++	default HW_RANDOM
++	help
++	  TRNG block of Cortina CS75xx (Goldengate) SoCs.
++
+ config HW_RANDOM_TIMERIOMEM
+ 	tristate "Timer IOMEM HW Random Number Generator support"
+ 	depends on HAS_IOMEM
+--- a/drivers/char/hw_random/Makefile
++++ b/drivers/char/hw_random/Makefile
+@@ -5,6 +5,7 @@
+ 
+ obj-$(CONFIG_HW_RANDOM) += rng-core.o
+ rng-core-y := core.o
++obj-$(CONFIG_HW_RANDOM_CS75XX) += cs75xx-trng.o
+ obj-$(CONFIG_HW_RANDOM_TIMERIOMEM) += timeriomem-rng.o
+ obj-$(CONFIG_HW_RANDOM_INTEL) += intel-rng.o
+ obj-$(CONFIG_HW_RANDOM_AMD) += amd-rng.o
