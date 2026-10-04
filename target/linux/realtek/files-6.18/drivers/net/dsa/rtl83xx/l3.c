@@ -2146,6 +2146,12 @@ static int otto_l3_fib_check_v6(struct otto_l3_ctrl *ctrl, struct fib6_info *rt,
 	if (rt->fib6_type != RTN_UNICAST || rt->fib6_flags & RTF_REJECT)
 		return -EOPNOTSUPP;
 
+	/* Routers advertise these, and the kernel picks among them at lookup
+	 * time, with no event when its pick changes
+	 */
+	if (rt->fib6_flags & RTF_ADDRCONF)
+		return -EOPNOTSUPP;
+
 	/* A row for the default route matches every destination no more
 	 * specific row holds, and the destinations this driver leaves out are
 	 * exactly the ones it does not know what to do with - a prefix that is
