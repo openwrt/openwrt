@@ -1365,6 +1365,11 @@ static void otto_l3_route_trap_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_rout
 	if (!ctrl->cfg->use_l3_tables || r->attr.action == ROUTE_ACT_TRAP2CPU)
 		return;
 
+	/* What the route says is what the next write of it puts in hardware */
+	r->attr.action = ROUTE_ACT_TRAP2CPU;
+	r->attr.ttl_dec = false;
+	r->attr.ttl_check = false;
+
 	if (r->is_host_route)
 		slot = ctrl->cfg->find_slot(ctrl, r, true);
 
@@ -1378,10 +1383,6 @@ static void otto_l3_route_trap_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_rout
 	else
 		dev_info(ctrl->dev, "no valid neighbour for %pI6c, routing %s in software\n",
 			 &r->gw_ip, otto_l3_route_dst(r, dst, sizeof(dst)));
-
-	r->attr.action = ROUTE_ACT_TRAP2CPU;
-	r->attr.ttl_dec = false;
-	r->attr.ttl_check = false;
 
 	if (otto_l3_host_shadowed(ctrl, r))
 		return;
