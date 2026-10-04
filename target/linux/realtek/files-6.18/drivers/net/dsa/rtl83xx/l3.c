@@ -2816,6 +2816,17 @@ static bool otto_l3_fib_table_ok(struct otto_l3_ctrl *ctrl, unsigned long event,
 	return false;
 }
 
+/* Probe holds the work disabled until the FIB notifier is in place, and a
+ * work that is disabled does not queue: the request is noted first, for probe
+ * to find once it has enabled the work.
+ */
+static void otto_l3_resync_request(struct otto_l3_ctrl *ctrl)
+{
+	WRITE_ONCE(ctrl->resync_wanted, true);
+	smp_mb(); /* pairs with the one after enable_delayed_work() in probe */
+	queue_delayed_work(system_long_wq, &ctrl->resync_work, 0);
+}
+
 /* Called with rcu_read_lock() */
 static int otto_l3_fib_notifier(struct notifier_block *this, unsigned long event, void *ptr)
 {
@@ -2833,7 +2844,7 @@ static int otto_l3_fib_notifier(struct notifier_block *this, unsigned long event
 
 	fib_work = kzalloc(sizeof(*fib_work), GFP_ATOMIC);
 	if (!fib_work) {
-		queue_delayed_work(system_long_wq, &ctrl->resync_work, 0);
+		otto_l3_resync_request(ctrl);
 		return NOTIFY_BAD;
 	}
 
@@ -2964,7 +2975,7 @@ static int otto_l3_netevent_notifier(struct notifier_block *this, unsigned long 
 
 		net_work = kzalloc(sizeof(*net_work), GFP_ATOMIC);
 		if (!net_work) {
-			queue_delayed_work(system_long_wq, &ctrl->resync_work, 0);
+			otto_l3_resync_request(ctrl);
 			return NOTIFY_BAD;
 		}
 
@@ -3671,6 +3682,7 @@ static void otto_l3_resync_work_do(struct work_struct *work)
 						 resync_work);
 	int err;
 
+	WRITE_ONCE(ctrl->resync_wanted, false);
 	if (!ctrl->resync_delay)
 		dev_warn(ctrl->dev, "an L3 event could not be queued, replaying the FIB\n");
 	unregister_fib_notifier(&init_net, &ctrl->fib_nb);
@@ -3759,8 +3771,12 @@ int otto_l3_probe(struct device *dev, struct rtl838x_switch_priv *priv)
 		return dev_err_probe(dev, err, "Failed to register fib event notifier\n");
 	}
 	/* Only the L3 tables trap while the routes are away */
-	if (ctrl->cfg->use_l3_tables)
+	if (ctrl->cfg->use_l3_tables) {
 		enable_delayed_work(&ctrl->resync_work);
+		smp_mb(); /* pairs with the one in otto_l3_resync_request() */
+		if (READ_ONCE(ctrl->resync_wanted))
+			queue_delayed_work(system_long_wq, &ctrl->resync_work, 0);
+	}
 
 	if (ctrl->cfg->dbgfs_init)
 		ctrl->cfg->dbgfs_init(ctrl);

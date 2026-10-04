@@ -128,6 +128,7 @@ struct otto_l3_ctrl {
 	struct notifier_block ne_nb;
 	struct delayed_work resync_work;
 	unsigned int resync_delay;
+	bool resync_wanted;
 	struct rhltable routes;
 	struct list_head routes_list;
 	unsigned long route_use_bm[MAX_ROUTES / 32];
