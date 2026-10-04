@@ -6,7 +6,7 @@ platform_check_image() {
 
 	case "$board" in
 	wd,mybooklive)
-		mbl_do_platform_check "$1"
+		legacy_sdcard_check_image "$1"
 		return $?;
 		;;
 	*)
@@ -20,7 +20,7 @@ platform_do_upgrade() {
 
 	case "$board" in
 	wd,mybooklive)
-		mbl_do_upgrade "$1"
+		legacy_sdcard_do_upgrade "$1"
 		;;
 	meraki,mr24|\
 	meraki,mx60|\
