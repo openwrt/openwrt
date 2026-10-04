@@ -1611,7 +1611,7 @@ static void otto_l3_route_remove(struct otto_l3_ctrl *ctrl, struct otto_l3_route
 				&r->dst_ip);
 		}
 
-		if (r->tb_id == RT_TABLE_LOCAL)
+		if (r->tb_id == RT_TABLE_LOCAL && !r->replaced)
 			otto_l3_host_unshadow(ctrl, r);
 	} else {
 		/* If there is a HW representation of the route, delete it */
@@ -1934,8 +1934,10 @@ static int otto_l3_fib_add_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 		dev_dbg(ctrl->dev, "route not offloaded: no device, nexthop object or tunnel\n");
 		route = otto_l3_route_find(ctrl, info->tb_id, ROUTE_TYPE_IP4UC, info->dst,
 					   NULL, info->dst_len);
-		if (route)
+		if (route) {
+			route->replaced = true;
 			otto_l3_route_teardown(ctrl, route);
+		}
 		otto_l3_fib_trap_v4(ctrl, info);
 		return 0;
 	}
@@ -1957,6 +1959,10 @@ static int otto_l3_fib_add_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 	if (route) {
 		dev_dbg(ctrl->dev, "replacing route %pI4/%d, id %d\n",
 			&info->dst, info->dst_len, route->id);
+		/* A route to the same destination takes the entry over: a
+		 * main /32 kept out of it stays out while it changes hands
+		 */
+		route->replaced = true;
 		otto_l3_route_teardown(ctrl, route);
 	}
 
