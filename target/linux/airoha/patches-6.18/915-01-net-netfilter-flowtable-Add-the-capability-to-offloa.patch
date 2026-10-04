@@ -138,7 +138,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  static bool nft_flow_offload_skip(struct sk_buff *skb, int family)
  {
  	if (skb_sec_path(skb))
-@@ -112,6 +134,9 @@ static void nft_flow_offload_eval(const
+@@ -113,6 +135,9 @@ static void nft_flow_offload_eval(const
  	if (!flow)
  		goto err_flow_alloc;
  
