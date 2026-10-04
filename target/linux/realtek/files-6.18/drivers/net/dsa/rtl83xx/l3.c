@@ -2235,6 +2235,14 @@ static struct otto_l3_route_src *otto_l3_route_src_find(struct otto_l3_route *r,
 	return NULL;
 }
 
+/* A source that could not be tracked is still a route the row stands for */
+static bool otto_l3_route_has_srcs(struct otto_l3_route *r)
+{
+	return !list_empty(&r->srcs) || r->srcs_incomplete;
+}
+
+static void otto_l3_resync_request(struct otto_l3_ctrl *ctrl);
+
 /* A source-specific route matches only the packets from its source, and the
  * hardware matches on the destination alone, so the destination traps for as
  * long as one of them remains. The trap row counts the members of each source
@@ -2278,8 +2286,17 @@ static int otto_l3_fib_add_v6_src(struct otto_l3_ctrl *ctrl, struct fib6_info *r
 	s = otto_l3_route_src_find(route, &rt->fib6_src);
 	if (!s) {
 		s = kzalloc(sizeof(*s), GFP_KERNEL);
-		if (!s)
+		if (!s) {
+			/* The row keeps trapping whatever the list says; a replay
+			 * builds the list again
+			 */
+			route->srcs_incomplete = true;
+			dev_err(ctrl->dev, "%pI6c/%d from %pI6c/%d: no memory to track the source\n",
+				&rt->fib6_dst.addr, rt->fib6_dst.plen,
+				&rt->fib6_src.addr, rt->fib6_src.plen);
+			otto_l3_resync_request(ctrl);
 			return -ENOMEM;
+		}
 		s->addr = rt->fib6_src.addr;
 		s->plen = rt->fib6_src.plen;
 		list_add_tail(&s->list, &route->srcs);
@@ -2312,7 +2329,7 @@ static int otto_l3_fib_del_v6_src(struct otto_l3_ctrl *ctrl, struct fib6_info *r
 	list_del(&s->list);
 	kfree(s);
 
-	if (list_empty(&route->srcs) && !route->members)
+	if (!otto_l3_route_has_srcs(route) && !route->members)
 		otto_l3_route_teardown(ctrl, route);
 
 	return 0;
@@ -2389,7 +2406,7 @@ static int otto_l3_fib_add_v6(struct otto_l3_ctrl *ctrl, struct fib6_entry_notif
 	 */
 	route = otto_l3_route_find(ctrl, rt->fib6_table->tb6_id, ROUTE_TYPE_IP6UC,
 				   0, &rt->fib6_dst.addr, rt->fib6_dst.plen);
-	if (route && !list_empty(&route->srcs)) {
+	if (route && otto_l3_route_has_srcs(route)) {
 		route->members = members;
 		return 0;
 	}
@@ -2507,7 +2524,7 @@ static int otto_l3_fib_del_v6(struct otto_l3_ctrl *ctrl, struct fib6_entry_notif
 	if (route && ipv6_addr_any(&route->gw_ip)) {
 		if (route->members > members)
 			route->members -= members;
-		else if (!list_empty(&route->srcs))
+		else if (otto_l3_route_has_srcs(route))
 			route->members = 0;
 		else
 			otto_l3_route_teardown(ctrl, route);
