@@ -2580,20 +2580,47 @@ static int otto_l3_fib_del_v6(struct otto_l3_ctrl *ctrl, struct fib6_entry_notif
 	return 0;
 }
 
-static bool otto_l3_rule_default(const struct fib_rule *rule, int family)
+/* A dscp selector the rule was given explicitly, 0 included, is kept in the
+ * family's own part of the rule, which only the family's callbacks see; its
+ * fill callback reports one as FRA_DSCP. A rule that cannot be read out counts
+ * as having one.
+ */
+static bool otto_l3_rule_dscp(struct fib_rules_ops *ops, struct fib_rule *rule)
 {
+	struct fib_rule_hdr *frh;
+	struct sk_buff *skb;
+	bool dscp = true;
+
+	skb = alloc_skb(sizeof(*frh) + ops->nlmsg_payload(rule), GFP_KERNEL);
+	if (!skb)
+		return true;
+
+	frh = skb_put_zero(skb, sizeof(*frh));
+	if (!ops->fill(rule, skb, frh))
+		dscp = nla_find((struct nlattr *)(frh + 1), skb->len - sizeof(*frh), FRA_DSCP);
+
+	consume_skb(skb);
+
+	return dscp;
+}
+
+static bool otto_l3_rule_default(struct fib_rules_ops *ops, struct fib_rule *rule,
+				 int family)
+{
+	bool def = false;
+
 	/* The kernel's own test leaves the protocol and the mark mask out */
 	if (rule->ip_proto || rule->mark_mask)
 		return false;
 #if IS_ENABLED(CONFIG_IP_MULTIPLE_TABLES)
 	if (family == AF_INET)
-		return fib4_rule_default(rule);
+		def = fib4_rule_default(rule);
 #endif
 #if IS_REACHABLE(CONFIG_IPV6) && IS_ENABLED(CONFIG_IPV6_MULTIPLE_TABLES)
 	if (family == AF_INET6)
-		return fib6_rule_default(rule);
+		def = fib6_rule_default(rule);
 #endif
-	return false;
+	return def && !otto_l3_rule_dscp(ops, rule);
 }
 
 /* The switch looks a destination up in one table, so it forwards the way the
@@ -2631,7 +2658,7 @@ static bool otto_l3_rules_allow(int family)
 			break;
 		}
 
-		if (otto_l3_rule_default(rule, family)) {
+		if (otto_l3_rule_default(ops, rule, family)) {
 			if (rule->table == RT_TABLE_MAIN) {
 				main_seen = true;
 				main_pref = rule->pref;
