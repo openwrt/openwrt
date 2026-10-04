@@ -55,6 +55,7 @@ ALLWIFIBOARDS:= \
 	jdcloud_re-ss-01 \
 	link_nn6000 \
 	linksys_homewrk \
+	linksys_ln6001 \
 	linksys_mr2000 \
 	linksys_mr5500 \
 	linksys_mr6350 \
@@ -269,6 +270,7 @@ $(eval $(call generate-ipq-wifi-package,jdcloud_re-cs-02,JDCloud RE-CS-02))
 $(eval $(call generate-ipq-wifi-package,jdcloud_re-ss-01,JDCloud RE-SS-01))
 $(eval $(call generate-ipq-wifi-package,link_nn6000,Link NN6000))
 $(eval $(call generate-ipq-wifi-package,linksys_homewrk,Linksys HomeWRK))
+$(eval $(call generate-ipq-wifi-package,linksys_ln6001,Linksys Velop WRT Pro 7 (LN6001/MBE70)))
 $(eval $(call generate-ipq-wifi-package,linksys_mr2000,Linksys MR2000))
 $(eval $(call generate-ipq-wifi-package,linksys_mr5500,Linksys MR5500))
 $(eval $(call generate-ipq-wifi-package,linksys_mr6350,Linksys MR6350))
