@@ -102,7 +102,7 @@ define KernelPackage/backlight-pwm
 	DEPENDS:=@PWM_SUPPORT +kmod-backlight
 	KCONFIG:=CONFIG_BACKLIGHT_PWM
 	FILES:=$(LINUX_DIR)/drivers/video/backlight/pwm_bl.ko
-	AUTOLOAD:=$(call AutoProbe,video pwm_bl)
+	AUTOLOAD:=$(call AutoProbe,video pwm_bl,1)
 endef
 
 define KernelPackage/backlight-pwm/description
@@ -693,7 +693,7 @@ define KernelPackage/drm-panel-mipi-dbi
   KCONFIG:=CONFIG_DRM_PANEL_MIPI_DBI
   FILES:= \
 	$(LINUX_DIR)/drivers/gpu/drm/tiny/panel-mipi-dbi.ko
-  AUTOLOAD:=$(call AutoProbe,panel-mipi-dbi)
+  AUTOLOAD:=$(call AutoProbe,panel-mipi-dbi,1)
 endef
 
 define KernelPackage/drm-panel-mipi-dbi/description
