@@ -3636,7 +3636,7 @@ static const struct of_device_id otto_l3_of_ids[] = {
 void otto_l3_remove(struct rtl838x_switch_priv *priv)
 {
 	struct otto_l3_ctrl *ctrl = priv->l3_ctrl;
-	struct otto_l3_route *r;
+	struct otto_l3_route *r, *tmp;
 
 	/* A replay would register the FIB notifier again */
 	disable_delayed_work_sync(&ctrl->resync_work);
@@ -3658,14 +3658,14 @@ void otto_l3_remove(struct rtl838x_switch_priv *priv)
 	flush_workqueue(priv->wq);
 
 	/* Nothing takes a route out now, and a FIB entry one still names would
-	 * be kept alive by it.
+	 * be kept alive by it. Destroying the hash table also waits for the
+	 * resize work it runs on its own.
 	 */
-	list_for_each_entry(r, &ctrl->routes_list, list) {
-		if (!IS_REACHABLE(CONFIG_IPV6) || !r->f6i)
-			continue;
-		fib6_info_release(r->f6i);
-		r->f6i = NULL;
-	}
+	rtnl_lock();
+	list_for_each_entry_safe(r, tmp, &ctrl->routes_list, list)
+		otto_l3_route_free(ctrl, r);
+	rtnl_unlock();
+	rhltable_destroy(&ctrl->routes);
 }
 
 struct otto_l3_flush_work {
@@ -3790,6 +3790,7 @@ int otto_l3_probe(struct device *dev, struct rtl838x_switch_priv *priv)
 	err = register_netevent_notifier(&ctrl->ne_nb);
 	if (err) {
 		ctrl->ne_nb.notifier_call = NULL;
+		otto_l3_remove(priv);
 		return dev_err_probe(dev, err, "Failed to register netevent notifier\n");
 	}
 
