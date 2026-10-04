@@ -1,0 +1,64 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: 安容 <HystericalDragons@proton.me>
+Date: Mon, 12 Oct 2026 14:55:42 +0800
+Subject: [PATCH] rockchip: rk3528: Split out common NanoPi u-boot.dtsi
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The Linux devicetree of the NanoPi Zero2 has been split into a common
+rk3528-nanopi.dtsi, which the NanoPi R28S builds on. Both boards use
+the same PWM regulators for vdd_arm and vdd_logic.
+
+Move the U-Boot specific parts of the NanoPi Zero2 into a common
+rk3528-nanopi-u-boot.dtsi in the same way, so that the NanoPi R28S can
+include it instead of duplicating it. No functional change.
+
+Signed-off-by: 安容 <HystericalDragons@proton.me>
+Link: https://lore.kernel.org/all/20261012-nanopi-r28s-v1-1-042d62597829@proton.me/
+---
+ arch/arm/dts/rk3528-nanopi-u-boot.dtsi       | 11 +++++++++++
+ arch/arm/dts/rk3528-nanopi-zero2-u-boot.dtsi | 10 +---------
+ arch/arm/mach-rockchip/rk3528/MAINTAINERS    |  1 +
+ 3 files changed, 13 insertions(+), 9 deletions(-)
+ create mode 100644 arch/arm/dts/rk3528-nanopi-u-boot.dtsi
+
+--- /dev/null
++++ b/arch/arm/dts/rk3528-nanopi-u-boot.dtsi
+@@ -0,0 +1,11 @@
++// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
++
++#include "rk3528-u-boot.dtsi"
++
++&vdd_arm {
++	regulator-init-microvolt = <953000>;
++};
++
++&vdd_logic {
++	regulator-init-microvolt = <900000>;
++};
+--- a/arch/arm/dts/rk3528-nanopi-zero2-u-boot.dtsi
++++ b/arch/arm/dts/rk3528-nanopi-zero2-u-boot.dtsi
+@@ -1,11 +1,3 @@
+ // SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+ 
+-#include "rk3528-u-boot.dtsi"
+-
+-&vdd_arm {
+-	regulator-init-microvolt = <953000>;
+-};
+-
+-&vdd_logic {
+-	regulator-init-microvolt = <900000>;
+-};
++#include "rk3528-nanopi-u-boot.dtsi"
+--- a/arch/arm/mach-rockchip/rk3528/MAINTAINERS
++++ b/arch/arm/mach-rockchip/rk3528/MAINTAINERS
+@@ -7,6 +7,7 @@ F:	configs/generic-rk3528_defconfig
+ NANOPI-ZERO2-RK3528
+ M:	Jonas Karlman <jonas@kwiboo.se>
+ S:	Maintained
++F:	arch/arm/dts/rk3528-nanopi-u-boot.dtsi
+ F:	arch/arm/dts/rk3528-nanopi-zero2*
+ F:	configs/nanopi-zero2-rk3528_defconfig
+ 
