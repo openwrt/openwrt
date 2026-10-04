@@ -40,7 +40,7 @@ Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
  #ifdef CONFIG_NF_CT_PROTO_SCTP
 --- a/net/netfilter/nf_flow_table_core.c
 +++ b/net/netfilter/nf_flow_table_core.c
-@@ -216,6 +216,11 @@ static void flow_offload_fixup_ct(struct
+@@ -219,6 +219,11 @@ static void flow_offload_fixup_ct(struct
  			tcp_state = READ_ONCE(ct->proto.tcp.state);
  			flow_offload_fixup_tcp(ct, tcp_state);
  			timeout = READ_ONCE(tn->timeouts[tcp_state]);
