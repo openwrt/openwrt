@@ -1,0 +1,23 @@
+#!/bin/sh
+
+[ -e /lib/firmware/$FIRMWARE ] && exit 0
+
+. /lib/functions/caldata.sh
+
+board=$(board_name)
+
+case "$FIRMWARE" in
+"ath10k/cal-pci-0000:00:00.0.bin")
+	case $board in
+	glinet,gl-e750)
+		# V1 radios carry their calibration in EEPROM and art is
+		# empty at this offset; V2 radios need the copy from art.
+		caldata_extract "art" 0x5000 0x844
+		caldata_valid "4408" || rm -f /lib/firmware/$FIRMWARE
+		;;
+	esac
+	;;
+*)
+	exit 1
+	;;
+esac
