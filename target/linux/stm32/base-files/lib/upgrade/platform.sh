@@ -39,36 +39,13 @@ export_bootdevice() {
 }
 
 platform_check_image() {
-	local diskdev partdev diff
+	[ "$#" -gt 1 ] && return 1
 
-        [ "$#" -gt 1 ] && return 1
-
-	export_bootdevice && export_partdevice diskdev 0 || {
-		v "platform_check_image: Unable to determine upgrade device"
-		return 1
-	}
-
-	get_partitions "/dev/$diskdev" bootdisk
-
-	v "Extract the boot sector from the image"
-	get_image_dd "$1" of=/tmp/image.bs count=63 bs=512b
-
-	get_partitions /tmp/image.bs image
-
-	#compare tables
-	diff="$(grep -F -x -v -f /tmp/partmap.bootdisk /tmp/partmap.image)"
-
-	rm -f /tmp/image.bs /tmp/partmap.bootdisk /tmp/partmap.image
-
-	if [ -n "$diff" ]; then
-		echo "Partition layout has changed. Full image will be written."
-		ask_bool 0 "Abort" && exit 1
-		return 0
-	fi
+	legacy_sdcard_check_image "$1"
 }
 
 platform_do_upgrade() {
-	local diskdev partdev diff partlabel
+	local diskdev partdev mode partlabel
 
 	export_bootdevice && export_partdevice diskdev 0 || {
 		v "platform_do_upgrade: Unable to determine upgrade device"
@@ -77,21 +54,13 @@ platform_do_upgrade() {
 
 	sync
 
-	if [ "$UPGRADE_OPT_SAVE_PARTITIONS" = "1" ]; then
-		get_partitions "/dev/$diskdev" bootdisk
+	mode="$(legacy_sdcard_upgrade_mode "$1" "$diskdev")"
+	case "$mode" in
+	full|partitions) ;;
+	*) return 1 ;;
+	esac
 
-		v "Extract boot sector from the image"
-		get_image_dd "$1" of=/tmp/image.bs count=63 bs=512b
-
-		get_partitions /tmp/image.bs image
-
-		#compare tables
-		diff="$(grep -F -x -v -f /tmp/partmap.bootdisk /tmp/partmap.image)"
-	else
-		diff=1
-	fi
-
-	if [ -n "$diff" ]; then
+	if [ "$mode" = "full" ]; then
 		rm -rf /tmp/ubootenv
 
 		if export_partdevice partdev $UBOOT_ENV_PART; then
