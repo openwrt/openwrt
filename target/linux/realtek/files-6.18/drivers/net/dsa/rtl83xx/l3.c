@@ -2671,8 +2671,10 @@ static int otto_l3_fib_notifier(struct notifier_block *this, unsigned long event
 		return NOTIFY_DONE;
 
 	fib_work = kzalloc(sizeof(*fib_work), GFP_ATOMIC);
-	if (!fib_work)
+	if (!fib_work) {
+		queue_delayed_work(system_long_wq, &ctrl->resync_work, 0);
 		return NOTIFY_BAD;
+	}
 
 	fib_work->ctrl = ctrl;
 	fib_work->event = event;
@@ -2800,8 +2802,10 @@ static int otto_l3_netevent_notifier(struct notifier_block *this, unsigned long 
 		}
 
 		net_work = kzalloc(sizeof(*net_work), GFP_ATOMIC);
-		if (!net_work)
+		if (!net_work) {
+			queue_delayed_work(system_long_wq, &ctrl->resync_work, 0);
 			return NOTIFY_BAD;
+		}
 
 		INIT_WORK(&net_work->work, otto_l3_net_event_work_do);
 		net_work->ctrl = ctrl;
@@ -3428,6 +3432,9 @@ void otto_l3_remove(struct rtl838x_switch_priv *priv)
 	struct otto_l3_ctrl *ctrl = priv->l3_ctrl;
 	struct otto_l3_route *r;
 
+	/* A replay would register the FIB notifier again */
+	disable_delayed_work_sync(&ctrl->resync_work);
+
 	if (ctrl->ne_nb.notifier_call) {
 		unregister_netevent_notifier(&ctrl->ne_nb);
 		ctrl->ne_nb.notifier_call = NULL;
@@ -3490,6 +3497,42 @@ static void otto_l3_fib_dump_flush(struct notifier_block *nb)
 	destroy_work_on_stack(&fw.work);
 }
 
+/* An event the notifiers had no memory to queue is lost, and with it what it
+ * would have changed: a deleted route or a neighbour gone can stay forwarding.
+ * Take every route out and have the kernel replay the FIB, as when the notifier
+ * is first registered. The stale entry forwards until the flush, which waits
+ * for the work already queued; from there until the replay has brought the
+ * routes back, the catch-all rows trap what comes.
+ */
+static void otto_l3_resync_work_do(struct work_struct *work)
+{
+	struct otto_l3_ctrl *ctrl = container_of(to_delayed_work(work), struct otto_l3_ctrl,
+						 resync_work);
+	int err;
+
+	if (!ctrl->resync_delay)
+		dev_warn(ctrl->dev, "an L3 event could not be queued, replaying the FIB\n");
+	unregister_fib_notifier(&init_net, &ctrl->fib_nb);
+	otto_l3_fib_dump_flush(&ctrl->fib_nb);
+
+	err = register_fib_notifier(&init_net, &ctrl->fib_nb, otto_l3_fib_dump_flush, NULL);
+	if (!err) {
+		ctrl->resync_delay = 0;
+		return;
+	}
+
+	/* A dump that failed half way is not flushed by the kernel */
+	otto_l3_fib_dump_flush(&ctrl->fib_nb);
+
+	/* Memory may still be short, or a route the notifier refuses may have come
+	 * in while it was away: try again, less and less often
+	 */
+	ctrl->resync_delay = clamp(2 * ctrl->resync_delay, HZ, 64 * HZ);
+	dev_err(ctrl->dev, "FIB replay failed: %d, routes stay in software, next try in %us\n",
+		err, ctrl->resync_delay / HZ);
+	mod_delayed_work(system_long_wq, &ctrl->resync_work, ctrl->resync_delay);
+}
+
 int otto_l3_probe(struct device *dev, struct rtl838x_switch_priv *priv)
 {
 	const struct of_device_id *match;
@@ -3504,6 +3547,9 @@ int otto_l3_probe(struct device *dev, struct rtl838x_switch_priv *priv)
 	ctrl->dev = priv->dev;
 	/* For now share the register access lock with the DSA driver */
 	ctrl->lock = &priv->reg_mutex;
+	/* Until the FIB notifier is in place there is nothing to replay */
+	INIT_DELAYED_WORK(&ctrl->resync_work, otto_l3_resync_work_do);
+	disable_delayed_work(&ctrl->resync_work);
 
 	match = of_match_node(otto_l3_of_ids, dev->of_node);
 	if (!match)
@@ -3551,6 +3597,9 @@ int otto_l3_probe(struct device *dev, struct rtl838x_switch_priv *priv)
 		otto_l3_remove(priv);
 		return dev_err_probe(dev, err, "Failed to register fib event notifier\n");
 	}
+	/* Only the L3 tables trap while the routes are away */
+	if (ctrl->cfg->use_l3_tables)
+		enable_delayed_work(&ctrl->resync_work);
 
 	if (ctrl->cfg->dbgfs_init)
 		ctrl->cfg->dbgfs_init(ctrl);
