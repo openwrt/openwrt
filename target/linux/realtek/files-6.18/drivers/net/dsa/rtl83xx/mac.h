@@ -133,6 +133,9 @@ int otto_mac_930x_link_state_source_set(struct otto_dsa_priv *priv, int port,
 					enum rtldsa_mac_link_state_source source,
 					phy_interface_t interface);
 
+/* Per-port EEE/EEEP speed enables in MAC_FORCE_MODE_CTRL. */
+#define RTL930X_MAC_FORCE_EEE_MASK		GENMASK(15, 10)
+
 /* Per-port EEE speed enables in MAC_FORCE_MODE_CTRL (bit 19 is reserved):
  * 100M@18, 1000M@20, 2.5G@21, 5G@22, 10G@23. Note the RTL931x (Mango) layout
  * differs from the RTL930x sibling (which packs its EEE enables at [15:10]).

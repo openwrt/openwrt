@@ -246,10 +246,11 @@ void otto_mac_930x_set_eee(struct otto_dsa_priv *priv, int port, bool enable)
 		return;
 
 	pr_debug("In %s: setting port %d to %d\n", __func__, port, enable);
-	v = enable ? 0x3f : 0x0;
 
 	/* Set EEE/EEEP state for 100, 500, 1000MBit and 2.5, 5 and 10GBit */
-	regmap_write_bits(priv->map, otto_mac_930x_force_mode_ctrl(port), v << 10, v << 10);
+	regmap_update_bits(priv->map, otto_mac_930x_force_mode_ctrl(port),
+			   RTL930X_MAC_FORCE_EEE_MASK,
+			   enable ? RTL930X_MAC_FORCE_EEE_MASK : 0);
 
 	/* Set TX/RX EEE state */
 	v = enable ? 0x3 : 0x0;

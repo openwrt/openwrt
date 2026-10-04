@@ -573,6 +573,7 @@ const struct rtldsa_config rtldsa_930x_cfg = {
 		.rx_pause_mask = RTL930X_RX_PAUSE_EN,
 		.media_mask = RTL930X_MEDIA_SEL,
 	},
+	.mac_force_mode_eee_mask = RTL930X_MAC_FORCE_EEE_MASK,
 	.mac_force_mode_ctrl = otto_mac_930x_force_mode_ctrl,
 	.mac_link_state_source_set = otto_mac_930x_link_state_source_set,
 	.mac_port_ctrl = otto_mac_930x_port_ctrl,
