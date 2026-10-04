@@ -134,6 +134,8 @@ struct otto_l3_ctrl {
 	unsigned long host_route_use_bm[MAX_HOST_ROUTES / 32];
 	struct otto_l3_intf interfaces[MAX_SMACS];
 	bool prefix_rows_stale;	/* a move failed, the rows are not where we say */
+	bool v4_fwd_off;	/* policy rules keep IPv4 forwarding in software */
+	bool v6_fwd_off;	/* policy rules keep IPv6 forwarding in software */
 	struct mutex *lock; /* protect register access */
 };
 

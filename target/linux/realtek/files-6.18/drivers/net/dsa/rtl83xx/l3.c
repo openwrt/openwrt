@@ -1226,6 +1226,11 @@ static void otto_l3_host_unshadow(struct otto_l3_ctrl *ctrl, struct otto_l3_rout
 	}
 }
 
+static bool otto_l3_fwd_off(struct otto_l3_ctrl *ctrl, u8 type)
+{
+	return type == ROUTE_TYPE_IP6UC ? ctrl->v6_fwd_off : ctrl->v4_fwd_off;
+}
+
 static void otto_l3_route_update_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r,
 				    u64 mac)
 {
@@ -1233,7 +1238,7 @@ static void otto_l3_route_update_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_ro
 	bool require_existing = ctrl->cfg->use_l3_tables;
 	char dst[INET6_ADDRSTRLEN + sizeof("/128")];
 	bool first = !r->nh.mac;
-	bool no_port;
+	bool no_port, trap;
 
 	dev_dbg(ctrl->dev, "setting up fwding: gw %pI6c, mac %016llx\n",
 		&r->gw_ip, mac);
@@ -1270,18 +1275,19 @@ static void otto_l3_route_update_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_ro
 				 &r->gw_ip, otto_l3_route_dst(r, dst, sizeof(dst)));
 	}
 
+	trap = no_port || otto_l3_fwd_off(ctrl, r->attr.type);
+
 	r->attr.valid = true;
-	r->attr.action = no_port ? ROUTE_ACT_TRAP2CPU : ROUTE_ACT_FORWARD;
+	r->attr.action = trap ? ROUTE_ACT_TRAP2CPU : ROUTE_ACT_FORWARD;
 	r->attr.hit = false; /* Reset route-used indicator */
 
 	/* Forwarding a packet is what makes this a hop, and a hop
 	 * spends one of the packet's. The two bits are what the SDK
 	 * asks for on an entry it creates with no flags of its own.
-	 * A route trapped for want of a port does not forward, so it
-	 * keeps them clear.
+	 * A route that traps does not forward, so it keeps them clear.
 	 */
-	r->attr.ttl_dec = !no_port;
-	r->attr.ttl_check = !no_port;
+	r->attr.ttl_dec = !trap;
+	r->attr.ttl_check = !trap;
 
 	if (r->attr.type == ROUTE_TYPE_IP4UC) {
 		/* Add PIE entry with dst_ip and prefix_len */
@@ -2574,6 +2580,159 @@ static int otto_l3_fib_del_v6(struct otto_l3_ctrl *ctrl, struct fib6_entry_notif
 	return 0;
 }
 
+static bool otto_l3_rule_default(const struct fib_rule *rule, int family)
+{
+	/* The kernel's own test leaves the protocol and the mark mask out */
+	if (rule->ip_proto || rule->mark_mask)
+		return false;
+#if IS_ENABLED(CONFIG_IP_MULTIPLE_TABLES)
+	if (family == AF_INET)
+		return fib4_rule_default(rule);
+#endif
+#if IS_REACHABLE(CONFIG_IPV6) && IS_ENABLED(CONFIG_IPV6_MULTIPLE_TABLES)
+	if (family == AF_INET6)
+		return fib6_rule_default(rule);
+#endif
+	return false;
+}
+
+/* The switch looks a destination up in one table, so it forwards the way the
+ * kernel does only while the kernel's lookup for a forwarded packet is the
+ * local table, then main. A rule ahead of main may send the packet elsewhere,
+ * and so does a main rule that is missing or takes only some packets. A rule
+ * after main only sees what main has no route for, and no row forwards that
+ * either. A rule that only matches what the switch sends itself never sees a
+ * forwarded packet.
+ */
+static bool otto_l3_rules_allow(int family)
+{
+	struct fib_rules_ops *ops = NULL;
+	struct fib_rule *rule;
+	bool main_seen = false;
+	u32 main_pref = 0;
+
+#if IS_ENABLED(CONFIG_IP_MULTIPLE_TABLES)
+	if (family == AF_INET)
+		ops = init_net.ipv4.rules_ops;
+#endif
+#if IS_REACHABLE(CONFIG_IPV6) && IS_ENABLED(CONFIG_IPV6_MULTIPLE_TABLES)
+	if (family == AF_INET6)
+		ops = init_net.ipv6.fib6_rules_ops;
+#endif
+	/* Without policy routing the lookup is local, then main */
+	if (!ops)
+		return true;
+
+	/* Sorted by priority, and changed only under rtnl, which is held */
+	list_for_each_entry(rule, &ops->rules_list, list) {
+		if (main_seen) {
+			if (rule->pref == main_pref)
+				return false;
+			break;
+		}
+
+		if (otto_l3_rule_default(rule, family)) {
+			if (rule->table == RT_TABLE_MAIN) {
+				main_seen = true;
+				main_pref = rule->pref;
+			} else if (rule->table != RT_TABLE_LOCAL) {
+				return false;
+			}
+			continue;
+		}
+
+		if (rule->iifindex == LOOPBACK_IFINDEX && !(rule->flags & FIB_RULE_INVERT))
+			continue;
+
+		return false;
+	}
+
+	return main_seen;
+}
+
+/* Writes what a route now says where it already is */
+static void otto_l3_route_rewrite(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r)
+{
+	int slot;
+
+	if (otto_l3_host_shadowed(ctrl, r))
+		return;
+
+	if (r->is_host_route) {
+		slot = ctrl->cfg->find_slot(ctrl, r, true);
+		if (slot >= 0)
+			ctrl->cfg->host_route_write(ctrl, slot, r);
+	} else if (r->row >= FIRST_PREFIX_ROW) {
+		ctrl->cfg->route_write(ctrl, r->row, r);
+	}
+}
+
+/* One resolve brings back every route through a gateway */
+static bool otto_l3_gw_seen(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r)
+{
+	struct otto_l3_route *q;
+
+	list_for_each_entry(q, &ctrl->routes_list, list) {
+		if (q == r)
+			return false;
+		if (q->attr.type == r->attr.type && q->gw_ifindex == r->gw_ifindex &&
+		    ipv6_addr_equal(&q->gw_ip, &r->gw_ip))
+			return true;
+	}
+
+	return false;
+}
+
+static void otto_l3_rules_check(struct otto_l3_ctrl *ctrl, int family)
+{
+	u8 type = family == AF_INET6 ? ROUTE_TYPE_IP6UC : ROUTE_TYPE_IP4UC;
+	bool *off = family == AF_INET6 ? &ctrl->v6_fwd_off : &ctrl->v4_fwd_off;
+	struct neigh_table *tbl = &arp_tbl;
+	struct otto_l3_route *r;
+	struct net_device *dev;
+
+	if (otto_l3_rules_allow(family) != *off)
+		return;
+
+	*off = !*off;
+	dev_info(ctrl->dev, "%s forwarding offload %s by the policy rules\n",
+		 family == AF_INET6 ? "IPv6" : "IPv4", *off ? "suspended" : "resumed");
+
+	if (family == AF_INET6) {
+		if (!IS_REACHABLE(CONFIG_IPV6))
+			return;
+		tbl = &nd_tbl;
+	}
+
+	list_for_each_entry(r, &ctrl->routes_list, list) {
+		if (r->attr.type != type || !r->tb_id)
+			continue;
+
+		if (*off) {
+			if (r->attr.action != ROUTE_ACT_FORWARD)
+				continue;
+			r->attr.action = ROUTE_ACT_TRAP2CPU;
+			r->attr.ttl_dec = false;
+			r->attr.ttl_check = false;
+			otto_l3_route_rewrite(ctrl, r);
+			if (IS_REACHABLE(CONFIG_IPV6) && r->f6i && r->row >= FIRST_PREFIX_ROW)
+				fib6_info_hw_flags_set(&init_net, r->f6i, false, true, false);
+			continue;
+		}
+
+		/* Back to forwarding the way a neighbour update brings a route
+		 * back: through the gateway, if it still answers
+		 */
+		if (ipv6_addr_any(&r->gw_ip) ||
+		    (type == ROUTE_TYPE_IP4UC && !r->gw_ip.s6_addr32[3]) ||
+		    otto_l3_gw_seen(ctrl, r))
+			continue;
+		dev = __dev_get_by_index(&init_net, r->gw_ifindex);
+		if (dev)
+			otto_l3_port_gw_resolve(ctrl, dev, tbl, &r->gw_ip);
+	}
+}
+
 static void otto_l3_fib_event_work_do(struct work_struct *work)
 {
 	struct otto_l3_fib_event_work *fib_work =
@@ -2605,7 +2764,9 @@ static void otto_l3_fib_event_work_do(struct work_struct *work)
 	case FIB_EVENT_RULE_ADD:
 	case FIB_EVENT_RULE_DEL:
 		rule = fib_work->fr_info.rule;
-		if (!fib4_rule_default(rule))
+		if (ctrl->cfg->use_l3_tables)
+			otto_l3_rules_check(ctrl, fib_work->fr_info.info.family);
+		else if (fib_work->fr_info.info.family == AF_INET && !fib4_rule_default(rule))
 			dev_err(ctrl->dev, "FIB4 default rule failed\n");
 		fib_rule_put(rule);
 		break;
