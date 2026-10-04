@@ -35,6 +35,10 @@
 #define ROUTE_ACT_COPY2CPU	2
 #define ROUTE_ACT_DROP		3
 
+/* Route kinds */
+#define ROUTE_PREFIX		0
+#define ROUTE_HOST		1
+
 /* L3 Routing */
 #define RTL839X_ROUTING_SA_CTRL			0x6afc
 #define RTL930X_L3_HOST_TBL_CTRL		(0xAB48)
@@ -1672,18 +1676,21 @@ static void otto_l3_route_teardown(struct otto_l3_ctrl *ctrl, struct otto_l3_rou
 	otto_l3_route_remove(ctrl, r);
 }
 
-static struct otto_l3_route *otto_l3_host_route_alloc(struct otto_l3_ctrl *ctrl,
-						      const struct in6_addr *gw)
+static struct otto_l3_route *otto_l3_route_alloc(struct otto_l3_ctrl *ctrl,
+						 const struct in6_addr *gw, int kind)
 {
+	bool host = kind == ROUTE_HOST;
+	unsigned long *use_bm = host ? ctrl->host_route_use_bm : ctrl->route_use_bm;
+	int size = host ? MAX_HOST_ROUTES : MAX_ROUTES;
 	struct otto_l3_route *r;
-	int idx = 0, err;
+	int idx, err;
 
 	mutex_lock(ctrl->lock);
 
-	idx = find_first_zero_bit(ctrl->host_route_use_bm, MAX_HOST_ROUTES);
-	if (idx >= MAX_HOST_ROUTES) {
-		dev_err(ctrl->dev, "host route table full, %d entries in use\n",
-			MAX_HOST_ROUTES);
+	idx = find_first_zero_bit(use_bm, size);
+	if (idx >= size) {
+		dev_err(ctrl->dev, "%s route table full, %d entries in use\n",
+			host ? "host" : "prefix", size);
 		mutex_unlock(ctrl->lock);
 		return NULL;
 	}
@@ -1692,90 +1699,34 @@ static struct otto_l3_route *otto_l3_host_route_alloc(struct otto_l3_ctrl *ctrl,
 	r = kzalloc(sizeof(*r), GFP_KERNEL);
 	if (!r) {
 		mutex_unlock(ctrl->lock);
-		return r;
+		return NULL;
 	}
 
 	/* We require a unique route ID irrespective of whether it is a prefix or host
 	 * route (on RTL93xx) as we use this ID to associate a DMAC and next-hop entry
 	 */
-	r->id = idx + MAX_ROUTES;
-	r->row = -1;			/* placed by find_slot(), not by row */
-
+	r->id = host ? idx + MAX_ROUTES : idx;
+	r->row = -1;	/* no row until placed; a host route never has one */
 	r->gw_ip = *gw;
 	r->pr.id = -1; /* We still need to allocate a rule in HW */
 	r->pr.packet_cntr = -1;
-	r->is_host_route = true;
+	r->is_host_route = host;
 	INIT_LIST_HEAD(&r->srcs);
 
 	err = rhltable_insert(&ctrl->routes, &r->linkage, otto_l3_route_ht_params);
 	if (err) {
 		dev_err(ctrl->dev, "Could not insert new rule\n");
 		mutex_unlock(ctrl->lock);
-		goto out_free;
-	}
-
-	list_add_tail(&r->list, &ctrl->routes_list);
-	set_bit(idx, ctrl->host_route_use_bm);
-
-	mutex_unlock(ctrl->lock);
-
-	return r;
-
-out_free:
-	kfree(r);
-
-	return NULL;
-}
-
-static struct otto_l3_route *otto_l3_route_alloc(struct otto_l3_ctrl *ctrl,
-						 const struct in6_addr *gw)
-{
-	struct otto_l3_route *r;
-	int idx = 0, err;
-
-	mutex_lock(ctrl->lock);
-
-	idx = find_first_zero_bit(ctrl->route_use_bm, MAX_ROUTES);
-	if (idx >= MAX_ROUTES) {
-		dev_err(ctrl->dev, "prefix route table full, %d entries in use\n",
-			MAX_ROUTES);
-		mutex_unlock(ctrl->lock);
+		kfree(r);
 		return NULL;
 	}
-	dev_dbg(ctrl->dev, "id: %d, gw %pI6c\n", idx, gw);
-
-	r = kzalloc(sizeof(*r), GFP_KERNEL);
-	if (!r) {
-		mutex_unlock(ctrl->lock);
-		return r;
-	}
-
-	r->id = idx;
-	r->row = -1;			/* no row until it is placed */
-	r->gw_ip = *gw;
-	r->pr.id = -1; /* We still need to allocate a rule in HW */
-	r->pr.packet_cntr = -1;
-	r->is_host_route = false;
-	INIT_LIST_HEAD(&r->srcs);
-
-	err = rhltable_insert(&ctrl->routes, &r->linkage, otto_l3_route_ht_params);
-	if (err) {
-		dev_err(ctrl->dev, "Could not insert new rule\n");
-		mutex_unlock(ctrl->lock);
-		goto out_free;
-	}
 
 	list_add_tail(&r->list, &ctrl->routes_list);
-	set_bit(idx, ctrl->route_use_bm);
+	set_bit(idx, use_bm);
 
 	mutex_unlock(ctrl->lock);
 
 	return r;
-
-out_free:
-	kfree(r);
-
-	return NULL;
 }
 
 static int otto_l3_fib_check_v4(struct otto_l3_ctrl *ctrl,
@@ -1810,7 +1761,7 @@ static void otto_l3_host_route_trap(struct otto_l3_ctrl *ctrl,
 	int slot;
 
 	ipv6_addr_set_v4mapped(0, &gw);
-	route = otto_l3_host_route_alloc(ctrl, &gw);
+	route = otto_l3_route_alloc(ctrl, &gw, ROUTE_HOST);
 	if (!route)
 		return;
 
@@ -1857,7 +1808,7 @@ static void otto_l3_fib_trap_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_noti
 	}
 
 	ipv6_addr_set_v4mapped(0, &gw);
-	route = otto_l3_route_alloc(ctrl, &gw);
+	route = otto_l3_route_alloc(ctrl, &gw, ROUTE_PREFIX);
 	if (!route) {
 		dev_err(ctrl->dev, "no row to trap %pI4/%d\n", &info->dst, info->dst_len);
 		return;
@@ -1979,10 +1930,9 @@ static int otto_l3_fib_add_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 
 	/* Allocate route or host-route entry (if hardware supports this) */
 	ipv6_addr_set_v4mapped(nh->fib_nh_gw4, &gw);
-	if (info->dst_len == 32 && ctrl->cfg->host_route_write)
-		route = otto_l3_host_route_alloc(ctrl, &gw);
-	else
-		route = otto_l3_route_alloc(ctrl, &gw);
+	route = otto_l3_route_alloc(ctrl, &gw,
+				    info->dst_len == 32 && ctrl->cfg->host_route_write ?
+				    ROUTE_HOST : ROUTE_PREFIX);
 
 	if (route)
 		dev_info(ctrl->dev, "route hashtable extended for gw %pI4\n", &nh->fib_nh_gw4);
@@ -2220,7 +2170,7 @@ static int otto_l3_fib_trap_v6(struct otto_l3_ctrl *ctrl, struct fib6_info *rt,
 	if (route)
 		otto_l3_route_teardown(ctrl, route);
 
-	route = otto_l3_route_alloc(ctrl, &in6addr_any);
+	route = otto_l3_route_alloc(ctrl, &in6addr_any, ROUTE_PREFIX);
 	if (!route) {
 		dev_err(ctrl->dev, "no row to trap %pI6c/%d\n",
 			&rt->fib6_dst.addr, rt->fib6_dst.plen);
@@ -2391,7 +2341,7 @@ static int otto_l3_add_catch_all(struct otto_l3_ctrl *ctrl, u8 type)
 {
 	struct otto_l3_route *route;
 
-	route = otto_l3_route_alloc(ctrl, &in6addr_any);
+	route = otto_l3_route_alloc(ctrl, &in6addr_any, ROUTE_PREFIX);
 	if (!route)
 		return -ENOSPC;
 
@@ -2460,7 +2410,7 @@ static int otto_l3_fib_add_v6(struct otto_l3_ctrl *ctrl, struct fib6_entry_notif
 
 	vlan = is_vlan_dev(ndev) ? vlan_dev_vlan_id(ndev) : 0;
 
-	route = otto_l3_route_alloc(ctrl, gw);
+	route = otto_l3_route_alloc(ctrl, gw, ROUTE_PREFIX);
 	if (!route) {
 		dev_err(ctrl->dev, "could not extend route hashtable for gw %pI6c\n", gw);
 		goto out_failed;
