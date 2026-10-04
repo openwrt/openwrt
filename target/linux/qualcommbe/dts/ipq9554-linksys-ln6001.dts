@@ -90,6 +90,26 @@
 			max-brightness = <255>;
 		};
 	};
+
+	reserved-memory {
+		/* WCSS M3 crash dump (1 MiB). */
+		reserved@4d600000 {
+			reg = <0 0x4d600000 0 0x00100000>;
+			no-map;
+		};
+
+		/* WCSS Q6 ETR trace buffer (1 MiB). */
+		reserved@4d700000 {
+			reg = <0 0x4d700000 0 0x00100000>;
+			no-map;
+		};
+
+		/* WCSS calibration database (5 MiB). */
+		reserved@4d800000 {
+			reg = <0 0x4d800000 0 0x00500000>;
+			no-map;
+		};
+	};
 };
 
 &blsp1_uart2 {
@@ -145,6 +165,36 @@
 
 &pcs1 {
 	status = "disabled";
+};
+
+&pcie2 {
+	pinctrl-0 = <&pcie2_pins>;
+	pinctrl-names = "default";
+	perst-gpios = <&tlmm 29 GPIO_ACTIVE_LOW>;
+	status = "okay";
+
+	pcie@0 {
+		device_type = "pci";
+		reg = <0x00000000 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+		ranges;
+
+		wifi@0 {
+			compatible = "pci17cb,1109";
+			reg = <0x00000000 0 0 0 0>;
+			qcom,calibration-variant = "Linksys-LN6001";
+			qcom,split-phy;
+		};
+	};
+};
+
+&pcie2_phy {
+	status = "okay";
+};
+
+&q6v5_wcss {
+	status = "okay";
 };
 
 &pwm {
@@ -293,6 +343,20 @@
 		partitions {
 			compatible = "gpt-partitions";
 
+			block-partition-art {
+				partname = "0:ART";
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					cal_art_1000: calibration@1000 {
+						reg = <0x1000 0x20000>;
+					};
+				};
+			};
+
 			block-partition-devinfo {
 				partname = "devinfo";
 
@@ -326,6 +390,14 @@
 		function = "gpio";
 		drive-strength = <8>;
 		bias-pull-up;
+	};
+
+	pcie2_pins: pcie2-state {
+		pins = "gpio29";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-pull-down;
+		output-low;
 	};
 
 	pwm_pins: pwm-state {
@@ -410,6 +482,13 @@
 &xo_board_clk {
 	clock-div = <2>;
 	clock-mult = <1>;
+};
+
+&wifi0 {
+	qcom,calibration-variant = "Linksys-LN6001";
+	nvmem-cells = <&hw_mac_addr 1>, <&cal_art_1000>;
+	nvmem-cell-names = "mac-address", "calibration";
+	status = "okay";
 };
 
 &xo_clk {
