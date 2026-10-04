@@ -207,7 +207,8 @@ int selfsigned(char **arg)
 	*/
 	mbedtls_asn1_sequence *eku = NULL, *ext_key_usage = NULL;
 	char *sanval, *santype;
-	uint8_t ipaddr[16] = { 0 };
+	uint8_t *ipaddr;
+	size_t iplen;
 
 	char *subject = "";
 	unsigned int ksize = 512;
@@ -310,28 +311,35 @@ int selfsigned(char **arg)
 					san_cur->node.san.unstructured_name.p = (unsigned char *) sanval;
 					san_cur->node.san.unstructured_name.len = strlen(sanval);
 				} else if (!strncmp(santype, "IP:", strlen("IP:"))) {
+					ipaddr = calloc(1, 16);
+					iplen = mbedtls_x509_crt_parse_cn_inet_pton(sanval, ipaddr);
+					if (!iplen) {
+						fprintf(stderr, "error: invalid IP address: %s\n", sanval);
+						return 1;
+					}
 					san_cur->node.type = MBEDTLS_X509_SAN_IP_ADDRESS;
-					mbedtls_x509_crt_parse_cn_inet_pton(sanval, ipaddr);
-					san_cur->node.san.unstructured_name.p = (unsigned char *) ipaddr;
-					san_cur->node.san.unstructured_name.len = sizeof(ipaddr);
+					san_cur->node.san.unstructured_name.p = ipaddr;
+					san_cur->node.san.unstructured_name.len = iplen;
 				} else if (!strncmp(santype, "URI:", strlen("URI:"))) {
 					san_cur->node.type = MBEDTLS_X509_SAN_UNIFORM_RESOURCE_IDENTIFIER;
 					san_cur->node.san.unstructured_name.p = (unsigned char *) sanval;
 					san_cur->node.san.unstructured_name.len = strlen(sanval);
+				} else {
+					fprintf(stderr, "error: invalid subjectAltName type: %s\n", santype);
+					return 1;
 				}
-				else fprintf(stderr, "No match to subjectAltName content type.\n");
+
+				//append the new entry to our san_list linked list
+				if (san_prev == NULL) {
+					san_list = san_cur;
+				} else {
+					san_prev->next = san_cur;
+				}
+				san_prev = san_cur;
 			arg++;
 			}
 		}
 		arg++;
-
-		//set the pointers in our san_list linked list
-		if (san_prev == NULL) {
-			san_list = san_cur;
-		} else {
-			san_prev->next = san_cur;
-		}
-		san_prev = san_cur;
 	}
 	gen_key(&key, rsa, ksize, exp, curve, pem);
 
@@ -358,7 +366,11 @@ int selfsigned(char **arg)
 	mbedtls_x509write_crt_set_basic_constraints(&cert, 0, -1);
 	mbedtls_x509write_crt_set_subject_key_identifier(&cert);
 	mbedtls_x509write_crt_set_authority_key_identifier(&cert);
-	mbedtls_x509write_crt_set_subject_alternative_name(&cert, san_list);
+	//an empty subjectAltName is not valid, add it only if names were given
+	if (san_list && mbedtls_x509write_crt_set_subject_alternative_name(&cert, san_list)) {
+		fprintf(stderr, "error: failed to add subjectAltName\n");
+		return 1;
+	}
 	mbedtls_x509write_crt_set_ext_key_usage(&cert, ext_key_usage);
 
 	_urandom(NULL, (void *) buf, 8);
