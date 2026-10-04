@@ -194,6 +194,7 @@ define Package/base-files/install
 
 	$(SED) "s#%PATH%#$(TARGET_INIT_PATH)#g" \
 		$(1)/sbin/hotplug-call \
+		$(1)/sbin/preinit-netdev \
 		$(1)/etc/preinit \
 		$(1)/etc/profile
 
