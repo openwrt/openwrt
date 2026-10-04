@@ -1,0 +1,76 @@
+From: Gary Dotzler <geldot@protonmail.com>
+Date: Wed, 9 Sep 2026 23:10:06 +0200
+Subject: [PATCH] netfilter: nft_flow_offload: offload a TCP flow that has no
+ reply
+
+A TCP connection picked up without a reply is not assured, so it is not
+offloaded. Offload it in the original direction; if a reply arrives and
+the connection becomes assured, the reply direction follows.
+
+When such a flow leaves the flowtable, cap the conntrack timeout at
+UNACK, as nf_conntrack_tcp_packet() does without a reply.
+
+Signed-off-by: Gary Dotzler <geldot@protonmail.com>
+Assisted-by: Claude:claude-opus-5
+Co-developed-by: Julius Bairaktaris <julius@bairaktaris.de>
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+ include/net/netfilter/nf_conntrack_l4proto.h | 9 +++++++++
+ net/netfilter/nf_flow_table_core.c           | 5 +++++
+ net/netfilter/nft_flow_offload.c             | 6 ++++--
+ 3 files changed, 18 insertions(+), 2 deletions(-)
+
+--- a/include/net/netfilter/nf_conntrack_l4proto.h
++++ b/include/net/netfilter/nf_conntrack_l4proto.h
+@@ -215,6 +215,15 @@ static inline bool nf_conntrack_tcp_esta
+ 	return ct->proto.tcp.state == TCP_CONNTRACK_ESTABLISHED &&
+ 	       test_bit(IPS_ASSURED_BIT, &ct->status);
+ }
++
++/* Picked up mid-stream, no reply seen yet. Caller must check
++ * nf_ct_protonum(ct) is IPPROTO_TCP.
++ */
++static inline bool nf_conntrack_tcp_unreplied(const struct nf_conn *ct)
++{
++	return ct->proto.tcp.state == TCP_CONNTRACK_ESTABLISHED &&
++	       !test_bit(IPS_SEEN_REPLY_BIT, &ct->status);
++}
+ #endif
+ 
+ #ifdef CONFIG_NF_CT_PROTO_SCTP
+--- a/net/netfilter/nf_flow_table_core.c
++++ b/net/netfilter/nf_flow_table_core.c
+@@ -216,6 +216,11 @@ static void flow_offload_fixup_ct(struct
+ 			tcp_state = READ_ONCE(ct->proto.tcp.state);
+ 			flow_offload_fixup_tcp(ct, tcp_state);
+ 			timeout = READ_ONCE(tn->timeouts[tcp_state]);
++			if (nf_conntrack_tcp_unreplied(ct)) {
++				u32 unack = READ_ONCE(tn->timeouts[TCP_CONNTRACK_UNACK]);
++
++				timeout = min_t(s32, timeout, unack);
++			}
+ 			expired = nf_flow_has_expired(flow);
+ 		}
+ 		offload_timeout = READ_ONCE(tn->offload_timeout);
+--- a/net/netfilter/nft_flow_offload.c
++++ b/net/netfilter/nft_flow_offload.c
+@@ -72,7 +72,8 @@ static void nft_flow_offload_eval(const
+ 		tcph = skb_header_pointer(pkt->skb, nft_thoff(pkt),
+ 					  sizeof(_tcph), &_tcph);
+ 		if (unlikely(!tcph || tcph->fin || tcph->rst ||
+-			     !nf_conntrack_tcp_established(ct)))
++			     (!nf_conntrack_tcp_established(ct) &&
++			      !nf_conntrack_tcp_unreplied(ct))))
+ 			goto out;
+ 		break;
+ 	case IPPROTO_UDP:
+@@ -118,7 +119,8 @@ static void nft_flow_offload_eval(const
+ 
+ 	flow->priority = pkt->skb->priority;
+ 
+-	__set_bit(NF_FLOW_HW_BIDIRECTIONAL, &flow->flags);
++	if (!tcph || test_bit(IPS_ASSURED_BIT, &ct->status))
++		__set_bit(NF_FLOW_HW_BIDIRECTIONAL, &flow->flags);
+ 	ret = flow_offload_add(flowtable, flow);
+ 	if (ret < 0)
+ 		goto err_flow_add;
