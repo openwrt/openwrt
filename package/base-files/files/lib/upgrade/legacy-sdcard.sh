@@ -59,8 +59,6 @@ legacy_sdcard_do_upgrade() {
 		partx -d - "/dev/$diskdev"
 		partx -a - "/dev/$diskdev"
 	else
-		v "Writing bootloader to /dev/$diskdev"
-		get_image_dd "$1" of="$diskdev" bs=512 skip=1 seek=1 count=2048 conv=fsync
 		#iterate over each partition from the image and write it to the boot disk
 		while read part start size; do
 			if export_partdevice partdev $part; then
