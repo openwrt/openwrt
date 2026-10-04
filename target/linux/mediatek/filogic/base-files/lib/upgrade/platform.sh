@@ -306,6 +306,7 @@ platform_do_upgrade() {
 	huasifei,wh3000-pro-nand|\
 	huasifei,wh3000r-nand|\
 	jioextender,je6000|\
+	jiorouter,ax3000-jidu6700|\
 	jiorouter,ax6000-jidu6101|\
 	jiorouter,ax6000-jidu6j01)
 		CI_UBIPART="ubi"
@@ -579,6 +580,7 @@ platform_pre_upgrade() {
 			fw_setenv bootmenu_delay 3
 		;;
 	jioextender,je6000|\
+	jiorouter,ax3000-jidu6700|\
 	jiorouter,ax6000-jidu6101|\
 	jiorouter,ax6000-jidu6j01)
 		jiorouter_initial_setup
