@@ -1,0 +1,294 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Fri, 2 Oct 2026 23:30:00 +0200
+Subject: [PATCH] netfilter: flowtable: tear down direct xmit flows when the
+ fdb entry moves
+
+A direct xmit flow that reaches a bridge port keeps sending to that port
+when the host moves to another port of the bridge, and packets from the
+other side keep the flow from timing out.
+
+The gc now checks the fdb entry through nf_br_utils_hook and tears the
+flow down when the entry points to another port. An entry that aged out
+does not tear it down, because offloaded packets do not refresh it.
+
+The bridge port is found from out.hw_ifidx through the vlan devices that
+the forward path has below the port. The vid is the bridge vlan in the
+encap stack, or the pvid of the port for an untagged port of a
+vlan_filtering bridge.
+
+Reported-by: Eric Woudstra <ericwouds@gmail.com>
+Link: https://lore.kernel.org/netfilter-devel/20250925182623.114045-1-ericwouds@gmail.com/
+Link: https://lore.kernel.org/netfilter-devel/20261017235849.1066624-2-julius@bairaktaris.de/
+Co-developed-by: Pablo Neira Ayuso <pablo@netfilter.org>
+Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+--- a/include/net/netfilter/nf_flow_table.h
++++ b/include/net/netfilter/nf_flow_table.h
+@@ -136,7 +136,10 @@ struct flow_offload_tuple {
+ 	u8				dir:2,
+ 					xmit_type:3,
+ 					encap_num:2,
+-					in_vlan_ingress:2;
++					in_vlan_ingress:2,
++					bridge_path:1,
++					bridge_vlan:1,
++					port_vlans:2;
+ 	u16				mtu;
+ 	union {
+ 		struct {
+@@ -215,6 +218,9 @@ struct nf_flow_route {
+ 			u32			hw_ifindex;
+ 			u8			h_source[ETH_ALEN];
+ 			u8			h_dest[ETH_ALEN];
++			u8			bridge_path:1,
++						bridge_vlan:1,
++						port_vlans:2;
+ 		} out;
+ 		enum flow_offload_xmit_type	xmit_type;
+ 	} tuple[FLOW_OFFLOAD_DIR_MAX];
+--- a/net/netfilter/nf_flow_table_core.c
++++ b/net/netfilter/nf_flow_table_core.c
+@@ -5,6 +5,7 @@
+ #include <linux/netfilter.h>
+ #include <linux/rhashtable.h>
+ #include <linux/netdevice.h>
++#include <linux/if_vlan.h>
+ #include <net/ip.h>
+ #include <net/ip6_route.h>
+ #include <net/netfilter/nf_tables.h>
+@@ -128,6 +129,9 @@ static int flow_offload_fill_route(struc
+ 		       ETH_ALEN);
+ 		flow_tuple->out.ifidx = route->tuple[dir].out.ifindex;
+ 		flow_tuple->out.hw_ifidx = route->tuple[dir].out.hw_ifindex;
++		flow_tuple->bridge_path = route->tuple[dir].out.bridge_path;
++		flow_tuple->bridge_vlan = route->tuple[dir].out.bridge_vlan;
++		flow_tuple->port_vlans = route->tuple[dir].out.port_vlans;
+ 		dst_release(dst);
+ 		break;
+ 	case FLOW_OFFLOAD_XMIT_XFRM:
+@@ -565,6 +569,40 @@ static void nf_flow_table_extend_ct_time
+ 	nf_ct_put(ct);
+ }
+ 
++static bool nf_flow_dst_valid(struct nf_flowtable *flow_table,
++			      struct flow_offload *flow, int dir)
++{
++	struct flow_offload_tuple *other = &flow->tuplehash[!dir].tuple;
++	struct flow_offload_tuple *tuple = &flow->tuplehash[dir].tuple;
++	struct net *net = read_pnet(&flow_table->net);
++	const struct nf_br_utils *br_utils;
++	struct net_device *dev;
++	bool valid = true;
++	u16 vid = 0;
++	int i;
++
++	if (!tuple->bridge_path)
++		return true;
++
++	rcu_read_lock();
++	br_utils = rcu_dereference(nf_br_utils_hook);
++	if (!br_utils)
++		goto out;
++
++	dev = dev_get_by_index_rcu(net, tuple->out.hw_ifidx);
++	for (i = 0; dev && i < tuple->port_vlans; i++)
++		dev = __vlan_find_dev_deep_rcu(dev, other->encap[i].proto,
++					       other->encap[i].id);
++	if (tuple->bridge_vlan)
++		vid = other->encap[i].id;
++
++	valid = dev && br_utils->fdb_valid_dst(dev, tuple->out.h_dest, vid);
++out:
++	rcu_read_unlock();
++
++	return valid;
++}
++
+ static void nf_flow_offload_gc_step(struct nf_flowtable *flow_table,
+ 				    struct flow_offload *flow, void *data)
+ {
+@@ -572,6 +610,8 @@ static void nf_flow_offload_gc_step(stru
+ 
+ 	if (nf_flow_has_expired(flow) ||
+ 	    nf_ct_is_dying(flow->ct) ||
++	    !nf_flow_dst_valid(flow_table, flow, FLOW_OFFLOAD_DIR_ORIGINAL) ||
++	    !nf_flow_dst_valid(flow_table, flow, FLOW_OFFLOAD_DIR_REPLY) ||
+ 	    nf_flow_custom_gc(flow_table, flow)) {
+ 		flow_offload_teardown(flow);
+ 		teardown = true;
+--- a/net/netfilter/nf_flow_table_path.c
++++ b/net/netfilter/nf_flow_table_path.c
+@@ -92,6 +92,9 @@ struct nft_forward_info {
+ 	u8 ingress_vlans;
+ 	u8 h_source[ETH_ALEN];
+ 	u8 h_dest[ETH_ALEN];
++	u8 bridge_path:1,
++	   bridge_vlan:1,
++	   port_vlans:2;
+ 	enum flow_offload_xmit_type xmit_type;
+ };
+ 
+@@ -100,7 +103,7 @@ static int nft_dev_path_info(const struc
+ 			     unsigned char *ha, struct nf_flowtable *flowtable)
+ {
+ 	const struct net_device_path *path;
+-	int i;
++	int i, n;
+ 
+ 	memcpy(info->h_dest, ha, ETH_ALEN);
+ 
+@@ -133,6 +136,8 @@ static int nft_dev_path_info(const struc
+ 			info->encap[info->num_encaps].id = path->encap.id;
+ 			info->encap[info->num_encaps].proto = path->encap.proto;
+ 			info->num_encaps++;
++			if (info->bridge_path)
++				info->port_vlans++;
+ 			if (path->type == DEV_PATH_PPPOE)
+ 				memcpy(info->h_dest, path->encap.h_dest, ETH_ALEN);
+ 			break;
+@@ -163,6 +168,13 @@ static int nft_dev_path_info(const struc
+ 			case DEV_PATH_BR_VLAN_KEEP:
+ 				break;
+ 			}
++			info->bridge_path = 1;
++			n = info->num_encaps;
++			info->bridge_vlan = path->bridge.vlan_id && n &&
++					    info->encap[n - 1].id ==
++					    path->bridge.vlan_id &&
++					    info->encap[n - 1].proto ==
++					    path->bridge.vlan_proto;
+ 			info->xmit_type = FLOW_OFFLOAD_XMIT_DIRECT;
+ 			break;
+ 		default:
+@@ -231,6 +243,9 @@ static int nft_dev_forward_path(struct n
+ 		memcpy(route->tuple[dir].out.h_source, info.h_source, ETH_ALEN);
+ 		memcpy(route->tuple[dir].out.h_dest, info.h_dest, ETH_ALEN);
+ 		route->tuple[dir].out.hw_ifindex = info.hw_outdev->ifindex;
++		route->tuple[dir].out.bridge_path = info.bridge_path;
++		route->tuple[dir].out.bridge_vlan = info.bridge_vlan;
++		route->tuple[dir].out.port_vlans = info.port_vlans;
+ 		route->tuple[dir].xmit_type = info.xmit_type;
+ 	}
+ 
+--- a/include/linux/netfilter.h
++++ b/include/linux/netfilter.h
+@@ -67,6 +67,13 @@ static inline void nf_inet_addr_mask(con
+ #endif
+ }
+ 
++struct nf_br_utils {
++	bool (*fdb_valid_dst)(const struct net_device *dev,
++			      const unsigned char *addr, u16 vid);
++};
++
++extern const struct nf_br_utils __rcu *nf_br_utils_hook;
++
+ int netfilter_init(void);
+ 
+ struct sk_buff;
+--- a/net/bridge/Makefile
++++ b/net/bridge/Makefile
+@@ -14,6 +14,8 @@ bridge-$(CONFIG_SYSFS) += br_sysfs_if.o
+ 
+ bridge-$(subst m,y,$(CONFIG_BRIDGE_NETFILTER)) += br_nf_core.o
+ 
++bridge-$(subst m,y,$(CONFIG_NF_FLOW_TABLE)) += br_nf_utils.o
++
+ br_netfilter-y := br_netfilter_hooks.o
+ br_netfilter-$(subst m,y,$(CONFIG_IPV6)) += br_netfilter_ipv6.o
+ obj-$(CONFIG_BRIDGE_NETFILTER) += br_netfilter.o
+--- a/net/bridge/br.c
++++ b/net/bridge/br.c
+@@ -463,6 +463,7 @@ static int __init br_init(void)
+ 		goto err_out6;
+ 
+ 	brioctl_set(br_ioctl_stub);
++	br_nf_utils_init();
+ 
+ #if IS_ENABLED(CONFIG_ATM_LANE)
+ 	br_fdb_test_addr_hook = br_fdb_test_addr;
+@@ -495,6 +496,7 @@ err_out:
+ 
+ static void __exit br_deinit(void)
+ {
++	br_nf_utils_fini();
+ 	stp_proto_unregister(&br_stp_proto);
+ 	br_netlink_fini();
+ 	unregister_switchdev_blocking_notifier(&br_switchdev_blocking_notifier);
+--- /dev/null
++++ b/net/bridge/br_nf_utils.c
+@@ -0,0 +1,38 @@
++// SPDX-License-Identifier: GPL-2.0-only
++#include <linux/netdevice.h>
++#include <linux/netfilter.h>
++
++#include "br_private.h"
++
++static bool nf_br_fdb_valid_dst(const struct net_device *dev,
++				const unsigned char *addr, u16 vid)
++{
++	const struct net_bridge_fdb_entry *f;
++	const struct net_bridge_port *p;
++
++	p = br_port_get_check_rcu(dev);
++	if (!p)
++		return false;
++
++	if (!vid && br_opt_get(p->br, BROPT_VLAN_ENABLED))
++		vid = br_get_pvid(nbp_vlan_group_rcu(p));
++
++	/* Offloaded packets do not refresh the entry, it can age out. */
++	f = br_fdb_find_rcu(p->br, addr, vid);
++
++	return !f || READ_ONCE(f->dst) == p;
++}
++
++static const struct nf_br_utils nf_br_utils = {
++	.fdb_valid_dst	= nf_br_fdb_valid_dst,
++};
++
++void br_nf_utils_init(void)
++{
++	rcu_assign_pointer(nf_br_utils_hook, &nf_br_utils);
++}
++
++void br_nf_utils_fini(void)
++{
++	RCU_INIT_POINTER(nf_br_utils_hook, NULL);
++}
+--- a/net/bridge/br_private.h
++++ b/net/bridge/br_private.h
+@@ -1995,6 +1995,19 @@ struct nf_br_ops {
+ };
+ extern const struct nf_br_ops __rcu *nf_br_ops;
+ 
++#if IS_ENABLED(CONFIG_NF_FLOW_TABLE)
++void br_nf_utils_init(void);
++void br_nf_utils_fini(void);
++#else
++static inline void br_nf_utils_init(void)
++{
++}
++
++static inline void br_nf_utils_fini(void)
++{
++}
++#endif
++
+ /* br_netfilter.c */
+ #if IS_ENABLED(CONFIG_BRIDGE_NETFILTER)
+ int br_nf_core_init(void);
+--- a/net/netfilter/core.c
++++ b/net/netfilter/core.c
+@@ -802,6 +802,9 @@ static struct pernet_operations netfilte
+ 	.exit = netfilter_net_exit,
+ };
+ 
++const struct nf_br_utils __rcu *nf_br_utils_hook;
++EXPORT_SYMBOL_GPL(nf_br_utils_hook);
++
+ int __init netfilter_init(void)
+ {
+ 	int ret;
