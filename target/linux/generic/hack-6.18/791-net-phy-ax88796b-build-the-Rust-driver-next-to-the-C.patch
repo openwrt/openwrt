@@ -15,7 +15,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
-@@ -220,8 +220,8 @@ config AX88796B_PHY
+@@ -225,8 +225,8 @@ config AX88796B_PHY
  	  AX88796B package.
  
  config AX88796B_RUST_PHY
@@ -28,7 +28,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	  The features are equivalent. It supports the Asix Electronics PHY
 --- a/drivers/net/phy/Makefile
 +++ b/drivers/net/phy/Makefile
-@@ -49,11 +49,8 @@ obj-$(CONFIG_AMD_PHY)		+= amd.o
+@@ -50,11 +50,8 @@ obj-$(CONFIG_AMD_PHY)		+= amd.o
  obj-$(CONFIG_AMCC_QT2025_PHY)	+= qt2025.o
  obj-$(CONFIG_AQUANTIA_PHY)	+= aquantia/
  obj-$(CONFIG_AS21XXX_PHY)	+= as21xxx.o
