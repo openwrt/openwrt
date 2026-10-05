@@ -210,6 +210,16 @@
 #define   PPE_TRUNK_HASH_L4_SPORT	BIT(5)
 #define   PPE_TRUNK_HASH_L4_DPORT	BIT(6)
 
+/* The ACL's user-defined fields: four 16-bit windows per packet class, each
+ * at an even offset from the L2, L3 or L4 header.
+ */
+#define PPE_ACL_UDF_CTRL(cls, w)	(PPE_IPR_BASE + 0x38 + \
+					 ((cls) * PPE_ACL_UDF_WINDOWS + (w)) * 4)
+#define   PPE_ACL_UDF_CLASSES		3	/* non-IP, IPv4, IPv6 */
+#define   PPE_ACL_UDF_WINDOWS		4
+#define   PPE_ACL_UDF_BASE		GENMASK(1, 0)	/* L2, L3, L4 */
+#define   PPE_ACL_UDF_OFFSET		GENMASK(13, 8)	/* 2-byte units */
+
 #define PPE_IPR_PKT_CNT(port)		(PPE_IPR_BASE + 0x80 + (port) * 0x4)
 #define PPE_IPR_BYTE_LO(port)		(PPE_IPR_BASE + 0xa0 + (port) * 0x4)
 #define PPE_IPR_BYTE_HI(port)		(PPE_IPR_BASE + 0xc0 + (port) * 0x4)
@@ -324,6 +334,12 @@
 #define     PPE_ACL_TAG_TAGGED		4
 #define   PPE_ACL_L2_PROT		GENMASK(31, 16)	/* w0 */
 #define   PPE_ACL_PPPOE_SID		GENMASK(15, 0)	/* w1 */
+/* A UDF rule's three 16-bit slots run from bit 0 of w0; each has a valid
+ * bit, and two bits name the packet class.
+ */
+#define   PPE_ACL_UDF_VALID(slot)	BIT(16 + (slot))	/* w1 */
+#define   PPE_ACL_UDF_IS_IPV6		BIT(19)		/* w1 */
+#define   PPE_ACL_UDF_IS_IP		BIT(20)		/* w1 */
 #define   PPE_ACL_IP_PORT		GENMASK(15, 0)	/* w0: L4 or ICMP */
 #define   PPE_ACL_IP_LO			GENMASK(31, 16)	/* w0 */
 #define   PPE_ACL_IP_HI			GENMASK(15, 0)	/* w1 */
@@ -347,6 +363,8 @@
 #define     PPE_ACL_TYPE_IPV6_DIP0	6	/* +1, +2 for the rest */
 #define     PPE_ACL_TYPE_IPV6_SIP0	9
 #define     PPE_ACL_TYPE_IPMISC		12
+#define     PPE_ACL_TYPE_UDF0		13	/* windows 0-2 */
+#define     PPE_ACL_TYPE_UDF1		14	/* windows 1-3 */
 #define   PPE_ACL_SRC_TYPE		GENMASK(28, 27)	/* w1 */
 #define     PPE_ACL_SRC_PORT_BMP	0
 #define   PPE_ACL_SRC_LO		GENMASK(31, 29)	/* w1: ports 0-2 */
@@ -1034,6 +1052,8 @@ struct qca_ppe_priv {
 	DECLARE_BITMAP(acl_meter_used, PPE_ACL_METER_ENTRIES);
 	struct list_head acl_rules;
 	struct mutex acl_lock;
+	u32 acl_udf_ctrl[PPE_ACL_UDF_CLASSES][PPE_ACL_UDF_WINDOWS];
+	u32 acl_udf_refs[PPE_ACL_UDF_CLASSES][PPE_ACL_UDF_WINDOWS];
 	/* Indexed by direction: egress 0, ingress 1. */
 	u8 mirror_port[2];
 	u16 mirror_ref[2];
