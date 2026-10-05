@@ -240,6 +240,14 @@
 /* --- IPR: the ingress parser (base 0x002000; 0x1e0000 only on APPE) --- */
 #define PPE_IPR_BASE			0x002000
 
+/* Eight TCP flag patterns, two to a register; a packet whose flags match a
+ * pattern under its mask raises exception PPE_EXCEP_TCP_FLAGS(n).
+ */
+#define PPE_L4_EXCEP_TCP_FLAGS(n)	(PPE_IPR_BASE + 0x28 + (n) / 2 * 0x4)
+#define   PPE_L4_EXCEP_FLAGS		GENMASK(5, 0)
+#define   PPE_L4_EXCEP_MASK		GENMASK(13, 8)
+#define   PPE_L4_EXCEP_SLOT_SHIFT	16
+
 /* One register for both trunk groups, and in the parser rather than beside the
  * trunk member tables in L2.
  */
@@ -673,6 +681,17 @@
 #define PPE_L3_VSI_TBL(vsi)		(PPE_L3_BASE + 0x40 + (vsi) * 0x4)
 #define   PPE_L3_VSI_IF_VALID		BIT(0)
 #define   PPE_L3_VSI_IF_INDEX		GENMASK(8, 1)
+
+/* Per exception: what happens to the frame, and whether the exception is
+ * raised at all for a packet that hit a routed flow entry.
+ */
+#define PPE_EXCEP_TCP_FLAGS(n)		(46 + (n))
+/* The TCP flags trapped from offloaded flows, one pattern each. */
+#define PPE_FLOW_TCP_TRAP		(TCPHDR_FIN | TCPHDR_RST)
+#define PPE_L3_EXCEP_CMD(e)		(PPE_L3_BASE + 0x544 + (e) * 0x4)
+#define   PPE_L3_EXCEP_ACTION		GENMASK(1, 0)
+#define     PPE_L3_EXCEP_RDT_TO_CPU	3
+#define PPE_L3_EXCEP_L3_FLOW_EN(e)	(PPE_L3_BASE + 0x9c4 + (e) * 0x4)
 
 #define PPE_FLOW_CTRL0			(PPE_L3_BASE + 0x368)
 #define   PPE_FLOW_EN			BIT(0)
