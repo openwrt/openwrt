@@ -1032,6 +1032,7 @@ struct qca_ppe_priv {
 	/* the pause each port's link resolved, which shaping overrides */
 	bool port_tx_pause[PPE_NUM_PORTS];
 	struct dentry *debugfs;
+	struct devlink_region *regions[3];
 	DECLARE_BITMAP(vsi_bitmap, PPE_VSI_MAX);
 	DECLARE_BITMAP(xlt_bitmap, PPE_XLT_TBL_NUM);
 	u32 port_vsi[QCA_PPE_MAX_PORTS];
