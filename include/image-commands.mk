@@ -587,12 +587,13 @@ define Build/kernel-pack-npk
 endef
 
 define Build/linksys-image
-	let \
-		size="$$(stat -c%s $@)" \
-		pad="$(call exp_units,$(PAGESIZE))" \
-		offset="256" \
-		pad="(pad - ((size + offset) % pad)) % pad"; \
-		dd if=/dev/zero bs=$$pad count=1 | tr '\000' '\377' >> $@
+	$(if $(PAGESIZE), \
+		size="$$(stat -c%s $@)"; \
+		pad="$(call exp_units,$(PAGESIZE))"; \
+		offset="256"; \
+		pad="$$(( (pad - ((size + offset) % pad)) % pad ))"; \
+		[ "$$pad" -eq 0 ] || \
+			dd if=/dev/zero bs=$$pad count=1 | tr '\000' '\377' >> $@)
 	printf ".LINKSYS.01000409%-15s%08X%-8s%-16s" \
 		"$(call param_get_default,type,$(1),$(DEVICE_NAME))" \
 		"$$(cksum $@ | cut -d ' ' -f1)" \
