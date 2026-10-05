@@ -28,7 +28,7 @@ define Package/airoha-dramc
   CATEGORY:=Boot Loaders
   TITLE:=Airoha/Econet DRAM initialization and TCBoot
   URL:=$(PKG_SOURCE_URL)
-  DEPENDS:=@(TARGET_airoha_en751221||TARGET_airoha_en751627||TARGET_airoha_en7528||TARGET_airoha_en7580)
+  DEPENDS:=@(TARGET_airoha_en751221||TARGET_airoha_en751627||TARGET_airoha_en7528)
   DEFAULT:=y
   HIDDEN:=1
 endef

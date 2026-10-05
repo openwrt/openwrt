@@ -1,0 +1,315 @@
+// SPDX-License-Identifier: GPL-2.0
+
+/dts-v1/;
+
+#include "en7580.dtsi"
+
+/ {
+	model = "Quantum/Axon C6500XK v1";
+	compatible = "quantum,c6500xk-v1", "econet,en7580";
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x00000000 0x10000000>;
+	};
+
+	aliases {
+		serial0 = &uart1;
+		// led-boot = &led_power;
+		// led-failsafe = &led_power;
+		// led-upgrade = &led_power;
+		// led-running = &led_power;
+	};
+
+	keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <100>;
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&pinctrl 0 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+	};
+};
+
+&spi0 {
+	status = "okay";
+
+/*
+[    3.222338] 0x000000000000-0x000000200000 : "bootloader"
+[    3.242515] 0x000000200000-0x000000400000 : "dsd"
+[    3.348448] 0x000000400000-0x000004400000 : "tclinux"
+[    3.462141] 0x000004400000-0x000008400000 : "tclinux_slave"
+[    3.481968] 0x000008400000-0x00001c400000 : "system"
+[    3.500182] 0x00001c400000-0x00001c600000 : "uenv"
+[    3.517237] 0x00001d5c0000-0x00001d740000 : "art"
+*/
+
+	flash@0 {
+		compatible = "spi-nand";
+		reg = <0>;
+		spi-max-frequency = <50000000>;
+		spi-tx-bus-width = <1>;
+		spi-rx-bus-width = <2>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "bootloader";
+				reg = <0x00000000 0x00200000>;
+				read-only;
+			};
+
+			partition@200000 {
+				label = "dsd";
+				reg = <0x00200000 0x00200000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					ble_mac: mac-address@6c {
+						compatible = "mac-base";
+						reg = <0x006c 0x11>;
+						#nvmem-cell-cells = <1>;
+					};
+
+					clei_code: clei-code@88 {
+						reg = <0x0088 0x0a>;
+					};
+
+					gpon_serial: gpon-serial-number@98 {
+						reg = <0x0098 0x0c>;
+					};
+
+					lan_mac: mac-address@ad {
+						compatible = "mac-base";
+						reg = <0x00ad 0x11>;
+						#nvmem-cell-cells = <1>;
+					};
+
+					manufacturer: manufacturer@cc {
+						reg = <0x00cc 0x06>;
+					};
+
+					hw_serial: serial-number@e1 {
+						reg = <0x00e1 0x11>;
+					};
+
+					/* Stored as ASCII: "4C:BA:7D:58:54:F2". */
+					wan_mac: mac-address@fb {
+						compatible = "mac-base";
+						reg = <0x00fb 0x11>;
+						#nvmem-cell-cells = <1>;
+					};
+
+					/* Vendor BLE provisioning value, stored as 32 ASCII hex digits. */
+					ble_random: ble-random@116 {
+						reg = <0x0116 0x20>;
+					};
+				};
+			};
+
+			partition@400000 {
+				label = "tclinux";
+				reg = <0x00400000 0x04000000>;
+			};
+
+			partition@4400000 {
+				label = "tclinux_slave";
+				reg = <0x04400000 0x04000000>;
+			};
+
+			partition@8400000 {
+				label = "system";
+				reg = <0x08400000 0x14000000>;
+			};
+
+			partition@1c400000 {
+				label = "uenv";
+				reg = <0x1c400000 0x00200000>;
+			};
+
+			partition@1d5c0000 {
+				label = "art";
+				reg = <0x1d5c0000 0x00180000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					/* Vendor EN7572 BOB calibration block, 160 bytes. */
+					en7573_bob: calibration@60160 {
+						reg = <0x060160 0x00a0>;
+					};
+				};
+			};
+		};
+	};
+};
+
+&i2c0 {
+	status = "okay";
+
+	en7573: lddla@70 {
+		compatible = "airoha,en7573";
+		reg = <0x70>;
+
+		nvmem-cells = <&en7573_bob>;
+		nvmem-cell-names = "calibration";
+
+		#optical-frontend-cells = <0>;
+	};
+};
+
+/* The vendor firmware communicates with the BLE module over UART2. */
+&uart2 {
+	status = "okay";
+};
+
+&xpon_phy {
+	status = "okay";
+};
+
+&xpon {
+	status = "okay";
+
+	nvmem-cells = <&gpon_serial>;
+	nvmem-cell-names = "gpon-serial-number";
+	omci-vendor-id = "AXON";
+
+	optical-frontends = <&en7573>;
+	optical-frontend-names = "pon";
+};
+
+&eth {
+	status = "okay";
+};
+
+&gdm1 {
+	status = "okay";
+
+	nvmem-cells = <&lan_mac 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&gdm2 {
+	status = "okay";
+
+
+	airoha,xpon-managed;
+	openwrt,netdev-name = "pon0";
+};
+
+&gdm3 {
+	status = "okay";
+
+	openwrt,netdev-name = "lan1";
+
+	phy-handle = <&aqr113c>;
+	phy-mode = "usxgmii";
+
+	nvmem-cells = <&wan_mac 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&mdio {
+	aqr113c: ethernet-phy@0 {
+		compatible = "ethernet-phy-id03a2.9471";
+		reg = <0x0>;
+		phy-mode = "usxgmii";
+
+		leds {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			led@1 {
+				reg = <1>;
+
+				color = <LED_COLOR_ID_GREEN>;
+				function = LED_FUNCTION_WAN;
+			};
+		};
+	};
+};
+
+&switch {
+	status = "okay";
+};
+
+&gsw_port1 {
+	label = "lan1";
+	status = "okay";
+};
+
+&gsw_port2 {
+	label = "lan2";
+	status = "okay";
+};
+
+&gsw_port3 {
+	label = "lan3";
+	status = "okay";
+};
+
+&gsw_port4 {
+	label = "lan4";
+	status = "okay";
+};
+
+&gsw_phy1 {
+	status = "okay";
+	pinctrl-0 = <&swp1_led1>;
+};
+
+&gsw_phy2 {
+	status = "okay";
+	pinctrl-0 = <&swp2_led1>;
+};
+
+&gsw_phy3 {
+	status = "okay";
+	pinctrl-0 = <&swp3_led1>;
+};
+
+&gsw_phy4 {
+	status = "okay";
+	pinctrl-0 = <&swp4_led1>;
+};
+
+&gsw_phy1_led1 {
+	status = "okay";
+	color = <LED_COLOR_ID_GREEN>;
+	function = LED_FUNCTION_LAN;
+};
+
+&gsw_phy2_led1 {
+	status = "okay";
+	color = <LED_COLOR_ID_GREEN>;
+	function = LED_FUNCTION_LAN;
+};
+
+&gsw_phy3_led1 {
+	status = "okay";
+	color = <LED_COLOR_ID_GREEN>;
+	function = LED_FUNCTION_LAN;
+};
+
+&gsw_phy4_led1 {
+	status = "okay";
+	color = <LED_COLOR_ID_GREEN>;
+	function = LED_FUNCTION_LAN;
+};

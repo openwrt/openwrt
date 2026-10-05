@@ -1,0 +1,21 @@
+. /lib/functions/system.sh
+. /lib/functions/uci-defaults.sh
+
+board_config_update
+board=$(board_name)
+
+case "$board" in
+quantum,c6500xk-v1)
+	ucidef_set_interface_lan "lan1 lan2"
+	ucidef_set_interface_wan "pon0" "dhcp"
+  ;;
+*)
+	# The remaining boards have no DSA switch driver yet.
+	ucidef_set_interface_lan "eth0"
+	;;
+esac
+
+
+board_config_flush
+
+exit 0
