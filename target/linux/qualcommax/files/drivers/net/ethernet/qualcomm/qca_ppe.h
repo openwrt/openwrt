@@ -1003,8 +1003,22 @@ struct qca_ppe_vlan_entry {
 	int xlt_pvid_idx;
 };
 
-/* Defined beside the MIB table that dimensions it. */
-struct qca_ppe_mib_stats;
+/* What a counter has reached, and the raw register value that total was last
+ * brought up to date from.
+ */
+struct qca_ppe_mib_stats {
+	u64 total;
+	u64 last;
+};
+
+/* A packet-and-byte counter table entry: 32-bit packets, then 40-bit bytes. */
+#define PPE_CNT_WORDS			3
+
+/* The queue-side ethtool counters of a user port at most: eight for each of
+ * its sixteen unicast queues, five for each multicast queue, two buffer
+ * manager drops and three meter colours.
+ */
+#define PPE_QSTATS_MAX			(16 * 8 + PPE_MUL_QUEUES_PORT * 5 + 2 + 3)
 
 /* A traffic class's rate and the scheduler node that will carry it, worked out
  * before any of it is programmed.
@@ -1094,7 +1108,8 @@ struct qca_ppe_priv {
 	bool mib_xgmac[QCA_PPE_MAX_PORTS];
 	bool mib_rebase[QCA_PPE_MAX_PORTS];
 	struct qca_ppe_mib_stats *port_mib;
-	/* Guards port_mib, port_xgmac, mib_xgmac and mib_rebase; get_stats64
+	struct qca_ppe_mib_stats *port_qstats;
+	/* Guards port_mib, port_qstats, port_xgmac, mib_xgmac and mib_rebase; get_stats64
 	 * takes it in atomic context, so it is never a mutex.
 	 */
 	spinlock_t mib_lock;
@@ -1158,6 +1173,8 @@ int ppe_scheduler_ready(struct qca_ppe_priv *priv);
 void ppe_scheduler_unready(struct qca_ppe_priv *priv);
 void ppe_scheduler_exit(struct qca_ppe_priv *priv);
 void ppe_port_queues_enable(struct qca_ppe_priv *priv, int port, bool en);
+int ppe_port_qstats(struct qca_ppe_priv *priv, int port, u8 **names,
+		    struct qca_ppe_mib_stats *st);
 int qca_ppe_setup_tc(struct dsa_switch *ds, int port, enum tc_setup_type type,
 		     void *type_data);
 int qca_ppe_devlink_sb_setup(struct dsa_switch *ds);

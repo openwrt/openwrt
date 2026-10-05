@@ -1918,14 +1918,6 @@ static const struct qca_ppe_mib_desc qca_ppe_mib[] = {
 	MIB_ROW(PPE_MIB_TXUNI, 1, 0x864, 2, "tx_unicast"),
 };
 
-/* What a counter has reached, and the raw register value that total was last
- * brought up to date from.
- */
-struct qca_ppe_mib_stats {
-	u64 total;
-	u64 last;
-};
-
 /* The PPE's own per-port drop counts, banked after the MAC's: 32-bit packet
  * counters outside the MAC, so they wrap but survive a port reset.
  */
@@ -2045,6 +2037,8 @@ static void ppe_mib_work(struct work_struct *work)
 	dsa_switch_for_each_user_port(dp, &priv->ds) {
 		spin_lock_bh(&priv->mib_lock);
 		ppe_mib_fold(priv, dp->index);
+		ppe_port_qstats(priv, dp->index, NULL,
+				priv->port_qstats + dp->index * PPE_QSTATS_MAX);
 		spin_unlock_bh(&priv->mib_lock);
 	}
 
@@ -2061,6 +2055,8 @@ static void qca_ppe_get_strings(struct dsa_switch *ds, int port,
 
 	for (i = 0; i < ARRAY_SIZE(qca_ppe_mib); i++)
 		ethtool_puts(&data, qca_ppe_mib[i].name);
+
+	ppe_port_qstats(ds_to_priv(ds), port, &data, NULL);
 }
 
 static int qca_ppe_get_sset_count(struct dsa_switch *ds, int port,
@@ -2069,15 +2065,16 @@ static int qca_ppe_get_sset_count(struct dsa_switch *ds, int port,
 	if (sset != ETH_SS_STATS)
 		return 0;
 
-	return ARRAY_SIZE(qca_ppe_mib);
+	return ARRAY_SIZE(qca_ppe_mib) +
+	       ppe_port_qstats(ds_to_priv(ds), port, NULL, NULL);
 }
 
 static void qca_ppe_get_ethtool_stats(struct dsa_switch *ds, int port,
 				      uint64_t *data)
 {
 	struct qca_ppe_priv *priv = ds_to_priv(ds);
-	struct qca_ppe_mib_stats *stats;
-	int i;
+	struct qca_ppe_mib_stats *stats, *qstats;
+	int i, n;
 
 	if (port < 1) {
 		memset(data, 0, sizeof(u64) * ARRAY_SIZE(qca_ppe_mib));
@@ -2085,12 +2082,16 @@ static void qca_ppe_get_ethtool_stats(struct dsa_switch *ds, int port,
 	}
 
 	stats = ppe_port_mib(priv, port);
+	qstats = priv->port_qstats + port * PPE_QSTATS_MAX;
 
 	spin_lock_bh(&priv->mib_lock);
 	ppe_mib_fold(priv, port);
+	n = ppe_port_qstats(priv, port, NULL, qstats);
 
 	for (i = 0; i < ARRAY_SIZE(qca_ppe_mib); i++)
 		data[i] = stats[i].total;
+	for (i = 0; i < n; i++)
+		data[ARRAY_SIZE(qca_ppe_mib) + i] = qstats[i].total;
 
 	spin_unlock_bh(&priv->mib_lock);
 }
@@ -3080,6 +3081,12 @@ static int qca_ppe_probe(struct platform_device *pdev)
 				      data->num_ports * PPE_MIB_STATS,
 				      sizeof(*priv->port_mib), GFP_KERNEL);
 	if (!priv->port_mib)
+		return -ENOMEM;
+
+	priv->port_qstats = devm_kcalloc(&pdev->dev,
+					 data->num_ports * PPE_QSTATS_MAX,
+					 sizeof(*priv->port_qstats), GFP_KERNEL);
+	if (!priv->port_qstats)
 		return -ENOMEM;
 
 	ds = &priv->ds;

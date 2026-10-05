@@ -15,9 +15,6 @@
 
 #include "qca_ppe.h"
 
-/* Every packet-and-byte counter table below is three words wide. */
-#define PPE_CNT_WORDS		3
-
 /* The counter tables share one shape: a 32-bit packet count followed by a
  * 40-bit byte count, both straddling word boundaries.
  */
