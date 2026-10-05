@@ -1060,6 +1060,7 @@ struct ppe_port_shaper {
 	u32 tbf_handle;
 	u32 bands_handle;
 	struct ppe_red band_tbf;
+	u32 drr_handle;
 	u32 limit;
 	u64 rate_bps;
 	u64 queue_rate[PPE_QOS_MAX_PRI + 1];
