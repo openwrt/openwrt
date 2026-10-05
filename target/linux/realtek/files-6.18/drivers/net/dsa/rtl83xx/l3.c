@@ -3776,7 +3776,9 @@ int otto_l3_probe(struct device *dev, struct rtl838x_switch_priv *priv)
 
 	/* Initialize hash table for L3 routing */
 	INIT_LIST_HEAD(&ctrl->routes_list);
-	rhltable_init(&ctrl->routes, &otto_l3_route_ht_params);
+	err = rhltable_init(&ctrl->routes, &otto_l3_route_ht_params);
+	if (err)
+		return dev_err_probe(dev, err, "could not set up the route hash table\n");
 
 	/* Before the notifiers, so no destination is dropped in the window
 	 * where the tables are live and the routes have not arrived yet.
