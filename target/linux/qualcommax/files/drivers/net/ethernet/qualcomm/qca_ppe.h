@@ -488,6 +488,11 @@
 #define   PPE_APP_CTRL_VALID		BIT(0)
 #define   PPE_APP_CTRL_RFDB_INCL	BIT(1)
 #define   PPE_APP_CTRL_RFDB_BMP		GENMASK(31, 2)
+/* Second word. */
+#define   PPE_APP_CTRL_PROTO_INCL	BIT(2)
+#define   PPE_APP_CTRL_PROTO_BMP	GENMASK(28, 3)
+#define     PPE_APP_PROTO_IGMP		BIT(2)
+#define     PPE_APP_PROTO_MLD		BIT(6)
 /* Fields in the third 32-bit word of APP_CTRL. */
 #define   PPE_APP_CTRL_PORT_BITMAP_EN	BIT(2)
 #define   PPE_APP_CTRL_PORT_BITMAP	GENMASK(10, 3)
