@@ -2188,7 +2188,29 @@ static void qca_ppe_port_stp_state_set(struct dsa_switch *ds, int port,
 }
 
 #define QCA_PPE_BRIDGE_FLAGS	(BR_LEARNING | BR_FLOOD | BR_MCAST_FLOOD | \
-				 BR_BCAST_FLOOD | BR_ISOLATED)
+				 BR_BCAST_FLOOD | BR_ISOLATED | \
+				 BR_PORT_LOCKED | BR_PORT_MAB)
+
+/* A locked port learns nothing in hardware: a frame from an unknown or moved
+ * source goes to the bridge instead, which drops it or, under BR_PORT_MAB,
+ * records the source as a locked entry. Only a static entry opens the port.
+ */
+static void ppe_port_learning_set(struct qca_ppe_priv *priv, int port)
+{
+	unsigned long flags = priv->port_brflags[port];
+	u32 rdt = PPE_BRIDGE_CMD_RDT_CPU;
+	u32 val = 0;
+
+	if (flags & BR_PORT_LOCKED)
+		val = FIELD_PREP(PPE_BRIDGE_NEW_ADDR_CMD, rdt) |
+		      FIELD_PREP(PPE_BRIDGE_STA_MOVE_CMD, rdt);
+	else if (flags & BR_LEARNING)
+		val = PPE_BRIDGE_LRN_EN;
+
+	regmap_update_bits(priv->regmap, PPE_PORT_BRIDGE_CTRL(port),
+			   PPE_BRIDGE_LRN_EN | PPE_BRIDGE_NEW_ADDR_CMD |
+			   PPE_BRIDGE_STA_MOVE_CMD, val);
+}
 
 static int qca_ppe_port_pre_bridge_flags(struct dsa_switch *ds, int port,
 					 struct switchdev_brport_flags flags,
@@ -2211,11 +2233,8 @@ static int qca_ppe_port_bridge_flags(struct dsa_switch *ds, int port,
 	priv->port_brflags[port] &= ~flags.mask;
 	priv->port_brflags[port] |= flags.val & flags.mask;
 
-	if (flags.mask & BR_LEARNING)
-		regmap_update_bits(priv->regmap, PPE_PORT_BRIDGE_CTRL(port),
-				   PPE_BRIDGE_LRN_EN,
-				   flags.val & BR_LEARNING ?
-					PPE_BRIDGE_LRN_EN : 0);
+	if (flags.mask & (BR_LEARNING | BR_PORT_LOCKED))
+		ppe_port_learning_set(priv, port);
 
 	if (flags.mask & (BR_FLOOD | BR_MCAST_FLOOD | BR_BCAST_FLOOD))
 		ppe_vsi_flood_refresh(priv);
