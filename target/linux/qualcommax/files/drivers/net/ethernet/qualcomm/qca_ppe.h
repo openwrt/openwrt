@@ -484,6 +484,10 @@
 #define PPE_RFDB_TBL(idx)		(PPE_L2_BASE + 0x1000 + (idx) * 0x8)
 
 #define PPE_APP_CTRL(idx)		(PPE_L2_BASE + 0x1400 + (idx) * 0x10)
+/* First word: RFDB profiles 0-29, one bit each. */
+#define   PPE_APP_CTRL_VALID		BIT(0)
+#define   PPE_APP_CTRL_RFDB_INCL	BIT(1)
+#define   PPE_APP_CTRL_RFDB_BMP		GENMASK(31, 2)
 /* Fields in the third 32-bit word of APP_CTRL. */
 #define   PPE_APP_CTRL_PORT_BITMAP_EN	BIT(2)
 #define   PPE_APP_CTRL_PORT_BITMAP	GENMASK(10, 3)
