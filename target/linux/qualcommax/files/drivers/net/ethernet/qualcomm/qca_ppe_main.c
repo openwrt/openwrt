@@ -2857,6 +2857,7 @@ static const struct dsa_switch_ops qca_ppe_ops = {
 	.port_mirror_del	= qca_ppe_port_mirror_del,
 	.port_policer_add	= qca_ppe_port_policer_add,
 	.port_policer_del	= qca_ppe_port_policer_del,
+	.port_policer_stats	= qca_ppe_port_policer_stats,
 	.port_get_dscp_prio	= qca_ppe_port_get_dscp_prio,
 	.port_add_dscp_prio	= qca_ppe_port_add_dscp_prio,
 	.port_del_dscp_prio	= qca_ppe_port_del_dscp_prio,

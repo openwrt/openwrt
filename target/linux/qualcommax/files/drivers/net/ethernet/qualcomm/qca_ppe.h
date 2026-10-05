@@ -1434,6 +1434,12 @@ struct qca_ppe_priv {
 	u8 ac_grp_owner[PPE_AC_GROUPS];
 	struct ppe_sb_occ sb_occ_ing[PPE_NUM_PORTS];
 	struct ppe_sb_occ sb_occ_eg[PPE_NUM_PORTS][PPE_SB_EGRESS_TCS];
+	/* Port meter counts last handed to tc. */
+	struct {
+		u64 bytes;
+		u32 pkts;
+		u32 drops;
+	} policer_base[QCA_PPE_MAX_PORTS];
 	/* A red's static limit and early drop gap per unicast queue, in
 	 * buffers; a limit of zero is a queue with no red.
 	 */
@@ -1614,6 +1620,8 @@ int qca_ppe_port_policer_add(struct dsa_switch *ds, int port,
 			     const struct flow_action_police *policer,
 			     struct netlink_ext_ack *extack);
 void qca_ppe_port_policer_del(struct dsa_switch *ds, int port);
+int qca_ppe_port_policer_stats(struct dsa_switch *ds, int port,
+			       struct flow_stats *stats);
 int ppe_token_bucket(unsigned long clk, u32 slot, u64 rate_bps, u32 burst,
 		     u32 cir_max, u32 cbs_max, u32 *cir, u32 *cbs);
 int ppe_police_rate(const struct flow_action_police *p, u64 *rate_bps,

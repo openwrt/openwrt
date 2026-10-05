@@ -2136,13 +2136,57 @@ int qca_ppe_port_policer_add(struct dsa_switch *ds, int port,
 	return ppe_port_policer_set(priv, port, rate_bps, burst, pkt);
 }
 
+/* The meter counts every frame it colours; red is what it dropped. The counters
+ * are free-running, 32-bit packets and 40-bit bytes, so tc gets the delta.
+ */
+static void ppe_port_policer_delta(struct qca_ppe_priv *priv, int port,
+				   u64 *bytes, u32 *pkts, u32 *drops)
+{
+	u32 p = 0, w[3];
+	u64 b = 0;
+	int c;
+
+	/* green, yellow, red */
+	for (c = 0; c < 3; c++) {
+		regmap_bulk_read(priv->regmap, PPE_PORT_METER_CNT(port, c), w,
+				 ARRAY_SIZE(w));
+		p += ppe_entry_get(w, 0, 32);
+		b += ppe_entry_get(w, 32, 40);
+	}
+
+	*bytes = (b - priv->policer_base[port].bytes) & GENMASK_ULL(39, 0);
+	*pkts = p - priv->policer_base[port].pkts;
+	*drops = (u32)ppe_entry_get(w, 0, 32) - priv->policer_base[port].drops;
+	priv->policer_base[port].bytes = b;
+	priv->policer_base[port].pkts = p;
+	priv->policer_base[port].drops = ppe_entry_get(w, 0, 32);
+}
+
+int qca_ppe_port_policer_stats(struct dsa_switch *ds, int port,
+			       struct flow_stats *stats)
+{
+	u32 pkts, drops;
+	u64 bytes;
+
+	ppe_port_policer_delta(ds_to_priv(ds), port, &bytes, &pkts, &drops);
+	flow_stats_update(stats, bytes, pkts, drops,
+			  pkts ? jiffies : 0,
+			  FLOW_ACTION_HW_STATS_IMMEDIATE);
+
+	return 0;
+}
+
 void qca_ppe_port_policer_del(struct dsa_switch *ds, int port)
 {
 	struct qca_ppe_priv *priv = ds_to_priv(ds);
+	u32 pkts, drops;
+	u64 bytes;
 
 	regmap_write(priv->regmap, PPE_POLICER_CMPST_LEN(port),
 		     FIELD_PREP(PPE_CMPST_LENGTH, ETH_FCS_LEN));
 	ppe_port_policer_set(priv, port, 0, 0, false);
+	/* Start the next policer's statistics from here. */
+	ppe_port_policer_delta(priv, port, &bytes, &pkts, &drops);
 }
 
 /* The counters a shaped port can answer with are the MAC's own transmit MIB and
