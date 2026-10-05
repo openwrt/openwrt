@@ -5,7 +5,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=hostapd
-PKG_RELEASE:=4
+PKG_RELEASE:=5
 
 PKG_SOURCE_URL:=https://w1.fi/hostap.git
 PKG_SOURCE_PROTO:=git
@@ -138,7 +138,7 @@ endif
 
 ifeq ($(SSL_VARIANT),mbedtls)
   DRIVER_MAKEOPTS += CONFIG_TLS=mbedtls CONFIG_SAE=y
-  TARGET_LDFLAGS += -lmbedcrypto -lmbedx509 -lmbedtls
+  TARGET_LDFLAGS += -ltfpsacrypto -lmbedx509 -lmbedtls
 
   ifeq ($(LOCAL_VARIANT),basic)
     DRIVER_MAKEOPTS += CONFIG_OWE=y
