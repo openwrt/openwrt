@@ -15,6 +15,7 @@
 #include <linux/etherdevice.h>
 #include <linux/ethtool.h>
 #include <linux/module.h>
+#include <linux/tc_act/tc_csum.h>
 #include <net/flow_offload.h>
 #include <net/ipv6.h>
 
@@ -810,8 +811,8 @@ static int ppe_acl_parse_action(struct qca_ppe_priv *priv,
 				struct ppe_acl_rule *r)
 {
 	const struct flow_action_entry *a;
+	bool fwd = false, csum = false;
 	u32 *act = r->act;
-	bool fwd = false;
 	int i, ret;
 
 	flow_action_for_each(i, a, &rule->action) {
@@ -1018,10 +1019,24 @@ static int ppe_acl_parse_action(struct qca_ppe_priv *priv,
 			act[0] |= PPE_ACL_MIRROR_EN;
 			break;
 		}
+		case FLOW_ACTION_CSUM:
+			/* A DSCP rewrite changes no L4 checksum. */
+			if (family != htons(ETH_P_IP) ||
+			    a->csum_flags != TCA_CSUM_UPDATE_FLAG_IPV4HDR) {
+				NL_SET_ERR_MSG_MOD(extack, "only the IPv4 header checksum is updated");
+				return -EOPNOTSUPP;
+			}
+			csum = true;
+			break;
 		default:
 			NL_SET_ERR_MSG_MOD(extack, "action the classifier cannot take");
 			return -EOPNOTSUPP;
 		}
+	}
+
+	if (csum && !(act[2] & PPE_ACL_DSCP_TC_CHANGE_EN)) {
+		NL_SET_ERR_MSG_MOD(extack, "the checksum is updated only for a DSCP rewrite");
+		return -EOPNOTSUPP;
 	}
 
 	return 0;
