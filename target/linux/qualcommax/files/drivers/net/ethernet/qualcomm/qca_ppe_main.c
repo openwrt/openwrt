@@ -438,11 +438,9 @@ static int ppe_fdb_op(struct qca_ppe_priv *priv, const unsigned char *addr,
 	return ret;
 }
 
-static int ppe_fdb_read_entry(struct qca_ppe_priv *priv, u32 index,
-			      unsigned char *addr, u32 *vsi, int *port,
-			      bool *is_static)
+static int ppe_fdb_read_raw(struct qca_ppe_priv *priv, u32 index, u32 *data)
 {
-	u32 data[3], cmd_id, val;
+	u32 cmd_id, val;
 	int ret;
 
 	spin_lock_bh(&priv->fdb_lock);
@@ -464,6 +462,17 @@ static int ppe_fdb_read_entry(struct qca_ppe_priv *priv, u32 index,
 
 	spin_unlock_bh(&priv->fdb_lock);
 
+	return ret;
+}
+
+static int ppe_fdb_read_entry(struct qca_ppe_priv *priv, u32 index,
+			      unsigned char *addr, u32 *vsi, int *port,
+			      bool *is_static)
+{
+	u32 data[3];
+	int ret;
+
+	ret = ppe_fdb_read_raw(priv, index, data);
 	if (ret)
 		return ret;
 
@@ -600,13 +609,49 @@ qca_ppe_get_tag_protocol(struct dsa_switch *ds, int port,
 	return DSA_TAG_PROTO_OOB;
 }
 
-/* The classifier's table. The hardware counts none of its entries, so
- * occupancy is the driver's own bookkeeping, which is what makes "the table
- * was full" a number rather than an inference from the rule that was refused.
+/* The hardware counts none of its table entries, so occupancy is the driver's
+ * own bookkeeping, which is what makes "the table was full" a number rather
+ * than an inference from the request that was refused. The FDB also holds
+ * what the switch learned on its own, so its count is a walk of the table.
  */
 enum ppe_devlink_resource_id {
 	PPE_RESOURCE_ACL = 1,
+	PPE_RESOURCE_FDB,
+	PPE_RESOURCE_VSI,
+	PPE_RESOURCE_VLAN_XLT,
 };
+
+static u64 ppe_devlink_fdb_occ(void *p)
+{
+	struct qca_ppe_priv *priv = p;
+	u32 data[3], i;
+	u64 n = 0;
+
+	for (i = 0; i < PPE_FDB_TBL_NUM; i++)
+		if (!ppe_fdb_read_raw(priv, i, data) &&
+		    (data[1] & PPE_FDB_DATA1_VALID))
+			n++;
+
+	return n;
+}
+
+static u64 ppe_devlink_vsi_occ(void *p)
+{
+	struct qca_ppe_priv *priv = p;
+
+	guard(mutex)(&priv->vlan_lock);
+
+	return bitmap_weight(priv->vsi_bitmap, PPE_VSI_MAX);
+}
+
+static u64 ppe_devlink_xlt_occ(void *p)
+{
+	struct qca_ppe_priv *priv = p;
+
+	guard(mutex)(&priv->vlan_lock);
+
+	return bitmap_weight(priv->xlt_bitmap, PPE_XLT_TBL_NUM);
+}
 
 static u64 ppe_devlink_acl_occ(void *p)
 {
@@ -644,19 +689,154 @@ static int ppe_devlink_resource(struct dsa_switch *ds, const char *name,
 	return 0;
 }
 
+#define PPE_FDB_WORDS		3
+#define PPE_VSI_WORDS		2
+/* Three rule words, then two action words. */
+#define PPE_XLT_WORDS		5
+
+static int ppe_region_fdb_snapshot(struct devlink *dl,
+				   const struct devlink_region_ops *ops,
+				   struct netlink_ext_ack *extack, u8 **data)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(dsa_devlink_to_ds(dl));
+	u32 *buf;
+	int ret;
+	u32 i;
+
+	buf = kcalloc(PPE_FDB_TBL_NUM, PPE_FDB_WORDS * sizeof(u32), GFP_KERNEL);
+	if (!buf)
+		return -ENOMEM;
+
+	for (i = 0; i < PPE_FDB_TBL_NUM; i++) {
+		ret = ppe_fdb_read_raw(priv, i, &buf[i * PPE_FDB_WORDS]);
+		if (ret) {
+			kfree(buf);
+			return ret;
+		}
+	}
+
+	*data = (u8 *)buf;
+
+	return 0;
+}
+
+static int ppe_region_vsi_snapshot(struct devlink *dl,
+				   const struct devlink_region_ops *ops,
+				   struct netlink_ext_ack *extack, u8 **data)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(dsa_devlink_to_ds(dl));
+	u32 *buf;
+	int i;
+
+	buf = kcalloc(PPE_VSI_MAX, PPE_VSI_WORDS * sizeof(u32), GFP_KERNEL);
+	if (!buf)
+		return -ENOMEM;
+
+	for (i = 0; i < PPE_VSI_MAX; i++) {
+		regmap_read(priv->regmap, PPE_VSI_TBL(i),
+			    &buf[i * PPE_VSI_WORDS]);
+		regmap_read(priv->regmap, PPE_VSI_TBL(i) + 4,
+			    &buf[i * PPE_VSI_WORDS + 1]);
+	}
+
+	*data = (u8 *)buf;
+
+	return 0;
+}
+
+static int ppe_region_xlt_snapshot(struct devlink *dl,
+				   const struct devlink_region_ops *ops,
+				   struct netlink_ext_ack *extack, u8 **data)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(dsa_devlink_to_ds(dl));
+	u32 *buf, *e;
+	int i;
+
+	buf = kcalloc(PPE_XLT_TBL_NUM, PPE_XLT_WORDS * sizeof(u32), GFP_KERNEL);
+	if (!buf)
+		return -ENOMEM;
+
+	for (i = 0; i < PPE_XLT_TBL_NUM; i++) {
+		e = &buf[i * PPE_XLT_WORDS];
+		regmap_read(priv->regmap, PPE_XLT_RULE_TBL(i), &e[0]);
+		regmap_read(priv->regmap, PPE_XLT_RULE_W1(i), &e[1]);
+		regmap_read(priv->regmap, PPE_XLT_RULE_TBL(i) + 8, &e[2]);
+		regmap_read(priv->regmap, PPE_XLT_ACTION_TBL(i), &e[3]);
+		regmap_read(priv->regmap, PPE_XLT_ACTION_W1(i), &e[4]);
+	}
+
+	*data = (u8 *)buf;
+
+	return 0;
+}
+
+static const struct devlink_region_ops ppe_region_ops[] = {
+	{ .name = "fdb", .snapshot = ppe_region_fdb_snapshot,
+	  .destructor = kfree },
+	{ .name = "vsi", .snapshot = ppe_region_vsi_snapshot,
+	  .destructor = kfree },
+	{ .name = "vlan_xlt", .snapshot = ppe_region_xlt_snapshot,
+	  .destructor = kfree },
+};
+
+static const u64 ppe_region_size[] = {
+	PPE_FDB_TBL_NUM * PPE_FDB_WORDS * sizeof(u32),
+	PPE_VSI_MAX * PPE_VSI_WORDS * sizeof(u32),
+	PPE_XLT_TBL_NUM * PPE_XLT_WORDS * sizeof(u32),
+};
+
+static void ppe_devlink_teardown(struct dsa_switch *ds)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(priv->regions); i++)
+		if (!IS_ERR_OR_NULL(priv->regions[i]))
+			dsa_devlink_region_destroy(priv->regions[i]);
+	devlink_sb_unregister(ds->devlink, PPE_DEVLINK_SB);
+	dsa_devlink_resources_unregister(ds);
+}
+
 static int ppe_devlink_setup(struct dsa_switch *ds)
 {
-	int ret;
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+	int ret, i;
 
 	ret = ppe_devlink_resource(ds, "acl",
 				   PPE_ACL_LISTS * PPE_ACL_LIST_ENTRIES,
 				   PPE_RESOURCE_ACL, ppe_devlink_acl_occ);
 	if (!ret)
+		ret = ppe_devlink_resource(ds, "fdb", PPE_FDB_TBL_NUM,
+					   PPE_RESOURCE_FDB,
+					   ppe_devlink_fdb_occ);
+	if (!ret)
+		ret = ppe_devlink_resource(ds, "vsi", PPE_VSI_MAX,
+					   PPE_RESOURCE_VSI,
+					   ppe_devlink_vsi_occ);
+	if (!ret)
+		ret = ppe_devlink_resource(ds, "vlan_xlt", PPE_XLT_TBL_NUM,
+					   PPE_RESOURCE_VLAN_XLT,
+					   ppe_devlink_xlt_occ);
+	if (!ret)
 		ret = qca_ppe_devlink_sb_setup(ds);
-	if (ret)
+	if (ret) {
 		dsa_devlink_resources_unregister(ds);
+		return ret;
+	}
 
-	return ret;
+	for (i = 0; i < ARRAY_SIZE(ppe_region_ops); i++) {
+		priv->regions[i] = dsa_devlink_region_create(ds,
+							     &ppe_region_ops[i],
+							     1,
+							     ppe_region_size[i]);
+		if (IS_ERR(priv->regions[i])) {
+			ret = PTR_ERR(priv->regions[i]);
+			ppe_devlink_teardown(ds);
+			return ret;
+		}
+	}
+
+	return 0;
 }
 
 /* The part names itself in the first register of the global block. qca-ssdk's
@@ -2074,8 +2254,7 @@ static void qca_ppe_teardown(struct dsa_switch *ds)
 	struct qca_ppe_priv *priv = ds_to_priv(ds);
 
 	cancel_delayed_work_sync(&priv->mib_work);
-	devlink_sb_unregister(ds->devlink, PPE_DEVLINK_SB);
-	dsa_devlink_resources_unregister(ds);
+	ppe_devlink_teardown(ds);
 }
 
 /* Everything the PPE holds about one port that a value can be read out of:

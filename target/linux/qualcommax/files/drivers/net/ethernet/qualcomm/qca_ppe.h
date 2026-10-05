@@ -1030,6 +1030,7 @@ struct qca_ppe_priv {
 	u8 mirror_dir_ref[QCA_PPE_MAX_PORTS][2];
 	struct ppe_port_shaper shaper[QCA_PPE_MAX_PORTS];
 	struct dentry *debugfs;
+	struct devlink_region *regions[3];
 	DECLARE_BITMAP(vsi_bitmap, PPE_VSI_MAX);
 	DECLARE_BITMAP(xlt_bitmap, PPE_XLT_TBL_NUM);
 	u32 port_vsi[QCA_PPE_MAX_PORTS];
