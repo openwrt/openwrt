@@ -6,6 +6,7 @@
 #include <net/dcbnl.h>
 #include <net/flow_offload.h>
 #include <net/pkt_cls.h>
+#include <net/red.h>
 
 #include "qca_ppe.h"
 
@@ -461,8 +462,22 @@ static const u8 port_queue_base[PPE_NUM_PORTS] = {
  */
 static void ppe_ac_uni_write(struct qca_ppe_priv *priv, u32 queue, u32 w0)
 {
+	u32 w1 = 0;
+
+	/* A red holds its queues at a static limit of its own, under the group
+	 * and force setting the queue is given here. Colour blind, every frame
+	 * is green and green's gap alone sets where early drop starts.
+	 */
+	if (priv->red_max[queue]) {
+		w0 &= ~(PPE_AC_SHARED_DYNAMIC | PPE_AC_SHARED_CEILING |
+			PPE_AC_COLOR_AWARE);
+		w0 |= PPE_AC_WRED_EN |
+		      FIELD_PREP(PPE_AC_SHARED_CEILING, priv->red_max[queue]);
+		w1 = FIELD_PREP(PPE_AC_GAP_GRN_MIN, priv->red_gap[queue]);
+	}
+
 	regmap_write(priv->regmap, PPE_QM_AC_UNI_W0(queue), w0);
-	regmap_write(priv->regmap, PPE_QM_AC_UNI_W1(queue), 0);
+	regmap_write(priv->regmap, PPE_QM_AC_UNI_W1(queue), w1);
 	regmap_write(priv->regmap, PPE_QM_AC_UNI_W2(queue), 0);
 	regmap_write(priv->regmap, PPE_QM_AC_UNI_W3(queue),
 		     FIELD_PREP(PPE_AC_GRN_RESUME_OFF, 36));
@@ -2055,12 +2070,15 @@ static int ppe_qos_bands_set(struct qca_ppe_priv *priv, int port, u32 handle,
 	return 0;
 }
 
-/* A child of an offloaded band is offloaded only if it is the band's tbf. */
+/* A child of an offloaded band is offloaded only if it is the band's tbf or
+ * red.
+ */
 static int ppe_band_graft(struct ppe_port_shaper *sh, u32 handle, u8 band,
 			  u32 child)
 {
-	if (handle != sh->bands_handle || band || !child ||
-	    child != sh->band_tbf_handle)
+	if (handle != sh->bands_handle || band >= PPE_QOS_BANDS || !child ||
+	    (child != sh->red[band].handle &&
+	     (band || child != sh->band_tbf.handle)))
 		return -EOPNOTSUPP;
 
 	return 0;
@@ -2149,6 +2167,10 @@ int qca_ppe_setup_tc_prio(struct qca_ppe_priv *priv, int port,
  * The other two bands are four hash queues each on L0 nodes of their own,
  * under one L1 node they share, so no single bucket holds either of them.
  */
+static void ppe_queues_counters(struct qca_ppe_priv *priv, u16 base, u8 count,
+				u64 *bytes, u32 *pkts, u32 *early, u32 *pdrop,
+				u32 *backlog);
+
 static int ppe_band_tbf(struct qca_ppe_priv *priv, int port,
 			struct tc_tbf_qopt_offload *qopt)
 {
@@ -2188,16 +2210,48 @@ static int ppe_band_tbf(struct qca_ppe_priv *priv, int port,
 			return ret;
 		}
 
-		sh->band_tbf_handle = qopt->handle;
+		sh->band_tbf = (struct ppe_red){ .handle = qopt->handle };
+		ppe_queues_counters(priv, p->ucast_base + offset,
+				    2 * PPE_FLOW_SPREAD_QUEUES,
+				    &sh->band_tbf.base_bytes,
+				    &sh->band_tbf.base_pkts,
+				    &sh->band_tbf.base_early,
+				    &sh->band_tbf.base_pdrop,
+				    &sh->band_tbf.base_backlog);
+		sh->band_tbf.base_drops = sh->band_tbf.base_early +
+					  sh->band_tbf.base_pdrop;
+		sh->band_tbf.base_backlog = 0;
 		break;
 	case TC_TBF_DESTROY:
-		if (!sh->band_tbf_handle || qopt->handle != sh->band_tbf_handle)
+		if (!sh->band_tbf.handle || qopt->handle != sh->band_tbf.handle)
 			return 0;
 
 		ppe_node_shaper_set(priv, prog.cfg, prog.credit, prog.slot, 0,
 				    0);
-		sh->band_tbf_handle = 0;
+		sh->band_tbf.handle = 0;
 		break;
+	case TC_TBF_STATS: {
+		struct ppe_red *t = &sh->band_tbf;
+		u32 pkts, early, pdrop, backlog;
+		u64 bytes;
+
+		if (!t->handle || qopt->handle != t->handle)
+			return -EOPNOTSUPP;
+		/* The band's node serves its hash queues and the sparse list. */
+		ppe_queues_counters(priv, p->ucast_base + offset,
+				    2 * PPE_FLOW_SPREAD_QUEUES, &bytes, &pkts,
+				    &early, &pdrop, &backlog);
+		_bstats_update(qopt->stats.bstats,
+			       (bytes - t->base_bytes) & GENMASK_ULL(39, 0),
+			       pkts - t->base_pkts);
+		qopt->stats.qstats->drops += early + pdrop - t->base_drops;
+		qopt->stats.qstats->backlog += backlog - t->base_backlog;
+		t->base_bytes = bytes;
+		t->base_pkts = pkts;
+		t->base_drops = early + pdrop;
+		t->base_backlog = backlog;
+		return 0;
+	}
 	default:
 		return -EOPNOTSUPP;
 	}
@@ -2207,6 +2261,194 @@ static int ppe_band_tbf(struct qca_ppe_priv *priv, int port,
 	ppe_port_queue_limit_set(priv, port);
 
 	return 0;
+}
+
+/* What a range of a port's unicast queues has sent, dropped early, dropped
+ * outright and is holding. The sums wrap at the width of the counters summed,
+ * so a delta taken at that width is still exact.
+ */
+static void ppe_queues_counters(struct qca_ppe_priv *priv, u16 base, u8 count,
+				u64 *bytes, u32 *pkts, u32 *early, u32 *pdrop,
+				u32 *backlog)
+{
+	u32 w[PPE_CNT_WORDS], val;
+	int i, t;
+
+	*bytes = 0;
+	*pkts = *early = *pdrop = *backlog = 0;
+
+	for (i = base; i < base + count; i++) {
+		regmap_bulk_read(priv->regmap, PPE_QUEUE_TX_CNT_TBL(i), w,
+				 ARRAY_SIZE(w));
+		*pkts += w[0];
+		*bytes += ppe_entry_get(w, 32, 40);
+
+		for (t = 0; t < PPE_UNI_DROP_TYPES; t++) {
+			regmap_bulk_read(priv->regmap,
+					 PPE_QM_UNI_DROP_CNT(i, t), w,
+					 ARRAY_SIZE(w));
+			if (t < PPE_UNI_DROP_TYPES / 2)
+				*early += w[0];
+			else
+				*pdrop += w[0];
+		}
+
+		regmap_read(priv->regmap, PPE_QM_AC_UNI_CNT(i), &val);
+		*backlog += FIELD_GET(PPE_AC_UNI_PEND_CNT, val) *
+			    PPE_BM_BUF_SIZE;
+	}
+}
+
+/* Where a red sits decides which queues it holds: all of the port's, under the
+ * root or a root tbf, or one band's, under an offloaded ets or prio. tc
+ * numbers bands from the top, and the top band's node also carries the
+ * sparse list.
+ */
+static int ppe_red_scope(struct ppe_port_shaper *sh,
+			 const struct port_l0_params *p, u32 parent,
+			 u8 *first, u8 *count)
+{
+	u32 band = TC_H_MIN(parent) - 1;
+
+	/* A tbf has one child, named by its handle or by its class 1. */
+	if (parent == TC_H_ROOT ||
+	    (sh->tbf_handle && TC_H_MAJ(parent) == sh->tbf_handle &&
+	     TC_H_MIN(parent) <= 1)) {
+		*first = 0;
+		*count = p->ucast_count;
+		return PPE_QOS_BANDS;
+	}
+
+	if (!sh->bands_handle || TC_H_MAJ(parent) != sh->bands_handle ||
+	    band >= PPE_QOS_BANDS)
+		return -EOPNOTSUPP;
+
+	*first = (PPE_QOS_BANDS - 1 - band) * PPE_FLOW_SPREAD_QUEUES;
+	*count = band ? PPE_FLOW_SPREAD_QUEUES : p->ucast_count - *first;
+
+	return band;
+}
+
+static void ppe_red_queues_set(struct qca_ppe_priv *priv,
+			       const struct port_l0_params *p,
+			       const struct ppe_red *red, u16 max, u16 gap)
+{
+	int i;
+
+	for (i = red->first; i < red->first + red->count; i++) {
+		priv->red_max[p->ucast_base + i] = max;
+		priv->red_gap[p->ucast_base + i] = gap;
+	}
+
+	ppe_port_queue_limit_set(priv, p->port);
+}
+
+/* The queue manager's WRED: a static limit per queue and a gap below it where
+ * early drop starts, compared against the queue's depth in buffers. Its drop
+ * probability is not programmable, and it cannot mark.
+ */
+static int qca_ppe_setup_tc_red(struct qca_ppe_priv *priv, int port,
+				struct tc_red_qopt_offload *qopt)
+{
+	struct ppe_port_shaper *sh = &priv->shaper[port];
+	const struct port_l0_params *p = NULL;
+	u32 pkts, early, pdrop, backlog, max, min;
+	struct ppe_red *red = NULL;
+	u8 first, count;
+	int i, scope;
+	u64 bytes;
+
+	for (i = 0; i < ARRAY_SIZE(port_l0); i++)
+		if (port_l0[i].port == port)
+			p = &port_l0[i];
+	if (!p)
+		return -EOPNOTSUPP;
+
+	for (i = 0; i < PPE_RED_SCOPES; i++)
+		if (sh->red[i].handle && sh->red[i].handle == qopt->handle)
+			red = &sh->red[i];
+
+	switch (qopt->command) {
+	case TC_RED_REPLACE:
+		if (qopt->set.is_ecn || qopt->set.is_nodrop) {
+			dev_err(priv->ds.dev,
+				"port %d: the queue manager drops and cannot mark\n",
+				port);
+			return -EOPNOTSUPP;
+		}
+
+		dev_info_once(priv->ds.dev,
+			      "red: the early drop probability is fixed in hardware; probability is ignored\n");
+
+		scope = ppe_red_scope(sh, p, qopt->parent, &first, &count);
+		if (scope < 0) {
+			dev_err(priv->ds.dev,
+				"port %d: a red is offloaded at the root, under a root tbf or under a band of an offloaded ets or prio\n",
+				port);
+			return scope;
+		}
+
+		max = DIV_ROUND_CLOSEST(qopt->set.max, PPE_BM_BUF_SIZE);
+		min = DIV_ROUND_CLOSEST(qopt->set.min, PPE_BM_BUF_SIZE);
+		if (!max || max > FIELD_MAX(PPE_AC_SHARED_CEILING)) {
+			dev_err(priv->ds.dev,
+				"port %d: a red max of %u bytes is outside the queue limit's range\n",
+				port, qopt->set.max);
+			return -ERANGE;
+		}
+
+		if (red && red != &sh->red[scope])
+			ppe_red_queues_set(priv, p, red, 0, 0);
+
+		red = &sh->red[scope];
+		*red = (struct ppe_red){
+			.handle = qopt->handle,
+			.first = first,
+			.count = count,
+		};
+		ppe_queues_counters(priv, p->ucast_base + first, count,
+				    &red->base_bytes, &red->base_pkts,
+				    &red->base_early, &red->base_pdrop,
+				    &backlog);
+		red->base_drops = red->base_early + red->base_pdrop;
+		ppe_red_queues_set(priv, p, red, max, max - min);
+		return 0;
+	case TC_RED_DESTROY:
+		if (!red)
+			return 0;
+		ppe_red_queues_set(priv, p, red, 0, 0);
+		red->handle = 0;
+		return 0;
+	case TC_RED_STATS:
+		if (!red)
+			return -EOPNOTSUPP;
+		ppe_queues_counters(priv, p->ucast_base + red->first,
+				    red->count, &bytes, &pkts, &early, &pdrop,
+				    &backlog);
+		_bstats_update(qopt->stats.bstats,
+			       (bytes - red->base_bytes) & GENMASK_ULL(39, 0),
+			       pkts - red->base_pkts);
+		qopt->stats.qstats->drops += early + pdrop - red->base_drops;
+		qopt->stats.qstats->backlog += backlog - red->base_backlog;
+		red->base_bytes = bytes;
+		red->base_pkts = pkts;
+		red->base_drops = early + pdrop;
+		red->base_backlog = backlog;
+		return 0;
+	case TC_RED_XSTATS:
+		if (!red)
+			return -EOPNOTSUPP;
+		ppe_queues_counters(priv, p->ucast_base + red->first,
+				    red->count, &bytes, &pkts, &early, &pdrop,
+				    &backlog);
+		qopt->xstats->prob_drop += early - red->base_early;
+		qopt->xstats->pdrop += pdrop - red->base_pdrop;
+		red->base_early = early;
+		red->base_pdrop = pdrop;
+		return 0;
+	default:
+		return -EOPNOTSUPP;
+	}
 }
 
 /* The port shaper meters everything the port sends, which is a root tbf. The
@@ -2254,6 +2496,13 @@ int qca_ppe_setup_tc_tbf(struct qca_ppe_priv *priv, int port,
 			return -EOPNOTSUPP;
 		ppe_port_shaper_stats(priv, port, &qopt->stats);
 		return 0;
+	case TC_TBF_GRAFT:
+		if (!qopt->child_handle || qopt->handle !=
+		    priv->shaper[port].tbf_handle ||
+		    qopt->child_handle !=
+		    priv->shaper[port].red[PPE_QOS_BANDS].handle)
+			return -EOPNOTSUPP;
+		return 0;
 	default:
 		return -EOPNOTSUPP;
 	}
@@ -2273,6 +2522,8 @@ int qca_ppe_setup_tc(struct dsa_switch *ds, int port, enum tc_setup_type type,
 		return qca_ppe_setup_tc_prio(priv, port, type_data);
 	case TC_SETUP_QDISC_MQPRIO:
 		return qca_ppe_setup_tc_mqprio(priv, port, type_data);
+	case TC_SETUP_QDISC_RED:
+		return qca_ppe_setup_tc_red(priv, port, type_data);
 	case TC_QUERY_CAPS:
 		return qca_ppe_tc_query_caps(type_data);
 	default:

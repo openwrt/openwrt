@@ -831,6 +831,7 @@
 #define PPE_QM_AC_UNI_W2(i)		(PPE_QM_BASE + 0x48000 + (i) * 0x10 + 0x8)
 #define PPE_QM_AC_UNI_W3(i)		(PPE_QM_BASE + 0x48000 + (i) * 0x10 + 0xc)
 #define   PPE_AC_EN			BIT(0)
+#define   PPE_AC_WRED_EN		BIT(1)
 /* The vendor calls this FORCE_AC_EN and the in-kernel ppe driver calls it
  * FC_EN; measured, it is what makes the limit bind. A queue held to twelve
  * buffers under a 20 Mbit/s ceiling passes 5 Mbit/s with this set and the
@@ -838,10 +839,13 @@
  * The vendor leaves it clear, and so does this driver until a port is shaped.
  */
 #define   PPE_AC_FORCE_AC_EN		BIT(2)
+#define   PPE_AC_COLOR_AWARE		BIT(3)
 #define   PPE_AC_GRP_ID			GENMASK(5, 4)
 #define   PPE_AC_SHARED_DYNAMIC		BIT(17)
 #define   PPE_AC_SHARED_WEIGHT		GENMASK(20, 18)
 #define   PPE_AC_SHARED_CEILING		GENMASK(31, 21)
+/* W1: how far below the limit a green frame starts to be dropped early. */
+#define   PPE_AC_GAP_GRN_MIN		GENMASK(10, 0)
 #define   PPE_AC_GRN_RESUME_OFF		GENMASK(23, 13)
 
 #define PPE_QM_AC_MUL_W0(i)		(PPE_QM_BASE + 0x4a000 + (i) * 0x10)
@@ -1030,16 +1034,35 @@ struct ppe_class_shaper {
 	u64 rate_bps;
 };
 
+/* An offloaded red: the port's unicast queues it holds, and the counters its
+ * last stats reads saw.
+ */
+struct ppe_red {
+	u32 handle;
+	u8 first;
+	u8 count;
+	u64 base_bytes;
+	u32 base_pkts;
+	u32 base_drops;
+	u32 base_backlog;
+	u32 base_early;
+	u32 base_pdrop;
+};
+
+/* One red per band of an offloaded ets or prio, and one for the whole port. */
+#define PPE_RED_SCOPES			4
+
 /* What a port's offloaded tbf was given, so that a stats read can be a delta and
  * its queues can be resized without the rate being asked for again.
  */
 struct ppe_port_shaper {
 	u32 tbf_handle;
 	u32 bands_handle;
-	u32 band_tbf_handle;
+	struct ppe_red band_tbf;
 	u32 limit;
 	u64 rate_bps;
 	u64 queue_rate[PPE_QOS_MAX_PRI + 1];
+	struct ppe_red red[PPE_RED_SCOPES];
 	u64 base_bytes;
 	u32 base_pkts;
 	u32 base_drops;
@@ -1076,6 +1099,11 @@ struct qca_ppe_priv {
 	u16 mirror_ref[2];
 	u8 mirror_dir_ref[QCA_PPE_MAX_PORTS][2];
 	struct ppe_port_shaper shaper[QCA_PPE_MAX_PORTS];
+	/* A red's static limit and early drop gap per unicast queue, in
+	 * buffers; a limit of zero is a queue with no red.
+	 */
+	u16 red_max[PPE_L0_UCAST_QUEUES];
+	u16 red_gap[PPE_L0_UCAST_QUEUES];
 	struct dentry *debugfs;
 	struct devlink_region *regions[3];
 	DECLARE_BITMAP(vsi_bitmap, PPE_VSI_MAX);
