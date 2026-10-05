@@ -2809,6 +2809,7 @@ static const struct dsa_switch_ops qca_ppe_ops = {
 	.port_setup_tc		= qca_ppe_setup_tc,
 	.cls_flower_add		= qca_ppe_cls_flower_add,
 	.cls_flower_del		= qca_ppe_cls_flower_del,
+	.cls_flower_stats	= qca_ppe_cls_flower_stats,
 	.get_rxnfc		= qca_ppe_get_rxnfc,
 	.set_rxnfc		= qca_ppe_set_rxnfc,
 	.port_mirror_add	= qca_ppe_port_mirror_add,

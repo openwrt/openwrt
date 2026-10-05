@@ -620,6 +620,11 @@
  */
 #define PPE_ACL_METER_CRDT(i)		(PPE_POLICER_BASE + 0x8000 + (i) * 0x10)
 
+/* Green, yellow and red counters per meter, laid out like PPE_ACL_CNT. */
+#define PPE_ACL_METER_CNT(i, c)		(PPE_POLICER_BASE + 0x10000 + \
+					 ((i) * 3 + (c)) * 0x10)
+#define   PPE_METER_CNT_RED		2
+
 #define PPE_PORT_METER_W0(p)		(PPE_POLICER_BASE + 0xc000 + (p) * 0x10)
 #define   PPE_METER_EN			BIT(0)
 #define   PPE_METER_FRAME_TYPE		GENMASK(6, 2)
@@ -1192,6 +1197,8 @@ int qca_ppe_cls_flower_add(struct dsa_switch *ds, int port,
 			   struct flow_cls_offload *cls, bool ingress);
 int qca_ppe_cls_flower_del(struct dsa_switch *ds, int port,
 			   struct flow_cls_offload *cls, bool ingress);
+int qca_ppe_cls_flower_stats(struct dsa_switch *ds, int port,
+			     struct flow_cls_offload *cls, bool ingress);
 int qca_ppe_set_rxnfc(struct dsa_switch *ds, int port,
 		      struct ethtool_rxnfc *nfc);
 int qca_ppe_get_rxnfc(struct dsa_switch *ds, int port,
