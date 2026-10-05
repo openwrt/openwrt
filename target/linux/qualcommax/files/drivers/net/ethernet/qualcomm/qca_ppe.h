@@ -16,7 +16,8 @@
 
 #define QCA_PPE_MAX_PORTS		8
 #define QCA_PPE_CPU_PORT		0
-#define QCA_PPE_MAX_BRIDGES		8
+/* One VSI per bridge; VSI 0 carries the standalone ports. */
+#define QCA_PPE_MAX_BRIDGES		(PPE_VSI_MAX - 1)
 
 /* --- Global --- */
 #define PPE_SWITCH_ID			0x0
