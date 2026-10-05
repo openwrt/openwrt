@@ -476,12 +476,6 @@ static int ppe_acl_parse_key(struct flow_rule *rule,
 			return -EOPNOTSUPP;
 		}
 
-		/* The slice compares the id and the priority; the tag's
-		 * drop-eligible bit has no compare of its own. Only ethtool
-		 * presents a mask for it, and it does so by masking the whole
-		 * tci rather than by naming the bit, so a filter is not
-		 * refused for one.
-		 */
 		s = ppe_acl_slice_get(slice, &n, PPE_ACL_TYPE_VLAN);
 		if (match.mask->vlan_id) {
 			s->key[0] |= FIELD_PREP(PPE_ACL_CVID,
@@ -494,6 +488,11 @@ static int ppe_acl_parse_key(struct flow_rule *rule,
 						match.key->vlan_priority);
 			s->mask[0] |= FIELD_PREP(PPE_ACL_CPCP,
 						 match.mask->vlan_priority);
+		}
+		if (match.mask->vlan_dei) {
+			if (match.key->vlan_dei)
+				s->key[0] |= PPE_ACL_CDEI;
+			s->mask[0] |= PPE_ACL_CDEI;
 		}
 		s->key[1] |= FIELD_PREP(PPE_ACL_CTAG_FMT, PPE_ACL_TAG_TAGGED) |
 			     FIELD_PREP(PPE_ACL_STAG_FMT, PPE_ACL_TAG_UNTAGGED);
