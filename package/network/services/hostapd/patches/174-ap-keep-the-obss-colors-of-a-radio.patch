@@ -268,7 +268,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	default:
 --- a/src/ap/drv_callbacks.c
 +++ b/src/ap/drv_callbacks.c
-@@ -2524,6 +2524,8 @@ static void hostapd_event_color_change(s
+@@ -2548,6 +2548,8 @@ static void hostapd_event_color_change(s
  			hostapd_cleanup_cca_params(bss);
  		}
  	}
@@ -277,7 +277,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
  #endif  /* CONFIG_IEEE80211AX */
  
-@@ -2944,6 +2946,8 @@ void wpa_supplicant_event(void *ctx, enu
+@@ -2969,6 +2971,8 @@ void wpa_supplicant_event(void *ctx, enu
  					data->bss_color_collision.link_id);
  		wpa_printf(MSG_DEBUG, "BSS color collision on %s",
  			   hapd->conf->iface);

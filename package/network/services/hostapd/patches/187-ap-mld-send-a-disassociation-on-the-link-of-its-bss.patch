@@ -21,7 +21,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/src/ap/ap_drv_ops.c
 +++ b/src/ap/ap_drv_ops.c
-@@ -922,10 +922,9 @@ int hostapd_drv_sta_disassoc(struct host
+@@ -930,10 +930,9 @@ int hostapd_drv_sta_disassoc(struct host
  	if (hapd->conf->mld_ap) {
  		struct sta_info *sta = ap_get_sta(hapd, addr);
  
