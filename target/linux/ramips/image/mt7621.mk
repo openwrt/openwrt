@@ -120,8 +120,14 @@ define Build/haier-sim_wr1800k-factory
   mkdir -p "$@.tmp"
   mv "$@" "$@.tmp/UploadBrush-bin.img"
   $(MKHASH) md5 "$@.tmp/UploadBrush-bin.img" | head -c32 > "$@.tmp/check_MD5.txt"
-  $(TAR) -czf "$@.tmp.tgz" -C "$@.tmp" UploadBrush-bin.img check_MD5.txt
-  $(STAGING_DIR_HOST)/bin/openssl aes-256-cbc -e -salt -in "$@.tmp.tgz" -out "$@" -k QiLunSmartWL
+  $(TAR) -cf - -C "$@.tmp" --numeric-owner --owner=0 --group=0 --mode=go-w \
+	$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") \
+	UploadBrush-bin.img check_MD5.txt | gzip -n > "$@.tmp.tgz"
+  # Derive the salt from the content instead of a random one, the firmware
+  # reads it from the header
+  $(STAGING_DIR_HOST)/bin/openssl aes-256-cbc -e -salt \
+	-S $$($(MKHASH) md5 "$@.tmp.tgz" | head -c16) \
+	-in "$@.tmp.tgz" -out "$@" -k QiLunSmartWL
   printf %32s $(DEVICE_MODEL) >> "$@"
   rm -rf "$@.tmp" "$@.tmp.tgz"
 endef
