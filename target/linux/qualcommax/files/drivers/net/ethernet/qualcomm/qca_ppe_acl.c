@@ -949,6 +949,24 @@ static int ppe_acl_parse_action(struct qca_ppe_priv *priv,
 			act[3] |= PPE_ACL_QID_EN |
 				  FIELD_PREP(PPE_ACL_QID, a->queue.index);
 			break;
+		case FLOW_ACTION_RX_QUEUE_MAPPING:
+			/* A receive queue of the port is a queue of the CPU
+			 * port, so the frame is trapped and queued there.
+			 */
+			if (a->rx_queue >= PPE_CPU_UCAST_QUEUES) {
+				NL_SET_ERR_MSG_MOD(extack, "no such receive queue");
+				return -EOPNOTSUPP;
+			}
+			if (fwd) {
+				NL_SET_ERR_MSG_MOD(extack, "one forward command per rule");
+				return -EOPNOTSUPP;
+			}
+			fwd = true;
+			act[0] |= PPE_ACL_DEST_CHANGE_EN |
+				  FIELD_PREP(PPE_ACL_FWD_CMD, PPE_ACL_FWD_RDT_CPU);
+			act[3] |= PPE_ACL_QID_EN |
+				  FIELD_PREP(PPE_ACL_QID, a->rx_queue);
+			break;
 		case FLOW_ACTION_VLAN_POP:
 			/* The format bit beside the change enable is the whole
 			 * choice: the frame leaves without the tag.
