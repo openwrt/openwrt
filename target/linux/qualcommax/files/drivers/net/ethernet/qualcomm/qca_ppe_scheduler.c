@@ -2128,40 +2128,105 @@ static int ppe_band_graft(struct ppe_port_shaper *sh, u32 handle, u8 band,
 	return 0;
 }
 
+/* The two lower bands as DRR under a strict top band. They share one L1 node
+ * as two priorities, and a weight per queue would split a band's share by how
+ * many of its hash queues are busy, so the middle band moves to one of the
+ * two spare L1 nodes of the four qca-ssdk's port_scheduler_resource gives a
+ * port, at the bottom band's priority: the two nodes then share the port's
+ * DRR list and the quanta become their weights. Zero weights move it back.
+ */
+static void ppe_bands_drr_set(struct qca_ppe_priv *priv,
+			      const struct port_l0_params *p, u32 mid, u32 low)
+{
+	u32 max_q = max(mid, low), spare = p->sp_base + 2;
+	u32 wm = 1, wl = 1;
+	int i;
+
+	if (mid) {
+		wm = max_t(u32, 1, DIV_ROUND_CLOSEST_ULL((u64)mid *
+			   FIELD_MAX(PPE_L1_C_DRR_WT), max_q));
+		wl = max_t(u32, 1, DIV_ROUND_CLOSEST_ULL((u64)low *
+			   FIELD_MAX(PPE_L1_C_DRR_WT), max_q));
+
+		regmap_write(priv->regmap, PPE_TM_L1_FLOW_MAP(spare),
+			     FIELD_PREP(PPE_L1_SP_ID, p->port) |
+			     FIELD_PREP(PPE_L1_C_DRR_WT, wm) |
+			     FIELD_PREP(PPE_L1_E_DRR_WT, wm));
+		regmap_write(priv->regmap, PPE_TM_L1_PORT_MAP(spare),
+			     FIELD_PREP(PPE_L1_PORT_NUM, p->port));
+	}
+
+	regmap_update_bits(priv->regmap, PPE_TM_L1_FLOW_MAP(p->sp_base),
+			   PPE_L1_C_DRR_WT | PPE_L1_E_DRR_WT,
+			   FIELD_PREP(PPE_L1_C_DRR_WT, wl) |
+			   FIELD_PREP(PPE_L1_E_DRR_WT, wl));
+
+	for (i = PPE_FLOW_SPREAD_QUEUES; i < 2 * PPE_FLOW_SPREAD_QUEUES; i++) {
+		u8 pri = mid ? 0 : PPE_FLOW_SPREAD_QUEUES;
+		struct l0_cfg c = {
+			.queue = p->ucast_base + i,
+			.port = p->port,
+			.sp = mid ? spare : p->sp_base,
+			.cpri = pri,
+			.cdrr = p->cdrr_base + i,
+			.epri = pri,
+			.edrr = p->cdrr_base + i,
+		};
+
+		ppe_l0_entry_write(priv, &c);
+	}
+}
+
 int qca_ppe_setup_tc_ets(struct qca_ppe_priv *priv, int port,
 			 struct tc_ets_qopt_offload *qopt)
 {
+	const u32 *quanta = qopt->replace_params.quanta;
 	struct ppe_port_shaper *sh = &priv->shaper[port];
+	const struct port_l0_params *p = NULL;
 	unsigned int i;
+	int ret;
 
 	if (qopt->parent != TC_H_ROOT)
 		return -EOPNOTSUPP;
 
+	for (i = 0; i < ARRAY_SIZE(port_l0); i++)
+		if (port_l0[i].port == port)
+			p = &port_l0[i];
+
 	switch (qopt->command) {
 	case TC_ETS_REPLACE:
-		/* sch_ets gives every band a quantum whether the user asked
-		 * for one or not, so a non-zero quantum is not a request. Bands
-		 * that differ are: refuse those, because the bands are strict
-		 * and the only round robin under them is between a band's hash
-		 * buckets, which no priority selects.
+		/* The top band's node also carries the multicast queues and
+		 * cannot join a DRR list, so it must be strict. Under it the
+		 * lower two bands are strict or DRR, at any quanta.
 		 */
-		for (i = 1; i < qopt->replace_params.bands; i++) {
-			if (qopt->replace_params.quanta[i] ==
-			    qopt->replace_params.quanta[0])
-				continue;
-
+		if (quanta[0]) {
 			dev_err(priv->ds.dev,
-				"port %d: band %u asks for a weight of its own; these bands are strict\n",
-				port, i);
+				"port %d: the top band has to be strict; only the lower two bands can be DRR\n",
+				port);
 			return -EOPNOTSUPP;
 		}
 
-		return ppe_qos_bands_set(priv, port, qopt->handle,
-					 qopt->replace_params.bands,
-					 qopt->replace_params.priomap);
+		ret = ppe_qos_bands_set(priv, port, qopt->handle,
+					qopt->replace_params.bands,
+					qopt->replace_params.priomap);
+		if (ret || !p)
+			return ret;
+
+		if (!quanta[0] && quanta[1]) {
+			ppe_bands_drr_set(priv, p, quanta[1], quanta[2]);
+			sh->drr_handle = qopt->handle;
+		} else if (sh->drr_handle) {
+			ppe_bands_drr_set(priv, p, 0, 0);
+			sh->drr_handle = 0;
+		}
+		return 0;
 	case TC_ETS_DESTROY:
 		if (qopt->handle == sh->bands_handle)
 			sh->bands_handle = 0;
+		if (p && qopt->handle == sh->drr_handle) {
+			ppe_bands_drr_set(priv, p, 0, 0);
+			sh->drr_handle = 0;
+		}
 		return 0;
 	case TC_ETS_STATS:
 		if (!sh->bands_handle || qopt->handle != sh->bands_handle)
