@@ -777,6 +777,9 @@ struct an8855_priv {
 	u8 mirror_tx;
 	u8 port_isolated_map;
 
+	/* The PVID the bridge asked for, kept while the port is VLAN-unaware */
+	u16 pvid_bridge[AN8855_NUM_PORTS];
+
 	bool phy_require_calib;
 };
 
