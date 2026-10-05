@@ -1589,6 +1589,54 @@ int qca_ppe_port_del_dscp_prio(struct dsa_switch *ds, int port, u8 dscp,
 	return 0;
 }
 
+/* The PCP table is shared the same way. DCB carries the DEI in bit 3, the
+ * table is indexed by PCP << 1 | DEI. Its default is the identity map
+ * ppe_qos_init() writes, so a deleted entry goes back to that.
+ */
+#define PPE_PCP_QOS_IDX(pcp)	((((pcp) & 7) << 1) | ((pcp) >> 3))
+
+int qca_ppe_port_get_pcp_prio(struct dsa_switch *ds, int port, u8 pcp)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+	u32 val;
+
+	regmap_read(priv->regmap,
+		    PPE_PCP_QOS_GROUP(PPE_QOS_GROUP, PPE_PCP_QOS_IDX(pcp)), &val);
+
+	return FIELD_GET(PPE_QOS_INFO_PRI, val);
+}
+
+int qca_ppe_port_add_pcp_prio(struct dsa_switch *ds, int port, u8 pcp,
+			      u8 prio)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+
+	if (prio > PPE_QOS_MAX_PRI)
+		return -ERANGE;
+
+	regmap_update_bits(priv->regmap,
+			   PPE_PCP_QOS_GROUP(PPE_QOS_GROUP, PPE_PCP_QOS_IDX(pcp)),
+			   PPE_QOS_INFO_PRI, FIELD_PREP(PPE_QOS_INFO_PRI, prio));
+
+	return 0;
+}
+
+int qca_ppe_port_del_pcp_prio(struct dsa_switch *ds, int port, u8 pcp,
+			      u8 prio)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+
+	if (qca_ppe_port_get_pcp_prio(ds, port, pcp) != prio)
+		return 0;
+
+	regmap_update_bits(priv->regmap,
+			   PPE_PCP_QOS_GROUP(PPE_QOS_GROUP, PPE_PCP_QOS_IDX(pcp)),
+			   PPE_QOS_INFO_PRI,
+			   FIELD_PREP(PPE_QOS_INFO_PRI, pcp & 7));
+
+	return 0;
+}
+
 /* Which classifier's internal priority wins when several offer one: the flow
  * table first, then the CPU preheader, ACL, DSCP and last a VLAN's PCP.
  */
