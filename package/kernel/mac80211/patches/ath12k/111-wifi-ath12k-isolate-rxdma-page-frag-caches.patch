@@ -1,0 +1,253 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nikolai Semendiaev <agent00791@gmail.com>
+Date: Tue, 6 Oct 2026 01:42:32 +0600
+Subject: [PATCH] wifi: ath12k: use private page-frag caches for RXDMA rings
+
+Based on Mark Ruvald Pedersen's ath11k per-ring page-frag isolation.
+Regular RX and monitor buffers currently share per-CPU caches with other
+network users. Long-lived ring fragments can retain sparsely populated
+32-KiB backing pages even while ring occupancy remains constant.
+
+Give each regular and monitor RXDMA ring a private page_frag_cache.
+Preserve initial skb headroom, allocation flags and DMA
+map/unmap operations. Existing refill SRNG locks serialize the private
+caches.
+Drain monitor caches after their IDR-owned buffers are released and the
+regular RX cache after its cookie-conversion descriptors are released.
+Quiesce external IRQ/NAPI processing before non-reset crash teardown;
+the reset worker already does so. The IRQ lifecycle patch is required.
+
+Keep the original series' DMA-alignment correction: skb_pull() cannot
+advance an empty skb, so use skb_reserve() before posting each buffer.
+Reserve extra alignment space for monitor status buffers so that their
+DMA capacity remains at least RX_MON_STATUS_BUF_SIZE after alignment.
+RX ring capacities and CE allocation remain unchanged.
+
+Link: https://lore.kernel.org/linux-wireless/20260719215817.2468580-4-wabsie@gmail.com/
+Signed-off-by: Nikolai Semendiaev <agent00791@gmail.com>
+---
+--- a/drivers/net/wireless/ath/ath12k/core.c
++++ b/drivers/net/wireless/ath/ath12k/core.c
+@@ -1386,6 +1386,9 @@ static int ath12k_core_reconfigure_on_cr
+ {
+ 	int ret, total_vdev;
+ 
++	if (!ab->is_reset)
++		ath12k_hif_irq_disable(ab);
++
+ 	mutex_lock(&ab->core_lock);
+ 	ath12k_link_sta_rhash_tbl_destroy(ab);
+ 	ath12k_thermal_unregister(ab);
+--- a/drivers/net/wireless/ath/ath12k/dp.h
++++ b/drivers/net/wireless/ath/ath12k/dp.h
+@@ -10,6 +10,7 @@
+ #include "hw.h"
+ #include "dp_htt.h"
+ #include "dp_cmn.h"
++#include <linux/mm_types.h>
+ #include <linux/rhashtable.h>
+ 
+ #define MAX_RXDMA_PER_PDEV     2
+@@ -41,6 +42,7 @@ struct dp_srng {
+ 
+ struct dp_rxdma_mon_ring {
+ 	struct dp_srng refill_buf_ring;
++	struct page_frag_cache frag_cache;
+ 	struct idr bufs_idr;
+ 	/* Protects bufs_idr */
+ 	spinlock_t idr_lock;
+@@ -49,6 +51,7 @@ struct dp_rxdma_mon_ring {
+ 
+ struct dp_rxdma_ring {
+ 	struct dp_srng refill_buf_ring;
++	struct page_frag_cache frag_cache;
+ 	int bufs_max;
+ };
+ 
+--- a/drivers/net/wireless/ath/ath12k/dp.c
++++ b/drivers/net/wireless/ath/ath12k/dp.c
+@@ -4,6 +4,7 @@
+  * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+  */
+ 
++#include <linux/page_frag_cache.h>
+ #include "core.h"
+ #include "dp_tx.h"
+ #include "hif.h"
+@@ -1015,6 +1016,8 @@ static void ath12k_dp_cc_cleanup(struct
+ 
+ 	spin_unlock_bh(&dp->rx_desc_lock);
+ 
++	page_frag_cache_drain(&dp->rx_refill_buf_ring.frag_cache);
++
+ 	/* TX Descriptor cleanup */
+ 	for (i = 0; i < ATH12K_HW_MAX_QUEUES; i++) {
+ 		spin_lock_bh(&dp->tx_desc_lock[i]);
+--- a/drivers/net/wireless/ath/ath12k/dp_rx.c
++++ b/drivers/net/wireless/ath/ath12k/dp_rx.c
+@@ -5,9 +5,12 @@
+  */
+ 
+ #include <linux/fips.h>
++#include <linux/gfp.h>
+ #include <linux/ieee80211.h>
+ #include <linux/kernel.h>
++#include <linux/page_frag_cache.h>
+ #include <linux/skbuff.h>
++#include <net/sock.h>
+ #include "core.h"
+ #include "debug.h"
+ #include "hw.h"
+@@ -68,6 +71,35 @@ static void ath12k_dp_rx_enqueue_free(st
+ 	spin_unlock_bh(&dp->rx_desc_lock);
+ }
+ 
++struct sk_buff *ath12k_dp_rx_alloc_skb(struct page_frag_cache *cache,
++				       unsigned int len)
++{
++	gfp_t gfp_mask = GFP_ATOMIC | __GFP_NOWARN;
++	struct sk_buff *skb;
++	void *data;
++
++	len += NET_SKB_PAD;
++	len = SKB_HEAD_ALIGN(len);
++
++	if (sk_memalloc_socks())
++		gfp_mask |= __GFP_MEMALLOC;
++
++	/* Refill paths serialize the per-ring cache with the SRNG lock. */
++	data = page_frag_alloc(cache, len, gfp_mask);
++	if (!data)
++		return NULL;
++
++	skb = build_skb(data, len);
++	if (!skb) {
++		page_frag_free(data);
++		return NULL;
++	}
++
++	skb_reserve(skb, NET_SKB_PAD);
++
++	return skb;
++}
++
+ /* Returns number of Rx buffers replenished */
+ int ath12k_dp_rx_bufs_replenish(struct ath12k_dp *dp,
+ 				struct dp_rxdma_ring *rx_ring,
+@@ -114,16 +146,17 @@ int ath12k_dp_rx_bufs_replenish(struct a
+ 	}
+ 
+ 	while (num_remain > 0) {
+-		skb = dev_alloc_skb(DP_RX_BUFFER_SIZE +
+-				    DP_RX_BUFFER_ALIGN_SIZE);
++		skb = ath12k_dp_rx_alloc_skb(&rx_ring->frag_cache,
++					     DP_RX_BUFFER_SIZE +
++					     DP_RX_BUFFER_ALIGN_SIZE);
+ 		if (!skb)
+ 			break;
+ 
+ 		if (!IS_ALIGNED((unsigned long)skb->data,
+ 				DP_RX_BUFFER_ALIGN_SIZE)) {
+-			skb_pull(skb,
+-				 PTR_ALIGN(skb->data, DP_RX_BUFFER_ALIGN_SIZE) -
+-				 skb->data);
++			skb_reserve(skb,
++				    PTR_ALIGN(skb->data, DP_RX_BUFFER_ALIGN_SIZE) -
++				    skb->data);
+ 		}
+ 
+ 		paddr = dma_map_single(dp->dev, skb->data,
+@@ -193,6 +226,8 @@ static int ath12k_dp_rxdma_mon_buf_ring_
+ 	idr_destroy(&rx_ring->bufs_idr);
+ 	spin_unlock_bh(&rx_ring->idr_lock);
+ 
++	page_frag_cache_drain(&rx_ring->frag_cache);
++
+ 	return 0;
+ }
+ 
+--- a/drivers/net/wireless/ath/ath12k/dp_rx.h
++++ b/drivers/net/wireless/ath/ath12k/dp_rx.h
+@@ -232,6 +232,8 @@ int ath12k_dp_rx_bufs_replenish(struct a
+ 				struct dp_rxdma_ring *rx_ring,
+ 				struct list_head *used_list,
+ 				int req_entries);
++struct sk_buff *ath12k_dp_rx_alloc_skb(struct page_frag_cache *cache,
++				       unsigned int len);
+ int ath12k_dp_rx_pdev_mon_attach(struct ath12k *ar);
+ int ath12k_dp_rx_peer_frag_setup(struct ath12k *ar, const u8 *peer_mac, int vdev_id);
+ 
+--- a/drivers/net/wireless/ath/ath12k/dp_mon.c
++++ b/drivers/net/wireless/ath/ath12k/dp_mon.c
+@@ -5,6 +5,7 @@
+  */
+ 
+ #include "dp_mon.h"
++#include "dp_rx.h"
+ #include "debug.h"
+ #include "dp_tx.h"
+ #include "peer.h"
+@@ -44,15 +45,17 @@ struct sk_buff
+ 	struct sk_buff *skb;
+ 	dma_addr_t paddr;
+ 
+-	skb = dev_alloc_skb(RX_MON_STATUS_BUF_SIZE);
++	skb = ath12k_dp_rx_alloc_skb(&rx_ring->frag_cache,
++				     RX_MON_STATUS_BUF_SIZE +
++				     RX_MON_STATUS_BUF_ALIGN);
+ 
+ 	if (!skb)
+ 		goto fail_alloc_skb;
+ 
+ 	if (!IS_ALIGNED((unsigned long)skb->data,
+ 			RX_MON_STATUS_BUF_ALIGN)) {
+-		skb_pull(skb, PTR_ALIGN(skb->data, RX_MON_STATUS_BUF_ALIGN) -
+-			 skb->data);
++		skb_reserve(skb, PTR_ALIGN(skb->data, RX_MON_STATUS_BUF_ALIGN) -
++			    skb->data);
+ 	}
+ 
+ 	paddr = dma_map_single(ab->dev, skb->data,
+@@ -667,14 +670,16 @@ int ath12k_dp_mon_buf_replenish(struct a
+ 	ath12k_hal_srng_access_begin(ab, srng);
+ 
+ 	while (req_entries > 0) {
+-		skb = dev_alloc_skb(DP_RX_BUFFER_SIZE + DP_RX_BUFFER_ALIGN_SIZE);
++		skb = ath12k_dp_rx_alloc_skb(&buf_ring->frag_cache,
++					     DP_RX_BUFFER_SIZE +
++					     DP_RX_BUFFER_ALIGN_SIZE);
+ 		if (unlikely(!skb))
+ 			goto fail_alloc_skb;
+ 
+ 		if (!IS_ALIGNED((unsigned long)skb->data, DP_RX_BUFFER_ALIGN_SIZE)) {
+-			skb_pull(skb,
+-				 PTR_ALIGN(skb->data, DP_RX_BUFFER_ALIGN_SIZE) -
+-				 skb->data);
++			skb_reserve(skb,
++				    PTR_ALIGN(skb->data, DP_RX_BUFFER_ALIGN_SIZE) -
++				    skb->data);
+ 		}
+ 
+ 		paddr = dma_map_single(ab->dev, skb->data,
+@@ -756,15 +761,17 @@ int ath12k_dp_mon_status_bufs_replenish(
+ 	num_remain = req_entries;
+ 
+ 	while (num_remain > 0) {
+-		skb = dev_alloc_skb(RX_MON_STATUS_BUF_SIZE);
++		skb = ath12k_dp_rx_alloc_skb(&rx_ring->frag_cache,
++					     RX_MON_STATUS_BUF_SIZE +
++					     RX_MON_STATUS_BUF_ALIGN);
+ 		if (!skb)
+ 			break;
+ 
+ 		if (!IS_ALIGNED((unsigned long)skb->data,
+ 				RX_MON_STATUS_BUF_ALIGN)) {
+-			skb_pull(skb,
+-				 PTR_ALIGN(skb->data, RX_MON_STATUS_BUF_ALIGN) -
+-				 skb->data);
++			skb_reserve(skb,
++				    PTR_ALIGN(skb->data, RX_MON_STATUS_BUF_ALIGN) -
++				    skb->data);
+ 		}
+ 
+ 		paddr = dma_map_single(ab->dev, skb->data,
