@@ -621,18 +621,23 @@ static void ppe_qm_init(struct qca_ppe_priv *priv)
  * admits it against one of four shared groups, on egress the queue manager
  * holds it against one of four admission control groups, and both count in
  * PPE_BM_BUF_SIZE buffers. Those eight groups are the devlink pools, ingress
- * first: their limits are what the two inits above write once at probe, and
- * until now neither could be read back, let alone moved, without a rebuild.
+ * first.
  *
- * Nothing else in devlink's shared buffer model fits this hardware. A per-port
- * threshold would have to name the BM port a switch port sits behind, and the
- * vendor says two contradictory things about that - its own init treats BM
- * ports 8 to 13 as the physical ones, while its per-port counter API indexes
- * the very same tables with the switch port number. Occupancy is reported by
- * devlink as a current and a maximum together and this hardware keeps no
- * watermark, so the live counts the debugfs `bm` and `queues` files already
- * read are the current half and there is no honest second half.
+ * A switch port's ingress is one BM port, PPE_BM_PHY_START + port - 1 as
+ * qca-ssdk's PHY_PORT_TO_BM_PORT() has it and as the TX pause setup uses it,
+ * with one group and one dynamic weight: that is its single ingress traffic
+ * class and its port threshold. Its egress classes are its unicast queues,
+ * each in one group with a weight of its own, so a port has no egress
+ * threshold. Occupancy is read at a snapshot; the counters report only the
+ * current value, so the maximum is the largest value a snapshot has seen.
  */
+static int ppe_port_bm(struct qca_ppe_priv *priv, int port)
+{
+	int bm = PPE_BM_PHY_START + port - 1;
+
+	return port && bm <= priv->data->bm_phy_end ? bm : -EOPNOTSUPP;
+}
+
 int qca_ppe_devlink_sb_setup(struct dsa_switch *ds)
 {
 	struct qca_ppe_priv *priv = ds_to_priv(ds);
@@ -643,7 +648,237 @@ int qca_ppe_devlink_sb_setup(struct dsa_switch *ds)
 	return devlink_sb_register(ds->devlink, PPE_DEVLINK_SB,
 				   priv->data->qm_total_buf * PPE_BM_BUF_SIZE,
 				   PPE_BM_SHARED_GROUPS,
-				   FIELD_MAX(PPE_AC_GRP_ID) + 1, 0, 0);
+				   FIELD_MAX(PPE_AC_GRP_ID) + 1, 1,
+				   PPE_SB_EGRESS_TCS);
+}
+
+/* A pool the port is not bound to reads as a threshold of zero; devlink dumps
+ * every port against every pool and fails the whole dump on an error.
+ */
+int qca_ppe_devlink_sb_port_pool_get(struct dsa_switch *ds, int port,
+				     unsigned int sb_index, u16 pool_index,
+				     u32 *p_threshold)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+	int bm = ppe_port_bm(priv, port);
+	u32 grp, w[2];
+
+	*p_threshold = 0;
+	if (bm < 0 || pool_index >= PPE_BM_SHARED_GROUPS)
+		return 0;
+
+	regmap_read(priv->regmap, PPE_BM_GROUP_ID(bm), &grp);
+	/* The entry is staged: a word read alone returns another entry's. */
+	regmap_bulk_read(priv->regmap, PPE_BM_PORT_FC_W0(bm), w, 2);
+	if (grp == pool_index)
+		*p_threshold = FIELD_GET(PPE_BM_WEIGHT, w[1]);
+
+	return 0;
+}
+
+int qca_ppe_devlink_sb_port_pool_set(struct dsa_switch *ds, int port,
+				     unsigned int sb_index, u16 pool_index,
+				     u32 threshold,
+				     struct netlink_ext_ack *extack)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+	int bm = ppe_port_bm(priv, port);
+	u32 grp, w[2];
+
+	if (bm < 0 || pool_index >= PPE_BM_SHARED_GROUPS) {
+		NL_SET_ERR_MSG_MOD(extack, "only a switch port's ingress has a port threshold");
+		return -EOPNOTSUPP;
+	}
+
+	regmap_read(priv->regmap, PPE_BM_GROUP_ID(bm), &grp);
+	if (grp != pool_index) {
+		NL_SET_ERR_MSG_MOD(extack, "the port is not bound to this pool");
+		return -EINVAL;
+	}
+
+	if (threshold > FIELD_MAX(PPE_BM_WEIGHT)) {
+		NL_SET_ERR_MSG_MOD(extack, "the dynamic weight is 0 to 7");
+		return -EINVAL;
+	}
+
+	/* The entry commits on its second word, so both go back together. */
+	regmap_bulk_read(priv->regmap, PPE_BM_PORT_FC_W0(bm), w, 2);
+	w[1] &= ~PPE_BM_WEIGHT;
+	w[1] |= FIELD_PREP(PPE_BM_WEIGHT, threshold);
+	regmap_write(priv->regmap, PPE_BM_PORT_FC_W0(bm), w[0]);
+	regmap_write(priv->regmap, PPE_BM_PORT_FC_W1(bm), w[1]);
+
+	return 0;
+}
+
+int qca_ppe_devlink_sb_tc_pool_bind_get(struct dsa_switch *ds, int port,
+					unsigned int sb_index, u16 tc_index,
+					enum devlink_sb_pool_type pool_type,
+					u16 *p_pool_index, u32 *p_threshold)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+	u32 val;
+
+	if (pool_type == DEVLINK_SB_POOL_TYPE_EGRESS) {
+		regmap_read(priv->regmap,
+			    PPE_QM_AC_UNI_W0(port_queue_base[port] + tc_index),
+			    &val);
+		*p_pool_index = PPE_BM_SHARED_GROUPS +
+				FIELD_GET(PPE_AC_GRP_ID, val);
+		*p_threshold = FIELD_GET(PPE_AC_SHARED_WEIGHT, val);
+		return 0;
+	}
+
+	*p_pool_index = 0;
+	*p_threshold = 0;
+	if (ppe_port_bm(priv, port) < 0)
+		return 0;
+
+	regmap_read(priv->regmap, PPE_BM_GROUP_ID(ppe_port_bm(priv, port)),
+		    &val);
+	*p_pool_index = val;
+
+	return qca_ppe_devlink_sb_port_pool_get(ds, port, sb_index, val,
+						p_threshold);
+}
+
+/* The driver assigns the queues' groups itself - a shaped port's queues move
+ * to a group of their own - so only the ingress binding can be moved.
+ */
+int qca_ppe_devlink_sb_tc_pool_bind_set(struct dsa_switch *ds, int port,
+					unsigned int sb_index, u16 tc_index,
+					enum devlink_sb_pool_type pool_type,
+					u16 pool_index, u32 threshold,
+					struct netlink_ext_ack *extack)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+	int bm = ppe_port_bm(priv, port);
+
+	if (pool_type == DEVLINK_SB_POOL_TYPE_EGRESS || bm < 0) {
+		NL_SET_ERR_MSG_MOD(extack, "only a switch port's ingress class can be bound");
+		return -EOPNOTSUPP;
+	}
+
+	if (pool_index >= PPE_BM_SHARED_GROUPS) {
+		NL_SET_ERR_MSG_MOD(extack, "an ingress class binds to an ingress pool");
+		return -EINVAL;
+	}
+
+	if (threshold > FIELD_MAX(PPE_BM_WEIGHT)) {
+		NL_SET_ERR_MSG_MOD(extack, "the dynamic weight is 0 to 7");
+		return -EINVAL;
+	}
+
+	regmap_write(priv->regmap, PPE_BM_GROUP_ID(bm), pool_index);
+
+	return qca_ppe_devlink_sb_port_pool_set(ds, port, sb_index, pool_index,
+						threshold, extack);
+}
+
+static void ppe_sb_occ_take(struct ppe_sb_occ *o, u32 cur)
+{
+	o->cur = cur;
+	o->max = max(o->max, cur);
+}
+
+int qca_ppe_devlink_sb_occ_snapshot(struct dsa_switch *ds,
+				    unsigned int sb_index)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+	int port, tc, bm;
+	u32 val;
+
+	for (port = 0; port < PPE_NUM_PORTS; port++) {
+		bm = ppe_port_bm(priv, port);
+		if (bm >= 0) {
+			regmap_read(priv->regmap, PPE_BM_PORT_CNT(bm), &val);
+			ppe_sb_occ_take(&priv->sb_occ_ing[port],
+					FIELD_GET(PPE_BM_PORT_CNT_VAL, val));
+		}
+		for (tc = 0; tc < PPE_SB_EGRESS_TCS; tc++) {
+			regmap_read(priv->regmap,
+				    PPE_QM_AC_UNI_CNT(port_queue_base[port] + tc),
+				    &val);
+			ppe_sb_occ_take(&priv->sb_occ_eg[port][tc],
+					FIELD_GET(PPE_AC_UNI_PEND_CNT, val));
+		}
+	}
+
+	return 0;
+}
+
+int qca_ppe_devlink_sb_occ_max_clear(struct dsa_switch *ds,
+				     unsigned int sb_index)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+	int port, tc;
+
+	for (port = 0; port < PPE_NUM_PORTS; port++) {
+		priv->sb_occ_ing[port].max = priv->sb_occ_ing[port].cur;
+		for (tc = 0; tc < PPE_SB_EGRESS_TCS; tc++)
+			priv->sb_occ_eg[port][tc].max =
+				priv->sb_occ_eg[port][tc].cur;
+	}
+
+	return 0;
+}
+
+int qca_ppe_devlink_sb_occ_tc_port_bind_get(struct dsa_switch *ds, int port,
+					    unsigned int sb_index, u16 tc_index,
+					    enum devlink_sb_pool_type pool_type,
+					    u32 *p_cur, u32 *p_max)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+	const struct ppe_sb_occ *o;
+
+	if (pool_type == DEVLINK_SB_POOL_TYPE_EGRESS)
+		o = &priv->sb_occ_eg[port][tc_index];
+	else
+		o = &priv->sb_occ_ing[port];
+
+	*p_cur = o->cur * PPE_BM_BUF_SIZE;
+	*p_max = o->max * PPE_BM_BUF_SIZE;
+
+	return 0;
+}
+
+/* A port's share of a pool: its ingress if bound there, or the sum of its
+ * queues in that admission group.
+ */
+int qca_ppe_devlink_sb_occ_port_pool_get(struct dsa_switch *ds, int port,
+					 unsigned int sb_index, u16 pool_index,
+					 u32 *p_cur, u32 *p_max)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+	int bm = ppe_port_bm(priv, port);
+	u32 val, cur = 0, max = 0;
+	int tc;
+
+	if (pool_index < PPE_BM_SHARED_GROUPS) {
+		if (bm >= 0) {
+			regmap_read(priv->regmap, PPE_BM_GROUP_ID(bm), &val);
+			if (val == pool_index) {
+				cur = priv->sb_occ_ing[port].cur;
+				max = priv->sb_occ_ing[port].max;
+			}
+		}
+	} else {
+		for (tc = 0; tc < PPE_SB_EGRESS_TCS; tc++) {
+			regmap_read(priv->regmap,
+				    PPE_QM_AC_UNI_W0(port_queue_base[port] + tc),
+				    &val);
+			if (FIELD_GET(PPE_AC_GRP_ID, val) !=
+			    pool_index - PPE_BM_SHARED_GROUPS)
+				continue;
+			cur += priv->sb_occ_eg[port][tc].cur;
+			max += priv->sb_occ_eg[port][tc].max;
+		}
+	}
+
+	*p_cur = cur * PPE_BM_BUF_SIZE;
+	*p_max = max * PPE_BM_BUF_SIZE;
+
+	return 0;
 }
 
 int qca_ppe_devlink_sb_pool_get(struct dsa_switch *ds, unsigned int sb_index,
