@@ -272,6 +272,9 @@
 #define   PPE_PORT_DEF_CVID		GENMASK(27, 16)
 #define   PPE_PORT_DEF_CVID_EN		BIT(28)
 
+#define PPE_PORT_DEF_PCP(port)		(PPE_IVLAN_BASE + 0x30 + (port) * 0x4)
+#define   PPE_PORT_DEF_CPCP		GENMASK(6, 4)
+
 #define PPE_PORT_VLAN_CFG(port)		(PPE_IVLAN_BASE + 0x50 + (port) * 0x4)
 #define   PPE_VLAN_XLT_MISS_FWD		GENMASK(6, 5)
 
@@ -1598,6 +1601,8 @@ int qca_ppe_port_add_pcp_prio(struct dsa_switch *ds, int port, u8 pcp,
 			      u8 prio);
 int qca_ppe_port_del_pcp_prio(struct dsa_switch *ds, int port, u8 pcp,
 			      u8 prio);
+int qca_ppe_port_get_default_prio(struct dsa_switch *ds, int port);
+int qca_ppe_port_set_default_prio(struct dsa_switch *ds, int port, u8 prio);
 int qca_ppe_port_get_apptrust(struct dsa_switch *ds, int port, u8 *sel,
 			      int *nsel);
 int qca_ppe_port_set_apptrust(struct dsa_switch *ds, int port, const u8 *sel,
