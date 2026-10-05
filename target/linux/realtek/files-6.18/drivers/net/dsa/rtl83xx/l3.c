@@ -66,7 +66,6 @@
 #include <linux/iopoll.h>
 #include <linux/notifier.h>
 #include <linux/of.h>
-#include <linux/rhashtable.h>
 #include <linux/seq_file.h>
 #include <net/arp.h>
 #include <net/fib_notifier.h>
@@ -113,12 +112,6 @@
 #define DEFAULT_MTU 1536
 #define MAX_ROUTER_MACS 64
 #define L3_EGRESS_DMACS 2048
-
-static const struct rhashtable_params otto_l3_route_ht_params = {
-	.key_len     = sizeof(struct in6_addr),
-	.key_offset  = offsetof(struct otto_l3_route, gw_ip),
-	.head_offset = offsetof(struct otto_l3_route, linkage),
-};
 
 struct otto_l3_net_event_work {
 	struct work_struct work;
@@ -1440,29 +1433,18 @@ static int otto_l3_nexthop_update(struct otto_l3_ctrl *ctrl, u8 type, int ifinde
 				  const struct in6_addr *gw, u64 mac, bool valid)
 {
 	struct otto_l3_route *r;
-	bool known;
-
-	/* The lookup runs in the section the rhashtable asks for and ends
-	 * there: on a kernel without preemptible RCU that section is
-	 * preempt_disable(), and every table op below it sleeps on a mutex.
-	 * Only whether the gateway is known leaves that section, so no
-	 * rhashtable pointer outlives it. The routes it would have walked are
-	 * the ones on the driver's own list with that gateway, and the work
-	 * queue that runs this is single threaded, which is what lets the rest
-	 * of the driver walk that list with no lock.
-	 */
-	rcu_read_lock();
-	known = rhltable_lookup(&ctrl->routes, gw, otto_l3_route_ht_params);
-	rcu_read_unlock();
-	if (!known)
-		return -ENOENT;
+	bool known = false;
 
 	list_for_each_entry(r, &ctrl->routes_list, list) {
+		if (!ipv6_addr_equal(&r->gw_ip, gw))
+			continue;
+
+		known = true;
+
 		/* An IPv4 gateway written v4-mapped is a valid IPv6 one, so
-		 * the key alone does not say whose route this is.
+		 * the address alone does not say whose route this is.
 		 */
-		if (r->attr.type != type || r->gw_ifindex != ifindex ||
-		    !ipv6_addr_equal(&r->gw_ip, gw))
+		if (r->attr.type != type || r->gw_ifindex != ifindex)
 			continue;
 
 		if (valid)
@@ -1471,6 +1453,9 @@ static int otto_l3_nexthop_update(struct otto_l3_ctrl *ctrl, u8 type, int ifinde
 			otto_l3_route_trap_hw(ctrl, r);
 	}
 
+	if (!known)
+		return -ENOENT;
+
 	/* An address of one family can be written as an address of the other,
 	 * so a neighbour of the wrong family reaches this far without having
 	 * placed anything, and has nothing to report.
@@ -1478,10 +1463,10 @@ static int otto_l3_nexthop_update(struct otto_l3_ctrl *ctrl, u8 type, int ifinde
 	if (type != ROUTE_TYPE_IP6UC)
 		return 0;
 
-	/* Reporting the offload allocates and can send a netlink message, so it
-	 * waits until the lookup above is over. It takes no lock of its own,
-	 * so unlike the FIB work this path needs no rtnl. The FIB notifier is
-	 * registered on init_net, which is where every route here comes from.
+	/* Reporting the offload allocates and can send a netlink message. It
+	 * takes no lock of its own, so unlike the FIB work this path needs no
+	 * rtnl. The FIB notifier is registered on init_net, which is where
+	 * every route here comes from.
 	 */
 	list_for_each_entry(r, &ctrl->routes_list, list) {
 		bool trap;
@@ -1575,9 +1560,6 @@ static bool otto_l3_route_is_at(struct otto_l3_ctrl *ctrl, int id, struct otto_l
 	return false;
 }
 
-/* The routes are hashed on the gateway, which is the field a replace
- * changes, so a lookup by destination needs a list of its own.
- */
 static struct otto_l3_route *otto_l3_route_find(struct otto_l3_ctrl *ctrl, u32 tb_id, u8 type,
 						u32 dst_ip, const struct in6_addr *dst_ip6,
 						int prefix_len)
@@ -1615,9 +1597,6 @@ struct otto_l3_route_src {
 static void otto_l3_route_free(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r)
 {
 	struct otto_l3_route_src *s, *tmp;
-
-	if (rhltable_remove(&ctrl->routes, &r->linkage, otto_l3_route_ht_params))
-		dev_warn(ctrl->dev, "Could not remove route\n");
 
 	list_for_each_entry_safe(s, tmp, &r->srcs, list)
 		kfree(s);
@@ -1729,7 +1708,7 @@ static struct otto_l3_route *otto_l3_route_alloc(struct otto_l3_ctrl *ctrl,
 	unsigned long *use_bm = host ? ctrl->host_route_use_bm : ctrl->route_use_bm;
 	int size = host ? MAX_HOST_ROUTES : MAX_ROUTES;
 	struct otto_l3_route *r;
-	int idx, err;
+	int idx;
 
 	mutex_lock(ctrl->lock);
 
@@ -1758,14 +1737,6 @@ static struct otto_l3_route *otto_l3_route_alloc(struct otto_l3_ctrl *ctrl,
 	r->pr.packet_cntr = -1;
 	r->is_host_route = host;
 	INIT_LIST_HEAD(&r->srcs);
-
-	err = rhltable_insert(&ctrl->routes, &r->linkage, otto_l3_route_ht_params);
-	if (err) {
-		dev_err(ctrl->dev, "Could not insert new rule\n");
-		mutex_unlock(ctrl->lock);
-		kfree(r);
-		return NULL;
-	}
 
 	list_add_tail(&r->list, &ctrl->routes_list);
 	set_bit(idx, use_bm);
@@ -1983,9 +1954,9 @@ static int otto_l3_fib_add_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 				    ROUTE_HOST : ROUTE_PREFIX);
 
 	if (route)
-		dev_info(ctrl->dev, "route hashtable extended for gw %pI4\n", &nh->fib_nh_gw4);
+		dev_info(ctrl->dev, "route allocated for gw %pI4\n", &nh->fib_nh_gw4);
 	else {
-		dev_err(ctrl->dev, "could not extend route hashtable for gw %pI4\n",
+		dev_err(ctrl->dev, "could not allocate a route for gw %pI4\n",
 			&nh->fib_nh_gw4);
 		return -ENOSPC;
 	}
@@ -2062,9 +2033,7 @@ out_free_rt:
 
 static int otto_l3_fib_del_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifier_info *info)
 {
-	struct rhlist_head *tmp, *list;
 	struct otto_l3_route *route;
-	bool found = false;
 	struct in6_addr gw;
 	struct fib_nh *nh;
 
@@ -2085,7 +2054,7 @@ static int otto_l3_fib_del_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 	if (otto_l3_fib_check_v4(ctrl, info, FIB_EVENT_ENTRY_DEL))
 		return 0;
 
-	/* The entry that traps for a route left out is keyed on no gateway,
+	/* The entry that traps for a route left out carries no gateway,
 	 * whatever gateway the route itself names
 	 */
 	route = otto_l3_route_find(ctrl, info->tb_id, ROUTE_TYPE_IP4UC, info->dst, NULL,
@@ -2098,29 +2067,13 @@ static int otto_l3_fib_del_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 
 	ipv6_addr_set_v4mapped(nh->fib_nh_gw4, &gw);
 
-	rcu_read_lock();
-	list = rhltable_lookup(&ctrl->routes, &gw, otto_l3_route_ht_params);
-	if (!list) {
-		rcu_read_unlock();
-		dev_err(ctrl->dev, "no such gateway: %pI4\n", &nh->fib_nh_gw4);
-		return -ENOENT;
-	}
-	rhl_for_each_entry_rcu(route, tmp, list, linkage) {
-		if (route->attr.type == ROUTE_TYPE_IP4UC &&
-		    route->dst_ip == info->dst && route->prefix_len == info->dst_len) {
-			dev_info(ctrl->dev, "found a route with id %d, nh-id %d\n",
-				 route->id, route->nh.id);
-			found = true;
-			break;
-		}
-	}
-	rcu_read_unlock();
-
-	if (!found) {
+	if (!route || !ipv6_addr_equal(&route->gw_ip, &gw)) {
 		dev_err(ctrl->dev, "no route %pI4/%d via %pI4\n",
 			&info->dst, info->dst_len, &nh->fib_nh_gw4);
 		return -ENOENT;
 	}
+	dev_info(ctrl->dev, "found a route with id %d, nh-id %d\n",
+		 route->id, route->nh.id);
 
 	otto_l3_route_teardown(ctrl, route);
 
@@ -2477,7 +2430,7 @@ static int otto_l3_fib_add_v6(struct otto_l3_ctrl *ctrl, struct fib6_entry_notif
 
 	route = otto_l3_route_alloc(ctrl, gw, ROUTE_PREFIX);
 	if (!route) {
-		dev_err(ctrl->dev, "could not extend route hashtable for gw %pI6c\n", gw);
+		dev_err(ctrl->dev, "could not allocate a route for gw %pI6c\n", gw);
 		goto out_failed;
 	}
 
@@ -3670,14 +3623,12 @@ void otto_l3_remove(struct rtl838x_switch_priv *priv)
 	flush_workqueue(priv->wq);
 
 	/* Nothing takes a route out now, and a FIB entry one still names would
-	 * be kept alive by it. Destroying the hash table also waits for the
-	 * resize work it runs on its own.
+	 * be kept alive by it.
 	 */
 	rtnl_lock();
 	list_for_each_entry_safe(r, tmp, &ctrl->routes_list, list)
 		otto_l3_route_free(ctrl, r);
 	rtnl_unlock();
-	rhltable_destroy(&ctrl->routes);
 }
 
 struct otto_l3_flush_work {
@@ -3781,11 +3732,7 @@ int otto_l3_probe(struct device *dev, struct rtl838x_switch_priv *priv)
 			return dev_err_probe(dev, err, "device specific L3 setup failed\n");
 	}
 
-	/* Initialize hash table for L3 routing */
 	INIT_LIST_HEAD(&ctrl->routes_list);
-	err = rhltable_init(&ctrl->routes, &otto_l3_route_ht_params);
-	if (err)
-		return dev_err_probe(dev, err, "could not set up the route hash table\n");
 
 	/* Before the notifiers, so no destination is dropped in the window
 	 * where the tables are live and the routes have not arrived yet.
