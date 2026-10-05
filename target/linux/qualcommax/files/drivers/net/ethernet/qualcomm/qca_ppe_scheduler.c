@@ -2055,6 +2055,17 @@ static int ppe_qos_bands_set(struct qca_ppe_priv *priv, int port, u32 handle,
 	return 0;
 }
 
+/* A child of an offloaded band is offloaded only if it is the band's tbf. */
+static int ppe_band_graft(struct ppe_port_shaper *sh, u32 handle, u8 band,
+			  u32 child)
+{
+	if (handle != sh->bands_handle || band || !child ||
+	    child != sh->band_tbf_handle)
+		return -EOPNOTSUPP;
+
+	return 0;
+}
+
 int qca_ppe_setup_tc_ets(struct qca_ppe_priv *priv, int port,
 			 struct tc_ets_qopt_offload *qopt)
 {
@@ -2095,6 +2106,9 @@ int qca_ppe_setup_tc_ets(struct qca_ppe_priv *priv, int port,
 			return -EOPNOTSUPP;
 		ppe_port_shaper_stats(priv, port, &qopt->stats);
 		return 0;
+	case TC_ETS_GRAFT:
+		return ppe_band_graft(sh, qopt->handle, qopt->graft_params.band,
+				      qopt->graft_params.child_handle);
 	default:
 		return -EOPNOTSUPP;
 	}
@@ -2122,15 +2136,83 @@ int qca_ppe_setup_tc_prio(struct qca_ppe_priv *priv, int port,
 			return -EOPNOTSUPP;
 		ppe_port_shaper_stats(priv, port, &qopt->stats);
 		return 0;
+	case TC_PRIO_GRAFT:
+		return ppe_band_graft(sh, qopt->handle, qopt->graft_params.band,
+				      qopt->graft_params.child_handle);
 	default:
 		return -EOPNOTSUPP;
 	}
 }
 
-/* The hardware has one shaper per port and nowhere to hang a class off it, so
- * only a root tbf is a rate this switch can keep. The qdisc's overhead, mpu and
- * linklayer are not carried into the hardware, which meters the frame it puts
- * on the wire including preamble, inter-packet gap and CRC.
+/* A tbf under the top band of an offloaded ets or prio is that band's L1 node
+ * shaper, which also carries the sparse list and the port's multicast queues.
+ * The other two bands are four hash queues each on L0 nodes of their own,
+ * under one L1 node they share, so no single bucket holds either of them.
+ */
+static int ppe_band_tbf(struct qca_ppe_priv *priv, int port,
+			struct tc_tbf_qopt_offload *qopt)
+{
+	struct ppe_port_shaper *sh = &priv->shaper[port];
+	u16 offset = 2 * PPE_FLOW_SPREAD_QUEUES;
+	const struct port_l0_params *p = NULL;
+	struct ppe_class_shaper prog;
+	u64 rate = 0;
+	int i, ret;
+
+	for (i = 0; i < ARRAY_SIZE(port_l0); i++)
+		if (port_l0[i].port == port)
+			p = &port_l0[i];
+	if (!p || ppe_class_node(port, p->ucast_base, offset,
+				 PPE_FLOW_SPREAD_QUEUES, &prog))
+		return -EOPNOTSUPP;
+
+	switch (qopt->command) {
+	case TC_TBF_REPLACE:
+		if (!sh->bands_handle ||
+		    qopt->parent != TC_H_MAKE(sh->bands_handle, 1)) {
+			dev_err(priv->ds.dev,
+				"port %d: a tbf is offloaded only on the top band of the port's ets or prio\n",
+				port);
+			return -EOPNOTSUPP;
+		}
+
+		rate = qopt->replace_params.rate.rate_bytes_ps * BITS_PER_BYTE;
+		ret = ppe_node_shaper_set(priv, prog.cfg, prog.credit,
+					  prog.slot, rate,
+					  max(qopt->replace_params.max_size,
+					      ppe_port_frame_len(priv, port)));
+		if (ret) {
+			dev_err(priv->ds.dev,
+				"port %d: %llu bit/s is outside the band shaper's range\n",
+				port, rate);
+			return ret;
+		}
+
+		sh->band_tbf_handle = qopt->handle;
+		break;
+	case TC_TBF_DESTROY:
+		if (!sh->band_tbf_handle || qopt->handle != sh->band_tbf_handle)
+			return 0;
+
+		ppe_node_shaper_set(priv, prog.cfg, prog.credit, prog.slot, 0,
+				    0);
+		sh->band_tbf_handle = 0;
+		break;
+	default:
+		return -EOPNOTSUPP;
+	}
+
+	for (i = offset; i < offset + PPE_FLOW_SPREAD_QUEUES; i++)
+		sh->queue_rate[i] = rate;
+	ppe_port_queue_limit_set(priv, port);
+
+	return 0;
+}
+
+/* The port shaper meters everything the port sends, which is a root tbf. The
+ * qdisc's overhead, mpu and linklayer are not carried into the hardware, which
+ * meters the frame it puts on the wire including preamble, inter-packet gap
+ * and CRC.
  */
 int qca_ppe_setup_tc_tbf(struct qca_ppe_priv *priv, int port,
 			 struct tc_tbf_qopt_offload *qopt)
@@ -2138,7 +2220,7 @@ int qca_ppe_setup_tc_tbf(struct qca_ppe_priv *priv, int port,
 	int ret;
 
 	if (qopt->parent != TC_H_ROOT)
-		return -EOPNOTSUPP;
+		return ppe_band_tbf(priv, port, qopt);
 
 	switch (qopt->command) {
 	case TC_TBF_REPLACE:
