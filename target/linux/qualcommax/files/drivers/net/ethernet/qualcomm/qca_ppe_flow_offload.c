@@ -71,8 +71,9 @@ struct ppe_flow_entry {
 	int l3_if;
 	int eg_l3_if;
 	int pub_ip;
-	int wan_port;
-	int wan_iport;
+	int uplink;
+	int in_uplink;
+	int session;
 	u8 iport;
 	u8 oport;
 	u16 ivid;
@@ -358,52 +359,55 @@ static int ppe_flow_port_by_ifindex(struct qca_ppe_priv *priv, int ifindex)
 	return -EOPNOTSUPP;
 }
 
-/* Make a tagged PPPoE WAN port route its ingress traffic in hardware, so the
- * download direction of an offloaded connection reaches the flow lookup on its
- * inner tuple.
+static int ppe_uplink_find(struct qca_ppe_priv *priv, int port, u16 vid)
+{
+	int i;
+
+	for (i = 0; i < PPE_PPPOE_SESSIONS; i++)
+		if (priv->uplink[i].ref && priv->uplink[i].port == port &&
+		    priv->uplink[i].vid == vid)
+			return i;
+
+	return -ENOENT;
+}
+
+/* Make an uplink route its ingress traffic in hardware, so the download
+ * direction of an offloaded connection reaches the flow lookup on its inner
+ * tuple.
  *
  * A dedicated VSI keeps the uplink out of any L2 domain: the ingress VLAN is
- * classified into it with the 802.1Q tag stripped, the VSI carries a route-
- * and PPPoE-terminating L3 interface holding the router's MAC, and the PPPoE
- * session id is recognised so the header is parsed through to the inner IP.
- * Everything is shared by every flow on the port and torn down with the last
- * of them. A frame that misses the flow table is still forwarded to the CPU,
- * with the tag the hardware stripped re-added on that path, so the software
- * PPPoE stack sees on-wire frames throughout.
+ * classified into it with the 802.1Q tag stripped, and the VSI carries a route-
+ * and PPPoE-terminating L3 interface holding the router's MAC. A frame that
+ * misses the flow table is still forwarded to the CPU, with the tag the
+ * hardware stripped re-added on that path, so the software stack sees on-wire
+ * frames throughout.
  */
-static int ppe_wan_ingress_get(struct qca_ppe_priv *priv, int port, u16 sid,
-			       bool vlan_valid, u16 vlan_id, const u8 *mac,
-			       u32 mtu)
+static int ppe_uplink_get(struct qca_ppe_priv *priv, int port, u16 vid,
+			  const u8 *mac, u32 mtu)
 {
 	u32 words[PPE_MY_MAC_WORDS] = {};
-	int vsi, xlt = -1, ret;
+	struct ppe_uplink *up;
+	int i, vsi, xlt = -1, ret;
 
-	if (priv->wan_ref[port]++) {
-		/* A re-dialled session has a new id, and an ingress still
-		 * keyed to the dead one silently un-offloads every download on
-		 * this uplink: the entries stay valid and correct, the frame
-		 * is never parsed through to the tuple they key on, and the
-		 * flow lookup is never reached. It is cheaper to write the
-		 * session on every install than to keep a copy of it that
-		 * could be wrong.
-		 */
-		regmap_write(priv->regmap, PPE_PPPOE_SESSION(port),
-			     FIELD_PREP(PPE_PPPOE_SESSION_ID, sid) |
-			     FIELD_PREP(PPE_PPPOE_SESSION_PORT_BMP, BIT(port)) |
-			     FIELD_PREP(PPE_PPPOE_SESSION_L3_IF,
-					priv->wan_vsi[port]));
-		return 0;
+	i = ppe_uplink_find(priv, port, vid);
+	if (i >= 0) {
+		priv->uplink[i].ref++;
+		return i;
 	}
+
+	for (i = 0; i < PPE_PPPOE_SESSIONS && priv->uplink[i].ref; i++)
+		;
+	if (i == PPE_PPPOE_SESSIONS)
+		return -ENOSPC;
+	up = &priv->uplink[i];
 
 	/* The translation rule shares one table with the bridge VLANs, so its
 	 * index comes from the allocator they share.
 	 */
-	if (vlan_valid) {
+	if (vid) {
 		xlt = ppe_xlt_idx_alloc(priv);
-		if (xlt < 0) {
-			priv->wan_ref[port]--;
+		if (xlt < 0)
 			return xlt;
-		}
 	}
 
 	vsi = ppe_vsi_alloc(priv);
@@ -411,8 +415,6 @@ static int ppe_wan_ingress_get(struct qca_ppe_priv *priv, int port, u16 sid,
 		ret = vsi;
 		goto err_xlt;
 	}
-	priv->wan_vsi[port] = vsi;
-	priv->wan_vid[port] = vlan_valid ? vlan_id : 0;
 	ppe_vsi_member_set(priv, vsi, BIT(port) | BIT(QCA_PPE_CPU_PORT));
 
 	ppe_entry_set(words, PPE_MY_MAC_ADDR_OFF, PPE_MY_MAC_ADDR_LEN,
@@ -422,7 +424,7 @@ static int ppe_wan_ingress_get(struct qca_ppe_priv *priv, int port, u16 sid,
 			  PPE_MY_MAC_WORDS);
 	if (ret < 0)
 		goto err_vsi;
-	priv->wan_mymac[port] = ret;
+	up->mymac = ret;
 	if (priv->my_mac[ret].refcount == 1)
 		ppe_tbl_write(priv, PPE_MY_MAC_TBL(ret), words, PPE_MY_MAC_WORDS);
 
@@ -438,23 +440,14 @@ static int ppe_wan_ingress_get(struct qca_ppe_priv *priv, int port, u16 sid,
 	regmap_write(priv->regmap, PPE_L3_VSI_TBL(vsi),
 		     PPE_L3_VSI_IF_VALID | FIELD_PREP(PPE_L3_VSI_IF_INDEX, vsi));
 
-	regmap_write(priv->regmap, PPE_PPPOE_SESSION(port),
-		     FIELD_PREP(PPE_PPPOE_SESSION_ID, sid) |
-		     FIELD_PREP(PPE_PPPOE_SESSION_PORT_BMP, BIT(port)) |
-		     FIELD_PREP(PPE_PPPOE_SESSION_L3_IF, vsi));
-	regmap_write(priv->regmap, PPE_PPPOE_SESSION_EXT(port),
-		     PPE_PPPOE_EXT_L3_IF_VALID | PPE_PPPOE_EXT_UC_VALID);
-
-	if (vlan_valid) {
-		priv->wan_xlt[port] = xlt;
-
+	if (vid) {
 		/* The L3 stage does not parse through a residual 802.1Q tag:
-		 * the PPPoE session is only recognised, and the inner tuple
+		 * a PPPoE session is only recognised, and the inner tuple
 		 * only reaches the flow lookup, once the rule also strips the
 		 * tag. The hardware re-adds it toward the CPU (below), so a
 		 * frame that misses the flow table still reaches the software
-		 * PPPoE stack in its on-wire form. Action and re-tag are in
-		 * place before the rule goes live.
+		 * stack in its on-wire form. Action and re-tag are in place
+		 * before the rule goes live.
 		 */
 		regmap_write(priv->regmap, PPE_XLT_ACTION_TBL(xlt),
 			     FIELD_PREP(PPE_XLT_CVID_CMD, PPE_XLT_CVID_DEL));
@@ -469,7 +462,7 @@ static int ppe_wan_ingress_get(struct qca_ppe_priv *priv, int port, u16 sid,
 		regmap_write(priv->regmap, PPE_EG_XLT_ACTION(xlt),
 			     FIELD_PREP(PPE_EG_XLT_CVID_CMD,
 					PPE_EG_XLT_CVID_ADD) |
-			     FIELD_PREP(PPE_EG_XLT_CVID, vlan_id));
+			     FIELD_PREP(PPE_EG_XLT_CVID, vid));
 		regmap_write(priv->regmap, PPE_EG_XLT_ACTION_W1(xlt), 0);
 		regmap_write(priv->regmap, PPE_EG_XLT_RULE(xlt),
 			     PPE_EG_XLT_VALID |
@@ -497,28 +490,32 @@ static int ppe_wan_ingress_get(struct qca_ppe_priv *priv, int port, u16 sid,
 			     FIELD_PREP(PPE_XLT_CKEY_FMT_1,
 					PPE_XLT_CKEY_TAGGED >> 1) |
 			     PPE_XLT_CKEY_VID_INCL |
-			     FIELD_PREP(PPE_XLT_CKEY_VID, vlan_id));
+			     FIELD_PREP(PPE_XLT_CKEY_VID, vid));
 		regmap_write(priv->regmap, PPE_XLT_RULE_TBL(xlt) + 8, 0);
 	}
 
-	return 1;
+	up->ref = 1;
+	up->port = port;
+	up->vid = vid;
+	up->vsi = vsi;
+	up->xlt = xlt;
+
+	return i;
 
 err_vsi:
 	ppe_vsi_free(priv, vsi);
-	priv->wan_vsi[port] = -1;
 err_xlt:
 	if (xlt >= 0)
 		ppe_xlt_idx_free(priv, &xlt);
-	priv->wan_ref[port]--;
 	return ret;
 }
 
-static void ppe_wan_ingress_put(struct qca_ppe_priv *priv, int port)
+static void ppe_uplink_put(struct qca_ppe_priv *priv, int i)
 {
-	int xlt = priv->wan_xlt[port];
-	u32 vsi = priv->wan_vsi[port];
+	struct ppe_uplink *up = &priv->uplink[i];
+	int xlt = up->xlt;
 
-	if (--priv->wan_ref[port])
+	if (--up->ref)
 		return;
 
 	if (xlt >= 0) {
@@ -529,21 +526,72 @@ static void ppe_wan_ingress_put(struct qca_ppe_priv *priv, int port)
 		 * the action's, since a key left live over a zeroed action
 		 * blackholes every frame it matches.
 		 */
-		ppe_xlt_idx_free(priv, &priv->wan_xlt[port]);
+		ppe_xlt_idx_free(priv, &up->xlt);
 		regmap_write(priv->regmap, PPE_EG_XLT_RULE(xlt), 0);
 		regmap_write(priv->regmap, PPE_EG_XLT_RULE_W1(xlt), 0);
 		regmap_write(priv->regmap, PPE_EG_XLT_ACTION(xlt), 0);
 		regmap_write(priv->regmap, PPE_EG_XLT_ACTION_W1(xlt), 0);
 	}
-	regmap_write(priv->regmap, PPE_PPPOE_SESSION(port), 0);
-	regmap_write(priv->regmap, PPE_PPPOE_SESSION_EXT(port), 0);
-	regmap_write(priv->regmap, PPE_L3_VSI_TBL(vsi), 0);
-	ppe_tbl_clear(priv, PPE_IN_L3_IF_TBL(vsi), PPE_L3_IF_WORDS);
-	if (ppe_res_put(priv->my_mac, priv->wan_mymac[port]))
-		ppe_tbl_clear(priv, PPE_MY_MAC_TBL(priv->wan_mymac[port]),
+	regmap_write(priv->regmap, PPE_L3_VSI_TBL(up->vsi), 0);
+	ppe_tbl_clear(priv, PPE_IN_L3_IF_TBL(up->vsi), PPE_L3_IF_WORDS);
+	if (ppe_res_put(priv->my_mac, up->mymac))
+		ppe_tbl_clear(priv, PPE_MY_MAC_TBL(up->mymac),
 			      PPE_MY_MAC_WORDS);
-	ppe_vsi_free(priv, vsi);
-	priv->wan_vsi[port] = -1;
+	ppe_vsi_free(priv, up->vsi);
+}
+
+/* Recognise a PPPoE session on its uplink, so the header is parsed through to
+ * the inner IP. A re-dialled session has a new id and gets an entry of its own;
+ * the old one goes with the last flow that used it.
+ */
+static int ppe_pppoe_session_get(struct qca_ppe_priv *priv, int up, u16 sid)
+{
+	int port = priv->uplink[up].port;
+	int i, free = -1;
+
+	for (i = 0; i < PPE_PPPOE_SESSIONS; i++) {
+		struct ppe_pppoe_session *s = &priv->pppoe[i];
+
+		if (!s->ref) {
+			if (free < 0)
+				free = i;
+			continue;
+		}
+		if (s->sid != sid || priv->uplink[s->uplink].port != port)
+			continue;
+		/* The same id on another VLAN of the port would match the
+		 * same entry.
+		 */
+		if (s->uplink != up)
+			return -ENOSPC;
+		s->ref++;
+		return i;
+	}
+
+	if (free < 0)
+		return -ENOSPC;
+
+	priv->pppoe[free].ref = 1;
+	priv->pppoe[free].sid = sid;
+	priv->pppoe[free].uplink = up;
+	regmap_write(priv->regmap, PPE_PPPOE_SESSION(free),
+		     FIELD_PREP(PPE_PPPOE_SESSION_ID, sid) |
+		     FIELD_PREP(PPE_PPPOE_SESSION_PORT_BMP, BIT(port)) |
+		     FIELD_PREP(PPE_PPPOE_SESSION_L3_IF,
+				priv->uplink[up].vsi));
+	regmap_write(priv->regmap, PPE_PPPOE_SESSION_EXT(free),
+		     PPE_PPPOE_EXT_L3_IF_VALID | PPE_PPPOE_EXT_UC_VALID);
+
+	return free;
+}
+
+static void ppe_pppoe_session_put(struct qca_ppe_priv *priv, int i)
+{
+	if (--priv->pppoe[i].ref)
+		return;
+
+	regmap_write(priv->regmap, PPE_PPPOE_SESSION(i), 0);
+	regmap_write(priv->regmap, PPE_PPPOE_SESSION_EXT(i), 0);
 }
 
 /* A port's PVID only classifies while the bridge enforces its VLANs; until
@@ -564,13 +612,6 @@ static int ppe_flow_ingress_vsi(struct qca_ppe_priv *priv, int iport, u16 vid)
 	struct qca_ppe_vlan_entry *vlan;
 
 	lockdep_assert_held(&priv->vlan_lock);
-
-	/* A PPPoE uplink is classified into a VSI of its own, and only the
-	 * VLAN and session id that classification names reach it.
-	 */
-	if (priv->wan_ref[iport])
-		return vid && vid != priv->wan_vid[iport] ? -EOPNOTSUPP :
-							    priv->wan_vsi[iport];
 
 	/* A VLAN-filtering bridge classifies a tagged frame into its VLAN's
 	 * VSI and an untagged one into the PVID's, so the port's own VSI
@@ -607,23 +648,25 @@ static int ppe_flow_alloc_ingress(struct qca_ppe_priv *priv, int iport,
 
 	lockdep_assert_held(&priv->vlan_lock);
 
+	/* An uplink's ingress interface belongs to the uplink, so take a
+	 * reference rather than programming anything: a sibling flow going away
+	 * must not pull the classification out from under this one.
+	 */
+	ret = ppe_uplink_find(priv, iport, vid);
+	if (ret >= 0) {
+		priv->uplink[ret].ref++;
+		entry->in_uplink = ret;
+		entry->src_if = priv->uplink[ret].vsi;
+		entry->ivid = vid;
+		return 0;
+	}
+
 	vsi = ppe_flow_ingress_vsi(priv, iport, vid);
 	if (vsi < 0)
 		return vsi;
 
 	entry->src_if = vsi;
-	entry->ivid = priv->wan_ref[iport] ? priv->wan_vid[iport] :
-		      vid ? vid : ppe_port_pvid(priv, iport);
-
-	/* A PPPoE uplink's ingress interface belongs to the uplink, so take a
-	 * reference rather than programming anything: a sibling flow going away
-	 * must not pull the classification out from under this one.
-	 */
-	if (priv->wan_ref[iport]) {
-		priv->wan_ref[iport]++;
-		entry->wan_iport = iport;
-		return 0;
-	}
+	entry->ivid = vid ? vid : ppe_port_pvid(priv, iport);
 
 	/* The address the packet is sent to is the address of the device that
 	 * routes for this port, which is the bridge when there is one. That
@@ -695,9 +738,10 @@ static void ppe_flow_l3_mtu_set(struct qca_ppe_priv *priv, int port, int mtu)
 
 	lockdep_assert_held(&priv->vlan_lock);
 
-	if (priv->wan_ref[port])
-		ppe_l3_if_mtu_set(priv, priv->wan_vsi[port],
-				  mtu + VLAN_ETH_HLEN + PPPOE_SES_HLEN);
+	for (i = 0; i < PPE_PPPOE_SESSIONS; i++)
+		if (priv->uplink[i].ref && priv->uplink[i].port == port)
+			ppe_l3_if_mtu_set(priv, priv->uplink[i].vsi,
+					  mtu + VLAN_ETH_HLEN + PPPOE_SES_HLEN);
 
 	vsi = ppe_port_l3_vsi(priv, port);
 	if (priv->l3_if_ref[vsi])
@@ -793,8 +837,8 @@ static void ppe_flow_free_ingress(struct qca_ppe_priv *priv,
 {
 	lockdep_assert_held(&priv->vlan_lock);
 
-	if (entry->wan_iport >= 0) {
-		ppe_wan_ingress_put(priv, entry->wan_iport);
+	if (entry->in_uplink >= 0) {
+		ppe_uplink_put(priv, entry->in_uplink);
 		return;
 	}
 
@@ -830,17 +874,19 @@ void ppe_flow_purge_vsi(struct qca_ppe_priv *priv, u32 vsi)
 	}
 }
 
-/* A flow that ingresses on this port and was installed before the uplink had a
- * classification named the port's plain VSI, and can never match now that one
- * exists. Drop those entries: the flowtable reinstalls whatever is still live.
+/* A flow that ingresses on the uplink's port and VLAN and was installed before
+ * the uplink had a classification named the port's plain VSI, and can never
+ * match now that one exists. Drop those entries: the flowtable reinstalls
+ * whatever is still live.
  */
-static void ppe_flow_purge_ingress(struct qca_ppe_priv *priv, int iport,
-				   u8 wan_vsi)
+static void ppe_flow_purge_ingress(struct qca_ppe_priv *priv,
+				   const struct ppe_uplink *up)
 {
 	struct ppe_flow_entry *entry, *tmp;
 
 	list_for_each_entry_safe(entry, tmp, &priv->flow_list, list) {
-		if (entry->iport != iport || entry->src_if == wan_vsi)
+		if (entry->iport != up->port || entry->ivid != up->vid ||
+		    entry->src_if == up->vsi)
 			continue;
 
 		ppe_flow_drop(priv, entry);
@@ -967,25 +1013,30 @@ static int ppe_flow_alloc_egress(struct qca_ppe_priv *priv,
 	 * offloads too.
 	 */
 	if (data->pppoe_valid) {
-		struct dsa_port *odp = dsa_to_port(&priv->ds, port);
-		u8 wan_vsi;
-
-		ret = ppe_wan_ingress_get(priv, port, data->pppoe_sid,
-					  data->vlan_valid, data->vlan_id,
-					  odp->user->dev_addr,
-					  odp->user->mtu + VLAN_ETH_HLEN +
-					  PPPOE_SES_HLEN);
-		wan_vsi = priv->wan_vsi[port];
+		ret = ppe_uplink_get(priv, port,
+				     data->vlan_valid ? data->vlan_id : 0,
+				     odp->user->dev_addr,
+				     odp->user->mtu + VLAN_ETH_HLEN +
+				     PPPOE_SES_HLEN);
 		if (ret < 0)
 			goto err_nexthop;
-		entry->wan_port = port;
+		entry->uplink = ret;
 
-		if (ret == 1)
-			ppe_flow_purge_ingress(priv, port, wan_vsi);
+		ret = ppe_pppoe_session_get(priv, entry->uplink,
+					    data->pppoe_sid);
+		if (ret < 0)
+			goto err_uplink;
+		entry->session = ret;
+
+		if (priv->uplink[entry->uplink].ref == 1)
+			ppe_flow_purge_ingress(priv,
+					       &priv->uplink[entry->uplink]);
 	}
 
 	return 0;
 
+err_uplink:
+	ppe_uplink_put(priv, entry->uplink);
 err_nexthop:
 	if (ppe_res_put(priv->nexthop, entry->nexthop))
 		ppe_tbl_clear(priv, PPE_IN_NEXTHOP_TBL(entry->nexthop),
@@ -1019,8 +1070,10 @@ static void ppe_flow_free_egress(struct qca_ppe_priv *priv,
 			      PPE_L3_IF_WORDS);
 	}
 
-	if (entry->wan_port >= 0)
-		ppe_wan_ingress_put(priv, entry->wan_port);
+	if (entry->session >= 0)
+		ppe_pppoe_session_put(priv, entry->session);
+	if (entry->uplink >= 0)
+		ppe_uplink_put(priv, entry->uplink);
 }
 
 /* The counters are cumulative and narrower than u64 - 32-bit packets, 40-bit
@@ -1461,8 +1514,9 @@ static int ppe_flow_offload_replace(struct ppe_flow_block *fb,
 	entry->pub_ip = -1;
 	entry->my_mac = -1;
 	entry->l3_if = -1;
-	entry->wan_port = -1;
-	entry->wan_iport = -1;
+	entry->uplink = -1;
+	entry->in_uplink = -1;
+	entry->session = -1;
 	entry->iport = iport;
 
 	ret = ppe_flow_alloc_ingress(priv, iport, data.ivid, entry);
@@ -1835,7 +1889,7 @@ static void ppe_sparse_work(struct work_struct *work)
 int ppe_flow_offload_init(struct qca_ppe_priv *priv)
 {
 	struct device *dev = priv->ds.dev;
-	int i, ret;
+	int ret;
 
 	priv->eg_l3_if = devm_kcalloc(dev, PPE_EG_L3_IF_ENTRIES,
 				      sizeof(*priv->eg_l3_if), GFP_KERNEL);
@@ -1850,12 +1904,6 @@ int ppe_flow_offload_init(struct qca_ppe_priv *priv)
 	if (!priv->eg_l3_if || !priv->pub_ip || !priv->nexthop ||
 	    !priv->host_ref || !priv->my_mac)
 		return -ENOMEM;
-
-	for (i = 0; i < QCA_PPE_MAX_PORTS; i++) {
-		priv->wan_vsi[i] = -1;
-		priv->wan_mymac[i] = -1;
-		priv->wan_xlt[i] = -1;
-	}
 
 	INIT_LIST_HEAD(&priv->flow_list);
 
