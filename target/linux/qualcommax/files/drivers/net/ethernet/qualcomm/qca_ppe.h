@@ -1071,6 +1071,13 @@ struct ppe_port_shaper {
 	u32 base_backlog;
 };
 
+#define PPE_SB_EGRESS_TCS	16
+
+struct ppe_sb_occ {
+	u32 cur;
+	u32 max;
+};
+
 struct qca_ppe_priv {
 	struct dsa_switch ds;
 	struct regmap *regmap;
@@ -1101,6 +1108,8 @@ struct qca_ppe_priv {
 	u16 mirror_ref[2];
 	u8 mirror_dir_ref[QCA_PPE_MAX_PORTS][2];
 	struct ppe_port_shaper shaper[QCA_PPE_MAX_PORTS];
+	struct ppe_sb_occ sb_occ_ing[PPE_NUM_PORTS];
+	struct ppe_sb_occ sb_occ_eg[PPE_NUM_PORTS][PPE_SB_EGRESS_TCS];
 	/* A red's static limit and early drop gap per unicast queue, in
 	 * buffers; a limit of zero is a queue with no red.
 	 */
@@ -1216,6 +1225,33 @@ int qca_ppe_devlink_sb_pool_set(struct dsa_switch *ds, unsigned int sb_index,
 				u16 pool_index, u32 size,
 				enum devlink_sb_threshold_type threshold_type,
 				struct netlink_ext_ack *extack);
+int qca_ppe_devlink_sb_port_pool_get(struct dsa_switch *ds, int port,
+				     unsigned int sb_index, u16 pool_index,
+				     u32 *p_threshold);
+int qca_ppe_devlink_sb_port_pool_set(struct dsa_switch *ds, int port,
+				     unsigned int sb_index, u16 pool_index,
+				     u32 threshold,
+				     struct netlink_ext_ack *extack);
+int qca_ppe_devlink_sb_tc_pool_bind_get(struct dsa_switch *ds, int port,
+					unsigned int sb_index, u16 tc_index,
+					enum devlink_sb_pool_type pool_type,
+					u16 *p_pool_index, u32 *p_threshold);
+int qca_ppe_devlink_sb_tc_pool_bind_set(struct dsa_switch *ds, int port,
+					unsigned int sb_index, u16 tc_index,
+					enum devlink_sb_pool_type pool_type,
+					u16 pool_index, u32 threshold,
+					struct netlink_ext_ack *extack);
+int qca_ppe_devlink_sb_occ_snapshot(struct dsa_switch *ds,
+				    unsigned int sb_index);
+int qca_ppe_devlink_sb_occ_max_clear(struct dsa_switch *ds,
+				     unsigned int sb_index);
+int qca_ppe_devlink_sb_occ_port_pool_get(struct dsa_switch *ds, int port,
+					 unsigned int sb_index, u16 pool_index,
+					 u32 *p_cur, u32 *p_max);
+int qca_ppe_devlink_sb_occ_tc_port_bind_get(struct dsa_switch *ds, int port,
+					    unsigned int sb_index, u16 tc_index,
+					    enum devlink_sb_pool_type pool_type,
+					    u32 *p_cur, u32 *p_max);
 int qca_ppe_port_get_dscp_prio(struct dsa_switch *ds, int port, u8 dscp);
 int qca_ppe_port_add_dscp_prio(struct dsa_switch *ds, int port, u8 dscp,
 			       u8 prio);

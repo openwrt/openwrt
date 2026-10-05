@@ -2885,6 +2885,14 @@ static const struct dsa_switch_ops qca_ppe_ops = {
 	.devlink_info_get	= qca_ppe_devlink_info_get,
 	.devlink_sb_pool_get	= qca_ppe_devlink_sb_pool_get,
 	.devlink_sb_pool_set	= qca_ppe_devlink_sb_pool_set,
+	.devlink_sb_port_pool_get = qca_ppe_devlink_sb_port_pool_get,
+	.devlink_sb_port_pool_set = qca_ppe_devlink_sb_port_pool_set,
+	.devlink_sb_tc_pool_bind_get = qca_ppe_devlink_sb_tc_pool_bind_get,
+	.devlink_sb_tc_pool_bind_set = qca_ppe_devlink_sb_tc_pool_bind_set,
+	.devlink_sb_occ_snapshot = qca_ppe_devlink_sb_occ_snapshot,
+	.devlink_sb_occ_max_clear = qca_ppe_devlink_sb_occ_max_clear,
+	.devlink_sb_occ_port_pool_get = qca_ppe_devlink_sb_occ_port_pool_get,
+	.devlink_sb_occ_tc_port_bind_get = qca_ppe_devlink_sb_occ_tc_port_bind_get,
 };
 
 static void ppe_mac_hw_init(struct qca_ppe_priv *priv)
