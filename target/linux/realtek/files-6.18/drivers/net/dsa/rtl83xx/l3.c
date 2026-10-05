@@ -46,13 +46,12 @@
  *   takes three, and at most two start in every eight rows. The driver takes
  *   up to 1536 host routes. Trapped to the CPU: addresses of the box, on-link
  *   prefixes, blackhole, unreachable and prohibit routes, routes through a
- *   device outside the switch, a nexthop object or a lightweight tunnel and,
- *   for IPv6, multipath, source-specific and RA-learnt routes. Default routes
- *   have no entry, so their packets reach the CPU through the catch-all rows.
- *   An IPv4 multipath route is programmed with its first next hop only.
- *   Multicast routing is not offloaded, and all egress interfaces share one
- *   1536 byte MTU. The programmed state is shown in debugfs, under
- *   realtek_otto_l3.
+ *   device outside the switch, a nexthop object or a lightweight tunnel,
+ *   multipath routes and, for IPv6, source-specific and RA-learnt routes.
+ *   Default routes have no entry, so their packets reach the CPU through the
+ *   catch-all rows. Multicast routing is not offloaded, and all egress
+ *   interfaces share one 1536 byte MTU. The programmed state is shown in
+ *   debugfs, under realtek_otto_l3.
  * - RTL839x: IPv4 unicast routes through a gateway are forwarded through PIE
  *   rules, each with a packet counter while one is free. No IPv6, and no
  *   trapping entries.
@@ -1927,13 +1926,15 @@ static int otto_l3_fib_add_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 
 	/* A route through a nexthop object has no nexthop array to read, a
 	 * blackhole, unreachable or prohibit route has no device behind its
-	 * nexthop, and a route with a lightweight tunnel (seg6, MPLS) needs the
-	 * CPU to encapsulate what the hardware would forward bare. None is
-	 * offloaded, but any can replace a route that is.
+	 * nexthop, a route with a lightweight tunnel (seg6, MPLS) needs the
+	 * CPU to encapsulate what the hardware would forward bare, and a
+	 * multipath route would be forwarded through its first next hop alone.
+	 * None is offloaded, but any can replace a route that is.
 	 */
 	if (info->fi->nh || !fib_info_nh(info->fi, 0)->fib_nh_dev ||
-	    fib_info_nh(info->fi, 0)->fib_nh_lws) {
-		dev_dbg(ctrl->dev, "route not offloaded: no device, nexthop object or tunnel\n");
+	    fib_info_nh(info->fi, 0)->fib_nh_lws || fib_info_num_path(info->fi) > 1) {
+		dev_dbg(ctrl->dev,
+			"route not offloaded: no device, nexthop object, tunnel or ECMP\n");
 		route = otto_l3_route_find(ctrl, info->tb_id, ROUTE_TYPE_IP4UC, info->dst,
 					   NULL, info->dst_len);
 		if (route) {
@@ -2070,11 +2071,11 @@ static int otto_l3_fib_del_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 	struct in6_addr gw;
 	struct fib_nh *nh;
 
-	/* A route through a nexthop object, without a device or with a
-	 * lightweight tunnel holds at most a trap entry
+	/* A route through a nexthop object, without a device, with a
+	 * lightweight tunnel or with several paths holds at most a trap entry
 	 */
 	if (info->fi->nh || !fib_info_nh(info->fi, 0)->fib_nh_dev ||
-	    fib_info_nh(info->fi, 0)->fib_nh_lws) {
+	    fib_info_nh(info->fi, 0)->fib_nh_lws || fib_info_num_path(info->fi) > 1) {
 		route = otto_l3_route_find(ctrl, info->tb_id, ROUTE_TYPE_IP4UC, info->dst,
 					   NULL, info->dst_len);
 		if (route)
