@@ -1,5 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
+ * Copyright (C) 2026 Gennaro Cimmino <gcimmino@rayonra.net>
+ * Assisted-by: Claude:claude-opus-5, Claude:claude-opus-5-5
+ */
+
+/*
  * Layer 3 unicast routing offload for the Realtek Otto switches
  *
  * The driver follows the kernel's routes through the FIB notifier and its
