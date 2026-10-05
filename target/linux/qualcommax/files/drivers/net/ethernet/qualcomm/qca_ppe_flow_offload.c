@@ -25,6 +25,7 @@
 #include <net/flow_offload.h>
 #include <net/netfilter/nf_flow_table.h>
 #include <net/pkt_cls.h>
+#include <net/tcp.h>
 
 #include "qca_ppe.h"
 
@@ -1311,6 +1312,18 @@ static int ppe_flow_offload_replace(struct ppe_flow_block *fb,
 
 	if (ppe_flow_proto(data.l4proto) < 0)
 		return ppe_flow_reject(priv, PPE_REJECT_PROTO);
+
+	/* The entry matches any flags; a flag the rule excludes is only
+	 * honoured if its exception takes it to the CPU.
+	 */
+	if (flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_TCP)) {
+		struct flow_match_tcp match;
+
+		flow_rule_match_tcp(rule, &match);
+		if (match.key->flags & match.mask->flags ||
+		    match.mask->flags & ~htons(PPE_FLOW_TCP_TRAP))
+			return ppe_flow_reject(priv, PPE_REJECT_KEY);
+	}
 
 	flow_action_for_each(i, act, &rule->action) {
 		switch (act->id) {

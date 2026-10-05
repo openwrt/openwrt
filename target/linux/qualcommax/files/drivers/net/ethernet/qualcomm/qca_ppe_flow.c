@@ -22,6 +22,7 @@
 #include <linux/debugfs.h>
 #include <linux/regmap.h>
 #include <linux/seq_file.h>
+#include <net/tcp.h>
 
 #include "qca_ppe.h"
 
@@ -344,8 +345,9 @@ static void ppe_flow_age_timer_set(struct qca_ppe_priv *priv, u32 *ctrl)
 
 void ppe_flow_init(struct qca_ppe_priv *priv)
 {
+	unsigned long trap = PPE_FLOW_TCP_TRAP;
+	int type, dir, bit, n;
 	u32 ctrl;
-	int type, dir;
 
 	/* A miss has to forward: with the lookup enabled and no entry matching,
 	 * any other action would black-hole traffic the driver never saw.
@@ -356,9 +358,7 @@ void ppe_flow_init(struct qca_ppe_priv *priv)
 	 *
 	 * The neighbouring TCP_SPECIAL bypass stays off: on this generation it
 	 * takes every TCP packet out of the lookup, not just the flagged ones.
-	 * A connection's FIN and RST are therefore forwarded in hardware and its
-	 * entry goes on the flowtable's idle timeout, as it does on every driver
-	 * whose hardware never shows it the teardown.
+	 * FIN and RST reach the CPU through the TCP flag exceptions instead.
 	 */
 	for (type = 0; type < PPE_FLOW_PKT_TYPES; type++) {
 		u32 val = 0;
@@ -380,6 +380,28 @@ void ppe_flow_init(struct qca_ppe_priv *priv)
 		       << (PPE_FLOW_DIR_WAN_TO_LAN * PPE_FLOW_CTRL1_DIR_BITS);
 
 		regmap_write(priv->regmap, PPE_FLOW_CTRL1(type), val);
+	}
+
+	/* A FIN or RST that hits a flow is redirected to the CPU, so the
+	 * flowtable sees the teardown; the entry keeps forwarding the
+	 * rest until the flowtable removes it. A pattern left at its reset
+	 * value matches every TCP packet, so the patterns are written before
+	 * their exceptions are enabled.
+	 */
+	ctrl = 0;
+	n = 0;
+	for_each_set_bit(bit, &trap, BITS_PER_LONG)
+		ctrl |= (FIELD_PREP(PPE_L4_EXCEP_FLAGS, BIT(bit)) |
+			 FIELD_PREP(PPE_L4_EXCEP_MASK, BIT(bit)))
+			<< (n++ * PPE_L4_EXCEP_SLOT_SHIFT);
+	regmap_write(priv->regmap, PPE_L4_EXCEP_TCP_FLAGS(0), ctrl);
+	while (n--) {
+		u32 e = PPE_EXCEP_TCP_FLAGS(n);
+
+		regmap_write(priv->regmap, PPE_L3_EXCEP_CMD(e),
+			     FIELD_PREP(PPE_L3_EXCEP_ACTION,
+					PPE_L3_EXCEP_RDT_TO_CPU));
+		regmap_write(priv->regmap, PPE_L3_EXCEP_L3_FLOW_EN(e), 1);
 	}
 
 	/* Both hash blocks are searched on every op, so both bucket functions
