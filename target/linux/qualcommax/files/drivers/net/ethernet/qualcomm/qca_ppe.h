@@ -331,6 +331,8 @@
 #define   PPE_ACL_L3_DSCP		GENMASK(31, 24)	/* w0 */
 #define   PPE_ACL_FIRST_FRAG		BIT(0)		/* w1 */
 #define   PPE_ACL_TCP_FLAGS		GENMASK(6, 1)	/* w1 */
+#define   PPE_ACL_L3_TTL		GENMASK(9, 8)	/* w1: 0, 1, 255, other */
+#define     PPE_ACL_TTL_255		2
 #define   PPE_ACL_L3_FRAG		BIT(16)		/* w1 */
 #define   PPE_ACL_IS_IPV6		BIT(17)		/* w1 */
 #define   PPE_ACL_RANGE_EN		BIT(21)		/* w1 */

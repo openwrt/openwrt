@@ -530,9 +530,19 @@ static int ppe_acl_parse_key(struct flow_rule *rule,
 		struct flow_match_ip match;
 
 		flow_rule_match_ip(rule, &match);
+		/* Two bits encode 0, 1, 255 or any other TTL/hop limit. */
 		if (match.mask->ttl) {
-			NL_SET_ERR_MSG_MOD(extack, "the TTL field is two encoded bits, not a value");
-			return -EOPNOTSUPP;
+			if (match.mask->ttl != 0xff ||
+			    (match.key->ttl > 1 && match.key->ttl != 255)) {
+				NL_SET_ERR_MSG_MOD(extack, "only a TTL of 0, 1 or 255 is matched");
+				return -EOPNOTSUPP;
+			}
+			s = ppe_acl_slice_get(slice, &n, PPE_ACL_TYPE_IPMISC);
+			s->key[1] |= FIELD_PREP(PPE_ACL_L3_TTL,
+						match.key->ttl == 255 ?
+						PPE_ACL_TTL_255 :
+						match.key->ttl);
+			s->mask[1] |= PPE_ACL_L3_TTL;
 		}
 		if (match.mask->tos) {
 			s = ppe_acl_slice_get(slice, &n, PPE_ACL_TYPE_IPMISC);
