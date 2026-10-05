@@ -87,7 +87,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  
 --- a/drivers/mmc/core/queue.c
 +++ b/drivers/mmc/core/queue.c
-@@ -272,6 +272,11 @@ static blk_status_t mmc_mq_queue_rq(stru
+@@ -278,6 +278,11 @@ static blk_status_t mmc_mq_queue_rq(stru
  			spin_unlock_irq(&mq->lock);
  			return BLK_STS_RESOURCE;
  		}
@@ -99,7 +99,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  		break;
  	default:
  		/*
-@@ -288,6 +293,8 @@ static blk_status_t mmc_mq_queue_rq(stru
+@@ -294,6 +299,8 @@ static blk_status_t mmc_mq_queue_rq(stru
  	/* Parallel dispatch of requests is not supported at the moment */
  	mq->busy = true;
  
@@ -108,7 +108,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	mq->in_flight[issue_type] += 1;
  	get_card = (mmc_tot_in_flight(mq) == 1);
  	cqe_retune_ok = (mmc_cqe_qcnt(mq) == 1);
-@@ -327,6 +334,8 @@ static blk_status_t mmc_mq_queue_rq(stru
+@@ -333,6 +340,8 @@ static blk_status_t mmc_mq_queue_rq(stru
  		bool put_card = false;
  
  		spin_lock_irq(&mq->lock);

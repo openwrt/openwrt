@@ -35,7 +35,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  #define YTPHY_SSR_DUPLEX_OFFSET			13
  #define YTPHY_SSR_DUPLEX			BIT(13)
  #define YTPHY_SSR_PAGE_RECEIVED			BIT(12)
-@@ -1187,8 +1185,7 @@ static int yt8521_adjust_status(struct p
+@@ -1186,8 +1184,7 @@ static int yt8521_adjust_status(struct p
  	else
  		duplex = DUPLEX_FULL;	/* for fiber, it always DUPLEX_FULL */
  
