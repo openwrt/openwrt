@@ -385,7 +385,8 @@ static int ppe_acl_parse_key(struct flow_rule *rule,
 
 		flow_rule_match_control(rule, &match);
 		addr_type = match.key->addr_type;
-		if (!flow_rule_is_supp_control_flags(FLOW_DIS_IS_FRAGMENT,
+		if (!flow_rule_is_supp_control_flags(FLOW_DIS_IS_FRAGMENT |
+						     FLOW_DIS_FIRST_FRAG,
 						     match.mask->flags, extack))
 			return -EOPNOTSUPP;
 
@@ -394,6 +395,12 @@ static int ppe_acl_parse_key(struct flow_rule *rule,
 			if (match.key->flags & FLOW_DIS_IS_FRAGMENT)
 				s->key[1] |= PPE_ACL_L3_FRAG;
 			s->mask[1] |= PPE_ACL_L3_FRAG;
+		}
+		if (match.mask->flags & FLOW_DIS_FIRST_FRAG) {
+			s = ppe_acl_slice_get(slice, &n, PPE_ACL_TYPE_IPMISC);
+			if (match.key->flags & FLOW_DIS_FIRST_FRAG)
+				s->key[1] |= PPE_ACL_FIRST_FRAG;
+			s->mask[1] |= PPE_ACL_FIRST_FRAG;
 		}
 	} else if (flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_IPV4_ADDRS)) {
 		/* ethtool registers the address key without the control key */
