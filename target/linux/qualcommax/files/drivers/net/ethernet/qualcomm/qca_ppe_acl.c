@@ -740,7 +740,7 @@ both:
  * which is drop, so red means "over the rate" and is dropped.
  */
 static int ppe_acl_meter_set(struct qca_ppe_priv *priv, u32 index,
-			     u64 rate_bps, u32 burst)
+			     u64 rate_bps, u32 burst, bool pkt)
 {
 	u32 cir = 0, cbs = 0;
 	unsigned long clk;
@@ -765,6 +765,7 @@ static int ppe_acl_meter_set(struct qca_ppe_priv *priv, u32 index,
 		     (rate_bps ? PPE_ACL_METER_EN : 0) |
 		     PPE_ACL_METER_MODE |
 		     FIELD_PREP(PPE_ACL_METER_TOKEN_UNIT, sel) |
+		     (pkt ? PPE_ACL_METER_UNIT : 0) |
 		     FIELD_PREP(PPE_ACL_METER_CBS, cbs) |
 		     FIELD_PREP(PPE_ACL_METER_CIR_LO, cir));
 	regmap_write(priv->regmap, PPE_ACL_METER(index) + 0x4,
@@ -798,7 +799,7 @@ static void ppe_acl_rule_free(struct qca_ppe_priv *priv,
 	if (r->mirror)
 		ppe_mirror_analyzer_put(priv);
 	if (r->meter >= 0) {
-		ppe_acl_meter_set(priv, r->meter, 0, 0);
+		ppe_acl_meter_set(priv, r->meter, 0, 0, false);
 		clear_bit(r->meter, priv->acl_meter_used);
 	}
 	kfree(r->fs);
@@ -949,22 +950,25 @@ static int ppe_acl_parse_action(struct qca_ppe_priv *priv,
 		}
 		case FLOW_ACTION_POLICE: {
 			unsigned long index;
+			u64 rate_bps;
+			u32 burst;
+			int pkt;
 
-			/* One byte rate whose excess is dropped: the meter's
+			/* One rate whose excess is dropped: the meter's
 			 * second bucket only re-marks a frame past the
 			 * committed rate, where a peak rate drops it, the
-			 * meter counts bytes rather than packets, compensates
-			 * frame length by the block's own constant rather than
-			 * by a per frame overhead, and the colour a lesser
-			 * exceed action would set is read by nothing here.
+			 * meter compensates frame length by the block's own
+			 * constant rather than by a per frame overhead, and
+			 * the colour a lesser exceed action would set is read
+			 * by nothing here.
 			 */
-			if (!a->police.rate_bytes_ps ||
+			if (!a->police.rate_bytes_ps == !a->police.rate_pkt_ps ||
 			    a->police.peakrate_bytes_ps || a->police.avrate ||
-			    a->police.rate_pkt_ps || a->police.overhead ||
+			    a->police.overhead ||
 			    a->police.exceed.act_id != FLOW_ACTION_DROP ||
 			    (a->police.notexceed.act_id != FLOW_ACTION_ACCEPT &&
 			     a->police.notexceed.act_id != FLOW_ACTION_PIPE)) {
-				NL_SET_ERR_MSG_MOD(extack, "the meter is one byte rate and drops what exceeds it");
+				NL_SET_ERR_MSG_MOD(extack, "the meter is one byte or packet rate and drops what exceeds it");
 				return -EOPNOTSUPP;
 			}
 			/* Accepting what conforms ends the filter, so a later
@@ -985,10 +989,10 @@ static int ppe_acl_parse_action(struct qca_ppe_priv *priv,
 				NL_SET_ERR_MSG_MOD(extack, "every meter is taken");
 				return -ENOSPC;
 			}
-			ret = ppe_acl_meter_set(priv, index,
-						a->police.rate_bytes_ps *
-						BITS_PER_BYTE,
-						a->police.burst);
+			pkt = ppe_police_rate(&a->police, &rate_bps, &burst);
+			ret = pkt < 0 ? pkt :
+			      ppe_acl_meter_set(priv, index, rate_bps, burst,
+						pkt);
 			if (ret) {
 				NL_SET_ERR_MSG_MOD(extack, "the rate and burst are outside the meter's range");
 				return ret;

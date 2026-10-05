@@ -1268,6 +1268,30 @@ int ppe_token_bucket(unsigned long clk, u32 slot, u64 rate_bps, u32 burst,
 	return -ERANGE;
 }
 
+/* A meter in packet mode charges a frame 128 times what byte mode charges a
+ * byte, at every token unit, so a packet rate is programmed as the byte rate
+ * of 128-byte frames. Returns 1 for packet mode, 0 for byte mode.
+ */
+#define PPE_METER_FRAME_BYTES	128
+
+int ppe_police_rate(const struct flow_action_police *p, u64 *rate_bps,
+		    u32 *burst)
+{
+	if (!p->rate_pkt_ps) {
+		*rate_bps = p->rate_bytes_ps * BITS_PER_BYTE;
+		*burst = p->burst;
+		return 0;
+	}
+
+	if (p->rate_pkt_ps > U32_MAX ||
+	    p->burst_pkt > U32_MAX / PPE_METER_FRAME_BYTES)
+		return -ERANGE;
+
+	*rate_bps = p->rate_pkt_ps * PPE_METER_FRAME_BYTES * BITS_PER_BYTE;
+	*burst = p->burst_pkt * PPE_METER_FRAME_BYTES;
+	return 1;
+}
+
 /* What one full frame costs on the wire for this port, which is what a token
  * bucket has to be able to hold and what a queue's floor is counted in.
  */
@@ -1448,7 +1472,7 @@ static int ppe_port_shaper_set(struct qca_ppe_priv *priv, int port,
  * dropped by the reset value of the violate command.
  */
 static int ppe_port_policer_set(struct qca_ppe_priv *priv, int port,
-				u64 rate_bps, u32 burst)
+				u64 rate_bps, u32 burst, bool pkt)
 {
 	u32 cir = 0, cbs = 0;
 	unsigned long clk;
@@ -1481,6 +1505,7 @@ static int ppe_port_policer_set(struct qca_ppe_priv *priv, int port,
 		     FIELD_PREP(PPE_METER_FRAME_TYPE,
 				FIELD_MAX(PPE_METER_FRAME_TYPE)) |
 		     FIELD_PREP(PPE_METER_TOKEN_UNIT, sel) |
+		     (pkt ? PPE_METER_UNIT : 0) |
 		     FIELD_PREP(PPE_METER_CBS, cbs) |
 		     FIELD_PREP(PPE_METER_CIR_LO, cir));
 	regmap_write(priv->regmap, PPE_PORT_METER_W1(port),
@@ -1504,21 +1529,28 @@ int qca_ppe_port_policer_add(struct dsa_switch *ds, int port,
 			     struct netlink_ext_ack *extack)
 {
 	struct qca_ppe_priv *priv = ds_to_priv(ds);
+	u64 rate_bps;
+	u32 burst;
+	int pkt;
 
 	/* One rate, one burst, drop on red is all this meter has. Everything
 	 * else the police action can carry is refused rather than dropped on
-	 * the floor: a filter that asked for a packet rate and got a byte
-	 * meter, or asked for pass on exceed and got drop, would report
-	 * offloaded and police something other than what it says.
+	 * the floor: a filter that asked for pass on exceed and got drop
+	 * would report offloaded and police something other than what it says.
 	 */
-	if (!policer->rate_bytes_ps ||
-	    policer->peakrate_bytes_ps || policer->rate_pkt_ps ||
-	    policer->burst_pkt || policer->avrate ||
+	if (!policer->rate_bytes_ps == !policer->rate_pkt_ps ||
+	    policer->peakrate_bytes_ps || policer->avrate ||
 	    policer->exceed.act_id != FLOW_ACTION_DROP ||
 	    (policer->notexceed.act_id != FLOW_ACTION_PIPE &&
 	     policer->notexceed.act_id != FLOW_ACTION_ACCEPT)) {
-		NL_SET_ERR_MSG_MOD(extack, "the meter is one byte rate, one burst and drop on red");
+		NL_SET_ERR_MSG_MOD(extack, "the meter is one byte or packet rate, one burst and drop on red");
 		return -EOPNOTSUPP;
+	}
+
+	pkt = ppe_police_rate(policer, &rate_bps, &burst);
+	if (pkt < 0) {
+		NL_SET_ERR_MSG_MOD(extack, "the rate and burst are outside the meter's range");
+		return pkt;
 	}
 
 	/* The meter counts the frame the port puts on the wire, so a link
@@ -1534,9 +1566,7 @@ int qca_ppe_port_policer_add(struct dsa_switch *ds, int port,
 		     FIELD_PREP(PPE_CMPST_LENGTH,
 				ETH_FCS_LEN + policer->overhead));
 
-	return ppe_port_policer_set(priv, port,
-				    policer->rate_bytes_ps * BITS_PER_BYTE,
-				    policer->burst);
+	return ppe_port_policer_set(priv, port, rate_bps, burst, pkt);
 }
 
 void qca_ppe_port_policer_del(struct dsa_switch *ds, int port)
@@ -1545,7 +1575,7 @@ void qca_ppe_port_policer_del(struct dsa_switch *ds, int port)
 
 	regmap_write(priv->regmap, PPE_POLICER_CMPST_LEN(port),
 		     FIELD_PREP(PPE_CMPST_LENGTH, ETH_FCS_LEN));
-	ppe_port_policer_set(priv, port, 0, 0);
+	ppe_port_policer_set(priv, port, 0, 0, false);
 }
 
 /* The counters a shaped port can answer with are the MAC's own transmit MIB and

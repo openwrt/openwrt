@@ -611,6 +611,7 @@
 #define   PPE_ACL_METER_EN		BIT(0)		/* word 0 */
 #define   PPE_ACL_METER_MODE		BIT(3)		/* word 0 */
 #define   PPE_ACL_METER_TOKEN_UNIT	GENMASK(6, 4)	/* word 0 */
+#define   PPE_ACL_METER_UNIT		BIT(7)		/* word 0: packets */
 #define   PPE_ACL_METER_CBS		GENMASK(23, 8)	/* word 0 */
 #define   PPE_ACL_METER_CIR_LO		GENMASK(31, 24)	/* word 0 */
 #define   PPE_ACL_METER_CIR_HI		GENMASK(9, 0)	/* word 1 */
@@ -1170,6 +1171,8 @@ int qca_ppe_port_policer_add(struct dsa_switch *ds, int port,
 void qca_ppe_port_policer_del(struct dsa_switch *ds, int port);
 int ppe_token_bucket(unsigned long clk, u32 slot, u64 rate_bps, u32 burst,
 		     u32 cir_max, u32 cbs_max, u32 *cir, u32 *cbs);
+int ppe_police_rate(const struct flow_action_police *p, u64 *rate_bps,
+		    u32 *burst);
 
 int ppe_vsi_alloc(struct qca_ppe_priv *priv);
 void ppe_vsi_free(struct qca_ppe_priv *priv, u32 vsi);
