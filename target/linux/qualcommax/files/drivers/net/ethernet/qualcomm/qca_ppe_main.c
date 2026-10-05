@@ -2710,8 +2710,10 @@ static void ppe_ctrlpkt_init(struct qca_ppe_priv *priv)
 		     FIELD_PREP(PPE_APP_CTRL_RFDB_BMP,
 				GENMASK(PPE_RFDB_LINK_LOCAL - 1, 0)));
 	regmap_write(priv->regmap, PPE_APP_CTRL(0) + 4, 0);
+	/* The bridge takes link-local frames before its VLAN filter does. */
 	regmap_write(priv->regmap, PPE_APP_CTRL(0) + 8,
-		     trap | PPE_APP_CTRL_STP_BYPASS);
+		     trap | PPE_APP_CTRL_STP_BYPASS |
+		     PPE_APP_CTRL_VLAN_FLTR_BYP);
 
 	/* A report is addressed to its group, so an MDB entry would forward
 	 * it past the bridge's snooping and the membership would expire.

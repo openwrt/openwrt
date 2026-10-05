@@ -220,10 +220,13 @@ int qca_ppe_port_vlan_filtering(struct dsa_switch *ds, int port,
 			   PPE_PORT_EG_VSI_TAG_EN,
 			   vlan_filtering ? PPE_PORT_EG_VSI_TAG_EN : 0);
 
+	/* Every VLAN the port is a member of has a rule naming the port, and
+	 * so does its PVID, so a miss is a frame the bridge would drop.
+	 */
 	regmap_update_bits(priv->regmap, PPE_PORT_VLAN_CFG(port),
 			   PPE_VLAN_XLT_MISS_FWD,
 			   vlan_filtering ?
-			   FIELD_PREP(PPE_VLAN_XLT_MISS_FWD, PPE_XLT_MISS_RDT_TO_CPU) : 0);
+			   FIELD_PREP(PPE_VLAN_XLT_MISS_FWD, PPE_XLT_MISS_DROP) : 0);
 
 	if (vlan_filtering)
 		priv->vlan_filtering |= BIT(port);

@@ -499,6 +499,7 @@
 /* Fields in the third 32-bit word of APP_CTRL. */
 #define   PPE_APP_CTRL_PORT_BITMAP_EN	BIT(2)
 #define   PPE_APP_CTRL_PORT_BITMAP	GENMASK(10, 3)
+#define   PPE_APP_CTRL_VLAN_FLTR_BYP	BIT(11)
 #define   PPE_APP_CTRL_STP_BYPASS	BIT(12)
 #define   PPE_APP_CTRL_CMD		GENMASK(16, 15)
 #define   PPE_APP_CTRL_REDIRECT_CPU	3
@@ -908,7 +909,7 @@
 #define PPE_TRUNK_GROUPS		2
 
 #define PPE_XLT_TBL_NUM			64
-#define PPE_XLT_MISS_RDT_TO_CPU		3
+#define PPE_XLT_MISS_DROP		1
 #define PPE_XLT_CKEY_PRIO_TAGGED	2
 #define PPE_XLT_CKEY_TAGGED		4
 
