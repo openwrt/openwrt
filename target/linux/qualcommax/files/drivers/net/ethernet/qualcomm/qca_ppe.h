@@ -909,6 +909,7 @@
 
 #define PPE_XLT_TBL_NUM			64
 #define PPE_XLT_MISS_RDT_TO_CPU		3
+#define PPE_XLT_CKEY_PRIO_TAGGED	2
 #define PPE_XLT_CKEY_TAGGED		4
 
 #define PPE_EG_UNTAGGED			0

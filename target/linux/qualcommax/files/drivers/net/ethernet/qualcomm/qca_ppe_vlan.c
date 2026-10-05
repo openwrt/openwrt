@@ -32,8 +32,11 @@ static void ppe_xlt_rule_set(struct qca_ppe_priv *priv, int idx,
 	     FIELD_PREP(PPE_XLT_SKEY_FMT, PPE_XLT_SKEY_UNTAGGED);
 	w1 = 0;
 
+	/* The bridge classifies a priority-tagged frame by the PVID too. */
 	if (untagged) {
 		w0 |= PPE_XLT_CKEY_FMT_0;
+		w1 |= FIELD_PREP(PPE_XLT_CKEY_FMT_1,
+				  PPE_XLT_CKEY_PRIO_TAGGED >> 1);
 	} else {
 		w1 |= FIELD_PREP(PPE_XLT_CKEY_FMT_1,
 				  PPE_XLT_CKEY_TAGGED >> 1);
