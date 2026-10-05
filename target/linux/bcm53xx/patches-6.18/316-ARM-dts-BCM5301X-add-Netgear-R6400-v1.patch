@@ -1,0 +1,202 @@
+From d7a0f16a0cc7ba2d463b4639a920734e149c2fb8 Mon Sep 17 00:00:00 2001
+From: Russell Ballestrini <russell@unturf.com>
+Date: Sun, 4 Oct 2026 20:37:42 -0400
+Subject: [PATCH] ARM: dts: BCM5301X: add Netgear R6400 v1
+
+Netgear R6400 v1: BCM4708A0, 256 MiB RAM, 128 MiB NAND, BCM4331 2.4 GHz
+and BCM4360 5 GHz on PCIe, WAN on switch port 0 and LAN 1-4 on ports 1-4.
+
+Signed-off-by: Russell Ballestrini <russell@unturf.com>
+---
+--- a/arch/arm/boot/dts/broadcom/Makefile
++++ b/arch/arm/boot/dts/broadcom/Makefile
+@@ -61,6 +61,7 @@ dtb-$(CONFIG_ARCH_BCM_5301X) += \
+ 	bcm4708-luxul-xwc-1000.dtb \
+ 	bcm4708-netgear-r6250.dtb \
+ 	bcm4708-netgear-r6300-v2.dtb \
++	bcm4708-netgear-r6400-v1.dtb \
+ 	bcm4708-smartrg-sr400ac.dtb \
+ 	bcm47081-asus-rt-n18u.dtb \
+ 	bcm47081-buffalo-wzr-600dhp2.dtb \
+--- /dev/null
++++ b/arch/arm/boot/dts/broadcom/bcm4708-netgear-r6400-v1.dts
+@@ -0,0 +1,179 @@
++// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
++/*
++ * Broadcom BCM470X / BCM5301X ARM platform code.
++ * DTS for Netgear R6400 V1
++ *
++ * BCM4708A0, 256 MiB RAM, 128 MiB NAND (BCH-8), BCM4331 (2.4 GHz)
++ * and BCM4360 (5 GHz) on PCIe. Switch: WAN on port 0, LAN 1-4 on
++ * ports 1-4, as on the R7000.
++ */
++
++/dts-v1/;
++
++#include <dt-bindings/leds/common.h>
++
++#include "bcm4708.dtsi"
++#include "bcm5301x-nand-cs0-bch8.dtsi"
++
++/ {
++	compatible = "netgear,r6400-v1", "brcm,bcm4708";
++	model = "Netgear R6400 V1 (BCM4708)";
++
++	chosen {
++		bootargs = "console=ttyS0,115200";
++	};
++
++	memory@0 {
++		device_type = "memory";
++		reg = <0x00000000 0x08000000>,
++		      <0x88000000 0x08000000>;
++	};
++
++	usb_power: regulator-usb {
++		compatible = "regulator-fixed";
++		regulator-name = "usb-vcc";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		gpios = <&chipcommon 0 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
++
++	leds {
++		compatible = "gpio-leds";
++
++		led-power-white {
++			color = <LED_COLOR_ID_WHITE>;
++			function = LED_FUNCTION_POWER;
++			gpios = <&chipcommon 1 GPIO_ACTIVE_LOW>;
++			linux,default-trigger = "default-on";
++		};
++
++		led-power-amber {
++			color = <LED_COLOR_ID_AMBER>;
++			function = LED_FUNCTION_POWER;
++			gpios = <&chipcommon 2 GPIO_ACTIVE_LOW>;
++		};
++
++		led-wan-amber {
++			color = <LED_COLOR_ID_AMBER>;
++			function = LED_FUNCTION_WAN;
++			gpios = <&chipcommon 6 GPIO_ACTIVE_LOW>;
++		};
++
++		led-wan-white {
++			color = <LED_COLOR_ID_WHITE>;
++			function = LED_FUNCTION_WAN;
++			gpios = <&chipcommon 7 GPIO_ACTIVE_LOW>;
++		};
++
++		led-5ghz {
++			color = <LED_COLOR_ID_WHITE>;
++			function = LED_FUNCTION_WLAN_5GHZ;
++			gpios = <&chipcommon 8 GPIO_ACTIVE_LOW>;
++		};
++
++		led-2ghz {
++			color = <LED_COLOR_ID_WHITE>;
++			function = LED_FUNCTION_WLAN_2GHZ;
++			gpios = <&chipcommon 9 GPIO_ACTIVE_LOW>;
++		};
++
++		led-wps {
++			color = <LED_COLOR_ID_WHITE>;
++			function = LED_FUNCTION_WPS;
++			gpios = <&chipcommon 10 GPIO_ACTIVE_HIGH>;
++		};
++
++		led-wireless {
++			color = <LED_COLOR_ID_WHITE>;
++			function = LED_FUNCTION_WLAN;
++			gpios = <&chipcommon 11 GPIO_ACTIVE_HIGH>;
++		};
++
++		led-usb1 {
++			color = <LED_COLOR_ID_WHITE>;
++			function = LED_FUNCTION_USB;
++			function-enumerator = <1>;
++			gpios = <&chipcommon 12 GPIO_ACTIVE_LOW>;
++		};
++
++		led-usb2 {
++			color = <LED_COLOR_ID_WHITE>;
++			function = LED_FUNCTION_USB;
++			function-enumerator = <2>;
++			gpios = <&chipcommon 13 GPIO_ACTIVE_LOW>;
++		};
++	};
++
++	gpio-keys {
++		compatible = "gpio-keys";
++
++		button-wps {
++			label = "WPS";
++			linux,code = <KEY_WPS_BUTTON>;
++			gpios = <&chipcommon 3 GPIO_ACTIVE_LOW>;
++		};
++
++		button-rfkill {
++			label = "WiFi";
++			linux,code = <KEY_RFKILL>;
++			gpios = <&chipcommon 4 GPIO_ACTIVE_LOW>;
++		};
++
++		button-restart {
++			label = "Reset";
++			linux,code = <KEY_RESTART>;
++			gpios = <&chipcommon 5 GPIO_ACTIVE_LOW>;
++		};
++	};
++};
++
++&usb2 {
++	vbus-supply = <&usb_power>;
++};
++
++&usb3 {
++	vbus-supply = <&usb_power>;
++};
++
++&usb3_phy {
++	status = "okay";
++};
++
++&srab {
++	status = "okay";
++
++	ports {
++		port@0 {
++			label = "wan";
++		};
++
++		port@1 {
++			label = "lan1";
++		};
++
++		port@2 {
++			label = "lan2";
++		};
++
++		port@3 {
++			label = "lan3";
++		};
++
++		port@4 {
++			label = "lan4";
++		};
++
++		port@5 {
++			label = "cpu";
++		};
++
++		port@7 {
++			status = "disabled";
++		};
++
++		port@8 {
++			status = "disabled";
++		};
++	};
++};
