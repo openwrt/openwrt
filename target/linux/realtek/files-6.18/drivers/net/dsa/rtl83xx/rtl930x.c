@@ -280,8 +280,6 @@ static void rtl930x_init_eee(struct rtl838x_switch_priv *priv, bool enable)
 	priv->eee_enabled = enable;
 }
 
-#ifdef CONFIG_NET_DSA_RTL83XX_RTL930X_L3_OFFLOAD
-
 // Currently not used
 // static u32 rtl930x_l3_hash6(struct in6_addr *ip6, int algorithm, bool move_dip)
 // {
@@ -384,8 +382,6 @@ static void rtl930x_init_eee(struct rtl838x_switch_priv *priv, bool enable)
 
 // 	return mtu_id;
 // }
-
-#endif /* CONFIG_NET_DSA_RTL83XX_RTL930X_L3_OFFLOAD */
 
 /* A PIE rule logs its matched packets into the LOG table entry that carries
  * its own rule ID, in data word 1 - one entry per rule. Counters handed out

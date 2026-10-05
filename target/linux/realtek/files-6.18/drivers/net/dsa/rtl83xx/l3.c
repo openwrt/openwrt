@@ -217,7 +217,6 @@ static int otto_l3_839x_setup(struct otto_l3_ctrl *ctrl)
 	return 0;
 }
 
-__maybe_unused
 static u32 otto_l3_930x_hash4(u32 ip, int algorithm, bool move_dip)
 {
 	u32 s0, s1, pH;
@@ -248,7 +247,6 @@ static u32 otto_l3_930x_hash4(u32 ip, int algorithm, bool move_dip)
  * Get the Destination-MAC of an L3 egress interface or the Source MAC for routed packets
  * from the SoC's L3_EGR_INTF_MAC table. Indexes 0-2047 are DMACs, 2048+ are SMACs
  */
-__maybe_unused
 static u64 otto_l3_930x_get_egress_mac(struct otto_l3_ctrl *ctrl, u32 idx)
 {
 	u32 data[2];
@@ -265,7 +263,6 @@ static u64 otto_l3_930x_get_egress_mac(struct otto_l3_ctrl *ctrl, u32 idx)
 /* Set the Destination-MAC of a route or the Source MAC of an L3 egress interface
  * in the SoC's L3_EGR_INTF_MAC table. Indexes 0-2047 are DMACs, 2048+ are SMACs
  */
-__maybe_unused
 static void otto_l3_930x_set_egress_mac(struct otto_l3_ctrl *ctrl, u32 idx, u64 mac)
 {
 	u32 data[2] = { mac >> 32, mac };
@@ -275,7 +272,6 @@ static void otto_l3_930x_set_egress_mac(struct otto_l3_ctrl *ctrl, u32 idx, u64 
 }
 
 /* Read a host route entry from the table using its index. Only IPv4 and IPv6 unicast supported */
-__maybe_unused
 static void otto_l3_930x_host_route_read(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt)
 {
 	/* Only the unicast layout is handled below */
@@ -321,7 +317,6 @@ static void otto_l3_930x_host_route_read(struct otto_l3_ctrl *ctrl, int idx, str
 }
 
 /* Write a host route entry from the table using its index. Only unicast routes supported */
-__maybe_unused
 static void otto_l3_930x_host_route_write(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt)
 {
 	/* Only the unicast layout is handled below */
@@ -376,7 +371,6 @@ static void otto_l3_930x_host_route_write(struct otto_l3_ctrl *ctrl, int idx, st
  */
 static const u8 otto_l3_930x_slot_widths[] = { 1, 2, 3, 6 };
 
-__maybe_unused
 static int otto_l3_930x_find_slot(struct otto_l3_ctrl *ctrl, struct otto_l3_route *rt, bool must_exist)
 {
 	int slot_width, algorithm, addr, idx;
@@ -426,7 +420,6 @@ static int otto_l3_930x_find_slot(struct otto_l3_ctrl *ctrl, struct otto_l3_rout
  * Reads a MAC entry for L3 termination as entry point for routing from the hardware table.
  * idx is the index into the L3_ROUTER_MAC table
  */
-__maybe_unused
 static void otto_l3_930x_get_router_mac(struct otto_l3_ctrl *ctrl,
 					u32 idx, struct otto_l3_router_mac *m)
 {
@@ -454,7 +447,6 @@ static void otto_l3_930x_get_router_mac(struct otto_l3_ctrl *ctrl,
  * Writes a MAC entry for L3 termination as entry point for routing into the hardware table
  * idx is the index into the L3_ROUTER_MAC table
  */
-__maybe_unused
 static void otto_l3_930x_set_router_mac(struct otto_l3_ctrl *ctrl,
 					u32 idx, struct otto_l3_router_mac *m)
 {
@@ -487,7 +479,6 @@ static void otto_l3_930x_set_router_mac(struct otto_l3_ctrl *ctrl,
 }
 
 /* Destination MAC and L3 egress interface ID of a nexthop entry from the SoC's L3_NEXTHOP table */
-__maybe_unused
 static void otto_l3_930x_get_nexthop(struct otto_l3_ctrl *ctrl,
 				     int idx, u16 *dmac_id, u16 *interface)
 {
@@ -507,7 +498,6 @@ static void otto_l3_930x_get_nexthop(struct otto_l3_ctrl *ctrl,
  * 0x7ffd: TRAP2MASTERCPU
  * 0x7fff: DMAC_ID_DROP
  */
-__maybe_unused
 static void otto_l3_930x_set_nexthop(struct otto_l3_ctrl *ctrl,
 				     int idx, u16 dmac_id, u16 interface)
 {
@@ -521,7 +511,6 @@ static void otto_l3_930x_set_nexthop(struct otto_l3_ctrl *ctrl,
 }
 
 /* Prefix length of an IPv6 mask, i.e. how many leading bits are set */
-__maybe_unused
 static int otto_l3_930x_mask6_len(const struct in6_addr *mask)
 {
 	int len = 0;
@@ -543,7 +532,6 @@ static int otto_l3_930x_mask6_len(const struct in6_addr *mask)
 /* Read a prefix route entry from the L3_PREFIX_ROUTE_IPUC table
  * We currently only support IPv4 and IPv6 unicast route
  */
-__maybe_unused
 static void otto_l3_930x_route_read(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt)
 {
 	bool host_route, default_route;
@@ -613,7 +601,6 @@ static void otto_l3_930x_route_read(struct otto_l3_ctrl *ctrl, int idx, struct o
 	dev_dbg(ctrl->dev, "GW: %pI4, prefix_len: %d\n", &rt->dst_ip, rt->prefix_len);
 }
 
-__maybe_unused
 static void otto_l3_930x_net6_mask(int prefix_len, struct in6_addr *ip6_m)
 {
 	int o = prefix_len >> 3;
@@ -629,7 +616,6 @@ static void otto_l3_930x_net6_mask(int prefix_len, struct in6_addr *ip6_m)
  * Look up the index of a prefix route in the routing table CAM for unicast IPv4/6 routes
  * using hardware offload.
  */
-__maybe_unused
 static int otto_l3_930x_route_lookup_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_route *rt)
 {
 	u32 ip4_m, v;
@@ -678,7 +664,6 @@ static int otto_l3_930x_route_lookup_hw(struct otto_l3_ctrl *ctrl, struct otto_l
  * cannot decode. Returns -EAGAIN when no row was written and the table is as
  * it was, and -EIO when the block may be half shifted.
  */
-__maybe_unused
 static int otto_l3_930x_route_rows_move(struct otto_l3_ctrl *ctrl, int dst, int src, int count)
 {
 	u32 data[11];
@@ -718,7 +703,6 @@ static int otto_l3_930x_route_rows_move(struct otto_l3_ctrl *ctrl, int dst, int 
 /* Write a prefix route into the routing table CAM at position idx
  * Currently only IPv4 and IPv6 unicast routes are supported
  */
-__maybe_unused
 static void otto_l3_930x_route_write(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt)
 {
 	struct in6_addr ip6_m;
@@ -868,7 +852,6 @@ static int otto_l3_alloc_router_mac(struct otto_l3_ctrl *ctrl, u64 mac)
 }
 
 /* Read back an egress interface descriptor, the layout written below. */
-__maybe_unused
 static void otto_l3_930x_get_egress_intf(struct otto_l3_ctrl *ctrl, int idx,
 					 struct otto_l3_intf *intf)
 {
@@ -894,7 +877,6 @@ static void otto_l3_930x_get_egress_intf(struct otto_l3_ctrl *ctrl, int idx,
  * 0: FORWARD, 1: DROP, 2: TRAP2CPU, 3: COPY2CPU, 4: TRAP2MASTERCPU, 5: COPY2MASTERCPU,  6: HARDDROP
  * idx is the index in the HW interface table: idx < 0x80
  */
-__maybe_unused
 static void otto_l3_930x_set_egress_intf(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_intf *intf)
 {
 	u32 data[2];
@@ -921,7 +903,6 @@ static void otto_l3_930x_set_egress_intf(struct otto_l3_ctrl *ctrl, int idx, str
  * - The router's MAC address on which routed packets are expected
  * - MAC addresses used as source macs of routed packets
  */
-__maybe_unused
 static int otto_l3_930x_setup(struct otto_l3_ctrl *ctrl)
 {
 	struct rtl838x_switch_priv *priv = ctrl->priv;
@@ -3593,7 +3574,6 @@ static void otto_l3_930x_dbgfs_remove(void *data)
  * system would find the name taken and log the warning below rather than
  * share the tree, since the directory is tied to @dev's devm lifetime.
  */
-__maybe_unused
 static void otto_l3_930x_dbgfs_init(struct otto_l3_ctrl *ctrl)
 {
 	struct device *dev = ctrl->dev;
@@ -3628,7 +3608,6 @@ const struct otto_l3_config otto_l3_839x_cfg = {
 };
 
 const struct otto_l3_config otto_l3_930x_cfg = {
-#ifdef CONFIG_NET_DSA_RTL83XX_RTL930X_L3_OFFLOAD
 	.use_l3_tables = true,
 	.find_slot = otto_l3_930x_find_slot,
 	.get_egress_intf = otto_l3_930x_get_egress_intf,
@@ -3646,7 +3625,6 @@ const struct otto_l3_config otto_l3_930x_cfg = {
 	.route_write = otto_l3_930x_route_write,
 	.setup = otto_l3_930x_setup,
 	.dbgfs_init = otto_l3_930x_dbgfs_init,
-#endif
 };
 
 const struct otto_l3_config otto_l3_931x_cfg = {
