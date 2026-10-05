@@ -376,11 +376,11 @@ static int ppe_uplink_find(struct qca_ppe_priv *priv, int port, u16 vid)
  * tuple.
  *
  * A dedicated VSI keeps the uplink out of any L2 domain: the ingress VLAN is
- * classified into it with the 802.1Q tag stripped, and the VSI carries a route-
- * and PPPoE-terminating L3 interface holding the router's MAC. A frame that
- * misses the flow table is still forwarded to the CPU, with the tag the
- * hardware stripped re-added on that path, so the software stack sees on-wire
- * frames throughout.
+ * classified into it with the 802.1Q tag stripped, and the VSI carries a routing
+ * L3 interface holding the router's MAC. A frame that misses the flow table is
+ * still forwarded to the CPU, with the tag the hardware stripped re-added on
+ * that path, so the software stack sees on-wire frames throughout. The MRU
+ * leaves room for the tag and a PPPoE header whether or not either is there.
  */
 static int ppe_uplink_get(struct qca_ppe_priv *priv, int port, u16 vid,
 			  const u8 *mac, u32 mtu)
@@ -434,9 +434,8 @@ static int ppe_uplink_get(struct qca_ppe_priv *priv, int port, u16 vid,
 		     FIELD_PREP(PPE_L3_IF_TTL_EXCEED_CMD,
 				PPE_L3_IF_TTL_EXCEED_TO_CPU) |
 		     PPE_L3_IF_TTL_EXCEED_DEACCEL |
-		     FIELD_PREP(PPE_L3_IF_MAC_BITMAP, GENMASK(7, 0)) |
-		     PPE_L3_IF_PPPOE_EN);
-	ppe_l3_if_mtu_set(priv, vsi, mtu);
+		     FIELD_PREP(PPE_L3_IF_MAC_BITMAP, GENMASK(7, 0)));
+	ppe_l3_if_mtu_set(priv, vsi, mtu + VLAN_ETH_HLEN + PPPOE_SES_HLEN);
 	regmap_write(priv->regmap, PPE_L3_VSI_TBL(vsi),
 		     PPE_L3_VSI_IF_VALID | FIELD_PREP(PPE_L3_VSI_IF_INDEX, vsi));
 
@@ -542,11 +541,14 @@ static void ppe_uplink_put(struct qca_ppe_priv *priv, int i)
 
 /* Recognise a PPPoE session on its uplink, so the header is parsed through to
  * the inner IP. A re-dialled session has a new id and gets an entry of its own;
- * the old one goes with the last flow that used it.
+ * the old one goes with the last flow that used it. The uplink terminates PPPoE
+ * from its first session on.
  */
 static int ppe_pppoe_session_get(struct qca_ppe_priv *priv, int up, u16 sid)
 {
 	int port = priv->uplink[up].port;
+	u32 vsi = priv->uplink[up].vsi;
+	u32 w[PPE_L3_IF_WORDS];
 	int i, free = -1;
 
 	for (i = 0; i < PPE_PPPOE_SESSIONS; i++) {
@@ -571,14 +573,18 @@ static int ppe_pppoe_session_get(struct qca_ppe_priv *priv, int up, u16 sid)
 	if (free < 0)
 		return -ENOSPC;
 
+	for (i = 0; i < PPE_L3_IF_WORDS; i++)
+		regmap_read(priv->regmap, PPE_IN_L3_IF_TBL(vsi) + i * 4, &w[i]);
+	w[1] |= PPE_L3_IF_PPPOE_EN;
+	ppe_tbl_write(priv, PPE_IN_L3_IF_TBL(vsi), w, PPE_L3_IF_WORDS);
+
 	priv->pppoe[free].ref = 1;
 	priv->pppoe[free].sid = sid;
 	priv->pppoe[free].uplink = up;
 	regmap_write(priv->regmap, PPE_PPPOE_SESSION(free),
 		     FIELD_PREP(PPE_PPPOE_SESSION_ID, sid) |
 		     FIELD_PREP(PPE_PPPOE_SESSION_PORT_BMP, BIT(port)) |
-		     FIELD_PREP(PPE_PPPOE_SESSION_L3_IF,
-				priv->uplink[up].vsi));
+		     FIELD_PREP(PPE_PPPOE_SESSION_L3_IF, vsi));
 	regmap_write(priv->regmap, PPE_PPPOE_SESSION_EXT(free),
 		     PPE_PPPOE_EXT_L3_IF_VALID | PPE_PPPOE_EXT_UC_VALID);
 
@@ -1008,30 +1014,30 @@ static int ppe_flow_alloc_egress(struct qca_ppe_priv *priv,
 		ppe_tbl_write(priv, PPE_IN_NEXTHOP_TBL(ret), words,
 			      PPE_NEXTHOP_WORDS);
 
-	/* The reverse of a flow that egresses PPPoE arrives PPPoE-encapsulated
-	 * on this same port; set the port up to route it so that direction
-	 * offloads too.
+	/* The reverse of a flow that egresses PPPoE, or a VLAN of a port no
+	 * bridge classifies, arrives the same way on this port; set the port up
+	 * to route it so that direction offloads too.
 	 */
-	if (data->pppoe_valid) {
+	if (data->pppoe_valid ||
+	    (data->vlan_valid && !priv->port_br_dev[port])) {
 		ret = ppe_uplink_get(priv, port,
 				     data->vlan_valid ? data->vlan_id : 0,
-				     odp->user->dev_addr,
-				     odp->user->mtu + VLAN_ETH_HLEN +
-				     PPPOE_SES_HLEN);
+				     odp->user->dev_addr, odp->user->mtu);
 		if (ret < 0)
 			goto err_nexthop;
 		entry->uplink = ret;
+	}
 
+	if (data->pppoe_valid) {
 		ret = ppe_pppoe_session_get(priv, entry->uplink,
 					    data->pppoe_sid);
 		if (ret < 0)
 			goto err_uplink;
 		entry->session = ret;
-
-		if (priv->uplink[entry->uplink].ref == 1)
-			ppe_flow_purge_ingress(priv,
-					       &priv->uplink[entry->uplink]);
 	}
+
+	if (entry->uplink >= 0 && priv->uplink[entry->uplink].ref == 1)
+		ppe_flow_purge_ingress(priv, &priv->uplink[entry->uplink]);
 
 	return 0;
 
