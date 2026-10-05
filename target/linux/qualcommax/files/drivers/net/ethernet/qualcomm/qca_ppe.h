@@ -343,6 +343,8 @@
 #define   PPE_ACL_IP_PORT		GENMASK(15, 0)	/* w0: L4 or ICMP */
 #define   PPE_ACL_IP_LO			GENMASK(31, 16)	/* w0 */
 #define   PPE_ACL_IP_HI			GENMASK(15, 0)	/* w1 */
+#define   PPE_ACL_L3_PKT_TYPE		GENMASK(19, 17)	/* w1 */
+#define     PPE_ACL_PKT_TYPE_ARP	5
 #define   PPE_ACL_L3_LEN		GENMASK(15, 0)	/* w0; range min */
 #define   PPE_ACL_L3_PROT		GENMASK(23, 16)	/* w0 */
 #define   PPE_ACL_L3_DSCP		GENMASK(31, 24)	/* w0 */
