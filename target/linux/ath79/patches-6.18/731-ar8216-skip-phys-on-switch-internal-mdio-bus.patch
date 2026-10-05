@@ -1,0 +1,105 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Salah Ahmed <haddad2inc@gmail.com>
+Date: Mon, 05 Oct 2026 04:53:13 +0300
+Subject: [PATCH] ath79: ar8216: skip PHYs on another switch's internal MDIO bus
+
+CONFIG_AR8216_PHY is part of the ath79 target default and its phy_driver
+matches on 0x004d0000/0xffff0000, which covers the PHY ID of the
+QCA83xx port PHYs (0x004dd036 on a QCA8337 rev. 2). It therefore also
+claims the PHYs that qca8k exposes on a switch's internal MDIO bus once
+a board is converted to DSA.
+
+That is fatal on ath79. 730-ar8216-make-reg-access-atomic.patch wraps
+every register access in local_irq_save()/local_irq_restore() and warns
+that it "breaks the driver on any mdio master with interrupts used".
+qca8k's MDIO master is exactly such a master: it takes a mutex, may
+allocate and transmit skbs (qca8k_phy_eth_command) and busy-waits up to
+QCA8K_BUSY_WAIT_TIMEOUT (2000 ms) per transaction, while
+ar8xxx_read_id() retries the whole sequence AR8X16_PROBE_RETRIES times.
+On a single-core SoC that runs with interrupts disabled, which locks
+the core up and resets the board in a loop before preinit.
+
+Skip PHYs whose MDIO bus is parented by an mdio_device that is not
+bound to this driver: that is the internal bus of a switch owned by
+another driver. The SoC MDIO masters (ag71xx, mdio-gpio, mdio-bitbang)
+are parented by platform devices, and our own ar8xxx-mdio bus is
+exempted by comparing the parent's driver, so swconfig boards -
+including the built-in switches described by the "mdio-bus" child node
+in qca956x.dtsi, qca953x.dtsi, ar7240.dtsi and ar9330.dtsi - are
+unaffected.
+
+The patch lives in the ath79 tree because the lock-up needs the
+interrupt-disabling accessors added by
+730-ar8216-make-reg-access-atomic.patch, and CONFIG_AR8216_PHY is set
+by target/linux/ath79/config-6.18 (the mikrotik subtarget turns it off
+in its config-default, which is why those boards never see this).
+
+Tested on a COMFAST CF-WA350 (QCA9563 single core, external QCA8337
+rev. 2 on SGMII, Linux 6.18.52) converted to qca8k/DSA with the port
+PHYs on the switch's internal MDIO bus. With this patch the board
+boots: the PHYs are enumerated at internal addresses 0 and 1 as
+"Qualcomm Atheros 8337 internal PHY", "DSA: tree 0 setup" completes and
+both user ports link at 1000 Mb/s Full with the hardware MIB counters
+incrementing under traffic. The same board also boots with the legacy
+mapping, where qca8k enumerates the port PHYs at addresses 1 and 2:
+ar8xxx_phy_probe() rejects both before touching a register, so that
+layout needs no guard at all. Adding an explicit "mdio" child moves the
+same PHYs to addresses 0 and 1, address 0 passes the filter, and only
+then does the driver reach ar8xxx_read() - which is exactly the access
+this patch prevents.
+
+This is the interference that 7d1c5a68e5 ("ath79: convert
+qca9558_tplink_archer-c.dtsi to swconfig") names explicitly and that
+made it revert the Archer C series; #12864 describes the same two
+drivers as mutually exclusive on this target. With the guard in place a
+board can keep CONFIG_AR8216_PHY built in and still put its QCA83xx port
+PHYs on the switch's internal bus.
+
+Signed-off-by: Salah Ahmed <haddad2inc@gmail.com>
+---
+ drivers/net/phy/ar8216.c | 27 +++++++++++++++++++++++++++
+ 1 file changed, 27 insertions(+)
+
+--- a/drivers/net/phy/ar8216.c
++++ b/drivers/net/phy/ar8216.c
+@@ -37,6 +37,9 @@
+ 
+ #include "ar8216.h"
+ 
++/* defined at the bottom of this file, used to recognise our own MDIO bus */
++static struct mdio_driver ar8xxx_mdio_driver;
++
+ extern const struct ar8xxx_chip ar8327_chip;
+ extern const struct ar8xxx_chip ar8337_chip;
+ 
+@@ -2611,6 +2614,30 @@ ar8xxx_phy_probe(struct phy_device *phyd
+ 	if (phydev->mdio.addr != 0 && phydev->mdio.addr != 3 && phydev->mdio.addr != 4)
+ 		return -ENODEV;
+ 
++	/*
++	 * Never claim a PHY that sits on the internal MDIO bus of a switch
++	 * driven by another driver, such as the bus qca8k registers for the
++	 * QCA83xx port PHYs once a board is converted to DSA.
++	 *
++	 * The register accessors below disable interrupts around every
++	 * transaction (730-ar8216-make-reg-access-atomic.patch), which is only
++	 * safe on the polling-mode MDIO masters used on ath79. The MDIO master
++	 * of such a switch instead takes a mutex, may allocate and transmit
++	 * skbs and busy-waits up to 2000 ms per access, so probing through it
++	 * with interrupts off locks up a single-core SoC and resets the
++	 * board in a loop before preinit.
++	 *
++	 * Such a bus is parented by the switch's mdio_device, while the SoC
++	 * MDIO masters (ag71xx, mdio-gpio, mdio-bitbang) are parented by
++	 * platform devices. Our own ar8xxx-mdio bus is exempted by comparing
++	 * the parent's driver.
++	 */
++	if (phydev->mdio.bus->parent &&
++	    phydev->mdio.bus->parent->bus == &mdio_bus_type &&
++	    phydev->mdio.bus->parent->driver !=
++			&ar8xxx_mdio_driver.mdiodrv.driver)
++		return -ENODEV;
++
+ 	if (!ar8xxx_is_possible(phydev->mdio.bus))
+ 		return -ENODEV;
+ 
