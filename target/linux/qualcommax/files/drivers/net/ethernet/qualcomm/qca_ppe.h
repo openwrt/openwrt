@@ -666,6 +666,10 @@
 #define PPE_PPPOE_SESSION_EXT(i)	(PPE_L3_BASE + 0xc60 + (i) * 0x4)
 #define   PPE_PPPOE_EXT_L3_IF_VALID	BIT(0)
 #define   PPE_PPPOE_EXT_UC_VALID	BIT(2)
+#define   PPE_PPPOE_EXT_SMAC_VALID	BIT(3)
+#define   PPE_PPPOE_EXT_SMAC_LO		GENMASK(31, 16)
+/* The top four bytes of the server address, the low two are in EXT. */
+#define PPE_PPPOE_SESSION_EXT1(i)	(PPE_L3_BASE + 0xca0 + (i) * 0x4)
 
 #define PPE_MY_MAC_TBL(i)		(PPE_L3_BASE + (i) * 0x8)
 #define   PPE_MY_MAC_ENTRIES		8
@@ -1305,6 +1309,29 @@ struct ppe_res {
 	int refcount;
 };
 
+/* An uplink routes on a VSI of its own, separate from the L2 bridge, so its
+ * download direction reaches the flow lookup: one per port and VLAN, shared by
+ * every flow and PPPoE session over it. A session names the uplink's VSI as
+ * its L3 interface; the hardware tells sessions apart by id and port alone.
+ */
+#define PPE_PPPOE_SESSIONS		16
+
+struct ppe_uplink {
+	u16 ref;
+	u16 vid;
+	u8 port;
+	s8 vsi;
+	s8 mymac;
+	int xlt;
+};
+
+struct ppe_pppoe_session {
+	u16 ref;
+	u16 sid;
+	u8 smac[ETH_ALEN];
+	u8 uplink;
+};
+
 struct qca_ppe_bridge_vsi {
 	struct net_device *br_dev;
 	u32 vsi;
@@ -1412,15 +1439,8 @@ struct qca_ppe_priv {
 	struct ppe_res *my_mac;
 	u16 *host_ref;
 	u16 l3_if_ref[PPE_VSI_MAX];
-	/* A tagged PPPoE WAN port routes on its own VSI, separate from the L2
-	 * bridge, so its download direction reaches the flow lookup. Allocated
-	 * with the first offloaded flow on the port and shared by the rest.
-	 */
-	s8 wan_vsi[QCA_PPE_MAX_PORTS];
-	s8 wan_mymac[QCA_PPE_MAX_PORTS];
-	u16 wan_ref[QCA_PPE_MAX_PORTS];
-	int wan_xlt[QCA_PPE_MAX_PORTS];
-	u16 wan_vid[QCA_PPE_MAX_PORTS];
+	struct ppe_uplink uplink[PPE_PPPOE_SESSIONS];
+	struct ppe_pppoe_session pppoe[PPE_PPPOE_SESSIONS];
 	u32 flow_reject[PPE_REJECT_MAX];
 	u32 flow_offloaded;
 	u32 flow_reinstalled;
