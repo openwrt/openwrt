@@ -1046,6 +1046,8 @@ struct qca_ppe_priv {
 	 */
 	u8 trunk_members[PPE_TRUNK_GROUPS];
 	u8 trunk_tx[PPE_TRUNK_GROUPS];
+	/* The groups an active-backup bond owns, one bit each. */
+	u8 trunk_backup;
 	u32 trunk_hash;
 	struct qca_ppe_bridge_vsi bridges[QCA_PPE_MAX_BRIDGES];
 	struct qca_ppe_vlan_entry vlans[PPE_VSI_MAX];

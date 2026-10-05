@@ -308,8 +308,23 @@ static void ppe_vsi_flood_refresh(struct qca_ppe_priv *priv)
 			ppe_vsi_member_set(priv, vsi, priv->vsi_member[vsi]);
 }
 
+/* A backup member of an active-backup bond, whose frames the bond drops. */
+static bool ppe_trunk_standby(struct qca_ppe_priv *priv, int port)
+{
+	int g;
+
+	for (g = 0; g < PPE_TRUNK_GROUPS; g++)
+		if ((priv->trunk_backup & BIT(g)) &&
+		    (priv->trunk_members[g] & BIT(port)) &&
+		    !(priv->trunk_tx[g] & BIT(port)))
+			return true;
+
+	return false;
+}
+
 /* The bitmap names the ports a frame from this one may leave by, so an isolated
- * port is expressed by taking the other isolated ports out of its own.
+ * port is expressed by taking the other isolated ports out of its own. A
+ * standby member reaches the CPU only, where the bond drops what it sends.
  */
 static void ppe_port_isolation_update(struct qca_ppe_priv *priv)
 {
@@ -322,6 +337,8 @@ static void ppe_port_isolation_update(struct qca_ppe_priv *priv)
 		if (priv->port_isolated & BIT(port))
 			mask = (all & ~priv->port_isolated) |
 			       BIT(QCA_PPE_CPU_PORT);
+		if (ppe_trunk_standby(priv, port))
+			mask = BIT(QCA_PPE_CPU_PORT);
 
 		regmap_update_bits(priv->regmap, PPE_PORT_BRIDGE_CTRL(port),
 				   PPE_BRIDGE_PORT_ISOL,
@@ -2373,6 +2390,8 @@ static void qca_ppe_port_stp_state_set(struct dsa_switch *ds, int port,
 /* A locked port learns nothing in hardware: a frame from an unknown or moved
  * source goes to the bridge instead, which drops it or, under BR_PORT_MAB,
  * records the source as a locked entry. Only a static entry opens the port.
+ * A standby trunk member does not learn either: what arrives on it would move
+ * hosts onto the trunk that the bond never received.
  */
 static void ppe_port_learning_set(struct qca_ppe_priv *priv, int port)
 {
@@ -2383,7 +2402,7 @@ static void ppe_port_learning_set(struct qca_ppe_priv *priv, int port)
 	if (flags & BR_PORT_LOCKED)
 		val = FIELD_PREP(PPE_BRIDGE_NEW_ADDR_CMD, rdt) |
 		      FIELD_PREP(PPE_BRIDGE_STA_MOVE_CMD, rdt);
-	else if (flags & BR_LEARNING)
+	else if ((flags & BR_LEARNING) && !ppe_trunk_standby(priv, port))
 		val = PPE_BRIDGE_LRN_EN;
 
 	regmap_update_bits(priv->regmap, PPE_PORT_BRIDGE_CTRL(port),
@@ -2488,6 +2507,7 @@ static int qca_ppe_port_lag_join(struct dsa_switch *ds, int port,
 				 struct netlink_ext_ack *extack)
 {
 	struct qca_ppe_priv *priv = ds_to_priv(ds);
+	bool backup;
 	u32 hash;
 
 	/* DSA allocates one id per aggregate out of num_lag_ids, so its
@@ -2501,15 +2521,18 @@ static int qca_ppe_port_lag_join(struct dsa_switch *ds, int port,
 
 	/* A frame arriving on a member is switched in hardware and never
 	 * reaches the bond, which is what every mode but hashing relies on to
-	 * drop what arrives on a link it is not using.
+	 * drop what arrives on a link it is not using. Active-backup gets that
+	 * drop back from a standby member that reaches the CPU only.
 	 */
-	if (info->tx_type != NETDEV_LAG_TX_TYPE_HASH) {
-		NL_SET_ERR_MSG_MOD(extack, "only a hashing bond is offloaded");
+	backup = info->tx_type == NETDEV_LAG_TX_TYPE_ACTIVEBACKUP;
+	if (info->tx_type != NETDEV_LAG_TX_TYPE_HASH && !backup) {
+		NL_SET_ERR_MSG_MOD(extack,
+				   "only hashing and active-backup bonds are offloaded");
 		return -EOPNOTSUPP;
 	}
 
-	hash = ppe_trunk_hash_field(info->hash_type);
-	if (!hash) {
+	hash = backup ? 0 : ppe_trunk_hash_field(info->hash_type);
+	if (!backup && !hash) {
 		NL_SET_ERR_MSG_MOD(extack,
 				   "the trunk hash has no such field set");
 		return -EOPNOTSUPP;
@@ -2520,17 +2543,26 @@ static int qca_ppe_port_lag_join(struct dsa_switch *ds, int port,
 	/* One hash-field register serves both groups, so the second aggregate
 	 * may only ask for what the first is already hashing on.
 	 */
-	if (priv->trunk_hash && priv->trunk_hash != hash) {
+	if (hash && priv->trunk_hash && priv->trunk_hash != hash) {
 		NL_SET_ERR_MSG_MOD(extack,
 				   "the other trunk hashes on other fields");
 		return -EOPNOTSUPP;
 	}
 
-	priv->trunk_hash = hash;
-	regmap_write(priv->regmap, PPE_TRUNK_HASH_FIELD, hash);
+	if (hash) {
+		priv->trunk_hash = hash;
+		regmap_write(priv->regmap, PPE_TRUNK_HASH_FIELD, hash);
+	}
+
+	if (backup)
+		priv->trunk_backup |= BIT(lag.id - 1);
+	else
+		priv->trunk_backup &= ~BIT(lag.id - 1);
 
 	priv->trunk_members[lag.id - 1] |= BIT(port);
 	ppe_trunk_program(priv, lag.id);
+	ppe_port_isolation_update(priv);
+	ppe_port_learning_set(priv, port);
 
 	/* Last, so that the port is never a member of a group whose tables it
 	 * is not in yet; leaving unmarks it first for the same reason.
@@ -2560,12 +2592,14 @@ static int qca_ppe_port_lag_leave(struct dsa_switch *ds, int port,
 	priv->trunk_tx[lag.id - 1] &= ~BIT(port);
 	ppe_trunk_program(priv, lag.id);
 	ppe_vsi_flood_refresh(priv);
+	ppe_port_isolation_update(priv);
+	ppe_port_learning_set(priv, port);
 
-	/* The hash-field register is released with the last group so that the
-	 * next aggregate is free to ask for another policy.
+	/* The hash-field register is released with the last hashing group so
+	 * that the next aggregate is free to ask for another policy.
 	 */
 	for (g = 0; g < PPE_TRUNK_GROUPS; g++)
-		if (priv->trunk_members[g])
+		if (priv->trunk_members[g] && !(priv->trunk_backup & BIT(g)))
 			return 0;
 
 	priv->trunk_hash = 0;
@@ -2593,6 +2627,8 @@ static int qca_ppe_port_lag_change(struct dsa_switch *ds, int port)
 
 	ppe_trunk_program(priv, id);
 	ppe_vsi_flood_refresh(priv);
+	ppe_port_isolation_update(priv);
+	ppe_port_learning_set(priv, port);
 
 	return 0;
 }
