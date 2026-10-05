@@ -15,6 +15,7 @@
 #include <linux/etherdevice.h>
 #include <linux/ethtool.h>
 #include <linux/module.h>
+#include <linux/ppp_defs.h>
 #include <linux/tc_act/tc_csum.h>
 #include <net/flow_offload.h>
 #include <net/ipv6.h>
@@ -500,16 +501,19 @@ static int ppe_acl_parse_key(struct flow_rule *rule,
 	}
 
 	/* The classifier has one ethertype field and PPPoE needs it for the
-	 * session, so a rule that also names the protocol the session carries -
-	 * which tc hands over in place of the frame's own - is declined rather
-	 * than installed matching only the half the field holds.
+	 * session. tc hands the protocol the session carries over as n_proto,
+	 * which for IP is the family bit above rather than that field; any
+	 * other protocol would need the field twice.
 	 */
 	if (flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_PPPOE)) {
 		struct flow_match_pppoe match;
 
 		flow_rule_match_pppoe(rule, &match);
-		if (match.mask->ppp_proto) {
-			NL_SET_ERR_MSG_MOD(extack, "the session is matched, not what it carries");
+		if (match.mask->ppp_proto &&
+		    (match.mask->ppp_proto != htons(0xffff) ||
+		     (match.key->ppp_proto != htons(PPP_IP) &&
+		      match.key->ppp_proto != htons(PPP_IPV6)))) {
+			NL_SET_ERR_MSG_MOD(extack, "only IP inside the session is matched");
 			return -EOPNOTSUPP;
 		}
 		s = ppe_acl_slice_get(slice, &n, PPE_ACL_TYPE_L2MISC);
