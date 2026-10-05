@@ -973,6 +973,104 @@ void ppe_port_queues_enable(struct qca_ppe_priv *priv, int port, bool en)
 	regmap_set_bits(priv->regmap, PPE_CLK_GATING_CTRL, PPE_QM_CLK_GATE_EN);
 }
 
+struct ppe_qstats {
+	struct qca_ppe_priv *priv;
+	u8 **names;
+	struct qca_ppe_mib_stats *st;
+	int n;
+};
+
+/* The packet counts are 32 bits and the byte counts 40, and both wrap, so each
+ * is folded at its own width like the MAC MIB.
+ */
+static __printf(4, 5) void ppe_qstat(struct ppe_qstats *q, u32 reg, bool bytes,
+				     const char *fmt, ...)
+{
+	struct qca_ppe_mib_stats *s;
+	u32 w[PPE_CNT_WORDS];
+	va_list args;
+	u64 cur;
+
+	if (q->names) {
+		char name[ETH_GSTRING_LEN];
+
+		va_start(args, fmt);
+		vsnprintf(name, sizeof(name), fmt, args);
+		va_end(args);
+		ethtool_puts(q->names, name);
+	} else if (q->st &&
+		   !regmap_bulk_read(q->priv->regmap, reg, w, ARRAY_SIZE(w))) {
+		s = &q->st[q->n];
+		cur = bytes ? ppe_entry_get(w, 32, 40) : w[0];
+		s->total += (cur - s->last) &
+			    (bytes ? GENMASK_ULL(39, 0) : U32_MAX);
+		s->last = cur;
+	}
+
+	q->n++;
+}
+
+/* A user port's queue-side counters for ethtool -S: what each of its queues
+ * sent and dropped by colour, what the buffer manager turned away on ingress,
+ * and the colours its meter painted. With @names it lists them, with @st it
+ * folds them; it returns how many there are either way.
+ */
+int ppe_port_qstats(struct qca_ppe_priv *priv, int port, u8 **names,
+		    struct qca_ppe_mib_stats *st)
+{
+	static const char * const colour[] = { "green", "yellow", "red" };
+	struct ppe_qstats q = { .priv = priv, .names = names, .st = st };
+	const struct port_l0_params *p = NULL;
+	int bm = PPE_BM_PHY_START + port - 1;
+	int i, c;
+
+	for (i = 0; i < ARRAY_SIZE(port_l0); i++)
+		if (port_l0[i].port == port)
+			p = &port_l0[i];
+	if (!p)
+		return 0;
+
+	for (i = 0; i < p->ucast_count; i++) {
+		u32 queue = p->ucast_base + i;
+
+		ppe_qstat(&q, PPE_QUEUE_TX_CNT_TBL(queue), false,
+			  "tx_queue_%d_packets", i);
+		ppe_qstat(&q, PPE_QUEUE_TX_CNT_TBL(queue), true,
+			  "tx_queue_%d_bytes", i);
+		for (c = 0; c < ARRAY_SIZE(colour); c++)
+			ppe_qstat(&q, PPE_QM_UNI_DROP_CNT(queue, c), false,
+				  "tx_queue_%d_wred_drop_%s", i, colour[c]);
+		for (c = 0; c < ARRAY_SIZE(colour); c++)
+			ppe_qstat(&q, PPE_QM_UNI_DROP_CNT(queue,
+							  ARRAY_SIZE(colour) + c),
+				  false, "tx_queue_%d_drop_%s", i, colour[c]);
+	}
+
+	for (i = 0; i < p->mcast_count; i++) {
+		u32 queue = p->mcast_base + i;
+
+		ppe_qstat(&q, PPE_QUEUE_TX_CNT_TBL(queue), false,
+			  "tx_mcast_queue_%d_packets", i);
+		ppe_qstat(&q, PPE_QUEUE_TX_CNT_TBL(queue), true,
+			  "tx_mcast_queue_%d_bytes", i);
+		for (c = 0; c < ARRAY_SIZE(colour); c++)
+			ppe_qstat(&q, PPE_QM_MUL_DROP_CNT(port, i, c), false,
+				  "tx_mcast_queue_%d_drop_%s", i, colour[c]);
+	}
+
+	if (bm <= priv->data->bm_phy_end) {
+		ppe_qstat(&q, PPE_BM_DROP_STAT(bm), false, "rx_bm_drop");
+		ppe_qstat(&q, PPE_BM_DROP_STAT(bm + PPE_BM_PORTS), false,
+			  "rx_bm_fc_drop");
+	}
+
+	for (c = 0; c < ARRAY_SIZE(colour); c++)
+		ppe_qstat(&q, PPE_PORT_METER_CNT(port, c), false,
+			  "rx_police_%s", colour[c]);
+
+	return q.n;
+}
+
 static void ppe_edma_ring_map_init(struct qca_ppe_priv *priv)
 {
 	int i;
