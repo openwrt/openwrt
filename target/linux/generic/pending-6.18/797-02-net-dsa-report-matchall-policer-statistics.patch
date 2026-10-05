@@ -1,0 +1,59 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Subject: [PATCH net-next] net: dsa: report matchall policer statistics
+
+dsa_user_setup_tc_cls_matchall() does not handle TC_CLSMATCHALL_STATS,
+so an offloaded police action never reports what the switch policer
+passed or dropped. Add a port_policer_stats op that fills the flow_stats
+of the port policer.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+ include/net/dsa.h |    2 ++
+ net/dsa/user.c    |   17 +++++++++++++++++
+ 2 files changed, 19 insertions(+)
+
+--- a/include/net/dsa.h
++++ b/include/net/dsa.h
+@@ -1131,6 +1131,8 @@ struct dsa_switch_ops {
+ 				    const struct flow_action_police *policer,
+ 				    struct netlink_ext_ack *extack);
+ 	void	(*port_policer_del)(struct dsa_switch *ds, int port);
++	int	(*port_policer_stats)(struct dsa_switch *ds, int port,
++				      struct flow_stats *stats);
+ 	int	(*port_setup_tc)(struct dsa_switch *ds, int port,
+ 				 enum tc_setup_type type, void *type_data);
+ 
+--- a/net/dsa/user.c
++++ b/net/dsa/user.c
+@@ -1570,6 +1570,21 @@ static void dsa_user_del_cls_matchall(st
+ 	kfree(mall_tc_entry);
+ }
+ 
++static int dsa_user_stats_cls_matchall(struct net_device *dev,
++				       struct tc_cls_matchall_offload *cls)
++{
++	struct dsa_port *dp = dsa_user_to_port(dev);
++	struct dsa_mall_tc_entry *mall_tc_entry;
++	struct dsa_switch *ds = dp->ds;
++
++	mall_tc_entry = dsa_user_mall_tc_entry_find(dev, cls->cookie);
++	if (!mall_tc_entry || mall_tc_entry->type != DSA_PORT_MALL_POLICER ||
++	    !ds->ops->port_policer_stats)
++		return -EOPNOTSUPP;
++
++	return ds->ops->port_policer_stats(ds, dp->index, &cls->stats);
++}
++
+ static int dsa_user_setup_tc_cls_matchall(struct net_device *dev,
+ 					  struct tc_cls_matchall_offload *cls,
+ 					  bool ingress)
+@@ -1583,6 +1598,8 @@ static int dsa_user_setup_tc_cls_matchal
+ 	case TC_CLSMATCHALL_DESTROY:
+ 		dsa_user_del_cls_matchall(dev, cls);
+ 		return 0;
++	case TC_CLSMATCHALL_STATS:
++		return dsa_user_stats_cls_matchall(dev, cls);
+ 	default:
+ 		return -EOPNOTSUPP;
+ 	}
