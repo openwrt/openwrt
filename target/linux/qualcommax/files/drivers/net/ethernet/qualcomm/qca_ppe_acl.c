@@ -252,6 +252,7 @@ static void ppe_acl_slice_write(struct qca_ppe_priv *priv, u32 index,
 	 BIT_ULL(FLOW_DISSECTOR_KEY_CVLAN) |			\
 	 BIT_ULL(FLOW_DISSECTOR_KEY_PPPOE) |			\
 	 BIT_ULL(FLOW_DISSECTOR_KEY_ETH_ADDRS) |		\
+	 BIT_ULL(FLOW_DISSECTOR_KEY_ARP) |			\
 	 BIT_ULL(FLOW_DISSECTOR_KEY_IPV4_ADDRS) |		\
 	 BIT_ULL(FLOW_DISSECTOR_KEY_IPV6_ADDRS) |		\
 	 BIT_ULL(FLOW_DISSECTOR_KEY_PORTS) |			\
@@ -363,6 +364,19 @@ static void ppe_acl_key_ip6(struct ppe_acl_slice *slice, int *n, u8 type,
 		s->mask[0] |= mw[i][0];
 		s->mask[1] |= mw[i][1];
 	}
+}
+
+/* An ARP sender or target address goes where the IPv4 rule types compare
+ * the source or destination address, of the ARP packet type.
+ */
+static void ppe_acl_key_arp(struct ppe_acl_slice *s, u32 key, u32 mask)
+{
+	s->key[0] |= FIELD_PREP(PPE_ACL_IP_LO, key);
+	s->key[1] |= FIELD_PREP(PPE_ACL_IP_HI, key >> 16) |
+		     FIELD_PREP(PPE_ACL_L3_PKT_TYPE, PPE_ACL_PKT_TYPE_ARP);
+	s->mask[0] |= FIELD_PREP(PPE_ACL_IP_LO, mask);
+	s->mask[1] |= FIELD_PREP(PPE_ACL_IP_HI, mask >> 16) |
+		      PPE_ACL_L3_PKT_TYPE;
 }
 
 /* Turn the filter into entries: one per rule type it needs, each carrying the
@@ -654,6 +668,35 @@ static int ppe_acl_parse_key(struct flow_rule *rule,
 		if (!ipv6_addr_any(&match.mask->dst))
 			ppe_acl_key_ip6(slice, &n, PPE_ACL_TYPE_IPV6_DIP0,
 					&match.key->dst, &match.mask->dst);
+	}
+
+	if (flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_ARP)) {
+		struct flow_match_basic basic;
+		struct flow_match_arp match;
+
+		/* The packet type names ARP, not RARP. */
+		flow_rule_match_basic(rule, &basic);
+		if (basic.key->n_proto != htons(ETH_P_ARP)) {
+			NL_SET_ERR_MSG_MOD(extack, "only ARP, not RARP, is classified");
+			return -EOPNOTSUPP;
+		}
+
+		flow_rule_match_arp(rule, &match);
+		if (match.mask->op || !is_zero_ether_addr(match.mask->sha) ||
+		    !is_zero_ether_addr(match.mask->tha)) {
+			NL_SET_ERR_MSG_MOD(extack, "only the ARP sender and target IP are matched");
+			return -EOPNOTSUPP;
+		}
+		if (match.mask->sip)
+			ppe_acl_key_arp(ppe_acl_slice_get(slice, &n,
+							  PPE_ACL_TYPE_IPV4_SIP),
+					ntohl((__force __be32)match.key->sip),
+					ntohl((__force __be32)match.mask->sip));
+		if (match.mask->tip)
+			ppe_acl_key_arp(ppe_acl_slice_get(slice, &n,
+							  PPE_ACL_TYPE_IPV4_DIP),
+					ntohl((__force __be32)match.key->tip),
+					ntohl((__force __be32)match.mask->tip));
 	}
 
 	/* The port and the ICMP type/code share one field of the address
