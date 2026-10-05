@@ -20,7 +20,7 @@ Signed-off-by: Sander Vanheule <sander@svanheule.net>
 
 --- a/drivers/net/mdio/Kconfig
 +++ b/drivers/net/mdio/Kconfig
-@@ -192,6 +192,16 @@ config MDIO_REGMAP
+@@ -201,6 +201,16 @@ config MDIO_REGMAP
  	  regmap. Users willing to use this driver must explicitly select
  	  REGMAP.
  
@@ -39,7 +39,7 @@ Signed-off-by: Sander Vanheule <sander@svanheule.net>
  	depends on 64BIT
 --- a/drivers/net/mdio/Makefile
 +++ b/drivers/net/mdio/Makefile
-@@ -22,6 +22,7 @@ obj-$(CONFIG_MDIO_MVUSB)		+= mdio-mvusb.
+@@ -23,6 +23,7 @@ obj-$(CONFIG_MDIO_MVUSB)		+= mdio-mvusb.
  obj-$(CONFIG_MDIO_OCTEON)		+= mdio-octeon.o
  obj-$(CONFIG_MDIO_REALTEK_RTL9300)	+= mdio-realtek-rtl9300.o
  obj-$(CONFIG_MDIO_REGMAP)		+= mdio-regmap.o
