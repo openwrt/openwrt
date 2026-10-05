@@ -1,4 +1,59 @@
 // SPDX-License-Identifier: GPL-2.0-only
+/*
+ * Layer 3 unicast routing offload for the Realtek Otto switches
+ *
+ * The driver follows the kernel's routes through the FIB notifier and its
+ * neighbours through the netevent notifier, and mirrors the routes whose
+ * gateway sits behind a switch port into the switch, which then routes their
+ * packets without the CPU. Only the local and main tables are taken.
+ *
+ * Hardware logic. The families route in one of two ways (use_l3_tables in
+ * struct otto_l3_config):
+ * - RTL930x matches the destination in its own tables: a host table of single
+ *   addresses and a prefix table, which answers with the lowest matching row
+ *   rather than the longest prefix. A packet whose destination MAC hits a
+ *   router MAC entry is routed. The entry it matches either traps it to the
+ *   CPU or points at a next hop entry, which names the gateway's entry in the
+ *   L2 table, for its MAC and port, and an egress interface with the VLAN,
+ *   source MAC and MTU to route with.
+ * - RTL838x and RTL839x hold no destination in their route table, only the
+ *   gateway's MAC. A PIE rule matches the destination prefix and points at
+ *   the gateway's L2 entry.
+ *
+ * Driver logic on RTL930x. IPv4 /32 routes go to the host table, all others,
+ * IPv6 /128 included, to the prefix table. A route takes its entry as soon as
+ * it is added, trapping to the CPU, and forwards once the gateway's neighbour
+ * is resolved and its MAC is learnt on a port. It traps again when the
+ * neighbour goes away. A destination the switch must not forward itself - an
+ * address of the box, an on-link prefix, a route the hardware cannot carry -
+ * gets a trapping entry too, so that no shorter prefix in hardware forwards
+ * it. The prefix rows of each family form one block, longest prefix first,
+ * and a catch-all row below each block hands lookup misses to the CPU, which
+ * the hardware would otherwise drop. Policy rules under which the kernel's
+ * lookup for a forwarded packet is not local, then main, turn the forwarding
+ * entries of that family into traps until those rules are gone. An event the
+ * driver could not take, for want of memory, has the routes flushed and the
+ * FIB replayed.
+ *
+ * State per family:
+ * - RTL930x: IPv4 and IPv6 unicast routes through a gateway are forwarded.
+ *   The prefix table has 512 rows shared by both families; an IPv6 entry
+ *   takes three, and at most two start in every eight rows. The driver takes
+ *   up to 1536 host routes. Trapped to the CPU: addresses of the box, on-link
+ *   prefixes, blackhole, unreachable and prohibit routes, routes through a
+ *   device outside the switch, a nexthop object or a lightweight tunnel and,
+ *   for IPv6, multipath, source-specific and RA-learnt routes. Default routes
+ *   have no entry, so their packets reach the CPU through the catch-all rows.
+ *   An IPv4 multipath route is programmed with its first next hop only.
+ *   Multicast routing is not offloaded, and all egress interfaces share one
+ *   1536 byte MTU. The programmed state is shown in debugfs, under
+ *   realtek_otto_l3.
+ * - RTL839x: IPv4 unicast routes through a gateway are forwarded through PIE
+ *   rules, each with a packet counter while one is free. No IPv6, and no
+ *   trapping entries.
+ * - RTL838x: route table accessors only. FIB and neighbour events are ignored.
+ * - RTL931x: not supported. FIB and neighbour events are ignored.
+ */
 
 #include <linux/debugfs.h>
 #include <linux/if_vlan.h>
