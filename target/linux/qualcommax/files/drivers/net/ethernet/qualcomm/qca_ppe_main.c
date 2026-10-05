@@ -2860,6 +2860,9 @@ static const struct dsa_switch_ops qca_ppe_ops = {
 	.port_get_dscp_prio	= qca_ppe_port_get_dscp_prio,
 	.port_add_dscp_prio	= qca_ppe_port_add_dscp_prio,
 	.port_del_dscp_prio	= qca_ppe_port_del_dscp_prio,
+	.port_get_pcp_prio	= qca_ppe_port_get_pcp_prio,
+	.port_add_pcp_prio	= qca_ppe_port_add_pcp_prio,
+	.port_del_pcp_prio	= qca_ppe_port_del_pcp_prio,
 	.port_get_apptrust	= qca_ppe_port_get_apptrust,
 	.port_set_apptrust	= qca_ppe_port_set_apptrust,
 	.get_tag_protocol	= qca_ppe_get_tag_protocol,
@@ -3121,10 +3124,12 @@ static int qca_ppe_probe(struct platform_device *pdev)
 	ds->dev = &pdev->dev;
 	ds->num_ports = data->num_ports;
 	ds->ops = &qca_ppe_ops;
-	/* The two DSCP tables are chosen between per port, not filled per port,
-	 * so every port shares one and DSA replicates an entry to all of them.
+	/* The DSCP and PCP tables, two of each, are chosen between per port,
+	 * not filled per port, so every port shares one and DSA replicates an
+	 * entry to all of them.
 	 */
 	ds->dscp_prio_mapping_is_global = true;
+	ds->pcp_prio_mapping_is_global = true;
 	/* mqprio carves these into traffic classes, one per hardware queue. */
 	ds->num_tx_queues = PPE_QOS_MAX_PRI + 1;
 	/* The id DSA hands an aggregate is the trunk group it is given, so this

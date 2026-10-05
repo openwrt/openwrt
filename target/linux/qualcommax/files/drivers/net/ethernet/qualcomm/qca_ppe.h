@@ -1587,6 +1587,11 @@ int qca_ppe_port_add_dscp_prio(struct dsa_switch *ds, int port, u8 dscp,
 			       u8 prio);
 int qca_ppe_port_del_dscp_prio(struct dsa_switch *ds, int port, u8 dscp,
 			       u8 prio);
+int qca_ppe_port_get_pcp_prio(struct dsa_switch *ds, int port, u8 pcp);
+int qca_ppe_port_add_pcp_prio(struct dsa_switch *ds, int port, u8 pcp,
+			      u8 prio);
+int qca_ppe_port_del_pcp_prio(struct dsa_switch *ds, int port, u8 pcp,
+			      u8 prio);
 int qca_ppe_port_get_apptrust(struct dsa_switch *ds, int port, u8 *sel,
 			      int *nsel);
 int qca_ppe_port_set_apptrust(struct dsa_switch *ds, int port, const u8 *sel,
