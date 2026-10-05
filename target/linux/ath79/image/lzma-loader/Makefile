@@ -53,7 +53,7 @@ loader.gz: $(PKG_BUILD_DIR)/loader.bin
 	# (TP-Link TL-WR1043ND v1) don't work correctly when
 	# the uncompressed loader is too small (probably a cache
 	# invalidation issue)
-	dd if=$< bs=512K conv=sync | gzip -nc9 > $(LOADER_GZ)
+	dd if=$< bs=512K conv=sync | libdeflate-gzip -12 -c > $(LOADER_GZ)
 
 loader.elf: $(PKG_BUILD_DIR)/loader.elf
 	$(CP) $< $(LOADER_ELF)

@@ -32,7 +32,7 @@ define Device/tplink-nolzma
   COMPILE/loader-$(1).gz := loader-okli-compile
   KERNEL := kernel-bin | append-dtb | lzma | uImage lzma -M 0x4f4b4c49 | \
 	loader-okli $(1) 7680
-  KERNEL_INITRAMFS := kernel-bin | append-dtb | gzip | tplink-v1-header
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | libdeflate-gzip | tplink-v1-header
 endef
 
 define Device/tplink-4m

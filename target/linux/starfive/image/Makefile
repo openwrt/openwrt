@@ -38,7 +38,7 @@ define Device/Default
   KERNEL_NAME := Image
   KERNEL := kernel-bin
   IMAGES := sdcard.img.gz
-  IMAGE/sdcard.img.gz := boot-scr-jh7110 | riscv-sdcard | append-metadata | gzip
+  IMAGE/sdcard.img.gz := boot-scr-jh7110 | riscv-sdcard | append-metadata | libdeflate-gzip
 endef
 
 define Device/JH7100
@@ -46,7 +46,7 @@ define Device/JH7100
   KERNEL_NAME := Image
   KERNEL := kernel-bin
   IMAGES := sdcard.img.gz
-  IMAGE/sdcard.img.gz := boot-scr-jh7100 | riscv-sdcard | append-metadata | gzip
+  IMAGE/sdcard.img.gz := boot-scr-jh7100 | riscv-sdcard | append-metadata | libdeflate-gzip
 endef
 
 define Device/visionfive2-v1.2a
