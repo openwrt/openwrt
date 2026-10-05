@@ -1772,37 +1772,77 @@ static void ppe_port_shaper_stats(struct qca_ppe_priv *priv, int port,
 #define PPE_L1_SHAPER_SLOT	64
 
 /* A node offers its parent two inputs, committed and excess, and arming the
- * committed bucket alone is not a rate: the excess input carries whatever the
- * committed bucket refuses, unmetered, at the same priority, so the node passes
- * line rate with its committed credit pegged negative. A single rate is both
- * buckets - the rate in the committed one and the excess one armed empty.
+ * committed bucket alone is not a ceiling: the excess input carries whatever
+ * the committed bucket refuses, unmetered, at the same priority, so the node
+ * passes line rate with its committed credit pegged negative. A ceiling alone
+ * is both buckets - the rate in the committed one and the excess one armed
+ * empty. A floor is the committed bucket and a ceiling above it the excess
+ * one holding the difference; a floor alone leaves the excess unmetered. The
+ * two buckets share one token unit, the one the faster of them needs.
+ *
+ * The port serves every committed input ahead of every excess one, so where
+ * any sibling has a floor, a class without one must send only as excess
+ * (@floor): its committed bucket armed empty, its ceiling in the excess one.
  */
-static int ppe_node_shaper_set(struct qca_ppe_priv *priv, u32 cfg, u32 credit,
-			       u32 slot, u64 rate_bps, u32 burst)
+static int ppe_node_shaper_words(unsigned long clk, u32 slot, u64 min_bps,
+				 u64 max_bps, u32 burst, bool floor, u32 *w)
 {
-	u32 cir = 0, cbs = 0;
-	unsigned long clk;
+	u64 c = floor ? min_bps : min_bps ?: max_bps;
+	u64 e = max_bps && (floor || min_bps) ? max_bps - min_bps : 0;
+	u32 hi, lo, bs;
 	int sel = 0;
 
-	if (rate_bps) {
+	memset(w, 0, 3 * sizeof(*w));
+	if (!c && !e) {
+		if (floor)
+			w[2] = PPE_SHP_C_EN;
+		return 0;
+	}
+
+	sel = ppe_token_bucket(clk, slot, max(c, e), burst,
+			       FIELD_MAX(PPE_SHP_CIR), FIELD_MAX(PPE_SHP_CBS),
+			       &hi, &bs);
+	if (sel < 0)
+		return sel;
+
+	lo = div64_ul(min(c, e) * (PPE_TOKEN_UNIT_MAX >> (2 * sel)) * slot,
+		      clk);
+	if (min(c, e) && !lo)
+		return -ERANGE;
+
+	w[0] = FIELD_PREP(PPE_SHP_CIR, c >= e ? hi : lo) |
+	       FIELD_PREP(PPE_SHP_CBS, bs);
+	if (e)
+		w[1] = FIELD_PREP(PPE_SHP_CIR, c >= e ? lo : hi) |
+		       FIELD_PREP(PPE_SHP_CBS, bs);
+	w[2] = FIELD_PREP(PPE_SHP_TOKEN_UNIT, sel) | PPE_SHP_C_EN |
+	       (max_bps ? PPE_SHP_E_EN : 0);
+
+	return 0;
+}
+
+static int ppe_node_shaper_set(struct qca_ppe_priv *priv, u32 cfg, u32 credit,
+			       u32 slot, u64 min_bps, u64 rate_bps, u32 burst,
+			       bool floor)
+{
+	unsigned long clk = 0;
+	u32 w[3];
+	int ret;
+
+	if (min_bps || rate_bps) {
 		clk = ppe_clk_rate(priv);
 		if (!clk)
 			return -ENODEV;
-
-		sel = ppe_token_bucket(clk, slot, rate_bps, burst,
-				       FIELD_MAX(PPE_SHP_CIR),
-				       FIELD_MAX(PPE_SHP_CBS), &cir, &cbs);
-		if (sel < 0)
-			return sel;
 	}
 
-	regmap_write(priv->regmap, cfg,
-		     FIELD_PREP(PPE_SHP_CIR, cir) |
-		     FIELD_PREP(PPE_SHP_CBS, cbs));
-	regmap_write(priv->regmap, cfg + 0x4, 0);
-	regmap_write(priv->regmap, cfg + 0x8,
-		     FIELD_PREP(PPE_SHP_TOKEN_UNIT, sel) |
-		     (rate_bps ? PPE_SHP_C_EN | PPE_SHP_E_EN : 0));
+	ret = ppe_node_shaper_words(clk, slot, min_bps, rate_bps, burst, floor,
+				    w);
+	if (ret)
+		return ret;
+
+	regmap_write(priv->regmap, cfg, w[0]);
+	regmap_write(priv->regmap, cfg + 0x4, w[1]);
+	regmap_write(priv->regmap, cfg + 0x8, w[2]);
 
 	/* Credit outlives the rate that filled it, and a bucket left negative
 	 * holds the node off until the new rate has refilled it.
@@ -1833,12 +1873,12 @@ static void ppe_port_shapers_clear(struct qca_ppe_priv *priv,
 	for (i = 0; i < p->ucast_count; i++)
 		ppe_node_shaper_set(priv, PPE_TM_L0_SHP_CFG(p->ucast_base + i),
 				    PPE_TM_L0_SHP_CREDIT(p->ucast_base + i),
-				    PPE_L0_SHAPER_SLOT, 0, 0);
+				    PPE_L0_SHAPER_SLOT, 0, 0, 0, false);
 
 	for (i = 0; (node = ppe_l1_node(p->port, i)) >= 0; i++)
 		ppe_node_shaper_set(priv, PPE_TM_L1_SHP_CFG(node),
 				    PPE_TM_L1_SHP_CREDIT(node),
-				    PPE_L1_SHAPER_SLOT, 0, 0);
+				    PPE_L1_SHAPER_SLOT, 0, 0, 0, false);
 
 	memset(sh->queue_rate, 0, sizeof(sh->queue_rate));
 	ppe_port_queue_limit_set(priv, p->port);
@@ -1888,6 +1928,7 @@ int qca_ppe_setup_tc_mqprio(struct qca_ppe_priv *priv, int port,
 	struct net_device *dev = dsa_to_port(&priv->ds, port)->user;
 	const struct port_l0_params *p = NULL;
 	unsigned long clk;
+	bool floor = false;
 	int i, tc;
 
 	for (i = 0; i < ARRAY_SIZE(port_l0); i++)
@@ -1928,16 +1969,12 @@ int qca_ppe_setup_tc_mqprio(struct qca_ppe_priv *priv, int port,
 		}
 	}
 
+	for (tc = 0; tc < q->num_tc; tc++)
+		floor |= !!qopt->min_rate[tc];
+
 	for (tc = 0; tc < q->num_tc; tc++) {
 		u16 offset = q->offset[tc], count = q->count[tc];
-		u32 cir, cbs;
-
-		if (qopt->min_rate[tc]) {
-			dev_err(priv->ds.dev,
-				"port %d: class %d asks for a floor; the scheduler is strict, it can only be given a ceiling\n",
-				port, tc);
-			return -EOPNOTSUPP;
-		}
+		u32 w[3];
 
 		if (ppe_class_node(port, p->ucast_base, offset, count,
 				   &prog[tc])) {
@@ -1947,14 +1984,20 @@ int qca_ppe_setup_tc_mqprio(struct qca_ppe_priv *priv, int port,
 			return -EINVAL;
 		}
 
+		prog[tc].min_bps = qopt->min_rate[tc] * BITS_PER_BYTE;
 		prog[tc].rate_bps = qopt->max_rate[tc] * BITS_PER_BYTE;
-		if (!prog[tc].rate_bps)
-			continue;
+		if (prog[tc].rate_bps &&
+		    prog[tc].min_bps > prog[tc].rate_bps) {
+			dev_err(priv->ds.dev,
+				"port %d: class %d has a floor above its ceiling\n",
+				port, tc);
+			return -EINVAL;
+		}
 
-		if (ppe_token_bucket(clk, prog[tc].slot, prog[tc].rate_bps,
-				     ppe_port_frame_len(priv, port),
-				     FIELD_MAX(PPE_SHP_CIR),
-				     FIELD_MAX(PPE_SHP_CBS), &cir, &cbs) < 0) {
+		if (ppe_node_shaper_words(clk, prog[tc].slot, prog[tc].min_bps,
+					  prog[tc].rate_bps,
+					  ppe_port_frame_len(priv, port), floor,
+					  w)) {
 			dev_err(priv->ds.dev,
 				"port %d: class %d rate is outside the shaper's range\n",
 				port, tc);
@@ -1969,7 +2012,7 @@ int qca_ppe_setup_tc_mqprio(struct qca_ppe_priv *priv, int port,
 		return 0;
 
 	for (tc = 0; tc < q->num_tc; tc++) {
-		if (!prog[tc].rate_bps)
+		if (!floor && !prog[tc].min_bps && !prog[tc].rate_bps)
 			continue;
 
 		/* A bucket that cannot hold one full frame stalls the node, and
@@ -1977,8 +2020,9 @@ int qca_ppe_setup_tc_mqprio(struct qca_ppe_priv *priv, int port,
 		 * all the burst a class needs.
 		 */
 		ppe_node_shaper_set(priv, prog[tc].cfg, prog[tc].credit,
-				    prog[tc].slot, prog[tc].rate_bps,
-				    ppe_port_frame_len(priv, port));
+				    prog[tc].slot, prog[tc].min_bps,
+				    prog[tc].rate_bps,
+				    ppe_port_frame_len(priv, port), floor);
 
 		for (i = q->offset[tc]; i < q->offset[tc] + q->count[tc]; i++)
 			priv->shaper[port].queue_rate[i] = prog[tc].rate_bps;
@@ -2200,9 +2244,10 @@ static int ppe_band_tbf(struct qca_ppe_priv *priv, int port,
 
 		rate = qopt->replace_params.rate.rate_bytes_ps * BITS_PER_BYTE;
 		ret = ppe_node_shaper_set(priv, prog.cfg, prog.credit,
-					  prog.slot, rate,
+					  prog.slot, 0, rate,
 					  max(qopt->replace_params.max_size,
-					      ppe_port_frame_len(priv, port)));
+					      ppe_port_frame_len(priv, port)),
+					  false);
 		if (ret) {
 			dev_err(priv->ds.dev,
 				"port %d: %llu bit/s is outside the band shaper's range\n",
@@ -2227,7 +2272,7 @@ static int ppe_band_tbf(struct qca_ppe_priv *priv, int port,
 			return 0;
 
 		ppe_node_shaper_set(priv, prog.cfg, prog.credit, prog.slot, 0,
-				    0);
+				    0, 0, false);
 		sh->band_tbf.handle = 0;
 		break;
 	case TC_TBF_STATS: {
@@ -2624,7 +2669,7 @@ static int ppe_cpu_port_dl_set(struct qca_ppe_priv *priv, u64 rate_bps)
 	 */
 	ret = ppe_node_shaper_set(priv, PPE_TM_L0_SHP_CFG(PPE_CPU_PORT_DL_QUEUE),
 				  PPE_TM_L0_SHP_CREDIT(PPE_CPU_PORT_DL_QUEUE),
-				  PPE_L0_SHAPER_SLOT, rate_bps, depth);
+				  PPE_L0_SHAPER_SLOT, 0, rate_bps, depth, false);
 	if (ret)
 		return ret;
 
