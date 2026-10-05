@@ -1538,6 +1538,37 @@ int qca_ppe_port_set_apptrust(struct dsa_switch *ds, int port, const u8 *sel,
 	return 0;
 }
 
+/* An untagged frame takes the port's default C-PCP, and the PCP map turns that
+ * into its priority, so the default is a PCP whose entry maps to the priority.
+ */
+int qca_ppe_port_get_default_prio(struct dsa_switch *ds, int port)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+	u32 val;
+
+	regmap_read(priv->regmap, PPE_PORT_DEF_PCP(port), &val);
+
+	return qca_ppe_port_get_pcp_prio(ds, port,
+					 FIELD_GET(PPE_PORT_DEF_CPCP, val));
+}
+
+int qca_ppe_port_set_default_prio(struct dsa_switch *ds, int port, u8 prio)
+{
+	int pcp;
+
+	for (pcp = 0; pcp <= FIELD_MAX(PPE_PORT_DEF_CPCP); pcp++)
+		if (qca_ppe_port_get_pcp_prio(ds, port, pcp) == prio)
+			break;
+	if (pcp > FIELD_MAX(PPE_PORT_DEF_CPCP))
+		return -EBUSY;
+
+	regmap_update_bits(ds_to_priv(ds)->regmap, PPE_PORT_DEF_PCP(port),
+			   PPE_PORT_DEF_CPCP,
+			   FIELD_PREP(PPE_PORT_DEF_CPCP, pcp));
+
+	return 0;
+}
+
 /* One DSCP table serves every port - the hardware has two of them and selects
  * between them per port, which is not the per-port mapping DCB describes, so
  * the driver keeps every port on the same one and tells DSA the mapping is
