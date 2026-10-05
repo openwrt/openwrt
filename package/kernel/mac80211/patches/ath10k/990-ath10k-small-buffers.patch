@@ -1,10 +1,25 @@
+--- a/drivers/net/wireless/ath/ath10k/Kconfig
++++ b/drivers/net/wireless/ath/ath10k/Kconfig
+@@ -13,6 +13,12 @@ config ATH10K
+ 
+ 	  If you choose to build a module, it'll be called ath10k.
+ 
++config ATH10K_SMALLBUFFERS
++	bool "Use small buffers"
++	depends on ATH10K
++	help
++	  Select this for low-RAM devices.
++
+ config ATH10K_CE
+ 	bool
+ 
 --- a/drivers/net/wireless/ath/ath10k/htt.h
 +++ b/drivers/net/wireless/ath/ath10k/htt.h
 @@ -236,7 +236,11 @@ enum htt_rx_ring_flags {
  };
  
  #define HTT_RX_RING_SIZE_MIN 128
-+#ifndef CONFIG_ATH10K_SMALLBUFFERS
++#ifndef CPTCFG_ATH10K_SMALLBUFFERS
  #define HTT_RX_RING_SIZE_MAX 2048
 +#else
 +#define HTT_RX_RING_SIZE_MAX 512
@@ -18,7 +33,7 @@
  		.flags = CE_ATTR_FLAGS,
  		.src_nentries = 0,
  		.src_sz_max = 2048,
-+#ifndef CONFIG_ATH10K_SMALLBUFFERS
++#ifndef CPTCFG_ATH10K_SMALLBUFFERS
  		.dest_nentries = 512,
 +#else
 +		.dest_nentries = 128,
@@ -30,7 +45,7 @@
  		.flags = CE_ATTR_FLAGS,
  		.src_nentries = 0,
  		.src_sz_max = 2048,
-+#ifndef CONFIG_ATH10K_SMALLBUFFERS
++#ifndef CPTCFG_ATH10K_SMALLBUFFERS
  		.dest_nentries = 128,
 +#else
 +		.dest_nentries = 64,
@@ -42,7 +57,7 @@
  		.flags = CE_ATTR_FLAGS,
  		.src_nentries = 0,
  		.src_sz_max = 512,
-+#ifndef CONFIG_ATH10K_SMALLBUFFERS
++#ifndef CPTCFG_ATH10K_SMALLBUFFERS
  		.dest_nentries = 512,
 +#else
 +		.dest_nentries = 128,
@@ -54,7 +69,7 @@
  		.flags = CE_ATTR_FLAGS,
  		.src_nentries = 0,
  		.src_sz_max = 2048,
-+#ifndef CONFIG_ATH10K_SMALLBUFFERS
++#ifndef CPTCFG_ATH10K_SMALLBUFFERS
  		.dest_nentries = 128,
 +#else
 +		.dest_nentries = 96,
@@ -62,3 +77,13 @@
  		.recv_cb = ath10k_pci_pktlog_rx_cb,
  	},
  
+--- a/local-symbols
++++ b/local-symbols
+@@ -143,6 +143,7 @@ WIL6210_ISR_COR=
+ WIL6210_TRACING=
+ WIL6210_DEBUGFS=
+ ATH10K=
++ATH10K_SMALLBUFFERS=
+ ATH10K_CE=
+ ATH10K_PCI=
+ ATH10K_AHB=
