@@ -266,7 +266,7 @@ static void ppe_acl_slice_write(struct qca_ppe_priv *priv, u32 index,
 /* A filter needs at most one entry per rule type, which is more than one
  * hardware list holds; the width is checked once the whole filter is parsed.
  */
-#define PPE_ACL_MAX_SLICES	(PPE_ACL_TYPE_IPMISC + 1)
+#define PPE_ACL_MAX_SLICES	(PPE_ACL_TYPE_UDF1 + 1)
 
 struct ppe_acl_rule {
 	struct list_head list;
@@ -280,6 +280,8 @@ struct ppe_acl_rule {
 	int port;
 	int meter;
 	bool mirror;
+	s8 udf_cls;
+	s8 udf_win;
 	/* Counter totals at the last stats request, at the counters' width */
 	u32 pkts;
 	u64 bytes;
@@ -822,6 +824,8 @@ static void ppe_acl_rule_free(struct qca_ppe_priv *priv,
 		ppe_acl_meter_set(priv, r->meter, 0, 0, false);
 		clear_bit(r->meter, priv->acl_meter_used);
 	}
+	if (r->udf_win >= 0)
+		priv->acl_udf_refs[r->udf_cls][r->udf_win]--;
 	kfree(r->fs);
 	kfree(r);
 }
@@ -1078,6 +1082,107 @@ static struct ppe_acl_rule *ppe_acl_rule_find(struct qca_ppe_priv *priv,
 	return NULL;
 }
 
+/* ethtool's user-def laid out as i40e does - the 16-bit word in bits 15:0,
+ * its byte offset in 31:16 - plus the header the offset counts from in 33:32:
+ * 0 for L2, 1 for L3, 2 for L4.
+ */
+#define PPE_ACL_USERDEF_WORD	GENMASK_ULL(15, 0)
+#define PPE_ACL_USERDEF_OFFSET	GENMASK_ULL(31, 16)
+#define PPE_ACL_USERDEF_BASE	GENMASK_ULL(33, 32)
+#define PPE_ACL_USERDEF_WINDOW	GENMASK_ULL(33, 16)
+
+struct ppe_acl_udf {
+	u8 cls;
+	u32 ctrl;
+	u16 word;
+	u16 mask;
+};
+
+/* Returns 1 for a user-def match, 0 for none. */
+static int ppe_acl_parse_udf(const struct ethtool_rx_flow_spec *fs,
+			     __be16 family, struct ppe_acl_udf *u)
+{
+	u64 v, m;
+	u32 off;
+
+	if (!fs || !(fs->flow_type & FLOW_EXT))
+		return 0;
+
+	v = be64_to_cpup((const __be64 *)fs->h_ext.data);
+	m = be64_to_cpup((const __be64 *)fs->m_ext.data);
+	if (!m)
+		return 0;
+
+	off = FIELD_GET(PPE_ACL_USERDEF_OFFSET, v);
+	if ((m & PPE_ACL_USERDEF_WINDOW) != PPE_ACL_USERDEF_WINDOW ||
+	    !(m & PPE_ACL_USERDEF_WORD) || v & ~GENMASK_ULL(33, 0) ||
+	    FIELD_GET(PPE_ACL_USERDEF_BASE, v) > 2 || off % 2 ||
+	    off / 2 > FIELD_MAX(PPE_ACL_UDF_OFFSET))
+		return -EINVAL;
+
+	/* The windows are per packet class - non-IP, IPv4, IPv6 - so the rule
+	 * has to name one.
+	 */
+	if (family == htons(ETH_P_IP))
+		u->cls = 1;
+	else if (family == htons(ETH_P_IPV6))
+		u->cls = 2;
+	else if (fs->m_u.ether_spec.h_proto)
+		u->cls = 0;
+	else
+		return -EINVAL;
+
+	u->ctrl = FIELD_PREP(PPE_ACL_UDF_BASE,
+			     FIELD_GET(PPE_ACL_USERDEF_BASE, v)) |
+		  FIELD_PREP(PPE_ACL_UDF_OFFSET, off / 2);
+	u->word = v;
+	u->mask = m;
+
+	return 1;
+}
+
+/* The windows are global: share one programmed the same way, or take a free
+ * one. Window 3 is reached only through the second UDF rule type's last slot.
+ */
+static int ppe_acl_udf_get(struct qca_ppe_priv *priv,
+			   const struct ppe_acl_udf *u,
+			   struct ppe_acl_slice *s, struct ppe_acl_rule *r)
+{
+	u32 *ctrl = priv->acl_udf_ctrl[u->cls];
+	u32 *refs = priv->acl_udf_refs[u->cls];
+	int w, slot, free = -1;
+
+	for (w = 0; w < PPE_ACL_UDF_WINDOWS; w++) {
+		if (refs[w] && ctrl[w] == u->ctrl)
+			break;
+		if (!refs[w] && free < 0)
+			free = w;
+	}
+	if (w == PPE_ACL_UDF_WINDOWS) {
+		if (free < 0)
+			return -ENOSPC;
+		w = free;
+		ctrl[w] = u->ctrl;
+		regmap_write(priv->regmap, PPE_ACL_UDF_CTRL(u->cls, w),
+			     u->ctrl);
+	}
+	refs[w]++;
+	r->udf_cls = u->cls;
+	r->udf_win = w;
+
+	slot = w < 3 ? w : 2;
+	s->type = w < 3 ? PPE_ACL_TYPE_UDF0 : PPE_ACL_TYPE_UDF1;
+	s->key[slot / 2] = (u32)u->word << (slot % 2 * 16);
+	s->mask[slot / 2] = (u32)u->mask << (slot % 2 * 16);
+	s->key[1] |= PPE_ACL_UDF_VALID(slot) |
+		     (u->cls ? PPE_ACL_UDF_IS_IP : 0) |
+		     (u->cls == 2 ? PPE_ACL_UDF_IS_IPV6 : 0);
+	s->mask[1] |= PPE_ACL_UDF_VALID(slot) | PPE_ACL_UDF_IS_IP |
+		      PPE_ACL_UDF_IS_IPV6;
+
+	return 0;
+}
+
 /* Place one parsed rule in the engine. Both uAPIs land here: the preference
  * is tc's for a filter and the location for an ethtool entry, and in each the
  * lower number is the stronger rule, which the engine expresses as the higher
@@ -1089,19 +1194,23 @@ static int ppe_acl_rule_add(struct qca_ppe_priv *priv, int port,
 			    u16 prio, struct netlink_ext_ack *extack)
 {
 	struct ppe_acl_slice slice[PPE_ACL_MAX_SLICES] = {};
+	int nslices, ret, i, udf;
+	struct ppe_acl_udf u;
 	struct ppe_acl_rule *r;
-	int nslices, ret, i;
 	__be16 family;
 	u16 pri;
 
 	nslices = ppe_acl_parse_key(rule, extack, slice, &family);
 	if (nslices < 0)
 		return nslices;
-	if (!nslices) {
+	udf = ppe_acl_parse_udf(fs, family, &u);
+	if (udf < 0)
+		return udf;
+	if (!nslices && !udf) {
 		NL_SET_ERR_MSG_MOD(extack, "a rule with no key would match every frame");
 		return -EOPNOTSUPP;
 	}
-	if (nslices > PPE_ACL_LIST_ENTRIES) {
+	if (nslices + udf > PPE_ACL_LIST_ENTRIES) {
 		NL_SET_ERR_MSG_MOD(extack, "the key needs more entries than one list holds");
 		return -EOPNOTSUPP;
 	}
@@ -1110,6 +1219,7 @@ static int ppe_acl_rule_add(struct qca_ppe_priv *priv, int port,
 	if (!r)
 		return -ENOMEM;
 	r->meter = -1;
+	r->udf_win = -1;
 	r->loc = loc;
 	if (fs) {
 		r->fs = kmemdup(fs, sizeof(*fs), GFP_KERNEL);
@@ -1127,6 +1237,12 @@ static int ppe_acl_rule_add(struct qca_ppe_priv *priv, int port,
 	ret = ppe_acl_parse_action(priv, rule, extack, family, r);
 	if (ret)
 		goto err;
+
+	if (udf) {
+		ret = ppe_acl_udf_get(priv, &u, &slice[nslices++], r);
+		if (ret)
+			goto err;
+	}
 
 	ret = ppe_acl_alloc(priv, slice, nslices, &r->group);
 	if (ret) {
