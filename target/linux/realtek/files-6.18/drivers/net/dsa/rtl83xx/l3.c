@@ -64,6 +64,7 @@
 #include <linux/if_vlan.h>
 #include <linux/inet.h>
 #include <linux/inetdevice.h>
+#include <linux/iopoll.h>
 #include <linux/notifier.h>
 #include <linux/of.h>
 #include <linux/rhashtable.h>
@@ -645,9 +646,9 @@ static int otto_l3_930x_route_lookup_hw(struct otto_l3_ctrl *ctrl, struct otto_l
 	sw_w32(BIT(15), RTL930X_L3_HW_LU_CTRL);
 
 	/* Wait until execute bit clears and result is ready */
-	do {
-		v = sw_r32(RTL930X_L3_HW_LU_CTRL);
-	} while (v & BIT(15));
+	if (readx_poll_timeout(sw_r32, RTL930X_L3_HW_LU_CTRL, v, !(v & BIT(15)),
+			       20, 10000))
+		return -ETIMEDOUT;
 
 	dev_dbg(ctrl->dev, "found: %d, index: %d\n", !!(v & BIT(14)), v & 0x1ff);
 
@@ -1669,7 +1670,7 @@ static void otto_l3_route_remove(struct otto_l3_ctrl *ctrl, struct otto_l3_route
 			id = r->row;
 			if (!otto_l3_route_is_at(ctrl, id, r)) {
 				id = ctrl->cfg->route_lookup_hw(ctrl, r);
-				if (!otto_l3_route_is_at(ctrl, id, r)) {
+				if (id != -ETIMEDOUT && !otto_l3_route_is_at(ctrl, id, r)) {
 					if (id >= FIRST_PREFIX_ROW)
 						dev_err(ctrl->dev,
 							"prefix route %s: row %d holds another route\n",
@@ -1682,6 +1683,14 @@ static void otto_l3_route_remove(struct otto_l3_ctrl *ctrl, struct otto_l3_route
 				dev_dbg(ctrl->dev, "Got id for prefix route: %d\n", id);
 				r->attr.valid = false;
 				ctrl->cfg->route_write(ctrl, id, r);
+			} else if (id == -ETIMEDOUT) {
+				/* The route may still hold a row that the block,
+				 * counted from the list, will no longer include
+				 */
+				ctrl->prefix_rows_stale = true;
+				dev_err(ctrl->dev,
+					"prefix route %s: hardware lookup timed out, no route will be placed again\n",
+					otto_l3_route_dst(r, dst, sizeof(dst)));
 			} else {
 				dev_err(ctrl->dev, "prefix route %s was not in hardware\n",
 					otto_l3_route_dst(r, dst, sizeof(dst)));
