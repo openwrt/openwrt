@@ -764,6 +764,8 @@ static int qca_ppe_setup(struct dsa_switch *ds)
 	ds->ageing_time_max = (unsigned int)min_t(u64,
 		(u64)PPE_AGE_UNIT_MS * PPE_AGE_TIMER_MASK, U32_MAX);
 	ds->assisted_learning_on_cpu_port = true;
+	ds->fdb_isolation = true;
+	ds->max_num_bridges = QCA_PPE_MAX_BRIDGES;
 
 	ret = ppe_devlink_setup(ds);
 	if (!ret)
@@ -934,13 +936,16 @@ static void qca_ppe_port_bridge_leave(struct dsa_switch *ds, int port,
 
 /* The entry is keyed on the VSI the frame will carry: a vid naming one of the
  * bridge's VLANs gives that VLAN's VSI, and the vid 0 a VLAN-unaware bridge
- * notifies with gives the bridge's own.
+ * notifies with gives the bridge's own. A standalone port classifies into
+ * VSI 0 whatever its tag.
  */
 static u32 ppe_fdb_vsi(struct qca_ppe_priv *priv, u16 vid, struct dsa_db db)
 {
 	struct qca_ppe_vlan_entry *vlan;
 	struct qca_ppe_bridge_vsi *bvsi;
 
+	if (db.type == DSA_DB_PORT)
+		return 0;
 	if (db.type != DSA_DB_BRIDGE)
 		return PPE_VSI_INVALID;
 
