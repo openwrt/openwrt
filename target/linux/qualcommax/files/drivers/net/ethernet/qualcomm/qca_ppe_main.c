@@ -1926,10 +1926,17 @@ struct qca_ppe_mib_stats {
 	u64 last;
 };
 
+/* The PPE's own per-port drop counts, banked after the MAC's: 32-bit packet
+ * counters outside the MAC, so they wrap but survive a port reset.
+ */
+#define PPE_MIB_RX_DROP		ARRAY_SIZE(qca_ppe_mib)
+#define PPE_MIB_TX_DROP		(PPE_MIB_RX_DROP + 1)
+#define PPE_MIB_STATS		(PPE_MIB_RX_DROP + 2)
+
 static struct qca_ppe_mib_stats *ppe_port_mib(struct qca_ppe_priv *priv,
 					      int port)
 {
-	return priv->port_mib + port * ARRAY_SIZE(qca_ppe_mib);
+	return priv->port_mib + port * PPE_MIB_STATS;
 }
 
 /* The GMAC keeps most counters in a single 32-bit register and neither MAC
@@ -1984,6 +1991,16 @@ static void ppe_mib_fold(struct qca_ppe_priv *priv, int port)
 		if (!rebase)
 			stats[i].total += size > 1 ? cur - stats[i].last :
 					  (u32)(cur - stats[i].last);
+		stats[i].last = cur;
+	}
+
+	for (i = PPE_MIB_RX_DROP; i < PPE_MIB_STATS; i++) {
+		u32 cur;
+
+		regmap_read(priv->regmap, i == PPE_MIB_RX_DROP ?
+			    PPE_PRX_DROP_CNT(port) :
+			    PPE_PORT_TX_DROP_CNT(port), &cur);
+		stats[i].total += (u32)(cur - stats[i].last);
 		stats[i].last = cur;
 	}
 
@@ -2116,6 +2133,9 @@ static void qca_ppe_get_stats64(struct dsa_switch *ds, int port,
 		       s->tx_window_errors;
 
 	s->collisions = MIB(TXCOLLISIONS);
+
+	s->rx_dropped = stats[PPE_MIB_RX_DROP].total;
+	s->tx_dropped = stats[PPE_MIB_TX_DROP].total;
 
 	spin_unlock_bh(&priv->mib_lock);
 }
@@ -3057,7 +3077,7 @@ static int qca_ppe_probe(struct platform_device *pdev)
 	INIT_DELAYED_WORK(&priv->mib_work, ppe_mib_work);
 
 	priv->port_mib = devm_kcalloc(&pdev->dev,
-				      data->num_ports * ARRAY_SIZE(qca_ppe_mib),
+				      data->num_ports * PPE_MIB_STATS,
 				      sizeof(*priv->port_mib), GFP_KERNEL);
 	if (!priv->port_mib)
 		return -ENOMEM;
