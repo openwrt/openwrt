@@ -2671,12 +2671,15 @@ static void ppe_mac_hw_init(struct qca_ppe_priv *priv)
 
 static void ppe_ctrlpkt_init(struct qca_ppe_priv *priv)
 {
-	u32 ports;
+	u32 ports, trap;
 	int i;
 
 	/* Trap external frames, but let CPU-originated ones reach the wire. */
 	ports = GENMASK(priv->data->num_ports - 1, 0) &
 		~(BIT(QCA_PPE_CPU_PORT) | BIT(priv->data->loopback_port));
+	trap = PPE_APP_CTRL_PORT_BITMAP_EN |
+	       FIELD_PREP(PPE_APP_CTRL_PORT_BITMAP, ports) |
+	       FIELD_PREP(PPE_APP_CTRL_CMD, PPE_APP_CTRL_REDIRECT_CPU);
 
 	for (i = 0; i < PPE_RFDB_LINK_LOCAL; i++) {
 		regmap_write(priv->regmap, PPE_RFDB_TBL(i), 0xc2000000 | i);
@@ -2689,10 +2692,17 @@ static void ppe_ctrlpkt_init(struct qca_ppe_priv *priv)
 				GENMASK(PPE_RFDB_LINK_LOCAL - 1, 0)));
 	regmap_write(priv->regmap, PPE_APP_CTRL(0) + 4, 0);
 	regmap_write(priv->regmap, PPE_APP_CTRL(0) + 8,
-		     PPE_APP_CTRL_PORT_BITMAP_EN |
-		     FIELD_PREP(PPE_APP_CTRL_PORT_BITMAP, ports) |
-		     PPE_APP_CTRL_STP_BYPASS |
-		     FIELD_PREP(PPE_APP_CTRL_CMD, PPE_APP_CTRL_REDIRECT_CPU));
+		     trap | PPE_APP_CTRL_STP_BYPASS);
+
+	/* A report is addressed to its group, so an MDB entry would forward
+	 * it past the bridge's snooping and the membership would expire.
+	 */
+	regmap_write(priv->regmap, PPE_APP_CTRL(1), PPE_APP_CTRL_VALID);
+	regmap_write(priv->regmap, PPE_APP_CTRL(1) + 4,
+		     PPE_APP_CTRL_PROTO_INCL |
+		     FIELD_PREP(PPE_APP_CTRL_PROTO_BMP,
+				PPE_APP_PROTO_IGMP | PPE_APP_PROTO_MLD));
+	regmap_write(priv->regmap, PPE_APP_CTRL(1) + 8, trap);
 }
 
 static void ppe_ipq6018_mux_setup(struct qca_ppe_priv *priv)
