@@ -558,9 +558,16 @@ define Device/ExportVar
   $(1) : $(2):=$$($(2))
 
 endef
+# Remove the image of the current target with a warning and mark it as dropped.
+# The strict shell skips the remaining recipe lines of a dropped image.
+Image/drop = { $(call ERROR_MESSAGE,    WARNING: $(if $(1),$(1)$(comma) )dropping image file $@); rm -f $@; touch $@.dropped; }
+
+# Run the recipes of the target with scripts/strict-shell.sh, which stops a
+# recipe at any failing command and skips the recipe lines after Image/drop.
 define Device/Export
   $(foreach var,$(DEVICE_VARS) $(DEFAULT_DEVICE_VARS),$(call Device/ExportVar,$(1),$(var)))
   $(1) : FILESYSTEM:=$(2)
+  $(1) : private SHELL:=$(SCRIPT_DIR)/strict-shell.sh --skip-if-exists $(1).dropped
 endef
 
 ifdef IB
@@ -988,12 +995,14 @@ define BuildImage
 	done
     image_prepare: compile compile-dtb
 		mkdir -p $(BIN_DIR) $(KDIR)/tmp
+		rm -f $(KDIR)/*.dropped $(KDIR)/tmp/*.dropped
 		rm -rf $(BUILD_DIR)/json_info_files
 		$(call Image/Prepare)
 
   else
     image_prepare:
 		rm -rf $(KDIR)/tmp
+		rm -f $(KDIR)/*.dropped
 		mkdir -p $(BIN_DIR) $(KDIR)/tmp
   endif
 

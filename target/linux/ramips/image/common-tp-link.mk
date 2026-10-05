@@ -10,7 +10,7 @@ define Build/tplink-v1-okli-image
 		-k "$(KDIR)/loader-$(word 1,$(1)).$(LOADER_TYPE)" -E $(KERNEL_LOADADDR) \
 		-r $@.rootfs -o $@.new -j -X 0x40000 \
 		-a $(call rootfs_align,$(FILESYSTEM)) $(wordlist 3,$(words $(1)),$(1)) \
-		$(if $(findstring sysupgrade,$(word 2,$(1))),-s) && mv $@.new $@ || rm -f $@
+		$(if $(findstring sysupgrade,$(word 2,$(1))),-s) && mv $@.new $@ || $(call Image/drop,mktplinkfw failed)
 	rm -f $@.rootfs
 endef
 

@@ -316,10 +316,8 @@ endef
 define Build/check-size
 	@imagesize="$$(stat -c%s $@)"; \
 	limitsize="$$(($(call exp_units,$(if $(1),$(1),$(IMAGE_SIZE)))))"; \
-	[ $$limitsize -ge $$imagesize ] || { \
-		$(call ERROR_MESSAGE,    WARNING: Image file $@ is too big: $$imagesize > $$limitsize); \
-		rm -f $@; \
-	}
+	[ $$limitsize -ge $$imagesize ] || \
+		$(call Image/drop,image is too big: $$imagesize > $$limitsize)
 endef
 
 define Build/copy-file
@@ -745,7 +743,7 @@ endef
 
 define Build/senao-header
 	-$(STAGING_DIR_HOST)/bin/mksenaofw $(1) -e $@ -o $@.new \
-	&& mv $@.new $@ || rm -f $@
+	&& mv $@.new $@ || $(call Image/drop,mksenaofw failed)
 endef
 
 define Build/sysupgrade-tar
@@ -775,7 +773,7 @@ define Build/tplink-safeloader
 		-o $@.new \
 		-j \
 		$(wordlist 2,$(words $(1)),$(1)) \
-		$(if $(findstring sysupgrade,$(word 1,$(1))),-S) && mv $@.new $@ || rm -f $@
+		$(if $(findstring sysupgrade,$(word 1,$(1))),-S) && mv $@.new $@ || $(call Image/drop,tplink-safeloader failed)
 endef
 
 define Build/tplink-v1-header
@@ -802,7 +800,7 @@ define Build/tplink-v1-image
 		-k $(IMAGE_KERNEL) -r $(IMAGE_ROOTFS) -o $@.new -j -X 0x40000 \
 		-a $(call rootfs_align,$(FILESYSTEM)) \
 		$(wordlist 2,$(words $(1)),$(1)) \
-		$(if $(findstring sysupgrade,$(word 1,$(1))),-s) && mv $@.new $@ || rm -f $@
+		$(if $(findstring sysupgrade,$(word 1,$(1))),-s) && mv $@.new $@ || $(call Image/drop,mktplinkfw failed)
 endef
 
 define Build/tplink-v2-header
@@ -812,7 +810,7 @@ define Build/tplink-v2-header
 		-w $(TPLINK_HWREVADD) -F "$(TPLINK_FLASHLAYOUT)" \
 		-T $(TPLINK_HVERSION) -V "ver. 2.0" \
 		-k $@ -o $@.new $(1) \
-	&& mv $@.new $@ || rm -f $@
+	&& mv $@.new $@ || $(call Image/drop,mktplinkfw2 failed)
 endef
 
 define Build/tplink-v2-image
@@ -821,7 +819,7 @@ define Build/tplink-v2-image
 		-w $(TPLINK_HWREVADD) -F "$(TPLINK_FLASHLAYOUT)" \
 		-T $(TPLINK_HVERSION) -V "ver. 2.0" -a 0x4 -j \
 		-k $(IMAGE_KERNEL) -r $(IMAGE_ROOTFS) -o $@.new $(1) \
-	&& cat $@.new >> $@ && rm -rf $@.new || rm -f $@
+	&& cat $@.new >> $@ && rm -rf $@.new || $(call Image/drop,mktplinkfw2 failed)
 endef
 
 define Build/uImage
@@ -859,7 +857,7 @@ endef
 
 define Build/xor-image
 	-$(STAGING_DIR_HOST)/bin/xorimage -i $@ -o $@.xor $(1) \
-	&& mv $@.xor $@ || rm -f $@
+	&& mv $@.xor $@ || $(call Image/drop,xorimage failed)
 endef
 
 define Build/zip
