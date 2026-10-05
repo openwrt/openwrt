@@ -286,7 +286,7 @@ write_lldpd_conf()
 	config_get lldp_platform 'config' 'lldp_platform' ""
 
 	local lldp_tx_interval
-	config_get lldp_tx_interval 'config' 'lldp_tx_interval' 0
+	config_get lldp_tx_interval 'config' 'lldp_tx_interval' ""
 
 	local lldp_tx_hold
 	config_get lldp_tx_hold 'config' 'lldp_tx_hold' 0
