@@ -1,0 +1,110 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+#include "mt7628an.dtsi"
+#include "mt7628an_tuoshi_lt22m_common.dtsi"
+
+/ {
+	compatible = "tuoshi,lt22m", "mediatek,mt7628an-soc";
+	model = "Tuoshi LT22M 4G Wireless Router";
+
+	virtual_flash {
+		compatible = "mtd-concat";
+		devices = <&fwconcat0 &fwconcat1 &fwconcat2>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "firmware";
+				reg = <0x0 0x0>;
+				compatible = "openwrt,uimage", "denx,uimage";
+				openwrt,ih-magic = <0x27151967>;
+			};
+		};
+	};
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <25000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/* Explicitly writable for the separately guarded loader migration. */
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x30000>;
+			};
+
+			partition@30000 {
+				label = "u-boot-env";
+				reg = <0x30000 0x10000>;
+			};
+
+			factory: partition@40000 {
+				label = "factory";
+				reg = <0x40000 0x10000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x400>;
+					};
+
+					macaddr_factory_28: macaddr@28 {
+						reg = <0x28 0x6>;
+					};
+				};
+			};
+
+			fwconcat0: partition@50000 {
+				label = "fwconcat0";
+				reg = <0x50000 0x770000>;
+			};
+
+			partition@7c0000 {
+				label = "stock-storage";
+				reg = <0x7c0000 0x40000>;
+			};
+
+			fwconcat1: partition@800000 {
+				label = "fwconcat1";
+				reg = <0x800000 0x50000>;
+			};
+
+			partition@850000 {
+				label = "stock-firmware2";
+				reg = <0x850000 0x770000>;
+			};
+
+			fwconcat2: partition@fc0000 {
+				label = "fwconcat2";
+				reg = <0xfc0000 0x40000>;
+			};
+		};
+	};
+};
+
+&wmac {
+	status = "okay";
+	nvmem-cells = <&eeprom_factory_0>;
+	nvmem-cell-names = "eeprom";
+};
+
+&ethernet {
+	nvmem-cells = <&macaddr_factory_28>;
+	nvmem-cell-names = "mac-address";
+};

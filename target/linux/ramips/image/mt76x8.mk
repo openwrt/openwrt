@@ -1267,6 +1267,24 @@ define Device/tplink_tl-wr902ac-v4
 endef
 TARGET_DEVICES += tplink_tl-wr902ac-v4
 
+# The stock loader uses OEM uImage magic and stores firmware in slot A.
+# Both images use the same 7104 KiB cap: this leaves 1088 KiB of the
+# virtual 8 MiB firmware MTD for rootfs_data and stays below the original
+# web updater's 0x770000-byte file-size limit.
+define Device/tuoshi_lt22m
+  IMAGE_SIZE := 7104k
+  DEVICE_VENDOR := Tuoshi
+  DEVICE_MODEL := LT22M 4G Wireless Router
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-net-rndis \
+	kmod-usb-serial-option uboot-envtools dumpimage
+  UIMAGE_MAGIC := 0x27151967
+  UIMAGE_NAME := JBoneCloud M7628NNxCPET
+  IMAGES := sysupgrade.bin factory.bin
+  IMAGE/sysupgrade.bin := $$(sysupgrade_bin) | append-metadata | check-size
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size
+endef
+TARGET_DEVICES += tuoshi_lt22m
+
 define Device/unielec_u7628-01-16m
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := UniElec
