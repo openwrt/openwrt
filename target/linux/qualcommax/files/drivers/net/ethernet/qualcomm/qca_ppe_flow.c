@@ -313,6 +313,18 @@ static int ppe_offload_show(struct seq_file *s, void *data)
 		seq_printf(s, "%-24s %u\n", ppe_flow_reject_name[i],
 			   priv->flow_reject[i]);
 
+	guard(mutex)(&priv->vlan_lock);
+	for (i = 0; i < PPE_PPPOE_SESSIONS; i++) {
+		const struct ppe_uplink *up = &priv->uplink[i];
+		char name[24];
+
+		if (!up->ref)
+			continue;
+		snprintf(name, sizeof(name), "uplink_port%u_vid%u", up->port,
+			 up->vid);
+		seq_printf(s, "%-24s %u\n", name, up->ref);
+	}
+
 	return 0;
 }
 DEFINE_SHOW_ATTRIBUTE(ppe_offload);
