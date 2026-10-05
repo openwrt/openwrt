@@ -726,11 +726,11 @@
 			"type": "number"
 		},
 		"mlo": {
-			"description": "Multi-Link Operation. On an AP MLD, psk and psk-mixed become psk2, and wpa and wpa-mixed become wpa2; psk2 keeps PSK in the RSNE of the 2.4 and 5 GHz links for single-link stations and offers SAE in the RSNE Override 2 element of every link, which multi-link associations use. The 6 GHz link uses SAE. If the AP MLD has a 6 GHz link, none becomes owe on the other links",
+			"description": "Multi-Link Operation. On an AP MLD, psk and psk-mixed become psk2, and wpa and wpa-mixed become wpa2; psk2 keeps PSK in the RSNE of the 2.4 and 5 GHz links for single-link stations and offers SAE in the RSNE Override 2 element of every link, which multi-link associations use. The 6 GHz link uses SAE. If the AP MLD has a 6 GHz link, none becomes owe on the other links. On an MLD station with a 6 GHz radio and radios of other bands, psk2 becomes sae-mixed and wpa2 becomes wpa3-mixed",
 			"type": "boolean"
 		},
 		"mlo_bands": {
-			"description": "Bands of all radios of the AP MLD, set by netifd",
+			"description": "Bands of all radios of the AP MLD or MLD station, set by netifd",
 			"type": "array",
 			"items": {
 				"type": "string"

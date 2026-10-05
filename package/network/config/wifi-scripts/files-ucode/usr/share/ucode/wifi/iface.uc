@@ -43,24 +43,46 @@ const encryption_mld_6g = {
 	'none': 'owe',
 };
 
-/* mld_bands: null for a single-link BSS, else the bands of the AP MLD */
-export function encryption_band(encryption, band, mld_bands) {
-	let modes;
-	if (band == '6g')
-		modes = encryption_6g;
-	else if (index(mld_bands ?? [], '6g') >= 0)
-		modes = encryption_mld_6g;
-	else if (mld_bands != null)
-		modes = encryption_mld;
-	else
-		return encryption;
+/*
+ * One network block serves all links of an MLD station, and wpa_supplicant
+ * removes the PSK AKMs for a 6 GHz BSS.
+ */
+const encryption_sta_mixed_6g = {
+	'psk2': 'sae-mixed',
+	'wpa2': 'wpa3-mixed',
+};
 
+function encryption_map(encryption, modes) {
 	let enc = split(encryption ?? 'none', '+', 2);
 	if (!modes[enc[0]])
 		return encryption;
 
 	enc[0] = modes[enc[0]];
 	return join('+', enc);
+}
+
+/* mld_bands: null for a single-link BSS, else the bands of the AP MLD */
+export function encryption_band(encryption, band, mld_bands) {
+	if (band == '6g')
+		return encryption_map(encryption, encryption_6g);
+	if (index(mld_bands ?? [], '6g') >= 0)
+		return encryption_map(encryption, encryption_mld_6g);
+	if (mld_bands != null)
+		return encryption_map(encryption, encryption_mld);
+
+	return encryption;
+};
+
+/* mld_bands: null for a single-link station, else the bands of the MLD */
+export function encryption_sta_band(encryption, band, mld_bands) {
+	if (!length(mld_bands))
+		return encryption_band(encryption, band);
+	if (index(mld_bands, '6g') < 0)
+		return encryption;
+	if (length(mld_bands) == 1)
+		return encryption_map(encryption, encryption_6g);
+
+	return encryption_map(encryption, encryption_sta_mixed_6g);
 };
 
 export function parse_encryption(config, dev_config, phy_features) {

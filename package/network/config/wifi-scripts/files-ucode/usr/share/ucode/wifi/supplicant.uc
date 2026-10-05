@@ -69,7 +69,8 @@ function setup_sta(data, config, phy_features) {
 
 	/* use what a 6 GHz AP with the same configuration offers */
 	if (config.mode == 'sta')
-		config.encryption = iface.encryption_band(config.encryption, data.band);
+		config.encryption = iface.encryption_sta_band(config.encryption, data.band,
+			config.mlo ? config.mlo_bands : null);
 
 	/* WPA3 Specification v3.5 2.5 items 9 and 10: "A STA that enables EHT
 	 * or MLO shall, in its Network Profile, allow AKM suite selector
