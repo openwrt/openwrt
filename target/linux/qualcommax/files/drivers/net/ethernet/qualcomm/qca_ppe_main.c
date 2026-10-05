@@ -2661,30 +2661,33 @@ static void ppe_mac_hw_init(struct qca_ppe_priv *priv)
 	ppe_port_bridge_txmac_set(priv, d->loopback_port, true);
 }
 
+/* The bridge forwards none of 01:80:c2:00:00:00-0f in the sense the hardware
+ * would: it consumes them, or forwards them in software under group_fwd_mask.
+ * Each address is an RFDB profile of its own, indexed by its last nibble.
+ * Without the trap, LLDP and EAPOL are flooded across the bridge and a bond
+ * never sees its partner's LACPDUs.
+ */
+#define PPE_RFDB_LINK_LOCAL	16
+
 static void ppe_ctrlpkt_init(struct qca_ppe_priv *priv)
 {
 	u32 ports;
+	int i;
 
-	/* Trap external BPDUs, but let CPU-originated BPDUs reach the wire. */
+	/* Trap external frames, but let CPU-originated ones reach the wire. */
 	ports = GENMASK(priv->data->num_ports - 1, 0) &
 		~(BIT(QCA_PPE_CPU_PORT) | BIT(priv->data->loopback_port));
 
-	/* RFDB_TBL[31]: STP multicast MAC 01:80:c2:00:00:00 */
-	regmap_write(priv->regmap, PPE_RFDB_TBL(31), 0xc2000000);
-	regmap_write(priv->regmap, PPE_RFDB_TBL(31) + 4, 0x00010180);
+	for (i = 0; i < PPE_RFDB_LINK_LOCAL; i++) {
+		regmap_write(priv->regmap, PPE_RFDB_TBL(i), 0xc2000000 | i);
+		regmap_write(priv->regmap, PPE_RFDB_TBL(i) + 4, 0x00010180);
+	}
 
-	/* RFDB_TBL[30]: Slow Protocols MAC 01:80:c2:00:00:02 (LACP, marker).
-	 * Without this entry the PPE keeps LACPDUs away from the CPU port and a
-	 * bond over these ports never sees its partner.
-	 */
-	regmap_write(priv->regmap, PPE_RFDB_TBL(30), 0xc2000002);
-	regmap_write(priv->regmap, PPE_RFDB_TBL(30) + 4, 0x00010180);
-
-	/* APP_CTRL[0]: match RFDB profiles 30 and 31 (bits 32 and 33 of the
-	 * RFDB index bitmap), bypass STP, redirect to CPU
-	 */
-	regmap_write(priv->regmap, PPE_APP_CTRL(0), 0x00000003);
-	regmap_write(priv->regmap, PPE_APP_CTRL(0) + 4, 0x00000003);
+	regmap_write(priv->regmap, PPE_APP_CTRL(0),
+		     PPE_APP_CTRL_VALID | PPE_APP_CTRL_RFDB_INCL |
+		     FIELD_PREP(PPE_APP_CTRL_RFDB_BMP,
+				GENMASK(PPE_RFDB_LINK_LOCAL - 1, 0)));
+	regmap_write(priv->regmap, PPE_APP_CTRL(0) + 4, 0);
 	regmap_write(priv->regmap, PPE_APP_CTRL(0) + 8,
 		     PPE_APP_CTRL_PORT_BITMAP_EN |
 		     FIELD_PREP(PPE_APP_CTRL_PORT_BITMAP, ports) |
