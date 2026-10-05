@@ -1563,14 +1563,46 @@ static void ppe_port_tx_counters(struct qca_ppe_priv *priv, int port,
 		ppe_mib_read(priv, port, PPE_MIB_TXMULTI);
 }
 
+static u32 ppe_port_backlog(struct qca_ppe_priv *priv, int port)
+{
+	const struct port_l0_params *p = NULL;
+	u32 val, bufs = 0;
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(port_l0); i++)
+		if (port_l0[i].port == port)
+			p = &port_l0[i];
+	if (!p)
+		return 0;
+
+	for (i = 0; i < p->ucast_count; i++) {
+		regmap_read(priv->regmap, PPE_QM_AC_UNI_CNT(p->ucast_base + i),
+			    &val);
+		bufs += FIELD_GET(PPE_AC_UNI_PEND_CNT, val);
+	}
+	for (i = 0; i < p->mcast_count; i++) {
+		regmap_read(priv->regmap,
+			    PPE_QM_AC_MUL_CNT(p->mcast_base + i -
+					      PPE_L0_UCAST_QUEUES), &val);
+		bufs += FIELD_GET(PPE_AC_MUL_PEND_CNT, val);
+	}
+
+	return bufs * PPE_BM_BUF_SIZE;
+}
+
 static void ppe_port_shaper_stats(struct qca_ppe_priv *priv, int port,
 				  struct tc_qopt_offload_stats *stats)
 {
 	struct ppe_port_shaper *sh = &priv->shaper[port];
+	u32 pkts, drops, backlog;
 	u64 bytes;
-	u32 pkts, drops;
 
 	ppe_port_tx_counters(priv, port, &bytes, &pkts, &drops);
+
+	/* The qdisc's backlog is a gauge the software path also moves. */
+	backlog = ppe_port_backlog(priv, port);
+	stats->qstats->backlog += backlog - sh->base_backlog;
+	sh->base_backlog = backlog;
 
 	/* The packet and drop counters are 32 bits wide and wrap, so their
 	 * deltas are taken in their own width.
@@ -1890,6 +1922,7 @@ static int ppe_qos_bands_set(struct qca_ppe_priv *priv, int port, u32 handle,
 	sh->bands_handle = handle;
 	ppe_port_tx_counters(priv, port, &sh->base_bytes, &sh->base_pkts,
 			     &sh->base_drops);
+	sh->base_backlog = 0;
 
 	return 0;
 }
@@ -1993,6 +2026,7 @@ int qca_ppe_setup_tc_tbf(struct qca_ppe_priv *priv, int port,
 				     &priv->shaper[port].base_bytes,
 				     &priv->shaper[port].base_pkts,
 				     &priv->shaper[port].base_drops);
+		priv->shaper[port].base_backlog = 0;
 		return 0;
 	case TC_TBF_DESTROY:
 		/* A replacement's destroy arrives after the new qdisc has
