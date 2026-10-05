@@ -32,7 +32,7 @@ define Build/elecom-header
 			sed 's/../\\x&/g')"; \
 		dd if=/dev/zero bs=92 count=1; \
 		data_crc="$$(dd if=$@ | gzip -c | tail -c 8 | \
-			od -An -N4 -tx4 --endian little | tr -d ' \n')"; \
+			od -An -tx4 --endian little | tr -d ' \n' | cut -c1-8)"; \
 		echo -ne "$$(echo "$${data_crc}00000000" | sed 's/../\\x&/g')"; \
 		dd if=$@; \
 	) > $@.new
