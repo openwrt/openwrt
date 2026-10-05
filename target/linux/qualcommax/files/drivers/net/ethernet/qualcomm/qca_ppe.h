@@ -313,6 +313,7 @@
 #define   PPE_ACL_MAC_HI		GENMASK(15, 0)	/* w1: bytes 1-0 */
 #define   PPE_ACL_CVID			GENMASK(11, 0)	/* w0; range min */
 #define   PPE_ACL_CPCP			GENMASK(18, 16)	/* w0 */
+#define   PPE_ACL_CDEI			BIT(19)		/* w0 */
 #define   PPE_ACL_CTAG_FMT		GENMASK(6, 4)	/* w1 */
 #define   PPE_ACL_STAG_FMT		GENMASK(9, 7)	/* w1 */
 /* The tag-format fields hold one frame format, not a bitmap of the formats a
