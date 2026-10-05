@@ -80,9 +80,6 @@
 #include "pie.h"
 #include "rtl-otto.h"
 
-/* L3 actions */
-#define L3_FORWARD		0
-
 /* Route entry types */
 #define ROUTE_TYPE_IP4UC	0
 #define ROUTE_TYPE_IP4MC	1
@@ -843,7 +840,7 @@ static int otto_l3_alloc_router_mac(struct otto_l3_ctrl *ctrl, u64 mac)
 	m.vid = 0;			/* Listen on any VLAN... */
 	m.vid_mask = 0;			/* ... so mask needs to be 0 */
 	m.mac_mask = 0xffffffffffffULL;	/* We want an exact match of the interface MAC */
-	m.action = L3_FORWARD;		/* Route the packet */
+	m.action = ROUTE_ACT_FORWARD;	/* Route the packet */
 	ctrl->cfg->set_router_mac(ctrl, free_mac, &m);
 
 	mutex_unlock(ctrl->lock);
