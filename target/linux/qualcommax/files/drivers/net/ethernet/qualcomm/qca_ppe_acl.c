@@ -182,16 +182,20 @@ static int ppe_acl_alloc(struct qca_ppe_priv *priv,
 
 /* Zeroing the rule words clears the source bitmap, which is the only thing
  * that makes an entry live; the chain goes last for the same reason it was
- * built first.
+ * built first. The hit counters are cleared for the next rule on the entries.
  */
 static void ppe_acl_free(struct qca_ppe_priv *priv, struct ppe_acl_group *g)
 {
 	int i, j;
 
-	for (i = 0; i < g->nslices; i++)
+	for (i = 0; i < g->nslices; i++) {
 		for (j = 0; j < PPE_ACL_RULE_WORDS; j++)
 			regmap_write(priv->regmap,
 				     PPE_ACL_RULE(g->index[i]) + j * 4, 0);
+		for (j = 0; j < PPE_ACL_CNT_WORDS; j++)
+			regmap_write(priv->regmap,
+				     PPE_ACL_CNT(g->index[i]) + j * 4, 0);
+	}
 
 	ppe_acl_ext_write(priv, g, false);
 	priv->acl_free[g->list] |= g->entries;
@@ -274,6 +278,10 @@ struct ppe_acl_rule {
 	int port;
 	int meter;
 	bool mirror;
+	/* Counter totals at the last stats request, at the counters' width */
+	u32 pkts;
+	u64 bytes;
+	u32 drops;
 	struct ppe_acl_group group;
 	u32 act[PPE_ACL_ACTION_WORDS];
 };
@@ -768,8 +776,15 @@ static int ppe_acl_meter_set(struct qca_ppe_priv *priv, u32 index,
 	 * be the first thing the next rule to take this index spends.
 	 */
 	if (!rate_bps) {
+		int c, i;
+
 		regmap_write(priv->regmap, PPE_ACL_METER_CRDT(index), 0);
 		regmap_write(priv->regmap, PPE_ACL_METER_CRDT(index) + 0x4, 0);
+		for (c = 0; c <= PPE_METER_CNT_RED; c++)
+			for (i = 0; i < PPE_ACL_CNT_WORDS; i++)
+				regmap_write(priv->regmap,
+					     PPE_ACL_METER_CNT(index, c) + i * 4,
+					     0);
 	}
 
 	return 0;
@@ -1115,6 +1130,8 @@ int qca_ppe_cls_flower_add(struct dsa_switch *ds, int port,
 		NL_SET_ERR_MSG_MOD(extack, "only chain 0 reaches the classifier");
 		return -EOPNOTSUPP;
 	}
+	if (!flow_action_basic_hw_stats_check(&rule->action, extack))
+		return -EOPNOTSUPP;
 	/* The engine matches the highest priority it holds, where tc gives
 	 * precedence to the lowest preference, so the rule's standing is the
 	 * field's span less the preference. Nine bits carry it, and a
@@ -1144,6 +1161,48 @@ int qca_ppe_cls_flower_del(struct dsa_switch *ds, int port,
 		ppe_acl_rule_free(priv, r);
 	}
 	mutex_unlock(&priv->acl_lock);
+
+	return 0;
+}
+
+/* The hit counter of every entry of the rule, as qca-ssdk sums them, and the
+ * red count of its meter as drops. The counters wrap at 32 bits of packets
+ * and 40 of bytes, so the delta is taken at that width.
+ */
+int qca_ppe_cls_flower_stats(struct dsa_switch *ds, int port,
+			     struct flow_cls_offload *cls, bool ingress)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+	u32 w[PPE_ACL_CNT_WORDS], pkts = 0, drops = 0;
+	struct ppe_acl_rule *r;
+	u64 bytes = 0;
+	int i;
+
+	guard(mutex)(&priv->acl_lock);
+
+	r = ppe_acl_rule_find(priv, cls->cookie, port);
+	if (!r)
+		return -ENOENT;
+
+	for (i = 0; i < r->group.nslices; i++) {
+		regmap_bulk_read(priv->regmap, PPE_ACL_CNT(r->group.index[i]),
+				 w, ARRAY_SIZE(w));
+		pkts += w[0];
+		bytes += w[1] | (u64)(w[2] & 0xff) << 32;
+	}
+	if (r->meter >= 0)
+		regmap_read(priv->regmap,
+			    PPE_ACL_METER_CNT(r->meter, PPE_METER_CNT_RED),
+			    &drops);
+
+	flow_stats_update(&cls->stats,
+			  (bytes - r->bytes) & GENMASK_ULL(39, 0),
+			  pkts - r->pkts, drops - r->drops,
+			  pkts != r->pkts ? jiffies : 0,
+			  FLOW_ACTION_HW_STATS_IMMEDIATE);
+	r->pkts = pkts;
+	r->bytes = bytes;
+	r->drops = drops;
 
 	return 0;
 }
