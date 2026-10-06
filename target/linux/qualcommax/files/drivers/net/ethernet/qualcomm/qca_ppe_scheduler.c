@@ -496,7 +496,14 @@ static void ppe_qm_init(struct qca_ppe_priv *priv)
 		}
 	}
 
+	/* Unicast to the CPU port is spread over four queues from its queue
+	 * base by the flow's hash; the EDMA driver maps them onto its receive
+	 * rings.
+	 */
 	for (i = 0; i < 256; i++) {
+		regmap_write(priv->regmap, PPE_QM_UCAST_HASH_MAP(i),
+			     FIELD_PREP(PPE_QM_HASH_CLASS,
+					i % PPE_CPU_RSS_QUEUES));
 		regmap_write(priv->regmap, PPE_QM_UCAST_HASH_MAP(15 * 256 + i), 0);
 		regmap_write(priv->regmap, PPE_QM_UCAST_HASH_MAP(14 * 256 + i), 0);
 	}
@@ -620,18 +627,22 @@ struct l0_cfg {
 	u8 edrr;
 };
 
+/* The hash spreads the CPU port's unicast from each of its queue bases 0, 4
+ * and 8 over four queues, so queues 0 to 11 share one priority and one DRR
+ * node.
+ */
 static const struct l0_cfg l0_port0[] = {
 	{   0, 0, 0, 0, 0, 0, 0 }, {   4, 0, 0, 0, 0, 0, 0 },
 	{   8, 0, 0, 0, 0, 0, 0 }, { 256, 0, 0, 0, 0, 0, 0 },
 	{ 260, 0, 0, 0, 0, 0, 0 },
-	{   1, 0, 0, 1, 1, 1, 1 }, {   5, 0, 0, 1, 1, 1, 1 },
-	{   9, 0, 0, 1, 1, 1, 1 }, { 257, 0, 0, 1, 1, 1, 1 },
+	{   1, 0, 0, 0, 0, 0, 0 }, {   5, 0, 0, 0, 0, 0, 0 },
+	{   9, 0, 0, 0, 0, 0, 0 }, { 257, 0, 0, 1, 1, 1, 1 },
 	{ 261, 0, 0, 1, 1, 1, 1 },
-	{   2, 0, 0, 2, 2, 2, 2 }, {   6, 0, 0, 2, 2, 2, 2 },
-	{  10, 0, 0, 2, 2, 2, 2 }, { 258, 0, 0, 2, 2, 2, 2 },
+	{   2, 0, 0, 0, 0, 0, 0 }, {   6, 0, 0, 0, 0, 0, 0 },
+	{  10, 0, 0, 0, 0, 0, 0 }, { 258, 0, 0, 2, 2, 2, 2 },
 	{ 262, 0, 0, 2, 2, 2, 2 },
-	{   3, 0, 0, 3, 3, 3, 3 }, {   7, 0, 0, 3, 3, 3, 3 },
-	{  11, 0, 0, 3, 3, 3, 3 }, { 259, 0, 0, 3, 3, 3, 3 },
+	{   3, 0, 0, 0, 0, 0, 0 }, {   7, 0, 0, 0, 0, 0, 0 },
+	{  11, 0, 0, 0, 0, 0, 0 }, { 259, 0, 0, 3, 3, 3, 3 },
 	{ 263, 0, 0, 3, 3, 3, 3 },
 };
 
@@ -812,6 +823,31 @@ const struct bm_tdm_data hppe_bm_tdm_data = {
 	.num = ARRAY_SIZE(hppe_bm_tdm),
 };
 
+/* Out of reset the mask, seed and mix stages are zero, and the hash then
+ * puts every flow in one bucket. The seed is fixed so that a flow keeps its
+ * bucket across a reboot.
+ */
+static void ppe_rss_hash_init(struct qca_ppe_priv *priv)
+{
+	static const u32 mix[5] = { 0x13, 0xb, 0x13, 0xb, 0x13 };
+	static const u32 fin[5] = { 0x205, 0x264, 0x227, 0x245, 0x201 };
+	int i;
+
+	regmap_write(priv->regmap, PPE_RSS_HASH_MASK, 0xfff);
+	regmap_write(priv->regmap, PPE_RSS_HASH_SEED, 0x5eedc0de);
+	for (i = 0; i < 11; i++)
+		regmap_write(priv->regmap, PPE_RSS_HASH_MIX(i), mix[i % 2]);
+	for (i = 0; i < 5; i++)
+		regmap_write(priv->regmap, PPE_RSS_HASH_FIN(i), fin[i]);
+
+	regmap_write(priv->regmap, PPE_RSS_HASH_MASK_IPV4, 0xfff);
+	regmap_write(priv->regmap, PPE_RSS_HASH_SEED_IPV4, 0x5eedc0de);
+	for (i = 0; i < 5; i++)
+		regmap_write(priv->regmap, PPE_RSS_HASH_MIX_IPV4(i), mix[i]);
+	for (i = 0; i < 5; i++)
+		regmap_write(priv->regmap, PPE_RSS_HASH_FIN_IPV4(i), fin[i]);
+}
+
 void ppe_scheduler_init(struct qca_ppe_priv *priv)
 {
 	ppe_tdm_init(priv);
@@ -821,4 +857,5 @@ void ppe_scheduler_init(struct qca_ppe_priv *priv)
 	ppe_l0_scheduler_init(priv);
 	ppe_edma_ring_map_init(priv);
 	ppe_qos_init(priv);
+	ppe_rss_hash_init(priv);
 }
