@@ -1,0 +1,470 @@
+From 9a6b281a8d3c0ed7a0755de75162a267e1252b88 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Andr=C3=A9=20Valentin?= <avalentin@marcant.net>
+Date: Tue, 6 Oct 2026 18:00:00 +0200
+Subject: [PATCH] board: mt7620: add Zyxel LTE3301-M209/Q222
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Add the Zyxel LTE3301-M209 and its Q222 sibling: MT7620N, 64 MB DDR,
+16 MB SPI-NOR, UART-lite console at 115200 baud, internal 5-port FE
+switch and an LTE modem on the internal USB bus.
+
+Both variants are the same board and share the device tree; they only
+differ in where the vendor config partition keeps the base MAC, so each
+gets its own defconfig and default environment.
+
+Signed-off-by: André Valentin <avalentin@marcant.net>
+
+diff --git a/arch/mips/dts/zyxel,lte3301.dts b/arch/mips/dts/zyxel,lte3301.dts
+new file mode 100644
+index 0000000..97f06cf
+--- /dev/null
++++ b/arch/mips/dts/zyxel,lte3301.dts
+@@ -0,0 +1,172 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Zyxel LTE3301-M209 and LTE3301-Q222 (MT7620N)
++ *
++ * Based on mediatek,mt7620-rfb.dts (MediaTek Inc.).
++ */
++
++/dts-v1/;
++
++#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/input/input.h>
++#include "mt7620.dtsi"
++
++/ {
++	compatible = "zyxel,lte3301", "mediatek,mt7620-soc";
++	model = "Zyxel LTE3301";
++
++	aliases {
++		serial0 = &uartlite;
++		spi0 = &spi0;
++	};
++
++	chosen {
++		stdout-path = &uartlite;
++	};
++
++	keys {
++		compatible = "gpio-keys";
++
++		reset {
++			label = "reset";
++			gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_RESTART>;
++		};
++
++		wps {
++			label = "wps";
++			gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_WPS_BUTTON>;
++		};
++	};
++
++	leds {
++		compatible = "gpio-leds";
++
++		led_power: power {
++			label = "green:power";
++			gpios = <&gpio1 15 GPIO_ACTIVE_HIGH>;
++		};
++
++		wan {
++			label = "green:wan";
++			gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
++			default-state = "on";
++		};
++
++		/*
++		 * Pads 40-43 drive the front LEDs. They need defined levels
++		 * from gpio-leds: in EPHY mode the switch drives them, which
++		 * also touches the modem strap lines. Pad 72 is deliberately
++		 * left unclaimed, driving it keeps the modem from enumerating.
++		 */
++		mobile_green {
++			label = "green:mobile";
++			gpios = <&gpio2 0 GPIO_ACTIVE_LOW>;
++			default-state = "off";
++		};
++
++		mobile_red {
++			label = "red:mobile";
++			gpios = <&gpio2 1 GPIO_ACTIVE_LOW>;
++			default-state = "off";
++		};
++
++		lte {
++			label = "green:lte";
++			gpios = <&gpio2 2 GPIO_ACTIVE_LOW>;
++			default-state = "off";
++		};
++
++		lan {
++			label = "green:lan";
++			gpios = <&gpio2 3 GPIO_ACTIVE_LOW>;
++			default-state = "on";
++		};
++	};
++
++	options {
++		u-boot {
++			boot-led = <&led_power>;
++		};
++	};
++};
++
++&uartlite {
++	status = "okay";
++};
++
++&pinctrl {
++	state_default: pin_state {
++		uart {
++			groups = "uartf";
++			function = "gpio";
++		};
++
++		/*
++		 * "ephy led" is bit 15 of GPIO1_MODE: without it the switch
++		 * drives pads 40-44, which blinks the front LEDs on LAN
++		 * traffic and touches the modem strap lines. "wled" (bit 13)
++		 * frees pad 72 the same way the vendor loader does.
++		 *
++		 * "wdt rst" is the bit 21:22 field. The vendor loader leaves
++		 * it at 0 (reset output on pad 17), gpio is what the stock
++		 * firmware selects - the extra board LEDs only work with it.
++		 */
++		led {
++			groups = "ephy led", "wled", "wdt rst";
++			function = "gpio";
++		};
++
++		/* reset and WPS button */
++		button {
++			groups = "i2c";
++			function = "gpio";
++		};
++	};
++};
++
++&spi0 {
++	status = "okay";
++	num-cs = <2>;
++
++	spi-flash@0 {
++		#address-cells = <1>;
++		#size-cells = <1>;
++		compatible = "jedec,spi-nor";
++		spi-max-frequency = <25000000>;
++		reg = <0>;
++
++		partitions {
++			compatible = "fixed-partitions";
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			partition@0 {
++				label = "u-boot";
++				reg = <0x0 0x30000>;
++			};
++
++			partition@30000 {
++				label = "u-boot-env";
++				reg = <0x30000 0x10000>;
++			};
++
++			firmware: partition@40000 {
++				compatible = "denx,fit";
++				label = "firmware";
++				reg = <0x40000 0xfb0000>;
++			};
++
++			config: partition@ff0000 {
++				label = "config";
++				reg = <0xff0000 0x10000>;
++				read-only;
++			};
++		};
++	};
++};
++
++&eth {
++	status = "okay";
++};
+diff --git a/configs/mt7620_zyxel_lte3301-m209_defconfig b/configs/mt7620_zyxel_lte3301-m209_defconfig
+new file mode 100644
+index 0000000..0f651d8
+--- /dev/null
++++ b/configs/mt7620_zyxel_lte3301-m209_defconfig
+@@ -0,0 +1,88 @@
++CONFIG_MIPS=y
++CONFIG_SKIP_LOWLEVEL_INIT=y
++CONFIG_SYS_MALLOC_LEN=0x100000
++CONFIG_SPL_LIBCOMMON_SUPPORT=y
++CONFIG_SPL_LIBGENERIC_SUPPORT=y
++CONFIG_NR_DRAM_BANKS=1
++CONFIG_ENV_SIZE=0x10000
++CONFIG_ENV_OFFSET=0x30000
++CONFIG_ENV_SECT_SIZE=0x10000
++CONFIG_DEFAULT_DEVICE_TREE="zyxel,lte3301"
++CONFIG_SPL_SYS_MALLOC_F_LEN=0x40000
++CONFIG_SPL_SERIAL=y
++CONFIG_SPL_BSS_START_ADDR=0x80010000
++CONFIG_SPL_BSS_MAX_SIZE=0x10000
++CONFIG_SYS_BOOTM_LEN=0x1000000
++CONFIG_SYS_LOAD_ADDR=0x81000000
++CONFIG_SPL=y
++CONFIG_DEBUG_UART_BASE=0xb0000c00
++CONFIG_DEBUG_UART_CLOCK=40000000
++CONFIG_ARCH_MTMIPS=y
++CONFIG_SYS_MIPS_TIMER_FREQ=290000000
++CONFIG_MIPS_CACHE_SETUP=y
++CONFIG_MIPS_CACHE_DISABLE=y
++CONFIG_RESTORE_EXCEPTION_VECTOR_BASE=y
++CONFIG_MIPS_BOOT_FDT=y
++CONFIG_DEBUG_UART=y
++CONFIG_FIT=y
++CONFIG_BOOTDELAY=30
++CONFIG_AUTOBOOT_KEYED=y
++CONFIG_AUTOBOOT_MENU_SHOW=y
++# CONFIG_ARCH_FIXUP_FDT_MEMORY is not set
++CONFIG_SYS_MALLOC_BOOTPARAMS=y
++CONFIG_SPL_MAX_SIZE=0x10000
++CONFIG_SPL_SYS_MALLOC_SIMPLE=y
++CONFIG_SPL_NOR_SUPPORT=y
++CONFIG_HUSH_PARSER=y
++CONFIG_CMD_BOOTMENU=y
++# CONFIG_CMD_ELF is not set
++# CONFIG_CMD_XIMG is not set
++CONFIG_CMD_ASKENV=y
++# CONFIG_CMD_CRC32 is not set
++CONFIG_CMD_ERASEENV=y
++CONFIG_CMD_ENV_READMEM=y
++# CONFIG_CMD_DM is not set
++# CONFIG_CMD_LOADS is not set
++CONFIG_CMD_MTD=y
++CONFIG_CMD_SPI=y
++CONFIG_CMD_DHCP=y
++CONFIG_CMD_GPIO=y
++# CONFIG_CMD_MDIO is not set
++CONFIG_CMD_PING=y
++# CONFIG_SPL_DOS_PARTITION is not set
++# CONFIG_ISO_PARTITION is not set
++CONFIG_OF_SPL_REMOVE_PROPS="pinctrl-0 pinctrl-names clocks clock-names interrupt-parent interrupts resets reset-names"
++CONFIG_ENV_IS_IN_MTD=y
++CONFIG_ENV_MTD_DEV="nor0"
++CONFIG_ENV_RELOC_GD_ENV_ADDR=y
++CONFIG_ENV_USE_DEFAULT_ENV_TEXT_FILE=y
++CONFIG_ENV_DEFAULT_ENV_TEXT_FILE="defenvs/zyxel_lte3301-m209_env"
++CONFIG_ENV_OVERWRITE=y
++CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
++CONFIG_VERSION_VARIABLE=y
++CONFIG_NET_RANDOM_ETHADDR=y
++CONFIG_SPL_DM=y
++# CONFIG_SIMPLE_BUS is not set
++# CONFIG_SPL_SIMPLE_BUS is not set
++CONFIG_BUTTON=y
++CONFIG_BUTTON_GPIO=y
++CONFIG_GPIO_HOG=y
++# CONFIG_INPUT is not set
++CONFIG_LED=y
++CONFIG_LED_BOOT=y
++CONFIG_LED_GPIO=y
++CONFIG_MTD=y
++CONFIG_DM_MTD=y
++CONFIG_SPI_FLASH_SFDP_SUPPORT=y
++CONFIG_SPI_FLASH_GIGADEVICE=y
++CONFIG_SPI_FLASH_WINBOND=y
++CONFIG_SPI_FLASH_MTD=y
++CONFIG_MT7620_ETH=y
++CONFIG_PHY=y
++CONFIG_SPECIFY_CONSOLE_INDEX=y
++CONFIG_DEBUG_UART_SHIFT=2
++CONFIG_SPI=y
++CONFIG_MT7620_SPI=y
++CONFIG_LZMA=y
++CONFIG_SPL_LZMA=y
++CONFIG_BAUDRATE=115200
+diff --git a/configs/mt7620_zyxel_lte3301-q222_defconfig b/configs/mt7620_zyxel_lte3301-q222_defconfig
+new file mode 100644
+index 0000000..cae20e5
+--- /dev/null
++++ b/configs/mt7620_zyxel_lte3301-q222_defconfig
+@@ -0,0 +1,88 @@
++CONFIG_MIPS=y
++CONFIG_SKIP_LOWLEVEL_INIT=y
++CONFIG_SYS_MALLOC_LEN=0x100000
++CONFIG_SPL_LIBCOMMON_SUPPORT=y
++CONFIG_SPL_LIBGENERIC_SUPPORT=y
++CONFIG_NR_DRAM_BANKS=1
++CONFIG_ENV_SIZE=0x10000
++CONFIG_ENV_OFFSET=0x30000
++CONFIG_ENV_SECT_SIZE=0x10000
++CONFIG_DEFAULT_DEVICE_TREE="zyxel,lte3301"
++CONFIG_SPL_SYS_MALLOC_F_LEN=0x40000
++CONFIG_SPL_SERIAL=y
++CONFIG_SPL_BSS_START_ADDR=0x80010000
++CONFIG_SPL_BSS_MAX_SIZE=0x10000
++CONFIG_SYS_BOOTM_LEN=0x1000000
++CONFIG_SYS_LOAD_ADDR=0x81000000
++CONFIG_SPL=y
++CONFIG_DEBUG_UART_BASE=0xb0000c00
++CONFIG_DEBUG_UART_CLOCK=40000000
++CONFIG_ARCH_MTMIPS=y
++CONFIG_SYS_MIPS_TIMER_FREQ=290000000
++CONFIG_MIPS_CACHE_SETUP=y
++CONFIG_MIPS_CACHE_DISABLE=y
++CONFIG_RESTORE_EXCEPTION_VECTOR_BASE=y
++CONFIG_MIPS_BOOT_FDT=y
++CONFIG_DEBUG_UART=y
++CONFIG_FIT=y
++CONFIG_BOOTDELAY=30
++CONFIG_AUTOBOOT_KEYED=y
++CONFIG_AUTOBOOT_MENU_SHOW=y
++# CONFIG_ARCH_FIXUP_FDT_MEMORY is not set
++CONFIG_SYS_MALLOC_BOOTPARAMS=y
++CONFIG_SPL_MAX_SIZE=0x10000
++CONFIG_SPL_SYS_MALLOC_SIMPLE=y
++CONFIG_SPL_NOR_SUPPORT=y
++CONFIG_HUSH_PARSER=y
++CONFIG_CMD_BOOTMENU=y
++# CONFIG_CMD_ELF is not set
++# CONFIG_CMD_XIMG is not set
++CONFIG_CMD_ASKENV=y
++# CONFIG_CMD_CRC32 is not set
++CONFIG_CMD_ERASEENV=y
++CONFIG_CMD_ENV_READMEM=y
++# CONFIG_CMD_DM is not set
++# CONFIG_CMD_LOADS is not set
++CONFIG_CMD_MTD=y
++CONFIG_CMD_SPI=y
++CONFIG_CMD_DHCP=y
++CONFIG_CMD_GPIO=y
++# CONFIG_CMD_MDIO is not set
++CONFIG_CMD_PING=y
++# CONFIG_SPL_DOS_PARTITION is not set
++# CONFIG_ISO_PARTITION is not set
++CONFIG_OF_SPL_REMOVE_PROPS="pinctrl-0 pinctrl-names clocks clock-names interrupt-parent interrupts resets reset-names"
++CONFIG_ENV_IS_IN_MTD=y
++CONFIG_ENV_MTD_DEV="nor0"
++CONFIG_ENV_RELOC_GD_ENV_ADDR=y
++CONFIG_ENV_USE_DEFAULT_ENV_TEXT_FILE=y
++CONFIG_ENV_DEFAULT_ENV_TEXT_FILE="defenvs/zyxel_lte3301-q222_env"
++CONFIG_ENV_OVERWRITE=y
++CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
++CONFIG_VERSION_VARIABLE=y
++CONFIG_NET_RANDOM_ETHADDR=y
++CONFIG_SPL_DM=y
++# CONFIG_SIMPLE_BUS is not set
++# CONFIG_SPL_SIMPLE_BUS is not set
++CONFIG_BUTTON=y
++CONFIG_BUTTON_GPIO=y
++CONFIG_GPIO_HOG=y
++# CONFIG_INPUT is not set
++CONFIG_LED=y
++CONFIG_LED_BOOT=y
++CONFIG_LED_GPIO=y
++CONFIG_MTD=y
++CONFIG_DM_MTD=y
++CONFIG_SPI_FLASH_SFDP_SUPPORT=y
++CONFIG_SPI_FLASH_GIGADEVICE=y
++CONFIG_SPI_FLASH_WINBOND=y
++CONFIG_SPI_FLASH_MTD=y
++CONFIG_MT7620_ETH=y
++CONFIG_PHY=y
++CONFIG_SPECIFY_CONSOLE_INDEX=y
++CONFIG_DEBUG_UART_SHIFT=2
++CONFIG_SPI=y
++CONFIG_MT7620_SPI=y
++CONFIG_LZMA=y
++CONFIG_SPL_LZMA=y
++CONFIG_BAUDRATE=115200
+diff --git a/defenvs/zyxel_lte3301-m209_env b/defenvs/zyxel_lte3301-m209_env
+new file mode 100644
+index 0000000..e5c4763
+--- /dev/null
++++ b/defenvs/zyxel_lte3301-m209_env
+@@ -0,0 +1,37 @@
++ipaddr=192.168.1.1
++serverip=192.168.1.254
++loadaddr=0x81000000
++ethaddr_factory=mtd read config $loadaddr 0x0 0x10000 ; setexpr macoffs $loadaddr + 0xe2a8 ; env readmem -b ethaddr $macoffs 0x6 ; setenv macoffs ; setenv ethaddr_factory
++bootcmd=run boot_first
++bootdelay=0
++bootfile=openwrt-ramips-mt7620-zyxel_lte3301-m209-initramfs-kernel.bin
++bootfile_upg=openwrt-ramips-mt7620-zyxel_lte3301-m209-squashfs-sysupgrade.bin
++bootfile_uboot=openwrt-ramips-mt7620-zyxel_lte3301-m209-squashfs-uboot.bin
++bootmenu_confirm_return=askenv - Press ENTER to return to menu ; bootmenu 60
++bootmenu_default=0
++bootmenu_delay=0
++bootmenu_title=      [0;34m( ( ( [1;39mOpenWrt[0;34m ) ) )[0m
++bootmenu_0=Initialize environment.=run _firstboot
++bootmenu_0d=Run default boot command.=run boot_default
++bootmenu_1=Boot system via TFTP.=run boot_tftp ; run bootmenu_confirm_return
++bootmenu_2=Boot system from flash.=run boot_nor ; run bootmenu_confirm_return
++bootmenu_3=Load system via TFTP then write to flash.=run boot_tftp_sysupgrade ; run bootmenu_confirm_return
++bootmenu_4=[31mLoad U-Boot via TFTP then write to flash.[0m=run boot_tftp_write_uboot ; run bootmenu_confirm_return
++bootmenu_5=Reset all settings to factory defaults.=run reset_factory ; reset
++bootmenu_6=Reboot.=reset
++boot_first=if button reset ; then run boot_recovery ; fi ; if button wps ; then run boot_recovery ; fi ; run boot_nor
++boot_recovery=run boot_tftp ; setenv flag_recover 1 ; run boot_default
++boot_default=if env exists flag_recover ; then else run bootcmd ; fi ; run boot_tftp_forever
++boot_nor=bootm 0xbc040000
++boot_tftp=tftpboot $loadaddr $bootfile && bootm $loadaddr
++boot_tftp_forever=while true ; do run boot_tftp ; sleep 1 ; done
++boot_tftp_sysupgrade=tftpboot $loadaddr $bootfile_upg && iminfo $loadaddr && run nor_write_production
++boot_tftp_write_uboot=tftpboot $loadaddr $bootfile_uboot && run nor_write_uboot
++reset_factory=mtd erase u-boot-env && reset
++nor_pad_size=setexpr image_eb $filesize / 0x10000 ; setexpr tmp1 $filesize % 0x10000 ; test 0x$tmp1 -gt 0 && setexpr image_eb $image_eb + 1 ; setexpr image_eb $image_eb * 0x10000
++nor_write_production=run nor_pad_size ; test 0x$image_eb -le 0xfb0000 && mtd erase firmware 0x0 0x$image_eb && mtd write firmware $loadaddr 0x0 $filesize
++nor_write_uboot=setexpr magic *$loadaddr + 0 ; test "$magic" = "1000013f" && mtd erase u-boot 0x0 0x30000 && mtd write u-boot $loadaddr 0x0 $filesize
++_init_env=setenv _init_env ; saveenv
++_firstboot=setenv _firstboot ; run _switch_to_menu ; run ethaddr_factory ; run _init_env ; run boot_first
++_switch_to_menu=setenv _switch_to_menu ; setenv bootdelay 3 ; setenv bootmenu_delay 3 ; setenv bootmenu_0 $bootmenu_0d ; setenv bootmenu_0d ; run _bootmenu_update_title
++_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title       [33m$ver[0m"
+diff --git a/defenvs/zyxel_lte3301-q222_env b/defenvs/zyxel_lte3301-q222_env
+new file mode 100644
+index 0000000..9f84133
+--- /dev/null
++++ b/defenvs/zyxel_lte3301-q222_env
+@@ -0,0 +1,37 @@
++ipaddr=192.168.1.1
++serverip=192.168.1.254
++loadaddr=0x81000000
++ethaddr_factory=mtd read config $loadaddr 0x0 0x10000 ; setexpr macoffs $loadaddr + 0xe07c ; env readmem -b ethaddr $macoffs 0x6 ; setenv macoffs ; setenv ethaddr_factory
++bootcmd=run boot_first
++bootdelay=0
++bootfile=openwrt-ramips-mt7620-zyxel_lte3301-q222-initramfs-kernel.bin
++bootfile_upg=openwrt-ramips-mt7620-zyxel_lte3301-q222-squashfs-sysupgrade.bin
++bootfile_uboot=openwrt-ramips-mt7620-zyxel_lte3301-q222-squashfs-uboot.bin
++bootmenu_confirm_return=askenv - Press ENTER to return to menu ; bootmenu 60
++bootmenu_default=0
++bootmenu_delay=0
++bootmenu_title=      [0;34m( ( ( [1;39mOpenWrt[0;34m ) ) )[0m
++bootmenu_0=Initialize environment.=run _firstboot
++bootmenu_0d=Run default boot command.=run boot_default
++bootmenu_1=Boot system via TFTP.=run boot_tftp ; run bootmenu_confirm_return
++bootmenu_2=Boot system from flash.=run boot_nor ; run bootmenu_confirm_return
++bootmenu_3=Load system via TFTP then write to flash.=run boot_tftp_sysupgrade ; run bootmenu_confirm_return
++bootmenu_4=[31mLoad U-Boot via TFTP then write to flash.[0m=run boot_tftp_write_uboot ; run bootmenu_confirm_return
++bootmenu_5=Reset all settings to factory defaults.=run reset_factory ; reset
++bootmenu_6=Reboot.=reset
++boot_first=if button reset ; then run boot_recovery ; fi ; if button wps ; then run boot_recovery ; fi ; run boot_nor
++boot_recovery=run boot_tftp ; setenv flag_recover 1 ; run boot_default
++boot_default=if env exists flag_recover ; then else run bootcmd ; fi ; run boot_tftp_forever
++boot_nor=bootm 0xbc040000
++boot_tftp=tftpboot $loadaddr $bootfile && bootm $loadaddr
++boot_tftp_forever=while true ; do run boot_tftp ; sleep 1 ; done
++boot_tftp_sysupgrade=tftpboot $loadaddr $bootfile_upg && iminfo $loadaddr && run nor_write_production
++boot_tftp_write_uboot=tftpboot $loadaddr $bootfile_uboot && run nor_write_uboot
++reset_factory=mtd erase u-boot-env && reset
++nor_pad_size=setexpr image_eb $filesize / 0x10000 ; setexpr tmp1 $filesize % 0x10000 ; test 0x$tmp1 -gt 0 && setexpr image_eb $image_eb + 1 ; setexpr image_eb $image_eb * 0x10000
++nor_write_production=run nor_pad_size ; test 0x$image_eb -le 0xfb0000 && mtd erase firmware 0x0 0x$image_eb && mtd write firmware $loadaddr 0x0 $filesize
++nor_write_uboot=setexpr magic *$loadaddr + 0 ; test "$magic" = "1000013f" && mtd erase u-boot 0x0 0x30000 && mtd write u-boot $loadaddr 0x0 $filesize
++_init_env=setenv _init_env ; saveenv
++_firstboot=setenv _firstboot ; run _switch_to_menu ; run ethaddr_factory ; run _init_env ; run boot_first
++_switch_to_menu=setenv _switch_to_menu ; setenv bootdelay 3 ; setenv bootmenu_delay 3 ; setenv bootmenu_0 $bootmenu_0d ; setenv bootmenu_0d ; run _bootmenu_update_title
++_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title       [33m$ver[0m"
