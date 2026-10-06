@@ -23,7 +23,7 @@
 #define PPE_MIB_FOLD_INTERVAL	(30 * HZ)
 
 static void ppe_port_gmac_set(struct qca_ppe_priv *priv, int port,
-			     bool tx_en, bool rx_en)
+			      bool tx_en, bool rx_en)
 {
 	int gmac = port - 1;
 	u32 val = 0;
@@ -147,10 +147,10 @@ static void ppe_xgmac_link_up(struct qca_ppe_priv *priv, int port,
 			   PPE_XGMAC_USXGMII_SELECT, val);
 
 	regmap_write_bits(priv->regmap, PPE_XGMAC_RX_CONF(xgmac),
-			   PPE_XGMAC_AUTO_CRC_STRIP |
-			   PPE_XGMAC_CRC_STRIP_TYPE,
-			   PPE_XGMAC_AUTO_CRC_STRIP |
-			   PPE_XGMAC_CRC_STRIP_TYPE);
+			  PPE_XGMAC_AUTO_CRC_STRIP |
+			  PPE_XGMAC_CRC_STRIP_TYPE,
+			  PPE_XGMAC_AUTO_CRC_STRIP |
+			  PPE_XGMAC_CRC_STRIP_TYPE);
 
 	regmap_write_bits(priv->regmap, PPE_XGMAC_TX_FLOW_CTRL(xgmac),
 			  PPE_XGMAC_TX_FLOW_ENABLE,
@@ -231,7 +231,7 @@ void ppe_vsi_free(struct qca_ppe_priv *priv, u32 vsi)
 }
 
 void ppe_vsi_member_set(struct qca_ppe_priv *priv, u32 vsi,
-			       u32 portmask)
+			u32 portmask)
 {
 	u32 val;
 
@@ -241,7 +241,7 @@ void ppe_vsi_member_set(struct qca_ppe_priv *priv, u32 vsi,
 	      FIELD_PREP(PPE_VSI_TBL_BC, portmask);
 	regmap_write(priv->regmap, PPE_VSI_TBL(vsi), val);
 	regmap_write(priv->regmap, PPE_VSI_TBL(vsi) + 4,
-		PPE_VSI_TBL_NEW_ADDR_LRN_EN | PPE_VSI_TBL_STA_MOVE_LRN_EN);
+		     PPE_VSI_TBL_NEW_ADDR_LRN_EN | PPE_VSI_TBL_STA_MOVE_LRN_EN);
 }
 
 /* The entry latches on the write to its last word: rewriting word 1 alone is
@@ -412,8 +412,8 @@ static int ppe_fdb_flush(struct qca_ppe_priv *priv)
 
 	cmd_id = ppe_fdb_next_cmd_id(&priv->fdb_cmd_id);
 	regmap_write(priv->regmap, PPE_FDB_OP,
-		FIELD_PREP(PPE_FDB_OP_CMD_ID, cmd_id) |
-		FIELD_PREP(PPE_FDB_OP_TYPE, PPE_FDB_OP_FLUSH));
+		     FIELD_PREP(PPE_FDB_OP_CMD_ID, cmd_id) |
+		     FIELD_PREP(PPE_FDB_OP_TYPE, PPE_FDB_OP_FLUSH));
 
 	ret = ppe_fdb_op_wait(priv, PPE_FDB_OP_RSLT, cmd_id, NULL);
 
@@ -510,7 +510,7 @@ static int ppe_fdb_mcast_op(struct qca_ppe_priv *priv,
 
 static enum dsa_tag_protocol
 qca_ppe_get_tag_protocol(struct dsa_switch *ds, int port,
-			     enum dsa_tag_protocol mprot)
+			 enum dsa_tag_protocol mprot)
 {
 	return DSA_TAG_PROTO_OOB;
 }
@@ -563,7 +563,7 @@ static int qca_ppe_setup(struct dsa_switch *ds)
 	      FIELD_PREP(PPE_VSI_TBL_BC, BIT(QCA_PPE_CPU_PORT));
 	regmap_write(priv->regmap, PPE_VSI_TBL(0), val);
 	regmap_write(priv->regmap, PPE_VSI_TBL(0) + 4,
-		PPE_VSI_TBL_NEW_ADDR_LRN_EN | PPE_VSI_TBL_STA_MOVE_LRN_EN);
+		     PPE_VSI_TBL_NEW_ADDR_LRN_EN | PPE_VSI_TBL_STA_MOVE_LRN_EN);
 
 	for (i = 1; i < num_ports; i++)
 		ppe_port_vsi_set(priv, i, 0);
@@ -612,7 +612,7 @@ static int qca_ppe_port_max_mtu(struct dsa_switch *ds, int port)
 }
 
 static int qca_ppe_port_enable(struct dsa_switch *ds, int port,
-				   struct phy_device *phy)
+			       struct phy_device *phy)
 {
 	struct qca_ppe_priv *priv = ds_to_priv(ds);
 
@@ -696,9 +696,9 @@ static void bridge_vsi_members_update(struct qca_ppe_priv *priv,
 }
 
 static int qca_ppe_port_bridge_join(struct dsa_switch *ds, int port,
-					struct dsa_bridge bridge,
-					bool *tx_fwd_offload,
-					struct netlink_ext_ack *extack)
+				    struct dsa_bridge bridge,
+				    bool *tx_fwd_offload,
+				    struct netlink_ext_ack *extack)
 {
 	struct qca_ppe_priv *priv = ds_to_priv(ds);
 	struct qca_ppe_bridge_vsi *bvsi;
@@ -723,7 +723,7 @@ static int qca_ppe_port_bridge_join(struct dsa_switch *ds, int port,
 }
 
 static void qca_ppe_port_bridge_leave(struct dsa_switch *ds, int port,
-					  struct dsa_bridge bridge)
+				      struct dsa_bridge bridge)
 {
 	struct qca_ppe_priv *priv = ds_to_priv(ds);
 	struct qca_ppe_bridge_vsi *bvsi;
@@ -779,8 +779,8 @@ static u16 ppe_fdb_vid(struct qca_ppe_priv *priv, u32 vsi)
 }
 
 static int qca_ppe_port_fdb_add(struct dsa_switch *ds, int port,
-				    const unsigned char *addr, u16 vid,
-				    struct dsa_db db)
+				const unsigned char *addr, u16 vid,
+				struct dsa_db db)
 {
 	struct qca_ppe_priv *priv = ds_to_priv(ds);
 	u32 vsi;
@@ -795,8 +795,8 @@ static int qca_ppe_port_fdb_add(struct dsa_switch *ds, int port,
 }
 
 static int qca_ppe_port_fdb_del(struct dsa_switch *ds, int port,
-				    const unsigned char *addr, u16 vid,
-				    struct dsa_db db)
+				const unsigned char *addr, u16 vid,
+				struct dsa_db db)
 {
 	struct qca_ppe_priv *priv = ds_to_priv(ds);
 	u32 vsi;
@@ -811,7 +811,7 @@ static int qca_ppe_port_fdb_del(struct dsa_switch *ds, int port,
 }
 
 static int qca_ppe_port_fdb_dump(struct dsa_switch *ds, int port,
-				     dsa_fdb_dump_cb_t *cb, void *data)
+				 dsa_fdb_dump_cb_t *cb, void *data)
 {
 	struct qca_ppe_priv *priv = ds_to_priv(ds);
 	unsigned char addr[ETH_ALEN];
@@ -839,8 +839,8 @@ static int qca_ppe_port_fdb_dump(struct dsa_switch *ds, int port,
 }
 
 static int qca_ppe_port_mdb_add(struct dsa_switch *ds, int port,
-				    const struct switchdev_obj_port_mdb *mdb,
-				    struct dsa_db db)
+				const struct switchdev_obj_port_mdb *mdb,
+				struct dsa_db db)
 {
 	struct qca_ppe_priv *priv = ds_to_priv(ds);
 	u32 portmap, vsi;
@@ -863,8 +863,8 @@ static int qca_ppe_port_mdb_add(struct dsa_switch *ds, int port,
 }
 
 static int qca_ppe_port_mdb_del(struct dsa_switch *ds, int port,
-				    const struct switchdev_obj_port_mdb *mdb,
-				    struct dsa_db db)
+				const struct switchdev_obj_port_mdb *mdb,
+				struct dsa_db db)
 {
 	struct qca_ppe_priv *priv = ds_to_priv(ds);
 	u32 portmap, vsi;
@@ -1148,8 +1148,8 @@ static void qca_ppe_xgmac_config(struct qca_ppe_priv *priv, int port)
 static void ppe_mib_fold(struct qca_ppe_priv *priv, int port);
 
 static void qca_ppe_mac_config(struct phylink_config *config,
-				    unsigned int mode,
-				    const struct phylink_link_state *state)
+			       unsigned int mode,
+			       const struct phylink_link_state *state)
 {
 	struct dsa_port *dp = dsa_phylink_to_port(config);
 	struct qca_ppe_priv *priv = ds_to_priv(dp->ds);
@@ -1275,11 +1275,11 @@ static bool qca_ppe_port_uses_xgmac(unsigned int mode, phy_interface_t interface
 }
 
 static void qca_ppe_mac_link_up(struct phylink_config *config,
-				     struct phy_device *phydev,
-				     unsigned int mode,
-				     phy_interface_t interface,
-				     int speed, int duplex,
-				     bool tx_pause, bool rx_pause)
+				struct phy_device *phydev,
+				unsigned int mode,
+				phy_interface_t interface,
+				int speed, int duplex,
+				bool tx_pause, bool rx_pause)
 {
 	struct dsa_port *dp = dsa_phylink_to_port(config);
 	struct qca_ppe_priv *priv = ds_to_priv(dp->ds);
@@ -1611,7 +1611,7 @@ static void ppe_mib_work(struct work_struct *work)
 }
 
 static void qca_ppe_get_strings(struct dsa_switch *ds, int port,
-				    u32 stringset, uint8_t *data)
+				u32 stringset, uint8_t *data)
 {
 	int i;
 
@@ -1623,7 +1623,7 @@ static void qca_ppe_get_strings(struct dsa_switch *ds, int port,
 }
 
 static int qca_ppe_get_sset_count(struct dsa_switch *ds, int port,
-				      int sset)
+				  int sset)
 {
 	if (sset != ETH_SS_STATS)
 		return 0;
@@ -1632,7 +1632,7 @@ static int qca_ppe_get_sset_count(struct dsa_switch *ds, int port,
 }
 
 static void qca_ppe_get_ethtool_stats(struct dsa_switch *ds, int port,
-					  uint64_t *data)
+				      uint64_t *data)
 {
 	struct qca_ppe_priv *priv = ds_to_priv(ds);
 	struct qca_ppe_mib_stats *stats;
@@ -1706,7 +1706,7 @@ static void qca_ppe_teardown(struct dsa_switch *ds)
 }
 
 static void qca_ppe_port_stp_state_set(struct dsa_switch *ds, int port,
-					   u8 state)
+				       u8 state)
 {
 	struct qca_ppe_priv *priv = ds_to_priv(ds);
 	u32 stp_state;
@@ -1785,7 +1785,7 @@ static void ppe_mac_hw_init(struct qca_ppe_priv *priv)
 			   PPE_LPBK_PPS_THRESHOLD,
 			   FIELD_PREP(PPE_LPBK_PPS_THRESHOLD, 21));
 	regmap_write(priv->regmap, PPE_LPBK_ENABLE(lpbk_gmac),
-		PPE_LPBK_EN | PPE_LPBK_CRC_STRIP_EN);
+		     PPE_LPBK_EN | PPE_LPBK_CRC_STRIP_EN);
 	msleep(100);
 	ppe_port_bridge_txmac_set(priv, d->loopback_port, true);
 }
@@ -1954,7 +1954,6 @@ static int qca_ppe_probe(struct platform_device *pdev)
 
 	ppe_mac_hw_init(priv);
 	ppe_ctrlpkt_init(priv);
-
 
 	if (data->type == PPE_TYPE_IPQ6018)
 		ppe_ipq6018_mux_setup(priv);

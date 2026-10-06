@@ -1035,7 +1035,7 @@ static void edma_configure_txdesc_ring(struct edma_priv *priv,
 	u32 val;
 
 	regmap_write(priv->regmap, EDMA_REG_TXDESC_BA(soc->txdesc_ring),
-		    (u32)txdesc_ring->dma);
+		     (u32)txdesc_ring->dma);
 
 	regmap_write(priv->regmap,
 		     EDMA_REG_TXDESC_RING_SIZE(soc->txdesc_ring),
