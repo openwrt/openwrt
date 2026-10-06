@@ -742,12 +742,12 @@ endef
 
 define KernelPackage/crypto-md5/octeon
   FILES+=$(LINUX_DIR)/arch/mips/cavium-octeon/crypto/octeon-md5.ko@lt6.18
-  AUTOLOAD+=$(call AutoLoad,09,LINUX_6_12:octeon-md5)
+  AUTOLOAD+=$(call AutoLoad,09,octeon-md5@lt6.18)
 endef
 
 define KernelPackage/crypto-md5/powerpc
   FILES+=$(LINUX_DIR)/arch/powerpc/crypto/md5-ppc.ko@lt6.18
-  AUTOLOAD+=$(call AutoLoad,09,LINUX_6_12:md5-ppc)
+  AUTOLOAD+=$(call AutoLoad,09,md5-ppc@lt6.18)
 endef
 
 ifdef KernelPackage/crypto-md5/$(ARCH)
@@ -1039,7 +1039,7 @@ endef
 
 define KernelPackage/crypto-sha512/aarch64
   FILES+=$(LINUX_DIR)/arch/arm64/crypto/sha512-arm64.ko@lt6.18
-  AUTOLOAD+=$(call AutoLoad,09,!LINUX_6_18:sha512-arm64)
+  AUTOLOAD+=$(call AutoLoad,09,sha512-arm64@lt6.18)
 endef
 
 KernelPackage/crypto-sha512/imx/cortexa7=$(KernelPackage/crypto-sha512/arm)
