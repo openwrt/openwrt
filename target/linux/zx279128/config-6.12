@@ -49,7 +49,33 @@ CONFIG_MTD_OF_PARTS=y
 CONFIG_MTD_BLKDEVS=y
 CONFIG_MTD_BLOCK=y
 CONFIG_MTD_NAND_ZTE_SPIFC=y
+# UBI (squashfs + overlay) on the ow-ubi partition
+CONFIG_MTD_UBI=y
+CONFIG_MTD_UBI_WL_THRESHOLD=4096
+CONFIG_MTD_UBI_BEB_LIMIT=20
+CONFIG_MTD_UBI_BLOCK=y
+CONFIG_UBIFS_FS=y
+# factory MAC from the tag partition (DT nvmem-cells)
+CONFIG_NVMEM=y
+# mksquashfs applies the ARM BCJ filter (-Xbcj arm)
+CONFIG_XZ_DEC_BCJ=y
+CONFIG_XZ_DEC_ARM=y
+CONFIG_XZ_DEC_ARMTHUMB=y
 # Warm reset: register-write reboot via topcrm@94000000 +0x44 (from U-Boot reset cmd)
 CONFIG_POWER_RESET=y
 CONFIG_POWER_RESET_SYSCON=y
 CONFIG_MFD_SYSCON=y
+# Stage C (plan 7.2): MDIO bus for the integrated GEPHYs, built-in so
+# the bus probes on first boot. PHYLIB/FIXED_PHY default to m in
+# OpenWrt generic config — pinned y here to override (target config
+# has higher precedence than generic).
+CONFIG_MDIO_DEVICE=y
+CONFIG_MDIO_BUS=y
+CONFIG_PHYLIB=y
+CONFIG_OF_MDIO=y
+CONFIG_FIXED_PHY=y
+CONFIG_ZX279128_MDIO=y
+# Stage D (plan 7.2): integrated 4-port Ethernet MAC/switch driver.
+# Built-in so eth0 exists before first userspace; depends on PHYLIB
+# which is already pinned y above.
+CONFIG_ZX279128_ETH=y

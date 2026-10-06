@@ -12,7 +12,11 @@ define Device/e1600
   KERNEL_INITRAMFS := kernel-bin | append-dtb | uImage none
   KERNEL_NAME := zImage
   KERNEL_SUFFIX := -uImage
-  IMAGES :=
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGES := ow-kernel.bin ow-ubi.bin
+  IMAGE/ow-kernel.bin := append-kernel
+  IMAGE/ow-ubi.bin := append-ubi
   ARTIFACTS :=
 endef
 TARGET_DEVICES += e1600

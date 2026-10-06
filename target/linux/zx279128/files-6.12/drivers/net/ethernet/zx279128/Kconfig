@@ -1,0 +1,11 @@
+config ZX279128_ETH
+	bool "ZTE ZX279128S integrated Ethernet support"
+	depends on OF && HAS_IOMEM && PHYLIB
+	help
+	  Say Y here to support the integrated Ethernet found on the ZTE
+	  ZX279128S SoC (ZXHN E1600 router): four GEMAC ports bridged by
+	  the on-chip packet processor, with the internal GEPHY PHYs at
+	  MDIO addresses 10..13.
+
+	  This driver exposes one netdev per front port: eth0 = LAN3,
+	  eth1 = LAN2, eth2 = LAN1, eth3 = WAN on the ZXHN E1600.

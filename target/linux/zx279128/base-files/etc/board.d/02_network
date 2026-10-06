@@ -1,0 +1,20 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+. /lib/functions/system.sh
+. /lib/functions/uci-defaults.sh
+
+board_config_update
+
+case "$(board_name)" in
+zte,zxhn-e1600)
+    # 192.168.2.1 is the address printed on the router's label.
+    ucidef_set_interface "lan" device "eth2 eth1 eth0" protocol static \
+        ipaddr 192.168.2.1
+    ucidef_set_interface_wan "eth3"
+    ;;
+esac
+
+board_config_flush
+
+exit 0

@@ -1,0 +1,9 @@
+config ZX279128_MDIO
+	bool "ZTE ZX279128S MDIO bus controller"
+	depends on OF && HAS_IOMEM
+	help
+	  Support for the MDIO bus controller in the ZTE ZX279128S SoC
+	  (ZXHN E1600). The controller drives the management interface
+	  to the four integrated GbE PHYs (GEPHY) at addresses 0-3.
+
+	  If unsure, say N.

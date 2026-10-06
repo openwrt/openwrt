@@ -1,0 +1,18 @@
+--- a/drivers/net/mdio/Kconfig	2026-09-30 20:55:07.920674736 +0300
++++ b/drivers/net/mdio/Kconfig	2026-09-30 20:55:07.952686992 +0300
+@@ -298,5 +298,7 @@
+ 	  Currently, only 8/16/32 bits registers are supported.
+ 
+ 
++source "drivers/net/mdio/zx279128/Kconfig"
++
+ endif
+ endif
+--- a/drivers/net/mdio/Makefile	2026-09-30 20:55:07.924676267 +0300
++++ b/drivers/net/mdio/Makefile	2026-09-30 20:55:07.952686992 +0300
+@@ -32,3 +32,5 @@
+ obj-$(CONFIG_MDIO_BUS_MUX_MESON_GXL)	+= mdio-mux-meson-gxl.o
+ obj-$(CONFIG_MDIO_BUS_MUX_MMIOREG) 	+= mdio-mux-mmioreg.o
+ obj-$(CONFIG_MDIO_BUS_MUX_MULTIPLEXER) 	+= mdio-mux-multiplexer.o
++
++obj-$(CONFIG_ZX279128_MDIO)		+= zx279128/

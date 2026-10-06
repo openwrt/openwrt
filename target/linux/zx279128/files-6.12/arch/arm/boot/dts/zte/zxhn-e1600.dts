@@ -15,9 +15,39 @@
         serial0 = &uart0;
     };
 
+    /* 224 MiB of the 256 MiB board RAM: the stock firmware keeps a
+     * reservation around 0x4e700000 that must stay untouched, so Linux
+     * allocations stop at 0x4e000000 (see extraction plan mem=224M note).
+     * The top 13 MiB below that limit is carved out below as the
+     * Ethernet buffer pool. */
     memory@40000000 {
         device_type = "memory";
-        reg = <0x40000000 0x10000000>;
+        reg = <0x40000000 0x0E000000>;
+    };
+
+    reserved-memory {
+        #address-cells = <1>;
+        #size-cells = <1>;
+        ranges;
+
+        /* Ethernet buffer pool: 2048x2 KiB buffer descriptors +
+         * BE16 lookup tables + 8 RX rings + DMA status ring + TX
+         * ring (layout in zx279128-mac.c). no-map + driver ioremap
+         * keeps it uncached, matching how U-Boot drives the same
+         * hardware; the DMA engines are cache-unaware.
+         * Address choice: must stay clear of the kernel Image
+         * (ends ~0x40fc0000) AND of the appended DTB, which U-Boot
+         * leaves in place right after the decompressed kernel
+         * (~0x413eb000) and which the kernel reserves early — a
+         * pool at 0x41000000 collided with that DTB reservation
+         * and failed with -EBUSY (Gate G4 attempt 1, 2026-10-01).
+         * 0x44000000 was the uImage load address, dead after bootm;
+         * pool end 0x44d00000 is still below the stock reservation
+         * at ~0x4e700000. */
+        ethpool: ethpool@44000000 {
+            reg = <0x44000000 0x00d00000>;
+            no-map;
+        };
     };
 
     cpus {
@@ -98,6 +128,56 @@
         };
     };
 
+    /* MDIO controller from the stock DT (mdio@9a101000,
+     * clocks = <&lsp1crpm 1>). The block clock is left in the
+     * bootloader-configured state (vendor driver never touches clocks;
+     * same convention as uart0/spifc here), so no clocks property.
+     * No child PHY nodes yet: of_mdiobus_register() scans all 32
+     * addresses; the four integrated GEPHYs should appear as C22
+     * devices once Stage B confirms their addresses. */
+    mdio0: mdio@9a101000 {
+        compatible = "zte,zx279128s-mdio";
+        reg = <0x9a101000 0x18>;
+        #address-cells = <1>;
+        #size-cells = <0>;
+        status = "okay";
+    };
+
+    /* Integrated 4-port Ethernet (MAC + packet processor + BMU/TM/RED
+     * + DMA). All register block bases are fixed SoC addresses known
+     * to the driver (decompiler-verified from U-Boot's drivers);
+     * reg names the node only. The driver attaches the four GEPHYs
+     * at mdio0 addresses 10..13 and exposes eth0..eth3 = LAN3, LAN2,
+     * LAN1, WAN (verified by moving a cable between the jacks). */
+    ethernet@92350000 {
+        compatible = "zte,zx279128-eth";
+        reg = <0x92350000 0x1000>;
+        memory-region = <&ethpool>;
+        zte,mdio = <&mdio0>;
+        /* TM interrupt (stock tm@92340000, SPI 36), used when use_irq=1 */
+        interrupt-parent = <&intc>;
+        interrupts = <0 36 4>;
+        nvmem-cells = <&macaddr_tag_lan>;
+        nvmem-cell-names = "mac-address";
+        status = "okay";
+    };
+
+    /* Integrated 4-port GbE PHY block (stock DT gephy@9b000000:
+     * four 1 MiB register windows + per-port IRQs 39-42, level-high).
+     * Inert for now — the vendor driver drives it through a vendor
+     * "common switch" stack, not phylib; Stage D/E will decide how to
+     * expose it. Kept documented and disabled. */
+    gephy: gephy@9b000000 {
+        compatible = "zte,zx279128s-gephy";
+        reg = <0x9b000000 0x100000>,
+              <0x9b100000 0x100000>,
+              <0x9b200000 0x100000>,
+              <0x9b300000 0x100000>;
+        interrupt-parent = <&intc>;
+        interrupts = <0 39 4>, <0 40 4>, <0 41 4>, <0 42 4>;
+        status = "disabled";
+    };
+
     /* SPIFC runs from the 25 MHz nandflash clock family (stock debug tree
      * reports lb_nandflash_100m_wclk = 25 MHz with nand_wclk_sel = 25 MHz).
      * This is deliberately a separate fixed clock: uart_clk is the same
@@ -125,9 +205,17 @@
             };
 
             partition@100000 {
+                compatible = "nvmem-cells";
+                #address-cells = <1>;
+                #size-cells = <1>;
                 label = "tag";
                 reg = <0x00100000 0x00100000>;
                 read-only;
+
+                /* factory TLV record (18 byte header), 6 byte MAC at 0x1e */
+                macaddr_tag_lan: macaddr@1e {
+                    reg = <0x1e 0x6>;
+                };
             };
 
             partition@200000 {
@@ -184,6 +272,20 @@
             partition@7a00000 {
                 label = "status";
                 reg = <0x07a00000 0x00500000>;
+            };
+
+            /* OpenWrt: raw kernel uImage, then the UBI volume group
+             * (squashfs rootfs + overlay). Both sit in flash that stock
+             * never uses. */
+            partition@3800000 {
+                label = "ow-kernel";
+                reg = <0x03800000 0x00800000>;
+            };
+
+            partition@4000000 {
+                compatible = "linux,ubi";
+                label = "ow-ubi";
+                reg = <0x04000000 0x02200000>;
             };
         };
     };

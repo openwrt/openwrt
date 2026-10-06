@@ -545,7 +545,7 @@ static int spifc_nand_page_load(struct spifc *spifc, u32 page_addr,
  * ZD35Q1GA (0xba71): field 01 or 11 is an uncorrectable error.
  */
 static int spifc_program_page(struct spifc *spifc, unsigned int page,
-			      const u8 *buf)
+			      const u8 *buf, u32 len)
 {
 	u8 status;
 	int ret;
@@ -563,7 +563,7 @@ static int spifc_program_page(struct spifc *spifc, unsigned int page,
 	if (ret)
 		return ret;
 
-	ret = spifc_nand_page_load(spifc, 0, buf, SPIFC_PAGE_DATA);
+	ret = spifc_nand_page_load(spifc, 0, buf, len);
 	if (ret)
 		return ret;
 
@@ -651,7 +651,7 @@ static int spifc_mtd_write(struct mtd_info *mtd, loff_t to, size_t len,
 
 		memcpy(page, buf, SPIFC_PAGE_DATA);
 
-		ret = spifc_program_page(spifc, pnum, page);
+		ret = spifc_program_page(spifc, pnum, page, SPIFC_PAGE_DATA);
 		if (ret)
 			break;
 
@@ -739,11 +739,17 @@ static int spifc_unlock(struct spifc *spifc)
 	return spifc_nand_wait(spifc);
 }
 
-/* Read one full page (2048 bytes) of main data into buf. Caller holds lock. */
+/*
+ * Read len bytes (page data, optionally followed by spare) from column 0.
+ * eccs, when non-NULL, receives the ECC result of the page read (status
+ * bits [5:4]): 0 clean, 1 corrected, 2 uncorrectable, 3 8 bits corrected.
+ * Caller holds the lock.
+ */
 static int spifc_read_page_data(struct spifc *spifc, unsigned int page,
-				u8 *buf)
+				u8 *buf, u32 len, u8 *eccs)
 {
 	void __iomem *r = spifc->regs;
+	u8 status;
 	int ret;
 
 	/* array -> cache */
@@ -751,17 +757,20 @@ static int spifc_read_page_data(struct spifc *spifc, unsigned int page,
 	if (ret)
 		return ret;
 
-	ret = spifc_nand_wait(spifc);
+	ret = spifc_nand_wait_ex(spifc, &status);
 	if (ret)
 		return ret;
 
+	if (eccs)
+		*eccs = (status >> 4) & 3;
+
 	/* cache -> host, dual-output, column 0 */
 	spifc_kick(spifc);
-	spifc_config_cmd(spifc, CMD_DUAL_OUTPUT_READ, 0, SPIFC_PAGE_DATA);
+	spifc_config_cmd(spifc, CMD_DUAL_OUTPUT_READ, 0, len);
 	writel((readl(r + SPIFC_REG_CMD14) & ~5u) | 4u, r + SPIFC_REG_CMD14);
 	spifc_trigger(spifc);
 
-	ret = spifc_read_fifo(spifc, buf, SPIFC_PAGE_DATA);
+	ret = spifc_read_fifo(spifc, buf, len);
 	if (ret)
 		return ret;
 
@@ -772,6 +781,8 @@ static int spifc_mtd_read(struct mtd_info *mtd, loff_t from, size_t len,
 			  size_t *retlen, u_char *buf)
 {
 	struct spifc *spifc = mtd_to_spifc(mtd);
+	unsigned int max_flips = 0;
+	bool failed = false;
 	u8 *page;
 	int ret = 0;
 
@@ -796,10 +807,25 @@ static int spifc_mtd_read(struct mtd_info *mtd, loff_t from, size_t len,
 		unsigned int pnum = div_u64(from, SPIFC_PAGE_DATA);
 		unsigned int off = from % SPIFC_PAGE_DATA;
 		size_t chunk = min_t(size_t, SPIFC_PAGE_DATA - off, len);
+		u8 eccs = 0;
 
-		ret = spifc_read_page_data(spifc, pnum, page);
+		ret = spifc_read_page_data(spifc, pnum, page, SPIFC_PAGE_DATA,
+					  &eccs);
 		if (ret)
 			break;
+
+		/* The chip does not report a flip count: 1 for "corrected", 8 for
+		 * "8 bits corrected" (at the limit, so UBI scrubs the block).
+		 */
+		if (eccs == 2) {
+			mtd->ecc_stats.failed++;
+			failed = true;
+		} else if (eccs) {
+			unsigned int flips = eccs == 3 ? 8 : 1;
+
+			mtd->ecc_stats.corrected += flips;
+			max_flips = max(max_flips, flips);
+		}
 
 		memcpy(buf, page + off, chunk);
 		buf += chunk;
@@ -811,6 +837,78 @@ static int spifc_mtd_read(struct mtd_info *mtd, loff_t from, size_t len,
 	spin_unlock_bh(&spifc->lock);
 	kfree(page);
 
+	if (ret)
+		return ret;
+
+	/* The core turns a bitflip count >= bitflip_threshold into -EUCLEAN. */
+	return failed ? -EBADMSG : max_flips;
+}
+
+#define SPIFC_PAGES_PER_BLOCK	(SPIFC_ERASE_SIZE / SPIFC_PAGE_DATA)
+#define SPIFC_RAW_PAGE		(SPIFC_PAGE_DATA + SPIFC_PAGE_OOB)
+
+/*
+ * Bad-block mark: first spare byte (column 2048) of the block's first page,
+ * 0xff = good (ZD35Q1GC datasheet 13.3). Returns 1 if bad, 0 if good.
+ */
+static int spifc_block_is_bad(struct spifc *spifc, unsigned int block)
+{
+	u8 *raw;
+	int ret;
+
+	raw = kmalloc(SPIFC_RAW_PAGE, GFP_KERNEL);
+	if (!raw)
+		return -ENOMEM;
+
+	spin_lock_bh(&spifc->lock);
+	ret = spifc_read_page_data(spifc, block * SPIFC_PAGES_PER_BLOCK, raw,
+				   SPIFC_RAW_PAGE, NULL);
+	spin_unlock_bh(&spifc->lock);
+
+	if (!ret)
+		ret = raw[SPIFC_PAGE_DATA] != 0xff;
+
+	kfree(raw);
+	return ret;
+}
+
+static int spifc_mtd_block_isbad(struct mtd_info *mtd, loff_t ofs)
+{
+	if (ofs < 0 || ofs >= mtd->size)
+		return -EINVAL;
+
+	return spifc_block_is_bad(mtd_to_spifc(mtd),
+				  div_u64(ofs, mtd->erasesize));
+}
+
+static int spifc_mtd_block_markbad(struct mtd_info *mtd, loff_t ofs)
+{
+	struct spifc *spifc = mtd_to_spifc(mtd);
+	unsigned int block;
+	u8 *raw;
+	int ret;
+
+	if (ofs < 0 || ofs >= mtd->size)
+		return -EINVAL;
+
+	block = div_u64(ofs, mtd->erasesize);
+	ret = spifc_block_is_bad(spifc, block);
+	if (ret)
+		return ret < 0 ? ret : 0;
+
+	raw = kmalloc(SPIFC_RAW_PAGE, GFP_KERNEL);
+	if (!raw)
+		return -ENOMEM;
+
+	memset(raw, 0xff, SPIFC_RAW_PAGE);
+	raw[SPIFC_PAGE_DATA] = 0x00;
+
+	spin_lock_bh(&spifc->lock);
+	ret = spifc_program_page(spifc, block * SPIFC_PAGES_PER_BLOCK, raw,
+				 SPIFC_RAW_PAGE);
+	spin_unlock_bh(&spifc->lock);
+
+	kfree(raw);
 	return ret;
 }
 
@@ -851,12 +949,19 @@ static int spifc_probe(struct platform_device *pdev)
 	mtd->type = MTD_NANDFLASH;
 	mtd->size = 0x08000000;	/* ZD35Q1GAIBR: 1 Gbit = 128 MiB */
 	mtd->writesize = SPIFC_PAGE_DATA;
+	mtd->writebufsize = SPIFC_PAGE_DATA;	/* UBI rejects 0 */
 	mtd->erasesize = SPIFC_ERASE_SIZE;
 	mtd->oobsize = SPIFC_PAGE_OOB;
 	mtd->oobavail = SPIFC_PAGE_OOB;
+	/* On-die BCH: 8 bits per 512 B (datasheet 13.4). */
+	mtd->ecc_strength = 8;
+	mtd->ecc_step_size = 512;
+	mtd->bitflip_threshold = 6;
 	mtd->_read = spifc_mtd_read;
 	mtd->_write = spifc_mtd_write;
 	mtd->_erase = spifc_mtd_erase;
+	mtd->_block_isbad = spifc_mtd_block_isbad;
+	mtd->_block_markbad = spifc_mtd_block_markbad;
 	/*
 	 * add_mtd_device() rejects a device implementing BOTH ->_read and
 	 * ->_read_oob (WARN_ON -> -EINVAL), so the stub above must not be
@@ -914,6 +1019,22 @@ static int spifc_probe(struct platform_device *pdev)
 		else
 			dev_info(dev, "SPI-NAND JEDEC ID: %*phN (unknown)\n", 5,
 				 id);
+	}
+
+	{
+		unsigned int blk, nblk = div_u64(mtd->size, mtd->erasesize);
+		unsigned int nbad = 0, nerr = 0;
+
+		for (blk = 0; blk < nblk; blk++) {
+			int bad = spifc_block_is_bad(spifc, blk);
+
+			if (bad > 0)
+				nbad++;
+			else if (bad < 0)
+				nerr++;
+		}
+		dev_info(dev, "bad-block scan: %u bad, %u unreadable of %u blocks\n",
+			 nbad, nerr, nblk);
 	}
 
 	/* The ofpart parser locates the "partitions" child through
