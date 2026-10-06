@@ -779,7 +779,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	/* Calculate Extended VLAN block sizes.
  	 * With VLAN Filter handling VID membership checks:
  	 *   Ingress: only final catchall rules (PVID insertion, 802.1Q
-@@ -785,11 +830,21 @@ static int mxl862xx_port_state(struct ds
+@@ -797,11 +842,21 @@ static int mxl862xx_port_state(struct ds
  static int mxl862xx_port_enable(struct dsa_switch *ds, int port,
  				struct phy_device *phydev)
  {
@@ -801,7 +801,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	if (mxl862xx_port_state(ds, port, false))
  		dev_err(ds->dev, "failed to disable port %d\n", port);
  }
-@@ -1407,6 +1462,17 @@ static int mxl862xx_port_setup(struct ds
+@@ -1419,6 +1474,17 @@ static int mxl862xx_port_setup(struct ds
  	bool is_cpu_port = dsa_port_is_cpu(dp);
  	int ret;
  
@@ -819,7 +819,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	ret = mxl862xx_port_state(ds, port, false);
  	if (ret)
  		return ret;
-@@ -1416,11 +1482,6 @@ static int mxl862xx_port_setup(struct ds
+@@ -1428,11 +1494,6 @@ static int mxl862xx_port_setup(struct ds
  	if (dsa_port_is_unused(dp))
  		return 0;
  
@@ -831,7 +831,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	ret = mxl862xx_configure_sp_tag_proto(ds, port, is_cpu_port);
  	if (ret)
  		return ret;
-@@ -1642,11 +1703,11 @@ static int mxl862xx_port_mdb_del(struct
+@@ -1654,11 +1715,11 @@ static int mxl862xx_port_mdb_del(struct
  	ether_addr_copy(qparam.mac, mdb->addr);
  
  	ret = MXL862XX_API_READ(priv, MXL862XX_MAC_TABLEENTRYQUERY, qparam);
@@ -847,7 +847,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		return 0;
  	if (ret)
  		return ret;
-@@ -1704,6 +1765,9 @@ static void mxl862xx_port_stp_state_set(
+@@ -1716,6 +1777,9 @@ static void mxl862xx_port_stp_state_set(
  	struct mxl862xx_priv *priv = ds->priv;
  	int ret;
  

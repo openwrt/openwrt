@@ -126,7 +126,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  
  	/* What interface are supported by the current link.
  	 * Can change on removal or addition of new PCS.
-@@ -543,11 +545,15 @@ static int phylink_validate_mac_and_pcs(
+@@ -546,11 +548,15 @@ static int phylink_validate_mac_and_pcs(
  	bool pcs_found = false;
  	int ret;
  
@@ -143,7 +143,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  
  		pcs_found = !!pcs;
  	/*
-@@ -571,6 +577,7 @@ static int phylink_validate_mac_and_pcs(
+@@ -574,6 +580,7 @@ static int phylink_validate_mac_and_pcs(
  		 * error and backtrace rather than oopsing the kernel.
  		 */
  		if (!pcs->ops) {
@@ -151,7 +151,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  			phylink_err(pl, "interface %s: uninitialised PCS\n",
  				    phy_modes(state->interface));
  			dump_stack();
-@@ -580,6 +587,7 @@ static int phylink_validate_mac_and_pcs(
+@@ -583,6 +590,7 @@ static int phylink_validate_mac_and_pcs(
  		/* Recheck PCS to handle legacy way for .mac_select_pcs */
  		ret = phylink_validate_pcs_interface(pcs, state->interface);
  		if (ret) {
@@ -159,7 +159,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  			phylink_err(pl, "selected PCS does not support %s\n",
  				    phy_modes(state->interface));
  			return -EINVAL;
-@@ -588,8 +596,10 @@ static int phylink_validate_mac_and_pcs(
+@@ -591,8 +599,10 @@ static int phylink_validate_mac_and_pcs(
  		/* Validate the link parameters with the PCS */
  		if (pcs->ops->pcs_validate) {
  			ret = pcs->ops->pcs_validate(pcs, supported, state);
@@ -171,7 +171,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  
  			/* Ensure the advertising mask is a subset of the
  			 * supported mask.
-@@ -599,6 +609,8 @@ static int phylink_validate_mac_and_pcs(
+@@ -602,6 +612,8 @@ static int phylink_validate_mac_and_pcs(
  		}
  	}
  
@@ -180,7 +180,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	/* Then validate the link parameters with the MAC */
  	if (pl->mac_ops->mac_get_caps)
  		capabilities = pl->mac_ops->mac_get_caps(pl->config,
-@@ -995,6 +1007,9 @@ static unsigned int phylink_inband_caps(
+@@ -998,6 +1010,9 @@ static unsigned int phylink_inband_caps(
  {
  	struct phylink_pcs *pcs;
  	bool pcs_found = false;
@@ -190,7 +190,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  
  	if (pl->mac_ops->mac_select_pcs) {
  		pcs = pl->mac_ops->mac_select_pcs(pl->config,
-@@ -1009,9 +1024,14 @@ static unsigned int phylink_inband_caps(
+@@ -1012,9 +1027,14 @@ static unsigned int phylink_inband_caps(
  		}
  	}
  	if (!pcs_found)
@@ -207,7 +207,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  }
  
  static void phylink_pcs_poll_stop(struct phylink *pl)
-@@ -1545,7 +1565,9 @@ static void phylink_mac_initial_config(s
+@@ -1555,7 +1575,9 @@ static void phylink_mac_initial_config(s
  	phylink_apply_manual_flow(pl, &link_state);
  	if (phy)
  		mutex_lock(&phy->lock);
@@ -217,7 +217,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	if (phy)
  		mutex_unlock(&phy->lock);
  }
-@@ -1913,6 +1935,9 @@ static int phylink_fill_available_pcs(st
+@@ -1925,6 +1947,9 @@ static int phylink_fill_available_pcs(st
  	if (!pcss)
  		return -ENOMEM;
  
@@ -227,7 +227,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	ret = config->fill_available_pcs(config, pcss, config->num_possible_pcs);
  	if (ret < 0)
  		goto out;
-@@ -1927,11 +1952,89 @@ static int phylink_fill_available_pcs(st
+@@ -1939,11 +1964,89 @@ static int phylink_fill_available_pcs(st
  	}
  
  out:
@@ -317,7 +317,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  /**
   * phylink_create() - create a phylink instance
   * @config: a pointer to the target &struct phylink_config
-@@ -2020,10 +2123,18 @@ struct phylink *phylink_create(struct ph
+@@ -2032,10 +2135,18 @@ struct phylink *phylink_create(struct ph
  	__set_bit(PHYLINK_DISABLE_STOPPED, &pl->phylink_disable_state);
  	timer_setup(&pl->link_poll, phylink_fixed_poll, 0);
  
@@ -337,7 +337,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  
  	/* Link available PCS to phylink */
  	list_for_each_entry(pcs, &pl->pcs_list, list)
-@@ -2038,13 +2149,15 @@ struct phylink *phylink_create(struct ph
+@@ -2050,13 +2161,15 @@ struct phylink *phylink_create(struct ph
  				 pl->supported_interfaces,
  				 pcs->supported_interfaces);
  
@@ -354,7 +354,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  
  	if (pl->cfg_link_an_mode == MLO_AN_FIXED) {
  		ret = phylink_parse_fixedlink(pl, fwnode);
-@@ -2063,11 +2176,17 @@ struct phylink *phylink_create(struct ph
+@@ -2075,11 +2188,17 @@ struct phylink *phylink_create(struct ph
  release_link_gpio:
  	if (pl->link_gpio)
  		gpiod_put(pl->link_gpio);
@@ -373,7 +373,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  free_pl:
  	fwnode_handle_put(pl->fwnode);
  	kfree(pl);
-@@ -2092,14 +2211,22 @@ void phylink_destroy(struct phylink *pl)
+@@ -2104,14 +2223,22 @@ void phylink_destroy(struct phylink *pl)
  	if (pl->link_gpio)
  		gpiod_put(pl->link_gpio);
  

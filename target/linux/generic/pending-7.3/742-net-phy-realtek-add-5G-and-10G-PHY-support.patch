@@ -50,7 +50,7 @@ Signed-off-by: Balázs Triszka <info@balika011.hu>
  #endif /* REALTEK_H */
 --- a/drivers/net/phy/realtek/realtek_main.c
 +++ b/drivers/net/phy/realtek/realtek_main.c
-@@ -231,6 +231,9 @@
+@@ -270,6 +270,9 @@
  #define RTL_8261C				0x001cc890
  #define RTL_8261C_CG				0x001cc898
  #define RTL_8261CE_CG				0x001cc899
@@ -60,7 +60,7 @@ Signed-off-by: Balázs Triszka <info@balika011.hu>
  
  #define RTL8261C_CE_MODEL		0x00
  #define RTL8261D_MODEL			0x81
-@@ -311,6 +314,26 @@ struct rtl8261x_fw_entry {
+@@ -350,6 +353,26 @@ struct rtl8261x_fw_entry {
  /* RTL8211E and RTL8211F support up to three LEDs */
  #define RTL8211x_LED_COUNT			3
  
@@ -87,7 +87,7 @@ Signed-off-by: Balázs Triszka <info@balika011.hu>
  MODULE_DESCRIPTION("Realtek PHY driver");
  MODULE_AUTHOR("Johnson Leung");
  MODULE_LICENSE("GPL");
-@@ -2888,6 +2911,125 @@ static int rtl8251b_c45_match_phy_device
+@@ -3277,6 +3300,125 @@ static int rtl8251b_c45_match_phy_device
  	return rtlgen_is_c45_match(phydev, RTL_8251B, true);
  }
  
@@ -213,7 +213,7 @@ Signed-off-by: Balázs Triszka <info@balika011.hu>
  static int rtlgen_resume(struct phy_device *phydev)
  {
  	int ret = genphy_resume(phydev);
-@@ -3109,6 +3251,485 @@ static int rtlgen_sfp_config_aneg(struct
+@@ -3498,6 +3640,485 @@ static int rtlgen_sfp_config_aneg(struct
  	return 0;
  }
  
@@ -699,7 +699,7 @@ Signed-off-by: Balázs Triszka <info@balika011.hu>
  static struct phy_driver realtek_drvs[] = {
  	{
  		PHY_ID_MATCH_EXACT(0x00008201),
-@@ -3459,6 +4080,108 @@ static struct phy_driver realtek_drvs[]
+@@ -3856,6 +4477,108 @@ static struct phy_driver realtek_drvs[]
  		.led_hw_control_get	= rtl8261x_led_hw_control_get,
  		.led_hw_control_set	= rtl8261x_led_hw_control_set,
  		.led_polarity_set	= rtl8261x_led_polarity_set,

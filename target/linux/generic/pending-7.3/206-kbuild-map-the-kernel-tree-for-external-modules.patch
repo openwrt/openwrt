@@ -28,7 +28,7 @@ Signed-off-by: Paul Spooren <mail@aparcar.org>
 
 --- a/Makefile
 +++ b/Makefile
-@@ -1106,6 +1106,11 @@ endif
+@@ -1198,6 +1198,11 @@ endif
  export CFLAGS_GCOV
  
  # change __FILE__ to the relative path to the source directory
@@ -38,5 +38,5 @@ Signed-off-by: Paul Spooren <mail@aparcar.org>
 +KBUILD_CPPFLAGS += $(call cc-option,-fmacro-prefix-map=$(abs_srctree)/=)
 +endif
  ifdef building_out_of_srctree
- KBUILD_CPPFLAGS += $(call cc-option,-fmacro-prefix-map=$(srcroot)/=)
- endif
+ KBUILD_CPPFLAGS += -fmacro-prefix-map=$(srcroot)/=
+ ifeq ($(call rustc-option-yn, --remap-path-scope=macro),y)

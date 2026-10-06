@@ -25,9 +25,9 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 
 --- a/drivers/nvmem/core.c
 +++ b/drivers/nvmem/core.c
-@@ -7,12 +7,9 @@
-  */
+@@ -8,12 +8,9 @@
  
+ #include <linux/cleanup.h>
  #include <linux/device.h>
 -#include <linux/ctype.h>
 -#include <linux/etherdevice.h>
@@ -38,7 +38,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  #include <linux/init.h>
  #include <linux/kref.h>
  #include <linux/module.h>
-@@ -789,62 +786,6 @@ static int nvmem_validate_keepouts(struc
+@@ -792,62 +789,6 @@ static int nvmem_validate_keepouts(struc
  	return 0;
  }
  

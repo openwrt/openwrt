@@ -14,7 +14,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/block/partitions/of.c
 +++ b/block/partitions/of.c
-@@ -48,7 +48,7 @@ static void add_of_partition(struct pars
+@@ -47,7 +47,7 @@ static void add_of_partition(struct pars
  	u64 offset = of_read_number(reg, a_cells) / SECTOR_SIZE;
  	u64 size = of_read_number(reg + a_cells, s_cells) / SECTOR_SIZE;
  

@@ -13,9 +13,9 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/drivers/net/phy/realtek/realtek_main.c
 +++ b/drivers/net/phy/realtek/realtek_main.c
-@@ -188,6 +188,10 @@
- 
- #define RTL8224_SRAM_RTCT_LEN(pair)		(0x8028 + (pair) * 4)
+@@ -227,6 +227,10 @@
+ #define  RTL8226_RG_LPF_CAP_PAIR_A_MASK		GENMASK(4, 0)
+ #define  RTL8226_RG_LPF_CAP_PAIR_B_MASK		GENMASK(12, 8)
  
 +#define RTL8221B_PHYCR1				0xa430
 +#define RTL8221B_PHYCR1_ALDPS_EN		BIT(2)
@@ -24,7 +24,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  #define RTL8366RB_POWER_SAVE			0x15
  #define RTL8366RB_POWER_SAVE_ON			BIT(12)
  
-@@ -304,6 +308,10 @@ struct rtl8261x_priv {
+@@ -346,6 +350,10 @@ struct rtl8261x_priv {
  	bool fw_loaded;
  };
  
@@ -35,7 +35,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static int rtl821x_read_page(struct phy_device *phydev)
  {
  	return __phy_read(phydev, RTL821x_PAGE_SELECT);
-@@ -1649,6 +1657,18 @@ static int rtl822x_write_mmd(struct phy_
+@@ -1809,6 +1817,18 @@ static int rtl822x_write_mmd(struct phy_
  
  static int rtl822x_probe(struct phy_device *phydev)
  {
@@ -54,8 +54,8 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	if (IS_ENABLED(CONFIG_REALTEK_PHY_HWMON) &&
  	    phydev->phy_id != RTL_GENERIC_PHYID)
  		return rtl822x_hwmon_init(phydev);
-@@ -1739,6 +1759,19 @@ static int rtl822xb_write_mmd(struct phy
- 	return write_ret;
+@@ -2037,6 +2057,19 @@ static int rtl8226_probe(struct phy_devi
+ 	return rtl8226_config_mdi_order(phydev);
  }
  
 +static int rtl822x_init_phycr1(struct phy_device *phydev, bool no_aldps)
@@ -74,7 +74,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static int rtl822x_set_serdes_option_mode(struct phy_device *phydev, bool gen1)
  {
  	bool has_2500, has_sgmii;
-@@ -1796,7 +1829,15 @@ static int rtl822x_set_serdes_option_mod
+@@ -2094,7 +2127,15 @@ static int rtl822x_set_serdes_option_mod
  	if (ret < 0)
  		return ret;
  

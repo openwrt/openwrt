@@ -17,16 +17,16 @@ Signed-off-by: Chukun Pan <amadeus@jmu.edu.cn>
 
 --- a/drivers/mtd/nand/spi/macronix.c
 +++ b/drivers/mtd/nand/spi/macronix.c
-@@ -187,7 +187,6 @@ static const struct spinand_info macroni
- 		     SPINAND_HAS_QE_BIT,
+@@ -212,7 +212,6 @@ static const struct spinand_info macroni
+ 		     SPINAND_INFO_VENDOR_OPS(&macronix_ops),
  		     SPINAND_ECCINFO(&mx35lfxge4ab_ooblayout,
  				     macronix_ecc_get_status),
 -		     SPINAND_CONT_READ(macronix_set_cont_read),
  		     SPINAND_READ_RETRY(MACRONIX_NUM_READ_RETRY_MODES,
  					macronix_set_read_retry)),
  	SPINAND_INFO("MX35LF4GE4AD",
-@@ -200,7 +199,6 @@ static const struct spinand_info macroni
- 		     SPINAND_HAS_QE_BIT,
+@@ -226,7 +225,6 @@ static const struct spinand_info macroni
+ 		     SPINAND_INFO_VENDOR_OPS(&macronix_ops),
  		     SPINAND_ECCINFO(&mx35lfxge4ab_ooblayout,
  				     macronix_ecc_get_status),
 -		     SPINAND_CONT_READ(macronix_set_cont_read),

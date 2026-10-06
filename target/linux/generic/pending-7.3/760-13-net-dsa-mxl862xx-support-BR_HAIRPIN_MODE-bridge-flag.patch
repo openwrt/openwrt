@@ -35,7 +35,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	} else {
  		mxl862xx_fw_portmap_set_bit(br_port_cfg.bridge_port_map,
  					    mxl862xx_cpu_bridge_port_id(ds, port));
-@@ -4074,7 +4078,7 @@ static int mxl862xx_port_pre_bridge_flag
+@@ -4082,7 +4086,7 @@ static int mxl862xx_port_pre_bridge_flag
  					  struct netlink_ext_ack *extack)
  {
  	if (flags.mask & ~(BR_FLOOD | BR_MCAST_FLOOD | BR_BCAST_FLOOD |
@@ -44,7 +44,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		return -EINVAL;
  
  	return 0;
-@@ -4116,7 +4120,11 @@ static int mxl862xx_port_bridge_flags(st
+@@ -4124,7 +4128,11 @@ static int mxl862xx_port_bridge_flags(st
  	if (flags.mask & BR_LEARNING)
  		priv->ports[port].learning = !!(flags.val & BR_LEARNING);
  

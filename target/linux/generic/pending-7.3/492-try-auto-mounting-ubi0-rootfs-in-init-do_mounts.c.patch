@@ -8,9 +8,9 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/init/do_mounts.c
 +++ b/init/do_mounts.c
-@@ -250,7 +250,30 @@ retry:
+@@ -243,7 +243,30 @@ retry:
  out:
- 	put_page(page);
+ 	kfree(fs_names);
  }
 - 
 +
@@ -40,7 +40,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  #ifdef CONFIG_ROOT_NFS
  
  #define NFSROOT_TIMEOUT_MIN	5
-@@ -387,6 +410,11 @@ static inline void mount_block_root(char
+@@ -380,6 +403,11 @@ static inline void mount_block_root(char
  
  void __init mount_root(char *root_device_name)
  {

@@ -986,7 +986,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		return 0;
  
  not_ready_yet:
-@@ -1590,6 +1642,12 @@ static int mxl862xx_port_mdb_del(struct
+@@ -1602,6 +1654,12 @@ static int mxl862xx_port_mdb_del(struct
  	ether_addr_copy(qparam.mac, mdb->addr);
  
  	ret = MXL862XX_API_READ(priv, MXL862XX_MAC_TABLEENTRYQUERY, qparam);
@@ -999,7 +999,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	if (ret)
  		return ret;
  
-@@ -2037,6 +2095,12 @@ static void mxl862xx_stats_work_fn(struc
+@@ -2049,6 +2107,12 @@ static void mxl862xx_stats_work_fn(struc
  	struct dsa_switch *ds = priv->ds;
  	struct dsa_port *dp;
  
@@ -1012,7 +1012,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	dsa_switch_for_each_available_port(dp, ds)
  		mxl862xx_stats_poll(ds, dp->index);
  
-@@ -2108,6 +2172,8 @@ static const struct dsa_switch_ops mxl86
+@@ -2119,6 +2183,8 @@ static const struct dsa_switch_ops mxl86
  	.get_pause_stats = mxl862xx_get_pause_stats,
  	.get_rmon_stats = mxl862xx_get_rmon_stats,
  	.get_stats64 = mxl862xx_get_stats64,
@@ -1021,7 +1021,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  };
  
  static int mxl862xx_probe(struct mdio_device *mdiodev)
-@@ -2123,7 +2189,13 @@ static int mxl862xx_probe(struct mdio_de
+@@ -2134,7 +2200,13 @@ static int mxl862xx_probe(struct mdio_de
  
  	priv->mdiodev = mdiodev;
  
@@ -1036,7 +1036,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	if (!ds)
  		return -ENOMEM;
  
-@@ -2157,6 +2229,8 @@ static int mxl862xx_probe(struct mdio_de
+@@ -2167,6 +2239,8 @@ static int mxl862xx_probe(struct mdio_de
  		mxl862xx_host_shutdown(priv);
  		for (i = 0; i < MXL862XX_MAX_PORTS; i++)
  			cancel_work_sync(&priv->ports[i].host_flood_work);
@@ -1045,7 +1045,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	}
  
  	return err;
-@@ -2187,6 +2261,9 @@ static void mxl862xx_remove(struct mdio_
+@@ -2196,6 +2270,9 @@ static void mxl862xx_remove(struct mdio_
  	 */
  	for (i = 0; i < MXL862XX_MAX_PORTS; i++)
  		cancel_work_sync(&priv->ports[i].host_flood_work);

@@ -244,7 +244,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  #endif /* __MXL862XX_PHYLINK_H */
 --- a/drivers/net/dsa/mxl862xx/mxl862xx.c
 +++ b/drivers/net/dsa/mxl862xx/mxl862xx.c
-@@ -1795,6 +1795,8 @@ static void mxl862xx_get_strings(struct
+@@ -1807,6 +1807,8 @@ static void mxl862xx_get_strings(struct
  
  	for (i = 0; i < ARRAY_SIZE(mxl862xx_mib); i++)
  		ethtool_puts(&data, mxl862xx_mib[i].name);
@@ -253,7 +253,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  }
  
  static int mxl862xx_get_sset_count(struct dsa_switch *ds, int port, int sset)
-@@ -1802,7 +1804,7 @@ static int mxl862xx_get_sset_count(struc
+@@ -1814,7 +1816,7 @@ static int mxl862xx_get_sset_count(struc
  	if (sset != ETH_SS_STATS)
  		return 0;
  
@@ -262,7 +262,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  }
  
  static int mxl862xx_read_rmon(struct dsa_switch *ds, int port,
-@@ -1838,6 +1840,8 @@ static void mxl862xx_get_ethtool_stats(s
+@@ -1850,6 +1852,8 @@ static void mxl862xx_get_ethtool_stats(s
  		else
  			*data++ = le64_to_cpu(*(__le64 *)field);
  	}

@@ -47,7 +47,7 @@ Assisted-by: LLM
 
 --- a/drivers/net/phy/realtek/realtek_main.c
 +++ b/drivers/net/phy/realtek/realtek_main.c
-@@ -163,12 +163,15 @@
+@@ -184,12 +184,15 @@
  #define RTL822X_VND2_LCR_LINK_100		BIT(1)
  #define RTL822X_VND2_LCR_LINK_1000		BIT(2)
  #define RTL822X_VND2_LCR_LINK_2500		BIT(5)
@@ -63,7 +63,7 @@ Assisted-by: LLM
  
  #define RTL8224_MII_RTCT			0x11
  #define RTL8224_MII_RTCT_ENABLE			BIT(0)
-@@ -270,6 +273,7 @@
+@@ -309,6 +312,7 @@
  #define FW_SUB_MAGIC_8261C		0x32363143
  #define RTL8261X_POLL_TIMEOUT_MS	100
  #define RTL8261X_MAX_MMD_DEV		31
@@ -71,7 +71,7 @@ Assisted-by: LLM
  
  #define RTL8261C_CE_FW_NAME	"rtl_nic/rtl8261c.bin"
  MODULE_FIRMWARE(RTL8261C_CE_FW_NAME);
-@@ -322,6 +326,11 @@ struct rtl821x_priv {
+@@ -364,6 +368,11 @@ struct rtl821x_priv {
  struct rtl8261x_priv {
  	const char *fw_name;
  	bool fw_loaded;
@@ -83,7 +83,7 @@ Assisted-by: LLM
  };
  
  struct rtl822x_priv {
-@@ -2271,6 +2280,215 @@ static int rtl822xb_led_brightness_set(s
+@@ -2569,6 +2578,215 @@ static int rtl822xb_led_brightness_set(s
  					  RTL822X_VND2_LED_POLAR(index));
  }
  
@@ -299,7 +299,7 @@ Assisted-by: LLM
  static int rtl822xb_led_hw_is_supported(struct phy_device *phydev, u8 index,
  					unsigned long rules)
  {
-@@ -3218,6 +3436,11 @@ static struct phy_driver realtek_drvs[]
+@@ -3615,6 +3833,11 @@ static struct phy_driver realtek_drvs[]
  		.soft_reset		= genphy_c45_pma_soft_reset,
  		.suspend		= genphy_c45_pma_suspend,
  		.resume			= genphy_c45_pma_resume,
@@ -311,7 +311,7 @@ Assisted-by: LLM
  	}, {
  		PHY_ID_MATCH_EXACT(RTL_8261CE_CG),
  		.name			= "Realtek RTL8261CE 10Gbps PHY",
-@@ -3231,6 +3454,11 @@ static struct phy_driver realtek_drvs[]
+@@ -3628,6 +3851,11 @@ static struct phy_driver realtek_drvs[]
  		.soft_reset		= genphy_c45_pma_soft_reset,
  		.suspend		= genphy_c45_pma_suspend,
  		.resume			= genphy_c45_pma_resume,

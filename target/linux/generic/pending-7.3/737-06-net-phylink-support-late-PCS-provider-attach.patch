@@ -71,7 +71,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  				 struct phylink_pcs *pl_pcs)
 --- a/drivers/net/phy/phylink.c
 +++ b/drivers/net/phy/phylink.c
-@@ -1916,6 +1916,27 @@ int phylink_set_fixed_link(struct phylin
+@@ -1928,6 +1928,27 @@ int phylink_set_fixed_link(struct phylin
  }
  EXPORT_SYMBOL_GPL(phylink_set_fixed_link);
  
@@ -99,7 +99,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  static int phylink_fill_available_pcs(struct phylink *pl,
  				      struct phylink_config *config)
  {
-@@ -1948,7 +1969,7 @@ static int phylink_fill_available_pcs(st
+@@ -1960,7 +1981,7 @@ static int phylink_fill_available_pcs(st
  		if (!pcs)
  			continue;
  
@@ -108,7 +108,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	}
  
  out:
-@@ -1994,27 +2015,57 @@ static int pcs_provider_notify(struct no
+@@ -2006,27 +2027,57 @@ static int pcs_provider_notify(struct no
  	struct fwnode_pcs_provider *pp = data;
  	struct phylink_pcs *pcs, *tmp;
  	bool resolve = false;
@@ -177,7 +177,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  		return NOTIFY_DONE;
  	}
  
-@@ -2028,7 +2079,8 @@ static int pcs_provider_notify(struct no
+@@ -2040,7 +2091,8 @@ static int pcs_provider_notify(struct no
  
  	mutex_unlock(&pl->state_mutex);
  
@@ -187,7 +187,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  
  	phylink_run_resolve(pl);
  
-@@ -2136,10 +2188,6 @@ struct phylink *phylink_create(struct ph
+@@ -2148,10 +2200,6 @@ struct phylink *phylink_create(struct ph
  
  	mutex_lock(&pl->state_mutex);
  

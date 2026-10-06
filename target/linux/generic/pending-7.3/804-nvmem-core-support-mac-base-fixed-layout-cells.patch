@@ -20,9 +20,9 @@ string.
  
 --- a/drivers/nvmem/core.c
 +++ b/drivers/nvmem/core.c
-@@ -7,9 +7,12 @@
-  */
+@@ -8,9 +8,12 @@
  
+ #include <linux/cleanup.h>
  #include <linux/device.h>
 +#include <linux/ctype.h>
 +#include <linux/etherdevice.h>
@@ -33,7 +33,7 @@ string.
  #include <linux/init.h>
  #include <linux/kref.h>
  #include <linux/module.h>
-@@ -786,6 +789,62 @@ static int nvmem_validate_keepouts(struc
+@@ -789,6 +792,62 @@ static int nvmem_validate_keepouts(struc
  	return 0;
  }
  

@@ -19,7 +19,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  #include <linux/slab.h>
  #include "check.h"
  #include "efi.h"
-@@ -694,6 +695,34 @@ static void utf16_le_to_7bit(const __le1
+@@ -692,6 +693,34 @@ static void utf16_le_to_7bit(const __le1
  	}
  }
  
@@ -54,7 +54,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  /**
   * efi_partition - scan for GPT partitions
   * @state: disk parsed partitions
-@@ -719,6 +748,8 @@ int efi_partition(struct parsed_partitio
+@@ -717,6 +746,8 @@ int efi_partition(struct parsed_partitio
  	gpt_entry *ptes = NULL;
  	u32 i;
  	unsigned ssz = queue_logical_block_size(state->disk->queue) / 512;
@@ -63,7 +63,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	if (!find_valid_gpt(state, &gpt, &ptes) || !gpt || !ptes) {
  		kfree(gpt);
-@@ -740,7 +771,8 @@ int efi_partition(struct parsed_partitio
+@@ -738,7 +769,8 @@ int efi_partition(struct parsed_partitio
  		if (!is_pte_valid(&ptes[i], last_lba(state->disk)))
  			continue;
  

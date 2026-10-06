@@ -19,7 +19,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 
 --- a/drivers/devfreq/tegra30-devfreq.c
 +++ b/drivers/devfreq/tegra30-devfreq.c
-@@ -823,8 +823,9 @@ static int devm_tegra_devfreq_init_hw(st
+@@ -818,8 +818,9 @@ static int devm_tegra_devfreq_init_hw(st
  
  static int tegra_devfreq_config_clks_nop(struct device *dev,
  					 struct opp_table *opp_table,
@@ -33,7 +33,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	return 0;
 --- a/drivers/opp/core.c
 +++ b/drivers/opp/core.c
-@@ -1054,7 +1054,8 @@ static int _set_opp_voltage(struct devic
+@@ -1056,7 +1056,8 @@ static int _set_opp_voltage(struct devic
  
  static int
  _opp_config_clk_single(struct device *dev, struct opp_table *opp_table,
@@ -43,7 +43,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  {
  	unsigned long *target = data;
  	unsigned long freq;
-@@ -1086,8 +1087,8 @@ _opp_config_clk_single(struct device *de
+@@ -1088,8 +1089,8 @@ _opp_config_clk_single(struct device *de
   * the order in which they are present in the array while scaling up.
   */
  int dev_pm_opp_config_clks_simple(struct device *dev,
@@ -54,7 +54,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  {
  	int ret, i;
  
-@@ -1353,7 +1354,7 @@ static int _set_opp(struct device *dev,
+@@ -1355,7 +1356,7 @@ static int _set_opp(struct device *dev,
  	}
  
  	if (opp_table->config_clks) {
@@ -63,7 +63,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  		if (ret)
  			return ret;
  	}
-@@ -1430,7 +1431,7 @@ int dev_pm_opp_set_rate(struct device *d
+@@ -1432,7 +1433,7 @@ int dev_pm_opp_set_rate(struct device *d
  		 * equivalent to a clk_set_rate()
  		 */
  		if (!_get_opp_count(opp_table)) {
@@ -74,7 +74,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  
 --- a/drivers/ufs/core/ufshcd.c
 +++ b/drivers/ufs/core/ufshcd.c
-@@ -1149,8 +1149,8 @@ out:
+@@ -1129,8 +1129,8 @@ out:
  }
  
  int ufshcd_opp_config_clks(struct device *dev, struct opp_table *opp_table,
@@ -121,7 +121,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  }
 --- a/include/ufs/ufshcd.h
 +++ b/include/ufs/ufshcd.h
-@@ -1327,8 +1327,8 @@ void ufshcd_mcq_enable_esi(struct ufs_hb
+@@ -1514,8 +1514,8 @@ void ufshcd_mcq_enable_esi(struct ufs_hb
  void ufshcd_mcq_config_esi(struct ufs_hba *hba, struct msi_msg *msg);
  
  int ufshcd_opp_config_clks(struct device *dev, struct opp_table *opp_table,

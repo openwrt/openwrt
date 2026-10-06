@@ -122,7 +122,7 @@ Tested-by: Aleksander Jan Bajkowski <olek2@wp.pl>
  static struct mii_timestamper *
  fwnode_find_mii_timestamper(struct fwnode_handle *fwnode)
  {
-@@ -123,7 +101,6 @@ int fwnode_mdiobus_register_phy(struct m
+@@ -118,7 +96,6 @@ int fwnode_mdiobus_register_phy(struct m
  				struct fwnode_handle *child, u32 addr)
  {
  	struct mii_timestamper *mii_ts = NULL;
@@ -130,7 +130,7 @@ Tested-by: Aleksander Jan Bajkowski <olek2@wp.pl>
  	struct phy_device *phy;
  	bool is_c45;
  	u32 phy_id;
-@@ -164,14 +141,6 @@ int fwnode_mdiobus_register_phy(struct m
+@@ -159,14 +136,6 @@ int fwnode_mdiobus_register_phy(struct m
  			goto clean_phy;
  	}
  
@@ -145,7 +145,7 @@ Tested-by: Aleksander Jan Bajkowski <olek2@wp.pl>
  	/* phy->mii_ts may already be defined by the PHY driver. A
  	 * mii_timestamper probed via the device tree will still have
  	 * precedence.
-@@ -181,9 +150,6 @@ int fwnode_mdiobus_register_phy(struct m
+@@ -176,9 +145,6 @@ int fwnode_mdiobus_register_phy(struct m
  
  	return 0;
  
@@ -157,7 +157,7 @@ Tested-by: Aleksander Jan Bajkowski <olek2@wp.pl>
  clean_mii_ts:
 --- a/drivers/net/phy/phy_device.c
 +++ b/drivers/net/phy/phy_device.c
-@@ -225,8 +225,19 @@ static void phy_mdio_device_free(struct
+@@ -223,8 +223,19 @@ static void phy_mdio_device_free(struct
  
  static void phy_device_release(struct device *dev)
  {
@@ -178,7 +178,7 @@ Tested-by: Aleksander Jan Bajkowski <olek2@wp.pl>
  }
  
  static void phy_mdio_device_remove(struct mdio_device *mdiodev)
-@@ -1138,9 +1149,108 @@ struct phy_device *get_phy_device(struct
+@@ -1102,9 +1113,108 @@ struct phy_device *get_phy_device(struct
  }
  EXPORT_SYMBOL(get_phy_device);
  
@@ -287,7 +287,7 @@ Tested-by: Aleksander Jan Bajkowski <olek2@wp.pl>
   */
  int phy_device_register(struct phy_device *phydev)
  {
-@@ -1166,12 +1276,15 @@ int phy_device_register(struct phy_devic
+@@ -1130,12 +1240,15 @@ int phy_device_register(struct phy_devic
  		goto out;
  	}
  
@@ -304,7 +304,7 @@ Tested-by: Aleksander Jan Bajkowski <olek2@wp.pl>
  	mdiobus_unregister_device(&phydev->mdio);
  	return err;
  }
-@@ -1188,8 +1301,6 @@ EXPORT_SYMBOL(phy_device_register);
+@@ -1152,8 +1265,6 @@ EXPORT_SYMBOL(phy_device_register);
  void phy_device_remove(struct phy_device *phydev)
  {
  	unregister_mii_timestamper(phydev->mii_ts);
@@ -313,7 +313,7 @@ Tested-by: Aleksander Jan Bajkowski <olek2@wp.pl>
  	device_del(&phydev->mdio.dev);
  
  	/* Assert the reset signal */
-@@ -3726,8 +3837,14 @@ static int __init phy_init(void)
+@@ -4034,8 +4145,14 @@ static int __init phy_init(void)
  	if (rc)
  		goto err_c45;
  
@@ -328,7 +328,7 @@ Tested-by: Aleksander Jan Bajkowski <olek2@wp.pl>
  err_c45:
  	phy_driver_unregister(&genphy_c45_driver);
  err_ethtool_phy_ops:
-@@ -3741,6 +3858,7 @@ err_ethtool_phy_ops:
+@@ -4052,6 +4169,7 @@ err_class:
  
  static void __exit phy_exit(void)
  {
@@ -472,7 +472,7 @@ Tested-by: Aleksander Jan Bajkowski <olek2@wp.pl>
  #endif
 --- a/net/ethtool/pse-pd.c
 +++ b/net/ethtool/pse-pd.c
-@@ -70,7 +70,12 @@ static int pse_prepare_data(const struct
+@@ -71,7 +71,12 @@ static int pse_prepare_data(const struct
  	if (ret < 0)
  		return ret;
  
@@ -485,7 +485,7 @@ Tested-by: Aleksander Jan Bajkowski <olek2@wp.pl>
  
  	ethnl_ops_complete(dev);
  
-@@ -280,9 +285,15 @@ ethnl_set_pse(struct ethnl_req_info *req
+@@ -281,9 +286,15 @@ ethnl_set_pse(struct ethnl_req_info *req
  
  	phydev = ethnl_req_get_phydev(req_info, tb, ETHTOOL_A_PSE_HEADER,
  				      info->extack);
@@ -502,7 +502,7 @@ Tested-by: Aleksander Jan Bajkowski <olek2@wp.pl>
  
  	if (tb[ETHTOOL_A_PSE_PRIO]) {
  		unsigned int prio;
-@@ -290,7 +301,7 @@ ethnl_set_pse(struct ethnl_req_info *req
+@@ -291,7 +302,7 @@ ethnl_set_pse(struct ethnl_req_info *req
  		prio = nla_get_u32(tb[ETHTOOL_A_PSE_PRIO]);
  		ret = pse_ethtool_set_prio(phydev->psec, info->extack, prio);
  		if (ret)
@@ -511,7 +511,7 @@ Tested-by: Aleksander Jan Bajkowski <olek2@wp.pl>
  	}
  
  	if (tb[ETHTOOL_A_C33_PSE_AVAIL_PW_LIMIT]) {
-@@ -300,7 +311,7 @@ ethnl_set_pse(struct ethnl_req_info *req
+@@ -301,7 +312,7 @@ ethnl_set_pse(struct ethnl_req_info *req
  		ret = pse_ethtool_set_pw_limit(phydev->psec, info->extack,
  					       pw_limit);
  		if (ret)
@@ -520,7 +520,7 @@ Tested-by: Aleksander Jan Bajkowski <olek2@wp.pl>
  	}
  
  	/* These values are already validated by the ethnl_pse_set_policy */
-@@ -318,10 +329,11 @@ ethnl_set_pse(struct ethnl_req_info *req
+@@ -319,10 +330,11 @@ ethnl_set_pse(struct ethnl_req_info *req
  		 */
  		ret = pse_ethtool_set_config(phydev->psec, info->extack,
  					     &config);
