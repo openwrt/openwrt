@@ -305,6 +305,19 @@ endif
 endef
 TARGET_DEVICES += tplink_archer-ax55-v1
 
+# Initial RAM-only scaffold; no supported factory or sysupgrade image.
+define Device/tplink_deco-xe75-v3
+	$(call Device/FitImageLzma)
+	DEVICE_VENDOR := TP-Link
+	DEVICE_MODEL := Deco XE75
+	DEVICE_VARIANT := v3
+	DEVICE_DTS_CONFIG := config@mp03.5-c1
+	SOC := ipq5018
+	IMAGES :=
+	DEVICE_PACKAGES := -kmod-ath11k-ahb
+endef
+TARGET_DEVICES += tplink_deco-xe75-v3
+
 define Device/tplink_eap650-outdoor-v1
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
