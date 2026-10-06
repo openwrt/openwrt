@@ -1044,8 +1044,7 @@ static int ppe_acl_parse_action(struct qca_ppe_priv *priv,
 			 * committed rate, where a peak rate drops it, the
 			 * meter compensates frame length by the block's own
 			 * constant rather than by a per frame overhead, and
-			 * the colour a lesser exceed action would set is read
-			 * by nothing here.
+			 * no tc exceed action sets a colour.
 			 */
 			if (!a->police.rate_bytes_ps == !a->police.rate_pkt_ps ||
 			    a->police.peakrate_bytes_ps || a->police.avrate ||
@@ -1252,7 +1251,7 @@ static int ppe_acl_udf_get(struct qca_ppe_priv *priv,
 static int ppe_acl_rule_add(struct qca_ppe_priv *priv, int port,
 			    struct flow_rule *rule, unsigned long cookie,
 			    int loc, const struct ethtool_rx_flow_spec *fs,
-			    u16 prio, struct netlink_ext_ack *extack)
+			    u16 prio, int dp, struct netlink_ext_ack *extack)
 {
 	struct ppe_acl_slice slice[PPE_ACL_MAX_SLICES] = {};
 	int nslices, ret, i, udf;
@@ -1298,6 +1297,9 @@ static int ppe_acl_rule_add(struct qca_ppe_priv *priv, int port,
 	ret = ppe_acl_parse_action(priv, rule, extack, family, r);
 	if (ret)
 		goto err;
+	if (dp >= 0)
+		r->act[3] |= PPE_ACL_INT_DP_CHANGE_EN |
+			     FIELD_PREP(PPE_ACL_INT_DP, dp);
 
 	if (udf) {
 		ret = ppe_acl_udf_get(priv, &u, &slice[nslices++], r);
@@ -1359,8 +1361,19 @@ int qca_ppe_cls_flower_add(struct dsa_switch *ds, int port,
 		return -EOPNOTSUPP;
 	}
 
+	/* An ingress classid sets skb->tc_index, which gred reads as the drop
+	 * precedence: DP 0 to 2 are the queue manager's green, yellow, red.
+	 */
+	if (cls->classid && (TC_H_MAJ(cls->classid) ||
+			     TC_H_MIN(cls->classid) > 2)) {
+		NL_SET_ERR_MSG_MOD(extack, "a classid sets the drop precedence, :0 to :2");
+		return -EOPNOTSUPP;
+	}
+
 	return ppe_acl_rule_add(priv, port, rule, cls->cookie, -1, NULL,
-				cls->common.prio, extack);
+				cls->common.prio,
+				cls->classid ? TC_H_MIN(cls->classid) : -1,
+				extack);
 }
 
 int qca_ppe_cls_flower_del(struct dsa_switch *ds, int port,
@@ -1496,7 +1509,7 @@ static int ppe_acl_rxnfc_ins(struct qca_ppe_priv *priv, int port,
 		return PTR_ERR(flow);
 
 	ret = ppe_acl_rule_add(priv, port, flow->rule, 0, fs->location, fs,
-			       fs->location, NULL);
+			       fs->location, -1, NULL);
 	ethtool_rx_flow_rule_destroy(flow);
 
 	return ret;
