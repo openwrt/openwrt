@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
 #include <linux/delay.h>
+#include <linux/dsa/oob.h>
 #include <linux/clk.h>
 #include <linux/module.h>
 #include <linux/of_device.h>
@@ -180,11 +181,14 @@ static void ppe_port_cnt_enable(struct qca_ppe_priv *priv, int port)
  * alone leaves the write staged. Word 1 holds the counter enables and the
  * source profile and goes back unchanged.
  */
-static void ppe_port_mtu_set(struct qca_ppe_priv *priv, int port,
-			     u32 frame_size)
+static void ppe_port_mtu_write(struct qca_ppe_priv *priv, int port)
 {
 	u32 reg = PPE_MRU_MTU_CTRL(port, priv->data->mru_mtu_ctrl_stride);
+	u32 frame_size = priv->port_frame_size[port];
+	u32 cmd = ppe_drop_cmd(priv, PPE_TRAP_MTU);
 	u32 w1;
+
+	lockdep_assert_held(&priv->mtu_lock);
 
 	regmap_read(priv->regmap, reg + 4, &w1);
 	regmap_write(priv->regmap, reg,
@@ -192,14 +196,21 @@ static void ppe_port_mtu_set(struct qca_ppe_priv *priv, int port,
 		     FIELD_PREP(PPE_MRU_MTU_CTRL_MRU_CMD,
 				PPE_SIZE_CMD_RDT_TO_CPU) |
 		     FIELD_PREP(PPE_MRU_MTU_CTRL_MTU, frame_size) |
-		     FIELD_PREP(PPE_MRU_MTU_CTRL_MTU_CMD, PPE_SIZE_CMD_DROP));
+		     FIELD_PREP(PPE_MRU_MTU_CTRL_MTU_CMD, cmd));
 	regmap_write(priv->regmap, reg + 4, w1);
 
 	regmap_update_bits(priv->regmap, PPE_MC_MTU_CTRL(port),
 			   PPE_MC_MTU_CTRL_MTU | PPE_MC_MTU_CTRL_MTU_CMD,
 			   FIELD_PREP(PPE_MC_MTU_CTRL_MTU, frame_size) |
-			   FIELD_PREP(PPE_MC_MTU_CTRL_MTU_CMD,
-				      PPE_SIZE_CMD_DROP));
+			   FIELD_PREP(PPE_MC_MTU_CTRL_MTU_CMD, cmd));
+}
+
+static void ppe_port_mtu_set(struct qca_ppe_priv *priv, int port,
+			     u32 frame_size)
+{
+	guard(mutex)(&priv->mtu_lock);
+	priv->port_frame_size[port] = frame_size;
+	ppe_port_mtu_write(priv, port);
 }
 
 int ppe_vsi_alloc(struct qca_ppe_priv *priv)
@@ -803,8 +814,8 @@ static const u64 ppe_region_size[] = {
 };
 
 /* Drops the PPE counts per reason, offered as devlink drop traps. Each drop
- * code was confirmed on IPQ8074 by provoking the drop; the frames are not
- * kept, so the only action is drop.
+ * code was confirmed on IPQ8074 by provoking the drop. A drop whose command
+ * can redirect to the CPU also takes the trap action.
  */
 static const struct devlink_trap_group ppe_trap_groups[] = {
 	DEVLINK_TRAP_GROUP_GENERIC(L2_DROPS, 0),
@@ -832,14 +843,36 @@ static const struct devlink_trap ppe_traps[] = {
 			     DEVLINK_TRAP_GROUP_GENERIC_ID_BUFFER_DROPS, 0),
 };
 
-static const u8 ppe_trap_drop_code[] = {
+static const u8 ppe_trap_drop_code[PPE_TRAP_CODES] = {
 	109, 113, 117, 111, 80,
 };
+
+/* The CPU code of a redirected frame; 0 where the drop cannot redirect. */
+static const u8 ppe_trap_cpu_code[PPE_TRAP_CODES] = {
+	176, 0, 0, 0, 80,
+};
+
+static int ppe_trap_index(u16 id)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(ppe_traps); i++)
+		if (ppe_traps[i].id == id)
+			return i;
+
+	return -ENOENT;
+}
 
 static int qca_ppe_devlink_trap_init(struct dsa_switch *ds,
 				     const struct devlink_trap *trap,
 				     void *trap_ctx)
 {
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+	int i = ppe_trap_index(trap->id);
+
+	if (i >= 0 && i < PPE_TRAP_CODES)
+		priv->trap_ctx[i] = trap_ctx;
+
 	return 0;
 }
 
@@ -848,10 +881,62 @@ static int qca_ppe_devlink_trap_action_set(struct dsa_switch *ds,
 					   enum devlink_trap_action action,
 					   struct netlink_ext_ack *extack)
 {
-	if (action != DEVLINK_TRAP_ACTION_DROP) {
-		NL_SET_ERR_MSG_MOD(extack, "the switch only counts this drop");
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+	int i = ppe_trap_index(trap->id);
+	int port;
+
+	if (action == DEVLINK_TRAP_ACTION_DROP) {
+		if (i < 0 || i >= PPE_TRAP_CODES || !ppe_trap_cpu_code[i])
+			return 0;
+		WRITE_ONCE(priv->trap_to_cpu, priv->trap_to_cpu & ~BIT(i));
+	} else if (action == DEVLINK_TRAP_ACTION_TRAP && i >= 0 &&
+		   i < PPE_TRAP_CODES && ppe_trap_cpu_code[i]) {
+		WRITE_ONCE(priv->trap_to_cpu, priv->trap_to_cpu | BIT(i));
+	} else {
+		NL_SET_ERR_MSG_MOD(extack, "the switch can only drop this");
 		return -EOPNOTSUPP;
 	}
+
+	if (i == PPE_TRAP_VLAN_FILTER) {
+		ppe_vlan_xlt_miss_apply(priv);
+	} else {
+		guard(mutex)(&priv->mtu_lock);
+		for (port = 0; port < priv->data->num_ports; port++)
+			ppe_port_mtu_write(priv, port);
+	}
+
+	return 0;
+}
+
+static bool qca_ppe_trap_rcv(struct dsa_switch *ds, struct sk_buff *skb,
+			     u8 cpu_code)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+	unsigned long to_cpu = READ_ONCE(priv->trap_to_cpu);
+	int i;
+
+	for_each_set_bit(i, &to_cpu, PPE_TRAP_CODES) {
+		if (ppe_trap_cpu_code[i] != cpu_code)
+			continue;
+		skb_push(skb, ETH_HLEN);
+		devlink_trap_report(ds->devlink, skb, priv->trap_ctx[i],
+				    &dsa_port_from_netdev(skb->dev)->devlink_port,
+				    NULL);
+		return true;
+	}
+
+	return false;
+}
+
+static int qca_ppe_connect_tag_protocol(struct dsa_switch *ds,
+					enum dsa_tag_protocol proto)
+{
+	struct dsa_oob_tagger_data *data = ds->tagger_data;
+
+	if (proto != DSA_TAG_PROTO_OOB)
+		return -EPROTONOSUPPORT;
+
+	data->trap_rcv = qca_ppe_trap_rcv;
 
 	return 0;
 }
@@ -878,11 +963,9 @@ static int qca_ppe_devlink_trap_drop_counter_get(struct dsa_switch *ds,
 		return 0;
 	}
 
-	for (i = 0; i < ARRAY_SIZE(ppe_traps); i++)
-		if (ppe_traps[i].id == trap->id)
-			break;
-	if (i == ARRAY_SIZE(ppe_traps))
-		return -ENOENT;
+	i = ppe_trap_index(trap->id);
+	if (i < 0)
+		return i;
 
 	code = PPE_CPU_CODE_ENTRIES + ppe_trap_drop_code[i] *
 	       PPE_DROP_CODE_PORTS;
@@ -2986,6 +3069,7 @@ static const struct dsa_switch_ops qca_ppe_ops = {
 	.port_get_apptrust	= qca_ppe_port_get_apptrust,
 	.port_set_apptrust	= qca_ppe_port_set_apptrust,
 	.get_tag_protocol	= qca_ppe_get_tag_protocol,
+	.connect_tag_protocol	= qca_ppe_connect_tag_protocol,
 	.setup			= qca_ppe_setup,
 	.teardown		= qca_ppe_teardown,
 	.set_ageing_time	= qca_ppe_set_ageing_time,
@@ -3229,6 +3313,7 @@ static int qca_ppe_probe(struct platform_device *pdev)
 	spin_lock_init(&priv->mib_lock);
 	mutex_init(&priv->flow_lock);
 	mutex_init(&priv->vlan_lock);
+	mutex_init(&priv->mtu_lock);
 	INIT_DELAYED_WORK(&priv->mib_work, ppe_mib_work);
 
 	priv->port_mib = devm_kcalloc(&pdev->dev,

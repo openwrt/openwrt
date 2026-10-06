@@ -230,7 +230,9 @@ int qca_ppe_port_vlan_filtering(struct dsa_switch *ds, int port,
 	regmap_update_bits(priv->regmap, PPE_PORT_VLAN_CFG(port),
 			   PPE_VLAN_XLT_MISS_FWD,
 			   vlan_filtering ?
-			   FIELD_PREP(PPE_VLAN_XLT_MISS_FWD, PPE_XLT_MISS_DROP) : 0);
+			   FIELD_PREP(PPE_VLAN_XLT_MISS_FWD,
+				      ppe_drop_cmd(priv, PPE_TRAP_VLAN_FILTER)) :
+			   0);
 
 	if (vlan_filtering)
 		priv->vlan_filtering |= BIT(port);
@@ -395,4 +397,19 @@ int qca_ppe_port_vlan_del(struct dsa_switch *ds, int port,
 	ppe_vlan_port_remove(priv, entry, port);
 
 	return 0;
+}
+
+void ppe_vlan_xlt_miss_apply(struct qca_ppe_priv *priv)
+{
+	unsigned long ports;
+	int port;
+
+	guard(mutex)(&priv->vlan_lock);
+	ports = priv->vlan_filtering;
+	for_each_set_bit(port, &ports, QCA_PPE_MAX_PORTS)
+		regmap_update_bits(priv->regmap, PPE_PORT_VLAN_CFG(port),
+				   PPE_VLAN_XLT_MISS_FWD,
+				   FIELD_PREP(PPE_VLAN_XLT_MISS_FWD,
+					      ppe_drop_cmd(priv,
+							   PPE_TRAP_VLAN_FILTER)));
 }

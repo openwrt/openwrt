@@ -1229,9 +1229,9 @@
 #define PPE_FDB_OP_FLUSH		4
 
 #define PPE_TRUNK_GROUPS		2
+#define PPE_TRAP_CODES			5
 
 #define PPE_XLT_TBL_NUM			64
-#define PPE_XLT_MISS_DROP		1
 #define PPE_XLT_CVID_DEL		2
 #define PPE_XLT_CKEY_PRIO_TAGGED	2
 #define PPE_XLT_CKEY_TAGGED		4
@@ -1509,6 +1509,12 @@ struct qca_ppe_priv {
 	struct qca_ppe_vlan_entry vlans[PPE_VSI_MAX];
 	struct net_device *port_br_dev[QCA_PPE_MAX_PORTS];
 	u32 vlan_filtering;
+	/* Drop traps whose action is trap; indexes into ppe_traps. */
+	u8 trap_to_cpu;
+	void *trap_ctx[PPE_TRAP_CODES];
+	/* Serializes the MRU/MTU entries, which a trap action rewrites. */
+	struct mutex mtu_lock;
+	u32 port_frame_size[QCA_PPE_MAX_PORTS];
 	struct notifier_block netdev_nb;
 	u16 port_pvid[QCA_PPE_MAX_PORTS];
 	struct clk *ppe_clk;
@@ -1568,6 +1574,17 @@ static inline struct qca_ppe_priv *ds_to_priv(struct dsa_switch *ds)
 	return container_of(ds, struct qca_ppe_priv, ds);
 }
 
+/* The drops of ppe_traps that can go to the CPU instead: */
+#define PPE_TRAP_VLAN_FILTER	0
+#define PPE_TRAP_MTU		4
+
+/* The XLT miss and MTU commands share the encoding of the size commands. */
+static inline u32 ppe_drop_cmd(struct qca_ppe_priv *priv, int trap)
+{
+	return READ_ONCE(priv->trap_to_cpu) & BIT(trap) ?
+	       PPE_SIZE_CMD_RDT_TO_CPU : PPE_SIZE_CMD_DROP;
+}
+
 u64 ppe_mib_read(struct qca_ppe_priv *priv, int port, unsigned int off);
 
 struct tc_tbf_qopt_offload;
@@ -1584,6 +1601,7 @@ void ppe_scheduler_init(struct qca_ppe_priv *priv);
 int ppe_scheduler_ready(struct qca_ppe_priv *priv);
 void ppe_scheduler_unready(struct qca_ppe_priv *priv);
 void ppe_scheduler_exit(struct qca_ppe_priv *priv);
+void ppe_vlan_xlt_miss_apply(struct qca_ppe_priv *priv);
 void ppe_port_queues_enable(struct qca_ppe_priv *priv, int port, bool en);
 void ppe_port_queue_drops(struct qca_ppe_priv *priv, int port, u32 *early,
 			  u32 *tail);
