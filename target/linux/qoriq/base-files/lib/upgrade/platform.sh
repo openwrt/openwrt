@@ -100,6 +100,7 @@ platform_check_image() {
 				return 1
 		esac
 		;;
+	watchguard,firebox-m200 |\
 	watchguard,firebox-m300)
 		legacy_sdcard_check_image "$1"
 		;;
@@ -122,6 +123,7 @@ platform_copy_config() {
 			return 0
 		esac
 		;;
+	watchguard,firebox-m200 |\
 	watchguard,firebox-m300)
 		legacy_sdcard_copy_config "$1"
 		;;
@@ -147,6 +149,7 @@ platform_do_upgrade() {
 				return 1
 		esac
 		;;
+	watchguard,firebox-m200 |\
 	watchguard,firebox-m300)
 		legacy_sdcard_do_upgrade "$1"
 		;;
@@ -155,4 +158,3 @@ platform_do_upgrade() {
 		;;
 	esac
 }
-

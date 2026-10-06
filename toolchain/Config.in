@@ -297,6 +297,7 @@ comment "C Library"
 
 choice
 	prompt "C Library implementation" if TOOLCHAINOPTS
+	default LIBC_USE_GLIBC if TARGET_qoriq_e5500
 	default LIBC_USE_MUSL
 	help
 	  Select the C library implementation.
@@ -308,6 +309,7 @@ choice
 	config LIBC_USE_MUSL
 		select USE_MUSL
 		bool "Use musl"
+		depends on !TARGET_qoriq_e5500
 
 endchoice
 
@@ -353,10 +355,11 @@ config USE_LLVM_BUILD
 	bool
 
 config USE_GLIBC
+	default y if !TOOLCHAINOPTS && !EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN && TARGET_qoriq_e5500
 	bool
 
 config USE_MUSL
-	default y if !TOOLCHAINOPTS && !EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN
+	default y if !TOOLCHAINOPTS && !EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN && !TARGET_qoriq_e5500
 	bool
 
 config SSP_SUPPORT

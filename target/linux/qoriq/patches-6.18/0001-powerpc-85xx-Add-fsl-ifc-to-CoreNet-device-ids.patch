@@ -1,0 +1,37 @@
+From f787c2c3718af050c87e45b109cfeab8b8282d8f Mon Sep 17 00:00:00 2001
+From: Pawel Dembicki <paweldembicki@gmail.com>
+Date: Tue, 22 Sep 2026 22:51:06 +0200
+Subject: [PATCH] powerpc/85xx: Add fsl,ifc to CoreNet device ids
+
+Commit 0bf51cc9e9e5 ("powerpc: dts: mpc85xx: remove "simple-bus"
+compatible from ifc node") removed the incorrect compatible string from
+IFC nodes. Commit 25957f7c3dac ("powerpc/85xx: Add fsl,ifc to common
+device ids") subsequently added an explicit match to mpc85xx_common_ids,
+allowing of_platform_bus_probe() to create the IFC platform device.
+
+CoreNet platforms use a separate of_device_ids table, which still lacks
+the corresponding match. As IFC is a direct child of the root node on
+these platforms, its platform device is not created and the controller
+and its flash children are never probed.
+
+Add the missing match to the CoreNet device table.
+
+Fixes: 0bf51cc9e9e5 ("powerpc: dts: mpc85xx: remove "simple-bus" compatible from ifc node")
+Signed-off-by: Pawel Dembicki <paweldembicki@gmail.com>
+Link: https://patch.msgid.link/20260922210531.1103068-2-paweldembicki@gmail.com/
+---
+ arch/powerpc/platforms/85xx/corenet_generic.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/arch/powerpc/platforms/85xx/corenet_generic.c
++++ b/arch/powerpc/platforms/85xx/corenet_generic.c
+@@ -71,6 +71,9 @@ static const struct of_device_id of_devi
+ 		.compatible	= "fsl,fpga-qixis"
+ 	},
+ 	{
++		.compatible	= "fsl,ifc",
++	},
++	{
+ 		.compatible	= "fsl,srio",
+ 	},
+ 	{
