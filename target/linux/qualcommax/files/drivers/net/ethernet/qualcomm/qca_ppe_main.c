@@ -814,7 +814,7 @@ static const u64 ppe_region_size[] = {
 };
 
 /* Drops the PPE counts per reason, offered as devlink drop traps. Each drop
- * code was confirmed on IPQ8074 by provoking the drop. A drop whose command
+ * code was confirmed on IPQ8074. A drop whose command
  * can redirect to the CPU also takes the trap action.
  */
 static const struct devlink_trap_group ppe_trap_groups[] = {
@@ -837,6 +837,10 @@ static const struct devlink_trap ppe_traps[] = {
 			     DEVLINK_TRAP_GROUP_GENERIC_ID_ACL_DROPS, 0),
 	DEVLINK_TRAP_DRIVER(DROP, DROP, PPE_TRAP_ID_MTU_DROP, "mtu_drop",
 			    DEVLINK_TRAP_GROUP_GENERIC_ID_L2_DROPS, 0),
+	DEVLINK_TRAP_GENERIC(DROP, DROP, INGRESS_STP_FILTER,
+			     DEVLINK_TRAP_GROUP_GENERIC_ID_L2_DROPS, 0),
+	DEVLINK_TRAP_GENERIC(DROP, DROP, EMPTY_TX_LIST,
+			     DEVLINK_TRAP_GROUP_GENERIC_ID_L2_DROPS, 0),
 	DEVLINK_TRAP_GENERIC(DROP, DROP, TAIL_DROP,
 			     DEVLINK_TRAP_GROUP_GENERIC_ID_BUFFER_DROPS, 0),
 	DEVLINK_TRAP_GENERIC(DROP, DROP, EARLY_DROP,
@@ -844,12 +848,12 @@ static const struct devlink_trap ppe_traps[] = {
 };
 
 static const u8 ppe_trap_drop_code[PPE_TRAP_CODES] = {
-	109, 113, 117, 111, 80,
+	109, 113, 117, 111, 80, 115, 114,
 };
 
 /* The CPU code of a redirected frame; 0 where the drop cannot redirect. */
 static const u8 ppe_trap_cpu_code[PPE_TRAP_CODES] = {
-	176, 0, 0, 0, 80,
+	176, 0, 0, 0, 80, 0, 0,
 };
 
 static int ppe_trap_index(u16 id)
