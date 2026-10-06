@@ -406,6 +406,8 @@
 #define   PPE_ACL_DSCP_TC		GENMASK(22, 15)	/* word 2 */
 #define   PPE_ACL_PRI_CHANGE_EN		BIT(3)		/* word 3 */
 #define   PPE_ACL_PRI			GENMASK(7, 4)	/* word 3 */
+#define   PPE_ACL_INT_DP_CHANGE_EN	BIT(8)		/* word 3 */
+#define   PPE_ACL_INT_DP		GENMASK(10, 9)	/* word 3 */
 #define   PPE_ACL_POLICER_EN		BIT(11)		/* word 3 */
 #define   PPE_ACL_POLICER_INDEX		GENMASK(20, 12)	/* word 3 */
 #define   PPE_ACL_QID_EN		BIT(21)		/* word 3 */
