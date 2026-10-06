@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=zlib
 PKG_VERSION:=2.3.3
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/zlib-ng/zlib-ng.git
@@ -65,6 +65,15 @@ endif
 CMAKE_OPTIONS += \
 	-DZLIB_COMPAT=ON \
 	-DBUILD_TESTING=OFF
+
+# POWER8 and POWER9 are 64-bit server ISAs; zlib-ng enables them from a probe
+# that only looks for getauxval and PPC_FEATURE2_ARCH_2_07, so it offers them
+# on e500 and PPC464 as well, where the compiler has no VSX to emit.
+ifeq ($(ARCH),powerpc)
+CMAKE_OPTIONS += \
+	-DWITH_POWER8=OFF \
+	-DWITH_POWER9=OFF
+endif
 
 define Build/InstallDev
 	mkdir -p $(1)/usr/include
