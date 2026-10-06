@@ -18,7 +18,6 @@
 #define QCA_PPE_CPU_PORT		0
 #define QCA_PPE_MAX_BRIDGES		8
 
-
 /* --- Global --- */
 /* GMAC LPI: an enable bit per port from port 1, a wake and an idle timer per
  * port in microseconds, and the PPE clock cycles that make a microsecond.
