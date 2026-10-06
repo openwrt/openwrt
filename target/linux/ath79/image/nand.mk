@@ -216,6 +216,13 @@ define Device/glinet_gl-e750
 endef
 TARGET_DEVICES += glinet_gl-e750
 
+define Device/glinet_gl-e750v2
+  $(Device/glinet_gl-e750-common)
+  DEVICE_MODEL := GL-E750V2
+  SUPPORTED_DEVICES += glinet,gl-e750
+endef
+TARGET_DEVICES += glinet_gl-e750v2
+
 define Device/glinet_gl-s200-common
   SOC := qca9531
   DEVICE_VENDOR := GL.iNet

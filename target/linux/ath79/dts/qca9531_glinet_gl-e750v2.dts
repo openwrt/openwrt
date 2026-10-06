@@ -1,0 +1,29 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qca9531_glinet_gl-e750.dtsi"
+
+/ {
+	compatible = "glinet,gl-e750v2", "qca,qca9531";
+	model = "GL.iNet GL-E750V2";
+
+	aliases {
+		label-mac-device = &eth0;
+	};
+};
+
+&art {
+	nvmem-layout {
+		cal_art_5000: calibration@5000 {
+			reg = <0x5000 0x844>;
+		};
+	};
+};
+
+&ath10k {
+	/*
+	 * The QCA9887 on this revision ships without calibration data in
+	 * its OTP; the vendor firmware loads it from the art partition.
+	 */
+	nvmem-cells = <&cal_art_5000>, <&macaddr_art_0 2>;
+	nvmem-cell-names = "calibration", "mac-address";
+};

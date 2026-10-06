@@ -26,6 +26,7 @@ ath79_setup_interfaces()
 			"0@eth0" "2:lan:2" "3:lan:1" "1:wan"
 		;;
 	glinet,gl-e750|\
+	glinet,gl-e750v2|\
 	zte,mf282)
 		ucidef_set_interface_lan "eth0"
 		ucidef_set_interface "wan" device "/dev/cdc-wdm0" protocol "qmi"
