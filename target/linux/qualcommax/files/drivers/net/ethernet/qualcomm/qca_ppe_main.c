@@ -968,6 +968,15 @@ static void qca_ppe_phylink_get_caps(struct dsa_switch *ds, int port,
 	if (port != 0)
 		phy_interface_copy(config->pcs_interfaces,
 				   config->supported_interfaces);
+
+	if (port != 0) {
+		config->lpi_capabilities = MAC_100FD | MAC_1000FD;
+		__set_bit(PHY_INTERFACE_MODE_QSGMII, config->lpi_interfaces);
+		__set_bit(PHY_INTERFACE_MODE_PSGMII, config->lpi_interfaces);
+		__set_bit(PHY_INTERFACE_MODE_SGMII, config->lpi_interfaces);
+		config->lpi_timer_default = 256;
+		config->eee_enabled_default = true;
+	}
 }
 
 static void ppe_pcs_set_mux_hppe(struct qca_ppe_priv *priv, int port,
@@ -1408,20 +1417,34 @@ static void qca_ppe_mac_link_up(struct phylink_config *config,
 	ppe_port_bridge_txmac_set(priv, port, true);
 }
 
-/* qca_ppe implements no LPI. The stubs exist only to make
- * phylink_mac_implements_lpi() true with lpi_capabilities left at 0 -
- * phylink's "EEE always disabled" case, where phylink_bringup_phy() calls
- * phy_disable_eee(). Without that the PHYs negotiate 802.3az and egress into
- * a MAC waking from LPI wedges the port. Never called.
- */
+/* Tw_sys for 100BASE-TX is 30 us, the longest of the speeds offered. */
+#define PPE_LPI_WAKE_US		32
+/* nss_ppe_clk runs at 300 MHz, as qca-ssdk's ADPT_HPPE_FREQUENCY has it. */
+#define PPE_LPI_CLK_MHZ		300
+
 static int qca_ppe_mac_enable_tx_lpi(struct phylink_config *config, u32 timer,
 				     bool tx_clk_stop)
 {
+	struct dsa_port *dp = dsa_phylink_to_port(config);
+	struct qca_ppe_priv *priv = ds_to_priv(dp->ds);
+
+	regmap_write(priv->regmap, PPE_LPI_1US_CNT, PPE_LPI_CLK_MHZ);
+	regmap_write(priv->regmap, PPE_LPI_PORT_TIMER(dp->index),
+		     FIELD_PREP(PPE_LPI_WAKEUP_TIMER, PPE_LPI_WAKE_US) |
+		     FIELD_PREP(PPE_LPI_SLEEP_TIMER,
+				min_t(u32, timer,
+				      FIELD_MAX(PPE_LPI_SLEEP_TIMER))));
+	regmap_set_bits(priv->regmap, PPE_LPI_ENABLE, BIT(dp->index - 1));
+
 	return 0;
 }
 
 static void qca_ppe_mac_disable_tx_lpi(struct phylink_config *config)
 {
+	struct dsa_port *dp = dsa_phylink_to_port(config);
+	struct qca_ppe_priv *priv = ds_to_priv(dp->ds);
+
+	regmap_clear_bits(priv->regmap, PPE_LPI_ENABLE, BIT(dp->index - 1));
 }
 
 static const struct phylink_mac_ops qca_ppe_phylink_mac_ops = {
@@ -1733,6 +1756,7 @@ static const struct dsa_switch_ops qca_ppe_ops = {
 	.port_mdb_add		= qca_ppe_port_mdb_add,
 	.port_mdb_del		= qca_ppe_port_mdb_del,
 	.phylink_get_caps	= qca_ppe_phylink_get_caps,
+	.support_eee		= dsa_supports_eee,
 	.port_vlan_filtering	= qca_ppe_port_vlan_filtering,
 	.port_vlan_add		= qca_ppe_port_vlan_add,
 	.port_vlan_del		= qca_ppe_port_vlan_del,
