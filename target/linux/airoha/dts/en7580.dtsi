@@ -212,60 +212,44 @@
 					};
 				};
 
-				swp1_led0: switch_port-1-led0 {
-					mux {
-						function = "phy1_led0";
-						pins = "gpio12";
-					};
+				swp1_led0: swp1-led0 {
+					function = "phy1_led0";
+					groups = "gpio8";
 				};
 
-				swp1_led1: switch_port-1-led1 {
-					mux {
-						function = "phy1_led1";
-						pins = "gpio8";
-					};
+				swp2_led0: swp2-led0 {
+					function = "phy2_led0";
+					groups = "gpio9";
 				};
 
-				swp2_led0: switch_port-2-led0 {
-					mux {
-						function = "phy2_led0";
-						pins = "gpio13";
-					};
+				swp3_led0: swp3-led0 {
+					function = "phy3_led0";
+					groups = "gpio10";
 				};
 
-				swp2_led1: switch_port-2-led1 {
-					mux {
-						function = "phy2_led1";
-						pins = "gpio9";
-					};
+				swp4_led0: swp4-led0 {
+					function = "phy4_led0";
+					groups = "gpio11";
 				};
 
-				swp3_led0: switch_port-3-led0 {
-					mux {
-						function = "phy3_led0";
-						pins = "gpio14";
-					};
+				swp1_led1: swp1-led1 {
+					function = "phy1_led1";
+					groups = "gpio12";
 				};
 
-				swp3_led1: switch_port-3-led1 {
-					mux {
-						function = "phy3_led1";
-						pins = "gpio10";
-					};
+				swp2_led1: swp2-led1 {
+					function = "phy2_led1";
+					groups = "gpio13";
 				};
 
-				swp4_led0: switch_port-4-led0 {
-					mux {
-						function = "phy4_led0";
-						pins = "gpio15";
-					};
+				swp3_led1: swp3-led1 {
+					function = "phy3_led1";
+					groups = "gpio14";
 				};
 
-				swp4_led1: switch_port-4-led1 {
-					mux {
-						function = "phy4_led1";
-						pins = "gpio11";
-					};
+				swp4_led1: swp4-led1 {
+					function = "phy4_led1";
+					groups = "gpio15";
 				};
 			};
 
@@ -563,18 +547,18 @@
 
 			interrupts = <GIC_SHARED 27 IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-names = "phy";
-			airoha,scu = <&scuclk>;
-			#phy-cells = <0>;
 
+			airoha,scu = <&scuclk>;
+
+			#phy-cells = <0>;
 			status = "disabled";
 		};
 
 		xpon: xmac@1fb60000 {
 			compatible = "airoha,en7580-xpon";
 
-			reg = <0x1fb60000 0x10000>,
-			      <0x1fa2ff24 0x4>;
-			reg-names = "mac", "tx-off";
+			reg = <0x1fb60000 0x10000>;
+			reg-names = "mac";
 
 			interrupts = <GIC_SHARED 26 IRQ_TYPE_LEVEL_HIGH>,
 			             <GIC_SHARED 18 IRQ_TYPE_LEVEL_HIGH>;
@@ -582,9 +566,12 @@
 
 			resets = <&scuclk EN7580_XPON_MAC_RST>;
 			reset-names = "mac";
+
 			phys = <&xpon_phy>;
 			phy-names = "xpon";
+
 			ethernet = <&gdm2>;
+
 			airoha,scu = <&scuclk>;
 
 			status = "disabled";
@@ -671,6 +658,8 @@
 			gdm3: ethernet@3 {
 				compatible = "econet,eth-mac";
 				reg = <3>;
+
+				pcs-handle = <&xsi_pcs>;
 
 				status = "disabled";
 			};

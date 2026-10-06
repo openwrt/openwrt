@@ -35,6 +35,30 @@
 
 	leds {
 		compatible = "gpio-leds";
+
+		led_b@8 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <8>;
+			gpios = <&pinctrl 8 GPIO_ACTIVE_LOW>;
+		};
+
+		led_b@15 {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <15>;
+			gpios = <&pinctrl 15 GPIO_ACTIVE_LOW>;
+		};
+
+		main {
+			function = LED_FUNCTION_STATUS;
+			gpios = <&pinctrl 18 GPIO_ACTIVE_HIGH>, // Red
+			        <&pinctrl 19 GPIO_ACTIVE_HIGH>, // Red brightless
+			        <&pinctrl 24 GPIO_ACTIVE_HIGH>, // Blue
+			        <&pinctrl 25 GPIO_ACTIVE_HIGH>, // White
+			        <&pinctrl 29 GPIO_ACTIVE_HIGH>, // Green
+			        <&pinctrl 31 GPIO_ACTIVE_HIGH>; // Green brightless
+		};
 	};
 };
 
@@ -42,13 +66,21 @@
 	status = "okay";
 
 /*
-[    3.222338] 0x000000000000-0x000000200000 : "bootloader"
-[    3.242515] 0x000000200000-0x000000400000 : "dsd"
-[    3.348448] 0x000000400000-0x000004400000 : "tclinux"
-[    3.462141] 0x000004400000-0x000008400000 : "tclinux_slave"
-[    3.481968] 0x000008400000-0x00001c400000 : "system"
-[    3.500182] 0x00001c400000-0x00001c600000 : "uenv"
-[    3.517237] 0x00001d5c0000-0x00001d740000 : "art"
+[    3.013668] parsing <2m[bootloader],2m[dsd],64m[tclinux],64m[tclinux_slave],320m[system],2m[uenv]>
+[    3.047455] partition 9: name <uenv>, offset ffffffff, size 200000, mask flags 0
+[    3.071353] partition 8: name <system>, offset ffffffff, size 14000000, mask flags 0
+[    3.096506] partition 7: name <tclinux_slave>, offset ffffffff, size 4000000, mask flags 0
+[    3.123296] partition 4: name <tclinux>, offset ffffffff, size 4000000, mask flags 0
+[    3.148400] partition 1: name <dsd>, offset ffffffff, size 200000, mask flags 0
+[    3.172069] partition 0: name <bootloader>, offset ffffffff, size 200000, mask flags 0
+[    3.201207] Creating 11 MTD partitions on "EN7512-SPI_NAND":
+[    3.219065] 0x000000000000-0x000000200000 : "bootloader"
+[    3.239329] 0x000000200000-0x000000400000 : "dsd"
+[    3.345400] 0x000000400000-0x000004400000 : "tclinux"
+[    3.458884] 0x000004400000-0x000008400000 : "tclinux_slave"
+[    3.478734] 0x000008400000-0x00001c400000 : "system"
+[    3.496841] 0x00001c400000-0x00001c600000 : "uenv"
+[    3.514013] 0x00001d5c0000-0x00001d740000 : "art"
 */
 
 	flash@0 {
@@ -209,7 +241,6 @@
 &gdm2 {
 	status = "okay";
 
-
 	airoha,xpon-managed;
 	openwrt,netdev-name = "pon0";
 };
@@ -217,30 +248,52 @@
 &gdm3 {
 	status = "okay";
 
-	openwrt,netdev-name = "lan1";
+	openwrt,netdev-name = "lan2";
 
 	phy-handle = <&aqr113c>;
-	phy-mode = "usxgmii";
+	phy-mode = "10gbase-r";
+	managed = "auto";
 
 	nvmem-cells = <&wan_mac 0>;
 	nvmem-cell-names = "mac-address";
 };
 
+&xsi_pcs {
+	status = "okay";
+};
+
+&pinctrl {
+	aqr113c-control-hog {
+		gpio-hog;
+		gpios = <42 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "aqr113c-control";
+	};
+};
+
 &mdio {
 	aqr113c: ethernet-phy@0 {
-		compatible = "ethernet-phy-id03a2.9471";
 		reg = <0x0>;
-		phy-mode = "usxgmii";
+		compatible = "ethernet-phy-ieee802.3-c45";
+		// firmware-name = "marvell/AQR-G4_v5.6.7-AQR_Marvell_NoSwap_XFI_ID44834_VER1922.cld";
+		firmware-name = "AQR-G4_v5.6.7-AQR_Marvell_NoSwap_XFI_ID44834_VER1922.cld";
 
 		leds {
 			#address-cells = <1>;
 			#size-cells = <0>;
-
+	
+			led@0 {
+				reg = <0>;
+				color = <LED_COLOR_ID_GREEN>;
+				function = LED_FUNCTION_LAN;
+				default-state = "on";
+			};
+	
 			led@1 {
 				reg = <1>;
-
-				color = <LED_COLOR_ID_GREEN>;
-				function = LED_FUNCTION_WAN;
+				color = <LED_COLOR_ID_AMBER>;
+				function = LED_FUNCTION_ACTIVITY;
+				default-state = "on";
 			};
 		};
 	};
@@ -250,34 +303,9 @@
 	status = "okay";
 };
 
-&gsw_port1 {
+&gsw_port3 {
 	label = "lan1";
 	status = "okay";
-};
-
-&gsw_port2 {
-	label = "lan2";
-	status = "okay";
-};
-
-&gsw_port3 {
-	label = "lan3";
-	status = "okay";
-};
-
-&gsw_port4 {
-	label = "lan4";
-	status = "okay";
-};
-
-&gsw_phy1 {
-	status = "okay";
-	pinctrl-0 = <&swp1_led1>;
-};
-
-&gsw_phy2 {
-	status = "okay";
-	pinctrl-0 = <&swp2_led1>;
 };
 
 &gsw_phy3 {
@@ -285,18 +313,7 @@
 	pinctrl-0 = <&swp3_led1>;
 };
 
-&gsw_phy4 {
-	status = "okay";
-	pinctrl-0 = <&swp4_led1>;
-};
-
-&gsw_phy1_led1 {
-	status = "okay";
-	color = <LED_COLOR_ID_GREEN>;
-	function = LED_FUNCTION_LAN;
-};
-
-&gsw_phy2_led1 {
+&gsw_phy3_led0 {
 	status = "okay";
 	color = <LED_COLOR_ID_GREEN>;
 	function = LED_FUNCTION_LAN;
@@ -304,12 +321,6 @@
 
 &gsw_phy3_led1 {
 	status = "okay";
-	color = <LED_COLOR_ID_GREEN>;
-	function = LED_FUNCTION_LAN;
-};
-
-&gsw_phy4_led1 {
-	status = "okay";
-	color = <LED_COLOR_ID_GREEN>;
-	function = LED_FUNCTION_LAN;
+	color = <LED_COLOR_ID_AMBER>;
+	function = LED_FUNCTION_ACTIVITY;
 };
