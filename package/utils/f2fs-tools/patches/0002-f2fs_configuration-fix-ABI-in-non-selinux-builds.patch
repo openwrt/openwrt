@@ -1,0 +1,69 @@
+From d7c9f79808e3edbacda854a049ce84cd34886c56 Mon Sep 17 00:00:00 2001
+From: Gary Dotzler <geldot@protonmail.com>
+Date: Fri, 9 Oct 2026 02:33:21 +0000
+Subject: [PATCH 2/2] f2fs_configuration: fix ABI in non-selinux builds
+
+Keep the struct layout of f2fs_configuration consistent regardless of
+HAVE_LIBSELINUX by providing a compatible fallback for struct
+selinux_opt.
+
+Add a compile-time assertion to verify ABI compatibility with
+libselinux.
+
+Signed-off-by: Gary Dotzler <geldot@protonmail.com>
+---
+ include/f2fs_fs.h | 25 ++++++++++++++++++-------
+ 1 file changed, 18 insertions(+), 7 deletions(-)
+
+--- a/include/f2fs_fs.h
++++ b/include/f2fs_fs.h
+@@ -75,9 +75,26 @@ enum rw_hint {
+ };
+ #endif
+ 
++#ifndef static_assert
++#define static_assert _Static_assert
++#endif
++
++struct f2fs_selinux_opt {
++	int type;
++	const char *value;
++};
++
+ #ifdef HAVE_LIBSELINUX
+ #include <selinux/selinux.h>
+ #include <selinux/label.h>
++
++static_assert(sizeof(struct f2fs_selinux_opt) == sizeof(struct selinux_opt) &&
++		offsetof(struct f2fs_selinux_opt, value) == offsetof(struct selinux_opt, value),
++		"struct selinux_opt ABI mismatch");
++
++typedef struct selinux_opt f2fs_selinux_opt_t;
++#else
++typedef struct f2fs_selinux_opt f2fs_selinux_opt_t;
+ #endif
+ 
+ #ifdef UNUSED
+@@ -91,10 +108,6 @@ enum rw_hint {
+ # define UNUSED(x) x
+ #endif
+ 
+-#ifndef static_assert
+-#define static_assert _Static_assert
+-#endif
+-
+ #ifdef HAVE_SYS_MOUNT_H
+ #include <sys/mount.h>
+ #endif
+@@ -1625,10 +1638,8 @@ struct f2fs_configuration {
+ 	char *mount_point;
+ 	char *target_out_dir;
+ 	char *fs_config_file;
+-#ifdef HAVE_LIBSELINUX
+-	struct selinux_opt seopt_file[8];
++	f2fs_selinux_opt_t seopt_file[8];
+ 	int nr_opt;
+-#endif
+ 
+ 	/* dump parameters */
+ 	int preserve_perms;

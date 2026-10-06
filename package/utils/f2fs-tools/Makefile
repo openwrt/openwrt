@@ -8,12 +8,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=f2fs-tools
-PKG_VERSION:=1.16.0
-PKG_RELEASE:=4
+PKG_VERSION:=1.17.0
+PKG_RELEASE:=1
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=https://git.kernel.org/pub/scm/linux/kernel/git/jaegeuk/f2fs-tools.git/snapshot/
-PKG_HASH:=208c7a07e95383fbd7b466b5681590789dcb41f41bf197369c41a95383b57c5e
+PKG_SOURCE_PROTO:=git
+PKG_SOURCE_URL:=https://git.kernel.org/pub/scm/linux/kernel/git/jaegeuk/f2fs-tools.git
+PKG_SOURCE_VERSION:=$(PKG_VERSION)
+PKG_MIRROR_HASH:=1b44cf0785d10a4912f3c94d3bd53f883a710c4702b0133feccaa496bbc132ef
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_LICENSE:=GPL-2.0-only
@@ -85,7 +86,7 @@ define Package/libf2fs
   CATEGORY:=Libraries
   TITLE:=Library for Flash-Friendly File System (F2FS) tools
   DEPENDS:=+libuuid
-  ABI_VERSION:=6
+  ABI_VERSION:=11
   CONFLICTS:=libf2fs-selinux
   VARIANT:=default
   DEFAULT_VARIANT:=1
@@ -96,7 +97,7 @@ define Package/libf2fs-selinux
   CATEGORY:=Libraries
   TITLE:=Library for Flash-Friendly File System (F2FS) tools with SELinux support
   DEPENDS:=+libuuid +libselinux
-  ABI_VERSION:=6
+  ABI_VERSION:=11
   VARIANT:=selinux
 endef
 
@@ -146,6 +147,7 @@ Package/f2fsck-selinux/install = $(Package/f2fsck/install)
 
 define Package/f2fs-tools/install
 	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/f2fs_io $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/fibmap.f2fs $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/parse.f2fs $(1)/usr/sbin
 endef
