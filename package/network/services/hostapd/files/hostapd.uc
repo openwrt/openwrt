@@ -1201,6 +1201,11 @@ function iface_check_mld(phydev, name, config)
 
 function iface_config_remove(name, old_config)
 {
+	let pending = hostapd.data.pending_config[name];
+
+	if (pending)
+		pending.abort();
+
 	delete hostapd.data.apsta_freq[name];
 	hostapd.remove_iface(name);
 	return iface_remove(old_config);
