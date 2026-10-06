@@ -1,0 +1,176 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR BSD-2-Clause
+
+/dts-v1/;
+
+#include "ipq8074.dtsi"
+#include "ipq8074-hk-cpu.dtsi"
+#include "ipq8074-ess.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	model = "EnGenius EWS377AP v3";
+	compatible = "engenius,ews377ap-v3", "qcom,ipq8074";
+
+	aliases {
+		serial0 = &blsp1_uart5;
+		led-boot = &led_blue;
+		led-failsafe = &led_red;
+		led-running = &led_blue;
+		led-upgrade = &led_green;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		/*
+		 * The OEM U-Boot only passes "ubi.mtd=rootfs", which does not
+		 * create a UBI block device, so add it here.
+		 */
+		bootargs-append = " ubi.block=0,rootfs root=/dev/ubiblock0_1";
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&tlmm 52 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_red: led-red {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&tlmm 54 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_green: led-green {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&tlmm 55 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_blue: led-blue {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&tlmm 56 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&blsp1_uart5 {
+	status = "okay";
+};
+
+&tlmm {
+	mdio_pins: mdio-pins {
+		mdc {
+			pins = "gpio68";
+			function = "mdc";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		mdio {
+			pins = "gpio69";
+			function = "mdio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+};
+
+&mdio {
+	status = "okay";
+
+	pinctrl-0 = <&mdio_pins>;
+	pinctrl-names = "default";
+	reset-gpios = <&tlmm 43 GPIO_ACTIVE_HIGH>;
+
+	qca8081_28: ethernet-phy@28 {
+		compatible = "ethernet-phy-id004d.d101";
+		reg = <28>;
+	};
+};
+
+&uniphy2 {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port@0 {
+			reg = <0>;
+			ethernet = <&edma>;
+			phy-mode = "internal";
+
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
+		};
+
+		swport6: port@6 {
+			reg = <6>;
+			label = "lan";
+			phy-handle = <&qca8081_28>;
+			phy-mode = "2500base-x";
+			pcs-handle = <&uniphy2 0>;
+			nvmem-cells = <&macaddr_ubootenv_ethaddr>;
+			nvmem-cell-names = "mac-address";
+		};
+	};
+};
+
+&edma {
+	status = "okay";
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&qpic_nand {
+	status = "okay";
+
+	nand@0 {
+		reg = <0>;
+		nand-ecc-strength = <4>;
+		nand-ecc-step-size = <512>;
+		nand-bus-width = <8>;
+
+		partitions {
+			compatible = "qcom,smem-part";
+
+			partition-0-appsblenv {
+				label = "0:appsblenv";
+				read-only;
+
+				nvmem-layout {
+					compatible = "u-boot,env";
+					env-size = <0x40000>;
+
+					macaddr_ubootenv_ethaddr: ethaddr {
+					};
+				};
+			};
+		};
+	};
+};
+
+&wifi {
+	status = "okay";
+
+	qcom,ath11k-fw-memory-mode = <1>;
+};

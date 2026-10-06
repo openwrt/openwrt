@@ -191,6 +191,19 @@ define Device/edimax_cax1800
 endef
 TARGET_DEVICES += edimax_cax1800
 
+define Device/engenius_ews377ap-v3
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := EnGenius
+	DEVICE_MODEL := EWS377AP
+	DEVICE_VARIANT := v3
+	DEVICE_DTS_CONFIG := config@hk07
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	SOC := ipq8072
+endef
+TARGET_DEVICES += engenius_ews377ap-v3
+
 define Device/linksys_homewrk
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
