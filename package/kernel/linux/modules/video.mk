@@ -299,7 +299,7 @@ define KernelPackage/cec-core
   TITLE:=CEC framework
   HIDDEN:=1
   KCONFIG:=CONFIG_CEC_CORE
-  DEPENDS:=@LINUX_6_18
+  DEPENDS:=@!LINUX_6_12
   FILES:=$(LINUX_DIR)/drivers/media/cec/core/cec.ko
   AUTOLOAD:=$(call AutoProbe,cec)
 endef
@@ -349,7 +349,7 @@ $(eval $(call KernelPackage,drm-buddy))
 define KernelPackage/drm-display-helper
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=DRM helpers for display adapters drivers
-  DEPENDS:=video-support +kmod-drm-kms-helper +LINUX_6_18:kmod-cec-core
+  DEPENDS:=video-support +kmod-drm-kms-helper +!LINUX_6_12:kmod-cec-core
   HIDDEN:=1
   KCONFIG:=CONFIG_DRM_DISPLAY_HELPER
   FILES:=$(LINUX_DIR)/drivers/gpu/drm/display/drm_display_helper.ko
