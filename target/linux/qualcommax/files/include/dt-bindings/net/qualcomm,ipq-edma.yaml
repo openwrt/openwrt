@@ -26,11 +26,12 @@ properties:
     maxItems: 1
 
   interrupts:
-    items:
-      - description: TX completion interrupt
-      - description: RX fill interrupt
-      - description: RX descriptor interrupt
-      - description: Miscellaneous interrupt
+    description:
+      The TX completion, RX fill and RX descriptor interrupts of the first
+      ring set and the miscellaneous interrupt, then the same three for each
+      further ring set the host uses, counting down from the first.
+    minItems: 4
+    maxItems: 13
 
   clocks:
     items:
