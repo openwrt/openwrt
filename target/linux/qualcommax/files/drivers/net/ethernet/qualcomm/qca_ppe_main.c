@@ -28,7 +28,7 @@ static void ppe_port_gmac_set(struct qca_ppe_priv *priv, int port,
 	int gmac = port - 1;
 	u32 val = 0;
 
-	if (port < 1 || port >= priv->data->num_ports)
+	if (port < 1)
 		return;
 
 	if (tx_en)
@@ -45,7 +45,7 @@ static void ppe_port_xgmac_set(struct qca_ppe_priv *priv, int port,
 {
 	int xgmac = port - 5;
 
-	if (port < 5 || port >= priv->data->num_ports)
+	if (port < 5)
 		return;
 
 	regmap_update_bits(priv->regmap, PPE_XGMAC_TX_CONF(xgmac),
@@ -678,7 +678,6 @@ static void bridge_vsi_put(struct qca_ppe_priv *priv,
 
 	ppe_vsi_free(priv, bvsi->vsi);
 	bvsi->br_dev = NULL;
-	bvsi->vsi = 0;
 }
 
 static void bridge_vsi_members_update(struct qca_ppe_priv *priv,
@@ -688,8 +687,7 @@ static void bridge_vsi_members_update(struct qca_ppe_priv *priv,
 	int i;
 
 	for (i = 0; i < priv->ds.num_ports; i++)
-		if (priv->port_vsi[i] != PPE_VSI_INVALID &&
-		    priv->port_vsi[i] == bvsi->vsi)
+		if (priv->port_vsi[i] == bvsi->vsi)
 			portmask |= BIT(i);
 
 	portmask |= BIT(QCA_PPE_CPU_PORT);
@@ -1199,7 +1197,7 @@ static void ppe_port_xgmac_loopback_pulse(struct qca_ppe_priv *priv, int port)
 {
 	int xgmac = port - 5;
 
-	if (port < 5 || port >= priv->data->num_ports)
+	if (port < 5)
 		return;
 
 	regmap_update_bits(priv->regmap, PPE_XGMAC_RX_CONF(xgmac),
@@ -1261,8 +1259,6 @@ static void qca_ppe_mac_link_down(struct phylink_config *config,
 	default:
 		return;
 	}
-
-	return;
 }
 
 static bool qca_ppe_port_uses_xgmac(unsigned int mode, phy_interface_t interface)
@@ -1385,10 +1381,8 @@ static void qca_ppe_mac_link_up(struct phylink_config *config,
 		break;
 	}
 
-	if (priv->port_rx_clk[port])
-		clk_set_rate(priv->port_rx_clk[port], rate);
-	if (priv->port_tx_clk[port])
-		clk_set_rate(priv->port_tx_clk[port], rate);
+	clk_set_rate(priv->port_rx_clk[port], rate);
+	clk_set_rate(priv->port_tx_clk[port], rate);
 
 	switch (interface) {
 	case PHY_INTERFACE_MODE_SGMII:
@@ -1644,7 +1638,7 @@ static void qca_ppe_get_ethtool_stats(struct dsa_switch *ds, int port,
 	struct qca_ppe_mib_stats *stats;
 	int i;
 
-	if (port < 1 || port >= ds->num_ports) {
+	if (port < 1) {
 		memset(data, 0, sizeof(u64) * ARRAY_SIZE(qca_ppe_mib));
 		return;
 	}
@@ -1671,7 +1665,7 @@ static void qca_ppe_get_stats64(struct dsa_switch *ds, int port,
 	struct qca_ppe_priv *priv = ds_to_priv(ds);
 	struct qca_ppe_mib_stats *stats;
 
-	if (port < 1 || port >= ds->num_ports)
+	if (port < 1)
 		return;
 
 	stats = ppe_port_mib(priv, port);
@@ -1827,7 +1821,7 @@ static void ppe_ctrlpkt_init(struct qca_ppe_priv *priv)
 		     FIELD_PREP(PPE_APP_CTRL_CMD, PPE_APP_CTRL_REDIRECT_CPU));
 }
 
-static int ppe_ipq6018_mux_setup(struct qca_ppe_priv *priv)
+static void ppe_ipq6018_mux_setup(struct qca_ppe_priv *priv)
 {
 	struct device_node *ports_np, *port_np;
 	struct of_phandle_args pcs_args;
@@ -1836,8 +1830,6 @@ static int ppe_ipq6018_mux_setup(struct qca_ppe_priv *priv)
 	int ret;
 
 	ports_np = of_get_child_by_name(priv->ds.dev->of_node, "ports");
-	if (!ports_np)
-		return -ENODEV;
 
 	for_each_available_child_of_node(ports_np, port_np) {
 		ret = of_property_read_u32(port_np, "reg", &port);
@@ -1865,8 +1857,6 @@ static int ppe_ipq6018_mux_setup(struct qca_ppe_priv *priv)
 				   FIELD_PREP(CPPE_PORT3_PCS_SEL,
 					      CPPE_PORT3_PCS0_CH4) |
 				   CPPE_PCS0_CH4_SEL);
-
-	return 0;
 }
 
 static const struct regmap_config ppe_regmap_cfg = {
@@ -1938,7 +1928,6 @@ static int qca_ppe_probe(struct platform_device *pdev)
 	ds->dev = &pdev->dev;
 	ds->num_ports = data->num_ports;
 	ds->ops = &qca_ppe_ops;
-	ds->priv = priv;
 	ds->phylink_mac_ops = &qca_ppe_phylink_mac_ops;
 
 	for (i = 1; i < data->num_ports; i++) {
@@ -1967,11 +1956,8 @@ static int qca_ppe_probe(struct platform_device *pdev)
 	ppe_ctrlpkt_init(priv);
 
 
-	if (data->type == PPE_TYPE_IPQ6018) {
-		ret = ppe_ipq6018_mux_setup(priv);
-		if (ret)
-			return ret;
-	}
+	if (data->type == PPE_TYPE_IPQ6018)
+		ppe_ipq6018_mux_setup(priv);
 
 	ret = dsa_register_switch(ds);
 	if (ret)
