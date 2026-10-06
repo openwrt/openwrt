@@ -45,6 +45,9 @@ ipq50xx_setup_interfaces()
 		ucidef_set_network_device_conduit "lan3" "eth1"
 		ucidef_set_network_device_conduit "wan" "eth0"
 		;;
+	xunison,exigo-hub-d50-5g)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
+		;;
 	tplink,eap650-outdoor-v1|\
 	tplink,re700x)
 		ucidef_set_interface_lan "lan" "dhcp"

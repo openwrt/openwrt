@@ -57,6 +57,10 @@ xiaomi,ax6000)
 	ucidef_set_led_netdev "wan-port-link-top-blue" "WAN-PORT-LINK-TOP-BLUE" "blue:wan" "wan" "link_1000 link_2500"
 	ucidef_set_led_netdev "wan-port-link-top-yellow" "WAN-PORT-LINK-TOP-YELLOW" "yellow:wan" "wan" "link_10 link_100"
 	;;
+xunison,exigo-hub-d50-5g)
+	ucidef_set_led_netdev "wan" "WAN" "green:wan" "wan" "link tx rx"
+	ucidef_set_led_netdev "internet" "Internet" "green:wan-online" "wwan0" "link"
+	;;
 esac
 
 board_config_flush
