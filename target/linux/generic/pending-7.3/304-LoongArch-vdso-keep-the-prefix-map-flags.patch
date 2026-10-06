@@ -32,12 +32,12 @@ Signed-off-by: John Crispin <john@phrozen.org>
 
 --- a/arch/loongarch/vdso/Makefile
 +++ b/arch/loongarch/vdso/Makefile
-@@ -13,6 +13,8 @@ ccflags-vdso := \
- 	$(filter -E%,$(KBUILD_CFLAGS)) \
+@@ -16,6 +16,8 @@ ccflags-vdso := \
+ 	$(filter -m64,$(KBUILD_CFLAGS)) \
  	$(filter -march=%,$(KBUILD_CFLAGS)) \
  	$(filter -m%-float,$(KBUILD_CFLAGS)) \
 +	$(filter -ffile-prefix-map=%,$(KBUILD_CFLAGS)) \
 +	$(filter -fdebug-prefix-map=%,$(KBUILD_CFLAGS)) \
+ 	$(CONFIG_CC_OPT_INLINE_MEMSET) \
  	$(CLANG_FLAGS) \
  	-D__VDSO__
- 

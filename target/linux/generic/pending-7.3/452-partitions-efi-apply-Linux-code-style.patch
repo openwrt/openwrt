@@ -59,23 +59,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		    (mbr->partition_record[i].os_type != 0x00))
  			ret = GPT_MBR_HYBRID;
  
-@@ -213,10 +211,11 @@ check_hybrid:
- 	 */
- 	if (ret == GPT_MBR_PROTECTIVE) {
- 		sz = le32_to_cpu(mbr->partition_record[part].size_in_lba);
--		if (sz != (uint32_t) total_sectors - 1 && sz != 0xFFFFFFFF)
--			pr_debug("GPT: mbr size in lba (%u) different than whole disk (%u).\n",
--				 sz, min_t(uint32_t,
--					   total_sectors - 1, 0xFFFFFFFF));
-+		if (sz != (uint32_t)total_sectors - 1 && sz != 0xFFFFFFFF)
-+			pr_debug(
-+				"GPT: mbr size in lba (%u) different than whole disk (%u).\n",
-+				sz,
-+				min_t(uint32_t, total_sectors - 1, 0xFFFFFFFF));
- 	}
- done:
- 	return ret;
-@@ -232,15 +231,14 @@ done:
+@@ -231,15 +229,14 @@ done:
   * Description: Reads @count bytes from @state->disk into @buffer.
   * Returns number of bytes read on success, 0 on error.
   */
@@ -95,7 +79,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	while (count) {
  		int copied = 512;
-@@ -253,7 +251,7 @@ static size_t read_lba(struct parsed_par
+@@ -252,7 +249,7 @@ static size_t read_lba(struct parsed_par
  		memcpy(buffer, data, copied);
  		put_dev_sector(sect);
  		buffer += copied;
@@ -104,7 +88,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		count -= copied;
  	}
  	return totalreadcount;
-@@ -278,17 +276,17 @@ static gpt_entry *alloc_read_gpt_entries
+@@ -277,17 +274,17 @@ static gpt_entry *alloc_read_gpt_entries
  		return NULL;
  
  	count = (size_t)le32_to_cpu(gpt->num_partition_entries) *
@@ -126,7 +110,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		return NULL;
  	}
  	return pte;
-@@ -313,9 +311,9 @@ static gpt_header *alloc_read_gpt_header
+@@ -312,9 +309,9 @@ static gpt_header *alloc_read_gpt_header
  	if (!gpt)
  		return NULL;
  
@@ -138,7 +122,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		return NULL;
  	}
  
-@@ -354,8 +352,9 @@ static int is_gpt_valid(struct parsed_pa
+@@ -353,8 +350,9 @@ static int is_gpt_valid(struct parsed_pa
  
  	/* Check the GUID Partition Table header size is too big */
  	if (le32_to_cpu((*gpt)->header_size) >
@@ -150,7 +134,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  			le32_to_cpu((*gpt)->header_size),
  			queue_logical_block_size(state->disk->queue));
  		goto fail;
-@@ -363,16 +362,17 @@ static int is_gpt_valid(struct parsed_pa
+@@ -362,16 +360,17 @@ static int is_gpt_valid(struct parsed_pa
  
  	/* Check the GUID Partition Table header size is too small */
  	if (le32_to_cpu((*gpt)->header_size) < sizeof(gpt_header)) {
@@ -172,7 +156,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	if (crc != origcrc) {
  		pr_debug("GUID Partition Table Header CRC is wrong: %x != %x\n",
-@@ -396,20 +396,25 @@ static int is_gpt_valid(struct parsed_pa
+@@ -395,20 +394,25 @@ static int is_gpt_valid(struct parsed_pa
  	lastlba = last_lba(state->disk);
  	if (le64_to_cpu((*gpt)->first_usable_lba) > lastlba) {
  		pr_debug("GPT: first_usable_lba incorrect: %lld > %lld\n",
@@ -203,7 +187,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		goto fail;
  	}
  	/* Check that sizeof_partition_entry has the correct value */
-@@ -420,10 +425,11 @@ static int is_gpt_valid(struct parsed_pa
+@@ -419,10 +423,11 @@ static int is_gpt_valid(struct parsed_pa
  
  	/* Sanity check partition table size */
  	pt_size = (u64)le32_to_cpu((*gpt)->num_partition_entries) *
@@ -218,7 +202,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		goto fail;
  	}
  
-@@ -431,7 +437,7 @@ static int is_gpt_valid(struct parsed_pa
+@@ -430,7 +435,7 @@ static int is_gpt_valid(struct parsed_pa
  		goto fail;
  
  	/* Check the GUID Partition Entry Array CRC */
@@ -227,7 +211,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	if (crc != le32_to_cpu((*gpt)->partition_entry_array_crc32)) {
  		pr_debug("GUID Partition Entry Array CRC check failed.\n");
-@@ -441,10 +447,10 @@ static int is_gpt_valid(struct parsed_pa
+@@ -440,10 +445,10 @@ static int is_gpt_valid(struct parsed_pa
  	/* We're done, all's well */
  	return 1;
  
@@ -240,7 +224,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	kfree(*gpt);
  	*gpt = NULL;
  	return 0;
-@@ -457,12 +463,11 @@ static int is_gpt_valid(struct parsed_pa
+@@ -456,12 +461,11 @@ static int is_gpt_valid(struct parsed_pa
   *
   * Description: returns 1 if valid,  0 on error.
   */
@@ -256,7 +240,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		return 0;
  	return 1;
  }
-@@ -477,8 +482,7 @@ is_pte_valid(const gpt_entry *pte, const
+@@ -476,8 +480,7 @@ is_pte_valid(const gpt_entry *pte, const
   * and prints warnings on discrepancies.
   * 
   */
@@ -266,7 +250,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  {
  	int error_found = 0;
  	if (!pgpt || !agpt)
-@@ -486,31 +490,32 @@ compare_gpts(gpt_header *pgpt, gpt_heade
+@@ -485,31 +488,32 @@ compare_gpts(gpt_header *pgpt, gpt_heade
  	if (le64_to_cpu(pgpt->my_lba) != le64_to_cpu(agpt->alternate_lba)) {
  		pr_warn("GPT:Primary header LBA != Alt. header alternate_lba\n");
  		pr_warn("GPT:%lld != %lld\n",
@@ -309,7 +293,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		error_found++;
  	}
  	if (efi_guidcmp(pgpt->disk_guid, agpt->disk_guid)) {
-@@ -518,27 +523,27 @@ compare_gpts(gpt_header *pgpt, gpt_heade
+@@ -517,27 +521,27 @@ compare_gpts(gpt_header *pgpt, gpt_heade
  		error_found++;
  	}
  	if (le32_to_cpu(pgpt->num_partition_entries) !=
@@ -349,16 +333,16 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		error_found++;
  	}
  	if (le64_to_cpu(pgpt->alternate_lba) != lastlba) {
-@@ -594,7 +599,7 @@ static int find_valid_gpt(struct parsed_
+@@ -593,7 +597,7 @@ static int find_valid_gpt(struct parsed_
  		return 0;
  
  	lastlba = last_lba(state->disk);
 -        if (!force_gpt) {
 +	if (!force_gpt) {
  		/* This will be added to the EFI Spec. per Intel after v1.02. */
- 		legacymbr = kzalloc(sizeof(*legacymbr), GFP_KERNEL);
+ 		legacymbr = kzalloc_obj(*legacymbr);
  		if (!legacymbr)
-@@ -608,18 +613,17 @@ static int find_valid_gpt(struct parsed_
+@@ -607,18 +611,17 @@ static int find_valid_gpt(struct parsed_
  			goto fail;
  
  		pr_debug("Device has a %s MBR\n",
@@ -386,7 +370,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	if (!good_agpt && force_gpt && fops->alternative_gpt_sector) {
  		sector_t agpt_sector;
-@@ -627,43 +631,42 @@ static int find_valid_gpt(struct parsed_
+@@ -626,43 +629,42 @@ static int find_valid_gpt(struct parsed_
  
  		err = fops->alternative_gpt_sector(disk, &agpt_sector);
  		if (!err)
@@ -461,7 +445,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  }
  
  /**
-@@ -725,7 +728,9 @@ int efi_partition(struct parsed_partitio
+@@ -724,7 +726,9 @@ int efi_partition(struct parsed_partitio
  
  	pr_debug("GUID Partition Table is valid!  Yea!\n");
  
@@ -472,7 +456,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		struct partition_meta_info *info;
  		unsigned label_max;
  		u64 start = le64_to_cpu(ptes[i].starting_lba);
-@@ -735,10 +740,11 @@ int efi_partition(struct parsed_partitio
+@@ -734,10 +738,11 @@ int efi_partition(struct parsed_partitio
  		if (!is_pte_valid(&ptes[i], last_lba(state->disk)))
  			continue;
  
@@ -486,7 +470,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  			state->parts[i + 1].flags = ADDPART_FLAG_RAID;
  
  		info = &state->parts[i + 1].info;
-@@ -747,7 +753,8 @@ int efi_partition(struct parsed_partitio
+@@ -746,7 +751,8 @@ int efi_partition(struct parsed_partitio
  		/* Naively convert UTF16-LE to 7 bits. */
  		label_max = min(ARRAY_SIZE(info->volname) - 1,
  				ARRAY_SIZE(ptes[i].partition_name));

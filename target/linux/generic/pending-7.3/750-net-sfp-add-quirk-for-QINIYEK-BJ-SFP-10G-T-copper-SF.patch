@@ -16,11 +16,11 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/drivers/net/phy/sfp.c
 +++ b/drivers/net/phy/sfp.c
-@@ -607,6 +607,7 @@ static const struct sfp_quirk sfp_quirks
+@@ -624,6 +624,7 @@ static const struct sfp_quirk sfp_quirks
  	SFP_QUIRK_S("OEM", "SFP-2.5G-LH20-A", sfp_quirk_2500basex),
  	SFP_QUIRK_F("OEM", "RTSFP-10", sfp_fixup_rollball_cc),
  	SFP_QUIRK_F("OEM", "RTSFP-10G", sfp_fixup_rollball_cc),
 +	SFP_QUIRK_F("QINIYEK", "BJ-SFP-10G-T", sfp_fixup_fs_10gt),
- 	SFP_QUIRK_F("Turris", "RTSFP-2.5G", sfp_fixup_rollball),
- 	SFP_QUIRK_F("Turris", "RTSFP-10", sfp_fixup_rollball),
- 	SFP_QUIRK_F("Turris", "RTSFP-10G", sfp_fixup_rollball),
+ 
+ 	// OEM XGSPONST2001 is an XGS-PON ONT stick with broken TX_FAULT and
+ 	// LOS indicators and slow startup, just like potron. On cold

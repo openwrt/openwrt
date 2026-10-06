@@ -14,7 +14,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/init/Kconfig
 +++ b/init/Kconfig
-@@ -1628,6 +1628,17 @@ config SYSFS_SYSCALL
+@@ -1747,6 +1747,17 @@ config SYSFS_SYSCALL
  
  	  If unsure say N here.
  
@@ -58,7 +58,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	 * and return the first char from this token. If MSB of length
 --- a/kernel/vmcore_info.c
 +++ b/kernel/vmcore_info.c
-@@ -218,8 +218,10 @@ static int __init crash_save_vmcoreinfo_
+@@ -239,8 +239,10 @@ static int __init crash_save_vmcoreinfo_
  #ifdef CONFIG_KALLSYMS
  	VMCOREINFO_SYMBOL(kallsyms_names);
  	VMCOREINFO_SYMBOL(kallsyms_num_syms);
@@ -67,19 +67,19 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	VMCOREINFO_SYMBOL(kallsyms_token_index);
 +#endif
  	VMCOREINFO_SYMBOL(kallsyms_offsets);
- 	VMCOREINFO_SYMBOL(kallsyms_relative_base);
  #endif /* CONFIG_KALLSYMS */
+ 
 --- a/scripts/kallsyms.c
 +++ b/scripts/kallsyms.c
-@@ -57,6 +57,7 @@ static struct addr_range text_ranges[] =
+@@ -56,6 +56,7 @@ static struct addr_range text_ranges[] =
  static struct sym_entry **table;
  static unsigned int table_size, table_cnt;
  static int all_symbols;
 +static int uncompressed;
+ static int pc_relative;
  
  static int token_profit[0x10000];
- 
-@@ -399,13 +400,17 @@ static void write_src(void)
+@@ -390,13 +391,17 @@ static void write_src(void)
  		for (k = 0; k < table[i]->len; k++)
  			printf(", 0x%02x", table[i]->sym[k]);
  
@@ -102,9 +102,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +			printf("\n");
 +		}
  	}
+ 	printf(".size kallsyms_names, . - kallsyms_names\n");
  	printf("\n");
- 
-@@ -416,20 +421,22 @@ static void write_src(void)
+@@ -409,21 +414,23 @@ static void write_src(void)
  
  	free(markers);
  
@@ -124,6 +124,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +			printf("\t.asciz\t\"%s\"\n", buf);
 +			off += strlen(buf) + 1;
 +		}
++		printf(".size kallsyms_token_table, . - kallsyms_token_table\n");
 +		printf("\n");
 +
 +		output_label("kallsyms_token_index");
@@ -131,6 +132,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +			printf("\t.short\t%d\n", best_idx[i]);
 +		printf("\n");
  	}
+-	printf(".size kallsyms_token_table, . - kallsyms_token_table\n");
 -	printf("\n");
 -
 -	output_label("kallsyms_token_index");
@@ -140,7 +142,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	output_label("kallsyms_offsets");
  
-@@ -508,6 +515,9 @@ static unsigned char *find_token(unsigne
+@@ -493,6 +500,9 @@ static unsigned char *find_token(unsigne
  {
  	int i;
  
@@ -150,7 +152,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	for (i = 0; i < len - 1; i++) {
  		if (str[i] == token[0] && str[i+1] == token[1])
  			return &str[i];
-@@ -580,6 +590,9 @@ static void optimize_result(void)
+@@ -565,6 +575,9 @@ static void optimize_result(void)
  {
  	int i, best;
  
@@ -160,18 +162,18 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	/* using the '\0' symbol last allows compress_symbols to use standard
  	 * fast string functions */
  	for (i = 255; i >= 0; i--) {
-@@ -717,6 +730,7 @@ int main(int argc, char **argv)
- 	while (1) {
+@@ -692,6 +705,7 @@ int main(int argc, char **argv)
  		static const struct option long_options[] = {
  			{"all-symbols",     no_argument, &all_symbols,     1},
-+			{"uncompressed",   no_argument, &uncompressed,   1},
+ 			{"pc-relative",     no_argument, &pc_relative,     1},
++			{"uncompressed",    no_argument, &uncompressed,    1},
  			{},
  		};
  
 --- a/scripts/link-vmlinux.sh
 +++ b/scripts/link-vmlinux.sh
-@@ -142,6 +142,10 @@ kallsyms()
- 		kallsymopt="${kallsymopt} --all-symbols"
+@@ -131,6 +131,10 @@ kallsyms()
+ 		kallsymopt="${kallsymopt} --pc-relative"
  	fi
  
 +	if is_enabled CONFIG_KALLSYMS_UNCOMPRESSED; then

@@ -21,15 +21,15 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/block/partitions/check.h
 +++ b/block/partitions/check.h
-@@ -1,6 +1,7 @@
- /* SPDX-License-Identifier: GPL-2.0 */
+@@ -2,6 +2,7 @@
  #include <linux/pagemap.h>
  #include <linux/blkdev.h>
+ #include <linux/seq_buf.h>
 +#include <linux/of.h>
  #include "../blk.h"
  
  /*
-@@ -16,6 +17,9 @@ struct parsed_partitions {
+@@ -17,6 +18,9 @@ struct parsed_partitions {
  		int flags;
  		bool has_info;
  		struct partition_meta_info info;
@@ -39,7 +39,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	} *parts;
  	int next;
  	int limit;
-@@ -34,18 +38,28 @@ static inline void put_dev_sector(Sector
+@@ -35,15 +39,25 @@ static inline void put_dev_sector(Sector
  }
  
  static inline void
@@ -48,15 +48,12 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +		 struct device_node *np)
  {
  	if (n < p->limit) {
- 		char tmp[1 + BDEVNAME_SIZE + 10 + 1];
- 
  		p->parts[n].from = from;
  		p->parts[n].size = size;
 +#ifdef CONFIG_OF
 +		p->parts[n].np = np;
 +#endif
- 		snprintf(tmp, sizeof(tmp), " %s%d", p->name, n);
- 		strlcat(p->pp_buf, tmp, PAGE_SIZE);
+ 		seq_buf_printf(&p->pp_buf, " %s%d", p->name, n);
  	}
  }
  
@@ -71,15 +68,15 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  int adfspart_check_CUMANA(struct parsed_partitions *state);
 --- a/block/partitions/core.c
 +++ b/block/partitions/core.c
-@@ -9,6 +9,7 @@
- #include <linux/slab.h>
+@@ -11,6 +11,7 @@
+ #include <linux/sysfs.h>
  #include <linux/ctype.h>
  #include <linux/vmalloc.h>
 +#include <linux/device.h>
  #include <linux/raid/detect.h>
  #include "check.h"
  
-@@ -292,7 +293,8 @@ static const DEVICE_ATTR(whole_disk, 044
+@@ -294,7 +295,8 @@ static const DEVICE_ATTR(whole_disk, 044
   */
  static struct block_device *add_partition(struct gendisk *disk, int partno,
  				sector_t start, sector_t len, int flags,
@@ -89,7 +86,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  {
  	dev_t devt = MKDEV(0, 0);
  	struct device *ddev = disk_to_dev(disk);
-@@ -341,6 +343,7 @@ static struct block_device *add_partitio
+@@ -343,6 +345,7 @@ static struct block_device *add_partitio
  	pdev->class = &block_class;
  	pdev->type = &part_type;
  	pdev->parent = ddev;
@@ -97,7 +94,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	/* in consecutive minor range? */
  	if (bdev_partno(bdev) < disk->minors) {
-@@ -447,7 +450,7 @@ int bdev_add_partition(struct gendisk *d
+@@ -449,7 +452,7 @@ int bdev_add_partition(struct gendisk *d
  	}
  
  	part = add_partition(disk, partno, start, length,
@@ -106,7 +103,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	ret = PTR_ERR_OR_ZERO(part);
  out:
  	mutex_unlock(&disk->open_mutex);
-@@ -561,8 +564,13 @@ static bool blk_add_partition(struct gen
+@@ -563,8 +566,13 @@ static bool blk_add_partition(struct gen
  		size = get_capacity(disk) - from;
  	}
  

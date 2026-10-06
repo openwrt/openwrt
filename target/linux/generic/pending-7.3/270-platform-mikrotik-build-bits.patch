@@ -16,16 +16,16 @@ Signed-off-by: Thibaut VARÈNE <hacks@slashdirt.org>
 
 --- a/drivers/platform/Kconfig
 +++ b/drivers/platform/Kconfig
-@@ -18,3 +18,5 @@ source "drivers/platform/surface/Kconfig
- source "drivers/platform/x86/Kconfig"
+@@ -22,3 +22,5 @@ source "drivers/platform/arm64/Kconfig"
+ source "drivers/platform/raspberrypi/Kconfig"
  
- source "drivers/platform/arm64/Kconfig"
+ source "drivers/platform/wmi/Kconfig"
 +
 +source "drivers/platform/mikrotik/Kconfig"
 --- a/drivers/platform/Makefile
 +++ b/drivers/platform/Makefile
-@@ -13,3 +13,4 @@ obj-$(CONFIG_CHROME_PLATFORMS)	+= chrome
- obj-$(CONFIG_CZNIC_PLATFORMS)	+= cznic/
- obj-$(CONFIG_SURFACE_PLATFORMS)	+= surface/
+@@ -15,3 +15,4 @@ obj-$(CONFIG_SURFACE_PLATFORMS)	+= surfa
  obj-$(CONFIG_ARM64_PLATFORM_DEVICES)	+= arm64/
+ obj-$(CONFIG_BCM2835_VCHIQ)	+= raspberrypi/
+ obj-$(CONFIG_ACPI_WMI)		+= wmi/
 +obj-$(CONFIG_MIKROTIK)		+= mikrotik/

@@ -1011,7 +1011,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	if (ret) {
  		dev_err(ds->dev, "failed to free fw bridge %u: %pe\n",
  			fw_id, ERR_PTR(ret));
-@@ -800,10 +974,42 @@ static int mxl862xx_setup(struct dsa_swi
+@@ -800,14 +974,42 @@ static int mxl862xx_setup(struct dsa_swi
  	if (ret)
  		return ret;
  
@@ -1039,23 +1039,23 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	if (ret)
 +		goto free_trap_fid;
 +
-+	ret = mxl862xx_setup_mdio(ds);
-+	if (ret)
+ 	ret = mxl862xx_setup_mdio(ds);
+ 	if (ret)
+-		return ret;
 +		goto free_trap_fid;
-+
+ 
  	schedule_delayed_work(&priv->stats_work,
  			      MXL862XX_STATS_POLL_INTERVAL);
  
--	return mxl862xx_setup_mdio(ds);
-+	return 0;
+ 	return 0;
 +
 +free_trap_fid:
 +	mxl862xx_free_fw_bridge(priv, priv->cpu_trap_fid);
 +	return ret;
  }
  
- static int mxl862xx_port_state(struct dsa_switch *ds, int port, bool enable)
-@@ -1515,6 +1721,15 @@ static int mxl862xx_port_setup(struct ds
+ static void mxl862xx_teardown(struct dsa_switch *ds)
+@@ -1527,6 +1729,15 @@ static int mxl862xx_port_setup(struct ds
  	if (ret)
  		return ret;
  

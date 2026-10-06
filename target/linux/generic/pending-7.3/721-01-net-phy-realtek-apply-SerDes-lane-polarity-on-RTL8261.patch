@@ -43,9 +43,9 @@ Signed-off-by: Simon Polack <spolack+git@mailbox.org>
  config REALTEK_PHY
  	tristate "Realtek PHYs"
 +	select PHY_COMMON_PROPS
+ 	select PHY_PACKAGE
  	help
  	  Currently supports RTL821x/RTL822x and fast ethernet PHYs
- 
 --- a/drivers/net/phy/realtek/realtek_main.c
 +++ b/drivers/net/phy/realtek/realtek_main.c
 @@ -13,9 +13,11 @@
@@ -60,7 +60,7 @@ Signed-off-by: Simon Polack <spolack+git@mailbox.org>
  #include <linux/delay.h>
  #include <linux/clk.h>
  #include <linux/string_choices.h>
-@@ -144,6 +146,7 @@
+@@ -165,6 +167,7 @@
  #define   RTL822X_VND1_SERDES_INBAND_DISABLE	0x71d0
  #define   RTL822X_VND1_SERDES_INBAND_ENABLE	0x70d0
  #define RTL822X_VND1_SERDES_DATA		0x7589
@@ -68,7 +68,7 @@ Signed-off-by: Simon Polack <spolack+git@mailbox.org>
  
  #define RTL822X_VND2_TO_PAGE(reg)		((reg) >> 4)
  #define RTL822X_VND2_TO_PAGE_REG(reg)		(16 + (((reg) & GENMASK(3, 0)) >> 1))
-@@ -237,6 +240,18 @@
+@@ -276,6 +279,18 @@
  #define RTL8261X_INT_ALDPS_CHG		BIT(9)
  #define RTL8261X_INT_JABBER		BIT(10)
  
@@ -87,7 +87,7 @@ Signed-off-by: Simon Polack <spolack+git@mailbox.org>
  #define RTL8261X_INT_MASK_DEFAULT	(RTL8261X_INT_AUTONEG_DONE | \
  					 RTL8261X_INT_LINK_CHG | \
  					 RTL8261X_INT_AUTONEG_ERROR | \
-@@ -662,18 +677,147 @@ static int rtl8261x_config_aneg(struct p
+@@ -704,18 +719,147 @@ static int rtl8261x_config_aneg(struct p
  	return 0;
  }
  
@@ -238,7 +238,7 @@ Signed-off-by: Simon Polack <spolack+git@mailbox.org>
  }
  
  static int rtl821x_probe(struct phy_device *phydev)
-@@ -1858,30 +2002,6 @@ static int rtl822xb_config_init(struct p
+@@ -2156,30 +2300,6 @@ static int rtl822xb_config_init(struct p
  	return rtl822x_set_serdes_option_mode(phydev, false);
  }
  

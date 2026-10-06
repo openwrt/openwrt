@@ -82,7 +82,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	/* What interface are supported by the current link.
  	 * Can change on removal or addition of new PCS.
  	 */
-@@ -514,12 +517,29 @@ static void phylink_validate_mask_caps(u
+@@ -517,12 +520,29 @@ static void phylink_validate_mask_caps(u
  	linkmode_and(state->advertising, state->advertising, mask);
  }
  
@@ -113,7 +113,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	int ret;
  
  	/* Get the PCS for this interface mode */
-@@ -527,9 +547,24 @@ static int phylink_validate_mac_and_pcs(
+@@ -530,9 +550,24 @@ static int phylink_validate_mac_and_pcs(
  		pcs = pl->mac_ops->mac_select_pcs(pl->config, state->interface);
  		if (IS_ERR(pcs))
  			return PTR_ERR(pcs);
@@ -139,7 +139,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  		/* The PCS, if present, must be setup before phylink_create()
  		 * has been called. If the ops is not initialised, print an
  		 * error and backtrace rather than oopsing the kernel.
-@@ -541,13 +576,10 @@ static int phylink_validate_mac_and_pcs(
+@@ -544,13 +579,10 @@ static int phylink_validate_mac_and_pcs(
  			return -EINVAL;
  		}
  
@@ -157,7 +157,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  				    phy_modes(state->interface));
  			return -EINVAL;
  		}
-@@ -961,12 +993,21 @@ static unsigned int phylink_inband_caps(
+@@ -964,12 +996,21 @@ static unsigned int phylink_inband_caps(
  					 phy_interface_t interface)
  {
  	struct phylink_pcs *pcs;
@@ -184,7 +184,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  		return 0;
  
  	return phylink_pcs_inband_caps(pcs, interface);
-@@ -1262,10 +1303,36 @@ static void phylink_major_config(struct
+@@ -1265,10 +1306,36 @@ static void phylink_major_config(struct
  			pl->major_config_failed = true;
  			return;
  		}
@@ -222,7 +222,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	phylink_pcs_neg_mode(pl, pcs, state->interface, state->advertising);
  
  	phylink_dbg(pl, "major config, active %s/%s/%s\n",
-@@ -1292,13 +1359,15 @@ static void phylink_major_config(struct
+@@ -1295,13 +1362,15 @@ static void phylink_major_config(struct
  	if (pcs_changed) {
  		phylink_pcs_disable(pl->pcs);
  
@@ -243,7 +243,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	}
  
  	if (pl->pcs)
-@@ -1824,6 +1893,44 @@ int phylink_set_fixed_link(struct phylin
+@@ -1836,6 +1905,44 @@ int phylink_set_fixed_link(struct phylin
  }
  EXPORT_SYMBOL_GPL(phylink_set_fixed_link);
  
@@ -288,7 +288,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  /**
   * phylink_create() - create a phylink instance
   * @config: a pointer to the target &struct phylink_config
-@@ -1845,9 +1952,20 @@ struct phylink *phylink_create(struct ph
+@@ -1857,9 +1964,20 @@ struct phylink *phylink_create(struct ph
  			       phy_interface_t iface,
  			       const struct phylink_mac_ops *mac_ops)
  {
@@ -309,7 +309,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	/* Validate the supplied configuration */
  	if (phy_interface_empty(config->supported_interfaces)) {
  		dev_err(config->dev,
-@@ -1862,6 +1980,7 @@ struct phylink *phylink_create(struct ph
+@@ -1874,6 +1992,7 @@ struct phylink *phylink_create(struct ph
  	mutex_init(&pl->phydev_mutex);
  	mutex_init(&pl->state_mutex);
  	INIT_WORK(&pl->resolve, phylink_resolve);
@@ -317,7 +317,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  
  	pl->config = config;
  	if (config->type == PHYLINK_NETDEV) {
-@@ -1899,16 +2018,31 @@ struct phylink *phylink_create(struct ph
+@@ -1911,16 +2030,31 @@ struct phylink *phylink_create(struct ph
  	__set_bit(PHYLINK_DISABLE_STOPPED, &pl->phylink_disable_state);
  	timer_setup(&pl->link_poll, phylink_fixed_poll, 0);
  
@@ -350,7 +350,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  
  	if (pl->cfg_link_an_mode == MLO_AN_FIXED) {
  		ret = phylink_parse_fixedlink(pl, fwnode);
-@@ -1927,6 +2061,11 @@ struct phylink *phylink_create(struct ph
+@@ -1939,6 +2073,11 @@ struct phylink *phylink_create(struct ph
  release_link_gpio:
  	if (pl->link_gpio)
  		gpiod_put(pl->link_gpio);
@@ -362,7 +362,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  free_pl:
  	kfree(pl);
  	return ERR_PTR(ret);
-@@ -1944,11 +2083,20 @@ EXPORT_SYMBOL_GPL(phylink_create);
+@@ -1956,11 +2095,20 @@ EXPORT_SYMBOL_GPL(phylink_create);
   */
  void phylink_destroy(struct phylink *pl)
  {
@@ -383,7 +383,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	kfree(pl);
  }
  EXPORT_SYMBOL_GPL(phylink_destroy);
-@@ -2435,8 +2583,15 @@ void phylink_pcs_change(struct phylink_p
+@@ -2445,8 +2593,15 @@ void phylink_pcs_change(struct phylink_p
  {
  	struct phylink *pl = pcs->phylink;
  
@@ -411,7 +411,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  
  enum {
  	MLO_PAUSE_NONE,
-@@ -150,12 +151,18 @@ enum phylink_op_type {
+@@ -151,12 +152,18 @@ enum phylink_op_type {
   *		     if MAC link is at %MLO_AN_FIXED mode.
   * @supported_interfaces: bitmap describing which PHY_INTERFACE_MODE_xxx
   *                        are supported by the MAC/PCS.
@@ -427,10 +427,10 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 + * @fill_available_pcs: callback to fill the available PCS in the passed
 + *			array struct of phylink_pcs PCS available_pcs up to
 + *			num_possible_pcs.
-  */
- struct phylink_config {
- 	struct device *dev;
-@@ -168,11 +175,17 @@ struct phylink_config {
+  * @wol_phy_legacy: Use Wake-on-Lan with PHY even if phy_can_wakeup() is false
+  * @wol_phy_speed_ctrl: Use phy speed control on suspend/resume
+  * @wol_mac_support: Bitmask of MAC supported %WAKE_* options
+@@ -172,12 +179,18 @@ struct phylink_config {
  	void (*get_fixed_state)(struct phylink_config *config,
  				struct phylink_link_state *state);
  	DECLARE_PHY_INTERFACE_MASK(supported_interfaces);
@@ -440,15 +440,16 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	unsigned long lpi_capabilities;
  	u32 lpi_timer_default;
  	bool eee_enabled_default;
-+
+ 
 +	unsigned int num_possible_pcs;
 +	int (*fill_available_pcs)(struct phylink_config *config,
 +				  struct phylink_pcs **available_pcs,
 +				  unsigned int num_possible_pcs);
- };
- 
- void phylink_limit_mac_speed(struct phylink_config *config, u32 max_speed);
-@@ -468,6 +481,9 @@ struct phylink_pcs {
++
+ 	/* Wake-on-Lan support */
+ 	bool wol_phy_legacy;
+ 	bool wol_phy_speed_ctrl;
+@@ -497,6 +510,9 @@ struct phylink_pcs {
  	struct phylink *phylink;
  	bool poll;
  	bool rxc_always_on;

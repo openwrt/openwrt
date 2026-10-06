@@ -21,10 +21,10 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #include <net/dsa.h>
  #include <net/dst_metadata.h>
 +#include <net/gso.h>
+ #include <net/netdev_lock.h>
  #include <net/page_pool/helpers.h>
  #include <linux/genalloc.h>
- 
-@@ -1774,12 +1775,28 @@ static void mtk_wake_queue(struct mtk_et
+@@ -1775,12 +1776,28 @@ static void mtk_wake_queue(struct mtk_et
  	}
  }
  
@@ -53,7 +53,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	bool gso = false;
  	int tx_num;
  
-@@ -1808,6 +1825,18 @@ static netdev_tx_t mtk_start_xmit(struct
+@@ -1809,6 +1826,18 @@ static netdev_tx_t mtk_start_xmit(struct
  		return NETDEV_TX_BUSY;
  	}
  
@@ -72,7 +72,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	/* TSO: fill MSS info in tcp checksum field */
  	if (skb_is_gso(skb)) {
  		if (skb_cow_head(skb, 0)) {
-@@ -1823,8 +1852,14 @@ static netdev_tx_t mtk_start_xmit(struct
+@@ -1824,8 +1853,14 @@ static netdev_tx_t mtk_start_xmit(struct
  		}
  	}
  
