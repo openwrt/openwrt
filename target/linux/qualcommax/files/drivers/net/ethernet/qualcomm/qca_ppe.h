@@ -1585,7 +1585,8 @@ int ppe_scheduler_ready(struct qca_ppe_priv *priv);
 void ppe_scheduler_unready(struct qca_ppe_priv *priv);
 void ppe_scheduler_exit(struct qca_ppe_priv *priv);
 void ppe_port_queues_enable(struct qca_ppe_priv *priv, int port, bool en);
-u32 ppe_port_queue_drops(struct qca_ppe_priv *priv, int port);
+void ppe_port_queue_drops(struct qca_ppe_priv *priv, int port, u32 *early,
+			  u32 *tail);
 int ppe_port_qstats(struct qca_ppe_priv *priv, int port, u8 **names,
 		    struct qca_ppe_mib_stats *st);
 int qca_ppe_setup_tc(struct dsa_switch *ds, int port, enum tc_setup_type type,

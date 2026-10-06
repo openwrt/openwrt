@@ -809,7 +809,11 @@ static const u64 ppe_region_size[] = {
 static const struct devlink_trap_group ppe_trap_groups[] = {
 	DEVLINK_TRAP_GROUP_GENERIC(L2_DROPS, 0),
 	DEVLINK_TRAP_GROUP_GENERIC(ACL_DROPS, 0),
+	DEVLINK_TRAP_GROUP_GENERIC(BUFFER_DROPS, 0),
 };
+
+/* The MTU check is set to drop; the generic MTU trap is an exception. */
+#define PPE_TRAP_ID_MTU_DROP	(DEVLINK_TRAP_GENERIC_ID_MAX + 1)
 
 static const struct devlink_trap ppe_traps[] = {
 	DEVLINK_TRAP_GENERIC(DROP, DROP, INGRESS_VLAN_FILTER,
@@ -820,10 +824,16 @@ static const struct devlink_trap ppe_traps[] = {
 			     DEVLINK_TRAP_GROUP_GENERIC_ID_L2_DROPS, 0),
 	DEVLINK_TRAP_GENERIC(DROP, DROP, INGRESS_FLOW_ACTION_DROP,
 			     DEVLINK_TRAP_GROUP_GENERIC_ID_ACL_DROPS, 0),
+	DEVLINK_TRAP_DRIVER(DROP, DROP, PPE_TRAP_ID_MTU_DROP, "mtu_drop",
+			    DEVLINK_TRAP_GROUP_GENERIC_ID_L2_DROPS, 0),
+	DEVLINK_TRAP_GENERIC(DROP, DROP, TAIL_DROP,
+			     DEVLINK_TRAP_GROUP_GENERIC_ID_BUFFER_DROPS, 0),
+	DEVLINK_TRAP_GENERIC(DROP, DROP, EARLY_DROP,
+			     DEVLINK_TRAP_GROUP_GENERIC_ID_BUFFER_DROPS, 0),
 };
 
 static const u8 ppe_trap_drop_code[] = {
-	109, 113, 117, 111,
+	109, 113, 117, 111, 80,
 };
 
 static int qca_ppe_devlink_trap_init(struct dsa_switch *ds,
@@ -853,6 +863,20 @@ static int qca_ppe_devlink_trap_drop_counter_get(struct dsa_switch *ds,
 	struct qca_ppe_priv *priv = ds_to_priv(ds);
 	u32 w[PPE_CNT_WORDS], code, port;
 	int i;
+
+	/* Queue drops are counted per queue, not by drop code. */
+	if (trap->id == DEVLINK_TRAP_GENERIC_ID_TAIL_DROP ||
+	    trap->id == DEVLINK_TRAP_GENERIC_ID_EARLY_DROP) {
+		u32 early, tail;
+
+		*p_drops = 0;
+		for (port = 0; port < PPE_NUM_PORTS; port++) {
+			ppe_port_queue_drops(priv, port, &early, &tail);
+			*p_drops += trap->id == DEVLINK_TRAP_GENERIC_ID_TAIL_DROP ?
+				    tail : early;
+		}
+		return 0;
+	}
 
 	for (i = 0; i < ARRAY_SIZE(ppe_traps); i++)
 		if (ppe_traps[i].id == trap->id)
@@ -2057,7 +2081,7 @@ static struct qca_ppe_mib_stats *ppe_port_mib(struct qca_ppe_priv *priv,
 static void ppe_mib_fold(struct qca_ppe_priv *priv, int port)
 {
 	struct qca_ppe_mib_stats *stats;
-	u32 drop[3];
+	u32 drop[3], early;
 	bool xgmac, rebase;
 	int i;
 
@@ -2101,7 +2125,8 @@ static void ppe_mib_fold(struct qca_ppe_priv *priv, int port)
 
 	regmap_read(priv->regmap, PPE_PRX_DROP_CNT(port), &drop[0]);
 	regmap_read(priv->regmap, PPE_PORT_TX_DROP_CNT(port), &drop[1]);
-	drop[2] = ppe_port_queue_drops(priv, port);
+	ppe_port_queue_drops(priv, port, &early, &drop[2]);
+	drop[2] += early;
 	for (i = PPE_MIB_RX_DROP; i < PPE_MIB_STATS; i++) {
 		u32 cur = drop[i - PPE_MIB_RX_DROP];
 
