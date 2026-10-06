@@ -59,7 +59,7 @@ Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
  		dst_release(dst);
  		break;
  	case FLOW_OFFLOAD_XMIT_XFRM:
-@@ -565,13 +568,47 @@ static void nf_flow_table_extend_ct_time
+@@ -565,13 +568,51 @@ static void nf_flow_table_extend_ct_time
  	nf_ct_put(ct);
  }
  
@@ -70,8 +70,10 @@ Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
 +static bool nf_flow_bridge_port_stale(struct net *net,
 +				      const struct flow_offload_tuple *tuple)
 +{
++	struct net_device_path_ctx ctx = {
++		.ieee80211 = true,
++	};
 +	struct net_device_path_stack stack;
-+	struct net_device *dev;
 +	bool stale = false;
 +	int i, port = 0;
 +
@@ -79,9 +81,11 @@ Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
 +	    !tuple->out.bridge_ifidx)
 +		return false;
 +
++	ether_addr_copy(ctx.daddr, tuple->out.h_dest);
++
 +	rcu_read_lock();
-+	dev = dev_get_by_index_rcu(net, tuple->out.path_ifidx);
-+	if (dev && !dev_fill_forward_path(dev, tuple->out.h_dest, &stack)) {
++	ctx.dev = dev_get_by_index_rcu(net, tuple->out.path_ifidx);
++	if (ctx.dev && !dev_fill_forward_path(&ctx, &stack)) {
 +		/* The last bridge, as in nft_dev_path_info() */
 +		for (i = 0; i < stack.num_paths - 1; i++) {
 +			if (stack.path[i].type == DEV_PATH_BRIDGE)
@@ -109,7 +113,7 @@ Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
  		teardown = true;
 --- a/net/netfilter/nf_flow_table_path.c
 +++ b/net/netfilter/nf_flow_table_path.c
-@@ -83,6 +83,7 @@ struct nft_forward_info {
+@@ -89,6 +89,7 @@ struct nft_forward_info {
  		__be16	proto;
  	} encap[NF_FLOW_TABLE_ENCAP_MAX];
  	u8 num_encaps;
@@ -117,7 +121,7 @@ Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
  	u8 ingress_vlans;
  	u8 h_source[ETH_ALEN];
  	u8 h_dest[ETH_ALEN];
-@@ -155,6 +156,10 @@ static void nft_dev_path_info(const stru
+@@ -163,6 +164,10 @@ static int nft_dev_path_info(const struc
  			case DEV_PATH_BR_VLAN_KEEP:
  				break;
  			}
@@ -128,7 +132,7 @@ Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
  			info->xmit_type = FLOW_OFFLOAD_XMIT_DIRECT;
  			break;
  		default:
-@@ -223,6 +228,8 @@ static void nft_dev_forward_path(struct
+@@ -231,6 +236,8 @@ static int nft_dev_forward_path(struct n
  		memcpy(route->tuple[dir].out.h_source, info.h_source, ETH_ALEN);
  		memcpy(route->tuple[dir].out.h_dest, info.h_dest, ETH_ALEN);
  		route->tuple[dir].out.hw_ifindex = info.hw_outdev->ifindex;
@@ -136,4 +140,4 @@ Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
 +		route->tuple[dir].out.bridge_ifindex = info.bridge_ifidx;
  		route->tuple[dir].xmit_type = info.xmit_type;
  	}
- }
+ 
