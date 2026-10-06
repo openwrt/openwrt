@@ -88,10 +88,10 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  #include <linux/mtd/mtd.h>
  #include <linux/mtd/partitions.h>
 +#include <linux/mtd/blktrans.h>
+ #include <linux/mtd/concat.h>
  
  #include "mtdcore.h"
- 
-@@ -1177,6 +1178,8 @@ int mtd_device_parse_register(struct mtd
+@@ -1190,6 +1191,8 @@ int mtd_device_parse_register(struct mtd
  		register_reboot_notifier(&mtd->reboot_notifier);
  	}
  

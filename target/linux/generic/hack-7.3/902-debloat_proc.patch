@@ -29,7 +29,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/fs/locks.c
 +++ b/fs/locks.c
-@@ -2974,6 +2974,8 @@ static const struct seq_operations locks
+@@ -3130,6 +3130,8 @@ static const struct seq_operations locks
  
  static int __init proc_locks_init(void)
  {
@@ -40,7 +40,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	return 0;
 --- a/fs/proc/Kconfig
 +++ b/fs/proc/Kconfig
-@@ -120,6 +120,11 @@ config PROC_CHILDREN
+@@ -119,6 +119,11 @@ config PROC_CHILDREN
  	  Say Y if you are running any user-space software which takes benefit from
  	  this interface. For example, rkt is such a piece of software.
  
@@ -176,7 +176,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	if (IS_ENABLED(CONFIG_PROC_STRIPPED))
 +		return;
 +
- 	iface = kmalloc(sizeof(*iface), GFP_KERNEL);
+ 	iface = kmalloc_obj(*iface);
  	if (!iface)
  		return;
 --- a/kernel/exec_domain.c
@@ -192,7 +192,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
 --- a/kernel/irq/proc.c
 +++ b/kernel/irq/proc.c
-@@ -332,6 +332,9 @@ void register_irq_proc(unsigned int irq,
+@@ -335,6 +335,9 @@ void register_irq_proc(unsigned int irq,
  	void __maybe_unused *irqp = (void *)(unsigned long) irq;
  	char name [MAX_NAMELEN];
  
@@ -202,7 +202,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (!root_irq_dir || (desc->irq_data.chip == &no_irq_chip))
  		return;
  
-@@ -385,6 +388,9 @@ void unregister_irq_proc(unsigned int ir
+@@ -388,6 +391,9 @@ void unregister_irq_proc(unsigned int ir
  {
  	char name [MAX_NAMELEN];
  
@@ -212,7 +212,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (!root_irq_dir || !desc->dir)
  		return;
  #ifdef CONFIG_SMP
-@@ -423,6 +429,9 @@ void init_irq_proc(void)
+@@ -426,6 +432,9 @@ void init_irq_proc(void)
  	unsigned int irq;
  	struct irq_desc *desc;
  
@@ -224,7 +224,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (!root_irq_dir)
 --- a/kernel/time/timer_list.c
 +++ b/kernel/time/timer_list.c
-@@ -352,6 +352,8 @@ static int __init init_timer_list_procfs
+@@ -348,6 +348,8 @@ static int __init init_timer_list_procfs
  {
  	struct proc_dir_entry *pe;
  
@@ -235,7 +235,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (!pe)
 --- a/mm/vmalloc.c
 +++ b/mm/vmalloc.c
-@@ -5155,6 +5155,9 @@ static int vmalloc_info_show(struct seq_
+@@ -5397,6 +5397,9 @@ static int vmalloc_info_show(struct seq_
  
  static int __init proc_vmalloc_init(void)
  {
@@ -247,7 +247,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
 --- a/mm/vmstat.c
 +++ b/mm/vmstat.c
-@@ -2288,10 +2288,12 @@ void __init init_mm_internals(void)
+@@ -2309,10 +2309,12 @@ void __init init_mm_internals(void)
  	start_shepherd_timer();
  #endif
  #ifdef CONFIG_PROC_FS
@@ -331,7 +331,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/core/sock.c
 +++ b/net/core/sock.c
-@@ -4358,6 +4358,8 @@ static __net_initdata struct pernet_oper
+@@ -4490,6 +4490,8 @@ static __net_initdata struct pernet_oper
  
  static int __init proto_init(void)
  {
@@ -342,7 +342,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/ipv4/fib_trie.c
 +++ b/net/ipv4/fib_trie.c
-@@ -3014,11 +3014,13 @@ static const struct seq_operations fib_r
+@@ -3007,11 +3007,13 @@ static const struct seq_operations fib_r
  
  int __net_init fib_proc_init(struct net *net)
  {
@@ -358,7 +358,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			fib_triestat_seq_show, NULL))
  		goto out2;
  
-@@ -3029,17 +3031,21 @@ int __net_init fib_proc_init(struct net
+@@ -3022,17 +3024,21 @@ int __net_init fib_proc_init(struct net
  	return 0;
  
  out3:
@@ -386,7 +386,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/ipv4/proc.c
 +++ b/net/ipv4/proc.c
-@@ -568,5 +568,8 @@ static __net_initdata struct pernet_oper
+@@ -552,5 +552,8 @@ static __net_initdata struct pernet_oper
  
  int __init ip_misc_proc_init(void)
  {
@@ -409,7 +409,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/ipv4/inet_timewait_sock.c
 +++ b/net/ipv4/inet_timewait_sock.c
-@@ -301,7 +301,7 @@ void __inet_twsk_schedule(struct inet_ti
+@@ -290,7 +290,7 @@ void __inet_twsk_schedule(struct inet_ti
  	 */
  
  	if (!rearm) {

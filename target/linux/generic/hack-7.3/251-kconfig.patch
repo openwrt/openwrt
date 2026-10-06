@@ -17,7 +17,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
 
 --- a/crypto/Kconfig
 +++ b/crypto/Kconfig
-@@ -55,7 +55,7 @@ config CRYPTO_FIPS_VERSION
+@@ -53,7 +53,7 @@ config CRYPTO_FIPS_VERSION
  	  By default the KERNELRELEASE value is used.
  
  config CRYPTO_ALGAPI
@@ -26,7 +26,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	select CRYPTO_ALGAPI2
  	help
  	  This option provides the API for cryptographic algorithms.
-@@ -64,7 +64,7 @@ config CRYPTO_ALGAPI2
+@@ -62,7 +62,7 @@ config CRYPTO_ALGAPI2
  	tristate
  
  config CRYPTO_AEAD
@@ -35,7 +35,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	select CRYPTO_AEAD2
  	select CRYPTO_ALGAPI
  
-@@ -82,7 +82,7 @@ config CRYPTO_SIG2
+@@ -80,7 +80,7 @@ config CRYPTO_SIG2
  	select CRYPTO_ALGAPI2
  
  config CRYPTO_SKCIPHER
@@ -44,7 +44,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	select CRYPTO_SKCIPHER2
  	select CRYPTO_ALGAPI
  	select CRYPTO_ECB
-@@ -92,7 +92,7 @@ config CRYPTO_SKCIPHER2
+@@ -90,7 +90,7 @@ config CRYPTO_SKCIPHER2
  	select CRYPTO_ALGAPI2
  
  config CRYPTO_HASH
@@ -53,7 +53,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	select CRYPTO_HASH2
  	select CRYPTO_ALGAPI
  
-@@ -101,7 +101,7 @@ config CRYPTO_HASH2
+@@ -99,7 +99,7 @@ config CRYPTO_HASH2
  	select CRYPTO_ALGAPI2
  
  config CRYPTO_RNG
@@ -93,7 +93,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	bool
 --- a/lib/Kconfig
 +++ b/lib/Kconfig
-@@ -320,16 +320,16 @@ config BCH_CONST_T
+@@ -317,16 +317,16 @@ config BCH_CONST_T
  # Textsearch support is select'ed if needed
  #
  config TEXTSEARCH
@@ -120,8 +120,8 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	def_bool NETFILTER_EGRESS && (NET_CLS_ACT || IFB)
  
  config NETFILTER_NETLINK
--	tristate
-+	tristate "Netfilter NFNETLINK interface"
+-	bool
++	bool "Netfilter NFNETLINK interface"
  
  config NETFILTER_FAMILY_BRIDGE
  	bool
@@ -147,7 +147,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	bool
 --- a/net/Kconfig
 +++ b/net/Kconfig
-@@ -492,7 +492,7 @@ config NET_DEVLINK
+@@ -489,7 +489,7 @@ config NET_DEVLINK
  	default n
  
  config PAGE_POOL

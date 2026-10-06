@@ -29,19 +29,28 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
 
 --- a/io_uring/zcrx.c
 +++ b/io_uring/zcrx.c
-@@ -87,7 +87,7 @@ static int io_populate_area_dma(struct i
+@@ -129,7 +129,7 @@ static int io_populate_area_dma(struct i
+ 
+ static void io_unmap_dmabuf(struct io_zcrx_mem *mem)
+ {
+-	if (!IS_ENABLED(CONFIG_DMA_SHARED_BUFFER))
++	if (!IS_REACHABLE(CONFIG_DMA_SHARED_BUFFER))
+ 		return;
+ 	if (mem->sgt)
+ 		dma_buf_unmap_attachment_unlocked(mem->attach, mem->sgt,
+@@ -142,7 +142,7 @@ static void io_unmap_dmabuf(struct io_zc
  
  static void io_release_dmabuf(struct io_zcrx_mem *mem)
  {
 -	if (!IS_ENABLED(CONFIG_DMA_SHARED_BUFFER))
 +	if (!IS_REACHABLE(CONFIG_DMA_SHARED_BUFFER))
  		return;
- 
- 	if (mem->sgt)
-@@ -118,7 +118,7 @@ static int io_import_dmabuf(struct io_zc
+ 	if (mem->dmabuf)
+ 		dma_buf_put(mem->dmabuf);
+@@ -164,7 +164,7 @@ static int io_import_dmabuf(struct io_zc
  		return -EINVAL;
- 	if (WARN_ON_ONCE(!ifq->dev))
- 		return -EFAULT;
+ 	if (off)
+ 		return -EINVAL;
 -	if (!IS_ENABLED(CONFIG_DMA_SHARED_BUFFER))
 +	if (!IS_REACHABLE(CONFIG_DMA_SHARED_BUFFER))
  		return -EINVAL;
