@@ -16,10 +16,6 @@ case "$FIRMWARE" in
 		ath11k_patch_mac $(macaddr_add $addr 8) 1
 		ath11k_set_macflag
 		;;
-	asus,rt-ax89x)
-		CI_UBIPART="UBI_DEV"
-		caldata_extract_ubi "Factory" 0x1000 0x20000
-		;;
 	arcadyan,aw1000|\
 	buffalo,wxr-5950ax12|\
 	cmcc,rm2-6|\

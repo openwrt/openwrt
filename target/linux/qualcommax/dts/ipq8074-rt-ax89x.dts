@@ -471,6 +471,10 @@
 							#address-cells = <1>;
 							#size-cells = <1>;
 
+							caldata: calibration@0x1000 {
+								reg = <0x1000 0x20000>;
+							};
+
 							macaddr: macaddr@1014 {
 								compatible = "mac-base";
 								reg = <0x100e 0x6>;
@@ -773,4 +777,6 @@
 &wifi {
 	status = "okay";
 	qcom,ath11k-calibration-variant = "Asus-RT-AX89X";
+	nvmem-cell-names = "calibration";
+	nvmem-cells = <&caldata>;
 };
