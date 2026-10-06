@@ -47,7 +47,8 @@
  *   up to 1536 host routes. Trapped to the CPU: addresses of the box, on-link
  *   prefixes, blackhole, unreachable and prohibit routes, routes through a
  *   device outside the switch, a nexthop object or a lightweight tunnel,
- *   multipath routes and, for IPv6, source-specific and RA-learnt routes.
+ *   multipath routes, IPv4 routes for one DSCP value and, for IPv6,
+ *   source-specific and RA-learnt routes.
  *   Default routes have no entry, so their packets reach the CPU through the
  *   catch-all rows. Multicast routing is not offloaded, and all egress
  *   interfaces share one 1536 byte MTU. The programmed state is shown in
@@ -1923,14 +1924,17 @@ static int otto_l3_fib_add_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 	/* A route through a nexthop object has no nexthop array to read, a
 	 * blackhole, unreachable or prohibit route has no device behind its
 	 * nexthop, a route with a lightweight tunnel (seg6, MPLS) needs the
-	 * CPU to encapsulate what the hardware would forward bare, and a
-	 * multipath route would be forwarded through its first next hop alone.
-	 * None is offloaded, but any can replace a route that is.
+	 * CPU to encapsulate what the hardware would forward bare, a multipath
+	 * route would be forwarded through its first next hop alone, and a route
+	 * for one DSCP value would carry every other value too, since the entry
+	 * matches on the destination only. None is offloaded, but any can
+	 * replace a route that is.
 	 */
 	if (info->fi->nh || !fib_info_nh(info->fi, 0)->fib_nh_dev ||
-	    fib_info_nh(info->fi, 0)->fib_nh_lws || fib_info_num_path(info->fi) > 1) {
+	    fib_info_nh(info->fi, 0)->fib_nh_lws || fib_info_num_path(info->fi) > 1 ||
+	    info->dscp) {
 		dev_dbg(ctrl->dev,
-			"route not offloaded: no device, nexthop object, tunnel or ECMP\n");
+			"route not offloaded: no device, nexthop object, tunnel, ECMP or DSCP\n");
 		route = otto_l3_route_find(ctrl, info->tb_id, ROUTE_TYPE_IP4UC, info->dst,
 					   NULL, info->dst_len);
 		if (route) {
@@ -2050,10 +2054,12 @@ static int otto_l3_fib_del_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 	struct fib_nh *nh;
 
 	/* A route through a nexthop object, without a device, with a
-	 * lightweight tunnel or with several paths holds at most a trap entry
+	 * lightweight tunnel, with several paths or for one DSCP value holds at
+	 * most a trap entry
 	 */
 	if (info->fi->nh || !fib_info_nh(info->fi, 0)->fib_nh_dev ||
-	    fib_info_nh(info->fi, 0)->fib_nh_lws || fib_info_num_path(info->fi) > 1) {
+	    fib_info_nh(info->fi, 0)->fib_nh_lws || fib_info_num_path(info->fi) > 1 ||
+	    info->dscp) {
 		route = otto_l3_route_find(ctrl, info->tb_id, ROUTE_TYPE_IP4UC, info->dst,
 					   NULL, info->dst_len);
 		if (route)
