@@ -848,6 +848,14 @@
 #define   PPE_AC_SHARED_CEILING		GENMASK(31, 21)
 /* W1: how far below the limit a green frame starts to be dropped early. */
 #define   PPE_AC_GAP_GRN_MIN		GENMASK(10, 0)
+/* The yellow and red limits and early-drop starts, as gaps below the green
+ * limit; the yellow start straddles W1 and W2.
+ */
+#define   PPE_AC_GAP_YEL_MAX		GENMASK(21, 11)
+#define   PPE_AC_GAP_YEL_MIN_LO		GENMASK(31, 22)
+#define   PPE_AC_GAP_YEL_MIN_HI		BIT(0)		/* W2 */
+#define   PPE_AC_GAP_RED_MAX		GENMASK(11, 1)	/* W2 */
+#define   PPE_AC_GAP_RED_MIN		GENMASK(22, 12)	/* W2 */
 #define   PPE_AC_GRN_RESUME_OFF		GENMASK(23, 13)
 
 #define PPE_QM_AC_MUL_W0(i)		(PPE_QM_BASE + 0x4a000 + (i) * 0x10)
@@ -1050,6 +1058,8 @@ struct ppe_red {
 	u32 base_backlog;
 	u32 base_early;
 	u32 base_pdrop;
+	u32 base_dp_drops[3];
+	bool gred;
 };
 
 /* One red per band of an offloaded ets or prio, and one for the whole port. */
@@ -1117,6 +1127,9 @@ struct qca_ppe_priv {
 	 */
 	u16 red_max[PPE_L0_UCAST_QUEUES];
 	u16 red_gap[PPE_L0_UCAST_QUEUES];
+	/* GRED: yellow max/min and red max/min gaps; zero for a colour-blind red. */
+	u16 gred_gap[PPE_L0_UCAST_QUEUES][4];
+	DECLARE_BITMAP(gred_queues, PPE_L0_UCAST_QUEUES);
 	struct dentry *debugfs;
 	struct devlink_region *regions[3];
 	DECLARE_BITMAP(vsi_bitmap, PPE_VSI_MAX);

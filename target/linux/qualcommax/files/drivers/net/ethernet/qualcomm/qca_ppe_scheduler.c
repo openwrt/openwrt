@@ -462,11 +462,13 @@ static const u8 port_queue_base[PPE_NUM_PORTS] = {
  */
 static void ppe_ac_uni_write(struct qca_ppe_priv *priv, u32 queue, u32 w0)
 {
-	u32 w1 = 0;
+	const u16 *g = priv->gred_gap[queue];
+	u32 w1 = 0, w2 = 0;
 
 	/* A red holds its queues at a static limit of its own, under the group
 	 * and force setting the queue is given here. Colour blind, every frame
-	 * is green and green's gap alone sets where early drop starts.
+	 * is green and green's gap alone sets where early drop starts; a gred
+	 * turns colour on and places yellow and red below green.
 	 */
 	if (priv->red_max[queue]) {
 		w0 &= ~(PPE_AC_SHARED_DYNAMIC | PPE_AC_SHARED_CEILING |
@@ -475,10 +477,18 @@ static void ppe_ac_uni_write(struct qca_ppe_priv *priv, u32 queue, u32 w0)
 		      FIELD_PREP(PPE_AC_SHARED_CEILING, priv->red_max[queue]);
 		w1 = FIELD_PREP(PPE_AC_GAP_GRN_MIN, priv->red_gap[queue]);
 	}
+	if (priv->red_max[queue] && test_bit(queue, priv->gred_queues)) {
+		w0 |= PPE_AC_COLOR_AWARE;
+		w1 |= FIELD_PREP(PPE_AC_GAP_YEL_MAX, g[0]) |
+		      FIELD_PREP(PPE_AC_GAP_YEL_MIN_LO, g[1]);
+		w2 = FIELD_PREP(PPE_AC_GAP_YEL_MIN_HI, g[1] >> 10) |
+		     FIELD_PREP(PPE_AC_GAP_RED_MAX, g[2]) |
+		     FIELD_PREP(PPE_AC_GAP_RED_MIN, g[3]);
+	}
 
 	regmap_write(priv->regmap, PPE_QM_AC_UNI_W0(queue), w0);
 	regmap_write(priv->regmap, PPE_QM_AC_UNI_W1(queue), w1);
-	regmap_write(priv->regmap, PPE_QM_AC_UNI_W2(queue), 0);
+	regmap_write(priv->regmap, PPE_QM_AC_UNI_W2(queue), w2);
 	regmap_write(priv->regmap, PPE_QM_AC_UNI_W3(queue),
 		     FIELD_PREP(PPE_AC_GRN_RESUME_OFF, 36));
 }
@@ -2710,13 +2720,22 @@ static int ppe_red_scope(struct ppe_port_shaper *sh,
 
 static void ppe_red_queues_set(struct qca_ppe_priv *priv,
 			       const struct port_l0_params *p,
-			       const struct ppe_red *red, u16 max, u16 gap)
+			       const struct ppe_red *red, u16 max, u16 gap,
+			       const u16 *colour)
 {
-	int i;
+	int i, q;
 
 	for (i = red->first; i < red->first + red->count; i++) {
-		priv->red_max[p->ucast_base + i] = max;
-		priv->red_gap[p->ucast_base + i] = gap;
+		q = p->ucast_base + i;
+		priv->red_max[q] = max;
+		priv->red_gap[q] = gap;
+		if (colour) {
+			memcpy(priv->gred_gap[q], colour,
+			       sizeof(priv->gred_gap[q]));
+			set_bit(q, priv->gred_queues);
+		} else {
+			clear_bit(q, priv->gred_queues);
+		}
 	}
 
 	ppe_port_queue_limit_set(priv, p->port);
@@ -2777,7 +2796,7 @@ static int qca_ppe_setup_tc_red(struct qca_ppe_priv *priv, int port,
 		}
 
 		if (red && red != &sh->red[scope])
-			ppe_red_queues_set(priv, p, red, 0, 0);
+			ppe_red_queues_set(priv, p, red, 0, 0, NULL);
 
 		red = &sh->red[scope];
 		*red = (struct ppe_red){
@@ -2790,12 +2809,12 @@ static int qca_ppe_setup_tc_red(struct qca_ppe_priv *priv, int port,
 				    &red->base_early, &red->base_pdrop,
 				    &backlog);
 		red->base_drops = red->base_early + red->base_pdrop;
-		ppe_red_queues_set(priv, p, red, max, max - min);
+		ppe_red_queues_set(priv, p, red, max, max - min, NULL);
 		return 0;
 	case TC_RED_DESTROY:
 		if (!red)
 			return 0;
-		ppe_red_queues_set(priv, p, red, 0, 0);
+		ppe_red_queues_set(priv, p, red, 0, 0, NULL);
 		red->handle = 0;
 		return 0;
 	case TC_RED_STATS:
@@ -2835,6 +2854,148 @@ static int qca_ppe_setup_tc_red(struct qca_ppe_priv *priv, int port,
  * meters the frame it puts on the wire including preamble, inter-packet gap
  * and CRC.
  */
+/* GRED in WRED mode on the same queues a red takes: the queue manager compares
+ * every colour against the one queue depth, with green's limit as the queue's
+ * and yellow and red held below it. DP 0, 1 and 2 are green, yellow and red,
+ * which an ingress flower classid sets.
+ */
+static int ppe_gred_colours(struct qca_ppe_priv *priv, int port,
+			    const struct tc_gred_qopt_offload_params *set,
+			    u16 *max, u16 *gap, u16 *colour)
+{
+	u32 cmax[3], cmin[3];
+	int i, d;
+
+	if (!set->wred_on || set->dp_cnt > 3 ||
+	    !set->tab[set->dp_def].present) {
+		dev_err(priv->ds.dev,
+			"port %d: a gred is offloaded in WRED mode (grio, equal priorities) with up to three DPs\n",
+			port);
+		return -EOPNOTSUPP;
+	}
+
+	for (i = 0; i < 3; i++) {
+		d = i < set->dp_cnt && set->tab[i].present ? i : set->dp_def;
+		if (set->tab[d].is_ecn) {
+			dev_err(priv->ds.dev,
+				"port %d: the queue manager drops and cannot mark\n",
+				port);
+			return -EOPNOTSUPP;
+		}
+		cmax[i] = DIV_ROUND_CLOSEST(set->tab[d].max, PPE_BM_BUF_SIZE);
+		cmin[i] = DIV_ROUND_CLOSEST(set->tab[d].min, PPE_BM_BUF_SIZE);
+	}
+
+	if (!cmax[0] || cmax[0] > FIELD_MAX(PPE_AC_SHARED_CEILING) ||
+	    cmax[1] > cmax[0] || cmax[2] > cmax[0]) {
+		dev_err(priv->ds.dev,
+			"port %d: green's max has to be the largest and within the queue limit's range\n",
+			port);
+		return -ERANGE;
+	}
+
+	*max = cmax[0];
+	*gap = cmax[0] - cmin[0];
+	colour[0] = cmax[0] - cmax[1];
+	colour[1] = cmax[0] - cmin[1];
+	colour[2] = cmax[0] - cmax[2];
+	colour[3] = cmax[0] - cmin[2];
+
+	return 0;
+}
+
+static void ppe_gred_dp_drops(struct qca_ppe_priv *priv,
+			      const struct port_l0_params *p,
+			      const struct ppe_red *red, u32 *drops)
+{
+	u32 w[PPE_CNT_WORDS];
+	int i, c;
+
+	drops[0] = drops[1] = drops[2] = 0;
+	for (i = red->first; i < red->first + red->count; i++)
+		for (c = 0; c < 3; c++) {
+			regmap_bulk_read(priv->regmap,
+					 PPE_QM_UNI_DROP_CNT(p->ucast_base + i, c),
+					 w, ARRAY_SIZE(w));
+			drops[c] += w[0];
+			regmap_bulk_read(priv->regmap,
+					 PPE_QM_UNI_DROP_CNT(p->ucast_base + i,
+							     3 + c),
+					 w, ARRAY_SIZE(w));
+			drops[c] += w[0];
+		}
+}
+
+static int qca_ppe_setup_tc_gred(struct qca_ppe_priv *priv, int port,
+				 struct tc_gred_qopt_offload *qopt)
+{
+	struct ppe_port_shaper *sh = &priv->shaper[port];
+	const struct port_l0_params *p = NULL;
+	struct ppe_red *red = NULL;
+	u16 max, gap, colour[4];
+	u32 drops[3];
+	u8 first, count;
+	int i, scope, ret;
+
+	for (i = 0; i < ARRAY_SIZE(port_l0); i++)
+		if (port_l0[i].port == port)
+			p = &port_l0[i];
+	if (!p)
+		return -EOPNOTSUPP;
+
+	for (i = 0; i < PPE_RED_SCOPES; i++)
+		if (sh->red[i].handle && sh->red[i].handle == qopt->handle)
+			red = &sh->red[i];
+
+	switch (qopt->command) {
+	case TC_GRED_REPLACE:
+		ret = ppe_gred_colours(priv, port, &qopt->set, &max, &gap,
+				       colour);
+		if (ret)
+			return ret;
+
+		scope = ppe_red_scope(sh, p, qopt->parent, &first, &count);
+		if (scope < 0) {
+			dev_err(priv->ds.dev,
+				"port %d: a gred is offloaded at the root, under a root tbf or under a band of an offloaded ets or prio\n",
+				port);
+			return scope;
+		}
+
+		if (red && red != &sh->red[scope])
+			ppe_red_queues_set(priv, p, red, 0, 0, NULL);
+
+		red = &sh->red[scope];
+		*red = (struct ppe_red){
+			.handle = qopt->handle,
+			.first = first,
+			.count = count,
+			.gred = true,
+		};
+		ppe_gred_dp_drops(priv, p, red, red->base_dp_drops);
+		ppe_red_queues_set(priv, p, red, max, gap, colour);
+		return 0;
+	case TC_GRED_DESTROY:
+		if (!red)
+			return 0;
+		ppe_red_queues_set(priv, p, red, 0, 0, NULL);
+		red->handle = 0;
+		return 0;
+	case TC_GRED_STATS:
+		if (!red || !red->gred)
+			return -EOPNOTSUPP;
+		ppe_gred_dp_drops(priv, p, red, drops);
+		for (i = 0; i < 3; i++) {
+			qopt->stats.qstats[i].drops += drops[i] -
+						       red->base_dp_drops[i];
+			red->base_dp_drops[i] = drops[i];
+		}
+		return 0;
+	default:
+		return -EOPNOTSUPP;
+	}
+}
+
 int qca_ppe_setup_tc_tbf(struct qca_ppe_priv *priv, int port,
 			 struct tc_tbf_qopt_offload *qopt)
 {
@@ -2903,6 +3064,8 @@ int qca_ppe_setup_tc(struct dsa_switch *ds, int port, enum tc_setup_type type,
 		return qca_ppe_setup_tc_mqprio(priv, port, type_data);
 	case TC_SETUP_QDISC_RED:
 		return qca_ppe_setup_tc_red(priv, port, type_data);
+	case TC_SETUP_QDISC_GRED:
+		return qca_ppe_setup_tc_gred(priv, port, type_data);
 	case TC_QUERY_CAPS:
 		return qca_ppe_tc_query_caps(type_data);
 	default:
