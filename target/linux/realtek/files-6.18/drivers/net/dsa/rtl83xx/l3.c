@@ -261,20 +261,16 @@ static void otto_l3_930x_set_egress_mac(struct otto_l3_ctrl *ctrl, u32 idx, u64 
 	otto_table_write(RTL9300_TBL_L3_EGR_INTF_MAC, idx, &data);
 }
 
-/* Read a host route entry from the table using its index. Only IPv4 and IPv6 unicast supported */
-static void otto_l3_930x_host_route_read(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt)
+/* Decode a host route entry fetched into @data. Returns false unless it is a
+ * valid unicast entry; valid is set for any entry, type for any valid one.
+ */
+static bool otto_l3_930x_host_route_decode(const u32 *data, struct otto_l3_route *rt)
 {
-	/* Only the unicast layout is handled below */
-	u32 data[5];
-	u32 v;
+	u32 v = data[0];
 
-	idx = ((idx / 6) * 8) + (idx % 6);
-
-	otto_table_read(RTL9300_TBL_L3_HOST_ROUTE_IPUC, idx, &data);
-	v = data[0];
 	rt->attr.valid = !!(v & BIT(31));
 	if (!rt->attr.valid)
-		return;
+		return false;
 	rt->attr.type = (v >> 29) & 0x3;
 	switch (rt->attr.type) {
 	case ROUTE_TYPE_IP4UC:
@@ -285,10 +281,8 @@ static void otto_l3_930x_host_route_read(struct otto_l3_ctrl *ctrl, int idx, str
 			      data[1], data[2],
 			      data[3], data[4]);
 		break;
-	case ROUTE_TYPE_IP4MC:
-	case ROUTE_TYPE_IP6MC:
-		dev_warn(ctrl->dev, "route type not supported\n");
-		return;
+	default:
+		return false;
 	}
 
 	rt->attr.hit = !!(v & BIT(20));
@@ -299,6 +293,25 @@ static void otto_l3_930x_host_route_read(struct otto_l3_ctrl *ctrl, int idx, str
 	rt->attr.ttl_check = !!(v & BIT(4));
 	rt->attr.qos_as = !!(v & BIT(3));
 	rt->attr.qos_prio =  v & 0x7;
+
+	return true;
+}
+
+/* Read a host route entry from the table using its index. Only IPv4 and IPv6 unicast supported */
+static void otto_l3_930x_host_route_read(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt)
+{
+	/* Only the unicast layout is handled below */
+	u32 data[5];
+
+	idx = ((idx / 6) * 8) + (idx % 6);
+
+	otto_table_read(RTL9300_TBL_L3_HOST_ROUTE_IPUC, idx, &data);
+	if (!otto_l3_930x_host_route_decode(data, rt)) {
+		if (rt->attr.valid)
+			dev_warn(ctrl->dev, "route type not supported\n");
+		return;
+	}
+
 	dev_dbg(ctrl->dev, "index %d is valid: %d\n", idx, rt->attr.valid);
 	dev_dbg(ctrl->dev, "next_hop: %d, hit: %d, action :%d, ttl_dec %d, ttl_check %d, dst_null %d\n",
 		rt->nh.id, rt->attr.hit, rt->attr.action, rt->attr.ttl_dec, rt->attr.ttl_check,
@@ -519,22 +532,18 @@ static int otto_l3_930x_mask6_len(const struct in6_addr *mask)
 	return len;
 }
 
-/* Read a prefix route entry from the L3_PREFIX_ROUTE_IPUC table
- * We currently only support IPv4 and IPv6 unicast route
+/* Decode a prefix route entry fetched into @data. Returns false unless it is
+ * a valid unicast entry; valid is set for any entry, type for any valid one.
  */
-static void otto_l3_930x_route_read(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt)
+static bool otto_l3_930x_route_decode(const u32 *data, struct otto_l3_route *rt)
 {
 	bool host_route, default_route;
 	struct in6_addr ip6_m;
-	u32 data[11];
-	u32 v, ip4_m;
+	u32 v;
 
-	dev_dbg(ctrl->dev, "%s\n", __func__);
-
-	otto_table_read(RTL9300_TBL_L3_PREFIX_ROUTE_IPUC, idx, &data);
 	rt->attr.valid = !!(data[0] & BIT(31));
 	if (!rt->attr.valid)
-		return;
+		return false;
 
 	rt->attr.type = (data[0] >> 29) & 0x3;
 
@@ -542,19 +551,16 @@ static void otto_l3_930x_route_read(struct otto_l3_ctrl *ctrl, int idx, struct o
 	host_route = !!(v & BIT(21));
 	default_route = !!(v & BIT(20));
 	rt->prefix_len = -1;
-	dev_dbg(ctrl->dev, "host route %d, default_route %d\n", host_route, default_route);
 
 	switch (rt->attr.type) {
 	case ROUTE_TYPE_IP4UC:
 		rt->dst_ip = data[4];
-		ip4_m = data[9];
-		dev_dbg(ctrl->dev, "Read ip4 mask: %08x\n", ip4_m);
 		if (host_route)
 			rt->prefix_len = 32;
 		else if (default_route)
 			rt->prefix_len = 0;
 		else
-			rt->prefix_len = inet_mask_len(ip4_m);
+			rt->prefix_len = inet_mask_len(data[9]);
 		break;
 	case ROUTE_TYPE_IP6UC:
 		ipv6_addr_set(&rt->dst_ip6,
@@ -570,10 +576,8 @@ static void otto_l3_930x_route_read(struct otto_l3_ctrl *ctrl, int idx, struct o
 		else
 			rt->prefix_len = otto_l3_930x_mask6_len(&ip6_m);
 		break;
-	case ROUTE_TYPE_IP4MC:
-	case ROUTE_TYPE_IP6MC:
-		dev_warn(ctrl->dev, "route type not supported\n");
-		return;
+	default:
+		return false;
 	}
 
 	rt->attr.hit = !!(v & BIT(22));
@@ -584,6 +588,26 @@ static void otto_l3_930x_route_read(struct otto_l3_ctrl *ctrl, int idx, struct o
 	rt->attr.dst_null = !!(v & BIT(4));
 	rt->attr.qos_as = !!(v & BIT(3));
 	rt->attr.qos_prio =  v & 0x7;
+
+	return true;
+}
+
+/* Read a prefix route entry from the L3_PREFIX_ROUTE_IPUC table
+ * We currently only support IPv4 and IPv6 unicast route
+ */
+static void otto_l3_930x_route_read(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt)
+{
+	u32 data[11];
+
+	dev_dbg(ctrl->dev, "%s\n", __func__);
+
+	otto_table_read(RTL9300_TBL_L3_PREFIX_ROUTE_IPUC, idx, &data);
+	if (!otto_l3_930x_route_decode(data, rt)) {
+		if (rt->attr.valid)
+			dev_warn(ctrl->dev, "route type not supported\n");
+		return;
+	}
+
 	dev_dbg(ctrl->dev, "index %d is valid: %d\n", idx, rt->attr.valid);
 	dev_dbg(ctrl->dev, "next_hop: %d, hit: %d, action :%d, ttl_dec %d, ttl_check %d, dst_null %d\n",
 		rt->nh.id, rt->attr.hit, rt->attr.action,
@@ -2990,9 +3014,8 @@ static int otto_l3_netevent_notifier(struct notifier_block *this, unsigned long 
  * as every other L3 table, so only one of the two is ever held at a time
  * (otto_table_acquire() takes a mutex per register, not per table).
  *
- * Field positions below are taken from otto_l3_930x_host_route_read()/_write()
- * and otto_l3_930x_route_read()/_write() further up in this file, which are
- * mutually consistent.
+ * Rows are decoded by otto_l3_930x_host_route_decode() and
+ * otto_l3_930x_route_decode(), the decoders the route readers use.
  */
 
 static const char * const otto_l3_930x_dump_type_name[4] = {
@@ -3000,7 +3023,7 @@ static const char * const otto_l3_930x_dump_type_name[4] = {
 };
 
 /* Indexed by ROUTE_ACT_*; multicast entries never reach this, so it is only
- * ever indexed with a value produced by the unicast decode below.
+ * ever indexed with a value produced by the unicast decoders.
  */
 static const char * const otto_l3_930x_dump_action_name[4] = {
 	[ROUTE_ACT_FORWARD]  = "fwd",
@@ -3019,30 +3042,19 @@ static const char * const otto_l3_930x_dump_action_name[4] = {
  */
 static const u8 otto_l3_930x_prefix_widths[] = { 1, 2, V6_PREFIX_ROWS, 8 };
 
-/* One valid entry, decoded and ready to print. Multicast entries (type 1 and
- * 3) only carry what word 0 says (valid, type, hence width): no field
- * position beyond that is in this driver or in the GPL SDK excerpts it was
- * written against, so decoded stays false and the dump prints '-' for the
- * rest.
+/* One valid entry, where it sits and the route it holds. Multicast entries
+ * (type 1 and 3) only carry what word 0 says (valid, type, hence width): no
+ * field position beyond that is in this driver or in the GPL SDK excerpts it
+ * was written against, so decoded stays false and the dump prints '-' for
+ * the rest.
  */
 struct otto_l3_930x_dump_rec {
 	bool is_prefix;
 	bool decoded;
 	u32 addr;
 	u32 idx;
-	u8 type;
 	u8 width;
-	bool hit;
-	bool dst_null;
-	u8 action;
-	u16 nh_id;
-	bool ttl_dec;
-	bool ttl_check;
-	bool qos_as;
-	u8 qos_prio;
-	int prefix_len;
-	u32 ip4;
-	struct in6_addr ip6;
+	struct otto_l3_route rt;
 };
 
 /* Decode a host route row already fetched into @data (words 0-4 of the
@@ -3052,87 +3064,35 @@ struct otto_l3_930x_dump_rec {
 static bool otto_l3_930x_dump_decode_host(const u32 *data, u32 addr,
 					  struct otto_l3_930x_dump_rec *rec)
 {
-	u32 v = data[0];
-
-	if (!(v & BIT(31)))
+	memset(rec, 0, sizeof(*rec));
+	rec->decoded = otto_l3_930x_host_route_decode(data, &rec->rt);
+	if (!rec->rt.attr.valid)
 		return false;
 
-	memset(rec, 0, sizeof(*rec));
 	rec->addr = addr;
 	rec->idx = (addr / 8) * 6 + (addr % 8);
-	rec->type = (v >> 29) & 0x3;
-	rec->width = otto_l3_930x_slot_widths[rec->type];
-
-	if (rec->type != 0 && rec->type != 2)
-		return true; /* multicast: type/width only */
-
-	rec->decoded = true;
-	rec->hit = !!(v & BIT(20));
-	rec->dst_null = !!(v & BIT(19));
-	rec->action = (v >> 17) & 0x3;
-	rec->nh_id = (v >> 6) & 0x7ff;
-	rec->ttl_dec = !!(v & BIT(5));
-	rec->ttl_check = !!(v & BIT(4));
-	rec->qos_as = !!(v & BIT(3));
-	rec->qos_prio = v & 0x7;
-
-	if (rec->type == 0) {
-		rec->ip4 = data[4];
-		rec->prefix_len = 32;
-	} else {
-		ipv6_addr_set(&rec->ip6, data[1], data[2], data[3], data[4]);
-		rec->prefix_len = 128;
-	}
+	rec->width = otto_l3_930x_slot_widths[rec->rt.attr.type];
+	if (rec->decoded)
+		rec->rt.prefix_len = rec->rt.attr.type == ROUTE_TYPE_IP4UC ? 32 : 128;
 
 	return true;
 }
 
 /* Decode a prefix route row already fetched into @data (words 0-10 of the
- * RTL9300_TBL_L3_PREFIX_ROUTE_IPMC layout). Field positions match
- * otto_l3_930x_route_read() above exactly. Returns false if not valid.
+ * RTL9300_TBL_L3_PREFIX_ROUTE_IPMC layout). Returns false if not valid.
  */
 static bool otto_l3_930x_dump_decode_prefix(const u32 *data, u32 addr,
 					    struct otto_l3_930x_dump_rec *rec)
 {
-	bool host_route, default_route;
-	struct in6_addr ip6_m;
-	u32 v;
-
-	if (!(data[0] & BIT(31)))
+	memset(rec, 0, sizeof(*rec));
+	rec->decoded = otto_l3_930x_route_decode(data, &rec->rt);
+	if (!rec->rt.attr.valid)
 		return false;
 
-	memset(rec, 0, sizeof(*rec));
 	rec->is_prefix = true;
 	rec->addr = addr;
 	rec->idx = addr;
-	rec->type = (data[0] >> 29) & 0x3;
-	rec->width = otto_l3_930x_prefix_widths[rec->type];
-
-	if (rec->type != 0 && rec->type != 2)
-		return true; /* multicast: type/width only */
-
-	rec->decoded = true;
-	v = data[10];
-	host_route = !!(v & BIT(21));
-	default_route = !!(v & BIT(20));
-	rec->hit = !!(v & BIT(22));
-	rec->action = (v >> 18) & 0x3;
-	rec->nh_id = (v >> 7) & 0x7ff;
-	rec->ttl_dec = !!(v & BIT(6));
-	rec->ttl_check = !!(v & BIT(5));
-	rec->dst_null = !!(v & BIT(4));
-	rec->qos_as = !!(v & BIT(3));
-	rec->qos_prio = v & 0x7;
-
-	if (rec->type == 0) {
-		rec->ip4 = data[4];
-		rec->prefix_len = host_route ? 32 : default_route ? 0 : inet_mask_len(data[9]);
-	} else {
-		ipv6_addr_set(&rec->ip6, data[1], data[2], data[3], data[4]);
-		ipv6_addr_set(&ip6_m, data[6], data[7], data[8], data[9]);
-		rec->prefix_len = host_route ? 128 : default_route ? 0 :
-			otto_l3_930x_mask6_len(&ip6_m);
-	}
+	rec->width = otto_l3_930x_prefix_widths[rec->rt.attr.type];
 
 	return true;
 }
@@ -3160,24 +3120,27 @@ static void otto_l3_930x_dump_print(struct seq_file *m, const struct otto_l3_930
 	}
 
 	if (r->decoded) {
-		snprintf(hit, sizeof(hit), "%d", r->hit);
-		snprintf(action, sizeof(action), "%s", otto_l3_930x_dump_action_name[r->action]);
-		snprintf(nh_id, sizeof(nh_id), "%u", r->nh_id);
-		snprintf(dst_null, sizeof(dst_null), "%d", r->dst_null);
-		snprintf(ttl, sizeof(ttl), "%s",
-			 otto_l3_930x_dump_ttl_label(r->ttl_dec, r->ttl_check));
-		if (r->qos_as)
-			snprintf(qos, sizeof(qos), "%u", r->qos_prio);
+		const struct otto_l3_route *rt = &r->rt;
 
-		if (r->type == 2)
-			snprintf(dest, sizeof(dest), "%pI6c/%d", &r->ip6, r->prefix_len);
+		snprintf(hit, sizeof(hit), "%d", rt->attr.hit);
+		snprintf(action, sizeof(action), "%s",
+			 otto_l3_930x_dump_action_name[rt->attr.action]);
+		snprintf(nh_id, sizeof(nh_id), "%u", rt->nh.id);
+		snprintf(dst_null, sizeof(dst_null), "%d", rt->attr.dst_null);
+		snprintf(ttl, sizeof(ttl), "%s",
+			 otto_l3_930x_dump_ttl_label(rt->attr.ttl_dec, rt->attr.ttl_check));
+		if (rt->attr.qos_as)
+			snprintf(qos, sizeof(qos), "%u", rt->attr.qos_prio);
+
+		if (rt->attr.type == ROUTE_TYPE_IP6UC)
+			snprintf(dest, sizeof(dest), "%pI6c/%d", &rt->dst_ip6, rt->prefix_len);
 		else
-			snprintf(dest, sizeof(dest), "%pI4/%d", &r->ip4, r->prefix_len);
+			snprintf(dest, sizeof(dest), "%pI4/%d", &rt->dst_ip, rt->prefix_len);
 	}
 
 	seq_printf(m, "%-7s%5u 0x%04x %4s %4s %5u 1 %-6s%4s %-48s %-7s%5s %4s %-8s %s\n",
 		   r->is_prefix ? "prefix" : "host", r->idx, r->addr, hash, slot, r->width,
-		   otto_l3_930x_dump_type_name[r->type], hit, dest, action, nh_id, dst_null,
+		   otto_l3_930x_dump_type_name[r->rt.attr.type], hit, dest, action, nh_id, dst_null,
 		   ttl, qos);
 }
 
@@ -3405,7 +3368,7 @@ static int otto_l3_930x_clear_hit_host(unsigned int *cleared, unsigned int *skip
 
 		if (!rec.decoded) {
 			(*skipped_mc)++;
-		} else if (rec.hit) {
+		} else if (rec.rt.attr.hit) {
 			data[0] &= ~BIT(20);
 			__otto_table_write(handle, addr, &data);
 			(*cleared)++;
@@ -3445,7 +3408,7 @@ static int otto_l3_930x_clear_hit_prefix(unsigned int *cleared, unsigned int *sk
 
 		if (!rec.decoded) {
 			(*skipped_mc)++;
-		} else if (rec.hit) {
+		} else if (rec.rt.attr.hit) {
 			data[10] &= ~BIT(22);
 			__otto_table_write(handle, addr, &data);
 			(*cleared)++;
