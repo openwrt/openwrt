@@ -190,9 +190,11 @@ int qca_ppe_vlan_setup(struct dsa_switch *ds)
 		u32 mode = dsa_is_user_port(ds, i) ?
 			   PPE_EG_UNMODIFIED : PPE_EG_UNTOUCHED;
 
+		/* VSI_TAG_EN resets set; only a filtering port takes it. */
 		regmap_update_bits(priv->regmap, PPE_PORT_EG_VLAN(i),
 				   PPE_PORT_EG_VLAN_CTAG_MODE |
-				   PPE_PORT_EG_VLAN_STAG_MODE,
+				   PPE_PORT_EG_VLAN_STAG_MODE |
+				   PPE_PORT_EG_VSI_TAG_EN,
 				   FIELD_PREP(PPE_PORT_EG_VLAN_CTAG_MODE, mode) |
 				   FIELD_PREP(PPE_PORT_EG_VLAN_STAG_MODE, mode));
 	}
