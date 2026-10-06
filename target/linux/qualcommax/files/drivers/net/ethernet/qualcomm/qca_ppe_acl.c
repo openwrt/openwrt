@@ -166,7 +166,7 @@ static int ppe_acl_alloc(struct qca_ppe_priv *priv,
 			for (n = 0; n < nslices; n++)
 				g->index[n] = l * PPE_ACL_LIST_ENTRIES +
 					      ppe_acl_entry_take(&avail,
-							slice[n].range);
+								 slice[n].range);
 
 			/* The chain has to exist before any of its entries
 			 * goes live: an armed entry whose RULE_EXT bit is
@@ -900,6 +900,10 @@ static int ppe_acl_parse_action(struct qca_ppe_priv *priv,
 					     a->id == FLOW_ACTION_TRAP ?
 					     PPE_ACL_FWD_RDT_CPU :
 					     PPE_ACL_FWD_FORWARD);
+			if (a->id == FLOW_ACTION_TRAP)
+				act[4] |= PPE_ACL_CPU_CODE_EN |
+					  FIELD_PREP(PPE_ACL_CPU_CODE,
+						     PPE_ACL_TRAP_CPU_CODE);
 			break;
 		case FLOW_ACTION_REDIRECT: {
 			struct dsa_port *to = dsa_port_from_netdev(a->dev);
@@ -946,6 +950,10 @@ static int ppe_acl_parse_action(struct qca_ppe_priv *priv,
 				NL_SET_ERR_MSG_MOD(extack, "no such hardware queue");
 				return -EOPNOTSUPP;
 			}
+			if (ppe_trap_queue(a->queue.index)) {
+				NL_SET_ERR_MSG_MOD(extack, "the queue is a trap policer's");
+				return -EBUSY;
+			}
 			act[3] |= PPE_ACL_QID_EN |
 				  FIELD_PREP(PPE_ACL_QID, a->queue.index);
 			break;
@@ -956,6 +964,10 @@ static int ppe_acl_parse_action(struct qca_ppe_priv *priv,
 			if (a->rx_queue >= PPE_CPU_UCAST_QUEUES) {
 				NL_SET_ERR_MSG_MOD(extack, "no such receive queue");
 				return -EOPNOTSUPP;
+			}
+			if (ppe_trap_queue(a->rx_queue)) {
+				NL_SET_ERR_MSG_MOD(extack, "the queue is a trap policer's");
+				return -EBUSY;
 			}
 			if (fwd) {
 				NL_SET_ERR_MSG_MOD(extack, "one forward command per rule");

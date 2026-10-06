@@ -2359,6 +2359,70 @@ static int ppe_node_shaper_words(unsigned long clk, u32 slot, u64 min_bps,
 	return 0;
 }
 
+/* A devlink trap policer is a CPU port queue of its own: the trap group's CPU
+ * codes map to it, its L0 shaper counts frames, and a queue full at the burst
+ * drops the rest. The burst stays at most PPE_TRAP_BURST_MAX buffers, below
+ * the pressure at which the ingress port would send pause frames instead.
+ */
+/* Counting frames, the shaper takes this many tokens per frame (measured). */
+#define PPE_FRAME_TOKENS	128
+
+/* Ports use source profile 0. Map profile 14 adds no offset, its priority map
+ * never programmed and its hash map zeroed, so a policed group's codes land on
+ * its queue alone.
+ */
+void ppe_cpu_code_queue_set(struct qca_ppe_priv *priv, u8 code, u32 policer)
+{
+	ppe_qm_map_set(priv, QM_CPU_CODE_OFFSET + code,
+		       policer ? PPE_TRAP_QUEUE(policer) : 0,
+		       policer ? 14 : 0);
+}
+
+int ppe_trap_policer_set(struct qca_ppe_priv *priv, u32 id, u64 rate,
+			 u64 burst)
+{
+	u32 q = PPE_TRAP_QUEUE(id), w[3];
+	unsigned long clk = ppe_clk_rate(priv);
+	int ret;
+
+	if (!clk)
+		return -ENODEV;
+
+	ret = ppe_node_shaper_words(clk, PPE_L0_SHAPER_SLOT, 0,
+				    rate * PPE_FRAME_TOKENS * BITS_PER_BYTE,
+				    burst * PPE_FRAME_TOKENS, false, w);
+	if (ret)
+		return ret;
+
+	regmap_write(priv->regmap, PPE_TM_L0_SHP_CFG(q), w[0]);
+	regmap_write(priv->regmap, PPE_TM_L0_SHP_CFG(q) + 0x4, w[1]);
+	regmap_write(priv->regmap, PPE_TM_L0_SHP_CFG(q) + 0x8,
+		     w[2] | PPE_SHP_METER_UNIT);
+	regmap_write(priv->regmap, PPE_TM_L0_SHP_CREDIT(q), 0);
+	regmap_write(priv->regmap, PPE_TM_L0_SHP_CREDIT(q) + 0x4, 0);
+
+	ppe_ac_uni_write(priv, q,
+			 ppe_ac_uni_bufs(burst));
+
+	return 0;
+}
+
+u64 ppe_trap_policer_drops(struct qca_ppe_priv *priv, u32 id)
+{
+	u32 w[PPE_CNT_WORDS];
+	u64 drops = 0;
+	int t;
+
+	for (t = 0; t < PPE_UNI_DROP_TYPES; t++) {
+		regmap_bulk_read(priv->regmap,
+				 PPE_QM_UNI_DROP_CNT(PPE_TRAP_QUEUE(id), t),
+				 w, ARRAY_SIZE(w));
+		drops += w[0];
+	}
+
+	return drops;
+}
+
 static int ppe_node_shaper_set(struct qca_ppe_priv *priv, u32 cfg, u32 credit,
 			       u32 slot, u64 min_bps, u64 rate_bps, u32 burst,
 			       bool floor)

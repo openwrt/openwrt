@@ -813,18 +813,51 @@ static const u64 ppe_region_size[] = {
 	PPE_XLT_TBL_NUM * PPE_XLT_WORDS * sizeof(u32),
 };
 
-/* Drops the PPE counts per reason, offered as devlink drop traps. Each drop
- * code was confirmed on IPQ8074. A drop whose command
- * can redirect to the CPU also takes the trap action.
+/* Drops the PPE counts per reason, offered as devlink drop traps; each drop
+ * code was confirmed on IPQ8074, and a drop whose command can redirect to the
+ * CPU also takes the trap action. Frames the PPE sends to the CPU are control
+ * and exception traps, reported by CPU code and delivered. A policer is the
+ * CPU queue a group's CPU codes map to.
  */
+#define PPE_TRAP_GROUP_LINK_LOCAL	(DEVLINK_TRAP_GROUP_GENERIC_ID_MAX + 1)
+#define PPE_TRAP_GROUP_FIN_RST		(DEVLINK_TRAP_GROUP_GENERIC_ID_MAX + 2)
+
 static const struct devlink_trap_group ppe_trap_groups[] = {
 	DEVLINK_TRAP_GROUP_GENERIC(L2_DROPS, 0),
 	DEVLINK_TRAP_GROUP_GENERIC(ACL_DROPS, 0),
 	DEVLINK_TRAP_GROUP_GENERIC(BUFFER_DROPS, 0),
+	DEVLINK_TRAP_GROUP_GENERIC(MC_SNOOPING, 1),
+	DEVLINK_TRAP_GROUP_GENERIC(L3_EXCEPTIONS, 2),
+	DEVLINK_TRAP_GROUP_GENERIC(ACL_TRAP, 0),
+	{
+		.name = "link_local",
+		.id = PPE_TRAP_GROUP_LINK_LOCAL,
+		.init_policer_id = 3,
+	},
+	/* Unpoliced: TCP does not retransmit a dropped RST. */
+	{
+		.name = "tcp_fin_rst",
+		.id = PPE_TRAP_GROUP_FIN_RST,
+	},
 };
+
+static const struct devlink_trap_policer ppe_trap_policers[] = {
+	DEVLINK_TRAP_POLICER(1, 1000, PPE_TRAP_BURST_MAX, 100000, 1,
+			     PPE_TRAP_BURST_MAX, 1),
+	DEVLINK_TRAP_POLICER(2, 10000, PPE_TRAP_BURST_MAX, 100000, 1,
+			     PPE_TRAP_BURST_MAX, 1),
+	DEVLINK_TRAP_POLICER(3, 1000, PPE_TRAP_BURST_MAX, 100000, 1,
+			     PPE_TRAP_BURST_MAX, 1),
+};
+
+static_assert(ARRAY_SIZE(ppe_trap_policers) == PPE_TRAP_POLICERS);
 
 /* The MTU check is set to drop; the generic MTU trap is an exception. */
 #define PPE_TRAP_ID_MTU_DROP	(DEVLINK_TRAP_GENERIC_ID_MAX + 1)
+#define PPE_TRAP_ID_IGMP	(DEVLINK_TRAP_GENERIC_ID_MAX + 2)
+#define PPE_TRAP_ID_MLD		(DEVLINK_TRAP_GENERIC_ID_MAX + 3)
+#define PPE_TRAP_ID_FIN_RST	(DEVLINK_TRAP_GENERIC_ID_MAX + 4)
+#define PPE_TRAP_ID_LINK_LOCAL	(DEVLINK_TRAP_GENERIC_ID_MAX + 5)
 
 static const struct devlink_trap ppe_traps[] = {
 	DEVLINK_TRAP_GENERIC(DROP, DROP, INGRESS_VLAN_FILTER,
@@ -845,6 +878,39 @@ static const struct devlink_trap ppe_traps[] = {
 			     DEVLINK_TRAP_GROUP_GENERIC_ID_BUFFER_DROPS, 0),
 	DEVLINK_TRAP_GENERIC(DROP, DROP, EARLY_DROP,
 			     DEVLINK_TRAP_GROUP_GENERIC_ID_BUFFER_DROPS, 0),
+	DEVLINK_TRAP_DRIVER(CONTROL, TRAP, PPE_TRAP_ID_IGMP, "igmp",
+			    DEVLINK_TRAP_GROUP_GENERIC_ID_MC_SNOOPING, 0),
+	DEVLINK_TRAP_DRIVER(CONTROL, TRAP, PPE_TRAP_ID_MLD, "mld",
+			    DEVLINK_TRAP_GROUP_GENERIC_ID_MC_SNOOPING, 0),
+	DEVLINK_TRAP_DRIVER(EXCEPTION, TRAP, PPE_TRAP_ID_FIN_RST,
+			    "tcp_fin_rst", PPE_TRAP_GROUP_FIN_RST, 0),
+	DEVLINK_TRAP_DRIVER(CONTROL, TRAP, PPE_TRAP_ID_LINK_LOCAL, "link_local",
+			    PPE_TRAP_GROUP_LINK_LOCAL, 0),
+	DEVLINK_TRAP_GENERIC(EXCEPTION, TRAP, TTL_ERROR,
+			     DEVLINK_TRAP_GROUP_GENERIC_ID_L3_EXCEPTIONS, 0),
+	DEVLINK_TRAP_GENERIC(CONTROL, TRAP, FLOW_ACTION_TRAP,
+			     DEVLINK_TRAP_GROUP_GENERIC_ID_ACL_TRAP, 0),
+};
+
+static_assert(ARRAY_SIZE(ppe_traps) == PPE_NUM_TRAPS);
+
+/* CPU codes of the frames the traps after the drop traps report. */
+static const struct {
+	u16 trap;
+	u16 group;
+	u8 code;
+} ppe_trap_rx[] = {
+	{ PPE_TRAP_ID_IGMP, DEVLINK_TRAP_GROUP_GENERIC_ID_MC_SNOOPING, 99 },
+	{ PPE_TRAP_ID_MLD, DEVLINK_TRAP_GROUP_GENERIC_ID_MC_SNOOPING, 107 },
+	{ PPE_TRAP_ID_FIN_RST, PPE_TRAP_GROUP_FIN_RST, 47 },
+	{ PPE_TRAP_ID_FIN_RST, PPE_TRAP_GROUP_FIN_RST, 48 },
+	{ PPE_TRAP_ID_LINK_LOCAL, PPE_TRAP_GROUP_LINK_LOCAL, 174 },
+	{ DEVLINK_TRAP_GENERIC_ID_TTL_ERROR,
+	  DEVLINK_TRAP_GROUP_GENERIC_ID_L3_EXCEPTIONS, 85 },
+	{ DEVLINK_TRAP_GENERIC_ID_TTL_ERROR,
+	  DEVLINK_TRAP_GROUP_GENERIC_ID_L3_EXCEPTIONS, 86 },
+	{ DEVLINK_TRAP_GENERIC_ID_FLOW_ACTION_TRAP,
+	  DEVLINK_TRAP_GROUP_GENERIC_ID_ACL_TRAP, PPE_ACL_TRAP_CPU_CODE },
 };
 
 static const u8 ppe_trap_drop_code[PPE_TRAP_CODES] = {
@@ -874,7 +940,7 @@ static int qca_ppe_devlink_trap_init(struct dsa_switch *ds,
 	struct qca_ppe_priv *priv = ds_to_priv(ds);
 	int i = ppe_trap_index(trap->id);
 
-	if (i >= 0 && i < PPE_TRAP_CODES)
+	if (i >= 0)
 		priv->trap_ctx[i] = trap_ctx;
 
 	return 0;
@@ -888,6 +954,13 @@ static int qca_ppe_devlink_trap_action_set(struct dsa_switch *ds,
 	struct qca_ppe_priv *priv = ds_to_priv(ds);
 	int i = ppe_trap_index(trap->id);
 	int port;
+
+	if (trap->type != DEVLINK_TRAP_TYPE_DROP) {
+		if (action == DEVLINK_TRAP_ACTION_TRAP)
+			return 0;
+		NL_SET_ERR_MSG_MOD(extack, "the switch always sends these to the CPU");
+		return -EOPNOTSUPP;
+	}
 
 	if (action == DEVLINK_TRAP_ACTION_DROP) {
 		if (i < 0 || i >= PPE_TRAP_CODES || !ppe_trap_cpu_code[i])
@@ -929,7 +1002,88 @@ static bool qca_ppe_trap_rcv(struct dsa_switch *ds, struct sk_buff *skb,
 		return true;
 	}
 
+	for (i = 0; i < ARRAY_SIZE(ppe_trap_rx); i++) {
+		if (ppe_trap_rx[i].code != cpu_code)
+			continue;
+		skb_push(skb, ETH_HLEN);
+		devlink_trap_report(ds->devlink, skb,
+				    priv->trap_ctx[ppe_trap_index(ppe_trap_rx[i].trap)],
+				    &dsa_port_from_netdev(skb->dev)->devlink_port,
+				    NULL);
+		skb_pull(skb, ETH_HLEN);
+		break;
+	}
+
 	return false;
+}
+
+static int qca_ppe_devlink_trap_group_set(struct dsa_switch *ds,
+					  const struct devlink_trap_group *group,
+					  const struct devlink_trap_policer *policer,
+					  struct netlink_ext_ack *extack)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+	u32 id = policer ? policer->id : 0;
+	bool bound = false;
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(ppe_trap_rx); i++) {
+		if (ppe_trap_rx[i].group != group->id)
+			continue;
+		ppe_cpu_code_queue_set(priv, ppe_trap_rx[i].code, id);
+		bound = true;
+	}
+	for (i = 0; i < PPE_TRAP_CODES; i++) {
+		if (ppe_traps[i].init_group_id != group->id ||
+		    !ppe_trap_cpu_code[i])
+			continue;
+		ppe_cpu_code_queue_set(priv, ppe_trap_cpu_code[i], id);
+		bound = true;
+	}
+
+	if (!bound && policer) {
+		NL_SET_ERR_MSG_MOD(extack, "no trap of this group reaches the CPU");
+		return -EOPNOTSUPP;
+	}
+
+	return 0;
+}
+
+static int qca_ppe_devlink_trap_group_init(struct dsa_switch *ds,
+					   const struct devlink_trap_group *group)
+{
+	const struct devlink_trap_policer *policer = NULL;
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(ppe_trap_policers); i++)
+		if (ppe_trap_policers[i].id == group->init_policer_id)
+			policer = &ppe_trap_policers[i];
+
+	return qca_ppe_devlink_trap_group_set(ds, group, policer, NULL);
+}
+
+static int qca_ppe_devlink_trap_policer_init(struct dsa_switch *ds,
+					     const struct devlink_trap_policer *policer)
+{
+	return ppe_trap_policer_set(ds_to_priv(ds), policer->id,
+				    policer->init_rate, policer->init_burst);
+}
+
+static int qca_ppe_devlink_trap_policer_set(struct dsa_switch *ds,
+					    const struct devlink_trap_policer *policer,
+					    u64 rate, u64 burst,
+					    struct netlink_ext_ack *extack)
+{
+	return ppe_trap_policer_set(ds_to_priv(ds), policer->id, rate, burst);
+}
+
+static int qca_ppe_devlink_trap_policer_counter_get(struct dsa_switch *ds,
+						    const struct devlink_trap_policer *policer,
+						    u64 *p_drops)
+{
+	*p_drops = ppe_trap_policer_drops(ds_to_priv(ds), policer->id);
+
+	return 0;
 }
 
 static int qca_ppe_connect_tag_protocol(struct dsa_switch *ds,
@@ -994,6 +1148,10 @@ static void ppe_devlink_teardown(struct dsa_switch *ds)
 				 ARRAY_SIZE(ppe_traps));
 	devlink_trap_groups_unregister(ds->devlink, ppe_trap_groups,
 				       ARRAY_SIZE(ppe_trap_groups));
+	devl_lock(ds->devlink);
+	devl_trap_policers_unregister(ds->devlink, ppe_trap_policers,
+				      ARRAY_SIZE(ppe_trap_policers));
+	devl_unlock(ds->devlink);
 	for (i = 0; i < ARRAY_SIZE(priv->regions); i++)
 		if (!IS_ERR_OR_NULL(priv->regions[i]))
 			dsa_devlink_region_destroy(priv->regions[i]);
@@ -1028,15 +1186,28 @@ static int ppe_devlink_setup(struct dsa_switch *ds)
 		return ret;
 	}
 
-	ret = devlink_trap_groups_register(ds->devlink, ppe_trap_groups,
-					   ARRAY_SIZE(ppe_trap_groups));
+	devl_lock(ds->devlink);
+	ret = devl_trap_policers_register(ds->devlink, ppe_trap_policers,
+					  ARRAY_SIZE(ppe_trap_policers));
+	devl_unlock(ds->devlink);
 	if (!ret) {
-		ret = devlink_traps_register(ds->devlink, ppe_traps,
-					     ARRAY_SIZE(ppe_traps), priv);
-		if (ret)
-			devlink_trap_groups_unregister(ds->devlink,
-						       ppe_trap_groups,
-						       ARRAY_SIZE(ppe_trap_groups));
+		ret = devlink_trap_groups_register(ds->devlink, ppe_trap_groups,
+						   ARRAY_SIZE(ppe_trap_groups));
+		if (!ret) {
+			ret = devlink_traps_register(ds->devlink, ppe_traps,
+						     ARRAY_SIZE(ppe_traps), priv);
+			if (ret)
+				devlink_trap_groups_unregister(ds->devlink,
+							       ppe_trap_groups,
+							       ARRAY_SIZE(ppe_trap_groups));
+		}
+		if (ret) {
+			devl_lock(ds->devlink);
+			devl_trap_policers_unregister(ds->devlink,
+						      ppe_trap_policers,
+						      ARRAY_SIZE(ppe_trap_policers));
+			devl_unlock(ds->devlink);
+		}
 	}
 	if (ret) {
 		devlink_sb_unregister(ds->devlink, PPE_DEVLINK_SB);
@@ -3126,6 +3297,11 @@ static const struct dsa_switch_ops qca_ppe_ops = {
 	.devlink_sb_occ_tc_port_bind_get = qca_ppe_devlink_sb_occ_tc_port_bind_get,
 	.devlink_trap_init	= qca_ppe_devlink_trap_init,
 	.devlink_trap_action_set = qca_ppe_devlink_trap_action_set,
+	.devlink_trap_group_init = qca_ppe_devlink_trap_group_init,
+	.devlink_trap_group_set	= qca_ppe_devlink_trap_group_set,
+	.devlink_trap_policer_init = qca_ppe_devlink_trap_policer_init,
+	.devlink_trap_policer_set = qca_ppe_devlink_trap_policer_set,
+	.devlink_trap_policer_counter_get = qca_ppe_devlink_trap_policer_counter_get,
 	.devlink_trap_drop_counter_get = qca_ppe_devlink_trap_drop_counter_get,
 };
 
