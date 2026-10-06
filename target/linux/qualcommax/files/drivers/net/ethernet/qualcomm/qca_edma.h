@@ -228,7 +228,14 @@
 #define EDMA_TXDESC_DATA_OFFSET_MASK	0xff
 #define EDMA_TXDESC_DATA_LENGTH_MASK	0xffff
 
-/* TX preheader fields */
+/* TX preheader fields. A tag to insert is flagged in pre2, its TCI given in
+ * pre3 (S-tag high, C-tag low) and the insertion commanded in pre4.
+ */
+#define EDMA_TX_PRE2_STAG_FLAG		BIT(31)
+#define EDMA_TX_PRE2_CTAG_FLAG		BIT(30)
+#define EDMA_TX_PRE3_STAG_SHIFT		16
+#define EDMA_TX_PRE4_CTAG_ADD		(0x1 << 24)
+#define EDMA_TX_PRE4_STAG_ADD		(0x1 << 26)
 #define EDMA_TX_PRE4_ADV_OFFLOAD_EN	BIT(28)
 #define EDMA_TX_PRE6_CSUM_MODE_L4	(0x1 << 29)
 #define EDMA_TX_PRE6_MSS_MASK		0x3fff

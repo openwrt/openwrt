@@ -792,6 +792,26 @@ static void edma_tx_csum(struct sk_buff *skb, struct edma_tx_preheader *txph,
 		txph->tx_pre6 |= EDMA_TX_PRE6_IP_CSUM_EN;
 }
 
+static void edma_tx_vlan(struct sk_buff *skb, struct edma_tx_preheader *txph)
+{
+	u16 tci = skb_vlan_tag_get(skb);
+
+	if (!skb_vlan_tag_present(skb))
+		return;
+
+	txph->tx_pre4 |= EDMA_TX_PRE4_ADV_OFFLOAD_EN;
+
+	if (skb->vlan_proto == htons(ETH_P_8021AD)) {
+		txph->tx_pre2 |= EDMA_TX_PRE2_STAG_FLAG;
+		txph->tx_pre3 = tci << EDMA_TX_PRE3_STAG_SHIFT;
+		txph->tx_pre4 |= EDMA_TX_PRE4_STAG_ADD;
+	} else {
+		txph->tx_pre2 |= EDMA_TX_PRE2_CTAG_FLAG;
+		txph->tx_pre3 = tci;
+		txph->tx_pre4 |= EDMA_TX_PRE4_CTAG_ADD;
+	}
+}
+
 /* Segmentation is one bit in every descriptor of the frame and the segment
  * size in the preheader. The engine writes the headers of each segment it
  * cuts, so the checksums it is already asked for cover what it produced.
@@ -908,6 +928,7 @@ static netdev_tx_t edma_ring_xmit(struct edma_priv *priv, struct net_device *net
 
 	txph->dst_info = dst_info;
 	edma_tx_csum(skb, txph, proto);
+	edma_tx_vlan(skb, txph);
 	tso = edma_tx_tso(skb, txph);
 
 	txdesc_ring->skb_store[idx] = skb;
@@ -1655,6 +1676,16 @@ static netdev_features_t edma_ndo_features_check(struct sk_buff *skb,
 	if (skb_is_gso(skb) && edma_tx_needs_linearize(skb))
 		features &= ~NETIF_F_GSO_MASK;
 
+	/* The switch inserts a C-tag behind an S-tag already in the frame and
+	 * drops a tag of the type the frame starts with, so on a tagged frame
+	 * only an S-tag over a C-tag comes out as the outer tag.
+	 */
+	if (skb_vlan_tag_present(skb) && eth_type_vlan(skb->protocol) &&
+	    (skb->vlan_proto != htons(ETH_P_8021AD) ||
+	     skb->protocol != htons(ETH_P_8021Q)))
+		features &= ~(NETIF_F_HW_VLAN_CTAG_TX |
+			      NETIF_F_HW_VLAN_STAG_TX);
+
 	return vlan_features_check(skb, features);
 }
 
@@ -1998,7 +2029,8 @@ static int edma_probe(struct platform_device *pdev)
 	netdev->hw_features = NETIF_F_RXCSUM | NETIF_F_IP_CSUM |
 			      NETIF_F_IPV6_CSUM | NETIF_F_SG | NETIF_F_TSO |
 			      NETIF_F_TSO6 | NETIF_F_RXHASH | NETIF_F_FRAGLIST |
-			      NETIF_F_HW_VLAN_CTAG_RX;
+			      NETIF_F_HW_VLAN_CTAG_RX | NETIF_F_HW_VLAN_CTAG_TX |
+			      NETIF_F_HW_VLAN_STAG_TX;
 	netdev->features = netdev->hw_features;
 	/* A DSA user port takes its features from the conduit's vlan_features. */
 	netdev->vlan_features = netdev->hw_features & ~NETIF_F_HW_VLAN_CTAG_RX;
