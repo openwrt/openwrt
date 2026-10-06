@@ -1330,6 +1330,7 @@ static void otto_l3_route_update_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_ro
 	struct rtl838x_switch_priv *priv = ctrl->priv;
 	bool require_existing = ctrl->cfg->use_l3_tables;
 	char dst[INET6_ADDRSTRLEN + sizeof("/128")];
+	bool trapped = r->attr.action == ROUTE_ACT_TRAP2CPU;
 	bool first = !r->nh.mac;
 	bool no_port, trap;
 
@@ -1338,6 +1339,19 @@ static void otto_l3_route_update_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_ro
 
 	dev_dbg(ctrl->dev, "route %d to %s\n",
 		r->id, otto_l3_route_dst(r, dst, sizeof(dst)));
+
+	/* A route that forwards and gets a new gateway MAC traps while its
+	 * next hop moves over, or it would forward through the L2 entry
+	 * rtldsa_l2_nexthop_add() releases. A family that routes through a PIE
+	 * rule has no entry that traps.
+	 */
+	if (ctrl->cfg->use_l3_tables && !first && mac != r->nh.mac &&
+	    r->attr.action == ROUTE_ACT_FORWARD) {
+		r->attr.action = ROUTE_ACT_TRAP2CPU;
+		r->attr.ttl_dec = false;
+		r->attr.ttl_check = false;
+		otto_l3_route_rewrite(ctrl, r);
+	}
 
 	r->nh.mac = r->nh.gw = mac;
 	r->nh.port = priv->r->port_ignore;
@@ -1359,7 +1373,7 @@ static void otto_l3_route_update_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_ro
 	 */
 	no_port = ctrl->cfg->use_l3_tables &&
 		  r->nh.port == priv->r->port_ignore;
-	if (no_port && (first || r->attr.action != ROUTE_ACT_TRAP2CPU)) {
+	if (no_port && (first || !trapped)) {
 		if (r->attr.type == ROUTE_TYPE_IP4UC)
 			dev_info(ctrl->dev, "no port for %pI4, routing %s in software\n",
 				 &r->gw_ip.s6_addr32[3], otto_l3_route_dst(r, dst, sizeof(dst)));
@@ -1388,6 +1402,10 @@ static void otto_l3_route_update_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_ro
 		r->pr.dip_m = inet_make_mask(r->prefix_len);
 	}
 
+	/* The next hop is in place before the entry that points at it */
+	if (ctrl->cfg->set_nexthop)
+		ctrl->cfg->set_nexthop(ctrl, r->nh.id, r->nh.l2_id, r->nh.if_id);
+
 	if (otto_l3_route_install(ctrl, r))
 		return;
 
@@ -1396,9 +1414,6 @@ static void otto_l3_route_update_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_ro
 		r->pr.fwd_data = r->nh.l2_id;
 		r->pr.fwd_act = PIE_ACT_ROUTE_UC;
 	}
-
-	if (ctrl->cfg->set_nexthop)
-		ctrl->cfg->set_nexthop(ctrl, r->nh.id, r->nh.l2_id, r->nh.if_id);
 
 	if (ctrl->cfg->use_l3_tables)
 		return;
@@ -1706,27 +1721,28 @@ static void otto_l3_route_remove(struct otto_l3_ctrl *ctrl, struct otto_l3_route
 			otto_l3_route_compact(ctrl, r);
 		}
 	}
-
-	otto_l3_route_free(ctrl, r);
 }
 
 static void otto_l3_route_teardown(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r)
 {
 	struct rtl838x_switch_priv *priv = ctrl->priv;
 
-	/* A route whose gateway never resolved holds neither of these:
-	 * otto_l3_nexthop_update() is what allocates them, and it may have
-	 * programmed the next hop without reaching the PIE rule.
+	/* What forwards through the route goes before the next hop it forwards
+	 * to. A route whose gateway never resolved holds neither the next hop
+	 * nor the PIE rule: otto_l3_nexthop_update() is what allocates them,
+	 * and it may have programmed the next hop without reaching the rule.
 	 */
-	if (r->nh.l2_installed)
-		rtldsa_l2_nexthop_del(priv, &r->nh);
 	if (r->pr.id >= 0)
 		priv->r->pie_rule_rm(priv, &r->pr);
+	otto_l3_route_remove(ctrl, r);
+
+	if (r->nh.l2_installed)
+		rtldsa_l2_nexthop_del(priv, &r->nh);
 
 	dev_dbg(ctrl->dev, "releasing packet counter %d\n", r->pr.packet_cntr);
 	rtldsa_packet_cntr_free(priv, r->pr.packet_cntr);
 
-	otto_l3_route_remove(ctrl, r);
+	otto_l3_route_free(ctrl, r);
 }
 
 static struct otto_l3_route *otto_l3_route_alloc(struct otto_l3_ctrl *ctrl,
