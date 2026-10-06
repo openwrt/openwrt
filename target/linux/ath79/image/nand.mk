@@ -194,13 +194,11 @@ define Device/glinet_gl-ar750s-nor
 endef
 TARGET_DEVICES += glinet_gl-ar750s-nor
 
-define Device/glinet_gl-e750
+define Device/glinet_gl-e750-common
   SOC := qca9531
   DEVICE_VENDOR := GL.iNet
-  DEVICE_MODEL := GL-E750
   DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9887-ct kmod-usb2 \
 	kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi
-  SUPPORTED_DEVICES += gl-e750
   KERNEL_SIZE := 4096k
   IMAGE_SIZE := 131072k
   PAGESIZE := 2048
@@ -209,6 +207,12 @@ define Device/glinet_gl-e750
   IMAGES += factory.img
   IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+
+define Device/glinet_gl-e750
+  $(Device/glinet_gl-e750-common)
+  DEVICE_MODEL := GL-E750
+  SUPPORTED_DEVICES += gl-e750
 endef
 TARGET_DEVICES += glinet_gl-e750
 
