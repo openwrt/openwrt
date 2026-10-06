@@ -3,6 +3,7 @@
 #include <dt-bindings/clock/mt7621-clk.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/interrupt-controller/mips-gic.h>
+#include <dt-bindings/phy/phy.h>
 #include <dt-bindings/reset/mt7621-reset.h>
 
 / {
@@ -157,7 +158,7 @@
 			reg = <0x5000 0x1000>;
 		};
 
-		uartlite: uartlite@c00 {
+		uartlite: serial@c00 {
 			compatible = "ns16550a";
 			reg = <0xc00 0x100>;
 
@@ -171,9 +172,12 @@
 			reg-shift = <2>;
 			reg-io-width = <4>;
 			no-loopback-test;
+
+			pinctrl-0 = <&uart1_pins>;
+			pinctrl-names = "default";
 		};
 
-		uartlite2: uartlite2@d00 {
+		uartlite2: serial@d00 {
 			compatible = "ns16550a";
 			reg = <0xd00 0x100>;
 
@@ -193,7 +197,7 @@
 			status = "disabled";
 		};
 
-		uartlite3: uartlite3@e00 {
+		uartlite3: serial@e00 {
 			compatible = "ns16550a";
 			reg = <0xe00 0x100>;
 
@@ -360,7 +364,7 @@
 
 	sdhci: mmc@1e130000 {
 		compatible = "mediatek,mt7620-mmc", "ralink,mt7620-sdhci";
-		reg = <0x1e130000 0x4000>;
+		reg = <0x1e130000 0x8000>;
 
 		bus-width = <4>;
 		max-frequency = <50000000>;
@@ -389,12 +393,10 @@
 	};
 
 	xhci: xhci@1e1c0000 {
+		compatible = "mediatek,mtk-xhci";
 		#address-cells = <1>;
 		#size-cells = <0>;
-
-		compatible = "mediatek,mt8173-xhci";
-		reg = <0x1e1c0000 0x1000
-		       0x1e1d0700 0x0100>;
+		reg = <0x1e1c0000 0x1000>, <0x1e1d0700 0x0100>;
 		reg-names = "mac", "ippc";
 
 		clocks = <&sysc MT7621_CLK_XTAL>;
@@ -402,6 +404,10 @@
 
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_SHARED 22 IRQ_TYPE_LEVEL_HIGH>;
+
+		phys = <&u2port0 PHY_TYPE_USB2>,
+		       <&u3port0 PHY_TYPE_USB3>,
+		       <&u2port1 PHY_TYPE_USB2>;
 
 		vbus-supply = <&reg_vbus>;
 		vusb33-supply = <&reg_vusb33>;
@@ -426,9 +432,32 @@
 		};
 	};
 
+	usb_phy: t-phy@1e1d0000 {
+		compatible = "mediatek,generic-tphy-v1";
+		reg = <0x1e1d0000 0x0700>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		u2port0: usb-phy@1e1d0800 {
+			reg = <0x1e1d0800 0x0100>;
+			#phy-cells = <1>;
+		};
+
+		u3port0: usb-phy@1e1d0900 {
+			reg = <0x1e1d0900 0x0700>;
+			#phy-cells = <1>;
+		};
+
+		u2port1: usb-phy@1e1d1000 {
+			reg = <0x1e1d1000 0x0100>;
+			#phy-cells = <1>;
+		};
+	};
+
 	gic: interrupt-controller@1fbc0000 {
 		compatible = "mti,gic";
-		reg = <0x1fbc0000 0x2000>;
+		reg = <0x1fbc0000 0x20000>;
 
 		interrupt-controller;
 		#interrupt-cells = <3>;
@@ -456,8 +485,7 @@
 		status = "disabled";
 
 		compatible = "mediatek,mt7621-nfc";
-		reg = <0x1e003000 0x800
-			0x1e003800 0x800>;
+		reg = <0x1e003000 0x800>, <0x1e003800 0x800>;
 		reg-names = "nfi", "ecc";
 
 		clocks = <&sysc MT7621_CLK_NAND>;
@@ -465,7 +493,7 @@
 	};
 
 	crypto: crypto@1e004000 {
-		compatible = "mediatek,mtk-eip93";
+		compatible = "inside-secure,safexcel-eip93ies";
 		reg = <0x1e004000 0x1000>;
 
 		interrupt-parent = <&gic>;
@@ -474,7 +502,7 @@
 
 	ethernet: ethernet@1e100000 {
 		compatible = "mediatek,mt7621-eth";
-		reg = <0x1e100000 0x10000>;
+		reg = <0x1e100000 0xe000>;
 
 		clocks = <&sysc MT7621_CLK_FE>, <&sysc MT7621_CLK_ETH>;
 		clock-names = "fe", "ethif";

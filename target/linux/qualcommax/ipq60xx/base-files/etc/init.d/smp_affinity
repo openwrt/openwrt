@@ -1,0 +1,105 @@
+#!/bin/sh /etc/rc.common
+
+START=94
+
+PROG=smp_affinity
+
+log_msg() {
+	local type="$1" id="$2" name="$3" affinity="$4"
+
+	logger -t "$PROG" "Pinning $type($id) $name to CPU $affinity"
+}
+
+get_irq() {
+	awk -v name="$1" '$NF == name {
+		sub(/:$/, "", $1)
+		print $1
+		exit
+	}' /proc/interrupts
+}
+
+get_napi_threads() {
+	local comm comm_path id pid
+
+	TX_NAPI_ID=
+	TX_PID=
+	RX_NAPI_ID=
+	RX_PID=
+
+	for comm_path in /proc/[0-9]*/comm; do
+		read -r comm < "$comm_path"
+		case "$comm" in
+		napi/eth0-[0-9]*)
+			id="${comm##*-}"
+			pid="${comm_path#/proc/}"
+			pid="${pid%/comm}"
+
+			if [ -z "$TX_NAPI_ID" ] || [ "$id" -lt "$TX_NAPI_ID" ]; then
+				TX_NAPI_ID="$id"
+				TX_PID="$pid"
+			fi
+
+			if [ -z "$RX_NAPI_ID" ] || [ "$id" -gt "$RX_NAPI_ID" ]; then
+				RX_NAPI_ID="$id"
+				RX_PID="$pid"
+			fi
+			;;
+		esac
+	done
+}
+
+pin_irq() {
+	local irq="$1" mask="$2" affinity="$3" name="$4"
+
+	[ -n "$irq" ] || return
+	$enable_log && log_msg IRQ "$irq" "$name" "$affinity"
+	echo "$mask" > "/proc/irq/$irq/smp_affinity"
+}
+
+pin_thread() {
+	local pid="$1" mask="$2" affinity="$3" name="$4"
+
+	[ -n "$pid" ] || return
+	$enable_log && log_msg thread "$pid" "$name" "$affinity"
+	taskset -p "$mask" "$pid" >/dev/null
+}
+
+enable_affinity_edma() {
+	local seconds=0 rx_irq tx_irq
+
+	while [ "$seconds" -lt 60 ]; do
+		rx_irq="$(get_irq edma_rxdesc)"
+		tx_irq="$(get_irq edma_txcmpl)"
+		get_napi_threads
+
+		[ -n "$rx_irq" ] && [ -n "$tx_irq" ] &&
+			[ -n "$RX_PID" ] && [ -n "$TX_PID" ] &&
+			[ "$RX_PID" != "$TX_PID" ] && break
+
+		seconds=$((seconds + 1))
+		sleep 1
+	done
+
+	[ -n "$rx_irq" ] && [ -n "$tx_irq" ] &&
+		[ -n "$RX_PID" ] && [ -n "$TX_PID" ] &&
+		[ "$RX_PID" != "$TX_PID" ] || return
+
+	pin_irq "$rx_irq" 2 1 edma_rxdesc
+	pin_thread "$RX_PID" 2 1 "EDMA RX NAPI"
+	pin_irq "$tx_irq" 4 2 edma_txcmpl
+	pin_thread "$TX_PID" 4 2 "EDMA TX NAPI"
+}
+
+boot() {
+	local enable
+
+	config_load smp_affinity
+
+	config_get_bool enable "general" enable 1
+	config_get_bool enable_log "general" enable_log 1
+
+	[ "$enable" -eq 1 ] && enable=true || enable=false
+	[ "$enable_log" -eq 1 ] && enable_log=true || enable_log=false
+
+	$enable && enable_affinity_edma &
+}

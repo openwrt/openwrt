@@ -22,7 +22,7 @@
 	};
 
 	aliases {
-		label-mac-device = &dp2;
+		label-mac-device = &swport2;
 	};
 };
 
@@ -198,6 +198,7 @@
 			partition@1a40000 {
 				label = "rootfs";
 				reg = <0x1a40000 0xa740000>;
+				linux,rootfs;
 			};
 
 			partition@c180000 {
@@ -255,33 +256,55 @@
 	};
 };
 
-&dp2 {
+&blsp1_i2c2 {
 	status = "okay";
-	phy-handle = <&qca8075_1>;
+
+	led-controller@62 {
+		compatible = "nxp,pca9633";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x62>;
+		nxp,hw-blink;
+
+		led_system_red: led@0 {
+			reg = <0>;
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
+		};
+
+		led_system_green: led@1 {
+			reg = <1>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+		};
+
+		led_system_blue: led@2 {
+			reg = <2>;
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_STATUS;
+		};
+	};
+};
+
+&swport2 {
 	label = "wan";
 	nvmem-cells = <&hw_mac_addr 0>;
 	nvmem-cell-names = "mac-address";
 };
 
-&dp3 {
-	status = "okay";
-	phy-handle = <&qca8075_2>;
+&swport3 {
 	label = "lan3";
 	nvmem-cells = <&hw_mac_addr 0>;
 	nvmem-cell-names = "mac-address";
 };
 
-&dp4 {
-	status = "okay";
-	phy-handle = <&qca8075_3>;
+&swport4 {
 	label = "lan2";
 	nvmem-cells = <&hw_mac_addr 0>;
 	nvmem-cell-names = "mac-address";
 };
 
-&dp5 {
-	status = "okay";
-	phy-handle = <&qca8075_4>;
+&swport5 {
 	label = "lan1";
 	nvmem-cells = <&hw_mac_addr 0>;
 	nvmem-cell-names = "mac-address";

@@ -16,17 +16,3 @@
  #if defined(IFXOS_HAVE_VERSION_CHECK)
  #  if (IFXOS_VERSION_CHECK_EG_THAN(1,1,0))
  #     define IFXOS_SUPPORTS_FIFO_PEEK                 1
---- a/src/drv_mei_cpe_linux.c
-+++ b/src/drv_mei_cpe_linux.c
-@@ -2548,7 +2548,11 @@ static int MEI_InitModuleRegCharDev(cons
-             ("Using major number %d" MEI_DRV_CRLF, major_number));
-    }
- 
-+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 4, 0)
-    mei_class = class_create(THIS_MODULE, devName);
-+#else
-+   mei_class = class_create(devName);
-+#endif
-    mei_devt = MKDEV(major_number, 0);
-    device_create(mei_class, NULL, mei_devt, NULL, "%s/%i", devName, 0);
- 

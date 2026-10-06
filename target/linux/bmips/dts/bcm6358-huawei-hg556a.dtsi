@@ -197,6 +197,16 @@
 			label = "cal_data";
 			reg = <0xee0000 0x100000>;
 			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				eeprom_cal_data_1fe00: eeprom@1fe00 {
+					reg = <0x1fe00 0x200>;
+				};
+			};
 		};
 
 		partition@fe0000 {

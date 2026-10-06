@@ -1180,13 +1180,16 @@ static int adm6996_gpio_probe(struct platform_device *pdev)
 	priv->read = adm6996_read_gpio_reg;
 	priv->write = adm6996_write_gpio_reg;
 
-	ret = devm_gpio_request(&pdev->dev, priv->eecs, "adm_eecs");
+	ret = devm_gpio_request_one(&pdev->dev, priv->eecs,
+				    GPIOF_IN, "adm_eecs");
 	if (ret)
 		return ret;
-	ret = devm_gpio_request(&pdev->dev, priv->eedi, "adm_eedi");
+	ret = devm_gpio_request_one(&pdev->dev, priv->eedi,
+				    GPIOF_IN, "adm_eedi");
 	if (ret)
 		return ret;
-	ret = devm_gpio_request(&pdev->dev, priv->eesk, "adm_eesk");
+	ret = devm_gpio_request_one(&pdev->dev, priv->eesk,
+				    GPIOF_IN, "adm_eesk");
 	if (ret)
 		return ret;
 
@@ -1219,14 +1222,14 @@ static int __init adm6996_init(void)
 {
 	int err;
 
-	phy_register_fixup_for_id(PHY_ANY_ID, adm6996_fixup);
-	err = phy_driver_register(&adm6996_phy_driver, THIS_MODULE);
+	phy_register_fixup_for_id("MATCH ANY PHY", adm6996_fixup);
+	err = phy_drivers_register(&adm6996_phy_driver, 1, THIS_MODULE);
 	if (err)
 		return err;
 
 	err = platform_driver_register(&adm6996_gpio_driver);
 	if (err)
-		phy_driver_unregister(&adm6996_phy_driver);
+		phy_drivers_unregister(&adm6996_phy_driver, 1);
 
 	return err;
 }
@@ -1234,7 +1237,7 @@ static int __init adm6996_init(void)
 static void __exit adm6996_exit(void)
 {
 	platform_driver_unregister(&adm6996_gpio_driver);
-	phy_driver_unregister(&adm6996_phy_driver);
+	phy_drivers_unregister(&adm6996_phy_driver, 1);
 }
 
 module_init(adm6996_init);

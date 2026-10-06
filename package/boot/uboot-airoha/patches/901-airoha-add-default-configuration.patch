@@ -1,7 +1,7 @@
-From 2bd435e8b2da2047ea0c5bb9b9af96bc6af2f8cd Mon Sep 17 00:00:00 2001
+From 7c6978fa5518ee3709afcee10183ae2771ad255d Mon Sep 17 00:00:00 2001
 From: Christian Marangi <ansuelsmth@gmail.com>
 Date: Wed, 28 May 2025 03:18:32 +0200
-Subject: [PATCH 22/24] airoha: add default configuration
+Subject: [PATCH 24/29] airoha: add default configuration
 
 Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 ---
@@ -17,38 +17,44 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  create mode 100644 defenvs/en7523_rfb_env
 
 diff --git a/configs/an7581_evb_defconfig b/configs/an7581_evb_defconfig
-index 05e37d04681..7633cb7ac96 100644
+index bd7440ddc76..b39ebac8f40 100644
 --- a/configs/an7581_evb_defconfig
 +++ b/configs/an7581_evb_defconfig
-@@ -98,4 +98,6 @@ CONFIG_MTD_UBI_BEB_LIMIT=20
- CONFIG_UBI_BLOCK=y
- # CONFIG_UBIFS_SILENCE_MSG is not set
- # CONFIG_UBIFS_SILENCE_DEBUG_DUMP is not set
+@@ -51,6 +51,8 @@ CONFIG_ENV_UBI_PART="ubi"
+ CONFIG_ENV_UBI_VOLUME="ubootenv"
+ CONFIG_ENV_UBI_VOLUME_REDUND="ubootenv2"
+ CONFIG_ENV_RELOC_GD_ENV_ADDR=y
 +CONFIG_ENV_USE_DEFAULT_ENV_TEXT_FILE=y
 +CONFIG_ENV_DEFAULT_ENV_TEXT_FILE="defenvs/an7581_rfb_env"
- CONFIG_SHA512=y
+ CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
+ CONFIG_NET_RANDOM_ETHADDR=y
+ CONFIG_SYS_RX_ETH_BUFFER=8
 diff --git a/configs/an7583_evb_defconfig b/configs/an7583_evb_defconfig
-index 663d1ec52ae..c69cf353ffa 100644
+index 7517b1a6fb3..e1d3c3b428a 100644
 --- a/configs/an7583_evb_defconfig
 +++ b/configs/an7583_evb_defconfig
-@@ -97,4 +97,6 @@ CONFIG_MTD_UBI_BEB_LIMIT=20
- CONFIG_UBI_BLOCK=y
- # CONFIG_UBIFS_SILENCE_MSG is not set
- # CONFIG_UBIFS_SILENCE_DEBUG_DUMP is not set
+@@ -48,6 +48,8 @@ CONFIG_ENV_UBI_PART="ubi"
+ CONFIG_ENV_UBI_VOLUME="ubootenv"
+ CONFIG_ENV_UBI_VOLUME_REDUND="ubootenv2"
+ CONFIG_ENV_RELOC_GD_ENV_ADDR=y
 +CONFIG_ENV_USE_DEFAULT_ENV_TEXT_FILE=y
 +CONFIG_ENV_DEFAULT_ENV_TEXT_FILE="defenvs/an7583_rfb_env"
- CONFIG_SHA512=y
+ CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
+ CONFIG_NET_RANDOM_ETHADDR=y
+ CONFIG_SYS_RX_ETH_BUFFER=8
 diff --git a/configs/en7523_evb_defconfig b/configs/en7523_evb_defconfig
-index 4d01e3f54fe..8febb6cabdd 100644
+index 7f05cb63a28..dd809c5f949 100644
 --- a/configs/en7523_evb_defconfig
 +++ b/configs/en7523_evb_defconfig
-@@ -79,4 +79,6 @@ CONFIG_MTD_UBI_BEB_LIMIT=20
- CONFIG_UBI_BLOCK=y
- # CONFIG_UBIFS_SILENCE_MSG is not set
- # CONFIG_UBIFS_SILENCE_DEBUG_DUMP is not set
+@@ -45,6 +45,8 @@ CONFIG_ENV_UBI_VOLUME="ubootenv"
+ CONFIG_ENV_UBI_VOLUME_REDUND="ubootenv2"
+ CONFIG_ENV_RELOC_GD_ENV_ADDR=y
+ CONFIG_ENV_MTD_DEV="spi-nand0"
 +CONFIG_ENV_USE_DEFAULT_ENV_TEXT_FILE=y
 +CONFIG_ENV_DEFAULT_ENV_TEXT_FILE="defenvs/en7523_rfb_env"
- CONFIG_SHA512=y
+ CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
+ CONFIG_NET_RANDOM_ETHADDR=y
+ CONFIG_SYS_RX_ETH_BUFFER=8
 diff --git a/defenvs/an7581_rfb_env b/defenvs/an7581_rfb_env
 new file mode 100644
 index 00000000000..716ddc321e2
@@ -80,5 +86,5 @@ index 00000000000..716ddc321e2
 +serverip=192.168.1.10
 +bootargs=ubi.mtd=ubi root=/dev/ubiblock0_5 rootwait
 -- 
-2.51.0
+2.53.0
 

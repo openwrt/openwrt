@@ -5,7 +5,7 @@
 
 START=99
 
-. /lib/functions.sh
+. "$IPKG_INSTROOT/lib/functions.sh"
 
 find_nct7802()
 {
@@ -15,7 +15,7 @@ find_nct7802()
 			return
 		fi
 	done
-	echo "/sys/class/hwmon/hwmon3" # fallback
+	echo "/sys/class/hwmon/hwmon5" # fallback
 }
 
 boot()

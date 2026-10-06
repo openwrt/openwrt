@@ -229,6 +229,8 @@
 };
 
 &usb3 {
+	dr_mode = "host";
+
 	status = "okay";
 };
 
@@ -276,33 +278,8 @@
 	};
 };
 
-&switch {
+&uniphy0 {
 	status = "okay";
-
-	switch_mac_mode = <MAC_MODE_PSGMII>;
-
-	qcom,port_phyinfo {
-		port@1 {
-			port_id = <1>;
-			phy_address = <0>;
-		};
-		port@2 {
-			port_id = <2>;
-			phy_address = <1>;
-		};
-		port@3 {
-			port_id = <3>;
-			phy_address = <2>;
-		};
-		port@4 {
-			port_id = <4>;
-			phy_address = <3>;
-		};
-		port@5 {
-			port_id = <5>;
-			phy_address = <4>;
-		};
-	};
 };
 
 &edma {

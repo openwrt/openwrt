@@ -38,12 +38,19 @@ function cleanup() {
 			delete wlan[name].info;
 }
 
+function wiphy_path_match(entry_path, path) {
+	if (type(entry_path) == "array")
+		return index(entry_path, path) >= 0;
+
+	return entry_path == path;
+}
+
 function wiphy_get_entry(phy, path) {
 	board_data.wlan ??= {};
 
 	let wlan = board_data.wlan;
 	for (let name in wlan)
-		if (wlan[name].path == path)
+		if (wiphy_path_match(wlan[name].path, path))
 			return wlan[name];
 
 	wlan[phy] = {

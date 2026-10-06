@@ -235,7 +235,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (!pe)
 --- a/mm/vmalloc.c
 +++ b/mm/vmalloc.c
-@@ -5071,6 +5071,9 @@ static int vmalloc_info_show(struct seq_
+@@ -5127,6 +5127,9 @@ static int vmalloc_info_show(struct seq_
  
  static int __init proc_vmalloc_init(void)
  {
@@ -287,7 +287,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		goto err;
 --- a/net/core/net-procfs.c
 +++ b/net/core/net-procfs.c
-@@ -295,10 +295,12 @@ static int __net_init dev_proc_net_init(
+@@ -312,10 +312,12 @@ static int __net_init dev_proc_net_init(
  	if (!proc_create_net("dev", 0444, net->proc_net, &dev_seq_ops,
  			sizeof(struct seq_net_private)))
  		goto out;
@@ -299,10 +299,10 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 -	if (!proc_create_net("ptype", 0444, net->proc_net, &ptype_seq_ops,
 +	if (!IS_ENABLED(CONFIG_PROC_STRIPPED) &&
 +			!proc_create_net("ptype", 0444, net->proc_net, &ptype_seq_ops,
- 			sizeof(struct seq_net_private)))
+ 			sizeof(struct ptype_iter_state)))
  		goto out_softnet;
  
-@@ -308,9 +310,11 @@ static int __net_init dev_proc_net_init(
+@@ -325,9 +327,11 @@ static int __net_init dev_proc_net_init(
  out:
  	return rc;
  out_ptype:
@@ -316,7 +316,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  out_dev:
  	remove_proc_entry("dev", net->proc_net);
  	goto out;
-@@ -320,8 +324,10 @@ static void __net_exit dev_proc_net_exit
+@@ -337,8 +341,10 @@ static void __net_exit dev_proc_net_exit
  {
  	wext_proc_exit(net);
  
@@ -331,7 +331,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/core/sock.c
 +++ b/net/core/sock.c
-@@ -4285,6 +4285,8 @@ static __net_initdata struct pernet_oper
+@@ -4316,6 +4316,8 @@ static __net_initdata struct pernet_oper
  
  static int __init proto_init(void)
  {
@@ -342,7 +342,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/ipv4/fib_trie.c
 +++ b/net/ipv4/fib_trie.c
-@@ -3016,11 +3016,13 @@ static const struct seq_operations fib_r
+@@ -3020,11 +3020,13 @@ static const struct seq_operations fib_r
  
  int __net_init fib_proc_init(struct net *net)
  {
@@ -358,7 +358,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			fib_triestat_seq_show, NULL))
  		goto out2;
  
-@@ -3031,17 +3033,21 @@ int __net_init fib_proc_init(struct net
+@@ -3035,17 +3037,21 @@ int __net_init fib_proc_init(struct net
  	return 0;
  
  out3:

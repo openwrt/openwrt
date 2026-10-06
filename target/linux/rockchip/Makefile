@@ -4,10 +4,10 @@ include $(TOPDIR)/rules.mk
 
 BOARD:=rockchip
 BOARDNAME:=Rockchip
-FEATURES:=ext4 audio usb usbgadget display gpio fpu pci pcie rootfs-part boot-part squashfs
+FEATURES:=ext4 usb usbgadget gpio fpu pci pcie rootfs-part boot-part squashfs
 SUBTARGETS:=armv8
 
-KERNEL_PATCHVER:=6.12
+KERNEL_PATCHVER:=6.18
 
 define Target/Description
 	Build firmware image for Rockchip SoC devices.

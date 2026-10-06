@@ -23,7 +23,4 @@ extreme-networks,ws-ap3825i)
 ocedo,panda)
 	mtd_get_mac_ascii uboot-env0 wmac$(($PHYNBR + 1)) > /sys${DEVPATH}/macaddress
 	;;
-sophos,red-15w-rev1)
-	mtd_get_mac_ascii u-boot-env ethaddr > /sys${DEVPATH}/macaddress
-	;;
 esac

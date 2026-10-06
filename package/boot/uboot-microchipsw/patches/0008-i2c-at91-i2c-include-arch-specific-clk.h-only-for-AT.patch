@@ -1,0 +1,26 @@
+From 6ab447ab0490b23f424d437fa8b1e14fa4c87bf2 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robert.marko@sartura.hr>
+Date: Mon, 19 Jan 2026 13:29:50 +0100
+Subject: [PATCH 08/17] i2c: at91-i2c: include arch specific clk.h only for
+ AT91
+
+Microchip LAN969x will not include any arch specific clk.h, so in order to
+support it only include <asm/arch/clk.h> when AT91 is selected.
+
+Signed-off-by: Robert Marko <robert.marko@sartura.hr>
+---
+ drivers/i2c/at91_i2c.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/i2c/at91_i2c.c
++++ b/drivers/i2c/at91_i2c.c
+@@ -14,7 +14,9 @@
+ #include <fdtdec.h>
+ #include <i2c.h>
+ #include <linux/bitops.h>
++#if IS_ENABLED(CONFIG_ARCH_AT91)
+ #include <mach/clk.h>
++#endif
+ 
+ #include "at91_i2c.h"
+ 

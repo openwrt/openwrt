@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/arch/arm/dts/mt7981-comfast-cf-wr632ax.dts
-@@ -0,0 +1,153 @@
+@@ -0,0 +1,151 @@
 +// SPDX-License-Identifier: GPL-2.0-or-later
 +
 +/dts-v1/;
@@ -9,10 +9,8 @@
 +#include <dt-bindings/input/linux-event-codes.h>
 +
 +/ {
-+	#address-cells = <1>;
-+	#size-cells = <1>;
 +	model = "COMFAST CF-WR632AX";
-+	compatible = "mediatek,mt7981", "mediatek,mt7981-rfb";
++	compatible = "comfast,cf-wr632ax", "mediatek,mt7981";
 +
 +	chosen {
 +		stdout-path = &uart0;
@@ -82,13 +80,13 @@
 +		conf-pu {
 +			pins = "SPI0_CS", "SPI0_HOLD", "SPI0_WP";
 +			drive-strength = <MTK_DRIVE_4mA>;
-+			bias-pull-up = <MTK_PUPD_SET_R1R0_00>;
++			bias-pull-up = <MTK_PUPD_SET_R1R0_11>;
 +		};
 +
 +		conf-pd {
 +			pins = "SPI0_CLK", "SPI0_MOSI", "SPI0_MISO";
 +			drive-strength = <MTK_DRIVE_4mA>;
-+			bias-pull-down = <MTK_PUPD_SET_R1R0_00>;
++			bias-pull-down = <MTK_PUPD_SET_R1R0_11>;
 +		};
 +	};
 +};
@@ -118,7 +116,7 @@
 +			#size-cells = <1>;
 +
 +			partition@0 {
-+				label = "bl2";
++				label = "BL2";
 +				reg = <0x0 0x100000>;
 +			};
 +
@@ -128,12 +126,12 @@
 +			};
 +
 +			partition@180000 {
-+				label = "factory";
++				label = "Factory";
 +				reg = <0x180000 0x200000>;
 +			};
 +
 +			partition@380000 {
-+				label = "fip";
++				label = "FIP";
 +				reg = <0x380000 0x200000>;
 +			};
 +
@@ -311,8 +309,8 @@
 +boot_tftp_write_fip=tftpboot $loadaddr $bootfile_fip && run mtd_write_fip && run reset_factory
 +boot_tftp_write_bl2=tftpboot $loadaddr $bootfile_bl2 && run mtd_write_bl2
 +reset_factory=ubi part ubi ; mw $loadaddr 0x0 0x800 ; ubi write $loadaddr ubootenv 0x800 ; ubi write $loadaddr ubootenv2 0x800
-+mtd_write_fip=mtd erase fip && mtd write fip $loadaddr
-+mtd_write_bl2=mtd erase bl2 && mtd write bl2 $loadaddr
++mtd_write_fip=mtd erase FIP && mtd write FIP $loadaddr
++mtd_write_bl2=mtd erase BL2 && mtd write BL2 $loadaddr
 +ubi_create_env=ubi check ubootenv || ubi create ubootenv 0x100000 dynamic || run ubi_format ; ubi check ubootenv2 || ubi create ubootenv2 0x100000 dynamic || run ubi_format
 +ubi_format=ubi detach ; mtd erase ubi && ubi part ubi ; reset
 +ubi_prepare_rootfs=if ubi check rootfs_data ; then else if env exists rootfs_data_max ; then ubi create rootfs_data $rootfs_data_max dynamic || ubi create rootfs_data - dynamic ; else ubi create rootfs_data - dynamic ; fi ; fi

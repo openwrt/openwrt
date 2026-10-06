@@ -1,0 +1,96 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+/*
+ * Copyright (C) 2025 SmartRG Inc.
+ * Author: Piotr Kubik <piotr.kubik@adtran.com>
+ */
+
+#define SDG_THERMAL_HEADER									\
+	polling-delay-passive = <0>;								\
+	polling-delay = <1000>;									\
+	critical-action = "reboot";								\
+	/delete-node/cooling-maps;								\
+	/delete-node/trips;
+
+#define SDG_THERMAL_TRIPS(_cname, _crit, _hot, _high, _med, _low, _silent)			\
+	trips {											\
+		_cname##_critical: critical {							\
+			temperature = <_crit>;							\
+			hysteresis = <4000>;							\
+			type = "critical";							\
+		};										\
+		_cname##_hot: hot {								\
+			temperature = <_hot>;							\
+			hysteresis = <4000>;							\
+			type = "hot";								\
+		};										\
+		_cname##_active_high: active-high {						\
+			temperature = <_high>;							\
+			hysteresis = <4000>;							\
+			type = "active";							\
+		};										\
+		_cname##_active_med: active-med {						\
+			temperature = <_med>;							\
+			hysteresis = <4000>;							\
+			type = "active";							\
+		};										\
+		_cname##_active_low: active-low {						\
+			temperature = <_low>;							\
+			hysteresis = <4000>;							\
+			type = "active";							\
+		};										\
+		_cname##_active_silent: active-silent {						\
+			temperature = <_silent>;						\
+			hysteresis = <4000>;							\
+			type = "active";							\
+		};										\
+	};
+
+#define SDG_COOLING_MAP_1FAN(_cname, _fan0) 							\
+	cooling-maps {										\
+		map3 {										\
+			trip = <&_cname##_active_high>;						\
+			cooling-device = <_fan0 3 3>;						\
+		};										\
+		map2 {										\
+			trip = <&_cname##_active_med>;						\
+			cooling-device = <_fan0 2 2>;						\
+		};										\
+		map1 {										\
+			trip = <&_cname##_active_low>;						\
+			cooling-device = <_fan0 1 1>;						\
+		};										\
+		map0 {										\
+			trip = <&_cname##_active_silent>;					\
+			cooling-device = <_fan0 0 0>;						\
+		};										\
+	}
+
+#define SDG_COOLING_MAP_2FAN(_cname, _fan0, _fan1)						\
+	cooling-maps {										\
+		map3 {										\
+			trip = <&_cname##_active_high>;						\
+			cooling-device = <_fan0 3 3>, <_fan1 3 3>;				\
+		};										\
+		map2 {										\
+			trip = <&_cname##_active_med>;						\
+			cooling-device = <_fan0 2 2>, <_fan1 2 2>;				\
+		};										\
+		map1 {										\
+			trip = <&_cname##_active_low>;						\
+			cooling-device = <_fan0 1 1>, <_fan1 1 1>;				\
+		};										\
+		map0 {										\
+			trip = <&_cname##_active_silent>;					\
+			cooling-device = <_fan0 0 0>, <_fan1 0 0>;				\
+		};										\
+	}
+
+#define SDG_1FAN_THERMAL_MAP(_cname, _fan0, _crit, _hot, _high, _med, _low, _silent)		\
+	SDG_THERMAL_HEADER									\
+	SDG_THERMAL_TRIPS(_cname, _crit, _hot, _high, _med, _low, _silent)			\
+	SDG_COOLING_MAP_1FAN(_cname, _fan0)
+
+#define SDG_2FAN_THERMAL_MAP(_cname, _fan0, _fan1, _crit, _hot, _high, _med, _low, _silent)	\
+	SDG_THERMAL_HEADER									\
+	SDG_THERMAL_TRIPS(_cname, _crit, _hot, _high, _med, _low, _silent)			\
+	SDG_COOLING_MAP_2FAN(_cname, _fan0, _fan1)

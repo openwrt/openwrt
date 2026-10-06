@@ -1,0 +1,28 @@
+From 5a26eb05e3224e11e5e026c9ba56598bc0b48961 Mon Sep 17 00:00:00 2001
+From: Naushir Patuck <naush@raspberrypi.com>
+Date: Mon, 14 Sep 2026 14:45:44 +0100
+Subject: [PATCH] media: rp1-cfe: Release the vb2 queue when unregistering a
+ node
+
+cfe_register_node() initialises the node vb2 queue but cfe_unregister_nodes()
+never released it, causing a memory leak.
+
+Release the queue after unregistering the video device so that the driver
+can be removed, and nodes can later be re-registered without leaking
+memory.
+
+Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
+---
+ drivers/media/platform/raspberrypi/rp1_cfe/cfe.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/media/platform/raspberrypi/rp1_cfe/cfe.c
++++ b/drivers/media/platform/raspberrypi/rp1_cfe/cfe.c
+@@ -2038,6 +2038,7 @@ static void cfe_unregister_nodes(struct
+ 		if (check_state(cfe, NODE_REGISTERED, i)) {
+ 			clear_state(cfe, NODE_REGISTERED, i);
+ 			video_unregister_device(&node->video_dev);
++			vb2_queue_release(&node->buffer_queue);
+ 		}
+ 	}
+ }

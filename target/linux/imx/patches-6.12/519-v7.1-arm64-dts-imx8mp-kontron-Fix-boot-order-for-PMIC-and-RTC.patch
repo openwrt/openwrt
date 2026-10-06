@@ -1,0 +1,38 @@
+From 130d90114c5255a7a729158da8fd8298a02017f1 Mon Sep 17 00:00:00 2001
+From: Annette Kobou <annette.kobou@kontron.de>
+Date: Mon, 9 Mar 2026 09:57:43 +0100
+Subject: arm64: dts: imx8mp-kontron: Fix boot order for PMIC and RTC
+
+The PMIC provides a level-shifter for the I2C lines to the RTC. As the
+level shifter needs to be enabled before the RTC can be accessed, make sure
+that the PMIC driver is probed first.
+
+As the PMIC also provides the supply voltage for the RTC through the 3.3V
+regulator, simply express this in the DT to create the required dependency.
+
+Avoid sporadic boot hangs that occurred when the RTC was accessed before
+the level-shifter was enabled.
+
+Fixes: 946ab10e3f40f ("arm64: dts: Add support for Kontron OSM-S i.MX8MP SoM and BL carrier board")
+Signed-off-by: Annette Kobou <annette.kobou@kontron.de>
+Signed-off-by: Frieder Schrempf <frieder.schrempf@kontron.de>
+Signed-off-by: Frank Li <Frank.Li@nxp.com>
+---
+ arch/arm64/boot/dts/freescale/imx8mp-kontron-osm-s.dtsi | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+--- a/arch/arm64/boot/dts/freescale/imx8mp-kontron-osm-s.dtsi
++++ b/arch/arm64/boot/dts/freescale/imx8mp-kontron-osm-s.dtsi
+@@ -330,6 +330,12 @@
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&pinctrl_rtc>;
+ 		interrupts-extended = <&gpio3 24 IRQ_TYPE_LEVEL_LOW>;
++		/*
++		 * While specifying the vdd-supply is normally not strictly necessary,
++		 * here it also makes sure that the PMIC driver enables the level-
++		 * shifter for the RTC before the RTC is probed.
++		 */
++		vdd-supply = <&reg_vdd_3v3>;
+ 	};
+ };
+ 

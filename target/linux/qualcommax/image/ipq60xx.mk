@@ -7,7 +7,8 @@ define Build/wax610-netgear-tar
 	md5sum $@.tmp/nand-ipq6018-apps.img | cut -c 1-32 > $@.tmp/nand-ipq6018-apps.md5sum
 	echo "WAX610" > $@.tmp/metadata.txt
 	echo "WAX610-610Y_V99.9.9.9" > $@.tmp/version
- 	tar -C $@.tmp/ -cf $@ .
+	$(TAR) -C $@.tmp/ -cf $@ --sort=name --numeric-owner --owner=0 --group=0 --mode=go-w \
+		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") .
 	rm -rf $@.tmp
 endef
 
@@ -20,6 +21,25 @@ define Build/netgear-rbx350-qsdk-ipq-factory
 	$(TOPDIR)/scripts/mkits-qsdk-ipq-image.sh $@.its $(FLASH_SCRIPT) txt $@.metadata ubi $@
 	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $@.its $@.new
 	@mv $@.new $@
+endef
+
+# RouterBOOT only loads bare ARM64 ELF images, not FIT, and the yaffs kernel
+# partition is just 8 MiB while the raw kernel is around 14 MiB. The kernel is
+# therefore wrapped in a self-extracting LZMA loader; see
+# image/mikrotik-lzma-loader.
+define Build/mikrotik-lzma-loader
+	# Compress $@ (the file currently travelling through the pipe) rather than
+	# $(IMAGE_KERNEL): the latter picks the wrong, larger image on squashfs
+	# builds. Write via a temporary file because $@ is both source and target.
+	$(MAKE) -C $(TOPDIR)/target/linux/qualcommax/image/mikrotik-lzma-loader \
+		KERNEL_IMAGE="$@" \
+		DTB="$(KERNEL_BUILD_DIR)/image-$(DEVICE_DTS).dtb" \
+		OUTPUT="$@.loader" \
+		BUILD="$@.build" \
+		TARGET_CC="$(TARGET_CC)" \
+		STAGING_DIR_HOST="$(STAGING_DIR_HOST)"
+	mv "$@.loader" "$@"
+	rm -rf "$@.build"
 endef
 
 define Device/8devices_mango-dvk
@@ -68,8 +88,6 @@ define Device/glinet_gl-common
 	PAGESIZE := 2048
 	DEVICE_DTS_CONFIG := config@cp03-c1
 	SOC := ipq6000
-	IMAGES += factory.bin
-	IMAGE/factory.bin := append-ubi | append-gl-metadata
 endef
 
 define Device/glinet_gl-ax1800
@@ -124,6 +142,25 @@ define Device/jdcloud_re-ss-01
 endef
 TARGET_DEVICES += jdcloud_re-ss-01
 
+define Device/link_nn6000-v1
+	$(call Device/FitImage)
+	$(call Device/EmmcImage)
+	DEVICE_VENDOR := Link
+	DEVICE_MODEL := NN6000 v1
+	SOC := ipq6000
+	KERNEL_SIZE := 6144k
+	DEVICE_DTS_CONFIG := config@cp03-c1
+	DEVICE_PACKAGES := ipq-wifi-link_nn6000 kmod-fs-f2fs f2fs-tools
+	IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-rootfs | append-metadata
+endef
+TARGET_DEVICES += link_nn6000-v1
+
+define Device/link_nn6000-v2
+	$(Device/link_nn6000-v1)
+	DEVICE_MODEL := NN6000 v2
+endef
+TARGET_DEVICES += link_nn6000-v2
+
 define Device/linksys_mr
 	$(call Device/FitImage)
 	DEVICE_VENDOR := Linksys
@@ -132,7 +169,7 @@ define Device/linksys_mr
 	KERNEL_SIZE := 8192k
 	IMAGES += factory.bin
 	IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | linksys-image type=$$$$(DEVICE_MODEL)
-	DEVICE_PACKAGE := kmod-usb-ledtrig-usbport
+	DEVICE_PACKAGES := kmod-usb-ledtrig-usbport
 endef
 
 define Device/linksys_mr7350
@@ -153,9 +190,39 @@ define Device/linksys_mr7500
 	IMAGE_SIZE := 147456k
 	DEVICE_PACKAGES += ipq-wifi-linksys_mr7500 \
 		ath11k-firmware-qcn9074 kmod-ath11k-pci \
-		kmod-leds-pwm kmod-phy-aquantia
+		kmod-leds-pwm
 endef
 TARGET_DEVICES += linksys_mr7500
+
+define Device/mikrotik_chateau-5g-r17-ax
+	$(call Device/UbiFit)
+	KERNEL := kernel-bin | mikrotik-lzma-loader
+	KERNEL_INITRAMFS := kernel-bin | mikrotik-lzma-loader
+	DEVICE_VENDOR := MikroTik
+	DEVICE_MODEL := S53UG+5HaxD2HaxD&RG650E-EU (Chateau 5G R17 ax)
+	SOC := ipq6010
+	DEVICE_DTS := ipq6010-mikrotik-chateau-5g-r17
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	# yafut: required by sysupgrade. The kernel partition is yaffs, whose
+	#   metadata and ECC live in the OOB area, so "mtd write" cannot be used.
+	# The built-in Quectel RG650E-EU (2c7c:0122) speaks QMI/RMNET. Note that
+	#   uqmi alone does not fully drive it: it only gets a client ID for UIM,
+	#   while DMS/NAS/WDS answer "Failed to connect to service". qmicli from
+	#   libqmi reaches all of them, so a libqmi based connection manager is
+	#   needed for an actual data session.
+	# kmod-usb-serial-option: AT ports of the modem.
+	# No ipq-wifi package: this unit's own board data and cal data come out
+	#   of RouterBOOT hard_config at runtime, served to ath11k from the
+	#   firmware hotplug script ipq60xx/base-files/etc/hotplug.d/firmware/
+	#   11-ath11k-caldata. The board-2.bin from ath11k-firmware-ipq6018 has
+	#   no entry this device matches.
+	# The USB basics (kmod-usb3, kmod-usb-dwc3, kmod-usb-dwc3-qcom) are
+	# already DEFAULT_PACKAGES of the target and are not repeated here.
+	DEVICE_PACKAGES := kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi \
+		yafut
+endef
+TARGET_DEVICES += mikrotik_chateau-5g-r17-ax
 
 define Device/netgear_rbx350
 	$(call Device/FitImage)
@@ -279,6 +346,25 @@ define Device/tplink_eap625-outdoor-hd-v1
 
 endef
 TARGET_DEVICES += tplink_eap625-outdoor-hd-v1
+
+define Device/tplink_eap620-hd-v2
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := TP-Link
+	DEVICE_MODEL := EAP620 HD v2
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	SOC := ipq6018
+	DEVICE_PACKAGES := ipq-wifi-tplink_eap620-hd-v2
+	IMAGES += web-ui-factory.bin
+	IMAGE/web-ui-factory.bin := append-ubi | tplink-image-2022
+	TPLINK_SUPPORT_STRING := SupportList:\r\n \
+		EAP620 HD(TP-Link|UN|AX1800-D):2.0\r\n \
+		EAP620 HD(TP-Link|CA|AX1800-D):2.0\r\n \
+		EAP620 HD(TP-Link|JP|AX1800-D):2.0\r\n \
+		EAP620 HD(TP-Link|EG|AX1800-D):2.0\r\n
+endef
+TARGET_DEVICES += tplink_eap620-hd-v2
 
 define Device/tplink_eap620-hd-v3
 	$(call Device/FitImage)

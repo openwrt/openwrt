@@ -186,6 +186,16 @@
 	nvmem-cell-names = "mac-address";
 };
 
+/*
+ * eth0 is connected to PHY 4 of the AR7240 built-in switch, which is
+ * 10/100 Mbps only, but the PHY erroneously advertises gigabit. This
+ * makes phylib attempt 1000BASE-T master/slave resolution that never
+ * completes, breaking auto-negotiation. Cap the PHY at 100 Mbps.
+ */
+&swphy4 {
+	max-speed = <100>;
+};
+
 &eth1 {
 	status = "okay";
 	nvmem-cells = <&macaddr_board_data_6c>;

@@ -1,0 +1,46 @@
+From: John Crispin <john@phrozen.org>
+Subject: [PATCH] keep build paths out of the configure string
+
+configure.in compiles the whole configure command line into the module as
+DRV_TAPI_CONFIGURE_STR, and drv_tapi_linux.c prints it through a proc
+file. The command line holds the absolute paths of the build machine,
+among them --enable-kernelbuild, --with-ifxos-incl, CPPFLAGS and LDFLAGS.
+The module therefore depends on the directory it was built in, and two
+builds in different directories produce different modules.
+
+The published snapshot module of lantiq/xway holds, for example,
+--enable-kernelbuild=/builder/shared-workdir/build/build_dir/...
+
+Drop every argument that holds a path. The feature flags, which are the
+part a reader of the proc file wants, stay. The loop repeats the idiom
+that the file already uses for CONFIGURE_OPTIONS.
+
+Signed-off-by: John Crispin <john@phrozen.org>
+---
+ configure.in | 15 ++++++++++++++-
+ 1 file changed, 14 insertions(+), 1 deletion(-)
+
+--- a/configure.in
++++ b/configure.in
+@@ -86,7 +86,20 @@ AH_BOTTOM([
+ #endif /* _DRV_CONFIG_H_ */
+ ])
+
+-AC_DEFINE_UNQUOTED([DRV_TAPI_CONFIGURE_STR], ["$ac_configure_args"], [configure options string])
++# The string below is printed through a proc file. An absolute path of the
++# build machine has no meaning on the target, and it makes the module depend
++# on the directory it was built in. Keep the arguments that hold no path.
++CONFIGURE_STR=''
++for c_arg in $ac_configure_args; do
++   case $c_arg in
++      *"/"*)
++         ;;
++      *)
++         CONFIGURE_STR="$CONFIGURE_STR $c_arg"
++         ;;
++   esac
++done
++AC_DEFINE_UNQUOTED([DRV_TAPI_CONFIGURE_STR], ["$CONFIGURE_STR"], [configure options string])
+
+ dnl enable linux kernel 2.6.x support (Make sure AC_PROG_CC is defined before to set $CC!)
+ AM_CONDITIONAL(KERNEL_2_6, false)

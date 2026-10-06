@@ -68,7 +68,11 @@ define Device/Default
   DEVICE_DTS = $$(SOC)_$(1)
   PROFILES = Default
   MTDPARTS :=
+ifeq ($(SUBTARGET),tiny)
+  BLOCKSIZE := 4k
+else
   BLOCKSIZE := 64k
+endif
   KERNEL := kernel-bin | append-dtb | lzma | uImage lzma
   KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | uImage lzma
   LOADER_KERNEL_MAGIC :=

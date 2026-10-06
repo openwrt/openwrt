@@ -15,10 +15,10 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 
 --- a/mesonbuild/environment.py
 +++ b/mesonbuild/environment.py
-@@ -999,3 +999,10 @@ class Environment:
- 
-     def has_exe_wrapper(self) -> bool:
-         return self.exe_wrapper and self.exe_wrapper.found()
+@@ -632,3 +632,10 @@ class Environment:
+         machines = self.machines.miss_defaulting()
+         machines.build = detect_machine_info(compilers)
+         self.machines = machines.default_missing()
 +
 +    def can_run_host_binaries(self) -> bool:
 +        return not (
@@ -28,9 +28,9 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +        )
 --- a/mesonbuild/interpreter/mesonmain.py
 +++ b/mesonbuild/interpreter/mesonmain.py
-@@ -277,20 +277,13 @@ class MesonMain(MesonInterpreterObject):
-     @noKwargs
+@@ -258,21 +258,14 @@ class MesonMain(MesonInterpreterObject):
      @FeatureDeprecated('meson.has_exe_wrapper', '0.55.0', 'use meson.can_run_host_binaries instead.')
+     @InterpreterObject.method('has_exe_wrapper')
      def has_exe_wrapper_method(self, args: T.List['TYPE_var'], kwargs: 'TYPE_kwargs') -> bool:
 -        return self._can_run_host_binaries_impl()
 +        return self.build.environment.can_run_host_binaries()
@@ -38,6 +38,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
      @noPosargs
      @noKwargs
      @FeatureNew('meson.can_run_host_binaries', '0.55.0')
+     @InterpreterObject.method('can_run_host_binaries')
      def can_run_host_binaries_method(self, args: T.List['TYPE_var'], kwargs: 'TYPE_kwargs') -> bool:
 -        return self._can_run_host_binaries_impl()
 -

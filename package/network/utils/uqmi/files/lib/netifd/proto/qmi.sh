@@ -39,7 +39,7 @@ proto_qmi_setup() {
 	local connstat dataformat mcc mnc plmn_mode
 	local cid_4 cid_6 pdh_4 pdh_6
 	local dns1_6 dns2_6 gateway_6 ip_6 ip_prefix_length
-	local profile_pdptype
+	local profile_pdptype profile_id
 
 	local delegate ip4table ip6table mtu sourcefilter $PROTO_DEFAULT_OPTIONS
 	json_get_vars delegate ip4table ip6table mtu sourcefilter $PROTO_DEFAULT_OPTIONS
@@ -331,12 +331,13 @@ proto_qmi_setup() {
 
 	[ "$pdptype" = "ip" -o "$pdptype" = "ipv6" -o "$pdptype" = "ipv4v6" ] || pdptype="ip"
 
-	# Configure PDP type and APN for profile 1.
+	# Configure PDP type and APN.
 	# In case GGSN rejects IPv4v6 PDP, modem might not be able to
 	# establish a non-LTE data session.
 	profile_pdptype="$pdptype"
+	profile_id="${profile:-1}"
 	[ "$profile_pdptype" = "ip" ] && profile_pdptype="ipv4"
-	uqmi -s -d "$device" -t 1000 --modify-profile "3gpp,1" --apn "$apn" --pdp-type "$profile_pdptype" > /dev/null 2>&1
+	uqmi -s -d "$device" -t 1000 --modify-profile "3gpp,$profile_id" --apn "$apn" --pdp-type "$profile_pdptype" > /dev/null 2>&1
 
 	if [ "$pdptype" = "ip" ]; then
 		[ -z "$autoconnect" ] && autoconnect=1
@@ -455,10 +456,8 @@ proto_qmi_setup() {
 			proto_add_ipv6_prefix "${ip_6}/${ip_prefix_length}"
 			proto_add_ipv6_route "$gateway_6" "128"
 			[ "$defaultroute" = 0 ] || proto_add_ipv6_route "::0" 0 "$gateway_6" "" "" "${ip_6}/${ip_prefix_length}"
-			[ "$peerdns" = 0 ] || {
-				proto_add_dns_server "$dns1_6"
-				proto_add_dns_server "$dns2_6"
-			}
+			proto_add_dns_server "$dns1_6"
+			proto_add_dns_server "$dns2_6"
 			[ -n "$zone" ] && {
 				proto_add_data
 				json_add_string zone "$zone"
@@ -498,10 +497,8 @@ proto_qmi_setup() {
 			proto_add_ipv4_address "$ip_4" "$subnet_4"
 			proto_add_ipv4_route "$gateway_4" "128"
 			[ "$defaultroute" = 0 ] || proto_add_ipv4_route "0.0.0.0" 0 "$gateway_4"
-			[ "$peerdns" = 0 ] || {
-				proto_add_dns_server "$dns1_4"
-				proto_add_dns_server "$dns2_4"
-			}
+			proto_add_dns_server "$dns1_4"
+			proto_add_dns_server "$dns2_4"
 			[ -n "$zone" ] && {
 				proto_add_data
 				json_add_string zone "$zone"

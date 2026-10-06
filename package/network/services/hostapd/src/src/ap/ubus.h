@@ -38,6 +38,7 @@ struct hostapd_ubus_bss {
 	struct ubus_object obj;
 	struct avl_tree banned;
 	int notify_response;
+	bool answer_bss_transition_query;
 };
 
 void hostapd_ubus_add_iface(struct hostapd_iface *iface);

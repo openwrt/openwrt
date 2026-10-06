@@ -297,6 +297,14 @@ uc_hostapd_bss_set_config(uc_vm_t *vm, size_t nargs)
 	started = hapd->started;
 	__uc_hostapd_bss_stop(hapd);
 
+	/*
+	 * start_disabled is only meaningful for the initial apsta bring-up. When
+	 * re-applying config to a BSS that was already started, clear it so the
+	 * restart keeps beaconing instead of silently going quiet.
+	 */
+	if (started)
+		conf->bss[idx]->start_disabled = 0;
+
 	old_bss = hapd->conf;
 	for (i = 0; i < iface->conf->num_bss; i++)
 		if (iface->conf->bss[i] == hapd->conf)
@@ -372,6 +380,9 @@ uc_hostapd_bss_delete(uc_vm_t *vm, size_t nargs)
 
 	hostapd_drv_stop_ap(hapd);
 	hostapd_bss_deinit(hapd);
+	/* deinit skips these for a bss that never started; both are idempotent */
+	hostapd_ucode_free_bss(hapd);
+	hostapd_ubus_free_bss(hapd);
 	hostapd_remove_iface_bss_conf(iface->conf, hapd->conf);
 	hostapd_config_free_bss(hapd->conf);
 #ifdef CONFIG_IEEE80211BE
@@ -420,7 +431,7 @@ uc_hostapd_iface_add_bss(uc_vm_t *vm, size_t nargs)
 {
 	struct hostapd_iface *iface = uc_fn_thisval("hostapd.iface");
 	struct hostapd_bss_config *bss;
-	struct hostapd_config *conf;
+	struct hostapd_config *conf = NULL;
 	struct hostapd_data *hapd;
 	uc_value_t *file = uc_fn_arg(0);
 	uc_value_t *index = uc_fn_arg(1);
@@ -457,9 +468,11 @@ uc_hostapd_iface_add_bss(uc_vm_t *vm, size_t nargs)
 	    interfaces->ctrl_iface_init(hapd) < 0)
 		goto free_hapd;
 
-	if (iface->state == HAPD_IFACE_ENABLED &&
-	    hostapd_setup_bss(hapd, -1, true))
-		goto deinit_ctrl;
+	if (iface->state == HAPD_IFACE_ENABLED) {
+		hapd->conf->start_disabled = 0;
+		if (hostapd_setup_bss(hapd, false, true))
+			goto deinit_ctrl;
+	}
 
 	iface->bss = os_realloc_array(iface->bss, iface->num_bss + 1,
 				      sizeof(*iface->bss));
@@ -737,10 +750,22 @@ uc_hostapd_iface_switch_channel(uc_vm_t *vm, size_t nargs)
 	intval = ucv_int64_get(ucv_object_get(info, "oper_chwidth", NULL));
 	if (errno)
 		intval = hostapd_get_oper_chwidth(conf);
-	if (intval)
-		csa.freq_params.bandwidth = 40 << intval;
-	else
+	switch (intval) {
+	case CONF_OPER_CHWIDTH_80MHZ:
+	case CONF_OPER_CHWIDTH_80P80MHZ:
+		/* 80+80 uses an 80 MHz primary segment plus center_freq2 */
+		csa.freq_params.bandwidth = 80;
+		break;
+	case CONF_OPER_CHWIDTH_160MHZ:
+		csa.freq_params.bandwidth = 160;
+		break;
+	case CONF_OPER_CHWIDTH_320MHZ:
+		csa.freq_params.bandwidth = 320;
+		break;
+	default:
 		csa.freq_params.bandwidth = csa.freq_params.sec_channel_offset ? 40 : 20;
+		break;
+	}
 
 	if ((intval = ucv_int64_get(ucv_object_get(info, "frequency", NULL))) && !errno)
 		csa.freq_params.freq = intval;
@@ -756,6 +781,17 @@ uc_hostapd_iface_switch_channel(uc_vm_t *vm, size_t nargs)
 }
 
 static uc_value_t *
+uc_hostapd_iface_csa_in_progress(uc_vm_t *vm, size_t nargs)
+{
+	struct hostapd_iface *iface = uc_fn_thisval("hostapd.iface");
+
+	if (!iface)
+		return NULL;
+
+	return ucv_boolean_new(hostapd_csa_in_progress(iface));
+}
+
+static uc_value_t *
 uc_hostapd_bss_rename(uc_vm_t *vm, size_t nargs)
 {
 	struct hostapd_data *hapd = uc_fn_thisval("hostapd.bss");
@@ -764,7 +800,7 @@ uc_hostapd_bss_rename(uc_vm_t *vm, size_t nargs)
 	char prev_ifname[IFNAMSIZ + 1];
 	struct sta_info *sta;
 	const char *ifname;
-	int ret;
+	int ret = 0;
 
 	if (!hapd || ucv_type(ifname_arg) != UC_STRING)
 		return NULL;
@@ -796,6 +832,7 @@ uc_hostapd_bss_rename(uc_vm_t *vm, size_t nargs)
 	if (!strncmp(hapd->conf->ssid.vlan, hapd->conf->iface, sizeof(hapd->conf->ssid.vlan)))
 		os_strlcpy(hapd->conf->ssid.vlan, ifname, sizeof(hapd->conf->ssid.vlan));
 	os_strlcpy(hapd->conf->iface, ifname, sizeof(hapd->conf->iface));
+	hostapd_set_ctrl_sock_iface(hapd);
 	hostapd_ubus_add_bss(hapd);
 
 	hostapd_ucode_update_interfaces();
@@ -838,13 +875,15 @@ int hostapd_ucode_sta_auth(struct hostapd_data *hapd, struct sta_info *sta)
 			size_t str_len;
 
 			cur_psk = ucv_array_get(cur, i);
+			if (ucv_type(cur_psk) != UC_STRING)
+				continue;
 			str = ucv_string_get(cur_psk);
 			str_len = strlen(str);
-			if (!str || str_len < 8 || str_len > 64)
+			if (str_len < 8 || str_len > 64)
 				continue;
 
 			p = os_zalloc(sizeof(*p));
-			if (len == 64) {
+			if (str_len == 64) {
 				if (hexstr2bin(str, p->psk, PMK_LEN) < 0) {
 					free(p);
 					continue;
@@ -949,6 +988,27 @@ uc_wpa_rkh_derive_key(uc_vm_t *vm, size_t nargs)
 }
 
 #ifdef CONFIG_DPP
+/* The BSS the caller reached carries the address of its own link. A frame that
+ * leaves under the address of one link on the channel of another is not
+ * acknowledged, so answer from the link that holds the channel.
+ */
+static struct hostapd_data *
+hostapd_dpp_freq_bss(struct hostapd_data *hapd, unsigned int freq)
+{
+#ifdef CONFIG_IEEE80211BE
+	struct hostapd_data *link;
+
+	if (!hapd->conf->mld_ap)
+		return hapd;
+
+	for_each_mld_link(link, hapd)
+		if (link->iface->freq == (int)freq)
+			return link;
+#endif /* CONFIG_IEEE80211BE */
+
+	return hapd;
+}
+
 static uc_value_t *
 uc_hostapd_bss_dpp_send_action(uc_vm_t *vm, size_t nargs)
 {
@@ -976,6 +1036,8 @@ uc_hostapd_bss_dpp_send_action(uc_vm_t *vm, size_t nargs)
 	freq = ucv_int64_get(freq_arg);
 	if (!freq)
 		freq = hapd->iface->freq;
+	else
+		hapd = hostapd_dpp_freq_bss(hapd, freq);
 
 	frame_b64 = ucv_string_get(frame_arg);
 	frame_data = base64_decode(frame_b64, os_strlen(frame_b64), &frame_len);
@@ -1037,6 +1099,8 @@ uc_hostapd_bss_dpp_send_gas_resp(uc_vm_t *vm, size_t nargs)
 	freq = ucv_int64_get(freq_arg);
 	if (!freq)
 		freq = hapd->iface->freq;
+	else
+		hapd = hostapd_dpp_freq_bss(hapd, freq);
 
 	data_b64 = ucv_string_get(data_arg);
 	data = base64_decode(data_b64, os_strlen(data_b64), &data_len);
@@ -1089,7 +1153,8 @@ int hostapd_ucode_dpp_rx_action(struct hostapd_data *hapd, const u8 *src,
 
 struct wpabuf *hostapd_ucode_dpp_gas_req(struct hostapd_data *hapd,
 					 const u8 *sa, u8 dialog_token,
-					 const u8 *query, size_t query_len)
+					 const u8 *query, size_t query_len,
+					 unsigned int freq)
 {
 	uc_value_t *val;
 	char addr[18];
@@ -1111,9 +1176,10 @@ struct wpabuf *hostapd_ucode_dpp_gas_req(struct hostapd_data *hapd,
 	uc_value_push(ucv_string_new(addr));
 	uc_value_push(ucv_int64_new(dialog_token));
 	uc_value_push(ucv_string_new(query_b64));
+	uc_value_push(ucv_int64_new(freq));
 	os_free(query_b64);
 
-	val = wpa_ucode_call(4);
+	val = wpa_ucode_call(5);
 	if (ucv_type(val) == UC_STRING) {
 		const char *resp_b64 = ucv_string_get(val);
 		size_t resp_len;
@@ -1211,6 +1277,7 @@ int hostapd_ucode_init(struct hapd_interfaces *ifaces)
 		{ "stop", uc_hostapd_iface_stop },
 		{ "start", uc_hostapd_iface_start },
 		{ "switch_channel", uc_hostapd_iface_switch_channel },
+		{ "csa_in_progress", uc_hostapd_iface_csa_in_progress },
 	};
 	uc_value_t *data, *proto;
 
@@ -1278,9 +1345,10 @@ void hostapd_ucode_free_bss(struct hostapd_data *hapd)
 	if (wpa_ucode_call_prepare("bss_remove"))
 		return;
 
+	uc_value_push(ucv_string_new(hapd->iface->phy));
 	uc_value_push(ucv_string_new(hapd->conf->iface));
 	uc_value_push(ucv_get(val));
-	ucv_put(wpa_ucode_call(2));
+	ucv_put(wpa_ucode_call(3));
 
 	ucv_put(val);
 }

@@ -328,6 +328,22 @@ endif
       APK_SCRIPTS_$(1)+=--script "post-deinstall:$$(ADIR_$(1))/postrm"
     endif
 
+ifneq ($(CONFIG_USE_APK),)
+    APK_TAGS_$(1):=
+
+    ifneq ($$(ABIV_$(1)),)
+      APK_TAGS_$(1)+=openwrt:abiversion=$$(ABIV_$(1))
+    endif
+
+    ifneq ($(SECTION),)
+      APK_TAGS_$(1)+=openwrt:section=$(SECTION)
+    endif
+
+    ifneq ($(PKG_CPE_ID),)
+      APK_TAGS_$(1)+=openwrt:cpe=$(PKG_CPE_ID)
+    endif
+endif
+
     TARGET_VARIANT:=$$(if $(ALL_VARIANTS),$$(if $$(VARIANT),$$(filter-out *,$$(VARIANT)),$(firstword $(ALL_VARIANTS))))
     ifeq ($(BUILD_VARIANT),$$(if $$(TARGET_VARIANT),$$(TARGET_VARIANT),$(BUILD_VARIANT)))
     do_install=
@@ -423,7 +439,7 @@ $$(call addfield,Depends,$$(Package/$(1)/DEPENDS)
 )$$(call addfield,LicenseFiles,$(LICENSE_FILES)
 )$$(call addfield,Section,$(SECTION)
 )$$(call addfield,Require-User,$(USERID)
-)$$(call addfield,SourceDateEpoch,$(PKG_SOURCE_DATE_EPOCH)
+)$$(call addfield,SourceDateEpoch,$$(PKG_SOURCE_DATE_EPOCH)
 )$$(call addfield,URL,$(URL)
 )$$(if $$(ABIV_$(1)),ABIVersion: $$(ABIV_$(1))
 )$(if $(PKG_CPE_ID),CPE-ID: $(PKG_CPE_ID)
@@ -437,8 +453,7 @@ $(_endef)
     $$(PACK_$(1)) : export CONTROL=$$(Package/$(1)/CONTROL)
     $$(PACK_$(1)) : $(call shexport,Package/$(1)/description)
     $$(PACK_$(1)) : export PATH=$$(TARGET_PATH_PKG)
-    $$(PACK_$(1)) : export PKG_SOURCE_DATE_EPOCH:=$(PKG_SOURCE_DATE_EPOCH)
-    $$(PACK_$(1)) : export SOURCE_DATE_EPOCH:=$(PKG_SOURCE_DATE_EPOCH)
+    $$(PACK_$(1)) : export SOURCE_DATE_EPOCH=$$(PKG_SOURCE_DATE_EPOCH)
     $(PKG_INFO_DIR)/$(1).provides $$(PACK_$(1)): $(STAMP_BUILT) $(INCLUDE_DIR)/package-pack.mk
 	rm -rf $$(IDIR_$(1))
 ifeq ($$(CONFIG_USE_APK),)
@@ -590,10 +605,10 @@ else
 		exit 1; \
 	fi
 
-	$(FAKEROOT) $(STAGING_DIR_HOST)/bin/apk mkpkg \
+	SOURCE_DATE_EPOCH=0 $(FAKEROOT) $(STAGING_DIR_HOST)/bin/apk mkpkg \
 	  --info "name:$(1)$$(ABIV_$(1))" \
 	  --info "version:$(VERSION)" \
-	  $$(if $$(ABIV_$(1)),--info "tags:openwrt:abiversion=$$(ABIV_$(1))") \
+	  $$(if $$(APK_TAGS_$(1)),--info "tags:$$(APK_TAGS_$(1))") \
 	  --info "description:$$(call description_escape,$$(strip $$(Package/$(1)/description)))" \
 	  $(if $(findstring all,$(PKGARCH)),--info "arch:noarch",--info "arch:$(PKGARCH)") \
 	  --info "license:$(LICENSE)" \
@@ -611,6 +626,13 @@ endif
 
 	@[ -f $$(PACK_$(1)) ]
 
+$(BuildTarget/ipkg/disabled)
+  endef
+
+  # Packages that are not selected only need the clean rule, which removes
+  # packages built before they were deselected. The rest of BuildTarget/ipkg
+  # takes about 0.7 ms per package to parse, for more than 1000 kmods.
+  define BuildTarget/ipkg/disabled
     $(1)-clean:
 ifeq ($(CONFIG_USE_APK),)
 	$$(call remove_ipkg_files,$(1),$$(call opkg_package_files,$(call gen_package_wildcard,$(1))))
@@ -618,8 +640,6 @@ else
 	$$(call remove_ipkg_files,$(1),$$(call apk_package_files,$(call gen_package_wildcard,$(1))))
 endif
 
-
     clean: $(1)-clean
-
   endef
 endif

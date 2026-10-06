@@ -1,6 +1,6 @@
 --- a/adb/adb_auth_host.c
 +++ b/adb/adb_auth_host.c
-@@ -39,15 +39,13 @@
+@@ -39,15 +39,12 @@
  
  #include <cutils/list.h>
  
@@ -14,7 +14,6 @@
 -#include <openssl/base64.h>
 -#endif
 +#include <mbedtls/rsa.h>
-+#include <mbedtls/sha1.h>
 +#include <mbedtls/base64.h>
 +#include <mbedtls/entropy.h>
 +#include <mbedtls/ctr_drbg.h>
@@ -23,7 +22,7 @@
  
  #define TRACE_TAG TRACE_AUTH
  
-@@ -57,56 +55,92 @@
+@@ -57,56 +54,92 @@
  
  struct adb_private_key {
      struct listnode node;
@@ -145,7 +144,7 @@
  
      return ret;
  }
-@@ -133,7 +167,7 @@ static void get_user_info(char *buf, siz
+@@ -133,7 +166,7 @@ static void get_user_info(char *buf, siz
          buf[len - 1] = '\0';
  }
  
@@ -154,7 +153,7 @@
  {
      RSAPublicKey pkey;
      FILE *outfile = NULL;
-@@ -161,16 +195,7 @@ static int write_public_keyfile(RSA *pri
+@@ -161,16 +194,7 @@ static int write_public_keyfile(RSA *pri
  
      D("Writing public key to '%s'\n", path);
  
@@ -171,7 +170,7 @@
  
      encoded = malloc(encoded_length);
      if (encoded == NULL) {
-@@ -178,7 +203,12 @@ static int write_public_keyfile(RSA *pri
+@@ -178,7 +202,12 @@ static int write_public_keyfile(RSA *pri
          goto out;
      }
  
@@ -185,7 +184,7 @@
      get_user_info(info, sizeof(info));
  
      if (fwrite(encoded, encoded_length, 1, outfile) != 1 ||
-@@ -201,23 +231,25 @@ static int write_public_keyfile(RSA *pri
+@@ -201,23 +230,25 @@ static int write_public_keyfile(RSA *pri
  
  static int generate_key(const char *file)
  {
@@ -219,7 +218,7 @@
  
      old_mask = umask(077);
  
-@@ -230,12 +262,20 @@ static int generate_key(const char *file
+@@ -230,12 +261,20 @@ static int generate_key(const char *file
  
      umask(old_mask);
  
@@ -243,7 +242,7 @@
          D("Failed to write public key\n");
          goto out;
      }
-@@ -243,44 +283,32 @@ static int generate_key(const char *file
+@@ -243,44 +282,32 @@ static int generate_key(const char *file
      ret = 1;
  
  out:
@@ -295,19 +294,16 @@
      list_add_tail(list, &key->node);
      return 1;
  }
-@@ -373,15 +401,20 @@ static void get_vendor_keys(struct listn
+@@ -373,15 +400,17 @@ static void get_vendor_keys(struct listn
  
  int adb_auth_sign(void *node, void *token, size_t token_size, void *sig)
  {
 -    unsigned int len;
      struct adb_private_key *key = node_to_item(node, struct adb_private_key, node);
-+    unsigned char hash[20];
 +    size_t sig_len;
-+
-+    mbedtls_sha1((unsigned char*)token, token_size, hash);
  
 -    if (!RSA_sign(NID_sha1, token, token_size, sig, &len, key->rsa)) {
-+    if (mbedtls_pk_sign(&key->pk, MBEDTLS_MD_SHA1, hash, sizeof(hash),
++    if (mbedtls_pk_sign(&key->pk, MBEDTLS_MD_SHA1, token, token_size,
 +                        sig, mbedtls_pk_get_len(&key->pk), &sig_len,
 +                        mbedtls_ctr_drbg_random, &ctr_drbg) != 0) {
          return 0;
@@ -320,7 +316,7 @@
  }
  
  void *adb_auth_nextkey(void *current)
-@@ -439,10 +472,19 @@ int adb_auth_get_userkey(unsigned char *
+@@ -439,10 +468,19 @@ int adb_auth_get_userkey(unsigned char *
  void adb_auth_init(void)
  {
      int ret;

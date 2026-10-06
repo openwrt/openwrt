@@ -32,7 +32,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #ifdef CPTCFG_ATH9K_DEBUGFS
 --- a/drivers/net/wireless/ath/ath9k/gpio.c
 +++ b/drivers/net/wireless/ath/ath9k/gpio.c
-@@ -16,12 +16,122 @@
+@@ -16,12 +16,131 @@
  
  #include "ath9k.h"
  
@@ -85,12 +85,21 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +}
 +
 +/* gpio_chip handler : set GPIO pin to value */
++#if LINUX_VERSION_IS_LESS(6,16,0)
 +static void ath9k_gpio_pin_set(struct gpio_chip *chip, unsigned offset,
 +			       int value)
++#else
++static int ath9k_gpio_pin_set(struct gpio_chip *chip, unsigned offset,
++			       int value)
++#endif
 +{
 +	struct ath_softc *sc = gpiochip_get_data(chip);
 +
 +	ath9k_hw_set_gpio(sc->sc_ah, offset, value);
++
++#if LINUX_VERSION_IS_GEQ(6,16,0)
++	return 0;
++#endif
 +}
 +
 +/* register GPIO chip */
@@ -157,7 +166,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static void ath_fill_led_pin(struct ath_softc *sc)
  {
  	struct ath_hw *ah = sc->sc_ah;
-@@ -80,6 +190,12 @@ static int ath_add_led(struct ath_softc
+@@ -80,6 +199,12 @@ static int ath_add_led(struct ath_softc
  	else
  		ath9k_hw_set_gpio(sc->sc_ah, gpio->gpio, gpio->active_low);
  
@@ -170,7 +179,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	return 0;
  }
  
-@@ -117,6 +233,11 @@ void ath_deinit_leds(struct ath_softc *s
+@@ -117,6 +242,11 @@ void ath_deinit_leds(struct ath_softc *s
  
  	while (!list_empty(&sc->leds)) {
  		led = list_first_entry(&sc->leds, struct ath_led, list);
@@ -182,7 +191,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		list_del(&led->list);
  		ath_led_brightness(&led->cdev, LED_OFF);
  		led_classdev_unregister(&led->cdev);
-@@ -124,6 +245,7 @@ void ath_deinit_leds(struct ath_softc *s
+@@ -124,6 +254,7 @@ void ath_deinit_leds(struct ath_softc *s
  		ath9k_hw_gpio_free(sc->sc_ah, gpio->gpio);
  		kfree(led);
  	}
@@ -190,7 +199,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
  
  void ath_init_leds(struct ath_softc *sc)
-@@ -136,6 +258,12 @@ void ath_init_leds(struct ath_softc *sc)
+@@ -136,6 +267,12 @@ void ath_init_leds(struct ath_softc *sc)
  	if (AR_SREV_9100(sc->sc_ah))
  		return;
  

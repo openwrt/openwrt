@@ -257,7 +257,8 @@ static int __rtl8366_mdio_read_reg(struct rtl8366_smi *smi, u32 addr, u32 *data)
 	u32 phy_id = smi->phy_id;
 	struct mii_bus *mbus = smi->ext_mbus;
 
-	BUG_ON(in_interrupt());
+	if (WARN_ON(in_interrupt()))
+		return -EPERM;
 
 	mutex_lock(&mbus->mdio_lock);
 	/* Write Start command to register 29 */
@@ -279,7 +280,7 @@ static int __rtl8366_mdio_read_reg(struct rtl8366_smi *smi, u32 addr, u32 *data)
 	mbus->write(mbus, phy_id, MDC_MDIO_CTRL1_REG, MDC_MDIO_READ_OP);
 
 	/* Write Start command to register 29 */
-	mbus->write(smi->ext_mbus, phy_id, MDC_MDIO_START_REG, MDC_MDIO_START_OP);
+	mbus->write(mbus, phy_id, MDC_MDIO_START_REG, MDC_MDIO_START_OP);
 
 	/* Read data from register 25 */
 	*data = mbus->read(mbus, phy_id, MDC_MDIO_DATA_READ_REG);
@@ -294,7 +295,8 @@ static int __rtl8366_mdio_write_reg(struct rtl8366_smi *smi, u32 addr, u32 data)
 	u32 phy_id = smi->phy_id;
 	struct mii_bus *mbus = smi->ext_mbus;
 
-	BUG_ON(in_interrupt());
+	if (WARN_ON(in_interrupt()))
+		return -EPERM;
 
 	mutex_lock(&mbus->mdio_lock);
 
@@ -1344,7 +1346,8 @@ struct rtl8366_smi *rtl8366_smi_alloc(struct device *parent)
 {
 	struct rtl8366_smi *smi;
 
-	BUG_ON(!parent);
+	if (WARN_ON(!parent))
+		return NULL;
 
 	smi = kzalloc(sizeof(*smi), GFP_KERNEL);
 	if (!smi) {

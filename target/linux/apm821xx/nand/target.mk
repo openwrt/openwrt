@@ -1,7 +1,7 @@
 BOARDNAME:=Devices with NAND flash (Routers)
-FEATURES += nand pcie
+FEATURES += nand pcie ubifs
 
-DEFAULT_PACKAGES += kmod-ath9k swconfig wpad-basic-mbedtls
+DEFAULT_PACKAGES += kmod-ath9k wpad-basic-mbedtls
 
 define Target/Description
 	Build firmware images for APM821XX boards with NAND flash.

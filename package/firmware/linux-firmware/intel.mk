@@ -224,7 +224,7 @@ define Package/iwlwifi-firmware-be200/install
 endef
 $(eval $(call BuildPackage,iwlwifi-firmware-be200))
 
-Package/e100-firmware = $(call Package/firmware-default,Intel e100)
+Package/e100-firmware = $(call Package/firmware-default,Firmware for Intel e100 PCI 10/100 Ethernet chipsets)
 define Package/e100-firmware/install
 	$(INSTALL_DIR) $(1)/lib/firmware/e100
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/e100/d101m_ucode.bin $(1)/lib/firmware/e100/

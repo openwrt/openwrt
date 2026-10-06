@@ -35,12 +35,11 @@
 	};
 
 	aliases {
-		// TODO: Verify if the ethernet0 alias is needed
-		ethernet0 = &gmac;
 		led-boot = &user;
 		led-failsafe = &user;
 		led-running = &user;
 		led-upgrade = &user;
+		label-mac-device = &gmac;
 	};
 
 	soc {
@@ -130,10 +129,6 @@
 	status = "okay";
 };
 
-&crypto {
-	status = "okay";
-};
-
 &tlmm {
 	serial_pins: serial_pinmux {
 		mux {
@@ -195,6 +190,14 @@
 				hard_config {
 					read-only;
 					size = <0x2000>;
+
+					nvmem-layout {
+						compatible = "mikrotik,routerboot-nvmem";
+
+						macaddr_hard: base-mac-address {
+							#nvmem-cell-cells = <1>;
+						};
+					};
 				};
 
 				dtb_config {
@@ -217,10 +220,6 @@
 &blsp1_uart1 {
 	pinctrl-0 = <&serial_pins>;
 	pinctrl-names = "default";
-	status = "okay";
-};
-
-&cryptobam {
 	status = "okay";
 };
 
@@ -275,6 +274,9 @@
 
 &gmac {
 	status = "okay";
+
+	nvmem-cells = <&macaddr_hard 0>;
+	nvmem-cell-names = "mac-address";
 };
 
 &switch {

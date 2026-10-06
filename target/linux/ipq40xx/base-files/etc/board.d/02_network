@@ -19,6 +19,7 @@ ipq40xx_setup_interfaces()
 	linksys,ea8300|\
 	linksys,mr6350|\
 	linksys,mr8300|\
+	linksys,mr9000|\
 	mikrotik,hap-ac2|\
 	mikrotik,hap-ac3|\
 	mikrotik,hap-ac3-lte6-kit|\
@@ -46,6 +47,10 @@ ipq40xx_setup_interfaces()
 	netgear,rbr20|\
 	netgear,wac510|\
 	sony,ncp-hg100-cellular|\
+	tplink,deco-m5-v1|\
+	tplink,deco-m5-v2|\
+	tplink,deco-m5-v3|\
+	ubnt,utr|\
 	wallys,dr40x9|\
 	zte,mf18a|\
 	zte,mf289f)
@@ -105,7 +110,8 @@ ipq40xx_setup_interfaces()
 		ucidef_set_interfaces_lan_wan "lan1 lan2" "wan"
 		;;
 	meraki,gx20|\
-	meraki,z3)
+	meraki,z3|\
+	meraki,z3c)
 		ucidef_set_interfaces_lan_wan "lan2 lan3 lan4 lan5" "wan"
 		;;
 	meraki,mr30h)
@@ -136,6 +142,9 @@ ipq40xx_setup_interfaces()
 		;;
 	skspruce,wia3300-20)
 		ucidef_set_interfaces_lan_wan "ETH2" "ETH1"
+		;;
+	sophos,apx120)
+		ucidef_set_interface_lan "lan"
 		;;
 	zte,mf286d)
 		ucidef_set_interfaces_lan_wan "lan2 lan3 lan4" "wan"
@@ -180,13 +189,6 @@ ipq40xx_setup_macs()
 	local label_mac=""
 
 	case "$board" in
-	8dev,habanero-dvk|\
-	cilab,meshpoint-one)
-		label_mac=$(mtd_get_mac_binary "ART" 0x1006)
-		;;
-	asus,rt-ac42u)
-		label_mac=$(mtd_get_mac_binary_ubi Factory 0x1006)
-		;;
 	avm,fritzbox-7530)
 		local tffsdev=$(find_mtd_chardev "nand-tffs")
 		wan_mac=$(/usr/bin/fritz_tffs_nand -b -d $tffsdev -n macdsl)
@@ -213,28 +215,9 @@ ipq40xx_setup_macs()
 		wan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
 		lan_mac=$(macaddr_add "$wan_mac" 1)
 		;;
-	extreme-networks,ws-ap3915i)
-		label_mac="$(mtd_get_mac_ascii CFG1 ethaddr)"
-		;;
-	ezviz,cs-w3-wd1200g-eup)
-		label_mac=$(mtd_get_mac_binary "ART" 0x6)
-		;;
 	google,wifi)
 		wan_mac=$(get_mac_label)
 		lan_mac=$(macaddr_add "$wan_mac" 1)
-		;;
-	mikrotik,cap-ac|\
-	mikrotik,hap-ac2|\
-	mikrotik,hap-ac3|\
-	mikrotik,hap-ac3-lte6-kit)
-		wan_mac=$(cat /sys/firmware/mikrotik/hard_config/mac_base)
-		lan_mac=$(macaddr_add $wan_mac 1)
-		label_mac="$wan_mac"
-		;;
-	mikrotik,lhgg-60ad|\
-	mikrotik,sxtsq-5-ac)
-		lan_mac=$(cat /sys/firmware/mikrotik/hard_config/mac_base)
-		label_mac="$lan_mac"
 		;;
 	netgear,rbr40|\
 	netgear,rbr50|\

@@ -12,11 +12,16 @@ ipq60xx_setup_interfaces()
 
 	case "$board" in
 	8devices,mango-dvk|\
-	glinet,gl-axt1800)
+	glinet,gl-axt1800|\
+	link,nn6000-v1)
 		ucidef_set_interfaces_lan_wan "lan1 lan2" "wan"
 		;;
 	alfa-network,ap120c-ax)
 		ucidef_set_interfaces_lan_wan "lan" "wan"
+		;;
+	mikrotik,chateau-5g-r17-ax)
+		# No dedicated WAN port, the uplink is the RG650E modem.
+		ucidef_set_interface_lan "lan1 lan2 lan3 lan4 lan5"
 		;;
 	cambiumnetworks,xe3-4|\
 	netgear,rbs350)
@@ -24,6 +29,7 @@ ipq60xx_setup_interfaces()
 		;;
 	glinet,gl-ax1800|\
 	jdcloud,re-cs-02|\
+	link,nn6000-v2|\
 	linksys,mr7350|\
 	linksys,mr7500|\
 	yuncore,fap650)
@@ -41,6 +47,7 @@ ipq60xx_setup_interfaces()
 	netgear,wax610|\
 	netgear,wax610y|\
 	tplink,eap610-outdoor|\
+	tplink,eap620-hd-v2|\
 	tplink,eap620-hd-v3|\
 	tplink,eap623-outdoor-hd-v1|\
 	tplink,eap625-outdoor-hd-v1)
@@ -69,6 +76,7 @@ ipq60xx_setup_macs()
 		label_mac=$lan_mac
 		;;
 	tplink,eap610-outdoor|\
+	tplink,eap620-hd-v2|\
 	tplink,eap620-hd-v3|\
 	tplink,eap623-outdoor-hd-v1|\
 	tplink,eap625-outdoor-hd-v1)

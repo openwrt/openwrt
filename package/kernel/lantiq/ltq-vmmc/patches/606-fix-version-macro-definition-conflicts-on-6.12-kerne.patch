@@ -32,7 +32,7 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
 
 --- a/src/drv_vmmc_init.c
 +++ b/src/drv_vmmc_init.c
-@@ -88,7 +88,7 @@ CREATE_TRACE_GROUP(VMMC);
+@@ -89,7 +89,7 @@ CREATE_TRACE_GROUP(VMMC);
  /** what compatible driver version */
  #define DRV_VMMC_WHAT_STR "@(#)Lantiq VMMC device driver, version " DRV_VMMC_VER_STR
  
@@ -41,7 +41,7 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
  
  #define MPS_CH_VALID(mpsCh)      ((mpsCh >= 1 && mpsCh <= 7) ? 1 : 0)
  
-@@ -927,17 +927,17 @@ static IFX_int32_t VMMC_TAPI_LL_FW_Init(
+@@ -923,17 +923,17 @@ static IFX_int32_t VMMC_TAPI_LL_FW_Init(
  
        /* Maximum number of resources, is the maximum of:
           nALI, nPCM, nCOD, nSIG, nDECT, nLIN and nAudioCnt. */
@@ -65,7 +65,7 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
  #endif /* (VMMC_CFG_FEATURES & VMMC_FEAT_AUDIO) */
  
        if (pDev->caps.nMaxRes > VMMC_MAX_CH_NR)
-@@ -977,7 +977,7 @@ static IFX_int32_t VMMC_TAPI_LL_FW_Init(
+@@ -973,7 +973,7 @@ static IFX_int32_t VMMC_TAPI_LL_FW_Init(
        nResource.DTMFRCount = pDev->caps.nDTMFD;
        nResource.FSKGCount  = pDev->caps.nCIDS;
        nResource.FSKRCount  = pDev->caps.nCIDR;
@@ -76,7 +76,7 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
  
 --- a/src/drv_vmmc_init_cap.c
 +++ b/src/drv_vmmc_init_cap.c
-@@ -39,7 +39,7 @@
+@@ -37,7 +37,7 @@
  /* ============================= */
  /* Local Macros & Definitions    */
  /* ============================= */
@@ -85,7 +85,7 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
  
  /* ============================= */
  /* Local function declaration    */
-@@ -392,7 +392,7 @@ IFX_return_t VMMC_Get_FwCap(VMMC_DEVICE
+@@ -390,7 +390,7 @@ IFX_return_t VMMC_Get_FwCap(VMMC_DEVICE
        /* Read the maximum length of the message that we can interpret but
           not more than the firmware can provide. */
        /* BLEN is the length including the header that the fw reports. */
@@ -94,7 +94,7 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
        /* Subtract the length of the header. */
        capCmd.LENGTH -= CMD_HDR_CNT;
        /* Read capability once more - this time with maximum length. */
-@@ -479,7 +479,7 @@ IFX_return_t VMMC_Get_FwCap(VMMC_DEVICE
+@@ -477,7 +477,7 @@ IFX_return_t VMMC_Get_FwCap(VMMC_DEVICE
        pDev->caps.FEAT = capCmd.FEAT;
        /* Number of UTG resources per channel (== SIG module), either 1 or 2 */
        pDev->caps.nUtgPerCh = (capCmd.FEAT & EDSP_CAP_FEAT_UTGUD) ? 2 : 1;

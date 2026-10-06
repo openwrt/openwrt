@@ -10,10 +10,12 @@ init_proto "$@"
 
 proto_dhcp_init_config() {
 	renew_handler=1
+	restart_handler=1
 
 	proto_config_add_string 'ipaddr:ipaddr'
 	proto_config_add_string 'hostname:hostname'
 	proto_config_add_string clientid
+	proto_config_add_string sendclientid
 	proto_config_add_string vendorid
 	proto_config_add_boolean 'broadcast:bool'
 	proto_config_add_boolean 'norelease:bool'
@@ -27,6 +29,9 @@ proto_dhcp_init_config() {
 	proto_config_add_string mtu6rd
 	proto_config_add_string customroutes
 	proto_config_add_boolean classlessroute
+	proto_config_add_int timeout
+	proto_config_add_int retry
+	proto_config_add_int tryagain
 }
 
 proto_dhcp_add_sendopts() {
@@ -40,17 +45,22 @@ proto_dhcp_get_default_clientid() {
 	local duid
 	local iaid
 
-	network_generate_iface_iaid iaid "$iface"
 	duid="$(uci_get network @globals[0] dhcp_default_duid)"
-	[ -n "$duid" ] && printf "ff%s%s" "$iaid" "$duid"
+	[ -n "$duid" ] && {
+		duid="$(hexdump_2hex "$duid")"
+		[ -z "$duid" ] && logger -p warn -t dhcp "$iface: ignoring invalid dhcp_default_duid value"
+	}
+	[ -z "$duid" ] && return
+	network_generate_iface_iaid iaid "$iface"
+	printf "ff%s%s" "$iaid" "$duid"
 }
 
 proto_dhcp_setup() {
 	local config="$1"
 	local iface="$2"
 
-	local ipaddr hostname clientid vendorid broadcast norelease reqopts defaultreqopts iface6rd sendopts delegate zone6rd zone mtu6rd customroutes classlessroute
-	json_get_vars ipaddr hostname clientid vendorid broadcast norelease reqopts defaultreqopts iface6rd delegate zone6rd zone mtu6rd customroutes classlessroute
+	local ipaddr hostname clientid sendclientid vendorid broadcast norelease reqopts defaultreqopts iface6rd sendopts delegate zone6rd zone mtu6rd customroutes classlessroute timeout retry tryagain
+	json_get_vars ipaddr hostname clientid sendclientid vendorid broadcast norelease reqopts defaultreqopts iface6rd delegate zone6rd zone mtu6rd customroutes classlessroute timeout retry tryagain
 
 	local opt dhcpopts
 	for opt in $reqopts; do
@@ -65,8 +75,28 @@ proto_dhcp_setup() {
 	[ "$defaultreqopts" = 0 ] && defaultreqopts="-o" || defaultreqopts=
 	[ "$broadcast" = 1 ] && broadcast="-B" || broadcast=
 	[ "$norelease" = 1 ] && norelease="" || norelease="-R"
-	[ -z "$clientid" ] && clientid="$(proto_dhcp_get_default_clientid "$iface")"
-	[ -n "$clientid" ] && clientid="-x 0x3d:${clientid//:/}"
+	case "$sendclientid" in
+		global)
+			clientid="$(proto_dhcp_get_default_clientid "$iface")"
+			;;
+		hardware)
+			clientid=''
+			;;
+		none)
+			clientid='-C'
+			;;
+		auto|\
+		*)
+			[ -n "$clientid" ] && {
+				clientid="$(hexdump_2hex "$clientid")"
+				[ -z "$clientid" ] && {
+					logger -p warn -t dhcp "$iface: ignoring invalid clientid value"
+				}
+			}
+			[ -z "$clientid" ] && clientid="$(proto_dhcp_get_default_clientid "$iface")"
+			;;
+	esac
+	[ -n "${clientid##-C}" ] && clientid="-x 0x3d:$clientid"
 	[ -n "$vendorid" ] && append dhcpopts "-x 0x3c:$(echo -n "$vendorid" | hexdump -ve '1/1 "%02x"')"
 	[ -n "$iface6rd" ] && proto_export "IFACE6RD=$iface6rd"
 	[ "$iface6rd" != 0 -a -f /lib/netifd/proto/6rd.sh ] && append dhcpopts "-O 212"
@@ -92,7 +122,9 @@ proto_dhcp_setup() {
 	proto_run_command "$config" udhcpc \
 		-p /var/run/udhcpc-$iface.pid \
 		-s /lib/netifd/dhcp.script \
-		-f -t 0 -i "$iface" \
+		-f -t "${retry:-0}" -i "$iface" \
+		${timeout:+-T "$timeout"} \
+		${tryagain:+-A "$tryagain"} \
 		${ipaddr:+-r ${ipaddr/\/*/}} \
 		${hostname:+-x "hostname:$hostname"} \
 		${emptyvendorid:+-V ""} \
@@ -104,6 +136,15 @@ proto_dhcp_renew() {
 	# SIGUSR1 forces udhcpc to renew its lease
 	local sigusr1="$(kill -l SIGUSR1)"
 	[ -n "$sigusr1" ] && proto_kill_command "$interface" $sigusr1
+}
+
+proto_dhcp_restart() {
+	local interface="$1"
+	# SIGHUP asks a patched udhcpc to release the current lease and
+	# immediately re-enter INIT_SELECTING so a fresh DHCPDISCOVER goes
+	# out. Requires the matching busybox udhcpc patch.
+	local sighup="$(kill -l SIGHUP)"
+	[ -n "$sighup" ] && proto_kill_command "$interface" $sighup
 }
 
 proto_dhcp_teardown() {

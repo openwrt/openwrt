@@ -64,10 +64,6 @@
 	status = "okay";
 };
 
-&crypto {
-	status = "okay";
-};
-
 &nand {
 	pinctrl-0 = <&nand_pins>;
 	pinctrl-names = "default";
@@ -208,10 +204,6 @@
 		bias-pull-down;
 		line-name = "enable external PA output-low";
 	};
-};
-
-&cryptobam {
-	status = "okay";
 };
 
 &blsp_dma {

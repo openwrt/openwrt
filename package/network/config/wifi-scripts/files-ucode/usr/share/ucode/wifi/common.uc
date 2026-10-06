@@ -72,6 +72,20 @@ export function append_vars(dict, keys) {
 		append(key, dict[key]);
 };
 
+/* emit one "key=value" line per list element (for options hostapd parses
+ * one entry per line, which must not be space-joined) */
+export function append_list(dict, keys) {
+	for (let key in keys) {
+		let val = dict[key];
+		if (val == null)
+			continue;
+		if (type(val) != 'array')
+			val = [ val ];
+		for (let v in val)
+			append(key, v);
+	}
+};
+
 export function append_string_vars(dict, keys) {
 	for (let key in keys)
 		append_string(key, dict[key]);

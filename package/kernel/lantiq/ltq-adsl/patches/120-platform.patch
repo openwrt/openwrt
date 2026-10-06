@@ -10,7 +10,7 @@
  
  #include "drv_dsl_cpe_api.h"
  #include "drv_dsl_cpe_api_ioctl.h"
-@@ -1070,7 +1071,7 @@ static void DSL_DRV_DebugInit(void)
+@@ -1058,7 +1059,7 @@ static void DSL_DRV_DebugInit(void)
  #endif
  
  /* Entry point of driver */
@@ -19,7 +19,7 @@
  {
     struct class *dsl_class;
     DSL_int_t i;
-@@ -1128,7 +1129,7 @@ int __init DSL_ModuleInit(void)
+@@ -1112,7 +1113,7 @@ int __init DSL_ModuleInit(void)
     return 0;
  }
  
@@ -28,7 +28,7 @@
  {
     printk("Module will be unloaded"DSL_DRV_CRLF);
  
-@@ -1142,8 +1143,6 @@ void __exit DSL_ModuleCleanup(void)
+@@ -1126,8 +1127,6 @@ void __exit DSL_ModuleCleanup(void)
                 DSL_FPGA_BND_REGS_SZ_BYTE,
                 (DSL_uint8_t**)&g_BndFpgaBase);
  #endif /* defined(INCLUDE_DSL_CPE_API_VINAX) && defined(INCLUDE_DSL_BONDING)*/
@@ -37,7 +37,7 @@
  }
  
  #ifndef _lint
-@@ -1159,8 +1158,29 @@ module_param(debug_level, byte, 0);
+@@ -1143,8 +1142,29 @@ module_param(debug_level, byte, 0);
  MODULE_PARM_DESC(debug_level, "set to get more (1) or fewer (4) debug outputs");
  #endif /* #ifndef DSL_DEBUG_DISABLE*/
  

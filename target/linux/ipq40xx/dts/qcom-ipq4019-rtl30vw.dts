@@ -23,7 +23,7 @@
 	};
 
 	chosen {
-		bootargs-append = "ubi.mtd=ubifs root=/dev/ubiblock0_0 rootfstype=squashfs ro";
+		bootargs-append = " ubi.mtd=ubifs root=/dev/ubiblock0_0 rootfstype=squashfs ro";
 	};
 
 	led_spi {
@@ -176,10 +176,6 @@
 	status = "okay";
 };
 
-&crypto {
-	status = "okay";
-};
-
 &blsp_dma {
 	status = "okay";
 };
@@ -247,6 +243,20 @@
 				label = "0:ART";
 				reg = <0x170000 0x10000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					precal_art_1000: pre-calibration@1000 {
+						reg = <0x1000 0x2f20>;
+					};
+
+					precal_art_5000: pre-calibration@5000 {
+						reg = <0x5000 0x2f20>;
+					};
+				};
 			};
 
 			partition@180000 {
@@ -283,6 +293,7 @@
 			partition@400000 {
 				label = "rootfs";
 				reg = <0x400000 0x2000000>;
+				linux,rootfs;
 			};
 
 			partition@2400000 {
@@ -306,10 +317,6 @@
 &blsp1_uart1 {
 	pinctrl-0 = <&serial_pins>;
 	pinctrl-names = "default";
-	status = "okay";
-};
-
-&cryptobam {
 	status = "okay";
 };
 
@@ -363,11 +370,15 @@
 &wifi0 {
 	status = "okay";
 	qcom,ath10k-calibration-variant = "cellc,rtl30vw";
+	nvmem-cells = <&precal_art_1000>;
+	nvmem-cell-names = "pre-calibration";
 };
 
 &wifi1 {
 	status = "okay";
 	qcom,ath10k-calibration-variant = "cellc,rtl30vw";
+	nvmem-cells = <&precal_art_5000>;
+	nvmem-cell-names = "pre-calibration";
 };
 
 &mdio {

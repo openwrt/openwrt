@@ -1,0 +1,44 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robimarko@gmail.com>
+Date: Wed, 16 Sep 2026 18:07:28 +0200
+Subject: [PATCH] arm64: dts: qcom: ipq6018: add UNIPHY clocks to GCC
+
+Add the UNIPHY RX and TX clocks as inputs of GCC so its RCGs can use
+them as their clock parents.
+
+Signed-off-by: Robert Marko <robimarko@gmail.com>
+---
+ arch/arm64/boot/dts/qcom/ipq6018.dtsi | 15 +++++++++++++--
+ 1 file changed, 13 insertions(+), 2 deletions(-)
+
+--- a/arch/arm64/boot/dts/qcom/ipq6018.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq6018.dtsi
+@@ -10,6 +10,7 @@
+ #include <dt-bindings/reset/qcom,gcc-ipq6018.h>
+ #include <dt-bindings/clock/qcom,apss-ipq.h>
+ #include <dt-bindings/thermal/thermal.h>
++#include <dt-bindings/net/qca-uniphy.h>
+ 
+ / {
+ 	#address-cells = <2>;
+@@ -401,8 +402,18 @@
+ 		gcc: clock-controller@1800000 {
+ 			compatible = "qcom,gcc-ipq6018";
+ 			reg = <0x0 0x01800000 0x0 0x80000>;
+-			clocks = <&xo>, <&sleep_clk>;
+-			clock-names = "xo", "sleep_clk";
++			clocks = <&xo>,
++				 <&sleep_clk>,
++				 <&uniphy0 UNIPHY_CLK_RX>,
++				 <&uniphy0 UNIPHY_CLK_TX>,
++				 <&uniphy1 UNIPHY_CLK_RX>,
++				 <&uniphy1 UNIPHY_CLK_TX>;
++			clock-names = "xo",
++				      "sleep_clk",
++				      "uniphy0_gcc_rx_clk",
++				      "uniphy0_gcc_tx_clk",
++				      "uniphy1_gcc_rx_clk",
++				      "uniphy1_gcc_tx_clk";
+ 			#clock-cells = <1>;
+ 			#reset-cells = <1>;
+ 		};

@@ -38,10 +38,10 @@
 			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 		};
 
-		wifi5g {
-			label = "green:wifi5g";
-			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy0tpt";
+		wifi2g {
+			label = "amber:wifi2g";
+			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
 		};
 	};
 
@@ -69,7 +69,7 @@
 	nvmem-cell-names = "calibration", "mac-address";
 
 	led {
-		led-sources = <19>;
+		led-sources = <18>;
 		led-active-low;
 	};
 };

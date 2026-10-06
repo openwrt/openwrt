@@ -55,10 +55,6 @@
 	status = "okay";
 };
 
-&crypto {
-	status = "okay";
-};
-
 &tlmm {
 	mdio_pins: mdio_pinmux {
 		pinmux_1 {
@@ -182,6 +178,10 @@
 						reg = <0x1000 0x2f20>;
 					};
 
+					macaddr_art_1006: precal@1006 {
+						reg = <0x1006 0x6>;
+					};
+
 					precal_art_5000: precal@5000 {
 						reg = <0x5000 0x2f20>;
 					};
@@ -217,10 +217,6 @@
 	pinctrl-names = "default";
 };
 
-&cryptobam {
-	status = "okay";
-};
-
 &mdio {
 	status = "okay";
 	pinctrl-0 = <&mdio_pins>;
@@ -247,8 +243,8 @@
 
 &wifi0 {
 	status = "okay";
-	nvmem-cell-names = "pre-calibration";
-	nvmem-cells = <&precal_art_1000>;
+	nvmem-cell-names = "pre-calibration", "mac-address";
+	nvmem-cells = <&precal_art_1000>, <&macaddr_art_1006>;
 	qcom,ath10k-calibration-variant = "8devices-Jalapeno";
 };
 

@@ -49,7 +49,7 @@ static int b53_phy_fixup(struct phy_device *dev)
 
 static int __init b53_phy_fixup_register(void)
 {
-	return phy_register_fixup_for_id(PHY_ANY_ID, b53_phy_fixup);
+	return phy_register_fixup_for_id("MATCH ANY PHY", b53_phy_fixup);
 }
 
 subsys_initcall(b53_phy_fixup_register);

@@ -19,7 +19,7 @@
 		led-boot = &led_status_green;
 		led-failsafe = &led_status_red;
 		led-upgrade = &led_status_green;
-		label-mac-device = <&dp1>;
+		label-mac-device = <&gmac0>;
 	};
 
 	chosen {
@@ -132,14 +132,6 @@
 	pinctrl-names = "default";
 };
 
-&crypto {
-	status = "okay";
-};
-
-&cryptobam {
-	status = "okay";
-};
-
 &prng {
 	status = "okay";
 };
@@ -171,22 +163,14 @@
 			compatible = "qcom,smem-part";
 
 			partition-0-appsblenv {
-				compatible = "fixed-partitions";
 				label = "0:appsblenv";
-				#address-cells = <1>;
-				#size-cells = <1>;
 
-				partition@0 {
-					label = "env-data";
-					reg = <0x0 0x40000>;
+				nvmem-layout {
+					compatible = "u-boot,env";
+					env-size = <0x40000>;
 
-					nvmem-layout {
-						compatible = "u-boot,env";
-
-						macaddr_appsblenv_ethaddr: ethaddr {
-							compatible = "mac-base";
-							#nvmem-cell-cells = <1>;
-						};
+					macaddr_appsblenv_ethaddr: ethaddr {
+						#nvmem-cell-cells = <1>;
 					};
 				};
 			};
@@ -194,36 +178,26 @@
 	};
 };
 
-&switch {
+&uniphy0 {
 	status = "okay";
 
-	switch_mac_mode = <MAC_MODE_SGMII_CHANNEL0>;
-
-	qcom,port_phyinfo {
-		port@1 {
-			port_id = <1>;
-			mdiobus = <&mdio0>;
-			phy_address = <7>;
-		};
-
-		port@2 {
-			port_id = <2>;
-			forced-speed = <1000>;
-			forced-duplex = <1>;
-		};
-	};
+	assigned-clocks = <&uniphy0 UNIPHY_CLK_REF>;
+	assigned-clock-rates = <UNIPHY_REFCLK_25MHZ>;
 };
 
-&dp1 {
+&gmac0 {
 	status = "okay";
 
 	label = "wan";
+
 	nvmem-cells = <&macaddr_appsblenv_ethaddr 2>;
 	nvmem-cell-names = "mac-address";
 };
 
-&dp2 {
+&gmac1 {
 	status = "okay";
+
+	phy-mode = "sgmii";
 
 	nvmem-cells = <&macaddr_appsblenv_ethaddr 0>;
 	nvmem-cell-names = "mac-address";
@@ -267,38 +241,38 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		ports {
+		ethernet-ports {
 			#address-cells = <1>;
 			#size-cells = <0>;
 
-			port@1 {
+			ethernet-port@1 {
 				reg = <1>;
 				label = "lan1";
 				phy-handle = <&qca8337_0>;
 			};
 
-			port@2 {
+			ethernet-port@2 {
 				reg = <2>;
 				label = "lan2";
 				phy-handle = <&qca8337_1>;
 			};
 
-			port@3 {
+			ethernet-port@3 {
 				reg = <3>;
 				label = "lan3";
 				phy-handle = <&qca8337_2>;
 			};
 
-			port@4 {
+			ethernet-port@4 {
 				reg = <4>;
 				label = "lan4";
 				phy-handle = <&qca8337_3>;
 			};
 
-			port@6 {
+			ethernet-port@6 {
 				reg = <6>;
 				phy-mode = "sgmii";
-				ethernet = <&dp2>;
+				ethernet = <&gmac1>;
 				qca,sgmii-enable-pll;
 
 				fixed-link {

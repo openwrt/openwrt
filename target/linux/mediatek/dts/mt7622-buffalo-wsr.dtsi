@@ -120,13 +120,9 @@
 };
 
 &slot0 {
-	status = "okay";
-
-	wifi@0,0 {
+	wmac1: wifi@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
-		mediatek,mtd-eeprom = <&factory 0x5000>;
-		ieee80211-freq-limit = <5000000 6000000>;
 	};
 };
 
@@ -134,7 +130,7 @@
 	eth_pins: eth-pins {
 		mux {
 			function = "eth";
-			groups = "mdc_mdio", "rgmii_via_gmac2";
+			groups = "mdc_mdio";
 		};
 	};
 
@@ -178,7 +174,7 @@
 		compatible = "mediatek,eth-mac";
 		reg = <0>;
 
-		phy-connection-type = "2500base-x";
+		phy-mode = "2500base-x";
 
 		fixed-link {
 			speed = <2500>;
@@ -222,7 +218,14 @@
 &wmac {
 	status = "okay";
 
-	mediatek,mtd-eeprom = <&factory 0x0>;
+	nvmem-cells = <&eeprom_factory_0>;
+	nvmem-cell-names = "eeprom";
+};
+
+&wmac1 {
+	nvmem-cells = <&eeprom_factory_5000>;
+	nvmem-cell-names = "eeprom";
+	ieee80211-freq-limit = <5000000 6000000>;
 };
 
 &rtc {

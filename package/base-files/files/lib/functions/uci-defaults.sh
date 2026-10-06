@@ -416,6 +416,17 @@ ucidef_set_led_ataport() {
 	_ucidef_set_led_trigger "$1" "$2" "$3" ata"$4"
 }
 
+ucidef_set_led_brightness() {
+	_ucidef_set_led_common "$1" "$2" "$3"
+
+	json_add_string type brightness
+	json_add_string default "$4"
+	[ -n "$5" ] && json_add_string brightness "$5"
+	json_select ..
+
+	json_select ..
+}
+
 _ucidef_set_led_common() {
 	local cfg="led_$1"
 	local name="$2"
@@ -757,13 +768,32 @@ ucidef_set_poe() {
 }
 
 ucidef_add_wlan() {
-	local path="$1"; shift
-
 	ucidef_wlan_idx=${ucidef_wlan_idx:-0}
 
 	json_select_object wlan
 	json_select_object "wl$ucidef_wlan_idx"
-	json_add_string path "$path"
+
+	# Leading arguments without '=' are device paths; remaining
+	# name=value arguments are passed through as fields. Multiple
+	# paths are stored as an array so a phy that enumerates on any
+	# one of them maps to this entry (non-deterministic PCI order).
+	local npaths=0 arg
+	for arg in "$@"; do
+		[ "${arg#*=}" != "$arg" ] && break
+		npaths=$((npaths + 1))
+	done
+
+	if [ "$npaths" -gt 1 ]; then
+		json_select_array path
+		while [ "$npaths" -gt 0 ]; do
+			json_add_string "" "$1"; shift
+			npaths=$((npaths - 1))
+		done
+		json_select ..
+	elif [ "$npaths" -gt 0 ]; then
+		json_add_string path "$1"; shift
+	fi
+
 	json_add_fields "$@"
 	json_select ..
 	json_select ..

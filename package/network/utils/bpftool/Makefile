@@ -8,11 +8,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=bpftool
-PKG_VERSION:=7.6.0
+PKG_VERSION:=7.7.0
 PKG_RELEASE:=1
 
 PKG_SOURCE_URL:=https://github.com/libbpf/bpftool
-PKG_MIRROR_HASH:=7406a424375642fda35cae6eccaa8e27c21e4f132123c0207a83f763ef6fe899
+PKG_MIRROR_HASH:=67402950366f03853edb9a8702e1701b206f5f6685d887e9873264b14894f062
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_VERSION:=v$(PKG_VERSION)
 
@@ -81,7 +81,8 @@ MAKE_FLAGS += \
 	feature-llvm=0 \
 	feature-libcap=0 \
 	feature-disassembler-four-args=1 \
-	feature-disassembler-init-styled=1
+	feature-disassembler-init-styled=1 \
+	SKIP_CRYPTO=1
 
 MAKE_PATH = src
 
@@ -101,7 +102,8 @@ HOST_MAKE_FLAGS += \
 	feature-llvm=0 \
 	feature-libcap=0 \
 	feature-disassembler-four-args=1 \
-	feature-disassembler-init-styled=1
+	feature-disassembler-init-styled=1 \
+	SKIP_CRYPTO=1
 
 HOST_MAKE_PATH = src
 

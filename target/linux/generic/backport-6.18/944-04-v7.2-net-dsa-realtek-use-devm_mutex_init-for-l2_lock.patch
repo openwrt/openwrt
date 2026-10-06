@@ -1,0 +1,36 @@
+From 442ecdc83d00d6c2312541c4e0ada47e02805fcb Mon Sep 17 00:00:00 2001
+From: Luiz Angelo Daros de Luca <luizluca@gmail.com>
+Date: Sun, 26 Jul 2026 22:56:11 -0300
+Subject: net: dsa: realtek: use devm_mutex_init for l2_lock
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+With CONFIG_DEBUG_MUTEXES enabled, mutex_destroy() needs to be called
+before the lock is discarded. Use devm_mutex_init() instead so the
+cleanup is handled automatically.
+
+Fixes: 336e3e4a1ab37 ("net: dsa: realtek: rtl8365mb: add FDB support")
+Reviewed-by: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+Signed-off-by: Luiz Angelo Daros de Luca <luizluca@gmail.com>
+Reviewed-by: Linus Walleij <linusw@kernel.org>
+Reviewed-by: Alvin Šipraga <alvin.sipraga@analog.com>
+Link: https://patch.msgid.link/20260726-realtek_mutext-v2-4-5d62ba998791@gmail.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/dsa/realtek/rtl83xx.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/dsa/realtek/rtl83xx.c
++++ b/drivers/net/dsa/realtek/rtl83xx.c
+@@ -164,7 +164,9 @@ rtl83xx_probe(struct device *dev,
+ 	if (ret)
+ 		return ERR_PTR(ret);
+ 
+-	mutex_init(&priv->l2_lock);
++	ret = devm_mutex_init(dev, &priv->l2_lock);
++	if (ret)
++		return ERR_PTR(ret);
+ 
+ 	rc.lock_arg = priv;
+ 	priv->map = devm_regmap_init(dev, NULL, priv, &rc);

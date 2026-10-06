@@ -8,6 +8,14 @@
 
 use strict;
 
+# The comparisons below are strict and the stamp file is scanned first, so a
+# file that shares a timestamp with the stamp counts as older and the caller
+# skips the work. Perl truncates the mtime of core stat to whole seconds, which
+# makes that tie reachable whenever two touches fall in the same second. Ask
+# Time::HiRes for the fractional mtime, and keep core stat where the module is
+# missing.
+BEGIN { eval { require Time::HiRes; Time::HiRes->import('stat') } }
+
 sub get_ts($$) {
 	my $path = shift;
 	my $options = shift;
@@ -29,10 +37,22 @@ sub get_ts($$) {
 	return ($ts, $fn);
 }
 
+sub any_newer($$$) {
+	my ($stamp, $paths, $options) = @_;
+	my $list = join(" ", map { -d $_ ? "$_/" : $_ } @$paths);
+
+	open FIND, "find $list -type f -and -not -path \\*/.svn\\* -and -not -path \\*CVS\\* $options -newer $stamp -print -quit 2>/dev/null |";
+	my $hit = <FIND>;
+	close FIND;
+
+	return defined $hit;
+}
+
 (@ARGV > 0) or push @ARGV, ".";
 my $ts = 0;
 my $n = ".";
 my %options;
+my @paths;
 while (@ARGV > 0) {
 	my $path = shift @ARGV;
 	if ($path =~ /^-x/) {
@@ -46,15 +66,27 @@ while (@ARGV > 0) {
 	} elsif ($path =~ /^-/) {
 		$options{$path} = 1;
 	} else {
-		my ($tmp, $fname) = get_ts($path, $options{"findopts"});
-		if ($tmp > $ts) {
-			if ($options{'-F'}) {
-				$n = $fname;
-			} else {
-				$n = $path;
-			}
-			$ts = $tmp;
+		push @paths, $path;
+	}
+}
+
+my $findopts = $options{"findopts"} || "";
+
+if (defined $options{"-n"} && !$options{"-p"} && !$options{"-t"} &&
+    !$options{"-F"} && $findopts !~ /-follow/) {
+	exit 1 unless -f $options{"-n"};
+	exit(any_newer($options{"-n"}, \@paths, $findopts) ? 1 : 0);
+}
+
+for my $path (@paths) {
+	my ($tmp, $fname) = get_ts($path, $findopts);
+	if ($tmp > $ts) {
+		if ($options{'-F'}) {
+			$n = $fname;
+		} else {
+			$n = $path;
 		}
+		$ts = $tmp;
 	}
 }
 

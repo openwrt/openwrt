@@ -38,9 +38,9 @@ struct nvram_header {
 } __attribute__((__packed__));
 
 struct nvram_tuple {
-	char *name;
 	char *value;
 	struct nvram_tuple *next;
+	char name[];
 };
 
 struct nvram_handle {

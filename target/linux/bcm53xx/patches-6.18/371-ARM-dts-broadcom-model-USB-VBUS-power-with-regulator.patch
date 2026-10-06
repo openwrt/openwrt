@@ -1,0 +1,783 @@
+From 938c6cbc63b91f6c11d25c9109d3623b33f7e271 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Sun, 20 Sep 2026 12:35:19 -0700
+Subject: [PATCH] ARM: dts: broadcom: model USB VBUS power with regulator-fixed
+
+Replace the undocumented "vcc-gpio" property on the usb2/usb3
+controller nodes with the standard vbus-supply/regulator-fixed model.
+Boards now declare a regulator bound to the chipcommon GPIO that
+bcma-hcd used to poke directly, one per power rail.
+
+Polarity is preserved: rails that used a GPIO_ACTIVE_HIGH are marked
+enable-active-high, while the Buffalo usb3 rails keep GPIO_ACTIVE_LOW
+and rely on the binding's active-low default. regulator-boot-on mirrors
+the rail being left enabled by CFE so the power line is never toggled
+during probe.
+
+Assisted-by: LLM
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ .../broadcom/bcm4708-buffalo-wxr-1750dhp.dts  | 12 +++++++++-
+ .../bcm4708-buffalo-wzr-1166dhp-common.dtsi   | 23 ++++++++++++++++--
+ .../broadcom/bcm4708-buffalo-wzr-1750dhp.dts  | 23 ++++++++++++++++--
+ .../broadcom/bcm4708-linksys-ea6300-v1.dts    | 12 +++++++++-
+ .../broadcom/bcm4708-linksys-ea6500-v2.dts    | 12 +++++++++-
+ .../dts/broadcom/bcm4708-netgear-r6250.dts    | 12 +++++++++-
+ .../dts/broadcom/bcm4708-netgear-r6300-v2.dts | 12 +++++++++-
+ .../dts/broadcom/bcm47081-luxul-xwr-1200.dts  | 12 +++++++++-
+ .../broadcom/bcm47081-tplink-archer-c5-v2.dts | 12 +++++++++-
+ .../dts/broadcom/bcm4709-asus-rt-ac3200.dts   | 12 +++++++++-
+ .../broadcom/bcm4709-buffalo-wxr-1900dhp.dts  | 13 ++++++++--
+ .../dts/broadcom/bcm4709-linksys-ea9200.dts   | 24 +++++++++++++++++--
+ .../dts/broadcom/bcm4709-netgear-r7000.dts    | 14 +++++++++--
+ .../dts/broadcom/bcm4709-netgear-r8000.dts    | 14 +++++++++--
+ .../broadcom/bcm4709-tplink-archer-c9-v1.dts  | 24 +++++++++++++++++--
+ .../dts/broadcom/bcm47094-asus-rt-ac3100.dtsi | 12 +++++++++-
+ .../dts/broadcom/bcm47094-asus-rt-ac5300.dts  | 12 +++++++++-
+ .../dts/broadcom/bcm47094-dlink-dir-885l.dts  | 12 +++++++++-
+ .../dts/broadcom/bcm47094-dlink-dir-890l.dts  | 24 +++++++++++++++++--
+ .../broadcom/bcm47094-linksys-panamera.dts    | 24 +++++++++++++++++--
+ .../dts/broadcom/bcm47094-luxul-abr-4500.dts  | 12 +++++++++-
+ .../dts/broadcom/bcm47094-luxul-xbr-4500.dts  | 12 +++++++++-
+ .../dts/broadcom/bcm47094-luxul-xwr-3100.dts  | 12 +++++++++-
+ .../broadcom/bcm47094-luxul-xwr-3150-v1.dts   | 12 +++++++++-
+ .../arm/boot/dts/broadcom/bcm947189acdbmr.dts | 12 +++++++++-
+ 25 files changed, 341 insertions(+), 34 deletions(-)
+
+--- a/arch/arm/boot/dts/broadcom/bcm4708-buffalo-wxr-1750dhp.dts
++++ b/arch/arm/boot/dts/broadcom/bcm4708-buffalo-wxr-1750dhp.dts
+@@ -101,6 +101,16 @@
+ 			trigger-sources = <&xhci_port1 &ehci_port1 &ohci_port1>;
+ 		};
+ 	};
++
++	usb_power: regulator-usb {
++		compatible = "regulator-fixed";
++		regulator-name = "usb-vcc";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		regulator-boot-on;
++		gpios = <&chipcommon 10 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
+ };
+ 
+ &srab {
+@@ -130,7 +140,7 @@
+ };
+ 
+ &usb3 {
+-	vcc-gpio = <&chipcommon 10 GPIO_ACTIVE_HIGH>;
++	vbus-supply = <&usb_power>;
+ };
+ 
+ &usb3_phy {
+--- a/arch/arm/boot/dts/broadcom/bcm4708-buffalo-wzr-1166dhp-common.dtsi
++++ b/arch/arm/boot/dts/broadcom/bcm4708-buffalo-wzr-1166dhp-common.dtsi
+@@ -136,14 +136,33 @@
+ 			gpios = <&chipcommon 15 GPIO_ACTIVE_LOW>;
+ 		};
+ 	};
++
++	usb2_power: regulator-usb2 {
++		compatible = "regulator-fixed";
++		regulator-name = "usb2-vcc";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		regulator-boot-on;
++		gpios = <&chipcommon 9 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
++
++	usb3_power: regulator-usb3 {
++		compatible = "regulator-fixed";
++		regulator-name = "usb3-vcc";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		regulator-boot-on;
++		gpios = <&chipcommon 10 GPIO_ACTIVE_LOW>;
++	};
+ };
+ 
+ &usb2 {
+-	vcc-gpio = <&chipcommon 9 GPIO_ACTIVE_HIGH>;
++	vbus-supply = <&usb2_power>;
+ };
+ 
+ &usb3 {
+-	vcc-gpio = <&chipcommon 10 GPIO_ACTIVE_LOW>;
++	vbus-supply = <&usb3_power>;
+ };
+ 
+ &spi_nor {
+--- a/arch/arm/boot/dts/broadcom/bcm4708-buffalo-wzr-1750dhp.dts
++++ b/arch/arm/boot/dts/broadcom/bcm4708-buffalo-wzr-1750dhp.dts
+@@ -132,14 +132,33 @@
+ 			gpios = <&chipcommon 15 GPIO_ACTIVE_LOW>;
+ 		};
+ 	};
++
++	usb2_power: regulator-usb2 {
++		compatible = "regulator-fixed";
++		regulator-name = "usb2-vcc";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		regulator-boot-on;
++		gpios = <&chipcommon 9 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
++
++	usb3_power: regulator-usb3 {
++		compatible = "regulator-fixed";
++		regulator-name = "usb3-vcc";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		regulator-boot-on;
++		gpios = <&chipcommon 10 GPIO_ACTIVE_LOW>;
++	};
+ };
+ 
+ &usb2 {
+-	vcc-gpio = <&chipcommon 9 GPIO_ACTIVE_HIGH>;
++	vbus-supply = <&usb2_power>;
+ };
+ 
+ &usb3 {
+-	vcc-gpio = <&chipcommon 10 GPIO_ACTIVE_LOW>;
++	vbus-supply = <&usb3_power>;
+ };
+ 
+ &spi_nor {
+--- a/arch/arm/boot/dts/broadcom/bcm4708-linksys-ea6300-v1.dts
++++ b/arch/arm/boot/dts/broadcom/bcm4708-linksys-ea6300-v1.dts
+@@ -45,6 +45,16 @@
+ 			gpios = <&chipcommon 11 GPIO_ACTIVE_LOW>;
+ 		};
+ 	};
++
++	usb_power: regulator-usb {
++		compatible = "regulator-fixed";
++		regulator-name = "usb-vcc";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		regulator-boot-on;
++		gpios = <&chipcommon 10 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
+ };
+ 
+ &usb3_phy {
+@@ -93,5 +103,5 @@
+ };
+ 
+ &usb3 {
+-	vcc-gpio = <&chipcommon 10 GPIO_ACTIVE_HIGH>;
++	vbus-supply = <&usb_power>;
+ };
+--- a/arch/arm/boot/dts/broadcom/bcm4708-linksys-ea6500-v2.dts
++++ b/arch/arm/boot/dts/broadcom/bcm4708-linksys-ea6500-v2.dts
+@@ -38,6 +38,16 @@
+ 			gpios = <&chipcommon 11 GPIO_ACTIVE_LOW>;
+ 		};
+ 	};
++
++	usb_power: regulator-usb {
++		compatible = "regulator-fixed";
++		regulator-name = "usb-vcc";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		regulator-boot-on;
++		gpios = <&chipcommon 10 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
+ };
+ 
+ &usb3_phy {
+@@ -83,5 +93,5 @@
+ };
+ 
+ &usb3 {
+-	vcc-gpio = <&chipcommon 10 GPIO_ACTIVE_HIGH>;
++	vbus-supply = <&usb_power>;
+ };
+--- a/arch/arm/boot/dts/broadcom/bcm4708-netgear-r6250.dts
++++ b/arch/arm/boot/dts/broadcom/bcm4708-netgear-r6250.dts
+@@ -81,10 +81,20 @@
+ 			gpios = <&chipcommon 6 GPIO_ACTIVE_LOW>;
+ 		};
+ 	};
++
++	usb_power: regulator-usb {
++		compatible = "regulator-fixed";
++		regulator-name = "usb-vcc";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		regulator-boot-on;
++		gpios = <&chipcommon 0 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
+ };
+ 
+ &usb3 {
+-	vcc-gpio = <&chipcommon 0 GPIO_ACTIVE_HIGH>;
++	vbus-supply = <&usb_power>;
+ };
+ 
+ &spi_nor {
+--- a/arch/arm/boot/dts/broadcom/bcm4708-netgear-r6300-v2.dts
++++ b/arch/arm/boot/dts/broadcom/bcm4708-netgear-r6300-v2.dts
+@@ -77,6 +77,16 @@
+ 			gpios = <&chipcommon 6 GPIO_ACTIVE_LOW>;
+ 		};
+ 	};
++
++	usb_power: regulator-usb {
++		compatible = "regulator-fixed";
++		regulator-name = "usb-vcc";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		regulator-boot-on;
++		gpios = <&chipcommon 0 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
+ };
+ 
+ &spi_nor {
+@@ -126,5 +136,5 @@
+ };
+ 
+ &usb3 {
+-	vcc-gpio = <&chipcommon 0 GPIO_ACTIVE_HIGH>;
++	vbus-supply = <&usb_power>;
+ };
+--- a/arch/arm/boot/dts/broadcom/bcm47081-luxul-xwr-1200.dts
++++ b/arch/arm/boot/dts/broadcom/bcm47081-luxul-xwr-1200.dts
+@@ -104,10 +104,20 @@
+ 			gpios = <&chipcommon 11 GPIO_ACTIVE_LOW>;
+ 		};
+ 	};
++
++	usb_power: regulator-usb {
++		compatible = "regulator-fixed";
++		regulator-name = "usb-vcc";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		regulator-boot-on;
++		gpios = <&chipcommon 9 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
+ };
+ 
+ &usb2 {
+-	vcc-gpio = <&chipcommon 9 GPIO_ACTIVE_HIGH>;
++	vbus-supply = <&usb_power>;
+ };
+ 
+ &gmac0 {
+--- a/arch/arm/boot/dts/broadcom/bcm47081-tplink-archer-c5-v2.dts
++++ b/arch/arm/boot/dts/broadcom/bcm47081-tplink-archer-c5-v2.dts
+@@ -89,6 +89,16 @@
+ 			gpios = <&chipcommon 7 GPIO_ACTIVE_LOW>;
+ 		};
+ 	};
++
++	usb_power: regulator-usb {
++		compatible = "regulator-fixed";
++		regulator-name = "usb-vcc";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		regulator-boot-on;
++		gpios = <&chipcommon 9 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
+ };
+ 
+ &srab {
+@@ -147,5 +157,5 @@
+ };
+ 
+ &usb2 {
+-	vcc-gpio = <&chipcommon 9 GPIO_ACTIVE_HIGH>;
++	vbus-supply = <&usb_power>;
+ };
+--- a/arch/arm/boot/dts/broadcom/bcm4709-asus-rt-ac3200.dts
++++ b/arch/arm/boot/dts/broadcom/bcm4709-asus-rt-ac3200.dts
+@@ -73,6 +73,16 @@
+ 			gpios = <&chipcommon 14 GPIO_ACTIVE_LOW>;
+ 		};
+ 	};
++
++	usb_power: regulator-usb {
++		compatible = "regulator-fixed";
++		regulator-name = "usb-vcc";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		regulator-boot-on;
++		gpios = <&chipcommon 9 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
+ };
+ 
+ &gmac0 {
+@@ -142,7 +152,7 @@
+ };
+ 
+ &usb2 {
+-	vcc-gpio = <&chipcommon 9 GPIO_ACTIVE_HIGH>;
++	vbus-supply = <&usb_power>;
+ };
+ 
+ &usb3_phy {
+--- a/arch/arm/boot/dts/broadcom/bcm4709-buffalo-wxr-1900dhp.dts
++++ b/arch/arm/boot/dts/broadcom/bcm4709-buffalo-wxr-1900dhp.dts
+@@ -116,11 +116,20 @@
+ 			gpios = <&chipcommon 20 GPIO_ACTIVE_LOW>;
+ 		};
+ 	};
+-};
+ 
++	usb_power: regulator-usb {
++		compatible = "regulator-fixed";
++		regulator-name = "usb-vcc";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		regulator-boot-on;
++		gpios = <&chipcommon 13 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
++};
+ 
+ &usb2 {
+-	vcc-gpio = <&chipcommon 13 GPIO_ACTIVE_HIGH>;
++	vbus-supply = <&usb_power>;
+ };
+ 
+ &spi_nor {
+--- a/arch/arm/boot/dts/broadcom/bcm4709-linksys-ea9200.dts
++++ b/arch/arm/boot/dts/broadcom/bcm4709-linksys-ea9200.dts
+@@ -92,6 +92,26 @@
+ 			linux,default-trigger = "default-on";
+ 		};
+ 	};
++
++	usb2_power: regulator-usb2 {
++		compatible = "regulator-fixed";
++		regulator-name = "usb2-vcc";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		regulator-boot-on;
++		gpios = <&chipcommon 13 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
++
++	usb3_power: regulator-usb3 {
++		compatible = "regulator-fixed";
++		regulator-name = "usb3-vcc";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		regulator-boot-on;
++		gpios = <&chipcommon 14 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
+ };
+ 
+ &pcie_bridge0 {
+@@ -156,11 +176,11 @@
+ };
+ 
+ &usb2 {
+-	vcc-gpios = <&chipcommon 13 GPIO_ACTIVE_HIGH>;
++	vbus-supply = <&usb2_power>;
+ };
+ 
+ &usb3 {
+-	vcc-gpios = <&chipcommon 14 GPIO_ACTIVE_HIGH>;
++	vbus-supply = <&usb3_power>;
+ };
+ 
+ &gmac2 {
+--- a/arch/arm/boot/dts/broadcom/bcm4709-netgear-r7000.dts
++++ b/arch/arm/boot/dts/broadcom/bcm4709-netgear-r7000.dts
+@@ -91,14 +91,24 @@
+ 			gpios = <&chipcommon 6 GPIO_ACTIVE_LOW>;
+ 		};
+ 	};
++
++	usb_power: regulator-usb {
++		compatible = "regulator-fixed";
++		regulator-name = "usb-vcc";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		regulator-boot-on;
++		gpios = <&chipcommon 0 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
+ };
+ 
+ &usb2 {
+-	vcc-gpio = <&chipcommon 0 GPIO_ACTIVE_HIGH>;
++	vbus-supply = <&usb_power>;
+ };
+ 
+ &usb3 {
+-	vcc-gpio = <&chipcommon 0 GPIO_ACTIVE_HIGH>;
++	vbus-supply = <&usb_power>;
+ };
+ 
+ &usb3_phy {
+--- a/arch/arm/boot/dts/broadcom/bcm4709-netgear-r8000.dts
++++ b/arch/arm/boot/dts/broadcom/bcm4709-netgear-r8000.dts
+@@ -176,14 +176,24 @@
+ 			};
+ 		};
+ 	};
++
++	usb_power: regulator-usb {
++		compatible = "regulator-fixed";
++		regulator-name = "usb-vcc";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		regulator-boot-on;
++		gpios = <&chipcommon 0 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
+ };
+ 
+ &usb2 {
+-	vcc-gpio = <&chipcommon 0 GPIO_ACTIVE_HIGH>;
++	vbus-supply = <&usb_power>;
+ };
+ 
+ &usb3 {
+-	vcc-gpio = <&chipcommon 0 GPIO_ACTIVE_HIGH>;
++	vbus-supply = <&usb_power>;
+ };
+ 
+ &usb3_phy {
+--- a/arch/arm/boot/dts/broadcom/bcm4709-tplink-archer-c9-v1.dts
++++ b/arch/arm/boot/dts/broadcom/bcm4709-tplink-archer-c9-v1.dts
+@@ -90,14 +90,34 @@
+ 			gpios = <&chipcommon 3 GPIO_ACTIVE_LOW>;
+ 		};
+ 	};
++
++	usb2_power: regulator-usb2 {
++		compatible = "regulator-fixed";
++		regulator-name = "usb2-vcc";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		regulator-boot-on;
++		gpios = <&chipcommon 13 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
++
++	usb3_power: regulator-usb3 {
++		compatible = "regulator-fixed";
++		regulator-name = "usb3-vcc";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		regulator-boot-on;
++		gpios = <&chipcommon 12 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
+ };
+ 
+ &usb2 {
+-	vcc-gpio = <&chipcommon 13 GPIO_ACTIVE_HIGH>;
++	vbus-supply = <&usb2_power>;
+ };
+ 
+ &usb3 {
+-	vcc-gpio = <&chipcommon 12 GPIO_ACTIVE_HIGH>;
++	vbus-supply = <&usb3_power>;
+ };
+ 
+ &srab {
+--- a/arch/arm/boot/dts/broadcom/bcm47094-asus-rt-ac3100.dtsi
++++ b/arch/arm/boot/dts/broadcom/bcm47094-asus-rt-ac3100.dtsi
+@@ -94,6 +94,16 @@
+ 			gpios = <&chipcommon 19 GPIO_ACTIVE_LOW>;
+ 		};
+ 	};
++
++	usb_power: regulator-usb {
++		compatible = "regulator-fixed";
++		regulator-name = "usb-vcc";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		regulator-boot-on;
++		gpios = <&chipcommon 9 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
+ };
+ 
+ &nandcs {
+@@ -160,7 +170,7 @@
+ };
+ 
+ &usb2 {
+-	vcc-gpio = <&chipcommon 9 GPIO_ACTIVE_HIGH>;
++	vbus-supply = <&usb_power>;
+ };
+ 
+ &usb3_phy {
+--- a/arch/arm/boot/dts/broadcom/bcm47094-asus-rt-ac5300.dts
++++ b/arch/arm/boot/dts/broadcom/bcm47094-asus-rt-ac5300.dts
+@@ -79,6 +79,16 @@
+ 			gpios = <&chipcommon 19 GPIO_ACTIVE_LOW>;
+ 		};
+ 	};
++
++	usb_power: regulator-usb {
++		compatible = "regulator-fixed";
++		regulator-name = "usb-vcc";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		regulator-boot-on;
++		gpios = <&chipcommon 9 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
+ };
+ 
+ &gmac0 {
+@@ -148,7 +158,7 @@
+ };
+ 
+ &usb2 {
+-	vcc-gpio = <&chipcommon 9 GPIO_ACTIVE_HIGH>;
++	vbus-supply = <&usb_power>;
+ };
+ 
+ &usb3_phy {
+--- a/arch/arm/boot/dts/broadcom/bcm47094-dlink-dir-885l.dts
++++ b/arch/arm/boot/dts/broadcom/bcm47094-dlink-dir-885l.dts
+@@ -115,10 +115,20 @@
+ 			gpios = <&chipcommon 17 GPIO_ACTIVE_LOW>;
+ 		};
+ 	};
++
++	usb_power: regulator-usb {
++		compatible = "regulator-fixed";
++		regulator-name = "usb-vcc";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		regulator-boot-on;
++		gpios = <&chipcommon 18 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
+ };
+ 
+ &usb3 {
+-	vcc-gpio = <&chipcommon 18 GPIO_ACTIVE_HIGH>;
++	vbus-supply = <&usb_power>;
+ };
+ 
+ &gmac0 {
+--- a/arch/arm/boot/dts/broadcom/bcm47094-dlink-dir-890l.dts
++++ b/arch/arm/boot/dts/broadcom/bcm47094-dlink-dir-890l.dts
+@@ -116,6 +116,26 @@
+ 		et0macaddr: et0macaddr {
+ 		};
+ 	};
++
++	usb2_power: regulator-usb2 {
++		compatible = "regulator-fixed";
++		regulator-name = "usb2-vcc";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		regulator-boot-on;
++		gpios = <&chipcommon 21 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
++
++	usb3_power: regulator-usb3 {
++		compatible = "regulator-fixed";
++		regulator-name = "usb3-vcc";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		regulator-boot-on;
++		gpios = <&chipcommon 18 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
+ };
+ 
+ &gmac2 {
+@@ -157,11 +177,11 @@
+ };
+ 
+ &usb2 {
+-	vcc-gpios = <&chipcommon 21 GPIO_ACTIVE_HIGH>;
++	vbus-supply = <&usb2_power>;
+ };
+ 
+ &usb3 {
+-	vcc-gpios = <&chipcommon 18 GPIO_ACTIVE_HIGH>;
++	vbus-supply = <&usb3_power>;
+ };
+ 
+ &usb3_phy {
+--- a/arch/arm/boot/dts/broadcom/bcm47094-linksys-panamera.dts
++++ b/arch/arm/boot/dts/broadcom/bcm47094-linksys-panamera.dts
+@@ -195,14 +195,34 @@
+ 			};
+ 		};
+ 	};
++
++	usb2_power: regulator-usb2 {
++		compatible = "regulator-fixed";
++		regulator-name = "usb2-vcc";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		regulator-boot-on;
++		gpios = <&chipcommon 13 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
++
++	usb3_power: regulator-usb3 {
++		compatible = "regulator-fixed";
++		regulator-name = "usb3-vcc";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		regulator-boot-on;
++		gpios = <&chipcommon 14 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
+ };
+ 
+ &usb2 {
+-	vcc-gpio = <&chipcommon 13 GPIO_ACTIVE_HIGH>;
++	vbus-supply = <&usb2_power>;
+ };
+ 
+ &usb3 {
+-	vcc-gpio = <&chipcommon 14 GPIO_ACTIVE_HIGH>;
++	vbus-supply = <&usb3_power>;
+ };
+ 
+ &srab {
+--- a/arch/arm/boot/dts/broadcom/bcm47094-luxul-abr-4500.dts
++++ b/arch/arm/boot/dts/broadcom/bcm47094-luxul-abr-4500.dts
+@@ -59,10 +59,20 @@
+ 			gpios = <&chipcommon 17 GPIO_ACTIVE_LOW>;
+ 		};
+ 	};
++
++	usb_power: regulator-usb {
++		compatible = "regulator-fixed";
++		regulator-name = "usb-vcc";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		regulator-boot-on;
++		gpios = <&chipcommon 18 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
+ };
+ 
+ &usb3 {
+-	vcc-gpio = <&chipcommon 18 GPIO_ACTIVE_HIGH>;
++	vbus-supply = <&usb_power>;
+ };
+ 
+ &gmac0 {
+--- a/arch/arm/boot/dts/broadcom/bcm47094-luxul-xbr-4500.dts
++++ b/arch/arm/boot/dts/broadcom/bcm47094-luxul-xbr-4500.dts
+@@ -59,10 +59,20 @@
+ 			gpios = <&chipcommon 17 GPIO_ACTIVE_LOW>;
+ 		};
+ 	};
++
++	usb_power: regulator-usb {
++		compatible = "regulator-fixed";
++		regulator-name = "usb-vcc";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		regulator-boot-on;
++		gpios = <&chipcommon 18 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
+ };
+ 
+ &usb3 {
+-	vcc-gpio = <&chipcommon 18 GPIO_ACTIVE_HIGH>;
++	vbus-supply = <&usb_power>;
+ };
+ 
+ &gmac0 {
+--- a/arch/arm/boot/dts/broadcom/bcm47094-luxul-xwr-3100.dts
++++ b/arch/arm/boot/dts/broadcom/bcm47094-luxul-xwr-3100.dts
+@@ -99,10 +99,20 @@
+ 			gpios = <&chipcommon 17 GPIO_ACTIVE_LOW>;
+ 		};
+ 	};
++
++	usb_power: regulator-usb {
++		compatible = "regulator-fixed";
++		regulator-name = "usb-vcc";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		regulator-boot-on;
++		gpios = <&chipcommon 18 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
+ };
+ 
+ &usb3 {
+-	vcc-gpio = <&chipcommon 18 GPIO_ACTIVE_HIGH>;
++	vbus-supply = <&usb_power>;
+ };
+ 
+ &gmac0 {
+--- a/arch/arm/boot/dts/broadcom/bcm47094-luxul-xwr-3150-v1.dts
++++ b/arch/arm/boot/dts/broadcom/bcm47094-luxul-xwr-3150-v1.dts
+@@ -74,6 +74,16 @@
+ 			gpios = <&chipcommon 17 GPIO_ACTIVE_LOW>;
+ 		};
+ 	};
++
++	usb_power: regulator-usb {
++		compatible = "regulator-fixed";
++		regulator-name = "usb-vcc";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		regulator-boot-on;
++		gpios = <&chipcommon 18 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
+ };
+ 
+ &gmac0 {
+@@ -98,7 +108,7 @@
+ };
+ 
+ &usb3 {
+-	vcc-gpio = <&chipcommon 18 GPIO_ACTIVE_HIGH>;
++	vbus-supply = <&usb_power>;
+ };
+ 
+ &usb3_phy {
+--- a/arch/arm/boot/dts/broadcom/bcm947189acdbmr.dts
++++ b/arch/arm/boot/dts/broadcom/bcm947189acdbmr.dts
+@@ -69,6 +69,16 @@
+ 
+ 		/* External BCM6802 MoCA chip is connected */
+ 	};
++
++	usb_power: regulator-usb {
++		compatible = "regulator-fixed";
++		regulator-name = "usb-vcc";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		regulator-boot-on;
++		gpios = <&chipcommon 8 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
+ };
+ 
+ &pcie0 {
+@@ -92,5 +102,5 @@
+ };
+ 
+ &usb2 {
+-	vcc-gpio = <&chipcommon 8 GPIO_ACTIVE_HIGH>;
++	vbus-supply = <&usb_power>;
+ };

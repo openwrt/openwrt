@@ -10,18 +10,29 @@ Subject: [PATCH] board: mediatek: wire-up NMBM support
  board/mediatek/mt7986/mt7986_rfb.c | 54 ++++++++++++++++++++++++++++++
  4 files changed, 182 insertions(+)
 
---- a/board/mediatek/mt7622/mt7622_rfb.c
-+++ b/board/mediatek/mt7622/mt7622_rfb.c
-@@ -9,4 +9,42 @@
- #include <init.h>
- #include <asm/global_data.h>
+--- a/board/mediatek/mt7622/Makefile
++++ b/board/mediatek/mt7622/Makefile
+@@ -1,3 +1,3 @@
+ # SPDX-License-Identifier:	GPL-2.0
  
+-obj-y	+=
++obj-y	+= mt7622_rfb.o
+--- /dev/null
++++ b/board/mediatek/mt7622/mt7622_rfb.c
+@@ -0,0 +1,46 @@
++// SPDX-License-Identifier: GPL-2.0
++
++#include <config.h>
++#include <env.h>
++#include <init.h>
++#include <asm/global_data.h>
++
 +#include <mtd.h>
 +#include <linux/mtd/mtd.h>
 +#include <nmbm/nmbm.h>
 +#include <nmbm/nmbm-mtd.h>
 +
- DECLARE_GLOBAL_DATA_PTR;
++DECLARE_GLOBAL_DATA_PTR;
 +
 +int board_nmbm_init(void)
 +{

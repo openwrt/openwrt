@@ -1,21 +1,23 @@
 --- a/configure.ac
 +++ b/configure.ac
-@@ -44,6 +44,7 @@ fi
+@@ -38,6 +38,7 @@ fi
  
  AC_CONFIG_AUX_DIR([config])
  AC_CONFIG_FILES([config/Makefile])
 +AC_CONFIG_FILES([libgnu/Makefile])
  
- AC_COPYRIGHT([Copyright (C) 1996-2024 The elfutils developers.])
- AC_PREREQ(2.63)			dnl Minimum Autoconf version required.
-@@ -88,11 +89,14 @@ AS_IF([test "$use_locks" = yes],
- 
- AH_TEMPLATE([USE_LOCKS], [Defined if libraries should be thread-safe.])
+ AC_COPYRIGHT([Copyright (C) 1996-2026 The elfutils developers.])
+ AC_PREREQ(2.69)			dnl Minimum Autoconf version required.
+@@ -87,6 +88,8 @@ AS_IF([test "$use_locks" = yes],
+       [eu_thread_safe="/* _ELFUTILS_THREAD_SAFE is not defined.  */"])
+ AC_SUBST([eu_thread_safe])
  
 +AC_USE_SYSTEM_EXTENSIONS()
 +
- m4_version_prereq([2.70], [AC_PROG_CC], [AC_PROG_CC_C99])
- AC_PROG_CXX
+ # Provided by gnulib's m4/std-gnu11.m4 for autoconf pre 2.70
+ AC_PROG_CC
+ AS_IF([test "x$ac_cv_prog_cc_c11" = "xno"],
+@@ -95,6 +98,7 @@ AC_PROG_CXX
  AC_PROG_RANLIB
  AC_PROG_YACC
  AC_PROG_LEX([noyywrap])
@@ -23,7 +25,7 @@
  # Only available since automake 1.12
  m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
  AC_CHECK_TOOL([READELF], [readelf])
-@@ -646,6 +650,8 @@ AC_COMPILE_IFELSE([AC_LANG_SOURCE([])],
+@@ -727,6 +731,8 @@ AC_COMPILE_IFELSE([AC_LANG_SOURCE([])],
  CFLAGS="$old_CFLAGS"])
  AS_IF([test "x$ac_cv_fno_addrsig" = "xyes"], CFLAGS="$CFLAGS -fno-addrsig")
  
@@ -162,7 +164,7 @@
 +}
 --- a/backends/ppc_attrs.c
 +++ b/backends/ppc_attrs.c
-@@ -81,6 +81,9 @@ ppc_check_object_attribute (Ebl *ebl __a
+@@ -93,6 +93,9 @@ ppc_check_object_attribute (Ebl *ebl __a
    return false;
  }
  
@@ -201,8 +203,8 @@
  #include <pthread.h>
  
 +#include <libeu.h>
- #include <libdw.h>
- #include <dwarf.h>
+ #include "libdw.h"
+ #include "dwarf.h"
  #include "eu-search.h"
 --- a/config/libdebuginfod.pc.in
 +++ b/config/libdebuginfod.pc.in
@@ -257,7 +259,7 @@
    result->check_special_symbol = default_check_special_symbol;
    result->data_marker_symbol = default_data_marker_symbol;
    result->check_st_other_bits = default_check_st_other_bits;
-@@ -638,8 +636,6 @@ default_copy_reloc_p (int reloc __attrib
+@@ -641,8 +639,6 @@ default_copy_reloc_p (int reloc __attrib
  {
    return false;
  }

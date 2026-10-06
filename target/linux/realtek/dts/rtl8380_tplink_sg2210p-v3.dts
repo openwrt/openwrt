@@ -12,7 +12,7 @@
 		port24: port@24 {
 			reg = <24>;
 			label = "lan-sfp2";
-			pcs-handle = <&serdes4>;
+			pcs-handle = <&serdes4 0>;
 			phy-mode = "1000base-x";
 			fixed-link {
 				speed = <1000>;
@@ -23,7 +23,7 @@
 		port26: port@26 {
 			reg = <26>;
 			label = "lan-sfp1";
-			pcs-handle = <&serdes5>;
+			pcs-handle = <&serdes5 0>;
 			phy-mode = "1000base-x";
 			fixed-link {
 				speed = <1000>;

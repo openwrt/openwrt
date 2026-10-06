@@ -94,7 +94,7 @@ SQUASHFSOPT += -small-readers $(CONFIG_TARGET_SQUASHFS_SMALL_READERS)
 SQUASHFSCOMP := gzip
 LZMA_XZ_OPTIONS := -Xpreset 9 -Xe -Xlc 0 -Xlp 2 -Xpb 2
 ifeq ($(CONFIG_SQUASHFS_XZ),y)
-  ifneq ($(filter arm x86 powerpc sparc,$(LINUX_KARCH)),)
+  ifneq ($(filter arm x86 powerpc,$(LINUX_KARCH)),)
     BCJ_FILTER:=-Xbcj $(LINUX_KARCH)
   endif
   SQUASHFSCOMP := xz $(LZMA_XZ_OPTIONS) $(BCJ_FILTER)
@@ -121,6 +121,10 @@ fs-types-$(CONFIG_TARGET_ROOTFS_TARGZ) += targz
 fs-subtypes-$(CONFIG_TARGET_ROOTFS_JFFS2) += $(addsuffix -raw,$(addprefix jffs2-,$(JFFS2_BLOCKSIZE)))
 
 TARGET_FILESYSTEMS := $(fs-types-y)
+
+ifneq ($(ROOTFS_FILESYSTEM),)
+TARGET_FILESYSTEMS := $(filter $(ROOTFS_FILESYSTEM) $(ROOTFS_FILESYSTEM)-%,$(TARGET_FILESYSTEMS))
+endif
 
 FS_64K := $(filter-out jffs2-%,$(TARGET_FILESYSTEMS)) jffs2-64k
 FS_128K := $(filter-out jffs2-%,$(TARGET_FILESYSTEMS)) jffs2-128k
@@ -310,6 +314,7 @@ define Image/mkfs/ubifs
 		$(if $(CONFIG_TARGET_UBIFS_COMPRESSION_LZO),--compr=lzo) \
 		$(if $(CONFIG_TARGET_UBIFS_COMPRESSION_ZLIB),--compr=zlib) \
 		$(if $(shell echo $(CONFIG_TARGET_UBIFS_JOURNAL_SIZE)),--jrn-size=$(CONFIG_TARGET_UBIFS_JOURNAL_SIZE)) \
+		$(if $(IMG_PART_DISKGUID),--uuid-node=$(subst -,,$(IMG_PART_DISKGUID))) \
 		--squash-uids \
 		-o $@ -d $(call mkfs_target_dir,$(1))
 endef
@@ -369,6 +374,7 @@ define Image/gzip-ext4-padded-squashfs
 
 endef
 
+ifeq ($(filter-out targz,$(ROOTFS_FILESYSTEM)),)
 ifdef CONFIG_TARGET_ROOTFS_TARGZ
   define Image/Build/targz
 	$(TAR) -cp --numeric-owner --owner=0 --group=0 --mode=a-s --sort=name \
@@ -376,11 +382,14 @@ ifdef CONFIG_TARGET_ROOTFS_TARGZ
 		-C $(TARGET_DIR)/ . | gzip -9n > $(BIN_DIR)/$(IMG_PREFIX)$(if $(PROFILE_SANITIZED),-$(PROFILE_SANITIZED))-rootfs.tar.gz
   endef
 endif
+endif
 
+ifeq ($(filter-out cpiogz,$(ROOTFS_FILESYSTEM)),)
 ifdef CONFIG_TARGET_ROOTFS_CPIOGZ
   define Image/Build/cpiogz
 	( cd $(TARGET_DIR); find . | $(STAGING_DIR_HOST)/bin/cpio -o -H newc -R 0:0 | gzip -9n >$(BIN_DIR)/$(IMG_ROOTFS).cpio.gz )
   endef
+endif
 endif
 
 mkfs_packages = $(filter-out @%,$(PACKAGES_$(call param_get,pkg,pkg=$(target_params))))
@@ -890,8 +899,12 @@ define Device/Build
     $$(call Device/Build/compile,$$(compile),$(1))))
 
   $$(eval $$(foreach image,$$(IMAGES), \
-    $$(foreach fs,$$(filter $(TARGET_FILESYSTEMS),$$(FILESYSTEMS)), \
+    $$(foreach fs,$$(filter $$(filter-out targz,$(TARGET_FILESYSTEMS)),$$(FILESYSTEMS)), \
       $$(call Device/Build/image,$$(fs),$$(image),$(1)))))
+
+  $(if $(CONFIG_TARGET_ROOTFS_TARGZ), \
+    IMAGE/rootfs.tar.gz := append-rootfs
+    $$(eval $$(call Device/Build/image,targz,rootfs.tar.gz,$(1))))
 
   $$(eval $$(foreach artifact,$$(ARTIFACTS), \
     $$(call Device/Build/artifact,$$(artifact),$(1))))
@@ -954,8 +967,17 @@ define Device
   $(call Device/Default,$(1))
   $(call Device/$(1),$(1))
   $(call Device/Check,$(1))
-  $(call Device/$(if $(DUMP),Dump,Build),$(1))
+  $(if $(DUMP),$(call Device/Dump,$(1)),$(call Device/BuildSelected,$(1)))
 
+endef
+
+# The rules of a device that is not selected can not be reached, and a
+# target defines more than 100 devices, so do not define them. The whole
+# image Makefile is parsed twice per build.
+define Device/BuildSelected
+  ifneq ($(CONFIG_IB)$$(_PROFILE_SET),)
+$(call Device/Build,$(1))
+  endif
 endef
 
 define BuildImage

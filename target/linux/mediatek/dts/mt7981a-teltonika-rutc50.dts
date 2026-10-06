@@ -312,8 +312,8 @@
 		reg = <0>;
 
 		spi-max-frequency = <52000000>;
-		spi-tx-buswidth = <4>;
-		spi-rx-buswidth = <4>;
+		spi-tx-bus-width = <4>;
+		spi-rx-bus-width = <4>;
 
 		mediatek,nmbm;
 		mediatek,bmt-max-ratio = <1>;
@@ -363,15 +363,15 @@
 		reg = <0>;
 
 		spi-max-frequency = <4000000>;
-		spi-tx-buswidth = <4>;
-		spi-rx-buswidth = <4>;
+		spi-tx-bus-width = <4>;
+		spi-rx-bus-width = <4>;
 
 		partitions {
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			partition@00000 {
+			partition@0 {
 				label = "bl2";
 				reg = <0x00000 0x0040000>;
 				read-only;
@@ -382,7 +382,7 @@
 				reg = <0x40000 0x0010000>;
 			};
 
-			factory: partition@50000 {
+			partition@50000 {
 				label = "factory";
 				reg = <0x50000 0x00A0000>;
 				read-only;
@@ -398,11 +398,7 @@
 				};
 			};
 
-			config: partition@f0000	{
-				compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
-
+			partition@f0000	{
 				label = "config";
 				reg = <0xF0000 0x0010000>;
 				read-only;

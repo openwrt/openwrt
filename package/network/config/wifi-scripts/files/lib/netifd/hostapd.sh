@@ -336,7 +336,7 @@ hostapd_common_add_bss_config() {
 
 	config_add_boolean wps_pushbutton wps_label ext_registrar wps_pbc_in_m1
 	config_add_int wps_ap_setup_locked wps_independent
-	config_add_string wps_device_type wps_device_name wps_manufacturer wps_pin
+	config_add_string wps_device_type wps_device_name wps_manufacturer wps_pin uuid
 	config_add_string multi_ap_backhaul_ssid multi_ap_backhaul_key
 
 	config_add_boolean wnm_sleep_mode wnm_sleep_mode_no_keys bss_transition mbo
@@ -563,7 +563,7 @@ hostapd_set_bss_options() {
 		wpa_disable_eapol_key_retries tdls_prohibit \
 		maxassoc max_inactivity disassoc_low_ack isolate auth_cache \
 		wps_pushbutton wps_label ext_registrar wps_pbc_in_m1 wps_ap_setup_locked \
-		wps_independent wps_device_type wps_device_name wps_manufacturer wps_pin \
+		wps_independent wps_device_type wps_device_name wps_manufacturer wps_pin uuid \
 		macfilter ssid utf8_ssid uapsd hidden short_preamble rsn_preauth \
 		iapp_interface eapol_version dynamic_vlan ieee80211w nasid \
 		acct_secret acct_port acct_interval \
@@ -854,6 +854,7 @@ hostapd_set_bss_options() {
 		append bss_conf "config_methods=$config_methods" "$N"
 		append bss_conf "wps_independent=$wps_independent" "$N"
 		[ -n "$wps_ap_setup_locked" ] && append bss_conf "ap_setup_locked=$wps_ap_setup_locked" "$N"
+		[ -n "$uuid" ] && append bss_conf "uuid=$uuid" "$N"
 		[ "$wps_pbc_in_m1" -gt 0 ] && append bss_conf "pbc_in_m1=$wps_pbc_in_m1" "$N"
 		[ "$multi_ap" -gt 0 ] && [ -n "$multi_ap_backhaul_ssid" ] && {
 			append bss_conf "multi_ap_backhaul_ssid=\"$multi_ap_backhaul_ssid\"" "$N"

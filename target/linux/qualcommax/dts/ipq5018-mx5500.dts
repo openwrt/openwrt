@@ -1,6 +1,7 @@
 /dts-v1/;
 
 #include "ipq5018.dtsi"
+#include "ipq5018-ess.dtsi"
 #include "ipq5018-mx-base.dtsi"
 
 / {
@@ -10,6 +11,10 @@
 	chosen {
 		bootargs-append = " root=/dev/ubiblock0_0 coherent_pool=2M";
 		stdout-path = "serial0:115200n8";
+	};
+
+	aliases {
+		label-mac-device = &gmac1;
 	};
 };
 
@@ -28,31 +33,18 @@
  * ===============================================================
  */
 
-&switch {
+&uniphy0 {
 	status = "okay";
 
-	switch_mac_mode = <MAC_MODE_SGMII_CHANNEL0>;
-
-	qcom,port_phyinfo {
-		// MAC0 -> GE Phy -> QCA8337 Phy4
-		port@1 {
-			port_id = <1>;
-			mdiobus = <&mdio0>;
-			phy_address = <7>;
-		};
-
-		// MAC1 ---SGMII---> QCA8337 SerDes
-		port@2 {
-			port_id = <2>;
-			forced-speed = <1000>;
-			forced-duplex = <1>;
-		};
-	};
+	assigned-clocks = <&uniphy0 UNIPHY_CLK_REF>;
+	assigned-clock-rates = <UNIPHY_REFCLK_25MHZ>;
 };
 
 // MAC1 ---SGMII---> QCA8337 SerDes
-&dp2 {
+&gmac1 {
 	status = "okay";
+
+	phy-mode = "sgmii";
 
 	nvmem-cells = <&hw_mac_addr 0>;
 	nvmem-cell-names = "mac-address";
@@ -106,39 +98,39 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		ports {
+		ethernet-ports {
 			#address-cells = <1>;
 			#size-cells = <0>;
 
-			port@2 {
+			ethernet-port@2 {
 				reg = <2>;
 				label = "wan";
 				phy-handle = <&qca8337_1>;
 			};
 
-			port@3 {
+			ethernet-port@3 {
 				reg = <3>;
 				label = "lan3";
 				phy-handle = <&qca8337_2>;
 			};
 
-			port@4 {
+			ethernet-port@4 {
 				reg = <4>;
 				label = "lan2";
 				phy-handle = <&qca8337_3>;
 			};
 
-			port@5 {
+			ethernet-port@5 {
 				reg = <5>;
 				label = "lan1";
 				phy-handle = <&qca8337_4>;
 			};
 
-			port@6 {
+			ethernet-port@6 {
 				reg = <6>;
 				label = "cpu";
 				phy-mode = "sgmii";
-				ethernet = <&dp2>;
+				ethernet = <&gmac1>;
 				qca,sgmii-enable-pll;
 
 				fixed-link {

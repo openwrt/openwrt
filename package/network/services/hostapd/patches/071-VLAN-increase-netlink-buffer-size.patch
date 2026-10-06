@@ -1,0 +1,35 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Fri, 4 Sep 2026 18:10:00 +0200
+Subject: [PATCH] VLAN: increase netlink buffer size
+
+The dynamic VLAN code opens its own RTMGRP_LINK socket and takes the
+default buffer, where netlink_init() sets one. A reconfiguration that
+creates and destroys several interfaces bursts more link events than the
+default holds, and hostapd answers "VLAN: vlan_event_receive: recvfrom
+failed: No buffer space available" and loses the events it needed.
+
+Use the same size as netlink_init().
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/src/ap/vlan_full.c
++++ b/src/ap/vlan_full.c
+@@ -771,6 +771,7 @@ struct full_dynamic_vlan *
+ full_dynamic_vlan_init(struct hostapd_data *hapd)
+ {
+ 	struct sockaddr_nl local;
++	int size = 262144;
+ 	struct full_dynamic_vlan *priv;
+
+ 	priv = os_zalloc(sizeof(*priv));
+@@ -790,6 +791,9 @@ full_dynamic_vlan_init(struct hostapd_da
+ 		return NULL;
+ 	}
+
++	setsockopt(priv->s, SOL_SOCKET, SO_RCVBUF, &size, sizeof(size));
++	setsockopt(priv->s, SOL_SOCKET, SO_SNDBUF, &size, sizeof(size));
++
+ 	os_memset(&local, 0, sizeof(local));
+ 	local.nl_family = AF_NETLINK;
+ 	local.nl_groups = RTMGRP_LINK;

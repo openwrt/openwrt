@@ -58,7 +58,7 @@
 
 			nvmem-layout {
 				compatible = "u-boot,env";
-				env-size = <0x1000>;
+				env-size = <0x20000>;
 
 				macaddr_uboot_ethaddr: ethaddr {
 					#nvmem-cell-cells = <1>;
@@ -134,6 +134,10 @@
 			label = "lan1";
 		};
 	};
+};
+
+&usb_phy {
+	status = "disabled";
 };
 
 &xhci {

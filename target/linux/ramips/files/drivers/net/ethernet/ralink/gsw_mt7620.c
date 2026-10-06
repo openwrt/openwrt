@@ -17,7 +17,6 @@
 #include <linux/kernel.h>
 #include <linux/types.h>
 #include <linux/platform_device.h>
-#include <linux/of_device.h>
 #include <linux/of_irq.h>
 #include <linux/of_platform.h>
 
@@ -30,11 +29,13 @@ void mtk_switch_w32(struct mt7620_gsw *gsw, u32 val, unsigned reg)
 {
 	iowrite32(val, gsw->base + reg);
 }
+EXPORT_SYMBOL_GPL(mtk_switch_w32);
 
 u32 mtk_switch_r32(struct mt7620_gsw *gsw, unsigned reg)
 {
 	return ioread32(gsw->base + reg);
 }
+EXPORT_SYMBOL_GPL(mtk_switch_r32);
 
 static irqreturn_t gsw_interrupt_mt7620(int irq, void *_priv)
 {
@@ -61,6 +62,22 @@ static irqreturn_t gsw_interrupt_mt7620(int irq, void *_priv)
 
 	return IRQ_HANDLED;
 }
+
+#if IS_ENABLED(CONFIG_NET_DSA_MT7620)
+static irqreturn_t gsw_interrupt_mt7620_dsa(int irq, void *data)
+{
+	struct mt7620_gsw *gsw = data;
+	u32 status;
+
+	status = mtk_switch_r32(gsw, GSW_REG_ISR);
+	if (!status)
+		return IRQ_NONE;
+
+	mtk_switch_w32(gsw, status, GSW_REG_ISR);
+
+	return IRQ_HANDLED;
+}
+#endif
 
 static void gsw_reset_ephy(struct mt7620_gsw *gsw)
 {
@@ -179,6 +196,8 @@ static void mt7620_ephy_init(struct mt7620_gsw *gsw)
 
 static void mt7620_mac_init(struct mt7620_gsw *gsw)
 {
+	u32 val;
+
 	/* Internal ethernet requires PCIe RC mode */
 	rt_sysc_w32(rt_sysc_r32(SYSC_REG_CFG1) | PCIE_RC_MODE, SYSC_REG_CFG1);
 
@@ -191,8 +210,15 @@ static void mt7620_mac_init(struct mt7620_gsw *gsw)
 	/* Set Port 6 as CPU Port */
 	mtk_switch_w32(gsw, 0x7f7f7fe0, 0x0010);
 
+	val = mtk_switch_r32(gsw, GSW_REG_GMACCR);
+	val &= ~((GMACCR_JMB_LEN_MASK << GMACCR_JMB_LEN_SHIFT) | GMACCR_MAX_RX_PKT_LEN_MASK);
+	/* Set 2k max frame size and set MAX_RX_PKT_LEN to jumbo mode */
+	val |= (2 << GMACCR_JMB_LEN_SHIFT) | GMACCR_MAX_RX_PKT_LEN_JUMBO;
+	mtk_switch_w32(gsw, val, GSW_REG_GMACCR);
+
 	/* Enable MIB stats */
-	mtk_switch_w32(gsw, mtk_switch_r32(gsw, GSW_REG_MIB_CNT_EN) | (1 << 1), GSW_REG_MIB_CNT_EN);
+	mtk_switch_w32(gsw, mtk_switch_r32(gsw, GSW_REG_MIB_CNT_EN) |
+		       GSW_MIB_CNT_EN, GSW_REG_MIB_CNT_EN);
 }
 
 static const struct of_device_id mediatek_gsw_match[] = {
@@ -204,11 +230,12 @@ MODULE_DEVICE_TABLE(of, mediatek_gsw_match);
 int mtk_gsw_init(struct fe_priv *priv)
 {
 	struct device_node *eth_node = priv->dev->of_node;
-	struct device_node *phy_node, *mdiobus_node;
+	struct device_node *mdiobus_node;
 	struct device_node *np = priv->switch_np;
 	struct platform_device *pdev;
 	struct mt7620_gsw *gsw;
 	const __be32 *id;
+	bool dsa_switch;
 	int ret;
 	u8 val;
 
@@ -226,7 +253,7 @@ int mtk_gsw_init(struct fe_priv *priv)
 
 	mdiobus_node = of_get_child_by_name(eth_node, "mdio-bus");
 	if (mdiobus_node) {
-		for_each_child_of_node(mdiobus_node, phy_node) {
+		for_each_child_of_node_scoped(mdiobus_node, phy_node) {
 			id = of_get_property(phy_node, "reg", NULL);
 			if (id && (be32_to_cpu(*id) == 0x1f))
 				gsw->ephy_disable = true;
@@ -242,16 +269,61 @@ int mtk_gsw_init(struct fe_priv *priv)
 	else
 		gsw->ephy_base = 0;
 
+	dsa_switch = priv->dsa_switch;
+
 	mt7620_mac_init(gsw);
+
+	/*
+	 * DSA uses phylib polling for the user PHYs. Mask the legacy switch
+	 * interrupt before enabling the PHYs, otherwise an unhandled link-state
+	 * change can continuously assert the GSW interrupt line.
+	 */
+	if (dsa_switch) {
+#if IS_ENABLED(CONFIG_NET_DSA_MT7620)
+		mtk_switch_w32(gsw, ~0, GSW_REG_IMR);
+		mtk_switch_w32(gsw, mtk_switch_r32(gsw, GSW_REG_ISR),
+			       GSW_REG_ISR);
+
+		/*
+		 * Claim the interrupt once, but leave it disabled because
+		 * phylib polls the user PHYs. Unlike the legacy handler, this
+		 * does not retain fe_priv across deferred Ethernet probes.
+		 */
+		if (gsw->irq && !gsw->dsa_irq_claimed) {
+			ret = devm_request_irq(&pdev->dev, gsw->irq,
+					       gsw_interrupt_mt7620_dsa,
+					       IRQF_NO_AUTOEN,
+					       "gsw-dsa", gsw);
+			if (ret) {
+				dev_err(&pdev->dev,
+					"failed to request DSA switch IRQ\n");
+				put_device(&pdev->dev);
+				return ret;
+			}
+
+			gsw->dsa_irq_claimed = true;
+		}
+#else
+		put_device(&pdev->dev);
+		return -ENODEV;
+#endif
+	}
 
 	mt7620_ephy_init(gsw);
 
-	if (gsw->irq) {
+	/*
+	 * DSA phylink manages the user PHYs. Do not install the legacy switch
+	 * interrupt handler for a DSA switch: a deferred DSA probe would leave
+	 * that handler attached to the switch device with a stale fe_priv
+	 * argument after the Ethernet probe is rolled back.
+	 */
+	if (gsw->irq && !dsa_switch) {
 		ret = devm_request_irq(&pdev->dev, gsw->irq, gsw_interrupt_mt7620, 0,
 				  "gsw", priv);
 		if (ret) {
+			dev_err(&pdev->dev,
+				"failed to request switch IRQ\n");
 			put_device(&pdev->dev);
-			dev_err(&pdev->dev, "Failed to request irq");
 			return ret;
 		}
 		mtk_switch_w32(gsw, ~PORT_IRQ_ST_CHG, GSW_REG_IMR);
@@ -260,6 +332,60 @@ int mtk_gsw_init(struct fe_priv *priv)
 	put_device(&pdev->dev);
 	return 0;
 }
+
+#if IS_ENABLED(CONFIG_NET_DSA_MT7620)
+int mt7620_gsw_dsa_device_register(struct mt7620_gsw *gsw,
+				   struct device *parent)
+{
+	struct platform_device *dsa_dev;
+	int ret;
+
+	if (gsw->dsa_dev)
+		return 0;
+
+	/*
+	 * The switch registers from the Ethernet driver's probe, but its
+	 * register block belongs to a separate platform device. Give DSA a
+	 * bound child of the Ethernet device so the conduit device link is
+	 * removed before the Ethernet supplier is unbound.
+	 *
+	 * Keep the child registered while the modular DSA driver is not loaded
+	 * yet. The platform bus binds it when the module becomes available.
+	 */
+	dsa_dev = platform_device_alloc("mt7620-dsa", PLATFORM_DEVID_AUTO);
+	if (!dsa_dev)
+		return -ENOMEM;
+
+	dsa_dev->dev.parent = parent;
+	dsa_dev->dev.of_node = of_node_get(gsw->dev->of_node);
+	platform_set_drvdata(dsa_dev, gsw);
+
+	ret = device_set_driver_override(&dsa_dev->dev, "mt7620-dsa");
+	if (ret)
+		goto err_put_device;
+
+	ret = platform_device_add(dsa_dev);
+	if (ret)
+		goto err_put_device;
+
+	gsw->dsa_dev = dsa_dev;
+
+	return 0;
+
+err_put_device:
+	platform_device_put(dsa_dev);
+	return ret;
+}
+
+void mt7620_gsw_dsa_device_unregister(struct mt7620_gsw *gsw)
+{
+	if (!gsw->dsa_dev)
+		return;
+
+	platform_device_unregister(gsw->dsa_dev);
+	gsw->dsa_dev = NULL;
+}
+#endif
 
 static int mt7620_gsw_probe(struct platform_device *pdev)
 {
@@ -274,6 +400,7 @@ static int mt7620_gsw_probe(struct platform_device *pdev)
 		return PTR_ERR(gsw->base);
 
 	gsw->dev = &pdev->dev;
+	mutex_init(&gsw->reg_mutex);
 
 	gsw->irq = platform_get_irq(pdev, 0);
 

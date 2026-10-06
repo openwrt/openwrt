@@ -65,7 +65,7 @@ Signed-off-by: Ziyang Huang <hzyitc@outlook.com>
  	if (ce_attr->src_nentries)
 --- a/drivers/net/wireless/ath/ath11k/hal.c
 +++ b/drivers/net/wireless/ath/ath11k/hal.c
-@@ -1274,20 +1274,16 @@ static int ath11k_hal_srng_create_config
+@@ -1273,20 +1273,16 @@ static int ath11k_hal_srng_create_config
  	s->reg_start[1] = HAL_SEQ_WCSS_UMAC_TCL_REG + HAL_TCL_STATUS_RING_HP;
  
  	s = &hal->srng_config[HAL_CE_SRC];
@@ -90,7 +90,7 @@ Signed-off-by: Ziyang Huang <hzyitc@outlook.com>
  	s->reg_size[0] = HAL_SEQ_WCSS_UMAC_CE1_DST_REG(ab) -
  		HAL_SEQ_WCSS_UMAC_CE0_DST_REG(ab);
  	s->reg_size[1] = HAL_SEQ_WCSS_UMAC_CE1_DST_REG(ab) -
-@@ -1295,9 +1291,8 @@ static int ath11k_hal_srng_create_config
+@@ -1294,9 +1290,8 @@ static int ath11k_hal_srng_create_config
  
  	s = &hal->srng_config[HAL_CE_DST_STATUS];
  	s->reg_start[0] = HAL_SEQ_WCSS_UMAC_CE0_DST_REG(ab) +
@@ -117,7 +117,7 @@ Signed-off-by: Ziyang Huang <hzyitc@outlook.com>
  };
  
  const struct ce_remap ath11k_ce_remap_ipq5018 = {
-@@ -2801,13 +2801,13 @@ const struct ath11k_hw_regs ipq5018_regs
+@@ -2809,13 +2809,13 @@ const struct ath11k_hw_regs ipq5018_regs
  	.hal_reo_status_hp = 0x00003070,
  
  	/* WCSS relative address */

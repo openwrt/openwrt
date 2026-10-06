@@ -5,6 +5,7 @@
 board_config_update
 
 case "$(board_name)" in
+	fsl,P2020RDB |\
 	tplink,tl-wdr4900-v1)
 		ucidef_set_compat_version "1.1"
 		;;

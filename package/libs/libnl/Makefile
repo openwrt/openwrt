@@ -7,7 +7,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libnl
 PKG_VERSION:=3.12.0
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://github.com/thom311/libnl/releases/download/libnl$(subst .,_,$(PKG_VERSION))
@@ -23,6 +23,7 @@ PKG_FIXUP:=autoreconf
 PKG_BUILD_FLAGS:=gc-sections
 
 include $(INCLUDE_DIR)/package.mk
+include $(INCLUDE_DIR)/host-build.mk
 
 define Package/libnl/default
   SECTION:=libs
@@ -97,6 +98,10 @@ TARGET_CFLAGS += $(FPIC)
 CONFIGURE_ARGS += \
 	--disable-debug
 
+HOST_CONFIGURE_ARGS += \
+	--disable-debug \
+	--without-cli
+
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include/libnl3 $(1)/usr/lib/pkgconfig
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/libnl3/* $(1)/usr/include/libnl3/
@@ -109,6 +114,13 @@ define Build/InstallDev
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libnl-nf-3.so $(1)/usr/lib/libnl-nf.so
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libnl-route-3.so $(1)/usr/lib/libnl-route.so
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libnl-cli-3.so $(1)/usr/lib/libnl-cli.so
+endef
+
+define Host/Install
+	$(call Host/Install/Default)
+	$(INSTALL_DIR) $(STAGING_DIR_HOST)/include/libnl3
+	$(CP) $(HOST_BUILD_DIR)/include/netlink $(STAGING_DIR_HOST)/include/libnl3/
+	$(LN) libnl3/netlink $(STAGING_DIR_HOST)/include/netlink
 endef
 
 define Package/libnl-core/install
@@ -146,3 +158,4 @@ $(eval $(call BuildPackage,libnl-route))
 $(eval $(call BuildPackage,libnl-nf))
 $(eval $(call BuildPackage,libnl-cli))
 $(eval $(call BuildPackage,libnl))
+$(eval $(call HostBuild))

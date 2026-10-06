@@ -15,7 +15,6 @@
 #include <linux/irq.h>
 #include <linux/of_dma.h>
 #include <linux/reset.h>
-#include <linux/of_device.h>
 
 #include "virt-dma.h"
 
@@ -118,7 +117,7 @@ struct gdma_dmaengine_chan {
 struct gdma_dma_dev {
 	struct dma_device ddev;
 	struct device_dma_parameters dma_parms;
-	struct gdma_data *data;
+	const struct gdma_data *data;
 	void __iomem *base;
 	struct tasklet_struct task;
 	volatile unsigned long chan_issued;
@@ -789,7 +788,6 @@ MODULE_DEVICE_TABLE(of, gdma_of_match_table);
 
 static int gdma_dma_probe(struct platform_device *pdev)
 {
-	const struct of_device_id *match;
 	struct gdma_dmaengine_chan *chan;
 	struct gdma_dma_dev *dma_dev;
 	struct dma_device *dd;
@@ -797,16 +795,13 @@ static int gdma_dma_probe(struct platform_device *pdev)
 	int ret;
 	int irq;
 	void __iomem *base;
-	struct gdma_data *data;
+	const struct gdma_data *data;
 
 	ret = dma_set_mask_and_coherent(&pdev->dev, DMA_BIT_MASK(32));
 	if (ret)
 		return ret;
 
-	match = of_match_device(gdma_of_match_table, &pdev->dev);
-	if (!match)
-		return -EINVAL;
-	data = (struct gdma_data *)match->data;
+	data = of_device_get_match_data(&pdev->dev);
 
 	dma_dev = devm_kzalloc(&pdev->dev,
 			       struct_size(dma_dev, chan, data->chancnt),

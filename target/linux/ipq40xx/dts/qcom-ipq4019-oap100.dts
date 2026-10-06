@@ -157,10 +157,6 @@
 	};
 };
 
-&cryptobam {
-	status = "okay";
-};
-
 &blsp1_spi1 {
 	pinctrl-0 = <&spi_0_pins>;
 	pinctrl-names = "default";
@@ -250,6 +246,7 @@
 			partition@0 {
 				label = "rootfs";
 				reg = <0x00000000 0x4000000>;
+				linux,rootfs;
 			};
 		};
 	};

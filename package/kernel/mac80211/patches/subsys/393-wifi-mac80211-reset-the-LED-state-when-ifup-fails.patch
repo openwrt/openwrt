@@ -1,0 +1,45 @@
+From 78183e8331958fda11cd2b6850bb424a9747c4b2 Mon Sep 17 00:00:00 2001
+From: Johannes Berg <johannes.berg@intel.com>
+Date: Fri, 4 Sep 2026 16:57:13 +0200
+Subject: [PATCH] wifi: mac80211: reset the LED state when ifup fails
+
+When the first interface comes up, the radio LED is turned on. This can
+start the TPT trigger timer, which continues running.
+
+But if bringing up the interface fails then the timer keeps running and
+won't be stopped by anything, eventually it can be freed:
+
+  ODEBUG: free active (active state 0) object: ffff888127e12130 object type: timer_list hint: tpt_trig_timer+0x0/0x300 net/mac80211/led.c:145
+  WARNING: CPU: 0 PID: 5923 at lib/debugobjects.c:612 debug_print_object+0x1a2/0x2b0
+   debug_check_no_obj_freed+0x4b7/0x600 lib/debugobjects.c:1129
+   kfree+0x436/0x670 mm/slub.c:6818
+   ieee80211_led_exit+0x162/0x1c0 net/mac80211/led.c:210
+   ieee80211_unregister_hw+0x27e/0x3a0 net/mac80211/main.c:1706
+   rt2x00lib_remove_dev+0x55b/0x670
+
+Undo the LED state in the error path.
+
+Assisted-by: LLM
+Fixes: 67408c8c7b9d ("mac80211: selective throughput LED trigger active")
+Reported-by: syzbot+e84ecca6d1fa09a9b3d9@syzkaller.appspotmail.com
+Closes: https://syzkaller.appspot.com/bug?extid=e84ecca6d1fa09a9b3d9
+Link: https://patch.msgid.link/20260904165722.044aa432f873.I601a67a2cd558b8ef8416a07554ae7efe896e9d8@changeid
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+---
+
+--- a/net/mac80211/iface.c
++++ b/net/mac80211/iface.c
+@@ -1603,8 +1603,12 @@ int ieee80211_do_open(struct wireless_de
+  err_del_interface:
+ 	drv_remove_interface(local, sdata);
+  err_stop:
+-	if (!local->open_count)
++	if (!local->open_count) {
++		ieee80211_led_radio(local, false);
++		ieee80211_mod_tpt_led_trig(local, 0,
++					   IEEE80211_TPT_LEDTRIG_FL_RADIO);
+ 		drv_stop(local, false);
++	}
+ 	if (sdata->vif.type == NL80211_IFTYPE_NAN_DATA)
+ 		RCU_INIT_POINTER(sdata->u.nan_data.nmi, NULL);
+ 	if (sdata->vif.type == NL80211_IFTYPE_AP_VLAN)

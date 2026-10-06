@@ -1,5 +1,4 @@
 #include "ipq5018.dtsi"
-#include "ipq5018-ess.dtsi"
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
@@ -75,14 +74,6 @@
 	pinctrl-names = "default";
 };
 
-&crypto {
-	status = "okay";
-};
-
-&cryptobam {
-	status = "okay";
-};
-
 &prng {
 	status = "okay";
 };
@@ -123,8 +114,6 @@
 
 				nvmem-layout {
 					compatible = "ascii-eq-delim-env";
-					#address-cells = <1>;
-					#size-cells = <1>;
 
 					hw_mac_addr: hw_mac_addr {
 						compatible = "mac-base";

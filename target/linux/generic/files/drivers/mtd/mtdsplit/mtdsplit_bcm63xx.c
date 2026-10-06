@@ -127,7 +127,7 @@ static int bcm63xx_parse_partitions(struct mtd_info *master,
 	if (mtd_check_rootfs_magic(master, rootfs_offset, NULL))
 		pr_warn("rootfs magic not found\n");
 
-	parts = kzalloc(BCM63XX_NR_PARTS * sizeof(*parts), GFP_KERNEL);
+	parts = kcalloc(BCM63XX_NR_PARTS, sizeof(*parts), GFP_KERNEL);
 	if (!parts)
 		return -ENOMEM;
 
@@ -176,11 +176,4 @@ static struct mtd_part_parser mtdsplit_bcm63xx_parser = {
 	.type = MTD_PARSER_TYPE_FIRMWARE,
 };
 
-static int __init mtdsplit_bcm63xx_init(void)
-{
-	register_mtd_parser(&mtdsplit_bcm63xx_parser);
-
-	return 0;
-}
-
-module_init(mtdsplit_bcm63xx_init);
+module_mtd_part_parser(mtdsplit_bcm63xx_parser);

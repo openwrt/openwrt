@@ -72,8 +72,25 @@
 			"AT+CGDCONT=${profile},\\\"${pdptype}\\\",\\\"${apn}\\\",0,0"
 		],
 		"connect": "AT+CGACT=1,${profile}",
+		"linkatfinalize": "1",
 		"finalize": "AT+CGDATA=\\\"M-MBIM\\\",${profile},1",
 		"disconnect": "AT+CGACT=0,${profile}"
+	},
+	"quectel-eg060w": {
+		"initialize": [
+			"AT+CFUN=1"
+		],
+		"configure": [
+			"AT+CGDCONT=${profile},\\\"${pdptype}\\\",\\\"${apn}\\\""
+		],
+		"modes": {
+			"lte": "AT+QCFG=\\\"nwscanmode\\\",3",
+			"umts": "AT+QCFG=\\\"nwscanmode\\\",2",
+			"gsm": "AT+QCFG=\\\"nwscanmode\\\",1",
+			"auto": "AT+QCFG=\\\"nwscanmode\\\",0"
+		},
+		"connect": "AT+qnetdevctl=1,${profile},1",
+		"disconnect": "AT+qnetdevctl=0,${profile},0"
 	},
 	"quectel": {
 		"initialize": [
@@ -136,5 +153,20 @@
 		],
 		"connect": "AT+SPTZCMD=\\\"Y29ubm1hbmN0bCBuZGlzZGlhbCBBVF5ORElTRFVOPSJ1c2IwIiwxLDE=\\\"",
 		"disconnect": "AT+SPTZCMD=\\\"Y29ubm1hbmN0bCBuZGlzZGlhbCBBVF5ORElTRFVOPSJ1c2IwIiwwLDE=\\\""
+	},
+	"fibocom": {
+		"initialize": [
+			"AT+CFUN=1"
+		],
+		"configure": [
+			"AT+CGDCONT=${profile},\\\"${pdptype}\\\"${apn:+,\\\"$apn\\\"}"
+		],
+		"modes": {
+			"lte": "AT+GTRAT=3",
+			"umts": "AT+GTRAT=2",
+			"auto": "AT+GTRAT=10"
+		},
+		"connect": "AT+GTRNDIS=1,${profile}",
+		"disconnect": "AT+CFUN=4"
 	}
 }

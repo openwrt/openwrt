@@ -2,6 +2,11 @@
 
 /dts-v1/;
 
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/pinctrl/mt65xx.h>
+
 #include "mt7981b.dtsi"
 
 / {
@@ -84,7 +89,6 @@
 			linux,default-trigger = "phy1tpt";
 		};
 	};
-		
 };
 
 &eth {
@@ -184,6 +188,10 @@
 		spi-tx-bus-width = <4>;
 		spi-rx-bus-width = <4>;
 
+		mediatek,nmbm;
+		mediatek,bmt-max-ratio = <1>;
+		mediatek,bmt-max-reserved-blocks = <64>;
+
 		partitions {
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
@@ -200,10 +208,38 @@
 				reg = <0x100000 0x80000>;
 			};
 
-			factory: partition@180000 {
+			partition@180000 {
 				label = "Factory";
 				reg = <0x180000 0x200000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory: eeprom@0 {
+						reg = <0x0 0x1000>;
+					};
+
+					macaddr_factory_4: macaddr@4 {
+						reg = <0x4 0x6>;
+						compatible = "mac-base";
+						#nvmem-cell-cells = <1>;
+					};
+
+					macaddr_factory_a: macaddr@a {
+						reg = <0xa 0x6>;
+						compatible = "mac-base";
+						#nvmem-cell-cells = <1>;
+					};
+
+					macaddr_factory_2a: macaddr@2a {
+						reg = <0x2a 0x6>;
+						compatible = "mac-base";
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 
 			partition@380000 {
@@ -253,6 +289,8 @@
 	status = "okay";
 	nvmem-cells = <&eeprom_factory>;
 	nvmem-cell-names = "eeprom";
+	#address-cells = <1>;
+	#size-cells = <0>;
 
 	band@0 {
 		reg = <0>;
@@ -264,33 +302,5 @@
 		reg = <1>;
 		nvmem-cells = <&macaddr_factory_a 1>;
 		nvmem-cell-names = "mac-address";
-	};
-};
-
-&factory {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	eeprom_factory: eeprom@0 {
-		reg = <0x0 0x1000>;
-	};
-
-	macaddr_factory_4: macaddr@4 {
-		reg = <0x4 0x6>;
-		compatible = "mac-base";
-		#nvmem-cell-cells = <1>;
-	};
-
-	macaddr_factory_a: macaddr@a {
-		reg = <0xa 0x6>;
-		compatible = "mac-base";
-		#nvmem-cell-cells = <1>;
-	};
-
-	macaddr_factory_2a: macaddr@2a {
-		reg = <0x2a 0x6>;
-		compatible = "mac-base";
-		#nvmem-cell-cells = <1>;
 	};
 };

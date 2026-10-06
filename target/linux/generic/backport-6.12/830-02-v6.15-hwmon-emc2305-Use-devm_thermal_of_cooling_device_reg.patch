@@ -1,0 +1,90 @@
+From 2115cbeec8a3ccc69e3b7ecdf97b4472b0829cfc Mon Sep 17 00:00:00 2001
+From: Florin Leotescu <florin.leotescu@nxp.com>
+Date: Fri, 21 Mar 2025 16:33:08 +0200
+Subject: [PATCH] hwmon: emc2305: Use devm_thermal_of_cooling_device_register
+
+Prepare the emc2305 driver to use configuration from Device Tree nodes.
+Switch to devm_thermal_of_cooling_device_register to simplify the
+cleanup procedure, allowing the removal of emc2305_unset_tz and
+emc2305_remove, which are no longer needed.
+
+Signed-off-by: Florin Leotescu <florin.leotescu@nxp.com>
+Reviewed-by: Frank Li <Frank.Li@nxp.com>
+Link: https://lore.kernel.org/r/20250321143308.4008623-4-florin.leotescu@oss.nxp.com
+Signed-off-by: Guenter Roeck <linux@roeck-us.net>
+---
+ drivers/hwmon/emc2305.c | 33 ++++-----------------------------
+ 1 file changed, 4 insertions(+), 29 deletions(-)
+
+--- a/drivers/hwmon/emc2305.c
++++ b/drivers/hwmon/emc2305.c
+@@ -112,8 +112,6 @@ static char *emc2305_fan_name[] = {
+ 	"emc2305_fan5",
+ };
+ 
+-static void emc2305_unset_tz(struct device *dev);
+-
+ static int emc2305_get_max_channel(const struct emc2305_data *data)
+ {
+ 	return data->pwm_num;
+@@ -293,8 +291,9 @@ static int emc2305_set_single_tz(struct
+ 	pwm = data->pwm_min[cdev_idx];
+ 
+ 	data->cdev_data[cdev_idx].cdev =
+-		thermal_cooling_device_register(emc2305_fan_name[idx], data,
+-						&emc2305_cooling_ops);
++		devm_thermal_of_cooling_device_register(dev, dev->of_node,
++							emc2305_fan_name[idx], data,
++							&emc2305_cooling_ops);
+ 
+ 	if (IS_ERR(data->cdev_data[cdev_idx].cdev)) {
+ 		dev_err(dev, "Failed to register cooling device %s\n", emc2305_fan_name[idx]);
+@@ -338,24 +337,9 @@ static int emc2305_set_tz(struct device
+ 	for (i = 0; i < data->pwm_num; i++) {
+ 		ret = emc2305_set_single_tz(dev, i + 1);
+ 		if (ret)
+-			goto thermal_cooling_device_register_fail;
++			return ret;
+ 	}
+ 	return 0;
+-
+-thermal_cooling_device_register_fail:
+-	emc2305_unset_tz(dev);
+-	return ret;
+-}
+-
+-static void emc2305_unset_tz(struct device *dev)
+-{
+-	struct emc2305_data *data = dev_get_drvdata(dev);
+-	int i;
+-
+-	/* Unregister cooling device. */
+-	for (i = 0; i < EMC2305_PWM_MAX; i++)
+-		if (data->cdev_data[i].cdev)
+-			thermal_cooling_device_unregister(data->cdev_data[i].cdev);
+ }
+ 
+ static umode_t
+@@ -605,14 +589,6 @@ static int emc2305_probe(struct i2c_clie
+ 	return 0;
+ }
+ 
+-static void emc2305_remove(struct i2c_client *client)
+-{
+-	struct device *dev = &client->dev;
+-
+-	if (IS_REACHABLE(CONFIG_THERMAL))
+-		emc2305_unset_tz(dev);
+-}
+-
+ static const struct of_device_id of_emc2305_match_table[] = {
+ 	{ .compatible = "microchip,emc2305", },
+ 	{},
+@@ -625,7 +601,6 @@ static struct i2c_driver emc2305_driver
+ 		.of_match_table = of_emc2305_match_table,
+ 	},
+ 	.probe = emc2305_probe,
+-	.remove	  = emc2305_remove,
+ 	.id_table = emc2305_ids,
+ };
+ 

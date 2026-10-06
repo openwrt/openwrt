@@ -94,7 +94,12 @@ trx_fixup(int fd, const char *name)
 	trx = ptr;
 	if (ntohl(trx->magic) != opt_trxmagic) {
 		fprintf(stderr, "TRX header not found\n");
-		goto err;
+		goto err2;
+	}
+
+	if (trx->len < sizeof(struct trx_header) || trx->len > len) {
+		fprintf(stderr, "Invalid TRX header length: %u\n", trx->len);
+		goto err2;
 	}
 
 	scan = ptr + offsetof(struct trx_header, flag_version);
@@ -104,6 +109,8 @@ trx_fixup(int fd, const char *name)
 	close(bfd);
 	return 0;
 
+err2:
+	munmap(ptr, len);
 err1:
 	close(bfd);
 err:

@@ -181,6 +181,7 @@ platform_do_upgrade() {
 	linksys,ea8300|\
 	linksys,mr6350|\
 	linksys,mr8300|\
+	linksys,mr9000|\
 	linksys,whw01|\
 	linksys,whw03v2)
 		platform_do_upgrade_linksys "$1"
@@ -191,7 +192,8 @@ platform_do_upgrade() {
 	meraki,mr20|\
 	meraki,mr70|\
 	meraki,gx20|\
-	meraki,z3)
+	meraki,z3|\
+	meraki,z3c)
 		# DO NOT set CI_KERNPART to part.safe,
 		# that is used for chain-loading an unlocked u-boot
 		# if part.safe is overwritten, then u-boot is lost!
@@ -236,6 +238,12 @@ platform_do_upgrade() {
 	sony,ncp-hg100-cellular)
 		sony_emmc_do_upgrade "$1"
 		;;
+	sophos,apx120)
+		CI_UBIPART="rootfs"
+		# Strip fwtool trailer for eraseblock alignment before ubiformat.
+		fwtool -q -t -i /dev/null "$1" || true
+		nand_do_upgrade "$1"
+		;;
 	teltonika,rutx10|\
 	teltonika,rutx50|\
 	zte,mf18a|\
@@ -246,6 +254,11 @@ platform_do_upgrade() {
 	zte,mf287pro|\
 	zte,mf289f)
 		CI_UBIPART="rootfs"
+		nand_do_upgrade "$1"
+		;;
+	ubnt,utr)
+		CI_UBIPART="kernel1"
+		CI_KERNPART="vol"
 		nand_do_upgrade "$1"
 		;;
 	zyxel,nbg6617)

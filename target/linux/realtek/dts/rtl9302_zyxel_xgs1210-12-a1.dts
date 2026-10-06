@@ -4,16 +4,14 @@
 #include "rtl9302_zyxel_xgs1210-12-common.dtsi"
 
 / {
-	compatible = "zyxel,xgs1210-12-a1", "realtek,rtl838x-soc";
+	compatible = "zyxel,xgs1210-12-a1", "realtek,rtl9302-soc";
 	model = "Zyxel XGS1210-12 A1 Switch";
 };
 
-&phy24 {
-	realtek,smi-address = <8>;
-	enet-phy-pair-order = <1>;
+&mdio_bus1 {
+	PHY_C45_PAIR_ORDER(24, 8, 1)
 };
 
-&phy25 {
-	realtek,smi-address = <9>;
-	enet-phy-pair-order = <1>;
+&mdio_bus2 {
+	PHY_C45_PAIR_ORDER(25, 9, 1)
 };

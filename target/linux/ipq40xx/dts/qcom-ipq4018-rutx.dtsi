@@ -67,14 +67,6 @@
 	status = "okay";
 };
 
-&cryptobam {
-	status = "okay";
-};
-
-&crypto {
-	status = "okay";
-};
-
 &tlmm {
 	serial_pins: serial_pinmux {
 		mux {
@@ -287,6 +279,7 @@
 			partition@8000000 {
 				label = "rootfs";
 				reg = <0x08000000 0x08000000>;
+				linux,rootfs;
 			};
 		};
 	};

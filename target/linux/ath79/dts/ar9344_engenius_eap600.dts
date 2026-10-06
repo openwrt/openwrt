@@ -8,6 +8,10 @@
 	model = "EnGenius EAP600";
 	compatible = "engenius,eap600", "qca,ar9344";
 
+	aliases {
+		label-mac-device = &eth0;
+	};
+
 	leds {
 		compatible = "gpio-leds";
 
@@ -22,12 +26,6 @@
 			function = LED_FUNCTION_WPS;
 			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
-		};
-
-		wifi5g {
-			label = "green:wifi5g";
-			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy0tpt";
 		};
 	};
 };
@@ -47,6 +45,11 @@
 &wmac {
 	nvmem-cells = <&macaddr_art_0 (-1)>, <&calibration_art_1000>;
 	nvmem-cell-names = "mac-address", "calibration";
+
+	led {
+		led-sources = <12>;
+		led-active-low;
+	};
 };
 
 &art {

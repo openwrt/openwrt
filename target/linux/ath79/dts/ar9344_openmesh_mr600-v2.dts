@@ -52,12 +52,6 @@
 			gpios = <&gpio 20 GPIO_ACTIVE_LOW>;
 		};
 
-		wifi5g_green {
-			label = "green:wifi5g";
-			gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy0tpt";
-		};
-
 		wifi5g_yellow {
 			label = "yellow:wifi5g";
 			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
@@ -76,4 +70,11 @@
 
 &wdt {
 	status = "disabled";
+};
+
+&wmac {
+	led {
+		led-sources = <21>;
+		led-active-low;
+	};
 };

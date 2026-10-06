@@ -11,3 +11,8 @@
 	compatible = "openwrt,uimage";
 	openwrt,ih-magic = <0x03802910>;
 };
+
+&pse {
+	compatible = "engenius,ews2910p-v1-pse", "realtek,pse-mcu-gen1";
+	current-speed = <19200>;
+};

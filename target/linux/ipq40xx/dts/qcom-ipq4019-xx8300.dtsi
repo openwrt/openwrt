@@ -70,10 +70,6 @@
 	status = "okay";
 };
 
-&crypto {
-	status = "okay";
-};
-
 &blsp_dma {
 	status = "okay";
 };
@@ -83,10 +79,6 @@
 	pinctrl-0 = <&serial_0_pins>;
 	pinctrl-names = "default";
 
-};
-
-&cryptobam {
-	status = "okay";
 };
 
 &nand {
@@ -180,8 +172,6 @@
 
 				nvmem-layout {
 					compatible = "ascii-eq-delim-env";
-					#address-cells = <1>;
-					#size-cells = <1>;
 
 					hw_mac_addr: hw_mac_addr {
 						compatible = "mac-base";
@@ -198,6 +188,7 @@
 			partition@c80000 {
 				label = "rootfs";
 				reg = <0xc80000 0x5300000>;
+				linux,rootfs;
 			};
 
 			partition@5f80000 {

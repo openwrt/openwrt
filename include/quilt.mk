@@ -171,6 +171,7 @@ define Quilt/Template
 		cd "$(1)"; $(QUILT_CMD) pop -a -f >/dev/null 2>/dev/null; \
 		while $(QUILT_CMD) next 2>/dev/null >/dev/null && $(QUILT_CMD) push; do \
 			QUILT_DIFF_OPTS="-p" $(QUILT_CMD) refresh -p ab --no-index --no-timestamps; \
+			echo; \
 		done; ! $(QUILT_CMD) next 2>/dev/null >/dev/null; \
 	}
 	$(Quilt/Refresh/$(4))

@@ -9,6 +9,24 @@ define Device/d-link_dgs-1210-52
 endef
 TARGET_DEVICES += d-link_dgs-1210-52
 
+define Device/edgecore_ecs2100-52t
+  $(Device/uimage-rt-loader)
+  SOC := rtl8393
+  DEVICE_VENDOR := Edgecore
+  DEVICE_MODEL := ECS2100-52T
+  IMAGE_SIZE := 30720k
+  ECS_BOARD_ID := 01d8
+  KERNEL := $$(KERNEL/rt-loader) | uImage none | edgecore-header
+  KERNEL_INITRAMFS := $$(KERNEL/rt-loader) | uImage none | edgecore-header
+  DEVICE_PACKAGES := \
+	kmod-eeprom-at24 \
+	kmod-hwmon-adt7470 \
+	kmod-hwmon-lm75 \
+	kmod-hwmon-pwmfan \
+	kmod-thermal
+endef
+TARGET_DEVICES += edgecore_ecs2100-52t
+
 define Device/edgecore_ecs4100-12ph
   $(Device/uimage-rt-loader)
   SOC := rtl8393
@@ -98,7 +116,17 @@ define Device/zyxel_gs1900-48-a1
 endef
 TARGET_DEVICES += zyxel_gs1900-48-a1
 
-define Device/zyxel_gs1920-24hp
+define Device/zyxel_gs1900-48hp-a1
+  $(Device/zyxel_gs1900)
+  SOC := rtl8393
+  DEVICE_MODEL := GS1900-48HP
+  DEVICE_VARIANT := A1
+  ZYXEL_VERS := AAHO
+  DEVICE_PACKAGES += realtek-poe
+endef
+TARGET_DEVICES += zyxel_gs1900-48hp-a1
+
+define Device/zyxel_gs1920
 ifeq ($(IB),)
   ARTIFACTS := loader.bin
   ARTIFACT/loader.bin := \
@@ -106,19 +134,24 @@ ifeq ($(IB),)
     zynsig
 endif
   DEVICE_VENDOR := Zyxel
+  DEVICE_PACKAGES += kmod-hwmon-lm85
+  $(Device/rt-loader-bootbase)
+endef
+
+define Device/zyxel_gs1920-24-v1
+  $(Device/zyxel_gs1920)
+  SOC := rtl8392
+  FLASH_ADDR := 0xb40c0000
+  IMAGE_SIZE := 12144k
+  DEVICE_MODEL := GS1920-24
+  DEVICE_VARIANT := v1
+endef
+TARGET_DEVICES += zyxel_gs1920-24-v1
+
+define Device/zyxel_gs1920-24hp
+  $(Device/zyxel_gs1920)
   DEVICE_MODEL := GS1920-24HP
-  DEVICE_PACKAGES := \
-	  kmod-hwmon-lm85
-  KERNEL := \
-    kernel-bin | \
-    append-dtb | \
-    rt-compress | \
-    uImage lzma
-  KERNEL_INITRAMFS := \
-    kernel-bin | \
-    append-dtb | \
-    rt-compress | \
-    rt-loader
+  DEVICE_PACKAGES += kmod-pse-realtek-mcu-i2c
 endef
 
 define Device/zyxel_gs1920-24hp-v1

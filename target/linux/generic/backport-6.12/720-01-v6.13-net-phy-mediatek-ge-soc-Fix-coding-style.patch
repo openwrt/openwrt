@@ -11,11 +11,11 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
 Reviewed-by: Simon Horman <horms@kernel.org>
 Signed-off-by: Andrew Lunn <andrew@lunn.ch>
 ---
- drivers/net/phy/mediatek-ge-soc.c | 36 ++++++++++++++++---------------
+ drivers/net/phy/mediatek/mtk-ge-soc.c | 36 ++++++++++++++++---------------
  1 file changed, 19 insertions(+), 17 deletions(-)
 
---- a/drivers/net/phy/mediatek-ge-soc.c
-+++ b/drivers/net/phy/mediatek-ge-soc.c
+--- a/drivers/net/phy/mediatek/mtk-ge-soc.c
++++ b/drivers/net/phy/mediatek/mtk-ge-soc.c
 @@ -408,16 +408,17 @@ static int tx_offset_cal_efuse(struct ph
  
  static int tx_amp_fill_result(struct phy_device *phydev, u16 *buf)
@@ -77,7 +77,7 @@ Signed-off-by: Andrew Lunn <andrew@lunn.ch>
  
  static int mt798x_phy_led_hw_is_supported(struct phy_device *phydev, u8 index,
  					  unsigned long rules)
-@@ -1415,7 +1417,7 @@ static int mt7988_phy_probe_shared(struc
+@@ -1422,7 +1424,7 @@ static int mt7988_phy_probe_shared(struc
  	 * LED_C and LED_D respectively. At the same time those pins are used to
  	 * bootstrap configuration of the reference clock source (LED_A),
  	 * DRAM DDRx16b x2/x1 (LED_B) and boot device (LED_C, LED_D).

@@ -81,6 +81,34 @@ function prepare_config(config, radio)
 	return { config };
 }
 
+function iface_macaddr_add(macaddr_list, phy)
+{
+	for (let ifname, iface in phy.data)
+		if (iface.config.macaddr)
+			macaddr_list[iface.config.macaddr] = -1;
+}
+
+// A configured address never passes through macaddr_next(), and the wdev of
+// its interface exists only while the interface runs. The configuration is
+// therefore the only source of such an address.
+function phy_macaddr_list(phy_name, phy)
+{
+	let macaddr_list = {};
+
+	for (let addr in wpas.data.macaddr_list[phy_name])
+		macaddr_list[addr] = -1;
+
+	for (let name, cur in wpas.data.config)
+		if (cur.name == phy.name)
+			iface_macaddr_add(macaddr_list, cur);
+
+	for (let name, mld in wpas.data.mld)
+		if (mld.phy == phy.name && mld.config?.macaddr)
+			macaddr_list[mld.config.macaddr] = -1;
+
+	return macaddr_list;
+}
+
 function phy_dev_open(phy_name)
 {
 	let phy = wpas.data.config[phy_name];
@@ -93,8 +121,7 @@ function phy_dev_open(phy_name)
 	if (!phydev)
 		return;
 
-	let macaddr_list = wpas.data.macaddr_list[phy_name];
-	phydev.macaddr_init(macaddr_list, {
+	phydev.macaddr_init(phy_macaddr_list(phy_name, phy), {
 		num_global: phy.num_global_macaddr,
 		macaddr_base: phy.macaddr_base,
 	});
@@ -438,6 +465,14 @@ function dpp_channel_handle_request(channel, req)
 			return libubus.STATUS_UNKNOWN_ERROR;
 		return 0;
 
+	case "tx_gas_comeback_req":
+		iface = dpp_find_iface(data.ifname);
+		if (!iface)
+			return libubus.STATUS_NOT_FOUND;
+		if (!iface.dpp_send_gas_comeback_req(data.dst, data.freq ?? 0, data.dialog_token ?? 0))
+			return libubus.STATUS_UNKNOWN_ERROR;
+		return 0;
+
 	case "dpp_bootstrap_gen":
 		iface = dpp_find_iface(data.ifname);
 		if (!iface)
@@ -466,8 +501,8 @@ function dpp_channel_handle_request(channel, req)
 		let chirp_cmd = "DPP_CHIRP own=" + data.id;
 		if (data.iter)
 			chirp_cmd += " iter=" + data.iter;
-		if (data.scan_interval)
-			chirp_cmd += " listen=" + data.scan_interval;
+		if (data.listen_freq)
+			chirp_cmd += " listen=" + data.listen_freq;
 		let chirp_result = iface.ctrl(chirp_cmd);
 		return (chirp_result == "OK") ? 0 : libubus.STATUS_UNKNOWN_ERROR;
 
@@ -499,16 +534,24 @@ function dpp_channel_handle_disconnect(channel)
 	}
 }
 
-function dpp_rx_via_channel(ifname, method, data)
+function dpp_rx_via_channel(ifname, method, data, no_reply)
 {
 	let hook = wpas.data.dpp_hooks[ifname];
 	if (!hook)
 		return null;
 
-	let response = hook.channel.request({
+	let req = {
 		method: method,
 		data: data,
-	});
+	};
+
+	if (no_reply) {
+		req.return = "ignore";
+		hook.channel.request(req);
+		return null;
+	}
+
+	let response = hook.channel.request(req);
 	if (hook.channel.error(true) == libubus.STATUS_TIMEOUT) {
 		hook.timeout_count++;
 		if (hook.timeout_count >= 3) {
@@ -544,6 +587,8 @@ let main_obj = {
 				for (let ifname in phy.data)
 					iface_stop(phy.data[ifname]);
 				for (let name, data in wpas.data.mld) {
+					if (data.phy != phy.name)
+						continue;
 					data.radio_mask_present &= ~radio_mask;
 					if (data.radio_mask_up & radio_mask)
 						mld_update_iface(name, data);
@@ -553,6 +598,8 @@ let main_obj = {
 
 				let found;
 				for (let name, data in wpas.data.mld) {
+					if (data.phy != phy.name)
+						continue;
 					if (!(data.radio_mask & radio_mask))
 						continue;
 					data.radio_mask_present |= radio_mask;
@@ -596,9 +643,12 @@ let main_obj = {
 
 			let ifnames = keys(phy.data);
 			let radio_mask = phy.radio != null ? (1 << phy.radio) : 0;
-			for (let name, data in wpas.data.mld)
+			for (let name, data in wpas.data.mld) {
+				if (data.phy != phy.name)
+					continue;
 				if (data.radio_mask_up & radio_mask)
 					push(ifnames, name);
+			}
 
 			for (let ifname in ifnames) {
 				try {
@@ -891,8 +941,16 @@ function iface_hostapd_notify(ifname, iface, state)
 			radio: i,
 		};
 
-		if (state == "COMPLETED")
+		if (state == "COMPLETED") {
 			iface_status_fill_radio(mld, i, radio_msg, status);
+
+			// A station MLD spans every radio it was configured for, but only
+			// drives the channel of the radios it holds a link on. Tell the AP
+			// side which radios are left without one, so they can fall back to
+			// their own channel configuration.
+			if (!radio_msg.frequency)
+				radio_msg.no_link = true;
+		}
 
 		ubus.call("hostapd", "apsta_state", radio_msg);
 	}
@@ -939,11 +997,14 @@ function iface_ubus_remove(ifname)
 
 function iface_ubus_notify(ifname, event)
 {
+	event = { ifname, event };
+
+	dpp_rx_via_channel(ifname, "ctrl-event", event, true);
 	let obj = wpas.data.iface_ubus[ifname];
 	if (!obj)
 		return;
 
-	obj.notify('ctrl-event', { event }, null, null, null, -1);
+	obj.notify('ctrl-event', event, null, null, null, -1);
 }
 
 function iface_ubus_add(ifname)
@@ -1030,6 +1091,18 @@ return {
 	},
 	ctrl_event: function(name, iface, ev) {
 		iface_ubus_notify(name, ev);
+
+		// The set of links of an associated MLD can change without a state
+		// transition, which would leave the AP side following a link that no
+		// longer exists, or ignoring one that just appeared.
+		if (index(ev, "CTRL-EVENT-LINK-RECONFIG") != 0)
+			return;
+
+		try {
+			iface_hostapd_notify(name, iface, "COMPLETED");
+		} catch (e) {
+			wpas.printf(`Error handling link reconfiguration: ${e}`);
+		}
 	},
 	state: function(ifname, iface, state) {
 		let event_data = iface.status();

@@ -1,0 +1,238 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Paul Marquess <pmqs@outlook.com>
+Date: Fri, 14 Aug 2026 18:58:00 +0200
+Subject: [PATCH] Fix command injection issue
+
+Bug-Debian: https://bugs.debian.org/1143866
+X-Debian-version: 3.0-16
+
+[Peter Polonec: adjust patch context for OpenWrt]
+Signed-off-by: Peter Polonec <polonec.devel@pm.me>
+
+---
+--- a/zip.c
++++ b/zip.c
+@@ -122,6 +122,7 @@ ZCONST uLongf *crc_32_tab;
+ 
+ local void freeup  OF((void));
+ local int  finish  OF((int));
++local char *quote_arg(char *instring);
+ #if (!defined(MACOS) && !defined(WINDLL))
+ local void handler OF((int));
+ local void license OF((void));
+@@ -1323,6 +1324,134 @@ local int check_unzip_version(unzippath)
+   return 1;
+ }
+ 
++
++/* quote_arg()
++ *
++ * Add quotation and/or escapes to a shell (VMS: DCL) argument string
++ * appropriate to the local operating system or shell  (Unix, Windows,
++ * etc.).  This is mainly used to build the command line to pass to
++ * UnZip (or other application when -TT used) to test an archive.
++ * Return malloc()'d result.
++ *
++ *    All:     Add " at beginning and end.
++ *    MSDOS:   % -> "^%"
++ *             " -> \""
++ *    Unix:    ! -> "'!'"
++ *             $ -> \$
++ *             \ -> \\
++ *             ` -> \`
++ *    Non-VMS: " -> \"
++ *    VMS:     " -> """
++ *
++ * On VMS, quoted double apostrophes are also special.  Currently not
++ * handled.  (How?  Quotation marks are needed for (upper-)case
++ * preservation.  Double apostrophes in quotation marks are interpreted
++ * (symbol evaluation).  SMS sees no way to handle "fr''ed".  "fr'""'ed"
++ * becomes >fr'"'ed<, for example.)  Not a problem for file specs, but
++ * imposes a restriction on passwords.
++ */
++#ifndef NO_PROTO
++local char *quote_arg(char *instring)
++#else
++local char *quote_arg(instring)
++  char *instring;
++#endif
++{
++  int i;
++  int j;
++  char *tempstring;
++  char *outstring;
++  char c;
++
++  if (instring == NULL)
++    return NULL;
++
++# ifdef MSDOS
++#  define QA_FACTOR 4            /* Worst case (MSDOS): % -> "^%"  */
++
++# else /* not MSDOS */
++#  ifdef VMS
++#   define QA_FACTOR 3           /* Worst case (VMS): " -> """  */
++
++#  else /* not MSDOS or VMS */
++#   define QA_FACTOR 5           /* Worst case (Unix): ! -> "'!'"  */
++#  endif /* VMS [else] */
++# endif /* MSDOS [else] */
++
++# define QA_INCR 2               /* Surrounding quotation marks. */
++
++  i = QA_FACTOR * (int)strlen(instring) + QA_INCR + 1;
++  if ((tempstring = (char *)malloc(i)) == NULL) {
++    ZIPERR(ZE_MEM, "quote_arg");
++  }
++
++  j = 0;
++
++  tempstring[j++] = '\"';       /* Surrounding quotation mark (start). */
++
++  for (i = 0; instring[i]; i++) {
++    c = instring[i];
++
++# ifdef MSDOS /* or Windows */
++    if (c == '%')               /* Percent. */
++    {
++      tempstring[j++] = '"';    /* Add (closing) quotation mark. */
++      tempstring[j++] = '^';    /* Add caret escape. */
++      tempstring[j++] = '%';    /* Original character (%). */
++      c = '"';                  /* Prepare (re-opening) quotation mark. */
++    }
++    else if (c == '"')          /* Quotation mark. */
++    {
++      tempstring[j++] = '\\';   /* Add backslash (escape). */
++      tempstring[j++] = '"';    /* Add quote (acts as closing and literal). */
++    }
++# else /* not def MSDOS */
++
++#  ifdef VMS
++    if (c == '"')               /* Quotation mark. */
++    {
++      tempstring[j++] = '"';    /* Add two quotation marks. */
++      tempstring[j++] = '"';
++    }
++#  else /* not def VMS */
++
++    /* UNIX is default for others */
++
++    if (c == '"')               /* Quotation mark. */
++    {
++      tempstring[j++] = '\\';   /* Add backslash (escape). */
++    }
++    else if (c == '!')          /* Exclamation.  (Inefficient.) */
++    {
++      tempstring[j++] = '"';    /* Add (closing) quotation mark. */
++      tempstring[j++] = '\'';   /* Add (opening) apostrophe. */
++      tempstring[j++] = '!';    /* Original character (!). */
++      tempstring[j++] = '\'';   /* Add (closing) apostrophe. */
++      c = '"';                  /* Prepare (re-opening) quotation mark. */
++    }
++    else if ((c == '$') ||      /* Dollar sign. */
++             (c == '`') ||      /* Grave accent (backtick). */
++             (c == '\\'))       /* Backslash. */
++    {
++      tempstring[j++] = '\\';   /* Add backslash (escape). */
++    }
++
++#  endif /* def VMS [else] */
++# endif /* def MSDOS [else] */
++
++    tempstring[j++] = c;        /* Original (or other last) character. */
++  }
++
++  tempstring[j++] = '\"';       /* Surrounding quotation mark (end). */
++
++  tempstring[j] = '\0';
++  /* outstring = string_dup(tempstring, "quote_arg", NO_FLUFF); */
++  outstring = strdup(tempstring);
++  free(tempstring);
++
++  return outstring;
++}
++
+ local void check_zipfile(zipname, zippath)
+   char *zipname;
+   char *zippath;
+@@ -1424,11 +1553,15 @@ local void check_zipfile(zipname, zippat
+ 
+ #else /* (MSDOS && !__GO32__) || __human68k__ */
+   char *cmd;
++  char *qzipname;
+   int result;
+ 
+   /* Tell picky compilers to shut up about unused variables */
+   zippath = zippath;
+ 
++  /* Quote each arg (and add appropriate escapes). */
++  qzipname = quote_arg(zipname);
++
+   if (unzip_path) {
+     /* user gave us a path to some unzip (may not be UnZip) */
+     char *here;
+@@ -1437,7 +1570,7 @@ local void check_zipfile(zipname, zippat
+     /* Replace first {} with archive name.  If no {} append name to string. */
+     here = strstr(unzip_path, "{}");
+ 
+-    if ((cmd = malloc(strlen(unzip_path) + strlen(zipname) + 3)) == NULL) {
++    if ((cmd = malloc(strlen(unzip_path) + strlen(qzipname) + 4)) == NULL) {
+       ziperr(ZE_MEM, "building command string for testing archive");
+     }
+ 
+@@ -1447,32 +1580,20 @@ local void check_zipfile(zipname, zippat
+       strcpy(cmd, unzip_path);
+       cmd[len] = '\0';
+       strcat(cmd, " ");
+-# ifdef UNIX
+-      strcat(cmd, "'");    /* accept space or $ in name */
+-      strcat(cmd, zipname);
+-      strcat(cmd, "'");
+-# else
+-      strcat(cmd, zipname);
+-# endif
++      strcat(cmd, qzipname);
+       strcat(cmd, " ");
+       strcat(cmd, here + 2);
+     } else {
+       /* No {} so append temp name to end */
+       strcpy(cmd, unzip_path);
+       strcat(cmd, " ");
+-# ifdef UNIX
+-      strcat(cmd, "'");    /* accept space or $ in name */
+-      strcat(cmd, zipname);
+-      strcat(cmd, "'");
+-# else
+-      strcat(cmd, zipname);
+-# endif
++      strcat(cmd, qzipname);
+     }
+     free(unzip_path);
+     unzip_path = NULL;
+ 
+   } else {
+-    if ((cmd = malloc(20 + strlen(zipname))) == NULL) {
++    if ((cmd = malloc(20 + strlen(qzipname))) == NULL) {
+       ziperr(ZE_MEM, "building command string for testing archive");
+     }
+ 
+@@ -1484,15 +1605,12 @@ local void check_zipfile(zipname, zippat
+     if (check_unzip_version("unzip") == 0)
+       ZIPERR(ZE_TEST, zipfile);
+ 
+-# ifdef UNIX
+-    strcat(cmd, "'");    /* accept space or $ in name */
+-    strcat(cmd, zipname);
+-    strcat(cmd, "'");
+-# else
+-    strcat(cmd, zipname);
+-# endif
++    strcat(cmd, qzipname);
+   }
+ 
++  if (qzipname)
++    free(qzipname);
++
+   result = system(cmd);
+ # ifdef VMS
+   /* Convert success severity to 0, others to non-zero. */

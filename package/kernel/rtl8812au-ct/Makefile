@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=rtl8812au-ct
-PKG_RELEASE=2
+PKG_RELEASE:=3
 
 PKG_LICENSE:=GPLv2
 PKG_LICENSE_FILES:=
@@ -24,7 +24,7 @@ include $(INCLUDE_DIR)/package.mk
 define KernelPackage/rtl8812au-ct
   SUBMENU:=Wireless Drivers
   TITLE:=Driver for Realtek 8812 AU devices comfast 912-ac, etc
-  DEPENDS:=+kmod-cfg80211 +kmod-usb-core +@DRIVER_11AC_SUPPORT
+  DEPENDS:=@!LINUX_6_18 +kmod-cfg80211 +kmod-usb-core +@DRIVER_11AC_SUPPORT
   FILES:=\
 	$(PKG_BUILD_DIR)/rtl8812au.ko
   AUTOLOAD:=$(call AutoProbe,rtl8812au)

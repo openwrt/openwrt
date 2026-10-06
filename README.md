@@ -23,7 +23,7 @@ image usable to migrate from a vendor stock firmware to OpenWrt, try the
 If your device is supported, please follow the **Info** link to see install
 instructions or consult the support resources listed below.
 
-## 
+##
 
 An advanced user may require additional or specific package. (Toolchain, SDK, ...) For everything else than simple firmware download, try the wiki download page:
 
@@ -44,7 +44,7 @@ documentation.
 
 ```
 binutils bzip2 diff find flex gawk gcc-6+ getopt grep install libc-dev libz-dev
-make4.1+ perl python3.7+ rsync subversion unzip which
+make4.1+ perl python3.8+ rsync subversion unzip which
 ```
 
 ### Quickstart

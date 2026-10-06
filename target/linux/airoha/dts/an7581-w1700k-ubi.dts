@@ -5,7 +5,9 @@
 #include <dt-bindings/leds/common.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/phy/phy.h>
 #include "an7581.dtsi"
+#include "an7581-npu-mt7996.dtsi"
 
 / {
 	model = "Gemtek W1700K (OpenWrt U-Boot layout)";
@@ -93,7 +95,7 @@
 };
 
 &en7581_pinctrl {
-	gpio-ranges = <&en7581_pinctrl 0 13 47>;
+	gpio-ranges = <&en7581_pinctrl 0 13 50>;
 
 	mdio_pins: mdio-pins {
 		mux {
@@ -118,25 +120,6 @@
 		conf {
 			pins = "pcie_reset2";
 			drive-open-drain = <1>;
-		};
-	};
-
-	/* W1700K does not use the built-in LED controller. Instead, it uses GPIO.
-	 * The driver fails to probe without gswpX_led0_pins defined, so put a dummy
-	 * here.
-	 */
-
-	gswp1_led0_pins: gswp1-led0-pins {
-		mux {
-			function = "phy1_led0";
-			pins = "gpio33";
-		};
-	};
-
-	gswp2_led0_pins: gswp2-led0-pins {
-		mux {
-			function = "phy2_led0";
-			pins = "gpio34";
 		};
 	};
 
@@ -181,7 +164,7 @@
 
 		partition@700000 {
 			label = "ubi";
-			reg = <0x00700000 0x1f700000>;
+			reg = <0x00700000 0x1b700000>;
 			compatible = "linux,ubi";
 
 			volumes {
@@ -210,9 +193,9 @@
 		};
 
 		/* reserved for bad block table */
-		reserved_bmt@1fe00000 {
+		reserved_bmt@1be00000 {
 			label = "reserved_bmt";
-			reg = <0x1fe00000 0x00200000>;
+			reg = <0x1be00000 0x04200000>;
 			read-only;
 		};
 	};
@@ -251,6 +234,21 @@
 
 &pcie0 {
 	status = "okay";
+
+	reg = <0x0 0x1fc00000 0x0 0x1670>,
+	      <0x0 0x1fc20000 0x0 0x1670>;
+	reg-names = "pcie-mac", "sec-pcie-mac";
+
+	resets = <&scuclk EN7581_PCIE0_RST>,
+		 <&scuclk EN7581_PCIE1_RST>,
+		 <&scuclk EN7581_PCIC_PERSTOUT0_RST>,
+		 <&scuclk EN7581_PCIC_PERSTOUT1_RST>;
+	reset-names = "phy-lane0", "phy-lane1",
+		      "perstout", "sec-perstout";
+
+	num-lanes = <2>;
+
+	airoha,scu = <&scuclk>;
 
 	pinctrl-names = "default";
 	pinctrl-0 = <&pcie0_rst_pins>;
@@ -293,6 +291,10 @@
 	};
 };
 
+&pcie1 {
+	status = "disabled";
+};
+
 &pcie2 {
 	status = "okay";
 
@@ -301,8 +303,6 @@
 };
 
 &npu {
-	firmware-name = "airoha/en7581_MT7996_npu_rv32.bin",
-		"airoha/en7581_MT7996_npu_data.bin";
 	status = "okay";
 };
 
@@ -317,9 +317,14 @@
 	nvmem-cell-names = "mac-address";
 };
 
+&pon_pcs {
+	status = "okay";
+};
+
 &gdm2 {
 	status = "okay";
 
+	managed = "in-band-status";
 	phy-handle = <&phy8>;
 	phy-mode = "usxgmii";
 
@@ -328,9 +333,14 @@
 	openwrt,netdev-name = "wan";
 };
 
+&eth_pcs {
+	status = "okay";
+};
+
 &gdm4 {
 	status = "okay";
 
+	managed = "in-band-status";
 	phy-handle = <&phy5>;
 	phy-mode = "usxgmii";
 
@@ -350,32 +360,67 @@
 			compatible = "ethernet-phy-ieee802.3-c45";
 			reg = <5>;
 			reset-gpios = <&en7581_pinctrl 46 GPIO_ACTIVE_LOW>;
-			reset-assert-us = <40000>;
-			reset-deassert-us = <150000>;
-			interrupt-parent = <&en7581_pinctrl>;
-			interrupts = <22 IRQ_TYPE_LEVEL_LOW>;
-			realtek,pnswap-tx;
-			realtek,pnswap-rx;
+			reset-assert-us = <200000>;
+			reset-deassert-us = <200000>;
+			// interrupt-parent = <&en7581_pinctrl>;
+			// interrupts = <22 IRQ_TYPE_LEVEL_LOW>;
+			tx-polarity = <PHY_POL_INVERT>;
+			rx-polarity = <PHY_POL_INVERT>;
+
+			leds {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				led@2 {
+					reg = <2>;
+					color = <LED_COLOR_ID_YELLOW>;
+					function = LED_FUNCTION_LAN;
+					function-enumerator = <2>;
+				};
+
+				led@3 {
+					reg = <3>;
+					color = <LED_COLOR_ID_GREEN>;
+					function = LED_FUNCTION_LAN;
+					function-enumerator = <2>;
+				};
+			};
 		};
 
 		phy8: ethernet-phy@8 {
 			compatible = "ethernet-phy-ieee802.3-c45";
 			reg = <8>;
 			reset-gpios = <&en7581_pinctrl 31 GPIO_ACTIVE_LOW>;
-			reset-assert-us = <40000>;
-			reset-deassert-us = <150000>;
-			interrupt-parent = <&en7581_pinctrl>;
-			interrupts = <23 IRQ_TYPE_LEVEL_LOW>;
-			realtek,pnswap-tx;
-			realtek,pnswap-rx;
+			reset-assert-us = <200000>;
+			reset-deassert-us = <200000>;
+			// interrupt-parent = <&en7581_pinctrl>;
+			// interrupts = <23 IRQ_TYPE_LEVEL_LOW>;
+			tx-polarity = <PHY_POL_INVERT>;
+			rx-polarity = <PHY_POL_INVERT>;
+
+			leds {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				led@2 {
+					reg = <2>;
+					color = <LED_COLOR_ID_YELLOW>;
+					function = LED_FUNCTION_WAN;
+				};
+
+				led@3 {
+					reg = <3>;
+					color = <LED_COLOR_ID_GREEN>;
+					function = LED_FUNCTION_WAN;
+				};
+			};
 		};
 	};
 };
 
 &gsw_phy1 {
 	status = "okay";
-	pinctrl-names = "gbe-led";
-	pinctrl-0 = <&gswp1_led0_pins>;
+	interrupts = <1>;
 };
 
 &gsw_port1 {
@@ -385,8 +430,7 @@
 
 &gsw_phy2 {
 	status = "okay";
-	pinctrl-names = "gbe-led";
-	pinctrl-0 = <&gswp2_led0_pins>;
+	interrupts = <2>;
 };
 
 &gsw_port2 {

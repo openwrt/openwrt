@@ -1,0 +1,131 @@
+# SPDX-License-Identifier: GPL-2.0
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/net/qcom,ipq5018-gmac.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Qualcomm IPQ5018 DWMAC glue layer (GMAC)
+
+maintainers:
+  - George Moussalem <george.moussalem@outlook.com>
+
+description: |
+  This file documents platform glue layer for Qualcomm IPQ5018 DWMAC (GMAC)
+  The MAC supports speeds of 10/100/1000/2500 Mbps and supports SGMII and
+  2500base-x interface modes. The IPQ5018 SoC has two GMACs:
+  The first MAC (GMAC0) is connected to an the SoC's internal IPQ5018 ethernet
+  GE PHY while the second MAC is connected to the SoC's UNIPHY PCS which is turn
+  can be wired to an external switch or PHY.
+  This MAC is of Synopsys DesignWare IP version 3.70a.
+
+# We need a select here so we don't match all nodes with 'snps,dwmac'
+select:
+  properties:
+    compatible:
+      contains:
+        enum:
+          - qcom,ipq5018-gmac
+  required:
+    - compatible
+
+properties:
+  compatible:
+    items:
+      - enum:
+          - qcom,ipq5018-gmac
+      - const: snps,dwmac
+
+  reg: true
+
+  reg-names:
+    items:
+      - const: stmmaceth
+
+  clocks:
+    minItems: 7
+
+  clock-names:
+    contains:
+      enum:
+        - stmmaceth
+        - pclk
+        - ptp_ref
+        - ahb
+        - axi
+        - rx
+        - tx
+
+  resets: true
+
+  reset-names:
+    items:
+      - const: stmmaceth
+
+  interrupts:
+    minItems: 1
+
+  interrupt-names:
+    items:
+      - const: macirq
+
+  pcs-handle:
+    $ref: ethernet-controller.yaml#/properties/pcs-handle
+    description:
+      A reference to an optional PCS PHY device (GMAC1 <-> UNIPHY PCS)
+
+required:
+  - compatible
+  - clocks
+  - clock-names
+  - resets
+  - reset-names
+  - interrupts
+  - interrupt-names
+
+allOf:
+  - $ref: snps,dwmac.yaml#
+
+unevaluatedProperties: false
+
+examples:
+  - |
+    #include <dt-bindings/clock/qcom,gcc-ipq5018.h>
+    #include <dt-bindings/interrupt-controller/arm-gic.h>
+    #include <dt-bindings/reset/qcom,gcc-ipq5018.h>
+    
+    gmac1: ethernet@39d00000 {
+        compatible = "qcom,ipq5018-gmac", "snps,dwmac";
+        reg = <0x39d00000 0x10000>;
+        reg-names = "stmmaceth";
+        clocks = <&gcc GCC_GMAC1_SYS_CLK>,
+                 <&gcc GCC_GMAC1_CFG_CLK>,
+                 <&gcc GCC_GMAC1_PTP_CLK>,
+                 <&gcc GCC_SNOC_GMAC1_AHB_CLK>,
+                 <&gcc GCC_SNOC_GMAC1_AXI_CLK>,
+                 <&gcc GCC_GMAC1_RX_CLK>,
+                 <&gcc GCC_GMAC1_TX_CLK>;
+        clock-names = "stmmaceth",
+                      "pclk",
+                      "ptp_ref",
+                      "ahb",
+                      "axi",
+                      "rx",
+                      "tx";
+        assigned-clocks = <&gcc GCC_GMAC1_SYS_CLK>,
+                          <&gcc GCC_GMAC1_CFG_CLK>,
+                          <&gcc GCC_GMAC1_PTP_CLK>,
+                          <&gcc GCC_SNOC_GMAC1_AHB_CLK>,
+                          <&gcc GCC_SNOC_GMAC1_AXI_CLK>;
+        assigned-clock-rates = <240000000>,
+                               <240000000>,
+                               <240000000>,
+                               <240000000>,
+                               <240000000>;
+        resets = <&gcc GCC_GMAC1_BCR>;
+        reset-names = "stmmaceth";
+        interrupts = <GIC_SPI 109 IRQ_TYPE_LEVEL_HIGH>;
+        interrupt-names = "macirq";
+
+        phy-mode = "sgmii";
+        pcs-handle = <&uniphy0>;
+    };

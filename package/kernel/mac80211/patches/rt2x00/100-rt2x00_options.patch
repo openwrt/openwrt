@@ -1,3 +1,15 @@
+From 5ca4d24cd1043e142515ac66c44a26a2371978d3 Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@openwrt.org>
+Date: Sat, 15 Jun 2013 20:14:06 +0000
+Subject: [PATCH] rt2x00: add prompts for library options
+
+The rt2x00 library symbols are selected by the bus front-end drivers
+only and carry no prompt of their own. Add one to each so that the
+module packaging can enable RT2X00_LIB, RT2X00_LIB_PCI, RT2X00_LIB_USB,
+RT2X00_LIB_MMIO, RT2800_LIB and RT2800_LIB_MMIO directly.
+
+Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+---
 --- a/drivers/net/wireless/ralink/rt2x00/Kconfig
 +++ b/drivers/net/wireless/ralink/rt2x00/Kconfig
 @@ -223,33 +223,33 @@ config RT2800SOC

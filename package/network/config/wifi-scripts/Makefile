@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=wifi-scripts
 PKG_VERSION:=1.0
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_LICENSE:=GPL-2.0
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
@@ -47,6 +47,9 @@ define Package/wifi-scripts/install
 	$(CP) ./files/* $(1)/
 ifeq ($(CONFIG_WIFI_SCRIPTS_UCODE),y)
 	$(CP) ./files-ucode/* $(1)/
+endif
+ifeq ($(CONFIG_WIFI_SCRIPTS_WPS_BUTTON_DISABLED),y)
+	rm -f $(1)/etc/rc.button/wps
 endif
 endef
 

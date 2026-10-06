@@ -1,0 +1,46 @@
+From 384de84ae08b2e71aaf3432f412f97d979f1ac7e Mon Sep 17 00:00:00 2001
+From: Frieder Schrempf <frieder.schrempf@kontron.de>
+Date: Mon, 21 Jul 2025 12:05:43 +0200
+Subject: arm64: dts: imx8mp-kontron: Fix USB hub reset
+
+The latest hardware revision uses GPIO_B_2 as reset for
+the USB hub. Fix this and remove the pinctrl as we already
+have this in the OSM-S devicetree.
+
+Signed-off-by: Frieder Schrempf <frieder.schrempf@kontron.de>
+Signed-off-by: Shawn Guo <shawnguo@kernel.org>
+---
+ arch/arm64/boot/dts/freescale/imx8mp-kontron-bl-osm-s.dts | 10 +---------
+ 1 file changed, 1 insertion(+), 9 deletions(-)
+
+--- a/arch/arm64/boot/dts/freescale/imx8mp-kontron-bl-osm-s.dts
++++ b/arch/arm64/boot/dts/freescale/imx8mp-kontron-bl-osm-s.dts
+@@ -250,8 +250,6 @@
+ };
+ 
+ &usb_dwc3_1 {
+-	pinctrl-names = "default";
+-	pinctrl-0 = <&pinctrl_usb_hub>;
+ 	#address-cells = <1>;
+ 	#size-cells = <0>;
+ 	dr_mode = "host";
+@@ -260,7 +258,7 @@
+ 	usb-hub@1 {
+ 		compatible = "usb424,2514";
+ 		reg = <1>;
+-		reset-gpios = <&gpio3 14 GPIO_ACTIVE_LOW>;
++		reset-gpios = <&gpio4 20 GPIO_ACTIVE_LOW>;
+ 	};
+ };
+ 
+@@ -317,10 +315,4 @@
+ 			MX8MP_IOMUXC_ECSPI1_MISO__GPIO5_IO08		0x46 /* CAN_ADR1 */
+ 		>;
+ 	};
+-
+-	pinctrl_usb_hub: usbhubgrp {
+-		fsl,pins = <
+-			MX8MP_IOMUXC_NAND_DQS__GPIO3_IO14		0x46
+-		>;
+-	};
+ };

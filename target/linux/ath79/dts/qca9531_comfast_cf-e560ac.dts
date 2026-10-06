@@ -65,13 +65,6 @@
 			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 		};
-
-		wlan {
-			function = LED_FUNCTION_WLAN;
-			color = <LED_COLOR_ID_BLUE>;
-			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy0tpt";
-		};
 	};
 
 	watchdog {
@@ -191,4 +184,9 @@
 
 	nvmem-cells = <&macaddr_art_0 10>, <&cal_art_1000>;
 	nvmem-cell-names = "mac-address", "calibration";
+
+	led {
+		led-sources = <0>;
+		led-active-low;
+	};
 };

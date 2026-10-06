@@ -1,9 +1,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=xdp-tools
-PKG_RELEASE:=2
-PKG_VERSION:=1.5.8
-PKG_HASH:=e7b9717074c511fef34aab6e22b16af55fb33307505a5785d25a82b542e596ae
+PKG_RELEASE:=3
+PKG_VERSION:=1.6.3
+PKG_HASH:=78da363ff7dcf1a586f47800f16d644022bd33f3844864061a44616fce854fd8
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://codeload.github.com/xdp-project/xdp-tools/tar.gz/v$(PKG_VERSION)?
@@ -150,6 +150,7 @@ CONFIGURE_VARS += \
 	CFLAGS="$(TARGET_CFLAGS)" \
 	LDFLAGS="$(TARGET_LDFLAGS)" \
 	CLANG="$(CLANG)" \
+	ARCH_INCLUDES="$(patsubst %,-idirafter%,$(TOOLCHAIN_INC_DIRS))" \
 	BPFTOOL="$(STAGING_DIR_HOST)/usr/sbin/bpftool"
 
 ifneq ($(findstring s,$(OPENWRT_VERBOSE)),)

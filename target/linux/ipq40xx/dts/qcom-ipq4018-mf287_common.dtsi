@@ -11,8 +11,6 @@
 
 / {
 	aliases {
-		// TODO: Verify if the ethernet0 alias is needed
-		ethernet0 = &gmac;
 		led-boot = &led_status;
 		led-failsafe = &led_status;
 		led-running = &led_status;
@@ -115,14 +113,6 @@
 &blsp1_uart1 {
 	pinctrl-0 = <&serial_pins>;
 	pinctrl-names = "default";
-	status = "okay";
-};
-
-&crypto {
-	status = "okay";
-};
-
-&cryptobam {
 	status = "okay";
 };
 

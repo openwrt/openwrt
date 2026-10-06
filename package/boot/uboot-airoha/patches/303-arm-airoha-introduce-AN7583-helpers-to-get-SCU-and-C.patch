@@ -1,7 +1,7 @@
-From 59e3fa0d74fd36ba61a2b4e63eb6faf31b4e2396 Mon Sep 17 00:00:00 2001
+From a4e98508a271287ca3b9425916ad0aa92896bc66 Mon Sep 17 00:00:00 2001
 From: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
 Date: Fri, 31 Oct 2025 00:42:08 +0300
-Subject: [PATCH 03/24] arm: airoha: introduce AN7583 helpers to get SCU and
+Subject: [PATCH 14/29] arm: airoha: introduce AN7583 helpers to get SCU and
  CHIP_SCU regmaps
 
 We need access SCU and CHIP_SCU regmaps in several places (clk-airoha,
@@ -79,5 +79,5 @@ index 00000000000..96f3564eec0
 +	return syscon_node_to_regmap(node);
 +}
 -- 
-2.51.0
+2.53.0
 

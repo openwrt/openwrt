@@ -10,8 +10,6 @@
 	compatible = "aruba,ap-303h";
 
 	aliases {
-		// TODO: Verify if the ethernet0 alias is needed
-		ethernet0 = &gmac;
 		led-boot = &led_system_green;
 		led-failsafe = &led_system_red;
 		led-running = &led_system_green;
@@ -109,10 +107,6 @@
 	status = "okay";
 };
 
-&crypto {
-	status = "okay";
-};
-
 &blsp_dma {
 	status = "okay";
 };
@@ -127,10 +121,6 @@
 	/* Texas Instruments CC2540T BLE radio */
 	pinctrl-0 = <&serial_1_pins>;
 	pinctrl-names = "default";
-	status = "okay";
-};
-
-&cryptobam {
 	status = "okay";
 };
 

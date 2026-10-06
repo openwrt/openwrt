@@ -1,0 +1,24 @@
+--- a/net/wireless/sysfs.c
++++ b/net/wireless/sysfs.c
+@@ -160,12 +160,21 @@ static SIMPLE_DEV_PM_OPS(wiphy_pm_ops, w
+ #define WIPHY_PM_OPS NULL
+ #endif
+ 
++#if LINUX_VERSION_IS_GEQ(7,0,0)
+ static const struct ns_common *wiphy_namespace(const struct device *d)
+ {
+ 	struct wiphy *wiphy = container_of(d, struct wiphy, dev);
+ 
+ 	return to_ns_common(wiphy_net(wiphy));
+ }
++#else
++static const void *wiphy_namespace(const struct device *d)
++{
++	struct wiphy *wiphy = container_of(d, struct wiphy, dev);
++
++	return wiphy_net(wiphy);
++}
++#endif
+ 
+ struct class ieee80211_class = {
+ 	.name = "ieee80211",

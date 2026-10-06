@@ -39,7 +39,7 @@ JIRA: SWWLAN-136577
 
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/bus.h
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/bus.h
-@@ -298,7 +298,7 @@ void brcmf_rx_event(struct device *dev,
+@@ -304,7 +304,7 @@ void brcmf_rx_event(struct device *dev,
  
  int brcmf_alloc(struct device *dev, struct brcmf_mp_device *settings);
  /* Indication from bus module regarding presence/insertion of dongle. */
@@ -59,7 +59,7 @@ JIRA: SWWLAN-136577
  
  MODULE_AUTHOR("Broadcom Corporation");
  MODULE_DESCRIPTION("Broadcom 802.11 wireless LAN fullmac driver.");
-@@ -274,6 +276,8 @@ int brcmf_c_preinit_dcmds(struct brcmf_i
+@@ -273,6 +275,8 @@ int brcmf_c_preinit_dcmds(struct brcmf_i
  	char *clmver;
  	char *ptr;
  	s32 err;
@@ -68,7 +68,7 @@ JIRA: SWWLAN-136577
  
  	if (is_valid_ether_addr(ifp->mac_addr)) {
  		/* set mac address */
-@@ -433,6 +437,41 @@ int brcmf_c_preinit_dcmds(struct brcmf_i
+@@ -432,6 +436,41 @@ int brcmf_c_preinit_dcmds(struct brcmf_i
  		goto done;
  	}
  
@@ -112,7 +112,7 @@ JIRA: SWWLAN-136577
  				    BRCMF_DEFAULT_SCAN_CHANNEL_TIME);
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
-@@ -1327,7 +1327,7 @@ int brcmf_alloc(struct device *dev, stru
+@@ -1356,7 +1356,7 @@ int brcmf_alloc(struct device *dev, stru
  	return 0;
  }
  
@@ -121,7 +121,7 @@ JIRA: SWWLAN-136577
  {
  	struct brcmf_bus *bus_if = dev_get_drvdata(dev);
  	struct brcmf_pub *drvr = bus_if->drvr;
-@@ -1370,10 +1370,13 @@ int brcmf_attach(struct device *dev)
+@@ -1399,10 +1399,13 @@ int brcmf_attach(struct device *dev)
  
  	brcmf_fwvid_get_cfg80211_ops(drvr);
  
@@ -205,7 +205,7 @@ JIRA: SWWLAN-136577
  				    void *data);
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/pcie.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/pcie.c
-@@ -2214,7 +2214,7 @@ static void brcmf_pcie_setup(struct devi
+@@ -2217,7 +2217,7 @@ static void brcmf_pcie_setup(struct devi
  
  	init_waitqueue_head(&devinfo->mbdata_resp_wait);
  
@@ -266,7 +266,7 @@ JIRA: SWWLAN-136577
  
  	return intstatus;
  }
-@@ -2581,6 +2596,182 @@ static int brcmf_sdio_intr_rstatus(struc
+@@ -2582,6 +2597,182 @@ static int brcmf_sdio_intr_rstatus(struc
  	return ret;
  }
  
@@ -449,7 +449,7 @@ JIRA: SWWLAN-136577
  static void brcmf_sdio_dpc(struct brcmf_sdio *bus)
  {
  	struct brcmf_sdio_dev *sdiod = bus->sdiodev;
-@@ -2652,8 +2843,11 @@ static void brcmf_sdio_dpc(struct brcmf_
+@@ -2653,8 +2844,11 @@ static void brcmf_sdio_dpc(struct brcmf_
  
  	/* Handle host mailbox indication */
  	if (intstatus & I_HMB_HOST_INT) {
@@ -462,7 +462,7 @@ JIRA: SWWLAN-136577
  	}
  
  	sdio_release_host(bus->sdiodev->func1);
-@@ -2698,7 +2892,7 @@ static void brcmf_sdio_dpc(struct brcmf_
+@@ -2699,7 +2893,7 @@ static void brcmf_sdio_dpc(struct brcmf_
  	brcmf_sdio_clrintr(bus);
  
  	if (bus->ctrl_frame_stat && (bus->clkstate == CLK_AVAIL) &&
@@ -471,7 +471,7 @@ JIRA: SWWLAN-136577
  		sdio_claim_host(bus->sdiodev->func1);
  		if (bus->ctrl_frame_stat) {
  			err = brcmf_sdio_tx_ctrlframe(bus,  bus->ctrl_frame_buf,
-@@ -3569,6 +3763,10 @@ static int brcmf_sdio_bus_preinit(struct
+@@ -3570,6 +3764,10 @@ static int brcmf_sdio_bus_preinit(struct
  	if (err < 0)
  		goto done;
  
@@ -482,7 +482,7 @@ JIRA: SWWLAN-136577
  	bus->tx_hdrlen = SDPCM_HWHDR_LEN + SDPCM_SWHDR_LEN;
  	if (sdiodev->sg_support) {
  		bus->txglom = false;
-@@ -4219,7 +4417,7 @@ static void brcmf_sdio_firmware_callback
+@@ -4220,7 +4418,7 @@ static void brcmf_sdio_firmware_callback
  	u8 saveclk, bpreq;
  	u8 devctl;
  
@@ -491,7 +491,7 @@ JIRA: SWWLAN-136577
  
  	if (err)
  		goto fail;
-@@ -4397,12 +4595,25 @@ static void brcmf_sdio_firmware_callback
+@@ -4398,12 +4596,25 @@ static void brcmf_sdio_firmware_callback
  	}
  
  	/* Attach to the common layer, reserve hdr space */
@@ -518,7 +518,7 @@ JIRA: SWWLAN-136577
  	/* ready */
  	return;
  
-@@ -4649,3 +4860,40 @@ int brcmf_sdio_sleep(struct brcmf_sdio *
+@@ -4658,3 +4869,40 @@ int brcmf_sdio_sleep(struct brcmf_sdio *
  
  	return ret;
  }
@@ -606,7 +606,7 @@ JIRA: SWWLAN-136577
  };
  
  /* sdio core registers */
-@@ -367,4 +398,83 @@ void brcmf_sdio_wowl_config(struct devic
+@@ -368,4 +399,83 @@ void brcmf_sdio_wowl_config(struct devic
  int brcmf_sdio_sleep(struct brcmf_sdio *bus, bool sleep);
  void brcmf_sdio_trigger_dpc(struct brcmf_sdio *bus);
  
@@ -701,7 +701,7 @@ JIRA: SWWLAN-136577
  	if (ret)
  		goto error;
  
-@@ -1288,7 +1288,7 @@ static int brcmf_usb_probe_cb(struct brc
+@@ -1289,7 +1289,7 @@ static int brcmf_usb_probe_cb(struct brc
  		ret = brcmf_alloc(devinfo->dev, devinfo->settings);
  		if (ret)
  			goto fail;

@@ -11,6 +11,10 @@
 / {
 	aliases {
 		serial0 = &uart0;
+		led-boot = &led_status_rgb;
+		led-failsafe = &led_status_rgb;
+		led-running = &led_status_rgb;
+		led-upgrade = &led_status_rgb;
 	};
 
 	chosen: chosen {
@@ -77,6 +81,9 @@
 		reg = <0>;
 		phy-mode = "2500base-x";
 
+		nvmem-cells = <&macaddr_uboot_ethaddr 1>;
+		nvmem-cell-names = "mac-address";
+
 		fixed-link {
 			speed = <2500>;
 			full-duplex;
@@ -88,6 +95,9 @@
 		reg = <1>;
 		phy-mode = "2500base-x";
 		phy-handle = <&phy6>;
+
+		nvmem-cells = <&macaddr_uboot_ethaddr 0>;
+		nvmem-cell-names = "mac-address";
 	};
 
 	mdio-bus {

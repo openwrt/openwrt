@@ -73,7 +73,7 @@
 				reg = <0x0 0x600000>;
 			};
 
-			partition@400000 {
+			partition@600000 {
 				label = "ubi";
 				reg = <0x600000 0x0>;
 			};
@@ -169,12 +169,12 @@
 		reg = <0>;
 
 		spi-max-frequency = <52000000>;
-		spi-tx-buswidth = <4>;
-		spi-rx-buswidth = <4>;
+		spi-tx-bus-width = <4>;
+		spi-rx-bus-width = <4>;
 
 		mediatek,nmbm;
 		mediatek,bmt-max-ratio = <1>;
-		mediatek,bmt-max-reserved-blocks = <64>;
+		mediatek,bmt-max-reserved-blocks = <256>;
 
 		partitions {
 			compatible = "fixed-partitions";

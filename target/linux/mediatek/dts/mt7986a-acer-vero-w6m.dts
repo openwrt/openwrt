@@ -58,7 +58,8 @@
 };
 
 &slot0 {
-	radio0: mt7915@0,0 {
+	radio0: wifi@0,0 {
+		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
 		nvmem-cells = <&eeprom_factory_a0000>, <&precal_factory_a1010>;
 		nvmem-cell-names = "eeprom", "precal";

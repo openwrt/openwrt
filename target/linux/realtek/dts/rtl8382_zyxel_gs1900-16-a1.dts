@@ -9,26 +9,26 @@
 };
 
 &mdio_bus0 {
-	EXTERNAL_PHY(16)
-	EXTERNAL_PHY(17)
-	EXTERNAL_PHY(18)
-	EXTERNAL_PHY(19)
-	EXTERNAL_PHY(20)
-	EXTERNAL_PHY(21)
-	EXTERNAL_PHY(22)
-	EXTERNAL_PHY(23)
+	PHY_C22(16, 16)
+	PHY_C22(17, 17)
+	PHY_C22(18, 18)
+	PHY_C22(19, 19)
+	PHY_C22(20, 20)
+	PHY_C22(21, 21)
+	PHY_C22(22, 22)
+	PHY_C22(23, 23)
 };
 
 &switch0 {
 	ethernet-ports {
-		SWITCH_PORT_SDS(16, 9, 2, qsgmii)
-		SWITCH_PORT_SDS(17, 10, 2, qsgmii)
-		SWITCH_PORT_SDS(18, 11, 2, qsgmii)
-		SWITCH_PORT_SDS(19, 12, 2, qsgmii)
-		SWITCH_PORT_SDS(20, 13, 3, qsgmii)
-		SWITCH_PORT_SDS(21, 14, 3, qsgmii)
-		SWITCH_PORT_SDS(22, 15, 3, qsgmii)
-		SWITCH_PORT_SDS(23, 16, 3, qsgmii)
+		SWITCH_PORT_SDS(16, 9, 2, 0, qsgmii)
+		SWITCH_PORT_SDS(17, 10, 2, 1, qsgmii)
+		SWITCH_PORT_SDS(18, 11, 2, 2, qsgmii)
+		SWITCH_PORT_SDS(19, 12, 2, 3, qsgmii)
+		SWITCH_PORT_SDS(20, 13, 3, 0, qsgmii)
+		SWITCH_PORT_SDS(21, 14, 3, 1, qsgmii)
+		SWITCH_PORT_SDS(22, 15, 3, 2, qsgmii)
+		SWITCH_PORT_SDS(23, 16, 3, 3, qsgmii)
 	};
 };
 

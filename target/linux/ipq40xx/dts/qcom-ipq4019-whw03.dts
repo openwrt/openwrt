@@ -33,6 +33,16 @@
 	};
 };
 
+&spi_1_pins {
+	mux-2 {
+		pins = "gpio56", "gpio49";
+	};
+};
+
+&blsp1_spi2 {
+	cs-gpios = <&tlmm 56 GPIO_ACTIVE_LOW>;
+};
+
 &mdio {
 	status = "okay";
 	pinctrl-0 = <&mdio_pins>;
@@ -63,7 +73,7 @@
 			compatible = "block-device";
 			partitions {
 				block-partition-art {
-					partname = "art";
+					partname = "0:ART";
 
 					nvmem-layout {
 						compatible = "fixed-layout";
@@ -89,8 +99,6 @@
 
 					nvmem-layout {
 						compatible = "ascii-eq-delim-env";
-						#address-cells = <1>;
-						#size-cells = <1>;
 
 						hw_mac_addr: hw_mac_addr {
 							compatible = "mac-base";

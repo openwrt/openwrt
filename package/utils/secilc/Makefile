@@ -6,12 +6,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=secilc
-PKG_VERSION:=3.9
+PKG_VERSION:=3.10
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://github.com/SELinuxProject/selinux/releases/download/$(PKG_VERSION)
-PKG_HASH:=c53fb7218ac158c05f28de186e48404857eb191bd4f9415802f85449fdf6da7f
+PKG_HASH:=6658071d6f1044184d3973062a798187537ae1c3ddb4c31afd417df333316c10
 HOST_BUILD_DEPENDS:=libsepol/host
 
 PKG_MAINTAINER:=Dominick Grift <dominick.grift@defensec.nl>

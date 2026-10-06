@@ -82,8 +82,6 @@ ifneq (,$(findstring uml,$(BOARD)))
   LINUX_KARCH=um
 else ifneq (,$(findstring $(ARCH) , aarch64 aarch64_be ))
   LINUX_KARCH := arm64
-else ifneq (,$(findstring $(ARCH) , arceb ))
-  LINUX_KARCH := arc
 else ifneq (,$(findstring $(ARCH) , armeb ))
   LINUX_KARCH := arm
 else ifneq (,$(findstring $(ARCH) , loongarch64 ))
@@ -94,8 +92,6 @@ else ifneq (,$(findstring $(ARCH) , powerpc64 ))
   LINUX_KARCH := powerpc
 else ifneq (,$(findstring $(ARCH) , riscv64 ))
   LINUX_KARCH := riscv
-else ifneq (,$(findstring $(ARCH) , sh2 sh3 sh4 ))
-  LINUX_KARCH := sh
 else ifneq (,$(findstring $(ARCH) , i386 x86_64 ))
   LINUX_KARCH := x86
 else
@@ -105,7 +101,8 @@ endif
 KERNEL_MAKE = $(MAKE) $(KERNEL_MAKEOPTS)
 
 KERNEL_MAKE_FLAGS = \
-	KCFLAGS="$(call iremap,$(BUILD_DIR),$(notdir $(BUILD_DIR))) $(filter-out -fno-plt,$(call qstrip,$(CONFIG_EXTRA_OPTIMIZATION))) $(call qstrip,$(CONFIG_KERNEL_CFLAGS))" \
+	KCFLAGS="$(call iremap,$(BUILD_DIR),$(notdir $(BUILD_DIR))) $(IREMAP_STAGING_DIR) $(filter-out -fno-plt,$(call qstrip,$(CONFIG_EXTRA_OPTIMIZATION))) $(call qstrip,$(CONFIG_KERNEL_CFLAGS))" \
+	KAFLAGS="$(call iremap,$(BUILD_DIR),$(notdir $(BUILD_DIR))) $(IREMAP_STAGING_DIR)" \
 	HOSTCFLAGS="$(HOST_CFLAGS) -Wall -Wmissing-prototypes -Wstrict-prototypes" \
 	CROSS_COMPILE="$(KERNEL_CROSS)" \
 	ARCH="$(LINUX_KARCH)" \
@@ -125,17 +122,16 @@ ifneq (,$(KERNEL_CC))
   KERNEL_MAKE_FLAGS += CC="$(KERNEL_CC)"
 endif
 
+ifeq ($(HOST_OS),Darwin)
+  KERNEL_MAKE_FLAGS += MACOSX_DEPLOYMENT_TARGET="$(shell sw_vers -productVersion)"
+endif
+
 KERNEL_NOSTDINC_FLAGS = \
 	-nostdinc $(if $(DUMP),, -isystem $(shell $(TARGET_CC) -print-file-name=include))
 
 ifeq ($(call qstrip,$(CONFIG_EXTERNAL_KERNEL_TREE))$(call qstrip,$(CONFIG_KERNEL_GIT_CLONE_URI)),)
   KERNEL_MAKE_FLAGS += \
 	KERNELRELEASE=$(LINUX_VERSION)
-endif
-
-ifneq ($(HOST_OS),Linux)
-  KERNEL_MAKE_FLAGS += CONFIG_STACK_VALIDATION=
-  export SKIP_STACK_VALIDATION:=1
 endif
 
 KERNEL_MAKEOPTS = -C $(LINUX_DIR) $(KERNEL_MAKE_FLAGS)
@@ -154,6 +150,9 @@ define collect_module_symvers
 		grep -F $(PKG_BUILD_DIR) $(PKG_BUILD_DIR)/$$$$subdir/Module.symvers >> $(PKG_BUILD_DIR)/Module.symvers.tmp; \
 		[ "$(PKG_BUILD_DIR)" = "$$$$realdir" ] || \
 			grep -F $$$$realdir $(PKG_BUILD_DIR)/$$$$subdir/Module.symvers >> $(PKG_BUILD_DIR)/Module.symvers.tmp; \
+		[ -s "$(PKG_BUILD_DIR)/Module.symvers.tmp" ] || [ "$(KERNEL_PATCHVER)" = "6.18" ] && \
+			sed 's/\.o$$$$//' $(PKG_BUILD_DIR)/$$$$subdir/modules.order | \
+			grep -Ff - $(PKG_BUILD_DIR)/$$$$subdir/Module.symvers >> $(PKG_BUILD_DIR)/Module.symvers.tmp; \
 	done; \
 	sort -u $(PKG_BUILD_DIR)/Module.symvers.tmp > $(PKG_BUILD_DIR)/Module.symvers; \
 	mkdir -p $(PKG_SYMVERS_DIR); \
@@ -274,7 +273,37 @@ $(call KernelPackage/$(1)/config)
 
 endef
 
-version_filter=$(if $(findstring @,$(1)),$(shell $(SCRIPT_DIR)/package-metadata.pl version_filter $(KERNEL_PATCHVER) $(1)),$(1))
+version_filter_perl=$(shell $(SCRIPT_DIR)/package-metadata.pl version_filter $(KERNEL_PATCHVER) $(1))
+
+# Items of the form <name>@<op><version> are filtered in make, as a perl
+# call per list costs seconds when parsing all kmod packages. The version
+# comparison stays in package-metadata.pl, but runs only once per version.
+# Any other form of item is passed to package-metadata.pl as before.
+
+# $(1): version, returns the operators that are true for KERNEL_PATCHVER
+version_ops=$(if $(filter undefined,$(origin version_ops/$(1))),$(eval \
+	version_ops/$(1):=$(call version_filter_perl,$(foreach op,lt le gt ge eq ne,$(op)@$(op)$(1)))))$(version_ops/$(1))
+
+strip_digits=$(subst 9,,$(subst 8,,$(subst 7,,$(subst 6,,$(subst 5,,$(subst 4,,$(subst 3,,$(subst 2,,$(subst 1,,$(subst 0,,$(1)))))))))))
+
+# $(1): version, returns y if it is a list of numbers separated by dots
+version_is_plain=$(if $(or $(filter .% %.,$(1)),$(findstring ..,$(1)),$(subst .,,$(call strip_digits,$(1)))),,$(if $(findstring .,$(1)),y))
+
+# $(1): condition such as ge6.18
+version_cond_op=$(firstword $(foreach op,lt le gt ge eq ne,$(if $(filter $(op)%,$(1)),$(op))))
+version_cond_ver=$(patsubst $(call version_cond_op,$(1))%,%,$(1))
+
+# $(1): item such as foo@ge6.18, $(2): name, $(3): condition
+version_filter_item=$(if $(and $(2),$(call version_cond_op,$(3)),$(call version_is_plain,$(call version_cond_ver,$(3)))), \
+	$(if $(filter $(call version_cond_op,$(3)),$(call version_ops,$(call version_cond_ver,$(3)))),$(2)), \
+	$(call version_filter_perl,$(1)))
+
+version_filter=$(if $(findstring @,$(1)),$(strip $(foreach item,$(1), \
+	$(if $(findstring @,$(item)), \
+		$(if $(filter 2,$(words $(subst @, ,$(item)))), \
+			$(call version_filter_item,$(item),$(word 1,$(subst @, ,$(item))),$(word 2,$(subst @, ,$(item)))), \
+			$(call version_filter_perl,$(item))), \
+		$(item)))),$(1))
 
 # 1: priority (optional)
 # 2: module list

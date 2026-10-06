@@ -1,0 +1,62 @@
+From 39e4189d9d63a0b6fc15458ce0136e99ecdfb1b8 Mon Sep 17 00:00:00 2001
+From: Frieder Schrempf <frieder.schrempf@kontron.de>
+Date: Wed, 18 Dec 2024 16:27:32 +0100
+Subject: arm64: dts: imx8mp-kontron: Add support for reading SD_VSEL signal
+
+This fixes the LDO5 regulator handling of the pca9450 driver by
+taking the status of the SD_VSEL into account to determine which
+configuration register is used for the voltage setting.
+
+Even without this change there is no functional issue, as the code
+for switching the voltage in sdhci.c currently switches both, the
+VSELECT/SD_VSEL signal and the regulator voltage at the same time
+and doesn't run into an invalid corner case.
+
+We should still make sure, that we always use the correct register
+when controlling the regulator. At least in U-Boot this fixes an
+actual bug where the wrong IO voltage is used and it makes sure
+that the correct voltage can be read from sysfs.
+
+Signed-off-by: Frieder Schrempf <frieder.schrempf@kontron.de>
+Signed-off-by: Shawn Guo <shawnguo@kernel.org>
+---
+ arch/arm64/boot/dts/freescale/imx8mp-kontron-osm-s.dtsi | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+--- a/arch/arm64/boot/dts/freescale/imx8mp-kontron-osm-s.dtsi
++++ b/arch/arm64/boot/dts/freescale/imx8mp-kontron-osm-s.dtsi
+@@ -311,6 +311,7 @@
+ 				regulator-name = "NVCC_SD (LDO5)";
+ 				regulator-min-microvolt = <1800000>;
+ 				regulator-max-microvolt = <3300000>;
++				sd-vsel-gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>;
+ 			};
+ 		};
+ 	};
+@@ -808,7 +809,7 @@
+ 			MX8MP_IOMUXC_SD2_DATA1__USDHC2_DATA1		0x1d0 /* SDIO_A_D1 */
+ 			MX8MP_IOMUXC_SD2_DATA2__USDHC2_DATA2		0x1d0 /* SDIO_A_D2 */
+ 			MX8MP_IOMUXC_SD2_DATA3__USDHC2_DATA3		0x1d0 /* SDIO_A_D3 */
+-			MX8MP_IOMUXC_GPIO1_IO04__USDHC2_VSELECT		0x1d0
++			MX8MP_IOMUXC_GPIO1_IO04__USDHC2_VSELECT		0x400001d0
+ 		>;
+ 	};
+ 
+@@ -820,7 +821,7 @@
+ 			MX8MP_IOMUXC_SD2_DATA1__USDHC2_DATA1		0x1d4 /* SDIO_A_D1 */
+ 			MX8MP_IOMUXC_SD2_DATA2__USDHC2_DATA2		0x1d4 /* SDIO_A_D2 */
+ 			MX8MP_IOMUXC_SD2_DATA3__USDHC2_DATA3		0x1d4 /* SDIO_A_D3 */
+-			MX8MP_IOMUXC_GPIO1_IO04__USDHC2_VSELECT		0x1d0
++			MX8MP_IOMUXC_GPIO1_IO04__USDHC2_VSELECT		0x400001d0
+ 		>;
+ 	};
+ 
+@@ -832,7 +833,7 @@
+ 			MX8MP_IOMUXC_SD2_DATA1__USDHC2_DATA1		0x1d6 /* SDIO_A_D1 */
+ 			MX8MP_IOMUXC_SD2_DATA2__USDHC2_DATA2		0x1d6 /* SDIO_A_D2 */
+ 			MX8MP_IOMUXC_SD2_DATA3__USDHC2_DATA3		0x1d6 /* SDIO_A_D3 */
+-			MX8MP_IOMUXC_GPIO1_IO04__USDHC2_VSELECT		0x1d0
++			MX8MP_IOMUXC_GPIO1_IO04__USDHC2_VSELECT		0x400001d0
+ 		>;
+ 	};
+ 

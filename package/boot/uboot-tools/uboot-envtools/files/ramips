@@ -32,6 +32,7 @@ allnet,all0256n-4m|\
 allnet,all0256n-8m|\
 allnet,all5002|\
 asiarf,ap7621-004-v3|\
+comfast,cf-ew84|\
 plasmacloud,pax1800-lite|\
 yuncore,ax820)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x10000" "0x10000"
@@ -44,10 +45,14 @@ arcadyan,we420223-99|\
 dlink,dir-806a-b1)
 	ubootenv_add_uci_config "/dev/mtd2" "0x0" "0x1000" "0x1000"
 	;;
+dlink,covr-x1860-a1)
+	ubootenv_add_uci_config "/dev/mtd1" "0x2000" "0x4000" "0x2000"
+	;;
 asus,rt-ax53u|\
 asus,rt-ax54|\
 asus,4g-ax56|\
 belkin,rt1800|\
+edup,ep-rt2983|\
 elecom,wrc-x1800gs|\
 h3c,tx1800-plus|\
 h3c,tx1801-plus|\

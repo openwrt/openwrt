@@ -123,6 +123,23 @@ get_config_restart_hash() {
 	export -n "$var=$_hash"
 }
 
+resolve_bridge_member_ports() {
+	local _lower _bridge _port _ports=""
+
+	_lower=$(ls "/sys/class/net/$1/" 2>/dev/null | grep "^lower_" | head -1)
+	[ -n "$_lower" ] || return 1
+
+	_bridge="${_lower#lower_}"
+	[ -d "/sys/class/net/$_bridge/bridge" ] || return 1
+
+	for _port in $(ls "/sys/class/net/$_bridge/" 2>/dev/null | grep "^lower_"); do
+		append _ports "${_port#lower_}" ","
+	done
+
+	[ -n "$_ports" ] || return 1
+	echo "$_ports"
+}
+
 get_interface_csv() {
 	local _ifaces
 	config_get _ifaces "$2" "$3"
@@ -134,7 +151,15 @@ get_interface_csv() {
 
 		local _l2device=""
 		if network_get_physdev _l2device "$_iface" || [ -e "/sys/class/net/$_iface" ]; then
-			append _ifnames "${_l2device:-$_iface}" ","
+			local _resolved="${_l2device:-$_iface}"
+			local _ports
+			# LLDP uses reserved multicast (01:80:c2:00:00:0e) that bridges
+			# trap rather than forward; trapped frames arrive on the member
+			# ports, not on bridge VLAN sub-interfaces, so resolve down to
+			# the individual bridge member ports
+			_ports=$(resolve_bridge_member_ports "$_resolved")
+			[ -n "$_ports" ] && _resolved="$_ports"
+			append _ifnames "$_resolved" ","
 		else
 			# Glob case (interface is e.g. '!eth1' or 'eth*' or '*')
 			append _ifnames "$_iface" ","

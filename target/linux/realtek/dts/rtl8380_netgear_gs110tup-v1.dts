@@ -46,17 +46,17 @@
 };
 
 &mdio_bus0 {
-	EXTERNAL_PHY(16)
+	PHY_C22(16, 16)
 };
 
 &switch0 {
 	ethernet-ports {
-		SWITCH_PORT_SDS(16, 9, 2, qsgmii)
+		SWITCH_PORT_SDS(16, 9, 2, 0, qsgmii)
 
 		port@24 {
 			reg = <24>;
 			label = "lan10";
-			pcs-handle = <&serdes4>;
+			pcs-handle = <&serdes4 0>;
 			phy-mode = "1000base-x";
 			managed = "in-band-status";
 			/* i2c and gpios not yet identified */

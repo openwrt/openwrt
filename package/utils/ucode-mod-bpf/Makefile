@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ucode-mod-bpf
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_LICENSE:=ISC
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 

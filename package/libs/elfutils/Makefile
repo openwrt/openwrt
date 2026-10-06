@@ -7,13 +7,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=elfutils
-PKG_VERSION:=0.192
-PKG_RELEASE:=2
+PKG_VERSION:=0.196
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=https://sourceware.org/$(PKG_NAME)/ftp/$(PKG_VERSION) \
                 https://mirrors.kernel.org/sourceware/$(PKG_NAME)/$(PKG_VERSION)
-PKG_HASH:=616099beae24aba11f9b63d86ca6cc8d566d968b802391334c91df54eab416b4
+PKG_HASH:=fd5cc6b77ad6773cac93cb3f415f9318ac3b3455eecf801f6b4a742c4f6c7209
 
 PKG_MAINTAINER:=Luiz Angelo Daros de Luca <luizluca@gmail.com>
 PKG_LICENSE:=GPL-2.0-or-later LGPL-3.0-or-later
@@ -87,6 +87,8 @@ TARGET_CFLAGS += \
 	-Wno-unused-result \
 	-Wno-format-nonliteral \
 	-Wno-error=use-after-free
+
+TARGET_LDFLAGS += $(FPIC)
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include

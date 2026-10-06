@@ -1,6 +1,6 @@
 --- a/src/ap/ieee802_1x.c
 +++ b/src/ap/ieee802_1x.c
-@@ -2005,6 +2005,25 @@ static int ieee802_1x_update_vlan(struct
+@@ -2021,6 +2021,25 @@ static int ieee802_1x_update_vlan(struct
  }
  #endif /* CONFIG_NO_VLAN */
  
@@ -26,7 +26,7 @@
  
  /**
   * ieee802_1x_receive_auth - Process RADIUS frames from Authentication Server
-@@ -2121,6 +2140,7 @@ ieee802_1x_receive_auth(struct radius_ms
+@@ -2137,6 +2156,7 @@ ieee802_1x_receive_auth(struct radius_ms
  		ieee802_1x_check_hs20(hapd, sta, msg,
  				      session_timeout_set ?
  				      (int) session_timeout : -1);
@@ -36,7 +36,7 @@
  		sm->eap_if->aaaFail = true;
 --- a/src/ap/sta_info.h
 +++ b/src/ap/sta_info.h
-@@ -95,6 +95,7 @@ struct sta_info {
+@@ -114,6 +114,7 @@ struct sta_info {
  	u8 supported_rates[WLAN_SUPP_RATES_MAX];
  	int supported_rates_len;
  	u8 qosinfo; /* Valid when WLAN_STA_WMM is set */

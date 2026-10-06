@@ -53,6 +53,7 @@ case "$(board_name)" in
 buffalo,wsr-2533dhp2)
 	BUFFALO_TRX_MAGIC="44485032" # "DHP2"
 	;;
+buffalo,wsr-2533dhp3|\
 buffalo,wsr-3200ax4s)
 	BUFFALO_TRX_MAGIC="44485033" # "DHP3"
 	;;

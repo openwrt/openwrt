@@ -117,11 +117,6 @@
 		reg = <0x0000 0 0 0 0>;
 		nvmem-cells = <&macaddr_uboot_1fc00 0>, <&calibration_art_1000>;
 		nvmem-cell-names = "mac-address", "calibration";
-
-		led {
-			led-sources = <1>;
-			led-active-low;
-		};
 	};
 };
 

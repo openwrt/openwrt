@@ -19,7 +19,7 @@ define Device/checkpoint_v-80
   IMAGE/sysupgrade.gz := boot-scr eMMC | append-bootscript | pad-to 2048 | \
 	append-kernel | \
 	sysupgrade-tar kernel=$$$$@ dtb=$$(KDIR)/image-$$(DEVICE_DTS).dtb | \
-	gzip | append-metadata
+	libdeflate-gzip | append-metadata
   ARTIFACTS := initramfs.dtb initramfs.scr
   ARTIFACT/initramfs.dtb := append-dtb
   ARTIFACT/initramfs.scr := boot-scr INIT | append-bootscript
@@ -37,7 +37,7 @@ define Device/checkpoint_v-81
   IMAGE/sysupgrade.gz := boot-scr eMMC | append-bootscript | pad-to 2048 | \
 	append-kernel | \
 	sysupgrade-tar kernel=$$$$@ dtb=$$(KDIR)/image-$$(DEVICE_DTS).dtb | \
-	gzip | append-metadata
+	libdeflate-gzip | append-metadata
   ARTIFACTS := initramfs.dtb initramfs.scr
   ARTIFACT/initramfs.dtb := append-dtb
   ARTIFACT/initramfs.scr := boot-scr INIT | append-bootscript
@@ -59,7 +59,7 @@ define Device/marvell_armada7040-db
   DEVICE_VENDOR := Marvell
   DEVICE_MODEL := Armada 7040 Development Board
   DEVICE_DTS := armada-7040-db
-  IMAGE/sdcard.img.gz := boot-img-ext4 | sdcard-img-ext4 | gzip | append-metadata
+  IMAGE/sdcard.img.gz := boot-img-ext4 | sdcard-img-ext4 | libdeflate-gzip | append-metadata
 endef
 TARGET_DEVICES += marvell_armada7040-db
 
@@ -68,7 +68,7 @@ define Device/marvell_armada8040-db
   DEVICE_VENDOR := Marvell
   DEVICE_MODEL := Armada 8040 Development Board
   DEVICE_DTS := armada-8040-db
-  IMAGE/sdcard.img.gz := boot-img-ext4 | sdcard-img-ext4 | gzip | append-metadata
+  IMAGE/sdcard.img.gz := boot-img-ext4 | sdcard-img-ext4 | libdeflate-gzip | append-metadata
 endef
 TARGET_DEVICES += marvell_armada8040-db
 
@@ -106,12 +106,25 @@ define Device/mikrotik_rb5009
   $(call Device/FitImage)
   $(call Device/UbiFit)
   DEVICE_VENDOR := MikroTik
-  DEVICE_MODEL := RB5009
   SOC := armada-7040
   KERNEL_LOADADDR := 0x22000000
   DEVICE_PACKAGES += kmod-i2c-gpio yafut kmod-dsa-mv88e6xxx
 endef
-TARGET_DEVICES += mikrotik_rb5009
+
+define Device/mikrotik_rb5009ug
+  $(call Device/mikrotik_rb5009)
+  DEVICE_DTS := armada-7040-rb5009ug
+  DEVICE_MODEL := RB5009UG+S+IN
+  SUPPORTED_DEVICES += mikrotik,rb5009
+endef
+TARGET_DEVICES += mikrotik_rb5009ug
+
+define Device/mikrotik_rb5009upr
+  $(call Device/mikrotik_rb5009)
+  DEVICE_DTS := armada-7040-rb5009upr
+  DEVICE_MODEL := RB5009UPr+S+IN
+endef
+TARGET_DEVICES += mikrotik_rb5009upr
 
 define Device/marvell_clearfog-gt-8k
   $(call Device/Default-arm64)

@@ -39,7 +39,7 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
 
 --- a/hostapd/Makefile
 +++ b/hostapd/Makefile
-@@ -1440,6 +1440,11 @@ CFLAGS += -DCONFIG_PROCESS_COORDINATION
+@@ -1462,6 +1462,11 @@ CFLAGS += -DCONFIG_PROCESS_COORDINATION
  OBJS += ../src/common/proc_coord.o
  endif
  
@@ -53,10 +53,10 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
  
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
-@@ -4999,6 +4999,15 @@ static int hostapd_config_fill(struct ho
- 		bss->mld_indicate_disabled = atoi(pos);
- #endif /* CONFIG_TESTING_OPTIONS */
+@@ -5255,6 +5255,15 @@ static int hostapd_config_fill(struct ho
  #endif /* CONFIG_IEEE80211BE */
+ 	} else if (os_strcmp(buf, "i2r_lmr_policy") == 0) {
+ 		conf->i2r_lmr_policy = atoi(pos);
 +#ifdef CONFIG_APUP
 +	} else if (os_strcmp(buf, "apup") == 0) {
 +		bss->apup = !!atoi(pos);
@@ -66,15 +66,16 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
 +		os_strlcpy(bss->apup_peer_ifname_prefix,
 +		           pos, sizeof(bss->apup_peer_ifname_prefix));
 +#endif // def CONFIG_APUP
- 	} else if (os_strcmp(buf, "i2r_lmr_policy") == 0) {
- 		conf->i2r_lmr_policy = atoi(pos);
  	} else {
+ 		wpa_printf(MSG_ERROR,
+ 			   "Line %d: unknown configuration item '%s'",
 --- a/src/ap/ap_config.h
 +++ b/src/ap/ap_config.h
-@@ -1001,6 +1001,34 @@ struct hostapd_bss_config {
+@@ -1024,6 +1024,35 @@ struct hostapd_bss_config {
  	unsigned int pmksa_caching_privacy:1;
  	unsigned int eap_using_authentication_frames:1;
  #endif /* CONFIG_ENC_ASSOC  */
++
 +#ifdef CONFIG_APUP
 +	/**
 +	 * Access Point Micro Peering
@@ -163,7 +164,7 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
  int hostapd_sta_add(struct hostapd_data *hapd,
 --- /dev/null
 +++ b/src/ap/apup.c
-@@ -0,0 +1,170 @@
+@@ -0,0 +1,176 @@
 +/*
 + * hostapd / APuP Access Point Micro Peering
 + *
@@ -218,6 +219,12 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
 +		return;
 +
 +	sta_ret = ap_sta_add(hapd, mgmt->bssid);
++	if (!sta_ret)
++	{
++		wpa_printf(MSG_INFO,
++		           "apup_process_beacon(...) Failed to add APuP peer");
++		return;
++	}
 +
 +	/* TODO: this has been added just to making compiler happy after breaking
 +	 * changes introduced in 11a607d12 and 7855b6d60 to support
@@ -225,9 +232,8 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
 +	 * understand what could be a proper implementation in this context too
 +	 */
 +	const u8 *mld_link_addr = NULL;
-+	bool mld_link_sta = false;
++	bool mld_link_sta = false, epp_sta = false;
 +	u16 eml_cap = 0;
-+  bool epp_sta = false;
 +
 +	/* First add the station without more information */
 +	int aRet = hostapd_sta_add(
@@ -282,6 +288,7 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
 +	if (hostapd_get_aid(hapd, sta_ret) < 0)
 +	{
 +		wpa_printf(MSG_INFO, "apup_process_beacon(...) No room for more AIDs");
++		ap_free_sta(hapd, sta_ret);
 +		return;
 +	}
 +
@@ -373,7 +380,7 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
  
  #ifdef CONFIG_FILS
  static struct wpabuf *
-@@ -4092,8 +4095,8 @@ static u16 check_multi_ap(struct hostapd
+@@ -5044,8 +5047,8 @@ static u16 check_multi_ap(struct hostapd
  }
  
  
@@ -384,7 +391,7 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
  {
  	/* Supported rates not used in IEEE 802.11ad/DMG */
  	if (hapd->iface->current_mode &&
-@@ -4543,7 +4546,7 @@ static int __check_assoc_ies(struct host
+@@ -5513,7 +5516,7 @@ static int __check_assoc_ies(struct host
  			       elems->ext_capab_len);
  	if (resp != WLAN_STATUS_SUCCESS)
  		goto out;
@@ -393,7 +400,7 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
  	if (resp != WLAN_STATUS_SUCCESS)
  		goto out;
  
-@@ -6747,6 +6750,11 @@ static void handle_beacon(struct hostapd
+@@ -7962,6 +7965,11 @@ static void handle_beacon(struct hostapd
  				      0);
  
  	ap_list_process_beacon(hapd->iface, mgmt, &elems, fi);
@@ -407,7 +414,7 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
  
 --- a/src/ap/ieee802_11.h
 +++ b/src/ap/ieee802_11.h
-@@ -145,6 +145,8 @@ int hostapd_process_ml_assoc_req_addr(st
+@@ -146,6 +146,8 @@ int hostapd_process_ml_assoc_req_addr(st
  				      const u8 *basic_mle, size_t basic_mle_len,
  				      u8 *mld_addr);
  int hostapd_get_aid(struct hostapd_data *hapd, struct sta_info *sta);
@@ -418,7 +425,7 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
  u16 copy_sta_vendor_vht(struct hostapd_data *hapd, struct sta_info *sta,
 --- a/src/drivers/driver.h
 +++ b/src/drivers/driver.h
-@@ -4281,7 +4281,7 @@ struct wpa_driver_ops {
+@@ -4548,7 +4548,7 @@ struct wpa_driver_ops {
  	 * Returns: 0 on success, -1 on failure
  	 */
  	int (*set_wds_sta)(void *priv, const u8 *addr, int aid, int val,
@@ -429,7 +436,7 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
  	 * send_action - Transmit an Action frame
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -9030,25 +9030,15 @@ int nl80211_has_ifidx(struct wpa_driver_
+@@ -9355,25 +9355,15 @@ int nl80211_has_ifidx(struct wpa_driver_
  
  
  static int i802_set_wds_sta(void *priv, const u8 *addr, int aid, int val,

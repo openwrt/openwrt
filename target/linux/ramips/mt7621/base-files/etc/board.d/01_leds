@@ -61,7 +61,12 @@ belkin,rt1800)
 cudy,ap1300-outdoor-v1)
 	ucidef_set_led_netdev "lan" "lan" "green:lan" "lan"
 	;;
+cudy,lt700-outdoor-v1)
+	ucidef_set_led_netdev "lan" "lan" "green:lan" "lan"
+	ucidef_set_led_netdev "internet" "internet" "green:wan-online" "usb0"
+	;;
 confiabits,mt7621-v1|\
+edup,ep-rt2983|\
 genexis,pulse-ex400|\
 netis,n6)
 	ucidef_set_led_netdev "wan" "wan" "green:wan" "wan" "link tx rx"
@@ -216,7 +221,8 @@ tplink,archer-ax21-v4|\
 tplink,archer-ax23-v1|\
 tplink,archer-c6-v3|\
 tplink,archer-c6u-v1|\
-tplink,ex220-v1)
+tplink,ex220-v1|\
+tplink,ex220-v1-nand)
 	ucidef_set_led_netdev "lan" "LAN" "green:lan" "br-lan"
 	ucidef_set_led_netdev "wan" "WAN" "green:wan" "wan"
 	;;
@@ -274,6 +280,10 @@ yuncore,ax820)
 	;;
 z-router,zr-2660)
 	ucidef_set_led_netdev "lan" "lan" "green:lan" "br-lan" "link tx rx"
+	ucidef_set_led_netdev "wan" "wan" "green:wan" "wan" "link tx rx"
+	ucidef_set_led_netdev "wan-off" "wan-off" "red:wan" "wan" "link"
+	;;
+z-router,zr-2662)
 	ucidef_set_led_netdev "wan" "wan" "green:wan" "wan" "link tx rx"
 	ucidef_set_led_netdev "wan-off" "wan-off" "red:wan" "wan" "link"
 	;;

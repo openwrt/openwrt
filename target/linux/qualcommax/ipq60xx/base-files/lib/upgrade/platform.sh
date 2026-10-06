@@ -116,6 +116,44 @@ tplink_do_upgrade() {
 	nand_do_upgrade "$1"
 }
 
+linksys_mr_pre_upgrade() {
+	local setenv_script="/tmp/fw_env_upgrade"
+
+	CI_UBIPART="rootfs"
+	boot_part="$(fw_printenv -n boot_part)"
+	if [ -n "$UPGRADE_OPT_USE_CURR_PART" ]; then
+		if [ "$boot_part" -eq "2" ]; then
+			CI_KERNPART="alt_kernel"
+			CI_UBIPART="alt_rootfs"
+		fi
+	else
+		if [ "$boot_part" -eq "1" ]; then
+			echo "boot_part 2" >> $setenv_script
+			CI_KERNPART="alt_kernel"
+			CI_UBIPART="alt_rootfs"
+		else
+			echo "boot_part 1" >> $setenv_script
+		fi
+	fi
+
+	boot_part_ready="$(fw_printenv -n boot_part_ready)"
+	if [ "$boot_part_ready" -ne "3" ]; then
+		echo "boot_part_ready 3" >> $setenv_script
+	fi
+
+	auto_recovery="$(fw_printenv -n auto_recovery)"
+	if [ "$auto_recovery" != "yes" ]; then
+		echo "auto_recovery yes" >> $setenv_script
+	fi
+
+	if [ -f "$setenv_script" ]; then
+		fw_setenv -s $setenv_script || {
+			echo "failed to update U-Boot environment"
+			return 1
+		}
+	fi
+}
+
 platform_check_image() {
 	return 0;
 }
@@ -143,8 +181,50 @@ EOF
 	fw_setenv --script /tmp/env_tmp
 }
 
+
+# On RouterBOOT NAND devices the kernel is an ELF file inside a yaffs
+# partition rather than a raw image, so it has to be written with yafut. The
+# root filesystem is handled by UBI as usual. Extend the subtarget-wide list
+# instead of replacing it, so head/seq stay available for the other boards.
+RAMFS_COPY_BIN="$RAMFS_COPY_BIN yafut"
+
+platform_do_upgrade_mikrotik_nand() {
+	local fw_mtd board_dir
+
+	CI_KERNPART=none
+
+	fw_mtd=$(find_mtd_part kernel)
+	fw_mtd="${fw_mtd/block/}"
+	[ -n "$fw_mtd" ] || return 1
+
+	board_dir=$(tar tf "$1" | grep -m 1 '^sysupgrade-.*/$')
+	board_dir=${board_dir%/}
+	[ -n "$board_dir" ] || return 1
+
+	# Erase the yaffs partition first. Stock firmware already fills 4.38 MiB
+	# of the 8 MiB partition, leaving less free space than the loader ELF
+	# needs. yaffs only frees the old blocks after the write, so without
+	# erasing first the write would run out of space halfway through.
+	#
+	# A fully erased partition is a valid empty yaffs: the filesystem is log
+	# structured and keeps its metadata in the OOB area, there is no
+	# superblock to prepare.
+	#
+	# Recovery stays available either way, as RouterBOOT lives in a separate
+	# SPI-NOR flash that is not touched here.
+	mtd erase kernel || return 1
+
+	tar xf "$1" "${board_dir}/kernel" -O | \
+		yafut -d "$fw_mtd" -w -i - -o kernel -m 0755 || return 1
+
+	nand_do_upgrade "$1"
+}
+
 platform_do_upgrade() {
 	case "$(board_name)" in
+	mikrotik,chateau-5g-r17-ax)
+		platform_do_upgrade_mikrotik_nand "$1"
+		;;
 	alfa-network,ap120c-ax)
 		CI_UBIPART="rootfs_1"
 		alfa_bootconfig_rootfs_rotate "0:BOOTCONFIG" "148"
@@ -170,7 +250,9 @@ platform_do_upgrade() {
 		;;
 	jdcloud,re-cs-02|\
 	jdcloud,re-cs-07|\
-	jdcloud,re-ss-01)
+	jdcloud,re-ss-01|\
+	link,nn6000-v1|\
+	link,nn6000-v2)
 		local cfgpart=$(find_mmc_part "0:BOOTCONFIG")
 		part_num="$(hexdump -e '1/1 "%01x|"' -n 1 -s 148 -C $cfgpart | cut -f 1 -d "|" | head -n1)"
 		if [ "$part_num" -eq "1" ]; then
@@ -190,20 +272,12 @@ platform_do_upgrade() {
 		;;
 	linksys,mr7350|\
 	linksys,mr7500)
-		boot_part="$(fw_printenv -n boot_part)"
-		if [ "$boot_part" -eq "1" ]; then
-			fw_setenv boot_part 2
-			CI_KERNPART="alt_kernel"
-			CI_UBIPART="alt_rootfs"
-		else
-			fw_setenv boot_part 1
-			CI_UBIPART="rootfs"
-		fi
-		fw_setenv boot_part_ready 3
-		fw_setenv auto_recovery yes
+		linksys_mr_pre_upgrade "$1"
+		remove_oem_ubi_volume squashfs
 		nand_do_upgrade "$1"
 		;;
 	tplink,eap610-outdoor|\
+	tplink,eap620-hd-v2|\
 	tplink,eap620-hd-v3|\
 	tplink,eap623-outdoor-hd-v1|\
 	tplink,eap625-outdoor-hd-v1)

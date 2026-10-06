@@ -2,10 +2,6 @@
 # Copyright (C) 2021 OpenWrt.org
 #
 
-[ -e /etc/config/ubootenv ] && exit 0
-
-touch /etc/config/ubootenv
-
 . /lib/uboot-envtools.sh
 . /lib/functions.sh
 
@@ -13,12 +9,39 @@ board=$(board_name)
 
 case "$board" in
 bananapi,bpi-r2)
-	. /lib/upgrade/common.sh
-	bootdev="$(fitblk_get_bootdev)"
-	ubootenv_add_uci_config "/dev/${bootdev%p[0-9]*}p1" "0xb0000" "0x10000" "0x10000" "1"
+	. /lib/upgrade/fit.sh
+	export_fitblk_bootdev
+	[ -n "$EMMC_KERN_DEV" ] || exit 1
+	bootdev=${EMMC_KERN_DEV%%p[0-9]*}
+	newdev="${bootdev}p1"
+	if [ -e /etc/config/ubootenv ]; then
+		if [ "$(uci -q get ubootenv.@ubootenv[0].dev)" = "/dev/p1" ]; then
+			if [ -s /etc/fw_env.config ]; then
+				if grep -q '^[[:space:]]*/dev/p1[[:space:]]' /etc/fw_env.config; then
+					sed -i "s|^\([[:space:]]*\)/dev/p1\([[:space:]]\)|\1$newdev\2|" /etc/fw_env.config || exit 1
+				elif ! grep -q "^[[:space:]]*$newdev[[:space:]]" /etc/fw_env.config; then
+					exit 0
+				fi
+			fi
+			uci set ubootenv.@ubootenv[0].dev="$newdev" || exit 1
+			uci commit ubootenv || exit 1
+			[ -s /etc/fw_env.config ] && exit 0
+		else
+			exit 0
+		fi
+	else
+		touch /etc/config/ubootenv
+		ubootenv_add_uci_config "$newdev" "0xb0000" "0x10000" "0x10000" "1"
+	fi
 	;;
 unielec,u7623-02)
+	[ -e /etc/config/ubootenv ] && exit 0
+	touch /etc/config/ubootenv
 	ubootenv_add_uci_config "/dev/mmcblk0p1" "0xc0000" "0x10000" "0x10000" "1"
+	;;
+*)
+	[ -e /etc/config/ubootenv ] && exit 0
+	touch /etc/config/ubootenv
 	;;
 esac
 

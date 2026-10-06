@@ -10,6 +10,8 @@ include $(TOPDIR)/include/verbose.mk
 
 ifeq ($(SDK),1)
   include $(TOPDIR)/include/version.mk
+else ifeq ($(filter-out 0,$(MAKELEVEL))$(origin REVISION)$(origin SOURCE_DATE_EPOCH),$(MAKELEVEL)environmentenvironment)
+  # Recursive calls of the top-level Makefile get both from its environment.
 else
   REVISION:=$(shell $(TOPDIR)/scripts/getver.sh)
   SOURCE_DATE_EPOCH:=$(shell $(TOPDIR)/scripts/get_source_date_epoch.sh)
@@ -20,7 +22,10 @@ export SOURCE_DATE_EPOCH
 export GIT_CONFIG_PARAMETERS='core.autocrlf=false'
 export GIT_ASKPASS:=/bin/true
 export MAKE_JOBSERVER=$(filter --jobserver%,$(MAKEFLAGS))
-export GNU_HOST_NAME:=$(shell $(TOPDIR)/scripts/config.guess)
+ifneq ($(filter-out 0,$(MAKELEVEL))$(origin GNU_HOST_NAME),$(MAKELEVEL)environment)
+  GNU_HOST_NAME:=$(shell $(TOPDIR)/scripts/config.guess)
+endif
+export GNU_HOST_NAME
 export HOST_OS:=$(shell uname)
 export HOST_ARCH:=$(shell uname -m)
 
@@ -75,20 +80,44 @@ endif
 
 _ignore = $(foreach p,$(IGNORE_PACKAGES),--ignore $(p))
 
+# package/kernel/linux names these files in SCAN_DEPS, so the package scan
+# reads them although they sit in the target tree.
+SCAN_DEPS_packageinfo:=target/linux/*/modules.mk target/linux/feeds/*/modules.mk
+
+# $(1): scan target, $(2): scan directory, $(3): scan depth
+SCAN_STAMP=tmp/info/.scan-$(1).stamp
+scan_unchanged=[ -f $(SCAN_STAMP) ] && \
+	[ -z "$$(find -L $(2) -maxdepth $(3) \( -type d -o -name Makefile -o -name '*.mk' \) \
+		-newer $(SCAN_STAMP) -print -quit 2>/dev/null)" ] && \
+	[ -z "$$(find include rules.mk .config $(SCAN_DEPS_$(1)) -maxdepth 1 \
+		\( -name '*.mk' -o -name .config \) \
+		-newer $(SCAN_STAMP) -print -quit 2>/dev/null)" ]
+
+# $(1): output file, $(2): package-metadata.pl command
+tmpinfo_gen=[ $(1) -nt tmp/.packageinfo ] && [ $(1) -nt scripts/package-metadata.pl ] && \
+	[ $(1) -nt scripts/metadata.pm ] || \
+	./scripts/package-metadata.pl $(2) tmp/.packageinfo > $(1) || { rm -f $(1); false; }
+
 prepare-tmpinfo: FORCE
 	@+$(MAKE) -r -s $(STAGING_DIR_HOST)/.prereq-build $(PREP_MK)
 	mkdir -p tmp/info feeds
 	[ -e $(TOPDIR)/feeds/base ] || ln -sf ../package $(TOPDIR)/feeds/base
-	$(_SINGLE)$(NO_TRACE_MAKE) -j1 -r -s -f include/scan.mk SCAN_TARGET="packageinfo" SCAN_DIR="package" SCAN_NAME="package" SCAN_DEPTH=5 SCAN_EXTRA=""
-	$(_SINGLE)$(NO_TRACE_MAKE) -j1 -r -s -f include/scan.mk SCAN_TARGET="targetinfo" SCAN_DIR="target/linux" SCAN_NAME="target" SCAN_DEPTH=3 SCAN_EXTRA="" SCAN_MAKEOPTS="TARGET_BUILD=1"
+	+$(call scan_unchanged,packageinfo,package,5) || { \
+		$(_SINGLE)$(NO_TRACE_MAKE) -j1 -r -s -f include/scan.mk SCAN_TARGET="packageinfo" SCAN_DIR="package" SCAN_NAME="package" SCAN_DEPTH=5 SCAN_EXTRA="" && \
+		touch $(call SCAN_STAMP,packageinfo); }
+	+$(call scan_unchanged,targetinfo,target/linux,3) || { \
+		$(_SINGLE)$(NO_TRACE_MAKE) -j1 -r -s -f include/scan.mk SCAN_TARGET="targetinfo" SCAN_DIR="target/linux" SCAN_NAME="target" SCAN_DEPTH=3 SCAN_EXTRA="" SCAN_MAKEOPTS="TARGET_BUILD=1" && \
+		touch $(call SCAN_STAMP,targetinfo); }
 	for type in package target; do \
 		f=tmp/.$${type}info; t=tmp/.config-$${type}.in; \
 		[ "$$t" -nt "$$f" ] || ./scripts/$${type}-metadata.pl $(_ignore) config "$$f" > "$$t" || { rm -f "$$t"; echo "Failed to build $$t"; false; break; }; \
 	done
-	[ tmp/.config-feeds.in -nt tmp/.packageauxvars ] || ./scripts/feeds feed_config > tmp/.config-feeds.in
-	./scripts/package-metadata.pl mk tmp/.packageinfo > tmp/.packagedeps || { rm -f tmp/.packagedeps; false; }
-	./scripts/package-metadata.pl pkgaux tmp/.packageinfo > tmp/.packageauxvars || { rm -f tmp/.packageauxvars; false; }
-	./scripts/package-metadata.pl usergroup tmp/.packageinfo > tmp/.packageusergroup || { rm -f tmp/.packageusergroup; false; }
+	./scripts/feeds feed_config > tmp/.config-feeds.in.new
+	cmp -s tmp/.config-feeds.in.new tmp/.config-feeds.in && rm -f tmp/.config-feeds.in.new || \
+		mv tmp/.config-feeds.in.new tmp/.config-feeds.in
+	$(call tmpinfo_gen,tmp/.packagedeps,mk)
+	$(call tmpinfo_gen,tmp/.packageauxvars,pkgaux)
+	$(call tmpinfo_gen,tmp/.packageusergroup,usergroup)
 	touch $(TOPDIR)/tmp/.build
 
 .config: ./scripts/config/conf $(if $(CONFIG_HAVE_DOT_CONFIG),,prepare-tmpinfo)
@@ -227,13 +256,25 @@ ifeq ($(SDK),1)
 
 else
 
+# The check if .config is in sync takes about a second. Skip it if the last
+# check passed, and neither .config nor a Kconfig file changed since then.
+CONFIG_CHECK_STAMP:=tmp/.config-check
+CONFIG_CHECK_FILES:=.config Config.in config target toolchain package feeds \
+	tmp/.config-package.in tmp/.config-target.in tmp/.config-feeds.in scripts/config/conf
+
 %::
 	@+$(PREP_MK) $(NO_TRACE_MAKE) -r -s prereq
 	@( \
+		[ -f $(CONFIG_CHECK_STAMP) ] && [ -z "$$(find $(CONFIG_CHECK_FILES) -newer $(CONFIG_CHECK_STAMP) \
+			\( -name .config -o -name conf -o -name '*.in' -o -name 'Config.*' \) -print -quit 2>/dev/null)" ] && exit 0; \
+		touch $(CONFIG_CHECK_STAMP).new; \
 		cp .config tmp/.config; \
 		./scripts/config/conf $(KCONF_FLAGS) --defconfig=tmp/.config -w tmp/.config Config.in > /dev/null 2>&1; \
 		if ./scripts/kconfig.pl '>' .config tmp/.config | grep -q CONFIG; then \
+			rm -f $(CONFIG_CHECK_STAMP) $(CONFIG_CHECK_STAMP).new; \
 			printf "$(_R)WARNING: your configuration is out of sync. Please run make menuconfig, oldconfig or defconfig!$(_N)\n" >&2; \
+		else \
+			mv $(CONFIG_CHECK_STAMP).new $(CONFIG_CHECK_STAMP); \
 		fi \
 	)
 	@+$(ULIMIT_FIX) $(SUBMAKE) -r $@ $(if $(WARN_PARALLEL_ERROR), || { \

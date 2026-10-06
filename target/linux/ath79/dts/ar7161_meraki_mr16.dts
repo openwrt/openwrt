@@ -103,13 +103,12 @@
 
 &eth0 {
 	status = "okay";
-	nvmem-cells = <&macaddr_config_66 0>;
-	nvmem-cell-names = "mac-address";
-
-	pll-data = <0x00110000 0x00001099 0x00991099>;
 
 	phy-mode = "rgmii";
 	phy-handle = <&phy0>;
+
+	nvmem-cells = <&macaddr_config_66 0>;
+	nvmem-cell-names = "mac-address";
 };
 
 &spi {

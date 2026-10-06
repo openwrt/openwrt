@@ -237,7 +237,7 @@ platform_do_upgrade_nand_trx() {
 	}
 
 	# Firmwares without UBI image should be flashed "normally"
-	local root_type=$(identify $dir/root)
+	local root_type=$(identify "$dir/root" "cat")
 	[ "$root_type" != "ubi" ] && {
 		echo "Provided firmware doesn't use UBI for rootfs."
 		return

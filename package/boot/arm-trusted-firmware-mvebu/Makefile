@@ -7,9 +7,9 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_VERSION:=2.9
-PKG_RELEASE:=2
-PKG_HASH:=76a66a1de0c01aeb83dfc7b72b51173fe62c6e51d6fca17cc562393117bed08b
+PKG_VERSION:=2.14
+PKG_RELEASE:=1
+PKG_HASH:=14fb6101f2ef424ec84c0296c3cbdeb7f79b22f5fbb46529bea0e362d0fab0d5
 
 PKG_MAINTAINER:=Vladimir Vid <vladimir.vid@sartura.hr>
 
@@ -119,7 +119,6 @@ TFA_TARGETS:= \
 	edpu
 
 TFA_MAKE_FLAGS += \
-		$(if $(CONFIG_BINUTILS_VERSION_2_37)$(CONFIG_BINUTILS_VERSION_2_38),,LDFLAGS="-no-warn-rwx-segments") \
 		CROSS_CM3=$(BUILD_DIR)/$(CM3_GCC_NAME)-$(CM3_GCC_RELEASE)-$(CM3_GCC_VERSION)/bin/arm-none-eabi- \
 		BL33=$(STAGING_DIR_IMAGE)/$(UBOOT)-u-boot.bin \
 		MV_DDR_PATH=$(BUILD_DIR)/$(MV_DDR_NAME) \
@@ -139,7 +138,7 @@ TFA_MAKE_FLAGS += \
 		mrvl_uart
 
 A3700_UTILS_NAME:=a3700-utils
-A3700_UTILS_RELEASE:=a3e1c67
+A3700_UTILS_RELEASE:=a3e1c67b
 A3700_UTILS_SOURCE=$(A3700_UTILS_NAME)-$(A3700_UTILS_RELEASE).tar.bz2
 
 define Download/a3700-utils
@@ -152,33 +151,33 @@ define Download/a3700-utils
 endef
 
 CRYPTOPP_NAME:=cryptopp
-CRYPTOPP_RELEASE:=4d0cad5
+CRYPTOPP_RELEASE:=843d74c7
 CRYPTOPP_SOURCE=$(CRYPTOPP_NAME)-$(CRYPTOPP_RELEASE).tar.bz2
 
 define Download/cryptopp
   FILE:=$(CRYPTOPP_SOURCE)
   PROTO:=git
   URL:=https://github.com/weidai11/cryptopp.git
-  SOURCE_VERSION:=4d0cad5401d1a2c998b314bc89288c9620d3021d
-  MIRROR_HASH:=6c53c8b4dfa07df0c5915a90c20f70c64d150b652cf5ac52e2eae08c5a9cc7cd
+  SOURCE_VERSION:=843d74c7c97f9e19a615b8ff3c0ca06599ca501b
+  MIRROR_HASH:=6d58162a0527971cac09208b7fbef3c02a8186ecdb3c28e03aabe00085183309
   SUBDIR:=$(CRYPTOPP_NAME)
 endef
 
 MV_DDR_NAME:=mv-ddr-marvell
-MV_DDR_RELEASE:=541616b
+MV_DDR_RELEASE:=7bcb9dc7
 MV_DDR_SOURCE:=$(MV_DDR_NAME)-$(MV_DDR_RELEASE).tar.bz2
 
 define Download/mv-ddr-marvell
   FILE:=$(MV_DDR_SOURCE)
   PROTO:=git
   URL:=https://github.com/MarvellEmbeddedProcessors/mv-ddr-marvell.git
-  SOURCE_VERSION:=541616bc5d25a0167c9901546255c55973e2c0f0
-  MIRROR_HASH:=9e86a986c7400ed1a72165a88150b6c494ebd87303b16314b43e5785e3f13068
+  SOURCE_VERSION:=7bcb9dc7ea7fa233bf96bd0350a4ec7c205e342e
+  MIRROR_HASH:=2afd31932731c5d30378aca4bdcb15cd0d56028727767c21a1e6885e190e85c4
   SUBDIR:=$(MV_DDR_NAME)
 endef
 
 MOX_BB_NAME:=mox-boot-builder
-MOX_BB_RELEASE:=604f8f51
+MOX_BB_RELEASE:=d6d9646a
 MOX_BB_SOURCE:=$(MOX_BB_NAME)-$(MOX_BB_RELEASE).tar.bz2
 
 define Download/mox-boot-builder
@@ -186,8 +185,8 @@ define Download/mox-boot-builder
   PROTO:=git
   SUBMODULES:=skip
   URL:=https://gitlab.nic.cz/turris/mox-boot-builder.git
-  SOURCE_VERSION:=604f8f51d97b4e59fa6d1e579101daa194d6ed2d
-  MIRROR_HASH:=b09337a7dde140f57e40133b6e7b7e1eb338e7cea9b15a3af6874824462f15f7
+  SOURCE_VERSION:=d6d9646abea1f536f4c5cf29f592f94e7dafe05d
+  MIRROR_HASH:=6e7822b58040f803632868270097bba0b0dbc5a1f856e5e46c7e76b90a8eeb27
   SUBDIR:=$(MOX_BB_NAME)
 endef
 
@@ -237,6 +236,7 @@ endef
 
 define Build/Compile
 	+$(MAKE) \
+		CROSS_COMPILE=$(TARGET_CROSS) \
 		CROSS_CM3=$(BUILD_DIR)/$(CM3_GCC_NAME)-$(CM3_GCC_RELEASE)-$(CM3_GCC_VERSION)/bin/arm-none-eabi- \
 		WTMI_VERSION=$(MOX_BB_RELEASE) \
 		CRYPTOPP_PATH=$PWD/cryptopp/ \

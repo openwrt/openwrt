@@ -881,6 +881,13 @@ config BUSYBOX_CONFIG_SSL_CLIENT
 	select BUSYBOX_CONFIG_TLS
 	help
 	This tool pipes data to/from a socket, TLS-encrypting it.
+config BUSYBOX_CONFIG_SSL_SERVER
+	bool "ssl_server (test TLS server)"
+	default BUSYBOX_DEFAULT_SSL_SERVER
+	select BUSYBOX_CONFIG_TLS
+	help
+	inetd-style TLS server. Stdin/stdout are already connected
+	to an accepted TCP socket.
 config BUSYBOX_CONFIG_TC
 	bool "tc (8.3 kb)"
 	default BUSYBOX_DEFAULT_TC
@@ -974,6 +981,14 @@ config BUSYBOX_CONFIG_TELNETD
 		chmod 4755 /bin/busybox
 
 	with all that done, telnetd _should_ work....
+
+config BUSYBOX_CONFIG_FEATURE_TELNETD_SELFTEST_DEBUG
+	bool "Include self-test (telnetd -@)"
+	default BUSYBOX_DEFAULT_FEATURE_TELNETD_SELFTEST_DEBUG
+	depends on BUSYBOX_CONFIG_TELNETD
+	help
+	  Include self-test code for pty/vhangup() behavior.
+	  Useful for development and validation on new platforms.
 
 config BUSYBOX_CONFIG_FEATURE_TELNETD_STANDALONE
 	bool "Support standalone telnetd (not inetd only)"

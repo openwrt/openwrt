@@ -276,13 +276,13 @@ Signed-off-by: Kenneth Kasilag <kenneth@kasilag.me>
 +
 +		ubi@700000 {
 +			label = "ubi";
-+			reg = <0x00700000 0x1f700000>;
++			reg = <0x00700000 0x1b700000>;
 +		};
 +
 +		/* reserved for bad block table */
-+		reserved_bmt@1fe00000 {
++		reserved_bmt@1be00000 {
 +			label = "reserved_bmt";
-+			reg = <0x1fe00000 0x00200000>;
++			reg = <0x1be00000 0x04200000>;
 +			read-only;
 +		};
 +	};
@@ -312,6 +312,16 @@ Signed-off-by: Kenneth Kasilag <kenneth@kasilag.me>
 +&eth {
 +	status = "okay";
 +};
++
++&gdm1 {
++	status = "okay";
++};
+--- /dev/null
++++ b/arch/arm/dts/an7581-w1700k-ubi-u-boot.dtsi
+@@ -0,0 +1,7 @@
++// SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++
++#include "an7581-u-boot.dtsi"
 +
 +&gdm1 {
 +	status = "okay";

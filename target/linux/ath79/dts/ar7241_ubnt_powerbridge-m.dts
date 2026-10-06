@@ -17,13 +17,17 @@
 	cal_art_1000: calibration@1000 {
 		reg = <0x1000 0xeb8>;
 	};
+
+	macaddr_art_1000: macaddr@1000 {
+		reg = <0x1000 0x6>;
+	};
 };
 
 &pcie {
 	wifi: wifi@0,0 {
 		compatible = "pci168c,002a";
 		reg = <0x0000 0 0 0 0>;
-		nvmem-cells = <&cal_art_1000>;
-		nvmem-cell-names = "calibration";
+		nvmem-cells = <&cal_art_1000>, <&macaddr_art_1000>;
+		nvmem-cell-names = "calibration", "mac-address";
 	};
 };

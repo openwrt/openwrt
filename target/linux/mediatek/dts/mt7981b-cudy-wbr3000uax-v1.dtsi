@@ -13,7 +13,7 @@
 		led-upgrade = &led_warning;
 		serial0 = &uart0;
 	};
-	
+
 	leds {
 		compatible = "gpio-leds";
 
@@ -28,7 +28,7 @@
 			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&pio 10 GPIO_ACTIVE_LOW>;
 		};
-		
+
 		led_warning: led_fault {
 			function = LED_FUNCTION_FAULT;
 			color = <LED_COLOR_ID_RED>;

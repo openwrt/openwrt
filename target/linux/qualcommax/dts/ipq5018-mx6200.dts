@@ -1,6 +1,7 @@
 /dts-v1/;
 
 #include "ipq5018.dtsi"
+#include "ipq5018-ess.dtsi"
 #include "ipq5018-mx-base.dtsi"
 #include "ipq5018-qcn6122.dtsi"
 
@@ -32,45 +33,32 @@
 * =================================================================
  */
 
-&switch {
+&uniphy0 {
 	status = "okay";
 
-	switch_mac_mode = <MAC_MODE_SGMII_CHANNEL0>;
-
-	qcom,port_phyinfo {
-		// MAC0 -> GE Phy -> MDI --> RJ45
-		port@1 {
-			port_id = <1>;
-			mdiobus = <&mdio0>;
-			phy_address = <7>;
-		};
-
-		// MAC1 ---SGMII---> MaxLinear PHY -> RJ45
-		port@2 {
-			port_id = <2>;
-			mdiobus = <&mdio1>;
-			phy_address = <15>;
-			port_mac_sel = "QGMAC_PORT";
-		};
-	};
+	assigned-clocks = <&uniphy0 UNIPHY_CLK_REF>;
+	assigned-clock-rates = <UNIPHY_REFCLK_50MHZ>;
 };
 
-// MAC0 ---MDI---> IPQ5018 GE PHY
-&dp1 {
+&gmac0 {
 	status = "okay";
 
 	label = "lan";
-	phy-handle = <&ge_phy>;
+
 	nvmem-cells = <&hw_mac_addr 1>;
 	nvmem-cell-names = "mac-address";
 };
 
-// MAC1 ---SGMII---> MXL Phy
-&dp2 {
+// MAC1 ---SGMII---> Maxlinear GPY115C
+&gmac1 {
 	status = "okay";
 
-	label = "wan";
 	phy-handle = <&gpy115c>;
+	phy-mode = "sgmii";
+	managed = "in-band-status";
+
+	label = "wan";
+
 	nvmem-cells = <&hw_mac_addr 0>;
 	nvmem-cell-names = "mac-address";
 };
@@ -89,7 +77,7 @@
 	// Maxlinear Ethernet GPY115C
 	gpy115c: ethernet-phy@f {
 		compatible = "ethernet-phy-id67c9.df10";
-		reg = <15>;
+		reg = <0xf>;
 	};
 };
 

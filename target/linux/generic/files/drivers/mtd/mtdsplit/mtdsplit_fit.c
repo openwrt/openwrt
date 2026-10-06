@@ -206,6 +206,7 @@ mtdsplit_fit_parse(struct mtd_info *mtd,
 	struct mtd_partition *parts;
 	int ret, ndepth, noffset, images_noffset;
 	const void *img_data;
+	bool found_fit = false;
 	void *fit;
 
 	of_property_read_string(np, "openwrt,cmdline-match", &cmdline_match);
@@ -217,7 +218,7 @@ mtdsplit_fit_parse(struct mtd_info *mtd,
 	hdr_len = sizeof(struct fdt_header);
 
 	/* Parse the MTD device & search for the FIT image location */
-	for(offset = 0; offset + hdr_len <= mtd->size; offset += mtd->erasesize) {
+	for (offset = 0; offset + offset_start + hdr_len <= mtd->size; offset += mtd->erasesize) {
 		ret = mtd_read(mtd, offset + offset_start, hdr_len, &retlen, (void*) &hdr);
 		if (ret) {
 			pr_err("read error in \"%s\" at offset 0x%llx\n",
@@ -238,7 +239,13 @@ mtdsplit_fit_parse(struct mtd_info *mtd,
 		}
 
 		/* We found a FIT image. Let's keep going */
+		found_fit = true;
 		break;
+	}
+
+	if (!found_fit) {
+		pr_info("No FIT image found in \"%s\"\n", mtd->name);
+		return -ENOENT;
 	}
 
 	fit_offset = offset;
@@ -272,7 +279,7 @@ mtdsplit_fit_parse(struct mtd_info *mtd,
 
 		rootfs_size = mtd->size - rootfs_offset;
 
-		parts = kzalloc(2 * sizeof(*parts), GFP_KERNEL);
+		parts = kcalloc(2, sizeof(*parts), GFP_KERNEL);
 		if (!parts)
 			return -ENOMEM;
 
@@ -351,15 +358,4 @@ static struct mtd_part_parser uimage_parser = {
 	.type = MTD_PARSER_TYPE_FIRMWARE,
 };
 
-/**************************************************
- * Init
- **************************************************/
-
-static int __init mtdsplit_fit_init(void)
-{
-	register_mtd_parser(&uimage_parser);
-
-	return 0;
-}
-
-module_init(mtdsplit_fit_init);
+module_mtd_part_parser(uimage_parser);

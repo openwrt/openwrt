@@ -167,7 +167,7 @@
 +/ {
 +	model = "Zyxel wx5600-T0 ubootmod";
 +	compatible = "zyxel,wx-5600", "mediatek,mt7986";
-+   
++
 +   options {
 +       u-boot {
 +          compatible = "u-boot,config";
@@ -302,8 +302,8 @@
 +		compatible = "spi-nand";
 +		reg = <0>;
 +		spi-max-frequency = <52000000>;
-+		spi-tx-buswidth = <4>;
-+		spi-rx-buswidth = <4>;
++		spi-tx-bus-width = <4>;
++		spi-rx-bus-width = <4>;
 +
 +		partitions {
 +			compatible = "fixed-partitions";

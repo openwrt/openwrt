@@ -1,15 +1,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=arm-trusted-firmware-microchipsw
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=https://github.com/microchip-ung/arm-trusted-firmware.git
-PKG_SOURCE_DATE:=2026-01-07
-PKG_SOURCE_VERSION:=7696c9aaaae7c677f4c373a61a1289cba7f824aa
-PKG_MIRROR_HASH:=331548d7c73896bd5e4438c0ec9c71bbe58d3bf9a29350496ad94c382e922b9c
+PKG_SOURCE_DATE:=2026-08-17
+PKG_SOURCE_VERSION:=dd04e20143b14286237df064338a28637cc4c449
+PKG_MIRROR_HASH:=114e1222fa20e06324aadc905f0d65857597034675d10ecd0d37b06b6a306d11
 
-PKG_BUILD_DEPENDS:=ruby/host
 PKG_MAINTAINER:=Robert Marko <robert.marko@sartura.hr>
 
 include $(INCLUDE_DIR)/kernel.mk

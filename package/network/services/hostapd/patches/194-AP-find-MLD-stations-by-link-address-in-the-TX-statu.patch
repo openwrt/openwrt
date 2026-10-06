@@ -1,0 +1,40 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Wed, 5 Aug 2026 19:13:43 +0200
+Subject: [PATCH] AP: find MLD stations by link address in the TX status
+ callbacks
+
+A non-AP MLD is registered under its MLD MAC address, but Authentication
+and Association responses are addressed to the link address the peer used.
+The lookup in the TX status callbacks therefore misses, so the association
+is never completed and the peer waits for an EAPOL frame that is never
+sent. Fall back to the link address lookup.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -8335,6 +8335,10 @@ static void handle_auth_cb(struct hostap
+ 	bool success_status;
+ 
+ 	sta = ap_get_sta(hapd, mgmt->da);
++#ifdef CONFIG_IEEE80211BE
++	if (!sta)
++		sta = ap_get_link_sta(hapd, mgmt->da);
++#endif /* CONFIG_IEEE80211BE */
+ 	if (!sta) {
+ 		wpa_printf(MSG_DEBUG, "handle_auth_cb: STA " MACSTR
+ 			   " not found",
+@@ -8515,6 +8519,12 @@ static void handle_assoc_cb(struct hosta
+ 	int new_assoc = 1;
+ 
+ 	sta = ap_get_sta(hapd, mgmt->da);
++#ifdef CONFIG_IEEE80211BE
++	/* A non-AP MLD is registered under its MLD MAC address, while the
++	 * response was addressed to the link address it associated from. */
++	if (!sta)
++		sta = ap_get_link_sta(hapd, mgmt->da);
++#endif /* CONFIG_IEEE80211BE */
+ 	if (!sta) {
+ 		wpa_printf(MSG_INFO, "handle_assoc_cb: STA " MACSTR " not found",
+ 			   MAC2STR(mgmt->da));

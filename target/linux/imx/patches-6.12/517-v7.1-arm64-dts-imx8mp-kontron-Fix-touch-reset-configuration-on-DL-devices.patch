@@ -1,0 +1,61 @@
+From 058c53476dde9937877e93d964a283bbb5e1e4c7 Mon Sep 17 00:00:00 2001
+From: Frieder Schrempf <frieder.schrempf@kontron.de>
+Date: Fri, 20 Feb 2026 11:36:16 +0100
+Subject: arm64: dts: imx8mp-kontron: Fix touch reset configuration on DL
+ devices
+
+The reset signal needs a pullup, but there is no hardware pullup.
+As a workaround, enable the internal pullup to fix the touchscreen.
+
+As this deviates from the default generic GPIO settings in the OSM
+devicetree, add a new node for the touch pinctrl and redefine the
+generic gpio1 pinctrl.
+
+Fixes: 946ab10e3f40f ("arm64: dts: Add support for Kontron OSM-S i.MX8MP SoM and BL carrier board")
+Signed-off-by: Frieder Schrempf <frieder.schrempf@kontron.de>
+Reviewed-by: Frank Li <Frank.Li@nxp.com>
+Signed-off-by: Frank Li <Frank.Li@nxp.com>
+---
+ arch/arm64/boot/dts/freescale/imx8mp-kontron-dl.dtso | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+
+--- a/arch/arm64/boot/dts/freescale/imx8mp-kontron-dl.dtso
++++ b/arch/arm64/boot/dts/freescale/imx8mp-kontron-dl.dtso
+@@ -77,6 +77,8 @@
+ 	touchscreen@5d {
+ 		compatible = "goodix,gt928";
+ 		reg = <0x5d>;
++		pinctrl-names = "default";
++		pinctrl-0 = <&pinctrl_touch>;
+ 		interrupt-parent = <&gpio1>;
+ 		interrupts = <6 8>;
+ 		irq-gpios = <&gpio1 6 0>;
+@@ -98,6 +100,16 @@
+ 	status = "okay";
+ };
+ 
++/* redefine to remove touch controller GPIOs */
++&pinctrl_gpio1 {
++	fsl,pins = <
++		MX8MP_IOMUXC_GPIO1_IO00__GPIO1_IO00		0x19 /* GPIO_A_0 */
++		MX8MP_IOMUXC_GPIO1_IO01__GPIO1_IO01		0x19 /* GPIO_A_1 */
++		MX8MP_IOMUXC_GPIO1_IO05__GPIO1_IO05		0x19 /* GPIO_A_2 */
++		MX8MP_IOMUXC_GPIO1_IO08__GPIO1_IO08		0x19 /* GPIO_A_5 */
++	>;
++};
++
+ &pwm1 {
+ 	status = "okay";
+ };
+@@ -108,4 +120,11 @@
+ 			MX8MP_IOMUXC_SAI3_RXFS__GPIO4_IO28		0x19
+ 		>;
+ 	};
++
++	pinctrl_touch: touchgrp {
++		fsl,pins = <
++			MX8MP_IOMUXC_GPIO1_IO06__GPIO1_IO06		0x19
++			MX8MP_IOMUXC_GPIO1_IO07__GPIO1_IO07		0x150
++		>;
++	};
+ };

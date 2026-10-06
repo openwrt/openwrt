@@ -14,6 +14,7 @@ PKG_SOURCE_URL:=@GNU/$(PKG_NAME)
 PKG_HASH:=6fe5193583d6e7c59da75e63d7234f76c0b07caf33b103894f46f66a871ffc9f
 
 HOST_BUILD_PARALLEL:=1
+HOST_CONFIGURE_CACHE:=1
 
 include $(INCLUDE_DIR)/host-build.mk
 
@@ -23,7 +24,7 @@ HOST_CONFIGURE_VARS += \
 	ac_cv_header_iconv_h=no
 
 define Host/Compile
-	$(MAKE) -C $(HOST_BUILD_DIR) mcopy mmd
+	+$(MAKE) $(HOST_JOBS) -C $(HOST_BUILD_DIR) mcopy mmd
 endef
 
 define Host/Install

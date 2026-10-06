@@ -11,11 +11,6 @@
 / {
 	model = "Qxwlan E2600AC c1";
 	compatible = "qxwlan,e2600ac-c1";
-
-	aliases {
-		// TODO: Verify if the ethernet0 alias is needed
-		ethernet0 = &gmac;
-	};
 };
 
 &blsp1_spi1 {
@@ -121,6 +116,9 @@
 
 &gmac {
 	status = "okay";
+
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_gmac0>;
 };
 
 &switch {
@@ -130,9 +128,6 @@
 &swport4 {
 	status = "okay";
 	label = "sw-eth1";
-
-	nvmem-cell-names = "mac-address";
-	nvmem-cells = <&macaddr_gmac0>;
 };
 
 &swport5 {

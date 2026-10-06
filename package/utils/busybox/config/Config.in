@@ -203,6 +203,13 @@ config BUSYBOX_CONFIG_FEATURE_INSTALLER
 	busybox at runtime to create hard links or symlinks for all the
 	applets that are compiled into busybox.
 
+config BUSYBOX_CONFIG_FEATURE_VERSION
+	bool "Support --version"
+	default BUSYBOX_DEFAULT_FEATURE_VERSION
+	depends on BUSYBOX_CONFIG_BUSYBOX
+	help
+	Enable 'busybox --version' support.
+
 config BUSYBOX_CONFIG_INSTALL_NO_USR
 	bool "Don't use /usr"
 	default BUSYBOX_DEFAULT_INSTALL_NO_USR

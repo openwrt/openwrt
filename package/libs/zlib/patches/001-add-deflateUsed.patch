@@ -1,0 +1,223 @@
+From c67cec9a64bffc8291ab7ff790d0fe72d37315dc Mon Sep 17 00:00:00 2001
+From: Mark Adler <madler@alumni.caltech.edu>
+Date: Fri, 3 Apr 2026 19:25:51 -0700
+Subject: [PATCH] Add deflateUsed() function to get the used bits in the last byte.
+
+This returns the number of used bits in the last byte of a stream
+that has just been compressed with deflate. Includes corrections
+for the stored block case.
+
+Upstream: https://github.com/madler/zlib/commit/e011d8c1
+Upstream: https://github.com/madler/zlib/commit/884e0c08
+Upstream: https://github.com/madler/zlib/commit/3adaa095
+
+[backported to 2.3.3: bi_used takes one of the reserved slots at the end
+ of internal_state, so the struct layout is unchanged]
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+ deflate.c                  |  9 +++++++++
+ deflate.h                  |  5 ++++-
+ deflate_stored.c           | 10 ++++++++--
+ trees.c                    |  1 +
+ trees_emit.h               |  1 +
+ win32/zlib-ng.def.in       |  1 +
+ win32/zlib.def.in          |  1 +
+ win32/zlibcompat.def.in    |  1 +
+ zlib-ng.h.in               | 12 ++++++++++++
+ zlib-ng.map.in             |  5 +++++
+ zlib.h.in                  | 11 +++++++++++
+ zlib.map.in                |  4 ++++
+ zlib_name_mangling-ng.h.in |  1 +
+ zlib_name_mangling.h.in    |  1 +
+ 14 files changed, 60 insertions(+), 3 deletions(-)
+
+--- a/deflate.c
++++ b/deflate.c
+@@ -550,6 +550,15 @@ int32_t Z_EXPORT PREFIX(deflatePending)(
+ }
+ 
+ /* ========================================================================= */
++int32_t Z_EXPORT PREFIX(deflateUsed)(PREFIX3(stream) *strm, int32_t *bits) {
++    if (deflateStateCheck(strm))
++        return Z_STREAM_ERROR;
++    if (bits != NULL)
++        *bits = strm->state->bi_used;
++    return Z_OK;
++}
++
++/* ========================================================================= */
+ int32_t Z_EXPORT PREFIX(deflatePrime)(PREFIX3(stream) *strm, int32_t bits, int32_t value) {
+     deflate_state *s;
+     uint64_t value64 = (uint64_t)value;
+--- a/deflate.h
++++ b/deflate.h
+@@ -327,8 +327,11 @@ struct ALIGNED_(64) internal_state {
+     int32_t bi_valid;
+     /* Number of valid bits in bi_buf.  All bits above the last valid bit are always zero. */
+ 
++    int32_t bi_used;
++    /* Last number of used bits when going to a byte boundary. */
++
+     /* Reserved for future use and alignment purposes */
+-    int32_t reserved[19];
++    int32_t reserved[18];
+ #if defined(_M_IX86) || defined(_M_ARM)
+     int32_t padding2[4];
+ #endif
+--- a/deflate_stored.c
++++ b/deflate_stored.c
+@@ -135,8 +135,10 @@ Z_INTERNAL block_state deflate_stored(de
+     s->high_water = MAX(s->high_water, s->strstart);
+ 
+     /* If the last block was written to next_out, then done. */
+-    if (last)
++    if (last) {
++        s->bi_used = 8;
+         return finish_done;
++    }
+ 
+     /* If flushing and all input has been consumed, then done. */
+     if (flush != Z_NO_FLUSH && flush != Z_FINISH && s->strm->avail_in == 0 && (int)s->strstart == s->block_start)
+@@ -182,5 +184,9 @@ Z_INTERNAL block_state deflate_stored(de
+     }
+ 
+     /* We've done all we can with the available input and output. */
+-    return last ? finish_started : need_more;
++    if (last) {
++        s->bi_used = 8;
++        return finish_started;
++    }
++    return need_more;
+ }
+--- a/trees.c
++++ b/trees.c
+@@ -92,6 +92,7 @@ void Z_INTERNAL zng_tr_init(deflate_stat
+ 
+     s->bi_buf = 0;
+     s->bi_valid = 0;
++    s->bi_used = 0;
+ #ifdef ZLIB_DEBUG
+     s->compressed_len = 0L;
+     s->bits_sent = 0L;
+--- a/trees_emit.h
++++ b/trees_emit.h
+@@ -96,6 +96,7 @@ static void bi_windup(deflate_state *s)
+             put_byte(s, s->bi_buf);
+         }
+     }
++    s->bi_used = ((s->bi_valid - 1) & 7) + 1;
+     s->bi_buf = 0;
+     s->bi_valid = 0;
+ }
+--- a/win32/zlib-ng.def.in
++++ b/win32/zlib-ng.def.in
+@@ -21,6 +21,7 @@ EXPORTS
+     @ZLIB_SYMBOL_PREFIX@zng_deflateBound
+     @ZLIB_SYMBOL_PREFIX@zng_deflatePending
+     @ZLIB_SYMBOL_PREFIX@zng_deflatePrime
++    @ZLIB_SYMBOL_PREFIX@zng_deflateUsed
+     @ZLIB_SYMBOL_PREFIX@zng_deflateSetHeader
+     @ZLIB_SYMBOL_PREFIX@zng_deflateSetParams
+     @ZLIB_SYMBOL_PREFIX@zng_deflateGetParams
+--- a/win32/zlib.def.in
++++ b/win32/zlib.def.in
+@@ -16,6 +16,7 @@ EXPORTS
+     @ZLIB_SYMBOL_PREFIX@deflateBound
+     @ZLIB_SYMBOL_PREFIX@deflatePending
+     @ZLIB_SYMBOL_PREFIX@deflatePrime
++    @ZLIB_SYMBOL_PREFIX@deflateUsed
+     @ZLIB_SYMBOL_PREFIX@deflateSetHeader
+     @ZLIB_SYMBOL_PREFIX@inflateSetDictionary
+     @ZLIB_SYMBOL_PREFIX@inflateGetDictionary
+--- a/win32/zlibcompat.def.in
++++ b/win32/zlibcompat.def.in
+@@ -16,6 +16,7 @@ EXPORTS
+     @ZLIB_SYMBOL_PREFIX@deflateBound
+     @ZLIB_SYMBOL_PREFIX@deflatePending
+     @ZLIB_SYMBOL_PREFIX@deflatePrime
++    @ZLIB_SYMBOL_PREFIX@deflateUsed
+     @ZLIB_SYMBOL_PREFIX@deflateSetHeader
+     @ZLIB_SYMBOL_PREFIX@inflateSetDictionary
+     @ZLIB_SYMBOL_PREFIX@inflateGetDictionary
+--- a/zlib-ng.h.in
++++ b/zlib-ng.h.in
+@@ -777,6 +777,18 @@ int32_t zng_deflatePending(zng_stream *s
+  */
+ 
+ Z_EXTERN Z_EXPORT
++int32_t zng_deflateUsed(zng_stream *strm, int32_t *bits);
++/*
++     deflateUsed() returns in *bits the most recent number of deflate bits used
++   in the last byte when flushing to a byte boundary. The result is in 1..8, or
++   0 if there has not yet been a flush. This helps determine the location of
++   the last bit of a deflate stream.
++
++     deflateUsed returns Z_OK if success, or Z_STREAM_ERROR if the source
++   stream state was inconsistent.
++ */
++
++Z_EXTERN Z_EXPORT
+ int32_t zng_deflatePrime(zng_stream *strm, int32_t bits, int32_t value);
+ /*
+      deflatePrime() inserts bits in the deflate output stream.  The intent
+--- a/zlib-ng.map.in
++++ b/zlib-ng.map.in
+@@ -1,3 +1,8 @@
++ZLIB_NG_2.4.0 {
++  global:
++    @ZLIB_SYMBOL_PREFIX@zng_deflateUsed;
++};
++
+ ZLIB_NG_2.1.0 {
+   global:
+     @ZLIB_SYMBOL_PREFIX@zng_deflateInit;
+--- a/zlib.h.in
++++ b/zlib.h.in
+@@ -787,6 +787,17 @@ Z_EXTERN int Z_EXPORT deflatePending(z_s
+    stream state was inconsistent.
+  */
+ 
++Z_EXTERN int Z_EXPORT deflateUsed(z_stream *strm, int *bits);
++/*
++     deflateUsed() returns in *bits the most recent number of deflate bits used
++   in the last byte when flushing to a byte boundary. The result is in 1..8, or
++   0 if there has not yet been a flush. This helps determine the location of
++   the last bit of a deflate stream.
++
++     deflateUsed returns Z_OK if success, or Z_STREAM_ERROR if the source
++   stream state was inconsistent.
++ */
++
+ Z_EXTERN int Z_EXPORT deflatePrime(z_stream *strm, int bits, int value);
+ /*
+      deflatePrime() inserts bits in the deflate output stream.  The intent
+--- a/zlib.map.in
++++ b/zlib.map.in
+@@ -96,3 +96,7 @@ ZLIB_1.2.12 {
+     @ZLIB_SYMBOL_PREFIX@crc32_combine_gen64;
+     @ZLIB_SYMBOL_PREFIX@crc32_combine_op;
+ } ZLIB_1.2.9;
++
++ZLIB_1.3.2 {
++    @ZLIB_SYMBOL_PREFIX@deflateUsed;
++} ZLIB_1.2.12;
+--- a/zlib_name_mangling-ng.h.in
++++ b/zlib_name_mangling-ng.h.in
+@@ -40,6 +40,7 @@
+ #define zng_deflateParams         @ZLIB_SYMBOL_PREFIX@zng_deflateParams
+ #define zng_deflatePending        @ZLIB_SYMBOL_PREFIX@zng_deflatePending
+ #define zng_deflatePrime          @ZLIB_SYMBOL_PREFIX@zng_deflatePrime
++#define zng_deflateUsed           @ZLIB_SYMBOL_PREFIX@zng_deflateUsed
+ #define zng_deflateReset          @ZLIB_SYMBOL_PREFIX@zng_deflateReset
+ #define zng_deflateResetKeep      @ZLIB_SYMBOL_PREFIX@zng_deflateResetKeep
+ #define zng_deflateSetDictionary  @ZLIB_SYMBOL_PREFIX@zng_deflateSetDictionary
+--- a/zlib_name_mangling.h.in
++++ b/zlib_name_mangling.h.in
+@@ -42,6 +42,7 @@
+ #define deflateParams         @ZLIB_SYMBOL_PREFIX@deflateParams
+ #define deflatePending        @ZLIB_SYMBOL_PREFIX@deflatePending
+ #define deflatePrime          @ZLIB_SYMBOL_PREFIX@deflatePrime
++#define deflateUsed           @ZLIB_SYMBOL_PREFIX@deflateUsed
+ #define deflateReset          @ZLIB_SYMBOL_PREFIX@deflateReset
+ #define deflateResetKeep      @ZLIB_SYMBOL_PREFIX@deflateResetKeep
+ #define deflateSetDictionary  @ZLIB_SYMBOL_PREFIX@deflateSetDictionary

@@ -52,13 +52,8 @@ module_param(pcie_switch_exist, bool, 0644);
 MODULE_PARM_DESC(pcie_switch_exist, "pcie switch existed or not");
 
 static const char dc_ep_driver_name[] = "vrx518";
-static const char dc_ep_driver_version[] = DRV_VERSION;
-static const char dc_ep_driver_string[] =
-			"Intel(R) SmartPHY DSL(VRX518) PCIe EP/ACA Driver";
-static const char dc_ep_copyright[] =
-				"Copyright (c) 2016 Intel Corporation.";
 
-static struct dc_ep_info g_dc_ep_info;
+static struct dc_ep_info g_dc_ep_info = {};
 static DEFINE_SPINLOCK(dc_ep_lock);
 
 static inline void reset_assert_device(struct dc_ep_dev *dev, u32 bits)
@@ -729,7 +724,7 @@ static const struct pci_device_id dc_ep_id_table[] = {
 MODULE_DEVICE_TABLE(pci, dc_ep_id_table);
 
 static struct pci_driver dc_ep_driver = {
-	.name = (char *)dc_ep_driver_name,
+	.name = dc_ep_driver_name,
 	.id_table = dc_ep_id_table,
 	.probe = dc_ep_probe,
 	.remove = dc_ep_remove,
@@ -738,31 +733,7 @@ static struct pci_driver dc_ep_driver = {
 	/* AER is controlled by RC */
 };
 
-static int __init dc_ep_init(void)
-{
-	pr_info("%s - version %s\n",
-		dc_ep_driver_string, dc_ep_driver_version);
-
-	pr_info("%s\n", dc_ep_copyright);
-	memset(&g_dc_ep_info, 0, sizeof(struct dc_ep_info));
-
-	if (pci_register_driver(&dc_ep_driver) < 0) {
-		pr_err("%s: No devices found, driver not installed.\n",
-			__func__);
-		return -ENODEV;
-	}
-	return 0;
-}
-module_init(dc_ep_init);
-
-static void __exit dc_ep_exit(void)
-{
-	pci_unregister_driver(&dc_ep_driver);
-
-	pr_info("%s: %s driver unloaded\n", __func__,
-		dc_ep_driver_name);
-}
-module_exit(dc_ep_exit);
+module_pci_driver(dc_ep_driver);
 
 MODULE_AUTHOR("Intel Corporation, <Chuanhua.lei@intel.com>");
 MODULE_DESCRIPTION("Intel(R) SmartPHY PCIe EP/ACA Driver");

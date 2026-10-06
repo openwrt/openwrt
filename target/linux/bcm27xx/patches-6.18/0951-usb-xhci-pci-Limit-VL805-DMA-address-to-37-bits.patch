@@ -1,0 +1,38 @@
+From fb62fd981296357550b7477aa2f348ce1bc72ddd Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.com>
+Date: Mon, 7 Sep 2026 16:53:56 +0100
+Subject: [PATCH] usb: xhci-pci: Limit VL805 DMA address to 37 bits
+
+Commit [1] forced a 36-bit DMA address width limit on VL805 XHCI
+controllers, on the basis that the device can't handle any more. There
+are Pi 5 HAT+ cards with VL805s to support more USB ports or attach
+other USB-based device. This change breaks such HATs because the inbound
+window is placed at 1x_xxxxxxxx - 37-bit addresses.
+
+The fact that these HATs used to work suggests that at least some VL805s
+don't have this restriction. Raise that limit to 37 bits - just enough
+to allow these devices to function.
+
+See: https://github.com/raspberrypi/linux/pull/7608
+Signed-off-by: Phil Elwell <phil@raspberrypi.com>
+
+[1] commit 1fc50f1ecde3 ("usb: xhci-pci: Limit VIA VL805 DMA addressing
+    to 36 bits")
+---
+ drivers/usb/host/xhci-pci.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/usb/host/xhci-pci.c
++++ b/drivers/usb/host/xhci-pci.c
+@@ -460,10 +460,10 @@ static void xhci_pci_quirks(struct devic
+ 	if (pdev->vendor == PCI_VENDOR_ID_VIA && pdev->device == PCI_DEVICE_ID_VIA_VL805) {
+ 		xhci->quirks |= XHCI_LPM_SUPPORT;
+ 		xhci->quirks |= XHCI_TRB_OVERFETCH;
++		xhci->dma_mask_bits = 37;
+ 		xhci->quirks |= XHCI_EP_CTX_BROKEN_DCS;
+ 		xhci->quirks |= XHCI_AVOID_DQ_ON_LINK;
+ 		xhci->quirks |= XHCI_VLI_SS_BULK_OUT_BUG;
+-		xhci->dma_mask_bits = 36;
+ 		if (xhci_vl805_get_fw_version(pdev) < VL805_FW_VER_0138C0)
+ 			xhci->quirks |= XHCI_VLI_HUB_TT_QUIRK;
+ 	}

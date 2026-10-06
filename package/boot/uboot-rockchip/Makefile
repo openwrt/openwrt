@@ -5,9 +5,9 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
-PKG_VERSION:=2026.01
+PKG_VERSION:=2026.07
 PKG_RELEASE:=1
-PKG_HASH:=b60d5865cefdbc75da8da4156c56c458e00de75a49b80c1a2e58a96e30ad0d54
+PKG_HASH:=78e8bfc382fe388f9b55aa1daf8c563522a037779b5d4c349d1415e381f1243e
 
 PKG_MAINTAINER:=Sarah Maedel <openwrt@tbspace.de>
 
@@ -69,6 +69,13 @@ define U-Boot/nanopi-r2s-rk3328
   NAME:=NanoPi R2S
   BUILD_DEVICES:= \
     friendlyarm_nanopi-r2s
+endef
+
+define U-Boot/nanopi-r2s-plus-rk3328
+  $(U-Boot/rk3328/Default)
+  NAME:=NanoPi R2S Plus
+  BUILD_DEVICES:= \
+    friendlyarm_nanopi-r2s-plus
 endef
 
 define U-Boot/orangepi-r1-plus-rk3328
@@ -328,9 +335,16 @@ define U-Boot/rk3576/Default
   TPL:=rk3576_ddr_lp4_2112MHz_lp5_2736MHz_v1.09.bin
 endef
 
-define U-Boot/generic-rk3576
+define U-Boot/nanopi-m5-rk3576
   $(U-Boot/rk3576/Default)
-  NAME:=Generic RK3576
+  NAME:=NanoPi M5
+  BUILD_DEVICES:= \
+    friendlyarm_nanopi-m5
+endef
+
+define U-Boot/nanopi-r76s-rk3576
+  $(U-Boot/rk3576/Default)
+  NAME:=NanoPi R76S
   BUILD_DEVICES:= \
     friendlyarm_nanopi-r76s
 endef
@@ -435,6 +449,7 @@ UBOOT_TARGETS := \
   nanopi-r2c-rk3328 \
   nanopi-r2c-plus-rk3328 \
   nanopi-r2s-rk3328 \
+  nanopi-r2s-plus-rk3328 \
   orangepi-r1-plus-rk3328 \
   orangepi-r1-plus-lts-rk3328 \
   roc-cc-rk3328 \
@@ -458,7 +473,8 @@ UBOOT_TARGETS := \
   radxa-e25-rk3568 \
   rock-3a-rk3568 \
   rock-3b-rk3568 \
-  generic-rk3576 \
+  nanopi-m5-rk3576 \
+  nanopi-r76s-rk3576 \
   rock-4d-rk3576 \
   generic-rk3588 \
   nanopc-t6-rk3588 \
@@ -479,6 +495,16 @@ UBOOT_CUSTOMIZE_CONFIG := \
 UBOOT_MAKE_FLAGS += \
   BL31=$(STAGING_DIR_IMAGE)/$(ATF) \
   $(if $(TPL),ROCKCHIP_TPL=$(STAGING_DIR_IMAGE)/$(TPL))
+
+define Build/Configure
+	$(call Build/Configure/U-Boot)
+
+ifneq ($(filter %rk3576,$(BUILD_VARIANT)),)
+	$(TARGET_CC) -nostdlib -ffreestanding -Os -S -o $(PKG_BUILD_DIR)/rk3576-boost.S $(PKG_BUILD_DIR)/rk3576-boost.c
+	$(TARGET_CROSS)as -o $(PKG_BUILD_DIR)/rk3576-boost.o $(PKG_BUILD_DIR)/rk3576-boost.S
+	$(TARGET_CROSS)objcopy -O binary -j .text $(PKG_BUILD_DIR)/rk3576-boost.o $(PKG_BUILD_DIR)/rk3576-boost.bin
+endif
+endef
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)

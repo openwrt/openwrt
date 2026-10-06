@@ -137,9 +137,9 @@
 						#address-cells = <1>;
 						#size-cells = <1>;
 
-						macaddr_board_102: macaddr@102 {
+						macaddr_board_66: macaddr@66 {
 							compatible = "mac-base";
-							reg = <0x102 0x6>;
+							reg = <0x66 0x6>;
 							#nvmem-cell-cells = <1>;
 						};
 					};
@@ -176,7 +176,7 @@
 		compatible = "pci168c,0033";
 		reg = <0x0000 0 0 0 0>;
 		qca,no-eeprom;
-		nvmem-cells = <&macaddr_board_102 2>;
+		nvmem-cells = <&macaddr_board_66 2>;
 		nvmem-cell-names = "mac-address";
 	};
 };
@@ -188,7 +188,7 @@
 		compatible = "pci168c,0033";
 		reg = <0x0000 0 0 0 0>;
 		qca,no-eeprom;
-		nvmem-cells = <&macaddr_board_102 3>;
+		nvmem-cells = <&macaddr_board_66 3>;
 		nvmem-cell-names = "mac-address";
 	};
 };
@@ -206,7 +206,7 @@
 	pll-data = <0xa6000000 0xa0000101 0x80001313>;
 	phy-handle = <&phy>;
 
-	nvmem-cells = <&macaddr_board_102 0>;
+	nvmem-cells = <&macaddr_board_66 0>;
 	nvmem-cell-names = "mac-address";
 
 	gmac-config {
@@ -221,6 +221,6 @@
 	status = "okay";
 	qca,no-eeprom;
 
-	nvmem-cells = <&macaddr_board_102 1>;
+	nvmem-cells = <&macaddr_board_66 1>;
 	nvmem-cell-names = "mac-address";
 };

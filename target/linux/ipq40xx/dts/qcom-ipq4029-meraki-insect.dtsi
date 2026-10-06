@@ -65,6 +65,7 @@
 		compatible = "ti,lp5562";
 		reg = <0x30>;
 		clock-mode = /bits/8 <2>;
+		enable-gpios = <&tlmm 48 GPIO_ACTIVE_HIGH>;
 		#address-cells = <1>;
 		#size-cells = <0>;
 

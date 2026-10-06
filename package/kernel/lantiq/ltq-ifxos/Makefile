@@ -8,7 +8,7 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=ifxos
 PKG_VERSION:=1.7.1
-PKG_RELEASE:=4
+PKG_RELEASE:=5
 
 UGW_VERSION=8.5.2.10
 UGW_BASENAME=$(PKG_NAME)-ugw_$(UGW_VERSION)
@@ -36,6 +36,9 @@ define KernelPackage/ltq-ifxos
   FILES:=$(PKG_BUILD_DIR)/src/drv_ifxos.ko
   AUTOLOAD:=$(call AutoLoad,10,drv_ifxos)
 endef
+
+MAKE_FLAGS += \
+	$(KERNEL_MAKE_FLAGS)
 
 CONFIGURE_ARGS += \
 	ARCH=$(LINUX_KARCH) \

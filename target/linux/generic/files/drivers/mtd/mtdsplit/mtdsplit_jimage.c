@@ -108,7 +108,7 @@ static int __mtdsplit_parse_jimage(struct mtd_info *master,
 	enum mtdsplit_part_type type;
 
 	nr_parts = 2;
-	parts = kzalloc(nr_parts * sizeof(*parts), GFP_KERNEL);
+	parts = kcalloc(nr_parts, sizeof(*parts), GFP_KERNEL);
 	if (!parts)
 		return -ENOMEM;
 
@@ -270,15 +270,4 @@ static struct mtd_part_parser jimage_generic_parser = {
 	.type = MTD_PARSER_TYPE_FIRMWARE,
 };
 
-/**************************************************
- * Init
- **************************************************/
-
-static int __init mtdsplit_jimage_init(void)
-{
-	register_mtd_parser(&jimage_generic_parser);
-
-	return 0;
-}
-
-module_init(mtdsplit_jimage_init);
+module_mtd_part_parser(jimage_generic_parser);

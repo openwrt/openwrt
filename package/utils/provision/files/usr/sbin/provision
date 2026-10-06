@@ -49,7 +49,7 @@ if (ARGV[0] == "create") {
 } else {
 	ctx = provision.open();
 	if (!ctx) {
-		warn(`Provisioning partition not found. Try ${basename(sourcepath())} enable\n`);
+		warn(`Provisioning partition not found. Try ${basename(sourcepath())} create\n`);
 		exit(1);
 	}
 }

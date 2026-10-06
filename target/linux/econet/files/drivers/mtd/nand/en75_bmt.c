@@ -1249,16 +1249,15 @@ static int w_init(struct en75_bmt_m *ctx, struct device_node *np)
 		add_remap_range(ctx, 0, ctx->reserve_area_begin);
 	} else {
 		struct device_node *parts_np;
-		struct device_node *part_np;
 
 		parts_np = of_get_child_by_name(np, "partitions");
-		for_each_child_of_node(parts_np, part_np) {
+		for_each_child_of_node_scoped(parts_np, part_np) {
 			u32 start;
 			u32 size;
 			const __be32 *reg;
 			int ret;
 
-			if (!of_property_read_bool(np, name_enable_remap))
+			if (!of_property_read_bool(part_np, name_enable_remap))
 				continue;
 
 			reg = of_get_property(part_np, "reg", NULL);

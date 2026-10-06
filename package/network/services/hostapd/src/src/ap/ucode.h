@@ -42,7 +42,8 @@ int hostapd_ucode_dpp_rx_action(struct hostapd_data *hapd, const u8 *src,
 				const u8 *data, size_t data_len);
 struct wpabuf *hostapd_ucode_dpp_gas_req(struct hostapd_data *hapd,
 					 const u8 *sa, u8 dialog_token,
-					 const u8 *query, size_t query_len);
+					 const u8 *query, size_t query_len,
+					 unsigned int freq);
 #endif /* CONFIG_DPP */
 
 #else
@@ -90,7 +91,8 @@ static inline struct wpabuf *hostapd_ucode_dpp_gas_req(struct hostapd_data *hapd
 						       const u8 *sa,
 						       u8 dialog_token,
 						       const u8 *query,
-						       size_t query_len)
+						       size_t query_len,
+						       unsigned int freq)
 {
 	return NULL;
 }

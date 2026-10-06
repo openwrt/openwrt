@@ -17,7 +17,7 @@ Signed-off-by: Matt Merhar <mattmerhar@protonmail.com>
 
 --- a/drivers/net/wireless/ath/ath12k/Kconfig
 +++ b/drivers/net/wireless/ath/ath12k/Kconfig
-@@ -61,3 +61,10 @@ config ATH12K_COREDUMP
+@@ -60,3 +60,10 @@ config ATH12K_COREDUMP
  
  	  If unsure, say Y to make it easier to debug problems. But if
  	  dump collection not required choose N.
@@ -30,7 +30,7 @@ Signed-off-by: Matt Merhar <mattmerhar@protonmail.com>
 +          Enable ath12k thermal sensor support.
 --- a/drivers/net/wireless/ath/ath12k/Makefile
 +++ b/drivers/net/wireless/ath/ath12k/Makefile
-@@ -30,7 +30,7 @@ ath12k-$(CPTCFG_ATH12K_TRACING) += trace
+@@ -32,7 +32,7 @@ ath12k-$(CPTCFG_ATH12K_TRACING) += trace
  ath12k-$(CONFIG_PM) += wow.o
  ath12k-$(CPTCFG_ATH12K_COREDUMP) += coredump.o
  ath12k-$(CPTCFG_NL80211_TESTMODE) += testmode.o
@@ -41,8 +41,8 @@ Signed-off-by: Matt Merhar <mattmerhar@protonmail.com>
  CFLAGS_trace.o := -I$(src)
 --- a/drivers/net/wireless/ath/ath12k/thermal.h
 +++ b/drivers/net/wireless/ath/ath12k/thermal.h
-@@ -17,7 +17,7 @@ struct ath12k_thermal {
- 	struct device *hwmon_dev;
+@@ -35,7 +35,7 @@ struct ath12k_thermal {
+ 	u32 throttle_state;
  };
  
 -#if IS_REACHABLE(CONFIG_THERMAL)
@@ -52,7 +52,7 @@ Signed-off-by: Matt Merhar <mattmerhar@protonmail.com>
  void ath12k_thermal_event_temperature(struct ath12k *ar, int temperature);
 --- a/local-symbols
 +++ b/local-symbols
-@@ -170,6 +170,7 @@ ATH12K_DEBUG=
+@@ -173,6 +173,7 @@ ATH12K_DEBUG=
  ATH12K_DEBUGFS=
  ATH12K_TRACING=
  ATH12K_COREDUMP=

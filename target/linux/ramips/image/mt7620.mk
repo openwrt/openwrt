@@ -223,7 +223,7 @@ define Device/dlink_dch-m225
   IMAGE_SIZE := 6848k
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DCH-M225
-  DEVICE_PACKAGES := kmod-sound-core kmod-sound-mt7620 kmod-i2c-ralink
+  DEVICE_PACKAGES := kmod-sound-core kmod-sound-mt7620 kmod-i2c-ralink audio-support
   SUPPORTED_DEVICES += dch-m225
 endef
 TARGET_DEVICES += dlink_dch-m225
@@ -1044,7 +1044,7 @@ define Device/planex_cs-qr10
   DEVICE_VENDOR := Planex
   DEVICE_MODEL := CS-QR10
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-sound-core \
-	kmod-sound-mt7620 kmod-i2c-ralink kmod-mmc-mtk
+	kmod-sound-mt7620 kmod-i2c-ralink kmod-mmc-mtk audio-support
   SUPPORTED_DEVICES += cs-qr10
 endef
 TARGET_DEVICES += planex_cs-qr10
@@ -1488,7 +1488,7 @@ define Device/yukai_bocco
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := YUKAI Engineering
   DEVICE_MODEL := BOCCO
-  DEVICE_PACKAGES := kmod-sound-core kmod-sound-mt7620 kmod-i2c-ralink
+  DEVICE_PACKAGES := kmod-sound-core kmod-sound-mt7620 kmod-i2c-ralink audio-support
   SUPPORTED_DEVICES += bocco
 endef
 TARGET_DEVICES += yukai_bocco

@@ -8,14 +8,14 @@ PKG_LICENSE_FILES:=
 
 PKG_SOURCE_URL:=https://github.com/greearb/ath10k-ct.git
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_DATE:=2025-12-01
-PKG_SOURCE_VERSION:=bb84e1597474a6db26f7681d6765fd3e69fff37e
-PKG_MIRROR_HASH:=76a950c4c5f02128f4225955b1ca0d1d8f6c68c3b0918c4bc2d1265698e939a6
+PKG_SOURCE_DATE:=2026-07-31
+PKG_SOURCE_VERSION:=fcbdb70debc261f9df6734bbb76d81cdc88e0e26
+PKG_MIRROR_HASH:=3bfcb2c8bc08902b95de16593b9d757e8c48f8891bd8ecd0934af14789294f37
 
-# Build the 6.14 ath10k-ct driver version.
+# Build the 7.2 ath10k-ct driver version.
 # Probably this should match as closely as
 # possible to whatever mac80211 backports version is being used.
-CT_KVER="-6.18"
+CT_KVER="-7.2"
 
 PKG_MAINTAINER:=Ben Greear <greearb@candelatech.com>
 PKG_BUILD_PARALLEL:=1
