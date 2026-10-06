@@ -154,8 +154,8 @@
 +		new_bss->radio_mask = nl80211_get_radio_mask(new_bss);
 +
  		/* Set interface mode to NL80211_IFTYPE_AP */
- 		if (nl80211_set_mode(new_bss, nlmode))
- 			return -1;
+ 		if (nl80211_set_mode(new_bss, nlmode)) {
+ 			if (added)
 --- a/src/drivers/driver_nl80211_monitor.c
 +++ b/src/drivers/driver_nl80211_monitor.c
 @@ -98,7 +98,7 @@ static int nl80211_create_monitor_interf
