@@ -802,11 +802,87 @@ static const u64 ppe_region_size[] = {
 	PPE_XLT_TBL_NUM * PPE_XLT_WORDS * sizeof(u32),
 };
 
+/* Drops the PPE counts per reason, offered as devlink drop traps. Each drop
+ * code was confirmed on IPQ8074 by provoking the drop; the frames are not
+ * kept, so the only action is drop.
+ */
+static const struct devlink_trap_group ppe_trap_groups[] = {
+	DEVLINK_TRAP_GROUP_GENERIC(L2_DROPS, 0),
+	DEVLINK_TRAP_GROUP_GENERIC(ACL_DROPS, 0),
+};
+
+static const struct devlink_trap ppe_traps[] = {
+	DEVLINK_TRAP_GENERIC(DROP, DROP, INGRESS_VLAN_FILTER,
+			     DEVLINK_TRAP_GROUP_GENERIC_ID_L2_DROPS, 0),
+	DEVLINK_TRAP_GENERIC(DROP, DROP, SMAC_MC,
+			     DEVLINK_TRAP_GROUP_GENERIC_ID_L2_DROPS, 0),
+	DEVLINK_TRAP_GENERIC(DROP, DROP, PORT_LOOPBACK_FILTER,
+			     DEVLINK_TRAP_GROUP_GENERIC_ID_L2_DROPS, 0),
+	DEVLINK_TRAP_GENERIC(DROP, DROP, INGRESS_FLOW_ACTION_DROP,
+			     DEVLINK_TRAP_GROUP_GENERIC_ID_ACL_DROPS, 0),
+};
+
+static const u8 ppe_trap_drop_code[] = {
+	109, 113, 117, 111,
+};
+
+static int qca_ppe_devlink_trap_init(struct dsa_switch *ds,
+				     const struct devlink_trap *trap,
+				     void *trap_ctx)
+{
+	return 0;
+}
+
+static int qca_ppe_devlink_trap_action_set(struct dsa_switch *ds,
+					   const struct devlink_trap *trap,
+					   enum devlink_trap_action action,
+					   struct netlink_ext_ack *extack)
+{
+	if (action != DEVLINK_TRAP_ACTION_DROP) {
+		NL_SET_ERR_MSG_MOD(extack, "the switch only counts this drop");
+		return -EOPNOTSUPP;
+	}
+
+	return 0;
+}
+
+static int qca_ppe_devlink_trap_drop_counter_get(struct dsa_switch *ds,
+						 const struct devlink_trap *trap,
+						 u64 *p_drops)
+{
+	struct qca_ppe_priv *priv = ds_to_priv(ds);
+	u32 w[PPE_CNT_WORDS], code, port;
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(ppe_traps); i++)
+		if (ppe_traps[i].id == trap->id)
+			break;
+	if (i == ARRAY_SIZE(ppe_traps))
+		return -ENOENT;
+
+	code = PPE_CPU_CODE_ENTRIES + ppe_trap_drop_code[i] *
+	       PPE_DROP_CODE_PORTS;
+	*p_drops = 0;
+	for (port = 0; port < PPE_DROP_CODE_PORTS; port++) {
+		if (regmap_bulk_read(priv->regmap,
+				     PPE_DROP_CPU_CNT_TBL(code + port), w,
+				     ARRAY_SIZE(w)))
+			return -EIO;
+		*p_drops += ppe_entry_get(w, 0, 32);
+	}
+
+	return 0;
+}
+
 static void ppe_devlink_teardown(struct dsa_switch *ds)
 {
 	struct qca_ppe_priv *priv = ds_to_priv(ds);
 	int i;
 
+	devlink_traps_unregister(ds->devlink, ppe_traps,
+				 ARRAY_SIZE(ppe_traps));
+	devlink_trap_groups_unregister(ds->devlink, ppe_trap_groups,
+				       ARRAY_SIZE(ppe_trap_groups));
 	for (i = 0; i < ARRAY_SIZE(priv->regions); i++)
 		if (!IS_ERR_OR_NULL(priv->regions[i]))
 			dsa_devlink_region_destroy(priv->regions[i]);
@@ -837,6 +913,22 @@ static int ppe_devlink_setup(struct dsa_switch *ds)
 	if (!ret)
 		ret = qca_ppe_devlink_sb_setup(ds);
 	if (ret) {
+		dsa_devlink_resources_unregister(ds);
+		return ret;
+	}
+
+	ret = devlink_trap_groups_register(ds->devlink, ppe_trap_groups,
+					   ARRAY_SIZE(ppe_trap_groups));
+	if (!ret) {
+		ret = devlink_traps_register(ds->devlink, ppe_traps,
+					     ARRAY_SIZE(ppe_traps), priv);
+		if (ret)
+			devlink_trap_groups_unregister(ds->devlink,
+						       ppe_trap_groups,
+						       ARRAY_SIZE(ppe_trap_groups));
+	}
+	if (ret) {
+		devlink_sb_unregister(ds->devlink, PPE_DEVLINK_SB);
 		dsa_devlink_resources_unregister(ds);
 		return ret;
 	}
@@ -2919,6 +3011,9 @@ static const struct dsa_switch_ops qca_ppe_ops = {
 	.devlink_sb_occ_max_clear = qca_ppe_devlink_sb_occ_max_clear,
 	.devlink_sb_occ_port_pool_get = qca_ppe_devlink_sb_occ_port_pool_get,
 	.devlink_sb_occ_tc_port_bind_get = qca_ppe_devlink_sb_occ_tc_port_bind_get,
+	.devlink_trap_init	= qca_ppe_devlink_trap_init,
+	.devlink_trap_action_set = qca_ppe_devlink_trap_action_set,
+	.devlink_trap_drop_counter_get = qca_ppe_devlink_trap_drop_counter_get,
 };
 
 static void ppe_mac_hw_init(struct qca_ppe_priv *priv)
