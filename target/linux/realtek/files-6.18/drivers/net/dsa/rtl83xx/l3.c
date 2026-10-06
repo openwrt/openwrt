@@ -1307,6 +1307,23 @@ static int otto_l3_route_install(struct otto_l3_ctrl *ctrl, struct otto_l3_route
 	return 0;
 }
 
+/* Writes what a route now says where it already is */
+static void otto_l3_route_rewrite(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r)
+{
+	int slot;
+
+	if (otto_l3_host_shadowed(ctrl, r))
+		return;
+
+	if (r->is_host_route) {
+		slot = ctrl->cfg->find_slot(ctrl, r, true);
+		if (slot >= 0)
+			ctrl->cfg->host_route_write(ctrl, slot, r);
+	} else if (r->row >= FIRST_PREFIX_ROW) {
+		ctrl->cfg->route_write(ctrl, r->row, r);
+	}
+}
+
 static void otto_l3_route_update_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r,
 				    u64 mac)
 {
@@ -1401,23 +1418,6 @@ static void otto_l3_route_update_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_ro
 		dev_dbg(ctrl->dev, "total packets: %d\n", pkts);
 
 		priv->r->pie_rule_write(priv, r->pr.id, &r->pr);
-	}
-}
-
-/* Writes what a route now says where it already is */
-static void otto_l3_route_rewrite(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r)
-{
-	int slot;
-
-	if (otto_l3_host_shadowed(ctrl, r))
-		return;
-
-	if (r->is_host_route) {
-		slot = ctrl->cfg->find_slot(ctrl, r, true);
-		if (slot >= 0)
-			ctrl->cfg->host_route_write(ctrl, slot, r);
-	} else if (r->row >= FIRST_PREFIX_ROW) {
-		ctrl->cfg->route_write(ctrl, r->row, r);
 	}
 }
 
