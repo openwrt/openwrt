@@ -791,6 +791,41 @@ static u32 edma_tx_tso(struct sk_buff *skb, struct edma_tx_preheader *txph)
 	return EDMA_TXDESC_TSO_EN;
 }
 
+/* A frame is described by its head, its fragments, then the head and
+ * fragments of every skb on its frag_list.
+ */
+static u16 edma_tx_ndesc(const struct sk_buff *skb)
+{
+	const struct sk_buff *seg;
+	u16 n = skb_shinfo(skb)->nr_frags + 1;
+
+	skb_walk_frags(skb, seg)
+		n += !!skb_headlen(seg) + skb_shinfo(seg)->nr_frags;
+
+	return n;
+}
+
+static bool edma_tx_map(struct device *dev, struct edma_ring *ring,
+			struct sk_buff *skb, u32 idx, u16 *n, u16 ndesc,
+			struct page *page, u32 off, u32 len, u32 tso)
+{
+	u32 fidx = (idx + *n) & (ring->count - 1);
+	struct edma_txdesc *txdesc;
+	dma_addr_t dma;
+
+	dma = dma_map_page(dev, page, off, len, DMA_TO_DEVICE);
+	if (dma_mapping_error(dev, dma))
+		return false;
+
+	ring->skb_store[fidx] = skb;
+	txdesc = EDMA_TXDESC_DESC(ring, fidx);
+	txdesc->buffer_addr = cpu_to_le32(dma);
+	txdesc->word1 = tso | (++*n < ndesc ? EDMA_TXDESC_MORE : 0) |
+			(len & EDMA_TXDESC_DATA_LENGTH_MASK);
+
+	return true;
+}
+
 static netdev_tx_t edma_ring_xmit(struct edma_priv *priv, struct net_device *netdev,
 				  struct sk_buff *skb,
 				  struct edma_ring *txdesc_ring)
@@ -801,10 +836,11 @@ static netdev_tx_t edma_ring_xmit(struct edma_priv *priv, struct net_device *net
 	u16 mask = txdesc_ring->count - 1;
 	struct edma_tx_preheader *txph;
 	struct dsa_oob_tag_info *tag_info;
-	u16 ndesc = shinfo->nr_frags + 1;
+	u16 ndesc = edma_tx_ndesc(skb);
 	struct edma_txdesc *txdesc;
-	u16 prod, cons, dst_info;
+	u16 prod, cons, dst_info, n;
 	u32 val, idx, i, len, bytes, tso;
+	struct sk_buff *seg;
 	dma_addr_t head_dma;
 	bool taken = false;
 	__be16 proto;
@@ -877,23 +913,29 @@ static netdev_tx_t edma_ring_xmit(struct edma_priv *priv, struct net_device *net
 			 << EDMA_TXDESC_DATA_OFFSET_SHIFT) |
 			(len & EDMA_TXDESC_DATA_LENGTH_MASK);
 
-	for (i = 0; i < shinfo->nr_frags; i++) {
-		const skb_frag_t *frag = &shinfo->frags[i];
-		u32 fidx = (idx + 1 + i) & mask;
-		dma_addr_t dma;
+	n = 1;
+	seg = skb;
+	do {
+		const struct skb_shared_info *si = skb_shinfo(seg);
 
-		len = skb_frag_size(frag);
-		dma = skb_frag_dma_map(dev, frag, 0, len, DMA_TO_DEVICE);
-		if (dma_mapping_error(dev, dma))
+		if (seg != skb && skb_headlen(seg) &&
+		    !edma_tx_map(dev, txdesc_ring, skb, idx, &n, ndesc,
+				 virt_to_page(seg->data),
+				 offset_in_page(seg->data), skb_headlen(seg),
+				 tso))
 			goto unmap;
 
-		txdesc_ring->skb_store[fidx] = skb;
-		txdesc = EDMA_TXDESC_DESC(txdesc_ring, fidx);
-		txdesc->buffer_addr = cpu_to_le32(dma);
-		txdesc->word1 = tso | (i + 1 < shinfo->nr_frags ?
-				       EDMA_TXDESC_MORE : 0) |
-				(len & EDMA_TXDESC_DATA_LENGTH_MASK);
-	}
+		for (i = 0; i < si->nr_frags; i++) {
+			const skb_frag_t *frag = &si->frags[i];
+
+			if (!edma_tx_map(dev, txdesc_ring, skb, idx, &n, ndesc,
+					 skb_frag_page(frag), skb_frag_off(frag),
+					 skb_frag_size(frag), tso))
+				goto unmap;
+		}
+
+		seg = seg == skb ? shinfo->frag_list : seg->next;
+	} while (seg);
 
 	prod = (prod + ndesc) & mask;
 
@@ -922,8 +964,8 @@ static netdev_tx_t edma_ring_xmit(struct edma_priv *priv, struct net_device *net
 	return NETDEV_TX_OK;
 
 unmap:
-	while (i--) {
-		u32 fidx = (idx + 1 + i) & mask;
+	while (--n) {
+		u32 fidx = (idx + n) & mask;
 
 		txdesc = EDMA_TXDESC_DESC(txdesc_ring, fidx);
 		dma_unmap_page(dev, le32_to_cpu(txdesc->buffer_addr),
@@ -1541,17 +1583,45 @@ static int edma_ndo_change_mtu(struct net_device *netdev, int new_mtu);
  */
 static bool edma_tx_needs_linearize(const struct sk_buff *skb)
 {
-	const struct skb_shared_info *shinfo = skb_shinfo(skb);
+	const struct sk_buff *seg = skb;
+	bool short_prev = false;
 	int i;
 
-	if (shinfo->nr_frags + 1 > EDMA_TX_MAX_SEGS)
+	if (edma_tx_ndesc(skb) > EDMA_TX_MAX_SEGS)
 		return true;
 
-	for (i = 0; i + 1 < shinfo->nr_frags; i++)
-		if (skb_frag_size(&shinfo->frags[i]) < EDMA_TX_MIN_SEG)
-			return true;
+	do {
+		const struct skb_shared_info *si = skb_shinfo(seg);
+
+		if (seg != skb && skb_headlen(seg)) {
+			if (short_prev)
+				return true;
+			short_prev = skb_headlen(seg) < EDMA_TX_MIN_SEG;
+		}
+
+		for (i = 0; i < si->nr_frags; i++) {
+			if (short_prev)
+				return true;
+			short_prev = skb_frag_size(&si->frags[i]) < EDMA_TX_MIN_SEG;
+		}
+
+		seg = seg == skb ? si->frag_list : seg->next;
+	} while (seg);
 
 	return false;
+}
+
+/* A GRO aggregate on its frag_list can need more descriptors than a frame
+ * may take; it is segmented in software rather than made linear.
+ */
+static netdev_features_t edma_ndo_features_check(struct sk_buff *skb,
+						 struct net_device *netdev,
+						 netdev_features_t features)
+{
+	if (skb_is_gso(skb) && edma_tx_needs_linearize(skb))
+		features &= ~NETIF_F_GSO_MASK;
+
+	return vlan_features_check(skb, features);
 }
 
 static netdev_tx_t edma_ndo_xmit(struct sk_buff *skb, struct net_device *netdev)
@@ -1595,6 +1665,7 @@ static const struct net_device_ops edma_netdev_ops = {
 	.ndo_open = edma_ndo_open,
 	.ndo_stop = edma_ndo_stop,
 	.ndo_start_xmit = edma_ndo_xmit,
+	.ndo_features_check = edma_ndo_features_check,
 	.ndo_change_mtu = edma_ndo_change_mtu,
 	.ndo_set_mac_address = eth_mac_addr,
 	.ndo_validate_addr = eth_validate_addr,
@@ -1891,7 +1962,7 @@ static int edma_probe(struct platform_device *pdev)
 	netdev->netdev_ops = &edma_netdev_ops;
 	netdev->hw_features = NETIF_F_RXCSUM | NETIF_F_IP_CSUM |
 			      NETIF_F_IPV6_CSUM | NETIF_F_SG | NETIF_F_TSO |
-			      NETIF_F_TSO6 | NETIF_F_RXHASH;
+			      NETIF_F_TSO6 | NETIF_F_RXHASH | NETIF_F_FRAGLIST;
 	netdev->features = netdev->hw_features;
 	/* A DSA user port takes its features from the conduit's vlan_features. */
 	netdev->vlan_features = netdev->hw_features;
