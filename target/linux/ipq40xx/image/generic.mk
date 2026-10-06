@@ -1342,7 +1342,8 @@ define Device/ubnt_utr-lr
 	DEVICE_VARIANT := LR
 	DEVICE_DTS := qcom-ipq4018-utr-lr
 	DEVICE_DTS_CONFIG := config@ea08
-	DEVICE_PACKAGES += ipq-wifi-ubnt_utr-lr mipi-dbi-ubnt-utr-lr
+	DEVICE_PACKAGES += ipq-wifi-ubnt_utr-lr mipi-dbi-ubnt-utr-lr \
+		kmod-usb-typec-tps6598x
 endef
 TARGET_DEVICES += ubnt_utr-lr
 

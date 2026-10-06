@@ -15,6 +15,21 @@
 	};
 };
 
+&i2c_gpio {
+	typec@20 {
+		compatible = "ti,tps25751", "ti,tps25750";
+		reg = <0x20>, <0x31>;
+		reg-names = "main", "patch-address";
+
+		connector {
+			compatible = "usb-c-connector";
+			label = "USB-C";
+			data-role = "dual";
+			power-role = "dual";
+		};
+	};
+};
+
 &wifi0 {
 	qcom,ath10k-calibration-variant = "Ubiquiti-UniFi-Travel-Router-LR";
 };
