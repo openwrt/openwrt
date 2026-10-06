@@ -19,7 +19,6 @@
 #include <linux/property.h>
 #include <linux/regmap.h>
 #include <linux/reset.h>
-#include <linux/version.h>
 #include <net/netdev_queues.h>
 
 #include "qca_edma.h"
@@ -1751,11 +1750,7 @@ static int edma_probe(struct platform_device *pdev)
 		goto err_irq;
 	}
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 18, 0)
 	ret = dev_set_threaded(netdev, NETDEV_NAPI_THREADED_ENABLED);
-#else
-	ret = dev_set_threaded(netdev, true);
-#endif
 	if (ret)
 		dev_warn(dev, "failed to enable threaded NAPI: %d\n", ret);
 
