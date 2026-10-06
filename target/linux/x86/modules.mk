@@ -5,7 +5,7 @@
 define KernelPackage/amd-xgbe
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=AMD Ethernet on SoC support
-  DEPENDS:=@PCI_SUPPORT @TARGET_x86_64 +kmod-ptp +kmod-libphy +kmod-mdio-devres
+  DEPENDS:=@PCI_SUPPORT @TARGET_x86_64 +kmod-ptp +kmod-libphy +kmod-mdio-devres +LINUX_7_3:kmod-net-selftests
   KCONFIG:= \
 	CONFIG_AMD_XGBE \
 	CONFIG_AMD_XGBE_DCB=y
