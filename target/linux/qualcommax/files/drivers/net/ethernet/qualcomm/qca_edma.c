@@ -579,6 +579,20 @@ static void edma_rx_hash(struct net_device *netdev, struct sk_buff *skb,
 						     PKT_HASH_TYPE_L3);
 }
 
+/* The engine strips an outer C-tag into the preheader; a C-tag below an S-tag
+ * stays in the frame.
+ */
+static void edma_rx_vlan(struct net_device *netdev, struct sk_buff *skb,
+			 const struct edma_rx_preheader *rxph)
+{
+	u32 pre2 = le32_to_cpu(rxph->rx_pre2);
+	u16 tci = le32_to_cpu(rxph->rx_pre3) & EDMA_RXPH_CTAG_TCI;
+
+	if ((netdev->features & NETIF_F_HW_VLAN_CTAG_RX) &&
+	    (pre2 & EDMA_RXPH_CTAG_FLAG))
+		__vlan_hwaccel_put_tag(skb, htons(ETH_P_8021Q), tci);
+}
+
 static u32 edma_clean_rx(struct edma_priv *priv, int budget,
 			 struct edma_ring *rxdesc_ring)
 {
@@ -656,6 +670,7 @@ static u32 edma_clean_rx(struct edma_priv *priv, int budget,
 		skb_reserve(skb, NET_SKB_PAD + EDMA_RX_PREHDR_SIZE);
 		skb_put(skb, pkt_len);
 
+		edma_rx_vlan(netdev, skb, rxph);
 		frame = skb->data;
 		skb->protocol = eth_type_trans(skb, priv->netdev);
 		edma_rx_csum(netdev, skb, rxph, desc_status,
@@ -1548,9 +1563,28 @@ static const struct ethtool_ops edma_ethtool_ops = {
 	.get_channels = edma_get_channels,
 };
 
+static void edma_rx_vlan_strip(struct edma_priv *priv,
+			       netdev_features_t features)
+{
+	regmap_assign_bits(priv->regmap,
+			   EDMA_REG_RXDESC_CTRL(priv->soc->rxdesc_ring),
+			   EDMA_RXDESC_CTAG_REMOVE_EN,
+			   features & NETIF_F_HW_VLAN_CTAG_RX);
+}
+
+static int edma_ndo_set_features(struct net_device *netdev,
+				 netdev_features_t features)
+{
+	edma_rx_vlan_strip(netdev_priv(netdev), features);
+
+	return 0;
+}
+
 static int edma_ndo_open(struct net_device *netdev)
 {
 	struct edma_priv *priv = netdev_priv(netdev);
+
+	edma_rx_vlan_strip(priv, netdev->features);
 
 	netdev_tx_reset_queue(netdev_get_tx_queue(netdev, 0));
 	napi_enable(&priv->tx_napi);
@@ -1666,6 +1700,7 @@ static const struct net_device_ops edma_netdev_ops = {
 	.ndo_stop = edma_ndo_stop,
 	.ndo_start_xmit = edma_ndo_xmit,
 	.ndo_features_check = edma_ndo_features_check,
+	.ndo_set_features = edma_ndo_set_features,
 	.ndo_change_mtu = edma_ndo_change_mtu,
 	.ndo_set_mac_address = eth_mac_addr,
 	.ndo_validate_addr = eth_validate_addr,
@@ -1962,10 +1997,11 @@ static int edma_probe(struct platform_device *pdev)
 	netdev->netdev_ops = &edma_netdev_ops;
 	netdev->hw_features = NETIF_F_RXCSUM | NETIF_F_IP_CSUM |
 			      NETIF_F_IPV6_CSUM | NETIF_F_SG | NETIF_F_TSO |
-			      NETIF_F_TSO6 | NETIF_F_RXHASH | NETIF_F_FRAGLIST;
+			      NETIF_F_TSO6 | NETIF_F_RXHASH | NETIF_F_FRAGLIST |
+			      NETIF_F_HW_VLAN_CTAG_RX;
 	netdev->features = netdev->hw_features;
 	/* A DSA user port takes its features from the conduit's vlan_features. */
-	netdev->vlan_features = netdev->hw_features;
+	netdev->vlan_features = netdev->hw_features & ~NETIF_F_HW_VLAN_CTAG_RX;
 	netdev->pcpu_stat_type = NETDEV_PCPU_STAT_TSTATS;
 	netdev->max_mtu = EDMA_MAX_MTU;
 	netdev->needed_headroom = EDMA_TX_PREHDR_SIZE;
