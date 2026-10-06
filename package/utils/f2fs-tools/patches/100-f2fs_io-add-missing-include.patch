@@ -1,0 +1,24 @@
+From 5b31727f2be5af5a5af52503d7b01d044ed7f4b6 Mon Sep 17 00:00:00 2001
+From: Gary Dotzler <geldot@protonmail.com>
+Date: Fri, 9 Oct 2026 02:41:56 +0000
+Subject: [PATCH] f2fs_io: add missing include
+
+This fixes the build with musl as used by OpenWrt, where falloc.h is not
+included implicitly by other system headers headers.
+
+Link: https://lore.kernel.org/linux-f2fs-devel/ebaZk7tbA9RElsM8ZlLlcgO-4okvuAioo-uh-w5S3rhYxqkBNRPyhTwd9U2vudXRC1RbRB0jG2Elk8sLinp-5IRsy9b1A14go_Ejo0o5Qeg=@protonmail.com/
+Signed-off-by: Gary Dotzler <geldot@protonmail.com>
+---
+ tools/f2fs_io/f2fs_io.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/tools/f2fs_io/f2fs_io.c
++++ b/tools/f2fs_io/f2fs_io.c
+@@ -21,6 +21,7 @@
+ #include <getopt.h>
+ #include <inttypes.h>
+ #include <limits.h>
++#include <linux/falloc.h>
+ #include <linux/fs.h>
+ #include <signal.h>
+ #include <stdarg.h>
