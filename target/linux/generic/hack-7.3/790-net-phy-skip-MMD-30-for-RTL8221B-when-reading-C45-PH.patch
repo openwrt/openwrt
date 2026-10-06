@@ -52,7 +52,7 @@ Signed-off-by: Jan Hoffmann <jan@3e8.eu>
 
 --- a/drivers/net/phy/phy_device.c
 +++ b/drivers/net/phy/phy_device.c
-@@ -937,6 +937,17 @@ static int get_phy_c45_devs_in_pkg(struc
+@@ -901,6 +901,17 @@ static int get_phy_c45_devs_in_pkg(struc
  	return 0;
  }
  
@@ -70,7 +70,7 @@ Signed-off-by: Jan Hoffmann <jan@3e8.eu>
  /**
   * get_phy_c45_ids - reads the specified addr for its 802.3-c45 IDs.
   * @bus: the target MII bus
-@@ -1004,6 +1015,10 @@ static int get_phy_c45_ids(struct mii_bu
+@@ -968,6 +979,10 @@ static int get_phy_c45_ids(struct mii_bu
  		if (!(devs_in_pkg & (1 << i)))
  			continue;
  

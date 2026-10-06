@@ -26,15 +26,15 @@ Signed-off-by: John Crispin <john@phrozen.org>
   * @name: name of the struct -- the string is not copied internally
 --- a/net/Makefile
 +++ b/net/Makefile
-@@ -51,7 +51,7 @@ obj-$(CONFIG_TIPC)		+= tipc/
+@@ -47,7 +47,7 @@ obj-$(CONFIG_TIPC)		+= tipc/
  obj-$(CONFIG_NETLABEL)		+= netlabel/
  obj-$(CONFIG_IUCV)		+= iucv/
  obj-$(CONFIG_SMC)		+= smc/
 -obj-$(CONFIG_RFKILL)		+= rfkill/
 +obj-$(CONFIG_RFKILL_FULL)	+= rfkill/
  obj-$(CONFIG_NET_9P)		+= 9p/
- obj-$(CONFIG_CAIF)		+= caif/
  obj-$(CONFIG_DCB)		+= dcb/
+ obj-$(CONFIG_6LOWPAN)		+= 6lowpan/
 --- a/net/rfkill/Kconfig
 +++ b/net/rfkill/Kconfig
 @@ -2,7 +2,11 @@

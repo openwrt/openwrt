@@ -21,8 +21,8 @@ Subject: [PATCH] net/usb/qmi_wwan: add MeigLink modem support
 +
  	{QMI_MATCH_FF_FF_FF(0x2c7c, 0x0122)},	/* Quectel RG650V */
  	{QMI_MATCH_FF_FF_FF(0x2c7c, 0x0125)},	/* Quectel EC25, EC20 R2.0  Mini PCIe */
- 	{QMI_MATCH_FF_FF_FF(0x2c7c, 0x0306)},	/* Quectel EP06/EG06/EM06 */
-@@ -1090,6 +1095,7 @@ static const struct usb_device_id produc
+ 	{QMI_MATCH_FF_FF_FF(0x2c7c, 0x013d)},	/* Quectel RG660QB */
+@@ -1091,6 +1096,7 @@ static const struct usb_device_id produc
  	{QMI_MATCH_FF_FF_FF(0x2c7c, 0x0620)},	/* Quectel EM160R-GL */
  	{QMI_MATCH_FF_FF_FF(0x2c7c, 0x0800)},	/* Quectel RM500Q-GL */
  	{QMI_MATCH_FF_FF_FF(0x2c7c, 0x0801)},	/* Quectel RM520N */
@@ -32,7 +32,7 @@ Subject: [PATCH] net/usb/qmi_wwan: add MeigLink modem support
  	{QMI_FIXED_INTF(0x0408, 0xea42, 4)},	/* Yota / Megafon M100-1 */
 --- a/drivers/usb/serial/option.c
 +++ b/drivers/usb/serial/option.c
-@@ -248,6 +248,11 @@ static void option_instat_callback(struc
+@@ -247,6 +247,11 @@ static void option_instat_callback(struc
  #define UBLOX_PRODUCT_R410M			0x90b2
  /* These Yuga products use Qualcomm's vendor ID */
  #define YUGA_PRODUCT_CLM920_NC5			0x9625

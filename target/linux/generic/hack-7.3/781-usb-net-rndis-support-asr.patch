@@ -13,8 +13,8 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/drivers/net/usb/rndis_host.c
 +++ b/drivers/net/usb/rndis_host.c
-@@ -634,6 +634,16 @@ static const struct driver_info	zte_rndi
- 	.tx_fixup =	rndis_tx_fixup,
+@@ -645,6 +645,16 @@ static const struct driver_info	rndis_in
+ 	.manage_power =	usbnet_manage_power,
  };
  
 +static const struct driver_info asr_rndis_info = {
@@ -30,7 +30,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  /*-------------------------------------------------------------------------*/
  
  static const struct usb_device_id	products [] = {
-@@ -670,6 +680,36 @@ static const struct usb_device_id	produc
+@@ -686,6 +696,36 @@ static const struct usb_device_id	produc
  	USB_INTERFACE_INFO(USB_CLASS_WIRELESS_CONTROLLER, 1, 3),
  	.driver_info = (unsigned long) &rndis_info,
  }, {

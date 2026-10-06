@@ -26,7 +26,7 @@ Co-authored-by: Shiji Yang <yangshiji66@outlook.com>
  #endif
 --- a/mm/execmem.c
 +++ b/mm/execmem.c
-@@ -458,7 +458,7 @@ static bool execmem_cache_free(void *ptr
+@@ -462,7 +462,7 @@ static bool execmem_cache_free(void *ptr
  }
  #endif /* CONFIG_ARCH_HAS_EXECMEM_ROX */
  
@@ -35,7 +35,7 @@ Co-authored-by: Shiji Yang <yangshiji66@outlook.com>
  {
  	struct execmem_range *range = &execmem_info->ranges[type];
  	bool use_cache = range->flags & EXECMEM_ROX_CACHE;
-@@ -491,7 +491,12 @@ void *execmem_alloc_rw(enum execmem_type
+@@ -495,7 +495,12 @@ void *execmem_alloc_rw(enum execmem_type
  	return no_free_ptr(p);
  }
  
@@ -49,7 +49,7 @@ Co-authored-by: Shiji Yang <yangshiji66@outlook.com>
  {
  	/*
  	 * This memory may be RO, and freeing RO memory in an interrupt is not
-@@ -508,6 +513,11 @@ bool execmem_is_rox(enum execmem_type ty
+@@ -512,6 +517,11 @@ bool execmem_is_rox(enum execmem_type ty
  	return !!(execmem_info->ranges[type].flags & EXECMEM_ROX_CACHE);
  }
  
