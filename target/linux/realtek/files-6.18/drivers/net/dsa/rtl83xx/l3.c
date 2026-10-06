@@ -994,6 +994,7 @@ static int otto_l3_alloc_egress_intf(struct otto_l3_ctrl *ctrl, u64 mac, int vla
 		if (m == mac && ctrl->interfaces[i].vid == vlan) {
 			dev_dbg(ctrl->dev, "reusing egress interface %d for VLAN %d\n",
 				i, vlan);
+			ctrl->intf_refs[i]++;
 			mutex_unlock(ctrl->lock);
 			return i;
 		}
@@ -1019,6 +1020,7 @@ static int otto_l3_alloc_egress_intf(struct otto_l3_ctrl *ctrl, u64 mac, int vla
 	ctrl->interfaces[free_mac] = intf;
 
 	ctrl->cfg->set_egress_mac(ctrl, L3_EGRESS_DMACS + free_mac, mac);
+	ctrl->intf_refs[free_mac]++;
 
 	mutex_unlock(ctrl->lock);
 
@@ -1662,6 +1664,20 @@ struct otto_l3_route_src {
 	unsigned int members;
 };
 
+/* Drops the route's hold on its egress interface, and frees one no route
+ * holds any more by zeroing its source MAC, which is what
+ * otto_l3_alloc_egress_intf() takes for a free one.
+ */
+static void otto_l3_route_put_intf(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r)
+{
+	mutex_lock(ctrl->lock);
+
+	if (r->nh.if_id >= 0 && !--ctrl->intf_refs[r->nh.if_id])
+		ctrl->cfg->set_egress_mac(ctrl, L3_EGRESS_DMACS + r->nh.if_id, 0);
+
+	mutex_unlock(ctrl->lock);
+}
+
 static void otto_l3_route_free(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r)
 {
 	struct otto_l3_route_src *s, *tmp;
@@ -1767,6 +1783,14 @@ static void otto_l3_route_teardown(struct otto_l3_ctrl *ctrl, struct otto_l3_rou
 	dev_dbg(ctrl->dev, "releasing packet counter %d\n", r->pr.packet_cntr);
 	rtldsa_packet_cntr_free(priv, r->pr.packet_cntr);
 
+	/* Once the rows are not where the list says, after a failed move or a
+	 * lookup that timed out, the row of a prefix route may still be in
+	 * hardware and route through its egress interface: it keeps that for
+	 * good.
+	 */
+	if (r->is_host_route || !ctrl->prefix_rows_stale)
+		otto_l3_route_put_intf(ctrl, r);
+
 	otto_l3_route_free(ctrl, r);
 }
 
@@ -1804,6 +1828,7 @@ static struct otto_l3_route *otto_l3_route_alloc(struct otto_l3_ctrl *ctrl,
 	r->gw_ip = *gw;
 	r->pr.id = -1; /* We still need to allocate a rule in HW */
 	r->pr.packet_cntr = -1;
+	r->nh.if_id = -1;
 	r->is_host_route = host;
 	INIT_LIST_HEAD(&r->srcs);
 
@@ -2043,6 +2068,7 @@ static int otto_l3_fib_add_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 
 out_free_rmac:
 out_free_rt:
+	otto_l3_route_put_intf(ctrl, route);
 	otto_l3_route_free(ctrl, route);
 	return 0;
 }
