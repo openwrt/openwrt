@@ -83,8 +83,8 @@ define Device/extreme-networks_ws-ap3825i
   DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
   BLOCKSIZE := 128k
   KERNEL_NAME := simpleImage.ws-ap3825i
-  KERNEL_ENTRY := 0x1500000
-  KERNEL_LOADADDR := 0x1500000
+  KERNEL_ENTRY := 0x3000000
+  KERNEL_LOADADDR := 0x3000000
   KERNEL = kernel-bin | fit none $(KDIR)/image-$$(DEVICE_DTS).dtb
   IMAGES := sysupgrade.bin
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
