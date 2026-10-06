@@ -122,6 +122,7 @@
 #define EDMA_RXDESC_PL_OFFSET_MASK	0x1ff
 #define EDMA_RXDESC_PL_OFFSET_SHIFT	16
 #define EDMA_RXDESC_RX_EN		0x1
+#define EDMA_RXDESC_CTAG_REMOVE_EN	0x4
 #define EDMA_RXDESC_PACKET_LEN_MASK	0x3fff
 /* A frame the engine had to spread over several receive descriptors. The fill
  * buffers are sized for the largest frame the conduit accepts, so it does not
@@ -164,6 +165,11 @@
 #define EDMA_RXPH_HASH_FLAG_MASK	0x7
 #define EDMA_RXPH_HASH_5TUPLE		1
 #define EDMA_RXPH_HASH_3TUPLE		2
+/* Where a stripped tag is reported: the tag flags in pre2 and the S-tag and
+ * C-tag TCIs in the high and low halves of pre3.
+ */
+#define EDMA_RXPH_CTAG_FLAG		BIT(30)
+#define EDMA_RXPH_CTAG_TCI		GENMASK(15, 0)
 #define EDMA_RXPH_L3_OFFSET_SHIFT	16
 #define EDMA_RXPH_L3_OFFSET_MASK	0xff
 #define EDMA_RXPH_L4_OFFSET_SHIFT	8
