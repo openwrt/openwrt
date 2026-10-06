@@ -289,6 +289,11 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch1" \
 			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "7t@eth0"
 		;;
+	zyxel,lte3301-m209|\
+	zyxel,lte3301-q222)
+		# No ethernet WAN - the WAN is the LTE modem.
+		ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
+		;;
 	esac
 }
 
