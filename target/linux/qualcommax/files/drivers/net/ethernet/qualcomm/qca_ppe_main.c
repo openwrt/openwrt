@@ -1126,7 +1126,7 @@ static void qca_ppe_port_bridge_leave(struct dsa_switch *ds, int port,
 
 	priv->port_vsi[port] = PPE_VSI_INVALID;
 	priv->port_br_dev[port] = NULL;
-	ppe_port_vsi_set(priv, port, PPE_VSI_INVALID);
+	ppe_port_vsi_set(priv, port, 0);
 	bridge_vsi_members_update(priv, bvsi);
 	bridge_vsi_put(priv, bvsi);
 }
