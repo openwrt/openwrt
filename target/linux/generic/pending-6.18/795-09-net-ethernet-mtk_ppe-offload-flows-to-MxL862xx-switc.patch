@@ -54,7 +54,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  #include "mtk_eth_soc.h"
  #include "mtk_wed.h"
  
-@@ -166,8 +167,25 @@ mtk_flow_mangle_ipv4(const struct flow_a
+@@ -171,8 +172,25 @@ mtk_flow_mangle_ipv4(const struct flow_a
  	return 0;
  }
  
@@ -81,7 +81,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  {
  #if IS_ENABLED(CONFIG_NET_DSA)
  	struct dsa_port *dp;
-@@ -176,8 +194,18 @@ mtk_flow_get_dsa_port(struct net_device
+@@ -181,8 +199,18 @@ mtk_flow_get_dsa_port(struct net_device
  	if (IS_ERR(dp))
  		return -ENODEV;
  
@@ -101,7 +101,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	*dev = dsa_port_to_conduit(dp);
  
-@@ -195,6 +223,7 @@ mtk_flow_set_output_device(struct mtk_et
+@@ -200,6 +228,7 @@ mtk_flow_set_output_device(struct mtk_et
  	struct mtk_wdma_info info = {};
  	struct mtk_mac *mac;
  	int pse_port, dsa_port, queue;
@@ -109,7 +109,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	if (mtk_flow_get_wdma_info(dev, dest_mac, &info) == 0) {
  		mtk_foe_entry_set_wdma(eth, foe, info.wdma_idx, info.queue,
-@@ -220,7 +249,7 @@ mtk_flow_set_output_device(struct mtk_et
+@@ -225,7 +254,7 @@ mtk_flow_set_output_device(struct mtk_et
  		goto out;
  	}
  
@@ -118,7 +118,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	if (dev == eth->netdev[0])
  		pse_port = PSE_GDM1_PORT;
-@@ -231,8 +260,12 @@ mtk_flow_set_output_device(struct mtk_et
+@@ -236,8 +265,12 @@ mtk_flow_set_output_device(struct mtk_et
  	else
  		return -EOPNOTSUPP;
  
@@ -133,7 +133,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	if (dsa_port >= 0 && dsa_port < MTK_DSA_USER_PORT_MAX) {
  		mac = netdev_priv(dev);
-@@ -294,6 +327,17 @@ mtk_flow_offload_replace(struct mtk_eth
+@@ -299,6 +332,17 @@ mtk_flow_offload_replace(struct mtk_eth
  		flow_rule_match_meta(rule, &match);
  		if (mtk_is_netsys_v2_or_greater(eth)) {
  			idev = __dev_get_by_index(&init_net, match.key->ingress_ifindex);

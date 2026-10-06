@@ -1,0 +1,49 @@
+From: Pablo Neira Ayuso <pablo@netfilter.org>
+Date: Wed, 23 Sep 2026 20:46:18 +0200
+Subject: [PATCH] netfilter: flowtable: restore ieee80211 forward path
+
+Before commit 871df5007eda ("netfilter: flowtable: bail out if forward
+path cannot be discovered"), there was a fallback to set up a forward
+path in case .ndo_fill_forward_path fails or DEV_PATH_MTK_WDMA was used.
+Such fallback was used by commit d787a3e38f01 ("mac80211: add support
+for .ndo_fill_forward_path").
+
+One possibility is to handle DEV_PATH_MTK_WDMA from the flowtable
+forward path discovery. However, this is only used internally by drivers
+to retrieve mtk_wdma information to set up hardware offload. Felix
+decided to use the .fill_forward_path interface for this purpose due to
+the lack of a better interface at that time.
+
+Add a new DEV_PATH_IEEE80211 path which is offered if the new ieee80211
+flag is set on in the struct net_device_path_ctx to restore the
+flowtable with a ieee80211 netdevice. Handle this new DEV_PATH_IEEE80211
+path just like DEV_PATH_ETHERNET and DEV_PATH_DSA, ie. this is the last
+netdevice in the stack.
+
+This new ieee80211 flag is implicitly unset for mtk_ppe and airoha which
+call dev_fill_forward_path() to retrieve a DEV_PATH_MTK_WDMA path.
+
+Fixes: 871df5007eda ("netfilter: flowtable: bail out if forward path cannot be discovered")
+Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
+[ julius: mac80211 part of the upstream commit; the kernel part is
+  generic/backport-6.18/706-03. 6.12 kernels lack DEV_PATH_IEEE80211, so the
+  hunk is built for 6.18 only ]
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+--- a/net/mac80211/iface.c
++++ b/net/mac80211/iface.c
+@@ -994,6 +994,15 @@ static int ieee80211_netdev_fill_forward
+ 	struct sta_info *sta;
+ 	int ret = -ENOENT;
+ 
++#if LINUX_VERSION_IS_GEQ(6,18,0)
++	if (ctx->ieee80211) {
++		path->type = DEV_PATH_IEEE80211;
++		path->dev = ctx->dev;
++		ctx->dev = NULL;
++		return 0;
++	}
++#endif
++
+ 	sdata = IEEE80211_DEV_TO_SUB_IF(ctx->dev);
+ 	local = sdata->local;
+ 
