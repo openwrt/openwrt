@@ -1072,7 +1072,12 @@ static void edma_configure_txcmpl_ring(struct edma_priv *priv,
 	regmap_write(priv->regmap,
 		     EDMA_REG_TX_MOD_TIMER(soc->tx_int_base,
 					   soc->txcmpl_ring),
-		     EDMA_TX_MOD_TIMER);
+		     priv->tx_mod_timer);
+
+	regmap_write(priv->regmap,
+		     EDMA_REG_TXCMPL_UGT_THRE(soc->txcmpl_base,
+					      soc->txcmpl_ring),
+		     priv->tx_ugt_thre);
 
 	regmap_write(priv->regmap,
 		     EDMA_REG_TX_INT_CTRL(soc->tx_int_base,
@@ -1099,7 +1104,11 @@ static void edma_configure_rxdesc_ring(struct edma_priv *priv,
 
 	regmap_write(priv->regmap,
 		     EDMA_REG_RX_MOD_TIMER(soc->rxdesc_ring),
-		     EDMA_RX_MOD_TIMER_INIT);
+		     priv->rx_mod_timer);
+
+	regmap_write(priv->regmap,
+		     EDMA_REG_RXDESC_UGT_THRE(soc->rxdesc_ring),
+		     priv->rx_ugt_thre);
 
 	regmap_write(priv->regmap,
 		     EDMA_REG_RX_INT_CTRL(soc->rxdesc_ring),
@@ -1287,6 +1296,78 @@ static int edma_set_ringparam(struct net_device *netdev,
 				ring->rx_pending);
 }
 
+/* A ring interrupts once it holds more frames than its threshold, and its
+ * timer interrupts for fewer once they have waited that long. A threshold of
+ * zero interrupts on every frame, which leaves the timer nothing to do.
+ */
+static u32 edma_mod_timer_us(struct edma_priv *priv, u16 ticks)
+{
+	return DIV_ROUND_CLOSEST_ULL((u64)ticks * EDMA_MOD_TIMER_CYCLES *
+				     USEC_PER_SEC, priv->clk_rate);
+}
+
+static int edma_get_coalesce(struct net_device *netdev,
+			     struct ethtool_coalesce *ec,
+			     struct kernel_ethtool_coalesce *kernel_coal,
+			     struct netlink_ext_ack *extack)
+{
+	struct edma_priv *priv = netdev_priv(netdev);
+
+	ec->rx_coalesce_usecs = edma_mod_timer_us(priv, priv->rx_mod_timer);
+	ec->tx_coalesce_usecs = edma_mod_timer_us(priv, priv->tx_mod_timer);
+	ec->rx_max_coalesced_frames = priv->rx_ugt_thre + 1;
+	ec->tx_max_coalesced_frames = priv->tx_ugt_thre + 1;
+
+	return 0;
+}
+
+static int edma_set_coalesce(struct net_device *netdev,
+			     struct ethtool_coalesce *ec,
+			     struct kernel_ethtool_coalesce *kernel_coal,
+			     struct netlink_ext_ack *extack)
+{
+	struct edma_priv *priv = netdev_priv(netdev);
+	const struct edma_soc_data *soc = priv->soc;
+	u64 rx_ticks, tx_ticks;
+
+	rx_ticks = DIV_ROUND_CLOSEST_ULL((u64)ec->rx_coalesce_usecs *
+					 priv->clk_rate,
+					 EDMA_MOD_TIMER_CYCLES * USEC_PER_SEC);
+	tx_ticks = DIV_ROUND_CLOSEST_ULL((u64)ec->tx_coalesce_usecs *
+					 priv->clk_rate,
+					 EDMA_MOD_TIMER_CYCLES * USEC_PER_SEC);
+	if (rx_ticks > EDMA_MOD_TIMER_MAX || tx_ticks > EDMA_MOD_TIMER_MAX) {
+		NL_SET_ERR_MSG_MOD(extack, "longer than the moderation timer counts");
+		return -EINVAL;
+	}
+
+	if (!ec->rx_max_coalesced_frames || !ec->tx_max_coalesced_frames ||
+	    ec->rx_max_coalesced_frames > EDMA_UGT_THRE_MAX + 1 ||
+	    ec->tx_max_coalesced_frames > EDMA_UGT_THRE_MAX + 1) {
+		NL_SET_ERR_MSG_MOD(extack, "frames must be between 1 and 65536");
+		return -EINVAL;
+	}
+
+	priv->rx_mod_timer = rx_ticks;
+	priv->tx_mod_timer = tx_ticks;
+	priv->rx_ugt_thre = ec->rx_max_coalesced_frames - 1;
+	priv->tx_ugt_thre = ec->tx_max_coalesced_frames - 1;
+
+	regmap_write(priv->regmap, EDMA_REG_RX_MOD_TIMER(soc->rxdesc_ring),
+		     priv->rx_mod_timer);
+	regmap_write(priv->regmap, EDMA_REG_RXDESC_UGT_THRE(soc->rxdesc_ring),
+		     priv->rx_ugt_thre);
+	regmap_write(priv->regmap,
+		     EDMA_REG_TX_MOD_TIMER(soc->tx_int_base, soc->txcmpl_ring),
+		     priv->tx_mod_timer);
+	regmap_write(priv->regmap,
+		     EDMA_REG_TXCMPL_UGT_THRE(soc->txcmpl_base,
+					      soc->txcmpl_ring),
+		     priv->tx_ugt_thre);
+
+	return 0;
+}
+
 /* One ring in each direction with an interrupt and a NAPI of its own, and
  * which ring of the engine each one is comes from the per-SoC data. Nothing
  * here can be handed out differently, which is why no set_channels sits
@@ -1410,6 +1491,10 @@ static void edma_get_ethtool_stats(struct net_device *netdev,
 }
 
 static const struct ethtool_ops edma_ethtool_ops = {
+	.supported_coalesce_params = ETHTOOL_COALESCE_USECS |
+				     ETHTOOL_COALESCE_MAX_FRAMES,
+	.get_coalesce = edma_get_coalesce,
+	.set_coalesce = edma_set_coalesce,
 	.get_sset_count = edma_get_sset_count,
 	.get_strings = edma_get_strings,
 	.get_ethtool_stats = edma_get_ethtool_stats,
@@ -1731,6 +1816,7 @@ static int edma_probe(struct platform_device *pdev)
 {
 	struct clk_bulk_data *clks;
 	struct device *dev = &pdev->dev;
+	int i, num_clks;
 	struct reset_control *rst;
 	struct net_device *netdev;
 	struct edma_priv *priv;
@@ -1738,9 +1824,9 @@ static int edma_probe(struct platform_device *pdev)
 	void __iomem *base;
 	int ret;
 
-	ret = devm_clk_bulk_get_all_enabled(dev, &clks);
-	if (ret < 0)
-		return ret;
+	num_clks = devm_clk_bulk_get_all_enabled(dev, &clks);
+	if (num_clks < 0)
+		return num_clks;
 
 	rst = devm_reset_control_get(dev, EDMA_HW_RESET_ID);
 	if (IS_ERR(rst))
@@ -1777,6 +1863,18 @@ static int edma_probe(struct platform_device *pdev)
 
 	priv->tx_ring_size = EDMA_TX_RING_SIZE;
 	priv->rx_ring_size = EDMA_RX_RING_SIZE;
+	for (i = 0; i < num_clks; i++)
+		if (!strcmp(clks[i].id, "nss_edma_clk"))
+			priv->clk_rate = clk_get_rate(clks[i].clk);
+	if (!priv->clk_rate)
+		return dev_err_probe(dev, -EINVAL, "no nss_edma_clk rate");
+	priv->tx_mod_timer = EDMA_TX_MOD_TIMER;
+	priv->rx_mod_timer = DIV_ROUND_CLOSEST_ULL((u64)EDMA_RX_COAL_US *
+						   priv->clk_rate,
+						   EDMA_MOD_TIMER_CYCLES *
+						   USEC_PER_SEC);
+	priv->rx_ugt_thre = EDMA_COAL_FRAMES - 1;
+	priv->tx_ugt_thre = EDMA_COAL_FRAMES - 1;
 	priv->rx_page_order = edma_rx_page_order(netdev->mtu);
 	priv->rx_buffer_size = edma_rx_buffer_size(priv->rx_page_order);
 	priv->page_pool = edma_page_pool_create(priv, priv->rx_page_order,
