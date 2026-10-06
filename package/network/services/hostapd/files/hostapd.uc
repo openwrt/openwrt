@@ -275,6 +275,9 @@ function __iface_pending_next(pending, state, ret, data)
 	if (pending.defer)
 		pending.defer.abort();
 	delete pending.defer;
+	if (pending.timer)
+		pending.timer.cancel();
+	delete pending.timer;
 	switch (state) {
 	case "init":
 		return "create_bss";
@@ -357,7 +360,16 @@ function iface_pending_ubus_call(obj, method, arg)
 {
 	let ubus = hostapd.data.ubus;
 	let pending = this;
-	this.defer = ubus.defer(obj, method, arg, (ret, data) => { delete pending.defer; pending.next(ret, data) });
+
+	/* libubus can run this from inside a synchronous ubus call, so continue
+	 * from the event loop */
+	this.defer = ubus.defer(obj, method, arg, (ret, data) => {
+		delete pending.defer;
+		pending.timer = uloop.timer(0, () => {
+			delete pending.timer;
+			pending.next(ret, data);
+		});
+	});
 }
 
 const iface_pending_proto = {
