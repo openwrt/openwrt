@@ -1919,6 +1919,39 @@ endef
 $(eval $(call KernelPackage,usb-roles))
 
 
+define KernelPackage/usb-typec
+  SUBMENU:=$(USB_MENU)
+  TITLE:=USB Type-C support
+  KCONFIG:=CONFIG_TYPEC
+  HIDDEN:=1
+  FILES:=$(LINUX_DIR)/drivers/usb/typec/typec.ko
+endef
+
+define KernelPackage/usb-typec/description
+ USB Type-C connector class: the typec sysfs interface for ports, partners
+ and USB Power Delivery
+endef
+
+$(eval $(call KernelPackage,usb-typec))
+
+
+define KernelPackage/usb-typec-tps6598x
+  SUBMENU:=$(USB_MENU)
+  TITLE:=TI TPS6598x/TPS25750 USB Type-C PD controller
+  DEPENDS:=@TARGET_ipq40xx +kmod-i2c-core +kmod-regmap-i2c +kmod-usb-roles +kmod-usb-typec
+  KCONFIG:=CONFIG_TYPEC_TPS6598X
+  FILES:=$(LINUX_DIR)/drivers/usb/typec/tipd/tps6598x.ko
+  AUTOLOAD:=$(call AutoProbe,tps6598x)
+endef
+
+define KernelPackage/usb-typec-tps6598x/description
+ Driver for the TI TPS65982/TPS65983 and TPS25750 USB Type-C Power Delivery
+ controllers, and the Apple CD321x
+endef
+
+$(eval $(call KernelPackage,usb-typec-tps6598x))
+
+
 define KernelPackage/usb-xhci-hcd
   TITLE:=xHCI HCD (USB 3.0) support
   KCONFIG:= CONFIG_USB_XHCI_HCD
