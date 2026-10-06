@@ -1304,17 +1304,22 @@ u32 ppe_port_queue_drops(struct qca_ppe_priv *priv, int port)
 	return tx;
 }
 
-/* A user port's queue-side counters for ethtool -S: what each of its queues
- * sent and dropped by colour, what the buffer manager turned away on ingress,
- * and the colours its meter painted. With @names it lists them, with @st it
- * folds them; it returns how many there are either way.
+/* A port's queue-side counters for ethtool -S: what each of its queues sent
+ * and dropped by colour and, for a user port, what the buffer manager turned
+ * away on ingress and the colours its meter painted. With @names it lists
+ * them, with @st it folds them; it returns how many there are either way.
  */
 int ppe_port_qstats(struct qca_ppe_priv *priv, int port, u8 **names,
 		    struct qca_ppe_mib_stats *st)
 {
+	static const struct port_l0_params cpu = {
+		.ucast_count = PPE_CPU_UCAST_QUEUES,
+		.mcast_base = 256,
+		.mcast_count = PPE_MUL_QUEUES_PORT,
+	};
 	static const char * const colour[] = { "green", "yellow", "red" };
 	struct ppe_qstats q = { .priv = priv, .names = names, .st = st };
-	const struct port_l0_params *p = NULL;
+	const struct port_l0_params *p = port ? NULL : &cpu;
 	int bm = PPE_BM_PHY_START + port - 1;
 	int i, c;
 
@@ -1351,6 +1356,9 @@ int ppe_port_qstats(struct qca_ppe_priv *priv, int port, u8 **names,
 			ppe_qstat(&q, PPE_QM_MUL_DROP_CNT(port, i, c), false,
 				  "tx_mcast_queue_%d_drop_%s", i, colour[c]);
 	}
+
+	if (!port)
+		return q.n;
 
 	if (bm <= priv->data->bm_phy_end) {
 		ppe_qstat(&q, PPE_BM_DROP_STAT(bm), false, "rx_bm_drop");

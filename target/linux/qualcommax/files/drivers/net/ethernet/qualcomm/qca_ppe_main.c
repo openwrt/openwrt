@@ -2055,7 +2055,8 @@ static void qca_ppe_get_strings(struct dsa_switch *ds, int port,
 	if (stringset != ETH_SS_STATS)
 		return;
 
-	for (i = 0; i < ARRAY_SIZE(qca_ppe_mib); i++)
+	/* The CPU port has no MAC; only its queues count. */
+	for (i = 0; port && i < ARRAY_SIZE(qca_ppe_mib); i++)
 		ethtool_puts(&data, qca_ppe_mib[i].name);
 
 	ppe_port_qstats(ds_to_priv(ds), port, &data, NULL);
@@ -2067,7 +2068,7 @@ static int qca_ppe_get_sset_count(struct dsa_switch *ds, int port,
 	if (sset != ETH_SS_STATS)
 		return 0;
 
-	return ARRAY_SIZE(qca_ppe_mib) +
+	return (port ? ARRAY_SIZE(qca_ppe_mib) : 0) +
 	       ppe_port_qstats(ds_to_priv(ds), port, NULL, NULL);
 }
 
@@ -2075,25 +2076,22 @@ static void qca_ppe_get_ethtool_stats(struct dsa_switch *ds, int port,
 				      uint64_t *data)
 {
 	struct qca_ppe_priv *priv = ds_to_priv(ds);
+	int off = port ? ARRAY_SIZE(qca_ppe_mib) : 0;
 	struct qca_ppe_mib_stats *stats, *qstats;
 	int i, n;
 
-	if (port < 1) {
-		memset(data, 0, sizeof(u64) * ARRAY_SIZE(qca_ppe_mib));
-		return;
-	}
-
-	stats = ppe_port_mib(priv, port);
 	qstats = priv->port_qstats + port * PPE_QSTATS_MAX;
 
 	spin_lock_bh(&priv->mib_lock);
-	ppe_mib_fold(priv, port);
+	if (port) {
+		stats = ppe_port_mib(priv, port);
+		ppe_mib_fold(priv, port);
+		for (i = 0; i < ARRAY_SIZE(qca_ppe_mib); i++)
+			data[i] = stats[i].total;
+	}
 	n = ppe_port_qstats(priv, port, NULL, qstats);
-
-	for (i = 0; i < ARRAY_SIZE(qca_ppe_mib); i++)
-		data[i] = stats[i].total;
 	for (i = 0; i < n; i++)
-		data[ARRAY_SIZE(qca_ppe_mib) + i] = qstats[i].total;
+		data[off + i] = qstats[i].total;
 
 	spin_unlock_bh(&priv->mib_lock);
 }
