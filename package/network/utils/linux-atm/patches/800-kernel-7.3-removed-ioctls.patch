@@ -1,0 +1,50 @@
+From: John Audia <therealgraysky@proton.me>
+Subject: [PATCH] keep ioctls removed in Linux 7.3
+
+Linux 7.3 dropped the SVC, LANE and point-to-multipoint ioctls from
+linux/atmdev.h. Define them when missing so the tools still build.
+
+Index: linux-atm-2.5.2/src/include/atm.h
+===================================================================
+--- linux-atm-2.5.2.orig/src/include/atm.h	2008-01-01 00:14:50.000000000 +0000
++++ linux-atm-2.5.2/src/include/atm.h	2026-10-06 22:58:41.022446899 +0000
+@@ -9,6 +9,39 @@
+ #include <stdint.h>
+ #include <sys/socket.h>
+ #include <linux/atm.h>
++#include <linux/atmdev.h>
++
++/*
++ * Linux 7.3 dropped the SVC, LANE and point-to-multipoint ioctls. Keep the
++ * old numbers so the tools still build; the kernel rejects them at runtime.
++ */
++#ifndef ATM_GETADDR
++#define ATM_GETADDR	_IOW('a',ATMIOC_ITF+6,struct atmif_sioc)
++#endif
++#ifndef ATM_RSTADDR
++#define ATM_RSTADDR	_IOW('a',ATMIOC_ITF+7,struct atmif_sioc)
++#endif
++#ifndef ATM_ADDADDR
++#define ATM_ADDADDR	_IOW('a',ATMIOC_ITF+8,struct atmif_sioc)
++#endif
++#ifndef ATM_DELADDR
++#define ATM_DELADDR	_IOW('a',ATMIOC_ITF+9,struct atmif_sioc)
++#endif
++#ifndef ATM_ADDLECSADDR
++#define ATM_ADDLECSADDR	_IOW('a',ATMIOC_ITF+14,struct atmif_sioc)
++#endif
++#ifndef ATM_DELLECSADDR
++#define ATM_DELLECSADDR	_IOW('a',ATMIOC_ITF+15,struct atmif_sioc)
++#endif
++#ifndef ATM_GETLECSADDR
++#define ATM_GETLECSADDR	_IOW('a',ATMIOC_ITF+16,struct atmif_sioc)
++#endif
++#ifndef ATM_ADDPARTY
++#define ATM_ADDPARTY	_IOW('a',ATMIOC_SPECIAL+4,struct atm_iobuf)
++#endif
++#ifndef ATM_DROPPARTY
++#define ATM_DROPPARTY	_IOW('a',ATMIOC_SPECIAL+5,int)
++#endif
+ 
+ #ifdef  __cplusplus
+ extern "C" {
