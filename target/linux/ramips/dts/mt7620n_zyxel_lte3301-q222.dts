@@ -1,0 +1,35 @@
+/dts-v1/;
+
+#include "mt7620n_zyxel_lte3301.dtsi"
+
+/ {
+	compatible = "zyxel,lte3301-q222", "ralink,mt7620n-soc";
+	model = "Zyxel LTE3301-Q222";
+};
+
+&config_nvmem {
+	/* base MAC of this hardware variant */
+	macaddr_base: macaddr@e07c {
+		compatible = "mac-base";
+		reg = <0xe07c 0x6>;
+		#nvmem-cell-cells = <1>;
+	};
+};
+
+&ethernet {
+	/* U-Boot overwrites this with its ethaddr, which is the same value. */
+	nvmem-cells = <&macaddr_base 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&wmac {
+	/*
+	 * Base MAC + 1, so wlan0 does not collide with eth0. The
+	 * calibration data keeps the "soc_wmac.eeprom" name inherited from
+	 * mt7620n.dtsi - it lives in the jboot config partition and is
+	 * extracted under that name by
+	 * etc/hotplug.d/firmware/10-rt2x00-eeprom.
+	 */
+	nvmem-cells = <&macaddr_base 1>;
+	nvmem-cell-names = "mac-address";
+};
