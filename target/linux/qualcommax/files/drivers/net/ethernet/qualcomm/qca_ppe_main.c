@@ -1923,7 +1923,8 @@ static const struct qca_ppe_mib_desc qca_ppe_mib[] = {
  */
 #define PPE_MIB_RX_DROP		ARRAY_SIZE(qca_ppe_mib)
 #define PPE_MIB_TX_DROP		(PPE_MIB_RX_DROP + 1)
-#define PPE_MIB_STATS		(PPE_MIB_RX_DROP + 2)
+#define PPE_MIB_TX_QUEUE_DROP	(PPE_MIB_RX_DROP + 2)
+#define PPE_MIB_STATS		(PPE_MIB_RX_DROP + 3)
 
 static struct qca_ppe_mib_stats *ppe_port_mib(struct qca_ppe_priv *priv,
 					      int port)
@@ -1945,6 +1946,7 @@ static struct qca_ppe_mib_stats *ppe_port_mib(struct qca_ppe_priv *priv,
 static void ppe_mib_fold(struct qca_ppe_priv *priv, int port)
 {
 	struct qca_ppe_mib_stats *stats;
+	u32 drop[3];
 	bool xgmac, rebase;
 	int i;
 
@@ -1986,12 +1988,12 @@ static void ppe_mib_fold(struct qca_ppe_priv *priv, int port)
 		stats[i].last = cur;
 	}
 
+	regmap_read(priv->regmap, PPE_PRX_DROP_CNT(port), &drop[0]);
+	regmap_read(priv->regmap, PPE_PORT_TX_DROP_CNT(port), &drop[1]);
+	drop[2] = ppe_port_queue_drops(priv, port);
 	for (i = PPE_MIB_RX_DROP; i < PPE_MIB_STATS; i++) {
-		u32 cur;
+		u32 cur = drop[i - PPE_MIB_RX_DROP];
 
-		regmap_read(priv->regmap, i == PPE_MIB_RX_DROP ?
-			    PPE_PRX_DROP_CNT(port) :
-			    PPE_PORT_TX_DROP_CNT(port), &cur);
 		stats[i].total += (u32)(cur - stats[i].last);
 		stats[i].last = cur;
 	}
@@ -2136,7 +2138,8 @@ static void qca_ppe_get_stats64(struct dsa_switch *ds, int port,
 	s->collisions = MIB(TXCOLLISIONS);
 
 	s->rx_dropped = stats[PPE_MIB_RX_DROP].total;
-	s->tx_dropped = stats[PPE_MIB_TX_DROP].total;
+	s->tx_dropped = stats[PPE_MIB_TX_DROP].total +
+			stats[PPE_MIB_TX_QUEUE_DROP].total;
 
 	spin_unlock_bh(&priv->mib_lock);
 }
