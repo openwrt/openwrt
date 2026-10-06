@@ -1,0 +1,86 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Subject: [PATCH] net: dsa: forward devlink drop trap ops to the switch
+
+A DSA switch cannot register devlink packet traps, since dsa_devlink_ops
+has no trap callbacks. Forward trap_init, trap_action_set and
+trap_drop_counter_get to the switch driver, so a switch that counts its
+own drops by reason can report them as devlink drop traps.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+--- a/include/net/dsa.h
++++ b/include/net/dsa.h
+@@ -1213,6 +1213,16 @@ struct dsa_switch_ops {
+ 						   unsigned int sb_index, u16 tc_index,
+ 						   enum devlink_sb_pool_type pool_type,
+ 						   u32 *p_cur, u32 *p_max);
++	int	(*devlink_trap_init)(struct dsa_switch *ds,
++				     const struct devlink_trap *trap,
++				     void *trap_ctx);
++	int	(*devlink_trap_action_set)(struct dsa_switch *ds,
++					   const struct devlink_trap *trap,
++					   enum devlink_trap_action action,
++					   struct netlink_ext_ack *extack);
++	int	(*devlink_trap_drop_counter_get)(struct dsa_switch *ds,
++						 const struct devlink_trap *trap,
++						 u64 *p_drops);
+ 
+ 	/*
+ 	 * MTU change functionality. Switches can also adjust their MRU through
+--- a/net/dsa/devlink.c
++++ b/net/dsa/devlink.c
+@@ -179,6 +179,43 @@ dsa_devlink_sb_occ_tc_port_bind_get(stru
+ 							p_max);
+ }
+ 
++static int dsa_devlink_trap_init(struct devlink *dl,
++				 const struct devlink_trap *trap,
++				 void *trap_ctx)
++{
++	struct dsa_switch *ds = dsa_devlink_to_ds(dl);
++
++	if (!ds->ops->devlink_trap_init)
++		return -EOPNOTSUPP;
++
++	return ds->ops->devlink_trap_init(ds, trap, trap_ctx);
++}
++
++static int dsa_devlink_trap_action_set(struct devlink *dl,
++				       const struct devlink_trap *trap,
++				       enum devlink_trap_action action,
++				       struct netlink_ext_ack *extack)
++{
++	struct dsa_switch *ds = dsa_devlink_to_ds(dl);
++
++	if (!ds->ops->devlink_trap_action_set)
++		return -EOPNOTSUPP;
++
++	return ds->ops->devlink_trap_action_set(ds, trap, action, extack);
++}
++
++static int dsa_devlink_trap_drop_counter_get(struct devlink *dl,
++					     const struct devlink_trap *trap,
++					     u64 *p_drops)
++{
++	struct dsa_switch *ds = dsa_devlink_to_ds(dl);
++
++	if (!ds->ops->devlink_trap_drop_counter_get)
++		return -EOPNOTSUPP;
++
++	return ds->ops->devlink_trap_drop_counter_get(ds, trap, p_drops);
++}
++
+ static const struct devlink_ops dsa_devlink_ops = {
+ 	.info_get			= dsa_devlink_info_get,
+ 	.flash_update			= dsa_devlink_flash_update,
+@@ -192,6 +229,9 @@ static const struct devlink_ops dsa_devl
+ 	.sb_occ_max_clear		= dsa_devlink_sb_occ_max_clear,
+ 	.sb_occ_port_pool_get		= dsa_devlink_sb_occ_port_pool_get,
+ 	.sb_occ_tc_port_bind_get	= dsa_devlink_sb_occ_tc_port_bind_get,
++	.trap_init			= dsa_devlink_trap_init,
++	.trap_action_set		= dsa_devlink_trap_action_set,
++	.trap_drop_counter_get		= dsa_devlink_trap_drop_counter_get,
+ };
+ 
+ int dsa_devlink_param_get(struct devlink *dl, u32 id,
