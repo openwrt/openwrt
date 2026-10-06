@@ -1229,7 +1229,7 @@
 #define PPE_FDB_OP_FLUSH		4
 
 #define PPE_TRUNK_GROUPS		2
-#define PPE_TRAP_CODES			5
+#define PPE_TRAP_CODES			7
 
 #define PPE_XLT_TBL_NUM			64
 #define PPE_XLT_CVID_DEL		2
