@@ -62,12 +62,12 @@ Signed-off-by: Johan Alvarado <contact@c127.dev>
 Link: https://patch.msgid.link/20260911184416.109790-2-contact@c127.dev
 Signed-off-by: Mark Brown <broonie@kernel.org>
 ---
- drivers/spi/spi-qpic-snand.c | 4 ++++
- 1 file changed, 4 insertions(+)
+ drivers/spi/spi-qpic-snand.c | 3 +++
+ 1 file changed, 3 insertions(+)
 
 --- a/drivers/spi/spi-qpic-snand.c
 +++ b/drivers/spi/spi-qpic-snand.c
-@@ -391,6 +391,8 @@ static int qcom_spi_ecc_init_ctx_pipelin
+@@ -411,6 +411,8 @@ static int qcom_spi_ecc_init_ctx_pipelin
  	dev_dbg(snandc->dev, "ECC strength: %u bits per %u bytes\n",
  		ecc_cfg->strength, ecc_cfg->step_size);
  
@@ -76,13 +76,10 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  	return 0;
  
  err_free_ecc_cfg:
-@@ -400,8 +402,10 @@ err_free_ecc_cfg:
+@@ -427,6 +429,7 @@ static void qcom_spi_ecc_cleanup_ctx_pip
  
- static void qcom_spi_ecc_cleanup_ctx_pipelined(struct nand_device *nand)
- {
-+	struct qcom_nand_controller *snandc = nand_to_qcom_snand(nand);
- 	struct qpic_ecc *ecc_cfg = nand_to_ecc_ctx(nand);
- 
+ 	kfree(snandc->qspi->oob_buf);
+ 	snandc->qspi->oob_buf = NULL;
 +	snandc->qspi->ecc = NULL;
  	kfree(ecc_cfg);
  }

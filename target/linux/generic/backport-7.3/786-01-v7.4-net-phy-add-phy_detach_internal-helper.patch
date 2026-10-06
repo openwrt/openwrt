@@ -17,9 +17,12 @@ Reviewed-by: Andrew Lunn <andrew@lunn.ch>
 Link: https://patch.msgid.link/20260831143439.2404484-5-markus.stockhausen@gmx.de
 Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 ---
+ drivers/net/phy/phy_device.c | 172 +++++++++++++++++++----------------
+ 1 file changed, 92 insertions(+), 80 deletions(-)
+
 --- a/drivers/net/phy/phy_device.c
 +++ b/drivers/net/phy/phy_device.c
-@@ -1612,6 +1612,95 @@ static bool phy_drv_supports_irq(const s
+@@ -1735,6 +1735,98 @@ static bool phy_drv_supports_irq(const s
  }
  
  /**
@@ -54,6 +57,9 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 +	if (dev) {
 +		struct hwtstamp_provider *hwprov;
 +
++		/* hwprov may technically be protected by ops lock but
++		 * not for devices with a phydev, see phy_link_topo_add_phy()
++		 */
 +		hwprov = rtnl_dereference(dev->hwprov);
 +		/* Disable timestamp if it is the one selected */
 +		if (hwprov && hwprov->phydev == phydev) {
@@ -115,9 +121,9 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
   * phy_attach_direct - attach a network device to a given PHY device pointer
   * @dev: network device to attach
   * @phydev: Pointer to phy_device to attach
-@@ -1821,83 +1910,6 @@ struct phy_device *phy_attach(struct net
+@@ -1906,86 +1998,6 @@ error_put_device:
  }
- EXPORT_SYMBOL(phy_attach);
+ EXPORT_SYMBOL(phy_attach_direct);
  
 -/**
 - * phy_detach - detach a PHY device from its network device
@@ -151,6 +157,9 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 -	if (dev) {
 -		struct hwtstamp_provider *hwprov;
 -
+-		/* hwprov may technically be protected by ops lock but
+-		 * not for devices with a phydev, see phy_link_topo_add_phy()
+-		 */
 -		hwprov = rtnl_dereference(dev->hwprov);
 -		/* Disable timestamp if it is the one selected */
 -		if (hwprov && hwprov->phydev == phydev) {
