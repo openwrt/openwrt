@@ -68,6 +68,7 @@
 #define EDMA_REG_TXCMPL_PROD_IDX(b, n)	((b) + 0x004 + (0x1000 * (n)))
 #define EDMA_REG_TXCMPL_CONS_IDX(b, n)	((b) + 0x008 + (0x1000 * (n)))
 #define EDMA_REG_TXCMPL_RING_SIZE(b, n)	((b) + 0x00c + (0x1000 * (n)))
+#define EDMA_REG_TXCMPL_UGT_THRE(b, n)	((b) + 0x010 + (0x1000 * (n)))
 #define EDMA_REG_TXCMPL_CTRL(b, n)	((b) + 0x014 + (0x1000 * (n)))
 
 #define EDMA_TXCMPL_PROD_IDX_MASK	0xffff
@@ -112,6 +113,7 @@
 #define EDMA_REG_RXDESC_PROD_IDX(n)	(0x39004 + (0x1000 * (n)))
 #define EDMA_REG_RXDESC_CONS_IDX(n)	(0x39008 + (0x1000 * (n)))
 #define EDMA_REG_RXDESC_RING_SIZE(n)	(0x3900c + (0x1000 * (n)))
+#define EDMA_REG_RXDESC_UGT_THRE(n)	(0x39014 + (0x1000 * (n)))
 #define EDMA_REG_RXDESC_CTRL(n)		(0x39018 + (0x1000 * (n)))
 
 #define EDMA_RXDESC_PROD_IDX_MASK	0xffff
@@ -134,7 +136,14 @@
 #define EDMA_REG_RX_INT_CTRL(n)		(0x4900c + (0x1000 * (n)))
 
 #define EDMA_RXDESC_INT_MASK_PKT_INT	0x1
-#define EDMA_RX_MOD_TIMER_INIT		1000
+/* Default moderation: an interrupt per 16 frames, or after 25 us on RX. */
+#define EDMA_RX_COAL_US			25
+#define EDMA_COAL_FRAMES		16
+
+/* A moderation timer counts 128 cycles of the EDMA clock. */
+#define EDMA_MOD_TIMER_CYCLES		128
+#define EDMA_MOD_TIMER_MAX		0xffff
+#define EDMA_UGT_THRE_MAX		0xffff
 
 /* RX descriptor status fields */
 #define EDMA_RXDESC_L4_CSUM_OK	BIT(14)
@@ -316,6 +325,11 @@ struct edma_priv {
 	u8 rx_page_order;
 	u16 tx_ring_size;
 	u16 rx_ring_size;
+	unsigned long clk_rate;
+	u16 tx_mod_timer;
+	u16 rx_mod_timer;
+	u16 tx_ugt_thre;
+	u16 rx_ugt_thre;
 
 	/* The frame a run of completions belongs to, named by the first of
 	 * them and released on the last.
