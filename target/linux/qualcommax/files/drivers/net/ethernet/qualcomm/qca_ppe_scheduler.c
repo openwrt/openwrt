@@ -1300,38 +1300,47 @@ static __printf(4, 5) void ppe_qstat(struct ppe_qstats *q, u32 reg, bool bytes,
 	q->n++;
 }
 
-/* The frames a port's queues dropped on egress, as a 32-bit sum for the caller
- * to fold.
+/* The frames a port's queues dropped on egress, as 32-bit sums for the caller
+ * to fold: by WRED, and at the queue limit. The CPU port's are its unicast
+ * queues below the first user port's.
  */
-u32 ppe_port_queue_drops(struct qca_ppe_priv *priv, int port)
+void ppe_port_queue_drops(struct qca_ppe_priv *priv, int port, u32 *early,
+			  u32 *tail)
 {
 	const struct port_l0_params *p = NULL;
-	u32 w[PPE_CNT_WORDS], tx = 0;
+	u16 base = 0, ucast = port_l0[0].ucast_base, mcast = 0;
+	u32 w[PPE_CNT_WORDS];
 	int i, t;
 
+	*early = *tail = 0;
 	for (i = 0; i < ARRAY_SIZE(port_l0); i++)
 		if (port_l0[i].port == port)
 			p = &port_l0[i];
-	if (!p)
-		return 0;
+	if (p) {
+		base = p->ucast_base;
+		ucast = p->ucast_count;
+		mcast = p->mcast_count;
+	} else if (port) {
+		return;
+	}
 
-	for (i = 0; i < p->ucast_count; i++)
+	for (i = 0; i < ucast; i++)
 		for (t = 0; t < PPE_UNI_DROP_TYPES; t++) {
 			regmap_bulk_read(priv->regmap,
-					 PPE_QM_UNI_DROP_CNT(p->ucast_base + i,
-							     t),
+					 PPE_QM_UNI_DROP_CNT(base + i, t),
 					 w, ARRAY_SIZE(w));
-			tx += w[0];
+			if (t < PPE_UNI_DROP_TYPES / 2)
+				*early += w[0];
+			else
+				*tail += w[0];
 		}
-	for (i = 0; i < p->mcast_count; i++)
+	for (i = 0; i < mcast; i++)
 		for (t = 0; t < PPE_MUL_DROP_TYPES; t++) {
 			regmap_bulk_read(priv->regmap,
 					 PPE_QM_MUL_DROP_CNT(port, i, t),
 					 w, ARRAY_SIZE(w));
-			tx += w[0];
+			*tail += w[0];
 		}
-
-	return tx;
 }
 
 /* A port's queue-side counters for ethtool -S: what each of its queues sent
