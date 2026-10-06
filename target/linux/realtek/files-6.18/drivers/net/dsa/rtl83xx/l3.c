@@ -1266,6 +1266,47 @@ static bool otto_l3_fwd_off(struct otto_l3_ctrl *ctrl, u8 type)
 	return type == ROUTE_TYPE_IP6UC ? ctrl->v6_fwd_off : ctrl->v4_fwd_off;
 }
 
+/* Writes a route to its host slot or prefix row, taking a free slot or placing
+ * a row when it has none yet. A host route that a local route shadows keeps out
+ * of the entry, and nothing is written for it.
+ */
+static int otto_l3_route_install(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r)
+{
+	char dst[INET6_ADDRSTRLEN + sizeof("/128")];
+	int slot;
+
+	if (otto_l3_host_shadowed(ctrl, r)) {
+		dev_dbg(ctrl->dev, "%pI4 is an address of the switch, its entry stays\n",
+			&r->dst_ip);
+		return 0;
+	}
+
+	if (r->is_host_route) {
+		slot = ctrl->cfg->find_slot(ctrl, r, true);
+		if (slot < 0)
+			slot = ctrl->cfg->find_slot(ctrl, r, false);
+		if (slot < 0) {
+			dev_err(ctrl->dev, "no slot for host route %pI4\n", &r->dst_ip);
+			return -ENOSPC;
+		}
+
+		dev_dbg(ctrl->dev, "Got slot for route: %d\n", slot);
+		ctrl->cfg->host_route_write(ctrl, slot, r);
+		return 0;
+	}
+
+	if (r->row < 0)
+		r->row = otto_l3_route_place(ctrl, r);
+	if (r->row < 0) {
+		dev_err(ctrl->dev, "no row for prefix route %s\n",
+			otto_l3_route_dst(r, dst, sizeof(dst)));
+		return -ENOSPC;
+	}
+
+	ctrl->cfg->route_write(ctrl, r->row, r);
+	return 0;
+}
+
 static void otto_l3_route_update_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r,
 				    u64 mac)
 {
@@ -1330,34 +1371,10 @@ static void otto_l3_route_update_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_ro
 		r->pr.dip_m = inet_make_mask(r->prefix_len);
 	}
 
-	if (otto_l3_host_shadowed(ctrl, r)) {
-		dev_dbg(ctrl->dev, "%pI4 is an address of the switch, its entry stays\n",
-			&r->dst_ip);
-	} else if (r->is_host_route) {
-		int slot = ctrl->cfg->find_slot(ctrl, r, true);
+	if (otto_l3_route_install(ctrl, r))
+		return;
 
-		if (slot < 0)
-			slot = ctrl->cfg->find_slot(ctrl, r, false);
-
-		if (slot < 0) {
-			dev_err(ctrl->dev, "no slot for host route %pI4\n",
-				&r->dst_ip);
-			return;
-		}
-
-		dev_info(ctrl->dev, "Got slot for route: %d\n", slot);
-		ctrl->cfg->host_route_write(ctrl, slot, r);
-	} else {
-		if (r->row < 0)
-			r->row = otto_l3_route_place(ctrl, r);
-
-		if (r->row < 0) {
-			dev_err(ctrl->dev, "no row for prefix route %s\n",
-				otto_l3_route_dst(r, dst, sizeof(dst)));
-			return;
-		}
-
-		ctrl->cfg->route_write(ctrl, r->row, r);
+	if (!r->is_host_route) {
 		r->pr.fwd_sel = true;
 		r->pr.fwd_data = r->nh.l2_id;
 		r->pr.fwd_act = PIE_ACT_ROUTE_UC;
@@ -1436,13 +1453,7 @@ static void otto_l3_route_trap_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_rout
 		dev_info(ctrl->dev, "no valid neighbour for %pI6c, routing %s in software\n",
 			 &r->gw_ip, otto_l3_route_dst(r, dst, sizeof(dst)));
 
-	if (otto_l3_host_shadowed(ctrl, r))
-		return;
-
-	if (r->is_host_route)
-		ctrl->cfg->host_route_write(ctrl, slot, r);
-	else
-		ctrl->cfg->route_write(ctrl, slot, r);
+	otto_l3_route_rewrite(ctrl, r);
 }
 
 /* Updates an L3 next hop entry in the ROUTING table */
@@ -1792,7 +1803,6 @@ static void otto_l3_host_route_trap(struct otto_l3_ctrl *ctrl,
 {
 	struct otto_l3_route *route;
 	struct in6_addr gw;
-	int slot;
 
 	ipv6_addr_set_v4mapped(0, &gw);
 	route = otto_l3_route_alloc(ctrl, &gw, ROUTE_HOST);
@@ -1806,20 +1816,8 @@ static void otto_l3_host_route_trap(struct otto_l3_ctrl *ctrl,
 	route->attr.action = ROUTE_ACT_TRAP2CPU;
 	route->attr.type = ROUTE_TYPE_IP4UC;
 
-	if (otto_l3_host_shadowed(ctrl, route))
-		return;
-
-	slot = ctrl->cfg->find_slot(ctrl, route, true);
-	if (slot < 0)
-		slot = ctrl->cfg->find_slot(ctrl, route, false);
-
-	if (slot < 0) {
-		dev_err(ctrl->dev, "no slot for host route %pI4\n", &route->dst_ip);
+	if (otto_l3_route_install(ctrl, route))
 		otto_l3_route_free(ctrl, route);
-		return;
-	}
-
-	ctrl->cfg->host_route_write(ctrl, slot, route);
 }
 
 /* A route this driver leaves out still has to keep a shorter prefix in
@@ -1867,37 +1865,10 @@ static void otto_l3_fib_trap_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_noti
 
 static void otto_l3_route_trap_new(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r)
 {
-	char dst[INET6_ADDRSTRLEN + sizeof("/128")];
-	int slot;
-
 	r->attr.valid = true;
 	r->attr.action = ROUTE_ACT_TRAP2CPU;
 
-	if (otto_l3_host_shadowed(ctrl, r))
-		return;
-
-	if (r->is_host_route) {
-		slot = ctrl->cfg->find_slot(ctrl, r, true);
-		if (slot < 0)
-			slot = ctrl->cfg->find_slot(ctrl, r, false);
-		if (slot < 0) {
-			dev_err(ctrl->dev, "no slot for host route %pI4\n", &r->dst_ip);
-			return;
-		}
-
-		ctrl->cfg->host_route_write(ctrl, slot, r);
-		return;
-	}
-
-	r->row = otto_l3_route_place(ctrl, r);
-	if (r->row < FIRST_PREFIX_ROW) {
-		r->row = -1;
-		dev_err(ctrl->dev, "no row for prefix route %s\n",
-			otto_l3_route_dst(r, dst, sizeof(dst)));
-		return;
-	}
-
-	ctrl->cfg->route_write(ctrl, r->row, r);
+	otto_l3_route_install(ctrl, r);
 }
 
 static int otto_l3_fib_add_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifier_info *info)
@@ -1998,29 +1969,14 @@ static int otto_l3_fib_add_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 			goto out_free_rmac;
 
 		if (!nh->fib_nh_gw4 && route->is_host_route) {
-			int slot;
-
 			route->nh.mac = mac;
 			route->nh.port = priv->r->port_ignore;
 			route->attr.valid = true;
 			route->attr.action = ROUTE_ACT_TRAP2CPU;
 			route->attr.type = ROUTE_TYPE_IP4UC;
 
-			if (otto_l3_host_shadowed(ctrl, route))
-				goto resolve;
-
-			slot = ctrl->cfg->find_slot(ctrl, route, true);
-			if (slot < 0)
-				slot = ctrl->cfg->find_slot(ctrl, route, false);
-
-			if (slot < 0) {
-				dev_err(ctrl->dev, "no slot for host route %pI4\n",
-					&route->dst_ip);
+			if (otto_l3_route_install(ctrl, route))
 				goto out_free_rt;
-			}
-
-			dev_dbg(ctrl->dev, "Got slot for route: %d\n", slot);
-			ctrl->cfg->host_route_write(ctrl, slot, route);
 		}
 	}
 
@@ -2033,7 +1989,6 @@ static int otto_l3_fib_add_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 	if (ctrl->cfg->use_l3_tables && (nh->fib_nh_gw4 || !route->is_host_route))
 		otto_l3_route_trap_new(ctrl, route);
 
-resolve:
 	/* We need to resolve the mac address of the GW */
 	if (nh->fib_nh_gw4)
 		otto_l3_port_gw_resolve(ctrl, ndev, &arp_tbl, &gw);
