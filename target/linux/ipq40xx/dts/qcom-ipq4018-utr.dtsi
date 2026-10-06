@@ -76,7 +76,7 @@
 		default-brightness-level = <100>;
 	};
 
-	i2c-gpio {
+	i2c_gpio: i2c-gpio {
 		compatible = "i2c-gpio";
 		sda-gpios = <&tlmm 5 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
 		scl-gpios = <&tlmm 58 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
