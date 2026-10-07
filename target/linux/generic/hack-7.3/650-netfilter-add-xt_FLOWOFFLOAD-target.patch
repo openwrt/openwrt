@@ -44,7 +44,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  obj-$(CONFIG_NETFILTER_XT_TARGET_LED) += xt_LED.o
 --- /dev/null
 +++ b/net/netfilter/xt_FLOWOFFLOAD.c
-@@ -0,0 +1,719 @@
+@@ -0,0 +1,742 @@
 +/*
 + * Copyright (C) 2018-2021 Felix Fietkau <nbd@nbd.name>
 + *
@@ -57,6 +57,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +#include <linux/netfilter.h>
 +#include <linux/netfilter/x_tables.h>
 +#include <linux/netfilter/xt_FLOWOFFLOAD.h>
++#include <linux/if_arp.h>
 +#include <linux/if_vlan.h>
 +#include <net/ip.h>
 +#include <net/netfilter/nf_conntrack.h>
@@ -91,6 +92,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	u8 h_source[ETH_ALEN];
 +	u8 h_dest[ETH_ALEN];
 +	enum flow_offload_xmit_type xmit_type;
++	bool needs_gso_segment;
 +};
 +
 +static DEFINE_SPINLOCK(hooks_lock);
@@ -366,8 +368,10 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +			info->encap[info->num_encaps].id = path->encap.id;
 +			info->encap[info->num_encaps].proto = path->encap.proto;
 +			info->num_encaps++;
-+			if (path->type == DEV_PATH_PPPOE)
++			if (path->type == DEV_PATH_PPPOE) {
 +				memcpy(info->h_dest, path->encap.h_dest, ETH_ALEN);
++				info->needs_gso_segment = true;
++			}
 +			break;
 +		case DEV_PATH_BRIDGE:
 +			if (is_zero_ether_addr(info->h_source))
@@ -438,7 +442,22 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +out:
 +	ether_addr_copy(ctx.daddr, ha);
 +
-+	return dev_fill_forward_path(&ctx, stack);
++	if (dev_fill_forward_path(&ctx, stack) >= 0)
++		return 0;
++
++	/* ipip and ip6tnl only fill a forward path when ctx.ether_type is
++	 * set, keep treating them as a single device like before.
++	 */
++	if (dev->type != ARPHRD_TUNNEL && dev->type != ARPHRD_TUNNEL6)
++		return -1;
++
++	stack->num_paths = 1;
++	stack->path[0] = (struct net_device_path) {
++		.type = DEV_PATH_ETHERNET,
++		.dev = dev,
++	};
++
++	return 0;
 +}
 +
 +static void nf_dev_forward_path(struct nf_flow_route *route,
@@ -480,9 +499,13 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	if (info.xmit_type == FLOW_OFFLOAD_XMIT_DIRECT) {
 +		memcpy(route->tuple[dir].out.h_source, info.h_source, ETH_ALEN);
 +		memcpy(route->tuple[dir].out.h_dest, info.h_dest, ETH_ALEN);
-+		route->tuple[dir].out.hw_ifindex = info.hw_outdev->ifindex;
++		/* The core pushes the encap itself and transmits on the
++		 * lowest device.
++		 */
++		route->tuple[dir].out.ifindex = info.hw_outdev->ifindex;
 +		route->tuple[dir].xmit_type = info.xmit_type;
 +	}
++	route->tuple[dir].out.needs_gso_segment = info.needs_gso_segment;
 +}
 +
 +static int
