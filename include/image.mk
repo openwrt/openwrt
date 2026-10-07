@@ -192,7 +192,7 @@ DTC_WARN_FLAGS := \
   -Wno-unit_address_vs_reg \
   -Wno-avoid_unnecessary_addr_size \
   -Wno-alias_paths \
-  -Wno-graph_child_address \
+  $(if $(call kernel_patchver_lt,7.3),-Wno-graph_child_address) \
   -Wno-simple_bus_reg
 
 DTC_FLAGS += $(DTC_WARN_FLAGS)
