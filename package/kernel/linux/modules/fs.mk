@@ -108,7 +108,8 @@ define KernelPackage/fs-smbfs-common
 	CONFIG_SMBFS
   FILES:= \
 	$(LINUX_DIR)/fs/smb/common/cifs_arc4.ko@lt6.18 \
-	$(LINUX_DIR)/fs/smb/common/cifs_md4.ko
+	$(LINUX_DIR)/fs/smb/common/cifs_md4.ko \
+	$(LINUX_DIR)/fs/smb/common/smb_compress.ko@ge7.3
 endef
 
 define KernelPackage/fs-smbfs-common/description
@@ -368,9 +369,8 @@ define KernelPackage/fs-ksmbd
 	CONFIG_SMB_SERVER_CHECK_CAP_NET_ADMIN=n \
 	CONFIG_SMB_SERVER_KERBEROS5=n
   FILES:= \
-	 $(LINUX_DIR)/fs/smb/common/smb_compress.ko@ge7.3 \
 	 $(LINUX_DIR)/fs/smb/server/ksmbd.ko
-  AUTOLOAD:=$(call AutoLoad,41,smb_compress@ge7.3 ksmbd)
+  AUTOLOAD:=$(call AutoLoad,41,ksmbd)
 endef
 
 define KernelPackage/fs-ksmbd/description
@@ -508,11 +508,12 @@ define KernelPackage/fs-nfs-common-rpcsec
 	CONFIG_CRYPTO_KRB5@ge7.3 \
 	CONFIG_CRYPTO_KRB5ENC@ge7.3
   FILES:= \
+	$(LINUX_DIR)/crypto/camellia_generic.ko@ge7.3 \
 	$(LINUX_DIR)/crypto/krb5enc.ko@ge7.3 \
 	$(LINUX_DIR)/crypto/krb5/krb5.ko@ge7.3 \
 	$(LINUX_DIR)/net/sunrpc/auth_gss/auth_rpcgss.ko \
 	$(LINUX_DIR)/net/sunrpc/auth_gss/rpcsec_gss_krb5.ko
-  AUTOLOAD:=$(call AutoLoad,31,krb5enc@ge7.3 krb5@ge7.3 auth_rpcgss rpcsec_gss_krb5)
+  AUTOLOAD:=$(call AutoLoad,31,camellia_generic@ge7.3 krb5enc@ge7.3 krb5@ge7.3 auth_rpcgss rpcsec_gss_krb5)
 endef
 
 define KernelPackage/fs-nfs-common-rpcsec/description
