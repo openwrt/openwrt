@@ -1,0 +1,40 @@
+From: John Audia <therealgraysky@proton.me>
+Subject: [PATCH] wifi: rtw89: fw: use MAC source for delay offload
+
+RTW89_FW_CMD_OFLD_SRC_OTHER is 4, which does not fit the 2-bit SRC
+field, and the build fails with __field_overflow once the delay
+helpers are inlined. Use RTW89_FW_CMD_OFLD_SRC_MAC like upstream does
+in Linux 7.3 and drop the unused enum value.
+
+Signed-off-by: John Audia <therealgraysky@proton.me>
+---
+--- a/drivers/net/wireless/realtek/rtw89/fw.c
++++ b/drivers/net/wireless/realtek/rtw89/fw.c
+@@ -11780,7 +11780,7 @@ static void rtw89_fw_cmd_ofld_write_rf(s
+ static void rtw89_fw_cmd_ofld_udelay(struct rtw89_dev *rtwdev, u32 us)
+ {
+ 	struct rtw89_fw_cmd_ofld_arg cmd = {
+-		.src = RTW89_FW_CMD_OFLD_SRC_OTHER,
++		.src = RTW89_FW_CMD_OFLD_SRC_MAC,
+ 		.type = RTW89_FW_CMD_OFLD_DELAY,
+ 		.value = us,
+ 	};
+@@ -11794,7 +11794,7 @@ static void rtw89_fw_cmd_ofld_udelay(str
+ static void rtw89_fw_cmd_ofld_mdelay(struct rtw89_dev *rtwdev, u32 ms)
+ {
+ 	struct rtw89_fw_cmd_ofld_arg cmd = {
+-		.src = RTW89_FW_CMD_OFLD_SRC_OTHER,
++		.src = RTW89_FW_CMD_OFLD_SRC_MAC,
+ 		.type = RTW89_FW_CMD_OFLD_DELAY,
+ 		.value = ms * 1000,
+ 	};
+--- a/drivers/net/wireless/realtek/rtw89/fw.h
++++ b/drivers/net/wireless/realtek/rtw89/fw.h
+@@ -3142,7 +3142,6 @@ enum rtw89_fw_cmd_ofld_arg_src {
+ 	RTW89_FW_CMD_OFLD_SRC_RF,
+ 	RTW89_FW_CMD_OFLD_SRC_MAC,
+ 	RTW89_FW_CMD_OFLD_SRC_RF_DDIE,
+-	RTW89_FW_CMD_OFLD_SRC_OTHER,
+ };
+ 
+ enum rtw89_fw_cmd_ofld_arg_type {
