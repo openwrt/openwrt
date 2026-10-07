@@ -1,0 +1,88 @@
+From: Rosen Penev <rosenp@gmail.com>
+Subject: [PATCH] net: ag71xx: use napi_gro_receive
+
+Now that received frames carry a checksum, pass them through GRO from
+the driver and complete NAPI with napi_complete_done() so GRO gets
+flushed properly.
+
+TP-Link Archer C7 v2, routed TCP stream without flow offload, median of
+3 runs, Mbit/s:
+
+          before   after
+  up         694     744
+  down       598     641
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+--- a/drivers/net/ethernet/atheros/ag71xx.c
++++ b/drivers/net/ethernet/atheros/ag71xx.c
+@@ -1723,7 +1723,7 @@ static int ag71xx_rx_packets(struct ag71
+ 	struct ag71xx_ring *ring;
+ 	bool use_csum, csum_err = false;
+ 	unsigned int nqueued = 0;
+-	struct sk_buff *skb;
++	struct sk_buff *skb, *tmp;
+ 	LIST_HEAD(rx_list);
+ 
+ 	/* Only GRO and locally terminated traffic need the sum. Forwarding
+@@ -1805,31 +1805,30 @@ next:
+ 		ring->curr++;
+ 	}
+ 
+-	if (use_csum) {
+-		/* the engine may have stopped before the last frames were
+-		 * queued
+-		 */
+-		if (nqueued && nqueued % AG71XX_CSUM_KICK_BATCH != 1)
+-			ag71xx_csum_kick(ag, &ag->csum_rx);
++	/* the engine may have stopped before the last frames were queued */
++	if (nqueued && nqueued % AG71XX_CSUM_KICK_BATCH != 1)
++		ag71xx_csum_kick(ag, &ag->csum_rx);
++
++	ag71xx_ring_rx_refill(ag);
++
++	list_for_each_entry_safe(skb, tmp, &rx_list, list) {
++		skb_list_del_init(skb);
+ 
+-		list_for_each_entry(skb, &rx_list, list) {
+-			if (csum_err ||
+-			    ag71xx_csum_wait(ag, &ag->csum_rx, &skb->csum)) {
+-				skb->ip_summed = CHECKSUM_NONE;
+-				csum_err = true;
+-			}
++		if (use_csum &&
++		    (csum_err ||
++		     ag71xx_csum_wait(ag, &ag->csum_rx, &skb->csum))) {
++			skb->ip_summed = CHECKSUM_NONE;
++			csum_err = true;
+ 		}
+ 
+-		/* Buffers may still be queued to the engine, do not reuse the
+-		 * channel until the next reset.
+-		 */
+-		if (unlikely(csum_err))
+-			ag->csum_rx.failed = true;
++		napi_gro_receive(&ag->napi, skb);
+ 	}
+ 
+-	ag71xx_ring_rx_refill(ag);
+-
+-	netif_receive_skb_list(&rx_list);
++	/* Buffers may still be queued to the engine, do not reuse the
++	 * channel until the next reset.
++	 */
++	if (unlikely(csum_err))
++		ag->csum_rx.failed = true;
+ 
+ 	netif_dbg(ag, rx_status, ndev, "rx finish, curr=%u, dirty=%u, done=%d\n",
+ 		  ring->curr, ring->dirty, done);
+@@ -1874,7 +1873,7 @@ static int ag71xx_poll(struct napi_struc
+ 		netif_dbg(ag, rx_status, ndev, "disable polling mode, rx=%d, tx=%d,limit=%d\n",
+ 			  rx_done, tx_done, limit);
+ 
+-		napi_complete(napi);
++		napi_complete_done(napi, rx_done);
+ 
+ 		/* enable interrupts */
+ 		ag71xx_int_enable(ag, AG71XX_INT_POLL);

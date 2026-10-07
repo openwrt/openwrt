@@ -1,0 +1,84 @@
+From: Rosen Penev <rosenp@gmail.com>
+Subject: [PATCH] net: ag71xx: align the IP header behind DSA tags
+
+The receive buffer offset includes NET_IP_ALIGN to get the IP header
+aligned behind a 14 byte Ethernet header. Most ag71xx devices use DSA
+switches whose tag sits in front of the EtherType, which moves the IP
+header by another 2 bytes. Every access to the IP and TCP headers then
+traps and gets emulated by the unaligned access handler, around 6 times
+per forwarded frame.
+
+Take the headroom needed by the DSA tagger into account when choosing
+the offset. Only even adjustments are made so that the MAC never gets an
+odd DMA address, and the buffer size now follows the chosen offset
+instead of assuming NET_IP_ALIGN.
+
+TP-Link Archer C7 v2 (qca8k), median of 3 runs, Mbit/s:
+
+                       before   after
+  routed up               743     855
+  routed down             660     749
+  local receive           554     572
+
+The unaligned instruction counter no longer moves while forwarding.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+--- a/drivers/net/ethernet/atheros/ag71xx.c
++++ b/drivers/net/ethernet/atheros/ag71xx.c
+@@ -39,6 +39,7 @@
+ #include <linux/reset.h>
+ #include <linux/clk.h>
+ #include <linux/io.h>
++#include <net/dsa.h>
+ #include <net/page_pool/helpers.h>
+ #include <net/selftests.h>
+ 
+@@ -1539,6 +1540,24 @@ static void ag71xx_hw_disable(struct ag7
+ 	ag71xx_rings_cleanup(ag);
+ }
+ 
++static unsigned int ag71xx_rx_offset(struct ag71xx *ag)
++{
++	unsigned int align = NET_IP_ALIGN;
++
++	if (ag71xx_is(ag, AR7100) || ag71xx_is(ag, AR9130))
++		return NET_SKB_PAD;
++
++#if IS_ENABLED(CONFIG_NET_DSA)
++	/* A tag inserted in front of the EtherType shifts the IP header,
++	 * compensate for it to avoid unaligned accesses in the stack.
++	 */
++	if (netdev_uses_dsa(ag->ndev))
++		align = (align - ag->ndev->dsa_ptr->tag_ops->needed_headroom) & 2;
++#endif
++
++	return NET_SKB_PAD + align;
++}
++
+ static int ag71xx_open(struct net_device *ndev)
+ {
+ 	struct ag71xx *ag = netdev_priv(ndev);
+@@ -1553,8 +1572,9 @@ static int ag71xx_open(struct net_device
+ 	}
+ 
+ 	max_frame_len = ag71xx_max_frame_len(ndev->mtu);
++	ag->rx_buf_offset = ag71xx_rx_offset(ag);
+ 	ag->rx_buf_size =
+-		SKB_DATA_ALIGN(max_frame_len + NET_SKB_PAD + NET_IP_ALIGN);
++		SKB_DATA_ALIGN(max_frame_len + ag->rx_buf_offset);
+ 
+ 	/* setup max frame length */
+ 	ag71xx_wr(ag, AG71XX_REG_MAC_MFL, max_frame_len);
+@@ -2106,10 +2126,6 @@ static int ag71xx_probe(struct platform_
+ 	ndev->min_mtu = 68;
+ 	ndev->max_mtu = dcfg->max_frame_len - ag71xx_max_frame_len(0);
+ 
+-	ag->rx_buf_offset = NET_SKB_PAD;
+-	if (!ag71xx_is(ag, AR7100) && !ag71xx_is(ag, AR9130))
+-		ag->rx_buf_offset += NET_IP_ALIGN;
+-
+ 	if (ag71xx_is(ag, AR7100)) {
+ 		ag->tx_ring.desc_split = AG71XX_TX_RING_SPLIT;
+ 		tx_size *= AG71XX_TX_RING_DS_PER_PKT;
