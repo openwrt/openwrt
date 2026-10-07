@@ -199,9 +199,9 @@ Signed-off-by: Sricharan Ramabadhran <quic_srichara@quicinc.com>
 
 --- a/drivers/mailbox/Kconfig
 +++ b/drivers/mailbox/Kconfig
-@@ -390,4 +390,14 @@ config RISCV_SBI_MPXY_MBOX
- 	  or HS-mode hypervisor). Say Y here if you want to have this support.
- 	  If unsure say N.
+@@ -409,4 +409,14 @@ config AXIADO_MAILBOX
+ 	  Axiado SoCs.
+ 	  If unsure, say N.
  
 +config QCOM_TMEL_QMP_MAILBOX
 +	tristate "QCOM Mailbox Protocol(QMP) for TMEL SS"

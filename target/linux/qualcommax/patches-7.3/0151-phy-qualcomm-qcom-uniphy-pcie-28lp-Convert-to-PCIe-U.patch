@@ -22,7 +22,7 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
 
 --- a/drivers/phy/qualcomm/Kconfig
 +++ b/drivers/phy/qualcomm/Kconfig
-@@ -145,19 +145,6 @@ config PHY_QCOM_M31_USB
+@@ -155,19 +155,6 @@ config PHY_QCOM_M31_USB
  	  management. This driver is required even for peripheral only or
  	  host only mode configurations.
  
@@ -42,7 +42,7 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
  config PHY_QCOM_M31_EUSB
  	tristate "Qualcomm M31 eUSB2 PHY driver support"
  	depends on USB && (ARCH_QCOM || COMPILE_TEST)
-@@ -168,6 +155,17 @@ config PHY_QCOM_M31_EUSB
+@@ -178,6 +165,17 @@ config PHY_QCOM_M31_EUSB
  	  up of the associated USB repeater that is paired with the eUSB2
  	  PHY.
  
@@ -62,7 +62,7 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
  	depends on USB_ULPI_BUS
 --- a/drivers/phy/qualcomm/Makefile
 +++ b/drivers/phy/qualcomm/Makefile
-@@ -17,7 +17,7 @@ obj-$(CONFIG_PHY_QCOM_QMP_USB_LEGACY)	+=
+@@ -18,7 +18,7 @@ obj-$(CONFIG_PHY_QCOM_QMP_USB_LEGACY)	+=
  
  obj-$(CONFIG_PHY_QCOM_QUSB2)		+= phy-qcom-qusb2.o
  obj-$(CONFIG_PHY_QCOM_EUSB2_REPEATER)	+= phy-qcom-eusb2-repeater.o

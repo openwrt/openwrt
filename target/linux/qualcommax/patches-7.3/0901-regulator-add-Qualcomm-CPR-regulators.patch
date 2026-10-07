@@ -25,7 +25,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 
 --- a/drivers/regulator/Kconfig
 +++ b/drivers/regulator/Kconfig
-@@ -1818,4 +1818,37 @@ config REGULATOR_QCOM_LABIBB
+@@ -1896,4 +1896,37 @@ config REGULATOR_QCOM_LABIBB
  	  boost regulator and IBB can be used as a negative boost regulator
  	  for LCD display panel.
  
@@ -65,7 +65,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  endif
 --- a/drivers/regulator/Makefile
 +++ b/drivers/regulator/Makefile
-@@ -124,6 +124,9 @@ obj-$(CONFIG_REGULATOR_QCOM_RPMH) += qco
+@@ -128,6 +128,9 @@ obj-$(CONFIG_REGULATOR_QCOM_RPMH) += qco
  obj-$(CONFIG_REGULATOR_QCOM_SMD_RPM) += qcom_smd-regulator.o
  obj-$(CONFIG_REGULATOR_QCOM_SPMI) += qcom_spmi-regulator.o
  obj-$(CONFIG_REGULATOR_QCOM_USB_VBUS) += qcom_usb_vbus-regulator.o
