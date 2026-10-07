@@ -1,0 +1,19 @@
+From: John Audia <therealgraysky@proton.me>
+Subject: [PATCH] wifi: mt76: mt7615: include linux/hex.h for mac_pton()
+
+Linux 7.3 declares mac_pton() only in linux/hex.h.
+
+Signed-off-by: John Audia <therealgraysky@proton.me>
+---
+--- a/mt7615/debugfs.c
++++ b/mt7615/debugfs.c
+@@ -1,6 +1,9 @@
+ // SPDX-License-Identifier: BSD-3-Clause-Clear
+ 
+ #include "mt7615.h"
++#if __has_include(<linux/hex.h>)
++#include <linux/hex.h>
++#endif
+ 
+ static int
+ mt7615_reg_set(void *data, u64 val)
