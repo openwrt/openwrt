@@ -95,6 +95,7 @@
 		pcie_misc: syscon@504 {
 			compatible = "realtek,pcie-misc", "syscon";
 			reg = <0x504 0x4>;
+			big-endian;
 		};
 
 		ip_en_rst: reset-controller@600 {
@@ -112,6 +113,7 @@
 		ecc0: ecc@1a600 {
 			compatible = "realtek,rtl9301-ecc";
 			reg = <0x1a600 0x54>;
+			big-endian;
 
 			status = "disabled";
 		};
@@ -129,6 +131,7 @@
 		snand: spi@1a400 {
 			compatible = "realtek,rtl9301-snand";
 			reg = <0x1a400 0x44>;
+			big-endian;
 			interrupt-parent = <&gic>;
 			interrupts = <GIC_SHARED 35 IRQ_TYPE_LEVEL_HIGH>;
 			clocks = <&ccu CLK_LXB>;
@@ -139,6 +142,7 @@
 		watchdog0: watchdog@3260 {
 			compatible = "realtek,rtl9310-wdt";
 			reg = <0x3260 0xc>;
+			big-endian;
 
 			realtek,reset-mode = "soc";
 
@@ -153,6 +157,7 @@
 		gpio0: gpio-controller@3300 {
 			compatible = "realtek,rtl9607-gpio";
 			reg = <0x3300 0x1c>;
+			big-endian;
 
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -167,6 +172,7 @@
 		gpio1: gpio-controller@331c {
 			compatible = "realtek,rtl9607-gpio";
 			reg = <0x331c 0x1c>;
+			big-endian;
 
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -181,6 +187,7 @@
 		gpio2: gpio-controller@3340 {
 			compatible = "realtek,rtl9607-gpio";
 			reg = <0x3340 0x1c>;
+			big-endian;
 
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -241,6 +248,7 @@
 		gmac0: ethernet@12000 {
 			compatible = "realtek,rtl9607c-gmac";
 			reg = <0x12000 0x2000>;
+			big-endian;
 			interrupt-parent = <&gic>;
 			interrupts = <GIC_SHARED 36 IRQ_TYPE_LEVEL_HIGH>;
 			clocks = <&ccu CLK_LXB>;
@@ -250,6 +258,7 @@
 		gmac1: ethernet@14000 {
 			compatible = "realtek,rtl9607c-gmac";
 			reg = <0x14000 0x2000>;
+			big-endian;
 			interrupt-parent = <&gic>;
 			interrupts = <GIC_SHARED 38 IRQ_TYPE_LEVEL_HIGH>;
 			clocks = <&ccu CLK_LXB>;
@@ -260,6 +269,7 @@
 		gmac2: ethernet@16000 {
 			compatible = "realtek,rtl9607c-gmac";
 			reg = <0x16000 0x2000>;
+			big-endian;
 			interrupt-parent = <&gic>;
 			interrupts = <GIC_SHARED 40 IRQ_TYPE_LEVEL_HIGH>;
 			clocks = <&ccu CLK_LXB>;
@@ -279,6 +289,7 @@
 	switch0: ethernet-switch@1b000000 {
 		compatible = "syscon", "simple-mfd";
 		reg = <0x1b000000 0x1000000>;
+		big-endian;
 		resets = <&soc_init_rst 0>;
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -362,6 +373,7 @@
 	pcie0_phy: phy@18b21000 {
 		compatible = "realtek,rtl9607c-revB-gen2x1-pcie-phy";
 		reg = <0x18b21000 0xc>;
+		big-endian;
 		#phy-cells = <0>;
 		realtek,pcie-misc = <&pcie_misc>;
 		resets = <&ip_en_rst 7>;
@@ -371,6 +383,7 @@
 	pcie1_phy: phy@18b01000 {
 		compatible = "realtek,rtl9607c-revB-gen1x1-pcie-phy";
 		reg = <0x18b01000 0xc>;
+		big-endian;
 		#phy-cells = <0>;
 		realtek,pcie-misc = <&pcie_misc>;
 		resets = <&ip_en_rst 6>;
