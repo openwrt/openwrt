@@ -1,4 +1,8 @@
 #!/bin/sh
+#
+# Protocol registration (ppp, pppoe, pppoa, pptp) is handled by ppp.uc.
+# This file is kept alongside ppp.uc as a library for other consumers.
+#
 
 [ -x /usr/sbin/pppd ] || exit 0
 
@@ -337,11 +341,4 @@ proto_pptp_setup() {
 
 proto_pptp_teardown() {
 	ppp_generic_teardown "$@"
-}
-
-[ -n "$INCLUDE_ONLY" ] || {
-	add_protocol ppp
-	[ -f /usr/lib/pppd/*/pppoe.so ] && add_protocol pppoe
-	[ -f /usr/lib/pppd/*/pppoatm.so ] && add_protocol pppoa
-	[ -f /usr/lib/pppd/*/pptp.so ] && add_protocol pptp
 }
