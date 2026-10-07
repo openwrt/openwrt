@@ -130,7 +130,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  		kfree(info.name);
 --- a/drivers/nvmem/layouts.c
 +++ b/drivers/nvmem/layouts.c
-@@ -6,8 +6,11 @@
+@@ -6,8 +6,12 @@
   * Author: Miquel Raynal <miquel.raynal@bootlin.com
   */
  
@@ -138,11 +138,12 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  #include <linux/device.h>
  #include <linux/dma-mapping.h>
 +#include <linux/etherdevice.h>
++#include <linux/hex.h>
 +#include <linux/if_ether.h>
  #include <linux/nvmem-consumer.h>
  #include <linux/nvmem-provider.h>
  #include <linux/of.h>
-@@ -21,6 +24,83 @@
+@@ -21,6 +25,83 @@
  #define to_nvmem_layout_device(_dev) \
  	container_of((_dev), struct nvmem_layout, dev)
  
