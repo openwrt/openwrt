@@ -13,12 +13,10 @@ define Build/wax610-netgear-tar
 endef
 
 define Build/netgear-rbx350-qsdk-ipq-factory
-	$(CP) $(FLASH_SCRIPT) $(KDIR_TMP)/
-
 	echo "VERSION : V5.0.0.0_$(LINUX_VERSION)" > $@.metadata
 	echo "MODEL_ID : $(DEVICE_MODEL)" >> $@.metadata
 
-	$(TOPDIR)/scripts/mkits-qsdk-ipq-image.sh $@.its $(FLASH_SCRIPT) txt $@.metadata ubi $@
+	$(TOPDIR)/scripts/mkits-qsdk-ipq-image.sh $@.its $(CURDIR)/$(FLASH_SCRIPT) txt $@.metadata ubi $@
 	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $@.its $@.new
 	@mv $@.new $@
 endef
