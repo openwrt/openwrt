@@ -1,0 +1,61 @@
+From ac55afb949c0cb51c4e124e670de686cdcd3aadc Mon Sep 17 00:00:00 2001
+From: Nick Hainke <vincent@systemli.org>
+Date: Wed, 7 Oct 2026 16:00:00 +0200
+Subject: [PATCH] qosify-bpf: only override unmarked packets with a fallback
+ value
+
+A value prefixed with '+' should only be set if the packet has no DSCP
+value yet. This did not work as documented:
+
+- Since commit 44ce40f8e083 ("qosify: count all traffic in per-DSCP
+  statistics") the fallback flag is checked after the value was masked
+  and shifted, so a bit of the DSCP value decides instead of the flag.
+  Values like CS6 were handled as fallback values, and values prefixed
+  with '+' always overrode the packet.
+- The check for an unmarked packet tested the ECN bits instead of the
+  DSCP bits. For IPv6 it read the header without converting it to host
+  byte order, so on little endian systems it tested the IP version and
+  never marked the packet.
+
+With the default config, DNS and NTP over IPv6 never got the voice
+class.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Nick Hainke <vincent@systemli.org>
+---
+ qosify-bpf.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/qosify-bpf.c b/qosify-bpf.c
+index 4dd04ab..dcb9f20 100644
+--- a/qosify-bpf.c
++++ b/qosify-bpf.c
+@@ -160,7 +160,7 @@ ipv4_change_dsfield(struct __sk_buff *skb, __u32 offset,
+ 		return;
+ 
+ 	check = bpf_ntohs(iph->check);
+-	if ((iph->tos & mask) && !force)
++	if ((iph->tos & ~mask) && !force)
+ 		return;
+ 
+ 	dsfield = (iph->tos & mask) | value;
+@@ -189,7 +189,7 @@ ipv6_change_dsfield(struct __sk_buff *skb, __u32 offset,
+ 		return;
+ 
+ 	p = (__u16 *)ipv6h;
+-	if (((*p >> 4) & mask) && !force)
++	if (((bpf_ntohs(*p) >> 4) & 0xff & ~mask) && !force)
+ 		return;
+ 
+ 	val = (*p & bpf_htons((((__u16)mask << 4) | 0xf00f))) | bpf_htons((__u16)value << 4);
+@@ -533,9 +533,9 @@ int classify(struct __sk_buff *skb)
+ 		    dscp_lookup_class(&dscp, ingress, &class, false, 0, 0))
+ 			goto out;
+ 
++		force = !(dscp & QOSIFY_DSCP_FALLBACK_FLAG);
+ 		dscp &= GENMASK(5, 0);
+ 		dscp <<= 2;
+-		force = !(dscp & QOSIFY_DSCP_FALLBACK_FLAG);
+ 
+ 		if (type == bpf_htons(ETH_P_IP))
+ 			ipv4_change_dsfield(skb, iph_offset, INET_ECN_MASK, dscp, force);
