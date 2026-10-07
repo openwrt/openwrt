@@ -167,6 +167,8 @@
 #define EDMA_QID2RID_DEPTH		0x40
 #define EDMA_QID2RID_RING_MASK		0xf
 #define EDMA_QID2RID_QUEUES_PER_ENTRY	8
+#define EDMA_RSS_QUEUES			4
+#define EDMA_RSS_HASHED_QUEUES		12
 
 /* TXDESC to TXCMPL ring mapping */
 #define EDMA_REG_TXDESC2CMPL_MAP(n) (0x0c + 0x4 * (n))
@@ -352,6 +354,10 @@ struct edma_priv {
 	struct edma_queue q[EDMA_MAX_QUEUES];
 	unsigned int num_queues;
 	unsigned int max_queues;
+	/* The PPE spreads unicast to the CPU by hash over four switch queues
+	 * from each of the bases 0, 4 and 8.
+	 */
+	u8 rss_indir[EDMA_RSS_QUEUES];
 	bool threaded_set;
 
 	int misc_irq;

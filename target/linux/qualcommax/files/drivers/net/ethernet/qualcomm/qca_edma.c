@@ -1194,31 +1194,46 @@ static void edma_hw_reset(struct edma_priv *priv)
 	udelay(100);
 }
 
+/* Every switch queue names a receive ring this driver enables: a hashed
+ * queue the ring its indirection entry names, any other queue the ring of its
+ * number modulo the queue count. Ring 0 is never given a base address here, so
+ * a queue left pointing at it would deliver nowhere.
+ */
+static void edma_qid2rid_set(struct edma_priv *priv)
+{
+	unsigned int i, j;
+	u32 val;
+
+	for (i = 0; i < EDMA_QID2RID_DEPTH; i++) {
+		val = 0;
+		for (j = 0; j < EDMA_QID2RID_QUEUES_PER_ENTRY; j++) {
+			u32 qid = i * EDMA_QID2RID_QUEUES_PER_ENTRY + j;
+			u32 q = qid < EDMA_RSS_HASHED_QUEUES ?
+				priv->rss_indir[qid % EDMA_RSS_QUEUES] :
+				qid % priv->num_queues;
+
+			val |= (priv->q[q].rxdesc & EDMA_QID2RID_RING_MASK) <<
+			       (4 * j);
+		}
+		regmap_write(priv->regmap, EDMA_QID2RID_TABLE_MEM(i), val);
+	}
+}
+
 static int edma_hw_init(struct edma_priv *priv)
 {
 	const struct edma_soc_data *soc = priv->soc;
-	unsigned int i, j;
+	unsigned int i;
 	int ret;
 	u32 val;
 
 	edma_hw_reset(priv);
 	edma_hw_stop(priv);
 
-	/* Every switch queue names a receive ring this driver enables, a queue
-	 * the ring of its number modulo the queue count. Ring 0 is never given
-	 * a base address here, so a queue left pointing at it would deliver
-	 * nowhere.
-	 */
-	for (i = 0; i < EDMA_QID2RID_DEPTH; i++) {
-		val = 0;
-		for (j = 0; j < EDMA_QID2RID_QUEUES_PER_ENTRY; j++) {
-			u32 qid = i * EDMA_QID2RID_QUEUES_PER_ENTRY + j;
-			u8 ring = priv->q[qid % priv->num_queues].rxdesc;
-
-			val |= (ring & EDMA_QID2RID_RING_MASK) << (4 * j);
-		}
-		regmap_write(priv->regmap, EDMA_QID2RID_TABLE_MEM(i), val);
-	}
+	if (!netif_is_rxfh_configured(priv->netdev))
+		for (i = 0; i < EDMA_RSS_QUEUES; i++)
+			priv->rss_indir[i] =
+				ethtool_rxfh_indir_default(i, priv->num_queues);
+	edma_qid2rid_set(priv);
 
 	ret = edma_rings_alloc(priv);
 	if (ret)
@@ -1440,6 +1455,51 @@ static int edma_set_channels(struct net_device *netdev,
 	return edma_reconfigure(priv, priv->rx_page_order, ch->combined_count);
 }
 
+static u32 edma_get_rx_ring_count(struct net_device *netdev)
+{
+	struct edma_priv *priv = netdev_priv(netdev);
+
+	return priv->num_queues;
+}
+
+static u32 edma_get_rxfh_indir_size(struct net_device *netdev)
+{
+	return EDMA_RSS_QUEUES;
+}
+
+static int edma_get_rxfh(struct net_device *netdev,
+			 struct ethtool_rxfh_param *rxfh)
+{
+	struct edma_priv *priv = netdev_priv(netdev);
+	unsigned int i;
+
+	if (rxfh->indir)
+		for (i = 0; i < EDMA_RSS_QUEUES; i++)
+			rxfh->indir[i] = priv->rss_indir[i];
+
+	return 0;
+}
+
+static int edma_set_rxfh(struct net_device *netdev,
+			 struct ethtool_rxfh_param *rxfh,
+			 struct netlink_ext_ack *extack)
+{
+	struct edma_priv *priv = netdev_priv(netdev);
+	unsigned int i;
+
+	if (rxfh->key || rxfh->hfunc != ETH_RSS_HASH_NO_CHANGE)
+		return -EOPNOTSUPP;
+
+	if (!rxfh->indir)
+		return 0;
+
+	for (i = 0; i < EDMA_RSS_QUEUES; i++)
+		priv->rss_indir[i] = rxfh->indir[i];
+	edma_qid2rid_set(priv);
+
+	return 0;
+}
+
 static const struct ethtool_ops edma_ethtool_ops = {
 	.get_sset_count = edma_get_sset_count,
 	.get_strings = edma_get_strings,
@@ -1450,6 +1510,10 @@ static const struct ethtool_ops edma_ethtool_ops = {
 	.get_regs = edma_get_regs,
 	.get_channels = edma_get_channels,
 	.set_channels = edma_set_channels,
+	.get_rx_ring_count = edma_get_rx_ring_count,
+	.get_rxfh_indir_size = edma_get_rxfh_indir_size,
+	.get_rxfh = edma_get_rxfh,
+	.set_rxfh = edma_set_rxfh,
 };
 
 static int edma_ndo_open(struct net_device *netdev)
@@ -1930,6 +1994,7 @@ static int edma_probe(struct platform_device *pdev)
 		return ret;
 	edma_page_pools_swap(priv, pools);
 
+	priv->netdev = netdev;
 	ret = edma_hw_init(priv);
 	if (ret)
 		goto err_page_pool;
@@ -1947,8 +2012,6 @@ static int edma_probe(struct platform_device *pdev)
 	netdev->max_mtu = EDMA_MAX_MTU;
 	netdev->needed_headroom = EDMA_TX_PREHDR_SIZE;
 	netdev->ethtool_ops = &edma_ethtool_ops;
-
-	priv->netdev = netdev;
 
 	for (i = 0; i < nq; i++)
 		netif_napi_add(netdev, &priv->q[i].napi, edma_napi);
