@@ -1,0 +1,37 @@
+From e877388ac1b2dab0a52edff65cc5add83a8037d8 Mon Sep 17 00:00:00 2001
+From: Nick Hainke <vincent@systemli.org>
+Date: Wed, 7 Oct 2026 16:00:00 +0200
+Subject: [PATCH] dns: check the length of address records
+
+The address of an A or AAAA record was copied without checking the
+record length. A record shorter than the address made qosify read
+beyond it and add an address made of the following bytes. Skip such
+records.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Nick Hainke <vincent@systemli.org>
+---
+ dns.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/dns.c b/dns.c
+index 21a6d65..e8b20e0 100644
+--- a/dns.c
++++ b/dns.c
+@@ -221,10 +221,16 @@ dns_parse_answer(struct packet *pkt, void *hdr, uint8_t *dscp, uint32_t *seq,
+ 
+ 		return 0;
+ 	case TYPE_A:
++		if (len != 4)
++			return 0;
++
+ 		data.id = CL_MAP_IPV4_ADDR;
+ 		memcpy(&data.addr, rdata, 4);
+ 		break;
+ 	case TYPE_AAAA:
++		if (len != 16)
++			return 0;
++
+ 		data.id = CL_MAP_IPV6_ADDR;
+ 		memcpy(&data.addr, rdata, 16);
+ 		break;
