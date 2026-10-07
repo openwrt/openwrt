@@ -1,0 +1,58 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robimarko@gmail.com>
+Date: Wed, 16 Sep 2026 14:45:00 +0200
+Subject: [PATCH] arm64: dts: qcom: ipq6018: use secure WCSS remoteproc
+
+The IPQ6018 WCSS firmware is loaded through the secure PIL remoteproc
+driver. Describe the remote processor with its secure PIL compatible and
+provide the firmware name used to locate the WCSS firmware. Enable the
+QDSS_AT clock required while loading that firmware.
+
+Use IRQ_TYPE_NONE for the SMP2P interrupt specifiers, since these are
+mailbox notification channels rather than hardware interrupts with a
+configurable trigger type.
+
+Signed-off-by: Robert Marko <robimarko@gmail.com>
+---
+ arch/arm64/boot/dts/qcom/ipq6018.dtsi | 29 ++++++++++++++++-------------
+ 1 file changed, 9 insertions(+), 9 deletions(-)
+
+--- a/arch/arm64/boot/dts/qcom/ipq6018.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq6018.dtsi
+@@ -829,16 +829,18 @@
+ 		};
+ 
+ 		q6v5_wcss: remoteproc@cd00000 {
+-			compatible = "qcom,ipq6018-wcss-pil";
++			compatible = "qcom,ipq6018-wcss-sec-pil";
+ 			reg = <0x0 0x0cd00000 0x0 0x4040>,
+ 			      <0x0 0x004ab000 0x0 0x20>;
+ 			reg-names = "qdsp6",
+ 				    "rmb";
++			firmware-name = "IPQ6018/q6_fw.mdt", "IPQ6018/m3_fw.mdt";
++
+ 			interrupts-extended = <&intc GIC_SPI 325 IRQ_TYPE_EDGE_RISING>,
+-					      <&wcss_smp2p_in 0 0>,
+-					      <&wcss_smp2p_in 1 0>,
+-					      <&wcss_smp2p_in 2 0>,
+-					      <&wcss_smp2p_in 3 0>;
++					      <&wcss_smp2p_in 0 IRQ_TYPE_NONE>,
++					      <&wcss_smp2p_in 1 IRQ_TYPE_NONE>,
++					      <&wcss_smp2p_in 2 IRQ_TYPE_NONE>,
++					      <&wcss_smp2p_in 3 IRQ_TYPE_NONE>;
+ 			interrupt-names = "wdog",
+ 					  "fatal",
+ 					  "ready",
+@@ -853,10 +855,8 @@
+ 				      "wcss_reset",
+ 				      "wcss_q6_reset";
+ 
+-			clocks = <&gcc GCC_PRNG_AHB_CLK>;
+-			clock-names = "prng";
+-
+-			qcom,halt-regs = <&tcsr 0x18000 0x1b000 0xe000>;
++			clocks = <&gcc GCC_PRNG_AHB_CLK>, <&gcc GCC_QDSS_AT_CLK>;
++			clock-names = "prng", "qdss" ;
+ 
+ 			qcom,smem-states = <&wcss_smp2p_out 0>,
+ 					   <&wcss_smp2p_out 1>;
