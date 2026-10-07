@@ -199,6 +199,11 @@ define KernelPackage/depends
   endef
 endef
 
+# apk wants any _rcN suffix after all numeric parts and before ~hash
+kmod_linux_base = $(firstword $(subst -rc, ,$(LINUX_VERSION)))
+kmod_linux_rc = $(if $(findstring -rc,$(LINUX_VERSION)),_rc$(lastword $(subst -rc, ,$(LINUX_VERSION))))
+kmod_version = $(kmod_linux_base)$(if $(1),.$(firstword $(subst ~, ,$(1))))$(kmod_linux_rc)$(if $(findstring ~,$(1)),~$(lastword $(subst ~, ,$(1))))
+
 define KernelPackage
   NAME:=$(1)
   $(eval $(call Package/Default))
@@ -212,7 +217,7 @@ define KernelPackage
     SECTION:=kernel
     CATEGORY:=Kernel modules
     EXTRA_DEPENDS:=kernel (=$(subst -rc,_rc,$(LINUX_VERSION))~$(LINUX_VERMAGIC)-r$(LINUX_RELEASE))
-    VERSION:=$(subst -rc,_rc,$(LINUX_VERSION))$(if $(PKG_VERSION),.$(PKG_VERSION))-r$(if $(PKG_RELEASE),$(PKG_RELEASE),$(LINUX_RELEASE))
+    VERSION:=$(call kmod_version,$(PKG_VERSION))-r$(if $(PKG_RELEASE),$(PKG_RELEASE),$(LINUX_RELEASE))
     PKGFLAGS:=$(PKGFLAGS)
     $(call KernelPackage/$(1))
     $(call KernelPackage/$(1)/$(BOARD))
