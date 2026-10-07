@@ -1,18 +1,18 @@
-From 984b79d812aaefc635c46034dd6d25bcfaa63dfa Mon Sep 17 00:00:00 2001
 From: George Moussalem <george.moussalem@outlook.com>
-Date: Thu, 3 Sep 2026 18:08:37 +0400
-Subject: [PATCH v3 09/10] arm64: dts: qcom: ipq8074: Flatten usb controller
- nodes
+Date: Thu, 01 Oct 2026 11:53:50 +0400
+Subject: [PATCH] arm64: dts: qcom: ipq8074: Flatten usb controller nodes
 
 Flatten usb controller nodes and update to using latest bindings and
 flattened driver approach.
 
 In addition, fix indentation of properties in both nodes.
 
+Reviewed-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Link: https://lore.kernel.org/r/20261001-ipq-flatten-usb-v4-7-486a4d5ede30@outlook.com
 Signed-off-by: George Moussalem <george.moussalem@outlook.com>
 ---
- arch/arm64/boot/dts/qcom/ipq8074-hk01.dts |  12 +--
- arch/arm64/boot/dts/qcom/ipq8074.dtsi     | 108 ++++++++++------------
+ arch/arm64/boot/dts/qcom/ipq8074-hk01.dts |  12 ++--
+ arch/arm64/boot/dts/qcom/ipq8074.dtsi     | 108 ++++++++++++++----------------
  2 files changed, 54 insertions(+), 66 deletions(-)
 
 --- a/arch/arm64/boot/dts/qcom/ipq8074-hk01.dts

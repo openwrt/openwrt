@@ -1,0 +1,25 @@
+From: George Moussalem <george.moussalem@outlook.com>
+Date: Tue, 08 Sep 2026 13:40:56 +0400
+Subject: [PATCH] phy: qualcomm: qcom-uniphy-pcie-usb3-28lp: Remove unused of_device.h header file
+
+Drop the unused of_device.h header file as the of_device_get_match_data
+declaration was moved to of.h in below commit:
+commit 82174a0a9c5c ("of: Move of_device_get_match_data() declaration")
+
+Tested-by: Stanislaw Pal <kuncy7@gmail.com>
+Link: https://lore.kernel.org/r/20260908-ipq5018-usb3-v4-3-b789702f0695@outlook.com
+Signed-off-by: George Moussalem <george.moussalem@outlook.com>
+---
+ drivers/phy/qualcomm/phy-qcom-uniphy-pcie-usb3-28lp.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+--- a/drivers/phy/qualcomm/phy-qcom-uniphy-pcie-usb3-28lp.c
++++ b/drivers/phy/qualcomm/phy-qcom-uniphy-pcie-usb3-28lp.c
+@@ -10,7 +10,6 @@
+ #include <linux/io.h>
+ #include <linux/mfd/syscon.h>
+ #include <linux/module.h>
+-#include <linux/of_device.h>
+ #include <linux/of.h>
+ #include <linux/phy/phy.h>
+ #include <linux/platform_device.h>

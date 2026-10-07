@@ -1,7 +1,7 @@
 From c6c159fcdb4e9a678eda0831f971e4a3a488ec47 Mon Sep 17 00:00:00 2001
 From: Gilberto Conde <gilbertorconde@gmail.com>
 Date: Mon, 21 Sep 2026 10:34:19 +0100
-Subject: [PATCH] pinctrl: qcom: ipq5018: add missing pwm3 function on gpio13
+Subject: pinctrl: qcom: ipq5018: add missing pwm3 function on gpio13
 
 GPIO13 supports the PWM3 function at mux select value 4, but the
 pingroup table leaves that slot empty and gpio13 is not listed in
@@ -26,6 +26,9 @@ Reviewed-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
 Link: https://patch.msgid.link/20260921093419.2870168-1-gilbertorconde@gmail.com
 Signed-off-by: Bartosz Golaszewski <bartosz.golaszewski@oss.qualcomm.com>
 ---
+ drivers/pinctrl/qcom/pinctrl-ipq5018.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
 --- a/drivers/pinctrl/qcom/pinctrl-ipq5018.c
 +++ b/drivers/pinctrl/qcom/pinctrl-ipq5018.c
 @@ -563,7 +563,7 @@ static const char * const qdss_cti_trig_

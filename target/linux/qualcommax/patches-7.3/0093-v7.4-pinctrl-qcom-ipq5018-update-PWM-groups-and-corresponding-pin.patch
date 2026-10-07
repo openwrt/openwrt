@@ -1,12 +1,21 @@
+From 65db42a9fae05c46a5df5b7ca5c175b80f9c4278 Mon Sep 17 00:00:00 2001
 From: George Moussalem <george.moussalem@outlook.com>
-Subject: [PATCH] pinctrl: qcom: IPQ5018: update pwm groups
-Date: Wed, 27 Nov 2024 09:14:11 +0400
+Date: Mon, 28 Sep 2026 13:48:47 +0400
+Subject: pinctrl: qcom: ipq5018: update PWM groups and corresponding pin
+ functions
 
-GPIO 1, 30, and 46 are used to control PWM1, PWM3, and PWM0 respectively which
-in turn drive the PWM led, so let's update the pwm# and pingroups accordingly.
+On multiple Linksys routers, GPIOs 1, 30, and 46 drive the PWM LED on
+the PWM1, PWM3, and PWM0 channels, respectively.
+Update the corresponding PWM groups to include these GPIOs and allocate
+the PWM functions to empty slots in the relevant pin groups.
 
 Signed-off-by: George Moussalem <george.moussalem@outlook.com>
+Link: https://patch.msgid.link/20260928-ipq5018-pwm-functions-v2-1-87bbcd706bc6@outlook.com
+Signed-off-by: Bartosz Golaszewski <bartosz.golaszewski@oss.qualcomm.com>
 ---
+ drivers/pinctrl/qcom/pinctrl-ipq5018.c | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+
 --- a/drivers/pinctrl/qcom/pinctrl-ipq5018.c
 +++ b/drivers/pinctrl/qcom/pinctrl-ipq5018.c
 @@ -539,7 +539,7 @@ static const char * const qdss_tracectl_
@@ -32,7 +41,7 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
  
  static const char * const pwm3_groups[] = {
 -	"gpio45", "gpio13",
-+	"gpio45", "gpio13", "gpio30",
++	"gpio45", "gpio30", "gpio13",
  };
  
  static const char * const qdss_cti_trig_in_b1_groups[] = {

@@ -1,8 +1,6 @@
-From 2b8dc0f00d0bb10871b454207ee2a5b83ced5fdd Mon Sep 17 00:00:00 2001
 From: George Moussalem <george.moussalem@outlook.com>
-Date: Tue, 25 Aug 2026 15:33:23 +0400
-Subject: [PATCH 158/160] arm64: dts: qcom: ipq5018: Add clocks required for
- USB3 support
+Date: Tue, 08 Sep 2026 13:41:04 +0400
+Subject: [PATCH] arm64: dts: qcom: ipq5018: Add clocks required for USB3 support
 
 Add aux and lfps clocks to USB controller node for Super-Speed support.
 These clocks are required for USB3 mode only and are not needed for USB2
@@ -14,6 +12,7 @@ and override the clock rate potentially set by the bootloader.
 Reviewed-by: Dmitry Baryshkov <dmitry.baryshkov@oss.qualcomm.com>
 Reviewed-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
 Tested-by: Stanislaw Pal <kuncy7@gmail.com>
+Link: https://lore.kernel.org/r/20260908-ipq5018-usb3-v4-11-b789702f0695@outlook.com
 Signed-off-by: George Moussalem <george.moussalem@outlook.com>
 ---
  arch/arm64/boot/dts/qcom/ipq5018.dtsi | 8 ++++++--
@@ -37,5 +36,5 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
 +				      "aux",
 +				      "lfps";
  			assigned-clocks = <&gcc GCC_USB0_MOCK_UTMI_CLK>;
- 			assigned-clock-rates = <60000000>;
+ 			assigned-clock-rates = <24000000>;
  

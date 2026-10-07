@@ -1,16 +1,16 @@
-From 84bb18eee71b7bdf202b47812d261208e735ac0e Mon Sep 17 00:00:00 2001
 From: George Moussalem <george.moussalem@outlook.com>
-Date: Tue, 25 Aug 2026 12:01:09 +0400
-Subject: [PATCH v3 07/10] arm64: dts: qcom: ipq6018: Flatten usb controller
- nodes
+Date: Thu, 01 Oct 2026 11:53:48 +0400
+Subject: [PATCH] arm64: dts: qcom: ipq6018: Flatten usb controller nodes
 
 Flatten usb controller nodes and update to using latest bindings and
 flattened driver approach.
 
+Reviewed-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Link: https://lore.kernel.org/r/20261001-ipq-flatten-usb-v4-5-486a4d5ede30@outlook.com
 Signed-off-by: George Moussalem <george.moussalem@outlook.com>
 ---
  arch/arm64/boot/dts/qcom/ipq6018-cp01-c1.dts |  6 +-
- arch/arm64/boot/dts/qcom/ipq6018.dtsi        | 93 +++++++++-----------
+ arch/arm64/boot/dts/qcom/ipq6018.dtsi        | 93 +++++++++++++---------------
  2 files changed, 44 insertions(+), 55 deletions(-)
 
 --- a/arch/arm64/boot/dts/qcom/ipq6018-cp01-c1.dts

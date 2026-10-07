@@ -1,8 +1,6 @@
-From b1c13a2a9d815dafebe26181791dedf403d85ec7 Mon Sep 17 00:00:00 2001
 From: George Moussalem <george.moussalem@outlook.com>
-Date: Thu, 3 Sep 2026 11:07:26 +0400
-Subject: [PATCH 150/160] dt-bindings: phy: qcom,ipq5332-uniphy-pcie: Document
- the IPQ5018 USB3 PHY
+Date: Tue, 08 Sep 2026 13:40:54 +0400
+Subject: [PATCH] dt-bindings: phy: qcom,ipq5332-uniphy-pcie: Document the IPQ5018 USB3 PHY
 
 Describe the USB3 PHY found in the IPQ5018 SoC, so add the compatible
 string for it as well as the required resources (clocks and resets).
@@ -13,9 +11,10 @@ the property for USB mux selection required.
 
 In addition, the PHY requires a 5V supply for USB3 mode operation.
 
+Link: https://lore.kernel.org/r/20260908-ipq5018-usb3-v4-1-b789702f0695@outlook.com
 Signed-off-by: George Moussalem <george.moussalem@outlook.com>
 ---
- .../phy/qcom,ipq5332-uniphy-pcie-phy.yaml     | 44 +++++++++++++++++--
+ .../bindings/phy/qcom,ipq5332-uniphy-pcie-phy.yaml | 44 ++++++++++++++++++++--
  1 file changed, 41 insertions(+), 3 deletions(-)
 
 --- a/Documentation/devicetree/bindings/phy/qcom,ipq5332-uniphy-pcie-phy.yaml

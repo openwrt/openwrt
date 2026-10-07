@@ -1,8 +1,6 @@
-From 6ff42f4d8717b05ad36a70ac18b9373902ea9625 Mon Sep 17 00:00:00 2001
 From: George Moussalem <george.moussalem@outlook.com>
-Date: Wed, 19 Aug 2026 10:31:40 +0400
-Subject: [PATCH 151/160] phy: qualcomm: qcom-uniphy-pcie-28lp: Convert to
- PCIe/USB3 combo PHY driver
+Date: Tue, 08 Sep 2026 13:40:55 +0400
+Subject: [PATCH] phy: qualcomm: qcom-uniphy-pcie-28lp: Convert to PCIe/USB3 combo PHY driver
 
 This PHY found in IPQ5332 and IPQ5018 SoCs is actually a multi-purpose
 PCIe/USB3 combo PHY. The driver was initially created for PCIe PHY
@@ -12,13 +10,13 @@ that USB3 support can be added in subsequent patches.
 
 Reviewed-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
 Tested-by: Stanislaw Pal <kuncy7@gmail.com>
+Link: https://lore.kernel.org/r/20260908-ipq5018-usb3-v4-2-b789702f0695@outlook.com
 Signed-off-by: George Moussalem <george.moussalem@outlook.com>
 ---
- drivers/phy/qualcomm/Kconfig                  | 24 +++--
- drivers/phy/qualcomm/Makefile                 |  2 +-
- ...8lp.c => phy-qcom-uniphy-pcie-usb3-28lp.c} | 87 +++++++++----------
- 3 files changed, 55 insertions(+), 58 deletions(-)
- rename drivers/phy/qualcomm/{phy-qcom-uniphy-pcie-28lp.c => phy-qcom-uniphy-pcie-usb3-28lp.c} (75%)
+ drivers/phy/qualcomm/Kconfig                       | 24 +++----
+ drivers/phy/qualcomm/Makefile                      |  2 +-
+ ...cie-28lp.c => phy-qcom-uniphy-pcie-usb3-28lp.c} | 83 +++++++++++-----------
+ 3 files changed, 53 insertions(+), 56 deletions(-)
 
 --- a/drivers/phy/qualcomm/Kconfig
 +++ b/drivers/phy/qualcomm/Kconfig
@@ -52,10 +50,10 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
 +	select GENERIC_PHY
 +	select MFD_SYSCON
 +	help
-+	  Enable this to support the Qualcomm USB Super-Speed UNIPHY transceiver
-+	  that is used on Qualcomm IPQ5018 and IPQ5332 SoCs with DWC3 USB core.
-+	  It handles PHY initialization, clock management required after
-+	  resetting the hardware and power management.
++	  Enable this to support the Qualcomm multi-purpose PCIe/USB3 UNIPHY
++	  transceiver that is used on Qualcomm IPQ5018 and IPQ5332 SoCs with
++	  PCIe and USB controllers. It handles PHY initialization, clock
++	  management required after resetting the hardware and power management.
 +
  config PHY_QCOM_USB_HS
  	tristate "Qualcomm USB HS PHY module"
@@ -532,7 +530,7 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
 +	},
 +};
 +
-+static const struct qcom_uniphy_data ipq5018_data = {
++static const struct qcom_uniphy_data ipq5018_pcie_data = {
 +	.lane_offset	= 0x800,
 +	.phy_type	= PHY_TYPE_PCIE_GEN2,
 +	.init_seq	= ipq5018_pcie_regs,
@@ -540,7 +538,7 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
 +	.pipe_clk_rate	= 125 * MEGA,
 +};
 +
-+static const struct qcom_uniphy_data ipq5332_data = {
++static const struct qcom_uniphy_data ipq5332_pcie_data = {
 +	.lane_offset	= 0x800,
 +	.phy_type	= PHY_TYPE_PCIE_GEN3,
 +	.init_seq	= ipq5332_pcie_regs,
@@ -565,7 +563,7 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
 +	}
 +}
 +
-+static int qcom_uniphy_pcie_usb3_power_off(struct phy *x)
++static int qcom_uniphy_pcie_power_off(struct phy *x)
 +{
 +	struct qcom_uniphy *phy = phy_get_drvdata(x);
 +
@@ -574,7 +572,7 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
 +	return reset_control_assert(phy->resets);
 +}
 +
-+static int qcom_uniphy_pcie_usb3_power_on(struct phy *x)
++static int qcom_uniphy_pcie_power_on(struct phy *x)
 +{
 +	struct qcom_uniphy *phy = phy_get_drvdata(x);
 +	int ret;
@@ -665,18 +663,18 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
 +static const struct of_device_id qcom_uniphy_pcie_usb3_id_table[] = {
 +	{
 +		.compatible = "qcom,ipq5018-uniphy-pcie-phy",
-+		.data = &ipq5018_data,
++		.data = &ipq5018_pcie_data,
 +	}, {
 +		.compatible = "qcom,ipq5332-uniphy-pcie-phy",
-+		.data = &ipq5332_data,
++		.data = &ipq5332_pcie_data,
 +	},
 +	{ },
 +};
 +MODULE_DEVICE_TABLE(of, qcom_uniphy_pcie_usb3_id_table);
 +
-+static const struct phy_ops qcom_uniphy_ops = {
-+	.power_on	= qcom_uniphy_pcie_usb3_power_on,
-+	.power_off	= qcom_uniphy_pcie_usb3_power_off,
++static const struct phy_ops qcom_uniphy_pcie_ops = {
++	.power_on	= qcom_uniphy_pcie_power_on,
++	.power_off	= qcom_uniphy_pcie_power_off,
 +	.owner          = THIS_MODULE,
 +};
 +
@@ -708,7 +706,7 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
 +		return dev_err_probe(&pdev->dev, ret,
 +				     "failed to get resources: %d\n", ret);
 +
-+	generic_phy = devm_phy_create(phy->dev, NULL, &qcom_uniphy_ops);
++	generic_phy = devm_phy_create(phy->dev, NULL, &qcom_uniphy_pcie_ops);
 +	if (IS_ERR(generic_phy))
 +		return PTR_ERR(generic_phy);
 +

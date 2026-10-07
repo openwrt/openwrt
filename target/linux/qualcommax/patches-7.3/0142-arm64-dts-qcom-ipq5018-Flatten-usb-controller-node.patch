@@ -1,8 +1,6 @@
-From 6ecaaef1a16147685e68ee25f86f812582c74e03 Mon Sep 17 00:00:00 2001
 From: George Moussalem <george.moussalem@outlook.com>
-Date: Mon, 3 Aug 2026 14:23:32 +0400
-Subject: [PATCH v3 03/10] arm64: dts: qcom: ipq5018: Flatten usb controller
- node
+Date: Thu, 01 Oct 2026 11:53:44 +0400
+Subject: [PATCH] arm64: dts: qcom: ipq5018: Flatten usb controller node
 
 Flatten usb controller node and update to using latest bindings and
 flattened driver approach.
@@ -10,11 +8,12 @@ flattened driver approach.
 In addition, set the right UTMI clock rate and override any clock
 rate inherited from the bootloader.
 
+Link: https://lore.kernel.org/r/20261001-ipq-flatten-usb-v4-1-486a4d5ede30@outlook.com
 Signed-off-by: George Moussalem <george.moussalem@outlook.com>
 Reviewed-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
 ---
- .../arm64/boot/dts/qcom/ipq5018-rdp432-c2.dts |  6 +--
- arch/arm64/boot/dts/qcom/ipq5018.dtsi         | 51 +++++++++----------
+ arch/arm64/boot/dts/qcom/ipq5018-rdp432-c2.dts |  6 +--
+ arch/arm64/boot/dts/qcom/ipq5018.dtsi          | 51 ++++++++++++--------------
  2 files changed, 25 insertions(+), 32 deletions(-)
 
 --- a/arch/arm64/boot/dts/qcom/ipq5018-rdp432-c2.dts
@@ -60,7 +59,7 @@ Reviewed-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
  				      "sleep",
  				      "mock_utmi";
 +			assigned-clocks = <&gcc GCC_USB0_MOCK_UTMI_CLK>;
-+			assigned-clock-rates = <60000000>;
++			assigned-clock-rates = <24000000>;
 +
 +			interrupts = <GIC_SPI 140 IRQ_TYPE_LEVEL_HIGH>,
 +				     <GIC_SPI 134 IRQ_TYPE_LEVEL_HIGH>,

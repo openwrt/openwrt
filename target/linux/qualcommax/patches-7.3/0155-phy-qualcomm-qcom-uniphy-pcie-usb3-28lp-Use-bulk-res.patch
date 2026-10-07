@@ -1,8 +1,6 @@
-From e5e9eed4f922cdfd7535affa9ce10fc416921f56 Mon Sep 17 00:00:00 2001
 From: George Moussalem <george.moussalem@outlook.com>
-Date: Tue, 18 Aug 2026 19:40:13 +0400
-Subject: [PATCH 153/160] phy: qualcomm: qcom-uniphy-pcie-usb3-28lp: Use bulk
- reset_control API
+Date: Tue, 08 Sep 2026 13:40:59 +0400
+Subject: [PATCH] phy: qualcomm: qcom-uniphy-pcie-usb3-28lp: Use bulk reset_control API
 
 Switch to using bulk reset_control functions to prepare the driver for
 managing multiple resets, acquiring reset controls by name, and
@@ -10,14 +8,16 @@ uniformly storing resets in the private data structure to enable support
 for future combo PHY functionality requiring multiple resets.
 
 Tested-by: Stanislaw Pal <kuncy7@gmail.com>
+Reviewed-by: Manivannan Sadhasivam <manivannan.sadhasivam@oss.qualcomm.com>
+Link: https://lore.kernel.org/r/20260908-ipq5018-usb3-v4-6-b789702f0695@outlook.com
 Signed-off-by: George Moussalem <george.moussalem@outlook.com>
 ---
- .../qualcomm/phy-qcom-uniphy-pcie-usb3-28lp.c | 31 ++++++++++++++-----
+ .../phy/qualcomm/phy-qcom-uniphy-pcie-usb3-28lp.c  | 31 ++++++++++++++++------
  1 file changed, 23 insertions(+), 8 deletions(-)
 
 --- a/drivers/phy/qualcomm/phy-qcom-uniphy-pcie-usb3-28lp.c
 +++ b/drivers/phy/qualcomm/phy-qcom-uniphy-pcie-usb3-28lp.c
-@@ -64,7 +64,8 @@ struct qcom_uniphy {
+@@ -67,7 +67,8 @@ struct qcom_uniphy {
  	const struct qcom_uniphy_data *data;
  	struct clk_bulk_data *clks;
  	int num_clks;
@@ -27,7 +27,7 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
  	void __iomem *base;
  	int lanes;
  };
-@@ -133,7 +134,7 @@ static int qcom_uniphy_pcie_usb3_power_o
+@@ -136,7 +137,7 @@ static int qcom_uniphy_pcie_power_off(st
  
  	clk_bulk_disable_unprepare(phy->num_clks, phy->clks);
  
@@ -35,8 +35,8 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
 +	return reset_control_bulk_assert(phy->num_resets, phy->resets);
  }
  
- static int qcom_uniphy_pcie_usb3_power_on(struct phy *x)
-@@ -141,7 +142,7 @@ static int qcom_uniphy_pcie_usb3_power_o
+ static int qcom_uniphy_pcie_power_on(struct phy *x)
+@@ -144,7 +145,7 @@ static int qcom_uniphy_pcie_power_on(str
  	struct qcom_uniphy *phy = phy_get_drvdata(x);
  	int ret;
  
@@ -45,7 +45,7 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
  	if (ret) {
  		dev_err(phy->dev, "reset assert failed (%d)\n", ret);
  		return ret;
-@@ -149,7 +150,7 @@ static int qcom_uniphy_pcie_usb3_power_o
+@@ -152,7 +153,7 @@ static int qcom_uniphy_pcie_power_on(str
  
  	usleep_range(RST_ASSERT_DELAY_MIN_US, RST_ASSERT_DELAY_MAX_US);
  
@@ -54,7 +54,7 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
  	if (ret) {
  		dev_err(phy->dev, "reset deassert failed (%d)\n", ret);
  		return ret;
-@@ -173,19 +174,33 @@ static int qcom_uniphy_pcie_usb3_power_o
+@@ -176,19 +177,33 @@ static int qcom_uniphy_pcie_power_on(str
  static inline int qcom_uniphy_pcie_usb3_get_resources(struct platform_device *pdev,
  						      struct qcom_uniphy *phy)
  {

@@ -1,0 +1,25 @@
+From: George Moussalem <george.moussalem@outlook.com>
+Date: Tue, 08 Sep 2026 13:40:57 +0400
+Subject: [PATCH] phy: qualcomm: qcom-uniphy-pcie-usb3-28lp: Drop unused phy_to_dw_phy macro
+
+Remove the unused phy_to_dw_phy() helper macro which is not referenced
+anywhere in the driver.
+
+Tested-by: Stanislaw Pal <kuncy7@gmail.com>
+Link: https://lore.kernel.org/r/20260908-ipq5018-usb3-v4-4-b789702f0695@outlook.com
+Signed-off-by: George Moussalem <george.moussalem@outlook.com>
+---
+ drivers/phy/qualcomm/phy-qcom-uniphy-pcie-usb3-28lp.c | 2 --
+ 1 file changed, 2 deletions(-)
+
+--- a/drivers/phy/qualcomm/phy-qcom-uniphy-pcie-usb3-28lp.c
++++ b/drivers/phy/qualcomm/phy-qcom-uniphy-pcie-usb3-28lp.c
+@@ -72,8 +72,6 @@ struct qcom_uniphy {
+ 	int lanes;
+ };
+ 
+-#define phy_to_dw_phy(x)	container_of((x), struct qcom_uniphy, phy)
+-
+ static const struct qcom_uniphy_regs ipq5018_pcie_regs[] = {
+ 	{
+ 		.offset = SSCG_CTRL_REG_4,

@@ -1,0 +1,91 @@
+From: George Moussalem <george.moussalem@outlook.com>
+Date: Tue, 08 Sep 2026 13:40:58 +0400
+Subject: [PATCH] phy: qualcomm: qcom-uniphy-pcie-usb3-28lp: Refactor init regs table definitions
+
+Refactor the IPQ5018/IPQ5332 UNIPHY PCIe init data by introducing a
+helper macro for register/value entries and converting open-coded struct
+initializers to the compact form.
+
+No functional change intended.
+
+Reviewed-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Tested-by: Stanislaw Pal <kuncy7@gmail.com>
+Link: https://lore.kernel.org/r/20260908-ipq5018-usb3-v4-5-b789702f0695@outlook.com
+Signed-off-by: George Moussalem <george.moussalem@outlook.com>
+---
+ .../phy/qualcomm/phy-qcom-uniphy-pcie-usb3-28lp.c  | 60 +++++++---------------
+ 1 file changed, 19 insertions(+), 41 deletions(-)
+
+--- a/drivers/phy/qualcomm/phy-qcom-uniphy-pcie-usb3-28lp.c
++++ b/drivers/phy/qualcomm/phy-qcom-uniphy-pcie-usb3-28lp.c
+@@ -72,51 +72,29 @@ struct qcom_uniphy {
+ 	int lanes;
+ };
+ 
++#define PHY_INIT_CFG(o, v)		\
++	{				\
++		.offset = o,		\
++		.val = v,		\
++	}
++
+ static const struct qcom_uniphy_regs ipq5018_pcie_regs[] = {
+-	{
+-		.offset = SSCG_CTRL_REG_4,
+-		.val = 0x1cb9,
+-	}, {
+-		.offset = SSCG_CTRL_REG_5,
+-		.val = 0x023a,
+-	}, {
+-		.offset = SSCG_CTRL_REG_3,
+-		.val = 0xd360,
+-	}, {
+-		.offset = SSCG_CTRL_REG_1,
+-		.val = 0x1,
+-	}, {
+-		.offset = SSCG_CTRL_REG_2,
+-		.val = 0xeb,
+-	}, {
+-		.offset = CDR_CTRL_REG_4,
+-		.val = 0x3f9,
+-	}, {
+-		.offset = CDR_CTRL_REG_5,
+-		.val = 0x1c9,
+-	}, {
+-		.offset = CDR_CTRL_REG_2,
+-		.val = 0x419,
+-	}, {
+-		.offset = CDR_CTRL_REG_1,
+-		.val = 0x200,
+-	}, {
+-		.offset = PCS_INTERNAL_CONTROL_2,
+-		.val = 0xf101,
+-	},
++	PHY_INIT_CFG(SSCG_CTRL_REG_4, 0x1cb9),
++	PHY_INIT_CFG(SSCG_CTRL_REG_5, 0x023a),
++	PHY_INIT_CFG(SSCG_CTRL_REG_3, 0xd360),
++	PHY_INIT_CFG(SSCG_CTRL_REG_1, 0x1),
++	PHY_INIT_CFG(SSCG_CTRL_REG_2, 0xeb),
++	PHY_INIT_CFG(CDR_CTRL_REG_4, 0x3f9),
++	PHY_INIT_CFG(CDR_CTRL_REG_5, 0x1c9),
++	PHY_INIT_CFG(CDR_CTRL_REG_2, 0x419),
++	PHY_INIT_CFG(CDR_CTRL_REG_1, 0x200),
++	PHY_INIT_CFG(PCS_INTERNAL_CONTROL_2, 0xf101),
+ };
+ 
+ static const struct qcom_uniphy_regs ipq5332_pcie_regs[] = {
+-	{
+-		.offset = PHY_CFG_PLLCFG,
+-		.val = 0x30,
+-	}, {
+-		.offset = PHY_CFG_EIOS_DTCT_REG,
+-		.val = 0x53ef,
+-	}, {
+-		.offset = PHY_CFG_GEN3_ALIGN_HOLDOFF_TIME,
+-		.val = 0xcf,
+-	},
++	PHY_INIT_CFG(PHY_CFG_PLLCFG, 0x30),
++	PHY_INIT_CFG(PHY_CFG_EIOS_DTCT_REG, 0x53ef),
++	PHY_INIT_CFG(PHY_CFG_GEN3_ALIGN_HOLDOFF_TIME, 0xcf),
+ };
+ 
+ static const struct qcom_uniphy_data ipq5018_pcie_data = {
