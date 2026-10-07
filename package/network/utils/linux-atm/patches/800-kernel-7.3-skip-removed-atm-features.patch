@@ -1,0 +1,73 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Subject: [PATCH] skip the ATM features removed in Linux 7.3
+
+Linux 7.3 removed SVC, CLIP, LANE, MPOA, ATM over TCP and most ATM
+drivers together with their uapi headers. Detect that and skip the
+daemons and tools that need them.
+
+--- a/configure.in
++++ b/configure.in
+@@ -44,6 +44,11 @@ AC_CHECK_HEADER(linux/atmsap.h, ,
+ 	AC_MSG_ERROR([*** Unable to find linux/atmsap.h!!!])
+ )
+ 
++dnl Linux 7.3 removed SVC, CLIP, LANE, MPOA, ATM over TCP and most ATM
++dnl drivers together with their uapi headers
++AC_CHECK_HEADER(linux/atmsvc.h, [legacy_atm=yes], [legacy_atm=no])
++AM_CONDITIONAL(LEGACY_ATM, test "x$legacy_atm" = xyes)
++
+ dnl Check for libraries
+ dnl libresolv is required
+ AC_CHECK_LIB(resolv, main, ,
+--- a/src/Makefile.am
++++ b/src/Makefile.am
+@@ -1,3 +1,7 @@
+-SUBDIRS = include lib test debug qgen q2931 saal sigd maint arpd ilmid man led lane \
+-		mpoad oamd switch config extra br2684
++if LEGACY_ATM
++LEGACY_SUBDIRS = sigd arpd ilmid led lane mpoad switch
++endif
++
++SUBDIRS = include lib test debug qgen q2931 saal $(LEGACY_SUBDIRS) maint man \
++		oamd config extra br2684
+ 
+--- a/src/debug/Makefile.am
++++ b/src/debug/Makefile.am
+@@ -1,6 +1,9 @@
+ # Remove the # for more hardware-specific debugging programs.
+ # I'll need those only if you're fiddling with the guts of drivers.
+-noinst_PROGRAMS = delay svctor # ed dnstest znth
++if LEGACY_ATM
++LEGACY_PGMS = svctor
++endif
++noinst_PROGRAMS = delay $(LEGACY_PGMS) # ed dnstest znth
+ 
+ LDADD = $(top_builddir)/src/lib/libatm.la
+ 
+--- a/src/maint/Makefile.am
++++ b/src/maint/Makefile.am
+@@ -1,5 +1,9 @@
+-BOOTPGMS=atmaddr esi
+-SYSPGMS=atmloop atmtcp enitune zntune hediag # nstune
++if LEGACY_ATM
++LEGACY_BOOTPGMS=atmaddr
++LEGACY_SYSPGMS=atmtcp enitune zntune hediag
++endif
++BOOTPGMS=$(LEGACY_BOOTPGMS) esi
++SYSPGMS=atmloop $(LEGACY_SYSPGMS) # nstune
+ USRPGMS=atmdiag atmdump sonetdiag saaldump
+ 
+ INCLUDES=-I$(srcdir)/../q2931 -I$(srcdir)/../saal -I.
+--- a/src/test/Makefile.am
++++ b/src/test/Makefile.am
+@@ -1,6 +1,9 @@
+ USRPGMS = aread awrite ttcp_atm atmswitch svc_recv svc_send @pmp_send@
+ EXTRA_PROGRAMS = pmp_send
+-PGMS = align aping br bw isp window
++if LEGACY_ATM
++LEGACY_PGMS = isp
++endif
++PGMS = align aping br bw $(LEGACY_PGMS) window
+ bin_PROGRAMS = $(USRPGMS)
+ noinst_PROGRAMS = $(PGMS)
+ 
