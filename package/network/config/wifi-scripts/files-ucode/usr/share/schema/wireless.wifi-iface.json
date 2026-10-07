@@ -397,7 +397,7 @@
 			"type": "string"
 		},
 		"gcmp256": {
-			"description": "Advertise the GCMP-256 pairwise cipher on HE/EHT BSSes (alongside CCMP for sae/sae-mixed, in the RSNE Override 2 element for sae-compat). Mandatory for EHT (WPA3 Specification v3.5 2.5), recommended otherwise. Off by default, because some clients and chipsets misbehave when GCMP-256 is offered. With an EHT htmode, sae, sae-mixed and sae-compat BSSes offer GCMP-256 in the RSNE Override 2 element unless this option is 0; 1 also offers it in the RSNE. Only advertised when the driver supports the GCMP-256 cipher.",
+			"description": "Advertise the GCMP-256 pairwise cipher on HE/EHT BSSes (alongside CCMP for sae/sae-mixed, in the RSNE Override 2 element for sae-compat). Mandatory for EHT (WPA3 Specification v3.5 2.5), recommended otherwise. Off by default, because some clients and chipsets misbehave when GCMP-256 is offered. With an EHT htmode, sae, sae-mixed and sae-compat BSSes offer GCMP-256 in the RSNE Override 2 element unless this option is 0; 1 also offers it in the RSNE. Only advertised when the driver supports the GCMP-256 cipher. The sae and sae-mixed BSSes send no RSNE Override 2 element when the RSNE already offers SAE-EXT-KEY and GCMP-256 (CCMP without driver support for GCMP-256). An AP MLD sends none only when this holds on every link, so a psk2 AP MLD sends it on every link unless sae_ext_key is 0.",
 			"type": "boolean"
 		},
 		"hidden": {
@@ -1021,7 +1021,7 @@
 			"type": "boolean"
 		},
 		"sae_ext_key": {
-			"description": "Advertise the SAE-EXT-KEY AKM (SAE using a group-dependent hash) alongside plain SAE. Mandatory for EHT (WPA3 Specification v3.5 2.5), recommended otherwise. Off by default in the RSNE, because some clients misbehave when SAE-EXT-KEY is offered there. With an EHT htmode, sae, sae-mixed and sae-compat BSSes offer it in the RSNE Override 2 element unless this option is 0; 1 also offers it in the RSNE (not for sae-compat).",
+			"description": "Advertise the SAE-EXT-KEY AKM (SAE using a group-dependent hash) alongside plain SAE. Mandatory for EHT (WPA3 Specification v3.5 2.5), recommended otherwise. Off by default in the RSNE, because some clients misbehave when SAE-EXT-KEY is offered there. With an EHT htmode, sae, sae-mixed and sae-compat BSSes offer it in the RSNE Override 2 element unless this option is 0; 1 also offers it in the RSNE (not for sae-compat). The sae and sae-mixed BSSes send no RSNE Override 2 element when the RSNE already offers SAE-EXT-KEY and GCMP-256 (CCMP without driver support for GCMP-256). An AP MLD sends none only when this holds on every link, so a psk2 AP MLD sends it on every link unless sae_ext_key is 0.",
 			"type": "boolean"
 		},
 		"sae_password_file": {

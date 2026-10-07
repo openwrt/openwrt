@@ -89,14 +89,33 @@ function station_password_count(stas) {
 	return n;
 }
 
-/* a refusal on any band refuses every link of the AP MLD */
-function mld_refusal(link_config, dev_config, phy_features) {
+function mld_links(link_config, dev_config, phy_features, rsno2) {
+	let links = [];
+
 	for (let band in link_config.mlo_bands) {
 		let config = { ...link_config };
 		config.encryption = iface.encryption_band(config.encryption, band, config.mlo_bands);
-		iface.parse_encryption(config, { ...dev_config, band }, phy_features);
+		iface.parse_encryption(config, { ...dev_config, band }, phy_features, rsno2);
+		push(links, { band, config });
+	}
 
-		const reason = bss_refusal(config, band);
+	return links;
+}
+
+/* WPA3 Specification v3.5 14.2: an AP MLD includes an identical RSNE
+ * Override 2 element on all links, so a link that needs it adds it to all */
+function mld_rsno2(link_config, dev_config, phy_features) {
+	for (let link in mld_links(link_config, dev_config, phy_features))
+		if (link.config.rsno2_sae)
+			return true;
+
+	return false;
+}
+
+/* a refusal on any band refuses every link of the AP MLD */
+function mld_refusal(link_config, dev_config, phy_features, rsno2) {
+	for (let link in mld_links(link_config, dev_config, phy_features, rsno2)) {
+		const reason = bss_refusal(link.config, link.band);
 		if (reason)
 			return reason;
 	}
@@ -691,12 +710,15 @@ export function generate(interface, data, config, vlans, stas, phy_features) {
 	config.sae_station_passwords = station_password_count(stas);
 	const link_config = { ...config };
 
+	const mld = config.mlo && length(config.mlo_bands);
+	const rsno2 = mld ? mld_rsno2(link_config, data.config, phy_features) : null;
+
 	config.encryption = iface.encryption_band(config.encryption, data.config.band,
 		config.mlo ? (config.mlo_bands ?? []) : null);
-	iface.parse_encryption(config, data.config, phy_features);
+	iface.parse_encryption(config, data.config, phy_features, rsno2);
 
-	const refusal = (config.mlo && length(config.mlo_bands)) ?
-		mld_refusal(link_config, data.config, phy_features) : bss_refusal(config, data.config.band);
+	const refusal = mld ?
+		mld_refusal(link_config, data.config, phy_features, rsno2) : bss_refusal(config, data.config.band);
 	if (refusal)
 		return refusal;
 

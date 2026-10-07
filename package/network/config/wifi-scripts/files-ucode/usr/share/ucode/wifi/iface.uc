@@ -61,6 +61,11 @@ function encryption_map(encryption, modes) {
 	return join('+', enc);
 }
 
+function rsne_offers_rsno2(config, rsno2_pairwise) {
+	return !!config.sae_ext_key && config.auth_type in [ 'sae', 'psk-sae' ] &&
+		index(split(config.wpa_pairwise ?? '', ' '), rsno2_pairwise) >= 0;
+}
+
 /* mld_bands: null for a single-link BSS, else the bands of the AP MLD */
 export function encryption_band(encryption, band, mld_bands) {
 	if (band == '6g')
@@ -85,7 +90,9 @@ export function encryption_sta_band(encryption, band, mld_bands) {
 	return encryption_map(encryption, encryption_sta_mixed_6g);
 };
 
-export function parse_encryption(config, dev_config, phy_features) {
+/* rsno2: null decides the RSNO2E for this link alone, a bool gives the
+ * decision of the AP MLD */
+export function parse_encryption(config, dev_config, phy_features, rsno2) {
 	if (!config.encryption)
 		config.encryption = 'none';
 
@@ -105,19 +112,20 @@ export function parse_encryption(config, dev_config, phy_features) {
 	 * WPA3 Specification v3.5 2.5 requires SAE-EXT-KEY and GCMP-256 with
 	 * EHT or MLO. Some clients fail when these are offered in the RSNE, so on
 	 * EHT they go into the RSNE Override 2 element. Explicit sae_ext_key and
-	 * gcmp256 options apply to the RSNE; 0 also keeps them out of RSNO2.
+	 * gcmp256 options apply to the RSNE; 0 also keeps them out of RSNO2. An
+	 * RSNE that already offers the AKM and the pairwise cipher of the RSNO2E
+	 * makes the RSNO2E a duplicate, so the BSS sends none. An AP MLD sends
+	 * none only where that holds on every link (ap.uc mld_rsno2()).
 	 */
 	let eht = wildcard(dev_config?.htmode ?? '', 'EHT*');
 	let compat = (config.auth_type == 'sae-compat');
 	let rsno2_mode = config.auth_type in [ 'sae', 'psk3', 'sae-mixed', 'psk3-mixed' ] ||
 		(!!config.mlo && config.auth_type == 'psk2');
 	/* all links of an AP MLD must reach the same decision */
-	config.rsno2_sae = (eht || !!config.mlo) && rsno2_mode && config.sae_ext_key !== false;
-	let rsno2_gcmp256 = config.gcmp256 !== false && phy_features?.cipher_gcmp256;
+	let rsno2_sae = (eht || !!config.mlo) && rsno2_mode && config.sae_ext_key !== false;
+	let rsno2_pairwise = (config.gcmp256 !== false && phy_features?.cipher_gcmp256) ? 'GCMP-256' : 'CCMP';
 	config.gcmp256 ??= compat && eht;
 	config.sae_ext_key ??= compat && eht;
-	if (config.rsno2_sae)
-		config.rsn_override_pairwise_2 = rsno2_gcmp256 ? 'GCMP-256' : 'CCMP';
 
 	switch(config.auth_type) {
 	case 'owe':
@@ -213,6 +221,10 @@ export function parse_encryption(config, dev_config, phy_features) {
 		config.wpa_pairwise ??= 'GCMP-256 CCMP';
 	else
 		config.wpa_pairwise ??= 'CCMP';
+
+	config.rsno2_sae = rsno2_sae && (rsno2 ?? !rsne_offers_rsno2(config, rsno2_pairwise));
+	if (config.rsno2_sae)
+		config.rsn_override_pairwise_2 = rsno2_pairwise;
 };
 
 export function wpa_key_mgmt(config, band) {
