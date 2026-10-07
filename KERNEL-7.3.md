@@ -102,15 +102,20 @@ In-tree, fix on this branch:
 
 packages feed (fix upstream in the feed, not here):
 
-- [ ] jool
+- [ ] jool: snmp_fold_field() no longer exported
 - [ ] libpfring: proto_ops bind() now takes struct sockaddr_unsized *
 - [ ] netatop: strncpy() removed from the kernel
-- [ ] xtables-addons
+- [ ] xtables-addons: strncpy() removed (ACCOUNT, LUA, pknock); rtsp uses
+      nf_conntrack_helper->tuple, which is gone
 
 telephony feed:
 
-- [ ] dahdi-linux
-- [ ] rtpengine (no-transcode variant, kernel module)
+- [ ] dahdi-linux: echocan_oslec needs the in-kernel oslec echo driver, removed
+      in 6.18 already (kmod-echo is @LINUX_6_12), so not 7.3 specific
+- [ ] rtpengine (no-transcode): kernel module sets -D__RE_EXTERNAL via
+      EXTRA_CFLAGS, which kbuild ignores; needs ccflags-y
+
+Not broken after all: batman-adv, ath10k-ct (empty .symvers, fixed in kernel.mk).
 
 ## Follow-ups found during the refresh
 
