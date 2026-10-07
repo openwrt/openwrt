@@ -1,0 +1,89 @@
+From bbb2b9543d24c14b3f20e6f1d1ba01d46c7c8885 Mon Sep 17 00:00:00 2001
+From: Rustam Adilov <adilov@disroot.org>
+Date: Mon, 23 Mar 2026 17:43:47 +0500
+Subject: [PATCH v7 3/6] dt-bindings: phy: realtek,usb2phy.yaml: extend for
+ resets and RTL9607C support
+
+Add the "realtek,rtl9607-usb2phy" compatible for USB2 PHY on the RTL9607C
+SoC series.
+
+Add a resets property to properties to describe the usb2phy reset line.
+
+In RTL9607C, USB2 PHY reset line is from "IP Enable controller" which is
+multipurpose and handle activating various SoC peripherals.
+
+It is unclear whether RTD SoCs have something similar to that so set
+the resets to false for these devices.
+
+RTL9607C requires the "resets" to be specified so add the corresponding
+if check for the "realtek,rtl9607-usb2phy" compatible.
+
+Reviewed-by: Krzysztof Kozlowski <krzysztof.kozlowski@oss.qualcomm.com>
+Acked-by: Manivannan Sadhasivam <manivannan.sadhasivam@oss.qualcomm.com>
+Signed-off-by: Rustam Adilov <adilov@disroot.org>
+---
+ .../bindings/phy/realtek,usb2phy.yaml         | 25 ++++++++++++++++++-
+ 1 file changed, 24 insertions(+), 1 deletion(-)
+
+--- a/Documentation/devicetree/bindings/phy/realtek,usb2phy.yaml
++++ b/Documentation/devicetree/bindings/phy/realtek,usb2phy.yaml
+@@ -11,7 +11,8 @@ maintainers:
+   - Stanley Chang <stanley_chang@realtek.com>
+ 
+ description: |
+-  Realtek USB 2.0 PHY support the digital home center (DHC) RTD series SoCs.
++  Realtek USB 2.0 PHY support the digital home center (DHC) RTD and
++  RTL9607C series SoCs.
+   The USB 2.0 PHY driver is designed to support the XHCI controller. The SoCs
+   support multiple XHCI controllers. One PHY device node maps to one XHCI
+   controller.
+@@ -57,6 +58,12 @@ description: |
+   XHCI controller#1 -- usb2phy -- phy#0
+   XHCI controller#2 -- usb2phy -- phy#0
+ 
++  RTL9607C SoCs USB
++  The USB architecture includes OHCI and EHCI controllers.
++  Both of them map to one USB2.0 PHY.
++  OHCI controller#0 -- usb2phy -- phy#0
++  EHCI controller#0 -- usb2phy -- phy#0
++
+ properties:
+   compatible:
+     enum:
+@@ -69,6 +76,7 @@ properties:
+       - realtek,rtd1395-usb2phy-2port
+       - realtek,rtd1619-usb2phy
+       - realtek,rtd1619b-usb2phy
++      - realtek,rtl9607-usb2phy
+ 
+   reg:
+     items:
+@@ -130,6 +138,9 @@ properties:
+     minimum: -8
+     maximum: 8
+ 
++  resets:
++    maxItems: 1
++
+ required:
+   - compatible
+   - reg
+@@ -157,6 +168,18 @@ allOf:
+     then:
+       properties:
+         realtek,driving-level-compensate: false
++  - if:
++      properties:
++        compatible:
++          contains:
++            enum:
++              - realtek,rtl9607-usb2phy
++    then:
++      required:
++        - resets
++    else:
++      properties:
++        resets: false
+ 
+ additionalProperties: false
+ 

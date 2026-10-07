@@ -1,0 +1,73 @@
+From 3b890679d7243923676cc34886ec1b61da82831e Mon Sep 17 00:00:00 2001
+From: Rustam Adilov <adilov@disroot.org>
+Date: Mon, 23 Mar 2026 16:50:58 +0500
+Subject: [PATCH v7 4/6] phy: realtek: usb2: introduce reset controller struct
+
+In RTL9607C, there is so called "IP Enable Controller" which resemble
+reset controller with reset lines and is used for various things like
+USB, PCIE, GMAC and such.
+
+Introduce the reset_control struct to this driver to handle deasserting
+usb2 phy reset line.
+
+Make use of the function devm_reset_control_get_optional_exclusive()
+function to get the reset controller and since existing RTD SoCs don't
+specify the resets we can have a cleaner code.
+
+Since the vendor usb driver developed by Realtek doesn't assert the reset
+line (or in their case clear the register bit), we can reasonably assume
+reset_control_assert is not needed here.
+
+Co-developed-by: Michael Zavertkin <misha.zavertkin@mail.ru>
+Signed-off-by: Michael Zavertkin <misha.zavertkin@mail.ru>
+Signed-off-by: Rustam Adilov <adilov@disroot.org>
+---
+ drivers/phy/realtek/phy-rtk-usb2.c | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+--- a/drivers/phy/realtek/phy-rtk-usb2.c
++++ b/drivers/phy/realtek/phy-rtk-usb2.c
+@@ -17,6 +17,7 @@
+ #include <linux/sys_soc.h>
+ #include <linux/mfd/syscon.h>
+ #include <linux/phy/phy.h>
++#include <linux/reset.h>
+ #include <linux/usb.h>
+ 
+ /* GUSB2PHYACCn register */
+@@ -128,6 +129,7 @@ struct rtk_phy {
+ 	struct phy_cfg *phy_cfg;
+ 	int num_phy;
+ 	struct phy_parameter *phy_parameter;
++	struct reset_control *phy_rst;
+ 
+ 	struct dentry *debug_dir;
+ };
+@@ -676,6 +678,15 @@ static int rtk_phy_init(struct phy *phy)
+ 	if (!rtk_phy)
+ 		return -EINVAL;
+ 
++	if (rtk_phy->phy_rst) {
++		ret = reset_control_deassert(rtk_phy->phy_rst);
++
++		if (ret)
++			return ret;
++
++		usleep_range(5000, 6000);
++	}
++
+ 	for (i = 0; i < rtk_phy->num_phy; i++)
+ 		ret = do_rtk_phy_init(rtk_phy, i);
+ 
+@@ -1055,6 +1066,11 @@ static int rtk_usb2phy_probe(struct plat
+ 
+ 	rtk_phy->num_phy = phy_cfg->num_phy;
+ 
++	rtk_phy->phy_rst = devm_reset_control_get_optional_exclusive(dev, NULL);
++	if (IS_ERR(rtk_phy->phy_rst))
++		return dev_err_probe(dev, PTR_ERR(rtk_phy->phy_rst),
++				     "usb2 phy reset is not working\n");
++
+ 	ret = parse_phy_data(rtk_phy);
+ 	if (ret)
+ 		goto err;
