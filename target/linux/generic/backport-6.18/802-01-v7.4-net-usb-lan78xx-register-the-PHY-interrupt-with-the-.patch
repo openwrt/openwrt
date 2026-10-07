@@ -1,0 +1,40 @@
+From 06192231d08937dd523ef8c8a691c390e1e638c0 Mon Sep 17 00:00:00 2001
+From: Aleksei Sviridkin <f@lex.la>
+Date: Thu, 1 Oct 2026 16:02:33 +0300
+Subject: [PATCH] net: usb: lan78xx: register the PHY interrupt with the MDIO
+ bus
+
+The interrupt this driver maps for its PHY is written only into
+phydev->irq, while the bus table mdiobus->irq[] keeps reading PHY_POLL
+for the same address. That table is where phylib records what the bus
+described - phy_device_create() seeds phydev->irq from it - so the
+number lives only as long as nothing else writes that one field.
+
+Copy the number into the table entry of the PHY this driver attaches,
+and into no other. The chip has one PHY interrupt, and on 7801
+phy_mask is 0, so other PHYs on the bus keep what the bus gave them.
+The address is known only after the scan, so the write to phydev->irq
+stays.
+
+Found going through the drivers that keep a PHY interrupt outside the
+bus table, so that the restore on detach later in this series has a
+number to hand back here as well.
+
+Signed-off-by: Aleksei Sviridkin <f@lex.la>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Link: https://patch.msgid.link/20261001130236.106059-2-f@lex.la
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/usb/lan78xx.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/net/usb/lan78xx.c
++++ b/drivers/net/usb/lan78xx.c
+@@ -2897,6 +2897,7 @@ static int lan78xx_phy_init(struct lan78
+ 		phydev->irq = dev->domain_data.phyirq;
+ 	else
+ 		phydev->irq = PHY_POLL;
++	dev->mdiobus->irq[phydev->mdio.addr] = phydev->irq;
+ 	netdev_dbg(dev->net, "phydev->irq = %d\n", phydev->irq);
+ 
+ 	ret = phylink_connect_phy(dev->phylink, phydev);
