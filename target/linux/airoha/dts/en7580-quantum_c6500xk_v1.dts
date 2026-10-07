@@ -15,10 +15,10 @@
 
 	aliases {
 		serial0 = &uart1;
-		// led-boot = &led_power;
-		// led-failsafe = &led_power;
-		// led-upgrade = &led_power;
-		// led-running = &led_power;
+		led-boot = &led_power;
+		led-failsafe = &led_upgrade;
+		led-upgrade = &led_update;
+		led-running = &led_power;
 	};
 
 	keys {
@@ -50,20 +50,55 @@
 			gpios = <&pinctrl 15 GPIO_ACTIVE_LOW>;
 		};
 
-		main {
+		// Red
+		led_upgrade: led@18 {
+			gpios = <&pinctrl 18 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_RED>;
 			function = LED_FUNCTION_STATUS;
-			gpios = <&pinctrl 18 GPIO_ACTIVE_HIGH>, // Red
-			        <&pinctrl 19 GPIO_ACTIVE_HIGH>, // Red brightless
-			        <&pinctrl 24 GPIO_ACTIVE_HIGH>, // Blue
-			        <&pinctrl 25 GPIO_ACTIVE_HIGH>, // White
-			        <&pinctrl 29 GPIO_ACTIVE_HIGH>, // Green
-			        <&pinctrl 31 GPIO_ACTIVE_HIGH>; // Green brightless
+			function-enumerator = <18>;
+		};
+
+		// Red brightless
+		led@19 {
+			gpios = <&pinctrl 19 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <19>;
+		};
+
+		// Blue
+		led_update: led@24 {
+			gpios = <&pinctrl 24 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <24>;
+		};
+
+		// White
+		led_power: led@25 {
+			gpios = <&pinctrl 25 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <25>;
+		};
+
+		// Green
+		led@29 {
+			gpios = <&pinctrl 29 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <29>;
+		};
+
+		// Green brightless
+		led@31 {
+			gpios = <&pinctrl 31 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_LIME>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <31>;
 		};
 	};
 };
-
-&spi0 {
-	status = "okay";
 
 /*
 [    3.013668] parsing <2m[bootloader],2m[dsd],64m[tclinux],64m[tclinux_slave],320m[system],2m[uenv]>
@@ -82,6 +117,9 @@
 [    3.496841] 0x00001c400000-0x00001c600000 : "uenv"
 [    3.514013] 0x00001d5c0000-0x00001d740000 : "art"
 */
+
+&spi0 {
+	status = "okay";
 
 	flash@0 {
 		compatible = "spi-nand";
@@ -183,9 +221,9 @@
 					#address-cells = <1>;
 					#size-cells = <1>;
 
-					/* Vendor EN7572 BOB calibration block, 160 bytes. */
-					en7573_bob: calibration@60160 {
-						reg = <0x060160 0x00a0>;
+					/* EN7573 A0/A2 calibration image, 512 bytes. */
+					en7573_bob: calibration@60000 {
+						reg = <0x060000 0x200>;
 					};
 				};
 			};
@@ -193,12 +231,28 @@
 	};
 };
 
+&pcie0 {
+	status = "okay";
+};
+
+&pcie1 {
+	status = "okay";
+};
+
+&usb0 {
+	status = "okay";
+};
+
+&usb1 {
+	status = "okay";
+};
+
 &i2c0 {
 	status = "okay";
 
-	en7573: lddla@70 {
+	en7573: lddla@50 {
 		compatible = "airoha,en7573";
-		reg = <0x70>;
+		reg = <0x50>;
 
 		nvmem-cells = <&en7573_bob>;
 		nvmem-cell-names = "calibration";
@@ -275,8 +329,7 @@
 	aqr113c: ethernet-phy@0 {
 		reg = <0x0>;
 		compatible = "ethernet-phy-ieee802.3-c45";
-		// firmware-name = "marvell/AQR-G4_v5.6.7-AQR_Marvell_NoSwap_XFI_ID44834_VER1922.cld";
-		firmware-name = "AQR-G4_v5.6.7-AQR_Marvell_NoSwap_XFI_ID44834_VER1922.cld";
+		firmware-name = "marvell/AQR-G4_v5.6.7-AQR_Marvell_NoSwap_XFI_ID44834_VER1922.cld";
 
 		leds {
 			#address-cells = <1>;

@@ -11,8 +11,10 @@ board=$(board_name)
 # Switch
 case "$board" in
   quantum,c6500xk-v1)
-    ucidef_set_led_netdev "lan1" "lan1" "mt7530-0:09:green:lan" "lan1" "link tx rx"
-    ucidef_set_led_netdev "lan2" "lan2" "mt7530-0:0a:green:lan" "lan2" "link tx rx"
+    ucidef_set_led_netdev "lan1" "lan1" "mt7530-0:0b:green:lan" "lan1" "link_1000"
+    ucidef_set_led_netdev "lan2" "lan2" "mt7530-0:00:green:lan" "lan2" "link_1000 link_2500 link_5000 link_10000"
+    ucidef_set_led_netdev "lan1-act" "lan1-act" "mt7530-0:0b:amber:activity" "lan1" "link tx rx"
+    ucidef_set_led_netdev "lan2-act" "lan2-act" "mt7530-0:00:amber:activity" "lan2" "link tx rx"
     ;;
   *)
     ucidef_set_led_netdev "lan1" "lan1" "mt7530-0:09:green:lan" "lan1" "link tx rx"
