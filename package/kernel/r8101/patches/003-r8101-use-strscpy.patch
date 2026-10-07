@@ -1,0 +1,18 @@
+From: John Audia <therealgraysky@proton.me>
+Subject: [PATCH] r8101: use strscpy()
+
+strncpy() was removed in Linux 7.3.
+
+Signed-off-by: John Audia <therealgraysky@proton.me>
+---
+--- a/src/r8101_n.c
++++ b/src/r8101_n.c
+@@ -3858,7 +3858,7 @@ rtl8101_get_drvinfo(struct net_device *d
+ 
+         strcpy(info->driver, MODULENAME);
+         strcpy(info->version, RTL8101_VERSION);
+-        strncpy(info->bus_info, pci_name(tp->pci_dev), sizeof(info->bus_info) - 1);
++        strscpy(info->bus_info, pci_name(tp->pci_dev), sizeof(info->bus_info));
+         info->regdump_len = R8101_REGS_DUMP_SIZE;
+ }
+ 
