@@ -495,8 +495,8 @@ define KernelPackage/usb-cdns
 	   +kmod-usb-roles
   KCONFIG:= \
 	CONFIG_USB_CDNS_SUPPORT
-  FILES:= $(LINUX_DIR)/drivers/usb/cdns3/cdns-usb-common.ko
-  AUTOLOAD:=$(call AutoLoad,50,cdns-usb-common,1)
+  FILES:= $(LINUX_DIR)/drivers/usb/cdns3/cdns-usb-common.ko@lt7.3
+  AUTOLOAD:=$(call AutoLoad,50,cdns-usb-common@lt7.3,1)
 endef
 
 define KernelPackage/usb-cdns/description
@@ -515,8 +515,9 @@ define KernelPackage/usb-cdns3
 	CONFIG_USB_CDNS3 \
 	CONFIG_USB_CDNS3_GADGET=$(if $(CONFIG_USB_GADGET_SUPPORT),y,n) \
 	CONFIG_USB_CDNS3_HOST=$(if $(CONFIG_USB_SUPPORT),y,n)
-  FILES:= $(LINUX_DIR)/drivers/usb/cdns3/cdns3.ko
-  AUTOLOAD:=$(call AutoLoad,54,cdns3,1)
+  FILES:= $(LINUX_DIR)/drivers/usb/cdns3/cdns3.ko@lt7.3 \
+	$(LINUX_DIR)/drivers/usb/cdns3/cdns.ko@ge7.3
+  AUTOLOAD:=$(call AutoLoad,54,cdns3@lt7.3 cdns@ge7.3,1)
 endef
 
 define KernelPackage/usb-cdns3/description

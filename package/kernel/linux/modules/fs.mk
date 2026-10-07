@@ -368,8 +368,9 @@ define KernelPackage/fs-ksmbd
 	CONFIG_SMB_SERVER_CHECK_CAP_NET_ADMIN=n \
 	CONFIG_SMB_SERVER_KERBEROS5=n
   FILES:= \
+	 $(LINUX_DIR)/fs/smb/common/smb_compress.ko@ge7.3 \
 	 $(LINUX_DIR)/fs/smb/server/ksmbd.ko
-  AUTOLOAD:=$(call AutoLoad,41,ksmbd)
+  AUTOLOAD:=$(call AutoLoad,41,smb_compress@ge7.3 ksmbd)
 endef
 
 define KernelPackage/fs-ksmbd/description

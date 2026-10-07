@@ -525,7 +525,7 @@ define KernelPackage/sound-hda-codec-cirrus
 	$(LINUX_DIR)/sound/hda/codecs/cirrus/snd-hda-codec-cs421x.ko@ge6.18 \
 	$(LINUX_DIR)/sound/hda/codecs/cirrus/snd-hda-codec-cs8409.ko@ge6.18
   AUTOLOAD:=$(call AutoProbe,snd-hda-codec-cirrus snd-hda-codec-cs420x@ge6.18 snd-hda-codec-cs421x@ge6.18 snd-hda-codec-cs8409@ge6.18)
-  $(call AddDepends/sound,kmod-sound-hda-core)
+  $(call AddDepends/sound,kmod-sound-hda-core +kmod-snd-hda-scodec-component)
 endef
 
 define KernelPackage/sound-hda-codec-cirrus/description

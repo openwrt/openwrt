@@ -647,8 +647,9 @@ define KernelPackage/phy-airoha-en8811h
   DEPENDS:=+airoha-en8811h-firmware +kmod-libphy
   KCONFIG:=CONFIG_AIR_EN8811H_PHY
   FILES:= \
+   $(LINUX_DIR)/drivers/net/phy/air_phy_lib.ko@ge7.3 \
    $(LINUX_DIR)/drivers/net/phy/air_en8811h.ko
-  AUTOLOAD:=$(call AutoLoad,18,air_en8811h,1)
+  AUTOLOAD:=$(call AutoLoad,18,air_phy_lib@ge7.3 air_en8811h,1)
 endef
 
 define KernelPackage/phy-airoha-en8811h/description
@@ -695,8 +696,9 @@ define KernelPackage/dwmac-motorcomm
   TITLE:=Motorcomm PCI DWMAC support
   DEPENDS:=@PCI_SUPPORT +kmod-phy-motorcomm +kmod-stmmac-core
   KCONFIG:=CONFIG_DWMAC_MOTORCOMM
-  FILES:=$(LINUX_DIR)/drivers/net/ethernet/stmicro/stmmac/dwmac-motorcomm.ko
-  AUTOLOAD:=$(call AutoProbe,dwmac-motorcomm,1)
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/stmicro/stmmac/stmmac_libpci.ko@ge7.3 \
+	$(LINUX_DIR)/drivers/net/ethernet/stmicro/stmmac/dwmac-motorcomm.ko
+  AUTOLOAD:=$(call AutoProbe,stmmac_libpci@ge7.3 dwmac-motorcomm,1)
 endef
 
 define KernelPackage/dwmac-motorcomm/description
@@ -1546,8 +1548,9 @@ define KernelPackage/ice
     CONFIG_ICE_HWMON=y \
     CONFIG_ICE_HWTS=n \
     CONFIG_ICE_SWITCHDEV=y
-  FILES:=$(LINUX_DIR)/drivers/net/ethernet/intel/ice/ice.ko
-  AUTOLOAD:=$(call AutoProbe,ice)
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/intel/libeth/libeth_xdp.ko@ge7.3 \
+	$(LINUX_DIR)/drivers/net/ethernet/intel/ice/ice.ko
+  AUTOLOAD:=$(call AutoProbe,libeth_xdp@ge7.3 ice)
 endef
 
 define KernelPackage/ice/description
@@ -1581,7 +1584,7 @@ $(eval $(call KernelPackage,iavf))
 define KernelPackage/b44
   TITLE:=Broadcom 44xx driver
   KCONFIG:=CONFIG_B44
-  DEPENDS:=@PCI_SUPPORT @!TARGET_bcm47xx_mips74k +!TARGET_bcm47xx:kmod-ssb +kmod-mii +kmod-libphy
+  DEPENDS:=@PCI_SUPPORT @!TARGET_bcm47xx_mips74k +!TARGET_bcm47xx:kmod-ssb +kmod-mii +kmod-libphy +LINUX_7_3:kmod-fixed-phy
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/broadcom/b44.ko
   AUTOLOAD:=$(call AutoLoad,19,b44,1)

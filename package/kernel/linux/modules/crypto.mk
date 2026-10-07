@@ -803,8 +803,9 @@ define KernelPackage/crypto-rsa
   FILES:= \
 	$(LINUX_DIR)/lib/crypto/mpi/mpi.ko \
 	$(LINUX_DIR)/crypto/akcipher.ko \
+	$(LINUX_DIR)/crypto/sig.ko@ge7.3 \
 	$(LINUX_DIR)/crypto/rsa_generic.ko
-  AUTOLOAD:=$(call AutoLoad,10,rsa_generic)
+  AUTOLOAD:=$(call AutoLoad,10,sig@ge7.3 rsa_generic)
   $(call AddDepends/crypto)
 endef
 
