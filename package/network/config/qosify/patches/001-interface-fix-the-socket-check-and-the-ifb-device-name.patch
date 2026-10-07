@@ -1,0 +1,46 @@
+From 78f25089c96c1ff1e0a99c9be48a2bda44bdb3a4 Mon Sep 17 00:00:00 2001
+From: Neil Kettle <neil@digit-labs.org>
+Date: Sun, 29 Mar 2026 21:57:40 +0200
+Subject: [PATCH] interface: fix the socket check and the ifb device name
+
+qosify_iface_init() checked the address of socket() instead of the
+returned descriptor, so a failure went unnoticed.
+
+If an interface name is too long for the "ifb-" prefix, the ifb device
+name is built from the first two and the last characters of the name.
+The offset of the end was computed with IFNAMSIZ + 6 instead of
+IFNAMSIZ - 6, which points before the start of the name.
+
+Signed-off-by: Neil Kettle <neil@digit-labs.org>
+[keep the last 9 characters of the name instead of dropping the last
+ two, otherwise VLAN devices like switch0.1234 and switch0.1235 get the
+ same ifb device; reword the commit message]
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Nick Hainke <vincent@systemli.org>
+---
+ interface.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/interface.c b/interface.c
+index 837cb95..8b415b1 100644
+--- a/interface.c
++++ b/interface.c
+@@ -199,7 +199,8 @@ interface_ifb_name(struct qosify_iface *iface)
+ 
+ 	ifname[4] = iface->ifname[0];
+ 	ifname[5] = iface->ifname[1];
+-	snprintf(ifname + 6, IFNAMSIZ - 6, "%s", iface->ifname + len - (IFNAMSIZ + 6) - 1);
++	/* keep the end of the name, it tells VLAN devices apart */
++	snprintf(ifname + 6, IFNAMSIZ - 6, "%s", iface->ifname + len - (IFNAMSIZ - 7));
+ 
+ 	return ifname;
+ }
+@@ -627,7 +628,7 @@ int qosify_iface_init(void)
+ 	int fd, opt;
+ 
+ 	socket_fd = socket(AF_UNIX, SOCK_DGRAM, 0);
+-	if (socket < 0)
++	if (socket_fd < 0)
+ 		return -1;
+ 
+ 	rtnl_sock = nl_socket_alloc();
