@@ -7,11 +7,12 @@ probe/assoc/auth requests via object subscribe.
 
 --- a/hostapd/Makefile
 +++ b/hostapd/Makefile
-@@ -167,6 +167,12 @@ OBJS += ../src/common/hw_features_common
+@@ -167,6 +167,13 @@ OBJS += ../src/common/hw_features_common
  
  OBJS += ../src/eapol_auth/eapol_auth_sm.o
  
 +ifdef CONFIG_UBUS
++NEED_BASE64=y
 +CFLAGS += -DUBUS_SUPPORT
 +OBJS += ../src/utils/uloop.o
 +OBJS += ../src/ap/ubus.o
