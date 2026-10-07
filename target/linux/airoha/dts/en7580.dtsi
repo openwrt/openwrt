@@ -326,19 +326,98 @@
 			status = "disabled";
 		};
 
-		usb_phy: usb-phy@1fa80000 {
-			compatible = "econet,en7528-usb-phy";
-			reg = <0x1fa80000 0x1400>;
-			#phy-cells = <1>;
+		efuse: efuse@1fa40b00 {
+			compatible = "econet,en7580-efuse";
+			reg = <0x1fa40b00 0x3c>;
+			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				usb0_tx_imp: usb3-tx-imp@6 {
+					reg = <0x6 0x2>;
+					bits = <4 5>;
+				};
+
+				usb0_rx_imp: usb3-rx-imp@7,1 {
+					reg = <0x7 0x1>;
+					bits = <1 5>;
+				};
+
+				usb0_u3_intr: usb3-intr@7,6 {
+					reg = <0x7 0x2>;
+					bits = <6 6>;
+				};
+
+				usb1_tx_imp: usb3-tx-imp@8 {
+					reg = <0x8 0x2>;
+					bits = <4 5>;
+				};
+
+				usb1_rx_imp: usb3-rx-imp@9,1 {
+					reg = <0x9 0x1>;
+					bits = <1 5>;
+				};
+
+				usb1_u3_intr: usb3-intr@9,6 {
+					reg = <0x9 0x2>;
+					bits = <6 6>;
+				};
+
+				usb0_u2_intr: usb2-intr@35 {
+					reg = <0x35 0x2>;
+					bits = <7 5>;
+				};
+
+				usb1_u2_intr: usb2-intr@36 {
+					reg = <0x36 0x2>;
+					bits = <4 5>;
+				};
+			};
 		};
 
-		usb: usb@1fb90000 {
-			compatible = "econet,en7528-xhci";
-			reg = <0x1fb90000 0x3e00>,
-			      <0x1fb93e00 0x100>;
+		usb_phy: usb_phy0: usb-phy@1fa80000 {
+			compatible = "econet,en7580-usb-phy";
+			reg = <0x1fa80000 0x1000>;
+			#phy-cells = <1>;
+			nvmem-cells = <&usb0_u2_intr>, <&usb0_u3_intr>,
+				      <&usb0_tx_imp>, <&usb0_rx_imp>;
+			nvmem-cell-names = "u2-intr", "u3-intr", "tx-imp", "rx-imp";
+		};
+
+		usb_phy1: usb-phy@1fa90000 {
+			compatible = "econet,en7580-usb-phy";
+			reg = <0x1fa90000 0x1000>;
+			#phy-cells = <1>;
+			nvmem-cells = <&usb1_u2_intr>, <&usb1_u3_intr>,
+				      <&usb1_tx_imp>, <&usb1_rx_imp>;
+			nvmem-cell-names = "u2-intr", "u3-intr", "tx-imp", "rx-imp";
+		};
+
+		usb: usb0: usb@1fb90000 {
+			compatible = "econet,en7580-xhci";
+			reg = <0x1fb90000 0x4000>,
+			      <0x1fa84700 0x100>;
 			reg-names = "mac", "ippc";
 			interrupts = <GIC_SHARED 17 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-names = "host";
 			phys = <&usb_phy PHY_TYPE_USB2>, <&usb_phy PHY_TYPE_USB3>;
+			phy-names = "usb2-phy", "usb3-phy";
+			usb3-lpm-capable;
+			status = "disabled";
+		};
+
+		usb1: usb@1fba0000 {
+			compatible = "econet,en7580-xhci";
+			reg = <0x1fba0000 0x4000>,
+			      <0x1fa94700 0x100>;
+			reg-names = "mac", "ippc";
+			interrupts = <GIC_SHARED 48 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-names = "host";
+			phys = <&usb_phy1 PHY_TYPE_USB2>, <&usb_phy1 PHY_TYPE_USB3>;
+			phy-names = "usb2-phy", "usb3-phy";
 			usb3-lpm-capable;
 			status = "disabled";
 		};
@@ -535,7 +614,7 @@
 
 		xpon_phy: phy@1faf0000 {
 			compatible = "airoha,en7580-xpon-phy";
-			reg = <0x1faf0000 0x5000>;
+			reg = <0x1faf0000 0x2000>;
 
 			pinctrl-names = "default";
 			pinctrl-0 = <&pon_pinctrl>;
