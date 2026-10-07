@@ -1,0 +1,75 @@
+From 8c53d99851f17a6bceb0ccf32076d3f1db76c9fe Mon Sep 17 00:00:00 2001
+From: Navid Ghahremani <ghahramani.navid@gmail.com>
+Date: Fri, 2 Oct 2026 09:38:28 +0100
+Subject: [PATCH 17/24] net: ethernet: zte: Add ZX279128S Ethernet switch
+ driver
+
+Provide per-port interfaces, phylink, IRQ NAPI, switchdev bridge
+forwarding, hardware IPv4 flow offload and verified standard MAC
+statistics. Use software fallback for unsupported VLAN and routing
+cases. Unwind failed/deferred PHY probes and partial notifier registration;
+start DMA only after ports, NAPI and the interrupt are ready.
+
+Linux 6.18 backport: also connect the new ZTE directory to the parent
+Ethernet Kconfig and Makefile; newer mainline already has these entries.
+
+Assisted-by: LLM
+---
+ drivers/net/ethernet/zte/Kconfig  |   27 +++++++++++++++++++++++++++
+ drivers/net/ethernet/zte/Makefile |    3 +++
+ drivers/net/ethernet/Kconfig      |    1 +
+ drivers/net/ethernet/Makefile     |    1 +
+ 4 files changed, 32 insertions(+)
+
+--- /dev/null
++++ b/drivers/net/ethernet/zte/Kconfig
+@@ -0,0 +1,27 @@
++# SPDX-License-Identifier: GPL-2.0-only
++config NET_VENDOR_ZTE
++	bool "ZTE devices"
++	depends on ARCH_ZTE || COMPILE_TEST
++	default y
++	help
++	  If you have a network (Ethernet) device belonging to this class, say Y.
++
++	  Note that the answer to this question doesn't directly affect the
++	  kernel: saying N will just cause the configurator to skip all
++	  the questions about ZTE devices.
++
++if NET_VENDOR_ZTE
++
++config ZX279128S_ETH
++	bool "ZTE zx279128s Ethernet switch support"
++	depends on OF
++	depends on BRIDGE=y || BRIDGE=n
++	select NET_SWITCHDEV
++	select PHYLINK
++	help
++	  This driver supports the five-port gigabit switch of the ZTE
++	  zx279128s SoC and the DMA engine that connects it to the CPU.
++	  Each switch port becomes its own network interface, such as the
++	  four LAN ports and the WAN port of the ZTE ZXHN H3600.
++
++endif # NET_VENDOR_ZTE
+--- /dev/null
++++ b/drivers/net/ethernet/zte/Makefile
+@@ -0,0 +1,3 @@
++# SPDX-License-Identifier: GPL-2.0-only
++obj-$(CONFIG_ZX279128S_ETH) += zx279128s-eth.o
++zx279128s-eth-y := zx279128s-main.o zx279128s-ppe.o zx279128s-switch.o
+--- a/drivers/net/ethernet/Kconfig
++++ b/drivers/net/ethernet/Kconfig
+@@ -203,5 +203,6 @@
+ source "drivers/net/ethernet/wiznet/Kconfig"
+ source "drivers/net/ethernet/xilinx/Kconfig"
+ source "drivers/net/ethernet/xircom/Kconfig"
++source "drivers/net/ethernet/zte/Kconfig"
+
+ endif # ETHERNET
+--- a/drivers/net/ethernet/Makefile
++++ b/drivers/net/ethernet/Makefile
+@@ -108,3 +108,4 @@
+ obj-$(CONFIG_NET_VENDOR_SYNOPSYS) += synopsys/
+ obj-$(CONFIG_NET_VENDOR_PENSANDO) += pensando/
+ obj-$(CONFIG_OA_TC6) += oa_tc6.o
++obj-$(CONFIG_NET_VENDOR_ZTE) += zte/

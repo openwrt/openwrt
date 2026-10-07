@@ -1,0 +1,69 @@
+From b2354736f524895b5a57aa829a17fbe8a3c5f71a Mon Sep 17 00:00:00 2001
+From: Navid Ghahremani <ghahramani.navid@gmail.com>
+Date: Fri, 2 Oct 2026 09:38:27 +0100
+Subject: [PATCH 06/24] clk: zte: Add ZX279128S CRM clock and reset driver
+
+Read the bootloader PLL and bus setup and provide peripheral gates,
+muxes, dividers and USB resets. Preserve the parked CPU memory clocks
+and use managed registration for platform clocks. Serialize shared clock
+gate and reset register updates with the same lock.
+
+Assisted-by: LLM
+---
+ drivers/clk/Kconfig      |    1 +
+ drivers/clk/Makefile     |    1 +
+ drivers/clk/zte/Kconfig  |   14 ++++++++++++++
+ drivers/clk/zte/Makefile |    2 ++
+ 4 files changed, 18 insertions(+)
+
+diff --git a/drivers/clk/Kconfig b/drivers/clk/Kconfig
+index 3a1611008..9f64d01a9 100644
+--- a/drivers/clk/Kconfig
++++ b/drivers/clk/Kconfig
+@@ -549,6 +549,7 @@ source "drivers/clk/uniphier/Kconfig"
+ source "drivers/clk/visconti/Kconfig"
+ source "drivers/clk/x86/Kconfig"
+ source "drivers/clk/xilinx/Kconfig"
++source "drivers/clk/zte/Kconfig"
+ source "drivers/clk/zynqmp/Kconfig"
+
+ # Kunit test cases
+diff --git a/drivers/clk/Makefile b/drivers/clk/Makefile
+index 61ec08404..9a46c898d 100644
+--- a/drivers/clk/Makefile
++++ b/drivers/clk/Makefile
+@@ -166,5 +166,6 @@ ifeq ($(CONFIG_COMMON_CLK), y)
+ obj-$(CONFIG_X86)			+= x86/
+ endif
+ obj-y					+= xilinx/
++obj-y					+= zte/
+ obj-$(CONFIG_ARCH_ZYNQ)			+= zynq/
+ obj-$(CONFIG_COMMON_CLK_ZYNQMP)         += zynqmp/
+diff --git a/drivers/clk/zte/Kconfig b/drivers/clk/zte/Kconfig
+new file mode 100644
+index 000000000..92fd27ea4
+--- /dev/null
++++ b/drivers/clk/zte/Kconfig
+@@ -0,0 +1,14 @@
++# SPDX-License-Identifier: GPL-2.0-only
++config CLK_ZX279128S
++	bool "ZTE zx279128s clock driver"
++	depends on SOC_ZX279128S || COMPILE_TEST
++	depends on OF
++	default SOC_ZX279128S
++	select RESET_CONTROLLER
++	select RESET_SIMPLE
++	help
++	  This driver supports the clocks of the ZTE zx279128s SoC: the
++	  top clock and reset module (CRM) with the PLLs, the CPU, bus and
++	  peripheral group clocks, and the CRPMs of the two groups of low
++	  speed peripherals (UARTs, SPI flash controller, GPIO, MDIO).
++	  Say Y if you build a kernel for a board with this SoC.
+diff --git a/drivers/clk/zte/Makefile b/drivers/clk/zte/Makefile
+new file mode 100644
+index 000000000..a55ffbfaf
+--- /dev/null
++++ b/drivers/clk/zte/Makefile
+@@ -0,0 +1,2 @@
++# SPDX-License-Identifier: GPL-2.0-only
++obj-$(CONFIG_CLK_ZX279128S)	+= clk-zx279128s.o

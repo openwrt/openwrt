@@ -1,0 +1,34 @@
+From 4a715c757a93952f4801bbe23717212f225c1812 Mon Sep 17 00:00:00 2001
+From: Navid Ghahremani <ghahramani.navid@gmail.com>
+Date: Fri, 2 Oct 2026 09:38:27 +0100
+Subject: [PATCH 10/24] dt-bindings: mfd: syscon: Add ZX279128S system
+ controller
+
+Describe the remaining system-control syscon. PCIe clock/reset/PHY
+modeling is explicitly a review question.
+
+Assisted-by: LLM
+---
+ Documentation/devicetree/bindings/mfd/syscon.yaml | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/mfd/syscon.yaml b/Documentation/devicetree/bindings/mfd/syscon.yaml
+index 657c38175..e45e70f91 100644
+--- a/Documentation/devicetree/bindings/mfd/syscon.yaml
++++ b/Documentation/devicetree/bindings/mfd/syscon.yaml
+@@ -128,6 +128,7 @@ select:
+           - ti,j784s4-acspcie-proxy-ctrl
+           - ti,j784s4-pcie-ctrl
+           - ti,keystone-pllctrl
++          - zte,zx279128s-crm2
+   required:
+     - compatible
+
+@@ -237,6 +238,7 @@ properties:
+           - ti,j784s4-acspcie-proxy-ctrl
+           - ti,j784s4-pcie-ctrl
+           - ti,keystone-pllctrl
++          - zte,zx279128s-crm2
+       - const: syscon
+
+   reg:

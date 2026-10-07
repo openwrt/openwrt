@@ -1,0 +1,64 @@
+From 2295ddc0d6cffd270a0998f7459ab7a07f270023 Mon Sep 17 00:00:00 2001
+From: Navid Ghahremani <ghahramani.navid@gmail.com>
+Date: Fri, 2 Oct 2026 09:38:27 +0100
+Subject: [PATCH 03/24] dt-bindings: arm: Add ZTE ZX279128S platform
+ descriptions
+
+Describe the SoC board compatibility, SRAM used by the parked second CPU
+and the SMP enable method.
+
+Assisted-by: LLM
+---
+ Documentation/devicetree/bindings/arm/cpus.yaml  | 1 +
+ Documentation/devicetree/bindings/arm/zte.yaml   | 8 +++++++-
+ Documentation/devicetree/bindings/sram/sram.yaml | 1 +
+ 3 files changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/Documentation/devicetree/bindings/arm/cpus.yaml b/Documentation/devicetree/bindings/arm/cpus.yaml
+index 736b7ab1b..88412bc0f 100644
+--- a/Documentation/devicetree/bindings/arm/cpus.yaml
++++ b/Documentation/devicetree/bindings/arm/cpus.yaml
+@@ -270,6 +270,7 @@ properties:
+           - ste,dbx500-smp
+           - ti,am3352
+           - ti,am4372
++          - zte,zx279128s-smp
+
+   cpu-release-addr:
+     oneOf:
+diff --git a/Documentation/devicetree/bindings/arm/zte.yaml b/Documentation/devicetree/bindings/arm/zte.yaml
+index f028d2cec..a1a374221 100644
+--- a/Documentation/devicetree/bindings/arm/zte.yaml
++++ b/Documentation/devicetree/bindings/arm/zte.yaml
+@@ -11,7 +11,8 @@ maintainers:
+
+ description: |
+   ARM platforms using SoCs designed by ZTE. Currently this supports devices
+-  based on the zx297520v3 SoC which is found in LTE routers.
++  based on the zx297520v3 SoC which is found in LTE routers, and on the
++  zx279128s SoC which is found in home gateways.
+
+ properties:
+   $nodename:
+@@ -23,4 +24,9 @@ properties:
+               - dlink,dwr932m
+           - const: zte,zx297520v3
+
++      - items:
++          - enum:
++              - zte,zxhn-h3600
++          - const: zte,zx279128s
++
+ additionalProperties: true
+diff --git a/Documentation/devicetree/bindings/sram/sram.yaml b/Documentation/devicetree/bindings/sram/sram.yaml
+index 7c1337e15..c452a2525 100644
+--- a/Documentation/devicetree/bindings/sram/sram.yaml
++++ b/Documentation/devicetree/bindings/sram/sram.yaml
+@@ -95,6 +95,7 @@ patternProperties:
+             - samsung,exynos4210-sysram-ns
+             - socionext,milbeaut-smp-sram
+             - stericsson,u8500-esram
++            - zte,zx279128s-smp-sram
+
+       reg:
+         description:

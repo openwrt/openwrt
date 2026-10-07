@@ -1,0 +1,45 @@
+From 7482ebe0b3d49ff33b0a711ffcf5321f60a30590 Mon Sep 17 00:00:00 2001
+From: Navid Ghahremani <ghahramani.navid@gmail.com>
+Date: Fri, 2 Oct 2026 09:38:28 +0100
+Subject: [PATCH 15/24] net: phy: Add Sanechips ZX5201 PHY support
+
+Initialize the external WAN PHY and its SerDes path; generic PHY support
+handles negotiation.
+
+Assisted-by: LLM
+---
+ drivers/net/phy/Kconfig  |    8 ++++++++
+ drivers/net/phy/Makefile |    1 +
+ 2 files changed, 9 insertions(+)
+
+diff --git a/drivers/net/phy/Kconfig b/drivers/net/phy/Kconfig
+index 2e6bd42f7..0cd457c9b 100644
+--- a/drivers/net/phy/Kconfig
++++ b/drivers/net/phy/Kconfig
+@@ -469,6 +469,14 @@ config ROCKCHIP_PHY
+ 	help
+ 	  Currently supports the integrated Ethernet PHY.
+
++config SANECHIPS_PHY
++	tristate "Sanechips Ethernet PHYs"
++	help
++	  Currently supports the Sanechips ZX5201 PHY, which the ZTE ZXHN
++	  H3600 uses for its WAN port. The driver sets the PHY up so that
++	  its SerDes interface passes traffic; everything else is handled
++	  by the generic PHY code.
++
+ config SMSC_PHY
+ 	tristate "SMSC PHYs"
+ 	select CRC16
+diff --git a/drivers/net/phy/Makefile b/drivers/net/phy/Makefile
+index 5ae15347c..ffda05d4a 100644
+--- a/drivers/net/phy/Makefile
++++ b/drivers/net/phy/Makefile
+@@ -108,6 +108,7 @@ obj-$(CONFIG_QSEMI_PHY)		+= qsemi.o
+ obj-$(CONFIG_REALTEK_PHY)	+= realtek/
+ obj-$(CONFIG_RENESAS_PHY)	+= uPD60620.o
+ obj-$(CONFIG_ROCKCHIP_PHY)	+= rockchip.o
++obj-$(CONFIG_SANECHIPS_PHY)	+= sanechips.o
+ obj-$(CONFIG_SMSC_PHY)		+= smsc.o
+ obj-$(CONFIG_STE10XP)		+= ste10Xp.o
+ obj-$(CONFIG_TERANETICS_PHY)	+= teranetics.o

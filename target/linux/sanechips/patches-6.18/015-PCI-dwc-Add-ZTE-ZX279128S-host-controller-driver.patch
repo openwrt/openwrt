@@ -1,0 +1,48 @@
+From 4d75110d5d66ca4e664e674748efce51d4410139 Mon Sep 17 00:00:00 2001
+From: Navid Ghahremani <ghahramani.navid@gmail.com>
+Date: Fri, 2 Oct 2026 09:38:28 +0100
+Subject: [PATCH 12/24] PCI: dwc: Add ZTE ZX279128S host controller driver
+
+Bring up both controller links using the verified vendor sequence and
+shared board reset. Propagate CRM/GPIO failures and retain the tested
+Gen1/INTx configuration.
+
+Assisted-by: LLM
+---
+ drivers/pci/controller/dwc/Kconfig  |   12 ++++++++++++
+ drivers/pci/controller/dwc/Makefile |    1 +
+ 2 files changed, 13 insertions(+)
+
+diff --git a/drivers/pci/controller/dwc/Kconfig b/drivers/pci/controller/dwc/Kconfig
+index 349d46573..aec936689 100644
+--- a/drivers/pci/controller/dwc/Kconfig
++++ b/drivers/pci/controller/dwc/Kconfig
+@@ -518,4 +518,16 @@ config PCIE_VISCONTI_HOST
+ 	  Say Y here if you want PCIe controller support on Toshiba Visconti SoC.
+ 	  This driver supports TMPV7708 SoC.
+
++config PCIE_ZX279128S
++	bool "ZTE zx279128s PCIe controller"
++	depends on ARCH_ZTE || COMPILE_TEST
++	depends on PCI_MSI
++	select MFD_SYSCON
++	select PCIE_DW_HOST
++	help
++	  Say Y here to enable support for the two PCIe host controllers of
++	  the ZTE zx279128s SoC. They are based on the Synopsys DesignWare
++	  PCIe IP. On the ZTE ZXHN H3600 they connect the MT7915 Wi-Fi chip.
++	  The driver only supports legacy INTx interrupts.
++
+ endmenu
+diff --git a/drivers/pci/controller/dwc/Makefile b/drivers/pci/controller/dwc/Makefile
+index 7ae28f3b0..e09de63dc 100644
+--- a/drivers/pci/controller/dwc/Makefile
++++ b/drivers/pci/controller/dwc/Makefile
+@@ -30,6 +30,7 @@ obj-$(CONFIG_PCIE_TEGRA194) += pcie-tegra194.o
+ obj-$(CONFIG_PCIE_UNIPHIER) += pcie-uniphier.o
+ obj-$(CONFIG_PCIE_UNIPHIER_EP) += pcie-uniphier-ep.o
+ obj-$(CONFIG_PCIE_VISCONTI_HOST) += pcie-visconti.o
++obj-$(CONFIG_PCIE_ZX279128S) += pcie-zx279128s.o
+ obj-$(CONFIG_PCIE_RCAR_GEN4) += pcie-rcar-gen4.o
+ obj-$(CONFIG_PCIE_STM32_HOST) += pcie-stm32.o
+ obj-$(CONFIG_PCIE_STM32_EP) += pcie-stm32-ep.o

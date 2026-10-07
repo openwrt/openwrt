@@ -1,0 +1,87 @@
+From 614fc81667c26993fd59526dd4206b7c76f20fa0 Mon Sep 17 00:00:00 2001
+From: Navid Ghahremani <ghahramani.navid@gmail.com>
+Date: Fri, 2 Oct 2026 09:38:27 +0100
+Subject: [PATCH 04/24] ARM: zte: Add ZX279128S platform and CPU hotplug
+ support
+
+Support the dual Cortex-A9 platform, second-CPU startup through
+bootloader SRAM and CPU hotplug. Keep existing ZX297520V3 support
+intact.
+
+Assisted-by: LLM
+---
+ MAINTAINERS                |   22 ++++++++++++++++++++++
+ arch/arm/mach-zte/Kconfig  |   17 +++++++++++++++++
+ arch/arm/mach-zte/Makefile |    4 ++++
+ 3 files changed, 43 insertions(+)
+
+diff --git a/MAINTAINERS b/MAINTAINERS
+index 78e876eb0..51a9d100f 100644
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -3661,6 +3661,28 @@ F:	drivers/video/fbdev/vt8500lcdfb.*
+ F:	drivers/video/fbdev/wm8505fb*
+ F:	drivers/video/fbdev/wmt_ge_rops.*
+
++ARM/ZTE ZX279128S SOC SUPPORT
++M:	Navid Ghahremani <ghahramani.navid@gmail.com>
++L:	linux-arm-kernel@lists.infradead.org (moderated for non-subscribers)
++S:	Maintained
++F:	Documentation/devicetree/bindings/clock/zte,zx279128s-crm.yaml
++F:	Documentation/devicetree/bindings/gpio/zte,zx279128s-gpio.yaml
++F:	Documentation/devicetree/bindings/net/zte,zx279128s-gmac.yaml
++F:	Documentation/devicetree/bindings/net/zte,zx279128s-mdio.yaml
++F:	Documentation/devicetree/bindings/pci/zte,zx279128s-pcie.yaml
++F:	Documentation/devicetree/bindings/spi/zte,zx279128s-spifc.yaml
++F:	Documentation/devicetree/bindings/usb/zte,zx279128s-dwc3.yaml
++F:	arch/arm/boot/dts/zte/zx279128s*
++F:	arch/arm/mach-zte/*zx279128s*
++F:	drivers/clk/zte/clk-zx279128s.c
++F:	drivers/gpio/gpio-zx279128s.c
++F:	drivers/net/ethernet/zte/zx279128s*
++F:	drivers/net/mdio/mdio-zx279128s.c
++F:	drivers/net/phy/sanechips.c
++F:	drivers/pci/controller/dwc/pcie-zx279128s.c
++F:	drivers/spi/spi-zx279128s-spifc.c
++F:	include/dt-bindings/clock/zte,zx279128s-crm.h
++
+ ARM/ZTE ZX29 SOC SUPPORT
+ M:	Stefan Dösinger <stefandoesinger@gmail.com>
+ L:	linux-arm-kernel@lists.infradead.org (moderated for non-subscribers)
+diff --git a/arch/arm/mach-zte/Kconfig b/arch/arm/mach-zte/Kconfig
+index d3b404ca4..ff3845f10 100644
+--- a/arch/arm/mach-zte/Kconfig
++++ b/arch/arm/mach-zte/Kconfig
+@@ -26,4 +26,21 @@ config SOC_ZX297520V3
+ 	  Please read Documentation/arch/arm/zte/zx297520v3.rst on how to boot
+ 	  the kernel.
+
++config SOC_ZX279128S
++	bool "zx279128s SoC"
++	default y
++	select ARM_AMBA
++	select ARM_GIC
++	select ARM_GLOBAL_TIMER
++	select CACHE_L2X0
++	select CACHE_L2X0_IO_LOCK
++	select CLKSRC_ARM_GLOBAL_TIMER_SCHED_CLOCK
++	select HAVE_ARM_SCU if SMP
++	select HAVE_ARM_TWD if SMP
++	help
++	  Support for the ZTE (Sanechips) zx279128s SoC, a dual-core
++	  Cortex-A9 with an L2C-310 cache controller, used in home gateways
++	  such as the ZTE ZXHN H3600. The second core is started through
++	  the on-chip SRAM, where the boot loader keeps it waiting.
++
+ endif
+diff --git a/arch/arm/mach-zte/Makefile b/arch/arm/mach-zte/Makefile
+index 1bfe4fddd..72f518632 100644
+--- a/arch/arm/mach-zte/Makefile
++++ b/arch/arm/mach-zte/Makefile
+@@ -1,2 +1,6 @@
+ # SPDX-License-Identifier: GPL-2.0-only
+ obj-$(CONFIG_SOC_ZX297520V3) += zx297520v3.o
++obj-$(CONFIG_SOC_ZX279128S) += zx279128s.o
++ifdef CONFIG_SMP
++obj-$(CONFIG_SOC_ZX279128S) += platsmp-zx279128s.o
++endif

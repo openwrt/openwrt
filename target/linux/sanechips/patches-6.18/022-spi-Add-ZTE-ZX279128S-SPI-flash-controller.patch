@@ -1,0 +1,51 @@
+From f9dcfd8f546c59959077d7028c423c3b14b90436 Mon Sep 17 00:00:00 2001
+From: Navid Ghahremani <ghahramani.navid@gmail.com>
+Date: Fri, 2 Oct 2026 09:38:28 +0100
+Subject: [PATCH 19/24] spi: Add ZTE ZX279128S SPI flash controller
+
+Execute bounded SPI-memory operations through the controller FIFO. Honor
+device and operation clock limits through the CRPM divider and cap the
+validated maximum at 50 MHz.
+
+Assisted-by: LLM
+---
+ drivers/spi/Kconfig  |   13 +++++++++++++
+ drivers/spi/Makefile |    1 +
+ 2 files changed, 14 insertions(+)
+
+diff --git a/drivers/spi/Kconfig b/drivers/spi/Kconfig
+index 1872f9d54..1708d009d 100644
+--- a/drivers/spi/Kconfig
++++ b/drivers/spi/Kconfig
+@@ -1288,6 +1288,19 @@ config SPI_XTENSA_XTFPGA
+ 	  16 bit words in SPI mode 0, automatically asserting CS on transfer
+ 	  start and deasserting on end.
+
++config SPI_ZX279128S_SPIFC
++	tristate "ZTE zx279128s SPI flash controller"
++	depends on ARCH_ZTE || COMPILE_TEST
++	depends on OF && HAS_IOMEM
++	depends on SPI_MEM
++	help
++	  This enables support for the SPI flash controller of the ZTE
++	  zx279128s SoC, through which it reaches its boot flash (a SPI
++	  NAND on the ZTE ZXHN H3600).
++
++	  This driver does not support generic SPI. It only implements the
++	  spi-mem interface.
++
+ config SPI_ZYNQ_QSPI
+ 	tristate "Xilinx Zynq QSPI controller"
+ 	depends on ARCH_ZYNQ || COMPILE_TEST
+diff --git a/drivers/spi/Makefile b/drivers/spi/Makefile
+index 1f7c06a30..f521e8eb1 100644
+--- a/drivers/spi/Makefile
++++ b/drivers/spi/Makefile
+@@ -164,6 +164,7 @@ obj-$(CONFIG_SPI_XCOMM)		+= spi-xcomm.o
+ obj-$(CONFIG_SPI_XILINX)		+= spi-xilinx.o
+ obj-$(CONFIG_SPI_XLP)			+= spi-xlp.o
+ obj-$(CONFIG_SPI_XTENSA_XTFPGA)		+= spi-xtensa-xtfpga.o
++obj-$(CONFIG_SPI_ZX279128S_SPIFC)	+= spi-zx279128s-spifc.o
+ obj-$(CONFIG_SPI_ZYNQ_QSPI)		+= spi-zynq-qspi.o
+ obj-$(CONFIG_SPI_ZYNQMP_GQSPI)		+= spi-zynqmp-gqspi.o
+ obj-$(CONFIG_SPI_AMD)			+= spi-amd.o spi-amd-pci.o
