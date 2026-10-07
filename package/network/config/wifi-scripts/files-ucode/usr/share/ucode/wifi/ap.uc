@@ -4,7 +4,7 @@ import * as libuci from 'uci';
 import { md5 } from 'digest';
 import * as fs from 'fs';
 
-import { append, append_raw, append_value, append_vars, append_list, append_string_vars, comment, push_config, set_default, touch_file } from 'wifi.common';
+import { append, append_raw, append_value, append_vars, append_list, append_string_vars, comment, push_config, set_default, touch_file, open_config } from 'wifi.common';
 import * as netifd from 'wifi.netifd';
 import * as iface from 'wifi.iface';
 
@@ -348,7 +348,7 @@ function iface_vlan(interface, config, vlans) {
 function iface_wpa_stations(config, stas) {
 	let path = `/var/run/hostapd-${config.ifname}.psk`;
 
-	let file = fs.open(path, 'w');
+	let file = open_config(path);
 	for (let k, sta in stas)
 		if (sta.config.mac && sta.config.key) {
 			for (let mac in sta.config.mac) {
@@ -366,7 +366,7 @@ function iface_wpa_stations(config, stas) {
 function iface_sae_stations(config, stas) {
 	let path = `/var/run/hostapd-${config.ifname}.sae`;
 
-	let file = fs.open(path, 'w');
+	let file = open_config(path);
 	for (let k, sta in stas)
 		if (sta.config.mac && sta.config.key) {
 			for (let mac in sta.config.mac) {
