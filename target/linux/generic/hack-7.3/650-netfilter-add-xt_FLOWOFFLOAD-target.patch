@@ -44,7 +44,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  obj-$(CONFIG_NETFILTER_XT_TARGET_LED) += xt_LED.o
 --- /dev/null
 +++ b/net/netfilter/xt_FLOWOFFLOAD.c
-@@ -0,0 +1,709 @@
+@@ -0,0 +1,719 @@
 +/*
 + * Copyright (C) 2018-2021 Felix Fietkau <nbd@nbd.name>
 + *
@@ -55,6 +55,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +#include <linux/module.h>
 +#include <linux/init.h>
 +#include <linux/netfilter.h>
++#include <linux/netfilter/x_tables.h>
 +#include <linux/netfilter/xt_FLOWOFFLOAD.h>
 +#include <linux/if_vlan.h>
 +#include <net/ip.h>
@@ -410,11 +411,16 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +{
 +	const void *daddr = &ct->tuplehash[!dir].tuple.src.u3;
 +	struct net_device *dev = dst_cache->dev;
++	struct net_device_path_ctx ctx = {
++		.dev = dev,
++	};
 +	struct neighbour *n;
 +	u8 nud_state;
 +
-+	if (!nf_is_valid_ether_device(dev))
++	if (!nf_is_valid_ether_device(dev)) {
++		eth_zero_addr(ha);
 +		goto out;
++	}
 +
 +	n = dst_neigh_lookup(dst_cache, daddr);
 +	if (!n)
@@ -430,7 +436,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +		return -1;
 +
 +out:
-+	return dev_fill_forward_path(dev, ha, stack);
++	ether_addr_copy(ctx.daddr, ha);
++
++	return dev_fill_forward_path(&ctx, stack);
 +}
 +
 +static void nf_dev_forward_path(struct nf_flow_route *route,
@@ -444,8 +452,10 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	unsigned char ha[ETH_ALEN];
 +	int i;
 +
-+	if (nf_dev_fill_forward_path(route, dst, ct, dir, ha, &stack) >= 0)
++	if (nf_dev_fill_forward_path(route, dst, ct, dir, ha, &stack) >= 0) {
 +		nf_dev_path_info(&stack, &info, ha);
++		dev_fill_forward_path_release(&stack);
++	}
 +
 +	/* The xmit path looks the output device up by index for every xmit
 +	 * type, so it has to be set even when the forward path is unknown.
