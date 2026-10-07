@@ -1,0 +1,85 @@
+From 2fc23f832e30a7918ca3e97e03845ea2f863af45 Mon Sep 17 00:00:00 2001
+From: Yongzhao Chen <yongzhao.derek@gmail.com>
+Date: Sat, 3 Oct 2026 19:24:03 +0200
+Subject: [PATCH 2/3] net: dsa: qca8k: do not clear MASTER_EN after a failed
+ page select
+
+qca8k_mdio_write() and qca8k_mdio_read() take the common exit path when
+selecting the page of QCA8K_MDIO_MASTER_CTRL fails. That path clears
+MASTER_CTRL[31:16] with a raw write to phy 0x10, reg 0x1f, which only
+addresses MASTER_CTRL while page 0 is selected. After a failed page
+select that did not reach the switch, the previous page remains selected.
+The write can then clear the upper half of an unrelated register at
+page * 0x200 + 0x3c.
+
+No MDIO master transaction has been started at that point, so there is
+nothing to clean up. Unlock and return the error directly.
+
+qca8k_set_page() also keeps the old cached page when the page write
+fails. If the write did reach the switch, a later access to the cached
+page skips the page select and reaches the wrong register. Invalidate
+the cache on failure so that the next access selects the page again.
+
+The Sashiko review of v1 identified the stray cleanup write. A userspace
+model of the driver's functions reproduces both problems by injecting
+page-select failures with and without a hardware page change; these cases
+pass after this change.
+
+The cleanup write comes from commit 759bafb8a322 ("net: dsa: qca8k: add
+support for internal phy and internal mdio"), and the stale page cache
+from commit ba5707ec58cf ("net: dsa: qca8k: handle qca8k_set_page
+errors").
+
+Signed-off-by: Yongzhao Chen <yongzhao.derek@gmail.com>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Link: https://patch.msgid.link/20261003172405.342-3-yongzhao.derek@gmail.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/dsa/qca/qca8k-8xxx.c | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/dsa/qca/qca8k-8xxx.c
++++ b/drivers/net/dsa/qca/qca8k-8xxx.c
+@@ -153,6 +153,8 @@ qca8k_set_page(struct qca8k_priv *priv,
+ 
+ 	ret = bus->write(bus, 0x18, 0, page);
+ 	if (ret < 0) {
++		/* The switch may or may not have switched pages. */
++		*cached_page = 0xffff;
+ 		dev_err_ratelimited(&bus->dev,
+ 				    "failed to set qca8k page\n");
+ 		return ret;
+@@ -836,7 +838,7 @@ qca8k_mdio_write(struct qca8k_priv *priv
+ 
+ 	ret = qca8k_set_page(priv, page);
+ 	if (ret)
+-		goto exit;
++		goto unlock;
+ 
+ 	ret = qca8k_mii_write32(bus, 0x10 | r2, r1, val);
+ 	if (ret < 0)
+@@ -851,6 +853,7 @@ exit:
+ 	if (!ret)
+ 		ret = ret1;
+ 
++unlock:
+ 	mutex_unlock(&bus->mdio_lock);
+ 
+ 	return ret;
+@@ -877,7 +880,7 @@ qca8k_mdio_read(struct qca8k_priv *priv,
+ 
+ 	ret = qca8k_set_page(priv, page);
+ 	if (ret)
+-		goto exit;
++		goto unlock;
+ 
+ 	ret = qca8k_mii_write_hi(bus, 0x10 | r2, r1 + 1, val);
+ 	if (ret < 0)
+@@ -896,6 +899,7 @@ exit:
+ 	if (!ret)
+ 		ret = ret1;
+ 
++unlock:
+ 	mutex_unlock(&bus->mdio_lock);
+ 
+ 	if (ret >= 0)
