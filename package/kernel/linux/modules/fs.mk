@@ -503,11 +503,15 @@ define KernelPackage/fs-nfs-common-rpcsec
 	+kmod-crypto-cts
   KCONFIG:= \
 	CONFIG_SUNRPC_GSS \
-	CONFIG_RPCSEC_GSS_KRB5
+	CONFIG_RPCSEC_GSS_KRB5 \
+	CONFIG_CRYPTO_KRB5@ge7.3 \
+	CONFIG_CRYPTO_KRB5ENC@ge7.3
   FILES:= \
+	$(LINUX_DIR)/crypto/krb5enc.ko@ge7.3 \
+	$(LINUX_DIR)/crypto/krb5/krb5.ko@ge7.3 \
 	$(LINUX_DIR)/net/sunrpc/auth_gss/auth_rpcgss.ko \
 	$(LINUX_DIR)/net/sunrpc/auth_gss/rpcsec_gss_krb5.ko
-  AUTOLOAD:=$(call AutoLoad,31,auth_rpcgss rpcsec_gss_krb5)
+  AUTOLOAD:=$(call AutoLoad,31,krb5enc@ge7.3 krb5@ge7.3 auth_rpcgss rpcsec_gss_krb5)
 endef
 
 define KernelPackage/fs-nfs-common-rpcsec/description
