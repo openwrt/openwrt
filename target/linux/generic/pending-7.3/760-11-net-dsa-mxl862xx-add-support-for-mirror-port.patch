@@ -59,7 +59,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	ret = mxl862xx_setup_drop_meter(ds);
  	if (ret)
  		return ret;
-@@ -2111,6 +2113,120 @@ static int mxl862xx_setup_cpu_bridge(str
+@@ -2117,6 +2119,120 @@ static int mxl862xx_setup_cpu_bridge(str
  	return mxl862xx_set_bridge_port(ds, port);
  }
  
@@ -180,7 +180,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  /**
   * mxl862xx_lag_master_port - Find the LAG master (lowest-numbered member)
   * @ds: DSA switch
-@@ -4289,6 +4405,8 @@ static const struct dsa_switch_ops mxl86
+@@ -4284,6 +4400,8 @@ static const struct dsa_switch_ops mxl86
  	.port_fdb_dump = mxl862xx_port_fdb_dump,
  	.port_mdb_add = mxl862xx_port_mdb_add,
  	.port_mdb_del = mxl862xx_port_mdb_del,

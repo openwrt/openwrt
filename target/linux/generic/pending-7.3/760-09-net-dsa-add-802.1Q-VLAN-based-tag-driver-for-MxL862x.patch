@@ -48,11 +48,9 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  create mode 100644 net/dsa/tag_mxl862xx.h
  create mode 100644 net/dsa/tag_mxl862xx_8021q.c
 
-Index: linux-7.3-rc6/drivers/net/dsa/mxl862xx/Kconfig
-===================================================================
---- linux-7.3-rc6.orig/drivers/net/dsa/mxl862xx/Kconfig	2026-10-06 22:40:56.486596440 +0000
-+++ linux-7.3-rc6/drivers/net/dsa/mxl862xx/Kconfig	2026-10-06 22:41:07.351232258 +0000
-@@ -4,6 +4,7 @@
+--- a/drivers/net/dsa/mxl862xx/Kconfig
++++ b/drivers/net/dsa/mxl862xx/Kconfig
+@@ -4,6 +4,7 @@ config NET_DSA_MXL862
  	depends on NET_DSA
  	select CRC16
  	select NET_DSA_TAG_MXL_862XX
@@ -60,11 +58,9 @@ Index: linux-7.3-rc6/drivers/net/dsa/mxl862xx/Kconfig
  	help
  	  This enables support for the MaxLinear MxL862xx switch family.
  	  These switches have two 10GE SerDes interfaces, one typically
-Index: linux-7.3-rc6/drivers/net/dsa/mxl862xx/mxl862xx-api.h
-===================================================================
---- linux-7.3-rc6.orig/drivers/net/dsa/mxl862xx/mxl862xx-api.h	2026-10-06 22:41:07.227239058 +0000
-+++ linux-7.3-rc6/drivers/net/dsa/mxl862xx/mxl862xx-api.h	2026-10-06 22:52:07.246991463 +0000
-@@ -1197,6 +1197,227 @@
+--- a/drivers/net/dsa/mxl862xx/mxl862xx-api.h
++++ b/drivers/net/dsa/mxl862xx/mxl862xx-api.h
+@@ -1197,6 +1197,227 @@ struct mxl862xx_ctp_port_assignment {
  	__le16 bridge_port_id;
  } __packed;
  
@@ -292,10 +288,8 @@ Index: linux-7.3-rc6/drivers/net/dsa/mxl862xx/mxl862xx-api.h
  /* PCE (Packet Classification Engine) rule structures.
   *
   * Binary layout must exactly match the firmware's GSW_PCE_rule_t
-Index: linux-7.3-rc6/drivers/net/dsa/mxl862xx/mxl862xx-cmd.h
-===================================================================
---- linux-7.3-rc6.orig/drivers/net/dsa/mxl862xx/mxl862xx-cmd.h	2026-10-06 22:41:07.227352929 +0000
-+++ linux-7.3-rc6/drivers/net/dsa/mxl862xx/mxl862xx-cmd.h	2026-10-06 22:52:07.246991463 +0000
+--- a/drivers/net/dsa/mxl862xx/mxl862xx-cmd.h
++++ b/drivers/net/dsa/mxl862xx/mxl862xx-cmd.h
 @@ -48,12 +48,14 @@
  #define MXL862XX_BRIDGEPORT_FREE	(MXL862XX_BRDGPORT_MAGIC + 0x4)
  
@@ -311,10 +305,8 @@ Index: linux-7.3-rc6/drivers/net/dsa/mxl862xx/mxl862xx-cmd.h
  #define MXL862XX_MAC_TABLEENTRYADD	(MXL862XX_SWMAC_MAGIC + 0x2)
  #define MXL862XX_MAC_TABLEENTRYREAD	(MXL862XX_SWMAC_MAGIC + 0x3)
  #define MXL862XX_MAC_TABLEENTRYQUERY	(MXL862XX_SWMAC_MAGIC + 0x4)
-Index: linux-7.3-rc6/drivers/net/dsa/mxl862xx/mxl862xx.c
-===================================================================
---- linux-7.3-rc6.orig/drivers/net/dsa/mxl862xx/mxl862xx.c	2026-10-06 22:41:07.294793640 +0000
-+++ linux-7.3-rc6/drivers/net/dsa/mxl862xx/mxl862xx.c	2026-10-06 22:52:07.275864854 +0000
+--- a/drivers/net/dsa/mxl862xx/mxl862xx.c
++++ b/drivers/net/dsa/mxl862xx/mxl862xx.c
 @@ -17,6 +17,7 @@
  #include <linux/of_mdio.h>
  #include <linux/phy.h>
@@ -323,7 +315,7 @@ Index: linux-7.3-rc6/drivers/net/dsa/mxl862xx/mxl862xx.c
  #include <net/dsa.h>
  
  #include "mxl862xx.h"
-@@ -96,6 +97,9 @@
+@@ -96,6 +97,9 @@ enum mxl862xx_evlan_action {
  	EVLAN_STRIP_IF_UNTAGGED,	/* remove 1 tag if entry's untagged flag set */
  	EVLAN_PVID_OR_DISCARD,		/* insert PVID tag or discard if no PVID */
  	EVLAN_STRIP1_AND_PVID_OR_DISCARD,/* strip 1 tag + insert PVID, or discard */
@@ -333,7 +325,7 @@ Index: linux-7.3-rc6/drivers/net/dsa/mxl862xx/mxl862xx.c
  };
  
  struct mxl862xx_evlan_rule_desc {
-@@ -105,6 +109,7 @@
+@@ -105,6 +109,7 @@ struct mxl862xx_evlan_rule_desc {
  	u8 inner_tpid;		/* enum mxl862xx_extended_vlan_filter_tpid */
  	bool match_vid;		/* true: match on VID from the vid parameter */
  	u8 action;		/* enum mxl862xx_evlan_action */
@@ -341,7 +333,7 @@ Index: linux-7.3-rc6/drivers/net/dsa/mxl862xx/mxl862xx.c
  };
  
  /* Shorthand constants for readability */
-@@ -170,11 +175,69 @@
+@@ -170,11 +175,69 @@ static const struct mxl862xx_evlan_rule_
  	{ FT_NO_FILTER, FT_NO_TAG, TP_NONE, TP_NONE,  false, EVLAN_STRIP_IF_UNTAGGED },
  };
  
@@ -412,7 +404,7 @@ Index: linux-7.3-rc6/drivers/net/dsa/mxl862xx/mxl862xx.c
  }
  
  /* PHY access via firmware relay */
-@@ -477,6 +540,78 @@
+@@ -477,6 +540,78 @@ static int mxl862xx_pce_rule_write(struc
  				  *rule);
  }
  
@@ -491,7 +483,7 @@ Index: linux-7.3-rc6/drivers/net/dsa/mxl862xx/mxl862xx.c
  /* Fill the action fields of a PCE rule that traps ingress frames to
   * the CPU port. Used by both the link-local trap and the multicast
   * snooping traps. The caller must already have set the rule header
-@@ -485,24 +620,36 @@
+@@ -485,24 +620,36 @@ static int mxl862xx_pce_rule_write(struc
   * PORTMAP_ALTERNATIVE redirects the frame to the CPU port but does
   * not by itself bypass downstream flood gates. In SpTag mode the
   * ingress port's private FID may have forward_unknown_multicast=false,
@@ -531,7 +523,7 @@ Index: linux-7.3-rc6/drivers/net/dsa/mxl862xx/mxl862xx.c
  	rule->action.cross_state_action =
  		cpu_to_le32(MXL862XX_PCE_ACTION_CROSS_STATE_CROSS);
  
-@@ -635,11 +782,17 @@
+@@ -635,11 +782,17 @@ static int mxl862xx_set_bridge_port(stru
  		return 0;
  
  	if (dsa_port_is_cpu(dp)) {
@@ -554,7 +546,7 @@ Index: linux-7.3-rc6/drivers/net/dsa/mxl862xx/mxl862xx.c
  		}
  	} else if (dp->bridge) {
  		dsa_switch_for_each_bridge_member(member_dp, ds,
-@@ -650,10 +803,10 @@
+@@ -650,10 +803,10 @@ static int mxl862xx_set_bridge_port(stru
  						    member_dp->index);
  		}
  		mxl862xx_fw_portmap_set_bit(br_port_cfg.bridge_port_map,
@@ -567,7 +559,7 @@ Index: linux-7.3-rc6/drivers/net/dsa/mxl862xx/mxl862xx.c
  		p->flood_block = 0;
  		p->learning = false;
  	}
-@@ -863,10 +1016,12 @@
+@@ -863,10 +1016,12 @@ static void mxl862xx_free_bridge(struct
  static int mxl862xx_setup(struct dsa_switch *ds)
  {
  	struct mxl862xx_priv *priv = ds->priv;
@@ -582,7 +574,7 @@ Index: linux-7.3-rc6/drivers/net/dsa/mxl862xx/mxl862xx.c
  
  	/* The SerDes state is software-only and must exist before anything can
  	 * reach phylink, including a rescue-mode flash clearing rescue_mode
-@@ -926,7 +1081,7 @@
+@@ -926,7 +1081,7 @@ static int mxl862xx_setup(struct dsa_swi
  		return 0;
  	}
  
@@ -591,7 +583,7 @@ Index: linux-7.3-rc6/drivers/net/dsa/mxl862xx/mxl862xx.c
  	 * With VLAN Filter handling VID membership checks:
  	 *   Ingress: only final catchall rules (PVID insertion, 802.1Q
  	 *            accept, non-8021Q TPID handling, discard).
-@@ -934,46 +1089,151 @@
+@@ -934,46 +1089,151 @@ static int mxl862xx_setup(struct dsa_swi
  	 *            ingress EVLAN rules are needed. (7 entries.)
  	 *   Egress:  2 rules per VID that needs tag stripping (untagged VIDs).
  	 *            No egress final catchalls -- VLAN Filter does the discard.
@@ -755,7 +747,7 @@ Index: linux-7.3-rc6/drivers/net/dsa/mxl862xx/mxl862xx.c
  	/* Allocate a dedicated PCE snooping FID with all flood modes enabled.
  	 * Per-port PCE trap rules (link-local, IGMP, MLD) set bFidEnable to
  	 * this FID so that the bridge engine uses it for its flood-permission
-@@ -998,10 +1258,6 @@
+@@ -998,10 +1258,6 @@ static int mxl862xx_setup(struct dsa_swi
  	if (ret)
  		goto free_trap_fid;
  
@@ -766,7 +758,7 @@ Index: linux-7.3-rc6/drivers/net/dsa/mxl862xx/mxl862xx.c
  	ret = mxl862xx_setup_mdio(ds);
  	if (ret)
  		goto free_trap_fid;
-@@ -1020,6 +1276,12 @@
+@@ -1020,6 +1276,12 @@ static void mxl862xx_teardown(struct dsa
  {
  	struct mxl862xx_priv *priv = ds->priv;
  
@@ -779,7 +771,7 @@ Index: linux-7.3-rc6/drivers/net/dsa/mxl862xx/mxl862xx.c
  	set_bit(MXL862XX_FLAG_WORK_STOPPED, &priv->flags);
  	disable_delayed_work_sync(&priv->stats_work);
  }
-@@ -1108,10 +1370,71 @@
+@@ -1108,10 +1370,71 @@ static int mxl862xx_configure_sp_tag_pro
  	return MXL862XX_API_WRITE(ds->priv, MXL862XX_SS_SPTAG_SET, tag);
  }
  
@@ -852,7 +844,7 @@ Index: linux-7.3-rc6/drivers/net/dsa/mxl862xx/mxl862xx.c
  {
  	struct mxl862xx_extendedvlan_config cfg = {};
  	struct mxl862xx_extendedvlan_filter_vlan *fv;
-@@ -1180,6 +1503,31 @@
+@@ -1180,6 +1503,31 @@ static int mxl862xx_evlan_write_rule(str
  				cpu_to_le32(MXL862XX_EXTENDEDVLAN_TREATMENT_DISCARD_UPSTREAM);
  		}
  		break;
@@ -884,7 +876,7 @@ Index: linux-7.3-rc6/drivers/net/dsa/mxl862xx/mxl862xx.c
  	}
  
  	return MXL862XX_API_WRITE(priv, MXL862XX_EXTENDEDVLAN_SET, cfg);
-@@ -1218,7 +1566,7 @@
+@@ -1218,7 +1566,7 @@ static int mxl862xx_evlan_write_final_ru
  	for (i = 0; i < n_rules; i++) {
  		ret = mxl862xx_evlan_write_rule(priv, blk->block_id,
  						start_idx + i, &rules[i],
@@ -893,7 +885,7 @@ Index: linux-7.3-rc6/drivers/net/dsa/mxl862xx/mxl862xx.c
  		if (ret)
  			return ret;
  	}
-@@ -1339,6 +1687,41 @@
+@@ -1339,6 +1687,41 @@ static int mxl862xx_vf_del_vid(struct mx
  	return 0;
  }
  
@@ -935,7 +927,7 @@ Index: linux-7.3-rc6/drivers/net/dsa/mxl862xx/mxl862xx.c
  static int mxl862xx_evlan_program_ingress(struct mxl862xx_priv *priv, int port)
  {
  	struct mxl862xx_port *p = &priv->ports[port];
-@@ -1363,8 +1746,8 @@
+@@ -1363,8 +1746,8 @@ static int mxl862xx_evlan_program_egress
  	const struct mxl862xx_evlan_rule_desc *vid_rules;
  	struct mxl862xx_vf_vid *vfv;
  	u16 old_active = blk->n_active;
@@ -945,7 +937,7 @@ Index: linux-7.3-rc6/drivers/net/dsa/mxl862xx/mxl862xx.c
  
  	if (p->vlan_filtering) {
  		vid_rules = vid_accept_standard;
-@@ -1378,13 +1761,23 @@
+@@ -1378,13 +1761,23 @@ static int mxl862xx_evlan_program_egress
  		if (!vfv->untagged)
  			continue;
  
@@ -970,7 +962,7 @@ Index: linux-7.3-rc6/drivers/net/dsa/mxl862xx/mxl862xx.c
  		if (ret)
  			return ret;
  
-@@ -1393,7 +1786,29 @@
+@@ -1393,7 +1786,29 @@ static int mxl862xx_evlan_program_egress
  							idx++, &vid_rules[1],
  							vfv->vid,
  							vfv->untagged,
@@ -1001,7 +993,7 @@ Index: linux-7.3-rc6/drivers/net/dsa/mxl862xx/mxl862xx.c
  			if (ret)
  				return ret;
  		}
-@@ -1405,8 +1820,7 @@
+@@ -1405,8 +1820,7 @@ static int mxl862xx_evlan_program_egress
  	 */
  	for (i = idx; i < old_active; i++) {
  		ret = mxl862xx_evlan_deactivate_entry(priv,
@@ -1011,7 +1003,7 @@ Index: linux-7.3-rc6/drivers/net/dsa/mxl862xx/mxl862xx.c
  		if (ret)
  			return ret;
  	}
-@@ -1431,13 +1845,16 @@
+@@ -1431,13 +1845,16 @@ static int mxl862xx_port_vlan_filtering(
  	p->vlan_filtering = vlan_filtering;
  
  	if (changed) {
@@ -1033,7 +1025,7 @@ Index: linux-7.3-rc6/drivers/net/dsa/mxl862xx/mxl862xx.c
  
  		ret = mxl862xx_evlan_program_ingress(priv, port);
  		if (ret)
-@@ -1657,22 +2074,571 @@
+@@ -1657,22 +2074,571 @@ static void mxl862xx_port_bridge_leave(s
  			port, ERR_PTR(err));
  
  	/* Revert leaving port, omitted by the sync above, to its
@@ -1607,7 +1599,7 @@ Index: linux-7.3-rc6/drivers/net/dsa/mxl862xx/mxl862xx.c
  static int mxl862xx_port_setup(struct dsa_switch *ds, int port)
  {
  	struct mxl862xx_priv *priv = ds->priv;
-@@ -1700,33 +2666,52 @@
+@@ -1700,33 +2666,52 @@ static int mxl862xx_port_setup(struct ds
  	if (dsa_port_is_unused(dp))
  		return 0;
  
@@ -1676,7 +1668,7 @@ Index: linux-7.3-rc6/drivers/net/dsa/mxl862xx/mxl862xx.c
  	if (ret)
  		return ret;
  	ret = mxl862xx_set_bridge_port(ds, port);
-@@ -1742,24 +2727,7 @@
+@@ -1742,24 +2727,7 @@ static int mxl862xx_port_setup(struct ds
  	if (ret)
  		return ret;
  
@@ -1701,7 +1693,7 @@ Index: linux-7.3-rc6/drivers/net/dsa/mxl862xx/mxl862xx.c
  	return 0;
  }
  
-@@ -1781,7 +2749,7 @@
+@@ -1781,7 +2749,7 @@ static void mxl862xx_port_teardown(struc
  	priv->ports[port].setup_done = false;
  }
  
@@ -1710,7 +1702,7 @@ Index: linux-7.3-rc6/drivers/net/dsa/mxl862xx/mxl862xx.c
  {
  	struct mxl862xx_priv *priv = ds->priv;
  
-@@ -1799,23 +2767,253 @@
+@@ -1799,23 +2767,253 @@ static int mxl862xx_get_fid(struct dsa_s
  	}
  }
  
@@ -1972,7 +1964,7 @@ Index: linux-7.3-rc6/drivers/net/dsa/mxl862xx/mxl862xx.c
  	if (ret)
  		dev_err(ds->dev, "failed to add FDB entry on port %d\n", port);
  
-@@ -1825,18 +3023,25 @@
+@@ -1825,18 +3023,25 @@ static int mxl862xx_port_fdb_add(struct
  static int mxl862xx_port_fdb_del(struct dsa_switch *ds, int port,
  				 const unsigned char *addr, u16 vid, const struct dsa_db db)
  {
@@ -2005,7 +1997,7 @@ Index: linux-7.3-rc6/drivers/net/dsa/mxl862xx/mxl862xx.c
  	if (ret)
  		dev_err(ds->dev, "failed to remove FDB entry on port %d\n", port);
  
-@@ -1875,90 +3080,153 @@
+@@ -1875,90 +3080,153 @@ static int mxl862xx_port_fdb_dump(struct
  	return 0;
  }
  
@@ -2212,7 +2204,7 @@ Index: linux-7.3-rc6/drivers/net/dsa/mxl862xx/mxl862xx.c
  
  	return ret;
  }
-@@ -2046,6 +3314,9 @@
+@@ -2046,6 +3314,9 @@ static void mxl862xx_host_flood_work_fn(
  					       host_flood_work);
  	struct mxl862xx_priv *priv = p->priv;
  	struct dsa_switch *ds = priv->ds;
@@ -2222,7 +2214,7 @@ Index: linux-7.3-rc6/drivers/net/dsa/mxl862xx/mxl862xx.c
  
  	rtnl_lock();
  
-@@ -2055,13 +3326,34 @@
+@@ -2055,13 +3326,34 @@ static void mxl862xx_host_flood_work_fn(
  		return;
  	}
  
@@ -2264,7 +2256,7 @@ Index: linux-7.3-rc6/drivers/net/dsa/mxl862xx/mxl862xx.c
  
  	rtnl_unlock();
  }
-@@ -2431,6 +3723,7 @@
+@@ -2431,6 +3723,7 @@ static void mxl862xx_get_stats64(struct
  
  static const struct dsa_switch_ops mxl862xx_switch_ops = {
  	.get_tag_protocol = mxl862xx_get_tag_protocol,
@@ -2272,7 +2264,7 @@ Index: linux-7.3-rc6/drivers/net/dsa/mxl862xx/mxl862xx.c
  	.setup = mxl862xx_setup,
  	.teardown = mxl862xx_teardown,
  	.port_setup = mxl862xx_port_setup,
-@@ -2454,6 +3747,8 @@
+@@ -2454,6 +3747,8 @@ static const struct dsa_switch_ops mxl86
  	.port_vlan_filtering = mxl862xx_port_vlan_filtering,
  	.port_vlan_add = mxl862xx_port_vlan_add,
  	.port_vlan_del = mxl862xx_port_vlan_del,
@@ -2281,7 +2273,7 @@ Index: linux-7.3-rc6/drivers/net/dsa/mxl862xx/mxl862xx.c
  	.get_strings = mxl862xx_get_strings,
  	.get_sset_count = mxl862xx_get_sset_count,
  	.get_ethtool_stats = mxl862xx_get_ethtool_stats,
-@@ -2510,6 +3805,8 @@
+@@ -2510,6 +3805,8 @@ static int mxl862xx_probe(struct mdio_de
  
  	INIT_DELAYED_WORK(&priv->stats_work, mxl862xx_stats_work_fn);
  
@@ -2290,7 +2282,7 @@ Index: linux-7.3-rc6/drivers/net/dsa/mxl862xx/mxl862xx.c
  	dev_set_drvdata(dev, ds);
  
  	err = dsa_register_switch(ds);
-@@ -2538,6 +3835,19 @@
+@@ -2538,6 +3835,19 @@ static void mxl862xx_remove(struct mdio_
  
  	set_bit(MXL862XX_FLAG_WORK_STOPPED, &priv->flags);
  
@@ -2310,11 +2302,9 @@ Index: linux-7.3-rc6/drivers/net/dsa/mxl862xx/mxl862xx.c
  	dsa_unregister_switch(ds);
  
  	mxl862xx_host_shutdown(priv);
-Index: linux-7.3-rc6/drivers/net/dsa/mxl862xx/mxl862xx.h
-===================================================================
---- linux-7.3-rc6.orig/drivers/net/dsa/mxl862xx/mxl862xx.h	2026-10-06 22:41:07.227496640 +0000
-+++ linux-7.3-rc6/drivers/net/dsa/mxl862xx/mxl862xx.h	2026-10-06 22:52:07.246991463 +0000
-@@ -218,6 +218,9 @@
+--- a/drivers/net/dsa/mxl862xx/mxl862xx.h
++++ b/drivers/net/dsa/mxl862xx/mxl862xx.h
+@@ -218,6 +218,9 @@ struct mxl862xx_port_stats {
   * @vf:                  per-port VLAN Filter block state
   * @ingress_evlan:       ingress extended VLAN block state
   * @egress_evlan:        egress extended VLAN block state
@@ -2324,7 +2314,7 @@ Index: linux-7.3-rc6/drivers/net/dsa/mxl862xx/mxl862xx.h
   * @host_flood_uc:       desired host unicast flood state (true = flood);
   *                       updated atomically by port_set_host_flood, consumed
   *                       by the deferred host_flood_work
-@@ -232,6 +235,7 @@
+@@ -232,6 +235,7 @@ struct mxl862xx_port_stats {
   *                       periodically by the stats polling work
   * @stats_lock:          protects accumulator reads in .get_stats64 against
   *                       concurrent updates from the polling work
@@ -2332,7 +2322,7 @@ Index: linux-7.3-rc6/drivers/net/dsa/mxl862xx/mxl862xx.h
   */
  struct mxl862xx_port {
  	struct mxl862xx_priv *priv;
-@@ -244,9 +248,13 @@
+@@ -244,9 +248,13 @@ struct mxl862xx_port {
  	struct mxl862xx_vf_block vf;
  	struct mxl862xx_evlan_block ingress_evlan;
  	struct mxl862xx_evlan_block egress_evlan;
@@ -2346,7 +2336,7 @@ Index: linux-7.3-rc6/drivers/net/dsa/mxl862xx/mxl862xx.h
  	struct mxl862xx_port_stats stats;
  	spinlock_t stats_lock; /* protects stats accumulators */
  };
-@@ -304,6 +312,7 @@
+@@ -304,6 +312,7 @@ struct mxl862xx_fw_version {
   *                      before CRC-triggered shutdown and cleared after;
   *                      %MXL862XX_FLAG_WORK_STOPPED is set before cancelling
   *                      stats_work to prevent rescheduling during teardown
@@ -2354,7 +2344,7 @@ Index: linux-7.3-rc6/drivers/net/dsa/mxl862xx/mxl862xx.h
   * @drop_meter:         index of the single shared zero-rate firmware meter
   *                      used to unconditionally drop traffic (used to block
   *                      flooding)
-@@ -328,6 +337,7 @@
+@@ -328,6 +337,7 @@ struct mxl862xx_fw_version {
   *                      (0 .. ds->max_num_bridges).
   * @evlan_ingress_size: per-port ingress Extended VLAN block size
   * @evlan_egress_size:  per-port egress Extended VLAN block size
@@ -2362,7 +2352,7 @@ Index: linux-7.3-rc6/drivers/net/dsa/mxl862xx/mxl862xx.h
   * @vf_block_size:      per-port VLAN Filter block size
   * @block_host:         reject firmware API commands (except FW_UPDATE)
   *                      during a firmware flash
-@@ -359,6 +369,7 @@
+@@ -359,6 +369,7 @@ struct mxl862xx_priv {
  	struct work_struct crc_err_work;
  	struct work_struct rescue_heal_work;
  	unsigned long flags;
@@ -2370,7 +2360,7 @@ Index: linux-7.3-rc6/drivers/net/dsa/mxl862xx/mxl862xx.h
  	u16 drop_meter;
  	struct mxl862xx_fw_version fw_version;
  	u16 asic_id;
-@@ -370,6 +381,7 @@
+@@ -370,6 +381,7 @@ struct mxl862xx_priv {
  	u16 bridges[MXL862XX_MAX_BRIDGES + 1];
  	u16 evlan_ingress_size;
  	u16 evlan_egress_size;
@@ -2378,11 +2368,9 @@ Index: linux-7.3-rc6/drivers/net/dsa/mxl862xx/mxl862xx.h
  	u16 vf_block_size;
  	bool block_host;
  	bool skip_teardown;
-Index: linux-7.3-rc6/include/net/dsa.h
-===================================================================
---- linux-7.3-rc6.orig/include/net/dsa.h	2026-10-06 22:41:06.900604921 +0000
-+++ linux-7.3-rc6/include/net/dsa.h	2026-10-06 22:52:07.275674822 +0000
-@@ -61,6 +61,7 @@
+--- a/include/net/dsa.h
++++ b/include/net/dsa.h
+@@ -61,6 +61,7 @@ struct tc_action;
  #define DSA_TAG_PROTO_NETC_VALUE		33
  #define DSA_TAG_PROTO_KSZ8463_VALUE		34
  #define DSA_TAG_PROTO_MT7628_VALUE		35
@@ -2390,7 +2378,7 @@ Index: linux-7.3-rc6/include/net/dsa.h
  
  enum dsa_tag_protocol {
  	DSA_TAG_PROTO_NONE		= DSA_TAG_PROTO_NONE_VALUE,
-@@ -96,6 +97,7 @@
+@@ -96,6 +97,7 @@ enum dsa_tag_protocol {
  	DSA_TAG_PROTO_YT921X		= DSA_TAG_PROTO_YT921X_VALUE,
  	DSA_TAG_PROTO_MXL_GSW1XX	= DSA_TAG_PROTO_MXL_GSW1XX_VALUE,
  	DSA_TAG_PROTO_MXL862		= DSA_TAG_PROTO_MXL862_VALUE,
@@ -2398,11 +2386,9 @@ Index: linux-7.3-rc6/include/net/dsa.h
  	DSA_TAG_PROTO_NETC		= DSA_TAG_PROTO_NETC_VALUE,
  	DSA_TAG_PROTO_KSZ8463		= DSA_TAG_PROTO_KSZ8463_VALUE,
  	DSA_TAG_PROTO_MT7628		= DSA_TAG_PROTO_MT7628_VALUE,
-Index: linux-7.3-rc6/net/dsa/Kconfig
-===================================================================
---- linux-7.3-rc6.orig/net/dsa/Kconfig	2026-10-06 22:40:56.486596440 +0000
-+++ linux-7.3-rc6/net/dsa/Kconfig	2026-10-06 22:41:07.351834524 +0000
-@@ -125,6 +125,13 @@
+--- a/net/dsa/Kconfig
++++ b/net/dsa/Kconfig
+@@ -125,6 +125,13 @@ config NET_DSA_TAG_MXL_GSW1XX
  	  Say Y or M if you want to enable support for tagging frames for
  	  MaxLinear GSW1xx switches.
  
@@ -2416,11 +2402,9 @@ Index: linux-7.3-rc6/net/dsa/Kconfig
  config NET_DSA_TAG_KSZ
  	tristate "Tag driver for Microchip 8795/937x/9477/9893 families of switches"
  	help
-Index: linux-7.3-rc6/net/dsa/Makefile
-===================================================================
---- linux-7.3-rc6.orig/net/dsa/Makefile	2026-10-06 22:40:56.486596440 +0000
-+++ linux-7.3-rc6/net/dsa/Makefile	2026-10-06 22:41:07.351864374 +0000
-@@ -30,6 +30,7 @@
+--- a/net/dsa/Makefile
++++ b/net/dsa/Makefile
+@@ -30,6 +30,7 @@ obj-$(CONFIG_NET_DSA_TAG_LAN9303) += tag
  obj-$(CONFIG_NET_DSA_TAG_MT7628) += tag_mt7628.o
  obj-$(CONFIG_NET_DSA_TAG_MTK) += tag_mtk.o
  obj-$(CONFIG_NET_DSA_TAG_MXL_862XX) += tag_mxl862xx.o
@@ -2428,10 +2412,8 @@ Index: linux-7.3-rc6/net/dsa/Makefile
  obj-$(CONFIG_NET_DSA_TAG_MXL_GSW1XX) += tag_mxl-gsw1xx.o
  obj-$(CONFIG_NET_DSA_TAG_NETC) += tag_netc.o
  obj-$(CONFIG_NET_DSA_TAG_NONE) += tag_none.o
-Index: linux-7.3-rc6/net/dsa/tag_mxl862xx.c
-===================================================================
---- linux-7.3-rc6.orig/net/dsa/tag_mxl862xx.c	2026-10-06 22:41:07.170707179 +0000
-+++ linux-7.3-rc6/net/dsa/tag_mxl862xx.c	2026-10-06 22:41:07.351901395 +0000
+--- a/net/dsa/tag_mxl862xx.c
++++ b/net/dsa/tag_mxl862xx.c
 @@ -8,16 +8,10 @@
  
  #include <linux/bitops.h>
@@ -2450,7 +2432,7 @@ Index: linux-7.3-rc6/net/dsa/tag_mxl862xx.c
  
  #define MXL862_NAME	"mxl862xx"
  
-@@ -63,84 +57,6 @@
+@@ -63,84 +57,6 @@ static struct sk_buff *mxl862_tag_xmit(s
  	return skb;
  }
  
@@ -2535,7 +2517,7 @@ Index: linux-7.3-rc6/net/dsa/tag_mxl862xx.c
  static struct sk_buff *mxl862_tag_rcv(struct sk_buff *skb,
  				      struct net_device *dev)
  {
-@@ -175,7 +91,8 @@
+@@ -175,7 +91,8 @@ static struct sk_buff *mxl862_tag_rcv(st
  	}
  
  	if (likely(!is_link_local_ether_addr(eth_hdr(skb)->h_dest) &&
@@ -2545,10 +2527,8 @@ Index: linux-7.3-rc6/net/dsa/tag_mxl862xx.c
  		dsa_default_offload_fwd_mark(skb);
  
  	/* remove the MxL862xx special tag between the MAC addresses and the
-Index: linux-7.3-rc6/net/dsa/tag_mxl862xx.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-7.3-rc6/net/dsa/tag_mxl862xx.h	2026-10-06 22:41:07.351914565 +0000
+--- /dev/null
++++ b/net/dsa/tag_mxl862xx.h
 @@ -0,0 +1,92 @@
 +/* SPDX-License-Identifier: GPL-2.0-or-later */
 +/*
@@ -2642,10 +2622,8 @@ Index: linux-7.3-rc6/net/dsa/tag_mxl862xx.h
 +}
 +
 +#endif /* _NET_DSA_TAG_MXL862XX_H */
-Index: linux-7.3-rc6/net/dsa/tag_mxl862xx_8021q.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-7.3-rc6/net/dsa/tag_mxl862xx_8021q.c	2026-10-06 22:52:06.573983057 +0000
+--- /dev/null
++++ b/net/dsa/tag_mxl862xx_8021q.c
 @@ -0,0 +1,70 @@
 +// SPDX-License-Identifier: GPL-2.0-or-later
 +/*
