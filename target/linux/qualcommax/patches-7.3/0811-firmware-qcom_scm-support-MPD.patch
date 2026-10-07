@@ -16,10 +16,10 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
 
 --- a/include/linux/firmware/qcom/qcom_scm.h
 +++ b/include/linux/firmware/qcom/qcom_scm.h
-@@ -93,6 +93,9 @@ int qcom_scm_pas_mem_setup(u32 pas_id, p
- int qcom_scm_pas_auth_and_reset(u32 pas_id);
- int qcom_scm_pas_shutdown(u32 pas_id);
- bool qcom_scm_pas_supported(u32 pas_id);
+@@ -93,6 +93,9 @@ struct resource_table *qcom_scm_pas_get_
+ 						  size_t *output_rt_size);
+ 
+ int qcom_scm_pas_prepare_and_auth_reset(struct qcom_scm_pas_context *ctx);
 +int qcom_scm_internal_wifi_powerup(u32 peripheral);
 +int qcom_scm_internal_wifi_shutdown(u32 peripheral);
 +int qcom_scm_pas_load_segment(u32 peripheral, int segment, dma_addr_t dma, int seg_cnt);
@@ -28,8 +28,8 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
  
 --- a/drivers/firmware/qcom/qcom_scm.c
 +++ b/drivers/firmware/qcom/qcom_scm.c
-@@ -852,6 +852,85 @@ bool qcom_scm_pas_supported(u32 pas_id)
- EXPORT_SYMBOL_GPL(qcom_scm_pas_supported);
+@@ -1094,6 +1094,85 @@ static bool qcom_scm_is_pas_available(vo
+ }
  
  /**
 + * qcom_scm_internal_wifi_powerup() - Bring up internal wifi
@@ -123,6 +123,6 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
 +#define QCOM_SCM_INTERNAL_WIFI_POWERUP	0x17
 +#define QCOM_SCM_INTERNAL_WIFI_SHUTDOWN	0x18
 +#define QCOM_SCM_PIL_PAS_LOAD_SEG	0x19
+ #define QCOM_SCM_PIL_PAS_GET_RSCTABLE	0x21
  #define QCOM_SCM_MSA_LOCK		0x24
  #define QCOM_SCM_MSA_UNLOCK		0x25
- 

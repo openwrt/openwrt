@@ -40,7 +40,7 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
 
 --- a/drivers/usb/dwc3/core.c
 +++ b/drivers/usb/dwc3/core.c
-@@ -419,6 +419,9 @@ static void dwc3_ref_clk_period(struct d
+@@ -420,6 +420,9 @@ static void dwc3_ref_clk_period(struct d
  	} else if (dwc->ref_clk_per) {
  		period = dwc->ref_clk_per;
  		rate = NSEC_PER_SEC / period;
@@ -50,7 +50,7 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
  	} else {
  		return;
  	}
-@@ -2262,6 +2265,9 @@ int dwc3_core_probe(const struct dwc3_pr
+@@ -2334,6 +2337,9 @@ int dwc3_core_probe(const struct dwc3_pr
  			goto err_put_psy;
  	}
  
@@ -62,7 +62,7 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
  		goto err_put_psy;
 --- a/drivers/usb/dwc3/core.h
 +++ b/drivers/usb/dwc3/core.h
-@@ -1033,6 +1033,7 @@ struct dwc3_glue_ops {
+@@ -1041,6 +1041,7 @@ struct dwc3_glue_ops {
   * @regs_size: address space size
   * @fladj: frame length adjustment
   * @ref_clk_per: reference clock period configuration
@@ -70,7 +70,7 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
   * @irq_gadget: peripheral controller's IRQ number
   * @otg_irq: IRQ number for OTG IRQs
   * @current_otg_role: current role of operation while using the OTG block
-@@ -1254,6 +1255,7 @@ struct dwc3 {
+@@ -1277,6 +1278,7 @@ struct dwc3 {
  
  	u32			fladj;
  	u32			ref_clk_per;
@@ -80,19 +80,21 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
  	u32			current_otg_role;
 --- a/drivers/usb/dwc3/glue.h
 +++ b/drivers/usb/dwc3/glue.h
-@@ -15,11 +15,15 @@
-  * @res: resource for the DWC3 core mmio region
-  * @ignore_clocks_and_resets: clocks and resets defined for the device should
-  *		be ignored by the DWC3 core, as they are managed by the glue
+@@ -33,6 +33,9 @@ struct dwc3_properties {
+  * @skip_core_init_mode: Skip the finial initialization of the target mode, as
+  *		it must be managed by the glue
+  * @properties: dwc3 software manage properties
 + * @ref_clk_rate: optional reference clock rate for the DWC3 core to compute the
 + *		period and frame length adjustment required if these values
 + *		differ from the hardware default.
   */
  struct dwc3_probe_data {
  	struct dwc3 *dwc;
- 	struct resource *res;
+@@ -40,6 +43,7 @@ struct dwc3_probe_data {
  	bool ignore_clocks_and_resets;
+ 	bool skip_core_init_mode;
+ 	struct dwc3_properties properties;
 +	unsigned long ref_clk_rate;
  };
  
- int dwc3_core_probe(const struct dwc3_probe_data *data);
+ /**

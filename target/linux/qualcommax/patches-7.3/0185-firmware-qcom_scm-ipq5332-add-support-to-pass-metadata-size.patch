@@ -21,8 +21,14 @@ Signed-off-by: Gokul Sriram Palanisamy <gokul.sriram.p@oss.qualcomm.com>
 
 --- a/drivers/firmware/qcom/qcom_scm.c
 +++ b/drivers/firmware/qcom/qcom_scm.c
-@@ -627,9 +627,6 @@ int qcom_scm_pas_init_image(u32 pas_id,
- 	int ret;
+@@ -597,14 +597,11 @@ struct qcom_scm_pas_context *devm_qcom_s
+ EXPORT_SYMBOL_GPL(devm_qcom_scm_pas_context_alloc);
+ 
+ static int __qcom_scm_pas_init_image(struct device *dev, u32 pas_id,
+-				     dma_addr_t mdata_phys,
++				     dma_addr_t mdata_phys, size_t size,
+ 				     struct qcom_scm_res *res)
+ {
  	struct qcom_scm_desc desc = {
  		.svc = QCOM_SCM_SVC_PIL,
 -		.cmd = QCOM_SCM_PIL_PAS_INIT_IMAGE,
@@ -30,8 +36,8 @@ Signed-off-by: Gokul Sriram Palanisamy <gokul.sriram.p@oss.qualcomm.com>
 -		.args[0] = pas_id,
  		.owner = ARM_SMCCC_OWNER_SIP,
  	};
- 	struct qcom_scm_res res;
-@@ -661,7 +658,19 @@ int qcom_scm_pas_init_image(u32 pas_id,
+ 	int ret;
+@@ -617,7 +614,19 @@ static int __qcom_scm_pas_init_image(str
  	if (ret)
  		goto disable_clk;
  
@@ -50,8 +56,26 @@ Signed-off-by: Gokul Sriram Palanisamy <gokul.sriram.p@oss.qualcomm.com>
 +		desc.args[1] = mdata_phys;
 +	}
  
- 	ret = qcom_scm_call(__scm->dev, &desc, &res);
+ 	ret = qcom_scm_call(dev, &desc, res);
  	qcom_scm_bw_disable();
+@@ -644,7 +653,7 @@ static int qcom_scm_pas_prep_and_init_im
+ 	memcpy(mdata_buf, metadata, size);
+ 	mdata_phys = qcom_tzmem_to_phys(mdata_buf);
+ 
+-	ret = __qcom_scm_pas_init_image(dev, ctx->pas_id, mdata_phys, &res);
++	ret = __qcom_scm_pas_init_image(dev, ctx->pas_id, mdata_phys, size, &res);
+ 	if (ret < 0)
+ 		qcom_tzmem_free(mdata_buf);
+ 	else
+@@ -683,7 +692,7 @@ static int __qcom_scm_pas_init_image2(st
+ 
+ 	memcpy(mdata_buf, metadata, size);
+ 
+-	ret = __qcom_scm_pas_init_image(dev, pas_id, mdata_phys, &res);
++	ret = __qcom_scm_pas_init_image(dev, pas_id, mdata_phys, size, &res);
+ 	if (ret < 0 || !ctx) {
+ 		dma_free_coherent(dev, size, mdata_buf, mdata_phys);
+ 	} else if (ctx) {
 --- a/drivers/firmware/qcom/qcom_scm.h
 +++ b/drivers/firmware/qcom/qcom_scm.h
 @@ -105,6 +105,7 @@ int qcom_scm_shm_bridge_enable(struct de
@@ -59,6 +83,6 @@ Signed-off-by: Gokul Sriram Palanisamy <gokul.sriram.p@oss.qualcomm.com>
  #define QCOM_SCM_PIL_PAS_IS_SUPPORTED	0x07
  #define QCOM_SCM_PIL_PAS_MSS_RESET	0x0a
 +#define QCOM_SCM_PIL_PAS_INIT_IMAGE_V2	0x1a
+ #define QCOM_SCM_PIL_PAS_GET_RSCTABLE	0x21
  
  #define QCOM_SCM_SVC_IO			0x05
- #define QCOM_SCM_IO_READ		0x01

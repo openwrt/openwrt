@@ -83,9 +83,9 @@ Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
 +#endif
 --- a/include/linux/skbuff.h
 +++ b/include/linux/skbuff.h
-@@ -4935,6 +4935,9 @@ enum skb_ext_id {
- #if IS_ENABLED(CONFIG_INET_PSP)
- 	SKB_EXT_PSP,
+@@ -5042,6 +5042,9 @@ enum skb_ext_id {
+ #if IS_ENABLED(CONFIG_CAN)
+ 	SKB_EXT_CAN,
  #endif
 +#if IS_ENABLED(CONFIG_NET_DSA_TAG_OOB)
 +	SKB_EXT_DSA_OOB,
@@ -95,18 +95,18 @@ Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
  
 --- a/include/net/dsa.h
 +++ b/include/net/dsa.h
-@@ -57,6 +57,7 @@ struct tc_action;
- #define DSA_TAG_PROTO_BRCM_LEGACY_FCS_VALUE	29
- #define DSA_TAG_PROTO_MXL862_VALUE		30
- #define DSA_TAG_PROTO_MXL862_8021Q_VALUE	31
-+#define DSA_TAG_PROTO_OOB_VALUE			32
+@@ -62,6 +62,7 @@ struct tc_action;
+ #define DSA_TAG_PROTO_KSZ8463_VALUE		34
+ #define DSA_TAG_PROTO_MT7628_VALUE		35
+ #define DSA_TAG_PROTO_MXL862_8021Q_VALUE	36
++#define DSA_TAG_PROTO_OOB_VALUE			37
  
  enum dsa_tag_protocol {
  	DSA_TAG_PROTO_NONE		= DSA_TAG_PROTO_NONE_VALUE,
-@@ -91,6 +92,7 @@ enum dsa_tag_protocol {
- 	DSA_TAG_PROTO_VSC73XX_8021Q	= DSA_TAG_PROTO_VSC73XX_8021Q_VALUE,
- 	DSA_TAG_PROTO_MXL862		= DSA_TAG_PROTO_MXL862_VALUE,
- 	DSA_TAG_PROTO_MXL862_8021Q	= DSA_TAG_PROTO_MXL862_8021Q_VALUE,
+@@ -101,6 +102,7 @@ enum dsa_tag_protocol {
+ 	DSA_TAG_PROTO_NETC		= DSA_TAG_PROTO_NETC_VALUE,
+ 	DSA_TAG_PROTO_KSZ8463		= DSA_TAG_PROTO_KSZ8463_VALUE,
+ 	DSA_TAG_PROTO_MT7628		= DSA_TAG_PROTO_MT7628_VALUE,
 +	DSA_TAG_PROTO_OOB		= DSA_TAG_PROTO_OOB_VALUE,
  };
  
@@ -126,19 +126,19 @@ Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
  #include <net/dst.h>
  #include <net/sock.h>
  #include <net/checksum.h>
-@@ -5120,6 +5124,9 @@ static const u8 skb_ext_type_len[] = {
- #if IS_ENABLED(CONFIG_INET_PSP)
- 	[SKB_EXT_PSP] = SKB_EXT_CHUNKSIZEOF(struct psp_skb_ext),
+@@ -5186,6 +5190,9 @@ static const u8 skb_ext_type_len[] = {
+ #if IS_ENABLED(CONFIG_CAN)
+ 	[SKB_EXT_CAN] = SKB_EXT_CHUNKSIZEOF(struct can_skb_ext),
  #endif
 +#if IS_ENABLED(CONFIG_NET_DSA_TAG_OOB)
 +	[SKB_EXT_DSA_OOB] = SKB_EXT_CHUNKSIZEOF(struct dsa_oob_tag_info),
 +#endif
  };
  
- static __always_inline unsigned int skb_ext_total_length(void)
+ static __always_inline __no_profile unsigned int skb_ext_total_length(void)
 --- a/net/dsa/Kconfig
 +++ b/net/dsa/Kconfig
-@@ -145,6 +145,15 @@ config NET_DSA_TAG_OCELOT_8021Q
+@@ -169,6 +169,15 @@ config NET_DSA_TAG_OCELOT_8021Q
  	  this mode, less TCAM resources (VCAP IS1, IS2, ES0) are available for
  	  use with tc-flower.
  
@@ -156,7 +156,7 @@ Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
  	help
 --- a/net/dsa/Makefile
 +++ b/net/dsa/Makefile
-@@ -33,6 +33,7 @@ obj-$(CONFIG_NET_DSA_TAG_MXL_862XX_8021Q
+@@ -36,6 +36,7 @@ obj-$(CONFIG_NET_DSA_TAG_NETC) += tag_ne
  obj-$(CONFIG_NET_DSA_TAG_NONE) += tag_none.o
  obj-$(CONFIG_NET_DSA_TAG_OCELOT) += tag_ocelot.o
  obj-$(CONFIG_NET_DSA_TAG_OCELOT_8021Q) += tag_ocelot_8021q.o

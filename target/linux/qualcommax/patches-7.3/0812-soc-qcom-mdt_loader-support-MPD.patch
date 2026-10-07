@@ -15,11 +15,12 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
 
 --- a/drivers/soc/qcom/mdt_loader.c
 +++ b/drivers/soc/qcom/mdt_loader.c
-@@ -17,6 +17,16 @@
+@@ -18,6 +18,17 @@
  #include <linux/sizes.h>
  #include <linux/slab.h>
  #include <linux/soc/qcom/mdt_loader.h>
 +#include <linux/dma-mapping.h>
++#include <linux/firmware/qcom/qcom_scm.h>
 +
 +#include "../../remoteproc/qcom_common.h"
 +
@@ -32,7 +33,7 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
  
  static bool mdt_header_valid(const struct firmware *fw)
  {
-@@ -100,6 +110,56 @@ static ssize_t mdt_load_split_segment(vo
+@@ -101,6 +112,56 @@ static ssize_t mdt_load_split_segment(vo
  	return ret;
  }
  
@@ -89,17 +90,35 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
  /**
   * qcom_mdt_get_size() - acquire size of the memory region needed to load mdt
   * @fw:		firmware object for the mdt file
-@@ -335,7 +395,8 @@ static bool qcom_mdt_bins_are_split(cons
- static int __qcom_mdt_load(struct device *dev, const struct firmware *fw,
- 			   const char *fw_name, void *mem_region,
- 			   phys_addr_t mem_phys, size_t mem_size,
--			   phys_addr_t *reloc_base)
+@@ -321,22 +382,11 @@ static bool qcom_mdt_bins_are_split(cons
+ 	return false;
+ }
+ 
+-/**
+- * qcom_mdt_load_no_init() - load the firmware which header is loaded as fw
+- * @dev:	device handle to associate resources with
+- * @fw:		firmware object for the mdt file
+- * @fw_name:	name of the firmware, for construction of segment file names
+- * @mem_region:	allocated memory region to load firmware into
+- * @mem_phys:	physical address of allocated memory region
+- * @mem_size:	size of the allocated memory region
+- * @reloc_base:	adjusted physical address after relocation
+- *
+- * Returns 0 on success, negative errno otherwise.
+- */
+-int qcom_mdt_load_no_init(struct device *dev, const struct firmware *fw,
+-			  const char *fw_name, void *mem_region,
+-			  phys_addr_t mem_phys, size_t mem_size,
+-			  phys_addr_t *reloc_base)
++static int __qcom_mdt_load(struct device *dev, const struct firmware *fw,
++			   const char *fw_name, void *mem_region,
++			   phys_addr_t mem_phys, size_t mem_size,
 +			   phys_addr_t *reloc_base, bool dma_require,
 +			   int pas_id, int pd_asid)
  {
  	const struct elf32_phdr *phdrs;
  	const struct elf32_phdr *phdr;
-@@ -392,6 +453,14 @@ static int __qcom_mdt_load(struct device
+@@ -393,6 +443,14 @@ int qcom_mdt_load_no_init(struct device
  		if (!mdt_phdr_loadable(phdr))
  			continue;
  
@@ -114,7 +133,7 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
  		offset = phdr->p_paddr - mem_reloc;
  		if (offset < 0 || offset + phdr->p_memsz > mem_size) {
  			dev_err(dev, "segment outside memory range\n");
-@@ -409,7 +478,11 @@ static int __qcom_mdt_load(struct device
+@@ -410,7 +468,11 @@ int qcom_mdt_load_no_init(struct device
  
  		ptr = mem_region + offset;
  
@@ -127,7 +146,7 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
  			/* Firmware is large enough to be non-split */
  			if (phdr->p_offset + phdr->p_filesz > fw->size) {
  				dev_err(dev, "file %s segment %d would be truncated\n",
-@@ -426,7 +499,7 @@ static int __qcom_mdt_load(struct device
+@@ -427,7 +489,7 @@ int qcom_mdt_load_no_init(struct device
  				break;
  		}
  
@@ -136,23 +155,37 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
  			memset(ptr + phdr->p_filesz, 0, phdr->p_memsz - phdr->p_filesz);
  	}
  
-@@ -461,7 +534,7 @@ int qcom_mdt_load(struct device *dev, co
- 		return ret;
+@@ -436,6 +498,27 @@ int qcom_mdt_load_no_init(struct device
  
- 	return __qcom_mdt_load(dev, fw, firmware, mem_region, mem_phys,
--			       mem_size, reloc_base);
-+			       mem_size, reloc_base, false, pas_id, 0);
+ 	return ret;
  }
- EXPORT_SYMBOL_GPL(qcom_mdt_load);
- 
-@@ -482,9 +555,37 @@ int qcom_mdt_load_no_init(struct device
- 			  size_t mem_size, phys_addr_t *reloc_base)
- {
- 	return __qcom_mdt_load(dev, fw, firmware, mem_region, mem_phys,
--			       mem_size, reloc_base);
++
++/**
++ * qcom_mdt_load_no_init() - load the firmware which header is loaded as fw
++ * @dev:	device handle to associate resources with
++ * @fw:		firmware object for the mdt file
++ * @fw_name:	name of the firmware, for construction of segment file names
++ * @mem_region:	allocated memory region to load firmware into
++ * @mem_phys:	physical address of allocated memory region
++ * @mem_size:	size of the allocated memory region
++ * @reloc_base:	adjusted physical address after relocation
++ *
++ * Returns 0 on success, negative errno otherwise.
++ */
++int qcom_mdt_load_no_init(struct device *dev, const struct firmware *fw,
++			  const char *fw_name, void *mem_region,
++			  phys_addr_t mem_phys, size_t mem_size,
++			  phys_addr_t *reloc_base)
++{
++	return __qcom_mdt_load(dev, fw, fw_name, mem_region, mem_phys,
 +			       mem_size, reloc_base, false, 0, 0);
- }
++}
  EXPORT_SYMBOL_GPL(qcom_mdt_load_no_init);
+ 
+ /**
+@@ -504,5 +587,33 @@ int qcom_mdt_pas_load(struct qcom_pas_co
+ }
+ EXPORT_SYMBOL_GPL(qcom_mdt_pas_load);
  
 +/**
 + * qcom_mdt_load_pd_seg() - load userpd specific PIL segements
