@@ -1,0 +1,62 @@
+From: Rosen Penev <rosenp@gmail.com>
+Subject: [PATCH] net: ag71xx: avoid MMIO read-back in hot paths
+
+ag71xx_wr() reads every register back after writing it. In the data
+path that adds an uncached bus read for each received frame, each
+completed frame and each transmit kick. Reads from the MAC are not
+reordered ahead of earlier writes, so those writes can be left posted.
+
+TP-Link Archer C7 v2, routed TCP stream without flow offload, median of
+3 runs, Mbit/s:
+
+          before   after
+  up         831     845
+  down       728     738
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+--- a/drivers/net/ethernet/atheros/ag71xx.c
++++ b/drivers/net/ethernet/atheros/ag71xx.c
+@@ -449,6 +449,14 @@ static void ag71xx_wr(struct ag71xx *ag,
+ 	(void)ioread32(ag->mac_base + reg);
+ }
+ 
++/* Posted write for the per-packet data path. Reads from the MAC are not
++ * reordered ahead of earlier writes, so no read-back is needed there.
++ */
++static void ag71xx_wr_posted(struct ag71xx *ag, unsigned int reg, u32 value)
++{
++	iowrite32(value, ag->mac_base + reg);
++}
++
+ static u32 ag71xx_rr(struct ag71xx *ag, unsigned int reg)
+ {
+ 	return ioread32(ag->mac_base + reg);
+@@ -855,7 +863,7 @@ static int ag71xx_tx_packets(struct ag71
+ 		ring->dirty += n;
+ 
+ 		while (n > 0) {
+-			ag71xx_wr(ag, AG71XX_REG_TX_STATUS, TX_STATUS_PS);
++			ag71xx_wr_posted(ag, AG71XX_REG_TX_STATUS, TX_STATUS_PS);
+ 			n--;
+ 		}
+ 	}
+@@ -1845,7 +1853,7 @@ static netdev_tx_t ag71xx_hard_start_xmi
+ 	netif_dbg(ag, tx_queued, ndev, "packet injected into TX queue\n");
+ 
+ 	/* enable TX engine */
+-	ag71xx_wr(ag, AG71XX_REG_TX_CTRL, TX_CTRL_TXE);
++	ag71xx_wr_posted(ag, AG71XX_REG_TX_CTRL, TX_CTRL_TXE);
+ 
+ 	return NETDEV_TX_OK;
+ 
+@@ -1938,7 +1946,7 @@ static int ag71xx_rx_packets(struct ag71
+ 			break;
+ 		}
+ 
+-		ag71xx_wr(ag, AG71XX_REG_RX_STATUS, RX_STATUS_PR);
++		ag71xx_wr_posted(ag, AG71XX_REG_RX_STATUS, RX_STATUS_PR);
+ 
+ 		pktlen = desc->ctrl & pktlen_mask;
+ 		pktlen -= ETH_FCS_LEN;

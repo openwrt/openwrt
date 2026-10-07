@@ -1,0 +1,216 @@
+From: Rosen Penev <rosenp@gmail.com>
+Subject: [PATCH] net: ag71xx: add TX scatter-gather support
+
+Without scatter-gather every GSO segment is copied into a new linear
+buffer. Support frames made of multiple buffers using the MORE bit. The
+hardware needs all buffers but the last one to be a multiple of 4 bytes
+long and none to be shorter than 5 bytes, frames not meeting that are
+linearized.
+
+Scatter-gather needs checksum offload to be advertised. The MAC cannot
+insert checksums, so they are computed in the driver, which costs the
+same as the stack doing it.
+
+TP-Link Archer C7 v2, TCP sent by the router, median of 3 runs: 326 ->
+406 Mbit/s. Forwarding is unchanged.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+--- a/drivers/net/ethernet/atheros/ag71xx.c
++++ b/drivers/net/ethernet/atheros/ag71xx.c
+@@ -1605,7 +1605,8 @@ static int ag71xx_stop(struct net_device
+ 	return 0;
+ }
+ 
+-static int ag71xx_fill_dma_desc(struct ag71xx_ring *ring, u32 addr, int len)
++static int ag71xx_fill_dma_desc(struct ag71xx_ring *ring, unsigned int start,
++				u32 addr, int len, bool more)
+ {
+ 	int i, ring_mask, ndesc, split;
+ 	struct ag71xx_desc *desc;
+@@ -1620,7 +1621,7 @@ static int ag71xx_fill_dma_desc(struct a
+ 	while (len > 0) {
+ 		unsigned int cur_len = len;
+ 
+-		i = (ring->curr + ndesc) & ring_mask;
++		i = (ring->curr + start + ndesc) & ring_mask;
+ 		desc = ag71xx_ring_desc(ring, i);
+ 
+ 		if (!ag71xx_desc_empty(desc))
+@@ -1640,11 +1641,11 @@ static int ag71xx_fill_dma_desc(struct a
+ 		addr += cur_len;
+ 		len -= cur_len;
+ 
+-		if (len > 0)
++		if (len > 0 || more)
+ 			cur_len |= DESC_MORE;
+ 
+ 		/* prevent early tx attempt of this descriptor */
+-		if (!ndesc)
++		if (!start && !ndesc)
+ 			cur_len |= DESC_EMPTY;
+ 
+ 		desc->ctrl = cur_len;
+@@ -1654,13 +1655,42 @@ static int ag71xx_fill_dma_desc(struct a
+ 	return ndesc;
+ }
+ 
++/* All buffers of a multi descriptor frame but the last one must be a multiple
++ * of 4 bytes long, otherwise the transmit DMA stalls. No buffer may be 4 bytes
++ * or shorter either.
++ */
++static bool ag71xx_tx_frags_ok(struct sk_buff *skb)
++{
++	struct skb_shared_info *shinfo = skb_shinfo(skb);
++	unsigned int headlen = skb_headlen(skb);
++	int i;
++
++	if (!shinfo->nr_frags)
++		return true;
++
++	if (headlen & 3 || (headlen && headlen <= 4))
++		return false;
++
++	for (i = 0; i < shinfo->nr_frags; i++) {
++		unsigned int len = skb_frag_size(&shinfo->frags[i]);
++
++		if (len <= 4)
++			return false;
++		if (i < shinfo->nr_frags - 1 && (len & 3))
++			return false;
++	}
++
++	return true;
++}
++
+ static netdev_tx_t ag71xx_hard_start_xmit(struct sk_buff *skb,
+ 					  struct net_device *ndev)
+ {
+-	int i, n, ring_min, ring_mask, ring_size;
++	int i, n, ret, nfrags, ring_min, ring_mask, ring_size;
+ 	struct ag71xx *ag = netdev_priv(ndev);
+ 	struct ag71xx_ring *ring;
+ 	struct ag71xx_desc *desc;
++	unsigned int headlen;
+ 	dma_addr_t dma_addr;
+ 
+ 	ring = &ag->tx_ring;
+@@ -1672,21 +1702,52 @@ static netdev_tx_t ag71xx_hard_start_xmi
+ 		goto err_drop;
+ 	}
+ 
+-	dma_addr = dma_map_single(&ag->pdev->dev, skb->data, skb->len,
+-				  DMA_TO_DEVICE);
+-	if (dma_mapping_error(&ag->pdev->dev, dma_addr)) {
+-		netif_dbg(ag, tx_err, ndev, "DMA mapping error\n");
++	if (!ag71xx_tx_frags_ok(skb) && skb_linearize(skb))
+ 		goto err_drop;
+-	}
+ 
+-	i = ring->curr & ring_mask;
+-	desc = ag71xx_ring_desc(ring, i);
++	if (skb->ip_summed == CHECKSUM_PARTIAL && skb_checksum_help(skb))
++		goto err_drop;
+ 
+-	/* setup descriptor fields */
+-	n = ag71xx_fill_dma_desc(ring, (u32)dma_addr,
+-				 skb->len & ag->dcfg->desc_pktlen_mask);
+-	if (n < 0)
+-		goto err_drop_unmap;
++	nfrags = skb_shinfo(skb)->nr_frags;
++	headlen = skb_headlen(skb);
++	n = 0;
++
++	if (headlen) {
++		dma_addr = dma_map_single(&ag->pdev->dev, skb->data, headlen,
++					  DMA_TO_DEVICE);
++		if (dma_mapping_error(&ag->pdev->dev, dma_addr)) {
++			netif_dbg(ag, tx_err, ndev, "DMA mapping error\n");
++			goto err_drop;
++		}
++
++		/* setup descriptor fields */
++		ret = ag71xx_fill_dma_desc(ring, n, (u32)dma_addr,
++					   headlen & ag->dcfg->desc_pktlen_mask,
++					   nfrags);
++		if (ret < 0)
++			goto err_reset;
++		n += ret;
++	}
++
++	for (i = 0; i < nfrags; i++) {
++		skb_frag_t *frag = &skb_shinfo(skb)->frags[i];
++		unsigned int len = skb_frag_size(frag);
++
++		dma_addr = skb_frag_dma_map(&ag->pdev->dev, frag, 0, len,
++					    DMA_TO_DEVICE);
++		if (dma_mapping_error(&ag->pdev->dev, dma_addr)) {
++			netif_dbg(ag, tx_err, ndev, "DMA mapping error\n");
++			goto err_reset;
++		}
++
++		ret = ag71xx_fill_dma_desc(ring, n, (u32)dma_addr, len,
++					   i < nfrags - 1);
++		if (ret < 0)
++			goto err_reset;
++		n += ret;
++	}
++
++	desc = ag71xx_ring_desc(ring, ring->curr & ring_mask);
+ 
+ 	i = (ring->curr + n - 1) & ring_mask;
+ 	ring->buf[i].tx.len = skb->len;
+@@ -1696,6 +1757,8 @@ static netdev_tx_t ag71xx_hard_start_xmi
+ 
+ 	skb_tx_timestamp(skb);
+ 
++	/* all descriptors must be written before handing over the first one */
++	wmb();
+ 	desc->ctrl &= ~DESC_EMPTY;
+ 	ring->curr += n;
+ 
+@@ -1705,6 +1768,8 @@ static netdev_tx_t ag71xx_hard_start_xmi
+ 	ring_min = 2;
+ 	if (ring->desc_split)
+ 		ring_min *= AG71XX_TX_RING_DS_PER_PKT;
++	else
++		ring_min += MAX_SKB_FRAGS + 1;
+ 
+ 	if (ring->curr - ring->dirty >= ring_size - ring_min) {
+ 		netif_dbg(ag, tx_err, ndev, "tx queue full\n");
+@@ -1718,8 +1783,13 @@ static netdev_tx_t ag71xx_hard_start_xmi
+ 
+ 	return NETDEV_TX_OK;
+ 
+-err_drop_unmap:
+-	dma_unmap_single(&ag->pdev->dev, dma_addr, skb->len, DMA_TO_DEVICE);
++err_reset:
++	/* hand the descriptors written so far back to software, the buffers
++	 * do not need to be unmapped on these non-coherent SoCs
++	 */
++	for (i = 0; i < n; i++)
++		ag71xx_ring_desc(ring, (ring->curr + i) & ring_mask)->ctrl =
++			DESC_EMPTY;
+ 
+ err_drop:
+ 	ndev->stats.tx_dropped++;
+@@ -2166,6 +2236,18 @@ static int ag71xx_probe(struct platform_
+ 		ndev->features |= NETIF_F_RXCSUM;
+ 	}
+ 
++	/* The MAC cannot insert checksums, but advertising it is needed for
++	 * scatter-gather. Software GSO then no longer has to copy every
++	 * segment and the checksum is computed here instead.
++	 */
++	if (!ag->tx_ring.desc_split) {
++		netdev_features_t tx = NETIF_F_SG | NETIF_F_HW_CSUM;
++
++		ndev->hw_features |= tx;
++		ndev->features |= tx;
++		ndev->vlan_features |= tx;
++	}
++
+ 	netif_napi_add(ndev, &ag->napi, ag71xx_poll);
+ 
+ 	ag71xx_wr(ag, AG71XX_REG_MAC_CFG1, 0);
