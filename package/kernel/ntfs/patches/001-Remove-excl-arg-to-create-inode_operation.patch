@@ -1,0 +1,51 @@
+From b35dd3336e884e1a13d10ba48f95092c759914c9 Mon Sep 17 00:00:00 2001
+From: NeilBrown <neil@brown.name>
+Date: Mon, 31 Aug 2026 08:58:17 +0900
+Subject: [PATCH] Remove excl arg to ->create inode_operation
+
+The only time that 'false' is passed as the 'excl' arg to the ->create
+inode_operation is in lookup_open() when ->atomic_open is not provided
+by the parent directory.
+*all* directory inode_operations which do not have ->atomic_open
+completely ignore the 'excl' arg.
+
+Therefore we don't need the 'excl' arg.  Those few ->create operations
+which pay attention to the arg are only ever called with a value of
+'true'.
+
+We remove that arg and change all ->create operations to behave as those
+thhe arg were 'true'.
+
+Signed-off-by: NeilBrown <neil@brown.name>
+Link: https://patch.msgid.link/178290671516.27465.15984496764174914338@noble.neil.brown.name
+Reviewed-by: Jori Koolstra <jkoolstra@xs4all.nl>
+Reviewed-by: Jan Kara <jack@suse.cz>
+Signed-off-by: Christian Brauner (Amutable) <brauner@kernel.org>
+Signed-off-by: Namjae Jeon <linkinjeon@kernel.org>
+---
+ namei.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/namei.c b/namei.c
+index c271706..1b2c3ce 100644
+--- a/namei.c
++++ b/namei.c
+@@ -770,6 +770,10 @@ static struct ntfs_inode *__ntfs_create(struct user_namespace *mnt_userns, struc
+ 	return ERR_PTR(err);
+ }
+ 
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(7, 3, 0)
++static int ntfs_create(struct mnt_idmap *idmap, struct inode *dir,
++		struct dentry *dentry, umode_t mode)
++#else
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
+ static int ntfs_create(struct mnt_idmap *idmap, struct inode *dir,
+ 		struct dentry *dentry, umode_t mode, bool excl)
+@@ -777,6 +781,7 @@ static int ntfs_create(struct mnt_idmap *idmap, struct inode *dir,
+ static int ntfs_create(struct user_namespace *mnt_userns, struct inode *dir,
+ 		struct dentry *dentry, umode_t mode, bool excl)
+ #endif
++#endif
+ {
+ 	struct ntfs_volume *vol = NTFS_SB(dir->i_sb);
+ 	struct ntfs_inode *ni;
