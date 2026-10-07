@@ -29,7 +29,7 @@ $(eval $(call KernelPackage,atm))
 define KernelPackage/atmtcp
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=ATM over TCP
-  DEPENDS:=kmod-atm
+  DEPENDS:=kmod-atm @(LINUX_6_12||LINUX_6_18)
   KCONFIG:=CONFIG_ATM_TCP CONFIG_ATM_DRIVERS=y
   FILES:=$(LINUX_DIR)/drivers/atm/atmtcp.ko
   AUTOLOAD:=$(call AutoLoad,40,atmtcp)
@@ -678,7 +678,7 @@ $(eval $(call KernelPackage,pppol2tp))
 define KernelPackage/ipoa
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=IPoA support
-  DEPENDS:=kmod-atm
+  DEPENDS:=kmod-atm @(LINUX_6_12||LINUX_6_18)
   KCONFIG:=CONFIG_ATM_CLIP
   FILES:=$(LINUX_DIR)/net/atm/clip.ko
   AUTOLOAD:=$(call AutoProbe,clip)
