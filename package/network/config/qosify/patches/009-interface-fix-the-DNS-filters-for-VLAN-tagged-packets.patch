@@ -1,0 +1,60 @@
+From c1d37bdda855827c1e8ad2aebe3eb9e542597819 Mon Sep 17 00:00:00 2001
+From: Nick Hainke <vincent@systemli.org>
+Date: Wed, 7 Oct 2026 16:00:00 +0200
+Subject: [PATCH] interface: fix the DNS filters for VLAN tagged packets
+
+For a packet with a single VLAN tag, the kernel removes the tag from
+the packet data before the ingress filters run, but tc still matches
+the packet with protocol 802.1Q. The filters for VLAN tagged DNS
+replies therefore see the IP header at offset 0, like the filters
+without a tag. 'offset plus 4' doesn't move the matches, it only
+applies to linked filters, which is why the IPv4 filter worked anyway.
+
+The IPv6 filter was added with protocol ipv6 instead of 802.1Q, so it
+only repeated the filter before it, and DNS replies over IPv6 with a
+VLAN tag were never redirected. The IPv4 filter didn't check the IP
+version and took IPv6 packets with 00 35 at that offset of the source
+address for DNS replies, and it took fragments for DNS replies like
+the filter fixed in the previous commit.
+
+Match the IP version in both filters, use protocol 802.1Q for IPv6,
+only take IPv4 packets with a fragment offset of 0, and drop the
+offset which had no effect. Packets with two VLAN tags need separate
+filters for the inner tag, they follow in the next commit.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Nick Hainke <vincent@systemli.org>
+---
+ interface.c | 11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
+
+diff --git a/interface.c b/interface.c
+index 141051a..46048e6 100644
+--- a/interface.c
++++ b/interface.c
+@@ -379,8 +379,14 @@ cmd_add_ingress(struct qosify_iface *iface, bool eth)
+ 			 "flowid 1:1 action mirred egress redirect dev " QOSIFY_DNS_IFNAME);
+ 	qosify_run_cmd(buf, false);
+ 
++	/*
++	 * With a VLAN tag, tc matches the VLAN protocol, but the tag is no
++	 * longer in the packet data, so the offsets are the same as without
++	 * it. The VLAN can carry IPv4 and IPv6, check the IP version.
++	 */
+ 	ofs = prepare_filter_cmd(buf, sizeof(buf), iface->ifname, prio++, true, false);
+-	APPEND(buf, ofs, " protocol 802.1Q u32 offset plus 4 match ip sport 53 0xffff "
++	APPEND(buf, ofs, " protocol 802.1Q u32 match u8 0x40 0xf0 at 0 "
++			 "match ip sport 53 0xffff match u16 0 0x1fff at 6 "
+ 			 "flowid 1:1 action mirred egress redirect dev " QOSIFY_DNS_IFNAME);
+ 	qosify_run_cmd(buf, false);
+ 
+@@ -390,7 +396,8 @@ cmd_add_ingress(struct qosify_iface *iface, bool eth)
+ 	qosify_run_cmd(buf, false);
+ 
+ 	ofs = prepare_filter_cmd(buf, sizeof(buf), iface->ifname, prio++, true, false);
+-	APPEND(buf, ofs, " protocol ipv6 u32 offset plus 4 match ip6 sport 53 0xffff "
++	APPEND(buf, ofs, " protocol 802.1Q u32 match u8 0x60 0xf0 at 0 "
++			 "match ip6 sport 53 0xffff "
+ 			 "flowid 1:1 action mirred egress redirect dev " QOSIFY_DNS_IFNAME);
+ 	qosify_run_cmd(buf, false);
+ 
