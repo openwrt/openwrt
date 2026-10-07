@@ -13,6 +13,7 @@
 struct fib6_info;
 
 #define MAX_SMACS 64
+#define MAX_ROUTER_MACS 64
 #define MAX_HOST_ROUTES		1536
 #define MAX_ROUTES		512
 
@@ -131,14 +132,17 @@ struct otto_l3_ctrl {
 	struct rtl838x_switch_priv *priv;
 	struct notifier_block fib_nb;
 	struct notifier_block ne_nb;
+	struct notifier_block nd_nb;
 	struct delayed_work resync_work;
 	unsigned int resync_delay;
 	bool resync_wanted;
 	struct list_head routes_list;
+	struct list_head rmac_devs;	/* devices router MACs follow */
 	unsigned long route_use_bm[MAX_ROUTES / 32];
 	unsigned long host_route_use_bm[MAX_HOST_ROUTES / 32];
 	struct otto_l3_intf interfaces[MAX_SMACS];
 	unsigned int intf_refs[MAX_SMACS];	/* routes holding each */
+	DECLARE_BITMAP(router_mac_bm, MAX_ROUTER_MACS);	/* entries written here */
 	bool prefix_rows_stale;	/* a move failed, the rows are not where we say */
 	bool v4_fwd_off;	/* policy rules keep IPv4 forwarding in software */
 	bool v6_fwd_off;	/* policy rules keep IPv6 forwarding in software */

@@ -111,7 +111,6 @@
 #define RTL930X_L3_IP_ROUTE_CTRL		0xab44
 
 #define DEFAULT_MTU 1536
-#define MAX_ROUTER_MACS 64
 #define L3_EGRESS_DMACS 2048
 
 struct otto_l3_net_event_work {
@@ -457,7 +456,7 @@ static void otto_l3_930x_set_router_mac(struct otto_l3_ctrl *ctrl,
 	u32 data[7];
 	u32 v, w;
 
-	v = BIT(20); /* mac entry valid, port type is 0: individual */
+	v = m->valid ? BIT(20) : 0; /* port type is 0: individual */
 	v |= (m->p_id & 0x3f) << 13;
 	v |= (m->vid & 0xfff); /* Set the interface_id to the vlan id */
 
@@ -860,10 +859,186 @@ static int otto_l3_alloc_router_mac(struct otto_l3_ctrl *ctrl, u64 mac)
 	m.mac_mask = 0xffffffffffffULL;	/* We want an exact match of the interface MAC */
 	m.action = ROUTE_ACT_FORWARD;	/* Route the packet */
 	ctrl->cfg->set_router_mac(ctrl, free_mac, &m);
+	set_bit(free_mac, ctrl->router_mac_bm);
 
 	mutex_unlock(ctrl->lock);
 
 	return 0;
+}
+
+/* A device a router MAC follows, see otto_l3_router_mac_sync() */
+struct otto_l3_rmac_dev {
+	struct list_head list;
+	int ifindex;
+};
+
+/* A port of a bridge, bond or team receives for its master, not on a MAC of
+ * its own. Its master link changes before NETDEV_CHANGEUPPER, its port flags
+ * only around that event.
+ */
+static bool otto_l3_router_mac_receiver(struct net_device *dev)
+{
+	struct net_device *master = netdev_master_upper_dev_get(dev);
+
+	return dev->addr_len == ETH_ALEN &&
+	       !(master && (netif_is_bridge_master(master) || netif_is_lag_master(master)));
+}
+
+static bool otto_l3_router_mac_tracked(struct otto_l3_ctrl *ctrl, int ifindex)
+{
+	struct otto_l3_rmac_dev *d;
+
+	list_for_each_entry(d, &ctrl->rmac_devs, list)
+		if (d->ifindex == ifindex)
+			return true;
+
+	return false;
+}
+
+/* Remembers every device that has this MAC, whether a route went out of it or
+ * it only receives on the entry, so that the entry follows each of them
+ */
+static int otto_l3_router_mac_track(struct otto_l3_ctrl *ctrl, u64 mac)
+{
+	struct otto_l3_rmac_dev *d;
+	struct net_device *dev;
+
+	for_each_netdev(&init_net, dev) {
+		if (!otto_l3_router_mac_receiver(dev) || ether_addr_to_u64(dev->dev_addr) != mac ||
+		    otto_l3_router_mac_tracked(ctrl, dev->ifindex))
+			continue;
+
+		d = kzalloc(sizeof(*d), GFP_KERNEL);
+		if (!d) {
+			dev_err(ctrl->dev, "cannot remember %s for router MAC %pM\n",
+				dev->name, dev->dev_addr);
+			return -ENOMEM;
+		}
+
+		d->ifindex = dev->ifindex;
+		list_add_tail(&d->list, &ctrl->rmac_devs);
+	}
+
+	return 0;
+}
+
+/* Called under RTNL, from the FIB work */
+static int otto_l3_router_mac_get(struct otto_l3_ctrl *ctrl, struct net_device *ndev)
+{
+	u64 mac = ether_addr_to_u64(ndev->dev_addr);
+
+	if (otto_l3_alloc_router_mac(ctrl, mac))
+		return -ENOSPC;
+
+	return otto_l3_router_mac_track(ctrl, mac);
+}
+
+/* A router MAC is what makes the switch route what arrives on that MAC, so it
+ * follows the devices that have the MAC rather than the routes out of them.
+ * Every device found with the MAC of an entry this driver wrote, the one a
+ * route gave it to or any other receiving on it, is remembered: as long as it
+ * exists, its current MAC keeps an entry, whatever routes or ports it has
+ * left, and an entry none of them has the MAC of is written back invalid.
+ * Called under RTNL, as the FIB work that gives them is.
+ */
+static void otto_l3_router_mac_sync(struct otto_l3_ctrl *ctrl, bool may_free)
+{
+	struct otto_l3_rmac_dev *d, *tmp;
+	bool have[MAX_ROUTER_MACS] = {};
+	u64 macs[MAX_ROUTER_MACS];
+	struct otto_l3_router_mac m;
+	struct net_device *dev;
+	int n = 0, i, k;
+	u64 mac;
+
+	/* Remember whatever has the MAC of an entry now. One that could not be
+	 * remembered may still receive on it, so nothing is freed then.
+	 */
+	mutex_lock(ctrl->lock);
+	for_each_set_bit(i, ctrl->router_mac_bm, MAX_ROUTER_MACS) {
+		ctrl->cfg->get_router_mac(ctrl, i, &m);
+		if (m.valid && otto_l3_router_mac_track(ctrl, m.mac)) {
+			mutex_unlock(ctrl->lock);
+			return;
+		}
+	}
+	mutex_unlock(ctrl->lock);
+
+	list_for_each_entry_safe(d, tmp, &ctrl->rmac_devs, list) {
+		dev = __dev_get_by_index(&init_net, d->ifindex);
+		if (!dev) {
+			list_del(&d->list);
+			kfree(d);
+			continue;
+		}
+
+		/* A bridge with no port left may have no MAC: it gets one back
+		 * with its first port, and the entry with it
+		 */
+		if (!is_valid_ether_addr(dev->dev_addr) || !otto_l3_router_mac_receiver(dev))
+			continue;
+
+		mac = ether_addr_to_u64(dev->dev_addr);
+		for (k = 0; k < n && macs[k] != mac; k++)
+			;
+		if (k < n)
+			continue;
+
+		if (n == MAX_ROUTER_MACS) {
+			dev_warn_once(ctrl->dev, "more MACs in use than router MACs, table left as is\n");
+			return;
+		}
+		macs[n++] = mac;
+	}
+
+	mutex_lock(ctrl->lock);
+	for_each_set_bit(i, ctrl->router_mac_bm, MAX_ROUTER_MACS) {
+		ctrl->cfg->get_router_mac(ctrl, i, &m);
+		for (k = 0; m.valid && k < n && macs[k] != m.mac; k++)
+			;
+		if (m.valid && k < n) {
+			have[k] = true;
+			continue;
+		}
+		if (!may_free)
+			continue;
+
+		dev_dbg(ctrl->dev, "freeing router MAC %d\n", i);
+		memset(&m, 0, sizeof(m));
+		ctrl->cfg->set_router_mac(ctrl, i, &m);
+		clear_bit(i, ctrl->router_mac_bm);
+	}
+	mutex_unlock(ctrl->lock);
+
+	/* A device that changed its MAC gets an entry for the new one */
+	for (k = 0; k < n; k++)
+		if (!have[k])
+			otto_l3_alloc_router_mac(ctrl, macs[k]);
+}
+
+static int otto_l3_netdev_notifier(struct notifier_block *nb, unsigned long event, void *ptr)
+{
+	struct otto_l3_ctrl *ctrl = container_of(nb, struct otto_l3_ctrl, nd_nb);
+
+	if (!net_eq(dev_net(netdev_notifier_info_to_dev(ptr)), &init_net))
+		return NOTIFY_DONE;
+
+	switch (event) {
+	case NETDEV_CHANGEUPPER:
+		/* A port joins or leaves its master. One joining a bridge stops
+		 * counting before the bridge, which may take its MAC, sends its
+		 * NETDEV_CHANGEADDR: free nothing here.
+		 */
+		otto_l3_router_mac_sync(ctrl, false);
+		break;
+	case NETDEV_REGISTER:	/* it may come with the MAC of an entry */
+	case NETDEV_CHANGEADDR:
+	case NETDEV_UNREGISTER:
+		otto_l3_router_mac_sync(ctrl, true);
+		break;
+	}
+
+	return NOTIFY_DONE;
 }
 
 /* Read back an egress interface descriptor, the layout written below. */
@@ -2029,7 +2204,7 @@ static int otto_l3_fib_add_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 		u64 mac = ether_addr_to_u64(ndev->dev_addr);
 
 		dev_dbg(ctrl->dev, "Local route and router MAC %pM\n", ndev->dev_addr);
-		if (otto_l3_alloc_router_mac(ctrl, mac))
+		if (otto_l3_router_mac_get(ctrl, ndev))
 			goto out_free_rt;
 
 		/* vid = 0: Do not care about VID */
@@ -2488,7 +2663,7 @@ static int otto_l3_fib_add_v6(struct otto_l3_ctrl *ctrl, struct fib6_entry_notif
 	if (ctrl->cfg->set_router_mac) {
 		u64 mac = ether_addr_to_u64(ndev->dev_addr);
 
-		if (otto_l3_alloc_router_mac(ctrl, mac))
+		if (otto_l3_router_mac_get(ctrl, ndev))
 			goto out_failed;
 
 		route->nh.if_id = otto_l3_alloc_egress_intf(ctrl, mac, vlan);
@@ -3567,11 +3742,16 @@ static const struct of_device_id otto_l3_of_ids[] = {
 void otto_l3_remove(struct rtl838x_switch_priv *priv)
 {
 	struct otto_l3_ctrl *ctrl = priv->l3_ctrl;
+	struct otto_l3_rmac_dev *d, *dtmp;
 	struct otto_l3_route *r, *tmp;
 
 	/* A replay would register the FIB notifier again */
 	disable_delayed_work_sync(&ctrl->resync_work);
 
+	if (ctrl->nd_nb.notifier_call) {
+		unregister_netdevice_notifier(&ctrl->nd_nb);
+		ctrl->nd_nb.notifier_call = NULL;
+	}
 	if (ctrl->ne_nb.notifier_call) {
 		unregister_netevent_notifier(&ctrl->ne_nb);
 		ctrl->ne_nb.notifier_call = NULL;
@@ -3594,6 +3774,10 @@ void otto_l3_remove(struct rtl838x_switch_priv *priv)
 	rtnl_lock();
 	list_for_each_entry_safe(r, tmp, &ctrl->routes_list, list)
 		otto_l3_route_free(ctrl, r);
+	list_for_each_entry_safe(d, dtmp, &ctrl->rmac_devs, list) {
+		list_del(&d->list);
+		kfree(d);
+	}
 	rtnl_unlock();
 }
 
@@ -3699,6 +3883,7 @@ int otto_l3_probe(struct device *dev, struct rtl838x_switch_priv *priv)
 	}
 
 	INIT_LIST_HEAD(&ctrl->routes_list);
+	INIT_LIST_HEAD(&ctrl->rmac_devs);
 
 	/* Before the notifiers, so no destination is dropped in the window
 	 * where the tables are live and the routes have not arrived yet.
@@ -3719,6 +3904,16 @@ int otto_l3_probe(struct device *dev, struct rtl838x_switch_priv *priv)
 		ctrl->ne_nb.notifier_call = NULL;
 		otto_l3_remove(priv);
 		return dev_err_probe(dev, err, "Failed to register netevent notifier\n");
+	}
+
+	if (ctrl->cfg->set_router_mac) {
+		ctrl->nd_nb.notifier_call = otto_l3_netdev_notifier;
+		err = register_netdevice_notifier(&ctrl->nd_nb);
+		if (err) {
+			ctrl->nd_nb.notifier_call = NULL;
+			otto_l3_remove(priv);
+			return dev_err_probe(dev, err, "Failed to register netdevice notifier\n");
+		}
 	}
 
 	/*
