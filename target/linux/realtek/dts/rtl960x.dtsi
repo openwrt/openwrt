@@ -278,6 +278,43 @@
 		};
 	};
 
+	usb2_phy: usb-phy@18140200 {
+		compatible = "realtek,rtl9607-usb2phy";
+		reg = <0x18140200 0x10>, <0x180210a4 0x4>;
+		#phy-cells = <0>;
+
+		resets = <&ip_en_rst 31>;
+		reset-names = "p1-usb2phy";
+	};
+
+	ochi: ohci@18020000 {
+		compatible = "generic-ohci";
+		reg = <0x18020000 0x200>;
+
+		phys = <&usb2_phy>;
+		phy-names = "usb2-phy";
+
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SHARED 51 IRQ_TYPE_LEVEL_HIGH>;
+
+		resets = <&ip_en_rst 3>;
+		reset-names = "p1-host";
+	};
+
+	ehci: ehci@18021000 {
+		compatible = "generic-ehci";
+		reg = <0x18021000 0x200>;
+
+		phys = <&usb2_phy>;
+		phy-names = "usb2-phy";
+
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SHARED 51 IRQ_TYPE_LEVEL_HIGH>;
+
+		resets = <&ip_en_rst 3>;
+		reset-names = "p1-host";
+	};
+
 	i2cclock: i2cclock {
 		#clock-cells = <0>;
 		compatible = "fixed-clock";
