@@ -112,7 +112,7 @@ start_instance()
 	local cfg="$1"
 	local realm="$(uci_get system.@system[0].hostname)"
 	local listen http https interpreter indexes path handler httpdconf haveauth
-	local enabled
+	local enabled mdnsport
 
 	config_get_bool enabled "$cfg" 'enabled' 1
 	[ $enabled -gt 0 ] || return
@@ -180,6 +180,12 @@ start_instance()
 	for listen in $http; do
 		 procd_append_param command -p "$listen"
 	done
+	
+	config_get_bool mdns "$cfg" mdns 1
+	if [ "$mdns" -ne 0 ]; then
+		mdnsport="${http##*:}"
+		[ -n "$mdnsport" ] && procd_add_mdns "http" "tcp" "$mdnsport" "daemon=uhttpd"
+	fi
 
 	config_get interpreter "$cfg" interpreter
 	for path in $interpreter; do
