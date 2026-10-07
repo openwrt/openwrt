@@ -1,0 +1,32 @@
+--- a/drivers/pinctrl/pinctrl-single.c
++++ b/drivers/pinctrl/pinctrl-single.c
+@@ -242,12 +242,12 @@ static unsigned int pcs_readb(void __iom
+ 
+ static unsigned int pcs_readw(void __iomem *reg)
+ {
+-	return readw(reg);
++	return __raw_readw(reg);
+ }
+ 
+ static unsigned int pcs_readl(void __iomem *reg)
+ {
+-	return readl(reg);
++	return __raw_readl(reg);
+ }
+ 
+ static void pcs_writeb(unsigned int val, void __iomem *reg)
+@@ -257,12 +257,12 @@ static void pcs_writeb(unsigned int val,
+ 
+ static void pcs_writew(unsigned int val, void __iomem *reg)
+ {
+-	writew(val, reg);
++	__raw_writew(val, reg);
+ }
+ 
+ static void pcs_writel(unsigned int val, void __iomem *reg)
+ {
+-	writel(val, reg);
++	__raw_writel(val, reg);
+ }
+ 
+ static unsigned int pcs_pin_reg_offset_get(struct pcs_device *pcs,
