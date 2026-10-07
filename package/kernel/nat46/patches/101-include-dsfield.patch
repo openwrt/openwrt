@@ -1,0 +1,17 @@
+From: John Audia <therealgraysky@proton.me>
+Subject: [PATCH] nat46: include net/dsfield.h
+
+Linux 7.3 no longer pulls it in through the existing includes.
+
+Signed-off-by: John Audia <therealgraysky@proton.me>
+---
+--- a/nat46/modules/nat46-core.c
++++ b/nat46/modules/nat46-core.c
+@@ -23,6 +23,7 @@
+ #else
+ #include <net/ipv6_frag.h>
+ #endif
++#include <net/dsfield.h>
+ #if IS_ENABLED(CONFIG_NF_CONNTRACK)
+ #include <net/netfilter/nf_conntrack.h>
+ #endif
