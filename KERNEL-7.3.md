@@ -95,10 +95,10 @@ Found with CONFIG_ALL_KMODS=y on 7.3-rc6 (x86/64, glibc, gcc 15.3).
 
 In-tree, fix on this branch:
 
-- [ ] package/kernel/mac80211
-- [ ] package/kernel/nat46
-- [ ] package/kernel/ntfs
-- [ ] package/kernel/r8101
+- [x] package/kernel/mac80211
+- [x] package/kernel/nat46
+- [x] package/kernel/ntfs
+- [x] package/kernel/r8101
 
 packages feed (fix upstream in the feed, not here):
 
