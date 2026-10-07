@@ -1,0 +1,31 @@
+--- a/drivers/nvmem/Kconfig
++++ b/drivers/nvmem/Kconfig
+@@ -314,6 +314,17 @@ config NVMEM_RCAR_EFUSE
+ 	  This driver can also be built as a module. If so, the module
+ 	  will be called nvmem-rcar-efuse.
+ 
++config NVMEM_RTL960X_OTP
++	tristate "Realtek RTL960x SoCs OTP support"
++	depends on (MACH_REALTEK_RTL && RTL960X) || COMPILE_TEST
++	select MFD_SYSCON
++	help
++	  Enable support for reading the data in the EFUSE or OTP
++	  non-volatile memory block on Realtek RTL960x SoCs.
++
++	  This driver can also be built as a module. If so, the module
++	  will be called nvmem-rtl960x-otp.
++
+ config NVMEM_RMEM
+ 	tristate "Reserved Memory Based Driver Support"
+ 	depends on HAS_IOMEM
+--- a/drivers/nvmem/Makefile
++++ b/drivers/nvmem/Makefile
+@@ -62,6 +62,8 @@ obj-$(CONFIG_NVMEM_RAVE_SP_EEPROM)	+= nv
+ nvmem-rave-sp-eeprom-y			:= rave-sp-eeprom.o
+ obj-$(CONFIG_NVMEM_RCAR_EFUSE)		+= nvmem-rcar-efuse.o
+ nvmem-rcar-efuse-y			:= rcar-efuse.o
++obj-$(CONFIG_NVMEM_RTL960X_OTP)	+= nvmem-rtl960x-otp.o
++nvmem-rtl960x-otp-y			:= rtl960x-otp.o
+ obj-$(CONFIG_NVMEM_RMEM) 		+= nvmem-rmem.o
+ nvmem-rmem-y				:= rmem.o
+ obj-$(CONFIG_NVMEM_ROCKCHIP_EFUSE)	+= nvmem_rockchip_efuse.o
