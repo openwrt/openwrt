@@ -19,7 +19,6 @@
 #include <linux/property.h>
 #include <linux/regmap.h>
 #include <linux/reset.h>
-#include <linux/version.h>
 #include <net/netdev_queues.h>
 
 #include "qca_edma.h"
@@ -1036,7 +1035,7 @@ static void edma_configure_txdesc_ring(struct edma_priv *priv,
 	u32 val;
 
 	regmap_write(priv->regmap, EDMA_REG_TXDESC_BA(soc->txdesc_ring),
-		    (u32)txdesc_ring->dma);
+		     (u32)txdesc_ring->dma);
 
 	regmap_write(priv->regmap,
 		     EDMA_REG_TXDESC_RING_SIZE(soc->txdesc_ring),
@@ -1239,14 +1238,6 @@ static int edma_hw_init(struct edma_priv *priv)
 	return 0;
 }
 
-static void edma_get_drvinfo(struct net_device *netdev,
-			     struct ethtool_drvinfo *info)
-{
-	strscpy(info->driver, "qca-edma", sizeof(info->driver));
-	strscpy(info->bus_info, dev_name(netdev->dev.parent),
-		sizeof(info->bus_info));
-}
-
 static void edma_get_ringparam(struct net_device *netdev,
 			       struct ethtool_ringparam *ring,
 			       struct kernel_ethtool_ringparam *kernel_ring,
@@ -1370,7 +1361,6 @@ static const struct ethtool_ops edma_ethtool_ops = {
 	.get_sset_count = edma_get_sset_count,
 	.get_strings = edma_get_strings,
 	.get_ethtool_stats = edma_get_ethtool_stats,
-	.get_drvinfo = edma_get_drvinfo,
 	.get_link = ethtool_op_get_link,
 	.get_ringparam = edma_get_ringparam,
 	.get_regs_len = edma_get_regs_len,
@@ -1429,7 +1419,7 @@ static netdev_tx_t edma_ndo_xmit(struct sk_buff *skb, struct net_device *netdev)
 {
 	struct edma_priv *priv = netdev_priv(netdev);
 	const struct edma_soc_data *soc = priv->soc;
-	u32 nhead, ntail;
+	u32 nhead;
 
 	if (skb->len < ETH_HLEN)
 		goto drop;
@@ -1442,17 +1432,15 @@ static netdev_tx_t edma_ndo_xmit(struct sk_buff *skb, struct net_device *netdev)
 	 * later head reallocation copies: the pad would be reallocated
 	 * uninitialised and transmitted.
 	 */
-	if (soc->tx_min_size && skb_put_padto(skb, soc->tx_min_size)) {
+	if (skb_put_padto(skb, soc->tx_min_size)) {
 		netdev->stats.tx_dropped++;
 		return NETDEV_TX_OK;
 	}
 
 	nhead = netdev->needed_headroom;
-	ntail = netdev->needed_tailroom;
 
-	if ((skb_cloned(skb) || skb_headroom(skb) < nhead ||
-	     skb_tailroom(skb) < ntail) &&
-	    pskb_expand_head(skb, nhead, ntail, GFP_ATOMIC))
+	if ((skb_cloned(skb) || skb_headroom(skb) < nhead) &&
+	    pskb_expand_head(skb, nhead, 0, GFP_ATOMIC))
 		goto drop;
 
 	return edma_ring_xmit(priv, netdev, skb, &priv->txdesc_ring);
@@ -1727,11 +1715,10 @@ static int edma_probe(struct platform_device *pdev)
 	netdev->hw_features = NETIF_F_RXCSUM | NETIF_F_IP_CSUM |
 			      NETIF_F_IPV6_CSUM | NETIF_F_SG | NETIF_F_TSO |
 			      NETIF_F_TSO6 | NETIF_F_RXHASH;
-	netdev->features = NETIF_F_GRO | netdev->hw_features;
+	netdev->features = netdev->hw_features;
 	/* A DSA user port takes its features from the conduit's vlan_features. */
 	netdev->vlan_features = netdev->hw_features;
 	netdev->pcpu_stat_type = NETDEV_PCPU_STAT_TSTATS;
-	netdev->watchdog_timeo = 5 * HZ;
 	netdev->max_mtu = EDMA_MAX_MTU;
 	netdev->needed_headroom = EDMA_TX_PREHDR_SIZE;
 	netdev->ethtool_ops = &edma_ethtool_ops;
@@ -1751,11 +1738,7 @@ static int edma_probe(struct platform_device *pdev)
 		goto err_irq;
 	}
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 18, 0)
 	ret = dev_set_threaded(netdev, NETDEV_NAPI_THREADED_ENABLED);
-#else
-	ret = dev_set_threaded(netdev, true);
-#endif
 	if (ret)
 		dev_warn(dev, "failed to enable threaded NAPI: %d\n", ret);
 

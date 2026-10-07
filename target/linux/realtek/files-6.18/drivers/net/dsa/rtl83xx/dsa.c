@@ -1055,7 +1055,7 @@ static int rtldsa_port_fdb_dump(struct dsa_switch *ds, int port,
 			continue;
 
 		if (e.port == port || e.port == RTL930X_PORT_IGNORE)
-			cb(e.mac, e.vid, e.is_static, data);
+			cb(e.mac, e.rvid, e.is_static, data);
 
 		if (!((i + 1) % 64))
 			cond_resched();
@@ -1070,7 +1070,7 @@ static int rtldsa_port_fdb_dump(struct dsa_switch *ds, int port,
 			continue;
 
 		if (e.port == port)
-			cb(e.mac, e.vid, e.is_static, data);
+			cb(e.mac, e.rvid, e.is_static, data);
 	}
 
 	mutex_unlock(&priv->reg_mutex);
