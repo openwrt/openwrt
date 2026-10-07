@@ -9,7 +9,17 @@ Subject: [PATCH] cfg80211: add support for changing the device mac address via
 
 --- a/net/wireless/sysfs.c
 +++ b/net/wireless/sysfs.c
-@@ -24,18 +24,35 @@ static inline struct cfg80211_registered
+@@ -9,6 +9,9 @@
+  */
+ 
+ #include <linux/device.h>
++#if __has_include(<linux/hex.h>)
++#include <linux/hex.h>
++#endif
+ #include <linux/module.h>
+ #include <linux/netdevice.h>
+ #include <linux/nl80211.h>
+@@ -24,18 +27,35 @@ static inline struct cfg80211_registered
  	return container_of(dev, struct cfg80211_registered_device, wiphy.dev);
  }
  
