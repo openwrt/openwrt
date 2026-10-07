@@ -647,6 +647,9 @@ enum ppe_devlink_resource_id {
 	PPE_RESOURCE_FDB,
 	PPE_RESOURCE_VSI,
 	PPE_RESOURCE_VLAN_XLT,
+	PPE_RESOURCE_FLOW,
+	PPE_RESOURCE_PPPOE,
+	PPE_RESOURCE_ACL_METER,
 };
 
 static u64 ppe_devlink_fdb_occ(void *p)
@@ -693,6 +696,36 @@ static u64 ppe_devlink_acl_occ(void *p)
 		free += hweight8(priv->acl_free[i]);
 
 	return PPE_ACL_LISTS * PPE_ACL_LIST_ENTRIES - free;
+}
+
+static u64 ppe_devlink_flow_occ(void *p)
+{
+	struct qca_ppe_priv *priv = p;
+
+	return atomic_read(&priv->flow_table.nelems);
+}
+
+static u64 ppe_devlink_pppoe_occ(void *p)
+{
+	struct qca_ppe_priv *priv = p;
+	u64 n = 0;
+	int i;
+
+	guard(mutex)(&priv->flow_lock);
+
+	for (i = 0; i < PPE_PPPOE_SESSIONS; i++)
+		n += !!priv->pppoe[i].ref;
+
+	return n;
+}
+
+static u64 ppe_devlink_acl_meter_occ(void *p)
+{
+	struct qca_ppe_priv *priv = p;
+
+	guard(mutex)(&priv->acl_lock);
+
+	return bitmap_weight(priv->acl_meter_used, PPE_ACL_METER_ENTRIES);
 }
 
 static int ppe_devlink_resource(struct dsa_switch *ds, const char *name,
@@ -1179,6 +1212,20 @@ static int ppe_devlink_setup(struct dsa_switch *ds)
 		ret = ppe_devlink_resource(ds, "vlan_xlt", PPE_XLT_TBL_NUM,
 					   PPE_RESOURCE_VLAN_XLT,
 					   ppe_devlink_xlt_occ);
+	if (!ret)
+		ret = ppe_devlink_resource(ds, "flow",
+					   priv->data->num_flow_entries,
+					   PPE_RESOURCE_FLOW,
+					   ppe_devlink_flow_occ);
+	if (!ret)
+		ret = ppe_devlink_resource(ds, "pppoe", PPE_PPPOE_SESSIONS,
+					   PPE_RESOURCE_PPPOE,
+					   ppe_devlink_pppoe_occ);
+	if (!ret)
+		ret = ppe_devlink_resource(ds, "acl_meter",
+					   PPE_ACL_METER_ENTRIES,
+					   PPE_RESOURCE_ACL_METER,
+					   ppe_devlink_acl_meter_occ);
 	if (!ret)
 		ret = qca_ppe_devlink_sb_setup(ds);
 	if (ret) {
