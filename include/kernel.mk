@@ -199,10 +199,11 @@ define KernelPackage/depends
   endef
 endef
 
-# apk wants any _rcN suffix after all numeric parts and before ~hash
+# apk wants any _rcN suffix after all numeric parts and before ~hash. The
+# extra .0 keeps rc package versions below the final release.
 kmod_linux_base = $(firstword $(subst -rc, ,$(LINUX_VERSION)))
 kmod_linux_rc = $(if $(findstring -rc,$(LINUX_VERSION)),_rc$(lastword $(subst -rc, ,$(LINUX_VERSION))))
-kmod_version = $(kmod_linux_base)$(if $(1),.$(firstword $(subst ~, ,$(1))))$(kmod_linux_rc)$(if $(findstring ~,$(1)),~$(lastword $(subst ~, ,$(1))))
+kmod_version = $(kmod_linux_base)$(if $(1),$(if $(kmod_linux_rc),.0).$(firstword $(subst ~, ,$(1))))$(kmod_linux_rc)$(if $(findstring ~,$(1)),~$(lastword $(subst ~, ,$(1))))
 
 define KernelPackage
   NAME:=$(1)
