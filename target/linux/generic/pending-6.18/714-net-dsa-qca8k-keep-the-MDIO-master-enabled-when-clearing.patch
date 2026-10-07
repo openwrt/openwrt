@@ -1,0 +1,84 @@
+From: Rosen Penev <rosenp@gmail.com>
+Subject: [PATCH] net: dsa: qca8k: keep the MDIO master enabled when clearing a
+ command
+
+After each internal PHY access through management frames,
+qca8k_phy_eth_command() writes 0 to MDIO_MASTER_CTRL, which also clears
+MDIO_MASTER_EN. On QCA8327, this makes the internal PHYs stop responding
+after anything from a few seconds to a few minutes, with or without
+traffic. All their registers then read back as 0, through management
+frames as well as through MDIO, until the switch is reset. phylib sees
+no link and the ports go down for good.
+
+Clearing MDIO_MASTER_EN through the MDIO bus after an access, as
+qca8k_mdio_read() and qca8k_mdio_write() do, does not cause this, and
+neither do accesses to other registers through management frames.
+Keep MDIO_MASTER_EN set in the clear command. Disable the MDIO master
+when the switch is removed or shut down, so that the PHYs are reachable
+through the external MDC again.
+
+Tested on a TP-Link Archer C7 v2 (QCA8327) with port 0 connected over
+SGMII as CPU port. Without this change, the ports died within 1 to 10
+minutes in each of 5 runs, also with "net: dsa: qca8k: fail mgmt
+Ethernet MDIO access on busy wait errors" applied. With it, they
+survived 90 minutes of bidirectional traffic, with the internal PHYs
+accessed through management frames.
+
+Fixes: 2cd548566384 ("net: dsa: qca8k: add support for phy read/write with mgmt Ethernet")
+Assisted-by: opencode:big-pickle
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+--- a/drivers/net/dsa/qca/qca8k-8xxx.c
++++ b/drivers/net/dsa/qca/qca8k-8xxx.c
+@@ -630,7 +630,7 @@ qca8k_phy_eth_command(struct qca8k_priv
+ {
+ 	struct sk_buff *write_skb, *clear_skb, *read_skb;
+ 	struct qca8k_mgmt_eth_data *mgmt_eth_data;
+-	u32 write_val, clear_val = 0, val;
++	u32 write_val, clear_val = QCA8K_MDIO_MASTER_EN, val;
+ 	struct net_device *mgmt_conduit;
+ 	int ret, ret1;
+ 	bool ack;
+@@ -684,7 +684,7 @@ qca8k_phy_eth_command(struct qca8k_priv
+ 	 * 1. Send mdio master packet
+ 	 * 2. Busy Wait for mdio master command
+ 	 * 3. Get the data if we are reading
+-	 * 4. Reset the mdio master (even with error)
++	 * 4. Clear the command bits while keeping the mdio master selected
+ 	 */
+ 	mutex_lock(&mgmt_eth_data->mutex);
+ 
+@@ -2239,6 +2239,16 @@ qca8k_sw_probe(struct mdio_device *mdiod
+ 	return dsa_register_switch(priv->ds);
+ }
+ 
++static void qca8k_mdio_master_disable(struct qca8k_priv *priv)
++{
++	int ret;
++
++	ret = regmap_clear_bits(priv->regmap, QCA8K_MDIO_MASTER_CTRL,
++				QCA8K_MDIO_MASTER_EN);
++	if (ret)
++		dev_warn(priv->dev, "failed to disable mdio master: %d\n", ret);
++}
++
+ static void
+ qca8k_sw_remove(struct mdio_device *mdiodev)
+ {
+@@ -2252,6 +2262,7 @@ qca8k_sw_remove(struct mdio_device *mdio
+ 		qca8k_port_set_status(priv, i, 0);
+ 
+ 	dsa_unregister_switch(priv->ds);
++	qca8k_mdio_master_disable(priv);
+ }
+ 
+ static void qca8k_sw_shutdown(struct mdio_device *mdiodev)
+@@ -2262,6 +2273,7 @@ static void qca8k_sw_shutdown(struct mdi
+ 		return;
+ 
+ 	dsa_switch_shutdown(priv->ds);
++	qca8k_mdio_master_disable(priv);
+ 
+ 	dev_set_drvdata(&mdiodev->dev, NULL);
+ }
