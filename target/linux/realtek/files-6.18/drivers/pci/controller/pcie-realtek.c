@@ -54,7 +54,7 @@ static void __iomem *rtpcie_map_bus(struct pci_bus *bus, unsigned int devfn, int
 	if (bus->number != pcie->bus_number)
 		return NULL;
 
-	writel(PCI_FUNC(devfn), pcie->hostext_base);
+	__raw_writel(PCI_FUNC(devfn), pcie->hostext_base);
 
 	switch (PCI_SLOT(devfn)) {
 	case 0:
@@ -66,10 +66,47 @@ static void __iomem *rtpcie_map_bus(struct pci_bus *bus, unsigned int devfn, int
 	}
 }
 
+static int rtpcie_config_read(struct pci_bus *bus, unsigned int devfn,
+		       int where, int size, u32 *val)
+{
+	void __iomem *addr;
+
+	addr = rtpcie_map_bus(bus, devfn, where);
+	if (!addr)
+		return PCIBIOS_DEVICE_NOT_FOUND;
+
+	if (size == 1)
+		*val = readb(addr);
+	else if (size == 2)
+		*val = __raw_readw(addr);
+	else
+		*val = __raw_readl(addr);
+
+	return PCIBIOS_SUCCESSFUL;
+}
+
+static int rtpcie_config_write(struct pci_bus *bus, unsigned int devfn,
+			int where, int size, u32 val)
+{
+	void __iomem *addr;
+
+	addr = rtpcie_map_bus(bus, devfn, where);
+	if (!addr)
+		return PCIBIOS_DEVICE_NOT_FOUND;
+
+	if (size == 1)
+		writeb(val, addr);
+	else if (size == 2)
+		__raw_writew(val, addr);
+	else
+		__raw_writel(val, addr);
+
+	return PCIBIOS_SUCCESSFUL;
+}
+
 static struct pci_ops rtpcie_ops = {
-	.map_bus = rtpcie_map_bus,
-	.read = pci_generic_config_read,
-	.write = pci_generic_config_write,
+	.read = rtpcie_config_read,
+	.write = rtpcie_config_write,
 };
 
 static int rtpcie_hw_init(struct rtpcie_ctrl *pcie)
@@ -91,8 +128,8 @@ static int rtpcie_hw_init(struct rtpcie_ctrl *pcie)
 	gpiod_set_value_cansleep(pcie->reset_gpio, 0);
 
 	/* Wait for Link Up */
-	err = readl_poll_timeout(pcie->hostcfg_base + RTPCIE_LINK_STATUS, val,
-				 (val & RTPCIE_LINKUP_MASK) == RTPCIE_IS_LINKUP,
+	err = readx_poll_timeout(__raw_readl, pcie->hostcfg_base + RTPCIE_LINK_STATUS,
+				 val, (val & RTPCIE_LINKUP_MASK) == RTPCIE_IS_LINKUP,
 				 10000, 100000);
 
 	if (err) {
@@ -105,19 +142,19 @@ static int rtpcie_hw_init(struct rtpcie_ctrl *pcie)
 
 	/* Enable PCIE host */
 	val = RTPCIE_PCI_CMD_BIT20 | PCI_COMMAND_IO | PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER;
-	writel(val, pcie->hostcfg_base + PCI_COMMAND);
+	__raw_writel(val, pcie->hostcfg_base + PCI_COMMAND);
 
 	/* Clear max payload size bits in DEVCTL */
-	devctl = readw(pcie->hostcfg_base + RTPCIE_HOSTCFG_CAP + PCI_EXP_DEVCTL);
+	devctl = __raw_readw(pcie->hostcfg_base + RTPCIE_HOSTCFG_CAP + PCI_EXP_DEVCTL);
 	devctl &= ~PCI_EXP_DEVCTL_PAYLOAD;
-	writew(devctl, pcie->hostcfg_base + RTPCIE_HOSTCFG_CAP + PCI_EXP_DEVCTL);
+	__raw_writew(devctl, pcie->hostcfg_base + RTPCIE_HOSTCFG_CAP + PCI_EXP_DEVCTL);
 
-	val = readl(pcie->hostcfg_base + RTPCIE_HOSTCFG_ENABLE);
-	writel(val | RTPCIE_ENABLE_BIT17, pcie->hostcfg_base + RTPCIE_HOSTCFG_ENABLE);
+	val = __raw_readl(pcie->hostcfg_base + RTPCIE_HOSTCFG_ENABLE);
+	__raw_writel(val | RTPCIE_ENABLE_BIT17, pcie->hostcfg_base + RTPCIE_HOSTCFG_ENABLE);
 
 	usleep_range(1000, 2000);
 
-	link = readw(pcie->hostcfg_base + RTPCIE_HOSTCFG_CAP + PCI_EXP_LNKSTA);
+	link = __raw_readw(pcie->hostcfg_base + RTPCIE_HOSTCFG_CAP + PCI_EXP_LNKSTA);
 	dev_info(pcie->dev, "link up, %s\n",
 		 pci_speed_string(pcie_link_speed[FIELD_GET(PCI_EXP_LNKSTA_CLS, link)]));
 
