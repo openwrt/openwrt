@@ -21,6 +21,7 @@
 #include <net/dsa.h>
 
 #include "rtl960x_dsa.h"
+#include "rtl960x_l2.h"
 #include "rtl960x_vlan.h"
 
 /* Forced MAC ability of a port, used to force the CPU ports' link up */
@@ -96,6 +97,20 @@ static int rtl960x_port_set_isolation(struct rtl960x_dsa *priv, int port,
 	return regmap_write(priv->map, RTL960X_PORT_ISOLATION_REG(port), mask);
 }
 
+static int rtl960x_port_add_isolation(struct rtl960x_dsa *priv, int port,
+				      u32 mask)
+{
+	return regmap_set_bits(priv->map, RTL960X_PORT_ISOLATION_REG(port),
+			       mask);
+}
+
+static int rtl960x_port_remove_isolation(struct rtl960x_dsa *priv, int port,
+					 u32 mask)
+{
+	return regmap_clear_bits(priv->map, RTL960X_PORT_ISOLATION_REG(port),
+				 mask);
+}
+
 /*
  * A learn limit of 0 disables learning; the over-limit action is
  * forward-without-learning, so the port keeps forwarding.
@@ -114,6 +129,17 @@ static int rtl960x_port_set_learning(struct rtl960x_dsa *priv, int port,
 
 	return regmap_assign_bits(priv->map, RTL960X_LUT_LRN_LIMITNO_REG(port),
 				  RTL960X_LUT_LRN_LIMITNO_MASK(port), enable);
+}
+
+static void rtl960x_port_fast_age(struct dsa_switch *ds, int port)
+{
+	struct rtl960x_dsa *priv = ds->priv;
+	int ret;
+
+	ret = rtl960x_l2_flush(priv, port);
+	if (ret)
+		dev_err(priv->dev, "failed to fast age on port %d: %pe\n",
+			port, ERR_PTR(ret));
 }
 
 static void rtl960x_port_stp_state_set(struct dsa_switch *ds, int port,
@@ -143,8 +169,9 @@ static void rtl960x_port_stp_state_set(struct dsa_switch *ds, int port,
 	}
 
 	/*
-	 * A VLAN entry's FID field doubles as its MSTI. MST is not offloaded,
-	 * so mirror the port's single STP state into every MSTI.
+	 * A VLAN entry's FID field doubles as its MSTI: standalone ports and
+	 * VLAN-aware bridges use FID 0, VLAN-unaware bridges FID 1. MST is not
+	 * offloaded, so mirror the port's single STP state into every MSTI.
 	 */
 	for (msti = 0; msti < RTL960X_NUM_MSTI; msti++)
 		regmap_update_bits(priv->map, RTL960X_MSTI_CTRL_REG(port),
@@ -169,9 +196,10 @@ static int rtl960x_dsa_setup(struct dsa_switch *ds)
 
 	/*
 	 * Start with all ports completely isolated and not learning, the CPU
-	 * and unused ports included, as rtl8365mb does. A standalone port
-	 * must not learn: a destination learned on another port would be
-	 * blocked by isolation instead of reaching the CPU for the software
+	 * and unused ports included, as rtl8365mb does. Learning is enabled
+	 * per user port by the bridge's BR_LEARNING flag; a standalone port
+	 * must not learn, or a destination it learned on another port would
+	 * be blocked by isolation instead of reaching the CPU for the software
 	 * bridge. Unknown destinations are flooded within the ingress port's
 	 * isolation group, which is how CPU-bound traffic reaches the CPU.
 	 */
@@ -203,8 +231,149 @@ static int rtl960x_dsa_setup(struct dsa_switch *ds)
 			return ret;
 	}
 
+	/* One reserved VID per offloaded bridge; DSA numbers them for us. */
+	ds->max_num_bridges = RTL960X_NUM_BRIDGE_VIDS;
+
 	/* Every user port starts standalone (see rtl960x_vlan_setup). */
 	return rtl960x_vlan_setup(ds);
+}
+
+static int rtl960x_port_bridge_join(struct dsa_switch *ds, int port,
+				    struct dsa_bridge bridge,
+				    bool *tx_fwd_offload,
+				    struct netlink_ext_ack *extack)
+{
+	struct rtl960x_dsa *priv = ds->priv;
+	struct dsa_port *dp;
+	u32 mask = 0;
+	int ret;
+
+	dev_dbg(priv->dev, "bridge %d join port %d\n", bridge.num, port);
+
+	/*
+	 * The port forwards as standalone until here. Block it before the
+	 * isolation groups are opened, so nothing crosses into the bridge
+	 * before its VLANs are replayed; DSA then syncs the bridge port's STP
+	 * state, and the bridge enables the port. A join DSA rolls back later
+	 * is put back into forwarding by rtl960x_port_bridge_leave(); a
+	 * failure below restores it here, as DSA does not call leave then.
+	 */
+	rtl960x_port_stp_state_set(ds, port, BR_STATE_BLOCKING);
+
+	/*
+	 * Add this port to the isolation group of every other port
+	 * offloading this bridge.
+	 */
+	dsa_switch_for_each_bridge_member(dp, ds, bridge.dev) {
+		if (dp->index == port)
+			continue;
+
+		ret = rtl960x_port_add_isolation(priv, dp->index, BIT(port));
+		if (ret)
+			goto undo_isolation;
+
+		mask |= BIT(dp->index);
+	}
+
+	/* Add those ports to the isolation group of this port */
+	ret = rtl960x_port_add_isolation(priv, port, mask);
+	if (ret)
+		goto undo_isolation;
+
+	ret = rtl960x_vlan_port_bridge_join(ds, port, bridge, extack);
+	if (ret)
+		goto undo_self_isolation;
+
+	return 0;
+
+undo_self_isolation:
+	rtl960x_port_remove_isolation(priv, port, mask);
+
+undo_isolation:
+	dsa_switch_for_each_user_port(dp, ds) {
+		if (mask & BIT(dp->index))
+			rtl960x_port_remove_isolation(priv, dp->index,
+						      BIT(port));
+	}
+	rtl960x_port_stp_state_set(ds, port, BR_STATE_FORWARDING);
+
+	return ret;
+}
+
+static void rtl960x_port_bridge_leave(struct dsa_switch *ds, int port,
+				      struct dsa_bridge bridge)
+{
+	struct rtl960x_dsa *priv = ds->priv;
+	struct dsa_port *dp;
+	u32 mask = 0;
+	int ret;
+
+	dev_dbg(priv->dev, "bridge %d leave port %d\n", bridge.num, port);
+
+	/*
+	 * Remove this port from the isolation group of every other port
+	 * offloading this bridge.
+	 */
+	dsa_switch_for_each_bridge_member(dp, ds, bridge.dev) {
+		if (dp->index == port)
+			continue;
+
+		ret = rtl960x_port_remove_isolation(priv, dp->index, BIT(port));
+		if (ret)
+			dev_err(priv->dev,
+				"failed to remove port %d from isolation group of port %d: %pe\n",
+				port, dp->index, ERR_PTR(ret));
+
+		mask |= BIT(dp->index);
+	}
+
+	/* Remove those ports from the isolation group of this port */
+	ret = rtl960x_port_remove_isolation(priv, port, mask);
+	if (ret)
+		dev_err(priv->dev,
+			"failed to remove isolation group of port %d: %pe\n",
+			port, ERR_PTR(ret));
+
+	/*
+	 * On a normal leave the bridge disables the port, which fast-ages it,
+	 * and DSA then clears BR_LEARNING and puts the port back into
+	 * forwarding. A join that DSA rolls back after inheriting the bridge
+	 * port's flags and (disabled) STP state leaves without any of that,
+	 * so restore the standalone state here: learning off, forwarding,
+	 * and nothing left in the bridge's database.
+	 */
+	ret = rtl960x_port_set_learning(priv, port, false);
+	if (ret)
+		dev_err(priv->dev, "failed to disable learning on port %d: %pe\n",
+			port, ERR_PTR(ret));
+	rtl960x_port_stp_state_set(ds, port, BR_STATE_FORWARDING);
+	rtl960x_port_fast_age(ds, port);
+
+	rtl960x_vlan_port_bridge_leave(ds, port, bridge);
+}
+
+static int rtl960x_port_pre_bridge_flags(struct dsa_switch *ds, int port,
+					 struct switchdev_brport_flags flags,
+					 struct netlink_ext_ack *extack)
+{
+	/* Flooding follows the hardware defaults (everything is flooded). */
+	if (flags.mask & ~BR_LEARNING)
+		return -EINVAL;
+
+	return 0;
+}
+
+static int rtl960x_port_bridge_flags(struct dsa_switch *ds, int port,
+				     struct switchdev_brport_flags flags,
+				     struct netlink_ext_ack *extack)
+{
+	struct rtl960x_dsa *priv = ds->priv;
+
+	if (flags.mask & BR_LEARNING)
+		return rtl960x_port_set_learning(priv, port,
+						 !!(flags.val & BR_LEARNING));
+
+	return 0;
 }
 
 static void rtl960x_dsa_phylink_get_caps(struct dsa_switch *ds, int port,
@@ -298,7 +467,15 @@ static const struct dsa_switch_ops rtl960x_dsa_ops = {
 	.setup			= rtl960x_dsa_setup,
 	.preferred_default_local_cpu_port = rtl960x_dsa_preferred_default_local_cpu_port,
 	.phylink_get_caps	= rtl960x_dsa_phylink_get_caps,
+	.port_bridge_join	= rtl960x_port_bridge_join,
+	.port_bridge_leave	= rtl960x_port_bridge_leave,
+	.port_pre_bridge_flags	= rtl960x_port_pre_bridge_flags,
+	.port_bridge_flags	= rtl960x_port_bridge_flags,
 	.port_stp_state_set	= rtl960x_port_stp_state_set,
+	.port_fast_age		= rtl960x_port_fast_age,
+	.port_vlan_filtering	= rtl960x_port_vlan_filtering,
+	.port_vlan_add		= rtl960x_port_vlan_add,
+	.port_vlan_del		= rtl960x_port_vlan_del,
 };
 
 static int rtl960x_dsa_probe(struct platform_device *pdev)
@@ -322,6 +499,10 @@ static int rtl960x_dsa_probe(struct platform_device *pdev)
 
 	priv->dev = dev;
 	priv->ds = ds;
+
+	ret = devm_mutex_init(dev, &priv->l2_lock);
+	if (ret)
+		return ret;
 
 	priv->map = syscon_node_to_regmap(dev->of_node);
 	if (IS_ERR(priv->map))
