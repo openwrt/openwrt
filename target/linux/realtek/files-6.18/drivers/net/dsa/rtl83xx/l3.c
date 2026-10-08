@@ -1469,6 +1469,28 @@ static bool otto_l3_fwd_off(struct otto_l3_ctrl *ctrl, u8 type)
 	return type == ROUTE_TYPE_IP6UC ? ctrl->v6_fwd_off : ctrl->v4_fwd_off;
 }
 
+/* The kernel looks the local table up whole before main, so a local IPv4
+ * prefix shorter than a host address (AnyIP: ip route add local ... table
+ * local) takes the destinations of a longer main route inside it, which the
+ * switch, longest prefix first, would forward. An IPv6 local prefix is not
+ * looked at.
+ */
+static bool otto_l3_local_covers(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r)
+{
+	struct otto_l3_route *q;
+
+	if (r->attr.type != ROUTE_TYPE_IP4UC || r->tb_id == RT_TABLE_LOCAL)
+		return false;
+
+	list_for_each_entry(q, &ctrl->routes_list, list)
+		if (q->attr.type == ROUTE_TYPE_IP4UC && q->tb_id == RT_TABLE_LOCAL &&
+		    !q->is_host_route && q->prefix_len < r->prefix_len &&
+		    !((q->dst_ip ^ r->dst_ip) & inet_make_mask(q->prefix_len)))
+			return true;
+
+	return false;
+}
+
 /* Writes a route to its host slot or prefix row, taking a free slot or placing
  * a row when it has none yet. A host route that a local route shadows keeps out
  * of the entry, and nothing is written for it.
@@ -1585,7 +1607,7 @@ static void otto_l3_route_update_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_ro
 				 &r->gw_ip, otto_l3_route_dst(r, dst, sizeof(dst)));
 	}
 
-	trap = no_port || otto_l3_fwd_off(ctrl, r->attr.type);
+	trap = no_port || otto_l3_fwd_off(ctrl, r->attr.type) || otto_l3_local_covers(ctrl, r);
 
 	r->attr.valid = true;
 	r->attr.action = trap ? ROUTE_ACT_TRAP2CPU : ROUTE_ACT_FORWARD;
@@ -2872,14 +2894,27 @@ static bool otto_l3_rules_allow(int family)
 	return main_seen;
 }
 
-/* One resolve brings back every route through a gateway */
-static bool otto_l3_gw_seen(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r)
+/* A main IPv4 route inside the local prefix @info names */
+static bool otto_l3_route_inside(struct otto_l3_route *r, struct fib_entry_notifier_info *info)
+{
+	return r->attr.type == ROUTE_TYPE_IP4UC && r->tb_id != RT_TABLE_LOCAL &&
+	       r->prefix_len > info->dst_len &&
+	       !((r->dst_ip ^ info->dst) & inet_make_mask(info->dst_len));
+}
+
+/* One resolve brings back every route through a gateway. With @info, only the
+ * routes inside that local prefix are looked at.
+ */
+static bool otto_l3_gw_seen(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r,
+			    struct fib_entry_notifier_info *info)
 {
 	struct otto_l3_route *q;
 
 	list_for_each_entry(q, &ctrl->routes_list, list) {
 		if (q == r)
 			return false;
+		if (info && !otto_l3_route_inside(q, info))
+			continue;
 		if (q->attr.type == r->attr.type && q->gw_ifindex == r->gw_ifindex &&
 		    ipv6_addr_equal(&q->gw_ip, &r->gw_ip))
 			return true;
@@ -2930,11 +2965,35 @@ static void otto_l3_rules_check(struct otto_l3_ctrl *ctrl, int family)
 		 */
 		if (ipv6_addr_any(&r->gw_ip) ||
 		    (type == ROUTE_TYPE_IP4UC && !r->gw_ip.s6_addr32[3]) ||
-		    otto_l3_gw_seen(ctrl, r))
+		    otto_l3_gw_seen(ctrl, r, NULL))
 			continue;
 		dev = __dev_get_by_index(&init_net, r->gw_ifindex);
 		if (dev)
 			otto_l3_port_gw_resolve(ctrl, dev, tbl, &r->gw_ip);
+	}
+}
+
+/* A main route inside a local prefix that came or went decides again whether
+ * it forwards, the way the policy rules bring a route back: through its
+ * gateway, if it still answers.
+ */
+static void otto_l3_local_prefix_check(struct otto_l3_ctrl *ctrl,
+				       struct fib_entry_notifier_info *info)
+{
+	struct otto_l3_route *r;
+	struct net_device *dev;
+
+	if (info->tb_id != RT_TABLE_LOCAL || !info->dst_len || info->dst_len >= 32 ||
+	    !ctrl->cfg->use_l3_tables)
+		return;
+
+	list_for_each_entry(r, &ctrl->routes_list, list) {
+		if (!otto_l3_route_inside(r, info) || !r->gw_ip.s6_addr32[3] ||
+		    otto_l3_gw_seen(ctrl, r, info))
+			continue;
+		dev = __dev_get_by_index(&init_net, r->gw_ifindex);
+		if (dev)
+			otto_l3_port_gw_resolve(ctrl, dev, &arp_tbl, &r->gw_ip);
 	}
 }
 
@@ -2957,6 +3016,7 @@ static void otto_l3_fib_event_work_do(struct work_struct *work)
 		if (err)
 			dev_err(ctrl->dev, "fib_add() failed\n");
 
+		otto_l3_local_prefix_check(ctrl, &fib_work->fen_info);
 		fib_info_put(fib_work->fen_info.fi);
 		break;
 	case FIB_EVENT_ENTRY_DEL:
@@ -2964,6 +3024,7 @@ static void otto_l3_fib_event_work_do(struct work_struct *work)
 		if (err)
 			dev_err(ctrl->dev, "fib_del() failed\n");
 
+		otto_l3_local_prefix_check(ctrl, &fib_work->fen_info);
 		fib_info_put(fib_work->fen_info.fi);
 		break;
 	case FIB_EVENT_RULE_ADD:
