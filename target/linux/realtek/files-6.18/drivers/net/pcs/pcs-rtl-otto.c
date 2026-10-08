@@ -3921,7 +3921,7 @@ static void rtpcs_931x_sds_rx_reset(struct rtpcs_serdes *sds)
  * equalization, so this only resets LEQ and releases it back into
  * auto-adapt. No TAP/VTH involvement.
  */
-static void rtpcs_931x_sds_rxcal_leq_adapt(struct rtpcs_serdes *sds)
+static int rtpcs_931x_sds_rxcal_leq_adapt(struct rtpcs_serdes *sds)
 {
 	dev_dbg(sds->ctrl->dev, "SerDes %u PHY-attached RX calibration...\n", sds->id);
 
@@ -3938,6 +3938,8 @@ static void rtpcs_931x_sds_rxcal_leq_adapt(struct rtpcs_serdes *sds)
 
 	dev_dbg(sds->ctrl->dev, "SerDes %u LEQ = %#x\n", sds->id,
 		rtpcs_931x_sds_rxeq_leq_get_coef(sds));
+
+	return 0;
 }
 
 /*
@@ -3955,7 +3957,7 @@ static void rtpcs_931x_sds_rxcal_leq_adapt(struct rtpcs_serdes *sds)
  * and tolerate a small nonzero symbol-error count rather than requiring
  * exactly 0.
  */
-static void rtpcs_931x_sds_rxcal_fiber_adapt(struct rtpcs_serdes *sds)
+static int rtpcs_931x_sds_rxcal_fiber_adapt(struct rtpcs_serdes *sds)
 {
 	unsigned int vth_p = 0, vth_n = 0, sum_p = 0, sum_n = 0;
 	struct device *dev = sds->ctrl->dev;
@@ -4021,16 +4023,19 @@ static void rtpcs_931x_sds_rxcal_fiber_adapt(struct rtpcs_serdes *sds)
 		if (link_up && symerr >= 0 && symerr <= 5) {
 			dev_dbg(dev, "SerDes %u fiber RX calibration OK (check %d)\n",
 				sds->id, i + 1);
-			return;
+			return 0;
 		}
 	}
 
-	if (link_up)
+	if (link_up) {
 		dev_dbg(dev, "SerDes %u fiber RX calibration: symErr still 0x%x after %d checks, link up anyway\n",
-			sds->id, symerr, i);
-	else
-		dev_warn(dev, "SerDes %u fiber RX calibration failed after %d symErr checks\n",
-			 sds->id, i);
+			 sds->id, symerr, i);
+		return 0;
+	}
+
+	dev_warn(dev, "SerDes %u fiber RX calibration failed after %d symErr checks\n",
+		 sds->id, i);
+	return -ENOLINK;
 }
 
 static int rtpcs_931x_sds_get_pll_select(struct rtpcs_serdes *sds, enum rtpcs_sds_pll_type *pll)
@@ -4264,6 +4269,8 @@ static int rtpcs_931x_sds_config_attachment(struct rtpcs_serdes *sds,
  */
 static int rtpcs_931x_sds_post_config(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode)
 {
+	int ret = 0;
+
 	if (sds->type != RTPCS_SDS_TYPE_10G)
 		return 0;
 	if (hw_mode != RTPCS_SDS_MODE_XSGMII)
@@ -4271,18 +4278,21 @@ static int rtpcs_931x_sds_post_config(struct rtpcs_serdes *sds, enum rtpcs_sds_m
 
 	switch (sds->attachment) {
 	case RTPCS_SDS_ATTACH_PHY:
-		rtpcs_931x_sds_rxcal_leq_adapt(sds);
+		ret = rtpcs_931x_sds_rxcal_leq_adapt(sds);
 		break;
 
 	case RTPCS_SDS_ATTACH_FIBER:
 		if (hw_mode == RTPCS_SDS_MODE_10GBASER)
-			rtpcs_931x_sds_rxcal_fiber_adapt(sds);
+			ret = rtpcs_931x_sds_rxcal_fiber_adapt(sds);
 		break;
 
 	default:
 		/* TODO: DAC RX calibration */
 		break;
 	}
+
+	if (ret < 0 && hw_mode != RTPCS_SDS_MODE_XSGMII)
+		rtpcs_931x_sds_reset_leq_dfe(sds);
 
 	return 0;
 }
