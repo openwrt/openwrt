@@ -1,0 +1,14 @@
+#include "mt7628an_onion_omega2.dtsi"
+
+/ {
+	compatible = "onion,omega2p", "onion,omega2", "mediatek,mt7628an-soc";
+	model = "Onion Omega2+";
+};
+
+&flash0 {
+	broken-flash-reset;
+};
+
+&firmware {
+	reg = <0x50000 0x1fb0000>;
+};

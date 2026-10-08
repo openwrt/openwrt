@@ -1,0 +1,80 @@
+From 5099807f335ce4f783f0578bef7278fffad30b07 Mon Sep 17 00:00:00 2001
+From: Kory Maincent <kory.maincent@bootlin.com>
+Date: Wed, 15 Apr 2026 15:02:59 +0200
+Subject: [PATCH] net: pse-pd: fix out-of-bounds bitmap access in pse_isr() on
+ 32-bit
+
+In pse_isr(), notifs_mask was declared as a single unsigned long on the
+stack (32 bits on 32-bit architectures). For PSE controllers with more
+than 32 ports, this causes two problems:
+
+- map_event callbacks could wrote bit positions >= 32 via
+  *notifs_mask |= BIT(i), which is undefined behaviour on a 32-bit
+  unsigned long and corrupts adjacent stack memory.
+
+- for_each_set_bit(i, &notifs_mask, pcdev->nr_lines) treats
+  &notifs_mask as a multi-word bitmap and reads beyond the single
+  unsigned long when nr_lines > BITS_PER_LONG.
+
+Fix this by moving notifs_mask out of the stack and into struct pse_irq
+as a dynamically allocated bitmap. It is sized with
+BITS_TO_LONGS(pcdev->nr_lines) words in devm_pse_irq_helper(), so it
+is always wide enough regardless of the host word size.
+
+[Jakub]: No upstream driver currently supports >=32 ports.
+
+Signed-off-by: Kory Maincent <kory.maincent@bootlin.com>
+Link: https://patch.msgid.link/20260415130300.806152-1-kory.maincent@bootlin.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/pse-pd/pse_core.c | 13 +++++++++----
+ 1 file changed, 9 insertions(+), 4 deletions(-)
+
+--- a/drivers/net/pse-pd/pse_core.c
++++ b/drivers/net/pse-pd/pse_core.c
+@@ -1170,6 +1170,7 @@ struct pse_irq {
+ 	struct pse_controller_dev *pcdev;
+ 	struct pse_irq_desc desc;
+ 	unsigned long *notifs;
++	unsigned long *notifs_mask;
+ };
+ 
+ /**
+@@ -1247,7 +1248,6 @@ static int pse_set_config_isr(struct pse
+ static irqreturn_t pse_isr(int irq, void *data)
+ {
+ 	struct pse_controller_dev *pcdev;
+-	unsigned long notifs_mask = 0;
+ 	struct pse_irq_desc *desc;
+ 	struct pse_irq *h = data;
+ 	int ret, i;
+@@ -1257,14 +1257,15 @@ static irqreturn_t pse_isr(int irq, void
+ 
+ 	/* Clear notifs mask */
+ 	memset(h->notifs, 0, pcdev->nr_lines * sizeof(*h->notifs));
++	bitmap_zero(h->notifs_mask, pcdev->nr_lines);
+ 	mutex_lock(&pcdev->lock);
+-	ret = desc->map_event(irq, pcdev, h->notifs, &notifs_mask);
+-	if (ret || !notifs_mask) {
++	ret = desc->map_event(irq, pcdev, h->notifs, h->notifs_mask);
++	if (ret || bitmap_empty(h->notifs_mask, pcdev->nr_lines)) {
+ 		mutex_unlock(&pcdev->lock);
+ 		return IRQ_NONE;
+ 	}
+ 
+-	for_each_set_bit(i, &notifs_mask, pcdev->nr_lines) {
++	for_each_set_bit(i, h->notifs_mask, pcdev->nr_lines) {
+ 		unsigned long notifs, rnotifs;
+ 		struct pse_ntf ntf = {};
+ 
+@@ -1340,6 +1341,10 @@ int devm_pse_irq_helper(struct pse_contr
+ 	if (!h->notifs)
+ 		return -ENOMEM;
+ 
++	h->notifs_mask = devm_bitmap_zalloc(dev, pcdev->nr_lines, GFP_KERNEL);
++	if (!h->notifs_mask)
++		return -ENOMEM;
++
+ 	ret = devm_request_threaded_irq(dev, irq, NULL, pse_isr,
+ 					IRQF_ONESHOT | irq_flags,
+ 					irq_name, h);

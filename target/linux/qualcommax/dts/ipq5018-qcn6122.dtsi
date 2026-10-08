@@ -1,0 +1,135 @@
+// SPDX-License-Identifier: GPL-2.0+ OR BSD-3-Clause
+/*
+ * IPQ5018 SoC device tree source extension for QCN6122 wifi
+ *
+ * Copyright (c) 2023-2025 The Linux Foundation. All rights reserved.
+ */
+
+&q6_region {
+	reg = <0x0 0x4b000000 0x0 0x3000000>;
+};
+
+&q6v5_wcss {
+	compatible = "qcom,ipq5018-q6-mpd";
+
+	firmware-name = "ath11k/IPQ5018/hw1.0/q6_fw.mdt",
+			"ath11k/IPQ5018/hw1.0/m3_fw.mdt",
+ 			"ath11k/QCN6122/hw1.0/m3_fw.mdt";
+
+	// IPQ5018
+	q6_wcss_pd1: pd-1 {
+		firmware-name = "ath11k/IPQ5018/hw1.0/q6_fw.mdt";
+
+		interrupts-extended =
+			<&wcss_smp2p_in 8 IRQ_TYPE_NONE>,
+			<&wcss_smp2p_in 9 IRQ_TYPE_NONE>,
+			<&wcss_smp2p_in 12 IRQ_TYPE_NONE>,
+			<&wcss_smp2p_in 11 IRQ_TYPE_NONE>;
+		interrupt-names =
+			"fatal",
+			"ready",
+			"spawn-ack",
+			"stop-ack";
+
+		qcom,smem-states =
+			<&wcss_smp2p_out 8>,
+			<&wcss_smp2p_out 9>,
+			<&wcss_smp2p_out 10>;
+		qcom,smem-state-names =
+			"shutdown",
+			"stop",
+			"spawn";
+	};
+
+	// QCN6122
+	q6_wcss_pd2: pd-2 {
+		firmware-name = "ath11k/IPQ5018/hw1.0/q6_fw.mdt";
+
+		interrupts-extended =
+			<&wcss_smp2p_in 16 IRQ_TYPE_NONE>,
+			<&wcss_smp2p_in 17 IRQ_TYPE_NONE>,
+			<&wcss_smp2p_in 20 IRQ_TYPE_NONE>,
+			<&wcss_smp2p_in 19 IRQ_TYPE_NONE>;
+		interrupt-names =
+			"fatal",
+			"ready",
+			"spawn-ack",
+			"stop-ack";
+
+		qcom,smem-states =
+			<&wcss_smp2p_out 16>,
+			<&wcss_smp2p_out 17>,
+			<&wcss_smp2p_out 18>;
+		qcom,smem-state-names =
+			"shutdown",
+			"stop",
+			"spawn";
+	};
+
+	// QCN6122
+	q6_wcss_pd3: pd-3 {
+		firmware-name = "ath11k/IPQ5018/hw1.0/q6_fw.mdt";
+
+		interrupts-extended =
+			<&wcss_smp2p_in 24 IRQ_TYPE_NONE>,
+			<&wcss_smp2p_in 25 IRQ_TYPE_NONE>,
+			<&wcss_smp2p_in 28 IRQ_TYPE_NONE>,
+			<&wcss_smp2p_in 27 IRQ_TYPE_NONE>;
+		interrupt-names =
+			"fatal",
+			"ready",
+			"spawn-ack",
+			"stop-ack";
+
+		qcom,smem-states =
+			<&wcss_smp2p_out 24>,
+			<&wcss_smp2p_out 25>,
+			<&wcss_smp2p_out 26>;
+		qcom,smem-state-names =
+			"shutdown",
+			"stop",
+			"spawn";
+	};
+};
+
+&soc {
+	//QCN6122: 1st instance
+	wifi1: wifi@b00a040 {
+		reg = <0x0b00a040 0x0>;
+		compatible = "qcom,qcn6122-wifi";
+		interrupts = <GIC_SPI 416 IRQ_TYPE_EDGE_RISING>,
+			     <GIC_SPI 417 IRQ_TYPE_EDGE_RISING>,
+			     <GIC_SPI 418 IRQ_TYPE_EDGE_RISING>,
+			     <GIC_SPI 419 IRQ_TYPE_EDGE_RISING>,
+			     <GIC_SPI 420 IRQ_TYPE_EDGE_RISING>,
+			     <GIC_SPI 421 IRQ_TYPE_EDGE_RISING>,
+			     <GIC_SPI 422 IRQ_TYPE_EDGE_RISING>,
+			     <GIC_SPI 423 IRQ_TYPE_EDGE_RISING>,
+			     <GIC_SPI 424 IRQ_TYPE_EDGE_RISING>,
+			     <GIC_SPI 425 IRQ_TYPE_EDGE_RISING>,
+			     <GIC_SPI 426 IRQ_TYPE_EDGE_RISING>,
+			     <GIC_SPI 427 IRQ_TYPE_EDGE_RISING>,
+			     <GIC_SPI 428 IRQ_TYPE_EDGE_RISING>;
+		status = "disabled";
+	};
+
+	//QCN6122: 2nd instance
+	wifi2: wifi@b00b040 {
+		reg = <0x0b00b040 0x0>;
+		compatible = "qcom,qcn6122-wifi";
+		interrupts = <GIC_SPI 448 IRQ_TYPE_EDGE_RISING>,
+			     <GIC_SPI 449 IRQ_TYPE_EDGE_RISING>,
+			     <GIC_SPI 450 IRQ_TYPE_EDGE_RISING>,
+			     <GIC_SPI 451 IRQ_TYPE_EDGE_RISING>,
+			     <GIC_SPI 452 IRQ_TYPE_EDGE_RISING>,
+			     <GIC_SPI 453 IRQ_TYPE_EDGE_RISING>,
+			     <GIC_SPI 454 IRQ_TYPE_EDGE_RISING>,
+			     <GIC_SPI 455 IRQ_TYPE_EDGE_RISING>,
+			     <GIC_SPI 456 IRQ_TYPE_EDGE_RISING>,
+			     <GIC_SPI 457 IRQ_TYPE_EDGE_RISING>,
+			     <GIC_SPI 458 IRQ_TYPE_EDGE_RISING>,
+			     <GIC_SPI 459 IRQ_TYPE_EDGE_RISING>,
+			     <GIC_SPI 460 IRQ_TYPE_EDGE_RISING>;
+		status = "disabled";
+	};
+};

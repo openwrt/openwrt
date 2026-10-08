@@ -1,0 +1,14 @@
+#!/bin/sh /etc/rc.common
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+START=11
+
+boot() {
+	. /lib/functions.sh
+	/usr/sbin/nu801 "$(board_name)"
+
+	# Because this is a userspace driver, we need to trigger diag.sh after
+	# we start the driver, but before boot is complete so we blink.
+	. /etc/diag.sh
+	set_state preinit_regular
+}

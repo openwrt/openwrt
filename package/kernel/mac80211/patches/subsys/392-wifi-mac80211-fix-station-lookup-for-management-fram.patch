@@ -1,0 +1,25 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Wed, 19 Aug 2026 12:31:49 +0000
+Subject: [PATCH] wifi: mac80211: fix station lookup for management frames on
+ 4-address VLANs
+
+A 4-address station is moved to its own AP_VLAN interface, but management
+frames for it are still transmitted on the AP interface. In that case the
+per-interface lookup fails, so use the BSS wide lookup for management
+frames as well.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -1238,7 +1238,8 @@ ieee80211_tx_prepare(struct ieee80211_su
+ 			tx->sta = rcu_dereference(sdata->u.vlan.sta);
+ 			if (!tx->sta && sdata->wdev.use_4addr)
+ 				return TX_DROP;
+-		} else if (tx->sdata->control_port_protocol == tx->skb->protocol) {
++		} else if (tx->sdata->control_port_protocol == tx->skb->protocol ||
++			   ieee80211_is_mgmt(hdr->frame_control)) {
+ 			tx->sta = sta_info_get_bss(sdata, hdr->addr1);
+ 		}
+ 		if (!tx->sta && !is_multicast_ether_addr(hdr->addr1)) {

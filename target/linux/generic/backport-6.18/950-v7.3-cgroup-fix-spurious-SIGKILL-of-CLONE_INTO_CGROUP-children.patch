@@ -1,0 +1,83 @@
+From 8e359920216689b3b79e0fe8961a77fe312a511f Mon Sep 17 00:00:00 2001
+From: Etienne Perot <eperot@google.com>
+Date: Fri, 28 Aug 2026 21:52:51 +0000
+Subject: [PATCH] cgroup: fix spurious SIGKILL of CLONE_INTO_CGROUP children
+
+Since commit b69bb476dee9 ("cgroup: fix race between fork and
+cgroup.kill"), the fork path snapshots the kill_seq of the child's
+future cgroup into kargs->kill_seq, and cgroup_post_fork() SIGKILLs
+the child if that cgroup's kill_seq has changed in the meantime, to
+catch forks racing with a cgroup.kill sweep.
+
+For CLONE_INTO_CGROUP, however, the snapshot in cgroup_css_set_fork()
+is taken before the target cgroup has been resolved: kargs->cgrp is
+always NULL at this point (it is only set at the end of the function).
+So the "if (kargs->cgrp)" branch is dead code and the snapshot always
+records the kill_seq of the parent's cgroup. cgroup_post_fork() then
+compares it with the kill_seq of the target cgroup, so the child gets
+SIGKILLed whenever the two cgroups have been killed a different number
+of times.
+
+As a result, once cgroup.kill has been written to a cgroup, every
+child subsequently cloned into it with clone3(CLONE_INTO_CGROUP) is
+killed on the spot, for as long as the cgroup exists: kill_seq is not
+exposed to userspace and never resets.
+
+Re-snapshot kill_seq from the target cgroup once it has been resolved,
+and drop the dead branch at the early snapshot site.
+
+This does not reopen the race fixed by b69bb476dee9. For
+CLONE_INTO_CGROUP, everything from the snapshot to the check in
+cgroup_post_fork() runs with cgroup_mutex held, and kill_seq is
+only ever incremented under cgroup_mutex.
+
+tj: Updated the comment above kill_seq to reflect the new serialization
+rules as suggested by Shakeel Butt.
+
+Fixes: b69bb476dee9 ("cgroup: fix race between fork and cgroup.kill")
+Cc: stable@vger.kernel.org
+Cc: Shakeel Butt <shakeel.butt@linux.dev>
+Assisted-by: LLM
+Signed-off-by: Etienne Perot <eperot@google.com>
+Signed-off-by: Tejun Heo <tj@kernel.org>
+---
+ include/linux/cgroup-defs.h | 5 ++++-
+ kernel/cgroup/cgroup.c      | 6 ++----
+ 2 files changed, 6 insertions(+), 5 deletions(-)
+
+--- a/include/linux/cgroup-defs.h
++++ b/include/linux/cgroup-defs.h
+@@ -518,7 +518,10 @@ struct cgroup {
+ 
+ 	int nr_threaded_children;	/* # of live threaded child cgroups */
+ 
+-	/* sequence number for cgroup.kill, serialized by css_set_lock. */
++	/*
++	 * Sequence number for cgroup.kill. Incremented with both cgroup_mutex
++	 * and css_set_lock held. Readers hold either one.
++	 */
+ 	unsigned int kill_seq;
+ 
+ 	struct kernfs_node *kn;		/* cgroup kernfs entry */
+--- a/kernel/cgroup/cgroup.c
++++ b/kernel/cgroup/cgroup.c
+@@ -6734,10 +6734,7 @@ static int cgroup_css_set_fork(struct ke
+ 	spin_lock_irq(&css_set_lock);
+ 	cset = task_css_set(current);
+ 	get_css_set(cset);
+-	if (kargs->cgrp)
+-		kargs->kill_seq = kargs->cgrp->kill_seq;
+-	else
+-		kargs->kill_seq = cset->dfl_cgrp->kill_seq;
++	kargs->kill_seq = cset->dfl_cgrp->kill_seq;
+ 	spin_unlock_irq(&css_set_lock);
+ 
+ 	if (!(kargs->flags & CLONE_INTO_CGROUP)) {
+@@ -6801,6 +6798,7 @@ static int cgroup_css_set_fork(struct ke
+ 
+ 	put_css_set(cset);
+ 	kargs->cgrp = dst_cgrp;
++	kargs->kill_seq = dst_cgrp->kill_seq;
+ 	return ret;
+ 
+ err:

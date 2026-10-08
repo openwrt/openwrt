@@ -1,0 +1,23 @@
+From 69a87c4153a874afbbb2319d0055f2a7ea419f9d Mon Sep 17 00:00:00 2001
+From: Robert Marko <robert.marko@sartura.hr>
+Date: Fri, 5 Dec 2025 14:34:36 +0100
+Subject: [PATCH 10/17] usb: dwc3-generic: add support for Microchip LAN969x
+
+Add Microchip LAN969x support, by using rk_ops as LAN969x uses single
+node to describe glue and ctrl.
+
+Signed-off-by: Robert Marko <robert.marko@sartura.hr>
+---
+ drivers/usb/dwc3/dwc3-generic.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/usb/dwc3/dwc3-generic.c
++++ b/drivers/usb/dwc3/dwc3-generic.c
+@@ -731,6 +731,7 @@ static const struct udevice_id dwc3_glue
+ 	{ .compatible = "intel,tangier-dwc3" },
+ 	{ .compatible = "samsung,exynos7870-dwusb3" },
+ 	{ .compatible = "samsung,exynos850-dwusb3" },
++	{ .compatible = "microchip,lan9691-dwc3", .data = (ulong)&rk_ops },
+ 	{ }
+ };
+ 

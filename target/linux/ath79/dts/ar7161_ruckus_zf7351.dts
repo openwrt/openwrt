@@ -1,0 +1,135 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "ar7161_ruckus_gd11.dtsi"
+
+/ {
+	model = "Ruckus ZoneFlex 7351[-U]";
+	compatible = "ruckus,zf7351", "qca,ar7161";
+
+};
+
+&beamforming_2g_gpio {
+	/* Default beamforming switches configuration from stock firmware,
+	 * the AP is started and for broadcast frames - all outputs high */
+	lb0 {
+		line-name = "beamforming:2g:lb0";
+		gpios = <0 GPIO_ACTIVE_HIGH>;
+		output-high;
+		gpio-hog;
+	};
+
+	lb1 {
+		line-name = "beamforming:2g:lb1";
+		gpios = <1 GPIO_ACTIVE_HIGH>;
+		output-high;
+		gpio-hog;
+	};
+
+	lb2 {
+		line-name = "beamforming:2g:lb2";
+		gpios = <2 GPIO_ACTIVE_HIGH>;
+		output-high;
+		gpio-hog;
+	};
+
+	lb3 {
+		line-name = "beamforming:2g:lb3";
+		gpios = <4 GPIO_ACTIVE_HIGH>;
+		output-high;
+		gpio-hog;
+	};
+
+	lb4 {
+		line-name = "beamforming:2g:lb4";
+		gpios = <5 GPIO_ACTIVE_HIGH>;
+		output-high;
+		gpio-hog;
+	};
+
+	lb5 {
+		line-name = "beamforming:2g:lb5";
+		gpios = <6 GPIO_ACTIVE_HIGH>;
+		output-high;
+		gpio-hog;
+	};
+};
+
+&beamforming_5g_gpio {
+	/* Default beamforming switches configuration from stock firmware,
+	 * the AP is started and for broadcast frames - all outputs high */
+	hb0 {
+		line-name = "beamforming:5g:hb0";
+		gpios = <0 GPIO_ACTIVE_HIGH>;
+		output-high;
+		gpio-hog;
+	};
+
+	hb1 {
+		line-name = "beamforming:5g:hb1";
+		gpios = <1 GPIO_ACTIVE_HIGH>;
+		output-high;
+		gpio-hog;
+	};
+
+	hb2 {
+		line-name = "beamforming:5g:hb2";
+		gpios = <2 GPIO_ACTIVE_HIGH>;
+		output-high;
+		gpio-hog;
+	};
+
+	hb3 {
+		line-name = "beamforming:5g:hb3";
+		gpios = <3 GPIO_ACTIVE_HIGH>;
+		output-high;
+		gpio-hog;
+	};
+
+	hb4 {
+		line-name = "beamforming:5g:hb4";
+		gpios = <4 GPIO_ACTIVE_HIGH>;
+		output-high;
+		gpio-hog;
+	};
+
+	hb5 {
+		line-name = "beamforming:5g:hb5";
+		gpios = <5 GPIO_ACTIVE_HIGH>;
+		output-high;
+		gpio-hog;
+	};
+
+	hb6 {
+		line-name = "beamforming:5g:hb6";
+		gpios = <6 GPIO_ACTIVE_HIGH>;
+		output-high;
+		gpio-hog;
+	};
+
+	hb7 {
+		line-name = "beamforming:5g:hb7";
+		gpios = <7 GPIO_ACTIVE_HIGH>;
+		output-high;
+		gpio-hog;
+	};
+};
+
+&board_data {
+	nvmem-layout {
+		compatible = "fixed-layout";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		macaddr_bdata_60: macaddr@60 {
+			reg = <0x60 0x6>;
+		};
+
+		macaddr_bdata_66: macaddr@66 {
+			reg = <0x66 0x6>;
+		};
+
+		macaddr_bdata_76: macaddr@76 {
+			reg = <0x76 0x6>;
+		};
+	};
+};

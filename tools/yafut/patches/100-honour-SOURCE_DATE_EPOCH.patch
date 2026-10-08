@@ -1,0 +1,42 @@
+From: John Crispin <john@phrozen.org>
+Subject: yaffs_glue: honour SOURCE_DATE_EPOCH
+
+yaffsfs_CurrentTime() returns the wall clock, and Yaffs writes that value
+to the access, modification and change time of every object header. An
+image written twice from the same input therefore differs.
+
+Read SOURCE_DATE_EPOCH and use it when it is set, as described in
+https://reproducible-builds.org/specs/source-date-epoch/. Exit with an
+error when the value is not a number, so a wrong value cannot pass as a
+reproducible build.
+
+Signed-off-by: John Crispin <john@phrozen.org>
+---
+ src/yaffs_glue.c | 16 +++++++++++++++-
+ 1 file changed, 15 insertions(+), 1 deletion(-)
+
+--- a/src/yaffs_glue.c
++++ b/src/yaffs_glue.c
+@@ -27,7 +27,21 @@ void yaffsfs_Unlock(void) {
+ }
+ 
+ u32 yaffsfs_CurrentTime(void) {
+-	return time(NULL);
++	const char *source_date_epoch = getenv("SOURCE_DATE_EPOCH");
++	unsigned long long epoch;
++	char *end;
++
++	if (!source_date_epoch || !*source_date_epoch) {
++		return time(NULL);
++	}
++
++	epoch = strtoull(source_date_epoch, &end, 10);
++	if (*end) {
++		fprintf(stderr, "SOURCE_DATE_EPOCH is not a number\n");
++		exit(1);
++	}
++
++	return epoch;
+ }
+ 
+ void yaffsfs_SetError(int err) {

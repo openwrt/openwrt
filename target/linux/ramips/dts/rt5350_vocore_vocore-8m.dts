@@ -1,0 +1,10 @@
+#include "rt5350_vocore_vocore.dtsi"
+
+/ {
+	compatible = "vocore,vocore-8m", "vocore,vocore", "ralink,rt5350-soc";
+	model = "VoCore (8M)";
+};
+
+&firmware {
+	reg = <0x50000 0x7b0000>;
+};

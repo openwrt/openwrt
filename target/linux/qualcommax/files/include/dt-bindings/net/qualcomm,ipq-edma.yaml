@@ -1,0 +1,110 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/net/qualcomm,ipq-edma.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Qualcomm IPQ EDMA Ethernet Controller
+
+maintainers:
+  - John Crispin <john@phrozen.org>
+
+description: |
+  The Enhanced Direct Memory Access (EDMA) controller in Qualcomm IPQ6018 and
+  IPQ8074 SoCs provides the dataplane for the PPE (Packet Processing Engine)
+  switch. It registers a network device that serves as the DSA conduit
+  interface. The EDMA handles packet DMA between the PPE hardware and the
+  host CPU through dedicated TX/RX descriptor and completion rings.
+
+properties:
+  compatible:
+    enum:
+      - qualcomm,ipq6018-edma
+      - qualcomm,ipq8074-edma
+
+  reg:
+    maxItems: 1
+
+  interrupts:
+    items:
+      - description: TX completion interrupt
+      - description: RX fill interrupt
+      - description: RX descriptor interrupt
+      - description: Miscellaneous interrupt
+
+  clocks:
+    items:
+      - description: EDMA core clock
+      - description: EDMA configuration clock
+      - description: PPE core clock
+      - description: PPE configuration clock
+      - description: NSSNOC PPE clock
+      - description: NSSNOC PPE configuration clock
+      - description: NSS NOC clock
+      - description: NSSNOC SNOC clock
+      - description: NOC interconnect clock (SoC-specific)
+
+  clock-names:
+    items:
+      - const: nss_edma_clk
+      - const: nss_edma_cfg_clk
+      - const: nss_ppe_clk
+      - const: nss_ppe_cfg_clk
+      - const: nssnoc_ppe_clk
+      - const: nssnoc_ppe_cfg_clk
+      - const: gcc_nss_noc_clk
+      - const: gcc_nssnoc_snoc_clk
+      - enum:
+          - gcc_mem_noc_nss_axi_clk
+          - gcc_snoc_nssnoc_clk
+
+  resets:
+    maxItems: 1
+
+  reset-names:
+    items:
+      - const: edma_rst
+
+required:
+  - compatible
+  - reg
+  - interrupts
+  - clocks
+  - clock-names
+  - resets
+  - reset-names
+
+additionalProperties: false
+
+examples:
+  - |
+    #include <dt-bindings/clock/qcom,gcc-ipq8074.h>
+    #include <dt-bindings/interrupt-controller/arm-gic.h>
+
+    edma@3ab00000 {
+        compatible = "qualcomm,ipq8074-edma";
+        reg = <0x3ab00000 0xb0000>;
+
+        interrupts = <GIC_SPI 345 IRQ_TYPE_LEVEL_HIGH>,
+                     <GIC_SPI 353 IRQ_TYPE_LEVEL_HIGH>,
+                     <GIC_SPI 361 IRQ_TYPE_LEVEL_HIGH>,
+                     <GIC_SPI 344 IRQ_TYPE_LEVEL_HIGH>;
+
+        clocks = <&gcc GCC_NSS_EDMA_CLK>,
+                 <&gcc GCC_NSS_EDMA_CFG_CLK>,
+                 <&gcc GCC_NSS_PPE_CLK>,
+                 <&gcc GCC_NSS_PPE_CFG_CLK>,
+                 <&gcc GCC_NSSNOC_PPE_CLK>,
+                 <&gcc GCC_NSSNOC_PPE_CFG_CLK>,
+                 <&gcc GCC_NSS_NOC_CLK>,
+                 <&gcc GCC_NSSNOC_SNOC_CLK>,
+                 <&gcc GCC_MEM_NOC_NSS_AXI_CLK>;
+        clock-names = "nss_edma_clk", "nss_edma_cfg_clk",
+                      "nss_ppe_clk", "nss_ppe_cfg_clk",
+                      "nssnoc_ppe_clk", "nssnoc_ppe_cfg_clk",
+                      "gcc_nss_noc_clk", "gcc_nssnoc_snoc_clk",
+                      "gcc_mem_noc_nss_axi_clk";
+
+        resets = <&gcc GCC_EDMA_HW_RESET>;
+        reset-names = "edma_rst";
+    };

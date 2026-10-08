@@ -1,0 +1,79 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: OpenWrt PSE-PD Backport <openwrt@openwrt.org>
+Date: Fri, 31 Jan 2025 00:00:00 +0000
+Subject: [PATCH] net: pse-pd: Add ethtool netlink definitions for PSE events
+ and priority
+
+GENERATED PATCH - OpenWrt PSE-PD Backport
+
+This patch:
+1. Adds ETHTOOL_A_PSE_PW_D_ID, ETHTOOL_A_PSE_PRIO_MAX, ETHTOOL_A_PSE_PRIO to
+   the ETHTOOL_A_PSE_* enum in ethtool_netlink.h (backported from kernel 6.17+)
+2. Creates include/uapi/linux/ethtool_netlink_generated.h with PSE event
+   definitions (in mainline 6.17+, this file is auto-generated)
+3. Adds ETHTOOL_MSG_PSE_NTF to the kernel message types enum
+
+These definitions are required by PSE event reporting and priority patches.
+
+Signed-off-by: OpenWrt PSE-PD Backport <openwrt@openwrt.org>
+Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
+---
+ include/uapi/linux/ethtool_netlink.h           |  4 ++
+ include/uapi/linux/ethtool_netlink_generated.h | 31 ++++++++++++++++++++++++++
+ 2 files changed, 35 insertions(+)
+ create mode 100644 include/uapi/linux/ethtool_netlink_generated.h
+
+--- a/include/uapi/linux/ethtool_netlink.h
++++ b/include/uapi/linux/ethtool_netlink.h
+@@ -115,6 +115,7 @@ enum {
+ 	ETHTOOL_MSG_PHY_GET_REPLY,
+ 	ETHTOOL_MSG_PHY_NTF,
+ 
++	ETHTOOL_MSG_PSE_NTF,
+ 	/* add new constants above here */
+ 	__ETHTOOL_MSG_KERNEL_CNT,
+ 	ETHTOOL_MSG_KERNEL_MAX = __ETHTOOL_MSG_KERNEL_CNT - 1
+@@ -970,6 +971,9 @@ enum {
+ 	ETHTOOL_A_C33_PSE_EXT_SUBSTATE,		/* u32 */
+ 	ETHTOOL_A_C33_PSE_AVAIL_PW_LIMIT,	/* u32 */
+ 	ETHTOOL_A_C33_PSE_PW_LIMIT_RANGES,	/* nest - _C33_PSE_PW_LIMIT_* */
++	ETHTOOL_A_PSE_PW_D_ID,			/* u32 */
++	ETHTOOL_A_PSE_PRIO_MAX,			/* u32 */
++	ETHTOOL_A_PSE_PRIO,			/* u32 */
+ 
+ 	/* add new constants above here */
+ 	__ETHTOOL_A_PSE_CNT,
+--- /dev/null
++++ b/include/uapi/linux/ethtool_netlink_generated.h
+@@ -0,0 +1,31 @@
++/* SPDX-License-Identifier: ((GPL-2.0 WITH Linux-syscall-note) OR BSD-3-Clause) */
++/* PSE ethtool netlink definitions - OpenWrt backport for 6.12 */
++
++#ifndef _UAPI_LINUX_ETHTOOL_NETLINK_GENERATED_H
++#define _UAPI_LINUX_ETHTOOL_NETLINK_GENERATED_H
++
++enum ethtool_pse_event {
++	ETHTOOL_PSE_EVENT_OVER_CURRENT = 1,
++	ETHTOOL_PSE_EVENT_OVER_TEMP = 2,
++	ETHTOOL_C33_PSE_EVENT_DETECTION = 4,
++	ETHTOOL_C33_PSE_EVENT_CLASSIFICATION = 8,
++	ETHTOOL_C33_PSE_EVENT_DISCONNECTION = 16,
++	ETHTOOL_PSE_EVENT_OVER_BUDGET = 32,
++	ETHTOOL_PSE_EVENT_SW_PW_CONTROL_ERROR = 64,
++};
++
++enum {
++	ETHTOOL_A_PSE_NTF_HEADER = 1,
++	ETHTOOL_A_PSE_NTF_EVENTS,
++	__ETHTOOL_A_PSE_NTF_CNT,
++	ETHTOOL_A_PSE_NTF_MAX = (__ETHTOOL_A_PSE_NTF_CNT - 1)
++};
++
++enum {
++	ETHTOOL_A_PSE_NTF_EVT_UNSPEC,
++	ETHTOOL_A_PSE_NTF_EVT_INDEX,
++	__ETHTOOL_A_PSE_NTF_EVT_CNT,
++	ETHTOOL_A_PSE_NTF_EVT_MAX = (__ETHTOOL_A_PSE_NTF_EVT_CNT - 1)
++};
++
++#endif /* _UAPI_LINUX_ETHTOOL_NETLINK_GENERATED_H */

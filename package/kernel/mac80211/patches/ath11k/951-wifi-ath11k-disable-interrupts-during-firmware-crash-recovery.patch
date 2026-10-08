@@ -1,0 +1,72 @@
+From f7a74e131d3f0de04335dbe278bfb82bdafcdb3e Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Mon, 27 Jul 2026 00:19:08 +0200
+Subject: [PATCH] wifi: ath11k: disable interrupts during firmware crash recovery
+
+On IPQ8074 a firmware assert reboots the SoC:
+
+  Unable to handle kernel read from unreadable memory at virtual address 0
+  pc : ath11k_hal_srng_access_begin+0xc/0x60 [ath11k]
+  lr : ath11k_dp_rx_process_mon_status+0x15c/0xd84 [ath11k]
+  Call trace:
+   ath11k_hal_srng_access_begin+0xc/0x60 [ath11k]
+   ath11k_dp_rx_process_mon_rings+0xa0/0x5d4 [ath11k]
+   ath11k_dp_service_srng+0x1f4/0x348 [ath11k]
+   ath11k_ahb_ext_grp_napi_poll+0x34/0xd4 [ath11k_ahb]
+   __napi_poll+0x38/0x188
+   net_rx_action+0x120/0x2c0
+
+ath11k_core_reconfigure_on_crash() tears the data path down with
+ath11k_dp_pdev_free(), ath11k_dp_free() and ath11k_hal_srng_clear(),
+which memsets the ring list. The DP NAPI is still running while that
+happens, so it services a ring whose address pointer has just been
+cleared.
+
+That function used to disable the interrupts first, until
+commit d455e805de70 ("wifi: ath11k: rearrange IRQ enable/disable in reset path")
+moved the disable into ath11k_core_reset(). reset_work is only queued
+from mhi.c and from the debugfs hw-restart handler, so AHB parts never
+run it on a real firmware crash. Their recovery goes QMI server exit ->
+restart_work -> ath11k_core_reconfigure_on_crash() ->
+ath11k_core_qmi_firmware_ready(), and nothing disables the interrupts
+anywhere along it.
+
+Disable them again on the crash path. The reset path has already done
+so by the time it gets here, hence the ab->is_reset check.
+
+This is also why the debugfs hw-restart trigger never showed the
+problem: it goes through ath11k_core_reset(), the one path that still
+had the disable.
+
+Tested-on: IPQ8074 hw2.0 AHB WLAN.HK.2.12-01460-QCAHKSWPL_SILICONZ-1
+
+Fixes: d455e805de70 ("wifi: ath11k: rearrange IRQ enable/disable in reset path")
+Assisted-by: Claude:claude-opus-5
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+Reviewed-by: Rameshkumar Sundaram <rameshkumar.sundaram@oss.qualcomm.com>
+Reviewed-by: Baochen Qiang <baochen.qiang@oss.qualcomm.com>
+Link: https://patch.msgid.link/20260726221908.104873-3-julius@bairaktaris.de
+Signed-off-by: Jeff Johnson <jeff.johnson@oss.qualcomm.com>
+---
+ drivers/net/wireless/ath/ath11k/core.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+--- a/drivers/net/wireless/ath/ath11k/core.c
++++ b/drivers/net/wireless/ath/ath11k/core.c
+@@ -2394,6 +2394,16 @@ static int ath11k_core_reconfigure_on_cr
+ 
+ 	mutex_lock(&ab->core_lock);
+ 	ath11k_thermal_unregister(ab);
++
++	/*
++	 * ath11k_core_reset() already disabled the interrupts on the reset
++	 * path; only the firmware crash path reaches here with them live.
++	 */
++	if (!ab->is_reset) {
++		ath11k_hif_irq_disable(ab);
++		ath11k_hif_ce_irq_disable(ab);
++	}
++
+ 	ath11k_dp_pdev_free(ab);
+ 	ath11k_cfr_deinit(ab);
+ 	ath11k_spectral_deinit(ab);

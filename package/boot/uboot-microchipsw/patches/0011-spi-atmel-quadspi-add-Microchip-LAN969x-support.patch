@@ -1,0 +1,59 @@
+From c8ea2cc976d650f39cf8dd2021f951b669a0f233 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robert.marko@sartura.hr>
+Date: Mon, 15 Dec 2025 23:03:02 +0100
+Subject: [PATCH 11/17] spi: atmel-quadspi: add Microchip LAN969x support
+
+Add support for Microchip LAN969x SoC-s.
+
+Signed-off-by: Robert Marko <robert.marko@sartura.hr>
+---
+ drivers/spi/Kconfig         |  2 +-
+ drivers/spi/atmel-quadspi.c | 11 +++++++++++
+ 2 files changed, 12 insertions(+), 1 deletion(-)
+
+--- a/drivers/spi/Kconfig
++++ b/drivers/spi/Kconfig
+@@ -103,7 +103,7 @@ config ATH79_SPI
+ 
+ config ATMEL_QSPI
+ 	bool "Atmel Quad SPI Controller"
+-	depends on ARCH_AT91
++	depends on ARCH_AT91 || ARCH_MICROCHIPSW
+ 	select SPI_MEM
+ 	help
+ 	  Enable the Atmel Quad SPI controller in master mode. This driver
+--- a/drivers/spi/atmel-quadspi.c
++++ b/drivers/spi/atmel-quadspi.c
+@@ -24,7 +24,9 @@
+ #include <linux/io.h>
+ #include <linux/iopoll.h>
+ #include <linux/ioport.h>
++#if IS_ENABLED(CONFIG_ARCH_AT91)
+ #include <mach/clk.h>
++#endif
+ #include <spi.h>
+ #include <spi-mem.h>
+ 
+@@ -1311,6 +1313,11 @@ static const struct atmel_qspi_caps atme
+ 	.has_gclk = true,
+ };
+ 
++static const struct atmel_qspi_caps microchip_lan9691_qspi_caps = {
++	.has_gclk = true,
++	.has_ricr = true,
++};
++
+ static const struct udevice_id atmel_qspi_ids[] = {
+ 	{
+ 		.compatible = "atmel,sama5d2-qspi",
+@@ -1328,6 +1335,10 @@ static const struct udevice_id atmel_qsp
+ 		.compatible = "microchip,sama7g5-qspi",
+ 		.data = (ulong)&atmel_sama7g5_qspi_caps,
+ 	},
++	{
++		.compatible = "microchip,lan9691-qspi",
++		.data = (ulong)&microchip_lan9691_qspi_caps,
++	},
+ 	{ /* sentinel */ }
+ };
+ 

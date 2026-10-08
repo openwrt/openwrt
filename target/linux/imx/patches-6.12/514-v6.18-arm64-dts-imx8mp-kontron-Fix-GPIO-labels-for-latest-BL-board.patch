@@ -1,0 +1,79 @@
+From 0153bcd37c61fdfd4953bc3e2953f00a19577e2a Mon Sep 17 00:00:00 2001
+From: Frieder Schrempf <frieder.schrempf@kontron.de>
+Date: Mon, 21 Jul 2025 12:05:42 +0200
+Subject: arm64: dts: imx8mp-kontron: Fix GPIO labels for latest BL board
+
+Hardware rev 3 changed a few signals. Reflect these changes in
+the GPIO labels.
+
+* digital IOs were moved to GPIO expander
+* remove labels for unused signals
+* add labels for TFT, CSI and USB hub IOs
+
+Signed-off-by: Frieder Schrempf <frieder.schrempf@kontron.de>
+Signed-off-by: Shawn Guo <shawnguo@kernel.org>
+---
+ .../boot/dts/freescale/imx8mp-kontron-bl-osm-s.dts | 30 ++++++++++------------
+ 1 file changed, 14 insertions(+), 16 deletions(-)
+
+--- a/arch/arm64/boot/dts/freescale/imx8mp-kontron-bl-osm-s.dts
++++ b/arch/arm64/boot/dts/freescale/imx8mp-kontron-bl-osm-s.dts
+@@ -123,38 +123,36 @@
+ 
+ /*
+  * Rename SoM signals according to board usage:
+- *   GPIO_B_0      -> DIO1_OUT
+- *   GPIO_B_1      -> DIO2_OUT
++ *   GPIO_B_0      -> IO_EXP_INT
++ *   GPIO_B_1      -> IO_EXP_RST
+  */
+ &gpio3 {
+ 	gpio-line-names = "PCIE_WAKE", "PCIE_CLKREQ", "PCIE_A_PERST", "SDIO_B_D5",
+ 			  "SDIO_B_D6", "SDIO_B_D7", "SPI_A_WP", "SPI_A_HOLD",
+ 			  "UART_B_RTS", "UART_B_CTS", "SDIO_B_D0", "SDIO_B_D1",
+ 			  "SDIO_B_D2", "SDIO_B_D3", "SDIO_B_WP", "SDIO_B_D4",
+-			  "PCIE_SM_ALERT", "SDIO_B_CLK", "SDIO_B_CMD", "DIO1_OUT",
+-			  "DIO2_OUT", "", "BOOT_SEL0", "BOOT_SEL1",
++			  "PCIE_SM_ALERT", "SDIO_B_CLK", "SDIO_B_CMD", "IO_EXP_INT",
++			  "IO_EXP_RST", "", "BOOT_SEL0", "BOOT_SEL1",
+ 			  "", "", "SDIO_B_CD", "SDIO_B_PWR_EN",
+ 			  "HDMI_CEC", "HDMI_HPD";
+ };
+ 
+ /*
+- * Rename SoM signals according to board usage:
+- *   GPIO_B_5      -> DIO2_IN
+- *   GPIO_B_6      -> DIO3_IN
+- *   GPIO_B_7      -> DIO4_IN
+- *   GPIO_B_3      -> DIO4_OUT
+- *   GPIO_B_4      -> DIO1_IN
+- *   GPIO_B_2      -> DIO3_OUT
++ * Rename SoM signals according to board usage and remove labels for unsed pins:
++ *   GPIO_A_6      -> TFT_RESET
++ *   GPIO_A_7      -> TFT_STBY
++ *   GPIO_B_3      -> CSI_ENABLE
++ *   GPIO_B_2      -> USB_HUB_RST
+  */
+ &gpio4 {
+-	gpio-line-names = "DIO2_IN", "DIO3_IN", "DIO4_IN", "GPIO_C_0",
++	gpio-line-names = "", "", "", "",
+ 			  "ETH_A_MDC", "ETH_A_MDIO", "ETH_A_RXD0", "ETH_A_RXD1",
+ 			  "ETH_A_RXD2", "ETH_A_RXD3", "ETH_A_RX_DV", "ETH_A_RX_CLK",
+ 			  "ETH_A_TXD0", "ETH_A_TXD1", "ETH_A_TXD2", "ETH_A_TXD3",
+-			  "ETH_A_TX_EN", "ETH_A_TX_CLK", "DIO4_OUT", "DIO1_IN",
+-			  "DIO3_OUT", "GPIO_A_6", "CAN_A_TX", "UART_A_CTS",
++			  "ETH_A_TX_EN", "ETH_A_TX_CLK", "CSI_ENABLE", "",
++			  "USB_HUB_RST", "TFT_RESET", "CAN_A_TX", "UART_A_CTS",
+ 			  "UART_A_RTS", "CAN_A_RX", "CAN_B_TX", "CAN_B_RX",
+-			  "GPIO_A_7", "CARRIER_PWR_EN", "I2S_A_DATA_IN", "I2S_LRCLK";
++			  "TFT_STBY", "CARRIER_PWR_EN", "I2S_A_DATA_IN", "I2S_LRCLK";
+ };
+ 
+ /*
+@@ -325,4 +323,4 @@
+ 			MX8MP_IOMUXC_NAND_DQS__GPIO3_IO14		0x46
+ 		>;
+ 	};
+-};
+\ No newline at end of file
++};

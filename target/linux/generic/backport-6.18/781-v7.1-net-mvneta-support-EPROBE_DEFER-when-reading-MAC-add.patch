@@ -1,0 +1,39 @@
+From 73a864352570fd30d942652f05bfe9340d7a2055 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Fri, 6 Mar 2026 19:17:09 -0800
+Subject: [PATCH] net: mvneta: support EPROBE_DEFER when reading MAC address
+
+If nvmem loads after the ethernet driver, mac address assignments will
+not take effect. of_get_ethdev_address returns EPROBE_DEFER in such a
+case so we need to handle that to avoid eth_hw_addr_random.
+
+Add extra goto section to just free stats as they are allocated right
+above.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+Reviewed-by: Simon Horman <horms@kernel.org>
+Link: https://patch.msgid.link/20260307031709.640141-1-rosenp@gmail.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/ethernet/marvell/mvneta.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/drivers/net/ethernet/marvell/mvneta.c
++++ b/drivers/net/ethernet/marvell/mvneta.c
+@@ -5628,6 +5628,8 @@ static int mvneta_probe(struct platform_
+ 	}
+ 
+ 	err = of_get_ethdev_address(dn, dev);
++	if (err == -EPROBE_DEFER)
++		goto err_free_stats;
+ 	if (!err) {
+ 		mac_from = "device tree";
+ 	} else {
+@@ -5763,6 +5765,7 @@ err_netdev:
+ 				       1 << pp->id);
+ 		mvneta_bm_put(pp->bm_priv);
+ 	}
++err_free_stats:
+ 	free_percpu(pp->stats);
+ err_free_ports:
+ 	free_percpu(pp->ports);

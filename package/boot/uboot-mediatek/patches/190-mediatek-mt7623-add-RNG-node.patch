@@ -1,0 +1,30 @@
+From 93854d4c2f6a634c90ac0f86d724478a812e081d Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Wed, 4 Mar 2026 01:36:10 +0000
+Subject: [PATCH 3/8] mediatek: mt7623: add RNG node
+
+Add node representing the hardware random number generator
+found in the MediaTek MT7623 SoC family to the corresponding
+device tree.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ arch/arm/dts/mt7623.dtsi | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+--- a/arch/arm/dts/mt7623.dtsi
++++ b/arch/arm/dts/mt7623.dtsi
+@@ -168,6 +168,13 @@
+ 		#clock-cells = <1>;
+ 	};
+ 
++	rng: rng@1020f000 {
++		compatible = "mediatek,mt7623-rng";
++		reg = <0x1020f000 0x1000>;
++		clocks = <&infracfg CLK_INFRA_TRNG>;
++		clock-names = "rng";
++	};
++
+ 	gic: interrupt-controller@10211000 {
+ 		compatible = "arm,cortex-a7-gic";
+ 		interrupt-controller;

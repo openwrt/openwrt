@@ -1,0 +1,71 @@
+From 5ba017f9efef3cf65cc60005aae4cbbf70b9b2b8 Mon Sep 17 00:00:00 2001
+From: Sandeep Sondagar <sandeepsondagar@gmail.com>
+Date: Sun, 9 Aug 2026 21:31:41 +0530
+Subject: [PATCH] net: phylink: treat PSGMII as an inband capable interface
+
+PSGMII (the Qualcomm 5-port SGMII) conveys the link negotiation result
+from the PHY back to the MAC through per-channel in-band SGMII words,
+exactly like SGMII and QSGMII.
+
+However, PHY_INTERFACE_MODE_PSGMII is missing from
+phylink_get_inband_type(), so phylink reports INBAND_NONE for it and
+phylink_pcs_neg_mode() falls back to PHYLINK_PCS_NEG_NONE. The PCS is
+then programmed in force mode and its control-register speed bits (which
+default to 1000base) are used, so a slower copper link - e.g. 100base-T
+- is reported as 1Gbps and cannot pass traffic.
+
+Classify PSGMII alongside SGMII and QSGMII as INBAND_CISCO_SGMII so the
+PCS negotiates in-band and the resolved link speed comes from the PHY
+in-band word.
+
+Also add PSGMII to the generic clause 22 PCS helper functions which
+handle the SGMII in-band word. Without this, a PCS using these helpers
+would still fall through to the default handling and force the link
+state to false in phylink_mii_c22_pcs_decode_state(), fail to encode
+the SGMII advertisement, and get rejected by phylink_get_link_timer_ns().
+
+Signed-off-by: Sandeep Sondagar <sandeepsondagar@gmail.com>
+Reviewed-by: Nicolai Buchwitz <nb@tipi-net.de>
+Link: https://patch.msgid.link/20260809-phylink-psgmii-v3-1-908dcd3a9e3d@gmail.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/phy/phylink.c | 3 +++
+ include/linux/phylink.h   | 1 +
+ 2 files changed, 4 insertions(+)
+
+--- a/drivers/net/phy/phylink.c
++++ b/drivers/net/phy/phylink.c
+@@ -1171,6 +1171,7 @@ static enum inband_type phylink_get_inba
+ {
+ 	switch (interface) {
+ 	case PHY_INTERFACE_MODE_SGMII:
++	case PHY_INTERFACE_MODE_PSGMII:
+ 	case PHY_INTERFACE_MODE_QSGMII:
+ 	case PHY_INTERFACE_MODE_QUSGMII:
+ 	case PHY_INTERFACE_MODE_USXGMII:
+@@ -3956,6 +3957,7 @@ void phylink_mii_c22_pcs_decode_state(st
+ 		break;
+ 
+ 	case PHY_INTERFACE_MODE_SGMII:
++	case PHY_INTERFACE_MODE_PSGMII:
+ 	case PHY_INTERFACE_MODE_QSGMII:
+ 		phylink_decode_sgmii_word(state, lpa);
+ 		break;
+@@ -4031,6 +4033,7 @@ int phylink_mii_c22_pcs_encode_advertise
+ 			adv |= ADVERTISE_1000XPSE_ASYM;
+ 		return adv;
+ 	case PHY_INTERFACE_MODE_SGMII:
++	case PHY_INTERFACE_MODE_PSGMII:
+ 	case PHY_INTERFACE_MODE_QSGMII:
+ 		return 0x0001;
+ 	default:
+--- a/include/linux/phylink.h
++++ b/include/linux/phylink.h
+@@ -674,6 +674,7 @@ static inline int phylink_get_link_timer
+ {
+ 	switch (interface) {
+ 	case PHY_INTERFACE_MODE_SGMII:
++	case PHY_INTERFACE_MODE_PSGMII:
+ 	case PHY_INTERFACE_MODE_QSGMII:
+ 	case PHY_INTERFACE_MODE_USXGMII:
+ 	case PHY_INTERFACE_MODE_10G_QXGMII:

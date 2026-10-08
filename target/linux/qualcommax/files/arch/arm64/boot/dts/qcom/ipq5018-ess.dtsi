@@ -1,0 +1,78 @@
+&soc {
+	gmac0: ethernet@39c00000 {
+		compatible = "qcom,ipq5018-gmac", "snps,dwmac";
+		reg = <0x39c00000 0x10000>;
+		reg-names = "stmmaceth";
+		clocks = <&gcc GCC_GMAC0_SYS_CLK>,
+			 <&gcc GCC_GMAC0_CFG_CLK>,
+			 <&gcc GCC_GMAC0_PTP_CLK>,
+			 <&gcc GCC_SNOC_GMAC0_AHB_CLK>,
+			 <&gcc GCC_SNOC_GMAC0_AXI_CLK>,
+			 <&gcc GCC_GMAC0_RX_CLK>,
+			 <&gcc GCC_GMAC0_TX_CLK>;
+		clock-names = "stmmaceth",
+			      "pclk",
+			      "ptp_ref",
+			      "ahb",
+			      "axi",
+			      "rx",
+			      "tx";
+		assigned-clocks = <&gcc GCC_GMAC0_SYS_CLK>,
+				  <&gcc GCC_GMAC0_CFG_CLK>,
+				  <&gcc GCC_GMAC0_PTP_CLK>,
+				  <&gcc GCC_SNOC_GMAC0_AHB_CLK>,
+				  <&gcc GCC_SNOC_GMAC0_AXI_CLK>;
+		assigned-clock-rates = <240000000>,
+				       <240000000>,
+				       <240000000>,
+				       <240000000>,
+				       <240000000>;
+		resets = <&gcc GCC_GMAC0_BCR>;
+		reset-names = "stmmaceth";
+		interrupts = <GIC_SPI 101 IRQ_TYPE_LEVEL_HIGH>;
+		interrupt-names = "macirq";
+
+		phy-handle = <&ge_phy>;
+		phy-mode = "sgmii";
+
+		status = "disabled";
+	};
+
+	gmac1: ethernet@39d00000 {
+		compatible = "qcom,ipq5018-gmac", "snps,dwmac";
+		reg = <0x39d00000 0x10000>;
+		reg-names = "stmmaceth";
+		clocks = <&gcc GCC_GMAC1_SYS_CLK>,
+			 <&gcc GCC_GMAC1_CFG_CLK>,
+			 <&gcc GCC_GMAC1_PTP_CLK>,
+			 <&gcc GCC_SNOC_GMAC1_AHB_CLK>,
+			 <&gcc GCC_SNOC_GMAC1_AXI_CLK>,
+			 <&gcc GCC_GMAC1_RX_CLK>,
+			 <&gcc GCC_GMAC1_TX_CLK>;
+		clock-names = "stmmaceth",
+			      "pclk",
+			      "ptp_ref",
+			      "ahb",
+			      "axi",
+			      "rx",
+			      "tx";
+		assigned-clocks = <&gcc GCC_GMAC1_SYS_CLK>,
+				  <&gcc GCC_GMAC1_CFG_CLK>,
+				  <&gcc GCC_GMAC1_PTP_CLK>,
+				  <&gcc GCC_SNOC_GMAC1_AHB_CLK>,
+				  <&gcc GCC_SNOC_GMAC1_AXI_CLK>;
+		assigned-clock-rates = <240000000>,
+				       <240000000>,
+				       <240000000>,
+				       <240000000>,
+				       <240000000>;
+		resets = <&gcc GCC_GMAC1_BCR>;
+		reset-names = "stmmaceth";
+		interrupts = <GIC_SPI 109 IRQ_TYPE_LEVEL_HIGH>;
+		interrupt-names = "macirq";
+
+		pcs-handle = <&uniphy0>;
+
+		status = "disabled";
+	};
+};

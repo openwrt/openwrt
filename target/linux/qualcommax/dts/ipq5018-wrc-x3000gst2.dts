@@ -1,0 +1,22 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "ipq5018-wrc-x3000.dtsi"
+
+/ {
+	model = "ELECOM WRC-X3000GST2";
+	compatible = "elecom,wrc-x3000gst2", "qcom,ipq5018";
+};
+
+&q6v5_wcss {
+	status = "okay";
+};
+
+&wifi {
+	status = "okay";
+	qcom,ath11k-fw-memory-mode = <1>;
+};
+
+&wifi1 {
+	status = "okay";
+	qcom,ath11k-fw-memory-mode = <1>;
+};

@@ -1,0 +1,14 @@
+--- a/monitor.c
++++ b/monitor.c
+@@ -449,9 +449,9 @@ static int read_and_act(struct active_ar
+ 	}
+ 
+ 	gettimeofday(&tv, NULL);
+-	dprintf("(%d): %ld.%06ld state:%s prev:%s action:%s prev: %s start:%llu\n",
++	dprintf("(%d): %lld.%06ld state:%s prev:%s action:%s prev: %s start:%llu\n",
+ 		a->info.container_member,
+-		tv.tv_sec, tv.tv_usec,
++		(long long)tv.tv_sec, (long)tv.tv_usec,
+ 		array_states[a->curr_state],
+ 		array_states[a->prev_state],
+ 		sync_actions[a->curr_action],

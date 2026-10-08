@@ -1,0 +1,140 @@
+// SPDX-License-Identifier: GPL-2.0-only
+/*
+ * Device Tree Source for Meraki devices
+ *
+ * Copyright (C) 2017 Chris Blake <chrisrblake93@gmail.com>
+ * Copyright (C) 2017 Christian Lamparter <chunkeey@googlemail.com>
+ * Copyright (C) 2025 Hal Martin <halmartin@googlemail.com>
+ *
+ * Based on Cisco Meraki DTS from GPL release r25-linux-3.14-20170427
+ *
+ * This file is licensed under the terms of the GNU General Public
+ * License version 2.  This program is licensed "as is" without
+ * any warranty of any kind, whether express or implied.
+ */
+
+#include "qcom-ipq4029-meraki-common.dtsi"
+
+/ {
+	aliases {
+		led-boot = &status_green;
+		led-failsafe = &status_blue;
+		led-running = &status_green;
+		led-upgrade = &power_orange;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		power_orange: power {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_ORANGE>;
+			gpios = <&tlmm 49 GPIO_ACTIVE_HIGH>;
+			panic-indicator;
+		};
+
+		status_green: led_green {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&tlmm 34 GPIO_ACTIVE_HIGH>;
+		};
+
+		status_blue: led_blue {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&tlmm 35 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	soc {
+		ess_tcsr@1953000 {
+			qcom,ess-interface-select = <TCSR_ESS_PSGMII_RGMII5>;
+		};
+	};
+};
+
+&blsp1_i2c3 {
+	eeprom@56 {
+		compatible = "atmel,24c64";
+		pagesize = <32>;
+		reg = <0x56>;
+		read-only; /* This holds our MAC & Meraki board-data */
+
+		nvmem-layout {
+			compatible = "fixed-layout";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			mac_address: mac-address@66 {
+				compatible = "mac-base";
+				reg = <0x66 0x6>;
+				#nvmem-cell-cells = <1>;
+			};
+		};
+	};
+};
+
+&tlmm {
+	i2c_0_pins: i2c_0_pinmux {
+		function = "blsp_i2c0";
+		pins = "gpio10", "gpio11";
+		drive-strength = <16>;
+		bias-disable;
+	};
+};
+
+&mdio {
+	ethernet-phy-package@0 {
+		status = "disabled";
+	};
+
+	ar8035: ethernet-phy@0 {
+		compatible = "ethernet-phy-ieee802.3-c22";
+		reg = <0>;
+	};
+};
+
+&switch {
+	/delete-property/ psgmii-ethphy;
+};
+
+&ethphy0 {
+	status = "disabled";
+};
+
+&ethphy1 {
+	status = "disabled";
+};
+
+&ethphy2 {
+	status = "disabled";
+};
+
+&ethphy3 {
+	status = "disabled";
+};
+
+&ethphy4 {
+	status = "disabled";
+};
+
+&psgmiiphy {
+	status = "disabled";
+};
+
+&swport5 {
+	status = "okay";
+	label = "lan";
+	phy-handle = <&ar8035>;
+	phy-mode = "rgmii-id";
+};
+
+&wifi0 {
+	status = "okay";
+	qcom,ath10k-calibration-variant = "Meraki-underdog";
+};
+
+&wifi1 {
+	status = "okay";
+	qcom,ath10k-calibration-variant = "Meraki-underdog";
+};

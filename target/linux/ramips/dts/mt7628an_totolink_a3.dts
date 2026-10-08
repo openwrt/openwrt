@@ -1,0 +1,39 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include <dt-bindings/leds/common.h>
+
+#include "mt7628an_iptime.dtsi"
+
+/ {
+	compatible = "totolink,a3", "mediatek,mt7628an-soc";
+	model = "TOTOLINK A3";
+
+	aliases {
+		led-boot = &led_cpu;
+		led-failsafe = &led_cpu;
+		led-running = &led_cpu;
+		led-upgrade = &led_cpu;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_cpu: cpu {
+			function = LED_FUNCTION_CPU;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
+		};
+
+		wlan {
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&gpio 46 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+	};
+};
+
+&esw {
+	mediatek,portmap = <0x3e>;
+	mediatek,portdisable = <0x32>;
+};

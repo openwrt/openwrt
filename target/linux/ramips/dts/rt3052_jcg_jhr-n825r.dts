@@ -1,0 +1,107 @@
+#include "rt3050.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	compatible = "jcg,jhr-n825r", "ralink,rt3052-soc";
+	model = "JCG JHR-N825R";
+
+	aliases {
+		led-boot = &led_system;
+		led-failsafe = &led_system;
+		led-running = &led_system;
+		led-upgrade = &led_system;
+	};
+
+	flash@1f000000 {
+		compatible = "cfi-flash";
+		reg = <0x1f000000 0x800000>;
+		bank-width = <2>;
+		device-width = <2>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x30000>;
+				read-only;
+			};
+
+			partition@30000 {
+				label = "u-boot-env";
+				reg = <0x30000 0x10000>;
+				read-only;
+			};
+
+			partition@40000 {
+				label = "factory";
+				reg = <0x40000 0x10000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x200>;
+					};
+
+					macaddr_factory_2e: macaddr@2e {
+						reg = <0x2e 0x6>;
+					};
+				};
+			};
+
+			partition@50000 {
+				compatible = "denx,uimage";
+				label = "firmware";
+				reg = <0x50000 0x3b0000>;
+			};
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led_system: system {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+		reset_wps {
+			label = "reset_wps";
+			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+};
+
+&state_default {
+	gpio {
+		groups = "spi", "i2c", "jtag", "rgmii", "mdio", "uartf";
+		function = "gpio";
+	};
+};
+
+&ethernet {
+	nvmem-cells = <&macaddr_factory_2e>;
+	nvmem-cell-names = "mac-address";
+};
+
+&esw {
+	mediatek,portmap = <0x3e>;
+};
+
+&wmac {
+	nvmem-cells = <&eeprom_factory_0>;
+	nvmem-cell-names = "eeprom";
+};

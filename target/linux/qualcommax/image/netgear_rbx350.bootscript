@@ -1,0 +1,7 @@
+imxtract $imgaddr ubi
+switch_rootfs 0
+smeminfo
+nand erase.part fs
+nand write $fileaddr fs $filesize
+setenv bootcmd "ubi part fs && ubi read 0x44000000 kernel && bootm"
+saveenv

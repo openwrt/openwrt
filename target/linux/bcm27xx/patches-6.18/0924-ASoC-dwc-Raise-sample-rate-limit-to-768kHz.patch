@@ -1,0 +1,24 @@
+From d1140e16d6f261d4f9cb51eeae5704b4c5724338 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.com>
+Date: Tue, 4 Aug 2026 08:52:51 +0100
+Subject: [PATCH] ASoC: dwc: Raise sample rate limit to 768kHz
+
+Regardless of what individual devices can support, there's no harm in
+allowing users to try higher sample rates.
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.com>
+---
+ sound/soc/dwc/dwc-i2s.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/sound/soc/dwc/dwc-i2s.c
++++ b/sound/soc/dwc/dwc-i2s.c
+@@ -813,7 +813,7 @@ static int dw_configure_dai_by_dt(struct
+ 	u32 idx2;
+ 	int ret;
+ 
+-	ret = dw_configure_dai(dev, dw_i2s_dai, SNDRV_PCM_RATE_8000_384000);
++	ret = dw_configure_dai(dev, dw_i2s_dai, SNDRV_PCM_RATE_8000_768000);
+ 	if (ret < 0)
+ 		return ret;
+ 

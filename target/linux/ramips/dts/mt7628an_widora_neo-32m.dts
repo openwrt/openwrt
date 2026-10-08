@@ -1,0 +1,14 @@
+#include "mt7628an_widora_neo.dtsi"
+
+/ {
+	compatible = "widora,neo-32m", "widora,neo", "mediatek,mt7628an-soc";
+	model = "Widora-NEO (32M)";
+};
+
+&flash0 {
+	broken-flash-reset;
+};
+
+&firmware {
+	reg = <0x50000 0x1fb0000>;
+};

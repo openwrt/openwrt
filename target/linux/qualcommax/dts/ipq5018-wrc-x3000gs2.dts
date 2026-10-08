@@ -1,0 +1,31 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "ipq5018-wrc-x3000.dtsi"
+
+/ {
+	model = "ELECOM WRC-X3000GS2";
+	compatible = "elecom,wrc-x3000gs2", "qcom,ipq5018";
+};
+
+/*
+ * ath11k Wi-Fi consumes too large memory spaces and too few spaces are
+ * available for users. To prevent OOM when using LuCI or other softwares,
+ * disable Wi-Fi related peripherals at the moment.
+ */
+&q6_region {
+	status = "disabled";
+};
+
+&q6v5_wcss {
+	status = "disabled";
+};
+
+&wifi {
+	status = "disabled";
+	qcom,ath11k-fw-memory-mode = <2>;
+};
+
+&wifi1 {
+	status = "disabled";
+	qcom,ath11k-fw-memory-mode = <2>;
+};

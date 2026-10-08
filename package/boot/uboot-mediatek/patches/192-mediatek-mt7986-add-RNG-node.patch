@@ -1,0 +1,34 @@
+From 7363cc746a12e6c62a5c44dd4aab06860978197d Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Tue, 3 Mar 2026 17:47:14 +0000
+Subject: [PATCH 5/8] mediatek: mt7986: add RNG node
+
+found in the MediaTek MT7986 SoC family to the corresponding
+device tree.
+
+Depending on whether TF-A prevents direct hardware access to the HWRNG
+via MMIO you have to enable either RNG_MTK (classic MMIO) or
+RNG_MTK_V2 (TF-A SMC).
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ arch/arm/dts/mt7986.dtsi | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+--- a/arch/arm/dts/mt7986.dtsi
++++ b/arch/arm/dts/mt7986.dtsi
+@@ -186,6 +186,14 @@
+ 		bootph-all;
+ 	};
+ 
++	rng@1020f000 {
++		compatible = "mediatek,mt7986-rng",
++			     "mediatek,mt7623-rng";
++		reg = <0x1020f000 0x100>;
++		clocks = <&infracfg CLK_INFRA_TRNG_CK>;
++		clock-names = "rng";
++	};
++
+ 	uart0: serial@11002000 {
+ 		compatible = "mediatek,hsuart";
+ 		reg = <0x11002000 0x400>;

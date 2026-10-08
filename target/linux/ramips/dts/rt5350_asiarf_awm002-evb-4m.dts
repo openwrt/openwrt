@@ -1,0 +1,10 @@
+#include "rt5350_asiarf_awm002-evb.dtsi"
+
+/ {
+	compatible = "asiarf,awm002-evb-4m", "ralink,rt5350-soc";
+	model = "AsiaRF AWM002 EVB (4M)";
+};
+
+&firmware {
+	reg = <0x50000 0x3b0000>;
+};

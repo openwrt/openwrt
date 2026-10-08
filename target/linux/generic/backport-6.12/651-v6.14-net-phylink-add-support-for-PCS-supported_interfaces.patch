@@ -1,0 +1,61 @@
+From fbb9a9d263a68f60a16c8ba5a51d6198d67171cd Mon Sep 17 00:00:00 2001
+From: "Russell King (Oracle)" <rmk+kernel@armlinux.org.uk>
+Date: Fri, 3 Jan 2025 11:16:31 +0000
+Subject: [PATCH] net: phylink: add support for PCS supported_interfaces bitmap
+
+Add support for the PCS to specify which interfaces it supports, which
+can be used by MAC drivers to build the main supported_interfaces
+bitmap. Phylink also validates that the PCS returned by the MAC driver
+supports the interface that the MAC was asked for.
+
+An empty supported_interfaces bitmap from the PCS indicates that it
+does not provide this information, and we handle that appropriately.
+
+Reviewed-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
+Signed-off-by: Russell King (Oracle) <rmk+kernel@armlinux.org.uk>
+Link: https://patch.msgid.link/E1tTffL-007RoD-1Y@rmk-PC.armlinux.org.uk
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/phy/phylink.c | 11 +++++++++++
+ include/linux/phylink.h   |  3 +++
+ 2 files changed, 14 insertions(+)
+
+--- a/drivers/net/phy/phylink.c
++++ b/drivers/net/phy/phylink.c
+@@ -701,6 +701,17 @@ static int phylink_validate_mac_and_pcs(
+ 			return -EINVAL;
+ 		}
+ 
++		/* Ensure that this PCS supports the interface which the MAC
++		 * returned it for. It is an error for the MAC to return a PCS
++		 * that does not support the interface mode.
++		 */
++		if (!phy_interface_empty(pcs->supported_interfaces) &&
++		    !test_bit(state->interface, pcs->supported_interfaces)) {
++			phylink_err(pl, "MAC returned PCS which does not support %s\n",
++				    phy_modes(state->interface));
++			return -EINVAL;
++		}
++
+ 		/* Validate the link parameters with the PCS */
+ 		if (pcs->ops->pcs_validate) {
+ 			ret = pcs->ops->pcs_validate(pcs, supported, state);
+--- a/include/linux/phylink.h
++++ b/include/linux/phylink.h
+@@ -393,6 +393,8 @@ struct phylink_pcs_ops;
+ 
+ /**
+  * struct phylink_pcs - PHYLINK PCS instance
++ * @supported_interfaces: describing which PHY_INTERFACE_MODE_xxx
++ *                        are supported by this PCS.
+  * @ops: a pointer to the &struct phylink_pcs_ops structure
+  * @phylink: pointer to &struct phylink_config
+  * @neg_mode: provide PCS neg mode via "mode" argument
+@@ -409,6 +411,7 @@ struct phylink_pcs_ops;
+  * the PCS driver.
+  */
+ struct phylink_pcs {
++	DECLARE_PHY_INTERFACE_MASK(supported_interfaces);
+ 	const struct phylink_pcs_ops *ops;
+ 	struct phylink *phylink;
+ 	bool neg_mode;

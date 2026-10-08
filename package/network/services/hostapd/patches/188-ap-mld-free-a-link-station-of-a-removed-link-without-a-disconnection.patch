@@ -1,0 +1,31 @@
+From 05106e0bb7e30caad2572140565e670468053099 Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 29 Sep 2026 08:20:26 +0200
+Subject: [PATCH] AP MLD: free a link station of a removed link without a
+ disconnection
+
+hostapd_free_link_stas() frees, on a link that leaves the AP MLD, the
+link stations of the non-AP MLDs associated over another link. Each
+went through ap_free_sta() and its ap_sta_set_authorized(..., 0), which
+reported AP-STA-DISCONNECTED and a ubus "disassoc" event with the MLD
+address. A non-AP MLD that stays associated over its other links was
+then reported gone.
+
+Clear the authorized flag of such a link station without the event
+before it is freed.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ src/ap/sta_info.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/src/ap/sta_info.c
++++ b/src/ap/sta_info.c
+@@ -606,6 +606,7 @@ void hostapd_free_link_stas(struct hosta
+ 
+ 		wpa_printf(MSG_DEBUG, "Removing link station from MLD " MACSTR,
+ 			   MAC2STR(prev->addr));
++		ap_sta_set_authorized_flag(hapd, prev, 0);
+ 		ap_free_sta(hapd, prev);
+ 	}
+ }

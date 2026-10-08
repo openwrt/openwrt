@@ -1,0 +1,12 @@
+--- a/src/Makefile.am
++++ b/src/Makefile.am
+@@ -213,8 +213,7 @@ drv_mei_cpe_common_cflags = $(AM_CFLAGS)
+ else
+ 
+ drv_mei_cpe_common_cflags = \
+-	$(AM_CFLAGS) -D__KERNEL__ -DLINUX -D__linux__ -DMODULE -DEXPORT_SYMTAB \
+-	-pipe -Wall -Wimplicit -Wunused -Wuninitialized -Wstrict-aliasing -Wno-date-time
++	-D__KERNEL__ -DLINUX -D__linux__ -DMODULE -DEXPORT_SYMTAB
+ 
+ endif
+ 

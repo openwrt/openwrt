@@ -1,0 +1,47 @@
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Tue, 29 Apr 2025 01:49:40 +0800
+Subject: [PATCH] fix usb_driver .shutdown callback
+
+Update API to fix build error on 6.12 kernel:
+
+/workspaces/openwrt/build_dir/target-x86_64_musl/linux-x86_64/rtl8812au-ct-2022.10.26~9b2b203a/os_dep/linux/usb_intf.c:393:17: error: 'struct usb_driver' has no member named 'drvwrap'
+  393 |         .usbdrv.drvwrap.driver.shutdown = rtw_dev_shutdown,
+      |                 ^~~~~~~
+/workspaces/openwrt/build_dir/target-x86_64_musl/linux-x86_64/rtl8812au-ct-2022.10.26~9b2b203a/os_dep/linux/usb_intf.c:393:43: error: initialization of 'const char *' from incompatible pointer type 'void (*)(struct device *)' [-Werror=incompatible-pointer-types]
+  393 |         .usbdrv.drvwrap.driver.shutdown = rtw_dev_shutdown,
+      |                                           ^~~~~~~~~~~~~~~~
+
+Link: https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/commit/?h=linux-6.11.y&id=a5f81642a7228489292f842a106e33c558121e8b
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ os_dep/linux/usb_intf.c | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+--- a/os_dep/linux/usb_intf.c
++++ b/os_dep/linux/usb_intf.c
+@@ -49,9 +49,14 @@ static int rtw_resume(struct usb_interfa
+ static int rtw_drv_init(struct usb_interface *pusb_intf,const struct usb_device_id *pdid);
+ static void rtw_dev_remove(struct usb_interface *pusb_intf);
+ 
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 11, 0))
++static void rtw_dev_shutdown(struct usb_interface *usb_intf)
++{
++#else
+ static void rtw_dev_shutdown(struct device *dev)
+ {
+ 	struct usb_interface *usb_intf = container_of(dev, struct usb_interface, dev);
++#endif
+ 	struct dvobj_priv *dvobj = NULL;
+ 	_adapter *adapter = NULL;
+ 	int i;
+@@ -389,7 +394,9 @@ struct rtw_usb_drv usb_drv = {
+ 	.usbdrv.supports_autosuspend = 1,
+ #endif
+ 
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19))
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 11, 0))
++	.usbdrv.shutdown = rtw_dev_shutdown,
++#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19))
+ 	.usbdrv.drvwrap.driver.shutdown = rtw_dev_shutdown,
+ #else
+ 	.usbdrv.driver.shutdown = rtw_dev_shutdown,

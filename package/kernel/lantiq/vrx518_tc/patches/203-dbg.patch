@@ -1,0 +1,120 @@
+--- a/dcdp/platform/sw_plat.c
++++ b/dcdp/platform/sw_plat.c
+@@ -85,6 +85,7 @@ struct aca_ring {
+ 	u32 dnum;
+ 	u32 dsize;
+ 	int idx; /* SoC RX/TX index */
++	u64 cnt;
+ 	int ep_dev_idx;
+ };
+ 
+@@ -210,6 +211,8 @@ struct plat_priv {
+ 	struct net_device *netdev;
+ 	struct napi_struct *napi_tx;
+ 	struct napi_struct *napi_rx;
++	u64 napi_tx_stats[NAPI_POLL_WEIGHT+1];
++	u64 napi_rx_stats[NAPI_POLL_WEIGHT+1];
+ 	DECLARE_HASHTABLE(mem_map, 8);
+ };
+ 
+@@ -362,6 +365,7 @@ static void txlist_free(struct tx_list *
+ static inline void ring_idx_inc(struct aca_ring *ring)
+ {
+ 	ring->idx = (ring->idx + 1) % ring->dnum;
++	ring->cnt += 1;
+ }
+ 
+ static struct sk_buff *txin_skb_prepare(struct sk_buff *skb)
+@@ -619,6 +623,8 @@ static int plat_txout_napi(struct napi_s
+ 
+ 	cnt = txout_action(tcpriv, txout, budget);
+ 
++	priv->napi_tx_stats[cnt] += 1;
++
+ 	if (cnt < budget) {
+ 		if (napi_complete_done(napi, cnt))
+ 			ep_dev->hw_ops->icu_en(ep_dev, ACA_HOSTIF_TX);
+@@ -653,6 +659,8 @@ static int plat_rxout_napi(struct napi_s
+ 	if (cnt)
+ 		rxin_action(tcpriv, rxin, DMA_PACKET_SZ, cnt);
+ 
++	priv->napi_rx_stats[cnt] += 1;
++
+ 	if (cnt < budget) {
+ 		if (napi_complete_done(napi, cnt))
+ 			ep_dev->hw_ops->icu_en(ep_dev, ACA_HOSTIF_RX);
+@@ -1092,6 +1100,56 @@ static int plat_soc_cfg_get(struct soc_c
+ 	return 0;
+ }
+ 
++static struct proc_dir_entry *g_proc_entry;
++
++static int proc_show(struct seq_file *m, void *p)
++{
++	struct aca_ring *txin = &g_plat_priv->soc_rings.txin;
++	struct aca_ring *txout = &g_plat_priv->soc_rings.txout;
++	struct aca_ring *rxin = &g_plat_priv->soc_rings.rxin;
++	struct aca_ring *rxout = &g_plat_priv->soc_rings.rxout;
++	int i;
++
++	seq_printf(m, "napi_tx_stats: ");
++	for (i = 0; i < sizeof(g_plat_priv->napi_tx_stats) / sizeof(g_plat_priv->napi_tx_stats[0]); i++) {
++		if (i == 0) {
++			seq_printf(m, "%llu", g_plat_priv->napi_tx_stats[i]);
++		} else {
++			seq_printf(m, ", %llu", g_plat_priv->napi_tx_stats[i]);
++		}
++	}
++	seq_printf(m, "\n");
++
++	seq_printf(m, "napi_rx_stats: ");
++	for (i = 0; i < sizeof(g_plat_priv->napi_rx_stats) / sizeof(g_plat_priv->napi_rx_stats[0]); i++) {
++		if (i == 0) {
++			seq_printf(m, "%llu", g_plat_priv->napi_rx_stats[i]);
++		} else {
++			seq_printf(m, ", %llu", g_plat_priv->napi_rx_stats[i]);
++		}
++	}
++	seq_printf(m, "\n");
++
++	seq_printf(m, "txin: %d/%u, %llu\n", txin->idx, txin->dnum, txin->cnt);
++	seq_printf(m, "txout: %d/%u, %llu\n", txout->idx, txout->dnum, txout->cnt);
++	seq_printf(m, "rxin: %d/%u, %llu\n", rxin->idx, rxin->dnum, rxin->cnt);
++	seq_printf(m, "rxout: %d/%u, %llu\n", rxout->idx, rxout->dnum, rxout->cnt);
++
++	return 0;
++}
++
++static int proc_open(struct inode *inode, struct file *file)
++{
++	return single_open(file, proc_show, NULL);
++}
++
++static struct proc_ops proc_operations = {
++        .proc_open    = proc_open,
++        .proc_read    = seq_read,
++        .proc_lseek   = seq_lseek,
++        .proc_release = single_release
++};
++
+ static int plat_open(struct net_device *pdev, const char *dev_name,
+ 		struct napi_struct *napi_tx, struct napi_struct *napi_rx,
+ 		int id, int flag)
+@@ -1099,6 +1157,8 @@ static int plat_open(struct net_device *
+ 	struct tc_priv *priv = g_plat_priv->tc_priv;
+ 	int i;
+ 
++	g_proc_entry = proc_create("swplat", 0600, priv->proc_dir, &proc_operations);
++
+ 	for (i = 0; i < EP_MAX_NUM && i < priv->ep_num; i++) {
+ 		disable_irq(priv->ep_dev[i].aca_rx_irq);
+ 		disable_irq(priv->ep_dev[i].aca_tx_irq);
+@@ -1137,6 +1197,8 @@ static void plat_close(struct net_device
+ 		enable_irq(priv->ep_dev[i].aca_tx_irq);
+ 	}
+ 
++	proc_remove(g_proc_entry);
++
+ 	return;
+ }
+ 

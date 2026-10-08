@@ -1,0 +1,59 @@
+From 5b19ca527471903920d713bc48518a036a95bf6b Mon Sep 17 00:00:00 2001
+From: Frieder Schrempf <frieder.schrempf@kontron.de>
+Date: Thu, 28 May 2026 12:15:56 +0200
+Subject: arm64: dts: imx8mp-kontron: Fix GPIO for display power switch
+
+The GPIO that controls the power supply for the LVDS display
+connector has changed between early prototypes and the current
+production design of the hardware. Reflect this change in the
+devicetree to properly switch on the panel supply.
+
+This was working before even with the wrong GPIO due to the
+bidirectional level shifter used on the board which drives the EN
+signal high even when the input has a (weak) pull down configured as
+reset condition of the SoC pad. As a result the display was working
+but the supply was always on.
+
+Tested on BL i.MX8MP to show the correct voltage level on the level
+shifter input.
+
+Fixes: 946ab10e3f40 ("arm64: dts: Add support for Kontron OSM-S i.MX8MP SoM and BL carrier board")
+Signed-off-by: Frieder Schrempf <frieder.schrempf@kontron.de>
+Signed-off-by: Frank Li <Frank.Li@nxp.com>
+---
+ arch/arm64/boot/dts/freescale/imx8mp-kontron-bl-osm-s.dts | 12 ++++++++++--
+ 1 file changed, 10 insertions(+), 2 deletions(-)
+
+--- a/arch/arm64/boot/dts/freescale/imx8mp-kontron-bl-osm-s.dts
++++ b/arch/arm64/boot/dts/freescale/imx8mp-kontron-bl-osm-s.dts
+@@ -49,7 +49,9 @@
+ 
+ 	reg_vcc_panel: regulator-vcc-panel {
+ 		compatible = "regulator-fixed";
+-		gpio = <&gpio4 3 GPIO_ACTIVE_HIGH>;
++		pinctrl-names = "default";
++		pinctrl-0 = <&pinctrl_reg_vcc_panel>;
++		gpio = <&gpio5 3 GPIO_ACTIVE_HIGH>;
+ 		enable-active-high;
+ 		regulator-max-microvolt = <3300000>;
+ 		regulator-min-microvolt = <3300000>;
+@@ -172,7 +174,7 @@
+ &gpio5 {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_gpio5>;
+-	gpio-line-names = "I2S_BITCLK", "I2S_A_DATA_OUT", "I2S_MCLK", "PWM_2",
++	gpio-line-names = "I2S_BITCLK", "I2S_A_DATA_OUT", "I2S_MCLK", "VCC_PANEL_EN",
+ 			  "PWM_1", "PWM_0", "SPI_A_SCK", "CAN_ADDR1",
+ 			  "CAN_ADDR0", "SPI_A_CS0", "SPI_B_SCK", "SPI_B_SDO",
+ 			  "SPI_B_SDI", "SPI_B_CS0", "I2C_A_SCL", "I2C_A_SDA",
+@@ -329,4 +331,10 @@
+ 			MX8MP_IOMUXC_ECSPI1_MISO__GPIO5_IO08		0x46 /* CAN_ADR1 */
+ 		>;
+ 	};
++
++	pinctrl_reg_vcc_panel: regvccpanelgrp {
++		fsl,pins = <
++			MX8MP_IOMUXC_SPDIF_TX__GPIO5_IO03		0x46
++		>;
++	};
+ };

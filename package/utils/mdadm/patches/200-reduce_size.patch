@@ -1,0 +1,25 @@
+--- a/Incremental.c
++++ b/Incremental.c
+@@ -985,6 +985,10 @@ static int array_try_spare(char *devname
+ 				goto next;
+ 		}
+ 
++		#ifndef MDADM_FULL
++			return 0;
++		#endif
++
+ 		dl = domain_from_array(sra, st2->ss->name);
+ 		if (domain_test(dl, pol, st2->ss->name) != 1) {
+ 			/* domain test fails */
+--- a/util.c
++++ b/util.c
+@@ -1192,7 +1192,9 @@ void wait_for(char *dev, int fd)
+ struct superswitch *superlist[] =
+ {
+ 	&super0, &super1,
++#ifdef MDADM_FULL
+ 	&super_ddf, &super_imsm,
++#endif
+ 	&mbr, &gpt,
+ 	NULL
+ };

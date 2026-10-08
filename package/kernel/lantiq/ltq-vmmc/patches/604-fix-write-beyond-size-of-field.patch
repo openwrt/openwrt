@@ -1,0 +1,66 @@
+--- a/src/drv_vmmc_fw_commands.h
++++ b/src/drv_vmmc_fw_commands.h
+@@ -4628,26 +4628,28 @@ struct RES_DTMFATG_COEF
+ struct CDM_RES_DTMFATG_DATA
+ {
+    CMD_HEAD_BE;
+-   /** Frequency 1 1st Tone or Dual Tone Control Word 1 */
+-   IFX_uint16_t FREQ11_DTC1;
+-   /** Frequency 2 1st Tone or Dual Tone Control Word 2 */
+-   IFX_uint16_t FREQ21_DTC2;
+-   /** Frequency 1 2nd Tone */
+-   IFX_uint16_t FREQ12_DTC3;
+-   /** Frequency 2 2nd Tone */
+-   IFX_uint16_t FREQ22_DTC4;
+-   /** Frequency 1 3rd Tone */
+-   IFX_uint16_t FREQ13_DTC5;
+-   /** Frequency 2 3nd Tone */
+-   IFX_uint16_t FREQ23_DTC6;
+-   /** Frequency 1 4th Tone */
+-   IFX_uint16_t FREQ14_DTC7;
+-   /** Frequency 2 4th Tone */
+-   IFX_uint16_t FREQ24_DTC8;
+-   /** Frequency 1 5th Tone */
+-   IFX_uint16_t FREQ15_DTC9;
+-   /** Frequency 2 5th Tone */
+-   IFX_uint16_t FREQ25_DTC10;
++   struct_group(FREQS,
++       /** Frequency 1 1st Tone or Dual Tone Control Word 1 */
++       IFX_uint16_t FREQ11_DTC1;
++       /** Frequency 2 1st Tone or Dual Tone Control Word 2 */
++       IFX_uint16_t FREQ21_DTC2;
++       /** Frequency 1 2nd Tone */
++       IFX_uint16_t FREQ12_DTC3;
++       /** Frequency 2 2nd Tone */
++       IFX_uint16_t FREQ22_DTC4;
++       /** Frequency 1 3rd Tone */
++       IFX_uint16_t FREQ13_DTC5;
++       /** Frequency 2 3nd Tone */
++       IFX_uint16_t FREQ23_DTC6;
++       /** Frequency 1 4th Tone */
++       IFX_uint16_t FREQ14_DTC7;
++       /** Frequency 2 4th Tone */
++       IFX_uint16_t FREQ24_DTC8;
++       /** Frequency 1 5th Tone */
++       IFX_uint16_t FREQ15_DTC9;
++       /** Frequency 2 5th Tone */
++       IFX_uint16_t FREQ25_DTC10;
++   );
+ } __PACKED__ ;
+ 
+ 
+--- a/src/drv_vmmc_sig_dtmfg.c
++++ b/src/drv_vmmc_sig_dtmfg.c
+@@ -742,10 +742,8 @@ IFX_int32_t irq_VMMC_SIG_DtmfOnRequest(V
+       /* Get a pointer to the data area which is behind the header of the cmd */
+       pAtgCmd = &pDtmfAtgData->FREQ11_DTC1;
+ 
+-      /* Wipe the data area in the command. The size of this area is
+-         command size - header size. */
+-      /*lint -e(419) */
+-      memset (pAtgCmd, 0x00, sizeof(CDM_RES_DTMFATG_DATA_t) - CMD_HDR_CNT);
++      /* Wipe the data area in the command. */
++      memset (&pDtmfAtgData->FREQS, 0x00, sizeof(pDtmfAtgData->FREQS));
+ 
+       /* Fill the data area */
+       if (pDtmf->bByteMode == IFX_TRUE)

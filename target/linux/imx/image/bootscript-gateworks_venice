@@ -1,0 +1,41 @@
+# distro-config bootscript
+#  - use only well-known variable names provided by U-Boot Distro boot
+#    - devtype - device type script run from (mmc|usb|scsi)
+#    - devnum - device number script run from (0 based int)
+#    - distro_bootpart - partition script run from (0 based int)
+#    - prefix - directory boot script was found in
+#    - kernel_addr_r - address to load kernel image to
+#    - fdt_addr_r - address to load dtb to
+#    - ftdcontroladdr - address dtb is at
+#    - fdt_file{1,2,3,4,5} name of fdt to load
+#    - fdt_overlays - list of fdt overlay files to load and apply
+echo "Gateworks Venice OpenWrt Boot script v1.0"
+
+# determine root device using PARTUUID:
+#  - this avoids any difference beteween uboot's device names/numbers
+#    not matching Linux as device enumeration is not a set API.
+#  - PARTUUID is disk UUID concatenated with partition number
+#    - for MBR disk UUID is unique disk id at offset 440
+#    - for GPT disk UUID is GPT UUID
+#  - for OpenWrt the squasfs rootfs is not readable by U-Boot so we have
+#    a 'boot' partition containing bootscript kernel dtbs followed by the rootfs
+#    partition, therefore we add 1 to the current partition
+setexpr rootpart ${distro_bootpart} + 1 # root on 'next' partition
+part uuid ${devtype} ${devnum}:${rootpart} uuid
+setenv bootargs ${bootargs} console=${console} root=PARTUUID=${uuid} rootfstype=squashfs,ext4,f2fs rootwait pci=noaer
+
+# load dtb (we try fdt_file and then fdt_file{1,2,3,4,5})
+echo "loading DTB..."
+setenv fdt_addr
+setenv fdt_list $fdt_file $fdt_file1 $fdt_file2 $fdt_file3 $fdt_file4 $fdt_file5
+setenv load_fdt 'echo Loading $fdt...; load ${devtype} ${devnum}:${distro_bootpart} ${fdt_addr_r} ${prefix}${fdt} && setenv fdt_addr ${fdt_addr_r}'
+setenv apply_overlays 'fdt addr $fdt_addr_r && for fdt in "$fdt_overlays"; do load ${devtype} ${devnum}:${distro_bootpart} $loadaddr $prefix/$fdt && fdt resize $filesize && fdt apply $loadaddr && echo applied $prefix/$fdt; done'
+for fdt in ${fdt_list}; do if test -e ${devtype} ${devnum}:${distro_bootpart} ${prefix}${fdt}; then run load_fdt; fi; done
+if test -z "$fdt_addr"; then echo "Warning: Using bootloader DTB"; setenv fdt_addr $fdtcontroladdr; fi
+if test -n "$fdt_overlays"; then echo "Applying overlays"; run apply_overlays; fi
+if test -n "$fixfdt"; then echo "Adjusting FDT"; run fixfdt; fi
+
+# load and boot kernel
+echo "loading kernel..."
+load ${devtype} ${devnum}:${distro_bootpart} ${kernel_addr_r} ${prefix}Image &&
+booti ${kernel_addr_r} - ${fdt_addr}

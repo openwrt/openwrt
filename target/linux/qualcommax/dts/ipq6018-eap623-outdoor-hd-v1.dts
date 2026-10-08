@@ -1,0 +1,21 @@
+// SPDX-License-Identifier: MIT, GPL-2.0 or later
+/* Copyright (c) 2025, Yang Xiwen <forbidden405@outlook.com> */
+
+/dts-v1/;
+
+#include "ipq6018-tplink-eap6xx-outdoor.dtsi"
+
+/ {
+	model = "TP-Link EAP623-Outdoor HD V1.0";
+	compatible = "tplink,eap623-outdoor-hd-v1", "qcom,ipq6018";
+};
+
+&led_sys_yellow {
+		function = LED_FUNCTION_STATUS;
+		gpios = <&tlmm 32 GPIO_ACTIVE_HIGH>;
+};
+
+&wifi {
+	qcom,ath11k-calibration-variant = "TPLink-EAP623-Outdoor-HD-v1";
+	status = "okay";
+};

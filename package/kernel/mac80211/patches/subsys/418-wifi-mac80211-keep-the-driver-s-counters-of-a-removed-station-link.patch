@@ -1,0 +1,197 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Thu, 1 Oct 2026 22:21:22 +0200
+Subject: [PATCH] wifi: mac80211: keep the driver's counters of a removed
+ station link
+
+When a link of an MLO station is removed, sta_accumulate_removed_link_stats()
+adds mac80211's own counters of the link to rem_link_stats, which then
+stands for the removed links in the station totals. mac80211 books the TX
+of an MLO station on the default link alone, so a driver that reports the
+TX counters of each link from link_sta_statistics, as sta_set_link_sinfo()
+prefers, makes the totals wrong at the removal: removing the default link
+adds the TX of every link once more, and removing another link drops its
+TX from the totals, which then fall.
+
+Ask the driver for the counters of the link before drv_change_sta_links(),
+which may let it drop them, and take those it fills in place of
+mac80211's own when the link's counters are accumulated.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ net/mac80211/sta_info.c | 96 +++++++++++++++++++++++++++++++++++------
+ 1 file changed, 83 insertions(+), 13 deletions(-)
+
+--- a/net/mac80211/sta_info.c
++++ b/net/mac80211/sta_info.c
+@@ -364,31 +364,57 @@ static void sta_link_free_rcu(struct rcu
+ 	kfree(alloc);
+ }
+ 
+-static void sta_accumulate_removed_link_stats(struct sta_info *sta, int link_id)
++static bool sta_link_drv_filled(const struct link_station_info *drv, u64 bits)
++{
++	return drv && (drv->filled & bits);
++}
++
++static void sta_accumulate_removed_link_stats(struct sta_info *sta, int link_id,
++					      const struct link_station_info *drv)
+ {
+ 	struct link_sta_info *link_sta = wiphy_dereference(sta->local->hw.wiphy,
+ 							   sta->link[link_id]);
+ 	struct ieee80211_link_data *link;
++	u64 tx_packets = 0, tx_bytes = 0;
+ 	unsigned int start;
+ 	int ac, tid;
+ 	u64 value;
+ 	u32 thr;
+ 
+ 	for (ac = 0; ac < IEEE80211_NUM_ACS; ac++) {
+-		sta->rem_link_stats.tx_packets +=
+-			link_sta->tx_stats.packets[ac];
+-		sta->rem_link_stats.tx_bytes += link_sta->tx_stats.bytes[ac];
++		tx_packets += link_sta->tx_stats.packets[ac];
++		tx_bytes += link_sta->tx_stats.bytes[ac];
+ 	}
+ 
++	/* As in sta_set_link_sinfo(), the driver's counters take precedence */
++	if (sta_link_drv_filled(drv, BIT_ULL(NL80211_STA_INFO_TX_PACKETS)))
++		tx_packets = drv->tx_packets;
++	if (sta_link_drv_filled(drv, BIT_ULL(NL80211_STA_INFO_TX_BYTES64) |
++				     BIT_ULL(NL80211_STA_INFO_TX_BYTES)))
++		tx_bytes = drv->tx_bytes;
++
++	sta->rem_link_stats.tx_packets += tx_packets;
++	sta->rem_link_stats.tx_bytes += tx_bytes;
++
+ 	do {
+ 		start = u64_stats_fetch_begin(&link_sta->rx_stats.syncp);
+ 		value = u64_stats_read(&link_sta->rx_stats.bytes);
+ 	} while (u64_stats_fetch_retry(&link_sta->rx_stats.syncp, start));
+ 
+-	sta->rem_link_stats.rx_packets += link_sta->rx_stats.packets;
++	if (sta_link_drv_filled(drv, BIT_ULL(NL80211_STA_INFO_RX_BYTES64) |
++				     BIT_ULL(NL80211_STA_INFO_RX_BYTES)))
++		value = drv->rx_bytes;
++
++	sta->rem_link_stats.rx_packets +=
++		sta_link_drv_filled(drv, BIT_ULL(NL80211_STA_INFO_RX_PACKETS)) ?
++		drv->rx_packets : link_sta->rx_stats.packets;
+ 	sta->rem_link_stats.rx_bytes += value;
+-	sta->rem_link_stats.tx_retries += link_sta->status_stats.retry_count;
+-	sta->rem_link_stats.tx_failed += link_sta->status_stats.retry_failed;
++	sta->rem_link_stats.tx_retries +=
++		sta_link_drv_filled(drv, BIT_ULL(NL80211_STA_INFO_TX_RETRIES)) ?
++		drv->tx_retries : link_sta->status_stats.retry_count;
++	sta->rem_link_stats.tx_failed +=
++		sta_link_drv_filled(drv, BIT_ULL(NL80211_STA_INFO_TX_FAILED)) ?
++		drv->tx_failed : link_sta->status_stats.retry_failed;
+ 	sta->rem_link_stats.rx_dropped_misc += link_sta->rx_stats.dropped;
+ 
+ 	thr = sta_get_expected_throughput(sta);
+@@ -421,7 +447,7 @@ static void sta_accumulate_removed_link_
+ }
+ 
+ static void sta_remove_link(struct sta_info *sta, unsigned int link_id,
+-			    bool unhash)
++			    bool unhash, const struct link_station_info *drv)
+ {
+ 	struct sta_link_alloc *alloc = NULL;
+ 	struct link_sta_info *link_sta;
+@@ -444,7 +470,7 @@ static void sta_remove_link(struct sta_i
+ 	sta->sta.valid_links &= ~BIT(link_id);
+ 
+ 	/* store removed link info for accumulated stats consistency */
+-	sta_accumulate_removed_link_stats(sta, link_id);
++	sta_accumulate_removed_link_stats(sta, link_id, drv);
+ 
+ 	RCU_INIT_POINTER(sta->link[link_id], NULL);
+ 	RCU_INIT_POINTER(sta->sta.link[link_id], NULL);
+@@ -476,7 +502,7 @@ void sta_info_free(struct ieee80211_loca
+ 		if (!link_sta)
+ 			continue;
+ 
+-		sta_remove_link(sta, i, false);
++		sta_remove_link(sta, i, false, NULL);
+ 	}
+ 
+ 	/*
+@@ -3444,7 +3470,7 @@ void ieee80211_sta_free_link(struct sta_
+ 
+ 	WARN_ON(!test_sta_flag(sta, WLAN_STA_INSERTED));
+ 
+-	sta_remove_link(sta, link_id, false);
++	sta_remove_link(sta, link_id, false, NULL);
+ }
+ 
+ int ieee80211_sta_activate_link(struct sta_info *sta, unsigned int link_id)
+@@ -3485,7 +3511,7 @@ int ieee80211_sta_activate_link(struct s
+ 				   old_links, new_links);
+ 	if (ret) {
+ 		sta->sta.valid_links = old_links;
+-		sta_remove_link(sta, link_id, false);
++		sta_remove_link(sta, link_id, false, NULL);
+ 		return ret;
+ 	}
+ 
+@@ -3495,20 +3521,60 @@ hash:
+ 	return 0;
+ }
+ 
++/* Read before drv_change_sta_links(), which may let the driver drop the
++ * counters it keeps for the link.
++ */
++static struct link_station_info *
++sta_link_drv_stats_get(struct sta_info *sta, unsigned int link_id)
++{
++	struct ieee80211_local *local = sta->local;
++	struct link_station_info *link_sinfo;
++	struct link_sta_info *link_sta;
++
++	if (!local->ops->link_sta_statistics ||
++	    !test_sta_flag(sta, WLAN_STA_INSERTED))
++		return NULL;
++
++	link_sta = wiphy_dereference(local->hw.wiphy, sta->link[link_id]);
++	if (!link_sta)
++		return NULL;
++
++	link_sinfo = kzalloc(sizeof(*link_sinfo), GFP_KERNEL);
++	if (!link_sinfo)
++		return NULL;
++
++	drv_link_sta_statistics(local, sta->sdata, link_sta->pub, link_sinfo);
++
++	return link_sinfo;
++}
++
++static void sta_link_drv_stats_free(struct link_station_info *link_sinfo)
++{
++	if (!link_sinfo)
++		return;
++
++	kfree(link_sinfo->pertid);
++	kfree(link_sinfo);
++}
++
+ void ieee80211_sta_remove_link(struct sta_info *sta, unsigned int link_id)
+ {
+ 	struct ieee80211_sub_if_data *sdata = sta->sdata;
+ 	u16 old_links = sta->sta.valid_links;
++	struct link_station_info *drv;
+ 
+ 	lockdep_assert_wiphy(sdata->local->hw.wiphy);
+ 
++	drv = sta_link_drv_stats_get(sta, link_id);
++
+ 	sta->sta.valid_links &= ~BIT(link_id);
+ 
+ 	if (!WARN_ON(!test_sta_flag(sta, WLAN_STA_INSERTED)))
+ 		drv_change_sta_links(sdata->local, sdata, &sta->sta,
+ 				     old_links, sta->sta.valid_links);
+ 
+-	sta_remove_link(sta, link_id, true);
++	sta_remove_link(sta, link_id, true, drv);
++	sta_link_drv_stats_free(drv);
+ }
+ 
+ static u8 ieee80211_sta_nss_capability(struct link_sta_info *link_sta)

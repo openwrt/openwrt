@@ -1,0 +1,112 @@
+From 0b567519d1152de52b29b2da2c47aa0f39a46266 Mon Sep 17 00:00:00 2001
+From: Kory Maincent <kory.maincent@bootlin.com>
+Date: Fri, 10 Jan 2025 10:40:23 +0100
+Subject: [PATCH] net: pse-pd: tps23881: Simplify function returns by removing
+ redundant checks
+
+Cleaned up several functions in tps23881 by removing redundant checks on
+return values at the end of functions. These check has been removed, and
+the return statement now directly returns the function result, reducing
+the code's complexity and making it more concise.
+
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Acked-by: Oleksij Rempel <o.rempel@pengutronix.de>
+Reviewed-by: Kyle Swenson <kyle.swenson@est.tech>
+Signed-off-by: Kory Maincent <kory.maincent@bootlin.com>
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
+---
+ drivers/net/pse-pd/tps23881.c | 34 ++++++----------------------------
+ 1 file changed, 6 insertions(+), 28 deletions(-)
+--- a/drivers/net/pse-pd/tps23881.c
++++ b/drivers/net/pse-pd/tps23881.c
+@@ -59,7 +59,6 @@ static int tps23881_pi_enable(struct pse
+ 	struct i2c_client *client = priv->client;
+ 	u8 chan;
+ 	u16 val;
+-	int ret;
+ 
+ 	if (id >= TPS23881_MAX_CHANS)
+ 		return -ERANGE;
+@@ -78,11 +77,7 @@ static int tps23881_pi_enable(struct pse
+ 			val |= BIT(chan + 4);
+ 	}
+ 
+-	ret = i2c_smbus_write_word_data(client, TPS23881_REG_PW_EN, val);
+-	if (ret)
+-		return ret;
+-
+-	return 0;
++	return i2c_smbus_write_word_data(client, TPS23881_REG_PW_EN, val);
+ }
+ 
+ static int tps23881_pi_disable(struct pse_controller_dev *pcdev, int id)
+@@ -91,7 +86,6 @@ static int tps23881_pi_disable(struct ps
+ 	struct i2c_client *client = priv->client;
+ 	u8 chan;
+ 	u16 val;
+-	int ret;
+ 
+ 	if (id >= TPS23881_MAX_CHANS)
+ 		return -ERANGE;
+@@ -110,11 +104,7 @@ static int tps23881_pi_disable(struct ps
+ 			val |= BIT(chan + 8);
+ 	}
+ 
+-	ret = i2c_smbus_write_word_data(client, TPS23881_REG_PW_EN, val);
+-	if (ret)
+-		return ret;
+-
+-	return 0;
++	return i2c_smbus_write_word_data(client, TPS23881_REG_PW_EN, val);
+ }
+ 
+ static int tps23881_pi_is_enabled(struct pse_controller_dev *pcdev, int id)
+@@ -480,7 +470,7 @@ tps23881_write_port_matrix(struct tps238
+ 	struct i2c_client *client = priv->client;
+ 	u8 pi_id, lgcl_chan, hw_chan;
+ 	u16 val = 0;
+-	int i, ret;
++	int i;
+ 
+ 	for (i = 0; i < port_cnt; i++) {
+ 		pi_id = port_matrix[i].pi_id;
+@@ -511,11 +501,7 @@ tps23881_write_port_matrix(struct tps238
+ 	}
+ 
+ 	/* Write hardware ports matrix */
+-	ret = i2c_smbus_write_word_data(client, TPS23881_REG_PORT_MAP, val);
+-	if (ret)
+-		return ret;
+-
+-	return 0;
++	return i2c_smbus_write_word_data(client, TPS23881_REG_PORT_MAP, val);
+ }
+ 
+ static int
+@@ -564,11 +550,7 @@ tps23881_set_ports_conf(struct tps23881_
+ 			val |= BIT(port_matrix[i].lgcl_chan[1]) |
+ 			       BIT(port_matrix[i].lgcl_chan[1] + 4);
+ 	}
+-	ret = i2c_smbus_write_word_data(client, TPS23881_REG_DET_CLA_EN, val);
+-	if (ret)
+-		return ret;
+-
+-	return 0;
++	return i2c_smbus_write_word_data(client, TPS23881_REG_DET_CLA_EN, val);
+ }
+ 
+ static int
+@@ -594,11 +576,7 @@ tps23881_set_ports_matrix(struct tps2388
+ 	if (ret)
+ 		return ret;
+ 
+-	ret = tps23881_set_ports_conf(priv, port_matrix);
+-	if (ret)
+-		return ret;
+-
+-	return 0;
++	return tps23881_set_ports_conf(priv, port_matrix);
+ }
+ 
+ static int tps23881_setup_pi_matrix(struct pse_controller_dev *pcdev)

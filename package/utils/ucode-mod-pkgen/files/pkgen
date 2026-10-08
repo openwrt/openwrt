@@ -1,0 +1,252 @@
+#!/usr/bin/env ucode
+'use strict';
+
+import { basename, readfile, writefile, stdin } from "fs";
+let pk = require("pkgen");
+let valid_from = "20240101000000";
+let valid_to = "21001231235959";
+let subject, password, password_stdin;
+let keytype = "ec";
+let keylen = 2048;
+let keyexp = 65537;
+let keycurve = "secp256r1";
+let no_ca;
+let legacy;
+
+const usage_message = `Usage: ${basename(sourcepath())} [<options>] <command> [<arguments>]
+
+Commands:
+  ca <ca.pem>:				Create a new CA.
+					(creates ca.pem, ca.key, ca.serial)
+
+  cert <ca.pem> <cert.pem>:		Create a new certificate/key using the CA
+					from ca.pem. (creates cert.pem and ca.key)
+
+  cert_p12 <ca.pem> <cert.p12>:		Create a new PKCS#12 certificate/key
+					using the CA from ca.pem. (creates ca.p12)
+
+  selfsigned <cert.pem>:		Create a self-signed certificate
+					(creates cert.pem)
+
+Options:
+  -C <curve>				Set EC curve type (default: ${keycurve})
+					Possible values: secp521r1, secp384r1, secp256r1,
+					secp256k1, secp224r1, secp224k1, secp192r1,
+					secp192k1
+  -E <exponent>				Set RSA key exponent (default: ${keyexp})
+  -L <len>				Set RSA key length (default: ${keylen})
+  -N					Omit CA certificate for PKCS#12 files
+  -p <password>				Set PKCS#12 password to <password>
+  -P					Read PKCS#12 password from stdin
+					(default: random password, printed to stdout)
+  -s <name>				Set subject for generated certificate to <name>.
+  -t rsa|ec				Set key type to rsa or ec (default: ec)
+  -V <from> <to>			Set validity for generated certificates.
+					(default: ${valid_from} ${valid_to})
+  -W					Use weaker PKCS#12 encryption for
+					compatibility with Windows and Apple systems
+
+`;
+
+function perror(msg) {
+	let err = pk.errno() == -1 ? "Invalid arguments" : pk.error();
+	warn(`${msg}: ${err}\n`);
+	exit(1);
+}
+
+function usage() {
+	warn(usage_message);
+	exit(1);
+}
+
+function check_pem_path(pem_file) {
+	if (substr(pem_file, -4) != ".pem") {
+		warn(`Path with .pem extension expected\n`);
+		exit(1);
+	}
+
+	return pem_file;
+}
+
+
+function gen_key() {
+	let key = pk.generate_key({
+		type: keytype,
+		curve: keycurve,
+		size: keylen,
+		exponent: keyexp,
+	});
+
+	if (!key)
+		perror("Failed to generate CA key");
+
+	return key;
+}
+
+function gen_cert(key, args) {
+	let cert = pk.generate_cert({
+		subject_name: subject,
+		subject_key: key,
+		validity: [ valid_from, valid_to ],
+		...args
+	});
+
+	if (!cert)
+		perror("Failed to generate certificate");
+
+	cert = cert.pem();
+	if (!cert)
+		perror("Failed to complete certificate");
+
+	return cert;
+}
+
+function gen_client_cert(ca_file, ca_data, key) {
+	let ca_base = substr(ca_file, 0, -4);
+	let ca_info = pk.cert_info(ca_data);
+	if (!length(ca_info))
+		perror("Failed to load CA certificate");
+
+	let ca_key = pk.load_key(readfile(ca_base + ".key"));
+	if (!ca_key)
+		perror("Failed to load CA key");
+	let ca_serial = +readfile(ca_base + ".serial");
+	if (!ca_serial)
+		perror("Failed to load CA serial");
+
+	let cert = gen_cert(key, {
+		serial: ++ca_serial,
+		issuer_name: ca_info[0].subject,
+		issuer_key: ca_key,
+	});
+	writefile(ca_base + ".serial", "" + ca_serial);
+
+	return cert;
+}
+
+let cmds = {
+	ca: function(args) {
+		let ca_file = check_pem_path(shift(args));
+		let ca_base = substr(ca_file, 0, -4);
+
+		let key = gen_key();
+		let ca_cert = gen_cert(key, {
+			ca: true,
+			serial: 1,
+			issuer_name: subject,
+			issuer_key: key,
+			key_usage: [ "key_cert_sign" ],
+		});
+
+		writefile(ca_file, ca_cert);
+		writefile(ca_base + ".key", key.pem());
+		writefile(ca_base + ".serial", "1");
+	},
+
+	cert: function (args) {
+		let ca_file = check_pem_path(shift(args));
+		let crt_file = check_pem_path(shift(args));
+		let crt_base = substr(crt_file, 0, -4);
+
+		let key = gen_key();
+		let ca_data = readfile(ca_file);
+		let cert = gen_client_cert(ca_file, ca_data, key);
+
+		writefile(crt_base + ".key", key.pem());
+		writefile(crt_file, cert);
+	},
+
+	cert_p12: function (args) {
+		let ca_file = check_pem_path(shift(args));
+		let p12_file = shift(args);
+		if (!p12_file)
+			usage();
+
+		let key = gen_key();
+		let ca_data = readfile(ca_file);
+		let cert = gen_client_cert(ca_file, ca_data, key);
+
+		if (password_stdin)
+			password = rtrim(stdin.read("line"));
+		else if (!password)
+			print((password = hexenc(readfile("/dev/urandom", 8))) + "\n");
+
+		let p12 = pk.generate_pkcs12({
+			password, cert, key, legacy,
+			extra: no_ca ? null : [ ca_data ],
+		});
+
+		writefile(p12_file, p12);
+	},
+
+	selfsigned: function(args) {
+		let crt_file = check_pem_path(shift(args));
+		let crt_base = substr(crt_file, 0, -4);
+
+		let key = gen_key();
+		let cert = gen_cert(key, {
+			serial: 1,
+			issuer_name: subject,
+			issuer_key: key,
+		});
+
+		writefile(crt_base + ".key", key.pem());
+		writefile(crt_file, cert);
+	},
+};
+
+while (substr(ARGV[0], 0, 1) == "-") {
+	let opt = substr(shift(ARGV), 1);
+	switch (opt) {
+	case 'C':
+		keycurve = shift(ARGV);
+		break;
+	case 'L':
+		keylen = +shift(ARGV);
+		break;
+	case 'N':
+		no_ca = true;
+		break;
+	case 'p':
+		password = shift(ARGV);
+		if (password_stdin)
+			usage();
+		break;
+	case 'P':
+		password_stdin = true;
+		if (password)
+			usage();
+		break;
+	case 's':
+		subject = shift(ARGV);
+		break;
+	case 't':
+		keytype = shift(ARGV);
+		if (keytype != "rsa" && keytype != "ec") {
+			warn(`Unsupported key type ${keytype}\n`);
+			exit(1);
+		}
+		break;
+	case 'V':
+		valid_from = shift(ARGV);
+		valid_to = shift(ARGV);
+		break;
+	case 'W':
+		legacy = true;
+		break;
+	default:
+		usage();
+		break;
+	}
+}
+
+let cmd = shift(ARGV);
+if (!cmd || !cmds[cmd])
+	usage();
+
+if (subject == null) {
+	warn(`Missing -s option\n`);
+	exit(1);
+}
+
+cmds[cmd](ARGV);

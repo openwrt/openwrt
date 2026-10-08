@@ -1,0 +1,236 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+#include "bcm6368.dtsi"
+
+/ {
+	model = "Observa VH4032N";
+	compatible = "observa,vh4032n", "brcm,bcm6368";
+
+	aliases {
+		led-boot = &led_power_blue;
+		led-failsafe = &led_power_red;
+		led-running = &led_power_blue;
+		led-upgrade = &led_power_blue;
+	};
+
+	keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <100>;
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 34 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+			debounce-interval = <60>;
+		};
+
+		rfkill {
+			label = "rfkill";
+			gpios = <&gpio 35 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RFKILL>;
+			debounce-interval = <60>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led-2 {
+			label = "blue:dsl";
+			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
+		};
+
+		led-5 {
+			label = "red:dsl";
+			gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
+		};
+
+		led-11 {
+			label = "blue:hspa";
+			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
+		};
+
+		led-12 {
+			label = "red:hspa";
+			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
+		};
+
+		led_power_blue: led-22 {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&gpio 22 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_power_red: led-24 {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&gpio 24 GPIO_ACTIVE_HIGH>;
+			panic-indicator;
+		};
+
+		led-25 {
+			label = "blue:voice";
+			gpios = <&gpio 25 GPIO_ACTIVE_LOW>;
+		};
+
+		led-26 {
+			label = "red:voice";
+			gpios = <&gpio 26 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	bcm43222-sprom {
+		compatible = "brcm,ssb-sprom";
+
+		pci-bus = <0>;
+		pci-dev = <1>;
+
+		nvmem-cells = <&macaddr_cfe_6a0 1>;
+		nvmem-cell-names = "mac-address";
+
+		brcm,sprom = "brcm/bcm43222-sprom.bin";
+		brcm,sprom-fixups = <2   0x04d2>, <4   0x4350>,
+				    <65  0x1300>, <68  0x0402>,
+				    <70  0x0090>, <71  0x4c19>,
+				    <72  0x2345>, <87  0x0315>,
+				    <88  0x0315>, <96  0x2048>,
+				    <97  0xfed7>, <98  0x15a6>,
+				    <99  0xfaee>, <100 0x3e3a>,
+				    <101 0x3a36>, <102 0xff7f>,
+				    <103 0x11b9>, <104 0xfc53>,
+				    <105 0xffe6>, <106 0xfdd2>,
+				    <107 0xfe49>, <108 0xff6a>,
+				    <109 0x136e>, <110 0xfbed>,
+				    <111 0x0000>, <112 0x2048>,
+				    <113 0xfee2>, <114 0x15e5>,
+				    <115 0xfaed>, <116 0x3e3a>,
+				    <117 0x3a36>, <118 0xffc8>,
+				    <119 0x12b8>, <120 0xfca1>,
+				    <121 0xff9b>, <122 0x122a>,
+				    <123 0xfcc8>, <124 0xff95>,
+				    <125 0x146b>, <126 0xfbba>,
+				    <127 0x0000>, <161 0x0000>,
+				    <162 0x0000>, <169 0x0000>,
+				    <170 0x0000>, <171 0x0000>,
+				    <172 0x0000>, <173 0x0000>,
+				    <174 0x0000>, <175 0x0000>,
+				    <176 0x0000>, <219 0x1108>;
+	};
+};
+
+&ehci {
+	status = "okay";
+};
+
+&ethernet {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_cfe_6a0 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&gpio {
+	usb_hub_reset {
+		gpio-hog;
+		gpios = <27 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "usb-hub-reset-gpio";
+	};
+};
+
+&ohci {
+	status = "okay";
+};
+
+&pci {
+	status = "okay";
+};
+
+&pflash {
+	status = "okay";
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "CFE";
+			reg = <0x0000000 0x0020000>;
+			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				macaddr_cfe_6a0: macaddr@6a0 {
+					compatible = "mac-base";
+					reg = <0x6a0 0x6>;
+					#nvmem-cell-cells = <1>;
+				};
+			};
+		};
+
+		partition@20000 {
+			compatible = "brcm,bcm963xx-imagetag";
+			label = "firmware";
+			reg = <0x0020000 0x1fc0000>;
+		};
+
+		partition@1fe0000 {
+			label = "nvram";
+			reg = <0x1fe0000 0x020000>;
+		};
+	};
+};
+
+&pinctrl {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_ephy0_led &pinctrl_ephy1_led
+		     &pinctrl_ephy2_led &pinctrl_ephy3_led>;
+};
+
+&switch0 {
+	ports {
+		port@0 {
+			reg = <0>;
+			label = "lan4";
+
+			phy-handle = <&phy1>;
+			phy-mode = "mii";
+		};
+
+		port@1 {
+			reg = <1>;
+			label = "lan3";
+
+			phy-handle = <&phy2>;
+			phy-mode = "mii";
+		};
+
+		port@2 {
+			reg = <2>;
+			label = "lan2";
+
+			phy-handle = <&phy3>;
+			phy-mode = "mii";
+		};
+
+		port@3 {
+			reg = <3>;
+			label = "lan1";
+
+			phy-handle = <&phy4>;
+			phy-mode = "mii";
+		};
+	};
+};
+
+&uart0 {
+	status = "okay";
+};
+
+&usbh {
+	status = "okay";
+};

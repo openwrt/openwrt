@@ -1,0 +1,17 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include <dt-bindings/leds/common.h>
+
+&leds {
+	wan_green {
+		function = LED_FUNCTION_WAN;
+		color = <LED_COLOR_ID_GREEN>;
+		gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
+	};
+
+	wan_amber {
+		function = LED_FUNCTION_WAN;
+		color = <LED_COLOR_ID_AMBER>;
+		gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
+	};
+};

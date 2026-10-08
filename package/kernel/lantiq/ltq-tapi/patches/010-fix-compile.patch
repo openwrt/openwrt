@@ -1,0 +1,20 @@
+--- a/src/drv_tapi_linux.c
++++ b/src/drv_tapi_linux.c
+@@ -54,6 +54,8 @@
+    #include <linux/workqueue.h>        /* LINUX 2.6 We need work_struct */
+    #include <linux/device.h>
+    #include <linux/sched.h>
++   #include <linux/sched/signal.h>
++   #include <uapi/linux/sched/types.h>
+    #undef   CONFIG_DEVFS_FS
+    #ifndef UTS_RELEASE
+       #include <generated/utsrelease.h>
+@@ -180,7 +182,7 @@ MODULE_PARM_DESC(block_egress_tasklet, "
+ MODULE_PARM_DESC(block_ingress_tasklet, "block the execution of the ingress tasklet, i.e. force to use the RT kernel thread");
+ 
+ /** The driver callbacks which will be registered with the kernel*/
+-static struct file_operations tapi_fops = {0};
++static struct file_operations tapi_fops;
+ 
+ /* ============================= */
+ /* Global function definition    */

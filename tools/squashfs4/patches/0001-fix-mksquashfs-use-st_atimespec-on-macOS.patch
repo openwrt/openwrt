@@ -1,0 +1,25 @@
+From f88f4a659d6ab432a57e90fe2f6191149c6b343f Mon Sep 17 00:00:00 2001
+From: Rui Chen <rui@chenrui.dev>
+Date: Sun, 1 Mar 2026 22:10:34 -0500
+Subject: [PATCH] fix(mksquashfs): use st_atimespec on macOS
+
+Darwin struct stat does not expose st_atim. Use st_atimespec on macOS while keeping existing behavior on other platforms.
+
+Signed-off-by: Rui Chen <rui@chenrui.dev>
+---
+ squashfs-tools/mksquashfs.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+--- a/squashfs-tools/mksquashfs.c
++++ b/squashfs-tools/mksquashfs.c
+@@ -3372,7 +3372,9 @@ static struct inode_info *lookup_inode4(
+ 		 *   lazytime or relatime and the file has been created or
+ 		 *   modified since the last access.
+ 		 */
+-#ifdef st_atime
++#ifdef __APPLE__
++		memset(&buf->st_atimespec, 0, sizeof(buf->st_atimespec));
++#elif defined(st_atime)
+ 		memset(&buf->st_atim, 0, sizeof(buf->st_atim));
+ #else
+ 		memset(&buf->st_atime, 0, sizeof(buf->st_atime));

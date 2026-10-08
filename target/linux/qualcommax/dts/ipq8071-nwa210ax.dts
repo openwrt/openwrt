@@ -1,0 +1,82 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/*
+ * Copyright (c) 2025 Pascal Beleiu <pascal@beleiu.de>
+ * Copyright (c) 2025 Eric Schäfer <eric@es86.de>
+ */
+
+/dts-v1/;
+
+#include "ipq807x-nwax10ax.dtsi"
+
+/ {
+	model = "Zyxel NWA210AX";
+	compatible = "zyxel,nwa210ax", "qcom,ipq8074";
+
+	aliases {
+		ethernet0 = &swport5;
+		ethernet1 = &swport1;
+		label-mac-device = &swport5;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		gpio_green {
+			gpios = <&tlmm 50 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+		};
+
+		gpio_red {
+			gpios = <&tlmm 51 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
+		};
+	};
+};
+
+&tlmm {
+	button_pins: button-pins {
+		pins = "gpio30";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-pull-up;
+	};
+};
+
+&uniphy1 {
+	status = "okay";
+};
+
+&swports {
+	swport5: port@5 {
+		reg = <5>;
+		label = "uplink";
+		phy-handle = <&qca8081>;
+		phy-mode = "2500base-x";
+		pcs-handle = <&uniphy1 0>;
+		nvmem-cell-names = "mac-address";
+		nvmem-cells = <&label_mac 0>;
+	};
+};
+
+&swport1 {
+	label = "lan1";
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&label_mac 1>;
+};
+
+&mdio {
+	qca8081: ethernet-phy@16 {
+		compatible = "ethernet-phy-id004d.d101";
+		reg = <16>;
+		reset-deassert-us = <10000>;
+		reset-gpios = <&tlmm 44 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&wifi {
+	qcom,ath11k-calibration-variant = "Zyxel-NWA210AX";
+};

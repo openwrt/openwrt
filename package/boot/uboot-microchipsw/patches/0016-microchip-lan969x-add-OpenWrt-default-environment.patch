@@ -1,0 +1,39 @@
+From b7aef16df60bf7d0d46dc995a373d28eb4f50561 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robert.marko@sartura.hr>
+Date: Tue, 13 Jan 2026 12:20:37 +0100
+Subject: [PATCH 16/17] microchip: lan969x: add OpenWrt default environment
+
+Add the required default environment for OpenWrt.
+
+Signed-off-by: Robert Marko <robert.marko@sartura.hr>
+---
+ board/microchip/lan969x/lan969x.env  | 12 ++++++++++++
+ configs/microchip_ev23x71a_defconfig |  1 +
+ 2 files changed, 13 insertions(+)
+ create mode 100644 board/microchip/lan969x/lan969x.env
+
+--- /dev/null
++++ b/board/microchip/lan969x/lan969x.env
+@@ -0,0 +1,12 @@
++// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
++
++fdt_high=0xffffffff
++baudrate=115200
++bootdelay=3
++loadaddr=0x64000000
++bootargs=console=ttyAT0,115200 root=PARTLABEL=rootfs rootwait
++mmc_read_kernel=mmc read $loadaddr $part_addr 0x100 && imszb $loadaddr image_size && test 0x$image_size -le 0x$part_size && mmc read $loadaddr $part_addr $image_size
++boot_system=part start mmc 0 kernel part_addr && part size mmc 0 kernel part_size && run mmc_read_kernel && bootm
++bootcmd=run boot_system
++filesize_to_blk=setexpr cnt $filesize + 0x1ff && setexpr cnt $cnt / 0x200
++mmc_write_fip=part start mmc 0 fip part_addr && part size mmc 0 fip part_size && run filesize_to_blk && test 0x$cnt -le 0x$part_size && mmc erase fip && mmc write $loadaddr $part_addr $cnt
+--- a/configs/microchip_ev23x71a_defconfig
++++ b/configs/microchip_ev23x71a_defconfig
+@@ -3,6 +3,7 @@ CONFIG_POSITION_INDEPENDENT=y
+ # CONFIG_ARM64_SUPPORT_AARCH32 is not set
+ CONFIG_ARCH_MICROCHIPSW=y
+ CONFIG_TFABOOT=y
++CONFIG_ENV_SOURCE_FILE="lan969x"
+ CONFIG_NR_DRAM_BANKS=3
+ CONFIG_ENV_OFFSET=0x0
+ CONFIG_DEFAULT_DEVICE_TREE="lan9696-ev23x71a"

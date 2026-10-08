@@ -1,0 +1,365 @@
+From 59abfb50f1dfdc3c51bce3f2020ce3ae0dc8eaa0 Mon Sep 17 00:00:00 2001
+From: Dave Stevenson <dave.stevenson@raspberrypi.com>
+Date: Tue, 18 Aug 2026 13:02:10 +0100
+Subject: [PATCH] media: bcm2835-unicam: Drop setting colorspace when in MC
+ mode
+
+Format Y12 didn't have a valid "valid_colorspaces" field which
+meant libcamera errored out selecting it as the colorspace didn't
+match.
+
+The colorspace was previously validated by v4l2-compliance
+and failed if it wasn't "valid" for the chosen pixel format.
+That test appear to have been dropped/amended.
+
+Rather than just adding the "valid_colorspaces" value for Y12,
+remove the whole thing.
+
+Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
+---
+ .../media/platform/bcm2835/bcm2835-unicam.c   | 83 -------------------
+ 1 file changed, 83 deletions(-)
+
+--- a/drivers/media/platform/bcm2835/bcm2835-unicam.c
++++ b/drivers/media/platform/bcm2835/bcm2835-unicam.c
+@@ -142,22 +142,6 @@ enum pad_types {
+ 	MAX_NODES
+ };
+ 
+-#define MASK_CS_DEFAULT		BIT(V4L2_COLORSPACE_DEFAULT)
+-#define MASK_CS_SMPTE170M	BIT(V4L2_COLORSPACE_SMPTE170M)
+-#define MASK_CS_SMPTE240M	BIT(V4L2_COLORSPACE_SMPTE240M)
+-#define MASK_CS_REC709		BIT(V4L2_COLORSPACE_REC709)
+-#define MASK_CS_BT878		BIT(V4L2_COLORSPACE_BT878)
+-#define MASK_CS_470_M		BIT(V4L2_COLORSPACE_470_SYSTEM_M)
+-#define MASK_CS_470_BG		BIT(V4L2_COLORSPACE_470_SYSTEM_BG)
+-#define MASK_CS_JPEG		BIT(V4L2_COLORSPACE_JPEG)
+-#define MASK_CS_SRGB		BIT(V4L2_COLORSPACE_SRGB)
+-#define MASK_CS_OPRGB		BIT(V4L2_COLORSPACE_OPRGB)
+-#define MASK_CS_BT2020		BIT(V4L2_COLORSPACE_BT2020)
+-#define MASK_CS_RAW		BIT(V4L2_COLORSPACE_RAW)
+-#define MASK_CS_DCI_P3		BIT(V4L2_COLORSPACE_DCI_P3)
+-
+-#define MAX_COLORSPACE		32
+-
+ /*
+  * struct unicam_fmt - Unicam media bus format information
+  * @pixelformat: V4L2 pixel format FCC identifier. 0 if n/a.
+@@ -166,9 +150,6 @@ enum pad_types {
+  * @code: V4L2 media bus format code.
+  * @depth: Bits per pixel as delivered from the source.
+  * @csi_dt: CSI data type.
+- * @valid_colorspaces: Bitmask of valid colorspaces so that the Media Controller
+- *		centric try_fmt can validate the colorspace and pass
+- *		v4l2-compliance.
+  * @check_variants: Flag to denote that there are multiple mediabus formats
+  *		still in the list that could match this V4L2 format.
+  * @mc_skip: Media Controller shouldn't list this format via ENUM_FMT as it is
+@@ -181,7 +162,6 @@ struct unicam_fmt {
+ 	u32	code;
+ 	u8	depth;
+ 	u8	csi_dt;
+-	u32	valid_colorspaces;
+ 	u8	check_variants:1;
+ 	u8	mc_skip:1;
+ 	u8	metadata_fmt:1;
+@@ -195,240 +175,197 @@ static const struct unicam_fmt formats[]
+ 		.depth		= 16,
+ 		.csi_dt		= MIPI_CSI2_DT_YUV422_8B,
+ 		.check_variants = 1,
+-		.valid_colorspaces = MASK_CS_SMPTE170M | MASK_CS_REC709 |
+-				     MASK_CS_JPEG,
+ 	}, {
+ 		.fourcc		= V4L2_PIX_FMT_UYVY,
+ 		.code		= MEDIA_BUS_FMT_UYVY8_2X8,
+ 		.depth		= 16,
+ 		.csi_dt		= MIPI_CSI2_DT_YUV422_8B,
+ 		.check_variants = 1,
+-		.valid_colorspaces = MASK_CS_SMPTE170M | MASK_CS_REC709 |
+-				     MASK_CS_JPEG,
+ 	}, {
+ 		.fourcc		= V4L2_PIX_FMT_YVYU,
+ 		.code		= MEDIA_BUS_FMT_YVYU8_2X8,
+ 		.depth		= 16,
+ 		.csi_dt		= MIPI_CSI2_DT_YUV422_8B,
+ 		.check_variants = 1,
+-		.valid_colorspaces = MASK_CS_SMPTE170M | MASK_CS_REC709 |
+-				     MASK_CS_JPEG,
+ 	}, {
+ 		.fourcc		= V4L2_PIX_FMT_VYUY,
+ 		.code		= MEDIA_BUS_FMT_VYUY8_2X8,
+ 		.depth		= 16,
+ 		.csi_dt		= MIPI_CSI2_DT_YUV422_8B,
+ 		.check_variants = 1,
+-		.valid_colorspaces = MASK_CS_SMPTE170M | MASK_CS_REC709 |
+-				     MASK_CS_JPEG,
+ 	}, {
+ 		.fourcc		= V4L2_PIX_FMT_YUYV,
+ 		.code		= MEDIA_BUS_FMT_YUYV8_1X16,
+ 		.depth		= 16,
+ 		.csi_dt		= MIPI_CSI2_DT_YUV422_8B,
+ 		.mc_skip	= 1,
+-		.valid_colorspaces = MASK_CS_SMPTE170M | MASK_CS_REC709 |
+-				     MASK_CS_JPEG,
+ 	}, {
+ 		.fourcc		= V4L2_PIX_FMT_UYVY,
+ 		.code		= MEDIA_BUS_FMT_UYVY8_1X16,
+ 		.depth		= 16,
+ 		.csi_dt		= MIPI_CSI2_DT_YUV422_8B,
+ 		.mc_skip	= 1,
+-		.valid_colorspaces = MASK_CS_SMPTE170M | MASK_CS_REC709 |
+-				     MASK_CS_JPEG,
+ 	}, {
+ 		.fourcc		= V4L2_PIX_FMT_YVYU,
+ 		.code		= MEDIA_BUS_FMT_YVYU8_1X16,
+ 		.depth		= 16,
+ 		.csi_dt		= MIPI_CSI2_DT_YUV422_8B,
+ 		.mc_skip	= 1,
+-		.valid_colorspaces = MASK_CS_SMPTE170M | MASK_CS_REC709 |
+-				     MASK_CS_JPEG,
+ 	}, {
+ 		.fourcc		= V4L2_PIX_FMT_VYUY,
+ 		.code		= MEDIA_BUS_FMT_VYUY8_1X16,
+ 		.depth		= 16,
+ 		.csi_dt		= MIPI_CSI2_DT_YUV422_8B,
+ 		.mc_skip	= 1,
+-		.valid_colorspaces = MASK_CS_SMPTE170M | MASK_CS_REC709 |
+-				     MASK_CS_JPEG,
+ 	}, {
+ 	/* RGB Formats */
+ 		.fourcc		= V4L2_PIX_FMT_RGB565, /* gggbbbbb rrrrrggg */
+ 		.code		= MEDIA_BUS_FMT_RGB565_2X8_LE,
+ 		.depth		= 16,
+ 		.csi_dt		= MIPI_CSI2_DT_RGB565,
+-		.valid_colorspaces = MASK_CS_SRGB,
+ 	}, {
+ 		.fourcc		= V4L2_PIX_FMT_RGB565X, /* rrrrrggg gggbbbbb */
+ 		.code		= MEDIA_BUS_FMT_RGB565_2X8_BE,
+ 		.depth		= 16,
+ 		.csi_dt		= MIPI_CSI2_DT_RGB565,
+-		.valid_colorspaces = MASK_CS_SRGB,
+ 	}, {
+ 		.fourcc		= V4L2_PIX_FMT_RGB555, /* gggbbbbb arrrrrgg */
+ 		.code		= MEDIA_BUS_FMT_RGB555_2X8_PADHI_LE,
+ 		.depth		= 16,
+ 		.csi_dt		= MIPI_CSI2_DT_RGB555,
+-		.valid_colorspaces = MASK_CS_SRGB,
+ 	}, {
+ 		.fourcc		= V4L2_PIX_FMT_RGB555X, /* arrrrrgg gggbbbbb */
+ 		.code		= MEDIA_BUS_FMT_RGB555_2X8_PADHI_BE,
+ 		.depth		= 16,
+ 		.csi_dt		= MIPI_CSI2_DT_RGB555,
+-		.valid_colorspaces = MASK_CS_SRGB,
+ 	}, {
+ 		.fourcc		= V4L2_PIX_FMT_RGB24, /* rgb */
+ 		.code		= MEDIA_BUS_FMT_RGB888_1X24,
+ 		.depth		= 24,
+ 		.csi_dt		= MIPI_CSI2_DT_RGB888,
+-		.valid_colorspaces = MASK_CS_SRGB,
+ 	}, {
+ 		.fourcc		= V4L2_PIX_FMT_BGR24, /* bgr */
+ 		.code		= MEDIA_BUS_FMT_BGR888_1X24,
+ 		.depth		= 24,
+ 		.csi_dt		= MIPI_CSI2_DT_RGB888,
+-		.valid_colorspaces = MASK_CS_SRGB,
+ 	}, {
+ 		.fourcc		= V4L2_PIX_FMT_RGB32, /* argb */
+ 		.code		= MEDIA_BUS_FMT_ARGB8888_1X32,
+ 		.depth		= 32,
+ 		.csi_dt		= 0x0,
+-		.valid_colorspaces = MASK_CS_SRGB,
+ 	}, {
+ 	/* Bayer Formats */
+ 		.fourcc		= V4L2_PIX_FMT_SBGGR8,
+ 		.code		= MEDIA_BUS_FMT_SBGGR8_1X8,
+ 		.depth		= 8,
+ 		.csi_dt		= MIPI_CSI2_DT_RAW8,
+-		.valid_colorspaces = MASK_CS_RAW,
+ 	}, {
+ 		.fourcc		= V4L2_PIX_FMT_SGBRG8,
+ 		.code		= MEDIA_BUS_FMT_SGBRG8_1X8,
+ 		.depth		= 8,
+ 		.csi_dt		= MIPI_CSI2_DT_RAW8,
+-		.valid_colorspaces = MASK_CS_RAW,
+ 	}, {
+ 		.fourcc		= V4L2_PIX_FMT_SGRBG8,
+ 		.code		= MEDIA_BUS_FMT_SGRBG8_1X8,
+ 		.depth		= 8,
+ 		.csi_dt		= MIPI_CSI2_DT_RAW8,
+-		.valid_colorspaces = MASK_CS_RAW,
+ 	}, {
+ 		.fourcc		= V4L2_PIX_FMT_SRGGB8,
+ 		.code		= MEDIA_BUS_FMT_SRGGB8_1X8,
+ 		.depth		= 8,
+ 		.csi_dt		= MIPI_CSI2_DT_RAW8,
+-		.valid_colorspaces = MASK_CS_RAW,
+ 	}, {
+ 		.fourcc		= V4L2_PIX_FMT_SBGGR10P,
+ 		.repacked_fourcc = V4L2_PIX_FMT_SBGGR10,
+ 		.code		= MEDIA_BUS_FMT_SBGGR10_1X10,
+ 		.depth		= 10,
+ 		.csi_dt		= MIPI_CSI2_DT_RAW10,
+-		.valid_colorspaces = MASK_CS_RAW,
+ 	}, {
+ 		.fourcc		= V4L2_PIX_FMT_SGBRG10P,
+ 		.repacked_fourcc = V4L2_PIX_FMT_SGBRG10,
+ 		.code		= MEDIA_BUS_FMT_SGBRG10_1X10,
+ 		.depth		= 10,
+ 		.csi_dt		= MIPI_CSI2_DT_RAW10,
+-		.valid_colorspaces = MASK_CS_RAW,
+ 	}, {
+ 		.fourcc		= V4L2_PIX_FMT_SGRBG10P,
+ 		.repacked_fourcc = V4L2_PIX_FMT_SGRBG10,
+ 		.code		= MEDIA_BUS_FMT_SGRBG10_1X10,
+ 		.depth		= 10,
+ 		.csi_dt		= MIPI_CSI2_DT_RAW10,
+-		.valid_colorspaces = MASK_CS_RAW,
+ 	}, {
+ 		.fourcc		= V4L2_PIX_FMT_SRGGB10P,
+ 		.repacked_fourcc = V4L2_PIX_FMT_SRGGB10,
+ 		.code		= MEDIA_BUS_FMT_SRGGB10_1X10,
+ 		.depth		= 10,
+ 		.csi_dt		= MIPI_CSI2_DT_RAW10,
+-		.valid_colorspaces = MASK_CS_RAW,
+ 	}, {
+ 		.fourcc		= V4L2_PIX_FMT_SBGGR12P,
+ 		.repacked_fourcc = V4L2_PIX_FMT_SBGGR12,
+ 		.code		= MEDIA_BUS_FMT_SBGGR12_1X12,
+ 		.depth		= 12,
+ 		.csi_dt		= MIPI_CSI2_DT_RAW12,
+-		.valid_colorspaces = MASK_CS_RAW,
+ 	}, {
+ 		.fourcc		= V4L2_PIX_FMT_SGBRG12P,
+ 		.repacked_fourcc = V4L2_PIX_FMT_SGBRG12,
+ 		.code		= MEDIA_BUS_FMT_SGBRG12_1X12,
+ 		.depth		= 12,
+ 		.csi_dt		= MIPI_CSI2_DT_RAW12,
+-		.valid_colorspaces = MASK_CS_RAW,
+ 	}, {
+ 		.fourcc		= V4L2_PIX_FMT_SGRBG12P,
+ 		.repacked_fourcc = V4L2_PIX_FMT_SGRBG12,
+ 		.code		= MEDIA_BUS_FMT_SGRBG12_1X12,
+ 		.depth		= 12,
+ 		.csi_dt		= MIPI_CSI2_DT_RAW12,
+-		.valid_colorspaces = MASK_CS_RAW,
+ 	}, {
+ 		.fourcc		= V4L2_PIX_FMT_SRGGB12P,
+ 		.repacked_fourcc = V4L2_PIX_FMT_SRGGB12,
+ 		.code		= MEDIA_BUS_FMT_SRGGB12_1X12,
+ 		.depth		= 12,
+ 		.csi_dt		= MIPI_CSI2_DT_RAW12,
+-		.valid_colorspaces = MASK_CS_RAW,
+ 	}, {
+ 		.fourcc		= V4L2_PIX_FMT_SBGGR14P,
+ 		.repacked_fourcc = V4L2_PIX_FMT_SBGGR14,
+ 		.code		= MEDIA_BUS_FMT_SBGGR14_1X14,
+ 		.depth		= 14,
+ 		.csi_dt		= MIPI_CSI2_DT_RAW14,
+-		.valid_colorspaces = MASK_CS_RAW,
+ 	}, {
+ 		.fourcc		= V4L2_PIX_FMT_SGBRG14P,
+ 		.repacked_fourcc = V4L2_PIX_FMT_SGBRG14,
+ 		.code		= MEDIA_BUS_FMT_SGBRG14_1X14,
+ 		.depth		= 14,
+ 		.csi_dt		= MIPI_CSI2_DT_RAW14,
+-		.valid_colorspaces = MASK_CS_RAW,
+ 	}, {
+ 		.fourcc		= V4L2_PIX_FMT_SGRBG14P,
+ 		.repacked_fourcc = V4L2_PIX_FMT_SGRBG14,
+ 		.code		= MEDIA_BUS_FMT_SGRBG14_1X14,
+ 		.depth		= 14,
+ 		.csi_dt		= MIPI_CSI2_DT_RAW14,
+-		.valid_colorspaces = MASK_CS_RAW,
+ 	}, {
+ 		.fourcc		= V4L2_PIX_FMT_SRGGB14P,
+ 		.repacked_fourcc = V4L2_PIX_FMT_SRGGB14,
+ 		.code		= MEDIA_BUS_FMT_SRGGB14_1X14,
+ 		.depth		= 14,
+ 		.csi_dt		= MIPI_CSI2_DT_RAW14,
+-		.valid_colorspaces = MASK_CS_RAW,
+ 	}, {
+ 		.fourcc		= V4L2_PIX_FMT_SBGGR16,
+ 		.code		= MEDIA_BUS_FMT_SBGGR16_1X16,
+ 		.depth		= 16,
+ 		.csi_dt		= MIPI_CSI2_DT_RAW16,
+-		.valid_colorspaces = MASK_CS_RAW,
+ 	}, {
+ 		.fourcc		= V4L2_PIX_FMT_SGBRG16,
+ 		.code		= MEDIA_BUS_FMT_SGBRG16_1X16,
+ 		.depth		= 16,
+ 		.csi_dt		= MIPI_CSI2_DT_RAW16,
+-		.valid_colorspaces = MASK_CS_RAW,
+ 	}, {
+ 		.fourcc		= V4L2_PIX_FMT_SGRBG16,
+ 		.code		= MEDIA_BUS_FMT_SGRBG16_1X16,
+ 		.depth		= 16,
+ 		.csi_dt		= MIPI_CSI2_DT_RAW16,
+-		.valid_colorspaces = MASK_CS_RAW,
+ 	}, {
+ 		.fourcc		= V4L2_PIX_FMT_SRGGB16,
+ 		.code		= MEDIA_BUS_FMT_SRGGB16_1X16,
+ 		.depth		= 16,
+ 		.csi_dt		= MIPI_CSI2_DT_RAW16,
+-		.valid_colorspaces = MASK_CS_RAW,
+ 	}, {
+ 
+ 	/* Greyscale formats */
+@@ -436,14 +373,12 @@ static const struct unicam_fmt formats[]
+ 		.code		= MEDIA_BUS_FMT_Y8_1X8,
+ 		.depth		= 8,
+ 		.csi_dt		= MIPI_CSI2_DT_RAW8,
+-		.valid_colorspaces = MASK_CS_RAW,
+ 	}, {
+ 		.fourcc		= V4L2_PIX_FMT_Y10P,
+ 		.repacked_fourcc = V4L2_PIX_FMT_Y10,
+ 		.code		= MEDIA_BUS_FMT_Y10_1X10,
+ 		.depth		= 10,
+ 		.csi_dt		= MIPI_CSI2_DT_RAW10,
+-		.valid_colorspaces = MASK_CS_RAW,
+ 	}, {
+ 		.fourcc		= V4L2_PIX_FMT_Y12P,
+ 		.repacked_fourcc = V4L2_PIX_FMT_Y12,
+@@ -456,13 +391,11 @@ static const struct unicam_fmt formats[]
+ 		.code		= MEDIA_BUS_FMT_Y14_1X14,
+ 		.depth		= 14,
+ 		.csi_dt		= MIPI_CSI2_DT_RAW14,
+-		.valid_colorspaces = MASK_CS_RAW,
+ 	}, {
+ 		.fourcc		= V4L2_PIX_FMT_Y16,
+ 		.code		= MEDIA_BUS_FMT_Y16_1X16,
+ 		.depth		= 16,
+ 		.csi_dt		= MIPI_CSI2_DT_RAW16,
+-		.valid_colorspaces = MASK_CS_RAW,
+ 	},
+ 	/* Embedded data format */
+ 	{
+@@ -1913,7 +1846,6 @@ static void unicam_mc_try_fmt(struct uni
+ 	struct v4l2_pix_format *v4l2_format = &f->fmt.pix;
+ 	struct unicam_device *dev = node->dev;
+ 	const struct unicam_fmt *fmt;
+-	int is_rgb;
+ 
+ 	/*
+ 	 * Default to the first format if the requested pixel format code isn't
+@@ -1933,21 +1865,6 @@ static void unicam_mc_try_fmt(struct uni
+ 	if (ret_fmt)
+ 		*ret_fmt = fmt;
+ 
+-	if (v4l2_format->colorspace >= MAX_COLORSPACE ||
+-	    !(fmt->valid_colorspaces & (1 << v4l2_format->colorspace))) {
+-		v4l2_format->colorspace = __ffs(fmt->valid_colorspaces);
+-
+-		v4l2_format->xfer_func =
+-			V4L2_MAP_XFER_FUNC_DEFAULT(v4l2_format->colorspace);
+-		v4l2_format->ycbcr_enc =
+-			V4L2_MAP_YCBCR_ENC_DEFAULT(v4l2_format->colorspace);
+-		is_rgb = v4l2_format->colorspace == V4L2_COLORSPACE_SRGB;
+-		v4l2_format->quantization =
+-			V4L2_MAP_QUANTIZATION_DEFAULT(is_rgb,
+-						      v4l2_format->colorspace,
+-						      v4l2_format->ycbcr_enc);
+-	}
+-
+ 	unicam_dbg(3, dev, "%s: %08x %ux%u (bytesperline %u sizeimage %u)\n",
+ 		   __func__, v4l2_format->pixelformat,
+ 		   v4l2_format->width, v4l2_format->height,

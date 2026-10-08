@@ -1,0 +1,56 @@
+From 6970ef8912a1141c812f5f1d27ad78c0e968bdd1 Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 29 Sep 2026 09:20:27 +0200
+Subject: [PATCH] AP MLD: keep the configured BSSID of the first link
+
+hostapd_setup_bss() adds the first link of an AP MLD on an existing
+netdev with no address (601-ucode_support.patch sets addr = NULL for
+mld_ap), takes the netdev address as own_addr, and copies it into
+mld->mld_addr. The configured BSSID of that link is lost: the link
+beacons with the MLD address, while hostapd's ubus get_status still
+reports conf->bssid. A BSS Transition candidate list built from
+get_status then names a BSSID that nothing transmits.
+
+hostapd.uc gives the MLD address as its BSSID to a link on radio 0
+only (bss_mld_addr()), so a single-link AP MLD on another radio, and
+the first link of any AP MLD that comes up on another radio, ran with
+the wrong link address. Where the radio-0 link came up second, its
+ADD_LINK carried the MLD address a second time, which mac80211
+ieee80211_check_dup_link_addrs() refuses with -EALREADY.
+
+Take the netdev address as the MLD address and keep the configured
+BSSID as the link address, as hostapd_driver_init() does for the first
+interface (pre_setup_mld). Without a configured BSSID, take a random
+address with the OUI of the netdev, as pre_setup_mld does, so that the
+link address cannot be the MLD address that a later link is given. A
+link on radio 0 has the MLD address as its configured BSSID, and runs
+with it as before.
+
+Fixes: 816c2d86e749 ("hostapd: add support for MLO interfaces in ucode")
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ src/ap/hostapd.c | 11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
+
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -1607,12 +1607,17 @@ static int hostapd_setup_bss(struct host
+ 			os_memcpy(hapd->own_addr, if_addr, ETH_ALEN);
+ 
+ #ifdef CONFIG_IEEE80211BE
++		/* As hostapd_driver_init() does for the first interface */
+ 		if (hapd->conf->mld_ap) {
+ 			wpa_printf(MSG_DEBUG,
+ 				   "Setup of first link (%d) BSS of MLD %s",
+ 				   hapd->mld_link_id, hapd->conf->iface);
+-			os_memcpy(hapd->mld->mld_addr, hapd->own_addr,
+-				  ETH_ALEN);
++			os_memcpy(hapd->mld->mld_addr, if_addr, ETH_ALEN);
++			if (!is_zero_ether_addr(conf->bssid))
++				os_memcpy(hapd->own_addr, conf->bssid,
++					  ETH_ALEN);
++			else
++				random_mac_addr_keep_oui(hapd->own_addr);
+ 		}
+ #endif /* CONFIG_IEEE80211BE */
+ 	}

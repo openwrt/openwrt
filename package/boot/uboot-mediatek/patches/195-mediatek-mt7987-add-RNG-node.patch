@@ -1,0 +1,27 @@
+From fc69f2d0657697097754dcf00f0e0ee8fb28e22f Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Wed, 4 Mar 2026 01:31:28 +0000
+Subject: [PATCH 8/8] mediatek: mt7987: add RNG node
+
+Add node representing the hardware random number generator
+found in the MediaTek MT7987 SoC family to the corresponding
+device tree.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ arch/arm/dts/mt7987.dtsi | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/arch/arm/dts/mt7987.dtsi
++++ b/arch/arm/dts/mt7987.dtsi
+@@ -44,6 +44,10 @@
+ 		};
+ 	};
+ 
++	rng {
++		compatible = "mediatek,mt7987-rng";
++	};
++
+ 	cpus {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;

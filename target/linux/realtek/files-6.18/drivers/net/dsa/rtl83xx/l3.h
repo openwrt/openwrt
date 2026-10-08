@@ -1,0 +1,155 @@
+/* SPDX-License-Identifier: GPL-2.0-only */
+/*
+ * Copyright (C) 2026 Gennaro Cimmino <gcimmino@rayonra.net>
+ * Assisted-by: Claude:claude-opus-5, Claude:claude-opus-5-5
+ */
+
+#ifndef _OTTO_L3_H
+#define _OTTO_L3_H
+
+#include "l3_limits.h"
+#include "rtl-otto.h"
+
+struct fib6_info;
+
+#define MAX_SMACS 64
+#define MAX_ROUTER_MACS 64
+#define MAX_HOST_ROUTES		1536
+#define MAX_ROUTES		512
+
+#define HASH_PICK(val, lsb, len) ((val & (((1 << len) - 1) << lsb)) >> lsb)
+
+/* An entry in the RTL93XX SoC's ROUTER_MAC tables setting up a termination point
+ * for the L3 routing system. Packets arriving and matching an entry in this table
+ * will be considered for routing.
+ * Mask fields state whether the corresponding data fields matter for matching
+ */
+struct otto_l3_router_mac {
+	bool valid;	/* Valid or not */
+	bool p_type;	/* Individual (0) or trunk (1) port */
+	bool p_mask;	/* Whether the port type is used */
+	u8 p_id;
+	u8 p_id_mask;	/* Mask for the port */
+	u8 action;	/* Routing action performed: 0: FORWARD, 1: DROP, 2: TRAP2CPU */
+			/*   3: COPY2CPU, 4: TRAP2MASTERCPU, 5: COPY2MASTERCPU, 6: HARDDROP */
+	u16 vid;
+	u16 vid_mask;
+	u64 mac;	/* MAC address used as source MAC in the routed packet */
+	u64 mac_mask;
+};
+
+struct otto_l3_intf {
+	u16 vid;
+	u8 smac_idx;
+	u8 ip4_mtu_id;
+	u8 ip6_mtu_id;
+	u16 ip4_mtu;
+	u16 ip6_mtu;
+	u8 ttl_scope;
+	u8 hl_scope;
+	u8 ip4_icmp_redirect;
+	u8 ip6_icmp_redirect;
+	u8 ip4_pbr_icmp_redirect;
+	u8 ip6_pbr_icmp_redirect;
+};
+
+struct otto_l3_route_attr {
+	bool valid;
+	bool hit;
+	bool ttl_dec;
+	bool ttl_check;
+	bool dst_null;
+	bool qos_as;
+	u8 qos_prio;
+	u8 type;
+	u8 action;
+};
+
+struct otto_l3_nexthop {
+	u16 id;		/* ID: L3_NEXT_HOP table-index or route-index set in L2_NEXT_HOP */
+	u32 dev_id;
+	u16 port;
+	u16 rvid;	/* Relay VID/FID for the L2 table entry */
+	u64 mac;	/* The MAC address of the entry in the L2_NEXT_HOP table */
+	u16 mac_id;
+	u16 l2_id;	/* Index of this next hop forwarding entry in L2 FIB table */
+	u64 l2_seed;	/* Seed the entry at l2_id was claimed on */
+	u64 gw;		/* The gateway MAC address packets are forwarded to */
+	int if_id;	/* Interface (into L3_EGR_INTF_IDX) */
+	bool l2_installed;	/* Entry written to the L2 table */
+};
+
+struct otto_l3_route {
+	struct fib6_info *f6i;		/* FIB entry to report the offload on */
+	struct in6_addr gw_ip;		/* Gateway of the route, IPv4 v4-mapped */
+	int gw_ifindex;			/* Device the gateway is reached on */
+	u32 dst_ip;			/* IP of the destination net */
+	struct in6_addr dst_ip6;
+	int prefix_len;			/* Network prefix len of the destination net */
+	bool is_host_route;
+	bool replaced;			/* torn down for a route to the same destination */
+	int id;				/* ID number of this route */
+	int row;			/* Row it occupies in the prefix route table */
+	unsigned int members;		/* FIB entries a trap row stands for */
+	struct list_head srcs;		/* source-specific routes a trap row stands for */
+	bool srcs_incomplete;		/* a source could not be tracked */
+	struct list_head list;		/* all routes, for every lookup */
+	u32 tb_id;			/* routing table the route came from */
+	u16 switch_mac_id;		/* Index into switch's own MACs, RTL839X only */
+	struct otto_l3_nexthop nh;
+	struct pie_rule pr;
+	struct otto_l3_route_attr attr;
+};
+
+struct otto_l3_config {
+	/* Which of the two routing models the family uses. RTL930x writes the
+	 * destination and its mask into the route entry, so the L3 tables match
+	 * on their own. RTL838x and RTL839x store only the gateway there and
+	 * need a PIE rule to match the destination and point at the next hop.
+	 */
+	bool use_l3_tables;
+	int (*find_slot)(struct otto_l3_ctrl *ctrl, struct otto_l3_route *rt, bool must_exist);
+	void (*get_egress_intf)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_intf *intf);
+	void (*set_egress_intf)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_intf *intf);
+	u64 (*get_egress_mac)(struct otto_l3_ctrl *ctrl, u32 idx);
+	void (*set_egress_mac)(struct otto_l3_ctrl *ctrl, u32 idx, u64 mac);
+	void (*host_route_write)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt);
+	void (*get_router_mac)(struct otto_l3_ctrl *ctrl, u32 idx, struct otto_l3_router_mac *m);
+	void (*set_router_mac)(struct otto_l3_ctrl *ctrl, u32 idx, struct otto_l3_router_mac *m);
+	void (*get_nexthop)(struct otto_l3_ctrl *ctrl, int idx, u16 *dmac_id, u16 *interface);
+	void (*set_nexthop)(struct otto_l3_ctrl *ctrl, int idx, u16 dmac_id, u16 interface);
+	int (*route_lookup_hw)(struct otto_l3_ctrl *ctrl, struct otto_l3_route *rt);
+	int (*route_rows_move)(struct otto_l3_ctrl *ctrl, int dst, int src, int count);
+	void (*route_read)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt);
+	void (*route_write)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt);
+	int (*setup)(struct otto_l3_ctrl *ctrl);
+	void (*dbgfs_init)(struct otto_l3_ctrl *ctrl);
+};
+
+struct otto_l3_ctrl {
+	const struct otto_l3_config *cfg;
+	struct device *dev;
+	struct rtl838x_switch_priv *priv;
+	struct notifier_block fib_nb;
+	struct notifier_block ne_nb;
+	struct notifier_block nd_nb;
+	struct delayed_work resync_work;
+	unsigned int resync_delay;
+	bool resync_wanted;
+	struct list_head routes_list;
+	struct list_head rmac_devs;	/* devices router MACs follow */
+	unsigned long route_use_bm[MAX_ROUTES / 32];
+	unsigned long host_route_use_bm[MAX_HOST_ROUTES / 32];
+	struct otto_l3_intf interfaces[MAX_SMACS];
+	unsigned int intf_refs[MAX_SMACS];	/* routes holding each */
+	DECLARE_BITMAP(router_mac_bm, MAX_ROUTER_MACS);	/* entries written here */
+	bool prefix_rows_stale;	/* a move failed, the rows are not where we say */
+	bool v4_fwd_off;	/* policy rules keep IPv4 forwarding in software */
+	bool v6_fwd_off;	/* policy rules keep IPv6 forwarding in software */
+	struct mutex *lock; /* protect register access */
+};
+
+int otto_l3_probe(struct device *dev, struct rtl838x_switch_priv *priv);
+void otto_l3_remove(struct rtl838x_switch_priv *priv);
+
+#endif /* _OTTO_L3_H */

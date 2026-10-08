@@ -1,0 +1,31 @@
+From 2c95a756e0cfc19af6d0b32b0c6cf3bada334998 Mon Sep 17 00:00:00 2001
+From: Thomas Wismer <thomas.wismer@scs.ch>
+Date: Mon, 6 Oct 2025 22:40:29 +0200
+Subject: [PATCH] net: pse-pd: tps23881: Fix current measurement scaling
+
+The TPS23881 improves on the TPS23880 with current sense resistors reduced
+from 255 mOhm to 200 mOhm. This has a direct impact on the scaling of the
+current measurement. However, the latest TPS23881 data sheet from May 2023
+still shows the scaling of the TPS23880 model.
+
+Fixes: 7f076ce3f1733 ("net: pse-pd: tps23881: Add support for power limit and measurement features")
+Signed-off-by: Thomas Wismer <thomas.wismer@scs.ch>
+Acked-by: Kory Maincent <kory.maincent@bootlin.com>
+Link: https://patch.msgid.link/20251006204029.7169-2-thomas@wismer.xyz
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
+---
+ drivers/net/pse-pd/tps23881.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/pse-pd/tps23881.c
++++ b/drivers/net/pse-pd/tps23881.c
+@@ -62,7 +62,7 @@
+ #define TPS23881_REG_SRAM_DATA	0x61
+ 
+ #define TPS23881_UV_STEP	3662
+-#define TPS23881_NA_STEP	70190
++#define TPS23881_NA_STEP	89500
+ #define TPS23881_MW_STEP	500
+ #define TPS23881_MIN_PI_PW_LIMIT_MW	2000
+ 

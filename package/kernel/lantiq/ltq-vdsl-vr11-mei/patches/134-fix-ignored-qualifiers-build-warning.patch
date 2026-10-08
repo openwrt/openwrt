@@ -1,0 +1,50 @@
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Wed, 7 May 2025 22:53:48 +0800
+Subject: [PATCH] fix ignored-qualifiers build warnings
+
+This patch fixes the following build warnings:
+
+/home/db/owrt/build_dir/target-arm_cortex-a7+neon-vfpv4_musl_eabi/linux-ipq40xx_generic/dsl_cpe_mei-ugw_8.5.2.10/src/drv_mei_cpe_mei_access_vrx.c:41:15: error: type qualifiers ignored on function return type [-Werror=ignored-qualifiers]
+   41 | static inline volatile IFX_uint32_t MEI_RCU_get(MEI_MEI_DRV_CNTRL_T *pMeiDrvCntrl)
+      |               ^~~~~~~~
+/home/db/owrt/build_dir/target-arm_cortex-a7+neon-vfpv4_musl_eabi/linux-ipq40xx_generic/dsl_cpe_mei-ugw_8.5.2.10/src/drv_mei_cpe_mei_access_vrx.c:55:15: error: type qualifiers ignored on function return type [-Werror=ignored-qualifiers]
+   55 | static inline volatile IFX_uint32_t MEI_CGU_get(MEI_MEI_DRV_CNTRL_T *pMeiDrvCntrl)
+      |               ^~~~~~~~
+/home/db/owrt/build_dir/target-arm_cortex-a7+neon-vfpv4_musl_eabi/linux-ipq40xx_generic/dsl_cpe_mei-ugw_8.5.2.10/src/drv_mei_cpe_mei_access_vrx.c:63:15: error: type qualifiers ignored on function return type [-Werror=ignored-qualifiers]
+   63 | static inline volatile IFX_uint32_t MEI_RCU_Slave_get(MEI_MEI_DRV_CNTRL_T *pMeiDrvCntrl)
+      |               ^~~~~~~~
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ src/drv_mei_cpe_mei_access_vrx.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- a/src/drv_mei_cpe_mei_access_vrx.c
++++ b/src/drv_mei_cpe_mei_access_vrx.c
+@@ -38,7 +38,7 @@
+    Local macro definition
+    ========================================================================= */
+ 
+-static inline volatile IFX_uint32_t MEI_RCU_get(MEI_MEI_DRV_CNTRL_T *pMeiDrvCntrl)
++static inline IFX_uint32_t MEI_RCU_get(MEI_MEI_DRV_CNTRL_T *pMeiDrvCntrl)
+ {
+    IFX_uint32_t ret = 0;
+    if (MEI_DEVICE_CFG_IS_PLATFORM(e_MEI_DEV_PLATFORM_CONFIG_VR9))
+@@ -52,7 +52,7 @@ static inline volatile IFX_uint32_t MEI_
+    return ret;
+ }
+ #if (MEI_SUPPORT_DEVICE_VR11 == 1)
+-static inline volatile IFX_uint32_t MEI_CGU_get(MEI_MEI_DRV_CNTRL_T *pMeiDrvCntrl)
++static inline IFX_uint32_t MEI_CGU_get(MEI_MEI_DRV_CNTRL_T *pMeiDrvCntrl)
+ {
+    IFX_uint32_t ret = 0;
+    ret = (MEI_DRV_PCIE_VIRT_MEMBASE_GET(pMeiDrvCntrl) | MEI_CGU_OFFSET);
+@@ -60,7 +60,7 @@ static inline volatile IFX_uint32_t MEI_
+ }
+ #endif
+ 
+-static inline volatile IFX_uint32_t MEI_RCU_Slave_get(MEI_MEI_DRV_CNTRL_T *pMeiDrvCntrl)
++static inline IFX_uint32_t MEI_RCU_Slave_get(MEI_MEI_DRV_CNTRL_T *pMeiDrvCntrl)
+ {
+    IFX_uint32_t ret = 0;
+    if (MEI_DEVICE_CFG_IS_PLATFORM(e_MEI_DEV_PLATFORM_CONFIG_VR9))

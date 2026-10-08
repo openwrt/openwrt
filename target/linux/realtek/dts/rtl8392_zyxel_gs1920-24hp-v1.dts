@@ -1,0 +1,20 @@
+/dts-v1/;
+
+#include "rtl839x_zyxel_gs1920-24hp-common.dtsi"
+#include "rtl8392_zyxel_gs1920-24-v1-common.dtsi"
+
+/ {
+	compatible = "zyxel,gs1920-24hp-v1", "realtek,rtl8392-soc";
+	model = "Zyxel GS1920-24HPv1";
+};
+
+&i2c4 {
+	adt7468: adt7468@2e {
+		compatible = "adi,adt7468";
+		reg = <0x2e>;
+	};
+};
+
+&pse {
+	compatible = "zyxel,gs1920-24hp-v1-pse", "realtek,pse-mcu-gen1-smbus";
+};

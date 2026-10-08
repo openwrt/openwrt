@@ -1,0 +1,190 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7621.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	compatible = "iptime,ax2004m", "mediatek,mt7621-soc";
+	model = "ipTIME AX2004M";
+
+	aliases {
+		led-boot = &led_cpu;
+		led-failsafe = &led_cpu;
+		led-running = &led_cpu;
+		led-upgrade = &led_cpu;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,115200";
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_cpu: cpu {
+			function = LED_FUNCTION_CPU;
+			color = <LED_COLOR_ID_AMBER>;
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
+		};
+
+		wlan2g {
+			label = "amber:wlan2g";
+			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0radio";
+		};
+
+		wlan5g {
+			label = "amber:wlan5g";
+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1radio";
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+};
+
+&nand {
+	status = "okay";
+
+	mediatek,nmbm;
+	mediatek,bmt-max-ratio = <1>;
+	mediatek,bmt-max-reserved-blocks = <64>;
+	mediatek,bmt-remap-range = <0x000000 0x580000>;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "u-boot";
+			reg = <0x0 0x80000>;
+			read-only;
+		};
+
+		partition@80000 {
+			label = "u-boot-env";
+			reg = <0x80000 0x80000>;
+		};
+
+		partition@100000 {
+			label = "factory";
+			reg = <0x100000 0x80000>;
+			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				eeprom_factory_0: eeprom@0 {
+					reg = <0x0 0xe00>;
+				};
+
+				macaddr_factory_4: macaddr@4 {
+					compatible = "mac-base";
+					reg = <0x4 0x6>;
+					#nvmem-cell-cells = <1>;
+				};
+
+				precal_factory_e10: precal@e10 {
+					reg = <0xe10 0x19c10>;
+				};
+			};
+		};
+
+		partition@180000 {
+			label = "firmware";
+			reg = <0x180000 0x7680000>;
+
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "kernel";
+				reg = <0x0 0x400000>;
+			};
+
+			partition@400000 {
+				label = "ubi";
+				reg = <0x400000 0x7280000>;
+			};
+		};
+
+		/* last 8 MiB is reserved for NMBM bad block table */
+	};
+};
+
+&state_default {
+	gpio {
+		groups = "i2c", "jtag", "wdt";
+		function = "gpio";
+	};
+};
+
+&gmac0 {
+	nvmem-cells = <&macaddr_factory_4 3>;
+	nvmem-cell-names = "mac-address";
+};
+
+&gmac1 {
+	status = "okay";
+	label = "wan";
+	phy-handle = <&ethphy0>;
+
+	nvmem-cells = <&macaddr_factory_4 1>;
+	nvmem-cell-names = "mac-address";
+};
+
+&ethphy0 {
+	/delete-property/ interrupts;
+};
+
+&switch0 {
+	ports {
+		port@1 {
+			status = "okay";
+			label = "lan4";
+		};
+
+		port@2 {
+			status = "okay";
+			label = "lan3";
+		};
+
+		port@3 {
+			status = "okay";
+			label = "lan2";
+		};
+
+		port@4 {
+			status = "okay";
+			label = "lan1";
+		};
+	};
+};
+
+&pcie {
+	status = "okay";
+};
+
+&pcie1 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&eeprom_factory_0>, <&precal_factory_e10>;
+		nvmem-cell-names = "eeprom", "precal";
+	};
+};

@@ -1,0 +1,28 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+#include "mt7981b-xiaomi-mi-router-wr30u.dtsi"
+
+/ {
+	model = "Xiaomi Mi Router WR30U (OpenWrt U-Boot layout)";
+	compatible = "xiaomi,mi-router-wr30u-ubootmod", "mediatek,mt7981";
+
+	chosen {
+		bootargs-append = " root=/dev/fit0 rootwait";
+		rootdisk = <&ubi_rootdisk>;
+	};
+};
+
+&partitions {
+	partition@600000 {
+		label = "ubi";
+		reg = <0x600000 0x7000000>;
+		compatible = "linux,ubi";
+
+		volumes {
+			ubi_rootdisk: ubi-volume-fit {
+				volname = "fit";
+			};
+		};
+	};
+};

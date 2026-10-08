@@ -1,0 +1,61 @@
+From 793d85b802e8b1a179134056894249c5a0270c72 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Sun, 15 Feb 2026 19:03:50 +0100
+Subject: stdio.h: ignore -Wformat-nonliteral in snprintf and sprintf
+
+Some applications might activate -Werror=format-nonliteral when building
+their application. This breaks fortify headers build. Tell GCC to ignore
+such warnings for this code.
+
+This fixes the libubox and ucode build:
+```
+/include/fortify/stdio.h: In function 'snprintf':
+/include/fortify/stdio.h:101:9: error: format not a string literal, argument types not checked [-Werror=format-nonliteral]
+  101 |         return __orig_snprintf(__s, __n, __f, __builtin_va_arg_pack());
+      |         ^~~~~~
+/include/fortify/stdio.h: In function 'sprintf':
+/include/fortify/stdio.h:110:17: error: format not a string literal, argument types not checked [-Werror=format-nonliteral]
+  110 |                 __r = __orig_snprintf(__s, __b, __f, __builtin_va_arg_pack());
+      |                 ^~~
+/include/fortify/stdio.h:114:17: error: format not a string literal, argument types not checked [-Werror=format-nonliteral]
+  114 |                 __r = __orig_sprintf(__s, __f, __builtin_va_arg_pack());
+      |                 ^~~
+cc1: all warnings being treated as errors
+ninja: build stopped: subcommand failed.
+```
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ include/stdio.h | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+--- a/include/stdio.h
++++ b/include/stdio.h
+@@ -98,7 +98,10 @@ _FORTIFY_FN(snprintf) int snprintf(char
+ 
+ 	if (__n > __b)
+ 		__builtin_trap();
++#pragma GCC diagnostic push
++#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+ 	return __orig_snprintf(__s, __n, __f, __builtin_va_arg_pack());
++#pragma GCC diagnostic pop
+ }
+ 
+ _FORTIFY_FN(sprintf) int sprintf(char *__s, const char *__f, ...)
+@@ -106,6 +109,8 @@ _FORTIFY_FN(sprintf) int sprintf(char *_
+ 	size_t __b = __builtin_object_size(__s, 0);
+ 	int __r;
+ 
++#pragma GCC diagnostic push
++#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+ 	if (__b != (size_t)-1) {
+ 		__r = __orig_snprintf(__s, __b, __f, __builtin_va_arg_pack());
+ 		if (__r != -1 && (size_t)__r >= __b)
+@@ -114,6 +119,7 @@ _FORTIFY_FN(sprintf) int sprintf(char *_
+ 		__r = __orig_sprintf(__s, __f, __builtin_va_arg_pack());
+ 	}
+ 	return __r;
++#pragma GCC diagnostic pop
+ }
+ 
+ #ifdef __cplusplus

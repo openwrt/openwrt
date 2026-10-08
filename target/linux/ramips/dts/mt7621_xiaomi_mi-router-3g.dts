@@ -1,0 +1,123 @@
+#include "mt7621_xiaomi_nand_128m.dtsi"
+#include <dt-bindings/leds/common.h>
+
+/ {
+	compatible = "xiaomi,mi-router-3g", "mediatek,mt7621-soc";
+	model = "Xiaomi Mi Router 3G";
+
+	aliases {
+		led-boot = &led_status_yellow;
+		led-failsafe = &led_status_red;
+		led-running = &led_status_blue;
+		led-upgrade = &led_status_yellow;
+		label-mac-device = &gmac0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_status_red: led-0 {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
+		};
+
+		led_status_blue: led-1 {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
+		};
+
+		led_status_yellow: led-2 {
+			color = <LED_COLOR_ID_YELLOW>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&gpio 10 GPIO_ACTIVE_LOW>;
+		};
+
+		led-3 {
+			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_WAN;
+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "mt7530-0:01:1Gbps";
+		};
+
+		led-4 {
+			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <1>;
+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "mt7530-0:03:1Gbps";
+		};
+
+		led-5 {
+			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <2>;
+			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "mt7530-0:02:1Gbps";
+		};
+	};
+};
+
+&pcie {
+	status = "okay";
+};
+
+&pcie0 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&eeprom_factory_0>;
+		nvmem-cell-names = "eeprom";
+		ieee80211-freq-limit = <2400000 2500000>;
+	};
+};
+
+&pcie1 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&eeprom_factory_8000>;
+		nvmem-cell-names = "eeprom";
+		ieee80211-freq-limit = <5000000 6000000>;
+	};
+};
+
+&gmac0 {
+	nvmem-cells = <&macaddr_factory_e006>;
+	nvmem-cell-names = "mac-address";
+};
+
+&reg_vbus {
+	/delete-property/ regulator-always-on;
+	gpios = <&gpio 12 GPIO_ACTIVE_HIGH>;
+	enable-active-high;
+};
+
+&switch0 {
+	ports {
+		port@1 {
+			status = "okay";
+			label = "wan";
+			nvmem-cells = <&macaddr_factory_e000>;
+			nvmem-cell-names = "mac-address";
+		};
+
+		port@2 {
+			status = "okay";
+			label = "lan2";
+		};
+
+		port@3 {
+			status = "okay";
+			label = "lan1";
+		};
+	};
+};
+
+&state_default {
+	gpio {
+		groups = "jtag", "uart2", "uart3", "wdt";
+		function = "gpio";
+	};
+};

@@ -1,0 +1,185 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+#include "bcm6368.dtsi"
+
+/ {
+	model = "Comtrend VR-3025un";
+	compatible = "comtrend,vr-3025un", "brcm,bcm6368";
+
+	aliases {
+		led-boot = &led_power_green;
+		led-failsafe = &led_power_red;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_green;
+	};
+
+	keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <100>;
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 34 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+			debounce-interval = <60>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led-2 {
+			label = "green:dsl";
+			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
+		};
+
+		led-5 {
+			label = "green:internet";
+			gpios = <&gpio 5 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_power_green: led-22 {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 22 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_power_red: led-24 {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&gpio 24 GPIO_ACTIVE_HIGH>;
+			panic-indicator;
+		};
+
+		led-31 {
+			label = "red:internet";
+			gpios = <&gpio 31 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	bcm43222-sprom {
+		compatible = "brcm,ssb-sprom";
+
+		pci-bus = <0>;
+		pci-dev = <1>;
+
+		nvmem-cells = <&macaddr_cfe_6a0 1>;
+		nvmem-cell-names = "mac-address";
+
+		brcm,sprom = "brcm/bcm43222-sprom.bin";
+		brcm,sprom-fixups = <97 0xfeb3>,
+				    <98 0x1618>,
+				    <99 0xfab0>,
+				    <113 0xfed1>,
+				    <114 0x1609>,
+				    <115 0xfad9>;
+	};
+};
+
+&ehci {
+	status = "okay";
+};
+
+&ethernet {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_cfe_6a0 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&ohci {
+	status = "okay";
+};
+
+&pci {
+	status = "okay";
+};
+
+&pflash {
+	status = "okay";
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "CFE";
+			reg = <0x000000 0x010000>;
+			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				macaddr_cfe_6a0: macaddr@6a0 {
+					compatible = "mac-base";
+					reg = <0x6a0 0x6>;
+					#nvmem-cell-cells = <1>;
+				};
+			};
+		};
+
+		partition@20000 {
+			compatible = "brcm,bcm963xx-imagetag";
+			label = "firmware";
+			reg = <0x010000 0x7e0000>;
+		};
+
+		partition@1fe0000 {
+			label = "nvram";
+			reg = <0x7f0000 0x010000>;
+		};
+	};
+};
+
+&pinctrl {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_ephy0_led &pinctrl_ephy1_led
+		     &pinctrl_ephy2_led &pinctrl_ephy3_led>;
+};
+
+&switch0 {
+	ports {
+		port@0 {
+			reg = <0>;
+			label = "lan1";
+
+			phy-handle = <&phy1>;
+			phy-mode = "mii";
+		};
+
+		port@1 {
+			reg = <1>;
+			label = "lan2";
+
+			phy-handle = <&phy2>;
+			phy-mode = "mii";
+		};
+
+		port@2 {
+			reg = <2>;
+			label = "lan3";
+
+			phy-handle = <&phy3>;
+			phy-mode = "mii";
+		};
+
+		port@3 {
+			reg = <3>;
+			label = "iptv";
+
+			phy-handle = <&phy4>;
+			phy-mode = "mii";
+		};
+	};
+};
+
+&uart0 {
+	status = "okay";
+};
+
+&usbh {
+	status = "okay";
+};

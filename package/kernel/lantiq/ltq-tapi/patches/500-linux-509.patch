@@ -1,0 +1,59 @@
+--- a/src/drv_tapi_linux.c
++++ b/src/drv_tapi_linux.c
+@@ -3253,10 +3253,7 @@ static IFX_void_t proc_EntriesRemove(IFX
+ */
+ static IFX_void_t tapi_wq_setscheduler (IFX_int32_t foo)
+ {
+-   struct sched_param sched_params;
+-
+-   sched_params.sched_priority = TAPI_OS_THREAD_PRIO_HIGH;
+-   sched_setscheduler(current, SCHED_FIFO, &sched_params);
++   sched_set_fifo_low(current);
+ }
+ #endif /* LINUX_2_6 */
+ 
+@@ -3677,23 +3674,8 @@ static IFX_int32_t TAPI_SelectCh (TAPI_F
+ */
+ IFX_int32_t TAPI_OS_ThreadPriorityModify(IFX_uint32_t newPriority)
+ {
+-   struct sched_param sched_params;
+-   IFX_int32_t ret;
+-
+-   sched_params.sched_priority = newPriority;
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0))
+-   ret = setscheduler(current->pid, SCHED_FIFO, &sched_params);
+-#else
+-   ret = sched_setscheduler(current, SCHED_FIFO, &sched_params);
+-#endif
+-
+-   if (ret < 0)
+-   {
+-      printk(KERN_ERR "Failed to set the thread priority to %d"
+-             " ret=%d\n", newPriority, ret);
+-   }
+-
+-   return (ret < 0) ? IFX_ERROR : IFX_SUCCESS;
++   sched_set_fifo_low(current);
++   return IFX_SUCCESS;
+ }
+ 
+ 
+@@ -3740,7 +3722,6 @@ module_exit (ifx_tapi_module_exit);
+ 
+ MODULE_AUTHOR           ("Lantiq Deutschland GmbH");
+ MODULE_DESCRIPTION      ("TAPI Driver - www.lantiq.com");
+-MODULE_SUPPORTED_DEVICE ("TAPI DEVICE");
+ MODULE_LICENSE          ("Dual BSD/GPL");
+ 
+ EXPORT_SYMBOL (IFX_TAPI_Register_LL_Drv);
+--- a/src/drv_tapi_kpi.c
++++ b/src/drv_tapi_kpi.c
+@@ -134,7 +134,7 @@ extern IFX_int32_t           block_ingre
+ /* ========================================================================== */
+ static IFX_void_t ifx_tapi_KPI_IngressHandler (IFX_ulong_t foo);
+ #ifdef KPI_TASKLET
+-DECLARE_TASKLET(tl_kpi_ingress, ifx_tapi_KPI_IngressHandler, 0L);
++DECLARE_TASKLET_OLD(tl_kpi_ingress, ifx_tapi_KPI_IngressHandler);
+ #endif /* KPI_TASKLET */
+ static IFX_int32_t ifx_tapi_KPI_IngressThread (IFXOS_ThreadParams_t *pThread);
+ static IFX_return_t ifx_tapi_KPI_GroupInit(IFX_uint32_t nKpiGroup);

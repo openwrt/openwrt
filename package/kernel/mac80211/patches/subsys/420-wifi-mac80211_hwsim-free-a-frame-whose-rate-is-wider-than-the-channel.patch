@@ -1,0 +1,29 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Thu, 1 Oct 2026 22:24:19 +0200
+Subject: [PATCH] wifi: mac80211_hwsim: free a frame whose rate is wider than
+ the channel
+
+mac80211_hwsim_tx() warns and returns when a rate of the frame is wider
+than the channel width in use, but does not free the frame, so it leaks
+the skb and the frame never gets a TX status. Free it as the other drop
+paths of the function do.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ drivers/net/wireless/virtual/mac80211_hwsim_main.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/virtual/mac80211_hwsim_main.c
++++ b/drivers/net/wireless/virtual/mac80211_hwsim_main.c
+@@ -2457,8 +2457,10 @@ static void mac80211_hwsim_tx(struct iee
+ 		else if (rflags & IEEE80211_TX_RC_160_MHZ_WIDTH)
+ 			bw = NL80211_CHAN_WIDTH_160;
+ 
+-		if (WARN_ON(hwsim_get_chanwidth(bw) > hwsim_get_chanwidth(confbw)))
++		if (WARN_ON(hwsim_get_chanwidth(bw) > hwsim_get_chanwidth(confbw))) {
++			ieee80211_free_txskb(hw, skb);
+ 			return;
++		}
+ 	}
+ 
+ 	if (tx_link_sta && control->sta->valid_links)

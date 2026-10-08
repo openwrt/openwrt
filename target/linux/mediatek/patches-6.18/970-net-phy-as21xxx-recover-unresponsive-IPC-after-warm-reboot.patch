@@ -1,0 +1,65 @@
+From: Pietro Ameruoso <p.ameruoso@live.it>
+Date: Sat, 29 Aug 2026 00:00:00 +0200
+Subject: [PATCH] net: phy: as21xxx: recover unresponsive IPC after warm reboot
+
+The firmware can remain loaded across a warm reboot while its IPC interface
+is no longer responsive. In that case the model-specific driver matches,
+but its probe times out while synchronizing IPC parity.
+
+On an IPC synchronization timeout, reset the PHY when a hardware reset is
+available, reload its firmware and retry synchronization. Issue a NOP
+command to wait for the freshly loaded firmware to become ready and report
+successful recovery in the boot log. If no hardware reset is available,
+report that recovery is proceeding with a firmware reload only.
+
+Signed-off-by: Pietro Ameruoso <p.ameruoso@live.it>
+---
+ drivers/net/phy/as21xxx.c | 30 ++++++++++++++++++++++++++++++
+ 1 file changed, 30 insertions(+)
+
+--- a/drivers/net/phy/as21xxx.c
++++ b/drivers/net/phy/as21xxx.c
+@@ -603,6 +603,7 @@ static int aeon_dpc_ra_enable(struct phy
+ static int as21xxx_probe(struct phy_device *phydev)
+ {
+ 	struct as21xxx_priv *priv;
++	u16 ret_sts;
+ 	int ret;
+ 
+ 	priv = devm_kzalloc(&phydev->mdio.dev,
+@@ -624,6 +625,35 @@ static int as21xxx_probe(struct phy_devi
+ 	phydev->c45_ids.devices_in_package &= ~BIT(0);
+ 
+ 	ret = aeon_ipc_sync_parity(phydev, priv);
++	if (ret == -ETIMEDOUT) {
++		if (phydev->mdio.reset_gpio || phydev->mdio.reset_ctrl) {
++			phydev_warn(phydev,
++				    "Aeonsemi recovery: IPC unresponsive, resetting PHY before firmware reload\n");
++
++			phy_device_reset(phydev, 1);
++			phy_device_reset(phydev, 0);
++		} else {
++			phydev_warn(phydev,
++				    "Aeonsemi recovery: IPC unresponsive, reloading firmware without hardware reset\n");
++		}
++
++		ret = aeon_firmware_load(phydev);
++		if (ret)
++			return ret;
++
++		priv->parity_status = false;
++		ret = aeon_ipc_sync_parity(phydev, priv);
++		if (ret)
++			return ret;
++
++		/* Wait for the freshly loaded firmware to become ready. */
++		mutex_lock(&priv->ipc_lock);
++		ret = aeon_ipc_noop(phydev, priv, &ret_sts);
++		mutex_unlock(&priv->ipc_lock);
++		if (!ret)
++			phydev_info(phydev,
++				    "Aeonsemi recovery: firmware reload and IPC recovery succeeded\n");
++	}
+ 	if (ret)
+ 		return ret;
+ 

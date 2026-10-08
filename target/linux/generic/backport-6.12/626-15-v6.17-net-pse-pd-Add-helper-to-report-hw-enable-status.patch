@@ -1,0 +1,74 @@
+From c394e757dedd9cf947f9ac470d615d28fd2b07d1 Mon Sep 17 00:00:00 2001
+From: "Kory Maincent (Dent Project)" <kory.maincent@bootlin.com>
+Date: Tue, 17 Jun 2025 14:12:05 +0200
+Subject: [PATCH] net: pse-pd: Add helper to report hardware enable status of
+ the PI
+
+Refactor code by introducing a helper function to retrieve the hardware
+enabled state of the PI, avoiding redundant implementations in the
+future.
+
+Signed-off-by: Kory Maincent (Dent Project) <kory.maincent@bootlin.com>
+Reviewed-by: Oleksij Rempel <o.rempel@pengutronix.de>
+Link: https://patch.msgid.link/20250617-feature_poe_port_prio-v14-6-78a1a645e2ee@bootlin.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
+---
+ drivers/net/pse-pd/pse_core.c | 36 +++++++++++++++++++++++++----------
+ 1 file changed, 26 insertions(+), 10 deletions(-)
+
+--- a/drivers/net/pse-pd/pse_core.c
++++ b/drivers/net/pse-pd/pse_core.c
+@@ -272,10 +272,34 @@ static struct net_device *pse_control_ge
+ 	return psec->attached_phydev->attached_dev;
+ }
+ 
++/**
++ * pse_pi_is_hw_enabled - Is PI enabled at the hardware level
++ * @pcdev: a pointer to the PSE controller device
++ * @id: Index of the PI
++ *
++ * Return: 1 if the PI is enabled at the hardware level, 0 if not, and
++ *	   a failure value on error
++ */
++static int pse_pi_is_hw_enabled(struct pse_controller_dev *pcdev, int id)
++{
++	struct pse_admin_state admin_state = {0};
++	int ret;
++
++	ret = pcdev->ops->pi_get_admin_state(pcdev, id, &admin_state);
++	if (ret < 0)
++		return ret;
++
++	/* PI is well enabled at the hardware level */
++	if (admin_state.podl_admin_state == ETHTOOL_PODL_PSE_ADMIN_STATE_ENABLED ||
++	    admin_state.c33_admin_state == ETHTOOL_C33_PSE_ADMIN_STATE_ENABLED)
++		return 1;
++
++	return 0;
++}
++
+ static int pse_pi_is_enabled(struct regulator_dev *rdev)
+ {
+ 	struct pse_controller_dev *pcdev = rdev_get_drvdata(rdev);
+-	struct pse_admin_state admin_state = {0};
+ 	const struct pse_controller_ops *ops;
+ 	int id, ret;
+ 
+@@ -285,15 +309,7 @@ static int pse_pi_is_enabled(struct regu
+ 
+ 	id = rdev_get_id(rdev);
+ 	mutex_lock(&pcdev->lock);
+-	ret = ops->pi_get_admin_state(pcdev, id, &admin_state);
+-	if (ret)
+-		goto out;
+-
+-	if (admin_state.podl_admin_state == ETHTOOL_PODL_PSE_ADMIN_STATE_ENABLED ||
+-	    admin_state.c33_admin_state == ETHTOOL_C33_PSE_ADMIN_STATE_ENABLED)
+-		ret = 1;
+-
+-out:
++	ret = pse_pi_is_hw_enabled(pcdev, id);
+ 	mutex_unlock(&pcdev->lock);
+ 
+ 	return ret;

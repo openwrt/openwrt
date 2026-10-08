@@ -1,0 +1,19 @@
+[
+	[ "if",
+		[ "eq", "SUBSYSTEM", "drm" ],
+		[
+			[ "if",
+				[ "regex", "DEVNAME", "^dri/renderD" ],
+				[
+					[ "makedev", "/dev/%DEVNAME%", "0660", "render" ],
+					[ "return" ]
+				]
+			],
+			[ "return" ]
+		]
+	],
+	[ "if",
+		[ "eq", "SUBSYSTEM", [ "accel", "kfd" ] ],
+		[ "makedev", "/dev/%DEVNAME%", "0660", "render" ]
+	]
+]

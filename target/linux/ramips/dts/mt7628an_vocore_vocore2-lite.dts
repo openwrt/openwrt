@@ -1,0 +1,29 @@
+#include <dt-bindings/leds/common.h>
+
+#include "mt7628an_vocore_vocore2.dtsi"
+
+/ {
+	compatible = "vocore,vocore2-lite", "vocore,vocore2", "mediatek,mt7628an-soc";
+	model = "VoCore2-Lite";
+
+	aliases {
+		led-boot = &led_status;
+		led-failsafe = &led_status;
+		led-running = &led_status;
+		led-upgrade = &led_status;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_status: status {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 44 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&firmware {
+	reg = <0x50000 0x7b0000>;
+};

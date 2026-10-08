@@ -1,0 +1,116 @@
+#include <dt-bindings/leds/common.h>
+
+#include "mt7628an_tplink_8m.dtsi"
+
+/ {
+	compatible = "tplink,tl-wr841n-v13", "mediatek,mt7628an-soc";
+	model = "TP-Link TL-WR841N v13";
+
+	aliases {
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 38 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+
+		rfkill {
+			label = "rfkill";
+			gpios = <&gpio 37 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RFKILL>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_power: power {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 36 GPIO_ACTIVE_LOW>;
+		};
+
+		wps {
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 46 GPIO_ACTIVE_LOW>;
+		};
+
+		lan1 {
+			label = "green:lan1";
+			gpios = <&gpio 42 GPIO_ACTIVE_LOW>;
+		};
+
+		lan2 {
+			label = "green:lan2";
+			gpios = <&gpio 41 GPIO_ACTIVE_LOW>;
+		};
+
+		lan3 {
+			label = "green:lan3";
+			gpios = <&gpio 40 GPIO_ACTIVE_LOW>;
+		};
+
+		lan4 {
+			label = "green:lan4";
+			gpios = <&gpio 39 GPIO_ACTIVE_LOW>;
+		};
+
+		wan_green {
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 43 GPIO_ACTIVE_LOW>;
+		};
+
+		wan_orange {
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_ORANGE>;
+			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
+		};
+
+		wlan {
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 44 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&ehci {
+	status = "disabled";
+};
+
+&ohci {
+	status = "disabled";
+};
+
+&state_default {
+	gpio {
+		groups = "gpio", "p0led_an", "p1led_an", "p2led_an", "p3led_an", "p4led_an", "perst", "refclk", "uart1", "wdt", "wled_an";
+		function = "gpio";
+	};
+};
+
+&wmac {
+	status = "okay";
+
+	nvmem-cells = <&eeprom_factory_20000>, <&macaddr_factory_f100 0>;
+	nvmem-cell-names = "eeprom", "mac-address";
+};
+
+&ethernet {
+	nvmem-cells = <&macaddr_factory_f100 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&esw {
+	mediatek,portmap = <0x3e>;
+};

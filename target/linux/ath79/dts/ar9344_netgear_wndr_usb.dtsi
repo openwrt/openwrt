@@ -1,0 +1,30 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include <dt-bindings/leds/common.h>
+
+&leds {
+	usb_green {
+		function = LED_FUNCTION_USB;
+		color = <LED_COLOR_ID_GREEN>;
+		gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+		trigger-sources = <&hub_port>;
+		linux,default-trigger = "usbport";
+	};
+};
+
+&ath9k {
+	usb_power {
+		gpio-hog;
+		line-name = "netgear:power:usb";
+		gpios = <0 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
+};
+
+&usb_phy {
+	status = "okay";
+};
+
+&usb {
+	status = "okay";
+};

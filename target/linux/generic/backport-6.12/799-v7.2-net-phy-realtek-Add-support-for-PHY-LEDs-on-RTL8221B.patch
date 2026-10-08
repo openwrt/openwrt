@@ -1,0 +1,211 @@
+From d3aae4d954f92a273388439ab015763e0cdea1e0 Mon Sep 17 00:00:00 2001
+From: Chukun Pan <amadeus@jmu.edu.cn>
+Date: Fri, 1 May 2026 18:00:02 +0800
+Subject: [PATCH] net: phy: realtek: Add support for PHY LEDs on RTL8221B
+
+Realtek RTL8221B Ethernet PHY supports three LED pins which are used to
+indicate link status and activity. Add netdev trigger support for them.
+
+Signed-off-by: Chukun Pan <amadeus@jmu.edu.cn>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Link: https://patch.msgid.link/20260501100002.755672-1-amadeus@jmu.edu.cn
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/phy/realtek/realtek_main.c | 165 +++++++++++++++++++++++++
+ 1 file changed, 165 insertions(+)
+
+--- a/drivers/net/phy/realtek/realtek_main.c
++++ b/drivers/net/phy/realtek/realtek_main.c
+@@ -149,6 +149,18 @@
+ 
+ #define RTL8221B_VND2_INSR			0xa4d4
+ 
++#define RTL822X_VND2_LED(x)			(0xd032 + ((x) * 2))
++#define RTL822X_VND2_LCR_LINK_10		BIT(0)
++#define RTL822X_VND2_LCR_LINK_100		BIT(1)
++#define RTL822X_VND2_LCR_LINK_1000		BIT(2)
++#define RTL822X_VND2_LCR_LINK_2500		BIT(5)
++
++#define RTL822X_VND2_LCR6			0xd040
++#define RTL822X_VND2_LED_ACT(x)			BIT(x)
++
++#define RTL822X_VND2_LCR7			0xd044
++#define RTL822X_VND2_LED_POLAR(x)		BIT(x)
++
+ #define RTL8224_MII_RTCT			0x11
+ #define RTL8224_MII_RTCT_ENABLE			BIT(0)
+ #define RTL8224_MII_RTCT_PAIR_A			BIT(4)
+@@ -1657,6 +1669,151 @@ static int rtl822xb_c45_read_status(stru
+ 	return 0;
+ }
+ 
++static int rtl822xb_led_brightness_set(struct phy_device *phydev, u8 index,
++				       enum led_brightness value)
++{
++	int ret;
++
++	if (index >= RTL8211x_LED_COUNT)
++		return -EINVAL;
++
++	/* clear HW LED setup */
++	ret = phy_write_mmd(phydev, MDIO_MMD_VEND2,
++			    RTL822X_VND2_LED(index), 0);
++	if (ret < 0)
++		return ret;
++
++	/* clear HW LED blink */
++	ret = phy_clear_bits_mmd(phydev, MDIO_MMD_VEND2, RTL822X_VND2_LCR6,
++				 RTL822X_VND2_LED_ACT(index));
++	if (ret < 0)
++		return ret;
++
++	if (value != LED_OFF)
++		return phy_set_bits_mmd(phydev, MDIO_MMD_VEND2,
++					RTL822X_VND2_LCR7,
++					RTL822X_VND2_LED_POLAR(index));
++	else
++		return phy_clear_bits_mmd(phydev, MDIO_MMD_VEND2,
++					  RTL822X_VND2_LCR7,
++					  RTL822X_VND2_LED_POLAR(index));
++}
++
++static int rtl822xb_led_hw_is_supported(struct phy_device *phydev, u8 index,
++					unsigned long rules)
++{
++	const unsigned long  act_mask = BIT(TRIGGER_NETDEV_RX) |
++					BIT(TRIGGER_NETDEV_TX);
++
++	const unsigned long link_mask = BIT(TRIGGER_NETDEV_LINK) |
++					BIT(TRIGGER_NETDEV_LINK_10) |
++					BIT(TRIGGER_NETDEV_LINK_100) |
++					BIT(TRIGGER_NETDEV_LINK_1000) |
++					BIT(TRIGGER_NETDEV_LINK_2500);
++
++	if (index >= RTL8211x_LED_COUNT)
++		return -EINVAL;
++
++	/* Filter out any other unsupported triggers. */
++	if (rules & ~(link_mask | act_mask))
++		return -EOPNOTSUPP;
++
++	/* RX and TX are not differentiated, they are not possible
++	 * without combination with a link trigger.
++	 */
++	if ((rules & act_mask) && !(rules & link_mask))
++		return -EOPNOTSUPP;
++
++	return 0;
++}
++
++static int rtl822xb_led_hw_control_get(struct phy_device *phydev, u8 index,
++				       unsigned long *rules)
++{
++	int val;
++
++	if (index >= RTL8211x_LED_COUNT)
++		return -EINVAL;
++
++	val = phy_read_mmd(phydev, MDIO_MMD_VEND2, RTL822X_VND2_LED(index));
++	if (val < 0)
++		return val;
++
++	if (val & RTL822X_VND2_LCR_LINK_10)
++		__set_bit(TRIGGER_NETDEV_LINK_10, rules);
++
++	if (val & RTL822X_VND2_LCR_LINK_100)
++		__set_bit(TRIGGER_NETDEV_LINK_100, rules);
++
++	if (val & RTL822X_VND2_LCR_LINK_1000)
++		__set_bit(TRIGGER_NETDEV_LINK_1000, rules);
++
++	if (val & RTL822X_VND2_LCR_LINK_2500)
++		__set_bit(TRIGGER_NETDEV_LINK_2500, rules);
++
++	if ((val & RTL822X_VND2_LCR_LINK_10) &&
++	    (val & RTL822X_VND2_LCR_LINK_100) &&
++	    (val & RTL822X_VND2_LCR_LINK_1000) &&
++	    (val & RTL822X_VND2_LCR_LINK_2500))
++		__set_bit(TRIGGER_NETDEV_LINK, rules);
++
++	val = phy_read_mmd(phydev, MDIO_MMD_VEND2, RTL822X_VND2_LCR6);
++	if (val < 0)
++		return val;
++
++	if (val & RTL822X_VND2_LED_ACT(index)) {
++		__set_bit(TRIGGER_NETDEV_RX, rules);
++		__set_bit(TRIGGER_NETDEV_TX, rules);
++	}
++
++	return 0;
++}
++
++static int rtl822xb_led_hw_control_set(struct phy_device *phydev, u8 index,
++				       unsigned long rules)
++{
++	u16 val = 0;
++	bool act;
++	int ret;
++
++	if (index >= RTL8211x_LED_COUNT)
++		return -EINVAL;
++
++	if (test_bit(TRIGGER_NETDEV_LINK, &rules) ||
++	    test_bit(TRIGGER_NETDEV_LINK_10, &rules))
++		val |= RTL822X_VND2_LCR_LINK_10;
++
++	if (test_bit(TRIGGER_NETDEV_LINK, &rules) ||
++	    test_bit(TRIGGER_NETDEV_LINK_100, &rules))
++		val |= RTL822X_VND2_LCR_LINK_100;
++
++	if (test_bit(TRIGGER_NETDEV_LINK, &rules) ||
++	    test_bit(TRIGGER_NETDEV_LINK_1000, &rules))
++		val |= RTL822X_VND2_LCR_LINK_1000;
++
++	if (test_bit(TRIGGER_NETDEV_LINK, &rules) ||
++	    test_bit(TRIGGER_NETDEV_LINK_2500, &rules))
++		val |= RTL822X_VND2_LCR_LINK_2500;
++
++	ret = phy_write_mmd(phydev, MDIO_MMD_VEND2,
++			    RTL822X_VND2_LED(index), val);
++	if (ret < 0)
++		return ret;
++
++	act = test_bit(TRIGGER_NETDEV_RX, &rules) ||
++	      test_bit(TRIGGER_NETDEV_TX, &rules);
++
++	ret = phy_modify_mmd(phydev, MDIO_MMD_VEND2, RTL822X_VND2_LCR6,
++			     RTL822X_VND2_LED_ACT(index), act ?
++			     RTL822X_VND2_LED_ACT(index) : 0);
++	if (ret < 0)
++		return ret;
++
++	/* Reset polarity to default */
++	return phy_clear_bits_mmd(phydev, MDIO_MMD_VEND2, RTL822X_VND2_LCR7,
++				  RTL822X_VND2_LED_POLAR(index));
++}
++
+ static int rtl8224_cable_test_start(struct phy_device *phydev)
+ {
+ 	u32 val;
+@@ -2329,6 +2486,10 @@ static struct phy_driver realtek_drvs[]
+ 		.write_page	= rtl821x_write_page,
+ 		.read_mmd	= rtl822xb_read_mmd,
+ 		.write_mmd	= rtl822xb_write_mmd,
++		.led_brightness_set = rtl822xb_led_brightness_set,
++		.led_hw_is_supported = rtl822xb_led_hw_is_supported,
++		.led_hw_control_get = rtl822xb_led_hw_control_get,
++		.led_hw_control_set = rtl822xb_led_hw_control_set,
+ 	}, {
+ 		.match_phy_device = rtl8221b_vm_cg_match_phy_device,
+ 		.name		= "RTL8221B-VM-CG 2.5Gbps PHY",
+@@ -2348,6 +2509,10 @@ static struct phy_driver realtek_drvs[]
+ 		.write_page	= rtl821x_write_page,
+ 		.read_mmd	= rtl822xb_read_mmd,
+ 		.write_mmd	= rtl822xb_write_mmd,
++		.led_brightness_set = rtl822xb_led_brightness_set,
++		.led_hw_is_supported = rtl822xb_led_hw_is_supported,
++		.led_hw_control_get = rtl822xb_led_hw_control_get,
++		.led_hw_control_set = rtl822xb_led_hw_control_set,
+ 	}, {
+ 		.match_phy_device = rtl8251b_c45_match_phy_device,
+ 		.name		= "RTL8251B 5Gbps PHY",
