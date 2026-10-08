@@ -20,9 +20,9 @@ else
   CARGO:=$(STAGING_DIR)/host/bin/cargo
 endif
 
-# Directory holding libclang for bindgen: the host LLVM, the one built by
-# tools/llvm-bpf or the prebuilt one unpacked into the source tree, as
-# selected for the BPF toolchain.
+# Directory holding libclang for bindgen, and the clang next to it: the host
+# LLVM, the one built by tools/llvm-bpf or the prebuilt one unpacked into the
+# source tree, as selected for the BPF toolchain.
 ifdef CONFIG_USE_LLVM_HOST
   RUST_HOST_LLVM_PREFIX:=$(call qstrip,$(CONFIG_BPF_TOOLCHAIN_HOST_PATH))
   RUST_HOST_LLVM_LIBDIRS:= \
@@ -34,8 +34,10 @@ ifdef CONFIG_USE_LLVM_HOST
 	$(if $(wildcard $(d)/libclang.so* $(d)/libclang-*.so* $(d)/libclang.dylib),$(d))))
 else ifdef CONFIG_USE_LLVM_BUILD
   RUST_LIBCLANG_PATH:=$(STAGING_DIR_HOST)/llvm-bpf/lib
+  RUST_CLANG_PATH:=$(STAGING_DIR_HOST)/llvm-bpf/bin/clang
 else ifdef CONFIG_USE_LLVM_PREBUILT
   RUST_LIBCLANG_PATH:=$(TOPDIR)/llvm-bpf/lib
+  RUST_CLANG_PATH:=$(TOPDIR)/llvm-bpf/bin/clang
 endif
 
 # Rust Environmental Vars
