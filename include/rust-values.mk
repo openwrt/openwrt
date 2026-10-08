@@ -13,6 +13,24 @@ RUST_SRC_TARBALL_HASH:=6451598a99e77f07571960f6b21d577399d3a30f33e80cbd2e3a4aae6
 RUSTC:=$(STAGING_DIR_HOST)/bin/rustc
 CARGO:=$(STAGING_DIR_HOST)/bin/cargo
 
+# Directory holding libclang for bindgen: the host LLVM, the one built by
+# tools/llvm-bpf or the prebuilt one unpacked into the source tree, as
+# selected for the BPF toolchain.
+ifdef CONFIG_USE_LLVM_HOST
+  RUST_HOST_LLVM_PREFIX:=$(call qstrip,$(CONFIG_BPF_TOOLCHAIN_HOST_PATH))
+  RUST_HOST_LLVM_LIBDIRS:= \
+	$(if $(RUST_HOST_LLVM_PREFIX),$(RUST_HOST_LLVM_PREFIX)/lib $(RUST_HOST_LLVM_PREFIX)/lib64) \
+	$(shell PATH='$(if $(RUST_HOST_LLVM_PREFIX),$(RUST_HOST_LLVM_PREFIX)/bin:)$(PATH)' \
+		llvm-config --libdir 2>/dev/null) \
+	/usr/lib /usr/lib64 /usr/local/lib
+  RUST_LIBCLANG_PATH:=$(firstword $(foreach d,$(RUST_HOST_LLVM_LIBDIRS), \
+	$(if $(wildcard $(d)/libclang.so* $(d)/libclang-*.so* $(d)/libclang.dylib),$(d))))
+else ifdef CONFIG_USE_LLVM_BUILD
+  RUST_LIBCLANG_PATH:=$(STAGING_DIR_HOST)/llvm-bpf/lib
+else ifdef CONFIG_USE_LLVM_PREBUILT
+  RUST_LIBCLANG_PATH:=$(TOPDIR)/llvm-bpf/lib
+endif
+
 # Rust Environmental Vars
 RUSTC_HOST_SUFFIX:=$(word 4, $(subst -, ,$(GNU_HOST_NAME)))
 RUSTC_HOST_ARCH:=$(HOST_ARCH)-unknown-linux-$(RUSTC_HOST_SUFFIX)
