@@ -37,6 +37,22 @@ RUSTC_HOST_SUFFIX:=$(word 4, $(subst -, ,$(GNU_HOST_NAME)))
 RUSTC_HOST_ARCH:=$(HOST_ARCH)-unknown-linux-$(RUSTC_HOST_SUFFIX)
 CARGO_HOME:=$(DL_DIR)/cargo
 
+ifeq ($(CONFIG_USE_MUSL),y)
+  # Force linking of the SSP library for musl
+  ifdef CONFIG_PKG_CC_STACKPROTECTOR_REGULAR
+    ifeq ($(strip $(PKG_SSP)),1)
+      RUSTC_LDFLAGS+=-lssp_nonshared
+    endif
+  endif
+  ifdef CONFIG_PKG_CC_STACKPROTECTOR_STRONG
+    ifeq ($(strip $(PKG_SSP)),1)
+      RUSTC_LDFLAGS+=-lssp_nonshared
+    endif
+  endif
+endif
+
+CARGO_RUSTFLAGS+=-Ctarget-feature=-crt-static $(RUSTC_LDFLAGS) $(if $(CONFIG_DEBUG),,-Cpanic=abort)
+
 ifeq ($(HOST_OS),Darwin)
   ifeq ($(HOST_ARCH),arm64)
     RUSTC_HOST_ARCH:=aarch64-apple-darwin
@@ -148,6 +164,12 @@ RUST_LLVM_TARGETS:=AArch64;ARM;LoongArch;Mips;PowerPC;RISCV;X86
 # Defaults to AVR;M68k;CSKY;Xtensa, none of which are relevant to OpenWrt.
 RUST_LLVM_EXPERIMENTAL_TARGETS:=
 
+# Link against libstd-HASH.so (shipped by package/libs/libstd-rust) instead of
+# bundling libstd.  rustc rejects -C prefer-dynamic together with LTO, so LTO
+# is switched off for packages that link dynamically.  Override per package
+# with RUST_PREFER_DYNAMIC:=0.
+RUST_PREFER_DYNAMIC ?= $(if $(CONFIG_RUST_PREFER_DYNAMIC),1,0)
+
 RUST_LIBSTD_FEATURES:=panic-unwind $(if $(CONFIG_DEBUG),,optimize_for_size)
 RUST_LIBSTD_FLAGS= \
 	-Zforce-unstable-if-unmarked \
@@ -171,16 +193,50 @@ LIBSTD_RUST_INPUTS = $(strip \
 	$(RUST_LIBSTD_FLAGS) $(RUST_LIBSTD_FEATURES) $(RUSTC_CFLAGS) \
 	$(foreach v,$(RUST_LIBSTD_CONFIG),$(v)=$($(v))))
 LIBSTD_RUST_ID = $(shell printf '%s' '$(subst ','\'',$(LIBSTD_RUST_INPUTS))' | $(MKHASH) sha256)
+RUST_TARGET_SYSROOT = $(STAGING_DIR)/usr/lib/rust/$(LIBSTD_RUST_ID)
 RUSTLIB_TARGET_PATH = /usr/lib/rust/$(LIBSTD_RUST_ID)/lib/rustlib/$(RUSTC_TARGET_ARCH)/lib
+RUST_PKG_BUILD_DEPENDS:=libstd-rust
 
 RUST_PKG_CONFIG_DEPENDS:= \
 	$(RUST_LIBSTD_CONFIG) \
-	LIBSTD_RUST_ID
+	CONFIG_RUST_PREFER_DYNAMIC LIBSTD_RUST_ID
+
+CARGO_RUSTFLAGS+= \
+	$(RUSTC_TARGET_FLAGS) \
+	--sysroot=$(RUST_TARGET_SYSROOT) \
+	$(if $(filter 1,$(RUST_PREFER_DYNAMIC)),-Cprefer-dynamic)
+
+# RUST_PKG_DEPENDS: use in Package/foo DEPENDS for all cargo-built target packages.
+# Includes arch constraint, toolchain config guard, and the libstd-rust
+# runtime dependency when the package links libstd dynamically.
+RUST_PKG_DEPENDS = @USE_RUST_TOOLCHAIN $(RUST_ARCH_DEPENDS) \
+	$(if $(filter 1,$(RUST_PREFER_DYNAMIC)),+libstd-rust)
 
 CARGO_HOST_CONFIG_VARS= \
 	RUSTC=$(RUSTC) \
 	CARGO_HOME=$(CARGO_HOME)
 
 CARGO_HOST_PROFILE:=release
+
+CARGO_PKG_CONFIG_VARS= \
+	RUSTC=$(RUSTC) \
+	CARGO_BUILD_TARGET=$(RUSTC_TARGET_ARCH) \
+	CARGO_HOME=$(CARGO_HOME) \
+	CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1 \
+	CARGO_PROFILE_RELEASE_DEBUG=false \
+	CARGO_PROFILE_RELEASE_DEBUG_ASSERTIONS=false \
+	CARGO_PROFILE_RELEASE_LTO=$(if $(filter 1,$(RUST_PREFER_DYNAMIC)),false,true) \
+	CARGO_PROFILE_RELEASE_OPT_LEVEL=z \
+	CARGO_PROFILE_RELEASE_OVERFLOW_CHECKS=true \
+	CARGO_PROFILE_RELEASE_PANIC=$(if $(CONFIG_DEBUG),unwind,abort) \
+	CARGO_PROFILE_RELEASE_RPATH=false \
+	CARGO_TARGET_$(subst -,_,$(call toupper,$(RUSTC_TARGET_ARCH)))_LINKER=$(TARGET_CC_NOCACHE) \
+	CARGO_TARGET_$(subst -,_,$(call toupper,$(RUSTC_TARGET_ARCH)))_RUSTFLAGS="$(CARGO_RUSTFLAGS)" \
+	TARGET_CC=$(TARGET_CC_NOCACHE) \
+	TARGET_CFLAGS="$(TARGET_CFLAGS) $(RUSTC_CFLAGS)"
+
+CARGO_PKG_PROFILE:=$(if $(CONFIG_DEBUG),dev,release)
+
+CARGO_RUSTFLAGS+=-Clink-arg=-fuse-ld=$(TARGET_LINKER)
 
 endif # __inc_rust_values
