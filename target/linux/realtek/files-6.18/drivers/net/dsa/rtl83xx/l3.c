@@ -76,6 +76,7 @@
 #include <net/nexthop.h>
 #include <uapi/linux/rtnetlink.h>
 
+#include "l2.h"
 #include "l3.h"
 #include "pie.h"
 #include "rtl-otto.h"
@@ -1544,7 +1545,7 @@ static void otto_l3_route_update_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_ro
 
 	/* A route that forwards and gets a new gateway MAC traps while its
 	 * next hop moves over, or it would forward through the L2 entry
-	 * rtldsa_l2_nexthop_add() releases. A family that routes through a PIE
+	 * otto_l2_nexthop_add() releases. A family that routes through a PIE
 	 * rule has no entry that traps.
 	 */
 	if (ctrl->cfg->use_l3_tables && !first && mac != r->nh.mac &&
@@ -1564,7 +1565,7 @@ static void otto_l3_route_update_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_ro
 		ctrl->cfg->set_egress_mac(ctrl, r->id, mac);
 
 	/* Update ROUTING table: map gateway-mac and switch-mac id to route id */
-	if (!rtldsa_l2_nexthop_add(priv, &r->nh, require_existing))
+	if (!otto_l2_nexthop_add(priv, &r->nh, require_existing))
 		r->nh.l2_installed = true;
 
 	/* A next hop with no port delivers the frame twice, so where the
@@ -1953,7 +1954,7 @@ static void otto_l3_route_teardown(struct otto_l3_ctrl *ctrl, struct otto_l3_rou
 	otto_l3_route_remove(ctrl, r);
 
 	if (r->nh.l2_installed)
-		rtldsa_l2_nexthop_del(priv, &r->nh);
+		otto_l2_nexthop_del(priv, &r->nh);
 
 	dev_dbg(ctrl->dev, "releasing packet counter %d\n", r->pr.packet_cntr);
 	rtldsa_packet_cntr_free(priv, r->pr.packet_cntr);

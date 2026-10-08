@@ -7,6 +7,7 @@
 
 struct rtl838x_switch_priv;
 struct rtl838x_l2_entry;
+struct otto_l3_nexthop;
 
 enum rtldsa_flood_type {
 	RTLDSA_FLOOD_TYPE_FORWARD = 0,
@@ -56,6 +57,10 @@ enum rtldsa_flood_type {
 #define MC_PMASK_ALL_PORTS_IDX	((MAX_MC_PMASKS - 1))
 
 #define RTLDSA_L2_L3_REFCOUNT_MAX	0x7f
+
+int otto_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop *nh,
+			bool require_existing);
+int otto_l2_nexthop_del(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop *nh);
 
 u64 otto_l2_838x_hash_seed(u64 mac, u32 vid);
 u32 otto_l2_838x_hash_key(struct rtl838x_switch_priv *priv, u64 seed);
