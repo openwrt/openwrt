@@ -378,6 +378,15 @@ config RUST_TOOLCHAIN_HOST_PATH
 	  Prefix of the host Rust toolchain. If empty, the sysroot of the
 	  rustc found in PATH is used.
 
+config BUILD_BINDGEN
+	bool
+	prompt "Build bindgen (C-header to Rust bindings)" if RUST_TOOLCHAINOPTS
+	depends on USE_RUST_TOOLCHAIN
+	select USE_LLVM_BUILD if !USE_LLVM_HOST && !USE_LLVM_PREBUILT
+	default y
+	help
+	  Installs bindgen-cli to the host toolchain.
+
 config HAS_BPF_TOOLCHAIN
 	default y if !BPF_TOOLCHAIN_NONE
 	bool
