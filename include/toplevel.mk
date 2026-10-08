@@ -46,6 +46,10 @@ unexport C_INCLUDE_PATH CROSS_COMPILE ARCH
 # prevent distro default LPATH from interfering
 unexport LPATH
 
+# prevent user settings for cargo and rustc from interfering
+unexport $(foreach v,$(filter CARGO CARGO_% RUST%,$(.VARIABLES)), \
+	$(if $(filter environment,$(origin $(v))),$(v)))
+
 # make sure that a predefined CFLAGS variable does not disturb packages
 export CFLAGS=
 export LDFLAGS=
