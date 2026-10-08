@@ -387,6 +387,16 @@ config BUILD_BINDGEN
 	help
 	  Installs bindgen-cli to the host toolchain.
 
+config USE_CBINDGEN
+	bool
+	prompt "Build cbindgen (Rust to C-header generator)" if RUST_TOOLCHAINOPTS
+	depends on USE_RUST_TOOLCHAIN
+	default y
+	help
+	  Installs cbindgen to the host toolchain. Required by Mesa3D Nouveau
+	  (NIL image library, NAK compiler) which generates C headers from Rust.
+	  Select when building Mesa3D with Nouveau/NVIDIA support.
+
 config HAS_BPF_TOOLCHAIN
 	default y if !BPF_TOOLCHAIN_NONE
 	bool
