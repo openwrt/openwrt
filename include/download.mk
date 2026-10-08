@@ -199,6 +199,36 @@ define DownloadMethod/cargo-vendor-crate
 	)
 endef
 
+# DownloadMethod/cargo-vendor-github: as cargo-vendor-crate, with a GitHub
+# archive tarball as the upstream source.
+#
+# PKG_VENDOR_REPO   GitHub repository, e.g. corrosion-rs/corrosion
+# PKG_VENDOR_TAG    git tag, e.g. v0.5.1
+# PKG_VENDOR_FILE   filename to save the GitHub archive as in $(DL_DIR)
+# PKG_VENDOR_URL    directory URL of the archive, .../archive/refs/tags
+# PKG_VENDOR_SUBDIR subdirectory of the archive containing Cargo.toml, optional
+define DownloadMethod/cargo-vendor-github
+	$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(FILE)" "$(HASH)" "$(URL_FILE)" \
+		$(foreach url,$(URL),"$(url)") || \
+	( \
+		$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(VENDOR_FILE)" "$(VENDOR_HASH)" "$(VENDOR_TAG).tar.gz" \
+			"$(VENDOR_URL)" && \
+		RUST_CARGO_URL="$(RUST_CARGO_URL)" RUST_CARGO_HASH="$(RUST_CARGO_HASH)" \
+			$(SCRIPT_DIR)/gen-cargo-vendor-tarball.sh github \
+			"$(VENDOR_REPO)" "$(VENDOR_TAG)" "$(PKG_NAME)" "$(PKG_VERSION)" \
+			--cached-source "$(DL_DIR)/$(VENDOR_FILE)" \
+			--output "$(DL_DIR)/$(FILE)" \
+			--hash "$(HASH)" \
+			$(if $(VENDOR_SUBDIR),--subdir "$(VENDOR_SUBDIR)") \
+			--quiet \
+	) \
+	$(if $(filter check,$(1)), \
+		$(call check_hash,$(VENDOR_FILE),$(VENDOR_HASH),$(2)VENDOR_HASH) \
+		$(call check_hash,$(FILE),$(HASH),$(2)$(call hash_var,$(MD5SUM))) \
+		$(call check_md5,$(MD5SUM),$(2)MD5SUM,$(2)HASH) \
+	)
+endef
+
 # $(1): "check"
 # $(2): "PKG_" if <name> as in Download/<name> is "default", otherwise "Download/<name>:"
 # $(3): shell command sequence to do the download
@@ -362,6 +392,9 @@ define Download/Defaults
   VENDOR_FILE:=
   VENDOR_HASH:=x
   VENDOR_URL:=
+  VENDOR_SUBDIR:=
+  VENDOR_REPO:=
+  VENDOR_TAG:=
 endef
 
 define Download/default
@@ -383,6 +416,9 @@ define Download/default
   $(if $(PKG_VENDOR_URL),VENDOR_URL:=$(PKG_VENDOR_URL), \
     $(if $(filter cargo-vendor-crate,$(PKG_SOURCE_PROTO)), \
       VENDOR_URL:=https://static.crates.io/crates/$(PKG_NAME)))
+  $(if $(PKG_VENDOR_SUBDIR),VENDOR_SUBDIR:=$(PKG_VENDOR_SUBDIR))
+  $(if $(PKG_VENDOR_REPO),VENDOR_REPO:=$(PKG_VENDOR_REPO))
+  $(if $(PKG_VENDOR_TAG),VENDOR_TAG:=$(PKG_VENDOR_TAG))
 endef
 
 define Download

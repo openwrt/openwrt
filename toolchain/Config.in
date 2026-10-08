@@ -397,6 +397,15 @@ config USE_CBINDGEN
 	  (NIL image library, NAK compiler) which generates C headers from Rust.
 	  Select when building Mesa3D with Nouveau/NVIDIA support.
 
+config USE_CORROSION
+	bool
+	prompt "Build corrosion-rs (CMake-Cargo integration)" if RUST_TOOLCHAINOPTS
+	depends on USE_RUST_TOOLCHAIN
+	default y
+	help
+	  Builds corrosion-rs and installs its CMake modules. Enables CMake-based
+	  projects to declare Rust crate targets via corrosion_import_crate().
+
 config HAS_BPF_TOOLCHAIN
 	default y if !BPF_TOOLCHAIN_NONE
 	bool

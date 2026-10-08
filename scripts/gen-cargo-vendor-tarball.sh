@@ -16,14 +16,24 @@
 #   Crate from crates.io:
 #     scripts/gen-cargo-vendor-tarball.sh crate <name> <version>
 #
+#   GitHub archive with a Rust sub-project:
+#     scripts/gen-cargo-vendor-tarball.sh github <owner/repo> <tag> \
+#         <pkgname> <version> [<cargo-subdir>]
+#
 # Usage (from DownloadMethod, with pre-downloaded source):
 #
 #   scripts/gen-cargo-vendor-tarball.sh crate <name> <version> \
 #       --cached-source <path> --output <path> [--quiet]
 #
+#   scripts/gen-cargo-vendor-tarball.sh github <owner/repo> <tag> \
+#       <pkgname> <version> \
+#       --cached-source <path> --output <path> \
+#       [--subdir <cargo-subdir>] [--quiet]
+#
 # Options:
 #   --cached-source PATH  Use pre-downloaded source file; skip network download.
 #   --output PATH         Write vendor tarball to PATH instead of DL_DIR/name-version-vendor.tar.zst.
+#   --subdir DIR          Subdirectory within archive that contains Cargo.toml (github mode only).
 #   --quiet               Suppress "Update Makefile:" instructions; for DownloadMethod use.
 #   --dl-dir DIR          Override DL_DIR (default: $TOPDIR/dl).
 #   --hash HASH           Verify the generated archive before publishing it.
@@ -82,13 +92,14 @@ options_parse() {
 	while [[ $# -gt 0 ]]; do
 		case "$1" in
 			--quiet) QUIET=1; shift; continue ;;
-			--cached-source|--output|--dl-dir|--hash)
+			--cached-source|--output|--subdir|--dl-dir|--hash)
 				[[ $# -ge 2 ]] || die "Missing argument for $1" ;;
 			*) die "Unknown option: $1" ;;
 		esac
 		case "$1" in
 			--cached-source) CACHED_SOURCE="$2" ;;
 			--output) OUTPUT="$2" ;;
+			--subdir) CARGO_SUBDIR="$2" ;;
 			--dl-dir) DL_DIR="$2" ;;
 			--hash) EXPECTED_HASH="$2" ;;
 		esac
@@ -216,14 +227,87 @@ crate)
 	fi
 	;;
 
+github)
+	[[ $# -ge 5 ]] || die "Usage: $0 github <owner/repo> <tag> <pkgname> <version> [<cargo-subdir>] [options]"
+	REPO="$2"        # e.g. corrosion-rs/corrosion
+	TAG="$3"         # e.g. v0.5.1
+	PKGNAME="$4"     # e.g. corrosion
+	VERSION="$5"     # e.g. 0.5.1
+	shift 5
+
+	# Accept legacy 6th positional arg as cargo subdir (before flags)
+	CARGO_SUBDIR=""
+	if [[ $# -gt 0 && "${1:-}" != --* ]]; then
+		CARGO_SUBDIR="$1"; shift
+	fi
+
+	options_parse "$@"
+
+	VENDOR_FILE="${PKGNAME}-${VERSION}-vendor.tar.zst"
+	OUTFILE="${OUTPUT:-${DL_DIR}/${VENDOR_FILE}}"
+
+	# GitHub archive extracts to repo-version/ (strips leading 'v' from tag)
+	REPONAME="${REPO##*/}"
+	EXTRACTED_DIR="${REPONAME}-${VERSION#v}"
+
+	if [[ -n "$CACHED_SOURCE" ]]; then
+		[[ -f "$CACHED_SOURCE" ]] || die "Cached source not found: $CACHED_SOURCE"
+		ARCHIVE_PATH="$CACHED_SOURCE"
+	else
+		echo ">>> Downloading GitHub archive ${REPO}@${TAG} ..."
+		ARCHIVE_PATH="${WORK_DIR}/archive.tar.gz"
+		curl -fL --progress-bar \
+			-o "$ARCHIVE_PATH" \
+			"https://github.com/${REPO}/archive/refs/tags/${TAG}.tar.gz"
+	fi
+
+	echo ">>> Extracting ..."
+	mkdir -p "${WORK_DIR}/src"
+	"$TAR" -xzf "$ARCHIVE_PATH" -C "${WORK_DIR}/src"
+
+	SRCDIR="${WORK_DIR}/src/${EXTRACTED_DIR}"
+	[[ -d "$SRCDIR" ]] || \
+		die "Expected directory ${EXTRACTED_DIR}/ in archive"
+
+	# Rename extracted dir to pkgname-version if they differ
+	if [[ "${EXTRACTED_DIR}" != "${PKGNAME}-${VERSION}" ]]; then
+		mv "${SRCDIR}" "${WORK_DIR}/src/${PKGNAME}-${VERSION}"
+		SRCDIR="${WORK_DIR}/src/${PKGNAME}-${VERSION}"
+	fi
+
+	CARGO_DIR="${SRCDIR}${CARGO_SUBDIR:+/${CARGO_SUBDIR}}"
+	[[ -f "${CARGO_DIR}/Cargo.toml" ]] || die "No Cargo.toml in ${CARGO_DIR}"
+
+	echo ">>> Running cargo vendor in ${CARGO_DIR} ..."
+	mkdir -p "${CARGO_DIR}/.cargo"
+	(cd "$CARGO_DIR" && "$CARGO" vendor --locked vendor > .cargo/config.toml)
+	normalise_vendor "${CARGO_DIR}/vendor"
+
+	printf '\n[net]\noffline = true\n' >> "${CARGO_DIR}/.cargo/config.toml"
+
+	echo ">>> Creating vendor tarball: ${OUTFILE} ..."
+	make_tarball "${PKGNAME}-${VERSION}" "$OUTFILE"
+
+	if [[ $QUIET -eq 0 ]]; then
+		echo ""
+		echo "Done: ${OUTFILE}"
+		echo "SHA-256: $("$MKHASH" sha256 "$OUTFILE")"
+		echo ""
+		echo "Update tools/${PKGNAME}/Makefile:"
+		echo "  PKG_HASH:=$("$MKHASH" sha256 "$OUTFILE")"
+	fi
+	;;
+
 *)
 	cat >&2 <<'EOF'
 Usage:
   scripts/gen-cargo-vendor-tarball.sh crate <name> <version> [options]
+  scripts/gen-cargo-vendor-tarball.sh github <owner/repo> <tag> <pkgname> <version> [<cargo-subdir>] [options]
 
 Options:
   --cached-source PATH  Use pre-downloaded source; skip network fetch.
   --output PATH         Write vendor tarball to PATH instead of DL_DIR/name-version-vendor.tar.zst.
+  --subdir DIR          Cargo subdirectory within GitHub archive (github mode only).
   --quiet               Suppress "Update Makefile:" instructions.
   --dl-dir DIR          Override DL_DIR.
   --hash HASH           Verify the generated archive before publishing it.
