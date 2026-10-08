@@ -32,6 +32,9 @@ MESON_BUILD_DIR:=$(PKG_BUILD_DIR)/openwrt-build
 MESON_VARS:=
 MESON_ARGS:=
 
+MESON_RUST_VARS=$(if $(RUSTC_TARGET_ARCH),LIBCLANG_PATH=$(RUST_LIBCLANG_PATH) \
+	$(if $(CONFIG_USE_LLVM_HOST),,CLANG_PATH=$(STAGING_DIR_HOST)/llvm-bpf/bin/clang))
+
 ifneq ($(findstring i386,$(CONFIG_ARCH)),)
 MESON_ARCH:="x86"
 else ifneq ($(findstring powerpc64,$(CONFIG_ARCH)),)
@@ -76,6 +79,9 @@ define Meson/CreateNativeFile
 		-e "s|@CXXFLAGS@|$(foreach FLAG,$(HOST_CXXFLAGS) $(HOST_CPPFLAGS),'$(FLAG)',)|" \
 		-e "s|@LDFLAGS@|$(foreach FLAG,$(HOST_LDFLAGS),'$(FLAG)',)|" \
 		-e "s|@PREFIX@|$(HOST_BUILD_PREFIX)|" \
+		$(if $(RUSTC_TARGET_ARCH), \
+			-e "s|@RUSTC@|'$(RUSTC)'|", \
+			-e "/@RUSTC@/d") \
 		< $(MESON_DIR)/openwrt-native.txt.in \
 		> $(1)
 endef
@@ -97,6 +103,11 @@ define Meson/CreateCrossFile
 		-e "s|@ARCH@|$(MESON_ARCH)|" \
 		-e "s|@CPU@|$(MESON_CPU)|" \
 		-e "s|@ENDIAN@|$(if $(CONFIG_BIG_ENDIAN),big,little)|" \
+		$(if $(RUSTC_TARGET_ARCH), \
+			-e "s|@RUSTC@|'$(RUSTC)'$(comma) '--target'$(comma) '$(RUSTC_TARGET_ARCH)'$(comma)$(foreach FLAG,$(CARGO_RUSTFLAGS),'$(FLAG)',)|" \
+			-e "s|@BINDGEN_CLANG_ARGS@|'--sysroot=$(TOOLCHAIN_ROOT_DIR)'|", \
+			-e "/@RUSTC@/d" \
+			-e "/@BINDGEN_CLANG_ARGS@/d") \
 		< $(MESON_DIR)/openwrt-cross.txt.in \
 		> $(1)
 endef
@@ -137,11 +148,11 @@ define Build/Configure/Meson
 		$(MESON_ARGS) \
 		$(MESON_BUILD_DIR) \
 		$(MESON_BUILD_DIR)/.., \
-		$(MESON_VARS))
+		$(MESON_VARS) $(MESON_RUST_VARS))
 endef
 
 define Build/Compile/Meson
-	+$(MESON_VARS) $(NINJA) -C $(MESON_BUILD_DIR) $(1)
+	+$(MESON_VARS) $(MESON_RUST_VARS) $(NINJA) -C $(MESON_BUILD_DIR) $(1)
 endef
 
 define Build/Install/Meson
