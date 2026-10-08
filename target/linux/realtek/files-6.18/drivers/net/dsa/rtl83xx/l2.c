@@ -106,8 +106,9 @@ static void otto_l2_uc_release_row(struct rtl838x_switch_priv *priv,
 	if (e->is_static && (!m || !m->fdb_ref))
 		e->valid = false;
 	e->next_hop = false;
-	/* A route id takes that field on the families that keep one, so what
-	 * goes back is the relay VID, which the row still carries either way.
+	/* A DMAC entry or a route id takes that field on the families that
+	 * keep one, so what goes back is the relay VID, which the row still
+	 * carries either way.
 	 */
 	e->vid = e->rvid;
 
@@ -199,9 +200,19 @@ int otto_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop
 		nh->port = e.port;
 		nh->rvid = e.rvid;
 		nh->dev_id = e.stack_dev;
-		/* If the entry is already a valid next hop entry, don't change it */
-		if (e.next_hop)
+		/* If the entry is already a valid next hop entry, don't change it,
+		 * but for the DMAC entry it names where the L3 tables hold one
+		 * per gateway MAC, the families a route traps on: every route
+		 * through the entry holds that one, and the entry may still name
+		 * one given up while it stayed a next hop.
+		 */
+		if (e.next_hop) {
+			if (!require_existing || e.nh_route_id == nh->dmac_id)
+				return 0;
+			e.nh_route_id = nh->dmac_id;
+			priv->r->write_l2_entry_using_hash(idx >> 2, idx & 0x3, &e);
 			return 0;
+		}
 	} else {
 		memset(&e, 0, sizeof(e));
 		e.type = L2_UNICAST;
@@ -212,7 +223,7 @@ int otto_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop
 		u64_to_ether_addr(nh->mac, &e.mac[0]);
 	}
 	e.next_hop = true;
-	e.nh_route_id = nh->id;			/* NH route ID takes place of VID */
+	e.nh_route_id = nh->dmac_id;		/* DMAC entry or route ID takes place of VID */
 	e.nh_vlan_target = false;
 
 	priv->r->write_l2_entry_using_hash(idx >> 2, idx & 0x3, &e);
