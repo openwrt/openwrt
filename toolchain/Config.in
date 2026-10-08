@@ -344,6 +344,12 @@ choice
 	default RUST_TOOLCHAIN_BUILD if EXPERIMENTAL && TARGET_mpc85xx
 	default RUST_TOOLCHAIN_PREBUILT if EXPERIMENTAL
 	default RUST_TOOLCHAIN_NONE
+	help
+	  With None, Rust packages build with rust/host of the packages
+	  feed. After switching from None to a Rust toolchain in a tree
+	  where rust/host was built, run "make package/rust/host/clean":
+	  its cargo comes first in PATH and is otherwise used by tools
+	  that run cargo from PATH, such as maturin.
 
 	config RUST_TOOLCHAIN_NONE
 		bool "None"
@@ -385,6 +391,17 @@ config RUST_TOOLCHAIN_HOST_PATH
 	help
 	  Prefix of the host Rust toolchain. If empty, the sysroot of the
 	  rustc found in PATH is used.
+
+config RUST_PREFER_DYNAMIC
+	bool
+	prompt "Link Rust packages to the shared standard library" if RUST_TOOLCHAINOPTS
+	depends on USE_RUST_TOOLCHAIN
+	default y
+	help
+	  Link Rust packages to libstd-rust by default. Disable this for
+	  static linking. Cargo release builds use LTO either way; with
+	  the shared libstd through the unstable -Zdylib-lto of rustc.
+	  Individual packages can override this default.
 
 config RUST_PANIC_IMMEDIATE_ABORT
 	bool

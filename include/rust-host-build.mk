@@ -24,6 +24,7 @@ endif
 include $(RUST_INCLUDE_DIR)/rust-values.mk
 
 RUST_HOST_LOCKED ?= 1
+HOST_BUILD_DEPENDS += $(RUST_HOST_BUILD_DEPENDS)
 
 ifeq ($(strip $(HOST_BUILD_PARALLEL)),)
   HOST_BUILD_PARALLEL:=1

@@ -32,6 +32,8 @@ TAR_CMD=$(HOST_TAR) -C $(1) $(TAR_OPTIONS)
 RUST_PREFIX_DIR:=$(HOST_BUILD_DIR)/prefix
 RUST_FILE_LIST:=$(STAGING_DIR_HOST)/stamp/.rust_files
 RUST_DIR_LIST:=$(STAGING_DIR_HOST)/stamp/.rust_dirs
+RUST_CC_WRAPPER:=$(subst $(space),,$(foreach dir, \
+	$(subst /, ,$(patsubst $(TOPDIR)/%,%,$(STAGING_DIR_HOST)/bin)),../))scripts/rust-cc-wrapper.sh
 
 # The rust-installer manifests name absolute paths, which its uninstaller
 # and the next install.sh into the same prefix delete.
@@ -218,6 +220,8 @@ endif
 define Host/Install
 	$(call Host/Install/Prefix)
 	$(call Host/Install/RemoveInstallerData)
+	ln -sf $(RUST_CC_WRAPPER) $(RUST_PREFIX_DIR)/bin/rust-cc-wrapper
+	ln -sf $(RUST_CC_WRAPPER) $(RUST_PREFIX_DIR)/bin/rust-cxx-wrapper
 	$(call Host/Uninstall)
 	$(INSTALL_DIR) $(STAGING_DIR_HOST)/stamp
 	cd $(RUST_PREFIX_DIR) && \

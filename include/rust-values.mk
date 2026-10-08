@@ -9,10 +9,16 @@ __inc_rust_values:=1
 RUST_VERSION:=1.99.1
 RUST_SRC_TARBALL_HASH:=6451598a99e77f07571960f6b21d577399d3a30f33e80cbd2e3a4aae6535d265
 
-# Paths to host Rust toolchain binaries
-RUSTC:=$(STAGING_DIR_HOST)/bin/rustc
-CARGO:=$(STAGING_DIR_HOST)/bin/cargo
-RUSTC_ID:=$(shell $(RUSTC) --version --verbose 2>/dev/null)
+# Paths to host Rust toolchain binaries. Without a toolchain of its own, the
+# build uses rust/host of the packages feed, installed in $(STAGING_DIR)/host.
+ifdef CONFIG_USE_RUST_TOOLCHAIN
+  RUSTC:=$(STAGING_DIR_HOST)/bin/rustc
+  CARGO:=$(STAGING_DIR_HOST)/bin/cargo
+  RUSTC_ID:=$(shell $(RUSTC) --version --verbose 2>/dev/null)
+else
+  RUSTC:=$(STAGING_DIR)/host/bin/rustc
+  CARGO:=$(STAGING_DIR)/host/bin/cargo
+endif
 
 # Directory holding libclang for bindgen: the host LLVM, the one built by
 # tools/llvm-bpf or the prebuilt one unpacked into the source tree, as
@@ -36,6 +42,23 @@ endif
 RUSTC_HOST_SUFFIX:=$(word 4, $(subst -, ,$(GNU_HOST_NAME)))
 RUSTC_HOST_ARCH:=$(HOST_ARCH)-unknown-linux-$(RUSTC_HOST_SUFFIX)
 CARGO_HOME:=$(STAGING_DIR_HOSTPKG)/cargo
+
+ifeq ($(CONFIG_USE_MUSL),y)
+  # Force linking of the SSP library for musl
+  ifdef CONFIG_PKG_CC_STACKPROTECTOR_REGULAR
+    ifeq ($(strip $(PKG_SSP)),1)
+      RUSTC_LDFLAGS+=-lssp_nonshared
+    endif
+  endif
+  ifdef CONFIG_PKG_CC_STACKPROTECTOR_STRONG
+    ifeq ($(strip $(PKG_SSP)),1)
+      RUSTC_LDFLAGS+=-lssp_nonshared
+    endif
+  endif
+endif
+
+CARGO_RUSTFLAGS+=-Ctarget-feature=-crt-static $(RUSTC_LDFLAGS) \
+	$(if $(CONFIG_DEBUG),,-Cpanic=abort -Cforce-unwind-tables=no)
 
 ifeq ($(HOST_OS),Darwin)
   ifeq ($(HOST_ARCH),arm64)
@@ -103,6 +126,15 @@ else
   RUSTC_TARGET_ARCH:=$(subst openwrt,unknown,$(REAL_GNU_TARGET_NAME))
 endif
 
+# rust/host of the packages feed builds its mips64 std for these triples
+ifndef CONFIG_USE_RUST_TOOLCHAIN
+  ifeq ($(ARCH),mips64)
+    RUSTC_TARGET_ARCH:=$(REAL_GNU_TARGET_NAME)
+  else ifeq ($(ARCH),mips64el)
+    RUSTC_TARGET_ARCH:=$(subst openwrt,unknown,$(REAL_GNU_TARGET_NAME))
+  endif
+endif
+
 RUSTC_TARGET_ARCH:=$(subst muslgnueabi,musleabi,$(RUSTC_TARGET_ARCH))
 
 ifeq ($(ARCH),i386)
@@ -126,9 +158,16 @@ ifeq ($(ARCH),arm)
 endif
 
 # Cargo also links build scripts with the target linker when the target triple
-# is the host's, but keeps target rustflags off them.
-ifeq ($(RUSTC_TARGET_ARCH),$(RUSTC_HOST_ARCH))
+# is the host's, but keeps target rustflags off them. cc-rs then compiles
+# target C code with the host compiler, see scripts/rust-cc-wrapper.sh.
+ifeq ($(CONFIG_USE_RUST_TOOLCHAIN)$(RUSTC_TARGET_ARCH),y$(RUSTC_HOST_ARCH))
   RUSTC_TARGET_LINKER_FLAGS:=-Clinker=$(TARGET_CC_NOCACHE)
+  RUSTC_TARGET_CC_VARS:= \
+	CC_$(subst -,_,$(RUSTC_TARGET_ARCH))=$(STAGING_DIR_HOST)/bin/rust-cc-wrapper \
+	CXX_$(subst -,_,$(RUSTC_TARGET_ARCH))=$(STAGING_DIR_HOST)/bin/rust-cxx-wrapper \
+	TARGET_CXX=$(TARGET_CXX_NOCACHE) \
+	HOST_CC=$(HOSTCC_NOCACHE) \
+	HOST_CXX=$(HOSTCXX_NOCACHE)
 else
   RUSTC_TARGET_LINKER_VARS:= \
 	CARGO_TARGET_$(subst -,_,$(call toupper,$(RUSTC_TARGET_ARCH)))_LINKER=$(TARGET_CC_NOCACHE)
@@ -178,7 +217,23 @@ RUST_LLVM_TARGETS:=AArch64;ARM;LoongArch;Mips;PowerPC;RISCV;X86
 # Defaults to AVR;M68k;CSKY;Xtensa, none of which are relevant to OpenWrt.
 RUST_LLVM_EXPERIMENTAL_TARGETS:=
 
+# Link against libstd-HASH.so (shipped by package/libs/libstd-rust) instead of
+# bundling libstd.  Override per package with RUST_PREFER_DYNAMIC:=0 or 1.
+# rust/host of the packages feed has no shared libstd.
+RUST_LIBSTD_DYNAMIC = $(if $(CONFIG_USE_RUST_TOOLCHAIN), \
+	$(or $(RUST_PREFER_DYNAMIC),$(if $(CONFIG_RUST_PREFER_DYNAMIC),1,0)),0)
+
 RUST_IMMEDIATE_ABORT:=$(if $(CONFIG_DEBUG),,$(CONFIG_RUST_PANIC_IMMEDIATE_ABORT))
+
+# Size options of unstable rustc, for libstd-rust and, through
+# scripts/rust-target-wrapper.sh, for the crates of packages. A package keeps
+# panic locations with RUST_PKG_LOCATION_DETAIL:=1, and selects the Debug
+# output with RUST_PKG_FMT_DEBUG:=full or none. immediate-abort applies to all
+# crates or none, std included.
+RUST_UNSTABLE_FLAGS = $(if $(CONFIG_DEBUG),, \
+	$(if $(filter 1,$(RUST_PKG_LOCATION_DETAIL)),,-Zlocation-detail=none) \
+	-Zfmt-debug=$(or $(RUST_PKG_FMT_DEBUG),shallow) \
+	$(if $(RUST_IMMEDIATE_ABORT),-Zunstable-options -Cpanic=immediate-abort))
 
 RUST_LIBSTD_FEATURES:=$(if $(RUST_IMMEDIATE_ABORT),,panic-unwind) \
 	$(if $(CONFIG_DEBUG),,optimize_for_size)
@@ -216,16 +271,77 @@ LIBSTD_RUST_INPUTS = $(strip \
 	$(RUST_LIBSTD_FLAGS) $(RUST_LIBSTD_FEATURES) $(RUSTC_CFLAGS) \
 	$(foreach v,$(RUST_LIBSTD_CONFIG),$(v)=$($(v))))
 LIBSTD_RUST_ID = $(shell printf '%s' '$(subst ','\'',$(LIBSTD_RUST_INPUTS))' | $(MKHASH) sha256)
+RUST_TARGET_SYSROOT = $(STAGING_DIR)/usr/lib/rust/$(LIBSTD_RUST_ID)
 RUSTLIB_TARGET_PATH = /usr/lib/rust/$(LIBSTD_RUST_ID)/lib/rustlib/$(RUSTC_TARGET_ARCH)/lib
+RUST_PKG_BUILD_DEPENDS:=USE_RUST_TOOLCHAIN:libstd-rust !USE_RUST_TOOLCHAIN:rust/host
+RUST_HOST_BUILD_DEPENDS:=!USE_RUST_TOOLCHAIN:rust/host
 
 RUST_PKG_CONFIG_DEPENDS:= \
 	$(RUST_LIBSTD_CONFIG) \
-	LIBSTD_RUST_ID
+	CONFIG_USE_RUST_TOOLCHAIN \
+	$(if $(CONFIG_USE_RUST_TOOLCHAIN),CONFIG_RUST_PREFER_DYNAMIC LIBSTD_RUST_ID)
+
+CARGO_RUSTFLAGS+= \
+	$(RUSTC_TARGET_FLAGS) \
+	$(RUSTC_TARGET_LINKER_FLAGS) \
+	$(if $(CONFIG_USE_RUST_TOOLCHAIN),--sysroot=$(RUST_TARGET_SYSROOT)) \
+	$(if $(filter 1,$(RUST_LIBSTD_DYNAMIC)),-Cprefer-dynamic) \
+	$(RUST_PATH_REMAP)
+
+# RUST_PKG_DEPENDS: use in Package/foo DEPENDS for all cargo-built target packages.
+# Includes arch constraint and the libstd-rust runtime dependency when the
+# package links libstd dynamically. The default is a Kconfig condition, as
+# .config is not read when metadata is collected.
+ifdef CONFIG_USE_RUST_TOOLCHAIN
+  # rustc runs LTO next to -Cprefer-dynamic only with -Zdylib-lto.
+  RUST_TARGET_WRAPPER_VARS = \
+	RUSTC_WRAPPER=$(SCRIPT_DIR)/rust-target-wrapper.sh \
+	RUST_TARGET_WRAPPER_FLAGS="$(RUST_UNSTABLE_FLAGS)" \
+	RUST_TARGET_WRAPPER_LTO_FLAGS="$(if $(filter 1,$(RUST_LIBSTD_DYNAMIC)),-Zdylib-lto)"
+endif
+
+RUST_PKG_DEPENDS = $(RUST_ARCH_DEPENDS) \
+	$(if $(RUST_PREFER_DYNAMIC), \
+		$(if $(filter 1,$(RUST_PREFER_DYNAMIC)),+USE_RUST_TOOLCHAIN:libstd-rust), \
+		+RUST_PREFER_DYNAMIC:libstd-rust)
 
 CARGO_HOST_CONFIG_VARS= \
 	RUSTC=$(RUSTC) \
 	CARGO_HOME=$(CARGO_HOME)
 
 CARGO_HOST_PROFILE:=release
+
+# Packages build the release profile, as maturin, CMake and autotools projects
+# do, or one inheriting from it. CONFIG_DEBUG gives it the settings of dev;
+# these take precedence over the profile settings of the package.
+CARGO_PKG_CONFIG_VARS= \
+	RUSTC=$(RUSTC) \
+	CARGO_BUILD_TARGET=$(RUSTC_TARGET_ARCH) \
+	CARGO_HOME=$(CARGO_HOME) \
+	$(if $(CONFIG_DEBUG),,CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1) \
+	CARGO_PROFILE_RELEASE_DEBUG=$(if $(CONFIG_DEBUG),true,false) \
+	CARGO_PROFILE_RELEASE_DEBUG_ASSERTIONS=$(if $(CONFIG_DEBUG),true,false) \
+	CARGO_PROFILE_RELEASE_LTO=$(if $(CONFIG_DEBUG),false,true) \
+	$(RUST_TARGET_WRAPPER_VARS) \
+	CARGO_PROFILE_RELEASE_OPT_LEVEL=$(if $(CONFIG_DEBUG),0,z) \
+	CARGO_PROFILE_RELEASE_OVERFLOW_CHECKS=true \
+	CARGO_PROFILE_RELEASE_PANIC=$(if $(CONFIG_DEBUG),unwind,abort) \
+	CARGO_PROFILE_RELEASE_RPATH=false \
+	$(RUSTC_TARGET_LINKER_VARS) \
+	$(RUSTC_TARGET_CC_VARS) \
+	CARGO_TARGET_$(subst -,_,$(call toupper,$(RUSTC_TARGET_ARCH)))_RUSTFLAGS="$(CARGO_RUSTFLAGS)" \
+	TARGET_CC=$(TARGET_CC_NOCACHE) \
+	TARGET_CFLAGS="$(TARGET_CFLAGS) $(RUSTC_CFLAGS)" \
+	TARGET_CXXFLAGS="$(TARGET_CXXFLAGS) $(RUSTC_CFLAGS)"
+
+CARGO_PKG_PROFILE:=release
+
+# rustc drives the linker itself, without TARGET_LDFLAGS: pass the linker, and
+# the -z options hardening.mk and package.mk set for the package.
+RUSTC_TARGET_LINK_ARGS = \
+	-Clink-arg=-fuse-ld=$(TARGET_LINKER) \
+	$(addprefix -Clink-arg=,$(filter -z%,$(TARGET_LDFLAGS)))
+
+CARGO_RUSTFLAGS+=$(RUSTC_TARGET_LINK_ARGS)
 
 endif # __inc_rust_values
