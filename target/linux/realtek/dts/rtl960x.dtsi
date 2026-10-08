@@ -277,7 +277,7 @@
 	};
 
 	switch0: ethernet-switch@1b000000 {
-		compatible = "syscon", "simple-mfd";
+		compatible = "realtek,rtl9607c-switch", "syscon", "simple-mfd";
 		reg = <0x1b000000 0x1000000>;
 		resets = <&soc_init_rst 0>;
 		#address-cells = <1>;
