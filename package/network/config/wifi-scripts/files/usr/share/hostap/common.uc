@@ -177,11 +177,9 @@ function wdev_set_mesh_params(name, data)
 
 function wdev_set_up(name, up)
 {
-	let ret = rtnl.request(rtnl.const.RTM_SETLINK, 0, { dev: name, change: 1, flags: up ? 1 : 0 });
-	if (!ret)
-		return rtnl.error() ?? "Could not set the interface flags";
-
-	return null;
+	rtnl.error();
+	rtnl.request(rtnl.const.RTM_SETLINK, 0, { dev: name, change: 1, flags: up ? 1 : 0 });
+	return rtnl.error();
 }
 
 // netifd rejects null fields and fields of a mismatched type
