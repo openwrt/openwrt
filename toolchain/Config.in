@@ -433,6 +433,7 @@ config USE_CORROSION
 	help
 	  Builds corrosion-rs and installs its CMake modules. Enables CMake-based
 	  projects to declare Rust crate targets via corrosion_import_crate().
+	  Provides Rust_CARGO_TARGET and Corrosion_DIR to cmake.mk automatically.
 
 config HAS_BPF_TOOLCHAIN
 	default y if !BPF_TOOLCHAIN_NONE
