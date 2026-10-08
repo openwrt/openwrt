@@ -1017,31 +1017,6 @@ static void otto_l3_router_mac_sync(struct otto_l3_ctrl *ctrl, bool may_free)
 			otto_l3_alloc_router_mac(ctrl, macs[k]);
 }
 
-static int otto_l3_netdev_notifier(struct notifier_block *nb, unsigned long event, void *ptr)
-{
-	struct otto_l3_ctrl *ctrl = container_of(nb, struct otto_l3_ctrl, nd_nb);
-
-	if (!net_eq(dev_net(netdev_notifier_info_to_dev(ptr)), &init_net))
-		return NOTIFY_DONE;
-
-	switch (event) {
-	case NETDEV_CHANGEUPPER:
-		/* A port joins or leaves its master. One joining a bridge stops
-		 * counting before the bridge, which may take its MAC, sends its
-		 * NETDEV_CHANGEADDR: free nothing here.
-		 */
-		otto_l3_router_mac_sync(ctrl, false);
-		break;
-	case NETDEV_REGISTER:	/* it may come with the MAC of an entry */
-	case NETDEV_CHANGEADDR:
-	case NETDEV_UNREGISTER:
-		otto_l3_router_mac_sync(ctrl, true);
-		break;
-	}
-
-	return NOTIFY_DONE;
-}
-
 /* Read back an egress interface descriptor, the layout written below. */
 static void otto_l3_930x_get_egress_intf(struct otto_l3_ctrl *ctrl, int idx,
 					 struct otto_l3_intf *intf)
@@ -1952,6 +1927,31 @@ static void otto_l3_route_put_intf(struct otto_l3_ctrl *ctrl, struct otto_l3_rou
 		ctrl->cfg->set_egress_mac(ctrl, L3_EGRESS_DMACS + r->nh.if_id, 0);
 
 	mutex_unlock(ctrl->lock);
+}
+
+static int otto_l3_netdev_notifier(struct notifier_block *nb, unsigned long event, void *ptr)
+{
+	struct otto_l3_ctrl *ctrl = container_of(nb, struct otto_l3_ctrl, nd_nb);
+
+	if (!net_eq(dev_net(netdev_notifier_info_to_dev(ptr)), &init_net))
+		return NOTIFY_DONE;
+
+	switch (event) {
+	case NETDEV_CHANGEUPPER:
+		/* A port joins or leaves its master. One joining a bridge stops
+		 * counting before the bridge, which may take its MAC, sends its
+		 * NETDEV_CHANGEADDR: free nothing here.
+		 */
+		otto_l3_router_mac_sync(ctrl, false);
+		break;
+	case NETDEV_REGISTER:	/* it may come with the MAC of an entry */
+	case NETDEV_CHANGEADDR:
+	case NETDEV_UNREGISTER:
+		otto_l3_router_mac_sync(ctrl, true);
+		break;
+	}
+
+	return NOTIFY_DONE;
 }
 
 static void otto_l3_route_free(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r)
