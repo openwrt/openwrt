@@ -1915,18 +1915,120 @@ struct otto_l3_route_src {
 	unsigned int members;
 };
 
-/* Drops the route's hold on its egress interface, and frees one no route
- * holds any more by zeroing its source MAC, which is what
- * otto_l3_alloc_egress_intf() takes for a free one.
+/* Drops a hold on an egress interface, and frees one no route holds any
+ * more by zeroing its source MAC, which is what otto_l3_alloc_egress_intf()
+ * takes for a free one.
  */
-static void otto_l3_route_put_intf(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r)
+static void otto_l3_intf_put(struct otto_l3_ctrl *ctrl, int if_id)
 {
 	mutex_lock(ctrl->lock);
 
-	if (r->nh.if_id >= 0 && !--ctrl->intf_refs[r->nh.if_id])
-		ctrl->cfg->set_egress_mac(ctrl, L3_EGRESS_DMACS + r->nh.if_id, 0);
+	if (if_id >= 0 && !--ctrl->intf_refs[if_id])
+		ctrl->cfg->set_egress_mac(ctrl, L3_EGRESS_DMACS + if_id, 0);
 
 	mutex_unlock(ctrl->lock);
+}
+
+static void otto_l3_route_put_intf(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r)
+{
+	otto_l3_intf_put(ctrl, r->nh.if_id);
+}
+
+struct otto_l3_egress_work {
+	struct work_struct work;
+	struct otto_l3_ctrl *ctrl;
+	int ifindex;
+};
+
+/* Whether every hold on an egress interface is a route out of this device */
+static bool otto_l3_intf_only_dev(struct otto_l3_ctrl *ctrl, int if_id, int ifindex)
+{
+	struct otto_l3_route *r;
+	unsigned int n = 0;
+
+	list_for_each_entry(r, &ctrl->routes_list, list)
+		if (r->nh.if_id == if_id && r->gw_ifindex == ifindex)
+			n++;
+
+	return n == ctrl->intf_refs[if_id];
+}
+
+/* Routes out of a device that took a new MAC go out with that one as source:
+ * each moves to an egress interface carrying it, and the next hop it has
+ * programmed moves with it. This runs on the queue the neighbour work runs on,
+ * which writes the same next hops, and under RTNL, as the FIB work does.
+ */
+static void otto_l3_egress_sync(struct work_struct *work)
+{
+	struct otto_l3_egress_work *ew = container_of(work, struct otto_l3_egress_work, work);
+	struct otto_l3_ctrl *ctrl = ew->ctrl;
+	struct otto_l3_route *r;
+	struct net_device *dev;
+	bool kept = false;
+	int if_id, old;
+	u64 mac;
+
+	rtnl_lock();
+
+	/* A source MAC of zero is how a free interface is told apart */
+	dev = __dev_get_by_index(&init_net, ew->ifindex);
+	if (!dev || !is_valid_ether_addr(dev->dev_addr))
+		goto out;
+
+	mac = ether_addr_to_u64(dev->dev_addr);
+
+	list_for_each_entry(r, &ctrl->routes_list, list) {
+		if (r->gw_ifindex != dev->ifindex || r->nh.if_id < 0)
+			continue;
+
+		old = r->nh.if_id;
+		if (ctrl->cfg->get_egress_mac(ctrl, L3_EGRESS_DMACS + old) == mac)
+			continue;
+
+		/* An interface that only routes out of this device takes the
+		 * new MAC where it is, which needs no free one
+		 */
+		if (otto_l3_intf_only_dev(ctrl, old, dev->ifindex)) {
+			mutex_lock(ctrl->lock);
+			ctrl->cfg->set_egress_mac(ctrl, L3_EGRESS_DMACS + old, mac);
+			mutex_unlock(ctrl->lock);
+			continue;
+		}
+
+		if_id = otto_l3_alloc_egress_intf(ctrl, mac, r->nh.rvid);
+		if (if_id < 0) {
+			kept = true;
+			continue;
+		}
+
+		r->nh.if_id = if_id;
+		if (if_id != old && r->nh.gw && ctrl->cfg->set_nexthop)
+			ctrl->cfg->set_nexthop(ctrl, r->nh.id, r->nh.l2_id, r->nh.if_id);
+		otto_l3_intf_put(ctrl, old);
+	}
+
+	if (kept)
+		dev_err(ctrl->dev, "routes out of %s keep their old source MAC\n", dev->name);
+
+out:
+	rtnl_unlock();
+	kfree(ew);
+}
+
+static void otto_l3_egress_sync_request(struct otto_l3_ctrl *ctrl, struct net_device *dev)
+{
+	struct otto_l3_egress_work *ew;
+
+	ew = kzalloc(sizeof(*ew), GFP_KERNEL);
+	if (!ew) {
+		dev_err(ctrl->dev, "routes out of %s keep their old source MAC\n", dev->name);
+		return;
+	}
+
+	INIT_WORK(&ew->work, otto_l3_egress_sync);
+	ew->ctrl = ctrl;
+	ew->ifindex = dev->ifindex;
+	queue_work(ctrl->priv->wq, &ew->work);
 }
 
 static int otto_l3_netdev_notifier(struct notifier_block *nb, unsigned long event, void *ptr)
@@ -1944,8 +2046,11 @@ static int otto_l3_netdev_notifier(struct notifier_block *nb, unsigned long even
 		 */
 		otto_l3_router_mac_sync(ctrl, false);
 		break;
-	case NETDEV_REGISTER:	/* it may come with the MAC of an entry */
 	case NETDEV_CHANGEADDR:
+		otto_l3_router_mac_sync(ctrl, true);
+		otto_l3_egress_sync_request(ctrl, netdev_notifier_info_to_dev(ptr));
+		break;
+	case NETDEV_REGISTER:	/* it may come with the MAC of an entry */
 	case NETDEV_UNREGISTER:
 		otto_l3_router_mac_sync(ctrl, true);
 		break;
