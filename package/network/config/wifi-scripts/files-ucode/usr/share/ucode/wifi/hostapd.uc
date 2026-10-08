@@ -405,6 +405,10 @@ function device_htmode_append(config) {
 			append_vars(config, [ 'he_6ghz_reg_pwr_type', ]);
 		}
 
+		/* Before the SR Control bits, which take PSR Disallowed from it. */
+		if (!(he_phy_cap[7] & 0x1))
+			config.he_spr_psr_enabled = false;
+
 		if (config.he_bss_color_enabled) {
 			/* An offset of 0 is a valid offset, so the presence of the
 			 * option sets the Present bit, and not its value. */
@@ -428,8 +432,6 @@ function device_htmode_append(config) {
 			config.he_su_beamformee = false;
 		if (!(he_phy_cap[4] & 0x2))
 			config.he_mu_beamformer = false;
-		if (!(he_phy_cap[7] & 0x1))
-			config.he_spr_psr_enabled = false;
 		if (!(he_mac_cap[0] & 0x4))
 			config.he_twt_responder = false;
 		if (!config.he_twt_responder)
