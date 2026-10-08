@@ -1,0 +1,64 @@
+From bfc39f5a863a07e3a962d99041874adc4c82b4d6 Mon Sep 17 00:00:00 2001
+From: Sean Wang <sean.wang@mediatek.com>
+Date: Sat, 13 Jun 2026 17:41:27 -0500
+Subject: [PATCH] wifi: mt76: mt7925: skip reset work on hung bus
+
+Skip mt7925 reset handling once the bus is marked hung.
+
+A hung bus cannot be recovered by issuing another device reset. Continuing
+the reset path may only send more failing MCU or register accesses and
+delay teardown. Return early from reset work and the USB reset path so the
+failed device can be torn down quickly.
+
+Signed-off-by: Sean Wang <sean.wang@mediatek.com>
+Link: https://patch.msgid.link/20260613224131.2396026-3-sean.wang@kernel.org
+---
+ mt7925/mac.c | 6 ++++++
+ mt7925/usb.c | 7 +++++++
+ 2 files changed, 13 insertions(+)
+
+diff --git a/mt7925/mac.c b/mt7925/mac.c
+index e2d7e4e1..84616d07 100644
+--- a/mt7925/mac.c
++++ b/mt7925/mac.c
+@@ -1317,6 +1317,9 @@ void mt7925_mac_reset_work(struct work_struct *work)
+ 	struct mt76_connac_pm *pm = &dev->pm;
+ 	int i, ret;
+ 
++	if (atomic_read(&dev->mt76.bus_hung))
++		return;
++
+ 	dev_dbg(dev->mt76.dev, "chip reset\n");
+ 	dev->hw_full_reset = true;
+ 	ieee80211_stop_queues(hw);
+@@ -1335,6 +1338,9 @@ void mt7925_mac_reset_work(struct work_struct *work)
+ 			break;
+ 	}
+ 
++	if (atomic_read(&dev->mt76.bus_hung))
++		return;
++
+ 	if (i == 10)
+ 		dev_err(dev->mt76.dev, "chip reset failed\n");
+ 
+diff --git a/mt7925/usb.c b/mt7925/usb.c
+index 2179e8c2..659f2db8 100644
+--- a/mt7925/usb.c
++++ b/mt7925/usb.c
+@@ -79,6 +79,13 @@ static int mt7925u_mac_reset(struct mt792x_dev *dev)
+ {
+ 	int err;
+ 
++	if (atomic_read(&dev->mt76.bus_hung))
++		return 0;
++
++	mt792xu_reset_on_bus_error(dev);
++	if (atomic_read(&dev->mt76.bus_hung))
++		return 0;
++
+ 	mt76_txq_schedule_all(&dev->mphy);
+ 	mt76_worker_disable(&dev->mt76.tx_worker);
+ 
+-- 
+2.54.0 (Apple Git-157)
+

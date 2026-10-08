@@ -1,0 +1,185 @@
+From 91828c69db3e805d3458c1c7f53c163219910e0a Mon Sep 17 00:00:00 2001
+From: Sean Wang <sean.wang@mediatek.com>
+Date: Sat, 13 Jun 2026 17:41:28 -0500
+Subject: [PATCH] wifi: mt76: mt792x: stop USB register access after bus hang
+
+Mark the mt792x USB bus hung on the first control timeout and switch
+register access to no-op bus ops. Each failed vendor request may spend
+up to MT_VEND_REQ_MAX_RETRY * MT_VEND_REQ_TOUT_MS, about 3 seconds, and
+teardown/reset paths can keep issuing such requests after the device has
+stopped responding.
+
+Also skip the USB WFSYS reset path after bus_hung is set, since it uses
+UHW vendor requests as well.
+
+mt7925u 1-2:1.3: vendor request req:63 off:0018 failed:-110
+mt7925u 1-2:1.3: vendor request req:63 off:0018 failed:-110
+mt7925u 1-2:1.3: vendor request req:63 off:0018 failed:-110
+mt7925u 1-2:1.3: vendor request req:63 off:0018 failed:-110
+mt7925u 1-2:1.3: vendor request req:63 off:0018 failed:-110
+
+Avoid repeating those register reads after the bus is known to be hung by
+switching register access to no-op handlers.
+
+Fixes: 0d2afe09fad5 ("mt76: mt7921: add mt7921u driver")
+Fixes: c948b5da6bbe ("wifi: mt76: mt7925: add Mediatek Wi-Fi7 driver for mt7925 chips")
+Signed-off-by: Sean Wang <sean.wang@mediatek.com>
+Link: https://patch.msgid.link/20260613224131.2396026-4-sean.wang@kernel.org
+---
+ mt76.h       |  1 +
+ mt792x_usb.c | 79 ++++++++++++++++++++++++++++++++++++++++++++++------
+ usb.c        | 11 ++++++++
+ 3 files changed, 82 insertions(+), 9 deletions(-)
+
+diff --git a/mt76.h b/mt76.h
+index 4788af1b..d3de2bc5 100644
+--- a/mt76.h
++++ b/mt76.h
+@@ -683,6 +683,7 @@ struct mt76_usb {
+ 
+ 	u8 out_ep[__MT_EP_OUT_MAX];
+ 	u8 in_ep[__MT_EP_IN_MAX];
++	void (*ctrl_timeout)(struct mt76_dev *dev, int err);
+ 	bool sg_en;
+ 
+ 	struct mt76u_mcu {
+diff --git a/mt792x_usb.c b/mt792x_usb.c
+index 6b10d035..86abf997 100644
+--- a/mt792x_usb.c
++++ b/mt792x_usb.c
+@@ -31,10 +31,75 @@ static void mt792xu_reset_work(struct work_struct *work)
+ 	atomic_set(&dev->usb_reset_pending, 0);
+ }
+ 
++static void mt792xu_queue_usb_reset(struct mt792x_dev *dev, int err)
++{
++	if (!atomic_xchg(&dev->usb_reset_pending, 1)) {
++		dev_warn(dev->mt76.dev,
++			 "USB transport access failed (%d), queueing device reset\n",
++			 err);
++
++		schedule_work(&dev->usb_reset_work);
++	}
++}
++
++static u32 mt792xu_bus_hung_rr(struct mt76_dev *mdev, u32 offset)
++{
++	return 0;
++}
++
++static void mt792xu_bus_hung_wr(struct mt76_dev *mdev, u32 offset, u32 val)
++{
++}
++
++static u32 mt792xu_bus_hung_rmw(struct mt76_dev *mdev, u32 offset,
++				u32 mask, u32 val)
++{
++	return 0;
++}
++
++static void mt792xu_bus_hung_write_copy(struct mt76_dev *mdev, u32 offset,
++					const void *data, int len)
++{
++}
++
++static void mt792xu_bus_hung_read_copy(struct mt76_dev *mdev, u32 offset,
++				       void *data, int len)
++{
++	memset(data, 0, len);
++}
++
++static const struct mt76_bus_ops mt792xu_bus_hung_ops = {
++	.rr = mt792xu_bus_hung_rr,
++	.wr = mt792xu_bus_hung_wr,
++	.rmw = mt792xu_bus_hung_rmw,
++	.write_copy = mt792xu_bus_hung_write_copy,
++	.read_copy = mt792xu_bus_hung_read_copy,
++	.type = MT76_BUS_USB,
++};
++
++static void mt792xu_set_bus_hung(struct mt792x_dev *dev)
++{
++	atomic_set(&dev->mt76.bus_hung, true);
++
++	if (READ_ONCE(dev->mt76.bus) == &mt792xu_bus_hung_ops)
++		return;
++
++	WRITE_ONCE(dev->mt76.bus, &mt792xu_bus_hung_ops);
++}
++
++static void mt792xu_ctrl_timeout(struct mt76_dev *mdev, int err)
++{
++	struct mt792x_dev *dev = container_of(mdev, struct mt792x_dev, mt76);
++
++	mt792xu_set_bus_hung(dev);
++	mt792xu_queue_usb_reset(dev, err);
++}
++
+ void mt792xu_reset_work_init(struct mt792x_dev *dev)
+ {
+ 	INIT_WORK(&dev->usb_reset_work, mt792xu_reset_work);
+ 	atomic_set(&dev->usb_reset_pending, 0);
++	dev->mt76.usb.ctrl_timeout = mt792xu_ctrl_timeout;
+ }
+ EXPORT_SYMBOL_GPL(mt792xu_reset_work_init);
+ 
+@@ -68,15 +133,8 @@ int mt792xu_reset_on_bus_error(struct mt792x_dev *dev)
+ 		err = mt792xu_check_bus(dev);
+ 
+ 	if (err) {
+-		atomic_set(&dev->mt76.bus_hung, true);
+-
+-		if (!atomic_xchg(&dev->usb_reset_pending, 1)) {
+-			dev_warn(dev->mt76.dev,
+-				 "USB transport access failed (%d), queueing device reset\n",
+-				 err);
+-
+-			schedule_work(&dev->usb_reset_work);
+-		}
++		mt792xu_set_bus_hung(dev);
++		mt792xu_queue_usb_reset(dev, err);
+ 
+ 		return err;
+ 	}
+@@ -344,6 +402,9 @@ int mt792xu_wfsys_reset(struct mt792x_dev *dev)
+ 	u32 val;
+ 	int i;
+ 
++	if (atomic_read(&dev->mt76.bus_hung))
++		return -EIO;
++
+ 	mt792xu_epctl_rst_opt(dev, false);
+ 
+ 	val = mt792xu_uhw_rr(&dev->mt76, desc->rst_reg);
+diff --git a/usb.c b/usb.c
+index 632ae755..899b68be 100644
+--- a/usb.c
++++ b/usb.c
+@@ -30,6 +30,8 @@ int __mt76u_vendor_request(struct mt76_dev *dev, u8 req, u8 req_type,
+ 	for (i = 0; i < MT_VEND_REQ_MAX_RETRY; i++) {
+ 		if (test_bit(MT76_REMOVED, &dev->phy.state))
+ 			return -EIO;
++		if (dev->usb.ctrl_timeout && atomic_read(&dev->bus_hung))
++			return -EIO;
+ 
+ 		ret = usb_control_msg(udev, pipe, req, req_type, val,
+ 				      offset, buf, len, MT_VEND_REQ_TOUT_MS);
+@@ -42,6 +44,15 @@ int __mt76u_vendor_request(struct mt76_dev *dev, u8 req, u8 req_type,
+ 
+ 	dev_err(dev->dev, "vendor request req:%02x off:%04x failed:%d\n",
+ 		req, offset, ret);
++
++	if (dev->usb.ctrl_timeout) {
++		atomic_set(&dev->bus_hung, true);
++		dev_err(dev->dev, "vendor request req:%02x off:%04x timed out, marking bus hung\n",
++			req, offset);
++		dev->usb.ctrl_timeout(dev, ret);
++		return ret;
++	}
++
+ 	return ret;
+ }
+ EXPORT_SYMBOL_GPL(__mt76u_vendor_request);
+-- 
+2.54.0 (Apple Git-157)
+
