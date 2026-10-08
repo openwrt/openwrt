@@ -21,6 +21,7 @@
 #include <net/dsa.h>
 
 #include "rtl960x_dsa.h"
+#include "rtl960x_l2.h"
 #include "rtl960x_vlan.h"
 
 /* Forced MAC ability of a port, used to force the CPU ports' link up */
@@ -83,6 +84,31 @@ static int rtl960x_port_set_isolation(struct rtl960x_dsa *priv, int port,
 	return regmap_write(priv->map, RTL960X_PORT_ISOLATION_REG(port), mask);
 }
 
+static int rtl960x_port_add_isolation(struct rtl960x_dsa *priv, int port,
+				      u32 mask)
+{
+	return regmap_update_bits(priv->map, RTL960X_PORT_ISOLATION_REG(port),
+				  mask, mask);
+}
+
+static int rtl960x_port_remove_isolation(struct rtl960x_dsa *priv, int port,
+					 u32 mask)
+{
+	return regmap_update_bits(priv->map, RTL960X_PORT_ISOLATION_REG(port),
+				  mask, 0);
+}
+
+static void rtl960x_port_fast_age(struct dsa_switch *ds, int port)
+{
+	struct rtl960x_dsa *priv = ds->priv;
+	int ret;
+
+	ret = rtl960x_l2_flush(priv, port);
+	if (ret)
+		dev_err(priv->dev, "failed to fast age on port %d: %pe\n",
+			port, ERR_PTR(ret));
+}
+
 static void rtl960x_port_stp_state_set(struct dsa_switch *ds, int port,
 				       u8 state)
 {
@@ -110,8 +136,9 @@ static void rtl960x_port_stp_state_set(struct dsa_switch *ds, int port,
 	}
 
 	/*
-	 * A VLAN entry's FID field doubles as its MSTI. MST is not offloaded,
-	 * so mirror the port's single STP state into every MSTI.
+	 * A VLAN entry's FID field doubles as its MSTI: standalone ports and
+	 * VLAN-aware bridges use FID 0, VLAN-unaware bridges FID 1. MST is not
+	 * offloaded, so mirror the port's single STP state into every MSTI.
 	 */
 	for (msti = 0; msti < RTL960X_NUM_MSTI; msti++)
 		regmap_update_bits(priv->map, RTL960X_MSTI_CTRL_REG(port),
@@ -164,8 +191,118 @@ static int rtl960x_dsa_setup(struct dsa_switch *ds)
 			return ret;
 	}
 
+	/* One reserved VID per offloaded bridge; DSA numbers them for us. */
+	ds->max_num_bridges = RTL960X_NUM_BRIDGE_VIDS;
+
 	/* Every user port starts standalone (see rtl960x_vlan_setup). */
 	return rtl960x_vlan_setup(ds);
+}
+
+static int rtl960x_port_bridge_join(struct dsa_switch *ds, int port,
+				    struct dsa_bridge bridge,
+				    bool *tx_fwd_offload,
+				    struct netlink_ext_ack *extack)
+{
+	struct rtl960x_dsa *priv = ds->priv;
+	struct dsa_port *dp;
+	u32 mask = 0;
+	int ret;
+
+	dev_dbg(priv->dev, "bridge %d join port %d\n", bridge.num, port);
+
+	/*
+	 * Add this port to the isolation group of every other port
+	 * offloading this bridge.
+	 */
+	dsa_switch_for_each_user_port(dp, ds) {
+		/* Handle this port after */
+		if (dp->index == port)
+			continue;
+
+		/* Skip ports that are not in this bridge */
+		if (!dsa_port_offloads_bridge(dp, &bridge))
+			continue;
+
+		ret = rtl960x_port_add_isolation(priv, dp->index, BIT(port));
+		if (ret)
+			goto undo_isolation;
+
+		mask |= BIT(dp->index);
+	}
+
+	/* Add those ports to the isolation group of this port */
+	ret = rtl960x_port_add_isolation(priv, port, mask);
+	if (ret)
+		goto undo_isolation;
+
+	/* Leave VLAN 0 and follow the bridge's VLAN configuration */
+	ret = rtl960x_vlan_port_bridge_join(ds, port, bridge);
+	if (ret)
+		goto undo_self_isolation;
+
+	return 0;
+
+undo_self_isolation:
+	rtl960x_port_remove_isolation(priv, port, mask);
+
+undo_isolation:
+	dsa_switch_for_each_user_port(dp, ds) {
+		if (mask & BIT(dp->index))
+			rtl960x_port_remove_isolation(priv, dp->index,
+						      BIT(port));
+	}
+
+	return ret;
+}
+
+static void rtl960x_port_bridge_leave(struct dsa_switch *ds, int port,
+				      struct dsa_bridge bridge)
+{
+	struct rtl960x_dsa *priv = ds->priv;
+	struct dsa_port *dp;
+	u32 mask = 0;
+	int ret;
+
+	dev_dbg(priv->dev, "bridge %d leave port %d\n", bridge.num, port);
+
+	/*
+	 * Remove this port from the isolation group of every other port
+	 * offloading this bridge.
+	 */
+	dsa_switch_for_each_user_port(dp, ds) {
+		/* Handle this port after */
+		if (dp->index == port)
+			continue;
+
+		/* Skip ports that are not in this bridge */
+		if (!dsa_port_offloads_bridge(dp, &bridge))
+			continue;
+
+		ret = rtl960x_port_remove_isolation(priv, dp->index, BIT(port));
+		if (ret)
+			dev_err(priv->dev,
+				"failed to remove port %d from isolation group of port %d: %pe\n",
+				port, dp->index, ERR_PTR(ret));
+
+		mask |= BIT(dp->index);
+	}
+
+	/* Remove those ports from the isolation group of this port */
+	ret = rtl960x_port_remove_isolation(priv, port, mask);
+	if (ret)
+		dev_err(priv->dev,
+			"failed to remove isolation group of port %d: %pe\n",
+			port, ERR_PTR(ret));
+
+	/*
+	 * The bridge disables the port before it leaves, which fast-ages it,
+	 * but a join that DSA rolls back leaves without an STP transition.
+	 * Flush here so nothing learned in the bridge's database stays behind.
+	 */
+	rtl960x_port_fast_age(ds, port);
+
+	/* Back to standalone on VLAN 0 */
+	rtl960x_vlan_port_bridge_leave(ds, port, bridge);
 }
 
 static void rtl960x_dsa_phylink_get_caps(struct dsa_switch *ds, int port,
@@ -259,7 +396,13 @@ static const struct dsa_switch_ops rtl960x_dsa_ops = {
 	.setup			= rtl960x_dsa_setup,
 	.preferred_default_local_cpu_port = rtl960x_dsa_preferred_default_local_cpu_port,
 	.phylink_get_caps	= rtl960x_dsa_phylink_get_caps,
+	.port_bridge_join	= rtl960x_port_bridge_join,
+	.port_bridge_leave	= rtl960x_port_bridge_leave,
 	.port_stp_state_set	= rtl960x_port_stp_state_set,
+	.port_fast_age		= rtl960x_port_fast_age,
+	.port_vlan_filtering	= rtl960x_port_vlan_filtering,
+	.port_vlan_add		= rtl960x_port_vlan_add,
+	.port_vlan_del		= rtl960x_port_vlan_del,
 };
 
 static int rtl960x_dsa_probe(struct platform_device *pdev)
@@ -284,6 +427,10 @@ static int rtl960x_dsa_probe(struct platform_device *pdev)
 
 	priv->dev = dev;
 	priv->ds = ds;
+
+	ret = devm_mutex_init(dev, &priv->l2_lock);
+	if (ret)
+		return ret;
 
 	priv->map = syscon_node_to_regmap(dev->of_node);
 	if (IS_ERR(priv->map))
