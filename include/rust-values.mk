@@ -23,8 +23,8 @@ ifeq ($(HOST_OS),Darwin)
 endif
 
 # Prebuilt Rust components of the release, pinned by hash. They are the
-# compiler of the prebuilt choice, and rust-src and llvm-tools of the
-# prebuilt and host choices.
+# compiler of the prebuilt choice, rust-src and llvm-tools of the prebuilt and
+# host choices, and the cargo that generates vendor tarballs without one.
 RUST_DIST_URL:=https://static.rust-lang.org/dist/2026-10-15/
 RUST_SRC_HASH:=e485a88c45db546b73571df7bebfcb4454ba4fb552c492e25fc5b00eeb5bf22d
 ifeq ($(RUSTC_HOST_ARCH),x86_64-unknown-linux-gnu)
@@ -58,6 +58,7 @@ else ifeq ($(RUSTC_HOST_ARCH),aarch64-apple-darwin)
   RUST_STD_HASH:=fe79d6ab5a0321de26463999d8c112b8ad3eafbcbcf822d66a2300b45dde1031
   RUST_LLVM_TOOLS_HASH:=b348db9d79666aee4b5e2ff4269029fffd16815cbd47f47018cd0b06e4f815f5
 endif
+RUST_CARGO_URL:=$(RUST_DIST_URL)cargo-$(RUST_VERSION)-$(RUSTC_HOST_ARCH).tar.xz
 
 # LLVM codegen backends to compile into rustc, one per unique LLVM target name
 # covering all architectures with a Rust target (semicolon-separated):
