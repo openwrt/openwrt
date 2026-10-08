@@ -406,11 +406,20 @@ function device_htmode_append(config) {
 		}
 
 		if (config.he_bss_color_enabled) {
-			if (config.he_spr_non_srg_obss_pd_max_offset)
+			/* An offset of 0 is a valid offset, so the presence of the
+			 * option sets the Present bit, and not its value. */
+			if (config.he_spr_non_srg_obss_pd_max_offset != null)
 				config.he_spr_sr_control |= 1 << 2;
+			if (config.he_spr_srg_obss_pd_min_offset != null ||
+			    config.he_spr_srg_obss_pd_max_offset != null)
+				config.he_spr_sr_control |= 1 << 3;
 			if (!config.he_spr_psr_enabled)
 				config.he_spr_sr_control |= 1;
-			append_vars(config, [ 'he_bss_color', 'he_spr_non_srg_obss_pd_max_offset', 'he_spr_sr_control' ]);
+			append_vars(config, [
+				'he_bss_color', 'he_spr_non_srg_obss_pd_max_offset', 'he_spr_sr_control',
+				'he_spr_srg_obss_pd_min_offset', 'he_spr_srg_obss_pd_max_offset',
+				'he_spr_srg_bss_colors', 'he_spr_srg_partial_bssid'
+			]);
 		}
 
 		if (!(he_phy_cap[3] & 0x80))
