@@ -357,7 +357,9 @@ choice
 		select USE_RUST_PREBUILT
 		help
 		  Downloads rustc, cargo, rust-src and llvm-tools from
-		  static.rust-lang.org instead of building them.
+		  static.rust-lang.org instead of building them. The cross
+		  rust-std for the target is still built from source by
+		  package/libs/libstd-rust.
 
 	config RUST_TOOLCHAIN_HOST
 		bool "Use host Rust toolchain"
@@ -366,7 +368,8 @@ choice
 		  Installs rustc, cargo, rust-src and llvm-tools from a
 		  relocatable Rust toolchain on the build host, such as a rustup
 		  toolchain directory. The version must match the one OpenWrt is
-		  built for.
+		  built for. The cross rust-std for the target is still built
+		  from source by package/libs/libstd-rust.
 endchoice
 
 config RUST_TOOLCHAIN_HOST_PATH

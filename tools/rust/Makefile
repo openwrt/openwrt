@@ -41,7 +41,7 @@ ifdef CONFIG_USE_RUST_BUILD
 
 HOST_CONFIGURE_VARS += CARGO_HOME="$(CARGO_HOME)"
 
-# Only the host compiler is built here.
+# Only the host compiler is built here; libstd-rust builds the cross rust-std.
 HOST_CONFIGURE_ARGS = \
 	--build=$(RUSTC_HOST_ARCH) \
 	--target=$(RUSTC_HOST_ARCH) \
