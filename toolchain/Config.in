@@ -411,7 +411,8 @@ config BUILD_BINDGEN
 	select USE_LLVM_BUILD if !USE_LLVM_HOST && !USE_LLVM_PREBUILT
 	default y
 	help
-	  Installs bindgen-cli to the host toolchain. Required for kernel Rust.
+	  Installs bindgen-cli to the host toolchain. Required for kernel Rust
+	  and for meson-based Rust projects (Mesa3D RustiCL, Nouveau, glycin).
 	  Automatically selected by KERNEL_RUST.
 
 config USE_CBINDGEN

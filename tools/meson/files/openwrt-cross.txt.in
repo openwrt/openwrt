@@ -9,6 +9,7 @@ nm = '@NM@'
 pkg-config = '@PKGCONFIG@'
 cmake = '@CMAKE@'
 python = '@PYTHON@'
+rust = [@RUSTC@]
 
 [built-in options]
 c_args = [@CFLAGS@]
@@ -25,3 +26,4 @@ endian = '@ENDIAN@'
 
 [properties]
 needs_exe_wrapper = true
+bindgen_clang_arguments = [@BINDGEN_CLANG_ARGS@]
