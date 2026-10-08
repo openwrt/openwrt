@@ -416,6 +416,19 @@ config RUST_PANIC_IMMEDIATE_ABORT
 	  all crates of a program, the standard library included, so this
 	  applies to the whole build.
 
+config KERNEL_RUST
+	bool
+	prompt "Enable Rust in the kernel" if RUST_TOOLCHAINOPTS
+	depends on USE_RUST_TOOLCHAIN
+	depends on aarch64 || (arm && arm_v7 && !BIG_ENDIAN && !KERNEL_KASAN) \
+		|| (loongarch64 && !KERNEL_KASAN) || x86_64
+	select BUILD_BINDGEN
+	default y
+	help
+	  Builds bindgen and passes RUSTC/BINDGEN/RUST_LIB_SRC to the kernel
+	  Kbuild, enabling CONFIG_RUST to be selected in the kernel .config.
+	  riscv64 is excluded: kernel Rust on riscv64 requires CC_IS_CLANG.
+
 config BUILD_BINDGEN
 	bool
 	prompt "Build bindgen (C-header to Rust bindings)" if RUST_TOOLCHAINOPTS
@@ -423,7 +436,8 @@ config BUILD_BINDGEN
 	select USE_LLVM_BUILD if !USE_LLVM_HOST && !USE_LLVM_PREBUILT
 	default y
 	help
-	  Installs bindgen-cli to the host toolchain.
+	  Installs bindgen-cli to the host toolchain. Required for kernel Rust.
+	  Automatically selected by KERNEL_RUST.
 
 config USE_CBINDGEN
 	bool
