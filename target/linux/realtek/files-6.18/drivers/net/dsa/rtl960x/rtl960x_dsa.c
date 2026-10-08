@@ -237,6 +237,8 @@ static int rtl960x_dsa_setup(struct dsa_switch *ds)
 	/* One reserved VID per offloaded bridge; DSA numbers them for us. */
 	ds->max_num_bridges = RTL960X_NUM_BRIDGE_VIDS;
 
+	ds->assisted_learning_on_cpu_port = true;
+
 	/* Every user port starts standalone (see rtl960x_vlan_setup). */
 	return rtl960x_vlan_setup(ds);
 }
@@ -479,6 +481,9 @@ static const struct dsa_switch_ops rtl960x_dsa_ops = {
 	.port_vlan_filtering	= rtl960x_port_vlan_filtering,
 	.port_vlan_add		= rtl960x_port_vlan_add,
 	.port_vlan_del		= rtl960x_port_vlan_del,
+	.port_fdb_add		= rtl960x_port_fdb_add,
+	.port_fdb_del		= rtl960x_port_fdb_del,
+	.port_fdb_dump		= rtl960x_port_fdb_dump,
 };
 
 static int rtl960x_dsa_probe(struct platform_device *pdev)
