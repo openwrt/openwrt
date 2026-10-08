@@ -9,6 +9,10 @@ __inc_rust_values:=1
 RUST_VERSION:=1.99.1
 RUST_SRC_TARBALL_HASH:=6451598a99e77f07571960f6b21d577399d3a30f33e80cbd2e3a4aae6535d265
 
+# Paths to host Rust toolchain binaries
+RUSTC:=$(STAGING_DIR_HOST)/bin/rustc
+CARGO:=$(STAGING_DIR_HOST)/bin/cargo
+
 # Rust Environmental Vars
 RUSTC_HOST_SUFFIX:=$(word 4, $(subst -, ,$(GNU_HOST_NAME)))
 RUSTC_HOST_ARCH:=$(HOST_ARCH)-unknown-linux-$(RUSTC_HOST_SUFFIX)
@@ -74,5 +78,11 @@ RUST_LLVM_TARGETS:=AArch64;ARM;LoongArch;Mips;PowerPC;RISCV;X86
 # Experimental LLVM backends (bootstrap key: llvm.experimental-targets).
 # Defaults to AVR;M68k;CSKY;Xtensa, none of which are relevant to OpenWrt.
 RUST_LLVM_EXPERIMENTAL_TARGETS:=
+
+CARGO_HOST_CONFIG_VARS= \
+	RUSTC=$(RUSTC) \
+	CARGO_HOME=$(CARGO_HOME)
+
+CARGO_HOST_PROFILE:=release
 
 endif # __inc_rust_values
