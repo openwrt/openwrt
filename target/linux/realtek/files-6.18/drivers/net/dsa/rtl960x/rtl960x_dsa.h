@@ -38,7 +38,12 @@ struct rtl960x_dsa {
 	struct dsa_switch *ds;
 	struct device *dev;
 	struct regmap *map;
-	struct mutex l2_lock;		/* serialises the L2 flush engine */
+	/*
+	 * l2_lock keeps a whole FDB dump walk atomic against the FDB add/del
+	 * work items, which run from DSA's deferred workqueue, and serialises
+	 * the L2 flush engine.
+	 */
+	struct mutex l2_lock;
 	u16 pvid[RTL960X_NUM_PORTS];	/* shadow of each port's PVID */
 	u16 bridge_pvid[RTL960X_NUM_PORTS]; /* PVID set by the bridge, 0 if none */
 	/* Bridges whose ports are programmed VLAN-unaware, by bridge.num - 1. */

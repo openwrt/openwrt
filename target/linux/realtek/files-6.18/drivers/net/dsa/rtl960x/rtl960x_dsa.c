@@ -403,6 +403,9 @@ static const struct dsa_switch_ops rtl960x_dsa_ops = {
 	.port_vlan_filtering	= rtl960x_port_vlan_filtering,
 	.port_vlan_add		= rtl960x_port_vlan_add,
 	.port_vlan_del		= rtl960x_port_vlan_del,
+	.port_fdb_add		= rtl960x_port_fdb_add,
+	.port_fdb_del		= rtl960x_port_fdb_del,
+	.port_fdb_dump		= rtl960x_port_fdb_dump,
 };
 
 static int rtl960x_dsa_probe(struct platform_device *pdev)
@@ -412,7 +415,7 @@ static int rtl960x_dsa_probe(struct platform_device *pdev)
 	struct dsa_switch *ds;
 	int ret;
 
-	/* The VLAN table is reached through otto_table */
+	/* The VLAN and L2 tables are reached through otto_table */
 	ret = otto_table_loaded();
 	if (ret)
 		return dev_err_probe(dev, ret, "table access not available\n");
