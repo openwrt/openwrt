@@ -3172,6 +3172,13 @@ static int otto_l3_netevent_notifier(struct notifier_block *this, unsigned long 
 		if (otto_l3_is_nd_tbl(n->tbl) && !ctrl->cfg->use_l3_tables)
 			return NOTIFY_DONE;
 		dev = n->dev;
+
+		/* Every route here comes from init_net, the only namespace the FIB
+		 * notifier follows, and an ifindex is only unique within one
+		 */
+		if (!net_eq(dev_net(dev), &init_net))
+			return NOTIFY_DONE;
+
 		port = otto_l3_port_dev_lower_find(dev, ctrl);
 		if (port < 0) {
 			dev_dbg(ctrl->dev, "Neighbour not on a switch port, not updating\n");
