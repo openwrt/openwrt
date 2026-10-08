@@ -515,6 +515,29 @@ hostapd_bss_color_add(struct hostapd_data *hapd)
 #endif
 }
 
+/* A ubus integer is signed and a colour bitmap uses bit 63, so each SRG
+ * bitmap is the value with bit n for colour or partial BSSID n, as 16 hex
+ * digits. The element holds it little-endian. */
+static void
+hostapd_spr_add(struct hostapd_data *hapd)
+{
+#ifdef CONFIG_IEEE80211AX
+	struct spatial_reuse *spr = &hapd->iface->conf->spr;
+
+	blobmsg_add_u32(&b, "he_spr_sr_control", spr->sr_control);
+	blobmsg_add_u32(&b, "he_spr_non_srg_obss_pd_max_offset",
+			spr->non_srg_obss_pd_max_offset);
+	blobmsg_add_u32(&b, "he_spr_srg_obss_pd_min_offset",
+			spr->srg_obss_pd_min_offset);
+	blobmsg_add_u32(&b, "he_spr_srg_obss_pd_max_offset",
+			spr->srg_obss_pd_max_offset);
+	blobmsg_printf(&b, "he_spr_srg_bss_colors", "%016llx",
+		       (unsigned long long) WPA_GET_LE64(spr->srg_bss_color_bitmap));
+	blobmsg_printf(&b, "he_spr_srg_partial_bssid", "%016llx",
+		       (unsigned long long) WPA_GET_LE64(spr->srg_partial_bssid_bitmap));
+#endif
+}
+
 static void
 hostapd_bss_status_links_add(struct ubus_object *obj)
 {
@@ -539,6 +562,7 @@ hostapd_bss_status_links_add(struct ubus_object *obj)
 		blobmsg_printf(&b, "bssid", MACSTR, MAC2STR(link_bss->own_addr));
 		blobmsg_add_u32(&b, "freq", link_bss->iface->freq);
 		hostapd_bss_color_add(link_bss);
+		hostapd_spr_add(link_bss);
 		blobmsg_close_table(&b, l);
 	}
 	blobmsg_close_array(&b, links);
@@ -580,6 +604,7 @@ hostapd_bss_get_status(struct ubus_context *ctx, struct ubus_object *obj,
 	blobmsg_add_u32(&b, "op_class", op_class);
 	blobmsg_add_u32(&b, "beacon_interval", hapd->iconf->beacon_int);
 	hostapd_bss_color_add(hapd);
+	hostapd_spr_add(hapd);
 	hostapd_bss_status_links_add(obj);
 
 	snprintf(phy_name, 17, "%s", hapd->iface->phy);
