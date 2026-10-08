@@ -3966,8 +3966,6 @@ static void rtpcs_931x_sds_rxcal_fiber_adapt(struct rtpcs_serdes *sds)
 	/* per-port calibration offset in the SDK, kept 0 here */
 	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xc, 14, 10, 0x0);
 
-	rtpcs_931x_sds_reset_leq_dfe(sds);
-
 	/* let VTH + TAP0 auto-adapt run and settle before sampling/forcing values */
 	rtpcs_931x_sds_rxeq_tap_set_adapt(sds, 0, true);
 	rtpcs_931x_sds_rxeq_vth_set_adapt(sds, true);
@@ -4180,10 +4178,8 @@ static int rtpcs_931x_sds_config_attachment(struct rtpcs_serdes *sds,
 		return 0;
 
 	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xe, 13, 11, 0x0);
-	if (hw_mode != RTPCS_SDS_MODE_XSGMII)
-		rtpcs_931x_sds_reset_leq_dfe(sds);
 
-	/* SDK: media none behavior - baseline applied regardless of attachment */
+	/* SDK media-none analog setup, applied regardless of attachment. */
 	rtpcs_931x_sds_10g_ana_pre(sds);
 
 	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, ANA_MISC_REG00, RTL93XX_FRC_CMU_EN,
@@ -4270,6 +4266,8 @@ static int rtpcs_931x_sds_post_config(struct rtpcs_serdes *sds, enum rtpcs_sds_m
 {
 	if (sds->type != RTPCS_SDS_TYPE_10G)
 		return 0;
+	if (hw_mode != RTPCS_SDS_MODE_XSGMII)
+		rtpcs_931x_sds_reset_leq_dfe(sds);
 
 	switch (sds->attachment) {
 	case RTPCS_SDS_ATTACH_PHY:
