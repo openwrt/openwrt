@@ -381,6 +381,8 @@ enum rtpcs_page {
 #define ANA_SPD_REG20			0x14
 #define  RTL931X_RX_COEF_SEL		GENMASK(10, 5)
 #define   RTL931X_RX_COEF_SEL_VTH	0x0c
+#define   RTL931X_RX_COEF_SEL_TAP_EVEN(t)	(t)
+#define   RTL931X_RX_COEF_SEL_TAP_ODD(t)	((t) + 5)
 
 #define ANA_SPD_REG21			0x15
 #define  RTL930X_RXCAL_OFFSET_RANGE	GENMASK(15, 14)
@@ -3707,6 +3709,49 @@ static int rtpcs_931x_sds_rxeq_leq_get_coef(struct rtpcs_serdes *sds)
 	return rtpcs_gray_to_binary(FIELD_GET(RTL93XX_RXEQ_COEF_LEQ_GRAY, gray));
 }
 
+static int rtpcs_931x_sds_rxeq_tap_get(struct rtpcs_serdes *sds, unsigned int tap_id,
+				       int *tap_even, int *tap_odd)
+{
+	int ret, val;
+	u16 sel;
+
+	if (tap_id > 4)
+		return -EINVAL;
+
+	ret = rtpcs_931x_sds_rxeq_set_debug(sds, RTL931X_RX_DEBUG_SEL_COEF);
+	if (ret < 0)
+		return ret;
+
+	sel = FIELD_PREP(RTL931X_RX_COEF_SEL, RTL931X_RX_COEF_SEL_TAP_EVEN(tap_id));
+	ret = rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG20, RTL931X_RX_COEF_SEL, sel);
+	if (ret < 0)
+		return ret;
+	usleep_range(1000, 2000);
+
+	val = rtpcs_sds_read(sds, PAGE_WDIG, WDIG_REG20);
+	if (val < 0)
+		return val;
+
+	*tap_even = rtpcs_sign_mag_decode(FIELD_GET(RTL93XX_RXEQ_COEF_TAPX, val), 5);
+
+	if (tap_id > 0) {
+		sel = FIELD_PREP(RTL931X_RX_COEF_SEL, RTL931X_RX_COEF_SEL_TAP_ODD(tap_id));
+		ret = rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG20,
+					   RTL931X_RX_COEF_SEL, sel);
+		if (ret < 0)
+			return ret;
+		usleep_range(1000, 2000);
+
+		val = rtpcs_sds_read(sds, PAGE_WDIG, WDIG_REG20);
+		if (val < 0)
+			return val;
+
+		*tap_odd = rtpcs_sign_mag_decode(FIELD_GET(RTL93XX_RXEQ_COEF_TAPX, val), 5);
+	}
+
+	return 0;
+}
+
 static int rtpcs_931x_sds_rxeq_tap_set_value(struct rtpcs_serdes *sds, unsigned int tap_id,
 					     int tap_even, int tap_odd)
 {
@@ -4096,6 +4141,109 @@ static int rtpcs_931x_sds_rxcal_fiber_adapt(struct rtpcs_serdes *sds)
 	return link ? -EIO : -ENOLINK;
 }
 
+/*
+ * rtpcs_931x_sds_rxcal_dac_adapt() - RX calibration for 10G DAC.
+ *
+ * LEQ and DFE TAP1-4 remain adaptive, while VTH is selected using the
+ * adapted TAP0 value and TAP0 is finally forced to 31. Run the sweep
+ * before requiring link, so a cable needing VTH/TAP0 training can acquire
+ * it. Only a stable, clean receive interval qualifies; the worker restores
+ * the baseline on failure.
+ */
+static int rtpcs_931x_sds_rxcal_dac_adapt(struct rtpcs_serdes *sds)
+{
+	int i, leq = 0, link = 0, ret, symerr = -1, tap0, vth = 0xa;
+	struct device *dev = sds->ctrl->dev;
+	bool latch_sts = false;
+
+	dev_dbg(dev, "SerDes %u DAC RX calibration...\n", sds->id);
+
+	/* Undocumented setting applied before releasing LEQ adaptation. */
+	ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G, ANA_SPD_REG13, 13, 13, 0x0);
+	if (ret < 0)
+		return ret;
+
+	rtpcs_931x_sds_rx_reset(sds);
+
+	ret = rtpcs_931x_sds_rxeq_leq_set_adapt(sds, true);
+	if (ret < 0)
+		return ret;
+	msleep(200);
+
+	for (i = 5; i <= 10; i++) {
+		ret = rtpcs_931x_sds_rxeq_vth_set_value(sds, i, i);
+		if (ret < 0)
+			return ret;
+
+		ret = rtpcs_931x_sds_rxeq_tap_set_adapt(sds, 0, true);
+		if (ret < 0)
+			return ret;
+
+		/* Allow TAP0 adaptation to settle before readback. */
+		usleep_range(5000, 6000);
+		ret = rtpcs_931x_sds_rxeq_tap_get(sds, 0, &tap0, NULL);
+		if (ret < 0)
+			return ret;
+
+		vth = i;
+		dev_dbg(dev, "SerDes %u DAC VTH = %#x, TAP0 = %d\n", sds->id, vth, tap0);
+		if (tap0 >= 15 && tap0 <= 31)
+			break;
+	}
+
+	ret = rtpcs_931x_sds_rxeq_tap_set_value(sds, 0, 31, 0);
+	if (ret < 0)
+		return ret;
+	ret = rtpcs_931x_sds_rxeq_tap_set_adapt(sds, 0, false);
+	if (ret < 0)
+		return ret;
+
+	rtpcs_931x_sds_rx_reset(sds);
+
+	/* Keep DFE TAP1-4 adapting continuously. */
+	for (i = 1; i <= 4; i++) {
+		ret = rtpcs_931x_sds_rxeq_tap_set_adapt(sds, i, true);
+		if (ret < 0)
+			return ret;
+	}
+
+	/* Clear historical latched-low status before the first observation window. */
+	ret = rtpcs_93xx_sds_10gr_link_status(sds, NULL);
+	if (ret < 0)
+		return ret;
+
+	for (i = 0; i < 8; i++) {
+		rtpcs_931x_sds_clear_symerr(sds, RTPCS_SDS_MODE_10GBASER);
+		msleep(300);
+		symerr = rtpcs_931x_sds_fiber_get_symerr(sds, RTPCS_SDS_MODE_10GBASER);
+		if (symerr < 0)
+			return symerr;
+
+		link = rtpcs_93xx_sds_10gr_link_status(sds, &latch_sts);
+		if (link < 0)
+			return link;
+
+		leq = rtpcs_931x_sds_rxeq_leq_get_coef(sds);
+		if (leq < 0)
+			return leq;
+
+		dev_dbg(dev,
+			"SerDes %u DAC check %d: linkUp=%d latch_sts=%d LEQ=%d symErr=0x%x\n",
+			sds->id, i + 1, link, latch_sts, leq, symerr);
+		if (latch_sts && link && leq < 20 && symerr <= 5) {
+			dev_dbg(dev,
+				"SerDes %u DAC RX calibration OK: LEQ=%#x VTH=%#x\n",
+				sds->id, leq, vth);
+			return 0;
+		}
+	}
+
+	dev_dbg(dev,
+		"SerDes %u DAC RX calibration did not pass: linkUp=%d latch_sts=%d LEQ=%d symErr=0x%x\n",
+		sds->id, link, latch_sts, leq, symerr);
+	return link ? -EIO : -ENOLINK;
+}
+
 static int rtpcs_931x_sds_get_pll_select(struct rtpcs_serdes *sds, enum rtpcs_sds_pll_type *pll)
 {
 	int cmu_page, pll_sel;
@@ -4360,9 +4508,20 @@ static void rtpcs_931x_rx_cali_work_handler(struct work_struct *work)
 		ret = rtpcs_931x_sds_rxcal_fiber_adapt(sds);
 		break;
 
+	case RTPCS_SDS_ATTACH_DAC_SHORT:
+	case RTPCS_SDS_ATTACH_DAC_LONG:
+		ret = rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG14,
+					   RTL931X_RXCAL_SEL, RTL931X_RXCAL_SEL_DAC);
+		if (ret < 0) {
+			dev_err(sds->ctrl->dev, "SerDes %u: DAC RX calibration selection failed: %d\n",
+				sds->id, ret);
+			break;
+		}
+		ret = rtpcs_931x_sds_rxcal_dac_adapt(sds);
+		break;
+
 	default:
 		sds->rxcal_pending = false;
-		/* TODO: DAC RX calibration */
 		goto unlock;
 	}
 
