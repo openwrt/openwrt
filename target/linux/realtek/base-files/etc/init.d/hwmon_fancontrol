@@ -121,6 +121,109 @@ linksys_lgs328mpc_v2() {
 	echo 2 > "$path_to_hwmon/pwm1_enable"
 }
 
+horaco_zx_swtgw2c48ns() {
+	# Locate the DT-instantiated ADT7476 without relying on dynamic bus or
+	# hwmon numbering.
+	local device
+	local path_to_hwmon
+	local candidate
+	local attr
+	local value
+
+	for candidate in /sys/bus/i2c/devices/*-002c; do
+		[ -e "$candidate/of_node" ] || continue
+		[ "$(cat "$candidate/name" 2>/dev/null)" = "adt7476" ] || continue
+		[ -z "$device" ] || {
+			logger -t hwmon_fancontrol -p daemon.err \
+				"multiple DT-backed ADT7476 devices found; leaving fans at power-on defaults"
+			return 1
+		}
+		device="$candidate"
+	done
+
+	[ -n "$device" ] || {
+		logger -t hwmon_fancontrol -p daemon.err \
+			"DT-backed ADT7476 not found; leaving fans at power-on defaults"
+		return 1
+	}
+
+	for candidate in "$device"/hwmon/hwmon*; do
+		[ -d "$candidate" ] || continue
+		[ "$(cat "$candidate/name" 2>/dev/null)" = "adt7476" ] || continue
+		[ -z "$path_to_hwmon" ] || {
+			logger -t hwmon_fancontrol -p daemon.err \
+				"multiple hwmon interfaces for $device; leaving fans at power-on defaults"
+			return 1
+		}
+		path_to_hwmon="$candidate"
+	done
+
+	[ -n "$path_to_hwmon" ] || {
+		logger -t hwmon_fancontrol -p daemon.err \
+			"ADT7476 hwmon interface not found; leaving fans at power-on defaults"
+		return 1
+	}
+
+	# Any failure after locating the controller falls back to manual full duty.
+	horaco_fan_failsafe() {
+		echo 1 > "$path_to_hwmon/pwm1_enable" 2>/dev/null
+		echo 255 > "$path_to_hwmon/pwm1" 2>/dev/null
+		logger -t hwmon_fancontrol -p daemon.err \
+			"ADT7476 setup failed; requested manual full fan duty"
+		return 1
+	}
+
+	horaco_fan_write() {
+		echo "$2" > "$path_to_hwmon/$1" 2>/dev/null || return 1
+		value="$(cat "$path_to_hwmon/$1" 2>/dev/null)" || return 1
+		[ "$value" = "$2" ]
+	}
+
+	# Do not start programming unless every control used below is available.
+	for attr in \
+		pwm1_enable pwm1 pwm1_auto_channels_temp pwm1_stall_disable \
+		pwm1_auto_point1_pwm pwm1_auto_point2_pwm \
+		temp1_auto_point1_temp temp1_auto_point2_temp temp1_crit temp1_crit_hyst \
+		temp2_auto_point1_temp temp2_auto_point2_temp temp2_crit temp2_crit_hyst \
+		temp3_auto_point1_temp temp3_auto_point2_temp temp3_crit temp3_crit_hyst; do
+		[ -w "$path_to_hwmon/$attr" ] || {
+			logger -t hwmon_fancontrol -p daemon.err \
+				"required ADT7476 attribute $attr is unavailable"
+			horaco_fan_failsafe
+			return 1
+		}
+	done
+
+	# Establish a safe manual state before changing the automatic table.
+	horaco_fan_write pwm1_enable 1 || { horaco_fan_failsafe; return 1; }
+	horaco_fan_write pwm1 255 || { horaco_fan_failsafe; return 1; }
+
+	# Allow all three temperature channels to drive the fan.
+	horaco_fan_write pwm1_auto_channels_temp 7 || { horaco_fan_failsafe; return 1; }
+
+	# Keep the fan running below the control window.
+	horaco_fan_write pwm1_stall_disable 1 || { horaco_fan_failsafe; return 1; }
+
+	# Use the validated stable duty floor and full duty at the upper point.
+	# Duty 40 matches the stock idle fan speed; lower duty was unstable on
+	# this fan.
+	horaco_fan_write pwm1_auto_point1_pwm 40 || { horaco_fan_failsafe; return 1; }
+	horaco_fan_write pwm1_auto_point2_pwm 255 || { horaco_fan_failsafe; return 1; }
+
+	# Ramp window and critical limits, per temperature channel.
+	for i in 1 2 3; do
+		horaco_fan_write "temp${i}_auto_point1_temp" 45000 || { horaco_fan_failsafe; return 1; }
+		# ADT7475 represents the 45 C ramp span on a discrete grid; 71670
+		# is the validated grid value nearest the intended 70 C endpoint.
+		horaco_fan_write "temp${i}_auto_point2_temp" 71670 || { horaco_fan_failsafe; return 1; }
+		horaco_fan_write "temp${i}_crit" 85000 || { horaco_fan_failsafe; return 1; }
+		horaco_fan_write "temp${i}_crit_hyst" 80000 || { horaco_fan_failsafe; return 1; }
+	done
+
+	# Enter the hardware closed loop only after every setting read back cleanly.
+	horaco_fan_write pwm1_enable 2 || { horaco_fan_failsafe; return 1; }
+}
+
 boot() {
 	case $(board_name) in
 	plasmacloud,esx28|\
@@ -133,6 +236,9 @@ boot() {
 		;;
 	d-link,dgs-1250-28x)
 		dlink_dgs_1250
+		;;
+	horaco,zx-swtgw2c48ns)
+		horaco_zx_swtgw2c48ns
 		;;
 	linksys,lgs328mpc-v2)
 		linksys_lgs328mpc_v2

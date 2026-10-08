@@ -1,0 +1,82 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/net/pcs/realtek,otto-pcs.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Realtek Otto Ethernet PCS
+
+maintainers:
+  - OpenWrt Realtek maintainers <openwrt-devel@lists.openwrt.org>
+
+properties:
+  compatible:
+    oneOf:
+      - items:
+          - enum:
+              - realtek,rtl8380-pcs
+              - realtek,rtl8392-pcs
+              - realtek,rtl9301-pcs
+              - realtek,rtl9311-pcs
+          - const: realtek,otto-pcs
+      - const: realtek,otto-pcs
+
+  mdio-parent-bus:
+    $ref: /schemas/types.yaml#/definitions/phandle
+    description: MDIO bus used to access the SerDes register pages.
+
+  '#address-cells':
+    const: 1
+
+  '#size-cells':
+    const: 0
+
+patternProperties:
+  '^serdes@[0-9a-f]+$':
+    type: object
+    $ref: /schemas/phy/phy-common-props.yaml#
+    properties:
+      reg:
+        maximum: 13
+
+      '#pcs-cells':
+        const: 1
+
+      realtek,sfp-dac-detect:
+        type: boolean
+        description:
+          Enable module-aware SFP receiver recovery on this SerDes, including
+          10GBASE-R direct-attach copper transmitter configuration and receiver
+          calibration, plus bounded 1000BASE-X no-link recovery. Boards must
+          opt in only after validating the affected analog settings and module
+          lifecycle on their hardware.
+
+    required:
+      - reg
+      - '#pcs-cells'
+
+    unevaluatedProperties: false
+
+required:
+  - compatible
+  - mdio-parent-bus
+  - '#address-cells'
+  - '#size-cells'
+
+additionalProperties: false
+
+examples:
+  - |
+    pcs {
+        compatible = "realtek,rtl9311-pcs", "realtek,otto-pcs";
+        #address-cells = <1>;
+        #size-cells = <0>;
+        mdio-parent-bus = <&mdio_serdes>;
+
+        serdes@6 {
+            reg = <6>;
+            #pcs-cells = <1>;
+            tx-polarity = <1>;
+            realtek,sfp-dac-detect;
+        };
+    };
