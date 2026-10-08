@@ -55,7 +55,6 @@ drv_mac80211_init_device_config() {
 		htc_vht \
 		rx_antenna_pattern \
 		tx_antenna_pattern \
-		he_spr_sr_control \
 		he_spr_psr_enabled \
 		he_bss_color_enabled \
 		he_twt_required
@@ -69,6 +68,7 @@ drv_mac80211_init_device_config() {
 		rx_stbc \
 		tx_stbc \
 		he_bss_color \
+		he_spr_sr_control \
 		he_spr_non_srg_obss_pd_max_offset \
 		he_spr_srg_obss_pd_min_offset \
 		he_spr_srg_obss_pd_max_offset
