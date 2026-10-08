@@ -580,7 +580,7 @@ void rtl839x_exec_tbl2_cmd(u32 cmd);
 void rtldsa_839x_print_matrix(void);
 
 /* RTL930x-specific */
-u32 rtl930x_hash(struct rtl838x_switch_priv *priv, u64 seed);
+u32 otto_l2_930x_hash(struct rtl838x_switch_priv *priv, u64 seed);
 void rtldsa_930x_print_matrix(void);
 
 /* RTL931x-specific */

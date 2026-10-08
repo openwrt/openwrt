@@ -753,7 +753,7 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 		break;
 	}
 
-	rtldsa_l2_dbgfs_init(priv);
+	otto_l2_dbgfs_init(priv);
 
 	if (priv->r->lag_switch_init)
 		priv->r->lag_switch_init(priv);
