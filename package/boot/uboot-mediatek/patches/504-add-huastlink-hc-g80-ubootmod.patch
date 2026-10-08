@@ -1,5 +1,5 @@
 --- /dev/null
-+++ b/configs/mt7981_huastlink_hc_g80_ubootmod_defconfig
++++ b/configs/mt7981_huastlink_hc-g80_defconfig
 @@ -0,0 +1,113 @@
 +CONFIG_ARM=y
 +CONFIG_ARM_SMCCC=y
@@ -69,7 +69,7 @@
 +CONFIG_ENV_UBI_VOLUME_REDUND="ubootenv2"
 +CONFIG_ENV_RELOC_GD_ENV_ADDR=y
 +CONFIG_ENV_USE_DEFAULT_ENV_TEXT_FILE=y
-+CONFIG_ENV_DEFAULT_ENV_TEXT_FILE="defenvs/huastlink_hc_g80_ubootmod_env"
++CONFIG_ENV_DEFAULT_ENV_TEXT_FILE="defenvs/huastlink_hc-g80_env"
 +CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
 +CONFIG_VERSION_VARIABLE=y
 +CONFIG_NETCONSOLE=y
@@ -117,28 +117,21 @@
 --- /dev/null
 +++ b/arch/arm/dts/mt7981-huastlink-hc-g80-ubootmod.dts
 @@ -0,0 +1,153 @@
-+// SPDX-License-Identifier: GPL-2.0-or-later
-+/*
-+ * Copyright (C) 2026 Maxis
-+ *
-+ * U-Boot board support (defconfig, board DTS, default environment and
-+ * boot scripts) created/reworked by Maxis.
-+ */
++// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 +
 +/dts-v1/;
 +#include "mt7981.dtsi"
 +#include <dt-bindings/gpio/gpio.h>
-+#include <dt-bindings/input/linux-event-codes.h>
++#include <dt-bindings/input/input.h>
 +
 +/ {
 +	#address-cells = <1>;
 +	#size-cells = <1>;
-+	model = "Huastlink HC-G80";
-+	compatible = "huastlink,hc-g80", "mediatek,mt7981", "mediatek,mt7981-rfb";
++	model = "Huastlink HC-G80 (OpenWrt U-Boot layout)";
++	compatible = "huastlink,hc-g80-ubootmod", "mediatek,mt7981b";
 +
 +	chosen {
 +		stdout-path = &uart0;
-+		tick-timer = &timer0;
 +	};
 +
 +	memory@40000000 {
@@ -148,8 +141,6 @@
 +
 +	gpio-keys {
 +		compatible = "gpio-keys";
-+
-+
 +		button-reset {
 +			label = "reset";
 +			linux,code = <KEY_RESTART>;
@@ -159,7 +150,6 @@
 +
 +	gpio-leds {
 +		compatible = "gpio-leds";
-+
 +		power_led: led-0 {
 +			label = "green:power";
 +			gpios = <&pio 25 GPIO_ACTIVE_LOW>;
@@ -177,15 +167,10 @@
 +
 +&eth {
 +	status = "okay";
-+	mediatek,gmac-id = <0>;
 +	phy-mode = "2500base-x";
 +	mediatek,switch = "mt7531";
 +	reset-gpios = <&pio 39 GPIO_ACTIVE_HIGH>;
-+
-+	fixed-link {
-+		speed = <2500>;
-+		full-duplex;
-+	};
++	fixed-link { speed = <2500>; full-duplex; };
 +};
 +
 +&pio {
@@ -215,13 +200,6 @@
 +	pinctrl-names = "default";
 +	pinctrl-0 = <&spi_flash_pins>;
 +	status = "okay";
-+	must_tx;
-+	enhance_timing;
-+	dma_ext;
-+	ipm_design;
-+	support_quad;
-+	tick_dly = <2>;
-+	sample_sel = <0>;
 +
 +	spi_nand@0 {
 +		compatible = "spi-nand";
@@ -263,7 +241,6 @@
 +};
 +
 +&uart0 {
-+	mediatek,force-highspeed;
 +	status = "okay";
 +};
 +
@@ -271,7 +248,7 @@
 +	status = "disabled";
 +};
 --- /dev/null
-+++ b/defenvs/huastlink_hc_g80_ubootmod_env
++++ b/defenvs/huastlink_hc-g80_env
 @@ -0,0 +1,54 @@
 +ipaddr=192.168.1.1
 +serverip=192.168.1.2
@@ -289,7 +266,7 @@
 +bootmenu_confirm_return=askenv - Press ENTER to return to menu ; bootmenu 60
 +bootmenu_default=0
 +bootmenu_delay=0
-+bootmenu_title=      [0;34m( ( ( [1;39mOpenWrt-HC-G80[0;34m ) ) )
++bootmenu_title=      \033[0;34m( ( ( \033[1;39mOpenWrt-HC-G80\033[0;34m ) ) )
 +bootmenu_0=Initialize environment.=run _firstboot
 +bootmenu_0d=Run default boot command.=run boot_default
 +bootmenu_1=Boot system via TFTP.=run boot_tftp ; run bootmenu_confirm_return
@@ -297,8 +274,8 @@
 +bootmenu_3=Boot recovery system from NAND.=run boot_recovery ; run bootmenu_confirm_return
 +bootmenu_4=Load production system via TFTP then write to NAND.=setenv noboot 1 ; setenv replacevol 1 ; run boot_tftp_production ; setenv noboot ; setenv replacevol ; run bootmenu_confirm_return
 +bootmenu_5=Load recovery system via TFTP then write to NAND.=setenv noboot 1 ; setenv replacevol 1 ; run boot_tftp_recovery ; setenv noboot ; setenv replacevol ; run bootmenu_confirm_return
-+bootmenu_6=[31mLoad BL31+U-Boot FIP via TFTP then write to NAND.[0m=run boot_tftp_write_fip ; run bootmenu_confirm_return
-+bootmenu_7=[31mLoad BL2 preloader via TFTP then write to NAND.[0m=run boot_tftp_write_bl2 ; run bootmenu_confirm_return
++bootmenu_6=\033[31mLoad BL31+U-Boot FIP via TFTP then write to NAND.\033[0m=run boot_tftp_write_fip ; run bootmenu_confirm_return
++bootmenu_7=\033[31mLoad BL2 preloader via TFTP then write to NAND.\033[0m=run boot_tftp_write_bl2 ; run bootmenu_confirm_return
 +bootmenu_8=Reboot.=reset
 +bootmenu_9=Reset all settings to factory defaults.=run reset_factory ; reset
 +boot_first=if button reset ; then led $bootled_rec on ; run boot_tftp_recovery ; setenv flag_recover 1 ; run boot_default ; fi ; bootmenu
@@ -326,4 +303,4 @@
 +_init_env=setenv _init_env ; run ubi_create_env ; saveenv ; saveenv
 +_firstboot=setenv _firstboot ; run _switch_to_menu ; run _init_env ; run boot_first
 +_switch_to_menu=setenv _switch_to_menu ; setenv bootdelay 3 ; setenv bootmenu_delay 3 ; setenv bootmenu_0 $bootmenu_0d ; setenv bootmenu_0d ; run _bootmenu_update_title
-+_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title       [33m$ver[0m"
++_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title       \033[33m$ver\033[0m"
