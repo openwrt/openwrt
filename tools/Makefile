@@ -88,6 +88,7 @@ tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_USE_SPARSE),y) += sparse
 tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_USE_LLVM_BUILD),y) += llvm-bpf
 tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_USE_MOLD),y) += mold
 tools-$(CONFIG_USE_RUST_TOOLCHAIN) += rust
+tools-$(CONFIG_BUILD_BINDGEN) += bindgen
 
 # builddir dependencies
 $(curdir)/autoconf/compile := $(curdir)/m4/compile
@@ -119,6 +120,7 @@ $(curdir)/lzma-old/compile := $(curdir)/zlib/compile
 $(curdir)/lzop/compile := $(curdir)/cmake/compile $(curdir)/liblzo/compile
 $(curdir)/llvm-bpf/compile := $(curdir)/cmake/compile
 $(curdir)/rust/compile := $(curdir)/cmake/compile $(curdir)/libdeflate/compile $(curdir)/xz/compile
+$(curdir)/bindgen/compile := $(curdir)/rust/compile $(if $(CONFIG_USE_LLVM_HOST),,$(curdir)/llvm-bpf/compile)
 $(curdir)/make-ext4fs/compile := $(curdir)/zlib/compile
 $(curdir)/meson/compile := $(curdir)/ninja/compile
 $(curdir)/missing-macros/compile := $(curdir)/autoconf/compile
