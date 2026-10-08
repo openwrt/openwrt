@@ -442,7 +442,7 @@ static void otto_l3_930x_get_router_mac(struct otto_l3_ctrl *ctrl,
 	m->vid = v & 0xfff;
 	m->vid_mask = w & 0xfff;
 	m->action = data[6] & 0x7;
-	m->mac_mask = ((((u64)data[5]) << 32) & 0xffffffffffffULL) | data[4];
+	m->mac_mask = ((u64)(data[4] & 0xffff) << 32) | data[5];
 	m->mac = ((((u64)data[1]) << 32) & 0xffffffffffffULL) | data[2];
 	/* Bits L3_INTF and BMSK_L3_INTF are 0 */
 }
