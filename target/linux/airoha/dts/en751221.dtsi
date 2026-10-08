@@ -24,7 +24,7 @@
 	chosen {
 		stdout-path = "serial0:115200n8";
 	};
-	
+
 	hpt_clock: clock {
 		compatible = "fixed-clock";
 		#clock-cells = <0>;
@@ -504,6 +504,26 @@
 		status = "disabled";
 	};
 
+	xdsl: dsl@1f900000 {
+		compatible = "econet,en751221-xdsl";
+		reg = <0x1f900000 0x10000>,
+		      <0x1fb62000 0x200>;
+		reg-names = "dmt", "ptm";
+
+		interrupt-parent = <&intc>;
+		interrupts = <19>;
+		interrupt-names = "dmt";
+
+		resets = <&scuclk EN751221_DMT_RST>,
+		         <&scuclk EN751221_PTM_MAC_RST>;
+		reset-names = "dmt", "ptm";
+
+		ethernet = <&gdm2>;
+		airoha,scu = <&scuclk>;
+
+		status = "disabled";
+	};
+
 	eth: ethernet@1fb50000 {
 		compatible = "econet,en751221-eth";
 		status = "disabled";
@@ -643,13 +663,16 @@
 				airoha,scu = <&scuclk>;
 
 				leds {
-					led@0 {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					fsw_phy0_led0: led@0 {
 						reg = <0>;
 						function = LED_FUNCTION_LAN;
 						active-low;
 					};
 
-					led@1 {
+					fsw_phy0_led1: led@1 {
 						reg = <1>;
 						function = LED_FUNCTION_ACTIVITY;
 						status = "disabled";
@@ -667,13 +690,16 @@
 				airoha,scu = <&scuclk>;
 
 				leds {
-					led@0 {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					fsw_phy1_led0: led@0 {
 						reg = <0>;
 						function = LED_FUNCTION_LAN;
 						active-low;
 					};
 
-					led@1 {
+					fsw_phy1_led1: led@1 {
 						reg = <1>;
 						function = LED_FUNCTION_ACTIVITY;
 						status = "disabled";
@@ -691,13 +717,16 @@
 				airoha,scu = <&scuclk>;
 
 				leds {
-					led@0 {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					fsw_phy2_led0: led@0 {
 						reg = <0>;
 						function = LED_FUNCTION_LAN;
 						active-low;
 					};
 
-					led@1 {
+					fsw_phy2_led1: led@1 {
 						reg = <1>;
 						function = LED_FUNCTION_ACTIVITY;
 						status = "disabled";
@@ -715,13 +744,16 @@
 				airoha,scu = <&scuclk>;
 
 				leds {
-					led@0 {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					fsw_phy3_led0: led@0 {
 						reg = <0>;
 						function = LED_FUNCTION_LAN;
 						active-low;
 					};
 
-					led@1 {
+					fsw_phy3_led1: led@1 {
 						reg = <1>;
 						function = LED_FUNCTION_ACTIVITY;
 						status = "disabled";
@@ -739,13 +771,16 @@
 				airoha,scu = <&scuclk>;
 
 				leds {
-					led@0 {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					fsw_phy4_led0: led@0 {
 						reg = <0>;
 						function = LED_FUNCTION_LAN;
 						active-low;
 					};
 
-					led@1 {
+					fsw_phy4_led1: led@1 {
 						reg = <1>;
 						function = LED_FUNCTION_ACTIVITY;
 						status = "disabled";
@@ -831,6 +866,9 @@
 						airoha,scu = <&scuclk>;
 
 						leds {
+							#address-cells = <1>;
+							#size-cells = <0>;
+
 							gsw_phy0_led0: led@0 {
 								reg = <0>;
 								function = LED_FUNCTION_LAN;
@@ -854,6 +892,9 @@
 						airoha,scu = <&scuclk>;
 
 						leds {
+							#address-cells = <1>;
+							#size-cells = <0>;
+
 							gsw_phy1_led0: led@0 {
 								reg = <0>;
 								function = LED_FUNCTION_LAN;
@@ -877,6 +918,9 @@
 						airoha,scu = <&scuclk>;
 
 						leds {
+							#address-cells = <1>;
+							#size-cells = <0>;
+
 							gsw_phy2_led0: led@0 {
 								reg = <0>;
 								function = LED_FUNCTION_LAN;
@@ -900,6 +944,9 @@
 						airoha,scu = <&scuclk>;
 
 						leds {
+							#address-cells = <1>;
+							#size-cells = <0>;
+
 							gsw_phy3_led0: led@0 {
 								reg = <0>;
 								function = LED_FUNCTION_LAN;
@@ -923,6 +970,9 @@
 						airoha,scu = <&scuclk>;
 
 						leds {
+							#address-cells = <1>;
+							#size-cells = <0>;
+
 							gsw_phy4_led0: led@0 {
 								reg = <0>;
 								function = LED_FUNCTION_LAN;

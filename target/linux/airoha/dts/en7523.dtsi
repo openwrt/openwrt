@@ -5,6 +5,7 @@
 #include <dt-bindings/clock/en7523-clk.h>
 #include <dt-bindings/reset/airoha,en7523-reset.h>
 #include <dt-bindings/leds/common.h>
+#include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/soc/airoha,scu-ssr.h>
 #include <dt-bindings/thermal/thermal.h>
 #include <dt-bindings/phy/phy.h>
@@ -590,6 +591,27 @@
 		interrupts = <GIC_SPI 44 IRQ_TYPE_LEVEL_HIGH>;
 	};
 
+	gdma: dma-controller@1fb30000 {
+		compatible = "airoha,en7523-gdma";
+		reg = <0x1fb30000 0x1000>;
+
+		resets = <&scuclk EN7523_GDMA_RST>;
+
+		#dma-cells = <1>;
+		dma-channels = <8>;
+	};
+
+	hsdma: dma-controller@1fa01800 {
+		compatible = "airoha,en7523-hsdma";
+		reg = <0x1fa01800 0x300>;
+
+		resets = <&scuclk EN7523_HSDMA_RST>;
+		interrupts = <GIC_SPI 63 IRQ_TYPE_LEVEL_HIGH>;
+
+		#dma-cells = <1>;
+		dma-channels = <2>;
+	};
+
 	thermal: thermal-sensor@1efbd800 {
 		compatible = "airoha,en7523-thermal";
 		reg = <0x1efbd000 0x0fff>;
@@ -924,7 +946,7 @@
 		         <&scuclk EN7523_GDMP_RST>;
 		reset-names = "fe", "pdma", "qdma",
 		              "hsi0-mac", "hsi1-mac", "hsi-mac",
-									"gdmp";
+		              "gdmp";
 
 		interrupts = <GIC_SPI 37 IRQ_TYPE_LEVEL_HIGH>,
 		             <GIC_SPI 55 IRQ_TYPE_LEVEL_HIGH>,
@@ -1068,7 +1090,7 @@
 				status = "disabled";
 
 				pinctrl-names = "gbe-led";
-				pinctrl-0 = <&swp1_led0>;
+				pinctrl-0 = <&swp1_led0 &swp1_led1>;
 				airoha,scu = <&scuclk>;
 
 				leds {
@@ -1098,7 +1120,7 @@
 				status = "disabled";
 
 				pinctrl-names = "gbe-led";
-				pinctrl-0 = <&swp2_led0>;
+				pinctrl-0 = <&swp2_led0 &swp2_led1>;
 				airoha,scu = <&scuclk>;
 
 				leds {
@@ -1128,7 +1150,7 @@
 				status = "disabled";
 
 				pinctrl-names = "gbe-led";
-				pinctrl-0 = <&swp3_led0>;
+				pinctrl-0 = <&swp3_led0 &swp3_led1>;
 				airoha,scu = <&scuclk>;
 
 				leds {
@@ -1158,7 +1180,7 @@
 				status = "disabled";
 
 				pinctrl-names = "gbe-led";
-				pinctrl-0 = <&swp4_led0>;
+				pinctrl-0 = <&swp4_led0 &swp4_led1>;
 				airoha,scu = <&scuclk>;
 
 				leds {
