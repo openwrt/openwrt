@@ -360,8 +360,10 @@ choice
 		select USE_RUST_PREBUILT
 		help
 		  Downloads rustc, cargo, rust-src and llvm-tools from
-		  static.rust-lang.org instead of building them. Not available
-		  for e500v2 targets, which need the LLVM fix of tools/rust.
+		  static.rust-lang.org instead of building them. The cross
+		  rust-std for the target is still built from source by
+		  package/libs/libstd-rust. Not available for e500v2 targets,
+		  which need the LLVM fix of tools/rust.
 
 	config RUST_TOOLCHAIN_HOST
 		bool "Use host Rust toolchain"
@@ -371,7 +373,8 @@ choice
 		  Installs rustc, cargo, rust-src and llvm-tools from a
 		  relocatable Rust toolchain on the build host, such as a rustup
 		  toolchain directory. The version must match the one OpenWrt is
-		  built for.
+		  built for. The cross rust-std for the target is still built
+		  from source by package/libs/libstd-rust.
 endchoice
 
 config RUST_TOOLCHAIN_HOST_PATH
@@ -382,6 +385,19 @@ config RUST_TOOLCHAIN_HOST_PATH
 	help
 	  Prefix of the host Rust toolchain. If empty, the sysroot of the
 	  rustc found in PATH is used.
+
+config RUST_PANIC_IMMEDIATE_ABORT
+	bool
+	prompt "Abort on panic without a panic message" if RUST_TOOLCHAINOPTS
+	depends on USE_RUST_TOOLCHAIN && !DEBUG
+	default y
+	help
+	  Build libstd-rust and all Rust packages with the unstable
+	  -Cpanic=immediate-abort of rustc: a panic stops the program at
+	  once, without formatting a message, which removes the panic
+	  machinery from every binary. rustc requires the same setting for
+	  all crates of a program, the standard library included, so this
+	  applies to the whole build.
 
 config BUILD_BINDGEN
 	bool

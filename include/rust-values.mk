@@ -12,6 +12,7 @@ RUST_SRC_TARBALL_HASH:=6451598a99e77f07571960f6b21d577399d3a30f33e80cbd2e3a4aae6
 # Paths to host Rust toolchain binaries
 RUSTC:=$(STAGING_DIR_HOST)/bin/rustc
 CARGO:=$(STAGING_DIR_HOST)/bin/cargo
+RUSTC_ID:=$(shell $(RUSTC) --version --verbose 2>/dev/null)
 
 # Directory holding libclang for bindgen: the host LLVM, the one built by
 # tools/llvm-bpf or the prebuilt one unpacked into the source tree, as
@@ -82,6 +83,86 @@ else ifeq ($(RUSTC_HOST_ARCH),aarch64-apple-darwin)
 endif
 RUST_CARGO_URL:=$(RUST_DIST_URL)cargo-$(RUST_VERSION)-$(RUSTC_HOST_ARCH).tar.xz
 
+# mips64 n64 ABI uses the muslabi64 and gnuabi64 suffixes; n32 has no Rust target;
+# o32 is not standard on 64-bit
+# muslabi64 is hard-float; mips64-openwrt-linux-musl is its soft-float variant.
+ifeq ($(ARCH),mips64)
+  RUSTC_TARGET_ARCH:=$(subst openwrt,unknown,$(REAL_GNU_TARGET_NAME))
+  ifeq ($(call qstrip,$(CONFIG_MIPS64_ABI)),64)
+    RUSTC_TARGET_ARCH:=$(subst musl,muslabi64,$(subst -gnu,-gnuabi64,$(RUSTC_TARGET_ARCH)))
+    ifeq ($(CONFIG_USE_MUSL)$(CONFIG_SOFT_FLOAT),yy)
+      RUSTC_TARGET_ARCH:=mips64-openwrt-linux-musl
+    endif
+  endif
+else ifeq ($(ARCH),mips64el)
+  RUSTC_TARGET_ARCH:=$(subst openwrt,unknown,$(REAL_GNU_TARGET_NAME))
+  ifeq ($(call qstrip,$(CONFIG_MIPS64_ABI)),64)
+    RUSTC_TARGET_ARCH:=$(subst musl,muslabi64,$(subst -gnu,-gnuabi64,$(RUSTC_TARGET_ARCH)))
+  endif
+else
+  RUSTC_TARGET_ARCH:=$(subst openwrt,unknown,$(REAL_GNU_TARGET_NAME))
+endif
+
+RUSTC_TARGET_ARCH:=$(subst muslgnueabi,musleabi,$(RUSTC_TARGET_ARCH))
+
+ifeq ($(ARCH),i386)
+  RUSTC_TARGET_ARCH:=$(subst i486,i586,$(RUSTC_TARGET_ARCH))
+else ifeq ($(ARCH),riscv64)
+  RUSTC_TARGET_ARCH:=$(subst riscv64,riscv64gc,$(RUSTC_TARGET_ARCH))
+endif
+
+# ARM Logic
+ifeq ($(ARCH),arm)
+  ifeq ($(CONFIG_arm_v6)$(CONFIG_arm_v7),)
+    RUSTC_TARGET_ARCH:=$(subst arm,armv5te,$(RUSTC_TARGET_ARCH))
+  else ifeq ($(CONFIG_arm_v7),y)
+    RUSTC_TARGET_ARCH:=$(subst arm,armv7,$(RUSTC_TARGET_ARCH))
+  endif
+
+  ifeq ($(CONFIG_HAS_FPU),y)
+    RUSTC_TARGET_ARCH:=$(subst musleabi,musleabihf,$(RUSTC_TARGET_ARCH))
+    RUSTC_TARGET_ARCH:=$(subst gnueabi,gnueabihf,$(RUSTC_TARGET_ARCH))
+  endif
+endif
+
+# Cargo also links build scripts with the target linker when the target triple
+# is the host's, but keeps target rustflags off them.
+ifeq ($(RUSTC_TARGET_ARCH),$(RUSTC_HOST_ARCH))
+  RUSTC_TARGET_LINKER_FLAGS:=-Clinker=$(TARGET_CC_NOCACHE)
+else
+  RUSTC_TARGET_LINKER_VARS:= \
+	CARGO_TARGET_$(subst -,_,$(call toupper,$(RUSTC_TARGET_ARCH)))_LINKER=$(TARGET_CC_NOCACHE)
+endif
+
+ifeq ($(ARCH),aarch64)
+    RUSTC_CFLAGS:=-mno-outline-atomics
+endif
+
+ifneq ($(filter mips mipsel mips64 mips64el,$(ARCH)),)
+  RUSTC_TARGET_CPU:=$(patsubst -%,%,$(lastword \
+	$(filter -mips32% -mips64%,$(TARGET_OPTIMIZATION))))
+  RUSTC_TARGET_CPU:=$(or $(RUSTC_TARGET_CPU),\
+	$(patsubst -march=%,%,$(filter -march=octeon%,$(TARGET_OPTIMIZATION))),\
+	$(filter mips32 mips64 mips64r2,$(call qstrip,$(CONFIG_CPU_TYPE))))
+  ifneq ($(RUSTC_TARGET_CPU),)
+    RUSTC_TARGET_FLAGS+=-Ctarget-cpu=$(RUSTC_TARGET_CPU)
+    ifneq ($(filter mips32 mips64,$(RUSTC_TARGET_CPU)),)
+      RUSTC_TARGET_FLAGS+=-Ctarget-feature=-$(RUSTC_TARGET_CPU)r2
+    endif
+  endif
+endif
+
+# mpc85xx (e500v2) has no FPU, but shares the hard-float powerpc triple
+ifeq ($(ARCH)$(CONFIG_SOFT_FLOAT),powerpcy)
+  RUSTC_TARGET_FLAGS+=-Ctarget-feature=-hard-float
+endif
+
+# Support only architectures with a valid Rust target.
+# powerpc/powerpc64 with SPE FPU append 'spe' to TARGET_SUFFIX, which is an invalid target.
+# mips64/mips64el n32 ABI has no standard Rust target.
+# The soft-float n64 Rust target is mips64-openwrt-linux-musl only.
+RUST_ARCH_DEPENDS:=@(aarch64||arm||i386||loongarch64||mips||(!MIPS64_ABI_N32&&mips64&&(USE_MUSL||!SOFT_FLOAT))||(!MIPS64_ABI_N32&&mips64el&&!SOFT_FLOAT)||mipsel||(!HAS_SPE_FPU&&powerpc)||(!HAS_SPE_FPU&&powerpc64)||riscv64||x86_64)
+
 # LLVM codegen backends to compile into rustc, one per unique LLVM target name
 # covering all architectures with a Rust target (semicolon-separated):
 #   aarch64, arm           : AArch64, ARM
@@ -96,6 +177,50 @@ RUST_LLVM_TARGETS:=AArch64;ARM;LoongArch;Mips;PowerPC;RISCV;X86
 # Experimental LLVM backends (bootstrap key: llvm.experimental-targets).
 # Defaults to AVR;M68k;CSKY;Xtensa, none of which are relevant to OpenWrt.
 RUST_LLVM_EXPERIMENTAL_TARGETS:=
+
+RUST_IMMEDIATE_ABORT:=$(if $(CONFIG_DEBUG),,$(CONFIG_RUST_PANIC_IMMEDIATE_ABORT))
+
+RUST_LIBSTD_FEATURES:=$(if $(RUST_IMMEDIATE_ABORT),,panic-unwind) \
+	$(if $(CONFIG_DEBUG),,optimize_for_size)
+RUST_LIBSTD_FLAGS= \
+	-Zforce-unstable-if-unmarked \
+	-Ctarget-feature=-crt-static \
+	-Ccodegen-units=1 \
+	-Cembed-bitcode=yes \
+	$(RUSTC_TARGET_FLAGS) \
+	$(if $(CONFIG_DEBUG),,-Cpanic=abort -Cforce-unwind-tables=no -Copt-level=z -Cstrip=debuginfo \
+		-Zlocation-detail=none -Zfmt-debug=shallow \
+		$(if $(RUST_IMMEDIATE_ABORT),-Zunstable-options -Cpanic=immediate-abort))
+
+RUST_LIBSTD_CONFIG:= \
+	CONFIG_DEBUG CONFIG_CPU_TYPE CONFIG_TARGET_OPTIMIZATION \
+	CONFIG_EXTRA_OPTIMIZATION CONFIG_GCC_VERSION CONFIG_BINUTILS_VERSION \
+	CONFIG_SOFT_FLOAT CONFIG_USE_LTO CONFIG_USE_MOLD CONFIG_USE_MIPS16 \
+	CONFIG_USE_GC_SECTIONS CONFIG_REPRODUCIBLE_DEBUG_INFO \
+	CONFIG_RUST_PANIC_IMMEDIATE_ABORT \
+	$(sort $(filter CONFIG_PKG_%,$(.VARIABLES)))
+
+# Build paths in panic locations, file!() and debug information, mapped as
+# iremap in rules.mk does for C. Local debugging keeps them, unless the debug
+# information is to be reproducible.
+RUST_PATH_REMAP = $(if $(and $(filter 1,$(call pkg_build_flag,iremap,1)), \
+		$(if $(CONFIG_DEBUG),$(CONFIG_REPRODUCIBLE_DEBUG_INFO),y)), \
+	--remap-path-prefix=$(PKG_BUILD_DIR)=$(notdir $(PKG_BUILD_DIR)) \
+	--remap-path-prefix=$(STAGING_DIR)=staging_dir/$(notdir $(STAGING_DIR)))
+
+# Identifier in the name of the shared libstd, libstd-ID.so, and ABI version
+# of package/libs/libstd-rust. It changes with every input that changes the
+# shared library.
+LIBSTD_RUST_INPUTS = $(strip \
+	$(RUST_VERSION) $(RUSTC_ID) $(RUST_SRC_TARBALL_HASH) $(RUSTC_TARGET_ARCH) \
+	$(RUST_LIBSTD_FLAGS) $(RUST_LIBSTD_FEATURES) $(RUSTC_CFLAGS) \
+	$(foreach v,$(RUST_LIBSTD_CONFIG),$(v)=$($(v))))
+LIBSTD_RUST_ID = $(shell printf '%s' '$(subst ','\'',$(LIBSTD_RUST_INPUTS))' | $(MKHASH) sha256)
+RUSTLIB_TARGET_PATH = /usr/lib/rust/$(LIBSTD_RUST_ID)/lib/rustlib/$(RUSTC_TARGET_ARCH)/lib
+
+RUST_PKG_CONFIG_DEPENDS:= \
+	$(RUST_LIBSTD_CONFIG) \
+	LIBSTD_RUST_ID
 
 CARGO_HOST_CONFIG_VARS= \
 	RUSTC=$(RUSTC) \

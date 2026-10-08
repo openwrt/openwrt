@@ -21,7 +21,7 @@ endef
 ifeq ($(SCAN_NAME),target)
   SCAN_DEPS=image/Makefile profiles/*.mk $(TOPDIR)/include/kernel*.mk $(TOPDIR)/include/target.mk image/*.mk
 else
-  SCAN_DEPS=$(TOPDIR)/include/package*.mk
+  SCAN_DEPS=$(TOPDIR)/include/package*.mk $(TOPDIR)/include/rust-*.mk
 ifneq ($(call feedname,$(SCAN_DIR)),)
   SCAN_DEPS += $(TOPDIR)/feeds/$(call feedname,$(SCAN_DIR))/*.mk
 endif
