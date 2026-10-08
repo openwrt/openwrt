@@ -1,0 +1,26 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dmitry Sinyavin <sinyavin@gmail.com>
+Date: Fri, 14 Aug 2026 20:00:00 +0200
+Subject: [PATCH] rtl8192es: set the permanent address before registration
+
+Populate the wiphy permanent address before registration so userspace can
+derive stable interface addresses before the first ndo_open call.
+
+Signed-off-by: Dmitry Sinyavin <sinyavin@gmail.com>
+---
+--- a/os_dep/linux/ioctl_cfg80211.c
++++ b/os_dep/linux/ioctl_cfg80211.c
+@@ -10109,6 +10109,13 @@ struct wiphy *rtw_wiphy_alloc(_adapter *
+ 	}
+ 	set_wiphy_dev(wiphy, dev);
+ 
++	/*
++	 * cfg80211 exposes perm_addr as soon as wiphy_register() completes.
++	 * The vendor driver used to populate it only on the first ndo_open(),
++	 * leaving userspace to derive interface addresses from all zeroes.
++	 */
++	memcpy(wiphy->perm_addr, adapter_mac_addr(padapter), ETH_ALEN);
++
+ 	/* wiphy_data */
+ 	wiphy_data = rtw_wiphy_priv(wiphy);
+ 	wiphy_data->dvobj = adapter_to_dvobj(padapter);
