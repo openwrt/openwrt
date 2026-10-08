@@ -600,6 +600,27 @@
 			};
 		};
 
+		gdma: dma-controller@1fb30000 {
+			compatible = "econet,en751221-gdma";
+			reg = <0x1fb30000 0x1000>;
+
+			resets = <&scuclk EN7580_GDMA_RST>;
+			interrupts = <GIC_SHARED 14 IRQ_TYPE_LEVEL_HIGH>;
+
+			#dma-cells = <1>;
+			dma-channels = <8>;
+		};
+
+		hsdma: dma-controller@1fa01800 {
+			compatible = "airoha,en7523-hsdma";
+			reg = <0x1fa01800 0x300>;
+
+			interrupts = <GIC_SHARED 47 IRQ_TYPE_LEVEL_HIGH>;
+
+			#dma-cells = <1>;
+			dma-channels = <2>;
+		};
+
 		xsi_pcs: pcs@1fa04000 {
 			compatible = "airoha,en7580-pcs";
 			reg = <0x1fa04000 0x200>,

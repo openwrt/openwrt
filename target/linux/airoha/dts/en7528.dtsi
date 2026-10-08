@@ -88,6 +88,17 @@
 			#phy-cells = <0>;
 		};
 
+		gdma: dma-controller@1fb30000 {
+			compatible = "econet,en751221-gdma";
+			reg = <0x1fb30000 0x1000>;
+
+			resets = <&scuclk EN7528_GDMA_RST>;
+			interrupts = <GIC_SHARED 14 IRQ_TYPE_LEVEL_HIGH>;
+
+			#dma-cells = <1>;
+			dma-channels = <8>;
+		};
+
 		pcie_phy1: pcie-phy@1fac0000 {
 			compatible = "econet,en7528-pcie-phy1";
 			reg = <0x1fac0000 0x1000>;
@@ -611,6 +622,7 @@
 			      <0x1fa06000 0x400>;
 			reg-names = "wed", "wdma";
 			interrupts = <GIC_SHARED 51 IRQ_TYPE_LEVEL_HIGH>;
+			airoha,scu = <&scuclk>;
 		};
 
 		wed1: wed@1fa03000 {
@@ -619,6 +631,7 @@
 			      <0x1fa06400 0x400>;
 			reg-names = "wed", "wdma";
 			interrupts = <GIC_SHARED 52 IRQ_TYPE_LEVEL_HIGH>;
+			airoha,scu = <&scuclk>;
 		};
 
 		eth: ethernet@1fb50000 {
