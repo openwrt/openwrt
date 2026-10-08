@@ -3650,6 +3650,7 @@ static int rtpcs_931x_sds_rxeq_leq_get_coef(struct rtpcs_serdes *sds)
 	ret = rtpcs_931x_sds_rxeq_set_debug(sds, RTL931X_RX_DEBUG_SEL_LEQ);
 	if (ret < 0)
 		return ret;
+	usleep_range(1000, 2000);
 
 	gray = rtpcs_sds_read(sds, PAGE_WDIG, WDIG_REG20);
 	if (gray < 0)
