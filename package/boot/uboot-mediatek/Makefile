@@ -562,6 +562,11 @@ define U-Boot/mt7981_keenetic_kn-1012
   NAME:=Keenetic KN-1012 (chainload)
   BUILD_SUBTARGET:=filogic
   BUILD_DEVICES:=keenetic_kn-1012 netcraze_nc-1012
+  DEFAULT:=y if (TARGET_mediatek_filogic_Default || IB \
+	|| TARGET_mediatek_filogic_DEVICE_keenetic_kn-1012 \
+	|| TARGET_mediatek_filogic_DEVICE_netcraze_nc-1012 \
+	|| TARGET_DEVICE_mediatek_filogic_DEVICE_keenetic_kn-1012 \
+	|| TARGET_DEVICE_mediatek_filogic_DEVICE_netcraze_nc-1012)
   UBOOT_CONFIG:=mt7981_keenetic_kn-1012
   UBOOT_IMAGE:=u-boot.bin
 endef
