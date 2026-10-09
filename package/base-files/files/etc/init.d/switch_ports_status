@@ -1,0 +1,13 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2022 x-wrt.com
+
+START=95
+USE_PROCD=1
+
+start_service() {
+	command -v swconfig >/dev/null || return 0
+	procd_open_instance
+	procd_set_param respawn
+	procd_set_param command /sbin/switch_ports_status
+	procd_close_instance
+}
