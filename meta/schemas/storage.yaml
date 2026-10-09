@@ -1,0 +1,45 @@
+$id: https://openwrt.org/schema/storage.yaml
+$schema: http://json-schema.org/draft-07/schema
+title: Storage
+description: Storage available on device
+type: object
+
+required:
+  - type
+
+examples:
+  - size_mb: 40
+    type: NOR
+
+properties:
+  size_mb:
+    $id: '#/properties/size_mb'
+    description: Size of the storage in MegaByte
+    title: Size
+    type: number
+    minimum: 1
+
+  type:
+    $id: '#/properties/type'
+    title: Type
+    type: string
+    enum:
+      - CF card
+      - HDD
+      - NAND
+      - NOR
+      - SD
+      - SDHC
+      - SDXC
+      - eMMC
+      - microSD
+      - microSDHC
+      - microSDXC
+      - unknown
+
+  variant:
+    $id: '#/properties/variant'
+    title: Variant
+    description: One of multiple possible storage variants
+    type: boolean
+
