@@ -1,0 +1,53 @@
+From 10c6f6c684d0462c04953a36af956ed9e342811c Mon Sep 17 00:00:00 2001
+From: Naresh Solanki <naresh.solanki.2011@gmail.com>
+Date: Sun, 11 Oct 2026 13:24:47 +0530
+Subject: [PATCH] netfilter: flowtable: don't bypass the bridge on an unused
+ path
+
+nft_dev_forward_path() stores the output device of the discovered
+forward path even when the path is not used afterwards because its input
+device is not part of the flowtable.  The flow then stays on
+FLOW_OFFLOAD_XMIT_NEIGH, and that transmit path looks the output device
+up by the stored interface index.  Behind a bridge this is the bridge
+port, so the packets are sent straight out of the port with the next hop
+resolved on the bridge, skipping the bridge's own egress handling.  A DSA
+switch tagger that uses a port's standalone VLAN for such frames then
+gets them dropped by the switch, and every routed flow towards the LAN
+stalls as soon as it is offloaded.
+
+Only use the output device of the path when the path is used, and
+transmit on the dst device otherwise.  The output device is never NULL
+when the input device is set, as nft_dev_path_info() falls back to the
+input device.
+
+Mainline avoids the problem differently: since commit 871df5007eda
+("netfilter: flowtable: bail out if forward path cannot be
+discovered") such flows are not offloaded at all.
+
+Signed-off-by: Naresh Solanki <naresh.solanki.2011@gmail.com>
+---
+ net/netfilter/nf_flow_table_path.c | 11 ++++++-----
+ 1 file changed, 6 insertions(+), 5 deletions(-)
+
+--- a/net/netfilter/nf_flow_table_path.c
++++ b/net/netfilter/nf_flow_table_path.c
+@@ -203,13 +203,14 @@ static void nft_dev_forward_path(struct nf_flow_route *route,
+ 	if (nft_dev_fill_forward_path(route, dst, ct, dir, ha, &stack) >= 0)
+ 		nft_dev_path_info(&stack, &info, ha, &ft->data);
+ 
+-	if (info.outdev)
+-		route->tuple[dir].out.ifindex = info.outdev->ifindex;
+-	else
++	/* A path that is not used leaves the flow on XMIT_NEIGH, which must
++	 * go out through the dst device and not a lower device of it.
++	 */
++	if (!info.indev || !nft_flowtable_find_dev(info.indev, ft)) {
+ 		route->tuple[dir].out.ifindex = dst->dev->ifindex;
+-
+-	if (!info.indev || !nft_flowtable_find_dev(info.indev, ft))
+ 		return;
++	}
++	route->tuple[dir].out.ifindex = info.outdev->ifindex;
+ 
+ 	route->tuple[!dir].in.ifindex = info.indev->ifindex;
+ 	for (i = 0; i < info.num_encaps; i++) {
