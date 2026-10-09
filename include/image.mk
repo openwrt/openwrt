@@ -301,6 +301,7 @@ define Image/mkfs/ubifs
 		$(if $(CONFIG_TARGET_UBIFS_COMPRESSION_NONE),--compr=none) \
 		$(if $(CONFIG_TARGET_UBIFS_COMPRESSION_LZO),--compr=lzo) \
 		$(if $(CONFIG_TARGET_UBIFS_COMPRESSION_ZLIB),--compr=zlib) \
+		$(if $(CONFIG_TARGET_UBIFS_COMPRESSION_ZSTD),--compr=zstd) \
 		$(if $(shell echo $(CONFIG_TARGET_UBIFS_JOURNAL_SIZE)),--jrn-size=$(CONFIG_TARGET_UBIFS_JOURNAL_SIZE)) \
 		$(if $(IMG_PART_DISKGUID),--uuid-node=$(subst -,,$(IMG_PART_DISKGUID))) \
 		--squash-uids \
