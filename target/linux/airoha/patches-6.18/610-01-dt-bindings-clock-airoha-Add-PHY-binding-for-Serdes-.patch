@@ -1,0 +1,99 @@
+From eff34eeac8fe1a46bd6a288c4afd4963214524d4 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Tue, 19 May 2026 23:21:58 +0200
+Subject: [PATCH 1/5] dt-bindings: clock: airoha: Add PHY binding for Serdes
+ port
+
+Add PHY cell property for Serdes port selection. Currently supported only
+for Airoha AN7581 SoC, that support up to 4 Serdes port.
+
+The Serdes port can support both PCIe, USB3 or Ethernet mode.
+
+- PCIe1 Serdes can support PCIe or Ethernet mode.
+- PCIe2 Serdes can support PCIe or Ethernet mode.
+- USB1 Serdes can support USB3 or HSGMII mode.
+- USB2 Serdes can support USB3 or PCIe mode.
+
+Add bindings to permit correct reference of the Serdes ports in DT.
+Values are just symbolic and enumerates the Serdes port with a specific
+number for precise reference.
+
+The available Serdes port can be selected following the dt-binding header
+in [2].
+
+[2] <include/dt-bindings/soc/airoha,scu-ssr.h>
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Reviewed-by: Rob Herring (Arm) <robh@kernel.org>
+---
+ .../bindings/clock/airoha,en7523-scu.yaml     | 24 ++++++++++++++++---
+ include/dt-bindings/soc/airoha,scu-ssr.h      | 11 +++++++++
+ 2 files changed, 32 insertions(+), 3 deletions(-)
+ create mode 100644 include/dt-bindings/soc/airoha,scu-ssr.h
+
+# diff --git a/Documentation/devicetree/bindings/clock/airoha,en7523-scu.yaml b/Documentation/devicetree/bindings/clock/airoha,en7523-scu.yaml
+# index eb24a5687639..fc37786ac7ed 100644
+# --- a/Documentation/devicetree/bindings/clock/airoha,en7523-scu.yaml
+# +++ b/Documentation/devicetree/bindings/clock/airoha,en7523-scu.yaml
+# @@ -23,6 +23,7 @@ description: |
+ 
+#    All these identifiers can be found in:
+#    [1]: <include/dt-bindings/clock/en7523-clk.h>.
+# +  [2]: <include/dt-bindings/soc/airoha,scu-ssr.h>.
+ 
+#    The clocks are provided inside a system controller node.
+ 
+# @@ -50,6 +51,12 @@ properties:
+#      description: ID of the controller reset line
+#      const: 1
+ 
+# +  '#phy-cells':
+# +    description:
+# +      The first cell indicates the serdes phy number, see [2] for the
+# +      available serdes port.
+# +    const: 1
+# +
+#  required:
+#    - compatible
+#    - reg
+# @@ -65,12 +72,23 @@ allOf:
+#          reg:
+#            minItems: 2
+ 
+# +        '#phy-cells': false
+# +
+# +  - if:
+# +      properties:
+# +        compatible:
+# +          const: econet,en751221-scu
+# +    then:
+# +      properties:
+# +        reg:
+# +          maxItems: 1
+# +
+# +        '#phy-cells': false
+# +
+#    - if:
+#        properties:
+#          compatible:
+# -          enum:
+# -            - airoha,en7581-scu
+# -            - econet,en751221-scu
+# +          const: airoha,en7581-scu
+#      then:
+#        properties:
+#          reg:
+--- /dev/null
++++ b/include/dt-bindings/soc/airoha,scu-ssr.h
+@@ -0,0 +1,11 @@
++/* SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause) */
++
++#ifndef __DT_BINDINGS_AIROHA_SCU_SSR_H
++#define __DT_BINDINGS_AIROHA_SCU_SSR_H
++
++#define AIROHA_SCU_SERDES_PCIE1		0
++#define AIROHA_SCU_SERDES_PCIE2		1
++#define AIROHA_SCU_SERDES_USB1		2
++#define AIROHA_SCU_SERDES_USB2		3
++
++#endif /* __DT_BINDINGS_AIROHA_SCU_SSR_H */
