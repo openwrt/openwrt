@@ -1491,6 +1491,43 @@ static bool otto_l3_local_covers(struct otto_l3_ctrl *ctrl, struct otto_l3_route
 	return false;
 }
 
+/* The hardware search keys on the masked destination, so a shorter prefix that
+ * covers the same address answers as well. The SDK reads the entry back and
+ * compares it with the route it asked for before touching it.
+ */
+static bool otto_l3_route_is_at(struct otto_l3_ctrl *ctrl, int id, struct otto_l3_route *r)
+{
+	struct otto_l3_route entry;
+
+	if (id < FIRST_PREFIX_ROW)
+		return false;
+
+	ctrl->cfg->route_read(ctrl, id, &entry);
+	/* The next hop index a row carries is the one the route wrote: its
+	 * own id once its gateway answered, and zero on a row that only
+	 * traps, which the SDK keeps for exactly that. Comparing it with the
+	 * route's own next hop tells two routes for one destination apart,
+	 * whatever their action.
+	 * Both are read after the type: the reader leaves them untouched on a
+	 * multicast row, and the type comparison is what stops it being read
+	 * there.
+	 */
+	if (!entry.attr.valid || entry.attr.type != r->attr.type ||
+	    entry.prefix_len != r->prefix_len ||
+	    entry.attr.action != r->attr.action ||
+	    entry.nh.id != r->nh.id)
+		return false;
+
+	switch (r->attr.type) {
+	case ROUTE_TYPE_IP4UC:
+		return entry.dst_ip == r->dst_ip;
+	case ROUTE_TYPE_IP6UC:
+		return ipv6_addr_equal(&entry.dst_ip6, &r->dst_ip6);
+	}
+
+	return false;
+}
+
 /* Writes a route to its host slot or prefix row, taking a free slot or placing
  * a row when it has none yet. A host route that a local route shadows keeps out
  * of the entry, and nothing is written for it.
@@ -1853,43 +1890,6 @@ static int otto_l3_port_gw_resolve(struct otto_l3_ctrl *ctrl, struct net_device 
 	neigh_release(n);
 
 	return err;
-}
-
-/* The hardware search keys on the masked destination, so a shorter prefix that
- * covers the same address answers as well. The SDK reads the entry back and
- * compares it with the route it asked for before touching it.
- */
-static bool otto_l3_route_is_at(struct otto_l3_ctrl *ctrl, int id, struct otto_l3_route *r)
-{
-	struct otto_l3_route entry;
-
-	if (id < FIRST_PREFIX_ROW)
-		return false;
-
-	ctrl->cfg->route_read(ctrl, id, &entry);
-	/* The next hop index a row carries is the one the route wrote: its
-	 * own id once its gateway answered, and zero on a row that only
-	 * traps, which the SDK keeps for exactly that. Comparing it with the
-	 * route's own next hop tells two routes for one destination apart,
-	 * whatever their action.
-	 * Both are read after the type: the reader leaves them untouched on a
-	 * multicast row, and the type comparison is what stops it being read
-	 * there.
-	 */
-	if (!entry.attr.valid || entry.attr.type != r->attr.type ||
-	    entry.prefix_len != r->prefix_len ||
-	    entry.attr.action != r->attr.action ||
-	    entry.nh.id != r->nh.id)
-		return false;
-
-	switch (r->attr.type) {
-	case ROUTE_TYPE_IP4UC:
-		return entry.dst_ip == r->dst_ip;
-	case ROUTE_TYPE_IP6UC:
-		return ipv6_addr_equal(&entry.dst_ip6, &r->dst_ip6);
-	}
-
-	return false;
 }
 
 static struct otto_l3_route *otto_l3_route_find(struct otto_l3_ctrl *ctrl, u32 tb_id, u8 type,
