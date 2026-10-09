@@ -31,6 +31,8 @@ def parse_args():
                         help="Required device architecture: like 'x86_64' or 'aarch64_generic'")
     parser.add_argument("-f", "--source-format", required=True, choices=source_format,
                         help="Required source format of input: 'apk' or 'opkg'")
+    parser.add_argument("-t", "--target", default=None,
+                        help="Running target, like 'x86/64' or 'ath79/generic'")
     parser.add_argument("-m", "--manifest", action="store_true", default=False,
                         help="Print output in opkg list format, as 'package - version' pairs")
     parser.add_argument(dest="source",
@@ -100,4 +102,6 @@ if __name__ == "__main__":
             "architecture": args.architecture,
             "packages": packages,
         }
+        if args.target is not None:
+            index["target"] = args.target
         print(json.dumps(index, indent=2))
