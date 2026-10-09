@@ -1305,6 +1305,21 @@ endef
 
 $(eval $(call KernelPackage,ipt-rpfilter))
 
+define KernelPackage/ipt-devgroup
+  SUBMENU:=$(NF_MENU)
+  TITLE:=Netfilter devgroup match
+  DEPENDS:=+kmod-ipt-core
+  KCONFIG:=$(KCONFIG_IPT_DEVGROUP)
+  FILES:=$(LINUX_DIR)/net/netfilter/xt_devgroup.ko
+  AUTOLOAD:=$(call AutoProbe,xt_devgroup)
+  $(call KernelPackage/ipt)
+endef
+
+define KernelPackage/ipt-devgroup/description
+ Kernel module support for the devgroup match module
+endef
+
+$(eval $(call KernelPackage,ipt-devgroup))
 
 define KernelPackage/nft-core
   SUBMENU:=$(NF_MENU)
