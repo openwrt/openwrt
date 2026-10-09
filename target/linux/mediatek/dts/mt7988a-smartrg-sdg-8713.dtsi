@@ -1,0 +1,158 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+/*
+ * Copyright (C) 2025 SmartRG Inc.
+ * Author: Chad Monroe <chad.monroe@smartrg.com>
+ *
+ * Mt. Stuart phase 4: dual Realtek RTL8261 10G PHYs, MT7992 radio on
+ * pcie1, built-in switch as lan2..lan4.
+ */
+
+#include "mt7988-smartrg-base.dtsi"
+#include "mt7988-smartrg-sysled.dtsi"
+#include "mt7988-smartrg-mt-stuart-gsw.dtsi"
+#include "mt798x-smartrg-factory.dtsi"
+
+/ {
+	aliases {
+		label-mac-device = &gmac2;
+	};
+
+	gpio-keys {
+		button-sync {
+			label = "sync";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&pio 14 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&button_pins {
+	pins = "GPIO_RESET", "GPIO_WPS";
+};
+
+&gmac1 {
+	nvmem-cells = <&macaddr 0x1>;
+	nvmem-cell-names = "mac-address";
+	label = "lan1";
+	phy-mode = "usxgmii";
+	phy = <&phy1>;
+
+	status = "okay";
+};
+
+&gmac2 {
+	nvmem-cells = <&macaddr 0x0>;
+	nvmem-cell-names = "mac-address";
+	label = "wan";
+	phy-mode = "usxgmii";
+	phy = <&phy2>;
+
+	status = "okay";
+};
+
+&mdio_bus {
+	phy1: ethernet-phy@1 {
+		/* Realtek RTL8261 - LAN1 */
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <1>;
+
+		reset-gpios = <&pio 62 GPIO_ACTIVE_LOW>;
+		reset-assert-us = <100000>;
+		reset-deassert-us = <221000>;
+
+		leds {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			led@0 {
+				reg = <0>;
+				color = <LED_COLOR_ID_WHITE>;
+				function = LED_FUNCTION_LAN;
+			};
+
+			led@1 {
+				reg = <1>;
+				color = <LED_COLOR_ID_GREEN>;
+				function = LED_FUNCTION_LAN;
+				active-low;
+			};
+
+			led@3 {
+				reg = <3>;
+				color = <LED_COLOR_ID_ORANGE>;
+				function = LED_FUNCTION_LAN;
+				active-low;
+			};
+		};
+	};
+
+	phy2: ethernet-phy@2 {
+		/* Realtek RTL8261 - WAN */
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <2>;
+
+		reset-gpios = <&pio 71 GPIO_ACTIVE_LOW>;
+		reset-assert-us = <100000>;
+		reset-deassert-us = <221000>;
+
+		leds {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			led@0 {
+				reg = <0>;
+				color = <LED_COLOR_ID_WHITE>;
+				function = LED_FUNCTION_WAN;
+				active-low;
+			};
+
+			led@1 {
+				reg = <1>;
+				color = <LED_COLOR_ID_ORANGE>;
+				function = LED_FUNCTION_WAN;
+			};
+
+			led@3 {
+				reg = <3>;
+				color = <LED_COLOR_ID_GREEN>;
+				function = LED_FUNCTION_WAN;
+			};
+		};
+	};
+};
+
+&pcie1 {
+	wifi-reset-gpios = <&pio 7 GPIO_ACTIVE_LOW>;
+	wifi-reset-msleep = <100>;
+	status = "okay";
+
+	pcie@0,0 {
+		reg = <0x0000 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+
+		radio0: wifi@0,0 {
+			compatible = "mediatek,mt76";
+			reg = <0x0000 0 0 0 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			nvmem-cells = <&eeprom_factory_0>;
+			nvmem-cell-names = "eeprom";
+			ieee80211-freq-limit = <2400000 2500000>, <5170000 5835000>;
+
+			band@0 {
+				/* 2.4 GHz */
+				reg = <0>;
+				nvmem-cells = <&macaddr 0x4>;
+				nvmem-cell-names = "mac-address";
+			};
+
+			band@1 {
+				/* 5 GHz */
+				reg = <1>;
+				nvmem-cells = <&macaddr 0xa>;
+				nvmem-cell-names = "mac-address";
+			};
+		};
+	};
+};
