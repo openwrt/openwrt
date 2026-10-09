@@ -10,7 +10,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libunwind
 PKG_VERSION:=1.8.3
-PKG_RELEASE:=3
+PKG_RELEASE:=4
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://github.com/libunwind/libunwind/releases/download/v$(PKG_VERSION)/
@@ -32,7 +32,7 @@ define Package/libunwind
   CATEGORY:=Libraries
   TITLE:=The libunwind project
   URL:=https://www.nongnu.org/libunwind/
-  DEPENDS:=@!(USE_MUSL&&(powerpc)) +zlib
+  DEPENDS:=+zlib +(USE_MUSL&&powerpc||USE_MUSL&&powerpc64):libucontext
   ABI_VERSION:=8
 endef
 
@@ -46,6 +46,10 @@ CONFIGURE_ARGS += \
 	--disable-minidebuginfo
 
 TARGET_LDFLAGS += $(if $(CONFIG_USE_MUSL),-lssp_nonshared)
+# On powerpc/powerpc64 libunwind maps unw_getcontext() onto the libc
+# getcontext(), which musl does not implement.  Other architectures ship
+# their own getcontext.S, so they are unaffected.
+TARGET_LDFLAGS += $(if $(CONFIG_USE_MUSL),$(if $(filter powerpc powerpc64,$(ARCH)),-lucontext))
 
 define Package/libunwind/install
 	$(INSTALL_DIR) $(1)/usr/lib
