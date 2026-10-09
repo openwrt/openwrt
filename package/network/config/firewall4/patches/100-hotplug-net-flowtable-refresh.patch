@@ -1,0 +1,41 @@
+From 0da881ce00d83f927ab6722c38a31a48b47e1545 Mon Sep 17 00:00:00 2001
+From: Paul Stejskal <paul.stejskal@gmail.com>
+Date: Mon, 5 Oct 2026 15:42:55 -0500
+Subject: [PATCH] fw4: refresh flowtable when Wi-Fi netdevs appear
+
+With flow_offloading_hw enabled, fw4 builds the flowtable device list
+from the physical lower ports of each zone's bridges at ruleset load
+time. A Wi-Fi AP netdev created afterwards (wifi reload, DFS channel
+switch, boot ordering) is never added, and nothing triggers a reload,
+so traffic through that interface silently bypasses flow offloading
+until the firewall is reloaded for an unrelated reason.
+
+Add a hotplug.d/net handler that, on a new Wi-Fi netdev (detected via
+its phy80211 link in sysfs) while flow_offloading and flow_offloading_hw
+are enabled, waits briefly for sibling APs to appear and reloads the
+firewall if the netdev is not in the flowtable.
+
+Link: https://github.com/openwrt/openwrt/issues/25646
+Signed-off-by: Paul Stejskal <paul.stejskal@gmail.com>
+---
+--- /dev/null
++++ b/root/etc/hotplug.d/net/20-firewall
+@@ -0,0 +1,18 @@
++#!/bin/sh
++# Per-port flowtable (flow_offloading_hw=1) lists the bridge's lower ports at ruleset load time.
++# A Wi-Fi netdev created later (wifi reload, DFS switch, boot ordering) is otherwise never added.
++[ "$ACTION" = add ] || exit 0
++[ "$(uci -q get firewall.@defaults[0].flow_offloading)" = 1 ] || exit 0
++[ "$(uci -q get firewall.@defaults[0].flow_offloading_hw)" = 1 ] || exit 0
++[ -e "/sys/class/net/$DEVICENAME/phy80211" ] || exit 0       # only Wi-Fi netdevs
++/etc/init.d/firewall enabled || exit 0
++[ -e /tmp/fw4-ft-hotplug.lock ] && exit 0                    # debounce: sibling APs appear in a burst
++touch /tmp/fw4-ft-hotplug.lock
++(
++	sleep 5
++	rm -f /tmp/fw4-ft-hotplug.lock
++	if ! nft list flowtable inet fw4 ft 2>/dev/null | grep -q "\"$DEVICENAME\""; then
++		logger -t firewall "Reloading firewall: Wi-Fi netdev $DEVICENAME not in flowtable"
++		fw4 -q reload
++	fi
++) >/dev/null 2>&1 &
