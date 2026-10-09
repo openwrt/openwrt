@@ -7,7 +7,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=mipsel
 BOARD:=ramips
 BOARDNAME:=MediaTek Ralink MIPS
-SUBTARGETS:=mt7620 mt7621 mt76x8 rt288x rt305x rt3883
+SUBTARGETS:=mt7620 mt7621 mt7621_small mt76x8 rt288x rt305x rt3883
 FEATURES:=squashfs gpio
 
 KERNEL_PATCHVER:=6.18
