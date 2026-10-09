@@ -31,7 +31,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 
 --- a/include/stdio.h
 +++ b/include/stdio.h
-@@ -98,7 +98,10 @@ _FORTIFY_FN(snprintf) int snprintf(char
+@@ -130,7 +130,10 @@
  
  	if (__n > __b)
  		__builtin_trap();
@@ -41,21 +41,21 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +#pragma GCC diagnostic pop
  }
  
- _FORTIFY_FN(sprintf) int sprintf(char *__s, const char *__f, ...)
-@@ -106,6 +109,8 @@ _FORTIFY_FN(sprintf) int sprintf(char *_
- 	size_t __b = __builtin_object_size(__s, 0);
+ __fortify__format(printf, 2, 3)
+@@ -139,6 +142,8 @@
+ 	size_t __b = __bos(__s, 2);
  	int __r;
  
 +#pragma GCC diagnostic push
 +#pragma GCC diagnostic ignored "-Wformat-nonliteral"
- 	if (__b != (size_t)-1) {
+ 	if (__b) {
  		__r = __orig_snprintf(__s, __b, __f, __builtin_va_arg_pack());
  		if (__r != -1 && (size_t)__r >= __b)
-@@ -114,6 +119,7 @@ _FORTIFY_FN(sprintf) int sprintf(char *_
+@@ -147,6 +152,7 @@
  		__r = __orig_sprintf(__s, __f, __builtin_va_arg_pack());
  	}
  	return __r;
 +#pragma GCC diagnostic pop
  }
  
- #ifdef __cplusplus
+ #endif /* __fortify_has_builtin(__builtin_va_arg_pack) */
