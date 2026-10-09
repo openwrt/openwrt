@@ -253,7 +253,8 @@ platform_do_upgrade() {
 	smartrg,sdg-8733|\
 	smartrg,sdg-8733a|\
 	smartrg,sdg-8734|\
-	smartrg,sdg-9000)
+	smartrg,sdg-9000|\
+	zbtlink,zbt-z8102ax-v2-emmc)
 		CI_KERNPART="kernel"
 		CI_ROOTPART="rootfs"
 		emmc_do_upgrade "$1"
@@ -556,7 +557,8 @@ platform_copy_config() {
 	smartrg,sdg-8733a|\
 	smartrg,sdg-8734|\
 	smartrg,sdg-9000|\
-	ubnt,unifi-6-plus)
+	ubnt,unifi-6-plus|\
+	zbtlink,zbt-z8102ax-v2-emmc)
 		emmc_copy_config
 		;;
 	esac
