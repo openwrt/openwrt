@@ -18,7 +18,7 @@ Signed-off-by: Eneas U de Queiroz <cotequeiroz@gmail.com>
  rebuild = rebuild=:; revision=`$(lt__cd) $(srcdir) && $(git_version_gen) | $(SED) 's|-.*$$||'`
  
  
-@@ -303,7 +303,7 @@ libtool: $(ltmain_sh) $(config_status) $
+@@ -313,7 +313,7 @@ libtool: $(ltmain_sh) $(config_status) $
  	  if test 0 = '$(AM_DEFAULT_VERBOSITY)' && test 1 != '$(V)'; \
  	    then echo "  GEN     " $@; \
  	  else echo '$(SHELL) $(top_builddir)/config.status "$@"'; fi; \
@@ -27,7 +27,7 @@ Signed-off-by: Eneas U de Queiroz <cotequeiroz@gmail.com>
  	fi
  
  
-@@ -790,13 +790,13 @@ testsuite_deps_uninstalled = $(testsuite
+@@ -806,13 +806,13 @@ testsuite_deps_uninstalled = $(testsuite
  # Hook the test suite into the check rule
  check-local: $(testsuite_deps_uninstalled)
  	$(AM_V_at)$(CD_TESTDIR); \
@@ -43,7 +43,7 @@ Signed-off-by: Eneas U de Queiroz <cotequeiroz@gmail.com>
  	  $(TESTS_ENVIRONMENT) $(INSTALLCHECK_ENVIRONMENT) $(TESTSUITEFLAGS) \
  	  AUTOTEST_PATH='$(exec_prefix)/bin'
  
-@@ -808,7 +808,7 @@ check-noninteractive-old:
+@@ -824,7 +824,7 @@ check-noninteractive-old:
  .PHONY: check-noninteractive-new
  check-noninteractive-new: $(testsuite_deps_uninstalled)
  	$(AM_V_at)$(CD_TESTDIR); \
@@ -52,7 +52,7 @@ Signed-off-by: Eneas U de Queiroz <cotequeiroz@gmail.com>
  	  $(TESTS_ENVIRONMENT) $(BUILDCHECK_ENVIRONMENT) \
  	  -k '!interactive' INNER_TESTSUITEFLAGS=',!interactive' \
  	  $(TESTSUITEFLAGS)
-@@ -817,7 +817,7 @@ check-noninteractive-new: $(testsuite_de
+@@ -833,7 +833,7 @@ check-noninteractive-new: $(testsuite_de
  .PHONY: check-interactive
  check-interactive: $(testsuite_deps_uninstalled)
  	$(AM_V_at)$(CD_TESTDIR); \
@@ -61,7 +61,7 @@ Signed-off-by: Eneas U de Queiroz <cotequeiroz@gmail.com>
  	  $(TESTS_ENVIRONMENT) $(BUILDCHECK_ENVIRONMENT) \
  	  -k interactive -k recursive INNER_TESTSUITEFLAGS=',interactive' \
  	  $(TESTSUITEFLAGS)
-@@ -829,7 +829,7 @@ check-noninteractive: check-noninteracti
+@@ -845,7 +845,7 @@ check-noninteractive: check-noninteracti
  clean-local:
  	-$(CD_TESTDIR); \
  	test -f "$$abs_srcdir/$(TESTSUITE)" && \
