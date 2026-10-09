@@ -1465,7 +1465,7 @@ define Device/youku_yk-l1
   DEVICE_MODEL := YK-L1
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-mmc-mtk \
 	kmod-usb-ledtrig-usbport
-  SUPPORTED_DEVICES += youku-yk1 youku,yk1
+  SUPPORTED_DEVICES += youku-yk1 youku,yk1 youku,yk-l1c
   UIMAGE_MAGIC := 0x12291000
   UIMAGE_NAME := 400000000000000000000000
 endef
@@ -1478,6 +1478,7 @@ define Device/youku_yk-l1c
   DEVICE_MODEL := YK-L1c
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-mmc-mtk \
 	kmod-usb-ledtrig-usbport
+  SUPPORTED_DEVICES += youku-yk1 youku,yk1 youku,yk-l1
   UIMAGE_MAGIC := 0x12291000
   UIMAGE_NAME := 400000000000000000000000
 endef
