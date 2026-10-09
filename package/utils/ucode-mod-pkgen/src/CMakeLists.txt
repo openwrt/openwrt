@@ -27,7 +27,7 @@ FIND_PATH(mbedtls_include_dir NAMES mbedtls/pk.h)
 FIND_PATH(ucode_include_dir NAMES ucode/module.h)
 INCLUDE_DIRECTORIES(${mbedtls_include_dir} ${ucode_include_dir})
 
-ADD_LIBRARY(pkgen_lib MODULE ucode.c pkcs12.c)
+ADD_LIBRARY(pkgen_lib MODULE ucode.c)
 SET_TARGET_PROPERTIES(pkgen_lib PROPERTIES OUTPUT_NAME pkgen PREFIX "")
 TARGET_LINK_OPTIONS(pkgen_lib PRIVATE ${UCODE_MODULE_LINK_OPTIONS})
 TARGET_LINK_LIBRARIES(pkgen_lib ${mbedtls})

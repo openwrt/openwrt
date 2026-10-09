@@ -3,26 +3,16 @@
  * Copyright (C) 2024 Felix Fietkau <nbd@nbd.name>
  */
 #include <sys/types.h>
-#include <sys/random.h>
 
 #include <stdint.h>
 #include <limits.h>
 #include <errno.h>
 
-#include <mbedtls/entropy.h>
 #include <mbedtls/x509_crt.h>
-#include <mbedtls/ecp.h>
-#include <mbedtls/rsa.h>
 
 #include <ucode/module.h>
 
 #include "pk.h"
-
-/* mbedtls < 3.x compat */
-#ifdef MBEDTLS_LEGACY
-#define mbedtls_pk_parse_key(pk, key, keylen, passwd, passwdlen, random, random_ctx) \
-	mbedtls_pk_parse_key(pk, key, keylen, passwd, passwdlen)
-#endif
 
 static uc_resource_type_t *uc_pk_type, *uc_crt_type;
 static uc_value_t *registry;
@@ -31,7 +21,6 @@ int mbedtls_errno;
 
 struct uc_cert_wr {
 	mbedtls_x509write_cert crt; /* must be first */
-	mbedtls_mpi mpi;
 	unsigned int reg;
 };
 
@@ -45,23 +34,6 @@ static unsigned int uc_reg_add(uc_value_t *val)
 	ucv_array_set(registry, i, ucv_get(val));
 
 	return i;
-}
-
-int random_cb(void *ctx, unsigned char *out, size_t len)
-{
-#ifdef linux
-	if (getrandom(out, len, 0) != (ssize_t) len)
-		return MBEDTLS_ERR_ENTROPY_SOURCE_FAILED;
-#else
-	static FILE *f;
-
-	if (!f)
-		f = fopen("/dev/urandom", "r");
-	if (fread(out, len, 1, f) != 1)
-		return MBEDTLS_ERR_ENTROPY_SOURCE_FAILED;
-#endif
-
-	return 0;
 }
 
 int64_t get_int_arg(uc_value_t *obj, const char *key, int64_t defval)
@@ -79,6 +51,63 @@ int64_t get_int_arg(uc_value_t *obj, const char *key, int64_t defval)
 	return val ? val : defval;
 }
 
+static const struct {
+	const char *name;
+	psa_ecc_family_t family;
+	size_t bits;
+} ecp_curves[] = {
+#if defined(PSA_WANT_ECC_SECP_R1_256)
+	{ "secp256r1",       PSA_ECC_FAMILY_SECP_R1,        256 },
+#endif
+#if defined(PSA_WANT_ECC_SECP_R1_384)
+	{ "secp384r1",       PSA_ECC_FAMILY_SECP_R1,        384 },
+#endif
+#if defined(PSA_WANT_ECC_SECP_R1_521)
+	{ "secp521r1",       PSA_ECC_FAMILY_SECP_R1,        521 },
+#endif
+#if defined(PSA_WANT_ECC_SECP_K1_256)
+	{ "secp256k1",       PSA_ECC_FAMILY_SECP_K1,        256 },
+#endif
+#if defined(PSA_WANT_ECC_BRAINPOOL_P_R1_256)
+	{ "brainpoolP256r1", PSA_ECC_FAMILY_BRAINPOOL_P_R1, 256 },
+#endif
+#if defined(PSA_WANT_ECC_BRAINPOOL_P_R1_384)
+	{ "brainpoolP384r1", PSA_ECC_FAMILY_BRAINPOOL_P_R1, 384 },
+#endif
+#if defined(PSA_WANT_ECC_BRAINPOOL_P_R1_512)
+	{ "brainpoolP512r1", PSA_ECC_FAMILY_BRAINPOOL_P_R1, 512 },
+#endif
+	{ NULL, 0, 0 },
+};
+
+static int
+psa_gen_key(mbedtls_pk_context *pk, psa_key_type_t type, size_t bits,
+	    psa_algorithm_t alg)
+{
+	psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
+	mbedtls_svc_key_id_t key_id = MBEDTLS_SVC_KEY_ID_INIT;
+	psa_status_t status;
+	int ret;
+
+	status = psa_crypto_init();
+	if (status != PSA_SUCCESS)
+		return status;
+
+	psa_set_key_type(&attr, type);
+	psa_set_key_bits(&attr, bits);
+	psa_set_key_algorithm(&attr, alg);
+	psa_set_key_usage_flags(&attr, PSA_KEY_USAGE_SIGN_HASH | PSA_KEY_USAGE_EXPORT);
+
+	status = psa_generate_key(&attr, &key_id);
+	if (status != PSA_SUCCESS)
+		return status;
+
+	ret = mbedtls_pk_copy_from_psa(key_id, pk);
+	psa_destroy_key(key_id);
+
+	return ret;
+}
+
 static int
 gen_rsa_key(mbedtls_pk_context *pk, uc_value_t *arg)
 {
@@ -89,13 +118,17 @@ gen_rsa_key(mbedtls_pk_context *pk, uc_value_t *arg)
 	if (key_size < 0 || exp < 0)
 		return -1;
 
-	return mbedtls_rsa_gen_key(mbedtls_pk_rsa(*pk), random_cb, NULL, key_size, exp);
+	if (exp != 65537)
+		return -1;
+
+	return psa_gen_key(pk, PSA_KEY_TYPE_RSA_KEY_PAIR, key_size,
+			   PSA_ALG_RSA_PKCS1V15_SIGN(PSA_ALG_SHA_256));
 }
 
 static int
 gen_ec_key(mbedtls_pk_context *pk, uc_value_t *arg)
 {
-	mbedtls_ecp_group_id curve;
+	const typeof(*ecp_curves) *c;
 	const char *c_name;
 	uc_value_t *c_arg;
 
@@ -105,17 +138,17 @@ gen_ec_key(mbedtls_pk_context *pk, uc_value_t *arg)
 
 	c_name = ucv_string_get(c_arg);
 	if (!c_name)
-		curve = MBEDTLS_ECP_DP_SECP256R1;
-	else {
-		const mbedtls_ecp_curve_info *curve_info;
-		curve_info = mbedtls_ecp_curve_info_from_name(c_name);
-		if (!curve_info)
-			return MBEDTLS_ERR_PK_UNKNOWN_NAMED_CURVE;
+		c_name = "secp256r1";
 
-		curve = curve_info->grp_id;
-	}
+	for (c = ecp_curves; c->name; c++)
+		if (!strcmp(c_name, c->name))
+			break;
 
-	return mbedtls_ecp_gen_key(curve, mbedtls_pk_ec(*pk), random_cb, NULL);
+	if (!c->name)
+		return MBEDTLS_ERR_PK_UNKNOWN_NAMED_CURVE;
+
+	return psa_gen_key(pk, PSA_KEY_TYPE_ECC_KEY_PAIR(c->family), c->bits,
+			   PSA_ALG_ECDSA(PSA_ALG_SHA_256));
 }
 
 static void free_pk(void *pk)
@@ -135,7 +168,6 @@ static void free_crt(void *ptr)
 		return;
 
 	mbedtls_x509write_crt_free(&crt->crt);
-	mbedtls_mpi_free(&crt->mpi);
 	ucv_array_set(registry, crt->reg, NULL);
 	free(crt);
 }
@@ -144,7 +176,6 @@ static uc_value_t *
 uc_generate_key(uc_vm_t *vm, size_t nargs)
 {
 	uc_value_t *cur, *arg = uc_fn_arg(0);
-	mbedtls_pk_type_t pk_type;
 	mbedtls_pk_context *pk;
 	const char *type;
 	int ret;
@@ -157,26 +188,15 @@ uc_generate_key(uc_vm_t *vm, size_t nargs)
 	if (!type)
 		INVALID_ARG();
 
-	if (!strcmp(type, "rsa"))
-		pk_type = MBEDTLS_PK_RSA;
-	else if (!strcmp(type, "ec"))
-		pk_type = MBEDTLS_PK_ECKEY;
-	else
-		INVALID_ARG();
-
 	pk = calloc(1, sizeof(*pk));
 	mbedtls_pk_init(pk);
-	mbedtls_pk_setup(pk, mbedtls_pk_info_from_type(pk_type));
-	switch (pk_type) {
-	case MBEDTLS_PK_RSA:
+
+	if (!strcmp(type, "rsa"))
 		ret = C(gen_rsa_key(pk, arg));
-		break;
-	case MBEDTLS_PK_ECKEY:
+	else if (!strcmp(type, "ec"))
 		ret = C(gen_ec_key(pk, arg));
-		break;
-	default:
-		ret = -1;
-	}
+	else
+		ret = C(-1);
 
 	if (ret) {
 		free_pk(pk);
@@ -209,8 +229,7 @@ uc_load_key(uc_vm_t *vm, size_t nargs)
 		ret = C(mbedtls_pk_parse_key(pk, (const uint8_t *)ucv_string_get(keystr),
 					     ucv_string_length(keystr) + 1,
 					     (const uint8_t *)ucv_string_get(passwd),
-					     ucv_string_length(passwd) + 1,
-					     random_cb, NULL));
+					     ucv_string_length(passwd) + 1));
 	if (ret) {
 		free_pk(pk);
 		return NULL;
@@ -330,7 +349,7 @@ uc_crt_pem(uc_vm_t *vm, size_t nargs)
 	if (!crt)
 		return NULL;
 
-	CHECK(mbedtls_x509write_crt_pem(crt, (void *)buf, sizeof(buf), random_cb, NULL));
+	CHECK(mbedtls_x509write_crt_pem(crt, (void *)buf, sizeof(buf)));
 
 	return ucv_string_new(buf);
 }
@@ -344,7 +363,7 @@ uc_crt_der(uc_vm_t *vm, size_t nargs)
 	if (!crt)
 		return NULL;
 
-	len = mbedtls_x509write_crt_der(crt, (void *)buf, sizeof(buf), random_cb, NULL);
+	len = mbedtls_x509write_crt_der(crt, (void *)buf, sizeof(buf));
 	if (len < 0)
 		CHECK(len);
 
@@ -364,15 +383,17 @@ uc_cert_set_validity(mbedtls_x509write_cert *crt, uc_value_t *arg)
 }
 
 static int
-uc_cert_init(mbedtls_x509write_cert *crt, mbedtls_mpi *mpi, uc_value_t *reg, uc_value_t *arg)
+uc_cert_init(mbedtls_x509write_cert *crt, uc_value_t *reg, uc_value_t *arg)
 {
 	uc_value_t *cur;
 	int64_t serial;
 	int path_len;
 	int version;
 	bool ca;
+	unsigned char serial_buf[8];
+	size_t serial_len;
+	int i;
 
-	mbedtls_mpi_init(mpi);
 	mbedtls_x509write_crt_init(crt);
 	mbedtls_x509write_crt_set_md_alg(crt, MBEDTLS_MD_SHA256);
 
@@ -389,8 +410,13 @@ uc_cert_init(mbedtls_x509write_cert *crt, mbedtls_mpi *mpi, uc_value_t *reg, uc_
 	if (serial < 0)
 		return -1;
 
-	mbedtls_mpi_lset(mpi, serial);
-	mbedtls_x509write_crt_set_serial(crt, mpi);
+	for (i = 7; i > 0; i--)
+		if ((serial >> (i * 8)) & 0xff)
+			break;
+	for (serial_len = 0; i >= 0; i--)
+		serial_buf[serial_len++] = (serial >> (i * 8)) & 0xff;
+
+	mbedtls_x509write_crt_set_serial_raw(crt, serial_buf, serial_len);
 	mbedtls_x509write_crt_set_version(crt, version - 1);
 	CHECK_INT(mbedtls_x509write_crt_set_basic_constraints(crt, ca, path_len));
 
@@ -472,7 +498,6 @@ uc_cert_init(mbedtls_x509write_cert *crt, mbedtls_mpi *mpi, uc_value_t *reg, uc_
 	} else if (cur)
 		return -1;
 
-#ifndef MBEDTLS_LEGACY
 	cur = ucv_object_get(arg, "ext_key_usage", NULL);
 	if (ucv_type(cur) == UC_ARRAY && ucv_array_length(cur)) {
 		static const struct {
@@ -525,7 +550,6 @@ uc_cert_init(mbedtls_x509write_cert *crt, mbedtls_mpi *mpi, uc_value_t *reg, uc_
 		CHECK_INT(mbedtls_x509write_crt_set_ext_key_usage(crt, elem));
 	} else if (cur)
 		return -1;
-#endif
 
 	return 0;
 }
@@ -542,7 +566,7 @@ uc_generate_cert(uc_vm_t *vm, size_t nargs)
 
 	reg = ucv_array_new(vm);
 	crt = calloc(1, sizeof(*crt));
-	if (C(uc_cert_init(&crt->crt, &crt->mpi, reg, arg))) {
+	if (C(uc_cert_init(&crt->crt, reg, arg))) {
 		free(crt);
 		return NULL;
 	}
@@ -582,13 +606,14 @@ static const uc_function_list_t global_fns[] = {
 	{ "cert_info", uc_cert_info },
 	{ "generate_key", uc_generate_key },
 	{ "generate_cert", uc_generate_cert },
-	{ "generate_pkcs12", uc_generate_pkcs12 },
 	{ "errno", uc_mbedtls_errno },
 	{ "error", uc_mbedtls_error },
 };
 
 void uc_module_init(uc_vm_t *vm, uc_value_t *scope)
 {
+	psa_crypto_init();
+
 	uc_pk_type = uc_type_declare(vm, "mbedtls.pk", pk_fns, free_pk);
 	uc_crt_type = uc_type_declare(vm, "mbedtls.crt", crt_fns, free_crt);
 	uc_function_list_register(scope, global_fns);
