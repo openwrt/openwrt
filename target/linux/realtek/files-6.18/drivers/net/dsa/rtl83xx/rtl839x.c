@@ -97,7 +97,12 @@ static inline int rtl839x_mac_port_ctrl(int p)
 
 static void rtl839x_traffic_set(int source, u64 dest_matrix)
 {
-	rtl839x_set_port_reg_be(dest_matrix, rtl839x_port_iso_ctrl(source));
+	/* The isolation mask also applies to frames routed in hardware, which
+	 * may have to leave through the port they came in on. The SDK keeps a
+	 * port in its own mask; a bridged frame is still not sent back out of
+	 * its ingress port.
+	 */
+	rtl839x_set_port_reg_be(dest_matrix | BIT_ULL(source), rtl839x_port_iso_ctrl(source));
 }
 
 static void rtl839x_traffic_enable(int source, int dest)
