@@ -40,6 +40,17 @@ define Package/mipi-dbi-ubnt-utr/install
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/ubnt,utr-lcd.bin $(1)/lib/firmware/
 endef
 
+define Package/mipi-dbi-ubnt-utr-lr
+  $(Package/mipi-dbi-default)
+  TITLE:=MIPI DBI LCD init sequence for Ubiquiti UniFi Travel Router LR
+  DEPENDS+=@TARGET_ipq40xx
+endef
+
+define Package/mipi-dbi-ubnt-utr-lr/install
+	$(INSTALL_DIR) $(1)/lib/firmware
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/ubnt,utr-lr-lcd.bin $(1)/lib/firmware/
+endef
+
 define Package/mipi-dbi-ph240240t004-zar
   $(Package/mipi-dbi-default)
   TITLE:=MIPI DBI LCD init sequence for PH240240T004-ZAR
@@ -52,4 +63,5 @@ define Package/mipi-dbi-ph240240t004-zar/install
 endef
 
 $(eval $(call BuildPackage,mipi-dbi-ubnt-utr))
+$(eval $(call BuildPackage,mipi-dbi-ubnt-utr-lr))
 $(eval $(call BuildPackage,mipi-dbi-ph240240t004-zar))
