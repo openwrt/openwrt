@@ -1268,7 +1268,7 @@ static void otto_l3_rows_stale(struct otto_l3_ctrl *ctrl, struct otto_l3_route *
 
 	ctrl->prefix_rows_stale = true;
 	dev_err(ctrl->dev,
-		"prefix route %d: row %d not moved, no route will be placed again\n",
+		"prefix route %d: row %d not moved, no prefix route will be placed again\n",
 		r->id, row);
 }
 
@@ -1527,6 +1527,17 @@ static bool otto_l3_route_is_at(struct otto_l3_ctrl *ctrl, int id, struct otto_l
 	return false;
 }
 
+/* Once the rows are not where the list says, the row a prefix route was given
+ * may hold another route by now. A route whose row no longer reads back as it
+ * is left as it is, so that nothing is written over the other one; a route
+ * whose row still does is updated as before, and its removal still finds it.
+ */
+static bool otto_l3_row_frozen(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r)
+{
+	return ctrl->prefix_rows_stale && !r->is_host_route && r->row >= FIRST_PREFIX_ROW &&
+	       !otto_l3_route_is_at(ctrl, r->row, r);
+}
+
 /* Writes a route to its host slot or prefix row, taking a free slot or placing
  * a row when it has none yet. A host route that a local route shadows keeps out
  * of the entry, and nothing is written for it.
@@ -1651,6 +1662,9 @@ static void otto_l3_route_update_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_ro
 	bool no_port, trap;
 	int dmac = r->id;
 
+	if (otto_l3_row_frozen(ctrl, r))
+		return;
+
 	dev_dbg(ctrl->dev, "setting up fwding: gw %pI6c, mac %016llx\n",
 		&r->gw_ip, mac);
 
@@ -1771,7 +1785,8 @@ static void otto_l3_route_trap_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_rout
 	char dst[INET6_ADDRSTRLEN + sizeof("/128")];
 	int slot = r->row;
 
-	if (!ctrl->cfg->use_l3_tables || r->attr.action == ROUTE_ACT_TRAP2CPU)
+	if (!ctrl->cfg->use_l3_tables || r->attr.action == ROUTE_ACT_TRAP2CPU ||
+	    otto_l3_row_frozen(ctrl, r))
 		return;
 
 	/* What the route says is what the next write of it puts in hardware */
@@ -2009,7 +2024,7 @@ static void otto_l3_route_remove(struct otto_l3_ctrl *ctrl, struct otto_l3_route
 				 */
 				ctrl->prefix_rows_stale = true;
 				dev_err(ctrl->dev,
-					"prefix route %s: hardware lookup timed out, no route will be placed again\n",
+					"prefix route %s: hardware lookup timed out, no prefix route will be placed again\n",
 					otto_l3_route_dst(r, dst, sizeof(dst)));
 			} else {
 				dev_err(ctrl->dev, "prefix route %s was not in hardware\n",
@@ -3015,7 +3030,7 @@ static void otto_l3_rules_check(struct otto_l3_ctrl *ctrl, int family)
 			continue;
 
 		if (*off) {
-			if (r->attr.action != ROUTE_ACT_FORWARD)
+			if (r->attr.action != ROUTE_ACT_FORWARD || otto_l3_row_frozen(ctrl, r))
 				continue;
 			r->attr.action = ROUTE_ACT_TRAP2CPU;
 			r->attr.ttl_dec = false;
