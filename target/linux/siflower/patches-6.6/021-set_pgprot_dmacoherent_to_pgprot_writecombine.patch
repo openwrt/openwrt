@@ -1,0 +1,11 @@
+--- a/arch/riscv/include/asm/pgtable.h
++++ b/arch/riscv/include/asm/pgtable.h
+@@ -619,6 +619,8 @@ static inline pgprot_t pgprot_writecombi
+ 	return __pgprot(prot);
+ }
+ 
++#define pgprot_dmacoherent pgprot_writecombine
++
+ /*
+  * THP functions
+  */
