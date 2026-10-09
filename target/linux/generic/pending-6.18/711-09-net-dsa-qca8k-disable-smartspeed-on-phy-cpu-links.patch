@@ -1,0 +1,125 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Yongzhao Chen <yongzhao.derek@gmail.com>
+Date: Wed, 16 Sep 2026 23:22:44 +0200
+Subject: [PATCH] net: dsa: qca8k: disable SmartSpeed on QCA8337 PHY CPU links
+
+On the Redmi AX5400 PHY-to-PHY CPU link, QCA8337 SmartSpeed clears Gigabit
+advertisement during boot before the IPQ5018 conduit starts. The PHY
+remains unable to negotiate after the conduit starts. Disabling SmartSpeed
+before the initial PHY reset keeps Gigabit advertised and restores DSA WAN.
+
+Carry the quirk through the existing PHY flags callback for QCA8337 CPU
+ports with an internal PHY. Other switch models and user ports retain their
+settings. Apply the setting before reset, when the hardware latches it.
+Requires DSA to pass PHY flags when connecting shared ports.
+
+Link: https://github.com/openwrt/openwrt/issues/24696
+Signed-off-by: Yongzhao Chen <yongzhao.derek@gmail.com>
+---
+ include/linux/qca83xx.h          |   11 +++++++++++
+ drivers/net/dsa/qca/qca8k-8xxx.c |   19 ++++++++++---------
+ drivers/net/phy/qcom/qca83xx.c   |   21 ++++++++++++++++++---
+ 3 files changed, 39 insertions(+), 12 deletions(-)
+
+--- /dev/null
++++ b/include/linux/qca83xx.h
+@@ -0,0 +1,11 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++#ifndef _LINUX_QCA83XX_H
++#define _LINUX_QCA83XX_H
++
++#include <linux/bits.h>
++
++/* QCA8K switch-to-PHY flags, carried through phy_device::dev_flags. */
++#define QCA8K_DEVFLAGS_REVISION_MASK	GENMASK(2, 0)
++#define QCA8K_DEVFLAGS_NO_SMARTSPEED	BIT(3)
++
++#endif
+--- a/drivers/net/dsa/qca/qca8k-8xxx.c
++++ b/drivers/net/dsa/qca/qca8k-8xxx.c
+@@ -8,6 +8,7 @@
+ 
+ #include <linux/module.h>
+ #include <linux/phy.h>
++#include <linux/qca83xx.h>
+ #include <linux/netdevice.h>
+ #include <linux/bitfield.h>
+ #include <linux/regmap.h>
+@@ -1723,17 +1724,17 @@ exit:
+ static u32 qca8k_get_phy_flags(struct dsa_switch *ds, int port)
+ {
+ 	struct qca8k_priv *priv = ds->priv;
++	u32 flags;
+ 
+-	/* Communicate to the phy internal driver the switch revision.
+-	 * Based on the switch revision different values needs to be
+-	 * set to the dbg and mmd reg on the phy.
+-	 * The first 2 bit are used to communicate the switch revision
+-	 * to the phy driver.
+-	 */
+-	if (port > 0 && port < 6)
+-		return priv->switch_revision;
++	if (port == 0 || port == 6)
++		return 0;
+ 
+-	return 0;
++	/* The PHY driver uses the switch revision for analog initialization. */
++	flags = priv->switch_revision;
++	if (priv->switch_id == QCA8K_ID_QCA8337 && dsa_is_cpu_port(ds, port))
++		flags |= QCA8K_DEVFLAGS_NO_SMARTSPEED;
++
++	return flags;
+ }
+ 
+ static enum dsa_tag_protocol
+--- a/drivers/net/phy/qcom/qca83xx.c
++++ b/drivers/net/phy/qcom/qca83xx.c
+@@ -1,6 +1,7 @@
+ // SPDX-License-Identifier: GPL-2.0+
+ 
+ #include <linux/phy.h>
++#include <linux/qca83xx.h>
+ #include <linux/module.h>
+ 
+ #include "qcom.h"
+@@ -16,8 +17,6 @@
+ #define QCA8327_B_PHY_ID			0x004dd034
+ #define QCA8337_PHY_ID				0x004dd036
+ 
+-#define QCA8K_DEVFLAGS_REVISION_MASK		GENMASK(2, 0)
+-
+ static struct at803x_hw_stat qca83xx_hw_stats[] = {
+ 	{ "phy_idle_errors", 0xa, GENMASK(7, 0), PHY},
+ 	{ "phy_receive_errors", 0x15, GENMASK(15, 0), PHY},
+@@ -92,6 +91,22 @@ static int qca83xx_probe(struct phy_devi
+ 	return 0;
+ }
+ 
++static int qca8337_soft_reset(struct phy_device *phydev)
++{
++	int ret;
++
++	if (phydev->dev_flags & QCA8K_DEVFLAGS_NO_SMARTSPEED) {
++		/* SmartSpeed settings take effect at software reset. */
++		ret = phy_clear_bits(phydev, AT803X_SMART_SPEED,
++				     AT803X_SMART_SPEED_ENABLE |
++				     AT803X_SMART_SPEED_BYPASS_TIMER);
++		if (ret < 0)
++			return ret;
++	}
++
++	return genphy_soft_reset(phydev);
++}
++
+ static int qca83xx_config_init(struct phy_device *phydev)
+ {
+ 	u8 switch_revision;
+@@ -219,7 +234,7 @@ static struct phy_driver qca83xx_driver[
+ 	.probe			= qca83xx_probe,
+ 	.flags			= PHY_IS_INTERNAL,
+ 	.config_init		= qca83xx_config_init,
+-	.soft_reset		= genphy_soft_reset,
++	.soft_reset		= qca8337_soft_reset,
+ 	.get_sset_count		= qca83xx_get_sset_count,
+ 	.get_strings		= qca83xx_get_strings,
+ 	.get_stats		= qca83xx_get_stats,
