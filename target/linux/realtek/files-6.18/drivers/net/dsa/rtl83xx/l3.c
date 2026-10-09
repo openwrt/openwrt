@@ -1444,24 +1444,29 @@ static bool otto_l3_fwd_off(struct otto_l3_ctrl *ctrl, u8 type)
 	return type == ROUTE_TYPE_IP6UC ? ctrl->v6_fwd_off : ctrl->v4_fwd_off;
 }
 
-/* The kernel looks the local table up whole before main, so a local IPv4
- * prefix shorter than a host address (AnyIP: ip route add local ... table
- * local) takes the destinations of a longer main route inside it, which the
- * switch, longest prefix first, would forward. An IPv6 local prefix is not
- * looked at.
+/* The kernel looks the local table up whole before main, so a local prefix
+ * shorter than a host address (AnyIP: ip route add local ... table local)
+ * takes the destinations of a longer main route inside it, which the switch,
+ * longest prefix first, would forward.
  */
 static bool otto_l3_local_covers(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r)
 {
 	struct otto_l3_route *q;
 
-	if (r->attr.type != ROUTE_TYPE_IP4UC || r->tb_id == RT_TABLE_LOCAL)
+	if (r->tb_id == RT_TABLE_LOCAL)
 		return false;
 
-	list_for_each_entry(q, &ctrl->routes_list, list)
-		if (q->attr.type == ROUTE_TYPE_IP4UC && q->tb_id == RT_TABLE_LOCAL &&
-		    !q->is_host_route && q->prefix_len < r->prefix_len &&
+	list_for_each_entry(q, &ctrl->routes_list, list) {
+		if (q->attr.type != r->attr.type || q->tb_id != RT_TABLE_LOCAL ||
+		    q->is_host_route || q->prefix_len >= r->prefix_len)
+			continue;
+		if (r->attr.type == ROUTE_TYPE_IP4UC &&
 		    !((q->dst_ip ^ r->dst_ip) & inet_make_mask(q->prefix_len)))
 			return true;
+		if (r->attr.type == ROUTE_TYPE_IP6UC &&
+		    ipv6_prefix_equal(&q->dst_ip6, &r->dst_ip6, q->prefix_len))
+			return true;
+	}
 
 	return false;
 }
@@ -3080,19 +3085,31 @@ static bool otto_l3_rules_allow(int family)
 	return main_seen;
 }
 
-/* A main IPv4 route inside the local prefix @info names */
-static bool otto_l3_route_inside(struct otto_l3_route *r, struct fib_entry_notifier_info *info)
+/* A main route inside the local prefix @info names */
+static bool otto_l3_route_inside(struct otto_l3_route *r, struct fib_notifier_info *info)
 {
-	return r->attr.type == ROUTE_TYPE_IP4UC && r->tb_id != RT_TABLE_LOCAL &&
-	       r->prefix_len > info->dst_len &&
-	       !((r->dst_ip ^ info->dst) & inet_make_mask(info->dst_len));
+	struct fib_entry_notifier_info *fen;
+	struct fib6_info *rt;
+
+	if (r->tb_id == RT_TABLE_LOCAL)
+		return false;
+
+	if (info->family == AF_INET) {
+		fen = container_of(info, struct fib_entry_notifier_info, info);
+		return r->attr.type == ROUTE_TYPE_IP4UC && r->prefix_len > fen->dst_len &&
+		       !((r->dst_ip ^ fen->dst) & inet_make_mask(fen->dst_len));
+	}
+
+	rt = container_of(info, struct fib6_entry_notifier_info, info)->rt;
+	return r->attr.type == ROUTE_TYPE_IP6UC && r->prefix_len > rt->fib6_dst.plen &&
+	       ipv6_prefix_equal(&r->dst_ip6, &rt->fib6_dst.addr, rt->fib6_dst.plen);
 }
 
 /* One resolve brings back every route through a gateway. With @info, only the
  * routes inside that local prefix are looked at.
  */
 static bool otto_l3_gw_seen(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r,
-			    struct fib_entry_notifier_info *info)
+			    struct fib_notifier_info *info)
 {
 	struct otto_l3_route *q;
 
@@ -3163,23 +3180,41 @@ static void otto_l3_rules_check(struct otto_l3_ctrl *ctrl, int family)
  * it forwards, the way the policy rules bring a route back: through its
  * gateway, if it still answers.
  */
-static void otto_l3_local_prefix_check(struct otto_l3_ctrl *ctrl,
-				       struct fib_entry_notifier_info *info)
+static void otto_l3_local_prefix_check(struct otto_l3_ctrl *ctrl, struct fib_notifier_info *info)
 {
+	struct neigh_table *tbl = &arp_tbl;
+	struct fib_entry_notifier_info *fen;
 	struct otto_l3_route *r;
 	struct net_device *dev;
+	struct fib6_info *rt;
+	int len, host = 32;
+	u32 tb_id;
 
-	if (info->tb_id != RT_TABLE_LOCAL || !info->dst_len || info->dst_len >= 32 ||
-	    !ctrl->cfg->use_l3_tables)
+	if (info->family == AF_INET) {
+		fen = container_of(info, struct fib_entry_notifier_info, info);
+		tb_id = fen->tb_id;
+		len = fen->dst_len;
+	} else {
+		if (!IS_REACHABLE(CONFIG_IPV6))
+			return;
+		rt = container_of(info, struct fib6_entry_notifier_info, info)->rt;
+		tb_id = rt->fib6_table->tb6_id;
+		len = rt->fib6_dst.plen;
+		host = 128;
+		tbl = &nd_tbl;
+	}
+
+	if (tb_id != RT_TABLE_LOCAL || len >= host || !ctrl->cfg->use_l3_tables)
 		return;
 
 	list_for_each_entry(r, &ctrl->routes_list, list) {
-		if (!otto_l3_route_inside(r, info) || !r->gw_ip.s6_addr32[3] ||
+		if (!otto_l3_route_inside(r, info) || ipv6_addr_any(&r->gw_ip) ||
+		    (r->attr.type == ROUTE_TYPE_IP4UC && !r->gw_ip.s6_addr32[3]) ||
 		    otto_l3_gw_seen(ctrl, r, info))
 			continue;
 		dev = __dev_get_by_index(&init_net, r->gw_ifindex);
 		if (dev)
-			otto_l3_port_gw_resolve(ctrl, dev, &arp_tbl, &r->gw_ip);
+			otto_l3_port_gw_resolve(ctrl, dev, tbl, &r->gw_ip);
 	}
 }
 
@@ -3202,7 +3237,7 @@ static void otto_l3_fib_event_work_do(struct work_struct *work)
 		if (err)
 			dev_err(ctrl->dev, "fib_add() failed\n");
 
-		otto_l3_local_prefix_check(ctrl, &fib_work->fen_info);
+		otto_l3_local_prefix_check(ctrl, &fib_work->fen_info.info);
 		fib_info_put(fib_work->fen_info.fi);
 		break;
 	case FIB_EVENT_ENTRY_DEL:
@@ -3210,7 +3245,7 @@ static void otto_l3_fib_event_work_do(struct work_struct *work)
 		if (err)
 			dev_err(ctrl->dev, "fib_del() failed\n");
 
-		otto_l3_local_prefix_check(ctrl, &fib_work->fen_info);
+		otto_l3_local_prefix_check(ctrl, &fib_work->fen_info.info);
 		fib_info_put(fib_work->fen_info.fi);
 		break;
 	case FIB_EVENT_RULE_ADD:
@@ -3240,9 +3275,11 @@ static void otto_l3_fib6_event_work_do(struct work_struct *work)
 	case FIB_EVENT_ENTRY_REPLACE:
 	case FIB_EVENT_ENTRY_APPEND:
 		err = otto_l3_fib_add_v6(ctrl, &fib_work->fen6_info, fib_work->members);
+		otto_l3_local_prefix_check(ctrl, &fib_work->fen6_info.info);
 		break;
 	case FIB_EVENT_ENTRY_DEL:
 		err = otto_l3_fib_del_v6(ctrl, &fib_work->fen6_info, fib_work->members);
+		otto_l3_local_prefix_check(ctrl, &fib_work->fen6_info.info);
 		break;
 	}
 	if (err)
