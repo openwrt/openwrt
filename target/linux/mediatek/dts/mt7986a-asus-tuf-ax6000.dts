@@ -54,11 +54,12 @@
 			function = LED_FUNCTION_WLAN;
 			color = <LED_COLOR_ID_WHITE>;
 			gpios = <&pio 2 GPIO_ACTIVE_HIGH>;
-			linux,default-trigger = "phy1tpt";
+			linux,default-trigger = "network";
 		};
 
 		led_system: system {
-			label = "white:system";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_WHITE>;
 			gpios = <&pio 11 GPIO_ACTIVE_HIGH>;
 		};
 
@@ -69,17 +70,20 @@
 		};
 
 		cover-blue {
-			label = "blue:cover";
+			function = "cover";
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&pio 20 GPIO_ACTIVE_HIGH>;
 		};
 
 		cover-red {
-			label = "red:cover";
+			function = "cover";
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&pio 21 GPIO_ACTIVE_HIGH>;
 		};
 
 		cover-green {
-			label = "green:cover";
+			function = "cover";
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&pio 22 GPIO_ACTIVE_HIGH>;
 		};
 	};
@@ -125,7 +129,7 @@
 		};
 	};
 
-	gmac1: mac@1 {
+	mac@1 {
 		/* WAN */
 		compatible = "mediatek,eth-mac";
 		reg = <1>;
@@ -133,54 +137,162 @@
 		phy-handle = <&phy6>;
 	};
 
-	mdio: mdio-bus {
+	mdio-bus {
 		#address-cells = <1>;
 		#size-cells = <0>;
-	};
-};
 
-&mdio {
-	reset-gpios = <&pio 6 GPIO_ACTIVE_LOW>;
-	reset-delay-us = <50000>;
-	reset-post-delay-us = <20000>;
+		reset-gpios = <&pio 6 GPIO_ACTIVE_LOW>;
+		reset-delay-us = <50000>;
+		reset-post-delay-us = <20000>;
 
-	phy5: phy@5 {
-		compatible = "ethernet-phy-ieee802.3-c45";
-		reg = <5>;
+		phy5: phy@5 {
+			compatible = "ethernet-phy-ieee802.3-c45";
+			reg = <5>;
 
-		leds {
-			#address-cells = <1>;
-			#size-cells = <0>;
+			leds {
+				#address-cells = <1>;
+				#size-cells = <0>;
 
-			led@0 {
-				reg = <0>;
-				active-high;
-				color = <LED_COLOR_ID_WHITE>;
-				function = LED_FUNCTION_LAN;
+				led@0 {
+					reg = <0>;
+					active-high;
+					color = <LED_COLOR_ID_WHITE>;
+					function = LED_FUNCTION_LAN;
+				};
 			};
 		};
-	};
 
-	phy6: phy@6 {
-		compatible = "ethernet-phy-ieee802.3-c45";
-		reg = <6>;
+		phy6: phy@6 {
+			compatible = "ethernet-phy-ieee802.3-c45";
+			reg = <6>;
 
-		leds {
-			#address-cells = <1>;
-			#size-cells = <0>;
+			leds {
+				#address-cells = <1>;
+				#size-cells = <0>;
 
-			led@0 {
-				reg = <0>;
-				color = <LED_COLOR_ID_WHITE>;
-				function = LED_FUNCTION_WAN;
+				led@0 {
+					reg = <0>;
+					color = <LED_COLOR_ID_WHITE>;
+					function = LED_FUNCTION_WAN;
+				};
 			};
 		};
-	};
 
-	switch: switch@1f {
-		compatible = "mediatek,mt7531";
-		reg = <31>;
-		reset-gpios = <&pio 5 GPIO_ACTIVE_HIGH>;
+		switch@1f {
+			compatible = "mediatek,mt7531";
+			reg = <31>;
+			reset-gpios = <&pio 5 GPIO_ACTIVE_HIGH>;
+
+			ports {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				port@1 {
+					reg = <1>;
+					label = "lan4";
+					phy-handle = <&swphy1>;
+				};
+
+				port@2 {
+					reg = <2>;
+					label = "lan3";
+					phy-handle = <&swphy2>;
+				};
+
+				port@3 {
+					reg = <3>;
+					label = "lan2";
+					phy-handle = <&swphy3>;
+				};
+
+				port@4 {
+					reg = <4>;
+					label = "lan1";
+					phy-handle = <&swphy4>;
+				};
+
+				port@5 {
+					reg = <5>;
+					label = "lan5";
+					phy-mode = "2500base-x";
+					phy-handle = <&phy5>;
+				};
+
+				port@6 {
+					reg = <6>;
+					label = "cpu";
+					ethernet = <&gmac0>;
+					phy-mode = "2500base-x";
+
+					fixed-link {
+						speed = <2500>;
+						full-duplex;
+						pause;
+					};
+				};
+			};
+
+			mdio {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				swphy1: phy@1 {
+					reg = <1>;
+
+					mediatek,led-config = <
+						0x21 0x8009 /* BASIC_CTRL */
+						0x22 0x0c00 /* ON_DURATION */
+						0x23 0x1400 /* BLINK_DURATION */
+						0x24 0x8000 /* LED0_ON_CTRL */
+						0x25 0x0000 /* LED0_BLINK_CTRL */
+						0x26 0xc007 /* LED1_ON_CTRL */
+						0x27 0x003f /* LED1_BLINK_CTRL */
+					>;
+				};
+
+				swphy2: phy@2 {
+					reg = <2>;
+
+					mediatek,led-config = <
+						0x21 0x8009 /* BASIC_CTRL */
+						0x22 0x0c00 /* ON_DURATION */
+						0x23 0x1400 /* BLINK_DURATION */
+						0x24 0x8000 /* LED0_ON_CTRL */
+						0x25 0x0000 /* LED0_BLINK_CTRL */
+						0x26 0xc007 /* LED1_ON_CTRL */
+						0x27 0x003f /* LED1_BLINK_CTRL */
+					>;
+				};
+
+				swphy3: phy@3 {
+					reg = <3>;
+
+					mediatek,led-config = <
+						0x21 0x8009 /* BASIC_CTRL */
+						0x22 0x0c00 /* ON_DURATION */
+						0x23 0x1400 /* BLINK_DURATION */
+						0x24 0x8000 /* LED0_ON_CTRL */
+						0x25 0x0000 /* LED0_BLINK_CTRL */
+						0x26 0xc007 /* LED1_ON_CTRL */
+						0x27 0x003f /* LED1_BLINK_CTRL */
+					>;
+				};
+
+				swphy4: phy@4 {
+					reg = <4>;
+
+					mediatek,led-config = <
+						0x21 0x8009 /* BASIC_CTRL */
+						0x22 0x0c00 /* ON_DURATION */
+						0x23 0x1400 /* BLINK_DURATION */
+						0x24 0x8000 /* LED0_ON_CTRL */
+						0x25 0x0000 /* LED0_BLINK_CTRL */
+						0x26 0xc007 /* LED1_ON_CTRL */
+						0x27 0x003f /* LED1_BLINK_CTRL */
+					>;
+				};
+			};
+		};
 	};
 };
 
@@ -226,19 +338,15 @@
 		};
 		conf {
 			pins = "WF0_HB1", "WF0_HB2", "WF0_HB3", "WF0_HB4",
-				"WF0_HB0", "WF0_HB0_B", "WF0_HB5", "WF0_HB6",
-				"WF0_HB7", "WF0_HB8", "WF0_HB9", "WF0_HB10",
-				"WF0_TOP_CLK", "WF0_TOP_DATA", "WF1_HB1",
-				"WF1_HB2", "WF1_HB3", "WF1_HB4", "WF1_HB0",
-				"WF1_HB5", "WF1_HB6", "WF1_HB7", "WF1_HB8",
-				"WF1_TOP_CLK", "WF1_TOP_DATA";
+			       "WF0_HB0", "WF0_HB0_B", "WF0_HB5", "WF0_HB6",
+			       "WF0_HB7", "WF0_HB8", "WF0_HB9", "WF0_HB10",
+			       "WF0_TOP_CLK", "WF0_TOP_DATA", "WF1_HB1",
+			       "WF1_HB2", "WF1_HB3", "WF1_HB4", "WF1_HB0",
+			       "WF1_HB5", "WF1_HB6", "WF1_HB7", "WF1_HB8",
+			       "WF1_TOP_CLK", "WF1_TOP_DATA";
 			drive-strength = <MTK_DRIVE_4mA>;
 		};
 	};
-};
-
-&pcie_phy {
-	status = "okay";
 };
 
 &spi0 {
@@ -249,8 +357,6 @@
 	spi_nand_flash: flash@0 {
 		compatible = "u-boot-dont-touch-spi-nand";
 		reg = <0>;
-		#address-cells = <1>;
-		#size-cells = <1>;
 
 		spi-max-frequency = <52000000>;
 		spi-tx-bus-width = <4>;
@@ -291,140 +397,25 @@
 				label = "UBI_DEV";
 
 				volumes {
-					ubi_factory: ubi-volume-factory {
+					ubi-volume-factory {
 						volname = "Factory";
+
+						nvmem-layout {
+							compatible = "fixed-layout";
+							#address-cells = <1>;
+							#size-cells = <1>;
+
+							eeprom_factory_0: eeprom@0 {
+								reg = <0x0 0x1000>;
+							};
+
+							macaddr_factory_4: macaddr@4 {
+								reg = <0x4 0x6>;
+							};
+						};
 					};
 				};
 			};
-		};
-	};
-};
-
-&ubi_factory {
-	nvmem-layout {
-		compatible = "fixed-layout";
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		eeprom_factory_0: eeprom@0 {
-			reg = <0x0 0x1000>;
-		};
-
-		macaddr_factory_4: macaddr@4 {
-			reg = <0x4 0x6>;
-		};
-	};
-};
-
-&switch {
-	ports {
-		#address-cells = <1>;
-		#size-cells = <0>;
-
-		port@1 {
-			reg = <1>;
-			label = "lan4";
-			phy-handle = <&swphy1>;
-		};
-
-		port@2 {
-			reg = <2>;
-			label = "lan3";
-			phy-handle = <&swphy2>;
-		};
-
-		port@3 {
-			reg = <3>;
-			label = "lan2";
-			phy-handle = <&swphy3>;
-		};
-
-		port@4 {
-			reg = <4>;
-			label = "lan1";
-			phy-handle = <&swphy4>;
-		};
-
-		port@5 {
-			reg = <5>;
-			label = "lan5";
-			phy-mode = "2500base-x";
-			phy-handle = <&phy5>;
-
-		};
-
-		port@6 {
-			reg = <6>;
-			label = "cpu";
-			ethernet = <&gmac0>;
-			phy-mode = "2500base-x";
-
-			fixed-link {
-				speed = <2500>;
-				full-duplex;
-				pause;
-			};
-		};
-	};
-
-	mdio {
-		#address-cells = <1>;
-		#size-cells = <0>;
-
-		swphy1: phy@1 {
-			reg = <1>;
-
-			mediatek,led-config = <
-				0x21 0x8009 /* BASIC_CTRL */
-				0x22 0x0c00 /* ON_DURATION */
-				0x23 0x1400 /* BLINK_DURATION */
-				0x24 0x8000 /* LED0_ON_CTRL */
-				0x25 0x0000 /* LED0_BLINK_CTRL */
-				0x26 0xc007 /* LED1_ON_CTRL */
-				0x27 0x003f /* LED1_BLINK_CTRL */
-			>;
-		};
-
-		swphy2: phy@2 {
-			reg = <2>;
-
-			mediatek,led-config = <
-				0x21 0x8009 /* BASIC_CTRL */
-				0x22 0x0c00 /* ON_DURATION */
-				0x23 0x1400 /* BLINK_DURATION */
-				0x24 0x8000 /* LED0_ON_CTRL */
-				0x25 0x0000 /* LED0_BLINK_CTRL */
-				0x26 0xc007 /* LED1_ON_CTRL */
-				0x27 0x003f /* LED1_BLINK_CTRL */
-			>;
-		};
-
-		swphy3: phy@3 {
-			reg = <3>;
-
-			mediatek,led-config = <
-				0x21 0x8009 /* BASIC_CTRL */
-				0x22 0x0c00 /* ON_DURATION */
-				0x23 0x1400 /* BLINK_DURATION */
-				0x24 0x8000 /* LED0_ON_CTRL */
-				0x25 0x0000 /* LED0_BLINK_CTRL */
-				0x26 0xc007 /* LED1_ON_CTRL */
-				0x27 0x003f /* LED1_BLINK_CTRL */
-			>;
-		};
-
-		swphy4: phy@4 {
-			reg = <4>;
-
-			mediatek,led-config = <
-				0x21 0x8009 /* BASIC_CTRL */
-				0x22 0x0c00 /* ON_DURATION */
-				0x23 0x1400 /* BLINK_DURATION */
-				0x24 0x8000 /* LED0_ON_CTRL */
-				0x25 0x0000 /* LED0_BLINK_CTRL */
-				0x26 0xc007 /* LED1_ON_CTRL */
-				0x27 0x003f /* LED1_BLINK_CTRL */
-			>;
 		};
 	};
 };
