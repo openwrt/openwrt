@@ -50,7 +50,7 @@ function section(title, rows) {
 
 function summary(status) {
 	var cards = [
-		[ _('GPON state'), state(status.state) ],
+		[ _('PON state'), state(status.state) ],
 		[ _('OMCI agent'), status.agent_operational ? _('Operational') : _('Not operational') ],
 		[ _('OLT profile'), text(status.olt_profile_effective_name) ],
 		[ _('MIB objects'), text(status.mib_objects, '0') ]
@@ -91,6 +91,8 @@ function values(status) {
 		permissive: yesno(status.permissive),
 		fake_omci: yesno(status.fake_omci),
 		dying_gasp: yesno(status.dying_gasp),
+		reboot: status.reboot == null ? '-' : yesno(status.reboot),
+		onu_type: text(status.onu_type_name),
 		uapi: '%s / client %s (%s)'.format(text(status.uapi_version), text(status.client_uapi_version), status.uapi_compatible ? _('compatible') : _('mismatch')),
 		capabilities: hex(status.capabilities, 8),
 		profile_configured: text(status.olt_profile_configured_name),
@@ -152,14 +154,16 @@ return view.extend({
 			E('p', {}, _('Runtime state reported directly by the Linux OMCI Generic Netlink API through the native ucode binding.')),
 			E('div', { 'id': 'omci-summary-root' }, summary(status)),
 			section(_('Channel and agent'), [
-				row(_('GPON state'), v.state, 'state'), row(_('Interface index'), v.ifindex, 'ifindex'),
+				row(_('PON state'), v.state, 'state'), row(_('Interface index'), v.ifindex, 'ifindex'),
 				row(_('ONU ID'), v.onu_id, 'onu_id'), row(_('Default GEM port'), v.gem_port, 'gem_port'),
 				row(_('OMCI channel up'), v.channel_up, 'channel_up'), row(_('Agent enabled'), v.agent_enabled, 'agent_enabled'),
 				row(_('Agent operational'), v.agent_operational, 'agent_operational'), row(_('Permissive mode'), v.permissive, 'permissive'),
 				row(_('Fake OMCI'), v.fake_omci, 'fake_omci'), row(_('Dying gasp'), v.dying_gasp, 'dying_gasp'),
+				row(_('Allow OLT-requested reboot'), v.reboot, 'reboot'),
 				row(_('UAPI'), v.uapi, 'uapi'), row(_('Capabilities'), v.capabilities, 'capabilities')
 			]),
 			section(_('ONU identity'), [
+				row(_('ONU type'), v.onu_type, 'onu_type'),
 				row(_('Serial number'), v.serial, 'serial'), row(_('Vendor ID'), v.vendor_id, 'vendor_id'),
 				row(_('Hardware version'), v.hardware_version, 'hardware_version'),
 				row(_('Software image 0 version'), v.software_version_0, 'software_version_0'),

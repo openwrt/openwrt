@@ -366,6 +366,21 @@
 					bits = <6 6>;
 				};
 
+				xpon_rx_imp: xpon-rx-impedance@b,2 {
+					reg = <0xb 0x1>;
+					bits = <2 2>;
+				};
+
+				xpon_txp_imp: xpon-txp-impedance@b,4 {
+					reg = <0xb 0x1>;
+					bits = <4 2>;
+				};
+
+				xpon_txn_imp: xpon-txn-impedance@b,6 {
+					reg = <0xb 0x1>;
+					bits = <6 2>;
+				};
+
 				usb0_u2_intr: usb2-intr@35 {
 					reg = <0x35 0x2>;
 					bits = <7 5>;
@@ -635,7 +650,12 @@
 
 		xpon_phy: phy@1faf0000 {
 			compatible = "airoha,en7580-xpon-phy";
-			reg = <0x1faf0000 0x2000>;
+			reg = <0x1faf0000 0x1000>,
+			      <0x1faf3000 0x1000>;
+			reg-names = "pcs", "pma";
+
+			nvmem-cells = <&xpon_rx_imp>, <&xpon_txp_imp>, <&xpon_txn_imp>;
+			nvmem-cell-names = "rx-impedance", "txp-impedance", "txn-impedance";
 
 			pinctrl-names = "default";
 			pinctrl-0 = <&pon_pinctrl>;

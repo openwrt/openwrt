@@ -3,7 +3,7 @@
 #define _UAPI_LINUX_OMCI_H
 
 #define OMCI_GENL_NAME		"omci"
-#define OMCI_GENL_VERSION	13
+#define OMCI_GENL_VERSION	14
 #define OMCI_MAX_PDU_LEN	1980
 #define OMCI_MAX_ATTR_DATA	64
 #define OMCI_MAX_CONFIG_VALUE	64
@@ -111,6 +111,7 @@ enum omci_attr {
 	OMCI_ATTR_OLT_PROFILE_QUIRKS,
 	OMCI_ATTR_AGENT_OPERATIONAL,
 	OMCI_ATTR_AGENT_DYING_GASP,
+	OMCI_ATTR_ONU_TYPE,
 
 	__OMCI_ATTR_MAX,
 };
@@ -284,11 +285,35 @@ enum omci_config_key {
 	OMCI_CONFIG_HARDWARE_VERSION,
 	OMCI_CONFIG_SOFTWARE_VERSION_0,
 	OMCI_CONFIG_SOFTWARE_VERSION_1,
+	OMCI_CONFIG_AGENT_REBOOT,
 
 	__OMCI_CONFIG_MAX,
 };
 
 #define OMCI_CONFIG_MAX (__OMCI_CONFIG_MAX - 1)
+
+/**
+ * enum omci_onu_type - deployment role advertised by an ONU/ONT
+ * @OMCI_ONU_TYPE_OTHER: deployment role is not one of the predefined types
+ * @OMCI_ONU_TYPE_SFU: Single Family Unit ONT
+ * @OMCI_ONU_TYPE_HGU: Home Gateway Unit ONT
+ * @OMCI_ONU_TYPE_MDU: Multi-Dwelling Unit ONT
+ * @OMCI_ONU_TYPE_SBU: Single Business Unit ONT
+ * @OMCI_ONU_TYPE_MTU: Multi-Tenant Unit ONT
+ * @OMCI_ONU_TYPE_CBU: Cellular Backhaul Unit ONT
+ *
+ * These values are deliberately stable because OMCI_CONFIG_ONU_TYPE is also
+ * exposed to userspace as a one-byte configuration value.
+ */
+enum omci_onu_type {
+	OMCI_ONU_TYPE_OTHER,
+	OMCI_ONU_TYPE_SFU,
+	OMCI_ONU_TYPE_HGU,
+	OMCI_ONU_TYPE_MDU,
+	OMCI_ONU_TYPE_SBU,
+	OMCI_ONU_TYPE_MTU,
+	OMCI_ONU_TYPE_CBU,
+};
 
 /**
  * enum omci_olt_profile - OLT interoperability policy profile
@@ -331,6 +356,7 @@ enum omci_config_source {
 	OMCI_CONFIG_SOURCE_NVMEM,
 	OMCI_CONFIG_SOURCE_DRIVER,
 	OMCI_CONFIG_SOURCE_NETLINK,
+	OMCI_CONFIG_SOURCE_SYSFS,
 };
 
 enum omci_fec_status {

@@ -42,6 +42,7 @@ const config_specs = [
 	{ key: 16, name: 'hardware-version', option: 'hardware_version', scalar: false },
 	{ key: 17, name: 'software-version-0', option: 'software_version_0', scalar: false },
 	{ key: 18, name: 'software-version-1', option: 'software_version_1', scalar: false },
+	{ key: 19, name: 'agent-reboot', option: 'reboot', scalar: true },
 ];
 
 const profile_values = {
@@ -64,8 +65,10 @@ const profile_names = [
 ];
 
 const source_names = [
-	'unspecified', 'default', 'device-tree', 'nvmem', 'driver', 'netlink'
+	'unspecified', 'default', 'device-tree', 'nvmem', 'driver', 'netlink', 'sysfs'
 ];
+
+const onu_type_names = [ 'other', 'sfu', 'hgu', 'mdu', 'sbu', 'mtu', 'cbu' ];
 
 const category_names = [
 	'unspecified', 'equipment', 'ani', 'uni', 'layer2', 'layer3',
@@ -244,6 +247,7 @@ function load_config(device) {
 }
 
 function decorate_status(device, status) {
+	status.onu_type_name = onu_type_names[status.onu_type] || `unknown-${status.onu_type}`;
 	status.olt_profile_configured_name = profile_name(status.olt_profile_configured);
 	status.olt_profile_effective_name = profile_name(status.olt_profile_effective);
 	status.olt_profile_forced_name = profile_name(status.olt_profile_forced);
@@ -251,6 +255,7 @@ function decorate_status(device, status) {
 
 	let config = load_config(device);
 	if (config != null) {
+		status.reboot = config['agent-reboot'];
 		status.serial = config.serial;
 		status.vendor_id = config['vendor-id'];
 		status.hardware_version = config['hardware-version'];

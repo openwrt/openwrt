@@ -40,6 +40,10 @@ return view.extend({
 		o.default = o.enabled;
 		o.rmempty = false;
 
+		o = s.option(form.Flag, 'reboot', _('Allow OLT-requested reboot'));
+		o.default = o.enabled;
+		o.rmempty = false;
+
 		o = s.option(form.ListValue, 'olt_profile', _('OLT profile'));
 		[ ['auto', _('Auto detect')], ['generic', _('Generic')], ['nokia-alcl', _('Nokia / Alcatel-Lucent')],
 		  ['dasan', _('DASAN')], ['huawei', _('Huawei')], ['fiberhome', _('FiberHome')], ['zte', _('ZTE')],
@@ -87,8 +91,11 @@ return view.extend({
 		o = s.option(form.Value, 'traffic_management_option', _('Traffic management option'));
 		o.datatype = 'range(0,255)';
 
-		o = s.option(form.Value, 'onu_type', _('ONU type'));
-		o.datatype = 'range(0,255)';
+		o = s.option(form.ListValue, 'onu_type', _('ONU type'));
+		o.value('', _('Keep kernel value'));
+		[ 'Other', 'SFU', 'HGU', 'MDU', 'SBU', 'MTU', 'CBU' ].forEach(function(name, value) {
+			o.value(String(value), name);
+		});
 
 		o = s.option(form.Value, 'uni_count', _('UNI count'));
 		o.datatype = 'range(0,255)';

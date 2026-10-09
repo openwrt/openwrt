@@ -419,8 +419,8 @@ static uc_value_t *config_value_decode(uint16_t key, const void *data, size_t le
 	const uint8_t *p = data;
 	size_t n;
 
-	if (key >= OMCI_CONFIG_TRAFFIC_MGMT_OPTION &&
-	    key <= OMCI_CONFIG_OMCC_VERSION) {
+	if ((key >= OMCI_CONFIG_TRAFFIC_MGMT_OPTION &&
+	     key <= OMCI_CONFIG_OMCC_VERSION) || key == OMCI_CONFIG_AGENT_REBOOT) {
 		if (len != 1)
 			return hex_value(data, len);
 		return ucv_uint64_new(p[0]);
@@ -547,6 +547,7 @@ static int status_reply(struct nlmsghdr *nlh, void *arg)
 	obj_add_u8(o, "permissive", a[OMCI_ATTR_AGENT_PERMISSIVE]);
 	obj_add_u8(o, "fake_omci", a[OMCI_ATTR_AGENT_FAKE_OMCI]);
 	obj_add_u8(o, "dying_gasp", a[OMCI_ATTR_AGENT_DYING_GASP]);
+	obj_add_u8(o, "onu_type", a[OMCI_ATTR_ONU_TYPE]);
 	obj_add_u8(o, "olt_profile_configured", a[OMCI_ATTR_OLT_PROFILE_CONFIGURED]);
 	obj_add_u8(o, "olt_profile_effective", a[OMCI_ATTR_OLT_PROFILE_EFFECTIVE]);
 	obj_add_u8(o, "olt_profile_forced", a[OMCI_ATTR_OLT_PROFILE_FORCED]);
@@ -1078,7 +1079,8 @@ static uc_value_t *uc_config_set(uc_vm_t *vm, size_t nargs)
 	ret = add_u16(&req, OMCI_ATTR_CONFIG_KEY, key);
 	if (ret) goto out;
 
-	if (key >= OMCI_CONFIG_TRAFFIC_MGMT_OPTION && key <= OMCI_CONFIG_OMCC_VERSION) {
+	if ((key >= OMCI_CONFIG_TRAFFIC_MGMT_OPTION &&
+	     key <= OMCI_CONFIG_OMCC_VERSION) || key == OMCI_CONFIG_AGENT_REBOOT) {
 		if (!parse_u32_arg(value, &n32) || n32 > 255) { ret = -EINVAL; goto out; }
 		n8 = n32;
 		ret = add_attr(&req, OMCI_ATTR_CONFIG_VALUE, &n8, sizeof(n8));

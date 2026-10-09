@@ -4,6 +4,8 @@ config agent 'main'
 	option permissive '1'
 	option fake_omci '0'
 	option dying_gasp '1'
+	# Optional OLT-requested reboot policy; empty keeps the kernel default.
+	option reboot ''
 	option reset_mib '0'
 
 	# OLT interoperability policy: auto, generic, nokia-alcl, dasan,
