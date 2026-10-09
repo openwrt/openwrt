@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
+. /lib/functions.sh
+. /lib/functions/uci-defaults.sh
+
+board_config_update
+
+board=$(board_name)
+
+case "$board" in
+iei,puzzle-m902)
+	ucidef_set_compat_version "1.1"
+	;;
+esac
+
+board_config_flush
+
+exit 0
