@@ -86,7 +86,10 @@ endif
 
 $(curdir)/install: $(curdir)/compile
 
+ifeq ($(SDK),)
 $(eval $(call stampfile,$(curdir),toolchain,compile,$(TOOLCHAIN_DIR)/stamp/.gcc_final_installed,,$(TOOLCHAIN_DIR)))
 $(eval $(call stampfile,$(curdir),toolchain,check,$(TMP_DIR)/.build))
+endif
+
 $(eval $(call subdir,$(curdir)))
 
