@@ -1,0 +1,30 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Anatoliy Shulika <shulikaa@icloud.com>
+Date: Thu, 6 Aug 2026 12:00:00 +0200
+Subject: [PATCH] arm64: dts: broadcom: archer-c2300-v1: enable PCIe
+
+Both PCIe controllers are populated on this board: PCIE0 carries the
+5 GHz BCM4366 (14e4:4365) and PCIE1 the 2.4 GHz BCM4360 (14e4:4360).
+Enable them so the radios are enumerated.
+
+Signed-off-by: Anatoliy Shulika <shulikaa@icloud.com>
+---
+--- a/arch/arm64/boot/dts/broadcom/bcmbca/bcm4906-tplink-archer-c2300-v1.dts
++++ b/arch/arm64/boot/dts/broadcom/bcmbca/bcm4906-tplink-archer-c2300-v1.dts
+@@ -189,3 +189,16 @@
+ 		};
+ 	};
+ };
++
++/*
++ * Both PCIe links are confirmed populated on this board (see the
++ * pcie0/pcie1 comment in bcm4908.dtsi for the boot-log evidence).
++ * PCIE2 is confirmed empty and is intentionally left undescribed.
++ */
++&pcie0 {
++	status = "okay";
++};
++
++&pcie1 {
++	status = "okay";
++};
