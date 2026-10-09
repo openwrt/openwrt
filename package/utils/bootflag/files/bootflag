@@ -1,0 +1,182 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-or-later
+#
+# Copyright (C) 2026 Michael Lotz <mmlr@mlotz.ch>
+
+print_usage_and_exit() {
+	echo "usage: $0 [<options>] <command> <flag> [<arguments>]
+
+Commands:
+	list
+		List all available flags.
+
+	values <flag>
+		Prints the available named values of the flag, if present.
+
+	show <flag>
+		Prints the current value of the flag in human readable format.
+
+	get <flag>
+		Prints the raw value of the flag.
+
+	set <flag> <value>
+		Sets the value of the flag either by numeric value or label."
+
+	exit 1
+}
+
+find_flag_declaration() {
+	find /sys/firmware/devicetree -path "*/nvmem-layout/$1@*" | head -n1
+}
+
+find_flag_cell() {
+	find /sys/devices/platform -path "*/cells/$1@*" | head -n1
+}
+
+read_hex() {
+	hexdump -ve "$2/1 \"%02x\" \" \"" "$1" | sed 's/ $//'
+}
+
+write_hex() {
+	echo -ne $(echo "$1" | awk '{ gsub(/.{2}/, "\\\\x&") }1')
+}
+
+hex_sequence() {
+	WIDTH=$(($2 * 2))
+
+	for I in $(seq 0 "$1")
+	do
+		printf "%0${WIDTH}x\n" "$I"
+	done
+}
+
+get_flag_width() {
+	hexdump -ve '/4 "%u\n"' "$1/reg" | tail -n1
+}
+
+get_flag_labels() {
+	FLAG=$1
+
+	[ -r "$FLAG/value-labels" ] || return
+
+	WIDTH=$(get_flag_width "$FLAG")
+	LABELS=$(cat "$FLAG/value-labels" | tr "\0" " ")
+
+	if [ -r "$FLAG/values" ]
+	then
+		set -- $(read_hex "$FLAG/values" "$WIDTH")
+	else
+		COUNT=$(echo "$LABELS" | tr " " "\n" | wc -l)
+		set -- $(hex_sequence "$COUNT" "$WIDTH")
+	fi
+
+	for LABEL in $(cat "$FLAG/value-labels" | tr '\0' ' ')
+	do
+		echo "$1=$LABEL"
+		shift
+	done
+}
+
+get_flag_label_for_value() {
+	get_flag_labels "$1" | grep "^$2=" | cut -d'=' -f2
+}
+
+get_flag_value_for_label() {
+	get_flag_labels "$1" | grep "^.*=$2$" | cut -d'=' -f1
+}
+
+[ -z "$1" ] && print_usage_and_exit
+
+NAME="$2"
+
+if [ ! -z "$NAME" ]
+then
+	FLAG=$(find_flag_declaration "$NAME")
+	if [ -z "$FLAG" ]
+	then
+		echo "flag \"$NAME\" not found"
+		exit 2
+	fi
+fi
+
+case "$1" in
+	list)
+		[ $# -eq 1 ] || print_usage_and_exit
+
+		COMPATIBLES=$(find /sys/firmware/devicetree \
+			-path "*/nvmem-layout/*" -name "compatible" | sort)
+		for COMPATIBLE in $COMPATIBLES
+		do
+			[ $(cat "$COMPATIBLE") == "bootflag" ] || continue
+
+			CELL=$(dirname "$COMPATIBLE")
+
+			echo -n $(basename ${CELL%@*})
+			if [ ! -r "$CELL/label" ]
+			then
+				echo
+				continue
+			fi
+
+			echo " - $(cat "$CELL/label")"
+		done
+	;;
+
+	values)
+		[ $# -eq 2 ] || print_usage_and_exit
+
+		LABELS=$(get_flag_labels "$FLAG")
+
+		if [ -z "$LABELS" ]
+		then
+			echo "no value labels, use numeric values"
+		else
+			echo "$LABELS"
+		fi
+	;;
+
+	show|get)
+		[ $# -eq 2 ] || print_usage_and_exit
+
+		WIDTH=$(get_flag_width "$FLAG")
+		CELL=$(find_flag_cell "$NAME")
+		VALUE=$(read_hex "$CELL" "$WIDTH")
+
+		if [ "$1" == "get" ]
+		then
+			echo "$VALUE"
+		else
+			LABEL=$(get_flag_label_for_value "$FLAG" "$VALUE")
+			[ -z "$LABEL" ] || LABEL="=$LABEL"
+			echo "current \"$NAME\" value: $VALUE$LABEL"
+		fi
+	;;
+
+	set)
+		[ $# -eq 3 ] || print_usage_and_exit
+
+		CELL=$(find_flag_cell "$NAME")
+
+		VALUE=$(get_flag_value_for_label "$FLAG" "$3")
+		if [ -z "$VALUE" ]
+		then
+			if [ $(echo "$3" | grep -ci "^[0-9a-fA-F]*$") != 1 ]
+			then
+				echo "value \"$3\" not found for \"$NAME\""
+				exit 3
+			fi
+
+			VALUE="$3"
+		fi
+
+		LABEL=$(get_flag_label_for_value "$FLAG" "$VALUE")
+		[ -z "$LABEL" ] || LABEL="=$LABEL"
+
+		echo "setting \"$NAME\" value to $VALUE$LABEL"
+		write_hex "$VALUE" > "$CELL"
+	;;
+
+	*)
+		print_usage_and_exit
+	;;
+esac
