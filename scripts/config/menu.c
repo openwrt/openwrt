@@ -784,10 +784,134 @@ static void get_symbol_props_str(struct gstr *r, struct symbol *sym,
 }
 
 /*
+ * Like expr_contains_symbol(), but tracks negation: report only occurrences of
+ * SYM with the requested polarity ('positive' flips on every E_NOT). Symbols
+ * inside comparisons have no meaningful polarity - whether they count is the
+ * caller's choice via 'count_cmp', because the two users of this helper need
+ * opposite conservatism: the trigger test must ignore them (the provider-
+ * fallback selects the metadata generator emits, "select fallback if
+ * preferred<depender", would otherwise show up as a bogus "enabling the
+ * preferred provider pulls in the fallback"), while the suppression test must
+ * count them (an uncertain reference keeps the entry hidden rather than
+ * risking a wrong one).
+ */
+static bool expr_contains_symbol_pol(struct expr *dep, struct symbol *sym,
+				     bool positive, bool count_cmp)
+{
+	if (!dep)
+		return false;
+
+	switch (dep->type) {
+	case E_AND:
+	case E_OR:
+		return expr_contains_symbol_pol(dep->left.expr, sym, positive,
+						count_cmp) ||
+		       expr_contains_symbol_pol(dep->right.expr, sym, positive,
+						count_cmp);
+	case E_NOT:
+		return expr_contains_symbol_pol(dep->left.expr, sym, !positive,
+						count_cmp);
+	case E_SYMBOL:
+		return positive && dep->left.sym == sym;
+	case E_EQUAL:
+	case E_GEQ:
+	case E_GTH:
+	case E_LEQ:
+	case E_LTH:
+	case E_UNEQUAL:
+		return count_cmp &&
+		       (dep->left.sym == sym ||
+			dep->right.sym == sym);
+	default:
+		;
+	}
+	return false;
+}
+
+/*
+ * OpenWrt: reverse "select ... if <this>" lookup. An optional dependency wired
+ * as '+SYM:pkg' in a package's DEPENDS is emitted by the metadata generator as
+ * 'select PACKAGE_pkg if SYM' on the *package* symbol, so the option SYM's own
+ * help page never shows what enabling it pulls in. Scan every symbol's P_SELECT
+ * properties and list those whose condition references SYM, right where the
+ * user toggles it - no redundant help text or select-on-option needed.
+ *
+ * menu_finalize() folds a symbol's base dependencies (menu->dep) into every
+ * property's visible.expr, which blurs the picture twice, and polarity is what
+ * restores it. First: once SYM appears anywhere in the selecting package's
+ * base dependency - e.g. in the guards the metadata generator emits when a
+ * pulled-in target carries constraints of its own ('!(SYM && ...) ||
+ * CONSTRAINT') - EVERY select of that package matches a plain contains-test
+ * on visible.expr, listing the package's whole dependency footprint down to
+ * libc. A genuine 'select pkg if SYM' carries SYM *positively* in the folded
+ * condition, the folded-in guards only *negated* - so require a positive
+ * occurrence in visible.expr. Second: a package that merely 'depends on SYM'
+ * folds a positive SYM into all its select conditions, which would pass that
+ * test - but there SYM is also positive in menu->dep itself, while the guard
+ * shapes reference it only negated. So additionally suppress the entry when
+ * menu->dep contains SYM in positive polarity. (A package that both 'depends
+ * on SYM' and 'select pkg if SYM' is suppressed too - accepted as the cheaper
+ * error, as dropping the suppression would list a package's whole dependency
+ * footprint under every symbol that package depends on. In-tree examples of
+ * the suppressed shape: kmod-usb-core's '@USB_SUPPORT +USB_SUPPORT:kmod-usb-
+ * common' and armsr's kmod-dwmac-renesas-gbeth.)
+ *
+ * The same target can be selected by more than one package symbol - a
+ * multi-binary package whose binaries share the option carries the dep on each
+ * binary - which would print the target once per selecting package. Render each
+ * entry and skip it when an identical one was already emitted. (Two selects of
+ * the same target under different conditions likewise collapse to one line; the
+ * condition is not printed anyway.)
+ *
+ * This walks the whole symbol table, so callers do it only for the focused help
+ * view, not for the per-match aggregation in get_relations_str().
+ */
+static void get_symbol_reverse_selects_str(struct gstr *r, struct symbol *sym)
+{
+	struct symbol *sym2;
+	struct property *prop2;
+	struct gstr seen, sel;
+	bool hit = false;
+	int i;
+
+	seen = str_new();
+	for_all_symbols(i, sym2) {
+		if (sym2 == sym)
+			continue;
+		for_all_properties(sym2, prop2, P_SELECT) {
+			if (!prop2->visible.expr ||
+			    !expr_contains_symbol_pol(prop2->visible.expr, sym,
+						      true, false))
+				continue;
+			if (prop2->menu && prop2->menu->dep &&
+			    expr_contains_symbol_pol(prop2->menu->dep, sym,
+						     true, true))
+				continue;
+			sel = str_new();
+			str_append(&sel, "  - ");
+			expr_gstr_print(prop2->expr, &sel);
+			str_append(&sel, "\n");
+			if (strstr(str_get(&seen), str_get(&sel))) {
+				str_free(&sel);
+				continue;
+			}
+			str_append(&seen, str_get(&sel));
+			if (!hit) {
+				str_append(r, "Selects when enabled:\n");
+				hit = true;
+			}
+			str_append(r, str_get(&sel));
+			str_free(&sel);
+		}
+	}
+	str_free(&seen);
+}
+
+/*
  * head is optional and may be NULL
  */
 static void get_symbol_str(struct gstr *r, struct symbol *sym,
-		    struct list_head *head)
+		    struct list_head *head, bool show_reverse_selects)
 {
 	struct property *prop;
 
@@ -827,6 +951,14 @@ static void get_symbol_str(struct gstr *r, struct symbol *sym,
 		expr_gstr_print_revdep(sym->rev_dep.expr, r, no, "Selected by [n]:\n");
 	}
 
+	/*
+	 * OpenWrt: surface what enabling this option pulls in via '+SYM:pkg'
+	 * wiring. Skipped for the search-results aggregation (get_relations_str),
+	 * which would turn the full-table scan into an O(matches x symbols) pass.
+	 */
+	if (show_reverse_selects)
+		get_symbol_reverse_selects_str(r, sym);
+
 	get_symbol_props_str(r, sym, P_IMPLY, "Implies: ");
 	if (sym->implied.expr) {
 		expr_gstr_print_revdep(sym->implied.expr, r, yes, "Implied by [y]:\n");
@@ -844,7 +976,7 @@ struct gstr get_relations_str(struct symbol **sym_arr, struct list_head *head)
 	int i;
 
 	for (i = 0; sym_arr && (sym = sym_arr[i]); i++)
-		get_symbol_str(&res, sym, head);
+		get_symbol_str(&res, sym, head, false);
 	if (!i)
 		str_append(&res, "No matches found.\n");
 	return res;
@@ -863,5 +995,5 @@ void menu_get_ext_help(struct menu *menu, struct gstr *help)
 	}
 	str_printf(help, "%s\n", help_text);
 	if (sym)
-		get_symbol_str(help, sym, NULL);
+		get_symbol_str(help, sym, NULL, true);
 }
