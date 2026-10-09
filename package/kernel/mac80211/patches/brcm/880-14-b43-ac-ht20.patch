@@ -1,0 +1,492 @@
+From 22245c643e8a849c6f1db2e2aa45538fae692f88 Mon Sep 17 00:00:00 2001
+From: Russell Ballestrini <russell@unturf.com>
+Date: Fri, 10 Oct 2026 12:00:00 -0400
+Subject: [PATCH 14/29] b43: AC-PHY: HT (802.11n, MCS 0..7) on core rev >= 40
+
+HT RX and TX on the AC core: the HT capabilities, the HT rate entry in the
+AC TX header (PLCP, PHY control words, MCS, short GI), HT RX reporting,
+the ucode 907 rate tables and the 5 GHz channel table of the R6400's wl.ko.
+Verified on the Netgear R6400 against a 2x2 client at MCS 7, 20 MHz.
+---
+ drivers/net/wireless/broadcom/b43/dma.h  |  10 +-
+ drivers/net/wireless/broadcom/b43/main.c |  78 ++++++++
+ drivers/net/wireless/broadcom/b43/xmit.c | 246 +++++++++++++++++++++++++-
+ drivers/net/wireless/broadcom/b43/xmit.h |  29 +++
+ 4 files changed, 357 insertions(+), 6 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/b43/dma.h
++++ b/drivers/net/wireless/broadcom/b43/dma.h
+@@ -169,7 +169,15 @@
+ /* Core rev >= 40 ucode puts 40 bytes before the PLCP, not 38
+  * (wl.ko hwrxoff: movhi r3, #40 at 0x164408, stored at 0x164410). */
+ #define B43_DMA0_RX_FW598_FO_REV40	40
+-#define B43_DMA0_RX_FW598_REV40_BUFSIZE	(B43_DMA0_RX_FW598_FO_REV40 + IEEE80211_MAX_FRAME_LEN)
++/*
++ * The AC-PHY advertises HT (main.c, b43_setup_bands), and an HT peer may
++ * send a 3839 byte A-MSDU in a plain MPDU (no A-MSDU length bit in our
++ * HT capabilities). Room for the 6 byte PLCP, 2 byte pad and an HT MPDU of
++ * up to IEEE80211_MAX_MPDU_LEN_HT_BA (4095), so dma_rx does not drop it as
++ * "frame spans multiple buffers".
++ */
++#define B43_DMA0_RX_FW598_REV40_BUFSIZE	(B43_DMA0_RX_FW598_FO_REV40 + 6 + 2 + \
++					 IEEE80211_MAX_MPDU_LEN_HT_BA)
+ #define B43_DMA0_RX_FW351_FO		30
+ 
+ /* DMA engine tuning knobs */
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
+@@ -300,6 +300,23 @@
+ 	CHAN5G(165, 0),
+ };
+ 
++/*
++ * AC-PHY (core rev >= 40) 5 GHz channels: the 20 MHz channels radio 0x2069
++ * rev 4's tuning table covers (chan_tuning_2069rev4, chan-set gaps doc),
++ * without the A-PHY table's 4.9 GHz entries 184..196 and 2..26, whose
++ * 5000 + 5 * n frequencies are wrong and made cfg80211_chandef_valid() warn
++ * at every scan (2026-10-06 stress run).
++ */
++static struct ieee80211_channel b43_5ghz_acphy_chantable[] = {
++	CHAN5G(36, 0),	CHAN5G(40, 0),	CHAN5G(44, 0),	CHAN5G(48, 0),
++	CHAN5G(52, 0),	CHAN5G(56, 0),	CHAN5G(60, 0),	CHAN5G(64, 0),
++	CHAN5G(100, 0),	CHAN5G(104, 0),	CHAN5G(108, 0),	CHAN5G(112, 0),
++	CHAN5G(116, 0),	CHAN5G(120, 0),	CHAN5G(124, 0),	CHAN5G(128, 0),
++	CHAN5G(132, 0),	CHAN5G(136, 0),	CHAN5G(140, 0),	CHAN5G(144, 0),
++	CHAN5G(149, 0),	CHAN5G(153, 0),	CHAN5G(157, 0),	CHAN5G(161, 0),
++	CHAN5G(165, 0),
++};
++
+ static struct ieee80211_channel b43_5ghz_aphy_chantable[] = {
+ 	CHAN5G(34, 0),		CHAN5G(36, 0),
+ 	CHAN5G(38, 0),		CHAN5G(40, 0),
+@@ -348,6 +365,18 @@
+ 	.n_bitrates	= b43_a_ratetable_size,
+ };
+ 
++/*
++ * 5 GHz band of the AC-PHY: the A-PHY channels and rates plus HT20 when
++ * b43_ac_ht_nss() allows it (b43_ac_setup_ht_cap fills ht_cap).
++ */
++static struct ieee80211_supported_band b43_band_5GHz_acphy = {
++	.band		= NL80211_BAND_5GHZ,
++	.channels	= b43_5ghz_acphy_chantable,
++	.n_channels	= ARRAY_SIZE(b43_5ghz_acphy_chantable),
++	.bitrates	= b43_a_ratetable,
++	.n_bitrates	= b43_a_ratetable_size,
++};
++
+ static struct ieee80211_supported_band b43_band_2GHz = {
+ 	.band		= NL80211_BAND_2GHZ,
+ 	.channels	= b43_2ghz_chantable,
+@@ -6113,6 +6142,49 @@
+ 	b43info(wl, "Controller restarted\n");
+ }
+ 
++/*
++ * HT capabilities of the AC-PHY 5 GHz band (re/r6400/b43-acphy/
++ * ht20-rev42.md). wl.ko starts from 0x181e (wlc_attach 0x13e390..0x13e39c:
++ * 20/40, SM power save disabled, greenfield, max A-MSDU 7935, DSSS/CCK 40)
++ * and adds short GI 20 and 40 (PHY cap bit 2, 0x13e47c..0x13e4a4,
++ * wlc_ht_update_sgi_rx 0x12855c), RX STBC 1 (PHY cap bit 1,
++ * wlc_stf_stbc_rx_set 0x13e4e8, bits 8..9 at 0x1905fc..0x19060c), TX STBC
++ * with more than one TX stream (0x13e4f4..0x13e520) and LDPC (PHY cap
++ * bit 4, 0x13e3ac); wlc_phy_ac_caps 0x2a174 gives this PHY rev the STBC,
++ * SGI and LDPC bits. A-MPDU: factor 3 (64 KiB, 0x1462e8), density 5 (4 us,
++ * 0x14628c), wlc_ampdu_update_ie_param 0x146138.
++ *
++ * b43 advertises the subset it implements: 20 MHz only, SM power save
++ * disabled (all chains on, as wl), short GI 20 (TX in HT-SIG, RX decoded),
++ * RX STBC 1 (the PHY decodes it; b43_rx reports it). Not advertised:
++ * 40 MHz and DSSS/CCK 40 (HT20 only), greenfield (b43 always sends mixed
++ * format; greenfield RX unverified), max A-MSDU 7935 (RX buffer sized for
++ * 3839), LDPC (TX not implemented; wl's wlc_phy_update_rxldpc_acphy not
++ * ported), TX STBC (single core by default). A-MPDU parameters are wl's;
++ * b43 has no ampdu_action, so mac80211 declines every block ack session
++ * and no A-MPDU is sent or expected.
++ */
++static void b43_ac_setup_ht_cap(struct b43_wldev *dev,
++				struct ieee80211_sta_ht_cap *ht_cap)
++{
++	unsigned int nss = b43_ac_ht_nss(dev), i;
++
++	memset(ht_cap, 0, sizeof(*ht_cap));
++	if (!nss)
++		return;
++	ht_cap->ht_supported = true;
++	ht_cap->cap = IEEE80211_HT_CAP_SM_PS |
++		      IEEE80211_HT_CAP_SGI_20 |
++		      (1 << IEEE80211_HT_CAP_RX_STBC_SHIFT);
++	ht_cap->ampdu_factor = IEEE80211_HT_MAX_AMPDU_64K;
++	ht_cap->ampdu_density = IEEE80211_HT_MPDU_DENSITY_4;
++	for (i = 0; i < nss; i++)
++		ht_cap->mcs.rx_mask[i] = 0xFF;
++	ht_cap->mcs.tx_params = IEEE80211_HT_MCS_TX_DEFINED;
++	b43info(dev->wl, "AC-PHY HT20: %u stream(s), MCS 0..%u\n",
++		nss, 8 * nss - 1);
++}
++
+ static int b43_setup_bands(struct b43_wldev *dev,
+ 			   bool have_2ghz_phy, bool have_5ghz_phy)
+ {
+@@ -6135,6 +6207,12 @@
+ 			hw->wiphy->bands[NL80211_BAND_5GHZ] = limited_5g ?
+ 				&b43_band_5GHz_nphy_limited :
+ 				&b43_band_5GHz_nphy;
++	} else if (dev->phy.type == B43_PHYTYPE_AC) {
++		if (have_5ghz_phy) {
++			b43_ac_setup_ht_cap(dev, &b43_band_5GHz_acphy.ht_cap);
++			hw->wiphy->bands[NL80211_BAND_5GHZ] =
++				&b43_band_5GHz_acphy;
++		}
+ 	} else {
+ 		if (have_5ghz_phy)
+ 			hw->wiphy->bands[NL80211_BAND_5GHZ] = &b43_band_5GHz_aphy;
+--- a/drivers/net/wireless/broadcom/b43/xmit.c
++++ b/drivers/net/wireless/broadcom/b43/xmit.c
+@@ -305,6 +305,186 @@
+ 				b43_ac_txcore(dev, nss_of_word[i]) & 0xF);
+ }
+ 
++/*
++ * HT on the AC-PHY: spatial streams offered (rx_mask in the band's ht_cap,
++ * TX MCS limit). wl runs this 3x3 board (txchain = rxchain = 7) at up to
++ * three streams; b43 has only run single-core legacy TX on it, so the
++ * default is one stream (MCS 0..7). 0 turns HT off (legacy only, as before).
++ */
++static int b43_modparam_ac_htnss = 1;
++module_param_named(acphy_htnss, b43_modparam_ac_htnss, int, 0444);
++MODULE_PARM_DESC(acphy_htnss,
++		 "AC-PHY 802.11n spatial streams, 0 = HT off, 1..3 (default 1)");
++
++/* Cores in a 4 bit chain mask; 0 (not in the SPROM) counts as 3 cores,
++ * as b43_ac_txcore treats it. Open-coded: hweight8 imports __sw_hweight8. */
++static unsigned int b43_ac_chain_cores(u8 chain)
++{
++	unsigned int i, n = 0;
++
++	chain &= 0xF;
++	if (!chain)
++		chain = 0x7;
++	for (i = 0; i < 4; i++)
++		n += (chain >> i) & 1;
++	return n;
++}
++
++unsigned int b43_ac_ht_nss(struct b43_wldev *dev)
++{
++	unsigned int nss;
++
++	if (dev->phy.type != B43_PHYTYPE_AC || b43_modparam_ac_htnss <= 0)
++		return 0;
++	nss = min3((unsigned int)b43_modparam_ac_htnss,
++		   b43_ac_chain_cores(dev->dev->bus_sprom->txchain),
++		   b43_ac_chain_cores(dev->dev->bus_sprom->rxchain));
++	return min(nss, 3U);
++}
++
++/*
++ * wl's per-MCS modulation and coding (.rodata 0xd73b4, `wlc_mcs_info`,
++ * read by wlc_rate_mcs2rate 0x180e40): bits per subcarrier, code rate
++ * numerator, code rate denominator, for MCS 0..7 of each stream.
++ */
++static const u8 b43_ac_mcs_info[8][3] = {
++	{ 1, 1, 2 }, { 2, 1, 2 }, { 2, 3, 4 }, { 4, 1, 2 },
++	{ 4, 3, 4 }, { 6, 2, 3 }, { 6, 3, 4 }, { 6, 5, 6 },
++};
++
++/*
++ * Rate of an HT20 MCS in 500 kbit/s, as wl stores it in the rate entry
++ * (wlc_rate_rspec2rate(rspec) / 500 at 0x11c330..0x11c360).
++ * wlc_rate_mcs2rate (0x180e40..0x180eec): kbit/s = 250 * (bits * num * nss *
++ * 52 / den), 52 data subcarriers at 20 MHz (0x180e74); short GI
++ * (kbit/s * 10 + 4) / 9 (0x180ed8..0x180ee8). MCS 7, one stream: 130, or
++ * 144 with short GI.
++ */
++static u16 b43_ac_ht_rate500(unsigned int mcs, bool sgi)
++{
++	const u8 *m = b43_ac_mcs_info[mcs & 7];
++	unsigned int nss = mcs / 8 + 1;
++	unsigned int kbps;
++
++	kbps = 250 * (m[0] * m[1] * nss * 52 / m[2]);
++	if (sgi)
++		kbps = (kbps * 10 + 4) / 9;
++	return kbps / 500;
++}
++
++/*
++ * The 802.11 Duration of a unicast HT data frame. mac80211 leaves it 0 for
++ * MCS rates ("assume HW handles this", tx.c ieee80211_duration); wl writes
++ * it into the 802.11 header itself (wlc_d11hdrs 0x11c4b0..0x11c4f0,
++ * wlc_compute_frame_dur 0x11afa0): SIFS (16 us on 5 GHz, 10 on 2.4 GHz,
++ * 0x11afbc..0x11afc4) plus the ACK time at the highest basic rate not above
++ * the MCS's reference rate (wlc_calc_ack_time 0x11af6c,
++ * wlc_rate_ht_basic_reference 0x180f80, table .rodata 0xd73d4: 6, 12, 18,
++ * 24, 36, 48, 54, 54 Mbit/s for MCS & 7). OFDM frame time 20 + 4 *
++ * ceil((22 + 8 * len) / (2 * rate500)) us, ACK len 14 (wlc_calc_frame_time
++ * 0x11af18..0x11af3c, 0x11af94). Only the single-fragment case: a frame
++ * with More Fragments or a non-zero Duration is left alone.
++ */
++static const u8 b43_ac_ht_ref_rate[8] = {
++	B43_OFDM_RATE_6MB, B43_OFDM_RATE_12MB, B43_OFDM_RATE_18MB,
++	B43_OFDM_RATE_24MB, B43_OFDM_RATE_36MB, B43_OFDM_RATE_48MB,
++	B43_OFDM_RATE_54MB, B43_OFDM_RATE_54MB,
++};
++
++static void b43_ac_ht_set_duration(struct b43_wldev *dev,
++				   struct ieee80211_tx_info *info,
++				   struct ieee80211_hdr *hdr, unsigned int mcs)
++{
++	struct ieee80211_supported_band *sband;
++	struct ieee80211_vif *vif = dev->wl->vif;
++	u8 ref = b43_ac_ht_ref_rate[mcs & 7];
++	u8 ack = B43_OFDM_RATE_6MB;
++	unsigned int i, us;
++
++	if (info->flags & IEEE80211_TX_CTL_NO_ACK)
++		return;
++	if (hdr->duration_id ||
++	    ieee80211_has_morefrags(hdr->frame_control) ||
++	    is_multicast_ether_addr(hdr->addr1))
++		return;
++
++	sband = dev->wl->hw->wiphy->bands[info->band];
++	if (vif && sband) {
++		for (i = 0; i < sband->n_bitrates; i++) {
++			u8 r = sband->bitrates[i].hw_value;
++
++			if ((vif->bss_conf.basic_rates & BIT(i)) &&
++			    b43_is_ofdm_rate(r) && r <= ref && r > ack)
++				ack = r;
++		}
++	}
++	/* r is in 500 kbit/s; data bits per 4 us symbol = 2 * r */
++	us = 20 + 4 * DIV_ROUND_UP(22 + 8 * 14, 2 * ack);
++	us += (info->band == NL80211_BAND_5GHZ) ? 16 : 10;
++	hdr->duration_id = cpu_to_le16(us);
++}
++
++/*
++ * Fill rate entry 0 for an HT MCS rate selected by mac80211 (minstrel_ht),
++ * as wl fills it for an HT rspec (ht20-rev42.md). 20 MHz, mixed-format
++ * preamble, one rate entry, no STBC (not advertised), no LDPC (not
++ * advertised), no beamforming.
++ */
++static int b43_ac_ht_entry(struct b43_wldev *dev,
++			   struct b43_txhdr_ac_rate *entry,
++			   const struct ieee80211_tx_rate *r,
++			   unsigned int frame_len)
++{
++	unsigned int nss_max = b43_ac_ht_nss(dev);
++	bool sgi = !!(r->flags & IEEE80211_TX_RC_SHORT_GI);
++	unsigned int mcs, nss;
++	u16 phy_ctl0;
++	u8 *plcp = entry->plcp.raw;
++
++	if (unlikely(r->idx < 0 || r->idx >= 8 * nss_max ||
++		     (r->flags & IEEE80211_TX_RC_40_MHZ_WIDTH))) {
++		b43dbg(dev->wl, "AC TX: HT rate idx %d flags 0x%x refused\n",
++		       r->idx, r->flags);
++		return -EINVAL;
++	}
++	mcs = r->idx;
++	nss = mcs / 8 + 1;
++
++	/*
++	 * PHY control 0 (wlc_acphy_txctl0_calc): frame type 2 for an HT rspec
++	 * (0x1135b8..0x1135c0), bit 2 (0x113660), TX core mask << 6 for the
++	 * rspec's streams (wlc_stf_txcore_get index nsts + 1, 0x1910dc..
++	 * 0x191100, mask << 6 at 0x191138), bandwidth bits 0 for 20 MHz
++	 * (0x11364c..0x113654). Bit 4 only for preamble 1 or 2 (0x113600..
++	 * 0x113614); wl picks 4 (mixed format) for HT unless the peer and
++	 * the band allow greenfield (0x11bdb8..0x11bf10). Greenfield is not
++	 * advertised, so b43 always sends mixed format and bit 4 stays clear.
++	 */
++	phy_ctl0 = B43_TXH_AC_PHY0_FT_HT | B43_TXH_AC_PHY0_SET;
++	phy_ctl0 |= ((u16)b43_ac_txcore(dev, nss) << B43_TXH_AC_PHY0_ANT_SHIFT) &
++		    B43_TXH_AC_PHY0_ANT;
++	entry->phy_ctl0 = cpu_to_le16(phy_ctl0);
++	/*
++	 * PHY control 1: per-rate power backoff << 3 from
++	 * wlc_stf_get_204080_pwrs (0x11c184), not decoded for MCS rates; zero
++	 * as for legacy rates (no backoff).
++	 */
++	entry->phy_ctl1 = cpu_to_le16(0);
++	/* PHY control 2: the MCS byte (0x114a38); STBC bit 6 never set */
++	entry->phy_ctl2 = cpu_to_le16(mcs);
++	/* HT-SIG, wlc_compute_plcp 0x118ca8..0x118cfc */
++	plcp[0] = mcs;
++	plcp[1] = frame_len & 0xFF;
++	plcp[2] = (frame_len >> 8) & 0xFF;
++	plcp[3] = B43_AC_HTSIG2_BASE | (sgi ? B43_AC_HTSIG2_SGI : 0);
++	plcp[4] = 0;
++	plcp[5] = 0;
++	entry->fb_bw = cpu_to_le16(B43_TXH_AC_FBBW_NONE);
++	entry->rate = cpu_to_le16(b43_ac_ht_rate500(mcs, sgi));
++	entry->rts_ctl = cpu_to_le16(B43_TXH_AC_RTS_LAST);
++	return 0;
++}
++
+ /* PHY control word 2 for a legacy rate: its index in the table above. */
+ static u16 b43_ac_legacy_rate_idx(u8 bitrate)
+ {
+@@ -384,7 +564,9 @@
+ 	u16 mac_ctl = 0;
+ 	u16 phy_ctl0 = 0;
+ 	u16 chanspec;
+-	u8 rate;
++	u8 rate = 0;
++	bool ht = !!(rates[0].flags & IEEE80211_TX_RC_MCS);
++	int err;
+ 
+ 	BUILD_BUG_ON(sizeof(struct b43_txhdr_ac_rate) != 20);
+ 	BUILD_BUG_ON(sizeof(struct b43_txhdr_ac) != 124);
+@@ -408,8 +590,11 @@
+ 	txhdr = (struct b43_txhdr_ac *)_txhdr;
+ 	entry = &txhdr->rate[0];
+ 
+-	txrate = ieee80211_get_tx_rate(dev->wl->hw, info);
+-	rate = txrate ? txrate->hw_value : B43_CCK_RATE_1MB;
++	/* ieee80211_get_tx_rate() indexes the legacy table; not for MCS */
++	if (!ht) {
++		txrate = ieee80211_get_tx_rate(dev->wl->hw, info);
++		rate = txrate ? txrate->hw_value : B43_CCK_RATE_1MB;
++	}
+ 
+ 	/* Packet part, bytes 0..19 */
+ 	if (!(info->flags & IEEE80211_TX_CTL_NO_ACK))
+@@ -433,6 +618,17 @@
+ 	txhdr->seq_ctl = wlhdr->seq_ctrl;
+ 	/* unk16 (packet flag 0x200), unk18, key bytes and tail: zero */
+ 
++	if (ht) {
++		/* HT MCS: rate entry 0 at byte 20, see b43_ac_ht_entry */
++		err = b43_ac_ht_entry(dev, entry, &rates[0], frame_len);
++		if (err)
++			return err;
++		b43_ac_ht_set_duration(dev, info,
++				       (struct ieee80211_hdr *)skb_frag->data,
++				       rates[0].idx);
++		goto retry_count;
++	}
++
+ 	/* Rate entry 0 at byte 20 */
+ 	if (b43_is_ofdm_rate(rate))
+ 		phy_ctl0 |= B43_TXH_AC_PHY0_FT_OFDM;
+@@ -487,6 +683,7 @@
+ 	entry->rts_ctl = cpu_to_le16(B43_TXH_AC_RTS_LAST);
+ 	/* Beamforming word: written only when wlc_txbf_sel selects (0x11c1f0) */
+ 
++retry_count:
+ 	/* Same retry-count bookkeeping as the 598 path, for the status report */
+ 	if (rates[0].count <= dev->wl->hw->conf.long_frame_max_tx_count)
+ 		rates[0].count = dev->wl->hw->conf.long_frame_max_tx_count;
+@@ -938,7 +1135,9 @@
+ 	}
+ 	if (unlikely(phystat0 & (B43_RX_PHYST0_PLCPHCF | B43_RX_PHYST0_PLCPFV)))
+ 		status.flag |= RX_FLAG_FAILED_PLCP_CRC;
+-	if (phystat0 & B43_RX_PHYST0_SHORTPRMBL)
++	if ((phystat0 & B43_RX_PHYST0_SHORTPRMBL) &&
++	    !(dev->dev->core_rev >= 40 &&
++	      (phystat0 & B43_RX_PHYST0_FTYPE) == B43_RX_PHYST0_AC_HT))
+ 		status.enc_flags |= RX_ENC_FLAG_SHORTPRE;
+ 	if (macstat & B43_RX_MAC_DECERR) {
+ 		/* Decryption with the given key failed.
+@@ -1049,7 +1248,31 @@
+ #endif
+ 	}
+ 
+-	if (phystat0 & B43_RX_PHYST0_OFDM)
++	if (dev->dev->core_rev >= 40 &&
++	    (phystat0 & B43_RX_PHYST0_FTYPE) == B43_RX_PHYST0_AC_HT) {
++		/*
++		 * HT frame on core rev >= 40, decoded as
++		 * wlc_recv_compute_rspec does (0x148a0..0x148dc) from the
++		 * HT-SIG in the 6 PLCP bytes: byte 0 bits 0..6 MCS, bit 7
++		 * 40 MHz; bytes 3..4 bit 7 short GI, bit 6 LDPC, bits 4..5
++		 * STBC.
++		 */
++		u8 sig2 = plcp->raw[3];
++
++		rate_idx = plcp->raw[0] & 0x7F;
++		if (rate_idx <= 76)
++			status.encoding = RX_ENC_HT;
++		else
++			rate_idx = -1;
++		status.bw = (plcp->raw[0] & B43_AC_HTSIG1_CBW40) ?
++			    RATE_INFO_BW_40 : RATE_INFO_BW_20;
++		if (sig2 & B43_AC_HTSIG2_SGI)
++			status.enc_flags |= RX_ENC_FLAG_SHORT_GI;
++		if (sig2 & B43_AC_HTSIG2_LDPC)
++			status.enc_flags |= RX_ENC_FLAG_LDPC;
++		status.enc_flags |= ((sig2 & B43_AC_HTSIG2_STBC) >> 4) <<
++				    RX_ENC_FLAG_STBC_SHIFT;
++	} else if (phystat0 & B43_RX_PHYST0_OFDM)
+ 		rate_idx = b43_plcp_get_bitrate_idx_ofdm(plcp, band5);
+ 	else
+ 		rate_idx = b43_plcp_get_bitrate_idx_cck(plcp);
+@@ -1231,6 +1454,19 @@
+ 	if (status->frame_count == 0) {
+ 		/* The frame was not transmitted at all. */
+ 		report->status.rates[0].count = 0;
++	} else if (b43_txhdr_is_ac(dev) &&
++		   (report->status.rates[0].flags & IEEE80211_TX_RC_MCS)) {
++		/*
++		 * AC header with an MCS rate: one rate entry and no fallback
++		 * (b43_generate_txhdr_ac), so every attempt was at rates[0].
++		 * The rev >= 40 status carries no rate; wl's rate selection
++		 * also takes only the frame count and the ACK bit from it
++		 * (wlc_ratesel_upd_txstatus_normalack 0x18368c..0x1836d8, txs
++		 * bytes 12 and 9) and the MCS from its own TX header
++		 * (wlc_txh_info_get_mcs 0x1197bc, call 0xa334).
++		 */
++		report->status.rates[0].count = status->frame_count;
++		report->status.rates[1].idx = -1;
+ 	} else if (status->rts_count > dev->wl->hw->conf.short_frame_max_tx_count) {
+ 		/*
+ 		 * If the short retries (RTS, not data frame) have exceeded
+--- a/drivers/net/wireless/broadcom/b43/xmit.h
++++ b/drivers/net/wireless/broadcom/b43/xmit.h
+@@ -281,6 +281,31 @@
+ /* AC per-rate RTS/CTS control word */
+ #define B43_TXH_AC_RTS_LAST		0x0020 /* Last rate entry (0x11cac8..0x11caf4) */
+ 
++/*
++ * HT (802.11n) rate in an AC rate entry, from wl.ko's rspec (bits 24..25 = 1
++ * for HT, low byte = MCS, bit 20 STBC, bit 22 LDPC, bit 23 short GI; see
++ * re/r6400/b43-acphy/ht20-rev42.md):
++ * - PHY control 2 = MCS byte, | 0x40 with STBC (wlc_acphy_txctl2_calc
++ *   0x114a30..0x114a38, 0x114ac4..0x114ac8).
++ * - PLCP = HT-SIG (wlc_compute_plcp HT branch 0x118ca0..0x118cfc):
++ *   byte 0 MCS, | 0x80 for 40 MHz or MCS 32; bytes 1..2 the length (frame +
++ *   FCS, sp+72 at 0x11c318); byte 3 = 0x07 (smoothing, not sounding,
++ *   reserved), | 0x10 STBC, | 0x40 LDPC, | 0x80 short GI; bytes 4..5 zero.
++ */
++#define B43_TXH_AC_PHY2_STBC		0x0040 /* 0x114ac8 */
++#define B43_AC_HTSIG1_CBW40		0x80	/* 0x118cc4..0x118cd0 */
++#define B43_AC_HTSIG2_BASE		0x07	/* 0x118cd8 */
++#define B43_AC_HTSIG2_STBC1		0x10	/* 0x118cdc */
++#define B43_AC_HTSIG2_STBC		0x30	/* wlc_txh_get_isSTBC 0x2de0, recv 0x148d4 */
++#define B43_AC_HTSIG2_LDPC		0x40	/* 0x118ce4 */
++#define B43_AC_HTSIG2_SGI		0x80	/* 0x118cec */
++
++/*
++ * Spatial streams b43 offers for HT on the AC-PHY (0 = HT off), limited
++ * by the acphy_htnss module parameter and the SPROM tx/rx chains.
++ */
++unsigned int b43_ac_ht_nss(struct b43_wldev *dev);
++
+ /* AC chanspec (wlc+0x548): channel in bits 0..7, sideband 0x0700, bandwidth
+  * 0x3800 (0x1000 = 20 MHz, 0x11b39c..0x11b3c4), band 0xc000 (0 = 2 GHz,
+  * 0xc000 = 5 GHz, chan-common-2069.md, 0x4b9b8) */
+@@ -506,6 +531,10 @@
+ #define  B43_RX_PHYST0_OFDM		0x0001 /* Frame type: OFDM */
+ #define  B43_RX_PHYST0_PRE_N		0x0002 /* Pre-standard N-PHY frame */
+ #define  B43_RX_PHYST0_STD_N		0x0003 /* Standard N-PHY frame */
++/* Core rev >= 40 (AC-PHY) frame type values: wlc_recv_compute_rspec
++ * 0x14854..0x14870 decodes 0 CCK, 1 OFDM, 2 HT, 3 VHT */
++#define  B43_RX_PHYST0_AC_HT		0x0002
++#define  B43_RX_PHYST0_AC_VHT		0x0003
+ 
+ /* PHY RX Status 2 */
+ #define B43_RX_PHYST2_LNAG		0xC000 /* LNA Gain */

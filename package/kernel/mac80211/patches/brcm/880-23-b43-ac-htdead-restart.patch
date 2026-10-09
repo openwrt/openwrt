@@ -1,0 +1,276 @@
+From c698658d9046529f2ff6f9868b933296d0f49190 Mon Sep 17 00:00:00 2001
+From: Russell Ballestrini <russell@unturf.com>
+Date: Fri, 10 Oct 2026 12:00:00 -0400
+Subject: [PATCH 23/29] b43: AC-PHY: restart the controller when a core init came up with HT TX dead
+
+Safety net behind the PHY reset pulse: an init whose first HT frames are
+all unacknowledged is restarted (acphy_htdead).
+---
+ drivers/net/wireless/broadcom/b43/b43.h  |  13 ++
+ drivers/net/wireless/broadcom/b43/main.c |   6 +
+ drivers/net/wireless/broadcom/b43/xmit.c | 167 +++++++++++++++++++++++++
+ drivers/net/wireless/broadcom/b43/xmit.h |  19 +++
+ 4 files changed, 205 insertions(+)
+
+--- a/drivers/net/wireless/broadcom/b43/b43.h
++++ b/drivers/net/wireless/broadcom/b43/b43.h
+@@ -929,6 +929,19 @@
+ 	struct sk_buff *ac_ampdu_next;
+ 	/* Core rev >= 40 AC-PHY: PHY TX errors counted, not acted on (99m) */
+ 	unsigned int phy_txerr_total;
++	/*
++	 * 9m0: HT TX liveness of this core init (xmit.c
++	 * b43_ac_htdead_txstatus): HT statuses seen, HT frames acked, HT
++	 * frames that failed every attempt, and whether a restart is queued;
++	 * zeroed with the core init. The restarts this chain asked for and
++	 * when the last one was queued (jiffies) survive the re-init.
++	 */
++	unsigned int ac_ht_tx_frames;
++	unsigned int ac_ht_tx_acked;
++	unsigned int ac_ht_tx_dead;
++	bool ac_htdead_pending;
++	unsigned int ac_htdead_restarts;
++	unsigned long ac_htdead_last;
+ 	struct b43_bus_dev *dev;
+ 	struct b43_wl *wl;
+ 	/* a completion event structure needed if this call is asynchronous */
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
+@@ -5830,6 +5830,8 @@
+ 		return;
+ 
+ 	b43_set_status(dev, B43_STAT_UNINIT);
++	/* 9m0: no longer the core the manual kick may restart */
++	b43_ac_htdead_core_exit(dev);
+ 
+ 	/* Stop the microcode PSM. */
+ 	b43_maskset32(dev, B43_MMIO_MACCTL, ~B43_MACCTL_PSM_RUN,
+@@ -6160,6 +6162,8 @@
+ 	b43_security_init(dev);
+ 	/* 996's core mask block, after anything that wrote shm above (99l) */
+ 	b43_ac_txcore_shm_write(dev);
++	/* 9m0: this init's HT TX counters start over (xmit.c) */
++	b43_ac_htdead_core_init(dev);
+ 	/* 9n0: acphy_initfix, the per-wldev AC state a re-init inherits */
+ 	b43_ac_initfix_wldev(dev);
+ 
+@@ -6265,6 +6269,8 @@
+ 
+ 	mutex_lock(&wl->mutex);
+ 
++	/* 9m0: a new HT-dead restart chain with every mac80211 start */
++	b43_ac_htdead_chain_reset(dev);
+ 	if (b43_status(dev) < B43_STAT_INITIALIZED) {
+ 		err = b43_wireless_core_init(dev);
+ 		if (err)
+--- a/drivers/net/wireless/broadcom/b43/xmit.c
++++ b/drivers/net/wireless/broadcom/b43/xmit.c
+@@ -667,6 +667,169 @@
+ MODULE_PARM_DESC(acphy_psamt,
+ 		 "AC AP power save: AMT attribute of a station's entry with acphy_psfix bit 8 (0x8000 valid, 0x8 A1, 0x4 A2, 0x2 A3; default 0x8004)");
+ 
++/*
++ * 9m0: the per-load HT TX death (htdead-rev42.md). Nothing the driver
++ * logs at init separates a live load from a dead one; the only known
++ * cure is a core re-init without a module reload (the 2026-10-07 15:11:59
++ * load, phy53: dead on its first HT frame, two ucode-fatal controller
++ * restarts re-drew dead and then live, 18.6/5.1 Mbit/s after). The
++ * restart goes through the same b43_controller_restart / restart_work
++ * (b43_chip_reset) as the 99d ucode-fatal handler. mac80211 is not told
++ * (no ieee80211_restart_hw): b43_chip_reset stops, exits, inits and starts
++ * the core under wl->mutex, then replays b43_op_config and
++ * b43_op_bss_info_changed (channel, BSSID, beacon interval and template),
++ * so hostapd and the persistent AP survive; keys are mac80211's (software
++ * crypto on the AC header, b43_op_set_key) and need no re-install; block
++ * ack sessions stay in mac80211 (nothing per session in the hardware,
++ * 99zb). In the phy53 log the station re-associated by itself 1..2 s
++ * after each "Controller restarted" (its auth/assoc/EAPOL acked), then
++ * sent HT at MCS 7.
++ */
++int b43_modparam_acphy_htdead;
++module_param_named(acphy_htdead, b43_modparam_acphy_htdead, int, 0444);
++MODULE_PARM_DESC(acphy_htdead,
++		 "AC-PHY: 1 = restart the controller when a core init came up with HT TX dead (every HT frame fails all its attempts, none acked since the init) (default 0)");
++
++static int b43_modparam_acphy_htdead_n = 3;
++module_param_named(acphy_htdead_n, b43_modparam_acphy_htdead_n, int, 0644);
++MODULE_PARM_DESC(acphy_htdead_n,
++		 "AC-PHY: HT frames that must each fail all their attempts, with no HT ACK since the core init, before acphy_htdead restarts the controller (default 3)");
++
++static int b43_modparam_acphy_htdead_max = 6;
++module_param_named(acphy_htdead_max, b43_modparam_acphy_htdead_max, int, 0644);
++MODULE_PARM_DESC(acphy_htdead_max,
++		 "AC-PHY: controller restarts acphy_htdead may ask for per core init chain, until an HT frame is acked (default 6)");
++
++/*
++ * ucode 907's attempts at a frame that is never acked: "frames 7" in every
++ * dead status of 2026-10-07 (one rate entry, the long retry limit; 9h0's
++ * acphy_retryfix=3 left it at 7). A status with fewer attempts and no ACK
++ * (frame_count 0 = not sent, 1 = a single try) is not counted as dead.
++ */
++static int b43_modparam_acphy_htdead_tries = 7;
++module_param_named(acphy_htdead_tries, b43_modparam_acphy_htdead_tries, int, 0644);
++MODULE_PARM_DESC(acphy_htdead_tries,
++		 "AC-PHY: attempts a status must show for acphy_htdead to count an unacked HT frame as failed at the retry limit (default 7)");
++
++/*
++ * The initialised AC core, for the manual kick (set in
++ * b43_wireless_core_init, cleared in b43_wireless_core_exit, both under
++ * wl->mutex; the kick never takes wl->mutex, so no inversion).
++ */
++static DEFINE_MUTEX(b43_ac_htdead_mutex);
++static struct b43_wldev *b43_ac_htdead_dev;
++
++/* Test hook: echo 1 > /sys/module/b43/parameters/acphy_htdead_kick */
++static int b43_ac_htdead_kick_set(const char *val, const struct kernel_param *kp)
++{
++	struct b43_wldev *dev;
++	int v, err;
++
++	err = kstrtoint(val, 0, &v);
++	if (err)
++		return err;
++	if (v != 1)
++		return 0;
++	mutex_lock(&b43_ac_htdead_mutex);
++	dev = b43_ac_htdead_dev;
++	if (dev) {
++		b43_controller_restart(dev, "HTDEAD kick");
++	} else {
++		pr_info("b43: HTDEAD: manual kick, no initialised AC core\n");
++	}
++	mutex_unlock(&b43_ac_htdead_mutex);
++	return 0;
++}
++
++static int b43_ac_htdead_kick_get(char *buf, const struct kernel_param *kp)
++{
++	return sprintf(buf, "0\n");
++}
++
++static const struct kernel_param_ops b43_ac_htdead_kick_ops = {
++	.set = b43_ac_htdead_kick_set,
++	.get = b43_ac_htdead_kick_get,
++};
++module_param_cb(acphy_htdead_kick, &b43_ac_htdead_kick_ops, NULL, 0644);
++MODULE_PARM_DESC(acphy_htdead_kick,
++		 "AC-PHY test hook: write 1 to restart the controller once (reads 0)");
++
++/* Core init: the counters of this init start over; this is the kick's core */
++void b43_ac_htdead_core_init(struct b43_wldev *dev)
++{
++	dev->ac_ht_tx_frames = 0;
++	dev->ac_ht_tx_acked = 0;
++	dev->ac_ht_tx_dead = 0;
++	dev->ac_htdead_pending = false;
++	if (!b43_txhdr_is_ac(dev))
++		return;
++	mutex_lock(&b43_ac_htdead_mutex);
++	b43_ac_htdead_dev = dev;
++	mutex_unlock(&b43_ac_htdead_mutex);
++}
++
++void b43_ac_htdead_core_exit(struct b43_wldev *dev)
++{
++	mutex_lock(&b43_ac_htdead_mutex);
++	if (b43_ac_htdead_dev == dev)
++		b43_ac_htdead_dev = NULL;
++	mutex_unlock(&b43_ac_htdead_mutex);
++}
++
++/* mac80211 starts the hardware (b43_op_start): a new restart chain */
++void b43_ac_htdead_chain_reset(struct b43_wldev *dev)
++{
++	dev->ac_htdead_restarts = 0;
++	dev->ac_htdead_last = 0;
++}
++
++/*
++ * One core rev >= 40 AC-header TX status, from b43_fill_txstatus_report
++ * (once per MPDU of an aggregate), with the report's rate entries still
++ * the header's: rates[0] with the MCS flag is an HT frame (VHT counted
++ * alike). Runs in the interrupt thread; the restart is only queued here.
++ */
++void b43_ac_htdead_txstatus(struct b43_wldev *dev,
++			    const struct ieee80211_tx_info *report,
++			    const struct b43_txstatus *status)
++{
++	unsigned int tries, need, limit;
++
++	if (!b43_modparam_acphy_htdead)
++		return;
++	if (!(report->status.rates[0].flags &
++	      (IEEE80211_TX_RC_MCS | IEEE80211_TX_RC_VHT_MCS)))
++		return;
++	dev->ac_ht_tx_frames++;
++	if (status->acked) {
++		if (dev->ac_ht_tx_acked++ == 0) {
++			dev->ac_htdead_restarts = 0;
++		}
++		return;
++	}
++	tries = max(b43_modparam_acphy_htdead_tries, 1);
++	if (status->frame_count < tries)
++		return;
++	dev->ac_ht_tx_dead++;
++	if (dev->ac_ht_tx_acked || dev->ac_htdead_pending)
++		return;
++	need = max(b43_modparam_acphy_htdead_n, 1);
++	if (dev->ac_ht_tx_dead < need)
++		return;
++	limit = max(b43_modparam_acphy_htdead_max, 0);
++	if (dev->ac_htdead_restarts >= limit) {
++		return;
++	}
++	/* 1 s between restarts, counted from the queueing of the last one */
++	if (dev->ac_htdead_restarts &&
++	    time_before(jiffies, dev->ac_htdead_last + HZ))
++		return;
++	dev->ac_htdead_restarts++;
++	dev->ac_htdead_last = jiffies;
++	dev->ac_htdead_pending = true;
++	b43_controller_restart(dev, "HT TX dead");
++}
++
+ #define B43_AC_PSFIX_LOGS	160
+ static atomic_t b43_ac_psfix_logn = ATOMIC_INIT(0);
+ 
+@@ -2058,6 +2221,10 @@
+ 		return false;
+ 	}
+ 
++	/* 9m0: HT TX liveness of this core init, rev >= 40 AC header only */
++	if (b43_txhdr_is_ac(dev) && b43_txstatus_is_rev40(dev))
++		b43_ac_htdead_txstatus(dev, report, status);
++
+ 	if (status->acked) {
+ 		/* The frame was ACKed. */
+ 		report->flags |= IEEE80211_TX_STAT_ACK;
+--- a/drivers/net/wireless/broadcom/b43/xmit.h
++++ b/drivers/net/wireless/broadcom/b43/xmit.h
+@@ -480,6 +480,25 @@
+ #define B43_TXST40_SUPR_PMQ	1
+ 
+ /*
++ * 9m0: acphy_htdead (int, default 0). About two loads in three come up
++ * with HT TX dead: every HT frame the core sends fails all its attempts
++ * while legacy frames are acked, the state is drawn inside
++ * b43_wireless_core_init and a controller restart re-draws it with
++ * P(live) ~ 1/3 (re/r6400/b43-acphy/htdead-rev42.md). With 1, the TX
++ * status path counts HT frames per core init and asks for
++ * b43_controller_restart when acphy_htdead_n HT frames each failed all
++ * their attempts and none was acked since the init, at most
++ * acphy_htdead_max times per chain, 1 s apart. xmit.c.
++ */
++extern int b43_modparam_acphy_htdead;
++void b43_ac_htdead_txstatus(struct b43_wldev *dev,
++			    const struct ieee80211_tx_info *report,
++			    const struct b43_txstatus *status);
++void b43_ac_htdead_core_init(struct b43_wldev *dev);
++void b43_ac_htdead_core_exit(struct b43_wldev *dev);
++void b43_ac_htdead_chain_reset(struct b43_wldev *dev);
++
++/*
+  * 9g0: A-MPDU TX limits as wl's AQM path writes them into the header tail
+  * (_wlc_sendampdu_aqm 0xde84..0xdec0). Max MPDUs per aggregate: wl's
+  * tunables for core rev > 39 are 32, 48 or 64 (wlc_ampdu_tx_attach

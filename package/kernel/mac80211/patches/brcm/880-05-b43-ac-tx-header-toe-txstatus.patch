@@ -1,0 +1,691 @@
+From 9d1513030c8bde38d62b64165a7fef965757899b Mon Sep 17 00:00:00 2001
+From: Russell Ballestrini <russell@unturf.com>
+Date: Fri, 10 Oct 2026 12:00:00 -0400
+Subject: [PATCH 05/29] b43: AC-PHY TX header with TOE prefix, and the core rev >= 40 TX status
+
+ucode 907 (core rev 40/42, PHY type AC) takes a different TX header and
+returns a different TX status than the 598 format b43 knows.
+
+TX header: wl.ko wlc_d11hdrs @0x11b360 builds a 124 byte header for PHY
+type 11 (cmp r3, #11 at 0x11b384): 20 byte packet part, four 20 byte
+rate entries, 24 byte tail. b43 sends legacy CCK/OFDM at 20 MHz, so the
+header is the one wl writes for a frame outside its rate selection: one
+rate entry, MAC control high word 0x0002, chanspec, 802.11 header length,
+frame length + FCS, frame id, sequence control, PHY control 0 and 2
+(wlc_acphy_txctl0_calc @0x1135a0, wlc_acphy_txctl2_calc @0x114a24), PLCP,
+rate, last-entry bit. On core rev > 39 wl puts a 4 byte TOE prefix
+{0x02, 0, 0, 0} in front of it (wlc_toe_add_hdr 0x199ef4, enabled at
+wlc_attach 0x13d4fc) and wlc_up clears MMIO 0xa00 bit 0 (0x129bdc); the
+hardware takes the first 4 bytes of every TX buffer as that prefix
+(wlc_get_txh_info skips them, 0x2d50..0x2d78). Without the prefix
+every TX status came back with frame id 0 and sequence 0. The header
+becomes 128 bytes and the PIO scratch space grows to match.
+
+Frame id: with the AC header the DMA cookie uses wl's layout, FIFO in
+bits 0..2 and the slot in bits 5..14 (0x11b734..0x11b744).
+
+TX status: core rev >= 40 reads two four-word packages from 0x170..0x17c
+in wl's order (wlc_bmac_txstatus @0x12270, rev > 39 branch at 0x12288),
+drops the status when the second package lacks its valid bit, and maps
+acked, intermediate, pm, suppress reason, frame and RTS counts.
+
+Hardware crypto is refused on the AC header (the key bytes and the 907
+key table are not decoded), so mac80211 encrypts in software. The 598,
+410 and 351 paths are unchanged.
+---
+ drivers/net/wireless/broadcom/b43/b43.h  |   7 +-
+ drivers/net/wireless/broadcom/b43/dma.c  |  38 ++++
+ drivers/net/wireless/broadcom/b43/main.c |  68 +++++++
+ drivers/net/wireless/broadcom/b43/xmit.c | 258 +++++++++++++++++++++++++
+ drivers/net/wireless/broadcom/b43/xmit.h | 160 ++++++++++++++++
+ 5 files changed, 529 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/b43/b43.h
++++ b/drivers/net/wireless/broadcom/b43/b43.h
+@@ -52,6 +52,8 @@
+ #define B43_MMIO_SHM_DATA_UNALIGNED	0x166
+ #define B43_MMIO_XMITSTAT_0		0x170
+ #define B43_MMIO_XMITSTAT_1		0x174
++#define B43_MMIO_XMITSTAT_2		0x178	/* core rev >= 40 (wl.ko 0x123f0) */
++#define B43_MMIO_XMITSTAT_3		0x17C	/* core rev >= 40 (wl.ko 0x12400) */
+ #define B43_MMIO_REV3PLUS_TSF_LOW	0x180	/* core rev >= 3 only */
+ #define B43_MMIO_REV3PLUS_TSF_HIGH	0x184	/* core rev >= 3 only */
+ #define B43_MMIO_TSF_CFP_REP		0x188
+@@ -972,8 +974,9 @@
+ 	/* The device LEDs. */
+ 	struct b43_leds leds;
+ 
+-	/* Kmalloc'ed scratch space for PIO TX/RX. Protected by wl->mutex. */
+-	u8 pio_scratchspace[118] __attribute__((__aligned__(8)));
++	/* Kmalloc'ed scratch space for PIO TX/RX. Protected by wl->mutex.
++	 * 128 bytes: TOE prefix + AC-PHY TX header (struct b43_txhdr_ac). */
++	u8 pio_scratchspace[128] __attribute__((__aligned__(8)));
+ 	u8 pio_tailspace[4] __attribute__((__aligned__(8)));
+ };
+ 
+--- a/drivers/net/wireless/broadcom/b43/dma.c
++++ b/drivers/net/wireless/broadcom/b43/dma.c
+@@ -1149,7 +1149,21 @@
+ 	 * is a special value used in RX path.
+ 	 * It can also not be 0xFFFF because that is special
+ 	 * for multicast frames.
++	 *
++	 * The AC-PHY TX header (ucode 907) gets wl.ko's frame id layout
++	 * instead: FIFO in bits 0..2, a counter in bits 5..14
++	 * (wlc_d11hdrs 0x11b734..0x11b744; FIFO 4 is broadcast/multicast,
++	 * 0x11b6d0..0x11b6f0). The ring index is the FIFO number and the slot
++	 * takes the counter's place. Whether ucode 907 reads these bits is not
++	 * known; matching wl leaves nothing for it to disagree with.
+ 	 */
++	if (b43_txhdr_is_ac(ring->dev)) {
++		B43_WARN_ON(slot & ~(B43_TXH_AC_FID_SLOT >>
++				     B43_TXH_AC_FID_SLOT_SHIFT));
++		return ((u16)slot << B43_TXH_AC_FID_SLOT_SHIFT) |
++		       ((u16)ring->index & B43_TXH_AC_FID_FIFO);
++	}
++
+ 	cookie = (((u16)ring->index + 1) << 12);
+ 	B43_WARN_ON(slot & ~0x0FFF);
+ 	cookie |= (u16)slot;
+@@ -1164,6 +1178,29 @@
+ 	struct b43_dma *dma = &dev->dma;
+ 	struct b43_dmaring *ring = NULL;
+ 
++	if (b43_txhdr_is_ac(dev)) {
++		switch (cookie & B43_TXH_AC_FID_FIFO) {
++		case 0:
++			ring = dma->tx_ring_AC_BK;
++			break;
++		case 1:
++			ring = dma->tx_ring_AC_BE;
++			break;
++		case 2:
++			ring = dma->tx_ring_AC_VI;
++			break;
++		case 3:
++			ring = dma->tx_ring_AC_VO;
++			break;
++		case 4:
++			ring = dma->tx_ring_mcast;
++			break;
++		}
++		*slot = (cookie & B43_TXH_AC_FID_SLOT) >>
++			B43_TXH_AC_FID_SLOT_SHIFT;
++		goto check;
++	}
++
+ 	switch (cookie & 0xF000) {
+ 	case 0x1000:
+ 		ring = dma->tx_ring_AC_BK;
+@@ -1182,6 +1219,7 @@
+ 		break;
+ 	}
+ 	*slot = (cookie & 0x0FFF);
++check:
+ 	if (unlikely(!ring || *slot < 0 || *slot >= ring->nr_slots)) {
+ 		b43dbg(dev->wl, "TX-status contains "
+ 		       "invalid cookie: 0x%04X\n", cookie);
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
+@@ -1412,12 +1412,52 @@
+ 	b43_write32(dev, B43_MMIO_MACCTL, macctl);
+ }
+ 
++/*
++ * Core rev >= 40 (ucode 907.113): each status is two four-word packages,
++ * read from 0x170..0x17c twice, in wl.ko's order (wlc_bmac_txstatus: valid
++ * bit of 0x170 at 0x12570..0x12584, 0xffffffff check at 0x123d8, first
++ * package 0x123e0..0x12400, second 0x1247c..0x124ac). A second package
++ * without its valid bit ends the call and drops the first, as wl does
++ * (0x124c0..0x124c8, return at 0x125d0).
++ */
++static bool b43_read_txstatus_rev40(struct b43_wldev *dev, u32 *s, u32 *t)
++{
++	s[0] = b43_read32(dev, B43_MMIO_XMITSTAT_0);
++	if (!(s[0] & B43_TXST40_S1_VALID))
++		return false;
++	if (s[0] == 0xFFFFFFFF)
++		return false;
++	s[1] = b43_read32(dev, B43_MMIO_XMITSTAT_1);
++	s[2] = b43_read32(dev, B43_MMIO_XMITSTAT_2);
++	s[3] = b43_read32(dev, B43_MMIO_XMITSTAT_3);
++	t[0] = b43_read32(dev, B43_MMIO_XMITSTAT_0);
++	t[1] = b43_read32(dev, B43_MMIO_XMITSTAT_1);
++	t[2] = b43_read32(dev, B43_MMIO_XMITSTAT_2);
++	t[3] = b43_read32(dev, B43_MMIO_XMITSTAT_3);
++	if (!(t[0] & B43_TXST40_S1_VALID)) {
++		b43dbg(dev->wl, "TX status second package not valid "
++		       "(0x%08X), first package 0x%08X dropped\n", t[0], s[0]);
++		return false;
++	}
++	return true;
++}
++
+ static void handle_irq_transmit_status(struct b43_wldev *dev)
+ {
+ 	u32 v0, v1;
+ 	u16 tmp;
+ 	struct b43_txstatus stat;
+ 
++	if (b43_txstatus_is_rev40(dev)) {
++		u32 s[B43_TXST40_WORDS], t[B43_TXST40_WORDS];
++
++		while (b43_read_txstatus_rev40(dev, s, t)) {
++			b43_txstatus_parse_rev40(&stat, s, t);
++			b43_handle_txstatus(dev, &stat);
++		}
++		return;
++	}
++
+ 	while (1) {
+ 		v0 = b43_read32(dev, B43_MMIO_XMITSTAT_0);
+ 		if (!(v0 & 0x00000001))
+@@ -1449,6 +1489,13 @@
+ 	/* Read all entries from the microcode TXstatus FIFO
+ 	 * and throw them away.
+ 	 */
++	if (b43_txstatus_is_rev40(dev)) {
++		u32 s[B43_TXST40_WORDS], t[B43_TXST40_WORDS];
++
++		while (b43_read_txstatus_rev40(dev, s, t))
++			;
++		return;
++	}
+ 	while (1) {
+ 		dummy = b43_read32(dev, B43_MMIO_XMITSTAT_0);
+ 		if (!(dummy & 0x00000001))
+@@ -4287,6 +4334,13 @@
+ 		goto out_unlock;
+ 	}
+ 
++	if (b43_txhdr_is_ac(dev)) {
++		/* The key fields of the AC TX header (bytes 100..101) and the
++		 * ucode 907 key table are not decoded. Use software crypto. */
++		err = -EOPNOTSUPP;
++		goto out_unlock;
++	}
++
+ 	err = -EINVAL;
+ 	switch (key->cipher) {
+ 	case WLAN_CIPHER_SUITE_WEP40:
+@@ -5013,6 +5067,20 @@
+ 
+ 	b43_rate_memory_init(dev);
+ 	b43_set_phytxctl_defaults(dev);
++	/*
++	 * TOE prefix on: wlc_up clears bit 0 of MMIO 0xa00 when set
++	 * (0x129bdc..0x129c2c) for core rev > 39 (wlc+0x7c6, wlc_attach
++	 * 0x13d4fc..0x13d504), and wl then adds the 4 byte prefix to every
++	 * TX header (see b43_txhdr_has_toe). Meaning of the register beyond
++	 * that bit is not decoded.
++	 */
++	if (b43_txhdr_has_toe(dev)) {
++		u16 toe = b43_read16(dev, 0xA00);
++
++		b43info(dev->wl, "TOE: MMIO 0xa00 = 0x%04x\n", toe);
++		if (toe & 1)
++			b43_write16(dev, 0xA00, toe & ~1);
++	}
+ 
+ 	/* Minimum Contention Window */
+ 	if (phy->type == B43_PHYTYPE_B)
+--- a/drivers/net/wireless/broadcom/b43/xmit.c
++++ b/drivers/net/wireless/broadcom/b43/xmit.c
+@@ -231,6 +231,210 @@
+ 	return 0;
+ }
+ 
++/*
++ * Legacy rate tables of wl.ko, in the order wlc_acphy_txctl2_calc searches
++ * them (0x114a60..0x114ac0): `cck_rates` (.rodata 0xd7584: 4 rates, 2 4 11 22)
++ * and `ofdm_rates` (.rodata 0xd746c: 8 rates, 12 18 24 36 48 72 96 108, basic
++ * bit 0x80 masked off). Both are in 500 kbit/s, the unit of b43's hw_value.
++ */
++static const u8 b43_ac_cck_rates[] = {
++	B43_CCK_RATE_1MB, B43_CCK_RATE_2MB, B43_CCK_RATE_5MB, B43_CCK_RATE_11MB,
++};
++
++static const u8 b43_ac_ofdm_rates[] = {
++	B43_OFDM_RATE_6MB, B43_OFDM_RATE_9MB, B43_OFDM_RATE_12MB,
++	B43_OFDM_RATE_18MB, B43_OFDM_RATE_24MB, B43_OFDM_RATE_36MB,
++	B43_OFDM_RATE_48MB, B43_OFDM_RATE_54MB,
++};
++
++/* PHY control word 2 for a legacy rate: its index in the table above. */
++static u16 b43_ac_legacy_rate_idx(u8 bitrate)
++{
++	const u8 *tbl;
++	unsigned int i, n;
++
++	if (b43_is_ofdm_rate(bitrate)) {
++		tbl = b43_ac_ofdm_rates;
++		n = ARRAY_SIZE(b43_ac_ofdm_rates);
++	} else {
++		tbl = b43_ac_cck_rates;
++		n = ARRAY_SIZE(b43_ac_cck_rates);
++	}
++	for (i = 0; i < n; i++) {
++		if (tbl[i] == bitrate)
++			return i;
++	}
++	/* wl's loop ends with the table size when nothing matches (0x114abc) */
++	B43_WARN_ON(1);
++	return n;
++}
++
++/*
++ * Header byte 8: the 802.11 header length as wl computes it
++ * (0x11b41c, 0x11b440..0x11b44c, 0x11b548..0x11b594): data frames 24, or 30
++ * with ToDS and FromDS both set, plus 2 for QoS data; control frames 16;
++ * anything else 24.
++ */
++static u8 b43_ac_hdr_len(__le16 fctl)
++{
++	u16 fc = le16_to_cpu(fctl);
++	u8 len;
++
++	switch (fc & IEEE80211_FCTL_FTYPE) {
++	case IEEE80211_FTYPE_DATA:
++		if ((fc & (IEEE80211_FCTL_TODS | IEEE80211_FCTL_FROMDS)) ==
++		    (IEEE80211_FCTL_TODS | IEEE80211_FCTL_FROMDS))
++			len = 30;
++		else
++			len = 24;
++		if (fc & IEEE80211_STYPE_QOS_DATA)
++			len += 2;
++		break;
++	case IEEE80211_FTYPE_CTL:
++		len = 16;
++		break;
++	default:
++		len = 24;
++	}
++	return len;
++}
++
++/*
++ * Generate the 124 byte AC TX header (ucode 907.113, PHY type AC).
++ *
++ * The header is what wl.ko's `wlc_d11hdrs` @0x11b360 writes for a frame
++ * that does not go through `wlc_scb_ratesel_gettxrate`: one rate entry
++ * (sp+208 = 1 at 0x11b7a0), the other three zero. b43 transmits legacy CCK
++ * and OFDM rates at 20 MHz only, so only those cases are filled in. Fields
++ * the decode does not establish are left zero, as wl's __memzero leaves them
++ * (0x11b48c). Evidence: re/r6400/b43-acphy/fw-abi-907-txhdr.md.
++ */
++static int b43_generate_txhdr_ac(struct b43_wldev *dev,
++				 u8 *_txhdr,
++				 struct sk_buff *skb_frag,
++				 struct ieee80211_tx_info *info,
++				 u16 cookie)
++{
++	struct b43_txhdr_ac *txhdr;
++	struct b43_txhdr_ac_rate *entry;
++	const struct ieee80211_hdr *wlhdr =
++	    (const struct ieee80211_hdr *)skb_frag->data;
++	unsigned int frame_len = skb_frag->len + FCS_LEN;
++	const struct b43_phy *phy = &dev->phy;
++	struct ieee80211_tx_rate *rates = info->control.rates;
++	struct ieee80211_rate *txrate;
++	u16 mac_ctl = 0;
++	u16 phy_ctl0 = 0;
++	u16 chanspec;
++	u8 rate;
++
++	BUILD_BUG_ON(sizeof(struct b43_txhdr_ac_rate) != 20);
++	BUILD_BUG_ON(sizeof(struct b43_txhdr_ac) != 124);
++
++	/*
++	 * b43_op_set_key refuses keys on the AC header, so mac80211 encrypts
++	 * in software. The key bytes 100..101 and wl's IV update into the
++	 * frame (_wlc_txh_iv_upd, call 0x11cc44) are not mapped onto b43's key
++	 * table, and wl adds the ICV length to the frame length only with a
++	 * key (0x11b46c..0x11b478).
++	 */
++	if (WARN_ON_ONCE(info->control.hw_key))
++		return -ENOKEY;
++
++	/* TOE prefix (wlc_toe_add_hdr 0x199ef4), then the AC header */
++	memset(_txhdr, 0, b43_txhdr_size(dev));
++	if (b43_txhdr_has_toe(dev)) {
++		_txhdr[0] = B43_TXH_AC_TOE_BYTE0;
++		_txhdr += B43_TXH_AC_TOE_LEN;
++	}
++	txhdr = (struct b43_txhdr_ac *)_txhdr;
++	entry = &txhdr->rate[0];
++
++	txrate = ieee80211_get_tx_rate(dev->wl->hw, info);
++	rate = txrate ? txrate->hw_value : B43_CCK_RATE_1MB;
++
++	/* Packet part, bytes 0..19 */
++	if (!(info->flags & IEEE80211_TX_CTL_NO_ACK))
++		mac_ctl |= B43_TXH_AC_MAC_ACK;
++	if (info->flags & IEEE80211_TX_CTL_ASSIGN_SEQ)
++		mac_ctl |= B43_TXH_AC_MAC_HWSEQ;
++	if (info->flags & IEEE80211_TX_CTL_FIRST_FRAGMENT)
++		mac_ctl |= B43_TXH_AC_MAC_STMSDU;
++	txhdr->mac_ctl_lo = cpu_to_le16(mac_ctl);
++	/* Single rate entry, primary rate not VHT */
++	txhdr->mac_ctl_hi = cpu_to_le16(B43_TXH_AC_MACH_NORATESEL);
++
++	chanspec = (phy->channel & 0xFF) | B43_AC_CHANSPEC_BW_20;
++	if (b43_current_band(dev->wl) == NL80211_BAND_5GHZ)
++		chanspec |= B43_AC_CHANSPEC_BAND_5G;
++	else
++		chanspec |= B43_AC_CHANSPEC_BAND_2G;
++	txhdr->chanspec = cpu_to_le16(chanspec);
++
++	txhdr->hdr_len = b43_ac_hdr_len(wlhdr->frame_control);
++	/* pkttotlen + 4 (0x11b458..0x11b464) */
++	txhdr->frame_len = cpu_to_le16(frame_len);
++	txhdr->frame_id = cpu_to_le16(cookie);
++	txhdr->seq_ctl = wlhdr->seq_ctrl;
++	/* unk16 (packet flag 0x200), unk18, key bytes and tail: zero */
++
++	/* Rate entry 0 at byte 20 */
++	if (b43_is_ofdm_rate(rate))
++		phy_ctl0 |= B43_TXH_AC_PHY0_FT_OFDM;
++	else
++		phy_ctl0 |= B43_TXH_AC_PHY0_FT_CCK;
++	phy_ctl0 |= B43_TXH_AC_PHY0_SET;
++	/*
++	 * wl passes preamble 1 (short) only for CCK above 1 Mbit/s and when the
++	 * caller allows it (0x11c104..0x11c158); OFDM keeps preamble 0.
++	 */
++	if (!b43_is_ofdm_rate(rate) && rate != B43_CCK_RATE_1MB &&
++	    (rates[0].flags & IEEE80211_TX_RC_USE_SHORT_PREAMBLE))
++		phy_ctl0 |= B43_TXH_AC_PHY0_SHORTPRMBL;
++	/*
++	 * Antenna bits 6..9 are the return value of
++	 * wlc_stf_d11hdrs_phyctl_txant (0x113630), not decoded: left zero.
++	 * Bandwidth bits 14..15 are 0 for 20 MHz. No beamforming.
++	 */
++	entry->phy_ctl0 = cpu_to_le16(phy_ctl0);
++	/*
++	 * PHY control 1 = (pwr << 3) | ((chanspec >> 8 & 7) >> (bw - 1))
++	 * (0x114254..0x114268). The sideband field of a 20 MHz chanspec is 0.
++	 * pwr is one byte of the per-bandwidth table that
++	 * wlc_stf_get_204080_pwrs fills (0x11c184), not decoded: left zero.
++	 */
++	entry->phy_ctl1 = cpu_to_le16(0);
++	entry->phy_ctl2 = cpu_to_le16(b43_ac_legacy_rate_idx(rate));
++	/*
++	 * PLCP. wl's rate_info (.rodata 0xd73fc) holds the same rate codes as
++	 * b43_plcp_get_ratecode_cck/ofdm (0x0a 0x14 0x37 0x6e for CCK, low
++	 * nibble 0xb 0xf 0xa 0xe 0x9 0xd 0x8 0xc for OFDM). The rest of
++	 * wlc_compute_plcp (call 0x11c328) is not compared with b43's
++	 * generator.
++	 */
++	b43_generate_plcp_hdr((struct b43_plcp_hdr4 *)&entry->plcp,
++			      frame_len, rate);
++	entry->fb_bw = cpu_to_le16(B43_TXH_AC_FBBW_NONE);
++	/* wlc_rate_rspec2rate(rspec) / 500 (0x11c330..0x11c360) */
++	entry->rate = cpu_to_le16(rate);
++	/*
++	 * RTS/CTS control: wl sets bits 0, 2..4 and 8..11 only when it chooses
++	 * protection (0x11c5d8..0x11c7b0); which of bits 2 and 3 means RTS is
++	 * open, so no protection frame is requested here. Bit 5 marks the last
++	 * entry.
++	 */
++	entry->rts_ctl = cpu_to_le16(B43_TXH_AC_RTS_LAST);
++	/* Beamforming word: written only when wlc_txbf_sel selects (0x11c1f0) */
++
++	/* Same retry-count bookkeeping as the 598 path, for the status report */
++	if (rates[0].count <= dev->wl->hw->conf.long_frame_max_tx_count)
++		rates[0].count = dev->wl->hw->conf.long_frame_max_tx_count;
++	else
++		rates[0].count = dev->wl->hw->conf.short_frame_max_tx_count;
++
++	return 0;
++}
++
+ /* Generate a TX data header. */
+ int b43_generate_txhdr(struct b43_wldev *dev,
+ 		       u8 *_txhdr,
+@@ -259,6 +463,10 @@
+ 	struct ieee80211_rate *txrate;
+ 	struct ieee80211_tx_rate *rates;
+ 
++	if (b43_txhdr_is_ac(dev))
++		return b43_generate_txhdr_ac(dev, _txhdr, skb_frag, info,
++					     cookie);
++
+ 	memset(txhdr, 0, sizeof(*txhdr));
+ 
+ 	txrate = ieee80211_get_tx_rate(dev->wl->hw, info);
+@@ -863,6 +1071,56 @@
+ 	b43_phy_txpower_check(dev, 0);
+ }
+ 
++/*
++ * Decode a core rev >= 40 TX status (ucode 907.113) into b43's struct.
++ * s[0..3] are the first package (0x170..0x17c), t[0..3] the second.
++ * Field map from wlc_bmac_txstatus @0x12270, rev > 39 branch at 0x123a0;
++ * see re/r6400/b43-acphy/fw-abi-907-txstatus.md.
++ */
++void b43_txstatus_parse_rev40(struct b43_txstatus *stat,
++			      const u32 *s, const u32 *t)
++{
++	u16 lo = s[0] & 0xFFFF;
++	unsigned int cnt, frames;
++
++	memset(stat, 0, sizeof(*stat));
++
++	/* Frame id: s1 >> 16 (0x12408, 0x12414) */
++	stat->cookie = s[0] >> 16;
++	/* Sequence: s2 & 0xffff (0x12464) */
++	stat->seq = s[1] & 0xFFFF;
++	/* PHY status: s2 bits 16..23 (0x12418..0x1241c) */
++	stat->phy_stat = (s[1] >> 16) & 0xFF;
++	stat->intermediate = !!(lo & B43_TXST40_S1_INTERMEDIATE);
++	stat->pm_indicated = !!(lo & B43_TXST40_S1_PM_INDICATED);
++	stat->supp_reason = (lo & B43_TXST40_S1_SUPP_REASON) >>
++			    B43_TXST40_S1_SUPP_REASON_SHIFT;
++	/*
++	 * Acked: bit 15, also set when the 7 bit count in bits 8..14 is above
++	 * 1 (0x12430..0x12450). Why the count implies an ACK is open; this
++	 * copies wl.
++	 */
++	cnt = (lo & B43_TXST40_S1_CNT) >> B43_TXST40_S1_CNT_SHIFT;
++	stat->acked = !!(lo & B43_TXST40_S1_ACKED) || cnt > 1;
++	/*
++	 * AMPDU: not in the status on rev > 39; wl asks its TX header
++	 * (wlc_txh_get_isAMPDU, 0x9880). The AC header b43 builds is never
++	 * AMPDU.
++	 */
++	stat->for_ampdu = 0;
++	/* Frame count: s3[7:0] + s4[7:0] + s3[23:16] + s4[23:16] (0x12454..0x12478) */
++	frames = (s[2] & 0xFF) + (s[3] & 0xFF) +
++		 ((s[2] >> 16) & 0xFF) + ((s[3] >> 16) & 0xFF);
++	stat->frame_count = min_t(unsigned int, frames, 0xFF);
++	/* RTS count: t1 bits 16..23 (0x12508, 0x12530) */
++	stat->rts_count = (t[0] >> 16) & 0xFF;
++	/*
++	 * Not used: t1 bits 24..31 (txs+14, 0x1250c), the raw halves of s3,
++	 * s4, t1..t4 (txs+18..+40, 0x124cc..0x12528) and the TSF that wl
++	 * reads from 0x180 once per call (0x123b8). Their meanings are open.
++	 */
++}
++
+ /* Fill out the mac80211 TXstatus report based on the b43-specific
+  * txstatus report data. This returns a boolean whether the frame was
+  * successfully transmitted. */
+--- a/drivers/net/wireless/broadcom/b43/xmit.h
++++ b/drivers/net/wireless/broadcom/b43/xmit.h
+@@ -188,9 +188,151 @@
+ #define  B43_TXH_PHY1_MODUL_QAM256	0x2000 /* QAM256 */
+ 
+ 
++/*
++ * AC-PHY TX header (ucode 907.113, d11ucode42), 124 bytes.
++ *
++ * Decoded from wl.ko 6.37.15.24 `wlc_d11hdrs` @0x11b360, AC path (PHY type
++ * 11 at 0x11b384); see re/r6400/b43-acphy/fw-abi-907-txhdr.md. wl pushes and
++ * zeroes 124 bytes (skb_push/__memzero 0x7c at 0x11b480/0x11b48c): a 20 byte
++ * packet part, four 20 byte rate entries (primary first, then fallbacks;
++ * stride 20 at 0x11bb74) and a 24 byte tail. Fields named "unk" or covered by
++ * PAD_BYTES have no writer in the decode and stay zero.
++ */
++struct b43_txhdr_ac_rate {
++	__le16 phy_ctl0;	/* +0  wlc_acphy_txctl0_calc @0x1135a0, store 0x11c8bc */
++	__le16 phy_ctl1;	/* +2  wlc_acphy_txctl1_calc @0x114254, store 0x11c964 */
++	__le16 phy_ctl2;	/* +4  wlc_acphy_txctl2_calc @0x114a24, store 0x11c978 */
++	struct b43_plcp_hdr6 plcp; /* +6 wlc_compute_plcp, call 0x11c328 */
++	__le16 fb_bw;		/* +12 fallback bandwidth word, 0x11bfa0..0x11bfbc */
++	__le16 rate;		/* +14 rate in 500 kbit/s, 0x11c330..0x11c360 */
++	__le16 rts_ctl;		/* +16 RTS/CTS control, 0x11bb94 and 0x11c5d8.. */
++	__le16 txbf;		/* +18 beamforming word, 0x11c204..0x11c23c */
++} __packed;
++
++struct b43_txhdr_ac {
++	PAD_BYTES(2);		/* 0..1: no writer in the AC path */
++	__le16 mac_ctl_lo;	/* 2..3: 0x11cafc, 0x11cb08 */
++	__le16 mac_ctl_hi;	/* 4..5: 0x11cb10, 0x11cb18 */
++	__le16 chanspec;	/* 6..7: wlc+0x548, 0x11b53c/0x11b544 */
++	__u8 hdr_len;		/* 8: 802.11 header length, 0x11b594 */
++	PAD_BYTES(1);		/* 9: no writer */
++	__le16 frame_len;	/* 10..11: frame length + FCS, 0x11b5a0/0x11b5a8 */
++	__le16 frame_id;	/* 12..13: 0x11cb20/0x11cb28 */
++	__le16 seq_ctl;		/* 14..15: 802.11 seq control, 0x11b754/0x11b75c */
++	__le16 unk16;		/* 16..17: only with wl packet flag 0x200 (0x11b760..0x11b780) */
++	__le16 unk18;		/* 18..19: zeroed at 0x11b798/0x11b79c */
++	struct b43_txhdr_ac_rate rate[4]; /* 20..99 */
++	__u8 key_algo;		/* 100: key byte +12 << 4, 0x11cc18/0x11cc20 */
++	__u8 key_idx;		/* 101: key byte +6, 0x11cc24/0x11cc2c */
++	PAD_BYTES(22);		/* 102..123: no writer in wlc_d11hdrs */
++} __packed;
++
++/* AC MAC control, low word (bytes 2..3), accumulated at wl sp+24 */
++#define B43_TXH_AC_MAC_ACK		0x0080 /* Unicast, ACK expected (0x11b4dc..0x11b530) */
++#define B43_TXH_AC_MAC_HWSEQ		0x0800 /* ucode assigns the sequence number (0x11b688..0x11b69c) */
++#define B43_TXH_AC_MAC_STMSDU		0x4000 /* Fragment number 0 (0x11b4c4..0x11b4d8) */
++/*
++ * Other bits wl sets here, left clear by b43: 0x0200 for beacons or an scb
++ * flag (0x11b490..0x11b4c0); 0x1000 with packet flag 0x200 (0x11b784);
++ * 0x8400 for the AMPDU path (0x11c3f4); 0x0400 frameburst-related
++ * (0x11c558..0x11c5bc).
++ */
++
++/* AC MAC control, high word (bytes 4..5), accumulated at wl sp+32 */
++#define B43_TXH_AC_MACH_NORATESEL	0x0002 /* Set on every frame, cleared only when
++						* wlc_scb_ratesel_gettxrate filled 2 or 4
++						* rate entries (0x11b9b0..0x11b9cc) */
++#define B43_TXH_AC_MACH_VHT		0x0004 /* Primary rate is VHT (0x11c5c0..0x11c5d4) */
++
++/* AC per-rate PHY control word 0 (wlc_acphy_txctl0_calc @0x1135a0) */
++#define B43_TXH_AC_PHY0_FT		0x0003 /* Frame type (0x1135a8..0x1135fc) */
++#define  B43_TXH_AC_PHY0_FT_CCK		0x0000
++#define  B43_TXH_AC_PHY0_FT_OFDM	0x0001
++#define  B43_TXH_AC_PHY0_FT_HT		0x0002
++#define  B43_TXH_AC_PHY0_FT_VHT		0x0003
++#define B43_TXH_AC_PHY0_SET		0x0004 /* Always set (0x113660) */
++#define B43_TXH_AC_PHY0_TXBF		0x0008 /* Beamforming (0x11c850) */
++#define B43_TXH_AC_PHY0_SHORTPRMBL	0x0010 /* Preamble 1 or 2 (0x113600..0x113614) */
++#define B43_TXH_AC_PHY0_ANT		0x03C0 /* wlc_stf_d11hdrs_phyctl_txant, not decoded */
++#define B43_TXH_AC_PHY0_BW		0xC000 /* TX bandwidth (0x11362c..0x113654) */
++#define  B43_TXH_AC_PHY0_BW_20		0x0000
++#define  B43_TXH_AC_PHY0_BW_40		0x4000
++#define  B43_TXH_AC_PHY0_BW_80		0x8000
++#define  B43_TXH_AC_PHY0_BW_160		0xC000
++
++/* AC per-rate fallback bandwidth word: bits 0..1 = (fb - 1) & 3, fb = 4
++ * (no fallback bandwidth) for every 20 MHz rate (0x11bf20..0x11bfbc) */
++#define B43_TXH_AC_FBBW_NONE		0x0003
++
++/* AC frame id (header bytes 12..13): `((n << 5) & 0x7fe0) | (fifo & 7)`
++ * (0x11b734..0x11b744); wlc_dotxstatus takes the FIFO from bits 0..2
++ * (0x927c..0x9284). b43's DMA ring index is the FIFO number. */
++#define B43_TXH_AC_FID_FIFO		0x0007
++#define B43_TXH_AC_FID_SLOT		0x7FE0
++#define B43_TXH_AC_FID_SLOT_SHIFT	5
++
++/* AC per-rate RTS/CTS control word */
++#define B43_TXH_AC_RTS_LAST		0x0020 /* Last rate entry (0x11cac8..0x11caf4) */
++
++/* AC chanspec (wlc+0x548): channel in bits 0..7, sideband 0x0700, bandwidth
++ * 0x3800 (0x1000 = 20 MHz, 0x11b39c..0x11b3c4), band 0xc000 (0 = 2 GHz,
++ * 0xc000 = 5 GHz, chan-common-2069.md, 0x4b9b8) */
++#define B43_AC_CHANSPEC_BW_20		0x1000
++#define B43_AC_CHANSPEC_BAND_2G		0x0000
++#define B43_AC_CHANSPEC_BAND_5G		0xC000
++
++/*
++ * Header format choice. wl.ko builds the AC header when the PHY type is 11
++ * (cmp r3, #11 at 0x11b384) and its legacy 6 + 112 byte header otherwise
++ * (0x11cc98), so the TX header follows the PHY type, not the core or
++ * firmware rev. b43 only gives PHY type AC to core rev 40 and 42.
++ */
++static inline bool b43_txhdr_is_ac(struct b43_wldev *dev)
++{
++	return dev->phy.type == B43_PHYTYPE_AC;
++}
++
++/*
++ * TX status format choice. wlc_bmac_txstatus keys on core rev > 39
++ * (cmp r3, #39 / bhi at 0x12288), as the RX header change (992) does.
++ */
++static inline bool b43_txstatus_is_rev40(struct b43_wldev *dev)
++{
++	return dev->dev->core_rev >= 40;
++}
++
++/*
++ * TOE (TSO) prefix in front of the AC TX header, core rev > 39.
++ *
++ * wlc_attach sets wlc+0x7c6 = 1 and wlc+0x7c5 = 0 for core rev > 39
++ * (0x13d4fc..0x13d50c). wlc_up clears bit 0 of d11 MMIO 0xa00 when it is set
++ * and leaves wlc+0x7c5 = that bit = 0 (0x129bcc..0x129c3c). With 0x7c6 set
++ * and 0x7c5 clear, wlc_d11hdrs ends every AC header with
++ * wlc_toe_add_hdr (0x11cc54..0x11cc90), which pushes 4 more bytes in front
++ * of the 124 byte header: byte 0 = 0x02, bytes 1..3 = 0 (0x199ef4..0x199f30).
++ * Every reader skips it: wlc_get_txh_info takes the header at
++ * data + wlc_tso_hdr_length(data) for core rev > 39 (wlc_pkt_get_vht_hdr
++ * 0x2d50..0x2d78), and wlc_tso_hdr_length is 4, or 16 when byte 0 bit 0 is
++ * set (0x199f44..0x199f50). So the hardware takes the first 4 bytes of each
++ * TX buffer as this prefix. Without it, the ucode read the 124 byte header
++ * 4 bytes late: frame id from our bytes 16..17 and sequence from 18..19,
++ * both 0, which is what every TX status reported on hardware.
++ */
++#define B43_TXH_AC_TOE_LEN		4
++#define B43_TXH_AC_TOE_BYTE0		0x02	/* 0x199f1c */
++
++static inline bool b43_txhdr_has_toe(struct b43_wldev *dev)
++{
++	return b43_txhdr_is_ac(dev) && dev->dev->core_rev >= 40;
++}
++
+ static inline
+ size_t b43_txhdr_size(struct b43_wldev *dev)
+ {
++	if (b43_txhdr_is_ac(dev))
++		return sizeof(struct b43_txhdr_ac) +
++		       (b43_txhdr_has_toe(dev) ? B43_TXH_AC_TOE_LEN : 0);
++
+ 	switch (dev->fw.hdr_format) {
+ 	case B43_FW_HDR_598:
+ 		return 112 + sizeof(struct b43_plcp_hdr6);
+@@ -223,6 +365,24 @@
+ 	u8 acked;		/* Wireless ACK received */
+ };
+ 
++/*
++ * Core rev >= 40 TX status: two packages of four words each, read in the
++ * order 0x170, 0x174, 0x178, 0x17c, 0x170, 0x174, 0x178, 0x17c
++ * (wlc_bmac_txstatus 0x12570, 0x123e0..0x12400, 0x1247c..0x124ac).
++ */
++#define B43_TXST40_WORDS		4
++#define B43_TXST40_S1_VALID		0x00000001 /* 0x12580, second package 0x124c0 */
++#define B43_TXST40_S1_INTERMEDIATE	0x00000004 /* 0x12420 */
++#define B43_TXST40_S1_PM_INDICATED	0x00000008 /* 0x12428 */
++#define B43_TXST40_S1_SUPP_REASON	0x000000F0 /* 0x12440 */
++#define B43_TXST40_S1_SUPP_REASON_SHIFT	4
++#define B43_TXST40_S1_CNT		0x00007F00 /* 0x12430 */
++#define B43_TXST40_S1_CNT_SHIFT		8
++#define B43_TXST40_S1_ACKED		0x00008000 /* 0x12438 */
++
++void b43_txstatus_parse_rev40(struct b43_txstatus *stat,
++			      const u32 *s, const u32 *t);
++
+ /* txstatus supp_reason values */
+ enum {
+ 	B43_TXST_SUPP_NONE,	/* Not suppressed */

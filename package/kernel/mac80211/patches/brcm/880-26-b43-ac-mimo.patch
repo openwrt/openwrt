@@ -1,0 +1,732 @@
+From 7aa28daf072a40cea0b4cb4129e8d2a374ca9e02 Mon Sep 17 00:00:00 2001
+From: Russell Ballestrini <russell@unturf.com>
+Date: Fri, 10 Oct 2026 12:00:00 -0400
+Subject: [PATCH 26/29] b43: AC-PHY: 2 and 3 spatial streams on core rev >= 40
+
+HT MCS 8..23: TX STBC, multi-core power back-off, the TX core table,
+the per-rate TX power offset word, and the aggregate length limit for
+2+ stream frames: aggregates longer than ~20 MPDUs at 300 Mbit/s are
+acknowledged but carry no usable data, brcmsmac's per-rate FIFO preload
+limit bounds them (acphy_htnss, acphy_mimo_ampdu, acphy_mimo_ffpld).
+---
+ drivers/net/wireless/broadcom/b43/b43.h  |   6 +
+ drivers/net/wireless/broadcom/b43/dma.c  |  24 ++-
+ drivers/net/wireless/broadcom/b43/main.c |  16 +-
+ drivers/net/wireless/broadcom/b43/xmit.c | 433 +++++++++++++++++++++++++-
+ drivers/net/wireless/broadcom/b43/xmit.h |  28 ++
+ 5 files changed, 484 insertions(+), 23 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/b43/b43.h
++++ b/drivers/net/wireless/broadcom/b43/b43.h
+@@ -965,6 +965,12 @@
+ 	 * burst even when it is the last one.
+ 	 */
+ 	bool burst;
++	/*
++	 * 9z0 (acphy_mimo_unfl): the last value read of this FIFO's TX
++	 * underflow counter (ucode 907 shm 0xEC + 2 * FIFO); zeroed with the
++	 * core init like the ucode's own copy.
++	 */
++	u16 txfunfl;
+ };
+ #define B43_AC_AMPDU_NFIFO	8	/* frame id bits 0..2 */
+ 
+--- a/drivers/net/wireless/broadcom/b43/dma.c
++++ b/drivers/net/wireless/broadcom/b43/dma.c
+@@ -1653,15 +1653,20 @@
+ 	unsigned int n = status->ampdu_cnt, i;
+ 	u8 epoch = 0;
+ 	int s = slot;
++	bool mimo;
+ 
+ 	if (!b43_ac_ampdu(dev, B43_AC_AMPDU_TX) || !b43_txhdr_has_toe(dev))
+ 		return false;
+ 	hdr = b43_dma_ac_txhdr(ring, slot);
+ 	if (!(hdr->mac_ctl_lo & cpu_to_le16(B43_TXH_AC_MAC_AMPDU)))
+ 		return false;
++	/* 9y0: the first acphy_mimo_log statuses of 2+ stream aggregates */
++	mimo = b43_ac_mimo_log_hdr(dev, hdr);
+ 	/* wlc_dotxstatus frees one packet for a count of 0 (0x93f4..0x9400) */
+ 	if (n == 0)
+ 		n = 1;
++	/* 9z0 acphy_mimo_unfl: this FIFO's TX underflow counter per aggregate */
++	b43_ac_unfl_status(dev, status, hdr, n);
+ 	if (n > 64)
+ 		why = "count above 64";
+ 	else if (n * TX_SLOTS_PER_FRAME > ring->used_slots)
+@@ -1697,12 +1702,14 @@
+ 		s = next_slot(ring, next_slot(ring, s));
+ 	}
+ 	/* 9r0 QUIET: the first-8 log and its atomic skipped; a fallback is always logged */
+-	if (why || (!b43_ac_fastpath(dev, B43_AC_FASTPATH_QUIET) &&
+-		    atomic_inc_return(&b43_ampdutx_st_logged) <= 8))
++	if (why || mimo || (!b43_ac_fastpath(dev, B43_AC_FASTPATH_QUIET) &&
++			    atomic_inc_return(&b43_ampdutx_st_logged) <= 8))
+ 		/*
+ 		 * 9l0: the four per-entry words (attempts low byte, ACKs high
+ 		 * byte; with the fixed-rate bit word 0 = attempts, word 1 =
+ 		 * ACKs, fw-abi-907-txstatus.md "s3/s4") instead of their sum.
++		 * 9y0: "nss2" marks a 2+ stream aggregate logged by
++		 * acphy_mimo_log.
+ 		 */
+ 	if (why) {
+ 		if (!b43_ampdutx_fallback_logged) {
+@@ -1851,6 +1858,13 @@
+ 	/* 9g0: one status for several MPDUs of an A-MPDU (never when skipping) */
+ 	if (!skip)
+ 		ampdu = b43_dma_ampdu_status(ring, slot, status, &nframes);
++	/*
++	 * 9z0 acphy_mimo_unfl: a frame sent plain is checked only when the
++	 * ucode marked it underflowed (suppress reason 6), no shm read per
++	 * frame
++	 */
++	if (!skip && !ampdu && status->supp_reason == 6)
++		b43_ac_unfl_status(dev, status, NULL, 1);
+ 	while (1) {
+ 		B43_WARN_ON(slot < 0 || slot >= ring->nr_slots);
+ 		/* get meta - ignore returned value */
+@@ -1931,9 +1945,11 @@
+ 				 * that went out plain (lone, a rate probe, or
+ 				 * acphy_ampdu bit 7 clear): are such ordinary
+ 				 * frames acked while a session is up?
++				 * 9y0: a 2+ stream frame sent plain (a probe,
++				 * or acphy_mimo_ampdu=1) counts against
++				 * acphy_mimo_log, QUIET or not.
+ 				 */
+-				if (!b43_ac_fastpath(dev, B43_AC_FASTPATH_QUIET) &&
+-				    atomic_inc_return(&b43_ampdutx_plain_logged) <= 16)
++
+ 				/* 9p0: visible to minstrel_ht as a one-MPDU aggregate */
+ 				if (b43_ac_ampdu(dev, B43_AC_AMPDU_PLAINRC))
+ 					b43_dma_plain_report(info);
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
+@@ -7086,13 +7086,25 @@
+ 	if (b43_ac_bw40_enabled())
+ 		ht_cap->cap |= IEEE80211_HT_CAP_SUP_WIDTH_20_40 |
+ 			       IEEE80211_HT_CAP_SGI_40;
++	/*
++	 * 9am acphy_htstbc (mimo-rev42.md): TX STBC as wl advertises it with
++	 * more than one TX stream (wlc_stf_attach 0x192eb4..0x192f04)
++	 */
++	if (b43_ac_ht_tx_stbc(dev))
++		ht_cap->cap |= IEEE80211_HT_CAP_TX_STBC;
+ 	ht_cap->ampdu_factor = IEEE80211_HT_MAX_AMPDU_64K;
+ 	ht_cap->ampdu_density = IEEE80211_HT_MPDU_DENSITY_4;
++	/*
++	 * RX MCS set as wlc_rateset_mcs_build (0x181b44) makes it: .rodata
++	 * 0xd75e9 (ff ff ff ff, MCS 0..31, no MCS 32) with bytes nss..3
++	 * cleared (0x181b68..0x181b7c). TX set = RX set, so TX_DEFINED alone.
++	 */
+ 	for (i = 0; i < nss; i++)
+ 		ht_cap->mcs.rx_mask[i] = 0xFF;
+ 	ht_cap->mcs.tx_params = IEEE80211_HT_MCS_TX_DEFINED;
+-	b43info(dev->wl, "AC-PHY HT20%s: %u stream(s), MCS 0..%u\n",
+-		b43_ac_bw40_enabled() ? "/40" : "", nss, 8 * nss - 1);
++	b43info(dev->wl, "AC-PHY HT20%s: %u stream(s), MCS 0..%u%s\n",
++		b43_ac_bw40_enabled() ? "/40" : "", nss, 8 * nss - 1,
++		b43_ac_ht_tx_stbc(dev) ? ", TX STBC" : "");
+ }
+ 
+ /*
+--- a/drivers/net/wireless/broadcom/b43/xmit.c
++++ b/drivers/net/wireless/broadcom/b43/xmit.c
+@@ -292,17 +292,30 @@
+ 	return mask;
+ }
+ 
+-/* wlc_stf_txcore_shmem_write (0x19118c) for PHY type 11, core rev >= 40 */
++/*
++ * wlc_stf_txcore_shmem_write (0x19118c) for PHY type 11, core rev >= 40:
++ * four words, i = 0..3 of stf+22+2i (CCK, OFDM, 1 and 2 space-time
++ * streams; 0x1911f0..0x191248), mask & 0xf with no spatial-map byte (that
++ * is PHY type 7 only, 0x19120c..0x191224). Three streams have no word: the
++ * frame's own PHY control 0 carries 0x7. The 0x5de word after it is for
++ * vendor 0x106b boards only (0x19124c..0x191290).
++ */
++static int b43_ac_mimo_hdb[2];	/* acphy_mimo_hdb, defined below */
++
+ void b43_ac_txcore_shm_write(struct b43_wldev *dev)
+ {
+ 	static const u8 nss_of_word[B43_AC_TXCORE_NWORDS] = { 1, 1, 1, 2 };
++	u16 w[B43_AC_TXCORE_NWORDS];
+ 	unsigned int i;
+ 
+ 	if (!b43_txhdr_is_ac(dev) || dev->dev->core_rev < 40)
+ 		return;
+-	for (i = 0; i < B43_AC_TXCORE_NWORDS; i++)
++	for (i = 0; i < B43_AC_TXCORE_NWORDS; i++) {
++		w[i] = b43_ac_txcore(dev, nss_of_word[i]) & 0xF;
+ 		b43_shm_write16(dev, B43_SHM_SHARED, B43_SHM_SH_AC_TXCORE + 2 * i,
+-				b43_ac_txcore(dev, nss_of_word[i]) & 0xF);
++				w[i]);
++	}
++	/* 9am: the per-rate core table as written, for MIMO trials */
+ }
+ 
+ /*
+@@ -354,6 +367,293 @@
+ }
+ 
+ /*
++ * TX STBC for single-stream MCS rates (re/r6400/b43-acphy/mimo-rev42.md).
++ * wl advertises TX STBC once it has more than one TX stream and sets the
++ * band's STBC TX mode to auto (wlc_stf_attach 0x192e94..0x192f04: band
++ * byte 0x4d = -1, HT cap |= 0x0080); wlc_d11hdrs then sends every MCS 0..7
++ * (and MCS 32) rate as STBC to a peer that advertises RX STBC (0x11d108..
++ * 0x11d1a4). An HT STBC rate has nss + 1 space-time streams
++ * (wlc_ratespec_nsts 0x180e0c..0x180e18), so it takes the two-stream core
++ * mask (0x3). Off by default: b43 has never sent on cores 1 and 2.
++ * mac80211 sets IEEE80211_TX_CTL_STBC only for a peer whose RX STBC
++ * survives our TX STBC capability (ht.c), and minstrel_ht sets it on every
++ * rate; it is applied to single-stream rates only, as wl does.
++ */
++static int b43_modparam_ac_htstbc;
++module_param_named(acphy_htstbc, b43_modparam_ac_htstbc, int, 0444);
++MODULE_PARM_DESC(acphy_htstbc,
++		 "AC-PHY: advertise and send HT TX STBC on MCS 0..7 (needs 2 TX cores; default 0)");
++
++bool b43_ac_ht_tx_stbc(struct b43_wldev *dev)
++{
++	return b43_modparam_ac_htstbc > 0 && b43_ac_ht_nss(dev) &&
++	       b43_ac_chain_cores(dev->dev->bus_sprom->txchain) > 1;
++}
++
++/*
++ * Per-frame TX power offset for an HT frame sent on more than one core,
++ * half-dB in PHY control 1 from bit 3 (mimo-rev42.md), added to 9a0's
++ * per-rate offset.
++ *
++ * wl takes it per rate from the offset ppr at stf+0x2c, indexed by
++ * bandwidth, spatial streams, TX mode (STBC, CDD for one stream on more
++ * cores, none) and the number of cores in the frame's core mask
++ * (wlc_stf_get_204080_pwrs 0x193990..0x193bd0; wlc_d11hdrs puts the byte
++ * << 3 into PHY control 1 at 0x11c8c8..0x11c8f0, wlc_acphy_txctl1_calc
++ * 0x114254). The board part of that ppr is the same for every core count
++ * (wlc_phy_ppr_set_mcs 0x529c4 copies one MCS array to 1, 2 and 3 cores);
++ * a lower per-core power for more cores can only come from the CLM
++ * regulatory table, which is not decoded. b43's TX power target is a
++ * per-core limit from mac80211's regulatory power (b43_ac_txpwr), so with
++ * every core at that target a 2-core frame would carry 3 dB and a 3-core
++ * frame 4.8 dB more in total. Default: back off by 10 log10(cores),
++ * rounded up to half-dB (6 = 3.0 dB for 2 cores, 10 = 5.0 dB for 3).
++ * Port choice, not wl's value; 0,0 sends at the single-core target.
++ * Legacy frames (acphy_txcore) are not changed.
++ */
++static int b43_ac_mimo_hdb[2] = { 6, 10 };
++static int b43_ac_mimo_hdb_n;
++module_param_array_named(acphy_mimo_hdb, b43_ac_mimo_hdb, int,
++			 &b43_ac_mimo_hdb_n, 0444);
++MODULE_PARM_DESC(acphy_mimo_hdb,
++		 "AC-PHY HT TX power back-off in half-dB for frames on 2,3 cores (default 6,10)");
++
++static unsigned int b43_ac_mimo_hdb_of(u8 coremask)
++{
++	unsigned int n = b43_ac_chain_cores(coremask);
++	int hdb = n >= 3 ? b43_ac_mimo_hdb[1] : n == 2 ? b43_ac_mimo_hdb[0] : 0;
++
++	/* s4.1 half-dB, 0..31 (wlc_stf_convert_to_s41_hdb 0x19016c) */
++	return clamp(hdb, 0, 31);
++}
++
++/*
++ * 9y0 (2026-10-08): the 2-stream downlink. With acphy_htnss=2 (ch36, HT40,
++ * PS off, hardware CCMP) the router receives MCS 15 at 164 Mbit/s, but its
++ * own 2-stream downlink carries 0.68 Mbit/s while the laptop samples
++ * "300.0 MBit/s MCS 15" on every read, drops nothing and the router's
++ * station dump shows 8 failed of 32198 (bench/r6400-5g/assoc-
++ * 20261008T062806Z.log; 3 streams: T063044Z, 0.55). One stream: 107..111.
++ * With software CCMP the same 2-stream downlink carries 40.9 Mbit/s, the
++ * software-CCMP ceiling (T063457Z), so the aggregates are small there.
++ * Static reading (ucode907-tx.md, the 9q0 decode) finds nothing in the
++ * header or the ucode's per-frame crypto setup that depends on the stream
++ * count; the candidates left are the hardware crypto path at the 2-stream
++ * PHY rate and the size of 2-stream aggregates. Three knobs separate them:
++ *
++ * acphy_mimo_ampdu (0..64, default 0): the aggregate of an HT frame with
++ *   2 or more streams at rate entry 0. 0 = as for one stream; 1 = such a
++ *   frame is never aggregated (no AMPDU bit, no tail; under a session its
++ *   status still reaches minstrel_ht through 9p0); N = at most N MPDUs per
++ *   aggregate (the header tail's max MPDUs, bytes 102/103).
++ * acphy_mimo_log (default 0): the first 4 headers (MIMOTX hdr, the 124
++ *   bytes) and the first N TX statuses (AMPDUTX nss2 status / plain) of
++ *   such frames, logged even with acphy_fastpath bit 0 (QUIET). The
++ *   status line carries the MPDU count, the block ack map and the per
++ *   entry words, so it says whether the laptop block-acks a 2-stream
++ *   aggregate in full and how long the aggregates are.
++ * acphy_mimo_word9 (default 0): rate entry word 9 bits 0..5 = the PHY
++ *   control 1 power offset, bit 6 = STBC, see b43_ac_ht_entry.
++ *
++ * v2 (07:37..07:48 UTC on the air): plain 2-stream keyed frames carry
++ * data (acphy_mimo_ampdu=1: 34.0 Mbit/s down, every probe acked), so the
++ * defect is in aggregated keyed frames at the 2-stream rate. The two
++ * tail words the host owns for an aggregate get their own 2-stream
++ * values: acphy_mimo_dur (default 0 = wl's 5416 us; the ucode turns the
++ * maximum duration into a byte budget at the entry's rate, twice the
++ * bytes at 300 Mbit/s: 2708 gives the 1-stream budget) and
++ * acphy_mimo_dens (default -1 = the peer's MPDU density code; 7 = 16 us,
++ * the widest spacing the AQM pads between MPDUs, which is the time the
++ * per-MPDU key setup has at the 2-stream rate). Both only for frames
++ * with MCS 8 and up at rate entry 0.
++ */
++static int b43_modparam_ac_mimo_dur;
++module_param_named(acphy_mimo_dur, b43_modparam_ac_mimo_dur, int, 0644);
++MODULE_PARM_DESC(acphy_mimo_dur,
++		 "AC-PHY HT TX with 2+ streams: A-MPDU maximum duration in us in the header tail (default 0 = 5416 as for one stream)");
++
++static int b43_modparam_ac_mimo_dens = -1;
++module_param_named(acphy_mimo_dens, b43_modparam_ac_mimo_dens, int, 0644);
++MODULE_PARM_DESC(acphy_mimo_dens,
++		 "AC-PHY HT TX with 2+ streams: A-MPDU MPDU density code 0..7 in the header tail (default -1 = the peer's)");
++static int b43_modparam_ac_mimo_ampdu;
++module_param_named(acphy_mimo_ampdu, b43_modparam_ac_mimo_ampdu, int, 0644);
++MODULE_PARM_DESC(acphy_mimo_ampdu,
++		 "AC-PHY HT TX with 2+ streams: 0 = aggregate as with one stream, 1 = never aggregate, N = at most N MPDUs per aggregate (default 0)");
++
++static int b43_modparam_ac_mimo_log;
++module_param_named(acphy_mimo_log, b43_modparam_ac_mimo_log, int, 0644);
++MODULE_PARM_DESC(acphy_mimo_log,
++		 "AC-PHY: log the first N TX statuses and 4 TX headers of HT frames with 2+ streams, also with acphy_fastpath bit 0 (default 0)");
++
++static int b43_modparam_ac_mimo_word9;
++module_param_named(acphy_mimo_word9, b43_modparam_ac_mimo_word9, int, 0444);
++MODULE_PARM_DESC(acphy_mimo_word9,
++		 "AC-PHY: 1 = rate entry word 9 = PHY control 1 power offset (bits 0..5) | STBC (bit 6), the place ucode 907 reads them from for a non-beamformed frame (default 0)");
++
++#define B43_AC_MIMO_HDRLOGS	4
++static atomic_t b43_ac_mimo_hdrlogs = ATOMIC_INIT(0);
++/* v2: aggregates and plain frames each have the acphy_mimo_log budget */
++static atomic_t b43_ac_mimo_agglogs = ATOMIC_INIT(0);
++static atomic_t b43_ac_mimo_plainlogs = ATOMIC_INIT(0);
++
++/* HT with MCS 8 and up at rate entry 0: 2 or more spatial streams */
++static bool b43_ac_mimo_entry_is_nss2(const struct b43_txhdr_ac_rate *e)
++{
++	return (le16_to_cpu(e->phy_ctl0) & B43_TXH_AC_PHY0_FT) ==
++	       B43_TXH_AC_PHY0_FT_HT &&
++	       (le16_to_cpu(e->phy_ctl2) & 0x7F) >= 8;
++}
++
++static bool b43_ac_mimo_rate_is_nss2(const struct ieee80211_tx_rate *r)
++{
++	return (r->flags & IEEE80211_TX_RC_MCS) && r->idx >= 8;
++}
++
++bool b43_ac_mimo_log_hdr(struct b43_wldev *dev,
++			 const struct b43_txhdr_ac *hdr)
++{
++	return b43_modparam_ac_mimo_log > 0 &&
++	       b43_ac_mimo_entry_is_nss2(&hdr->rate[0]) &&
++	       atomic_inc_return(&b43_ac_mimo_agglogs) <=
++	       b43_modparam_ac_mimo_log;
++}
++
++bool b43_ac_mimo_log_info(struct b43_wldev *dev,
++			  const struct ieee80211_tx_info *info)
++{
++	return b43_modparam_ac_mimo_log > 0 &&
++	       b43_ac_mimo_rate_is_nss2(&info->status.rates[0]) &&
++	       atomic_inc_return(&b43_ac_mimo_plainlogs) <=
++	       b43_modparam_ac_mimo_log;
++}
++
++/*
++ * 9z0 (2026-10-08): the 2-stream aggregate length. On the air (ch36, HT40,
++ * PS off, hardware CCMP, the router at MCS 8..15) acphy_mimo_ampdu=N gave
++ * 34 / 71 / 105 / 148 / 151 Mbit/s down for N = 1 / 4 / 8 / 16 / 20, then
++ * 2.4 for 24 and 0.6..1.3 uncapped (32); one stream (MCS 7, 150 Mbit/s)
++ * carries 32-MPDU aggregates at 111. The broken loads report tx failed ~0:
++ * the long aggregates are block-acked, yet their data never arrives.
++ *
++ * Two mechanisms from the open driver for the earlier d11 cores fit "breaks
++ * past a length that depends on the PHY rate", and this patch gives each a
++ * knob, both off by default:
++ *
++ * acphy_mimo_ffpld (Mbit/s, default 0 = off): brcmsmac's FIFO preload
++ *   model (brcmsmac/ampdu.c, "ffpld"). It assumes the TX FIFO is filled by
++ *   DMA at dmaxferrate while the PHY drains it at the PHY rate, after a
++ *   preload of ampdu_pld_size bytes; an aggregate whose deficit outruns the
++ *   preload underflows. brcms_c_ffpld_calc_mcs2ampdu_table (ampdu.c:312)
++ *   turns that into a per-MCS MPDU limit (ampdu.c:332..340):
++ *     mcs2ampdu[mcs] = pld * phy / ((phy - dma) * FFPLD_MPDU_SIZE) + 1
++ *   for phy > dma, FFPLD_MPDU_SIZE = 1800 (ampdu.c:56), and
++ *   brcms_c_sendampdu applies it only to rates at or above dmaxferrate
++ *   (ampdu.c:570..575). There it is adaptive: brcms_c_ffpld_check_txfunfl
++ *   (ampdu.c:350) reads the ucode's txfunfl[fifo] counter on a suppressed
++ *   status, raises the preload by 1000 bytes per 10 underflows and, at the
++ *   FIFO size less 2048 bytes (ampdu.c:380..383), lowers the limit at the
++ *   top MCS and recomputes the table. wl 7.x on core rev 42 has none of
++ *   this: rev > 39 aggregates in hardware (_wlc_sendampdu_aqm), wl.ko has
++ *   no ffpld/mcs2ampdu/dmaxferrate symbol or string, and its MPDU limit is
++ *   per peer stream count, not per rate (scb_ampdu_update_config 0x140b18:
++ *   32 / 48 / 64 for 1 / 2 / 3 stream peers from wlc_ampdu_tx_attach
++ *   0x143374..0x143398, 16 only for a Broadcom peer without the large
++ *   aggregate flag, 0x140b6c..0x140ba4). So this is a static table with
++ *   the formula and our measured numbers: acphy_mimo_ffpld = the fill rate,
++ *   acphy_mimo_pld (bytes, default 16384) = the preload. 150 / 16384 gives
++ *   19 MPDUs at 300 Mbit/s (MCS 15 SGI), 21 at 270, 25 at 240, 55 (so the
++ *   32 cap) at 180 and no limit at 150 and below: it keeps one stream as
++ *   it is and caps only the rates that broke. The rate is rate entry 0's
++ *   own (b43_ac_ht_rate500 / b43_ac_vht_rate500 x 500 kbit/s), any HT or
++ *   VHT aggregate.
++ * acphy_mimo_unfl (default 0 = off): N > 0 logs up to N TX underflow
++ *   events. ucode 907 counts a TX FIFO underflow in shm word 0x76 + FIFO
++ *   (byte 0xEC + 2 * FIFO, L759 @0xD5B..0xD5D: off5 = 0x76 + [0x18]) and
++ *   sets the frame's suppress reason to 6 when none is set yet (@0xD5F..
++ *   0xD60, s1 bits 4..7: brcmsmac's TX_STATUS_SUPR_UF, d11.h). That block
++ *   is wl's macstat: wlc_statsupd 0x117768 copies 128 bytes from shm 0xE0
++ *   (0x117790..0x1177a8) and adds words 6..11 (0x1178e4..0x11793c) to its
++ *   six txfunfl counters, and the ucode counts txallfrm..txbcnfrm in words
++ *   0x70..0x75. With this knob every A-MPDU status (and every status with
++ *   suppress reason 6) reads the counter of its FIFO and logs "TXUNFL" when
++ *   it moved or the reason is 6, with the aggregate's count, map, rate and
++ *   limit. An underflow mid-aggregate is the ffpld model's event; no
++ *   TXUNFL line in a broken uncapped load rules the FIFO out, and the
++ *   corruption is then past the FIFO (the MPDUs are block-acked, so their
++ *   FCS is good on the air: their payload, MIC or PN is not).
++ */
++static unsigned int b43_modparam_ac_mimo_ffpld;
++module_param_named(acphy_mimo_ffpld, b43_modparam_ac_mimo_ffpld, uint, 0644);
++MODULE_PARM_DESC(acphy_mimo_ffpld,
++		 "AC-PHY A-MPDU TX: FIFO fill rate in Mbit/s for brcmsmac's per-rate MPDU limit, applied to rates above it (default 0 = off)");
++
++static unsigned int b43_modparam_ac_mimo_pld = 16384;
++module_param_named(acphy_mimo_pld, b43_modparam_ac_mimo_pld, uint, 0644);
++MODULE_PARM_DESC(acphy_mimo_pld,
++		 "AC-PHY A-MPDU TX: FIFO preload in bytes for acphy_mimo_ffpld (default 16384)");
++
++static int b43_modparam_ac_mimo_unfl;
++module_param_named(acphy_mimo_unfl, b43_modparam_ac_mimo_unfl, int, 0644);
++MODULE_PARM_DESC(acphy_mimo_unfl,
++		 "AC-PHY: log up to N TX FIFO underflow events (ucode txfunfl counter, suppress reason 6) with the A-MPDU status (default 0)");
++
++#define B43_AC_FFPLD_MPDU_SIZE		1800	/* brcmsmac FFPLD_MPDU_SIZE */
++#define B43_AC_SHM_TXFUNFL		0x00EC	/* macstat 0xE0 + 12, 6 FIFOs */
++#define B43_AC_TXFUNFL_NFIFO		6
++#define B43_TXST40_SUPR_UF		6	/* ucode 907 @0xD60 */
++#define B43_AC_FFPLD_LOGS		16
++
++static atomic_t b43_ac_unfl_logs = ATOMIC_INIT(0);
++/*
++ * 9z0 acphy_mimo_ffpld: the MPDU limit for an aggregate at rate entry 0,
++ * brcms_c_ffpld_calc_mcs2ampdu_table's formula (brcmsmac/ampdu.c:332..340)
++ * in kbit/s, at most 255 as there; 0 = no limit.
++ */
++static unsigned int b43_ac_ffpld_cap(const struct b43_txhdr_ac_rate *e)
++{
++	u64 phy = (u64)le16_to_cpu(e->rate) * 500;
++	u64 dma = (u64)b43_modparam_ac_mimo_ffpld * 1000;
++	u64 n;
++
++	if (!b43_modparam_ac_mimo_ffpld || phy <= dma)
++		return 0;
++	n = div64_u64((u64)b43_modparam_ac_mimo_pld * phy,
++		      (phy - dma) * B43_AC_FFPLD_MPDU_SIZE) + 1;
++	return min_t(u64, n, 255);
++}
++
++/*
++ * 9z0 acphy_mimo_unfl, from the TX status path (dma.c): `hdr` is the
++ * header of the first MPDU the status releases (NULL when unknown),
++ * `nframes` the MPDUs it releases. Reads FIFO's txfunfl word, keeps it
++ * per FIFO (dev->ac_ampdu_epoch[fifo].txfunfl, zeroed with the core init
++ * as the ucode's shm) and logs a moved counter or a suppress reason 6.
++ */
++void b43_ac_unfl_status(struct b43_wldev *dev,
++			const struct b43_txstatus *status,
++			const struct b43_txhdr_ac *hdr, unsigned int nframes)
++{
++	unsigned int fifo = status->cookie & B43_TXH_AC_FID_FIFO;
++	struct b43_ac_ampdu_epoch *e;
++	u16 cur, delta;
++
++	if (b43_modparam_ac_mimo_unfl <= 0 || dev->dev->core_rev < 40 ||
++	    fifo >= B43_AC_TXFUNFL_NFIFO)
++		return;
++	e = &dev->ac_ampdu_epoch[fifo];
++	cur = b43_shm_read16(dev, B43_SHM_SHARED,
++			     B43_AC_SHM_TXFUNFL + 2 * fifo);
++	/* the ucode's counter starts over when its shm is cleared */
++	delta = cur >= e->txfunfl ? cur - e->txfunfl : cur;
++	e->txfunfl = cur;
++	if (!delta && status->supp_reason != B43_TXST40_SUPR_UF)
++		return;
++	if (atomic_inc_return(&b43_ac_unfl_logs) > b43_modparam_ac_mimo_unfl)
++		return;
++}
++
++/*
+  * wl's per-MCS modulation and coding (.rodata 0xd73b4, `wlc_mcs_info`,
+  * read by wlc_rate_mcs2rate 0x180e40): bits per subcarrier, code rate
+  * numerator, code rate denominator, for MCS 0..7 of each stream and the
+@@ -429,6 +729,23 @@
+ };
+ 
+ /* ref: MCS & 7 for HT (wlc_rate_ht_basic_reference 0x180f80), MCS for VHT */
++/*
++ * PHY control 1 power bits for a frame: the per-rate offset phy_ac.c keeps
++ * for slot (acphy_rateppr, acphy_rateppr_htadd; 0 by default), as
++ * wlc_d11hdrs passes the wlc_stf_get_204080_pwrs byte to
++ * wlc_acphy_txctl1_calc (0x11c8c8..0x11c8f0).
++ */
++static u16 b43_ac_phyctl1_pwr(struct b43_wldev *dev, unsigned int slot,
++			      bool ht)
++{
++#ifdef CPTCFG_B43_PHY_AC
++	if (dev->phy.type == B43_PHYTYPE_AC)
++		return (u16)b43_phy_ac_txpwroff(dev, slot, ht) <<
++		       B43_TXH_AC_PHY1_PWR_SHIFT;
++#endif
++	return 0;
++}
++
+ static void b43_ac_ht_set_duration(struct b43_wldev *dev,
+ 				   struct ieee80211_tx_info *info,
+ 				   struct ieee80211_hdr *hdr, unsigned int ref_idx)
+@@ -466,19 +783,20 @@
+  * Fill rate entry 0 for an HT MCS rate selected by mac80211 (minstrel_ht),
+  * as wl fills it for an HT rspec (ht20-rev42.md, ht40-2069.md). 20 MHz, or
+  * 40 MHz when mac80211 asks for it on a 40 MHz chanspec (acphy_bw40);
+- * mixed-format preamble, one rate entry, no STBC (not advertised), no LDPC
+- * (not advertised), no beamforming.
++ * mixed-format preamble, one rate entry, STBC only with acphy_htstbc, no
++ * LDPC (not advertised), no beamforming.
+  */
+ static int b43_ac_ht_entry(struct b43_wldev *dev,
+ 			   struct b43_txhdr_ac_rate *entry,
+ 			   const struct ieee80211_tx_rate *r,
+-			   unsigned int frame_len, u16 chanspec)
++			   unsigned int frame_len, u16 chanspec, bool stbc)
+ {
+ 	unsigned int nss_max = b43_ac_ht_nss(dev);
+ 	bool sgi = !!(r->flags & IEEE80211_TX_RC_SHORT_GI);
+ 	bool bw40 = !!(r->flags & IEEE80211_TX_RC_40_MHZ_WIDTH);
+-	unsigned int mcs, nss;
++	unsigned int mcs, nss, nsts, pwr;
+ 	u16 phy_ctl0;
++	u8 coremask;
+ 	u8 *plcp = entry->plcp.raw;
+ 
+ 	/*
+@@ -496,6 +814,14 @@
+ 	}
+ 	mcs = r->idx;
+ 	nss = mcs / 8 + 1;
++	/*
++	 * STBC on single-stream rates only (wl: MCS 0..7 or 32, 0x11d148..
++	 * 0x11d1a4); nsts = nss + 1 (wlc_ratespec_nsts 0x180e0c..0x180e18)
++	 * picks the core mask, as wlc_stf_txcore_get indexes by nsts + 1.
++	 */
++	stbc = stbc && nss == 1 && b43_ac_ht_tx_stbc(dev);
++	nsts = nss + (stbc ? 1 : 0);
++	coremask = b43_ac_txcore(dev, nsts);
+ 
+ 	/*
+ 	 * PHY control 0 (wlc_acphy_txctl0_calc): frame type 2 for an HT rspec
+@@ -508,7 +834,7 @@
+ 	 * advertised, so b43 always sends mixed format and bit 4 stays clear.
+ 	 */
+ 	phy_ctl0 = B43_TXH_AC_PHY0_FT_HT | B43_TXH_AC_PHY0_SET;
+-	phy_ctl0 |= ((u16)b43_ac_txcore(dev, nss) << B43_TXH_AC_PHY0_ANT_SHIFT) &
++	phy_ctl0 |= ((u16)coremask << B43_TXH_AC_PHY0_ANT_SHIFT) &
+ 		    B43_TXH_AC_PHY0_ANT;
+ 	if (bw40)
+ 		phy_ctl0 |= B43_TXH_AC_PHY0_BW_40;		/* 0x11364c..0x113650 */
+@@ -521,14 +847,47 @@
+ 	 * 20 MHz rate in a 40 or 80 MHz channel; for a 40 MHz rate 0 in a
+ 	 * 40 MHz channel, the 40 MHz half (sb >> 1) in an 80 MHz one.
+ 	 */
+-	entry->phy_ctl1 = cpu_to_le16(b43_ac_phyctl1_sb(chanspec, bw40));
+-	/* PHY control 2: the MCS byte (0x114a38); STBC bit 6 never set */
+-	entry->phy_ctl2 = cpu_to_le16(mcs);
+-	/* HT-SIG, wlc_compute_plcp 0x118ca8..0x118cfc; CBW 40 at 0x118cb8..0x118cd0 */
++	/*
++	 * 9a0's per-rate offset plus 9am's multi-core back-off acphy_mimo_hdb
++	 * for a frame on 2 or 3 cores (b43_ac_mimo_hdb_of), the sum capped at
++	 * 31 as wl caps its offsets (0x193ef4..0x193f10).
++	 */
++	pwr = (b43_ac_phyctl1_pwr(dev, (bw40 ? B43_AC_PWROFF_MCS40 :
++					B43_AC_PWROFF_MCS) + (mcs & 7), true) >>
++	       B43_TXH_AC_PHY1_PWR_SHIFT) + b43_ac_mimo_hdb_of(coremask);
++	entry->phy_ctl1 = cpu_to_le16(b43_ac_phyctl1_sb(chanspec, bw40) |
++				      (min(pwr, 31U) << B43_TXH_AC_PHY1_PWR_SHIFT));
++	/*
++	 * PHY control 2: the MCS byte (0x114a38), bit 6 for STBC (0x114ac4..
++	 * 0x114ac8). No stream-count field for HT: the PHY takes it from the
++	 * MCS (VHT puts nss - 1 in bits 4..6, 0x114a40..0x114a50).
++	 */
++	entry->phy_ctl2 = cpu_to_le16(mcs | (stbc ? B43_TXH_AC_PHY2_STBC : 0));
++	/*
++	 * 9y0 acphy_mimo_word9: ucode 907 L206/L207 @0x37A..0x37D copies rate
++	 * entry word 9 bits 0..5 into PHY control 1 bits 3..8 and bit 6 into
++	 * PHY control 2 bit 6 (spr8A, spr8B) for every frame whose
++	 * beamforming block ([0x00,off1] bit 8, cleared @0x362 when the
++	 * block's address is not the frame's A1) is not valid, i.e. every
++	 * frame of this port: the header's own power offset (9a0, 9am) and
++	 * STBC bit never reached the PHY. wl writes word 9 only on its
++	 * beamforming path (0x11c204..0x11c23c: the pwrs byte | 0x40 for
++	 * STBC) and sends non-beamformed frames with word 9 = 0 too. With
++	 * this bit the port's offset and STBC bit go where the ucode reads
++	 * them. Off by default: a power change on an already working link.
++	 */
++	if (b43_modparam_ac_mimo_word9)
++		entry->txbf = cpu_to_le16((min(pwr, 31U) & 0x3F) |
++					  (stbc ? 0x40 : 0));
++	/*
++	 * HT-SIG, wlc_compute_plcp 0x118ca8..0x118cfc; CBW 40 at
++	 * 0x118cb8..0x118cd0; STBC field nsts - nss = 1 (0x118cdc)
++	 */
+ 	plcp[0] = mcs | (bw40 ? B43_AC_HTSIG1_CBW40 : 0);
+ 	plcp[1] = frame_len & 0xFF;
+ 	plcp[2] = (frame_len >> 8) & 0xFF;
+-	plcp[3] = B43_AC_HTSIG2_BASE | (sgi ? B43_AC_HTSIG2_SGI : 0);
++	plcp[3] = B43_AC_HTSIG2_BASE | (sgi ? B43_AC_HTSIG2_SGI : 0) |
++		  (stbc ? B43_AC_HTSIG2_STBC1 : 0);
+ 	plcp[4] = 0;
+ 	plcp[5] = 0;
+ 	/*
+@@ -1002,9 +1361,13 @@
+ 				     B43_AC_AMPDU_NFIFO];
+ 	unsigned int fifo = cookie & B43_TXH_AC_FID_FIFO;
+ 	unsigned int wsize = 0, maxpdu = 0, dens = 0;
++	unsigned int dur = B43_AC_AMPDU_MAX_DUR;
++	unsigned int ffcap;
+ 	u16 seq = le16_to_cpu(wlhdr->seq_ctrl) >> 4;
+ 	u8 tid = 0, ft = 0, epoch;
+ 	bool ampdu = false, lone = false, more = false, cont = false;
++	/* 9y0: an HT frame with 2 or more streams at rate entry 0 */
++	bool nss2 = ht && b43_ac_mimo_rate_is_nss2(&info->control.rates[0]);
+ 
+ 	if (!b43_ac_ampdu(dev, B43_AC_AMPDU_TX) || !b43_txhdr_has_toe(dev))
+ 		return;
+@@ -1026,6 +1389,9 @@
+ 	/* 9l0 v2: the header fields only with bit 7; else the frame is plain */
+ 	if (!b43_ac_ampdu(dev, B43_AC_AMPDU_TXHDR))
+ 		ampdu = false;
++	/* 9y0: acphy_mimo_ampdu=1, a 2+ stream frame goes out plain */
++	if (nss2 && b43_modparam_ac_mimo_ampdu == 1)
++		ampdu = false;
+ 	if (b43_ac_ampdu(dev, B43_AC_AMPDU_BURST)) {
+ 		more = ampdu && b43_ac_ampdu_same_burst(skb, dev->ac_ampdu_next);
+ 		cont = ampdu && e->burst && e->prev_ft &&
+@@ -1042,14 +1408,32 @@
+ 		maxpdu = b43_ac_ampdu(dev, B43_AC_AMPDU_TX64) ?
+ 			 B43_AC_AMPDU_MAX_MPDU64 : B43_AC_AMPDU_MAX_MPDU;
+ 		maxpdu = min(maxpdu, wsize);
++		/* 9y0: acphy_mimo_ampdu=N caps a 2+ stream aggregate at N */
++		if (nss2 && b43_modparam_ac_mimo_ampdu >= 2)
++			maxpdu = min_t(unsigned int, maxpdu,
++				       b43_modparam_ac_mimo_ampdu);
++		/*
++		 * 9z0 acphy_mimo_ffpld: brcmsmac's per-rate limit at rate
++		 * entry 0's rate (filled before this, b43_generate_txhdr)
++		 */
++		ffcap = b43_ac_ffpld_cap(&txhdr->rate[0]);
++		if (ffcap) {
++			maxpdu = min(maxpdu, ffcap);
++		}
+ 		/* 0xde4c, 0xde50 */
+ 		txhdr->mac_ctl_lo |= cpu_to_le16(B43_TXH_AC_MAC_AMPDU);
+ 		txhdr->mac_ctl_hi &= ~cpu_to_le16(B43_TXH_AC_MACH_VHT);
++		/* 9y0 v2: a 2+ stream aggregate's own duration and density */
++		if (nss2 && b43_modparam_ac_mimo_dur > 0)
++			dur = min_t(unsigned int, b43_modparam_ac_mimo_dur,
++				    0xFFF0);
++		if (nss2 && b43_modparam_ac_mimo_dens >= 0)
++			dens = b43_modparam_ac_mimo_dens;
+ 		/* 0xde8c..0xdec0 */
+ 		txhdr->ampdu_max_mpdu[0] = maxpdu;
+ 		txhdr->ampdu_max_mpdu[1] = maxpdu;
+ 		txhdr->ampdu_dur_dens =
+-			cpu_to_le16((B43_AC_AMPDU_MAX_DUR & ~B43_AC_AMPDU_DENS_MASK) |
++			cpu_to_le16((dur & ~B43_AC_AMPDU_DENS_MASK) |
+ 				    (dens & B43_AC_AMPDU_DENS_MASK));
+ 		txhdr->ampdu_wsize = wsize - 1;
+ 	}
+@@ -1058,6 +1442,15 @@
+ 				   wlhdr->addr1, tid, ft, seq, &txhdr->rate[0]);
+ 	toe[2] = (toe[2] & ~B43_TXH_AC_TOE_EPOCH) |
+ 		 (epoch ? B43_TXH_AC_TOE_EPOCH : 0);
++	/*
++	 * 9y0: the first headers of 2+ stream frames as the DMA sends them,
++	 * QUIET or not: the A-MPDU decision, the crypto bytes and the 124
++	 * bytes (as 99q's HTTX dump, 4 lines of 32).
++	 */
++	if (nss2 && b43_modparam_ac_mimo_log > 0 &&
++	    atomic_inc_return(&b43_ac_mimo_hdrlogs) <= B43_AC_MIMO_HDRLOGS) {
++
++	}
+ 	/* 9r0 QUIET: no per-frame log atomics */
+ 	if (b43_ac_fastpath(dev, B43_AC_FASTPATH_QUIET))
+ 		return;
+@@ -1279,7 +1672,8 @@
+ 	if (ht) {
+ 		/* HT MCS: rate entry 0 at byte 20, see b43_ac_ht_entry */
+ 		err = b43_ac_ht_entry(dev, entry, &rates[0], frame_len,
+-				      chanspec);
++				      chanspec,
++				      !!(info->flags & IEEE80211_TX_CTL_STBC));
+ 		if (err)
+ 			return err;
+ 		b43_ac_ht_set_duration(dev, info,
+@@ -1319,9 +1713,14 @@
+ 	 * wlc_stf_get_204080_pwrs fills (0x11c184) from the stf+0x2c ppr,
+ 	 * which wlc_update_txppr_offset builds as a backoff in half dB clamped
+ 	 * to 0..31 (0x193ef4..0x193f10, wlc_stf_convert_to_s41_hdb 0x19016c):
+-	 * zero is no backoff, the PHY's own TX power.
++	 * zero is no backoff, the PHY's own TX power. OFDM frames take their
++	 * rate's offset (acphy_rateppr, 0 by default); CCK is never sent on
++	 * the AC PHY's 5 GHz band.
+ 	 */
+-	entry->phy_ctl1 = cpu_to_le16(b43_ac_phyctl1_sb(chanspec, false));
++	entry->phy_ctl1 = cpu_to_le16(b43_ac_phyctl1_sb(chanspec, false) |
++		(b43_is_ofdm_rate(rate) ?
++		 b43_ac_phyctl1_pwr(dev, B43_AC_PWROFF_OFDM +
++				    b43_ac_legacy_rate_idx(rate), false) : 0));
+ 	entry->phy_ctl2 = cpu_to_le16(b43_ac_legacy_rate_idx(rate));
+ 	/*
+ 	 * PLCP. wl's rate_info (.rodata 0xd73fc) holds the same rate codes as
+--- a/drivers/net/wireless/broadcom/b43/xmit.h
++++ b/drivers/net/wireless/broadcom/b43/xmit.h
+@@ -290,6 +290,13 @@
+ #define  B43_TXH_AC_PHY0_BW_80		0x8000
+ #define  B43_TXH_AC_PHY0_BW_160		0xC000
+ 
++/*
++ * AC PHY control 1 (wlc_acphy_txctl1_calc @0x114254): control sideband in
++ * bits 0..2, the frame's TX power offset below the target in half dB from
++ * bit 3 (0..31, wlc_update_txppr_offset 0x193f04..0x193f0c).
++ */
++#define B43_TXH_AC_PHY1_PWR_SHIFT	3
++
+ /* AC per-rate fallback bandwidth word: bits 0..1 = (fb - 1) & 3, fb = 4
+  * (no fallback bandwidth) for every 20 MHz rate (0x11bf20..0x11bfbc) */
+ #define B43_TXH_AC_FBBW_NONE		0x0003
+@@ -359,6 +366,27 @@
+  * by the acphy_htnss module parameter and the SPROM tx/rx chains.
+  */
+ unsigned int b43_ac_ht_nss(struct b43_wldev *dev);
++/* 9am: HT TX STBC advertised and sent (acphy_htstbc, mimo-rev42.md) */
++bool b43_ac_ht_tx_stbc(struct b43_wldev *dev);
++/*
++ * 9y0: acphy_mimo_log (xmit.c): true for the first N TX statuses of HT
++ * frames with 2 or more streams (MCS 8 and up at rate entry 0), by the
++ * header at the head of the FIFO or by the frame's control block; the
++ * dma.c status lines then print even with acphy_fastpath bit 0.
++ */
++bool b43_ac_mimo_log_hdr(struct b43_wldev *dev,
++			 const struct b43_txhdr_ac *hdr);
++bool b43_ac_mimo_log_info(struct b43_wldev *dev,
++			  const struct ieee80211_tx_info *info);
++/*
++ * 9z0: acphy_mimo_unfl (xmit.c): the TX FIFO underflow counter of the
++ * status' FIFO (ucode 907 shm 0xEC + 2 * FIFO) and suppress reason 6,
++ * logged as TXUNFL with the status of the aggregate.
++ */
++struct b43_txstatus;
++void b43_ac_unfl_status(struct b43_wldev *dev,
++			const struct b43_txstatus *status,
++			const struct b43_txhdr_ac *hdr, unsigned int nframes);
+ 
+ /*
+  * 99zb: acphy_ampdu (xmit.c, bitmask, default 0), A-MPDU on core rev >= 40

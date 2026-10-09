@@ -1,0 +1,412 @@
+From 7f0d892767cb9a8250d6979adaa12f0446070cf1 Mon Sep 17 00:00:00 2001
+From: Russell Ballestrini <russell@unturf.com>
+Date: Fri, 10 Oct 2026 12:00:00 -0400
+Subject: [PATCH 09/29] b43: core rev >= 40 beaconing: template layout, beacon PHY control, AMT
+
+ucode 907 keeps beacons in a different place and format:
+
+- Templates at template RAM 0x200 and 0x480, not 0x68/0x468
+  (wlc_write_hw_bcntemplate0/1 0x15faa8, 0x15fb18), with a 12 byte PHY
+  header area in front of the 802.11 header and the PLCP at byte 3 for
+  OFDM, 6 for CCK (wlc_bcn_prb_template 0x1257c0..0x125820). BTL0/1 and
+  TIMBPOS count the 12 bytes.
+- Beacon PHY control at shm 0xcc/0xce/0xd0 in the AC header encoding with
+  the TX core mask, instead of the legacy word at 0x54
+  (wlc_beacon_phytxctl 0x118f98..0x119008).
+- BTSFOFF (shm 0x1c), never written by b43 (wlc_compute_bcntsfoff
+  @0x11ee64).
+- Host flag word 1 bit 0 turns ucode probe responses off, as wl does in
+  host probe response mode (wlc_config_ucode_probe_resp 0x11351c); hostapd
+  answers probe requests.
+- Pre-TBTT 2 us for an AP (wlc_pretbtt_calc 0x116554).
+- Our MAC and the BSSID go into the address match table (object 0x304,
+  entries 63 and 62; wlc_bmac_write_amt @0x15c964) instead of MMIO
+  0x420/0x422, which wl never touches on core rev > 39 (0x15cb94).
+
+Everything is gated on core rev >= 40.
+---
+ drivers/net/wireless/broadcom/b43/b43.h  |  48 ++++++
+ drivers/net/wireless/broadcom/b43/main.c | 223 +++++++++++++++++++++++++-
+ 2 files changed, 263 insertions(+), 8 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/b43/b43.h
++++ b/drivers/net/wireless/broadcom/b43/b43.h
+@@ -312,6 +312,15 @@
+ #define B43_SHM_SH_PRTLEN		0x004A	/* Probe Response template length */
+ #define B43_SHM_SH_PRMAXTIME		0x0074	/* Probe Response max time */
+ #define B43_SHM_SH_PRPHYCTL		0x0188	/* Probe Response PHY TX control word */
++/*
++ * Core rev >= 40 (ucode 907): beacon PHY control words, written by
++ * wlc_beacon_phytxctl @0x118f84 instead of BEACPHYCTL (0x54) when core rev > 39
++ * (cmp 39 at 0x118f98): word 0 at 0xcc (0x118fb4), word 1 at 0xce (0x118fe8),
++ * word 2 at 0xd0 (0x119000). Same encoding as the AC TX header rate entry.
++ */
++#define B43_SHM_SH_AC_BCNPHYCTL0	0x00CC
++#define B43_SHM_SH_AC_BCNPHYCTL1	0x00CE
++#define B43_SHM_SH_AC_BCNPHYCTL2	0x00D0
+ /* SHM_SHARED rate tables */
+ #define B43_SHM_SH_OFDMDIRECT		0x01C0	/* Pointer to OFDM direct map */
+ #define B43_SHM_SH_OFDMBASIC		0x01E0	/* Pointer to OFDM basic rate map */
+@@ -392,6 +401,13 @@
+ #define B43_HF_ANTSELMODE	0x000200000000ULL /* Antenna selection mode (rev >= 13 only) */
+ #define B43_HF_MLADVW		0x001000000000ULL /* N PHY ML ADV workaround (rev >= 13 only) */
+ #define B43_HF_PR45960W		0x080000000000ULL /* PR 45960 workaround (rev >= 13 only) */
++/*
++ * ucode 907: word 1 bit 0 turns ucode probe responses off. wl sets it when the
++ * host answers probe requests (wlc_config_ucode_probe_resp @0x11351c, via
++ * wlc_disable_probe_resp from wlc_probresp_doiovar 0x17b84c..0x17b858). Same
++ * bit as B43_HF_BT4PRIOCOEX on older ucode.
++ */
++#define B43_HF_AC_NOPRBRESP	0x000000010000ULL
+ 
+ /* Firmware capabilities field in SHM (Opensource firmware only) */
+ #define B43_FWCAPA_HWCRYPTO	0x0001
+@@ -400,6 +416,38 @@
+ /* MacFilter offsets. */
+ #define B43_MACFILTER_SELF		0x0000
+ #define B43_MACFILTER_BSSID		0x0003
++/*
++ * Core rev >= 40: address match table (AMT) in object memory 0x304, two
++ * 32 bit words per entry (wlc_bmac_write_amt @0x15c964). wl puts our MAC in
++ * entry 63 with attribute 0x8008 (wlc_set_mac 0x115a78..0x115a84) and the
++ * BSSID in entry 62 with 0x8002 for an AP or IBSS, 0x8006 for an infra STA
++ * (wlc_set_bssid 0x115b78..0x115bd8). Bit 15 is "valid" (guess: it is the bit
++ * that makes wl merge the old attribute, 0x15c96c..0x15c99c).
++ */
++#define B43_SHM_AMT			0x0304
++#define B43_AMT_IDX_BSSID		62
++#define B43_AMT_IDX_SELF		63
++#define B43_AMT_ATTR_VALID		0x8000
++#define B43_AMT_ATTR_SELF		0x8008
++#define B43_AMT_ATTR_BSSID_AP		0x8002
++#define B43_AMT_ATTR_BSSID_STA		0x8006
++
++/*
++ * Core rev >= 40 template RAM layout. Beacon 0 at 0x200, beacon 1 at 0x480
++ * (wlc_write_hw_bcntemplate0/1 0x15faa8..0x15fab0, 0x15fb18..0x15fb28; 0x68
++ * and 0x468 below rev 40), the probe response at 0x700 (0x128428..0x128430).
++ * Each slot holds pub+0x100 = 640 bytes (wlc_attach 0x13d130..0x13d138), and
++ * a beacon template starts with a 12 byte PHY header area (pub+0xbc = 12,
++ * 0x13d13c..0x13d140; 6 below rev 40) in which the PLCP sits at byte 3 for
++ * OFDM and HT, 6 for CCK, 0 for VHT (wlc_bcn_prb_template 0x1257c0..0x125808).
++ */
++#define B43_AC_TPL_BCN0			0x0200
++#define B43_AC_TPL_BCN1			0x0480
++#define B43_AC_TPL_PRSP			0x0700
++#define B43_AC_TPL_SIZE			640
++#define B43_AC_TPL_PHYHDR		12
++#define B43_AC_TPL_PLCP_OFDM		3
++#define B43_AC_TPL_PLCP_CCK		6
+ 
+ /* PowerControl */
+ #define B43_PCTL_IN			0xB0
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
+@@ -657,6 +657,32 @@
+ 	b43_time_unlock(dev);
+ }
+ 
++/*
++ * Core rev >= 40: wlc_bmac_write_amt @0x15c964. One control write selects
++ * object 0x304 at word index * 2 (0x15c9e8..0x15c9f0), then two data writes:
++ * address bytes 0..3, then bytes 4..5 with the attribute in the high half
++ * (0x15c9a0..0x15c9cc, 0x15ca1c, 0x15ca38). With the valid bit set, wl first
++ * reads the entry back the same way and ORs the old attribute in
++ * (wlc_bmac_read_amt @0x15b9fc, 0x15c96c..0x15c99c).
++ */
++static void b43_amt_write(struct b43_wldev *dev, unsigned int idx,
++			  const u8 *mac, u16 attr)
++{
++	u32 lo, hi;
++
++	if (attr & B43_AMT_ATTR_VALID) {
++		b43_write32(dev, B43_MMIO_SHM_CONTROL,
++			    (B43_SHM_AMT << 16) | (idx * 2));
++		b43_read32(dev, B43_MMIO_SHM_DATA);
++		attr |= b43_read32(dev, B43_MMIO_SHM_DATA) >> 16;
++	}
++	lo = mac[0] | (mac[1] << 8) | (mac[2] << 16) | ((u32)mac[3] << 24);
++	hi = mac[4] | (mac[5] << 8) | ((u32)attr << 16);
++	b43_write32(dev, B43_MMIO_SHM_CONTROL, (B43_SHM_AMT << 16) | (idx * 2));
++	b43_write32(dev, B43_MMIO_SHM_DATA, lo);
++	b43_write32(dev, B43_MMIO_SHM_DATA, hi);
++}
++
+ static
+ void b43_macfilter_set(struct b43_wldev *dev, u16 offset, const u8 *mac)
+ {
+@@ -666,6 +692,33 @@
+ 	if (!mac)
+ 		mac = zero_addr;
+ 
++	/*
++	 * Core rev >= 40: wl never touches MMIO 0x420/0x422
++	 * (wlc_bmac_set_addrmatch returns for core rev > 39, 0x15cb94..0x15cba4)
++	 * and uses the AMT instead: our MAC in entry 63 (wlc_set_mac
++	 * 0x115a78..0x115a84), the BSSID in entry 62 (wlc_set_bssid
++	 * 0x115b78..0x115bd8), attribute 0 for an all-zero BSSID.
++	 */
++	if (dev->dev->core_rev >= 40) {
++		u16 attr;
++
++		if (offset == B43_MACFILTER_SELF) {
++			b43_amt_write(dev, B43_AMT_IDX_SELF, mac,
++				      B43_AMT_ATTR_SELF);
++			return;
++		}
++		if (offset != B43_MACFILTER_BSSID)
++			return;
++		if (is_zero_ether_addr(mac))
++			attr = 0;
++		else if (b43_is_mode(dev->wl, NL80211_IFTYPE_STATION))
++			attr = B43_AMT_ATTR_BSSID_STA;
++		else
++			attr = B43_AMT_ATTR_BSSID_AP;
++		b43_amt_write(dev, B43_AMT_IDX_BSSID, mac, attr);
++		return;
++	}
++
+ 	offset |= 0x0020;
+ 	b43_write16(dev, B43_MMIO_MACFILTER_CONTROL, offset);
+ 
+@@ -1696,6 +1749,95 @@
+ 			size + sizeof(struct b43_plcp_hdr6));
+ }
+ 
++/*
++ * Core rev >= 40 beacon template: a 12 byte PHY header area, then the frame.
++ * wlc_bcn_prb_template @0x1256b4 zeroes pub+0xbc = 12 bytes in front of the
++ * 802.11 header (0x125714..0x125750), and for a beacon on core rev > 39 puts
++ * the PLCP at byte 3 for OFDM and HT, 6 for CCK, 0 for VHT (0x1257c0..0x125808),
++ * built by wlc_compute_plcp @0x118be8 for frame length + FCS (bodylen + 28,
++ * 0x125814). wlc_bmac_write_template_ram @0x15cc60 sets MMIO 0x130 once and
++ * streams 32 bit words into 0x134, rounded up to 4 bytes (0x15fa98..0x15faa0);
++ * the length word is the exact byte count, prefix included (0x15fab8..0x15fac4).
++ * b43 only generates legacy rates; its 4 byte CCK PLCP leaves bytes 4..5 of the
++ * CCK PLCP zero, as b43's pre-rev-40 path does.
++ */
++static void b43_write_template_ac(struct b43_wldev *dev,
++				  const u8 *data, u16 size,
++				  u16 ram_offset,
++				  u16 shm_size_offset, u8 rate)
++{
++	u8 phyhdr[B43_AC_TPL_PHYHDR] = { 0 };
++	struct b43_plcp_hdr4 plcp;
++	unsigned int i, k, j, total;
++	u32 tmp;
++
++	plcp.data = 0;
++	b43_generate_plcp_hdr(&plcp, size + FCS_LEN, rate);
++	memcpy(phyhdr + (b43_is_cck_rate(rate) ? B43_AC_TPL_PLCP_CCK :
++					      B43_AC_TPL_PLCP_OFDM),
++	       plcp.raw, sizeof(plcp.raw));
++
++	total = B43_AC_TPL_PHYHDR + size;
++	for (i = 0; i < total; i += sizeof(u32)) {
++		tmp = 0;
++		for (k = 0; k < sizeof(u32); k++) {
++			j = i + k;
++			if (j >= total)
++				break;
++			tmp |= (u32)(j < B43_AC_TPL_PHYHDR ? phyhdr[j] :
++				     data[j - B43_AC_TPL_PHYHDR]) << (8 * k);
++		}
++		b43_ram_write(dev, ram_offset + i, tmp);
++	}
++	b43_shm_write16(dev, B43_SHM_SHARED, shm_size_offset, total);
++}
++
++/*
++ * PHY control word 2 for a legacy rate: index in wl's cck_rates or ofdm_rates
++ * (wlc_acphy_txctl2_calc @0x114a24, 0x114a60..0x114ac0).
++ */
++static u16 b43_ac_bcn_rate_idx(u8 rate)
++{
++	switch (rate) {
++	case B43_CCK_RATE_1MB:
++	case B43_OFDM_RATE_6MB:
++		return 0;
++	case B43_CCK_RATE_2MB:
++	case B43_OFDM_RATE_9MB:
++		return 1;
++	case B43_CCK_RATE_5MB:
++	case B43_OFDM_RATE_12MB:
++		return 2;
++	case B43_CCK_RATE_11MB:
++	case B43_OFDM_RATE_18MB:
++		return 3;
++	case B43_OFDM_RATE_24MB:
++		return 4;
++	case B43_OFDM_RATE_36MB:
++		return 5;
++	case B43_OFDM_RATE_48MB:
++		return 6;
++	case B43_OFDM_RATE_54MB:
++		return 7;
++	}
++	B43_WARN_ON(1);
++	return 0;
++}
++
++/*
++ * Beacon TSF offset (shm BTSFOFF 0x1c), wlc_compute_bcntsfoff @0x11ee64 as
++ * wlc_write_hw_bcnparams calls it (long preamble, PHY delay on; 0x11f1e0..
++ * 0x11f20c): OFDM 22 us plus the airtime of SERVICE + 24 byte header (26
++ * bytes, 4 us symbols, 0x114824..0x114838); CCK 195 us plus 24 bytes at the
++ * CCK rate (0x114840..0x114890). b43 never wrote this word.
++ */
++static u16 b43_ac_bcn_tsfoff(u8 rate)
++{
++	if (b43_is_cck_rate(rate))
++		return 195 + (24 * 16) / rate;
++	return 22 + 4 * DIV_ROUND_UP(26 * 8, 2 * rate);
++}
++
+ /* Check if the use of the antenna that ieee80211 told us to
+  * use is possible. This will fall back to DEFAULT.
+  * "antenna_nr" is the antenna identifier we got from ieee80211. */
+@@ -1757,6 +1899,8 @@
+ 	struct ieee80211_tx_info *info;
+ 	unsigned long flags;
+ 	struct sk_buff *beacon_skb;
++	bool ac = dev->dev->core_rev >= 40;
++	unsigned int phyhdr_len;
+ 
+ 	spin_lock_irqsave(&dev->wl->beacon_lock, flags);
+ 	info = IEEE80211_SKB_CB(dev->wl->current_beacon);
+@@ -1772,11 +1916,49 @@
+ 	}
+ 
+ 	bcn = (const struct ieee80211_mgmt *)(beacon_skb->data);
+-	len = min_t(size_t, beacon_skb->len,
+-		    0x200 - sizeof(struct b43_plcp_hdr6));
++	if (ac) {
++		len = min_t(size_t, beacon_skb->len,
++			    B43_AC_TPL_SIZE - B43_AC_TPL_PHYHDR);
++		b43_write_template_ac(dev, (const u8 *)bcn,
++				      len, ram_offset, shm_size_offset, rate);
++		phyhdr_len = B43_AC_TPL_PHYHDR;
++	} else {
++		len = min_t(size_t, beacon_skb->len,
++			    0x200 - sizeof(struct b43_plcp_hdr6));
++		b43_write_template_common(dev, (const u8 *)bcn,
++					  len, ram_offset, shm_size_offset,
++					  rate);
++		phyhdr_len = sizeof(struct b43_plcp_hdr6);
++	}
+ 
+-	b43_write_template_common(dev, (const u8 *)bcn,
+-				  len, ram_offset, shm_size_offset, rate);
++	if (ac) {
++		/*
++		 * wlc_beacon_phytxctl @0x118f84, core rev > 39 branch: the rate
++		 * forced to 20 MHz (0x118fa0..0x118fa8), word 0 =
++		 * wlc_acphy_txctl0_calc(rspec, preamble 0): frame type, bit 2,
++		 * core mask << 6 from wlc_stf_d11hdrs_phyctl_txant, bandwidth 0
++		 * (0x1135a0..0x113664); wlc_beacon_phytxctl_txant_upd @0x11641c
++		 * rewrites bits 6..13 of 0xcc with the same core mask
++		 * (0x116444, 0x116478..0x1164b0). Word 1 =
++		 * wlc_acphy_txctl1_calc: power backoff << 3 | control sideband;
++		 * both 0 at full power on a 20 MHz chanspec (0x118fc4..0x118ff4,
++		 * 0x114254..0x114268). Word 2 = the legacy rate index
++		 * (0x118ff8..0x119008). BEACPHYCTL (0x54) and EXTNPHYCTL (0xb0)
++		 * are not written on this branch.
++		 */
++		ctl = b43_is_cck_rate(rate) ? B43_TXH_AC_PHY0_FT_CCK :
++					      B43_TXH_AC_PHY0_FT_OFDM;
++		ctl |= B43_TXH_AC_PHY0_SET;
++		ctl |= (b43_ac_txcore(dev, 1) << B43_TXH_AC_PHY0_ANT_SHIFT) &
++		       B43_TXH_AC_PHY0_ANT;
++		b43_shm_write16(dev, B43_SHM_SHARED, B43_SHM_SH_AC_BCNPHYCTL0, ctl);
++		b43_shm_write16(dev, B43_SHM_SHARED, B43_SHM_SH_AC_BCNPHYCTL1, 0);
++		b43_shm_write16(dev, B43_SHM_SHARED, B43_SHM_SH_AC_BCNPHYCTL2,
++				b43_ac_bcn_rate_idx(rate));
++		b43_shm_write16(dev, B43_SHM_SHARED, B43_SHM_SH_BTSFOFF,
++				b43_ac_bcn_tsfoff(rate));
++		goto tim;
++	}
+ 
+ 	/* Write the PHY TX control parameters. */
+ 	antenna = dev->tx_antenna;
+@@ -1793,6 +1975,7 @@
+ 		ctl |= B43_TXH_PHY_ENC_OFDM;
+ 	b43_shm_write16(dev, B43_SHM_SHARED, B43_SHM_SH_BEACPHYCTL, ctl);
+ 
++tim:
+ 	/* Find the position of the TIM and the DTIM_period value
+ 	 * and write them to SHM. */
+ 	ie = bcn->u.beacon.variable;
+@@ -1815,7 +1998,9 @@
+ 				break;
+ 			tim_found = true;
+ 
+-			tim_position = sizeof(struct b43_plcp_hdr6);
++			/* From the template start, PHY header area included
++			 * (wlc_write_hw_bcnparams 0x11f238..0x11f270). */
++			tim_position = phyhdr_len;
+ 			tim_position += offsetof(struct ieee80211_mgmt, u.beacon.variable);
+ 			tim_position += i;
+ 
+@@ -1836,7 +2021,7 @@
+ 		 */
+ 		b43_shm_write16(dev, B43_SHM_SHARED,
+ 				B43_SHM_SH_TIMBPOS,
+-				len + sizeof(struct b43_plcp_hdr6));
++				len + phyhdr_len);
+ 		b43_shm_write16(dev, B43_SHM_SHARED,
+ 				B43_SHM_SH_DTIMPER, 0);
+ 	}
+@@ -1851,7 +2036,9 @@
+ 
+ 	if (wl->beacon0_uploaded)
+ 		return;
+-	b43_write_beacon_template(dev, B43_SHM_SH_BT_BASE0, B43_SHM_SH_BTL0);
++	b43_write_beacon_template(dev, dev->dev->core_rev >= 40 ?
++				  B43_AC_TPL_BCN0 : B43_SHM_SH_BT_BASE0,
++				  B43_SHM_SH_BTL0);
+ 	wl->beacon0_uploaded = true;
+ }
+ 
+@@ -1861,7 +2048,9 @@
+ 
+ 	if (wl->beacon1_uploaded)
+ 		return;
+-	b43_write_beacon_template(dev, B43_SHM_SH_BT_BASE1, B43_SHM_SH_BTL1);
++	b43_write_beacon_template(dev, dev->dev->core_rev >= 40 ?
++				  B43_AC_TPL_BCN1 : B43_SHM_SH_BT_BASE1,
++				  B43_SHM_SH_BTL1);
+ 	wl->beacon1_uploaded = true;
+ }
+ 
+@@ -5132,6 +5321,14 @@
+ 		pretbtt = 2;
+ 	else
+ 		pretbtt = 250;
++	/*
++	 * wlc_pretbtt_calc @0x1164b4: PHY type 11, no MBSS, AP -> 2 us
++	 * (0x116554..0x11656c), written to MMIO 0x612 and shm 0x96
++	 * (wlc_pretbtt_set 0x1165fc..0x116618).
++	 */
++	if (dev->dev->core_rev >= 40 &&
++	    b43_is_mode(dev->wl, NL80211_IFTYPE_AP))
++		pretbtt = 2;
+ 	b43_shm_write16(dev, B43_SHM_SHARED, B43_SHM_SH_PRETBTT, pretbtt);
+ 	b43_write16(dev, B43_MMIO_TSF_CFP_PRETBTT, pretbtt);
+ }
+@@ -5248,6 +5445,16 @@
+ 		hf |= B43_HF_PCISCW; /* PCI slow clock workaround. */
+ #endif
+ 	hf &= ~B43_HF_SKCFPUP;
++	/*
++	 * ucode 907: hostapd answers probe requests, so turn ucode probe
++	 * responses off the way wl does in its host probe response mode
++	 * (wlc_config_ucode_probe_resp 0x11351c..0x11355c). Without the bit
++	 * the ucode answers from the probe response template at 0x700
++	 * (wlc_bss_update_probe_resp 0x128428..0x128444), which b43 never
++	 * writes; PRMAXTIME = 1 below was b43's only guard.
++	 */
++	if (dev->dev->core_rev >= 40)
++		hf |= B43_HF_AC_NOPRBRESP;
+ 	b43_hf_write(dev, hf);
+ 
+ 	/* tell the ucode MAC capabilities */

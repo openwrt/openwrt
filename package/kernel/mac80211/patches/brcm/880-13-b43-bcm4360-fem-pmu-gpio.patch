@@ -1,0 +1,172 @@
+From b94562bbc092070923a0ae48f75a8aa872b5ef6c Mon Sep 17 00:00:00 2001
+From: Russell Ballestrini <russell@unturf.com>
+Date: Fri, 10 Oct 2026 12:00:00 -0400
+Subject: [PATCH 13/29] b43: BCM4360 PMU regulator control and GPIO ownership as wl
+
+Two PMU/GPIO steps of wl's TX front-end setup that neither b43 nor bcma
+does on the BCM4360 (also 0x4352, 0xaa06), each behind a bit of the
+acphy_fem module parameter (default 3, both on):
+
+- bit 0: PMU regulator control 0 bit 1 cleared before the ucode download
+  (RF LDO on), as wlc_bmac_init does with si_pmu_rfldo(sih, 1)
+  (0x1625a4..0x1625d0; stock kernel si_pmu_rfldo 0xc02c9ac4).
+- bit 1: ChipCommon GPIO control 0..15 back to ChipCommon after
+  b43_gpio_init, as wlc_phy_init_acphy does with
+  si_gpiocontrol(sih, 0xffff, 0, 0) (0x50080..0x5009c); b43 hands
+  GPIOs 0..3 to the d11 core.
+
+acphy_otp16 (default -1, nothing written) applies wl's PMU regulator
+control 0 bits 20..24 rule (wlc_phy_init_acphy 0x4ffec..0x50048) from
+PHY 0x000 and OTP word 16 bits 8..12, which b43 cannot read.
+---
+ drivers/net/wireless/broadcom/b43/main.c | 118 +++++++++++++++++++++++++
+ 1 file changed, 118 insertions(+)
+
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
+@@ -1389,6 +1389,117 @@
+ 		usleep_range(2000, 2500);
+ }
+ 
++/*
++ * 99j, R6400 BCM4360 (core rev 42, PHY type 11): the PMU and GPIO parts of
++ * wl's TX front-end setup that b43 and bcma do not do (fem-tx-enable.md).
++ *
++ * acphy_fem bit 0: RF LDO on. wl's wlc_bmac_init calls si_pmu_rfldo(sih, 1)
++ *   for chips 0x4360/0x4352/0xaa06 (wl.ko 0x1625a4..0x1625d0), before the
++ *   ucode download; the stock kernel's si_pmu_rfldo (0xc02c9ac4) is
++ *   si_pmu_regcontrol(sih, 0, 0x2, on ? 0 : 0x2): PMU regulator control 0
++ *   bit 1 cleared. wl sets it again at the end of attach (0x164e10) and in
++ *   wlc_bmac_hw_down (0x15eb90). Live 2026-10-06 14:35 UTC: regctl 0 reads
++ *   0x00000004 (bit 1 already 0), so on our unit this is a no-op kept for
++ *   parity with wl.
++ * acphy_fem bit 1: GPIOs back to ChipCommon. wl's wlc_phy_init_acphy calls
++ *   si_gpiocontrol(sih, 0xffff, 0, 0) (0x50080..0x5009c), ChipCommon 0x6c
++ *   bits 0..15 = 0 (kernel 0xc02c6bac, PCI bus: no reservation mask), after
++ *   wlc_bmac_init's own gpiocontrol, which is (0, 0) on this board
++ *   (0x162744..0x16294c: no antsel GPIOs, boardflags bit 1 clear).
++ *   b43_gpio_init gives GPIOs 0..3 to the d11 core instead.
++ */
++static int modparam_acphy_fem = 0x3;
++module_param_named(acphy_fem, modparam_acphy_fem, int, 0444);
++MODULE_PARM_DESC(acphy_fem, "BCM4360 core rev >= 40: bit 0 RF LDO on (PMU regctl 0 bit 1 = 0), bit 1 GPIO control 0..15 to ChipCommon");
++
++static bool b43_ac_fem_chip(struct b43_wldev *dev)
++{
++	struct bcma_bus *bus;
++
++	if (dev->dev->bus_type != B43_BUS_BCMA || dev->dev->core_rev < 40 ||
++	    dev->phy.type != B43_PHYTYPE_AC)
++		return false;
++	bus = dev->dev->bdev->bus;
++	return bus->chipinfo.id == BCMA_CHIP_ID_BCM4360 ||
++	       bus->chipinfo.id == 0x4352 || bus->chipinfo.id == 0xaa06;
++}
++
++/* wl 0x1625d0 -> si_pmu_rfldo(sih, 1), kernel 0xc02c9af0..0xc02c9b04 */
++static void b43_ac_rfldo_on(struct b43_wldev *dev)
++{
++	struct bcma_drv_cc *cc;
++	u32 before;
++
++	if (!(modparam_acphy_fem & 0x1) || !b43_ac_fem_chip(dev))
++		return;
++	cc = &dev->dev->bdev->bus->drv_cc;
++	if (!(cc->capabilities & BCMA_CC_CAP_PMU) || !cc->pmu.core)
++		return;
++	bcma_pmu_write32(cc, BCMA_CC_PMU_REGCTL_ADDR, 0);
++	before = bcma_pmu_read32(cc, BCMA_CC_PMU_REGCTL_DATA);
++	bcma_chipco_regctl_maskset(cc, 0, ~0x2, 0);
++	b43info(dev->wl, "FEM: PMU regctl 0 0x%08x -> 0x%08x (RF LDO on, wl 0x1625d0)\n",
++		before, before & ~0x2);
++}
++
++/* wl 0x5009c -> si_gpiocontrol(sih, 0xffff, 0, 0) */
++static void b43_ac_gpio_to_cc(struct b43_wldev *dev)
++{
++	struct bcma_drv_cc *cc;
++	u32 before;
++
++	if (!(modparam_acphy_fem & 0x2) || !b43_ac_fem_chip(dev))
++		return;
++	cc = &dev->dev->bdev->bus->drv_cc;
++	before = bcma_cc_read32(cc, BCMA_CC_GPIOCTL);
++	bcma_chipco_gpio_control(cc, 0xffff, 0);
++	b43info(dev->wl, "FEM: ChipCommon gpiocontrol 0x%08x -> 0x%08x (wl 0x5009c)\n",
++		before, before & ~0xffff);
++}
++
++/*
++ * PMU regulator control 0 bits 20..24, wlc_phy_init_acphy 0x4ffec..0x50048:
++ * n = PHY 0x000 & 0xf; n == 0: v = f, or 5 when f is 0; n == 1: v = f - 3
++ * when f > 3, else 0; n > 1: no write. f is OTP word 16 bits 8..12
++ * (wlc_phy_attach_acphy otp_read_word 0x472d8, ubfx 0x47300), which b43
++ * cannot read, so it is a parameter; -1 (default) writes nothing. wl
++ * writes this after the radio power-on and before the first channel set;
++ * here it runs just before b43_phy_init (before the radio power-on).
++ * Live 2026-10-06 14:35 UTC: regctl 0 = 0x00000004 with our b43 up, so
++ * the field is 0 where wl writes 5 for a zero OTP field on nibble 0.
++ */
++static int modparam_acphy_otp16 = -1;
++module_param_named(acphy_otp16, modparam_acphy_otp16, int, 0444);
++MODULE_PARM_DESC(acphy_otp16, "BCM4360: OTP word 16 bits 8..12 for PMU regctl 0 bits 20..24 (wl 0x50048); -1 skips");
++
++static void b43_ac_regctl0_paldo(struct b43_wldev *dev)
++{
++	struct bcma_drv_cc *cc;
++	u32 f, v, before;
++	u16 n;
++
++	if (modparam_acphy_otp16 < 0 || !b43_ac_fem_chip(dev))
++		return;
++	cc = &dev->dev->bdev->bus->drv_cc;
++	if (!(cc->capabilities & BCMA_CC_CAP_PMU) || !cc->pmu.core)
++		return;
++	n = b43_phy_read(dev, 0x000) & 0xf;			/* 0x4fff4 */
++	if (n > 1) {						/* 0x50000 */
++		b43info(dev->wl, "FEM: PHY 0x000 nibble %u, regctl 0 bits 20..24 not written (wl 0x50000)\n", n);
++		return;
++	}
++	f = modparam_acphy_otp16 & 0x1f;
++	if (n == 0)
++		v = f ? f : 5;					/* 0x5000c..0x50018 */
++	else
++		v = f > 3 ? f - 3 : 0;				/* 0x50020..0x50030 */
++	bcma_pmu_write32(cc, BCMA_CC_PMU_REGCTL_ADDR, 0);
++	before = bcma_pmu_read32(cc, BCMA_CC_PMU_REGCTL_DATA);
++	bcma_chipco_regctl_maskset(cc, 0, ~0x01f00000, v << 20);	/* 0x50048 */
++	b43info(dev->wl, "FEM: PMU regctl 0 0x%08x, bits 20..24 <- %u (PHY 0x000 nibble %u, OTP field %u)\n",
++		before, v, n, f);
++}
++
+ static void b43_bcma_wireless_core_reset(struct b43_wldev *dev, bool gmode)
+ {
+ 	u32 req = B43_BCMA_CLKCTLST_80211_PLL_REQ |
+@@ -3820,6 +3931,9 @@
+ 			 B43_MACCTL_INFRA;
+ 	b43_write32(dev, B43_MMIO_MACCTL, macctl);
+ 
++	/* 99j: wl's si_pmu_rfldo(sih, 1) precedes its ucode download */
++	b43_ac_rfldo_on(dev);
++
+ 	err = b43_upload_microcode(dev);
+ 	if (err)
+ 		goto out;	/* firmware is released later */
+@@ -3827,6 +3941,8 @@
+ 	err = b43_gpio_init(dev);
+ 	if (err)
+ 		goto out;	/* firmware is released later */
++	/* 99j: after b43's GPIO handoff, wl's si_gpiocontrol(0xffff, 0) */
++	b43_ac_gpio_to_cc(dev);
+ 
+ 	err = b43_upload_initvals(dev);
+ 	if (err)
+@@ -3841,6 +3957,8 @@
+ 
+ 	/* Turn the Analog on and initialize the PHY. */
+ 	phy->ops->switch_analog(dev, 1);
++	/* 99j: wl 0x50048, PMU regctl 0 bits 20..24 (acphy_otp16) */
++	b43_ac_regctl0_paldo(dev);
+ 	err = b43_phy_init(dev);
+ 	if (err)
+ 		goto err_gpio_clean;

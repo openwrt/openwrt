@@ -1,0 +1,711 @@
+From 7b844fda625ba86ef6bbbfead0efbfa80f4d62cc Mon Sep 17 00:00:00 2001
+From: Russell Ballestrini <russell@unturf.com>
+Date: Fri, 10 Oct 2026 12:00:00 -0400
+Subject: [PATCH 24/29] b43: AC-PHY: hardware CCMP and WEP on ucode 907
+
+Keys in ucode 907's key table with the station's AMT entry, the key
+bytes of the AC TX header, the ignore-PMQ bit on unicast frames to a
+keyed station (the ucode's own power save otherwise suppresses them)
+(acphy_hwcrypto). Software CCMP was the CPU ceiling (~35 Mbit/s).
+---
+ drivers/net/wireless/broadcom/b43/b43.h  |  49 ++++
+ drivers/net/wireless/broadcom/b43/main.c | 370 +++++++++++++++++++++++---
+ drivers/net/wireless/broadcom/b43/xmit.c |  71 +++++-
+ drivers/net/wireless/broadcom/b43/xmit.h |  54 ++++
+ 4 files changed, 494 insertions(+), 50 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/b43/b43.h
++++ b/drivers/net/wireless/broadcom/b43/b43.h
+@@ -450,6 +450,52 @@
+ #define B43_AMT_ATTR_SELF		0x8008
+ #define B43_AMT_ATTR_BSSID_AP		0x8002
+ #define B43_AMT_ATTR_BSSID_STA		0x8006
++#define B43_AMT_ATTR_A2			0x0004
++
++/*
++ * 9q0: hardware keys of ucode 907 on core rev >= 40 (acphy_hwcrypto). The
++ * layout is wl's for core rev > 39 (wlc_attach 0x13d130..0x13d184): 61 key
++ * slots of 16 bytes at the key table pointer (shm 0x56 * 2, as b43's
++ * dev->ktp; wlc_init 0x12ecc0..0x12eccc), a 68 word key index/algorithm
++ * block at byte 0x5e0 (b43's legacy B43_SHM_SH_KEYIDXBLOCK 0x5d4 is the
++ * TX core mask block there, 99l), and an AMT of 64 entries. Slots 0..3
++ * are the default (group) keys, slot 4 + n belongs to AMT entry n: the
++ * ucode turns an A2 match index into a key slot by adding 4 (@0x0AAE),
++ * and wl writes a key's station into AMT entry slot - 4 with attribute
++ * 0x8004, valid | match A2 (wlc_key_hw_init 0x1731bc -> wlc_set_rcmta,
++ * wlc_bmac_set_rcmta 0x15ca94). A slot's index block word is
++ * (slot << 4) | algo_hw (0x172ff0, 0x1730bc); the material goes to
++ * ktp + 16 * slot (0x1730c4..0x1730ec). Keys above slot 60 do not exist
++ * in wl (wlc_d11hdrs 0x11cbf4..0x11cbfc refuses them).
++ */
++#define B43_SHM_SH_AC_KEYIDXBLOCK	0x05E0
++#define B43_AC_KEYIDXBLOCK_WORDS	68
++#define B43_AC_HWKEY_SLOTS		61
++#define B43_AC_HWKEY_GROUP_SLOTS	4
++#define B43_AC_HWKEY_AMT_MAX		(B43_AC_HWKEY_SLOTS - B43_AC_HWKEY_GROUP_SLOTS)
++#define B43_AC_HWKEY_SIZE		16
++/*
++ * Hardware algorithm numbers of core rev > 39 (wlc_key_insert
++ * 0x173ff4..0x1740b8: WEP40 1, TKIP 2, WEP104 3 (4 below rev 40), AES
++ * legacy/OCB 4 (5 below), AES-CCM 5 (3 below)). b43's B43_SEC_ALGO_* are
++ * the pre-40 numbers. TKIP is never given to the hardware by this wl
++ * (wlc_key_hw_init 0x172e4c..0x172e5c drops the key for algo 2).
++ */
++#define B43_AC_WSEC_ALGO_OFF		0
++#define B43_AC_WSEC_ALGO_WEP1		1
++#define B43_AC_WSEC_ALGO_TKIP		2
++#define B43_AC_WSEC_ALGO_WEP128		3
++#define B43_AC_WSEC_ALGO_AES_LEGACY	4
++#define B43_AC_WSEC_ALGO_AES		5
++
++struct b43_ac_hwkey {
++	/* NULL = slot free. A cookie: only compared, never dereferenced. */
++	struct ieee80211_key_conf *keyconf;
++	u8 algo_hw;
++	u8 pairwise;
++	u8 mac[ETH_ALEN];	/* pairwise: the station (AMT entry slot - 4) */
++	u8 key[B43_AC_HWKEY_SIZE];
++};
+ 
+ /*
+  * Core rev >= 40 template RAM layout. Beacon 0 at 0x200, beacon 1 at 0x480
+@@ -997,6 +1043,9 @@
+ 	/* encryption/decryption */
+ 	u16 ktp;		/* Key table pointer */
+ 	struct b43_key key[B43_NR_GROUP_KEYS * 2 + B43_NR_PAIRWISE_KEYS];
++	/* 9q0: the hardware keys of the AC path, replayed on a core init */
++	struct b43_ac_hwkey ac_hwkey[B43_AC_HWKEY_SLOTS];
++	unsigned int ac_hwcrypto_rxlogs;
+ 
+ 	/* Firmware data */
+ 	struct b43_firmware fw;
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
+@@ -4504,6 +4504,295 @@
+ 	return -ENODEV;
+ }
+ 
++/*
++ * 9j0: acphy_psfix bit 8, one AMT entry per associated station on core rev
++ * >= 40 (see xmit.h). Entries 0..61 are free: 99c keeps the BSSID in 62 and
++ * our MAC in 63 (wlc_set_bssid 0x115b78.., wlc_set_mac 0x115a78..). wl
++ * writes an entry through wlc_bmac_write_amt 0x15c964 (b43_amt_write
++ * mirrors it) and clears it with attribute 0; the attribute is
++ * acphy_psamt. The index lives in the station's drv_priv (b43_ac_sta.amt_idx
++ * + 1). Only AP interfaces get entries.
++ */
++#define B43_AC_AMT_STA_MAX	62
++static DECLARE_BITMAP(b43_ac_amt_used, B43_AC_AMT_STA_MAX);
++
++/*
++ * 9q0: a station's AMT entry is shared by acphy_psfix bit 8 and its
++ * pairwise hardware key (B43_AC_AMT_USER_*): the first user allocates the
++ * entry, every user writes its attribute (b43_amt_write ORs the old one in
++ * when the valid bit is set, as wlc_write_amt 0x115514..0x115540), the
++ * last user clears it. A key needs an entry below B43_AC_HWKEY_AMT_MAX
++ * (slot 4 + entry < wl's 61 keys); the bitmap fills from 0, so only a
++ * crowd of stations pushes one above that. Returns the entry or -ENOSPC.
++ * wl->mutex held; the station has a b43_ac_sta (hw->sta_data_size).
++ */
++static int b43_ac_amt_sta_get(struct b43_wldev *dev,
++			      struct ieee80211_sta *sta, u8 user, u16 attr)
++{
++	struct b43_ac_sta *acs = (struct b43_ac_sta *)sta->drv_priv;
++	unsigned int idx, max;
++	u32 lo, hi;
++
++	max = user == B43_AC_AMT_USER_KEY ? B43_AC_HWKEY_AMT_MAX :
++					    B43_AC_AMT_STA_MAX;
++	if (acs->amt_idx) {
++		idx = acs->amt_idx - 1;
++		if (idx >= max)
++			return -ENOSPC;
++	} else {
++		idx = find_first_zero_bit(b43_ac_amt_used, max);
++		if (idx >= max)
++			return -ENOSPC;
++		set_bit(idx, b43_ac_amt_used);
++		acs->amt_idx = idx + 1;
++	}
++	acs->amt_users |= user;
++	b43_amt_write(dev, idx, sta->addr, attr);
++	/* Read the entry back the way wlc_bmac_read_amt 0x15b9fc does */
++	b43_write32(dev, B43_MMIO_SHM_CONTROL, (B43_SHM_AMT << 16) | (idx * 2));
++	lo = b43_read32(dev, B43_MMIO_SHM_DATA);
++	hi = b43_read32(dev, B43_MMIO_SHM_DATA);
++	return idx;
++}
++
++/* Drop users of the station's entry; the last one clears it (wl->mutex held). */
++static void b43_ac_amt_sta_put(struct b43_wldev *dev,
++			       struct ieee80211_sta *sta, u8 users)
++{
++	struct b43_ac_sta *acs = (struct b43_ac_sta *)sta->drv_priv;
++	static const u8 zero_addr[ETH_ALEN] = { 0 };
++	unsigned int idx;
++
++	acs->amt_users &= ~users;
++	if (!acs->amt_idx || acs->amt_users)
++		return;
++	idx = acs->amt_idx - 1;
++	clear_bit(idx, b43_ac_amt_used);
++	acs->amt_idx = 0;
++	if (dev && b43_status(dev) >= B43_STAT_INITIALIZED) {
++		b43_amt_write(dev, idx, zero_addr, 0);
++	}
++}
++
++/*
++ * 9q0: acphy_hwcrypto, ucode 907's key table (b43.h B43_AC_HWKEY_*,
++ * xmit.h). A slot is its index/algorithm word at 0x5e0 + 2 * slot and 16
++ * bytes of material at ktp + 16 * slot (wlc_key_hw_init 0x1730a4..
++ * 0x17310c). The material goes in before the word that enables the slot
++ * and the word is cleared before the material, so the ucode never works
++ * with half a key; wl writes them the other way round (0x1730bc, 0x1730ec)
++ * and clears a slot to (slot << 4) | 0 where wlc_key_hw_init_all
++ * (0x1745a8) writes 0: both mean "off".
++ */
++static void b43_ac_hwkey_slot_write(struct b43_wldev *dev, unsigned int slot,
++				    u8 algo_hw, const u8 *key)
++{
++	unsigned int i;
++	u16 value;
++
++	if (!algo_hw)
++		b43_shm_write16(dev, B43_SHM_SHARED,
++				B43_SHM_SH_AC_KEYIDXBLOCK + slot * 2, 0);
++	for (i = 0; i < B43_AC_HWKEY_SIZE; i += 2) {
++		value = key ? key[i] | (u16)key[i + 1] << 8 : 0;
++		b43_shm_write16(dev, B43_SHM_SHARED,
++				dev->ktp + slot * B43_AC_HWKEY_SIZE + i, value);
++	}
++	if (algo_hw)
++		b43_shm_write16(dev, B43_SHM_SHARED,
++				B43_SHM_SH_AC_KEYIDXBLOCK + slot * 2,
++				(slot << 4) | algo_hw);
++}
++
++static bool b43_ac_hwkey_sta_ok(struct b43_wldev *dev,
++				struct ieee80211_sta *sta)
++{
++	return sta && dev->wl->hw->sta_data_size >= sizeof(struct b43_ac_sta);
++}
++
++/* USEDEFKEYS for WEP default keys, as wlc_key_defkeyflag 0x172df4 and the
++ * legacy path; off with any other key in the table. */
++static void b43_ac_hwkey_defkeys(struct b43_wldev *dev)
++{
++	unsigned int slot;
++	bool wep = false;
++
++	for (slot = 0; slot < B43_AC_HWKEY_GROUP_SLOTS; slot++)
++		if (dev->ac_hwkey[slot].keyconf &&
++		    dev->ac_hwkey[slot].algo_hw != B43_AC_WSEC_ALGO_AES)
++			wep = true;
++	for (slot = B43_AC_HWKEY_GROUP_SLOTS; slot < B43_AC_HWKEY_SLOTS; slot++)
++		if (dev->ac_hwkey[slot].keyconf)
++			wep = false;
++	if (wep)
++		b43_hf_write(dev, b43_hf_read(dev) | B43_HF_USEDEFKEYS);
++	else
++		b43_hf_write(dev, b43_hf_read(dev) & ~B43_HF_USEDEFKEYS);
++}
++
++static int b43_ac_hwkey_set(struct b43_wldev *dev, struct ieee80211_vif *vif,
++			    struct ieee80211_sta *sta,
++			    struct ieee80211_key_conf *key)
++{
++	static const u8 zero_addr[ETH_ALEN] = { 0 };
++	bool pairwise = !!(key->flags & IEEE80211_KEY_FLAG_PAIRWISE);
++	struct b43_ac_hwkey *hk;
++	u8 algo_hw, buf[B43_AC_HWKEY_SIZE] = { 0 };
++	unsigned int i;
++	int slot, amt = -1;
++
++	switch (key->cipher) {
++	case WLAN_CIPHER_SUITE_CCMP:
++		if (!b43_ac_hwcrypto(dev, B43_AC_HWCRYPTO_CCMP))
++			return -EOPNOTSUPP;
++		algo_hw = B43_AC_WSEC_ALGO_AES;
++		break;
++	case WLAN_CIPHER_SUITE_WEP40:
++		if (!b43_ac_hwcrypto(dev, B43_AC_HWCRYPTO_WEP))
++			return -EOPNOTSUPP;
++		algo_hw = B43_AC_WSEC_ALGO_WEP1;
++		break;
++	case WLAN_CIPHER_SUITE_WEP104:
++		if (!b43_ac_hwcrypto(dev, B43_AC_HWCRYPTO_WEP))
++			return -EOPNOTSUPP;
++		algo_hw = B43_AC_WSEC_ALGO_WEP128;
++		break;
++	default:
++		/* TKIP (software in wl too), GCMP, the CMAC group key of MFP */
++		return -EOPNOTSUPP;
++	}
++	if (key->keylen > B43_AC_HWKEY_SIZE || key->keyidx < 0 ||
++	    key->keyidx >= B43_AC_HWKEY_GROUP_SLOTS)
++		return -EINVAL;
++	if (pairwise) {
++		if (!b43_ac_hwkey_sta_ok(dev, sta))
++			return -EOPNOTSUPP;
++		amt = b43_ac_amt_sta_get(dev, sta, B43_AC_AMT_USER_KEY,
++					 B43_AMT_ATTR_VALID | B43_AMT_ATTR_A2);
++		if (amt < 0) {
++			return -ENOSPC;
++		}
++		slot = B43_AC_HWKEY_GROUP_SLOTS + amt;
++	} else {
++		slot = key->keyidx;
++	}
++	/*
++	 * The same key again (a replay) or the slot in use (a PTK rekey:
++	 * mac80211 installs the new key before it disables the old one, and
++	 * the old one's DISABLE_KEY then finds its slot taken, below): clear
++	 * first. A stale pairwise record at another slot leaves its own AMT
++	 * entry behind; cleared only if no station holds it (the station's
++	 * current entry is the one b43_ac_amt_sta_get just returned).
++	 */
++	for (i = 0; i < B43_AC_HWKEY_SLOTS; i++) {
++		hk = &dev->ac_hwkey[i];
++		if (!hk->keyconf || (hk->keyconf != key && i != slot))
++			continue;
++		if (hk->pairwise && i != slot &&
++		    !test_bit(i - B43_AC_HWKEY_GROUP_SLOTS, b43_ac_amt_used))
++			b43_amt_write(dev, i - B43_AC_HWKEY_GROUP_SLOTS,
++				      zero_addr, 0);
++		b43_ac_hwkey_slot_write(dev, i, 0, NULL);
++		memset(hk, 0, sizeof(*hk));
++	}
++	memcpy(buf, key->key, key->keylen);
++	b43_ac_hwkey_slot_write(dev, slot, algo_hw, buf);
++	hk = &dev->ac_hwkey[slot];
++	hk->keyconf = key;
++	hk->algo_hw = algo_hw;
++	hk->pairwise = pairwise;
++	memcpy(hk->mac, sta ? sta->addr : zero_addr, ETH_ALEN);
++	memcpy(hk->key, buf, B43_AC_HWKEY_SIZE);
++	key->hw_key_idx = slot;
++	/* The host writes the IV into the frame, as wl's does (xmit.h) */
++	key->flags |= IEEE80211_KEY_FLAG_GENERATE_IV;
++	if (algo_hw == B43_AC_WSEC_ALGO_AES)
++		key->flags |= IEEE80211_KEY_FLAG_SW_MGMT_TX;
++	b43_ac_hwkey_defkeys(dev);
++	return 0;
++}
++
++/* The core may be down (mac80211 drops keys around b43_op_stop): the
++ * record always goes, the hardware only while it is up. */
++static int b43_ac_hwkey_disable(struct b43_wldev *dev,
++				struct ieee80211_sta *sta,
++				struct ieee80211_key_conf *key)
++{
++	unsigned int slot = key->hw_key_idx;
++	struct b43_ac_hwkey *hk;
++
++	if (slot >= B43_AC_HWKEY_SLOTS || dev->ac_hwkey[slot].keyconf != key) {
++		return 0;
++	}
++	hk = &dev->ac_hwkey[slot];
++	/* wl's order: the AMT entry first (0x172f04..0x172f2c), then the slot */
++	if (hk->pairwise && b43_ac_hwkey_sta_ok(dev, sta))
++		b43_ac_amt_sta_put(dev, sta, B43_AC_AMT_USER_KEY);
++	if (b43_status(dev) >= B43_STAT_INITIALIZED) {
++		b43_ac_hwkey_slot_write(dev, slot, 0, NULL);
++		b43_ac_hwkey_defkeys(dev);
++	}
++	memset(hk, 0, sizeof(*hk));
++	return 0;
++}
++
++static int b43_ac_hwkey_op(struct b43_wldev *dev, enum set_key_cmd cmd,
++			   struct ieee80211_vif *vif, struct ieee80211_sta *sta,
++			   struct ieee80211_key_conf *key)
++{
++	switch (cmd) {
++	case SET_KEY:
++		return b43_ac_hwkey_set(dev, vif, sta, key);
++	case DISABLE_KEY:
++		return b43_ac_hwkey_disable(dev, sta, key);
++	default:
++		B43_WARN_ON(1);
++		return -EINVAL;
++	}
++}
++
++/*
++ * 9q0: from b43_security_init on the AC path. A clean table (every slot
++ * and index word, and the AMT rows a key may use that no station holds:
++ * wlc_key_hw_init_all 0x174594..0x1745ec), then the keys mac80211 still
++ * holds, because a 99d/9m0 controller restart re-inits the core without
++ * telling mac80211 (xmit.c, acphy_htdead) and ucode 907's key material sits
++ * above the 4 KiB b43_upload_microcode zeroes (ktp 0x10f4 on 907).
++ */
++static void b43_ac_hwcrypto_core_init(struct b43_wldev *dev)
++{
++	static const u8 zero_addr[ETH_ALEN] = { 0 };
++	struct b43_ac_hwkey *hk;
++	unsigned int slot, n = 0;
++	u16 attr;
++
++	if (!b43_ac_hwcrypto(dev, B43_AC_HWCRYPTO_CCMP | B43_AC_HWCRYPTO_WEP))
++		return;
++	for (slot = 0; slot < B43_AC_HWKEY_SLOTS; slot++)
++		b43_ac_hwkey_slot_write(dev, slot, 0, NULL);
++	for (slot = B43_AC_HWKEY_SLOTS; slot < B43_AC_KEYIDXBLOCK_WORDS; slot++)
++		b43_shm_write16(dev, B43_SHM_SHARED,
++				B43_SHM_SH_AC_KEYIDXBLOCK + slot * 2, 0);
++	for (slot = 0; slot < B43_AC_HWKEY_AMT_MAX; slot++)
++		if (!test_bit(slot, b43_ac_amt_used))
++			b43_amt_write(dev, slot, zero_addr, 0);
++	dev->ac_hwcrypto_rxlogs = 0;
++	attr = B43_AMT_ATTR_VALID | B43_AMT_ATTR_A2;
++	if (b43_ac_psfix(dev, B43_AC_PSFIX_AMT))
++		attr |= b43_modparam_acphy_psamt;
++	for (slot = 0; slot < B43_AC_HWKEY_SLOTS; slot++) {
++		hk = &dev->ac_hwkey[slot];
++		if (!hk->keyconf)
++			continue;
++		b43_ac_hwkey_slot_write(dev, slot, hk->algo_hw, hk->key);
++		if (hk->pairwise)
++			b43_amt_write(dev, slot - B43_AC_HWKEY_GROUP_SLOTS,
++				      hk->mac, attr);
++		n++;
++	}
++	b43_ac_hwkey_defkeys(dev);
++}
++
+ static void b43_security_init(struct b43_wldev *dev)
+ {
+ 	dev->ktp = b43_shm_read16(dev, B43_SHM_SHARED, B43_SHM_SH_KTP);
+@@ -4527,8 +4816,11 @@
+ 	 * decoded. wl writes MMIO 0x43c (RCMTA count) on no core rev > 39
+ 	 * path, so leave it too.
+ 	 */
+-	if (b43_txhdr_is_ac(dev) && dev->dev->core_rev >= 40)
++	if (b43_txhdr_is_ac(dev) && dev->dev->core_rev >= 40) {
++		/* 9q0: ucode 907's own table, when acphy_hwcrypto asks */
++		b43_ac_hwcrypto_core_init(dev);
+ 		return;
++	}
+ 	/* Number of RCMTA address slots */
+ 	b43_write16(dev, B43_MMIO_RCMTA_COUNT, B43_NR_PAIRWISE_KEYS);
+ 	/* Clear the key memory. */
+@@ -5203,10 +5495,32 @@
+ 	mutex_lock(&wl->mutex);
+ 
+ 	dev = wl->current_dev;
++	/* 9q0: a slot record outlives a core that is down; drop it anyway */
++	if (dev && cmd == DISABLE_KEY && dev->dev->core_rev >= 40 &&
++	    b43_status(dev) < B43_STAT_INITIALIZED) {
++		err = b43_ac_hwkey_disable(dev, sta, key);
++		mutex_unlock(&wl->mutex);
++		return err;
++	}
+ 	err = -ENODEV;
+ 	if (!dev || b43_status(dev) < B43_STAT_INITIALIZED)
+ 		goto out_unlock;
+ 
++	if (b43_txhdr_is_ac(dev)) {
++		/*
++		 * 9q0: ucode 907's key table with acphy_hwcrypto (b43.h
++		 * B43_AC_HWKEY_*, xmit.h); refused (software crypto, as
++		 * before) without it. Nothing below applies to this ucode.
++		 */
++		if (!b43_ac_hwcrypto(dev, B43_AC_HWCRYPTO_CCMP |
++					  B43_AC_HWCRYPTO_WEP))
++			err = -EOPNOTSUPP;
++		else
++			err = b43_ac_hwkey_op(dev, cmd, vif, sta, key);
++		mutex_unlock(&wl->mutex);
++		return err;
++	}
++
+ 	if (dev->fw.pcm_request_failed || !dev->hwcrypto_enabled) {
+ 		/* We don't have firmware for the crypto engine.
+ 		 * Must use software-crypto. */
+@@ -5214,13 +5528,6 @@
+ 		goto out_unlock;
+ 	}
+ 
+-	if (b43_txhdr_is_ac(dev)) {
+-		/* The key fields of the AC TX header (bytes 100..101) and the
+-		 * ucode 907 key table are not decoded. Use software crypto. */
+-		err = -EOPNOTSUPP;
+-		goto out_unlock;
+-	}
+-
+ 	err = -EINVAL;
+ 	switch (key->cipher) {
+ 	case WLAN_CIPHER_SUITE_WEP40:
+@@ -6359,44 +6666,28 @@
+ }
+ 
+ /*
+- * 9j0: acphy_psfix bit 8, one AMT entry per associated station on core rev
+- * >= 40 (see xmit.h). Entries 0..61 are free: 99c keeps the BSSID in 62 and
+- * our MAC in 63 (wlc_set_bssid 0x115b78.., wlc_set_mac 0x115a78..). wl
+- * writes an entry through wlc_bmac_write_amt 0x15c964 (b43_amt_write
+- * mirrors it) and clears it with attribute 0; the attribute is
+- * acphy_psamt. The index lives in the station's drv_priv (b43_ac_sta.amt_idx
+- * + 1). Only AP interfaces get entries.
++ * 9j0: acphy_psfix bit 8 (the AMT comment sits with b43_ac_amt_sta_get).
++ * 9q0: the entry is taken through the allocator shared with the hardware
++ * key, and drv_priv is only touched when hw->sta_data_size made room for
++ * a b43_ac_sta (it is 0 without the bits that need one).
+  */
+-#define B43_AC_AMT_STA_MAX	62
+-static DECLARE_BITMAP(b43_ac_amt_used, B43_AC_AMT_STA_MAX);
+-
+ static int b43_op_sta_add(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
+ 			  struct ieee80211_sta *sta)
+ {
+ 	struct b43_wl *wl = hw_to_b43_wl(hw);
+ 	struct b43_ac_sta *acs = (struct b43_ac_sta *)sta->drv_priv;
+ 	struct b43_wldev *dev;
+-	unsigned int idx;
+-	u32 lo, hi;
+ 
+ 	mutex_lock(&wl->mutex);
+ 	dev = wl->current_dev;
++	if (hw->sta_data_size < sizeof(*acs))
++		goto out;
+ 	acs->amt_idx = 0;
++	acs->amt_users = 0;
+ 	if (!dev || b43_status(dev) < B43_STAT_INITIALIZED ||
+ 	    !b43_ac_psfix(dev, B43_AC_PSFIX_AMT) ||
+ 	    vif->type != NL80211_IFTYPE_AP)
+ 		goto out;
+-	idx = find_first_zero_bit(b43_ac_amt_used, B43_AC_AMT_STA_MAX);
+-	if (idx >= B43_AC_AMT_STA_MAX) {
+-		goto out;
+-	}
+-	set_bit(idx, b43_ac_amt_used);
+-	acs->amt_idx = idx + 1;
+-	b43_amt_write(dev, idx, sta->addr, b43_modparam_acphy_psamt);
+-	/* Read the entry back the way wlc_bmac_read_amt 0x15b9fc does */
+-	b43_write32(dev, B43_MMIO_SHM_CONTROL, (B43_SHM_AMT << 16) | (idx * 2));
+-	lo = b43_read32(dev, B43_MMIO_SHM_DATA);
+-	hi = b43_read32(dev, B43_MMIO_SHM_DATA);
+ out:
+ 	mutex_unlock(&wl->mutex);
+ 	return 0;
+@@ -6409,19 +6700,13 @@
+ 	struct b43_wl *wl = hw_to_b43_wl(hw);
+ 	struct b43_ac_sta *acs = (struct b43_ac_sta *)sta->drv_priv;
+ 	struct b43_wldev *dev;
+-	static const u8 zero_addr[ETH_ALEN] = { 0 };
+ 
+ 	mutex_lock(&wl->mutex);
+ 	dev = wl->current_dev;
+-	if (acs->amt_idx) {
+-		unsigned int idx = acs->amt_idx - 1;
+-
+-		clear_bit(idx, b43_ac_amt_used);
+-		acs->amt_idx = 0;
+-		if (dev && b43_status(dev) >= B43_STAT_INITIALIZED) {
+-			b43_amt_write(dev, idx, zero_addr, 0);
+-		}
+-	}
++	/* mac80211 drops the station's keys first; every user goes anyway */
++	if (hw->sta_data_size >= sizeof(*acs) && acs->amt_idx)
++		b43_ac_amt_sta_put(dev, sta,
++				   B43_AC_AMT_USER_PS | B43_AC_AMT_USER_KEY);
+ 	mutex_unlock(&wl->mutex);
+ 	return 0;
+ }
+@@ -7150,7 +7435,8 @@
+ 	 */
+ 	if ((((b43_modparam_acphy_ampdu & B43_AC_AMPDU_TX) &&
+ 	      (b43_modparam_acphy_ampdu & B43_AC_AMPDU_SESSION)) ||
+-	     (b43_modparam_acphy_psfix & B43_AC_PSFIX_AMT)) &&
++	     (b43_modparam_acphy_psfix & B43_AC_PSFIX_AMT) ||
++	     b43_modparam_acphy_hwcrypto) &&	/* 9q0: the key's AMT entry */
+ 	    dev->core_rev >= 40)
+ 		hw->sta_data_size = sizeof(struct b43_ac_sta);
+ 	hw->wiphy->interface_modes =
+--- a/drivers/net/wireless/broadcom/b43/xmit.c
++++ b/drivers/net/wireless/broadcom/b43/xmit.c
+@@ -667,6 +667,12 @@
+ MODULE_PARM_DESC(acphy_psamt,
+ 		 "AC AP power save: AMT attribute of a station's entry with acphy_psfix bit 8 (0x8000 valid, 0x8 A1, 0x4 A2, 0x2 A3; default 0x8004)");
+ 
++/* 9q0: hardware keys on ucode 907 (xmit.h, b43.h B43_AC_HWKEY_*) */
++int b43_modparam_acphy_hwcrypto;
++module_param_named(acphy_hwcrypto, b43_modparam_acphy_hwcrypto, int, 0444);
++MODULE_PARM_DESC(acphy_hwcrypto,
++		 "AC-PHY hardware keys on core rev >= 40: 1 = CCMP (pairwise key in slot 4 + the station's AMT entry, group key in slot keyidx), 2 = WEP, 4 = leave the ucode's PMQ power save on for a keyed station (else its frames carry the ignore-PMQ bit unless acphy_psfix bit 8 is set); TKIP and anything else stay in software (default 0)");
++
+ /*
+  * 9m0: the per-load HT TX death (htdead-rev42.md). Nothing the driver
+  * logs at init separates a live load from a dead one; the only known
+@@ -1131,6 +1137,8 @@
+ 	const struct ieee80211_hdr *wlhdr =
+ 	    (const struct ieee80211_hdr *)skb_frag->data;
+ 	unsigned int frame_len = skb_frag->len + FCS_LEN;
++	const struct ieee80211_key_conf *hwkey = info->control.hw_key;
++	const struct b43_ac_hwkey *hk = NULL;
+ 	const struct b43_phy *phy = &dev->phy;
+ 	struct ieee80211_tx_rate *rates = info->control.rates;
+ 	struct ieee80211_rate *txrate;
+@@ -1147,14 +1155,25 @@
+ 	BUILD_BUG_ON(sizeof(struct b43_txhdr_ac) != 124);
+ 
+ 	/*
+-	 * b43_op_set_key refuses keys on the AC header, so mac80211 encrypts
+-	 * in software. The key bytes 100..101 and wl's IV update into the
+-	 * frame (_wlc_txh_iv_upd, call 0x11cc44) are not mapped onto b43's key
+-	 * table, and wl adds the ICV length to the frame length only with a
+-	 * key (0x11b46c..0x11b478).
++	 * 9q0: a hardware key (acphy_hwcrypto, b43_op_set_key gave it its
++	 * slot). wl adds the key's ICV length to the frame length
++	 * (0x11b46c..0x11b478), so the PLCPs and byte 10 count the MIC the
++	 * ucode appends; the IV is already in the frame (mac80211's
++	 * GENERATE_IV; _wlc_txh_iv_upd 0x11456c..0x114570 leaves the header
++	 * alone for a non-TKIP key on rev > 39). A key the slot no longer
++	 * holds drops the frame, as the legacy path does (never send it
++	 * unencrypted). Without acphy_hwcrypto b43_op_set_key refused every
++	 * key and mac80211 encrypts in software, so hw_key is NULL here.
+ 	 */
+-	if (WARN_ON_ONCE(info->control.hw_key))
+-		return -ENOKEY;
++	if (hwkey) {
++		if (!b43_ac_hwcrypto(dev, B43_AC_HWCRYPTO_CCMP |
++					  B43_AC_HWCRYPTO_WEP) ||
++		    hwkey->hw_key_idx >= B43_AC_HWKEY_SLOTS ||
++		    dev->ac_hwkey[hwkey->hw_key_idx].keyconf != hwkey)
++			return -ENOKEY;
++		hk = &dev->ac_hwkey[hwkey->hw_key_idx];
++		frame_len += hwkey->icv_len;
++	}
+ 
+ 	/* TOE prefix (wlc_toe_add_hdr 0x199ef4), then the AC header */
+ 	memset(_txhdr, 0, b43_txhdr_size(dev));
+@@ -1164,6 +1183,11 @@
+ 		_txhdr += B43_TXH_AC_TOE_LEN;
+ 	}
+ 	txhdr = (struct b43_txhdr_ac *)_txhdr;
++	/* 9q0: bytes 100 and 101, wlc_d11hdrs 0x11cc18..0x11cc2c */
++	if (hk) {
++		txhdr->key_algo = hk->algo_hw << 4;
++		txhdr->key_idx = hwkey->hw_key_idx;
++	}
+ 	entry = &txhdr->rate[0];
+ 
+ 	/* ieee80211_get_tx_rate() indexes the legacy table; not for MCS */
+@@ -1198,6 +1222,19 @@
+ 	    (info->flags & (IEEE80211_TX_CTL_NO_PS_BUFFER |
+ 			    IEEE80211_TX_CTL_CLEAR_PS_FILT)))
+ 		mac_ctl |= B43_TXH_AC_MAC_IPMQ;
++	/*
++	 * 9q0: the AMT entry a pairwise hardware key needs must not hand the
++	 * station's power save to the ucode unless acphy_psfix bit 8 asked
++	 * for that (xmit.h, acphy_hwcrypto bit 4): with the entry the A2
++	 * lookup succeeds and the ucode suppresses unicast frames while its
++	 * PMQ holds the station dozing, which mac80211 handles in software
++	 * already (2026-10-08 03:15 UTC: downlink 15.6 Mbit/s against 36..40,
++	 * no failure, no drop). The ignore-PMQ bit per frame keeps the ucode
++	 * out of it, as with no entry at all.
++	 */
++	if (hk && hk->pairwise && !b43_ac_psfix(dev, B43_AC_PSFIX_AMT) &&
++	    !(b43_modparam_acphy_hwcrypto & B43_AC_HWCRYPTO_PMQ))
++		mac_ctl |= B43_TXH_AC_MAC_IPMQ;
+ 	txhdr->mac_ctl_lo = cpu_to_le16(mac_ctl);
+ 	/* Single rate entry; 0x0004 when the primary rate is VHT (0x11c5c0) */
+ 	txhdr->mac_ctl_hi = cpu_to_le16(B43_TXH_AC_MACH_NORATESEL |
+@@ -1836,7 +1873,25 @@
+ 		status.enc_flags &= ~RX_ENC_FLAG_SHORTPRE;
+ 	}
+ 
+-	if (macstat & B43_RX_MAC_DEC) {
++	if ((macstat & B43_RX_MAC_DEC) && dev->dev->core_rev >= 40 &&
++	    b43_txhdr_is_ac(dev)) {
++		/*
++		 * 9q0: ucode 907 decrypted the frame with the slot it found
++		 * (A2 match index + 4 @0x0AA8..0x0AAE, or a default slot); a
++		 * DECERR frame was dropped above. IV and MIC stay in the frame
++		 * and mac80211 strips them (RX_FLAG_DECRYPTED), as on the
++		 * legacy path. The status key index (bits 5..10) is only
++		 * logged: 6 bits cannot name every slot and nothing here
++		 * depends on it.
++		 */
++		if (b43_ac_hwcrypto(dev, B43_AC_HWCRYPTO_CCMP |
++					 B43_AC_HWCRYPTO_WEP)) {
++			status.flag |= RX_FLAG_DECRYPTED;
++			if (dev->ac_hwcrypto_rxlogs < B43_AC_HWCRYPTO_RXLOGS) {
++				dev->ac_hwcrypto_rxlogs++;
++			}
++		}
++	} else if (macstat & B43_RX_MAC_DEC) {
+ 		unsigned int keyidx;
+ 		int wlhdr_len;
+ 
+--- a/drivers/net/wireless/broadcom/b43/xmit.h
++++ b/drivers/net/wireless/broadcom/b43/xmit.h
+@@ -480,6 +480,59 @@
+ #define B43_TXST40_SUPR_PMQ	1
+ 
+ /*
++ * 9q0: acphy_hwcrypto (bitmask, default 0): keys in the hardware on core
++ * rev >= 40 with the AC header (b43.h, B43_AC_HWKEY_*). Every frame was
++ * CCMP'd in software until now, and the router's CPU is the ~35 Mbit/s
++ * ceiling (76 % system time on an iperf run, 2026-10-08).
++ * 1 = CCMP: a pairwise key in slot 4 + its station's AMT entry (shared
++ *     with acphy_psfix bit 8, b43_ac_amt_sta_get), a group key in slot
++ *     keyidx (0..3). mac80211 writes the CCMP header into the frame
++ *     (IEEE80211_KEY_FLAG_GENERATE_IV, as wl's host does: wlc_dofrag ->
++ *     wlc_key_iv_update; _wlc_txh_iv_upd 0x11456c returns without touching
++ *     the header for a non-TKIP key on rev > 39), the ucode encrypts and
++ *     appends the MIC (frame length + icv_len, wlc_d11hdrs 0x11b46c..
++ *     0x11b478), header bytes 100 = algo_hw << 4 and 101 = slot
++ *     (0x11cc18..0x11cc2c). Received frames the ucode decrypted (mac
++ *     status DEC without DECERR) keep their IV and MIC and are flagged
++ *     RX_FLAG_DECRYPTED, as on the legacy path. Protected management
++ *     frames stay in software (IEEE80211_KEY_FLAG_SW_MGMT_TX).
++ * 2 = WEP40/WEP104 the same way (slot keyidx, host flag USEDEFKEYS as
++ *     wlc_key_defkeyflag 0x172df4 sets it for WEP default keys).
++ * 4 = leave ucode 907's PMQ power save on for a keyed station. Without
++ *     it, a unicast frame to a station whose AMT entry exists for its key
++ *     alone (acphy_psfix bit 8 not asked for) carries the ignore-PMQ bit:
++ *     the entry makes the ucode's A2 lookup succeed, and from then on its
++ *     TX path suppresses frames while the PMQ holds the station dozing
++ *     (@0x03D4..0x03D6, acphy_psfix), power save mac80211 is handling in
++ *     software at the same time. On air (2026-10-08 03:11..03:16 UTC,
++ *     the laptop toggling PM every second or two: 19 doze/wake pairs in
++ *     35 s) that cut the downlink to 15.6 Mbit/s with no MAC failure and
++ *     no drop at the laptop, against 36..40 with software CCMP and no
++ *     entry; the uplink went from 49 to 76 Mbit/s.
++ * TKIP always stays in software: this wl never gives it to the hardware
++ * (wlc_key_hw_init 0x172e4c..0x172e5c). Anything else: -EOPNOTSUPP,
++ * mac80211 encrypts in software as before. Lines "HWCRYPTO ..." report
++ * each slot written or cleared (slot, algo, AMT entry) and the first
++ * decrypted frames (mac status key index, A2).
++ */
++#define B43_AC_HWCRYPTO_CCMP	0x1
++#define B43_AC_HWCRYPTO_WEP	0x2
++#define B43_AC_HWCRYPTO_PMQ	0x4
++#define B43_AC_HWCRYPTO_RXLOGS	16
++extern int b43_modparam_acphy_hwcrypto;
++
++static inline bool b43_ac_hwcrypto(struct b43_wldev *dev, int bits)
++{
++	/* b43_txhdr_is_ac (below), spelled out: it is defined after this */
++	return (b43_modparam_acphy_hwcrypto & bits) &&
++	       dev->dev->core_rev >= 40 && dev->phy.type == B43_PHYTYPE_AC;
++}
++
++/* Users of a station's AMT entry (b43_ac_sta.amt_users) */
++#define B43_AC_AMT_USER_PS	0x1	/* 9j0: acphy_psfix bit 8 */
++#define B43_AC_AMT_USER_KEY	0x2	/* 9q0: its pairwise hardware key */
++
++/*
+  * 9m0: acphy_htdead (int, default 0). About two loads in three come up
+  * with HT TX dead: every HT frame the core sends fails all its attempts
+  * while legacy frames are acked, the state is drawn inside
+@@ -524,6 +577,7 @@
+ struct b43_ac_sta {
+ 	u8 ampdu_wsize[IEEE80211_NUM_TIDS];
+ 	u8 amt_idx;	/* 9j0: AMT entry + 1, 0 = none (acphy_psfix bit 8) */
++	u8 amt_users;	/* 9q0: B43_AC_AMT_USER_* holding the entry */
+ };
+ 
+ /*

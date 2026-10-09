@@ -1,0 +1,1072 @@
+From cd9612fc6c37d2363058dccee616692d082fdc37 Mon Sep 17 00:00:00 2001
+From: Russell Ballestrini <russell@unturf.com>
+Date: Fri, 10 Oct 2026 12:00:00 -0400
+Subject: [PATCH 19/29] b43: AC-PHY: A-MPDU TX on core rev >= 40 with wl's hardware aggregation
+
+wl's AQM aggregation: the epoch bit, the aggregate tail, bursts of same
+session frames, the block ack status reported to minstrel_ht as
+transmission rounds (not MPDUs) and the status of a plain session frame
+(every rate probe) as a one-MPDU aggregate, else the rate can only fall
+(acphy_ampdu bits 1..10).
+---
+ drivers/net/wireless/broadcom/b43/b43.h  |  39 ++++
+ drivers/net/wireless/broadcom/b43/dma.c  | 265 +++++++++++++++++++++++++-
+ drivers/net/wireless/broadcom/b43/dma.h  |   9 +
+ drivers/net/wireless/broadcom/b43/main.c |  91 +++++++++-
+ drivers/net/wireless/broadcom/b43/xmit.c | 245 +++++++++++++++++++++++-
+ drivers/net/wireless/broadcom/b43/xmit.h | 124 ++++++++++++-
+ 6 files changed, 752 insertions(+), 21 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/b43/b43.h
++++ b/drivers/net/wireless/broadcom/b43/b43.h
+@@ -408,6 +408,12 @@
+  * bit as B43_HF_BT4PRIOCOEX on older ucode.
+  */
+ #define B43_HF_AC_NOPRBRESP	0x000000010000ULL
++/*
++ * 9g0: host flags word 3 (wl's word index 2) bit 6, A-MPDU TX. wl sets it
++ * for both bands when its AQM mode is selected (wlc_ampdu_tx_set
++ * 0x143314..0x14332c, wlc_mhf(wlc, 2, 0x40, 0x40, 3)); b43 bit 38.
++ */
++#define B43_HF_AC_AMPDUTX	0x004000000000ULL
+ 
+ /* Firmware capabilities field in SHM (Opensource firmware only) */
+ #define B43_FWCAPA_HWCRYPTO	0x0001
+@@ -873,8 +879,41 @@
+ 		smp_wmb();					\
+ 					} while (0)
+ 
++/*
++ * 9g0: A-MPDU TX epoch state per TX FIFO (core rev >= 40, acphy_ampdu
++ * bit 1); what wl keeps at ampdu_tx + 0x278 + 28 * fifo and saves in
++ * wlc_ampdu_chgnsav_epoch 0x141c20. See xmit.h, "epoch state per TX FIFO".
++ */
++struct b43_ac_ampdu_epoch {
++	u8 epoch;
++	u8 prev_ft;		/* 1 HT, 2 VHT, 0 none */
++	u8 prev_tid;
++	u8 prev_addr[ETH_ALEN];
++	u16 prev_phyctl0;
++	u16 prev_phyctl1;
++	u8 prev_plcp[5];
++	u16 next_seq;
++	/*
++	 * 9l0 (acphy_ampdu bit 4): the last aggregate-able MPDU queued on
++	 * this FIFO had another one of its burst behind it in the TX worker's
++	 * queue, so the next MPDU of the same station and TID continues the
++	 * burst even when it is the last one.
++	 */
++	bool burst;
++};
++#define B43_AC_AMPDU_NFIFO	8	/* frame id bits 0..2 */
++
+ /* Data structure for one wireless device (802.11 core) */
+ struct b43_wldev {
++	/* 9g0: A-MPDU TX epoch per TX FIFO, zeroed with the core init */
++	struct b43_ac_ampdu_epoch ac_ampdu_epoch[B43_AC_AMPDU_NFIFO];
++	/*
++	 * 9l0: while b43_tx_work hands a frame to b43_dma_tx, the frame
++	 * behind it in the same software queue (NULL when none); the header
++	 * builder and the DMA submit use it to tell a burst from a lone
++	 * MPDU. Valid under wl->mutex only.
++	 */
++	struct sk_buff *ac_ampdu_next;
+ 	/* Core rev >= 40 AC-PHY: PHY TX errors counted, not acted on (99m) */
+ 	unsigned int phy_txerr_total;
+ 	struct b43_bus_dev *dev;
+--- a/drivers/net/wireless/broadcom/b43/dma.c
++++ b/drivers/net/wireless/broadcom/b43/dma.c
+@@ -1432,7 +1432,21 @@
+ 	}
+ 	/* Now transfer the whole frame. */
+ 	wmb();
+-	ops->poke_tx(ring, next_slot(ring, slot));
++	/*
++	 * 9l0 (acphy_ampdu bit 4): a frame of an aggregate burst waits on the
++	 * ring until the burst is complete (b43_tx_work calls
++	 * b43_dma_tx_poke_pending), so the ucode finds the whole burst
++	 * pending when it looks for MPDUs to join (its wait at 0x397..0x3A2
++	 * only covers frames the DMA already holds).
++	 */
++	if (b43_ac_ampdu(ring->dev, B43_AC_AMPDU_BURST) &&
++	    b43_ac_ampdu_same_burst(skb, ring->dev->ac_ampdu_next)) {
++		ring->poke_pending = true;
++		ring->poke_slot = next_slot(ring, slot);
++	} else {
++		ring->poke_pending = false;
++		ops->poke_tx(ring, next_slot(ring, slot));
++	}
+ 	return 0;
+ 
+ out_unmap_hdr:
+@@ -1493,6 +1507,31 @@
+ 	return ring;
+ }
+ 
++/*
++ * 9l0: start the DMA engine of every TX ring that holds a burst frame put
++ * there without a poke (dma_tx_fragment). Called by b43_tx_work after each
++ * queue and after a failed submit, so no frame stays on a ring unstarted.
++ */
++void b43_dma_tx_poke_pending(struct b43_wldev *dev)
++{
++	struct b43_dmaring *rings[] = {
++		dev->dma.tx_ring_AC_BK, dev->dma.tx_ring_AC_BE,
++		dev->dma.tx_ring_AC_VI, dev->dma.tx_ring_AC_VO,
++		dev->dma.tx_ring_mcast,
++	};
++	unsigned int i;
++
++	for (i = 0; i < ARRAY_SIZE(rings); i++) {
++		struct b43_dmaring *ring = rings[i];
++
++		if (!ring || !ring->poke_pending)
++			continue;
++		ring->poke_pending = false;
++		wmb();
++		ring->ops->poke_tx(ring, ring->poke_slot);
++	}
++}
++
+ int b43_dma_tx(struct b43_wldev *dev, struct sk_buff *skb)
+ {
+ 	struct b43_dmaring *ring;
+@@ -1567,6 +1606,182 @@
+ 	return err;
+ }
+ 
++/*
++ * 9g0: the AC TX header of the frame whose header slot is `slot`, from the
++ * ring's header cache (dma_tx_fragment keeps one per frame), behind the
++ * TOE prefix.
++ */
++static const struct b43_txhdr_ac *b43_dma_ac_txhdr(struct b43_dmaring *ring,
++						   int slot)
++{
++	const u8 *hdr = &ring->txhdr_cache[(slot / TX_SLOTS_PER_FRAME) *
++					   b43_txhdr_size(ring->dev)];
++
++	return (const struct b43_txhdr_ac *)
++		(hdr + (b43_txhdr_has_toe(ring->dev) ? B43_TXH_AC_TOE_LEN : 0));
++}
++
++static atomic_t b43_ampdutx_st_logged = ATOMIC_INIT(0);
++static bool b43_ampdutx_fallback_logged;
++
++/*
++ * 9g0: an A-MPDU TX status (acphy_ampdu bit 1) releases status->ampdu_cnt
++ * MPDUs from the FIFO in order, one getnexttxp each (wlc_ampdu_dotxstatus
++ * 0xe45c..0xe464, loop 0xe6d0..0xee2c), each acked by its bit in the
++ * block ack map (t2 bits 0..31 for MPDU 0..31 at 0xe868..0xe898, t3 for
++ * 32..63 at 0xe8a0..0xe8d8). wl decides "A-MPDU" from the TX header of
++ * the packet at the head of the FIFO (wlc_txh_get_isAMPDU, 0x9880), not
++ * from the status; so does this, from the header cache.
++ *
++ * Returns true and the number of frames to release when the ring holds
++ * exactly that many consecutive aggregate-able frames of one epoch from
++ * `slot` on. Otherwise false: the frame completes with its own status, as
++ * before. A wrong walk would free the wrong slots and hang the ring, so a
++ * count that does not match what is queued falls back to one frame per
++ * status (logged once, AMPDUTX): the remaining MPDUs of the aggregate then
++ * complete on later statuses, which at worst reports them late.
++ */
++static bool b43_dma_ampdu_status(struct b43_dmaring *ring, int slot,
++				 const struct b43_txstatus *status,
++				 int *nframes)
++{
++	struct b43_wldev *dev = ring->dev;
++	struct b43_dmadesc_meta *meta;
++	const struct b43_txhdr_ac *hdr;
++	const u8 *toe;
++	const char *why = NULL;
++	unsigned int n = status->ampdu_cnt, i;
++	u8 epoch = 0;
++	int s = slot;
++
++	if (!b43_ac_ampdu(dev, B43_AC_AMPDU_TX) || !b43_txhdr_has_toe(dev))
++		return false;
++	hdr = b43_dma_ac_txhdr(ring, slot);
++	if (!(hdr->mac_ctl_lo & cpu_to_le16(B43_TXH_AC_MAC_AMPDU)))
++		return false;
++	/* wlc_dotxstatus frees one packet for a count of 0 (0x93f4..0x9400) */
++	if (n == 0)
++		n = 1;
++	if (n > 64)
++		why = "count above 64";
++	else if (n * TX_SLOTS_PER_FRAME > ring->used_slots)
++		why = "count above the frames in the ring";
++	for (i = 0; !why && i < n; i++) {
++		if (s % TX_SLOTS_PER_FRAME) {
++			why = "odd header slot";
++			break;
++		}
++		ring->ops->idx2desc(ring, s, &meta);
++		if (meta->skb || meta->is_last_fragment) {
++			why = "header slot carries a frame";
++			break;
++		}
++		ring->ops->idx2desc(ring, next_slot(ring, s), &meta);
++		if (!meta->skb || b43_dma_ptr_is_poisoned(meta->skb) ||
++		    !meta->is_last_fragment) {
++			why = "frame slot without a frame";
++			break;
++		}
++		hdr = b43_dma_ac_txhdr(ring, s);
++		toe = (const u8 *)hdr - B43_TXH_AC_TOE_LEN;
++		if (!(hdr->mac_ctl_lo & cpu_to_le16(B43_TXH_AC_MAC_AMPDU))) {
++			why = "frame without the AMPDU bit";
++			break;
++		}
++		if (i == 0)
++			epoch = toe[2] & B43_TXH_AC_TOE_EPOCH;
++		else if ((toe[2] & B43_TXH_AC_TOE_EPOCH) != epoch) {
++			why = "frame of another epoch";
++			break;
++		}
++		s = next_slot(ring, next_slot(ring, s));
++	}
++		/*
++		 * 9l0: the four per-entry words (attempts low byte, ACKs high
++		 * byte; with the fixed-rate bit word 0 = attempts, word 1 =
++		 * ACKs, fw-abi-907-txstatus.md "s3/s4") instead of their sum.
++		 */
++	if (why) {
++		if (!b43_ampdutx_fallback_logged) {
++			b43_ampdutx_fallback_logged = true;
++		}
++		return false;
++	}
++	*nframes = n;
++	return true;
++}
++
++static void b43_dma_ampdu_rc(struct b43_wldev *dev,
++			     struct ieee80211_tx_info *info,
++			     const struct b43_txstatus *status,
++			     int idx, int nframes)
++{
++	struct ieee80211_tx_rate *r = info->status.rates;
++	unsigned int k, mpdus = 0;
++
++	if (nframes < 1)
++		return;
++	for (k = 0; k < IEEE80211_TX_MAX_RATES && r[k].idx >= 0 && r[k].count;
++	     k++) {
++		mpdus += r[k].count;
++		r[k].count = DIV_ROUND_UP(r[k].count, nframes);
++	}
++}
++
++static void b43_dma_ampdu_report(struct b43_wldev *dev,
++				 struct ieee80211_tx_info *info,
++				 const struct b43_txstatus *status,
++				 int idx, int nframes)
++{
++	u64 mask = nframes >= 64 ? ~0ULL : (BIT_ULL(nframes) - 1);
++	u64 ba = status->ampdu_ba & mask;
++	u64 nack;
++
++	/* The same rule as the per-MPDU ACK in b43_dma_handle_txstatus */
++	if (nframes == 1 && status->acked)
++		ba |= 1;
++	nack = mask & ~ba;
++	if (idx == 0) {
++		info->flags |= IEEE80211_TX_STAT_AMPDU;
++		info->status.ampdu_len = nframes;
++		info->status.ampdu_ack_len = hweight64(ba);
++	}
++	if (nack && idx == fls64(nack) - 1)
++		info->flags |= IEEE80211_TX_STAT_AMPDU_NO_BACK;
++	/* 9n0: MPDU counts to rounds, after ampdu_ack_len is known */
++	if (b43_ac_ampdu(dev, B43_AC_AMPDU_RCFIX))
++		b43_dma_ampdu_rc(dev, info, status, idx, nframes);
++}
++
++/*
++ * 9p0, acphy_ampdu bit 10: the status of a session frame that went out
++ * plain (a rate probe, or a lone MPDU with bit 4) as minstrel_ht reads it.
++ * mac80211 marks every frame of a TID with an operational block ack
++ * session IEEE80211_TX_CTL_AMPDU, and minstrel_ht_tx_status drops a status
++ * that carries that flag without IEEE80211_TX_STAT_AMPDU ("aggregated but
++ * doesn't carry status info"); status.c ieee80211_tx_get_rates and
++ * ieee80211_lost_packet do the same. b43 sends every rate probe plain
++ * (b43_ac_ampdu_same_burst refuses a probe), so once the session was up no
++ * probe ever reached minstrel_ht and the rate stayed where the one or two
++ * probes before the session had put it: MCS 0 or 1 in the 2026-10-07
++ * 22:55, 23:07 and 23:12 UTC loads (5..9 Mbit/s) and MCS 7 in the 22:31 and
++ * 23:10 loads (30..37 Mbit/s), with every probe up to MCS 7 at 20 and 40 MHz
++ * acked at the first attempt and every aggregate block-acked in full. The
++ * convention of drivers whose hardware aggregates (mt7603 mac.c
++ * mt7603_fill_txs, mt76_connac_mac.c) is a one-MPDU aggregate:
++ * STAT_AMPDU, ampdu_len 1, ampdu_ack_len = acked, the rate entries' counts
++ * as they are (attempts), which minstrel_ht books as attempts = count * 1
++ * and success = ampdu_ack_len.
++ */
++static void b43_dma_plain_report(struct ieee80211_tx_info *info)
++{
++	if (!(info->flags & IEEE80211_TX_CTL_AMPDU))
++		return;
++	info->flags |= IEEE80211_TX_STAT_AMPDU;
++	info->status.ampdu_len = 1;
++	info->status.ampdu_ack_len = !!(info->flags & IEEE80211_TX_STAT_ACK);
++}
++
+ void b43_dma_handle_txstatus(struct b43_wldev *dev,
+ 			     const struct b43_txstatus *status)
+ {
+@@ -1575,9 +1790,13 @@
+ 	struct b43_dmadesc_meta *meta;
+ 	static const struct b43_txstatus fake; /* filled with 0 */
+ 	const struct b43_txstatus *txstat;
++	struct b43_txstatus mpdu_stat;
+ 	int slot, firstused;
+ 	bool frame_succeed;
+ 	int skip;
++	/* 9g0: frames this status releases (A-MPDU), index of the current one */
++	int nframes = 1, frame = 0;
++	bool ampdu = false;
+ 	static u8 err_out1;
+ 
+ 	ring = parse_cookie(dev, status->cookie, &slot);
+@@ -1626,6 +1845,9 @@
+ 	}
+ 
+ 	ops = ring->ops;
++	/* 9g0: one status for several MPDUs of an A-MPDU (never when skipping) */
++	if (!skip)
++		ampdu = b43_dma_ampdu_status(ring, slot, status, &nframes);
+ 	while (1) {
+ 		B43_WARN_ON(slot < 0 || slot >= ring->nr_slots);
+ 		/* get meta - ignore returned value */
+@@ -1673,13 +1895,44 @@
+ 			 * filled with zeros to indicate that the frame was not
+ 			 * sent (frame_count 0) and not acknowledged
+ 			 */
+-			if (unlikely(skip))
++			if (unlikely(skip)) {
+ 				txstat = &fake;
+-			else
++			} else if (ampdu) {
++				/*
++				 * 9g0: this MPDU's ACK is its bit of the
++				 * block ack map (wlc_ampdu_dotxstatus
++				 * 0xe868..0xe8d8), not the status bit. A
++				 * one-MPDU status also takes the status bit
++				 * (s1 bit 15), in case the ucode answers a
++				 * lone MPDU's ACK there and not in the map.
++				 */
++				mpdu_stat = *status;
++				mpdu_stat.acked =
++					!!(status->ampdu_ba & BIT_ULL(frame)) ||
++					(nframes == 1 && status->acked);
++				txstat = &mpdu_stat;
++			} else {
+ 				txstat = status;
++			}
+ 
+ 			frame_succeed = b43_fill_txstatus_report(dev, info,
+ 								 txstat);
++			if (ampdu) {
++				b43_dma_ampdu_report(dev, info, status, frame,
++						     nframes);
++			} else if (!skip && b43_ac_ampdu(dev, B43_AC_AMPDU_TX) &&
++				   (info->flags & IEEE80211_TX_CTL_AMPDU)) {
++				/*
++				 * 9l0 v2: the first 16 statuses of session
++				 * frames (mac80211's IEEE80211_TX_CTL_AMPDU)
++				 * that went out plain (lone, a rate probe, or
++				 * acphy_ampdu bit 7 clear): are such ordinary
++				 * frames acked while a session is up?
++				 */
++				/* 9p0: visible to minstrel_ht as a one-MPDU aggregate */
++				if (b43_ac_ampdu(dev, B43_AC_AMPDU_PLAINRC))
++					b43_dma_plain_report(info);
++			}
+ #ifdef CPTCFG_B43_DEBUG
+ 			if (frame_succeed)
+ 				ring->nr_succeed_tx_packets++;
+@@ -1709,8 +1962,10 @@
+ 
+ 		if (meta->is_last_fragment && !skip) {
+ 			/* This is the last scatter-gather
+-			 * fragment of the frame. We are done. */
+-			break;
++			 * fragment of the frame. We are done, unless this
++			 * status covers more frames (9g0, A-MPDU). */
++			if (++frame >= nframes)
++				break;
+ 		}
+ 		slot = next_slot(ring, slot);
+ 		if (skip > 0)
+--- a/drivers/net/wireless/broadcom/b43/dma.h
++++ b/drivers/net/wireless/broadcom/b43/dma.h
+@@ -272,6 +272,13 @@
+ 	/* The QOS priority assigned to this ring. Only used for TX rings.
+ 	 * This is the mac80211 "queue" value. */
+ 	u8 queue_prio;
++	/*
++	 * 9l0 (acphy_ampdu bit 4): a frame of an aggregate burst was put on
++	 * the ring without starting the DMA engine; poke_slot is the slot to
++	 * hand it. b43_dma_tx_poke_pending starts it.
++	 */
++	bool poke_pending;
++	int poke_slot;
+ 	/* DMA64 engine that does not need an aligned descriptor table
+ 	 * (core rev 42 class, probed like hnddma's dma_attach). Such an
+ 	 * engine takes the ring address before the enable bit, and its
+@@ -314,6 +321,8 @@
+ 
+ int b43_dma_tx(struct b43_wldev *dev,
+ 	       struct sk_buff *skb);
++/* 9l0: start the DMA of every TX ring with a burst left unstarted */
++void b43_dma_tx_poke_pending(struct b43_wldev *dev);
+ void b43_dma_handle_txstatus(struct b43_wldev *dev,
+ 			     const struct b43_txstatus *status);
+ 
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
+@@ -4389,10 +4389,18 @@
+ 	for (queue_num = 0; queue_num < B43_QOS_QUEUE_NUM; queue_num++) {
+ 		while (skb_queue_len(&wl->tx_queue[queue_num])) {
+ 			skb = skb_dequeue(&wl->tx_queue[queue_num]);
++			/*
++			 * 9l0 (acphy_ampdu bit 4): the frame behind this one,
++			 * for the A-MPDU burst rules (xmit.c
++			 * b43_ac_ampdu_txhdr, dma.c dma_tx_fragment).
++			 */
++			dev->ac_ampdu_next = b43_ac_ampdu(dev, B43_AC_AMPDU_BURST) ?
++				skb_peek(&wl->tx_queue[queue_num]) : NULL;
+ 			if (b43_using_pio_transfers(dev))
+ 				err = b43_pio_tx(dev, skb);
+ 			else
+ 				err = b43_dma_tx(dev, skb);
++			dev->ac_ampdu_next = NULL;
+ 			if (err == -ENOSPC) {
+ 				wl->tx_queue_stopped[queue_num] = true;
+ 				b43_stop_queue(dev, queue_num);
+@@ -4403,6 +4411,10 @@
+ 				ieee80211_free_txskb(wl->hw, skb);
+ 			err = 0;
+ 		}
++		/* 9l0: a burst left unstarted by dma_tx_fragment, or its tail
++		 * after an error, is started here */
++		if (!b43_using_pio_transfers(dev))
++			b43_dma_tx_poke_pending(dev);
+ 
+ 		if (!err)
+ 			wl->tx_queue_stopped[queue_num] = false;
+@@ -5718,6 +5730,21 @@
+ 	 */
+ 	if (dev->dev->core_rev >= 40)
+ 		hf |= B43_HF_AC_NOPRBRESP;
++	/*
++	 * 9g0: acphy_ampdu bit 1, the A-MPDU TX host flag wl sets with its
++	 * AQM mode (wlc_ampdu_tx_set 0x143314..0x14332c); the epoch state of
++	 * every TX FIFO starts over with the ucode (xmit.c b43_ac_ampdu_epoch).
++	 */
++	if (b43_ac_ampdu(dev, B43_AC_AMPDU_TX)) {
++		/*
++		 * 9l0 v2: the flag only with bit 5. Ucode 907 tests shm 0x62
++		 * (its word [0x31]) bits 2, 3, 4, 5, 7, 8, 9 and 12 and never
++		 * bit 6, so on this ucode the flag should be inert.
++		 */
++		if (b43_ac_ampdu(dev, B43_AC_AMPDU_HF))
++			hf |= B43_HF_AC_AMPDUTX;
++		memset(dev->ac_ampdu_epoch, 0, sizeof(dev->ac_ampdu_epoch));
++	}
+ 	b43_hf_write(dev, hf);
+ 	/* 99zb: acphy_ampdu bit 2, wl's A-MPDU shm words */
+ 	b43_ac_ampdu_shm(dev);
+@@ -6121,8 +6148,14 @@
+  * and keeps the session on the host (scb_ampdu_rx_init 0x144f6c,
+  * wlc_ampdu_recvdata 0x10d4c reorders), with no shm, AMT or register write
+  * for it; the ucode sends the block ack. mac80211 does the reordering here.
+- * TX (wl's AQM path, _wlc_sendampdu_aqm 0xd9a8 in .text.fastpath) is not
+- * implemented: every TX action is refused, so mac80211 never aggregates.
++ *
++ * 9g0, acphy_ampdu bit 1, TX sessions (wl's AQM path, _wlc_sendampdu_aqm
++ * 0xd9a8 in .text.fastpath): the ucode needs no per-session state either;
++ * wl's per-TID initiator (ini) only feeds the header tail of each MPDU
++ * (xmit.c b43_ac_ampdu_txhdr). TX_START is granted at once; TX_OPERATIONAL
++ * stores the negotiated window in the station's drv_priv, from which the
++ * header takes the block ack window and the MPDU limit; the STOP variants
++ * clear it, so the frames queued afterwards go out non-aggregated.
+  */
+ static int b43_op_ampdu_action(struct ieee80211_hw *hw,
+ 			       struct ieee80211_vif *vif,
+@@ -6130,22 +6163,57 @@
+ {
+ 	struct b43_wl *wl = hw_to_b43_wl(hw);
+ 	struct b43_wldev *dev;
++	struct b43_ac_sta *bsta = (struct b43_ac_sta *)params->sta->drv_priv;
+ 	int err = -EOPNOTSUPP;
+ 
+ 	mutex_lock(&wl->mutex);
+ 	dev = wl->current_dev;
+ 	if (!dev || dev->phy.type != B43_PHYTYPE_AC ||
+-	    !b43_ac_ampdu(dev, B43_AC_AMPDU_RX))
++	    !b43_ac_ampdu(dev, B43_AC_AMPDU_RX | B43_AC_AMPDU_TX))
+ 		goto out_unlock;
+ 	switch (params->action) {
+ 	case IEEE80211_AMPDU_RX_START:
++		if (!b43_ac_ampdu(dev, B43_AC_AMPDU_RX))
++			break;
+ 		err = 0;
+ 		break;
+ 	case IEEE80211_AMPDU_RX_STOP:
++		if (!b43_ac_ampdu(dev, B43_AC_AMPDU_RX))
++			break;
++		err = 0;
++		break;
++	case IEEE80211_AMPDU_TX_START:
++		/* 9l0 v2: sessions only with bit 6 (and bit 1) */
++		if (!b43_ac_ampdu(dev, B43_AC_AMPDU_TX) ||
++		    !b43_ac_ampdu(dev, B43_AC_AMPDU_SESSION) ||
++		    params->tid >= IEEE80211_NUM_TIDS)
++			break;
++		err = IEEE80211_AMPDU_TX_START_IMMEDIATE;
++		break;
++	case IEEE80211_AMPDU_TX_OPERATIONAL:
++		if (!b43_ac_ampdu(dev, B43_AC_AMPDU_TX) ||
++		    !b43_ac_ampdu(dev, B43_AC_AMPDU_SESSION) ||
++		    params->tid >= IEEE80211_NUM_TIDS)
++			break;
++		bsta->ampdu_wsize[params->tid] =
++			clamp_t(u16, params->buf_size, 1, B43_AC_AMPDU_WSIZE_DEF);
++		err = 0;
++		break;
++	case IEEE80211_AMPDU_TX_STOP_CONT:
++	case IEEE80211_AMPDU_TX_STOP_FLUSH:
++	case IEEE80211_AMPDU_TX_STOP_FLUSH_CONT:
++		if (!b43_ac_ampdu(dev, B43_AC_AMPDU_TX) ||
++		    !b43_ac_ampdu(dev, B43_AC_AMPDU_SESSION) ||
++		    params->tid >= IEEE80211_NUM_TIDS)
++			break;
++		bsta->ampdu_wsize[params->tid] = 0;
++		/* Queued frames go out unaggregated; nothing to flush */
++		if (params->action == IEEE80211_AMPDU_TX_STOP_CONT)
++			ieee80211_stop_tx_ba_cb_irqsafe(vif, params->sta->addr,
++							params->tid);
+ 		err = 0;
+ 		break;
+ 	default:
+-		/* TX: not implemented (ampdu-rev42.md) */
+ 		break;
+ 	}
+ out_unlock:
+@@ -6260,7 +6328,8 @@
+  * 3839), LDPC (TX not implemented; wl's wlc_phy_update_rxldpc_acphy not
+  * ported), TX STBC (single core by default). A-MPDU parameters are wl's;
+  * mac80211 declines every block ack session unless acphy_ampdu bit 0
+- * accepts RX sessions (99zb, b43_op_ampdu_action); no A-MPDU is sent.
++ * accepts RX sessions (99zb, b43_op_ampdu_action) or bit 1 TX sessions
++ * (9g0, hardware AQM aggregation).
+  */
+ static void b43_ac_setup_ht_cap(struct b43_wldev *dev,
+ 				struct ieee80211_sta_ht_cap *ht_cap)
+@@ -6681,11 +6750,21 @@
+ 	 * where wl offers 64 (wlc_ampdu_rx_attach 0x146258..0x146288), so a
+ 	 * burst cannot outrun the ring.
+ 	 */
+-	if ((b43_modparam_acphy_ampdu & B43_AC_AMPDU_RX) &&
++	if ((b43_modparam_acphy_ampdu & (B43_AC_AMPDU_RX | B43_AC_AMPDU_TX)) &&
+ 	    dev->core_rev >= 40) {
+ 		ieee80211_hw_set(hw, AMPDU_AGGREGATION);
+ 		hw->max_rx_aggregation_subframes = B43_RXRING_SLOTS;
+ 	}
++	/*
++	 * 9g0: acphy_ampdu bit 1, TX block ack sessions: the negotiated
++	 * window per TID lives in the station's drv_priv (b43_op_ampdu_action,
++	 * xmit.c b43_ac_ampdu_txhdr). mac80211 caps an aggregate at its
++	 * default of 64 subframes; the header tail carries b43's own limit.
++	 */
++	if ((b43_modparam_acphy_ampdu & B43_AC_AMPDU_TX) && dev->core_rev >= 40)
++	if ((((b43_modparam_acphy_ampdu & B43_AC_AMPDU_TX) &&
++	      (b43_modparam_acphy_ampdu & B43_AC_AMPDU_SESSION)) ||
++		hw->sta_data_size = sizeof(struct b43_ac_sta);
+ 	hw->wiphy->interface_modes =
+ 		BIT(NL80211_IFTYPE_AP) |
+ 		BIT(NL80211_IFTYPE_MESH_POINT) |
+--- a/drivers/net/wireless/broadcom/b43/xmit.c
++++ b/drivers/net/wireless/broadcom/b43/xmit.c
+@@ -632,8 +632,13 @@
+  * 99zb: acphy_ampdu (bitmask, default 0), A-MPDU on core rev >= 40
+  * (re/r6400/b43-acphy/ampdu-rev42.md). Bit 0: RX block ack sessions
+  * (main.c: ampdu_action, AMPDU_AGGREGATION; mac80211 reorders). Bit 1:
+- * TX, not implemented (wl's rev 42 TX aggregation is the AQM path, see the
+- * note). Bit 2: wl's A-MPDU shm words (main.c, b43_ac_ampdu_shm).
++ * TX (9g0, b43_ac_ampdu_txhdr below, dma.c b43_dma_handle_txstatus and
++ * main.c b43_op_ampdu_action): wl's rev 42 TX aggregation is the AQM path
++ * (_wlc_sendampdu_aqm 0xd9a8), hardware aggregation of ordinary MPDUs
++ * queued on the normal FIFO with the AMPDU bit, the A-MPDU limits in the
++ * header tail and an epoch bit in the TSO prefix; one TX status covers
++ * several MPDUs with a block ack map. Bit 2: wl's A-MPDU shm words
++ * (main.c, b43_ac_ampdu_shm). Bit 3: 64 MPDUs per aggregate instead of 32.
+  *
+  * RX: the ucode answers an A-MPDU with a block ack by itself; wl keeps no
+  * ucode state per block ack session (wlc_ampdu_recv_addba_req_resp
+@@ -649,11 +654,211 @@
+ unsigned int b43_modparam_acphy_ampdu;
+ module_param_named(acphy_ampdu, b43_modparam_acphy_ampdu, uint, 0444);
+ MODULE_PARM_DESC(acphy_ampdu,
+-		 "AC-PHY A-MPDU: 1 = RX block ack sessions, 2 = TX (not implemented), 4 = wl's A-MPDU shm words (default 0)");
++		 "AC-PHY A-MPDU: 1 = RX block ack sessions, 2 = TX (hardware AQM aggregation), 4 = wl's A-MPDU shm words, 8 = 64 MPDUs per aggregate, 16 = aggregate in bursts only, lone MPDUs non-aggregated, 32 = TX host flag, 64 = accept TX block ack sessions, 128 = A-MPDU header fields for session frames, 256 = ucode sequence numbers for session frames, 512 = A-MPDU status counts as rounds for rate control, 1024 = plain session frames (rate probes) visible to rate control as one-MPDU aggregates (default 0)");
+ 
+ #define B43_AC_AMPDU_DUMPS	8
+ static atomic_t b43_ac_ampdu_rxdumps = ATOMIC_INIT(0);
+ static atomic_t b43_ac_ampdu_rxn = ATOMIC_INIT(0);
++/*
++ * 9l0: `next` (the frame behind `skb` in the TX worker's software queue,
++ * NULL when none) joins an aggregate burst with `skb` when both are QoS
++ * data of one station and TID that mac80211 marked IEEE80211_TX_CTL_AMPDU,
++ * at the same primary rate and neither a rate probe: the epoch rules of
++ * b43_ac_ampdu_epoch would keep them in one epoch, so the ucode's AQM can
++ * join them. Same TID means the same mac80211 queue and so the same DMA
++ * ring (b43_dma_tx, select_ring_by_priority).
++ */
++bool b43_ac_ampdu_same_burst(struct sk_buff *skb, struct sk_buff *next)
++{
++	struct ieee80211_hdr *h1, *h2;
++	const struct ieee80211_tx_info *i1, *i2;
++
++	if (!skb || !next)
++		return false;
++	h1 = (struct ieee80211_hdr *)skb->data;
++	h2 = (struct ieee80211_hdr *)next->data;
++	i1 = IEEE80211_SKB_CB(skb);
++	i2 = IEEE80211_SKB_CB(next);
++	if (!(i1->flags & IEEE80211_TX_CTL_AMPDU) ||
++	    !(i2->flags & IEEE80211_TX_CTL_AMPDU))
++		return false;
++	if ((i1->flags | i2->flags) &
++	    (IEEE80211_TX_CTL_RATE_CTRL_PROBE | IEEE80211_TX_CTL_SEND_AFTER_DTIM))
++		return false;
++	if (!ieee80211_is_data_qos(h1->frame_control) ||
++	    !ieee80211_is_data_qos(h2->frame_control))
++		return false;
++	if (!ether_addr_equal(h1->addr1, h2->addr1) ||
++	    ieee80211_get_tid(h1) != ieee80211_get_tid(h2))
++		return false;
++	return i1->control.rates[0].idx == i2->control.rates[0].idx &&
++	       i1->control.rates[0].flags == i2->control.rates[0].flags;
++}
++
++/*
++ * 9g0: epoch bit for the MPDU being queued on FIFO `fifo`, the rules of
++ * _wlc_sendampdu_aqm 0xdec4..0xe10c and 0xdd68..0xdda4 (xmit.h, "epoch
++ * state per TX FIFO"). `entry` is rate entry 0 of the header just built.
++ * Returns the epoch to write; updates the saved state as
++ * wlc_ampdu_chgnsav_epoch does (reason -1 at 0xe018 saves without a
++ * change, 0xe024..0xe034 neither changes nor saves).
++ */
++static u8 b43_ac_ampdu_epoch(struct b43_wldev *dev, unsigned int fifo,
++			     bool ampdu, bool probe, const u8 *addr, u8 tid,
++			     u8 ft, u16 seq,
++			     const struct b43_txhdr_ac_rate *entry)
++{
++	struct b43_ac_ampdu_epoch *e =
++		&dev->ac_ampdu_epoch[fifo % B43_AC_AMPDU_NFIFO];
++	u16 phyctl0 = le16_to_cpu(entry->phy_ctl0);
++	u16 phyctl1 = le16_to_cpu(entry->phy_ctl1);
++	const u8 *plcp = entry->plcp.raw;
++	bool change, save = true;
++
++	if (!ampdu) {
++		/* 0xdd68..0xdda4: once after aggregates (reason 2, NAGG) */
++		if (e->prev_ft) {
++			e->epoch ^= 1;
++			e->prev_ft = 0;
++		}
++		return e->epoch;
++	}
++	if (probe) {
++		/* 0xded0..0xdef8: frame id bit 15, rate probe (reason 1) */
++		change = true;
++	} else if (!ether_addr_equal(addr, e->prev_addr) ||
++		   tid != e->prev_tid) {
++		/* 0xdefc..0xdf20: station or TID (reason 4) */
++		change = true;
++	} else if (ft != e->prev_ft || phyctl0 != e->prev_phyctl0 ||
++		   phyctl1 != e->prev_phyctl1 || plcp[0] != e->prev_plcp[0] ||
++		   plcp[3] != e->prev_plcp[3] ||
++		   (ft == B43_AC_AMPDU_FT_VHT &&
++		    (plcp[1] != e->prev_plcp[1] || plcp[2] != e->prev_plcp[2] ||
++		     plcp[4] != e->prev_plcp[4]))) {
++		/*
++		 * 0xdf40..0xe00c: frame type, PHY control, SIG (reason 0).
++		 * Includes the first aggregate after a non-aggregate frame
++		 * (prev_ft 0 differs from HT/VHT), so 0xe010..0xe01c's
++		 * "prev_ft 0: save only" is never reached.
++		 */
++		change = true;
++	} else if (seq == e->next_seq) {
++		/* 0xe020..0xe034: the expected sequence number: as before */
++		change = false;
++		save = false;
++	} else {
++		/* 0xe038..0xe03c: out of sequence (reason 5) */
++		change = true;
++	}
++	if (change)
++		e->epoch ^= 1;
++	if (save) {
++		/* wlc_ampdu_chgnsav_epoch 0x141c60..0x141ce8 */
++		ether_addr_copy(e->prev_addr, addr);
++		e->prev_tid = tid;
++		e->prev_ft = ft;
++		e->prev_phyctl0 = phyctl0;
++		e->prev_phyctl1 = phyctl1;
++		memcpy(e->prev_plcp, plcp, sizeof(e->prev_plcp));
++	}
++	/* 0xe1b4..0xe1c4: the next MPDU of this station and TID */
++	e->next_seq = (seq + 1) & (IEEE80211_SCTL_SEQ >> 4);
++	return e->epoch;
++}
++
++/*
++ * 9g0: A-MPDU TX fields of an HT or VHT MPDU that mac80211 marks
++ * IEEE80211_TX_CTL_AMPDU (an operational block ack session for its TID),
++ * as _wlc_sendampdu_aqm writes them (0xde3c..0xdec0), then the epoch bit
++ * in the TSO prefix (wlc_txh_set_epoch 0x2d04, call 0xe10c). Non-aggregate
++ * frames only feed the epoch (0xdd68..0xdda4). The peer's MPDU density and
++ * the negotiated window come from its ieee80211_sta (found by address 1
++ * under RCU; the AP's vif is in the control block); without a station the
++ * MPDU goes out non-aggregated, which the status side sees from the
++ * header bit, not from the mac80211 flag.
++ *
++ * 9l0, acphy_ampdu bit 4: an aggregate-able MPDU keeps the AMPDU bit only
++ * as part of a burst: another MPDU of its burst follows it in the TX
++ * worker's queue (dev->ac_ampdu_next), or the MPDU before it on this FIFO
++ * was such a one for the same station and TID. A lone MPDU goes out as an
++ * ordinary frame (no AMPDU bit, the epoch flips as for any non-aggregate
++ * frame). On the air (2026-10-07, ampdu-rev42.md section 5) every MPDU the
++ * AQM sent alone (status count 1) was transmitted 7 times and never
++ * acked, while the same frames without the bit are acked; a burst was
++ * never reached because the TCP SYN itself was such a lone MPDU.
++ */
++static void b43_ac_ampdu_txhdr(struct b43_wldev *dev, u8 *toe,
++			       struct b43_txhdr_ac *txhdr,
++			       struct sk_buff *skb,
++			       struct ieee80211_tx_info *info, u16 cookie,
++			       bool ht, bool vht)
++{
++	struct ieee80211_hdr *wlhdr = (struct ieee80211_hdr *)skb->data;
++	struct ieee80211_sta *sta;
++	struct b43_ac_sta *bsta;
++	struct b43_ac_ampdu_epoch *e =
++		&dev->ac_ampdu_epoch[(cookie & B43_TXH_AC_FID_FIFO) %
++				     B43_AC_AMPDU_NFIFO];
++	unsigned int fifo = cookie & B43_TXH_AC_FID_FIFO;
++	unsigned int wsize = 0, maxpdu = 0, dens = 0;
++	u16 seq = le16_to_cpu(wlhdr->seq_ctrl) >> 4;
++	u8 tid = 0, ft = 0, epoch;
++	bool ampdu = false, lone = false, more = false, cont = false;
++
++	if (!b43_ac_ampdu(dev, B43_AC_AMPDU_TX) || !b43_txhdr_has_toe(dev))
++		return;
++	if (ieee80211_is_data_qos(wlhdr->frame_control))
++		tid = ieee80211_get_tid(wlhdr);
++	if ((info->flags & IEEE80211_TX_CTL_AMPDU) && (ht || vht) &&
++	    ieee80211_is_data_qos(wlhdr->frame_control) &&
++	    info->control.vif) {
++		rcu_read_lock();
++		sta = ieee80211_find_sta(info->control.vif, wlhdr->addr1);
++		if (sta) {
++			bsta = (struct b43_ac_sta *)sta->drv_priv;
++			wsize = bsta->ampdu_wsize[tid];
++			dens = sta->deflink.ht_cap.ampdu_density;
++		}
++		rcu_read_unlock();
++		ampdu = wsize > 0;
++	}
++	/* 9l0 v2: the header fields only with bit 7; else the frame is plain */
++	if (!b43_ac_ampdu(dev, B43_AC_AMPDU_TXHDR))
++		ampdu = false;
++	if (b43_ac_ampdu(dev, B43_AC_AMPDU_BURST)) {
++		more = ampdu && b43_ac_ampdu_same_burst(skb, dev->ac_ampdu_next);
++		cont = ampdu && e->burst && e->prev_ft &&
++		       !(info->flags & IEEE80211_TX_CTL_RATE_CTRL_PROBE) &&
++		       ether_addr_equal(wlhdr->addr1, e->prev_addr) &&
++		       tid == e->prev_tid;
++		lone = ampdu && !more && !cont;
++		if (lone)
++			ampdu = false;
++		e->burst = more;
++	}
++	if (ampdu) {
++		ft = vht ? B43_AC_AMPDU_FT_VHT : B43_AC_AMPDU_FT_HT;
++		maxpdu = b43_ac_ampdu(dev, B43_AC_AMPDU_TX64) ?
++			 B43_AC_AMPDU_MAX_MPDU64 : B43_AC_AMPDU_MAX_MPDU;
++		maxpdu = min(maxpdu, wsize);
++		/* 0xde4c, 0xde50 */
++		txhdr->mac_ctl_lo |= cpu_to_le16(B43_TXH_AC_MAC_AMPDU);
++		txhdr->mac_ctl_hi &= ~cpu_to_le16(B43_TXH_AC_MACH_VHT);
++		/* 0xde8c..0xdec0 */
++		txhdr->ampdu_max_mpdu[0] = maxpdu;
++		txhdr->ampdu_max_mpdu[1] = maxpdu;
++		txhdr->ampdu_dur_dens =
++			cpu_to_le16((B43_AC_AMPDU_MAX_DUR & ~B43_AC_AMPDU_DENS_MASK) |
++				    (dens & B43_AC_AMPDU_DENS_MASK));
++		txhdr->ampdu_wsize = wsize - 1;
++	}
++	epoch = b43_ac_ampdu_epoch(dev, fifo, ampdu,
++				   !!(info->flags & IEEE80211_TX_CTL_RATE_CTRL_PROBE),
++				   wlhdr->addr1, tid, ft, seq, &txhdr->rate[0]);
++	toe[2] = (toe[2] & ~B43_TXH_AC_TOE_EPOCH) |
++		 (epoch ? B43_TXH_AC_TOE_EPOCH : 0);
++}
+ static struct {
+ 	bool valid;
+ 	bool signal_valid;
+@@ -664,6 +869,12 @@
+ 	s8 signal;
+ } b43_ac_ampdu_last;
+ 
++/*
++ * 9l0 v2: called after b43_ac_ampdu_txhdr, so the bytes are what the DMA
++ * sends (the 9g0 trials' dumps showed MAC control 4080 where the header
++ * had 40c0: the dump ran before the A-MPDU edit); `toe` is the 4 byte
++ * TOE prefix in front of the header (NULL without one).
++ */
+ /* PHY control word 2 for a legacy rate: its index in the table above. */
+ static u16 b43_ac_legacy_rate_idx(u8 bitrate)
+ {
+@@ -744,6 +955,7 @@
+ 	u16 phy_ctl0 = 0;
+ 	u16 chanspec;
+ 	u8 rate = 0;
++	u8 *toe;
+ 	bool ht = !!(rates[0].flags & IEEE80211_TX_RC_MCS);
+ 	bool vht = !!(rates[0].flags & IEEE80211_TX_RC_VHT_MCS);
+ 	int err;
+@@ -763,6 +975,7 @@
+ 
+ 	/* TOE prefix (wlc_toe_add_hdr 0x199ef4), then the AC header */
+ 	memset(_txhdr, 0, b43_txhdr_size(dev));
++	toe = _txhdr;
+ 	if (b43_txhdr_has_toe(dev)) {
+ 		_txhdr[0] = B43_TXH_AC_TOE_BYTE0;
+ 		_txhdr += B43_TXH_AC_TOE_LEN;
+@@ -781,6 +994,16 @@
+ 		mac_ctl |= B43_TXH_AC_MAC_ACK;
+ 	if (info->flags & IEEE80211_TX_CTL_ASSIGN_SEQ)
+ 		mac_ctl |= B43_TXH_AC_MAC_HWSEQ;
++	/*
++	 * 9l0 v2, acphy_ampdu bit 8 (diagnostic): QoS data of a TX block ack
++	 * session numbered by the ucode (@0x5D7, one counter in shm 0x7A8)
++	 * instead of mac80211's per-TID counter; the session's SSN then no
++	 * longer matches, so only the ACK behaviour is of interest.
++	 */
++	if (b43_ac_ampdu(dev, B43_AC_AMPDU_HWSEQ) &&
++	    (info->flags & IEEE80211_TX_CTL_AMPDU) &&
++	    ieee80211_is_data_qos(wlhdr->frame_control))
++		mac_ctl |= B43_TXH_AC_MAC_HWSEQ;
+ 	if (info->flags & IEEE80211_TX_CTL_FIRST_FRAGMENT)
+ 		mac_ctl |= B43_TXH_AC_MAC_STMSDU;
+ 	txhdr->mac_ctl_lo = cpu_to_le16(mac_ctl);
+@@ -879,6 +1102,9 @@
+ 	/* Beamforming word: written only when wlc_txbf_sel selects (0x11c1f0) */
+ 
+ retry_count:
++	/* 9g0: A-MPDU fields and the epoch bit, after rate entry 0 is known */
++	b43_ac_ampdu_txhdr(dev, toe, txhdr, skb_frag, info, cookie, ht, vht);
++
+ 	/* Same retry-count bookkeeping as the 598 path, for the status report */
+ 	if (rates[0].count <= dev->wl->hw->conf.long_frame_max_tx_count)
+ 		rates[0].count = dev->wl->hw->conf.long_frame_max_tx_count;
+@@ -1697,11 +1923,20 @@
+ 	stat->acked = !!(lo & B43_TXST40_S1_ACKED) || cnt > 1;
+ 	/*
+ 	 * AMPDU: not in the status on rev > 39; wl asks its TX header
+-	 * (wlc_txh_get_isAMPDU, 0x9880). The AC header b43 builds is never
+-	 * AMPDU.
++	 * (wlc_txh_get_isAMPDU, 0x9880). 9g0: dma.c reads the header bit from
++	 * its header cache; for_ampdu stays 0 so b43_handle_txstatus passes
++	 * the status on. The count is the MPDUs this status releases
++	 * (wlc_ampdu_dotxstatus 0xe45c..0xe464), the block ack map is t2:t3
++	 * by position (0xe868..0xe8d8).
+ 	 */
+ 	stat->for_ampdu = 0;
++	stat->ampdu_cnt = cnt;
++	stat->ampdu_ba = (u64)t[1] | ((u64)t[2] << 32);
+ 	/* Frame count: s3[7:0] + s4[7:0] + s3[23:16] + s4[23:16] (0x12454..0x12478) */
++	stat->rate_cnt[0] = s[2] & 0xFF;
++	stat->rate_cnt[1] = (s[2] >> 16) & 0xFF;
++	stat->rate_cnt[2] = s[3] & 0xFF;
++	stat->rate_cnt[3] = (s[3] >> 16) & 0xFF;
+ 	frames = (s[2] & 0xFF) + (s[3] & 0xFF) +
+ 		 ((s[2] >> 16) & 0xFF) + ((s[3] >> 16) & 0xFF);
+ 	stat->frame_count = min_t(unsigned int, frames, 0xFF);
+--- a/drivers/net/wireless/broadcom/b43/xmit.h
++++ b/drivers/net/wireless/broadcom/b43/xmit.h
+@@ -225,25 +225,43 @@
+ 	struct b43_txhdr_ac_rate rate[4]; /* 20..99 */
+ 	__u8 key_algo;		/* 100: key byte +12 << 4, 0x11cc18/0x11cc20 */
+ 	__u8 key_idx;		/* 101: key byte +6, 0x11cc24/0x11cc2c */
+-	PAD_BYTES(22);		/* 102..123: no writer in wlc_d11hdrs */
++	/*
++	 * 9g0: the A-MPDU tail, written by _wlc_sendampdu_aqm for an
++	 * aggregate-able MPDU with the full 124 byte header (0xde78..0xdec0),
++	 * read by ucode 907 @0x38F..0x3A3 only with mac_ctl_lo bit 6 set.
++	 */
++	__u8 ampdu_max_mpdu[2];	/* 102, 103: both scb_ampdu max_pdu (0xde8c..0xde98) */
++	__le16 ampdu_dur_dens;	/* 104..105: max duration & 0xfff0 | density (0xde9c..0xdeb4) */
++	__u8 ampdu_wsize;	/* 106: block ack window - 1 (0xdeb8..0xdec0) */
++	PAD_BYTES(17);		/* 107..123: no writer in wlc_d11hdrs */
+ } __packed;
+ 
+ /* AC MAC control, low word (bytes 2..3), accumulated at wl sp+24 */
++#define B43_TXH_AC_MAC_AMPDU		0x0040 /* 9g0: aggregate-able MPDU, the AQM joins
++						* consecutive ones of equal epoch
++						* (_wlc_sendampdu_aqm 0xde4c set, 0xdd38
++						* clear; wlc_txh_get_isAMPDU 0x2cdc) */
+ #define B43_TXH_AC_MAC_ACK		0x0080 /* Unicast, ACK expected (0x11b4dc..0x11b530) */
+ #define B43_TXH_AC_MAC_HWSEQ		0x0800 /* ucode assigns the sequence number (0x11b688..0x11b69c) */
+ #define B43_TXH_AC_MAC_STMSDU		0x4000 /* Fragment number 0 (0x11b4c4..0x11b4d8) */
+ /*
+  * Other bits wl sets here, left clear by b43: 0x0200 for beacons or an scb
+  * flag (0x11b490..0x11b4c0); 0x1000 with packet flag 0x200 (0x11b784);
+- * 0x8400 for the AMPDU path (0x11c3f4); 0x0400 frameburst-related
+- * (0x11c558..0x11c5bc).
++ * 0x8400 on the frame-burst path (wlc_d11hdrs 0x11c364..0x11c418, gated by
++ * wlc byte 0x201; _wlc_sendampdu_aqm clears 0x0400 again at 0xe08c..
++ * 0xe0ac); 0x0400 frameburst-related (0x11c558..0x11c5bc).
+  */
+ 
+ /* AC MAC control, high word (bytes 4..5), accumulated at wl sp+32 */
+ #define B43_TXH_AC_MACH_NORATESEL	0x0002 /* Set on every frame, cleared only when
+ 						* wlc_scb_ratesel_gettxrate filled 2 or 4
+ 						* rate entries (0x11b9b0..0x11b9cc) */
+-#define B43_TXH_AC_MACH_VHT		0x0004 /* Primary rate is VHT (0x11c5c0..0x11c5d4) */
++#define B43_TXH_AC_MACH_VHT		0x0004 /* Primary rate is VHT (0x11c5c0..0x11c5d4).
++						* 9g0: _wlc_sendampdu_aqm sets it on a
++						* non-aggregated MPDU (0xdd40) and clears
++						* it on an aggregate-able one (0xde50): a
++						* lone VHT MPDU goes out as a one-MPDU
++						* A-MPDU, a real aggregate does not */
+ 
+ /* AC per-rate PHY control word 0 (wlc_acphy_txctl0_calc @0x1135a0) */
+ #define B43_TXH_AC_PHY0_FT		0x0003 /* Frame type (0x1135a8..0x1135fc) */
+@@ -341,11 +359,48 @@
+ /*
+  * 99zb: acphy_ampdu (xmit.c, bitmask, default 0), A-MPDU on core rev >= 40
+  * (re/r6400/b43-acphy/ampdu-rev42.md): bit 0 RX block ack sessions, bit 1
+- * TX (not implemented, refused), bit 2 wl's A-MPDU shm words.
++ * TX (9g0, hardware AQM aggregation), bit 2 wl's A-MPDU shm words, bit 3
++ * (9g0) 64 MPDUs per aggregate instead of 32, bit 4 (9l0) aggregate only
++ * in bursts: a lone MPDU goes out non-aggregated and the DMA of a burst
++ * is started once the whole burst is on the ring (xmit.c
++ * b43_ac_ampdu_txhdr, dma.c dma_tx_fragment, main.c b43_tx_work).
+  */
+ #define B43_AC_AMPDU_RX		0x1
+ #define B43_AC_AMPDU_TX		0x2
+ #define B43_AC_AMPDU_SHM	0x4
++#define B43_AC_AMPDU_TX64	0x8
++#define B43_AC_AMPDU_BURST	0x10
++/*
++ * 9l0 v2: what bit 1 used to do unconditionally, each on its own bit, after
++ * the 2026-10-07 16:58/17:10 trials (TX mode broke ordinary unicast
++ * frames with no aggregate ever sent, ampdu-rev42.md section 5):
++ * bit 5 the host flag (B43_HF_AC_AMPDUTX, shm 0x62 bit 6), bit 6 accept
++ * TX block ack sessions (and the station drv_priv), bit 7 the A-MPDU
++ * header fields (AMPDU bit, tail, epoch) for session frames, bit 8 the
++ * ucode's own sequence numbers (MAC control low bit 11) for QoS data of a
++ * session instead of mac80211's, a diagnostic. Bit 1 alone keeps the
++ * AMPDU_AGGREGATION hw flag, the status-side code and the logs.
++ */
++#define B43_AC_AMPDU_HF		0x20
++#define B43_AC_AMPDU_SESSION	0x40
++#define B43_AC_AMPDU_TXHDR	0x80
++#define B43_AC_AMPDU_HWSEQ	0x100
++/*
++ * 9n0: bit 9, the rate entries' counts of an A-MPDU status reported to
++ * minstrel_ht as transmission rounds (mac80211's convention) instead of
++ * MPDUs transmitted (the ucode's words), which booked a 19-MPDU aggregate
++ * as 361 attempts (dma.c b43_dma_ampdu_rc).
++ */
++#define B43_AC_AMPDU_RCFIX	0x200
++/*
++ * 9p0: bit 10, the status of a session frame sent plain (every rate probe,
++ * and a lone MPDU with bit 4) reported as a one-MPDU aggregate
++ * (IEEE80211_TX_STAT_AMPDU, ampdu_len 1), as mt76 does; without it
++ * minstrel_ht drops the status (IEEE80211_TX_CTL_AMPDU without
++ * STAT_AMPDU) and never learns a rate above the one the pre-session
++ * probes hit (dma.c b43_dma_plain_report).
++ */
++#define B43_AC_AMPDU_PLAINRC	0x400
+ extern unsigned int b43_modparam_acphy_ampdu;
+ 
+ static inline bool b43_ac_ampdu(struct b43_wldev *dev, unsigned int bits)
+@@ -353,6 +408,56 @@
+ 	return (b43_modparam_acphy_ampdu & bits) && dev->dev->core_rev >= 40;
+ }
+ 
++/* 9l0: would `next` join an aggregate burst with `skb` (xmit.c)? */
++bool b43_ac_ampdu_same_burst(struct sk_buff *skb, struct sk_buff *next);
++
++/*
++ * 9g0: A-MPDU TX limits as wl's AQM path writes them into the header tail
++ * (_wlc_sendampdu_aqm 0xde84..0xdec0). Max MPDUs per aggregate: wl's
++ * tunables for core rev > 39 are 32, 48 or 64 (wlc_ampdu_tx_attach
++ * 0x143374..0x143398), picked per peer by scb_ampdu_update_config
++ * 0x140b18 from capability bits it does not name; b43 takes 32, or 64 with
++ * acphy_ampdu bit 3, capped by the negotiated window. Max duration 5416 us
++ * (ampdu_tx+0x2a, 0x1434fc), its low nibble replaced by the peer's MPDU
++ * density code (0xdea4..0xdea8). Block ack window: the negotiated one, wl's
++ * default 64 (ampdu_tx+0x13, 0x1434a4..0x1434bc).
++ */
++#define B43_AC_AMPDU_MAX_MPDU		32
++#define B43_AC_AMPDU_MAX_MPDU64		64
++#define B43_AC_AMPDU_MAX_DUR		5416
++#define B43_AC_AMPDU_DENS_MASK		0x000F
++#define B43_AC_AMPDU_WSIZE_DEF		64
++
++/*
++ * 9g0: per station A-MPDU TX state (ieee80211_sta drv_priv, allocated
++ * with acphy_ampdu bit 1): the negotiated block ack window per TID from
++ * IEEE80211_AMPDU_TX_OPERATIONAL, 0 while no session is operational. wl
++ * keeps it in ini[tid] byte 1 (0xdeb8).
++ */
++struct b43_ac_sta {
++	u8 ampdu_wsize[IEEE80211_NUM_TIDS];
++};
++
++/*
++ * 9g0: epoch state per TX FIFO (wl: ampdu_tx + 0x278 + 28 * fifo). The
++ * AQM joins consecutive aggregate-able MPDUs of one FIFO while their epoch
++ * bit (TSO prefix byte 2 bit 1, wlc_txh_set_epoch 0x2d04) is equal, so
++ * the host toggles the bit (wlc_ampdu_change_epoch 0x141bc4, mode 3:
++ * 0x141bec..0x141c00) whenever the next MPDU must not join: a rate probe
++ * (0xded0..0xdef8), another station or TID (0xdefc..0xdf20), another frame
++ * type, PHY control word or HT-SIG/VHT-SIG (0xdf40..0xe00c), a sequence
++ * number that is not the one expected (0xe020..0xe03c), and once for a
++ * non-aggregate frame after aggregates (0xdd68..0xdda4). What
++ * wlc_ampdu_chgnsav_epoch 0x141c20 saves (0x141c60..0x141ce8) is kept
++ * in struct b43_ac_ampdu_epoch (b43.h, one per FIFO in struct b43_wldev):
++ * station (+4), TID (+8), frame type 1 HT / 2 VHT / 0 none (+9), PHY
++ * control 0 and 1 (+10, +12), PLCP bytes 0 and 3 (+14, +15; VHT also 1, 2,
++ * 4 at +17, +16, +18).
++ */
++#define B43_AC_AMPDU_FT_HT		1	/* 0x141c7c..0x141c84 */
++#define B43_AC_AMPDU_FT_VHT		2
++#define B43_TXH_AC_TOE_EPOCH		0x02	/* prefix byte 2 (0x2d0c..0x2d1c) */
++
+ /* AC chanspec (wlc+0x548): channel in bits 0..7 (the center channel at
+  * 40 and 80 MHz), sideband 0x0700 (40 MHz: 0x0100 = control channel in the
+  * upper half; 80 MHz: 0..3 from the lowest 20 MHz, wf_chspec_ctlchan
+@@ -557,6 +662,15 @@
+ 	u8 intermediate;	/* Intermediate status notification (not final) */
+ 	u8 for_ampdu;		/* Status is for an AMPDU (afterburner) */
+ 	u8 acked;		/* Wireless ACK received */
++	/*
++	 * 9g0, core rev >= 40 only: MPDUs this status releases from the FIFO
++	 * (s1 bits 8..14, wlc_ampdu_dotxstatus 0xe45c..0xe464), the block ack
++	 * map by position (t2 for MPDU 0..31, t3 for 32..63, 0xe868..0xe8d8)
++	 * and the TX count of each rate entry (s3/s4 bytes 0 and 2).
++	 */
++	u8 ampdu_cnt;
++	u8 rate_cnt[4];
++	u64 ampdu_ba;
+ };
+ 
+ /*

@@ -1,0 +1,55 @@
+From 780d5f0e97aaa10994cc0ae08884becceb58b45c Mon Sep 17 00:00:00 2001
+From: Russell Ballestrini <russell@unturf.com>
+Date: Fri, 10 Oct 2026 12:00:00 -0400
+Subject: [PATCH 11/29] b43: count AC-PHY TX errors instead of restarting the controller
+
+b43 restarts the controller after B43_PHY_TX_BADNESS_LIMIT PHY TX errors.
+On core rev >= 40 with the AC-PHY wl only counts them (wlc_dpc
+0x12c78..0x12c9c); its reinit on a threshold is for PHY type 6 only
+(0x12ca0..0x12cc8). Under load the BCM4360 shows about 1 % PHY TX errors
+while the frames are retried and delivered, so the restart only cost
+the link.
+
+On core rev >= 40 with the AC-PHY, count them in dev->phy_txerr_total
+and log them rate-limited at debug level, as wl does; other PHYs keep
+the threshold.
+---
+ drivers/net/wireless/broadcom/b43/b43.h  |  2 ++
+ drivers/net/wireless/broadcom/b43/main.c | 15 +++++++++++++++
+ 2 files changed, 17 insertions(+)
+
+--- a/drivers/net/wireless/broadcom/b43/b43.h
++++ b/drivers/net/wireless/broadcom/b43/b43.h
+@@ -875,6 +875,8 @@
+ 
+ /* Data structure for one wireless device (802.11 core) */
+ struct b43_wldev {
++	/* Core rev >= 40 AC-PHY: PHY TX errors counted, not acted on (99m) */
++	unsigned int phy_txerr_total;
+ 	struct b43_bus_dev *dev;
+ 	struct b43_wl *wl;
+ 	/* a completion event structure needed if this call is asynchronous */
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
+@@ -2332,6 +2332,21 @@
+ 	if (unlikely(reason & B43_IRQ_MAC_TXERR))
+ 		b43err(dev->wl, "MAC transmission error\n");
+ 
++	if (unlikely(reason & B43_IRQ_PHY_TXERR) &&
++	    dev->dev->core_rev >= 40 && dev->phy.type == B43_PHYTYPE_AC) {
++		/*
++		 * Core rev >= 40 / AC-PHY: wl only counts PHY TX errors
++		 * (wlc_dpc 0x12c78..0x12c9c); its reinit on a threshold is for
++		 * PHY type 6 only (0x12ca0..0x12cc8). Frames are retried and
++		 * delivered, so count and log rate-limited instead of
++		 * restarting the controller after B43_PHY_TX_BADNESS_LIMIT.
++		 */
++		dev->phy_txerr_total++;
++		if (b43_ratelimit(dev->wl))
++			b43dbg(dev->wl, "PHY transmission error (%u so far)\n",
++			       dev->phy_txerr_total);
++		reason &= ~B43_IRQ_PHY_TXERR;
++	}
+ 	if (unlikely(reason & B43_IRQ_PHY_TXERR)) {
+ 		b43err(dev->wl, "PHY transmission error\n");
+ 		rmb();

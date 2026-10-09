@@ -1,0 +1,145 @@
+From fab99e0dc5ea9965ae820069d78662eb646ca6e6 Mon Sep 17 00:00:00 2001
+From: Russell Ballestrini <russell@unturf.com>
+Date: Fri, 10 Oct 2026 12:00:00 -0400
+Subject: [PATCH 04/29] b43: RX header of core rev >= 40: frame offset 40 and chanspec channel word
+
+Core rev >= 40 ucode (907) puts 40 bytes in front of the PLCP, not 38:
+wl.ko sets hwrxoff to 40 for corerev > 39 (movhi r3, #40 at 0x164408,
+stored at 0x164410, passed to dma_attach at 0x1647a4). Use offset 40 and
+a buffer 2 bytes larger on RX ring 0 for these cores.
+
+The channel word of the RX header is a chanspec there, not a chanstat:
+wl.ko skips its chanstat->chanspec conversion for corerev > 39 (bhi at
+0x12874). Take the channel from the low byte and the band from the
+channel number (above 14 is 5 GHz), including for the OFDM rate lookup.
+A chanspec carries no PHY type, so the PHY-type decode is skipped and an
+AC case reports the band and frequency. The 0xc000 band bits (tested by
+wl.ko at 0x8050) are left undecoded.
+---
+ drivers/net/wireless/broadcom/b43/dma.c  |  9 ++++++--
+ drivers/net/wireless/broadcom/b43/dma.h  |  4 +++
+ drivers/net/wireless/broadcom/b43/xmit.c | 35 ++++++++++++++++++++++-----
+ drivers/net/wireless/broadcom/b43/xmit.h |  2 ++
+ 4 files changed, 42 insertions(+), 8 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/b43/dma.c
++++ b/drivers/net/wireless/broadcom/b43/dma.c
+@@ -868,8 +868,13 @@
+ 		if (ring->index == 0) {
+ 			switch (dev->fw.hdr_format) {
+ 			case B43_FW_HDR_598:
+-				ring->rx_buffersize = B43_DMA0_RX_FW598_BUFSIZE;
+-				ring->frameoffset = B43_DMA0_RX_FW598_FO;
++				if (dev->dev->core_rev >= 40) {
++					ring->rx_buffersize = B43_DMA0_RX_FW598_REV40_BUFSIZE;
++					ring->frameoffset = B43_DMA0_RX_FW598_FO_REV40;
++				} else {
++					ring->rx_buffersize = B43_DMA0_RX_FW598_BUFSIZE;
++					ring->frameoffset = B43_DMA0_RX_FW598_FO;
++				}
+ 				break;
+ 			case B43_FW_HDR_410:
+ 			case B43_FW_HDR_351:
+--- a/drivers/net/wireless/broadcom/b43/dma.h
++++ b/drivers/net/wireless/broadcom/b43/dma.h
+@@ -166,6 +166,10 @@
+ #define B43_DMA64_RINGMEMSIZE		8192
+ /* Offset of frame with actual data */
+ #define B43_DMA0_RX_FW598_FO		38
++/* Core rev >= 40 ucode puts 40 bytes before the PLCP, not 38
++ * (wl.ko hwrxoff: movhi r3, #40 at 0x164408, stored at 0x164410). */
++#define B43_DMA0_RX_FW598_FO_REV40	40
++#define B43_DMA0_RX_FW598_REV40_BUFSIZE	(B43_DMA0_RX_FW598_FO_REV40 + IEEE80211_MAX_FRAME_LEN)
+ #define B43_DMA0_RX_FW351_FO		30
+ 
+ /* DMA engine tuning knobs */
+--- a/drivers/net/wireless/broadcom/b43/xmit.c
++++ b/drivers/net/wireless/broadcom/b43/xmit.c
+@@ -640,6 +640,8 @@
+ 	u16 chanstat, mactime;
+ 	u32 macstat;
+ 	u16 chanid;
++	u8 phytype;
++	bool band5;
+ 	int padding, rate_idx;
+ 
+ 	memset(&status, 0, sizeof(status));
+@@ -715,8 +717,26 @@
+ 		}
+ 	}
+ 
++	/*
++	 * Core rev >= 40 (AC-PHY) ucode writes the channel word as a chanspec,
++	 * not a chanstat: wl.ko skips its chanstat->chanspec conversion for
++	 * corerev > 39 (bhi at 0x12874). A chanspec carries no PHY type, so
++	 * the PHY-type decode below is skipped for it. The channel is the low
++	 * byte; the band comes from the channel number because the 0xc000
++	 * band bits (tested by wl.ko at 0x8050) are still undecoded.
++	 */
++	if (dev->dev->core_rev >= 40) {
++		phytype = B43_PHYTYPE_AC;
++		chanid = chanstat & B43_RX_CHANSPEC_CHAN;
++		band5 = chanid > 14;
++	} else {
++		phytype = chanstat & B43_RX_CHAN_PHYTYPE;
++		chanid = (chanstat & B43_RX_CHAN_ID) >> B43_RX_CHAN_ID_SHIFT;
++		band5 = !!(chanstat & B43_RX_CHAN_5GHZ);
++	}
++
+ 	/* Link quality statistics */
+-	switch (chanstat & B43_RX_CHAN_PHYTYPE) {
++	switch (phytype) {
+ 	case B43_PHYTYPE_HT:
+ 		/* TODO: is max the right choice? */
+ 		status.signal = max_t(__s8,
+@@ -741,8 +761,7 @@
+ 	}
+ 
+ 	if (phystat0 & B43_RX_PHYST0_OFDM)
+-		rate_idx = b43_plcp_get_bitrate_idx_ofdm(plcp,
+-					!!(chanstat & B43_RX_CHAN_5GHZ));
++		rate_idx = b43_plcp_get_bitrate_idx_ofdm(plcp, band5);
+ 	else
+ 		rate_idx = b43_plcp_get_bitrate_idx_cck(plcp);
+ 	if (unlikely(rate_idx == -1)) {
+@@ -774,8 +793,7 @@
+ 		status.flag |= RX_FLAG_MACTIME_START;
+ 	}
+ 
+-	chanid = (chanstat & B43_RX_CHAN_ID) >> B43_RX_CHAN_ID_SHIFT;
+-	switch (chanstat & B43_RX_CHAN_PHYTYPE) {
++	switch (phytype) {
+ 	case B43_PHYTYPE_G:
+ 		status.band = NL80211_BAND_2GHZ;
+ 		/* Somewhere between 478.104 and 508.1084 firmware for G-PHY
+@@ -791,13 +809,18 @@
+ 	case B43_PHYTYPE_HT:
+ 		/* chanid is the SHM channel cookie. Which is the plain
+ 		 * channel number in b43. */
+-		if (chanstat & B43_RX_CHAN_5GHZ)
++		if (band5)
+ 			status.band = NL80211_BAND_5GHZ;
+ 		else
+ 			status.band = NL80211_BAND_2GHZ;
+ 		status.freq =
+ 			ieee80211_channel_to_frequency(chanid, status.band);
+ 		break;
++	case B43_PHYTYPE_AC:
++		status.band = band5 ? NL80211_BAND_5GHZ : NL80211_BAND_2GHZ;
++		status.freq =
++			ieee80211_channel_to_frequency(chanid, status.band);
++		break;
+ 	default:
+ 		B43_WARN_ON(1);
+ 		goto drop;
+--- a/drivers/net/wireless/broadcom/b43/xmit.h
++++ b/drivers/net/wireless/broadcom/b43/xmit.h
+@@ -346,6 +346,8 @@
+ #define B43_RX_CHAN_ID			0x07F8 /* Channel ID */
+ #define B43_RX_CHAN_ID_SHIFT		3
+ #define B43_RX_CHAN_PHYTYPE		0x0007 /* PHY type */
++/* Core rev >= 40 writes a chanspec instead of a chanstat */
++#define B43_RX_CHANSPEC_CHAN		0x00FF /* Channel number */
+ 
+ 
+ u8 b43_plcp_get_ratecode_cck(const u8 bitrate);

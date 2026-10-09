@@ -1,0 +1,290 @@
+From ba11acbc2835c90641d76b300e95e823f108f39c Mon Sep 17 00:00:00 2001
+From: Russell Ballestrini <russell@unturf.com>
+Date: Fri, 10 Oct 2026 12:00:00 -0400
+Subject: [PATCH 18/29] b43: AC-PHY: A-MPDU RX on core rev >= 40
+
+Block ack sessions and the PLCP-less MPDUs of an aggregate as ucode 907
+delivers them (acphy_ampdu bit 0).
+---
+ drivers/net/wireless/broadcom/b43/main.c | 86 ++++++++++++++++++++++++++-
+ drivers/net/wireless/broadcom/b43/xmit.c | 86 ++++++++++++++++++++++++++
+ drivers/net/wireless/broadcom/b43/xmit.h | 15 +++++
+ 3 files changed, 185 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
+@@ -789,6 +789,34 @@
+ 	}
+ }
+ 
++/*
++ * 99zb: acphy_ampdu bit 2, the shm words wl's wlc_ampdu_shm_upd 0x14658c
++ * writes from wlc_init (0x12f048) when A-MPDU TX and RX are on (wlc_pub
++ * bytes 0x49 and 0x4a) and the PHY type is N, HT or AC (11). With the RX
++ * factor 64 KiB (rx_factor & 3 == 3, wlc_ampdu_rx_attach 0x1462e8) it
++ * writes 0xffff to shm 0xba and 10 to shm 0x3c, otherwise 0x8000 and 5:
++ * brcmsmac's M_MIMO_MAXSYM and M_WATCHDOG_8TU (brcms_c_ampdu_shm_upd),
++ * which extend the ucode's RX watchdog for long A-MPDUs. b43's 64 KiB
++ * factor (b43_ac_setup_ht_cap) takes the first pair. shm 0x3c is b43's
++ * B43_SHM_SH_DEFAULTIV, which b43 never writes. wl writes no host flag
++ * and no other shm word for A-MPDU RX.
++ */
++#define B43_SHM_SH_AC_MIMO_MAXSYM	0x00BA
++#define B43_SHM_SH_AC_WATCHDOG_8TU	0x003C
++
++static void b43_ac_ampdu_shm(struct b43_wldev *dev)
++{
++	u16 maxsym, wdog;
++
++	if (!b43_ac_ampdu(dev, B43_AC_AMPDU_SHM) ||
++	    dev->phy.type != B43_PHYTYPE_AC)
++		return;
++	maxsym = b43_shm_read16(dev, B43_SHM_SHARED, B43_SHM_SH_AC_MIMO_MAXSYM);
++	wdog = b43_shm_read16(dev, B43_SHM_SHARED, B43_SHM_SH_AC_WATCHDOG_8TU);
++	b43_shm_write16(dev, B43_SHM_SHARED, B43_SHM_SH_AC_MIMO_MAXSYM, 0xFFFF);
++	b43_shm_write16(dev, B43_SHM_SHARED, B43_SHM_SH_AC_WATCHDOG_8TU, 10);
++}
++
+ static void b43_upload_card_macaddress(struct b43_wldev *dev)
+ {
+ 	b43_write_mac_bssid_templates(dev);
+@@ -5691,6 +5719,8 @@
+ 	if (dev->dev->core_rev >= 40)
+ 		hf |= B43_HF_AC_NOPRBRESP;
+ 	b43_hf_write(dev, hf);
++	/* 99zb: acphy_ampdu bit 2, wl's A-MPDU shm words */
++	b43_ac_ampdu_shm(dev);
+ 
+ 	/* tell the ucode MAC capabilities */
+ 	if (dev->dev->core_rev >= 13) {
+@@ -6084,6 +6114,45 @@
+ 	return 0;
+ }
+ 
++/*
++ * 99zb: block ack sessions on core rev >= 40 (acphy_ampdu, xmit.c;
++ * re/r6400/b43-acphy/ampdu-rev42.md). RX needs nothing from the driver:
++ * wl answers the ADDBA request in software (wlc_send_addba_resp 0x146638)
++ * and keeps the session on the host (scb_ampdu_rx_init 0x144f6c,
++ * wlc_ampdu_recvdata 0x10d4c reorders), with no shm, AMT or register write
++ * for it; the ucode sends the block ack. mac80211 does the reordering here.
++ * TX (wl's AQM path, _wlc_sendampdu_aqm 0xd9a8 in .text.fastpath) is not
++ * implemented: every TX action is refused, so mac80211 never aggregates.
++ */
++static int b43_op_ampdu_action(struct ieee80211_hw *hw,
++			       struct ieee80211_vif *vif,
++			       struct ieee80211_ampdu_params *params)
++{
++	struct b43_wl *wl = hw_to_b43_wl(hw);
++	struct b43_wldev *dev;
++	int err = -EOPNOTSUPP;
++
++	mutex_lock(&wl->mutex);
++	dev = wl->current_dev;
++	if (!dev || dev->phy.type != B43_PHYTYPE_AC ||
++	    !b43_ac_ampdu(dev, B43_AC_AMPDU_RX))
++		goto out_unlock;
++	switch (params->action) {
++	case IEEE80211_AMPDU_RX_START:
++		err = 0;
++		break;
++	case IEEE80211_AMPDU_RX_STOP:
++		err = 0;
++		break;
++	default:
++		/* TX: not implemented (ampdu-rev42.md) */
++		break;
++	}
++out_unlock:
++	mutex_unlock(&wl->mutex);
++	return err;
++}
++
+ static const struct ieee80211_ops b43_hw_ops = {
+ 	.add_chanctx = ieee80211_emulate_add_chanctx,
+ 	.remove_chanctx = ieee80211_emulate_remove_chanctx,
+@@ -6112,6 +6181,7 @@
+ 	.rfkill_poll		= b43_rfkill_poll,
+ 	.set_antenna		= b43_op_set_antenna,
+ 	.get_antenna		= b43_op_get_antenna,
++	.ampdu_action		= b43_op_ampdu_action,
+ };
+ 
+ /* Hard-reset the chip. Do not call this directly.
+@@ -6189,8 +6259,8 @@
+  * format; greenfield RX unverified), max A-MSDU 7935 (RX buffer sized for
+  * 3839), LDPC (TX not implemented; wl's wlc_phy_update_rxldpc_acphy not
+  * ported), TX STBC (single core by default). A-MPDU parameters are wl's;
+- * b43 has no ampdu_action, so mac80211 declines every block ack session
+- * and no A-MPDU is sent or expected.
++ * mac80211 declines every block ack session unless acphy_ampdu bit 0
++ * accepts RX sessions (99zb, b43_op_ampdu_action); no A-MPDU is sent.
+  */
+ static void b43_ac_setup_ht_cap(struct b43_wldev *dev,
+ 				struct ieee80211_sta_ht_cap *ht_cap)
+@@ -6604,6 +6674,18 @@
+ 	ieee80211_hw_set(hw, RX_INCLUDES_FCS);
+ 	ieee80211_hw_set(hw, SIGNAL_DBM);
+ 	ieee80211_hw_set(hw, MFP_CAPABLE);
++	/*
++	 * 99zb: acphy_ampdu bit 0, RX block ack sessions. The PHY type is not
++	 * known yet; core rev >= 40 is the AC core. The reorder buffer is
++	 * capped at the RX ring (B43_RXRING_SLOTS, 32 after OpenWrt's 813)
++	 * where wl offers 64 (wlc_ampdu_rx_attach 0x146258..0x146288), so a
++	 * burst cannot outrun the ring.
++	 */
++	if ((b43_modparam_acphy_ampdu & B43_AC_AMPDU_RX) &&
++	    dev->core_rev >= 40) {
++		ieee80211_hw_set(hw, AMPDU_AGGREGATION);
++		hw->max_rx_aggregation_subframes = B43_RXRING_SLOTS;
++	}
+ 	hw->wiphy->interface_modes =
+ 		BIT(NL80211_IFTYPE_AP) |
+ 		BIT(NL80211_IFTYPE_MESH_POINT) |
+--- a/drivers/net/wireless/broadcom/b43/xmit.c
++++ b/drivers/net/wireless/broadcom/b43/xmit.c
+@@ -628,6 +628,42 @@
+ 	return 0;
+ }
+ 
++/*
++ * 99zb: acphy_ampdu (bitmask, default 0), A-MPDU on core rev >= 40
++ * (re/r6400/b43-acphy/ampdu-rev42.md). Bit 0: RX block ack sessions
++ * (main.c: ampdu_action, AMPDU_AGGREGATION; mac80211 reorders). Bit 1:
++ * TX, not implemented (wl's rev 42 TX aggregation is the AQM path, see the
++ * note). Bit 2: wl's A-MPDU shm words (main.c, b43_ac_ampdu_shm).
++ *
++ * RX: the ucode answers an A-MPDU with a block ack by itself; wl keeps no
++ * ucode state per block ack session (wlc_ampdu_recv_addba_req_resp
++ * 0x146714 and scb_ampdu_rx_init 0x144f6c write no shm, AMT or register).
++ * Every MPDU of an A-MPDU arrives as its own RX frame, but only the first
++ * carries the PLCP: wl skips its RX rate statistics when PLCP bytes 0..2
++ * are all zero (wlc_recvdata 0x89a8..0x89bc), and the PHY RX status is not
++ * valid then (MAC status bit 24, wlc_phy_rssi_compute 0x644..0x65c). b43
++ * would decode the zero PLCP as an invalid legacy rate and drop the MPDU,
++ * so the rate, bandwidth, flags and signal of the last good frame with a
++ * PLCP are reused. An HT PLCP is never zero in bytes 1..2 (HT-SIG length).
++ */
++unsigned int b43_modparam_acphy_ampdu;
++module_param_named(acphy_ampdu, b43_modparam_acphy_ampdu, uint, 0444);
++MODULE_PARM_DESC(acphy_ampdu,
++		 "AC-PHY A-MPDU: 1 = RX block ack sessions, 2 = TX (not implemented), 4 = wl's A-MPDU shm words (default 0)");
++
++#define B43_AC_AMPDU_DUMPS	8
++static atomic_t b43_ac_ampdu_rxdumps = ATOMIC_INIT(0);
++static atomic_t b43_ac_ampdu_rxn = ATOMIC_INIT(0);
++static struct {
++	bool valid;
++	bool signal_valid;
++	u8 encoding;
++	u8 bw;
++	u8 enc_flags;
++	int rate_idx;
++	s8 signal;
++} b43_ac_ampdu_last;
++
+ /* PHY control word 2 for a legacy rate: its index in the table above. */
+ static u16 b43_ac_legacy_rate_idx(u8 bitrate)
+ {
+@@ -1267,6 +1303,7 @@
+ 	u16 chanid;
+ 	u8 phytype;
+ 	bool band5;
++	bool noplcp;
+ 	int padding, rate_idx;
+ 
+ 	memset(&status, 0, sizeof(status));
+@@ -1323,6 +1360,18 @@
+ 	wlhdr = (struct ieee80211_hdr *)(skb->data);
+ 	fctl = wlhdr->frame_control;
+ 
++	/*
++	 * 99zb: an MPDU after the first of an A-MPDU has no PLCP (see
++	 * b43_modparam_acphy_ampdu). Without a valid PHY RX status, the PHY
++	 * status flags taken above are not this MPDU's: the FCS decides.
++	 */
++	noplcp = b43_ac_ampdu(dev, B43_AC_AMPDU_RX) &&
++		 !(plcp->raw[0] | plcp->raw[1] | plcp->raw[2]);
++	if (noplcp && !(macstat & B43_RX_MAC_RXST_VALID)) {
++		status.flag &= ~RX_FLAG_FAILED_PLCP_CRC;
++		status.enc_flags &= ~RX_ENC_FLAG_SHORTPRE;
++	}
++
+ 	if (macstat & B43_RX_MAC_DEC) {
+ 		unsigned int keyidx;
+ 		int wlhdr_len;
+@@ -1417,6 +1466,30 @@
+ 	}
+ 
+ 	if (dev->dev->core_rev >= 40 &&
++	if (noplcp) {
++		/* 99zb: rate of the A-MPDU's first MPDU */
++		rate_idx = -1;
++		if (b43_ac_ampdu_last.valid) {
++			rate_idx = b43_ac_ampdu_last.rate_idx;
++			status.encoding = b43_ac_ampdu_last.encoding;
++			status.bw = b43_ac_ampdu_last.bw;
++			status.enc_flags = b43_ac_ampdu_last.enc_flags;
++			if ((status.flag & RX_FLAG_NO_SIGNAL_VAL) &&
++			    b43_ac_ampdu_last.signal_valid) {
++				status.signal = b43_ac_ampdu_last.signal;
++				status.flag &= ~RX_FLAG_NO_SIGNAL_VAL;
++			}
++		}
++		atomic_inc(&b43_ac_ampdu_rxn);
++		if (atomic_inc_return(&b43_ac_ampdu_rxdumps) <=
++		    B43_AC_AMPDU_DUMPS)
++			b43info(dev->wl, "AMPDURX %d physt0 %04x physt3 %04x macst %08x fc %04x seq %u len %u rate %d flag 0x%x\n",
++				atomic_read(&b43_ac_ampdu_rxn), phystat0,
++				phystat3, macstat, le16_to_cpu(fctl),
++				skb->len >= 24 ?
++				le16_to_cpu(wlhdr->seq_ctrl) >> 4 : 0,
++				skb->len, rate_idx, status.flag);
++	} else if (dev->dev->core_rev >= 40 &&
+ 	    (phystat0 & B43_RX_PHYST0_FTYPE) == B43_RX_PHYST0_AC_HT) {
+ 		/*
+ 		 * HT frame on core rev >= 40, decoded as
+@@ -1487,6 +1560,19 @@
+ 	}
+ 	status.rate_idx = rate_idx;
+ 	status.antenna = !!(phystat0 & B43_RX_PHYST0_ANT);
++	/* 99zb: remember the rate for the MPDUs that follow without a PLCP */
++	if (b43_ac_ampdu(dev, B43_AC_AMPDU_RX) && !noplcp && rate_idx >= 0 &&
++	    !(status.flag & (RX_FLAG_FAILED_FCS_CRC |
++			     RX_FLAG_FAILED_PLCP_CRC))) {
++		b43_ac_ampdu_last.rate_idx = rate_idx;
++		b43_ac_ampdu_last.encoding = status.encoding;
++		b43_ac_ampdu_last.bw = status.bw;
++		b43_ac_ampdu_last.enc_flags = status.enc_flags;
++		b43_ac_ampdu_last.signal = status.signal;
++		b43_ac_ampdu_last.signal_valid =
++			!(status.flag & RX_FLAG_NO_SIGNAL_VAL);
++		b43_ac_ampdu_last.valid = true;
++	}
+ 
+ 	/*
+ 	 * All frames on monitor interfaces and beacons always need a full
+--- a/drivers/net/wireless/broadcom/b43/xmit.h
++++ b/drivers/net/wireless/broadcom/b43/xmit.h
+@@ -338,6 +338,21 @@
+  */
+ unsigned int b43_ac_ht_nss(struct b43_wldev *dev);
+ 
++/*
++ * 99zb: acphy_ampdu (xmit.c, bitmask, default 0), A-MPDU on core rev >= 40
++ * (re/r6400/b43-acphy/ampdu-rev42.md): bit 0 RX block ack sessions, bit 1
++ * TX (not implemented, refused), bit 2 wl's A-MPDU shm words.
++ */
++#define B43_AC_AMPDU_RX		0x1
++#define B43_AC_AMPDU_TX		0x2
++#define B43_AC_AMPDU_SHM	0x4
++extern unsigned int b43_modparam_acphy_ampdu;
++
++static inline bool b43_ac_ampdu(struct b43_wldev *dev, unsigned int bits)
++{
++	return (b43_modparam_acphy_ampdu & bits) && dev->dev->core_rev >= 40;
++}
++
+ /* AC chanspec (wlc+0x548): channel in bits 0..7 (the center channel at
+  * 40 and 80 MHz), sideband 0x0700 (40 MHz: 0x0100 = control channel in the
+  * upper half; 80 MHz: 0..3 from the lowest 20 MHz, wf_chspec_ctlchan

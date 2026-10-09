@@ -1,0 +1,46 @@
+From 20e4d1826dbc1d746d7f5865bfadce10ab94ecbb Mon Sep 17 00:00:00 2001
+From: Russell Ballestrini <russell@unturf.com>
+Date: Fri, 10 Oct 2026 12:00:00 -0400
+Subject: [PATCH 02/29] b43: refuse to read the core rev 40/42 radio ID without the HT clock
+
+On core rev 40 and 42 the radio ID is read through the RADIO24 window,
+which needs the core's HT clock. With the HT clock down that read hung
+the R6400 hard (power cycle needed) while bcma logged "HT force timeout"
+and "PLL enable timeout".
+
+Read BCMA_CLKCTLST from the core first (bcma polls the same register in
+bcma_core_set_clockmode() without hanging), log it, and return -ENODEV
+instead of touching the radio when BCMA_CLKCTLST_HAVEHT is clear. Other
+core revisions and the SSB bus are unchanged.
+---
+ drivers/net/wireless/broadcom/b43/main.c | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
+@@ -4634,6 +4634,25 @@
+ 
+ 	/* Get RADIO versioning */
+ 	if (core_rev == 40 || core_rev == 42) {
++		/*
++		 * The RADIO24 window reaches the radio, which needs the core's
++		 * HT clock. On the R6400 BCM4360 bcma logs "HT force timeout"
++		 * and "PLL enable timeout" at boot, and reading the radio then
++		 * hung the router (2026-10-04, 2026-10-05 20:43 UTC). CLKCTLST
++		 * is in the core's own register space, which bcma itself polls
++		 * in bcma_core_set_clockmode() without hanging, so checking it
++		 * here is safe. Refuse instead of reading the radio.
++		 */
++		if (dev->dev->bus_type == B43_BUS_BCMA) {
++			u32 clkst = bcma_read32(dev->dev->bdev, BCMA_CLKCTLST);
++
++			b43info(dev->wl, "core rev %u CLKCTLST 0x%08x\n",
++				core_rev, clkst);
++			if (!(clkst & BCMA_CLKCTLST_HAVEHT)) {
++				b43err(dev->wl, "no HT clock, not reading radio\n");
++				return -ENODEV;
++			}
++		}
+ 		radio_manuf = 0x17F;
+ 
+ 		b43_write16f(dev, B43_MMIO_RADIO24_CONTROL, 0);

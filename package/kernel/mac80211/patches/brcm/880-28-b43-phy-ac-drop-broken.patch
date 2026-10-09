@@ -1,0 +1,22 @@
+From 021d3066c98960b40ce952c33d667a5c645faeb3 Mon Sep 17 00:00:00 2001
+From: Russell Ballestrini <russell@unturf.com>
+Date: Fri, 10 Oct 2026 12:00:00 -0400
+Subject: [PATCH 28/29] b43: allow B43_PHY_AC to be selected
+
+With the AC-PHY port and the core rev >= 40 MAC support in place, drop
+the BROKEN dependency of B43_PHY_AC so the BCM4360 can be driven.
+---
+ drivers/net/wireless/broadcom/b43/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/broadcom/b43/Kconfig
++++ b/drivers/net/wireless/broadcom/b43/Kconfig
+@@ -151,7 +151,7 @@
+ 
+ config B43_PHY_AC
+ 	bool "Support for AC-PHY (802.11ac) devices (BROKEN)"
+-	depends on B43 && B43_BCMA && BROKEN
++	depends on B43 && B43_BCMA
+ 	help
+ 	  This PHY type can be found in the following chipsets:
+ 	  PCI: BCM4352, BCM4360
