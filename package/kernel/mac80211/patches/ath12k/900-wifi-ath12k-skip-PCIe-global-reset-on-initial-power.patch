@@ -1,0 +1,39 @@
+wifi: ath12k: skip PCIe global reset on initial power-up
+
+ath12k_pci_sw_reset() unconditionally calls ath12k_pci_soc_global_reset()
+regardless of whether the device is being powered up for the first time or
+recovering from a previous run. The global reset drops the PCIe link and
+relies on the host root complex to perform physical link retraining before
+the MHI BHI register can be accessed.
+
+When the device is passed through to a VM via VFIO, no physical link
+retraining occurs after the reset since QEMU's virtual PCIe bridge does
+not implement hardware LTSSM negotiation. As a result, all subsequent
+MMIO reads return 0xffffffff and MHI initialization fails with -EREMOTEIO.
+
+On initial power-up, vfio-pci has already performed a Function Level
+Reset before handing the device to the guest driver, placing it in a
+known clean state equivalent to what the global reset achieves. The global
+reset is therefore redundant on power-up and only necessary on the
+shutdown/recovery path where it tears down an already-running firmware.
+
+Skip ath12k_pci_soc_global_reset() when power_on is true to allow MHI
+initialization to succeed under VFIO passthrough without affecting bare
+metal behavior.
+
+Tested-on: QCN9274 hw2.0 PCI WLAN.WBE.1.6-01243-QCAHKSWPL_SILICONZ-1 (KVM/VFIO)
+
+Signed-off-by: Nazar Mokrynskyi <nazar@mokrynskyi.com>
+
+--- a/drivers/net/wireless/ath/ath12k/pci.c
++++ b/drivers/net/wireless/ath/ath12k/pci.c
+@@ -335,7 +335,8 @@
+
+ 	ath12k_mhi_clear_vector(ab);
+ 	ath12k_pci_clear_dbg_registers(ab);
+-	ath12k_pci_soc_global_reset(ab);
++	if (!power_on)
++		ath12k_pci_soc_global_reset(ab);
+ 	ath12k_mhi_set_mhictrl_reset(ab);
+ }
+

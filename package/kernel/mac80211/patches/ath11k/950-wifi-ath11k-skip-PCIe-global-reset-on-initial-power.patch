@@ -1,0 +1,29 @@
+wifi: ath11k: skip PCIe global reset on initial power-up
+
+Same issue as fixed in ath12k: ath11k_pci_sw_reset() unconditionally
+calls ath11k_pci_soc_global_reset() on both initial power-up and
+shutdown/recovery paths. The global reset drops the PCIe link and depends
+on physical link retraining by the host root complex to restore MMIO
+access.
+
+Under VFIO passthrough, no hardware link retraining occurs and all
+subsequent MMIO reads return 0xffffffff, causing MHI initialization
+to fail.
+
+Skip ath11k_pci_soc_global_reset() when power_on is true, matching
+the fix applied to ath12k.
+
+Signed-off-by: Nazar Mokrynskyi <nazar@mokrynskyi.com>
+
+--- a/drivers/net/wireless/ath/ath11k/pci.c
++++ b/drivers/net/wireless/ath/ath11k/pci.c
+@@ -385,7 +385,8 @@
+
+ 	ath11k_mhi_clear_vector(ab);
+ 	ath11k_pci_clear_dbg_registers(ab);
+-	ath11k_pci_soc_global_reset(ab);
++	if (!power_on)
++		ath11k_pci_soc_global_reset(ab);
+ 	ath11k_mhi_set_mhictrl_reset(ab);
+ }
+
