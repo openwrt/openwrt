@@ -1,0 +1,145 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+/*
+ * Copyright (C) 2021 MediaTek Inc.
+ * Author: Sam.Shih <sam.shih@mediatek.com>
+ */
+
+/dts-v1/;
+#include "mt7986a-zyxel-ex5601-t0-common.dtsi"
+
+/ {
+	model = "Zyxel EX5512-T0 (ubootmod)";
+	compatible = "zyxel,ex5512-t0-ubootmod", "mediatek,mt7986a";
+
+	memory@40000000 {
+		reg = <0 0x40000000 0 0x20000000>;
+		device_type = "memory";
+	};
+
+	chosen {
+		bootargs-append = " root=/dev/fit0 rootwait";
+		rootdisk = <&ubi_rootdisk>;
+	};
+
+	leds {
+		led_green_inet: led_green_inet {
+			label = "green:inet";
+			gpios = <&pio 30 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
+		};
+
+		led_red_inet: led_red_inet {
+			label = "red:inet";
+			gpios = <&pio 31 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
+		};
+
+		led_green_wps: led_green_wps {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WPS;
+			gpios = <&pio 14 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+	};
+};
+
+&nand_partitions {
+	partition@0 {
+		label = "bl2";
+		reg = <0x0 0x100000>;
+		read-only;
+	};
+
+	partition@100000 {
+		label = "u-boot-env";
+		reg = <0x0100000 0x0080000>;
+		read-only;
+	};
+
+	factory: partition@180000 {
+		label = "Factory";
+		reg = <0x180000 0x0200000>;
+		read-only;
+
+		nvmem-layout {
+			compatible = "fixed-layout";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			eeprom_factory: eeprom@0 {
+				#size-cells = <1>;
+				reg = <0x0 0x1000>;
+			};
+
+			macaddr_factory_4: macaddr@4 {
+				compatible = "mac-base";
+				reg = <0x4 0x6>;
+				#nvmem-cell-cells = <1>;
+			};
+
+			macaddr_factory_24: macaddr@24 {
+				compatible = "mac-base";
+				reg = <0x24 0x6>;
+				#nvmem-cell-cells = <1>;
+			};
+
+			macaddr_factory_2a: macaddr@2a {
+				compatible = "mac-base";
+				reg = <0x2a 0x6>;
+				#nvmem-cell-cells = <1>;
+			};
+		};
+	};
+
+	partition@380000 {
+		label = "fip";
+		reg = <0x380000 0x01C0000>;
+		read-only;
+	};
+
+	partition@540000 {
+		label = "zloader";
+		reg = <0x540000 0x0040000>;
+		read-only;
+	};
+
+	partition@580000 {
+		label = "ubi";
+		reg = <0x580000 0x1da80000>;
+		compatible = "linux,ubi";
+
+		volumes {
+			ubi_rootdisk: ubi-volume-fit {
+				volname = "fit";
+			};
+		};
+	};
+};
+
+&gmac1 {
+	phy = <&phy2>;
+};
+
+&mdio {
+	/delete-node/ phy@6;
+
+	phy2: phy@2 {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <2>;
+
+		leds {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			led@0 {
+				reg = <0>;
+				color = <LED_COLOR_ID_GREEN>;
+				function = LED_FUNCTION_WAN;
+			};
+		};
+	};
+};
+
+&spi1 {
+	status = "disabled";
+};
