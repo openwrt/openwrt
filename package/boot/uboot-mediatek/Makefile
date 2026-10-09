@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_VERSION:=2026.07
-PKG_RELEASE:=3
+PKG_RELEASE:=4
 PKG_HASH:=78e8bfc382fe388f9b55aa1daf8c563522a037779b5d4c349d1415e381f1243e
 PKG_BUILD_DEPENDS:=!(TARGET_ramips||TARGET_mediatek_mt7623):arm-trusted-firmware-tools/host
 PKG_PARALLEL_VARIANTS:=1
@@ -56,6 +56,24 @@ define U-Boot/mt7620_mt7530_rfb
   NAME:=MT7620+MT7530 Reference Board
   UBOOT_CONFIG:=mt7620_mt7530_rfb
   BUILD_DEVICES:=ralink_mt7620a-mt7530-evb
+  BUILD_TARGET:=ramips
+  BUILD_SUBTARGET:=mt7620
+  UBOOT_IMAGE:=u-boot-with-spl.bin
+endef
+
+define U-Boot/mt7620_zyxel_lte3301-m209
+  NAME:=Zyxel LTE3301-M209
+  UBOOT_CONFIG:=mt7620_zyxel_lte3301-m209
+  BUILD_DEVICES:=zyxel_lte3301-m209
+  BUILD_TARGET:=ramips
+  BUILD_SUBTARGET:=mt7620
+  UBOOT_IMAGE:=u-boot-with-spl.bin
+endef
+
+define U-Boot/mt7620_zyxel_lte3301-q222
+  NAME:=Zyxel LTE3301-Q222
+  UBOOT_CONFIG:=mt7620_zyxel_lte3301-q222
+  BUILD_DEVICES:=zyxel_lte3301-q222
   BUILD_TARGET:=ramips
   BUILD_SUBTARGET:=mt7620
   UBOOT_IMAGE:=u-boot-with-spl.bin
@@ -1472,6 +1490,8 @@ endef
 UBOOT_TARGETS := \
 	mt7620_mt7530_rfb \
 	mt7620_rfb \
+	mt7620_zyxel_lte3301-m209 \
+	mt7620_zyxel_lte3301-q222 \
 	mt7621_nand_rfb \
 	mt7621_rfb \
 	mt7621_zbtlink_zbt-wg3526-16m \

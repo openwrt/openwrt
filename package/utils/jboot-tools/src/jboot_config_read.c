@@ -94,6 +94,16 @@ struct data_header {
 	uint8_t data[];		/* encoding method of body */
 };
 
+static uint16_t get_le16(const uint8_t *p)
+{
+	return p[0] | (p[1] << 8);
+}
+
+static uint32_t get_le32(const uint8_t *p)
+{
+	return p[0] | (p[1] << 8) | (p[2] << 16) | (p[3] << 24);
+}
+
 /* globals */
 
 char *ofname;
@@ -135,9 +145,10 @@ static void print_data_header(struct data_header *printed_header)
 	       "data: ",
 	       printed_header->id,
 	       printed_header->type,
-	       printed_header->unknown, printed_header->length);
+	       get_le16((uint8_t *)printed_header + 2),
+	       get_le16((uint8_t *)printed_header + 4));
 
-	for (uint16_t i = 0; i < printed_header->length; i++)
+	for (uint16_t i = 0; i < get_le16((uint8_t *)printed_header + 4); i++)
 		printf("%02X ", printed_header->data[i]);
 
 	printf("\n");
@@ -173,65 +184,76 @@ static int find_header(uint8_t *buf, uint32_t buf_size,
 	struct csxf_header *tmp_csxf_header;
 	uint16_t tmp_checksum = 0;
 	uint16_t data_header_counter = 0;
-	int ret = EXIT_FAILURE;
+	/*
+	 * Must be negative on failure: the caller reads every value > 0 as
+	 * "that many records found" and would walk an uninitialised table.
+	 */
+	int ret = -1;
 
 	VERBOSE("Looking for STAG header!");
 
-	while ((uint32_t) tmp_buf - (uint32_t) buf <= buf_size) {
+	/*
+	 * Stop early enough that the CSXF header behind the STAG header is
+	 * still inside the buffer.
+	 */
+	while ((size_t)(tmp_buf - buf) + STAG_SIZE + CSXF_SIZE <= buf_size) {
 		if (!memcmp(tmp_buf, tmp_hdr, 4)) {
-			if (((struct stag_header *)tmp_buf)->tag_checksum ==
+			if (get_le16(tmp_buf + 14) ==
 			    (uint16_t) ~jboot_checksum(0, (uint16_t *) tmp_buf,
 							STAG_SIZE - 2)) {
 				VERBOSE("Found proper STAG header at: 0x%X.",
-					tmp_buf - buf);
+					(unsigned int)(tmp_buf - buf));
 				break;
 			}
 		}
 		tmp_buf++;
 	}
 
+	if ((size_t)(tmp_buf - buf) + STAG_SIZE + CSXF_SIZE > buf_size) {
+		ERR("No valid STAG header found!");
+		goto out;
+	}
+
 	tmp_csxf_header = (struct csxf_header *)(tmp_buf + STAG_SIZE);
-	if (tmp_csxf_header->magic != CSXF_MAGIC) {
+	if (get_le16((uint8_t *)tmp_csxf_header) != CSXF_MAGIC) {
 		ERR("CSXF magic incorrect! 0x%X != 0x%X",
-		    tmp_csxf_header->magic, CSXF_MAGIC);
+		    get_le16((uint8_t *)tmp_csxf_header), CSXF_MAGIC);
 		goto out;
 	}
 	VERBOSE("CSXF magic ok.");
-	tmp_checksum = tmp_csxf_header->checksum;
-	tmp_csxf_header->checksum = 0;
+	tmp_checksum = get_le16((uint8_t *)tmp_csxf_header + 2);
+	*((uint8_t *)tmp_csxf_header + 2) = 0;
+	*((uint8_t *)tmp_csxf_header + 3) = 0;
 
-	tmp_csxf_header->checksum =
+	if (tmp_checksum !=
 	    (uint16_t) ~jboot_checksum(0, (uint16_t *) (tmp_buf + STAG_SIZE),
-					tmp_csxf_header->raw_length +
-					CSXF_SIZE);
-
-	if (tmp_checksum != tmp_csxf_header->checksum) {
-		ERR("CSXF checksum incorrect! Stored: 0x%X Calculated: 0x%X",
-		    tmp_checksum, tmp_csxf_header->checksum);
+					get_le32((uint8_t *)tmp_csxf_header + 12) +
+					CSXF_SIZE)) {
+		ERR("CSXF checksum incorrect! Stored: 0x%X", tmp_checksum);
 		goto out;
 	}
 	VERBOSE("CSXF image checksum ok.");
 
 	tmp_buf = tmp_buf + STAG_SIZE + CSXF_SIZE;
 
-	while ((uint32_t) tmp_buf - (uint32_t) buf <= buf_size) {
+	while ((size_t)(tmp_buf - buf) + DATA_HEADER_SIZE <= buf_size &&
+	       data_header_counter < MAX_DATA_HEADER) {
 
 		struct data_header *tmp_data_header =
 		    (struct data_header *)tmp_buf;
 
-		if (tmp_data_header->unknown != DATA_HEADER_UNKNOWN) {
+		if (get_le16(tmp_buf + 2) != DATA_HEADER_UNKNOWN) {
 			tmp_buf++;
 			continue;
 		}
-		if (tmp_data_header->type != DATA_HEADER_EEPROM
-		    && tmp_data_header->type != DATA_HEADER_CONFIG) {
+		if (tmp_buf[1] != DATA_HEADER_EEPROM
+		    && tmp_buf[1] != DATA_HEADER_CONFIG) {
 			tmp_buf++;
 			continue;
 		}
 
 		data_table[data_header_counter] = tmp_data_header;
-		tmp_buf +=
-		    DATA_HEADER_SIZE + data_table[data_header_counter]->length;
+		tmp_buf += DATA_HEADER_SIZE + get_le16(tmp_buf + 4);
 		data_header_counter++;
 
 	}
@@ -335,7 +357,7 @@ static int write_eeprom(struct data_header **data_table, int cnt)
 		    && data_table[i]->id == DATA_HEADER_ID_CAL) {
 			ret =
 			    write_file(ofname, data_table[i]->data,
-				       data_table[i]->length);
+				       get_le16((uint8_t *)data_table[i] + 4));
 			break;
 		}
 
@@ -403,8 +425,11 @@ int main(int argc, char *argv[])
 
 	configs_counter = find_header(buffer, config_size, configs_table);
 
-	if (configs_counter <= 0)
+	if (configs_counter <= 0) {
+		/* without this the tool exits 0 although nothing was read */
+		ret = EXIT_FAILURE;
 		goto out_free_buf;
+	}
 
 	if (print_data || verbose) {
 		for (int i = 0; i < configs_counter; i++)
