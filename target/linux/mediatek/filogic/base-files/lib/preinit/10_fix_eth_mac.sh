@@ -43,6 +43,11 @@ preinit_set_mac_address() {
 		ip link set dev eth1 address "$(macaddr_add $addr 1)"
 		ip link set dev eth2 address "$(macaddr_add $addr 2)"
 		;;
+	tplink,deco-x50-poe-v2)
+		addr=$(get_mac_binary "/tmp/factory_data/default-mac" 0)
+		ip link set dev eth0 address "$addr"
+		ip link set dev eth1 address "$(macaddr_add $addr 1)"
+		;;
 	tplink,fr365-v1)
 		lan_mac=$(strings /dev/mtd11 | grep 'option macaddr' | awk -F"'" '{print $2}')
 		wan_mac="$(macaddr_add $lan_mac 1)"

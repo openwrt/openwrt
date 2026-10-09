@@ -262,6 +262,9 @@ mediatek_setup_interfaces()
 	tplink,be450-ubi)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 eth2" eth1
 		;;
+	tplink,deco-x50-poe-v2)
+		ucidef_set_interfaces_lan_wan eth1 eth0
+		;;
 	tplink,re6000xd)
 		ucidef_set_interface_lan "lan1 lan2 eth1"
 		;;
@@ -388,6 +391,11 @@ mediatek_setup_macs()
 		;;
 	smartrg,sdg-9000)
 		lan_mac=$(macaddr_add "$(mmc_get_mac_ascii mfginfo MFG_MAC)" 1)
+		;;
+	tplink,deco-x50-poe-v2)
+		label_mac=$(get_mac_binary "/tmp/factory_data/default-mac" 0)
+		wan_mac=$label_mac
+		lan_mac=$(macaddr_add "$label_mac" 1)
 		;;
 	tplink,eap683-lr|\
 	tplink,f65-v1)
