@@ -186,7 +186,7 @@ define Device/avm_fritz5490
   DEVICE_VARIANT := Other NAND
   KERNEL_SIZE := 4096k
   IMAGE_SIZE := 49152k
-  DEVICE_PACKAGES := kmod-dsa-qca8k kmod-phy-qca83xx kmod-usb-xhci-pci-renesas \
+  DEVICE_PACKAGES := kmod-dsa-qca8k kmod-usb-xhci-pci-renesas \
 	fritz-tffs xrx200-rev1.1-phy11g-firmware xrx200-rev1.2-phy11g-firmware \
 	-ltq-vdsl-vr9-vectoring-fw-installer -kmod-ltq-vdsl-vr9-mei \
 	-kmod-ltq-vdsl-vr9 -kmod-ltq-atm-vr9 -kmod-ltq-ptm-vr9 \
@@ -205,7 +205,7 @@ define Device/avm_fritz5490-micron
   DEVICE_VARIANT := Micron NAND
   KERNEL_SIZE := 4096k
   IMAGE_SIZE := 49152k
-  DEVICE_PACKAGES := kmod-dsa-qca8k kmod-phy-qca83xx kmod-usb-xhci-pci-renesas \
+  DEVICE_PACKAGES := kmod-dsa-qca8k kmod-usb-xhci-pci-renesas \
 	fritz-tffs xrx200-rev1.1-phy11g-firmware xrx200-rev1.2-phy11g-firmware \
 	-ltq-vdsl-vr9-vectoring-fw-installer -kmod-ltq-vdsl-vr9-mei \
 	-kmod-ltq-vdsl-vr9 -kmod-ltq-atm-vr9 -kmod-ltq-ptm-vr9 \
