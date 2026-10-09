@@ -195,7 +195,6 @@ static void otto_l3_839x_setup_port_macs(struct otto_l3_ctrl *ctrl)
 	mac = ether_addr_to_u64(dev->dev_addr);
 
 	for (int i = 0; i < 15; i++) {
-		mac++;  /* BUG: VRRP for testing */
 		sw_w32(mac >> 32, RTL839X_ROUTING_SA_CTRL + i * 8);
 		sw_w32(mac, RTL839X_ROUTING_SA_CTRL + i * 8 + 4);
 	}
