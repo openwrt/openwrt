@@ -1,0 +1,11 @@
+--- a/drivers/net/wireless/ath/ath10k/mac.c
++++ b/drivers/net/wireless/ath/ath10k/mac.c
+@@ -9879,7 +9879,7 @@ ieee80211_iface_combination ath10k_10_4_bcn_int_if_comb[] = {
+ 		.max_interfaces = 16,
+ 		.num_different_channels = 1,
+ 		.beacon_int_infra_match = true,
+-		.beacon_int_min_gcd = 100,
++		.beacon_int_min_gcd = 50,
+ #ifdef CPTCFG_ATH10K_DFS_CERTIFIED
+ 		.radar_detect_widths =  BIT(NL80211_CHAN_WIDTH_20_NOHT) |
+ 					BIT(NL80211_CHAN_WIDTH_20) |
