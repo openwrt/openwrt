@@ -4,6 +4,11 @@ START=99
 
 boot() {
 	case $(board_name) in
+	edgecore,eap101)
+		avail=$(fw_printenv -n upgrade_available)
+		[ ${avail} -eq 0 ] && fw_setenv upgrade_available 1
+		fw_setenv bootcount 0
+	;;
 	linksys,mr7350|\
 	linksys,mr7500)
 		mtd resetbc s_env || true
