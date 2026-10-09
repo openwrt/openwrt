@@ -1,0 +1,109 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+
+/dts-v1/;
+#include "rv1126-38x38-v10-emmc.dtsi"
+
+/ {
+	model = "Herospeed RV1126 IMX415 Base";
+	compatible = "herospeed,rv1126-imx415", "rockchip,rv1126-38x38-v10-emmc",
+		     "rockchip,rv1126";
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		linux,cma {
+			compatible = "shared-dma-pool";
+			linux,cma-default;
+			reusable;
+			size = <0x4000000>;
+		};
+	};
+
+	vcc_dvdd: regulator-vcc-dvdd {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc_dvdd";
+		regulator-always-on;
+		regulator-boot-on;
+		regulator-min-microvolt = <1200000>;
+		regulator-max-microvolt = <1200000>;
+	};
+};
+
+&csi2 {
+	status = "okay";
+};
+
+&csi2_in {
+	csi2_in_imx415: endpoint {
+		data-lanes = <1 2 3 4>;
+		remote-endpoint = <&imx415_out>;
+	};
+};
+
+&csi2_out {
+	csi2_out_vicap: endpoint {
+		remote-endpoint = <&vicap_in_csi2>;
+	};
+};
+
+&csi_dphy0 {
+	status = "okay";
+};
+
+&i2c0 {
+	status = "okay";
+
+	rtc@51 {
+		compatible = "nxp,pcf8563";
+		reg = <0x51>;
+	};
+};
+
+&i2c1 {
+	clock-frequency = <400000>;
+	status = "okay";
+
+	camera@1a {
+		compatible = "sony,imx415";
+		reg = <0x1a>;
+		assigned-clocks = <&cru CLK_MIPICSI_OUT>;
+		assigned-clock-rates = <37125000>;
+		avdd-supply = <&vcc3v3_sys>;
+		clocks = <&cru CLK_MIPICSI_OUT>;
+		dvdd-supply = <&vcc_dvdd>;
+		ovdd-supply = <&vcc_1v8>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&mipicsi_clk0>;
+		power-domains = <&power RV1126_PD_VI>;
+		reset-gpios = <&gpio1 RK_PD5 GPIO_ACTIVE_LOW>;
+
+		port {
+			imx415_out: endpoint {
+				data-lanes = <1 2 3 4>;
+				link-frequencies = /bits/ 64 <445500000>;
+				remote-endpoint = <&csi2_in_imx415>;
+			};
+		};
+	};
+};
+
+&pinctrl {
+	mipicsi {
+		mipicsi_clk0: mipicsi-clk0 {
+			rockchip,pins =
+				<2 RK_PA3 1 &pcfg_pull_none>;
+		};
+	};
+};
+
+&vicap {
+	status = "okay";
+};
+
+&vicap_mipi {
+	vicap_in_csi2: endpoint {
+		remote-endpoint = <&csi2_out_vicap>;
+	};
+};

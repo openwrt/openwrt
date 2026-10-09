@@ -1,0 +1,7 @@
+. /lib/functions.sh
+
+case "$(board_name)" in
+herospeed,rv1126-imx415)
+	/etc/init.d/rkab-boot enable
+	;;
+esac
