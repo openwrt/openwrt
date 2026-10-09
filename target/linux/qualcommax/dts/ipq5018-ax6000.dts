@@ -314,10 +314,6 @@
 	nvmem-cell-names = "mac-address";
 };
 
-&mdio0 {
-	status = "okay";
-};
-
 // IPQ5018 GE Phy -> QCA8337 PHY0
 &ge_phy {
 	qcom,dac-preset-short-cable;
@@ -326,8 +322,6 @@
 &mdio1 {
 	status = "okay";
 
-	pinctrl-0 = <&mdio1_pins>;
-	pinctrl-names = "default";
 	reset-gpios = <&tlmm 39 GPIO_ACTIVE_LOW>;
 
 	// QCA8337 Phy0 -> LAN1
@@ -457,22 +451,6 @@
 		bias-pull-down;
 	};
 
-	mdio1_pins: mdio-state {
-		mdc-pins {
-			pins = "gpio36";
-			function = "mdc";
-			drive-strength = <8>;
-			bias-pull-up;
-		};
-
-		mdio-pins {
-			pins = "gpio37";
-			function = "mdio";
-			drive-strength = <8>;
-			bias-pull-up;
-		};
-	};
-
 	qpic_pins: qpic-state {
 		clock-pins {
 			pins = "gpio9";
@@ -503,48 +481,48 @@
 	};
 };
 
+&pcie0 {
+	status = "okay";
+};
+
 &pcie0_phy {
 	status = "okay";
 };
 
-&pcie0 {
-	status = "okay";
+&pcie0_port0 {
+	reset-gpios = <&tlmm 15 GPIO_ACTIVE_LOW>;
 
-	perst-gpios = <&tlmm 15 GPIO_ACTIVE_LOW>;
+	wifi@0,0 {
+		status = "okay";
 
-	pcie@0 {
-		wifi@0,0 {
-			status = "okay";
+		/* QCN9074: ath11k lacks DT compatible for PCI cards */
+		compatible = "pci17cb,1104";
+		reg = <0x00010000 0 0 0 0>;
 
-			/* QCN9074: ath11k lacks DT compatible for PCI cards */
-			compatible = "pci17cb,1104";
-			reg = <0x00010000 0 0 0 0>;
-
-			qcom,ath11k-calibration-variant = "Xiaomi-AX6000";
-		};
+		qcom,ath11k-calibration-variant = "Xiaomi-AX6000";
 	};
+};
+
+&pcie1 {
+	status = "okay";
 };
 
 &pcie1_phy {
 	status = "okay";
 };
 
-&pcie1 {
-	status = "okay";
+&pcie1_port0 {
+	reset-gpios = <&tlmm 18 GPIO_ACTIVE_HIGH>;
 
-	perst-gpios = <&tlmm 18 GPIO_ACTIVE_HIGH>;
+	wifi@0,0 {
+		status = "okay";
 
-	pcie@0 {
-		wifi@0,0 {
-			status = "okay";
+		compatible = "qcom,ath10k";
+		reg = <0x00010000 0 0 0 0>;
 
-			compatible = "qcom,ath10k";
-			reg = <0x00010000 0 0 0 0>;
-
-			qcom,ath10k-calibration-variant = "Xiaomi-AX6000";
-			nvmem-cell-names = "calibration";
-			nvmem-cells = <&caldata_qca9889>;
-		};
+		qcom,ath10k-calibration-variant = "Xiaomi-AX6000";
+		nvmem-cell-names = "calibration";
+		nvmem-cells = <&caldata_qca9889>;
 	};
 };
 

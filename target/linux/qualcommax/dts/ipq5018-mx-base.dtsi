@@ -133,22 +133,6 @@
 		bias-pull-up;
 	};
 
-	mdio1_pins: mdio-state {
-		mdc-pins {
-			pins = "gpio36";
-			function = "mdc";
-			drive-strength = <8>;
-			bias-pull-up;
-		};
-
-		mdio-pins {
-			pins = "gpio37";
-			function = "mdio";
-			drive-strength = <8>;
-			bias-pull-up;
-		};
-	};
-
 	pwm_pins: pwm-state {
 		mux_1 {
 			pins = "gpio1";

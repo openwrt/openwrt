@@ -174,21 +174,8 @@
 	phy-handle = <&rtl8211f_6>;
 };
 
-&mdio0 {
-	/*
-	 * Not used for a port, but its probe sets TCSR ETH_LDO_RDY, which
-	 * tells the CMN PLL that the ethernet LDO is up. All other ipq5018
-	 * boards enable it; with it disabled the RTL8211F on MDIO1 did not
-	 * answer (-ETIMEDOUT).
-	 */
-	status = "okay";
-};
-
 &mdio1 {
 	status = "okay";
-
-	pinctrl-0 = <&mdio1_pins>;
-	pinctrl-names = "default";
 
 	rtl8211f_6: ethernet-phy@6 {
 		compatible = "ethernet-phy-id001c.c916";
@@ -215,22 +202,6 @@
 		function = "gpio";
 		drive-strength = <8>;
 		bias-pull-down;
-	};
-
-	mdio1_pins: mdio-state {
-		mdc-pins {
-			pins = "gpio36";
-			function = "mdc";
-			drive-strength = <8>;
-			bias-pull-up;
-		};
-
-		mdio-pins {
-			pins = "gpio37";
-			function = "mdio";
-			drive-strength = <8>;
-			bias-pull-up;
-		};
 	};
 
 	qpic_pins: qpic-state {

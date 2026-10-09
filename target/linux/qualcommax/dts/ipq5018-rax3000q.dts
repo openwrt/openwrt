@@ -172,15 +172,9 @@
 	};
 };
 
-&mdio0 {
-	status = "okay";
-};
-
 &mdio1 {
 	status = "okay";
 
-	pinctrl-0 = <&mdio1_pins>;
-	pinctrl-names = "default";
 	reset-gpios = <&tlmm 26 GPIO_ACTIVE_LOW>;
 
 	// QCA8337 Phy0 -> WAN
@@ -269,22 +263,6 @@
 		function = "gpio";
 		drive-strength = <8>;
 		bias-pull-down;
-	};
-
-	mdio1_pins: mdio-state {
-		mdc-pins {
-			pins = "gpio36";
-			function = "mdc";
-			drive-strength = <8>;
-			bias-pull-up;
-		};
-
-		mdio-pins {
-			pins = "gpio37";
-			function = "mdio";
-			drive-strength = <8>;
-			bias-pull-up;
-		};
 	};
 
 	qpic_pins: qpic-state {
