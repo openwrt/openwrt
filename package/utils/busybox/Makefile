@@ -166,6 +166,9 @@ ifneq ($(CONFIG_BUSYBOX_$(BUSYBOX_SYM)_NTPD),)
 	$(INSTALL_DIR) $(1)/etc/capabilities $(1)/usr/share/acl.d
 	$(INSTALL_DATA) ./files/ntpd.capabilities $(1)/etc/capabilities/ntpd.json
 	$(INSTALL_DATA) ./files/ntpd_acl.json $(1)/usr/share/acl.d/ntpd.json
+	$(INSTALL_DIR) $(1)/etc/hotplug.d/iface $(1)/etc/hotplug.d/ntp
+	$(INSTALL_DATA) ./files/ntpd.iface-hotplug $(1)/etc/hotplug.d/iface/20-ntpd
+	$(INSTALL_DATA) ./files/ntpd.ntp-hotplug $(1)/etc/hotplug.d/ntp/10-ntpd-sync-state
 endif
 	-rm -rf $(1)/lib64
 endef
