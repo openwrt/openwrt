@@ -1,0 +1,96 @@
+From 24c294baf375ba37d334efa61afd48f817e2ae26 Mon Sep 17 00:00:00 2001
+From: Devon Openheim <devopenm@proton.me>
+Date: Wed, 12 Aug 2026 12:29:04 +0100
+Subject: [PATCH] ARM: asr: Add ARCH_ASR platform support and MAINTAINERS
+ entry
+
+Introduce the ARCH_ASR platform Kconfig/Makefile and register
+maintainership in MAINTAINERS.
+
+Signed-off-by: Devon Openheim <devopenm@proton.me>
+
+---
+
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -3459,6 +3459,14 @@ S:	Maintained
+ F:	Documentation/devicetree/bindings/media/aspeed-video.txt
+ F:	drivers/media/platform/aspeed/
+ 
++ASR MICROELECTRONICS ASR1802S ARCHITECTURE
++M:	Devon Openheim <devopenm@proton.me>
++L:	linux-arm-kernel@lists.infradead.org (moderated for non-subscribers)
++S:	Maintained
++F:	Documentation/devicetree/bindings/arm/asr/
++F:	arch/arm/boot/dts/asr/
++F:	arch/arm/mach-asr/
++
+ ASUS EC HARDWARE MONITOR DRIVER
+ M:	Eugene Shalygin <eugene.shalygin@gmail.com>
+ L:	linux-hwmon@vger.kernel.org
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -363,6 +363,8 @@ source "arch/arm/mach-artpec/Kconfig"
+ 
+ source "arch/arm/mach-aspeed/Kconfig"
+ 
++source "arch/arm/mach-asr/Kconfig"
++
+ source "arch/arm/mach-at91/Kconfig"
+ 
+ source "arch/arm/mach-axxia/Kconfig"
+--- a/arch/arm/Makefile
++++ b/arch/arm/Makefile
+@@ -175,6 +175,7 @@ machine-$(CONFIG_ARCH_ACTIONS)		+= actio
+ machine-$(CONFIG_ARCH_ALPINE)		+= alpine
+ machine-$(CONFIG_ARCH_ARTPEC)		+= artpec
+ machine-$(CONFIG_ARCH_ASPEED)           += aspeed
++machine-$(CONFIG_ARCH_ASR)		+= asr
+ machine-$(CONFIG_ARCH_AT91)		+= at91
+ machine-$(CONFIG_ARCH_AXXIA)		+= axxia
+ machine-$(CONFIG_ARCH_BCM)		+= bcm
+--- /dev/null
++++ b/arch/arm/mach-asr/Kconfig
+@@ -0,0 +1,18 @@
++# SPDX-License-Identifier: GPL-2.0
++config ARCH_ASR
++	bool "ASR Microelectronics ASR1802S platforms"
++	depends on ARCH_MULTI_V7
++	select ARCH_MMP
++	select COMMON_CLK
++	select PINCTRL
++	help
++	  Support for boards based on the ASR Microelectronics ASR1802S
++	  SoC (single ARM Cortex-A7).  The SoC is derived from the Marvell
++	  MMP design; ARCH_MMP is selected so its mainline drivers cover
++	  the shared blocks (ICU, timer, UART, GPIO, DMA, I2C, RTC).
++	  ASR-specific blocks (clock, QSPI SPI-NAND, MMC, ethernet, PCIe,
++	  USB3 PHY) still need upstream drivers.
++
++	  Boards in this family include the Notion R291 ASR (ASR 1826s /
++	  KAGU) LTE router.  See the device tree files in
++	  arch/arm/boot/dts/asr/.
+--- /dev/null
++++ b/arch/arm/mach-asr/Makefile
+@@ -0,0 +1,2 @@
++# SPDX-License-Identifier: GPL-2.0
++obj-y += board-dt.o
+--- /dev/null
++++ b/arch/arm/mach-asr/board-dt.c
+@@ -0,0 +1,16 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Device Tree support for ASR Microelectronics ASR1802S platforms.
++ */
++
++#include <linux/of.h>
++#include <asm/mach/arch.h>
++
++static const char *const asr_dt_compat[] __initconst = {
++	"asr,1802s",
++	NULL,
++};
++
++DT_MACHINE_START(ASR_DT, "ASR ASR1802S (Device Tree Support)")
++	.dt_compat = asr_dt_compat,
++MACHINE_END

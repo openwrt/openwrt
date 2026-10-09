@@ -1,0 +1,87 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Devon Openheim <devopenm@proton.me>
+Date: Sat, 23 Aug 2026 03:00:00 +0100
+Subject: [PATCH] ARM: dts: asr: add YT9215RB switch on MDIO
+
+Wire the Motorcomm YT9215RB 5-port switch at MDIO 0x1d on &eth0.
+The switch uses the yt921x DSA driver (0010). CPU port 8 is RGMII
+to eth0. This replaces the placeholder phy0 at reg 0x0 — live
+dmesg shows "mdio_bus: cannot get PHY at address 0" and the
+vendor yt9215rb driver probes via platform yt_switch.13, so the
+switch is not at address 0; 0x1d is the YT9215 SMI default used in
+mainline examples.
+
+Signed-off-by: Devon Openheim <devopenm@proton.me>
+---
+
+--- a/arch/arm/boot/dts/asr/asr1826s-r291.dts
++++ b/arch/arm/boot/dts/asr/asr1826s-r291.dts
+@@ -193,10 +193,64 @@
+ 	mdio {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+-		phy0: ethernet-phy@0 {
+-			compatible = "ethernet-phy-id011a.c816",
+-				     "ethernet-phy-ieee802.3-c22";
+-			reg = <0>;
++		switch@1d {
++			compatible = "motorcomm,yt9215";
++			reg = <0x1d>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++			ports {
++				#address-cells = <1>;
++				#size-cells = <0>;
++				port@0 {
++					reg = <0>;
++					label = "lan1";
++					phy-mode = "internal";
++					phy-handle = <&sw_phy0>;
++				};
++				port@1 {
++					reg = <1>;
++					label = "lan2";
++					phy-mode = "internal";
++					phy-handle = <&sw_phy1>;
++				};
++				port@2 {
++					reg = <2>;
++					label = "lan3";
++					phy-mode = "internal";
++					phy-handle = <&sw_phy2>;
++				};
++				port@3 {
++					reg = <3>;
++					label = "lan4";
++					phy-mode = "internal";
++					phy-handle = <&sw_phy3>;
++				};
++				port@4 {
++					reg = <4>;
++					label = "wan";
++					phy-mode = "internal";
++					phy-handle = <&sw_phy4>;
++				};
++				port@8 {
++					reg = <8>;
++					label = "cpu";
++					phy-mode = "rgmii";
++					ethernet = <&eth0>;
++					fixed-link {
++						speed = <1000>;
++						full-duplex;
++					};
++				};
++			};
++			mdio {
++				#address-cells = <1>;
++				#size-cells = <0>;
++				sw_phy0: phy@0 { reg = <0>; };
++				sw_phy1: phy@1 { reg = <1>; };
++				sw_phy2: phy@2 { reg = <2>; };
++				sw_phy3: phy@3 { reg = <3>; };
++				sw_phy4: phy@4 { reg = <4>; };
++			};
+ 		};
+ 	};
+ };
