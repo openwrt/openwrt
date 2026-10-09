@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+// SPDX-License-Identifier: (GPL-2.0-or-later OR MIT)
 
 /dts-v1/;
 #include <dt-bindings/gpio/gpio.h>
@@ -9,9 +9,6 @@
 #include "mt7986a.dtsi"
 
 / {
-	compatible = "wavlink,wl-wn536ax6-a", "mediatek,mt7986a";
-	model = "WAVLINK WL-WN536AX6 Rev a";
-
 	aliases {
 		serial0 = &uart0;
 		label-mac-device = &wifi;
@@ -128,9 +125,9 @@
 		nvmem-cells = <&macaddr_factory_3fff4>;
 
 		fixed-link {
+			speed = <2500>;
 			full-duplex;
 			pause;
-			speed = <2500>;
 		};
 	};
 
@@ -274,7 +271,7 @@
 	status = "okay";
 
 	/* Macronix SPI NAND (128M) */
-	flash@0 {
+	spi_nand: flash@0 {
 		compatible = "spi-nand";
 		reg = <0>;
 
@@ -289,66 +286,10 @@
 		spi-cal-addrlen = <5>;
 		spi-cal-addr = /bits/ 32 <0x0 0x0 0x0 0x0 0x0>;
 
-		mediatek,nmbm;
-		mediatek,bmt-max-ratio = <1>;
-		mediatek,bmt-max-reserved-blocks = <64>;
-
 		partitions {
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
-
-			partition@0 {
-				label = "BL2";
-				reg = <0x0 0x100000>;
-				read-only;
-			};
-
-			partition@100000 {
-				label = "u-boot-env";
-				reg = <0x100000 0x80000>;
-			};
-
-			partition@180000 {
-				label = "Factory";
-				reg = <0x180000 0x200000>;
-				read-only;
-
-				nvmem-layout {
-					compatible = "fixed-layout";
-					#address-cells = <1>;
-					#size-cells = <1>;
-
-					eeprom_factory_0: eeprom@0 {
-						reg = <0x0 0x1000>;
-					};
-
-					macaddr_factory_3fff4: macaddr@3fff4 {
-						reg = <0x3fff4 0x6>;
-					};
-
-					macaddr_factory_3fffa: macaddr@3fffa {
-						reg = <0x3fffa 0x6>;
-					};
-				};
-			};
-
-			partition@380000 {
-				label = "FIP";
-				reg = <0x380000 0x200000>;
-				read-only;
-			};
-
-			partition@580000 {
-				label = "ubi";
-				reg = <0x580000 0x4000000>;
-			};
-
-			partition@7580000 {
-				label = "HW";
-				reg = <0x4580000 0x80000>;
-				read-only;
-			};
 		};
 	};
 };
@@ -376,8 +317,8 @@
 };
 
 &wifi {
-	nvmem-cells = <&eeprom_factory_0>;
 	nvmem-cell-names = "eeprom";
+	nvmem-cells = <&eeprom_factory_0>;
 	pinctrl-names = "default", "dbdc";
 	pinctrl-0 = <&wf_2g_5g_pins>;
 	pinctrl-1 = <&wf_dbdc_pins>;
