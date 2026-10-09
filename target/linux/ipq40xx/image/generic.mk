@@ -656,6 +656,21 @@ define Device/huawei_ap4050dn
 endef
 TARGET_DEVICES += huawei_ap4050dn
 
+define Device/huawei_ap4050dn-e
+	$(call Device/FitImageLzma)
+	DEVICE_VENDOR := Huawei
+	DEVICE_MODEL := AP4050DN-E
+	SOC := qcom-ipq4019
+	IMAGE_SIZE := 51200k
+	DEVICE_PACKAGES := ipq-wifi-huawei_ap4050dn-e \
+		kmod-usb-dwc3-qcom kmod-usb3 \
+		kmod-usb-storage kmod-fs-ext4 kmod-fs-vfat block-mount \
+		i2c-tools
+	KERNEL = kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(DEVICE_DTS).dtb
+	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | check-size | append-metadata
+endef
+TARGET_DEVICES += huawei_ap4050dn-e
+
 define Device/kernel-size-6350-8300
 	DEVICE_COMPAT_VERSION := 2.0
 	DEVICE_COMPAT_MESSAGE := Kernel partition size must be increased for \
