@@ -318,13 +318,22 @@ static void rtldsa_93xx_phylink_mac_config(struct phylink_config *config,
 	struct dsa_port *dp = dsa_phylink_to_port(config);
 	struct rtl838x_switch_priv *priv = dp->ds->priv;
 	int port = dp->index;
+	u32 eee = 0;
 
 	/* Nothing to be done for the CPU-port */
 	if (port == priv->r->cpu_port)
 		return;
 
-	/* Disable MAC completely */
-	sw_w32(0, priv->r->mac_force_mode_ctrl(port));
+	/*
+	 * Disable forced link state while retaining independently configured
+	 * per-port EEE capability. Families that keep those controls in the
+	 * same register describe them in mac_force_mode_eee_mask, so that a
+	 * phylink reconfiguration does not silently undo an ethtool EEE request.
+	 */
+	if (READ_ONCE(priv->ports[port].eee_enabled))
+		eee = priv->r->mac_force_mode_eee_mask;
+
+	sw_w32(eee, priv->r->mac_force_mode_ctrl(port));
 }
 
 static void rtldsa_phylink_mac_link_down(struct phylink_config *config,

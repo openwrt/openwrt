@@ -395,6 +395,7 @@ struct rtldsa_config {
 	void (*stp_set)(struct rtl838x_switch_priv *priv, u16 msti, int port, int state);
 	int mac_link_sts;
 	u32 mac_force_mode_mask;
+	u32 mac_force_mode_eee_mask;
 	int  (*mac_force_mode_ctrl)(int port);
 	int  (*mac_port_ctrl)(int port);
 
