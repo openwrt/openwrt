@@ -146,6 +146,24 @@ endef
 
 $(eval $(call KernelPackage,btmrvl))
 
+define KernelPackage/btqcomipc
+  SUBMENU:=$(BLUETOOTH_MENU)
+  TITLE:=Qualcomm IPQ5018 Bluetooth IPC support
+  DEPENDS:=+kmod-bluetooth
+  KCONFIG:= \
+	CONFIG_BT_QCA \
+	CONFIG_BT_QCOMIPC
+  FILES:= \
+	$(LINUX_DIR)/drivers/bluetooth/btqca.ko \
+	$(LINUX_DIR)/drivers/bluetooth/btqcomipc.ko
+  AUTOLOAD:=$(call AutoProbe,btqcomipc)
+endef
+
+define KernelPackage/btqcomipc/description
+ Kernel support for Qualcomm IPQ5018 Bluetooth IPC Module
+endef
+
+$(eval $(call KernelPackage,btqcomipc))
 
 define KernelPackage/btsdio
   SUBMENU:=$(BLUETOOTH_MENU)
