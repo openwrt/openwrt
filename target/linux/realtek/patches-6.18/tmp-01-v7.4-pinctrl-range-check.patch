@@ -1,0 +1,42 @@
+From a38ad4bbd1f2862a7db1cb0a4ec27af166882e95 Mon Sep 17 00:00:00 2001
+From: Linus Walleij <linusw@kernel.org>
+Date: Thu, 20 Aug 2026 19:10:05 +0200
+Subject: [PATCH] gpio: generic: Avoid pinctrl calls when ranges are missing
+
+Most calls to the pinctrl core is done through the generic helper
+that go into gpiolib, where the library checks if there is a range
+associated with the chip and just bails out silently if ther isn't.
+
+gpio_mmio_dir_return() misses this check before calling
+pinctrl_gpio_direction_output/input().
+
+Fix this up with an explicit range check.
+
+Reported-by: sashiko-bot@kernel.org
+Closes: https://lore.kernel.org/linux-devicetree/20260820073920.909F71F000E9@smtp.kernel.org/
+Signed-off-by: Linus Walleij <linusw@kernel.org>
+Link: https://patch.msgid.link/20260820-fix-gpio-mmio-pinctrl-v1-1-62c2d7dd4903@kernel.org
+Signed-off-by: Bartosz Golaszewski <bartosz.golaszewski@oss.qualcomm.com>
+---
+ drivers/gpio/gpio-mmio.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/drivers/gpio/gpio-mmio.c b/drivers/gpio/gpio-mmio.c
+index e9c531eef452..7e4b3e8d609f 100644
+--- a/drivers/gpio/gpio-mmio.c
++++ b/drivers/gpio/gpio-mmio.c
+@@ -354,6 +354,11 @@ static int gpio_mmio_dir_return(struct gpio_chip *gc, unsigned int gpio,
+ 	if (!chip->pinctrl)
+ 		return 0;
+ 
++#ifdef CONFIG_PINCTRL
++	if (list_empty(&gc->gpiodev->pin_ranges))
++		return 0;
++#endif
++
+ 	if (dir_out)
+ 		return pinctrl_gpio_direction_output(gc, gpio);
+ 	else
+-- 
+2.54.0
+

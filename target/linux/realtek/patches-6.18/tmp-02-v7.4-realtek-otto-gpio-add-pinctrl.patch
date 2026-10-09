@@ -1,0 +1,40 @@
+From 7257c35db0fdb4fb02d857a8197a16afa84d92c0 Mon Sep 17 00:00:00 2001
+From: Michael Zavertkin <misha.zavertkin@mail.ru>
+Date: Thu, 27 Aug 2026 21:29:31 +0700
+Subject: [PATCH] gpio: realtek-otto: add pinctrl support
+
+RTL9607C relies on pinctrl to mux SoC pins. Use pinctrl to request pins
+for GPIO.
+pinctrl driver for other SoCs might be implemented later.
+
+Signed-off-by: Michael Zavertkin <misha.zavertkin@mail.ru>
+Link: https://patch.msgid.link/adce57b3797cae6f6a3486eb1d21c33be61f14dc.1787830440.git.misha.zavertkin@mail.ru
+Signed-off-by: Bartosz Golaszewski <bartosz.golaszewski@oss.qualcomm.com>
+---
+ drivers/gpio/gpio-realtek-otto.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/gpio/gpio-realtek-otto.c b/drivers/gpio/gpio-realtek-otto.c
+index be743a2eaa42..5d98ad597d9e 100644
+--- a/drivers/gpio/gpio-realtek-otto.c
++++ b/drivers/gpio/gpio-realtek-otto.c
+@@ -393,13 +393,14 @@ static int realtek_gpio_probe(struct platform_device *pdev)
+ 
+ 	raw_spin_lock_init(&ctrl->lock);
+ 
++	gen_gc_flags = GPIO_GENERIC_PINCTRL_BACKEND;
++
+ 	if (dev_flags & GPIO_PORTS_REVERSED) {
+-		gen_gc_flags = 0;
+ 		ctrl->bank_read = realtek_gpio_bank_read;
+ 		ctrl->bank_write = realtek_gpio_bank_write;
+ 		ctrl->line_imr_pos = realtek_gpio_line_imr_pos;
+ 	} else {
+-		gen_gc_flags = GPIO_GENERIC_BIG_ENDIAN_BYTE_ORDER;
++		gen_gc_flags |= GPIO_GENERIC_BIG_ENDIAN_BYTE_ORDER;
+ 		ctrl->bank_read = realtek_gpio_bank_read_swapped;
+ 		ctrl->bank_write = realtek_gpio_bank_write_swapped;
+ 		ctrl->line_imr_pos = realtek_gpio_line_imr_pos_swapped;
+-- 
+2.54.0
+
