@@ -1,0 +1,31 @@
+From 4a09126a33638945a1640e064ed73e983b51ae07 Mon Sep 17 00:00:00 2001
+From: Michael Riesch <michael.riesch@collabora.com>
+Date: Fri, 14 Nov 2025 16:20:13 +0100
+Subject: [PATCH] media: dt-bindings: video-interfaces: add defines for
+ sampling modes
+
+Add defines for the pixel clock sampling modes (rising edge, falling edge,
+dual edge) for parallel video interfaces.
+This avoids hardcoded constants in device tree sources.
+
+Acked-by: Rob Herring <robh@kernel.org>
+Signed-off-by: Michael Riesch <michael.riesch@wolfvision.net>
+Reviewed-by: Bryan O'Donoghue <bryan.odonoghue@linaro.org>
+Signed-off-by: Michael Riesch <michael.riesch@collabora.com>
+Signed-off-by: Sakari Ailus <sakari.ailus@linux.intel.com>
+Signed-off-by: Hans Verkuil <hverkuil+cisco@kernel.org>
+---
+ include/dt-bindings/media/video-interfaces.h | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/include/dt-bindings/media/video-interfaces.h
++++ b/include/dt-bindings/media/video-interfaces.h
+@@ -20,4 +20,8 @@
+ #define MEDIA_BUS_CSI2_CPHY_LINE_ORDER_CAB	4
+ #define MEDIA_BUS_CSI2_CPHY_LINE_ORDER_CBA	5
+ 
++#define MEDIA_PCLK_SAMPLE_FALLING_EDGE		0
++#define MEDIA_PCLK_SAMPLE_RISING_EDGE		1
++#define MEDIA_PCLK_SAMPLE_DUAL_EDGE		2
++
+ #endif /* __DT_BINDINGS_MEDIA_VIDEO_INTERFACES_H__ */
