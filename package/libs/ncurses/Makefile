@@ -90,6 +90,7 @@ HOST_CFLAGS += $(HOST_FPIC)
 
 HOST_CONFIGURE_ARGS += \
 	--enable-pc-files \
+	--with-pkg-config-libdir=$(STAGING_DIR_HOSTPKG)/lib/pkgconfig \
 	--without-cxx \
 	--without-cxx-binding \
 	--without-ada \
@@ -198,6 +199,27 @@ endef
 define Host/Compile
 	$(MAKE) -C $(HOST_BUILD_DIR) libs
 	$(MAKE) -C $(HOST_BUILD_DIR)/progs tic
+endef
+
+# Trees that built host ncurses before --with-pkg-config-libdir was added
+# have ncurses' *.pc files left over in $(STAGING_DIR_HOST)/lib/pkgconfig,
+# which still shadow the correct copies in $(HOST_BUILD_PREFIX)/lib/pkgconfig
+# since PKG_CONFIG_PATH searches STAGING_DIR_HOST first. Both spellings can
+# be present: the narrow names from 6.4 and older, and the widec names from
+# the 6.6 snapshots. Clean them up whenever host ncurses is (re)installed, so
+# a plain rebuild after pulling this change stops resolving pkg-config
+# ncurses/ncursesw to the stale prefix.
+define Host/CleanStaleHostPkgConfig
+	rm -f $(foreach l,ncurses panel menu form, \
+		$(STAGING_DIR_HOST)/lib/pkgconfig/$(l).pc \
+		$(STAGING_DIR_HOST)/lib/pkgconfig/$(l)w.pc)
+endef
+
+Hooks/HostInstall/Post := Host/CleanStaleHostPkgConfig $(Hooks/HostInstall/Post)
+
+# Also cover the explicit host-clean path.
+define Host/Uninstall
+	$(call Host/CleanStaleHostPkgConfig)
 endef
 
 $(eval $(call HostBuild))
