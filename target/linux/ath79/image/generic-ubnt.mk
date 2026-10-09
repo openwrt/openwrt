@@ -277,6 +277,18 @@ define Device/ubnt_unifi-ap
 endef
 TARGET_DEVICES += ubnt_unifi-ap
 
+define Device/ubnt_unifi-ap-v2
+  $(Device/ubnt)
+  SOC := ar9342
+  IMAGES := sysupgrade.bin
+  IMAGE_SIZE := 7360k
+  DEVICE_MODEL := UniFi AP
+  DEVICE_VARIANT := v2
+  DEVICE_PACKAGES += -kmod-usb2
+  SUPPORTED_DEVICES += uap-v2 unifi-ap-v2
+endef
+TARGET_DEVICES += ubnt_unifi-ap-v2
+
 define Device/ubnt_unifi-ap-lr
   $(Device/ubnt-bz)
   DEVICE_MODEL := UniFi AP
