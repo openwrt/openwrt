@@ -132,8 +132,15 @@ define Kernel/Configure/Default
 	grep '=[ym]' $(LINUX_DIR)/.config.set | LC_ALL=C sort | $(MKHASH) md5 > $(LINUX_DIR)/.vermagic
 endef
 
+# The Pre/Post hooks are expanded into the single backslash-continued
+# shell line assembled by Kernel/CompileImage/Initramfs, not into a make
+# recipe like the include/package.mk hooks this mirrors. A hook whose
+# body spans multiple lines must keep them backslash-continued, or the
+# bare newline aborts the shell command.
 define Kernel/Configure/Initramfs
-	$(call Kernel/SetInitramfs,$(1),$(2))
+	$(foreach hook,$(Hooks/InitramfsConfigure/Pre),$(call $(hook),$(1),$(2));) \
+	$(call Kernel/SetInitramfs,$(1),$(2)) \
+	$(foreach hook,$(Hooks/InitramfsConfigure/Post),;$(call $(hook),$(1),$(2)))
 endef
 
 # The image link reads symtab.h through EXTRA_LDSFLAGS. It sits above
