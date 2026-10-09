@@ -19,12 +19,32 @@ tplink_sg2xxx_fix_mtdparts() {
 	echo -e "$args" | fw_setenv --script -
 }
 
+# Board identity is checked before this: REQUIRE_IMAGE_METADATA is set, so
+# fwtool refuses an image whose metadata does not list this board unless -F
+# is given. This check only rejects an image that is not in the Realtek SDK
+# uImage container (magic 0x83800000), which the bootloader requires.
+horaco_check_image() {
+	local magic
+	magic="$(get_magic_long "$1")"
+
+	[ "$magic" = "83800000" ] && return 0
+
+	echo "Invalid image magic $magic; expected 83800000." >&2
+	echo "This board takes an OpenWrt image built for it, or a vendor" >&2
+	echo "upgrade file. Nothing else will boot." >&2
+	return 1
+}
+
 platform_check_image() {
 	local board=$(board_name)
 
 	case "$board" in
 	draytek,g2282x)
 		draytek_g2282x_set_part_name || return 1
+		;;
+	horaco,zx-swtgw2c48ns)
+		horaco_check_image "$1"
+		return $?
 		;;
 	esac
 
