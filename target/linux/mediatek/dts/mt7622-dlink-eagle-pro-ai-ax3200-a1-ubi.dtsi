@@ -1,0 +1,79 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7622-dlink-eagle-pro-ai-ax3200-a1-common.dtsi"
+
+/ {
+	aliases {
+		ethernet0 = &gmac0;
+		ethernet1 = &wan;
+	};
+
+	chosen {
+		rootdisk = <&ubi_rootfs>;
+		bootargs = "earlycon=uart8250,mmio32,0x11002000 console=ttyS0,115200n1 swiotlb=512 ubi.block=0,fit root=/dev/fit0 rootwait";
+	};
+};
+
+&snand {
+	partitions {
+		partition@0 {
+			label = "bl2";
+		};
+
+		partition@80000 {
+			label = "ubi";
+			reg = <0x80000 0x7f80000>;
+			compatible = "linux,ubi";
+
+			volumes {
+				ubi-volume-ubootenv {
+					volname = "ubootenv";
+
+					nvmem-layout {
+						compatible = "u-boot,env-redundant-bool";
+					};
+				};
+
+				ubi-volume-ubootenv2 {
+					volname = "ubootenv2";
+
+					nvmem-layout {
+						compatible = "u-boot,env-redundant-bool";
+					};
+				};
+
+				ubi-volume-odm {
+					volname = "odm";
+
+					odm_nvmem: nvmem-layout {
+						compatible = "fixed-layout";
+						#address-cells = <1>;
+						#size-cells = <1>;
+					};
+				};
+
+				ubi-volume-factory {
+					volname = "factory";
+
+					nvmem-layout {
+						compatible = "fixed-layout";
+						#address-cells = <1>;
+						#size-cells = <1>;
+
+						eeprom_factory_0: eeprom@0 {
+							reg = <0x0 0x4da8>;
+						};
+
+						eeprom_factory_5000: eeprom@5000 {
+							reg = <0x5000 0xe00>;
+						};
+					};
+				};
+
+				ubi_rootfs: ubi-volume-fit {
+					volname = "fit";
+				};
+			};
+		};
+	};
+};
