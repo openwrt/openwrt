@@ -1,0 +1,79 @@
+From 2f510c0522ef87570f679fd9483d41ebfd9da947 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 9 Oct 2026 14:05:19 +0100
+Subject: [PATCH] thermal/drivers/rockchip: pass the GRF to set_tshut_mode
+
+The GRF of some SoCs carries bits that route the thermal shutdown
+signal to the CRU or to a GPIO, so the callback that selects the
+shutdown mode needs access to it. Hand the GRF regmap to
+set_tshut_mode(); the existing implementations ignore it.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ drivers/thermal/rockchip_thermal.c | 20 +++++++++++---------
+ 1 file changed, 11 insertions(+), 9 deletions(-)
+
+--- a/drivers/thermal/rockchip_thermal.c
++++ b/drivers/thermal/rockchip_thermal.c
+@@ -81,7 +81,7 @@ struct chip_tsadc_table {
+  * @get_temp: get the raw temperature, unadjusted by trim
+  * @set_alarm_temp: set the high temperature interrupt
+  * @set_tshut_temp: set the hardware-controlled shutdown temperature
+- * @set_tshut_mode: set the hardware-controlled shutdown mode
++ * @set_tshut_mode: set the hardware-controlled shutdown mode, may use the GRF
+  * @get_trim_code: convert a hardware temperature code to one adjusted for by trim
+  * @table: the chip-specific conversion table
+  */
+@@ -114,7 +114,8 @@ struct rockchip_tsadc_chip {
+ 			      int chn, void __iomem *reg, int temp);
+ 	int (*set_tshut_temp)(const struct chip_tsadc_table *table,
+ 			      int chn, void __iomem *reg, int temp);
+-	void (*set_tshut_mode)(int chn, void __iomem *reg, enum tshut_mode m);
++	void (*set_tshut_mode)(struct regmap *grf, int chn,
++			       void __iomem *reg, enum tshut_mode m);
+ 	int (*get_trim_code)(const struct chip_tsadc_table *table,
+ 			     int code, int trim_base, int trim_base_frac);
+ 
+@@ -1137,8 +1138,8 @@ static int rk_tsadcv3_tshut_temp(const s
+ 	return 0;
+ }
+ 
+-static void rk_tsadcv2_tshut_mode(int chn, void __iomem *regs,
+-				  enum tshut_mode mode)
++static void rk_tsadcv2_tshut_mode(struct regmap *grf, int chn,
++				  void __iomem *regs, enum tshut_mode mode)
+ {
+ 	u32 val;
+ 
+@@ -1154,8 +1155,8 @@ static void rk_tsadcv2_tshut_mode(int ch
+ 	writel_relaxed(val, regs + TSADCV2_INT_EN);
+ }
+ 
+-static void rk_tsadcv4_tshut_mode(int chn, void __iomem *regs,
+-				  enum tshut_mode mode)
++static void rk_tsadcv4_tshut_mode(struct regmap *grf, int chn,
++				  void __iomem *regs, enum tshut_mode mode)
+ {
+ 	u32 val_gpio, val_cru;
+ 
+@@ -1773,7 +1774,8 @@ rockchip_thermal_register_sensor(struct
+ 
+ 	tshut_temp = min(thermal->tshut_temp + sensor->trim_temp, RK_MAX_TEMP);
+ 
+-	tsadc->set_tshut_mode(id, thermal->regs, thermal->tshut_mode);
++	tsadc->set_tshut_mode(thermal->grf, id, thermal->regs,
++			      thermal->tshut_mode);
+ 
+ 	error = tsadc->set_tshut_temp(&tsadc->table, id, thermal->regs, tshut_temp);
+ 	if (error)
+@@ -1960,8 +1962,8 @@ static int __maybe_unused rockchip_therm
+ 		tshut_temp = min(thermal->tshut_temp + sensor->trim_temp,
+ 				 RK_MAX_TEMP);
+ 
+-		tsadc->set_tshut_mode(sensor->id, thermal->regs,
+-					      thermal->tshut_mode);
++		tsadc->set_tshut_mode(thermal->grf, sensor->id, thermal->regs,
++				      thermal->tshut_mode);
+ 
+ 		error = tsadc->set_tshut_temp(&thermal->chip->table,
+ 					      sensor->id, thermal->regs,

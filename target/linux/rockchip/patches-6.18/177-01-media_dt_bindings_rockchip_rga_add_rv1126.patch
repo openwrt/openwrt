@@ -1,0 +1,24 @@
+From d151f7b7b87ed46fe7d84058837bac26209034fd Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 9 Oct 2026 14:33:07 +0100
+Subject: [PATCH] media: dt-bindings: rockchip-rga: add rv1126
+
+The RGA of the RV1126 has the three clocks and three resets of the
+RK3568 one, which falls back to the RK3288 compatible string. Use the
+same fallback for the RV1126.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ Documentation/devicetree/bindings/media/rockchip-rga.yaml | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/Documentation/devicetree/bindings/media/rockchip-rga.yaml
++++ b/Documentation/devicetree/bindings/media/rockchip-rga.yaml
+@@ -25,6 +25,7 @@ properties:
+               - rockchip,rk3228-rga
+               - rockchip,rk3568-rga
+               - rockchip,rk3588-rga
++              - rockchip,rv1126-rga
+           - const: rockchip,rk3288-rga
+ 
+   reg:

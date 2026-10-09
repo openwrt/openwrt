@@ -1,0 +1,35 @@
+From 6c1de0a70a10904ac2f2daf5947d00e80476bf14 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 9 Oct 2026 14:33:15 +0100
+Subject: [PATCH] ARM: dts: rockchip: add rga to rv1126
+
+Add the RGA 2D graphics accelerator of the video output power domain.
+The node is disabled and left for boards to enable.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ arch/arm/boot/dts/rockchip/rv1126.dtsi | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+--- a/arch/arm/boot/dts/rockchip/rv1126.dtsi
++++ b/arch/arm/boot/dts/rockchip/rv1126.dtsi
+@@ -1086,6 +1086,19 @@
+ 		status = "disabled";
+ 	};
+ 
++	rga: rga@ffaf0000 {
++		compatible = "rockchip,rv1126-rga", "rockchip,rk3288-rga";
++		reg = <0xffaf0000 0x1000>;
++		interrupts = <GIC_SPI 62 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&cru ACLK_RGA>, <&cru HCLK_RGA>, <&cru CLK_RGA_CORE>;
++		clock-names = "aclk", "hclk", "sclk";
++		power-domains = <&power RV1126_PD_VO>;
++		resets = <&cru SRST_RGA_CORE>, <&cru SRST_RGA_A>,
++			 <&cru SRST_RGA_H>;
++		reset-names = "core", "axi", "ahb";
++		status = "disabled";
++	};
++
+ 	vop: vop@ffb00000 {
+ 		compatible = "rockchip,rv1126-vop";
+ 		reg = <0xffb00000 0x200>, <0xffb00a00 0x400>;

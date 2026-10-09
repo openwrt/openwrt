@@ -1,0 +1,169 @@
+From 4f5f13196c59d721c164dc0bbed8de9dd760c482 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 9 Oct 2026 14:07:26 +0100
+Subject: [PATCH] thermal/drivers/rockchip: add rv1126 support
+
+The RV1126 TSADC converts codes to temperature with a linear
+relation: code = degrees * 2.263 + 2704. Teach the conversion helpers
+to apply a slope and offset when the chip supplies them.
+
+The GRF needs the sensor trim configuration written at initialisation
+and a routing bit that depends on whether the thermal shutdown signal
+goes to the CRU or to a GPIO. The analog front end is clocked by a
+separate gate, phy_clk, which is enabled when the device tree
+provides it.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ drivers/thermal/rockchip_thermal.c | 78 ++++++++++++++++++++++++++++++
+ 1 file changed, 78 insertions(+)
+
+--- a/drivers/thermal/rockchip_thermal.c
++++ b/drivers/thermal/rockchip_thermal.c
+@@ -56,12 +56,17 @@ enum adc_sort_mode {
+  * struct chip_tsadc_table - hold information about chip-specific differences
+  * @id: conversion table
+  * @length: size of conversion table
++ * @slope: if non-zero, code per degree Celsius times 1000 of a linear
++ *	   conversion that is used instead of @id
++ * @offset: code at 0 degrees Celsius of the linear conversion
+  * @data_mask: mask to apply on data inputs
+  * @mode: sort mode of this adc variant (incrementing or decrementing)
+  */
+ struct chip_tsadc_table {
+ 	const struct tsadc_table *id;
+ 	unsigned int length;
++	int slope;
++	int offset;
+ 	u32 data_mask;
+ 	enum adc_sort_mode mode;
+ };
+@@ -276,6 +281,12 @@ struct rockchip_thermal_data {
+ #define RK3588_GRF0_TSADC_SHUT_2CRU		(0x30003 << 10)
+ #define RK3588_GRF0_TSADC_SHUT_2GPIO		(0x70007 << 12)
+ 
++#define RV1126_GRF0_TSADC_CON			0x0100
++
++#define RV1126_GRF0_TSADC_TRM			(0xff0077 << 0)
++#define RV1126_GRF0_TSADC_SHUT_2CRU		(0x30003 << 10)
++#define RV1126_GRF0_TSADC_SHUT_2GPIO		(0x70007 << 12)
++
+ #define GRF_SARADC_TESTBIT_ON			(0x10001 << 2)
+ #define GRF_TSADC_TESTBIT_H_ON			(0x10001 << 2)
+ #define GRF_TSADC_VCM_EN_L			(0x10001 << 7)
+@@ -285,6 +296,7 @@ struct rockchip_thermal_data {
+ 
+ 
+ #define RK_MAX_TEMP				(180000)
++#define RK_MIN_TEMP				(-40000)
+ 
+ /**
+  * struct tsadc_table - code to temperature conversion table
+@@ -629,6 +641,15 @@ static u32 rk_tsadcv2_temp_to_code(const
+ 	unsigned long num;
+ 	unsigned int denom;
+ 	u32 error = table->data_mask;
++	int code;
++
++	if (table->slope) {
++		code = temp * table->slope / 1000000 + table->offset;
++		if (code < 0 || code >= table->data_mask)
++			return error;
++
++		return code;
++	}
+ 
+ 	low = 0;
+ 	high = (table->length - 1) - 1; /* ignore the last check for table */
+@@ -683,6 +704,16 @@ static int rk_tsadcv2_code_to_temp(const
+ 	unsigned int num;
+ 	unsigned long denom;
+ 
++	if (table->slope) {
++		code &= table->data_mask;
++		*temp = div_s64((s64)((int)code - table->offset) * 1000000,
++				table->slope);
++		if (*temp < RK_MIN_TEMP || *temp > RK_MAX_TEMP)
++			return -EAGAIN;
++
++		return 0;
++	}
++
+ 	WARN_ON(table->length < 2);
+ 
+ 	switch (table->mode) {
+@@ -911,6 +942,13 @@ static void rk_tsadcv8_initialize(struct
+ 			       regs + TSADCV2_AUTO_CON);
+ }
+ 
++static void rk_tsadcv9_initialize(struct regmap *grf, void __iomem *regs,
++				  enum tshut_polarity tshut_polarity)
++{
++	rk_tsadcv2_initialize(grf, regs, tshut_polarity);
++	regmap_write(grf, RV1126_GRF0_TSADC_CON, RV1126_GRF0_TSADC_TRM);
++}
++
+ static void rk_tsadcv11_initialize(struct regmap *grf, void __iomem *regs,
+ 				   enum tshut_polarity tshut_polarity)
+ {
+@@ -1171,6 +1209,19 @@ static void rk_tsadcv4_tshut_mode(struct
+ 	writel_relaxed(val_cru, regs + TSADCV3_HSHUT_CRU_INT_EN);
+ }
+ 
++static void rk_tsadcv9_tshut_mode(struct regmap *grf, int chn,
++				  void __iomem *regs, enum tshut_mode mode)
++{
++	rk_tsadcv2_tshut_mode(grf, chn, regs, mode);
++
++	if (mode == TSHUT_MODE_GPIO)
++		regmap_write(grf, RV1126_GRF0_TSADC_CON,
++			     RV1126_GRF0_TSADC_SHUT_2GPIO);
++	else
++		regmap_write(grf, RV1126_GRF0_TSADC_CON,
++			     RV1126_GRF0_TSADC_SHUT_2CRU);
++}
++
+ static int rk_tsadcv2_get_trim_code(const struct chip_tsadc_table *table,
+ 				    int code, int trim_base, int trim_base_frac)
+ {
+@@ -1234,6 +1285,29 @@ static const struct rockchip_tsadc_chip
+ 	},
+ };
+ 
++static const struct rockchip_tsadc_chip rv1126_tsadc_data = {
++	/* cpu or npu */
++	.chn_offset = 0,
++	.chn_num = 1, /* one channel for tsadc */
++	.grf_required = true,
++	.tshut_mode = TSHUT_MODE_CRU, /* default TSHUT via CRU */
++	.tshut_polarity = TSHUT_LOW_ACTIVE, /* default TSHUT LOW ACTIVE */
++	.tshut_temp = 95000,
++	.initialize = rk_tsadcv9_initialize,
++	.irq_ack = rk_tsadcv3_irq_ack,
++	.control = rk_tsadcv2_control,
++	.get_temp = rk_tsadcv2_get_temp,
++	.set_alarm_temp = rk_tsadcv2_alarm_temp,
++	.set_tshut_temp = rk_tsadcv2_tshut_temp,
++	.set_tshut_mode = rk_tsadcv9_tshut_mode,
++	.table = {
++		.slope = 2263,
++		.offset = 2704,
++		.data_mask = TSADCV2_DATA_MASK,
++		.mode = ADC_INCREMENT,
++	},
++};
++
+ static const struct rockchip_tsadc_chip rk3228_tsadc_data = {
+ 	/* cpu */
+ 	.chn_offset = 0,
+@@ -1474,6 +1548,10 @@ static const struct of_device_id of_rock
+ 		.data = (void *)&rv1108_tsadc_data,
+ 	},
+ 	{
++		.compatible = "rockchip,rv1126-tsadc",
++		.data = (void *)&rv1126_tsadc_data,
++	},
++	{
+ 		.compatible = "rockchip,rk3228-tsadc",
+ 		.data = (void *)&rk3228_tsadc_data,
+ 	},

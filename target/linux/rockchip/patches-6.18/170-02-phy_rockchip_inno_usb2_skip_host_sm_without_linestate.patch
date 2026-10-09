@@ -1,0 +1,29 @@
+From a6e79c82dfa06facbb1e38f514f34d94a50b082f Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 9 Oct 2026 13:59:10 +0100
+Subject: [PATCH] phy: rockchip: inno-usb2: skip host sm without linestate
+
+The host port state machine decodes the connection state from the
+utmi_ls status register and would read GRF offset 0 for a port whose
+configuration does not provide one. Leave such a port alone in
+rockchip_usb2phy_init(), so that it stays under the control of the
+host controller through phy_power_on() and phy_power_off().
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ drivers/phy/rockchip/phy-rockchip-inno-usb2.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/drivers/phy/rockchip/phy-rockchip-inno-usb2.c
++++ b/drivers/phy/rockchip/phy-rockchip-inno-usb2.c
+@@ -561,6 +561,10 @@ static int rockchip_usb2phy_init(struct
+ 			dev_dbg(&rport->phy->dev, "mode %d\n", rport->mode);
+ 		}
+ 	} else if (rport->port_id == USB2PHY_PORT_HOST) {
++		/* Without a linestate status the host controller owns power */
++		if (!rport->port_cfg->utmi_ls.offset)
++			goto out;
++
+ 		if (rport->port_cfg->disfall_en.offset) {
+ 			rport->host_disconnect = true;
+ 			ret = rockchip_usb2phy_enable_host_disc_irq(rphy, rport, true);
