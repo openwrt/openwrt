@@ -1494,3 +1494,17 @@ define Device/zyxel_wre6606
 endef
 # Missing DSA Setup
 #TARGET_DEVICES += zyxel_wre6606
+
+define Device/zyxel_wsq50
+	$(call Device/FitImage)
+	DEVICE_VENDOR := Zyxel
+	DEVICE_MODEL := WSQ50
+	DEVICE_ALT0_VENDOR := Zyxel
+	DEVICE_ALT0_MODEL := WSQ60
+	DEVICE_DTS_CONFIG := config@ap.wsq50
+	SOC := qcom-ipq4019
+	KERNEL_SIZE := 8192k
+	IMAGE_SIZE := 128m
+	DEVICE_PACKAGES := ath10k-firmware-qca9984-ct ipq-wifi-zyxel_wsq50 kmod-fs-ext4 kmod-leds-lp5562 e2fsprogs
+endef
+TARGET_DEVICES += zyxel_wsq50
