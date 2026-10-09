@@ -10,7 +10,7 @@ proto_dhcpv6_init_config() {
 	renew_handler=1
 
 	proto_config_add_string 'reqaddress:or("try","force","none")'
-	proto_config_add_string reqprefix
+	proto_config_add_array 'reqprefix:list(string)'
 	proto_config_add_string clientid
 	proto_config_add_string 'sendclientid:or("auto","global","hardware")'
 	proto_config_add_string 'reqopts:list(uinteger)'
@@ -69,6 +69,31 @@ proto_dhcpv6_add_sendopts() {
 	[ -n "$1" ] && append "$3" "-x$1"
 }
 
+proto_dhcpv6_add_reqprefix() {
+	[ "$1" = "no" ] && return
+	local pfhint="$1"
+	[ -z "${pfhint##auto}" ] && pfhint=0
+	# append interface IAID if none specified
+	local iaid=$(echo -n $pfhint | sed -nr 's/^.*:([0-9A-Fa-f]{1,8})$/\1/p')
+	[ -z "$iaid" ] && {
+		# generate unique default IAID per prefix request
+		iaidmod="$iface$iaidmod"
+		network_generate_iface_iaid iaid "$iaidmod"
+		pfhint="$pfhint:$iaid"
+	}
+	# validate prefix/length hint
+	local hint=${pfhint%:$iaid}
+	[ "${hint#/}" -le "128" ] 2>/dev/null && {
+		pfhint=${pfhint#/}
+	} || {
+		validate_data cidr6 "$hint" 2>/dev/null || {
+			pfhint="0:$iaid"
+			logger -p warn -t dhcpv6 "$iface: ignoring invalid prefix hint '$1'"
+		}
+	}
+	append "$3" "-P$pfhint"
+}
+
 proto_dhcpv6_setup() {
 	local config="$1"
 	local iface="$2"
@@ -83,7 +108,7 @@ proto_dhcpv6_setup() {
 
 	local ip6prefix ip6prefixes
 
-	json_get_vars reqaddress reqprefix clientid sendclientid reqopts defaultreqopts
+	json_get_vars reqaddress clientid sendclientid reqopts defaultreqopts
 	json_get_vars noslaaconly forceprefix extendprefix norelease strict_rfc7550
 	json_get_vars noserverunicast noclientfqdn noacceptreconfig iface_dslite
 	json_get_vars iface_map iface_464xlat ip6ifaceid userclass vendorclass
@@ -98,26 +123,8 @@ proto_dhcpv6_setup() {
 	local opts=""
 	[ -n "$reqaddress" ] && append opts "-N$reqaddress"
 
-	[ -z "$reqprefix" -o "$reqprefix" = "auto" ] && reqprefix=0
-	[ "$reqprefix" != "no" ] && {
-		# append interface IAID if none specified
-		local iaid=$(echo -n $reqprefix | sed -nr 's/^.*:([0-9A-Fa-f]{1,8})$/\1/p')
-		[ -z "$iaid" ] && {
-			network_generate_iface_iaid iaid "$iface"
-			reqprefix="$reqprefix:$iaid"
-		}
-		# validate prefix/length hint
-		local hint=${reqprefix%:$iaid}
-		[ "${hint#/}" -le "128" ] 2>/dev/null && {
-			reqprefix=${reqprefix#/}
-		} || {
-			validate_data cidr6 "$hint" 2>/dev/null || {
-				reqprefix="0:$iaid"
-				logger -p warn -t dhcpv6 "$iface: ignoring invalid prefix hint"
-			}
-		}
-		append opts "-P$reqprefix"
-	}
+	local iaidmod=''
+	json_for_each_item proto_dhcpv6_add_reqprefix reqprefix opts
 
 	case "$sendclientid" in
 		global)
