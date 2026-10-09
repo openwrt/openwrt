@@ -1,0 +1,226 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qca955x.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/mtd/partitions/uimage.h>
+
+/ {
+	compatible = "watchguard,ap120", "qca,qca9558";
+	model = "WatchGuard AP120";
+
+	aliases {
+		label-mac-device = &eth0;
+		led-boot = &led_power_amber;
+		led-running = &led_power_amber;
+		led-failsafe = &led_power_amber;
+		led-upgrade = &led_power_amber;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			linux,code = <KEY_RESTART>;
+			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_power_amber: power-amber {
+			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
+		};
+
+		wifi-2g {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN_2GHZ;
+			gpios = <&gpio 2 GPIO_ACTIVE_HIGH>;
+		};
+
+		lan {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	virtual_flash {
+		compatible = "mtd-concat";
+		devices = <&fwconcat0 &fwconcat1>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				compatible = "openwrt,uimage", "denx,uimage";
+				openwrt,ih-magic = <0x73714f4b>;
+				label = "firmware";
+				reg = <0x0 0x0>;
+			};
+		};
+	};
+};
+
+&eth0 {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_art_0 0>;
+	nvmem-cell-names = "mac-address";
+
+	phy-handle = <&phy5>;
+	phy-mode = "rgmii-id";
+
+	pll-data = <0x82000000 0x80000101 0x80001313>;
+};
+
+&mdio0 {
+	status = "okay";
+
+	phy5: ethernet-phy@5 {
+		reg = <5>;
+		eee-broken-100tx;
+		eee-broken-1000t;
+	};
+};
+
+&pinmux {
+	cs1_pin13: spi-cs1-pin13 {
+		pinctrl-single,bits = <0xc 0x00000a00 0x0000ff00>;
+	};
+};
+
+&spi {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&cs1_pin13>;
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <25000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x000000 0x040000>;
+				read-only;
+			};
+
+			// Note: If this partition is moved, the mtd index must also be changed in
+			// package/boot/uboot-tools/uboot-envtools/files/ath79
+			partition@40000 {
+				label = "u-boot-env";
+				reg = <0x40000 0x10000>;
+			};
+
+			partition@50000 {
+				label = "jffs-config";
+				reg = <0x50000 0x10000>;
+				read-only;
+			};
+
+			partition@60000 {
+				label = "loader";
+				reg = <0x60000 0x10000>;
+			};
+
+			fwconcat1: partition@70000 {
+				label = "fwconcat1";
+				reg = <0x70000 0x170000>;
+			};
+
+			fwconcat0: partition@1e0000 {
+				label = "fwconcat0";
+				reg = <0x1e0000 0xe10000>;
+			};
+
+			partition@ff0000 {
+				label = "art";
+				reg = <0xff0000 0x10000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_art_0: macaddr@0 {
+						compatible = "mac-base";
+						reg = <0x0 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+
+					cal_art_1000: calibration@1000 {
+						reg = <0x1000 0x440>;
+					};
+
+					cal_art_5000: calibration@5000 {
+						reg = <0x5000 0x844>;
+					};
+				};
+			};
+
+			// This partition is intentionally overlapping with
+			// u-boot-env, jffs-config, loader, fwconcat1 and fwconcat0
+			// The dump of it can be used to revert back to OEM firmware
+			// partition@1 is used because partition@40000 is already used by u-boot-env
+			partition@1 {
+				label = "oem-backup";
+				reg = <0x40000 0xfb0000>;
+				read-only;
+			};
+		};
+	};
+
+	// This partition is disabled because SPI CS1 via GPIO13 doesn't work
+	// Toggling GPIO13 manually works.
+	// Either I don't know how to do it correctly or an issue in the SPI driver
+	flash@1 {
+		status = "disabled";
+		compatible = "jedec,spi-nor";
+		reg = <1>;
+		spi-max-frequency = <25000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "opt";
+				reg = <0x0 0x1000000>;
+			};
+		};
+	};
+};
+
+&wmac {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_art_0 1>, <&cal_art_1000>;
+	nvmem-cell-names = "mac-address", "calibration";
+};
+
+&pcie0 {
+	status = "okay";
+
+	wifi@0,0 {
+		compatible = "qcom,ath10k";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&cal_art_5000>, <&macaddr_art_0 2>;
+		nvmem-cell-names = "calibration", "mac-address";
+	};
+};
