@@ -1,0 +1,25 @@
+--- a/drivers/thermal/Makefile
++++ b/drivers/thermal/Makefile
+@@ -37,6 +37,7 @@ thermal_sys-$(CONFIG_PCIE_THERMAL) += pc
+ obj-$(CONFIG_K3_THERMAL)	+= k3_bandgap.o k3_j72xx_bandgap.o
+ # platform thermal drivers
+ obj-y				+= broadcom/
++obj-$(CONFIG_AL_THERMAL)	+= al/
+ obj-$(CONFIG_THERMAL_MMIO)		+= thermal_mmio.o
+ obj-$(CONFIG_AIROHA_THERMAL)	+= airoha_thermal.o
+ obj-$(CONFIG_SPEAR_THERMAL)	+= spear_thermal.o
+--- a/drivers/thermal/Kconfig
++++ b/drivers/thermal/Kconfig
+@@ -517,4 +517,12 @@ config LOONGSON2_THERMAL
+ 	  is higher than the high temperature threshold or lower than the low
+ 	  temperature threshold, the interrupt will occur.
+ 
++config AL_THERMAL
++	bool "Annapurna Labs thermal sensor driver"
++	depends on ARCH_ALPINE
++	depends on OF
++	help
++	  Enable this to plug the Annapurna Labs thermal sensor driver into the
++	  Linux thermal framework
++
+ endif
