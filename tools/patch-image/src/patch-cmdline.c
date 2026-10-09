@@ -76,7 +76,7 @@ int main(int argc, char **argv)
 	ret = 0;
 
 err3:
-	munmap((void *) ptr, len);
+	munmap((void *) ptr, search_space + CMDLINE_MAX);
 err2:
 	if (fd > 0)
 		close(fd);
