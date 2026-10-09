@@ -290,6 +290,10 @@ zbtlink,zbt-we1026-h-32m)
 zbtlink,zbt-we2026)
 	ucidef_set_led_netdev "wifi_led" "wifi" "green:wlan" "wlan0"
 	;;
+zyxel,lte3302)
+	ucidef_set_led_switch "lan" "lan" "green:lan" "switch0" "0x03"
+	ucidef_set_led_netdev "online_green" "Online Status Green" "green:wan-online" "wwan0"
+	;;
 esac
 
 board_config_flush
