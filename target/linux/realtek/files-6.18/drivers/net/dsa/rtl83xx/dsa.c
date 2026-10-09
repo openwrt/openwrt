@@ -1430,7 +1430,7 @@ static int rtldsa_port_lag_join(struct dsa_switch *ds,
 	priv->lagmembers |= BIT_ULL(port);
 
 	pr_debug("lag_members = %llX\n", priv->lagmembers);
-	err = rtldsa_lag_add(priv->ds, group, port, info);
+	err = otto_lag_add(priv->ds, group, port, info);
 	if (err) {
 		err = -EINVAL;
 		goto out;
@@ -1465,7 +1465,7 @@ static int rtldsa_port_lag_leave(struct dsa_switch *ds, int port,
 	priv->lagmembers &= ~BIT_ULL(port);
 	priv->lag_non_primary &= ~BIT_ULL(port);
 	pr_debug("lag_members = %llX\n", priv->lagmembers);
-	err = rtldsa_lag_del(priv->ds, group, port);
+	err = otto_lag_del(priv->ds, group, port);
 	if (err) {
 		err = -EINVAL;
 		goto out;
