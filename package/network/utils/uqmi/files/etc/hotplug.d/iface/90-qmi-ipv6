@@ -1,0 +1,46 @@
+#!/bin/sh
+[ "$ACTION" = "ifup" ] || exit 0
+[ "$(uci -q get network."$INTERFACE".proto)" = "qmi" ] || exit 0
+
+LOCKFILE="/tmp/qmi-ipv6-hotplug-${INTERFACE}.lock"
+
+if [ -f "$LOCKFILE" ]; then
+	PID=$(cat "$LOCKFILE")
+	[ -d "/proc/$PID" ] && exit 0
+fi
+
+ipv6_restart() {
+	TRIES=0
+	while [ $TRIES -lt 24 ]; do
+		GATEWAY=$(ifstatus "$INTERFACE" 2>/dev/null | jsonfilter -e '@.route[1].nexthop' 2>/dev/null)
+		[ -n "$GATEWAY" ] && [ "$GATEWAY" != "::" ] && break
+		sleep 5
+		TRIES=$((TRIES + 1))
+	done
+
+	rm -f "$LOCKFILE"
+
+	[ -n "$GATEWAY" ] && [ "$GATEWAY" != "::" ] || exit 1
+
+	DEVICE=$(ifstatus "$INTERFACE" 2>/dev/null | jsonfilter -e '@.l3_device' 2>/dev/null)
+	[ -n "$DEVICE" ] || exit 1
+
+	# Wait for the modem's global IPv6 address to appear on the wwan device.
+	# odhcpd derives the /64 prefix from this address; restarting it before
+	# the address is present causes it to come up with no prefix to advertise,
+	# and it will not recover until manually restarted.
+	TRIES=0
+	while [ $TRIES -lt 12 ]; do
+		ip -6 addr show dev "$DEVICE" scope global 2>/dev/null | grep -q 'inet6' && break
+		sleep 5
+		TRIES=$((TRIES + 1))
+	done
+
+	ip -6 addr show dev "$DEVICE" scope global 2>/dev/null | grep -q 'inet6' || exit 1
+
+	ip -6 route replace ::/0 via "$GATEWAY" dev "$DEVICE" metric 512
+	service odhcpd restart
+}
+
+ipv6_restart &
+echo $! > "$LOCKFILE"
