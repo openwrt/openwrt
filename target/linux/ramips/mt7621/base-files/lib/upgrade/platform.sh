@@ -108,6 +108,7 @@ platform_do_upgrade() {
 	hiwifi,hc5962|\
 	gemtek,wvrtm-127acn|\
 	gemtek,wvrtm-130acn|\
+	glinet,gl-mg1300|\
 	iptime,a3004t|\
 	iptime,ax2002m|\
 	iptime,ax2004m|\
