@@ -916,6 +916,7 @@ static void qca_ppe_phylink_get_caps(struct dsa_switch *ds, int port,
 				     struct phylink_config *config)
 {
 	struct dsa_port *dp = dsa_to_port(ds, port);
+	phy_interface_t mode;
 
 	if (port != 0) {
 		config->num_possible_pcs = fwnode_phylink_pcs_count(of_fwnode_handle(dp->dn));
@@ -968,10 +969,25 @@ static void qca_ppe_phylink_get_caps(struct dsa_switch *ds, int port,
 				   config->supported_interfaces);
 
 	if (port != 0) {
-		config->lpi_capabilities = MAC_100FD | MAC_1000FD;
 		__set_bit(PHY_INTERFACE_MODE_QSGMII, config->lpi_interfaces);
 		__set_bit(PHY_INTERFACE_MODE_PSGMII, config->lpi_interfaces);
 		__set_bit(PHY_INTERFACE_MODE_SGMII, config->lpi_interfaces);
+		if (port >= 5)
+			__set_bit(PHY_INTERFACE_MODE_2500BASEX,
+				  config->lpi_interfaces);
+
+		/* phylink sets the PHY EEE advertisement from lpi_capabilities
+		 * alone, and the XPCS behind USXGMII and 10GBASE-R reports no
+		 * EEE ability, so EEE is offered only on a port whose phy-mode
+		 * has MAC LPI.
+		 */
+		if (of_get_phy_mode(dp->dn, &mode) ||
+		    !test_bit(mode, config->lpi_interfaces))
+			return;
+
+		config->lpi_capabilities = MAC_100FD | MAC_1000FD;
+		if (port >= 5)
+			config->lpi_capabilities |= MAC_2500FD;
 		config->lpi_timer_default = 256;
 		config->eee_enabled_default = true;
 	}
