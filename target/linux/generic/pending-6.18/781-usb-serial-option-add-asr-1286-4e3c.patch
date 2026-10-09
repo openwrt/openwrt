@@ -1,0 +1,29 @@
+From 629020ca2016bcbb04d1670537d7764114534b7d Mon Sep 17 00:00:00 2001
+From: Michael Wyraz <michael@wyraz.de>
+Date: Wed, 30 Sep 2026 21:58:01 +0200
+Subject: [PATCH] USB: serial: option: match ASR modem serial interfaces only
+
+The ASR 1286:4e3c composite device used in the Tuoshi LT22M exposes
+RNDIS on interfaces 0/1 and serial DIAG, AT and modem ports on 2/3/4.
+Match only vendor-specific interfaces and reserve the RNDIS pair so the
+option driver cannot take the network interfaces from rndis_host.
+
+Other ASR product IDs have not been verified on this board.
+
+Link: https://docs.yuge-info.com/doku.php?id=asr:linux:driver
+Signed-off-by: Michael Wyraz <michael@wyraz.de>
+---
+ drivers/usb/serial/option.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/usb/serial/option.c
++++ b/drivers/usb/serial/option.c
+@@ -2545,6 +2545,8 @@ static const struct usb_device_id option
+ 	{ USB_DEVICE_AND_INTERFACE_INFO(UNISOC_VENDOR_ID, TOZED_PRODUCT_LT70C, 0xff, 0, 0) },
+ 	{ USB_DEVICE_AND_INTERFACE_INFO(UNISOC_VENDOR_ID, UNISOC_PRODUCT_UIS7720, 0xff, 0, 0) },
+ 	{ USB_DEVICE_AND_INTERFACE_INFO(UNISOC_VENDOR_ID, LUAT_PRODUCT_AIR720U, 0xff, 0, 0) },
++	{ USB_DEVICE_INTERFACE_CLASS(0x1286, 0x4e3c, USB_CLASS_VENDOR_SPEC),
++	  .driver_info = RSVD(0) | RSVD(1) },
+ 	{ USB_DEVICE_INTERFACE_CLASS(0x1bbb, 0x0530, 0xff),			/* TCL IK512 MBIM */
+ 	  .driver_info = NCTRL(1) },
+ 	{ USB_DEVICE_INTERFACE_CLASS(0x1bbb, 0x0640, 0xff),			/* TCL IK512 ECM */
