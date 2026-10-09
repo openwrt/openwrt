@@ -1,0 +1,57 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Sergey Lebedev <sergey@lebedev.mobi>
+Date: Sun, 12 Jul 2026 13:27:20 +0300
+Subject: [PATCH] mtd: nand: mtk: restore ACCCON after NFI reset
+
+On EcoNet EN751221 the NFI soft reset (CON_NFI_RST) clears the ACCCON
+access-timing register, and mainline never re-programs it before READID,
+so the read strobes have zero width and no data arrives. Seed a safe
+(slowest) ACCCON, restore it after every hw_reset, and remember the value
+computed by setup_interface.
+
+Signed-off-by: Sergey Lebedev <sergey@lebedev.mobi>
+---
+--- a/drivers/mtd/nand/raw/mtk_nand.c
++++ b/drivers/mtd/nand/raw/mtk_nand.c
+@@ -155,6 +155,15 @@ struct mtk_nfc {
+ 	u8 *buffer;
+ 
+ 	unsigned long assigned_cs;
++
++	/*
++	 * Last good ACCCON (NAND access timing). On EN751221 the NFI soft
++	 * reset (CON_NFI_RST) appears to clear ACCCON, and mainline never
++	 * re-programs it before READID -> zero-width strobes -> "data not
++	 * ready". Seed a safe (slowest) value and restore it after each reset;
++	 * setup_interface() updates it with the computed value.
++	 */
++	u32 acccon;
+ };
+ 
+ /*
+@@ -275,6 +284,9 @@ static void mtk_nfc_hw_reset(struct mtk_
+ 	/* ensure any status register affected by the NFI master is reset */
+ 	nfi_writel(nfc, CON_FIFO_FLUSH | CON_NFI_RST, NFI_CON);
+ 	nfi_writew(nfc, STAR_DE, NFI_STRDATA);
++
++	/* NFI_RST may have wiped ACCCON; restore known-good access timing. */
++	nfi_writel(nfc, nfc->acccon, NFI_ACCCON);
+ }
+ 
+ static int mtk_nfc_send_command(struct mtk_nfc *nfc, u8 command)
+@@ -634,6 +646,7 @@ static int mtk_nfc_setup_interface(struc
+ 	 */
+ 	trlt = ACCTIMING(tpoecs, tprecs, tc2r, tw2r, twh, twst, trlt);
+ 	nfi_writel(nfc, trlt, NFI_ACCCON);
++	nfc->acccon = trlt;
+ 
+ 	return 0;
+ }
+@@ -1528,6 +1541,7 @@ static int mtk_nfc_probe(struct platform
+ 
+ 	nfc->caps = of_device_get_match_data(dev);
+ 	nfc->dev = dev;
++	nfc->acccon = 0xffffffff;	/* slowest/safest until setup_interface() */
+ 
+ 	nfc->regs = devm_platform_ioremap_resource(pdev, 0);
+ 	if (IS_ERR(nfc->regs)) {

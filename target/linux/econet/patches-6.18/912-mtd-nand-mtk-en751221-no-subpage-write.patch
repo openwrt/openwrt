@@ -1,0 +1,84 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Sergey Lebedev <sergey@lebedev.mobi>
+Date: Tue, 11 Aug 2026 23:13:10 +0300
+Subject: [PATCH] mtd: nand: mtk: en751221: forbid subpage writes
+
+Hard prerequisite for putting UBI on this board's NAND, and correct on its
+own terms regardless of which filesystem sits on top.
+
+This chip is 2048 B page / 4 ECC steps of 512 B, so nand_scan_tail() picks
+mtd->subpage_sft = 2 and advertises subpagesize = 512. Two things break
+because of it:
+
+ - The BCH codeword this controller's format uses covers 512 B of main
+   data *plus* that sector's 8 FDM bytes as one unit, so encoding a
+   sub-span of a sector cannot produce a codeword the bootloader's
+   hardware decoder (or this driver's own software decoder) will accept.
+   There is no way to make ecc.write_subpage correct here.
+
+ - UBI derives its header geometry from the advertised subpage size
+   (ubi->hdrs_min_io_size = writesize >> subpage_sft) and rejects any
+   image whose recorded vid_hdr_offset disagrees. With subpagesize = 512
+   the kernel expects offset 512, while images built for this board
+   (scripts/ubinize-image.sh -m 2048, no -s) record 2048 -- attach would
+   fail with "bad VID header offset" before the ECC issue above even
+   applies.
+
+Set NAND_NO_SUBPAGE_WRITE unconditionally in the attach path, before
+nand_scan_tail() reads it -- this driver copy exists only in the econet
+build and only ever binds this controller.
+
+Also drop the ecc.write_subpage assignment: NAND_NO_SUBPAGE_WRITE only
+zeroes mtd->subpage_sft, but nand_write_page() still dispatches to
+ecc.write_subpage whenever data_len != mtd->writesize, which an
+unaligned or short userspace mtd_write() can still produce.
+With the hook NULL that falls through to ecc.write_page (the
+software-BCH writer) against the 0xFF-padded bounce buffer
+nand_do_write_ops() has already built -- a full, correctly encoded
+page. mtk_nfc_write_subpage_hwecc() then has no callers, so tag it
+__maybe_unused.
+
+Signed-off-by: Sergey Lebedev <sergey@lebedev.mobi>
+---
+--- a/drivers/mtd/nand/raw/mtk_nand.c
++++ b/drivers/mtd/nand/raw/mtk_nand.c
+@@ -1158,9 +1158,10 @@
+ 	return mtk_nfc_write_page(mtd, chip, nfc->buffer, pg, 1);
+ }
+ 
+-static int mtk_nfc_write_subpage_hwecc(struct nand_chip *chip, u32 offset,
+-				       u32 data_len, const u8 *buf,
+-				       int oob_on, int page)
++static int __maybe_unused
++mtk_nfc_write_subpage_hwecc(struct nand_chip *chip, u32 offset,
++			    u32 data_len, const u8 *buf,
++			    int oob_on, int page)
+ {
+ 	struct mtd_info *mtd = nand_to_mtd(chip);
+ 	struct mtk_nfc *nfc = nand_get_controller_data(chip);
+@@ -1673,6 +1674,17 @@
+ 	if (chip->bbt_options & NAND_BBT_USE_FLASH)
+ 		chip->bbt_options |= NAND_BBT_NO_OOB;
+ 
++	/*
++	 * This controller's BCH codeword spans 512 B of main data plus the
++	 * sector's 8 FDM bytes as one unit, so a sub-sector write can never
++	 * carry valid parity. Forcing every write to a full 2048 B page keeps
++	 * the software BCH encoder the only writer -- and it is also what
++	 * makes UBI attachable at all: hdrs_min_io_size then comes out 2048,
++	 * matching the vid_hdr_offset ubinize records in the images built
++	 * for this board.
++	 */
++	chip->options |= NAND_NO_SUBPAGE_WRITE;
++
+ 	ret = mtk_nfc_ecc_init(dev, mtd);
+ 	if (ret)
+ 		return ret;
+@@ -1763,7 +1775,6 @@
+ 	 * Write every page RAW instead, same reasoning and same pattern as
+ 	 * the read side below.
+ 	 */
+-	nand->ecc.write_subpage = mtk_nfc_write_subpage_hwecc;
+ 	nand->ecc.write_page_raw = mtk_nfc_write_page_raw;
+ 	nand->ecc.write_page = mtk_nfc_write_page_raw;
+ 	nand->ecc.write_oob_raw = mtk_nfc_write_oob_std;

@@ -1,0 +1,98 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Sergey Lebedev <sergey@lebedev.mobi>
+Date: Thu, 16 Jul 2026 00:27:32 +0300
+Subject: [PATCH] mtd: nand: mtk: EN751221 -- disable the in-band
+ bad-block-marker swap, main data and OOB
+
+EN751221 tracks bad blocks with a BMT (an out-of-band back-reference
+table managed by the bootloader), NOT the MediaTek in-band factory-BBM
+scheme this driver implements by default -- and the bootbase `flash`
+writer stores raw page data, main and spare, verbatim with no BBM
+relocation of any kind. Two call sites apply that scheme and both are
+wrong here, for the same reason:
+
+ - mtk_nfc_bad_mark_swap() exchanges a live main-data byte with
+   oob_poi[0] on every page read/write. For our geometry it clobbers
+   main-data offset 2000 (0x7D0) of every page: one wrong byte per
+   2048-byte page, which most block checksums still happen to survive
+   but which corrupts xz decompression near the end of the rootfs --
+   the observed "SQUASHFS error: xz decompression failed" boot failure.
+ - oob_ptr() moves the bad-mark sector's FDM to the front of oob_poi,
+   the OOB-side half of the same in-band convention. Leaving this
+   active desyncs Linux's OOB byte offsets from the vendor bootloader
+   and the on-flash BMT/BBT tables it writes: en75_bmt's FDM tag
+   lookup at ooboffs 0 would silently land on physical sector 3's
+   spare bytes instead of sector 0's, for our page geometry
+   (bad_mark.sec == 3).
+
+The vendor read/write path never does either swap; neither should we.
+Select the no-op swap for the main-data path (mtk_nfc_bad_mark_swap
+then has no callers, so tag it __maybe_unused to keep
+-Werror=unused-function happy) and drop oob_ptr()'s swap outright.
+This driver copy is EN751221-only in the econet build, so an
+unconditional change is correct here.
+
+Signed-off-by: Sergey Lebedev <sergey@lebedev.mobi>
+---
+--- a/drivers/mtd/nand/raw/mtk_nand.c
++++ b/drivers/mtd/nand/raw/mtk_nand.c
+@@ -204,20 +204,22 @@ static inline u8 *data_ptr(struct nand_c
+ static inline u8 *oob_ptr(struct nand_chip *chip, int i)
+ {
+ 	struct mtk_nfc_nand_chip *mtk_nand = to_mtk_nand(chip);
+-	u8 *poi;
+ 
+-	/* map the sector's FDM data to free oob:
+-	 * the beginning of the oob area stores the FDM data of bad mark sectors
++	/*
++	 * Mainline moves the bad-mark sector's FDM to the front of oob_poi,
++	 * mirroring the in-band factory-BBM byte swap disabled below in
++	 * mtk_nfc_set_bad_mark_ctl() for the same reason: EN751221 uses a
++	 * BMT for bad blocks, not that scheme, and the bootbase `flash`
++	 * writer stores raw page data -- data AND spare -- verbatim with no
++	 * relocation. Leaving this OOB-side swap active desyncs Linux's OOB
++	 * byte offsets from the vendor bootloader and the on-flash BMT/BBT
++	 * tables it writes: en75_bmt's FDM tag lookup at ooboffs 0 would
++	 * silently land on physical sector 3's spare bytes instead of
++	 * sector 0's, for our page geometry (bad_mark.sec == 3). This
++	 * driver copy is EN751221-only in the econet build, so an
++	 * unconditional change is correct here.
+ 	 */
+-
+-	if (i < mtk_nand->bad_mark.sec)
+-		poi = chip->oob_poi + (i + 1) * mtk_nand->fdm.reg_size;
+-	else if (i == mtk_nand->bad_mark.sec)
+-		poi = chip->oob_poi;
+-	else
+-		poi = chip->oob_poi + i * mtk_nand->fdm.reg_size;
+-
+-	return poi;
++	return chip->oob_poi + i * mtk_nand->fdm.reg_size;
+ }
+ 
+ static inline int mtk_data_len(struct nand_chip *chip)
+@@ -733,7 +735,7 @@ static void mtk_nfc_no_bad_mark_swap(str
+ 	/* nop */
+ }
+ 
+-static void mtk_nfc_bad_mark_swap(struct mtd_info *mtd, u8 *buf, int raw)
++static void __maybe_unused mtk_nfc_bad_mark_swap(struct mtd_info *mtd, u8 *buf, int raw)
+ {
+ 	struct nand_chip *chip = mtd_to_nand(mtd);
+ 	struct mtk_nfc_nand_chip *nand = to_mtk_nand(chip);
+@@ -1176,7 +1178,14 @@ static void mtk_nfc_set_bad_mark_ctl(str
+ 	if (mtd->writesize == 512) {
+ 		bm_ctl->bm_swap = mtk_nfc_no_bad_mark_swap;
+ 	} else {
+-		bm_ctl->bm_swap = mtk_nfc_bad_mark_swap;
++		/*
++		 * EN751221 uses a BMT for bad blocks, not the MediaTek in-band
++		 * factory-BBM scheme, and the bootbase `flash` writer stores
++		 * raw page data with no BBM relocation. The in-band swap would
++		 * corrupt one live main-data byte per page (sector 3, offset
++		 * 464 -> page offset 0x7D0) and break squashfs/xz. Disable it.
++		 */
++		bm_ctl->bm_swap = mtk_nfc_no_bad_mark_swap;
+ 		bm_ctl->sec = mtd->writesize / mtk_data_len(nand);
+ 		bm_ctl->pos = mtd->writesize % mtk_data_len(nand);
+ 	}

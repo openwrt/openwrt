@@ -1,0 +1,89 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Sergey Lebedev <sergey@lebedev.mobi>
+Date: Mon, 31 Aug 2026 00:00:00 +0000
+Subject: [PATCH] phy: econet: EN751221 -- replicate the vendor's real port0 PHY calibration
+
+PCIe link training on the ZTE ZXHN H267A (EN751221, HIR=0x00050003)
+needs the real vendor analog PHY calibration for port0 (gen1) -- this
+driver's generic en7528_phy_gen1[] (a single LCDDS_CLK_PH_INV write) is
+never reached by the vendor's own bring-up path on this chip at all,
+and calibrating with it alone leaves the link dead.
+
+Re-disassembled tc3162_pcie_init() from the stock vendor kernel: it
+checks bit 31 of 0x1fb0008c (clear on real hardware) and calls
+TpciePhyInit(), which re-checks HIR and calls Tinit_60901() -- an
+18-step analog PHY calibration/reset dance against registers at
+0x1faf2000 + {0x000, 0x100, 0x400, 0x490, 0x49c, 0x4a4, 0x4a8, 0x4ac},
+exactly the phy0 register block (en751221.dtsi: pcie-phy@1faf2000,
+compatible econet,en751221-pcie-gen1) this driver already claims.
+
+Added en751221_phy_gen1[], wired only to "econet,en751221-pcie-gen1"
+(en7528_phy_gen1 stays untouched for real EN7528 boards this bit-for-bit
+sequence has never been verified on), replicating all 18 steps as
+{reg, mask, val} triples -- values are field-relative (this driver's
+en75_pcie_phy_init() does field_prep(mask, val) before the
+regmap_update_bits(), unlike the raw pre-shifted values an earlier,
+pre-upstream-refactor version of this driver used), ordering/timing
+(1ms between each step) unchanged from the vendor's own udelay(1000).
+
+Port 1 (gen2, 0x1fac0000) is a different PHY block already correctly
+handled by the existing en751221_phy_gen2[] RX-detect-timing fix.
+
+Verified on real hardware (ZTE ZXHN H267A): with this patch and the
+matching pcie-mediatek/clk-en7523 changes, both radios enumerate
+(MT7592 14c3:7603, MT7612 14c3:7662).
+
+Signed-off-by: Sergey Lebedev <sergey@lebedev.mobi>
+---
+--- a/drivers/phy/phy-econet-pcie.c
++++ b/drivers/phy/phy-econet-pcie.c
+@@ -83,6 +83,40 @@ static const struct en75_phy_op en751221
+ 	{ /* sentinel */ }
+ };
+ 
++/*
++ * EN751221 Port 0 (gen1) PHY: the vendor's real analog calibration/reset
++ * sequence for this SoC variant, recovered by disassembling the stock
++ * vendor kernel's unconditional TpciePhyInit()/Tinit_60901() call chain.
++ * The generic en7528_phy_gen1[]'s single LCDDS_CLK_PH_INV write above is
++ * never reached by this code path at all on real EN751221 hardware --
++ * it's carried over from a different chip's calibration and isn't part
++ * of what the vendor firmware does for this board's port0 PHY. All
++ * offsets are relative to the phy0 register block (0x1faf2000);
++ * ordering/timing (1ms between each step) is replicated exactly as the
++ * vendor issues it, via this driver's own usleep_range() between ops.
++ */
++static const struct en75_phy_op en751221_phy_gen1[] = {
++	{ .reg = 0x000, .mask = BIT(4), .val = 1 },
++	{ .reg = 0x100, .mask = BIT(4), .val = 1 },
++	{ .reg = 0x000, .mask = BIT(5), .val = 0 },
++	{ .reg = 0x100, .mask = BIT(5), .val = 0 },
++	{ .reg = 0x400, .mask = BIT(8), .val = 1 },
++	{ .reg = 0x400, .mask = GENMASK(10, 9), .val = 0 },
++	{ .reg = 0x490, .mask = GENMASK(15, 12), .val = 0xa },
++	{ .reg = 0x4ac, .mask = GENMASK(18, 16), .val = 1 },
++	{ .reg = 0x49c, .mask = GENMASK(30, 16), .val = 0x1900 },
++	{ .reg = 0x49c, .mask = BIT(31), .val = 0 },
++	{ .reg = 0x49c, .mask = BIT(31), .val = 1 },
++	{ .reg = 0x4a4, .mask = GENMASK(15, 0), .val = 0x18d },
++	{ .reg = 0x4a8, .mask = GENMASK(11, 0), .val = 0x4a },
++	{ .reg = 0x4a8, .mask = GENMASK(27, 16), .val = 0x4a },
++	{ .reg = 0x400, .mask = BIT(12), .val = 1 },
++	{ .reg = 0x400, .mask = BIT(11), .val = 1 },
++	{ .reg = 0x000, .mask = BIT(5), .val = 1 },
++	{ .reg = 0x100, .mask = BIT(5), .val = 1 },
++	{ /* sentinel */ }
++};
++
+ static int en75_pcie_phy_init(struct phy *phy)
+ {
+ 	struct en7528_pcie_phy *ephy = phy_get_drvdata(phy);
+@@ -162,7 +196,7 @@ static int en75_pcie_phy_probe(struct pl
+ static const struct of_device_id en75_pcie_phy_ids[] = {
+ 	{ .compatible = "econet,en7528-pcie-gen1", .data = en7528_phy_gen1 },
+ 	{ .compatible = "econet,en7528-pcie-gen2", .data = en7528_phy_gen2 },
+-	{ .compatible = "econet,en751221-pcie-gen1", .data = en7528_phy_gen1 },
++	{ .compatible = "econet,en751221-pcie-gen1", .data = en751221_phy_gen1 },
+ 	{ .compatible = "econet,en751221-pcie-gen2", .data = en751221_phy_gen2 },
+ 	{ /* sentinel */ }
+ };

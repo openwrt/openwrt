@@ -1,0 +1,393 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Sergey Lebedev <sergey@lebedev.mobi>
+Date: Sun, 30 Aug 2026 16:58:53 +0300
+Subject: [PATCH] phy: en7528-usb: add EN751221 (MT7510 family) USB 2.0 PHY support
+
+The EN751221/MT751020-family SoCs (EN7512, MT7511, ...) carry the same U2
+USB PHY block this driver already programs on EN7528 -- identical ACR0 and
+ACR3 offsets and bitfields, identical frequency-meter programming model --
+just laid out at different offsets: the two U2 port banks are 0x100 apart
+from the bank base rather than 0x1000 apart from +0x300, and the frequency
+meter sits at +0x700 instead of +0x100. There is no USB 3 / combo PHY on
+this variant.
+
+Add an econet,en751221-usb-phy compatible driven by per-SoC match data, and
+give it the vendor's usb_mt751020_phy_init() bring-up sequence (recovered
+from drivers/usb/core/usbphy.c in the EN751221 vendor GPL tree) as its U2
+init callback.
+
+That sequence is required, not tuning. Without it, on a ZTE ZXHN H267A
+(EN7512/MT7511) the legacy EHCI probes but the physical port never sees a
+device, and the legacy OHCI companion's very first register read stalls
+the SoC's internal bus and hangs the CPU dead (this SoC's bus-timeout
+interrupt is a vendor-kernel feature mainline doesn't wire up, so there's
+no trap to recover through). With the PHY brought up first, both
+controllers work and read back textbook reset defaults.
+
+Doing this in a real PHY provider rather than in one host controller's
+probe makes the ordering correct for both: usb_add_hcd() runs the PHY
+roothub init before the first controller register access, and an
+unprobed provider yields -EPROBE_DEFER instead of a hang. phy_init()/
+phy_power_on() are refcounted, so the sequence runs once for both
+controllers sharing this PHY.
+
+The slew-rate calibration is shared, with one variant difference: the vendor
+runs the frequency meter but discards FM_OUT and programs a constant HS TX
+slew-rate code, so the EN751221 data sets fixed_srctrl rather than deriving
+a value from a reference clock this variant may not use.
+
+Signed-off-by: Sergey Lebedev <sergey@lebedev.mobi>
+--- a/drivers/phy/phy-en7528-usb.c
++++ b/drivers/phy/phy-en7528-usb.c
+@@ -11,11 +11,12 @@
+ #include <linux/bitfield.h>
+ #include <linux/math.h>
+ #include <linux/module.h>
++#include <linux/of.h>
+ #include <linux/phy/phy.h>
+ #include <linux/platform_device.h>
+ #include <linux/regmap.h>
+ 
+-/* Frequency Meter registers (shared across ports) */
++/* Frequency Meter registers (shared across ports), EN7528 layout */
+ #define EN7528_USB_PHY_FMCR0			0x100
+ #define   EN7528_USB_PHY_MONCLK_SEL		GENMASK(27, 26)
+ #define   EN7528_USB_PHY_FREQDET_EN		BIT(24)
+@@ -49,11 +50,70 @@
+ #define EN7528_USB_PHY_FREQDET_SLEEP		1000	/* 1ms */
+ #define EN7528_USB_PHY_FREQDET_TIMEOUT		(EN7528_USB_PHY_FREQDET_SLEEP * 10)
+ 
++/*
++ * EN751221 (MT7510/MT751020 family, e.g. EN7512/MT7511) variant.
++ *
++ * Same U2 PHY register block as EN7528 -- identical ACR0/ACR3 offsets and
++ * bitfields, identical frequency-meter programming model -- but laid out at
++ * different offsets: the two U2 port banks are 0x100 apart starting at the
++ * bank base, and the frequency meter sits at +0x700 instead of +0x100.
++ *
++ * The extra register writes in en751221_usb_phy_u2_init() are the vendor's
++ * usb_mt751020_phy_init() (drivers/usb/core/usbphy.c in the EN751221 vendor
++ * GPL tree, dispatched from usb_init() when the SCU HIR upper half reads
++ * 0x0005). They are *required*, not tuning: without them the host controller
++ * probes and its root hub enumerates, but the physical port never sees a
++ * device -- and the legacy OHCI companion's very first register read stalls
++ * the SoC's internal bus outright. Verified on a ZTE ZXHN H267A.
++ */
++#define EN751221_USB_PHY_FMCR0			0x700
++#define EN751221_USB_PHY_FMMONR0		0x70c
++#define EN751221_USB_PHY_FMMONR1		0x710
++
++#define EN751221_USB_PHY_U2_P0_BASE		0x000
++#define EN751221_USB_PHY_U2_P1_BASE		0x100
++
++/* Vendor bring-up values, port-relative (names follow MediaTek tphy) */
++#define EN751221_USB_PHY_USBPHYACR0		0x00
++#define   EN751221_USB_PHY_USBPHYACR0_INIT	0x0048086a
++#define EN751221_USB_PHY_USBPHYACR1		0x04
++#define   EN751221_USB_PHY_USBPHYACR1_INIT	0x4400001c
++#define EN751221_USB_PHY_ACR3_ENABLE		0xC0200000
++#define EN751221_USB_PHY_U2PHYDCR0		0x60
++#define   EN751221_USB_PHY_U2PHYDCR0_INIT	0x00000402
++#define EN751221_USB_PHY_U2PHYDTM0		0x68
++#define   EN751221_USB_PHY_U2PHYDTM0_INIT	0x02000000
++#define   EN751221_USB_PHY_U2PHYDTM0_RESET	0x02004000
++#define EN751221_USB_PHY_U2PHYDTM1		0x6c
++#define   EN751221_USB_PHY_U2PHYDTM1_INIT	0x00800000
++
++#define EN751221_USB_PHY_MAX_REGISTER		0x7fc
++
+ static const unsigned int en7528_u2_port_bases[EN7528_USB_PHY_NUM_U2_PORTS] = {
+ 	EN7528_USB_PHY_U2_P0_BASE,
+ 	EN7528_USB_PHY_U2_P1_BASE,
+ };
+ 
++static const unsigned int en751221_u2_port_bases[EN7528_USB_PHY_NUM_U2_PORTS] = {
++	EN751221_USB_PHY_U2_P0_BASE,
++	EN751221_USB_PHY_U2_P1_BASE,
++};
++
++struct en7528_usb_phy_priv;
++
++struct en7528_usb_phy_soc_data {
++	const unsigned int *u2_port_bases;
++	unsigned int num_u2_ports;
++	unsigned int fmcr0;
++	unsigned int fmmonr0;
++	unsigned int fmmonr1;
++	unsigned int max_register;
++	bool has_usb3;
++	/* < 0: derive the HS TX slew rate from the frequency meter */
++	int fixed_srctrl;
++	void (*u2_init)(struct en7528_usb_phy_priv *priv);
++};
++
+ struct en7528_usb_phy_instance {
+ 	struct phy *phy;
+ 	u32 type;
+@@ -69,6 +129,7 @@ enum en7528_usb_phy_type {
+ struct en7528_usb_phy_priv {
+ 	struct device *dev;
+ 	struct regmap *regmap;
++	const struct en7528_usb_phy_soc_data *data;
+ 
+ 	struct en7528_usb_phy_instance *phys[EN7528_PHY_USB_MAX];
+ };
+@@ -77,6 +138,7 @@ static void en7528_usb_phy_slew_rate_cal
+ 						  unsigned int port_id,
+ 						  unsigned int port_base)
+ {
++	const struct en7528_usb_phy_soc_data *data = priv->data;
+ 	unsigned int acr0 = port_base + EN7528_USB_PHY_ACR0;
+ 	u32 fm_out;
+ 	u32 srctrl;
+@@ -88,36 +150,36 @@ static void en7528_usb_phy_slew_rate_cal
+ 	usleep_range(1000, 1500);
+ 
+ 	/* Enable free run clock */
+-	regmap_set_bits(priv->regmap, EN7528_USB_PHY_FMMONR1,
++	regmap_set_bits(priv->regmap, data->fmmonr1,
+ 			EN7528_USB_PHY_FRCK_EN);
+ 
+ 	/* Select monitor clock: port 0 = MONCLK_SEL 0, port 1 = MONCLK_SEL 1 */
+-	regmap_update_bits(priv->regmap, EN7528_USB_PHY_FMCR0,
++	regmap_update_bits(priv->regmap, data->fmcr0,
+ 			   EN7528_USB_PHY_MONCLK_SEL,
+ 			   FIELD_PREP(EN7528_USB_PHY_MONCLK_SEL, port_id));
+ 
+ 	/* Set cycle count */
+-	regmap_update_bits(priv->regmap, EN7528_USB_PHY_FMCR0,
++	regmap_update_bits(priv->regmap, data->fmcr0,
+ 			   EN7528_USB_PHY_CYCLECNT,
+ 			   FIELD_PREP(EN7528_USB_PHY_CYCLECNT,
+ 				      EN7528_USB_PHY_FM_DET_CYCLE_CNT));
+ 
+ 	/* Enable frequency meter */
+-	regmap_set_bits(priv->regmap, EN7528_USB_PHY_FMCR0,
++	regmap_set_bits(priv->regmap, data->fmcr0,
+ 			EN7528_USB_PHY_FREQDET_EN);
+ 
+ 	/* Timeout can happen and we will apply default value at the end */
+-	(void)regmap_read_poll_timeout(priv->regmap, EN7528_USB_PHY_FMMONR0,
++	(void)regmap_read_poll_timeout(priv->regmap, data->fmmonr0,
+ 				 fm_out, fm_out,
+ 				 EN7528_USB_PHY_FREQDET_SLEEP,
+ 				 EN7528_USB_PHY_FREQDET_TIMEOUT);
+ 
+ 	/* Disable frequency meter */
+-	regmap_clear_bits(priv->regmap, EN7528_USB_PHY_FMCR0,
++	regmap_clear_bits(priv->regmap, data->fmcr0,
+ 			  EN7528_USB_PHY_FREQDET_EN);
+ 
+ 	/* Disable free run clock */
+-	regmap_clear_bits(priv->regmap, EN7528_USB_PHY_FMMONR1,
++	regmap_clear_bits(priv->regmap, data->fmmonr1,
+ 			  EN7528_USB_PHY_FRCK_EN);
+ 
+ 	/* Disable HS TX SR calibration */
+@@ -126,7 +188,14 @@ static void en7528_usb_phy_slew_rate_cal
+ 
+ 	usleep_range(1000, 1500);
+ 
+-	if (!fm_out) {
++	if (data->fixed_srctrl >= 0) {
++		/*
++		 * The vendor runs the frequency meter but discards FM_OUT and
++		 * programs a constant slew rate; do the same rather than
++		 * guessing at a reference clock this variant may not use.
++		 */
++		srctrl = data->fixed_srctrl;
++	} else if (!fm_out) {
+ 		srctrl = EN7528_USB_PHY_DEFAULT_SR;
+ 		dev_err(priv->dev, "port%u: frequency not detected, using default SR calibration.\n",
+ 			port_id);
+@@ -144,19 +213,81 @@ static void en7528_usb_phy_slew_rate_cal
+ 			   FIELD_PREP(EN7528_USB_PHY_HSTX_SRCTRL, srctrl));
+ }
+ 
++static void en7528_usb_phy_u2_init(struct en7528_usb_phy_priv *priv)
++{
++	const struct en7528_usb_phy_soc_data *data = priv->data;
++	unsigned int i;
++
++	/* Enable both U2 PHY ports before calibration */
++	for (i = 0; i < data->num_u2_ports; i++)
++		regmap_write(priv->regmap,
++			     data->u2_port_bases[i] + EN7528_USB_PHY_ACR3,
++			     EN7528_USB_PHY_ACR3_ENABLE);
++}
++
++static void en751221_usb_phy_u2_init(struct en7528_usb_phy_priv *priv)
++{
++	const struct en7528_usb_phy_soc_data *data = priv->data;
++	unsigned int p0 = data->u2_port_bases[0];
++	unsigned int i;
++
++	/*
++	 * usb_mt751020_phy_init(), verbatim, including the vendor's 1ms
++	 * settle after every single write.
++	 */
++	usleep_range(1000, 1500);
++
++	regmap_write(priv->regmap, p0 + EN751221_USB_PHY_U2PHYDCR0,
++		     EN751221_USB_PHY_U2PHYDCR0_INIT);
++	usleep_range(1000, 1500);
++	regmap_write(priv->regmap, p0 + EN751221_USB_PHY_USBPHYACR0,
++		     EN751221_USB_PHY_USBPHYACR0_INIT);
++	usleep_range(1000, 1500);
++	regmap_write(priv->regmap, p0 + EN751221_USB_PHY_USBPHYACR1,
++		     EN751221_USB_PHY_USBPHYACR1_INIT);
++	usleep_range(1000, 1500);
++
++	/* Enable every U2 PHY port */
++	for (i = 0; i < data->num_u2_ports; i++) {
++		regmap_write(priv->regmap,
++			     data->u2_port_bases[i] + EN7528_USB_PHY_ACR3,
++			     EN751221_USB_PHY_ACR3_ENABLE);
++		usleep_range(1000, 1500);
++	}
++
++	/* Reset dance on every port's DTM0: idle, reset, idle */
++	for (i = 0; i < data->num_u2_ports; i++) {
++		regmap_write(priv->regmap,
++			     data->u2_port_bases[i] + EN751221_USB_PHY_U2PHYDTM0,
++			     EN751221_USB_PHY_U2PHYDTM0_INIT);
++		usleep_range(1000, 1500);
++	}
++	for (i = 0; i < data->num_u2_ports; i++) {
++		regmap_write(priv->regmap,
++			     data->u2_port_bases[i] + EN751221_USB_PHY_U2PHYDTM0,
++			     EN751221_USB_PHY_U2PHYDTM0_RESET);
++		usleep_range(1000, 1500);
++	}
++	for (i = 0; i < data->num_u2_ports; i++) {
++		regmap_write(priv->regmap,
++			     data->u2_port_bases[i] + EN751221_USB_PHY_U2PHYDTM0,
++			     EN751221_USB_PHY_U2PHYDTM0_INIT);
++		usleep_range(1000, 1500);
++	}
++
++	regmap_write(priv->regmap, p0 + EN751221_USB_PHY_U2PHYDTM1,
++		     EN751221_USB_PHY_U2PHYDTM1_INIT);
++	usleep_range(1000, 1500);
++}
++
+ static int en7528_usb_phy_init(struct phy *phy)
+ {
+ 	struct en7528_usb_phy_instance *instance = phy_get_drvdata(phy);
+ 	struct en7528_usb_phy_priv *priv = dev_get_drvdata(phy->dev.parent);
+-	unsigned int i;
+ 
+ 	switch (instance->type) {
+ 	case PHY_TYPE_USB2:
+-		/* Enable both U2 PHY ports before calibration */
+-		for (i = 0; i < EN7528_USB_PHY_NUM_U2_PORTS; i++)
+-			regmap_write(priv->regmap,
+-				     en7528_u2_port_bases[i] + EN7528_USB_PHY_ACR3,
+-				     EN7528_USB_PHY_ACR3_ENABLE);
++		priv->data->u2_init(priv);
+ 		break;
+ 	case PHY_TYPE_USB3:
+ 		/* Combo PHY Rx R mean value too high, tune -5 Ohm */
+@@ -181,10 +312,10 @@ static int en7528_usb_phy_power_on(struc
+ 	if (instance->type != PHY_TYPE_USB2)
+ 		return 0;
+ 
+-	/* Calibrate slew rate for both U2 PHY ports */
+-	for (i = 0; i < EN7528_USB_PHY_NUM_U2_PORTS; i++)
++	/* Calibrate slew rate for every U2 PHY port */
++	for (i = 0; i < priv->data->num_u2_ports; i++)
+ 		en7528_usb_phy_slew_rate_calibration(priv, i,
+-						     en7528_u2_port_bases[i]);
++						     priv->data->u2_port_bases[i]);
+ 
+ 	return 0;
+ }
+@@ -235,26 +366,59 @@ static const struct regmap_config en7528
+ 	.max_register = EN7528_USB_PHY_U2_P1_BASE + EN7528_USB_PHY_ACR3,
+ };
+ 
++static const struct en7528_usb_phy_soc_data en7528_usb_phy_data = {
++	.u2_port_bases	= en7528_u2_port_bases,
++	.num_u2_ports	= EN7528_USB_PHY_NUM_U2_PORTS,
++	.fmcr0		= EN7528_USB_PHY_FMCR0,
++	.fmmonr0	= EN7528_USB_PHY_FMMONR0,
++	.fmmonr1	= EN7528_USB_PHY_FMMONR1,
++	.max_register	= EN7528_USB_PHY_U2_P1_BASE + EN7528_USB_PHY_ACR3,
++	.has_usb3	= true,
++	.fixed_srctrl	= -1,
++	.u2_init	= en7528_usb_phy_u2_init,
++};
++
++static const struct en7528_usb_phy_soc_data en751221_usb_phy_data = {
++	.u2_port_bases	= en751221_u2_port_bases,
++	.num_u2_ports	= EN7528_USB_PHY_NUM_U2_PORTS,
++	.fmcr0		= EN751221_USB_PHY_FMCR0,
++	.fmmonr0	= EN751221_USB_PHY_FMMONR0,
++	.fmmonr1	= EN751221_USB_PHY_FMMONR1,
++	.max_register	= EN751221_USB_PHY_MAX_REGISTER,
++	.has_usb3	= false,
++	.fixed_srctrl	= EN7528_USB_PHY_DEFAULT_SR,
++	.u2_init	= en751221_usb_phy_u2_init,
++};
++
+ static int en7528_usb_phy_probe(struct platform_device *pdev)
+ {
++	const struct en7528_usb_phy_soc_data *data;
++	struct regmap_config regmap_config;
+ 	struct phy_provider *phy_provider;
+ 	struct en7528_usb_phy_priv *priv;
+ 	struct device *dev = &pdev->dev;
+ 	unsigned int index;
+ 	void *base;
+ 
++	data = of_device_get_match_data(dev);
++	if (!data)
++		return -EINVAL;
++
+ 	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
+ 	if (!priv)
+ 		return -ENOMEM;
+ 
+ 	priv->dev = dev;
++	priv->data = data;
+ 
+ 	base = devm_platform_ioremap_resource(pdev, 0);
+ 	if (IS_ERR(base))
+ 		return PTR_ERR(base);
+ 
+-	priv->regmap = devm_regmap_init_mmio(dev, base,
+-					     &en7528_usb_phy_regmap_config);
++	regmap_config = en7528_usb_phy_regmap_config;
++	regmap_config.max_register = data->max_register;
++
++	priv->regmap = devm_regmap_init_mmio(dev, base, &regmap_config);
+ 	if (IS_ERR(priv->regmap))
+ 		return PTR_ERR(priv->regmap);
+ 
+@@ -269,6 +433,8 @@ static int en7528_usb_phy_probe(struct p
+ 			phy_type = PHY_TYPE_USB2;
+ 			break;
+ 		case EN7528_PHY_USB3:
++			if (!data->has_usb3)
++				continue;
+ 			phy_type = PHY_TYPE_USB3;
+ 			break;
+ 		default:
+@@ -297,7 +463,10 @@ static int en7528_usb_phy_probe(struct p
+ }
+ 
+ static const struct of_device_id en7528_usb_phy_match[] = {
+-	{ .compatible = "econet,en7528-usb-phy" },
++	{ .compatible = "econet,en7528-usb-phy",
++	  .data = &en7528_usb_phy_data },
++	{ .compatible = "econet,en751221-usb-phy",
++	  .data = &en751221_usb_phy_data },
+ 	{ },
+ };
+ MODULE_DEVICE_TABLE(of, en7528_usb_phy_match);
+@@ -313,4 +482,4 @@ static struct platform_driver en7528_usb
+ module_platform_driver(en7528_usb_phy_driver);
+ 
+ MODULE_LICENSE("GPL");
+-MODULE_DESCRIPTION("EcoNet EN7528 USB PHY driver");
++MODULE_DESCRIPTION("EcoNet EN7528/EN751221 USB PHY driver");
