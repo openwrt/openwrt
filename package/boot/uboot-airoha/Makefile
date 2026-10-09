@@ -94,6 +94,8 @@ UBOOT_CUSTOMIZE_CONFIG := \
 	--disable TOOLS_KWBIMAGE \
 	--disable TOOLS_LIBCRYPTO \
 	--disable TOOLS_MKEFICAPSULE \
+	--enable DM_RNG \
+	--enable RNG_AIROHA \
 	--enable SERIAL_RX_BUFFER \
 	--set-val SERIAL_RX_BUFFER_SIZE 256
 
