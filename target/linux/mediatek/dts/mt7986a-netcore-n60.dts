@@ -22,8 +22,6 @@
 	};
 
 	chosen {
-		bootargs-append = " root=/dev/fit0 rootwait";
-		rootdisk = <&ubi_rootdisk>;
 		stdout-path = "serial0:115200n8";
 	};
 
@@ -187,6 +185,10 @@
 		spi-tx-bus-width = <4>;
 		spi-rx-bus-width = <4>;
 
+		mediatek,nmbm;
+		mediatek,bmt-max-ratio = <1>;
+		mediatek,bmt-max-reserved-blocks = <64>;
+
 		partitions {
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
@@ -212,7 +214,6 @@
 			partition@380000 {
 				label = "FIP";
 				reg = <0x0380000 0x0200000>;
-				read-only;
 			};
 
 			partition@580000 {
