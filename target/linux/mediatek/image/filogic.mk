@@ -2203,6 +2203,20 @@ define Device/huasifei_wh3000r-nand
 endef
 TARGET_DEVICES += huasifei_wh3000r-nand
 
+define Device/huasifei_ws1698-nand
+  DEVICE_VENDOR := Huasifei
+  DEVICE_MODEL := WS1698
+  DEVICE_VARIANT := NAND
+  DEVICE_DTS := mt7981b-huasifei-ws1698-nand
+  DEVICE_DTS_DIR := ../dts
+  SUPPORTED_DEVICES += huasifei,ws1698
+  IMAGE_SIZE := 231936k
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware \
+	kmod-usb3
+endef
+TARGET_DEVICES += huasifei_ws1698-nand
+
 define Device/imou_hx21
   DEVICE_VENDOR := Imou
   DEVICE_MODEL := HX21
