@@ -492,6 +492,7 @@ struct rtl838x_switch_priv {
 	struct device *dev;
 	u16 family_id;
 	struct rtldsa_port ports[57];
+	struct regmap *map;
 	struct mutex reg_mutex;		/* Mutex for individual register manipulations */
 	struct mutex pie_mutex;		/* Mutex for Packet Inspection Engine */
 	int link_state_irq;

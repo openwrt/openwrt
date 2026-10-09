@@ -9,6 +9,7 @@
 #include <linux/etherdevice.h>
 #include <linux/if_vlan.h>
 #include <linux/inetdevice.h>
+#include <linux/mfd/syscon.h>
 #include <linux/platform_device.h>
 #include <linux/rhashtable.h>
 #include <linux/of_net.h>
@@ -327,8 +328,12 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 		return -ENOMEM;
 
 	priv->r = r;
-	memset(priv->lag_primary, -1, sizeof(priv->lag_primary));
+	priv->map = syscon_node_to_regmap(dev->of_node);
+	if (IS_ERR(priv->map))
+		return dev_err_probe(dev, PTR_ERR(priv->map),
+				     "no switch register map\n");
 
+	memset(priv->lag_primary, -1, sizeof(priv->lag_primary));
 	priv->l2_uc_map = devm_kcalloc(dev, r->fib_entries, sizeof(*priv->l2_uc_map),
 				       GFP_KERNEL);
 	if (!priv->l2_uc_map)
