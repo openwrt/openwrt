@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 /* Copyright (c) 2024, Robert Marko <robimarko@gmail.com> */
 
-/dts-v1/;
-
 #include "ipq8074.dtsi"
 #include "ipq8074-hk-cpu.dtsi"
 #include "ipq8074-ess.dtsi"
@@ -11,9 +9,6 @@
 #include <dt-bindings/leds/common.h>
 
 / {
-	model = "Asus RT-AX89X";
-	compatible = "asus,rt-ax89x", "qcom,ipq8074";
-
 	aliases {
 		serial0 = &blsp1_uart5;
 		mdio-gpio0 = &mdio1;
@@ -745,7 +740,7 @@
 			nvmem-cell-names = "mac-address";
 		};
 
-		port@6 {
+		port_10g_copper: port@6 {
 			reg = <6>;
 			label = "10g-copper";
 			phy-handle = <&aqr113c>;
