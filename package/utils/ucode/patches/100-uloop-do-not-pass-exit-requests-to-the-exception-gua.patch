@@ -1,0 +1,69 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Thu, 15 Oct 2026 14:27:10 +0200
+Subject: [PATCH] uloop: do not pass exit() requests to the exception guard
+
+Since the exception guard was added, uc_uloop_vm_call() hands every
+exception of a callback to the guard handler, also the EXCEPTION_EXIT
+that exit() raises. The guard receives an "Exit" exception and the loop
+keeps running. When run() returns, the script ends with code 0 instead
+of the code given to exit(), because the VM already reset its call
+frames for the exit request.
+
+End the loop and keep the exit request pending, as without a guard, so
+that the script terminates with the requested code.
+
+Fixes: aaf712eb4fb4 ("uloop: add guard() function")
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ create mode 100644 tests/custom/06_lib_uloop/12_callback_exit
+
+--- a/lib/uloop.c
++++ b/lib/uloop.c
+@@ -149,9 +149,17 @@ uc_uloop_vm_call(uc_vm_t *vm, bool mcall
+ {
+ 	uc_value_t *exh, *val;
+ 
+-	if (uc_vm_call(vm, mcall, nargs) == EXCEPTION_NONE)
++	switch (uc_vm_call(vm, mcall, nargs)) {
++	case EXCEPTION_NONE:
+ 		return true;
+ 
++	case EXCEPTION_EXIT:
++		goto error;
++
++	default:
++		break;
++	}
++
+ 	exh = uc_vm_registry_get(vm, "uloop.ex_handler");
+ 	if (!ucv_is_callable(exh))
+ 		goto error;
+--- /dev/null
++++ b/tests/custom/06_lib_uloop/12_callback_exit
+@@ -0,0 +1,26 @@
++Calling exit() in a uloop callback ends the loop and terminates the script
++with the given code, also when an exception guard is set. The guard does not
++receive the exit request.
++
++-- Testcase --
++{%
++	import * as uloop from 'uloop';
++
++	uloop.init();
++
++	uloop.guard((e) => print(`guard: ${e.type}\n`));
++
++	uloop.timer(10, () => exit(4));
++	uloop.timer(100, () => {
++		print("loop kept running\n");
++		uloop.end();
++	});
++
++	uloop.run();
++	print("run() returned\n");
++%}
++-- End --
++
++-- Expect exitcode --
++4
++-- End --
