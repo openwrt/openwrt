@@ -263,8 +263,6 @@ config OPENSSL_ENGINE
 		using an engine-enabled library (i.e. from the official repo) may
 		fail to run.  Compile and install the packages with engine support
 		disabled, and you should be fine.
-		Note that you need to enable KERNEL_AIO to be able to build the
-		afalg engine package.
 
 config OPENSSL_ENGINE_BUILTIN
 	bool "Build chosen engines into libcrypto"
@@ -274,15 +272,6 @@ config OPENSSL_ENGINE_BUILTIN
 		them as dynamic engines in separate packages.
 		The benefit of building the engines into libcrypto is that they won't
 		require any configuration to be used by default.
-
-config OPENSSL_ENGINE_BUILTIN_AFALG
-	bool
-	prompt "Acceleration support through AF_ALG sockets engine"
-	depends on OPENSSL_ENGINE_BUILTIN && KERNEL_AIO
-	select PACKAGE_libopenssl-conf
-	help
-		This enables use of hardware acceleration through the
-		AF_ALG kernel interface.
 
 config OPENSSL_ENGINE_BUILTIN_DEVCRYPTO
 	bool
