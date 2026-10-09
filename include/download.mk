@@ -163,7 +163,7 @@ define DownloadMethod/unknown
 endef
 
 define DownloadMethod/default
-	$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(FILE)" "$(HASH)" "$(URL_FILE)" $(foreach url,$(URL),"$(url)") \
+	SPOOF_USER_AGENT="$(SPOOF_USER_AGENT)" $(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(FILE)" "$(HASH)" "$(URL_FILE)" $(foreach url,$(URL),"$(url)") \
 	$(if $(filter check,$(1)), \
 		$(call check_hash,$(FILE),$(HASH),$(2)$(call hash_var,$(MD5SUM))) \
 		$(call check_md5,$(MD5SUM),$(2)MD5SUM,$(2)HASH) \
@@ -330,6 +330,7 @@ define Download/Defaults
   SOURCE_VERSION:=
   OPTS:=
   SUBMODULES:=
+  SPOOF_USER_AGENT:=
 endef
 
 define Download/default
@@ -345,6 +346,7 @@ define Download/default
   SOURCE_VERSION:=$(PKG_SOURCE_VERSION)
   $(if $(PKG_MD5SUM),MD5SUM:=$(PKG_MD5SUM))
   $(if $(PKG_HASH),HASH:=$(PKG_HASH))
+  $(if $(PKG_SPOOF_USER_AGENT),SPOOF_USER_AGENT:=$(PKG_SPOOF_USER_AGENT))
 endef
 
 define Download
