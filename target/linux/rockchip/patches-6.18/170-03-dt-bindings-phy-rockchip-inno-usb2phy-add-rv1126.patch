@@ -1,0 +1,72 @@
+From 7865df7d246c6fc91e74b00e4bac272615bb9df4 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 9 Oct 2026 14:00:29 +0100
+Subject: [PATCH] dt-bindings: phy: rockchip,inno-usb2phy: add rv1126
+
+The RV1126 has two Innosilicon USB2 PHYs, one with an OTG port and one
+with a host port. Their registers live in the general register files,
+referenced through rockchip,usbgrf, and each PHY takes a reference
+clock and an APB clock named phyclk and pclk.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ .../bindings/phy/rockchip,inno-usb2phy.yaml   | 27 +++++++++++++++++--
+ 1 file changed, 25 insertions(+), 2 deletions(-)
+
+--- a/Documentation/devicetree/bindings/phy/rockchip,inno-usb2phy.yaml
++++ b/Documentation/devicetree/bindings/phy/rockchip,inno-usb2phy.yaml
+@@ -25,6 +25,7 @@ properties:
+       - rockchip,rk3576-usb2phy
+       - rockchip,rk3588-usb2phy
+       - rockchip,rv1108-usb2phy
++      - rockchip,rv1126-usb2phy
+ 
+   reg:
+     maxItems: 1
+@@ -44,7 +45,9 @@ properties:
+     minItems: 1
+     items:
+       - const: phyclk
+-      - const: aclk
++      - enum:
++          - aclk
++          - pclk
+       - const: aclk_slv
+ 
+   assigned-clocks:
+@@ -78,7 +81,8 @@ properties:
+     description:
+       Phandle to the syscon managing the 'usb general register files'.
+       When set the driver will request its phandle as one companion-grf
+-      for some special SoCs (e.g rv1108).
++      for some special SoCs (e.g rv1108). On rv1126 it points to the general
++      register files holding the phy registers.
+ 
+   host-port:
+     type: object
+@@ -217,6 +221,25 @@ allOf:
+         clock-names:
+           minItems: 3
+ 
++  - if:
++      properties:
++        compatible:
++          contains:
++            enum:
++              - rockchip,rv1126-usb2phy
++    then:
++      properties:
++        clocks:
++          minItems: 2
++          maxItems: 2
++        clock-names:
++          items:
++            - const: phyclk
++            - const: pclk
++
++      required:
++        - rockchip,usbgrf
++
+ additionalProperties: false
+ 
+ examples:
