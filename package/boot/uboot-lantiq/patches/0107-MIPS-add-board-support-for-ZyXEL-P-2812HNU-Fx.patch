@@ -231,7 +231,7 @@ Signed-off-by: Luka Perkov <luka@openwrt.org>
  Active  nds32       n1213          ag101       AndesTech       adp-ag101           adp-ag101                            -                                                                                                                                 Andes <uboot@andestech.com>
 --- /dev/null
 +++ b/include/configs/p2812hnufx.h
-@@ -0,0 +1,69 @@
+@@ -0,0 +1,75 @@
 +/*
 + * Copyright (C) 2013 Luka Perkov <luka@openwrt.org>
 + *
@@ -289,6 +289,12 @@ Signed-off-by: Luka Perkov <luka@openwrt.org>
 +/* Pull in default board configs for Lantiq XWAY VRX200 */
 +#include <asm/lantiq/config.h>
 +#include <asm/arch/config.h>
++
++/* Override SPL base address for NAND boot (bootstrap loads SPL to SRAM+0x800) */
++#if defined(CONFIG_SYS_BOOT_NANDSPL)
++#undef CONFIG_SPL_TEXT_BASE
++#define CONFIG_SPL_TEXT_BASE		0xBE220800
++#endif
 +
 +/* Pull in default OpenWrt configs for Lantiq SoC */
 +#include "openwrt-lantiq-common.h"
