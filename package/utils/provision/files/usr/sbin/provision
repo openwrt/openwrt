@@ -32,11 +32,21 @@ if (!length(ARGV))
 	usage();
 
 const create_error_msg = `Provisioning partition could not be created.
-This is only supported on devices with UBI for now.
+It needs UBI, or a GPT partition named 'provisioning' on a block device.
 If there was not enough space, please reflash using the sysugrade -P parameter
 `;
 
 let ctx;
+
+function commit()
+{
+	if (ctx.commit())
+		return;
+
+	warn('Commit failed\n');
+	exit(1);
+}
+
 if (ARGV[0] == "create") {
 	ctx = provision.create();
 	if (!ctx) {
@@ -44,7 +54,7 @@ if (ARGV[0] == "create") {
 		exit(1);
 	}
 	ctx.reset();
-	ctx.commit();
+	commit();
 	exit(0);
 } else {
 	ctx = provision.open();
@@ -83,7 +93,7 @@ case "set":
 		exit(1);
 	}
 
-	ctx.commit();
+	commit();
 	break;
 case "delete":
 	if (length(ARGV) != 1)
@@ -93,14 +103,17 @@ case "delete":
 		warn('Delete failed\n');
 		exit(1);
 	}
-	ctx.commit();
+	commit();
 	break;
 case "reset":
 	ctx.reset();
-	ctx.commit();
+	commit();
 	break;
 case "destroy":
-	ctx.destroy();
+	if (!ctx.destroy()) {
+		warn('Destroy failed\n');
+		exit(1);
+	}
 	break;
 default:
 	usage();

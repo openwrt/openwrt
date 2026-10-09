@@ -1,0 +1,44 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Mon, 28 Sep 2026 03:10:00 +0200
+Subject: [PATCH] AP MLD: answer a frame from an unknown station on its own link
+
+EVENT_RX_FROM_UNKNOWN carries the link on which the driver received a
+class 3 frame from a station it does not know, and the event handler
+switches to the BSS of that link. hostapd_rx_from_unknown_sta() then
+looks the BSS up again by the address of the MLD netdev with no link.
+That address matches no link BSS by its link address, so the lookup
+returns the partner link whose own address equals the AP MLD address,
+or none. The Deauthentication frame with reason 7 goes out on that
+partner link, where a non-AP MLD that set up the other link alone does
+not take it, or it is not sent at all. The station then never starts an
+SA Query and keeps its association.
+
+Pass the link of the event to get_hapd_bssid(), as hostapd_mgmt_rx()
+does for a received management frame.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/drv_callbacks.c
++++ b/src/ap/drv_callbacks.c
+@@ -1962,9 +1962,9 @@ static struct hostapd_data * get_hapd_bs
+ 
+ static void hostapd_rx_from_unknown_sta(struct hostapd_data *hapd,
+ 					const u8 *bssid, const u8 *addr,
+-					int wds)
++					int wds, int link_id)
+ {
+-	hapd = get_hapd_bssid(hapd->iface, bssid, -1);
++	hapd = get_hapd_bssid(hapd->iface, bssid, link_id);
+ 	if (hapd == NULL || hapd == HAPD_BROADCAST)
+ 		return;
+ 
+@@ -2728,7 +2728,8 @@ void wpa_supplicant_event(void *ctx, enu
+ 		hapd = switch_link_hapd(hapd, data->rx_from_unknown.link_id);
+ 		hostapd_rx_from_unknown_sta(hapd, data->rx_from_unknown.bssid,
+ 					    data->rx_from_unknown.addr,
+-					    data->rx_from_unknown.wds);
++					    data->rx_from_unknown.wds,
++					    data->rx_from_unknown.link_id);
+ 		break;
+ #endif /* NEED_AP_MLME */
+ 	case EVENT_RX_MGMT:

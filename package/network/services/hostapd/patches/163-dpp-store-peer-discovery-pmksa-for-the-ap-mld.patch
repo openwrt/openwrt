@@ -1,0 +1,70 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 26 Sep 2026 10:00:00 +0200
+Subject: [PATCH] DPP: store the Network Introduction PMKSA for the AP MLD as
+ well
+
+wpas_dpp_rx_peer_disc_resp() adds the PMKSA it derives under the address
+of the affiliated AP that sent the Peer Discovery Response. For an MLD
+association, sme_send_authentication() and wpas_populate_assoc_ies() look
+up the PMKSA by the AP MLD address instead. The lookup misses whenever the
+link address differs from the MLD address, the Association Request then
+carries the DPP AKM without a PMKID, and the AP rejects it with status 53
+(invalid PMKID), because wpa_validate_wpa_ie() requires a PMKSA for DPP.
+
+The AP side already stores the PMKSA in the per-link and the MLD-level
+cache (commit 0de2f1865d31 "AP MLD: Store PMKSA from DPP to both per-link
+and MLD-level cache"). Do the same in the station: add a copy of the entry
+under the AP MLD address when the scan entry of the responding AP names
+one.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/wpa_supplicant/dpp_supplicant.c
++++ b/wpa_supplicant/dpp_supplicant.c
+@@ -2775,6 +2775,27 @@ wpas_dpp_rx_reconfig_auth_conf(struct wp
+ #endif /* CONFIG_DPP2 */
+ 
+ 
++static void wpas_dpp_pmksa_cache_add(struct wpa_supplicant *wpa_s,
++				     struct rsn_pmksa_cache_entry *entry)
++{
++	struct rsn_pmksa_cache_entry *mld_entry = NULL;
++	struct wpa_bss *bss;
++
++	/* An MLD association looks up the PMKSA by the AP MLD address */
++	bss = wpa_bss_get_bssid_latest(wpa_s, entry->aa);
++	if (bss && !is_zero_ether_addr(bss->mld_addr) &&
++	    !ether_addr_equal(bss->mld_addr, entry->aa)) {
++		mld_entry = os_memdup(entry, sizeof(*entry));
++		if (mld_entry)
++			os_memcpy(mld_entry->aa, bss->mld_addr, ETH_ALEN);
++	}
++
++	wpa_sm_pmksa_cache_add_entry(wpa_s->wpa, entry);
++	if (mld_entry)
++		wpa_sm_pmksa_cache_add_entry(wpa_s->wpa, mld_entry);
++}
++
++
+ static void wpas_dpp_rx_peer_disc_resp(struct wpa_supplicant *wpa_s,
+ 				       const u8 *src,
+ 				       const u8 *buf, size_t len)
+@@ -2917,7 +2938,7 @@ static void wpas_dpp_rx_peer_disc_resp(s
+ 	entry->expiration = rnow.sec + seconds;
+ 	entry->reauth_time = rnow.sec + seconds;
+ 	entry->network_ctx = ssid;
+-	wpa_sm_pmksa_cache_add_entry(wpa_s->wpa, entry);
++	wpas_dpp_pmksa_cache_add(wpa_s, entry);
+ 
+ 	wpa_msg(wpa_s, MSG_INFO, DPP_EVENT_INTRO "peer=" MACSTR
+ 		" status=%u version=%u", MAC2STR(src), status[0], peer_version);
+@@ -4070,7 +4091,7 @@ wpas_dpp_rx_priv_peer_intro_notify(struc
+ 	entry->expiration = rnow.sec + seconds;
+ 	entry->reauth_time = rnow.sec + seconds;
+ 	entry->network_ctx = ssid;
+-	wpa_sm_pmksa_cache_add_entry(wpa_s->wpa, entry);
++	wpas_dpp_pmksa_cache_add(wpa_s, entry);
+ 
+ 	/* Association will be initiated from TX status handler for the Private
+ 	 * Peer Intro Update: wpas_dpp_tx_priv_intro_status() */

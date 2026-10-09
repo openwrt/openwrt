@@ -63,28 +63,11 @@
 		compatible = "i2c-gpio";
 		#address-cells = <1>;
 		#size-cells = <0>;
+		status = "disabled";
 
 		scl-gpios = <&gpio0 22 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
 		sda-gpios = <&gpio0 23 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
 		clock-frequency = <100000>;
-
-		stc8: stc8@6e {
-			compatible = "hasivo,stc8-mfd", "syscon";
-			reg = <0x6e>;
-			#address-cells = <2>;
-			#size-cells = <0>;
-			hasivo,execute-bit = <0x40>;
-			hasivo,execute-bit-registers = <0x01 0x02>;
-			status = "okay";
-
-			watchdog {
-				compatible = "hasivo,mcu-wdt";
-			};
-
-			sensor {
-				compatible = "hasivo,mcu-sensor";
-			};
-		};
 	};
 
 	sfp0: sfp-p1 {
@@ -170,8 +153,8 @@
 			};
 
 			/* stock is RUNTIME and RUNTIME2
-			 * RUNTIME is <0x0300000 0x0e80000>
-			 * RUNTIME2 is <0x1180000 0x0e80000>
+			 * RUNTIME is <0x0300000 0x0700000>
+			 * RUNTIME2 is <0x0a00000 0x1600000>
 			 */
 			partition@300000 {
 				compatible = "openwrt,uimage", "denx,uimage";
@@ -243,4 +226,3 @@
 		};
 	};
 };
-

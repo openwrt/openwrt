@@ -71,7 +71,7 @@ export $(PKG_GNULIB_BASE)_xsize=$(HOST_BUILD_DIR)/$(PKG_GNULIB_BASE)/$(PKG_GNULI
 
 HOST_MAKE_FLAGS += \
 	am__CONFIG_DISTCLEAN_FILES= \
-	DEFAULT_INCLUDES='-I. -I$$$$(top_builddir) -I$$$$(top_srcdir)/$(PKG_GNULIB_BASE)' \
+	DEFAULT_INCLUDES='$$$$(if $$$$(findstring $(lastword $(PKG_SUBDIRS)),$$$$(subdir)),,-I.) -I$$$$(top_builddir) -I$$$$(top_srcdir)/$(PKG_GNULIB_BASE)' \
 	AM_LDFLAGS='$$$$(STACK_USAGE_NO_ERROR)' \
 	LIBS+='$$$$(if $$$$(findstring $(lastword $(PKG_SUBDIRS)),$$$$(subdir)), $$$$($(PKG_GNULIB_BASE)))' \
 	LIBS+='$$$$(wildcard $$$$($(PKG_GNULIB_BASE)_exitfail))' \

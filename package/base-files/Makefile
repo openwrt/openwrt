@@ -231,6 +231,7 @@ else
 	$(LN) /tmp/run $(1)/var/run
 endif
 	$(LN) /tmp/resolv.conf /tmp/TZ /tmp/localtime $(1)/etc/
+	$(LN) /tmp/sysinfo/board.json $(1)/etc/board.json
 
 	chmod 0600 $(1)/etc/shadow
 	chmod 1777 $(1)/tmp

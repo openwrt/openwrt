@@ -1,0 +1,136 @@
+From 5c660b243435d74d17a6721cd90e9d188b231cc8 Mon Sep 17 00:00:00 2001
+From: P Praneesh <praneesh.p@oss.qualcomm.com>
+Date: Sun, 14 Jun 2026 10:47:31 +0530
+Subject: [PATCH 1/5] wifi: cfg80211: Drop unused link stats handling in
+ nl80211_send_station()
+
+Remove the link level statistics handling from
+nl80211_send_station() and drop the unused link_stats parameter
+from its signature and callers. The removed code iterated over
+each MLO link and attempted to send link specific station data
+through NL80211_ATTR_MLO_LINKS, but this logic was never used
+because link_stats was always false.
+
+This logic was introduced during early work on link level station
+statistics with the intention of reporting information for each
+link. Due to message size concerns when a station has multiple
+links, the feature was disabled behind the link_stats flag and
+remained unused.
+
+The link level reporting block in nl80211_send_station() is dead
+code and cannot support larger messages, so remove it. This
+cleanup also prepares for proper link level statistics reporting
+in nl80211_dump_station() in a later patch, where fragmentation
+allows safe transmission of multi link data.
+
+Also fix label indentation: the nla_put_failure label had an
+erroneous leading space.
+
+Signed-off-by: P Praneesh <praneesh.p@oss.qualcomm.com>
+Link: https://patch.msgid.link/20260614051739.3979947-2-praneesh.p@oss.qualcomm.com
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+---
+ net/wireless/nl80211.c | 50 +++++-------------------------------------
+ 1 file changed, 6 insertions(+), 44 deletions(-)
+
+--- a/net/wireless/nl80211.c
++++ b/net/wireless/nl80211.c
+@@ -8045,14 +8045,10 @@ static int nl80211_send_station(struct s
+ 				u32 seq, int flags,
+ 				struct cfg80211_registered_device *rdev,
+ 				struct wireless_dev *wdev,
+-				const u8 *mac_addr, struct station_info *sinfo,
+-				bool link_stats)
++				const u8 *mac_addr, struct station_info *sinfo)
+ {
+ 	void *hdr;
+ 	struct nlattr *sinfoattr, *bss_param;
+-	struct link_station_info *link_sinfo;
+-	struct nlattr *links, *link;
+-	int link_id;
+ 
+ 	hdr = nl80211hdr_put(msg, portid, seq, flags, cmd);
+ 	if (!hdr) {
+@@ -8270,45 +8266,11 @@ static int nl80211_send_station(struct s
+ 			goto nla_put_failure;
+ 	}
+ 
+-	if (link_stats && sinfo->valid_links) {
+-		links = nla_nest_start(msg, NL80211_ATTR_MLO_LINKS);
+-		if (!links)
+-			goto nla_put_failure;
+-
+-		for_each_valid_link(sinfo, link_id) {
+-			link_sinfo = sinfo->links[link_id];
+-
+-			if (WARN_ON_ONCE(!link_sinfo))
+-				continue;
+-
+-			if (!is_valid_ether_addr(link_sinfo->addr))
+-				continue;
+-
+-			link = nla_nest_start(msg, link_id + 1);
+-			if (!link)
+-				goto nla_put_failure;
+-
+-			if (nla_put_u8(msg, NL80211_ATTR_MLO_LINK_ID,
+-				       link_id))
+-				goto nla_put_failure;
+-
+-			if (nla_put(msg, NL80211_ATTR_MAC, ETH_ALEN,
+-				    link_sinfo->addr))
+-				goto nla_put_failure;
+-
+-			if (nl80211_fill_link_station(msg, rdev, link_sinfo))
+-				goto nla_put_failure;
+-
+-			nla_nest_end(msg, link);
+-		}
+-		nla_nest_end(msg, links);
+-	}
+-
+ 	cfg80211_sinfo_release_content(sinfo);
+ 	genlmsg_end(msg, hdr);
+ 	return 0;
+ 
+- nla_put_failure:
++nla_put_failure:
+ 	cfg80211_sinfo_release_content(sinfo);
+ 	genlmsg_cancel(msg, hdr);
+ 	return -EMSGSIZE;
+@@ -8561,7 +8523,7 @@ static int nl80211_dump_station(struct s
+ 				NETLINK_CB(cb->skb).portid,
+ 				cb->nlh->nlmsg_seq, NLM_F_MULTI,
+ 				rdev, wdev, mac_addr,
+-				&sinfo, false) < 0)
++				&sinfo) < 0)
+ 			goto out;
+ 
+ 		sta_idx++;
+@@ -8625,7 +8587,7 @@ static int nl80211_get_station(struct sk
+ 
+ 	if (nl80211_send_station(msg, NL80211_CMD_NEW_STATION,
+ 				 info->snd_portid, info->snd_seq, 0,
+-				 rdev, wdev, mac_addr, &sinfo, false) < 0) {
++				 rdev, wdev, mac_addr, &sinfo) < 0) {
+ 		nlmsg_free(msg);
+ 		return -ENOBUFS;
+ 	}
+@@ -21647,7 +21609,7 @@ void cfg80211_new_sta(struct wireless_de
+ 		return;
+ 
+ 	if (nl80211_send_station(msg, NL80211_CMD_NEW_STATION, 0, 0, 0,
+-				 rdev, wdev, mac_addr, sinfo, false) < 0) {
++				 rdev, wdev, mac_addr, sinfo) < 0) {
+ 		nlmsg_free(msg);
+ 		return;
+ 	}
+@@ -21677,7 +21639,7 @@ void cfg80211_del_sta_sinfo(struct wirel
+ 	}
+ 
+ 	if (nl80211_send_station(msg, NL80211_CMD_DEL_STATION, 0, 0, 0,
+-				 rdev, wdev, mac_addr, sinfo, false) < 0) {
++				 rdev, wdev, mac_addr, sinfo) < 0) {
+ 		nlmsg_free(msg);
+ 		return;
+ 	}

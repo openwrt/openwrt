@@ -1,0 +1,182 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sun, 27 Sep 2026 19:30:00 +0200
+Subject: [PATCH] AP MLD: list the elements a link profile does not carry
+
+A per-STA profile in the Basic Multi-Link element of an (Re)Association
+Response inherits each element of the frame that carries it and that it
+does not carry itself, unless a Non-Inheritance element lists it (IEEE
+802.11be 35.3.3.5.1). ieee80211_ml_build_assoc_resp() adds no such
+element. When the station associates on a 5 GHz link, the profile of a
+2.4 GHz partner link omits VHT Capabilities and VHT Operation and so
+inherits those of the 5 GHz link. mac80211 with IEEE80211_HW_STRICT then
+rejects the association ("[link 0] VHT capabilities mismatch"), and a
+driver without it sets up the 2.4 GHz link with VHT parameters the AP
+does not use there.
+
+Pass the BSS whose frame carries the Basic Multi-Link element to the
+profile builder, and list those of HT Capabilities, HT Operation, VHT
+Capabilities, VHT Operation and HE 6 GHz Band Capabilities that this
+frame carries and the partner link does not. A Non-Inheritance element
+names only elements present in the frame that carries the Basic
+Multi-Link element (9.4.2.239). A Link Reconfiguration Response carries
+none of them outside the Basic Multi-Link element, so its profiles get
+no Non-Inheritance element.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -6165,7 +6165,92 @@ static int check_assoc_ies(struct hostap
+ 
+ #ifdef CONFIG_IEEE80211BE
+ 
+-void ieee80211_ml_build_assoc_resp(struct hostapd_data *hapd,
++static bool ml_eid_ht_cap(struct hostapd_data *hapd, u8 *tmp)
++{
++	return hostapd_eid_ht_capabilities(hapd, tmp) != tmp;
++}
++
++
++static bool ml_eid_ht_oper(struct hostapd_data *hapd, u8 *tmp)
++{
++	return hostapd_eid_ht_operation(hapd, tmp) != tmp;
++}
++
++
++static bool ml_eid_vht_cap(struct hostapd_data *hapd, u8 *tmp)
++{
++	return hostapd_is_vht_enabled(hapd) &&
++		hostapd_eid_vht_capabilities(hapd, tmp, 0) != tmp;
++}
++
++
++static bool ml_eid_vht_oper(struct hostapd_data *hapd, u8 *tmp)
++{
++	return hostapd_is_vht_enabled(hapd) &&
++		hostapd_eid_vht_operation(hapd, tmp) != tmp;
++}
++
++
++static bool ml_eid_he_6ghz_cap(struct hostapd_data *hapd, u8 *tmp)
++{
++	return hostapd_is_he_enabled(hapd) &&
++		hostapd_eid_he_6ghz_band_cap(hapd, tmp) != tmp;
++}
++
++
++/* IEEE 802.11be 35.3.3.5.1: elements a per-STA profile does not inherit */
++static u8 * ieee80211_ml_non_inheritance(struct hostapd_data *carrier,
++					 struct hostapd_data *hapd,
++					 u8 *eid, const u8 *end)
++{
++	static const struct {
++		u8 id;
++		bool ext;
++		bool (*present)(struct hostapd_data *hapd, u8 *tmp);
++	} candidates[] = {
++		{ WLAN_EID_HT_CAP, false, ml_eid_ht_cap },
++		{ WLAN_EID_HT_OPERATION, false, ml_eid_ht_oper },
++		{ WLAN_EID_VHT_CAP, false, ml_eid_vht_cap },
++		{ WLAN_EID_VHT_OPERATION, false, ml_eid_vht_oper },
++		{ WLAN_EID_EXT_HE_6GHZ_BAND_CAP, true, ml_eid_he_6ghz_cap },
++	};
++	u8 ids[ARRAY_SIZE(candidates)], ext_ids[ARRAY_SIZE(candidates)];
++	size_t n_ids = 0, n_ext_ids = 0, i;
++	u8 tmp[64];
++
++	if (!carrier || carrier == hapd)
++		return eid;
++
++	for (i = 0; i < ARRAY_SIZE(candidates); i++) {
++		if (!candidates[i].present(carrier, tmp) ||
++		    candidates[i].present(hapd, tmp))
++			continue;
++		if (candidates[i].ext)
++			ext_ids[n_ext_ids++] = candidates[i].id;
++		else
++			ids[n_ids++] = candidates[i].id;
++	}
++
++	if ((!n_ids && !n_ext_ids) ||
++	    end - eid < (long) (5 + n_ids + n_ext_ids))
++		return eid;
++
++	*eid++ = WLAN_EID_EXTENSION;
++	*eid++ = 3 + n_ids + n_ext_ids;
++	*eid++ = WLAN_EID_EXT_NON_INHERITANCE;
++	*eid++ = n_ids;
++	os_memcpy(eid, ids, n_ids);
++	eid += n_ids;
++	*eid++ = n_ext_ids;
++	os_memcpy(eid, ext_ids, n_ext_ids);
++	eid += n_ext_ids;
++
++	return eid;
++}
++
++
++void ieee80211_ml_build_assoc_resp(struct hostapd_data *carrier,
++				   struct hostapd_data *hapd,
+ 				   struct mld_link_info *link)
+ {
+ 	u8 buf[EHT_ML_MAX_STA_PROF_LEN];
+@@ -6219,6 +6304,9 @@ void ieee80211_ml_build_assoc_resp(struc
+ 		p += wpabuf_len(hapd->conf->assocresp_elements);
+ 	}
+ 
++	/* The Non-Inheritance element is the last element of the profile */
++	p = ieee80211_ml_non_inheritance(carrier, hapd, p, buf + buflen);
++
+ out:
+ 	os_free(link->resp_sta_profile);
+ 	link->resp_sta_profile = os_memdup(buf, p - buf);
+@@ -6346,7 +6434,10 @@ out:
+ 	link->status = status;
+ 
+ 	if (!offload && type != LINK_PARSE_RECONF)
+-		ieee80211_ml_build_assoc_resp(hapd, link);
++		ieee80211_ml_build_assoc_resp(
++			hostapd_mld_get_link_bss(hapd,
++						 origin_sta->mld_assoc_link_id),
++			hapd, link);
+ 
+ 	wpa_printf(MSG_DEBUG, "MLD: link: status=%u", status);
+ 	if (status != WLAN_STATUS_SUCCESS) {
+@@ -6428,12 +6519,12 @@ int hostapd_process_assoc_ml_info(struct
+ 
+ 			link->status = WLAN_STATUS_UNSPECIFIED_FAILURE;
+ 			if (!offload)
+-				ieee80211_ml_build_assoc_resp(hapd, link);
++				ieee80211_ml_build_assoc_resp(hapd, hapd, link);
+ 		} else if (tx_link_status != WLAN_STATUS_SUCCESS) {
+ 			/* TX link rejected the connection */
+ 			link->status = WLAN_STATUS_DENIED_TX_LINK_NOT_ACCEPTED;
+ 			if (!offload)
+-				ieee80211_ml_build_assoc_resp(hapd, link);
++				ieee80211_ml_build_assoc_resp(hapd, hapd, link);
+ 		} else {
+ 			if (ieee80211_ml_process_link(
+ 				    bss, sta, link, ies, ies_len,
+--- a/src/ap/ieee802_11.h
++++ b/src/ap/ieee802_11.h
+@@ -315,7 +315,8 @@ int ieee80211_ml_process_link(struct hos
+ 			      const u8 *ies, size_t ies_len,
+ 			      enum link_parse_type type, bool offload,
+ 			      bool *set_beacon);
+-void ieee80211_ml_build_assoc_resp(struct hostapd_data *hapd,
++void ieee80211_ml_build_assoc_resp(struct hostapd_data *carrier,
++				   struct hostapd_data *hapd,
+ 				   struct mld_link_info *link);
+ 
+ void ieee802_11_rx_protected_eht_action(struct hostapd_data *hapd,
+--- a/src/ap/ieee802_11_eht.c
++++ b/src/ap/ieee802_11_eht.c
+@@ -1965,7 +1965,7 @@ hostapd_send_link_reconf_resp(struct hos
+ 				continue;
+ 
+ 			link->valid = true;
+-			ieee80211_ml_build_assoc_resp(lhapd, link);
++			ieee80211_ml_build_assoc_resp(NULL, lhapd, link);
+ 		}
+ 		/* TODO: Basic MLE is not supposed to include BPCC in Link
+ 		 * Reconfiguration Response, but mac80211 implementation for

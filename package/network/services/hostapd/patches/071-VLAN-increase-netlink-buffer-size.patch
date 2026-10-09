@@ -15,18 +15,18 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/src/ap/vlan_full.c
 +++ b/src/ap/vlan_full.c
-@@ -771,6 +771,7 @@ struct full_dynamic_vlan *
+@@ -767,6 +767,7 @@ struct full_dynamic_vlan *
  full_dynamic_vlan_init(struct hostapd_data *hapd)
  {
  	struct sockaddr_nl local;
 +	int size = 262144;
  	struct full_dynamic_vlan *priv;
-
+ 
  	priv = os_zalloc(sizeof(*priv));
-@@ -790,6 +791,9 @@ full_dynamic_vlan_init(struct hostapd_da
+@@ -787,6 +788,9 @@ full_dynamic_vlan_init(struct hostapd_da
  		return NULL;
  	}
-
+ 
 +	setsockopt(priv->s, SOL_SOCKET, SO_RCVBUF, &size, sizeof(size));
 +	setsockopt(priv->s, SOL_SOCKET, SO_SNDBUF, &size, sizeof(size));
 +

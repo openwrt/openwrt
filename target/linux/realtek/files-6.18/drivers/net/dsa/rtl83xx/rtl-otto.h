@@ -613,7 +613,6 @@ void rtl930x_dbgfs_init(struct rtl838x_switch_priv *priv);
 
 void rtldsa_93xx_prepare_lag_fdb(struct rtl838x_l2_entry *e, int lag_group);
 
-struct otto_l3_nexthop;
 int rtldsa_find_l2_hash_entry(struct rtl838x_switch_priv *priv, u64 seed,
 			      bool must_exist, struct rtl838x_l2_entry *e);
 
@@ -628,9 +627,5 @@ static inline struct rtldsa_l2_uc *rtldsa_l2_uc_lookup(struct rtl838x_switch_pri
 
 	return &priv->l2_uc_map[idx];
 }
-
-int rtldsa_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop *nh,
-			  bool require_existing);
-int rtldsa_l2_nexthop_del(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop *nh);
 
 #endif /* _RTL838X_H */

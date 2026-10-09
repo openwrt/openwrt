@@ -1,0 +1,70 @@
+From e96ca6c0db28642c5bd5448d5abc61144e5572d0 Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 29 Sep 2026 08:21:27 +0200
+Subject: [PATCH] AP MLD: free the partner link stations of a BSS that is torn
+ down
+
+hostapd_bss_deinit_no_free() frees the stations of a BSS with
+hostapd_free_stas(). For a non-AP MLD whose association link is that
+BSS, ap_free_sta() clears the state machine of the partner link
+stations, and the partner links keep them: entries with no state
+machine, for a station that the STOP_AP of the link removes from the
+driver.
+
+Free them before the stations of the BSS. This runs on every teardown
+of a BSS of an AP MLD: a link removed from the AP MLD, and each link of
+an AP MLD that goes as a whole, where the first link frees the partner
+link stations that the later links would free with their own BSS.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ src/ap/hostapd.c  |  3 +++
+ src/ap/sta_info.c | 16 ++++++++++++++++
+ src/ap/sta_info.h |  1 +
+ 3 files changed, 20 insertions(+)
+
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -943,6 +943,9 @@ static int hostapd_flush_old_stations(st
+ 
+ void hostapd_bss_deinit_no_free(struct hostapd_data *hapd)
+ {
++#ifdef CONFIG_IEEE80211BE
++	hostapd_free_mld_partner_stas(hapd);
++#endif /* CONFIG_IEEE80211BE */
+ 	hostapd_free_stas(hapd);
+ 	hostapd_flush_old_stations(hapd, WLAN_REASON_DEAUTH_LEAVING);
+ #ifdef CONFIG_WEP
+--- a/src/ap/sta_info.c
++++ b/src/ap/sta_info.c
+@@ -2099,6 +2099,20 @@ static void ap_sta_remove_link_sta(struc
+ 		}
+ 	}
+ }
++
++
++void hostapd_free_mld_partner_stas(struct hostapd_data *hapd)
++{
++	struct sta_info *sta;
++
++	for (sta = hapd->sta_list; sta; sta = sta->next) {
++		if (!ap_sta_is_mld(hapd, sta) ||
++		    sta->mld_assoc_link_id != hapd->mld_link_id)
++			continue;
++
++		ap_sta_remove_link_sta(hapd, sta);
++	}
++}
+ #endif /* CONFIG_IEEE80211BE */
+ 
+ 
+--- a/src/ap/sta_info.h
++++ b/src/ap/sta_info.h
+@@ -477,6 +477,7 @@ static inline void ap_sta_set_mld(struct
+ void ap_sta_free_sta_profile(struct mld_info *info);
+ 
+ void hostapd_free_link_stas(struct hostapd_data *hapd);
++void hostapd_free_mld_partner_stas(struct hostapd_data *hapd);
+ void set_wpa_sm_for_each_partner_link(struct hostapd_data *hapd,
+ 				      struct sta_info *psta, void *wpa_sm);
+ void clear_wpa_sm_for_each_partner_link(struct hostapd_data *hapd,

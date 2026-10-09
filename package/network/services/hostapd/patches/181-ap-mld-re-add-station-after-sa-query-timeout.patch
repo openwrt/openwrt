@@ -1,0 +1,117 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Wed, 23 Sep 2026 12:25:30 +0200
+Subject: [PATCH] AP MLD: reset the station when association follows a timed
+ out SA Query
+
+A non-AP MLD that lost its association without a Deauthentication
+(power, crash, a local interface down) comes back with a new
+authentication and association. With PMF the AP answers status 30, runs
+an SA Query, and allows the next association once the query times out.
+handle_auth() keeps the WPA state machine and the station entries of a
+PMF station, so the partner link entries of the earlier association
+survive, and ieee80211_ml_process_link() refuses those links with "MLD:
+link: Station already exists" (status 1), or the kernel refuses the link
+station (status 17). The station then comes back with the association
+link only.
+
+IEEE Std 802.11be-2024 11.3.5.3 l) has all states of the earlier
+association deleted at that point. Delete them in handle_assoc() once
+the SA Query has timed out, before check_assoc_ies() runs: free the WPA
+state machine, which the station entries of all links share, the way
+handle_auth() does for a station without PMF, and then run
+ap_sta_re_add(), which removes the station entries of the other links.
+check_assoc_ies() then creates a state machine for the link that
+receives the association. Keep the authenticated state that
+ap_sta_re_add() clears.
+
+A state machine kept past ap_sta_re_add() does not work: its owner is
+the authenticator of the earlier association link, and ap_free_sta() of
+the station entries of the other links deinitialises it or marks their
+links invalid in it. The new association then has no state machine, or
+its 4-way handshake fails on the MLO Link KDE of such a link in M2.
+
+Only Open System and SAE authentication are covered, as FT and FILS keep
+keys of the authentication in the state machine, and only drivers with
+full AP client state, as in handle_auth().
+
+Upstream hostap still refuses the links as of 2026-09-22 (24c033de8775).
+
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -4576,15 +4576,8 @@ static void handle_auth(struct hostapd_d
+ 				  hapd->own_addr, ETH_ALEN);
+ 		}
+ 
+-		if ((!(sta->flags & WLAN_STA_MFP) ||
+-		     !ap_sta_is_authorized(sta)) && sta->wpa_sm) {
+-			struct wpa_state_machine *sm = sta->wpa_sm;
+-
+-			clear_wpa_sm_for_each_partner_link(hapd, sta);
+-			clear_wpa_sm_for_all_sta(hapd, sm);
+-			wpa_auth_sta_deinit(sm);
+-			sta->wpa_sm = NULL;
+-		}
++		if (!(sta->flags & WLAN_STA_MFP) || !ap_sta_is_authorized(sta))
++			ap_sta_free_wpa_sm(hapd, sta);
+ 	}
+ #endif /* CONFIG_IEEE80211BE */
+ 
+@@ -7429,6 +7422,25 @@ static void handle_assoc(struct hostapd_
+ 		goto fail;
+ 	}
+ 
++#ifdef CONFIG_IEEE80211BE
++	/*
++	 * IEEE Std 802.11be-2024, 11.3.5.3 l): delete the states of the earlier
++	 * association. FT and FILS keep keys in the state machine.
++	 */
++	if (hapd->conf->wpa && (sta->flags & WLAN_STA_MFP) &&
++	    sta->sa_query_timed_out && ap_sta_is_mld(hapd, sta) &&
++	    FULL_AP_CLIENT_STATE_SUPP(hapd->iface->drv_flags) &&
++	    (sta->auth_alg == WLAN_AUTH_OPEN ||
++	     sta->auth_alg == WLAN_AUTH_SAE)) {
++		ap_sta_free_wpa_sm(hapd, sta);
++		if (ap_sta_re_add(hapd, sta) < 0) {
++			resp = WLAN_STATUS_AP_UNABLE_TO_HANDLE_NEW_STA;
++			goto fail;
++		}
++		sta->flags |= WLAN_STA_AUTH;
++	}
++#endif /* CONFIG_IEEE80211BE */
++
+ 	/*
+ 	 * sta->capability is used in check_assoc_ies() for RRM enabled
+ 	 * capability element.
+--- a/src/ap/sta_info.c
++++ b/src/ap/sta_info.c
+@@ -275,6 +275,20 @@ void clear_wpa_sm_for_all_sta(struct hos
+ 	}
+ }
+ 
++
++void ap_sta_free_wpa_sm(struct hostapd_data *hapd, struct sta_info *sta)
++{
++	struct wpa_state_machine *sm = sta->wpa_sm;
++
++	if (!sm)
++		return;
++
++	clear_wpa_sm_for_each_partner_link(hapd, sta);
++	clear_wpa_sm_for_all_sta(hapd, sm);
++	wpa_auth_sta_deinit(sm);
++	sta->wpa_sm = NULL;
++}
++
+ #endif /* CONFIG_IEEE80211BE */
+ 
+ 
+--- a/src/ap/sta_info.h
++++ b/src/ap/sta_info.h
+@@ -483,6 +483,7 @@ void clear_wpa_sm_for_each_partner_link(
+ 					struct sta_info *psta);
+ void clear_wpa_sm_for_all_sta(struct hostapd_data *hapd,
+ 			      struct wpa_state_machine *wpa_sm);
++void ap_sta_free_wpa_sm(struct hostapd_data *hapd, struct sta_info *sta);
+ 
+ static inline bool ap_sta_is_epp(const struct sta_info *sta)
+ {

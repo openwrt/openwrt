@@ -1,0 +1,38 @@
+From d7034f6fd7b0630f3d70ff9c121a648cb636301b Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@nbd.name>
+Date: Wed, 30 Sep 2026 10:00:10 +0200
+Subject: [PATCH 3/3] wifi: mac80211: use the AP address as RA for a 4-addr MLO
+ station
+
+In 4-address mode, ieee80211_build_hdr() and ieee80211_check_fast_xmit()
+set A1 to sdata->deflink.u.mgd.bssid, which is not valid for an MLO
+connection.
+
+Use sdata->vif.cfg.ap_addr instead, like the 3-address case does.
+
+Fixes: 8a9be422f5ff ("wifi: mac80211: tx: use AP address in some places for MLO")
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ net/mac80211/tx.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -2863,7 +2863,7 @@ static struct sk_buff *ieee80211_build_h
+ 			fc |= cpu_to_le16(IEEE80211_FCTL_FROMDS |
+ 					  IEEE80211_FCTL_TODS);
+ 			/* RA TA DA SA */
+-			memcpy(hdr.addr1, sdata->deflink.u.mgd.bssid, ETH_ALEN);
++			memcpy(hdr.addr1, sdata->vif.cfg.ap_addr, ETH_ALEN);
+ 			memcpy(hdr.addr2, sdata->vif.addr, ETH_ALEN);
+ 			memcpy(hdr.addr3, skb->data, ETH_ALEN);
+ 			memcpy(hdr.addr4, skb->data + ETH_ALEN, ETH_ALEN);
+@@ -3212,7 +3212,7 @@ void ieee80211_check_fast_xmit(struct st
+ 			fc |= cpu_to_le16(IEEE80211_FCTL_FROMDS |
+ 					  IEEE80211_FCTL_TODS);
+ 			/* RA TA DA SA */
+-			memcpy(hdr->addr1, sdata->deflink.u.mgd.bssid, ETH_ALEN);
++			memcpy(hdr->addr1, sdata->vif.cfg.ap_addr, ETH_ALEN);
+ 			memcpy(hdr->addr2, sdata->vif.addr, ETH_ALEN);
+ 			build.da_offs = offsetof(struct ieee80211_hdr, addr3);
+ 			build.sa_offs = offsetof(struct ieee80211_hdr, addr4);

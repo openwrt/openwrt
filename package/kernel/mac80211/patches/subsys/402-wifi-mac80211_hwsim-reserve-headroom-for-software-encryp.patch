@@ -1,0 +1,33 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 26 Sep 2026 14:00:00 +0200
+Subject: [PATCH] wifi: mac80211_hwsim: reserve headroom for software encryption
+
+mac80211_hwsim accepts CCMP and GCMP keys in mac80211_hwsim_set_key()
+and encrypts unicast data frames itself in mac80211_hwsim_tx(), through
+ieee80211_encrypt_tx_skb(). It asks mac80211 to reserve tailroom for the
+MIC, but not headroom for the CCMP or GCMP header.
+
+For a hardware key without IEEE80211_KEY_FLAG_GENERATE_IV or
+IEEE80211_KEY_FLAG_PUT_IV_SPACE, ieee80211_xmit_fast() resizes the frame
+with ENCRYPT_NO and reserves only the 802.11 header and
+hw.extra_tx_headroom. A locally generated frame usually has room to
+spare, but a frame forwarded from a bridge can arrive with none. The
+room check in ccmp_encrypt_skb() then warns, ieee80211_encrypt_tx_skb()
+returns an error and the frame is freed. An access point that bridges
+traffic to its clients sends no downlink unicast data at all.
+
+Reserve the header as driver headroom. IEEE80211_CCMP_HDR_LEN,
+IEEE80211_CCMP_256_HDR_LEN and IEEE80211_GCMP_HDR_LEN are all 8 bytes.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/drivers/net/wireless/virtual/mac80211_hwsim_main.c
++++ b/drivers/net/wireless/virtual/mac80211_hwsim_main.c
+@@ -5913,6 +5913,7 @@ static int mac80211_hwsim_new_radio(stru
+ 
+ 	hw->queues = 5;
+ 	hw->offchannel_tx_hw_queue = 4;
++	hw->extra_tx_headroom = IEEE80211_CCMP_HDR_LEN;
+ 
+ 	ieee80211_hw_set(hw, SUPPORT_FAST_XMIT);
+ 	ieee80211_hw_set(hw, CHANCTX_STA_CSA);

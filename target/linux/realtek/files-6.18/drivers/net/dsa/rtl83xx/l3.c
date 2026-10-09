@@ -76,6 +76,7 @@
 #include <net/nexthop.h>
 #include <uapi/linux/rtnetlink.h>
 
+#include "l2.h"
 #include "l3.h"
 #include "pie.h"
 #include "rtl-otto.h"
@@ -111,7 +112,6 @@
 #define RTL930X_L3_IP_ROUTE_CTRL		0xab44
 
 #define DEFAULT_MTU 1536
-#define MAX_ROUTER_MACS 64
 #define L3_EGRESS_DMACS 2048
 
 struct otto_l3_net_event_work {
@@ -254,12 +254,12 @@ static u64 otto_l3_930x_get_egress_mac(struct otto_l3_ctrl *ctrl, u32 idx)
 /* Set the Destination-MAC of a route or the Source MAC of an L3 egress interface
  * in the SoC's L3_EGR_INTF_MAC table. Indexes 0-2047 are DMACs, 2048+ are SMACs
  */
-static void otto_l3_930x_set_egress_mac(struct otto_l3_ctrl *ctrl, u32 idx, u64 mac)
+static int otto_l3_930x_set_egress_mac(struct otto_l3_ctrl *ctrl, u32 idx, u64 mac)
 {
 	u32 data[2] = { mac >> 32, mac };
 
 	dev_dbg(ctrl->dev, "setting index %d to %016llx\n", idx, mac);
-	otto_table_write(RTL9300_TBL_L3_EGR_INTF_MAC, idx, &data);
+	return otto_table_write(RTL9300_TBL_L3_EGR_INTF_MAC, idx, &data);
 }
 
 /* Decode a host route entry fetched into @data. Returns false unless it is a
@@ -442,7 +442,7 @@ static void otto_l3_930x_get_router_mac(struct otto_l3_ctrl *ctrl,
 	m->vid = v & 0xfff;
 	m->vid_mask = w & 0xfff;
 	m->action = data[6] & 0x7;
-	m->mac_mask = ((((u64)data[5]) << 32) & 0xffffffffffffULL) | data[4];
+	m->mac_mask = ((u64)(data[4] & 0xffff) << 32) | data[5];
 	m->mac = ((((u64)data[1]) << 32) & 0xffffffffffffULL) | data[2];
 	/* Bits L3_INTF and BMSK_L3_INTF are 0 */
 }
@@ -457,7 +457,7 @@ static void otto_l3_930x_set_router_mac(struct otto_l3_ctrl *ctrl,
 	u32 data[7];
 	u32 v, w;
 
-	v = BIT(20); /* mac entry valid, port type is 0: individual */
+	v = m->valid ? BIT(20) : 0; /* port type is 0: individual */
 	v |= (m->p_id & 0x3f) << 13;
 	v |= (m->vid & 0xfff); /* Set the interface_id to the vlan id */
 
@@ -860,10 +860,186 @@ static int otto_l3_alloc_router_mac(struct otto_l3_ctrl *ctrl, u64 mac)
 	m.mac_mask = 0xffffffffffffULL;	/* We want an exact match of the interface MAC */
 	m.action = ROUTE_ACT_FORWARD;	/* Route the packet */
 	ctrl->cfg->set_router_mac(ctrl, free_mac, &m);
+	set_bit(free_mac, ctrl->router_mac_bm);
 
 	mutex_unlock(ctrl->lock);
 
 	return 0;
+}
+
+/* A device a router MAC follows, see otto_l3_router_mac_sync() */
+struct otto_l3_rmac_dev {
+	struct list_head list;
+	int ifindex;
+};
+
+/* A port of a bridge, bond or team receives for its master, not on a MAC of
+ * its own. Its master link changes before NETDEV_CHANGEUPPER, its port flags
+ * only around that event.
+ */
+static bool otto_l3_router_mac_receiver(struct net_device *dev)
+{
+	struct net_device *master = netdev_master_upper_dev_get(dev);
+
+	return dev->addr_len == ETH_ALEN &&
+	       !(master && (netif_is_bridge_master(master) || netif_is_lag_master(master)));
+}
+
+static bool otto_l3_router_mac_tracked(struct otto_l3_ctrl *ctrl, int ifindex)
+{
+	struct otto_l3_rmac_dev *d;
+
+	list_for_each_entry(d, &ctrl->rmac_devs, list)
+		if (d->ifindex == ifindex)
+			return true;
+
+	return false;
+}
+
+/* Remembers every device that has this MAC, whether a route went out of it or
+ * it only receives on the entry, so that the entry follows each of them
+ */
+static int otto_l3_router_mac_track(struct otto_l3_ctrl *ctrl, u64 mac)
+{
+	struct otto_l3_rmac_dev *d;
+	struct net_device *dev;
+
+	for_each_netdev(&init_net, dev) {
+		if (!otto_l3_router_mac_receiver(dev) || ether_addr_to_u64(dev->dev_addr) != mac ||
+		    otto_l3_router_mac_tracked(ctrl, dev->ifindex))
+			continue;
+
+		d = kzalloc(sizeof(*d), GFP_KERNEL);
+		if (!d) {
+			dev_err(ctrl->dev, "cannot remember %s for router MAC %pM\n",
+				dev->name, dev->dev_addr);
+			return -ENOMEM;
+		}
+
+		d->ifindex = dev->ifindex;
+		list_add_tail(&d->list, &ctrl->rmac_devs);
+	}
+
+	return 0;
+}
+
+/* Called under RTNL, from the FIB work */
+static int otto_l3_router_mac_get(struct otto_l3_ctrl *ctrl, struct net_device *ndev)
+{
+	u64 mac = ether_addr_to_u64(ndev->dev_addr);
+
+	if (otto_l3_alloc_router_mac(ctrl, mac))
+		return -ENOSPC;
+
+	return otto_l3_router_mac_track(ctrl, mac);
+}
+
+/* A router MAC is what makes the switch route what arrives on that MAC, so it
+ * follows the devices that have the MAC rather than the routes out of them.
+ * Every device found with the MAC of an entry this driver wrote, the one a
+ * route gave it to or any other receiving on it, is remembered: as long as it
+ * exists, its current MAC keeps an entry, whatever routes or ports it has
+ * left, and an entry none of them has the MAC of is written back invalid.
+ * Called under RTNL, as the FIB work that gives them is.
+ */
+static void otto_l3_router_mac_sync(struct otto_l3_ctrl *ctrl, bool may_free)
+{
+	struct otto_l3_rmac_dev *d, *tmp;
+	bool have[MAX_ROUTER_MACS] = {};
+	u64 macs[MAX_ROUTER_MACS];
+	struct otto_l3_router_mac m;
+	struct net_device *dev;
+	int n = 0, i, k;
+	u64 mac;
+
+	/* Remember whatever has the MAC of an entry now. One that could not be
+	 * remembered may still receive on it, so nothing is freed then.
+	 */
+	mutex_lock(ctrl->lock);
+	for_each_set_bit(i, ctrl->router_mac_bm, MAX_ROUTER_MACS) {
+		ctrl->cfg->get_router_mac(ctrl, i, &m);
+		if (m.valid && otto_l3_router_mac_track(ctrl, m.mac)) {
+			mutex_unlock(ctrl->lock);
+			return;
+		}
+	}
+	mutex_unlock(ctrl->lock);
+
+	list_for_each_entry_safe(d, tmp, &ctrl->rmac_devs, list) {
+		dev = __dev_get_by_index(&init_net, d->ifindex);
+		if (!dev) {
+			list_del(&d->list);
+			kfree(d);
+			continue;
+		}
+
+		/* A bridge with no port left may have no MAC: it gets one back
+		 * with its first port, and the entry with it
+		 */
+		if (!is_valid_ether_addr(dev->dev_addr) || !otto_l3_router_mac_receiver(dev))
+			continue;
+
+		mac = ether_addr_to_u64(dev->dev_addr);
+		for (k = 0; k < n && macs[k] != mac; k++)
+			;
+		if (k < n)
+			continue;
+
+		if (n == MAX_ROUTER_MACS) {
+			dev_warn_once(ctrl->dev, "more MACs in use than router MACs, table left as is\n");
+			return;
+		}
+		macs[n++] = mac;
+	}
+
+	mutex_lock(ctrl->lock);
+	for_each_set_bit(i, ctrl->router_mac_bm, MAX_ROUTER_MACS) {
+		ctrl->cfg->get_router_mac(ctrl, i, &m);
+		for (k = 0; m.valid && k < n && macs[k] != m.mac; k++)
+			;
+		if (m.valid && k < n) {
+			have[k] = true;
+			continue;
+		}
+		if (!may_free)
+			continue;
+
+		dev_dbg(ctrl->dev, "freeing router MAC %d\n", i);
+		memset(&m, 0, sizeof(m));
+		ctrl->cfg->set_router_mac(ctrl, i, &m);
+		clear_bit(i, ctrl->router_mac_bm);
+	}
+	mutex_unlock(ctrl->lock);
+
+	/* A device that changed its MAC gets an entry for the new one */
+	for (k = 0; k < n; k++)
+		if (!have[k])
+			otto_l3_alloc_router_mac(ctrl, macs[k]);
+}
+
+static int otto_l3_netdev_notifier(struct notifier_block *nb, unsigned long event, void *ptr)
+{
+	struct otto_l3_ctrl *ctrl = container_of(nb, struct otto_l3_ctrl, nd_nb);
+
+	if (!net_eq(dev_net(netdev_notifier_info_to_dev(ptr)), &init_net))
+		return NOTIFY_DONE;
+
+	switch (event) {
+	case NETDEV_CHANGEUPPER:
+		/* A port joins or leaves its master. One joining a bridge stops
+		 * counting before the bridge, which may take its MAC, sends its
+		 * NETDEV_CHANGEADDR: free nothing here.
+		 */
+		otto_l3_router_mac_sync(ctrl, false);
+		break;
+	case NETDEV_REGISTER:	/* it may come with the MAC of an entry */
+	case NETDEV_CHANGEADDR:
+	case NETDEV_UNREGISTER:
+		otto_l3_router_mac_sync(ctrl, true);
+		break;
+	}
+
+	return NOTIFY_DONE;
 }
 
 /* Read back an egress interface descriptor, the layout written below. */
@@ -1293,6 +1469,28 @@ static bool otto_l3_fwd_off(struct otto_l3_ctrl *ctrl, u8 type)
 	return type == ROUTE_TYPE_IP6UC ? ctrl->v6_fwd_off : ctrl->v4_fwd_off;
 }
 
+/* The kernel looks the local table up whole before main, so a local IPv4
+ * prefix shorter than a host address (AnyIP: ip route add local ... table
+ * local) takes the destinations of a longer main route inside it, which the
+ * switch, longest prefix first, would forward. An IPv6 local prefix is not
+ * looked at.
+ */
+static bool otto_l3_local_covers(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r)
+{
+	struct otto_l3_route *q;
+
+	if (r->attr.type != ROUTE_TYPE_IP4UC || r->tb_id == RT_TABLE_LOCAL)
+		return false;
+
+	list_for_each_entry(q, &ctrl->routes_list, list)
+		if (q->attr.type == ROUTE_TYPE_IP4UC && q->tb_id == RT_TABLE_LOCAL &&
+		    !q->is_host_route && q->prefix_len < r->prefix_len &&
+		    !((q->dst_ip ^ r->dst_ip) & inet_make_mask(q->prefix_len)))
+			return true;
+
+	return false;
+}
+
 /* Writes a route to its host slot or prefix row, taking a free slot or placing
  * a row when it has none yet. A host route that a local route shadows keeps out
  * of the entry, and nothing is written for it.
@@ -1351,6 +1549,60 @@ static void otto_l3_route_rewrite(struct otto_l3_ctrl *ctrl, struct otto_l3_rout
 	}
 }
 
+/* Routes through one gateway share its L2 entry, and that names a single
+ * DMAC entry, whichever route claimed it first. So the entry is held per MAC
+ * by every route through it, the way the SDK holds it
+ * (_dal_longan_l3_dmacEntry_alloc()), not per route: a route that goes leaves
+ * it to the others. A route holds one at most, and there are no more routes
+ * than entries. Entry 0 stays unused, as it did while route 0, which is never
+ * allocated, named it.
+ */
+static int otto_l3_dmac_get(struct otto_l3_ctrl *ctrl, u64 mac)
+{
+	int i, unused = -1, err;
+
+	mutex_lock(ctrl->lock);
+
+	for (i = 1; i < MAX_DMACS; i++) {
+		if (ctrl->dmac_refs[i] && ctrl->dmacs[i] == mac)
+			break;
+		if (unused < 0 && !ctrl->dmac_refs[i])
+			unused = i;
+	}
+
+	if (i == MAX_DMACS) {
+		i = unused;
+		if (i < 0) {
+			i = -ENOSPC;
+			goto out;
+		}
+
+		/* An entry whose write failed stays free */
+		err = ctrl->cfg->set_egress_mac(ctrl, i, mac);
+		if (err) {
+			i = err;
+			goto out;
+		}
+		ctrl->dmacs[i] = mac;
+	}
+
+	ctrl->dmac_refs[i]++;
+out:
+	mutex_unlock(ctrl->lock);
+
+	return i;
+}
+
+static void otto_l3_dmac_put(struct otto_l3_ctrl *ctrl, int idx)
+{
+	if (!ctrl->cfg->set_egress_mac || idx < 0)
+		return;
+
+	mutex_lock(ctrl->lock);
+	ctrl->dmac_refs[idx]--;
+	mutex_unlock(ctrl->lock);
+}
+
 static void otto_l3_route_update_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r,
 				    u64 mac)
 {
@@ -1358,8 +1610,10 @@ static void otto_l3_route_update_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_ro
 	bool require_existing = ctrl->cfg->use_l3_tables;
 	char dst[INET6_ADDRSTRLEN + sizeof("/128")];
 	bool trapped = r->attr.action == ROUTE_ACT_TRAP2CPU;
+	int old_dmac = r->nh.dmac_id;
 	bool first = !r->nh.mac;
 	bool no_port, trap;
+	int dmac = r->id;
 
 	dev_dbg(ctrl->dev, "setting up fwding: gw %pI6c, mac %016llx\n",
 		&r->gw_ip, mac);
@@ -1369,7 +1623,7 @@ static void otto_l3_route_update_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_ro
 
 	/* A route that forwards and gets a new gateway MAC traps while its
 	 * next hop moves over, or it would forward through the L2 entry
-	 * rtldsa_l2_nexthop_add() releases. A family that routes through a PIE
+	 * otto_l2_nexthop_add() releases. A family that routes through a PIE
 	 * rule has no entry that traps.
 	 */
 	if (ctrl->cfg->use_l3_tables && !first && mac != r->nh.mac &&
@@ -1380,17 +1634,25 @@ static void otto_l3_route_update_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_ro
 		otto_l3_route_rewrite(ctrl, r);
 	}
 
+	if (ctrl->cfg->set_egress_mac) {
+		dmac = otto_l3_dmac_get(ctrl, mac);
+		if (dmac < 0) {
+			dev_err(ctrl->dev, "no DMAC entry for %016llx: %d\n", mac, dmac);
+			return;
+		}
+	}
+
 	r->nh.mac = r->nh.gw = mac;
 	r->nh.port = priv->r->port_ignore;
 	r->nh.id = r->id;
-
-	/* Do we need to explicitly add a DMAC entry with the route's nh index? */
-	if (ctrl->cfg->set_egress_mac)
-		ctrl->cfg->set_egress_mac(ctrl, r->id, mac);
+	r->nh.dmac_id = dmac;
 
 	/* Update ROUTING table: map gateway-mac and switch-mac id to route id */
-	if (!rtldsa_l2_nexthop_add(priv, &r->nh, require_existing))
+	if (!otto_l2_nexthop_add(priv, &r->nh, require_existing))
 		r->nh.l2_installed = true;
+
+	/* The route names its gateway's entry now, through its L2 entry */
+	otto_l3_dmac_put(ctrl, old_dmac);
 
 	/* A next hop with no port delivers the frame twice, so where the
 	 * route entry can trap, let the CPU route it alone until an update
@@ -1409,7 +1671,7 @@ static void otto_l3_route_update_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_ro
 				 &r->gw_ip, otto_l3_route_dst(r, dst, sizeof(dst)));
 	}
 
-	trap = no_port || otto_l3_fwd_off(ctrl, r->attr.type);
+	trap = no_port || otto_l3_fwd_off(ctrl, r->attr.type) || otto_l3_local_covers(ctrl, r);
 
 	r->attr.valid = true;
 	r->attr.action = trap ? ROUTE_ACT_TRAP2CPU : ROUTE_ACT_FORWARD;
@@ -1778,18 +2040,20 @@ static void otto_l3_route_teardown(struct otto_l3_ctrl *ctrl, struct otto_l3_rou
 	otto_l3_route_remove(ctrl, r);
 
 	if (r->nh.l2_installed)
-		rtldsa_l2_nexthop_del(priv, &r->nh);
+		otto_l2_nexthop_del(priv, &r->nh);
 
 	dev_dbg(ctrl->dev, "releasing packet counter %d\n", r->pr.packet_cntr);
 	rtldsa_packet_cntr_free(priv, r->pr.packet_cntr);
 
 	/* Once the rows are not where the list says, after a failed move or a
 	 * lookup that timed out, the row of a prefix route may still be in
-	 * hardware and route through its egress interface: it keeps that for
-	 * good.
+	 * hardware and route through its egress interface and its gateway's
+	 * DMAC entry: it keeps them for good.
 	 */
-	if (r->is_host_route || !ctrl->prefix_rows_stale)
+	if (r->is_host_route || !ctrl->prefix_rows_stale) {
 		otto_l3_route_put_intf(ctrl, r);
+		otto_l3_dmac_put(ctrl, r->nh.dmac_id);
+	}
 
 	otto_l3_route_free(ctrl, r);
 }
@@ -1821,7 +2085,7 @@ static struct otto_l3_route *otto_l3_route_alloc(struct otto_l3_ctrl *ctrl,
 	}
 
 	/* We require a unique route ID irrespective of whether it is a prefix or host
-	 * route (on RTL93xx) as we use this ID to associate a DMAC and next-hop entry
+	 * route (on RTL93xx) as we use this ID to associate a next-hop entry
 	 */
 	r->id = host ? idx + MAX_ROUTES : idx;
 	r->row = -1;	/* no row until placed; a host route never has one */
@@ -1829,6 +2093,7 @@ static struct otto_l3_route *otto_l3_route_alloc(struct otto_l3_ctrl *ctrl,
 	r->pr.id = -1; /* We still need to allocate a rule in HW */
 	r->pr.packet_cntr = -1;
 	r->nh.if_id = -1;
+	r->nh.dmac_id = -1;
 	r->is_host_route = host;
 	INIT_LIST_HEAD(&r->srcs);
 
@@ -2029,7 +2294,7 @@ static int otto_l3_fib_add_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 		u64 mac = ether_addr_to_u64(ndev->dev_addr);
 
 		dev_dbg(ctrl->dev, "Local route and router MAC %pM\n", ndev->dev_addr);
-		if (otto_l3_alloc_router_mac(ctrl, mac))
+		if (otto_l3_router_mac_get(ctrl, ndev))
 			goto out_free_rt;
 
 		/* vid = 0: Do not care about VID */
@@ -2488,7 +2753,7 @@ static int otto_l3_fib_add_v6(struct otto_l3_ctrl *ctrl, struct fib6_entry_notif
 	if (ctrl->cfg->set_router_mac) {
 		u64 mac = ether_addr_to_u64(ndev->dev_addr);
 
-		if (otto_l3_alloc_router_mac(ctrl, mac))
+		if (otto_l3_router_mac_get(ctrl, ndev))
 			goto out_failed;
 
 		route->nh.if_id = otto_l3_alloc_egress_intf(ctrl, mac, vlan);
@@ -2696,14 +2961,27 @@ static bool otto_l3_rules_allow(int family)
 	return main_seen;
 }
 
-/* One resolve brings back every route through a gateway */
-static bool otto_l3_gw_seen(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r)
+/* A main IPv4 route inside the local prefix @info names */
+static bool otto_l3_route_inside(struct otto_l3_route *r, struct fib_entry_notifier_info *info)
+{
+	return r->attr.type == ROUTE_TYPE_IP4UC && r->tb_id != RT_TABLE_LOCAL &&
+	       r->prefix_len > info->dst_len &&
+	       !((r->dst_ip ^ info->dst) & inet_make_mask(info->dst_len));
+}
+
+/* One resolve brings back every route through a gateway. With @info, only the
+ * routes inside that local prefix are looked at.
+ */
+static bool otto_l3_gw_seen(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r,
+			    struct fib_entry_notifier_info *info)
 {
 	struct otto_l3_route *q;
 
 	list_for_each_entry(q, &ctrl->routes_list, list) {
 		if (q == r)
 			return false;
+		if (info && !otto_l3_route_inside(q, info))
+			continue;
 		if (q->attr.type == r->attr.type && q->gw_ifindex == r->gw_ifindex &&
 		    ipv6_addr_equal(&q->gw_ip, &r->gw_ip))
 			return true;
@@ -2754,11 +3032,35 @@ static void otto_l3_rules_check(struct otto_l3_ctrl *ctrl, int family)
 		 */
 		if (ipv6_addr_any(&r->gw_ip) ||
 		    (type == ROUTE_TYPE_IP4UC && !r->gw_ip.s6_addr32[3]) ||
-		    otto_l3_gw_seen(ctrl, r))
+		    otto_l3_gw_seen(ctrl, r, NULL))
 			continue;
 		dev = __dev_get_by_index(&init_net, r->gw_ifindex);
 		if (dev)
 			otto_l3_port_gw_resolve(ctrl, dev, tbl, &r->gw_ip);
+	}
+}
+
+/* A main route inside a local prefix that came or went decides again whether
+ * it forwards, the way the policy rules bring a route back: through its
+ * gateway, if it still answers.
+ */
+static void otto_l3_local_prefix_check(struct otto_l3_ctrl *ctrl,
+				       struct fib_entry_notifier_info *info)
+{
+	struct otto_l3_route *r;
+	struct net_device *dev;
+
+	if (info->tb_id != RT_TABLE_LOCAL || !info->dst_len || info->dst_len >= 32 ||
+	    !ctrl->cfg->use_l3_tables)
+		return;
+
+	list_for_each_entry(r, &ctrl->routes_list, list) {
+		if (!otto_l3_route_inside(r, info) || !r->gw_ip.s6_addr32[3] ||
+		    otto_l3_gw_seen(ctrl, r, info))
+			continue;
+		dev = __dev_get_by_index(&init_net, r->gw_ifindex);
+		if (dev)
+			otto_l3_port_gw_resolve(ctrl, dev, &arp_tbl, &r->gw_ip);
 	}
 }
 
@@ -2781,6 +3083,7 @@ static void otto_l3_fib_event_work_do(struct work_struct *work)
 		if (err)
 			dev_err(ctrl->dev, "fib_add() failed\n");
 
+		otto_l3_local_prefix_check(ctrl, &fib_work->fen_info);
 		fib_info_put(fib_work->fen_info.fi);
 		break;
 	case FIB_EVENT_ENTRY_DEL:
@@ -2788,6 +3091,7 @@ static void otto_l3_fib_event_work_do(struct work_struct *work)
 		if (err)
 			dev_err(ctrl->dev, "fib_del() failed\n");
 
+		otto_l3_local_prefix_check(ctrl, &fib_work->fen_info);
 		fib_info_put(fib_work->fen_info.fi);
 		break;
 	case FIB_EVENT_RULE_ADD:
@@ -2996,6 +3300,13 @@ static int otto_l3_netevent_notifier(struct notifier_block *this, unsigned long 
 		if (otto_l3_is_nd_tbl(n->tbl) && !ctrl->cfg->use_l3_tables)
 			return NOTIFY_DONE;
 		dev = n->dev;
+
+		/* Every route here comes from init_net, the only namespace the FIB
+		 * notifier follows, and an ifindex is only unique within one
+		 */
+		if (!net_eq(dev_net(dev), &init_net))
+			return NOTIFY_DONE;
+
 		port = otto_l3_port_dev_lower_find(dev, ctrl);
 		if (port < 0) {
 			dev_dbg(ctrl->dev, "Neighbour not on a switch port, not updating\n");
@@ -3567,11 +3878,16 @@ static const struct of_device_id otto_l3_of_ids[] = {
 void otto_l3_remove(struct rtl838x_switch_priv *priv)
 {
 	struct otto_l3_ctrl *ctrl = priv->l3_ctrl;
+	struct otto_l3_rmac_dev *d, *dtmp;
 	struct otto_l3_route *r, *tmp;
 
 	/* A replay would register the FIB notifier again */
 	disable_delayed_work_sync(&ctrl->resync_work);
 
+	if (ctrl->nd_nb.notifier_call) {
+		unregister_netdevice_notifier(&ctrl->nd_nb);
+		ctrl->nd_nb.notifier_call = NULL;
+	}
 	if (ctrl->ne_nb.notifier_call) {
 		unregister_netevent_notifier(&ctrl->ne_nb);
 		ctrl->ne_nb.notifier_call = NULL;
@@ -3594,6 +3910,10 @@ void otto_l3_remove(struct rtl838x_switch_priv *priv)
 	rtnl_lock();
 	list_for_each_entry_safe(r, tmp, &ctrl->routes_list, list)
 		otto_l3_route_free(ctrl, r);
+	list_for_each_entry_safe(d, dtmp, &ctrl->rmac_devs, list) {
+		list_del(&d->list);
+		kfree(d);
+	}
 	rtnl_unlock();
 }
 
@@ -3692,6 +4012,14 @@ int otto_l3_probe(struct device *dev, struct rtl838x_switch_priv *priv)
 		return dev_err_probe(dev, -EINVAL, "No compatible configuration found\n");
 	ctrl->cfg = match->data;
 
+	if (ctrl->cfg->set_egress_mac) {
+		ctrl->dmacs = devm_kcalloc(dev, MAX_DMACS, sizeof(*ctrl->dmacs), GFP_KERNEL);
+		ctrl->dmac_refs = devm_kcalloc(dev, MAX_DMACS, sizeof(*ctrl->dmac_refs),
+					       GFP_KERNEL);
+		if (!ctrl->dmacs || !ctrl->dmac_refs)
+			return -ENOMEM;
+	}
+
 	if (ctrl->cfg->setup) {
 		err = ctrl->cfg->setup(ctrl);
 		if (err)
@@ -3699,6 +4027,7 @@ int otto_l3_probe(struct device *dev, struct rtl838x_switch_priv *priv)
 	}
 
 	INIT_LIST_HEAD(&ctrl->routes_list);
+	INIT_LIST_HEAD(&ctrl->rmac_devs);
 
 	/* Before the notifiers, so no destination is dropped in the window
 	 * where the tables are live and the routes have not arrived yet.
@@ -3719,6 +4048,16 @@ int otto_l3_probe(struct device *dev, struct rtl838x_switch_priv *priv)
 		ctrl->ne_nb.notifier_call = NULL;
 		otto_l3_remove(priv);
 		return dev_err_probe(dev, err, "Failed to register netevent notifier\n");
+	}
+
+	if (ctrl->cfg->set_router_mac) {
+		ctrl->nd_nb.notifier_call = otto_l3_netdev_notifier;
+		err = register_netdevice_notifier(&ctrl->nd_nb);
+		if (err) {
+			ctrl->nd_nb.notifier_call = NULL;
+			otto_l3_remove(priv);
+			return dev_err_probe(dev, err, "Failed to register netdevice notifier\n");
+		}
 	}
 
 	/*

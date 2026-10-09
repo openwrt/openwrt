@@ -5,6 +5,16 @@ include $(INCLUDE_DIR)/image.mk
 
 KERNEL_LOADADDR = 0x80100000
 
+define Build/hasivo-stock-patch
+	python3 $(TOPDIR)/target/linux/realtek/image/hasivo-stock-patch.py \
+		--board $(DEVICE_NAME) --image $@ --output $@.new \
+		--topdir $(TOPDIR) --build-dir $(BUILD_DIR) \
+		--busybox-variant $(if $(CONFIG_PACKAGE_busybox-selinux),selinux,default) \
+		--cross-compile "$(TARGET_CROSS)" --staging-dir $(STAGING_DIR) \
+		--cc "$(TARGET_CC)"
+	mv $@.new $@
+endef
+
 DEVICE_VARS += \
 	BELKIN_HEADER \
 	BELKIN_MODEL \

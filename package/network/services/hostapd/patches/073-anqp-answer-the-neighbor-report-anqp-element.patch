@@ -1,0 +1,179 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Thu, 17 Sep 2026 13:28:10 +0200
+Subject: [PATCH] ANQP: answer the Neighbor Report ANQP-element from the
+ neighbor report database
+
+Answer the Neighbor Report ANQP-element (Info ID 272, IEEE Std
+802.11-2024 9.4.5.19) from the neighbor report database that the AP
+keeps for Radio Measurement, not only from a configured anqp_elem, which
+still takes precedence. The element:
+
+- comes before the elements of the extra requests, as 11.22.3.3.1
+  orders the elements of a response by nondecreasing Info ID;
+- stops at 65535 octets, the limit of its Length field;
+- carries only the entries with the SSID of the BSS, as
+  hostapd_send_nei_report_resp() does, so that an unassociated station
+  does not learn the BSSs of other SSIDs.
+
+The Capability List advertises Info ID 272 under the same condition as
+the response.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/gas_serv.c
++++ b/src/ap/gas_serv.c
+@@ -233,6 +233,42 @@ static int anqp_add_override(struct host
+ }
+ 
+ 
++/* The same SSID filter as hostapd_send_nei_report_resp() in rrm.c */
++static size_t anqp_neighbor_report_len(struct hostapd_data *hapd,
++				       struct hostapd_neighbor_entry *nr)
++{
++	const struct hostapd_ssid *ssid = &hapd->conf->ssid;
++
++	if (!nr->nr || wpabuf_len(nr->nr) > 255)
++		return 0;
++
++	if (ssid->ssid_len != nr->ssid.ssid_len ||
++	    os_memcmp(ssid->ssid, nr->ssid.ssid, ssid->ssid_len) != 0)
++		return 0;
++
++	return 2 + wpabuf_len(nr->nr);
++}
++
++
++/* Capped at what the Length field of the ANQP-element can express */
++static size_t anqp_neighbor_report_payload_len(struct hostapd_data *hapd)
++{
++	struct hostapd_neighbor_entry *nr;
++	size_t len = 0;
++
++	dl_list_for_each(nr, &hapd->nr_db, struct hostapd_neighbor_entry, list) {
++		size_t entry = anqp_neighbor_report_len(hapd, nr);
++
++		if (!entry || len + entry > 0xffff)
++			continue;
++
++		len += entry;
++	}
++
++	return len;
++}
++
++
+ static void anqp_add_capab_list(struct hostapd_data *hapd,
+ 				struct wpabuf **_buf)
+ {
+@@ -279,7 +315,8 @@ static void anqp_add_capab_list(struct h
+ 		wpabuf_put_le16(buf, ANQP_TDLS_CAPABILITY);
+ 	if (get_anqp_elem(hapd, ANQP_EMERGENCY_NAI))
+ 		wpabuf_put_le16(buf, ANQP_EMERGENCY_NAI);
+-	if (get_anqp_elem(hapd, ANQP_NEIGHBOR_REPORT))
++	if (get_anqp_elem(hapd, ANQP_NEIGHBOR_REPORT) ||
++	    anqp_neighbor_report_payload_len(hapd))
+ 		wpabuf_put_le16(buf, ANQP_NEIGHBOR_REPORT);
+ #ifdef CONFIG_FILS
+ 	if (!dl_list_empty(&hapd->conf->fils_realms) ||
+@@ -862,6 +899,43 @@ static void anqp_add_mbo_cell_data_conn_
+ #endif /* CONFIG_MBO */
+ 
+ 
++/* Neighbor Report ANQP-element (IEEE 802.11 9.4.5.19) */
++static void anqp_add_neighbor_report(struct hostapd_data *hapd,
++				     struct wpabuf **buf)
++{
++	struct hostapd_neighbor_entry *nr;
++	size_t len, written = 0;
++	u8 *elem_len;
++
++	if (anqp_add_override(hapd, buf, ANQP_NEIGHBOR_REPORT))
++		return;
++
++	len = anqp_neighbor_report_payload_len(hapd);
++	if (!len)
++		return;
++
++	if (wpabuf_resize(buf, 2 + 2 + len) < 0)
++		return;
++
++	wpabuf_put_le16(*buf, ANQP_NEIGHBOR_REPORT);
++	elem_len = wpabuf_put(*buf, 2);
++
++	dl_list_for_each(nr, &hapd->nr_db, struct hostapd_neighbor_entry, list) {
++		size_t entry = anqp_neighbor_report_len(hapd, nr);
++
++		if (!entry || written + entry > len)
++			continue;
++
++		wpabuf_put_u8(*buf, WLAN_EID_NEIGHBOR_REPORT);
++		wpabuf_put_u8(*buf, wpabuf_len(nr->nr));
++		wpabuf_put_buf(*buf, nr->nr);
++		written += entry;
++	}
++
++	WPA_PUT_LE16(elem_len, written);
++}
++
++
+ static size_t anqp_get_required_len(struct hostapd_data *hapd,
+ 				    const u16 *infoid,
+ 				    unsigned int num_infoid)
+@@ -885,7 +959,8 @@ gas_serv_build_gas_resp_payload(struct h
+ 				unsigned int request,
+ 				const u8 *home_realm, size_t home_realm_len,
+ 				const u16 *extra_req,
+-				unsigned int num_extra_req)
++				unsigned int num_extra_req,
++				int neighbor_report)
+ {
+ 	struct wpabuf *buf;
+ 	size_t len;
+@@ -1046,6 +1121,17 @@ gas_serv_build_gas_resp_payload(struct h
+ 		}
+ 	}
+ 
++	/* IEEE Std 802.11-2024 11.22.3.3.1: nondecreasing Info ID order */
++	if (neighbor_report) {
++		prev_len = wpabuf_len(buf);
++		anqp_add_neighbor_report(hapd, &buf);
++		if (wpabuf_len(buf) > max_len) {
++			wpa_printf(MSG_INFO,
++				   "ANQP: ANQP-element would go beyond maximum GAS response length - skip");
++			buf->used = prev_len;
++		}
++	}
++
+ 	for (i = 0; i < num_extra_req; i++) {
+ 		prev_len = wpabuf_len(buf);
+ #ifdef CONFIG_FILS
+@@ -1153,6 +1239,8 @@ struct anqp_query_info {
+ 	int p2p_sd;
+ 	u16 extra_req[ANQP_MAX_EXTRA_REQ];
+ 	unsigned int num_extra_req;
++	/* Info ID 272 has no bit in the optimized bitmap of `request` */
++	int neighbor_report;
+ };
+ 
+ 
+@@ -1241,6 +1329,10 @@ static void rx_anqp_query_list_id(struct
+ 			     "Emergency NAI",
+ 			     get_anqp_elem(hapd, info_id) != NULL, qi);
+ 		break;
++	case ANQP_NEIGHBOR_REPORT:
++		qi->neighbor_report = 1;
++		wpa_printf(MSG_DEBUG, "ANQP: Neighbor Report (local)");
++		break;
+ 	default:
+ #ifdef CONFIG_FILS
+ 		if (info_id == ANQP_FILS_REALM_INFO &&
+@@ -1490,7 +1582,8 @@ static void gas_serv_req_local_processin
+ 	buf = gas_serv_build_gas_resp_payload(hapd, qi->request,
+ 					      qi->home_realm_query,
+ 					      qi->home_realm_query_len,
+-					      qi->extra_req, qi->num_extra_req);
++					      qi->extra_req, qi->num_extra_req,
++					      qi->neighbor_report);
+ 	wpa_hexdump_buf(MSG_MSGDUMP, "ANQP: Locally generated ANQP responses",
+ 			buf);
+ 	if (!buf)

@@ -14,7 +14,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/src/ap/ieee802_11.c
 +++ b/src/ap/ieee802_11.c
-@@ -8335,6 +8335,10 @@ static void handle_auth_cb(struct hostap
+@@ -8438,6 +8438,10 @@ static void handle_auth_cb(struct hostap
  	bool success_status;
  
  	sta = ap_get_sta(hapd, mgmt->da);
@@ -25,7 +25,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (!sta) {
  		wpa_printf(MSG_DEBUG, "handle_auth_cb: STA " MACSTR
  			   " not found",
-@@ -8515,6 +8519,12 @@ static void handle_assoc_cb(struct hosta
+@@ -8618,6 +8622,12 @@ static void handle_assoc_cb(struct hosta
  	int new_assoc = 1;
  
  	sta = ap_get_sta(hapd, mgmt->da);

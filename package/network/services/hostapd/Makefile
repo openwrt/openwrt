@@ -741,6 +741,13 @@ define Package/hostapd-common/install
 	$(INSTALL_DATA) ./files/wpad.json $(1)/etc/capabilities
 endef
 
+define Package/hostapd-common/postinst
+#!/bin/sh
+if [ -z "$${IPKG_INSTROOT}" ]; then
+  killall -s HUP ubusd || true
+fi
+endef
+
 define Package/hostapd/install
 	$(call Install/hostapd,$(1))
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/hostapd/hostapd $(1)/usr/sbin/

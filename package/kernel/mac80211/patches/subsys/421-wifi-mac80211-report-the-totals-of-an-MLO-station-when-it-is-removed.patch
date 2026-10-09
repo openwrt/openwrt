@@ -1,0 +1,72 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Thu, 1 Oct 2026 22:30:28 +0200
+Subject: [PATCH] wifi: mac80211: report the totals of an MLO station when it
+ is removed
+
+The removal notification of a station carries its closing counters, and
+userspace that keeps totals across a station's departure takes them
+from there. For an MLO station they were the counters of the default
+link alone: mac80211 filled the station info without links, so
+sta_set_sinfo() dropped every link, and cfg80211_del_sta_sinfo() sent
+it without the MLD aggregation that NL80211_CMD_GET_STATION applies.
+The received counters of the other links and the counters of removed
+links were missing.
+
+Fill the station info of a removed station as ieee80211_get_station()
+does: allocate its links, then add the counters of removed links. Apply
+cfg80211_sta_set_mld_sinfo() before the notification is sent. As in
+NL80211_CMD_GET_STATION, a link whose interface link is already gone,
+which is the case when the interface removes the link and flushes its
+stations, or whose link info could not be allocated, is not counted.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ net/mac80211/sta_info.c | 20 +++++++++++++++++++-
+ net/wireless/nl80211.c  |  3 +++
+ 2 files changed, 22 insertions(+), 1 deletion(-)
+
+--- a/net/mac80211/sta_info.c
++++ b/net/mac80211/sta_info.c
+@@ -1572,6 +1572,21 @@ int sta_info_move_state(struct sta_info
+ 	return _sta_info_move_state(sta, new_state, true);
+ }
+ 
++static void sta_set_removal_sinfo(struct sta_info *sta,
++				  struct station_info *sinfo)
++{
++	int link_id;
++
++	for (link_id = 0; link_id < IEEE80211_MLD_MAX_NUM_LINKS; link_id++)
++		if (sta->sta.valid_links & BIT(link_id))
++			sinfo->links[link_id] = kzalloc_obj(*sinfo->links[0]);
++
++	sta_set_sinfo(sta, sinfo, true);
++
++	if (sinfo->valid_links)
++		sta_set_accumulated_removed_links_sinfo(sta, sinfo);
++}
++
+ static void __sta_info_destroy_part2(struct sta_info *sta, bool recalc)
+ {
+ 	struct ieee80211_local *local = sta->local;
+@@ -1627,7 +1642,7 @@ static void __sta_info_destroy_part2(str
+ 
+ 	sinfo = kzalloc_obj(*sinfo);
+ 	if (sinfo)
+-		sta_set_sinfo(sta, sinfo, true);
++		sta_set_removal_sinfo(sta, sinfo);
+ 
+ 	if (sta->uploaded) {
+ 		ret = drv_sta_state(local, sdata, sta, IEEE80211_STA_NONE,
+--- a/net/wireless/nl80211.c
++++ b/net/wireless/nl80211.c
+@@ -21839,6 +21839,9 @@ void cfg80211_del_sta_sinfo(struct wirel
+ 		return;
+ 	}
+ 
++	if (sinfo->valid_links)
++		cfg80211_sta_set_mld_sinfo(sinfo);
++
+ 	if (nl80211_send_station(msg, NL80211_CMD_DEL_STATION, 0, 0, 0,
+ 				 rdev, wdev, mac_addr, sinfo) < 0) {
+ 		nlmsg_free(msg);
