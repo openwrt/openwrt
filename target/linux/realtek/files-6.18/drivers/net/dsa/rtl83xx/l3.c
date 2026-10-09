@@ -1508,13 +1508,12 @@ static bool otto_l3_route_is_at(struct otto_l3_ctrl *ctrl, int id, struct otto_l
 	 * traps, which the SDK keeps for exactly that. Comparing it with the
 	 * route's own next hop tells two routes for one destination apart,
 	 * whatever their action.
-	 * Both are read after the type: the reader leaves them untouched on a
+	 * It is read after the type: the reader leaves it untouched on a
 	 * multicast row, and the type comparison is what stops it being read
 	 * there.
 	 */
 	if (!entry.attr.valid || entry.attr.type != r->attr.type ||
 	    entry.prefix_len != r->prefix_len ||
-	    entry.attr.action != r->attr.action ||
 	    entry.nh.id != r->nh.id)
 		return false;
 
