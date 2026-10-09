@@ -5,6 +5,7 @@
 #include <linux/if_bridge.h>
 #include <linux/if_vlan.h>
 #include <linux/pcs/pcs.h>
+#include <linux/regmap.h>
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 
 #include "lag.h"
@@ -296,11 +297,12 @@ static void rtldsa_83xx_phylink_mac_config(struct phylink_config *config,
 
 	if (dsa_port_is_cpu(dp)) {
 		/* allow CRC errors on CPU-port */
-		sw_w32_mask(0, 0x8, priv->r->mac_port_ctrl(port));
+		regmap_update_bits(priv->map, priv->r->mac_port_ctrl(port),
+				   0x8, 0x8);
 		return;
 	}
 
-	mcr = sw_r32(priv->r->mac_force_mode_ctrl(port));
+	regmap_read(priv->map, priv->r->mac_force_mode_ctrl(port), &mcr);
 	if (mode == MLO_AN_PHY || phylink_autoneg_inband(mode)) {
 		pr_debug("port %d PHY autonegotiates\n", port);
 
@@ -308,7 +310,7 @@ static void rtldsa_83xx_phylink_mac_config(struct phylink_config *config,
 	} else {
 		mcr &= ~RTL838X_NWAY_EN;
 	}
-	sw_w32(mcr, priv->r->mac_force_mode_ctrl(port));
+	regmap_write(priv->map, priv->r->mac_force_mode_ctrl(port), mcr);
 }
 
 static void rtldsa_93xx_phylink_mac_config(struct phylink_config *config,
@@ -324,7 +326,7 @@ static void rtldsa_93xx_phylink_mac_config(struct phylink_config *config,
 		return;
 
 	/* Disable MAC completely */
-	sw_w32(0, priv->r->mac_force_mode_ctrl(port));
+	regmap_write(priv->map, priv->r->mac_force_mode_ctrl(port), 0);
 }
 
 static void rtldsa_phylink_mac_link_down(struct phylink_config *config,
@@ -336,11 +338,11 @@ static void rtldsa_phylink_mac_link_down(struct phylink_config *config,
 	int port = dp->index;
 
 	/* Stop TX/RX to port */
-	sw_w32_mask(0x3, 0, priv->r->mac_port_ctrl(port));
+	regmap_update_bits(priv->map, priv->r->mac_port_ctrl(port), 0x3, 0);
 
 	/* No longer force link */
-	sw_w32_mask(priv->r->mac_force_mode_mask, 0,
-		    priv->r->mac_force_mode_ctrl(port));
+	regmap_update_bits(priv->map, priv->r->mac_force_mode_ctrl(port),
+			   priv->r->mac_force_mode_mask, 0);
 }
 
 static void rtldsa_83xx_phylink_mac_link_up(struct phylink_config *config,
@@ -362,7 +364,7 @@ static void rtldsa_83xx_phylink_mac_link_up(struct phylink_config *config,
 	else
 		spdsel = RTL_SPEED_10;
 
-	mcr = sw_r32(priv->r->mac_force_mode_ctrl(port));
+	regmap_read(priv->map, priv->r->mac_force_mode_ctrl(port), &mcr);
 
 	if (priv->family_id == RTL8380_FAMILY_ID) {
 		mcr &= ~RTL838X_RX_PAUSE_EN;
@@ -401,10 +403,10 @@ static void rtldsa_83xx_phylink_mac_link_up(struct phylink_config *config,
 
 	pr_debug("%s port %d, mode %x, speed %d, duplex %d, txpause %d, rxpause %d: set mcr=%08x\n",
 		 __func__, port, mode, speed, duplex, tx_pause, rx_pause, mcr);
-	sw_w32(mcr, priv->r->mac_force_mode_ctrl(port));
+	regmap_write(priv->map, priv->r->mac_force_mode_ctrl(port), mcr);
 
 	/* Restart TX/RX to port */
-	sw_w32_mask(0, 0x3, priv->r->mac_port_ctrl(port));
+	regmap_update_bits(priv->map, priv->r->mac_port_ctrl(port), 0x3, 0x3);
 }
 
 static void rtldsa_93xx_phylink_mac_link_up(struct phylink_config *config,
@@ -432,7 +434,7 @@ static void rtldsa_93xx_phylink_mac_link_up(struct phylink_config *config,
 	else
 		spdsel = RTL_SPEED_10;
 
-	mcr = sw_r32(priv->r->mac_force_mode_ctrl(port));
+	regmap_read(priv->map, priv->r->mac_force_mode_ctrl(port), &mcr);
 
 	if (priv->family_id == RTL9300_FAMILY_ID) {
 		mcr &= ~RTL930X_RX_PAUSE_EN;
@@ -454,10 +456,10 @@ static void rtldsa_93xx_phylink_mac_link_up(struct phylink_config *config,
 
 	pr_debug("%s port %d, mode %x, speed %d, duplex %d, txpause %d, rxpause %d: set mcr=%08x\n",
 		 __func__, port, mode, speed, duplex, tx_pause, rx_pause, mcr);
-	sw_w32(mcr, priv->r->mac_force_mode_ctrl(port));
+	regmap_write(priv->map, priv->r->mac_force_mode_ctrl(port), mcr);
 
 	/* Restart TX/RX to port */
-	sw_w32_mask(0, 0x3, priv->r->mac_port_ctrl(port));
+	regmap_update_bits(priv->map, priv->r->mac_port_ctrl(port), 0x3, 0x3);
 }
 
 static int rtldsa_mc_group_alloc(struct rtl838x_switch_priv *priv, int port)
