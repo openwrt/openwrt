@@ -68,6 +68,7 @@ define U-Boot/nanopi-r2s-rk3328
   $(U-Boot/rk3328/Default)
   NAME:=NanoPi R2S
   BUILD_DEVICES:= \
+    friendlyarm_nanopi-neo3 \
     friendlyarm_nanopi-r2s
 endef
 
