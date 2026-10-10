@@ -29,7 +29,8 @@ static void edma_irq_disable_all(struct edma_priv *priv)
 	const struct edma_soc_data *soc = priv->soc;
 	int i;
 
-	for (i = 0; i <= soc->txdesc_ring; i++)
+	/* One TX interrupt block per completion ring, not per descriptor ring */
+	for (i = 0; i <= soc->txcmpl_ring; i++)
 		regmap_write(priv->regmap,
 			     EDMA_REG_TX_INT_MASK(soc->tx_int_base, i),
 			     0);
