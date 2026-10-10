@@ -1,0 +1,49 @@
+From dc914bd5c192bc8d747bdbc67a0404b211112755 Mon Sep 17 00:00:00 2001
+From: Ziyang Huang <hzyitc@outlook.com>
+Date: Sun, 16 Aug 2026 17:47:07 +0800
+Subject: [PATCH] spi: spi-qpic-snand: pick default ECC settings based on
+ OOB size
+
+Instand of using the ECC provided by the flash chip, QPIC handles ECC by
+itself. So the ECC capabilities of the flash chip is useless.
+
+The max ECC capabilities of QPIC depends on the page size (include OOB).
+For ECC4, it needs 64B OOB space. For ECC8, it needs 80B OOB space. Use
+the max capabilities as the default value.
+
+Signed-off-by: Ziyang Huang <hzyitc@outlook.com>
+---
+ drivers/spi/spi-qpic-snand.c | 12 +++++++-----
+ 1 file changed, 7 insertions(+), 5 deletions(-)
+
+--- a/drivers/spi/spi-qpic-snand.c
++++ b/drivers/spi/spi-qpic-snand.c
+@@ -248,7 +248,6 @@ static const struct mtd_ooblayout_ops qc
+ static int qcom_spi_ecc_init_ctx_pipelined(struct nand_device *nand)
+ {
+ 	struct qcom_nand_controller *snandc = nand_to_qcom_snand(nand);
+-	struct nand_ecc_props *reqs = &nand->ecc.requirements;
+ 	struct nand_ecc_props *user = &nand->ecc.user_conf;
+ 	struct nand_ecc_props *conf = &nand->ecc.ctx.conf;
+ 	struct mtd_info *mtd = nanddev_to_mtd(nand);
+@@ -265,13 +264,16 @@ static int qcom_spi_ecc_init_ctx_pipelin
+ 	if (user->step_size && user->strength) {
+ 		ecc_cfg->step_size = user->step_size;
+ 		ecc_cfg->strength = user->strength;
+-	} else if (reqs->step_size && reqs->strength) {
+-		ecc_cfg->step_size = reqs->step_size;
+-		ecc_cfg->strength = reqs->strength;
+ 	} else {
+ 		/* use defaults */
+ 		ecc_cfg->step_size = NANDC_STEP_SIZE;
+-		ecc_cfg->strength = 4;
++		if (mtd->oobsize < 64) {
++			ret = -EOPNOTSUPP;
++			goto err_free_ecc_cfg;
++		} else if (mtd->oobsize < 80)
++			ecc_cfg->strength = 4;
++		else
++			ecc_cfg->strength = 8;
+ 	}
+ 
+ 	if (ecc_cfg->step_size != NANDC_STEP_SIZE) {
