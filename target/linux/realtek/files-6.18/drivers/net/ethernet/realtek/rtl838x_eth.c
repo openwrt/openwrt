@@ -1004,6 +1004,12 @@ static void rteth_839x_set_rx_mode(struct net_device *dev)
 		regmap_write(ctrl->map, RTETH_839X_RMA_CTRL_2, GENMASK(31, 0));
 		regmap_write(ctrl->map, RTETH_839X_RMA_CTRL_3, GENMASK(9, 0));
 	}
+
+	/* Slow protocols (01-80-C2-00-00-02, e.g. LACP) are link-local. The
+	 * switch drops them with FORWARD, so always trap them for bonding.
+	 */
+	regmap_update_bits(ctrl->map, RTETH_839X_RMA_CTRL_0, GENMASK(5, 4),
+			   RTETH_839X_RMA_CTRL_0_SLOW_TRAP);
 }
 
 static void rteth_930x_set_rx_mode(struct net_device *dev)
