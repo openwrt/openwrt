@@ -743,6 +743,23 @@ endef
 $(eval $(call KernelPackage,sched-core))
 
 
+define KernelPackage/sched-act-gate
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=Traffic gate control
+  DEPENDS:=+kmod-sched-core
+  KCONFIG:=CONFIG_NET_ACT_GATE
+  FILES:=$(LINUX_DIR)/net/sched/act_gate.ko
+  AUTOLOAD:=$(call AutoProbe,act_gate)
+endef
+
+define KernelPackage/sched-act-gate/description
+ Gate tc action (IEEE 802.1Qci) that passes or drops ingress packets
+ based on a time schedule.
+endef
+
+$(eval $(call KernelPackage,sched-act-gate))
+
+
 define KernelPackage/sched-act-police
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Traffic Policing
