@@ -876,6 +876,23 @@ endef
 $(eval $(call KernelPackage,sched-drr))
 
 
+define KernelPackage/sched-etf
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=Earliest TxTime First scheduler (ETF)
+  DEPENDS:=+kmod-sched-core
+  KCONFIG:=CONFIG_NET_SCH_ETF
+  FILES:=$(LINUX_DIR)/net/sched/sch_etf.ko
+  AUTOLOAD:=$(call AutoProbe,sch_etf)
+endef
+
+define KernelPackage/sched-etf/description
+ Earliest TxTime First scheduler, sends packets at the time set with
+ SO_TXTIME. Used for Time-Sensitive Networking.
+endef
+
+$(eval $(call KernelPackage,sched-etf))
+
+
 define KernelPackage/sched-flower
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Flower traffic classifier
