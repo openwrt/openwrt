@@ -1379,6 +1379,23 @@ static int edma_set_ringparam(struct net_device *netdev,
 				ring->rx_pending);
 }
 
+/* The rebuild asserts the block's reset line, so it is the DMA reset too. */
+static int edma_reset(struct net_device *netdev, u32 *flags)
+{
+	struct edma_priv *priv = netdev_priv(netdev);
+	int ret;
+
+	if (!(*flags & ETH_RESET_DMA))
+		return -EINVAL;
+
+	ret = edma_reconfigure(priv, priv->rx_page_order, priv->tx_ring_size,
+			       priv->rx_ring_size);
+	if (!ret)
+		*flags &= ~ETH_RESET_DMA;
+
+	return ret;
+}
+
 /* A ring interrupts once it holds more frames than its threshold, and its
  * timer interrupts for fewer once they have waited that long. A threshold of
  * zero interrupts on every frame, which leaves the timer nothing to do.
@@ -1587,6 +1604,7 @@ static const struct ethtool_ops edma_ethtool_ops = {
 	.get_regs_len = edma_get_regs_len,
 	.get_regs = edma_get_regs,
 	.get_channels = edma_get_channels,
+	.reset = edma_reset,
 };
 
 static void edma_rx_vlan_strip(struct edma_priv *priv,
