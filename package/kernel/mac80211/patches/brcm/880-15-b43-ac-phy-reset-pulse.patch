@@ -1,0 +1,44 @@
+From 6d98dd42f77fb6b318c4ed8f62429d6bf88fe342 Mon Sep 17 00:00:00 2001
+From: Russell Ballestrini <russell@unturf.com>
+Date: Fri, 10 Oct 2026 12:00:00 -0400
+Subject: [PATCH 15/29] b43: AC-PHY: pulse the PHY reset with the forced clocks as wl does
+
+About two core inits in three came up with HT transmit dead (every HT
+frame unacknowledged, legacy fine) while nothing in the init differed.
+wl asserts and releases the PHY reset with the forced clock and the PHY
+clock on; b43's reset did not, so the HT TX stage reset only by chance.
+Do it wl's way (acphy_initorder=1): 10 of 10 inits live on the R6400.
+---
+ drivers/net/wireless/broadcom/b43/main.c | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
+@@ -38,6 +38,7 @@
+ #include "phy_common.h"
+ #include "phy_g.h"
+ #include "phy_n.h"
++#include "phy_ac.h"
+ #include "dma.h"
+ #include "pio.h"
+ #include "sysfs.h"
+@@ -1333,6 +1334,19 @@
+ {
+ 	u32 flags;
+ 
++#ifdef CPTCFG_B43_PHY_AC
++	/*
++	 * acphy_initorder 1: wl's PHY reset pulse for PHY type 11
++	 * (wlc_bmac_phy_reset + wlc_bmac_core_phy_clk(1), phy_ac.c). Not on
++	 * the first attach reset: phy.type is set by b43_phy_versioning.
++	 */
++	if (dev->phy.type == B43_PHYTYPE_AC &&
++	    (b43_modparam_ac_initorder & B43_AC_INITORDER_PHYRESET)) {
++		b43_phy_ac_phy_reset_wl(dev);
++		return;
++	}
++#endif
++
+ 	/* Put PHY into reset */
+ 	flags = bcma_aread32(dev->dev->bdev, BCMA_IOCTL);
+ 	flags |= B43_BCMA_IOCTL_PHY_RESET;

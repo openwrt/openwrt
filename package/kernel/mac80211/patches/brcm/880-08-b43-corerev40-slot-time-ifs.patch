@@ -1,0 +1,77 @@
+From 18b99599e194ad61a00de379d55c59aaa9c865d9 Mon Sep 17 00:00:00 2001
+From: Russell Ballestrini <russell@unturf.com>
+Date: Fri, 10 Oct 2026 12:00:00 -0400
+Subject: [PATCH 08/29] b43: core rev >= 40 slot time and IFS control as wl sets them
+
+With the AP passing traffic, about 1 % of the frames under load ended in
+a PHY TX error, with the receiver busy at the time (MMIO 0x158). wl sets
+three MAC timing values on core rev > 39 that b43 does not:
+
+- Slot time: wlc_bmac_bsinit calls wlc_bmac_update_slot_timing with
+  short slot forced on the 5 GHz band (0x160420..0x160434), which writes
+  MMIO 0x684 = 0x207 and shm 0x10 = 9 (0x15ff98..0x15ffb0). b43's
+  b43_set_slot_time returns on 5 GHz and never writes shm 0x10, and b43
+  zeroes shm before the ucode upload, so the ucode's slot time was 0
+  while the bsinitvals left 0x684 at the long slot 0x212.
+- wlc_bmac_init clears IFS_CTL (0x688) bits 12..15 (0x163618..0x163634).
+- wlc_bmac_init writes MMIO 0x69c = 1 (0x163650..0x163658).
+
+Do all three at core init on core rev >= 40 with the AC-PHY, and make
+b43_set_slot_time write 0x684 and shm 0x10 together there (9 us on
+5 GHz), as wlc_bmac_update_slot_timing does. Register meanings beyond
+the wl function names are not decoded.
+---
+ drivers/net/wireless/broadcom/b43/main.c | 35 ++++++++++++++++++++++++++
+ 1 file changed, 35 insertions(+)
+
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
+@@ -715,6 +715,18 @@
+ static void b43_set_slot_time(struct b43_wldev *dev, u16 slot_time)
+ {
+ 	/* slot_time is in usec. */
++	/*
++	 * Core rev >= 40 (AC): wlc_bmac_update_slot_timing writes the IFS
++	 * slot register and shm 0x10 together (0x15ff98..0x15ffe4), and on
++	 * 5 GHz always with short slot (wlc_bmac_bsinit 0x160420..0x160434).
++	 */
++	if (dev->phy.type == B43_PHYTYPE_AC && dev->dev->core_rev >= 40) {
++		if (b43_current_band(dev->wl) == NL80211_BAND_5GHZ)
++			slot_time = 9;
++		b43_write16(dev, B43_MMIO_IFSSLOT, 510 + slot_time);
++		b43_shm_write16(dev, B43_SHM_SHARED, 0x0010, slot_time);
++		return;
++	}
+ 	/* This test used to exit for all but a G PHY. */
+ 	if (b43_current_band(dev->wl) == NL80211_BAND_5GHZ)
+ 		return;
+@@ -5297,6 +5309,29 @@
+ 		b43_phy_set(dev, 0x042, 0x8000);
+ 	}
+ 
++	/*
++	 * 99n: wl's MAC timing on core rev >= 40 that b43 leaves at the
++	 * initvals or at 0.
++	 * - wlc_bmac_init clears IFS_CTL bits 12..15 (0x163618..0x163634) and
++	 *   writes MMIO 0x69c = 1 (0x163650..0x163658).
++	 * - wlc_bmac_bsinit calls wlc_bmac_update_slot_timing with short
++	 *   slot forced on for the 5 GHz band (band type 1, 0x160420..
++	 *   0x160434): MMIO 0x684 (IFS slot) = 0x207 and shm 0x10 (slot
++	 *   time) = 9 (0x15ff98..0x15ffb0; long slot 0x212 / 20). b43's
++	 *   b43_set_slot_time returns on 5 GHz and never writes shm 0x10, and
++	 *   b43 zeroes shm before the ucode upload, so the ucode's slot time
++	 *   was 0.
++	 */
++	if (dev->phy.type == B43_PHYTYPE_AC && dev->dev->core_rev >= 40) {
++		b43_write16(dev, B43_MMIO_IFSCTL,
++			    b43_read16(dev, B43_MMIO_IFSCTL) & 0x0FFF);
++		b43_write16(dev, 0x69C, 1);
++		if (b43_current_band(dev->wl) == NL80211_BAND_5GHZ) {
++			b43_write16(dev, B43_MMIO_IFSSLOT, 0x207);
++			b43_shm_write16(dev, B43_SHM_SHARED, 0x0010, 9);
++		}
++	}
++
+ 	/* Minimum Contention Window */
+ 	if (phy->type == B43_PHYTYPE_B)
+ 		b43_shm_write16(dev, B43_SHM_SCRATCH, B43_SHM_SC_MINCONT, 0x1F);

@@ -1,0 +1,56 @@
+From e6d056cc4a926fbb27fc9a4a7f648a09db37b8fc Mon Sep 17 00:00:00 2001
+From: Russell Ballestrini <russell@unturf.com>
+Date: Fri, 10 Oct 2026 12:00:00 -0400
+Subject: [PATCH 12/29] b43: AC-PHY RX signal strength
+
+b43_rx() had no AC case in its link-quality switch, so every frame and
+every scanned BSS reported 0 dBm.
+
+Core rev >= 40 ucode puts one signed byte per core at RX header offsets
+9, 10 and 11 (the bytes the HT-PHY case reads; wl.ko
+wlc_phy_rssi_compute_acphy reads them at 0x27c, 0x290, 0x298), valid only
+with MAC status bit 24 (wlc_phy_rssi_compute 0x644..0x65c). Pass them to
+b43_phy_ac_rssi(), which applies wl's per-core RX gain error correction,
+the NVRAM RSSI offset and the max-over-cores merge. Without the valid
+bit, or before radio-on, report RX_FLAG_NO_SIGNAL_VAL instead of 0 dBm.
+---
+ drivers/net/wireless/broadcom/b43/xmit.c | 21 +++++++++++++++++++++
+ 1 file changed, 21 insertions(+)
+
+--- a/drivers/net/wireless/broadcom/b43/xmit.c
++++ b/drivers/net/wireless/broadcom/b43/xmit.c
+@@ -20,6 +20,7 @@
+ #include "phy_common.h"
+ #include "dma.h"
+ #include "pio.h"
++#include "phy_ac.h"
+ 
+ static const struct b43_tx_legacy_rate_phy_ctl_entry b43_tx_legacy_rate_phy_ctl[] = {
+ 	{ B43_CCK_RATE_1MB,	0x0,			0x0 },
+@@ -1026,6 +1027,26 @@
+ 						  (phystat0 & B43_RX_PHYST0_GAINCTL),
+ 						  (phystat3 & B43_RX_PHYST3_TRSTATE));
+ 		break;
++#ifdef CPTCFG_B43_PHY_AC
++	case B43_PHYTYPE_AC: {
++		/*
++		 * Core rev >= 40: one signed byte per core at 9, 10, 11 (the
++		 * HT-PHY bytes), valid only with the PHY RX status valid bit
++		 * (wl.ko wlc_phy_rssi_compute 0x644..0x65c, rssi-rev42.md).
++		 */
++		u8 raw[3] = { rxhdr->phy_ht_power0, rxhdr->phy_ht_power1,
++			      rxhdr->phy_ht_power2 };
++		s8 dbm;
++
++		if (dev->phy.type == B43_PHYTYPE_AC &&
++		    (macstat & B43_RX_MAC_RXST_VALID) &&
++		    !b43_phy_ac_rssi(dev, raw, &dbm))
++			status.signal = dbm;
++		else
++			status.flag |= RX_FLAG_NO_SIGNAL_VAL;
++		break;
++	}
++#endif
+ 	}
+ 
+ 	if (phystat0 & B43_RX_PHYST0_OFDM)

@@ -1,0 +1,102 @@
+From 19f8499724360dc5fd7f4dc57954e03e75f17040 Mon Sep 17 00:00:00 2001
+From: Russell Ballestrini <russell@unturf.com>
+Date: Fri, 10 Oct 2026 12:00:00 -0400
+Subject: [PATCH 20/29] b43: AC-PHY: shared memory above 4 KB and per-wldev state across a core re-init
+
+A controller restart's core init must see the AC state as the module load
+did: the ucode shared memory above 4 KB and the per-wldev AC state are
+reset on re-init (acphy_initfix).
+---
+ drivers/net/wireless/broadcom/b43/main.c | 67 ++++++++++++++++++++++++++
+ 1 file changed, 67 insertions(+)
+
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
+@@ -3186,6 +3186,69 @@
+ 	kfree(ctx);
+ }
+ 
++/*
++ * 9n0: acphy_initfix bits 8 and 16 (phy_ac.c, htdead-rev42.md section 7)
++ * at the ucode upload of a core rev >= 40 AC core. b43 zeroes 4 KB of
++ * shared memory; ucode 907's initvals write from 0x1000 up (0x10ca,
++ * 0x17d2, 0x17e4..) and the ucode keeps words of its own there (0x17f4..
++ * 0x180e the PHY control read-back, 0x1816 and 0x1822..0x1832 the packet
++ * engine, ucode907-tx.md), which a controller restart, and a module
++ * reload with the PMU resources never dropped, inherit. Bit 16 logs the
++ * words before anything touches them (the fresh-load value on the first
++ * init, the previous init's on a restart); bit 8 zeroes 0x1000 up to
++ * acphy_initfix_shm bytes (default 0x2000) with the 4 KB, before the
++ * initvals. Addresses past the core's shared memory wrap (the control
++ * word's offset is masked), so a too-large end only re-zeroes the low
++ * part; bounded at 32 KB.
++ */
++static void b43_ac_initfix_shm(struct b43_wldev *dev)
++{
++	static const u16 words[] = {
++		0x10CA, 0x17D2, 0x17D4, 0x17F4, 0x17F6, 0x17F8, 0x17FA,
++		0x1816, 0x1822, 0x1824, 0x1826, 0x1832,
++	};
++	unsigned int bits = b43_modparam_acphy_initfix;
++	unsigned int i, end;
++	char line[160];
++	int len = 0;
++
++	if (!(bits & (B43_AC_INITFIX_SHM | B43_AC_INITFIX_LOG)) ||
++	    !b43_txhdr_is_ac(dev))
++		return;
++	if (bits & B43_AC_INITFIX_LOG) {
++		for (i = 0; i < ARRAY_SIZE(words); i++)
++			len += scnprintf(line + len, sizeof(line) - len,
++					 " %04x:%04x", words[i],
++					 b43_shm_read16(dev, B43_SHM_SHARED,
++							words[i]));
++	}
++	if (!(bits & B43_AC_INITFIX_SHM))
++		return;
++	end = clamp(b43_modparam_acphy_initfix_shm, 0x1000U, 0x8000U) & ~1U;
++	for (i = 0x1000; i < end; i += 2)
++		b43_shm_write16(dev, B43_SHM_SHARED, i, 0);
++}
++
++/*
++ * 9n0: acphy_initfix bits 4 and 16 at the end of b43_wireless_core_init:
++ * the per-wldev AC state that outlives a core re-init. 99m's PHY TX error
++ * count only grows; 9g0's A-MPDU epoch state is zeroed at init only with
++ * TX aggregation on; 9m0's restart count is this chain's and is logged,
++ * not touched.
++ */
++static void b43_ac_initfix_wldev(struct b43_wldev *dev)
++{
++	unsigned int bits = b43_modparam_acphy_initfix;
++
++	if (!(bits & (B43_AC_INITFIX_WLDEV | B43_AC_INITFIX_LOG)) ||
++	    !b43_txhdr_is_ac(dev))
++		return;
++	if (!(bits & B43_AC_INITFIX_WLDEV))
++		return;
++	dev->phy_txerr_total = 0;
++	memset(dev->ac_ampdu_epoch, 0, sizeof(dev->ac_ampdu_epoch));
++}
++
+ static int b43_upload_microcode(struct b43_wldev *dev)
+ {
+ 	struct wiphy *wiphy = dev->wl->hw->wiphy;
+@@ -3201,6 +3264,8 @@
+ 	B43_WARN_ON(macctl & B43_MACCTL_PSM_RUN);
+ 	macctl |= B43_MACCTL_PSM_JMP0;
+ 	b43_write32(dev, B43_MMIO_MACCTL, macctl);
++	/* 9n0: what the ucode's memory above 4 KB holds before this init */
++	b43_ac_initfix_shm(dev);
+ 	/* Zero out all microcode PSM registers and shared memory. */
+ 	for (i = 0; i < 64; i++)
+ 		b43_shm_write16(dev, B43_SHM_SCRATCH, i, 0);
+@@ -5868,6 +5933,8 @@
+ 	b43_security_init(dev);
+ 	/* 996's core mask block, after anything that wrote shm above (99l) */
+ 	b43_ac_txcore_shm_write(dev);
++	/* 9n0: acphy_initfix, the per-wldev AC state a re-init inherits */
++	b43_ac_initfix_wldev(dev);
+ 
+ 	ieee80211_wake_queues(dev->wl->hw);
+ 

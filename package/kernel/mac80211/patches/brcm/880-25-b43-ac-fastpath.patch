@@ -1,0 +1,545 @@
+From 51e66376bc1a928c154c5955a11bb59443f48f61 Mon Sep 17 00:00:00 2001
+From: Russell Ballestrini <russell@unturf.com>
+Date: Fri, 10 Oct 2026 12:00:00 -0400
+Subject: [PATCH 25/29] b43: AC-PHY: the per-frame CPU cost of the core rev 42 path
+
+No per-frame diagnostics, one TX kick per interrupt, interrupt re-poll,
+RX cache sync of the used length, RX list handoff (acphy_fastpath).
+---
+ drivers/net/wireless/broadcom/b43/b43.h  |  18 ++++
+ drivers/net/wireless/broadcom/b43/dma.c  |  55 ++++++++++-
+ drivers/net/wireless/broadcom/b43/main.c | 141 ++++++++++++++++++++------
+ drivers/net/wireless/broadcom/b43/xmit.c |  36 ++++++-
+ drivers/net/wireless/broadcom/b43/xmit.h |  56 ++++++++++
+ 5 files changed, 269 insertions(+), 37 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/b43/b43.h
++++ b/drivers/net/wireless/broadcom/b43/b43.h
+@@ -38,6 +38,12 @@
+ #define B43_MMIO_DMA4_IRQ_MASK		0x44
+ #define B43_MMIO_DMA5_REASON		0x48
+ #define B43_MMIO_DMA5_IRQ_MASK		0x4C
++/*
++ * 9r0: receive-lazy interrupt control of DMA engine 0 (d11 intrcvlazy[0],
++ * brcmsmac d11.h): bits 24..31 frames per RX interrupt, bits 0..23 timeout.
++ * b43_chip_init writes 0x01000000 (one frame) as brcmsmac does.
++ */
++#define B43_MMIO_INTRCVLAZY0		0x100
+ #define B43_MMIO_MACCTL			0x120	/* MAC control */
+ #define B43_MMIO_MACCMD			0x124	/* MAC command */
+ #define B43_MMIO_GEN_IRQ_REASON		0x128
+@@ -973,6 +979,18 @@
+ 	 * MPDU. Valid under wl->mutex only.
+ 	 */
+ 	struct sk_buff *ac_ampdu_next;
++	/*
++	 * 9r0, acphy_fastpath bit 5: while b43_dma_rx drains the ring with
++	 * the bottom halves off, b43_rx hands every frame to ieee80211_rx_list
++	 * on this list instead of ieee80211_rx_ni; NULL outside the drain.
++	 */
++	struct list_head *ac_rx_list;
++	/*
++	 * 9r0, acphy_fastpath bit 1: a TX status of this interrupt cleared a
++	 * software queue's tx_queue_stopped, so the TX worker must run once
++	 * the status FIFO is drained (handle_irq_transmit_status).
++	 */
++	bool ac_txs_kick;
+ 	/* Core rev >= 40 AC-PHY: PHY TX errors counted, not acted on (99m) */
+ 	unsigned int phy_txerr_total;
+ 	/*
+--- a/drivers/net/wireless/broadcom/b43/dma.c
++++ b/drivers/net/wireless/broadcom/b43/dma.c
+@@ -1696,6 +1696,9 @@
+ 		}
+ 		s = next_slot(ring, next_slot(ring, s));
+ 	}
++	/* 9r0 QUIET: the first-8 log and its atomic skipped; a fallback is always logged */
++	if (why || (!b43_ac_fastpath(dev, B43_AC_FASTPATH_QUIET) &&
++		    atomic_inc_return(&b43_ampdutx_st_logged) <= 8))
+ 		/*
+ 		 * 9l0: the four per-entry words (attempts low byte, ACKs high
+ 		 * byte; with the fixed-rate bit word 0 = attempts, word 1 =
+@@ -1929,6 +1932,8 @@
+ 				 * acphy_ampdu bit 7 clear): are such ordinary
+ 				 * frames acked while a session is up?
+ 				 */
++				if (!b43_ac_fastpath(dev, B43_AC_FASTPATH_QUIET) &&
++				    atomic_inc_return(&b43_ampdutx_plain_logged) <= 16)
+ 				/* 9p0: visible to minstrel_ht as a one-MPDU aggregate */
+ 				if (b43_ac_ampdu(dev, B43_AC_AMPDU_PLAINRC))
+ 					b43_dma_plain_report(info);
+@@ -1978,6 +1983,8 @@
+ 
+ 	if (dev->wl->tx_queue_stopped[ring->queue_prio]) {
+ 		dev->wl->tx_queue_stopped[ring->queue_prio] = false;
++		/* 9r0 TXBATCH: the worker must drain this queue (main.c) */
++		dev->ac_txs_kick = true;
+ 	} else {
+ 		/* If the driver queue is running wake the corresponding
+ 		 * mac80211 queue. */
+@@ -1986,8 +1993,9 @@
+ 			b43dbg(dev->wl, "Woke up TX ring %d\n", ring->index);
+ 		}
+ 	}
+-	/* Add work to the queue. */
+-	ieee80211_queue_work(dev->wl->hw, &dev->wl->tx_work);
++	/* Add work to the queue. 9r0 TXBATCH: once per interrupt instead. */
++	if (!b43_ac_fastpath(dev, B43_AC_FASTPATH_TXBATCH))
++		ieee80211_queue_work(dev->wl->hw, &dev->wl->tx_work);
+ }
+ 
+ static void dma_rx(struct b43_dmaring *ring, int *slot)
+@@ -2000,10 +2008,20 @@
+ 	u16 len;
+ 	int err;
+ 	dma_addr_t dmaaddr;
++	/*
++	 * 9r0 RXSYNC: sync the RX header and the poison bytes now, the frame
++	 * once its length is known, and skip the unmap's full-buffer pass. On
++	 * this SoC (Cortex-A9, PL310, DMA not coherent) every sync or unmap
++	 * of the 4143 byte buffer is 130 L1 lines plus 130 outer-cache
++	 * operations; most frames are 1500 bytes or a 100 byte TCP ACK.
++	 */
++	bool rxsync = b43_ac_fastpath(ring->dev, B43_AC_FASTPATH_RXSYNC);
++	size_t hdrsync = ring->frameoffset + sizeof(struct b43_plcp_hdr6) + 2;
+ 
+ 	desc = ops->idx2desc(ring, *slot, &meta);
+ 
+-	sync_descbuffer_for_cpu(ring, meta->dmaaddr, ring->rx_buffersize);
++	sync_descbuffer_for_cpu(ring, meta->dmaaddr,
++				rxsync ? hdrsync : ring->rx_buffersize);
+ 	skb = meta->skb;
+ 
+ 	rxhdr = (struct b43_rxhdr_fw4 *)skb->data;
+@@ -2014,6 +2032,10 @@
+ 		do {
+ 			udelay(2);
+ 			barrier();
++			/* the header line again: the device may have written it */
++			if (rxsync)
++				sync_descbuffer_for_cpu(ring, meta->dmaaddr,
++							hdrsync);
+ 			len = le16_to_cpu(rxhdr->frame_len);
+ 		} while (len == 0 && i++ < 5);
+ 		if (unlikely(len == 0)) {
+@@ -2062,7 +2084,15 @@
+ 		goto drop_recycle_buffer;
+ 	}
+ 
+-	unmap_descbuffer(ring, dmaaddr, ring->rx_buffersize, 0);
++	if (rxsync) {
++		/* the bytes the device wrote; then the unmap without its pass */
++		sync_descbuffer_for_cpu(ring, dmaaddr, len + ring->frameoffset);
++		dma_unmap_single_attrs(ring->dev->dev->dma_dev, dmaaddr,
++				       ring->rx_buffersize, DMA_FROM_DEVICE,
++				       DMA_ATTR_SKIP_CPU_SYNC);
++	} else {
++		unmap_descbuffer(ring, dmaaddr, ring->rx_buffersize, 0);
++	}
+ 	skb_put(skb, len + ring->frameoffset);
+ 	skb_pull(skb, ring->frameoffset);
+ 
+@@ -2100,16 +2130,33 @@
+ 	const struct b43_dma_ops *ops = ring->ops;
+ 	int slot, current_slot;
+ 	int used_slots = 0;
++	/*
++	 * 9r0 RXLIST: ieee80211_rx_napi's steps around the whole drain: the
++	 * bottom halves off once, every frame through ieee80211_rx_list
++	 * (b43_rx, xmit.c), the netif list delivered once. ieee80211_rx_ni
++	 * does the same per frame.
++	 */
++	bool batch = b43_ac_fastpath(ring->dev, B43_AC_FASTPATH_RXLIST);
++	LIST_HEAD(list);
+ 
+ 	B43_WARN_ON(ring->tx);
+ 	current_slot = ops->get_current_rxslot(ring);
+ 	B43_WARN_ON(!(current_slot >= 0 && current_slot < ring->nr_slots));
+ 
+ 	slot = ring->current_slot;
++	if (batch) {
++		local_bh_disable();
++		ring->dev->ac_rx_list = &list;
++	}
+ 	for (; slot != current_slot; slot = next_slot(ring, slot)) {
+ 		dma_rx(ring, &slot);
+ 		update_max_used_slots(ring, ++used_slots);
+ 	}
++	if (batch) {
++		ring->dev->ac_rx_list = NULL;
++		netif_receive_skb_list(&list);
++		local_bh_enable();
++	}
+ 	wmb();
+ 	ops->set_current_rxslot(ring, slot);
+ 	ring->current_slot = slot;
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
+@@ -1705,11 +1705,29 @@
+ 
+ 	if (b43_txstatus_is_rev40(dev)) {
+ 		u32 s[B43_TXST40_WORDS], t[B43_TXST40_WORDS];
++		/* 9r0 QUIET: no per-status dump checks or log atomics */
++		bool quiet = b43_ac_fastpath(dev, B43_AC_FASTPATH_QUIET);
+ 
++		dev->ac_txs_kick = false;
+ 		while (b43_read_txstatus_rev40(dev, s, t)) {
+ 			b43_txstatus_parse_rev40(&stat, s, t);
++			if (quiet) {
++				b43_handle_txstatus(dev, &stat);
++				continue;
++			}
+ 			b43_handle_txstatus(dev, &stat);
+ 		}
++		/*
++		 * 9r0 TXBATCH: b43_dma_handle_txstatus kicked the TX worker
++		 * after every status (a kworker wake-up, the mutex and four
++		 * empty queues when nothing waits). With the bit it only notes
++		 * when a status cleared tx_queue_stopped, the one case where a
++		 * frame sits in the software queue without a kick of its own
++		 * (b43_op_tx kicks unless the queue is stopped), and the worker
++		 * runs once per interrupt.
++		 */
++		if (dev->ac_txs_kick)
++			ieee80211_queue_work(dev->wl->hw, &dev->wl->tx_work);
+ 		return;
+ 	}
+ 
+@@ -2639,17 +2657,80 @@
+ 		b43err(dev->wl, "ucode fatal %u times, not restarting\n", n);
+ }
+ 
++/*
++ * The register part of the interrupt top half: read the DMA reasons for
++ * `reason` (already masked with dev->irq_mask), acknowledge everything and
++ * save it for the thread. Caller holds wl->hardirq_lock.
++ */
++static void b43_irq_ack_reasons(struct b43_wldev *dev, u32 reason)
++{
++	dev->dma_reason[0] = b43_read32(dev, B43_MMIO_DMA0_REASON)
++	    & 0x0001FC00;
++	dev->dma_reason[1] = b43_read32(dev, B43_MMIO_DMA1_REASON)
++	    & 0x0000DC00;
++	dev->dma_reason[2] = b43_read32(dev, B43_MMIO_DMA2_REASON)
++	    & 0x0000DC00;
++	dev->dma_reason[3] = b43_read32(dev, B43_MMIO_DMA3_REASON)
++	    & 0x0001DC00;
++	dev->dma_reason[4] = b43_read32(dev, B43_MMIO_DMA4_REASON)
++	    & 0x0000DC00;
++/* Unused ring
++	dev->dma_reason[5] = b43_read32(dev, B43_MMIO_DMA5_REASON)
++	    & 0x0000DC00;
++*/
++
++	/* ACK the interrupt. */
++	b43_write32(dev, B43_MMIO_GEN_IRQ_REASON, reason);
++	b43_write32(dev, B43_MMIO_DMA0_REASON, dev->dma_reason[0]);
++	b43_write32(dev, B43_MMIO_DMA1_REASON, dev->dma_reason[1]);
++	b43_write32(dev, B43_MMIO_DMA2_REASON, dev->dma_reason[2]);
++	b43_write32(dev, B43_MMIO_DMA3_REASON, dev->dma_reason[3]);
++	b43_write32(dev, B43_MMIO_DMA4_REASON, dev->dma_reason[4]);
++/* Unused ring
++	b43_write32(dev, B43_MMIO_DMA5_REASON, dev->dma_reason[5]);
++*/
++
++	/* Save the reason bitmasks for the IRQ thread handler. */
++	dev->irq_reason = reason;
++}
++
++/*
++ * 9r0 IRQPOLL: at the end of a thread pass, with the device still masked,
++ * look for reasons that arrived while the pass ran. True (and the reasons
++ * read and acknowledged as the top half would) when there are any, so the
++ * thread handles them in this pass instead of after a hard interrupt and a
++ * wake-up. Under hardirq_lock, the lock of the top half (a shared line
++ * could run it meanwhile; whichever side takes the reasons handles them).
++ */
++static bool b43_ac_irq_repoll(struct b43_wldev *dev)
++{
++	unsigned long flags;
++	u32 reason;
++	bool more;
++
++	spin_lock_irqsave(&dev->wl->hardirq_lock, flags);
++	reason = b43_read32(dev, B43_MMIO_GEN_IRQ_REASON);
++	more = reason != 0xffffffff && (reason & dev->irq_mask);
++	if (more)
++		b43_irq_ack_reasons(dev, reason & dev->irq_mask);
++	spin_unlock_irqrestore(&dev->wl->hardirq_lock, flags);
++	return more;
++}
++
+ static void b43_do_interrupt_thread(struct b43_wldev *dev)
+ {
+ 	u32 reason;
+ 	u32 dma_reason[ARRAY_SIZE(dev->dma_reason)];
+ 	u32 merged_dma_reason = 0;
++	unsigned int round = 0;
+ 	int i;
+ 
++again:
+ 	if (unlikely(b43_status(dev) != B43_STAT_STARTED))
+ 		return;
+ 
+ 	reason = dev->irq_reason;
++	merged_dma_reason = 0;
+ 	for (i = 0; i < ARRAY_SIZE(dma_reason); i++) {
+ 		dma_reason[i] = dev->dma_reason[i];
+ 		merged_dma_reason |= dma_reason[i];
+@@ -2747,7 +2828,8 @@
+ 	 * wlc_dpc checks MACCTL after the DMA interrupt and logs when neither
+ 	 * EN_MAC nor PSM_RUN is set (tst #3 at 0x12d34..0x12d64).
+ 	 */
+-	if (dev->dev->core_rev >= 40 && (reason & B43_IRQ_DMA)) {
++	if (dev->dev->core_rev >= 40 && (reason & B43_IRQ_DMA) &&
++	    !b43_ac_fastpath(dev, B43_AC_FASTPATH_QUIET)) {
+ 		static unsigned int psm_stopped_logged;
+ 		u32 macctl = b43_read32(dev, B43_MMIO_MACCTL);
+ 
+@@ -2756,6 +2838,11 @@
+ 			       macctl);
+ 	}
+ 
++	/* 9r0 IRQPOLL: another pass for what arrived meanwhile, bounded */
++	if (b43_ac_fastpath(dev, B43_AC_FASTPATH_IRQPOLL) &&
++	    ++round < B43_AC_IRQPOLL_ROUNDS && b43_ac_irq_repoll(dev))
++		goto again;
++
+ 	/* Re-enable interrupts on the device by restoring the current interrupt mask. */
+ 	b43_write32(dev, B43_MMIO_GEN_IRQ_MASK, dev->irq_mask);
+ 
+@@ -2796,36 +2883,11 @@
+ 	if (!reason)
+ 		return IRQ_NONE;
+ 
+-	dev->dma_reason[0] = b43_read32(dev, B43_MMIO_DMA0_REASON)
+-	    & 0x0001FC00;
+-	dev->dma_reason[1] = b43_read32(dev, B43_MMIO_DMA1_REASON)
+-	    & 0x0000DC00;
+-	dev->dma_reason[2] = b43_read32(dev, B43_MMIO_DMA2_REASON)
+-	    & 0x0000DC00;
+-	dev->dma_reason[3] = b43_read32(dev, B43_MMIO_DMA3_REASON)
+-	    & 0x0001DC00;
+-	dev->dma_reason[4] = b43_read32(dev, B43_MMIO_DMA4_REASON)
+-	    & 0x0000DC00;
+-/* Unused ring
+-	dev->dma_reason[5] = b43_read32(dev, B43_MMIO_DMA5_REASON)
+-	    & 0x0000DC00;
+-*/
+-
+-	/* ACK the interrupt. */
+-	b43_write32(dev, B43_MMIO_GEN_IRQ_REASON, reason);
+-	b43_write32(dev, B43_MMIO_DMA0_REASON, dev->dma_reason[0]);
+-	b43_write32(dev, B43_MMIO_DMA1_REASON, dev->dma_reason[1]);
+-	b43_write32(dev, B43_MMIO_DMA2_REASON, dev->dma_reason[2]);
+-	b43_write32(dev, B43_MMIO_DMA3_REASON, dev->dma_reason[3]);
+-	b43_write32(dev, B43_MMIO_DMA4_REASON, dev->dma_reason[4]);
+-/* Unused ring
+-	b43_write32(dev, B43_MMIO_DMA5_REASON, dev->dma_reason[5]);
+-*/
++	/* DMA reasons, the ACKs and the save for the thread (shared with 9r0) */
++	b43_irq_ack_reasons(dev, reason);
+ 
+ 	/* Disable IRQs on the device. The IRQ thread handler will re-enable them. */
+ 	b43_write32(dev, B43_MMIO_GEN_IRQ_MASK, 0);
+-	/* Save the reason bitmasks for the IRQ thread handler. */
+-	dev->irq_reason = reason;
+ 
+ 	return IRQ_WAKE_THREAD;
+ }
+@@ -4272,7 +4334,15 @@
+ 		value16 |= 0x0004;
+ 		b43_write16(dev, 0x005E, value16);
+ 	}
+-	b43_write32(dev, 0x0100, 0x01000000);
++	/*
++	 * Receive-lazy interrupt control of DMA engine 0: one frame per RX
++	 * interrupt. 9r0: acphy_rxlazy sets another frame count and timeout
++	 * on core rev >= 40 (the RX ring holds B43_RXRING_SLOTS frames).
++	 */
++	if (dev->dev->core_rev >= 40 && b43_modparam_acphy_rxlazy)
++		b43_write32(dev, B43_MMIO_INTRCVLAZY0, b43_modparam_acphy_rxlazy);
++	else
++		b43_write32(dev, B43_MMIO_INTRCVLAZY0, 0x01000000);
+ 	if (dev->dev->core_rev < 5)
+ 		b43_write32(dev, 0x010C, 0x01000000);
+ 
+@@ -6345,6 +6415,7 @@
+ 			hf |= B43_HF_AC_AMPDUTX;
+ 		memset(dev->ac_ampdu_epoch, 0, sizeof(dev->ac_ampdu_epoch));
+ 	}
++	/* 9r0: the per-frame cuts in force for this core init, once */
+ 	b43_hf_write(dev, hf);
+ 	/* 99zb: acphy_ampdu bit 2, wl's A-MPDU shm words */
+ 	b43_ac_ampdu_shm(dev);
+@@ -7419,6 +7490,18 @@
+ 		hw->max_rx_aggregation_subframes = B43_RXRING_SLOTS;
+ 	}
+ 	/*
++	 * 9r0: acphy_fastpath bit 3, A-MSDU TX. mac80211 aggregates MSDUs of a
++	 * station and TID into one MPDU on its fast-xmit path (tx.c
++	 * ieee80211_amsdu_aggregate; up to the peer's HT max A-MSDU length)
++	 * and, as b43 lacks TX_FRAG_LIST, linearizes the result before
++	 * b43_op_tx (ieee80211_tx_dequeue). The TX DMA descriptor takes up to
++	 * 8191 bytes; the AC header's frame length is 16 bits. No effect with
++	 * software crypto: fast-xmit refuses it until hardware CCMP exists.
++	 */
++	if ((b43_modparam_acphy_fastpath & B43_AC_FASTPATH_AMSDU) &&
++	    dev->core_rev >= 40)
++		ieee80211_hw_set(hw, TX_AMSDU);
++	/*
+ 	 * 9j0: acphy_psfix bit 4: the hardware PMQ reports a station's power
+ 	 * save state (b43_ac_pmq_drain), so mac80211 does not track the PM
+ 	 * bit of received frames and leaves PS-Poll and U-APSD trigger frames
+--- a/drivers/net/wireless/broadcom/b43/xmit.c
++++ b/drivers/net/wireless/broadcom/b43/xmit.c
+@@ -673,6 +673,17 @@
+ MODULE_PARM_DESC(acphy_hwcrypto,
+ 		 "AC-PHY hardware keys on core rev >= 40: 1 = CCMP (pairwise key in slot 4 + the station's AMT entry, group key in slot keyidx), 2 = WEP, 4 = leave the ucode's PMQ power save on for a keyed station (else its frames carry the ignore-PMQ bit unless acphy_psfix bit 8 is set); TKIP and anything else stay in software (default 0)");
+ 
++/* 9r0: per-frame CPU cost cuts on core rev >= 40, see xmit.h */
++unsigned int b43_modparam_acphy_fastpath;
++module_param_named(acphy_fastpath, b43_modparam_acphy_fastpath, uint, 0444);
++MODULE_PARM_DESC(acphy_fastpath,
++		 "AC core per-frame CPU cuts: 1 = no per-frame diagnostics, 2 = TX worker kick per interrupt, 4 = re-poll interrupt reasons before unmasking, 8 = A-MSDU TX via mac80211, 16 = RX cache maintenance over the frame only, 32 = batched RX delivery (default 0)");
++
++unsigned int b43_modparam_acphy_rxlazy;
++module_param_named(acphy_rxlazy, b43_modparam_acphy_rxlazy, uint, 0444);
++MODULE_PARM_DESC(acphy_rxlazy,
++		 "AC core RX interrupt coalescing (d11 intrcvlazy 0x100): frames << 24 | timeout, 0 = b43's one frame (default 0)");
++
+ /*
+  * 9m0: the per-load HT TX death (htdead-rev42.md). Nothing the driver
+  * logs at init separates a live load from a dead one; the only known
+@@ -1047,6 +1058,9 @@
+ 				   wlhdr->addr1, tid, ft, seq, &txhdr->rate[0]);
+ 	toe[2] = (toe[2] & ~B43_TXH_AC_TOE_EPOCH) |
+ 		 (epoch ? B43_TXH_AC_TOE_EPOCH : 0);
++	/* 9r0 QUIET: no per-frame log atomics */
++	if (b43_ac_fastpath(dev, B43_AC_FASTPATH_QUIET))
++		return;
+ }
+ static struct {
+ 	bool valid;
+@@ -1333,6 +1347,7 @@
+ retry_count:
+ 	/* 9g0: A-MPDU fields and the epoch bit, after rate entry 0 is known */
+ 	b43_ac_ampdu_txhdr(dev, toe, txhdr, skb_frag, info, cookie, ht, vht);
++	/* 9l0 v2: the dump after every edit, with the TOE prefix; 9r0 QUIET: none */
+ 
+ 	/* Same retry-count bookkeeping as the 598 path, for the status report */
+ 	if (rates[0].count <= dev->wl->hw->conf.long_frame_max_tx_count)
+@@ -1805,6 +1820,8 @@
+ 	u8 phytype;
+ 	bool band5;
+ 	bool noplcp;
++	/* 9r0 QUIET: no per-frame counters, dumps or their atomics */
++	bool quiet = b43_ac_fastpath(dev, B43_AC_FASTPATH_QUIET);
+ 	int padding, rate_idx;
+ 
+ 	memset(&status, 0, sizeof(status));
+@@ -1984,7 +2001,6 @@
+ #endif
+ 	}
+ 
+-	if (dev->dev->core_rev >= 40 &&
+ 	if (noplcp) {
+ 		/* 99zb: rate of the A-MPDU's first MPDU */
+ 		rate_idx = -1;
+@@ -1999,8 +2015,9 @@
+ 				status.flag &= ~RX_FLAG_NO_SIGNAL_VAL;
+ 			}
+ 		}
+-		atomic_inc(&b43_ac_ampdu_rxn);
+-		if (atomic_inc_return(&b43_ac_ampdu_rxdumps) <=
++		if (!quiet)
++			atomic_inc(&b43_ac_ampdu_rxn);
++		if (!quiet && atomic_inc_return(&b43_ac_ampdu_rxdumps) <=
+ 		    B43_AC_AMPDU_DUMPS)
+ 			b43info(dev->wl, "AMPDURX %d physt0 %04x physt3 %04x macst %08x fc %04x seq %u len %u rate %d flag 0x%x\n",
+ 				atomic_read(&b43_ac_ampdu_rxn), phystat0,
+@@ -2151,7 +2168,18 @@
+ 		b43_ac_psfix_rx(dev, skb);
+ 
+ 	memcpy(IEEE80211_SKB_RXCB(skb), &status, sizeof(status));
+-	ieee80211_rx_ni(dev->wl->hw, skb);
++	if (dev->ac_rx_list) {
++		/*
++		 * 9r0 RXLIST: inside b43_dma_rx's drain, bottom halves off;
++		 * ieee80211_rx_napi's steps, the netif list delivered once per
++		 * drain. The RCU section is the one ieee80211_rx_napi takes.
++		 */
++		rcu_read_lock();
++		ieee80211_rx_list(dev->wl->hw, NULL, skb, dev->ac_rx_list);
++		rcu_read_unlock();
++	} else {
++		ieee80211_rx_ni(dev->wl->hw, skb);
++	}
+ 
+ #if B43_DEBUG
+ 	dev->rx_count++;
+--- a/drivers/net/wireless/broadcom/b43/xmit.h
++++ b/drivers/net/wireless/broadcom/b43/xmit.h
+@@ -533,6 +533,62 @@
+ #define B43_AC_AMT_USER_KEY	0x2	/* 9q0: its pairwise hardware key */
+ 
+ /*
++ * 9r0: acphy_fastpath (xmit.c, bitmask, default 0), the per-frame CPU cost
++ * of the core rev >= 40 path (the ~40 % system time per 40 Mbit/s that is
++ * not software CCMP, 2026-10-08). Each bit is one independent cut:
++ * 1 QUIET: no per-frame diagnostics: the capped TXSUB/TXHDR, TXST40, HTTX,
++ *     HTRX, BADRX, AMPDURX, AMPDUTX, RATESEL lines and their atomics, the
++ *     RXFT counters with their line every 512 frames (a 100-character line
++ *     on a 115200 baud serial console is ~9 ms of busy wait), the TXST40
++ *     PSM dump and the per-interrupt MACCTL read (99d "PSM not running").
++ *     acphy_regdump=1 (first HT TX) is part of the HTTX dump and so is off.
++ * 2 TXBATCH: one TX worker kick per interrupt instead of one per TX
++ *     status, and only when a status unblocked a software queue (every
++ *     other frame already has its own kick from b43_op_tx).
++ * 4 IRQPOLL: before the interrupt mask is restored, re-read and
++ *     acknowledge the interrupt reasons under hardirq_lock and handle them
++ *     in the same thread pass (up to B43_AC_IRQPOLL_ROUNDS): under load
++ *     events arrive while the pass runs, and each would otherwise cost a
++ *     hard interrupt (6 PCIe reads, 7 writes) and a thread wake-up.
++ * 8 AMSDU: IEEE80211_HW_TX_AMSDU, mac80211 builds A-MSDUs (up to the
++ *     peer's 3839 or 7935 bytes) on its fast-xmit path and linearizes
++ *     them for a driver without TX_FRAG_LIST; fewer MPDUs per byte. The
++ *     fast-xmit path refuses software crypto (tx.c "don't handle software
++ *     crypto"), so this bit only acts with hardware CCMP or no encryption.
++ * 16 RXSYNC: cache maintenance of an RX buffer over the received bytes
++ *     only. b43 maps 4143 bytes (B43_DMA0_RX_FW598_REV40_BUFSIZE) at setup,
++ *     then syncs and unmaps the whole buffer per frame: three passes of
++ *     130 L1 lines and 130 PL310 outer-cache operations on this SoC. With
++ *     the bit: the RX header, then len + frameoffset, and the unmap skips
++ *     its pass (DMA_ATTR_SKIP_CPU_SYNC), the idiom of the ethernet drivers.
++ * 32 RXLIST: ieee80211_rx_napi's steps around the whole ring drain: bottom
++ *     halves off once, ieee80211_rx_list per frame, one
++ *     netif_receive_skb_list for the batch (ieee80211_rx_ni does this per
++ *     frame).
++ */
++#define B43_AC_FASTPATH_QUIET	0x01
++#define B43_AC_FASTPATH_TXBATCH	0x02
++#define B43_AC_FASTPATH_IRQPOLL	0x04
++#define B43_AC_FASTPATH_AMSDU	0x08
++#define B43_AC_FASTPATH_RXSYNC	0x10
++#define B43_AC_FASTPATH_RXLIST	0x20
++/* IRQPOLL: passes per interrupt before the mask is restored regardless */
++#define B43_AC_IRQPOLL_ROUNDS	8
++extern unsigned int b43_modparam_acphy_fastpath;
++/*
++ * 9r0: acphy_rxlazy (uint, default 0 = b43's 0x01000000, one frame per RX
++ * interrupt): the value for B43_MMIO_INTRCVLAZY0 at chip init, frames << 24
++ * | timeout. The timeout unit is not established (core clocks or
++ * microseconds): 0x04000080 = 4 frames or 128 units is the first trial.
++ */
++extern unsigned int b43_modparam_acphy_rxlazy;
++
++static inline bool b43_ac_fastpath(struct b43_wldev *dev, unsigned int bits)
++{
++	return (b43_modparam_acphy_fastpath & bits) && dev->dev->core_rev >= 40;
++}
++
++/*
+  * 9m0: acphy_htdead (int, default 0). About two loads in three come up
+  * with HT TX dead: every HT frame the core sends fails all its attempts
+  * while legacy frames are acked, the state is drawn inside

@@ -1,0 +1,634 @@
+From 43ffb8afb8b37570b7d6da56ce02d0fcca731edd Mon Sep 17 00:00:00 2001
+From: Russell Ballestrini <russell@unturf.com>
+Date: Fri, 10 Oct 2026 12:00:00 -0400
+Subject: [PATCH 07/29] b43: core rev >= 40 TX enable: buffer memory, MAC awake, TX core mask
+
+With ucode 907 frames reached TX DMA but nothing went on air and no TX
+status came back, while RX worked. wl.ko does several things b43 never
+did on core rev > 39:
+
+- Buffer memory and TX FIFO setup right after the initvals (wlc_bmac_init
+  0x162b18..0x162e60, MMIO 0x520..0x550), skipping the legacy shm FIFO
+  size words; poll the command bit 15 of 0x530, which clears while the
+  command bits stay (0x8007 -> 0x0007).
+- MAC control WAKE | IHR_EN | INFRA from ucode start (wlc_bmac_init
+  0x162620..0x162630, wlc_bmac_wowlucode_start 0x15dbf8..0x15dc08), so
+  the buffer memory commands are accepted; with the MAC asleep every 0x530
+  command timed out.
+- shm 0xa0 holds the full chanspec (wlc_phy_chanspec_shm_set
+  0x55454..0x5548c), the same word the AC TX header carries.
+- TX core mask in PHY control 0 bits 6..9 of the AC header and in the ucode
+  core mask block at shm 0x5d4..0x5da (_wlc_stf_phytxchain_sel
+  0x191124..0x19113c, wlc_stf_txcore_shmem_write 0x19118c); both were 0,
+  which selects no core. Default core 0 as wl's txcore_default; the
+  acphy_txcore module parameter overrides it within the SPROM txchain.
+- No legacy key table clear and no RCMTA count on these cores: b43's key
+  index block (B43_SHM_SH_KEYIDXBLOCK, byte 0x5d4) is the ucode 907 core
+  mask block (word base 0x2ea for core rev > 39, wlc_attach
+  0x13d180..0x13d184; written at (0x2ea + i) * 2 by
+  wlc_stf_txcore_shmem_write 0x1911e8..0x191248). b43_clear_keys wrote
+  (kidx << 4) over the masks, and the ucode's own frames then went out
+  with PHY control 0x0405 (no core), a PHY TX error each. Keys are
+  refused on the AC header anyway; the core mask block is written again
+  after b43_security_init.
+- Basic rate maps at shm 0x1e0/0x220 (wlc_set_ratetable 0x11ebc0), which
+  also removes the B43_WARN_ON b43_rate_memory_init hit on AC; no legacy
+  PHY control words at shm 0x22/0x54/0x188 (wlc_ucode_txant_set returns
+  at 0x15f9c4).
+- wlc_bmac_ifsctl_vht_set(hw, 1) at init and after every AC channel set:
+  MMIO 0x6c6 = shm 0x5a = 0x0f0f at 20 MHz and PHY 0x042 bit 15
+  (0x15f76c..0x15f7a0, wlc_acphy_set_scramb_dyn_bw_en 0x4305c).
+- DMA64 burst length, outstanding reads and prefetch as wl sets hnddma for
+  this chip on PCIe (wlc_bmac_dma_param_set 0x15bf5c; hnddma dma64_txinit
+  0xc02b5d04, _dma_rxenable 0xc02b4a84).
+
+Register names in the buffer memory and IFS parts are guesses; the
+values and their order are wl's.
+---
+ drivers/net/wireless/broadcom/b43/dma.c        |  43 ++++
+ drivers/net/wireless/broadcom/b43/main.c       | 217 +++++++++++++++++++
+ drivers/net/wireless/broadcom/b43/phy_common.c |  27 +++
+ drivers/net/wireless/broadcom/b43/xmit.c       |  76 ++++++-
+ drivers/net/wireless/broadcom/b43/xmit.h       |  37 ++++-
+ 5 files changed, 391 insertions(+), 9 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/b43/dma.c
++++ b/drivers/net/wireless/broadcom/b43/dma.c
+@@ -666,6 +666,47 @@
+ 	goto out;
+ }
+ 
++/*
++ * DMA64 burst / outstanding read / prefetch fields for the BCM4360 on PCIe
++ * (core rev >= 40), as wl configures hnddma.
++ *
++ * wl.ko: wlc_bmac_attach fills the parameter table at .data 0x7fe40 when the
++ * bus is PCI (sih->bustype == 1, 0x1647c4..0x164800), and
++ * wlc_bmac_dma_param_set (0x15bf5c..0x15c064; core rev > 31, chip 0x4360
++ * among others) passes it to hnddma: TX ids 0..3 = 1, 3, 3, 4; RX ids
++ * 0x100..0x102 = 2, 0, 4.
++ * Stock R6400 kernel hnddma: _dma_param_set (0xc02b54f4) stores TX id 0
++ * (outstanding reads), 1 (prefetch control), 2 (prefetch threshold),
++ * 3 (burst length) and RX 0x100 (prefetch control), 0x101 (prefetch
++ * threshold), 0x102 (burst length). dma64_txinit (0xc02b5d04..0xc02b5d30)
++ * puts them in the TX control word at bits 6..7 (MR), 21..23 (PC),
++ * 24..25 (PT), 18..20 (BL); _dma_rxenable (0xc02b4a84..0xc02b4ab8) puts the
++ * RX ones at 21..23, 24..25, 18..20.
++ * b43 leaves all of them 0 (16 byte bursts, one outstanding read, no
++ * prefetch).
++ */
++#define B43_DMA64_TXMR_SHIFT		6
++#define B43_DMA64_TXBL_SHIFT		18
++#define B43_DMA64_TXPC_SHIFT		21
++#define B43_DMA64_TXPT_SHIFT		24
++#define B43_DMA64_RXBL_SHIFT		18
++#define B43_DMA64_RXPC_SHIFT		21
++#define B43_DMA64_RXPT_SHIFT		24
++
++static u32 b43_dma64_ctl_params_rev40(struct b43_dmaring *ring)
++{
++	if (ring->dev->dev->core_rev < 40)
++		return 0;
++	if (ring->tx)
++		return (1 << B43_DMA64_TXMR_SHIFT) |
++		       (4 << B43_DMA64_TXBL_SHIFT) |
++		       (3 << B43_DMA64_TXPC_SHIFT) |
++		       (3 << B43_DMA64_TXPT_SHIFT);
++	return (4 << B43_DMA64_RXBL_SHIFT) |
++	       (2 << B43_DMA64_RXPC_SHIFT) |
++	       (0 << B43_DMA64_RXPT_SHIFT);
++}
++
+ /* Do initial setup of the DMA controller.
+  * Reset the controller, write the ring busaddress
+  * and switch the "enable" bit on.
+@@ -687,6 +728,7 @@
+ 			addrhi = b43_dma_address(&ring->dev->dma, ringbase, B43_DMA_ADDR_HIGH);
+ 
+ 			value = B43_DMA64_TXENABLE;
++			value |= b43_dma64_ctl_params_rev40(ring);
+ 			value |= (addrext << B43_DMA64_TXADDREXT_SHIFT)
+ 			    & B43_DMA64_TXADDREXT_MASK;
+ 			if (!parity)
+@@ -727,6 +769,7 @@
+ 
+ 			value = (ring->frameoffset << B43_DMA64_RXFROFF_SHIFT);
+ 			value |= B43_DMA64_RXENABLE;
++			value |= b43_dma64_ctl_params_rev40(ring);
+ 			value |= (addrext << B43_DMA64_RXADDREXT_SHIFT)
+ 			    & B43_DMA64_RXADDREXT_MASK;
+ 			if (!parity)
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
+@@ -3289,6 +3289,106 @@
+ 		b43_maskset32(dev, B43_MMIO_MACCTL, ~0, B43_MACCTL_DISCPMQ);
+ }
+ 
++/*
++ * Buffer memory and TX FIFO setup for core rev 40..42 (ucode 907).
++ *
++ * wl.ko wlc_bmac_init runs this right after the core rev 42 initvals
++ * (wlc_write_inits, call 0x162b14) when core rev > 39 (0x162b20), and skips
++ * the legacy shm FIFO size words SIZE01..67 (0x162e60 -> 0x163258). Neither
++ * initvals42 nor bsinitvals42 writes 0x520..0x550, and b43 never touches
++ * them, so without this the TX FIFOs own no buffers: TX DMA can hand frames
++ * to the MAC but the ucode has nothing to transmit from and returns no TX
++ * status, while RX keeps working.
++ * Register names are guesses; the values and their order are wl's:
++ * - buffers = MAC_HW_CAP (0x15c) bits 3..12, times 4 (0x162b44..0x162b5c),
++ *   into 0x542 (0x162b90); 5 into 0x540, poll bit 0 clear, 20 x 10 us
++ *   (0x162bac..0x162be8);
++ * - per FIFO in the order 7, 0, 1, 2, 3, 4, 5 (.rodata 0xd69f8; loop
++ *   0x162c28..0x162d48): 0x54a, 0x54c, 0x520, 0x54e, 0x550, then 0x548 =
++ *   fifo | 0x10. FIFO 7: 42, 42, 42, 42 | 38 << 8, 0x740c. FIFOs 0..5:
++ *   buffers - 42, minbuf[rev - 40][fifo] (.rodata 0xd699c + 0x78,
++ *   0x162c44..0x162c5c), 11, 22 | 18 << 8, 0x740c;
++ * - for i = 0..41 (0x162d6c..0x162e58): 0x534 = i, 0x536 = hi =
++ *   min(i + 2, 41), 0x532 = hi + 1 - i, 0x530 = i << 4 | 0x8007
++ *   (literal 0x1632bc), poll 0x530 until 0, 20 x 10 us.
++ */
++static void b43_bmc_init_rev40(struct b43_wldev *dev)
++{
++	static const u8 fifos[] = { 7, 0, 1, 2, 3, 4, 5 };
++	static const u16 minbuf[3][6] = {
++		{ 0x20, 0x20, 0x20, 0x20, 0x20, 0x08 },	/* core rev 40 */
++		{ 0x20, 0x20, 0x20, 0x20, 0x20, 0x00 },	/* core rev 41 */
++		{ 0x20, 0x20, 0x20, 0x20, 0x20, 0x20 },	/* core rev 42 */
++	};
++	u8 rev = dev->dev->core_rev;
++	u16 bufs, a, b, c, d, v;
++	unsigned int i, k, fails = 0;
++	u32 cap;
++
++	if (rev < 40 || rev > 42)
++		return;
++
++	cap = b43_read32(dev, B43_MMIO_MAC_HW_CAP);
++	bufs = ((cap >> 3) & 0x3FF) << 2;
++	b43info(dev->wl, "BMC: MAC_HW_CAP 0x%08x, %u buffers, MACCTL 0x%08x\n",
++		cap, bufs, b43_read32(dev, B43_MMIO_MACCTL));
++	b43_write16(dev, 0x542, bufs);
++	b43_write16(dev, 0x540, 5);
++	for (k = 0; k < 20 && (b43_read16(dev, 0x540) & 1); k++)
++		udelay(10);
++	if (b43_read16(dev, 0x540) & 1)
++		b43warn(dev->wl, "BMC: 0x540 bit 0 still set\n");
++
++	for (i = 0; i < ARRAY_SIZE(fifos); i++) {
++		u8 f = fifos[i];
++
++		if (f == 7) {
++			a = b = c = d = 42;
++		} else {
++			a = bufs - 42;
++			b = minbuf[rev - 40][f];
++			c = 11;
++			d = 22;
++		}
++		b43_write16(dev, 0x54A, a);
++		b43_write16(dev, 0x54C, b);
++		b43_write16(dev, 0x520, c);
++		b43_write16(dev, 0x54E, d | ((d - 4) << 8));
++		b43_write16(dev, 0x550, 0x740C);
++		b43_write16(dev, 0x548, f | 0x10);
++	}
++
++	for (i = 0; i < 42; i++) {
++		u16 hi = min_t(u16, i + 2, 41);
++
++		b43_write16(dev, 0x534, i);
++		b43_write16(dev, 0x536, hi);
++		b43_write16(dev, 0x532, hi + 1 - i);
++		b43_write16(dev, 0x530, (i << 4) | 0x8007);
++		/*
++		 * wl waits for the whole register to read 0 (ldrh / cmp #0 /
++		 * beq at 0x162e18..0x162e2c), 20 x 10 us, and never checks
++		 * the result. On hardware (2026-10-06 12:24 UTC) bit 15 clears
++		 * and the command bits stay (0x8007 -> 0x0007), as bit 0 of
++		 * 0x540 clears and 0x4 stays; wl then just spends the full
++		 * 200 us per entry. Poll bit 15, the bit that clears.
++		 */
++		for (k = 0; k < 20 && (b43_read16(dev, 0x530) & 0x8000); k++)
++			udelay(10);
++		v = b43_read16(dev, 0x530);
++		if ((v & 0x8000) && !fails++)
++			b43warn(dev->wl, "BMC: entry %u, 0x530 reads 0x%04x "
++				"(0x540 0x%04x, MACCTL 0x%08x)\n", i, v,
++				b43_read16(dev, 0x540),
++				b43_read32(dev, B43_MMIO_MACCTL));
++	}
++	if (fails)
++		b43warn(dev->wl, "BMC: %u of 42 entries did not complete\n",
++			fails);
++	b43dbg(dev->wl, "BMC: %u buffers, 0x540 0x%04x\n", bufs,
++	       b43_read16(dev, 0x540));
++}
++
+ static void b43_rate_memory_write(struct b43_wldev *dev, u16 rate, int is_ofdm)
+ {
+ 	u16 offset;
+@@ -3304,8 +3404,52 @@
+ 			b43_shm_read16(dev, B43_SHM_SHARED, offset));
+ }
+ 
++/*
++ * Core rev >= 40 (ucode 907): wl copies each basic rate's entry of the direct
++ * rate maps (OFDM at shm 0x1c0, CCK at 0x200, read by wlc_init
++ * 0x12ec28..0x12ec74) into the basic rate maps at 0x1e0 / 0x220 + 2 * code
++ * (wlc_set_ratetable 0x11ebc0..0x11ebd4, from wlc_bsinit 0x120d1c). Same
++ * scheme as b43_rate_memory_write with the new bases. b43 had no AC case and
++ * hit the B43_WARN_ON below.
++ */
++static void b43_rate_memory_write_rev40(struct b43_wldev *dev, u16 rate,
++					int is_ofdm)
++{
++	u16 code, src;
++
++	if (is_ofdm) {
++		code = b43_plcp_get_ratecode_ofdm(rate) & 0x000F;
++		src = 0x1C0 + code * 2;
++	} else {
++		code = b43_plcp_get_ratecode_cck(rate) & 0x000F;
++		src = 0x200 + code * 2;
++	}
++	b43_shm_write16(dev, B43_SHM_SHARED, src + 0x20,
++			b43_shm_read16(dev, B43_SHM_SHARED, src));
++}
++
+ static void b43_rate_memory_init(struct b43_wldev *dev)
+ {
++	if (dev->phy.type == B43_PHYTYPE_AC && dev->dev->core_rev >= 40) {
++		static const u16 ofdm[] = {
++			B43_OFDM_RATE_6MB, B43_OFDM_RATE_9MB,
++			B43_OFDM_RATE_12MB, B43_OFDM_RATE_18MB,
++			B43_OFDM_RATE_24MB, B43_OFDM_RATE_36MB,
++			B43_OFDM_RATE_48MB, B43_OFDM_RATE_54MB,
++		};
++		static const u16 cck[] = {
++			B43_CCK_RATE_1MB, B43_CCK_RATE_2MB,
++			B43_CCK_RATE_5MB, B43_CCK_RATE_11MB,
++		};
++		unsigned int i;
++
++		for (i = 0; i < ARRAY_SIZE(ofdm); i++)
++			b43_rate_memory_write_rev40(dev, ofdm[i], 1);
++		for (i = 0; i < ARRAY_SIZE(cck); i++)
++			b43_rate_memory_write_rev40(dev, cck[i], 0);
++		return;
++	}
++
+ 	switch (dev->phy.type) {
+ 	case B43_PHYTYPE_G:
+ 	case B43_PHYTYPE_N:
+@@ -3337,6 +3481,16 @@
+ {
+ 	u16 ctl = 0;
+ 
++	/*
++	 * Core rev > 39: wl writes none of these words in the legacy format.
++	 * wlc_ucode_txant_set returns before shm 0x188 / 0x22 (0x15f9c4) and
++	 * wlc_beacon_phytxctl uses shm 0xcc/0xce/0xd0 instead of 0x54
++	 * (0x118f98..0x119008). What ucode 907 keeps at 0x22, 0x54 and 0x188
++	 * is not decoded, so leave them as the initvals set them.
++	 */
++	if (dev->dev->core_rev >= 40)
++		return;
++
+ 	ctl |= B43_TXH_PHY_ENC_CCK;
+ 	ctl |= B43_TXH_PHY_ANT01AUTO;
+ 	ctl |= B43_TXH_PHY_TXPWR;
+@@ -3352,6 +3506,10 @@
+ 	u16 ant;
+ 	u16 tmp;
+ 
++	/* See b43_set_phytxctl_defaults: not on core rev >= 40 (0x15f9c4) */
++	if (dev->dev->core_rev >= 40)
++		return;
++
+ 	ant = b43_antenna_to_phyctl(antenna);
+ 
+ 	/* For ACK/CTS */
+@@ -3387,6 +3545,21 @@
+ 	if (dev->phy.gmode)
+ 		macctl |= B43_MACCTL_GMODE;
+ 	macctl |= B43_MACCTL_INFRA;
++	/*
++	 * Core rev >= 40: wl's MAC control from here to the end of
++	 * wlc_bmac_init. wlc_bmac_init sets it to WAKE | IHR_EN | PSM_JMP_0
++	 * (mctrl(~0, 0x04000404), 0x162620..0x162630) before the ucode
++	 * download (0x16270c), starts the PSM with WAKE | INFRA | IHR_EN |
++	 * PSM_RUN (wlc_bmac_wowlucode_start, mctrl(~0, 0x04020402),
++	 * 0x15dbf8..0x15dc08) and keeps WAKE set through the initvals and the
++	 * buffer memory setup (0x162b14..0x162e60). No SHM_EN, no GMODE.
++	 * b43 started the ucode without AWAKE, and the first b43 path that
++	 * sets it (b43_power_saving_ctl_bits) runs after b43_chip_init; on
++	 * hardware the buffer memory commands at 0x530 then never completed.
++	 */
++	if (dev->dev->core_rev >= 40)
++		macctl = B43_MACCTL_IHR_ENABLED | B43_MACCTL_AWAKE |
++			 B43_MACCTL_INFRA;
+ 	b43_write32(dev, B43_MMIO_MACCTL, macctl);
+ 
+ 	err = b43_upload_microcode(dev);
+@@ -3405,6 +3578,9 @@
+ 	if (err)
+ 		goto err_gpio_clean;
+ 
++	/* wl's order: right after the initvals (wlc_bmac_init 0x162b14) */
++	b43_bmc_init_rev40(dev);
++
+ 	/* Turn the Analog on and initialize the PHY. */
+ 	phy->ops->switch_analog(dev, 1);
+ 	err = b43_phy_init(dev);
+@@ -3664,6 +3840,24 @@
+ 	 * So multiply by two.
+ 	 */
+ 	dev->ktp *= 2;
++	/*
++	 * Core rev >= 40 with the AC TX header: ucode 907's shared memory is
++	 * laid out differently. b43's key index block B43_SHM_SH_KEYIDXBLOCK
++	 * (byte 0x5d4, "v4 firmware") is wl's TX core mask block there:
++	 * wlc_attach sets the word base 0x2ea for core rev > 39
++	 * (0x13d180..0x13d184) and wlc_stf_txcore_shmem_write writes byte
++	 * offsets (0x2ea + i) * 2 = 0x5d4.. (0x1911e8..0x191248). Clearing
++	 * the keys wrote (kidx << 4) | ALGO_NONE from 0x5d4 upward, after 996
++	 * had written the core masks: on hardware (2026-10-06 15:22 UTC)
++	 * 0x5d4..0x5da read 0x0000 0x0010 0x0020 0x0030 and the ucode's own
++	 * frames went out with PHY control 0x0405 (no core), a PHY TX error
++	 * each. b43_op_set_key already refuses keys on the AC header (994),
++	 * so there is nothing to clear; the ucode 907 key table layout is not
++	 * decoded. wl writes MMIO 0x43c (RCMTA count) on no core rev > 39
++	 * path, so leave it too.
++	 */
++	if (b43_txhdr_is_ac(dev) && dev->dev->core_rev >= 40)
++		return;
+ 	/* Number of RCMTA address slots */
+ 	b43_write16(dev, B43_MMIO_RCMTA_COUNT, B43_NR_PAIRWISE_KEYS);
+ 	/* Clear the key memory. */
+@@ -5067,6 +5261,8 @@
+ 
+ 	b43_rate_memory_init(dev);
+ 	b43_set_phytxctl_defaults(dev);
++	/* ucode 907 TX core mask block, wlc_init 0x12f04c..0x12f070 */
++	b43_ac_txcore_shm_write(dev);
+ 	/*
+ 	 * TOE prefix on: wlc_up clears bit 0 of MMIO 0xa00 when set
+ 	 * (0x129bdc..0x129c2c) for core rev > 39 (wlc+0x7c6, wlc_attach
+@@ -5081,6 +5277,25 @@
+ 		if (toe & 1)
+ 			b43_write16(dev, 0xA00, toe & ~1);
+ 	}
++	/*
++	 * wlc_bmac_ifsctl_vht_set(hw, 1) for PHY type 11 from
++	 * wlc_bmac_up_finish (0x15f9a8) and wlc_set_chanspec (0x120fa8): at
++	 * 20 MHz MMIO 0x6c6 = 0x0f0f (0x15f798) and shm 0x5a = 0x0f0f
++	 * (0x15f7a0). Meaning a guess (CRS select per 20 MHz subband for the
++	 * IFS engine); no initvals entry writes 0x6c6. b43 reads 0x5a as the
++	 * high half of TSSI_CCK, only on G-PHY paths.
++	 */
++	if (dev->phy.type == B43_PHYTYPE_AC && dev->dev->core_rev >= 40) {
++		b43_write16(dev, 0x6C6, 0x0F0F);
++		b43_shm_write16(dev, B43_SHM_SHARED, 0x005A, 0x0F0F);
++		/*
++		 * The same wlc_bmac_ifsctl_vht_set(hw, 1) ends in
++		 * wlc_acphy_set_scramb_dyn_bw_en(pi, 1) (tail call 0x15f888):
++		 * PHY 0x042 bit 15 set (0x4305c..0x43098). Name from the wl
++		 * symbol: scrambler dynamic bandwidth enable.
++		 */
++		b43_phy_set(dev, 0x042, 0x8000);
++	}
+ 
+ 	/* Minimum Contention Window */
+ 	if (phy->type == B43_PHYTYPE_B)
+@@ -5117,6 +5332,8 @@
+ 	b43_bus_powerup(dev, !(sprom->boardflags_lo & B43_BFL_XTAL_NOSLOW));
+ 	b43_upload_card_macaddress(dev);
+ 	b43_security_init(dev);
++	/* 996's core mask block, after anything that wrote shm above (99l) */
++	b43_ac_txcore_shm_write(dev);
+ 
+ 	ieee80211_wake_queues(dev->wl->hw);
+ 
+--- a/drivers/net/wireless/broadcom/b43/phy_common.c
++++ b/drivers/net/wireless/broadcom/b43/phy_common.c
+@@ -23,6 +23,7 @@
+ #include "phy_ac.h"
+ #include "b43.h"
+ #include "main.h"
++#include "xmit.h"
+ 
+ 
+ int b43_phy_allocate(struct b43_wldev *dev)
+@@ -428,6 +429,19 @@
+ 	/* FIXME: set 40Mhz flag if required */
+ 	if (0)
+ 		channelcookie |= B43_SHM_SH_CHAN_40MHZ;
++	/*
++	 * Core rev >= 40 (ucode 907): shm 0xa0 holds the full 16 bit chanspec,
++	 * the same word the AC TX header carries in bytes 6..7.
++	 * wlc_phy_chanspec_shm_set @0x55454 writes the chanspec unchanged when
++	 * core rev > 39 (cmp #39 / movhi at 0x5545c..0x55464) and the
++	 * channel | 0x100 (5 GHz) | 0x200 (40 MHz) cookie only for older cores
++	 * (0x55468..0x55480); called from wlc_phy_init 0x568b0. b43's cookie
++	 * (0x0124 for channel 36) never matches the header's 0xd024, and
++	 * this check is what keeps the ucode from sending frames built for
++	 * another channel (the "ghost packets" above).
++	 */
++	if (dev->dev->core_rev >= 40 && phy->type == B43_PHYTYPE_AC)
++		channelcookie = b43_ac_chanspec(dev, new_channel);
+ 	savedcookie = b43_shm_read16(dev, B43_SHM_SHARED, B43_SHM_SH_CHAN);
+ 	b43_shm_write16(dev, B43_SHM_SHARED, B43_SHM_SH_CHAN, channelcookie);
+ 
+@@ -436,6 +450,19 @@
+ 	if (err)
+ 		goto err_restore_cookie;
+ 
++	/*
++	 * wlc_set_chanspec calls wlc_bmac_ifsctl_vht_set(hw, 1) after every
++	 * channel set on PHY type 11 (0x120fa8): MMIO 0x6c6 / shm 0x5a at
++	 * 20 MHz (0x15f76c..0x15f7a0) and PHY 0x042 bit 15
++	 * (wlc_acphy_set_scramb_dyn_bw_en 0x4305c..0x43098). The channel set
++	 * may reset PHY 0x042, so repeat the PHY write here.
++	 */
++	if (dev->dev->core_rev >= 40 && phy->type == B43_PHYTYPE_AC) {
++		b43_write16(dev, 0x6C6, 0x0F0F);
++		b43_shm_write16(dev, B43_SHM_SHARED, 0x005A, 0x0F0F);
++		b43_phy_set(dev, 0x042, 0x8000);
++	}
++
+ 	/* Wait for the radio to tune to the channel and stabilize. */
+ 	msleep(8);
+ 
+--- a/drivers/net/wireless/broadcom/b43/xmit.c
++++ b/drivers/net/wireless/broadcom/b43/xmit.c
+@@ -14,6 +14,8 @@
+ 
+ */
+ 
++#include <linux/module.h>
++
+ #include "xmit.h"
+ #include "phy_common.h"
+ #include "dma.h"
+@@ -247,6 +249,61 @@
+ 	B43_OFDM_RATE_48MB, B43_OFDM_RATE_54MB,
+ };
+ 
++/*
++ * TX core mask for the AC header and the ucode 907 core mask block.
++ *
++ * wl keeps one mask per rate class at stf+22+2i (i = 0 CCK, 1 OFDM, 2 + n
++ * for n + 1 spatial streams, wlc_stf_txcore_get 0x191078..0x191100).
++ * wlc_stf_init_txcore_default (0x190660) fills it from .rodata 0xd8060
++ * (`txcore_default`, rows of three bytes {01 01 02} {01 01 02} {01 01 02}
++ * {02 03 06} {03 07 07} {04 0f 0f}); with txchain 7 it takes the second
++ * byte of each row (stf+20 = 1, 0x19066c..0x19067c), so CCK, OFDM and one
++ * stream use core 0 (0x1), two streams 0x3, three 0x7.
++ * wlc_stf_spatialpolicy_set_complete can widen the legacy entries to the
++ * whole txchain (0x1918a8..0x1918c0) and drops a mask with more cores than
++ * txstreams (0x19193c..0x191978); every path leaves a non-zero mask.
++ *
++ * acphy_txcore overrides the legacy mask (1 = core 0 as txcore_default,
++ * 7 = all three cores as the spatial expansion policy); it is limited to
++ * the SPROM txchain when that is set.
++ */
++static int b43_modparam_ac_txcore = 0x1;
++module_param_named(acphy_txcore, b43_modparam_ac_txcore, int, 0444);
++MODULE_PARM_DESC(acphy_txcore,
++		 "AC-PHY TX core mask for legacy rates (default 1 = core 0)");
++
++u8 b43_ac_txcore(struct b43_wldev *dev, unsigned int nss)
++{
++	u8 chain = dev->dev->bus_sprom->txchain & 0xF;
++	u8 mask;
++
++	if (!chain)
++		chain = 0x7;	/* 3 cores, b43_phy_ac reads PHY 0x00b & 7 */
++	if (nss <= 1)
++		mask = b43_modparam_ac_txcore & 0xF;
++	else if (nss == 2)
++		mask = 0x3;
++	else
++		mask = 0x7;
++	mask &= chain;
++	if (!mask)
++		mask = chain & -chain;	/* lowest present core, never 0 */
++	return mask;
++}
++
++/* wlc_stf_txcore_shmem_write (0x19118c) for PHY type 11, core rev >= 40 */
++void b43_ac_txcore_shm_write(struct b43_wldev *dev)
++{
++	static const u8 nss_of_word[B43_AC_TXCORE_NWORDS] = { 1, 1, 1, 2 };
++	unsigned int i;
++
++	if (!b43_txhdr_is_ac(dev) || dev->dev->core_rev < 40)
++		return;
++	for (i = 0; i < B43_AC_TXCORE_NWORDS; i++)
++		b43_shm_write16(dev, B43_SHM_SHARED, B43_SHM_SH_AC_TXCORE + 2 * i,
++				b43_ac_txcore(dev, nss_of_word[i]) & 0xF);
++}
++
+ /* PHY control word 2 for a legacy rate: its index in the table above. */
+ static u16 b43_ac_legacy_rate_idx(u8 bitrate)
+ {
+@@ -364,11 +421,8 @@
+ 	/* Single rate entry, primary rate not VHT */
+ 	txhdr->mac_ctl_hi = cpu_to_le16(B43_TXH_AC_MACH_NORATESEL);
+ 
+-	chanspec = (phy->channel & 0xFF) | B43_AC_CHANSPEC_BW_20;
+-	if (b43_current_band(dev->wl) == NL80211_BAND_5GHZ)
+-		chanspec |= B43_AC_CHANSPEC_BAND_5G;
+-	else
+-		chanspec |= B43_AC_CHANSPEC_BAND_2G;
++	/* Must equal shm 0xa0 (b43_switch_channel), see phy_common.c */
++	chanspec = b43_ac_chanspec(dev, phy->channel);
+ 	txhdr->chanspec = cpu_to_le16(chanspec);
+ 
+ 	txhdr->hdr_len = b43_ac_hdr_len(wlhdr->frame_control);
+@@ -392,16 +446,22 @@
+ 	    (rates[0].flags & IEEE80211_TX_RC_USE_SHORT_PREAMBLE))
+ 		phy_ctl0 |= B43_TXH_AC_PHY0_SHORTPRMBL;
+ 	/*
+-	 * Antenna bits 6..9 are the return value of
+-	 * wlc_stf_d11hdrs_phyctl_txant (0x113630), not decoded: left zero.
++	 * Antenna bits 6..9: TX core mask << 6, the value
++	 * wlc_stf_d11hdrs_phyctl_txant returns for PHY type 11 (call 0x113630,
++	 * 0x191124..0x19113c). Left zero, the PHY transmits on no core.
+ 	 * Bandwidth bits 14..15 are 0 for 20 MHz. No beamforming.
+ 	 */
++	phy_ctl0 |= ((u16)b43_ac_txcore(dev, 1) << B43_TXH_AC_PHY0_ANT_SHIFT) &
++		    B43_TXH_AC_PHY0_ANT;
+ 	entry->phy_ctl0 = cpu_to_le16(phy_ctl0);
+ 	/*
+ 	 * PHY control 1 = (pwr << 3) | ((chanspec >> 8 & 7) >> (bw - 1))
+ 	 * (0x114254..0x114268). The sideband field of a 20 MHz chanspec is 0.
+ 	 * pwr is one byte of the per-bandwidth table that
+-	 * wlc_stf_get_204080_pwrs fills (0x11c184), not decoded: left zero.
++	 * wlc_stf_get_204080_pwrs fills (0x11c184) from the stf+0x2c ppr,
++	 * which wlc_update_txppr_offset builds as a backoff in half dB clamped
++	 * to 0..31 (0x193ef4..0x193f10, wlc_stf_convert_to_s41_hdb 0x19016c):
++	 * zero is no backoff, the PHY's own TX power.
+ 	 */
+ 	entry->phy_ctl1 = cpu_to_le16(0);
+ 	entry->phy_ctl2 = cpu_to_le16(b43_ac_legacy_rate_idx(rate));
+--- a/drivers/net/wireless/broadcom/b43/xmit.h
++++ b/drivers/net/wireless/broadcom/b43/xmit.h
+@@ -253,7 +253,14 @@
+ #define B43_TXH_AC_PHY0_SET		0x0004 /* Always set (0x113660) */
+ #define B43_TXH_AC_PHY0_TXBF		0x0008 /* Beamforming (0x11c850) */
+ #define B43_TXH_AC_PHY0_SHORTPRMBL	0x0010 /* Preamble 1 or 2 (0x113600..0x113614) */
+-#define B43_TXH_AC_PHY0_ANT		0x03C0 /* wlc_stf_d11hdrs_phyctl_txant, not decoded */
++/*
++ * TX core mask << 6. For PHY type 11 wlc_stf_d11hdrs_phyctl_txant (0x193284)
++ * tail-calls _wlc_stf_phytxchain_sel, which returns wlc_stf_txcore_get() << 6
++ * (0x191124..0x19113c): the per rate class core mask (stf+22+2i, i = 0 CCK,
++ * 1 OFDM, 2.. by stream count; 0x191078..0x191100). Zero selects no core.
++ */
++#define B43_TXH_AC_PHY0_ANT		0x03C0
++#define B43_TXH_AC_PHY0_ANT_SHIFT	6
+ #define B43_TXH_AC_PHY0_BW		0xC000 /* TX bandwidth (0x11362c..0x113654) */
+ #define  B43_TXH_AC_PHY0_BW_20		0x0000
+ #define  B43_TXH_AC_PHY0_BW_40		0x4000
+@@ -281,6 +288,18 @@
+ #define B43_AC_CHANSPEC_BAND_2G		0x0000
+ #define B43_AC_CHANSPEC_BAND_5G		0xC000
+ 
++/* 20 MHz chanspec for a channel in the current band, as wl keeps it at wlc+0x548 */
++static inline u16 b43_ac_chanspec(struct b43_wldev *dev, unsigned int channel)
++{
++	u16 chanspec = (channel & 0xFF) | B43_AC_CHANSPEC_BW_20;
++
++	if (b43_current_band(dev->wl) == NL80211_BAND_5GHZ)
++		chanspec |= B43_AC_CHANSPEC_BAND_5G;
++	else
++		chanspec |= B43_AC_CHANSPEC_BAND_2G;
++	return chanspec;
++}
++
+ /*
+  * Header format choice. wl.ko builds the AC header when the PHY type is 11
+  * (cmp r3, #11 at 0x11b384) and its legacy 6 + 112 byte header otherwise
+@@ -302,6 +321,22 @@
+ }
+ 
+ /*
++ * ucode 907 TX core mask block, core rev >= 40. wlc_attach stores word base
++ * 0x2ea in pub+0xd0 for core rev > 39 (0x13d180..0x13d184); wlc_init copies it
++ * to stf+0x2a and calls wlc_stf_txcore_shmem_write(wlc, 1) when N mode is on
++ * (0x12f04c..0x12f070), which writes four words at byte offset
++ * (0x2ea + i) * 2, i = 0 CCK, 1 OFDM, 2 one stream, 3 two streams, each the
++ * core mask & 0xf (0x1911e8..0x191248; no spatial map for PHY type 11).
++ * b43 zeroes shared memory before the ucode upload, so without this block
++ * the ucode sees core mask 0 for every rate class.
++ */
++#define B43_SHM_SH_AC_TXCORE		0x05D4	/* 4 words: CCK, OFDM, 1SS, 2SS */
++#define B43_AC_TXCORE_NWORDS		4
++
++u8 b43_ac_txcore(struct b43_wldev *dev, unsigned int nss);
++void b43_ac_txcore_shm_write(struct b43_wldev *dev);
++
++/*
+  * TOE (TSO) prefix in front of the AC TX header, core rev > 39.
+  *
+  * wlc_attach sets wlc+0x7c6 = 1 and wlc+0x7c5 = 0 for core rev > 39

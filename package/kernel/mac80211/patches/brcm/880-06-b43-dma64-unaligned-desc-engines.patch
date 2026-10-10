@@ -1,0 +1,185 @@
+From 98fe83eb8f2f772f9a31213b1307df95717dc139 Mon Sep 17 00:00:00 2001
+From: Russell Ballestrini <russell@unturf.com>
+Date: Fri, 10 Oct 2026 12:00:00 -0400
+Subject: [PATCH 06/29] b43: dma: support DMA64 engines without descriptor table alignment
+
+The BCM4360 (core rev 42) reported "Fatal DMA error 0x00001000" (I_DE,
+descriptor protocol error) on controller 0 right after the first init.
+
+wl.ko leaves DMA to hnddma in the stock R6400 kernel, whose dma_attach
+probes each engine: 0xff0 written to the ring address low word reads
+back non-zero on an engine that needs no aligned descriptor table
+(0xc02b7240..0xc02b72ac). For such an engine hnddma writes the ring
+address before the enable bit (_dma_rxinit 0xc02b5c50, dma64_txinit
+0xc02b5d54) and adds the ring base low word to every index register
+write and subtracts it from the RX status pointer (_dma_ddtable_init
+0xc02b4784, _dma_rxfill 0xc048c928, _dma_getnextrxp 0xc048c4b8).
+
+Probe every DMA64 ring the same way on its own registers before setup
+and do the same. For engines that need an aligned table the index base
+stays 0 and the write order is unchanged.
+---
+ drivers/net/wireless/broadcom/b43/dma.c | 92 ++++++++++++++++++++++++----
+ drivers/net/wireless/broadcom/b43/dma.h |  9 +++
+ 2 files changed, 90 insertions(+), 11 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/b43/dma.c
++++ b/drivers/net/wireless/broadcom/b43/dma.c
+@@ -212,7 +212,7 @@
+ 
+ static void op64_poke_tx(struct b43_dmaring *ring, int slot)
+ {
+-	b43_dma_write(ring, B43_DMA64_TXINDEX,
++	b43_dma_write(ring, B43_DMA64_TXINDEX, ring->index_base +
+ 		      (u32) (slot * sizeof(struct b43_dmadesc64)));
+ }
+ 
+@@ -233,14 +233,15 @@
+ 	u32 val;
+ 
+ 	val = b43_dma_read(ring, B43_DMA64_RXSTATUS);
+-	val &= B43_DMA64_RXSTATDPTR;
++	/* hnddma _dma_getnextrxp: ((status0 & mask) - rcvptrbase) & mask */
++	val = (val - ring->index_base) & B43_DMA64_RXSTATDPTR;
+ 
+ 	return (val / sizeof(struct b43_dmadesc64));
+ }
+ 
+ static void op64_set_current_rxslot(struct b43_dmaring *ring, int slot)
+ {
+-	b43_dma_write(ring, B43_DMA64_RXINDEX,
++	b43_dma_write(ring, B43_DMA64_RXINDEX, ring->index_base +
+ 		      (u32) (slot * sizeof(struct b43_dmadesc64)));
+ }
+ 
+@@ -690,9 +691,17 @@
+ 			    & B43_DMA64_TXADDREXT_MASK;
+ 			if (!parity)
+ 				value |= B43_DMA64_TXPARITYDISABLE;
+-			b43_dma_write(ring, B43_DMA64_TXCTL, value);
+-			b43_dma_write(ring, B43_DMA64_TXRINGLO, addrlo);
+-			b43_dma_write(ring, B43_DMA64_TXRINGHI, addrhi);
++			if (ring->desc_unaligned) {
++				/* hnddma dma64_txinit: ring address before the
++				 * enable bit on this engine type. */
++				b43_dma_write(ring, B43_DMA64_TXRINGLO, addrlo);
++				b43_dma_write(ring, B43_DMA64_TXRINGHI, addrhi);
++				b43_dma_write(ring, B43_DMA64_TXCTL, value);
++			} else {
++				b43_dma_write(ring, B43_DMA64_TXCTL, value);
++				b43_dma_write(ring, B43_DMA64_TXRINGLO, addrlo);
++				b43_dma_write(ring, B43_DMA64_TXRINGHI, addrhi);
++			}
+ 		} else {
+ 			u32 ringbase = (u32) (ring->dmabase);
+ 			addrext = b43_dma_address(&ring->dev->dma, ringbase, B43_DMA_ADDR_EXT);
+@@ -722,11 +731,19 @@
+ 			    & B43_DMA64_RXADDREXT_MASK;
+ 			if (!parity)
+ 				value |= B43_DMA64_RXPARITYDISABLE;
+-			b43_dma_write(ring, B43_DMA64_RXCTL, value);
+-			b43_dma_write(ring, B43_DMA64_RXRINGLO, addrlo);
+-			b43_dma_write(ring, B43_DMA64_RXRINGHI, addrhi);
+-			b43_dma_write(ring, B43_DMA64_RXINDEX, ring->nr_slots *
+-				      sizeof(struct b43_dmadesc64));
++			if (ring->desc_unaligned) {
++				/* hnddma _dma_rxinit: ring address before the
++				 * enable bit on this engine type. */
++				b43_dma_write(ring, B43_DMA64_RXRINGLO, addrlo);
++				b43_dma_write(ring, B43_DMA64_RXRINGHI, addrhi);
++				b43_dma_write(ring, B43_DMA64_RXCTL, value);
++			} else {
++				b43_dma_write(ring, B43_DMA64_RXCTL, value);
++				b43_dma_write(ring, B43_DMA64_RXRINGLO, addrlo);
++				b43_dma_write(ring, B43_DMA64_RXRINGHI, addrhi);
++			}
++			b43_dma_write(ring, B43_DMA64_RXINDEX, ring->index_base +
++				      ring->nr_slots * sizeof(struct b43_dmadesc64));
+ 		} else {
+ 			u32 ringbase = (u32) (ring->dmabase);
+ 			addrext = b43_dma_address(&ring->dev->dma, ringbase, B43_DMA_ADDR_EXT);
+@@ -827,6 +844,57 @@
+ 	return B43_DMA_30BIT;
+ }
+ 
++/*
++ * Probe a DMA64 engine the way hnddma's dma_attach does in the stock R6400
++ * kernel (2.6.36.4brcmarm+, R6400-V1.0.1.78), which wl.ko uses for the
++ * BCM4360 (core rev 42):
++ *
++ * - address mask: write 0xffffffff to the ring address low word; if its low
++ *   12 bits read back as 0 the mask is 0x1fff, else it is the index register
++ *   read back, ORed with 0xf (0xc02b6f14..0xc02b6f58 RX, 0xc02b6fdc..0xc02b7024
++ *   TX). Logged only: b43's 8 KiB rings are 8 KiB aligned, so the 0x1fff
++ *   status mask below gives the right slot either way.
++ * - descriptor table alignment: write 0xff0 to the ring address low word; a
++ *   non-zero read back means the engine needs no aligned table (aligndesc_4k
++ *   false, 0xc02b7240..0xc02b72ac). For such an engine hnddma programs the
++ *   ring address before the enable bit (_dma_rxinit 0xc02b5c50..0xc02b5c70,
++ *   dma64_txinit 0xc02b5d54..0xc02b5db0) and adds the ring base low word to
++ *   every index register write (_dma_ddtable_init 0xc02b4784..0xc02b4798,
++ *   _dma_rxfill 0xc048c928..0xc048c934, _dma_getnextrxp 0xc048c4b8..0xc048c4cc).
++ *
++ * hnddma probes the TX registers of a controller when it has them; b43 sets
++ * up TX ring 0 before RX ring 0, so each ring probes its own registers here
++ * to leave a live ring address alone. The engine is disabled at this point.
++ */
++static void b43_dma64_probe(struct b43_dmaring *ring)
++{
++	u16 lo = ring->tx ? B43_DMA64_TXRINGLO : B43_DMA64_RXRINGLO;
++	u16 idx = ring->tx ? B43_DMA64_TXINDEX : B43_DMA64_RXINDEX;
++	u32 mask, align;
++
++	b43_dma_write(ring, lo, 0xffffffff);
++	mask = b43_dma_read(ring, lo);
++	if (mask & 0xfff)
++		mask = b43_dma_read(ring, idx) | 0xf;
++	else
++		mask = 0x1fff;
++
++	b43_dma_write(ring, lo, 0xff0);
++	align = b43_dma_read(ring, lo);
++	b43_dma_write(ring, lo, 0);
++
++	ring->desc_unaligned = (align != 0);
++	ring->index_base = ring->desc_unaligned ?
++			   lower_32_bits(ring->dmabase) : 0;
++
++	if (ring->desc_unaligned || mask != 0x1fff ||
++	    ring->dev->dev->core_rev >= 40)
++		b43info(ring->dev->wl, "DMA64 %s ring %d: address mask 0x%04x, "
++			"0xff0 reads back 0x%03x, ring base 0x%08x, index base 0x%08x\n",
++			ring->tx ? "TX" : "RX", ring->index, mask, align,
++			lower_32_bits(ring->dmabase), ring->index_base);
++}
++
+ /* Main initialization function. */
+ static
+ struct b43_dmaring *b43_setup_dmaring(struct b43_wldev *dev,
+@@ -937,6 +1005,8 @@
+ 	err = alloc_ringmemory(ring);
+ 	if (err)
+ 		goto err_kfree_txhdr_cache;
++	if (type == B43_DMA_64BIT)
++		b43_dma64_probe(ring);
+ 	err = dmacontroller_setup(ring);
+ 	if (err)
+ 		goto err_free_ringmemory;
+--- a/drivers/net/wireless/broadcom/b43/dma.h
++++ b/drivers/net/wireless/broadcom/b43/dma.h
+@@ -264,6 +264,15 @@
+ 	/* The QOS priority assigned to this ring. Only used for TX rings.
+ 	 * This is the mac80211 "queue" value. */
+ 	u8 queue_prio;
++	/* DMA64 engine that does not need an aligned descriptor table
++	 * (core rev 42 class, probed like hnddma's dma_attach). Such an
++	 * engine takes the ring address before the enable bit, and its
++	 * index register holds the low address bits of a descriptor, not
++	 * an offset into the ring. */
++	bool desc_unaligned;
++	/* Added to every index register write: low 32 bits of the ring
++	 * base when desc_unaligned, else 0 (hnddma xmtptrbase/rcvptrbase). */
++	u32 index_base;
+ 	struct b43_wldev *dev;
+ #ifdef CPTCFG_B43_DEBUG
+ 	/* Maximum number of used slots. */

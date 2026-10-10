@@ -1,0 +1,75 @@
+From e7f3bcac75efb4a4eb6ca0d8dc9566c1e38930a6 Mon Sep 17 00:00:00 2001
+From: Russell Ballestrini <russell@unturf.com>
+Date: Fri, 10 Oct 2026 12:00:00 -0400
+Subject: [PATCH 27/29] b43: AC-PHY: the ucode-fatal restart budget per interface start
+
+Past its restart limit the interrupt thread returned before restoring
+the IRQ mask and the core stayed silent until the next load; the budget
+resets per interface start, not per module.
+---
+ drivers/net/wireless/broadcom/b43/main.c | 35 ++++++++++++++++++++++-----
+ 1 file changed, 29 insertions(+), 6 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
+@@ -2646,15 +2646,33 @@
+ #define B43_UCODE_FATAL_RESTARTS	3
+ static atomic_t b43_ucode_fatal_count = ATOMIC_INIT(0);
+ 
+-static void b43_handle_ucode_fatal_rev40(struct b43_wldev *dev)
++/*
++ * 9v0: acphy_gp0 bit 1 logs the fatal and goes on without the controller
++ * restart (2.4 s of silence: every laptop beacon loss of 2026-10-08
++ * followed one), to see whether ucode 907 keeps running after its watchdog
++ * fired; the interrupt is acknowledged by the top half either way.
++ */
++static int b43_modparam_acphy_gp0;
++module_param_named(acphy_gp0, b43_modparam_acphy_gp0, int, 0644);
++MODULE_PARM_DESC(acphy_gp0,
++		 "AC-PHY ucode fatal (MACINTSTATUS bit 13) on core rev >= 40: 1 = log only, no controller restart (default 0)");
++
++/* 9v0: true when a controller restart was queued (the caller then returns
++ * without touching the IRQ mask); false past the limit, the caller goes on
++ * and restores the mask, else the core stays silent until the next load. */
++static bool b43_handle_ucode_fatal_rev40(struct b43_wldev *dev)
+ {
+ 	unsigned int n;
+ 
+ 	n = atomic_inc_return(&b43_ucode_fatal_count);
+-	if (n <= B43_UCODE_FATAL_RESTARTS)
++	if (b43_modparam_acphy_gp0 & 1) {
++		return false;
++	}
++	if (n <= B43_UCODE_FATAL_RESTARTS) {
+ 		b43_controller_restart(dev, "ucode fatal");
+-	else
+-		b43err(dev->wl, "ucode fatal %u times, not restarting\n", n);
++		return true;
++	}
++	return false;
+ }
+ 
+ /*
+@@ -2784,8 +2802,9 @@
+ 
+ 	if (unlikely(dev->dev->core_rev >= 40 &&
+ 		     (reason & B43_IRQ_UCODE_FATAL_REV40))) {
+-		b43_handle_ucode_fatal_rev40(dev);
+-		return;	/* the restart re-enables interrupts */
++		if (b43_handle_ucode_fatal_rev40(dev))
++			return;	/* the restart re-enables interrupts */
++		/* 9v0: past the restart limit: keep serving interrupts */
+ 	}
+ 	if (unlikely(reason & B43_IRQ_UCODE_DEBUG))
+ 		handle_irq_ucode_debug(dev);
+@@ -6640,6 +6659,10 @@
+ 	wl->filter_flags = 0;
+ 	wl->radiotap_enabled = false;
+ 	b43_qos_clear(wl);
++	/* 9v0: the ucode-fatal restart budget (99d) is per interface start,
++	 * not per module: a controller restart's core init keeps it (so a
++	 * restart loop still ends), a fresh start gets a new one. */
++	atomic_set(&b43_ucode_fatal_count, 0);
+ 	wl->beacon0_uploaded = false;
+ 	wl->beacon1_uploaded = false;
+ 	wl->beacon_templates_virgin = true;

@@ -1,0 +1,117 @@
+From 6e995db6d4527a43ba271430640e3c652239cf27 Mon Sep 17 00:00:00 2001
+From: Russell Ballestrini <russell@unturf.com>
+Date: Fri, 10 Oct 2026 12:00:00 -0400
+Subject: [PATCH 01/29] b43: bcma: set up the BCM4360 PMU resources before the core reset
+
+bcma has no PMU resource case for the BCM4360 ("PMU resource config
+unknown or not needed for device 0x4360"), so on the Netgear R6400 the
+HT clock request of the 802.11 core times out at every boot.
+
+Do what Broadcom's si_pmu_res_init does for chip 0x4360 rev >= 3 in the
+stock R6400 kernel (2.6.36.4brcmarm), from b43_bcma_wireless_core_reset:
+up/down timer of resource 6 = 0x00100001 (bcm4360_res_updown), PLL
+control 6 and 14 = 0x09048560 with PLL_UPD on chip rev <= 3, and the max
+resource mask raised to include 0x1ff. Nothing is written when chip
+status bit 5 is set (the stock kernel leaves the masks alone then), and
+every write is gated on a read showing it is needed, so a chip that is
+already set up is left alone and a second reset writes nothing. The
+2 ms settle time matches bcma_pmu_resources_init.
+
+Only BCM4360 rev >= 3 with a PMU is affected.
+---
+ drivers/net/wireless/broadcom/b43/main.c | 77 ++++++++++++++++++++++++++
+ 1 file changed, 77 insertions(+)
+
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
+@@ -1249,6 +1249,81 @@
+ 	b43_phy_take_out_of_reset(dev);
+ }
+ 
++/*
++ * BCM4360 chip rev >= 3: the PMU resource setup bcma has no case for
++ * ("PMU resource config unknown or not needed for device 0x4360"). Values
++ * from Broadcom's si_pmu_res_init in the stock R6400 kernel (2.6.36.4brcmarm):
++ * up/down timer table bcm4360_res_updown {6, 0x00100001}, no dependency table,
++ * PLL control 6 and 14 = 0x09048560 for chip rev <= 3, max resource mask
++ * 0x1ff, min left 0. All of it only when chip status bit 5 is clear; with it
++ * set the stock kernel leaves both masks 0 and writes no PLL fix.
++ *
++ * Every write is gated on a read showing it is needed, so a chip that is
++ * already set up is left alone and a second reset writes nothing. Selecting
++ * the table entry (0x620) and the PLL control index (0x660) are writes too;
++ * the values behind them cannot be read without them.
++ */
++static void b43_bcma_4360_pmu_res(struct b43_wldev *dev)
++{
++	struct bcma_bus *bus = dev->dev->bdev->bus;
++	struct bcma_drv_cc *cc = &bus->drv_cc;
++	static const u32 pll_regs[] = { 6, 14 };
++	u32 chipst, updn, maxres, val;
++	bool pll_upd = false, wrote = false;
++	int i;
++
++	if (bus->chipinfo.id != BCMA_CHIP_ID_BCM4360 || bus->chipinfo.rev < 3)
++		return;
++	if (!(cc->capabilities & BCMA_CC_CAP_PMU) || !cc->pmu.core)
++		return;
++
++	chipst = bcma_cc_read32(cc, BCMA_CC_CHIPSTAT);
++	if (chipst & 0x20) {
++		b43info(dev->wl, "4360 PMU: chipst 0x%08x bit 5 set, nothing written\n",
++			chipst);
++		return;
++	}
++
++	/* Up/down timer of resource 6 (RES_TABSEL 0x620, RES_UPDNTM 0x628) */
++	bcma_pmu_write32(cc, BCMA_CC_PMU_RES_TABSEL, 6);
++	updn = bcma_pmu_read32(cc, BCMA_CC_PMU_RES_UPDNTM);
++	if (updn != 0x00100001) {
++		bcma_pmu_write32(cc, BCMA_CC_PMU_RES_UPDNTM, 0x00100001);
++		wrote = true;
++	}
++
++	/* PLL control 6 and 14, chip rev <= 3 only, then PLL_UPD */
++	if (bus->chipinfo.rev <= 3) {
++		for (i = 0; i < ARRAY_SIZE(pll_regs); i++) {
++			val = bcma_chipco_pll_read(cc, pll_regs[i]);
++			if (val == 0x09048560)
++				continue;
++			b43info(dev->wl, "4360 PMU: PLL ctl %u 0x%08x -> 0x09048560\n",
++				pll_regs[i], val);
++			bcma_chipco_pll_write(cc, pll_regs[i], 0x09048560);
++			pll_upd = true;
++		}
++		if (pll_upd)
++			bcma_pmu_set32(cc, BCMA_CC_PMU_CTL,
++				       BCMA_CC_PMU_CTL_PLL_UPD);
++	}
++
++	/* Max resource mask: raise to include 0x1ff, never clear a bit */
++	maxres = bcma_pmu_read32(cc, BCMA_CC_PMU_MAXRES_MSK);
++	if ((maxres & 0x1ff) != 0x1ff) {
++		bcma_pmu_write32(cc, BCMA_CC_PMU_MAXRES_MSK, maxres | 0x1ff);
++		wrote = true;
++	}
++
++	b43info(dev->wl, "4360 PMU: chipst 0x%08x updn6 0x%08x maxres 0x%08x%s\n",
++		chipst, updn, maxres,
++		(wrote || pll_upd) ? ", written" : ", already set");
++
++	/* Let resources come up, as bcma_pmu_resources_init does */
++	if (wrote || pll_upd)
++		usleep_range(2000, 2500);
++}
++
+ static void b43_bcma_wireless_core_reset(struct b43_wldev *dev, bool gmode)
+ {
+ 	u32 req = B43_BCMA_CLKCTLST_80211_PLL_REQ |
+@@ -1257,6 +1332,8 @@
+ 		     B43_BCMA_CLKCTLST_PHY_PLL_ST;
+ 	u32 flags;
+ 
++	b43_bcma_4360_pmu_res(dev);
++
+ 	flags = B43_BCMA_IOCTL_PHY_CLKEN;
+ 	if (gmode)
+ 		flags |= B43_BCMA_IOCTL_GMODE;

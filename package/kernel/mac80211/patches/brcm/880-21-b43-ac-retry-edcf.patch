@@ -1,0 +1,106 @@
+From 4f8aeb1e8b22af72c2a54d19b359689cab5e2588 Mon Sep 17 00:00:00 2001
+From: Russell Ballestrini <russell@unturf.com>
+Date: Fri, 10 Oct 2026 12:00:00 -0400
+Subject: [PATCH 21/29] b43: AC-PHY: retry limits and EDCF on core rev >= 40
+
+Data frames went out with a single attempt: raise the short and long
+retry limits and the fallback counts the ucode reads (acphy_retryfix).
+---
+ drivers/net/wireless/broadcom/b43/main.c | 79 ++++++++++++++++++++++++++
+ 1 file changed, 79 insertions(+)
+
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
+@@ -5713,6 +5713,84 @@
+ 	b43_bus_may_powerdown(dev);
+ }
+ 
++/*
++ * 9h0: acphy_retryfix (bitmask, default 0), per-frame transmit retry
++ * ceilings on core rev >= 40 (re/r6400/b43-acphy/retry-edcf-rev42.md).
++ *
++ * ucode 907.113 takes its retry inputs where b43 already writes them:
++ * the per-frame short/long retry limits from SCRATCH 0x6/0x7
++ * (b43_set_retry_limits == wl's wlc_bmac_retrylimit_upd, which writes
++ * objmem routing 0x0002 offsets 0x0006/0x0007); the per-queue EDCF
++ * parameters from 0x240 + 32*fifo (b43_qos_params_upload ==
++ * wl's wlc_edcf_acp_set_one, same 16-word block, STATUS word |= 0x100);
++ * and the per-rate fallback counts from SFFBLIM 0x44 / LFFBLIM 0x46.
++ * All offsets and the EDCF layout match wl.ko byte for byte.
++ *
++ * The one value divergence is the fallback counts: b43 hardcodes 3/2,
++ * while the AC header b43 builds carries a single rate entry with
++ * MACH_NORATESEL and no fallback entries (994). A single-entry frame is
++ * therefore attempted only up to the fallback count before it runs out
++ * of rate entries, so AC_BE data frames give up well short of the
++ * global short/long retry limit that small management frames reach.
++ * This hook raises those ceilings (bit 1), re-asserts the retry limits
++ * (bit 0) and the EDCF STATUS mark (bit 2), logging the old and new
++ * shared-memory words so a trial can confirm what the ucode reads. It
++ * changes nothing when the parameter is 0.
++ */
++static unsigned int b43_modparam_acphy_retryfix;
++module_param_named(acphy_retryfix, b43_modparam_acphy_retryfix, uint, 0444);
++MODULE_PARM_DESC(acphy_retryfix,
++		 "AC-PHY retry ceilings (core rev >= 40): 1 = max short/long retry limits, 2 = max fallback counts, 4 = re-assert EDCF status (default 0)");
++
++#define B43_AC_RETRYFIX_SRL	0x1
++#define B43_AC_RETRYFIX_FBLIM	0x2
++#define B43_AC_RETRYFIX_EDCF	0x4
++#define B43_AC_RETRY_MAX	0xF	/* the ucode retry counters are 4-bit */
++
++static void b43_ac_retryfix(struct b43_wldev *dev)
++{
++	unsigned int fix = b43_modparam_acphy_retryfix;
++	u16 old, cur;
++	int q;
++
++	if (!fix || dev->dev->core_rev < 40)
++		return;
++
++	if (fix & B43_AC_RETRYFIX_SRL) {
++		old = b43_shm_read16(dev, B43_SHM_SCRATCH, B43_SHM_SC_SRLIMIT);
++		b43_shm_write16(dev, B43_SHM_SCRATCH, B43_SHM_SC_SRLIMIT,
++				B43_AC_RETRY_MAX);
++		cur = b43_shm_read16(dev, B43_SHM_SCRATCH, B43_SHM_SC_SRLIMIT);
++
++		old = b43_shm_read16(dev, B43_SHM_SCRATCH, B43_SHM_SC_LRLIMIT);
++		b43_shm_write16(dev, B43_SHM_SCRATCH, B43_SHM_SC_LRLIMIT,
++				B43_AC_RETRY_MAX);
++		cur = b43_shm_read16(dev, B43_SHM_SCRATCH, B43_SHM_SC_LRLIMIT);
++	}
++
++	if (fix & B43_AC_RETRYFIX_FBLIM) {
++		old = b43_shm_read16(dev, B43_SHM_SHARED, B43_SHM_SH_SFFBLIM);
++		b43_shm_write16(dev, B43_SHM_SHARED, B43_SHM_SH_SFFBLIM,
++				B43_AC_RETRY_MAX);
++		cur = b43_shm_read16(dev, B43_SHM_SHARED, B43_SHM_SH_SFFBLIM);
++
++		old = b43_shm_read16(dev, B43_SHM_SHARED, B43_SHM_SH_LFFBLIM);
++		b43_shm_write16(dev, B43_SHM_SHARED, B43_SHM_SH_LFFBLIM,
++				B43_AC_RETRY_MAX);
++		cur = b43_shm_read16(dev, B43_SHM_SHARED, B43_SHM_SH_LFFBLIM);
++	}
++
++	if (fix & B43_AC_RETRYFIX_EDCF) {
++		for (q = 0; q < 4; q++) {
++			u16 off = B43_QOS_PARAMS(q) + B43_QOSPARAM_STATUS * 2;
++
++			old = b43_shm_read16(dev, B43_SHM_SHARED, off);
++			b43_shm_write16(dev, B43_SHM_SHARED, off, old | 0x100);
++			cur = b43_shm_read16(dev, B43_SHM_SHARED, off);
++		}
++	}
++}
++
+ /* Initialize a wireless core */
+ static int b43_wireless_core_init(struct b43_wldev *dev)
+ {
+@@ -5828,6 +5906,7 @@
+ 			     B43_DEFAULT_LONG_RETRY_LIMIT);
+ 	b43_shm_write16(dev, B43_SHM_SHARED, B43_SHM_SH_SFFBLIM, 3);
+ 	b43_shm_write16(dev, B43_SHM_SHARED, B43_SHM_SH_LFFBLIM, 2);
++	b43_ac_retryfix(dev);
+ 
+ 	/* Disable sending probe responses from firmware.
+ 	 * Setting the MaxTime to one usec will always trigger

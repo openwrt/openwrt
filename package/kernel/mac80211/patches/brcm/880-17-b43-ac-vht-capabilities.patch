@@ -1,0 +1,581 @@
+From 2b6a410def92b2941ec7f86302187a46437ee258 Mon Sep 17 00:00:00 2001
+From: Russell Ballestrini <russell@unturf.com>
+Date: Fri, 10 Oct 2026 12:00:00 -0400
+Subject: [PATCH 17/29] b43: AC-PHY: VHT (802.11ac) capabilities and rate entries behind acphy_vht
+
+VHT capabilities (MCS 0..9 on acphy_htnss streams), the VHT TX rate
+entry (frame type 3, VHT-SIG-A), VHT RX reporting and the 80 MHz chanspec
+words, all behind acphy_vht / acphy_bw80 (default off): the 80 MHz path
+has not been verified on the air, HT40 is the default.
+---
+ drivers/net/wireless/broadcom/b43/main.c       |  50 +++++
+ drivers/net/wireless/broadcom/b43/phy_common.c |  18 ++-
+ drivers/net/wireless/broadcom/b43/xmit.c       | 214 ++++++++++++++++++--
+ drivers/net/wireless/broadcom/b43/xmit.h       |  95 ++++++++-
+ 4 files changed, 344 insertions(+), 33 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
+@@ -6222,6 +6222,55 @@
+ 		b43_ac_bw40_enabled() ? "/40" : "", nss, 8 * nss - 1);
+ }
+ 
++/*
++ * VHT capabilities of the AC-PHY band (acphy_vht, vht80-2069.md). wl on
++ * this chip (wlc_vht_init_defaults 0x19c4c4, wlc_up 0x129adc..0x129b30)
++ * advertises 0x038001b2 without beamforming: max MPDU 11454, 80 MHz only
++ * (no 160 / 80+80), RX LDPC, short GI 80, TX STBC (txstreams > 1), RX STBC
++ * 1, A-MPDU exponent 7; RX and TX MCS maps 0xffea (MCS 0..9 on 3 streams);
++ * highest rates 0. Beamforming bits only with wl's txbf on.
++ *
++ * b43 advertises the subset it implements, as for HT (b43_ac_setup_ht_cap):
++ * max MPDU 3895 (RX buffers sized for 3839), RX STBC 1, short GI 80 only
++ * with the 80 MHz width, A-MPDU exponent 3 (64 KiB, the HT factor; b43 has
++ * no ampdu_action). Not advertised: RX LDPC (wlc_phy_update_rxldpc_acphy
++ * not ported), TX STBC, beamforming, 160 MHz. MCS 0..9 on the streams b43
++ * transmits (acphy_htnss, the TX limit), RX and TX alike. 80 MHz needs
++ * acphy_bw40 and acphy_bw80 (mac80211 uses 80 MHz only with HT 20/40);
++ * without them every channel gets IEEE80211_CHAN_NO_80MHZ. Untested.
++ */
++static void b43_ac_setup_vht_cap(struct b43_wldev *dev,
++				 struct ieee80211_supported_band *band)
++{
++	struct ieee80211_sta_vht_cap *vht_cap = &band->vht_cap;
++	unsigned int nss = b43_ac_ht_nss(dev), i;
++	bool bw80 = b43_ac_bw40_enabled() && b43_ac_bw80_enabled();
++	u16 map = 0;
++
++	memset(vht_cap, 0, sizeof(*vht_cap));
++	if (!b43_modparam_ac_vht || !nss)
++		return;
++	vht_cap->vht_supported = true;
++	vht_cap->cap = IEEE80211_VHT_CAP_MAX_MPDU_LENGTH_3895 |
++		       IEEE80211_VHT_CAP_RXSTBC_1 |
++		       (3 << IEEE80211_VHT_CAP_MAX_A_MPDU_LENGTH_EXPONENT_SHIFT);
++	if (bw80)
++		vht_cap->cap |= IEEE80211_VHT_CAP_SHORT_GI_80;
++	for (i = 0; i < 8; i++)
++		map |= (i < nss ? IEEE80211_VHT_MCS_SUPPORT_0_9 :
++				  IEEE80211_VHT_MCS_NOT_SUPPORTED) << (2 * i);
++	vht_cap->vht_mcs.rx_mcs_map = cpu_to_le16(map);
++	vht_cap->vht_mcs.tx_mcs_map = cpu_to_le16(map);
++	for (i = 0; i < band->n_channels; i++) {
++		band->channels[i].flags |= IEEE80211_CHAN_NO_160MHZ;
++		if (!bw80)
++			band->channels[i].flags |= IEEE80211_CHAN_NO_80MHZ;
++	}
++	b43info(dev->wl, "AC-PHY VHT%s: %u stream(s), MCS 0..9, map 0x%04x (untested)\n",
++		bw80 ? "20/40/80" : (b43_ac_bw40_enabled() ? "20/40" : "20"),
++		nss, map);
++}
++
+ static int b43_setup_bands(struct b43_wldev *dev,
+ 			   bool have_2ghz_phy, bool have_5ghz_phy)
+ {
+@@ -6247,6 +6296,7 @@
+ 	} else if (dev->phy.type == B43_PHYTYPE_AC) {
+ 		if (have_5ghz_phy) {
+ 			b43_ac_setup_ht_cap(dev, &b43_band_5GHz_acphy.ht_cap);
++			b43_ac_setup_vht_cap(dev, &b43_band_5GHz_acphy);
+ 			hw->wiphy->bands[NL80211_BAND_5GHZ] =
+ 				&b43_band_5GHz_acphy;
+ 		}
+--- a/drivers/net/wireless/broadcom/b43/phy_common.c
++++ b/drivers/net/wireless/broadcom/b43/phy_common.c
+@@ -422,8 +422,12 @@
+  * upper control sideband, 2 with the lower; then v = 0x303, or that value
+  * ^ 0x303 when host flag word 0 bit 0 (ANTDIVHELP, wl's band->mhfs[0] at
+  * band+8, 0x15f7d8..0x15f7ec) is set, masked with 0x0f0f (0x15f844), to shm
+- * 0x5a and MMIO 0x6c6. Then wlc_acphy_set_scramb_dyn_bw_en (tail call
+- * 0x15f888): PHY 0x042 bit 15 (99h); the channel set may reset PHY 0x042.
++ * 0x5a and MMIO 0x6c6. 80 MHz (0x15f7f4..0x15f874, vht80-2069.md): MMIO
++ * 0x6c8 = 3 with the control channel in the lower 40 MHz (sideband 0 or 1),
++ * 12 in the upper; then v = 0x0f0f, or that value ^ 0x0f0f with ANTDIVHELP,
++ * masked with 0x0f0f, to shm 0x5a and MMIO 0x6c6. Then
++ * wlc_acphy_set_scramb_dyn_bw_en (tail call 0x15f888): PHY 0x042 bit 15
++ * (99h); the channel set may reset PHY 0x042.
+  */
+ static void b43_ac_ifsctl_vht_set(struct b43_wldev *dev, u16 chanspec)
+ {
+@@ -439,6 +443,16 @@
+ 		v &= 0x0F0F;
+ 		b43_shm_write16(dev, B43_SHM_SHARED, 0x005A, v);
+ 		b43_write16(dev, 0x6C6, v);
++	} else if (b43_ac_chanspec_is80(chanspec)) {
++		v = (chanspec & 0x0600) ? 12 : 3;		/* 0x15f7f4..0x15f804 */
++		b43_write16(dev, 0x6C8, v);
++		if (b43_hf_read(dev) & B43_HF_ANTDIVHELP)
++			v ^= 0x0F0F;				/* 0x15f838..0x15f840 */
++		else
++			v = 0x0F0F;
++		v &= 0x0F0F;
++		b43_shm_write16(dev, B43_SHM_SHARED, 0x005A, v);
++		b43_write16(dev, 0x6C6, v);
+ 	} else {
+ 		b43_write16(dev, 0x6C6, 0x0F0F);
+ 		b43_shm_write16(dev, B43_SHM_SHARED, 0x005A, 0x0F0F);
+--- a/drivers/net/wireless/broadcom/b43/xmit.c
++++ b/drivers/net/wireless/broadcom/b43/xmit.c
+@@ -316,6 +316,17 @@
+ MODULE_PARM_DESC(acphy_htnss,
+ 		 "AC-PHY 802.11n spatial streams, 0 = HT off, 1..3 (default 1)");
+ 
++/*
++ * VHT (802.11ac) on the AC-PHY, vht80-2069.md: VHT capabilities (main.c),
++ * VHT rate entries in the TX header and VHT rate reporting on RX. Needs HT
++ * (acphy_htnss >= 1); the streams are acphy_htnss's. The 80 MHz width also
++ * needs acphy_bw40 and acphy_bw80 (phy_ac.c). Untested on the radio.
++ */
++bool b43_modparam_ac_vht;
++module_param_named(acphy_vht, b43_modparam_ac_vht, bool, 0444);
++MODULE_PARM_DESC(acphy_vht,
++		 "AC-PHY 802.11ac VHT: capabilities, VHT TX rate entries, VHT RX reporting (default 0 = off)");
++
+ /* Cores in a 4 bit chain mask; 0 (not in the SPROM) counts as 3 cores,
+  * as b43_ac_txcore treats it. Open-coded: hweight8 imports __sw_hweight8. */
+ static unsigned int b43_ac_chain_cores(u8 chain)
+@@ -345,14 +356,34 @@
+ /*
+  * wl's per-MCS modulation and coding (.rodata 0xd73b4, `wlc_mcs_info`,
+  * read by wlc_rate_mcs2rate 0x180e40): bits per subcarrier, code rate
+- * numerator, code rate denominator, for MCS 0..7 of each stream.
++ * numerator, code rate denominator, for MCS 0..7 of each stream and the
++ * VHT MCS 8 and 9 (256-QAM 3/4 and 5/6).
+  */
+-static const u8 b43_ac_mcs_info[8][3] = {
++static const u8 b43_ac_mcs_info[10][3] = {
+ 	{ 1, 1, 2 }, { 2, 1, 2 }, { 2, 3, 4 }, { 4, 1, 2 },
+ 	{ 4, 3, 4 }, { 6, 2, 3 }, { 6, 3, 4 }, { 6, 5, 6 },
++	{ 8, 3, 4 }, { 8, 5, 6 },
+ };
+ 
+ /*
++ * Rate of a VHT MCS in 500 kbit/s (wlc_rate_rspec2rate 0x180f50..0x180f68
++ * -> wlc_rate_mcs2rate): data subcarriers 52 / 108 / 234 at 20 / 40 /
++ * 80 MHz (0x180e6c..0x180e9c), short GI as for HT. MCS 9, one stream,
++ * 80 MHz: 780, or 866 with short GI.
++ */
++static u16 b43_ac_vht_rate500(unsigned int mcs, unsigned int nss,
++			      unsigned int sc, bool sgi)
++{
++	const u8 *m = b43_ac_mcs_info[mcs];
++	unsigned int kbps;
++
++	kbps = 250 * (m[0] * m[1] * nss * sc / m[2]);
++	if (sgi)
++		kbps = (kbps * 10 + 4) / 9;
++	return kbps / 500;
++}
++
++/*
+  * Rate of an HT20 or HT40 MCS in 500 kbit/s, as wl stores it in the rate
+  * entry (wlc_rate_rspec2rate(rspec) / 500 at 0x11c330..0x11c360).
+  * wlc_rate_mcs2rate (0x180e40..0x180eec): kbit/s = 250 * (bits * num * nss *
+@@ -385,19 +416,26 @@
+  * 0x11af18..0x11af3c, 0x11af94). Only the single-fragment case: a frame
+  * with More Fragments or a non-zero Duration is left alone.
+  */
+-static const u8 b43_ac_ht_ref_rate[8] = {
++static const u8 b43_ac_ht_ref_rate[10] = {
+ 	B43_OFDM_RATE_6MB, B43_OFDM_RATE_12MB, B43_OFDM_RATE_18MB,
+ 	B43_OFDM_RATE_24MB, B43_OFDM_RATE_36MB, B43_OFDM_RATE_48MB,
+ 	B43_OFDM_RATE_54MB, B43_OFDM_RATE_54MB,
++	/*
++	 * VHT MCS 8 and 9: basic_ref_rate (.rodata 0xd73d4) entries 8 and 9,
++	 * read by wlc_rate_vht_basic_reference 0x180fdc (index MCS & 15, 0
++	 * above 9) and wlc_rate_rspec_reference_rate 0x180fa0
++	 */
++	B43_OFDM_RATE_54MB, B43_OFDM_RATE_54MB,
+ };
+ 
++/* ref: MCS & 7 for HT (wlc_rate_ht_basic_reference 0x180f80), MCS for VHT */
+ static void b43_ac_ht_set_duration(struct b43_wldev *dev,
+ 				   struct ieee80211_tx_info *info,
+-				   struct ieee80211_hdr *hdr, unsigned int mcs)
++				   struct ieee80211_hdr *hdr, unsigned int ref_idx)
+ {
+ 	struct ieee80211_supported_band *sband;
+ 	struct ieee80211_vif *vif = dev->wl->vif;
+-	u8 ref = b43_ac_ht_ref_rate[mcs & 7];
++	u8 ref = b43_ac_ht_ref_rate[min(ref_idx, 9U)];
+ 	u8 ack = B43_OFDM_RATE_6MB;
+ 	unsigned int i, us;
+ 
+@@ -444,12 +482,13 @@
+ 	u8 *plcp = entry->plcp.raw;
+ 
+ 	/*
+-	 * A 40 MHz rate only on a 40 MHz chanspec: wl caps the rspec
++	 * A 40 MHz rate only on a 40 or 80 MHz chanspec: wl caps the rspec
+ 	 * bandwidth at the chanspec's (0x11bba0..0x11bbc0, 0x11bc08..0x11bc1c).
+ 	 * The 20 MHz duplicate format has no AC entry encoding here.
+ 	 */
+ 	if (unlikely(r->idx < 0 || r->idx >= 8 * nss_max ||
+-		     (bw40 && !b43_ac_chanspec_is40(chanspec)) ||
++		     (bw40 && !b43_ac_chanspec_is40(chanspec) &&
++		      !b43_ac_chanspec_is80(chanspec)) ||
+ 		     (r->flags & IEEE80211_TX_RC_DUP_DATA))) {
+ 		b43dbg(dev->wl, "AC TX: HT rate idx %d flags 0x%x chanspec 0x%04x refused\n",
+ 		       r->idx, r->flags, chanspec);
+@@ -479,7 +518,8 @@
+ 	 * wlc_stf_get_204080_pwrs (0x11c184), not decoded for MCS rates; zero
+ 	 * as for legacy rates (no backoff). The sideband bits
+ 	 * (wlc_acphy_txctl1_calc @0x114254): the control sideband for a
+-	 * 20 MHz rate in a 40 MHz channel, 0 for a 40 MHz rate.
++	 * 20 MHz rate in a 40 or 80 MHz channel; for a 40 MHz rate 0 in a
++	 * 40 MHz channel, the 40 MHz half (sb >> 1) in an 80 MHz one.
+ 	 */
+ 	entry->phy_ctl1 = cpu_to_le16(b43_ac_phyctl1_sb(chanspec, bw40));
+ 	/* PHY control 2: the MCS byte (0x114a38); STBC bit 6 never set */
+@@ -503,6 +543,91 @@
+ 	return 0;
+ }
+ 
++/*
++ * wl's valid VHT MCS per (bandwidth, streams), .rodata 0xd74f4 halfwords
++ * indexed (bw - 1) * 8 + nss - 1 (0x18162c..0x181644), for 1..3 streams:
++ * no MCS 9 at 20 MHz for 1 and 2 streams, no MCS 6 at 80 MHz for 3.
++ */
++static const u16 b43_ac_vht_mcs_valid[3][3] = {
++	{ 0x1ff, 0x1ff, 0x3ff },	/* 20 MHz */
++	{ 0x3ff, 0x3ff, 0x3ff },	/* 40 MHz */
++	{ 0x3ff, 0x3ff, 0x3bf },	/* 80 MHz */
++};
++
++/*
++ * Fill rate entry 0 for a VHT rate selected by mac80211 (acphy_vht), as wl
++ * fills it for a VHT rspec (vht80-2069.md): 20 MHz, 40 MHz on a 40 or
++ * 80 MHz chanspec, 80 MHz on an 80 MHz chanspec; one rate entry, no STBC,
++ * no LDPC (neither advertised), no beamforming, no fallback bandwidth (wl's
++ * fb 4 with byte 0x106 of *wlc clear, 0x11bf20..0x11bfbc). Untested.
++ */
++static int b43_ac_vht_entry(struct b43_wldev *dev,
++			    struct b43_txhdr_ac_rate *entry,
++			    const struct ieee80211_tx_rate *r,
++			    __le16 fctl, u16 chanspec)
++{
++	unsigned int nss_max = b43_ac_ht_nss(dev);
++	unsigned int mcs = ieee80211_rate_get_vht_mcs(r);
++	unsigned int nss = ieee80211_rate_get_vht_nss(r);
++	bool sgi = !!(r->flags & IEEE80211_TX_RC_SHORT_GI);
++	unsigned int bw = 0, sc = 52, gid;
++	u16 phy_ctl0 = B43_TXH_AC_PHY0_FT_VHT | B43_TXH_AC_PHY0_SET;
++	u32 a1, a2;
++	u8 *plcp = entry->plcp.raw;
++
++	if (r->flags & IEEE80211_TX_RC_80_MHZ_WIDTH) {
++		bw = 2;
++		sc = 234;
++		phy_ctl0 |= B43_TXH_AC_PHY0_BW_80;	/* 0x113634..0x113654 */
++	} else if (r->flags & IEEE80211_TX_RC_40_MHZ_WIDTH) {
++		bw = 1;
++		sc = 108;
++		phy_ctl0 |= B43_TXH_AC_PHY0_BW_40;	/* 0x113634..0x113654 */
++	}
++	if (unlikely(!b43_modparam_ac_vht || !nss || nss > nss_max ||
++		     mcs > 9 ||
++		     !(b43_ac_vht_mcs_valid[bw][nss - 1] & BIT(mcs)) ||
++		     (bw == 2 && !b43_ac_chanspec_is80(chanspec)) ||
++		     (bw == 1 && !b43_ac_chanspec_is40(chanspec) &&
++		      !b43_ac_chanspec_is80(chanspec)) ||
++		     (r->flags & (IEEE80211_TX_RC_160_MHZ_WIDTH |
++				  IEEE80211_TX_RC_DUP_DATA)))) {
++		b43dbg(dev->wl, "AC TX: VHT rate idx 0x%x flags 0x%x chanspec 0x%04x refused\n",
++		       r->idx, r->flags, chanspec);
++		return -EINVAL;
++	}
++
++	/* PHY control 0: core mask << 6 for nss streams, as for HT */
++	phy_ctl0 |= ((u16)b43_ac_txcore(dev, nss) << B43_TXH_AC_PHY0_ANT_SHIFT) &
++		    B43_TXH_AC_PHY0_ANT;
++	entry->phy_ctl0 = cpu_to_le16(phy_ctl0);
++	/* PHY control 1: pwr 0, sideband >> (bw code - 1) (0x114254) */
++	entry->phy_ctl1 = cpu_to_le16(b43_ac_phyctl1_sb_bw(chanspec, bw));
++	/* PHY control 2: (nss - 1) << 4 | MCS (0x114a40..0x114a50) */
++	entry->phy_ctl2 = cpu_to_le16(((nss - 1) << 4) | mcs);
++	/*
++	 * VHT-SIG-A (0x118c04..0x118c9c). Group ID 0 for a frame to an AP
++	 * (FC & 0x300 == ToDS), else 63; NSTS = NSS without STBC.
++	 */
++	gid = (le16_to_cpu(fctl) & (IEEE80211_FCTL_TODS | IEEE80211_FCTL_FROMDS)) ==
++	      IEEE80211_FCTL_TODS ? 0 : B43_AC_VHTSIGA1_GID_ALL;
++	a1 = B43_AC_VHTSIGA1_BASE | bw |
++	     (gid << B43_AC_VHTSIGA1_GID_SHIFT) |
++	     ((nss - 1) << B43_AC_VHTSIGA1_NSTS_SHIFT);
++	a2 = (sgi ? B43_AC_VHTSIGA2_SGI : 0) |
++	     (mcs << B43_AC_VHTSIGA2_MCS_SHIFT) | B43_AC_VHTSIGA2_RES9;
++	plcp[0] = a1 & 0xFF;
++	plcp[1] = (a1 >> 8) & 0xFF;
++	plcp[2] = (a1 >> 16) & 0xFF;
++	plcp[3] = a2 & 0xFF;
++	plcp[4] = (a2 >> 8) & 0xFF;
++	plcp[5] = 0;
++	entry->fb_bw = cpu_to_le16(B43_TXH_AC_FBBW_NONE);
++	entry->rate = cpu_to_le16(b43_ac_vht_rate500(mcs, nss, sc, sgi));
++	entry->rts_ctl = cpu_to_le16(B43_TXH_AC_RTS_LAST);
++	return 0;
++}
++
+ /* PHY control word 2 for a legacy rate: its index in the table above. */
+ static u16 b43_ac_legacy_rate_idx(u8 bitrate)
+ {
+@@ -584,6 +709,7 @@
+ 	u16 chanspec;
+ 	u8 rate = 0;
+ 	bool ht = !!(rates[0].flags & IEEE80211_TX_RC_MCS);
++	bool vht = !!(rates[0].flags & IEEE80211_TX_RC_VHT_MCS);
+ 	int err;
+ 
+ 	BUILD_BUG_ON(sizeof(struct b43_txhdr_ac_rate) != 20);
+@@ -609,7 +735,7 @@
+ 	entry = &txhdr->rate[0];
+ 
+ 	/* ieee80211_get_tx_rate() indexes the legacy table; not for MCS */
+-	if (!ht) {
++	if (!ht && !vht) {
+ 		txrate = ieee80211_get_tx_rate(dev->wl->hw, info);
+ 		rate = txrate ? txrate->hw_value : B43_CCK_RATE_1MB;
+ 	}
+@@ -622,8 +748,9 @@
+ 	if (info->flags & IEEE80211_TX_CTL_FIRST_FRAGMENT)
+ 		mac_ctl |= B43_TXH_AC_MAC_STMSDU;
+ 	txhdr->mac_ctl_lo = cpu_to_le16(mac_ctl);
+-	/* Single rate entry, primary rate not VHT */
+-	txhdr->mac_ctl_hi = cpu_to_le16(B43_TXH_AC_MACH_NORATESEL);
++	/* Single rate entry; 0x0004 when the primary rate is VHT (0x11c5c0) */
++	txhdr->mac_ctl_hi = cpu_to_le16(B43_TXH_AC_MACH_NORATESEL |
++					(vht ? B43_TXH_AC_MACH_VHT : 0));
+ 
+ 	/* Must equal shm 0xa0 (b43_switch_channel), see phy_common.c */
+ 	chanspec = b43_ac_chanspec(dev, phy->channel);
+@@ -636,6 +763,17 @@
+ 	txhdr->seq_ctl = wlhdr->seq_ctrl;
+ 	/* unk16 (packet flag 0x200), unk18, key bytes and tail: zero */
+ 
++	if (vht) {
++		/* VHT MCS: rate entry 0 at byte 20, see b43_ac_vht_entry */
++		err = b43_ac_vht_entry(dev, entry, &rates[0],
++				       wlhdr->frame_control, chanspec);
++		if (err)
++			return err;
++		b43_ac_ht_set_duration(dev, info,
++				       (struct ieee80211_hdr *)skb_frag->data,
++				       ieee80211_rate_get_vht_mcs(&rates[0]));
++		goto retry_count;
++	}
+ 	if (ht) {
+ 		/* HT MCS: rate entry 0 at byte 20, see b43_ac_ht_entry */
+ 		err = b43_ac_ht_entry(dev, entry, &rates[0], frame_len,
+@@ -644,7 +782,7 @@
+ 			return err;
+ 		b43_ac_ht_set_duration(dev, info,
+ 				       (struct ieee80211_hdr *)skb_frag->data,
+-				       rates[0].idx);
++				       rates[0].idx & 7);
+ 		goto retry_count;
+ 	}
+ 
+@@ -1158,7 +1296,9 @@
+ 		status.flag |= RX_FLAG_FAILED_PLCP_CRC;
+ 	if ((phystat0 & B43_RX_PHYST0_SHORTPRMBL) &&
+ 	    !(dev->dev->core_rev >= 40 &&
+-	      (phystat0 & B43_RX_PHYST0_FTYPE) == B43_RX_PHYST0_AC_HT))
++	      ((phystat0 & B43_RX_PHYST0_FTYPE) == B43_RX_PHYST0_AC_HT ||
++	       (b43_modparam_ac_vht &&
++		(phystat0 & B43_RX_PHYST0_FTYPE) == B43_RX_PHYST0_AC_VHT))))
+ 		status.enc_flags |= RX_ENC_FLAG_SHORTPRE;
+ 	if (macstat & B43_RX_MAC_DECERR) {
+ 		/* Decryption with the given key failed.
+@@ -1219,15 +1359,12 @@
+ 		chanid = chanstat & B43_RX_CHANSPEC_CHAN;
+ 		band5 = chanid > 14;
+ 		/*
+-		 * A 40 MHz chanspec names its center channel; mac80211 wants
+-		 * the control channel. wf_chspec_ctlchan @0x7840: center - 2 +
+-		 * 4 * sideband (bandwidth 40 from .rodata 0x3020 + 24 + 3,
+-		 * 0x7884..0x78b4), ht40-2069.md.
++		 * A 40 or 80 MHz chanspec names its center channel; mac80211
++		 * wants the control channel. wf_chspec_ctlchan @0x7840: center
++		 * - 2 + 4 * sideband at 40 MHz, center - 6 + 4 * sideband at
++		 * 80 MHz (ht40-2069.md, vht80-2069.md).
+ 		 */
+-		if (b43_ac_chanspec_is40(chanstat))
+-			chanid = chanid - 2 +
+-				 4 * ((chanstat & B43_AC_CHANSPEC_SB) >>
+-				      B43_AC_CHANSPEC_SB_SHIFT);
++		chanid = b43_ac_chanspec_ctlchan(chanstat);
+ 	} else {
+ 		phytype = chanstat & B43_RX_CHAN_PHYTYPE;
+ 		chanid = (chanstat & B43_RX_CHAN_ID) >> B43_RX_CHAN_ID_SHIFT;
+@@ -1303,6 +1440,41 @@
+ 			status.enc_flags |= RX_ENC_FLAG_LDPC;
+ 		status.enc_flags |= ((sig2 & B43_AC_HTSIG2_STBC) >> 4) <<
+ 				    RX_ENC_FLAG_STBC_SHIFT;
++	} else if (dev->dev->core_rev >= 40 && b43_modparam_ac_vht &&
++		   (phystat0 & B43_RX_PHYST0_FTYPE) == B43_RX_PHYST0_AC_VHT) {
++		/*
++		 * VHT frame (PHY status 0 type 3), acphy_vht: VHT-SIG-A from
++		 * the 6 PLCP bytes as wlc_vht_get_rspec_from_plcp 0x181358 and
++		 * wlc_vht_get_rate_from_plcp 0x11979c read it: A1 bits 0..1
++		 * bandwidth, bit 3 STBC, bits 10..12 NSTS - 1 (NSS = NSTS / 2
++		 * with STBC); byte 3 bits 4..7 MCS, bit 0 short GI, bit 2 LDPC.
++		 */
++		u32 a1 = plcp->raw[0] | (plcp->raw[1] << 8) |
++			 (plcp->raw[2] << 16);
++		u8 sig2 = plcp->raw[3];
++		bool stbc = a1 & B43_AC_VHTSIGA1_STBC;
++		unsigned int nss = ((a1 >> B43_AC_VHTSIGA1_NSTS_SHIFT) & 7) + 1;
++		static const u8 vht_bw[4] = {
++			RATE_INFO_BW_20, RATE_INFO_BW_40, RATE_INFO_BW_80,
++			RATE_INFO_BW_160,
++		};
++
++		if (stbc)
++			nss /= 2;
++		rate_idx = sig2 >> B43_AC_VHTSIGA2_MCS_SHIFT;
++		if (rate_idx <= 9 && nss >= 1) {
++			status.encoding = RX_ENC_VHT;
++			status.nss = nss;
++			status.bw = vht_bw[a1 & 3];
++			if (sig2 & B43_AC_VHTSIGA2_SGI)
++				status.enc_flags |= RX_ENC_FLAG_SHORT_GI;
++			if (sig2 & B43_AC_VHTSIGA2_LDPC)
++				status.enc_flags |= RX_ENC_FLAG_LDPC;
++			if (stbc)
++				status.enc_flags |= 1 << RX_ENC_FLAG_STBC_SHIFT;
++		} else {
++			rate_idx = -1;
++		}
+ 	} else if (phystat0 & B43_RX_PHYST0_OFDM)
+ 		rate_idx = b43_plcp_get_bitrate_idx_ofdm(plcp, band5);
+ 	else
+--- a/drivers/net/wireless/broadcom/b43/xmit.h
++++ b/drivers/net/wireless/broadcom/b43/xmit.h
+@@ -302,19 +302,52 @@
+ #define B43_AC_HTSIG2_SGI		0x80	/* 0x118cec */
+ 
+ /*
++ * VHT (802.11ac) rate in an AC rate entry, wl's rspec with bits 24..25 = 2:
++ * MCS bits 0..3, NSS bits 4..7 (1 based, wlc_ratespec_nss 0x180da4),
++ * bandwidth bits 16..18 (1/2/3 = 20/40/80 MHz), STBC 20, LDPC 22, short GI
++ * 23 (vht80-2069.md).
++ * - PHY control 0: frame type 3 (0x1135ac..0x1135b0); VHT forces preamble 4
++ *   (0x11bf1c), so bit 4 stays clear; bandwidth 0x8000 at 80 MHz
++ *   (0x113634..0x113654).
++ * - PHY control 2 = (NSS - 1) << 4 | MCS, | 0x40 with STBC
++ *   (wlc_acphy_txctl2_calc 0x114a40..0x114a50).
++ * - MAC control high word | 0x0004 (0x11c5c0..0x11c5d4).
++ * - PLCP = VHT-SIG-A as wlc_compute_plcp builds it (0x118c04..0x118c9c):
++ *   A1 in bytes 0..2 (little endian) = 0x800004 | BW (0..3) | STBC << 3 |
++ *   group ID << 4 | (NSTS - 1) << 10, group ID 0 when the frame goes to an
++ *   AP (FC ToDS only), else 63; partial AID and TXOP_PS 0. A2 in bytes 3..4
++ *   = short GI | LDPC << 2 | MCS << 4 | 0x200 (reserved bit 9). CRC and tail
++ *   are left 0 (byte 4 bits 2..7, byte 5): wl does not compute them.
++ */
++#define B43_AC_VHTSIGA1_BASE		0x800004	/* 0x118c08..0x118c3c */
++#define B43_AC_VHTSIGA1_STBC		0x000008	/* 0x118c40..0x118c48 */
++#define B43_AC_VHTSIGA1_GID_SHIFT	4		/* 0x118c4c */
++#define B43_AC_VHTSIGA1_GID_ALL		63
++#define B43_AC_VHTSIGA1_NSTS_SHIFT	10		/* 0x118c50..0x118c5c */
++#define B43_AC_VHTSIGA2_SGI		0x0001		/* 0x118c70 */
++#define B43_AC_VHTSIGA2_LDPC		0x0004		/* 0x118c78 */
++#define B43_AC_VHTSIGA2_MCS_SHIFT	4		/* 0x118c74, 0x118c80 */
++#define B43_AC_VHTSIGA2_RES9		0x0200		/* 0x118c84 */
++
++/* acphy_vht (xmit.c, default 0): VHT caps, VHT TX and VHT RX reporting */
++extern bool b43_modparam_ac_vht;
++
++/*
+  * Spatial streams b43 offers for HT on the AC-PHY (0 = HT off), limited
+  * by the acphy_htnss module parameter and the SPROM tx/rx chains.
+  */
+ unsigned int b43_ac_ht_nss(struct b43_wldev *dev);
+ 
+ /* AC chanspec (wlc+0x548): channel in bits 0..7 (the center channel at
+- * 40 MHz), sideband 0x0700 (0x0100: control channel in the upper half,
+- * wf_chspec_ctlchan @0x7840), bandwidth 0x3800 (0x1000 = 20 MHz, 0x1800 =
+- * 40 MHz, 0x11b39c..0x11b3c4), band 0xc000 (0 = 2 GHz, 0xc000 = 5 GHz,
+- * chan-common-2069.md, 0x4b9b8) */
++ * 40 and 80 MHz), sideband 0x0700 (40 MHz: 0x0100 = control channel in the
++ * upper half; 80 MHz: 0..3 from the lowest 20 MHz, wf_chspec_ctlchan
++ * @0x7840: control = center - (bw - 20) / 10 + 4 * sb), bandwidth 0x3800
++ * (0x1000 = 20 MHz, 0x1800 = 40 MHz, 0x2000 = 80 MHz, 0x11b39c..0x11b3c4),
++ * band 0xc000 (0 = 2 GHz, 0xc000 = 5 GHz, chan-common-2069.md, 0x4b9b8) */
+ #define B43_AC_CHANSPEC_BW		0x3800
+ #define B43_AC_CHANSPEC_BW_20		0x1000
+ #define B43_AC_CHANSPEC_BW_40		0x1800
++#define B43_AC_CHANSPEC_BW_80		0x2000
+ #define B43_AC_CHANSPEC_SB		0x0700
+ #define B43_AC_CHANSPEC_SB_SHIFT	8
+ #define B43_AC_CHANSPEC_BAND_2G		0x0000
+@@ -335,22 +368,64 @@
+ 	return (chanspec & B43_AC_CHANSPEC_BW) == B43_AC_CHANSPEC_BW_40;
+ }
+ 
++/* 80 MHz on the AC PHY: acphy_bw80 of phy_ac.c */
++static inline bool b43_ac_bw80_enabled(void)
++{
++#ifdef CPTCFG_B43_PHY_AC
++	return b43_modparam_ac_bw80;
++#else
++	return false;
++#endif
++}
++
++static inline bool b43_ac_chanspec_is80(u16 chanspec)
++{
++	return (chanspec & B43_AC_CHANSPEC_BW) == B43_AC_CHANSPEC_BW_80;
++}
++
++/*
++ * The control channel of an AC chanspec, wf_chspec_ctlchan @0x7840:
++ * center + 4 * sb - (bw_mhz - 20) / 10, bw_mhz from .rodata 0x3038
++ * (0x7884..0x78b4): 20 MHz the channel byte, 40 MHz center - 2 + 4 sb,
++ * 80 MHz center - 6 + 4 sb.
++ */
++static inline unsigned int b43_ac_chanspec_ctlchan(u16 chanspec)
++{
++	unsigned int ch = chanspec & 0xFF;
++	unsigned int sb = (chanspec & B43_AC_CHANSPEC_SB) >>
++			  B43_AC_CHANSPEC_SB_SHIFT;
++
++	if (b43_ac_chanspec_is40(chanspec))
++		return ch - 2 + 4 * sb;
++	if (b43_ac_chanspec_is80(chanspec))
++		return ch - 6 + 4 * sb;
++	return ch;
++}
++
+ /*
+  * PHY control word 1 sideband bits, wlc_acphy_txctl1_calc.clone.18
+  * @0x114254: ((chanspec >> 8) & 7) >> (bw - 1), bw the rate's bandwidth code
+- * (1 = 20, 2 = 40 MHz). A 20 MHz frame in a 40 MHz channel carries the
+- * control sideband, a 40 MHz frame 0 (ht40-2069.md).
++ * (1 = 20, 2 = 40, 3 = 80 MHz). A 20 MHz frame in a 40 or 80 MHz channel
++ * carries the control sideband, a 40 MHz frame in an 80 MHz channel the
++ * 40 MHz half (sb >> 1), a frame as wide as the channel 0 (ht40-2069.md,
++ * vht80-2069.md). rate40 is b43_ac_phyctl1_sb_bw(chanspec, 1).
+  */
+-static inline u16 b43_ac_phyctl1_sb(u16 chanspec, bool rate40)
++static inline u16 b43_ac_phyctl1_sb_bw(u16 chanspec, unsigned int shift)
+ {
+ 	return ((chanspec & B43_AC_CHANSPEC_SB) >> B43_AC_CHANSPEC_SB_SHIFT) >>
+-	       (rate40 ? 1 : 0);
++	       shift;
++}
++
++static inline u16 b43_ac_phyctl1_sb(u16 chanspec, bool rate40)
++{
++	return b43_ac_phyctl1_sb_bw(chanspec, rate40 ? 1 : 0);
+ }
+ 
+ /*
+  * The chanspec as wl keeps it at wlc+0x548 for a channel in the current
+- * band: the AC PHY's (20 MHz, or 40 MHz with acphy_bw40 and a 40 MHz
+- * chandef, b43_phy_ac_chanspec in phy_ac.c), else 20 MHz.
++ * band: the AC PHY's (20 MHz, 40 MHz with acphy_bw40 and a 40 MHz chandef,
++ * 80 MHz with acphy_bw80 and an 80 MHz chandef, b43_phy_ac_chanspec in
++ * phy_ac.c), else 20 MHz.
+  */
+ static inline u16 b43_ac_chanspec(struct b43_wldev *dev, unsigned int channel)
+ {

@@ -1,0 +1,94 @@
+From f1f1b738ea6ed645c2b88fc9a077f53e856014e1 Mon Sep 17 00:00:00 2001
+From: Russell Ballestrini <russell@unturf.com>
+Date: Fri, 10 Oct 2026 12:00:00 -0400
+Subject: [PATCH 10/29] b43: unmask the ucode fatal interrupt on core rev >= 40 and restart
+
+wl's default MAC interrupt mask 0xb0e7a860 (wlc_bmac_info_init, literal
+at 0x15c484) includes bit 13, which ucode 907 raises on a fatal error;
+wlc_dpc then reinitialises the driver (0x12db0..0x12dd8). b43's mask
+lacks it, so a ucode crash went unnoticed and the interface just stopped
+raising interrupts.
+
+On core rev >= 40 unmask bit 13 and restart the controller when it fires,
+at most three times. After a DMA interrupt, log when neither EN_MAC nor
+PSM_RUN is set in MACCTL, as wlc_dpc checks (0x12d34..0x12d64), at most
+ten times.
+---
+ drivers/net/wireless/broadcom/b43/main.c | 45 ++++++++++++++++++++++++++
+ 1 file changed, 45 insertions(+)
+
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
+@@ -2289,6 +2289,30 @@
+ 			B43_DEBUGIRQ_REASON_REG, B43_DEBUGIRQ_ACK);
+ }
+ 
++/*
++ * Core rev >= 40: ucode 907 raises MACINTSTATUS bit 13 (b43's TIMER0, wl's
++ * GP0) on a fatal error. wl's default MAC interrupt mask 0xb0e7a860
++ * (wlc_bmac_info_init literal 0x15c484, wlc_bmac_attach 0x163c08) includes
++ * it; wlc_dpc then calls wlc_dump_ucode_fatal and reinitialises the driver
++ * (wl_init) (0x12db0..0x12dd8). b43's mask lacks it, so a ucode crash
++ * was silent. Restart the controller as wl does, at most
++ * B43_UCODE_FATAL_RESTARTS times.
++ */
++#define B43_IRQ_UCODE_FATAL_REV40	B43_IRQ_TIMER0
++#define B43_UCODE_FATAL_RESTARTS	3
++static atomic_t b43_ucode_fatal_count = ATOMIC_INIT(0);
++
++static void b43_handle_ucode_fatal_rev40(struct b43_wldev *dev)
++{
++	unsigned int n;
++
++	n = atomic_inc_return(&b43_ucode_fatal_count);
++	if (n <= B43_UCODE_FATAL_RESTARTS)
++		b43_controller_restart(dev, "ucode fatal");
++	else
++		b43err(dev->wl, "ucode fatal %u times, not restarting\n", n);
++}
++
+ static void b43_do_interrupt_thread(struct b43_wldev *dev)
+ {
+ 	u32 reason;
+@@ -2336,6 +2360,11 @@
+ 		return;
+ 	}
+ 
++	if (unlikely(dev->dev->core_rev >= 40 &&
++		     (reason & B43_IRQ_UCODE_FATAL_REV40))) {
++		b43_handle_ucode_fatal_rev40(dev);
++		return;	/* the restart re-enables interrupts */
++	}
+ 	if (unlikely(reason & B43_IRQ_UCODE_DEBUG))
+ 		handle_irq_ucode_debug(dev);
+ 	if (reason & B43_IRQ_TBTT_INDI)
+@@ -2373,6 +2402,19 @@
+ 	if (reason & B43_IRQ_TX_OK)
+ 		handle_irq_transmit_status(dev);
+ 
++	/*
++	 * wlc_dpc checks MACCTL after the DMA interrupt and logs when neither
++	 * EN_MAC nor PSM_RUN is set (tst #3 at 0x12d34..0x12d64).
++	 */
++	if (dev->dev->core_rev >= 40 && (reason & B43_IRQ_DMA)) {
++		static unsigned int psm_stopped_logged;
++		u32 macctl = b43_read32(dev, B43_MMIO_MACCTL);
++
++		if (!(macctl & 3) && psm_stopped_logged++ < 10)
++			b43err(dev->wl, "PSM not running, MACCTL 0x%08x\n",
++			       macctl);
++	}
++
+ 	/* Re-enable interrupts on the device by restoring the current interrupt mask. */
+ 	b43_write32(dev, B43_MMIO_GEN_IRQ_MASK, dev->irq_mask);
+ 
+@@ -5238,6 +5280,9 @@
+ 	dev->irq_mask = B43_IRQ_MASKTEMPLATE;
+ 	if (b43_modparam_verbose < B43_VERBOSITY_DEBUG)
+ 		dev->irq_mask &= ~B43_IRQ_PHY_TXERR;
++	/* wl's defmacintmask carries bit 13 (ucode fatal) on this ucode */
++	if (dev->dev->core_rev >= 40)
++		dev->irq_mask |= B43_IRQ_UCODE_FATAL_REV40;
+ 
+ 	dev->mac_suspended = 1;
+ 

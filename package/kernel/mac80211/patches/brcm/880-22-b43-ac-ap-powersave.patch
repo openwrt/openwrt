@@ -1,0 +1,566 @@
+From dde7673f1075cb24af34ea8aa8809eeda154f1bc Mon Sep 17 00:00:00 2001
+From: Russell Ballestrini <russell@unturf.com>
+Date: Fri, 10 Oct 2026 12:00:00 -0400
+Subject: [PATCH 22/29] b43: AC-PHY: AP power save on core rev >= 40
+
+The AP's power save path dropped frames to a dozing station: the
+hardware PMQ, mac80211's view of the station from the PM bit, the AMT
+entry and held PMQ entries (acphy_psfix). Verified with a client's power
+save on.
+---
+ drivers/net/wireless/broadcom/b43/b43.h  |  13 ++
+ drivers/net/wireless/broadcom/b43/main.c | 242 +++++++++++++++++++++++++-
+ drivers/net/wireless/broadcom/b43/xmit.c |  93 ++++++++++
+ drivers/net/wireless/broadcom/b43/xmit.h |  69 ++++++++
+ 4 files changed, 414 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/b43/b43.h
++++ b/drivers/net/wireless/broadcom/b43/b43.h
+@@ -45,6 +45,19 @@
+ #define B43_MMIO_RAM_CONTROL		0x130
+ #define B43_MMIO_RAM_DATA		0x134
+ #define B43_MMIO_PS_STATUS		0x140
++/* 9j0: PMQ on core rev >= 40 (wlc_bmac_processpmq 0x12180): 0x140 status and
++ * head entry flags, 0x144 / 0x148 the head entry's address bytes 0..3 / 4..5 */
++#define B43_MMIO_AC_PMQ_PATL		0x144
++#define B43_MMIO_AC_PMQ_PATH		0x148
++#define  B43_AC_PMQ_DEL_ENTRY		0x00000001 /* write: delete the head entry */
++#define  B43_AC_PMQ_DEL_MULT		0x00000002 /* write: delete up to the read pointer (0x12168) */
++#define  B43_AC_PMQ_OFLO		0x00000004 /* queue overflowed */
++#define  B43_AC_PMQ_NOT_EMPTY		0x00000008 /* entries wait (0x12258) */
++#define  B43_AC_PMQ_PMOFF		0x00010000 /* head: PM off (0x12210) */
++#define  B43_AC_PMQ_PMON		0x00020000 /* head: PM on */
++#define  B43_AC_PMQ_DASAT		0x00040000 /* head: deauth / disassoc (ucode L845 @0x0F20) */
++#define  B43_AC_PMQ_BSSCFG		0x00100000 /* head: BSS entry (ucode @0x0C3E) */
++#define  B43_AC_PMQ_PMPS		0x00200000 /* head: PS pretend (0x1220c) */
+ #define B43_MMIO_RADIO_HWENABLED_HI	0x158
+ #define B43_MMIO_MAC_HW_CAP		0x15C	/* MAC capabilities (corerev >= 13) */
+ #define B43_MMIO_SHM_CONTROL		0x160
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
+@@ -1891,10 +1891,130 @@
+ 	}
+ }
+ 
++/*
++ * 9j0: acphy_psfix bit 2, the hardware power management queue (PMQ) of
++ * core rev >= 40. ucode 907 looks every received frame's A2 up in the PMQ
++ * (@0x0A34..0x0A38) and, for a data or management frame to our address
++ * from a station past authentication (@0x0C2D..0x0C30 skip assoc/auth),
++ * queues (A2, PM bit) when the bit differs from the queued state
++ * (@0x0C31..0x0C49), raising B43_IRQ_PMQ once more than shm 0x2A entries
++ * wait (@0x0C4A..0x0C4C; b43 zeroes shm, so on the first). Entries are
++ * only queued while MACCTL DISCPMQ is clear when the PSM (re)starts:
++ * @0x0DE3..0x0DE5 derives the queue command word [0x16] from it, so
++ * b43_adjust_opmode cycles the MAC after flipping the bit. A deauth or
++ * disassoc to our address queues a delete (L845 @0x0F20). wl.ko drains
++ * the queue in wlc_bmac_processpmq 0x12180: while 0x140 bit 3 is set it
++ * reads 0x144 (A2 bytes 0..3), 0x148 (bytes 4..5), takes PM on/off from
++ * 0x140 bits 17/16, skips group addresses (0x121f8) and calls
++ * wlc_apps_process_ps_switch 0x11fa0; wlc_bmac_process_ps_switch 0x1210c
++ * then writes 2 (delete up to the read pointer) to 0x140. While an entry
++ * with PM on waits, the ucode TX path suppresses unicast frames to that
++ * station with reason 1 (@0x03D1..0x03DC -> L247 @0x0409) unless the
++ * header's MAC control bit 9 is set; xmit.c reports those as
++ * IEEE80211_TX_STAT_TX_FILTERED. With bit 4 the entries drive
++ * ieee80211_sta_ps_transition (AP_LINK_PS).
++ */
++#define B43_AC_PMQ_MAX	64
++
++/*
++ * 9j0: acphy_psfix bit 16, the dozing stations as the PMQ entries report
++ * them, so the processed entries can stay in the queue (the ucode's
++ * lookups find them) until nobody dozes. Index 0 is unused.
++ */
++#define B43_AC_PMQ_STAS	62
++static struct {
++	u8 mac[ETH_ALEN];
++	bool used;
++	bool dozing;
++} b43_ac_pmq_sta[B43_AC_PMQ_STAS];
++
++/* Returns the number of dozing stations after the update */
++static unsigned int b43_ac_pmq_sta_update(const u8 *mac, bool dozing,
++					  bool gone)
++{
++	unsigned int i, free = B43_AC_PMQ_STAS, n = 0;
++
++	for (i = 0; i < B43_AC_PMQ_STAS; i++) {
++		if (!b43_ac_pmq_sta[i].used) {
++			if (free == B43_AC_PMQ_STAS)
++				free = i;
++			continue;
++		}
++		if (ether_addr_equal(b43_ac_pmq_sta[i].mac, mac)) {
++			b43_ac_pmq_sta[i].dozing = dozing;
++			b43_ac_pmq_sta[i].used = !gone;
++			free = i;
++		}
++		if (b43_ac_pmq_sta[i].used && b43_ac_pmq_sta[i].dozing)
++			n++;
++	}
++	if (!gone && free < B43_AC_PMQ_STAS && !b43_ac_pmq_sta[free].used) {
++		memcpy(b43_ac_pmq_sta[free].mac, mac, ETH_ALEN);
++		b43_ac_pmq_sta[free].used = true;
++		b43_ac_pmq_sta[free].dozing = dozing;
++		if (dozing)
++			n++;
++	}
++	return n;
++}
++
++static void b43_ac_pmq_drain(struct b43_wldev *dev)
++{
++	struct b43_wl *wl = dev->wl;
++	struct ieee80211_sta *sta;
++	unsigned int n, dozing = 0;
++	bool hold = b43_ac_psfix(dev, B43_AC_PSFIX_HOLD), flush = false;
++	u32 reg, lo, hi;
++	u8 mac[ETH_ALEN];
++
++	for (n = 0; n < B43_AC_PMQ_MAX; n++) {
++		reg = b43_read32(dev, B43_MMIO_PS_STATUS);
++		if (!(reg & B43_AC_PMQ_NOT_EMPTY))
++			break;
++		lo = b43_read32(dev, B43_MMIO_AC_PMQ_PATL);
++		hi = b43_read32(dev, B43_MMIO_AC_PMQ_PATH);
++		mac[0] = lo;
++		mac[1] = lo >> 8;
++		mac[2] = lo >> 16;
++		mac[3] = lo >> 24;
++		mac[4] = hi;
++		mac[5] = hi >> 8;
++		if (reg & (B43_AC_PMQ_OFLO | B43_AC_PMQ_DASAT))
++			flush = true;
++		if (mac[0] & 1)
++			continue;
++		if (reg & B43_AC_PMQ_DASAT)
++			dozing = b43_ac_pmq_sta_update(mac, false, true);
++		if (!(reg & (B43_AC_PMQ_PMON | B43_AC_PMQ_PMOFF)))
++			continue;
++		dozing = b43_ac_pmq_sta_update(mac, !!(reg & B43_AC_PMQ_PMON),
++					       false);
++		if (!b43_ac_psfix(dev, B43_AC_PSFIX_LINKPS) || !wl->vif)
++			continue;
++		rcu_read_lock();
++		sta = ieee80211_find_sta(wl->vif, mac);
++		rcu_read_unlock();
++	}
++	if (n == B43_AC_PMQ_MAX) {
++		flush = true;
++	}
++	if (!n)
++		return;
++	if (hold && dozing && !flush) {
++		return;
++	}
++	b43_write16(dev, B43_MMIO_PS_STATUS, B43_AC_PMQ_DEL_MULT);
++}
++
+ static void handle_irq_pmq(struct b43_wldev *dev)
+ {
+ 	u32 tmp;
+ 
++	if (b43_ac_psfix(dev, B43_AC_PSFIX_PMQ)) {
++		b43_ac_pmq_drain(dev);
++		return;
++	}
++
+ 	//TODO: AP mode.
+ 
+ 	while (1) {
+@@ -2266,6 +2386,19 @@
+ 	beacon0_valid = (cmd & B43_MACCMD_BEACON0_VALID);
+ 	beacon1_valid = (cmd & B43_MACCMD_BEACON1_VALID);
+ 
++	/*
++	 * 9j0: acphy_psfix bit 1. ucode 907 sends from the template its
++	 * r20 bit 9 names (@0x0518: 0x202 / 0x482), and when both valid bits
++	 * are set (@0x0109) writes those bits back to MACCMD (@0x01C1) and
++	 * raises IRQ 0x2 (@0x01C2). MACCMD is write-1-to-clear for the ucode
++	 * (@0x0110, @0x1018, @0x123E, @0x1254 acknowledge host commands that
++	 * way), so the bit of the template just sent clears and the read-back
++	 * (@0x01C3..0x01C4) switches r20 to the other one: the alternation
++	 * b43 expects. A TIM change (set_tim) lands in the next free template
++	 * and goes on air one beacon later. This line shows which bit the
++	 * ucode cleared; "both valid" only ever means the IRQ is re-armed.
++	 */
++
+ 	/* Schedule interrupt manually, if busy. */
+ 	if (beacon0_valid && beacon1_valid) {
+ 		b43_write32(dev, B43_MMIO_GEN_IRQ_REASON, B43_IRQ_BEACON);
+@@ -3799,10 +3932,25 @@
+ 	 *        so always disable it. If we want to implement PMQ,
+ 	 *        we need to enable it here (clear DISCPMQ) in AP mode.
+ 	 */
+-	if (0  /* ctl & B43_MACCTL_AP */)
++	/*
++	 * 9j0: acphy_psfix bit 2 enables the PMQ for an AP on core rev >= 40
++	 * (b43_ac_pmq_drain), as wl clears DISCPMQ for an AP. ucode 907 reads
++	 * the bit only when the PSM (re)starts (@0x0DE3..0x0DE5, L785 from
++	 * the MAC enable wait @0x0DC0), so a change while the MAC runs takes
++	 * effect through a suspend / enable cycle.
++	 */
++	if ((ctl & B43_MACCTL_AP) && b43_ac_psfix(dev, B43_AC_PSFIX_PMQ)) {
++		bool was_set = b43_read32(dev, B43_MMIO_MACCTL) &
++			       B43_MACCTL_DISCPMQ;
++
+ 		b43_maskset32(dev, B43_MMIO_MACCTL, ~B43_MACCTL_DISCPMQ, 0);
+-	else
++		if (was_set && dev->mac_suspended == 0) {
++			b43_mac_suspend(dev);
++			b43_mac_enable(dev);
++		}
++	} else {
+ 		b43_maskset32(dev, B43_MMIO_MACCTL, ~0, B43_MACCTL_DISCPMQ);
++	}
+ }
+ 
+ /*
+@@ -6181,6 +6329,8 @@
+ {
+ 	struct b43_wl *wl = hw_to_b43_wl(hw);
+ 
++	/* 9j0: acphy_psfix bit 1, mac80211's TIM request (sta_info_recalc_tim) */
++
+ 	b43_update_templates(wl);
+ 
+ 	return 0;
+@@ -6194,6 +6344,80 @@
+ 	struct b43_wl *wl = hw_to_b43_wl(hw);
+ 
+ 	B43_WARN_ON(!vif || wl->vif != vif);
++
++	/*
++	 * 9j0: acphy_psfix bit 1, mac80211's view of the station (sta_ps_start
++	 * / sta_ps_end from the PM bit of received frames; not called with
++	 * AP_LINK_PS, where the PMQ lines show it instead).
++	 */
++}
++
++/*
++ * 9j0: acphy_psfix bit 8, one AMT entry per associated station on core rev
++ * >= 40 (see xmit.h). Entries 0..61 are free: 99c keeps the BSSID in 62 and
++ * our MAC in 63 (wlc_set_bssid 0x115b78.., wlc_set_mac 0x115a78..). wl
++ * writes an entry through wlc_bmac_write_amt 0x15c964 (b43_amt_write
++ * mirrors it) and clears it with attribute 0; the attribute is
++ * acphy_psamt. The index lives in the station's drv_priv (b43_ac_sta.amt_idx
++ * + 1). Only AP interfaces get entries.
++ */
++#define B43_AC_AMT_STA_MAX	62
++static DECLARE_BITMAP(b43_ac_amt_used, B43_AC_AMT_STA_MAX);
++
++static int b43_op_sta_add(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
++			  struct ieee80211_sta *sta)
++{
++	struct b43_wl *wl = hw_to_b43_wl(hw);
++	struct b43_ac_sta *acs = (struct b43_ac_sta *)sta->drv_priv;
++	struct b43_wldev *dev;
++	unsigned int idx;
++	u32 lo, hi;
++
++	mutex_lock(&wl->mutex);
++	dev = wl->current_dev;
++	acs->amt_idx = 0;
++	if (!dev || b43_status(dev) < B43_STAT_INITIALIZED ||
++	    !b43_ac_psfix(dev, B43_AC_PSFIX_AMT) ||
++	    vif->type != NL80211_IFTYPE_AP)
++		goto out;
++	idx = find_first_zero_bit(b43_ac_amt_used, B43_AC_AMT_STA_MAX);
++	if (idx >= B43_AC_AMT_STA_MAX) {
++		goto out;
++	}
++	set_bit(idx, b43_ac_amt_used);
++	acs->amt_idx = idx + 1;
++	b43_amt_write(dev, idx, sta->addr, b43_modparam_acphy_psamt);
++	/* Read the entry back the way wlc_bmac_read_amt 0x15b9fc does */
++	b43_write32(dev, B43_MMIO_SHM_CONTROL, (B43_SHM_AMT << 16) | (idx * 2));
++	lo = b43_read32(dev, B43_MMIO_SHM_DATA);
++	hi = b43_read32(dev, B43_MMIO_SHM_DATA);
++out:
++	mutex_unlock(&wl->mutex);
++	return 0;
++}
++
++static int b43_op_sta_remove(struct ieee80211_hw *hw,
++			     struct ieee80211_vif *vif,
++			     struct ieee80211_sta *sta)
++{
++	struct b43_wl *wl = hw_to_b43_wl(hw);
++	struct b43_ac_sta *acs = (struct b43_ac_sta *)sta->drv_priv;
++	struct b43_wldev *dev;
++	static const u8 zero_addr[ETH_ALEN] = { 0 };
++
++	mutex_lock(&wl->mutex);
++	dev = wl->current_dev;
++	if (acs->amt_idx) {
++		unsigned int idx = acs->amt_idx - 1;
++
++		clear_bit(idx, b43_ac_amt_used);
++		acs->amt_idx = 0;
++		if (dev && b43_status(dev) >= B43_STAT_INITIALIZED) {
++			b43_amt_write(dev, idx, zero_addr, 0);
++		}
++	}
++	mutex_unlock(&wl->mutex);
++	return 0;
+ }
+ 
+ static void b43_op_sw_scan_start_notifier(struct ieee80211_hw *hw,
+@@ -6389,6 +6613,8 @@
+ 	.stop			= b43_op_stop,
+ 	.set_tim		= b43_op_beacon_set_tim,
+ 	.sta_notify		= b43_op_sta_notify,
++	.sta_add		= b43_op_sta_add,
++	.sta_remove		= b43_op_sta_remove,
+ 	.sw_scan_start		= b43_op_sw_scan_start_notifier,
+ 	.sw_scan_complete	= b43_op_sw_scan_complete_notifier,
+ 	.get_survey		= b43_op_get_survey,
+@@ -6902,14 +7128,24 @@
+ 		hw->max_rx_aggregation_subframes = B43_RXRING_SLOTS;
+ 	}
+ 	/*
++	 * 9j0: acphy_psfix bit 4: the hardware PMQ reports a station's power
++	 * save state (b43_ac_pmq_drain), so mac80211 does not track the PM
++	 * bit of received frames and leaves PS-Poll and U-APSD trigger frames
++	 * to b43_rx (b43_ac_psfix_rx). wl's model (wlc_bmac_processpmq).
++	 */
++	if ((b43_modparam_acphy_psfix & B43_AC_PSFIX_LINKPS) &&
++	    dev->core_rev >= 40)
++		ieee80211_hw_set(hw, AP_LINK_PS);
++	/*
+ 	 * 9g0: acphy_ampdu bit 1, TX block ack sessions: the negotiated
+ 	 * window per TID lives in the station's drv_priv (b43_op_ampdu_action,
+ 	 * xmit.c b43_ac_ampdu_txhdr). mac80211 caps an aggregate at its
+ 	 * default of 64 subframes; the header tail carries b43's own limit.
+ 	 */
+-	if ((b43_modparam_acphy_ampdu & B43_AC_AMPDU_TX) && dev->core_rev >= 40)
+ 	if ((((b43_modparam_acphy_ampdu & B43_AC_AMPDU_TX) &&
+ 	      (b43_modparam_acphy_ampdu & B43_AC_AMPDU_SESSION)) ||
++	     (b43_modparam_acphy_psfix & B43_AC_PSFIX_AMT)) &&
++	    dev->core_rev >= 40)
+ 		hw->sta_data_size = sizeof(struct b43_ac_sta);
+ 	hw->wiphy->interface_modes =
+ 		BIT(NL80211_IFTYPE_AP) |
+--- a/drivers/net/wireless/broadcom/b43/xmit.c
++++ b/drivers/net/wireless/broadcom/b43/xmit.c
+@@ -656,6 +656,26 @@
+ MODULE_PARM_DESC(acphy_ampdu,
+ 		 "AC-PHY A-MPDU: 1 = RX block ack sessions, 2 = TX (hardware AQM aggregation), 4 = wl's A-MPDU shm words, 8 = 64 MPDUs per aggregate, 16 = aggregate in bursts only, lone MPDUs non-aggregated, 32 = TX host flag, 64 = accept TX block ack sessions, 128 = A-MPDU header fields for session frames, 256 = ucode sequence numbers for session frames, 512 = A-MPDU status counts as rounds for rate control, 1024 = plain session frames (rate probes) visible to rate control as one-MPDU aggregates (default 0)");
+ 
++/* 9j0: AP power save trial hook, see xmit.h */
++unsigned int b43_modparam_acphy_psfix;
++module_param_named(acphy_psfix, b43_modparam_acphy_psfix, uint, 0444);
++MODULE_PARM_DESC(acphy_psfix,
++		 "AC AP power save: 1 = PSFIX log lines, 2 = hardware PMQ (DISCPMQ clear, TX filtered status, ignore-PMQ bit), 4 = AP_LINK_PS from the PMQ, 8 = an AMT entry per station, 16 = hold PMQ entries while a station dozes (4, 8, 16 imply 2) (default 0)");
++
++unsigned int b43_modparam_acphy_psamt = 0x8004;
++module_param_named(acphy_psamt, b43_modparam_acphy_psamt, uint, 0444);
++MODULE_PARM_DESC(acphy_psamt,
++		 "AC AP power save: AMT attribute of a station's entry with acphy_psfix bit 8 (0x8000 valid, 0x8 A1, 0x4 A2, 0x2 A3; default 0x8004)");
++
++#define B43_AC_PSFIX_LOGS	160
++static atomic_t b43_ac_psfix_logn = ATOMIC_INIT(0);
++
++/* The PSFIX lines are capped per module load; state changes log uncapped */
++bool b43_ac_psfix_log(void)
++{
++	return atomic_inc_return(&b43_ac_psfix_logn) <= B43_AC_PSFIX_LOGS;
++}
++
+ #define B43_AC_AMPDU_DUMPS	8
+ static atomic_t b43_ac_ampdu_rxdumps = ATOMIC_INIT(0);
+ static atomic_t b43_ac_ampdu_rxn = ATOMIC_INIT(0);
+@@ -1006,6 +1026,15 @@
+ 		mac_ctl |= B43_TXH_AC_MAC_HWSEQ;
+ 	if (info->flags & IEEE80211_TX_CTL_FIRST_FRAGMENT)
+ 		mac_ctl |= B43_TXH_AC_MAC_STMSDU;
++	/*
++	 * 9j0: a PS-Poll or U-APSD response and the first frame after a
++	 * wake-up go out even if the PMQ still holds the station as dozing
++	 * (ucode 907 @0x03D1 -> L232, wl 0x11b490..0x11b4c0).
++	 */
++	if (b43_ac_psfix(dev, B43_AC_PSFIX_PMQ) &&
++	    (info->flags & (IEEE80211_TX_CTL_NO_PS_BUFFER |
++			    IEEE80211_TX_CTL_CLEAR_PS_FILT)))
++		mac_ctl |= B43_TXH_AC_MAC_IPMQ;
+ 	txhdr->mac_ctl_lo = cpu_to_le16(mac_ctl);
+ 	/* Single rate entry; 0x0004 when the primary rate is VHT (0x11c5c0) */
+ 	txhdr->mac_ctl_hi = cpu_to_le16(B43_TXH_AC_MACH_NORATESEL |
+@@ -1516,6 +1545,52 @@
+ 	return (s8) tmp;
+ }
+ 
++/*
++ * 9j0: acphy_psfix, the station power save frames of an AP on core rev
++ * >= 40. ucode 907 hands them up like any other frame to our address: a
++ * PS-Poll is acked and passed (L843 @0x0F1B -> L501 @0x090A, no KEEP_CTL
++ * needed), a null or QoS null data frame takes the data path (L749
++ * @0x0D33: 28 bytes including the FCS is exactly a null frame), and the
++ * PM bit is bit 12 of the frame control the ucode reads at [0x03,off1].
++ * Bit 1 logs them with their PM bit, mac80211's only input for the
++ * station's state without AP_LINK_PS. With bit 4 (AP_LINK_PS) mac80211
++ * leaves PS-Poll and U-APSD trigger frames to the driver
++ * (ieee80211_rx_h_uapsd_and_pspoll), so they are reported here the way
++ * mac80211 itself would: ieee80211_sta_pspoll for a PS-Poll,
++ * ieee80211_sta_uapsd_trigger for a QoS data or QoS null frame with the
++ * PM bit set and no more fragments.
++ */
++static void b43_ac_psfix_rx(struct b43_wldev *dev, struct sk_buff *skb)
++{
++	struct b43_wl *wl = dev->wl;
++	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
++	__le16 fc = hdr->frame_control;
++	struct ieee80211_sta *sta;
++	bool pspoll = ieee80211_is_pspoll(fc);
++
++	/* addr2 of a PS-Poll (its TA) ends at byte 16 */
++	if (skb->len < 16 || !wl->vif || !b43_is_mode(wl, NL80211_IFTYPE_AP))
++		return;
++	if (!b43_ac_psfix(dev, B43_AC_PSFIX_LINKPS))
++		return;
++	if (!pspoll &&
++	    (!ieee80211_is_data_qos(fc) || !ieee80211_has_pm(fc) ||
++	     ieee80211_has_morefrags(fc) || skb->len < ieee80211_hdrlen(fc)))
++		return;
++
++	rcu_read_lock();
++	sta = ieee80211_find_sta(wl->vif, hdr->addr2);
++	if (sta) {
++		local_bh_disable();
++		if (pspoll)
++			ieee80211_sta_pspoll(sta);
++		else
++			ieee80211_sta_uapsd_trigger(sta, ieee80211_get_tid(hdr));
++		local_bh_enable();
++	}
++	rcu_read_unlock();
++}
++
+ void b43_rx(struct b43_wldev *dev, struct sk_buff *skb, const void *_rxhdr)
+ {
+ 	struct ieee80211_rx_status status;
+@@ -1853,6 +1928,10 @@
+ 		goto drop;
+ 	}
+ 
++	if (b43_modparam_acphy_psfix && dev->dev->core_rev >= 40 &&
++	    !(status.flag & (RX_FLAG_FAILED_FCS_CRC | RX_FLAG_FAILED_PLCP_CRC)))
++		b43_ac_psfix_rx(dev, skb);
++
+ 	memcpy(IEEE80211_SKB_RXCB(skb), &status, sizeof(status));
+ 	ieee80211_rx_ni(dev->wl->hw, skb);
+ 
+@@ -1965,6 +2044,20 @@
+ 	retry_limit = report->status.rates[0].count;
+ 	ieee80211_tx_info_clear_status(report);
+ 
++	/*
++	 * 9j0: ucode 907 did not send the frame because the PMQ holds its
++	 * station as dozing (suppress reason 1, L247 @0x0409). mac80211
++	 * requeues a filtered frame into the station's power save buffer
++	 * (ieee80211_handle_filtered_frame), as wl's
++	 * wlc_apps_suppr_frame_enq 0x152b24 does.
++	 */
++	if (b43_ac_psfix(dev, B43_AC_PSFIX_PMQ) && b43_txhdr_is_ac(dev) &&
++	    !status->acked && status->supp_reason == B43_TXST40_SUPR_PMQ) {
++		report->flags |= IEEE80211_TX_STAT_TX_FILTERED;
++		report->status.rates[0].count = 0;
++		return false;
++	}
++
+ 	if (status->acked) {
+ 		/* The frame was ACKed. */
+ 		report->flags |= IEEE80211_TX_STAT_ACK;
+--- a/drivers/net/wireless/broadcom/b43/xmit.h
++++ b/drivers/net/wireless/broadcom/b43/xmit.h
+@@ -242,6 +242,10 @@
+ 						* (_wlc_sendampdu_aqm 0xde4c set, 0xdd38
+ 						* clear; wlc_txh_get_isAMPDU 0x2cdc) */
+ #define B43_TXH_AC_MAC_ACK		0x0080 /* Unicast, ACK expected (0x11b4dc..0x11b530) */
++#define B43_TXH_AC_MAC_IPMQ		0x0200 /* 9j0: ignore the PMQ, send to a dozing station
++						* (wl: beacons and PS-Poll / APSD responses,
++						* 0x11b490..0x11b4c0; ucode 907 @0x03D1 skips
++						* the suppression L247 with it set) */
+ #define B43_TXH_AC_MAC_HWSEQ		0x0800 /* ucode assigns the sequence number (0x11b688..0x11b69c) */
+ #define B43_TXH_AC_MAC_STMSDU		0x4000 /* Fragment number 0 (0x11b4c4..0x11b4d8) */
+ /*
+@@ -412,6 +416,70 @@
+ bool b43_ac_ampdu_same_burst(struct sk_buff *skb, struct sk_buff *next);
+ 
+ /*
++ * 9j0: acphy_psfix (bitmask, default 0), AP power save on core rev >= 40.
++ * 1 = "PSFIX" log lines for mac80211's view (sta_notify sleep/awake,
++ *     set_tim, PS-Poll / null data frames received with their PM bit);
++ * 2 = the hardware power management queue (PMQ): MACCTL DISCPMQ cleared
++ *     for an AP as wl does, B43_IRQ_PMQ drained and logged, a frame the
++ *     ucode suppressed for a dozing station (reason 1) reported as
++ *     IEEE80211_TX_STAT_TX_FILTERED, and IEEE80211_TX_CTL_NO_PS_BUFFER /
++ *     CLEAR_PS_FILT frames sent with the header's ignore-PMQ bit;
++ * 4 = AP_LINK_PS: the PMQ entries drive ieee80211_sta_ps_transition and
++ *     b43_rx hands PS-Poll and U-APSD trigger frames to mac80211 itself
++ *     (wl's model: wlc_bmac_processpmq 0x12180 -> wlc_apps_process_ps_switch
++ *     0x11fa0). Implies 2.
++ */
++#define B43_AC_PSFIX_LOG	0x1
++#define B43_AC_PSFIX_PMQ	0x2
++#define B43_AC_PSFIX_LINKPS	0x4
++/*
++ * 8 = an address match table (AMT) entry per associated station
++ *     (b43_op_sta_add / b43_op_sta_remove, indices 0..61; 62 and 63 are the
++ *     BSSID and our MAC from 99c), attribute acphy_psamt (default 0x8004 =
++ *     valid | match A2, the entry wl gives a station's hardware key:
++ *     ucode 907 @0x0AA8..0x0AAE turns an A2 match index into a key slot).
++ *     ucode 907 looks a received frame's A2 up (@0x0A34..0x0A38) and queues
++ *     a PMQ entry for every frame while the lookup says "not found"
++ *     (@0x0C40), and its TX suppression (@0x03D4..0x03D6) is keyed on the
++ *     lookup result too; without an entry no frame was ever suppressed
++ *     (2026-10-07 16:28 runs). Implies 2.
++ */
++#define B43_AC_PSFIX_AMT	0x8
++/*
++ * 16 = hold the PMQ entries while a station dozes (stage 3, after the
++ *     2026-10-07 17:28 runs with bit 8: still one PMQ entry per received
++ *     frame and no suppression). The lookup the ucode makes for every
++ *     received frame (@0x0A34..0x0A38, command 4 / pattern type 0x13 on
++ *     the PMQ registers spr1F0..spr1F7) and the one its TX path relies on
++ *     (@0x03D4..0x03D6) search the PMQ's own entries, not the AMT: an
++ *     entry answers "found" only while it is in the queue, and b43 deleted
++ *     every entry right after reading it (as wl does only once its data
++ *     FIFO drained: wlc_bmac_process_ps_switch 0x1210c writes the delete
++ *     for ps_on < 0, and wlc_apps_process_ps_switch 0x120e4..0x120f8 makes
++ *     ps_on negative only when wlc byte 0x384 bit 3, the "PS pending"
++ *     state, is clear). With the entries deleted the next frame is "not
++ *     found" again (@0x0C40 -> L685 queues it) and the TX path never sees
++ *     a dozing station. This bit deletes the processed entries only when
++ *     no station is dozing (per the entries themselves), on a deauth
++ *     entry, or when the queue overflows. Implies 2.
++ */
++#define B43_AC_PSFIX_HOLD	0x10
++extern unsigned int b43_modparam_acphy_psfix;
++extern unsigned int b43_modparam_acphy_psamt;
++bool b43_ac_psfix_log(void);
++
++static inline bool b43_ac_psfix(struct b43_wldev *dev, unsigned int bits)
++{
++	if (bits & (B43_AC_PSFIX_LINKPS | B43_AC_PSFIX_AMT | B43_AC_PSFIX_HOLD))
++		bits |= B43_AC_PSFIX_PMQ;
++	return (b43_modparam_acphy_psfix & bits) == bits &&
++	       dev->dev->core_rev >= 40;
++}
++
++/* ucode 907 TX status suppress reason (s1 bits 4..7): PMQ, L247 @0x0409 */
++#define B43_TXST40_SUPR_PMQ	1
++
++/*
+  * 9g0: A-MPDU TX limits as wl's AQM path writes them into the header tail
+  * (_wlc_sendampdu_aqm 0xde84..0xdec0). Max MPDUs per aggregate: wl's
+  * tunables for core rev > 39 are 32, 48 or 64 (wlc_ampdu_tx_attach
+@@ -436,6 +504,7 @@
+  */
+ struct b43_ac_sta {
+ 	u8 ampdu_wsize[IEEE80211_NUM_TIDS];
++	u8 amt_idx;	/* 9j0: AMT entry + 1, 0 = none (acphy_psfix bit 8) */
+ };
+ 
+ /*
