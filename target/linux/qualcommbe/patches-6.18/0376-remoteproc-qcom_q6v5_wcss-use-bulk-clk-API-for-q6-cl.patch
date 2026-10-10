@@ -1,0 +1,181 @@
+From 95236527db54b988f1c24bfc3fdaa04a4463c6f5 Mon Sep 17 00:00:00 2001
+From: Alexandru Gagniuc <mr.nuke.me@gmail.com>
+Date: Fri, 5 Dec 2025 19:15:59 -0600
+Subject: [PATCH] remoteproc: qcom_q6v5_wcss: use bulk clk API for q6 clocks
+
+Five of the clocks on QCS404 are consistently enabled and disabled
+together. Use the bulk clock API to get and enable them. They are
+enabled after the Q6 reset is deasserted, implying they are required
+by the Q6. Store them in q6_clks.
+
+Noye: I would like someone to test this to make sure we don't hit
+undocumented clock interdependencies.
+
+Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
+---
+ drivers/remoteproc/qcom_q6v5_wcss.c | 99 ++++++++---------------------
+ 1 file changed, 28 insertions(+), 71 deletions(-)
+
+--- a/drivers/remoteproc/qcom_q6v5_wcss.c
++++ b/drivers/remoteproc/qcom_q6v5_wcss.c
+@@ -125,14 +125,9 @@ struct q6v5_wcss {
+ 	u32 halt_nc;
+ 
+ 	struct clk *xo;
+-	struct clk *ahbfabric_cbcr_clk;
+ 	struct clk *gcc_abhs_cbcr;
+ 	struct clk *gcc_axim_cbcr;
+-	struct clk *lcc_csr_cbcr;
+ 	struct clk *ahbs_cbcr;
+-	struct clk *tcm_slave_cbcr;
+-	struct clk *qdsp6ss_abhm_cbcr;
+-	struct clk *qdsp6ss_axim_cbcr;
+ 	struct clk *lcc_bcr_sleep;
+ 	struct clk_bulk_data *clks;
+ 	int num_clks;
+@@ -412,35 +407,16 @@ static int q6v5_wcss_qcs404_power_on(str
+ 	/* Remove reset to the WCNSS QDSP6SS */
+ 	reset_control_deassert(wcss->wcss_q6_reset);
+ 
+-	/* Enable Q6SSTOP_AHBFABRIC_CBCR clock */
+-	ret = clk_prepare_enable(wcss->ahbfabric_cbcr_clk);
+-	if (ret)
++	ret = clk_bulk_prepare_enable(wcss->num_q6_clks, wcss->q6_clks);
++	if (ret) {
++		dev_err(wcss->dev, "failed to enable q6 clocks, err=%d\n", ret);
+ 		goto disable_gcc_abhs_cbcr_clk;
+-
+-	/* Enable the LCCCSR CBC clock, Q6SSTOP_Q6SSTOP_LCC_CSR_CBCR clock */
+-	ret = clk_prepare_enable(wcss->lcc_csr_cbcr);
+-	if (ret)
+-		goto disable_ahbfabric_cbcr_clk;
++	};
+ 
+ 	/* Enable the Q6AHBS CBC, Q6SSTOP_Q6SS_AHBS_CBCR clock */
+ 	ret = clk_prepare_enable(wcss->ahbs_cbcr);
+ 	if (ret)
+-		goto disable_csr_cbcr_clk;
+-
+-	/* Enable the TCM slave CBC, Q6SSTOP_Q6SS_TCM_SLAVE_CBCR clock */
+-	ret = clk_prepare_enable(wcss->tcm_slave_cbcr);
+-	if (ret)
+-		goto disable_ahbs_cbcr_clk;
+-
+-	/* Enable the Q6SS AHB master CBC, Q6SSTOP_Q6SS_AHBM_CBCR clock */
+-	ret = clk_prepare_enable(wcss->qdsp6ss_abhm_cbcr);
+-	if (ret)
+-		goto disable_tcm_slave_cbcr_clk;
+-
+-	/* Enable the Q6SS AXI master CBC, Q6SSTOP_Q6SS_AXIM_CBCR clock */
+-	ret = clk_prepare_enable(wcss->qdsp6ss_axim_cbcr);
+-	if (ret)
+-		goto disable_abhm_cbcr_clk;
++		goto disable_q6_clks;
+ 
+ 	/* Enable the Q6SS XO CBC */
+ 	val = readl(wcss->reg_base + Q6SS_XO_CBCR);
+@@ -523,17 +499,9 @@ disable_xo_cbcr_clk:
+ 	val = readl(wcss->reg_base + Q6SS_XO_CBCR);
+ 	val &= ~Q6SS_CLK_ENABLE;
+ 	writel(val, wcss->reg_base + Q6SS_XO_CBCR);
+-	clk_disable_unprepare(wcss->qdsp6ss_axim_cbcr);
+-disable_abhm_cbcr_clk:
+-	clk_disable_unprepare(wcss->qdsp6ss_abhm_cbcr);
+-disable_tcm_slave_cbcr_clk:
+-	clk_disable_unprepare(wcss->tcm_slave_cbcr);
+-disable_ahbs_cbcr_clk:
+ 	clk_disable_unprepare(wcss->ahbs_cbcr);
+-disable_csr_cbcr_clk:
+-	clk_disable_unprepare(wcss->lcc_csr_cbcr);
+-disable_ahbfabric_cbcr_clk:
+-	clk_disable_unprepare(wcss->ahbfabric_cbcr_clk);
++disable_q6_clks:
++	clk_bulk_disable_unprepare(wcss->num_q6_clks, wcss->q6_clks);
+ disable_gcc_abhs_cbcr_clk:
+ 	clk_disable_unprepare(wcss->gcc_abhs_cbcr);
+ 
+@@ -651,11 +619,7 @@ static int q6v5_qcs404_wcss_shutdown(str
+ 	val &= ~Q6SS_BHS_ON;
+ 	writel(val, wcss->reg_base + Q6SS_PWR_CTL_REG);
+ 
+-	clk_disable_unprepare(wcss->ahbfabric_cbcr_clk);
+-	clk_disable_unprepare(wcss->lcc_csr_cbcr);
+-	clk_disable_unprepare(wcss->tcm_slave_cbcr);
+-	clk_disable_unprepare(wcss->qdsp6ss_abhm_cbcr);
+-	clk_disable_unprepare(wcss->qdsp6ss_axim_cbcr);
++	clk_bulk_disable_unprepare(wcss->num_q6_clks, wcss->q6_clks);
+ 
+ 	val = readl(wcss->reg_base + Q6SS_SLEEP_CBCR);
+ 	val &= ~BIT(0);
+@@ -1085,6 +1049,20 @@ static int q6v5_alloc_memory_region(stru
+ 
+ static int q6v5_wcss_init_clock(struct q6v5_wcss *wcss)
+ {
++	const char *q6_clks[] = { "lcc_ahbfabric_cbc", "tcsr_lcc_cbc",
++				  "lcc_tcm_slave_cbc", "lcc_abhm_cbc",
++				  "lcc_axim_cbc" };
++	int ret, i;
++
++	wcss->num_q6_clks = ARRAY_SIZE(q6_clks);
++	wcss->q6_clks = devm_kcalloc(wcss->dev, wcss->num_q6_clks,
++				       sizeof(*wcss->q6_clks), GFP_KERNEL);
++	if (!wcss->q6_clks)
++		  return -ENOMEM;
++
++	for (i = 0; i < wcss->num_q6_clks; i++)
++		wcss->q6_clks[i].id = q6_clks[i];
++
+ 	wcss->xo = devm_clk_get(wcss->dev, "xo");
+ 	if (IS_ERR(wcss->xo))
+ 		return dev_err_probe(wcss->dev, PTR_ERR(wcss->xo),
+@@ -1100,44 +1078,23 @@ static int q6v5_wcss_init_clock(struct q
+ 		return dev_err_probe(wcss->dev, PTR_ERR(wcss->gcc_axim_cbcr),
+ 				     "failed to get gcc axim clock\n");
+ 
+-	wcss->ahbfabric_cbcr_clk = devm_clk_get(wcss->dev,
+-						"lcc_ahbfabric_cbc");
+-	if (IS_ERR(wcss->ahbfabric_cbcr_clk))
+-		return dev_err_probe(wcss->dev, PTR_ERR(wcss->ahbfabric_cbcr_clk),
+-				     "failed to get ahbfabric clock\n");
+-
+-	wcss->lcc_csr_cbcr = devm_clk_get(wcss->dev, "tcsr_lcc_cbc");
+-	if (IS_ERR(wcss->lcc_csr_cbcr))
+-		return dev_err_probe(wcss->dev, PTR_ERR(wcss->lcc_csr_cbcr),
+-				     "failed to get csr cbcr clk\n");
+-
+ 	wcss->ahbs_cbcr = devm_clk_get(wcss->dev,
+ 				       "lcc_abhs_cbc");
+ 	if (IS_ERR(wcss->ahbs_cbcr))
+ 		return dev_err_probe(wcss->dev, PTR_ERR(wcss->ahbs_cbcr),
+ 				     "failed to get ahbs_cbcr clk\n");
+ 
+-	wcss->tcm_slave_cbcr = devm_clk_get(wcss->dev,
+-					    "lcc_tcm_slave_cbc");
+-	if (IS_ERR(wcss->tcm_slave_cbcr))
+-		return dev_err_probe(wcss->dev, PTR_ERR(wcss->tcm_slave_cbcr),
+-				     "failed to get tcm cbcr clk\n");
+-
+-	wcss->qdsp6ss_abhm_cbcr = devm_clk_get(wcss->dev, "lcc_abhm_cbc");
+-	if (IS_ERR(wcss->qdsp6ss_abhm_cbcr))
+-		return dev_err_probe(wcss->dev, PTR_ERR(wcss->qdsp6ss_abhm_cbcr),
+-				     "failed to get abhm cbcr clk\n");
+-
+-	wcss->qdsp6ss_axim_cbcr = devm_clk_get(wcss->dev, "lcc_axim_cbc");
+-	if (IS_ERR(wcss->qdsp6ss_axim_cbcr))
+-		return dev_err_probe(wcss->dev, PTR_ERR(wcss->qdsp6ss_axim_cbcr),
+-				     "failed to get axim cbcr clk\n");
+-
+ 	wcss->lcc_bcr_sleep = devm_clk_get(wcss->dev, "lcc_bcr_sleep");
+ 	if (IS_ERR(wcss->lcc_bcr_sleep))
+ 		return dev_err_probe(wcss->dev, PTR_ERR(wcss->lcc_bcr_sleep),
+ 				     "failed to get bcr cbcr clk\n");
+ 
++	ret = devm_clk_bulk_get(wcss->dev, wcss->num_q6_clks, wcss->q6_clks);
++	if (ret < 0) {
++		return dev_err_probe(wcss->dev, ret,
++				     "failed to bulk get q6 clocks\n");
++	}
++
+ 	return 0;
+ }
+ 

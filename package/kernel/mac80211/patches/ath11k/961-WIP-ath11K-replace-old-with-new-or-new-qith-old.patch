@@ -1,0 +1,28 @@
+From ace39d8fbef84bd78fa96216b7541ab142edd1c8 Mon Sep 17 00:00:00 2001
+From: Alexandru Gagniuc <mr.nuke.me@gmail.com>
+Date: Sat, 29 Nov 2025 11:09:24 -0600
+Subject: [PATCH] [WIP] ath11K: replace old with new or new qith old
+
+---
+ drivers/net/wireless/ath/ath11k/core.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/ath/ath11k/core.c
++++ b/drivers/net/wireless/ath/ath11k/core.c
+@@ -92,6 +92,8 @@ static struct ath11k_hw_params ath11k_hw
+ 		.coldboot_cal_ftm = true,
+ 
+ 		.fw_mem_mode = 0,
++		.num_vdevs = 16 + 1,
++		.num_peers = 512,
+ 		.supports_suspend = false,
+ 		.hal_desc_sz = sizeof(struct hal_rx_desc_ipq8074),
+ 
+@@ -115,7 +117,6 @@ static struct ath11k_hw_params ath11k_hw
+ 		.fixed_fw_mem = false,
+ 		.support_off_channel_tx = false,
+ 
+-		.num_vdevs_peers = ath11k_vdevs_peers,
+ 	},
+ 	{
+ 		.hw_rev = ATH11K_HW_IPQ8074,

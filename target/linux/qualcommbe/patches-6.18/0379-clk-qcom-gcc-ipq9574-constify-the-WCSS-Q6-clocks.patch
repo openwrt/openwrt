@@ -1,0 +1,62 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Patrick Lawler <patricktlawler@gmail.com>
+Date: Tue, 29 Sep 2026 17:20:30 -0400
+Subject: [PATCH] clk: qcom: gcc-ipq9574: constify the WCSS/Q6 clocks
+
+Make the clk_init_data of gcc_wcss_ahb_s_clk, gcc_wcss_axi_m_clk and
+gcc_q6_axim2_clk const, format their parent_hws like the rest of the
+driver and drop a stray blank line, as in the version tested on the
+TP-Link Archer BE550.
+
+Signed-off-by: Patrick Lawler <patricktlawler@gmail.com>
+---
+--- a/drivers/clk/qcom/gcc-ipq9574.c
++++ b/drivers/clk/qcom/gcc-ipq9574.c
+@@ -2815,16 +2815,16 @@ static struct clk_branch gcc_wcss_acmt_c
+ 	},
+ };
+ 
+-
+ static struct clk_branch gcc_wcss_ahb_s_clk = {
+ 	.halt_reg = 0x25060,
+ 	.clkr = {
+ 		.enable_reg = 0x25060,
+ 		.enable_mask = BIT(0),
+-		.hw.init = &(struct clk_init_data) {
++		.hw.init = &(const struct clk_init_data) {
+ 			.name = "gcc_wcss_ahb_s_clk",
+ 			.parent_hws = (const struct clk_hw *[]) {
+-					&wcss_ahb_clk_src.clkr.hw },
++				&wcss_ahb_clk_src.clkr.hw
++			},
+ 			.num_parents = 1,
+ 			.flags = CLK_SET_RATE_PARENT,
+ 			.ops = &clk_branch2_ops,
+@@ -2874,10 +2874,11 @@ static struct clk_branch gcc_wcss_axi_m_
+ 	.clkr = {
+ 		.enable_reg = 0x25064,
+ 		.enable_mask = BIT(0),
+-		.hw.init = &(struct clk_init_data) {
++		.hw.init = &(const struct clk_init_data) {
+ 			.name = "gcc_wcss_axi_m_clk",
+ 			.parent_hws = (const struct clk_hw *[]) {
+-					&wcss_axi_m_clk_src.clkr.hw },
++				&wcss_axi_m_clk_src.clkr.hw
++			},
+ 			.num_parents = 1,
+ 			.flags = CLK_SET_RATE_PARENT,
+ 			.ops = &clk_branch2_ops,
+@@ -3669,10 +3670,11 @@ static struct clk_branch gcc_q6_axim2_cl
+ 	.clkr = {
+ 		.enable_reg = 0x25010,
+ 		.enable_mask = BIT(0),
+-		.hw.init = &(struct clk_init_data) {
++		.hw.init = &(const struct clk_init_data) {
+ 			.name = "gcc_q6_axim2_clk",
+ 			.parent_hws = (const struct clk_hw *[]) {
+-					&q6_axim2_clk_src.clkr.hw },
++				&q6_axim2_clk_src.clkr.hw
++			},
+ 			.num_parents = 1,
+ 			.flags = CLK_SET_RATE_PARENT,
+ 			.ops = &clk_branch2_ops,

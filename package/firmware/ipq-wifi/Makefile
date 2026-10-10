@@ -2,13 +2,13 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/version.mk
 
 PKG_NAME:=ipq-wifi
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/firmware/qca-wireless.git
-PKG_SOURCE_DATE:=2026-10-01
-PKG_SOURCE_VERSION:=6a0f508b9ce3d7b6abf4127f206315ee6c9e1942
-PKG_MIRROR_HASH:=72c12d05177b55a178e1cb73fed5bd823ed9653983ba1ef96f9aecc377a573f9
+PKG_SOURCE_DATE:=2026-10-02
+PKG_SOURCE_VERSION:=586e2ebcd8665acef3a3cdbc2004512c7f4443ef
+PKG_MIRROR_HASH:=190aadcfce8ca037b1849cebf2c1c8c90a087a111d33583cb87e5cdd46ae828b
 PKG_FLAGS:=nonshared
 
 include $(INCLUDE_DIR)/package.mk
@@ -92,6 +92,7 @@ ALLWIFIBOARDS:= \
 	spectrum_sax1v1k \
 	tcl_linkhub-hh500v \
 	tplink_archer-ax55-v1 \
+	tplink_archer-be550-v1 \
 	tplink_archer-c59-v1 \
 	tplink_archer-c6-v2 \
 	tplink_archer-c60-v1 \
@@ -176,6 +177,8 @@ define ipq-wifi-install-one
     $(call ipq-wifi-install-ath11-one-to,$(1),$(2),IPQ6018/hw1.0),\
   $(if $(filter $(suffix $(1)),.IPQ8074 .ipq8074),\
     $(call ipq-wifi-install-ath11-one-to,$(1),$(2),IPQ8074/hw2.0),\
+  $(if $(filter $(suffix $(1)),.IPQ9574 .ipq9574),\
+    $(call ipq-wifi-install-ath11-one-to,$(1),$(2),IPQ9574/hw1.0),\
   $(if $(filter $(suffix $(1)),.QCN6122 .qcn6122),\
     $(call ipq-wifi-install-ath11-one-to,$(1),$(2),QCN6122/hw1.0),\
   $(if $(filter $(suffix $(1)),.QCN9074 .qcn9074),\
@@ -183,7 +186,7 @@ define ipq-wifi-install-one
   $(if $(filter $(suffix $(1)),.QCN9274 .qcn9274),\
     $(call ipq-wifi-install-ath12-one-to,$(1),$(2),QCN9274/hw2.0),\
     $(error Unrecognized board-file suffix '$(suffix $(1))' for '$(1)')\
-  ))))))))))))
+  )))))))))))))
 
 endef
 # Blank line required at end of above define due to foreach context
@@ -298,6 +301,7 @@ $(eval $(call generate-ipq-wifi-package,skspruce_wia3300-20,SKSpruce WIA3300-20)
 $(eval $(call generate-ipq-wifi-package,spectrum_sax1v1k,Spectrum SAX1V1K))
 $(eval $(call generate-ipq-wifi-package,tcl_linkhub-hh500v,TCL LINKHUB HH500V))
 $(eval $(call generate-ipq-wifi-package,tplink_archer-ax55-v1,TP-Link Archer AX55 v1))
+$(eval $(call generate-ipq-wifi-package,tplink_archer-be550-v1,TP-Link Archer BE550 v1))
 $(eval $(call generate-ipq-wifi-package,tplink_archer-c59-v1,TP-Link Archer C59 V1))
 $(eval $(call generate-ipq-wifi-package,tplink_archer-c6-v2,TP-Link Archer C6 V2))
 $(eval $(call generate-ipq-wifi-package,tplink_archer-c60-v1,TP-Link Archer C60 V1))

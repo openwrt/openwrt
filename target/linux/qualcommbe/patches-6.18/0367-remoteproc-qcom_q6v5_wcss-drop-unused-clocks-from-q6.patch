@@ -1,0 +1,29 @@
+From c5aef7cd0efa768a2e36f258ad88e5f9512ac8ae Mon Sep 17 00:00:00 2001
+From: Alexandru Gagniuc <mr.nuke.me@gmail.com>
+Date: Fri, 5 Dec 2025 18:46:12 -0600
+Subject: [PATCH] remoteproc: qcom_q6v5_wcss: drop unused clocks from q6v5
+ struct
+
+Three of the clocks from struct q6v5_wcss are not populated, and are
+not used. Remove them.
+
+Fixes: 0af65b9b915e ("remoteproc: qcom: wcss: Add non pas wcss Q6 support for QCS404")
+
+Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
+---
+ drivers/remoteproc/qcom_q6v5_wcss.c | 3 ---
+ 1 file changed, 3 deletions(-)
+
+--- a/drivers/remoteproc/qcom_q6v5_wcss.c
++++ b/drivers/remoteproc/qcom_q6v5_wcss.c
+@@ -122,10 +122,7 @@ struct q6v5_wcss {
+ 	struct clk *ahbs_cbcr;
+ 	struct clk *tcm_slave_cbcr;
+ 	struct clk *qdsp6ss_abhm_cbcr;
+-	struct clk *qdsp6ss_sleep_cbcr;
+ 	struct clk *qdsp6ss_axim_cbcr;
+-	struct clk *qdsp6ss_xo_cbcr;
+-	struct clk *qdsp6ss_core_gfmux;
+ 	struct clk *lcc_bcr_sleep;
+ 	struct regulator *cx_supply;
+ 	struct qcom_sysmon *sysmon;
