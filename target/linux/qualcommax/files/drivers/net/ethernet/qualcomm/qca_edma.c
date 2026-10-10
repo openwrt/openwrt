@@ -143,8 +143,12 @@ static irqreturn_t edma_misc_irq_handle(int irq, void *ctx)
 	if (!val)
 		return IRQ_NONE;
 
+	/* Nothing here clears the status, so a condition that persists would
+	 * raise the interrupt again at once. Report it and mask it.
+	 */
+	regmap_write(priv->regmap, EDMA_REG_MISC_INT_MASK, 0);
 	priv->stats.misc_error++;
-	dev_warn_ratelimited(&priv->pdev->dev, "misc error %#x\n", val);
+	dev_warn(&priv->pdev->dev, "misc error %#x, masked\n", val);
 
 	return IRQ_HANDLED;
 }
