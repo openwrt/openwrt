@@ -225,7 +225,7 @@ static int rtldsa_93xx_setup(struct dsa_switch *ds)
 	priv->r->pie_init(priv);
 
 	if (priv->r->pie_rule_id_is_log_counter) {
-		err = rtldsa_tc_init(priv);
+		err = otto_tc_init(priv);
 		if (err)
 			return err;
 	}
@@ -1612,7 +1612,7 @@ const struct dsa_switch_ops rtldsa_93xx_switch_ops = {
 	.port_pre_bridge_flags	= rtldsa_port_pre_bridge_flags,
 	.port_bridge_flags	= rtldsa_port_bridge_flags,
 
-	.cls_flower_add		= rtldsa_cls_flower_add,
-	.cls_flower_del		= rtldsa_cls_flower_del,
-	.cls_flower_stats	= rtldsa_cls_flower_stats,
+	.cls_flower_add		= otto_tc_cls_flower_add,
+	.cls_flower_del		= otto_tc_cls_flower_del,
+	.cls_flower_stats	= otto_tc_cls_flower_stats,
 };

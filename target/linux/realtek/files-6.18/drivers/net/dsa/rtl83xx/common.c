@@ -559,7 +559,7 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 err_register_l3:
 	dsa_switch_shutdown(priv->ds);
 err_register_switch:
-	rtldsa_tc_cleanup(priv);
+	otto_tc_cleanup(priv);
 	destroy_workqueue(priv->wq);
 
 	return err;
@@ -585,7 +585,7 @@ static void rtl83xx_sw_remove(struct platform_device *pdev)
 
 	dsa_switch_shutdown(priv->ds);
 
-	rtldsa_tc_cleanup(priv);
+	otto_tc_cleanup(priv);
 
 	destroy_workqueue(priv->wq);
 
