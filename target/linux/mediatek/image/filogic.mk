@@ -2399,6 +2399,9 @@ define Device/jiorouter_ax6000-jidu6j01
   DEVICE_ALT3_VENDOR := JioRouter
   DEVICE_ALT3_MODEL := AX6000
   DEVICE_ALT3_VARIANT := JIDU6701
+  DEVICE_ALT4_VENDOR := JioRouter
+  DEVICE_ALT4_MODEL := AX6000
+  DEVICE_ALT4_VARIANT := JIDU6801
   DEVICE_DTS := mt7986a-jiorouter-ax6000-jidu6j01
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-usb3 kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware
