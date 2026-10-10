@@ -1,0 +1,52 @@
+From 82568cd3ec5853f437d2336d84e5aecbd39778ca Mon Sep 17 00:00:00 2001
+From: Timofey Maykov <itnitro@gmail.com>
+Date: Sat, 3 Oct 2026 12:33:56 +0000
+Subject: [PATCH] net: ethernet: qualcomm: ppe: fix port unwind in
+ ppe_port_mac_init()
+
+When edma_port_setup() fails, ppe_port_mac_init() decrements i and then
+destroys the EDMA ports with while (i >= 0), which leaves i at -1. The
+following while (i) in err_port_clk is true for -1 and calls
+ppe_port_clock_deinit() on port[-2], port[-3], and so on, walking before
+the start of the array. A failure on the first port does it too.
+
+Release the clocks of the port that failed explicitly, then unwind the
+earlier ports with a loop that stops at 0. Their EDMA ports and clocks
+are released together, so the err_port_clk loop no longer runs for them.
+
+Signed-off-by: Timofey Maykov <itnitro@gmail.com>
+---
+ drivers/net/ethernet/qualcomm/ppe/ppe_port.c | 14 ++++++++++----
+ 1 file changed, 10 insertions(+), 4 deletions(-)
+
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_port.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_port.c
+@@ -1397,7 +1397,6 @@ int ppe_port_mac_init(struct ppe_device
+ 		ret = edma_port_setup(&ppe_ports->port[i]);
+ 		if (ret) {
+ 			dev_err(ppe_dev->dev, "QCOM EDMA port setup failed\n");
+-			i--;
+ 			goto err_port_setup;
+ 		}
+ 
+@@ -1408,10 +1407,17 @@ int ppe_port_mac_init(struct ppe_device
+ 	return 0;
+ 
+ err_port_setup:
+-	/* Destroy edma ports created till now */
+-	while (i >= 0) {
+-		edma_port_destroy(&ppe_ports->port[i]);
++	/* Clocks of the port whose EDMA setup failed */
++	ppe_port_clock_deinit(&ppe_ports->port[i]);
++
++	/* Destroy the EDMA ports created so far and release their clocks.
++	 * Do not let 'i' go negative: the err_port_clk loop below tests
++	 * 'while (i)' and would otherwise walk before the ports array.
++	 */
++	while (i > 0) {
+ 		i--;
++		edma_port_destroy(&ppe_ports->port[i]);
++		ppe_port_clock_deinit(&ppe_ports->port[i]);
+ 	}
+ 
+ err_port_clk:

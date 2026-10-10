@@ -1,0 +1,53 @@
+From 8970202b6e998f8b59a6fa4a5a7210a4e2c4c431 Mon Sep 17 00:00:00 2001
+From: Timofey Maykov <itnitro@gmail.com>
+Date: Sat, 3 Oct 2026 12:34:09 +0000
+Subject: [PATCH] net: ethernet: qualcomm: ppe: edma rx: do not reuse a
+ freed skb
+
+edma_rx_reap() reads the skb of the next descriptor from its opaque field
+only on the delivery path and on the scatter path. When the source port of
+a frame is unknown, edma_rx_get_src_dev() fails, the skb is freed and the
+loop goes to next_rx_desc without updating next_skb. The next round then
+starts with skb = next_skb, which still points at the skb that was just
+freed, and unmaps and processes it a second time.
+
+Read next_skb once per round, right after the next descriptor is fetched.
+
+Signed-off-by: Timofey Maykov <itnitro@gmail.com>
+---
+ drivers/net/ethernet/qualcomm/ppe/edma_rx.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_rx.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_rx.c
+@@ -502,6 +502,11 @@ static int edma_rx_reap(struct edma_rxde
+ 		/* Get the next Rx descriptor. */
+ 		next_rxdesc_pri = EDMA_RXDESC_PRI_DESC(rxdesc_ring, cons_idx);
+ 
++		/* Take the next skb before any path that drops the frame and
++		 * jumps to next_rx_desc, it must not keep the freed one.
++		 */
++		next_skb = (struct sk_buff *)EDMA_RXDESC_OPAQUE_GET(next_rxdesc_pri);
++
+ 		/* Handle linear packets or initial segments first. */
+ 		if (likely(!(rxdesc_ring->head))) {
+ 			ndev = edma_rx_get_src_dev(rxdesc_stats, rxdesc_pri, skb);
+@@ -516,9 +521,6 @@ static int edma_rx_reap(struct edma_rxde
+ 
+ 			/* Handle linear packets. */
+ 			if (likely(!EDMA_RXDESC_MORE_BIT_GET(rxdesc_pri))) {
+-				next_skb =
+-					(struct sk_buff *)EDMA_RXDESC_OPAQUE_GET(next_rxdesc_pri);
+-
+ 				if (unlikely(!
+ 					     edma_rx_handle_linear_packets(rxdesc_ring,
+ 									   rxdesc_pri, skb)))
+@@ -528,8 +530,6 @@ static int edma_rx_reap(struct edma_rxde
+ 			}
+ 		}
+ 
+-		next_skb = (struct sk_buff *)EDMA_RXDESC_OPAQUE_GET(next_rxdesc_pri);
+-
+ 		/* Handle scatter frame processing for first/middle/last segments. */
+ 		page_mode ? edma_rx_handle_nr_frags(rxdesc_ring, rxdesc_pri, skb) :
+ 			edma_rx_handle_frag_list(rxdesc_ring, rxdesc_pri, skb);
