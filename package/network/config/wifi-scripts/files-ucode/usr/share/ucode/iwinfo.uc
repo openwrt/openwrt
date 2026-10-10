@@ -591,6 +591,38 @@ function scan_extension(ext, cell) {
 	}
 };
 
+const scan_done_cmds = [
+	nl80211.const.NL80211_CMD_NEW_SCAN_RESULTS,
+	nl80211.const.NL80211_CMD_SCAN_ABORTED
+];
+
+function clock_ms() {
+	let t = clock(true);
+	return t[0] * 1000 + t[1] / 1000000;
+}
+
+// The event socket stays subscribed for the life of the process and can hold
+// the results of an earlier scan. scan() reads nl80211.error() after the
+// trigger, so clear the timeout error of the drain.
+function scan_events_drain() {
+	while (nl80211.waitfor(scan_done_cmds, 0))
+		;
+	nl80211.error();
+}
+
+function scan_done_wait(dev, timeout_ms) {
+	let deadline = clock_ms() + timeout_ms;
+	let left;
+
+	while ((left = deadline - clock_ms()) > 0) {
+		let res = nl80211.waitfor(scan_done_cmds, left);
+		if (!res || res.msg?.dev == dev)
+			return res;
+	}
+
+	return null;
+}
+
 export function scan(dev) {
 	const rsn_cipher = [ 'NONE', 'WEP-40', 'TKIP', 'WRAP', 'CCMP', 'WEP-104', 'AES-OCB', 'CKIP', 'GCMP', 'GCMP-256', 'CCMP-256' ];
 	const ht_chan_offset = [ 'no secondary', 'above', '[reserved]', 'below' ];
@@ -604,6 +636,8 @@ export function scan(dev) {
 		scan_ssids: [ '' ],
 	};
 
+	scan_events_drain();
+
 	nl80211.request(nl80211.const.NL80211_CMD_TRIGGER_SCAN, 0, params);
 	let err = nl80211.error();
 	if (err) {
@@ -611,10 +645,7 @@ export function scan(dev) {
 		return null;
 	}
 
-	let res = nl80211.waitfor([
-		nl80211.const.NL80211_CMD_NEW_SCAN_RESULTS,
-		nl80211.const.NL80211_CMD_SCAN_ABORTED
-	], 5000);
+	let res = scan_done_wait(dev, 5000);
 
 	if (!res) {
 		warn("Netlink error while awaiting scan results on " + dev + ": " + nl80211.error() + "\n");
