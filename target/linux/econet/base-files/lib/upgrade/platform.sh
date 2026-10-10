@@ -13,7 +13,8 @@ platform_check_image() {
 	jiofiber,jcow414)
 		return 0
 		;;
-	zyxel,ex3301-t0)
+	zyxel,ex3301-t0|\
+	zyxel,wx3100-t0)
 		[ "$#" -eq 1 ] || return 1
 		[ "$(get_magic_long "$1")" = "73797375" ] || {
 			echo "Invalid image: expected a UBI sysupgrade archive"
@@ -47,7 +48,8 @@ platform_do_upgrade() {
 	dasan,h660gm-a-generic|\
 	jiofiber,jcow407|\
 	jiofiber,jcow414|\
-	zyxel,ex3301-t0)
+	zyxel,ex3301-t0|\
+	zyxel,wx3100-t0)
 		CI_KERNPART="tclinux_kernel"
 		nand_do_upgrade "$1"
 		;;
