@@ -1,0 +1,215 @@
+From 5311418bcc30b186fac1386974b33cd4d84fc4a6 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 9 Oct 2026 14:35:23 +0100
+Subject: [PATCH 2/2] mkhsfls: add tool for Herospeed RV1126 camera firmware
+
+The web interface of Herospeed and Longse RV1126 IP cameras accepts a
+.FLS container, which the firmware writes to the inactive A/B slot. It
+has a 24 byte header with SoC and sensor name, the file size and the
+entry count, followed by one 256 byte record per entry and the entry
+data. Add a tool that packs boot, system and the other entry types the
+firmware understands into such a container.
+
+The output is identical to the container of a stock RV1126 firmware
+rebuilt from its entries.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ CMakeLists.txt |   1 +
+ src/mkhsfls.c  | 180 +++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 181 insertions(+)
+ create mode 100644 src/mkhsfls.c
+
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -74,6 +74,7 @@ FW_UTIL(mkh3cimg "" "" "")
+ FW_UTIL(mkh3cvfs "" "" "")
+ FW_UTIL(mkheader_gemtek "" "" "${ZLIB_LIBRARIES}")
+ FW_UTIL(mkhilinkfw "" "" "${OPENSSL_CRYPTO_LIBRARIES}")
++FW_UTIL(mkhsfls "" "" "")
+ FW_UTIL(mkmerakifw src/sha1.c "" "")
+ FW_UTIL(mkmerakifw-old "" "" "")
+ FW_UTIL(mkmylofw "" "" "")
+--- /dev/null
++++ b/src/mkhsfls.c
+@@ -0,0 +1,180 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++/*
++ * mkhsfls - build the .FLS firmware container accepted by the web
++ * interface of Herospeed and Longse RV1126 IP cameras
++ */
++#include <errno.h>
++#include <getopt.h>
++#include <stdint.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++
++#define MAX_ENTRIES		32
++#define HDR_SIZE		0x18
++#define HDR_STR_LEN		8
++#define HDR_OFF_SENSOR		8
++#define HDR_OFF_DATA_LEN	16
++#define HDR_OFF_FILE_NUM	20
++#define ENTRY_SIZE		0x100
++#define ENTRY_NAME_LEN		128
++#define ENTRY_OFF_LEN		128
++#define ENTRY_OFF_OFFSET	132
++#define ENTRY_OFF_MAGIC		140
++#define ENTRY_MAGIC		0x12345
++
++struct entry {
++	char		*name;
++	uint8_t		*data;
++	size_t		len;
++};
++
++static void put_le32(uint8_t *buf, uint32_t val)
++{
++	buf[0] = val & 0xff;
++	buf[1] = (val >> 8) & 0xff;
++	buf[2] = (val >> 16) & 0xff;
++	buf[3] = val >> 24;
++}
++
++static int entry_read(struct entry *entry, char *spec)
++{
++	char *sep;
++	FILE *fp;
++	long len;
++
++	sep = strchr(spec, '=');
++	if (!sep || sep == spec || (size_t)(sep - spec) >= ENTRY_NAME_LEN) {
++		fprintf(stderr, "%s: expected <name>=<file>\n", spec);
++		return -1;
++	}
++	*sep = '\0';
++	entry->name = spec;
++
++	fp = fopen(sep + 1, "rb");
++	if (!fp) {
++		fprintf(stderr, "%s: %s\n", sep + 1, strerror(errno));
++		return -1;
++	}
++	if (fseek(fp, 0, SEEK_END) || (len = ftell(fp)) < 0 ||
++	    fseek(fp, 0, SEEK_SET)) {
++		fprintf(stderr, "%s: cannot determine size\n", sep + 1);
++		fclose(fp);
++		return -1;
++	}
++	entry->len = len;
++	entry->data = malloc(len ? len : 1);
++	if (!entry->data || fread(entry->data, 1, len, fp) != (size_t)len) {
++		fprintf(stderr, "%s: read failed\n", sep + 1);
++		fclose(fp);
++		return -1;
++	}
++	fclose(fp);
++	return 0;
++}
++
++static int fls_write(const char *path, const char *ic, const char *sensor,
++		     const struct entry *entries, int count)
++{
++	size_t offset = HDR_SIZE + (size_t)count * ENTRY_SIZE;
++	size_t total;
++	uint8_t *buf;
++	uint8_t *ent;
++	FILE *fp;
++	int i;
++
++	total = offset;
++	for (i = 0; i < count; i++)
++		total += entries[i].len;
++
++	buf = calloc(1, total);
++	if (!buf)
++		return -1;
++
++	strncpy((char *)buf, ic, HDR_STR_LEN - 1);
++	strncpy((char *)buf + HDR_OFF_SENSOR, sensor, HDR_STR_LEN - 1);
++	put_le32(buf + HDR_OFF_DATA_LEN, total);
++	put_le32(buf + HDR_OFF_FILE_NUM, count);
++
++	for (i = 0; i < count; i++) {
++		ent = buf + HDR_SIZE + (size_t)i * ENTRY_SIZE;
++		strcpy((char *)ent, entries[i].name);
++		put_le32(ent + ENTRY_OFF_LEN, entries[i].len);
++		put_le32(ent + ENTRY_OFF_OFFSET, offset);
++		put_le32(ent + ENTRY_OFF_MAGIC, ENTRY_MAGIC);
++		memcpy(buf + offset, entries[i].data, entries[i].len);
++		offset += entries[i].len;
++	}
++
++	fp = fopen(path, "wb");
++	if (!fp) {
++		fprintf(stderr, "%s: %s\n", path, strerror(errno));
++		free(buf);
++		return -1;
++	}
++	if (fwrite(buf, 1, total, fp) != total || fclose(fp)) {
++		fprintf(stderr, "%s: write failed\n", path);
++		free(buf);
++		return -1;
++	}
++	free(buf);
++	return 0;
++}
++
++static void usage(const char *progname)
++{
++	fprintf(stderr,
++		"Usage: %s -i <ic> -s <sensor> -o <output> "
++		"-e <name=file> [-e ...]\n"
++		"\n"
++		"Options:\n"
++		"  -i <string>    SoC name checked by the device, e.g. RV1126\n"
++		"  -s <string>    sensor name checked by the device, e.g. IMX415\n"
++		"  -e <name=file> entry: boot, system, uboot, param, var, update,\n"
++		"                 userdata or an absolute path of a file to write\n"
++		"  -o <file>      output file\n"
++		"  -h             show this help\n",
++		progname);
++}
++
++int main(int argc, char *argv[])
++{
++	struct entry entries[MAX_ENTRIES];
++	const char *out_path = NULL;
++	const char *sensor = NULL;
++	const char *ic = NULL;
++	int count = 0;
++	int opt;
++
++	while ((opt = getopt(argc, argv, "i:s:e:o:h")) != -1) {
++		switch (opt) {
++		case 'i':
++			ic = optarg;
++			break;
++		case 's':
++			sensor = optarg;
++			break;
++		case 'e':
++			if (count >= MAX_ENTRIES ||
++			    entry_read(&entries[count], optarg))
++				return EXIT_FAILURE;
++			count++;
++			break;
++		case 'o':
++			out_path = optarg;
++			break;
++		default:
++			usage(argv[0]);
++			return opt == 'h' ? EXIT_SUCCESS : EXIT_FAILURE;
++		}
++	}
++
++	if (!ic || !sensor || !out_path || !count ||
++	    strlen(ic) >= HDR_STR_LEN || strlen(sensor) >= HDR_STR_LEN) {
++		usage(argv[0]);
++		return EXIT_FAILURE;
++	}
++
++	return fls_write(out_path, ic, sensor, entries, count) ?
++	       EXIT_FAILURE : EXIT_SUCCESS;
++}

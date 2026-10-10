@@ -1,0 +1,346 @@
+From 9bac440102e7383d0508ef5f6c8a91c3217c4697 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 9 Oct 2026 14:34:01 +0100
+Subject: [PATCH 1/2] mkrkboot: add tool for Rockchip RV11xx boot images
+
+Rockchip's U-Boot on the RV11xx camera SoCs boots an Android boot image
+with a Rockchip resource image in the second stage slot, which carries
+the device tree as rk-kernel.dtb. Add a tool that builds both from a
+kernel image and a device tree, with optional extra resource entries.
+
+The boot image header is the Android v0 header including the SHA-1 id,
+and the resource image has the index table with a SHA-1 per entry. The
+output is identical to the boot image of a stock RV1126 firmware.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ CMakeLists.txt |   1 +
+ src/mkrkboot.c | 312 +++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 313 insertions(+)
+ create mode 100644 src/mkrkboot.c
+
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -81,6 +81,7 @@ FW_UTIL(mkplanexfw src/sha1.c "" "")
+ FW_UTIL(mkporayfw "" "" "")
+ FW_UTIL(mkqdimg src/sha1.c "" "")
+ FW_UTIL(mkrasimage "" --std=gnu99 "")
++FW_UTIL(mkrkboot src/sha1.c "" "")
+ FW_UTIL(mkrtn56uimg "" "" "${ZLIB_LIBRARIES}")
+ FW_UTIL(mksenaofw src/md5.c --std=gnu99 "")
+ FW_UTIL(mksercommfw "" "" "")
+--- /dev/null
++++ b/src/mkrkboot.c
+@@ -0,0 +1,312 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++/*
++ * mkrkboot - build the Android boot image booted by Rockchip's U-Boot
++ * together with the Rockchip resource image carrying the device tree
++ */
++#include <errno.h>
++#include <getopt.h>
++#include <stdint.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++
++#include "sha1.h"
++
++#define BLOCK_SIZE		512
++#define SHA1_LEN		20
++#define MAX_ENTRIES		16
++
++#define BOOT_MAGIC		"ANDROID!"
++#define BOOT_NAME_LEN		16
++#define BOOT_CMDLINE_LEN	512
++#define BOOT_ID_LEN		32
++#define BOOT_EXTRA_LEN		1024
++#define BOOT_OFF_KERNEL_SIZE	8
++#define BOOT_OFF_KERNEL_ADDR	12
++#define BOOT_OFF_SECOND_SIZE	24
++#define BOOT_OFF_SECOND_ADDR	28
++#define BOOT_OFF_TAGS_ADDR	32
++#define BOOT_OFF_PAGE_SIZE	36
++#define BOOT_OFF_NAME		48
++#define BOOT_OFF_CMDLINE	(BOOT_OFF_NAME + BOOT_NAME_LEN)
++#define BOOT_OFF_ID		(BOOT_OFF_CMDLINE + BOOT_CMDLINE_LEN)
++#define BOOT_HDR_SIZE		(BOOT_OFF_ID + BOOT_ID_LEN + BOOT_EXTRA_LEN)
++
++#define RES_MAGIC		"RSCE"
++#define RES_ENTRY_MAGIC		"ENTR"
++#define RES_PATH_LEN		220
++#define RES_HASH_LEN		32
++#define RES_OFF_HDR_BLOCKS	8
++#define RES_OFF_TABLE_BLOCK	9
++#define RES_OFF_ENTRY_BLOCKS	10
++#define RES_OFF_COUNT		12
++#define RES_OFF_PATH		4
++#define RES_OFF_HASH		(RES_OFF_PATH + RES_PATH_LEN)
++#define RES_OFF_HASH_SIZE	(RES_OFF_HASH + RES_HASH_LEN)
++#define RES_OFF_OFFSET		(RES_OFF_HASH_SIZE + 4)
++#define RES_OFF_SIZE		(RES_OFF_OFFSET + 4)
++
++struct blob {
++	uint8_t		*data;
++	size_t		len;
++};
++
++struct res_entry {
++	char		*path;
++	struct blob	blob;
++};
++
++static void put_le32(uint8_t *buf, uint32_t val)
++{
++	buf[0] = val & 0xff;
++	buf[1] = (val >> 8) & 0xff;
++	buf[2] = (val >> 16) & 0xff;
++	buf[3] = val >> 24;
++}
++
++static size_t round_up(size_t val, size_t align)
++{
++	return (val + align - 1) / align * align;
++}
++
++static int blob_read(const char *path, struct blob *blob)
++{
++	FILE *fp;
++	long len;
++
++	fp = fopen(path, "rb");
++	if (!fp) {
++		fprintf(stderr, "%s: %s\n", path, strerror(errno));
++		return -1;
++	}
++	if (fseek(fp, 0, SEEK_END) || (len = ftell(fp)) < 0 ||
++	    fseek(fp, 0, SEEK_SET)) {
++		fprintf(stderr, "%s: cannot determine size\n", path);
++		fclose(fp);
++		return -1;
++	}
++	blob->len = len;
++	blob->data = malloc(len ? len : 1);
++	if (!blob->data || fread(blob->data, 1, len, fp) != (size_t)len) {
++		fprintf(stderr, "%s: read failed\n", path);
++		fclose(fp);
++		return -1;
++	}
++	fclose(fp);
++	return 0;
++}
++
++static int blob_write(const char *path, const struct blob *blob)
++{
++	FILE *fp;
++
++	fp = fopen(path, "wb");
++	if (!fp) {
++		fprintf(stderr, "%s: %s\n", path, strerror(errno));
++		return -1;
++	}
++	if (fwrite(blob->data, 1, blob->len, fp) != blob->len ||
++	    fclose(fp)) {
++		fprintf(stderr, "%s: write failed\n", path);
++		return -1;
++	}
++	return 0;
++}
++
++static int res_build(struct res_entry *entries, int count,
++		     struct blob *out)
++{
++	size_t table = BLOCK_SIZE + (size_t)count * BLOCK_SIZE;
++	size_t offset;
++	size_t total;
++	uint8_t *ent;
++	int i;
++
++	total = table;
++	for (i = 0; i < count; i++)
++		total += round_up(entries[i].blob.len, BLOCK_SIZE);
++
++	out->data = calloc(1, total);
++	if (!out->data)
++		return -1;
++	out->len = total;
++
++	memcpy(out->data, RES_MAGIC, 4);
++	out->data[RES_OFF_HDR_BLOCKS] = 1;
++	out->data[RES_OFF_TABLE_BLOCK] = 1;
++	out->data[RES_OFF_ENTRY_BLOCKS] = 1;
++	put_le32(out->data + RES_OFF_COUNT, count);
++
++	offset = count + 1;
++	for (i = 0; i < count; i++) {
++		ent = out->data + BLOCK_SIZE + (size_t)i * BLOCK_SIZE;
++		memcpy(ent, RES_ENTRY_MAGIC, 4);
++		strncpy((char *)ent + RES_OFF_PATH, entries[i].path,
++			RES_PATH_LEN - 1);
++		sha1_csum(entries[i].blob.data, entries[i].blob.len,
++			  ent + RES_OFF_HASH);
++		put_le32(ent + RES_OFF_HASH_SIZE, SHA1_LEN);
++		put_le32(ent + RES_OFF_OFFSET, offset);
++		put_le32(ent + RES_OFF_SIZE, entries[i].blob.len);
++		memcpy(out->data + offset * BLOCK_SIZE, entries[i].blob.data,
++		       entries[i].blob.len);
++		offset += round_up(entries[i].blob.len, BLOCK_SIZE) /
++			  BLOCK_SIZE;
++	}
++	return 0;
++}
++
++static int boot_build(const struct blob *kernel, const struct blob *second,
++		      uint32_t kernel_addr, uint32_t second_addr,
++		      uint32_t tags_addr, const char *name,
++		      const char *cmdline, size_t page, struct blob *out)
++{
++	size_t kernel_pad = round_up(kernel->len, page);
++	size_t second_pad = round_up(second->len, page);
++	size_t hdr_pad = round_up(BOOT_HDR_SIZE, page);
++	uint8_t len_le[4];
++	sha1_context sha;
++	uint8_t *hdr;
++
++	out->len = hdr_pad + kernel_pad + second_pad;
++	out->data = calloc(1, out->len);
++	if (!out->data)
++		return -1;
++
++	hdr = out->data;
++	memcpy(hdr, BOOT_MAGIC, 8);
++	put_le32(hdr + BOOT_OFF_KERNEL_SIZE, kernel->len);
++	put_le32(hdr + BOOT_OFF_KERNEL_ADDR, kernel_addr);
++	put_le32(hdr + BOOT_OFF_SECOND_SIZE, second->len);
++	put_le32(hdr + BOOT_OFF_SECOND_ADDR, second_addr);
++	put_le32(hdr + BOOT_OFF_TAGS_ADDR, tags_addr);
++	put_le32(hdr + BOOT_OFF_PAGE_SIZE, page);
++	strncpy((char *)hdr + BOOT_OFF_NAME, name, BOOT_NAME_LEN - 1);
++	strncpy((char *)hdr + BOOT_OFF_CMDLINE, cmdline,
++		BOOT_CMDLINE_LEN - 1);
++
++	/* kernel, empty ramdisk and second stage, each followed by its size */
++	sha1_starts(&sha);
++	sha1_update(&sha, kernel->data, kernel->len);
++	put_le32(len_le, kernel->len);
++	sha1_update(&sha, len_le, 4);
++	put_le32(len_le, 0);
++	sha1_update(&sha, len_le, 4);
++	sha1_update(&sha, second->data, second->len);
++	put_le32(len_le, second->len);
++	sha1_update(&sha, len_le, 4);
++	sha1_finish(&sha, hdr + BOOT_OFF_ID);
++
++	memcpy(out->data + hdr_pad, kernel->data, kernel->len);
++	memcpy(out->data + hdr_pad + kernel_pad, second->data, second->len);
++	return 0;
++}
++
++static void usage(const char *progname)
++{
++	fprintf(stderr,
++		"Usage: %s -k <kernel> -d <dtb> -o <output> [options]\n"
++		"\n"
++		"Options:\n"
++		"  -k <file>      kernel image\n"
++		"  -d <file>      device tree, stored as rk-kernel.dtb\n"
++		"  -e <name=file> additional resource image entry\n"
++		"  -o <file>      output boot image\n"
++		"  -a <addr>      kernel load address\n"
++		"  -f <addr>      resource image load address\n"
++		"  -t <addr>      kernel tags address\n"
++		"  -c <string>    kernel command line\n"
++		"  -n <string>    image name\n"
++		"  -p <size>      page size (default 2048)\n"
++		"  -h             show this help\n",
++		progname);
++}
++
++int main(int argc, char *argv[])
++{
++	uint32_t kernel_addr = 0, second_addr = 0, tags_addr = 0;
++	struct res_entry entries[MAX_ENTRIES];
++	const char *cmdline = "", *name = "";
++	struct blob resource, kernel, boot;
++	const char *kernel_path = NULL;
++	const char *out_path = NULL;
++	const char *dtb_path = NULL;
++	size_t page = 2048;
++	int count = 1;
++	char *sep;
++	int opt;
++	int i;
++
++	while ((opt = getopt(argc, argv, "k:d:e:o:a:f:t:c:n:p:h")) != -1) {
++		switch (opt) {
++		case 'k':
++			kernel_path = optarg;
++			break;
++		case 'd':
++			dtb_path = optarg;
++			break;
++		case 'e':
++			sep = strchr(optarg, '=');
++			if (!sep || count >= MAX_ENTRIES) {
++				usage(argv[0]);
++				return EXIT_FAILURE;
++			}
++			*sep = '\0';
++			entries[count].path = optarg;
++			if (blob_read(sep + 1, &entries[count].blob))
++				return EXIT_FAILURE;
++			count++;
++			break;
++		case 'o':
++			out_path = optarg;
++			break;
++		case 'a':
++			kernel_addr = strtoul(optarg, NULL, 0);
++			break;
++		case 'f':
++			second_addr = strtoul(optarg, NULL, 0);
++			break;
++		case 't':
++			tags_addr = strtoul(optarg, NULL, 0);
++			break;
++		case 'c':
++			cmdline = optarg;
++			break;
++		case 'n':
++			name = optarg;
++			break;
++		case 'p':
++			page = strtoul(optarg, NULL, 0);
++			break;
++		default:
++			usage(argv[0]);
++			return opt == 'h' ? EXIT_SUCCESS : EXIT_FAILURE;
++		}
++	}
++
++	if (!kernel_path || !dtb_path || !out_path || !page) {
++		usage(argv[0]);
++		return EXIT_FAILURE;
++	}
++
++	entries[0].path = "rk-kernel.dtb";
++	if (blob_read(dtb_path, &entries[0].blob) ||
++	    blob_read(kernel_path, &kernel))
++		return EXIT_FAILURE;
++
++	for (i = 0; i < count; i++) {
++		if (strlen(entries[i].path) >= RES_PATH_LEN) {
++			fprintf(stderr, "%s: path too long\n", entries[i].path);
++			return EXIT_FAILURE;
++		}
++	}
++
++	if (res_build(entries, count, &resource) ||
++	    boot_build(&kernel, &resource, kernel_addr, second_addr,
++		       tags_addr, name, cmdline, page, &boot)) {
++		fprintf(stderr, "out of memory\n");
++		return EXIT_FAILURE;
++	}
++
++	return blob_write(out_path, &boot) ? EXIT_FAILURE : EXIT_SUCCESS;
++}

@@ -1,0 +1,197 @@
+From 126dfb7bc11e1cde1635d822b3847abb1e8cd369 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 9 Oct 2026 14:15:19 +0100
+Subject: [PATCH] phy: rockchip: inno-csidphy: add rv1126 support
+
+The RV1126 CSI D-PHY shares the lane control, THS-SETTLE and
+calibration register layout of the RK1808 one and has no power control
+register. Its two instances at 0xff4b0000 and 0xff4b8000 differ in the
+GRF control register they use, so select the GRF register table by the
+base address of the instance.
+
+The GRF additionally carries a clock inversion bit per instance and a
+bit that selects whether the camera interface receives the first or
+the second instance. Both are programmed when the PHY is powered on.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ .../phy/rockchip/phy-rockchip-inno-csidphy.c  | 84 ++++++++++++++++++-
+ 1 file changed, 81 insertions(+), 3 deletions(-)
+
+--- a/drivers/phy/rockchip/phy-rockchip-inno-csidphy.c
++++ b/drivers/phy/rockchip/phy-rockchip-inno-csidphy.c
+@@ -32,6 +32,10 @@
+ 
+ #define RK3588_CSIDPHY_GRF_CON0		0x0000
+ 
++#define RV1126_GRF_CSIPHY0_CON		0x10200
++#define RV1126_GRF_CSIPHY1_CON		0x10210
++#define RV1126_GRF_IOFUNC_CON3		0x1026c
++
+ /* PHY */
+ #define CSIDPHY_CTRL_LANE_ENABLE		0x00
+ #define CSIDPHY_CTRL_LANE_ENABLE_CK		BIT(6)
+@@ -64,10 +68,12 @@
+ #define RK3326_CSIDPHY_CLK_WR_THS_SETTLE	0x100
+ #define RK3368_CSIDPHY_CLK_WR_THS_SETTLE	0x100
+ #define RK3568_CSIDPHY_CLK_WR_THS_SETTLE	0x160
++#define RV1126_CSIDPHY_CLK_WR_THS_SETTLE	0x160
+ 
+ /* Calibration reception enable */
+ #define RK1808_CSIDPHY_CLK_CALIB_EN		0x168
+ #define RK3568_CSIDPHY_CLK_CALIB_EN		0x168
++#define RV1126_CSIDPHY_CLK_CALIB_EN		0x168
+ 
+ #define RESETS_MAX				2
+ 
+@@ -85,6 +91,9 @@ enum dphy_reg_id {
+ 	GRF_DPHY_CSIPHY_FORCERXMODE,
+ 	GRF_DPHY_CSIPHY_CLKLANE_EN,
+ 	GRF_DPHY_CSIPHY_DATALANE_EN,
++	/* rv1126 */
++	GRF_DPHY_CSIPHY_CLK_INV_SEL,
++	GRF_DPHY_CIF_SEL,
+ };
+ 
+ struct dphy_reg {
+@@ -125,6 +134,28 @@ static const struct dphy_reg rk3588_grf_
+ 	[GRF_DPHY_CSIPHY_CLKLANE_EN] = PHY_REG(RK3588_CSIDPHY_GRF_CON0, 1, 8),
+ };
+ 
++static const struct dphy_reg rv1126_grf_dphy0_regs[] = {
++	[GRF_DPHY_CSIPHY_FORCERXMODE] = PHY_REG(RV1126_GRF_CSIPHY0_CON, 4, 0),
++	[GRF_DPHY_CSIPHY_DATALANE_EN] = PHY_REG(RV1126_GRF_CSIPHY0_CON, 4, 4),
++	[GRF_DPHY_CSIPHY_CLKLANE_EN] = PHY_REG(RV1126_GRF_CSIPHY0_CON, 1, 8),
++	[GRF_DPHY_CSIPHY_CLK_INV_SEL] = PHY_REG(RV1126_GRF_CSIPHY0_CON, 1, 9),
++	[GRF_DPHY_CIF_SEL] = PHY_REG(RV1126_GRF_IOFUNC_CON3, 1, 9),
++};
++
++static const struct dphy_reg rv1126_grf_dphy1_regs[] = {
++	[GRF_DPHY_CSIPHY_FORCERXMODE] = PHY_REG(RV1126_GRF_CSIPHY1_CON, 4, 0),
++	[GRF_DPHY_CSIPHY_DATALANE_EN] = PHY_REG(RV1126_GRF_CSIPHY1_CON, 4, 4),
++	[GRF_DPHY_CSIPHY_CLKLANE_EN] = PHY_REG(RV1126_GRF_CSIPHY1_CON, 1, 8),
++	[GRF_DPHY_CSIPHY_CLK_INV_SEL] = PHY_REG(RV1126_GRF_CSIPHY1_CON, 1, 9),
++	[GRF_DPHY_CIF_SEL] = PHY_REG(RV1126_GRF_IOFUNC_CON3, 1, 9),
++};
++
++struct dphy_instance {
++	phys_addr_t base;
++	const struct dphy_reg *grf_regs;
++	u8 cif_sel;
++};
++
+ struct hsfreq_range {
+ 	u32 range_h;
+ 	u8 cfg_bit;
+@@ -137,6 +168,8 @@ struct dphy_drv_data {
+ 	const struct hsfreq_range *hsfreq_ranges;
+ 	int num_hsfreq_ranges;
+ 	const struct dphy_reg *grf_regs;
++	const struct dphy_instance *instances;
++	unsigned int instances_num;
+ 	const char *const *resets;
+ 	unsigned int resets_num;
+ };
+@@ -146,6 +179,8 @@ struct rockchip_inno_csidphy {
+ 	void __iomem *phy_base;
+ 	struct clk *pclk;
+ 	struct regmap *grf;
++	const struct dphy_reg *grf_regs;
++	u8 cif_sel;
+ 	struct reset_control_bulk_data resets[RESETS_MAX];
+ 	unsigned int resets_num;
+ 	const struct dphy_drv_data *drv_data;
+@@ -156,8 +191,7 @@ struct rockchip_inno_csidphy {
+ static inline void write_grf_reg(struct rockchip_inno_csidphy *priv,
+ 				 int index, u8 value)
+ {
+-	const struct dphy_drv_data *drv_data = priv->drv_data;
+-	const struct dphy_reg *reg = &drv_data->grf_regs[index];
++	const struct dphy_reg *reg = &priv->grf_regs[index];
+ 
+ 	if (reg->valid)
+ 		regmap_write(priv->grf, reg->offset,
+@@ -304,6 +338,8 @@ static int rockchip_inno_csidphy_power_o
+ 		rockchip_inno_csidphy_ths_settle(priv, priv->hsfreq,
+ 						 CSIDPHY_LANE_THS_SETTLE(i));
+ 
++	write_grf_reg(priv, GRF_DPHY_CSIPHY_CLK_INV_SEL, 0x1);
++	write_grf_reg(priv, GRF_DPHY_CIF_SEL, priv->cif_sel);
+ 	write_grf_reg(priv, GRF_DPHY_CSIPHY_CLKLANE_EN, 0x1);
+ 	write_grf_reg(priv, GRF_DPHY_CSIPHY_DATALANE_EN,
+ 		      GENMASK(priv->config.lanes - 1, 0));
+@@ -414,6 +450,29 @@ static const struct dphy_drv_data rk3588
+ 	.resets_num = ARRAY_SIZE(rk3588_reset_names),
+ };
+ 
++static const struct dphy_instance rv1126_mipidphy_instances[] = {
++	{
++		.base = 0xff4b0000,
++		.grf_regs = rv1126_grf_dphy0_regs,
++		.cif_sel = 0,
++	},
++	{
++		.base = 0xff4b8000,
++		.grf_regs = rv1126_grf_dphy1_regs,
++		.cif_sel = 1,
++	},
++};
++
++static const struct dphy_drv_data rv1126_mipidphy_drv_data = {
++	.pwrctl_offset = -1,
++	.ths_settle_offset = RV1126_CSIDPHY_CLK_WR_THS_SETTLE,
++	.calib_offset = RV1126_CSIDPHY_CLK_CALIB_EN,
++	.hsfreq_ranges = rk1808_mipidphy_hsfreq_ranges,
++	.num_hsfreq_ranges = ARRAY_SIZE(rk1808_mipidphy_hsfreq_ranges),
++	.instances = rv1126_mipidphy_instances,
++	.instances_num = ARRAY_SIZE(rv1126_mipidphy_instances),
++};
++
+ static const struct of_device_id rockchip_inno_csidphy_match_id[] = {
+ 	{
+ 		.compatible = "rockchip,px30-csi-dphy",
+@@ -439,6 +498,10 @@ static const struct of_device_id rockchi
+ 		.compatible = "rockchip,rk3588-csi-dphy",
+ 		.data = &rk3588_mipidphy_drv_data,
+ 	},
++	{
++		.compatible = "rockchip,rv1126-csi-dphy",
++		.data = &rv1126_mipidphy_drv_data,
++	},
+ 	{}
+ };
+ MODULE_DEVICE_TABLE(of, rockchip_inno_csidphy_match_id);
+@@ -448,6 +511,7 @@ static int rockchip_inno_csidphy_probe(s
+ 	struct rockchip_inno_csidphy *priv;
+ 	struct device *dev = &pdev->dev;
+ 	struct phy_provider *phy_provider;
++	struct resource *res;
+ 	struct phy *phy;
+ 	int ret;
+ 
+@@ -471,10 +535,24 @@ static int rockchip_inno_csidphy_probe(s
+ 		return PTR_ERR(priv->grf);
+ 	}
+ 
+-	priv->phy_base = devm_platform_ioremap_resource(pdev, 0);
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	priv->phy_base = devm_ioremap_resource(dev, res);
+ 	if (IS_ERR(priv->phy_base))
+ 		return PTR_ERR(priv->phy_base);
+ 
++	priv->grf_regs = priv->drv_data->grf_regs;
++	for (unsigned int i = 0; i < priv->drv_data->instances_num; i++) {
++		const struct dphy_instance *inst = &priv->drv_data->instances[i];
++
++		if (inst->base != res->start)
++			continue;
++
++		priv->grf_regs = inst->grf_regs;
++		priv->cif_sel = inst->cif_sel;
++	}
++	if (!priv->grf_regs)
++		return dev_err_probe(dev, -EINVAL, "unknown phy instance\n");
++
+ 	priv->pclk = devm_clk_get(dev, "pclk");
+ 	if (IS_ERR(priv->pclk)) {
+ 		dev_err(dev, "failed to get pclk\n");

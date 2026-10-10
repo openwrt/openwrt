@@ -1,0 +1,52 @@
+From 79180a5dacd96b5b5ecdb6aa83374134f404f0fc Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 9 Oct 2026 14:15:12 +0100
+Subject: [PATCH] dt-bindings: phy: rockchip-inno-csi-dphy: add rv1126
+
+The RV1126 has two Innosilicon CSI D-PHYs that are clocked through a
+pclk each and configured through the general register files. They have
+no reset lines, so resets are only required for the other SoCs.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ .../bindings/phy/rockchip-inno-csi-dphy.yaml     | 16 ++++++++++++++--
+ 1 file changed, 14 insertions(+), 2 deletions(-)
+
+--- a/Documentation/devicetree/bindings/phy/rockchip-inno-csi-dphy.yaml
++++ b/Documentation/devicetree/bindings/phy/rockchip-inno-csi-dphy.yaml
+@@ -22,6 +22,7 @@ properties:
+       - rockchip,rk3368-csi-dphy
+       - rockchip,rk3568-csi-dphy
+       - rockchip,rk3588-csi-dphy
++      - rockchip,rv1126-csi-dphy
+ 
+   reg:
+     maxItems: 1
+@@ -62,14 +63,25 @@ required:
+   - clocks
+   - clock-names
+   - '#phy-cells'
+-  - resets
+-  - reset-names
+   - rockchip,grf
+ 
+ allOf:
+   - if:
+       properties:
+         compatible:
++          contains:
++            const: rockchip,rv1126-csi-dphy
++    then:
++      properties:
++        resets: false
++        reset-names: false
++    else:
++      required:
++        - resets
++        - reset-names
++  - if:
++      properties:
++        compatible:
+           contains:
+             enum:
+               - rockchip,px30-csi-dphy

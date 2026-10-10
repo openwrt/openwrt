@@ -216,3 +216,19 @@ define KernelPackage/rockchip-dfi
 endef
 
 $(eval $(call KernelPackage,rockchip-dfi))
+
+
+define KernelPackage/iio-rockchip-saradc
+  TITLE:=Rockchip SARADC driver
+  DEPENDS:=@TARGET_rockchip +kmod-industrialio-triggered-buffer
+  KCONFIG:=CONFIG_ROCKCHIP_SARADC
+  FILES:=$(LINUX_DIR)/drivers/iio/adc/rockchip_saradc.ko
+  AUTOLOAD:=$(call AutoProbe,rockchip_saradc)
+  $(call AddDepends/iio)
+endef
+
+define KernelPackage/iio-rockchip-saradc/description
+ Support for the successive approximation ADC found in Rockchip SoCs.
+endef
+
+$(eval $(call KernelPackage,iio-rockchip-saradc))
