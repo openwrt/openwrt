@@ -11,7 +11,11 @@ PKG_SOURCE_URL = \
 	ftp://ftp.denx.de/pub/u-boot
 endif
 
-PKG_BUILD_DIR = $(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
+ifeq ($(firstword $(sort $(PKG_VERSION) 2026.07)),$(PKG_VERSION))
+  PKG_BUILD_DIR = $(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
+else
+  PKG_BUILD_DIR = $(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-v$(PKG_VERSION)
+endif
 
 PKG_TARGETS := bin
 PKG_FLAGS:=nonshared
