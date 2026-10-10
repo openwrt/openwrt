@@ -3953,7 +3953,74 @@ static const struct file_operations otto_l3_930x_clear_hit_fops = {
 	.write = otto_l3_930x_clear_hit_write,
 };
 
-static void otto_l3_930x_dbgfs_remove(void *data)
+/* An RTL839x routes through PIE rules: each one matches a destination prefix
+ * and forwards to the L2 entry of its gateway, and that entry names the
+ * ROUTING table row holding the gateway MAC.
+ */
+static int otto_l3_839x_route_show(struct seq_file *m, void *v)
+{
+	struct otto_l3_ctrl *ctrl = m->private;
+	struct rtl838x_switch_priv *priv = ctrl->priv;
+	int rows = priv->r->n_pie_blocks * PIE_BLOCK_SIZE;
+
+	seq_puts(m,
+		 " PIE DESTINATION        L2_IDX V NH PORT MAC               RVID ROUTE GATEWAY           MAC_ID  PACKETS\n");
+
+	for (int idx = 0; idx < rows; idx++) {
+		char dst[sizeof("255.255.255.255/32")];
+		struct rtl838x_l2_entry e = {};
+		struct otto_l3_route rt = {};
+		struct pie_rule pr;
+		u8 gw[ETH_ALEN];
+
+		if (!(idx % 64))
+			cond_resched();
+
+		priv->r->pie_rule_read(priv, idx, &pr);
+		if (!pr.valid || !pr.fwd_sel || pr.fwd_act != PIE_ACT_ROUTE_UC)
+			continue;
+
+		snprintf(dst, sizeof(dst), "%pI4/%d", &pr.dip, inet_mask_len(pr.dip_m));
+		seq_printf(m, "%4d %-18s %6d", idx, dst, pr.fwd_data);
+
+		priv->r->read_l2_entry_using_hash(pr.fwd_data >> 2, pr.fwd_data & 0x3, &e);
+		if (!e.valid) {
+			seq_puts(m, " 0  -    -                 -    -     -                 -      -");
+		} else {
+			seq_printf(m, " %d %2d %4d %pM %4d", e.valid, e.next_hop, e.port, e.mac, e.rvid);
+
+			if (e.next_hop) {
+				ctrl->cfg->route_read(ctrl, e.nh_route_id, &rt);
+				u64_to_ether_addr(rt.nh.gw, gw);
+				seq_printf(m, " %5d %pM %6d", e.nh_route_id, gw, rt.switch_mac_id);
+			} else {
+				seq_puts(m, "     -                 -      -");
+			}
+		}
+
+		if (pr.log_sel)
+			seq_printf(m, " %8u\n", priv->r->packet_cntr_read(priv, pr.log_data));
+		else
+			seq_puts(m, "        -\n");
+	}
+
+	return 0;
+}
+
+static int otto_l3_839x_route_open(struct inode *inode, struct file *filp)
+{
+	return single_open(filp, otto_l3_839x_route_show, inode->i_private);
+}
+
+static const struct file_operations otto_l3_839x_route_fops = {
+	.owner   = THIS_MODULE,
+	.open    = otto_l3_839x_route_open,
+	.read    = seq_read,
+	.llseek  = seq_lseek,
+	.release = single_release,
+};
+
+static void otto_l3_dbgfs_remove(void *data)
 {
 	debugfs_remove_recursive(data);
 }
@@ -3961,12 +4028,12 @@ static void otto_l3_930x_dbgfs_remove(void *data)
 #define OTTO_L3_DBG_ROOT_DIR	"realtek_otto_l3"
 
 /* A debugfs tree of its own rather than a subtree of the "rtl838x" directory
- * debugfs.c creates: otto_l3_probe() runs before rtl930x_dbgfs_init(), so
- * priv->dbgfs_dir does not exist yet at this point. A second RTL9300 in one
+ * debugfs.c creates: otto_l3_probe() runs before the init there, so
+ * priv->dbgfs_dir does not exist yet at this point. A second switch in one
  * system would find the name taken and log the warning below rather than
  * share the tree, since the directory is tied to @dev's devm lifetime.
  */
-static void otto_l3_930x_dbgfs_init(struct otto_l3_ctrl *ctrl)
+static struct dentry *otto_l3_dbgfs_root(struct otto_l3_ctrl *ctrl)
 {
 	struct device *dev = ctrl->dev;
 	struct dentry *root;
@@ -3977,10 +4044,28 @@ static void otto_l3_930x_dbgfs_init(struct otto_l3_ctrl *ctrl)
 		if (PTR_ERR(root) != -ENODEV)
 			dev_warn(dev, "could not create %s debugfs directory\n",
 				 OTTO_L3_DBG_ROOT_DIR);
-		return;
+		return NULL;
 	}
 
-	if (devm_add_action_or_reset(dev, otto_l3_930x_dbgfs_remove, root))
+	if (devm_add_action_or_reset(dev, otto_l3_dbgfs_remove, root))
+		return NULL;
+
+	return root;
+}
+
+static void otto_l3_839x_dbgfs_init(struct otto_l3_ctrl *ctrl)
+{
+	struct dentry *root = otto_l3_dbgfs_root(ctrl);
+
+	if (root)
+		debugfs_create_file("routes", 0400, root, ctrl, &otto_l3_839x_route_fops);
+}
+
+static void otto_l3_930x_dbgfs_init(struct otto_l3_ctrl *ctrl)
+{
+	struct dentry *root = otto_l3_dbgfs_root(ctrl);
+
+	if (!root)
 		return;
 
 	debugfs_create_file("routes", 0400, root, ctrl, &otto_l3_930x_route_fops);
@@ -3997,6 +4082,7 @@ const struct otto_l3_config otto_l3_839x_cfg = {
 	.route_read = otto_l3_839x_route_read,
 	.route_write = otto_l3_839x_route_write,
 	.setup = otto_l3_839x_setup,
+	.dbgfs_init = otto_l3_839x_dbgfs_init,
 };
 
 const struct otto_l3_config otto_l3_930x_cfg = {
