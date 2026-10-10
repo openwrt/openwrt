@@ -1,0 +1,41 @@
+From ad05a927f8a3fb8bb24bbe9ca0347b3f0d94bfed Mon Sep 17 00:00:00 2001
+From: Hsiu-Chi Tsai <hctsai@linux.com>
+Date: Fri, 9 Oct 2026 00:30:00 +0800
+Subject: [PATCH] mac80211: scale the TXQ memory limit with RAM
+
+mac80211 lets the TXQs of a radio hold up to 16 MiB with VHT and 4 MiB
+without. On a board with 64 MiB of RAM that is about all the free memory,
+and a wired-to-Wi-Fi flood can run it out of memory.
+
+Cap the default limit of each radio at 1/16 of totalram_pages(), the
+MemTotal of /proc/meminfo. VHT radios keep 16 MiB from 256 MiB of
+MemTotal up, and other radios keep 4 MiB from 64 MiB up. A limit the
+driver sets in wiphy->txq_memory_limit still takes precedence.
+
+Signed-off-by: Hsiu-Chi Tsai <hctsai@linux.com>
+---
+ net/mac80211/tx.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -1593,6 +1593,7 @@ int ieee80211_txq_setup_flows(struct iee
+ 	int i;
+ 	bool supp_vht = false;
+ 	enum nl80211_band band;
++	u64 limit;
+ 
+ 	ret = fq_init(fq, 4096);
+ 	if (ret)
+@@ -1615,6 +1616,11 @@ int ieee80211_txq_setup_flows(struct iee
+ 	if (!supp_vht)
+ 		fq->memory_limit = 4 << 20; /* 4 Mbytes */
+ 
++	/* Keep the queues within 1/16 of RAM on small systems. */
++	limit = (u64)totalram_pages() * PAGE_SIZE / 16;
++	if (limit < fq->memory_limit)
++		fq->memory_limit = limit;
++
+ 	codel_params_init(&local->cparams);
+ 	local->cparams.interval = MS2TIME(100);
+ 	local->cparams.target = MS2TIME(20);
