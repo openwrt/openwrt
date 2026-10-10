@@ -1,0 +1,20 @@
+From 9bbe070681b546f0f93b3061453603f70876d6bf Mon Sep 17 00:00:00 2001
+From: Gary Dotzler <geldot@protonmail.com>
+Date: Fri, 9 Oct 2026 02:41:56 +0000
+Subject: [PATCH 1/2] f2fs_io: add missing include
+
+Signed-off-by: Gary Dotzler <geldot@protonmail.com>
+---
+ tools/f2fs_io/f2fs_io.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/tools/f2fs_io/f2fs_io.c
++++ b/tools/f2fs_io/f2fs_io.c
+@@ -21,6 +21,7 @@
+ #include <getopt.h>
+ #include <inttypes.h>
+ #include <limits.h>
++#include <linux/falloc.h>
+ #include <linux/fs.h>
+ #include <signal.h>
+ #include <stdarg.h>
