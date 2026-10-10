@@ -1317,10 +1317,10 @@ static void rtl839x_read_pie_templated(u32 r[], struct pie_rule *pr, enum rtl839
 
 		if (!(i % 2)) {
 			data = r[5 - i / 2];
-			data_m = r[12 - i / 2];
+			data_m = r[12 - i / 2] >> 8;
 		} else {
 			data = r[5 - i / 2] >> 16;
-			data_m = r[12 - i / 2] >> 16;
+			data_m = (r[12 - i / 2] >> 24) | (r[11 - i / 2] << 8);
 		}
 
 		switch (field_type) {
@@ -1403,13 +1403,13 @@ static void rtl839x_read_pie_templated(u32 r[], struct pie_rule *pr, enum rtl839
 			break;
 
 		case RTL839X_TEMPLATE_FIELD_DIP0:
-			pr->dip = data;
-			pr->dip_m = data_m;
+			pr->dip = (pr->dip & 0xffff0000) | data;
+			pr->dip_m = (pr->dip_m & 0xffff0000) | data_m;
 			break;
 
 		case RTL839X_TEMPLATE_FIELD_DIP1:
-			pr->dip = (pr->dip << 16) | data;
-			pr->dip_m = (pr->dip << 16) | data_m;
+			pr->dip = (pr->dip & 0xffff) | ((u32)data << 16);
+			pr->dip_m = (pr->dip_m & 0xffff) | ((u32)data_m << 16);
 			break;
 
 		case RTL839X_TEMPLATE_FIELD_DIP2:
@@ -1558,11 +1558,11 @@ static void rtl839x_write_pie_action(u32 r[],  struct pie_rule *pr)
 static void rtl839x_read_pie_action(u32 r[],  struct pie_rule *pr)
 {
 	if (r[13] & BIT(3)) { /* ACT_MASK_FWD set, is it a drop? */
-		if ((r[14] & 0x7) == 1) {
+		if ((r[13] & 0x7) == 1) {
 			pr->drop = true;
 		} else {
 			pr->fwd_sel = true;
-			pr->fwd_act = r[14] & 0x7;
+			pr->fwd_act = r[13] & 0x7;
 		}
 	}
 
@@ -1575,7 +1575,10 @@ static void rtl839x_read_pie_action(u32 r[],  struct pie_rule *pr)
 	pr->mir_sel = r[13] & BIT(5);
 	pr->log_sel = r[13] & BIT(4);
 
-	/* TODO: Read in data fields */
+	pr->fwd_data = r[14] >> 18;
+	pr->log_data = (r[14] >> 4) & 0x7ff;
+
+	/* TODO: Read in the other data fields */
 
 	pr->bypass_all = r[16] & BIT(9);
 	pr->bypass_igr_stp = r[16] & BIT(8);
