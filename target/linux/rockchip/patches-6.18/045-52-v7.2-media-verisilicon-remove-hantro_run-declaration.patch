@@ -1,0 +1,26 @@
+From 94826832483708d4386226e6d966dd946f37a2bf Mon Sep 17 00:00:00 2001
+From: Rouven Czerwinski <rouven.czerwinski@linaro.org>
+Date: Fri, 10 Apr 2026 08:15:42 +0200
+Subject: [PATCH] media: verisilicon: remove hantro_run declaration
+
+The function hantro_run() is declared but never defined nor used, remove
+the dangling declaration.
+
+Signed-off-by: Rouven Czerwinski <rouven.czerwinski@linaro.org>
+Reviewed-by: Nicolas Dufresne  <nicolas.dufresne@collabora.com>
+Signed-off-by: Nicolas Dufresne <nicolas.dufresne@collabora.com>
+Signed-off-by: Hans Verkuil <hverkuil+cisco@kernel.org>
+---
+ drivers/media/platform/verisilicon/hantro_hw.h | 1 -
+ 1 file changed, 1 deletion(-)
+
+--- a/drivers/media/platform/verisilicon/hantro_hw.h
++++ b/drivers/media/platform/verisilicon/hantro_hw.h
+@@ -427,7 +427,6 @@ extern const struct hantro_postproc_ops
+ extern const u32 hantro_vp8_dec_mc_filter[8][6];
+ 
+ void hantro_watchdog(struct work_struct *work);
+-void hantro_run(struct hantro_ctx *ctx);
+ void hantro_irq_done(struct hantro_dev *vpu,
+ 		     enum vb2_buffer_state result);
+ void hantro_start_prepare_run(struct hantro_ctx *ctx);

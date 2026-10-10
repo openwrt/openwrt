@@ -27,10 +27,7 @@
 							[ "return" ]
 						]
 					],
-					[ "if",
-						[ "regex", "DEVNAME", "^snd" ],
-						[ "makedev", "/dev/%DEVNAME%", "0660", "audio" ]
-					],
+					[ "include", "/etc/hotplug.json.d/*.json" ],
 					[ "if",
 						[ "regex", "DEVNAME", "^tty" ],
 						[ "makedev", "/dev/%DEVNAME%", "0660", "dialout" ]

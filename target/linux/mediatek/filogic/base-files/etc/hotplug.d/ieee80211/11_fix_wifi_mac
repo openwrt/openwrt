@@ -48,6 +48,13 @@ case "$board" in
 			macaddr_setbit_la $(macaddr_setbit $(macaddr_add $addr 1) 28) > \
 			/sys${DEVPATH}/macaddress
 		;;
+	asus,rt-ax59u-ubi)
+		CI_UBIPART="ubi"
+		addr=$(mtd_get_mac_binary_ubi "factory" 0x4)
+		[ "$PHYNBR" = "1" ] && \
+			macaddr_setbit_la $(macaddr_setbit $(macaddr_add $addr 1) 28) > \
+			/sys${DEVPATH}/macaddress
+		;;
 	asus,rt-ax52|\
 	asus,rt-ax57m|\
 	asus,tuf-ax4200|\
@@ -209,10 +216,24 @@ case "$board" in
 		# no alternative either: the DTS already consumes it as the
 		# ethernet/label mac. Reproduce the address mt76 would derive on
 		# its own (LA bit set, bit 7 flipped), out of reach of both
-		# allocator schemes.
+		# allocator schemes. phy0 would share the slot with the LAN port
+		# on the routers here, so it gets the slot with the LA bit set;
+		# the allocator keeps bit 7, keeping its phy0 addresses apart
+		# from the phy1 ones.
 		addr=$(mtd_get_mac_binary rf-eeprom 0x4)
+		[ "$PHYNBR" = "0" ] && macaddr_setbit_la $addr > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" = "1" ] && \
 			printf "%02x:%s" $(( (0x${addr%%:*} | 0x2) ^ 0x80 )) "${addr#*:}" > /sys${DEVPATH}/macaddress
+		;;
+	keenetic,kn-3411|\
+	keenetic,kn-4410|\
+	netcraze,nc-3411|\
+	netcraze,nc-4410)
+		# The single Ethernet port takes the 0x4 slot that mt76 reads for
+		# phy0. phy1 needs nothing: the 0xa slot is empty, so mt76 derives
+		# the same address the family above sets.
+		addr=$(mtd_get_mac_binary rf-eeprom 0x4)
+		[ "$PHYNBR" = "0" ] && macaddr_setbit_la $addr > /sys${DEVPATH}/macaddress
 		;;
 	mercusys,mr80x-v3|\
 	mercusys,mr85x)

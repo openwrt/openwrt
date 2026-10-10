@@ -1,0 +1,130 @@
+From 267dd76227c90535a22522fcf2bacbb9904a90f4 Mon Sep 17 00:00:00 2001
+From: Wilfried Teiken <wteiken@teiken.org>
+Date: Thu, 21 May 2026 18:09:53 -0400
+Subject: [PATCH] arm64: r4pro: Add lan SFP and overlays for the wan port
+ (SFP/2g5) on bpi-r4-pro-4e
+
+This is a modified patch from Wilfried Teiken added via pull-request
+to my linux git repository.
+
+Signed-off-by: Frank Wunderlich <frank-w@public-files.de>
+--- a/arch/arm64/boot/dts/mediatek/Makefile
++++ b/arch/arm64/boot/dts/mediatek/Makefile
+@@ -26,6 +26,8 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += mt7988a-b
+ dtb-$(CONFIG_ARCH_MEDIATEK) += mt7988a-bananapi-bpi-r4-2g5.dtb
+ dtb-$(CONFIG_ARCH_MEDIATEK) += mt7988a-bananapi-bpi-r4-emmc.dtbo
+ dtb-$(CONFIG_ARCH_MEDIATEK) += mt7988a-bananapi-bpi-r4-pro-4e.dtb
++dtb-$(CONFIG_ARCH_MEDIATEK) += mt7988a-bananapi-bpi-r4-pro-4e-wan-phy.dtbo
++dtb-$(CONFIG_ARCH_MEDIATEK) += mt7988a-bananapi-bpi-r4-pro-4e-wan-sfp.dtbo
+ dtb-$(CONFIG_ARCH_MEDIATEK) += mt7988a-bananapi-bpi-r4-pro-8x.dtb
+ dtb-$(CONFIG_ARCH_MEDIATEK) += mt7988a-bananapi-bpi-r4-pro-8x-lan-phy.dtbo
+ dtb-$(CONFIG_ARCH_MEDIATEK) += mt7988a-bananapi-bpi-r4-pro-8x-lan-sfp.dtbo
+--- /dev/null
++++ b/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro-4e-wan-phy.dtso
+@@ -0,0 +1,34 @@
++// SPDX-License-Identifier: (GPL-2.0 OR MIT)
++/*
++ * Author: Wilfried Teiken <wteiken@teiken.org>
++ */
++
++/* This enables the 2.5G port BPI-R4-Pro-4E */
++
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "bananapi,bpi-r4-pro-4e", "mediatek,mt7988a";
++};
++
++&gmac1 {
++	phy = <&int_2p5g_phy>;
++	phy-mode = "internal";
++	status = "okay";
++};
++
++&int_2p5g_phy {
++	pinctrl-0 = <&i2p5gbe_led0_pins>;
++	pinctrl-names = "i2p5gbe-led";
++	status = "okay";
++};
++
++&pio {
++	i2p5gbe_led0_pins: i2p5gbe-led0-pins {
++		mux {
++			function = "led";
++			groups = "2p5gbe_led0";
++		};
++	};
++};
+--- /dev/null
++++ b/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro-4e-wan-sfp.dtso
+@@ -0,0 +1,20 @@
++// SPDX-License-Identifier: (GPL-2.0 OR MIT)
++/*
++ * Author: Wilfried Teiken <wteiken@teiken.org>
++ */
++
++/* This enables the SFP+ cage 2 on BPI-R4-Pro-4E */
++
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "bananapi,bpi-r4-pro-4e", "mediatek,mt7988a";
++};
++
++&gmac1 {
++	managed = "in-band-status";
++	phy-mode = "usxgmii";
++	sfp = <&sfp2>;
++	status = "okay";
++};
+--- a/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro-4e.dts
++++ b/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro-4e.dts
+@@ -14,3 +14,46 @@
+ 		     "bananapi,bpi-r4-pro",
+ 		     "mediatek,mt7988a";
+ };
++
++&gmac1 {
++	openwrt,netdev-name = "wan";
++};
++
++&gsw_phy2 {
++	pinctrl-0 = <&gbe2_led0_pins>;
++	pinctrl-names = "gbe-led";
++	status = "okay";
++};
++
++&gsw_phy2_led0 {
++	color = <LED_COLOR_ID_YELLOW>;
++	status = "okay";
++};
++
++&gsw_port2 {
++	label = "lan6";
++	status = "okay";
++};
++
++&pio {
++	gbe2_led0_pins: gbe2-led0-pins {
++		mux {
++			function = "led";
++			groups = "gbe2_led0";
++		};
++	};
++};
++
++&switch16 {
++	ports {
++		port@13 {
++			reg = <13>;
++			label = "sfp-lan";
++			phy-mode = "usxgmii";
++			managed = "in-band-status";
++			sfp = <&sfp1>;
++
++			status = "okay";
++		};
++	};
++};

@@ -107,10 +107,21 @@ static int do_set(nvram_handle_t *nvram, const char *pair)
 static int do_info(nvram_handle_t *nvram)
 {
 	nvram_header_t *hdr = nvram_header(nvram);
+	uint32_t len = hdr->len;
+	uint8_t crc;
+
+	/*
+	 * The length is taken from the nvram, do not use it to read beyond
+	 * the mapped partition or to underflow the calculations below.
+	 */
+	if (len > nvram->length - nvram->offset)
+		len = nvram->length - nvram->offset;
+	if (len < NVRAM_CRC_START_POSITION)
+		len = NVRAM_CRC_START_POSITION;
 
 	/* CRC8 over the last 11 bytes of the header and data bytes */
-	uint8_t crc = hndcrc8((unsigned char *) &hdr[0] + NVRAM_CRC_START_POSITION,
-		hdr->len - NVRAM_CRC_START_POSITION, 0xff);
+	crc = hndcrc8((unsigned char *) &hdr[0] + NVRAM_CRC_START_POSITION,
+		len - NVRAM_CRC_START_POSITION, 0xff);
 
 	/* Show info */
 	printf("Magic:         0x%08X\n",   hdr->magic);
@@ -127,8 +138,8 @@ static int do_info(nvram_handle_t *nvram)
 	printf("NCDL values:   0x%08X\n\n", hdr->config_ncdl);
 
 	printf("%i bytes used / %i bytes available (%.2f%%)\n",
-		hdr->len, nvram->length - nvram->offset - hdr->len,
-		(100.00 / (double)(nvram->length - nvram->offset)) * (double)hdr->len);
+		len, nvram->length - nvram->offset - len,
+		(100.00 / (double)(nvram->length - nvram->offset)) * (double)len);
 
 	return 0;
 }

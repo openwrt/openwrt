@@ -49,21 +49,29 @@ define Build/dns313-images
 
 	rm $@.tmp/dummyfile
 
+	$(TAR) -C $@.tmp -cf $@.tmp.tar --sort=name --numeric-owner \
+		--owner=0 --group=0 --mode=go-w \
+		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)" --clamp-mtime) \
+		.boot
+
 	genext2fs --block-size $(BLOCKSIZE:%k=%Ki) \
 		--size-in-blocks $$((1024 * $(CONFIG_TARGET_KERNEL_PARTSIZE))) \
 		--squash-uids \
-		--root $@.tmp $@.tmp-boot
+		--tarball $@.tmp.tar $@.tmp-boot
 
 	# The device firmware needs revision 1 of EXT2
-	$(STAGING_DIR_HOST)/bin/tune2fs -O filetype $@.tmp-boot
+	$(STAGING_DIR_HOST)/bin/tune2fs -O filetype \
+		-U $(patsubst %00,%01,$(IMG_PART_DISKGUID)) \
+		$@.tmp-boot
 	# Ignore errors because file system was intentionally broken with tune2fs
-	-$(STAGING_DIR_HOST)/bin/e2fsck -pDf $@.tmp-boot > /dev/null
+	-$(if $(SOURCE_DATE_EPOCH),E2FSCK_TIME=$(SOURCE_DATE_EPOCH)) \
+		$(STAGING_DIR_HOST)/bin/e2fsck -pDf $@.tmp-boot > /dev/null
 
 	./dns313_gen_hdd_img.sh $@ $@.tmp-boot $(IMAGE_ROOTFS) \
 		$(CONFIG_TARGET_KERNEL_PARTSIZE) \
 		$(CONFIG_TARGET_ROOTFS_PARTSIZE)
 
-	rm -rf $@.tmp
+	rm -rf $@.tmp $@.tmp.tar
 endef
 
 define Build/wiligear-image
@@ -212,6 +220,7 @@ define Device/dlink_dir-685
 	DEVICE_DTS := gemini-dlink-dir-685
 	DEVICE_PACKAGES := $(GEMINI_NAS_PACKAGES) \
 			kmod-dsa-rtl8366rb
+	FILESYSTEMS := squashfs
 	IMAGES := factory.bin sysupgrade.bin
 	# Pad to 128k erase blocks with 160 bytes WRGG header
 	IMAGE/factory.bin := append-kernel | pad-offset 128k 160 | append-rootfs | dir685-pad-rootfs | dir685-image

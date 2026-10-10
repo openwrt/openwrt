@@ -5,7 +5,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=hostapd
-PKG_RELEASE:=3
+PKG_RELEASE:=4
 
 PKG_SOURCE_URL:=https://w1.fi/hostap.git
 PKG_SOURCE_PROTO:=git
@@ -739,6 +739,13 @@ define Package/hostapd-common/install
 	$(INSTALL_BIN) ./files/wpad.init $(1)/etc/init.d/wpad
 	$(INSTALL_DATA) ./files/wpad_acl.json $(1)/usr/share/acl.d
 	$(INSTALL_DATA) ./files/wpad.json $(1)/etc/capabilities
+endef
+
+define Package/hostapd-common/postinst
+#!/bin/sh
+if [ -z "$${IPKG_INSTROOT}" ]; then
+  killall -s HUP ubusd || true
+fi
 endef
 
 define Package/hostapd/install

@@ -49,6 +49,7 @@ mediatek_setup_interfaces()
 		;;
 	asus,rt-ax52|\
 	asus,rt-ax59u|\
+	asus,rt-ax59u-ubi|\
 	asus,zenwifi-bt8|\
 	asus,zenwifi-bt8-ubootmod|\
 	buffalo,wsr-3000ax4p|\
@@ -124,6 +125,9 @@ mediatek_setup_interfaces()
 	bananapi,bpi-r4-2g5|\
 	bananapi,bpi-r4-poe)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan sfp-wan"
+		;;
+	bananapi,bpi-r4-pro-4e)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 lan5 lan6 sfp-lan" "wan"
 		;;
 	bananapi,bpi-r4-pro-8x)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 lan5 lan6" "wan"
@@ -231,6 +235,9 @@ mediatek_setup_interfaces()
 	smartrg,sdg-8712|\
 	smartrg,sdg-8732)
 		ucidef_set_interfaces_lan_wan "lan1 lan2" wan
+		;;
+	smartrg,sdg-9000)
+		ucidef_set_interfaces_lan_wan "aux lan1 lan2 lan3 lan4 lan5 lan6 lan7 lan8 lan9" wan
 		;;
 	tenda,be12-pro)
 		ucidef_set_interfaces_lan_wan "lan3 lan4 lan5 eth1" eth2
@@ -379,6 +386,9 @@ mediatek_setup_macs()
 		wan_mac=$label_mac
 		lan_mac=$(macaddr_add "$label_mac" 1)
 		;;
+	smartrg,sdg-9000)
+		lan_mac=$(macaddr_add "$(mmc_get_mac_ascii mfginfo MFG_MAC)" 1)
+		;;
 	tplink,eap683-lr|\
 	tplink,f65-v1)
 		label_mac=$(get_mac_binary "/tmp/factory/default-mac" 0)
@@ -407,10 +417,22 @@ mediatek_setup_macs()
 	[ -n "$label_mac" ] && ucidef_set_label_macaddr $label_mac
 }
 
+mediatek_setup_poe()
+{
+	local board="$1"
+
+	case $board in
+	smartrg,sdg-9000)
+		ucidef_set_poe 200 "lan1 lan2 lan3 lan4 lan5 lan6 lan7 lan8"
+		;;
+	esac
+}
+
 board_config_update
 board=$(board_name)
 mediatek_setup_interfaces $board
 mediatek_setup_macs $board
+mediatek_setup_poe $board
 board_config_flush
 
 exit 0

@@ -1,6 +1,6 @@
 BOARDNAME:=Generic
 CPU_TYPE :=pentium4
-FEATURES += audio pci pcie usb
+FEATURES += pci pcie usb
 
 define Target/Description
 	Build firmware images for modern x86 based boards with CPUs

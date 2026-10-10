@@ -1,0 +1,302 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 3 Oct 2026 22:00:00 +0200
+Subject: [PATCH] AP: keep the OBSS colours of a radio
+
+hostapd kept the colours in use in color_collision_bitmap of a BSS.
+hostapd_switch_color() replaced it with the bitmap of each collision
+event or BSS Color Collision report, on the first BSS of the radio, and
+a BSS Color In Use report added its colour to the BSS that received it.
+The kernel repeats a collision event every 500 ms, with the colliding
+colour alone (mac80211 ieee80211_rx_check_bss_color_collision()
+compares the OBSS colour with the BSS's own), so each event erased the
+colours stations had reported, and the next report brought them back.
+A BSS Color In Use report names no OBSS colour either: it names a
+colour the station uses with a peer (IEEE Std 802.11-2024 11.21.2.8),
+and a report of colour 0 cancels it.
+
+Keep two sets per radio:
+- the OBSS colours (struct hostapd_iface bss_colors_in_use), which the
+  kernel's collision events and the BSS Color Collision reports of
+  stations add to. A colour leaves the set 60 s after an event named
+  it (DOT11BSS_COLOR_COLLISION_AP_PERIOD + 10 s: the kernel repeats an
+  event every 500 ms while it hears the colliding OBSS, and hostapd
+  judges a collision persistent within that time), or 130 s after a
+  report did (the longest dot11BSSColorCollisionSTAPeriod, 120 s, with
+  which a station repeats its report, plus the 10 s margin hostapd
+  gives its own period, for a report that power save or retries
+  delay). Stations stop reporting while BSS Color is disabled
+  (26.17.3.5.2), and mac80211 compares no OBSS colour then, so the
+  ageing pauses while BSS Color is disabled;
+- the colours that stations use with a peer, held per station
+  (struct sta_info bss_color_in_use) until a report of colour 0 or
+  until the station leaves.
+
+A colour change picks a colour outside both sets.
+hostapd_switch_color() no longer changes either.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -797,6 +797,9 @@ static void hostapd_cleanup_iface(struct
+ 	hostapd_afc_stop(iface);
+ 	eloop_cancel_timeout(hostapd_interface_setup_failure_handler, iface,
+ 			     NULL);
++#ifdef CONFIG_IEEE80211AX
++	eloop_cancel_timeout(hostapd_bss_colors_in_use_timeout, iface, NULL);
++#endif /* CONFIG_IEEE80211AX */
+ 
+ 	hostapd_cleanup_iface_partial(iface);
+ 	hostapd_config_free(iface->conf);
+@@ -5068,6 +5071,7 @@ void hostapd_switch_color_timeout_handle
+ 	struct hostapd_data *hapd = (struct hostapd_data *) eloop_data;
+ 	os_time_t delta_t;
+ 	unsigned int b;
++	u64 avoided;
+ 	int i, r;
+ 
+ 	 /* CCA can be triggered once the handler constantly receives
+@@ -5085,10 +5089,12 @@ void hostapd_switch_color_timeout_handle
+ 	 * during the CCA countdown carry the correct Disabled=1 state.
+ 	 */
+ 	hapd->iface->conf->he_op.he_bss_color_disabled = 1;
++	hostapd_bss_colors_in_use_update(hapd->iface);
+ 
++	avoided = hostapd_bss_colors_avoided(hapd->iface);
+ 	r = os_random() % HE_OPERATION_BSS_COLOR_MAX;
+ 	for (i = 0; i < HE_OPERATION_BSS_COLOR_MAX; i++) {
+-		if (r && !(hapd->color_collision_bitmap & (1ULL << r)))
++		if (r && !(avoided & (1ULL << r)))
+ 			break;
+ 
+ 		r = (r + 1) % HE_OPERATION_BSS_COLOR_MAX;
+@@ -5131,6 +5137,112 @@ void hostapd_switch_color_timeout_handle
+ }
+ 
+ 
++/* An OBSS colour expires BSS_COLOR_EVENT_AGE seconds after a collision
++ * event and BSS_COLOR_REPORT_AGE seconds after a station report names it
++ * (IEEE Std 802.11-2024 26.17.3.5.2). The ageing pauses while BSS Color
++ * is disabled. */
++#define BSS_COLOR_EVENT_AGE (DOT11BSS_COLOR_COLLISION_AP_PERIOD + 10)
++#define BSS_COLOR_REPORT_AGE (120 + 10)
++
++static void hostapd_bss_colors_in_use_age(struct hostapd_iface *iface,
++					  u64 added, os_time_t age)
++{
++	struct os_reltime now;
++	os_time_t next = 0;
++	u64 in_use = 0;
++	bool paused;
++	int i;
++
++	if (os_get_reltime(&now))
++		return;
++
++	eloop_cancel_timeout(hostapd_bss_colors_in_use_timeout, iface, NULL);
++
++	paused = iface->conf->he_op.he_bss_color_disabled;
++	if (paused && !iface->bss_color_aging_paused) {
++		iface->bss_color_aging_paused = true;
++		iface->bss_color_paused_at = now;
++	} else if (!paused && iface->bss_color_aging_paused) {
++		iface->bss_color_aging_paused = false;
++		for (i = 1; i < 64; i++)
++			iface->bss_color_expiry[i].sec +=
++				now.sec - iface->bss_color_paused_at.sec;
++	}
++
++	for (i = 1; i < 64; i++) {
++		os_time_t left;
++
++		if (!((iface->bss_colors_in_use | added) & BIT_ULL(i)))
++			continue;
++
++		if ((added & BIT_ULL(i)) &&
++		    (!(iface->bss_colors_in_use & BIT_ULL(i)) ||
++		     iface->bss_color_expiry[i].sec < now.sec + age))
++			iface->bss_color_expiry[i].sec = now.sec + age;
++
++		left = iface->bss_color_expiry[i].sec - now.sec;
++		if (!paused && left <= 0)
++			continue;
++
++		in_use |= BIT_ULL(i);
++		if (!paused && (!next || left < next))
++			next = left;
++	}
++
++	if (next)
++		eloop_register_timeout(next, 0,
++				       hostapd_bss_colors_in_use_timeout,
++				       iface, NULL);
++
++	iface->bss_colors_in_use = in_use;
++}
++
++
++void hostapd_bss_colors_in_use_timeout(void *eloop_data, void *user_ctx)
++{
++	hostapd_bss_colors_in_use_age(eloop_data, 0, 0);
++}
++
++
++void hostapd_bss_colors_in_use_update(struct hostapd_iface *iface)
++{
++	hostapd_bss_colors_in_use_age(iface, 0, 0);
++}
++
++
++void hostapd_bss_colors_collision_event(struct hostapd_iface *iface,
++					u64 bitmap)
++{
++	hostapd_bss_colors_in_use_age(iface, bitmap & ~BIT_ULL(0),
++				      BSS_COLOR_EVENT_AGE);
++}
++
++
++void hostapd_bss_colors_collision_report(struct hostapd_iface *iface,
++					 u64 bitmap)
++{
++	hostapd_bss_colors_in_use_age(iface, bitmap & ~BIT_ULL(0),
++				      BSS_COLOR_REPORT_AGE);
++}
++
++
++/* The OBSS colours and the colours of BSS Color In Use reports (IEEE Std
++ * 802.11-2024 11.21.2.8) */
++u64 hostapd_bss_colors_avoided(struct hostapd_iface *iface)
++{
++	u64 avoided = iface->bss_colors_in_use;
++	struct sta_info *sta;
++	size_t j;
++
++	for (j = 0; j < iface->num_bss; j++)
++		for (sta = iface->bss[j]->sta_list; sta; sta = sta->next)
++			if (sta->bss_color_in_use)
++				avoided |= BIT_ULL(sta->bss_color_in_use);
++
++	return avoided;
++}
++
++
+ bool hostapd_is_cca_in_progress(struct hostapd_iface *iface)
+ {
+ 	size_t i;
+@@ -5154,7 +5266,6 @@ void hostapd_switch_color(struct hostapd
+ 	if (os_get_reltime(&now))
+ 		return;
+ 
+-	hapd->color_collision_bitmap = bitmap;
+ 	hapd->last_color_collision = now;
+ 
+ 	if (eloop_is_timeout_registered(hostapd_switch_color_timeout_handler,
+--- a/src/ap/hostapd.h
++++ b/src/ap/hostapd.h
+@@ -355,7 +355,6 @@ struct hostapd_data {
+ 	unsigned int cca_c_off_proberesp;
+ 	struct os_reltime first_color_collision;
+ 	struct os_reltime last_color_collision;
+-	u64 color_collision_bitmap;
+ #endif /* CONFIG_IEEE80211AX */
+ 
+ #ifdef CONFIG_P2P
+@@ -790,6 +789,14 @@ struct hostapd_iface {
+ 		bool data_valid;
+ 	} afc;
+ #endif /* CONFIG_AFC */
++
++#ifdef CONFIG_IEEE80211AX
++	/* OBSS colours and their expiry (hostapd_bss_colors_in_use_age()) */
++	u64 bss_colors_in_use;
++	struct os_reltime bss_color_expiry[64];
++	struct os_reltime bss_color_paused_at;
++	bool bss_color_aging_paused;
++#endif /* CONFIG_IEEE80211AX */
+ };
+ 
+ /* hostapd.c */
+@@ -845,6 +852,12 @@ int hostapd_owe_trans_get_info(struct ho
+ void hostapd_ocv_check_csa_sa_query(void *eloop_ctx, void *timeout_ctx);
+ 
+ void hostapd_switch_color(struct hostapd_data *hapd, u64 bitmap);
++void hostapd_bss_colors_collision_event(struct hostapd_iface *iface,
++					u64 bitmap);
++void hostapd_bss_colors_collision_report(struct hostapd_iface *iface,
++					 u64 bitmap);
++void hostapd_bss_colors_in_use_update(struct hostapd_iface *iface);
++u64 hostapd_bss_colors_avoided(struct hostapd_iface *iface);
+ void hostapd_cleanup_cca_params(struct hostapd_data *hapd);
+ #ifdef CONFIG_AFC
+ int hostap_afc_get_chan_max_eirp_power(struct hostapd_iface *iface, bool psd,
+@@ -952,6 +965,7 @@ void free_beacon_data(struct beacon_data
+ int hostapd_fill_cca_settings(struct hostapd_data *hapd,
+ 			      struct cca_settings *settings);
+ void hostapd_switch_color_timeout_handler(void *eloop_data, void *user_ctx);
++void hostapd_bss_colors_in_use_timeout(void *eloop_data, void *user_ctx);
+ bool hostapd_is_cca_in_progress(struct hostapd_iface *iface);
+ void hostapd_refresh_all_iface_beacons(struct hostapd_iface *hapd_iface);
+ 
+--- a/src/ap/wnm_ap.c
++++ b/src/ap/wnm_ap.c
+@@ -753,6 +753,7 @@ static void ieee802_11_rx_wnm_event_repo
+ 		wpa_printf(MSG_DEBUG,
+ 			   "WNM: BSS color collision bitmap 0x%llx reported by "
+ 			   MACSTR, (unsigned long long) bitmap, MAC2STR(addr));
++		hostapd_bss_colors_collision_report(hapd->iface, bitmap);
+ 		hostapd_switch_color(hapd->iface->bss[0], bitmap);
+ 		break;
+ 	case WNM_EVENT_TYPE_BSS_COLOR_IN_USE:
+@@ -771,17 +772,15 @@ static void ieee802_11_rx_wnm_event_repo
+ 				   MACSTR, color, MAC2STR(addr));
+ 			return;
+ 		}
++		sta->bss_color_in_use = color;
+ 		if (color == 0) {
+ 			wpa_printf(MSG_DEBUG,
+ 				   "WNM: BSS color use report canceled by "
+ 				   MACSTR, MAC2STR(addr));
+-			/* TODO: Clear stored color from the collision bitmap
+-			 * if there are no other users for it. */
+ 			return;
+ 		}
+ 		wpa_printf(MSG_DEBUG, "WNM: BSS color %u use report by "
+ 			   MACSTR, color, MAC2STR(addr));
+-		hapd->color_collision_bitmap |= 1ULL << color;
+ 		break;
+ #endif /* CONFIG_IEEE80211AX */
+ 	default:
+--- a/src/ap/drv_callbacks.c
++++ b/src/ap/drv_callbacks.c
+@@ -2548,6 +2548,8 @@ static void hostapd_event_color_change(s
+ 			hostapd_cleanup_cca_params(bss);
+ 		}
+ 	}
++
++	hostapd_bss_colors_in_use_update(hapd->iface);
+ }
+ #endif  /* CONFIG_IEEE80211AX */
+ 
+@@ -2969,6 +2971,8 @@ void wpa_supplicant_event(void *ctx, enu
+ 					data->bss_color_collision.link_id);
+ 		wpa_printf(MSG_DEBUG, "BSS color collision on %s",
+ 			   hapd->conf->iface);
++		hostapd_bss_colors_collision_event(hapd->iface,
++						   data->bss_color_collision.bitmap);
+ 		hostapd_switch_color(hapd->iface->bss[0],
+ 				     data->bss_color_collision.bitmap);
+ 		break;
+--- a/src/ap/sta_info.h
++++ b/src/ap/sta_info.h
+@@ -359,6 +359,11 @@ struct sta_info {
+ #ifdef CONFIG_IEEE8021X_AUTH
+ 	struct eap_over_auth_data eap_auth_data;
+ #endif /* CONFIG_IEEE8021X_AUTH */
++
++#ifdef CONFIG_IEEE80211AX
++	/* last BSS Color In Use report, 0 for none */
++	u8 bss_color_in_use;
++#endif /* CONFIG_IEEE80211AX */
+ };
+ 
+ 

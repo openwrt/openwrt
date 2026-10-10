@@ -157,7 +157,7 @@ static void gen_key(mbedtls_pk_context *key, bool rsa, int ksize, int exp,
 int dokey(bool rsa, char **arg)
 {
 	mbedtls_pk_context key;
-	unsigned int ksize = 512;
+	unsigned int ksize = 2048;
 	int exp = 65537;
 	char *path = NULL;
 	bool pem = true;
@@ -205,12 +205,14 @@ int selfsigned(char **arg)
 	- MBEDTLS_X509_SAN_RFC822_NAME
 	- MBEDTLS_X509_SAN_UNIFORM_RESOURCE_IDENTIFIER
 	*/
-	mbedtls_asn1_sequence *eku = NULL, *ext_key_usage = NULL;
+	mbedtls_asn1_sequence *eku = NULL, **eku_tail = &eku, *ext_key_usage;
+	char *usage;
 	char *sanval, *santype;
-	uint8_t ipaddr[16] = { 0 };
+	uint8_t *ipaddr;
+	size_t iplen;
 
 	char *subject = "";
-	unsigned int ksize = 512;
+	unsigned int ksize = 2048;
 	int exp = 65537;
 	unsigned int days = 30;
 	char *keypath = NULL, *certpath = NULL;
@@ -283,21 +285,35 @@ int selfsigned(char **arg)
 			} while(*delim);
 			arg++;
 		} else if (!strcmp(*arg, "-addext") && arg[1]) {
-			mbedtls_asn1_sequence **tail = &eku;
 			if (!strncmp(arg[1], "extendedKeyUsage=", strlen("extendedKeyUsage="))) {
+				usage = arg[1] + strlen("extendedKeyUsage=");
 				ext_key_usage = calloc(1, sizeof(mbedtls_asn1_sequence));
 				ext_key_usage->buf.tag = MBEDTLS_ASN1_OID;
-				if (!strncmp(arg[1] + strlen("extendedKeyUsage="), "serverAuth", strlen("serverAuth"))) {
+				if (!strcmp(usage, "serverAuth")) {
 					SET_OID(ext_key_usage->buf, MBEDTLS_OID_SERVER_AUTH);
-				} else if (!strncmp(arg[1] + strlen("extendedKeyUsage="), "any", strlen("any"))) {
+				} else if (!strcmp(usage, "any") || !strcmp(usage, "anyExtendedKeyUsage")) {
 					SET_OID(ext_key_usage->buf, MBEDTLS_OID_ANY_EXTENDED_KEY_USAGE);
-				} // there are other extendedKeyUsage OIDs but none conceivably useful here
-				*tail = ext_key_usage;
-				tail = &ext_key_usage->next;
-				arg++;
-			} else if (!strncmp(arg[1], "subjectAltName=", strlen("subjectAltName=")) && strchr(arg[1], ':') != NULL) {
-				santype = strchr(arg[1], '=') + 1;
-				sanval = strchr(arg[1], ':') + 1;
+				} else {
+					// there are other extendedKeyUsage OIDs but none conceivably useful here
+					fprintf(stderr, "error: unsupported extendedKeyUsage: %s\n", usage);
+					return 1;
+				}
+				//append to the list, so that several usages can be given
+				*eku_tail = ext_key_usage;
+				eku_tail = &ext_key_usage->next;
+			} else if (!strncmp(arg[1], "subjectAltName=", strlen("subjectAltName="))) {
+				santype = arg[1] + strlen("subjectAltName=");
+				sanval = strchr(santype, ':');
+				if (!sanval || !sanval[1]) {
+					fprintf(stderr, "error: invalid subjectAltName: %s\n", santype);
+					return 1;
+				}
+				sanval++;
+				//OpenSSL takes a comma separated list, here it would become one bogus name
+				if (strchr(sanval, ',')) {
+					fprintf(stderr, "error: give one subjectAltName entry per -addext: %s\n", santype);
+					return 1;
+				}
 				//build sAN list
 				san_cur = calloc(1, sizeof(mbedtls_x509_san_list));
 				san_cur->next = NULL;
@@ -305,33 +321,43 @@ int selfsigned(char **arg)
 					san_cur->node.type = MBEDTLS_X509_SAN_DNS_NAME;
 					san_cur->node.san.unstructured_name.p = (unsigned char *) sanval;
 					san_cur->node.san.unstructured_name.len = strlen(sanval);
-				} else if (!strncmp(santype, "EMAIL:", strlen("EMAIL:"))) {
+				} else if (!strncmp(santype, "EMAIL:", strlen("EMAIL:")) || !strncmp(santype, "email:", strlen("email:"))) {
 					san_cur->node.type = MBEDTLS_X509_SAN_RFC822_NAME;
 					san_cur->node.san.unstructured_name.p = (unsigned char *) sanval;
 					san_cur->node.san.unstructured_name.len = strlen(sanval);
 				} else if (!strncmp(santype, "IP:", strlen("IP:"))) {
+					ipaddr = calloc(1, 16);
+					iplen = mbedtls_x509_crt_parse_cn_inet_pton(sanval, ipaddr);
+					if (!iplen) {
+						fprintf(stderr, "error: invalid IP address: %s\n", sanval);
+						return 1;
+					}
 					san_cur->node.type = MBEDTLS_X509_SAN_IP_ADDRESS;
-					mbedtls_x509_crt_parse_cn_inet_pton(sanval, ipaddr);
-					san_cur->node.san.unstructured_name.p = (unsigned char *) ipaddr;
-					san_cur->node.san.unstructured_name.len = sizeof(ipaddr);
+					san_cur->node.san.unstructured_name.p = ipaddr;
+					san_cur->node.san.unstructured_name.len = iplen;
 				} else if (!strncmp(santype, "URI:", strlen("URI:"))) {
 					san_cur->node.type = MBEDTLS_X509_SAN_UNIFORM_RESOURCE_IDENTIFIER;
 					san_cur->node.san.unstructured_name.p = (unsigned char *) sanval;
 					san_cur->node.san.unstructured_name.len = strlen(sanval);
+				} else {
+					fprintf(stderr, "error: invalid subjectAltName type: %s\n", santype);
+					return 1;
 				}
-				else fprintf(stderr, "No match to subjectAltName content type.\n");
-			arg++;
+
+				//append the new entry to our san_list linked list
+				if (san_prev == NULL) {
+					san_list = san_cur;
+				} else {
+					san_prev->next = san_cur;
+				}
+				san_prev = san_cur;
+			} else {
+				fprintf(stderr, "error: unsupported extension: %s\n", arg[1]);
+				return 1;
 			}
+			arg++;
 		}
 		arg++;
-
-		//set the pointers in our san_list linked list
-		if (san_prev == NULL) {
-			san_list = san_cur;
-		} else {
-			san_prev->next = san_cur;
-		}
-		san_prev = san_cur;
 	}
 	gen_key(&key, rsa, ksize, exp, curve, pem);
 
@@ -358,8 +384,16 @@ int selfsigned(char **arg)
 	mbedtls_x509write_crt_set_basic_constraints(&cert, 0, -1);
 	mbedtls_x509write_crt_set_subject_key_identifier(&cert);
 	mbedtls_x509write_crt_set_authority_key_identifier(&cert);
-	mbedtls_x509write_crt_set_subject_alternative_name(&cert, san_list);
-	mbedtls_x509write_crt_set_ext_key_usage(&cert, ext_key_usage);
+	//an empty subjectAltName is not valid, add it only if names were given
+	if (san_list && mbedtls_x509write_crt_set_subject_alternative_name(&cert, san_list)) {
+		fprintf(stderr, "error: failed to add subjectAltName\n");
+		return 1;
+	}
+	//mbedtls refuses an empty extendedKeyUsage
+	if (eku && mbedtls_x509write_crt_set_ext_key_usage(&cert, eku)) {
+		fprintf(stderr, "error: failed to add extendedKeyUsage\n");
+		return 1;
+	}
 
 	_urandom(NULL, (void *) buf, 8);
 	for (len = 0; len < 8; len++)

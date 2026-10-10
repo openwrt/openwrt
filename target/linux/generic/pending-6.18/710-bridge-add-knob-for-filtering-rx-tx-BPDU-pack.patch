@@ -45,7 +45,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			if (!(p->flags & BR_BCAST_FLOOD) && skb->dev != br->dev)
 --- a/net/bridge/br_input.c
 +++ b/net/bridge/br_input.c
-@@ -384,6 +384,8 @@ static rx_handler_result_t br_handle_fra
+@@ -392,6 +392,8 @@ static rx_handler_result_t br_handle_fra
  		fwd_mask |= p->group_fwd_mask;
  		switch (dest[5]) {
  		case 0x00:	/* Bridge Group Address */
@@ -74,7 +74,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  };
 --- a/net/bridge/br_stp_bpdu.c
 +++ b/net/bridge/br_stp_bpdu.c
-@@ -80,7 +80,8 @@ void br_send_config_bpdu(struct net_brid
+@@ -83,7 +83,8 @@ void br_send_config_bpdu(struct net_brid
  {
  	unsigned char buf[35];
  
@@ -84,7 +84,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		return;
  
  	buf[0] = 0;
-@@ -127,7 +128,8 @@ void br_send_tcn_bpdu(struct net_bridge_
+@@ -130,7 +131,8 @@ void br_send_tcn_bpdu(struct net_bridge_
  {
  	unsigned char buf[4];
  
@@ -94,7 +94,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		return;
  
  	buf[0] = 0;
-@@ -172,6 +174,9 @@ void br_stp_rcv(const struct stp_proto *
+@@ -175,6 +177,9 @@ void br_stp_rcv(const struct stp_proto *
  	if (!(br->dev->flags & IFF_UP))
  		goto out;
  
@@ -161,7 +161,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  struct rtnl_link {
  	rtnl_doit_func		doit;
-@@ -5340,7 +5340,9 @@ int ndo_dflt_bridge_getlink(struct sk_bu
+@@ -5345,7 +5345,9 @@ int ndo_dflt_bridge_getlink(struct sk_bu
  	    brport_nla_put_flag(skb, flags, mask,
  				IFLA_BRPORT_MCAST_FLOOD, BR_MCAST_FLOOD) ||
  	    brport_nla_put_flag(skb, flags, mask,

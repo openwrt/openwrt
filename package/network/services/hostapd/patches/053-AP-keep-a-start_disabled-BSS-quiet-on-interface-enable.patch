@@ -1,0 +1,29 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Thu, 8 Oct 2026 02:58:30 +0200
+Subject: [PATCH] AP: keep a start_disabled BSS quiet on interface enable
+
+A BSS with start_disabled=1 starts without beacons. The beacons start
+only after the flag is cleared and a beacon update is requested.
+
+If the driver disables the interface in that period and enables it
+again, hostapd_iface_enable() calls ieee802_11_set_beacon() for every
+started BSS. The beacons of a start_disabled BSS then start too early.
+
+Skip the beacon update for such a BSS. reenable_beacon stays set, so
+the beacon update that follows later does a full start of the AP in
+the driver.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/drv_callbacks.c
++++ b/src/ap/drv_callbacks.c
+@@ -2542,7 +2542,8 @@ static void hostapd_iface_enable(struct
+ 		else
+ 			hostapd_reconfig_encryption(hapd);
+ 		hapd->reenable_beacon = 1;
+-		ieee802_11_set_beacon(hapd);
++		if (!hapd->conf->start_disabled)
++			ieee802_11_set_beacon(hapd);
+ #ifdef NEED_AP_MLME
+ 	} else if (hapd->disabled && hapd->iface->cac_started) {
+ 		wpa_printf(MSG_DEBUG, "DFS: restarting pending CAC");

@@ -1,0 +1,31 @@
+From 9232fa05921bc0ea0bc71947440ec9a50b3ad26e Mon Sep 17 00:00:00 2001
+From: Michael Riesch <michael.riesch@collabora.com>
+Date: Mon, 16 Feb 2026 13:28:47 +0100
+Subject: [PATCH] media: synopsys: csi2rx: fix out-of-bounds check for formats
+ array
+
+The out-of-bounds check for the format array is off by one. Fix the
+check.
+
+Fixes: 355a11004066 ("media: synopsys: add driver for the designware mipi csi-2 receiver")
+Cc: stable@kernel.org
+Suggested-by: Dan Carpenter <dan.carpenter@linaro.org>
+Signed-off-by: Michael Riesch <michael.riesch@collabora.com>
+Reviewed-by: Frank Li <Frank.Li@nxp.com>
+Signed-off-by: Sakari Ailus <sakari.ailus@linux.intel.com>
+Signed-off-by: Mauro Carvalho Chehab <mchehab+huawei@kernel.org>
+---
+ drivers/media/platform/synopsys/dw-mipi-csi2rx.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/media/platform/synopsys/dw-mipi-csi2rx.c
++++ b/drivers/media/platform/synopsys/dw-mipi-csi2rx.c
+@@ -301,7 +301,7 @@ dw_mipi_csi2rx_enum_mbus_code(struct v4l
+ 
+ 		return 0;
+ 	case DW_MIPI_CSI2RX_PAD_SINK:
+-		if (code->index > csi2->formats_num)
++		if (code->index >= csi2->formats_num)
+ 			return -EINVAL;
+ 
+ 		code->code = csi2->formats[code->index].code;

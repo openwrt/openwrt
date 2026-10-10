@@ -45,6 +45,10 @@ define Device/Default
 	KERNEL_NAME := zImage
 	KERNEL := kernel-bin | append-dtb
 	BLOCKSIZE := 128k
+	FILESYSTEMS/rootfs.bin := squashfs
+	# The ext4 root file system goes on an external hard drive
+	FILESYSTEMS/rootfs.bin.gz := ext4
+	IMAGE/rootfs.bin.gz := append-rootfs | pad-rootfs | pad-to 128k | gzip
 endef
 
 define Device/actiontec_mi424wr_ac
@@ -55,7 +59,7 @@ define Device/actiontec_mi424wr_ac
 	DEVICE_PACKAGES := ixp4xx-microcode-ethernet kmod-dsa-ks8995
 	DEVICE_DTS := intel-ixp42x-actiontec-mi424wr-ac
 	KERNEL := kernel-bin | append-dtb
-	IMAGES := kernel.bin rootfs.bin
+	IMAGES := kernel.bin rootfs.bin rootfs.bin.gz
 	IMAGE/kernel.bin := append-kernel
 	IMAGE/rootfs.bin := append-rootfs | pad-rootfs | pad-to 128k
 endef
@@ -69,7 +73,7 @@ define Device/actiontec_mi424wr_d
 	DEVICE_PACKAGES := ixp4xx-microcode-ethernet kmod-dsa-ks8995
 	DEVICE_DTS := intel-ixp42x-actiontec-mi424wr-d
 	KERNEL := kernel-bin | append-dtb
-	IMAGES := kernel.bin rootfs.bin
+	IMAGES := kernel.bin rootfs.bin rootfs.bin.gz
 	IMAGE/kernel.bin := append-kernel
 	IMAGE/rootfs.bin := append-rootfs | pad-rootfs | pad-to 128k
 endef
@@ -81,7 +85,7 @@ define Device/dlink_dsm_g600_a
 	DEVICE_PACKAGES := ixp4xx-microcode-ethernet kmod-rtc-pcf8563 kmod-via-velocity kmod-ata-artop kmod-ath5k wpad-basic-mbedtls
 	DEVICE_DTS := intel-ixp42x-dlink-dsm-g600
 	KERNEL := kernel-bin | append-dtb
-	IMAGES := kernel.bin rootfs.bin
+	IMAGES := kernel.bin rootfs.bin rootfs.bin.gz
 	IMAGE/kernel.bin := append-kernel
 	IMAGE/rootfs.bin := append-rootfs | pad-rootfs | pad-to 128k
 endef
@@ -107,7 +111,7 @@ define Device/gateworks_avila
 	DEVICE_PACKAGES := ixp4xx-microcode-ethernet kmod-rtc-ds1672 kmod-eeprom-at24 kmod-hwmon-ad7418
 	DEVICE_DTS := intel-ixp42x-gateworks-gw2348
 	KERNEL := kernel-bin | append-dtb
-	IMAGES := kernel.bin rootfs.bin
+	IMAGES := kernel.bin rootfs.bin rootfs.bin.gz
 	IMAGE/kernel.bin := append-kernel
 	IMAGE/rootfs.bin := append-rootfs | pad-rootfs | pad-to 128k
 endef
@@ -119,7 +123,7 @@ define Device/gateworks_cambria
 	DEVICE_PACKAGES := ixp4xx-microcode-ethernet kmod-rtc-ds1672 kmod-eeprom-at24 kmod-hwmon-ad7418
 	DEVICE_DTS := intel-ixp43x-gateworks-gw2358
 	KERNEL := kernel-bin | append-dtb
-	IMAGES := kernel.bin rootfs.bin
+	IMAGES := kernel.bin rootfs.bin rootfs.bin.gz
 	IMAGE/kernel.bin := append-kernel
 	IMAGE/rootfs.bin := append-rootfs | pad-rootfs | pad-to 128k
 endef
@@ -162,7 +166,7 @@ define Device/netgear_wg302v1
 	DEFAULT := n
 	DEVICE_DTS := intel-ixp42x-netgear-wg302v1
 	KERNEL := kernel-bin | append-dtb
-	IMAGES := kernel.bin rootfs.bin
+	IMAGES := kernel.bin rootfs.bin rootfs.bin.gz
 	IMAGE/kernel.bin := append-kernel
 	IMAGE/rootfs.bin := append-rootfs | pad-rootfs | pad-to 128k
 	IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | pad-to 128k | append-metadata
@@ -176,7 +180,7 @@ define Device/usrobotics_usr8200
 	DEVICE_PACKAGES := ixp4xx-microcode-ethernet kmod-rtc-r7301 kmod-firewire kmod-firewire-ohci kmod-dsa-mv88e6060
 	DEVICE_DTS := intel-ixp42x-usrobotics-usr8200
 	KERNEL := kernel-bin | append-dtb
-	IMAGES := kernel.bin rootfs.bin
+	IMAGES := kernel.bin rootfs.bin rootfs.bin.gz
 	IMAGE/kernel.bin := append-kernel
 	IMAGE/rootfs.bin := append-rootfs | pad-rootfs | pad-to 128k
 endef

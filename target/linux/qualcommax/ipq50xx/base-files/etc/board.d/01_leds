@@ -16,6 +16,11 @@ elecom,wrc-x3000gst2|\
 iodata,wn-dax3000gr)
 	ucidef_set_led_netdev "wan" "WAN" "green:wan" "wan" "tx rx link_10 link_100 link_1000"
 	;;
+glinet,gl-x2000)
+	ucidef_set_led_netdev "wan" "WAN" "green:wan" "wan"
+	ucidef_set_led_netdev "wlan2g" "WLAN2G" "green:wlan-2ghz" "phy0-ap0" "link tx rx"
+	ucidef_set_led_netdev "wlan5g" "WLAN5G" "green:wlan-5ghz" "phy1-ap0" "link tx rx"
+	;;
 linksys,mr5500)
 	ucidef_set_led_netdev "lan1-port-link" "LAN1-PORT-LINK" "90000.mdio-1:00:green:lan" "lan1" "link_10 link_100 link_1000"
 	ucidef_set_led_netdev "lan1-port-activity" "LAN1-PORT-ACTIVITY" "90000.mdio-1:00:amber:lan" "lan1" "tx rx"
@@ -27,6 +32,12 @@ linksys,mr5500)
 	ucidef_set_led_netdev "lan4-port-activity" "LAN4-PORT-ACTIVITY" "90000.mdio-1:03:amber:lan" "lan4" "tx rx"
 	ucidef_set_led_netdev "wan-port-link" "WAN-PORT-LINK" "90000.mdio-1:04:green:wan" "wan" "link_10 link_100 link_1000"
 	ucidef_set_led_netdev "wan-port-activity" "WAN-PORT-ACTIVITY" "90000.mdio-1:04:amber:wan" "wan" "tx rx"
+	;;
+mercusys,mr80x-v2)
+	ucidef_set_led_netdev "wan" "WAN" "green:wan" "wan" "tx rx link"
+	ucidef_set_led_netdev "lan1" "LAN1" "green:lan-1" "lan1" "tx rx link"
+	ucidef_set_led_netdev "lan2" "LAN2" "green:lan-2" "lan2" "tx rx link"
+	ucidef_set_led_netdev "lan3" "LAN3" "green:lan-3" "lan3" "tx rx link"
 	;;
 tplink,archer-ax55-v1)
 	ucidef_set_led_netdev "lan" "LAN" "green:lan" "br-lan"

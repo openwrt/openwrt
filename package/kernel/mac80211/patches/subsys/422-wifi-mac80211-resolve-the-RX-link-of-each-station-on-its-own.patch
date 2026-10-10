@@ -1,0 +1,157 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Thu, 8 Oct 2026 12:30:00 +0200
+Subject: [PATCH] wifi: mac80211: resolve the RX link of each station on its
+ own
+
+When several stations match addr2 of a data frame, the loop in
+__ieee80211_rx_handle_packet() delivers the frame to each of them and
+resolves the link of an MLO station with link_sta_info_get_bss(). Two
+things go wrong there:
+
+- If the lookup fails, the loop continues without moving prev_sta to
+  the current station. Each later pass retries the same station, so no
+  station after it gets the frame.
+- The resolved link_id is kept for the stations that follow. A later
+  non-MLO station then gets a link_id that is not in its valid_links,
+  ieee80211_rx_data_set_link() fails and the frame is dropped.
+
+Resolve the link for each station on its own and skip only the station
+whose link lookup fails. Use the same code for the station that the
+driver passes, which resolves its link the same way.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/net/mac80211/rx.c
++++ b/net/mac80211/rx.c
+@@ -5373,6 +5373,37 @@ static bool ieee80211_rx_for_link_sta(st
+ 	return ieee80211_prepare_and_rx_handle(rx, skb, consume);
+ }
+ 
++static bool ieee80211_rx_for_sta(struct ieee80211_rx_data *rx,
++				 struct sta_info *sta, struct sk_buff *skb,
++				 bool consume)
++{
++	struct ieee80211_rx_status *status = IEEE80211_SKB_RXCB(skb);
++	struct ieee80211_hdr *hdr = (void *)skb->data;
++	int link_id = -1;
++
++	/*
++	 * When the driver or hardware already translated the addresses, it
++	 * must pass the link_id in the status.
++	 */
++	rx->sdata = sta->sdata;
++	if (status->link_valid) {
++		link_id = status->link_id;
++	} else if (sta->sta.mlo) {
++		struct link_sta_info *link_sta;
++
++		link_sta = link_sta_info_get_bss(rx->sdata, hdr->addr2);
++		if (!link_sta)
++			return false;
++
++		link_id = link_sta->link_id;
++	}
++
++	if (!ieee80211_rx_data_set_sta(rx, sta, link_id))
++		return false;
++
++	return ieee80211_prepare_and_rx_handle(rx, skb, consume);
++}
++
+ /*
+  * This is the actual Rx frames handler. as it belongs to Rx path it must
+  * be called with rcu_read_lock protection.
+@@ -5383,7 +5414,6 @@ static void __ieee80211_rx_handle_packet
+ 					 struct list_head *list)
+ {
+ 	struct ieee80211_local *local = hw_to_local(hw);
+-	struct ieee80211_rx_status *status = IEEE80211_SKB_RXCB(skb);
+ 	struct ieee80211_sub_if_data *sdata;
+ 	struct ieee80211_hdr *hdr;
+ 	__le16 fc;
+@@ -5440,38 +5470,10 @@ static void __ieee80211_rx_handle_packet
+ 	if (ieee80211_is_data(fc)) {
+ 		struct link_sta_info *link_sta, *prev_link_sta;
+ 		struct sta_info *sta, *prev_sta;
+-		int link_id = -1;
+-
+-		if (status->link_valid)
+-			link_id = status->link_id;
+ 
+ 		if (pubsta) {
+ 			sta = container_of(pubsta, struct sta_info, sta);
+-			if (!ieee80211_rx_data_set_sta(&rx, sta, link_id))
+-				goto out;
+-
+-			/*
+-			 * In MLO connection, fetch the link_id using addr2
+-			 * when the driver does not pass link_id in status.
+-			 * When the address translation is already performed by
+-			 * driver/hw, the valid link_id must be passed in
+-			 * status.
+-			 */
+-
+-			if (!status->link_valid && pubsta->mlo) {
+-				struct link_sta_info *link_sta;
+-
+-				link_sta = link_sta_info_get_bss(rx.sdata,
+-								 hdr->addr2);
+-				if (!link_sta)
+-					goto out;
+-
+-				if (!ieee80211_rx_data_set_link(&rx,
+-								link_sta->link_id))
+-					goto out;
+-			}
+-
+-			if (ieee80211_prepare_and_rx_handle(&rx, skb, true))
++			if (ieee80211_rx_for_sta(&rx, sta, skb, true))
+ 				return;
+ 			goto out;
+ 		}
+@@ -5484,43 +5486,13 @@ static void __ieee80211_rx_handle_packet
+ 				continue;
+ 			}
+ 
+-			rx.sdata = prev_sta->sdata;
+-			if (!status->link_valid && prev_sta->sta.mlo) {
+-				struct link_sta_info *link_sta;
+-
+-				link_sta = link_sta_info_get_bss(rx.sdata,
+-								 hdr->addr2);
+-				if (!link_sta)
+-					continue;
+-
+-				link_id = link_sta->link_id;
+-			}
+-
+-			if (!ieee80211_rx_data_set_sta(&rx, prev_sta, link_id))
+-				goto out;
+-
+-			ieee80211_prepare_and_rx_handle(&rx, skb, false);
++			ieee80211_rx_for_sta(&rx, prev_sta, skb, false);
+ 
+ 			prev_sta = sta;
+ 		}
+ 
+ 		if (prev_sta) {
+-			rx.sdata = prev_sta->sdata;
+-			if (!status->link_valid && prev_sta->sta.mlo) {
+-				struct link_sta_info *link_sta;
+-
+-				link_sta = link_sta_info_get_bss(rx.sdata,
+-								 hdr->addr2);
+-				if (!link_sta)
+-					goto out;
+-
+-				link_id = link_sta->link_id;
+-			}
+-
+-			if (!ieee80211_rx_data_set_sta(&rx, prev_sta, link_id))
+-				goto out;
+-
+-			if (ieee80211_prepare_and_rx_handle(&rx, skb, true))
++			if (ieee80211_rx_for_sta(&rx, prev_sta, skb, true))
+ 				return;
+ 			goto out;
+ 		}

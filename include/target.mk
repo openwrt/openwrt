@@ -265,6 +265,8 @@ ifeq ($(DUMP),1)
     CPU_TYPE ?= generic
     CPU_CFLAGS_generic = -mcpu=generic
     CPU_CFLAGS_cortex-a53 = -mcpu=cortex-a53
+    CPU_CFLAGS_cortex-a72 = -mcpu=cortex-a72
+    CPU_CFLAGS_cortex-a76 = -mcpu=cortex-a76
   endif
   ifeq ($(ARCH),riscv64)
     CPU_TYPE ?= generic
@@ -326,9 +328,6 @@ ifeq ($(DUMP),1)
     endif
     ifneq ($(CONFIG_PCMCIA)$(CONFIG_PCCARD),)
       FEATURES += pcmcia
-    endif
-    ifneq ($(CONFIG_VGA_CONSOLE)$(CONFIG_FB),)
-      FEATURES += display
     endif
     ifneq ($(CONFIG_RTC_CLASS),)
       FEATURES += rtc

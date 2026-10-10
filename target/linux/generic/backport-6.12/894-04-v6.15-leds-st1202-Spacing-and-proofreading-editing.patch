@@ -1,0 +1,47 @@
+From 5d0e4816a9e7ee663e3f32e96b45d79aa900c398 Mon Sep 17 00:00:00 2001
+From: Manuel Fombuena <fombuena@outlook.com>
+Date: Wed, 26 Feb 2025 17:08:44 +0000
+Subject: [PATCH] leds: leds-st1202: Spacing and proofreading editing
+
+Minor edits regarding use of spacing and proofreading.
+
+There is a minor inconsistency in the use of spacing as margin in
+one of the comments providing details about the datasheet.
+
+There is also a typo that comes from the datasheet itself.
+
+Change spacing on comment and correct typo.
+
+Signed-off-by: Manuel Fombuena <fombuena@outlook.com>
+Link: https://lore.kernel.org/r/CWLP123MB547333EFFFBFFA840225BC02C5C22@CWLP123MB5473.GBRP123.PROD.OUTLOOK.COM
+Signed-off-by: Lee Jones <lee@kernel.org>
+---
+ drivers/leds/leds-st1202.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+--- a/drivers/leds/leds-st1202.c
++++ b/drivers/leds/leds-st1202.c
+@@ -99,9 +99,9 @@ static int st1202_pwm_pattern_write(stru
+ 	value_h = (u8)(value >> 8);
+ 
+ 	/*
+-	 *  Datasheet: Register address low = 1Eh + 2*(xh) + 18h*(yh),
+-	 *  where x is the channel number (led number) in hexadecimal (x = 00h .. 0Bh)
+-	 *  and y is the pattern number in hexadecimal (y = 00h .. 07h)
++	 * Datasheet: Register address low = 1Eh + 2*(xh) + 18h*(yh),
++	 * where x is the channel number (led number) in hexadecimal (x = 00h .. 0Bh)
++	 * and y is the pattern number in hexadecimal (y = 00h .. 07h)
+ 	 */
+ 	ret = st1202_write_reg(chip, (ST1202_PATTERN_PWM + (led_num * 2) + 0x18 * pattern),
+ 				value_l);
+@@ -287,8 +287,8 @@ static int st1202_setup(struct st1202_ch
+ 	guard(mutex)(&chip->lock);
+ 
+ 	/*
+-	 * Once the supply voltage is applied, the LED1202 executes some internal checks,
+-	 * afterwords it stops the oscillator and puts the internal LDO in quiescent mode.
++	 * Once the supply voltage is applied, the LED1202 executes some internal checks.
++	 * Afterwards, it stops the oscillator and puts the internal LDO in quiescent mode.
+ 	 * To start the device, EN bit must be set inside the “Device Enable” register at
+ 	 * address 01h. As soon as EN is set, the LED1202 loads the adjustment parameters
+ 	 * from the internal non-volatile memory and performs an auto-calibration procedure

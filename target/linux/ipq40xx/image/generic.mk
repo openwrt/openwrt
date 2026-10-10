@@ -77,7 +77,7 @@ endef
 define Build/wac5xx-netgear-tar
 	mkdir $@.tmp
 	mv $@ $@.tmp/wac5xx-ubifs-root.img
-	md5sum $@.tmp/wac5xx-ubifs-root.img > $@.tmp/wac5xx-ubifs-root.md5sum
+	(cd $@.tmp && md5sum wac5xx-ubifs-root.img) > $@.tmp/wac5xx-ubifs-root.md5sum
 	echo "WAC505 WAC510" > $@.tmp/metadata.txt
 	echo "WAC505_V9.9.9.9" > $@.tmp/version
 	$(TAR) -C $@.tmp/ -cf $@ --sort=name --numeric-owner --owner=0 --group=0 --mode=go-w \
@@ -1327,7 +1327,7 @@ define Device/ubnt_utr
 	PAGESIZE := 2048
 	KERNEL_IN_UBI :=
 	UBINIZE_PARTS = vol=$$(KDIR_KERNEL_IMAGE)
-	DEVICE_PACKAGES := ipq-wifi-ubnt_utr kmod-i2c-gpio kmod-iio-st_accel-i2c kmod-drm-panel-mipi-dbi kmod-backlight-pwm kmod-gpio-pwm kmod-btusb mipi-dbi-ubnt-utr
+	DEVICE_PACKAGES := ipq-wifi-ubnt_utr kmod-i2c-gpio kmod-iio-st_accel-i2c kmod-backlight-pwm kmod-gpio-pwm kmod-btusb mipi-dbi-ubnt-utr video-support
 endef
 TARGET_DEVICES += ubnt_utr
 

@@ -229,7 +229,7 @@ Signed-off-by: Andrew Lunn <andrew@lunn.ch>
  	    (blink & (MTK_PHY_LED_BLINK_RX | MTK_PHY_LED_BLINK_TX)))
  		set_bit(bit_netdev, &priv->led_state);
  	else
-@@ -1333,17 +1377,23 @@ static int mt798x_phy_led_hw_control_set
+@@ -1340,17 +1384,23 @@ static int mt798x_phy_led_hw_control_set
  
  	if (rules & BIT(TRIGGER_NETDEV_RX)) {
  		blink |= (on & MTK_PHY_LED_ON_LINK) ?
@@ -259,7 +259,7 @@ Signed-off-by: Andrew Lunn <andrew@lunn.ch>
  			  MTK_PHY_LED_BLINK_TX;
  	}
  
-@@ -1400,7 +1450,8 @@ static int mt7988_phy_fix_leds_polaritie
+@@ -1407,7 +1457,8 @@ static int mt7988_phy_fix_leds_polaritie
  	/* Only now setup pinctrl to avoid bogus blinking */
  	pinctrl = devm_pinctrl_get_select(&phydev->mdio.dev, "gbe-led");
  	if (IS_ERR(pinctrl))

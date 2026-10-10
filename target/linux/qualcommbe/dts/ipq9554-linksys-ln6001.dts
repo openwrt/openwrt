@@ -14,6 +14,7 @@
 
 	aliases {
 		serial0 = &blsp1_uart2;
+		serial1 = &blsp1_uart4;
 		led-boot = &led_blue;
 		led-failsafe = &led_red;
 		led-running = &led_blue;
@@ -22,6 +23,22 @@
 
 	chosen {
 		stdout-path = "serial0:115200n8";
+	};
+
+	gpio-export {
+		compatible = "gpio-export";
+
+		bluetooth-isp {
+			gpio-export,name = "bluetooth-isp";
+			gpio-export,output = <1>;
+			gpios = <&tlmm 57 GPIO_ACTIVE_HIGH>;
+		};
+
+		bluetooth-reset {
+			gpio-export,name = "bluetooth-reset";
+			gpio-export,output = <1>;
+			gpios = <&tlmm 31 GPIO_ACTIVE_HIGH>;
+		};
 	};
 
 	keys {
@@ -77,6 +94,12 @@
 
 &blsp1_uart2 {
 	pinctrl-0 = <&uart2_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&blsp1_uart4 {
+	pinctrl-0 = <&uart4_pins>, <&bluetooth_pta_pins>;
 	pinctrl-names = "default";
 	status = "okay";
 };
@@ -291,6 +314,13 @@
 };
 
 &tlmm {
+	bluetooth_pta_pins: bluetooth-pta-state {
+		pins = "gpio54", "gpio55", "gpio56";
+		function = "pta";
+		drive-strength = <8>;
+		bias-disable;
+	};
+
 	keys_pins: keys-state {
 		pins = "gpio37", "gpio40";
 		function = "gpio";
@@ -353,6 +383,13 @@
 			drive-strength = <8>;
 			bias-pull-down;
 		};
+	};
+
+	uart4_pins: uart4-state {
+		pins = "gpio50", "gpio51", "gpio52", "gpio53";
+		function = "blsp4_uart";
+		drive-strength = <8>;
+		bias-disable;
 	};
 };
 

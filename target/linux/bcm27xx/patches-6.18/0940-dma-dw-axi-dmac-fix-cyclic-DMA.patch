@@ -47,7 +47,7 @@ Signed-off-by: Hans Verkuil <hverkuil@kernel.org>
  	axi_chan_irq_sig_set(chan, irq_mask);
  
  	/* Generate 'suspend' status but don't generate interrupt */
-@@ -707,6 +708,15 @@ static void set_desc_last(struct axi_dma
+@@ -701,6 +702,15 @@ static void set_desc_last(struct axi_dma
  	desc->lli->ctl_hi = cpu_to_le32(val);
  }
  
@@ -63,7 +63,7 @@ Signed-off-by: Hans Verkuil <hverkuil@kernel.org>
  static void write_desc_sar(struct axi_dma_hw_desc *desc, dma_addr_t adr)
  {
  	desc->lli->sar = cpu_to_le64(adr);
-@@ -889,19 +899,20 @@ dw_axi_dma_chan_prep_cyclic(struct dma_c
+@@ -883,19 +893,20 @@ dw_axi_dma_chan_prep_cyclic(struct dma_c
  	size_t axi_block_len;
  	u32 total_segments;
  	u32 segment_len;
@@ -86,7 +86,7 @@ Signed-off-by: Hans Verkuil <hverkuil@kernel.org>
  
  	total_segments = num_periods * num_segments;
  
-@@ -915,26 +926,34 @@ dw_axi_dma_chan_prep_cyclic(struct dma_c
+@@ -909,26 +920,34 @@ dw_axi_dma_chan_prep_cyclic(struct dma_c
  	desc->length = 0;
  	desc->period_len = period_len;
  
@@ -131,7 +131,7 @@ Signed-off-by: Hans Verkuil <hverkuil@kernel.org>
  
  	/* Managed transfer list */
  	do {
-@@ -1214,18 +1233,14 @@ out:
+@@ -1208,18 +1227,14 @@ out:
  	spin_unlock_irqrestore(&chan->vc.lock, flags);
  }
  
@@ -152,7 +152,7 @@ Signed-off-by: Hans Verkuil <hverkuil@kernel.org>
  		dev_err(chan2dev(chan), "BUG: %s caught DWAXIDMAC_IRQ_DMA_TRF, but channel not idle!\n",
  			axi_chan_name(chan));
  		axi_chan_disable(chan);
-@@ -1242,22 +1257,52 @@ static void axi_chan_block_xfer_complete
+@@ -1236,22 +1251,52 @@ static void axi_chan_block_xfer_complete
  	if (chan->cyclic) {
  		desc = vd_to_axi_desc(vd);
  		if (desc) {
@@ -220,7 +220,7 @@ Signed-off-by: Hans Verkuil <hverkuil@kernel.org>
  		}
  	} else {
  		/* Remove the completed descriptor from issued list before completing */
-@@ -1294,8 +1339,8 @@ static irqreturn_t dw_axi_dma_interrupt(
+@@ -1288,8 +1333,8 @@ static irqreturn_t dw_axi_dma_interrupt(
  
  		if (status & DWAXIDMAC_IRQ_ALL_ERR)
  			axi_chan_handle_err(chan, status);

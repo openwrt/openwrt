@@ -1,0 +1,134 @@
+From bf4afc53b77aeaa48b5409da5c8da6bb4eff7f43 Mon Sep 17 00:00:00 2001
+From: Linus Torvalds <torvalds@linux-foundation.org>
+Date: Sat, 21 Feb 2026 16:37:42 -0800
+Subject: [PATCH] Convert 'alloc_obj' family to use the new default GFP_KERNEL
+ argument
+
+This was done entirely with mindless brute force, using
+
+    git grep -l '\<k[vmz]*alloc_objs*(.*, GFP_KERNEL)' |
+        xargs sed -i 's/\(alloc_objs*(.*\), GFP_KERNEL)/\1)/'
+
+to convert the new alloc_obj() users that had a simple GFP_KERNEL
+argument to just drop that argument.
+
+Note that due to the extreme simplicity of the scripting, any slightly
+more complex cases spread over multiple lines would not be triggered:
+they definitely exist, but this covers the vast bulk of the cases, and
+the resulting diff is also then easier to check automatically.
+
+For the same reason the 'flex' versions will be done as a separate
+conversion.
+
+Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+---
+ drivers/media/platform/rockchip/rkvdec/rkvdec-h264.c         | 2 +-
+ drivers/media/platform/rockchip/rkvdec/rkvdec-hevc.c         | 2 +-
+ drivers/media/platform/rockchip/rkvdec/rkvdec-vdpu381-h264.c | 2 +-
+ drivers/media/platform/rockchip/rkvdec/rkvdec-vdpu381-hevc.c | 2 +-
+ drivers/media/platform/rockchip/rkvdec/rkvdec-vdpu383-h264.c | 2 +-
+ drivers/media/platform/rockchip/rkvdec/rkvdec-vdpu383-hevc.c | 2 +-
+ drivers/media/platform/rockchip/rkvdec/rkvdec-vp9.c          | 2 +-
+ drivers/media/platform/rockchip/rkvdec/rkvdec.c              | 2 +-
+ drivers/media/platform/verisilicon/hantro_drv.c              | 2 +-
+ 9 files changed, 9 insertions(+), 9 deletions(-)
+
+--- a/drivers/media/platform/rockchip/rkvdec/rkvdec-h264.c
++++ b/drivers/media/platform/rockchip/rkvdec/rkvdec-h264.c
+@@ -375,7 +375,7 @@ static int rkvdec_h264_start(struct rkvd
+ 	if (ret)
+ 		return ret;
+ 
+-	h264_ctx = kzalloc_obj(*h264_ctx, GFP_KERNEL);
++	h264_ctx = kzalloc_obj(*h264_ctx);
+ 	if (!h264_ctx)
+ 		return -ENOMEM;
+ 
+--- a/drivers/media/platform/rockchip/rkvdec/rkvdec-hevc.c
++++ b/drivers/media/platform/rockchip/rkvdec/rkvdec-hevc.c
+@@ -528,7 +528,7 @@ static int rkvdec_hevc_start(struct rkvd
+ 	struct rkvdec_hevc_priv_tbl *priv_tbl;
+ 	struct rkvdec_hevc_ctx *hevc_ctx;
+ 
+-	hevc_ctx = kzalloc_obj(*hevc_ctx, GFP_KERNEL);
++	hevc_ctx = kzalloc_obj(*hevc_ctx);
+ 	if (!hevc_ctx)
+ 		return -ENOMEM;
+ 
+--- a/drivers/media/platform/rockchip/rkvdec/rkvdec-vdpu381-h264.c
++++ b/drivers/media/platform/rockchip/rkvdec/rkvdec-vdpu381-h264.c
+@@ -383,7 +383,7 @@ static int rkvdec_h264_start(struct rkvd
+ 	if (ret)
+ 		return ret;
+ 
+-	h264_ctx = kzalloc_obj(*h264_ctx, GFP_KERNEL);
++	h264_ctx = kzalloc_obj(*h264_ctx);
+ 	if (!h264_ctx)
+ 		return -ENOMEM;
+ 
+--- a/drivers/media/platform/rockchip/rkvdec/rkvdec-vdpu381-hevc.c
++++ b/drivers/media/platform/rockchip/rkvdec/rkvdec-vdpu381-hevc.c
+@@ -551,7 +551,7 @@ static int rkvdec_hevc_start(struct rkvd
+ 	if (ret)
+ 		return ret;
+ 
+-	hevc_ctx = kzalloc_obj(*hevc_ctx, GFP_KERNEL);
++	hevc_ctx = kzalloc_obj(*hevc_ctx);
+ 	if (!hevc_ctx)
+ 		return -ENOMEM;
+ 
+--- a/drivers/media/platform/rockchip/rkvdec/rkvdec-vdpu383-h264.c
++++ b/drivers/media/platform/rockchip/rkvdec/rkvdec-vdpu383-h264.c
+@@ -447,7 +447,7 @@ static int rkvdec_h264_start(struct rkvd
+ 	if (ret)
+ 		return ret;
+ 
+-	h264_ctx = kzalloc_obj(*h264_ctx, GFP_KERNEL);
++	h264_ctx = kzalloc_obj(*h264_ctx);
+ 	if (!h264_ctx)
+ 		return -ENOMEM;
+ 
+--- a/drivers/media/platform/rockchip/rkvdec/rkvdec-vdpu383-hevc.c
++++ b/drivers/media/platform/rockchip/rkvdec/rkvdec-vdpu383-hevc.c
+@@ -559,7 +559,7 @@ static int rkvdec_hevc_start(struct rkvd
+ 	if (ret)
+ 		return ret;
+ 
+-	hevc_ctx = kzalloc_obj(*hevc_ctx, GFP_KERNEL);
++	hevc_ctx = kzalloc_obj(*hevc_ctx);
+ 	if (!hevc_ctx)
+ 		return -ENOMEM;
+ 
+--- a/drivers/media/platform/rockchip/rkvdec/rkvdec-vp9.c
++++ b/drivers/media/platform/rockchip/rkvdec/rkvdec-vp9.c
+@@ -972,7 +972,7 @@ static int rkvdec_vp9_start(struct rkvde
+ 	unsigned char *count_tbl;
+ 	int ret;
+ 
+-	vp9_ctx = kzalloc_obj(*vp9_ctx, GFP_KERNEL);
++	vp9_ctx = kzalloc_obj(*vp9_ctx);
+ 	if (!vp9_ctx)
+ 		return -ENOMEM;
+ 
+--- a/drivers/media/platform/rockchip/rkvdec/rkvdec.c
++++ b/drivers/media/platform/rockchip/rkvdec/rkvdec.c
+@@ -1282,7 +1282,7 @@ static int rkvdec_open(struct file *filp
+ 	struct rkvdec_ctx *ctx;
+ 	int ret;
+ 
+-	ctx = kzalloc_obj(*ctx, GFP_KERNEL);
++	ctx = kzalloc_obj(*ctx);
+ 	if (!ctx)
+ 		return -ENOMEM;
+ 
+--- a/drivers/media/platform/verisilicon/hantro_drv.c
++++ b/drivers/media/platform/verisilicon/hantro_drv.c
+@@ -640,7 +640,7 @@ static int hantro_open(struct file *filp
+ 	 * helper functions used here.
+ 	 */
+ 
+-	ctx = kzalloc_obj(*ctx, GFP_KERNEL);
++	ctx = kzalloc_obj(*ctx);
+ 	if (!ctx)
+ 		return -ENOMEM;
+ 

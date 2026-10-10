@@ -184,6 +184,23 @@ preinit_ip() {
 	preinit_net_echo "Doing OpenWrt Preinit\n"
 }
 
+preinit_ip_event() {
+	[ "$pi_preinit_no_failsafe" = "y" ] && return
+
+	if [ -z "$pi_ifname" ]; then
+		type set_preinit_iface > /dev/null 2>&1 && set_preinit_iface
+		pi_ifname=$ifname
+	fi
+
+	[ -n "$pi_ifname" ] || return
+
+	ip -4 -o address show dev "$pi_ifname" 2> /dev/null | \
+		grep -q "inet $pi_ip/" && return
+
+	preinit_ip_config "$pi_ifname"
+	preinit_net_echo "Doing OpenWrt Preinit\n"
+}
+
 preinit_ip_deconfig() {
 	[ -n "$pi_ifname" ] && grep -q "$pi_ifname" /proc/net/dev && {
 		local netdev vid

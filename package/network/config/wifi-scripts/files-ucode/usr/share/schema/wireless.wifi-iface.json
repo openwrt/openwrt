@@ -270,6 +270,23 @@
 			"type": "boolean",
 			"default": true
 		},
+		"dpp": {
+			"description": "Enable the DPP AKM in addition to the one selected by encryption. Sets ieee80211w to 1 (optional) if it is 0 or not set, also an explicit 0 and sae-compat outside 6 GHz, whose base RSNE then advertises PMF",
+			"type": "boolean",
+			"default": false
+		},
+		"dpp_connector": {
+			"description": "DPP Connector (signedConnector) for DPP Network Introduction",
+			"type": "string"
+		},
+		"dpp_csign": {
+			"description": "DPP C-sign-key of the Configurator, hex-encoded DER",
+			"type": "string"
+		},
+		"dpp_netaccesskey": {
+			"description": "DPP netAccessKey, hex-encoded DER",
+			"type": "string"
+		},
 		"domain_match": {
 			"type": "array",
 			"items": {
@@ -380,7 +397,7 @@
 			"type": "string"
 		},
 		"gcmp256": {
-			"description": "Advertise the GCMP-256 pairwise cipher on HE/EHT BSSes (alongside CCMP for sae/sae-mixed, in the RSNE Override 2 element for sae-compat). Mandatory for EHT, recommended otherwise. Defaults off for sae and sae-mixed because some clients and chipsets misbehave when GCMP-256 is offered, and on for sae-compat BSSes using an EHT htmode (where GCMP-256 is mandatory), carried in a separate RSN Override element that legacy clients ignore. Only advertised when the driver supports the GCMP-256 cipher.",
+			"description": "Advertise the GCMP-256 pairwise cipher on HE/EHT BSSes (alongside CCMP for sae/sae-mixed, in the RSNE Override 2 element for sae-compat). Mandatory for EHT (WPA3 Specification v3.5 2.5), recommended otherwise. Off by default, because some clients and chipsets misbehave when GCMP-256 is offered. With an EHT htmode, sae, sae-mixed and sae-compat BSSes offer GCMP-256 in the RSNE Override 2 element unless this option is 0; 1 also offers it in the RSNE. Only advertised when the driver supports the GCMP-256 cipher. The sae and sae-mixed BSSes send no RSNE Override 2 element when the RSNE already offers SAE-EXT-KEY and GCMP-256 (CCMP without driver support for GCMP-256). An AP MLD sends none only when this holds on every link, so a psk2 AP MLD sends it on every link unless sae_ext_key is 0.",
 			"type": "boolean"
 		},
 		"hidden": {
@@ -447,7 +464,7 @@
 			"type": "boolean"
 		},
 		"ieee80211w": {
-			"description": "Enables MFP (802.11w) support (0 = disabled, 1 = optional, 2 = required). Requires the 'full' version of wpad/hostapd and support from the Wi-Fi driver",
+			"description": "Enables MFP (802.11w) support (0 = disabled, 1 = optional, 2 = required). Requires the 'full' version of wpad/hostapd and support from the Wi-Fi driver. In the 6 GHz band, an AP with WPA2 or later always uses 2, also with an explicit value, as IEEE 802.11-2024 12.12.2 requires. With an EHT htmode, an AP with WPA2 or later defaults to 1, because IEEE 802.11be-2024 12.12.9 requires beacon protection; sae-compat outside 6 GHz keeps 0 in its base RSNE (WPA3 Specification v3.5 2.4) unless mbo, ocv or dpp needs PMF",
 			"type": "number",
 			"enum": [ 0, 1, 2 ]
 		},
@@ -615,7 +632,7 @@
 			"default": "max_num_sta"
 		},
 		"mbo": {
-			"description": "Multiband Operation",
+			"description": "Multiband Operation. On a BSS with WPA2 or later, sets ieee80211w to 1 (optional) if it is 0 or not set, because hostapd requires PMF for MBO with WPA2",
 			"type": "boolean"
 		},
 		"mcast_rate": {
@@ -709,8 +726,15 @@
 			"type": "number"
 		},
 		"mlo": {
-			"description": "Multi-Link Operation",
+			"description": "Multi-Link Operation. On an AP MLD, psk and psk-mixed become psk2, and wpa and wpa-mixed become wpa2; psk2 keeps PSK in the RSNE of the 2.4 and 5 GHz links for single-link stations and offers SAE in the RSNE Override 2 element of every link, which multi-link associations use. The 6 GHz link uses SAE. If the AP MLD has a 6 GHz link, none becomes owe on the other links. On an MLD station with a 6 GHz radio and radios of other bands, psk2 becomes sae-mixed and wpa2 becomes wpa3-mixed",
 			"type": "boolean"
+		},
+		"mlo_bands": {
+			"description": "Bands of all radios of the AP MLD or MLD station, set by netifd",
+			"type": "array",
+			"items": {
+				"type": "string"
+			}
 		},
 		"mobility_domain": {
 			"description": "DID is used to indicate a group of APs between which a STA can use Fast BSS Transition.",
@@ -788,7 +812,7 @@
 			"type": "boolean"
 		},
 		"ocv": {
-			"description": "Operating Channel Validation",
+			"description": "Operating Channel Validation. Requires PMF: on a BSS with WPA2 or later, sets ieee80211w to 1 (optional) if it is 0 or not set. Ignored on a BSS without WPA2, which cannot use PMF",
 			"type": "number",
 			"minimum": 0,
 			"maximum": 15
@@ -798,7 +822,7 @@
 			"type": "boolean"
 		},
 		"owe_transition": {
-			"description": "Indicate that an OWE BSS shall automatically add an unencrypted transition interface",
+			"description": "Indicate that an OWE BSS shall automatically add an unencrypted transition interface. Ignored in the 6 GHz band, which allows no unencrypted BSS",
 			"type": "boolean"
 		},
 		"owe_transition_bssid": {
@@ -989,11 +1013,15 @@
 				"type": "string"
 			}
 		},
+		"rsn_override": {
+			"description": "Station mode with an HE or EHT htmode: use the RSNE Override elements of the AP (RSN overriding, wpa_supplicant rsn_overriding=1)",
+			"type": "boolean"
+		},
 		"rsn_preauth": {
 			"type": "boolean"
 		},
 		"sae_ext_key": {
-			"description": "Advertise the SAE-EXT-KEY AKM (SAE using a group-dependent hash) alongside plain SAE. Mandatory for EHT, recommended otherwise. Defaults off for sae and sae-mixed because some clients misbehave when SAE-EXT-KEY is offered, and on for sae-compat BSSes using an EHT htmode (where SAE-EXT-KEY is mandatory), carried in a separate RSN Override element that legacy clients ignore.",
+			"description": "Advertise the SAE-EXT-KEY AKM (SAE using a group-dependent hash) alongside plain SAE. Mandatory for EHT (WPA3 Specification v3.5 2.5), recommended otherwise. Off by default in the RSNE, because some clients misbehave when SAE-EXT-KEY is offered there. With an EHT htmode, sae, sae-mixed and sae-compat BSSes offer it in the RSNE Override 2 element unless this option is 0; 1 also offers it in the RSNE (not for sae-compat). The sae and sae-mixed BSSes send no RSNE Override 2 element when the RSNE already offers SAE-EXT-KEY and GCMP-256 (CCMP without driver support for GCMP-256). An AP MLD sends none only when this holds on every link, so a psk2 AP MLD sends it on every link unless sae_ext_key is 0.",
 			"type": "boolean"
 		},
 		"sae_password_file": {
@@ -1216,7 +1244,7 @@
 			"default": true
 		},
 		"wps_label": {
-			"description": "Support WPS labels",
+			"description": "Support WPS labels. Ignored in the 6 GHz band, which has no WPS",
 			"type": "boolean"
 		},
 		"wps_manufacturer": {
@@ -1232,7 +1260,7 @@
 			"default": "ap_pin"
 		},
 		"wps_pushbutton": {
-			"description": "Support WPS pushbutton",
+			"description": "Support WPS pushbutton. Ignored in the 6 GHz band, which has no WPS",
 			"type": "boolean"
 		}
 	}

@@ -16,14 +16,10 @@ config HAS_FPU
 config HAS_DT_OVERLAY_SUPPORT
 	bool
 
-config AUDIO_SUPPORT
-	bool
-
 config GPIO_SUPPORT
 	bool
 
 config PCI_SUPPORT
-	select AUDIO_SUPPORT
 	bool
 
 config PCIE_SUPPORT
@@ -39,7 +35,6 @@ config PWM_SUPPORT
 	bool
 
 config USB_SUPPORT
-	select AUDIO_SUPPORT
 	bool
 
 config USB_GADGET_SUPPORT

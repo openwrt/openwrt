@@ -14,9 +14,13 @@ define Device/Default
   KERNEL := kernel-bin
   KERNEL_INSTALL := 1
   FILESYSTEMS := ext4 squashfs
-  IMAGES := rootfs.img rootfs.img.gz
   IMAGE/rootfs.img := append-rootfs | pad-to $(ROOTFS_PARTSIZE)
   IMAGE/rootfs.img.gz := append-rootfs | pad-to $(ROOTFS_PARTSIZE) | gzip
+  ifeq ($(CONFIG_TARGET_IMAGES_GZIP),y)
+    IMAGES := rootfs.img.gz
+  else
+    IMAGES := rootfs.img
+  endif
   ARTIFACTS := uImage-lzma uImage-gzip
   ARTIFACT/uImage-lzma := kernel-bin | lzma | uImage lzma
   ARTIFACT/uImage-gzip := kernel-bin | gzip | uImage gzip

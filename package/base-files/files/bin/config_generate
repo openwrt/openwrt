@@ -2,10 +2,15 @@
 
 CFG=/etc/board.json
 
+FORCE=
+[ "$1" = "-f" ] && FORCE=-f
+
 . /usr/share/libubox/jshn.sh
 . /lib/functions/ipv4.sh
 
-[ -s $CFG ] || /bin/board_detect || exit 1
+if [ -n "$FORCE" ] || [ ! -s $CFG ]; then
+	/bin/board_detect $FORCE || exit 1
+fi
 [ -s /etc/config/network -a -s /etc/config/system ] && exit 0
 
 generate_bridge() {
@@ -405,6 +410,12 @@ generate_led() {
 	EOF
 
 	case "$type" in
+		brightness)
+			local brightness
+			json_get_vars brightness
+			[ -n "$brightness" ] && uci -q set system.$cfg.brightness="$brightness"
+		;;
+
 		gpio)
 			local gpio inverted
 			json_get_vars gpio inverted

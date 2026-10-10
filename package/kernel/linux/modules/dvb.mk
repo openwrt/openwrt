@@ -23,7 +23,7 @@ define KernelPackage/dvb-core
 	CONFIG_DVB_DEMUX_SECTION_LOSS_LOG=y
   FILES:=$(LINUX_DIR)/drivers/media/dvb-core/dvb-core.ko
   AUTOLOAD:=$(call AutoProbe,dvb-core)
-  DEPENDS:=@!LINUX_6_12 +kmod-i2c-core
+  DEPENDS:=@!LINUX_6_12 dvb-support +kmod-i2c-core
 endef
 
 define KernelPackage/dvb-core/description

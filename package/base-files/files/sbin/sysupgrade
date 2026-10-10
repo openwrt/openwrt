@@ -11,7 +11,7 @@ INSTALLED_PACKAGES=${ETCBACKUP_DIR}/installed_packages.txt
 COMMAND=/lib/upgrade/do_stage2
 
 # File-local globals
-ADD_PROVISIONING=0
+ADD_PROVISIONING=1
 SAVE_OVERLAY=0
 SAVE_OVERLAY_PATH=
 SAVE_PARTITIONS=1
@@ -47,6 +47,7 @@ while [ -n "$1" ]; do
 		-o) SAVE_OVERLAY=1 SAVE_OVERLAY_PATH=/;;
 		-p) SAVE_PARTITIONS=0;;
 		-P) ADD_PROVISIONING=1;;
+		--no-provisioning) ADD_PROVISIONING=0;;
 		-k) SAVE_INSTALLED_PKGS=1;;
 		-u) SKIP_UNCHANGED=1;;
 		-b|--create-backup) CONF_BACKUP="$2" NEED_IMAGE=1; shift;;
@@ -85,7 +86,9 @@ upgrade-option:
 	             $INSTALLED_PACKAGES
 	-s           stay on current partition (for dual firmware devices)
 	-P           create provisioning partition to keep sensitive data across
-	             factory resets.
+	             factory resets. This is the default.
+	--no-provisioning
+	             do not create a provisioning partition.
 	-T | --test
 	             Verify image and config .tar.gz but do not actually flash.
 	-F | --force
@@ -222,6 +225,7 @@ build_list_of_backup_overlay_files() {
 	( cd /overlay/upper/; find .$SAVE_OVERLAY_PATH \( -type f -o -type l \) $find_filter | sed \
 		-e 's,^\.,,' \
 		-e '\,^/etc/board.json$,d' \
+		-e '\,^/etc/board-base.json$,d' \
 		-e '\,^/etc/luci-uploads/\.placeholder,d' \
 		-e '\,/[^/]*-opkg$,d' \
 		-e '\,/[^/]*\.apk-new$,d' \

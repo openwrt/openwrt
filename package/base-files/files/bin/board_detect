@@ -1,22 +1,47 @@
 #!/bin/sh
 
+BASE_CFG=/etc/board-base.json
+RUNTIME_CFG=/tmp/sysinfo/board.json
+LINK_CFG=/etc/board.json
+PREINIT_CFG=/tmp/board.json
+
+FORCE=
+[ "$1" = "-f" ] && {
+	FORCE=1
+	shift
+}
+
 REAL_CFG=$1
 
-[ -n "$REAL_CFG" ] || REAL_CFG=/etc/board.json
+[ -n "$REAL_CFG" ] || REAL_CFG=$BASE_CFG
 
-if [ -d "/etc/board.d/" ] && [ ! -s "$REAL_CFG" ]; then
+if [ -d "/etc/board.d/" ] && { [ -n "$FORCE" ] || [ ! -s "$REAL_CFG" ]; }; then
 	# Use temp file to prevent incomplete file on power-cut, CFG is used by the sourced script to read/write the file
 	CFG="$(dirname "$REAL_CFG")/.$(basename "$REAL_CFG").tmp"
 	rm -f "$CFG" || exit
-	for a in $(ls /etc/board.d/*); do
-		[ -s "$a" ] || continue
-		(. "$a")
-	done
+	if [ -z "$FORCE" ] && [ "$REAL_CFG" = "$BASE_CFG" ] && [ -s "$PREINIT_CFG" ]; then
+		mv "$PREINIT_CFG" "$CFG"
+	else
+		for a in $(ls /etc/board.d/*); do
+			[ -s "$a" ] || continue
+			(. "$a")
+		done
+	fi
+
+	if [ -s "$CFG" ]; then
+		mv "$CFG" "$REAL_CFG" || exit
+	else
+		rm -f "$CFG"
+		exit 1
+	fi
 fi
 
-if [ -s "$CFG" ]; then
-	mv "$CFG" "$REAL_CFG" || exit
-else
-	rm -f "$CFG"
-	exit 1
-fi
+[ -s "$REAL_CFG" ] || exit 1
+[ "$REAL_CFG" = "$BASE_CFG" ] || exit 0
+
+mkdir -p "$(dirname "$RUNTIME_CFG")"
+cp "$BASE_CFG" "$RUNTIME_CFG.tmp" && mv "$RUNTIME_CFG.tmp" "$RUNTIME_CFG" || exit
+
+[ -L "$LINK_CFG" ] && exit 0
+rm -f "$LINK_CFG"
+ln -s "$RUNTIME_CFG" "$LINK_CFG"

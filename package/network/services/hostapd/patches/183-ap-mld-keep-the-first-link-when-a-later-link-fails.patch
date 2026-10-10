@@ -1,0 +1,62 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sun, 27 Sep 2026 20:12:59 +0200
+Subject: [PATCH] hostapd: keep the first link when a later AP MLD link fails
+
+A later link of an AP MLD takes the driver instance of the first link
+(hapd->drv_priv = h_hapd->drv_priv) in hostapd_driver_init() and joins
+the MLD only after hostapd_drv_link_add() succeeds. When that call, or
+the check for driver MLO support, fails, the link returns -1 with the
+borrowed pointer still set.
+
+The caller's cleanup, hostapd_deinit_driver(), then treats the instance
+as its own: hostapd_cleanup_driver() removes the link with this BSS's
+link ID from the shared instance, which is the link of another BSS when
+the link IDs collide, or deinits the instance when it looks unshared.
+The first link keeps a pointer to a torn down or freed instance, and the
+next link that is set up calls get_capa() on it and crashes hostapd.
+
+Seen with an AP MLD whose links span two wiphys: the link on the second
+wiphy was assigned link ID 0, hostapd_drv_link_add() refused it, and the
+cleanup removed link 0 of the first wiphy.
+
+A link that never joined the MLD now drops the borrowed instance before
+it returns, so the cleanup leaves the first link alone.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/hostapd/main.c
++++ b/hostapd/main.c
+@@ -371,7 +371,7 @@ setup_mld:
+ 		if (!(iface->drv_flags2 & WPA_DRIVER_FLAGS2_MLO)) {
+ 			wpa_printf(MSG_INFO,
+ 				   "MLD: Not supported by the driver");
+-			return -1;
++			goto fail_mld;
+ 		}
+ 
+ 		/* Initialize the BSS parameter change to 1 */
+@@ -388,13 +388,23 @@ setup_mld:
+ 			wpa_printf(MSG_ERROR,
+ 				   "MLD: Failed to add link %d in MLD %s",
+ 				   hapd->mld_link_id, hapd->conf->iface);
+-			return -1;
++			goto fail_mld;
+ 		}
+ 		hostapd_mld_add_link(hapd);
+ 	}
+ #endif /* CONFIG_IEEE80211BE */
+ 
+ 	return 0;
++
++#ifdef CONFIG_IEEE80211BE
++fail_mld:
++	/* A later link only borrowed the driver instance of the first link */
++	if (h_hapd) {
++		hapd->drv_priv = NULL;
++		hapd->interface_added = 0;
++	}
++	return -1;
++#endif /* CONFIG_IEEE80211BE */
+ }
+ 
+ 

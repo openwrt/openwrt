@@ -4,6 +4,16 @@
 
 #include <linux/types.h>
 
+/* PIE actions */
+#define PIE_ACT_COPY_TO_PORT	2
+#define PIE_ACT_REDIRECT_TO_PORT 4
+#define PIE_ACT_ROUTE_UC	6
+#define PIE_ACT_VID_ASSIGN	0
+
+#define PIE_BLOCK_SIZE 128
+#define MAX_PIE_ENTRIES (18 * PIE_BLOCK_SIZE)
+#define MAX_COUNTERS 2048
+
 struct pie_rule;
 struct rtl838x_switch_priv;
 

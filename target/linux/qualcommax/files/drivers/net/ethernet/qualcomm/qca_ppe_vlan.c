@@ -124,7 +124,6 @@ ppe_vlan_alloc(struct qca_ppe_priv *priv, struct net_device *br_dev,
 		entry->br_dev = br_dev;
 		entry->vid = vid;
 		entry->vsi = vsi;
-		entry->ports = 0;
 		entry->pvid_ports = 0;
 		entry->xlt_idx = -1;
 		entry->xlt_pvid_idx = -1;
@@ -195,12 +194,9 @@ int qca_ppe_vlan_setup(struct dsa_switch *ds)
 				   FIELD_PREP(PPE_PORT_EG_VLAN_STAG_MODE, mode));
 	}
 
-	for (i = 0; i < PPE_VSI_MAX; i++) {
+	for (i = 0; i < PPE_VSI_MAX; i++)
 		regmap_write(priv->regmap, PPE_EG_VSI_TAG(i),
 			     PPE_EG_VSI_TAG_UNMODIFIED);
-		priv->vlans[i].xlt_idx = -1;
-		priv->vlans[i].xlt_pvid_idx = -1;
-	}
 
 	regmap_update_bits(priv->regmap, PPE_EG_BRIDGE_CONFIG,
 			   PPE_EG_L2_EDIT_EN, PPE_EG_L2_EDIT_EN);

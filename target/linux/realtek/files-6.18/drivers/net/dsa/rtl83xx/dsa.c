@@ -8,11 +8,52 @@
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 
 #include "lag.h"
+#include "mirror.h"
+#include "mac.h"
+#include "l2.h"
 #include "rtl-otto.h"
 #include "stats.h"
 #include "tc.h"
 #include "vlan.h"
 #include "stp.h"
+
+/* Both length fields are 14 bits wide (hardware maximum 16383 bytes). */
+#define RTLDSA_MAC_MAX_LEN_FIELD		GENMASK(13, 0)
+/* Mask of both length fields, leaving the tag-inclusion bit (28) untouched. */
+#define RTLDSA_MAC_MAX_LEN_MASK \
+	(RTLDSA_MAC_MAX_LEN_FIELD | (RTLDSA_MAC_MAX_LEN_FIELD << 14))
+/* Encode @len into both the high-speed and the 10/100M length field. */
+#define RTLDSA_MAC_MAX_LEN_VAL(len) \
+	(((len) & RTLDSA_MAC_MAX_LEN_FIELD) | (((len) & RTLDSA_MAC_MAX_LEN_FIELD) << 14))
+
+/* MAC link state bits */
+#define RTL_SPEED_10				0
+#define RTL_SPEED_100				1
+#define RTL_SPEED_1000				2
+#define RTL_SPEED_2500				5
+#define RTL_SPEED_5000				6
+#define RTL_SPEED_10000				4
+
+#define RTL838X_NWAY_EN				BIT(2)
+#define RTL838X_DUPLEX_MODE			BIT(3)
+#define RTL838X_SPEED_SHIFT			(4)
+#define RTL838X_SPEED_MASK			(3 << RTL838X_SPEED_SHIFT)
+#define RTL838X_TX_PAUSE_EN			BIT(6)
+#define RTL838X_RX_PAUSE_EN			BIT(7)
+
+#define RTL839X_DUPLEX_MODE			BIT(2)
+#define RTL839X_SPEED_SHIFT			(3)
+#define RTL839X_SPEED_MASK			(3 << RTL839X_SPEED_SHIFT)
+#define RTL839X_TX_PAUSE_EN			BIT(5)
+#define RTL839X_RX_PAUSE_EN			BIT(6)
+
+#define RTL930X_DUPLEX_MODE			BIT(2)
+#define RTL930X_SPEED_SHIFT			(3)
+#define RTL930X_SPEED_MASK			(15 << RTL930X_SPEED_SHIFT)
+#define RTL930X_TX_PAUSE_EN			BIT(7)
+#define RTL930X_RX_PAUSE_EN			BIT(8)
+
+#define RTL930X_PORT_IGNORE 0x3f
 
 /* Ethernet header, two stacked VLAN tags (802.1ad QinQ) and FCS */
 #define RTLDSA_FRAME_OVERHEAD		(ETH_HLEN + 2 * VLAN_HLEN + ETH_FCS_LEN)
@@ -119,7 +160,7 @@ static int rtldsa_83xx_setup(struct dsa_switch *ds)
 	rtldsa_stats_init_counters(priv);
 
 	rtldsa_83xx_mc_pmasks_setup(priv);
-	rtldsa_vlan_setup(priv);
+	otto_vlan_setup(priv);
 
 	rtldsa_setup_bpdu_traps(priv);
 	rtldsa_setup_lldp_traps(priv);
@@ -168,7 +209,7 @@ static int rtldsa_93xx_setup(struct dsa_switch *ds)
 	rtldsa_stats_init(priv);
 	rtldsa_stats_init_counters(priv);
 
-	rtldsa_vlan_setup(priv);
+	otto_vlan_setup(priv);
 
 	rtldsa_setup_bpdu_traps(priv);
 	rtldsa_setup_lldp_traps(priv);
@@ -814,9 +855,14 @@ static int rtldsa_find_l2_cam_entry(struct rtl838x_switch_priv *priv, u64 seed,
 				    bool must_exist, struct rtl838x_l2_entry *e)
 {
 	int idx = -1;
+	int cam_rows;
 	u64 entry;
 
-	for (int i = 0; i < 64; i++) {
+	cam_rows = otto_table_rows(priv->r->l2_cam_tbl);
+	if (cam_rows < 0)
+		return -1;
+
+	for (int i = 0; i < cam_rows; i++) {
 		entry = priv->r->read_cam(i, e);
 		if (!must_exist && !e->valid) {
 			if (idx < 0) /* First empty entry? */
@@ -988,10 +1034,19 @@ static int rtldsa_port_fdb_dump(struct dsa_switch *ds, int port,
 				dsa_fdb_dump_cb_t *cb, void *data)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
+	int uc_rows, cam_rows;
+
+	uc_rows = otto_table_rows(priv->r->l2_uc_tbl);
+	if (uc_rows < 0)
+		return uc_rows;
+
+	cam_rows = otto_table_rows(priv->r->l2_cam_tbl);
+	if (cam_rows < 0)
+		return cam_rows;
 
 	mutex_lock(&priv->reg_mutex);
 
-	for (int i = 0; i < priv->r->fib_entries; i++) {
+	for (int i = 0; i < uc_rows; i++) {
 		struct rtl838x_l2_entry e = {};
 
 		priv->r->read_l2_entry_using_hash(i >> 2, i & 0x3, &e);
@@ -1000,13 +1055,13 @@ static int rtldsa_port_fdb_dump(struct dsa_switch *ds, int port,
 			continue;
 
 		if (e.port == port || e.port == RTL930X_PORT_IGNORE)
-			cb(e.mac, e.vid, e.is_static, data);
+			cb(e.mac, e.rvid, e.is_static, data);
 
 		if (!((i + 1) % 64))
 			cond_resched();
 	}
 
-	for (int i = 0; i < 64; i++) {
+	for (int i = 0; i < cam_rows; i++) {
 		struct rtl838x_l2_entry e = {};
 
 		priv->r->read_cam(i, &e);
@@ -1015,7 +1070,7 @@ static int rtldsa_port_fdb_dump(struct dsa_switch *ds, int port,
 			continue;
 
 		if (e.port == port)
-			cb(e.mac, e.vid, e.is_static, data);
+			cb(e.mac, e.rvid, e.is_static, data);
 	}
 
 	mutex_unlock(&priv->reg_mutex);
@@ -1184,114 +1239,6 @@ out:
 	mutex_unlock(&priv->reg_mutex);
 
 	return err;
-}
-
-static int rtldsa_port_mirror_add(struct dsa_switch *ds, int port,
-				  struct dsa_mall_mirror_tc_entry *mirror,
-				  bool ingress, struct netlink_ext_ack *extack)
-{
-	/* We support 4 mirror groups, one destination port per group */
-	struct rtl838x_switch_priv *priv = ds->priv;
-	struct rtldsa_mirror_config config;
-	int err = 0;
-	int pm_reg;
-	int group;
-	int r;
-
-	if (!priv->r->get_mirror_config)
-		return -EOPNOTSUPP;
-
-	pr_debug("In %s\n", __func__);
-
-	mutex_lock(&priv->reg_mutex);
-
-	for (group = 0; group < 4; group++) {
-		if (priv->mirror_group_ports[group] == mirror->to_local_port)
-			break;
-	}
-	if (group >= 4) {
-		for (group = 0; group < 4; group++) {
-			if (priv->mirror_group_ports[group] < 0)
-				break;
-		}
-	}
-
-	if (group >= 4) {
-		err = -ENOSPC;
-		goto out_unlock;
-	}
-
-	pr_debug("Using group %d\n", group);
-
-	r = priv->r->get_mirror_config(&config, group, mirror->to_local_port);
-	if (r < 0) {
-		err = r;
-		goto out_unlock;
-	}
-
-	if (ingress)
-		pm_reg = config.spm;
-	else
-		pm_reg = config.dpm;
-
-	sw_w32(config.val, config.ctrl);
-
-	if (priv->r->get_port_reg_be(pm_reg) & (1ULL << port)) {
-		err = -EEXIST;
-		goto out_unlock;
-	}
-
-	priv->r->mask_port_reg_be(0, 1ULL << port, pm_reg);
-	priv->mirror_group_ports[group] = mirror->to_local_port;
-
-out_unlock:
-	mutex_unlock(&priv->reg_mutex);
-
-	return err;
-}
-
-static void rtldsa_port_mirror_del(struct dsa_switch *ds, int port,
-				   struct dsa_mall_mirror_tc_entry *mirror)
-{
-	struct rtl838x_switch_priv *priv = ds->priv;
-	struct rtldsa_mirror_config config;
-	int group = 0;
-	int r;
-
-	if (!priv->r->get_mirror_config)
-		return;
-
-	pr_debug("In %s\n", __func__);
-
-	mutex_lock(&priv->reg_mutex);
-
-	for (group = 0; group < 4; group++) {
-		if (priv->mirror_group_ports[group] == mirror->to_local_port)
-			break;
-	}
-	if (group >= 4)
-		goto out_unlock;
-
-	r = priv->r->get_mirror_config(&config, group, mirror->to_local_port);
-	if (r < 0)
-		goto out_unlock;
-
-	if (mirror->ingress) {
-		/* Ingress, clear source port matrix */
-		priv->r->mask_port_reg_be(1ULL << port, 0, config.spm);
-	} else {
-		/* Egress, clear destination port matrix */
-		priv->r->mask_port_reg_be(1ULL << port, 0, config.dpm);
-	}
-
-	if (!(priv->r->get_port_reg_be(config.spm) ||
-	      priv->r->get_port_reg_be(config.dpm))) {
-		priv->mirror_group_ports[group] = -1;
-		sw_w32(0, config.ctrl);
-	}
-
-out_unlock:
-	mutex_unlock(&priv->reg_mutex);
 }
 
 static int rtldsa_port_pre_bridge_flags(struct dsa_switch *ds, int port,
@@ -1483,7 +1430,7 @@ static int rtldsa_port_lag_join(struct dsa_switch *ds,
 	priv->lagmembers |= BIT_ULL(port);
 
 	pr_debug("lag_members = %llX\n", priv->lagmembers);
-	err = rtldsa_lag_add(priv->ds, group, port, info);
+	err = otto_lag_add(priv->ds, group, port, info);
 	if (err) {
 		err = -EINVAL;
 		goto out;
@@ -1518,7 +1465,7 @@ static int rtldsa_port_lag_leave(struct dsa_switch *ds, int port,
 	priv->lagmembers &= ~BIT_ULL(port);
 	priv->lag_non_primary &= ~BIT_ULL(port);
 	pr_debug("lag_members = %llX\n", priv->lagmembers);
-	err = rtldsa_lag_del(priv->ds, group, port);
+	err = otto_lag_del(priv->ds, group, port);
 	if (err) {
 		err = -EINVAL;
 		goto out;
@@ -1580,11 +1527,11 @@ const struct dsa_switch_ops rtldsa_83xx_switch_ops = {
 	.port_fast_age		= rtldsa_port_fast_age,
 	.port_mst_state_set	= rtldsa_port_mst_state_set,
 
-	.port_vlan_filtering	= rtldsa_vlan_filtering,
-	.port_vlan_add		= rtldsa_vlan_add,
-	.port_vlan_del		= rtldsa_vlan_del,
-	.port_vlan_fast_age	= rtldsa_port_vlan_fast_age,
-	.vlan_msti_set		= rtldsa_vlan_msti_set,
+	.port_vlan_filtering	= otto_vlan_port_filtering,
+	.port_vlan_add		= otto_vlan_port_add,
+	.port_vlan_del		= otto_vlan_port_del,
+	.port_vlan_fast_age	= otto_vlan_port_fast_age,
+	.vlan_msti_set		= otto_vlan_msti_set,
 
 	.port_fdb_add		= rtldsa_port_fdb_add,
 	.port_fdb_del		= rtldsa_port_fdb_del,
@@ -1642,11 +1589,11 @@ const struct dsa_switch_ops rtldsa_93xx_switch_ops = {
 	.port_fast_age		= rtldsa_port_fast_age,
 	.port_mst_state_set	= rtldsa_port_mst_state_set,
 
-	.port_vlan_filtering	= rtldsa_vlan_filtering,
-	.port_vlan_add		= rtldsa_vlan_add,
-	.port_vlan_del		= rtldsa_vlan_del,
-	.port_vlan_fast_age	= rtldsa_port_vlan_fast_age,
-	.vlan_msti_set		= rtldsa_vlan_msti_set,
+	.port_vlan_filtering	= otto_vlan_port_filtering,
+	.port_vlan_add		= otto_vlan_port_add,
+	.port_vlan_del		= otto_vlan_port_del,
+	.port_vlan_fast_age	= otto_vlan_port_fast_age,
+	.vlan_msti_set		= otto_vlan_msti_set,
 
 	.port_fdb_add		= rtldsa_port_fdb_add,
 	.port_fdb_del		= rtldsa_port_fdb_del,

@@ -7,6 +7,46 @@
 #include "pie.h"
 #include "rtl-otto.h"
 
+/* Packet Inspection Engine */
+#define RTL838X_METER_GLB_CTRL			(0x4B08)
+#define RTL839X_METER_GLB_CTRL			(0x1300)
+#define RTL930X_METER_GLB_CTRL			(0xa0a0)
+#define RTL931X_METER_GLB_CTRL			(0x411C)
+
+#define RTL839X_ACL_CTRL			(0x1288)
+
+#define RTL838X_ACL_BLK_LOOKUP_CTRL		(0x6100)
+#define RTL839X_ACL_BLK_LOOKUP_CTRL		(0x1280)
+#define RTL930X_PIE_BLK_LOOKUP_CTRL		(0xa5a0)
+#define RTL931X_PIE_BLK_LOOKUP_CTRL		(0x4180)
+
+#define RTL838X_ACL_BLK_PWR_CTRL		(0x6104)
+#define RTL839X_PS_ACL_PWR_CTRL			(0x049c)
+
+#define RTL838X_ACL_BLK_TMPLTE_CTRL(block)	(0x6108 + ((block) << 2))
+#define RTL839X_ACL_BLK_TMPLTE_CTRL(block)	(0x128c + ((block) << 2))
+#define RTL930X_PIE_BLK_TMPLTE_CTRL(block)	(0xa624 + ((block) << 2))
+#define RTL931X_PIE_BLK_TMPLTE_CTRL(block)	(0x4214 + ((block) << 2))
+
+#define RTL838X_ACL_BLK_GROUP_CTRL		(0x615C)
+
+#define RTL838X_ACL_CLR_CTRL			(0x6168)
+#define RTL839X_ACL_CLR_CTRL			(0x12fc)
+#define RTL930X_PIE_CLR_CTRL			(0xa66c)
+#define RTL931X_PIE_CLR_CTRL			(0x42D8)
+
+#define RTL838X_DMY_REG27			(0x3378)
+
+#define RTL838X_ACL_PORT_LOOKUP_CTRL(p)		(0x616C + (((p) << 2)))
+#define RTL930X_ACL_PORT_LOOKUP_CTRL(p)		(0xA784 + (((p) << 2)))
+#define RTL931X_ACL_PORT_LOOKUP_CTRL(p)		(0x44F8 + (((p) << 2)))
+
+#define RTL930X_PIE_BLK_PHASE_CTRL		(0xA5A4)
+#define RTL931X_PIE_BLK_PHASE_CTRL		(0x4184)
+
+#define N_FIXED_FIELDS 12
+#define N_FIXED_FIELDS_RTL931X 14
+
 /* RTL838X */
 
 /* see_dal_maple_acl_log2PhyTmplteField and src/app/diag_v2/src/diag_acl.c */

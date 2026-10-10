@@ -938,6 +938,24 @@ static int bcm6368_enetsw_probe(struct platform_device *pdev)
 	priv->pdev = pdev;
 	priv->net_dev = ndev;
 
+	/*
+	 * Look up the MAC first: an nvmem provider that isn't ready yet makes
+	 * this return -EPROBE_DEFER, which must happen before the power
+	 * domains are attached below, as those aren't released on defer and
+	 * re-attaching them on the next probe fails with -EEXIST.
+	 */
+	ret = of_get_mac_address(node, dev_addr);
+	if (ret == -EPROBE_DEFER)
+		return ret;
+
+	if (is_valid_ether_addr(dev_addr)) {
+		dev_addr_set(ndev, dev_addr);
+		dev_info(dev, "mtd mac %pM\n", dev_addr);
+	} else {
+		eth_hw_addr_random(ndev);
+		dev_info(dev, "random mac\n");
+	}
+
 	priv->num_pms = of_count_phandle_with_args(node, "power-domains",
 						   "#power-domain-cells");
 	if (priv->num_pms > 1) {
@@ -1009,18 +1027,6 @@ static int bcm6368_enetsw_probe(struct platform_device *pdev)
 	priv->rx_ring_size = ENETSW_DEF_RX_DESC;
 	priv->tx_ring_size = ENETSW_DEF_TX_DESC;
 	priv->copybreak = ENETSW_DEF_CPY_BREAK;
-
-	ret = of_get_mac_address(node, dev_addr);
-	if (ret == -EPROBE_DEFER)
-		return ret;
-
-	if (is_valid_ether_addr(dev_addr)) {
-		dev_addr_set(ndev, dev_addr);
-		dev_info(dev, "mtd mac %pM\n", dev_addr);
-	} else {
-		eth_hw_addr_random(ndev);
-		dev_info(dev, "random mac\n");
-	}
 
 	priv->rx_buf_size = ALIGN(ENETSW_MAX_FRAME,
 				  ENETSW_DMA_MAXBURST * 4);

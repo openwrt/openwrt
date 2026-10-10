@@ -7,7 +7,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=arm
 BOARD:=sunxi
 BOARDNAME:=Allwinner ARM SoCs
-FEATURES:=ext4 display ramdisk rootfs-part rtc squashfs usb usbgadget
+FEATURES:=ext4 ramdisk rootfs-part rtc squashfs usb usbgadget
 SUBTARGETS:=cortexa8 cortexa7 cortexa53 arm926ejs
 
 KERNEL_PATCHVER:=6.18
@@ -27,5 +27,6 @@ include $(INCLUDE_DIR)/target.mk
 
 DEFAULT_PACKAGES += uboot-envtools
 DEFAULT_PACKAGES += partx-utils mkf2fs e2fsprogs
+DEFAULT_PACKAGES += video-support
 
 $(eval $(call BuildTarget))

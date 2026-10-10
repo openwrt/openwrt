@@ -35,6 +35,7 @@ struct otto_table {
 	s8 wr_e_bit;
 	s8 m_bit;
 	s8 hit_bit;
+	s8 sp_bit;
 	struct mutex lock;
 };
 
@@ -42,37 +43,37 @@ struct otto_table {
  * write data window, read data window, how many data registers the window holds,
  * the busy status bit, the read/write bit, the shift the table type sits at,
  * whether the read/write bit is inverted, LSB and MSB of the address bit field,
- * read / write execute bits, access method bit and hit status bit.
+ * read / write execute bits, access method bit, hit status bit and source port bit.
  * The enum, the descriptors and the per-register width limit are all generated
  * from here, so an entry cannot be described in one place and not in the others.
  */
 
-#define OTTO_REG_LIST(_)											\
-	_(OTTO_REG_8380_L2,   0x6900,   0x6900,   0x6908,   0x6908,   3, -1, 15, 13, 1,  0, 12, 16, 16, -1, -1)	\
-	_(OTTO_REG_8380_0,    0x6914,   0x6914,   0x6918,   0x6918,  18, -1, 14, 12, 1,  0, 11, 15, 15, -1, -1)	\
-	_(OTTO_REG_8380_1,    0xA4C8,   0xA4C8,   0xA4CC,   0xA4CC,   6, -1, 14, 12, 1,  0, 11, 15, 15, -1, -1)	\
-	_(OTTO_REG_8390_L2,   0x1180,   0x1180,   0x1184,   0x1184,   3, -1, 16, 14, 0,  0, 13, 17, 17, -1, -1)	\
-	_(OTTO_REG_8390_0,    0x1190,   0x1190,   0x1194,   0x1194,  17, -1, 15, 12, 0,  0, 11, 16, 16, -1, -1)	\
-	_(OTTO_REG_8390_1,    0x6B80,   0x6B80,   0x6B84,   0x6B84,   4, -1, 14, 12, 0,  0, 11, 15, 15, -1, -1)	\
-	_(OTTO_REG_8390_2,    0x611C,   0x611C,   0x6120,   0x6120,   9, -1,  8,  6, 0,  0,  5,  9,  9, -1, -1)	\
-	_(OTTO_REG_9300_L2,   0xB320,   0xB320,   0xB334,   0xB334,   3, -1, 18, 16, 0,  0, 13, 19, 19, -1, -1)	\
-	_(OTTO_REG_9300_0,    0xB340,   0xB340,   0xB344,   0xB344,  19, -1, 16, 12, 0,  0, 11, 17, 17, -1, -1)	\
-	_(OTTO_REG_9300_1,    0xB3A0,   0xB3A0,   0xB3A4,   0xB3A4,  20, -1, 16, 13, 0,  0, 12, 17, 17, -1, -1)	\
-	_(OTTO_REG_9300_2,    0xCE04,   0xCE04,   0xCE08,   0xCE08,   6, -1, 14, 12, 0,  0, 11, 15, 15, -1, -1)	\
-	_(OTTO_REG_9300_HSB,  0xD600,   0xD600,   0xD604,   0xD604,  30, -1,  7,  6, 0,  0,  5,  8,  8, -1, -1)	\
-	_(OTTO_REG_9300_HSA,  0x7880,   0x7880,   0x7884,   0x7884,  22, -1,  9,  8, 0,  0,  7, 10, 10, -1, -1)	\
-	_(OTTO_REG_9310_0,    0x8500,   0x8500,   0x8508,   0x8508,   8, -1, 19, 15, 0,  0, 14, 20, 20, -1, -1)	\
-	_(OTTO_REG_9310_1,    0x40C0,   0x40C0,   0x40C4,   0x40C4,  22, -1, 16, 14, 0,  0, 13, 17, 17, -1, -1)	\
-	_(OTTO_REG_9310_2,    0x8528,   0x8528,   0x852C,   0x852C,   6, -1, 18, 14, 0,  0, 13, 19, 19, -1, -1)	\
-	_(OTTO_REG_9310_3,    0x0200,   0x0200,   0x0204,   0x0204,   9, -1, 15, 12, 0,  0, 11, 16, 16, -1, -1)	\
-	_(OTTO_REG_9310_4,    0x20dc,   0x20dc,   0x20e0,   0x20e0,  29, -1,  7,  6, 0,  0,  5,  8,  8, -1, -1)	\
-	_(OTTO_REG_9310_5,    0x7e1c,   0x7e1c,   0x7e20,   0x7e20,  53, -1,  8,  6, 0,  0,  5,  9,  9, -1, -1)	\
-	_(OTTO_REG_9607C_0,   0x12000,  0x12004,  0x12008,  0x1201c,  5, 13,  3,  0, 0, 12, 23, -1, -1,  5, 12)	\
-	_(OTTO_REG_9607C_NAT, 0x801100, 0x801100, 0x801180, 0x801110, 8, -1, -1, 16, 0,  0, 15, 25, 24, -1, -1)	\
+#define OTTO_REG_LIST(_)												\
+	_(OTTO_REG_8380_L2,   0x6900,   0x6900,   0x6908,   0x6908,   3, -1, 15, 13, 1,  0, 12, 16, 16, -1, -1, -1)	\
+	_(OTTO_REG_8380_0,    0x6914,   0x6914,   0x6918,   0x6918,  18, -1, 14, 12, 1,  0, 11, 15, 15, -1, -1, -1)	\
+	_(OTTO_REG_8380_1,    0xA4C8,   0xA4C8,   0xA4CC,   0xA4CC,   6, -1, 14, 12, 1,  0, 11, 15, 15, -1, -1, -1)	\
+	_(OTTO_REG_8390_L2,   0x1180,   0x1180,   0x1184,   0x1184,   3, -1, 16, 14, 0,  0, 13, 17, 17, -1, -1, -1)	\
+	_(OTTO_REG_8390_0,    0x1190,   0x1190,   0x1194,   0x1194,  17, -1, 15, 12, 0,  0, 11, 16, 16, -1, -1, -1)	\
+	_(OTTO_REG_8390_1,    0x6B80,   0x6B80,   0x6B84,   0x6B84,   4, -1, 14, 12, 0,  0, 11, 15, 15, -1, -1, -1)	\
+	_(OTTO_REG_8390_2,    0x611C,   0x611C,   0x6120,   0x6120,   9, -1,  8,  6, 0,  0,  5,  9,  9, -1, -1, -1)	\
+	_(OTTO_REG_9300_L2,   0xB320,   0xB320,   0xB334,   0xB334,   3, -1, 18, 16, 0,  0, 13, 19, 19, -1, -1, -1)	\
+	_(OTTO_REG_9300_0,    0xB340,   0xB340,   0xB344,   0xB344,  19, -1, 16, 12, 0,  0, 11, 17, 17, -1, -1, -1)	\
+	_(OTTO_REG_9300_1,    0xB3A0,   0xB3A0,   0xB3A4,   0xB3A4,  20, -1, 16, 13, 0,  0, 12, 17, 17, -1, -1, -1)	\
+	_(OTTO_REG_9300_2,    0xCE04,   0xCE04,   0xCE08,   0xCE08,   6, -1, 14, 12, 0,  0, 11, 15, 15, -1, -1, -1)	\
+	_(OTTO_REG_9300_HSB,  0xD600,   0xD600,   0xD604,   0xD604,  30, -1,  7,  6, 0,  0,  5,  8,  8, -1, -1, -1)	\
+	_(OTTO_REG_9300_HSA,  0x7880,   0x7880,   0x7884,   0x7884,  22, -1,  9,  8, 0,  0,  7, 10, 10, -1, -1, -1)	\
+	_(OTTO_REG_9310_0,    0x8500,   0x8500,   0x8508,   0x8508,   8, -1, 19, 15, 0,  0, 14, 20, 20, -1, -1, -1)	\
+	_(OTTO_REG_9310_1,    0x40C0,   0x40C0,   0x40C4,   0x40C4,  22, -1, 16, 14, 0,  0, 13, 17, 17, -1, -1, -1)	\
+	_(OTTO_REG_9310_2,    0x8528,   0x8528,   0x852C,   0x852C,   6, -1, 18, 14, 0,  0, 13, 19, 19, -1, -1, -1)	\
+	_(OTTO_REG_9310_3,    0x0200,   0x0200,   0x0204,   0x0204,   9, -1, 15, 12, 0,  0, 11, 16, 16, -1, -1, -1)	\
+	_(OTTO_REG_9310_4,    0x20dc,   0x20dc,   0x20e0,   0x20e0,  29, -1,  7,  6, 0,  0,  5,  8,  8, -1, -1, -1)	\
+	_(OTTO_REG_9310_5,    0x7e1c,   0x7e1c,   0x7e20,   0x7e20,  53, -1,  8,  6, 0,  0,  5,  9,  9, -1, -1, -1)	\
+	_(OTTO_REG_9607C_0,   0x12000,  0x12004,  0x12008,  0x1201c,  5, 13,  3,  0, 0, 12, 23, -1, -1,  5, 12,  8)	\
+	_(OTTO_REG_9607C_NAT, 0x801100, 0x801100, 0x801180, 0x801110, 8, -1, -1, 16, 0,  0, 15, 25, 24, -1, -1, -1)	\
 
 #define OTTO_REG_ENUM(name, ctrl_addr, sts_addr, wr_data, rd_data, max,	\
 		      busy_bit, cbit, tbit, rmode, addr_lsb, addr_msb,	\
-		      rd_e_bit, wr_e_bit, m_bit, hit_bit)		\
+		      rd_e_bit, wr_e_bit, m_bit, hit_bit, sp_bit)	\
 	name,
 
 enum otto_table_reg {
@@ -82,7 +83,7 @@ enum otto_table_reg {
 
 #define OTTO_REG_MAX(name, ctrl_addr, sts_addr, wr_data, rd_data, max,	\
 		     busy_bit, cbit, tbit, rmode, addr_lsb, addr_msb,	\
-		     rd_e_bit, wr_e_bit, m_bit, hit_bit)		\
+		     rd_e_bit, wr_e_bit, m_bit, hit_bit, sp_bit)	\
 	name##_MAX_DATA = max,
 
 enum otto_table_reg_max {
@@ -91,7 +92,8 @@ enum otto_table_reg_max {
 
 #define OTTO_REG_DESC(name, ctrl_addr_, sts_addr_, wr_data_, rd_data_,	\
 		      max_, busy_bit_, cbit_, tbit_, rmode_, addr_lsb_,	\
-		      addr_msb_, rd_e_bit_, wr_e_bit_, m_bit_, hit_bit_)\
+		      addr_msb_, rd_e_bit_, wr_e_bit_, m_bit_, hit_bit_,\
+		      sp_bit_)						\
 	[name] = {							\
 		.ctrl_addr = ctrl_addr_, .sts_addr = sts_addr_,		\
 		.wr_data = wr_data_, .rd_data = rd_data_,		\
@@ -99,7 +101,7 @@ enum otto_table_reg_max {
 		.rmode = rmode_,					\
 		.addr_lsb = addr_lsb_, .addr_msb = addr_msb_,		\
 		.rd_e_bit = rd_e_bit_, .wr_e_bit = wr_e_bit_,		\
-		.m_bit = m_bit_, .hit_bit = hit_bit_,			\
+		.m_bit = m_bit_, .hit_bit = hit_bit_, .sp_bit = sp_bit_	\
 	},
 
 static struct otto_table otto_regs[OTTO_REG_END] = {
@@ -563,3 +565,122 @@ int otto_table_write_bytes(enum otto_table_id id, int idx, const void *buf, size
 	return ret;
 }
 EXPORT_SYMBOL_GPL(otto_table_write_bytes);
+
+static int otto_table_l2_exec(int handle, bool is_write, int idx, int port,
+		       enum otto_table_l2_method method)
+{
+	bool use_idx = !is_write && method != OTTO_TABLE_L2_METHOD_MAC;
+	const struct otto_table_map *map = &otto_table_maps[handle];
+	struct otto_table *tbl = &otto_regs[map->reg];
+	u32 val, hit, cmd, addr_mask;
+	int ret = 0;
+
+	/* Prepare target table and operation (read or write) */
+	cmd = is_write ? BIT(tbl->c_bit) : 0;
+	cmd |= map->type << tbl->t_bit; /* Table type */
+
+	if (!is_write) {
+		cmd |= method << tbl->m_bit;
+
+		if (method == OTTO_TABLE_L2_METHOD_ADDR_NEXT_UC_PORT)
+			cmd |= port << tbl->sp_bit;
+	}
+
+	if (use_idx) {
+		if (!otto_table_index_ok(handle, idx))
+			return -EINVAL;
+
+		addr_mask = GENMASK(tbl->addr_msb, tbl->addr_lsb);
+		cmd |= field_prep(addr_mask, idx + map->offset); /* Index */
+	}
+
+	/* Defensive pre check in case an earlier command never completed */
+	ret = regmap_read_poll_timeout(otto_map, tbl->sts_addr, val,
+				       !(val & BIT(tbl->busy_bit)), 20, 10000);
+	if (ret) {
+		pr_err_ratelimited("otto_table: table %d busy, command not sent\n",
+				   otto_table_handle_to_id(handle));
+		return ret;
+	}
+
+	ret = regmap_write(otto_map, tbl->ctrl_addr, cmd);
+	if (ret)
+		return ret;
+
+	/* Poll for completion */
+	ret = regmap_read_poll_timeout(otto_map, tbl->sts_addr, val,
+				       !(val & BIT(tbl->busy_bit)), 20, 10000);
+	if (ret) {
+		pr_err_ratelimited("otto_table: table %d did not complete\n",
+				   otto_table_handle_to_id(handle));
+		return ret;
+	}
+
+	/* For both reads and writes to the L2 table, check status */
+	ret = regmap_read(otto_map, tbl->sts_addr, &val);
+	if (ret)
+		return ret;
+
+	/* Did the query find an entry? */
+	hit = val & BIT(tbl->hit_bit);
+	if (!hit)
+		return is_write ? -ENOSPC : -ENOENT;
+
+	/* If so, extract the address */
+	return field_get(BIT(tbl->hit_bit) - 1, val);
+}
+
+int __otto_table_l2_query(int handle, int idx, void *buf, bool is_write,
+			  size_t size, int port,
+			  enum otto_table_l2_method method)
+{
+	struct otto_table *tbl = otto_table_reg(handle);
+	unsigned int words;
+	u32 *data = buf;
+	int ret;
+
+	if (!tbl)
+		return -EINVAL;
+
+	words = otto_table_maps[handle].width;
+	if (WARN_ONCE(size != words * sizeof(u32),
+		      "otto_table: %zu bytes for table %d, a %u word entry\n",
+		      size, otto_table_handle_to_id(handle), words))
+		return -EINVAL;
+
+	if (is_write || method == OTTO_TABLE_L2_METHOD_MAC) {
+		ret = regmap_bulk_write(otto_map, tbl->wr_data, data, words);
+		if (ret)
+			return ret;
+	}
+
+	/* Execute and get hit address on success or an error */
+	idx = otto_table_l2_exec(handle, is_write, idx, port, method);
+	if (idx < 0)
+		return idx;
+
+	/* Hopefully it doesn't throw an error or else hit address is lost */
+	if (!is_write)
+		ret = regmap_bulk_read(otto_map, tbl->rd_data, data, words);
+
+	return ret ? ret : idx;
+}
+EXPORT_SYMBOL_GPL(__otto_table_l2_query);
+
+int otto_table_l2_query(enum otto_table_id id, int idx, void *buf,
+			bool is_write, size_t size, int port,
+			enum otto_table_l2_method method)
+{
+	int handle = otto_table_acquire(id);
+	int ret = 0;
+
+	if (handle < 0)
+		return handle;
+
+	ret = __otto_table_l2_query(handle, idx, buf, is_write, size, port,
+				    method);
+	otto_table_release(handle);
+
+	return ret;
+}
+EXPORT_SYMBOL_GPL(otto_table_l2_query);

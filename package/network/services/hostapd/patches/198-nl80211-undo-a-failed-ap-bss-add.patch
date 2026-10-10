@@ -1,0 +1,53 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 6 Oct 2026 08:00:00 +0200
+Subject: [PATCH] nl80211: undo a failed AP BSS add
+
+wpa_driver_nl80211_if_add() links the new i802_bss into the driver and
+stores it in *drv_priv before nl80211_setup_ap(). When that fails, the
+function returns -1 and leaves both in place. The caller's cleanup then
+takes the half set up BSS for its own: for an AP MLD BSS,
+hostapd_cleanup_driver() calls driver_nl80211_link_remove() on a BSS
+with no links, which copies the context of its unused first link (NULL)
+into bss->ctx and reports EVENT_MLD_INTERFACE_FREED with it, and hostapd
+crashes in hostapd_wpa_event(). A failure of nl80211_set_mode() leaks
+the BSS.
+
+Undo the add on both failures, as the other error paths of the function
+do, and clear *drv_priv.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/drivers/driver_nl80211.c
++++ b/src/drivers/driver_nl80211.c
+@@ -9819,8 +9819,12 @@ static int wpa_driver_nl80211_if_add(voi
+ 		new_bss->added_if = added;
+ 
+ 		/* Set interface mode to NL80211_IFTYPE_AP */
+-		if (nl80211_set_mode(new_bss, nlmode))
++		if (nl80211_set_mode(new_bss, nlmode)) {
++			if (added)
++				nl80211_remove_iface(drv, ifidx);
++			os_free(new_bss);
+ 			return -1;
++		}
+ 
+ 		if (bridge &&
+ 		    i802_check_bridge(drv, new_bss, bridge, ifname) < 0) {
+@@ -9850,8 +9854,16 @@ static int wpa_driver_nl80211_if_add(voi
+ 		nl80211_init_bss(new_bss);
+ 
+ 		/* Subscribe management frames for this WPA_IF_AP_BSS */
+-		if (nl80211_setup_ap(new_bss))
++		if (nl80211_setup_ap(new_bss)) {
++			drv->first_bss->next = new_bss->next;
++			if (drv_priv)
++				*drv_priv = NULL;
++			nl80211_destroy_bss(new_bss);
++			if (added)
++				nl80211_remove_iface(drv, ifidx);
++			os_free(new_bss);
+ 			return -1;
++		}
+ 	}
+ 
+ 	if (drv->global)

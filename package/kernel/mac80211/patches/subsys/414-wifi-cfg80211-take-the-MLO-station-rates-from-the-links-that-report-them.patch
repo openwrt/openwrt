@@ -1,0 +1,75 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Thu, 1 Oct 2026 16:36:19 +0200
+Subject: [PATCH] wifi: cfg80211: take the MLO station rates from the links
+ that report them
+
+cfg80211_sta_set_mld_sinfo() takes the TX and RX rate of an MLO station
+from the link with the least inactive time. The inactive time block
+before it has already stored this link's value as the least one when it
+is, so the comparison against it never holds after the first link. The
+first link then decides alone, and where that link reports no rate the
+station reports none.
+
+mac80211 records the last TX rate of a driver with its own rate control
+on the station's default link, which is the association link. A station
+that associated on any other link than the first therefore reports no
+TX bit rate at all: an MLO backhaul station associated on link 1 of a
+mac80211_hwsim AP MLD shows only the RX rate of link 0.
+
+Track the least inactive time per rate among the links that report it.
+The TX and RX durations had the same condition, so only the first link
+was counted; sum them over every link.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ net/wireless/nl80211.c | 21 ++++++++++-----------
+ 1 file changed, 10 insertions(+), 11 deletions(-)
+
+--- a/net/wireless/nl80211.c
++++ b/net/wireless/nl80211.c
+@@ -8295,6 +8295,7 @@ static void cfg80211_sta_set_mld_sinfo(s
+ 	struct link_station_info *link_sinfo;
+ 	int link_id, init = 0;
+ 	u32 link_inactive_time;
++	u32 txrate_inactive_time = U32_MAX, rxrate_inactive_time = U32_MAX;
+ 
+ 	sinfo->signal = -99;
+ 
+@@ -8421,31 +8422,27 @@ static void cfg80211_sta_set_mld_sinfo(s
+ 		/* Update MLO rates as per last updated link rate */
+ 		if ((link_sinfo->filled &
+ 		     BIT_ULL(NL80211_STA_INFO_TX_BITRATE)) &&
+-		    (!init ||
+-		     link_inactive_time > link_sinfo->inactive_time)) {
++		    link_sinfo->inactive_time <= txrate_inactive_time) {
++			txrate_inactive_time = link_sinfo->inactive_time;
+ 			sinfo->txrate = link_sinfo->txrate;
+ 			sinfo->filled |= BIT_ULL(NL80211_STA_INFO_TX_BITRATE);
+ 		}
+ 		if ((link_sinfo->filled &
+ 		     BIT_ULL(NL80211_STA_INFO_RX_BITRATE)) &&
+-		    (!init ||
+-		     link_inactive_time > link_sinfo->inactive_time)) {
++		    link_sinfo->inactive_time <= rxrate_inactive_time) {
++			rxrate_inactive_time = link_sinfo->inactive_time;
+ 			sinfo->rxrate = link_sinfo->rxrate;
+ 			sinfo->filled |= BIT_ULL(NL80211_STA_INFO_RX_BITRATE);
+ 		}
+ 
+ 		if (link_sinfo->filled &
+-		    BIT_ULL(NL80211_STA_INFO_TX_DURATION) &&
+-		    (!init ||
+-		     link_inactive_time > link_sinfo->inactive_time)) {
++		    BIT_ULL(NL80211_STA_INFO_TX_DURATION)) {
+ 			sinfo->tx_duration += link_sinfo->tx_duration;
+ 			sinfo->filled |=
+ 				BIT_ULL(NL80211_STA_INFO_TX_DURATION);
+ 		}
+ 		if (link_sinfo->filled &
+-		    BIT_ULL(NL80211_STA_INFO_RX_DURATION) &&
+-		    (!init ||
+-		     link_inactive_time > link_sinfo->inactive_time)) {
++		    BIT_ULL(NL80211_STA_INFO_RX_DURATION)) {
+ 			sinfo->rx_duration += link_sinfo->rx_duration;
+ 			sinfo->filled |=
+ 				BIT_ULL(NL80211_STA_INFO_RX_DURATION);

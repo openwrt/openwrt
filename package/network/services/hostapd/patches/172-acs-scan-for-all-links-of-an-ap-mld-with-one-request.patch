@@ -1,0 +1,441 @@
+From: John Crispin <john@phrozen.org>
+Date: Mon, 5 Oct 2026 16:30:00 +0200
+Subject: [PATCH] ACS: scan for all links of an AP MLD with one request
+
+The links of an AP MLD share one wiphy, and the kernel runs one scan per
+wiphy at a time. If several links use ACS, each link scans for itself,
+and every link after the first one gets -EBUSY and retries every
+ACS_SCAN_RETRY_INTERVAL seconds. The ACS of three links then takes
+three full scans and the retry delays, and every retry logs two lines
+at info level.
+
+Scan for all links of the AP MLD that are in ACS with one request:
+
+- acs_request_scan() adds the channels of every partner link that is in
+  ACS and waits for a scan, and gives those links the scan callback.
+- acs_scan_complete() fetches the survey once. Every link of the scan
+  keeps its scan callback until then, and the survey event hands the
+  survey to each of them, whichever link the driver reports it on.
+  Each link keeps the channels of its own band.
+- Each link then counts the scan, and continues from the event loop:
+  the links that need more scans with the next request, the others
+  with the channel study. EVENT_SCAN_RESULTS may still go on to call
+  the scan callback of the partners when the results reached a link
+  that did not scan, so a request started from the callback would be
+  taken as completed at once.
+- A link that the scan of a partner link includes waits at most
+  ACS_SCAN_WAIT_TIMEOUT seconds for its results, and then scans for
+  itself. The results can be lost when the partner link is torn down.
+- acs_cleanup() drops the scan callback of ACS, so that a link that is
+  disabled during its scan does not block the scans of its partner
+  links.
+
+A driver that scans its radios in parallel can then serve all links
+with one scan.
+
+The partner scan check of hostapd_driver_scan() moves into
+hostapd_mld_partner_scanning(). A scan that has to wait for a partner
+link is expected, so log it at debug level.
+
+Signed-off-by: John Crispin <john@phrozen.org>
+[nbd: continue the requesting link from the event loop as well, keep
+ its scan callback until the survey is fetched, add the wait timeout of
+ a partner link and the scan callback reset in acs_cleanup()]
+---
+--- a/src/ap/acs.c
++++ b/src/ap/acs.c
+@@ -310,6 +310,13 @@ static const struct bw_item *bw_desc[] =
+ static int acs_request_scan(struct hostapd_iface *iface);
+ static int acs_survey_is_sufficient(struct freq_survey *survey);
+ static void acs_scan_retry(void *eloop_data, void *user_data);
++static void acs_scan_complete(struct hostapd_iface *iface);
++static void acs_scan_next(void *eloop_data, void *user_data);
++static void acs_study_timeout(void *eloop_data, void *user_data);
++static void acs_scan_wait_timeout(void *eloop_data, void *user_data);
++
++/* seconds a link waits for the scan of a partner link */
++#define ACS_SCAN_WAIT_TIMEOUT 30
+ 
+ 
+ static void acs_clean_chan_surveys(struct hostapd_channel_data *chan)
+@@ -357,6 +364,12 @@ void acs_cleanup(struct hostapd_iface *i
+ 	iface->acs_num_completed_scans = 0;
+ 	iface->acs_num_retries = 0;
+ 	eloop_cancel_timeout(acs_scan_retry, iface, NULL);
++	eloop_cancel_timeout(acs_scan_next, iface, NULL);
++	eloop_cancel_timeout(acs_study_timeout, iface, NULL);
++	eloop_cancel_timeout(acs_scan_wait_timeout, iface, NULL);
++
++	if (iface->scan_cb == acs_scan_complete)
++		iface->scan_cb = NULL;
+ }
+ 
+ 
+@@ -1357,37 +1370,118 @@ fail:
+ }
+ 
+ 
++/* The links of an AP MLD share one wiphy, which runs one scan at a time */
++static size_t acs_mld_partners(struct hostapd_iface *iface,
++			       struct hostapd_iface **partners, bool scanning)
++{
++	size_t n = 0;
++#ifdef CONFIG_IEEE80211BE
++	struct hapd_interfaces *interfaces = iface->interfaces;
++	size_t i;
++
++	if (!interfaces || !iface->num_bss || !iface->bss[0]->conf->mld_ap)
++		return 0;
++
++	for (i = 0; i < interfaces->count && n < MAX_NUM_MLD_LINKS; i++) {
++		struct hostapd_iface *h = interfaces->iface[i];
++
++		if (!h || h == iface || !h->num_bss ||
++		    h->state != HAPD_IFACE_ACS ||
++		    !hostapd_is_ml_partner(iface->bss[0], h->bss[0]))
++			continue;
++
++		if (scanning && h->scan_cb != acs_scan_complete)
++			continue;
++
++		if (!scanning &&
++		    (h->scan_cb ||
++		     h->acs_num_completed_scans >= h->conf->acs_num_scans))
++			continue;
++
++		partners[n++] = h;
++	}
++#endif /* CONFIG_IEEE80211BE */
++
++	return n;
++}
++
++
++static void acs_scan_failed(struct hostapd_iface *iface)
++{
++	hostapd_acs_completed(iface, 1);
++	acs_fail(iface);
++}
++
++
++static void acs_study_timeout(void *eloop_data, void *user_data)
++{
++	acs_study(eloop_data);
++}
++
++
++static void acs_scan_next(void *eloop_data, void *user_data)
++{
++	struct hostapd_iface *iface = eloop_data;
++
++	if (acs_request_scan(iface)) {
++		wpa_printf(MSG_ERROR, "ACS: Failed to request scan");
++		acs_scan_failed(iface);
++	}
++}
++
++
++static void acs_scan_wait_timeout(void *eloop_data, void *user_data)
++{
++	struct hostapd_iface *iface = eloop_data;
++
++	wpa_printf(MSG_DEBUG,
++		   "ACS: No results of the scan of a partner link - scan again");
++	iface->scan_cb = NULL;
++	acs_scan_next(eloop_data, user_data);
++}
++
++
+ static void acs_scan_complete(struct hostapd_iface *iface)
+ {
++	struct hostapd_iface *ifaces[MAX_NUM_MLD_LINKS + 1];
++	size_t i, n;
+ 	int err;
+ 
+-	iface->scan_cb = NULL;
+-	iface->acs_num_retries = 0;
++	ifaces[0] = iface;
++	n = 1 + acs_mld_partners(iface, &ifaces[1], true);
+ 
+ 	wpa_printf(MSG_DEBUG, "ACS: Using survey based algorithm (acs_num_scans=%d)",
+ 		   iface->conf->acs_num_scans);
+ 
++	/* Each link keeps its scan_cb until the survey event, which goes to the
++	 * link that requested the scan. */
+ 	err = hostapd_drv_get_survey(iface->bss[0], 0);
++
++	for (i = 0; i < n; i++) {
++		ifaces[i]->scan_cb = NULL;
++		ifaces[i]->acs_num_retries = 0;
++		eloop_cancel_timeout(acs_scan_wait_timeout, ifaces[i], NULL);
++	}
++
+ 	if (err) {
+ 		wpa_printf(MSG_ERROR, "ACS: Failed to get survey data");
+-		goto fail;
++		for (i = 0; i < n; i++)
++			acs_scan_failed(ifaces[i]);
++		return;
+ 	}
+ 
+-	if (++iface->acs_num_completed_scans < iface->conf->acs_num_scans) {
+-		err = acs_request_scan(iface);
+-		if (err && err != -EBUSY) {
+-			wpa_printf(MSG_ERROR, "ACS: Failed to request scan");
+-			goto fail;
++	/* EVENT_SCAN_RESULTS may still call the scan_cb of the partners */
++	for (i = 0; i < n; i++) {
++		struct hostapd_iface *h = ifaces[i];
++
++		if (++h->acs_num_completed_scans >= h->conf->acs_num_scans) {
++			eloop_register_timeout(0, 0, acs_study_timeout, h,
++					       NULL);
++		} else {
++			eloop_cancel_timeout(acs_scan_retry, h, NULL);
++			eloop_register_timeout(0, 0, acs_scan_next, h, NULL);
+ 		}
+-
+-		return;
+ 	}
+-
+-	acs_study(iface);
+-	return;
+-fail:
+-	hostapd_acs_completed(iface, 1);
+-	acs_fail(iface);
+ }
+ 
+ 
+@@ -1425,34 +1519,71 @@ static int * acs_request_scan_add_freqs(
+ }
+ 
+ 
+-static int acs_request_scan(struct hostapd_iface *iface)
++static int acs_num_scan_channels(struct hostapd_iface *iface)
+ {
+-	struct wpa_driver_scan_params params;
+-	int i, *freq, ret;
+-	int num_channels;
+ 	struct hostapd_hw_modes *mode;
++	int i, num_channels = 0;
+ 
+-	os_memset(&params, 0, sizeof(params));
+-
+-	num_channels = 0;
+ 	for (i = 0; i < iface->num_hw_features; i++) {
+ 		mode = &iface->hw_features[i];
+ 		if (!hostapd_hw_skip_mode(iface, mode))
+ 			num_channels += mode->num_channels;
+ 	}
+ 
+-	params.freqs = os_calloc(num_channels + 1, sizeof(params.freqs[0]));
+-	if (params.freqs == NULL)
+-		return -1;
++	return num_channels;
++}
++
+ 
+-	freq = params.freqs;
++static int * acs_add_scan_freqs(struct hostapd_iface *iface, int *start,
++				int *next)
++{
++	struct hostapd_hw_modes *mode;
++	int *added, *end, *pos;
++	int i;
+ 
++	end = next;
+ 	for (i = 0; i < iface->num_hw_features; i++) {
+ 		mode = &iface->hw_features[i];
+ 		if (!hostapd_hw_skip_mode(iface, mode))
+-			freq = acs_request_scan_add_freqs(iface, mode, freq);
++			end = acs_request_scan_add_freqs(iface, mode, end);
+ 	}
+ 
++	for (added = next; added < end; added++) {
++		for (pos = start; pos < next; pos++)
++			if (*pos == *added)
++				break;
++		if (pos == next)
++			*next++ = *added;
++	}
++
++	return next;
++}
++
++
++static int acs_request_scan(struct hostapd_iface *iface)
++{
++	struct hostapd_iface *partners[MAX_NUM_MLD_LINKS];
++	struct wpa_driver_scan_params params;
++	int *freq, ret;
++	int num_channels;
++	size_t i, n;
++
++	os_memset(&params, 0, sizeof(params));
++
++	n = acs_mld_partners(iface, partners, false);
++
++	num_channels = acs_num_scan_channels(iface);
++	for (i = 0; i < n; i++)
++		num_channels += acs_num_scan_channels(partners[i]);
++
++	params.freqs = os_calloc(num_channels + 1, sizeof(params.freqs[0]));
++	if (params.freqs == NULL)
++		return -1;
++
++	freq = acs_add_scan_freqs(iface, params.freqs, params.freqs);
++	for (i = 0; i < n; i++)
++		freq = acs_add_scan_freqs(partners[i], params.freqs, freq);
++
+ 	*freq = 0;
+ 
+ 	if (params.freqs == freq) {
+@@ -1484,7 +1615,8 @@ static int acs_request_scan(struct hosta
+ 			return -1;
+ 		}
+ 
+-		wpa_printf(MSG_INFO,
++		wpa_printf(hostapd_mld_partner_scanning(iface->bss[0]) ?
++			   MSG_DEBUG : MSG_INFO,
+ 			   "Failed to request acs scan ret=%d (%s) - try to scan after %d seconds",
+ 			   ret, strerror(-ret), ACS_SCAN_RETRY_INTERVAL);
+ 		eloop_cancel_timeout(acs_scan_retry, iface, NULL);
+@@ -1501,6 +1633,17 @@ static int acs_request_scan(struct hosta
+ 
+ 	iface->scan_cb = acs_scan_complete;
+ 
++	for (i = 0; i < n; i++) {
++		partners[i]->scan_cb = acs_scan_complete;
++		partners[i]->acs_num_retries = 0;
++		eloop_cancel_timeout(acs_scan_retry, partners[i], NULL);
++		eloop_cancel_timeout(acs_scan_next, partners[i], NULL);
++		eloop_cancel_timeout(acs_scan_wait_timeout, partners[i], NULL);
++		eloop_register_timeout(ACS_SCAN_WAIT_TIMEOUT, 0,
++				       acs_scan_wait_timeout, partners[i],
++				       NULL);
++	}
++
+ 	return 0;
+ }
+ 
+--- a/src/ap/ap_drv_ops.c
++++ b/src/ap/ap_drv_ops.c
+@@ -774,6 +774,32 @@ bool hostapd_drv_nl80211(struct hostapd_
+ }
+ 
+ 
++bool hostapd_mld_partner_scanning(struct hostapd_data *hapd)
++{
++#ifdef CONFIG_IEEE80211BE
++	unsigned int i;
++
++	if (!hapd->conf->mld_ap || !hapd->iface->interfaces)
++		return false;
++
++	for (i = 0; i < hapd->iface->interfaces->count; i++) {
++		struct hostapd_iface *h_iface =
++			hapd->iface->interfaces->iface[i];
++
++		if (!h_iface || h_iface == hapd->iface ||
++		    h_iface->num_bss == 0)
++			continue;
++
++		if (hostapd_is_ml_partner(hapd, h_iface->bss[0]) &&
++		    h_iface->scan_cb)
++			return true;
++	}
++#endif /* CONFIG_IEEE80211BE */
++
++	return false;
++}
++
++
+ int hostapd_driver_scan(struct hostapd_data *hapd,
+ 			struct wpa_driver_scan_params *params)
+ {
+@@ -782,29 +808,11 @@ int hostapd_driver_scan(struct hostapd_d
+ 	if (hapd->conf->mld_ap)
+ 		params->link_id = hapd->mld_link_id;
+ 
+-	if (!hapd->iface->scan_cb && hapd->conf->mld_ap &&
+-	    hapd->iface->interfaces) {
+-		/* Other links may be waiting for scan results */
+-		unsigned int i;
+-
+-		for (i = 0; i < hapd->iface->interfaces->count; i++) {
+-			struct hostapd_iface *h_iface =
+-				hapd->iface->interfaces->iface[i];
+-			struct hostapd_data *h_hapd;
+-
+-			if (!h_iface || h_iface == hapd->iface ||
+-			    h_iface->num_bss == 0)
+-				continue;
+-
+-			h_hapd = h_iface->bss[0];
+-
+-			if (hostapd_is_ml_partner(hapd, h_hapd) &&
+-			    h_iface->scan_cb) {
+-				wpa_printf(MSG_INFO,
+-					   "Scan in progress in a partner link - try to scan later");
+-				return -EBUSY;
+-			}
+-		}
++	/* Other links may be waiting for scan results */
++	if (!hapd->iface->scan_cb && hostapd_mld_partner_scanning(hapd)) {
++		wpa_printf(MSG_DEBUG,
++			   "Scan in progress in a partner link - try to scan later");
++		return -EBUSY;
+ 	}
+ #endif /* CONFIG_IEEE80211BE */
+ 
+--- a/src/ap/ap_drv_ops.h
++++ b/src/ap/ap_drv_ops.h
+@@ -89,6 +89,7 @@ hostapd_get_hw_feature_data(struct hosta
+ 			    u16 *flags, u8 *dfs_domain);
+ int hostapd_drv_none(struct hostapd_data *hapd);
+ bool hostapd_drv_nl80211(struct hostapd_data *hapd);
++bool hostapd_mld_partner_scanning(struct hostapd_data *hapd);
+ int hostapd_driver_scan(struct hostapd_data *hapd,
+ 			struct wpa_driver_scan_params *params);
+ struct wpa_scan_results * hostapd_driver_get_scan_results(
+--- a/src/ap/drv_callbacks.c
++++ b/src/ap/drv_callbacks.c
+@@ -2272,6 +2272,30 @@ void hostapd_event_get_survey(struct hos
+ 
+ 
+ #ifdef HOSTAPD
++
++static void hostapd_event_get_survey_mld(struct hostapd_data *hapd,
++					 struct survey_results *survey_results)
++{
++#ifdef CONFIG_IEEE80211BE
++	struct hapd_interfaces *interfaces = hapd->iface->interfaces;
++	size_t i;
++
++	if (!hapd->conf->mld_ap || !interfaces || survey_results->freq_filter)
++		return;
++
++	for (i = 0; i < interfaces->count; i++) {
++		struct hostapd_iface *h = interfaces->iface[i];
++
++		if (!h || h == hapd->iface || !h->num_bss ||
++		    h->state != HAPD_IFACE_ACS || !h->scan_cb ||
++		    !hostapd_is_ml_partner(hapd, h->bss[0]))
++			continue;
++
++		hostapd_event_get_survey(h, survey_results);
++	}
++#endif /* CONFIG_IEEE80211BE */
++}
++
+ #ifdef NEED_AP_MLME
+ 
+ static void hostapd_event_iface_unavailable(struct hostapd_data *hapd)
+@@ -2838,6 +2862,7 @@ void wpa_supplicant_event(void *ctx, enu
+ 		break;
+ 	case EVENT_SURVEY:
+ 		hostapd_event_get_survey(hapd->iface, &data->survey_results);
++		hostapd_event_get_survey_mld(hapd, &data->survey_results);
+ 		break;
+ #ifdef NEED_AP_MLME
+ 	case EVENT_INTERFACE_UNAVAILABLE:

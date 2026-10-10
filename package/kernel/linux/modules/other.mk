@@ -312,7 +312,7 @@ $(eval $(call KernelPackage,parport-pc))
 define KernelPackage/lp
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Parallel port line printer device support
-  DEPENDS:=+kmod-ppdev
+  DEPENDS:=printer-support +kmod-ppdev
   KCONFIG:= \
 	CONFIG_PRINTER
   FILES:= \

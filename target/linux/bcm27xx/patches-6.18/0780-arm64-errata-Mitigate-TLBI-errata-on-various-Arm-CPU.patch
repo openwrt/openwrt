@@ -85,7 +85,7 @@ Cc: Will Deacon <will@kernel.org>
  	default y
 --- a/arch/arm64/kernel/cpu_errata.c
 +++ b/arch/arm64/kernel/cpu_errata.c
-@@ -412,7 +412,33 @@ static const struct midr_range workaroun
+@@ -415,7 +415,33 @@ static const struct midr_range workaroun
  	/* Cortex-A53 r0p[01] : ARM errata 819472 */
  	MIDR_REV_RANGE(MIDR_CORTEX_A53, 0, 0, 1),
  #endif

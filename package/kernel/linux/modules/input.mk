@@ -104,7 +104,7 @@ $(eval $(call KernelPackage,input-core))
 define KernelPackage/input-evdev
   SUBMENU:=$(INPUT_MODULES_MENU)
   TITLE:=Input event device
-  DEPENDS:=+kmod-input-core
+  DEPENDS:=input-support +kmod-input-core
   KCONFIG:=CONFIG_INPUT_EVDEV
   FILES:=$(LINUX_DIR)/drivers/input/evdev.ko
   AUTOLOAD:=$(call AutoLoad,60,evdev)
@@ -196,7 +196,7 @@ $(eval $(call KernelPackage,input-matrix-keypad))
 define KernelPackage/input-joydev
   SUBMENU:=$(INPUT_MODULES_MENU)
   TITLE:=Joystick device support
-  DEPENDS:=+kmod-input-core
+  DEPENDS:=input-support +kmod-input-core
   KCONFIG:=CONFIG_INPUT_JOYDEV
   FILES:=$(LINUX_DIR)/drivers/input/joydev.ko
   AUTOLOAD:=$(call AutoProbe,joydev)
@@ -260,6 +260,25 @@ define KernelPackage/input-touchscreen-edt-ft5x06/description
 endef
 
 $(eval $(call KernelPackage,input-touchscreen-edt-ft5x06))
+
+
+define KernelPackage/input-touchscreen-hynitron-cst816x
+  SUBMENU:=$(INPUT_MODULES_MENU)
+  TITLE:=Hynitron CST816X touchscreen
+  DEPENDS:=@!LINUX_6_12 +kmod-i2c-core +kmod-input-core
+  KCONFIG:= \
+	CONFIG_INPUT_TOUCHSCREEN=y \
+	CONFIG_TOUCHSCREEN_HYNITRON_CST816X
+  FILES:=$(LINUX_DIR)/drivers/input/touchscreen/hynitron-cst816x.ko
+  AUTOLOAD:=$(call AutoProbe,hynitron-cst816x)
+endef
+
+define KernelPackage/input-touchscreen-hynitron-cst816x/description
+  Kernel module for Hynitron CST816X touchscreen controller
+  used for 240×240 1.28-inch Round LCD Display Module.
+endef
+
+$(eval $(call KernelPackage,input-touchscreen-hynitron-cst816x))
 
 
 define KernelPackage/keyboard-imx

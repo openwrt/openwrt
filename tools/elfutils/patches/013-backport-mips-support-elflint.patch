@@ -91,7 +91,7 @@ Signed-off-by: Ying Huang <ying.huang@oss.cipunited.com>
  mips_machine_flag_check (GElf_Word flags)
 --- a/src/elflint.c
 +++ b/src/elflint.c
-@@ -936,7 +936,9 @@ section [%2d] '%s': symbol %zu (%s): non
+@@ -940,7 +940,9 @@ section [%2d] '%s': symbol %zu (%s): non
  	}
  
        if (GELF_ST_TYPE (sym->st_info) == STT_SECTION
@@ -102,7 +102,7 @@ Signed-off-by: Ying Huang <ying.huang@oss.cipunited.com>
  	ERROR (_("\
  section [%2d] '%s': symbol %zu (%s): non-local section symbol\n"),
  	       idx, section_name (ebl, idx), cnt, name);
-@@ -3829,6 +3831,10 @@ cannot get section header for section [%
+@@ -3842,6 +3844,10 @@ cannot get section header for section [%
  		    && ebl_bss_plt_p (ebl))
  		  good_type = SHT_NOBITS;
  
@@ -113,7 +113,7 @@ Signed-off-by: Ying Huang <ying.huang@oss.cipunited.com>
  		/* In a debuginfo file, any normal section can be SHT_NOBITS.
  		   This is only invalid for DWARF sections and .shstrtab.  */
  		if (shdr->sh_type != good_type
-@@ -3989,12 +3995,21 @@ section [%2zu] '%s': size not multiple o
+@@ -4006,12 +4012,21 @@ section [%2zu] '%s': size not multiple o
  		ERROR (_("section [%2zu] '%s'"
  				" contains invalid processor-specific flag(s)"
  				" %#" PRIx64 "\n"),
@@ -138,7 +138,7 @@ Signed-off-by: Ying Huang <ying.huang@oss.cipunited.com>
  	  if (sh_flags != 0)
  	    ERROR (_("section [%2zu] '%s' contains unknown flag(s)"
  			    " %#" PRIx64 "\n"),
-@@ -4060,6 +4075,7 @@ section [%2zu] '%s': merge flag set but
+@@ -4077,6 +4092,7 @@ section [%2zu] '%s': merge flag set but
  	  switch (shdr->sh_type)
  	    {
  	    case SHT_PROGBITS:
@@ -146,7 +146,7 @@ Signed-off-by: Ying Huang <ying.huang@oss.cipunited.com>
  	      break;
  
  	    case SHT_NOBITS:
-@@ -4717,7 +4733,7 @@ program header offset in ELF header and
+@@ -4766,7 +4782,7 @@ program header offset in ELF header and
  	      if (shdr != NULL
  		  && ((is_debuginfo && shdr->sh_type == SHT_NOBITS)
  		      || (! is_debuginfo

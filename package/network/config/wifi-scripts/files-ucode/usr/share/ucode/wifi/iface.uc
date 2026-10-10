@@ -3,7 +3,96 @@
 import { append_value, log } from 'wifi.common';
 import * as fs from 'fs';
 
-export function parse_encryption(config, dev_config, phy_features) {
+const WLAN_CIPHER_SUITE_GCMP_256 = 0x000fac09;
+
+export function phy_cipher_gcmp256(phy) {
+	return WLAN_CIPHER_SUITE_GCMP_256 in (phy?.cipher_suites ?? []);
+};
+
+/*
+ * The 6 GHz band allows WPA3 and OWE only (IEEE 802.11-2024 12.12.2,
+ * WPA3 Specification v3.5 11.2).
+ */
+const encryption_6g = {
+	'sae-mixed': 'sae',
+	'psk3-mixed': 'sae',
+	'wpa3-mixed': 'wpa3',
+	'wpa': 'wpa3',
+	'wpa2': 'wpa3',
+	'wpa-mixed': 'wpa3',
+	'none': 'owe',
+	'psk': 'sae',
+	'psk2': 'sae',
+	'psk-mixed': 'sae',
+};
+
+/*
+ * An AP MLD needs RSN on every link. parse_encryption() adds SAE in the
+ * RSNE Override 2 element for multi-link associations.
+ */
+const encryption_mld = {
+	'psk': 'psk2',
+	'psk-mixed': 'psk2',
+	'wpa': 'wpa2',
+	'wpa-mixed': 'wpa2',
+};
+
+/* IEEE 802.11be-2024 12.6.2: all links of an AP MLD share an AKM */
+const encryption_mld_6g = {
+	...encryption_mld,
+	'none': 'owe',
+};
+
+/*
+ * One network block serves all links of an MLD station, and wpa_supplicant
+ * removes the PSK AKMs for a 6 GHz BSS.
+ */
+const encryption_sta_mixed_6g = {
+	'psk2': 'sae-mixed',
+	'wpa2': 'wpa3-mixed',
+};
+
+function encryption_map(encryption, modes) {
+	let enc = split(encryption ?? 'none', '+', 2);
+	if (!modes[enc[0]])
+		return encryption;
+
+	enc[0] = modes[enc[0]];
+	return join('+', enc);
+}
+
+function rsne_offers_rsno2(config, rsno2_pairwise) {
+	return !!config.sae_ext_key && config.auth_type in [ 'sae', 'psk-sae' ] &&
+		index(split(config.wpa_pairwise ?? '', ' '), rsno2_pairwise) >= 0;
+}
+
+/* mld_bands: null for a single-link BSS, else the bands of the AP MLD */
+export function encryption_band(encryption, band, mld_bands) {
+	if (band == '6g')
+		return encryption_map(encryption, encryption_6g);
+	if (index(mld_bands ?? [], '6g') >= 0)
+		return encryption_map(encryption, encryption_mld_6g);
+	if (mld_bands != null)
+		return encryption_map(encryption, encryption_mld);
+
+	return encryption;
+};
+
+/* mld_bands: null for a single-link station, else the bands of the MLD */
+export function encryption_sta_band(encryption, band, mld_bands) {
+	if (!length(mld_bands))
+		return encryption_band(encryption, band);
+	if (index(mld_bands, '6g') < 0)
+		return encryption;
+	if (length(mld_bands) == 1)
+		return encryption_map(encryption, encryption_6g);
+
+	return encryption_map(encryption, encryption_sta_mixed_6g);
+};
+
+/* rsno2: null decides the RSNO2E for this link alone, a bool gives the
+ * decision of the AP MLD */
+export function parse_encryption(config, dev_config, phy_features, rsno2) {
 	if (!config.encryption)
 		config.encryption = 'none';
 
@@ -20,17 +109,23 @@ export function parse_encryption(config, dev_config, phy_features) {
 	config.auth_type = encryption[0] ?? 'none';
 
 	/*
-	 * GCMP-256 and the SAE-EXT-KEY (SAE-GDH) AKM are only mandatory for
-	 * EHT/MLO and break interoperability with many clients, so only default
-	 * them on where they are both required and safe to offer: on Compatibility
-	 * mode (sae-compat) BSSes that run an EHT htmode, which carry them in a
-	 * separate RSN Override element that legacy clients ignore. They stay off
-	 * for WPA3-Personal (sae) and Transition (sae-mixed) mode and on non-EHT
-	 * BSSes. Explicit gcmp256 and sae_ext_key options override this per BSS.
+	 * WPA3 Specification v3.5 2.5 requires SAE-EXT-KEY and GCMP-256 with
+	 * EHT or MLO. Some clients fail when these are offered in the RSNE, so on
+	 * EHT they go into the RSNE Override 2 element. Explicit sae_ext_key and
+	 * gcmp256 options apply to the RSNE; 0 also keeps them out of RSNO2. An
+	 * RSNE that already offers the AKM and the pairwise cipher of the RSNO2E
+	 * makes the RSNO2E a duplicate, so the BSS sends none. An AP MLD sends
+	 * none only where that holds on every link (ap.uc mld_rsno2()).
 	 */
+	let eht = wildcard(dev_config?.htmode ?? '', 'EHT*');
 	let compat = (config.auth_type == 'sae-compat');
-	config.gcmp256 ??= compat && wildcard(dev_config?.htmode ?? '', 'EHT*');
-	config.sae_ext_key ??= compat && wildcard(dev_config?.htmode ?? '', 'EHT*');
+	let rsno2_mode = config.auth_type in [ 'sae', 'psk3', 'sae-mixed', 'psk3-mixed' ] ||
+		(!!config.mlo && config.auth_type == 'psk2');
+	/* all links of an AP MLD must reach the same decision */
+	let rsno2_sae = (eht || !!config.mlo) && rsno2_mode && config.sae_ext_key !== false;
+	let rsno2_pairwise = (config.gcmp256 !== false && phy_features?.cipher_gcmp256) ? 'GCMP-256' : 'CCMP';
+	config.gcmp256 ??= compat && eht;
+	config.sae_ext_key ??= compat && eht;
 
 	switch(config.auth_type) {
 	case 'owe':
@@ -77,6 +172,8 @@ export function parse_encryption(config, dev_config, phy_features) {
 			config.rsn_override_pairwise = 'CCMP';
 		if (config.gcmp256 && phy_features?.cipher_gcmp256)
 			config.rsn_override_pairwise_2 = 'GCMP-256';
+		else if (config.sae_ext_key)
+			config.rsn_override_pairwise_2 = 'CCMP';
 		break;
 
 	case 'wpa':
@@ -124,6 +221,10 @@ export function parse_encryption(config, dev_config, phy_features) {
 		config.wpa_pairwise ??= 'GCMP-256 CCMP';
 	else
 		config.wpa_pairwise ??= 'CCMP';
+
+	config.rsno2_sae = rsno2_sae && (rsno2 ?? !rsne_offers_rsno2(config, rsno2_pairwise));
+	if (config.rsno2_sae)
+		config.rsn_override_pairwise_2 = rsno2_pairwise;
 };
 
 export function wpa_key_mgmt(config, band) {
@@ -209,8 +310,6 @@ export function wpa_key_mgmt(config, band) {
 			}
 		} else {
 			append_value(config, 'wpa_key_mgmt', 'WPA-PSK');
-			if (config.ieee80211w)
-				append_value(config, 'wpa_key_mgmt', 'WPA-PSK-SHA256');
 			if (config.ieee80211r)
 				append_value(config, 'wpa_key_mgmt', 'FT-PSK');
 
@@ -233,6 +332,12 @@ export function wpa_key_mgmt(config, band) {
 	case 'dpp':
 		append_value(config, 'wpa_key_mgmt', 'DPP');
 		break;
+	}
+
+	if (config.rsno2_sae) {
+		append_value(config, 'rsn_override_key_mgmt_2', 'SAE-EXT-KEY');
+		if (config.ieee80211r)
+			append_value(config, 'rsn_override_key_mgmt_2', 'FT-SAE-EXT-KEY');
 	}
 
 	if (config.dpp && config.auth_type != 'dpp')
@@ -270,20 +375,13 @@ function macaddr_random() {
 	return join(":", map(addr, (v) => sprintf("%02x", v)));
 }
 
-let mac_idx = 0;
-export function prepare(data, phy, num_global_macaddr, macaddr_base) {
+export function prepare(data) {
 	if (!data.macaddr) {
-		let pipe = fs.popen(`ucode /usr/share/hostap/wdev.uc ${phy} get_macaddr id=${mac_idx} num_global=${num_global_macaddr} mbssid=${data.mbssid ?? 0} macaddr_base=${macaddr_base ?? ""}`);
-
-		data.macaddr = trim(pipe.read("all"), '\n');
-		pipe.close();
-
 		data.default_macaddr = true;
-		mac_idx++;
 	} else if (data.macaddr == 'random') {
 		data.macaddr = macaddr_random();
 		data.random_macaddr = true;
 	}
 
-	log(`Preparing interface: ${data.ifname} with MAC: ${data.macaddr}`);
+	log(`Preparing interface: ${data.ifname}` + (data.macaddr ? ` with MAC: ${data.macaddr}` : ""));
 };

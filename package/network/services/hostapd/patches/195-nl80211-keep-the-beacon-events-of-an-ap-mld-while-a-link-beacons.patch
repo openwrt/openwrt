@@ -1,0 +1,52 @@
+From 4b1e444f1f1b5fa0192d5601fea3544c1eb68dc9 Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 29 Sep 2026 08:24:34 +0200
+Subject: [PATCH] nl80211: keep the Beacon events of an AP MLD while a link
+ beacons
+
+wpa_driver_nl80211_del_beacon() gave up the wiphy's Beacon event
+subscription whenever one link stopped beaconing. The subscription is
+the interface's, and the other links of an AP MLD lost the OBSS Beacon
+events that feed OLBC detection and the AP list (handle_beacon(),
+ap_list_process_beacon()). Give it up only once no link of the
+interface beacons.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ src/drivers/driver_nl80211.c | 21 ++++++++++++++++++++-
+ 1 file changed, 20 insertions(+), 1 deletion(-)
+
+--- a/src/drivers/driver_nl80211.c
++++ b/src/drivers/driver_nl80211.c
+@@ -3628,6 +3628,21 @@ wpa_driver_nl80211_finish_drv_init(struc
+ }
+ 
+ 
++static bool nl80211_bss_beaconing(struct i802_bss *bss)
++{
++	int link_id;
++
++	if (!bss->valid_links)
++		return bss->flink->beacon_set;
++
++	for_each_link(bss->valid_links, link_id)
++		if (bss->links[link_id].beacon_set)
++			return true;
++
++	return false;
++}
++
++
+ static int wpa_driver_nl80211_del_beacon(struct i802_bss *bss,
+ 					 int link_id)
+ {
+@@ -3643,7 +3658,8 @@ static int wpa_driver_nl80211_del_beacon
+ 	link->beacon_set = 0;
+ 	link->freq = 0;
+ 
+-	nl80211_put_wiphy_data_ap(bss);
++	if (!nl80211_bss_beaconing(bss))
++		nl80211_put_wiphy_data_ap(bss);
+ 	msg = nl80211_bss_msg(bss, 0, NL80211_CMD_DEL_BEACON);
+ 	if (!msg)
+ 		return -ENOBUFS;

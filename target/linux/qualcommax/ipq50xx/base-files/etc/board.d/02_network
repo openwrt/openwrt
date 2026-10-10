@@ -18,11 +18,15 @@ ipq50xx_setup_interfaces()
 	glinet,gl-b3000)
 		ucidef_set_interfaces_lan_wan "lan1 lan2" "wan"
 		;;
+	glinet,gl-x2000)
+		ucidef_set_interfaces_lan_wan "lan" "wan"
+		;;
 	cmcc,mr3000d-ci|\
 	cmcc,rax3000q|\
 	linksys,mx2000|\
 	linksys,mx5500|\
 	linksys,spnmx56|\
+	mercusys,mr80x-v2|\
 	xiaomi,ax6000)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
 		;;
@@ -39,7 +43,8 @@ ipq50xx_setup_interfaces()
 		ucidef_set_network_device_conduit "lan3" "eth1"
 		ucidef_set_network_device_conduit "wan" "eth0"
 		;;
-	tplink,eap650-outdoor-v1)
+	tplink,eap650-outdoor-v1|\
+	tplink,re700x)
 		ucidef_set_interface_lan "lan" "dhcp"
 		;;
 	esac
@@ -51,6 +56,7 @@ ipq50xx_setup_macs()
 	local label_mac=""
 
 	case $board in
+	mercusys,mr80x-v2|\
 	tplink,archer-ax55-v1)
 		# factory MAC is 6 raw bytes in tp_data/default-mac, mounted
 		# read-only during preinit (see lib/preinit/09_mount_tp_data)
@@ -63,7 +69,8 @@ ipq50xx_setup_macs()
 		# DSA conduit's address on every boot - pin it to the label MAC
 		ucidef_set_network_device_mac "eth0" "$label_mac"
 		;;
-	tplink,eap650-outdoor-v1)
+	tplink,eap650-outdoor-v1|\
+	tplink,re700x)
 		label_mac=$(get_mac_binary /tmp/factory_data/default-mac 0)
 		[ -n "$label_mac" ] || return
 		ucidef_set_interface_macaddr "lan" "$label_mac"

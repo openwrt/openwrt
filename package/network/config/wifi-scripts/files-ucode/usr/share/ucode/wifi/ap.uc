@@ -4,11 +4,126 @@ import * as libuci from 'uci';
 import { md5 } from 'digest';
 import * as fs from 'fs';
 
-import { append, append_raw, append_value, append_vars, append_list, append_string_vars, comment, push_config, set_default, touch_file } from 'wifi.common';
+import {
+	append, append_raw, append_value, append_vars, append_list, append_string_vars, comment, config_mark,
+	config_rewind, push_config, set_default, touch_file
+} from 'wifi.common';
 import * as netifd from 'wifi.netifd';
 import * as iface from 'wifi.iface';
 
-function iface_setup(config, phy, num_global_macaddr, macaddr_base) {
+const PSK_HEX = /^[0-9a-fA-F]{64}$/;
+
+function key_kind(key) {
+	const n = length(key);
+
+	if (n == 64)
+		return match(key, PSK_HEX) ? 'psk' : 'invalid';
+	if (n >= 8 && n <= 63)
+		return 'passphrase';
+
+	return n ? 'invalid' : null;
+}
+
+const WPS_AUTH_TYPES = [ 'none', 'owe', 'psk', 'psk2', 'sae', 'psk-sae', 'psk-sae-compat' ];
+
+function wps_enabled(config, band) {
+	return band != '6g' && config.multi_ap != 1 && (config.auth_type in WPS_AUTH_TYPES) &&
+		!!(length(config.config_methods) || config.wps_pushbutton || config.wps_label);
+}
+
+/* local generation covers FT-PSK only */
+function ft_psk_local_default(config) {
+	return config.auth_type == 'psk' && !config.rsno2_sae;
+}
+
+function sae_password_option(config) {
+	if (config.sae_password_file)
+		return true;
+
+	for (let option in config.hostapd_bss_options)
+		if (wildcard(option, 'sae_password=*') || wildcard(option, 'sae_password_file=*'))
+			return true;
+
+	return false;
+}
+
+function bss_refusal(config, band) {
+	const personal = config.auth_type in [ 'psk', 'psk2', 'sae', 'psk-sae', 'psk-sae-compat' ];
+	const kind = key_kind(config.key);
+
+	if (personal && !config.ppsk && kind == 'invalid')
+		return 'INVALID_WPA_PSK';
+
+	/* SAE needs a passphrase or sae_password entries: a 64 hex digit key is
+	 * a raw PSK */
+	const sae_only = config.auth_type == 'sae' || (config.auth_type == 'psk-sae-compat' && band == '6g');
+	const mld_sae = config.auth_type == 'psk' && config.rsno2_sae;
+	const sae_password = config.ppsk || kind == 'passphrase' || config.sae_station_passwords ||
+		sae_password_option(config);
+
+	if (personal && sae_only && !sae_password)
+		return 'SAE_NO_PASSWORD';
+	if (personal && mld_sae && !sae_password)
+		return 'MLD_SAE_NO_PASSWORD';
+
+	if (wps_enabled(config, band) && config.multi_ap && config.multi_ap_backhaul_ssid &&
+	    index([ 'psk', 'passphrase' ], key_kind(config.multi_ap_backhaul_key)) < 0)
+		return 'INVALID_WPA_PSK';
+
+	if (config.ieee80211r && config.wpa >= 2 &&
+	    !(config.ft_psk_generate_local ?? ft_psk_local_default(config)) &&
+	    (!config.r0kh || !config.r1kh) && !config.auth_secret && !config.key)
+		return 'FT_KEY_CANT_BE_DERIVED';
+
+	return null;
+}
+
+/* the entries iface_sae_stations() writes */
+function station_password_count(stas) {
+	let n = 0;
+
+	for (let k, sta in stas)
+		if (sta.config.mac && sta.config.key)
+			n += length(sta.config.mac);
+
+	return n;
+}
+
+function mld_links(link_config, dev_config, phy_features, rsno2) {
+	let links = [];
+
+	for (let band in link_config.mlo_bands) {
+		let config = { ...link_config };
+		config.encryption = iface.encryption_band(config.encryption, band, config.mlo_bands);
+		iface.parse_encryption(config, { ...dev_config, band }, phy_features, rsno2);
+		push(links, { band, config });
+	}
+
+	return links;
+}
+
+/* WPA3 Specification v3.5 14.2: an AP MLD includes an identical RSNE
+ * Override 2 element on all links, so a link that needs it adds it to all */
+function mld_rsno2(link_config, dev_config, phy_features) {
+	for (let link in mld_links(link_config, dev_config, phy_features))
+		if (link.config.rsno2_sae)
+			return true;
+
+	return false;
+}
+
+/* a refusal on any band refuses every link of the AP MLD */
+function mld_refusal(link_config, dev_config, phy_features, rsno2) {
+	for (let link in mld_links(link_config, dev_config, phy_features, rsno2)) {
+		const reason = bss_refusal(link.config, link.band);
+		if (reason)
+			return reason;
+	}
+
+	return null;
+}
+
+function iface_setup(config) {
 	switch(config.fixup) {
 	case 'owe':
 		config.ignore_broadcast_ssid = true;
@@ -26,7 +141,7 @@ function iface_setup(config, phy, num_global_macaddr, macaddr_base) {
 		config.macaddr = null;
 		delete config.default_macaddr;
 		delete config.random_macaddr;
-		iface.prepare(config, phy, num_global_macaddr, macaddr_base);
+		iface.prepare(config);
 		break;
 	}
 
@@ -38,6 +153,11 @@ function iface_setup(config, phy, num_global_macaddr, macaddr_base) {
 		config.wds_bridge = null;
 	else
 		config.wds_sta = true;
+
+	/* hostapd copies bridge= into an empty wds_bridge, so wds_bridge= must
+	 * follow bridge= in append_vars() */
+	if (config.bridge)
+		set_default(config, 'wds_bridge', '');
 
 	if (!config.idx)
 		append('interface', config.ifname);
@@ -65,7 +185,7 @@ function iface_setup(config, phy, num_global_macaddr, macaddr_base) {
 		'disassoc_low_ack', 'skip_inactivity_poll', 'ignore_broadcast_ssid', 'uapsd_advertisement_enabled',
 		'utf8_ssid', 'multi_ap', 'multi_ap_vlanid', 'multi_ap_profile', 'tdls_prohibit', 'bridge',
 		'wds_sta', 'wds_bridge', 'snoop_iface', 'vendor_elements', 'nas_identifier', 'radius_acct_interim_interval',
-		'ocv', 'spp_amsdu', 'multicast_to_unicast', 'preamble', 'proxy_arp', 'per_sta_vif', 'mbo',
+		'spp_amsdu', 'multicast_to_unicast', 'preamble', 'proxy_arp', 'per_sta_vif', 'mbo',
 		'bss_transition', 'wnm_sleep_mode', 'wnm_sleep_mode_no_keys', 'qos_map_set', 'max_listen_int',
 		'dtim_period', 'wmm_enabled', 'start_disabled', 'na_mcast_to_ucast', 'no_probe_resp_if_max_sta',
 	]);
@@ -89,31 +209,49 @@ function iface_accounting_server(config) {
 	append_list(config, [ 'radius_acct_req_attr' ]);
 }
 
-function iface_auth_type(config, band) {
+function iface_auth_type(config, band, eht) {
 	if (config.auth_type in [ 'sae', 'owe', 'eap2', 'eap192', 'dpp' ])
 		config.ieee80211w = 2;
 
 	if (config.auth_type in [ 'psk-sae', 'eap-eap2' ])
 		set_default(config, 'ieee80211w', 1);
 
+	/* IEEE 802.11-2024 12.12.2: MFPR on 6 GHz */
+	if (band == '6g' && config.wpa)
+		config.ieee80211w = 2;
+
+	/* IEEE 802.11be-2024 12.12.9: beacon protection on EHT, which needs PMF */
+	if (eht && (config.wpa & 2) && config.auth_type != 'psk-sae-compat')
+		set_default(config, 'ieee80211w', 1);
+
 	if (config.auth_type == 'psk-sae-compat') {
-		if (band == '6g') {
-			set_default(config, 'ieee80211w', 2);
-		} else {
+		if (band != '6g') {
 			set_default(config, 'ieee80211w', 0);
 			config.rsn_override_mfp = 2;
 			config.rsn_override_omit_rsnxe = 1;
+			if (config.mlo)
+				config.rsn_override_mlo_compat = 1;
 		}
-		if (config.rsn_override_pairwise_2)
-			config.rsn_override_mfp_2 = 2;
 	}
+
+	if (config.rsn_override_pairwise_2)
+		config.rsn_override_mfp_2 = 2;
+
+	/* Easy Connect 3.0 8.4.2: PMF for every association with the DPP AKM.
+	 * Optional keeps the other AKM open to stations without PMF. */
+	if (config.dpp && !config.ieee80211w)
+		config.ieee80211w = 1;
+
+	/* hostapd_config_check_bss() refuses MBO with WPA2 and OCV without PMF */
+	if ((config.mbo || config.ocv) && (config.wpa & 2) && !config.ieee80211w)
+		config.ieee80211w = 1;
 
 	if (config.auth_type == 'owe') {
 		set_default(config, 'owe_groups', '19 20 21');
 		set_default(config, 'owe_ptk_workaround', 1);
 	}
 
-	if (config.auth_type in [ 'sae', 'psk-sae', 'psk-sae-compat' ]) {
+	if (config.auth_type in [ 'sae', 'psk-sae', 'psk-sae-compat' ] || config.rsno2_sae) {
 		config.sae_require_mfp = 1;
 		set_default(config, 'sae_groups', '19 20 21');
 		if (!config.ppsk) {
@@ -133,7 +271,6 @@ function iface_auth_type(config, band) {
 	switch(config.auth_type) {
 	case 'none':
 	case 'owe':
-		config.wps_possible = 1;
 		config.wps_state = 1;
 
 		append_string_vars(config, [ 'owe_transition_ssid' ]);
@@ -154,18 +291,15 @@ function iface_auth_type(config, band) {
 	case 'psk-sae':
 	case 'psk-sae-compat':
 		config.vlan_possible = 1;
-		config.wps_possible = 1;
 
 		if (config.ppsk) {
 			iface_authentication_server(config);
 			config.macaddr_acl = 2;
 			config.wpa_psk_radius = 2;
-		} else if (length(config.key) == 64) {
+		} else if (key_kind(config.key) == 'psk') {
 			config.wpa_psk = config.key;
-		} else if (length(config.key) >= 8 && length(config.key) <= 63) {
+		} else if (key_kind(config.key) == 'passphrase') {
 			config.wpa_passphrase = config.key;
-		} else if (config.key) {
-			 netifd.setup_failed('INVALID_WPA_PSK');
 		}
 
 		if (config.auth_type in [ 'psk', 'psk-sae', 'psk-sae-compat' ] && band != '6g') {
@@ -173,7 +307,7 @@ function iface_auth_type(config, band) {
 			touch_file(config.wpa_psk_file);
 		}
 
-		if (config.auth_type in [ 'sae', 'psk-sae', 'psk-sae-compat' ]) {
+		if (config.auth_type in [ 'sae', 'psk-sae', 'psk-sae-compat' ] || config.rsno2_sae) {
 			set_default(config, 'sae_password_file', `/var/run/hostapd-${config.ifname}.sae`);
 			touch_file(config.sae_password_file);
 		}
@@ -236,14 +370,11 @@ function iface_ppsk(config) {
 	append('macaddr_acl', '2');
 }
 
-function iface_wps(config) {
+function iface_wps(config, band) {
 	push_config(config, 'config_methods', 'wps_pushbutton', 'push_button');
 	push_config(config, 'config_methods', 'wps_label', 'label');
 
-	if (config.multi_ap == 1)
-		config.wps_possible = false;
-
-	if (config.wps_possible && length(config.config_methods)) {
+	if (wps_enabled(config, band)) {
 		config.eap_server = 1;
 		set_default(config, 'wps_state', 2);
 
@@ -252,12 +383,10 @@ function iface_wps(config) {
 
 		if (config.multi_ap && config.multi_ap_backhaul_ssid) {
 			append_string_vars(config, [ 'multi_ap_backhaul_ssid' ]);
-			if (length(config.multi_ap_backhaul_key) == 64)
+			if (key_kind(config.multi_ap_backhaul_key) == 'psk')
 				append('multi_ap_backhaul_wpa_psk', config.multi_ap_backhaul_key);
-			else if (length(config.multi_ap_backhaul_key) > 8)
-				append('multi_ap_backhaul_wpa_passphrase', config.multi_ap_backhaul_key);
 			else
-				netifd.setup_failed('INVALID_WPA_PSK');
+				append('multi_ap_backhaul_wpa_passphrase', config.multi_ap_backhaul_key);
 		}
 
 		append_vars(config, [
@@ -345,44 +474,54 @@ function iface_vlan(interface, config, vlans) {
 	]);
 }
 
-function iface_wpa_stations(config, stas) {
-	let path = `/var/run/hostapd-${config.ifname}.psk`;
+/* hostapd uses only the last wpa_psk_file line, and the hostapd service
+ * hashes one file per option, so the user's file is copied */
+function station_file_write(config, option, path, lines) {
+	const user_entries = config[option] ? fs.readfile(config[option]) : null;
+
+	if (config[option] && user_entries == null)
+		return;
 
 	let file = fs.open(path, 'w');
-	for (let k, sta in stas)
-		if (sta.config.mac && sta.config.key) {
-			for (let mac in sta.config.mac) {
-				let station = `${mac} ${sta.config.key}\n`;
-				if (sta.config.vid)
-					station = `vlanid=${sta.config.vid} ` + station;
-				file.write(station);
-			}
-		}
+	if (length(user_entries))
+		file.write(rtrim(user_entries, '\n') + '\n');
+	for (let line in lines)
+		file.write(line + '\n');
 	file.close();
 
-	set_default(config, 'wpa_psk_file', path);
+	config[option] = path;
+}
+
+function iface_wpa_stations(config, stas) {
+	let lines = [];
+
+	for (let k, sta in stas) {
+		if (!sta.config.mac || !sta.config.key)
+			continue;
+
+		for (let mac in sta.config.mac)
+			push(lines, (sta.config.vid ? `vlanid=${sta.config.vid} ` : '') + `${mac} ${sta.config.key}`);
+	}
+
+	station_file_write(config, 'wpa_psk_file', `/var/run/hostapd-${config.ifname}.psk`, lines);
 }
 
 function iface_sae_stations(config, stas) {
-	let path = `/var/run/hostapd-${config.ifname}.sae`;
+	let lines = [];
 
-	let file = fs.open(path, 'w');
-	for (let k, sta in stas)
-		if (sta.config.mac && sta.config.key) {
-			for (let mac in sta.config.mac) {
-				if (mac == '00:00:00:00:00:00')
-					mac = 'ff:ff:ff:ff:ff:ff';
+	for (let k, sta in stas) {
+		if (!sta.config.mac || !sta.config.key)
+			continue;
 
-				let station = `${sta.config.key}|mac=${mac}`;
-				if (sta.config.vid)
-					station = station + `|vlanid=${sta.config.vid}`;
-				station = station + '\n';
-				file.write(station);
-			}
+		for (let mac in sta.config.mac) {
+			if (mac == '00:00:00:00:00:00')
+				mac = 'ff:ff:ff:ff:ff:ff';
+
+			push(lines, `${sta.config.key}|mac=${mac}` + (sta.config.vid ? `|vlanid=${sta.config.vid}` : ''));
 		}
-	file.close();
+	}
 
-	set_default(config, 'sae_password_file', path);
+	station_file_write(config, 'sae_password_file', `/var/run/hostapd-${config.ifname}.sae`, lines);
 }
 
 function iface_eap_server(config) {
@@ -403,14 +542,11 @@ function iface_roaming(config) {
 		return;
 
 	set_default(config, 'mobility_domain', substr(md5(config.ssid + '\n'), 0, 4));
-	set_default(config, 'ft_psk_generate_local', config.auth_type == 'psk');
+	set_default(config, 'ft_psk_generate_local', ft_psk_local_default(config));
 	set_default(config, 'ft_iface', config.network_ifname);
 
 	if (!config.ft_psk_generate_local) {
 		if (!config.r0kh || !config.r1kh) {
-			if (!config.auth_secret && !config.key)
-				netifd.setup_failed('FT_KEY_CANT_BE_DERIVED');
-
 			let ft_key = md5(`${config.mobility_domain}/${config.auth_secret ?? config.key}`);
 
 			set_default(config, 'r0kh', [ 'ff:ff:ff:ff:ff:ff,*,' + ft_key ]);
@@ -459,7 +595,7 @@ function iface_mfp(config) {
 	set_default(config, 'beacon_prot', 1);
 
 	append_vars(config, [
-		'ieee80211w', 'group_mgmt_cipher', 'beacon_prot',
+		'ieee80211w', 'group_mgmt_cipher', 'beacon_prot', 'ocv',
 		'assoc_sa_query_max_timeout', 'assoc_sa_query_retry_timeout'
 	]);
 }
@@ -512,7 +648,8 @@ function iface_key_caching(config) {
 			'rsn_preauth', 'rsn_preauth_interfaces'
 		]);
 	} else {
-		set_default(config, 'okc', (config.auth_type in  [ 'sae', 'psk-sae', 'psk-sae-compat', 'owe' ]));
+		set_default(config, 'okc', (config.auth_type in  [ 'sae', 'psk-sae', 'psk-sae-compat', 'owe' ]) ||
+			!!config.rsno2_sae);
 	}
 
 	if (!config.okc && !config.fils)
@@ -560,34 +697,45 @@ function iface_rates(config) {
 		append(key, map(config[key], x => x / 100))
 }
 
+export function owe_transition(config, band) {
+	return config.encryption == 'owe' && !!config.owe_transition && band != '6g';
+};
+
 export function generate(interface, data, config, vlans, stas, phy_features) {
 	config.ctrl_interface = '/var/run/hostapd';
 
 	config.start_disabled = data.ap_start_disabled;
-	iface_setup(config, data.phy + data.phy_suffix, data.config.num_global_macaddr, data.config.macaddr_base);
+	iface_setup(config);
 
-	iface.parse_encryption(config, data.config, phy_features);
-	if (data.config.band == '6g') {
-		if (config.auth_type == 'psk-sae')
-			config.auth_type = 'sae';
-		if (config.auth_type == 'eap-eap2')
-			config.auth_type = 'eap2';
-	}
+	config.sae_station_passwords = station_password_count(stas);
+	const link_config = { ...config };
+
+	const mld = config.mlo && length(config.mlo_bands);
+	const rsno2 = mld ? mld_rsno2(link_config, data.config, phy_features) : null;
+
+	config.encryption = iface.encryption_band(config.encryption, data.config.band,
+		config.mlo ? (config.mlo_bands ?? []) : null);
+	iface.parse_encryption(config, data.config, phy_features, rsno2);
+
+	const refusal = mld ?
+		mld_refusal(link_config, data.config, phy_features, rsno2) : bss_refusal(config, data.config.band);
+	if (refusal)
+		return refusal;
 
 	if (config.auth_type in [ 'psk', 'psk-sae', 'psk-sae-compat' ] && data.config.band != '6g')
 		iface_wpa_stations(config, stas);
-	if (config.auth_type in [ 'sae', 'psk-sae', 'psk-sae-compat' ])
+	if (config.auth_type in [ 'sae', 'psk-sae', 'psk-sae-compat' ] || config.rsno2_sae)
 		iface_sae_stations(config, stas);
 
 	iface_rates(data.config);
 
-	iface_auth_type(config, data.config.band);
+	iface_auth_type(config, data.config.band, wildcard(data.config.htmode ?? '', 'EHT*'));
 
 	iface_accounting_server(config);
 
 	iface_ppsk(config);
 
-	iface_wps(config);
+	iface_wps(config, data.config.band);
 
 	iface_rrm(config);
 
@@ -636,6 +784,8 @@ export function generate(interface, data, config, vlans, stas, phy_features) {
 		append_vars(config, ['rsn_override_omit_rsnxe']);
 	}
 
+	append_vars(config, [ 'rsn_override_mlo_compat' ]);
+
 	/* raw options */
 	for (let raw in config.hostapd_bss_options)
 		append_raw(raw);
@@ -650,4 +800,16 @@ export function generate(interface, data, config, vlans, stas, phy_features) {
 		append_raw('#default_macaddr');
 	else if (config.random_macaddr)
 		append_raw('#random_macaddr');
+};
+
+export function bss_add(interface, data, config, vlans, stas, phy_features) {
+	const mark = config_mark();
+	const refusal = generate(interface, data, config, vlans, stas, phy_features);
+
+	if (!refusal)
+		return true;
+
+	config_rewind(mark);
+	netifd.bss_failed(interface, config.ifname, refusal);
+	return false;
 };

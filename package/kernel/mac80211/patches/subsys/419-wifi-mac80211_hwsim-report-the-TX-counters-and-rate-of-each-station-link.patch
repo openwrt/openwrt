@@ -1,0 +1,216 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Thu, 1 Oct 2026 20:44:19 +0200
+Subject: [PATCH] wifi: mac80211_hwsim: report the TX counters and rate of each
+ station link
+
+mac80211 books every frame to an MLO station on the default link, so a
+per-link station dump shows all TX bytes, packets and the TX rate on the
+association link, and none on the other links, whichever link carried
+the frames. Userspace that compares the links of a station, for example
+to report the metrics of each affiliated station, then reads wrong
+values.
+
+hwsim selects the link of each frame. Count the bytes and packets per
+access category on that link as ieee80211_tx_h_stats() counts them on
+the default link: the length before encryption, and one packet for all
+fragments of an MSDU. Record the rate of the first attempt of a data
+frame with the band of the link channel. A frame whose link station is
+not resolved is not counted. Report bytes, packets and rate from the
+link_sta_statistics callback, which mac80211 calls for each link of a
+station with links. Retries, failures and the other per-link fields stay
+mac80211's.
+
+Clear the record of a link that is new to the station's valid links.
+old_links and new_links of change_sta_links are masked with the active
+links, so a link that becomes active again keeps its record. A record
+also starts again for a new link station under the same link ID, since
+mac80211 does not call change_sta_links for a link it removes after the
+vif link or for a dormant one.
+
+The rate is the rate at TX time, not the rate of the TX status, which
+names no link; with HAS_RATE_CONTROL the two are the same here. The
+station totals are the sum of the links, and of removed links, whose
+counters mac80211 now takes from the driver.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ .../net/wireless/virtual/mac80211_hwsim_i.h   | 12 +++
+ .../wireless/virtual/mac80211_hwsim_main.c    | 94 ++++++++++++++++++-
+ 2 files changed, 105 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/virtual/mac80211_hwsim_i.h
++++ b/drivers/net/wireless/virtual/mac80211_hwsim_i.h
+@@ -24,11 +24,23 @@ struct hwsim_sta_nan_sched {
+ 	} maps[CFG80211_NAN_MAX_PEER_MAPS];
+ };
+ 
++struct hwsim_link_tx_stats {
++	const struct ieee80211_link_sta *link_sta;
++	u64 bytes[IEEE80211_NUM_ACS];
++	u32 packets[IEEE80211_NUM_ACS];
++	struct ieee80211_tx_rate last_rate;
++	enum nl80211_band band;
++};
++
+ struct hwsim_sta_priv {
+ 	u32 magic;
+ 	unsigned int last_link;
+ 	u16 active_links_rx;
+ 
++	/* mac80211 books TX on the default link only */
++	struct hwsim_link_tx_stats link_tx[IEEE80211_MLD_MAX_NUM_LINKS];
++	u16 link_tx_valid;
++
+ 	/* NAN peer schedule - must be accessed under nan_sched.lock */
+ 	struct hwsim_sta_nan_sched nan_sched;
+ };
+--- a/drivers/net/wireless/virtual/mac80211_hwsim_main.c
++++ b/drivers/net/wireless/virtual/mac80211_hwsim_main.c
+@@ -2255,6 +2255,39 @@ static void mac80211_hwsim_tx_rate_fill(
+ 		mac80211_hwsim_tx_ht(rate, peer, bw);
+ }
+ 
++/* Counted as ieee80211_tx_h_stats() counts on the default link: the length
++ * before encryption, and one packet for all fragments of an MSDU.
++ */
++static void mac80211_hwsim_link_tx_account(struct ieee80211_link_sta *link_sta,
++					   struct sk_buff *skb, unsigned int len,
++					   enum nl80211_band band)
++{
++	struct hwsim_sta_priv *sp = (void *)link_sta->sta->drv_priv;
++	struct hwsim_link_tx_stats *stats = &sp->link_tx[link_sta->link_id];
++	struct ieee80211_tx_rate *rate = &IEEE80211_SKB_CB(skb)->control.rates[0];
++	struct ieee80211_hdr *hdr = (void *)skb->data;
++	int ac = skb_get_queue_mapping(skb);
++
++	/* mac80211 may not report the removal of a link added again */
++	if (READ_ONCE(stats->link_sta) != link_sta) {
++		memset(stats, 0, sizeof(*stats));
++		WRITE_ONCE(stats->link_sta, link_sta);
++	}
++
++	stats->bytes[ac] += len;
++	if (ieee80211_is_ctl(hdr->frame_control) ||
++	    ieee80211_is_first_frag(hdr->seq_ctrl))
++		stats->packets[ac]++;
++
++	if (!ieee80211_is_data(hdr->frame_control) || !ieee80211_rate_valid(rate))
++		return;
++
++	/* the reader takes no lock: a rate is never read against an older band */
++	WRITE_ONCE(stats->band, band);
++	smp_wmb();
++	stats->last_rate = *rate;
++}
++
+ static void mac80211_hwsim_tx(struct ieee80211_hw *hw,
+ 			      struct ieee80211_tx_control *control,
+ 			      struct sk_buff *skb)
+@@ -2268,6 +2301,8 @@ static void mac80211_hwsim_tx(struct iee
+ 	struct ieee80211_vif *vif = txi->control.vif;
+ 	struct ieee80211_link_sta *peer =
+ 		control->sta ? &control->sta->deflink : NULL;
++	struct ieee80211_link_sta *tx_link_sta = NULL;
++	unsigned int tx_len = skb->len;
+ 	bool ack, unicast_data;
+ 	enum nl80211_chan_width confbw = NL80211_CHAN_WIDTH_20_NOHT;
+ 	u32 _portid, i;
+@@ -2328,8 +2363,10 @@ static void mac80211_hwsim_tx(struct iee
+ 								 hdr, &link_sta);
+ 		}
+ 
+-		if (link_sta)
++		if (link_sta) {
+ 			peer = link_sta;
++			tx_link_sta = link_sta;
++		}
+ 
+ 		if (unlikely(!bss_conf)) {
+ 			/* if it's an MLO STA, it might have deactivated all
+@@ -2424,6 +2461,10 @@ static void mac80211_hwsim_tx(struct iee
+ 			return;
+ 	}
+ 
++	if (tx_link_sta && control->sta->valid_links)
++		mac80211_hwsim_link_tx_account(tx_link_sta, skb, tx_len,
++					       channel->band);
++
+ 	/* wmediumd mode check */
+ 	_portid = READ_ONCE(data->wmediumd);
+ 
+@@ -3030,6 +3071,7 @@ static int mac80211_hwsim_sta_add(struct
+ 		     sta->valid_links);
+ 		sp->active_links_rx = sta->valid_links;
+ 	}
++	sp->link_tx_valid = sta->valid_links;
+ 
+ 	spin_lock_init(&sp->nan_sched.lock);
+ 
+@@ -3740,15 +3782,59 @@ static int mac80211_hwsim_change_sta_lin
+ 					   u16 old_links, u16 new_links)
+ {
+ 	struct hwsim_sta_priv *sp = (void *)sta->drv_priv;
++	unsigned long added = sta->valid_links & ~sp->link_tx_valid;
++	unsigned int link_id;
+ 
+ 	hwsim_check_sta_magic(sta);
+ 
+ 	if (vif->type == NL80211_IFTYPE_STATION)
+ 		sp->active_links_rx = new_links;
+ 
++	/* old_links and new_links hold active links only */
++	for_each_set_bit(link_id, &added, IEEE80211_MLD_MAX_NUM_LINKS)
++		memset(&sp->link_tx[link_id], 0, sizeof(sp->link_tx[link_id]));
++	sp->link_tx_valid = sta->valid_links;
++
+ 	return 0;
+ }
+ 
++static void
++mac80211_hwsim_link_sta_statistics(struct ieee80211_hw *hw,
++				   struct ieee80211_vif *vif,
++				   struct ieee80211_link_sta *link_sta,
++				   struct link_station_info *link_sinfo)
++{
++	struct hwsim_sta_priv *sp = (void *)link_sta->sta->drv_priv;
++	struct hwsim_link_tx_stats *stats = &sp->link_tx[link_sta->link_id];
++	struct ieee80211_tx_rate rate;
++	enum nl80211_band band;
++	int ac;
++
++	link_sinfo->tx_bytes = 0;
++	link_sinfo->tx_packets = 0;
++	link_sinfo->filled |= BIT_ULL(NL80211_STA_INFO_TX_BYTES64) |
++			      BIT_ULL(NL80211_STA_INFO_TX_PACKETS);
++
++	if (READ_ONCE(stats->link_sta) != link_sta)
++		return;
++
++	for (ac = 0; ac < IEEE80211_NUM_ACS; ac++) {
++		link_sinfo->tx_bytes += stats->bytes[ac];
++		link_sinfo->tx_packets += stats->packets[ac];
++	}
++
++	rate = stats->last_rate;
++	smp_rmb();
++	band = READ_ONCE(stats->band);
++
++	if (!ieee80211_rate_valid(&rate))
++		return;
++
++	ieee80211_tx_rate_to_rate_info(hw->wiphy->bands[band], &rate,
++				       &link_sinfo->txrate);
++	link_sinfo->filled |= BIT_ULL(NL80211_STA_INFO_TX_BITRATE);
++}
++
+ static int mac80211_hwsim_send_pmsr_ftm_request_peer(struct sk_buff *msg,
+ 						     struct cfg80211_pmsr_ftm_request_peer *request)
+ {
+@@ -4513,6 +4599,7 @@ static const struct ieee80211_ops mac802
+ 	HWSIM_CHANCTX_OPS
+ 	.change_vif_links = mac80211_hwsim_change_vif_links,
+ 	.change_sta_links = mac80211_hwsim_change_sta_links,
++	.link_sta_statistics = mac80211_hwsim_link_sta_statistics,
+ 	.sta_state = mac80211_hwsim_sta_state,
+ 	.can_neg_ttlm = mac80211_hwsim_can_neg_ttlm,
+ };

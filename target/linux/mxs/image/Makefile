@@ -82,7 +82,7 @@ define Device/olinuxino_maxi
   DEVICE_VENDOR := Olimex
   DEVICE_MODEL := OLinuXino Maxi
   DEVICE_PACKAGES := kmod-usb-net-smsc95xx kmod-pinctrl-mcp23s08-i2c \
-	kmod-pinctrl-mcp23s08-spi kmod-leds-gpio kmod-sound-core
+	kmod-pinctrl-mcp23s08-spi kmod-leds-gpio kmod-sound-core audio-support
   SUPPORTED_DEVICES := olimex,imx23-olinuxino
   SOC := imx23
   DEVICE_DTS := imx23-olinuxino

@@ -30,6 +30,9 @@ endef
 define Build/package-kernel-ubifs
 	mkdir $@.kernelubifs
 	cp $@ $@.kernelubifs/kernel
+	$(if $(SOURCE_DATE_EPOCH), \
+		touch -hcd "@$(SOURCE_DATE_EPOCH)" \
+		$@.kernelubifs $@.kernelubifs/kernel)
 	$(STAGING_DIR_HOST)/bin/mkfs.ubifs \
 		$(KERNEL_UBIFS_OPTS) \
 		-r $@.kernelubifs $@
@@ -404,9 +407,9 @@ define Build/elx-header
 		hw_id="$(hw_id)"; \
 		echo -ne "\x$${hw_id:0:2}\x$${hw_id:2:2}\x$${hw_id:4:2}\x$${hw_id:6:2}" | \
 			dd bs=20 count=1 conv=sync; \
-		echo -ne "$$(printf '%08x' $$(stat -c%s $@) | fold -s2 | xargs -I {} echo \\x{} | tr -d '\n')" | \
+		echo -ne "$$(printf '%08x' $$(stat -c%s $@) | fold -w2 | xargs -I {} echo \\x{} | tr -d '\n')" | \
 			dd bs=8 count=1 conv=sync; \
-		echo -ne "$$($(MKHASH) md5 $@ | fold -s2 | xargs -I {} echo \\x{} | tr -d '\n')" | \
+		echo -ne "$$($(MKHASH) md5 $@ | fold -w2 | xargs -I {} echo \\x{} | tr -d '\n')" | \
 			dd bs=58 count=1 conv=sync; \
 	) > $(KDIR)/tmp/$(DEVICE_NAME).header
 	-$(call Build/xor-image,-p $(xor_pattern) -x) \
@@ -551,16 +554,20 @@ define Build/gl-qsdk-factory
 	$(eval GL_IMGK := $(KDIR_TMP)/$(DEVICE_IMG_PREFIX)-squashfs-factory.img)
 	$(eval GL_ITS := $(KDIR_TMP)/$(GL_NAME).its)
 	$(eval GL_UBI := "ubi")
+	$(eval GL_SCRIPT := $(GL_NAME).bootscript)
 
-	$(CP) $(BOOT_SCRIPT) $(KDIR_TMP)/
+	$(CP) $(BOOT_SCRIPT) $(KDIR_TMP)/$(GL_SCRIPT)
 	$(shell mv $(GL_IMGK) $(GL_IMGK).tmp)
 
-	sed -i "s/rootfs_size/`wc -c $(GL_IMGK) | \
-	cut -d " " -f 1 | xargs printf "0x%x"`/g" $(KDIR_TMP)/$(BOOT_SCRIPT);
+	sed -i -e "s/@ROOTFS_SIZE@/`wc -c $(GL_IMGK) | \
+	cut -d " " -f 1 | xargs printf "0x%x"`/g" \
+		-e "s/@UBI_OFFSET@/$(call param_get,ubi_offset,$(1))/g" \
+		-e "s/@UBI_SIZE@/$(call param_get,ubi_size,$(1))/g" \
+		$(KDIR_TMP)/$(GL_SCRIPT);
 
 	$(TOPDIR)/scripts/mkits-qsdk-ipq-image.sh \
 		$(GL_ITS) \
-		$(BOOT_SCRIPT) \
+		$(GL_SCRIPT) \
 		$(GL_UBI) \
 		$(GL_IMGK)
 
@@ -571,7 +578,7 @@ define Build/gl-qsdk-factory
 	$(RM) \
 		$(GL_ITS) \
 		$(GL_IMGK).tmp \
-		$(KDIR_TMP)/$(notdir $(BOOT_SCRIPT))
+		$(KDIR_TMP)/$(GL_SCRIPT)
 endef
 
 define Build/kernel-pack-npk

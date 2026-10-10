@@ -47,3 +47,8 @@ export function setup_failed(reason) {
 	printf('%s\n', reason);
 	set_retry(false);
 };
+
+export function bss_failed(interface, ifname, reason) {
+	log(`Interface ${interface} (${ifname}) left out: ${reason}`);
+	notify(CMD_SET_DATA, { interface }, { error: reason });
+};

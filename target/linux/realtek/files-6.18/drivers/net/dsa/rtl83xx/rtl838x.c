@@ -10,87 +10,67 @@
 #include "l3.h"
 #include "pie.h"
 #include "qos.h"
+#include "mirror.h"
+#include "mac.h"
 #include "rtl-otto.h"
 #include "stats.h"
 #include "vlan.h"
 #include "stp.h"
 
-const struct rtldsa_mib_list_item rtldsa_838x_mib_list[] = {
-	MIB_LIST_ITEM("dot1dTpPortInDiscards", MIB_ITEM(MIB_REG_STD, 0xec, 1)),
-	MIB_LIST_ITEM("ifOutDiscards", MIB_ITEM(MIB_REG_STD, 0xd0, 1)),
-	MIB_LIST_ITEM("DropEvents", MIB_ITEM(MIB_REG_STD, 0xa8, 1)),
-	MIB_LIST_ITEM("tx_BroadcastPkts", MIB_ITEM(MIB_REG_STD, 0xa4, 1)),
-	MIB_LIST_ITEM("tx_MulticastPkts", MIB_ITEM(MIB_REG_STD, 0xa0, 1)),
-	MIB_LIST_ITEM("tx_UndersizePkts", MIB_ITEM(MIB_REG_STD, 0x98, 1)),
-	MIB_LIST_ITEM("rx_UndersizeDropPkts", MIB_ITEM(MIB_REG_STD, 0x90, 1)),
-	MIB_LIST_ITEM("tx_OversizePkts", MIB_ITEM(MIB_REG_STD, 0x8c, 1)),
-	MIB_LIST_ITEM("Collisions", MIB_ITEM(MIB_REG_STD, 0x7c, 1)),
-	MIB_LIST_ITEM("rx_MacDiscards", MIB_ITEM(MIB_REG_STD, 0x40, 1))
-};
+/* Register definition */
+#define RTL838X_MAC_PORT_CTRL(port)		(0xd560 + (((port) << 7)))
 
-const struct rtldsa_mib_desc rtldsa_838x_mib_desc = {
-	.symbol_errors = MIB_ITEM(MIB_REG_STD, 0xb8, 1),
+/* MAC maximum packet length (jumbo frame) control.
+ *
+ * The switch MAC drops frames whose L2 length exceeds the configured maximum.
+ * A family holds either one register per user port or a single one for the
+ * whole switch. The length is a direct byte value held in two 14-bit fields
+ * (high-speed links in [13:0], 10/100M links in [27:14]); bit 28 selects
+ * whether VLAN tag bytes count towards the limit.
+ */
 
-	.if_in_octets = MIB_ITEM(MIB_REG_STD, 0xf8, 2),
-	.if_out_octets = MIB_ITEM(MIB_REG_STD, 0xf0, 2),
-	.if_in_ucast_pkts = MIB_ITEM(MIB_REG_STD, 0xe8, 1),
-	.if_in_mcast_pkts = MIB_ITEM(MIB_REG_STD, 0xe4, 1),
-	.if_in_bcast_pkts = MIB_ITEM(MIB_REG_STD, 0xe0, 1),
-	.if_out_ucast_pkts = MIB_ITEM(MIB_REG_STD, 0xdc, 1),
-	.if_out_mcast_pkts = MIB_ITEM(MIB_REG_STD, 0xd8, 1),
-	.if_out_bcast_pkts = MIB_ITEM(MIB_REG_STD, 0xd4, 1),
-	.if_out_discards = MIB_ITEM(MIB_REG_STD, 0xd0, 1),
-	.single_collisions = MIB_ITEM(MIB_REG_STD, 0xcc, 1),
-	.multiple_collisions = MIB_ITEM(MIB_REG_STD, 0xc8, 1),
-	.deferred_transmissions = MIB_ITEM(MIB_REG_STD, 0xc4, 1),
-	.late_collisions = MIB_ITEM(MIB_REG_STD, 0xc0, 1),
-	.excessive_collisions = MIB_ITEM(MIB_REG_STD, 0xbc, 1),
-	.crc_align_errors = MIB_ITEM(MIB_REG_STD, 0x9c, 1),
+/* RTL838x and RTL839x hold one limit for the whole switch instead, bounding
+ * the CPU port with it. RTL838x mirrors it in a second register, and the
+ * vendor SDK writes both (dal_maple_switch_maxPktLenLinkSpeed_set()).
+ */
+#define RTL838X_MAC_MAX_LEN_CTRL		(0xa9e0)
+#define RTL838X_MAC_MAX_LEN_CTRL_DUP		(0x6b00)
 
-	.unsupported_opcodes = MIB_ITEM(MIB_REG_STD, 0xb4, 1),
+/* RTL838x stops at what its datasheet gives, below the vendor SDK value */
+#define RTL838X_MAX_FRAME			10000
 
-	.rx_undersize_pkts = MIB_ITEM(MIB_REG_STD, 0x94, 1),
-	.rx_oversize_pkts = MIB_ITEM(MIB_REG_STD, 0x88, 1),
-	.rx_fragments = MIB_ITEM(MIB_REG_STD, 0x84, 1),
-	.rx_jabbers = MIB_ITEM(MIB_REG_STD, 0x80, 1),
+/* MAC handling */
+#define RTL838X_MAC_LINK_STS			(0xa188)
 
-	.tx_pkts = {
-		MIB_ITEM(MIB_REG_STD, 0x78, 1),
-		MIB_ITEM(MIB_REG_STD, 0x70, 1),
-		MIB_ITEM(MIB_REG_STD, 0x68, 1),
-		MIB_ITEM(MIB_REG_STD, 0x60, 1),
-		MIB_ITEM(MIB_REG_STD, 0x58, 1),
-		MIB_ITEM(MIB_REG_STD, 0x50, 1),
-		MIB_ITEM(MIB_REG_STD, 0x48, 1)
-	},
-	.rx_pkts = {
-		MIB_ITEM(MIB_REG_STD, 0x74, 1),
-		MIB_ITEM(MIB_REG_STD, 0x6c, 1),
-		MIB_ITEM(MIB_REG_STD, 0x64, 1),
-		MIB_ITEM(MIB_REG_STD, 0x5c, 1),
-		MIB_ITEM(MIB_REG_STD, 0x54, 1),
-		MIB_ITEM(MIB_REG_STD, 0x4c, 1),
-		MIB_ITEM(MIB_REG_STD, 0x44, 1)
-	},
-	.rmon_ranges = {
-		{ 0, 64 },
-		{ 65, 127 },
-		{ 128, 255 },
-		{ 256, 511 },
-		{ 512, 1023 },
-		{ 1024, 1518 },
-		{ 1519, 10000 }
-	},
+#define RTL838X_EEE_PORT_TX_EN			(0x014c)
+#define RTL838X_EEE_PORT_RX_EN			(0x0150)
+#define RTL838X_EEE_TX_TIMER_GIGA_CTRL		(0xaa04)
+#define RTL838X_EEE_TX_TIMER_GELITE_CTRL	(0xaa08)
 
-	.drop_events = MIB_ITEM(MIB_REG_STD, 0xa8, 1),
-	.collisions = MIB_ITEM(MIB_REG_STD, 0x7c, 1),
+/* L2 functionality */
+#define RTL838X_L2_CTRL_0			(0x3200)
 
-	.rx_pause_frames = MIB_ITEM(MIB_REG_STD, 0xb0, 1),
-	.tx_pause_frames = MIB_ITEM(MIB_REG_STD, 0xac, 1),
+#define RTL838X_L2_TBL_FLUSH_CTRL		(0x3370)
 
-	.list_count = ARRAY_SIZE(rtldsa_838x_mib_list),
-	.list = rtldsa_838x_mib_list
-};
+/* 802.1X */
+#define RTL838X_RMA_BPDU_FLD_PMSK		(0x4348)
+
+#define RTL838X_SPCL_TRAP_EAPOL_CTRL		(0x6988)
+#define RTL838X_SPCL_TRAP_SWITCH_MAC_CTRL	(0x6998)
+
+/* Switch interrupts */
+#define RTL838X_IMR_GLB				(0x1100)
+#define RTL838X_IMR_PORT_LINK_STS_CHG		(0x1104)
+#define RTL838X_ISR_GLB_SRC			(0x1148)
+#define RTL838X_ISR_PORT_LINK_STS_CHG		(0x114C)
+
+#define RTL838X_SMI_GLB_CTRL			(0xa100) /* used by RTL838x EEE setup */
+
+#define RTL838X_RMA_BPDU_CTRL			(0x4330)
+
+#define RTL838X_RMA_PTP_CTRL			(0x4338)
+
+#define RTL838X_RMA_LLDP_CTRL			(0x4340)
 
 void rtldsa_838x_print_matrix(void)
 {
@@ -117,23 +97,6 @@ static inline int rtl838x_mac_force_mode_ctrl(int p)
 static inline int rtl838x_mac_port_ctrl(int p)
 {
 	return RTL838X_MAC_PORT_CTRL(p);
-}
-
-static int rtldsa_838x_get_mirror_config(struct rtldsa_mirror_config *config,
-					 int group, int port)
-{
-	config->ctrl = RTL838X_MIR_CTRL + group * 4;
-	config->spm = RTL838X_MIR_SPM_CTRL + group * 4;
-	config->dpm = RTL838X_MIR_DPM_CTRL + group * 4;
-
-	/* Enable mirroring to destination port */
-	config->val = BIT(0);
-	config->val |= port << 4;
-
-	/* Enable mirroring to port across VLANs */
-	config->val |= BIT(11);
-
-	return 0;
 }
 
 static void rtl838x_traffic_set(int source, u64 dest_matrix)
@@ -307,7 +270,7 @@ const struct rtldsa_config rtldsa_838x_cfg = {
 	.high_res_l2_age = true,
 	.self_mac_trap_ctrl = RTL838X_SPCL_TRAP_SWITCH_MAC_CTRL,
 	.l2_port_aging_out = RTL838X_L2_PORT_AGING_OUT,
-	.set_ageing_time = rtl838x_set_ageing_time,
+	.set_ageing_time = otto_l2_838x_set_ageing_time,
 	.l2_tbl_flush_ctrl = RTL838X_L2_TBL_FLUSH_CTRL,
 	.isr_glb_src = RTL838X_ISR_GLB_SRC,
 	.isr_port_link_sts_chg = RTL838X_ISR_PORT_LINK_STS_CHG,
@@ -316,23 +279,23 @@ const struct rtldsa_config rtldsa_838x_cfg = {
 	.n_counters = 128,
 	.n_pie_blocks = 12,
 	.port_ignore = 0x1f,
-	.vlan_tables_read = rtl838x_vlan_tables_read,
-	.vlan_set_tagged = rtl838x_vlan_set_tagged,
-	.vlan_set_untagged = rtl838x_vlan_set_untagged,
+	.vlan_tables_read = otto_vlan_838x_tables_read,
+	.vlan_set_tagged = otto_vlan_838x_set_tagged,
+	.vlan_set_untagged = otto_vlan_838x_set_untagged,
 	.mac_force_mode_mask = RTL83XX_FORCE_EN | RTL83XX_FORCE_LINK_EN,
 	.mac_force_mode_ctrl = rtl838x_mac_force_mode_ctrl,
 	.mac_link_sts = RTL838X_MAC_LINK_STS,
-	.vlan_profile_get = rtldsa_838x_vlan_profile_get,
-	.vlan_profile_dump = rtldsa_838x_vlan_profile_dump,
-	.vlan_profile_setup = rtl838x_vlan_profile_setup,
-	.vlan_fwd_on_inner = rtl838x_vlan_fwd_on_inner,
+	.vlan_profile_get = otto_vlan_838x_profile_get,
+	.vlan_profile_dump = otto_vlan_838x_profile_dump,
+	.vlan_profile_setup = otto_vlan_838x_profile_setup,
+	.vlan_fwd_on_inner = otto_vlan_838x_port_forward_on_inner,
 	.set_vlan_igr_filter = rtl838x_set_igr_filter,
 	.set_vlan_egr_filter = rtl838x_set_egr_filter,
-	.enable_learning = rtl838x_enable_learning,
-	.enable_flood = rtl838x_enable_flood,
-	.enable_mcast_flood = rtl838x_enable_mcast_flood,
-	.enable_bcast_flood = rtl838x_enable_bcast_flood,
-	.set_static_move_action = rtl838x_set_static_move_action,
+	.enable_learning = otto_l2_838x_enable_learning,
+	.enable_flood = otto_l2_838x_enable_flood,
+	.enable_mcast_flood = otto_l2_838x_enable_mcast_flood,
+	.enable_bcast_flood = otto_l2_838x_enable_bcast_flood,
+	.set_static_move_action = otto_l2_838x_set_static_move_action,
 	.stp_get = rtldsa_838x_stp_get,
 	.stp_set = rtl838x_stp_set,
 	.mac_port_ctrl = rtl838x_mac_port_ctrl,
@@ -340,40 +303,40 @@ const struct rtldsa_config rtldsa_838x_cfg = {
 	.mac_max_len_ctrl = RTL838X_MAC_MAX_LEN_CTRL,
 	.mac_max_len_ctrl_dup = RTL838X_MAC_MAX_LEN_CTRL_DUP,
 	.max_frame = RTL838X_MAX_FRAME,
-	.l2_port_new_salrn = rtl838x_l2_port_new_salrn,
-	.l2_port_new_sa_fwd = rtl838x_l2_port_new_sa_fwd,
+	.l2_port_new_salrn = otto_l2_838x_port_new_salrn,
+	.l2_port_new_sa_fwd = otto_l2_838x_port_new_sa_fwd,
 	.get_mirror_config = rtldsa_838x_get_mirror_config,
 	.print_matrix = rtldsa_838x_print_matrix,
-	.read_l2_entry_using_hash = rtl838x_read_l2_entry_using_hash,
-	.write_l2_entry_using_hash = rtl838x_write_l2_entry_using_hash,
-	.read_cam = rtl838x_read_cam,
-	.write_cam = rtl838x_write_cam,
-	.vlan_port_keep_tag_set = rtl838x_vlan_port_keep_tag_set,
-	.vlan_port_pvidmode_set = rtl838x_vlan_port_pvidmode_set,
-	.vlan_port_pvid_set = rtl838x_vlan_port_pvid_set,
-	.fast_age = rtldsa_838x_fast_age,
-	.trk_mbr_ctr = rtl838x_trk_mbr_ctr,
+	.read_l2_entry_using_hash = otto_l2_838x_read_entry_using_hash,
+	.write_l2_entry_using_hash = otto_l2_838x_write_entry_using_hash,
+	.read_cam = otto_l2_838x_read_cam,
+	.write_cam = otto_l2_838x_write_cam,
+	.vlan_port_keep_tag_set = otto_vlan_838x_port_keep_tag_set,
+	.vlan_port_pvidmode_set = otto_vlan_838x_port_pvid_mode_set,
+	.vlan_port_pvid_set = otto_vlan_838x_port_pvid_set,
+	.fast_age = otto_l2_838x_fast_age,
+	.trk_mbr_ctr = otto_lag_838x_trk_mbr_ctr,
 	.rma_bpdu_fld_pmask = RTL838X_RMA_BPDU_FLD_PMSK,
 	.spcl_trap_eapol_ctrl = RTL838X_SPCL_TRAP_EAPOL_CTRL,
 	.init_eee = rtl838x_init_eee,
 	.set_mac_eee = rtldsa_838x_set_mac_eee,
-	.l2_hash_seed = rtl838x_l2_hash_seed,
-	.l2_hash_key = rtl838x_l2_hash_key,
-	.read_mcast_pmask = rtl838x_read_mcast_pmask,
-	.write_mcast_pmask = rtl838x_write_mcast_pmask,
+	.l2_hash_seed = otto_l2_838x_hash_seed,
+	.l2_hash_key = otto_l2_838x_hash_key,
+	.read_mcast_pmask = otto_l2_838x_read_mcast_pmask,
+	.write_mcast_pmask = otto_l2_838x_write_mcast_pmask,
 	.pie_init = rtl838x_pie_init,
 	.pie_rule_read = rtl838x_pie_rule_read,
 	.pie_rule_write = rtl838x_pie_rule_write,
 	.pie_rule_add = rtl838x_pie_rule_add,
 	.pie_rule_rm = rtl838x_pie_rule_rm,
-	.l2_learning_setup = rtl838x_l2_learning_setup,
+	.l2_learning_setup = otto_l2_838x_learning_setup,
 	.packet_cntr_read = rtl838x_packet_cntr_read,
 	.packet_cntr_clear = rtl838x_packet_cntr_clear,
 	.set_receive_management_action = rtl838x_set_receive_management_action,
 	.get_egress_rate = rtldsa_838x_get_egress_rate,
 	.set_egress_rate = rtldsa_838x_set_egress_rate,
 	.qos_init = rtldsa_838x_qos_init,
-	.lag_set_distribution_algorithm = rtldsa_838x_set_distribution_algorithm,
-	.lag_set_port_members = rtldsa_838x_lag_set_port_members,
-	.lag_setup_algomask = rtldsa_83xx_lag_setup_algomask,
+	.lag_set_distribution_algorithm = otto_lag_838x_set_distribution_algorithm,
+	.lag_set_port_members = otto_lag_838x_set_port_members,
+	.lag_setup_algomask = otto_lag_83xx_setup_algomask,
 };

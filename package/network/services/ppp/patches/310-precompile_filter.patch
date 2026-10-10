@@ -13,7 +13,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
 
 --- a/configure.ac
 +++ b/configure.ac
-@@ -306,6 +306,13 @@ AM_CONDITIONAL(PPP_WITH_PAM, test "x${wi
+@@ -304,6 +304,13 @@ AM_CONDITIONAL(PPP_WITH_PAM, test "x${wi
  # With libpcap support, activate pppd on network activity
  AX_CHECK_PCAP
  
@@ -27,17 +27,17 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
  #
  # SunOS provides a version of libpcap that would work, but SunOS has no support for activity filter
  AM_CONDITIONAL([PPP_WITH_FILTER], [ test "x${with_pcap}" = "xyes" && test "x${build_sunos}" != "xyes" ])
-@@ -349,6 +356,7 @@ $PACKAGE_NAME version $PACKAGE_VERSION
+@@ -347,6 +354,7 @@ $PACKAGE_NAME version $PACKAGE_VERSION
      With libatm..........: ${with_atm:-no}
      With libpam..........: ${with_pam:-no}
      With libpcap.........: ${with_pcap:-no}
 +    With static libpcap..: ${with_static_pcap:-no}
-     With libsrp..........: ${with_srp:-no}
      C Compiler...........: $CC $CFLAGS
      Linker...............: $LD $LDFLAGS $LIBS
+ 
 --- a/pppd/Makefile.am
 +++ b/pppd/Makefile.am
-@@ -137,6 +137,12 @@ pppd_LDFLAGS += $(PCAP_LDFLAGS)
+@@ -128,6 +128,12 @@ pppd_LDFLAGS += $(PCAP_LDFLAGS)
  pppd_LIBS += $(PCAP_LIBS)
  endif
  
@@ -60,7 +60,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
  /*
   * There have been 3 or 4 different names for this in libpcap CVS, but
   * this seems to be what they have settled on...
-@@ -186,6 +187,13 @@ static int setlogfile(char **);
+@@ -187,6 +188,13 @@ static int setlogfile(char **);
  static int loadplugin(char **);
  #endif
  
@@ -74,7 +74,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
  #ifdef PPP_WITH_FILTER
  static int setpassfilter(char **);
  static int setactivefilter(char **);
-@@ -404,6 +412,14 @@ struct option general_options[] = {
+@@ -407,6 +415,14 @@ struct option general_options[] = {
        "set filter for active pkts", OPT_PRIO },
  #endif
  
@@ -89,7 +89,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
      { "maxoctets", o_int, &maxoctets,
        "Set connection traffic limit",
        OPT_PRIO | OPT_LLIMIT | OPT_NOINCR | OPT_ZEROINF },
-@@ -1690,6 +1706,27 @@ callfile(char **argv)
+@@ -1733,6 +1749,27 @@ callfile(char **argv)
      return ok;
  }
  

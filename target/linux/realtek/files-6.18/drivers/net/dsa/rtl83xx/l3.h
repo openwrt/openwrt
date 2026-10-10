@@ -1,10 +1,20 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
+/*
+ * Copyright (C) 2026 Gennaro Cimmino <gcimmino@rayonra.net>
+ * Assisted-by: Claude:claude-opus-5, Claude:claude-opus-5-5
+ */
 
 #ifndef _OTTO_L3_H
 #define _OTTO_L3_H
 
+#include "l3_limits.h"
 #include "rtl-otto.h"
 
+struct fib6_info;
+
+#define MAX_SMACS 64
+#define MAX_DMACS 2048
+#define MAX_ROUTER_MACS 64
 #define MAX_HOST_ROUTES		1536
 #define MAX_ROUTES		512
 
@@ -57,7 +67,7 @@ struct otto_l3_route_attr {
 };
 
 struct otto_l3_nexthop {
-	u16 id;		/* ID: L3_NEXT_HOP table-index or route-index set in L2_NEXT_HOP */
+	u16 id;		/* ID: L3_NEXT_HOP table-index or route-index */
 	u32 dev_id;
 	u16 port;
 	u16 rvid;	/* Relay VID/FID for the L2 table entry */
@@ -67,19 +77,25 @@ struct otto_l3_nexthop {
 	u64 l2_seed;	/* Seed the entry at l2_id was claimed on */
 	u64 gw;		/* The gateway MAC address packets are forwarded to */
 	int if_id;	/* Interface (into L3_EGR_INTF_IDX) */
+	int dmac_id;	/* Gateway MAC entry the L2 entry names, or route id */
 	bool l2_installed;	/* Entry written to the L2 table */
 };
 
 struct otto_l3_route {
-	u32 gw_ip;			/* IP of the route's gateway */
+	struct fib6_info *f6i;		/* FIB entry to report the offload on */
+	struct in6_addr gw_ip;		/* Gateway of the route, IPv4 v4-mapped */
+	int gw_ifindex;			/* Device the gateway is reached on */
 	u32 dst_ip;			/* IP of the destination net */
 	struct in6_addr dst_ip6;
 	int prefix_len;			/* Network prefix len of the destination net */
 	bool is_host_route;
+	bool replaced;			/* torn down for a route to the same destination */
 	int id;				/* ID number of this route */
 	int row;			/* Row it occupies in the prefix route table */
-	struct rhlist_head linkage;
-	struct list_head list;		/* all routes, for lookups by destination */
+	unsigned int members;		/* FIB entries a trap row stands for */
+	struct list_head srcs;		/* source-specific routes a trap row stands for */
+	bool srcs_incomplete;		/* a source could not be tracked */
+	struct list_head list;		/* all routes, for every lookup */
 	u32 tb_id;			/* routing table the route came from */
 	u16 switch_mac_id;		/* Index into switch's own MACs, RTL839X only */
 	struct otto_l3_nexthop nh;
@@ -98,7 +114,7 @@ struct otto_l3_config {
 	void (*get_egress_intf)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_intf *intf);
 	void (*set_egress_intf)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_intf *intf);
 	u64 (*get_egress_mac)(struct otto_l3_ctrl *ctrl, u32 idx);
-	void (*set_egress_mac)(struct otto_l3_ctrl *ctrl, u32 idx, u64 mac);
+	int (*set_egress_mac)(struct otto_l3_ctrl *ctrl, u32 idx, u64 mac);
 	void (*host_route_write)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt);
 	void (*get_router_mac)(struct otto_l3_ctrl *ctrl, u32 idx, struct otto_l3_router_mac *m);
 	void (*set_router_mac)(struct otto_l3_ctrl *ctrl, u32 idx, struct otto_l3_router_mac *m);
@@ -118,11 +134,22 @@ struct otto_l3_ctrl {
 	struct rtl838x_switch_priv *priv;
 	struct notifier_block fib_nb;
 	struct notifier_block ne_nb;
-	struct rhltable routes;
+	struct notifier_block nd_nb;
+	struct delayed_work resync_work;
+	unsigned int resync_delay;
+	bool resync_wanted;
 	struct list_head routes_list;
+	struct list_head rmac_devs;	/* devices router MACs follow */
 	unsigned long route_use_bm[MAX_ROUTES / 32];
 	unsigned long host_route_use_bm[MAX_HOST_ROUTES / 32];
 	struct otto_l3_intf interfaces[MAX_SMACS];
+	unsigned int intf_refs[MAX_SMACS];	/* routes holding each */
+	u64 *dmacs;				/* gateway MAC of each DMAC entry */
+	unsigned int *dmac_refs;		/* routes holding each */
+	DECLARE_BITMAP(router_mac_bm, MAX_ROUTER_MACS);	/* entries written here */
+	bool prefix_rows_stale;	/* a move failed, the rows are not where we say */
+	bool v4_fwd_off;	/* policy rules keep IPv4 forwarding in software */
+	bool v6_fwd_off;	/* policy rules keep IPv6 forwarding in software */
 	struct mutex *lock; /* protect register access */
 };
 

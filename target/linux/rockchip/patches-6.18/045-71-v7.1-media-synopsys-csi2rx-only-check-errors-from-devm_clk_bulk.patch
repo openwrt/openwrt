@@ -1,0 +1,40 @@
+From 6fb44d14929036ca4d10ed5d1df47af8a6b642b6 Mon Sep 17 00:00:00 2001
+From: Frank Li <Frank.Li@nxp.com>
+Date: Mon, 16 Feb 2026 14:18:40 -0500
+Subject: [PATCH] media: synopsys: csi2rx: only check errors from
+ devm_clk_bulk_get_all()
+
+devm_clk_bulk_get_all() returns all clocks described in the DT, which are
+already validated by the binding. Do not need enforce an expected clock
+count.
+
+Only check for error returns (< 0) to support more SoCs.
+
+Reviewed-by: Michael Riesch <michael.riesch@collabora.com>
+Signed-off-by: Frank Li <Frank.Li@nxp.com>
+Signed-off-by: Sakari Ailus <sakari.ailus@linux.intel.com>
+Signed-off-by: Hans Verkuil <hverkuil+cisco@kernel.org>
+---
+ drivers/media/platform/synopsys/dw-mipi-csi2rx.c | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+--- a/drivers/media/platform/synopsys/dw-mipi-csi2rx.c
++++ b/drivers/media/platform/synopsys/dw-mipi-csi2rx.c
+@@ -40,8 +40,6 @@
+ #define SW_DATATYPE_LS(x)	((x) << 20)
+ #define SW_DATATYPE_LE(x)	((x) << 26)
+ 
+-#define DW_MIPI_CSI2RX_CLKS_MAX	1
+-
+ enum {
+ 	DW_MIPI_CSI2RX_PAD_SINK,
+ 	DW_MIPI_CSI2RX_PAD_SRC,
+@@ -630,7 +628,7 @@ static int dw_mipi_csi2rx_probe(struct p
+ 		return PTR_ERR(csi2->base_addr);
+ 
+ 	ret = devm_clk_bulk_get_all(dev, &csi2->clks);
+-	if (ret != DW_MIPI_CSI2RX_CLKS_MAX)
++	if (ret < 0)
+ 		return dev_err_probe(dev, -ENODEV, "failed to get clocks\n");
+ 	csi2->clks_num = ret;
+ 

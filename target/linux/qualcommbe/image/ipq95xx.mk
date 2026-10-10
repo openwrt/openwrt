@@ -37,7 +37,7 @@ define Device/linksys_ln6001
 	DEVICE_MODEL := LN6001
 	DEVICE_DTS := ipq9554-linksys-ln6001
 	SOC := ipq9554
-	DEVICE_PACKAGES += kmod-leds-pwm kmod-fs-f2fs mkf2fs f2fsck
+	DEVICE_PACKAGES += bluetooth-uart kmod-leds-pwm kmod-fs-f2fs mkf2fs f2fsck
 	IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-to 64k | \
 		check-size 128m | sysupgrade-tar rootfs=$$$$@ | append-metadata
 endef

@@ -1,0 +1,41 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Mon, 08 Sep 2026 06:10:00 +0000
+Subject: [PATCH] wifi: mac80211: report the BSSID of each link in debugfs
+
+The bssid file of a station interface reports the default link. An MLO
+association keeps a BSSID per link and never uses the default link, so
+the file reads as the zero address and gives no way to tell which BSSID
+belongs to which link.
+
+Add a bssid file to each link directory. The link directories already
+carry the local address of the link, so this completes the pair.
+
+Add it in ieee80211_link_debugfs_add() rather than in add_link_files().
+The latter also runs for the default link with the netdev directory,
+where a bssid file already exists.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/net/mac80211/debugfs_netdev.c
++++ b/net/mac80211/debugfs_netdev.c
+@@ -735,6 +735,7 @@ static ssize_t ieee80211_if_parse_active
+ IEEE80211_IF_FILE_RW(active_links);
+ 
+ IEEE80211_IF_LINK_FILE(addr, conf->addr, MAC);
++IEEE80211_IF_LINK_FILE(link_bssid, u.mgd.bssid, MAC);
+ 
+ #ifdef CPTCFG_MAC80211_MESH
+ IEEE80211_IF_FILE(estab_plinks, u.mesh.estab_plinks, ATOMIC);
+@@ -1060,6 +1061,11 @@ void ieee80211_link_debugfs_add(struct i
+ 				   link->sdata->vif.debugfs_dir);
+ 
+ 	DEBUGFS_ADD(link->debugfs_dir, addr);
++
++	if (link->sdata->vif.type == NL80211_IFTYPE_STATION)
++		debugfs_create_file("bssid", 0400, link->debugfs_dir, link,
++				    &link_link_bssid_ops);
++
+ 	add_link_files(link, link->debugfs_dir);
+ }
+ 

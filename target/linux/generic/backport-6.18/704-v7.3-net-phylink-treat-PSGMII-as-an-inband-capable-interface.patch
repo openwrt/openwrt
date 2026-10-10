@@ -43,7 +43,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	case PHY_INTERFACE_MODE_QSGMII:
  	case PHY_INTERFACE_MODE_QUSGMII:
  	case PHY_INTERFACE_MODE_USXGMII:
-@@ -4093,6 +4094,7 @@ void phylink_mii_c22_pcs_decode_state(st
+@@ -4107,6 +4108,7 @@ void phylink_mii_c22_pcs_decode_state(st
  		break;
  
  	case PHY_INTERFACE_MODE_SGMII:
@@ -51,7 +51,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	case PHY_INTERFACE_MODE_QSGMII:
  		if (neg_mode == PHYLINK_PCS_NEG_INBAND_ENABLED)
  			phylink_decode_sgmii_word(state, lpa);
-@@ -4173,6 +4175,7 @@ int phylink_mii_c22_pcs_encode_advertise
+@@ -4187,6 +4189,7 @@ int phylink_mii_c22_pcs_encode_advertise
  			adv |= ADVERTISE_1000XPSE_ASYM;
  		return adv;
  	case PHY_INTERFACE_MODE_SGMII:

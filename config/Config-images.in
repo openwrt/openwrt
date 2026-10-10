@@ -332,7 +332,7 @@ menu "Target Images"
 
 	config TARGET_IMAGES_GZIP
 		bool "GZip images"
-		depends on TARGET_ROOTFS_EXT4FS || TARGET_x86 || TARGET_armsr || TARGET_malta || TARGET_loongarch64
+		depends on TARGET_x86 || TARGET_armsr || TARGET_malta || TARGET_loongarch64
 		default y
 
 	comment "Image Options"

@@ -110,12 +110,6 @@ enum mib_reg {
 	MIB_TBL_PRV,
 };
 
-#define MIB_ITEM(_reg, _offset, _size) \
-		{.reg = _reg, .offset = _offset, .size = _size}
-
-#define MIB_LIST_ITEM(_name, _item) \
-		{.name = _name, .item = _item}
-
 struct rtldsa_mib_item {
 	enum mib_reg reg;
 	unsigned int offset;
@@ -167,6 +161,11 @@ struct rtldsa_mib_desc {
 	size_t list_count;
 	const struct rtldsa_mib_list_item *list;
 };
+
+extern const struct rtldsa_mib_desc rtldsa_838x_mib_desc;
+extern const struct rtldsa_mib_desc rtldsa_839x_mib_desc;
+extern const struct rtldsa_mib_desc rtldsa_930x_mib_desc;
+extern const struct rtldsa_mib_desc rtldsa_931x_mib_desc;
 
 struct dsa_switch;
 struct ethtool_eth_ctrl_stats;

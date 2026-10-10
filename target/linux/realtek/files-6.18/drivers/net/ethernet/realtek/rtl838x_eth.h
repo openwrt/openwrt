@@ -27,6 +27,10 @@
 #define RTETH_838X_QM_PKT2CPU_INTPRI_CNT	3
 #define RTETH_838X_RMA_CTRL_0			(0x4300)
 #define RTETH_838X_RMA_CTRL_1			(0x4304)
+#define RTETH_838X_TAG1_PROTO_MASK		GENMASK(15, 8)
+#define RTETH_838X_TAG1_PROTO			0x04
+/* TX CPU tag: bypass the egress spanning-tree port state and egress VLAN filtering */
+#define RTETH_838X_TAG1_BP_FLTR2		BIT(4)
 
 #define RTETH_839X_CPU_PORT			52
 #define RTETH_839X_DMA_IF_CTRL			(0x786c)
@@ -300,6 +304,7 @@ struct rteth_ctrl {
 	struct phylink_config	phylink_config;
 	u32			lastEvent;
 	struct metadata_dst	*dsa_meta[RTETH_931X_CPU_PORT];
+	struct metadata_dst	*dsa_meta_trapped[RTETH_931X_CPU_PORT];
 	/* receive handling */
 	dma_addr_t		rx_dma;
 	spinlock_t		rx_lock;
@@ -351,7 +356,8 @@ struct rteth_cfg {
 	void (*set_max_packet_length)(struct rteth_ctrl *ctrl, int len);
 	void (*setup_notify_buffer)(struct rteth_ctrl *ctrl);
 	void (*update_counter)(struct rteth_ctrl *ctrl, int ring, int released);
-	const struct net_device_ops *netdev_ops;
+	void (*set_rx_mode)(struct net_device *dev);
+	u32 rx_csum_mask;
 };
 
 
