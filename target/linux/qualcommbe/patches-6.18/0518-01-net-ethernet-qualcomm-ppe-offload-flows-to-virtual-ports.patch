@@ -1,0 +1,192 @@
+From: Kenneth Kasilag <kenneth@kasilag.me>
+Date: Sun, 05 Jul 2026 00:00:00 +0000
+Subject: [PATCH] net: ethernet: qualcomm: ppe: offload flows egressing a virtual port
+
+Offload the wired-to-wireless direction of a routed or NAT'd flow whose
+egress net device is not a PPE port, by forwarding it to a virtual
+port. The egress source MAC rewrite is programmed on an L3 interface
+reserved for the virtual port, past the physical, PPPoE and VLAN-uplink
+ones, and the next hop carries the virtual port as the egress port. The
+packet is delivered to the host already rewritten, for transmit out the
+device by the receive path that follows.
+
+The reverse, wireless-to-wired, direction is left on the software fast
+path; only the heavier downlink is hardware assisted. Virtual-port
+carrier events use the device-lifetime bitmap that already spans the
+hardware port identifier namespace.
+
+Only a routed Ethernet wireless interface is eligible for a virtual
+port. A device bridged in hardware keeps forwarding through its bridge,
+other virtual net devices stay in software, and virtual ports are not
+added to the flood bitmaps.
+
+Signed-off-by: Kenneth Kasilag <kenneth@kasilag.me>
+---
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_flowtable.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_flowtable.c
+@@ -42,6 +42,7 @@
+ #include "ppe_config.h"
+ #include "ppe_flow.h"
+ #include "ppe_flowtable.h"
++#include "ppe_vp.h"
+ #include "ppe_regs.h"
+ #include "ppe_tunnel.h"
+ 
+@@ -173,6 +174,7 @@ struct ppe_ft_flow {
+ 	int pppoe;
+ 	int vlan;
+ 	int tunnel;
++	int vp;
+ 	u8 eport;
+ 	u32 packets;
+ 	u64 bytes;
+@@ -892,6 +894,15 @@ static int ppe_ft_vlan_xlt(int index)
+ 	return PPE_XLT_RULE_TBL_ENTRIES - PPE_L3_VLAN_UPLINKS + index;
+ }
+ 
++/* The egress L3 interface a virtual port owns; its region starts
++ * where the VLAN-uplink one ends.
++ */
++static int ppe_ft_vp_l3_if(struct ppe_flowtable *ft, int vp)
++{
++	return ppe_ft_vlan_l3_if(ft, PPE_L3_VLAN_UPLINKS) +
++	       (vp - PPE_VP_PORT_BASE);
++}
++
+ /* Get a refcounted VLAN uplink slot of (port, VID), programming its
+  * L3 interface, VSI binding and translation rule on first use. Must
+  * be called with the flowtable lock held.
+@@ -1779,6 +1790,7 @@ static int ppe_ft_flow_replace(struct pp
+ 	flow->pppoe = -1;
+ 	flow->vlan = -1;
+ 	flow->tunnel = -1;
++	flow->vp = -1;
+ 	nh.vid = -1;
+ 	data.pppoe_sid = -1;
+ 	data.ingress_vid = -1;
+@@ -2040,12 +2052,17 @@ static int ppe_ft_flow_replace(struct pp
+ 			dev_hold(tdev);
+ 	}
+ 
+-	if (!odev || (!tunnel_encap && !edma_port_dev_check(odev)) ||
+-	    (vlan_pops && data.ingress_vid < 0) ||
++	if (!odev || (vlan_pops && data.ingress_vid < 0) ||
+ 	    is_zero_ether_addr(data.eth.dst)) {
+ 		ret = -EOPNOTSUPP;
+ 		goto err_tdev;
+ 	}
++	if (!tunnel_encap && !edma_port_dev_check(odev) &&
++	    (!ft->ppe_dev->variant->has_vports ||
++	     odev->type != ARPHRD_ETHER || !odev->ieee80211_ptr)) {
++		ret = -EOPNOTSUPP;
++		goto err_tdev;
++	}
+ 
+ 	/* The PPPoE L3 interface carries the session ID, so it needs
+ 	 * the source MAC rewrite of the rule to be complete.
+@@ -2082,9 +2099,18 @@ static int ppe_ft_flow_replace(struct pp
+ 	}
+ 
+ 	if (!tunnel_encap) {
+-		port_priv = netdev_priv(odev);
+-		nh.port = port_priv->ppe_port->port_id;
+-		nh.l3_if = nh.port;
++		if (edma_port_dev_check(odev)) {
++			port_priv = netdev_priv(odev);
++			nh.port = port_priv->ppe_port->port_id;
++			nh.l3_if = nh.port;
++		} else {
++			ret = ppe_vp_get(ft->ppe_dev, odev);
++			if (ret < 0)
++				goto err_tdev;
++			flow->vp = ret;
++			nh.port = ret;
++			nh.l3_if = ppe_ft_vp_l3_if(ft, ret);
++		}
+ 		flow->eport = nh.port;
+ 		ether_addr_copy(nh.mac, data.eth.dst);
+ 	}
+@@ -2160,7 +2186,7 @@ static int ppe_ft_flow_replace(struct pp
+ 		if (data.sport != flow->entry.sport ||
+ 		    data.dport != flow->entry.dport) {
+ 			ret = -EOPNOTSUPP;
+-			goto err_unlock;
++			goto err_vp;
+ 		}
+ 
+ 		flow->entry.fwd_type = PPE_FLOW_FWD_TYPE_ROUTE;
+@@ -2169,7 +2195,7 @@ static int ppe_ft_flow_replace(struct pp
+ 		   (data.dip != flow->entry.dip.ip4 ||
+ 		    data.dport != flow->entry.dport)) {
+ 		ret = -EOPNOTSUPP;
+-		goto err_unlock;
++		goto err_vp;
+ 	} else if (data.sip != flow->entry.sip.ip4 ||
+ 		   data.sport != flow->entry.sport) {
+ 		flow->entry.fwd_type = PPE_FLOW_FWD_TYPE_SNAT;
+@@ -2178,7 +2204,7 @@ static int ppe_ft_flow_replace(struct pp
+ 		flow->pub_ip = ppe_ft_pub_ip_get(ft, data.sip);
+ 		if (flow->pub_ip < 0) {
+ 			ret = flow->pub_ip;
+-			goto err_unlock;
++			goto err_vp;
+ 		}
+ 		nh.pub_ip_index = flow->pub_ip;
+ 	} else if (data.dip != flow->entry.dip.ip4 ||
+@@ -2205,6 +2231,15 @@ static int ppe_ft_flow_replace(struct pp
+ 	 * rule arrives as a plain flow of the inner tuple.
+ 	 */
+ 	if (data.pppoe_sid >= 0) {
++		/* A PPPoE session is matched by an ingress physical-port
++		 * bitmap that cannot represent a virtual port, so a PPPoE
++		 * flow egressing a VAP is not offloadable.
++		 */
++		if (flow->vp >= 0) {
++			ret = -EOPNOTSUPP;
++			goto err_vlan;
++		}
++
+ 		flow->pppoe = ppe_ft_pppoe_get(ft, data.pppoe_sid,
+ 					       data.eth.dst, data.eth.src,
+ 					       nh.port, nh.vid);
+@@ -2239,9 +2274,11 @@ static int ppe_ft_flow_replace(struct pp
+ 
+ 		/* The port binding classifies plain ingress on the
+ 		 * port; PPPoE ingress resolves its L3 interface
+-		 * through the session table instead.
++		 * through the session table instead, and a virtual
++		 * port has no hardware ingress at all (only the
++		 * wired-to-wireless direction is offloaded).
+ 		 */
+-		if (data.pppoe_sid < 0) {
++		if (data.pppoe_sid < 0 && flow->vp < 0) {
+ 			ret = ppe_port_l3_if_set(ft->ppe_dev, nh.port,
+ 						 nh.l3_if);
+ 			if (ret)
+@@ -2316,6 +2353,9 @@ err_vlan:
+ 	ppe_ft_vlan_put(ft, flow->vlan);
+ err_pub_ip:
+ 	ppe_ft_pub_ip_put(ft, flow->pub_ip);
++err_vp:
++	if (flow->vp >= 0)
++		ppe_vp_put(ft->ppe_dev, flow->vp);
+ err_unlock:
+ 	ppe_ft_tunnel_put(ft, flow ? flow->tunnel : -1);
+ 	mutex_unlock(&ft->lock);
+@@ -2351,6 +2391,7 @@ static int ppe_ft_flow_destroy(struct pp
+ 		ppe_ft_vlan_put(ft, flow->vlan);
+ 		ppe_ft_pub_ip_put(ft, flow->pub_ip);
+ 		ppe_ft_tunnel_put(ft, flow->tunnel);
++		ppe_vp_put(ft->ppe_dev, flow->vp);
+ 	} else {
+ 		ppe_ft_flow_quarantine(ft, flow);
+ 		flow = NULL;
+@@ -3191,7 +3232,7 @@ int ppe_flowtable_setup(struct ppe_devic
+ 		return -ENOMEM;
+ 
+ 	ft->ppe_dev = ppe_dev;
+-	if (WARN_ON(ppe_ft_vlan_l3_if(ft, PPE_L3_VLAN_UPLINKS) >
++	if (WARN_ON(ppe_ft_vp_l3_if(ft, PPE_VP_PORT_BASE + PPE_VP_SLOTS) >
+ 		    PPE_IN_L3_IF_TBL_ENTRIES)) {
+ 		kfree(ft);
+ 		return -ERANGE;

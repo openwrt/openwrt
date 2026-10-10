@@ -1,0 +1,744 @@
+From: Kenneth Kasilag <kenneth@kasilag.me>
+Date: Fri, 03 Jul 2026 00:00:00 +0000
+Subject: [PATCH] net: ethernet: qualcomm: ppe: add L2 bridge configuration helpers
+
+Add the low level helpers for driving the PPE L2 bridge, in
+preparation for offloading software bridges: VSI (virtual switch
+instance) membership, port to VSI binding, per-VSI egress tag modes,
+the bridge TX MAC, the per-port spanning tree state and the hardware
+FDB.
+
+The helpers follow the SSDK. The FDB is manipulated through the FDB
+operation registers (add, delete and read-by-index commands serialized
+by a mutex, with a rolling command ID matched against the result
+register), the port VSI binding lives in the L3_VP_PORT table, and the
+spanning tree state maps onto the per-port CST state register. The
+hardware flush command acts on the whole FDB including static entries,
+so the per-port flush walks the table with indexed reads instead.
+
+The per-VSI egress tag modes are needed even for VLAN-unaware bridges:
+the VSI tag mode is enabled per port out of hardware reset with the
+modes defaulting to untagged, and a VSI left unconfigured would strip
+VLAN tags from packets forwarded in hardware.
+
+Initialize each physical dataport as an active normal L2 VP context and
+configure learned station moves to redirect their triggering packet to
+the CPU. This mirrors the QWRT physical-port allocation transaction while
+leaving the global reset-equivalent promiscuous and learning defaults
+untouched.
+
+Signed-off-by: Kenneth Kasilag <kenneth@kasilag.me>
+---
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe.h
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe.h
+@@ -8,12 +8,14 @@
+ 
+ #include <linux/compiler.h>
+ #include <linux/interconnect.h>
++#include <linux/mutex.h>
+ 
+ struct device;
+ struct regmap;
+ struct dentry;
+ 
+ struct ppe_ports;
++struct ppe_bridge;
+ 
+ /* Per-SoC PPE parameters. The PPE register layer is shared between the
+  * HPPE (IPQ807x) and APPE (IPQ9574) generations; this collects the few
+@@ -55,6 +57,9 @@ struct ppe_variant {
+  * @num_ports: Number of PPE ports.
+  * @debugfs_root: Debugfs root entry.
+  * @ports: PPE MAC ports.
++ * @bridge: PPE bridge offload private data.
++ * @fdb_lock: Lock to serialize the hardware FDB operation registers.
++ * @fdb_cmd_id: Rolling command ID of the last issued FDB operation.
+  * @num_icc_paths: Number of interconnect paths.
+  * @icc_paths: Interconnect path array.
+  *
+@@ -70,6 +75,10 @@ struct ppe_device {
+ 	unsigned int num_ports;
+ 	struct dentry *debugfs_root;
+ 	struct ppe_ports *ports;
++	struct ppe_bridge *bridge;
++	/* Serialize indirect FDB table operations. */
++	struct mutex fdb_lock;
++	u8 fdb_cmd_id;
+ 	unsigned int num_icc_paths;
+ 	struct icc_bulk_data icc_paths[] __counted_by(num_icc_paths);
+ };
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_config.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_config.c
+@@ -1469,6 +1469,378 @@ int ppe_ring_queue_map_set(struct ppe_de
+ }
+ 
+ /**
++ * ppe_vsi_members_set - Set the member ports of the PPE VSI
++ * @ppe_dev: PPE device
++ * @vsi: VSI ID to configure
++ * @port_bitmap: Bitmap of the PPE ports joined to the VSI
++ *
++ * Set the port members of the VSI (virtual switch instance) for the
++ * forwarding of known unicast, unknown unicast, unknown multicast and
++ * broadcast packets, with hardware FDB learning enabled on the VSI.
++ *
++ * Return: 0 on success, negative error code on failure.
++ */
++int ppe_vsi_members_set(struct ppe_device *ppe_dev, int vsi,
++			unsigned int port_bitmap)
++{
++	u32 reg, vsi_cfg[2];
++	int ret;
++
++	reg = PPE_VSI_TBL_ADDR + PPE_VSI_TBL_INC * vsi;
++	ret = regmap_bulk_read(ppe_dev->regmap, reg,
++			       vsi_cfg, ARRAY_SIZE(vsi_cfg));
++	if (ret)
++		return ret;
++
++	PPE_VSI_SET_MEMBER_PORT_BITMAP(vsi_cfg, port_bitmap);
++	PPE_VSI_SET_UUC_BITMAP(vsi_cfg, port_bitmap);
++	PPE_VSI_SET_UMC_BITMAP(vsi_cfg, port_bitmap);
++	PPE_VSI_SET_BC_BITMAP(vsi_cfg, port_bitmap);
++	PPE_VSI_SET_NEW_ADDR_LRN_EN(vsi_cfg, true);
++	PPE_VSI_SET_NEW_ADDR_FWD_CMD(vsi_cfg, PPE_ACTION_FORWARD);
++	PPE_VSI_SET_STATION_MOVE_LRN_EN(vsi_cfg, true);
++	PPE_VSI_SET_STATION_MOVE_FWD_CMD(vsi_cfg, PPE_ACTION_FORWARD);
++
++	return regmap_bulk_write(ppe_dev->regmap, reg,
++				 vsi_cfg, ARRAY_SIZE(vsi_cfg));
++}
++
++/**
++ * ppe_port_vsi_set - Bind a PPE port to a VSI
++ * @ppe_dev: PPE device
++ * @port: PPE port to configure
++ * @vsi: VSI ID to bind the port to, negative value to unbind
++ *
++ * Packets received on a port bound to a VSI are bridged in hardware
++ * within the VSI. Packets received on an unbound port bypass the L2
++ * bridge and take the invalid-VSI forwarding action configured by
++ * ppe_hw_config(), which redirects them to the CPU port.
++ *
++ * Return: 0 on success, negative error code on failure.
++ */
++int ppe_port_vsi_set(struct ppe_device *ppe_dev, int port, int vsi)
++{
++	u32 reg, port_cfg[4];
++	int ret;
++
++	reg = PPE_L3_VP_PORT_TBL_ADDR + PPE_L3_VP_PORT_TBL_INC * port;
++	ret = regmap_bulk_read(ppe_dev->regmap, reg,
++			       port_cfg, ARRAY_SIZE(port_cfg));
++	if (ret)
++		return ret;
++
++	PPE_L3_VP_PORT_SET_VSI_VALID(port_cfg, vsi >= 0);
++	PPE_L3_VP_PORT_SET_VSI(port_cfg, vsi >= 0 ? vsi : 0);
++
++	return regmap_bulk_write(ppe_dev->regmap, reg,
++				 port_cfg, ARRAY_SIZE(port_cfg));
++}
++
++/**
++ * ppe_vsi_eg_mode_set - Set the per-port egress tag modes of a VSI
++ * @ppe_dev: PPE device
++ * @vsi: VSI ID to configure
++ * @port_modes: Egress tag modes, two bits per port (PPE_EG_VLAN_MODE_*)
++ *
++ * Control per (VSI, port) whether packets forwarded within the VSI
++ * leave the port tagged, untagged or unmodified. The hardware applies
++ * these modes on ports with the VSI tag mode enabled, which is the
++ * hardware reset default.
++ *
++ * Return: 0 on success, negative error code on failure.
++ */
++int ppe_vsi_eg_mode_set(struct ppe_device *ppe_dev, int vsi, u32 port_modes)
++{
++	u32 reg = PPE_EG_VSI_TAG_ADDR + PPE_EG_VSI_TAG_INC * vsi;
++
++	return regmap_update_bits(ppe_dev->regmap, reg,
++				  PPE_EG_VSI_TAG_PORT_MODE_BITMAP,
++				  FIELD_PREP(PPE_EG_VSI_TAG_PORT_MODE_BITMAP,
++					     port_modes));
++}
++
++/**
++ * ppe_port_bridge_txmac_set - Enable or disable the bridge TX MAC of a port
++ * @ppe_dev: PPE device
++ * @port: PPE port to configure
++ * @enable: Enable or disable the bridge TX MAC
++ *
++ * The bridge TX MAC gates the egress of packets forwarded to the port by
++ * the L2 bridge, it does not affect packets transmitted by the CPU with
++ * an explicit destination port.
++ *
++ * Return: 0 on success, negative error code on failure.
++ */
++int ppe_port_bridge_txmac_set(struct ppe_device *ppe_dev, int port,
++			      bool enable)
++{
++	u32 reg = PPE_PORT_BRIDGE_CTRL_ADDR + PPE_PORT_BRIDGE_CTRL_INC * port;
++
++	return regmap_update_bits(ppe_dev->regmap, reg,
++				  PPE_PORT_BRIDGE_TXMAC_EN,
++				  enable ? PPE_PORT_BRIDGE_TXMAC_EN : 0);
++}
++
++/**
++ * ppe_port_stp_state_set - Set the spanning tree state of a PPE port
++ * @ppe_dev: PPE device
++ * @port: PPE port to configure
++ * @state: Spanning tree state
++ *
++ * Return: 0 on success, negative error code on failure.
++ */
++int ppe_port_stp_state_set(struct ppe_device *ppe_dev, int port,
++			   enum ppe_stp_state state)
++{
++	u32 reg = PPE_CST_STATE_ADDR + PPE_CST_STATE_INC * port;
++
++	return regmap_update_bits(ppe_dev->regmap, reg,
++				  PPE_CST_STATE_PORT_STATE,
++				  FIELD_PREP(PPE_CST_STATE_PORT_STATE, state));
++}
++
++/* Pack an FDB entry into the 3-word layout shared by the FDB table and
++ * the FDB operation data registers.
++ */
++static void ppe_fdb_entry_pack(const struct ppe_fdb_entry *entry, u32 *val)
++{
++	u32 dst_info;
++
++	dst_info = FIELD_PREP(PPE_FDB_DST_INFO_TYPE,
++			      PPE_FDB_DST_INFO_TYPE_PORT_ID);
++	dst_info |= FIELD_PREP(PPE_FDB_DST_INFO_VALUE, entry->port);
++
++	val[0] = (u32)entry->addr[2] << 24 | entry->addr[3] << 16 |
++		 entry->addr[4] << 8 | entry->addr[5];
++	val[1] = FIELD_PREP(PPE_FDB_W1_MAC_ADDR_HI,
++			    entry->addr[0] << 8 | entry->addr[1]);
++	val[1] |= PPE_FDB_W1_ENTRY_VALID | PPE_FDB_W1_LOOKUP_VALID;
++	val[1] |= FIELD_PREP(PPE_FDB_W1_VSI, entry->vsi);
++	val[1] |= FIELD_PREP(PPE_FDB_W1_DST_INFO_LO,
++			     FIELD_GET(PPE_FDB_DST_INFO_LO, dst_info));
++	val[2] = FIELD_PREP(PPE_FDB_W2_DST_INFO_HI,
++			    FIELD_GET(PPE_FDB_DST_INFO_HI, dst_info));
++	val[2] |= FIELD_PREP(PPE_FDB_W2_SA_CMD, PPE_ACTION_FORWARD);
++	val[2] |= FIELD_PREP(PPE_FDB_W2_DA_CMD, PPE_ACTION_FORWARD);
++	val[2] |= FIELD_PREP(PPE_FDB_W2_HIT_AGE,
++			     entry->is_static ? PPE_FDB_HIT_AGE_STATIC : 2);
++}
++
++/* Unpack the 3-word layout of the FDB table and the FDB operation result
++ * data registers into an FDB entry. Entries with a port bitmap destination
++ * are reported with the invalid port PPE_FDB_PORT_NONE.
++ */
++static void ppe_fdb_entry_unpack(const u32 *val, struct ppe_fdb_entry *entry,
++				 bool *valid)
++{
++	u32 mac_hi, dst_info;
++
++	*valid = !!(val[1] & PPE_FDB_W1_ENTRY_VALID);
++	if (!*valid)
++		return;
++
++	mac_hi = FIELD_GET(PPE_FDB_W1_MAC_ADDR_HI, val[1]);
++	entry->addr[0] = mac_hi >> 8;
++	entry->addr[1] = mac_hi & 0xff;
++	entry->addr[2] = val[0] >> 24;
++	entry->addr[3] = (val[0] >> 16) & 0xff;
++	entry->addr[4] = (val[0] >> 8) & 0xff;
++	entry->addr[5] = val[0] & 0xff;
++
++	entry->vsi = FIELD_GET(PPE_FDB_W1_VSI, val[1]);
++
++	dst_info = FIELD_PREP(PPE_FDB_DST_INFO_LO,
++			      FIELD_GET(PPE_FDB_W1_DST_INFO_LO, val[1]));
++	dst_info |= FIELD_PREP(PPE_FDB_DST_INFO_HI,
++			       FIELD_GET(PPE_FDB_W2_DST_INFO_HI, val[2]));
++	if (FIELD_GET(PPE_FDB_DST_INFO_TYPE, dst_info) ==
++	    PPE_FDB_DST_INFO_TYPE_PORT_ID)
++		entry->port = FIELD_GET(PPE_FDB_DST_INFO_VALUE, dst_info);
++	else
++		entry->port = PPE_FDB_PORT_NONE;
++
++	entry->is_static = FIELD_GET(PPE_FDB_W2_HIT_AGE, val[2]) ==
++			   PPE_FDB_HIT_AGE_STATIC;
++}
++
++/* Issue a command to the FDB operation registers and wait for its result.
++ * Must be called with the FDB lock held.
++ */
++static int ppe_fdb_op_issue(struct ppe_device *ppe_dev, u32 op_reg,
++			    u32 rslt_reg, u32 op_type, u32 op_mode, int index)
++{
++	u32 val, cmd_id;
++	int ret;
++
++	cmd_id = ppe_dev->fdb_cmd_id;
++	ppe_dev->fdb_cmd_id = (cmd_id + 1) % 15;
++
++	val = FIELD_PREP(PPE_FDB_OP_CMD_ID, cmd_id);
++	val |= FIELD_PREP(PPE_FDB_OP_TYPE, op_type);
++	val |= FIELD_PREP(PPE_FDB_OP_HASH_BLOCK_BITMAP, 0x3);
++	val |= FIELD_PREP(PPE_FDB_OP_MODE, op_mode);
++	val |= FIELD_PREP(PPE_FDB_OP_ENTRY_INDEX, index);
++
++	ret = regmap_write(ppe_dev->regmap, op_reg, val);
++	if (ret)
++		return ret;
++
++	ret = regmap_read_poll_timeout(ppe_dev->regmap, rslt_reg, val,
++				       FIELD_GET(PPE_FDB_OP_RSLT_CMD_ID, val) ==
++				       cmd_id &&
++				       FIELD_GET(PPE_FDB_OP_RSLT_VALID_CNT, val) <=
++				       PPE_FDB_OP_FIFO_DEPTH,
++				       10, 10000);
++	if (ret)
++		return ret;
++
++	return val & PPE_FDB_OP_RSLT_FAIL ? -ENOENT : 0;
++}
++
++/**
++ * ppe_fdb_entry_add - Add an entry to the PPE hardware FDB
++ * @ppe_dev: PPE device
++ * @entry: FDB entry to add
++ *
++ * Return: 0 on success, -ENOENT when all hash slots of the MAC address
++ * are occupied, other negative error code on failure.
++ */
++int ppe_fdb_entry_add(struct ppe_device *ppe_dev,
++		      const struct ppe_fdb_entry *entry)
++{
++	u32 val[PPE_FDB_TBL_WORDS];
++	int ret;
++
++	ppe_fdb_entry_pack(entry, val);
++
++	mutex_lock(&ppe_dev->fdb_lock);
++	ret = regmap_bulk_write(ppe_dev->regmap, PPE_FDB_TBL_OP_DATA_ADDR,
++				val, ARRAY_SIZE(val));
++	if (!ret)
++		ret = ppe_fdb_op_issue(ppe_dev, PPE_FDB_TBL_OP_ADDR,
++				       PPE_FDB_TBL_OP_RSLT_ADDR,
++				       PPE_FDB_OP_TYPE_ADD,
++				       PPE_FDB_OP_MODE_HASH, 0);
++	mutex_unlock(&ppe_dev->fdb_lock);
++
++	return ret;
++}
++
++/**
++ * ppe_fdb_entry_del - Delete an entry from the PPE hardware FDB
++ * @ppe_dev: PPE device
++ * @entry: FDB entry to delete, matched by MAC address and VSI
++ *
++ * Return: 0 on success, -ENOENT when no matching entry exists, other
++ * negative error code on failure.
++ */
++int ppe_fdb_entry_del(struct ppe_device *ppe_dev,
++		      const struct ppe_fdb_entry *entry)
++{
++	u32 val[PPE_FDB_TBL_WORDS];
++	int ret;
++
++	ppe_fdb_entry_pack(entry, val);
++
++	mutex_lock(&ppe_dev->fdb_lock);
++	ret = regmap_bulk_write(ppe_dev->regmap, PPE_FDB_TBL_OP_DATA_ADDR,
++				val, ARRAY_SIZE(val));
++	if (!ret)
++		ret = ppe_fdb_op_issue(ppe_dev, PPE_FDB_TBL_OP_ADDR,
++				       PPE_FDB_TBL_OP_RSLT_ADDR,
++				       PPE_FDB_OP_TYPE_DEL,
++				       PPE_FDB_OP_MODE_HASH, 0);
++	mutex_unlock(&ppe_dev->fdb_lock);
++
++	return ret;
++}
++
++/**
++ * ppe_fdb_entry_read - Read an entry of the PPE hardware FDB by index
++ * @ppe_dev: PPE device
++ * @index: Index into the FDB table
++ * @entry: Returned FDB entry, filled in when the entry is valid
++ * @valid: Returned validity of the FDB entry at the index
++ *
++ * Read entries through the read operation registers, which return an
++ * entry atomically with respect to concurrent hardware FDB learning and
++ * aging. Reading an invalid (empty) entry is not an error.
++ *
++ * Return: 0 on success, negative error code on failure.
++ */
++int ppe_fdb_entry_read(struct ppe_device *ppe_dev, int index,
++		       struct ppe_fdb_entry *entry, bool *valid)
++{
++	u32 val[PPE_FDB_TBL_WORDS] = {};
++	int ret;
++
++	*valid = false;
++
++	mutex_lock(&ppe_dev->fdb_lock);
++	ret = regmap_bulk_write(ppe_dev->regmap, PPE_FDB_TBL_RD_OP_DATA_ADDR,
++				val, ARRAY_SIZE(val));
++	if (ret)
++		goto out;
++
++	ret = ppe_fdb_op_issue(ppe_dev, PPE_FDB_TBL_RD_OP_ADDR,
++			       PPE_FDB_TBL_RD_OP_RSLT_ADDR,
++			       PPE_FDB_OP_TYPE_GET,
++			       PPE_FDB_OP_MODE_INDEX, index);
++	if (ret) {
++		/* The read of an invalid entry fails the operation. */
++		if (ret == -ENOENT)
++			ret = 0;
++		goto out;
++	}
++
++	ret = regmap_bulk_read(ppe_dev->regmap,
++			       PPE_FDB_TBL_RD_OP_RSLT_DATA_ADDR,
++			       val, ARRAY_SIZE(val));
++	if (ret)
++		goto out;
++
++	ppe_fdb_entry_unpack(val, entry, valid);
++out:
++	mutex_unlock(&ppe_dev->fdb_lock);
++
++	return ret;
++}
++
++/**
++ * ppe_fdb_port_flush - Flush dynamic entries of a port from the PPE FDB
++ * @ppe_dev: PPE device
++ * @port: PPE port to flush the FDB entries of
++ *
++ * The FDB flush command of the hardware acts on the whole FDB including
++ * static entries, so flushing the dynamic entries of a single port is
++ * done by walking the FDB table and deleting the matching entries. May
++ * sleep, must be called from process context.
++ *
++ * Return: 0 on success, negative error code on failure.
++ */
++int ppe_fdb_port_flush(struct ppe_device *ppe_dev, int port)
++{
++	struct ppe_fdb_entry entry;
++	bool valid;
++	int i, ret;
++
++	for (i = 0; i < PPE_FDB_TBL_ENTRIES; i++) {
++		ret = ppe_fdb_entry_read(ppe_dev, i, &entry, &valid);
++		if (ret)
++			return ret;
++
++		if (!valid || entry.is_static || entry.port != port)
++			continue;
++
++		ret = ppe_fdb_entry_del(ppe_dev, &entry);
++		if (ret && ret != -ENOENT)
++			return ret;
++	}
++
++	return 0;
++}
++
++/**
+  * ppe_queue_scheduler_get - get scheduler of PPE hardware queue
+  * @ppe_dev: PPE device
+  * @node_id: PPE queue ID or flow ID
+@@ -2058,6 +2430,21 @@ static int ppe_bridge_init(struct ppe_de
+ 		return ret;
+ 
+ 	for (i = 1; i < ppe_dev->num_ports; i++) {
++		/* A physical dataport is an active normal VP context.  Learn
++		 * station moves and redirect the triggering packet to the CPU,
++		 * matching the vendor physical-port allocation transaction.
++		 */
++		reg = PPE_PORT_BRIDGE_CTRL_ADDR +
++		      PPE_PORT_BRIDGE_CTRL_INC * i;
++		mask = PPE_PORT_BRIDGE_STA_MOVE_LRN_EN |
++		       PPE_PORT_BRIDGE_STA_MOVE_FWD_CMD;
++		ret = regmap_update_bits(ppe_dev->regmap, reg, mask,
++					 PPE_PORT_BRIDGE_STA_MOVE_LRN_EN |
++					 FIELD_PREP(PPE_PORT_BRIDGE_STA_MOVE_FWD_CMD,
++						    PPE_ACTION_REDIRECT_TO_CPU));
++		if (ret)
++			return ret;
++
+ 		/* Enable invalid VSI forwarding for all the physical ports
+ 		 * to CPU port0, in case no VSI is assigned to the physical
+ 		 * port.
+@@ -2071,6 +2458,10 @@ static int ppe_bridge_init(struct ppe_de
+ 
+ 		PPE_L2_PORT_SET_INVALID_VSI_FWD_EN(port_cfg, true);
+ 		PPE_L2_PORT_SET_DST_INFO(port_cfg, 0);
++		port_cfg[1] &= ~(PPE_L2_VP_PORT_W1_STATE_CHECK_EN |
++				 PPE_L2_VP_PORT_W1_EG_DATA_VALID);
++		port_cfg[1] |= PPE_L2_VP_PORT_W1_VP_TYPE |
++			       PPE_L2_VP_PORT_W1_CONTEXT_ACTIVE;
+ 
+ 		ret = regmap_bulk_write(ppe_dev->regmap, reg,
+ 					port_cfg, ARRAY_SIZE(port_cfg));
+@@ -2112,6 +2503,14 @@ int ppe_hw_config(struct ppe_device *ppe
+ {
+ 	int ret;
+ 
++	mutex_init(&ppe_dev->fdb_lock);
++
++	/* The result register resets to command id 0, so start the rolling
++	 * id at 1: otherwise the first operation's completion poll matches
++	 * the reset value before the hardware has run.
++	 */
++	ppe_dev->fdb_cmd_id = 1;
++
+ 	ret = ppe_config_bm(ppe_dev);
+ 	if (ret)
+ 		return ret;
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_config.h
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_config.h
+@@ -6,6 +6,7 @@
+ #ifndef __PPE_CONFIG_H__
+ #define __PPE_CONFIG_H__
+ 
++#include <linux/if_ether.h>
+ #include <linux/types.h>
+ 
+ #include "ppe.h"
+@@ -287,7 +288,55 @@ struct ppe_rss_hash_cfg {
+ 	u8 hash_fin_outer[PPE_RSS_HASH_TUPLES];
+ };
+ 
++/**
++ * enum ppe_stp_state - PPE port spanning tree states.
++ * @PPE_STP_STATE_DISABLED: Ingress traffic is dropped, no learning.
++ * @PPE_STP_STATE_BLOCKING: Ingress traffic is dropped, no learning.
++ * @PPE_STP_STATE_LEARNING: Ingress traffic is dropped, SA learning happens.
++ * @PPE_STP_STATE_FORWARDING: Traffic is forwarded, SA learning happens.
++ */
++enum ppe_stp_state {
++	PPE_STP_STATE_DISABLED = 0,
++	PPE_STP_STATE_BLOCKING = 1,
++	PPE_STP_STATE_LEARNING = 2,
++	PPE_STP_STATE_FORWARDING = 3,
++};
++
++/* Destination port of FDB entries which do not point to a single port,
++ * such as entries with a port bitmap destination.
++ */
++#define PPE_FDB_PORT_NONE			0xff
++
++/**
++ * struct ppe_fdb_entry - PPE hardware FDB entry.
++ * @addr: MAC address.
++ * @vsi: VSI (bridge domain) the MAC address belongs to.
++ * @port: Destination PPE port of the MAC address.
++ * @is_static: Entry is excluded from hardware aging.
++ */
++struct ppe_fdb_entry {
++	u8 addr[ETH_ALEN];
++	u8 vsi;
++	u8 port;
++	bool is_static;
++};
++
+ int ppe_hw_config(struct ppe_device *ppe_dev);
++int ppe_vsi_members_set(struct ppe_device *ppe_dev, int vsi,
++			unsigned int port_bitmap);
++int ppe_port_vsi_set(struct ppe_device *ppe_dev, int port, int vsi);
++int ppe_vsi_eg_mode_set(struct ppe_device *ppe_dev, int vsi, u32 port_modes);
++int ppe_port_bridge_txmac_set(struct ppe_device *ppe_dev, int port,
++			      bool enable);
++int ppe_port_stp_state_set(struct ppe_device *ppe_dev, int port,
++			   enum ppe_stp_state state);
++int ppe_fdb_entry_add(struct ppe_device *ppe_dev,
++		      const struct ppe_fdb_entry *entry);
++int ppe_fdb_entry_del(struct ppe_device *ppe_dev,
++		      const struct ppe_fdb_entry *entry);
++int ppe_fdb_entry_read(struct ppe_device *ppe_dev, int index,
++		       struct ppe_fdb_entry *entry, bool *valid);
++int ppe_fdb_port_flush(struct ppe_device *ppe_dev, int port);
+ int ppe_queue_scheduler_set(struct ppe_device *ppe_dev,
+ 			    int node_id, bool flow_level, int port,
+ 			    struct ppe_scheduler_cfg scheduler_cfg);
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_regs.h
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_regs.h
+@@ -137,6 +137,21 @@
+ #define PPE_EG_BRIDGE_CONFIG_ADDR		0x20044
+ #define PPE_EG_BRIDGE_CONFIG_QUEUE_CNT_EN	BIT(2)
+ 
++/* Per-VSI egress tag modes, two bits per port with the egress mode
++ * encoding below. Applied to the ports on which the VSI tag mode is
++ * enabled in the egress VLAN table above, which is the hardware reset
++ * default.
++ */
++#define PPE_EG_VSI_TAG_ADDR			0x20800
++#define PPE_EG_VSI_TAG_ENTRIES			64
++#define PPE_EG_VSI_TAG_INC			0x10
++#define PPE_EG_VSI_TAG_PORT_MODE_BITMAP		GENMASK(15, 0)
++
++#define PPE_EG_VLAN_MODE_UNTAGGED		0
++#define PPE_EG_VLAN_MODE_TAGGED			1
++#define PPE_EG_VLAN_MODE_UNMODIFIED		2
++#define PPE_EG_VLAN_MODE_UNTOUCHED		3
++
+ /* PPE service code configuration on the egress direction. */
+ #define PPE_EG_SERVICE_TBL_ADDR			0x43000
+ #define PPE_EG_SERVICE_TBL_ENTRIES		256
+@@ -158,13 +173,81 @@
+ #define PPE_EG_SERVICE_SET_TX_CNT_EN(tbl_cfg, value)	\
+ 	FIELD_MODIFY(PPE_EG_SERVICE_W1_TX_CNT_EN, (tbl_cfg) + 0x1, value)
+ 
++/* PPE hardware FDB operation registers. An FDB entry is added, deleted or
++ * looked up by filling the operation data registers and issuing a command
++ * through the operation register, then checking the result register for
++ * the completion of the command. The read (RD) register set works the same
++ * way, and exists so that entry lookups do not race with add and delete
++ * commands.
++ */
++#define PPE_FDB_TBL_OP_ADDR			0x60008
++#define PPE_FDB_TBL_RD_OP_ADDR			0x60010
++#define PPE_FDB_OP_CMD_ID			GENMASK(3, 0)
++#define PPE_FDB_OP_BYP_RSLT_EN			BIT(4)
++#define PPE_FDB_OP_TYPE				GENMASK(7, 5)
++#define PPE_FDB_OP_TYPE_ADD			0
++#define PPE_FDB_OP_TYPE_DEL			1
++#define PPE_FDB_OP_TYPE_GET			2
++#define PPE_FDB_OP_TYPE_FLUSH			4
++#define PPE_FDB_OP_TYPE_AGE			5
++#define PPE_FDB_OP_HASH_BLOCK_BITMAP		GENMASK(9, 8)
++#define PPE_FDB_OP_MODE				BIT(10)
++#define PPE_FDB_OP_MODE_HASH			0
++#define PPE_FDB_OP_MODE_INDEX			1
++#define PPE_FDB_OP_ENTRY_INDEX			GENMASK(21, 11)
++
++#define PPE_FDB_TBL_OP_RSLT_ADDR		0x60020
++#define PPE_FDB_TBL_RD_OP_RSLT_ADDR		0x60030
++#define PPE_FDB_OP_RSLT_CMD_ID			GENMASK(3, 0)
++#define PPE_FDB_OP_RSLT_FAIL			BIT(4)
++#define PPE_FDB_OP_RSLT_VALID_CNT		GENMASK(8, 5)
++#define PPE_FDB_OP_RSLT_ENTRY_INDEX		GENMASK(19, 9)
++
++/* The command FIFO of the FDB operation registers holds up to 8 commands. */
++#define PPE_FDB_OP_FIFO_DEPTH			8
++
++/* FDB aging timer tick, decrementing the 2-bit age counter of FDB entries. */
++#define PPE_FDB_AGE_TIMER_ADDR			0x60034
++#define PPE_FDB_AGE_TIMER_VAL			GENMASK(19, 0)
++
++/* PPE L2 global settings for FDB learning, aging and the hash algorithm. */
++#define PPE_L2_GLOBAL_CONF_ADDR			0x60038
++#define PPE_L2_GLOBAL_CONF_FDB_HASH_MODE_0	GENMASK(1, 0)
++#define PPE_L2_GLOBAL_CONF_FDB_HASH_MODE_1	GENMASK(3, 2)
++#define PPE_L2_GLOBAL_CONF_FDB_HASH_FULL_FWD_CMD	GENMASK(5, 4)
++#define PPE_L2_GLOBAL_CONF_LRN_EN		BIT(6)
++#define PPE_L2_GLOBAL_CONF_AGE_EN		BIT(7)
++#define PPE_L2_GLOBAL_CONF_LRN_CTRL_MODE	BIT(8)
++#define PPE_L2_GLOBAL_CONF_AGE_CTRL_MODE	BIT(9)
++
++/* PPE per-port spanning tree state. */
++#define PPE_CST_STATE_ADDR			0x60100
++#define PPE_CST_STATE_ENTRIES			8
++#define PPE_CST_STATE_INC			4
++#define PPE_CST_STATE_PORT_STATE		GENMASK(1, 0)
++
++/* Result data registers of the FDB read (GET) command, 3 words with the
++ * same layout as an FDB table entry.
++ */
++#define PPE_FDB_TBL_RD_OP_RSLT_DATA_ADDR	0x60200
++
++/* Operation data registers of the FDB add/delete/flush commands and of the
++ * read (GET) command, 3 words with the same layout as an FDB table entry.
++ */
++#define PPE_FDB_TBL_OP_DATA_ADDR		0x60230
++#define PPE_FDB_TBL_RD_OP_DATA_ADDR		0x60260
++
+ /* PPE port bridge configuration */
+ #define PPE_PORT_BRIDGE_CTRL_ADDR		0x60300
+ #define PPE_PORT_BRIDGE_CTRL_ENTRIES		8
+ #define PPE_PORT_BRIDGE_CTRL_INC		4
+ #define PPE_PORT_BRIDGE_NEW_LRN_EN		BIT(0)
++#define PPE_PORT_BRIDGE_NEW_FWD_CMD		GENMASK(2, 1)
+ #define PPE_PORT_BRIDGE_STA_MOVE_LRN_EN		BIT(3)
++#define PPE_PORT_BRIDGE_STA_MOVE_FWD_CMD	GENMASK(5, 4)
++#define PPE_PORT_BRIDGE_ISOLATION_BITMAP	GENMASK(15, 8)
+ #define PPE_PORT_BRIDGE_TXMAC_EN		BIT(16)
++#define PPE_PORT_BRIDGE_PROMISC_EN		BIT(17)
+ 
+ /* PPE port control configurations for the traffic to the multicast queues. */
+ #define PPE_MC_MTU_CTRL_TBL_ADDR		0x60a00
+@@ -242,12 +325,51 @@
+ #define PPE_IN_L2_SERVICE_TBL_RX_CNT_EN		BIT(30)
+ #define PPE_IN_L2_SERVICE_TBL_TX_CNT_EN		BIT(31)
+ 
++/* PPE hardware FDB table. Entries are normally added, deleted and looked
++ * up with the FDB operation registers, the table is accessed directly only
++ * for walking all entries by index. The 3-word entry layout below is shared
++ * with the FDB operation data and result data registers.
++ *
++ * The destination info field encodes a destination type in the two upper
++ * bits, either a single port ID or a bitmap of ports in the lower bits.
++ */
++#define PPE_FDB_TBL_ADDR			0x70000
++#define PPE_FDB_TBL_ENTRIES			2048
++#define PPE_FDB_TBL_INC				0x10
++#define PPE_FDB_TBL_WORDS			3
++#define PPE_FDB_W0_MAC_ADDR_LO			GENMASK(31, 0)
++#define PPE_FDB_W1_MAC_ADDR_HI			GENMASK(15, 0)
++#define PPE_FDB_W1_ENTRY_VALID			BIT(16)
++#define PPE_FDB_W1_LOOKUP_VALID			BIT(17)
++#define PPE_FDB_W1_VSI				GENMASK(23, 18)
++#define PPE_FDB_W1_DST_INFO_LO			GENMASK(31, 24)
++#define PPE_FDB_W2_DST_INFO_HI			GENMASK(5, 0)
++#define PPE_FDB_W2_SA_CMD			GENMASK(7, 6)
++#define PPE_FDB_W2_DA_CMD			GENMASK(9, 8)
++#define PPE_FDB_W2_HIT_AGE			GENMASK(11, 10)
++
++#define PPE_FDB_DST_INFO_LO			GENMASK(7, 0)
++#define PPE_FDB_DST_INFO_HI			GENMASK(13, 8)
++#define PPE_FDB_DST_INFO_TYPE			GENMASK(13, 12)
++#define PPE_FDB_DST_INFO_TYPE_PORT_ID		2
++#define PPE_FDB_DST_INFO_TYPE_PORT_BITMAP	3
++#define PPE_FDB_DST_INFO_VALUE			GENMASK(11, 0)
++
++/* A static FDB entry has the maximum age value, which the aging process
++ * never decrements.
++ */
++#define PPE_FDB_HIT_AGE_STATIC			3
++
+ /* L2 Port configurations */
+ #define PPE_L2_VP_PORT_TBL_ADDR			0x98000
+ #define PPE_L2_VP_PORT_TBL_ENTRIES		256
+ #define PPE_L2_VP_PORT_TBL_INC			0x10
+ #define PPE_L2_VP_PORT_W0_INVALID_VSI_FWD_EN	BIT(0)
+ #define PPE_L2_VP_PORT_W0_DST_INFO		GENMASK(9, 2)
++#define PPE_L2_VP_PORT_W1_STATE_CHECK_EN	BIT(28)
++#define PPE_L2_VP_PORT_W1_VP_TYPE		BIT(29)
++#define PPE_L2_VP_PORT_W1_CONTEXT_ACTIVE	BIT(30)
++#define PPE_L2_VP_PORT_W1_EG_DATA_VALID		BIT(31)
+ 
+ #define PPE_L2_PORT_SET_INVALID_VSI_FWD_EN(tbl_cfg, value)	\
+ 	FIELD_MODIFY(PPE_L2_VP_PORT_W0_INVALID_VSI_FWD_EN, tbl_cfg, value)
+@@ -299,6 +421,21 @@
+ #define PPE_IPR_PKT_CNT_TBL_ENTRIES		8
+ #define PPE_IPR_PKT_CNT_TBL_INC			4
+ 
++/* L3 port configurations, which hold the VSI a port is bound to. Ingress
++ * packets are assigned to the port VSI when it is valid, otherwise the
++ * invalid-VSI forwarding configured in the L2 port table applies to them.
++ */
++#define PPE_L3_VP_PORT_TBL_ADDR			0x204000
++#define PPE_L3_VP_PORT_TBL_ENTRIES		256
++#define PPE_L3_VP_PORT_TBL_INC			0x10
++#define PPE_L3_VP_PORT_W1_VSI_VALID		BIT(9)
++#define PPE_L3_VP_PORT_W1_VSI			GENMASK(15, 10)
++
++#define PPE_L3_VP_PORT_SET_VSI_VALID(tbl_cfg, value)		\
++	FIELD_MODIFY(PPE_L3_VP_PORT_W1_VSI_VALID, (tbl_cfg) + 0x1, value)
++#define PPE_L3_VP_PORT_SET_VSI(tbl_cfg, value)			\
++	FIELD_MODIFY(PPE_L3_VP_PORT_W1_VSI, (tbl_cfg) + 0x1, value)
++
+ /* PPE service code configuration for the tunnel packet. */
+ #define PPE_TL_SERVICE_TBL_ADDR			0x306000
+ #define PPE_TL_SERVICE_TBL_ENTRIES		256

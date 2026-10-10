@@ -1,0 +1,230 @@
+From: Kenneth Kasilag <kenneth@kasilag.me>
+Date: Fri, 03 Jul 2026 00:00:00 +0000
+Subject: [PATCH] net: ethernet: qualcomm: ppe: trap BPDUs to the CPU port
+
+Program the reserved MAC address table and a control packet rule to
+redirect packets for 01:80:c2:00:00:00 to the CPU port, bypassing the
+ingress spanning tree state and VLAN filtering.
+
+Hardware-bridged ports need this for spanning tree to work at all:
+within a VSI, BPDUs would be flooded to the VSI members like ordinary
+link-local multicast instead of being delivered to the bridge, and a
+port put into the blocking state drops all ingress except control
+packet rule matches, so the port would never see the BPDUs which are
+supposed to take it out of blocking again.
+
+The rule redirects from all ports. On standalone ports link-local
+packets already reach the CPU through the invalid-VSI redirect, so
+there the rule only changes which queue they arrive on.
+
+Publish the match rule only after its reserved-MAC key is valid.
+Invalidate it before removal, and restore both rows in that order
+after a programming error. Clear the rule on every setup failure
+and during bridge teardown.
+
+Signed-off-by: Kenneth Kasilag <kenneth@kasilag.me>
+---
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_bridge.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_bridge.c
+@@ -532,13 +532,25 @@ static int ppe_bridge_switchdev_blocking
+  */
+ int ppe_bridge_setup(struct ppe_device *ppe_dev)
+ {
++	const u8 bpdu_addr[ETH_ALEN] = { 0x01, 0x80, 0xc2, 0x00, 0x00, 0x00 };
+ 	struct ppe_bridge *pb;
+ 	int i, ret;
+ 
++	/* Trap BPDUs to the CPU port. Within a VSI they would otherwise
++	 * be flooded like any multicast, and a port in the blocking
++	 * state would not receive them at all, so spanning tree could
++	 * never break a loop between offloaded ports.
++	 */
++	ret = ppe_mac_trap_set(ppe_dev, 0, bpdu_addr);
++	if (ret)
++		return ret;
++
+ 	pb = kzalloc(struct_size(pb, ports, ppe_dev->num_ports),
+ 		     GFP_KERNEL);
+-	if (!pb)
+-		return -ENOMEM;
++	if (!pb) {
++		ret = -ENOMEM;
++		goto err_trap;
++	}
+ 
+ 	pb->ppe_dev = ppe_dev;
+ 	for (i = 0; i < ppe_dev->num_ports; i++)
+@@ -577,6 +589,9 @@ err_wq:
+ 	destroy_workqueue(pb->fdb_wq);
+ err_free:
+ 	kfree(pb);
++err_trap:
++	if (ppe_mac_trap_clear(ppe_dev, 0))
++		dev_err(ppe_dev->dev, "failed to clear BPDU trap\n");
+ 
+ 	return ret;
+ }
+@@ -600,6 +615,8 @@ void ppe_bridge_destroy(struct ppe_devic
+ 	unregister_switchdev_notifier(&pb->switchdev_nb);
+ 	unregister_netdevice_notifier(&pb->netdev_nb);
+ 	destroy_workqueue(pb->fdb_wq);
++	if (ppe_mac_trap_clear(ppe_dev, 0))
++		dev_err(ppe_dev->dev, "failed to clear BPDU trap\n");
+ 	ppe_dev->bridge = NULL;
+ 	kfree(pb);
+ }
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_config.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_config.c
+@@ -1599,6 +1599,99 @@ int ppe_port_stp_state_set(struct ppe_de
+ 				  FIELD_PREP(PPE_CST_STATE_PORT_STATE, state));
+ }
+ 
++/**
++ * ppe_mac_trap_update - Update a reserved destination MAC trap
++ * @ppe_dev: PPE device
++ * @index: Index of the reserved MAC address and of its trap rule
++ * @addr: MAC address to trap when enabling the rule
++ * @enable: Enable the trap, or remove it when false
++ *
++ * Program the reserved MAC address table and a control packet rule to
++ * redirect matching packets to the CPU port from all ports, bypassing
++ * the ingress spanning tree state and VLAN filtering. Used to trap
++ * link-local protocol packets such as BPDUs, which must reach the CPU
++ * even on a port in the blocking state.
++ *
++ * Return: 0 on success, negative error code on failure.
++ */
++static int ppe_mac_trap_update(struct ppe_device *ppe_dev, int index,
++			       const u8 *addr, bool enable)
++{
++	u32 rfdb_reg, app_reg, rfdb_old[2], app_old[3];
++	u32 rfdb_cfg[2] = {}, app_cfg[3] = {};
++	int ret, err;
++
++	if (index < 0 || index >= PPE_RFDB_TBL_ENTRIES ||
++	    index >= PPE_APP_CTRL_ENTRIES || (enable && !addr))
++		return -EINVAL;
++
++	rfdb_reg = PPE_RFDB_TBL_ADDR + PPE_RFDB_TBL_INC * index;
++	app_reg = PPE_APP_CTRL_ADDR + PPE_APP_CTRL_INC * index;
++	ret = regmap_bulk_read(ppe_dev->regmap, rfdb_reg, rfdb_old,
++			       ARRAY_SIZE(rfdb_old));
++	if (ret)
++		return ret;
++	ret = regmap_bulk_read(ppe_dev->regmap, app_reg, app_old,
++			       ARRAY_SIZE(app_old));
++	if (ret)
++		return ret;
++
++	if (enable) {
++		rfdb_cfg[0] = (u32)addr[2] << 24 | addr[3] << 16 |
++			      addr[4] << 8 | addr[5];
++		rfdb_cfg[1] = FIELD_PREP(PPE_RFDB_W1_MAC_ADDR_HI,
++					 addr[0] << 8 | addr[1]) |
++			      PPE_RFDB_W1_VALID;
++		app_cfg[0] = PPE_APP_CTRL_W0_VALID |
++			     PPE_APP_CTRL_W0_RFDB_INCLUDE |
++			     FIELD_PREP(PPE_APP_CTRL_W0_RFDB_BITMAP_LO,
++					index < 30 ? BIT(index) : 0);
++		app_cfg[1] = FIELD_PREP(PPE_APP_CTRL_W1_RFDB_BITMAP_HI,
++					index < 30 ? 0 : BIT(index - 30));
++		app_cfg[2] = PPE_APP_CTRL_W2_IN_VLAN_FLTR_BYP |
++			     PPE_APP_CTRL_W2_IN_STG_BYP |
++			     FIELD_PREP(PPE_APP_CTRL_W2_CMD,
++					PPE_ACTION_REDIRECT_TO_CPU);
++	}
++
++	/* Publish the application rule last and invalidate it first. */
++	if (!enable) {
++		ret = regmap_bulk_write(ppe_dev->regmap, app_reg, app_cfg,
++					ARRAY_SIZE(app_cfg));
++		if (ret)
++			return ret;
++	}
++	ret = regmap_bulk_write(ppe_dev->regmap, rfdb_reg, rfdb_cfg,
++				ARRAY_SIZE(rfdb_cfg));
++	if (!ret && enable)
++		ret = regmap_bulk_write(ppe_dev->regmap, app_reg, app_cfg,
++					ARRAY_SIZE(app_cfg));
++	if (!ret)
++		return 0;
++
++	/* Restore with the same invalidate-before-key ordering. */
++	err = regmap_bulk_write(ppe_dev->regmap, app_reg, app_cfg,
++				ARRAY_SIZE(app_cfg));
++	err |= regmap_bulk_write(ppe_dev->regmap, rfdb_reg, rfdb_old,
++				 ARRAY_SIZE(rfdb_old));
++	err |= regmap_bulk_write(ppe_dev->regmap, app_reg, app_old,
++				 ARRAY_SIZE(app_old));
++	if (err)
++		dev_err(ppe_dev->dev,
++			"failed to restore reserved MAC trap %d\n", index);
++	return ret;
++}
++
++int ppe_mac_trap_set(struct ppe_device *ppe_dev, int index, const u8 *addr)
++{
++	return ppe_mac_trap_update(ppe_dev, index, addr, true);
++}
++
++int ppe_mac_trap_clear(struct ppe_device *ppe_dev, int index)
++{
++	return ppe_mac_trap_update(ppe_dev, index, NULL, false);
++}
++
+ /* Pack an FDB entry into the 3-word layout shared by the FDB table and
+  * the FDB operation data registers.
+  */
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_config.h
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_config.h
+@@ -338,6 +338,8 @@ int ppe_fdb_entry_read(struct ppe_device
+ 		       struct ppe_fdb_entry *entry, bool *valid);
+ int ppe_fdb_port_flush(struct ppe_device *ppe_dev, int port, bool static_too);
+ int ppe_fdb_vsi_flush(struct ppe_device *ppe_dev, int vsi);
++int ppe_mac_trap_set(struct ppe_device *ppe_dev, int index, const u8 *addr);
++int ppe_mac_trap_clear(struct ppe_device *ppe_dev, int index);
+ int ppe_queue_scheduler_set(struct ppe_device *ppe_dev,
+ 			    int node_id, bool flow_level, int port,
+ 			    struct ppe_scheduler_cfg scheduler_cfg);
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_regs.h
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_regs.h
+@@ -257,6 +257,39 @@
+ #define PPE_MC_MTU_CTRL_TBL_MTU_CMD		GENMASK(15, 14)
+ #define PPE_MC_MTU_CTRL_TBL_TX_CNT_EN		BIT(16)
+ 
++/* Reserved MAC addresses, matched by the control packet rules below. */
++#define PPE_RFDB_TBL_ADDR			0x63000
++#define PPE_RFDB_TBL_ENTRIES			32
++#define PPE_RFDB_TBL_INC			0x8
++#define PPE_RFDB_W0_MAC_ADDR_LO			GENMASK(31, 0)
++#define PPE_RFDB_W1_MAC_ADDR_HI			GENMASK(15, 0)
++#define PPE_RFDB_W1_VALID			BIT(16)
++
++/* Control packet rules. A rule matches packets by reserved MAC address,
++ * protocol or Ethertype and applies a forward action to them, optionally
++ * bypassing the ingress spanning tree state and VLAN filtering.
++ */
++#define PPE_APP_CTRL_ADDR			0x63400
++#define PPE_APP_CTRL_ENTRIES			32
++#define PPE_APP_CTRL_INC			0x10
++#define PPE_APP_CTRL_W0_VALID			BIT(0)
++#define PPE_APP_CTRL_W0_RFDB_INCLUDE		BIT(1)
++#define PPE_APP_CTRL_W0_RFDB_BITMAP_LO		GENMASK(31, 2)
++#define PPE_APP_CTRL_W1_RFDB_BITMAP_HI		GENMASK(1, 0)
++#define PPE_APP_CTRL_W1_PROTOCOL_INCLUDE	BIT(2)
++#define PPE_APP_CTRL_W1_PROTOCOL_BITMAP		GENMASK(28, 3)
++#define PPE_APP_CTRL_W1_ETHERTYPE_INCLUDE	BIT(29)
++#define PPE_APP_CTRL_W1_ETHERTYPE_BITMAP_LO	GENMASK(31, 30)
++#define PPE_APP_CTRL_W2_ETHERTYPE_BITMAP_HI	GENMASK(1, 0)
++#define PPE_APP_CTRL_W2_PORTBITMAP_INCLUDE	BIT(2)
++#define PPE_APP_CTRL_W2_PORTBITMAP		GENMASK(10, 3)
++#define PPE_APP_CTRL_W2_IN_VLAN_FLTR_BYP	BIT(11)
++#define PPE_APP_CTRL_W2_IN_STG_BYP		BIT(12)
++#define PPE_APP_CTRL_W2_L2_SEC_BYP		BIT(13)
++#define PPE_APP_CTRL_W2_SG_BYP			BIT(14)
++#define PPE_APP_CTRL_W2_CMD			GENMASK(16, 15)
++#define PPE_APP_CTRL_W2_PORT_TYPE		GENMASK(18, 17)
++
+ /* PPE VSI configurations */
+ #define PPE_VSI_TBL_ADDR			0x63800
+ #define PPE_VSI_TBL_ENTRIES			64

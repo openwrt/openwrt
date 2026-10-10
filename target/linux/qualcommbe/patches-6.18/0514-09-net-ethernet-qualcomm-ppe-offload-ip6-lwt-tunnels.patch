@@ -1,0 +1,239 @@
+From: Kenneth Kasilag <kenneth@kasilag.me>
+Date: Wed, 15 Jul 2026 13:40:00 +0800
+Subject: [PATCH] net: ethernet: qualcomm: ppe: offload IP6 LWT tunnels
+
+Consume the generic flow action's LWT type, TX tunnel key and reversed
+encapsulated-address match to publish fixed IPv4-in-IPv6 LWT flows through
+the PPE tunnel transaction.
+
+Signed-off-by: Kenneth Kasilag <kenneth@kasilag.me>
+
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_flowtable.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_flowtable.c
+@@ -31,7 +31,9 @@
+ #include <net/flow_offload.h>
+ #include <net/ip6_tunnel.h>
+ #include <net/ip6_route.h>
++#include <net/ip_tunnels.h>
+ #include <net/ipv6.h>
++#include <net/lwtunnel.h>
+ #include <net/neighbour.h>
+ #include <net/tcp.h>
+ 
+@@ -612,6 +614,7 @@ static int ppe_ft_pppoe_path(struct net_
+ 	    !is_valid_ether_addr(topo->peer) ||
+ 	    !is_valid_ether_addr(topo->local))
+ 		ret = -EINVAL;
++
+ out_unlock:
+ 	rcu_read_unlock();
+ 	return ret;
+@@ -1099,6 +1102,63 @@ static int ppe_ft_tunnel_pppoe_port_put(
+ 	return ret;
+ }
+ 
++static bool ppe_ft_lwt_encap(const struct flow_action_entry *act,
++			     struct in6_addr *local,
++			     struct in6_addr *remote, u8 *hop_limit)
++{
++	const struct ip_tunnel_info *info = act->tunnel;
++
++	if (act->tunnel_type != LWTUNNEL_ENCAP_IP6 || !info ||
++	    (info->mode & (IP_TUNNEL_INFO_TX | IP_TUNNEL_INFO_IPV6 |
++			   IP_TUNNEL_INFO_BRIDGE)) !=
++	    (IP_TUNNEL_INFO_TX | IP_TUNNEL_INFO_IPV6) ||
++	    info->options_len || info->key.tun_id ||
++	    !ip_tunnel_flags_empty(info->key.tun_flags) ||
++	    info->key.tp_src || info->key.tp_dst ||
++	    ipv6_addr_any(&info->key.u.ipv6.src) ||
++	    ipv6_addr_any(&info->key.u.ipv6.dst))
++		return false;
++
++	*local = info->key.u.ipv6.src;
++	*remote = info->key.u.ipv6.dst;
++	*hop_limit = info->key.ttl ?: 64;
++
++	return true;
++}
++
++static bool ppe_ft_lwt_decap(const struct flow_rule *rule,
++			     const struct flow_action_entry *act,
++			     struct in6_addr *local,
++			     struct in6_addr *remote)
++{
++	struct flow_match_enc_keyid keyid;
++	struct flow_match_ipv6_addrs ipv6;
++	struct flow_match_control control;
++
++	if (act->tunnel_type != LWTUNNEL_ENCAP_IP6 ||
++	    !flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_ENC_CONTROL) ||
++	    !flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_ENC_KEYID) ||
++	    !flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_ENC_IPV6_ADDRS))
++		return false;
++
++	flow_rule_match_enc_control(rule, &control);
++	flow_rule_match_enc_keyid(rule, &keyid);
++	flow_rule_match_enc_ipv6_addrs(rule, &ipv6);
++	if (control.key->addr_type != FLOW_DISSECTOR_KEY_IPV6_ADDRS ||
++	    control.mask->addr_type != 0xffff || control.mask->flags ||
++	    keyid.key->keyid || keyid.mask->keyid != cpu_to_be32(~0U) ||
++	    memchr_inv(&ipv6.mask->src, 0xff, sizeof(ipv6.mask->src)) ||
++	    memchr_inv(&ipv6.mask->dst, 0xff, sizeof(ipv6.mask->dst)) ||
++	    ipv6_addr_any(&ipv6.key->src) || ipv6_addr_any(&ipv6.key->dst))
++		return false;
++
++	/* nf_flow_rule_lwt_match() reverses the TX key for ingress match. */
++	*remote = ipv6.key->src;
++	*local = ipv6.key->dst;
++
++	return true;
++}
++
+ static int ppe_ft_tunnel_underlay_get(struct ppe_flowtable *ft, int port,
+ 				      int pppoe)
+ {
+@@ -1339,13 +1399,11 @@ out_dst:
+ }
+ 
+ static bool ppe_ft_tunnel_match(const struct ppe_ft_tunnel *tunnel,
+-				const struct net_device *dev,
+ 				const struct in6_addr *local,
+ 				const struct in6_addr *remote,
+ 				const struct ppe_ft_tunnel *path)
+ {
+ 	return tunnel->ref.refcnt && !tunnel->poisoned &&
+-	       tunnel->dev == dev &&
+ 	       ipv6_addr_equal(&tunnel->local, local) &&
+ 	       ipv6_addr_equal(&tunnel->remote, remote) &&
+ 	       tunnel->underlay_port == path->underlay_port &&
+@@ -1388,7 +1446,7 @@ static int ppe_ft_tunnel_get(struct ppe_
+ 		return ret;
+ 
+ 	for (i = 0; i < PPE_FT_TUNNELS; i++) {
+-		if (!ppe_ft_tunnel_match(&ft->tunnels[i], dev, local, remote,
++		if (!ppe_ft_tunnel_match(&ft->tunnels[i], local, remote,
+ 					 &path))
+ 			continue;
+ 		ppe_ft_tunnel_path_put(ft, &path);
+@@ -1673,7 +1731,9 @@ static int ppe_ft_flow_replace(struct pp
+ 	struct ppe_ft_data data = {};
+ 	struct ppe_ft_flow *flow;
+ 	int vlan_pops = 0;
+-	bool tunnel_flow, tunnel_encap = false;
++	struct in6_addr lwt_local = {}, lwt_remote = {};
++	u8 lwt_hop_limit = 0;
++	bool tunnel_flow, tunnel_encap = false, lwt_tunnel = false;
+ 	int i, nexthop, ret, redirects = 0, iport = -1, imtu = 0;
+ 
+ 	/* nf_flow_offload_refresh() re-sends FLOW_CLS_REPLACE for as long
+@@ -1705,7 +1765,8 @@ static int ppe_ft_flow_replace(struct pp
+ 	      BIT_ULL(FLOW_DISSECTOR_KEY_IPV6_ADDRS) |
+ 	      BIT_ULL(FLOW_DISSECTOR_KEY_TCP) |
+ 	      BIT_ULL(FLOW_DISSECTOR_KEY_PORTS) |
+-	      BIT_ULL(FLOW_DISSECTOR_KEY_VLAN)))
++	      BIT_ULL(FLOW_DISSECTOR_KEY_VLAN) |
++	      PPE_FT_TUNNEL_KEYS))
+ 		return -EOPNOTSUPP;
+ 
+ 	flow = kzalloc(sizeof(*flow), GFP_KERNEL);
+@@ -1922,6 +1983,25 @@ static int ppe_ft_flow_replace(struct pp
+ 			break;
+ 		case FLOW_ACTION_CSUM:
+ 			break;
++		case FLOW_ACTION_TUNNEL_ENCAP:
++			if (lwt_tunnel ||
++			    !ppe_ft_lwt_encap(act, &lwt_local, &lwt_remote,
++					      &lwt_hop_limit)) {
++				ret = -EOPNOTSUPP;
++				goto err_free;
++			}
++			lwt_tunnel = true;
++			tunnel_encap = true;
++			break;
++		case FLOW_ACTION_TUNNEL_DECAP:
++			if (lwt_tunnel ||
++			    !ppe_ft_lwt_decap(rule, act, &lwt_local,
++					      &lwt_remote)) {
++				ret = -EOPNOTSUPP;
++				goto err_free;
++			}
++			lwt_tunnel = true;
++			break;
+ 		default:
+ 			ret = -EOPNOTSUPP;
+ 			goto err_free;
+@@ -1938,7 +2018,10 @@ static int ppe_ft_flow_replace(struct pp
+ 			ret = -EOPNOTSUPP;
+ 			goto err_free;
+ 		}
+-		if (ppe_ft_ipip6_dev(odev)) {
++		if (lwt_tunnel) {
++			tdev = odev;
++			dev_hold(tdev);
++		} else if (ppe_ft_ipip6_dev(odev)) {
+ 			tdev = odev;
+ 			tunnel_encap = true;
+ 		} else if (data.ingress_ifindex) {
+@@ -1953,7 +2036,7 @@ static int ppe_ft_flow_replace(struct pp
+ 			ret = -EOPNOTSUPP;
+ 			goto err_free;
+ 		}
+-		if (tunnel_encap)
++		if (tunnel_encap && !lwt_tunnel)
+ 			dev_hold(tdev);
+ 	}
+ 
+@@ -2006,7 +2089,7 @@ static int ppe_ft_flow_replace(struct pp
+ 		ether_addr_copy(nh.mac, data.eth.dst);
+ 	}
+ 
+-	if (tunnel_flow) {
++	if (tunnel_flow && !lwt_tunnel) {
+ 		struct ip6_tnl_flow_offload_key key = {
+ 			.addr = tunnel_encap ? flow->entry.dip.ip4 :
+ 					       flow->entry.sip.ip4,
+@@ -2020,7 +2103,7 @@ static int ppe_ft_flow_replace(struct pp
+ 		if (ret || ipv6_addr_any(&tnl_info.local) ||
+ 		    ipv6_addr_any(&tnl_info.remote)) {
+ 			ret = -EOPNOTSUPP;
+-			goto err_tdev;
++			goto err_prelock_ivp;
+ 		}
+ 	}
+ 
+@@ -2031,12 +2114,29 @@ static int ppe_ft_flow_replace(struct pp
+ 	 */
+ 	mutex_lock(&ft->lock);
+ 	if (tunnel_flow) {
+-		flow->tunnel = ppe_ft_tunnel_get(ft, tdev,
+-						 &tnl_info.local,
+-						 &tnl_info.remote,
+-						 tnl_info.link,
+-						 tnl_info.hop_limit,
+-						 tnl_info.mtu);
++		struct in6_addr local, remote;
++		int link, mtu;
++		u8 hop_limit;
++
++		if (lwt_tunnel) {
++			local = lwt_local;
++			remote = lwt_remote;
++			link = 0;
++			hop_limit = lwt_hop_limit;
++			mtu = max_t(int, 68, tdev->mtu - sizeof(struct ipv6hdr));
++		} else {
++			local = tnl_info.local;
++			remote = tnl_info.remote;
++			link = tnl_info.link;
++			hop_limit = tnl_info.hop_limit;
++			mtu = tnl_info.mtu;
++		}
++		if (ipv6_addr_any(&remote)) {
++			ret = -EOPNOTSUPP;
++			goto err_unlock;
++		}
++		flow->tunnel = ppe_ft_tunnel_get(ft, tdev, &local, &remote,
++						 link, hop_limit, mtu);
+ 		if (flow->tunnel < 0) {
+ 			ret = flow->tunnel;
+ 			goto err_unlock;

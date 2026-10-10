@@ -1,0 +1,581 @@
+From: Kenneth Kasilag <kenneth@kasilag.me>
+Date: Wed, 15 Jul 2026 10:10:00 +0800
+Subject: [PATCH] net: ethernet: qualcomm: ppe: offload DS-Lite flows
+
+Resolve fixed ip6tnl endpoints through the IPv6 underlay and publish a
+refcounted tunnel object shared by both flow directions.  Underlay ports
+share their single tunnel-L3 binding, while each endpoint pair owns its
+decap row, encap template and dedicated tunnel VP.
+
+Activate the VP last and dismantle the transaction in reverse order.
+Only plain physical underlays are accepted; unresolved neighbours and
+layered underlays remain on the software path.
+
+Signed-off-by: Kenneth Kasilag <kenneth@kasilag.me>
+
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_flowtable.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_flowtable.c
+@@ -30,7 +30,9 @@
+ #include <linux/seq_file.h>
+ #include <net/flow_offload.h>
+ #include <net/ip6_tunnel.h>
++#include <net/ip6_route.h>
+ #include <net/ipv6.h>
++#include <net/neighbour.h>
+ #include <net/tcp.h>
+ 
+ #include "edma_port.h"
+@@ -39,6 +41,7 @@
+ #include "ppe_flow.h"
+ #include "ppe_flowtable.h"
+ #include "ppe_regs.h"
++#include "ppe_tunnel.h"
+ 
+ /**
+  * struct ppe_ft_ref - Common head of a refcounted hardware-entry table.
+@@ -167,11 +170,38 @@ struct ppe_ft_flow {
+ 	int pub_ip;
+ 	int pppoe;
+ 	int vlan;
++	int tunnel;
+ 	u8 eport;
+ 	u32 packets;
+ 	u64 bytes;
+ };
+ 
++#define PPE_FT_TUNNELS	PPE_TUNNEL_ENTRIES
++
++struct ppe_ft_tunnel {
++	struct ppe_ft_ref ref;
++	bool poisoned;
++	struct net_device *dev;
++	struct in6_addr local;
++	struct in6_addr remote;
++	u8 local_mac[ETH_ALEN];
++	u8 remote_mac[ETH_ALEN];
++	u8 underlay_port;
++	u8 hop_limit;
++	u16 mtu;
++	int encap_id;
++	int decap_index;
++	int vp;
++};
++
++struct ppe_ft_tunnel_underlay {
++	unsigned int refcnt;
++	bool poisoned;
++	int l3_if;
++};
++
++static_assert(offsetof(struct ppe_ft_tunnel, ref) == 0);
++
+ #define PPE_FT_HOST_HASH_BITS	8
+ 
+ /* Refcounted hardware host entry. Its hardware-selected index is
+@@ -222,6 +252,8 @@ struct ppe_flowtable {
+ 	struct ppe_ft_pub_ip pub_ips[PPE_PUB_IP_TBL_ENTRIES];
+ 	struct ppe_ft_pppoe pppoe[PPE_FT_PPPOE_SESSIONS];
+ 	struct ppe_ft_vlan vlans[PPE_L3_VLAN_UPLINKS];
++	struct ppe_ft_tunnel tunnels[PPE_FT_TUNNELS];
++	struct ppe_ft_tunnel_underlay tunnel_underlays[PPE_PORT_ID_COUNT];
+ 	struct notifier_block ppp_nb;
+ 	struct list_head block_cb_list;
+ };
+@@ -981,21 +1013,300 @@ static bool ppe_ft_rule_is_tunnel(const
+ 	return is_tunnel;
+ }
+ 
+-/* Tunneled flows stay on the software path for now. The SoC carries a
+- * tunnel engine that could take them: the tunnel lookup block (which
+- * already hosts the PPPoE session table) terminates encapsulations
+- * into tunnel L3 interfaces, and the tunnel fields of the egress L3
+- * interfaces generate them. A fixed IPIP6 implementation must derive
+- * its endpoints from the redirect netdevice and program a shared
+- * tunnel-port lifecycle before publishing either direction.
+- */
+-static int ppe_ft_tunnel_replace(struct ppe_flowtable *ft,
+-				 struct flow_cls_offload *f)
++static int ppe_ft_tunnel_underlay_get(struct ppe_flowtable *ft, int port)
+ {
+-	if (!ft->ppe_dev->variant->has_tunnel_engine)
+-		return -EOPNOTSUPP;
++	struct ppe_ft_tunnel_underlay *underlay;
++	int ret;
++
++	if (port < 0 || port >= ft->ppe_dev->num_ports)
++		return -EINVAL;
++	underlay = &ft->tunnel_underlays[port];
++	if (underlay->refcnt) {
++		if (underlay->poisoned)
++			return -EIO;
++		underlay->refcnt++;
++		return underlay->l3_if;
++	}
++	underlay->refcnt = 1;
++
++	underlay->l3_if = ppe_tunnel_l3_if_alloc(ft->ppe_dev);
++	if (underlay->l3_if < 0) {
++		ret = underlay->l3_if;
++		goto err_ref;
++	}
++	ret = ppe_tunnel_l3_if_set(ft->ppe_dev, underlay->l3_if,
++				   PPE_TUNNEL_L3_IPIP6_VALUE);
++	if (ret)
++		goto err_id;
++	ret = ppe_tunnel_port_l3_if_set(ft->ppe_dev, port, true,
++					underlay->l3_if);
++	if (ret)
++		goto err_row;
++
++	return underlay->l3_if;
++
++err_row:
++	if (ppe_tunnel_l3_if_set(ft->ppe_dev, underlay->l3_if, 0)) {
++		underlay->poisoned = true;
++		WARN_ONCE(1, "quarantining a partial tunnel underlay\n");
++		return ret;
++	}
++err_id:
++	ppe_tunnel_l3_if_free(ft->ppe_dev, underlay->l3_if);
++err_ref:
++	memset(underlay, 0, sizeof(*underlay));
++	return ret;
++}
++
++static void ppe_ft_tunnel_underlay_put(struct ppe_flowtable *ft, int port)
++{
++	struct ppe_ft_tunnel_underlay *underlay;
++	int ret, err;
++
++	if (WARN_ON_ONCE(port < 0 || port >= ft->ppe_dev->num_ports))
++		return;
++	underlay = &ft->tunnel_underlays[port];
++	if (WARN_ON_ONCE(!underlay->refcnt) || --underlay->refcnt)
++		return;
+ 
+-	return -EOPNOTSUPP;	/* TODO: program the tunnel engine */
++	ret = ppe_tunnel_port_l3_if_set(ft->ppe_dev, port, false, 0);
++	err = ppe_tunnel_l3_if_set(ft->ppe_dev, underlay->l3_if, 0);
++	if (ret || err) {
++		underlay->poisoned = true;
++		underlay->refcnt = 1;
++		WARN_ONCE(1, "quarantining an undeletable tunnel underlay\n");
++		return;
++	}
++	ppe_tunnel_l3_if_free(ft->ppe_dev, underlay->l3_if);
++	memset(underlay, 0, sizeof(*underlay));
++}
++
++static int ppe_ft_tunnel_resolve(struct ppe_flowtable *ft,
++				 const struct net_device *tdev,
++				 const struct in6_addr *local,
++				 const struct in6_addr *remote,
++				 struct ppe_ft_tunnel *tunnel)
++{
++	const struct ip6_tnl *ip6tnl = netdev_priv(tdev);
++	struct flowi6 fl6 = {
++		.flowi6_oif = ip6tnl->parms.link,
++		.saddr = *local,
++		.daddr = *remote,
++	};
++	struct neighbour *neigh;
++	struct dst_entry *dst;
++	struct edma_port_priv *priv;
++	int ret = 0;
++
++	dst = ip6_route_output(dev_net(tdev), NULL, &fl6);
++	if (dst->error) {
++		ret = dst->error;
++		goto out_dst;
++	}
++	if (!edma_port_dev_check(dst->dev)) {
++		ret = -EOPNOTSUPP;
++		goto out_dst;
++	}
++
++	neigh = dst_neigh_lookup(dst, remote);
++	if (!neigh) {
++		ret = -EHOSTUNREACH;
++		goto out_dst;
++	}
++	read_lock_bh(&neigh->lock);
++	if (!(neigh->nud_state & NUD_VALID) ||
++	    !is_valid_ether_addr(neigh->ha)) {
++		ret = -EHOSTUNREACH;
++	} else {
++		ether_addr_copy(tunnel->remote_mac, neigh->ha);
++	}
++	read_unlock_bh(&neigh->lock);
++	neigh_release(neigh);
++	if (ret)
++		goto out_dst;
++
++	priv = netdev_priv(dst->dev);
++	tunnel->underlay_port = priv->ppe_port->port_id;
++	ether_addr_copy(tunnel->local_mac, dst->dev->dev_addr);
++out_dst:
++	dst_release(dst);
++	return ret;
++}
++
++static bool ppe_ft_tunnel_match(const struct ppe_ft_tunnel *tunnel,
++				const struct net_device *dev,
++				const struct in6_addr *local,
++				const struct in6_addr *remote)
++{
++	return tunnel->ref.refcnt && !tunnel->poisoned &&
++	       tunnel->dev == dev &&
++	       ipv6_addr_equal(&tunnel->local, local) &&
++	       ipv6_addr_equal(&tunnel->remote, remote);
++}
++
++static void ppe_ft_tunnel_put(struct ppe_flowtable *ft, int index);
++
++static int ppe_ft_tunnel_get(struct ppe_flowtable *ft, struct net_device *dev,
++			     const struct in6_addr *local,
++			     const struct in6_addr *remote)
++{
++	struct ppe_tunnel_decap_entry decap, readback;
++	struct ppe_tunnel_encap_entry encap;
++	const struct ip6_tnl *ip6tnl = netdev_priv(dev);
++	struct ppe_tunnel_ipip6 ipip6;
++	struct ppe_ft_tunnel *tunnel;
++	int i, ret, err, cleanup_ret = 0, l3_if;
++
++	for (i = 0; i < PPE_FT_TUNNELS; i++) {
++		if (!ppe_ft_tunnel_match(&ft->tunnels[i], dev, local, remote))
++			continue;
++		ft->tunnels[i].ref.refcnt++;
++		return i;
++	}
++	for (i = 0; i < PPE_FT_TUNNELS; i++)
++		if (!ft->tunnels[i].ref.refcnt)
++			break;
++	if (i == PPE_FT_TUNNELS)
++		return -ENOSPC;
++
++	tunnel = &ft->tunnels[i];
++	memset(tunnel, 0, sizeof(*tunnel));
++	tunnel->ref.refcnt = 1;
++	tunnel->dev = dev;
++	tunnel->local = *local;
++	tunnel->remote = *remote;
++	tunnel->hop_limit = ip6tnl->parms.hop_limit ?: 64;
++	tunnel->mtu = dev->mtu;
++	tunnel->encap_id = -1;
++	tunnel->decap_index = -1;
++	tunnel->vp = -1;
++
++	ret = ppe_ft_tunnel_resolve(ft, dev, local, remote, tunnel);
++	if (ret)
++		goto err_clear;
++	l3_if = ppe_ft_tunnel_underlay_get(ft, tunnel->underlay_port);
++	if (l3_if < 0) {
++		ret = l3_if;
++		goto err_clear;
++	}
++	tunnel->encap_id = ppe_tunnel_id_alloc(ft->ppe_dev);
++	if (tunnel->encap_id < 0) {
++		ret = tunnel->encap_id;
++		goto err_underlay;
++	}
++	tunnel->vp = ppe_tunnel_vp_alloc(ft->ppe_dev);
++	if (tunnel->vp < 0) {
++		ret = tunnel->vp;
++		goto err_encap_id;
++	}
++
++	ipip6.local = *local;
++	ipip6.remote = *remote;
++	ether_addr_copy(ipip6.local_mac, tunnel->local_mac);
++	ether_addr_copy(ipip6.remote_mac, tunnel->remote_mac);
++	ipip6.hop_limit = tunnel->hop_limit;
++	ipip6.vp = tunnel->vp;
++	ipip6.l3_if = l3_if;
++	ppe_tunnel_ipip6_decap_build(&decap, &ipip6);
++	ppe_tunnel_ipip6_encap_build(&encap, &ipip6);
++
++	ret = ppe_tunnel_decap_add(ft->ppe_dev, &decap,
++				   &tunnel->decap_index, &readback);
++	if (ret)
++		goto err_decap;
++	if (memcmp(&decap, &readback, sizeof(decap))) {
++		ret = -EIO;
++		goto err_decap;
++	}
++	ret = ppe_tunnel_encap_set(ft->ppe_dev, tunnel->encap_id, &encap);
++	if (ret)
++		goto err_decap;
++	ret = ppe_tunnel_vp_bind(ft->ppe_dev, tunnel->vp,
++				 tunnel->encap_id);
++	if (ret)
++		goto err_encap;
++	ret = ppe_tunnel_decap_enable(ft->ppe_dev, tunnel->decap_index, true);
++	if (ret)
++		goto err_bind;
++	ret = ppe_tunnel_port_set(ft->ppe_dev, tunnel->vp,
++				  tunnel->underlay_port, tunnel->mtu, true);
++	if (ret)
++		goto err_enable;
++
++	dev_hold(dev);
++	return i;
++
++err_enable:
++	cleanup_ret = ppe_tunnel_decap_enable(ft->ppe_dev,
++					      tunnel->decap_index, false);
++err_bind:
++	err = ppe_tunnel_vp_unbind(ft->ppe_dev, tunnel->vp);
++	if (!cleanup_ret)
++		cleanup_ret = err;
++err_encap:
++	err = ppe_tunnel_encap_clear(ft->ppe_dev, tunnel->encap_id);
++	if (!cleanup_ret)
++		cleanup_ret = err;
++err_decap:
++	if (tunnel->decap_index >= 0) {
++		err = ppe_tunnel_decap_del(ft->ppe_dev, tunnel->decap_index);
++		if (!cleanup_ret)
++			cleanup_ret = err;
++	}
++	if (cleanup_ret) {
++		tunnel->poisoned = true;
++		dev_hold(dev);
++		WARN_ONCE(1, "quarantining a partial PPE tunnel\n");
++		return ret;
++	}
++	ppe_tunnel_vp_free(ft->ppe_dev, tunnel->vp);
++err_encap_id:
++	ppe_tunnel_id_free(ft->ppe_dev, tunnel->encap_id);
++err_underlay:
++	ppe_ft_tunnel_underlay_put(ft, tunnel->underlay_port);
++err_clear:
++	memset(tunnel, 0, sizeof(*tunnel));
++	return ret;
++}
++
++static void ppe_ft_tunnel_put(struct ppe_flowtable *ft, int index)
++{
++	struct ppe_ft_tunnel *tunnel;
++	int ret, err;
++
++	if (WARN_ON_ONCE(index >= PPE_FT_TUNNELS))
++		return;
++	if (!ppe_ft_ref_put(ft->tunnels, sizeof(*ft->tunnels), index))
++		return;
++	tunnel = &ft->tunnels[index];
++
++	ret = ppe_tunnel_port_set(ft->ppe_dev, tunnel->vp,
++				  tunnel->underlay_port, tunnel->mtu, false);
++	err = ppe_tunnel_decap_enable(ft->ppe_dev,
++				      tunnel->decap_index, false);
++	if (!ret)
++		ret = err;
++	err = ppe_tunnel_vp_unbind(ft->ppe_dev, tunnel->vp);
++	if (!ret)
++		ret = err;
++	err = ppe_tunnel_encap_clear(ft->ppe_dev, tunnel->encap_id);
++	if (!ret)
++		ret = err;
++	err = ppe_tunnel_decap_del(ft->ppe_dev, tunnel->decap_index);
++	if (!ret)
++		ret = err;
++	if (ret) {
++		tunnel->poisoned = true;
++		tunnel->ref.refcnt = 1;
++		WARN_ONCE(1, "quarantining an undeletable PPE tunnel\n");
++		return;
++	}
++
++	ppe_tunnel_vp_free(ft->ppe_dev, tunnel->vp);
++	ppe_tunnel_id_free(ft->ppe_dev, tunnel->encap_id);
++	ppe_ft_tunnel_underlay_put(ft, tunnel->underlay_port);
++	dev_put(tunnel->dev);
++	memset(tunnel, 0, sizeof(*tunnel));
+ }
+ 
+ /* Hash key of a flow's source IP for the host refcount table. */
+@@ -1118,10 +1429,12 @@ static int ppe_ft_flow_replace(struct pp
+ 	struct edma_port_priv *port_priv;
+ 	struct flow_action_entry *act;
+ 	struct net_device *odev = NULL;
++	struct net_device *tdev = NULL;
+ 	struct ppe_flow_nexthop nh = {};
+ 	struct ppe_ft_data data = {};
+ 	struct ppe_ft_flow *flow;
+ 	int vlan_pops = 0;
++	bool tunnel_flow, tunnel_encap = false;
+ 	int i, nexthop, ret, redirects = 0, iport = -1, imtu = 0;
+ 
+ 	/* nf_flow_offload_refresh() re-sends FLOW_CLS_REPLACE for as long
+@@ -1141,8 +1454,9 @@ static int ppe_ft_flow_replace(struct pp
+ 	    !flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_IPV6_ADDRS))
+ 		return -EOPNOTSUPP;
+ 
+-	if (ppe_ft_rule_is_tunnel(rule))
+-		return ppe_ft_tunnel_replace(ft, f);
++	tunnel_flow = ppe_ft_rule_is_tunnel(rule);
++	if (tunnel_flow && !ft->ppe_dev->variant->has_tunnel_engine)
++		return -EOPNOTSUPP;
+ 
+ 	if (rule->match.dissector->used_keys &
+ 	    ~(BIT_ULL(FLOW_DISSECTOR_KEY_META) |
+@@ -1164,6 +1478,7 @@ static int ppe_ft_flow_replace(struct pp
+ 	flow->pub_ip = -1;
+ 	flow->pppoe = -1;
+ 	flow->vlan = -1;
++	flow->tunnel = -1;
+ 	nh.vid = -1;
+ 	data.pppoe_sid = -1;
+ 	data.ingress_vid = -1;
+@@ -1374,11 +1689,40 @@ static int ppe_ft_flow_replace(struct pp
+ 		}
+ 	}
+ 
+-	if (!odev || !edma_port_dev_check(odev) ||
++	if (tunnel_flow) {
++		if (!odev) {
++			ret = -EOPNOTSUPP;
++			goto err_free;
++		}
++		if (flow->entry.is_ipv6 || data.pppoe_sid >= 0 || nh.vid >= 0 ||
++		    data.ingress_vid >= 0) {
++			ret = -EOPNOTSUPP;
++			goto err_free;
++		}
++		if (ppe_ft_ipip6_dev(odev)) {
++			tdev = odev;
++			tunnel_encap = true;
++		} else if (data.ingress_ifindex) {
++			tdev = dev_get_by_index(dev_net(odev),
++						data.ingress_ifindex);
++			if (tdev && !ppe_ft_ipip6_dev(tdev)) {
++				dev_put(tdev);
++				tdev = NULL;
++			}
++		}
++		if (!tdev) {
++			ret = -EOPNOTSUPP;
++			goto err_free;
++		}
++		if (tunnel_encap)
++			dev_hold(tdev);
++	}
++
++	if (!odev || (!tunnel_encap && !edma_port_dev_check(odev)) ||
+ 	    (vlan_pops && data.ingress_vid < 0) ||
+ 	    is_zero_ether_addr(data.eth.dst)) {
+ 		ret = -EOPNOTSUPP;
+-		goto err_free;
++		goto err_tdev;
+ 	}
+ 
+ 	/* The PPPoE L3 interface carries the session ID, so it needs
+@@ -1386,7 +1730,7 @@ static int ppe_ft_flow_replace(struct pp
+ 	 */
+ 	if (data.pppoe_sid >= 0 && is_zero_ether_addr(data.eth.src)) {
+ 		ret = -EOPNOTSUPP;
+-		goto err_free;
++		goto err_tdev;
+ 	}
+ 
+ 	/* Tagged ingress must arrive on a PPE port to be classified by
+@@ -1415,11 +1759,13 @@ static int ppe_ft_flow_replace(struct pp
+ 		}
+ 	}
+ 
+-	port_priv = netdev_priv(odev);
+-	nh.port = port_priv->ppe_port->port_id;
+-	nh.l3_if = nh.port;
+-	flow->eport = nh.port;
+-	ether_addr_copy(nh.mac, data.eth.dst);
++	if (!tunnel_encap) {
++		port_priv = netdev_priv(odev);
++		nh.port = port_priv->ppe_port->port_id;
++		nh.l3_if = nh.port;
++		flow->eport = nh.port;
++		ether_addr_copy(nh.mac, data.eth.dst);
++	}
+ 
+ 	/* The hardware rewrites one direction per flow: the translated
+ 	 * source of SNAT comes from the public IP table, the translated
+@@ -1427,6 +1773,31 @@ static int ppe_ft_flow_replace(struct pp
+ 	 * port from the flow entry itself.
+ 	 */
+ 	mutex_lock(&ft->lock);
++	if (tunnel_flow) {
++		const struct ip6_tnl *ip6tnl = netdev_priv(tdev);
++
++		if (ipv6_addr_any(&ip6tnl->parms.laddr) ||
++		    ipv6_addr_any(&ip6tnl->parms.raddr)) {
++			ret = -EOPNOTSUPP;
++			goto err_unlock;
++		}
++		flow->tunnel = ppe_ft_tunnel_get(ft, tdev,
++						 &ip6tnl->parms.laddr,
++						 &ip6tnl->parms.raddr);
++		if (flow->tunnel < 0) {
++			ret = flow->tunnel;
++			goto err_unlock;
++		}
++		if (tunnel_encap) {
++			const struct ppe_ft_tunnel *tunnel =
++				&ft->tunnels[flow->tunnel];
++
++			nh.port = tunnel->vp;
++			nh.l3_if = tunnel->underlay_port;
++			flow->eport = tunnel->underlay_port;
++			ether_addr_copy(nh.mac, tunnel->remote_mac);
++		}
++	}
+ 
+ 	if (flow->entry.is_ipv6) {
+ 		/* The hardware routes IPv6 but has no NAT66. Mangles of
+@@ -1495,7 +1866,7 @@ static int ppe_ft_flow_replace(struct pp
+ 	 * reverse direction ingresses on; the egress L3 interface
+ 	 * provides the rewrite.
+ 	 */
+-	if (!is_zero_ether_addr(data.eth.src)) {
++	if (!tunnel_encap && !is_zero_ether_addr(data.eth.src)) {
+ 		flow->my_mac = ppe_ft_my_mac_get(ft, data.eth.src);
+ 		if (flow->my_mac < 0) {
+ 			ret = flow->my_mac;
+@@ -1564,6 +1935,8 @@ static int ppe_ft_flow_replace(struct pp
+ 
+ 	set_bit(nexthop, ft->nexthop_used);
+ 	mutex_unlock(&ft->lock);
++	if (tdev)
++		dev_put(tdev);
+ 
+ 	return 0;
+ 
+@@ -1591,7 +1964,11 @@ err_vlan:
+ err_pub_ip:
+ 	ppe_ft_pub_ip_put(ft, flow->pub_ip);
+ err_unlock:
++	ppe_ft_tunnel_put(ft, flow ? flow->tunnel : -1);
+ 	mutex_unlock(&ft->lock);
++err_tdev:
++	if (tdev)
++		dev_put(tdev);
+ err_free:
+ 	kfree_rcu(flow, rcu);
+ 
+@@ -1620,6 +1997,7 @@ static int ppe_ft_flow_destroy(struct pp
+ 		ppe_ft_pppoe_put(ft, flow->pppoe);
+ 		ppe_ft_vlan_put(ft, flow->vlan);
+ 		ppe_ft_pub_ip_put(ft, flow->pub_ip);
++		ppe_ft_tunnel_put(ft, flow->tunnel);
+ 	} else {
+ 		ppe_ft_flow_quarantine(ft, flow);
+ 		flow = NULL;
+@@ -2556,5 +2934,9 @@ void ppe_flowtable_destroy(struct ppe_de
+ 		kfree(host);
+ 	}
+ 
++	for (i = 0; i < PPE_FT_TUNNELS; i++)
++		if (ft->tunnels[i].dev)
++			dev_put(ft->tunnels[i].dev);
++
+ 	kfree(ft);
+ }

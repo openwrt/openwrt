@@ -1,0 +1,58 @@
+From: Kenneth Kasilag <kenneth@kasilag.me>
+Date: Wed, 15 Jul 2026 13:35:00 +0800
+Subject: [PATCH] net: flow_offload: publish LWT tunnel metadata
+
+Hardware drivers need both the LWT encapsulation type and the original TX
+tunnel key to distinguish fixed raw IP-in-IPv6 routes from other metadata
+tunnels.  Preserve that metadata on both the encap and decap actions; the
+decap direction already publishes the reversed match keys, while the shared
+TX key makes immutable tunnel parameters available in either arrival order.
+Keep the tunnel type beside the tunnel pointer in the action union.
+This preserves the established entry->tunnel accessor without
+growing every action entry for tunnel-only state.
+
+Signed-off-by: Kenneth Kasilag <kenneth@kasilag.me>
+
+--- a/include/net/flow_offload.h
++++ b/include/net/flow_offload.h
+@@ -240,6 +240,13 @@ struct flow_action_entry {
+ 	action_destr			destructor;
+ 	void				*destructor_priv;
+ 	union {
++		/* Keep tunnel-only metadata together while preserving the
++		 * established entry->tunnel source interface.
++		 */
++		struct {
++			struct ip_tunnel_info *tunnel;
++			u16			tunnel_type;
++		};
+ 		u32			chain_index;	/* FLOW_ACTION_GOTO */
+ 		struct net_device	*dev;		/* FLOW_ACTION_REDIRECT */
+ 		struct {				/* FLOW_ACTION_VLAN */
+@@ -258,7 +265,6 @@ struct flow_action_entry {
+ 			u32		mask;
+ 			u32		val;
+ 		} mangle;
+-		struct ip_tunnel_info	*tunnel;	/* FLOW_ACTION_TUNNEL_ENCAP */
+ 		u32			csum_flags;	/* FLOW_ACTION_CSUM */
+ 		u32			mark;		/* FLOW_ACTION_MARK */
+ 		u16                     ptype;          /* FLOW_ACTION_PTYPE */
+--- a/net/netfilter/nf_flow_table_offload.c
++++ b/net/netfilter/nf_flow_table_offload.c
+@@ -643,6 +643,7 @@ static int flow_offload_encap_tunnel(con
+ 				return -E2BIG;
+ 			entry->id = FLOW_ACTION_TUNNEL_ENCAP;
+ 			entry->tunnel = tun_info;
++			entry->tunnel_type = dst->lwtstate->type;
+ 		}
+ 	}
+ 
+@@ -671,6 +672,8 @@ static int flow_offload_decap_tunnel(con
+ 			if (!entry)
+ 				return -E2BIG;
+ 			entry->id = FLOW_ACTION_TUNNEL_DECAP;
++			entry->tunnel = tun_info;
++			entry->tunnel_type = dst->lwtstate->type;
+ 		}
+ 	}
+ 

@@ -1,0 +1,386 @@
+From: Kenneth Kasilag <kenneth@kasilag.me>
+Date: Fri, 03 Jul 2026 00:00:00 +0000
+Subject: [PATCH] net: ethernet: qualcomm: ppe: handle FDB events for offloaded bridges
+
+Handle the switchdev FDB events which hardware learning cannot cover.
+
+Entries the bridge reports for its software ports (e.g. wireless
+interfaces) and the addresses of the bridge itself are installed as
+static entries pointing to the CPU port. Without this assisted
+learning, known unicast towards a wireless client would flood the VSI
+forever: hardware learning is disabled on the CPU port, so those
+addresses never enter the FDB on their own. The entries follow the
+software bridge, which handles their aging: the bridge notifies the
+deletion when it expires an entry, and static hardware entries are
+excluded from hardware aging.
+
+Entries added by the user on the PPE ports themselves are programmed
+as static entries towards the port and reported back as offloaded.
+Dynamically learned entries of the PPE ports stay with the hardware
+and are ignored.
+
+The events arrive in atomic context and are queued to an ordered
+workqueue; the work re-checks under RTNL that the port is still
+offloaded, as the leave path flushes the port and VSI entries itself.
+The FDB flush helper can now include static entries: a port leaving
+its bridge takes its user-installed entries along, and releasing a VSI
+flushes the CPU-directed entries which are not tied to any port. The
+spanning tree flush keeps excluding static entries, matching the
+software bridge behavior on blocked ports.
+
+Signed-off-by: Kenneth Kasilag <kenneth@kasilag.me>
+---
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_bridge.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_bridge.c
+@@ -13,10 +13,13 @@
+  * the bridge.
+  */
+ 
++#include <linux/etherdevice.h>
+ #include <linux/if_bridge.h>
+ #include <linux/netdevice.h>
+ #include <linux/notifier.h>
++#include <linux/rtnetlink.h>
+ #include <linux/slab.h>
++#include <linux/workqueue.h>
+ #include <net/switchdev.h>
+ 
+ #include "edma_port.h"
+@@ -52,22 +55,46 @@ struct ppe_bridge_port {
+  * @netdev_nb: Notifier for bridge join and leave events of the ports.
+  * @switchdev_nb: Notifier for atomic switchdev events (FDB).
+  * @switchdev_blocking_nb: Notifier for blocking switchdev events.
++ * @fdb_wq: Ordered workqueue processing the deferred FDB events.
+  * @vsis: State of the PPE VSIs.
+  * @ports: Bridge state of the PPE ports, indexed by port ID.
+  *
+  * All state is protected by RTNL: bridge join and leave events run
+- * under RTNL, and deferred switchdev attribute events are processed
+- * under RTNL as well.
++ * under RTNL, and both the deferred switchdev attribute events and
++ * the FDB work items are processed under RTNL as well.
+  */
+ struct ppe_bridge {
+ 	struct ppe_device *ppe_dev;
+ 	struct notifier_block netdev_nb;
+ 	struct notifier_block switchdev_nb;
+ 	struct notifier_block switchdev_blocking_nb;
++	struct workqueue_struct *fdb_wq;
+ 	struct ppe_bridge_vsi vsis[PPE_VSI_TBL_ENTRIES];
+ 	struct ppe_bridge_port ports[];
+ };
+ 
++/**
++ * struct ppe_bridge_fdb_work - Deferred FDB event of an offloaded port.
++ * @work: Work structure.
++ * @pb: Global PPE bridge offload state.
++ * @dev: PPE port net device the event applies to, held while queued.
++ * @event: SWITCHDEV_FDB_ADD_TO_DEVICE or SWITCHDEV_FDB_DEL_TO_DEVICE.
++ * @addr: MAC address of the FDB entry.
++ * @host_addr: Entry points to the CPU port instead of the PPE port,
++ * used for the addresses of the bridge itself and for addresses on
++ * software ports of the bridge (assisted learning).
++ * @notify_offloaded: Report the entry as offloaded to the bridge.
++ */
++struct ppe_bridge_fdb_work {
++	struct work_struct work;
++	struct ppe_bridge *pb;
++	struct net_device *dev;
++	unsigned long event;
++	unsigned char addr[ETH_ALEN];
++	bool host_addr;
++	bool notify_offloaded;
++};
++
+ static int ppe_bridge_port_id(struct net_device *dev)
+ {
+ 	struct edma_port_priv *port_priv = netdev_priv(dev);
+@@ -237,7 +264,14 @@ static void ppe_bridge_port_leave(struct
+ 	 */
+ 	ppe_port_stp_state_set(ppe_dev, port, PPE_STP_STATE_FORWARDING);
+ 
+-	ppe_fdb_port_flush(ppe_dev, port);
++	ppe_fdb_port_flush(ppe_dev, port, true);
++
++	/* Entries of a released VSI which point to the CPU port, such as
++	 * the addresses of the bridge itself and of its software ports,
++	 * are not tied to any PPE port, flush them along with the VSI.
++	 */
++	if (!pb->vsis[vsi].num_ports)
++		ppe_fdb_vsi_flush(ppe_dev, vsi);
+ }
+ 
+ static int ppe_bridge_stp_state_set(struct ppe_bridge *pb,
+@@ -271,7 +305,7 @@ static int ppe_bridge_stp_state_set(stru
+ 		return ret;
+ 
+ 	if (stp_state != PPE_STP_STATE_FORWARDING)
+-		ret = ppe_fdb_port_flush(ppe_dev, port);
++		ret = ppe_fdb_port_flush(ppe_dev, port, false);
+ 
+ 	return ret;
+ }
+@@ -334,12 +368,139 @@ static int ppe_bridge_netdev_event(struc
+ 	return notifier_from_errno(ret);
+ }
+ 
+-/* FDB entries of the offloaded ports are learned and aged by the
+- * hardware, the switchdev FDB events are not consumed yet.
++static void ppe_bridge_fdb_work_fn(struct work_struct *work)
++{
++	struct ppe_bridge_fdb_work *fdb_work;
++	struct ppe_fdb_entry entry = {};
++	struct ppe_bridge *pb;
++	int port, vsi, ret;
++
++	fdb_work = container_of(work, struct ppe_bridge_fdb_work, work);
++	pb = fdb_work->pb;
++
++	rtnl_lock();
++
++	port = ppe_bridge_port_id(fdb_work->dev);
++	vsi = pb->ports[port].vsi;
++
++	/* The port left its bridge before the work ran, the leave path
++	 * has flushed the FDB entries already.
++	 */
++	if (vsi < 0)
++		goto out;
++
++	ether_addr_copy(entry.addr, fdb_work->addr);
++	entry.vsi = vsi;
++	entry.port = fdb_work->host_addr ? 0 : port;
++	entry.is_static = true;
++
++	if (fdb_work->event == SWITCHDEV_FDB_ADD_TO_DEVICE) {
++		ret = ppe_fdb_entry_add(pb->ppe_dev, &entry);
++		if (ret) {
++			netdev_dbg(fdb_work->dev,
++				   "failed to add FDB entry %pM: %d\n",
++				   fdb_work->addr, ret);
++			goto out;
++		}
++
++		if (fdb_work->notify_offloaded) {
++			struct switchdev_notifier_fdb_info info = {};
++
++			info.addr = fdb_work->addr;
++			info.offloaded = true;
++			call_switchdev_notifiers(SWITCHDEV_FDB_OFFLOADED,
++						 fdb_work->dev, &info.info,
++						 NULL);
++		}
++	} else {
++		ppe_fdb_entry_del(pb->ppe_dev, &entry);
++	}
++out:
++	rtnl_unlock();
++	dev_put(fdb_work->dev);
++	kfree(fdb_work);
++}
++
++/* Decide what to do with an FDB event dispatched to a PPE port and
++ * queue the hardware update. Runs in atomic context.
++ *
++ * Entries of the port itself are learned and aged by the hardware,
++ * only entries added by the user are programmed. Entries reported for
++ * a software port of the bridge (@orig_dev, e.g. a wireless interface)
++ * or for the bridge itself are installed towards the CPU port, so
++ * known unicast to those destinations does not flood the VSI forever
++ * (assisted learning). Their removal follows the software bridge, of
++ * which the hardware knows nothing, so they are installed as static
++ * entries and deleted when the bridge ages them out.
+  */
++static int ppe_bridge_fdb_event(struct net_device *dev,
++				struct net_device *orig_dev,
++				unsigned long event, const void *ctx,
++				const struct switchdev_notifier_fdb_info *fdb_info)
++{
++	struct edma_port_priv *port_priv = netdev_priv(dev);
++	struct ppe_bridge *pb = port_priv->ppe_port->ppe_dev->bridge;
++	struct ppe_bridge_fdb_work *fdb_work;
++	bool host_addr;
++
++	if (ctx && ctx != pb)
++		return 0;
++
++	/* Only VLAN-unaware bridges are offloaded. */
++	if (fdb_info->vid)
++		return 0;
++
++	if (fdb_info->locked)
++		return 0;
++
++	if (fdb_info->is_local || dev != orig_dev)
++		host_addr = true;
++	else if (fdb_info->added_by_user)
++		host_addr = false;
++	else
++		return 0;
++
++	fdb_work = kzalloc(sizeof(*fdb_work), GFP_ATOMIC);
++	if (!fdb_work)
++		return -ENOMEM;
++
++	INIT_WORK(&fdb_work->work, ppe_bridge_fdb_work_fn);
++	fdb_work->pb = pb;
++	fdb_work->dev = dev;
++	fdb_work->event = event;
++	ether_addr_copy(fdb_work->addr, fdb_info->addr);
++	fdb_work->host_addr = host_addr;
++	fdb_work->notify_offloaded = !host_addr &&
++				     event == SWITCHDEV_FDB_ADD_TO_DEVICE;
++
++	dev_hold(dev);
++	queue_work(pb->fdb_wq, &fdb_work->work);
++
++	return 0;
++}
++
++static bool ppe_bridge_foreign_dev_check(const struct net_device *dev,
++					 const struct net_device *foreign_dev)
++{
++	return !edma_port_dev_check(foreign_dev);
++}
++
+ static int ppe_bridge_switchdev_event(struct notifier_block *nb,
+ 				      unsigned long event, void *ptr)
+ {
++	struct net_device *dev = switchdev_notifier_info_to_dev(ptr);
++	int ret;
++
++	switch (event) {
++	case SWITCHDEV_FDB_ADD_TO_DEVICE:
++	case SWITCHDEV_FDB_DEL_TO_DEVICE:
++		ret = switchdev_handle_fdb_event_to_device(dev, event, ptr,
++							   edma_port_dev_check,
++							   ppe_bridge_foreign_dev_check,
++							   ppe_bridge_fdb_event);
++		return notifier_from_errno(ret);
++	}
++
+ 	return NOTIFY_DONE;
+ }
+ 
+@@ -383,10 +544,16 @@ int ppe_bridge_setup(struct ppe_device *
+ 	for (i = 0; i < ppe_dev->num_ports; i++)
+ 		pb->ports[i].vsi = -1;
+ 
++	pb->fdb_wq = alloc_ordered_workqueue("ppe_bridge_fdb", 0);
++	if (!pb->fdb_wq) {
++		ret = -ENOMEM;
++		goto err_free;
++	}
++
+ 	pb->netdev_nb.notifier_call = ppe_bridge_netdev_event;
+ 	ret = register_netdevice_notifier(&pb->netdev_nb);
+ 	if (ret)
+-		goto err_free;
++		goto err_wq;
+ 
+ 	pb->switchdev_nb.notifier_call = ppe_bridge_switchdev_event;
+ 	ret = register_switchdev_notifier(&pb->switchdev_nb);
+@@ -406,6 +573,8 @@ err_switchdev_nb:
+ 	unregister_switchdev_notifier(&pb->switchdev_nb);
+ err_netdev_nb:
+ 	unregister_netdevice_notifier(&pb->netdev_nb);
++err_wq:
++	destroy_workqueue(pb->fdb_wq);
+ err_free:
+ 	kfree(pb);
+ 
+@@ -430,6 +599,7 @@ void ppe_bridge_destroy(struct ppe_devic
+ 	unregister_switchdev_blocking_notifier(&pb->switchdev_blocking_nb);
+ 	unregister_switchdev_notifier(&pb->switchdev_nb);
+ 	unregister_netdevice_notifier(&pb->netdev_nb);
++	destroy_workqueue(pb->fdb_wq);
+ 	ppe_dev->bridge = NULL;
+ 	kfree(pb);
+ }
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_config.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_config.c
+@@ -1806,19 +1806,13 @@ out:
+ 	return ret;
+ }
+ 
+-/**
+- * ppe_fdb_port_flush - Flush dynamic entries of a port from the PPE FDB
+- * @ppe_dev: PPE device
+- * @port: PPE port to flush the FDB entries of
+- *
+- * The FDB flush command of the hardware acts on the whole FDB including
+- * static entries, so flushing the dynamic entries of a single port is
+- * done by walking the FDB table and deleting the matching entries. May
+- * sleep, must be called from process context.
+- *
+- * Return: 0 on success, negative error code on failure.
++/* The FDB flush command of the hardware acts on the whole FDB including
++ * static entries, so scoped flushing is done by walking the FDB table
++ * and deleting the matching entries. Negative port or VSI matches any.
++ * May sleep, must be called from process context.
+  */
+-int ppe_fdb_port_flush(struct ppe_device *ppe_dev, int port)
++static int ppe_fdb_flush(struct ppe_device *ppe_dev, int port, int vsi,
++			 bool static_too)
+ {
+ 	struct ppe_fdb_entry entry;
+ 	bool valid;
+@@ -1829,7 +1823,10 @@ int ppe_fdb_port_flush(struct ppe_device
+ 		if (ret)
+ 			return ret;
+ 
+-		if (!valid || entry.is_static || entry.port != port)
++		if (!valid ||
++		    (port >= 0 && entry.port != port) ||
++		    (vsi >= 0 && entry.vsi != vsi) ||
++		    (entry.is_static && !static_too))
+ 			continue;
+ 
+ 		ret = ppe_fdb_entry_del(ppe_dev, &entry);
+@@ -1841,6 +1838,34 @@ int ppe_fdb_port_flush(struct ppe_device
+ }
+ 
+ /**
++ * ppe_fdb_port_flush - Flush entries of a port from the PPE FDB
++ * @ppe_dev: PPE device
++ * @port: PPE port to flush the FDB entries of
++ * @static_too: Flush static entries along with the dynamic ones
++ *
++ * Return: 0 on success, negative error code on failure.
++ */
++int ppe_fdb_port_flush(struct ppe_device *ppe_dev, int port, bool static_too)
++{
++	return ppe_fdb_flush(ppe_dev, port, -1, static_too);
++}
++
++/**
++ * ppe_fdb_vsi_flush - Flush all entries of a VSI from the PPE FDB
++ * @ppe_dev: PPE device
++ * @vsi: VSI to flush the FDB entries of
++ *
++ * Flush dynamic and static entries of the VSI, including entries which
++ * point to the CPU port, when the VSI is released.
++ *
++ * Return: 0 on success, negative error code on failure.
++ */
++int ppe_fdb_vsi_flush(struct ppe_device *ppe_dev, int vsi)
++{
++	return ppe_fdb_flush(ppe_dev, -1, vsi, true);
++}
++
++/**
+  * ppe_queue_scheduler_get - get scheduler of PPE hardware queue
+  * @ppe_dev: PPE device
+  * @node_id: PPE queue ID or flow ID
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_config.h
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_config.h
+@@ -336,7 +336,8 @@ int ppe_fdb_entry_del(struct ppe_device
+ 		      const struct ppe_fdb_entry *entry);
+ int ppe_fdb_entry_read(struct ppe_device *ppe_dev, int index,
+ 		       struct ppe_fdb_entry *entry, bool *valid);
+-int ppe_fdb_port_flush(struct ppe_device *ppe_dev, int port);
++int ppe_fdb_port_flush(struct ppe_device *ppe_dev, int port, bool static_too);
++int ppe_fdb_vsi_flush(struct ppe_device *ppe_dev, int vsi);
+ int ppe_queue_scheduler_set(struct ppe_device *ppe_dev,
+ 			    int node_id, bool flow_level, int port,
+ 			    struct ppe_scheduler_cfg scheduler_cfg);
