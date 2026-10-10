@@ -1,0 +1,133 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+/dts-v1/;
+
+#include "rtl9302_ubnt_usw-pro-max-common.dtsi"
+
+/* ADT7475 temperature sensors: */
+/* temp1: Q9 under RTL9302B SoC heatsink */
+/* temp2: Local ADT sensor under RTL8224 heatsink */
+/* temp3: Q10 near SFP cages */
+
+/ {
+	compatible = "ubnt,usw-pro-max-16-poe", "realtek,rtl9302b-soc";
+	model = "UniFi USW Pro Max 16 PoE";
+};
+
+&pse {
+	compatible = "ubnt,usw-pro-max-16-poe-pse", "realtek,pse-mcu-gen2-smbus";
+
+	pse-pis {
+		PSE_PI(0)
+		PSE_PI(1)
+		PSE_PI(2)
+		PSE_PI(3)
+		PSE_PI(4)
+		PSE_PI(5)
+		PSE_PI(6)
+		PSE_PI(7)
+		PSE_PI(8)
+		PSE_PI(9)
+		PSE_PI(10)
+		PSE_PI(11)
+		PSE_PI(12)
+		PSE_PI(13)
+		PSE_PI(14)
+		PSE_PI(15)
+	};
+};
+
+&mdio_bus2 {
+	/* RTL8224 */
+	ethernet-phy-package@0 {
+		reg = <0>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		PHY_C45(20, 0)
+		PHY_C45(21, 1)
+		PHY_C45(22, 2)
+		PHY_C45(23, 3)
+	};
+};
+
+&switch0 {
+	ethernet-ports {
+		SWITCH_PORT_LED(0, 1, 2, 0, 0, usxgmii)
+		SWITCH_PORT_LED(1, 2, 2, 1, 0, usxgmii)
+		SWITCH_PORT_LED(2, 3, 2, 2, 0, usxgmii)
+		SWITCH_PORT_LED(3, 4, 2, 3, 0, usxgmii)
+		SWITCH_PORT_LED(4, 5, 2, 4, 0, usxgmii)
+		SWITCH_PORT_LED(5, 6, 2, 5, 0, usxgmii)
+		SWITCH_PORT_LED(6, 7, 2, 6, 0, usxgmii)
+		SWITCH_PORT_LED(7, 8, 2, 7, 0, usxgmii)
+
+		/* 8, 9, 14, 15 Unconnected ports, required for PHY initialization */
+		port@8 {
+			reg = <8>;
+			label = "nc1";
+			led-set = <0>;
+			pcs-handle = <&serdes3 0>;
+			phy-handle = <&phy8>;
+			phy-mode = "usxgmii";
+		};
+
+		port@9 {
+			reg = <9>;
+			label = "nc2";
+			led-set = <0>;
+			pcs-handle = <&serdes3 1>;
+			phy-handle = <&phy9>;
+			phy-mode = "usxgmii";
+		};
+
+		SWITCH_PORT_LED(10, 9, 3, 2, 0, usxgmii)
+		SWITCH_PORT_LED(11, 10, 3, 3, 0, usxgmii)
+		SWITCH_PORT_LED(12, 11, 3, 4, 0, usxgmii)
+		SWITCH_PORT_LED(13, 12, 3, 5, 0, usxgmii)
+
+		port@14 {
+			reg = <14>;
+			label = "nc3";
+			led-set = <0>;
+			pcs-handle = <&serdes3 6>;
+			phy-handle = <&phy14>;
+			phy-mode = "usxgmii";
+		};
+
+		port@15 {
+			reg = <15>;
+			label = "nc4";
+			led-set = <0>;
+			pcs-handle = <&serdes3 7>;
+			phy-handle = <&phy15>;
+			phy-mode = "usxgmii";
+		};
+
+		SWITCH_PORT_LED(20, 13, 5, 0, 0, 10g-qxgmii)
+		SWITCH_PORT_LED(21, 14, 5, 1, 0, 10g-qxgmii)
+		SWITCH_PORT_LED(22, 15, 5, 2, 0, 10g-qxgmii)
+		SWITCH_PORT_LED(23, 16, 5, 3, 0, 10g-qxgmii)
+
+		SWITCH_PORT_SFP(24, 17, 6, 0, 1)
+		SWITCH_PORT_SFP(25, 18, 7, 0, 2)
+	};
+};
+
+&phy0 { pses = <&pse_pi0>; };
+&phy1 { pses = <&pse_pi1>; };
+&phy2 { pses = <&pse_pi2>; };
+&phy3 { pses = <&pse_pi3>; };
+&phy4 { pses = <&pse_pi4>; };
+&phy5 { pses = <&pse_pi5>; };
+&phy6 { pses = <&pse_pi6>; };
+&phy7 { pses = <&pse_pi7>; };
+
+&phy10 { pses = <&pse_pi8>; };
+&phy11 { pses = <&pse_pi9>; };
+&phy12 { pses = <&pse_pi10>; };
+&phy13 { pses = <&pse_pi11>; };
+
+&phy20 { pses = <&pse_pi12>; };
+&phy21 { pses = <&pse_pi13>; };
+&phy22 { pses = <&pse_pi14>; };
+&phy23 { pses = <&pse_pi15>; };
