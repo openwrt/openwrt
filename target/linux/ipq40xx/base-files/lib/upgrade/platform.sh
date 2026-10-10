@@ -125,6 +125,8 @@ platform_do_upgrade() {
 	netgear,lbr20|\
 	netgear,rbr20|\
 	netgear,rbs20|\
+	netgear,rbr50-v2|\
+	netgear,rbs50-v2|\
 	netgear,wac510|\
 	p2w,r619ac-64m|\
 	p2w,r619ac-128m|\
