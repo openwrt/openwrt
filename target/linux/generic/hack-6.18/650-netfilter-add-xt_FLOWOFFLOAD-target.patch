@@ -44,7 +44,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  obj-$(CONFIG_NETFILTER_XT_TARGET_LED) += xt_LED.o
 --- /dev/null
 +++ b/net/netfilter/xt_FLOWOFFLOAD.c
-@@ -0,0 +1,709 @@
+@@ -0,0 +1,733 @@
 +/*
 + * Copyright (C) 2018-2021 Felix Fietkau <nbd@nbd.name>
 + *
@@ -328,9 +328,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	return true;
 +}
 +
-+static void nf_dev_path_info(const struct net_device_path_stack *stack,
-+			     struct nf_forward_info *info,
-+			     unsigned char *ha)
++static int nf_dev_path_info(const struct net_device_path_stack *stack,
++			    struct nf_forward_info *info,
++			    unsigned char *ha)
 +{
 +	const struct net_device_path *path;
 +	int i;
@@ -356,10 +356,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +			}
 +
 +			/* DEV_PATH_VLAN and DEV_PATH_PPPOE */
-+			if (info->num_encaps >= NF_FLOW_TABLE_ENCAP_MAX) {
-+				info->indev = NULL;
-+				break;
-+			}
++			if (info->num_encaps >= NF_FLOW_TABLE_ENCAP_MAX)
++				return -1;
++
 +			if (!info->outdev)
 +				info->outdev = path->dev;
 +			info->encap[info->num_encaps].id = path->encap.id;
@@ -374,23 +373,30 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +
 +			switch (path->bridge.vlan_mode) {
 +			case DEV_PATH_BR_VLAN_UNTAG_HW:
++				if (info->num_encaps == 0)
++					return -1;
++
 +				info->ingress_vlans |= BIT(info->num_encaps - 1);
 +				break;
 +			case DEV_PATH_BR_VLAN_TAG:
++				if (info->num_encaps >= NF_FLOW_TABLE_ENCAP_MAX)
++					return -1;
++
 +				info->encap[info->num_encaps].id = path->bridge.vlan_id;
 +				info->encap[info->num_encaps].proto = path->bridge.vlan_proto;
 +				info->num_encaps++;
 +				break;
 +			case DEV_PATH_BR_VLAN_UNTAG:
-+				info->num_encaps--;
++				if (WARN_ON_ONCE(info->num_encaps-- == 0))
++					return -1;
++
 +				break;
 +			case DEV_PATH_BR_VLAN_KEEP:
 +				break;
 +			}
 +			break;
 +		default:
-+			info->indev = NULL;
-+			break;
++			return -1;
 +		}
 +	}
 +	if (!info->outdev)
@@ -400,6 +406,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +
 +	if (nf_is_valid_ether_device(info->indev))
 +		info->xmit_type = FLOW_OFFLOAD_XMIT_DIRECT;
++
++	return 0;
 +}
 +
 +static int nf_dev_fill_forward_path(const struct nf_flow_route *route,
@@ -410,6 +418,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +{
 +	const void *daddr = &ct->tuplehash[!dir].tuple.src.u3;
 +	struct net_device *dev = dst_cache->dev;
++	struct net_device_path_ctx ctx = {
++		.dev = dev,
++	};
 +	struct neighbour *n;
 +	u8 nud_state;
 +
@@ -430,13 +441,15 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +		return -1;
 +
 +out:
-+	return dev_fill_forward_path(dev, ha, stack);
++	ether_addr_copy(ctx.daddr, ha);
++
++	return dev_fill_forward_path(&ctx, stack);
 +}
 +
-+static void nf_dev_forward_path(struct nf_flow_route *route,
-+				const struct nf_conn *ct,
-+				enum ip_conntrack_dir dir,
-+				struct net_device **devs)
++static int nf_dev_forward_path(struct nf_flow_route *route,
++			       const struct nf_conn *ct,
++			       enum ip_conntrack_dir dir,
++			       struct net_device **devs)
 +{
 +	const struct dst_entry *dst = route->tuple[dir].dst;
 +	struct net_device_path_stack stack;
@@ -444,8 +457,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	unsigned char ha[ETH_ALEN];
 +	int i;
 +
-+	if (nf_dev_fill_forward_path(route, dst, ct, dir, ha, &stack) >= 0)
-+		nf_dev_path_info(&stack, &info, ha);
++	if (nf_dev_fill_forward_path(route, dst, ct, dir, ha, &stack) < 0 ||
++	    nf_dev_path_info(&stack, &info, ha) < 0)
++		return -ENOENT;
 +
 +	/* The xmit path looks the output device up by index for every xmit
 +	 * type, so it has to be set even when the forward path is unknown.
@@ -457,7 +471,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +
 +	devs[!dir] = (struct net_device *)info.indev;
 +	if (!info.indev)
-+		return;
++		return 0;
 +
 +	route->tuple[!dir].in.ifindex = info.indev->ifindex;
 +	for (i = 0; i < info.num_encaps; i++) {
@@ -473,6 +487,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +		route->tuple[dir].out.hw_ifindex = info.hw_outdev->ifindex;
 +		route->tuple[dir].xmit_type = info.xmit_type;
 +	}
++
++	return 0;
 +}
 +
 +static int
@@ -510,12 +526,20 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	nf_default_forward_path(route, this_dst, dir, devs);
 +	nf_default_forward_path(route, other_dst, !dir, devs);
 +
-+	if (route->tuple[dir].xmit_type	== FLOW_OFFLOAD_XMIT_NEIGH)
-+		nf_dev_forward_path(route, ct, dir, devs);
-+	if (route->tuple[!dir].xmit_type == FLOW_OFFLOAD_XMIT_NEIGH)
-+		nf_dev_forward_path(route, ct, !dir, devs);
++	if (route->tuple[dir].xmit_type	== FLOW_OFFLOAD_XMIT_NEIGH &&
++	    nf_dev_forward_path(route, ct, dir, devs) < 0)
++		goto err_dst_release;
++
++	if (route->tuple[!dir].xmit_type == FLOW_OFFLOAD_XMIT_NEIGH &&
++	    nf_dev_forward_path(route, ct, !dir, devs) < 0)
++		goto err_dst_release;
 +
 +	return 0;
++
++err_dst_release:
++	dst_release(route->tuple[dir].dst);
++	dst_release(route->tuple[!dir].dst);
++	return -ENOENT;
 +}
 +
 +static unsigned int
