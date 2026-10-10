@@ -15,7 +15,7 @@ Subject: [PATCH] add xiaomi redmi ax6s
 
 --- a/arch/arm/dts/Makefile
 +++ b/arch/arm/dts/Makefile
-@@ -1100,6 +1100,7 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += \
+@@ -1077,6 +1077,7 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += \
  	mt7622-linksys-e8450-ubi.dtb \
  	mt7622-ubnt-unifi-6-lr.dtb \
  	mt7622-ubnt-unifi-6-lr-v3.dtb \
@@ -194,7 +194,7 @@ Subject: [PATCH] add xiaomi redmi ax6s
 +};
 --- /dev/null
 +++ b/configs/mt7622_xiaomi_redmi-router-ax6s-ubi-loader_defconfig
-@@ -0,0 +1,102 @@
+@@ -0,0 +1,98 @@
 +CONFIG_ARM=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
 +CONFIG_POSITION_INDEPENDENT=y
@@ -230,15 +230,15 @@ Subject: [PATCH] add xiaomi redmi ax6s
 +CONFIG_CMD_GPIO=y
 +CONFIG_CMD_MTD=y
 +# CONFIG_CMD_BOOTP is not set
-+CONFIG_CMD_TFTPSRV=y
 +CONFIG_CMD_PING=y
++CONFIG_CMD_TFTPSRV=y
++CONFIG_CMD_RNG=y
 +CONFIG_CMD_HASH=y
 +CONFIG_CMD_SMC=y
 +CONFIG_CMD_FS_GENERIC=y
 +CONFIG_CMD_FS_UUID=y
 +CONFIG_CMD_MTDPARTS=y
 +CONFIG_MTDPARTS_DEFAULT="mtdparts=spi-nand0:512k(preloader),2816k(reserved),117248k(ubi)"
-+CONFIG_CMD_RNG=y
 +CONFIG_CMD_UBI=y
 +CONFIG_CMD_UBI_RENAME=y
 +CONFIG_DOS_PARTITION=y
@@ -257,8 +257,6 @@ Subject: [PATCH] add xiaomi redmi ax6s
 +CONFIG_USE_SERVERIP=y
 +CONFIG_SERVERIP="192.168.1.254"
 +CONFIG_NET_RANDOM_ETHADDR=y
-+CONFIG_REGMAP=y
-+CONFIG_SYSCON=y
 +CONFIG_BUTTON=y
 +CONFIG_BUTTON_GPIO=y
 +CONFIG_CLK=y
@@ -273,15 +271,14 @@ Subject: [PATCH] add xiaomi redmi ax6s
 +CONFIG_MTK_SPI_NAND_MTD=y
 +CONFIG_UBI_SILENCE_MSG=y
 +CONFIG_MTD_UBI_FASTMAP=y
-+CONFIG_PHY_FIXED=y
 +CONFIG_MEDIATEK_ETH=y
++CONFIG_PHY_FIXED=y
 +CONFIG_PCIE_MEDIATEK=y
 +CONFIG_PHY=y
 +CONFIG_PINCTRL=y
 +CONFIG_PINCONF=y
 +CONFIG_PINCTRL_MT7622=y
 +CONFIG_POWER_DOMAIN=y
-+CONFIG_MTK_POWER_DOMAIN=y
 +CONFIG_DM_REGULATOR=y
 +CONFIG_DM_REGULATOR_FIXED=y
 +CONFIG_DM_REGULATOR_GPIO=y
@@ -296,7 +293,6 @@ Subject: [PATCH] add xiaomi redmi ax6s
 +CONFIG_UBIFS_SILENCE_MSG=y
 +CONFIG_LZ4=y
 +CONFIG_ZSTD=y
-+CONFIG_HEXDUMP=y
 --- /dev/null
 +++ b/defenvs/xiaomi-redmi-router-ax6s-ubi-loader_env
 @@ -0,0 +1,22 @@

@@ -39,8 +39,8 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 --- a/drivers/mtd/Kconfig
 +++ b/drivers/mtd/Kconfig
 @@ -248,6 +248,8 @@ config SYS_MAX_FLASH_BANKS_DETECT
- 	 to reduce the effective number of flash bank, between 0 and
- 	 CONFIG_SYS_MAX_FLASH_BANKS
+ 	  to reduce the effective number of flash bank, between 0 and
+ 	  CONFIG_SYS_MAX_FLASH_BANKS
  
 +source "drivers/mtd/mtk-snand/Kconfig"
 +
