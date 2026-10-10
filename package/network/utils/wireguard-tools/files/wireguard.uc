@@ -51,6 +51,37 @@ function parse_address(addr) {
 	return { family: 4, address: addr, mask: 32 };
 }
 
+function get_endpoint_addrs(iface) {
+	let addrs = [];
+
+	if (!fs.access(sprintf('/sys/class/net/%s', iface), fs.F_OK))
+		return addrs;
+
+	let endpoints_proc = fs.popen(sprintf('%s show %s endpoints', WG, iface));
+	if (!endpoints_proc)
+		return addrs;
+
+	let endpoints_data = endpoints_proc.read('all');
+	endpoints_proc.close();
+
+	let endpoint_lines = split(endpoints_data, '\n');
+	for (let line in endpoint_lines) {
+		if (!line)
+			continue;
+
+		let parts = split(rtrim(line), '\t');
+		if (length(parts) < 2)
+			continue;
+
+		let endpoint = parts[1];
+		let addr_match = match(endpoint, regexp('\\[?([0-9.:a-f]+)\\]?:([0-9]+)'));
+		if (addr_match && length(addr_match) > 1)
+			push(addrs, addr_match[1]);
+	}
+
+	return addrs;
+}
+
 function load_peers(cursor, iface) {
 	let peers = [];
 	let peer_type = sprintf('wireguard_%s', iface);
@@ -208,26 +239,8 @@ function proto_setup(proto) {
 	}
 
 	if (config.nohostroute != '1') {
-		let endpoints_proc = fs.popen(sprintf('%s show %s endpoints', WG, iface));
-		if (endpoints_proc) {
-			let endpoints_data = endpoints_proc.read('all');
-			endpoints_proc.close();
-
-			let endpoint_lines = split(endpoints_data, '\n');
-			for (let line in endpoint_lines) {
-				if (!line)
-					continue;
-
-				let parts = split(rtrim(line), '\t');
-				if (length(parts) < 2)
-					continue;
-
-				let endpoint = parts[1];
-				let addr_match = match(endpoint, regexp('\\[?([0-9.:a-f]+)\\]?:([0-9]+)'));
-				if (addr_match && length(addr_match) > 1)
-					proto.add_host_dependency(addr_match[1], config.tunlink);
-			}
-		}
+		for (let addr in get_endpoint_addrs(iface))
+			proto.add_host_dependency(addr, config.tunlink);
 	}
 
 	proto.update_link(true, link_data);
@@ -235,6 +248,16 @@ function proto_setup(proto) {
 
 function proto_teardown(proto) {
 	let iface = proto.iface;
+	let config = proto.config;
+
+	if (config.nohostroute != '1') {
+		for (let addr in get_endpoint_addrs(iface)) {
+			let v6 = index(addr, ':') >= 0;
+			system(sprintf('ip%s route del %s/%d 2>/dev/null || true',
+				v6 ? ' -6' : '', addr, v6 ? 128 : 32));
+		}
+	}
+
 	system(sprintf('ip link del dev %s 2>/dev/null', iface));
 	proto.update_link(false);
 }
