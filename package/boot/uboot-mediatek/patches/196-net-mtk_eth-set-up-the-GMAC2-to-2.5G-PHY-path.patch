@@ -8,7 +8,7 @@ in mtk_interface_mode_is_xgmii(), so the MAC takes the XGMAC path.
 
 --- a/drivers/net/mtk_eth/mtk_eth.c
 +++ b/drivers/net/mtk_eth/mtk_eth.c
-@@ -181,6 +181,28 @@
+@@ -181,6 +181,28 @@ static void mtk_infra_rmw(struct mtk_eth
  	regmap_write(priv->infra_regmap, reg, val);
  }
  
@@ -37,7 +37,7 @@ in mtk_interface_mode_is_xgmii(), so the MAC takes the XGMAC path.
  /* Direct MDIO clause 22/45 access via SoC */
  static int mtk_mii_rw(struct mtk_eth_priv *priv, u8 phy, u8 reg, u16 data,
  		      u32 cmd, u32 st)
-@@ -548,9 +570,7 @@
+@@ -548,9 +570,7 @@ static int mtk_phy_start(struct mtk_eth_
  	}
  
  	if (!priv->force_mode) {
@@ -48,7 +48,7 @@ in mtk_interface_mode_is_xgmii(), so the MAC takes the XGMAC path.
  			mtk_xphy_link_adjust(priv);
  		else
  			mtk_phy_link_adjust(priv);
-@@ -924,6 +944,19 @@
+@@ -924,6 +944,19 @@ static int mtk_xmac_init(struct mtk_eth_
  	case PHY_INTERFACE_MODE_10GBASER:
  		mtk_10gbaser_init(priv);
  		break;
@@ -68,7 +68,7 @@ in mtk_interface_mode_is_xgmii(), so the MAC takes the XGMAC path.
  	default:
  		break;
  	}
-@@ -936,11 +969,12 @@
+@@ -936,11 +969,12 @@ static int mtk_xmac_init(struct mtk_eth_
  	if ((priv->phy_interface == PHY_INTERFACE_MODE_USXGMII ||
  	     priv->phy_interface == PHY_INTERFACE_MODE_10GBASER) &&
  	    priv->gmac_id == 1) {
@@ -82,7 +82,7 @@ in mtk_interface_mode_is_xgmii(), so the MAC takes the XGMAC path.
  	    priv->gmac_id == 2)
  		force_link = XGMAC_FORCE_LINK(priv->gmac_id);
  
-@@ -1070,9 +1104,7 @@
+@@ -1070,9 +1104,7 @@ static int mtk_eth_start(struct udevice
  
  			mtk_gdma_write(priv, priv->gmac_id, GDMA_EG_CTRL_REG,
  				       GDMA_CPU_BRIDGE_EN);
@@ -93,7 +93,7 @@ in mtk_interface_mode_is_xgmii(), so the MAC takes the XGMAC path.
  			   priv->gmac_id != 0) {
  			mtk_gdma_write(priv, priv->gmac_id, GDMA_EG_CTRL_REG,
  				       GDMA_CPU_BRIDGE_EN);
-@@ -1250,9 +1282,7 @@
+@@ -1250,9 +1282,7 @@ static int mtk_eth_probe(struct udevice
  	mtk_eth_mdc_init(priv);
  
  	/* Set MAC mode */
@@ -104,7 +104,7 @@ in mtk_interface_mode_is_xgmii(), so the MAC takes the XGMAC path.
  		ret = mtk_xmac_init(priv);
  	else
  		ret = mtk_mac_init(priv);
-@@ -1474,6 +1504,7 @@
+@@ -1474,6 +1504,7 @@ static int mtk_eth_of_to_plat(struct ude
  
  static const struct mtk_soc_data mt7988_data = {
  	.caps = MT7988_CAPS,
@@ -112,7 +112,7 @@ in mtk_interface_mode_is_xgmii(), so the MAC takes the XGMAC path.
  	.ana_rgc3 = 0x128,
  	.gdma_count = 3,
  	.pdma_base = PDMA_V3_BASE,
-@@ -1483,6 +1514,7 @@
+@@ -1483,6 +1514,7 @@ static const struct mtk_soc_data mt7988_
  
  static const struct mtk_soc_data mt7987_data = {
  	.caps = MT7987_CAPS,
@@ -122,7 +122,7 @@ in mtk_interface_mode_is_xgmii(), so the MAC takes the XGMAC path.
  	.pdma_base = PDMA_V3_BASE,
 --- a/drivers/net/mtk_eth/mtk_eth.h
 +++ b/drivers/net/mtk_eth/mtk_eth.h
-@@ -28,6 +28,7 @@
+@@ -28,6 +28,7 @@ struct mtk_eth_switch_priv;
   */
  struct mtk_soc_data {
  	u32 caps;
@@ -130,7 +130,7 @@ in mtk_interface_mode_is_xgmii(), so the MAC takes the XGMAC path.
  	u32 ana_rgc3;
  	u32 gdma_count;
  	u32 pdma_base;
-@@ -129,7 +130,14 @@
+@@ -129,7 +130,14 @@ enum mkt_eth_capabilities {
  #define ETHSYS_TRGMII_CLK_SEL362_5	BIT(11)
  
  /* Top misc registers */
