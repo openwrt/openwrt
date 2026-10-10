@@ -198,6 +198,18 @@ define Device/linksys_ipq50xx_mx_base
 	IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | linksys-image type=$$$$(DEVICE_MODEL)
 endef
 
+define Device/linksys_mr2000
+	$(call Device/linksys_ipq50xx_mx_base)
+	DEVICE_MODEL := MR2000
+	DEVICE_DTS_CONFIG := config@mp03.5-c1
+	IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | \
+		append-ubi | linksys-image type=MX2000
+	DEVICE_PACKAGES := ath11k-firmware-ipq5018-qcn6122 \
+		ipq-wifi-linksys_mx2000 kmod-usb-storage \
+		kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += linksys_mr2000
+
 define Device/linksys_mr5500
 	$(call Device/linksys_ipq50xx_mx_base)
 	DEVICE_MODEL := MR5500

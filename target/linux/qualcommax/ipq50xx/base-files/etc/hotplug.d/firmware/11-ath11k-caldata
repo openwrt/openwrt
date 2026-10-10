@@ -35,6 +35,7 @@ case "$FIRMWARE" in
 		ath11k_patch_mac $(macaddr_add $(mtd_get_mac_binary "0:art" 0x6) 2) 0
 		ath11k_set_macflag
 		;;
+	linksys,mr2000|\
 	linksys,mr5500|\
 	linksys,mx2000|\
 	linksys,mx5500|\
@@ -114,6 +115,7 @@ case "$FIRMWARE" in
 		ath11k_patch_mac $(macaddr_add $(get_mac_label_dt) 4) 0
 		ath11k_set_macflag
 		;;
+	linksys,mr2000|\
 	linksys,mx2000)
 		caldata_extract "0:art" 0x26800 0x20000
 		label_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)

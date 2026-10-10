@@ -1,0 +1,20 @@
+#!/bin/sh
+# Linksys MR2000: assign the 5 GHz AP the device's factory-derived MAC.
+# The QCN6122 PHY can expose a firmware default address even though
+# its ART calibration MAC is patched correctly.
+
+. /lib/functions.sh
+. /lib/functions/system.sh
+
+[ "$(board_name)" = "linksys,mr2000" ] || exit 0
+
+# Only change the generated default 5 GHz AP; don't overwrite custom MACs.
+[ "$(uci -q get wireless.radio1.path)" = "platform/soc@0/b00a040.wifi" ] || exit 1
+[ "$(uci -q get wireless.default_radio1.device)" = "radio1" ] || exit 1
+[ -z "$(uci -q get wireless.default_radio1.macaddr)" ] || exit 0
+
+base_mac="$(mtd_get_mac_ascii devinfo hw_mac_addr)"
+[ -n "$base_mac" ] || exit 1
+
+uci set wireless.default_radio1.macaddr="$(macaddr_add "$base_mac" 2)" || exit 1
+uci commit wireless
