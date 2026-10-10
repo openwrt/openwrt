@@ -35,6 +35,19 @@ jiofiber,jcow414)
 	ucidef_set_led_netdev "lan3-green" "lan3" "mt7530-0:0b:green:lan-3" "lan3" "tx rx"
 	ucidef_set_led_netdev "lan4-green" "lan4" "mt7530-0:0c:green:lan-4" "lan4" "tx rx"
 	;;
+zyxel,ex3301-t0)
+	ucidef_set_led_default "power" "Power" "green:power" "1"
+	ucidef_set_led_netdev "internet" "Internet" "green:internet" "wan" "link tx rx"
+	ucidef_set_led_netdev "lan" "LAN Aggregate" "green:lan" "br-lan" "link tx rx"
+	ucidef_set_led_netdev "wan-eth" "WAN Ethernet" "green:wan" "wan" "link tx rx"
+	ucidef_set_led_wlan "wlan2g" "WLAN 2.4GHz" "green:wlan2g" "phy0tpt"
+	ucidef_set_led_wlan "wlan5g" "WLAN 5GHz" "green:wlan5g" "phy1tpt"
+	ucidef_set_led_netdev "lan1" "LAN1" "mt7530-0:0b:green:lan-1" "lan1" "link tx rx"
+	ucidef_set_led_netdev "lan2" "LAN2" "mt7530-0:0a:green:lan-2" "lan2" "link tx rx"
+	ucidef_set_led_netdev "lan3" "LAN3" "mt7530-0:09:green:lan-3" "lan3" "link tx rx"
+	ucidef_set_led_netdev "lan4" "LAN4" "mt7530-0:08:green:lan-4" "lan4" "link tx rx"
+	ucidef_set_led_netdev "wan-port" "WAN Port" "mt7530-0:0c:green:wan" "wan" "link tx rx"
+	;;
 esac
 
 board_config_flush

@@ -25,6 +25,11 @@ define Build/kernel-trx
 	mv $@.new $@
 endef
 
+define Build/tclinux-trx-fixup
+  ./tclinux-trx.sh --fixup $@ > $@.new
+	mv $@.new $@
+endef
+
 # If TCSUPPORT_FREE_BOOTBASE is enabled, bootloader will decompress the kernel
 # at 0x80002000 instead of 0x80020000.
 #
