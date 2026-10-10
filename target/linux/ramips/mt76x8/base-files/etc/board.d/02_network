@@ -176,7 +176,8 @@ ramips_setup_interfaces()
 		ucidef_set_interface_lan "eth0"
 		ucidef_set_interface "wan" device "/dev/cdc-wdm0" protocol "qmi"
 		;;
-	linksys,e5400)
+	linksys,e5400|\
+	teltonika,rut301)
 		ucidef_add_switch "switch0" \
 			"0:lan:1" "1:lan:2" "2:lan:3" "3:lan:4" "4:wan" "6@eth0"
 		;;
