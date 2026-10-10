@@ -501,6 +501,15 @@ define Device/netgear_r6300-v2
 endef
 TARGET_DEVICES += netgear_r6300-v2
 
+define Device/netgear_r6400-v1
+  DEVICE_MODEL := R6400
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := $(B43) $(USB3_PACKAGES)
+  $(Device/netgear)
+  NETGEAR_BOARD_ID := U12H332T00_NETGEAR
+endef
+TARGET_DEVICES += netgear_r6400-v1
+
 define Device/netgear_r7000
   DEVICE_MODEL := R7000
   DEVICE_PACKAGES := $(USB3_PACKAGES)

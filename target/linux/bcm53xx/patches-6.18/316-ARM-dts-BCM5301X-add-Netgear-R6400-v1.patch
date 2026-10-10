@@ -1,0 +1,116 @@
+From d7a0f16a0cc7ba2d463b4639a920734e149c2fb8 Mon Sep 17 00:00:00 2001
+From: Russell Ballestrini <russell@unturf.com>
+Date: Sun, 4 Oct 2026 20:37:42 -0400
+Subject: [PATCH] ARM: dts: BCM5301X: add Netgear R6400 v1
+
+Netgear R6400 v1: BCM4708A0, 256 MiB RAM, 128 MiB NAND, BCM4331 2.4 GHz
+and BCM4360 5 GHz on PCIe, WAN on switch port 0 and LAN 1-4 on ports 1-4.
+
+---
+diff --git a/arch/arm/boot/dts/broadcom/Makefile b/arch/arm/boot/dts/broadcom/Makefile
+index 05b34b9..818b73a 100644
+--- a/arch/arm/boot/dts/broadcom/Makefile
++++ b/arch/arm/boot/dts/broadcom/Makefile
+@@ -61,6 +61,7 @@ dtb-$(CONFIG_ARCH_BCM_5301X) += \
+ 	bcm4708-luxul-xwc-1000.dtb \
+ 	bcm4708-netgear-r6250.dtb \
+ 	bcm4708-netgear-r6300-v2.dtb \
++	bcm4708-netgear-r6400-v1.dtb \
+ 	bcm4708-smartrg-sr400ac.dtb \
+ 	bcm47081-asus-rt-n18u.dtb \
+ 	bcm47081-buffalo-wzr-600dhp2.dtb \
+diff --git a/arch/arm/boot/dts/broadcom/bcm4708-netgear-r6400-v1.dts b/arch/arm/boot/dts/broadcom/bcm4708-netgear-r6400-v1.dts
+new file mode 100644
+index 0000000..5167038
+--- /dev/null
++++ b/arch/arm/boot/dts/broadcom/bcm4708-netgear-r6400-v1.dts
+@@ -0,0 +1,89 @@
++// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
++/*
++ * Broadcom BCM470X / BCM5301X ARM platform code.
++ * DTS for Netgear R6400 V1
++ *
++ * BCM4708A0, 256 MiB RAM, 128 MiB NAND (BCH-8), BCM4331 (2.4 GHz)
++ * and BCM4360 (5 GHz) on PCIe. Switch: WAN on port 0, LAN 1-4 on
++ * ports 1-4, as on the R7000. Buttons and LEDs not mapped yet.
++ */
++
++/dts-v1/;
++
++#include "bcm4708.dtsi"
++#include "bcm5301x-nand-cs0-bch8.dtsi"
++
++/ {
++	compatible = "netgear,r6400-v1", "brcm,bcm4708";
++	model = "Netgear R6400 V1 (BCM4708)";
++
++	chosen {
++		bootargs = "console=ttyS0,115200";
++	};
++
++	memory@0 {
++		device_type = "memory";
++		reg = <0x00000000 0x08000000>,
++		      <0x88000000 0x08000000>;
++	};
++
++	usb_power: regulator-usb {
++		compatible = "regulator-fixed";
++		regulator-name = "usb-vcc";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		regulator-boot-on;
++		gpios = <&chipcommon 0 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
++};
++
++&usb2 {
++	vbus-supply = <&usb_power>;
++};
++
++&usb3 {
++	vbus-supply = <&usb_power>;
++};
++
++&usb3_phy {
++	status = "okay";
++};
++
++&srab {
++	status = "okay";
++
++	ports {
++		port@0 {
++			label = "wan";
++		};
++
++		port@1 {
++			label = "lan1";
++		};
++
++		port@2 {
++			label = "lan2";
++		};
++
++		port@3 {
++			label = "lan3";
++		};
++
++		port@4 {
++			label = "lan4";
++		};
++
++		port@5 {
++			label = "cpu";
++		};
++
++		port@7 {
++			status = "disabled";
++		};
++
++		port@8 {
++			status = "disabled";
++		};
++	};
++};
