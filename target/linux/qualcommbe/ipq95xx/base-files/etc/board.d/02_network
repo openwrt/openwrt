@@ -41,6 +41,13 @@ ipq95xx_setup_wlan()
 	askey,sbe1v1k)
 		ucidef_add_wlan "$DEV_PATH_PCIE0" "$DEV_PATH_PCIE1" "$DEV_PATH_PCIE2"
 		;;
+	linksys,ln6001)
+		ucidef_add_wlan "$DEV_PATH_PCIE2"
+		# Keep the 6 GHz world default when adding per-band MAC defaults.
+		ucidef_set_country "00"
+		ucidef_set_wireless_mac_count "5g" 0
+		ucidef_set_wireless_mac_count "6g" 0
+		;;
 	esac
 }
 

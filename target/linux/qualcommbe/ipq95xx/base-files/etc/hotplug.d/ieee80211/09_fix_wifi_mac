@@ -1,0 +1,18 @@
+#!/bin/sh
+
+[ "$ACTION" = "add" ] || exit 0
+
+. /lib/functions.sh
+. /lib/functions/system.sh
+
+case "$(board_name):$DEVPATH" in
+linksys,ln6001:*/20000000.pcie/pci0002:00/0002:00:00.0/0002:01:00.0/ieee80211/phy*)
+	macaddr=$(mmc_get_mac_ascii devinfo hw_mac_addr)
+	case "$macaddr" in
+		?[02468ace]:??:??:??:??:??) ;;
+		*) exit 1 ;;
+	esac
+	[ "$macaddr" != "00:00:00:00:00:00" ] || exit 1
+	macaddr_add "$macaddr" 2 > "/sys$DEVPATH/macaddress"
+	;;
+esac
