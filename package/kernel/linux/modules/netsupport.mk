@@ -860,6 +860,22 @@ endef
 $(eval $(call KernelPackage,sched-drr))
 
 
+define KernelPackage/sched-dualpi2
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=Dual Queue PI Square scheduler (DUALPI2)
+  DEPENDS:=+kmod-sched-core @!LINUX_6_12
+  KCONFIG:=CONFIG_NET_SCH_DUALPI2
+  FILES:=$(LINUX_DIR)/net/sched/sch_dualpi2.ko
+  AUTOLOAD:=$(call AutoProbe,sch_dualpi2)
+endef
+
+define KernelPackage/sched-dualpi2/description
+ Dual Queue Coupled AQM (RFC 9332) with low latency for L4S traffic.
+endef
+
+$(eval $(call KernelPackage,sched-dualpi2))
+
+
 define KernelPackage/sched-flower
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Flower traffic classifier
