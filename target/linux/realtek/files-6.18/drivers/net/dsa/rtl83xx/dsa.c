@@ -1457,14 +1457,13 @@ static int rtldsa_port_lag_leave(struct dsa_switch *ds, int port,
 		goto out;
 	}
 	pr_info("port_lag_del: group %d, port %d\n", group, port);
+	err = otto_lag_del(priv->ds, group, port);
+	if (err)
+		goto out;
+
 	priv->lagmembers &= ~BIT_ULL(port);
 	priv->lag_non_primary &= ~BIT_ULL(port);
 	pr_debug("lag_members = %llX\n", priv->lagmembers);
-	err = otto_lag_del(priv->ds, group, port);
-	if (err) {
-		err = -EINVAL;
-		goto out;
-	}
 
 	if (priv->lag_primary[group] == port) {
 		u64 members = priv->lags_port_members[group];
@@ -1481,7 +1480,7 @@ static int rtldsa_port_lag_leave(struct dsa_switch *ds, int port,
 
 out:
 	mutex_unlock(&priv->reg_mutex);
-	return 0;
+	return err;
 }
 
 const struct phylink_mac_ops rtldsa_83xx_phylink_mac_ops = {
