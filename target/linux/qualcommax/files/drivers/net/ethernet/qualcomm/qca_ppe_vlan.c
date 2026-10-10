@@ -5,7 +5,7 @@
 
 #include "qca_ppe.h"
 
-static int ppe_xlt_idx_alloc(struct qca_ppe_priv *priv)
+int ppe_xlt_idx_alloc(struct qca_ppe_priv *priv)
 {
 	int idx;
 
@@ -32,8 +32,11 @@ static void ppe_xlt_rule_set(struct qca_ppe_priv *priv, int idx,
 	     FIELD_PREP(PPE_XLT_SKEY_FMT, PPE_XLT_SKEY_UNTAGGED);
 	w1 = 0;
 
+	/* The bridge classifies a priority-tagged frame by the PVID too. */
 	if (untagged) {
 		w0 |= PPE_XLT_CKEY_FMT_0;
+		w1 |= FIELD_PREP(PPE_XLT_CKEY_FMT_1,
+				  PPE_XLT_CKEY_PRIO_TAGGED >> 1);
 	} else {
 		w1 |= FIELD_PREP(PPE_XLT_CKEY_FMT_1,
 				  PPE_XLT_CKEY_TAGGED >> 1);
@@ -67,7 +70,7 @@ static void ppe_xlt_clear(struct qca_ppe_priv *priv, int idx)
 	regmap_write(priv->regmap, PPE_XLT_ACTION_W1(idx), 0);
 }
 
-static void ppe_xlt_idx_free(struct qca_ppe_priv *priv, int *idx)
+void ppe_xlt_idx_free(struct qca_ppe_priv *priv, int *idx)
 {
 	lockdep_assert_held(&priv->vlan_lock);
 
@@ -141,6 +144,7 @@ static void ppe_vlan_free(struct qca_ppe_priv *priv,
 		ppe_xlt_idx_free(priv, &entry->xlt_idx);
 	if (entry->xlt_pvid_idx >= 0)
 		ppe_xlt_idx_free(priv, &entry->xlt_pvid_idx);
+	ppe_flow_purge_vsi(priv, entry->vsi);
 	ppe_vsi_free(priv, entry->vsi);
 	entry->br_dev = NULL;
 }
@@ -187,9 +191,11 @@ int qca_ppe_vlan_setup(struct dsa_switch *ds)
 		u32 mode = dsa_is_user_port(ds, i) ?
 			   PPE_EG_UNMODIFIED : PPE_EG_UNTOUCHED;
 
+		/* VSI_TAG_EN resets set; only a filtering port takes it. */
 		regmap_update_bits(priv->regmap, PPE_PORT_EG_VLAN(i),
 				   PPE_PORT_EG_VLAN_CTAG_MODE |
-				   PPE_PORT_EG_VLAN_STAG_MODE,
+				   PPE_PORT_EG_VLAN_STAG_MODE |
+				   PPE_PORT_EG_VSI_TAG_EN,
 				   FIELD_PREP(PPE_PORT_EG_VLAN_CTAG_MODE, mode) |
 				   FIELD_PREP(PPE_PORT_EG_VLAN_STAG_MODE, mode));
 	}
@@ -211,16 +217,22 @@ int qca_ppe_port_vlan_filtering(struct dsa_switch *ds, int port,
 	struct qca_ppe_priv *priv = ds_to_priv(ds);
 	int i;
 
+	guard(mutex)(&priv->flow_lock);
 	guard(mutex)(&priv->vlan_lock);
 
 	regmap_update_bits(priv->regmap, PPE_PORT_EG_VLAN(port),
 			   PPE_PORT_EG_VSI_TAG_EN,
 			   vlan_filtering ? PPE_PORT_EG_VSI_TAG_EN : 0);
 
+	/* Every VLAN the port is a member of has a rule naming the port, and
+	 * so does its PVID, so a miss is a frame the bridge would drop.
+	 */
 	regmap_update_bits(priv->regmap, PPE_PORT_VLAN_CFG(port),
 			   PPE_VLAN_XLT_MISS_FWD,
 			   vlan_filtering ?
-			   FIELD_PREP(PPE_VLAN_XLT_MISS_FWD, PPE_XLT_MISS_RDT_TO_CPU) : 0);
+			   FIELD_PREP(PPE_VLAN_XLT_MISS_FWD,
+				      ppe_drop_cmd(priv, PPE_TRAP_VLAN_FILTER)) :
+			   0);
 
 	if (vlan_filtering)
 		priv->vlan_filtering |= BIT(port);
@@ -284,6 +296,7 @@ int qca_ppe_port_vlan_add(struct dsa_switch *ds, int port,
 	if (!br_dev)
 		return 0;
 
+	guard(mutex)(&priv->flow_lock);
 	guard(mutex)(&priv->vlan_lock);
 
 	entry = ppe_vlan_find(priv, br_dev, vid);
@@ -374,6 +387,7 @@ int qca_ppe_port_vlan_del(struct dsa_switch *ds, int port,
 	if (!br_dev)
 		return 0;
 
+	guard(mutex)(&priv->flow_lock);
 	guard(mutex)(&priv->vlan_lock);
 
 	entry = ppe_vlan_find(priv, br_dev, vid);
@@ -383,4 +397,19 @@ int qca_ppe_port_vlan_del(struct dsa_switch *ds, int port,
 	ppe_vlan_port_remove(priv, entry, port);
 
 	return 0;
+}
+
+void ppe_vlan_xlt_miss_apply(struct qca_ppe_priv *priv)
+{
+	unsigned long ports;
+	int port;
+
+	guard(mutex)(&priv->vlan_lock);
+	ports = priv->vlan_filtering;
+	for_each_set_bit(port, &ports, QCA_PPE_MAX_PORTS)
+		regmap_update_bits(priv->regmap, PPE_PORT_VLAN_CFG(port),
+				   PPE_VLAN_XLT_MISS_FWD,
+				   FIELD_PREP(PPE_VLAN_XLT_MISS_FWD,
+					      ppe_drop_cmd(priv,
+							   PPE_TRAP_VLAN_FILTER)));
 }

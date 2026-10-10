@@ -1,0 +1,78 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Subject: [PATCH] net: dsa: tag_oob: let the switch claim trapped frames
+
+A switch that redirects a frame it would drop to the CPU marks it with a
+CPU code, which the out-of-band tag does not carry. Add the CPU code to
+dsa_oob_tag_info and a tagger_data hook, set through
+connect_tag_protocol, that lets the switch driver report such a frame to
+devlink and consume it.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+--- a/include/linux/dsa/oob.h
++++ b/include/linux/dsa/oob.h
+@@ -7,8 +7,17 @@
+ 
+ #include <linux/skbuff.h>
+ 
++struct dsa_switch;
++
+ struct dsa_oob_tag_info {
+ 	u16 port;
++	u8 cpu_code;
++};
++
++/* Set by the switch driver in connect_tag_protocol */
++struct dsa_oob_tagger_data {
++	bool (*trap_rcv)(struct dsa_switch *ds, struct sk_buff *skb,
++			 u8 cpu_code);
+ };
+ 
+ int dsa_oob_tag_push(struct sk_buff *skb, struct dsa_oob_tag_info *ti);
+--- a/net/dsa/tag_oob.c
++++ b/net/dsa/tag_oob.c
+@@ -25,6 +25,8 @@ static struct sk_buff *oob_tag_rcv(struc
+ 				   struct net_device *dev)
+ {
+ 	struct dsa_oob_tag_info *tag_info = skb_ext_find(skb, SKB_EXT_DSA_OOB);
++	struct dsa_switch *ds = dev->dsa_ptr->ds;
++	struct dsa_oob_tagger_data *data = ds->tagger_data;
+ 
+ 	if (!tag_info)
+ 		return NULL;
+@@ -33,14 +35,35 @@ static struct sk_buff *oob_tag_rcv(struc
+ 	if (!skb->dev)
+ 		return NULL;
+ 
++	/* A frame the switch trapped is reported and consumed by its driver. */
++	if (tag_info->cpu_code && data->trap_rcv &&
++	    data->trap_rcv(ds, skb, tag_info->cpu_code))
++		return NULL;
++
+ 	return skb;
+ }
+ 
++static int oob_connect(struct dsa_switch *ds)
++{
++	ds->tagger_data = kzalloc(sizeof(struct dsa_oob_tagger_data),
++				  GFP_KERNEL);
++
++	return ds->tagger_data ? 0 : -ENOMEM;
++}
++
++static void oob_disconnect(struct dsa_switch *ds)
++{
++	kfree(ds->tagger_data);
++	ds->tagger_data = NULL;
++}
++
+ static const struct dsa_device_ops oob_tag_dsa_ops = {
+ 	.name	= OOB_NAME,
+ 	.proto	= DSA_TAG_PROTO_OOB,
+ 	.xmit	= oob_tag_xmit,
+ 	.rcv	= oob_tag_rcv,
++	.connect = oob_connect,
++	.disconnect = oob_disconnect,
+ };
+ 
+ MODULE_LICENSE("GPL");

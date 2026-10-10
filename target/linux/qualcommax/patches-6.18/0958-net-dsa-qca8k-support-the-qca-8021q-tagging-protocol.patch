@@ -1,0 +1,332 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sat, 10 Oct 2026 10:24:05 +0200
+Subject: [PATCH] net: dsa: qca8k: support the qca-8021q tagging protocol
+
+Let a CPU port select "qca-8021q": register tag_8021q, put every port in
+VLAN secure mode and turn the header off on the CPU ports. The
+tag_8021q VLANs go through the port VLAN ops, bridge join and leave move
+the ports to and from the bridge VLAN, and register access and MIB
+autocast stay on MDIO, as they need the header. Bridges are numbered,
+since tag_8021q tells them apart by number; unnumbered, every bridge VLAN
+decodes as the CPU port and the frame is dropped.
+
+A port keeps two PVIDs, tag_8021q's and the bridge's, and uses the
+bridge's only while the bridge filters by VLAN; otherwise the bridge's
+default VLAN 1 would replace the tag_8021q PVID and its frames would
+reach the CPU untagged. The CPU port stays a tagged member of bridge
+VLANs, bridge VLANs in the tag_8021q range are refused, and a bridged
+port keeps its standalone VLAN, which the tagger uses for frames the
+bridge does not forward in hardware, such as IGMP and MLD.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+--- a/drivers/net/dsa/qca/qca8k-8xxx.c
++++ b/drivers/net/dsa/qca/qca8k-8xxx.c
+@@ -19,6 +19,7 @@
+ #include <linux/phylink.h>
+ #include <linux/gpio/consumer.h>
+ #include <linux/etherdevice.h>
++#include <linux/dsa/8021q.h>
+ #include <linux/dsa/tag_qca.h>
+ 
+ #include "qca8k.h"
+@@ -1755,15 +1756,53 @@ qca8k_get_tag_protocol(struct dsa_switch
+ 	return DSA_TAG_PROTO_QCA;
+ }
+ 
++/* With qca-8021q the switch tells the ports apart by VLAN, so it filters by
++ * VLAN on every port and sends and takes no header.
++ */
++static int qca8k_tag_8021q_set(struct dsa_switch *ds, bool enable)
++{
++	struct qca8k_priv *priv = ds->priv;
++	struct dsa_port *dp;
++	u32 hdr = 0;
++	int ret;
++
++	if (!enable) {
++		dsa_tag_8021q_unregister(ds);
++		hdr = FIELD_PREP(QCA8K_PORT_HDR_CTRL_TX_MASK,
++				 QCA8K_PORT_HDR_CTRL_ALL) |
++		      FIELD_PREP(QCA8K_PORT_HDR_CTRL_RX_MASK,
++				 QCA8K_PORT_HDR_CTRL_ALL);
++	}
++
++	dsa_switch_for_each_cpu_port(dp, ds) {
++		ret = qca8k_write(priv, QCA8K_REG_PORT_HDR_CTRL(dp->index), hdr);
++		if (ret)
++			return ret;
++	}
++
++	dsa_switch_for_each_available_port(dp, ds) {
++		ret = qca8k_rmw(priv, QCA8K_PORT_LOOKUP_CTRL(dp->index),
++				QCA8K_PORT_LOOKUP_VLAN_MODE_MASK,
++				enable ? QCA8K_PORT_LOOKUP_VLAN_MODE_SECURE :
++					 QCA8K_PORT_LOOKUP_VLAN_MODE_NONE);
++		if (ret)
++			return ret;
++	}
++
++	return enable ? dsa_tag_8021q_register(ds, htons(ETH_P_8021Q)) : 0;
++}
++
+ static int qca8k_change_tag_protocol(struct dsa_switch *ds,
+ 				     enum dsa_tag_protocol proto)
+ {
++	bool tag_8021q = proto == DSA_TAG_PROTO_QCA_8021Q;
+ 	struct qca8k_priv *priv = ds->priv;
+ 	u32 val;
+ 	int ret;
+ 
+ 	switch (proto) {
+ 	case DSA_TAG_PROTO_QCA:
++	case DSA_TAG_PROTO_QCA_8021Q:
+ 		val = 0;
+ 		break;
+ 	case DSA_TAG_PROTO_QCA_ETYPE:
+@@ -1774,6 +1813,12 @@ static int qca8k_change_tag_protocol(str
+ 		return -EPROTONOSUPPORT;
+ 	}
+ 
++	if (tag_8021q != !!ds->tag_8021q_ctx) {
++		ret = qca8k_tag_8021q_set(ds, tag_8021q);
++		if (ret)
++			return ret;
++	}
++
+ 	/* Written in the format the switch still expects */
+ 	ret = qca8k_write(priv, QCA8K_REG_HEADER_CTRL, val);
+ 	if (ret)
+@@ -1914,8 +1959,10 @@ qca8k_conduit_change(struct dsa_switch *
+ 	struct dsa_port *dp = conduit->dsa_ptr;
+ 	struct qca8k_priv *priv = ds->priv;
+ 
+-	/* Ethernet MIB/MDIO is only supported for CPU port 0 */
+-	if (dp->index != 0)
++	/* Ethernet MIB/MDIO is only supported for CPU port 0, and needs the
++	 * header.
++	 */
++	if (dp->index != 0 || ds->tag_8021q_ctx)
+ 		return;
+ 
+ 	mutex_lock(&priv->mgmt_eth_data.mutex);
+@@ -1941,6 +1988,8 @@ static int qca8k_connect_tag_protocol(st
+ 		tagger_data->mib_autocast_handler = qca8k_mib_autocast_handler;
+ 
+ 		break;
++	case DSA_TAG_PROTO_QCA_8021Q:
++		break;
+ 	default:
+ 		return -EOPNOTSUPP;
+ 	}
+@@ -2112,6 +2161,7 @@ qca8k_setup(struct dsa_switch *ds)
+ 				  QCA8K_PORT_VLAN_SVID(QCA8K_PORT_VID_DEF));
+ 		if (ret)
+ 			return ret;
++		priv->pvid[port] = QCA8K_PORT_VID_DEF;
+ 	}
+ 
+ 	/* The port 5 of the qca8337 have some problem in flood condition. The
+@@ -2152,6 +2202,9 @@ qca8k_setup(struct dsa_switch *ds)
+ 	/* HW learn on CPU port is limited and require manual setting */
+ 	ds->assisted_learning_on_cpu_port = true;
+ 
++	/* qca-8021q tells bridges apart by number */
++	ds->max_num_bridges = DSA_TAG_8021Q_MAX_NUM_BRIDGES;
++
+ 	return 0;
+ }
+ 
+@@ -2165,6 +2218,8 @@ static const struct phylink_mac_ops qca8
+ static const struct dsa_switch_ops qca8k_switch_ops = {
+ 	.get_tag_protocol	= qca8k_get_tag_protocol,
+ 	.change_tag_protocol	= qca8k_change_tag_protocol,
++	.tag_8021q_vlan_add	= qca8k_tag_8021q_vlan_add,
++	.tag_8021q_vlan_del	= qca8k_tag_8021q_vlan_del,
+ 	.setup			= qca8k_setup,
+ 	.get_strings		= qca8k_get_strings,
+ 	.get_ethtool_stats	= qca8k_get_ethtool_stats,
+--- a/drivers/net/dsa/qca/qca8k-common.c
++++ b/drivers/net/dsa/qca/qca8k-common.c
+@@ -7,6 +7,7 @@
+  */
+ 
+ #include <linux/netdevice.h>
++#include <linux/dsa/8021q.h>
+ #include <net/dsa.h>
+ #include <linux/if_bridge.h>
+ 
+@@ -730,6 +731,14 @@ int qca8k_port_bridge_join(struct dsa_sw
+ 			   struct netlink_ext_ack *extack)
+ {
+ 	struct qca8k_priv *priv = ds->priv;
++	int ret;
++
++	if (ds->tag_8021q_ctx) {
++		ret = dsa_tag_8021q_bridge_join(ds, port, bridge,
++						tx_fwd_offload, extack);
++		if (ret)
++			return ret;
++	}
+ 
+ 	return qca8k_update_port_member(priv, port, bridge.dev, true);
+ }
+@@ -740,6 +749,9 @@ void qca8k_port_bridge_leave(struct dsa_
+ 	struct qca8k_priv *priv = ds->priv;
+ 	int err;
+ 
++	if (ds->tag_8021q_ctx)
++		dsa_tag_8021q_bridge_leave(ds, port, bridge);
++
+ 	err = qca8k_update_port_member(priv, port, bridge.dev, false);
+ 	if (err)
+ 		dev_err(priv->dev,
+@@ -1044,6 +1056,30 @@ err:
+ 	dev_err(priv->dev, "Failed to del mirror port from %d", port);
+ }
+ 
++/* With qca-8021q a port takes the tag_8021q PVID, unless its bridge filters
++ * by VLAN.
++ */
++static int qca8k_port_commit_pvid(struct dsa_switch *ds, int port,
++				  bool vlan_filtering)
++{
++	struct qca8k_priv *priv = ds->priv;
++	u16 vid = priv->pvid[port];
++	int ret;
++
++	if (ds->tag_8021q_ctx && !vlan_filtering)
++		vid = priv->pvid_8021q[port];
++
++	ret = qca8k_rmw(priv, QCA8K_EGRESS_VLAN(port),
++			QCA8K_EGREES_VLAN_PORT_MASK(port),
++			QCA8K_EGREES_VLAN_PORT(port, vid));
++	if (ret)
++		return ret;
++
++	return qca8k_write(priv, QCA8K_REG_PORT_VLAN_CTRL0(port),
++			   QCA8K_PORT_VLAN_CVID(vid) |
++			   QCA8K_PORT_VLAN_SVID(vid));
++}
++
+ int qca8k_port_vlan_filtering(struct dsa_switch *ds, int port,
+ 			      bool vlan_filtering,
+ 			      struct netlink_ext_ack *extack)
+@@ -1051,7 +1087,7 @@ int qca8k_port_vlan_filtering(struct dsa
+ 	struct qca8k_priv *priv = ds->priv;
+ 	int ret;
+ 
+-	if (vlan_filtering) {
++	if (vlan_filtering || ds->tag_8021q_ctx) {
+ 		ret = qca8k_rmw(priv, QCA8K_PORT_LOOKUP_CTRL(port),
+ 				QCA8K_PORT_LOOKUP_VLAN_MODE_MASK,
+ 				QCA8K_PORT_LOOKUP_VLAN_MODE_SECURE);
+@@ -1061,6 +1097,9 @@ int qca8k_port_vlan_filtering(struct dsa
+ 				QCA8K_PORT_LOOKUP_VLAN_MODE_NONE);
+ 	}
+ 
++	if (!ret && ds->tag_8021q_ctx)
++		ret = qca8k_port_commit_pvid(ds, port, vlan_filtering);
++
+ 	return ret;
+ }
+ 
+@@ -1073,6 +1112,17 @@ int qca8k_port_vlan_add(struct dsa_switc
+ 	struct qca8k_priv *priv = ds->priv;
+ 	int ret;
+ 
++	/* The CPU port stays a tagged member, as the tag names the port. */
++	if (ds->tag_8021q_ctx) {
++		if (vid_is_dsa_8021q(vlan->vid)) {
++			NL_SET_ERR_MSG_MOD(extack,
++					   "VLANs 3072-4095 are reserved for qca-8021q");
++			return -EBUSY;
++		}
++		if (dsa_is_cpu_port(ds, port))
++			untagged = false;
++	}
++
+ 	ret = qca8k_vlan_add(priv, port, vlan->vid, untagged);
+ 	if (ret) {
+ 		dev_err(priv->dev, "Failed to add VLAN to port %d (%d)", port, ret);
+@@ -1080,15 +1130,11 @@ int qca8k_port_vlan_add(struct dsa_switc
+ 	}
+ 
+ 	if (pvid) {
+-		ret = qca8k_rmw(priv, QCA8K_EGRESS_VLAN(port),
+-				QCA8K_EGREES_VLAN_PORT_MASK(port),
+-				QCA8K_EGREES_VLAN_PORT(port, vlan->vid));
+-		if (ret)
+-			return ret;
++		struct dsa_port *dp = dsa_to_port(ds, port);
+ 
+-		ret = qca8k_write(priv, QCA8K_REG_PORT_VLAN_CTRL0(port),
+-				  QCA8K_PORT_VLAN_CVID(vlan->vid) |
+-				  QCA8K_PORT_VLAN_SVID(vlan->vid));
++		priv->pvid[port] = vlan->vid;
++		ret = qca8k_port_commit_pvid(ds, port,
++					     dsa_port_is_vlan_filtering(dp));
+ 	}
+ 
+ 	return ret;
+@@ -1107,6 +1153,38 @@ int qca8k_port_vlan_del(struct dsa_switc
+ 	return ret;
+ }
+ 
++int qca8k_tag_8021q_vlan_add(struct dsa_switch *ds, int port, u16 vid,
++			     u16 flags)
++{
++	struct dsa_port *dp = dsa_to_port(ds, port);
++	struct qca8k_priv *priv = ds->priv;
++	int ret;
++
++	ret = qca8k_vlan_add(priv, port, vid,
++			     flags & BRIDGE_VLAN_INFO_UNTAGGED);
++	if (ret || !(flags & BRIDGE_VLAN_INFO_PVID))
++		return ret;
++
++	priv->pvid_8021q[port] = vid;
++
++	return qca8k_port_commit_pvid(ds, port, dsa_port_is_vlan_filtering(dp));
++}
++
++/* The tagger still sends what the bridge does not forward in hardware, such
++ * as IGMP and MLD, on a port's standalone VLAN, so that VLAN stays while the
++ * port is bridged.
++ */
++int qca8k_tag_8021q_vlan_del(struct dsa_switch *ds, int port, u16 vid)
++{
++	struct dsa_port *dp = dsa_to_port(ds, dsa_8021q_rx_source_port(vid));
++
++	if (dp && vid == dsa_tag_8021q_standalone_vid(dp) &&
++	    dsa_port_bridge_dev_get(dp))
++		return 0;
++
++	return qca8k_vlan_del(ds->priv, port, vid);
++}
++
+ static bool qca8k_lag_can_offload(struct dsa_switch *ds,
+ 				  struct dsa_lag lag,
+ 				  struct netdev_lag_upper_info *info,
+--- a/drivers/net/dsa/qca/qca8k.h
++++ b/drivers/net/dsa/qca/qca8k.h
+@@ -466,6 +466,8 @@ struct qca8k_priv {
+ 	struct gpio_desc *reset_gpio;
+ 	struct net_device *mgmt_conduit; /* Track if mdio/mib Ethernet is available */
+ 	bool etype_hdr; /* The header is behind QCA_HDR_ETYPE */
++	u16 pvid[QCA8K_NUM_PORTS];		/* the bridge's */
++	u16 pvid_8021q[QCA8K_NUM_PORTS];	/* tag_8021q's */
+ 	struct qca8k_mgmt_eth_data mgmt_eth_data;
+ 	struct qca8k_mib_eth_data mib_eth_data;
+ 	struct qca8k_mdio_cache mdio_cache;
+@@ -589,6 +591,9 @@ int qca8k_port_vlan_add(struct dsa_switc
+ 			struct netlink_ext_ack *extack);
+ int qca8k_port_vlan_del(struct dsa_switch *ds, int port,
+ 			const struct switchdev_obj_port_vlan *vlan);
++int qca8k_tag_8021q_vlan_add(struct dsa_switch *ds, int port, u16 vid,
++			     u16 flags);
++int qca8k_tag_8021q_vlan_del(struct dsa_switch *ds, int port, u16 vid);
+ 
+ /* Common port LAG function */
+ int qca8k_port_lag_join(struct dsa_switch *ds, int port, struct dsa_lag lag,

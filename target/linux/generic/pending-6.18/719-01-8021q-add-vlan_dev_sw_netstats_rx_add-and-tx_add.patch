@@ -1,0 +1,68 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sun, 4 Oct 2026 13:14:48 +0200
+Subject: [PATCH] 8021q: add vlan_dev_sw_netstats_rx_add() and
+ vlan_dev_sw_netstats_tx_add()
+
+Let code that forwards packets on behalf of a VLAN device update its
+per-cpu counters, like dev_sw_netstats_rx_add() and
+dev_sw_netstats_tx_add() do for devices with tstats. The netfilter
+flowtable fast path uses them in the next patch.
+
+Assisted-by: Claude:claude-fable-5-1
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+ include/linux/if_vlan.h | 36 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 36 insertions(+)
+
+--- a/include/linux/if_vlan.h
++++ b/include/linux/if_vlan.h
+@@ -224,6 +224,31 @@ vlan_dev_get_egress_qos_mask(struct net_
+ 	return 0;
+ }
+ 
++static inline void vlan_dev_sw_netstats_rx_add(struct net_device *dev,
++					       unsigned int len)
++{
++	struct vlan_pcpu_stats *stats;
++
++	stats = this_cpu_ptr(vlan_dev_priv(dev)->vlan_pcpu_stats);
++	u64_stats_update_begin(&stats->syncp);
++	u64_stats_inc(&stats->rx_packets);
++	u64_stats_add(&stats->rx_bytes, len);
++	u64_stats_update_end(&stats->syncp);
++}
++
++static inline void vlan_dev_sw_netstats_tx_add(struct net_device *dev,
++					       unsigned int packets,
++					       unsigned int len)
++{
++	struct vlan_pcpu_stats *stats;
++
++	stats = this_cpu_ptr(vlan_dev_priv(dev)->vlan_pcpu_stats);
++	u64_stats_update_begin(&stats->syncp);
++	u64_stats_add(&stats->tx_packets, packets);
++	u64_stats_add(&stats->tx_bytes, len);
++	u64_stats_update_end(&stats->syncp);
++}
++
+ extern bool vlan_do_receive(struct sk_buff **skb);
+ 
+ extern int vlan_vid_add(struct net_device *dev, __be16 proto, u16 vid);
+@@ -242,6 +267,17 @@ static inline bool is_vlan_dev(const str
+ 	return false;
+ }
+ 
++static inline void vlan_dev_sw_netstats_rx_add(struct net_device *dev,
++					       unsigned int len)
++{
++}
++
++static inline void vlan_dev_sw_netstats_tx_add(struct net_device *dev,
++					       unsigned int packets,
++					       unsigned int len)
++{
++}
++
+ static inline struct net_device *
+ __vlan_find_dev_deep_rcu(struct net_device *real_dev,
+ 		     __be16 vlan_proto, u16 vlan_id)
