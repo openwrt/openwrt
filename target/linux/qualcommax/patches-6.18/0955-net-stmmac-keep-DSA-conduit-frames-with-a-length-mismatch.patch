@@ -1,0 +1,100 @@
+From d4d1b076e61678da3febcb7ebbb65df4add94306 Mon Sep 17 00:00:00 2001
+From: Adriel Santos <adriel@adriel.eu>
+Date: Tue, 6 Oct 2026 09:10:01 +0000
+Subject: [PATCH] net: stmmac: keep DSA conduit frames with a length mismatch
+
+With enhanced descriptors, the MAC sets the length error bit when a
+frame's EtherType field is below 0x600, so an 802.3 length, and does not
+match the frame's size, and stmmac discards the frame.
+
+On a DSA conduit, that field can be the switch's tag instead. On the
+Xiaomi AX3000T v2, an IPQ5018 GMAC is the conduit of an Airoha AN8855
+using the MediaTek tag. For a frame the switch forwards with a VLAN tag,
+the tag reads as a length larger than the frame, so every VLAN-tagged
+frame of a VLAN-aware bridge was dropped as a length error, while
+untagged ones went through.
+
+Report the mismatch from the descriptor to stmmac_rx() instead, which
+keeps the frame on a DSA conduit, and counts and drops it as before on
+any other netdev.
+
+Signed-off-by: Adriel Santos <adriel@adriel.eu>
+Assisted-by: Claude
+---
+--- a/drivers/net/ethernet/stmicro/stmmac/enh_desc.c
++++ b/drivers/net/ethernet/stmicro/stmmac/enh_desc.c
+@@ -237,10 +237,9 @@ static int enh_desc_get_rx_status(struct
+ 		x->da_rx_filter_fail++;
+ 		ret = discard_frame;
+ 	}
+-	if (unlikely(rdes0 & RDES0_LENGTH_ERROR)) {
+-		x->rx_length++;
+-		ret = discard_frame;
+-	}
++	/* Left to stmmac_rx_len_mismatch(): a DSA tag can cause it */
++	if (unlikely(rdes0 & RDES0_LENGTH_ERROR))
++		ret |= len_mismatch;
+ #ifdef STMMAC_VLAN_TAG_USED
+ 	if (rdes0 & RDES0_VLAN_TAG)
+ 		x->rx_vlan++;
+--- a/drivers/net/ethernet/stmicro/stmmac/common.h
++++ b/drivers/net/ethernet/stmicro/stmmac/common.h
+@@ -347,6 +347,7 @@ enum rx_frame_status {
+ 	llc_snap = 0x4,
+ 	dma_own = 0x8,
+ 	rx_not_ls = 0x10,
++	len_mismatch = 0x20,
+ };
+ 
+ /* Tx status */
+--- a/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
++++ b/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
+@@ -40,6 +40,7 @@
+ #include <linux/phylink.h>
+ #include <linux/udp.h>
+ #include <linux/bpf_trace.h>
++#include <net/dsa.h>
+ #include <net/page_pool/helpers.h>
+ #include <net/pkt_cls.h>
+ #include <net/xdp_sock_drv.h>
+@@ -5281,6 +5282,22 @@ static struct stmmac_xdp_buff *xsk_buff_
+ 	return (struct stmmac_xdp_buff *)xdp;
+ }
+ 
++/* The MAC flags a frame whose EtherType field is below 0x600, so an
++ * 802.3 length, and does not match the frame's size. On a DSA conduit
++ * that field can be the switch's tag instead: the MediaTek tag ahead of
++ * a VLAN tag reads as a length larger than the frame. Keep those frames,
++ * and drop and count the mismatch everywhere else, as before.
++ */
++static int stmmac_rx_len_mismatch(struct stmmac_priv *priv, int status)
++{
++	status &= ~len_mismatch;
++	if (netdev_uses_dsa(priv->dev))
++		return status;
++
++	priv->xstats.rx_length++;
++	return discard_frame;
++}
++
+ static int stmmac_rx_zc(struct stmmac_priv *priv, int limit, u32 queue)
+ {
+ 	struct stmmac_rxq_stats *rxq_stats = &priv->xstats.rxq_stats[queue];
+@@ -5351,6 +5368,8 @@ read_again:
+ 		/* check if managed by the DMA otherwise go ahead */
+ 		if (unlikely(status & dma_own))
+ 			break;
++		if (unlikely(status & len_mismatch))
++			status = stmmac_rx_len_mismatch(priv, status);
+ 
+ 		/* Prefetch the next RX descriptor */
+ 		next_entry = STMMAC_NEXT_ENTRY(rx_q->cur_rx,
+@@ -5550,6 +5569,8 @@ read_again:
+ 		/* check if managed by the DMA otherwise go ahead */
+ 		if (unlikely(status & dma_own))
+ 			break;
++		if (unlikely(status & len_mismatch))
++			status = stmmac_rx_len_mismatch(priv, status);
+ 
+ 		next_entry = STMMAC_NEXT_ENTRY(rx_q->cur_rx,
+ 					       priv->dma_conf.dma_rx_size);

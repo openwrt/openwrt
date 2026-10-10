@@ -1,0 +1,50 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: George Moussalem <george.moussalem@outlook.com>
+Date: Tue, 19 May 2026 17:27:49 +0400
+Subject: [PATCH] mtd: spinand: winbond: add support for W25N01KW chips
+
+Add support for the Winbond W25N01KW, a 1.8 V 1 Gbit SPI-NAND. It is
+second-sourced on the Xiaomi AX3000T v2 in place of the ESMT F50D1G41LB,
+and without an ID table entry the probe fails on those units:
+
+  spi-nand spi0.0: unknown raw ID efbe210000
+
+Per the datasheet (W25N01KWxxxG/T/R, rev. D) and the chip's parameter
+page, the part has 2048 byte pages with 64 bytes of spare, 64 pages per
+block, 1024 blocks and at most 20 bad blocks, and needs 4-bit ECC per
+512 bytes. The on-die ECC keeps its parity in a separate 32-byte area
+outside the spare. It reports the maximum bit flip count in bits 6:4 of
+feature register 0x30, which is what w25n02kv_ecc_get_status() reads, so
+use it as for the W25N01KV.
+
+The K-generation OOB layouts place the ECC bytes past offset 64, so use
+the w25m02gv layout of the W25N01GV/GW, which have the same 64-byte
+spare. It marks bytes the chip leaves to the user as ECC, which only
+under-reports the free OOB bytes. On qualcommax the QPIC is the ECC
+engine and the chip's layout is not used at all.
+
+Signed-off-by: George Moussalem <george.moussalem@outlook.com>
+[use the w25m02gv OOB layout, the w25n02kv one does not fit in 64 bytes;
+ describe the part from its datasheet]
+Reported-by: Mikhail Zhilkin <csharper2005@gmail.com>
+Link: https://forum.openwrt.org/t/adding-support-for-xiaomi-ax3000t-rd03v2/235136/17
+Signed-off-by: Adriel Santos <adriel@adriel.eu>
+---
+--- a/drivers/mtd/nand/spi/winbond.c
++++ b/drivers/mtd/nand/spi/winbond.c
+@@ -457,6 +457,15 @@ static const struct spinand_info winbond
+ 					      &update_cache_variants),
+ 		     0,
+ 		     SPINAND_ECCINFO(&w25n01kv_ooblayout, w25n02kv_ecc_get_status)),
++	SPINAND_INFO("W25N01KW",
++		     SPINAND_ID(SPINAND_READID_METHOD_OPCODE_DUMMY, 0xbe, 0x21),
++		     NAND_MEMORG(1, 2048, 64, 64, 1024, 20, 1, 1, 1),
++		     NAND_ECCREQ(4, 512),
++		     SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
++					      &write_cache_variants,
++					      &update_cache_variants),
++		     0,
++		     SPINAND_ECCINFO(&w25m02gv_ooblayout, w25n02kv_ecc_get_status)),
+ 	SPINAND_INFO("W35N01JW", /* 1.8V */
+ 		     SPINAND_ID(SPINAND_READID_METHOD_OPCODE_DUMMY, 0xdc, 0x21),
+ 		     NAND_MEMORG(1, 4096, 128, 64, 512, 10, 1, 1, 1),

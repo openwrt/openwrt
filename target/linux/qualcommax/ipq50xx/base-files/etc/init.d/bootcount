@@ -11,5 +11,22 @@ boot() {
 	linksys,spnmx56)
 		mtd resetbc s_env || true
 	;;
+	xiaomi,mi-router-ax3000t-v2)
+		. /lib/upgrade/common.sh
+		[ "$(rootfs_type)" = "tmpfs" ] && return 0
+		# The stock loader keeps counting boot attempts and eventually
+		# gives up on the installed image unless the boot is confirmed.
+		[ "$(fw_printenv -n flag_boot_success 2>/dev/null)" = "1" ] && \
+		[ "$(fw_printenv -n flag_last_success 2>/dev/null)" = "1" ] && \
+		[ "$(fw_printenv -n flag_try_sys1_failed 2>/dev/null)" = "8" ] && \
+		[ "$(fw_printenv -n flag_try_sys2_failed 2>/dev/null)" = "8" ] && \
+			return 0
+		fw_setenv -s - <<-EOF
+			flag_boot_success 1
+			flag_last_success 1
+			flag_try_sys1_failed 8
+			flag_try_sys2_failed 8
+		EOF
+	;;
 	esac
 }

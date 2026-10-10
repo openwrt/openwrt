@@ -23,9 +23,9 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
 +	help
 +	  Currently supports the Airoha EN8801SC PHY.
 +
- config AIR_EN8811H_PHY
- 	tristate "Airoha EN8811H 2.5 Gigabit PHY"
- 	select PHY_COMMON_PROPS
+ config AIR_AN8855_PHY
+ 	tristate "Airoha AN8855 Internal Gigabit PHY"
+ 	help
 --- a/drivers/net/phy/Makefile
 +++ b/drivers/net/phy/Makefile
 @@ -44,6 +44,7 @@ obj-y				+= $(sfp-obj-y) $(sfp-obj-m)
@@ -33,6 +33,6 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
  obj-$(CONFIG_ADIN_PHY)		+= adin.o
  obj-$(CONFIG_ADIN1100_PHY)	+= adin1100.o
 +obj-$(CONFIG_AIROHA_EN8801SC_PHY)   += en8801sc.o
+ obj-$(CONFIG_AIR_AN8855_PHY)		+= air_an8855.o
  obj-$(CONFIG_AIR_EN8811H_PHY)   += air_en8811h.o
  obj-$(CONFIG_AMD_PHY)		+= amd.o
- obj-$(CONFIG_AMCC_QT2025_PHY)	+= qt2025.o
