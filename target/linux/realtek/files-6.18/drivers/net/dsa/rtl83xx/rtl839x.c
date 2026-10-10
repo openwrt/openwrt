@@ -97,7 +97,12 @@ static inline int rtl839x_mac_port_ctrl(int p)
 
 static void rtl839x_traffic_set(int source, u64 dest_matrix)
 {
-	rtl839x_set_port_reg_be(dest_matrix, rtl839x_port_iso_ctrl(source));
+	/* The isolation mask also applies to frames routed in hardware, which
+	 * may have to leave through the port they came in on. The SDK keeps a
+	 * port in its own mask; a bridged frame is still not sent back out of
+	 * its ingress port.
+	 */
+	rtl839x_set_port_reg_be(dest_matrix | BIT_ULL(source), rtl839x_port_iso_ctrl(source));
 }
 
 static void rtl839x_traffic_enable(int source, int dest)
@@ -300,7 +305,7 @@ const struct rtldsa_config rtldsa_839x_cfg = {
 	.read_cam = otto_l2_839x_read_cam,
 	.write_cam = otto_l2_839x_write_cam,
 	.fast_age = otto_l2_839x_fast_age,
-	.trk_mbr_ctr = rtl839x_trk_mbr_ctr,
+	.trk_mbr_ctr = otto_lag_839x_trk_mbr_ctr,
 	.rma_bpdu_fld_pmask = RTL839X_RMA_BPDU_FLD_PMSK,
 	.spcl_trap_eapol_ctrl = RTL839X_SPCL_TRAP_EAPOL_CTRL,
 	.init_eee = rtl839x_init_eee,
@@ -321,7 +326,7 @@ const struct rtldsa_config rtldsa_839x_cfg = {
 	.get_egress_rate = rtldsa_839x_get_egress_rate,
 	.set_egress_rate = rtldsa_839x_set_egress_rate,
 	.qos_init = rtldsa_839x_qos_init,
-	.lag_set_distribution_algorithm = rtldsa_839x_set_distribution_algorithm,
-	.lag_set_port_members = rtldsa_839x_lag_set_port_members,
-	.lag_setup_algomask = rtldsa_83xx_lag_setup_algomask,
+	.lag_set_distribution_algorithm = otto_lag_839x_set_distribution_algorithm,
+	.lag_set_port_members = otto_lag_839x_set_port_members,
+	.lag_setup_algomask = otto_lag_83xx_setup_algomask,
 };

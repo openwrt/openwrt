@@ -99,6 +99,7 @@
 
 /* L3 Routing */
 #define RTL839X_ROUTING_SA_CTRL			0x6afc
+#define RTL839X_ROUTING_EXCPT_CTRL		0x100c
 #define RTL930X_L3_HOST_TBL_CTRL		(0xAB48)
 #define RTL930X_L3_IPUC_ROUTE_CTRL		(0xAB4C)
 #define RTL930X_L3_IP6UC_ROUTE_CTRL		(0xAB50)
@@ -195,7 +196,6 @@ static void otto_l3_839x_setup_port_macs(struct otto_l3_ctrl *ctrl)
 	mac = ether_addr_to_u64(dev->dev_addr);
 
 	for (int i = 0; i < 15; i++) {
-		mac++;  /* BUG: VRRP for testing */
 		sw_w32(mac >> 32, RTL839X_ROUTING_SA_CTRL + i * 8);
 		sw_w32(mac, RTL839X_ROUTING_SA_CTRL + i * 8 + 4);
 	}
@@ -204,6 +204,13 @@ static void otto_l3_839x_setup_port_macs(struct otto_l3_ctrl *ctrl)
 static int otto_l3_839x_setup(struct otto_l3_ctrl *ctrl)
 {
 	otto_l3_839x_setup_port_macs(ctrl);
+
+	/* A routed packet whose TTL runs out goes to the CPU, which answers
+	 * it with Time Exceeded, instead of being dropped. IP4_TTL_EXECEED,
+	 * bits 3:2: 0 drop, 1 forward, 2 trap (Realtek GPL SDK,
+	 * dal_cypress_trap.c).
+	 */
+	sw_w32_mask(0x3 << 2, 2 << 2, RTL839X_ROUTING_EXCPT_CTRL);
 
 	return 0;
 }
@@ -1017,31 +1024,6 @@ static void otto_l3_router_mac_sync(struct otto_l3_ctrl *ctrl, bool may_free)
 			otto_l3_alloc_router_mac(ctrl, macs[k]);
 }
 
-static int otto_l3_netdev_notifier(struct notifier_block *nb, unsigned long event, void *ptr)
-{
-	struct otto_l3_ctrl *ctrl = container_of(nb, struct otto_l3_ctrl, nd_nb);
-
-	if (!net_eq(dev_net(netdev_notifier_info_to_dev(ptr)), &init_net))
-		return NOTIFY_DONE;
-
-	switch (event) {
-	case NETDEV_CHANGEUPPER:
-		/* A port joins or leaves its master. One joining a bridge stops
-		 * counting before the bridge, which may take its MAC, sends its
-		 * NETDEV_CHANGEADDR: free nothing here.
-		 */
-		otto_l3_router_mac_sync(ctrl, false);
-		break;
-	case NETDEV_REGISTER:	/* it may come with the MAC of an entry */
-	case NETDEV_CHANGEADDR:
-	case NETDEV_UNREGISTER:
-		otto_l3_router_mac_sync(ctrl, true);
-		break;
-	}
-
-	return NOTIFY_DONE;
-}
-
 /* Read back an egress interface descriptor, the layout written below. */
 static void otto_l3_930x_get_egress_intf(struct otto_l3_ctrl *ctrl, int idx,
 					 struct otto_l3_intf *intf)
@@ -1268,7 +1250,7 @@ static void otto_l3_rows_stale(struct otto_l3_ctrl *ctrl, struct otto_l3_route *
 
 	ctrl->prefix_rows_stale = true;
 	dev_err(ctrl->dev,
-		"prefix route %d: row %d not moved, no route will be placed again\n",
+		"prefix route %d: row %d not moved, no prefix route will be placed again\n",
 		r->id, row);
 }
 
@@ -1469,26 +1451,78 @@ static bool otto_l3_fwd_off(struct otto_l3_ctrl *ctrl, u8 type)
 	return type == ROUTE_TYPE_IP6UC ? ctrl->v6_fwd_off : ctrl->v4_fwd_off;
 }
 
-/* The kernel looks the local table up whole before main, so a local IPv4
- * prefix shorter than a host address (AnyIP: ip route add local ... table
- * local) takes the destinations of a longer main route inside it, which the
- * switch, longest prefix first, would forward. An IPv6 local prefix is not
- * looked at.
+/* The kernel looks the local table up whole before main, so a local prefix
+ * shorter than a host address (AnyIP: ip route add local ... table local)
+ * takes the destinations of a longer main route inside it, which the switch,
+ * longest prefix first, would forward.
  */
 static bool otto_l3_local_covers(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r)
 {
 	struct otto_l3_route *q;
 
-	if (r->attr.type != ROUTE_TYPE_IP4UC || r->tb_id == RT_TABLE_LOCAL)
+	if (r->tb_id == RT_TABLE_LOCAL)
 		return false;
 
-	list_for_each_entry(q, &ctrl->routes_list, list)
-		if (q->attr.type == ROUTE_TYPE_IP4UC && q->tb_id == RT_TABLE_LOCAL &&
-		    !q->is_host_route && q->prefix_len < r->prefix_len &&
+	list_for_each_entry(q, &ctrl->routes_list, list) {
+		if (q->attr.type != r->attr.type || q->tb_id != RT_TABLE_LOCAL ||
+		    q->is_host_route || q->prefix_len >= r->prefix_len)
+			continue;
+		if (r->attr.type == ROUTE_TYPE_IP4UC &&
 		    !((q->dst_ip ^ r->dst_ip) & inet_make_mask(q->prefix_len)))
 			return true;
+		if (r->attr.type == ROUTE_TYPE_IP6UC &&
+		    ipv6_prefix_equal(&q->dst_ip6, &r->dst_ip6, q->prefix_len))
+			return true;
+	}
 
 	return false;
+}
+
+/* The hardware search keys on the masked destination, so a shorter prefix that
+ * covers the same address answers as well. The SDK reads the entry back and
+ * compares it with the route it asked for before touching it.
+ */
+static bool otto_l3_route_is_at(struct otto_l3_ctrl *ctrl, int id, struct otto_l3_route *r)
+{
+	struct otto_l3_route entry;
+
+	if (id < FIRST_PREFIX_ROW)
+		return false;
+
+	ctrl->cfg->route_read(ctrl, id, &entry);
+	/* The next hop index a row carries is the one the route wrote: its
+	 * own id once its gateway answered, and zero on a row that only
+	 * traps, which the SDK keeps for exactly that. Comparing it with the
+	 * route's own next hop tells two routes for one destination apart,
+	 * whatever their action.
+	 * It is read after the type: the reader leaves it untouched on a
+	 * multicast row, and the type comparison is what stops it being read
+	 * there.
+	 */
+	if (!entry.attr.valid || entry.attr.type != r->attr.type ||
+	    entry.prefix_len != r->prefix_len ||
+	    entry.nh.id != r->nh.id)
+		return false;
+
+	switch (r->attr.type) {
+	case ROUTE_TYPE_IP4UC:
+		return entry.dst_ip == r->dst_ip;
+	case ROUTE_TYPE_IP6UC:
+		return ipv6_addr_equal(&entry.dst_ip6, &r->dst_ip6);
+	}
+
+	return false;
+}
+
+/* Once the rows are not where the list says, the row a prefix route was given
+ * may hold another route by now. A route whose row no longer reads back as it
+ * is left as it is, so that nothing is written over the other one; a route
+ * whose row still does is updated as before, and its removal still finds it.
+ */
+static bool otto_l3_row_frozen(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r)
+{
+	return ctrl->prefix_rows_stale && !r->is_host_route && r->row >= FIRST_PREFIX_ROW &&
+	       !otto_l3_route_is_at(ctrl, r->row, r);
 }
 
 /* Writes a route to its host slot or prefix row, taking a free slot or placing
@@ -1615,6 +1649,9 @@ static void otto_l3_route_update_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_ro
 	bool no_port, trap;
 	int dmac = r->id;
 
+	if (otto_l3_row_frozen(ctrl, r))
+		return;
+
 	dev_dbg(ctrl->dev, "setting up fwding: gw %pI6c, mac %016llx\n",
 		&r->gw_ip, mac);
 
@@ -1735,7 +1772,8 @@ static void otto_l3_route_trap_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_rout
 	char dst[INET6_ADDRSTRLEN + sizeof("/128")];
 	int slot = r->row;
 
-	if (!ctrl->cfg->use_l3_tables || r->attr.action == ROUTE_ACT_TRAP2CPU)
+	if (!ctrl->cfg->use_l3_tables || r->attr.action == ROUTE_ACT_TRAP2CPU ||
+	    otto_l3_row_frozen(ctrl, r))
 		return;
 
 	/* What the route says is what the next write of it puts in hardware */
@@ -1855,43 +1893,6 @@ static int otto_l3_port_gw_resolve(struct otto_l3_ctrl *ctrl, struct net_device 
 	return err;
 }
 
-/* The hardware search keys on the masked destination, so a shorter prefix that
- * covers the same address answers as well. The SDK reads the entry back and
- * compares it with the route it asked for before touching it.
- */
-static bool otto_l3_route_is_at(struct otto_l3_ctrl *ctrl, int id, struct otto_l3_route *r)
-{
-	struct otto_l3_route entry;
-
-	if (id < FIRST_PREFIX_ROW)
-		return false;
-
-	ctrl->cfg->route_read(ctrl, id, &entry);
-	/* The next hop index a row carries is the one the route wrote: its
-	 * own id once its gateway answered, and zero on a row that only
-	 * traps, which the SDK keeps for exactly that. Comparing it with the
-	 * route's own next hop tells two routes for one destination apart,
-	 * whatever their action.
-	 * Both are read after the type: the reader leaves them untouched on a
-	 * multicast row, and the type comparison is what stops it being read
-	 * there.
-	 */
-	if (!entry.attr.valid || entry.attr.type != r->attr.type ||
-	    entry.prefix_len != r->prefix_len ||
-	    entry.attr.action != r->attr.action ||
-	    entry.nh.id != r->nh.id)
-		return false;
-
-	switch (r->attr.type) {
-	case ROUTE_TYPE_IP4UC:
-		return entry.dst_ip == r->dst_ip;
-	case ROUTE_TYPE_IP6UC:
-		return ipv6_addr_equal(&entry.dst_ip6, &r->dst_ip6);
-	}
-
-	return false;
-}
-
 static struct otto_l3_route *otto_l3_route_find(struct otto_l3_ctrl *ctrl, u32 tb_id, u8 type,
 						u32 dst_ip, const struct in6_addr *dst_ip6,
 						int prefix_len)
@@ -1926,18 +1927,148 @@ struct otto_l3_route_src {
 	unsigned int members;
 };
 
-/* Drops the route's hold on its egress interface, and frees one no route
- * holds any more by zeroing its source MAC, which is what
- * otto_l3_alloc_egress_intf() takes for a free one.
+/* Drops a hold on an egress interface, and frees one no route holds any
+ * more by zeroing its source MAC, which is what otto_l3_alloc_egress_intf()
+ * takes for a free one.
  */
-static void otto_l3_route_put_intf(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r)
+static void otto_l3_intf_put(struct otto_l3_ctrl *ctrl, int if_id)
 {
 	mutex_lock(ctrl->lock);
 
-	if (r->nh.if_id >= 0 && !--ctrl->intf_refs[r->nh.if_id])
-		ctrl->cfg->set_egress_mac(ctrl, L3_EGRESS_DMACS + r->nh.if_id, 0);
+	if (if_id >= 0 && !--ctrl->intf_refs[if_id])
+		ctrl->cfg->set_egress_mac(ctrl, L3_EGRESS_DMACS + if_id, 0);
 
 	mutex_unlock(ctrl->lock);
+}
+
+static void otto_l3_route_put_intf(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r)
+{
+	otto_l3_intf_put(ctrl, r->nh.if_id);
+}
+
+struct otto_l3_egress_work {
+	struct work_struct work;
+	struct otto_l3_ctrl *ctrl;
+	int ifindex;
+};
+
+/* Whether every hold on an egress interface is a route out of this device */
+static bool otto_l3_intf_only_dev(struct otto_l3_ctrl *ctrl, int if_id, int ifindex)
+{
+	struct otto_l3_route *r;
+	unsigned int n = 0;
+
+	list_for_each_entry(r, &ctrl->routes_list, list)
+		if (r->nh.if_id == if_id && r->gw_ifindex == ifindex)
+			n++;
+
+	return n == ctrl->intf_refs[if_id];
+}
+
+/* Routes out of a device that took a new MAC go out with that one as source:
+ * each moves to an egress interface carrying it, and the next hop it has
+ * programmed moves with it. This runs on the queue the neighbour work runs on,
+ * which writes the same next hops, and under RTNL, as the FIB work does.
+ */
+static void otto_l3_egress_sync(struct work_struct *work)
+{
+	struct otto_l3_egress_work *ew = container_of(work, struct otto_l3_egress_work, work);
+	struct otto_l3_ctrl *ctrl = ew->ctrl;
+	struct otto_l3_route *r;
+	struct net_device *dev;
+	bool kept = false;
+	int if_id, old;
+	u64 mac;
+
+	rtnl_lock();
+
+	/* A source MAC of zero is how a free interface is told apart */
+	dev = __dev_get_by_index(&init_net, ew->ifindex);
+	if (!dev || !is_valid_ether_addr(dev->dev_addr))
+		goto out;
+
+	mac = ether_addr_to_u64(dev->dev_addr);
+
+	list_for_each_entry(r, &ctrl->routes_list, list) {
+		if (r->gw_ifindex != dev->ifindex || r->nh.if_id < 0)
+			continue;
+
+		old = r->nh.if_id;
+		if (ctrl->cfg->get_egress_mac(ctrl, L3_EGRESS_DMACS + old) == mac)
+			continue;
+
+		/* An interface that only routes out of this device takes the
+		 * new MAC where it is, which needs no free one
+		 */
+		if (otto_l3_intf_only_dev(ctrl, old, dev->ifindex)) {
+			mutex_lock(ctrl->lock);
+			ctrl->cfg->set_egress_mac(ctrl, L3_EGRESS_DMACS + old, mac);
+			mutex_unlock(ctrl->lock);
+			continue;
+		}
+
+		if_id = otto_l3_alloc_egress_intf(ctrl, mac, r->nh.rvid);
+		if (if_id < 0) {
+			kept = true;
+			continue;
+		}
+
+		r->nh.if_id = if_id;
+		if (if_id != old && r->nh.gw && ctrl->cfg->set_nexthop)
+			ctrl->cfg->set_nexthop(ctrl, r->nh.id, r->nh.l2_id, r->nh.if_id);
+		otto_l3_intf_put(ctrl, old);
+	}
+
+	if (kept)
+		dev_err(ctrl->dev, "routes out of %s keep their old source MAC\n", dev->name);
+
+out:
+	rtnl_unlock();
+	kfree(ew);
+}
+
+static void otto_l3_egress_sync_request(struct otto_l3_ctrl *ctrl, struct net_device *dev)
+{
+	struct otto_l3_egress_work *ew;
+
+	ew = kzalloc(sizeof(*ew), GFP_KERNEL);
+	if (!ew) {
+		dev_err(ctrl->dev, "routes out of %s keep their old source MAC\n", dev->name);
+		return;
+	}
+
+	INIT_WORK(&ew->work, otto_l3_egress_sync);
+	ew->ctrl = ctrl;
+	ew->ifindex = dev->ifindex;
+	queue_work(ctrl->priv->wq, &ew->work);
+}
+
+static int otto_l3_netdev_notifier(struct notifier_block *nb, unsigned long event, void *ptr)
+{
+	struct otto_l3_ctrl *ctrl = container_of(nb, struct otto_l3_ctrl, nd_nb);
+
+	if (!net_eq(dev_net(netdev_notifier_info_to_dev(ptr)), &init_net))
+		return NOTIFY_DONE;
+
+	switch (event) {
+	case NETDEV_CHANGEUPPER:
+		/* A port joins or leaves its master. One joining a bridge stops
+		 * counting before the bridge, which may take its MAC, sends its
+		 * NETDEV_CHANGEADDR: free nothing here.
+		 */
+		otto_l3_router_mac_sync(ctrl, false);
+		break;
+	case NETDEV_CHANGEADDR:
+		otto_l3_router_mac_sync(ctrl, true);
+		otto_l3_egress_sync_request(ctrl, netdev_notifier_info_to_dev(ptr));
+		break;
+	case NETDEV_REGISTER:	/* it may come with the MAC of an entry */
+	case NETDEV_UNREGISTER:
+		otto_l3_router_mac_sync(ctrl, true);
+		break;
+	}
+
+	return NOTIFY_DONE;
 }
 
 static void otto_l3_route_free(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r)
@@ -2010,7 +2141,7 @@ static void otto_l3_route_remove(struct otto_l3_ctrl *ctrl, struct otto_l3_route
 				 */
 				ctrl->prefix_rows_stale = true;
 				dev_err(ctrl->dev,
-					"prefix route %s: hardware lookup timed out, no route will be placed again\n",
+					"prefix route %s: hardware lookup timed out, no prefix route will be placed again\n",
 					otto_l3_route_dst(r, dst, sizeof(dst)));
 			} else {
 				dev_err(ctrl->dev, "prefix route %s was not in hardware\n",
@@ -2961,19 +3092,31 @@ static bool otto_l3_rules_allow(int family)
 	return main_seen;
 }
 
-/* A main IPv4 route inside the local prefix @info names */
-static bool otto_l3_route_inside(struct otto_l3_route *r, struct fib_entry_notifier_info *info)
+/* A main route inside the local prefix @info names */
+static bool otto_l3_route_inside(struct otto_l3_route *r, struct fib_notifier_info *info)
 {
-	return r->attr.type == ROUTE_TYPE_IP4UC && r->tb_id != RT_TABLE_LOCAL &&
-	       r->prefix_len > info->dst_len &&
-	       !((r->dst_ip ^ info->dst) & inet_make_mask(info->dst_len));
+	struct fib_entry_notifier_info *fen;
+	struct fib6_info *rt;
+
+	if (r->tb_id == RT_TABLE_LOCAL)
+		return false;
+
+	if (info->family == AF_INET) {
+		fen = container_of(info, struct fib_entry_notifier_info, info);
+		return r->attr.type == ROUTE_TYPE_IP4UC && r->prefix_len > fen->dst_len &&
+		       !((r->dst_ip ^ fen->dst) & inet_make_mask(fen->dst_len));
+	}
+
+	rt = container_of(info, struct fib6_entry_notifier_info, info)->rt;
+	return r->attr.type == ROUTE_TYPE_IP6UC && r->prefix_len > rt->fib6_dst.plen &&
+	       ipv6_prefix_equal(&r->dst_ip6, &rt->fib6_dst.addr, rt->fib6_dst.plen);
 }
 
 /* One resolve brings back every route through a gateway. With @info, only the
  * routes inside that local prefix are looked at.
  */
 static bool otto_l3_gw_seen(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r,
-			    struct fib_entry_notifier_info *info)
+			    struct fib_notifier_info *info)
 {
 	struct otto_l3_route *q;
 
@@ -3016,7 +3159,7 @@ static void otto_l3_rules_check(struct otto_l3_ctrl *ctrl, int family)
 			continue;
 
 		if (*off) {
-			if (r->attr.action != ROUTE_ACT_FORWARD)
+			if (r->attr.action != ROUTE_ACT_FORWARD || otto_l3_row_frozen(ctrl, r))
 				continue;
 			r->attr.action = ROUTE_ACT_TRAP2CPU;
 			r->attr.ttl_dec = false;
@@ -3044,23 +3187,41 @@ static void otto_l3_rules_check(struct otto_l3_ctrl *ctrl, int family)
  * it forwards, the way the policy rules bring a route back: through its
  * gateway, if it still answers.
  */
-static void otto_l3_local_prefix_check(struct otto_l3_ctrl *ctrl,
-				       struct fib_entry_notifier_info *info)
+static void otto_l3_local_prefix_check(struct otto_l3_ctrl *ctrl, struct fib_notifier_info *info)
 {
+	struct neigh_table *tbl = &arp_tbl;
+	struct fib_entry_notifier_info *fen;
 	struct otto_l3_route *r;
 	struct net_device *dev;
+	struct fib6_info *rt;
+	int len, host = 32;
+	u32 tb_id;
 
-	if (info->tb_id != RT_TABLE_LOCAL || !info->dst_len || info->dst_len >= 32 ||
-	    !ctrl->cfg->use_l3_tables)
+	if (info->family == AF_INET) {
+		fen = container_of(info, struct fib_entry_notifier_info, info);
+		tb_id = fen->tb_id;
+		len = fen->dst_len;
+	} else {
+		if (!IS_REACHABLE(CONFIG_IPV6))
+			return;
+		rt = container_of(info, struct fib6_entry_notifier_info, info)->rt;
+		tb_id = rt->fib6_table->tb6_id;
+		len = rt->fib6_dst.plen;
+		host = 128;
+		tbl = &nd_tbl;
+	}
+
+	if (tb_id != RT_TABLE_LOCAL || len >= host || !ctrl->cfg->use_l3_tables)
 		return;
 
 	list_for_each_entry(r, &ctrl->routes_list, list) {
-		if (!otto_l3_route_inside(r, info) || !r->gw_ip.s6_addr32[3] ||
+		if (!otto_l3_route_inside(r, info) || ipv6_addr_any(&r->gw_ip) ||
+		    (r->attr.type == ROUTE_TYPE_IP4UC && !r->gw_ip.s6_addr32[3]) ||
 		    otto_l3_gw_seen(ctrl, r, info))
 			continue;
 		dev = __dev_get_by_index(&init_net, r->gw_ifindex);
 		if (dev)
-			otto_l3_port_gw_resolve(ctrl, dev, &arp_tbl, &r->gw_ip);
+			otto_l3_port_gw_resolve(ctrl, dev, tbl, &r->gw_ip);
 	}
 }
 
@@ -3083,7 +3244,7 @@ static void otto_l3_fib_event_work_do(struct work_struct *work)
 		if (err)
 			dev_err(ctrl->dev, "fib_add() failed\n");
 
-		otto_l3_local_prefix_check(ctrl, &fib_work->fen_info);
+		otto_l3_local_prefix_check(ctrl, &fib_work->fen_info.info);
 		fib_info_put(fib_work->fen_info.fi);
 		break;
 	case FIB_EVENT_ENTRY_DEL:
@@ -3091,7 +3252,7 @@ static void otto_l3_fib_event_work_do(struct work_struct *work)
 		if (err)
 			dev_err(ctrl->dev, "fib_del() failed\n");
 
-		otto_l3_local_prefix_check(ctrl, &fib_work->fen_info);
+		otto_l3_local_prefix_check(ctrl, &fib_work->fen_info.info);
 		fib_info_put(fib_work->fen_info.fi);
 		break;
 	case FIB_EVENT_RULE_ADD:
@@ -3121,9 +3282,11 @@ static void otto_l3_fib6_event_work_do(struct work_struct *work)
 	case FIB_EVENT_ENTRY_REPLACE:
 	case FIB_EVENT_ENTRY_APPEND:
 		err = otto_l3_fib_add_v6(ctrl, &fib_work->fen6_info, fib_work->members);
+		otto_l3_local_prefix_check(ctrl, &fib_work->fen6_info.info);
 		break;
 	case FIB_EVENT_ENTRY_DEL:
 		err = otto_l3_fib_del_v6(ctrl, &fib_work->fen6_info, fib_work->members);
+		otto_l3_local_prefix_check(ctrl, &fib_work->fen6_info.info);
 		break;
 	}
 	if (err)
@@ -3798,7 +3961,74 @@ static const struct file_operations otto_l3_930x_clear_hit_fops = {
 	.write = otto_l3_930x_clear_hit_write,
 };
 
-static void otto_l3_930x_dbgfs_remove(void *data)
+/* An RTL839x routes through PIE rules: each one matches a destination prefix
+ * and forwards to the L2 entry of its gateway, and that entry names the
+ * ROUTING table row holding the gateway MAC.
+ */
+static int otto_l3_839x_route_show(struct seq_file *m, void *v)
+{
+	struct otto_l3_ctrl *ctrl = m->private;
+	struct rtl838x_switch_priv *priv = ctrl->priv;
+	int rows = priv->r->n_pie_blocks * PIE_BLOCK_SIZE;
+
+	seq_puts(m,
+		 " PIE DESTINATION        L2_IDX V NH PORT MAC               RVID ROUTE GATEWAY           MAC_ID  PACKETS\n");
+
+	for (int idx = 0; idx < rows; idx++) {
+		char dst[sizeof("255.255.255.255/32")];
+		struct rtl838x_l2_entry e = {};
+		struct otto_l3_route rt = {};
+		struct pie_rule pr;
+		u8 gw[ETH_ALEN];
+
+		if (!(idx % 64))
+			cond_resched();
+
+		priv->r->pie_rule_read(priv, idx, &pr);
+		if (!pr.valid || !pr.fwd_sel || pr.fwd_act != PIE_ACT_ROUTE_UC)
+			continue;
+
+		snprintf(dst, sizeof(dst), "%pI4/%d", &pr.dip, inet_mask_len(pr.dip_m));
+		seq_printf(m, "%4d %-18s %6d", idx, dst, pr.fwd_data);
+
+		priv->r->read_l2_entry_using_hash(pr.fwd_data >> 2, pr.fwd_data & 0x3, &e);
+		if (!e.valid) {
+			seq_puts(m, " 0  -    -                 -    -     -                 -      -");
+		} else {
+			seq_printf(m, " %d %2d %4d %pM %4d", e.valid, e.next_hop, e.port, e.mac, e.rvid);
+
+			if (e.next_hop) {
+				ctrl->cfg->route_read(ctrl, e.nh_route_id, &rt);
+				u64_to_ether_addr(rt.nh.gw, gw);
+				seq_printf(m, " %5d %pM %6d", e.nh_route_id, gw, rt.switch_mac_id);
+			} else {
+				seq_puts(m, "     -                 -      -");
+			}
+		}
+
+		if (pr.log_sel)
+			seq_printf(m, " %8u\n", priv->r->packet_cntr_read(priv, pr.log_data));
+		else
+			seq_puts(m, "        -\n");
+	}
+
+	return 0;
+}
+
+static int otto_l3_839x_route_open(struct inode *inode, struct file *filp)
+{
+	return single_open(filp, otto_l3_839x_route_show, inode->i_private);
+}
+
+static const struct file_operations otto_l3_839x_route_fops = {
+	.owner   = THIS_MODULE,
+	.open    = otto_l3_839x_route_open,
+	.read    = seq_read,
+	.llseek  = seq_lseek,
+	.release = single_release,
+};
+
+static void otto_l3_dbgfs_remove(void *data)
 {
 	debugfs_remove_recursive(data);
 }
@@ -3806,12 +4036,12 @@ static void otto_l3_930x_dbgfs_remove(void *data)
 #define OTTO_L3_DBG_ROOT_DIR	"realtek_otto_l3"
 
 /* A debugfs tree of its own rather than a subtree of the "rtl838x" directory
- * debugfs.c creates: otto_l3_probe() runs before rtl930x_dbgfs_init(), so
- * priv->dbgfs_dir does not exist yet at this point. A second RTL9300 in one
+ * debugfs.c creates: otto_l3_probe() runs before the init there, so
+ * priv->dbgfs_dir does not exist yet at this point. A second switch in one
  * system would find the name taken and log the warning below rather than
  * share the tree, since the directory is tied to @dev's devm lifetime.
  */
-static void otto_l3_930x_dbgfs_init(struct otto_l3_ctrl *ctrl)
+static struct dentry *otto_l3_dbgfs_root(struct otto_l3_ctrl *ctrl)
 {
 	struct device *dev = ctrl->dev;
 	struct dentry *root;
@@ -3822,10 +4052,28 @@ static void otto_l3_930x_dbgfs_init(struct otto_l3_ctrl *ctrl)
 		if (PTR_ERR(root) != -ENODEV)
 			dev_warn(dev, "could not create %s debugfs directory\n",
 				 OTTO_L3_DBG_ROOT_DIR);
-		return;
+		return NULL;
 	}
 
-	if (devm_add_action_or_reset(dev, otto_l3_930x_dbgfs_remove, root))
+	if (devm_add_action_or_reset(dev, otto_l3_dbgfs_remove, root))
+		return NULL;
+
+	return root;
+}
+
+static void otto_l3_839x_dbgfs_init(struct otto_l3_ctrl *ctrl)
+{
+	struct dentry *root = otto_l3_dbgfs_root(ctrl);
+
+	if (root)
+		debugfs_create_file("routes", 0400, root, ctrl, &otto_l3_839x_route_fops);
+}
+
+static void otto_l3_930x_dbgfs_init(struct otto_l3_ctrl *ctrl)
+{
+	struct dentry *root = otto_l3_dbgfs_root(ctrl);
+
+	if (!root)
 		return;
 
 	debugfs_create_file("routes", 0400, root, ctrl, &otto_l3_930x_route_fops);
@@ -3842,6 +4090,7 @@ const struct otto_l3_config otto_l3_839x_cfg = {
 	.route_read = otto_l3_839x_route_read,
 	.route_write = otto_l3_839x_route_write,
 	.setup = otto_l3_839x_setup,
+	.dbgfs_init = otto_l3_839x_dbgfs_init,
 };
 
 const struct otto_l3_config otto_l3_930x_cfg = {

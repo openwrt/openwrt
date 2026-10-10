@@ -55,15 +55,11 @@ qca_uniphy_clk_recalc_rate(struct clk_hw *hw, unsigned long parent_rate)
 	 * PHY mode.
 	 */
 	regmap_read(uniphy->regmap, UNIPHY_MODE_CTRL, &val);
-	if (val & UNIPHY_SGMII_MODE ||
-	    val & UNIPHY_CH0_PSGMII_QSGMII ||
-	    val & UNIPHY_CH0_QSGMII_SGMII)
-		return 125000000;
-	else if (val & UNIPHY_SGPLUS_MODE ||
-		 val & UNIPHY_XPCS_MODE)
+	if (val & UNIPHY_SGPLUS_MODE ||
+	    val & UNIPHY_XPCS_MODE)
 		return 312500000;
 
-	return 0;
+	return 125000000;
 }
 
 static const struct clk_ops qca_uniphy_clk_ops = {
@@ -462,6 +458,17 @@ static bool uniphy_ch_forced(struct phylink_pcs *pcs, unsigned int neg_mode)
 	       !phylink_expects_phy(pcs->phylink);
 }
 
+/* The PSGMII instance, the only one with a clock pair per channel, runs
+ * SGMII on channel 0 with every mode select bit clear.
+ */
+static u32 uniphy_sgmii_mode(struct qca_uniphy *uniphy)
+{
+	if (uniphy->num_clks == 2 + 2 * QCA_UNIPHY_CHANNELS)
+		return 0;
+
+	return UNIPHY_SGMII_MODE;
+}
+
 static int qca_uniphy_pcs_config_mode(struct phylink_pcs *pcs,
 				      unsigned int neg_mode,
 				      phy_interface_t interface,
@@ -484,11 +491,11 @@ static int qca_uniphy_pcs_config_mode(struct phylink_pcs *pcs,
 	switch (interface) {
 	case PHY_INTERFACE_MODE_1000BASEX:
 		misc2_phy_mode = UNIPHY_MISC2_SGMII;
-		mode_ctrl = UNIPHY_SGMII_MODE;
+		mode_ctrl = uniphy_sgmii_mode(uniphy);
 		break;
 	case PHY_INTERFACE_MODE_SGMII:
 		misc2_phy_mode = UNIPHY_MISC2_SGMII;
-		mode_ctrl = UNIPHY_SGMII_MODE;
+		mode_ctrl = uniphy_sgmii_mode(uniphy);
 		mode_ctrl |= FIELD_PREP(UNIPHY_CH0_MODE_CTRL_25M, UNIPHY_CH0_MODE_MAC);
 		mode_ctrl |= UNIPHY_AUTONEG_MODE_ATH;
 		break;

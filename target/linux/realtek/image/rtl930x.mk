@@ -198,6 +198,23 @@ define Device/keeplink_kp-9000-8xm
 endef
 TARGET_DEVICES += keeplink_kp-9000-8xm
 
+define Device/lianguo_lg-swtgw3c8f
+  SOC := rtl9303
+  UIMAGE_MAGIC := 0x83800000
+  DEVICE_VENDOR := Lianguo
+  DEVICE_MODEL := LG-SWTGW3C8F
+  IMAGE_SIZE := 12288k
+  $(Device/kernel-lzma)
+  IMAGES += factory.bix
+  IMAGE/factory.bix := \
+	append-kernel | \
+	pad-to 64k | \
+	append-rootfs | \
+	pad-rootfs | \
+	check-size
+endef
+TARGET_DEVICES += lianguo_lg-swtgw3c8f
+
 define Device/mokerlink_2g080gm
   SOC := rtl9303
   UIMAGE_MAGIC := 0x83800000

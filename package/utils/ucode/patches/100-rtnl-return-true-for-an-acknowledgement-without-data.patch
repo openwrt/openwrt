@@ -1,0 +1,64 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Wed, 30 Sep 2026 18:08:32 +0200
+Subject: [PATCH] rtnl: return true for an acknowledgement without data
+
+request() treats an ACK as the end of a reply and returns the collected
+data. For a command that the kernel answers with a bare ACK, such as
+RTM_SETLINK, that data is null, so a caller that tests the result for
+truth sees a failure.
+
+Return true if an ACK ends a request without reply data. A dump that
+ends without entries still returns null, and a refused request still
+returns false.
+
+Document these results in the description of request().
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/lib/rtnl.c
++++ b/lib/rtnl.c
+@@ -3350,6 +3350,19 @@ cb_done(struct nl_msg *msg, void *arg)
+ }
+ 
+ static int
++cb_done_ack(struct nl_msg *msg, void *arg)
++{
++	request_state_t *s = arg;
++
++	if (s->state == STATE_UNREPLIED)
++		s->res = ucv_boolean_new(true);
++
++	s->state = STATE_REPLIED;
++
++	return NL_STOP;
++}
++
++static int
+ cb_error(struct sockaddr_nl *nla, struct nlmsgerr *err, void *arg)
+ {
+ 	request_state_t *s = arg;
+@@ -3433,7 +3446,13 @@ static const struct {
+  * @param {number} flags - The netlink flags for the request
+  * @param {*} payload - The payload data for the request
+  *
+- * @returns {?*} - The response data or null on error
++ * @returns {?(Object|Object[]|boolean)} - The response data, true for a
++ *                                         successful acknowledgement without
++ *                                         data, false when the kernel refuses
++ *                                         the request or the reply cannot be
++ *                                         received, or null for a dump
++ *                                         without entries and when the
++ *                                         request cannot be sent
+  *
+  * @example
+  * // Send a route request
+@@ -3532,7 +3551,7 @@ uc_nl_request(uc_vm_t *vm, size_t nargs)
+ 
+ 	nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, cb_reply, &st);
+ 	nl_cb_set(cb, NL_CB_FINISH, NL_CB_CUSTOM, cb_done, &st);
+-	nl_cb_set(cb, NL_CB_ACK, NL_CB_CUSTOM, cb_done, &st);
++	nl_cb_set(cb, NL_CB_ACK, NL_CB_CUSTOM, cb_done_ack, &st);
+ 	nl_cb_err(cb, NL_CB_CUSTOM, cb_error, &st);
+ 
+ 	nl_send_auto_complete(sock, msg);
