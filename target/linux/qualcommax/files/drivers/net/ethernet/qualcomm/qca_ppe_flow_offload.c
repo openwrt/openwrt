@@ -17,6 +17,8 @@
  */
 
 #include <linux/bitfield.h>
+#include <linux/dsa/8021q.h>
+#include <linux/if_bridge.h>
 #include <linux/if_pppox.h>
 #include <linux/if_vlan.h>
 #include <linux/netdevice.h>
@@ -73,6 +75,8 @@ struct ppe_flow_entry {
 	int pub_ip;
 	int uplink;
 	int in_uplink;
+	int icasc;
+	int ocasc;
 	int session;
 	u8 iport;
 	u8 oport;
@@ -341,13 +345,66 @@ static int ppe_flow_mangle_ipv4(const struct flow_action_entry *act,
 	return 0;
 }
 
-static int ppe_flow_port_by_ifindex(struct qca_ppe_priv *priv, int ifindex)
+/* A port of a switch stacked behind one of ours on the qca-8021q tag reaches
+ * it as an 802.1Q VLAN, so its flows are flows of our port in that VLAN: the
+ * port's own, that of the VLAN-unaware bridge it forwards in, or in a
+ * VLAN-aware bridge the flow's bridge VLAN, which is the tag the flow carries
+ * or, untagged, the port's PVID. The bridge is read as the tagger reads it on
+ * transmit. A flow tag on top of the port's own VLAN would be a second tag.
+ */
+static u16 ppe_flow_8021q_vid(struct dsa_port *dp, u16 flow_vid)
 {
-	struct dsa_port *dp;
+	struct net_device *br = dsa_port_bridge_dev_get(dp);
+	struct bridge_vlan_info vinfo;
+	u16 pvid;
 
-	dsa_switch_for_each_user_port(dp, &priv->ds)
-		if (dp->user && dp->user->ifindex == ifindex)
+	if (!br || !br_vlan_enabled(br)) {
+		if (flow_vid)
+			return 0;
+		if (!br)
+			return dsa_tag_8021q_standalone_vid(dp);
+		return dsa_tag_8021q_bridge_vid(dsa_port_bridge_num_get(dp));
+	}
+	if (flow_vid)
+		return flow_vid;
+
+	guard(rcu)();
+	if (br_vlan_get_pvid_rcu(dp->user, &pvid) || !pvid ||
+	    br_vlan_get_info_rcu(dp->user, pvid, &vinfo) ||
+	    !(vinfo.flags & BRIDGE_VLAN_INFO_UNTAGGED))
+		return 0;
+
+	return pvid;
+}
+
+static int ppe_flow_port_by_ifindex(struct qca_ppe_priv *priv, int ifindex,
+				    u16 flow_vid, u16 *vid)
+{
+	struct dsa_port *dp, *cpu_dp, *cdp;
+
+	*vid = 0;
+
+	dsa_switch_for_each_user_port(dp, &priv->ds) {
+		if (!dp->user)
+			continue;
+		if (dp->user->ifindex == ifindex)
 			return dp->index;
+		if (!netdev_uses_dsa(dp->user))
+			continue;
+
+		cpu_dp = dp->user->dsa_ptr;
+		if (cpu_dp->tag_ops->proto != DSA_TAG_PROTO_QCA_8021Q)
+			continue;
+
+		dsa_tree_for_each_user_port(cdp, cpu_dp->dst) {
+			if (cdp->cpu_dp != cpu_dp || !cdp->user ||
+			    cdp->user->ifindex != ifindex)
+				continue;
+
+			*vid = ppe_flow_8021q_vid(cdp, flow_vid);
+			return *vid ? dp->index : -EOPNOTSUPP;
+		}
+	}
 
 	return -EOPNOTSUPP;
 }
@@ -793,11 +850,23 @@ static int ppe_flow_netdev_event(struct notifier_block *nb, unsigned long event,
 	struct dsa_port *dp;
 	int i;
 
-	if (event != NETDEV_CHANGEMTU && event != NETDEV_CHANGEADDR)
+	if (event != NETDEV_CHANGEMTU && event != NETDEV_CHANGEADDR &&
+	    event != NETDEV_CHANGEUPPER)
 		return NOTIFY_DONE;
 
 	guard(mutex)(&priv->flow_lock);
 	guard(mutex)(&priv->vlan_lock);
+
+	/* A stacked switch's port that changes its size, its address or its
+	 * bridge, and with the bridge its VLAN, invalidates its flows.
+	 */
+	list_for_each_entry_safe(entry, tmp, &priv->flow_list, list)
+		if (entry->icasc == dev->ifindex ||
+		    entry->ocasc == dev->ifindex)
+			ppe_flow_drop(priv, entry);
+
+	if (event == NETDEV_CHANGEUPPER)
+		return NOTIFY_DONE;
 
 	/* Reached through the netdev itself rather than by walking the switch:
 	 * this notifier is live before the switch is registered, and every
@@ -901,14 +970,21 @@ static int ppe_flow_alloc_egress(struct qca_ppe_priv *priv,
 				 struct ppe_flow_entry *entry)
 {
 	u32 words[PPE_NEXTHOP_WORDS] = {};
-	struct dsa_port *odp;
 	u32 eg_mtu;
 	u64 mac;
 	int port, ret;
+	u16 vid;
 
-	port = ppe_flow_port_by_ifindex(priv, data->odev->ifindex);
+	port = ppe_flow_port_by_ifindex(priv, data->odev->ifindex,
+					data->vlan_valid ? data->vlan_id : 0,
+					&vid);
 	if (port < 0)
 		return port;
+	if (vid) {
+		data->vlan_id = vid;
+		data->vlan_valid = true;
+		entry->ocasc = data->odev->ifindex;
+	}
 
 	/* A frame sent back out the port it arrived on is discarded by source
 	 * port filtering, so offloading it would black-hole what the CPU would
@@ -934,13 +1010,14 @@ static int ppe_flow_alloc_egress(struct qca_ppe_priv *priv,
 	}
 	/* The size a routed frame leaves at, which the hardware compares before
 	 * it egresses and sends the frame to the CPU when it does not fit. The
-	 * port's mtu carries one mac header and the vlan tag the nexthop pushes;
-	 * a pppoe session header rides inside that mtu rather than on top of it.
+	 * device's mtu carries one mac header and the vlan tag the nexthop
+	 * pushes; a pppoe session header rides inside that mtu rather than on
+	 * top of it.
 	 * It joins the key because two interfaces sharing a source address need
 	 * separate entries when they do not share a size.
 	 */
-	odp = dsa_to_port(&priv->ds, port);
-	eg_mtu = odp->user->mtu + ETH_HLEN + (data->vlan_valid ? VLAN_HLEN : 0);
+	eg_mtu = data->odev->mtu + ETH_HLEN +
+		 (data->vlan_valid ? VLAN_HLEN : 0);
 	words[PPE_EG_L3_IF_WORDS] = eg_mtu;
 
 	/* An L3 interface is one index with an ingress half and an egress half.
@@ -1015,7 +1092,7 @@ static int ppe_flow_alloc_egress(struct qca_ppe_priv *priv,
 	    (data->vlan_valid && !priv->port_br_dev[port])) {
 		ret = ppe_uplink_get(priv, port,
 				     data->vlan_valid ? data->vlan_id : 0,
-				     odp->user->dev_addr, odp->user->mtu);
+				     data->eth.h_source, data->odev->mtu);
 		if (ret < 0)
 			goto err_nexthop;
 		entry->uplink = ret;
@@ -1118,9 +1195,20 @@ static void ppe_flow_dev_add(struct net_device *dev, bool rx, u32 pkts,
 }
 
 static void ppe_flow_account_side(struct qca_ppe_priv *priv, int port,
-				  u16 vid, bool rx, u32 pkts, u64 bytes)
+				  u16 vid, int casc, bool rx, u32 pkts,
+				  u64 bytes)
 {
 	struct net_device *dev = priv->port_br_dev[port];
+
+	/* A stacked switch's port counts its own frames, its bridge does not */
+	if (casc) {
+		dev = dsa_to_port(&priv->ds, port)->user;
+		dev = dev_get_by_index_rcu(dev_net(dev), casc);
+		dev = dev ? netdev_master_upper_dev_get_rcu(dev) : NULL;
+		if (dev && netif_is_bridge_master(dev))
+			ppe_flow_dev_add(dev, rx, pkts, bytes);
+		return;
+	}
 
 	if (dev)
 		ppe_flow_dev_add(dev, rx, pkts, bytes);
@@ -1158,10 +1246,10 @@ static void ppe_flow_account(struct qca_ppe_priv *priv,
 	entry->unread_bytes += bytes;
 
 	rcu_read_lock();
-	ppe_flow_account_side(priv, entry->iport, entry->ivid, true, pkts,
-			      bytes);
-	ppe_flow_account_side(priv, entry->oport, entry->ovid, false, pkts,
-			      bytes);
+	ppe_flow_account_side(priv, entry->iport, entry->ivid, entry->icasc,
+			      true, pkts, bytes);
+	ppe_flow_account_side(priv, entry->oport, entry->ovid, entry->ocasc,
+			      false, pkts, bytes);
 	rcu_read_unlock();
 }
 
@@ -1283,7 +1371,8 @@ static int ppe_flow_offload_replace(struct ppe_flow_block *fb,
 	struct ppe_flow_data data = {};
 	struct flow_action_entry *act;
 	bool snat, dnat, v6;
-	int i, ret, nfw, nhw, iport;
+	int i, ret, nfw, nhw, iport, icasc;
+	u16 kvid = 0;
 
 	guard(mutex)(&priv->flow_lock);
 	guard(mutex)(&priv->vlan_lock);
@@ -1313,21 +1402,6 @@ static int ppe_flow_offload_replace(struct ppe_flow_block *fb,
 	    !flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_BASIC))
 		return ppe_flow_reject(priv, PPE_REJECT_KEY);
 
-	{
-		struct flow_match_meta match;
-
-		flow_rule_match_meta(rule, &match);
-		/* Compare against our own ports rather than looking the index
-		 * up, which keeps this correct without knowing the namespace
-		 * the flowtable belongs to. A flow that did not arrive on a
-		 * switch port, Wi-Fi included, has no source port to match.
-		 */
-		iport = ppe_flow_port_by_ifindex(priv,
-						 match.key->ingress_ifindex);
-		if (iport < 0)
-			return ppe_flow_reject(priv, PPE_REJECT_INGRESS_PORT);
-	}
-
 	/* An ingress tag is matched by the VSI it is classified into - the
 	 * uplink's tag on a PPPoE port, a bridge VLAN the port is a member
 	 * of - never by the tag itself, which the hardware key cannot hold.
@@ -1342,7 +1416,26 @@ static int ppe_flow_offload_replace(struct ppe_flow_block *fb,
 		flow_rule_match_vlan(rule, &match);
 		if (match.key->vlan_tpid != htons(ETH_P_8021Q))
 			return ppe_flow_reject(priv, PPE_REJECT_INGRESS_VLAN);
-		data.ivid = match.key->vlan_id;
+		kvid = match.key->vlan_id;
+	}
+
+	{
+		struct flow_match_meta match;
+
+		flow_rule_match_meta(rule, &match);
+		/* Compare against our own ports rather than looking the index
+		 * up, which keeps this correct without knowing the namespace
+		 * the flowtable belongs to. A flow that did not arrive on a
+		 * switch port, Wi-Fi included, has no source port to match.
+		 */
+		iport = ppe_flow_port_by_ifindex(priv,
+						 match.key->ingress_ifindex,
+						 kvid, &data.ivid);
+		if (iport < 0)
+			return ppe_flow_reject(priv, PPE_REJECT_INGRESS_PORT);
+		icasc = data.ivid ? match.key->ingress_ifindex : 0;
+		if (!icasc)
+			data.ivid = kvid;
 	}
 
 	{
@@ -1517,6 +1610,7 @@ static int ppe_flow_offload_replace(struct ppe_flow_block *fb,
 	entry->in_uplink = -1;
 	entry->session = -1;
 	entry->iport = iport;
+	entry->icasc = icasc;
 
 	ret = ppe_flow_alloc_ingress(priv, iport, data.ivid, entry);
 	if (ret) {
