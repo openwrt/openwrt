@@ -7,7 +7,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=i386
 BOARD:=x86
 BOARDNAME:=x86
-FEATURES:=squashfs ext4 vdi vmdk vhdx pcmcia targz fpu boot-part rootfs-part
+FEATURES:=squashfs ext4 legacy-sdcard vdi vmdk vhdx pcmcia targz fpu boot-part rootfs-part
 SUBTARGETS:=generic legacy geode 64
 
 KERNEL_PATCHVER:=6.18
@@ -17,7 +17,7 @@ KERNELNAME:=bzImage
 include $(INCLUDE_DIR)/target.mk
 
 DEFAULT_PACKAGES += \
-	partx-utils mkf2fs \
+	mkf2fs \
 	e2fsprogs kmod-button-hotplug \
 	grub2-bios-setup
 DEFAULT_PACKAGES += video-support
