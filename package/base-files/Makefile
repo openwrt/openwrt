@@ -229,6 +229,8 @@ ifneq ($(CONFIG_TARGET_ROOTFS_PERSIST_VAR),y)
 else
 	mkdir -p $(1)/var
 	$(LN) /tmp/run $(1)/var/run
+	$(LN) ../tmp/lock $(1)/var/lock
+	mkdir -p $(1)/tmp/lock
 endif
 	$(LN) /tmp/resolv.conf /tmp/TZ /tmp/localtime $(1)/etc/
 	$(LN) /tmp/sysinfo/board.json $(1)/etc/board.json
