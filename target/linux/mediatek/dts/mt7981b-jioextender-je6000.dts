@@ -1,0 +1,26 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+
+/dts-v1/;
+
+#include "mt7981b-jio-common.dtsi"
+
+/ {
+	model = "JioExtender JE6000";
+	compatible = "jioextender,je6000", "mediatek,mt7981";
+
+	aliases {
+		label-mac-device = &gmac1;
+	};
+};
+
+&eth {
+	gmac1: mac@1 {
+		compatible = "mediatek,eth-mac";
+		reg = <1>;
+		phy-mode = "gmii";
+		phy-handle = <&int_gbe_phy>;
+
+		nvmem-cells = <&mfg_mac 0>;
+		nvmem-cell-names = "mac-address";
+	};
+};
