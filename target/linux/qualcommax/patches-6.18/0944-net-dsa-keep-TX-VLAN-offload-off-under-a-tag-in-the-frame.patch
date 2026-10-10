@@ -1,0 +1,30 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Subject: [PATCH] net: dsa: keep TX VLAN offload off under a tag in the frame
+
+A user port takes its features from the conduit's vlan_features. When
+those carry NETIF_F_HW_VLAN_CTAG_TX, a switch whose tagger writes into
+the frame gets its VLAN tag inserted by the conduit in front of the
+switch tag, where the switch does not parse it. This happens to a switch
+stacked behind a port of another switch whose conduit inserts VLAN tags.
+
+Clear the VLAN TX features on such a port, so the stack pushes the tag
+before the tagger runs.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+--- a/net/dsa/user.c
++++ b/net/dsa/user.c
+@@ -2860,6 +2860,13 @@ void dsa_user_setup_tagger(struct net_de
+ 	user->hw_features |= NETIF_F_HW_TC;
+ 	if (user->needed_tailroom)
+ 		user->features &= ~(NETIF_F_SG | NETIF_F_FRAGLIST);
++	/* A tag the conduit inserts would land in front of the one written
++	 * into the frame, so the VLAN tag is pushed before it.
++	 */
++	if (cpu_dp->tag_ops->needed_headroom ||
++	    cpu_dp->tag_ops->needed_tailroom)
++		user->features &= ~(NETIF_F_HW_VLAN_CTAG_TX |
++				    NETIF_F_HW_VLAN_STAG_TX);
+ 	if (ds->needs_standalone_vlan_filtering)
+ 		user->features |= NETIF_F_HW_VLAN_CTAG_FILTER;
+ 
