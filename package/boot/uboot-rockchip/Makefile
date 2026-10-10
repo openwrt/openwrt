@@ -188,6 +188,13 @@ define U-Boot/hinlink-h28k-rk3528
     hinlink_h28k
 endef
 
+define U-Boot/nanopi-zero2-rk3528
+  $(U-Boot/rk3528/Default)
+  NAME:=NanoPi Zero2
+  BUILD_DEVICES:= \
+    friendlyarm_nanopi-r28s
+endef
+
 define U-Boot/radxa-e20c-rk3528
   $(U-Boot/rk3528/Default)
   NAME:=E20C
@@ -457,6 +464,7 @@ UBOOT_TARGETS := \
   rock-pi-e-rk3328 \
   rock-pi-e-v3-rk3328 \
   hinlink-h28k-rk3528 \
+  nanopi-zero2-rk3528 \
   radxa-e20c-rk3528 \
   rock-2-rk3528 \
   nanopi-r3s-rk3566 \
