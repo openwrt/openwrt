@@ -4,6 +4,7 @@ define Device/tplink-deco-m5-common
 	$(call Device/FitzImage)
 	DEVICE_VENDOR := TP-Link
 	SOC := qcom-ipq4019
+	DEVICE_PACKAGES := ipq-wifi-tplink_deco-m5
 	IMAGES += factory.bin
 	IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
 	IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade | append-metadata
