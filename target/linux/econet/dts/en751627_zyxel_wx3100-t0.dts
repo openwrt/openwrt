@@ -7,8 +7,8 @@
 #include <dt-bindings/leds/common.h>
 
 / {
-	model = "Zyxel EX3301-T0";
-	compatible = "zyxel,ex3301-t0", "econet,en751627";
+	model = "Zyxel WX3100-T0";
+	compatible = "zyxel,wx3100-t0", "econet,en751627";
 
 	aliases {
 		led-boot = &led_power_green;
@@ -43,54 +43,39 @@
 			default-state = "off";
 		};
 
-		led_internet_green: led-2 {
+		led_link: led-2 {
 			color = <LED_COLOR_ID_GREEN>;
-			function = "internet";
+			function = "link";
 			gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
 			default-state = "off";
 		};
 
-		led_internet_red: led-3 {
+		led_link_red: led-3 {
 			color = <LED_COLOR_ID_RED>;
-			function = "internet";
+			function = "link";
 			gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
 			default-state = "off";
 		};
 
-		led_wlan24: led-4 {
+		led_wifi: led-4 {
 			color = <LED_COLOR_ID_GREEN>;
-			function = "wlan2g";
+			function = "wifi";
 			gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
 			default-state = "off";
 		};
 
-		led_wlan5: led-5 {
+		led_wps_green: led-5 {
 			color = <LED_COLOR_ID_GREEN>;
-			function = "wlan5g";
-			gpios = <&gpio0 20 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy1tpt";
-			default-state = "off";
-		};
-
-		led_wps: led-6 {
-			color = <LED_COLOR_ID_AMBER>;
 			function = LED_FUNCTION_WPS;
 			gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
 			default-state = "off";
 		};
 
-		led_lan_agg: led-7 {
-			color = <LED_COLOR_ID_GREEN>;
-			function = LED_FUNCTION_LAN;
-			gpios = <&gpio1 6 GPIO_ACTIVE_LOW>;
-			default-state = "off";
-		};
-
-		led_wan_eth: led-8 {
-			color = <LED_COLOR_ID_GREEN>;
-			function = LED_FUNCTION_WAN;
-			gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
+		led_wps_red: led-6 {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_WPS;
+			gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
 			default-state = "off";
 		};
 	};
@@ -109,12 +94,6 @@
 			label = "wps";
 			gpios = <&gpio0 16 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_WPS_BUTTON>;
-		};
-
-		key-wifi {
-			label = "wifi";
-			gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
-			linux,code = <KEY_RFKILL>;
 		};
 	};
 };
@@ -217,6 +196,7 @@
 &pcie0 {
 	status = "okay";
 };
+
 &slot0 {
 	status = "okay";
 
@@ -263,61 +243,26 @@
 	status = "okay";
 };
 
-&gsw_port3 {
+&gsw_port0 {
 	status = "okay";
 	label = "lan1";
 };
 
-&gsw_port2 {
+&gsw_port1 {
 	status = "okay";
 	label = "lan2";
 };
 
-&gsw_port1 {
-	status = "okay";
-	label = "lan3";
-};
-
-&gsw_port0 {
-	status = "okay";
-	label = "lan4";
-};
-
-&gsw_port4 {
-	status = "okay";
-	label = "wan";
-};
-
-&gsw_phy3_led0 {
+&gsw_phy0_led0 {
 	color = <LED_COLOR_ID_GREEN>;
 	function = LED_FUNCTION_LAN;
 	function-enumerator = <1>;
 	status = "okay";
 };
 
-&gsw_phy2_led0 {
-	color = <LED_COLOR_ID_GREEN>;
-	function = LED_FUNCTION_LAN;
-	function-enumerator = <2>;
-	status = "okay";
-};
-
 &gsw_phy1_led0 {
 	color = <LED_COLOR_ID_GREEN>;
 	function = LED_FUNCTION_LAN;
-	function-enumerator = <3>;
-	status = "okay";
-};
-
-&gsw_phy0_led0 {
-	color = <LED_COLOR_ID_GREEN>;
-	function = LED_FUNCTION_LAN;
-	function-enumerator = <4>;
-	status = "okay";
-};
-
-&gsw_phy4_led0 {
-	color = <LED_COLOR_ID_GREEN>;
-	function = LED_FUNCTION_WAN;
+	function-enumerator = <2>;
 	status = "okay";
 };
