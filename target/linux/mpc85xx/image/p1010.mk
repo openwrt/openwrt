@@ -17,7 +17,7 @@ endef
 define Device/aerohive_br200-wp
   DEVICE_VENDOR := Aerohive
   DEVICE_MODEL := BR200-WP
-  DEVICE_PACKAGES := kmod-dsa-qca8k kmod-phy-qca83xx
+  DEVICE_PACKAGES := kmod-dsa-qca8k
   BLOCKSIZE := 128k
   KERNEL_NAME := simpleImage.br200-wp
   KERNEL := kernel-bin | uImage none
@@ -55,7 +55,7 @@ define Device/tplink_tl-wdr4900-v1
   DEVICE_VARIANT := v1
   DEVICE_COMPAT_VERSION := 1.1
   DEVICE_COMPAT_MESSAGE := Config cannot be migrated from swconfig to DSA
-  DEVICE_PACKAGES := kmod-usb-ledtrig-usbport kmod-dsa-qca8k kmod-phy-qca83xx
+  DEVICE_PACKAGES := kmod-usb-ledtrig-usbport kmod-dsa-qca8k
   TPLINK_HEADER_VERSION := 1
   TPLINK_HWID := 0x49000001
   TPLINK_HWREV := 1
