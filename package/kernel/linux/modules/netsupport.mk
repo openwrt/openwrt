@@ -822,6 +822,22 @@ endef
 $(eval $(call KernelPackage,sched-cake))
 
 
+define KernelPackage/sched-cbs
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=Credit Based Shaper (CBS)
+  DEPENDS:=+kmod-sched-core
+  KCONFIG:=CONFIG_NET_SCH_CBS
+  FILES:=$(LINUX_DIR)/net/sched/sch_cbs.ko
+  AUTOLOAD:=$(call AutoProbe,sch_cbs)
+endef
+
+define KernelPackage/sched-cbs/description
+ Credit Based Shaper (IEEE 802.1Qav) for Time-Sensitive Networking.
+endef
+
+$(eval $(call KernelPackage,sched-cbs))
+
+
 define KernelPackage/sched-connmark
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Traffic shaper conntrack mark support
