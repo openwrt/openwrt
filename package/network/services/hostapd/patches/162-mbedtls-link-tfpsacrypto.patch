@@ -1,0 +1,65 @@
+From: Sander van Deijck <sander@vandeijck.com>
+Subject: mbedtls: link libtfpsacrypto, drop removed curves from ECC test
+
+Mbed TLS 4.x installs its crypto library as libtfpsacrypto; the legacy
+libmbedcrypto name is not staged. Link against it in hostapd,
+wpa_supplicant and the tests (lines added by patches 110 and 140).
+
+TF-PSA-Crypto 1.x drops secp192r1 and secp224r1, so the mbedTLS ECC
+module test covers SAE groups 19, 20 and 21 only; OpenWrt builds the
+library without the Brainpool curves (groups 28-30) by default.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+--- a/hostapd/Makefile
++++ b/hostapd/Makefile
+@@ -806,10 +806,10 @@ LIBS_h += -lmbedx509
+ LIBS_n += -lmbedx509
+ LIBS_s += -lmbedx509
+ endif
+-LIBS += -lmbedcrypto
+-LIBS_h += -lmbedcrypto
+-LIBS_n += -lmbedcrypto
+-LIBS_s += -lmbedcrypto
++LIBS += -ltfpsacrypto
++LIBS_h += -ltfpsacrypto
++LIBS_n += -ltfpsacrypto
++LIBS_s += -ltfpsacrypto
+ # XXX: create a config option?
+ CFLAGS += -DCRYPTO_RSA_OAEP_SHA256
+ endif
+--- a/tests/Makefile
++++ b/tests/Makefile
+@@ -61,7 +61,7 @@ LLIBS = -Wl,--start-group $(DLIBS) -Wl,-
+ 
+ ifeq ($(CONFIG_TLS),mbedtls)
+ CFLAGS += -DCONFIG_TLS_MBEDTLS
+-LLIBS += -lmbedtls -lmbedx509 -lmbedcrypto
++LLIBS += -lmbedtls -lmbedx509 -ltfpsacrypto
+ else
+ ifeq ($(CONFIG_TLS),openssl)
+ CFLAGS += -DCONFIG_TLS_OPENSSL
+--- a/wpa_supplicant/Makefile
++++ b/wpa_supplicant/Makefile
+@@ -1291,8 +1291,8 @@ OBJS += ../src/crypto/crypto_$(CONFIG_CR
+ OBJS_p += ../src/crypto/crypto_$(CONFIG_CRYPTO).o
+ OBJS_priv += ../src/crypto/crypto_$(CONFIG_CRYPTO).o
+ ifeq ($(CONFIG_CRYPTO), mbedtls)
+-LIBS += -lmbedcrypto
+-LIBS_p += -lmbedcrypto
++LIBS += -ltfpsacrypto
++LIBS_p += -ltfpsacrypto
+ # XXX: create a config option?
+ CFLAGS += -DCRYPTO_RSA_OAEP_SHA256
+ endif
+--- a/src/crypto/crypto_module_tests.c
++++ b/src/crypto/crypto_module_tests.c
+@@ -2484,7 +2484,7 @@ static int test_ecc(void)
+ 	 * (e.g. deriving and comparing y^2 test below not valid on Montgomery)
+ 	 */
+ #ifdef CONFIG_TLS_MBEDTLS
+-	const int grps[] = {19, 20, 21, 25, 26, 28};
++	const int grps[] = {19, 20, 21};
+ #endif
+ #ifdef CONFIG_TLS_OPENSSL
+ 	const int grps[] = {19, 20, 21, 26};
