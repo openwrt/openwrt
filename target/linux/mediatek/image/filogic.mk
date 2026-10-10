@@ -3955,6 +3955,30 @@ define Device/unielec_u7981-01-nand
 endef
 TARGET_DEVICES += unielec_u7981-01-nand
 
+define Device/urant_u28_ax3000
+  DEVICE_VENDOR := URANT
+  DEVICE_MODEL := U28-AX3000
+  DEVICE_DTS := mt7981b-urant-u28-ax3000
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_DTS_LOADADDR := 0x43f00000
+  KERNEL_LOADADDR := 0x44000000
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware uboot-envtools kmod-leds-group-multicolor
+  SUPPORTED_DEVICES := urant,u28-ax3000
+  IMAGE_SIZE := 14848k
+  KERNEL := kernel-bin | libdeflate-gzip
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+    fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  KERNEL_INITRAMFS_SUFFIX := -recovery.itb
+  IMAGES := sysupgrade.itb
+  IMAGE/sysupgrade.itb := append-kernel | \
+    fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | \
+    pad-rootfs | append-metadata
+  ARTIFACTS := preloader.bin bl31-uboot.fip
+  ARTIFACT/preloader.bin := mt7981-bl2 nor-ddr3
+  ARTIFACT/bl31-uboot.fip := mt7981-bl31-uboot urant_u28_ax3000
+endef
+TARGET_DEVICES += urant_u28_ax3000
+
 define Device/wavlink_wl-wn536ax6-a
   DEVICE_VENDOR := WAVLINK
   DEVICE_MODEL := WL-WN536AX6

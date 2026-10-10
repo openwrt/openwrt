@@ -1,0 +1,205 @@
+From b3dd98294a5ad431e2986ddb1a39d3c803f13089 Mon Sep 17 00:00:00 2001
+From: Lucian Radu <lucianradu@hotmail.com>
+Date: Tue, 29 Sep 2026 20:30:00 +0300
+Subject: [PATCH] uboot-mediatek: add support for urant u28 ax3000
+
+Signed-off-by: Lucian Radu <lucianradu@hotmail.com>
+---
+--- /dev/null
++++ b/arch/arm/dts/mt7981-urant-u28-ax3000.dts
+@@ -0,0 +1,48 @@
++// SPDX-License-Identifier: GPL-2.0
++/dts-v1/;
++
++/*
++ * URANT U28-AX3000
++ *
++ * Re-use the upstream MT7981 NOR RFB hardware description and only add
++ * the U28 board identity plus the SPI NOR alias used by U-Boot's generic
++ * "sf probe" path.
++ */
++#include "mt7981-rfb.dts"
++#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/leds/common.h>
++
++/ {
++	model = "URANT U28-AX3000";
++	compatible = "urant,u28-ax3000", "mediatek,mt7981";
++
++	aliases {
++		/* U28 boot NOR: MT7981 SPI controller at 0x11009000, CS0. */
++		spi0 = "/spi@11009000";
++	};
++
++	leds {
++		compatible = "gpio-leds";
++
++		led-red {
++			color = <LED_COLOR_ID_RED>;
++			function = LED_FUNCTION_STATUS;
++			gpios = <&pio 8 GPIO_ACTIVE_LOW>;
++			default-state = "on";
++		};
++
++		led-green {
++			color = <LED_COLOR_ID_GREEN>;
++			function = LED_FUNCTION_STATUS;
++			gpios = <&pio 34 GPIO_ACTIVE_LOW>;
++			default-state = "off";
++		};
++
++		led-blue {
++			color = <LED_COLOR_ID_BLUE>;
++			function = LED_FUNCTION_STATUS;
++			gpios = <&pio 35 GPIO_ACTIVE_LOW>;
++			default-state = "on";
++		};
++	};
++};
++
++/* Disabling SPI NAND controller at 0x1100a000, as it is not used on the U28-AX3000 board. */
++&{/spi@1100a000} {
++	status = "disabled";
++};
+--- /dev/null
++++ b/configs/mt7981_urant_u28_ax3000_defconfig
+@@ -0,0 +1,117 @@
++CONFIG_ARM=y
++CONFIG_ARM_SMCCC=y
++CONFIG_SYS_HAS_NONCACHED_MEMORY=y
++CONFIG_POSITION_INDEPENDENT=y
++CONFIG_ARCH_MEDIATEK=y
++CONFIG_TEXT_BASE=0x41e00000
++CONFIG_SYS_MALLOC_F_LEN=0x4000
++CONFIG_NR_DRAM_BANKS=1
++CONFIG_ENV_SIZE=0x4000
++CONFIG_ENV_OFFSET=0x0
++CONFIG_DEFAULT_DEVICE_TREE="mt7981-urant-u28-ax3000"
++# CONFIG_BOARD_INIT is not set
++CONFIG_OF_LIBFDT_OVERLAY=y
++CONFIG_TARGET_MT7981=y
++CONFIG_SYS_LOAD_ADDR=0x46000000
++CONFIG_DEBUG_UART_BASE=0x11002000
++CONFIG_DEBUG_UART_CLOCK=40000000
++CONFIG_DEBUG_UART=y
++CONFIG_AUTOBOOT=y
++CONFIG_USE_PREBOOT=y
++CONFIG_HUSH_PARSER=y
++CONFIG_CMD_NVEDIT_INFO=y
++CONFIG_FIT=y
++CONFIG_BOOTSTD_FULL=y
++CONFIG_SPI_BOOT=y
++CONFIG_OF_SYSTEM_SETUP=y
++CONFIG_ENV_USE_DEFAULT_ENV_TEXT_FILE=y
++CONFIG_ENV_DEFAULT_ENV_TEXT_FILE="defenvs/urant_u28_ax3000_env"
++CONFIG_DEFAULT_FDT_FILE="mt7981-urant-u28-ax3000"
++CONFIG_SYS_CBSIZE=512
++CONFIG_SYS_PBSIZE=1049
++CONFIG_LOGLEVEL=7
++CONFIG_LOG=y
++CONFIG_BOARD_LATE_INIT=y
++CONFIG_SYS_PROMPT="MT7981> "
++CONFIG_CMD_CPU=y
++CONFIG_CMD_LICENSE=y
++# CONFIG_BOOTM_NETBSD is not set
++# CONFIG_BOOTM_PLAN9 is not set
++# CONFIG_BOOTM_RTEMS is not set
++# CONFIG_BOOTM_VXWORKS is not set
++CONFIG_CMD_BOOTMENU=y
++CONFIG_CMD_ASKENV=y
++CONFIG_CMD_ERASEENV=y
++CONFIG_CMD_ENV_FLAGS=y
++CONFIG_CMD_STRINGS=y
++CONFIG_CMD_DM=y
++CONFIG_CMD_GPIO=y
++CONFIG_CMD_LED=y
++CONFIG_CMD_MTD=y
++CONFIG_CMD_PCI=y
++CONFIG_CMD_SF_TEST=y
++CONFIG_CMD_TFTPBOOT=y
++CONFIG_CMD_TFTPSRV=y
++CONFIG_CMD_DHCP=y
++CONFIG_CMD_PING=y
++CONFIG_CMD_RARP=y
++CONFIG_CMD_CDP=y
++CONFIG_CMD_SNTP=y
++CONFIG_CMD_LINK_LOCAL=y
++CONFIG_CMD_DNS=y
++CONFIG_CMD_CACHE=y
++CONFIG_CMD_PSTORE=y
++CONFIG_CMD_PSTORE_MEM_ADDR=0x42ff0000
++CONFIG_CMD_UUID=y
++CONFIG_CMD_HASH=y
++CONFIG_CMD_RNG=y
++CONFIG_CMD_SMC=y
++CONFIG_CMD_FS_UUID=y
++CONFIG_CMD_MII=y
++CONFIG_ENV_OVERWRITE=y
++CONFIG_ENV_IS_IN_MTD=y
++CONFIG_ENV_RELOC_GD_ENV_ADDR=y
++CONFIG_ENV_MTD_DEV="u-boot-env"
++CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
++CONFIG_NET_RANDOM_ETHADDR=y
++CONFIG_REGMAP=y
++CONFIG_SYSCON=y
++CONFIG_BUTTON=y
++CONFIG_BUTTON_GPIO=y
++CONFIG_CLK=y
++CONFIG_GPIO_HOG=y
++CONFIG_LED=y
++CONFIG_LED_BLINK=y
++CONFIG_LED_GPIO=y
++# CONFIG_MMC is not set
++CONFIG_MTD=y
++CONFIG_DM_MTD=y
++# CONFIG_MTD_SPI_NAND is not set
++CONFIG_DM_SPI_FLASH=y
++CONFIG_SPI_FLASH_SFDP_SUPPORT=y
++CONFIG_SPI_FLASH_EON=y
++CONFIG_SPI_FLASH_GIGADEVICE=y
++CONFIG_SPI_FLASH_ISSI=y
++CONFIG_SPI_FLASH_MACRONIX=y
++CONFIG_SPI_FLASH_SPANSION=y
++CONFIG_SPI_FLASH_STMICRO=y
++CONFIG_SPI_FLASH_WINBOND=y
++CONFIG_SPI_FLASH_XMC=y
++CONFIG_SPI_FLASH_XTX=y
++CONFIG_SPI_FLASH_MTD=y
++CONFIG_PHY_FIXED=y
++CONFIG_MEDIATEK_ETH=y
++CONFIG_PINCTRL=y
++CONFIG_PINCONF=y
++CONFIG_PINCTRL_MT7981=y
++CONFIG_POWER_DOMAIN=y
++CONFIG_MTK_POWER_DOMAIN=y
++CONFIG_DM_RNG=y
++CONFIG_RNG_MTK_V2=y
++CONFIG_DM_SERIAL=y
++CONFIG_SERIAL_RX_BUFFER=y
++CONFIG_MTK_SERIAL=y
++CONFIG_SPI=y
++CONFIG_DM_SPI=y
++CONFIG_MTK_SPIM=y
++CONFIG_HEXDUMP=y
+--- /dev/null
++++ b/defenvs/urant_u28_ax3000_env
+@@ -0,0 +1,19 @@
++# U28-AX3000 default environment.
++# Persistent environment remains in the vendor u-boot-env MTD partition.
++
++bootmenu_default=3
++bootmenu_delay=2
++
++bootmenu_0=Flash preloader (BL2)=sf probe && tftpboot 0x42000000 openwrt-mediatek-filogic-urant_u28_ax3000-preloader.bin && sf erase 0x000000 0x040000 && sf write 0x42000000 0x000000 ${filesize}
++bootmenu_1=Flash u-boot (BL31)=sf probe && tftpboot 0x46000000 openwrt-mediatek-filogic-urant_u28_ax3000-bl31-uboot.fip && sf erase 0x100000 0x080000 && sf write 0x46000000 0x100000 ${filesize}
++bootmenu_2=Flash system (squashfs-sysupgrade)=sf probe && tftpboot 0x46000000 openwrt-mediatek-filogic-urant_u28_ax3000-squashfs-sysupgrade.itb && sf erase 0x180000 0xE80000 && sf write 0x46000000 0x180000 ${filesize}
++bootmenu_3=Boot openwrt=sf probe; sf read ${loadaddr} 0x180000 0xe80000; bootm ${loadaddr}#config-1
++
++loadaddr=0x46000000
++bootargs=console=ttyS0,115200n8 earlycon=uart8250,mmio32,0x11002000 root=/dev/fit0 rootwait
++bootcmd=bootmenu
++ipaddr=192.168.1.1
++serverip=192.168.1.2
++netmask=255.255.255.0
++ethaddr_factory=mtd read Factory 0x46000000 0xe000 0x6 && env readmem -b ethaddr 0x46000000 0x6 ; setenv ethaddr_factory
++preboot=if env info -d -q; then run ethaddr_factory; saveenv; fi
