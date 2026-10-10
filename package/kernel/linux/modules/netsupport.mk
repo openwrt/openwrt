@@ -1013,6 +1013,22 @@ endef
 $(eval $(call KernelPackage,sched-skbprio))
 
 
+define KernelPackage/sched-taprio
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=Time Aware Priority scheduler (TAPRIO)
+  DEPENDS:=+kmod-sched-core +kmod-sched-mqprio-common
+  KCONFIG:=CONFIG_NET_SCH_TAPRIO
+  FILES:=$(LINUX_DIR)/net/sched/sch_taprio.ko
+  AUTOLOAD:=$(call AutoProbe,sch_taprio)
+endef
+
+define KernelPackage/sched-taprio/description
+ Time Aware Priority scheduler (IEEE 802.1Qbv) for Time-Sensitive Networking.
+endef
+
+$(eval $(call KernelPackage,sched-taprio))
+
+
 define KernelPackage/bpf-test
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Test Berkeley Packet Filter functionality
