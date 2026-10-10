@@ -1049,6 +1049,9 @@ static int rtldsa_port_fdb_dump(struct dsa_switch *ds, int port,
 	for (int i = 0; i < uc_rows; i++) {
 		struct rtl838x_l2_entry e = {};
 
+		if (!((i + 1) % 64))
+			cond_resched();
+
 		priv->r->read_l2_entry_using_hash(i >> 2, i & 0x3, &e);
 
 		if (!e.valid || e.type != L2_UNICAST || e.is_trunk)
@@ -1056,9 +1059,6 @@ static int rtldsa_port_fdb_dump(struct dsa_switch *ds, int port,
 
 		if (e.port == port || e.port == RTL930X_PORT_IGNORE)
 			cb(e.mac, e.rvid, e.is_static, data);
-
-		if (!((i + 1) % 64))
-			cond_resched();
 	}
 
 	for (int i = 0; i < cam_rows; i++) {
