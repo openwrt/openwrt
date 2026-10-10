@@ -14,6 +14,44 @@ define Build/tplink-v1-okli-image
 	rm -f $(IMAGE_ROOTFS).$(word 2,$(1))
 endef
 
+define Build/tplink-v2-okli-factory
+	cp $(IMAGE_KERNEL) $(IMAGE_ROOTFS).okli
+	cat $(IMAGE_ROOTFS) >> $(IMAGE_ROOTFS).okli
+	-if $(STAGING_DIR_HOST)/bin/mktplinkfw2 -e \
+		-H $(TPLINK_HWID) -W $(TPLINK_HWREV) -w $(TPLINK_HWREVADD) \
+		-F "$(TPLINK_FLASHLAYOUT)" -T $(TPLINK_HVERSION) -V "ver. 2.0" \
+		-L $(LZMA_TEXT_START) -E $(LZMA_TEXT_START) -R 0xfe00 \
+		-k "$(KDIR)/loader-$(1).$(LOADER_TYPE)" \
+		-r $(IMAGE_ROOTFS).okli -s -o $(IMAGE_ROOTFS).okli.inner \
+	&& loader_len=$$(stat -c%s "$(KDIR)/loader-$(1).$(LOADER_TYPE)") \
+	&& outer_kernel_ofs=$$(( (loader_len + 512 + 3) / 4 * 4 )) \
+	&& prefix_len=$$(( ($(LOADER_FLASH_OFFS) - 0x20000) - 0xfe00 - outer_kernel_ofs )) \
+	&& { [ "$$prefix_len" -ge 0 ] || { \
+		echo "ERROR: LOADER_FLASH_OFFS $(LOADER_FLASH_OFFS) is too small for this loader" >&2; \
+		false; \
+	}; } \
+	&& truncate -s "$$prefix_len" $(IMAGE_ROOTFS).okli.prefix \
+	&& cat $(IMAGE_ROOTFS).okli.inner >> $(IMAGE_ROOTFS).okli.prefix \
+	&& $(STAGING_DIR_HOST)/bin/mktplinkfw2 \
+		-H $(TPLINK_HWID) -W $(TPLINK_HWREV) \
+		-w $(TPLINK_HWREVADD) -F "$(TPLINK_FLASHLAYOUT)" \
+		-T $(TPLINK_HVERSION) -V "ver. 2.0" -a 0x4 -j \
+		-L $(LZMA_TEXT_START) -E $(LZMA_TEXT_START) \
+		-k "$(KDIR)/loader-$(1).$(LOADER_TYPE)" \
+		-r $(IMAGE_ROOTFS).okli.prefix -o $@.new -e \
+	&& cat $@.new >> $@; then :; else rm -f $@; fi
+	# The outer image above (-a 0x4) places its own "kernel" (the same
+	# OKLI loader) right after its header, then rounds that up to a
+	# 4-byte boundary to get the outer rootfs offset; the zero prefix
+	# has to make up the remaining distance so that the inner image's
+	# own rootfs offset (0xfe00, from -R above -- where the real,
+	# OKLI-magic-tagged kernel starts) lands exactly at
+	# LOADER_FLASH_OFFS on flash. factory.bin itself starts at flash
+	# offset 0x20000 (the first 128k, "boot", is never touched by it):
+	#   prefix_len = (LOADER_FLASH_OFFS - 0x20000) - 0xfe00 - outer_kernel_ofs
+	rm -f $@.new $(IMAGE_ROOTFS).okli $(IMAGE_ROOTFS).okli.inner $(IMAGE_ROOTFS).okli.prefix
+endef
+
 define Build/uImage-tplink-c9
 	mkimage \
 		-A $(LINUX_KARCH) \
@@ -66,6 +104,18 @@ define Device/tplink-v2
   IMAGE/factory.bin := tplink-v2-image -e
   IMAGE/sysupgrade.bin := tplink-v2-image -s -e | check-size | \
 	append-metadata
+endef
+
+define Device/tplink-v2-okli
+  $(Device/tplink-v2)
+  LOADER_TYPE := bin
+  LZMA_TEXT_START := 0x80a00000
+  COMPILE := loader-$(1).bin
+  COMPILE/loader-$(1).bin := loader-okli-compile | pad-to 64k | lzma | pad-to 3584
+  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma -M 0x4f4b4c49 | pad-to 64k
+  IMAGE/factory.bin := tplink-v2-okli-factory $(1)
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | \
+	check-size | append-metadata
 endef
 
 define Device/tplink-safeloader
