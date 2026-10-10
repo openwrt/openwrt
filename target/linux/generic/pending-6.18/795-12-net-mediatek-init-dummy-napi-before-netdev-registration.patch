@@ -1,0 +1,85 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: GL.iNet Test Build <support@gl-inet.com>
+Date: Fri, 4 Sep 2026 12:00:00 +0800
+Subject: [PATCH] net: ethernet: mediatek: init dummy NAPI device before netdev registration
+
+The MediaTek Ethernet driver registers its netdevs before allocating the
+dummy device used by the shared NAPI queues. A userspace link-up racing with
+probe can therefore enter mtk_open() while dummy_dev is NULL, triggering the
+XDP "Missing net_device from driver" warning and returning -ENODEV.
+
+Allocate and initialize the dummy NAPI device before publishing any netdev,
+and release it on the registration error path.
+
+Signed-off-by: GL.iNet Test Build <support@gl-inet.com>
+---
+diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+index 0c13e2a72b..68edd82895 100644
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -5829,6 +5829,21 @@ static int mtk_probe(struct platform_device *pdev)
+ 		}
+ 	}
+ 
++	/* we run 2 devices on the same DMA ring so we need a dummy device
++	 * for NAPI to work. Allocate it before registering netdevs so a
++	 * userspace link-up cannot race with its initialization.
++	 */
++	eth->dummy_dev = alloc_netdev_dummy(0);
++	if (!eth->dummy_dev) {
++		err = -ENOMEM;
++		dev_err(eth->dev, "failed to allocated dummy device\n");
++		goto err_deinit_ppe;
++	}
++	eth->dummy_dev->threaded = 1;
++	strcpy(eth->dummy_dev->name, "mtk_eth");
++	netif_napi_add(eth->dummy_dev, &eth->tx_napi, mtk_napi_tx);
++	netif_napi_add(eth->dummy_dev, &eth->rx_napi, mtk_napi_rx);
++
+ 	for (i = 0; i < MTK_MAX_DEVS; i++) {
+ 		if (!eth->netdev[i])
+ 			continue;
+@@ -5836,35 +5851,24 @@ static int mtk_probe(struct platform_device *pdev)
+ 		err = register_netdev(eth->netdev[i]);
+ 		if (err) {
+ 			dev_err(eth->dev, "error bringing up device\n");
+-			goto err_deinit_ppe;
++			goto err_free_dummy;
+ 		} else
+ 			netif_info(eth, probe, eth->netdev[i],
+ 				   "mediatek frame engine at 0x%08lx, irq %d\n",
+ 				   eth->netdev[i]->base_addr, eth->irq[MTK_FE_IRQ_SHARED]);
+ 	}
+ 
+-	/* we run 2 devices on the same DMA ring so we need a dummy device
+-	 * for NAPI to work
+-	 */
+-	eth->dummy_dev = alloc_netdev_dummy(0);
+-	if (!eth->dummy_dev) {
+-		err = -ENOMEM;
+-		dev_err(eth->dev, "failed to allocated dummy device\n");
+-		goto err_unreg_netdev;
+-	}
+-	eth->dummy_dev->threaded = 1;
+-	strcpy(eth->dummy_dev->name, "mtk_eth");
+-	netif_napi_add(eth->dummy_dev, &eth->tx_napi, mtk_napi_tx);
+-	netif_napi_add(eth->dummy_dev, &eth->rx_napi, mtk_napi_rx);
+-
+ 	platform_set_drvdata(pdev, eth);
+ 	schedule_delayed_work(&eth->reset.monitor_work,
+ 			      MTK_DMA_MONITOR_TIMEOUT);
+ 
+ 	return 0;
+ 
+-err_unreg_netdev:
+-	mtk_unreg_dev(eth);
++err_free_dummy:
++	netif_napi_del(&eth->tx_napi);
++	netif_napi_del(&eth->rx_napi);
++	free_netdev(eth->dummy_dev);
++	eth->dummy_dev = NULL;
+ err_deinit_ppe:
+ 	mtk_ppe_deinit(eth);
+ 	mtk_mdio_cleanup(eth);
+-- 
+2.51.0
