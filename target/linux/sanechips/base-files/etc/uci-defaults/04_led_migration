@@ -1,0 +1,23 @@
+. /lib/functions.sh
+. /lib/functions/migrations.sh
+
+case "$(board_name)" in
+zte,zxhn-h3600)
+	migrate_leds \
+		"^h3600:red:power$=red:power" \
+		"^h3600:green:power$=green:power" \
+		"^h3600:wifi2g$=:wlan-2ghz" \
+		"^h3600:broadband$=:wan" \
+		"^h3600:green:phone1$=green:phone-1" \
+		"^h3600:green:phone2$=green:phone-2" \
+		"^h3600:green:wifi5g$=green:wlan-5ghz" \
+		"^h3600:green:usb$=green:usb" \
+		"^h3600:red:internet$=red:wan-online" \
+		"^h3600:green:internet$=green:wan-online" \
+		"^h3600:wps$=:wps"
+	;;
+esac
+
+migrations_apply system
+
+exit 0

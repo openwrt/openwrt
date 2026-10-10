@@ -1,0 +1,87 @@
+From 431613b825f566079cd0437dc964440b46030001 Mon Sep 17 00:00:00 2001
+From: Navid Ghahremani <ghahramani.navid@gmail.com>
+Date: Fri, 2 Oct 2026 09:38:28 +0100
+Subject: [PATCH 13/24] dt-bindings: net: Add ZTE ZX279128S MDIO controller
+
+Describe the MDIO register block and its work/register clocks. External-
+PHY pin selections use pinctrl rather than direct syscon writes.
+
+Assisted-by: LLM
+---
+ .../bindings/net/zte,zx279128s-mdio.yaml      | 67 +++++++++++++++++++
+ 1 file changed, 67 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/net/zte,zx279128s-mdio.yaml
+
+diff --git a/Documentation/devicetree/bindings/net/zte,zx279128s-mdio.yaml b/Documentation/devicetree/bindings/net/zte,zx279128s-mdio.yaml
+new file mode 100644
+index 000000000..49ff7e7b1
+--- /dev/null
++++ b/Documentation/devicetree/bindings/net/zte,zx279128s-mdio.yaml
+@@ -0,0 +1,67 @@
++# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/net/zte,zx279128s-mdio.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: ZTE zx279128s MDIO controller
++
++maintainers:
++  - Navid Ghahremani <ghahramani.navid@gmail.com>
++
++description:
++  The MDIO controller of the ZTE zx279128s reaches the PHYs of the integrated
++  switch and an optional external PHY. On boards with an external PHY, the
++  default pin state connects the interface to it.
++
++allOf:
++  - $ref: mdio.yaml#
++
++properties:
++  compatible:
++    const: zte,zx279128s-mdio
++
++  reg:
++    maxItems: 1
++
++  clocks:
++    items:
++      - description: work clock, the source of the management clock (MDC)
++      - description: register (APB) clock
++
++  clock-names:
++    items:
++      - const: wclk
++      - const: pclk
++
++required:
++  - compatible
++  - reg
++  - clocks
++  - clock-names
++
++unevaluatedProperties: false
++
++examples:
++  - |
++    #include <dt-bindings/clock/zte,zx279128s-crm.h>
++
++    mdio@9a101000 {
++        compatible = "zte,zx279128s-mdio";
++        reg = <0x9a101000 0x18>;
++        clocks = <&lsp1crpm ZX279128S_LSP1_MDIO_WCLK>,
++                 <&lsp1crpm ZX279128S_LSP1_MDIO_PCLK>;
++        clock-names = "wclk", "pclk";
++        #address-cells = <1>;
++        #size-cells = <0>;
++        pinctrl-names = "default";
++        pinctrl-0 = <&ext_phy_pins>;
++
++        ethernet-phy@8 {
++            reg = <8>;
++        };
++
++        ethernet-phy@10 {
++            reg = <10>;
++        };
++    };

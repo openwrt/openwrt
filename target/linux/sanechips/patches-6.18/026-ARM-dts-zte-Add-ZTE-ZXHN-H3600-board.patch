@@ -1,0 +1,393 @@
+From 4c603b1a8f912b22fc69fc42a1764c0579957c18 Mon Sep 17 00:00:00 2001
+From: Navid Ghahremani <ghahramani.navid@gmail.com>
+Date: Fri, 2 Oct 2026 09:38:29 +0100
+Subject: [PATCH 23/24] ARM: dts: zte: Add ZTE ZXHN H3600 board
+
+Enable the board ports, Wi-Fi links, USB, LEDs, buttons and generic SPI
+NAND. Keep the stock firmware slot intact and UBI above both bootloader-
+visible headers.
+
+Assisted-by: LLM
+---
+ arch/arm/boot/dts/zte/Makefile                |   3 +
+ .../boot/dts/zte/zx279128s-zte-zxhn-h3600.dts | 361 ++++++++++++++++++
+ 2 files changed, 364 insertions(+)
+ create mode 100644 arch/arm/boot/dts/zte/Makefile
+ create mode 100644 arch/arm/boot/dts/zte/zx279128s-zte-zxhn-h3600.dts
+
+diff --git a/arch/arm/boot/dts/zte/Makefile b/arch/arm/boot/dts/zte/Makefile
+new file mode 100644
+index 000000000..5e094ec16
+--- /dev/null
++++ b/arch/arm/boot/dts/zte/Makefile
+@@ -0,0 +1,3 @@
++# SPDX-License-Identifier: GPL-2.0
++dtb-$(CONFIG_SOC_ZX279128S) += \
++	zx279128s-zte-zxhn-h3600.dtb
+diff --git a/arch/arm/boot/dts/zte/zx279128s-zte-zxhn-h3600.dts b/arch/arm/boot/dts/zte/zx279128s-zte-zxhn-h3600.dts
+new file mode 100644
+index 000000000..96d09f029
+--- /dev/null
++++ b/arch/arm/boot/dts/zte/zx279128s-zte-zxhn-h3600.dts
+@@ -0,0 +1,361 @@
++// SPDX-License-Identifier: GPL-2.0-only OR BSD-2-Clause
++/*
++ * ZTE ZXHN H3600 (also sold as ZXHN H1600): home gateway with four LAN ports,
++ * a WAN port and an MT7915 Wi-Fi 6 chip on both PCIe controllers.
++ *
++ * Copyright (C) 2026 Navid Ghahremani <ghahramani.navid@gmail.com>
++ */
++
++/dts-v1/;
++
++#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/input/input.h>
++#include <dt-bindings/leds/common.h>
++
++#include "zx279128s.dtsi"
++
++/ {
++	model = "ZTE ZXHN H3600";
++	compatible = "zte,zxhn-h3600", "zte,zx279128s";
++
++	aliases {
++		serial0 = &serial0;
++		serial1 = &serial1;
++	};
++
++	chosen {
++		stdout-path = "serial0:115200n8";
++	};
++
++	memory@40000000 {
++		device_type = "memory";
++		reg = <0x40000000 0x20000000>;
++	};
++
++	reserved-memory {
++		#address-cells = <1>;
++		#size-cells = <1>;
++		ranges;
++
++		/*
++		 * The stock kernel reserves the top 38 MiB for the packet
++		 * processor. Keep Linux, and in particular DMA buffers, out.
++		 */
++		pp@5da00000 {
++			reg = <0x5da00000 0x2600000>;
++			no-map;
++		};
++	};
++
++	/* All LEDs are active low. Colours only where seen on the panel. */
++	leds {
++		compatible = "gpio-leds";
++
++		/* One power LED with two elements: both on shows orange */
++		led_power_red: led-power-red {
++			color = <LED_COLOR_ID_RED>;
++			function = LED_FUNCTION_POWER;
++			gpios = <&gpio2 6 GPIO_ACTIVE_LOW>;
++			default-state = "on";
++		};
++
++		led_power_green: led-power-green {
++			color = <LED_COLOR_ID_GREEN>;
++			function = LED_FUNCTION_POWER;
++			gpios = <&gpio2 7 GPIO_ACTIVE_LOW>;
++		};
++
++		led_wlan_2g: led-wlan-2g {
++			function = LED_FUNCTION_WLAN_2GHZ;
++			gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
++		};
++
++		led_broadband: led-broadband {
++			function = LED_FUNCTION_WAN;
++			gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
++		};
++
++		led_phone1: led-phone1 {
++			color = <LED_COLOR_ID_GREEN>;
++			function = "phone";
++			function-enumerator = <1>;
++			gpios = <&gpio1 12 GPIO_ACTIVE_LOW>;
++		};
++
++		led_phone2: led-phone2 {
++			color = <LED_COLOR_ID_GREEN>;
++			function = "phone";
++			function-enumerator = <2>;
++			gpios = <&gpio1 13 GPIO_ACTIVE_LOW>;
++		};
++
++		led_wlan_5g: led-wlan-5g {
++			color = <LED_COLOR_ID_GREEN>;
++			function = LED_FUNCTION_WLAN_5GHZ;
++			gpios = <&gpio2 8 GPIO_ACTIVE_LOW>;
++		};
++
++		led_usb: led-usb {
++			color = <LED_COLOR_ID_GREEN>;
++			function = LED_FUNCTION_USB;
++			gpios = <&gpio2 9 GPIO_ACTIVE_LOW>;
++		};
++
++		led_internet_red: led-internet-red {
++			color = <LED_COLOR_ID_RED>;
++			function = LED_FUNCTION_WAN_ONLINE;
++			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
++		};
++
++		led_internet_green: led-internet-green {
++			color = <LED_COLOR_ID_GREEN>;
++			function = LED_FUNCTION_WAN_ONLINE;
++			gpios = <&gpio3 1 GPIO_ACTIVE_LOW>;
++		};
++
++		led_wps: led-wps {
++			function = LED_FUNCTION_WPS;
++			gpios = <&gpio3 2 GPIO_ACTIVE_LOW>;
++		};
++	};
++
++	/* Polled: the GPIO driver does not support interrupts */
++	keys {
++		compatible = "gpio-keys-polled";
++		poll-interval = <50>;
++
++		key-reset {
++			label = "reset";
++			gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_RESTART>;
++			debounce-interval = <60>;
++		};
++
++		key-wps {
++			label = "wps";
++			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_WPS_BUTTON>;
++			debounce-interval = <60>;
++		};
++
++		key-wifi {
++			label = "rfkill";
++			gpios = <&gpio3 12 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_RFKILL>;
++			debounce-interval = <60>;
++		};
++
++		key-led {
++			label = "led";
++			gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_LIGHTS_TOGGLE>;
++			debounce-interval = <60>;
++		};
++	};
++};
++
++&gmac {
++	status = "okay";
++};
++
++&gmac_port0 {
++	label = "lan1";
++	phy-handle = <&phy10>;
++	phy-mode = "internal";
++	nvmem-cells = <&macaddr_tag_1e 0>;
++	nvmem-cell-names = "mac-address";
++	status = "okay";
++};
++
++&gmac_port1 {
++	label = "lan2";
++	phy-handle = <&phy11>;
++	phy-mode = "internal";
++	nvmem-cells = <&macaddr_tag_1e 0>;
++	nvmem-cell-names = "mac-address";
++	status = "okay";
++};
++
++&gmac_port2 {
++	label = "lan3";
++	phy-handle = <&phy12>;
++	phy-mode = "internal";
++	nvmem-cells = <&macaddr_tag_1e 0>;
++	nvmem-cell-names = "mac-address";
++	status = "okay";
++};
++
++&gmac_port3 {
++	label = "lan4";
++	phy-handle = <&phy13>;
++	phy-mode = "internal";
++	nvmem-cells = <&macaddr_tag_1e 0>;
++	nvmem-cell-names = "mac-address";
++	status = "okay";
++};
++
++&gmac_port4 {
++	label = "wan";
++	phy-handle = <&phy8>;
++	phy-mode = "gmii";
++	nvmem-cells = <&macaddr_tag_1e 1>;
++	nvmem-cell-names = "mac-address";
++	status = "okay";
++};
++
++&mdio {
++	/* the ZX5201 WAN PHY */
++	pinctrl-names = "default";
++	pinctrl-0 = <&ext_phy_pins>;
++	status = "okay";
++
++	/* external Sanechips ZX5201; its SerDes answers on address 9 */
++	phy8: ethernet-phy@8 {
++		reg = <8>;
++	};
++
++	phy10: ethernet-phy@10 {
++		reg = <10>;
++	};
++
++	phy11: ethernet-phy@11 {
++		reg = <11>;
++	};
++
++	phy12: ethernet-phy@12 {
++		reg = <12>;
++	};
++
++	phy13: ethernet-phy@13 {
++		reg = <13>;
++	};
++};
++
++/* MT7915: main interface on pcie0, second interface (HIF2) on pcie1 */
++/*
++ * The two lines reset the whole MT7915, which is behind both controllers.
++ * Whichever controller starts first releases it.
++ */
++&pcie0 {
++	reset-gpios = <&gpio3 5 GPIO_ACTIVE_LOW>;
++	enable-gpios = <&gpio3 7 GPIO_ACTIVE_HIGH>;
++	status = "okay";
++};
++
++&pcie1 {
++	reset-gpios = <&gpio3 5 GPIO_ACTIVE_LOW>;
++	enable-gpios = <&gpio3 7 GPIO_ACTIVE_HIGH>;
++	status = "okay";
++};
++
++&serial0 {
++	status = "okay";
++};
++
++&usb {
++	status = "okay";
++};
++
++&serial1 {
++	status = "okay";
++};
++
++&spifc {
++	status = "okay";
++
++	flash@0 {
++		compatible = "spi-nand";
++		reg = <0>;
++		spi-max-frequency = <50000000>;
++		spi-rx-bus-width = <2>;
++		spi-tx-bus-width = <1>;
++
++		partitions {
++			compatible = "fixed-partitions";
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			partition@0 {
++				label = "bootloader";
++				reg = <0x0000000 0x0100000>;
++				read-only;
++			};
++
++			partition@100000 {
++				label = "tag";
++				reg = <0x0100000 0x0100000>;
++				read-only;
++
++				nvmem-layout {
++					compatible = "fixed-layout";
++					#address-cells = <1>;
++					#size-cells = <1>;
++
++					/* the LAN ports' MAC; the WAN port uses the next one */
++					macaddr_tag_1e: macaddr@1e {
++						compatible = "mac-base";
++						reg = <0x1e 0x6>;
++						#nvmem-cell-cells = <1>;
++					};
++				};
++			};
++
++			partition@200000 {
++				label = "wifi";
++				reg = <0x0200000 0x0100000>;
++				read-only;
++			};
++
++			partition@300000 {
++				label = "usercfg";
++				reg = <0x0300000 0x0200000>;
++				read-only;
++			};
++
++			partition@500000 {
++				label = "defcfg";
++				reg = <0x0500000 0x0200000>;
++				read-only;
++			};
++
++			/*
++			 * Slot 0 of the boot loader, up to its slot 1 at
++			 * 0x2700000: it reads the kernel from the start, stepping
++			 * over bad blocks, and finds the slot header, which
++			 * holds the kernel's length and CRC. A rootfs length of 0
++			 * makes it check nothing else.
++			 */
++			partition@700000 {
++				label = "kernel";
++				reg = <0x0700000 0x0400000>;
++			};
++
++			partition@b00000 {
++				/* Erase old rootfs/UBI headers during migration. */
++				label = "slot0_gap";
++				reg = <0x0b00000 0x1b00000>;
++			};
++
++			partition@2600000 {
++				label = "trailer";
++				reg = <0x2600000 0x0100000>;
++			};
++
++			partition@2700000 {
++				label = "stock";
++				reg = <0x2700000 0x2000000>;
++				read-only;
++			};
++
++			/*
++			 * Keep slot 1 (0x2700000..0x4700000) intact. cspboot
++			 * mistakes UBI erase-counter headers for boot headers;
++			 * its scan must find both firmware headers before UBI.
++			 */
++			partition@4700000 {
++				label = "ubi";
++				reg = <0x4700000 0x3900000>;
++			};
++		};
++	};
++};

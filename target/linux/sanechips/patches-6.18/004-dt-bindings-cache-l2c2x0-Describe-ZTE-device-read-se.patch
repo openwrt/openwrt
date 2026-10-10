@@ -1,0 +1,35 @@
+From aafee772360e0d09c4a1065232612394b197058a Mon Sep 17 00:00:00 2001
+From: Navid Ghahremani <ghahramani.navid@gmail.com>
+Date: Fri, 2 Oct 2026 09:38:26 +0100
+Subject: [PATCH 01/24] dt-bindings: cache: l2c2x0: Describe ZTE device-read
+ serialization
+
+Describe the observed interconnect deadlock workaround separately from
+the ARM implementation. This property and API remain an RFC requiring
+ARM and DT review.
+
+Assisted-by: LLM
+---
+ Documentation/devicetree/bindings/cache/l2c2x0.yaml | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/cache/l2c2x0.yaml b/Documentation/devicetree/bindings/cache/l2c2x0.yaml
+index 10c1a9002..bf062aa0e 100644
+--- a/Documentation/devicetree/bindings/cache/l2c2x0.yaml
++++ b/Documentation/devicetree/bindings/cache/l2c2x0.yaml
+@@ -173,6 +173,15 @@ properties:
+     description: enable ECC protection on the L2 cache
+     type: boolean
+
++  zte,l2c-io-read-lock:
++    description: On the ZTE zx279128s, a CPU read from a PCIe device that is
++      still outstanding when an L2C-310 range or sync operation starts hangs
++      the interconnect. This property makes the L2C-310 maintenance operations
++      take a lock that the drivers of such devices also take around their
++      register reads. Valid only when the arm,pl310-cache compatible string
++      is used.
++    type: boolean
++
+   arm,outer-sync-disable:
+     description: disable the outer sync operation on the L2 cache.
+       Some core tiles, especially ARM PB11MPCore have a faulty L220 cache that

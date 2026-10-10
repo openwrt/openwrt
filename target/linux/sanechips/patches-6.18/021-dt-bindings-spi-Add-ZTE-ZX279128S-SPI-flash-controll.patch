@@ -1,0 +1,90 @@
+From f525e5cf89054b7a75f2768ffb0d582e92256b59 Mon Sep 17 00:00:00 2001
+From: Navid Ghahremani <ghahramani.navid@gmail.com>
+Date: Fri, 2 Oct 2026 09:38:28 +0100
+Subject: [PATCH 18/24] dt-bindings: spi: Add ZTE ZX279128S SPI flash
+ controller
+
+Describe the flash-operation controller and its work and register
+clocks.
+
+Assisted-by: LLM
+---
+ .../bindings/spi/zte,zx279128s-spifc.yaml     | 69 +++++++++++++++++++
+ 1 file changed, 69 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/spi/zte,zx279128s-spifc.yaml
+
+diff --git a/Documentation/devicetree/bindings/spi/zte,zx279128s-spifc.yaml b/Documentation/devicetree/bindings/spi/zte,zx279128s-spifc.yaml
+new file mode 100644
+index 000000000..967d460ec
+--- /dev/null
++++ b/Documentation/devicetree/bindings/spi/zte,zx279128s-spifc.yaml
+@@ -0,0 +1,69 @@
++# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/spi/zte,zx279128s-spifc.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: ZTE zx279128s SPI flash controller
++
++maintainers:
++  - Navid Ghahremani <ghahramani.navid@gmail.com>
++
++description:
++  The SPI flash controller of the ZTE zx279128s runs flash operations (an
++  opcode with optional address, dummy and data phases) on one chip select.
++  The data phase can use one, two or four lines.
++
++allOf:
++  - $ref: spi-controller.yaml#
++
++properties:
++  compatible:
++    const: zte,zx279128s-spifc
++
++  reg:
++    maxItems: 1
++
++  interrupts:
++    maxItems: 1
++
++  clocks:
++    items:
++      - description: work clock, the source of the SPI clock
++      - description: register (APB) clock
++
++  clock-names:
++    items:
++      - const: wclk
++      - const: pclk
++
++required:
++  - compatible
++  - reg
++  - clocks
++  - clock-names
++
++unevaluatedProperties: false
++
++examples:
++  - |
++    #include <dt-bindings/clock/zte,zx279128s-crm.h>
++    #include <dt-bindings/interrupt-controller/arm-gic.h>
++
++    spi@94406000 {
++        compatible = "zte,zx279128s-spifc";
++        reg = <0x94406000 0x1000>;
++        interrupts = <GIC_SPI 13 IRQ_TYPE_LEVEL_HIGH>;
++        clocks = <&lsp0crpm ZX279128S_LSP0_SPI_WCLK>,
++                 <&lsp0crpm ZX279128S_LSP0_SPI_PCLK>;
++        clock-names = "wclk", "pclk";
++        #address-cells = <1>;
++        #size-cells = <0>;
++
++        flash@0 {
++            compatible = "spi-nand";
++            reg = <0>;
++            spi-max-frequency = <50000000>;
++            spi-rx-bus-width = <2>;
++        };
++    };

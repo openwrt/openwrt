@@ -1,0 +1,48 @@
+From f692d4c1eeb4f93571131b6c2e6f5ff1516d0d34 Mon Sep 17 00:00:00 2001
+From: Navid Ghahremani <ghahramani.navid@gmail.com>
+Date: Fri, 2 Oct 2026 09:38:27 +0100
+Subject: [PATCH 08/24] gpio: Add ZTE ZX279128S GPIO driver
+
+Expose the six banks using the generic GPIO implementation and enable
+the register clock before accessing the bank.
+
+Assisted-by: LLM
+---
+ drivers/gpio/Kconfig  |   12 ++++++++++++
+ drivers/gpio/Makefile |    1 +
+ 2 files changed, 13 insertions(+)
+
+diff --git a/drivers/gpio/Kconfig b/drivers/gpio/Kconfig
+index 33ba7a0a1..dfd4f4526 100644
+--- a/drivers/gpio/Kconfig
++++ b/drivers/gpio/Kconfig
+@@ -862,6 +862,18 @@ config GPIO_ZEVIO
+ 	help
+ 	  Say yes here to support the GPIO controller in LSI ZEVIO SoCs.
+
++config GPIO_ZX279128S
++	tristate "ZTE zx279128s GPIO support"
++	depends on ARCH_ZTE || COMPILE_TEST
++	select GPIO_GENERIC
++	help
++	  Say yes here to support the GPIO controller of the ZTE zx279128s
++	  SoC. It has several banks of 16 lines each, which boards such as
++	  the ZTE ZXHN H3600 use for LEDs, buttons and reset lines.
++
++	  To compile this driver as a module, choose M here: the module
++	  will be called gpio-zx279128s.
++
+ config GPIO_ZYNQ
+ 	tristate "Xilinx Zynq GPIO support"
+ 	depends on ARCH_ZYNQ || ARCH_ZYNQMP || COMPILE_TEST
+diff --git a/drivers/gpio/Makefile b/drivers/gpio/Makefile
+index 206b69e66..181d65432 100644
+--- a/drivers/gpio/Makefile
++++ b/drivers/gpio/Makefile
+@@ -216,5 +216,6 @@ obj-$(CONFIG_GPIO_XLP)			+= gpio-xlp.o
+ obj-$(CONFIG_GPIO_XRA1403)		+= gpio-xra1403.o
+ obj-$(CONFIG_GPIO_XTENSA)		+= gpio-xtensa.o
+ obj-$(CONFIG_GPIO_ZEVIO)		+= gpio-zevio.o
++obj-$(CONFIG_GPIO_ZX279128S)		+= gpio-zx279128s.o
+ obj-$(CONFIG_GPIO_ZYNQ)			+= gpio-zynq.o
+ obj-$(CONFIG_GPIO_ZYNQMP_MODEPIN)	+= gpio-zynqmp-modepin.o

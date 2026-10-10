@@ -1,0 +1,26 @@
+From c87c2ff4552bc0c5228bfb4199fcf956c9f9b67f Mon Sep 17 00:00:00 2001
+From: Navid Ghahremani <ghahramani.navid@gmail.com>
+Date: Fri, 2 Oct 2026 09:38:27 +0100
+Subject: [PATCH 09/24] dt-bindings: pinctrl: pinctrl-single: Add ZTE ZX279128S
+ pin mux
+
+Use pinctrl-single for the verified PCIe and external-PHY bit selections
+without guessing the unverified field layout.
+
+Assisted-by: LLM
+---
+ Documentation/devicetree/bindings/pinctrl/pinctrl-single.yaml | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/Documentation/devicetree/bindings/pinctrl/pinctrl-single.yaml b/Documentation/devicetree/bindings/pinctrl/pinctrl-single.yaml
+index f83dbf32a..7758378bc 100644
+--- a/Documentation/devicetree/bindings/pinctrl/pinctrl-single.yaml
++++ b/Documentation/devicetree/bindings/pinctrl/pinctrl-single.yaml
+@@ -32,6 +32,7 @@ properties:
+               - ti,omap4-padconf
+               - ti,omap5-padconf
+               - ti,j7200-padconf
++              - zte,zx279128s-pinmux
+           - const: pinctrl-single
+       - items:
+           - enum:

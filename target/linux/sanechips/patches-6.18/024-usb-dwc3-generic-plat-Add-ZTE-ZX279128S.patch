@@ -1,0 +1,39 @@
+From 1f3376b52b450faa8a76da19cf2d66978ae61242 Mon Sep 17 00:00:00 2001
+From: Navid Ghahremani <ghahramani.navid@gmail.com>
+Date: Fri, 2 Oct 2026 09:38:29 +0100
+Subject: [PATCH 21/24] usb: dwc3: generic-plat: Add ZTE ZX279128S
+
+Use the generic DWC3 platform integration to enable clocks and release
+resets.
+
+Assisted-by: LLM
+---
+ drivers/usb/dwc3/Kconfig             | 2 +-
+ drivers/usb/dwc3/dwc3-generic-plat.c | 1 +
+ 2 files changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/usb/dwc3/Kconfig b/drivers/usb/dwc3/Kconfig
+index 4925d1508..1c1c151d0 100644
+--- a/drivers/usb/dwc3/Kconfig
++++ b/drivers/usb/dwc3/Kconfig
+@@ -195,7 +195,7 @@ config USB_DWC3_GENERIC_PLAT
+ 	default USB_DWC3
+ 	help
+ 	  Support USB3 functionality in simple SoC integrations.
+-	  Currently supports SpacemiT DWC USB3. Platforms using
++	  Currently supports SpacemiT and ZTE zx279128s DWC USB3. Platforms using
+ 	  dwc3-of-simple can easily switch to dwc3-generic by flattening
+ 	  the dwc3 child node in the device tree.
+ 	  Say 'Y' or 'M' here if your platform integrates DWC3 in a similar way.
+diff --git a/drivers/usb/dwc3/dwc3-generic-plat.c b/drivers/usb/dwc3/dwc3-generic-plat.c
+index f8ad79c08..cc199d8c3 100644
+--- a/drivers/usb/dwc3/dwc3-generic-plat.c
++++ b/drivers/usb/dwc3/dwc3-generic-plat.c
+@@ -144,6 +144,7 @@ static const struct dev_pm_ops dwc3_generic_dev_pm_ops = {
+
+ static const struct of_device_id dwc3_generic_of_match[] = {
+ 	{ .compatible = "spacemit,k1-dwc3", },
++	{ .compatible = "zte,zx279128s-dwc3", },
+ 	{ /* sentinel */ }
+ };
+ MODULE_DEVICE_TABLE(of, dwc3_generic_of_match);
