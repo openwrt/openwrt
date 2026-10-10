@@ -1,0 +1,39 @@
+From 2e493d4888fc3236ea66b5356d00adfbf4e5e7e9 Mon Sep 17 00:00:00 2001
+From: surendra <kr494167@gmail.com>
+Date: Mon, 20 Jul 2026 16:06:06 +0530
+Subject: [PATCH] thermal/drivers/spacemit: Validate clamped trip thresholds
+
+k1_tsensor_set_trips() checks the requested trip temperatures before
+converting them to the sensor register representation. Distinct
+out-of-range temperatures can clamp to the same hardware value, leaving the
+sensor with an invalid low/high threshold pair.
+
+Validate the ordering after conversion and clamping.
+
+Fixes: 296a977f2bac ("thermal/drivers/spacemit/k1: Add thermal sensor support")
+Signed-off-by: surendra <kr494167@gmail.com>
+Signed-off-by: Daniel Lezcano <daniel.lezcano@kernel.org>
+Link: https://patch.msgid.link/20260720103606.93924-1-kr494167@gmail.com
+(cherry picked from commit 68b78ad1e3533c1330dc9b7517947491c1a909c3)
+---
+ drivers/thermal/spacemit/k1_tsensor.c | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+
+--- a/drivers/thermal/spacemit/k1_tsensor.c
++++ b/drivers/thermal/spacemit/k1_tsensor.c
+@@ -156,13 +156,12 @@ static int k1_tsensor_set_trips(struct t
+ 	struct k1_tsensor *ts = ch->ts;
+ 	u32 val;
+ 
+-	if (low >= high)
+-		return -EINVAL;
+-
+ 	low = clamp_val(low / 1000 + TEMPERATURE_OFFSET, TEMPERATURE_OFFSET,
+ 			FIELD_MAX(K1_TSENSOR_THRSH_LOW_MASK));
+ 	high = clamp_val(high / 1000 + TEMPERATURE_OFFSET, TEMPERATURE_OFFSET,
+ 			 FIELD_MAX(K1_TSENSOR_THRSH_HIGH_MASK));
++	if (low >= high)
++		return -EINVAL;
+ 
+ 	val = readl(ts->base + K1_TSENSOR_THRSH_REG(ch->id));
+ 
