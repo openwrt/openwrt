@@ -1,0 +1,46 @@
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sat, 10 Oct 2026 14:34:17 +0200
+Subject: [PATCH] ipmr: do not drop GSO packets that fit the MTU after
+ segmentation
+
+ipmr_prepare_xmit() drops a packet with DF set when skb->len exceeds the
+route MTU, without checking whether it is a GSO packet. A UDP multicast
+stream received with fraglist GRO or UDP GRO forwarding enabled is
+aggregated into GSO packets, and every aggregate is dropped with
+FragFails, while ip_forward() lets the same packets pass by checking
+skb_gso_validate_network_len(). Do the same for multicast routing.
+ip6mr has no such check and leaves GSO packets to ip6_output().
+
+On an IPQ8074 router with fraglist GRO on, a 10 Mbit/s stream of
+1316-byte DF datagrams routed by igmpproxy loses 14.5 to 15.5% (n=3)
+and 0% with this change.
+
+Fixes: 9fd1ff5d2ac7 ("udp: Support UDP fraglist GRO/GSO.")
+Link: https://lore.kernel.org/netdev/20261010131842.2157365-1-julius@bairaktaris.de/
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+ net/ipv4/ipmr.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+--- a/net/ipv4/ipmr.c
++++ b/net/ipv4/ipmr.c
+@@ -1860,6 +1860,7 @@ static void ipmr_queue_xmit(struct net *
+ 	struct rtable *rt;
+ 	struct flowi4 fl4;
+ 	int    encap = 0;
++	unsigned int mtu;
+ 
+ 	vif_dev = vif_dev_read(vif);
+ 	if (!vif_dev)
+@@ -1897,7 +1898,9 @@ static void ipmr_queue_xmit(struct net *
+ 
+ 	dev = dst_dev_rcu(&rt->dst);
+ 
+-	if (skb->len+encap > dst4_mtu(&rt->dst) && (ntohs(iph->frag_off) & IP_DF)) {
++	mtu = dst4_mtu(&rt->dst) - encap;
++	if (skb->len > mtu && (ntohs(iph->frag_off) & IP_DF) &&
++	    !(skb_is_gso(skb) && skb_gso_validate_network_len(skb, mtu))) {
+ 		/* Do not fragment multicasts. Alas, IPv4 does not
+ 		 * allow to send ICMP, so that packets will disappear
+ 		 * to blackhole.
