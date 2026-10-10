@@ -1,0 +1,36 @@
+From 2ac48432dc2f22f261f4893c236c51ab1088ea19 Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sat, 3 Oct 2026 23:10:00 +0200
+Subject: [PATCH] sha256: keep the target CPU when enabling the crypto
+ extensions
+
+On AArch64, "arch=armv8-a+crypto" replaces the -mcpu/-march of the
+build with plain Armv8.0-A. For -mcpu=cortex-a53 this drops CRC, and GCC
+then refuses to inline always_inline functions compiled for the full
+target, such as a fortified memset():
+
+  error: inlining failed in call to 'always_inline' 'memset':
+  target specific option mismatch
+
+Use "+crypto" on AArch64, as aesce.c does, which adds the extension to
+the build target. Keep "arch=armv8-a+crypto" for AArch32.
+
+Link: https://github.com/Mbed-TLS/mbedtls/pull/10986
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+---
+--- a/library/sha256.c
++++ b/library/sha256.c
+@@ -102,7 +102,11 @@
+ #          error "A more recent GCC is required for MBEDTLS_SHA256_USE_ARMV8_A_CRYPTO_*"
+ #        else
+ #          pragma GCC push_options
+-#          pragma GCC target ("arch=armv8-a+crypto")
++#          if defined(MBEDTLS_ARCH_IS_ARM64)
++#            pragma GCC target ("+crypto")
++#          else
++#            pragma GCC target ("arch=armv8-a+crypto")
++#          endif
+ #          define MBEDTLS_POP_TARGET_PRAGMA
+ #        endif
+ #      else
