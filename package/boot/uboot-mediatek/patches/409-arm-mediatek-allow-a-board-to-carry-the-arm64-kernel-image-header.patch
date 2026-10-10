@@ -44,7 +44,7 @@ Signed-off-by: Aleksei Sviridkin <f@lex.la>
 +++ b/arch/arm/mach-mediatek/Kconfig
 @@ -173,6 +173,23 @@ config MTK_MEM_MAP_MMIO_SIZE
  	help
- 		Target-specific MMIO region size in mem_map.
+ 	  Target-specific MMIO region size in mem_map.
  
 +config MTK_KERNEL_IMAGE_HEADER
 +	bool "Prepend an arm64 Linux kernel image header"
