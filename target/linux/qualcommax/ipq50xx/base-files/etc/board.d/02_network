@@ -43,6 +43,7 @@ ipq50xx_setup_interfaces()
 		ucidef_set_network_device_conduit "lan3" "eth1"
 		ucidef_set_network_device_conduit "wan" "eth0"
 		;;
+	tplink,deco-xe75-v3|\
 	tplink,eap650-outdoor-v1|\
 	tplink,re700x)
 		ucidef_set_interface_lan "lan" "dhcp"
