@@ -98,7 +98,7 @@
 +CONFIG_PINCONF=y
 +CONFIG_PINCTRL_MT7622=y
 +CONFIG_POWER_DOMAIN=y
-+CONFIG_MTK_POWER_DOMAIN=y
++CONFIG_MT7622_POWER_DOMAIN=y
 +CONFIG_DM_REGULATOR=y
 +CONFIG_DM_REGULATOR_FIXED=y
 +CONFIG_DM_REGULATOR_GPIO=y
@@ -335,7 +335,7 @@
 +};
 --- a/arch/arm/dts/Makefile
 +++ b/arch/arm/dts/Makefile
-@@ -1097,6 +1097,7 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += \
+@@ -1074,6 +1074,7 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += \
  	mt7622-rfb.dtb \
  	mt7623a-unielec-u7623-02-emmc.dtb \
  	mt7622-bananapi-bpi-r64.dtb \
