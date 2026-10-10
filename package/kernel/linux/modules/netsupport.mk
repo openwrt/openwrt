@@ -743,6 +743,23 @@ endef
 $(eval $(call KernelPackage,sched-core))
 
 
+define KernelPackage/sched-act-gate
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=Traffic gate control
+  DEPENDS:=+kmod-sched-core
+  KCONFIG:=CONFIG_NET_ACT_GATE
+  FILES:=$(LINUX_DIR)/net/sched/act_gate.ko
+  AUTOLOAD:=$(call AutoProbe,act_gate)
+endef
+
+define KernelPackage/sched-act-gate/description
+ Gate tc action (IEEE 802.1Qci) that passes or drops ingress packets
+ based on a time schedule.
+endef
+
+$(eval $(call KernelPackage,sched-act-gate))
+
+
 define KernelPackage/sched-act-police
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Traffic Policing
@@ -822,6 +839,22 @@ endef
 $(eval $(call KernelPackage,sched-cake))
 
 
+define KernelPackage/sched-cbs
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=Credit Based Shaper (CBS)
+  DEPENDS:=+kmod-sched-core
+  KCONFIG:=CONFIG_NET_SCH_CBS
+  FILES:=$(LINUX_DIR)/net/sched/sch_cbs.ko
+  AUTOLOAD:=$(call AutoProbe,sch_cbs)
+endef
+
+define KernelPackage/sched-cbs/description
+ Credit Based Shaper (IEEE 802.1Qav) for Time-Sensitive Networking.
+endef
+
+$(eval $(call KernelPackage,sched-cbs))
+
+
 define KernelPackage/sched-connmark
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Traffic shaper conntrack mark support
@@ -858,6 +891,23 @@ define KernelPackage/sched-drr/description
 endef
 
 $(eval $(call KernelPackage,sched-drr))
+
+
+define KernelPackage/sched-etf
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=Earliest TxTime First scheduler (ETF)
+  DEPENDS:=+kmod-sched-core
+  KCONFIG:=CONFIG_NET_SCH_ETF
+  FILES:=$(LINUX_DIR)/net/sched/sch_etf.ko
+  AUTOLOAD:=$(call AutoProbe,sch_etf)
+endef
+
+define KernelPackage/sched-etf/description
+ Earliest TxTime First scheduler, sends packets at the time set with
+ SO_TXTIME. Used for Time-Sensitive Networking.
+endef
+
+$(eval $(call KernelPackage,sched-etf))
 
 
 define KernelPackage/sched-flower
@@ -995,6 +1045,22 @@ define KernelPackage/sched-skbprio
 endef
 
 $(eval $(call KernelPackage,sched-skbprio))
+
+
+define KernelPackage/sched-taprio
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=Time Aware Priority scheduler (TAPRIO)
+  DEPENDS:=+kmod-sched-core +kmod-sched-mqprio-common
+  KCONFIG:=CONFIG_NET_SCH_TAPRIO
+  FILES:=$(LINUX_DIR)/net/sched/sch_taprio.ko
+  AUTOLOAD:=$(call AutoProbe,sch_taprio)
+endef
+
+define KernelPackage/sched-taprio/description
+ Time Aware Priority scheduler (IEEE 802.1Qbv) for Time-Sensitive Networking.
+endef
+
+$(eval $(call KernelPackage,sched-taprio))
 
 
 define KernelPackage/bpf-test
