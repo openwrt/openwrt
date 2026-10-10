@@ -1,0 +1,38 @@
+From 58605f1c0d2b7312dbf4d8d3e82b4a3cfde984fb Mon Sep 17 00:00:00 2001
+From: Nick Hainke <vincent@systemli.org>
+Date: Wed, 7 Oct 2026 16:00:00 +0200
+Subject: [PATCH] interface: don't take IPv4 fragments for DNS replies
+
+The u32 filter which redirects DNS replies to the ifb-dns device reads
+the source port at a fixed offset. For the fragments after the first
+one, these are payload bytes. A fragment with 00 35 there was taken for
+a DNS reply and redirected, which also kept it away from the ingress
+shaping. The bytes can be chosen by the sender.
+
+Only match packets with a fragment offset of 0, which are unfragmented
+packets and first fragments.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Nick Hainke <vincent@systemli.org>
+---
+ interface.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/interface.c b/interface.c
+index fab9499..141051a 100644
+--- a/interface.c
++++ b/interface.c
+@@ -369,8 +369,13 @@ cmd_add_ingress(struct qosify_iface *iface, bool eth)
+ 
+ 	cmd_add_bpf_filter(iface->ifname, prio++, false, eth);
+ 
++	/*
++	 * Only the first fragment carries the UDP header, the payload of the
++	 * other fragments must not be taken for the source port.
++	 */
+ 	ofs = prepare_filter_cmd(buf, sizeof(buf), iface->ifname, prio++, true, false);
+ 	APPEND(buf, ofs, " protocol ip u32 match ip sport 53 0xffff "
++			 "match u16 0 0x1fff at 6 "
+ 			 "flowid 1:1 action mirred egress redirect dev " QOSIFY_DNS_IFNAME);
+ 	qosify_run_cmd(buf, false);
+ 

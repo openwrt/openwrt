@@ -1,0 +1,39 @@
+From c246d9d21661e9674c2426765415dfed0581a796 Mon Sep 17 00:00:00 2001
+From: Ash Clarke <clarkeaj@hotmail.co.uk>
+Date: Wed, 5 Aug 2026 12:08:59 +0100
+Subject: [PATCH] main: tear down the DNS ifb device on exit
+
+qosify_dns_init() creates the ifb-dns netdev, but qosify_dns_stop() is
+never called, so the device and its default qdisc survive a clean
+shutdown of the daemon:
+
+  # /etc/init.d/qosify stop
+  # tc qdisc show dev ifb-dns
+  qdisc fq_codel 0: dev ifb-dns root refcnt 2 limit 10240p flows 1024 [...]
+
+Per-interface ifb devices are already removed via interface_clear_qdisc(),
+so ifb-dns is the only leftover. It is most visible after removing the
+package, since nothing recreates or cleans it up afterwards.
+
+Call qosify_dns_stop() after qosify_iface_stop(), so that the filters
+redirecting to ifb-dns are gone before the device itself is deleted.
+This also closes the raw packet socket and frees the cname cache.
+
+Signed-off-by: Ash Clarke <clarkeaj@hotmail.co.uk>
+Signed-off-by: Nick Hainke <vincent@systemli.org>
+---
+ main.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/main.c b/main.c
+index 56b4a30..fd1451a 100644
+--- a/main.c
++++ b/main.c
+@@ -127,6 +127,7 @@ int main(int argc, char **argv)
+ 
+ 	qosify_ubus_stop();
+ 	qosify_iface_stop();
++	qosify_dns_stop();
+ 
+ 	uloop_done();
+ 

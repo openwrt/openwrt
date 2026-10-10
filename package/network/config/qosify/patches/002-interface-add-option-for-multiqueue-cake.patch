@@ -1,0 +1,130 @@
+From 5a9cc29c4b6169bb77e6871b679df96693826c29 Mon Sep 17 00:00:00 2001
+From: Karol Kolacinski <karol.kolacinski@tuta.com>
+Date: Mon, 6 Apr 2026 11:11:48 +0200
+Subject: [PATCH] interface: add option for multiqueue cake
+
+OpenWRT 25.12 added an option to use multiqueue cake.
+Add a new option multiqueue to select cake_mq instead of cake.
+
+Signed-off-by: Karol Kolacinski <karol.kolacinski@tuta.com>
+[only use cake_mq on devices with more than one transmit queue, the
+ kernel refuses it on other devices, which left them without shaping;
+ the ifb device for ingress has a single queue and keeps using cake]
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Nick Hainke <vincent@systemli.org>
+---
+ README      |  5 +++++
+ interface.c | 30 +++++++++++++++++++++++++++++-
+ 2 files changed, 34 insertions(+), 1 deletion(-)
+
+diff --git a/README b/README
+index 10d0c55..7b6523e 100644
+--- a/README
++++ b/README
+@@ -86,6 +86,11 @@ interface/device properties:
+ - "options": STRING
+ 	CAKE options for ingress + egress
+ 
++- "multiqueue": BOOL
++	Use cake_mq instead of cake on devices with more than one transmit
++	queue. The ifb device for ingress has a single queue and keeps
++	using cake.
++
+ 
+ Mapping file syntax:
+ 
+diff --git a/interface.c b/interface.c
+index 8b415b1..0c21bbb 100644
+--- a/interface.c
++++ b/interface.c
+@@ -12,6 +12,7 @@
+ 
+ #include <unistd.h>
+ #include <errno.h>
++#include <glob.h>
+ 
+ #include <netlink/msg.h>
+ #include <netlink/attr.h>
+@@ -45,6 +46,7 @@ struct qosify_iface_config {
+ 	bool nat;
+ 	bool host_isolate;
+ 	bool autorate_ingress;
++	bool multiqueue;
+ 
+ 	const char *bandwidth_up;
+ 	const char *bandwidth_down;
+@@ -78,6 +80,7 @@ enum {
+ 	IFACE_ATTR_INGRESS_OPTS,
+ 	IFACE_ATTR_EGRESS_OPTS,
+ 	IFACE_ATTR_OPTS,
++	IFACE_ATTR_MULTIQUEUE,
+ 	__IFACE_ATTR_MAX
+ };
+ 
+@@ -101,6 +104,7 @@ iface_config_parse(struct blob_attr *attr, struct blob_attr **tb)
+ 		[IFACE_ATTR_INGRESS_OPTS] = { "ingress_options", BLOBMSG_TYPE_STRING },
+ 		[IFACE_ATTR_EGRESS_OPTS] = { "egress_options", BLOBMSG_TYPE_STRING },
+ 		[IFACE_ATTR_OPTS] = { "options", BLOBMSG_TYPE_STRING },
++		[IFACE_ATTR_MULTIQUEUE] = { "multiqueue", BLOBMSG_TYPE_BOOL },
+ 	};
+ 
+ 	blobmsg_parse(policy, __IFACE_ATTR_MAX, tb, blobmsg_data(attr), blobmsg_len(attr));
+@@ -160,6 +164,7 @@ iface_config_set(struct qosify_iface *iface, struct blob_attr *attr)
+ 	cfg->host_isolate = true;
+ 	cfg->autorate_ingress = false;
+ 	cfg->nat = !iface->device;
++	cfg->multiqueue = false;
+ 
+ 	if ((cur = tb[IFACE_ATTR_BW_UP]) != NULL)
+ 		cfg->bandwidth_up = check_str(cur);
+@@ -183,6 +188,8 @@ iface_config_set(struct qosify_iface *iface, struct blob_attr *attr)
+ 		cfg->host_isolate = blobmsg_get_bool(cur);
+ 	if ((cur = tb[IFACE_ATTR_AUTORATE_IN]) != NULL)
+ 		cfg->autorate_ingress = blobmsg_get_bool(cur);
++	if ((cur = tb[IFACE_ATTR_MULTIQUEUE]) != NULL)
++		cfg->multiqueue = blobmsg_get_bool(cur);
+ }
+ 
+ static const char *
+@@ -262,19 +269,40 @@ cmd_add_bpf_filter(const char *ifname, int prio, bool egress, bool eth)
+ 	return nl_wait_for_ack(rtnl_sock);
+ }
+ 
++static int
++interface_tx_queues(const char *ifname)
++{
++	char path[64];
++	glob_t gl;
++	int queues = 1;
++
++	snprintf(path, sizeof(path), "/sys/class/net/%s/queues/tx-*", ifname);
++	if (glob(path, 0, NULL, &gl) == 0) {
++		queues = gl.gl_pathc;
++		globfree(&gl);
++	}
++
++	return queues;
++}
++
+ static int
+ cmd_add_qdisc(struct qosify_iface *iface, const char *ifname, bool egress, bool eth)
+ {
+ 	struct qosify_iface_config *cfg = &iface->config;
+ 	const char *bw = egress ? cfg->bandwidth_up : cfg->bandwidth_down;
+ 	const char *dir_opts = egress ? cfg->egress_opts : cfg->ingress_opts;
++	const char *cake = "root cake";
+ 	char buf[512];
+ 	int ofs;
+ 
++	/* cake_mq can only be attached to a device with several queues */
++	if (cfg->multiqueue && interface_tx_queues(ifname) > 1)
++		cake = "root cake_mq";
++
+ 	ofs = prepare_qdisc_cmd(buf, sizeof(buf), ifname, true, "clsact");
+ 	qosify_run_cmd(buf, true);
+ 
+-	ofs = prepare_qdisc_cmd(buf, sizeof(buf), ifname, true, "root cake");
++	ofs = prepare_qdisc_cmd(buf, sizeof(buf), ifname, true, cake);
+ 	if (bw)
+ 		APPEND(buf, ofs, " bandwidth %s", bw);
+ 

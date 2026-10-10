@@ -1,0 +1,139 @@
+From d524446f36a44922a4f9c4473b08c6a237c563a5 Mon Sep 17 00:00:00 2001
+From: Nick Hainke <vincent@systemli.org>
+Date: Wed, 7 Oct 2026 16:00:00 +0200
+Subject: [PATCH] interface: redirect DNS replies with 802.1ad and two VLAN
+ tags
+
+The DNS filters only handled a single 802.1Q tag. Like for 802.1Q, the
+kernel removes a single 802.1ad tag from the packet data before ingress
+and tc matches the 802.1ad protocol, with the IP header at offset 0.
+
+With two VLAN tags, the kernel removes the outer tag and tc matches its
+protocol, 802.1Q or 802.1ad. The packet data starts with the inner tag,
+followed by the protocol of the payload, so none of the filters matched
+these packets, and their DNS replies were never redirected. The DNS
+parser already handles one VLAN tag in the packet data, which is where
+the inner tag of these packets is.
+
+Add the filters for a single tag and for two tags for both protocols.
+The filters for two tags check the payload protocol behind the inner
+tag, the source port at the offsets after it, and for IPv4 the fragment
+offset. Remove all twelve ingress filters on cleanup, instead of the
+first six.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Nick Hainke <vincent@systemli.org>
+---
+ interface.c | 69 +++++++++++++++++++++++++++++++++++++++--------------
+ 1 file changed, 51 insertions(+), 18 deletions(-)
+
+diff --git a/interface.c b/interface.c
+index 46048e6..3b03be6 100644
+--- a/interface.c
++++ b/interface.c
+@@ -37,6 +37,13 @@ static VLIST_TREE(interfaces, avl_strcmp, interface_update_cb, true, false);
+ static int socket_fd;
+ static struct nl_sock *rtnl_sock;
+ 
++/*
++ * Ingress filters: the classifier, two DNS filters without a VLAN tag,
++ * four DNS filters for each VLAN protocol and the redirect to the ifb
++ * device.
++ */
++#define QOSIFY_INGRESS_FILTERS	12
++
+ #define APPEND(_buf, _ofs, _format, ...) _ofs += snprintf(_buf + _ofs, sizeof(_buf) - _ofs, _format, ##__VA_ARGS__)
+ 
+ struct qosify_iface_config {
+@@ -361,11 +368,12 @@ cmd_add_ifb(const char *ifname, int queues)
+ static int
+ cmd_add_ingress(struct qosify_iface *iface, bool eth)
+ {
++	static const char * const vlan_protos[] = { "802.1Q", "802.1ad" };
+ 	const char *ifbdev = interface_ifb_name(iface);
+ 	char buf[256];
+ 	int prio = QOSIFY_PRIO_BASE;
+ 	int queues = 1;
+-	int ofs;
++	int ofs, i;
+ 
+ 	cmd_add_bpf_filter(iface->ifname, prio++, false, eth);
+ 
+@@ -379,27 +387,52 @@ cmd_add_ingress(struct qosify_iface *iface, bool eth)
+ 			 "flowid 1:1 action mirred egress redirect dev " QOSIFY_DNS_IFNAME);
+ 	qosify_run_cmd(buf, false);
+ 
+-	/*
+-	 * With a VLAN tag, tc matches the VLAN protocol, but the tag is no
+-	 * longer in the packet data, so the offsets are the same as without
+-	 * it. The VLAN can carry IPv4 and IPv6, check the IP version.
+-	 */
+-	ofs = prepare_filter_cmd(buf, sizeof(buf), iface->ifname, prio++, true, false);
+-	APPEND(buf, ofs, " protocol 802.1Q u32 match u8 0x40 0xf0 at 0 "
+-			 "match ip sport 53 0xffff match u16 0 0x1fff at 6 "
+-			 "flowid 1:1 action mirred egress redirect dev " QOSIFY_DNS_IFNAME);
+-	qosify_run_cmd(buf, false);
+-
+ 	ofs = prepare_filter_cmd(buf, sizeof(buf), iface->ifname, prio++, true, false);
+ 	APPEND(buf, ofs, " protocol ipv6 u32 match ip6 sport 53 0xffff "
+ 			 "flowid 1:1 action mirred egress redirect dev " QOSIFY_DNS_IFNAME);
+ 	qosify_run_cmd(buf, false);
+ 
+-	ofs = prepare_filter_cmd(buf, sizeof(buf), iface->ifname, prio++, true, false);
+-	APPEND(buf, ofs, " protocol 802.1Q u32 match u8 0x60 0xf0 at 0 "
+-			 "match ip6 sport 53 0xffff "
+-			 "flowid 1:1 action mirred egress redirect dev " QOSIFY_DNS_IFNAME);
+-	qosify_run_cmd(buf, false);
++	/*
++	 * The kernel removes the outer VLAN tag from the packet data before
++	 * ingress, and tc matches its protocol.
++	 */
++	for (i = 0; i < ARRAY_SIZE(vlan_protos); i++) {
++		/*
++		 * One tag: the IP header is at 0, like without a tag. The VLAN
++		 * can carry IPv4 and IPv6, check the IP version.
++		 */
++		ofs = prepare_filter_cmd(buf, sizeof(buf), iface->ifname, prio++, true, false);
++		APPEND(buf, ofs, " protocol %s u32 match u8 0x40 0xf0 at 0 "
++				 "match ip sport 53 0xffff match u16 0 0x1fff at 6 "
++				 "flowid 1:1 action mirred egress redirect dev " QOSIFY_DNS_IFNAME,
++		       vlan_protos[i]);
++		qosify_run_cmd(buf, false);
++
++		ofs = prepare_filter_cmd(buf, sizeof(buf), iface->ifname, prio++, true, false);
++		APPEND(buf, ofs, " protocol %s u32 match u8 0x60 0xf0 at 0 "
++				 "match ip6 sport 53 0xffff "
++				 "flowid 1:1 action mirred egress redirect dev " QOSIFY_DNS_IFNAME,
++		       vlan_protos[i]);
++		qosify_run_cmd(buf, false);
++
++		/*
++		 * Two tags: the packet data starts with the inner tag, which is
++		 * followed by the protocol of the payload and the IP header at 4.
++		 */
++		ofs = prepare_filter_cmd(buf, sizeof(buf), iface->ifname, prio++, true, false);
++		APPEND(buf, ofs, " protocol %s u32 match u16 0x0800 0xffff at 2 "
++				 "match u16 0 0x1fff at 10 match u16 53 0xffff at 24 "
++				 "flowid 1:1 action mirred egress redirect dev " QOSIFY_DNS_IFNAME,
++		       vlan_protos[i]);
++		qosify_run_cmd(buf, false);
++
++		ofs = prepare_filter_cmd(buf, sizeof(buf), iface->ifname, prio++, true, false);
++		APPEND(buf, ofs, " protocol %s u32 match u16 0x86dd 0xffff at 2 "
++				 "match u16 53 0xffff at 44 "
++				 "flowid 1:1 action mirred egress redirect dev " QOSIFY_DNS_IFNAME,
++		       vlan_protos[i]);
++		qosify_run_cmd(buf, false);
++	}
+ 
+ 
+ 	if (!iface->config.ingress)
+@@ -445,7 +478,7 @@ interface_clear_qdisc(struct qosify_iface *iface)
+ 	prepare_qdisc_cmd(buf, sizeof(buf), iface->ifname, false, "root");
+ 	qosify_run_cmd(buf, true);
+ 
+-	for (i = 0; i < 6; i++) {
++	for (i = 0; i < QOSIFY_INGRESS_FILTERS; i++) {
+ 		prepare_filter_cmd(buf, sizeof(buf), iface->ifname, QOSIFY_PRIO_BASE + i, false, false);
+ 		qosify_run_cmd(buf, true);
+ 	}
