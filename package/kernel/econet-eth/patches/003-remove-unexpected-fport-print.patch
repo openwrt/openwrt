@@ -1,0 +1,20 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Navid Ghahremani <ghahramani.navid@gmail.com>
+Date: Sun, 27 Sep 2026 22:20:00 +0100
+Subject: [PATCH] econet-eth: remove unexpected fport print
+
+Remove the noisy 'rx: on unexpected fport' print from en75_get_sport_dev().
+
+Signed-off-by: Navid Ghahremani <ghahramani.navid@gmail.com>
+---
+--- a/econet_eth.c
++++ b/econet_eth.c
+@@ -148,8 +148,6 @@ static struct net_device *en75_get_sport
+ 	if (sport == ETX_FPORT_GDM2) {
+ 		return eth->ports[1];
+ 	} else {
+-		if (sport != ETX_FPORT_GDM1)
+-			dev_info(eth->pub.dev, "rx: on unexpected fport %d\n", sport);
+ 		return eth->ports[0];
+ 	}
+ }
