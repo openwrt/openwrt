@@ -211,15 +211,25 @@ static bool rtl8214fc_media_is_fibre(struct phy_device *phydev)
 static void rtl8214fc_power_set(struct phy_device *phydev, int port, bool on)
 {
 	int page = port == PORT_FIBRE ? RTL821X_MEDIA_PAGE_FIBRE : RTL821X_MEDIA_PAGE_COPPER;
-	int oldxpage = __phy_read(phydev, RTL821x_EXT_PAGE_SELECT);
 	int pdown = on ? 0 : BMCR_PDOWN;
+	int oldpage, oldxpage;
 
 	phydev_info(phydev, "power %s %s\n", on ? "on" : "off",
 		    port == PORT_FIBRE ? "fibre" : "copper");
 
-	phy_write(phydev, RTL821x_EXT_PAGE_SELECT, page);
-	phy_modify_paged(phydev, RTL821X_PAGE_POWER, 0x10, BMCR_PDOWN, pdown);
-	phy_write(phydev, RTL821x_EXT_PAGE_SELECT, oldxpage);
+	/* Hold the bus lock for the whole sequence. On the base port, other ports
+	 * change the page registers in between (__rtl8214fc_media_is_fibre()), and
+	 * a stale oldxpage would leave the port stuck on the internal page.
+	 */
+	phy_lock_mdio_bus(phydev);
+	oldxpage = __phy_read(phydev, RTL821x_EXT_PAGE_SELECT);
+	oldpage = __phy_read(phydev, RTL821x_PAGE_SELECT);
+	__phy_write(phydev, RTL821x_EXT_PAGE_SELECT, page);
+	__phy_write(phydev, RTL821x_PAGE_SELECT, RTL821X_PAGE_POWER);
+	__phy_modify(phydev, 0x10, BMCR_PDOWN, pdown);
+	__phy_write(phydev, RTL821x_PAGE_SELECT, oldpage);
+	__phy_write(phydev, RTL821x_EXT_PAGE_SELECT, oldxpage);
+	phy_unlock_mdio_bus(phydev);
 }
 
 static int rtl8214fc_suspend(struct phy_device *phydev)
