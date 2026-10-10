@@ -1,0 +1,77 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Salah Ahmed <haddad2inc@gmail.com>
+Date: Tue, 06 Oct 2026 03:18:05 +0300
+Subject: [PATCH] wifi: mac80211: count the tpt LED trigger from delivered data
+ only
+
+The phy tpt trigger adds every received frame with the data-present bit
+set to its RX byte count in ieee80211_rx_napi(), before the frame is
+matched to a BSS or delivered to an interface. On a busy band an access
+point with zero associated clients still hears data frames from
+neighbouring networks, so the throughput LED blinks continuously and
+gives no indication of actual transfer. Management frames such as
+beacons are already excluded by the data-present check, and the TX side
+only counts data submitted through the interface transmit paths, so
+overheard data is the only remaining source of idle blinking.
+
+Move the RX count to the two places where a frame is actually handed to
+an interface, right next to the dev_sw_netstats_rx_add() calls in
+ieee80211_deliver_skb() and ieee80211_rx_8023() (the latter also covers
+the fast-RX and the 802.3-offload delivery paths). The trigger then
+counts exactly the data delivered to the wiphy's interfaces, in every
+mode - AP, client or mesh - which matches what the per-interface
+counters report and what users read from a throughput LED. With no
+delivered data the computed rate is zero and the existing blink table
+already keeps the LED solid, so an idle radio no longer blinks.
+
+Monitor copies are deliberately not counted: they are clones of frames
+whose original delivery is already counted once at its own interface,
+and counting them would double the reported rate whenever a monitor
+interface is up.
+
+The deleted block was the only user of the local hdr pointer in
+ieee80211_rx_list(), so drop its declaration too - mac80211 is built
+with -Werror=unused-variable and the file would not compile otherwise.
+
+Signed-off-by: Salah Ahmed <haddad2inc@gmail.com>
+---
+ net/mac80211/rx.c | 7 ++-----
+ 1 file changed, 2 insertions(+), 5 deletions(-)
+
+--- a/net/mac80211/rx.c
++++ b/net/mac80211/rx.c
+@@ -2803,6 +2803,7 @@ ieee80211_deliver_skb(struct ieee80211_r
+ 	xmit_skb = NULL;
+ 
+ 	dev_sw_netstats_rx_add(dev, skb->len);
++	ieee80211_tpt_led_trig_rx(rx->local, skb->len);
+ 
+ 	if (rx->sta) {
+ 		/* The seqno index has the same property as needed
+@@ -4969,6 +4970,7 @@ static void ieee80211_rx_8023(struct iee
+ 	skb->dev = fast_rx->dev;
+ 
+ 	dev_sw_netstats_rx_add(fast_rx->dev, skb->len);
++	ieee80211_tpt_led_trig_rx(rx->local, skb->len);
+ 
+ 	/* The seqno index has the same property as needed
+ 	 * for the rx_msdu field, i.e. it is IEEE80211_NUM_TIDS
+@@ -5568,7 +5570,6 @@ void ieee80211_rx_list(struct ieee80211_
+ 	struct ieee80211_rate *rate = NULL;
+ 	struct ieee80211_supported_band *sband;
+ 	struct ieee80211_rx_status *status = IEEE80211_SKB_RXCB(skb);
+-	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
+ 
+ 	WARN_ON_ONCE(softirq_count() == 0);
+ 
+@@ -5715,10 +5716,6 @@ void ieee80211_rx_list(struct ieee80211_
+ 	if (!(status->flag & RX_FLAG_8023))
+ 		skb = ieee80211_rx_monitor(local, skb, rate);
+ 	if (skb) {
+-		if ((status->flag & RX_FLAG_8023) ||
+-			ieee80211_is_data_present(hdr->frame_control))
+-			ieee80211_tpt_led_trig_rx(local, skb->len);
+-
+ 		if (status->flag & RX_FLAG_8023)
+ 			__ieee80211_rx_handle_8023(hw, pubsta, skb, list);
+ 		else
