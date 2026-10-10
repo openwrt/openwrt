@@ -25,12 +25,10 @@ define Build/asus-trx
 endef
 
 define Build/netgear-rbx750_850-qsdk-ipq-factory
-	$(CP) $(NETGEAR_FLASH_SCRIPT) $(KDIR_TMP)/
-
 	echo "VERSION : V8.0.0.0_$(LINUX_VERSION)" > $@.metadata
 	echo "MODEL_ID : $(DEVICE_MODEL)" >> $@.metadata
 
-	$(TOPDIR)/scripts/mkits-qsdk-ipq-image.sh $@.its $(NETGEAR_FLASH_SCRIPT) txt $@.metadata ubi $@
+	$(TOPDIR)/scripts/mkits-qsdk-ipq-image.sh $@.its $(CURDIR)/$(NETGEAR_FLASH_SCRIPT) txt $@.metadata ubi $@
 	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $@.its $@.new
 	@mv $@.new $@
 endef
