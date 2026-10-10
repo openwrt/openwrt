@@ -19,7 +19,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/drivers/rng/Kconfig
 +++ b/drivers/rng/Kconfig
-@@ -38,6 +38,13 @@ config RNG_MSM
+@@ -45,6 +45,13 @@ config RNG_MSM
  	  This driver provides support for the Random Number
  	  Generator hardware found on Qualcomm SoCs.
  
@@ -35,8 +35,8 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	depends on DM_RNG && !LIB_RAND
 --- a/drivers/rng/Makefile
 +++ b/drivers/rng/Makefile
-@@ -7,6 +7,7 @@ obj-$(CONFIG_$(PHASE_)DM_RNG) += rng-ucl
- obj-$(CONFIG_RNG_MESON) += meson-rng.o
+@@ -8,6 +8,7 @@ obj-$(CONFIG_RNG_MESON) += meson-rng.o
+ obj-$(CONFIG_RNG_MPFS) += mpfs_rng.o
  obj-$(CONFIG_RNG_SANDBOX) += sandbox_rng.o
  obj-$(CONFIG_RNG_MSM) += msm_rng.o
 +obj-$(CONFIG_RNG_MTK) += mtk-rng.o
