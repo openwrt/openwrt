@@ -1,0 +1,32 @@
+#!/bin/sh
+
+[ "$ACTION" = add ] || exit 0
+
+. /lib/functions.sh
+. /lib/functions/system.sh
+
+[ "$(board_name)" = zte,zxhn-h3600 ] || exit 0
+
+case "$(cat "/sys${DEVPATH}/device/modalias" 2>/dev/null)" in
+pci:v000014C3d00007915*) ;;
+*) exit 0 ;;
+esac
+
+phy_index=${DEVPATH##*/phy}
+case "$phy_index" in
+0|1) ;;
+*) exit 0 ;;
+esac
+
+# The factory calibration has shared template MACs. Derive a separate
+# local address for each radio from this unit's factory Ethernet address.
+# OpenWrt then allocates the virtual interface addresses automatically.
+# Leave the calibration file and the factory flash partitions unchanged.
+base_mac=$(mtd_get_mac_binary tag 0x1e)
+case "$base_mac" in
+""|00:00:00:00:00:00|ff:ff:ff:ff:ff:ff) exit 1 ;;
+esac
+[ "$((0x${base_mac%%:*} & 1))" -eq 0 ] || exit 1
+
+macaddr_setbit_la "$(macaddr_add "$base_mac" "$((phy_index + 2))")" > \
+	"/sys${DEVPATH}/macaddress"

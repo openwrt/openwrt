@@ -1,0 +1,38 @@
+#!/bin/sh
+
+[ -e /lib/firmware/$FIRMWARE ] && exit 0
+
+. /lib/functions/caldata.sh
+
+# The ZTE firmware keeps the MT7915 calibration as the file "caldata" in the
+# JFFS2 filesystem of the "wifi" partition.
+zte_caldata_from_jffs2() {
+	local part dir=/tmp/wifi-caldata
+
+	part=$(find_mtd_part wifi)
+	[ -n "$part" ] || caldata_die "no mtd device found for partition wifi"
+
+	mkdir -p $dir
+	mount -t jffs2 -o ro $part $dir || caldata_die "failed to mount $part"
+	# An MT7915 calibration starts with the chip ID 0x7915 (little endian)
+	if [ "$(hexdump -v -n 2 -e '2/1 "%02x"' $dir/caldata 2>/dev/null)" = "1579" ]; then
+		caldata_from_file $dir/caldata 0x0 0xe00
+	else
+		echo "caldata: no MT7915 calibration in $part"
+	fi
+	umount $dir
+	rmdir $dir
+}
+
+board=$(board_name)
+
+case "$FIRMWARE" in
+"mediatek/mt7915_eeprom.bin"|\
+"mediatek/mt7915_eeprom_dbdc.bin")
+	case "$board" in
+	zte,zxhn-h3600)
+		zte_caldata_from_jffs2
+		;;
+	esac
+	;;
+esac

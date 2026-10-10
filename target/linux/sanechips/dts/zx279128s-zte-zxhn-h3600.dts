@@ -1,0 +1,34 @@
+// SPDX-License-Identifier: GPL-2.0-only OR BSD-2-Clause
+/*
+ * OpenWrt additions to the ZTE ZXHN H3600 device tree of the kernel
+ * (arch/arm/boot/dts/zte/zx279128s-zte-zxhn-h3600.dts): the boot arguments,
+ * the LED aliases of OpenWrt's boot status and a pstore region.
+ */
+
+#include "zte/zx279128s-zte-zxhn-h3600.dts"
+
+/ {
+	aliases {
+		ethernet0 = &gmac;
+		led-boot = &led_power_red;
+		led-failsafe = &led_power_red;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_red;
+	};
+
+	chosen {
+		bootargs = "console=ttyAMA0,115200n8";
+	};
+};
+
+&{/reserved-memory} {
+	/* Kernel log and oops records that survive a reboot, below the PP area */
+	ramoops@5d900000 {
+		compatible = "ramoops";
+		reg = <0x5d900000 0x100000>;
+		no-map;
+		record-size = <0x20000>;
+		console-size = <0x40000>;
+		ecc-size = <16>;
+	};
+};

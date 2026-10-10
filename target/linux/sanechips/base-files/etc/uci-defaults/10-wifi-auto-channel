@@ -1,0 +1,43 @@
+#!/bin/sh
+
+. /lib/functions.sh
+
+[ "$(board_name)" = zte,zxhn-h3600 ] || exit 0
+
+# Generate missing radio sections before selecting defaults. Preserve an
+# existing user's wireless settings during a settings-preserving upgrade.
+wifi config
+config_load wireless
+
+factory_wireless=1
+interfaces=0
+
+check_default_interface() {
+	local section="$1" ssid encryption disabled mode network
+
+	interfaces=$((interfaces + 1))
+	config_get ssid "$section" ssid
+	config_get encryption "$section" encryption
+	config_get disabled "$section" disabled
+	config_get mode "$section" mode
+	config_get network "$section" network
+
+	case "$section" in
+	default_radio[0-9]*) ;;
+	*) factory_wireless=0 ;;
+	esac
+	[ "$ssid" = OpenWrt ] && [ "$encryption" = none ] &&
+		[ "$disabled" = 1 ] && [ "$mode" = ap ] &&
+		[ "$network" = lan ] || factory_wireless=0
+}
+
+set_default_channel() {
+	uci set "wireless.${1}.channel=auto"
+}
+
+config_foreach check_default_interface wifi-iface
+[ "$factory_wireless" = 1 ] && [ "$interfaces" -gt 0 ] || exit 0
+config_foreach set_default_channel wifi-device
+uci commit wireless
+
+exit 0
