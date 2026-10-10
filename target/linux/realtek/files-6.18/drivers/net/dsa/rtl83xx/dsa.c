@@ -1358,7 +1358,7 @@ static bool rtldsa_83xx_lag_can_offload(struct dsa_switch *ds,
 	int id;
 
 	id = dsa_lag_id(ds->dst, lag);
-	if (id < 0 || id >= ds->num_lag_ids)
+	if (id < 1 || id > ds->num_lag_ids)
 		return false;
 
 	if (info->tx_type != NETDEV_LAG_TX_TYPE_HASH)
@@ -1418,7 +1418,7 @@ static int rtldsa_port_lag_join(struct dsa_switch *ds,
 		goto out;
 	}
 
-	group = lag.id;
+	group = lag.id - 1;
 
 	pr_info("port_lag_join: group %d, port %d\n", group, port);
 
@@ -1450,7 +1450,7 @@ static int rtldsa_port_lag_leave(struct dsa_switch *ds, int port,
 
 	mutex_lock(&priv->reg_mutex);
 
-	group = lag.id;
+	group = lag.id - 1;
 
 	if (port >= priv->r->cpu_port) {
 		err = -EINVAL;
