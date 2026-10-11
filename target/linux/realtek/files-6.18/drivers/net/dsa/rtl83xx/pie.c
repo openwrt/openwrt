@@ -1405,25 +1405,30 @@ static void rtl839x_read_pie_templated(u32 r[], struct pie_rule *pr, enum rtl839
 		case RTL839X_TEMPLATE_FIELD_DIP0:
 			pr->dip = (pr->dip & 0xffff0000) | data;
 			pr->dip_m = (pr->dip_m & 0xffff0000) | data_m;
+			pr->dip6.s6_addr16[7] = data;
+			pr->dip6_m.s6_addr16[7] = data_m;
 			break;
 
 		case RTL839X_TEMPLATE_FIELD_DIP1:
 			pr->dip = (pr->dip & 0xffff) | ((u32)data << 16);
 			pr->dip_m = (pr->dip_m & 0xffff) | ((u32)data_m << 16);
+			pr->dip6.s6_addr16[6] = data;
+			pr->dip6_m.s6_addr16[6] = data_m;
 			break;
 
 		case RTL839X_TEMPLATE_FIELD_DIP2:
-			pr->is_ipv6 = true;
-			ipv6_addr_set(&pr->dip6, pr->dip, r[5 - i / 2],
-				      r[4 - i / 2], r[3 - i / 2]);
-			ipv6_addr_set(&pr->dip6_m, pr->dip_m, r[5 - i / 2],
-				      r[4 - i / 2], r[3 - i / 2]);
 		case RTL839X_TEMPLATE_FIELD_DIP3:
 		case RTL839X_TEMPLATE_FIELD_DIP4:
 		case RTL839X_TEMPLATE_FIELD_DIP5:
 		case RTL839X_TEMPLATE_FIELD_DIP6:
-		case RTL839X_TEMPLATE_FIELD_DIP7:
+		case RTL839X_TEMPLATE_FIELD_DIP7: {
+			int w = 5 - (field_type - RTL839X_TEMPLATE_FIELD_DIP2);
+
+			pr->is_ipv6 = true;
+			pr->dip6.s6_addr16[w] = data;
+			pr->dip6_m.s6_addr16[w] = data_m;
 			break;
+		}
 		case RTL839X_TEMPLATE_FIELD_IP_TOS_PROTO:
 			pr->tos_proto = data;
 			pr->tos_proto_m = data_m;
