@@ -472,6 +472,29 @@ endef
 $(eval $(call KernelPackage,ip6-tunnel))
 
 
+define KernelPackage/ipv6-seg6
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=IPv6 Segment Routing (SRv6) lightweight tunnels
+  DEPENDS:=@IPV6
+  KCONFIG:= \
+	CONFIG_IPV6_SEG6_LWTUNNEL \
+	CONFIG_LWTUNNEL=y \
+	CONFIG_LWTUNNEL_BPF=n
+  FILES:= \
+	$(LINUX_DIR)/net/ipv6/seg6_iptunnel.ko \
+	$(LINUX_DIR)/net/ipv6/seg6_local.ko
+  AUTOLOAD:=$(call AutoProbe,seg6_iptunnel seg6_local)
+endef
+
+define KernelPackage/ipv6-seg6/description
+ Kernel modules for SRv6 encapsulation (encap seg6) and local processing
+ of SRv6 packets (encap seg6local). Configuring the routes requires the
+ ip-full package.
+endef
+
+$(eval $(call KernelPackage,ipv6-seg6))
+
+
 define KernelPackage/gre
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=GRE support
