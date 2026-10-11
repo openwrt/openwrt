@@ -1,0 +1,53 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Salah Ahmed <haddad2inc@gmail.com>
+Date: Fri, 9 Oct 2026 23:56:18 +0300
+Subject: [PATCH] wifi: mac80211: keep the tpt LED solid below an idle threshold
+
+The phy throughput LED blinks whenever the counted traffic is non-zero:
+tpt_trig_timer() walks the blink table from the top and only falls back to
+solid on when no entry matches, which needs tpt == 0 exactly. An access
+point transmits the broadcast and multicast it bridges even with zero
+associated stations - measured at roughly 2 KiB/s on a quiet LAN - so the
+LED blinks at the slowest table step (334 ms) forever and stops indicating
+whether anything is actually being transferred.
+
+Count anything below 12 KiB/s (96 kbit/s) as idle instead. That is the
+threshold the userspace activity monitors used on these devices were tuned
+against: it is above the background of a quiet LAN and well below any real
+transfer, so the LED is solid while nothing moves and still tracks the
+blink table as soon as a station transfers data.
+
+Signed-off-by: Salah Ahmed <haddad2inc@gmail.com>
+---
+--- a/net/mac80211/led.c
++++ b/net/mac80211/led.c
+@@ -9,6 +9,16 @@
+ #include <linux/export.h>
+ #include "led.h"
+ 
++/*
++ * Below this throughput the tpt LED stays solid on instead of blinking at the
++ * slowest step of the table. An access point transmits the LAN broadcast and
++ * multicast it bridges even with zero associated stations (measured ~2 KiB/s),
++ * which is enough to keep the LED blinking forever while nothing is actually
++ * transferred. 12 KiB/s (96 kbit/s) is the idle rate the userspace activity
++ * monitors this behaviour was derived from were tuned against.
++ */
++#define IEEE80211_TPT_LED_IDLE_KBIT	(12 * 8)
++
+ void ieee80211_led_assoc(struct ieee80211_local *local, bool associated)
+ {
+ 	if (!atomic_read(&local->assoc_led_active))
+@@ -270,6 +280,12 @@ static void tpt_trig_timer(struct timer_
+ 
+ 	tpt = tpt_trig_traffic(local, tpt_trig);
+ 
++	/* Treat anything below the idle threshold as no traffic, so that the
++	 * LED is solid while the radio only carries background broadcast.
++	 */
++	if (tpt < IEEE80211_TPT_LED_IDLE_KBIT)
++		tpt = 0;
++
+ 	/* default to just solid on */
+ 	on = 1;
+ 	off = 0;
