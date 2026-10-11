@@ -8,13 +8,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=intel-microcode
-PKG_VERSION:=20260227
+PKG_VERSION:=20260925
 PKG_RELEASE:=1
 
-PKG_SOURCE:=intel-microcode_3.$(PKG_VERSION).1.tar.xz
-PKG_SOURCE_URL:=@DEBIAN/pool/non-free-firmware/i/intel-microcode/
-PKG_HASH:=15289edaaa2db7976e005628027f16d19945f1eab1bb2d5dd44133cd06c4ad25
-PKG_BUILD_DIR:=$(BUILD_DIR)/intel-microcode-3.$(PKG_VERSION).1
+PKG_SOURCE:=microcode-$(PKG_VERSION).tar.gz
+PKG_SOURCE_URL:=https://github.com/intel/Intel-Linux-Processor-Microcode-Data-Files/archive/refs/tags/
+PKG_HASH:=0ec19023dad1e6dd0c5909174b8dff2555b91cf01671e36271a1ef36655c0cfc
+PKG_BUILD_DIR:=$(BUILD_DIR)/Intel-Linux-Processor-Microcode-Data-Files-microcode-$(PKG_VERSION)
 PKG_CPE_ID:=cpe:/a:intel:microcode
 
 PKG_BUILD_DEPENDS:=iucode-tool/host
@@ -25,7 +25,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/intel-microcode-32bit
   SECTION:=firmware
   CATEGORY:=Firmware
-  URL:=$(PKG_SOURCE_URL)
+  URL:=https://github.com/intel/Intel-Linux-Processor-Microcode-Data-Files
   DEPENDS:=@TARGET_x86_generic||TARGET_x86_legacy
   CONFLICTS:=intel-microcode-64bit
   TITLE:=Intel x86 CPU microcode (32-bit only)
@@ -34,7 +34,7 @@ endef
 define Package/intel-microcode-64bit
   SECTION:=firmware
   CATEGORY:=Firmware
-  URL:=$(PKG_SOURCE_URL)
+  URL:=https://github.com/intel/Intel-Linux-Processor-Microcode-Data-Files
   DEPENDS:=@TARGET_x86_64||TARGET_x86_generic
   TITLE:=Intel x86 CPU microcode (64-bit)
 endef
@@ -95,7 +95,6 @@ CPUID_MIXED:= \
 	0x000106c2
 
 define Build/Compile
-	IUCODE_TOOL=$(STAGING_DIR)/../host/bin/iucode_tool $(MAKE) all -C $(PKG_BUILD_DIR)
 	$(STAGING_DIR)/../host/bin/iucode_tool -q --overwrite \
 		$(foreach sig,$(CPUID_32BIT_ONLY),-s $(sig)) \
 		--write-earlyfw=$(PKG_BUILD_DIR)/intel-ucode-32bit.img $(PKG_BUILD_DIR)/intel-ucode/
