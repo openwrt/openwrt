@@ -187,13 +187,14 @@ static void otto_l3_839x_nexthop_read(struct otto_l3_ctrl *ctrl, int idx, struct
 }
 
 /* A ROUTING row holds a gateway's MAC and the index of the source MAC to
- * route with, left at 0. The routes through one gateway share its row, the
+ * route with (SW_MAC_IDX). The routes through one gateway share its row, the
  * way RTL930x routes share a DMAC entry: the L2 entry of the gateway names
  * one row, whichever route claimed it.
  */
-static int otto_l3_839x_set_egress_mac(struct otto_l3_ctrl *ctrl, u32 idx, u64 mac)
+static int otto_l3_839x_set_dmac(struct otto_l3_ctrl *ctrl, u32 idx,
+				 const struct otto_l3_dmac *dmac)
 {
-	u32 data[2] = { mac >> 16, mac << 16 };
+	u32 data[2] = { dmac->mac >> 16, dmac->mac << 16 | (dmac->smac_id & 0xf) << 12 };
 
 	return otto_table_write(RTL8390_TBL_ROUTING, idx, &data);
 }
@@ -358,6 +359,12 @@ static int otto_l3_930x_set_egress_mac(struct otto_l3_ctrl *ctrl, u32 idx, u64 m
 
 	dev_dbg(ctrl->dev, "setting index %d to %016llx\n", idx, mac);
 	return otto_table_write(RTL9300_TBL_L3_EGR_INTF_MAC, idx, &data);
+}
+
+static int otto_l3_930x_set_dmac(struct otto_l3_ctrl *ctrl, u32 idx,
+				 const struct otto_l3_dmac *dmac)
+{
+	return otto_l3_930x_set_egress_mac(ctrl, idx, dmac->mac);
 }
 
 /* Decode a host route entry fetched into @data. Returns false unless it is a
@@ -1674,6 +1681,11 @@ static void otto_l3_route_rewrite(struct otto_l3_ctrl *ctrl, struct otto_l3_rout
 	}
 }
 
+static bool otto_l3_dmac_equal(const struct otto_l3_dmac *a, const struct otto_l3_dmac *b)
+{
+	return a->mac == b->mac && a->smac_id == b->smac_id;
+}
+
 /* Routes through one gateway share its L2 entry, and that names a single
  * DMAC entry, whichever route claimed it first. So the entry is held per MAC
  * by every route through it, the way the SDK holds it
@@ -1682,14 +1694,14 @@ static void otto_l3_route_rewrite(struct otto_l3_ctrl *ctrl, struct otto_l3_rout
  * than entries. Entry 0 stays unused, as it did while route 0, which is never
  * allocated, named it.
  */
-static int otto_l3_dmac_get(struct otto_l3_ctrl *ctrl, u64 mac)
+static int otto_l3_dmac_get(struct otto_l3_ctrl *ctrl, const struct otto_l3_dmac *dmac)
 {
 	int i, unused = -1, err;
 
 	mutex_lock(ctrl->lock);
 
 	for (i = 1; i < MAX_DMACS; i++) {
-		if (ctrl->dmac_refs[i] && ctrl->dmacs[i] == mac)
+		if (ctrl->dmac_refs[i] && otto_l3_dmac_equal(&ctrl->dmacs[i], dmac))
 			break;
 		if (unused < 0 && !ctrl->dmac_refs[i])
 			unused = i;
@@ -1703,12 +1715,12 @@ static int otto_l3_dmac_get(struct otto_l3_ctrl *ctrl, u64 mac)
 		}
 
 		/* An entry whose write failed stays free */
-		err = ctrl->cfg->set_egress_mac(ctrl, i, mac);
+		err = ctrl->cfg->set_dmac(ctrl, i, dmac);
 		if (err) {
 			i = err;
 			goto out;
 		}
-		ctrl->dmacs[i] = mac;
+		ctrl->dmacs[i] = *dmac;
 	}
 
 	ctrl->dmac_refs[i]++;
@@ -1720,7 +1732,7 @@ out:
 
 static void otto_l3_dmac_put(struct otto_l3_ctrl *ctrl, int idx)
 {
-	if (!ctrl->cfg->set_egress_mac || idx < 0)
+	if (!ctrl->cfg->set_dmac || idx < 0)
 		return;
 
 	mutex_lock(ctrl->lock);
@@ -1735,6 +1747,7 @@ static void otto_l3_route_update_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_ro
 	char dst[INET6_ADDRSTRLEN + sizeof("/128")];
 	bool trapped = r->attr.action == ROUTE_ACT_TRAP2CPU;
 	int old_dmac = r->nh.dmac_id;
+	struct otto_l3_dmac key = { .mac = mac };
 	bool first = !r->nh.mac;
 	bool no_port, no_l2, trap;
 	int dmac = r->id;
@@ -1759,8 +1772,8 @@ static void otto_l3_route_update_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_ro
 		otto_l3_route_rewrite(ctrl, r);
 	}
 
-	if (ctrl->cfg->set_egress_mac) {
-		dmac = otto_l3_dmac_get(ctrl, mac);
+	if (ctrl->cfg->set_dmac) {
+		dmac = otto_l3_dmac_get(ctrl, &key);
 		if (dmac < 0) {
 			dev_err(ctrl->dev, "no DMAC entry for %016llx: %d\n", mac, dmac);
 			return;
@@ -4155,7 +4168,7 @@ const struct otto_l3_config otto_l3_838x_cfg = {
 };
 
 const struct otto_l3_config otto_l3_839x_cfg = {
-	.set_egress_mac = otto_l3_839x_set_egress_mac,
+	.set_dmac = otto_l3_839x_set_dmac,
 	.route_rows_move = otto_l3_839x_route_rows_move,
 	.route_write = otto_l3_839x_route_write,
 	.setup = otto_l3_839x_setup,
@@ -4168,6 +4181,7 @@ const struct otto_l3_config otto_l3_930x_cfg = {
 	.get_egress_intf = otto_l3_930x_get_egress_intf,
 	.get_egress_mac = otto_l3_930x_get_egress_mac,
 	.set_egress_mac = otto_l3_930x_set_egress_mac,
+	.set_dmac = otto_l3_930x_set_dmac,
 	.set_egress_intf = otto_l3_930x_set_egress_intf,
 	.host_route_write = otto_l3_930x_host_route_write,
 	.get_router_mac = otto_l3_930x_get_router_mac,
@@ -4330,7 +4344,7 @@ int otto_l3_probe(struct device *dev, struct rtl838x_switch_priv *priv)
 		return dev_err_probe(dev, -EINVAL, "No compatible configuration found\n");
 	ctrl->cfg = match->data;
 
-	if (ctrl->cfg->set_egress_mac) {
+	if (ctrl->cfg->set_dmac) {
 		ctrl->dmacs = devm_kcalloc(dev, MAX_DMACS, sizeof(*ctrl->dmacs), GFP_KERNEL);
 		ctrl->dmac_refs = devm_kcalloc(dev, MAX_DMACS, sizeof(*ctrl->dmac_refs),
 					       GFP_KERNEL);

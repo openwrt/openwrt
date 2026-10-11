@@ -103,6 +103,14 @@ struct otto_l3_route {
 	struct otto_l3_route_attr attr;
 };
 
+/* What a DMAC entry holds: a gateway's MAC and, on RTL839x, the switch MAC
+ * entry the frames routed to it leave with
+ */
+struct otto_l3_dmac {
+	u64 mac;
+	u16 smac_id;	/* not taken for RTL930x */
+};
+
 struct otto_l3_config {
 	/* Which of the two routing models the family uses. RTL930x writes the
 	 * destination and its mask into the route entry, so the L3 tables match
@@ -115,6 +123,7 @@ struct otto_l3_config {
 	void (*set_egress_intf)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_intf *intf);
 	u64 (*get_egress_mac)(struct otto_l3_ctrl *ctrl, u32 idx);
 	int (*set_egress_mac)(struct otto_l3_ctrl *ctrl, u32 idx, u64 mac);
+	int (*set_dmac)(struct otto_l3_ctrl *ctrl, u32 idx, const struct otto_l3_dmac *dmac);
 	void (*host_route_write)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt);
 	void (*get_router_mac)(struct otto_l3_ctrl *ctrl, u32 idx, struct otto_l3_router_mac *m);
 	void (*set_router_mac)(struct otto_l3_ctrl *ctrl, u32 idx, struct otto_l3_router_mac *m);
@@ -144,7 +153,7 @@ struct otto_l3_ctrl {
 	unsigned long host_route_use_bm[MAX_HOST_ROUTES / 32];
 	struct otto_l3_intf interfaces[MAX_SMACS];
 	unsigned int intf_refs[MAX_SMACS];	/* routes holding each */
-	u64 *dmacs;				/* gateway MAC of each DMAC entry */
+	struct otto_l3_dmac *dmacs;		/* what each DMAC entry holds */
 	unsigned int *dmac_refs;		/* routes holding each */
 	DECLARE_BITMAP(router_mac_bm, MAX_ROUTER_MACS);	/* entries written here */
 	bool prefix_rows_stale;	/* a move failed, the rows are not where we say */
