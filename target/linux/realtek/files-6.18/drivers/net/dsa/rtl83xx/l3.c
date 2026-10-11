@@ -296,6 +296,13 @@ static int otto_l3_839x_setup(struct otto_l3_ctrl *ctrl)
 	 */
 	sw_w32_mask(0x3 << 2, 2 << 2, RTL839X_ROUTING_EXCPT_CTRL);
 
+	/* A packet routed through a gateway whose L2 entry has aged out goes
+	 * to the CPU alone. Forwarded, the default, it is routed and reaches
+	 * the CPU as well, which routes it a second time. ROUTING_AGE, bits
+	 * 15:14, same encoding.
+	 */
+	sw_w32_mask(0x3 << 14, 2 << 14, RTL839X_ROUTING_EXCPT_CTRL);
+
 	return 0;
 }
 
