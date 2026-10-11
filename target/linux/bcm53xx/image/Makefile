@@ -220,7 +220,8 @@ TARGET_DEVICES += asus_rt-ac87u
 define Device/asus_rt-ac88u
   $(call Device/asus)
   DEVICE_MODEL := RT-AC88U
-  DEVICE_PACKAGES := $(BRCMFMAC_4366B1) $(BRCMFMAC_4366C0) $(USB3_PACKAGES)
+  # xHCI probed in preinit hard-locks CPU0 on ~38 % of cold boots: load it in normal boot
+  DEVICE_PACKAGES := $(BRCMFMAC_4366B1) $(BRCMFMAC_4366C0) $(USB3_PACKAGES) usb3-late-load
   ASUS_PRODUCTID := RT-AC88U
 endef
 TARGET_DEVICES += asus_rt-ac88u
