@@ -1,0 +1,92 @@
+From: Stanislaw Pal <kuncy7@gmail.com>
+Subject: [PATCH] net: dsa: qca8k: put bridge FDB entries in the qca-8021q VLAN
+
+Under qca-8021q the switch learns and looks up the addresses of a
+VLAN-unaware bridge in the bridge's tag_8021q VLAN. The bridge hands its
+FDB and MDB entries over with VID 0, which qca8k puts in VID 1, where no
+lookup finds them. The purge of a stale dynamic entry for a station that
+roamed from a switch port to a software port of the bridge then misses,
+and the switch keeps sending the station's traffic to the old port until
+the entry ages out.
+
+Map VID 0 to the tag_8021q VLAN of the bridge, or of the standalone port.
+Without FDB isolation the core passes bridge number 0, so the number is
+taken from a port in the bridge.
+
+On a GL-B3000 used as an access point, a laptop roaming onto its Wi-Fi
+got no DHCP lease in five of five attempts before, and one in all five
+after.
+
+Signed-off-by: Stanislaw Pal <kuncy7@gmail.com>
+[julius: ported to the qca-8021q support of this tree]
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+Index: linux-6.18.55/drivers/net/dsa/qca/qca8k-common.c
+===================================================================
+--- linux-6.18.55.orig/drivers/net/dsa/qca/qca8k-common.c
++++ linux-6.18.55/drivers/net/dsa/qca/qca8k-common.c
+@@ -864,6 +864,29 @@ int qca8k_port_fdb_insert(struct qca8k_p
+ 			     QCA8K_ATU_STATUS_STATIC);
+ }
+ 
++/* Under qca-8021q a VLAN-unaware bridge learns in its tag_8021q VLAN and a
++ * standalone port in its own. Without FDB isolation db.bridge.num is 0.
++ */
++static u16 qca8k_db_vid(struct dsa_switch *ds, struct dsa_db db, u16 vid)
++{
++	struct dsa_port *dp;
++
++	if (vid || !ds->tag_8021q_ctx)
++		return vid;
++
++	if (db.type == DSA_DB_PORT)
++		return dsa_tag_8021q_standalone_vid(db.dp);
++
++	dsa_switch_for_each_user_port(dp, ds) {
++		if (db.type != DSA_DB_BRIDGE ||
++		    !dsa_port_offloads_bridge_dev(dp, db.bridge.dev))
++			continue;
++		return dsa_tag_8021q_bridge_vid(dsa_port_bridge_num_get(dp));
++	}
++
++	return 0;
++}
++
+ int qca8k_port_fdb_add(struct dsa_switch *ds, int port,
+ 		       const unsigned char *addr, u16 vid,
+ 		       struct dsa_db db)
+@@ -871,6 +894,8 @@ int qca8k_port_fdb_add(struct dsa_switch
+ 	struct qca8k_priv *priv = ds->priv;
+ 	u16 port_mask = BIT(port);
+ 
++	vid = qca8k_db_vid(ds, db, vid);
++
+ 	/* The ATU forwards a unicast hit to every port set in the
+ 	 * destination mask, so a host entry spanning multiple CPU ports
+ 	 * would deliver one copy of each host-bound frame per CPU port.
+@@ -907,6 +932,7 @@ int qca8k_port_fdb_del(struct dsa_switch
+ 	if (dsa_is_cpu_port(ds, port) || dsa_is_dsa_port(ds, port))
+ 		return 0;
+ 
++	vid = qca8k_db_vid(ds, db, vid);
+ 	if (!vid)
+ 		vid = QCA8K_PORT_VID_DEF;
+ 
+@@ -942,7 +968,7 @@ int qca8k_port_mdb_add(struct dsa_switch
+ {
+ 	struct qca8k_priv *priv = ds->priv;
+ 	const u8 *addr = mdb->addr;
+-	u16 vid = mdb->vid;
++	u16 vid = qca8k_db_vid(ds, db, mdb->vid);
+ 
+ 	if (!vid)
+ 		vid = QCA8K_PORT_VID_DEF;
+@@ -957,7 +983,7 @@ int qca8k_port_mdb_del(struct dsa_switch
+ {
+ 	struct qca8k_priv *priv = ds->priv;
+ 	const u8 *addr = mdb->addr;
+-	u16 vid = mdb->vid;
++	u16 vid = qca8k_db_vid(ds, db, mdb->vid);
+ 
+ 	if (!vid)
+ 		vid = QCA8K_PORT_VID_DEF;
