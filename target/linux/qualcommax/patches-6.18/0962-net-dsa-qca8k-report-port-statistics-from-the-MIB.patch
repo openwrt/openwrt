@@ -1,0 +1,266 @@
+From: Stanislaw Pal <kuncy7@gmail.com>
+Subject: [PATCH] net: dsa: qca8k: report port statistics from the MIB
+
+Without .get_stats64 a DSA user port only counts the frames that cross
+the CPU, via the user netdev's own tstats. With the conduit offloaded
+(NSS firmware, flowtable) the forwarded traffic never does, so the port
+counters stay near zero: on a GL-B3000 a 482 MB upload over the WAN port
+moved the wan netdev by 0.74 MB while the switch's TxByte grew by 503 MB.
+
+The switch counts every frame. .get_stats64 runs in atomic context and
+register reads sleep, so read the MIB from a delayed work every 3 s, as
+ar9331 and rtl8365mb do, and hand out the cached result. The MIB
+counters are cumulative; only the difference since the previous read is
+added, so a 32-bit counter wrapping between reads does not corrupt the
+total.
+
+Signed-off-by: Stanislaw Pal <kuncy7@gmail.com>
+Link: https://github.com/kuncy7/openwrt-nss-edma/commit/b1026344f474
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+--- a/drivers/net/dsa/qca/qca8k-8xxx.c
++++ b/drivers/net/dsa/qca/qca8k-8xxx.c
+@@ -2056,6 +2056,156 @@ static void qca8k_setup_hol_fixup(struct
+ 			   mask);
+ }
+ 
++/* Without .get_stats64 a DSA user port counts only what crosses the CPU,
++ * which is nothing of the traffic an offloaded conduit (NSS, flowtable)
++ * forwards past the host. Report the switch's own port counters instead.
++ */
++#define QCA8K_STATS_INTERVAL	(3 * HZ)
++
++static const u8 qca8k_stats_mib[QCA8K_STATS_MIB_COUNT] = {
++	[QCA8K_STATS_RX_MULTI]		= 0x08,
++	[QCA8K_STATS_RX_FCS_ERR]	= 0x0c,
++	[QCA8K_STATS_RX_ALIGN_ERR]	= 0x10,
++	[QCA8K_STATS_RX_RUNT]		= 0x14,
++	[QCA8K_STATS_RX_FRAGMENT]	= 0x18,
++	[QCA8K_STATS_RX_64]		= 0x1c,
++	[QCA8K_STATS_RX_128]		= 0x20,
++	[QCA8K_STATS_RX_256]		= 0x24,
++	[QCA8K_STATS_RX_512]		= 0x28,
++	[QCA8K_STATS_RX_1024]		= 0x2c,
++	[QCA8K_STATS_RX_1518]		= 0x30,
++	[QCA8K_STATS_RX_MAX]		= 0x34,
++	[QCA8K_STATS_RX_TOO_LONG]	= 0x38,
++	[QCA8K_STATS_RX_OVERFLOW]	= 0x4c,
++	[QCA8K_STATS_FILTERED]		= 0x50,
++	[QCA8K_STATS_TX_UNDERRUN]	= 0x60,
++	[QCA8K_STATS_TX_64]		= 0x64,
++	[QCA8K_STATS_TX_128]		= 0x68,
++	[QCA8K_STATS_TX_256]		= 0x6c,
++	[QCA8K_STATS_TX_512]		= 0x70,
++	[QCA8K_STATS_TX_1024]		= 0x74,
++	[QCA8K_STATS_TX_1518]		= 0x78,
++	[QCA8K_STATS_TX_MAX]		= 0x7c,
++	[QCA8K_STATS_TX_OVERSIZE]	= 0x80,
++	[QCA8K_STATS_TX_COLLISION]	= 0x8c,
++	[QCA8K_STATS_TX_ABORT_COL]	= 0x90,
++	[QCA8K_STATS_TX_LATE_COL]	= 0xa4,
++};
++
++#define QCA8K_MIB_RX_GOOD_BYTE	0x3c
++#define QCA8K_MIB_TX_BYTE	0x84
++
++static int qca8k_stats_read64(struct qca8k_priv *priv, u32 reg, u64 *val)
++{
++	u32 lo, hi;
++	int ret;
++
++	ret = qca8k_read(priv, reg, &lo);
++	if (!ret)
++		ret = qca8k_read(priv, reg + 4, &hi);
++	if (!ret)
++		*val = ((u64)hi << 32) | lo;
++
++	return ret;
++}
++
++static u64 qca8k_stats_delta64(u64 now, u64 *last)
++{
++	/* a flushed MIB starts again from zero */
++	u64 delta = now >= *last ? now - *last : now;
++
++	*last = now;
++	return delta;
++}
++
++static void qca8k_stats_read_port(struct qca8k_priv *priv, int port)
++{
++	struct qca8k_port_stats *ps = &priv->port_stats[port];
++	u32 raw[QCA8K_STATS_MIB_COUNT], d[QCA8K_STATS_MIB_COUNT];
++	u32 base = QCA8K_PORT_MIB_COUNTER(port);
++	struct rtnl_link_stats64 *s = &ps->stats;
++	u64 rx_bytes, tx_bytes;
++	int i;
++
++	/* all register reads before the lock */
++	if (qca8k_stats_read64(priv, base + QCA8K_MIB_RX_GOOD_BYTE, &rx_bytes) ||
++	    qca8k_stats_read64(priv, base + QCA8K_MIB_TX_BYTE, &tx_bytes))
++		return;
++
++	for (i = 0; i < QCA8K_STATS_MIB_COUNT; i++)
++		if (qca8k_read(priv, base + qca8k_stats_mib[i], &raw[i]))
++			return;
++
++	spin_lock_bh(&ps->lock);
++
++	for (i = 0; i < QCA8K_STATS_MIB_COUNT; i++) {
++		d[i] = raw[i] - ps->last[i];
++		ps->last[i] = raw[i];
++	}
++
++	s->rx_bytes += qca8k_stats_delta64(rx_bytes, &ps->last_rx_bytes);
++	s->tx_bytes += qca8k_stats_delta64(tx_bytes, &ps->last_tx_bytes);
++	s->rx_packets += (u64)d[QCA8K_STATS_RX_64] + d[QCA8K_STATS_RX_128] +
++			 d[QCA8K_STATS_RX_256] + d[QCA8K_STATS_RX_512] +
++			 d[QCA8K_STATS_RX_1024] + d[QCA8K_STATS_RX_1518] +
++			 d[QCA8K_STATS_RX_MAX];
++	s->tx_packets += (u64)d[QCA8K_STATS_TX_64] + d[QCA8K_STATS_TX_128] +
++			 d[QCA8K_STATS_TX_256] + d[QCA8K_STATS_TX_512] +
++			 d[QCA8K_STATS_TX_1024] + d[QCA8K_STATS_TX_1518] +
++			 d[QCA8K_STATS_TX_MAX];
++	s->multicast += d[QCA8K_STATS_RX_MULTI];
++	s->rx_length_errors += (u64)d[QCA8K_STATS_RX_RUNT] +
++			       d[QCA8K_STATS_RX_FRAGMENT] +
++			       d[QCA8K_STATS_RX_TOO_LONG];
++	s->rx_crc_errors += d[QCA8K_STATS_RX_FCS_ERR];
++	s->rx_frame_errors += d[QCA8K_STATS_RX_ALIGN_ERR];
++	s->rx_missed_errors += d[QCA8K_STATS_RX_OVERFLOW];
++	s->rx_dropped += d[QCA8K_STATS_FILTERED];
++	s->rx_errors += (u64)d[QCA8K_STATS_RX_FCS_ERR] +
++			d[QCA8K_STATS_RX_ALIGN_ERR] + d[QCA8K_STATS_RX_RUNT] +
++			d[QCA8K_STATS_RX_FRAGMENT] + d[QCA8K_STATS_RX_OVERFLOW] +
++			d[QCA8K_STATS_RX_TOO_LONG];
++	s->tx_fifo_errors += d[QCA8K_STATS_TX_UNDERRUN];
++	s->tx_aborted_errors += d[QCA8K_STATS_TX_ABORT_COL];
++	s->tx_window_errors += d[QCA8K_STATS_TX_LATE_COL];
++	s->tx_errors += (u64)d[QCA8K_STATS_TX_OVERSIZE] +
++			d[QCA8K_STATS_TX_ABORT_COL] + d[QCA8K_STATS_TX_UNDERRUN] +
++			d[QCA8K_STATS_TX_LATE_COL];
++	s->collisions += d[QCA8K_STATS_TX_COLLISION];
++
++	spin_unlock_bh(&ps->lock);
++}
++
++static void qca8k_stats_poll(struct work_struct *work)
++{
++	struct qca8k_priv *priv = container_of(work, struct qca8k_priv,
++					       stats_work.work);
++	struct dsa_port *dp;
++
++	dsa_switch_for_each_user_port(dp, priv->ds)
++		qca8k_stats_read_port(priv, dp->index);
++
++	schedule_delayed_work(&priv->stats_work, QCA8K_STATS_INTERVAL);
++}
++
++static void qca8k_get_stats64(struct dsa_switch *ds, int port,
++			      struct rtnl_link_stats64 *s)
++{
++	struct qca8k_priv *priv = ds->priv;
++	struct qca8k_port_stats *ps = &priv->port_stats[port];
++
++	spin_lock_bh(&ps->lock);
++	memcpy(s, &ps->stats, sizeof(*s));
++	spin_unlock_bh(&ps->lock);
++}
++
++static void qca8k_teardown(struct dsa_switch *ds)
++{
++	struct qca8k_priv *priv = ds->priv;
++
++	cancel_delayed_work_sync(&priv->stats_work);
++}
++
+ static int
+ qca8k_setup(struct dsa_switch *ds)
+ {
+@@ -2224,6 +2374,11 @@ qca8k_setup(struct dsa_switch *ds)
+ 	/* qca-8021q tells bridges apart by number */
+ 	ds->max_num_bridges = DSA_TAG_8021Q_MAX_NUM_BRIDGES;
+ 
++	for (int port = 0; port < QCA8K_NUM_PORTS; port++)
++		spin_lock_init(&priv->port_stats[port].lock);
++	INIT_DELAYED_WORK(&priv->stats_work, qca8k_stats_poll);
++	schedule_delayed_work(&priv->stats_work, 0);
++
+ 	return 0;
+ }
+ 
+@@ -2240,9 +2395,11 @@ static const struct dsa_switch_ops qca8k
+ 	.tag_8021q_vlan_add	= qca8k_tag_8021q_vlan_add,
+ 	.tag_8021q_vlan_del	= qca8k_tag_8021q_vlan_del,
+ 	.setup			= qca8k_setup,
++	.teardown		= qca8k_teardown,
+ 	.get_strings		= qca8k_get_strings,
+ 	.get_ethtool_stats	= qca8k_get_ethtool_stats,
+ 	.get_sset_count		= qca8k_get_sset_count,
++	.get_stats64		= qca8k_get_stats64,
+ 	.set_ageing_time	= qca8k_set_ageing_time,
+ 	.support_eee		= dsa_supports_eee,
+ 	.set_mac_eee		= qca8k_set_mac_eee,
+--- a/drivers/net/dsa/qca/qca8k.h
++++ b/drivers/net/dsa/qca/qca8k.h
+@@ -447,6 +447,51 @@ struct qca8k_led {
+ 	struct led_classdev cdev;
+ };
+ 
++/* MIB counters behind .get_stats64, in the order qca8k_stats_mib[] reads them */
++enum qca8k_stats_mib_idx {
++	QCA8K_STATS_RX_MULTI,
++	QCA8K_STATS_RX_FCS_ERR,
++	QCA8K_STATS_RX_ALIGN_ERR,
++	QCA8K_STATS_RX_RUNT,
++	QCA8K_STATS_RX_FRAGMENT,
++	QCA8K_STATS_RX_64,
++	QCA8K_STATS_RX_128,
++	QCA8K_STATS_RX_256,
++	QCA8K_STATS_RX_512,
++	QCA8K_STATS_RX_1024,
++	QCA8K_STATS_RX_1518,
++	QCA8K_STATS_RX_MAX,
++	QCA8K_STATS_RX_TOO_LONG,
++	QCA8K_STATS_RX_OVERFLOW,
++	QCA8K_STATS_FILTERED,
++	QCA8K_STATS_TX_UNDERRUN,
++	QCA8K_STATS_TX_64,
++	QCA8K_STATS_TX_128,
++	QCA8K_STATS_TX_256,
++	QCA8K_STATS_TX_512,
++	QCA8K_STATS_TX_1024,
++	QCA8K_STATS_TX_1518,
++	QCA8K_STATS_TX_MAX,
++	QCA8K_STATS_TX_OVERSIZE,
++	QCA8K_STATS_TX_COLLISION,
++	QCA8K_STATS_TX_ABORT_COL,
++	QCA8K_STATS_TX_LATE_COL,
++	QCA8K_STATS_MIB_COUNT
++};
++
++/* Port counters for .get_stats64. That callback runs in atomic context and
++ * register reads sleep, so a worker reads the MIB and this holds the result.
++ * The MIB counters are cumulative; last[] keeps the previous raw values so
++ * only the difference is added and a 32-bit counter may wrap between reads.
++ */
++struct qca8k_port_stats {
++	spinlock_t lock;	/* stats and last */
++	struct rtnl_link_stats64 stats;
++	u32 last[QCA8K_STATS_MIB_COUNT];
++	u64 last_rx_bytes;
++	u64 last_tx_bytes;
++};
++
+ struct qca8k_priv {
+ 	u8 switch_id;
+ 	u8 switch_revision;
+@@ -477,6 +522,8 @@ struct qca8k_priv {
+ 	struct qca8k_pcs pcs_port_6;
+ 	const struct qca8k_match_data *info;
+ 	struct qca8k_led ports_led[QCA8K_LED_COUNT];
++	struct qca8k_port_stats port_stats[QCA8K_NUM_PORTS];
++	struct delayed_work stats_work;
+ };
+ 
+ struct qca8k_mib_desc {
