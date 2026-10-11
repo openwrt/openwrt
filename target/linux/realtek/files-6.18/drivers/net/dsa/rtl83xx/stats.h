@@ -35,7 +35,7 @@
  * at the highest supported speeds, an interval of a minute is probably a safe
  * choice for the other counters.
  */
-#define RTLDSA_COUNTERS_POLL_INTERVAL	(60 * HZ)
+#define OTTO_STATS_COUNTERS_POLL_INTERVAL	(60 * HZ)
 
 /* Some SoC families require table access to get the HW counters. A mutex is
  * required for this access - which will potentially cause a sleep in the
@@ -45,14 +45,14 @@
  * For these SoCs, the retrieval of the current counters in .get_stats64 is
  * skipped and the counters are simply retrieved a lot more often from the HW.
  */
-#define RTLDSA_COUNTERS_FAST_POLL_INTERVAL	(3 * HZ)
+#define OTTO_STATS_COUNTERS_FAST_POLL_INTERVAL	(3 * HZ)
 
-struct rtldsa_counter {
+struct otto_stats_counter {
 	u64 val;
 	u32 last;
 };
 
-struct rtldsa_counter_state {
+struct otto_stats_counter_state {
 	/**
 	 * @lock: protect updates to members of the structure when the
 	 * priv->counters_lock is not used. (see rtl931x_reg->stat_update_counters_atomically)
@@ -60,40 +60,40 @@ struct rtldsa_counter_state {
 	spinlock_t lock;
 	ktime_t last_update;
 
-	struct rtldsa_counter symbol_errors;
+	struct otto_stats_counter symbol_errors;
 
-	struct rtldsa_counter if_in_octets;
-	struct rtldsa_counter if_out_octets;
-	struct rtldsa_counter if_in_ucast_pkts;
-	struct rtldsa_counter if_in_mcast_pkts;
-	struct rtldsa_counter if_in_bcast_pkts;
-	struct rtldsa_counter if_out_ucast_pkts;
-	struct rtldsa_counter if_out_mcast_pkts;
-	struct rtldsa_counter if_out_bcast_pkts;
-	struct rtldsa_counter if_out_discards;
-	struct rtldsa_counter single_collisions;
-	struct rtldsa_counter multiple_collisions;
-	struct rtldsa_counter deferred_transmissions;
-	struct rtldsa_counter late_collisions;
-	struct rtldsa_counter excessive_collisions;
-	struct rtldsa_counter crc_align_errors;
-	struct rtldsa_counter rx_pkts_over_max_octets;
+	struct otto_stats_counter if_in_octets;
+	struct otto_stats_counter if_out_octets;
+	struct otto_stats_counter if_in_ucast_pkts;
+	struct otto_stats_counter if_in_mcast_pkts;
+	struct otto_stats_counter if_in_bcast_pkts;
+	struct otto_stats_counter if_out_ucast_pkts;
+	struct otto_stats_counter if_out_mcast_pkts;
+	struct otto_stats_counter if_out_bcast_pkts;
+	struct otto_stats_counter if_out_discards;
+	struct otto_stats_counter single_collisions;
+	struct otto_stats_counter multiple_collisions;
+	struct otto_stats_counter deferred_transmissions;
+	struct otto_stats_counter late_collisions;
+	struct otto_stats_counter excessive_collisions;
+	struct otto_stats_counter crc_align_errors;
+	struct otto_stats_counter rx_pkts_over_max_octets;
 
-	struct rtldsa_counter unsupported_opcodes;
+	struct otto_stats_counter unsupported_opcodes;
 
-	struct rtldsa_counter rx_undersize_pkts;
-	struct rtldsa_counter rx_oversize_pkts;
-	struct rtldsa_counter rx_fragments;
-	struct rtldsa_counter rx_jabbers;
+	struct otto_stats_counter rx_undersize_pkts;
+	struct otto_stats_counter rx_oversize_pkts;
+	struct otto_stats_counter rx_fragments;
+	struct otto_stats_counter rx_jabbers;
 
-	struct rtldsa_counter tx_pkts[ETHTOOL_RMON_HIST_MAX];
-	struct rtldsa_counter rx_pkts[ETHTOOL_RMON_HIST_MAX];
+	struct otto_stats_counter tx_pkts[ETHTOOL_RMON_HIST_MAX];
+	struct otto_stats_counter rx_pkts[ETHTOOL_RMON_HIST_MAX];
 
-	struct rtldsa_counter drop_events;
-	struct rtldsa_counter collisions;
+	struct otto_stats_counter drop_events;
+	struct otto_stats_counter collisions;
 
-	struct rtldsa_counter rx_pause_frames;
-	struct rtldsa_counter tx_pause_frames;
+	struct otto_stats_counter rx_pause_frames;
+	struct otto_stats_counter tx_pause_frames;
 
 	/** @link_stat_lock: Protect link_stat */
 	spinlock_t link_stat_lock;
@@ -110,62 +110,62 @@ enum mib_reg {
 	MIB_TBL_PRV,
 };
 
-struct rtldsa_mib_item {
+struct otto_stats_mib_item {
 	enum mib_reg reg;
 	unsigned int offset;
 	unsigned int size;
 };
 
-struct rtldsa_mib_list_item {
+struct otto_stats_mib_list_item {
 	const char *name;
-	struct rtldsa_mib_item item;
+	struct otto_stats_mib_item item;
 };
 
-struct rtldsa_mib_desc {
-	struct rtldsa_mib_item symbol_errors;
+struct otto_stats_mib_desc {
+	struct otto_stats_mib_item symbol_errors;
 
-	struct rtldsa_mib_item if_in_octets;
-	struct rtldsa_mib_item if_out_octets;
-	struct rtldsa_mib_item if_in_ucast_pkts;
-	struct rtldsa_mib_item if_in_mcast_pkts;
-	struct rtldsa_mib_item if_in_bcast_pkts;
-	struct rtldsa_mib_item if_out_ucast_pkts;
-	struct rtldsa_mib_item if_out_mcast_pkts;
-	struct rtldsa_mib_item if_out_bcast_pkts;
-	struct rtldsa_mib_item if_out_discards;
-	struct rtldsa_mib_item single_collisions;
-	struct rtldsa_mib_item multiple_collisions;
-	struct rtldsa_mib_item deferred_transmissions;
-	struct rtldsa_mib_item late_collisions;
-	struct rtldsa_mib_item excessive_collisions;
-	struct rtldsa_mib_item crc_align_errors;
-	struct rtldsa_mib_item rx_pkts_over_max_octets;
+	struct otto_stats_mib_item if_in_octets;
+	struct otto_stats_mib_item if_out_octets;
+	struct otto_stats_mib_item if_in_ucast_pkts;
+	struct otto_stats_mib_item if_in_mcast_pkts;
+	struct otto_stats_mib_item if_in_bcast_pkts;
+	struct otto_stats_mib_item if_out_ucast_pkts;
+	struct otto_stats_mib_item if_out_mcast_pkts;
+	struct otto_stats_mib_item if_out_bcast_pkts;
+	struct otto_stats_mib_item if_out_discards;
+	struct otto_stats_mib_item single_collisions;
+	struct otto_stats_mib_item multiple_collisions;
+	struct otto_stats_mib_item deferred_transmissions;
+	struct otto_stats_mib_item late_collisions;
+	struct otto_stats_mib_item excessive_collisions;
+	struct otto_stats_mib_item crc_align_errors;
+	struct otto_stats_mib_item rx_pkts_over_max_octets;
 
-	struct rtldsa_mib_item unsupported_opcodes;
+	struct otto_stats_mib_item unsupported_opcodes;
 
-	struct rtldsa_mib_item rx_undersize_pkts;
-	struct rtldsa_mib_item rx_oversize_pkts;
-	struct rtldsa_mib_item rx_fragments;
-	struct rtldsa_mib_item rx_jabbers;
+	struct otto_stats_mib_item rx_undersize_pkts;
+	struct otto_stats_mib_item rx_oversize_pkts;
+	struct otto_stats_mib_item rx_fragments;
+	struct otto_stats_mib_item rx_jabbers;
 
-	struct rtldsa_mib_item tx_pkts[ETHTOOL_RMON_HIST_MAX];
-	struct rtldsa_mib_item rx_pkts[ETHTOOL_RMON_HIST_MAX];
+	struct otto_stats_mib_item tx_pkts[ETHTOOL_RMON_HIST_MAX];
+	struct otto_stats_mib_item rx_pkts[ETHTOOL_RMON_HIST_MAX];
 	struct ethtool_rmon_hist_range rmon_ranges[ETHTOOL_RMON_HIST_MAX];
 
-	struct rtldsa_mib_item drop_events;
-	struct rtldsa_mib_item collisions;
+	struct otto_stats_mib_item drop_events;
+	struct otto_stats_mib_item collisions;
 
-	struct rtldsa_mib_item rx_pause_frames;
-	struct rtldsa_mib_item tx_pause_frames;
+	struct otto_stats_mib_item rx_pause_frames;
+	struct otto_stats_mib_item tx_pause_frames;
 
 	size_t list_count;
-	const struct rtldsa_mib_list_item *list;
+	const struct otto_stats_mib_list_item *list;
 };
 
-extern const struct rtldsa_mib_desc rtldsa_838x_mib_desc;
-extern const struct rtldsa_mib_desc rtldsa_839x_mib_desc;
-extern const struct rtldsa_mib_desc rtldsa_930x_mib_desc;
-extern const struct rtldsa_mib_desc rtldsa_931x_mib_desc;
+extern const struct otto_stats_mib_desc otto_stats_838x_mib_desc;
+extern const struct otto_stats_mib_desc otto_stats_839x_mib_desc;
+extern const struct otto_stats_mib_desc otto_stats_930x_mib_desc;
+extern const struct otto_stats_mib_desc otto_stats_931x_mib_desc;
 
 struct dsa_switch;
 struct ethtool_eth_ctrl_stats;

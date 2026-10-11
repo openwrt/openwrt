@@ -17,7 +17,7 @@
 #define MIB_LIST_ITEM(_name, _item) \
 		{.name = _name, .item = _item}
 
-static const struct rtldsa_mib_list_item rtldsa_838x_mib_list[] = {
+static const struct otto_stats_mib_list_item otto_stats_838x_mib_list[] = {
 	MIB_LIST_ITEM("dot1dTpPortInDiscards", MIB_ITEM(MIB_REG_STD, 0xec, 1)),
 	MIB_LIST_ITEM("ifOutDiscards", MIB_ITEM(MIB_REG_STD, 0xd0, 1)),
 	MIB_LIST_ITEM("DropEvents", MIB_ITEM(MIB_REG_STD, 0xa8, 1)),
@@ -30,7 +30,7 @@ static const struct rtldsa_mib_list_item rtldsa_838x_mib_list[] = {
 	MIB_LIST_ITEM("rx_MacDiscards", MIB_ITEM(MIB_REG_STD, 0x40, 1))
 };
 
-const struct rtldsa_mib_desc rtldsa_838x_mib_desc = {
+const struct otto_stats_mib_desc otto_stats_838x_mib_desc = {
 	.symbol_errors = MIB_ITEM(MIB_REG_STD, 0xb8, 1),
 
 	.if_in_octets = MIB_ITEM(MIB_REG_STD, 0xf8, 2),
@@ -90,11 +90,11 @@ const struct rtldsa_mib_desc rtldsa_838x_mib_desc = {
 	.rx_pause_frames = MIB_ITEM(MIB_REG_STD, 0xb0, 1),
 	.tx_pause_frames = MIB_ITEM(MIB_REG_STD, 0xac, 1),
 
-	.list_count = ARRAY_SIZE(rtldsa_838x_mib_list),
-	.list = rtldsa_838x_mib_list
+	.list_count = ARRAY_SIZE(otto_stats_838x_mib_list),
+	.list = otto_stats_838x_mib_list
 };
 
-static const struct rtldsa_mib_list_item rtldsa_839x_mib_list[] = {
+static const struct otto_stats_mib_list_item otto_stats_839x_mib_list[] = {
 	MIB_LIST_ITEM("ifOutDiscards", MIB_ITEM(MIB_REG_STD, 0xd4, 1)),
 	MIB_LIST_ITEM("dot1dTpPortInDiscards", MIB_ITEM(MIB_REG_STD, 0xd0, 1)),
 	MIB_LIST_ITEM("DropEvents", MIB_ITEM(MIB_REG_STD, 0xa8, 1)),
@@ -114,7 +114,7 @@ static const struct rtldsa_mib_list_item rtldsa_839x_mib_list[] = {
 	MIB_LIST_ITEM("rx_MacDiscards", MIB_ITEM(MIB_REG_STD, 0x24, 1))
 };
 
-const struct rtldsa_mib_desc rtldsa_839x_mib_desc = {
+const struct otto_stats_mib_desc otto_stats_839x_mib_desc = {
 	.symbol_errors = MIB_ITEM(MIB_REG_STD, 0xb8, 1),
 
 	.if_in_octets = MIB_ITEM(MIB_REG_STD, 0xf8, 2),
@@ -174,11 +174,11 @@ const struct rtldsa_mib_desc rtldsa_839x_mib_desc = {
 	.rx_pause_frames = MIB_ITEM(MIB_REG_STD, 0xb0, 1),
 	.tx_pause_frames = MIB_ITEM(MIB_REG_STD, 0xac, 1),
 
-	.list_count = ARRAY_SIZE(rtldsa_839x_mib_list),
-	.list = rtldsa_839x_mib_list
+	.list_count = ARRAY_SIZE(otto_stats_839x_mib_list),
+	.list = otto_stats_839x_mib_list
 };
 
-static const struct rtldsa_mib_list_item rtldsa_930x_mib_list[] = {
+static const struct otto_stats_mib_list_item otto_stats_930x_mib_list[] = {
 	MIB_LIST_ITEM("ifOutDiscards", MIB_ITEM(MIB_REG_STD, 0xbc, 1)),
 	MIB_LIST_ITEM("dot1dTpPortInDiscards", MIB_ITEM(MIB_REG_STD, 0xb8, 1)),
 	MIB_LIST_ITEM("DropEvents", MIB_ITEM(MIB_REG_STD, 0x90, 1)),
@@ -208,7 +208,7 @@ static const struct rtldsa_mib_list_item rtldsa_930x_mib_list[] = {
 	MIB_LIST_ITEM("rx_MacIPGShortDrop", MIB_ITEM(MIB_REG_PRV, 0x30, 1))
 };
 
-const struct rtldsa_mib_desc rtldsa_930x_mib_desc = {
+const struct otto_stats_mib_desc otto_stats_930x_mib_desc = {
 	.symbol_errors = MIB_ITEM(MIB_REG_STD, 0xa0, 1),
 
 	.if_in_octets = MIB_ITEM(MIB_REG_STD, 0xf8, 2),
@@ -272,11 +272,11 @@ const struct rtldsa_mib_desc rtldsa_930x_mib_desc = {
 	.rx_pause_frames = MIB_ITEM(MIB_REG_STD, 0x98, 1),
 	.tx_pause_frames = MIB_ITEM(MIB_REG_STD, 0x94, 1),
 
-	.list_count = ARRAY_SIZE(rtldsa_930x_mib_list),
-	.list = rtldsa_930x_mib_list
+	.list_count = ARRAY_SIZE(otto_stats_930x_mib_list),
+	.list = otto_stats_930x_mib_list
 };
 
-static const struct rtldsa_mib_list_item rtldsa_931x_mib_list[] = {
+static const struct otto_stats_mib_list_item otto_stats_931x_mib_list[] = {
 	MIB_LIST_ITEM("ifOutDiscards", MIB_ITEM(MIB_TBL_STD, 36, 1)),
 	MIB_LIST_ITEM("dot1dTpPortInDiscards", MIB_ITEM(MIB_TBL_STD, 35, 1)),
 	MIB_LIST_ITEM("DropEvents", MIB_ITEM(MIB_TBL_STD, 25, 1)),
@@ -306,7 +306,7 @@ static const struct rtldsa_mib_list_item rtldsa_931x_mib_list[] = {
 	MIB_LIST_ITEM("rx_MacIPGShortDrop", MIB_ITEM(MIB_TBL_PRV, 8, 1))
 };
 
-const struct rtldsa_mib_desc rtldsa_931x_mib_desc = {
+const struct otto_stats_mib_desc otto_stats_931x_mib_desc = {
 	.symbol_errors = MIB_ITEM(MIB_TBL_STD, 29, 1),
 
 	.if_in_octets = MIB_ITEM(MIB_TBL_STD, 51, 2),
@@ -370,8 +370,8 @@ const struct rtldsa_mib_desc rtldsa_931x_mib_desc = {
 	.rx_pause_frames = MIB_ITEM(MIB_TBL_STD, 27, 1),
 	.tx_pause_frames = MIB_ITEM(MIB_TBL_STD, 26, 1),
 
-	.list_count = ARRAY_SIZE(rtldsa_931x_mib_list),
-	.list = rtldsa_931x_mib_list
+	.list_count = ARRAY_SIZE(otto_stats_931x_mib_list),
+	.list = otto_stats_931x_mib_list
 };
 
 void otto_stats_838x_init(struct rtl838x_switch_priv *priv)
@@ -424,7 +424,7 @@ void otto_stats_init(struct rtl838x_switch_priv *priv)
 }
 
 static bool otto_stats_read_mib_item(struct rtl838x_switch_priv *priv, int port,
-				     const struct rtldsa_mib_item *mib_item,
+				     const struct otto_stats_mib_item *mib_item,
 				     u64 *data)
 {
 	u32 high1, high2;
@@ -471,8 +471,8 @@ static bool otto_stats_read_mib_item(struct rtl838x_switch_priv *priv, int port,
 }
 
 static void otto_stats_update_counter(struct rtl838x_switch_priv *priv, int port,
-				      struct rtldsa_counter *counter,
-				      const struct rtldsa_mib_item *mib_item)
+				      struct otto_stats_counter *counter,
+				      const struct otto_stats_mib_item *mib_item)
 {
 	u64 val;
 	u32 val32, diff;
@@ -491,7 +491,7 @@ static void otto_stats_update_counter(struct rtl838x_switch_priv *priv, int port
 }
 
 static void otto_stats_update_link(struct rtnl_link_stats64 *s,
-				   const struct rtldsa_counter_state *counters)
+				   const struct otto_stats_counter_state *counters)
 {
 	s->rx_packets = counters->if_in_ucast_pkts.val +
 			counters->if_in_mcast_pkts.val +
@@ -527,8 +527,8 @@ static void otto_stats_update_link(struct rtnl_link_stats64 *s,
 
 static void otto_stats_update_port_counters(struct rtl838x_switch_priv *priv, int port)
 {
-	struct rtldsa_counter_state *counters = &priv->ports[port].counters;
-	const struct rtldsa_mib_desc *mib_desc;
+	struct otto_stats_counter_state *counters = &priv->ports[port].counters;
+	const struct otto_stats_mib_desc *mib_desc;
 	ktime_t now;
 
 	mib_desc = priv->r->mib_desc;
@@ -676,7 +676,7 @@ static void otto_stats_poll_counters(struct work_struct *work)
 
 void otto_stats_init_counters(struct rtl838x_switch_priv *priv)
 {
-	struct rtldsa_counter_state *counters;
+	struct otto_stats_counter_state *counters;
 
 	for (int port = 0; port < priv->r->cpu_port; port++) {
 		if (!priv->ports[port].phy && !priv->ports[port].has_pcs)
@@ -697,7 +697,7 @@ void otto_stats_init_counters(struct rtl838x_switch_priv *priv)
 void otto_stats_get_strings(struct dsa_switch *ds, int port, u32 stringset, u8 *data)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
-	const struct rtldsa_mib_desc *mib_desc;
+	const struct otto_stats_mib_desc *mib_desc;
 
 	if (stringset != ETH_SS_STATS)
 		return;
@@ -715,8 +715,8 @@ void otto_stats_get_ethtool(struct dsa_switch *ds, int port,
 			    u64 *data)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
-	const struct rtldsa_mib_desc *mib_desc;
-	const struct rtldsa_mib_item *mib_item;
+	const struct otto_stats_mib_desc *mib_desc;
+	const struct otto_stats_mib_item *mib_item;
 
 	if (port < 0 || port >= priv->r->cpu_port)
 		return;
@@ -745,7 +745,7 @@ void otto_stats_get_eth_phy(struct dsa_switch *ds, int port,
 			    struct ethtool_eth_phy_stats *phy_stats)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
-	struct rtldsa_counter_state *counters = &priv->ports[port].counters;
+	struct otto_stats_counter_state *counters = &priv->ports[port].counters;
 
 	if (port < 0 || port >= priv->r->cpu_port)
 		return;
@@ -763,7 +763,7 @@ void otto_stats_get_eth_mac(struct dsa_switch *ds, int port,
 			    struct ethtool_eth_mac_stats *mac_stats)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
-	struct rtldsa_counter_state *counters = &priv->ports[port].counters;
+	struct otto_stats_counter_state *counters = &priv->ports[port].counters;
 
 	if (port < 0 || port >= priv->r->cpu_port)
 		return;
@@ -814,7 +814,7 @@ void otto_stats_get_eth_ctrl(struct dsa_switch *ds, int port,
 			     struct ethtool_eth_ctrl_stats *ctrl_stats)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
-	struct rtldsa_counter_state *counters = &priv->ports[port].counters;
+	struct otto_stats_counter_state *counters = &priv->ports[port].counters;
 
 	if (port < 0 || port >= priv->r->cpu_port)
 		return;
@@ -833,8 +833,8 @@ void otto_stats_get_rmon(struct dsa_switch *ds, int port,
 			 const struct ethtool_rmon_hist_range **ranges)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
-	const struct rtldsa_mib_desc *mib_desc;
-	struct rtldsa_counter_state *counters = &priv->ports[port].counters;
+	const struct otto_stats_mib_desc *mib_desc;
+	struct otto_stats_counter_state *counters = &priv->ports[port].counters;
 
 	if (port < 0 || port >= priv->r->cpu_port)
 		return;
@@ -880,7 +880,7 @@ void otto_stats_get64(struct dsa_switch *ds, int port,
 		      struct rtnl_link_stats64 *s)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
-	struct rtldsa_counter_state *counters = &priv->ports[port].counters;
+	struct otto_stats_counter_state *counters = &priv->ports[port].counters;
 
 	if (port < 0 || port >= priv->r->cpu_port)
 		return;
@@ -898,7 +898,7 @@ void otto_stats_get_pause(struct dsa_switch *ds, int port,
 			  struct ethtool_pause_stats *pause_stats)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
-	struct rtldsa_counter_state *counters = &priv->ports[port].counters;
+	struct otto_stats_counter_state *counters = &priv->ports[port].counters;
 
 	if (port < 0 || port >= priv->r->cpu_port)
 		return;

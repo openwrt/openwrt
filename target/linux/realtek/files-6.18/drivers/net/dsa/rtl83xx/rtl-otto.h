@@ -92,7 +92,7 @@ struct rtldsa_port {
 	int led_set;
 	enum rtldsa_flood_type flood_type;
 	int leds_on_this_port;
-	struct rtldsa_counter_state counters;
+	struct otto_stats_counter_state counters;
 	const struct dsa_port *dp;
 };
 
@@ -326,7 +326,7 @@ struct rtldsa_config {
 	void (*stat_init)(struct rtl838x_switch_priv *priv);
 	int stat_port_std_mib;
 	int stat_port_prv_mib;
-	const struct rtldsa_mib_desc *mib_desc;
+	const struct otto_stats_mib_desc *mib_desc;
 	u64 (*stat_port_table_read)(int port, unsigned int mib_size, unsigned int offset, bool is_pvt);
 	void (*stat_counters_lock)(struct rtl838x_switch_priv *priv, int port);
 	void (*stat_counters_unlock)(struct rtl838x_switch_priv *priv, int port);
