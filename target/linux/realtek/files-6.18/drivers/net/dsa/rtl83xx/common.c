@@ -201,28 +201,6 @@ static int rtldsa_ports_probe(struct rtl838x_switch_priv *priv)
 	return 0;
 }
 
-static int rtl83xx_get_l2aging(struct rtl838x_switch_priv *priv)
-{
-	int t = sw_r32(priv->r->l2_ctrl_1);
-
-	/* RTL838x uses a high-resolution 23-bit AGE_UNIT where one unit is
-	 * 204.8 ms. RTL839x and RTL93xx use a 21-bit AGE_UNIT where one unit
-	 * is 600 ms. An AGE_UNIT value of 0 disables dynamic address aging.
-	 */
-	if (priv->r->high_res_l2_age) {
-		t &= GENMASK(22, 0);
-		t = t * 128 / 625;
-	} else {
-		t &= GENMASK(20, 0);
-		t = t * 3 / 5;
-	}
-
-	pr_debug("L2 AGING time: %d sec\n", t);
-	pr_debug("Dynamic aging for ports: %x\n", sw_r32(priv->r->l2_port_aging_out));
-
-	return t;
-}
-
 // Currently Unused
 // /* Allocate a 64 bit octet counter located in the LOG HW table */
 // static int rtl83xx_octet_cntr_alloc(struct rtl838x_switch_priv *priv)
@@ -519,7 +497,7 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 	if (soc_info.family != RTL9310_FAMILY_ID)
 		sw_w32(0x1, priv->r->imr_glb);
 
-	rtl83xx_get_l2aging(priv);
+	otto_l2_get_ageing_time(priv);
 
 	if (priv->r->qos_init)
 		priv->r->qos_init(priv);

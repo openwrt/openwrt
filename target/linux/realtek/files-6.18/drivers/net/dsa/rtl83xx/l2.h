@@ -7,6 +7,7 @@
 
 struct rtl838x_switch_priv;
 struct rtl838x_l2_entry;
+struct rtldsa_l2_uc;
 struct otto_l3_nexthop;
 
 enum rtldsa_flood_type {
@@ -57,6 +58,14 @@ enum rtldsa_flood_type {
 #define MC_PMASK_ALL_PORTS_IDX	((MAX_MC_PMASKS - 1))
 
 #define RTLDSA_L2_L3_REFCOUNT_MAX	0x7f
+
+/* Returns the L2 ageing time in seconds. */
+int otto_l2_get_ageing_time(struct rtl838x_switch_priv *priv);
+int otto_l2_find_hash_entry(struct rtl838x_switch_priv *priv, u64 seed,
+			    bool must_exist, struct rtl838x_l2_entry *e);
+int otto_l2_find_cam_entry(struct rtl838x_switch_priv *priv, u64 seed,
+			   bool must_exist, struct rtl838x_l2_entry *e);
+struct rtldsa_l2_uc *otto_l2_uc_lookup(struct rtl838x_switch_priv *priv, int idx);
 
 int otto_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop *nh,
 			bool require_existing);

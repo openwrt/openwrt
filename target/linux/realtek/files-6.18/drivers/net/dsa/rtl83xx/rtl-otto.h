@@ -611,19 +611,4 @@ extern struct rtl83xx_soc_info soc_info;
 void rtl838x_dbgfs_init(struct rtl838x_switch_priv *priv);
 void rtl930x_dbgfs_init(struct rtl838x_switch_priv *priv);
 
-int rtldsa_find_l2_hash_entry(struct rtl838x_switch_priv *priv, u64 seed,
-			      bool must_exist, struct rtl838x_l2_entry *e);
-
-/* RTL931x hashes its second block into rows the fib_entries count does not
- * reach, so an index can fall outside the map and is simply not tracked.
- */
-static inline struct rtldsa_l2_uc *rtldsa_l2_uc_lookup(struct rtl838x_switch_priv *priv,
-						      int idx)
-{
-	if (idx < 0 || idx >= priv->r->fib_entries)
-		return NULL;
-
-	return &priv->l2_uc_map[idx];
-}
-
 #endif /* _RTL838X_H */

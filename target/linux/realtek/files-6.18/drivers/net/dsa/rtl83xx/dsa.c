@@ -797,87 +797,6 @@ static void rtldsa_setup_l2_mc_entry(struct rtl838x_l2_entry *e, int vid, u64 ma
 	u64_to_ether_addr(mac, e->mac);
 }
 
-static int rtldsa_l2_hash_index(u32 key, int slot)
-{
-	return slot > 3 ? ((key >> 14) & 0xffff) | (slot & 3) : ((key << 2) | slot) & 0xffff;
-}
-
-/* Uses the seed to identify a hash bucket in the L2 using the derived hash key and then loops
- * over the entries in the bucket until either a matching entry is found or an empty slot
- * Returns the filled in rtl838x_l2_entry and the index in the bucket when an entry was found
- * when an empty slot was found and must exist is false, the index of the slot is returned
- * when no slots are available returns -1
- */
-int rtldsa_find_l2_hash_entry(struct rtl838x_switch_priv *priv, u64 seed,
-			      bool must_exist, struct rtl838x_l2_entry *e)
-{
-	u32 key = priv->r->l2_hash_key(priv, seed);
-	int free_slot = -1;
-	u64 entry;
-
-	pr_debug("%s: using key %x, for seed %016llx\n", __func__, key, seed);
-	/* Loop over all entries in the hash-bucket and over the second block on 93xx SoCs */
-	for (int i = 0; i < priv->r->l2_bucket_size; i++) {
-		entry = priv->r->read_l2_entry_using_hash(key, i, e);
-		pr_debug("valid %d, mac %016llx\n", e->valid, ether_addr_to_u64(&e->mac[0]));
-
-		/* Remember the first free slot, but keep looking: the address
-		 * may be sitting further down the bucket.
-		 */
-		if (!e->valid) {
-			if (free_slot < 0)
-				free_slot = i;
-			continue;
-		}
-
-		if ((entry & 0x0fffffffffffffffULL) == seed)
-			return rtldsa_l2_hash_index(key, i);
-	}
-
-	if (must_exist || free_slot < 0)
-		return -1;
-
-	/* The loop leaves the last entry it read here, valid bit included.
-	 * Reading the free slot back does not undo that on RTL930x and
-	 * RTL931x, whose readers return as soon as the valid bit is clear.
-	 */
-	memset(e, 0, sizeof(*e));
-
-	return rtldsa_l2_hash_index(key, free_slot);
-}
-
-/* Uses the seed to identify an entry in the CAM by looping over all its entries
- * Returns the filled in rtl838x_l2_entry and the index in the CAM when an entry was found
- * when an empty slot was found the index of the slot is returned
- * when no slots are available returns -1
- */
-static int rtldsa_find_l2_cam_entry(struct rtl838x_switch_priv *priv, u64 seed,
-				    bool must_exist, struct rtl838x_l2_entry *e)
-{
-	int idx = -1;
-	int cam_rows;
-	u64 entry;
-
-	cam_rows = otto_table_rows(priv->r->l2_cam_tbl);
-	if (cam_rows < 0)
-		return -1;
-
-	for (int i = 0; i < cam_rows; i++) {
-		entry = priv->r->read_cam(i, e);
-		if (!must_exist && !e->valid) {
-			if (idx < 0) /* First empty entry? */
-				idx = i;
-			break;
-		} else if ((entry & 0x0fffffffffffffffULL) == seed) {
-			pr_debug("Found entry in CAM\n");
-			idx = i;
-			break;
-		}
-	}
-
-	return idx;
-}
-
 static int rtldsa_port_fdb_add(struct dsa_switch *ds, int port,
 			       const unsigned char *addr, u16 vid,
 			       const struct dsa_db db)
@@ -901,11 +820,11 @@ static int rtldsa_port_fdb_add(struct dsa_switch *ds, int port,
 
 	mutex_lock(&priv->reg_mutex);
 
-	idx = rtldsa_find_l2_hash_entry(priv, seed, false, &e);
+	idx = otto_l2_find_hash_entry(priv, seed, false, &e);
 
 	/* Found an existing or empty entry */
 	if (idx >= 0) {
-		struct rtldsa_l2_uc *m = rtldsa_l2_uc_lookup(priv, idx);
+		struct rtldsa_l2_uc *m = otto_l2_uc_lookup(priv, idx);
 
 		if (m) {
 			/* A slot nobody had claimed carries whatever its last
@@ -922,7 +841,7 @@ static int rtldsa_port_fdb_add(struct dsa_switch *ds, int port,
 	}
 
 	/* Hash buckets full, try CAM */
-	idx = rtldsa_find_l2_cam_entry(priv, seed, false, &e);
+	idx = otto_l2_find_cam_entry(priv, seed, false, &e);
 
 	if (idx >= 0) {
 		rtldsa_setup_l2_uc_entry(&e, port, vid, mac);
@@ -956,10 +875,10 @@ static int rtldsa_port_fdb_del(struct dsa_switch *ds, int port,
 
 	mutex_lock(&priv->reg_mutex);
 
-	idx = rtldsa_find_l2_hash_entry(priv, seed, true, &e);
+	idx = otto_l2_find_hash_entry(priv, seed, true, &e);
 
 	if (idx >= 0) {
-		struct rtldsa_l2_uc *m = rtldsa_l2_uc_lookup(priv, idx);
+		struct rtldsa_l2_uc *m = otto_l2_uc_lookup(priv, idx);
 
 		pr_debug("Found entry index %d, key %d and bucket %d\n", idx, idx >> 2, idx & 3);
 
@@ -982,7 +901,7 @@ static int rtldsa_port_fdb_del(struct dsa_switch *ds, int port,
 	}
 
 	/* Check CAM for spillover from hash buckets */
-	idx = rtldsa_find_l2_cam_entry(priv, seed, true, &e);
+	idx = otto_l2_find_cam_entry(priv, seed, true, &e);
 
 	if (idx >= 0) {
 		e.valid = false;
@@ -1091,7 +1010,7 @@ static int rtldsa_83xx_port_mdb_add(struct dsa_switch *ds, int port,
 
 	mutex_lock(&priv->reg_mutex);
 
-	idx = rtldsa_find_l2_hash_entry(priv, seed, false, &e);
+	idx = otto_l2_find_hash_entry(priv, seed, false, &e);
 
 	/* Found an existing or empty entry */
 	if (idx >= 0) {
@@ -1113,7 +1032,7 @@ static int rtldsa_83xx_port_mdb_add(struct dsa_switch *ds, int port,
 	}
 
 	/* Hash buckets full, try CAM */
-	idx = rtldsa_find_l2_cam_entry(priv, seed, false, &e);
+	idx = otto_l2_find_cam_entry(priv, seed, false, &e);
 
 	if (idx >= 0) {
 		if (e.valid) {
@@ -1177,7 +1096,7 @@ static int rtldsa_port_mdb_del(struct dsa_switch *ds, int port,
 
 	mutex_lock(&priv->reg_mutex);
 
-	idx = rtldsa_find_l2_hash_entry(priv, seed, true, &e);
+	idx = otto_l2_find_hash_entry(priv, seed, true, &e);
 
 	if (idx >= 0) {
 		pr_debug("Found entry index %d, key %d and bucket %d\n", idx, idx >> 2, idx & 3);
@@ -1190,7 +1109,7 @@ static int rtldsa_port_mdb_del(struct dsa_switch *ds, int port,
 	}
 
 	/* Check CAM for spillover from hash buckets */
-	idx = rtldsa_find_l2_cam_entry(priv, seed, true, &e);
+	idx = otto_l2_find_cam_entry(priv, seed, true, &e);
 
 	if (idx >= 0) {
 		portmask = rtldsa_mc_group_del_port(priv, e.mc_portmask_index, port);
