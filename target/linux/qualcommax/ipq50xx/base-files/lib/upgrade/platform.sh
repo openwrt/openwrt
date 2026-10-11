@@ -210,6 +210,7 @@ platform_do_upgrade() {
 		remove_oem_ubi_volume wifi_fw
 		glinet_do_upgrade "$1"
 		;;
+	linksys,mr2000|\
 	linksys,mr5500|\
 	linksys,mx2000|\
 	linksys,mx5500|\
