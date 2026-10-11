@@ -47,7 +47,11 @@
  * holds an L2 entry for its MAC. A trapping rule only takes frames addressed
  * to one of the switch's MACs, so a frame for another station goes its way. A
  * destination no rule matches needs no catch-all: its frames are addressed to
- * the switch, which traps them.
+ * the switch, which traps them. The switch's MACs (ROUTING_SA_CTRL) are both
+ * the source MACs a routed frame leaves with and the MACs whose frames are
+ * routed: entry 0 is the switch's own, and a device with a MAC of its own
+ * takes another for as long as a route out of it holds one, its on-link
+ * prefix included.
  *
  * State per family:
  * - RTL930x: IPv4 and IPv6 unicast routes through a gateway are forwarded.
@@ -63,7 +67,9 @@
  *   interfaces share one 1536 byte MTU. The programmed state is shown in
  *   debugfs, under realtek_otto_l3.
  * - RTL839x: IPv4 unicast routes through a gateway are forwarded, through the
- *   first 512 PIE rules. A route counts its packets from when its gateway
+ *   first 512 PIE rules, with the MAC of the device they go out of. Up to 15
+ *   MACs besides the switch's own are taken; a route out of a device whose
+ *   MAC finds no entry traps. A route counts its packets from when its gateway
  *   resolves, while a counter is free. Trapped to the CPU: the same IPv4
  *   routes as on RTL930x. No IPv6, and an event the driver could not take is
  *   not replayed.
@@ -186,9 +192,9 @@ static void otto_l3_839x_nexthop_read(struct otto_l3_ctrl *ctrl, int idx, struct
 	rt->nh.gw = v >> 16;
 }
 
-/* A ROUTING row holds a gateway's MAC and the index of the source MAC to
- * route with (SW_MAC_IDX). The routes through one gateway share its row, the
- * way RTL930x routes share a DMAC entry: the L2 entry of the gateway names
+/* A ROUTING row holds a gateway's MAC and the switch MAC entry to route with
+ * (SW_MAC_IDX). The routes through one gateway out of one device share a row,
+ * the way RTL930x routes share a DMAC entry: the L2 entry of the gateway names
  * one row, whichever route claimed it.
  */
 static int otto_l3_839x_set_dmac(struct otto_l3_ctrl *ctrl, u32 idx,
@@ -197,6 +203,12 @@ static int otto_l3_839x_set_dmac(struct otto_l3_ctrl *ctrl, u32 idx,
 	u32 data[2] = { dmac->mac >> 16, dmac->mac << 16 | (dmac->smac_id & 0xf) << 12 };
 
 	return otto_table_write(RTL8390_TBL_ROUTING, idx, &data);
+}
+
+static void otto_l3_839x_set_switch_mac(struct otto_l3_ctrl *ctrl, int idx, u64 mac)
+{
+	sw_w32(mac >> 32, RTL839X_ROUTING_SA_CTRL + idx * 8);
+	sw_w32(mac, RTL839X_ROUTING_SA_CTRL + idx * 8 + 4);
 }
 
 /* The prefix rows of an RTL839x are the PIE rules L3 keeps for itself. A rule
@@ -280,10 +292,13 @@ static void otto_l3_839x_setup_port_macs(struct otto_l3_ctrl *ctrl)
 	dev = priv->ports[priv->r->cpu_port].dp->user;
 	mac = ether_addr_to_u64(dev->dev_addr);
 
-	for (int i = 0; i < 15; i++) {
-		sw_w32(mac >> 32, RTL839X_ROUTING_SA_CTRL + i * 8);
-		sw_w32(mac, RTL839X_ROUTING_SA_CTRL + i * 8 + 4);
-	}
+	/* Entry 0 is the switch's own MAC, the others wait for a device with a
+	 * MAC of its own (otto_l3_switch_mac_get())
+	 */
+	ctrl->switch_macs[0] = mac;
+	otto_l3_839x_set_switch_mac(ctrl, 0, mac);
+	for (int i = 1; i < MAX_SWITCH_MACS; i++)
+		otto_l3_839x_set_switch_mac(ctrl, i, SWITCH_MAC_FREE);
 }
 
 static int otto_l3_839x_setup(struct otto_l3_ctrl *ctrl)
@@ -1687,12 +1702,12 @@ static bool otto_l3_dmac_equal(const struct otto_l3_dmac *a, const struct otto_l
 }
 
 /* Routes through one gateway share its L2 entry, and that names a single
- * DMAC entry, whichever route claimed it first. So the entry is held per MAC
- * by every route through it, the way the SDK holds it
- * (_dal_longan_l3_dmacEntry_alloc()), not per route: a route that goes leaves
- * it to the others. A route holds one at most, and there are no more routes
- * than entries. Entry 0 stays unused, as it did while route 0, which is never
- * allocated, named it.
+ * DMAC entry, whichever route claimed it first. So the entry is held per MAC,
+ * and on RTL839x per switch MAC entry too, by every route through it, the way
+ * the SDK holds it (_dal_longan_l3_dmacEntry_alloc()), not per route: a route
+ * that goes leaves it to the others. A route holds one at most, and there are
+ * no more routes than entries. Entry 0 stays unused, as it did while route 0,
+ * which is never allocated, named it.
  */
 static int otto_l3_dmac_get(struct otto_l3_ctrl *ctrl, const struct otto_l3_dmac *dmac)
 {
@@ -1740,6 +1755,89 @@ static void otto_l3_dmac_put(struct otto_l3_ctrl *ctrl, int idx)
 	mutex_unlock(ctrl->lock);
 }
 
+/* On RTL839x the source MACs a routed frame leaves with are also the MACs
+ * whose frames are routed. Entry 0 is the switch's own; each other MAC a route
+ * goes out of a device with, its on-link prefix and its addresses included,
+ * takes an entry while a route holds it, so a device with a MAC of its own
+ * routes what arrives on it while it has an address. Devices with one MAC
+ * share its entry. An entry no route holds any more goes back to the unused
+ * value, after the ROUTING rows that named it, which the routes held too.
+ */
+static int otto_l3_switch_mac_get(struct otto_l3_ctrl *ctrl, u64 mac)
+{
+	int i, unused = -1;
+
+	if (mac == ctrl->switch_macs[0])
+		return 0;
+
+	mutex_lock(ctrl->lock);
+
+	for (i = 1; i < MAX_SWITCH_MACS; i++) {
+		if (ctrl->switch_mac_refs[i] && ctrl->switch_macs[i] == mac)
+			break;
+		if (unused < 0 && !ctrl->switch_mac_refs[i])
+			unused = i;
+	}
+
+	if (i == MAX_SWITCH_MACS) {
+		i = unused;
+		if (i < 0) {
+			mutex_unlock(ctrl->lock);
+			return -ENOSPC;
+		}
+
+		ctrl->switch_macs[i] = mac;
+		ctrl->cfg->set_switch_mac(ctrl, i, mac);
+	}
+
+	ctrl->switch_mac_refs[i]++;
+	mutex_unlock(ctrl->lock);
+
+	return i;
+}
+
+static void otto_l3_switch_mac_put(struct otto_l3_ctrl *ctrl, int idx)
+{
+	if (idx <= 0)
+		return;
+
+	mutex_lock(ctrl->lock);
+	if (!--ctrl->switch_mac_refs[idx])
+		ctrl->cfg->set_switch_mac(ctrl, idx, SWITCH_MAC_FREE);
+	mutex_unlock(ctrl->lock);
+}
+
+/* A route the switch cannot route keeps to the CPU, its next hop as it was */
+static void otto_l3_route_trap_sw(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r)
+{
+	if (r->attr.action == ROUTE_ACT_TRAP2CPU)
+		return;
+
+	r->attr.action = ROUTE_ACT_TRAP2CPU;
+	r->attr.ttl_dec = false;
+	r->attr.ttl_check = false;
+	otto_l3_route_rewrite(ctrl, r);
+}
+
+/* A gateway's L2 entry names one ROUTING row, which on RTL839x also names the
+ * switch MAC entry. Two devices with different MACs on one VLAN reach a
+ * gateway through the same L2 entry, but each with a row of its own: the
+ * routes forwarding through the entry keep it.
+ */
+static bool otto_l3_l2_entry_taken(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r,
+				   const struct otto_l3_dmac *key)
+{
+	struct otto_l3_route *q;
+
+	list_for_each_entry(q, &ctrl->routes_list, list)
+		if (q != r && q->attr.action == ROUTE_ACT_FORWARD && q->nh.mac == key->mac &&
+		    q->nh.rvid == r->nh.rvid && q->nh.dmac_id >= 0 &&
+		    !otto_l3_dmac_equal(&ctrl->dmacs[q->nh.dmac_id], key))
+			return true;
+
+	return false;
+}
+
 static void otto_l3_route_update_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r,
 				    u64 mac)
 {
@@ -1750,6 +1848,8 @@ static void otto_l3_route_update_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_ro
 	struct otto_l3_dmac key = { .mac = mac };
 	bool first = !r->nh.mac;
 	bool no_port, no_l2, trap;
+	int old_sa = -1, sa;
+	bool new_sa = false;
 	int dmac = r->id;
 
 	if (otto_l3_row_frozen(ctrl, r))
@@ -1772,14 +1872,47 @@ static void otto_l3_route_update_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_ro
 		otto_l3_route_rewrite(ctrl, r);
 	}
 
+	/* An RTL839x route routes with the switch MAC entry of its device's
+	 * MAC. One without, or whose device took another MAC, takes one here,
+	 * and gives the old one up only with the ROUTING row that names it.
+	 * With none free it keeps to the CPU, its next hop untouched.
+	 */
+	if (ctrl->cfg->set_switch_mac &&
+	    (r->switch_mac_id < 0 || ctrl->switch_macs[r->switch_mac_id] != r->switch_mac)) {
+		sa = otto_l3_switch_mac_get(ctrl, r->switch_mac);
+		if (sa < 0) {
+			otto_l3_route_trap_sw(ctrl, r);
+			return;
+		}
+		old_sa = r->switch_mac_id;
+		r->switch_mac_id = sa;
+		new_sa = true;
+	}
+
+	/* An RTL839x ROUTING row also names the switch MAC entry */
+	if (r->switch_mac_id > 0)
+		key.smac_id = r->switch_mac_id;
+
 	if (ctrl->cfg->set_dmac) {
 		dmac = otto_l3_dmac_get(ctrl, &key);
 		if (dmac < 0) {
 			dev_err(ctrl->dev, "no DMAC entry for %016llx: %d\n", mac, dmac);
-			return;
+			goto undo_sa;
 		}
 	}
 
+	if (ctrl->cfg->set_switch_mac && otto_l3_l2_entry_taken(ctrl, r, &key)) {
+		if (!r->l2_taken)
+			dev_info(ctrl->dev, "gateway %pI4 also reached from another MAC on VLAN %d, routing %s in software\n",
+				 &r->gw_ip.s6_addr32[3], r->nh.rvid,
+				 otto_l3_route_dst(r, dst, sizeof(dst)));
+		r->l2_taken = true;
+		otto_l3_dmac_put(ctrl, dmac);
+		otto_l3_route_trap_sw(ctrl, r);
+		goto undo_sa;
+	}
+
+	r->l2_taken = false;
 	r->nh.mac = r->nh.gw = mac;
 	r->nh.port = priv->r->port_ignore;
 	r->nh.id = r->id;
@@ -1790,8 +1923,11 @@ static void otto_l3_route_update_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_ro
 	if (!no_l2)
 		r->nh.l2_installed = true;
 
-	/* The route names its gateway's entry now, through its L2 entry */
+	/* The route names its gateway's entry now, through its L2 entry, and
+	 * the old row gave up the switch MAC entry it named
+	 */
 	otto_l3_dmac_put(ctrl, old_dmac);
+	otto_l3_switch_mac_put(ctrl, old_sa);
 
 	/* A next hop with no port delivers the frame twice, so where the
 	 * route entry can trap, let the CPU route it alone until an update
@@ -1837,6 +1973,13 @@ static void otto_l3_route_update_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_ro
 	}
 
 	otto_l3_route_install(ctrl, r);
+	return;
+
+undo_sa:
+	if (new_sa) {
+		otto_l3_switch_mac_put(ctrl, r->switch_mac_id);
+		r->switch_mac_id = old_sa;
+	}
 }
 
 /* The hardware would go on forwarding to the address the gateway last
@@ -2068,6 +2211,81 @@ struct otto_l3_egress_work {
 	int ifindex;
 };
 
+/* Whether an entry other than @skip holds @mac */
+static bool otto_l3_switch_mac_held(struct otto_l3_ctrl *ctrl, u64 mac, int skip)
+{
+	if (mac == ctrl->switch_macs[0])
+		return true;
+
+	for (int i = 1; i < MAX_SWITCH_MACS; i++)
+		if (i != skip && ctrl->switch_mac_refs[i] && ctrl->switch_macs[i] == mac)
+			return true;
+
+	return false;
+}
+
+/* An RTL839x device that took a new MAC routes with it. A switch MAC entry
+ * that only routes out of the device hold takes the new MAC where it is, and
+ * the ROUTING rows naming it follow. Routes on any other entry move: one
+ * without a gateway names no row and moves now; one through a gateway traps
+ * and moves in otto_l3_route_update_hw(), with its row, once the resolve
+ * asked for here brings its gateway back.
+ */
+static void otto_l3_switch_mac_sync(struct otto_l3_ctrl *ctrl, struct net_device *dev, u64 mac)
+{
+	struct otto_l3_route *r;
+	bool none = false;
+	int old;
+
+	/* An entry keeps to one MAC, so it is only rewritten where no other
+	 * entry has the new one
+	 */
+	for (int k = 1; k < MAX_SWITCH_MACS; k++) {
+		unsigned int n = 0;
+
+		list_for_each_entry(r, &ctrl->routes_list, list)
+			if (r->gw_ifindex == dev->ifindex && r->switch_mac_id == k)
+				n++;
+
+		if (n && n == ctrl->switch_mac_refs[k] && !otto_l3_switch_mac_held(ctrl, mac, k)) {
+			mutex_lock(ctrl->lock);
+			ctrl->switch_macs[k] = mac;
+			ctrl->cfg->set_switch_mac(ctrl, k, mac);
+			mutex_unlock(ctrl->lock);
+		}
+	}
+
+	list_for_each_entry(r, &ctrl->routes_list, list) {
+		if (r->gw_ifindex != dev->ifindex)
+			continue;
+
+		r->switch_mac = mac;
+		old = r->switch_mac_id;
+		if (old >= 0 && ctrl->switch_macs[old] == mac)
+			continue;
+
+		if (r->gw_ip.s6_addr32[3]) {
+			otto_l3_route_trap_sw(ctrl, r);
+			continue;
+		}
+
+		otto_l3_switch_mac_put(ctrl, old);
+		r->switch_mac_id = otto_l3_switch_mac_get(ctrl, mac);
+		none |= r->switch_mac_id < 0;
+	}
+
+	if (none)
+		dev_err(ctrl->dev, "no switch MAC entry free for %pM, routes out of %s stay in software\n",
+			dev->dev_addr, dev->name);
+
+	/* One resolve brings back every route through a gateway */
+	list_for_each_entry(r, &ctrl->routes_list, list)
+		if (r->gw_ifindex == dev->ifindex && r->attr.type == ROUTE_TYPE_IP4UC &&
+		    r->gw_ip.s6_addr32[3] && r->attr.action == ROUTE_ACT_TRAP2CPU &&
+		    !otto_l3_gw_seen(ctrl, r, NULL))
+			otto_l3_port_gw_resolve(ctrl, dev, &arp_tbl, &r->gw_ip);
+}
+
 /* Whether every hold on an egress interface is a route out of this device */
 static bool otto_l3_intf_only_dev(struct otto_l3_ctrl *ctrl, int if_id, int ifindex)
 {
@@ -2104,6 +2322,11 @@ static void otto_l3_egress_sync(struct work_struct *work)
 		goto out;
 
 	mac = ether_addr_to_u64(dev->dev_addr);
+
+	if (ctrl->cfg->set_switch_mac) {
+		otto_l3_switch_mac_sync(ctrl, dev, mac);
+		goto out;
+	}
 
 	list_for_each_entry(r, &ctrl->routes_list, list) {
 		if (r->gw_ifindex != dev->ifindex || r->nh.if_id < 0)
@@ -2165,6 +2388,13 @@ static int otto_l3_netdev_notifier(struct notifier_block *nb, unsigned long even
 
 	if (!net_eq(dev_net(netdev_notifier_info_to_dev(ptr)), &init_net))
 		return NOTIFY_DONE;
+
+	/* RTL839x keeps no router MAC table: the routes hold its switch MACs */
+	if (!ctrl->cfg->set_router_mac) {
+		if (event == NETDEV_CHANGEADDR)
+			otto_l3_egress_sync_request(ctrl, netdev_notifier_info_to_dev(ptr));
+		return NOTIFY_DONE;
+	}
 
 	switch (event) {
 	case NETDEV_CHANGEUPPER:
@@ -2297,6 +2527,7 @@ static void otto_l3_route_teardown(struct otto_l3_ctrl *ctrl, struct otto_l3_rou
 	if (r->is_host_route || !ctrl->prefix_rows_stale) {
 		otto_l3_route_put_intf(ctrl, r);
 		otto_l3_dmac_put(ctrl, r->nh.dmac_id);
+		otto_l3_switch_mac_put(ctrl, r->switch_mac_id);
 	}
 
 	otto_l3_route_free(ctrl, r);
@@ -2337,6 +2568,7 @@ static struct otto_l3_route *otto_l3_route_alloc(struct otto_l3_ctrl *ctrl,
 	r->pr.packet_cntr = -1;
 	r->nh.if_id = -1;
 	r->nh.dmac_id = -1;
+	r->switch_mac_id = -1;
 	r->is_host_route = host;
 	INIT_LIST_HEAD(&r->srcs);
 
@@ -2534,6 +2766,14 @@ static int otto_l3_fib_add_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 	route->nh.rvid = vlan;
 	route->gw_ifindex = ndev->ifindex;
 
+	if (ctrl->cfg->set_switch_mac) {
+		route->switch_mac = ether_addr_to_u64(ndev->dev_addr);
+		route->switch_mac_id = otto_l3_switch_mac_get(ctrl, route->switch_mac);
+		if (route->switch_mac_id < 0)
+			dev_err(ctrl->dev, "no switch MAC entry free for %pM, %pI4/%d stays in software\n",
+				ndev->dev_addr, &info->dst, info->dst_len);
+	}
+
 	if (ctrl->cfg->set_router_mac) {
 		u64 mac = ether_addr_to_u64(ndev->dev_addr);
 
@@ -2578,6 +2818,7 @@ static int otto_l3_fib_add_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 out_free_rmac:
 out_free_rt:
 	otto_l3_route_put_intf(ctrl, route);
+	otto_l3_switch_mac_put(ctrl, route->switch_mac_id);
 	otto_l3_route_free(ctrl, route);
 	return 0;
 }
@@ -4169,6 +4410,7 @@ const struct otto_l3_config otto_l3_838x_cfg = {
 
 const struct otto_l3_config otto_l3_839x_cfg = {
 	.set_dmac = otto_l3_839x_set_dmac,
+	.set_switch_mac = otto_l3_839x_set_switch_mac,
 	.route_rows_move = otto_l3_839x_route_rows_move,
 	.route_write = otto_l3_839x_route_write,
 	.setup = otto_l3_839x_setup,
@@ -4382,7 +4624,7 @@ int otto_l3_probe(struct device *dev, struct rtl838x_switch_priv *priv)
 		return dev_err_probe(dev, err, "Failed to register netevent notifier\n");
 	}
 
-	if (ctrl->cfg->set_router_mac) {
+	if (ctrl->cfg->set_router_mac || ctrl->cfg->set_switch_mac) {
 		ctrl->nd_nb.notifier_call = otto_l3_netdev_notifier;
 		err = register_netdevice_notifier(&ctrl->nd_nb);
 		if (err) {

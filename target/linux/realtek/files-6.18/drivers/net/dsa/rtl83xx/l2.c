@@ -306,9 +306,9 @@ int otto_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop
 	nh->rvid = e.rvid;
 	nh->dev_id = e.stack_dev;
 	/* If the entry is already a valid next hop entry, don't change it, but
-	 * for the DMAC entry it names, one per gateway MAC: every route through
-	 * the entry holds that one, and the entry may still name one given up
-	 * while it stayed a next hop.
+	 * for the DMAC entry it names: every route through the entry holds that
+	 * one, and the entry may still name one given up while it stayed a next
+	 * hop, or, on RTL839x, the row of the device's old MAC.
 	 */
 	if (e.next_hop) {
 		if (e.nh_route_id == nh->dmac_id)

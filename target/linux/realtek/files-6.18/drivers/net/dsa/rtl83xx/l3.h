@@ -15,6 +15,9 @@ struct fib6_info;
 #define MAX_SMACS 64
 #define MAX_DMACS 2048
 #define MAX_ROUTER_MACS 64
+#define MAX_SWITCH_MACS 16
+/* What an unused switch MAC entry holds (Realtek GPL SDK, dal_cypress_l3_init()) */
+#define SWITCH_MAC_FREE 0xfffffffffffeULL
 #define MAX_HOST_ROUTES		1536
 #define MAX_ROUTES		512
 
@@ -97,7 +100,9 @@ struct otto_l3_route {
 	bool srcs_incomplete;		/* a source could not be tracked */
 	struct list_head list;		/* all routes, for every lookup */
 	u32 tb_id;			/* routing table the route came from */
-	u16 switch_mac_id;		/* Index into switch's own MACs, RTL839X only */
+	int switch_mac_id;		/* Switch MAC entry it routes with, RTL839x */
+	u64 switch_mac;			/* MAC of its device, which that entry holds */
+	bool l2_taken;			/* its gateway's L2 entry names another row */
 	struct otto_l3_nexthop nh;
 	struct pie_rule pr;
 	struct otto_l3_route_attr attr;
@@ -131,6 +136,10 @@ struct otto_l3_config {
 	void (*set_nexthop)(struct otto_l3_ctrl *ctrl, int idx, u16 dmac_id, u16 interface);
 	int (*route_lookup_hw)(struct otto_l3_ctrl *ctrl, struct otto_l3_route *rt);
 	int (*route_rows_move)(struct otto_l3_ctrl *ctrl, int dst, int src, int count);
+	/* RTL839x: one entry of the switch's own MACs, the source MACs it
+	 * routes with and the MACs it routes what arrives on
+	 */
+	void (*set_switch_mac)(struct otto_l3_ctrl *ctrl, int idx, u64 mac);
 	void (*route_read)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt);
 	void (*route_write)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt);
 	int (*setup)(struct otto_l3_ctrl *ctrl);
@@ -155,6 +164,8 @@ struct otto_l3_ctrl {
 	unsigned int intf_refs[MAX_SMACS];	/* routes holding each */
 	struct otto_l3_dmac *dmacs;		/* what each DMAC entry holds */
 	unsigned int *dmac_refs;		/* routes holding each */
+	u64 switch_macs[MAX_SWITCH_MACS];	/* MAC of each switch MAC entry */
+	unsigned int switch_mac_refs[MAX_SWITCH_MACS];	/* routes holding each */
 	DECLARE_BITMAP(router_mac_bm, MAX_ROUTER_MACS);	/* entries written here */
 	bool prefix_rows_stale;	/* a move failed, the rows are not where we say */
 	bool v4_fwd_off;	/* policy rules keep IPv4 forwarding in software */
