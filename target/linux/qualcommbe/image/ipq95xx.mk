@@ -1,5 +1,7 @@
 DTS_DIR := $(DTS_DIR)/qcom
 
+DEVICE_VARS += TPLINK_SUPPORT_STRING
+
 define Device/8devices_kiwi-dvk
 	$(call Device/FitImage)
 	$(call Device/EmmcImage)
@@ -58,3 +60,36 @@ define Device/qcom_rdp433
 	IMAGE/sysupgrade.bin := append-kernel | pad-to 64k | append-rootfs | pad-rootfs | check-size | append-metadata
 endef
 TARGET_DEVICES += qcom_rdp433
+
+define Device/tplink_archer-be550-v1
+	$(call Device/FitImageLzma)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := TP-Link
+	DEVICE_MODEL := Archer BE550
+	DEVICE_VARIANT := v1
+	DEVICE_DTS_CONFIG := config@al02-c11
+	SOC := ipq9554
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	IMAGE_SIZE := 43008k
+	NAND_SIZE := 128m
+	DEVICE_PACKAGES := kmod-ath11k-ahb kmod-qrtr-smd kmod-ath12k \
+		ath12k-firmware-qcn9274 ipq-wifi-tplink_archer-be550-v1 \
+		uboot-envtools kmod-leds-tplink-ledbar tplink-ledbar
+	IMAGES += web-ui-factory.bin
+	IMAGE/web-ui-factory.bin := append-ubi | tplink-image-2023
+	# web-ui-factory.bin is installed from the stock TP-Link web UI. The
+	# stock checker requires the support list to start with "SupportList:";
+	# it lists all nine stock regions.
+	TPLINK_SUPPORT_STRING := SupportList:\r\n\
+		{product_name:Archer BE550,product_ver:1.0.0,special_id:55530000}\r\n\
+		{product_name:Archer BE550,product_ver:1.0.0,special_id:43410000}\r\n\
+		{product_name:Archer BE550,product_ver:1.0.0,special_id:45550000}\r\n\
+		{product_name:Archer BE550,product_ver:1.0.0,special_id:41550000}\r\n\
+		{product_name:Archer BE550,product_ver:1.0.0,special_id:4A500000}\r\n\
+		{product_name:Archer BE550,product_ver:1.0.0,special_id:41530000}\r\n\
+		{product_name:Archer BE550,product_ver:1.0.0,special_id:53470000}\r\n\
+		{product_name:Archer BE550,product_ver:1.0.0,special_id:4B520000}\r\n\
+		{product_name:Archer BE550,product_ver:1.0.0,special_id:494E0000}\r\n
+endef
+TARGET_DEVICES += tplink_archer-be550-v1
