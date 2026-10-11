@@ -749,7 +749,7 @@ SVN-Revision: 35130
  EXPORT_SYMBOL(xfrm_parse_spi);
 --- a/net/ipv4/tcp_input.c
 +++ b/net/ipv4/tcp_input.c
-@@ -4449,14 +4449,16 @@ static bool tcp_parse_aligned_timestamp(
+@@ -4455,14 +4455,16 @@ static bool tcp_parse_aligned_timestamp(
  {
  	const __be32 *ptr = (const __be32 *)(th + 1);
  
@@ -783,7 +783,7 @@ SVN-Revision: 35130
  
 --- a/include/net/neighbour.h
 +++ b/include/net/neighbour.h
-@@ -294,8 +294,10 @@ static inline bool neigh_key_eq128(const
+@@ -296,8 +296,10 @@ static inline bool neigh_key_eq128(const
  	const u32 *n32 = (const u32 *)n->primary_key;
  	const u32 *p32 = pkey;
  

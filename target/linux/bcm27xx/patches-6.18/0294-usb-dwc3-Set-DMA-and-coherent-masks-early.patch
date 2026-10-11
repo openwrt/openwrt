@@ -323,7 +323,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  		if (IS_ERR(dwc->reset)) {
 --- a/drivers/usb/dwc3/core.h
 +++ b/drivers/usb/dwc3/core.h
-@@ -198,6 +198,9 @@
+@@ -199,6 +199,9 @@
  #define DWC3_GSBUSCFG0_REQINFO(n)	(((n) & 0xffff) << 16)
  #define DWC3_GSBUSCFG0_REQINFO_UNSPECIFIED	0xffffffff
  
@@ -333,7 +333,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  /* Global Debug LSP MUX Select */
  #define DWC3_GDBGLSPMUX_ENDBC		BIT(15)	/* Host only */
  #define DWC3_GDBGLSPMUX_HOSTSELECT(n)	((n) & 0x3fff)
-@@ -1097,6 +1100,7 @@ struct dwc3_glue_ops {
+@@ -1109,6 +1112,7 @@ struct dwc3_glue_ops {
   * @tx_fifo_resize_max_num: max number of fifos allocated during txfifo resize
   * @clear_stall_protocol: endpoint number that requires a delayed status phase
   * @num_hc_interrupters: number of host controller interrupters
@@ -341,7 +341,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
   * @hsphy_interface: "utmi" or "ulpi"
   * @connected: true when we're connected to a host, false otherwise
   * @softconnect: true when gadget connect is called, false when disconnect runs
-@@ -1355,6 +1359,7 @@ struct dwc3 {
+@@ -1374,6 +1378,7 @@ struct dwc3 {
  	u8			tx_fifo_resize_max_num;
  	u8			clear_stall_protocol;
  	u16			num_hc_interrupters;
