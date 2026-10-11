@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=jboot-tools
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 CMAKE_INSTALL:=1
 PKG_FLAGS:=nonshared
 
@@ -12,12 +12,13 @@ define Package/jboot-tools
   SECTION:=firmware
   CATEGORY:=Firmware
   DEPENDS:=@TARGET_ramips
-  TITLE:=Utilites for accessing JBOOT based D-Link devices Calibration data
+  TITLE:=Utilities for accessing JBOOT based D-Link/Zyxel devices Calibration data
 endef
 
 define Package/jboot-tools/description
  This package contains:
- jboot_config_read.c: partially read the config partition of JBOOT based D-Link devices.
+ jboot_config_read.c: partially read the config partition of JBOOT based
+ D-Link and Zyxel (LTE3301-M209/Q222) devices.
 endef
 
 define Package/jboot-tools/install

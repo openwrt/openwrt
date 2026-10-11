@@ -1,0 +1,179 @@
+#include "mt7620n.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+	chosen {
+		bootargs = "console=ttyS0,115200";
+	};
+
+	aliases {
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_power: led-0 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&gpio1 15 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-1 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WAN;
+			gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
+		};
+
+		/*
+		 * Pads 40-43 are the front LEDs (signal bars, LTE, switch).
+		 * They need defined levels from gpio-leds: in EPHY mode the
+		 * switch drives them, which also touches the modem strap
+		 * lines. Pin 72 is deliberately left unclaimed, driving it
+		 * keeps the modem from enumerating.
+		 */
+		led-2 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_MOBILE;
+			gpios = <&gpio2 0 GPIO_ACTIVE_LOW>;
+		};
+
+		led-3 {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_MOBILE;
+			gpios = <&gpio2 1 GPIO_ACTIVE_LOW>;
+		};
+
+		led-4 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = "lte";
+			gpios = <&gpio2 2 GPIO_ACTIVE_LOW>;
+		};
+
+		led-5 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			gpios = <&gpio2 3 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	/*
+	 * No gpio-keys here: pin 2 (WPS) has to stay unclaimed, the modem
+	 * stops enumerating as soon as anything else on the port is driven.
+	 * The modem only needs the usbpower switch below.
+	 */
+
+	gpio-export {
+		compatible = "gpio-export";
+		#size-cells = <0>;
+
+		usbpower {
+			gpio-export,name = "usbpower";
+			gpio-export,output = <1>;
+			gpios = <&gpio0 0 0>;
+		};
+	};
+
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&gpio3 {
+	status = "okay";
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x30000>;
+				read-only;
+			};
+
+			partition@30000 {
+				/* writable on purpose: uboot-envtools (fw_setenv) */
+				label = "u-boot-env";
+				reg = <0x30000 0x10000>;
+			};
+
+			partition@40000 {
+				compatible = "denx,fit";
+				label = "firmware";
+				reg = <0x40000 0xFB0000>;
+			};
+
+			config: partition@ff0000 {
+				label = "config";
+				reg = <0xff0000 0x10000>;
+				read-only;
+
+				/*
+				 * The base MAC sits at a different offset per
+				 * hardware variant, so the cell itself is
+				 * added by the including board file.
+				 */
+				config_nvmem: nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+				};
+			};
+		};
+	};
+
+};
+
+&ehci {
+	status = "okay";
+};
+
+&ohci {
+	status = "okay";
+};
+
+&ethernet {
+	mediatek,portmap = "llllw";
+};
+
+/*
+ * GPIO1_MODE (0x10000060) bits that have to be in GPIO mode for this board,
+ * and the group that owns each of them:
+ *   bit 2-4   uartf       pads 7-14 unused here, keep them as gpio
+ *   bit 12    spi refclk  pads 37-39 (power/wan LED) - already gpio at reset
+ *   bit 13    wled        pad 72 (LTE globe) - already gpio at reset; the pad
+ *                         itself stays unclaimed, driving it kills the modem
+ *   bit 15    ephy        pads 40-44, otherwise the ESW blinks the front LEDs
+ *                         and drives the modem strap lines
+ *   bit 21-22 wdt         0 at reset (watchdog reset on pad 17); the stock
+ *                         firmware selects gpio, and the extra board LEDs
+ *                         only work with it
+ */
+&state_default {
+	default {
+		groups = "uartf", "spi refclk", "wled", "ephy", "wdt";
+		function = "gpio";
+	};
+};

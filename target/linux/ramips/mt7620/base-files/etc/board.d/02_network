@@ -205,6 +205,15 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan:2" "1:lan:1" "4:wan" "6@eth0"
 		;;
+	zyxel,lte3301-m209|\
+	zyxel,lte3301-q222)
+		# Internal 5-port switch, VLAN 1 = 4x LAN + CPU (tagged).
+		# No ethernet WAN - the WAN is the LTE modem (qmi).
+		# The sockets are wired in reverse (port 0 is the LAN4 jack),
+		# which also makes the port order match the front LED bars.
+		ucidef_add_switch "switch0" \
+			"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "6t@eth0"
+		;;
 	lenovo,newifi-y1s)
 		ucidef_add_switch "switch0" \
 			"1:lan:4" "2:lan:3" "4:lan:2" "5:lan:1" "0:wan" "6@eth0"

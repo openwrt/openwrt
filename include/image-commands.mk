@@ -702,6 +702,16 @@ define Build/pad-to
 	$(call Image/pad-to,$@,$(1))
 endef
 
+# Pad the image to an absolute size with 0xff (erased flash) instead of the
+# 0x00 Build/pad-to writes, for partitions that are expected to be erased,
+# e.g. the area a jffs2 overlay initialises itself in on first boot. Fails
+# instead of truncating when the image is already larger than the target.
+define Build/pad-to-ff
+	[ $$(stat -c%s $@) -le $$(($(call exp_units,$(1)))) ]
+	dd if=/dev/zero bs=$(1) count=1 2>/dev/null | tr '\000' '\377' >> $@
+	truncate -s $(1) $@
+endef
+
 define Build/patch-cmdline
 	$(STAGING_DIR_HOST)/bin/patch-cmdline $@ '$(CMDLINE)'
 endef
