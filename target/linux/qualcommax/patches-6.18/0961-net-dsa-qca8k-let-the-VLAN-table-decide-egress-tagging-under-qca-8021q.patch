@@ -1,0 +1,49 @@
+From: Stanislaw Pal <kuncy7@gmail.com>
+Subject: [PATCH] net: dsa: qca8k: let the VLAN table decide egress tagging under qca-8021q
+
+qca-8021q needs the CPU port to send every frame with the VLAN tag of
+its source port, which the VLAN table asks for. The port egress mode in
+PORT_VLAN_CTRL1 overrides the table unless it is "untouched", and qca8k
+never sets it. On a GL-B3000 the ports came up in "unmodified" mode, and
+the CPU received frames from the user ports without a tag.
+
+Set the egress mode of every port to "untouched" with the tag protocol.
+It is left so when the header returns, where the VLAN table decides the
+egress tagging of a VLAN-aware bridge as well.
+
+Signed-off-by: Stanislaw Pal <kuncy7@gmail.com>
+[julius: ported to the qca-8021q support of this tree, kept on the way back]
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+Index: linux-6.18.55/drivers/net/dsa/qca/qca8k-8xxx.c
+===================================================================
+--- linux-6.18.55.orig/drivers/net/dsa/qca/qca8k-8xxx.c
++++ linux-6.18.55/drivers/net/dsa/qca/qca8k-8xxx.c
+@@ -1801,6 +1801,14 @@ static int qca8k_tag_8021q_set(struct ds
+ 					 QCA8K_PORT_LOOKUP_VLAN_MODE_NONE);
+ 		if (ret)
+ 			return ret;
++
++		/* The VLAN table decides what leaves a port tagged */
++		ret = qca8k_rmw(priv, QCA8K_REG_PORT_VLAN_CTRL1(dp->index),
++				QCA8K_PORT_VLAN_CTRL1_EG_MODE_MASK,
++				FIELD_PREP(QCA8K_PORT_VLAN_CTRL1_EG_MODE_MASK,
++					   QCA8K_PORT_VLAN_CTRL1_EG_UNTOUCH));
++		if (ret)
++			return ret;
+ 	}
+ 
+ 	return enable ? dsa_tag_8021q_register(ds, htons(ETH_P_8021Q)) : 0;
+Index: linux-6.18.55/drivers/net/dsa/qca/qca8k.h
+===================================================================
+--- linux-6.18.55.orig/drivers/net/dsa/qca/qca8k.h
++++ linux-6.18.55/drivers/net/dsa/qca/qca8k.h
+@@ -194,6 +194,8 @@
+ #define   QCA8K_PORT_VLAN_SVID_MASK			GENMASK(11, 0)
+ #define   QCA8K_PORT_VLAN_SVID(x)			FIELD_PREP(QCA8K_PORT_VLAN_SVID_MASK, x)
+ #define QCA8K_REG_PORT_VLAN_CTRL1(_i)			(0x424 + (_i * 8))
++#define   QCA8K_PORT_VLAN_CTRL1_EG_MODE_MASK		GENMASK(13, 12)
++#define   QCA8K_PORT_VLAN_CTRL1_EG_UNTOUCH		3
+ #define QCA8K_REG_IPV4_PRI_BASE_ADDR			0x470
+ #define QCA8K_REG_IPV4_PRI_ADDR_MASK			0x474
+ 
