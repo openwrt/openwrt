@@ -1,0 +1,226 @@
+From: Nick Hainke <vincent@systemli.org>
+Date: Sun, 11 Oct 2026 16:19:08 +0200
+Subject: [PATCH] ipv6: sr: allow building the SRv6 lightweight tunnels as
+ modules
+
+seg6_iptunnel and seg6_local are always built into the IPv6 stack. Since
+commit 309b905deee5 ("ipv6: convert CONFIG_IPV6 to built-in only and
+clean up Kconfigs") IPv6 itself is always built in, so enabling SRv6
+always grows the kernel image, even though only few users need it. This
+matters on embedded systems such as OpenWrt routers.
+
+Make IPV6_SEG6_LWTUNNEL tristate. Both files register their lwtunnel
+encap ops from their own module init and set MODULE_ALIAS_RTNL_LWT(), so
+the modules are loaded on demand when the first SRv6 route is added. The
+ops already set .owner, so the modules cannot be removed while routes
+use them.
+
+The SRH handling in seg6.c and HMAC stay built in, they are used by the
+IPv6 receive path. Export seg6_validate_srh() and seg6_get_srh() for the
+modules.
+
+The BPF helpers in net/core/filter.c call into seg6_iptunnel and
+seg6_local directly, so IPV6_SEG6_BPF now requires
+IPV6_SEG6_LWTUNNEL=y.
+
+On x86_64 this moves about 27 KB of text and data out of vmlinux.
+
+[Backport: also export ip6_route_input(), upstream since commit
+4b70b2021504 ("ipv6: prepare headers for ipv6_stub removal")]
+
+Signed-off-by: Nick Hainke <vincent@systemli.org>
+---
+ include/net/seg6.h       | 11 -----------
+ net/ipv6/Kconfig         |  8 +++++---
+ net/ipv6/Makefile        |  2 +-
+ net/ipv6/route.c         |  1 +
+ net/ipv6/seg6.c          | 18 +++---------------
+ net/ipv6/seg6_iptunnel.c | 11 +++++++++--
+ net/ipv6/seg6_local.c    | 11 +++++++++--
+ 7 files changed, 28 insertions(+), 34 deletions(-)
+
+--- a/include/net/seg6.h
++++ b/include/net/seg6.h
+@@ -52,17 +52,6 @@ static inline struct seg6_pernet_data *s
+ 
+ extern int seg6_init(void);
+ extern void seg6_exit(void);
+-#ifdef CONFIG_IPV6_SEG6_LWTUNNEL
+-extern int seg6_iptunnel_init(void);
+-extern void seg6_iptunnel_exit(void);
+-extern int seg6_local_init(void);
+-extern void seg6_local_exit(void);
+-#else
+-static inline int seg6_iptunnel_init(void) { return 0; }
+-static inline void seg6_iptunnel_exit(void) {}
+-static inline int seg6_local_init(void) { return 0; }
+-static inline void seg6_local_exit(void) {}
+-#endif
+ 
+ extern bool seg6_validate_srh(struct ipv6_sr_hdr *srh, int len, bool reduced);
+ extern struct ipv6_sr_hdr *seg6_get_srh(struct sk_buff *skb, int flags);
+--- a/net/ipv6/Kconfig
++++ b/net/ipv6/Kconfig
+@@ -288,7 +288,7 @@ config IPV6_PIMSM_V2
+ 	  If unsure, say N.
+ 
+ config IPV6_SEG6_LWTUNNEL
+-	bool "IPv6: Segment Routing Header encapsulation support"
++	tristate "IPv6: Segment Routing Header encapsulation support"
+ 	depends on IPV6
+ 	select LWTUNNEL
+ 	select DST_CACHE
+@@ -299,6 +299,9 @@ config IPV6_SEG6_LWTUNNEL
+ 	  tunnels mechanism. Also enable support for advanced local
+ 	  processing of SRv6 packets based on their active segment.
+ 
++	  To compile this as modules, choose M here: the modules will be
++	  called seg6_iptunnel and seg6_local.
++
+ 	  If unsure, say N.
+ 
+ config IPV6_SEG6_HMAC
+@@ -316,8 +319,7 @@ config IPV6_SEG6_HMAC
+ 
+ config IPV6_SEG6_BPF
+ 	def_bool y
+-	depends on IPV6_SEG6_LWTUNNEL
+-	depends on IPV6 = y
++	depends on IPV6_SEG6_LWTUNNEL = y
+ 
+ config IPV6_RPL_LWTUNNEL
+ 	bool "IPv6: RPL Source Routing Header support"
+--- a/net/ipv6/Makefile
++++ b/net/ipv6/Makefile
+@@ -22,7 +22,6 @@ ipv6-$(CONFIG_IPV6_MULTIPLE_TABLES) += f
+ ipv6-$(CONFIG_PROC_FS) += proc.o
+ ipv6-$(CONFIG_SYN_COOKIES) += syncookies.o
+ ipv6-$(CONFIG_NETLABEL) += calipso.o
+-ipv6-$(CONFIG_IPV6_SEG6_LWTUNNEL) += seg6_iptunnel.o seg6_local.o
+ ipv6-$(CONFIG_IPV6_SEG6_HMAC) += seg6_hmac.o
+ ipv6-$(CONFIG_IPV6_RPL_LWTUNNEL) += rpl_iptunnel.o
+ ipv6-$(CONFIG_IPV6_IOAM6_LWTUNNEL) += ioam6_iptunnel.o
+@@ -35,6 +34,7 @@ obj-$(CONFIG_INET6_XFRM_TUNNEL) += xfrm6
+ obj-$(CONFIG_INET6_TUNNEL) += tunnel6.o
+ obj-$(CONFIG_IPV6_MIP6) += mip6.o
+ obj-$(CONFIG_IPV6_ILA) += ila/
++obj-$(CONFIG_IPV6_SEG6_LWTUNNEL) += seg6_iptunnel.o seg6_local.o
+ obj-$(CONFIG_NETFILTER)	+= netfilter/
+ 
+ obj-$(CONFIG_IPV6_VTI) += ip6_vti.o
+--- a/net/ipv6/route.c
++++ b/net/ipv6/route.c
+@@ -2672,6 +2672,7 @@ void ip6_route_input(struct sk_buff *skb
+ 	skb_dst_set_noref(skb, ip6_route_input_lookup(net, skb->dev,
+ 						      &fl6, skb, flags));
+ }
++EXPORT_SYMBOL_GPL(ip6_route_input);
+ 
+ INDIRECT_CALLABLE_SCOPE struct rt6_info *ip6_pol_route_output(struct net *net,
+ 					     struct fib6_table *table,
+--- a/net/ipv6/seg6.c
++++ b/net/ipv6/seg6.c
+@@ -75,6 +75,7 @@ bool seg6_validate_srh(struct ipv6_sr_hd
+ 
+ 	return true;
+ }
++EXPORT_SYMBOL_GPL(seg6_validate_srh);
+ 
+ struct ipv6_sr_hdr *seg6_get_srh(struct sk_buff *skb, int flags)
+ {
+@@ -104,6 +105,7 @@ struct ipv6_sr_hdr *seg6_get_srh(struct
+ 
+ 	return srh;
+ }
++EXPORT_SYMBOL_GPL(seg6_get_srh);
+ 
+ /* Determine if an ICMP invoking packet contains a segment routing
+  * header.  If it does, extract the offset to the true destination
+@@ -517,26 +519,14 @@ int __init seg6_init(void)
+ 	if (err)
+ 		goto out_unregister_pernet;
+ 
+-	err = seg6_iptunnel_init();
+-	if (err)
+-		goto out_unregister_genl;
+-
+-	err = seg6_local_init();
+-	if (err)
+-		goto out_unregister_iptun;
+-
+ 	err = seg6_hmac_init();
+ 	if (err)
+-		goto out_unregister_seg6;
++		goto out_unregister_genl;
+ 
+ 	pr_info("Segment Routing with IPv6\n");
+ 
+ out:
+ 	return err;
+-out_unregister_seg6:
+-	seg6_local_exit();
+-out_unregister_iptun:
+-	seg6_iptunnel_exit();
+ out_unregister_genl:
+ 	genl_unregister_family(&seg6_genl_family);
+ out_unregister_pernet:
+@@ -547,8 +537,6 @@ out_unregister_pernet:
+ void seg6_exit(void)
+ {
+ 	seg6_hmac_exit();
+-	seg6_local_exit();
+-	seg6_iptunnel_exit();
+ 	genl_unregister_family(&seg6_genl_family);
+ 	unregister_pernet_subsys(&ip6_segments_ops);
+ }
+--- a/net/ipv6/seg6_iptunnel.c
++++ b/net/ipv6/seg6_iptunnel.c
+@@ -790,12 +790,19 @@ static const struct lwtunnel_encap_ops s
+ 	.owner = THIS_MODULE,
+ };
+ 
+-int __init seg6_iptunnel_init(void)
++static int __init seg6_iptunnel_init(void)
+ {
+ 	return lwtunnel_encap_add_ops(&seg6_iptun_ops, LWTUNNEL_ENCAP_SEG6);
+ }
+ 
+-void seg6_iptunnel_exit(void)
++static void __exit seg6_iptunnel_exit(void)
+ {
+ 	lwtunnel_encap_del_ops(&seg6_iptun_ops, LWTUNNEL_ENCAP_SEG6);
+ }
++
++module_init(seg6_iptunnel_init);
++module_exit(seg6_iptunnel_exit);
++
++MODULE_ALIAS_RTNL_LWT(SEG6);
++MODULE_LICENSE("GPL");
++MODULE_DESCRIPTION("IPv6 Segment Routing Header encapsulation");
+--- a/net/ipv6/seg6_local.c
++++ b/net/ipv6/seg6_local.c
+@@ -2693,7 +2693,7 @@ static const struct lwtunnel_encap_ops s
+ 	.owner		= THIS_MODULE,
+ };
+ 
+-int __init seg6_local_init(void)
++static int __init seg6_local_init(void)
+ {
+ 	/* If the max total number of defined attributes is reached, then your
+ 	 * kernel build stops here.
+@@ -2729,7 +2729,14 @@ int __init seg6_local_init(void)
+ 				      LWTUNNEL_ENCAP_SEG6_LOCAL);
+ }
+ 
+-void seg6_local_exit(void)
++static void __exit seg6_local_exit(void)
+ {
+ 	lwtunnel_encap_del_ops(&seg6_local_ops, LWTUNNEL_ENCAP_SEG6_LOCAL);
+ }
++
++module_init(seg6_local_init);
++module_exit(seg6_local_exit);
++
++MODULE_ALIAS_RTNL_LWT(SEG6LOCAL);
++MODULE_LICENSE("GPL");
++MODULE_DESCRIPTION("IPv6 Segment Routing local processing");
