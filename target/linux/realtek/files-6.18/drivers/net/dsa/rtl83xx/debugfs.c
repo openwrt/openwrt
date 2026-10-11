@@ -422,7 +422,7 @@ static const struct file_operations rtldsa_vlan_profiles_fops = {
 static int rtldsa_vlan_table_raw_show(struct seq_file *m, void *v)
 {
 	struct rtl838x_switch_priv *priv = m->private;
-	struct rtldsa_vlan_info info;
+	struct otto_vlan_info info;
 
 	if (!priv->r->vlan_tables_read)
 		return -ENOTSUPP;
@@ -464,7 +464,7 @@ static const struct file_operations rtldsa_vlan_table_raw_fops = {
 static int rtldsa_vlan_table_show(struct seq_file *m, void *v)
 {
 	struct rtl838x_switch_priv *priv = m->private;
-	struct rtldsa_vlan_info info;
+	struct otto_vlan_info info;
 
 	if (!priv->r->vlan_tables_read)
 		return -ENOTSUPP;

@@ -373,8 +373,8 @@ struct rtldsa_config {
 	int trk_ctrl;
 	int trk_hash_ctrl;
 	void (*stp_init)(void);
-	void (*vlan_tables_read)(u32 vlan, struct rtldsa_vlan_info *info);
-	void (*vlan_set_tagged)(u32 vlan, struct rtldsa_vlan_info *info);
+	void (*vlan_tables_read)(u32 vlan, struct otto_vlan_info *info);
+	void (*vlan_set_tagged)(u32 vlan, struct otto_vlan_info *info);
 	void (*vlan_set_untagged)(u32 vlan, u64 portmask);
 	int (*vlan_profile_get)(int index, struct rtldsa_vlan_profile *profile);
 	void (*vlan_profile_dump)(struct rtl838x_switch_priv *priv, int index);
