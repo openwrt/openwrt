@@ -1783,6 +1783,39 @@ void rtl839x_pie_rule_rm(struct rtl838x_switch_priv *priv, struct pie_rule *pr)
 	clear_bit(idx, priv->pie_use_bm);
 }
 
+/* L3 keeps its rules in an order of its own, the longest prefix first, so it
+ * writes each one in place, in the rules rtl839x_pie_init() keeps for it. A
+ * rule matches the IPv4 destination and takes the template of its block that
+ * has one.
+ */
+int rtl839x_pie_l3_rule_write(struct rtl838x_switch_priv *priv, int idx, struct pie_rule *pr)
+{
+	int block = idx / PIE_BLOCK_SIZE;
+	int j, t;
+
+	if (idx < 0 || idx >= RTL839X_PIE_L3_RULES)
+		return -EINVAL;
+
+	for (j = 0; j < 2; j++) {
+		t = (sw_r32(RTL839X_ACL_BLK_TMPLTE_CTRL(block)) >> (j * 3)) & 0x7;
+		if (rtl839x_pie_templ_has(t, RTL839X_TEMPLATE_FIELD_DIP0))
+			break;
+	}
+	if (j == 2)
+		return -EOPNOTSUPP;
+
+	pr->tid = j;
+	pr->tid_m = 0x3;
+	pr->id = idx;
+
+	mutex_lock(&priv->pie_mutex);
+	rtl839x_pie_lookup_enable(priv, idx);
+	rtl839x_pie_rule_write(priv, idx, pr);
+	mutex_unlock(&priv->pie_mutex);
+
+	return 0;
+}
+
 void rtl839x_pie_init(struct rtl838x_switch_priv *priv)
 {
 	u32 template_selectors;
@@ -1801,6 +1834,9 @@ void rtl839x_pie_init(struct rtl838x_switch_priv *priv)
 
 	/* Delete all present rules */
 	rtl839x_pie_rule_del(priv, 0, priv->r->n_pie_blocks * PIE_BLOCK_SIZE - 1);
+
+	/* Never hand out L3's rules, see rtl839x_pie_l3_rule_write() */
+	bitmap_set(priv->pie_use_bm, 0, RTL839X_PIE_L3_RULES);
 
 	/* Enable predefined templates 0, 1 for blocks 0-2 */
 	template_selectors = 0 | (1 << 3);

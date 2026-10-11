@@ -14,6 +14,9 @@
 #define MAX_PIE_ENTRIES (18 * PIE_BLOCK_SIZE)
 #define MAX_COUNTERS 2048
 
+/* The first rules of an RTL839x are L3's own, blocks 0-3 */
+#define RTL839X_PIE_L3_RULES	(4 * PIE_BLOCK_SIZE)
+
 struct pie_rule;
 struct rtl838x_switch_priv;
 
@@ -32,6 +35,8 @@ int rtl839x_pie_rule_write(struct rtl838x_switch_priv *priv, int idx,
 			   struct pie_rule *pr);
 int rtl839x_pie_rule_add(struct rtl838x_switch_priv *priv, struct pie_rule *pr);
 void rtl839x_pie_rule_rm(struct rtl838x_switch_priv *priv, struct pie_rule *pr);
+int rtl839x_pie_l3_rule_write(struct rtl838x_switch_priv *priv, int idx,
+			      struct pie_rule *pr);
 void rtl839x_pie_rule_dump(struct pie_rule *pr);
 
 void rtl930x_pie_init(struct rtl838x_switch_priv *priv);
