@@ -345,12 +345,23 @@ static int ppe_flow_mangle_ipv4(const struct flow_action_entry *act,
 	return 0;
 }
 
+/* The 802.1Q upper of @dev with this VID, not one of its bridge. */
+static struct net_device *ppe_flow_vlan_upper(struct net_device *dev, u16 vid)
+{
+	struct net_device *upper;
+
+	upper = __vlan_find_dev_deep_rcu(dev, htons(ETH_P_8021Q), vid);
+
+	return upper && vlan_dev_real_dev(upper) == dev ? upper : NULL;
+}
+
 /* A port of a switch stacked behind one of ours on the qca-8021q tag reaches
  * it as an 802.1Q VLAN, so its flows are flows of our port in that VLAN: the
  * port's own, that of the VLAN-unaware bridge it forwards in, or in a
  * VLAN-aware bridge the flow's bridge VLAN, which is the tag the flow carries
  * or, untagged, the port's PVID. The bridge is read as the tagger reads it on
- * transmit. A flow tag on top of the port's own VLAN would be a second tag.
+ * transmit. An 802.1Q upper of the port crosses the switch with its own tag;
+ * any other flow tag on top of the port's own VLAN would be a second tag.
  */
 static u16 ppe_flow_8021q_vid(struct dsa_port *dp, u16 flow_vid)
 {
@@ -358,9 +369,11 @@ static u16 ppe_flow_8021q_vid(struct dsa_port *dp, u16 flow_vid)
 	struct bridge_vlan_info vinfo;
 	u16 pvid;
 
+	guard(rcu)();
 	if (!br || !br_vlan_enabled(br)) {
 		if (flow_vid)
-			return 0;
+			return ppe_flow_vlan_upper(dp->user, flow_vid) ?
+			       flow_vid : 0;
 		if (!br)
 			return dsa_tag_8021q_standalone_vid(dp);
 		return dsa_tag_8021q_bridge_vid(dsa_port_bridge_num_get(dp));
@@ -368,7 +381,6 @@ static u16 ppe_flow_8021q_vid(struct dsa_port *dp, u16 flow_vid)
 	if (flow_vid)
 		return flow_vid;
 
-	guard(rcu)();
 	if (br_vlan_get_pvid_rcu(dp->user, &pvid) || !pvid ||
 	    br_vlan_get_info_rcu(dp->user, pvid, &vinfo) ||
 	    !(vinfo.flags & BRIDGE_VLAN_INFO_UNTAGGED))
@@ -1200,11 +1212,22 @@ static void ppe_flow_account_side(struct qca_ppe_priv *priv, int port,
 {
 	struct net_device *dev = priv->port_br_dev[port];
 
-	/* A stacked switch's port counts its own frames, its bridge does not */
+	/* A stacked switch's port counts its own frames, its 802.1Q upper or
+	 * its bridge does not.
+	 */
 	if (casc) {
+		struct net_device *upper;
+
 		dev = dsa_to_port(&priv->ds, port)->user;
 		dev = dev_get_by_index_rcu(dev_net(dev), casc);
-		dev = dev ? netdev_master_upper_dev_get_rcu(dev) : NULL;
+		if (!dev)
+			return;
+		upper = ppe_flow_vlan_upper(dev, vid);
+		if (upper) {
+			ppe_flow_dev_add(upper, rx, pkts, bytes);
+			return;
+		}
+		dev = netdev_master_upper_dev_get_rcu(dev);
 		if (dev && netif_is_bridge_master(dev))
 			ppe_flow_dev_add(dev, rx, pkts, bytes);
 		return;
