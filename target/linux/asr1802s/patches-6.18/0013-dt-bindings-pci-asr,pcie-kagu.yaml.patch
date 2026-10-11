@@ -1,0 +1,207 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Devon Openheim <devopenm@proton.me>
+Date: Wed, 2 Sep 2026 12:00:00 +0100
+Subject: [PATCH] dt-bindings: pci: add ASR1802S Kagu PCIe host controller binding
+
+Document the ASR1802S Kagu PCIe host controller (dual-port DesignWare
+PCIe) used on the Notion P298 gateway. The controller manages two
+PCIe Gen1 x1 root ports connected to RTL8812FE and RTL8192FR WiFi cards.
+
+Signed-off-by: Devon Openheim <devopenm@proton.me>
+
+---
+--- /dev/null
++++ b/Documentation/devicetree/bindings/pci/asr,pcie-kagu.yaml
+@@ -0,0 +1,192 @@
++# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/pci/asr,pcie-kagu.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: ASR1802S Kagu PCIe Host Controller
++
++maintainers:
++  - Devon Openheim <devopenm@proton.me>
++
++description: |
++  The ASR1802S Kagu PCIe host controller is a dual-port DesignWare PCIe
++  Root Complex implementation. It manages two PCIe Gen1 x1 root ports,
++  each with independent PHY and configuration space registers. The
++  controller is used on the Notion P298 gateway where the two ports
++  connect to RTL8812FE and RTL8192FR WiFi cards.
++
++  The controller provides:
++  - Two PHY register windows (0x800 each) for PHY initialization
++  - Two DBI/configuration space windows (0x1000 each) for PCIe config
++  - Legacy INTx interrupt routing via ICU (IRQ 50/51)
++  - MSI interrupt support
++  - Per-port reset GPIOs
++  - Clock control via ASR1802S clock driver (AXI + PERIPH clocks)
++
++properties:
++  compatible:
++    const: asr,pcie-kagu
++
++  reg:
++    minItems: 4
++    maxItems: 4
++    description: |
++      Four register regions in order:
++      1. PCIe port 1 PHY registers (0x800)
++      2. PCIe port 1 DBI/config space (0x1000)
++      3. PCIe port 2 PHY registers (0x800)
++      4. PCIe port 2 DBI/config space (0x1000)
++
++  reg-names:
++    items:
++      - const: pcie1-phy
++      - const: pcie1-config
++      - const: pcie2-phy
++      - const: pcie2-config
++
++  ranges:
++    maxItems: 3
++    description: |
++      Three ranges for the two root ports:
++      1. Port 1 memory space (0x82000000)
++      2. Port 2 memory space (0x82000000)
++      3. I/O space (0x81000000)
++
++  clocks:
++    minItems: 2
++    maxItems: 2
++    description: AXI and PERIPH clocks from ASR1802S clock controller
++
++  clock-names:
++    items:
++      - const: axi
++      - const: periph
++
++  reset-gpios:
++    minItems: 2
++    maxItems: 2
++    description: Per-port PERST# GPIOs, in port order.
++
++  "#interrupt-cells":
++    const: 1
++
++  interrupt-map-mask:
++    description: Mask for INTx routing to ICU
++
++  interrupt-map:
++    description: INTx interrupt routing map to ICU
++
++patternProperties:
++  "^pcie@[1-2],0$":
++    type: object
++    $ref: /schemas/pci/pci-pci-bridge.yaml#
++
++    properties:
++      reg:
++        maxItems: 1
++        description: PCI device address (bus, dev, func)
++
++      "#address-cells":
++        const: 3
++
++      "#size-cells":
++        const: 2
++
++      device_type:
++        const: pci
++
++      "#interrupt-cells":
++        const: 1
++
++      interrupt-map-mask:
++        description: INTx routing mask for this port
++
++      interrupt-map:
++        description: INTx routing map for this port
++
++      asr,pcie-port:
++        $ref: /schemas/types.yaml#/definitions/uint32
++        description: Port index (0 or 1)
++
++    required:
++      - reg
++      - "#address-cells"
++      - "#size-cells"
++      - device_type
++      - "#interrupt-cells"
++      - interrupt-map-mask
++      - interrupt-map
++      - asr,pcie-port
++
++    unevaluatedProperties: false
++
++required:
++  - compatible
++  - reg
++  - reg-names
++  - ranges
++  - clocks
++  - clock-names
++  - reset-gpios
++  - "#interrupt-cells"
++  - interrupt-map-mask
++  - interrupt-map
++
++unevaluatedProperties: false
++
++examples:
++  - |
++    #include <dt-bindings/gpio/gpio.h>
++    #include <dt-bindings/clock/asr,asr1802s.h>
++
++    pcie: pcie@d4220000 {
++        compatible = "asr,pcie-kagu";
++        device_type = "pci";
++        #address-cells = <3>;
++        #size-cells = <2>;
++        #interrupt-cells = <1>;
++        bus-range = <0x00 0xff>;
++        reg = <0xd4220000 0x800>,
++              <0xd428c000 0x1000>,
++              <0xd4210000 0x800>,
++              <0xd4288000 0x1000>;
++        reg-names = "pcie1-phy", "pcie1-config",
++                    "pcie2-phy", "pcie2-config";
++        ranges = <0x82000000 0 0xd8050000 0xd8050000 0 0x80b0000>,
++                 <0x82000000 0 0xe0100000 0xe0100000 0 0x2000000>,
++                 <0x81000000 0 0 0xd8010000 0 0x40000>;
++        clocks = <&clk_apb ASR1802S_CLK_AXI>,
++                 <&clk_apb ASR1802S_CLK_PERIPH>;
++        clock-names = "axi", "periph";
++        reset-gpios = <&gpio 72 GPIO_ACTIVE_LOW>,
++                      <&gpio 80 GPIO_ACTIVE_LOW>;
++        interrupt-map-mask = <0xF800 0 0 0>;
++        interrupt-map = <0x0000 0 0 0 &icu 51>,
++                        <0x0800 0 0 0 &icu 50>;
++        status = "okay";
++
++        pcie@1,0 {
++            reg = <0x0000 0 0 0 0>;
++            #address-cells = <3>;
++            #size-cells = <2>;
++            device_type = "pci";
++            #interrupt-cells = <1>;
++            interrupt-map-mask = <0 0 0 0>;
++            interrupt-map = <0 0 0 0 &icu 51>;
++            asr,pcie-port = <0>;
++            ranges;
++        };
++
++        pcie@2,0 {
++            reg = <0x0800 0 0 0 0>;
++            #address-cells = <3>;
++            #size-cells = <2>;
++            device_type = "pci";
++            #interrupt-cells = <1>;
++            interrupt-map-mask = <0 0 0 0>;
++            interrupt-map = <0 0 0 0 &icu 50>;
++            asr,pcie-port = <1>;
++            ranges;
++        };
++    };
