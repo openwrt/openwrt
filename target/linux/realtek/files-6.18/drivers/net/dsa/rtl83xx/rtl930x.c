@@ -383,61 +383,6 @@ static void rtl930x_init_eee(struct rtl838x_switch_priv *priv, bool enable)
 // 	return mtu_id;
 // }
 
-/* A PIE rule logs its matched packets into the LOG table entry that carries
- * its own rule ID, in data word 1 - one entry per rule. Counters handed out
- * by rtldsa_packet_cntr_alloc() for L3 route statistics start above the PIE
- * rule ID range and pack two 32-bit counters into one 64-bit LOG entry.
- */
-#define RTL930X_PIE_RULE_IDS	(rtldsa_930x_cfg.n_pie_blocks * PIE_BLOCK_SIZE)
-
-static u32 rtl930x_packet_cntr_read(struct rtl838x_switch_priv *priv, int counter)
-{
-	u32 buf[2];
-	u32 v;
-
-	dev_dbg(priv->dev, "reading LOG packet counter %d\n", counter);
-
-	if (counter < RTL930X_PIE_RULE_IDS) {
-		otto_table_read(RTL9300_TBL_LOG, counter, &buf);
-		v = buf[1];
-	} else {
-		/* Two counters share one entry, so the parity of counter picks
-		 * which half of it to return.
-		 */
-		otto_table_read(RTL9300_TBL_LOG, counter / 2, &buf);
-		v = counter % 2 ? buf[0] : buf[1];
-	}
-
-	dev_dbg(priv->dev, "LOG entry: %08x %08x\n", buf[0], buf[1]);
-
-	return v;
-}
-
-static void rtl930x_packet_cntr_clear(struct rtl838x_switch_priv *priv, int counter)
-{
-	int tbl = otto_table_acquire(RTL9300_TBL_LOG);
-
-	u32 v[2];
-
-	dev_dbg(priv->dev, "clearing LOG packet counter %d\n", counter);
-
-	/* Read-modify-write: for a route counter the other 32-bit counter in
-	 * the same 64-bit entry must be preserved; for a PIE rule ID the entry
-	 * is ours alone but the RMW is harmless.
-	 */
-	if (counter < RTL930X_PIE_RULE_IDS) {
-		__otto_table_read(tbl, counter, &v);
-		v[1] = 0;
-		__otto_table_write(tbl, counter, &v);
-	} else {
-		__otto_table_read(tbl, counter / 2, &v);
-		v[counter % 2 ? 0 : 1] = 0;
-		__otto_table_write(tbl, counter / 2, &v);
-	}
-
-	otto_table_release(tbl);
-}
-
 static void rtl930x_set_igr_filter(int port,  enum igr_filter state)
 {
 	sw_w32_mask(0x3 << ((port & 0xf) << 1), state << ((port & 0xf) << 1),
@@ -620,9 +565,9 @@ const struct rtldsa_config rtldsa_930x_cfg = {
 	.stat_port_std_mib = RTL930X_STAT_PORT_MIB_CNTR,
 	.stat_port_prv_mib = RTL930X_STAT_PORT_PRVTE_CNTR,
 	.mib_desc = &rtldsa_930x_mib_desc,
-	.stat_counters_lock = rtldsa_counters_lock_register,
-	.stat_counters_unlock = rtldsa_counters_unlock_register,
-	.stat_update_counters_atomically = rtldsa_update_counters_atomically,
+	.stat_counters_lock = otto_stats_counters_lock_register,
+	.stat_counters_unlock = otto_stats_counters_unlock_register,
+	.stat_update_counters_atomically = otto_stats_update_counters_atomically,
 	.stat_counter_poll_interval = RTLDSA_COUNTERS_POLL_INTERVAL,
 	.traffic_enable = rtl930x_traffic_enable,
 	.traffic_disable = rtl930x_traffic_disable,
@@ -686,8 +631,8 @@ const struct rtldsa_config rtldsa_930x_cfg = {
 	.pie_rule_add = rtl930x_pie_rule_add,
 	.pie_rule_rm = rtl930x_pie_rule_rm,
 	.l2_learning_setup = otto_l2_930x_learning_setup,
-	.packet_cntr_read = rtl930x_packet_cntr_read,
-	.packet_cntr_clear = rtl930x_packet_cntr_clear,
+	.packet_cntr_read = otto_stats_930x_packet_cntr_read,
+	.packet_cntr_clear = otto_stats_930x_packet_cntr_clear,
 	.led_init = rtl930x_led_init,
 	.enable_learning = otto_l2_930x_enable_learning,
 	.enable_l2_new_sa_fwd = otto_l2_930x_set_port_new_sa_fwd,

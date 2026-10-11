@@ -481,7 +481,7 @@ static int otto_tc_configure_flower(struct rtl838x_switch_priv *priv,
 	/* The only caller, otto_tc_pie_cls_flower_add(), is RTL930x-only, where
 	 * the PIE rule ID is also the LOG table counter ID: the counter is
 	 * implied by the rule and only known once pie_rule_add() has assigned
-	 * the ID. That range is kept out of rtldsa_packet_cntr_alloc(), so the
+	 * the ID. That range is kept out of otto_stats_packet_cntr_alloc(), so the
 	 * implied LOG entry cannot alias an L3 route PIE rule's counter.
 	 */
 	flow->rule.log_sel = true;

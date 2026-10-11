@@ -80,6 +80,7 @@
 #include "l3.h"
 #include "pie.h"
 #include "rtl-otto.h"
+#include "stats.h"
 
 /* Route entry types */
 #define ROUTE_TYPE_IP4UC	0
@@ -1745,7 +1746,7 @@ static void otto_l3_route_update_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_ro
 		return;
 
 	if (r->pr.id < 0) {
-		r->pr.packet_cntr = rtldsa_packet_cntr_alloc(priv);
+		r->pr.packet_cntr = otto_stats_packet_cntr_alloc(priv);
 		if (r->pr.packet_cntr >= 0) {
 			dev_info(ctrl->dev, "Using packet counter %d\n",
 				 r->pr.packet_cntr);
@@ -2174,7 +2175,7 @@ static void otto_l3_route_teardown(struct otto_l3_ctrl *ctrl, struct otto_l3_rou
 		otto_l2_nexthop_del(priv, &r->nh);
 
 	dev_dbg(ctrl->dev, "releasing packet counter %d\n", r->pr.packet_cntr);
-	rtldsa_packet_cntr_free(priv, r->pr.packet_cntr);
+	otto_stats_packet_cntr_free(priv, r->pr.packet_cntr);
 
 	/* Once the rows are not where the list says, after a failed move or a
 	 * lookup that timed out, the row of a prefix route may still be in

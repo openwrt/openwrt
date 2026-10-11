@@ -385,36 +385,6 @@ static void rtldsa_931x_led_init(struct rtl838x_switch_priv *priv)
 		dev_dbg(dev, "%08x: %08x\n", 0xbb000600 + i * 4, sw_r32(0x0600 + i * 4));
 }
 
-static u64 rtldsa_931x_stat_port_table_read(int port, unsigned int mib_size,
-					    unsigned int mib_offset, bool is_pvt)
-{
-	enum otto_table_id id;
-	int field_offset;
-	u32 val[2];
-
-	if (is_pvt) {
-		id = RTL9310_TBL_STAT_PORT_PRVTE_CNTR;
-		field_offset = 27;
-	} else {
-		id = RTL9310_TBL_STAT_PORT_MIB_CNTR;
-		field_offset = 52;
-	}
-
-	/* Counter fields are numbered down from the last data word of the
-	 * entry, so the high half of a 64 bit counter sits at the lower word
-	 * index.
-	 */
-	if (mib_size == 2) {
-		otto_table_offset_read(id, port, &val, field_offset - (mib_offset + 1));
-
-		return (u64)val[0] << 32 | val[1];
-	}
-
-	otto_table_offset_read(id, port, &val[0], field_offset - mib_offset);
-
-	return val[0];
-}
-
 const struct rtldsa_config rtldsa_931x_cfg = {
 	.switch_ops = &rtldsa_93xx_switch_ops,
 	.phylink_mac_ops = &rtldsa_93xx_phylink_mac_ops,
@@ -436,9 +406,9 @@ const struct rtldsa_config rtldsa_931x_cfg = {
 	.stat_rst = RTL931X_STAT_RST,
 	.stat_port_std_mib = 0,  /* Not defined */
 	.mib_desc = &rtldsa_931x_mib_desc,
-	.stat_port_table_read = rtldsa_931x_stat_port_table_read,
-	.stat_counters_lock = rtldsa_counters_lock_table,
-	.stat_counters_unlock = rtldsa_counters_unlock_table,
+	.stat_port_table_read = otto_stats_931x_port_table_read,
+	.stat_counters_lock = otto_stats_counters_lock_table,
+	.stat_counters_unlock = otto_stats_counters_unlock_table,
 	.stat_counter_poll_interval = RTLDSA_COUNTERS_FAST_POLL_INTERVAL,
 	.traffic_enable = rtl931x_traffic_enable,
 	.traffic_disable = rtl931x_traffic_disable,

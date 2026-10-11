@@ -6,7 +6,6 @@
 #include <net/nexthop.h>
 #include <net/neighbour.h>
 #include <net/netevent.h>
-#include <linux/cleanup.h>
 #include <linux/etherdevice.h>
 #include <linux/if_vlan.h>
 #include <linux/inetdevice.h>
@@ -220,95 +219,6 @@ static int rtldsa_ports_probe(struct rtl838x_switch_priv *priv)
 
 // 	return idx;
 // }
-
-/*
- * Packet counters share hardware memory with octet counters (2 packet counters
- * per 1 octet block). Allocation relies on two complementary bitmaps:
- *
- *   octet_cntr_use_bm:  0 = free block, 1 = used (or split into packet counters)
- *   packet_cntr_use_bm: 1 = free standalone counter, 0 = unavailable
- *
- * Allocation strategy:
- * 1. Look for a free standalone counter from an already split block (bit = 1).
- * 2. If none are free, claim a new octet block 'j', use counter index (2 * j),
- *    and mark counter (2 * j + 1) as available for future allocations.
- */
-
-/**
- * rtldsa_packet_cntr_alloc - Allocate a hardware packet counter.
- * @priv: Switch driver private structure.
- *
- * Return: Counter index (>= 0) on success, or -1 if full.
- */
-int rtldsa_packet_cntr_alloc(struct rtl838x_switch_priv *priv)
-{
-	int idx, j, base = 0;
-
-	/* On SoCs where a PIE rule implicitly logs into the LOG table entry
-	 * with its own rule ID (RTL930x), the tc cls_flower offload consumes
-	 * one LOG counter per PIE rule and does not pass through this
-	 * allocator. Keep that range reserved so a route counter handed out
-	 * here cannot alias a flow's LOG entry.
-	 *
-	 * The offload is ingress-only, so PIE rule IDs currently populate
-	 * only the lower half of that range, and a route counter's LOG entry
-	 * (idx / 2) never dips below the upper half either. If egress PIE
-	 * rules are ever wired up, this reservation needs to grow so their
-	 * LOG entries stay clear of route counters too.
-	 */
-	if (priv->r->pie_rule_id_is_log_counter)
-		base = priv->r->n_pie_blocks * PIE_BLOCK_SIZE;
-
-	scoped_guard(mutex, &priv->reg_mutex) {
-		idx = find_next_bit(priv->packet_cntr_use_bm, priv->r->n_counters * 2, base);
-		if (idx >= priv->r->n_counters * 2) {
-			j = find_next_zero_bit(priv->octet_cntr_use_bm, priv->r->n_counters,
-					       base / 2);
-			if (j >= priv->r->n_counters)
-				return -1;
-
-			__set_bit(j, priv->octet_cntr_use_bm);
-			idx = j * 2;
-			__set_bit(j * 2 + 1, priv->packet_cntr_use_bm);
-		} else {
-			__clear_bit(idx, priv->packet_cntr_use_bm);
-		}
-	}
-
-	return idx;
-}
-
-/**
- * rtldsa_packet_cntr_free - Release a packet counter from rtldsa_packet_cntr_alloc().
- * @priv: Switch driver private structure.
- * @idx: Packet counter index to free; a negative id is ignored.
- *
- * Marks the counter free again and, once both halves of its octet block are
- * free, returns the whole block to the octet counter pool.
- */
-void rtldsa_packet_cntr_free(struct rtl838x_switch_priv *priv, int idx)
-{
-	int j;
-
-	if (idx < 0 || idx >= priv->r->n_counters * 2)
-		return;
-
-	scoped_guard(mutex, &priv->reg_mutex) {
-		/* already free - guard against a double release */
-		if (test_bit(idx, priv->packet_cntr_use_bm))
-			return;
-
-		__set_bit(idx, priv->packet_cntr_use_bm);
-
-		j = idx / 2;
-		if (test_bit(j, priv->octet_cntr_use_bm) &&
-		    test_bit(idx ^ 1, priv->packet_cntr_use_bm)) {
-			__clear_bit(idx, priv->packet_cntr_use_bm);
-			__clear_bit(idx ^ 1, priv->packet_cntr_use_bm);
-			__clear_bit(j, priv->octet_cntr_use_bm);
-		}
-	}
-}
 
 int rtl83xx_port_is_under(const struct net_device *dev, struct rtl838x_switch_priv *priv)
 {

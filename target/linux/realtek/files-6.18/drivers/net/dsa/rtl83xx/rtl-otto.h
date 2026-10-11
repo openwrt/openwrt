@@ -337,7 +337,7 @@ struct rtldsa_config {
 	 * code.
 	 *
 	 * Any SoC family which requires stat_port_table_read must use the table
-	 * rtldsa_counters_(un)lock_table helpers. They are using a mutex for locking. The counters
+	 * otto_stats_counters_(un)lock_table helpers. They are using a mutex for locking. The counters
 	 * update is therefore not atomic.
 	 */
 	void (*stat_update_counters_atomically)(struct rtl838x_switch_priv *priv, int port);
@@ -554,8 +554,6 @@ struct fdb_update_work {
 };
 
 void rtldsa_port_fast_age(struct dsa_switch *ds, int port);
-int rtldsa_packet_cntr_alloc(struct rtl838x_switch_priv *priv);
-void rtldsa_packet_cntr_free(struct rtl838x_switch_priv *priv, int idx);
 int rtl83xx_port_is_under(const struct net_device *dev, struct rtl838x_switch_priv *priv);
 /* Port register accessor functions for the RTL839x and RTL931X SoCs */
 void rtl839x_mask_port_reg_be(u64 clear, u64 set, int reg);

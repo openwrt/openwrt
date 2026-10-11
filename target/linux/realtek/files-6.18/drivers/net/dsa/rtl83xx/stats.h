@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-#ifndef __RTL_OTTO_STATS_H
-#define __RTL_OTTO_STATS_H
+#ifndef _OTTO_STATS_H
+#define _OTTO_STATS_H
 
 #include <linux/ethtool.h>
 #include <linux/jiffies.h>
@@ -177,36 +177,48 @@ struct ethtool_rmon_stats;
 struct rtl838x_switch_priv;
 struct rtnl_link_stats64;
 
-void rtldsa_stats_init(struct rtl838x_switch_priv *priv);
-void rtldsa_stats_init_counters(struct rtl838x_switch_priv *priv);
+void otto_stats_init(struct rtl838x_switch_priv *priv);
+void otto_stats_init_counters(struct rtl838x_switch_priv *priv);
+void otto_stats_838x_init(struct rtl838x_switch_priv *priv);
+u64 otto_stats_931x_port_table_read(int port, unsigned int mib_size,
+				    unsigned int mib_offset, bool is_pvt);
 
-void rtldsa_get_strings(struct dsa_switch *ds, int port, u32 stringset,
-			u8 *data);
-void rtldsa_get_ethtool_stats(struct dsa_switch *ds, int port, u64 *data);
-int rtldsa_get_sset_count(struct dsa_switch *ds, int port, int sset);
-void rtldsa_get_eth_phy_stats(struct dsa_switch *ds, int port,
-			      struct ethtool_eth_phy_stats *phy_stats);
-void rtldsa_get_eth_mac_stats(struct dsa_switch *ds, int port,
-			      struct ethtool_eth_mac_stats *mac_stats);
-void rtldsa_get_eth_ctrl_stats(struct dsa_switch *ds, int port,
-			       struct ethtool_eth_ctrl_stats *ctrl_stats);
-void rtldsa_get_rmon_stats(struct dsa_switch *ds, int port,
-			   struct ethtool_rmon_stats *rmon_stats,
-			   const struct ethtool_rmon_hist_range **ranges);
-void rtldsa_get_stats64(struct dsa_switch *ds, int port,
-			struct rtnl_link_stats64 *s);
-void rtldsa_get_pause_stats(struct dsa_switch *ds, int port,
-			    struct ethtool_pause_stats *pause_stats);
+int otto_stats_packet_cntr_alloc(struct rtl838x_switch_priv *priv);
+void otto_stats_packet_cntr_free(struct rtl838x_switch_priv *priv, int idx);
+u32 otto_stats_838x_packet_cntr_read(struct rtl838x_switch_priv *priv, int counter);
+void otto_stats_838x_packet_cntr_clear(struct rtl838x_switch_priv *priv, int counter);
+u32 otto_stats_839x_packet_cntr_read(struct rtl838x_switch_priv *priv, int counter);
+void otto_stats_839x_packet_cntr_clear(struct rtl838x_switch_priv *priv, int counter);
+u32 otto_stats_930x_packet_cntr_read(struct rtl838x_switch_priv *priv, int counter);
+void otto_stats_930x_packet_cntr_clear(struct rtl838x_switch_priv *priv, int counter);
 
-void rtldsa_counters_lock_register(struct rtl838x_switch_priv *priv, int port)
+void otto_stats_get_strings(struct dsa_switch *ds, int port, u32 stringset,
+			    u8 *data);
+void otto_stats_get_ethtool(struct dsa_switch *ds, int port, u64 *data);
+int otto_stats_get_sset_count(struct dsa_switch *ds, int port, int sset);
+void otto_stats_get_eth_phy(struct dsa_switch *ds, int port,
+			    struct ethtool_eth_phy_stats *phy_stats);
+void otto_stats_get_eth_mac(struct dsa_switch *ds, int port,
+			    struct ethtool_eth_mac_stats *mac_stats);
+void otto_stats_get_eth_ctrl(struct dsa_switch *ds, int port,
+			     struct ethtool_eth_ctrl_stats *ctrl_stats);
+void otto_stats_get_rmon(struct dsa_switch *ds, int port,
+			 struct ethtool_rmon_stats *rmon_stats,
+			 const struct ethtool_rmon_hist_range **ranges);
+void otto_stats_get64(struct dsa_switch *ds, int port,
+		      struct rtnl_link_stats64 *s);
+void otto_stats_get_pause(struct dsa_switch *ds, int port,
+			  struct ethtool_pause_stats *pause_stats);
+
+void otto_stats_counters_lock_register(struct rtl838x_switch_priv *priv, int port)
 	__acquires(&priv->ports[port].counters.lock);
-void rtldsa_counters_unlock_register(struct rtl838x_switch_priv *priv, int port)
+void otto_stats_counters_unlock_register(struct rtl838x_switch_priv *priv, int port)
 	__releases(&priv->ports[port].counters.lock);
-void rtldsa_counters_lock_table(struct rtl838x_switch_priv *priv, int port)
+void otto_stats_counters_lock_table(struct rtl838x_switch_priv *priv, int port)
 	__acquires(&priv->counters_lock);
-void rtldsa_counters_unlock_table(struct rtl838x_switch_priv *priv, int port)
+void otto_stats_counters_unlock_table(struct rtl838x_switch_priv *priv, int port)
 	__releases(&priv->ports[port].counters.lock);
-void rtldsa_update_counters_atomically(struct rtl838x_switch_priv *priv,
-				       int port);
+void otto_stats_update_counters_atomically(struct rtl838x_switch_priv *priv,
+					   int port);
 
-#endif /* __RTL_OTTO_STATS_H */
+#endif /* _OTTO_STATS_H */

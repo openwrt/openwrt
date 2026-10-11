@@ -156,8 +156,8 @@ static int rtldsa_83xx_setup(struct dsa_switch *ds)
 	}
 
 	priv->r->print_matrix();
-	rtldsa_stats_init(priv);
-	rtldsa_stats_init_counters(priv);
+	otto_stats_init(priv);
+	otto_stats_init_counters(priv);
 
 	rtldsa_83xx_mc_pmasks_setup(priv);
 	otto_vlan_setup(priv);
@@ -206,8 +206,8 @@ static int rtldsa_93xx_setup(struct dsa_switch *ds)
 	priv->r->traffic_set(priv->r->cpu_port, BIT_ULL(priv->r->cpu_port));
 	priv->r->print_matrix();
 
-	rtldsa_stats_init(priv);
-	rtldsa_stats_init_counters(priv);
+	otto_stats_init(priv);
+	otto_stats_init_counters(priv);
 
 	otto_vlan_setup(priv);
 
@@ -1249,15 +1249,15 @@ const struct dsa_switch_ops rtldsa_83xx_switch_ops = {
 
 	.phylink_get_caps	= rtldsa_phylink_get_caps,
 
-	.get_strings		= rtldsa_get_strings,
-	.get_ethtool_stats	= rtldsa_get_ethtool_stats,
-	.get_sset_count		= rtldsa_get_sset_count,
-	.get_eth_phy_stats	= rtldsa_get_eth_phy_stats,
-	.get_eth_mac_stats	= rtldsa_get_eth_mac_stats,
-	.get_eth_ctrl_stats	= rtldsa_get_eth_ctrl_stats,
-	.get_rmon_stats		= rtldsa_get_rmon_stats,
-	.get_stats64		= rtldsa_get_stats64,
-	.get_pause_stats	= rtldsa_get_pause_stats,
+	.get_strings		= otto_stats_get_strings,
+	.get_ethtool_stats	= otto_stats_get_ethtool,
+	.get_sset_count		= otto_stats_get_sset_count,
+	.get_eth_phy_stats	= otto_stats_get_eth_phy,
+	.get_eth_mac_stats	= otto_stats_get_eth_mac,
+	.get_eth_ctrl_stats	= otto_stats_get_eth_ctrl,
+	.get_rmon_stats		= otto_stats_get_rmon,
+	.get_stats64		= otto_stats_get64,
+	.get_pause_stats	= otto_stats_get_pause,
 
 	.port_enable		= rtldsa_port_enable,
 	.port_disable		= rtldsa_port_disable,
@@ -1311,15 +1311,15 @@ const struct dsa_switch_ops rtldsa_93xx_switch_ops = {
 
 	.phylink_get_caps	= rtldsa_phylink_get_caps,
 
-	.get_strings		= rtldsa_get_strings,
-	.get_ethtool_stats	= rtldsa_get_ethtool_stats,
-	.get_sset_count		= rtldsa_get_sset_count,
-	.get_eth_phy_stats	= rtldsa_get_eth_phy_stats,
-	.get_eth_mac_stats	= rtldsa_get_eth_mac_stats,
-	.get_eth_ctrl_stats	= rtldsa_get_eth_ctrl_stats,
-	.get_rmon_stats		= rtldsa_get_rmon_stats,
-	.get_stats64		= rtldsa_get_stats64,
-	.get_pause_stats	= rtldsa_get_pause_stats,
+	.get_strings		= otto_stats_get_strings,
+	.get_ethtool_stats	= otto_stats_get_ethtool,
+	.get_sset_count		= otto_stats_get_sset_count,
+	.get_eth_phy_stats	= otto_stats_get_eth_phy,
+	.get_eth_mac_stats	= otto_stats_get_eth_mac,
+	.get_eth_ctrl_stats	= otto_stats_get_eth_ctrl,
+	.get_rmon_stats		= otto_stats_get_rmon,
+	.get_stats64		= otto_stats_get64,
+	.get_pause_stats	= otto_stats_get_pause,
 
 	.port_enable		= rtldsa_port_enable,
 	.port_disable		= rtldsa_port_disable,
