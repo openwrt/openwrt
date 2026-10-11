@@ -67,8 +67,7 @@ int otto_l2_find_cam_entry(struct rtl838x_switch_priv *priv, u64 seed,
 			   bool must_exist, struct rtl838x_l2_entry *e);
 struct rtldsa_l2_uc *otto_l2_uc_lookup(struct rtl838x_switch_priv *priv, int idx);
 
-int otto_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop *nh,
-			bool require_existing);
+int otto_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop *nh);
 int otto_l2_nexthop_del(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop *nh);
 
 u64 otto_l2_838x_hash_seed(u64 mac, u32 vid);

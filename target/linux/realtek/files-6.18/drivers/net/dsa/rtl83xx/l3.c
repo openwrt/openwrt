@@ -43,11 +43,11 @@
  *
  * Driver logic on RTL839x. The PIE rules L3 keeps for itself are the prefix
  * rows, and every route takes one, in the same order and with the same traps.
- * A route forwards once the gateway's neighbour is resolved, whether its MAC
- * was learnt or not. A trapping rule only takes frames addressed to one of the
- * switch's MACs, so a frame for another station goes its way. A destination no
- * rule matches needs no catch-all: its frames are addressed to the switch,
- * which traps them.
+ * A route forwards once the gateway's neighbour is resolved and the switch
+ * holds an L2 entry for its MAC. A trapping rule only takes frames addressed
+ * to one of the switch's MACs, so a frame for another station goes its way. A
+ * destination no rule matches needs no catch-all: its frames are addressed to
+ * the switch, which traps them.
  *
  * State per family:
  * - RTL930x: IPv4 and IPv6 unicast routes through a gateway are forwarded.
@@ -1732,7 +1732,6 @@ static void otto_l3_route_update_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_ro
 				    u64 mac)
 {
 	struct rtl838x_switch_priv *priv = ctrl->priv;
-	bool require_existing = ctrl->cfg->use_l3_tables;
 	char dst[INET6_ADDRSTRLEN + sizeof("/128")];
 	bool trapped = r->attr.action == ROUTE_ACT_TRAP2CPU;
 	int old_dmac = r->nh.dmac_id;
@@ -1774,7 +1773,7 @@ static void otto_l3_route_update_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_ro
 	r->nh.dmac_id = dmac;
 
 	/* Update ROUTING table: map gateway-mac and switch-mac id to route id */
-	no_l2 = otto_l2_nexthop_add(priv, &r->nh, require_existing);
+	no_l2 = otto_l2_nexthop_add(priv, &r->nh);
 	if (!no_l2)
 		r->nh.l2_installed = true;
 
@@ -1789,7 +1788,7 @@ static void otto_l3_route_update_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_ro
 	 */
 	no_port = ctrl->cfg->use_l3_tables &&
 		  r->nh.port == priv->r->port_ignore;
-	if (no_port && (first || !trapped)) {
+	if ((no_port || no_l2) && (first || !trapped)) {
 		if (r->attr.type == ROUTE_TYPE_IP4UC)
 			dev_info(ctrl->dev, "no port for %pI4, routing %s in software\n",
 				 &r->gw_ip.s6_addr32[3], otto_l3_route_dst(r, dst, sizeof(dst)));

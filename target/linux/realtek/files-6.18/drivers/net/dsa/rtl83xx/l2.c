@@ -253,13 +253,12 @@ static void otto_l2_uc_put_row(struct rtl838x_switch_priv *priv,
 }
 
 /* Add an L2 nexthop entry for the L3 routing system / PIE forwarding in the SoC
- * Use VID and MAC in rtl838x_l2_entry to identify either a free slot in the L2 hash table
- * or mark an existing entry as a nexthop by setting it's nexthop bit
+ * Use VID and MAC in rtl838x_l2_entry to find the entry the switch holds for the
+ * gateway and mark it as a nexthop by setting its nexthop bit
  * Called from the L3 layer
  * The index in the L2 hash table is filled into nh->l2_id;
  */
-int otto_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop *nh,
-			bool require_existing)
+int otto_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop *nh)
 {
 	struct rtl838x_l2_entry e = {};
 	u64 seed = priv->r->l2_hash_seed(nh->mac, nh->rvid);
@@ -280,63 +279,43 @@ int otto_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop
 	}
 
 	/* With a next hop that has no port, an RTL930x delivers every forwarded
-	 * frame twice, once from the switch and once from the Linux stack. A
-	 * row invented here would be static, and nothing would replace it:
-	 * dsa_user_fdb_event() drops an address the software bridge learns on
-	 * an offloaded port before the driver sees it. A caller that can trap
-	 * the route leaves the slot to the address, and lets the switch learn
-	 * it.
+	 * frame twice, once from the switch and once from the Linux stack, and
+	 * an RTL839x cuts the gateway off from the switch. A row invented here
+	 * would be static, and nothing would replace it: dsa_user_fdb_event()
+	 * drops an address the software bridge learns on an offloaded port
+	 * before the driver sees it. The caller traps the route, leaves the
+	 * slot to the address, and lets the switch learn it.
 	 */
-	if (require_existing && !e.valid) {
+	if (!e.valid) {
 		if (nh->l2_installed)
 			otto_l2_uc_put_row(priv, nh);
 		nh->l2_installed = false;
 		return -ENOENT;
 	}
 
-	/* Found an existing (e->valid is true) or empty entry, make it a nexthop entry */
+	/* Found an existing entry, make it a nexthop entry */
 	if (nh->l2_installed && nh->l2_id != idx)
 		otto_l2_uc_put_row(priv, nh);
 
-	if (!nh->l2_installed || nh->l2_id != idx) {
-		struct rtldsa_l2_uc *m = otto_l2_uc_lookup(priv, idx);
-
-		/* An entry nobody had claimed carries whatever its last owner
-		 * left behind, including a count for a route long gone.
-		 */
-		if (m && !e.valid)
-			*m = (struct rtldsa_l2_uc){};
-
+	if (!nh->l2_installed || nh->l2_id != idx)
 		otto_l2_uc_get(priv, idx);
-	}
 
 	nh->l2_id = idx;
 	nh->l2_seed = seed;
-	if (e.valid) {
-		nh->port = e.port;
-		nh->rvid = e.rvid;
-		nh->dev_id = e.stack_dev;
-		/* If the entry is already a valid next hop entry, don't change it,
-		 * but for the DMAC entry it names where the L3 tables hold one
-		 * per gateway MAC, the families a route traps on: every route
-		 * through the entry holds that one, and the entry may still name
-		 * one given up while it stayed a next hop.
-		 */
-		if (e.next_hop) {
-			if (!require_existing || e.nh_route_id == nh->dmac_id)
-				return 0;
-			e.nh_route_id = nh->dmac_id;
-			priv->r->write_l2_entry_using_hash(idx >> 2, idx & 0x3, &e);
+	nh->port = e.port;
+	nh->rvid = e.rvid;
+	nh->dev_id = e.stack_dev;
+	/* If the entry is already a valid next hop entry, don't change it, but
+	 * for the DMAC entry it names, one per gateway MAC: every route through
+	 * the entry holds that one, and the entry may still name one given up
+	 * while it stayed a next hop.
+	 */
+	if (e.next_hop) {
+		if (e.nh_route_id == nh->dmac_id)
 			return 0;
-		}
-	} else {
-		memset(&e, 0, sizeof(e));
-		e.type = L2_UNICAST;
-		e.valid = true;
-		e.is_static = true;
-		e.rvid = nh->rvid;
-		e.port = priv->r->port_ignore;
-		u64_to_ether_addr(nh->mac, &e.mac[0]);
+		e.nh_route_id = nh->dmac_id;
+		priv->r->write_l2_entry_using_hash(idx >> 2, idx & 0x3, &e);
+		return 0;
 	}
 	e.next_hop = true;
 	e.nh_route_id = nh->dmac_id;		/* DMAC entry or route ID takes place of VID */
