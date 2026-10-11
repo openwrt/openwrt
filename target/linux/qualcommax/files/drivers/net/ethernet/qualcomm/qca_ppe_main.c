@@ -904,7 +904,7 @@ static int qca_ppe_setup(struct dsa_switch *ds)
 	frame_size = PPE_DEFAULT_MTU + 2 * VLAN_HLEN;
 
 	for (i = 0; i < num_ports; i++)
-		priv->port_vsi[i] = PPE_VSI_INVALID;
+		priv->port_vsi[i] = 0;
 
 	regmap_write(priv->regmap, PPE_FDB_OP, 0);
 
@@ -1125,7 +1125,7 @@ static void qca_ppe_port_bridge_leave(struct dsa_switch *ds, int port,
 	if (!bvsi)
 		return;
 
-	priv->port_vsi[port] = PPE_VSI_INVALID;
+	priv->port_vsi[port] = 0;
 	priv->port_br_dev[port] = NULL;
 	ppe_port_vsi_set(priv, port, 0);
 	bridge_vsi_members_update(priv, bvsi);

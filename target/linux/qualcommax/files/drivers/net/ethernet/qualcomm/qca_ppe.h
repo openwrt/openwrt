@@ -1136,6 +1136,7 @@ struct qca_ppe_priv {
 	struct devlink_region *regions[3];
 	DECLARE_BITMAP(vsi_bitmap, PPE_VSI_MAX);
 	DECLARE_BITMAP(xlt_bitmap, PPE_XLT_TBL_NUM);
+	/* The VSI each port is bound to, 0 outside a bridge. */
 	u32 port_vsi[QCA_PPE_MAX_PORTS];
 	/* The member mask each VSI was last programmed with, so a bridge flag
 	 * that narrows a flood class can reprogram every VSI it reaches.
