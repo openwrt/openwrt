@@ -1647,7 +1647,7 @@ static void otto_l3_route_update_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_ro
 	bool trapped = r->attr.action == ROUTE_ACT_TRAP2CPU;
 	int old_dmac = r->nh.dmac_id;
 	bool first = !r->nh.mac;
-	bool no_port, trap;
+	bool no_port, no_l2, trap;
 	int dmac = r->id;
 
 	if (otto_l3_row_frozen(ctrl, r))
@@ -1686,7 +1686,8 @@ static void otto_l3_route_update_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_ro
 	r->nh.dmac_id = dmac;
 
 	/* Update ROUTING table: map gateway-mac and switch-mac id to route id */
-	if (!otto_l2_nexthop_add(priv, &r->nh, require_existing))
+	no_l2 = otto_l2_nexthop_add(priv, &r->nh, require_existing);
+	if (!no_l2)
 		r->nh.l2_installed = true;
 
 	/* The route names its gateway's entry now, through its L2 entry */
@@ -1709,7 +1710,8 @@ static void otto_l3_route_update_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_ro
 				 &r->gw_ip, otto_l3_route_dst(r, dst, sizeof(dst)));
 	}
 
-	trap = no_port || otto_l3_fwd_off(ctrl, r->attr.type) || otto_l3_local_covers(ctrl, r);
+	trap = no_port || no_l2 || otto_l3_fwd_off(ctrl, r->attr.type) ||
+	       otto_l3_local_covers(ctrl, r);
 
 	r->attr.valid = true;
 	r->attr.action = trap ? ROUTE_ACT_TRAP2CPU : ROUTE_ACT_FORWARD;
