@@ -15,6 +15,7 @@ ipq806x_setup_interfaces()
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "eth2"
 		;;
 	aruba,ap-32x|\
+	aruba,ap-32x-256m|\
 	edgecore,ecw5410|\
 	extreme,ap3935)
 		ucidef_set_interfaces_lan_wan "eth1" "eth0"
