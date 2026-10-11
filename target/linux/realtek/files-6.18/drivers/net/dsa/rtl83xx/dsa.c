@@ -878,39 +878,6 @@ static int rtldsa_find_l2_cam_entry(struct rtl838x_switch_priv *priv, u64 seed,
 	return idx;
 }
 
-/**
- * rtldsa_find_lag_group_from_port() - Find lag group of current port
- * @priv: private data of rtldsa switch
- * @port: port id of potential LAG member
- * Return: -ENOENT when port does not belong to any lag group, lag id otherwise
- */
-static int rtldsa_find_lag_group_from_port(struct rtl838x_switch_priv *priv, int port)
-{
-	if (!(priv->lagmembers & BIT_ULL(port)))
-		return -ENOENT;
-
-	/* port is a lag member */
-	for (int lag_group = 0; lag_group < MAX_LAGS; lag_group++) {
-		if (priv->lags_port_members[lag_group] & BIT_ULL(port))
-			return lag_group;
-	}
-
-	return -ENOENT;
-}
-
-/**
- * rtldsa_93xx_prepare_lag_fdb() - Prepare fdb entry for LAG
- * @e: L2 entry data
- * @lag_group: lag id of the trunk group
- */
-inline void rtldsa_93xx_prepare_lag_fdb(struct rtl838x_l2_entry *e, int lag_group)
-{
-	if (e && lag_group >= 0) {
-		e->is_trunk = true;
-		e->trunk = lag_group;
-	}
-}
-
 static int rtldsa_port_fdb_add(struct dsa_switch *ds, int port,
 			       const unsigned char *addr, u16 vid,
 			       const struct dsa_db db)
@@ -920,7 +887,7 @@ static int rtldsa_port_fdb_add(struct dsa_switch *ds, int port,
 	struct rtl838x_l2_entry e;
 	int err = 0, idx;
 	u64 seed = priv->r->l2_hash_seed(mac, vid);
-	int lag_group = rtldsa_find_lag_group_from_port(priv, port);
+	int lag_group = otto_lag_find_group_from_port(priv, port);
 
 	if (lag_group >= 0 && priv->r->prepare_lag_fdb) {
 		priv->r->prepare_lag_fdb(&e, lag_group);
@@ -980,7 +947,7 @@ static int rtldsa_port_fdb_del(struct dsa_switch *ds, int port,
 	struct rtl838x_l2_entry e;
 	int err = 0, idx;
 	u64 seed = priv->r->l2_hash_seed(mac, vid);
-	int lag_group = rtldsa_find_lag_group_from_port(priv, port);
+	int lag_group = otto_lag_find_group_from_port(priv, port);
 
 	if (lag_group >= 0 && priv->r->prepare_lag_fdb)
 		priv->r->prepare_lag_fdb(&e, lag_group);
@@ -1351,138 +1318,6 @@ static int rtldsa_port_bridge_flags(struct dsa_switch *ds, int port,
 	return 0;
 }
 
-static bool rtldsa_83xx_lag_can_offload(struct dsa_switch *ds,
-					struct net_device *lag,
-					struct netdev_lag_upper_info *info)
-{
-	int id;
-
-	id = dsa_lag_id(ds->dst, lag);
-	if (id < 1 || id > ds->num_lag_ids)
-		return false;
-
-	if (info->tx_type != NETDEV_LAG_TX_TYPE_HASH)
-		return false;
-
-	if (info->hash_type != NETDEV_LAG_HASH_L2 && info->hash_type != NETDEV_LAG_HASH_L23)
-		return false;
-
-	return true;
-}
-
-static int rtldsa_port_lag_change(struct dsa_switch *ds, int port)
-{
-	struct dsa_port *dp = dsa_to_port(ds, port);
-	struct rtl838x_switch_priv *priv = ds->priv;
-	int lag_group;
-	int ret;
-
-	if (!dp)
-		return -EINVAL;
-
-	lag_group = rtldsa_find_lag_group_from_port(priv, port);
-	if (lag_group < 0)
-		return lag_group;
-
-	if (priv->r->lag_set_port_members) {
-		/* Set same port members again, the function should check against
-		 * lag_tx_enabled and set egress ports accordingly.
-		 */
-		ret = priv->r->lag_set_port_members(priv, lag_group,
-						    priv->lags_port_members[lag_group],
-						    NULL);
-		if (ret)
-			return ret;
-	}
-
-	return 0;
-}
-
-static int rtldsa_port_lag_join(struct dsa_switch *ds,
-				int port,
-				struct dsa_lag lag,
-				struct netdev_lag_upper_info *info,
-				struct netlink_ext_ack *extack)
-{
-	struct rtl838x_switch_priv *priv = ds->priv;
-	int err = 0;
-	int group;
-
-	if (!rtldsa_83xx_lag_can_offload(ds, lag.dev, info))
-		return -EOPNOTSUPP;
-
-	mutex_lock(&priv->reg_mutex);
-
-	if (port >= priv->r->cpu_port) {
-		err = -EINVAL;
-		goto out;
-	}
-
-	group = lag.id - 1;
-
-	pr_info("port_lag_join: group %d, port %d\n", group, port);
-
-	err = otto_lag_add(priv->ds, group, port, info);
-	if (err) {
-		err = -EINVAL;
-		goto out;
-	}
-
-	if (priv->lag_primary[group] == -1)
-		priv->lag_primary[group] = port;
-	else
-		priv->lag_non_primary |= BIT_ULL(port);
-
-	priv->lagmembers |= BIT_ULL(port);
-	pr_debug("lag_members = %llX\n", priv->lagmembers);
-
-out:
-	mutex_unlock(&priv->reg_mutex);
-
-	return err;
-}
-
-static int rtldsa_port_lag_leave(struct dsa_switch *ds, int port,
-				 struct dsa_lag lag)
-{
-	int group, err;
-	struct rtl838x_switch_priv *priv = ds->priv;
-
-	mutex_lock(&priv->reg_mutex);
-
-	group = lag.id - 1;
-
-	if (port >= priv->r->cpu_port) {
-		err = -EINVAL;
-		goto out;
-	}
-	pr_info("port_lag_del: group %d, port %d\n", group, port);
-	err = otto_lag_del(priv->ds, group, port);
-	if (err)
-		goto out;
-
-	priv->lagmembers &= ~BIT_ULL(port);
-	priv->lag_non_primary &= ~BIT_ULL(port);
-	pr_debug("lag_members = %llX\n", priv->lagmembers);
-
-	if (priv->lag_primary[group] == port) {
-		u64 members = priv->lags_port_members[group];
-
-		priv->lag_primary[group] = members ? __ffs64(members) : -1;
-		if (members)
-			priv->lag_non_primary &= ~BIT_ULL(priv->lag_primary[group]);
-	}
-
-	/* No need to update fdb entries since they make use of trunk_id for entry.
-	 * The primary interface is only calculated at time of
-	 * port_fdb_dump
-	 */
-
-out:
-	mutex_unlock(&priv->reg_mutex);
-	return err;
-}
-
 const struct phylink_mac_ops rtldsa_83xx_phylink_mac_ops = {
 	.mac_config		= rtldsa_83xx_phylink_mac_config,
 	.mac_link_down		= rtldsa_phylink_mac_link_down,
@@ -1537,9 +1372,9 @@ const struct dsa_switch_ops rtldsa_83xx_switch_ops = {
 	.port_mirror_add	= rtldsa_port_mirror_add,
 	.port_mirror_del	= rtldsa_port_mirror_del,
 
-	.port_lag_change	= rtldsa_port_lag_change,
-	.port_lag_join		= rtldsa_port_lag_join,
-	.port_lag_leave		= rtldsa_port_lag_leave,
+	.port_lag_change	= otto_lag_port_change,
+	.port_lag_join		= otto_lag_port_join,
+	.port_lag_leave		= otto_lag_port_leave,
 
 	.port_pre_bridge_flags	= rtldsa_port_pre_bridge_flags,
 	.port_bridge_flags	= rtldsa_port_bridge_flags,
@@ -1599,9 +1434,9 @@ const struct dsa_switch_ops rtldsa_93xx_switch_ops = {
 	.port_mirror_add	= rtldsa_port_mirror_add,
 	.port_mirror_del	= rtldsa_port_mirror_del,
 
-	.port_lag_change	= rtldsa_port_lag_change,
-	.port_lag_join		= rtldsa_port_lag_join,
-	.port_lag_leave		= rtldsa_port_lag_leave,
+	.port_lag_change	= otto_lag_port_change,
+	.port_lag_join		= otto_lag_port_join,
+	.port_lag_leave		= otto_lag_port_leave,
 
 	.port_pre_bridge_flags	= rtldsa_port_pre_bridge_flags,
 	.port_bridge_flags	= rtldsa_port_bridge_flags,

@@ -3,7 +3,10 @@
 #include <linux/bitfield.h>
 #include <linux/bitmap.h>
 #include <linux/iopoll.h>
+#include <linux/mutex.h>
+#include <linux/netdevice.h>
 #include <linux/string.h>
+#include <net/dsa.h>
 
 #include "lag.h"
 #include "rtl-otto.h"
@@ -131,6 +134,168 @@
 #define RTL93XX_TRK_CTRL_NON_TMN_TUNNEL_HASH_SEL	BIT(0)
 #define RTL93XX_TRK_CTRL_TRK_STAND_ALONE_MODE		BIT(2)
 #define RTL93XX_TRK_CTRL_LOCAL_FIRST			BIT(4)
+
+/**
+ * otto_lag_find_group_from_port() - Find lag group of current port
+ * @priv: private data of rtldsa switch
+ * @port: port id of potential LAG member
+ * Return: -ENOENT when port does not belong to any lag group, lag id otherwise
+ */
+int otto_lag_find_group_from_port(struct rtl838x_switch_priv *priv, int port)
+{
+	if (!(priv->lagmembers & BIT_ULL(port)))
+		return -ENOENT;
+
+	/* port is a lag member */
+	for (int lag_group = 0; lag_group < MAX_LAGS; lag_group++) {
+		if (priv->lags_port_members[lag_group] & BIT_ULL(port))
+			return lag_group;
+	}
+
+	return -ENOENT;
+}
+
+/**
+ * otto_lag_93xx_prepare_fdb() - Prepare fdb entry for LAG
+ * @e: L2 entry data
+ * @lag_group: lag id of the trunk group
+ */
+void otto_lag_93xx_prepare_fdb(struct rtl838x_l2_entry *e, int lag_group)
+{
+	if (e && lag_group >= 0) {
+		e->is_trunk = true;
+		e->trunk = lag_group;
+	}
+}
+
+static bool otto_lag_83xx_can_offload(struct dsa_switch *ds,
+				      struct net_device *lag,
+				      struct netdev_lag_upper_info *info)
+{
+	int id;
+
+	id = dsa_lag_id(ds->dst, lag);
+	if (id < 1 || id > ds->num_lag_ids)
+		return false;
+
+	if (info->tx_type != NETDEV_LAG_TX_TYPE_HASH)
+		return false;
+
+	if (info->hash_type != NETDEV_LAG_HASH_L2 && info->hash_type != NETDEV_LAG_HASH_L23)
+		return false;
+
+	return true;
+}
+
+int otto_lag_port_change(struct dsa_switch *ds, int port)
+{
+	struct dsa_port *dp = dsa_to_port(ds, port);
+	struct rtl838x_switch_priv *priv = ds->priv;
+	int lag_group;
+	int ret;
+
+	if (!dp)
+		return -EINVAL;
+
+	lag_group = otto_lag_find_group_from_port(priv, port);
+	if (lag_group < 0)
+		return lag_group;
+
+	if (priv->r->lag_set_port_members) {
+		/* Set same port members again, the function should check against
+		 * lag_tx_enabled and set egress ports accordingly.
+		 */
+		ret = priv->r->lag_set_port_members(priv, lag_group,
+						    priv->lags_port_members[lag_group],
+						    NULL);
+		if (ret)
+			return ret;
+	}
+
+	return 0;
+}
+
+int otto_lag_port_join(struct dsa_switch *ds, int port, struct dsa_lag lag,
+		       struct netdev_lag_upper_info *info,
+		       struct netlink_ext_ack *extack)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+	int err = 0;
+	int group;
+
+	if (!otto_lag_83xx_can_offload(ds, lag.dev, info))
+		return -EOPNOTSUPP;
+
+	mutex_lock(&priv->reg_mutex);
+
+	if (port >= priv->r->cpu_port) {
+		err = -EINVAL;
+		goto out;
+	}
+
+	group = lag.id - 1;
+
+	pr_info("port_lag_join: group %d, port %d\n", group, port);
+
+	err = otto_lag_add(priv->ds, group, port, info);
+	if (err) {
+		err = -EINVAL;
+		goto out;
+	}
+
+	if (priv->lag_primary[group] == -1)
+		priv->lag_primary[group] = port;
+	else
+		priv->lag_non_primary |= BIT_ULL(port);
+
+	priv->lagmembers |= BIT_ULL(port);
+	pr_debug("lag_members = %llX\n", priv->lagmembers);
+
+out:
+	mutex_unlock(&priv->reg_mutex);
+
+	return err;
+}
+
+int otto_lag_port_leave(struct dsa_switch *ds, int port, struct dsa_lag lag)
+{
+	int group, err;
+	struct rtl838x_switch_priv *priv = ds->priv;
+
+	mutex_lock(&priv->reg_mutex);
+
+	group = lag.id - 1;
+
+	if (port >= priv->r->cpu_port) {
+		err = -EINVAL;
+		goto out;
+	}
+	pr_info("port_lag_del: group %d, port %d\n", group, port);
+	err = otto_lag_del(priv->ds, group, port);
+	if (err)
+		goto out;
+
+	priv->lagmembers &= ~BIT_ULL(port);
+	priv->lag_non_primary &= ~BIT_ULL(port);
+	pr_debug("lag_members = %llX\n", priv->lagmembers);
+
+	if (priv->lag_primary[group] == port) {
+		u64 members = priv->lags_port_members[group];
+
+		priv->lag_primary[group] = members ? __ffs64(members) : -1;
+		if (members)
+			priv->lag_non_primary &= ~BIT_ULL(priv->lag_primary[group]);
+	}
+
+	/* No need to update fdb entries since they make use of trunk_id for entry.
+	 * The primary interface is only calculated at time of
+	 * port_fdb_dump
+	 */
+
+out:
+	mutex_unlock(&priv->reg_mutex);
+	return err;
+}
 
 /* Caller must hold priv->reg_mutex */
 int otto_lag_add(struct dsa_switch *ds, int group, int port, struct netdev_lag_upper_info *info)

@@ -611,8 +611,6 @@ extern struct rtl83xx_soc_info soc_info;
 void rtl838x_dbgfs_init(struct rtl838x_switch_priv *priv);
 void rtl930x_dbgfs_init(struct rtl838x_switch_priv *priv);
 
-void rtldsa_93xx_prepare_lag_fdb(struct rtl838x_l2_entry *e, int lag_group);
-
 int rtldsa_find_l2_hash_entry(struct rtl838x_switch_priv *priv, u64 seed,
 			      bool must_exist, struct rtl838x_l2_entry *e);
 
