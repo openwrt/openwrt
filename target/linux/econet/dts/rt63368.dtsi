@@ -1,0 +1,111 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+/*
+ * Ralink/TrendChip RT63365/RT63368, the predecessor of the EcoNet EN751221.
+ * The CPU, interrupt controller, UART, GPIO and timer blocks match the
+ * EN751221; Ethernet (FE/PDMA), PCIe, NAND and USB are older blocks.
+ */
+
+#include "en751221.dtsi"
+
+/ {
+	compatible = "econet,rt63368", "econet,en751221";
+
+	/*
+	 * Older Ralink-style PCIe controller with an indirect configuration
+	 * window at +0x20/+0x24 and the root complex registers at +0x2000.
+	 * Every device interrupt arrives on intc 24.
+	 */
+	pcie_rt: pcie@1fb80000 {
+		compatible = "econet,rt63368-pcie";
+		device_type = "pci";
+		reg = <0x1fb80000 0x3000>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+		bus-range = <0x00 0xff>;
+		ranges = <0x82000000 0 0x20000000 0x20000000 0 0x08000000>;
+
+		#interrupt-cells = <1>;
+		interrupt-map-mask = <0 0 0 0>;
+		interrupt-map = <0 0 0 0 &intc 24>;
+
+		status = "disabled";
+	};
+
+	/* USB 2.0 host: EHCI + OHCI companion sharing intc 17. */
+	ehci: usb@1fbb0000 {
+		compatible = "generic-ehci";
+		reg = <0x1fbb0000 0x10000>;
+		interrupt-parent = <&intc>;
+		interrupts = <17>;
+		status = "disabled";
+	};
+
+	ohci: usb@1fba0000 {
+		compatible = "generic-ohci";
+		reg = <0x1fba0000 0x10000>;
+		interrupt-parent = <&intc>;
+		interrupts = <17>;
+		status = "disabled";
+	};
+
+	/* Parallel NAND controller with 1-bit hardware Hamming ECC. */
+	rt_nand: nand-controller@1fbe0000 {
+		compatible = "econet,rt63368-nfc";
+		reg = <0x1fbe0000 0x100>;
+		status = "disabled";
+	};
+
+	/*
+	 * Serial LED engine: the 16-bit register at 0x1fbf0224 is shifted out
+	 * to external shift registers (one bit per LED line). It owns SoC
+	 * gpio1, gpio2, gpio3 and gpio5, which must not be used as GPIOs.
+	 */
+	led_sr: gpio@1fbf0224 {
+		compatible = "wd,mbl-gpio";
+		reg = <0x1fbf0224 0x4>;
+		reg-names = "dat";
+		gpio-controller;
+		#gpio-cells = <2>;
+		status = "disabled";
+	};
+};
+
+/delete-node/ &pciecfg;
+
+&intc {
+	#address-cells = <0>;
+};
+
+/* The CPU timer runs from a 250 MHz clock. */
+&hpt_clock {
+	clock-frequency = <250000000>;
+};
+
+/*
+ * U-Boot leaves the UART at 57600 using the fractional divider. Claim a
+ * 921600 Hz input clock so that 8250 computes divisor 1 and keeps that rate.
+ */
+&uart {
+	clock-frequency = <921600>;
+};
+
+/* FE/PDMA Ethernet: one netdev towards the internal switch CPU port 6. */
+&ethernet {
+	compatible = "econet,rt63368-eth";
+	/delete-property/ resets;
+	/delete-property/ reset-names;
+	interrupts = <21>;
+};
+
+/* No SPI-NAND controller, no xHCI and a single GPIO bank. */
+&spi_ctrl {
+	status = "disabled";
+};
+
+&usb {
+	status = "disabled";
+};
+
+&gpio1 {
+	status = "disabled";
+};

@@ -14,6 +14,9 @@ econet_setup_interfaces()
 	jiofiber,jcow414)
 		ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
 		;;
+	zyxel,keenetic-lte)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
+		;;
 	*)
 		# The remaining boards have no DSA switch driver yet.
 		ucidef_set_interface_lan "eth0"
