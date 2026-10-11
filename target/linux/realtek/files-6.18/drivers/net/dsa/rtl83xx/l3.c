@@ -218,6 +218,9 @@ static void otto_l3_839x_route_write(struct otto_l3_ctrl *ctrl, int idx, struct 
 		pr.valid = true;
 		pr.dip = rt->dst_ip;
 		pr.dip_m = inet_make_mask(rt->prefix_len);
+		/* The DIP fields hold part of an IPv6 destination as well */
+		pr.frame_type = 2;	/* IPv4 */
+		pr.frame_type_m = 0x3;
 		pr.fwd_sel = true;
 
 		if (rt->attr.action == ROUTE_ACT_FORWARD) {
