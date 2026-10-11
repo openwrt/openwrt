@@ -1569,3 +1569,11 @@ define Device/yuncore_1200f
   DEVICE_PACKAGES := kmod-mt7615e kmod-mt7663-firmware-ap -kmod-mt76x2 -kmod-mt76x2-common -kmod-mt76x02-common
 endef
 TARGET_DEVICES += yuncore_1200f
+
+define Device/freefa_ac1200m-u10
+  IMAGE_SIZE := 7872k
+  DEVICE_VENDOR := FREEFA
+  DEVICE_MODEL := AC1200M-U10
+  DEVICE_PACKAGES := kmod-mt76x2
+endef
+TARGET_DEVICES += freefa_ac1200m-u10
