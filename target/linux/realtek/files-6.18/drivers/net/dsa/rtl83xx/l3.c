@@ -186,14 +186,16 @@ static void otto_l3_839x_nexthop_read(struct otto_l3_ctrl *ctrl, int idx, struct
 	rt->nh.gw = v >> 16;
 }
 
-static void otto_l3_839x_nexthop_write(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt)
+/* A ROUTING row holds a gateway's MAC and the index of the source MAC to
+ * route with, left at 0. The routes through one gateway share its row, the
+ * way RTL930x routes share a DMAC entry: the L2 entry of the gateway names
+ * one row, whichever route claimed it.
+ */
+static int otto_l3_839x_set_egress_mac(struct otto_l3_ctrl *ctrl, u32 idx, u64 mac)
 {
-	u32 data[2];
+	u32 data[2] = { mac >> 16, mac << 16 };
 
-	data[0] = rt->nh.gw >> 16;
-	data[1] = (rt->nh.gw << 16) | (rt->switch_mac_id << 12);
-
-	otto_table_write(RTL8390_TBL_ROUTING, idx, &data);
+	return otto_table_write(RTL8390_TBL_ROUTING, idx, &data);
 }
 
 /* The prefix rows of an RTL839x are the PIE rules L3 keeps for itself. A rule
@@ -219,8 +221,6 @@ static void otto_l3_839x_route_write(struct otto_l3_ctrl *ctrl, int idx, struct 
 		pr.fwd_sel = true;
 
 		if (rt->attr.action == ROUTE_ACT_FORWARD) {
-			/* The next hop is in place before the rule that points at it */
-			otto_l3_839x_nexthop_write(ctrl, rt->nh.dmac_id, rt);
 			pr.fwd_act = PIE_ACT_ROUTE_UC;
 			pr.fwd_data = rt->nh.l2_id;
 		} else {
@@ -4146,6 +4146,7 @@ const struct otto_l3_config otto_l3_838x_cfg = {
 };
 
 const struct otto_l3_config otto_l3_839x_cfg = {
+	.set_egress_mac = otto_l3_839x_set_egress_mac,
 	.route_rows_move = otto_l3_839x_route_rows_move,
 	.route_write = otto_l3_839x_route_write,
 	.setup = otto_l3_839x_setup,
