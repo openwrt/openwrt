@@ -616,6 +616,85 @@ function bss_find_existing(config, prev_config, prev_hash)
 	return -1;
 }
 
+// Each value is the one hostapd uses without the line. hostapd reads
+// multi_ap_vlanid only when it builds a (Re)Association Response, so an
+// associated station keeps the old value until it associates again.
+const BSS_INPLACE_FIELDS = {
+	multi_ap_vlanid: "0",
+};
+
+function bss_inplace_changes(config, prev, changed)
+{
+	let data = remove_file_fields(config.data);
+	let prev_data = remove_file_fields(prev.data);
+	let changes = {};
+	let inplace = true;
+
+	for (let line in prev_data) {
+		if (index(data, line) >= 0)
+			continue;
+
+		let key = split(line, "=", 2)[0];
+		push(changed, key);
+		if (!(key in BSS_INPLACE_FIELDS))
+			inplace = false;
+		changes[key] ??= BSS_INPLACE_FIELDS[key];
+	}
+
+	for (let line in data) {
+		if (index(prev_data, line) >= 0)
+			continue;
+
+		let val = split(line, "=", 2);
+		push(changed, val[0]);
+		if (!(val[0] in BSS_INPLACE_FIELDS))
+			inplace = false;
+		changes[val[0]] = val[1];
+	}
+
+	return (inplace && length(changes)) ? changes : null;
+}
+
+// A new BSS drops its stations, so the log names what keeps a bss from an
+// update in place.
+function bss_find_inplace(config, prev_config, prev_hash)
+{
+	for (let i = 0; i < length(prev_config.bss); i++) {
+		let prev = prev_config.bss[i];
+
+		if (!prev_hash[i] || prev.ifname != config.ifname)
+			continue;
+
+		let changed = [];
+		let changes = bss_inplace_changes(config, prev, changed);
+		if (!changes) {
+			let reason = length(changed) ? join(", ", uniq(changed)) :
+				"line order or ifindex of a named interface";
+			hostapd.printf(`bss ${config.ifname} changed in ${reason}, replacing it`);
+			continue;
+		}
+
+		prev_hash[i] = null;
+		return { index: i, changes };
+	}
+
+	return null;
+}
+
+function bss_inplace_apply(bss, ifname, changes)
+{
+	for (let key, val in changes) {
+		let ret = bss.ctrl(`SET ${key} ${val}`);
+		if (ret != "OK") {
+			hostapd.printf(`Could not set ${key} of bss ${ifname}: ${ret}`);
+			return false;
+		}
+	}
+
+	hostapd.printf(`Updated ${join(", ", keys(changes))} of bss ${ifname} in place`);
+	return true;
+}
+
 function get_config_bss(name, config, idx)
 {
 	if (!config.bss[idx]) {
@@ -923,13 +1002,27 @@ function iface_reload_config(name, phydev, config, old_config)
 	}
 
 	// Step 1: find (possibly renamed) interfaces with the same config
-	// and store them in the new order (with gaps)
+	// and store them in the new order (with gaps), then interfaces of the
+	// same name whose changes apply in place (bss_find_inplace())
+	let inplace = [];
+	for (let pass = 0; pass < 2; pass++)
 	for (let i = 0; i < length(config.bss); i++) {
-		let prev;
+		let prev = -1;
+
+		if (bss_list[i])
+			continue;
 
 		// For fullmac devices, the first interface needs to be preserved,
 		// since it's treated as the master
-		if (!i && phy_is_fullmac(phydev.phy)) {
+		let fullmac_first = !i && phy_is_fullmac(phydev.phy);
+		if (pass) {
+			let found = !fullmac_first &&
+				bss_find_inplace(config.bss[i], old_config, prev_bss_hash);
+			if (found) {
+				prev = found.index;
+				inplace[i] = found.changes;
+			}
+		} else if (fullmac_first) {
 			prev = 0;
 			prev_bss_hash[0] = null;
 		} else {
@@ -1114,12 +1207,20 @@ function iface_reload_config(name, phydev, config, old_config)
 
 		let ifname = config.bss[i].ifname;
 		let bss = bss_list[i];
+		let prev_cfg = bss_list_cfg[i];
 
-		if (is_equal(config.bss[i], bss_list_cfg[i]))
+		if (inplace[i]) {
+			if (!bss_inplace_apply(bss, ifname, inplace[i]))
+				return false;
+
+			prev_cfg = { ...prev_cfg, data: config.bss[i].data };
+		}
+
+		if (is_equal(config.bss[i], prev_cfg))
 			continue;
 
 		if (is_equal(bss_remove_file_fields(config.bss[i]),
-		             bss_remove_file_fields(bss_list_cfg[i]))) {
+		             bss_remove_file_fields(prev_cfg))) {
 			hostapd.printf(`Update config data files for bss ${ifname}`);
 			if (bss.set_config(config_inline, i, true) < 0) {
 				hostapd.printf(`Could not update config data files for bss ${ifname}`);
@@ -1130,9 +1231,9 @@ function iface_reload_config(name, phydev, config, old_config)
 			}
 		}
 
-		bss_reload_psk(bss, config.bss[i], bss_list_cfg[i]);
-		bss_reload_rxkhs(bss, config.bss[i], bss_list_cfg[i]);
-		if (is_equal(config.bss[i], bss_list_cfg[i]))
+		bss_reload_psk(bss, config.bss[i], prev_cfg);
+		bss_reload_rxkhs(bss, config.bss[i], prev_cfg);
+		if (is_equal(config.bss[i], prev_cfg))
 			continue;
 
 		hostapd.printf(`Reload config for bss '${config.bss[0].ifname}' on phy '${name}'`);
