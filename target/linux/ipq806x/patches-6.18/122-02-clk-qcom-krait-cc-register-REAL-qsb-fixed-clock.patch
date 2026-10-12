@@ -16,7 +16,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 
 --- a/drivers/clk/qcom/krait-cc.c
 +++ b/drivers/clk/qcom/krait-cc.c
-@@ -25,6 +25,8 @@ enum {
+@@ -24,6 +24,8 @@ enum {
  	clks_max,
  };
  
@@ -25,7 +25,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  static unsigned int sec_mux_map[] = {
  	2,
  	0,
-@@ -360,7 +362,7 @@ static int krait_cc_probe(struct platfor
+@@ -359,7 +361,7 @@ static int krait_cc_probe(struct platfor
  	 */
  	clk = clk_get(dev, "qsb");
  	if (IS_ERR(clk))
