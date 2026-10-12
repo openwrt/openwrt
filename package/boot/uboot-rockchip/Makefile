@@ -6,7 +6,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_VERSION:=2026.07
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_HASH:=78e8bfc382fe388f9b55aa1daf8c563522a037779b5d4c349d1415e381f1243e
 
 PKG_MAINTAINER:=Sarah Maedel <openwrt@tbspace.de>
@@ -335,6 +335,13 @@ define U-Boot/rk3576/Default
   TPL:=rk3576_ddr_lp4_2112MHz_lp5_2736MHz_v1.09.bin
 endef
 
+define U-Boot/generic-rk3576
+  $(U-Boot/rk3576/Default)
+  NAME:=Generic RK3576
+  BUILD_DEVICES:= \
+    ariaboard_photonicat-2
+endef
+
 define U-Boot/nanopi-m5-rk3576
   $(U-Boot/rk3576/Default)
   NAME:=NanoPi M5
@@ -473,6 +480,7 @@ UBOOT_TARGETS := \
   radxa-e25-rk3568 \
   rock-3a-rk3568 \
   rock-3b-rk3568 \
+  generic-rk3576 \
   nanopi-m5-rk3576 \
   nanopi-r76s-rk3576 \
   rock-4d-rk3576 \
