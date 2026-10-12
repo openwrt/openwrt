@@ -1,0 +1,38 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Łukasz Buśko <lukasz.busko@guns4hire.cc>
+Date: Fri, 16 Oct 2026 19:40:00 +0200
+Subject: [PATCH] arm64: dts: mediatek: mt7988a-bpi-r4-pro-8x: hog switch reset high
+
+The MxL86252C 2.5G switch of the BPi-R4 Pro 8X is held in reset by its
+HRSTN line, which is MT7988 GPIO 4 (GPIO_A). Nothing in the upstream board
+description claims that pin, so it is left in its reset default and is also
+free for userspace: one `gpioset gpiochip0 4=0` drops the whole switch -
+CPU port included - and the board becomes unreachable with no way back but
+a power cycle.
+
+The Bananapi vendor tree keeps the line high with a gpio-hog ("MxL86252C
+2.5G switch reset pin GPIO4: High"). Do the same here: the hog takes the
+pin when the pinctrl driver registers its gpio chip, so the switch is
+guaranteed to come out of reset on every boot, and gpiolib refuses the
+line to userspace afterwards.
+
+Based on the BPi-R4 Pro 8X board support from the Bananapi vendor tree.
+---
+ arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro-8x.dts |  9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+--- a/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro-8x.dts
++++ b/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro-8x.dts
+@@ -166,3 +166,12 @@
+ 		};
+ 	};
+ };
++
++&pio {
++	/* MxL86252C switch reset (GPIO_A): keep the switch out of reset */
++	switch-hrstn-hog {
++		gpio-hog;
++		gpios = <4 GPIO_ACTIVE_HIGH>;
++		output-high;
++	};
++};
