@@ -1,0 +1,59 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Łukasz Buśko <lukasz.busko@guns4hire.cc>
+Date: Mon, 12 Oct 2026 07:27:39 +0200
+Subject: [PATCH] net: dsa: mxl862xx: use the legacy SerDes PCS on old firmware
+
+mxl862xx_setup_pcs() already installs mxl862xx_legacy_pcs_ops when the
+firmware predates the XPCS API (< 1.0.84), but mac_select_pcs() refuses
+to hand that PCS out and returns NULL instead. A phylink instance
+without a PCS can never report a link: phylink_mac_pcs_get_state()
+clears state->link when no PCS is attached, so every phylink managed
+SerDes port on such firmware stays down no matter what the switch sees.
+
+On the Bananapi BPi-R4 Pro 8X (switch firmware 1.0.70) this leaves lan6,
+whose SerDes reaches an Aeonsemi AS21010 PHY over USXGMII, without
+carrier: the PHY completes negotiation, the switch port links up, yet
+phylink never learns about it.
+
+Return the legacy PCS for the SerDes ports that are not fixed-link. Its
+ops only read the port link configuration through the C45 API
+(PORTLINKCFGGET/PORTCFGGET) and select the SerDes mode with
+SYS_MISC_SFP_SET, all of which old firmware does implement; the SerDes
+of the CPU port keeps running in its flash-configured mode as before.
+
+Based on the BPi-R4 Pro 8X board support from the Bananapi vendor tree.
+---
+--- a/drivers/net/dsa/mxl862xx/mxl862xx-phylink.c
++++ b/drivers/net/dsa/mxl862xx/mxl862xx-phylink.c
+@@ -34,9 +34,9 @@ void mxl862xx_phylink_get_caps(struct ds
+ 	case 9:
+ 	case 13:
+ 		/* Advertised also on old firmware lacking the XPCS API:
+-		 * there the SerDes runs in its flash-configured mode
+-		 * without host control (mac_select_pcs returns NULL),
+-		 * keeping the CPU port working.
++		 * there the SerDes of a fixed-link (CPU) port runs in its
++		 * flash-configured mode without host control, while a
++		 * phylink managed port uses the legacy PCS.
+ 		 */
+ 		__set_bit(PHY_INTERFACE_MODE_SGMII, config->supported_interfaces);
+ 		__set_bit(PHY_INTERFACE_MODE_1000BASEX, config->supported_interfaces);
+@@ -559,9 +559,15 @@ mxl862xx_phylink_mac_select_pcs(struct p
+ 		if (priv->rescue_mode)
+ 			return NULL;
+ 		if (!MXL862XX_FW_VER_MIN(priv, 1, 0, 84)) {
+-			dev_warn_once(dp->ds->dev,
+-				      "SerDes PCS unsupported on old firmware.\n");
+-			return NULL;
++			/* Old firmware has no XPCS API but it does implement
++			 * the C45 port link API used by the legacy PCS. The
++			 * SerDes of a fixed-link (CPU) port is left in its
++			 * flash-configured mode, as before.
++			 */
++			if (dsa_is_cpu_port(dp->ds, port))
++				return NULL;
++			dev_info_once(dp->ds->dev,
++				      "using legacy SerDes PCS on old firmware\n");
+ 		}
+ 		return &priv->serdes_ports[port - 9].pcs;
+ 	default:

@@ -1,0 +1,52 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Bo-Cun Chen <bc-bocun.chen@mediatek.com>
+Date: Tue, 29 Oct 2024 14:25:17 +0800
+Subject: [PATCH] net: ethernet: mtk_eth_soc: add mdio reset delay
+
+The MDIO bus scan runs from __mdiobus_register() right after the ethernet
+controller has been brought out of reset, and before phylib has acquired,
+asserted or released the per-PHY reset GPIOs. The external Aeonsemi
+AS2101x PHYs on the Bananapi BPi-R4 Pro 8X are not answering at that
+point, so the Clause 45 scan caches PHY_ID and PCS_ID values that are
+zero, 0xffffffff or a response shifted from an adjacent transaction.
+
+Implement the mii_bus reset callback as a 150 ms settle wait so the bus
+scan starts only once the devices behind it are ready. The wait sleeps - the
+callback is only called from the probe path of the ethernet controller, never
+from atomic context. The as21xxx driver still needs its stale-ID handling for
+the read pipelining quirk, but the scan no longer races the PHY power-on.
+
+Based on the BPi-R4 Pro 8X board support from the Bananapi vendor tree.
+---
+ drivers/net/ethernet/mediatek/mtk_eth_soc.c | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -487,6 +487,18 @@ static int mtk_mdio_read_c45(struct mii_
+ 	return _mtk_mdio_read_c45(eth, phy_addr, devad, phy_reg);
+ }
+ 
++static int mtk_mdio_reset(struct mii_bus *bus)
++{
++	/*
++	 * mdiobus_register() may pulse the bus reset line, and the devices
++	 * behind this bus need time to answer again afterwards. The bus scan
++	 * runs from a probe path, so sleep instead of busy-waiting.
++	 */
++	msleep(150);
++
++	return 0;
++}
++
+ static int mt7621_gmac0_rgmii_adjust(struct mtk_eth *eth,
+ 				     phy_interface_t interface)
+ {
+@@ -1096,6 +1108,7 @@ static int mtk_mdio_init(struct mtk_eth
+ 	eth->mii_bus->write = mtk_mdio_write_c22;
+ 	eth->mii_bus->read_c45 = mtk_mdio_read_c45;
+ 	eth->mii_bus->write_c45 = mtk_mdio_write_c45;
++	eth->mii_bus->reset = mtk_mdio_reset;
+ 	eth->mii_bus->priv = eth;
+ 	eth->mii_bus->parent = eth->dev;
+ 

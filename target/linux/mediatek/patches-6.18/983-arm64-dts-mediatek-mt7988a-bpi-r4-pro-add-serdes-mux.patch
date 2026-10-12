@@ -1,0 +1,81 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Łukasz Buśko <lukasz.busko@guns4hire.cc>
+Date: Mon, 12 Oct 2026 07:27:39 +0200
+Subject: [PATCH] arm64: dts: mediatek: mt7988a-bpi-r4-pro: add SerDes mux for LAN
+
+The 10G LAN SerDes of the BPi-R4 Pro 8X reaches either the external
+Aeonsemi AS21010 PHY (phy24) or the SFP1 cage through a passive mux
+driven by the SFP1 module detect line. Describe both lanes as channels
+of a "mxl862xx,ds-mux" attached to switch port 13 so the lane is
+selected at runtime instead of by a boot-time overlay.
+
+Like the WAN side, the mux node does not repeat the module detect GPIO
+of the cage and asks the SFP bus of its SFP channel for the module
+presence instead.
+
+The port node itself describes the PHY lane, which is the state the mux
+starts in, and port 13 is enabled as lan6. Channel ids match the
+logical chan-sel GPIO value: channel 0 is the SFP lane, channel 1 the
+PHY lane. The channels need no pcs-handle because the SerDes PCS of a
+switch port is picked by the switch driver in mac_select_pcs().
+
+Like the WAN side, the PHY lane uses USXGMII with in-band status and the
+SFP lane keeps fixed-rate 10GBASE-R: the PHY rate-adapts the SerDes to
+the copper speed, which the switch PCS only follows with USXGMII
+negotiation enabled, while a 10G SFP+ module has no USXGMII AN to
+complete.
+
+Based on the Bananapi BPi-R4 Pro 8X vendor device tree.
+---
+ arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro-8x.dts | 36 +++++++++++++++++++++++++++++++++++-
+ 1 file changed, 35 insertions, 1 deletion
+
+--- a/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro-8x.dts
++++ b/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro-8x.dts
+@@ -59,11 +59,45 @@
+ };
+ 
+ &switch16 {
++	ds_mux: ds-mux-bus {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		ds_mux0: ds-mux@13 {
++			compatible = "mxl862xx,ds-mux";
++			reg = <13>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++			chan-sel-gpios = <&pio 54 GPIO_ACTIVE_HIGH>;
++			sfp-present-channel = <0>;
++
++			ds_mux0_sfp: channel@0 {
++				reg = <0>;
++				phy-mode = "10gbase-r";
++				phy-connection-type = "10gbase-r";
++				managed = "in-band-status";
++				sfp = <&sfp1>;
++			};
++
++			ds_mux0_phy: channel@1 {
++				reg = <1>;
++				phy-mode = "usxgmii";
++				phy-connection-type = "usxgmii";
++				managed = "in-band-status";
++				phy-handle = <&phy24>;
++			};
++		};
++	};
++
+ 	ports {
+ 		port@13 {
+ 			reg = <13>;
+ 			label = "lan6";
+-			status = "disabled";
++			phy-handle = <&phy24>;
++			phy-mode = "usxgmii";
++			phy-connection-type = "usxgmii";
++			managed = "in-band-status";
++			status = "okay";
+ 		};
+ 	};
+ };
