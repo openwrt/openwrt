@@ -1900,7 +1900,7 @@ static void otto_l3_route_update_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_ro
 	 * and gives the old one up only with the ROUTING row that names it.
 	 * With none free it keeps to the CPU, its next hop untouched.
 	 */
-	if (ctrl->cfg->set_switch_mac &&
+	if (ctrl->cfg->smac_per_route &&
 	    (r->switch_mac_id < 0 || ctrl->switch_macs[r->switch_mac_id] != r->switch_mac)) {
 		sa = otto_l3_switch_mac_get(ctrl, r->switch_mac);
 		if (sa < 0) {
@@ -1924,7 +1924,7 @@ static void otto_l3_route_update_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_ro
 		}
 	}
 
-	if (ctrl->cfg->set_switch_mac && otto_l3_l2_entry_taken(ctrl, r, &key)) {
+	if (ctrl->cfg->smac_per_route && otto_l3_l2_entry_taken(ctrl, r, &key)) {
 		if (!r->l2_taken) {
 			if (r->attr.type == ROUTE_TYPE_IP4UC)
 				dev_info(ctrl->dev, "gateway %pI4 also reached from another MAC on VLAN %d, routing %s in software\n",
@@ -2362,7 +2362,7 @@ static void otto_l3_egress_sync(struct work_struct *work)
 
 	mac = ether_addr_to_u64(dev->dev_addr);
 
-	if (ctrl->cfg->set_switch_mac) {
+	if (ctrl->cfg->smac_per_route) {
 		otto_l3_switch_mac_sync(ctrl, dev, mac);
 		goto out;
 	}
@@ -2805,7 +2805,7 @@ static int otto_l3_fib_add_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 	route->nh.rvid = vlan;
 	route->gw_ifindex = ndev->ifindex;
 
-	if (ctrl->cfg->set_switch_mac) {
+	if (ctrl->cfg->smac_per_route) {
 		route->switch_mac = ether_addr_to_u64(ndev->dev_addr);
 		route->switch_mac_id = otto_l3_switch_mac_get(ctrl, route->switch_mac);
 		if (route->switch_mac_id < 0)
@@ -3025,7 +3025,7 @@ static int otto_l3_fib_trap_v6(struct otto_l3_ctrl *ctrl, struct fib6_info *rt,
 	 * a MAC of its own may have no other route to take one, and frames to
 	 * that MAC would miss the trap rules, which match on the switch's MACs.
 	 */
-	if (ctrl->cfg->set_switch_mac && ndev && !rt->fib6_nh->fib_nh_gw_family &&
+	if (ctrl->cfg->smac_per_route && ndev && !rt->fib6_nh->fib_nh_gw_family &&
 	    otto_l3_port_dev_lower_find(ndev, ctrl) >= 0) {
 		route->gw_ifindex = ndev->ifindex;
 		route->switch_mac = ether_addr_to_u64(ndev->dev_addr);
@@ -3290,7 +3290,7 @@ static int otto_l3_fib_add_v6(struct otto_l3_ctrl *ctrl, struct fib6_entry_notif
 	route->nh.rvid = vlan;
 	route->gw_ifindex = ndev->ifindex;
 
-	if (ctrl->cfg->set_switch_mac) {
+	if (ctrl->cfg->smac_per_route) {
 		route->switch_mac = ether_addr_to_u64(ndev->dev_addr);
 		route->switch_mac_id = otto_l3_switch_mac_get(ctrl, route->switch_mac);
 		if (route->switch_mac_id < 0)
@@ -4467,6 +4467,7 @@ const struct otto_l3_config otto_l3_838x_cfg = {
 };
 
 const struct otto_l3_config otto_l3_839x_cfg = {
+	.smac_per_route = true,
 	.set_dmac = otto_l3_839x_set_dmac,
 	.set_switch_mac = otto_l3_839x_set_switch_mac,
 	.route_rows_move = otto_l3_839x_route_rows_move,
@@ -4682,7 +4683,7 @@ int otto_l3_probe(struct device *dev, struct rtl838x_switch_priv *priv)
 		return dev_err_probe(dev, err, "Failed to register netevent notifier\n");
 	}
 
-	if (ctrl->cfg->set_router_mac || ctrl->cfg->set_switch_mac) {
+	if (ctrl->cfg->set_router_mac || ctrl->cfg->smac_per_route) {
 		ctrl->nd_nb.notifier_call = otto_l3_netdev_notifier;
 		err = register_netdevice_notifier(&ctrl->nd_nb);
 		if (err) {
