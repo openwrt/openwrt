@@ -1,0 +1,201 @@
+From 13f075999935bb696dbab63243923179f06fa05e Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Thu, 16 Jun 2022 19:56:08 +0200
+Subject: [PATCH 3/4] devfreq: add ipq806x fabric scaling driver
+
+Add ipq806x fabric scaling driver using the devfreq passive governor.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ drivers/devfreq/Kconfig               |  11 ++
+ drivers/devfreq/Makefile              |   1 +
+ drivers/devfreq/ipq806x-fab-devfreq.c | 155 ++++++++++++++++++++++++++
+ 3 files changed, 167 insertions(+)
+ create mode 100644 drivers/devfreq/ipq806x-fab-devfreq.c
+
+--- a/drivers/devfreq/Kconfig
++++ b/drivers/devfreq/Kconfig
+@@ -161,6 +161,17 @@ config ARM_KRAIT_CACHE_DEVFREQ
+ 	  based on the max frequency across all core and the range set in the device
+ 	  dts. If provided this scale also the regulator attached to the l2 cache.
+ 
++config ARM_IPQ806X_FAB_DEVFREQ
++	tristate "Scaling support for ipq806x Soc Fabric"
++	depends on ARCH_QCOM || COMPILE_TEST
++	select DEVFREQ_GOV_PASSIVE
++	help
++	  This adds the DEVFREQ driver for the ipq806x Soc Fabric.
++
++	  The driver register with the cpufreq notifier and find the right frequency
++	  based on the max frequency across all core and the range set in the device
++	  dts.
++
+ source "drivers/devfreq/event/Kconfig"
+ 
+ endif # PM_DEVFREQ
+--- a/drivers/devfreq/Makefile
++++ b/drivers/devfreq/Makefile
+@@ -16,6 +16,7 @@ obj-$(CONFIG_ARM_RK3399_DMC_DEVFREQ)	+=
+ obj-$(CONFIG_ARM_SUN8I_A33_MBUS_DEVFREQ)	+= sun8i-a33-mbus.o
+ obj-$(CONFIG_ARM_TEGRA_DEVFREQ)		+= tegra30-devfreq.o
+ obj-$(CONFIG_ARM_KRAIT_CACHE_DEVFREQ)	+= krait-cache-devfreq.o
++obj-$(CONFIG_ARM_IPQ806X_FAB_DEVFREQ)	+= ipq806x-fab-devfreq.o
+ 
+ # DEVFREQ Event Drivers
+ obj-$(CONFIG_PM_DEVFREQ_EVENT)		+= event/
+--- /dev/null
++++ b/drivers/devfreq/ipq806x-fab-devfreq.c
+@@ -0,0 +1,153 @@
++// SPDX-License-Identifier: GPL-2.0
++
++#include <linux/kernel.h>
++#include <linux/init.h>
++#include <linux/module.h>
++#include <linux/cpufreq.h>
++#include <linux/devfreq.h>
++#include <linux/of.h>
++#include <linux/platform_device.h>
++#include <linux/clk.h>
++#include <linux/slab.h>
++#include <linux/pm_opp.h>
++
++#include "governor.h"
++
++struct ipq806x_fab_data {
++	struct clk *fab_clk;
++	struct clk *ddr_clk;
++};
++
++static int ipq806x_fab_get_cur_freq(struct device *dev, unsigned long *freq)
++{
++	struct ipq806x_fab_data *data = dev_get_drvdata(dev);
++
++	*freq = clk_get_rate(data->fab_clk);
++
++	return 0;
++};
++
++static int ipq806x_fab_target(struct device *dev, unsigned long *freq,
++			      u32 flags)
++{
++	struct ipq806x_fab_data *data = dev_get_drvdata(dev);
++	struct dev_pm_opp *opp;
++	int ret;
++
++	opp = dev_pm_opp_find_freq_ceil(dev, freq);
++	if (unlikely(IS_ERR(opp)))
++		return PTR_ERR(opp);
++
++	dev_pm_opp_put(opp);
++
++	ret = clk_set_rate(data->fab_clk, *freq);
++	if (ret)
++		return ret;
++
++	return clk_set_rate(data->ddr_clk, *freq);
++};
++
++static int ipq806x_fab_get_dev_status(struct device *dev,
++				      struct devfreq_dev_status *stat)
++{
++	struct ipq806x_fab_data *data = dev_get_drvdata(dev);
++
++	stat->busy_time = 0;
++	stat->total_time = 0;
++	stat->current_frequency = clk_get_rate(data->fab_clk);
++
++	return 0;
++};
++
++static struct devfreq_dev_profile ipq806x_fab_devfreq_profile = {
++	.target = ipq806x_fab_target,
++	.get_dev_status = ipq806x_fab_get_dev_status,
++	.get_cur_freq = ipq806x_fab_get_cur_freq
++};
++
++static struct devfreq_passive_data devfreq_gov_data = {
++	.parent_type = CPUFREQ_PARENT_DEV,
++};
++
++static int ipq806x_fab_probe(struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++	struct ipq806x_fab_data *data;
++	struct devfreq *devfreq;
++	struct clk *clk;
++	int ret;
++
++	data = devm_kzalloc(dev, sizeof(*data), GFP_KERNEL);
++	if (!data)
++		return -ENOMEM;
++
++	clk = devm_clk_get(dev, "apps-fab-clk");
++	if (IS_ERR(clk)) {
++		dev_err_probe(dev, PTR_ERR(clk), "failed to get apps fab clk\n");
++		return PTR_ERR(clk);
++	}
++
++	clk_prepare_enable(clk);
++	data->fab_clk = clk;
++
++	clk = devm_clk_get(dev, "ddr-fab-clk");
++	if (IS_ERR(clk)) {
++		dev_err_probe(dev, PTR_ERR(clk), "failed to get ddr fab clk\n");
++		goto err_ddr;
++	}
++
++	clk_prepare_enable(clk);
++	data->ddr_clk = clk;
++
++	ret = dev_pm_opp_of_add_table(dev);
++	if (ret) {
++		dev_err(dev, "failed to parse fab freq thresholds\n");
++		return ret;
++	}
++
++	dev_set_drvdata(dev, data);
++
++	devfreq = devm_devfreq_add_device(&pdev->dev, &ipq806x_fab_devfreq_profile,
++					  DEVFREQ_GOV_PASSIVE, &devfreq_gov_data);
++	if (IS_ERR(devfreq))
++		dev_pm_opp_remove_table(dev);
++
++	return PTR_ERR_OR_ZERO(devfreq);
++
++err_ddr:
++	clk_unprepare(data->fab_clk);
++	clk_put(data->fab_clk);
++	return PTR_ERR(clk);
++};
++
++static void ipq806x_fab_remove(struct platform_device *pdev)
++{
++	struct ipq806x_fab_data *data = dev_get_drvdata(&pdev->dev);
++
++	clk_unprepare(data->fab_clk);
++	clk_put(data->fab_clk);
++
++	clk_unprepare(data->ddr_clk);
++	clk_put(data->ddr_clk);
++
++	dev_pm_opp_remove_table(&pdev->dev);
++};
++
++static const struct of_device_id ipq806x_fab_match_table[] = {
++	{ .compatible = "qcom,fab-scaling" },
++	{}
++};
++
++static struct platform_driver ipq806x_fab_driver = {
++	.probe		= ipq806x_fab_probe,
++	.remove_new	= ipq806x_fab_remove,
++	.driver		= {
++		.name   = "ipq806x-fab-scaling",
++		.of_match_table = ipq806x_fab_match_table,
++	},
++};
++module_platform_driver(ipq806x_fab_driver);
++
++MODULE_DESCRIPTION("ipq806x Fab Scaling driver");
++MODULE_AUTHOR("Christian Marangi <ansuelsmth@gmail.com>");
++MODULE_LICENSE("GPL v2");
