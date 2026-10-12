@@ -132,8 +132,12 @@ struct otto_l3_config {
 	int (*find_slot)(struct otto_l3_ctrl *ctrl, struct otto_l3_route *rt, bool must_exist);
 	void (*get_egress_intf)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_intf *intf);
 	void (*set_egress_intf)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_intf *intf);
-	u64 (*get_egress_mac)(struct otto_l3_ctrl *ctrl, u32 idx);
-	int (*set_egress_mac)(struct otto_l3_ctrl *ctrl, u32 idx, u64 mac);
+	/* Source MAC entries by their index: on RTL839x those of
+	 * ROUTING_SA_CTRL, on RTL930x the source MAC rows of the egress MAC
+	 * table
+	 */
+	int (*get_smac)(struct otto_l3_ctrl *ctrl, u32 idx, u64 *mac);
+	int (*set_smac)(struct otto_l3_ctrl *ctrl, u32 idx, u64 mac);
 	int (*set_dmac)(struct otto_l3_ctrl *ctrl, u32 idx, const struct otto_l3_dmac *dmac);
 	void (*host_route_write)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt);
 	void (*get_router_mac)(struct otto_l3_ctrl *ctrl, u32 idx, struct otto_l3_router_mac *m);
@@ -142,10 +146,6 @@ struct otto_l3_config {
 	void (*set_nexthop)(struct otto_l3_ctrl *ctrl, int idx, u16 dmac_id, u16 interface);
 	int (*route_lookup_hw)(struct otto_l3_ctrl *ctrl, struct otto_l3_route *rt);
 	int (*route_rows_move)(struct otto_l3_ctrl *ctrl, int dst, int src, int count);
-	/* RTL839x: one entry of the switch's own MACs, the source MACs it
-	 * routes with and the MACs it routes what arrives on
-	 */
-	void (*set_switch_mac)(struct otto_l3_ctrl *ctrl, int idx, u64 mac);
 	void (*route_read)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt);
 	void (*route_write)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt);
 	int (*setup)(struct otto_l3_ctrl *ctrl);
