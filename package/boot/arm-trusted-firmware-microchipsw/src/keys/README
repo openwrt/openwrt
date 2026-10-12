@@ -11,5 +11,5 @@ containing the same filenames via TFA_KEY_DIR. The root key's public X and Y
 coordinates must have no leading zero byte because of ERR-LAN969X-001.
 
 The package passes SOURCE_DATE_EPOCH to cert_create for stable certificate
-validity and serials. ECDSA signatures are still random, so the FIP is not
-yet reproducible.
+validity, serials, and deterministic ECDSA signatures. Other inputs to the
+FIP must also remain stable for reproducible builds.
