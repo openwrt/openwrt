@@ -1,0 +1,650 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 20 Oct 2026 14:38:57 +0200
+Subject: [PATCH] AP MLD: Move the shared authenticator to the new first link
+
+Since commit a213fee11da3 ("AP: MLO: Make IEEE 802.1X SM, authserv, and
+RADIUS client singletons"), the links of an AP MLD share the IEEE 802.1X
+authenticator, the authentication server and the RADIUS client of the
+first BSS. These objects keep pointers to that BSS:
+- the context of the authenticator callbacks and its ERP keys,
+- the WPS context, message context and IMSI privacy key of the EAP
+  server configuration,
+- the context of the RADIUS client, of its IEEE 802.1X handler and of
+  its interim accounting error callback,
+- the context of RADIUS DAS, of the EAP-SIM database and of the RADIUS
+  server.
+They also keep pointers into the configuration of that BSS. The RADIUS
+client and its pending messages use its RADIUS server list, and the
+RADIUS server uses its erp_domain string.
+
+When the first link is removed, hostapd_mld_remove_link() makes the
+next link the first BSS. The removed BSS drops only its own pointers,
+and its data and configuration are freed. The next RADIUS message of
+another link reads the freed server list, and the next state machine
+step reads the freed BSS. With accounting enabled, hostapd crashes when
+another link is removed later:
+
+  WPA_TRACE: eloop SIGSEGV - START
+  MD5_Update()
+  radius_msg_finish_acct() ../src/radius/radius.c:581
+  radius_client_send() ../src/radius/radius_client.c:956
+  accounting_report_state() ../src/ap/accounting.c:455
+  accounting_deinit() ../src/ap/accounting.c:547
+  hostapd_free_hapd_data() ../src/ap/hostapd.c:547
+
+Move all of these to the new first BSS when the first BSS changes. The
+RADIUS server list moves with the client, as the VLAN list does in
+hostapd_mld_move_vlan_list(). The RADIUS server keeps its own copy of
+erp_domain, as it does for t_c_server_url. The other links take the
+pointer to the RADIUS server as well, as they do for the EAP server
+configuration, so that the server can move. A configuration reload of a
+link other than the first leaves the shared RADIUS client alone, since
+that configuration goes away with the link.
+
+Each link also registers its ACL and accounting handlers on the shared
+RADIUS client, and nothing removes them when the link goes away. A
+RADIUS reply then reaches the ACL handler of a removed link, which reads
+its freed query list, and a disabled link adds a second set of handlers
+when it is enabled again. Remove the handlers of a BSS at its deinit.
+
+The client has one interim accounting error callback, and each link
+replaces its context with its own BSS at setup. The callback then finds
+only the stations of the link that was set up last, and keeps that BSS
+after its removal. Register the callback with the first BSS, move it
+with the other contexts, and let it prefer the station entry whose
+interim accounting timer is pending.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/src/ap/accounting.c
++++ b/src/ap/accounting.c
+@@ -457,6 +457,14 @@ static void accounting_report_state(stru
+ }
+ 
+ 
++static bool accounting_sta_interim_pending(struct hostapd_data *hapd,
++					   struct sta_info *sta)
++{
++	return eloop_is_timeout_registered(accounting_interim_update, hapd,
++					   sta);
++}
++
++
+ static void accounting_interim_error_cb(const u8 *addr, void *ctx)
+ {
+ 	struct hostapd_data *hapd = ctx;
+@@ -464,7 +472,9 @@ static void accounting_interim_error_cb(
+ 	unsigned int i, wait_time;
+ 	int res;
+ 
+-	sta = ap_get_sta(hapd, addr);
++	sta = ap_get_sta_mld_links(&hapd, addr, accounting_sta_interim_pending);
++	if (!sta)
++		sta = ap_get_sta_mld_links(&hapd, addr, NULL);
+ 	if (!sta)
+ 		return;
+ 	sta->acct_interim_errors++;
+@@ -514,6 +524,21 @@ static void accounting_interim_error_cb(
+ }
+ 
+ 
++/* The links of an AP MLD share the RADIUS client of the first BSS, and the
++ * client has one interim accounting error callback. */
++static void * accounting_interim_error_ctx(struct hostapd_data *hapd)
++{
++#ifdef CONFIG_IEEE80211BE
++	struct hostapd_data *first = hostapd_mld_get_first_bss(hapd);
++
++	if (first && !hostapd_mld_is_first_bss(hapd))
++		return first;
++#endif /* CONFIG_IEEE80211BE */
++
++	return hapd;
++}
++
++
+ /**
+  * accounting_init: Initialize accounting
+  * @hapd: hostapd BSS data
+@@ -529,7 +554,8 @@ int accounting_init(struct hostapd_data
+ 				   accounting_receive, hapd))
+ 		return -1;
+ 	radius_client_set_interim_error_cb(hapd->radius,
+-					   accounting_interim_error_cb, hapd);
++					   accounting_interim_error_cb,
++					   accounting_interim_error_ctx(hapd));
+ 
+ 	accounting_report_state(hapd, 1);
+ 
+@@ -537,6 +563,18 @@ int accounting_init(struct hostapd_data
+ }
+ 
+ 
++#ifdef CONFIG_IEEE80211BE
++void accounting_mld_first_bss_moved(struct hostapd_data *old,
++				    struct hostapd_data *first)
++{
++	if (first->radius && first->radius == old->radius)
++		radius_client_set_interim_error_cb(first->radius,
++						   accounting_interim_error_cb,
++						   first);
++}
++#endif /* CONFIG_IEEE80211BE */
++
++
+ /**
+  * accounting_deinit: Deinitialize accounting
+  * @hapd: hostapd BSS data
+@@ -544,4 +582,7 @@ int accounting_init(struct hostapd_data
+ void accounting_deinit(struct hostapd_data *hapd)
+ {
+ 	accounting_report_state(hapd, 0);
++	radius_client_unregister(hapd->radius, RADIUS_ACCT,
++				 accounting_receive, hapd);
++	radius_client_unset_interim_error_cb(hapd->radius, hapd);
+ }
+--- a/src/ap/accounting.h
++++ b/src/ap/accounting.h
+@@ -34,12 +34,19 @@ static inline int accounting_init(struct
+ static inline void accounting_deinit(struct hostapd_data *hapd)
+ {
+ }
++
++static inline void accounting_mld_first_bss_moved(struct hostapd_data *old,
++						  struct hostapd_data *first)
++{
++}
+ #else /* CONFIG_NO_ACCOUNTING */
+ int accounting_sta_get_id(struct hostapd_data *hapd, struct sta_info *sta);
+ void accounting_sta_start(struct hostapd_data *hapd, struct sta_info *sta);
+ void accounting_sta_stop(struct hostapd_data *hapd, struct sta_info *sta);
+ int accounting_init(struct hostapd_data *hapd);
+ void accounting_deinit(struct hostapd_data *hapd);
++void accounting_mld_first_bss_moved(struct hostapd_data *old,
++				    struct hostapd_data *first);
+ #endif /* CONFIG_NO_ACCOUNTING */
+ 
+ #endif /* ACCOUNTING_H */
+--- a/src/ap/authsrv.c
++++ b/src/ap/authsrv.c
+@@ -387,6 +387,9 @@ int authsrv_init(struct hostapd_data *ha
+ #ifdef EAP_SIM_DB
+ 		hapd->eap_sim_db_priv = first->eap_sim_db_priv;
+ #endif /* EAP_SIM_DB */
++#ifdef RADIUS_SERVER
++		hapd->radius_srv = first->radius_srv;
++#endif /* RADIUS_SERVER */
+ 		return 0;
+ 	}
+ #endif /* CONFIG_IEEE80211BE */
+@@ -503,6 +506,38 @@ int authsrv_init(struct hostapd_data *ha
+ }
+ 
+ 
++#ifdef CONFIG_IEEE80211BE
++/* The authentication server that the links of an AP MLD share calls back with
++ * the first BSS and holds its WPS context and message context. */
++void authsrv_mld_first_bss_moved(struct hostapd_data *old,
++				 struct hostapd_data *first)
++{
++	if (first->eap_cfg && first->eap_cfg == old->eap_cfg) {
++		first->eap_cfg->wps = first->wps;
++		first->eap_cfg->msg_ctx = first->msg_ctx;
++	}
++
++#ifdef CRYPTO_RSA_OAEP_SHA256
++	if (!first->imsi_privacy_key) {
++		first->imsi_privacy_key = old->imsi_privacy_key;
++		old->imsi_privacy_key = NULL;
++	}
++#endif /* CRYPTO_RSA_OAEP_SHA256 */
++
++#ifdef EAP_SIM_DB
++	if (first->eap_sim_db_priv &&
++	    first->eap_sim_db_priv == old->eap_sim_db_priv)
++		eap_sim_db_set_ctx(first->eap_sim_db_priv, first);
++#endif /* EAP_SIM_DB */
++
++#ifdef RADIUS_SERVER
++	if (first->radius_srv && first->radius_srv == old->radius_srv)
++		radius_server_set_conf_ctx(first->radius_srv, first);
++#endif /* RADIUS_SERVER */
++}
++#endif /* CONFIG_IEEE80211BE */
++
++
+ void authsrv_deinit(struct hostapd_data *hapd)
+ {
+ #ifdef CONFIG_IEEE80211BE
+--- a/src/ap/authsrv.h
++++ b/src/ap/authsrv.h
+@@ -10,6 +10,8 @@
+ #define AUTHSRV_H
+ 
+ int authsrv_init(struct hostapd_data *hapd);
++void authsrv_mld_first_bss_moved(struct hostapd_data *old,
++				 struct hostapd_data *first);
+ void authsrv_deinit(struct hostapd_data *hapd);
+ 
+ #endif /* AUTHSRV_H */
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -137,7 +137,8 @@ static void hostapd_reload_bss(struct ho
+ 			hapd->iconf->ieee80211ax;
+ 
+ #ifndef CONFIG_NO_RADIUS
+-	radius_client_reconfig(hapd->radius, hapd->conf->radius);
++	if (hostapd_mld_is_first_bss(hapd))
++		radius_client_reconfig(hapd->radius, hapd->conf->radius);
+ #endif /* CONFIG_NO_RADIUS */
+ 
+ 	ssid = &hapd->conf->ssid;
+@@ -5930,6 +5931,28 @@ int hostapd_mld_add_link(struct hostapd_
+ }
+ 
+ 
++static void hostapd_mld_move_radius(struct hostapd_data *old_fbss,
++				    struct hostapd_data *new_fbss)
++{
++#ifndef CONFIG_NO_RADIUS
++	struct hostapd_radius_servers *servers;
++
++	if (!new_fbss->radius || new_fbss->radius != old_fbss->radius)
++		return;
++
++	/* The RADIUS client and its pending messages point into the server
++	 * list of the configuration it was set up with. */
++	servers = new_fbss->conf->radius;
++	new_fbss->conf->radius = old_fbss->conf->radius;
++	old_fbss->conf->radius = servers;
++	radius_client_set_ctx(new_fbss->radius, new_fbss);
++
++	if (new_fbss->radius_das == old_fbss->radius_das)
++		radius_das_set_ctx(new_fbss->radius_das, new_fbss);
++#endif /* CONFIG_NO_RADIUS */
++}
++
++
+ int hostapd_mld_remove_link(struct hostapd_data *hapd)
+ {
+ 	struct hostapd_mld *mld = hapd->mld;
+@@ -5971,6 +5994,10 @@ int hostapd_mld_remove_link(struct hosta
+ 			hostapd_mld_move_vlan_list(hapd, next_fbss);
+ 
+ 		mld->fbss = next_fbss;
++		hostapd_mld_move_radius(hapd, next_fbss);
++		accounting_mld_first_bss_moved(hapd, next_fbss);
++		ieee802_1x_mld_first_bss_moved(hapd, next_fbss);
++		authsrv_mld_first_bss_moved(hapd, next_fbss);
+ 	}
+ 
+ 	wpa_printf(MSG_DEBUG, "AP MLD %s: First link BSS set to %p",
+--- a/src/ap/ieee802_11_auth.c
++++ b/src/ap/ieee802_11_auth.c
+@@ -674,6 +674,8 @@ void hostapd_acl_deinit(struct hostapd_d
+ 	struct hostapd_acl_query_data *query, *prev;
+ 
+ #ifndef CONFIG_NO_RADIUS
++	radius_client_unregister(hapd->radius, RADIUS_AUTH,
++				 hostapd_acl_recv_radius, hapd);
+ 	hostapd_acl_cache_free(hapd->acl_cache);
+ 	hapd->acl_cache = NULL;
+ #endif /* CONFIG_NO_RADIUS */
+--- a/src/ap/ieee802_1x.c
++++ b/src/ap/ieee802_1x.c
+@@ -2678,6 +2678,54 @@ void ieee802_1x_erp_flush(struct hostapd
+ }
+ 
+ 
++#ifdef CONFIG_IEEE80211BE
++/* The IEEE 802.1X authenticator that the links of an AP MLD share calls back
++ * with the first BSS, which also holds its ERP keys and WEP rekey timer. */
++void ieee802_1x_mld_first_bss_moved(struct hostapd_data *old,
++				    struct hostapd_data *first)
++{
++	struct eapol_authenticator *eapol = first->eapol_auth;
++#ifdef CONFIG_WEP
++	struct os_reltime remaining;
++#endif /* CONFIG_WEP */
++
++	if (!eapol || eapol != old->eapol_auth)
++		return;
++
++	if (eapol->conf.ctx == old)
++		eapol->conf.ctx = first;
++
++#ifdef CONFIG_WEP
++	if (eloop_cancel_timeout_one(ieee802_1x_rekey, old, NULL, &remaining))
++		eloop_register_timeout(remaining.sec, remaining.usec,
++				       ieee802_1x_rekey, first, NULL);
++#endif /* CONFIG_WEP */
++
++#ifdef CONFIG_ERP
++	while (!dl_list_empty(&old->erp_keys)) {
++		struct eap_server_erp_key *erp;
++
++		erp = dl_list_first(&old->erp_keys, struct eap_server_erp_key,
++				    list);
++		dl_list_del(&erp->list);
++		dl_list_add_tail(&first->erp_keys, &erp->list);
++	}
++#endif /* CONFIG_ERP */
++
++#ifndef CONFIG_NO_RADIUS
++	if (first->radius && first->radius == old->radius)
++		radius_client_handler_data_replace(first->radius, RADIUS_AUTH,
++						   ieee802_1x_receive_auth,
++						   old, first);
++#endif /* CONFIG_NO_RADIUS */
++
++	wpa_printf(MSG_DEBUG,
++		   "MLD: IEEE 802.1X state machine moved to the first BSS %s",
++		   first->conf->iface);
++}
++#endif /* CONFIG_IEEE80211BE */
++
++
+ void ieee802_1x_deinit(struct hostapd_data *hapd)
+ {
+ #ifdef CONFIG_IEEE80211BE
+@@ -2694,6 +2742,11 @@ void ieee802_1x_deinit(struct hostapd_da
+ 	eloop_cancel_timeout(ieee802_1x_rekey, hapd, NULL);
+ #endif /* CONFIG_WEP */
+ 
++#ifndef CONFIG_NO_RADIUS
++	radius_client_unregister(hapd->radius, RADIUS_AUTH,
++				 ieee802_1x_receive_auth, hapd);
++#endif /* CONFIG_NO_RADIUS */
++
+ 	if (hapd->driver && hapd->drv_priv &&
+ 	    (hapd->conf->ieee802_1x || hapd->conf->wpa))
+ 		hostapd_set_drv_ieee8021x(hapd, hapd->conf->iface, 0);
+--- a/src/ap/ieee802_1x.h
++++ b/src/ap/ieee802_1x.h
+@@ -29,6 +29,8 @@ void ieee802_1x_set_sta_authorized(struc
+ void ieee802_1x_dump_state(FILE *f, const char *prefix, struct sta_info *sta);
+ int ieee802_1x_init(struct hostapd_data *hapd);
+ void ieee802_1x_erp_flush(struct hostapd_data *hapd);
++void ieee802_1x_mld_first_bss_moved(struct hostapd_data *old,
++				    struct hostapd_data *first);
+ void ieee802_1x_deinit(struct hostapd_data *hapd);
+ int ieee802_1x_tx_status(struct hostapd_data *hapd, struct sta_info *sta,
+ 			 const u8 *buf, size_t len, int ack);
+--- a/src/eap_server/eap_sim_db.c
++++ b/src/eap_server/eap_sim_db.c
+@@ -861,6 +861,18 @@ void eap_sim_db_deinit(void *priv)
+ }
+ 
+ 
++/**
++ * eap_sim_db_set_ctx - Change the context pointer for get_complete_cb
++ * @data: Private data pointer from eap_sim_db_init()
++ * @ctx: Context pointer to use from now on
++ */
++void eap_sim_db_set_ctx(struct eap_sim_db_data *data, void *ctx)
++{
++	if (data)
++		data->ctx = ctx;
++}
++
++
+ static int eap_sim_db_send(struct eap_sim_db_data *data, const char *msg,
+ 			   size_t len)
+ {
+--- a/src/eap_server/eap_sim_db.h
++++ b/src/eap_server/eap_sim_db.h
+@@ -37,6 +37,8 @@ eap_sim_db_init(const char *config, unsi
+ 
+ void eap_sim_db_deinit(void *priv);
+ 
++void eap_sim_db_set_ctx(struct eap_sim_db_data *data, void *ctx);
++
+ int eap_sim_db_get_gsm_triplets(struct eap_sim_db_data *data,
+ 				const char *username, int max_chal,
+ 				u8 *_rand, u8 *kc, u8 *sres,
+--- a/src/radius/radius_client.c
++++ b/src/radius/radius_client.c
+@@ -324,6 +324,102 @@ int radius_client_register(struct radius
+ 
+ 
+ /**
++ * radius_client_unregister - Unregister a RADIUS client RX handler
++ * @radius: RADIUS client context from radius_client_init()
++ * @msg_type: RADIUS client type (RADIUS_AUTH or RADIUS_ACCT)
++ * @handler: Handler registered with radius_client_register()
++ * @data: Context pointer the handler was registered with
++ *
++ * This function is used by a user of a RADIUS client that is shared with
++ * other users and stays in use after this user is deinitialised.
++ */
++void radius_client_unregister(struct radius_client_data *radius,
++			      RadiusType msg_type,
++			      RadiusRxResult (*handler)(struct radius_msg *msg,
++							struct radius_msg *req,
++							const u8 *shared_secret,
++							size_t shared_secret_len,
++							void *data),
++			      void *data)
++{
++	struct radius_rx_handler *handlers;
++	size_t *num, i;
++
++	if (!radius)
++		return;
++
++	if (msg_type == RADIUS_ACCT) {
++		handlers = radius->acct_handlers;
++		num = &radius->num_acct_handlers;
++	} else {
++		handlers = radius->auth_handlers;
++		num = &radius->num_auth_handlers;
++	}
++
++	for (i = 0; i < *num; i++) {
++		if (handlers[i].handler != handler || handlers[i].data != data)
++			continue;
++		os_memmove(&handlers[i], &handlers[i + 1],
++			   (*num - i - 1) * sizeof(*handlers));
++		(*num)--;
++		return;
++	}
++}
++
++
++/**
++ * radius_client_handler_data_replace - Move a RX handler to another context
++ * @radius: RADIUS client context from radius_client_init()
++ * @msg_type: RADIUS client type (RADIUS_AUTH or RADIUS_ACCT)
++ * @handler: Handler registered with radius_client_register()
++ * @old_data: Context pointer the handler was registered with
++ * @new_data: Context pointer to use from now on
++ */
++void radius_client_handler_data_replace(struct radius_client_data *radius,
++					RadiusType msg_type,
++					RadiusRxResult (*handler)
++					(struct radius_msg *msg,
++					 struct radius_msg *req,
++					 const u8 *shared_secret,
++					 size_t shared_secret_len,
++					 void *data),
++					void *old_data, void *new_data)
++{
++	struct radius_rx_handler *handlers;
++	size_t num, i;
++
++	if (!radius)
++		return;
++
++	if (msg_type == RADIUS_ACCT) {
++		handlers = radius->acct_handlers;
++		num = radius->num_acct_handlers;
++	} else {
++		handlers = radius->auth_handlers;
++		num = radius->num_auth_handlers;
++	}
++
++	for (i = 0; i < num; i++) {
++		if (handlers[i].handler == handler &&
++		    handlers[i].data == old_data)
++			handlers[i].data = new_data;
++	}
++}
++
++
++/**
++ * radius_client_set_ctx - Change the context pointer for hostapd_logger()
++ * @radius: RADIUS client context from radius_client_init()
++ * @ctx: Context pointer to use from now on
++ */
++void radius_client_set_ctx(struct radius_client_data *radius, void *ctx)
++{
++	if (radius)
++		radius->ctx = ctx;
++}
++
++
++/**
+  * radius_client_set_interim_erro_cb - Register an interim acct error callback
+  * @radius: RADIUS client context from radius_client_init()
+  * @addr: Station address from the failed message
+@@ -342,6 +438,24 @@ void radius_client_set_interim_error_cb(
+ }
+ 
+ 
++/**
++ * radius_client_unset_interim_error_cb - Remove an interim acct error callback
++ * @radius: RADIUS client context from radius_client_init()
++ * @ctx: Context pointer the callback was registered with
++ *
++ * The callback is removed only if it was registered with @ctx.
++ */
++void radius_client_unset_interim_error_cb(struct radius_client_data *radius,
++					  void *ctx)
++{
++	if (!radius || radius->interim_error_cb_ctx != ctx)
++		return;
++
++	radius->interim_error_cb = NULL;
++	radius->interim_error_cb_ctx = NULL;
++}
++
++
+ /*
+  * Returns >0 if message queue was flushed (i.e., the message that triggered
+  * the error is not available anymore)
+--- a/src/radius/radius_client.h
++++ b/src/radius/radius_client.h
+@@ -271,9 +271,29 @@ int radius_client_register(struct radius
+ 			    const u8 *shared_secret, size_t shared_secret_len,
+ 			    void *data),
+ 			   void *data);
++void radius_client_unregister(struct radius_client_data *radius,
++			      RadiusType msg_type,
++			      RadiusRxResult (*handler)(struct radius_msg *msg,
++							struct radius_msg *req,
++							const u8 *shared_secret,
++							size_t shared_secret_len,
++							void *data),
++			      void *data);
++void radius_client_handler_data_replace(struct radius_client_data *radius,
++					RadiusType msg_type,
++					RadiusRxResult (*handler)
++					(struct radius_msg *msg,
++					 struct radius_msg *req,
++					 const u8 *shared_secret,
++					 size_t shared_secret_len,
++					 void *data),
++					void *old_data, void *new_data);
++void radius_client_set_ctx(struct radius_client_data *radius, void *ctx);
+ void radius_client_set_interim_error_cb(struct radius_client_data *radius,
+ 					void (*cb)(const u8 *addr, void *ctx),
+ 					void *ctx);
++void radius_client_unset_interim_error_cb(struct radius_client_data *radius,
++					  void *ctx);
+ int radius_client_get_local_addr(struct radius_client_data *radius,
+ 				 struct hostapd_ip_addr * addr);
+ int radius_client_send(struct radius_client_data *radius,
+--- a/src/radius/radius_das.c
++++ b/src/radius/radius_das.c
+@@ -689,3 +689,10 @@ void radius_das_deinit(struct radius_das
+ 	os_free(das->shared_secret);
+ 	os_free(das);
+ }
++
++
++void radius_das_set_ctx(struct radius_das_data *das, void *ctx)
++{
++	if (das)
++		das->ctx = ctx;
++}
+--- a/src/radius/radius_das.h
++++ b/src/radius/radius_das.h
+@@ -61,4 +61,6 @@ radius_das_init(struct radius_das_conf *
+ 
+ void radius_das_deinit(struct radius_das_data *data);
+ 
++void radius_das_set_ctx(struct radius_das_data *data, void *ctx);
++
+ #endif /* RADIUS_DAS_H */
+--- a/src/radius/radius_server.c
++++ b/src/radius/radius_server.c
+@@ -162,7 +162,7 @@ struct radius_server_data {
+ 	 */
+ 	int num_sess;
+ 
+-	const char *erp_domain;
++	char *erp_domain;
+ 
+ 	struct dl_list erp_keys; /* struct eap_server_erp_key */
+ 
+@@ -2089,7 +2089,11 @@ radius_server_init(struct radius_server_
+ 			  conf->eap_req_id_text_len);
+ 		data->eap_req_id_text_len = conf->eap_req_id_text_len;
+ 	}
+-	data->erp_domain = conf->erp_domain;
++	if (conf->erp_domain) {
++		data->erp_domain = os_strdup(conf->erp_domain);
++		if (!data->erp_domain)
++			goto fail;
++	}
+ 
+ 	if (conf->t_c_server_url) {
+ 		data->t_c_server_url = os_strdup(conf->t_c_server_url);
+@@ -2181,6 +2185,18 @@ void radius_server_erp_flush(struct radi
+ 
+ 
+ /**
++ * radius_server_set_conf_ctx - Change the context pointer for callbacks
++ * @data: RADIUS server context from radius_server_init()
++ * @conf_ctx: Context pointer to use from now on
++ */
++void radius_server_set_conf_ctx(struct radius_server_data *data, void *conf_ctx)
++{
++	if (data)
++		data->conf_ctx = conf_ctx;
++}
++
++
++/**
+  * radius_server_deinit - Deinitialize RADIUS server
+  * @data: RADIUS server context from radius_server_init()
+  */
+@@ -2206,6 +2222,7 @@ void radius_server_deinit(struct radius_
+ 	os_free(data->dump_msk_file);
+ #endif /* CONFIG_RADIUS_TEST */
+ 	os_free(data->t_c_server_url);
++	os_free(data->erp_domain);
+ 
+ #ifdef CONFIG_SQLITE
+ 	if (data->db)
+--- a/src/radius/radius_server.h
++++ b/src/radius/radius_server.h
+@@ -129,6 +129,7 @@ struct radius_server_data *
+ radius_server_init(struct radius_server_conf *conf);
+ 
+ void radius_server_erp_flush(struct radius_server_data *data);
++void radius_server_set_conf_ctx(struct radius_server_data *data, void *conf_ctx);
+ void radius_server_deinit(struct radius_server_data *data);
+ 
+ int radius_server_get_mib(struct radius_server_data *data, char *buf,
