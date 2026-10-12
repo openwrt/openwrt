@@ -1,0 +1,67 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Łukasz Buśko <lukasz.busko@guns4hire.cc>
+Date: Sat, 17 Oct 2026 09:10:00 +0200
+Subject: [PATCH] dt-bindings: PCI: mediatek: add MT7988 with its PEXTP
+ reference clock
+
+The MT7988 PCIe hosts are described with the mediatek,mt7986-pcie
+fallback, whose schema pins the host to exactly four clocks. Each MT7988
+port drives its SerDes through a per-port transceiver PHY fed by the
+topckgen pextp_p<n>_sel mux, so the MT7988 hosts need a fifth clock and
+a compatible of their own to describe it.
+
+Add mediatek,mt7988-pcie, paired with the mediatek,mt8192-pcie fallback
+the driver already matches, and pin its clocks to the four infracfg
+clocks plus pextp_clk.
+
+---
+ .../devicetree/bindings/pci/mediatek-pcie-gen3.yaml | 31 +++++++++++++++++++
+ 1 file changed, 31 insertions(+)
+
+--- a/Documentation/devicetree/bindings/pci/mediatek-pcie-gen3.yaml
++++ b/Documentation/devicetree/bindings/pci/mediatek-pcie-gen3.yaml
+@@ -49,6 +49,7 @@
+       - items:
+           - enum:
+               - mediatek,mt7986-pcie
++              - mediatek,mt7988-pcie
+               - mediatek,mt8188-pcie
+               - mediatek,mt8195-pcie
+           - const: mediatek,mt8192-pcie
+@@ -268,6 +269,36 @@
+ 
+         resets:
+           minItems: 1
++          maxItems: 2
++
++        reset-names:
++          minItems: 1
++          maxItems: 2
++
++        mediatek,pbus-csr: false
++
++  - if:
++      properties:
++        compatible:
++          contains:
++            enum:
++              - mediatek,mt7988-pcie
++    then:
++      properties:
++        clocks:
++          minItems: 5
++          maxItems: 5
++
++        clock-names:
++          items:
++            - const: pl_250m
++            - const: tl_26m
++            - const: peri_26m
++            - const: top_133m
++            - const: pextp_clk
++
++        resets:
++          minItems: 1
+           maxItems: 2
+ 
+         reset-names:
