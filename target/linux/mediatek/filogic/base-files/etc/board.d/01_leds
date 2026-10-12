@@ -158,6 +158,11 @@ huasifei,wh3000)
 huasifei,wh3000r-nand)
 	ucidef_set_led_netdev "wan" "WAN" "blue:wan-online" "wan" "link"
 	;;
+huastlink,hc-g80|\
+huastlink,hc-g80-ubootmod)
+	ucidef_set_led_netdev "wan" "WAN" "green:wan" "eth1" "link tx rx"
+	ucidef_set_led_netdev "lan" "NET" "green:lan" "br-lan" "link tx rx"
+	;;
 iptime,ax3000q)
 	ucidef_set_led_netdev "wan" "WAN" "amber:wan" "wan" "link tx rx"
 	;;
