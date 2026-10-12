@@ -10,5 +10,6 @@ For a device provisioned with a private root key, supply a private directory
 containing the same filenames via TFA_KEY_DIR. The root key's public X and Y
 coordinates must have no leading zero byte because of ERR-LAN969X-001.
 
-Fixed keys alone do not make the FIP reproducible: cert_create still generates
-random certificate serials and ECDSA signatures and uses the current time.
+The package passes SOURCE_DATE_EPOCH to cert_create for stable certificate
+validity and serials. ECDSA signatures are still random, so the FIP is not
+yet reproducible.
