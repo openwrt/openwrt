@@ -1,0 +1,164 @@
+From 39abfddbc3a938b2659db9ee6b269cde440e9b51 Mon Sep 17 00:00:00 2001
+From: Mohammed Afifi <i.mafifi17@gmail.com>
+Date: Sun, 11 Oct 2026 11:59:37 +0200
+Subject: [PATCH v5] wifi: rtw88: usb: Download the reserved page synchronously
+
+In AP mode the reserved page (which contains the beacon) is downloaded
+to the chip by rtw_fw_write_data_rsvd_page(). That function writes the
+data via rtw_hci_write_data_rsvd_page() and then immediately polls the
+hardware BCN_VALID bit to confirm the firmware accepted the beacon.
+
+On USB, rtw_usb_write_data_rsvd_page() ends up in rtw_usb_write_port(),
+which submits the URB with usb_submit_urb() and returns as soon as the
+transfer is queued. The completion callback only frees the skb. As a
+result the BCN_VALID poll can run while the beacon is still in flight
+on the bus, and the poll times out even though the download itself is
+fine.
+
+This shows up as:
+
+  rtw_8822bu: error beacon valid
+  rtw_8822bu: failed to download drv rsvd page
+
+The failure is intermittent because the poll retries sometimes cover
+the transfer time. It occurs in bursts when something triggers repeated
+beacon updates, such as stations associating and disassociating.
+
+Fix this by making rtw_usb_write_data() wait for the URB to complete
+when it's called from rtw_usb_write_data_rsvd_page(). The new
+rtw_usb_write_port_sync() waits the same way usb_bulk_msg() does: if
+the URB doesn't complete within 5 seconds, it is killed before the
+function returns, so the completion handler can't run after that.
+usb_bulk_msg() itself is not used because it can't set URB_ZERO_PACKET,
+which rtw_usb_write_port() sets for every bulk out transfer.
+
+Only the reserved page path is made synchronous; the normal data TX
+path and the H2C path are left untouched, so throughput is unaffected.
+The chips with a 3081 WCPU also download their firmware through
+rtw_usb_write_data_rsvd_page(), so those chunks are now sent
+synchronously as well.
+
+The reserved page download runs in process context under rtwdev->mutex,
+so sleeping there is safe.
+
+Closes: https://github.com/lwfinger/rtw88/issues/451
+Signed-off-by: Mohammed Afifi <i.mafifi17@gmail.com>
+Signed-off-by: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Co-developed-by: Josef Schlehofer <pepe.schlehofer@gmail.com>
+Signed-off-by: Josef Schlehofer <pepe.schlehofer@gmail.com>
+Acked-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://lore.kernel.org/linux-wireless/20261013033737.6761-1-pepe.schlehofer@gmail.com/
+---
+ drivers/net/wireless/realtek/rtw88/usb.c | 66 +++++++++++++++++++++---
+ 1 file changed, 58 insertions(+), 8 deletions(-)
+
+--- a/drivers/net/wireless/realtek/rtw88/usb.c
++++ b/drivers/net/wireless/realtek/rtw88/usb.c
+@@ -389,6 +389,51 @@ static int rtw_usb_write_port(struct rtw
+ 	return ret;
+ }
+ 
++static void rtw_usb_write_port_sync_complete(struct urb *urb)
++{
++	complete(urb->context);
++}
++
++static int rtw_usb_write_port_sync(struct rtw_dev *rtwdev, u8 qsel,
++				   struct sk_buff *skb)
++{
++	struct rtw_usb *rtwusb = rtw_get_usb_priv(rtwdev);
++	struct usb_device *usbd = rtwusb->udev;
++	int ep = qsel_to_ep(rtwusb, qsel);
++	DECLARE_COMPLETION_ONSTACK(done);
++	unsigned int pipe;
++	struct urb *urb;
++	int ret;
++
++	if (ep < 0)
++		return ep;
++
++	pipe = usb_sndbulkpipe(usbd, rtwusb->out_ep[ep]);
++	urb = usb_alloc_urb(0, GFP_KERNEL);
++	if (!urb)
++		return -ENOMEM;
++
++	usb_fill_bulk_urb(urb, usbd, pipe, skb->data, skb->len,
++			  rtw_usb_write_port_sync_complete, &done);
++	urb->transfer_flags |= URB_ZERO_PACKET;
++	ret = usb_submit_urb(urb, GFP_KERNEL);
++	if (ret)
++		goto out;
++
++	if (wait_for_completion_timeout(&done, secs_to_jiffies(5))) {
++		ret = urb->status;
++	} else {
++		/* timed out; usb_kill_urb() waits for the completion handler */
++		usb_kill_urb(urb);
++		ret = urb->status == -ENOENT ? -ETIMEDOUT : urb->status;
++	}
++
++out:
++	usb_free_urb(urb);
++
++	return ret;
++}
++
+ static bool rtw_usb_tx_agg_skb(struct rtw_usb *rtwusb, struct sk_buff_head *list)
+ {
+ 	struct rtw_dev *rtwdev = rtwusb->rtwdev;
+@@ -501,13 +546,13 @@ static void rtw_usb_write_port_complete(
+ 
+ static int rtw_usb_write_data(struct rtw_dev *rtwdev,
+ 			      struct rtw_tx_pkt_info *pkt_info,
+-			      u8 *buf)
++			      u8 *buf, bool sync)
+ {
+ 	const struct rtw_chip_info *chip = rtwdev->chip;
+ 	struct sk_buff *skb;
+ 	unsigned int size;
+ 	u8 qsel;
+-	int ret = 0;
++	int ret;
+ 
+ 	size = pkt_info->tx_pkt_size;
+ 	qsel = pkt_info->qsel;
+@@ -523,12 +568,16 @@ static int rtw_usb_write_data(struct rtw
+ 	rtw_tx_fill_tx_desc(rtwdev, pkt_info, skb);
+ 	rtw_tx_fill_txdesc_checksum(rtwdev, pkt_info, skb->data);
+ 
+-	ret = rtw_usb_write_port(rtwdev, qsel, skb,
+-				 rtw_usb_write_port_complete, skb);
+-	if (unlikely(ret)) {
++	if (sync)
++		ret = rtw_usb_write_port_sync(rtwdev, qsel, skb);
++	else
++		ret = rtw_usb_write_port(rtwdev, qsel, skb,
++					 rtw_usb_write_port_complete, skb);
++	if (unlikely(ret))
+ 		rtw_err(rtwdev, "failed to do USB write, ret=%d\n", ret);
++
++	if (ret || sync)
+ 		dev_kfree_skb_any(skb);
+-	}
+ 
+ 	return ret;
+ }
+@@ -544,7 +593,8 @@ static int rtw_usb_write_data_rsvd_page(
+ 	pkt_info.offset = chip->tx_pkt_desc_sz;
+ 	pkt_info.ls = true;
+ 
+-	return rtw_usb_write_data(rtwdev, &pkt_info, buf);
++	/* the caller checks BCN_VALID right after this, so wait for the URB */
++	return rtw_usb_write_data(rtwdev, &pkt_info, buf, true);
+ }
+ 
+ static int rtw_usb_write_data_h2c(struct rtw_dev *rtwdev, u8 *buf, u32 size)
+@@ -554,7 +604,7 @@ static int rtw_usb_write_data_h2c(struct
+ 	pkt_info.tx_pkt_size = size;
+ 	pkt_info.qsel = TX_DESC_QSEL_H2C;
+ 
+-	return rtw_usb_write_data(rtwdev, &pkt_info, buf);
++	return rtw_usb_write_data(rtwdev, &pkt_info, buf, false);
+ }
+ 
+ static u8 rtw_usb_tx_queue_mapping_to_qsel(struct sk_buff *skb)
