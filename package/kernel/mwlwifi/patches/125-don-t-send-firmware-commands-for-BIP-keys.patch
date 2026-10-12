@@ -1,0 +1,43 @@
+From 44be978ed7163bc2e560460ddb285efb7fc2b8b1 Mon Sep 17 00:00:00 2001
+From: Anders Kaseorg <andersk@mit.edu>
+Date: Thu, 29 Oct 2026 18:54:24 +0000
+Subject: don't send firmware commands for BIP keys
+
+mac80211 does BIP in software, but mwl_mac80211_set_key() still sent
+UPDATE_ENCRYPTION with ENCR_TYPE_DISABLE for the BSS address when the
+IGTK was installed, right after the GTK had set it to AES. Only then
+did mwl_fwcmd_encryption_set_cmd_info() return 1 to fall back to
+software.
+
+With PMF, which WPA3 requires, this breaks group addressed traffic
+from the AP: on a WRT3200ACM (88W8964), a wireless client's ARP
+request for another wireless client is never answered (also reported
+for the 88W8864 in #362).
+
+Return 1 for AES_CMAC before talking to the firmware at all.
+
+Based on neheb/mwlwifi commit cd43e4f by Rosen Penev.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Signed-off-by: Anders Kaseorg <andersk@mit.edu>
+---
+ mac80211.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+--- a/mac80211.c
++++ b/mac80211.c
+@@ -522,6 +522,14 @@ static int mwl_mac80211_set_key(struct i
+ 	mwl_vif = mwl_dev_get_vif(vif);
+ 	addr = sta ? sta->addr : vif->addr;
+ 
++	/* mac80211 does BIP in software. Don't tell the firmware anything
++	 * about the IGTK: an UPDATE_ENCRYPTION with ENCR_TYPE_DISABLE for
++	 * the BSS address would override the encryption type set for the
++	 * GTK, and break group addressed traffic.
++	 */
++	if (key->cipher == WLAN_CIPHER_SUITE_AES_CMAC)
++		return 1;
++
+ 	if (cmd_param == SET_KEY) {
+ 		if ((key->cipher == WLAN_CIPHER_SUITE_WEP40) ||
+ 		    (key->cipher == WLAN_CIPHER_SUITE_WEP104)) {
