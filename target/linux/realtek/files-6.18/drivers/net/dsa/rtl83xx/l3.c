@@ -179,25 +179,26 @@ static void otto_l3_838x_route_write(struct otto_l3_ctrl *ctrl, int idx, struct 
 	otto_table_write(RTL8380_TBL_ROUTING, idx, &data);
 }
 
-static void otto_l3_839x_nexthop_read(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt)
-{
-	u32 data[2];
-	u64 v;
-
-	otto_table_read(RTL8390_TBL_ROUTING, idx, &data);
-
-	v = data[0];
-	v <<= 32;
-	v |= data[1];
-	rt->switch_mac_id = (v >> 12) & 0xf;
-	rt->nh.gw = v >> 16;
-}
-
 /* A ROUTING row holds a gateway's MAC and the switch MAC entry to route with
  * (SW_MAC_IDX). The routes through one gateway out of one device share a row,
  * the way RTL930x routes share a DMAC entry: the L2 entry of the gateway names
  * one row, whichever route claimed it.
  */
+static int otto_l3_839x_get_dmac(struct otto_l3_ctrl *ctrl, u32 idx,
+				 struct otto_l3_dmac *dmac)
+{
+	u32 data[2];
+	u64 v;
+	int err;
+
+	err = otto_table_read(RTL8390_TBL_ROUTING, idx, &data);
+	v = (u64)data[0] << 32 | data[1];
+	dmac->mac = v >> 16;
+	dmac->smac_id = (v >> 12) & 0xf;
+
+	return err;
+}
+
 static int otto_l3_839x_set_dmac(struct otto_l3_ctrl *ctrl, u32 idx,
 				 const struct otto_l3_dmac *dmac)
 {
@@ -401,6 +402,15 @@ static int otto_l3_930x_set_egress_mac(struct otto_l3_ctrl *ctrl, u32 idx, u64 m
 
 	dev_dbg(ctrl->dev, "setting index %d to %016llx\n", idx, mac);
 	return otto_table_write(RTL9300_TBL_L3_EGR_INTF_MAC, idx, &data);
+}
+
+/* The egress interface of a next hop names the source MAC, not its DMAC */
+static int otto_l3_930x_get_dmac(struct otto_l3_ctrl *ctrl, u32 idx,
+				 struct otto_l3_dmac *dmac)
+{
+	dmac->smac_id = 0;
+
+	return otto_l3_930x_get_egress_mac(ctrl, idx, &dmac->mac);
 }
 
 static int otto_l3_930x_set_dmac(struct otto_l3_ctrl *ctrl, u32 idx,
@@ -4393,7 +4403,7 @@ static int otto_l3_839x_route_show(struct seq_file *m, void *v)
 	for (int idx = 0; idx < rows; idx++) {
 		char dst[INET6_ADDRSTRLEN + sizeof("/128")];
 		struct rtl838x_l2_entry e = {};
-		struct otto_l3_route rt = {};
+		struct otto_l3_dmac dmac;
 		struct pie_rule pr;
 		u8 gw[ETH_ALEN];
 
@@ -4425,10 +4435,11 @@ static int otto_l3_839x_route_show(struct seq_file *m, void *v)
 		} else {
 			seq_printf(m, " %d %2d %4d %pM %4d", e.valid, e.next_hop, e.port, e.mac, e.rvid);
 
-			if (e.next_hop) {
-				otto_l3_839x_nexthop_read(ctrl, e.nh_route_id, &rt);
-				u64_to_ether_addr(rt.nh.gw, gw);
-				seq_printf(m, " %5d %pM %6d", e.nh_route_id, gw, rt.switch_mac_id);
+			if (e.next_hop && ctrl->cfg->get_dmac(ctrl, e.nh_route_id, &dmac)) {
+				seq_printf(m, " %5d %17s %6s", e.nh_route_id, "-", "-");
+			} else if (e.next_hop) {
+				u64_to_ether_addr(dmac.mac, gw);
+				seq_printf(m, " %5d %pM %6d", e.nh_route_id, gw, dmac.smac_id);
 			} else {
 				seq_puts(m, "     -                 -      -");
 			}
@@ -4517,6 +4528,7 @@ const struct otto_l3_config otto_l3_838x_cfg = {
 
 const struct otto_l3_config otto_l3_839x_cfg = {
 	.smac_per_route = true,
+	.get_dmac = otto_l3_839x_get_dmac,
 	.set_dmac = otto_l3_839x_set_dmac,
 	.get_smac = otto_l3_839x_get_smac,
 	.set_smac = otto_l3_839x_set_smac,
@@ -4532,6 +4544,7 @@ const struct otto_l3_config otto_l3_930x_cfg = {
 	.get_egress_intf = otto_l3_930x_get_egress_intf,
 	.get_smac = otto_l3_930x_get_smac,
 	.set_smac = otto_l3_930x_set_smac,
+	.get_dmac = otto_l3_930x_get_dmac,
 	.set_dmac = otto_l3_930x_set_dmac,
 	.set_egress_intf = otto_l3_930x_set_egress_intf,
 	.host_route_write = otto_l3_930x_host_route_write,
