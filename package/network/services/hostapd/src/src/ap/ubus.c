@@ -485,6 +485,9 @@ hostapd_bss_get_features(struct ubus_context *ctx, struct ubus_object *obj,
 	blob_buf_init(&b, 0);
 	blobmsg_add_u8(&b, "ht_supported", ht_supported(hapd->iface->hw_features));
 	blobmsg_add_u8(&b, "vht_supported", vht_supported(hapd->iface->hw_features));
+#ifdef CONFIG_WPS
+	blobmsg_add_u8(&b, "wps_link_start", 1);
+#endif /* CONFIG_WPS */
 	ubus_send_reply(ctx, req, b.head);
 
 	return 0;
@@ -854,13 +857,52 @@ hostapd_bss_list_bans(struct ubus_context *ctx, struct ubus_object *obj,
 }
 
 #ifdef CONFIG_WPS
+enum {
+	WPS_START_LINK_ID,
+	__WPS_START_MAX
+};
+
+static const struct blobmsg_policy wps_start_policy[__WPS_START_MAX] = {
+	[WPS_START_LINK_ID] = { "link_id", BLOBMSG_TYPE_INT32 },
+};
+
+/* Each link of an AP MLD is a BSS of its own, and with wps_independent the
+ * push button reaches the BSS it is pressed on alone. */
+static struct hostapd_data *
+hostapd_ubus_link_hapd(struct ubus_object *obj, int link_id)
+{
+#ifdef CONFIG_IEEE80211BE
+	struct hostapd_ubus_mld *umld;
+	unsigned int i;
+
+	if (!hostapd_ubus_obj_state(obj)->mld)
+		return NULL;
+
+	umld = container_of(hostapd_ubus_obj_state(obj), struct hostapd_ubus_mld, ubus);
+	for (i = 0; i < MAX_NUM_MLD_LINKS; i++)
+		if (umld->links[i] && umld->links[i]->mld_link_id == link_id)
+			return umld->links[i];
+#endif /* CONFIG_IEEE80211BE */
+
+	return NULL;
+}
+
 static int
 hostapd_bss_wps_start(struct ubus_context *ctx, struct ubus_object *obj,
 			struct ubus_request_data *req, const char *method,
 			struct blob_attr *msg)
 {
-	int rc;
+	struct blob_attr *tb[__WPS_START_MAX];
 	struct hostapd_data *hapd = get_hapd_from_object(obj);
+	int rc;
+
+	blobmsg_parse(wps_start_policy, __WPS_START_MAX, tb, blob_data(msg), blob_len(msg));
+
+	if (tb[WPS_START_LINK_ID]) {
+		hapd = hostapd_ubus_link_hapd(obj, blobmsg_get_u32(tb[WPS_START_LINK_ID]));
+		if (!hapd)
+			return UBUS_STATUS_NOT_FOUND;
+	}
 
 	rc = hostapd_wps_button_pushed(hapd, NULL);
 
@@ -2198,7 +2240,7 @@ static const struct ubus_method bss_methods[] = {
 #endif
 	UBUS_METHOD_NOARG("list_bans", hostapd_bss_list_bans),
 #ifdef CONFIG_WPS
-	UBUS_METHOD_NOARG("wps_start", hostapd_bss_wps_start),
+	UBUS_METHOD("wps_start", hostapd_bss_wps_start, wps_start_policy),
 	UBUS_METHOD_NOARG("wps_status", hostapd_bss_wps_status),
 	UBUS_METHOD_NOARG("wps_cancel", hostapd_bss_wps_cancel),
 #endif
