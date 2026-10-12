@@ -2008,6 +2008,47 @@ static void otto_l3_route_put_intf(struct otto_l3_ctrl *ctrl, struct otto_l3_rou
 	otto_l3_intf_put(ctrl, r->nh.if_id);
 }
 
+/* A main route inside the local prefix @info names */
+static bool otto_l3_route_inside(struct otto_l3_route *r, struct fib_notifier_info *info)
+{
+	struct fib_entry_notifier_info *fen;
+	struct fib6_info *rt;
+
+	if (r->tb_id == RT_TABLE_LOCAL)
+		return false;
+
+	if (info->family == AF_INET) {
+		fen = container_of(info, struct fib_entry_notifier_info, info);
+		return r->attr.type == ROUTE_TYPE_IP4UC && r->prefix_len > fen->dst_len &&
+		       !((r->dst_ip ^ fen->dst) & inet_make_mask(fen->dst_len));
+	}
+
+	rt = container_of(info, struct fib6_entry_notifier_info, info)->rt;
+	return r->attr.type == ROUTE_TYPE_IP6UC && r->prefix_len > rt->fib6_dst.plen &&
+	       ipv6_prefix_equal(&r->dst_ip6, &rt->fib6_dst.addr, rt->fib6_dst.plen);
+}
+
+/* One resolve brings back every route through a gateway. With @info, only the
+ * routes inside that local prefix are looked at.
+ */
+static bool otto_l3_gw_seen(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r,
+			    struct fib_notifier_info *info)
+{
+	struct otto_l3_route *q;
+
+	list_for_each_entry(q, &ctrl->routes_list, list) {
+		if (q == r)
+			return false;
+		if (info && !otto_l3_route_inside(q, info))
+			continue;
+		if (q->attr.type == r->attr.type && q->gw_ifindex == r->gw_ifindex &&
+		    ipv6_addr_equal(&q->gw_ip, &r->gw_ip))
+			return true;
+	}
+
+	return false;
+}
+
 struct otto_l3_egress_work {
 	struct work_struct work;
 	struct otto_l3_ctrl *ctrl;
@@ -3149,47 +3190,6 @@ static bool otto_l3_rules_allow(int family)
 	}
 
 	return main_seen;
-}
-
-/* A main route inside the local prefix @info names */
-static bool otto_l3_route_inside(struct otto_l3_route *r, struct fib_notifier_info *info)
-{
-	struct fib_entry_notifier_info *fen;
-	struct fib6_info *rt;
-
-	if (r->tb_id == RT_TABLE_LOCAL)
-		return false;
-
-	if (info->family == AF_INET) {
-		fen = container_of(info, struct fib_entry_notifier_info, info);
-		return r->attr.type == ROUTE_TYPE_IP4UC && r->prefix_len > fen->dst_len &&
-		       !((r->dst_ip ^ fen->dst) & inet_make_mask(fen->dst_len));
-	}
-
-	rt = container_of(info, struct fib6_entry_notifier_info, info)->rt;
-	return r->attr.type == ROUTE_TYPE_IP6UC && r->prefix_len > rt->fib6_dst.plen &&
-	       ipv6_prefix_equal(&r->dst_ip6, &rt->fib6_dst.addr, rt->fib6_dst.plen);
-}
-
-/* One resolve brings back every route through a gateway. With @info, only the
- * routes inside that local prefix are looked at.
- */
-static bool otto_l3_gw_seen(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r,
-			    struct fib_notifier_info *info)
-{
-	struct otto_l3_route *q;
-
-	list_for_each_entry(q, &ctrl->routes_list, list) {
-		if (q == r)
-			return false;
-		if (info && !otto_l3_route_inside(q, info))
-			continue;
-		if (q->attr.type == r->attr.type && q->gw_ifindex == r->gw_ifindex &&
-		    ipv6_addr_equal(&q->gw_ip, &r->gw_ip))
-			return true;
-	}
-
-	return false;
 }
 
 static void otto_l3_rules_check(struct otto_l3_ctrl *ctrl, int family)
