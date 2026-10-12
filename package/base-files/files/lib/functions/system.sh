@@ -249,6 +249,24 @@ macaddr_add() {
 	echo $oui:$nic
 }
 
+macaddr_generate_from_cpuid_rockchip() {
+	local nvmem="$1"
+	local offset="$2"
+	local cpuid cpuid_hash mac
+
+	# read 16 bytes at the supplied OTP offset; make the CPUID lowercase hex.
+	cpuid=$(dd if="$nvmem" bs=1 skip="$offset" count=16 2>/dev/null | hexdump -v -e '16/1 "%02x"')
+	[ "${#cpuid}" -eq 32 ] || return 1
+	case "$cpuid" in *[!0-9a-f]*) return 1 ;; esac
+
+	cpuid_hash=$(printf '%s' "$cpuid" | sha256sum)
+	cpuid_hash=${cpuid_hash%% *}
+
+	mac=$(printf '%s' "$cpuid_hash" | cut -c1-12 | sed -e 's/\(.\{2\}\)/\1:/g' -e 's/:$//')
+
+	echo "$(macaddr_setbit_la "$(macaddr_unsetbit_mc "$mac")")"
+}
+
 macaddr_generate_from_mmc_cid() {
 	local mmc_dev=$1
 
