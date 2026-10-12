@@ -17,6 +17,7 @@ libubus.guard(ex_handler);
 hostapd.data.config = {};
 hostapd.data.pending_config = {};
 hostapd.data.apsta_freq = {};
+hostapd.data.apsta_stopped = {};
 
 hostapd.data.file_fields = {
 	vlan_file: true,
@@ -413,6 +414,7 @@ function iface_restart(phydev, config, old_config)
 	if (pending)
 		pending.abort();
 
+	delete hostapd.data.apsta_stopped[phy];
 	hostapd.remove_iface(phy);
 
 	let prev_bssid = {};
@@ -844,6 +846,16 @@ function iface_macaddr_move(phydev, config, old_config, bss_list_cfg)
 	return true;
 }
 
+// A failed start leaves the interface DISABLED until a restart. apsta_state
+// can also leave it DISABLED, while it waits for its station.
+function iface_start_failed(name)
+{
+	let iface = hostapd.interfaces[name];
+
+	return !!iface && iface.state() == "DISABLED" &&
+	       !hostapd.data.apsta_stopped[name];
+}
+
 function iface_reload_config(name, phydev, config, old_config)
 {
 	let phy = phydev.name;
@@ -860,14 +872,21 @@ function iface_reload_config(name, phydev, config, old_config)
 		break;
 	}
 
-	// A configuration whose restart failed has no interface. Only a
-	// running or pending one is up to date.
+	// A configuration whose restart failed has no interface, and one whose
+	// start failed has a disabled one. Only a running or pending one is up
+	// to date.
 	let prev_macaddr_bss = bss_list_prev_macaddr(config.bss, old_config.bss);
-	if (is_equal(old_config.bss, prev_macaddr_bss) &&
-	    (hostapd.interfaces[name] || hostapd.data.pending_config[name])) {
-		for (let i = 0; i < length(config.bss); i++)
-			config.bss[i].bssid = prev_macaddr_bss[i].bssid;
-		return true;
+	if (is_equal(old_config.bss, prev_macaddr_bss)) {
+		if (!hostapd.data.pending_config[name] && iface_start_failed(name)) {
+			hostapd.printf(`Interface for phy ${name} failed to start`);
+			return false;
+		}
+
+		if (hostapd.interfaces[name] || hostapd.data.pending_config[name]) {
+			for (let i = 0; i < length(config.bss); i++)
+				config.bss[i].bssid = prev_macaddr_bss[i].bssid;
+			return true;
+		}
 	}
 
 	if (hostapd.data.pending_config[name])
@@ -1207,6 +1226,7 @@ function iface_config_remove(name, old_config)
 		pending.abort();
 
 	delete hostapd.data.apsta_freq[name];
+	delete hostapd.data.apsta_stopped[name];
 	hostapd.remove_iface(name);
 	return iface_remove(old_config);
 }
@@ -1815,6 +1835,7 @@ let main_obj = {
 
 			if (!req.args.up) {
 				delete hostapd.data.apsta_freq[phy];
+				hostapd.data.apsta_stopped[phy] = true;
 				iface.stop();
 				return 0;
 			}
@@ -1830,8 +1851,10 @@ let main_obj = {
 				 */
 				delete hostapd.data.apsta_freq[phy];
 
-				if (iface_channel_switch(phy, config))
+				if (iface_channel_switch(phy, config)) {
+					delete hostapd.data.apsta_stopped[phy];
 					return 0;
+				}
 
 				let phydev = phy_open(config.phy, config.radio_idx);
 				if (phydev)
@@ -1851,6 +1874,8 @@ let main_obj = {
 					let ret = iface.switch_channel(freq_info);
 					if (!ret)
 						return libubus.STATUS_UNKNOWN_ERROR;
+
+					delete hostapd.data.apsta_stopped[phy];
 					return 0;
 				}
 			}
@@ -1859,6 +1884,7 @@ let main_obj = {
 			if (!ret)
 				return libubus.STATUS_UNKNOWN_ERROR;
 
+			delete hostapd.data.apsta_stopped[phy];
 			return 0;
 		}
 	},
