@@ -130,10 +130,11 @@ list() {
 	local len
 
 	config_get len "$CONFIG_SECTION" "${varname}_LENGTH" 0
-	[ $len = 0 ] && append CONFIG_LIST_STATE "${CONFIG_SECTION}_${varname}"
 	len=$((len + 1))
 	config_set "$CONFIG_SECTION" "${varname}_ITEM$len" "$value"
 	config_set "$CONFIG_SECTION" "${varname}_LENGTH" "$len"
+	list_contains CONFIG_OPTION_STATE "${CONFIG_SECTION}_${varname}" ||
+		append CONFIG_OPTION_STATE "${CONFIG_SECTION}_${varname}"
 	append "CONFIG_${CONFIG_SECTION}_${varname}" "$value" "$LIST_SEP"
 	[ -n "$NO_CALLBACK" ] || list_cb "$varname" "$*"
 }
@@ -180,6 +181,8 @@ config_set() {
 	local option="$2"
 	local value="$3"
 
+	list_contains CONFIG_OPTION_STATE "${section}_${option}" ||
+		append CONFIG_OPTION_STATE "${section}_${option}"
 	export ${NO_EXPORT:+-n} "CONFIG_${section}_${option}=${value}"
 }
 
