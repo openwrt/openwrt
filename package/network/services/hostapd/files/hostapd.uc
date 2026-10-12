@@ -616,14 +616,103 @@ function bss_find_existing(config, prev_config, prev_hash)
 	return -1;
 }
 
-// Each value is the one hostapd uses without the line. hostapd reads
-// multi_ap_vlanid only when it builds a (Re)Association Response, so an
-// associated station keeps the old value until it associates again.
+function bss_ctrl_ok(bss, ifname, cmd)
+{
+	let ret = bss.ctrl(cmd);
+	if (ret == "OK")
+		return true;
+
+	hostapd.printf(`Could not run ${split(cmd, " ")[0]} on bss ${ifname}: ${ret}`);
+	return false;
+}
+
+let qos_map_ctrl;
+
+// SET_QOS_MAP_SET and SEND_QOS_MAP_CONF exist only with CONFIG_INTERWORKING.
+// SEND_QOS_MAP_CONF without an address fails and sends no frame.
+function bss_qos_map_ctrl(bss)
+{
+	qos_map_ctrl ??= bss.ctrl("SEND_QOS_MAP_CONF ") == "FAIL";
+
+	return qos_map_ctrl;
+}
+
+const STA_ADDR_RE = /^([0-9a-f]{2}:){5}[0-9a-f]{2}$/;
+const STA_ASSOC_RE = /^flags=.*\[ASSOC\]/;
+const STA_EXT_CAPAB_RE = /^ext_capab=([0-9a-f]+)/;
+
+// hostapd sends a QoS Map Configure frame only to a station that set the QoS
+// Map bit (bit 32) of its Extended Capabilities.
+function sta_qos_map_capable(reply)
+{
+	let capab = match(reply, STA_EXT_CAPAB_RE)?.[1];
+
+	return !!match(reply, STA_ASSOC_RE) && length(capab) >= 10 &&
+	       !!(hex(substr(capab, 8, 2)) & 1);
+}
+
+function bss_qos_map_stations(bss)
+{
+	let list = [];
+	let reply = bss.ctrl("STA-FIRST");
+
+	while (reply) {
+		let addr = split(reply, "\n")[0];
+		if (!match(addr, STA_ADDR_RE))
+			break;
+
+		if (sta_qos_map_capable(reply))
+			push(list, addr);
+		reply = bss.ctrl(`STA-NEXT ${addr}`);
+	}
+
+	return list;
+}
+
+// An empty SET_QOS_MAP_SET clears the map (patch 781). No frame removes a map
+// from a station, so it keeps the old one until it associates again.
+function bss_qos_map_apply(bss, ifname, value, prev)
+{
+	if (!bss_ctrl_ok(bss, ifname, `SET_QOS_MAP_SET ${value ?? ""}`))
+		return false;
+
+	if (!value != !prev && !bss_ctrl_ok(bss, ifname, "UPDATE_BEACON"))
+		return false;
+
+	if (!value)
+		return true;
+
+	for (let addr in bss_qos_map_stations(bss)) {
+		let ret = bss.ctrl(`SEND_QOS_MAP_CONF ${addr}`);
+		if (ret != "OK")
+			hostapd.printf(`Could not send the QoS Map of bss ${ifname} to ${addr}: ${ret}`);
+	}
+
+	return true;
+}
+
+// hostapd reads multi_ap_vlanid only when it builds a (Re)Association
+// Response, so an associated station keeps the old value until it associates
+// again.
 const BSS_INPLACE_FIELDS = {
-	multi_ap_vlanid: "0",
+	multi_ap_vlanid: {
+		apply: (bss, ifname, value) =>
+			bss_ctrl_ok(bss, ifname, `SET multi_ap_vlanid ${value ?? "0"}`),
+	},
+	qos_map_set: {
+		supported: bss_qos_map_ctrl,
+		apply: bss_qos_map_apply,
+	},
 };
 
-function bss_inplace_changes(config, prev, changed)
+function bss_inplace_field(bss, key)
+{
+	let field = BSS_INPLACE_FIELDS[key];
+
+	return !!field && (!field.supported || field.supported(bss));
+}
+
+function bss_inplace_changes(config, prev, bss, changed)
 {
 	let data = remove_file_fields(config.data);
 	let prev_data = remove_file_fields(prev.data);
@@ -634,11 +723,11 @@ function bss_inplace_changes(config, prev, changed)
 		if (index(data, line) >= 0)
 			continue;
 
-		let key = split(line, "=", 2)[0];
-		push(changed, key);
-		if (!(key in BSS_INPLACE_FIELDS))
+		let val = split(line, "=", 2);
+		push(changed, val[0]);
+		if (!bss_inplace_field(bss, val[0]))
 			inplace = false;
-		changes[key] ??= BSS_INPLACE_FIELDS[key];
+		changes[val[0]] = { value: null, prev: val[1] };
 	}
 
 	for (let line in data) {
@@ -647,17 +736,18 @@ function bss_inplace_changes(config, prev, changed)
 
 		let val = split(line, "=", 2);
 		push(changed, val[0]);
-		if (!(val[0] in BSS_INPLACE_FIELDS))
+		if (!bss_inplace_field(bss, val[0]))
 			inplace = false;
-		changes[val[0]] = val[1];
+		changes[val[0]] ??= { prev: null };
+		changes[val[0]].value = val[1];
 	}
 
 	return (inplace && length(changes)) ? changes : null;
 }
 
 // A new BSS drops its stations, so the log names what keeps a bss from an
-// update in place.
-function bss_find_inplace(config, prev_config, prev_hash)
+// update in place. Any bss of the hostapd process answers for `supported`.
+function bss_find_inplace(config, prev_config, prev_hash, bss)
 {
 	for (let i = 0; i < length(prev_config.bss); i++) {
 		let prev = prev_config.bss[i];
@@ -666,7 +756,7 @@ function bss_find_inplace(config, prev_config, prev_hash)
 			continue;
 
 		let changed = [];
-		let changes = bss_inplace_changes(config, prev, changed);
+		let changes = bss_inplace_changes(config, prev, bss, changed);
 		if (!changes) {
 			let reason = length(changed) ? join(", ", uniq(changed)) :
 				"line order or ifindex of a named interface";
@@ -683,13 +773,9 @@ function bss_find_inplace(config, prev_config, prev_hash)
 
 function bss_inplace_apply(bss, ifname, changes)
 {
-	for (let key, val in changes) {
-		let ret = bss.ctrl(`SET ${key} ${val}`);
-		if (ret != "OK") {
-			hostapd.printf(`Could not set ${key} of bss ${ifname}: ${ret}`);
+	for (let key, change in changes)
+		if (!BSS_INPLACE_FIELDS[key].apply(bss, ifname, change.value, change.prev))
 			return false;
-		}
-	}
 
 	hostapd.printf(`Updated ${join(", ", keys(changes))} of bss ${ifname} in place`);
 	return true;
@@ -1017,7 +1103,7 @@ function iface_reload_config(name, phydev, config, old_config)
 		let fullmac_first = !i && phy_is_fullmac(phydev.phy);
 		if (pass) {
 			let found = !fullmac_first &&
-				bss_find_inplace(config.bss[i], old_config, prev_bss_hash);
+				bss_find_inplace(config.bss[i], old_config, prev_bss_hash, first_bss);
 			if (found) {
 				prev = found.index;
 				inplace[i] = found.changes;
