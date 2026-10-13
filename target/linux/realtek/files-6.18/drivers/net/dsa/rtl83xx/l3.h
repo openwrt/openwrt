@@ -147,6 +147,12 @@ struct otto_l3_config {
 	void (*set_nexthop)(struct otto_l3_ctrl *ctrl, int idx, u16 dmac_id, u16 interface);
 	int (*route_lookup_hw)(struct otto_l3_ctrl *ctrl, struct otto_l3_route *rt);
 	int (*route_rows_move)(struct otto_l3_ctrl *ctrl, int dst, int src, int count);
+	/* First prefix table row of the IPv6 entry in a slot, the slots counted
+	 * from the first IPv6 entry downwards, and the slot of an entry's first
+	 * row. Every family that moves prefix rows has them.
+	 */
+	int (*v6_slot_to_row)(struct otto_l3_ctrl *ctrl, int slot);
+	int (*v6_row_to_slot)(struct otto_l3_ctrl *ctrl, int row);
 	void (*route_read)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt);
 	void (*route_write)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt);
 	int (*setup)(struct otto_l3_ctrl *ctrl);

@@ -306,6 +306,17 @@ static int otto_l3_839x_route_rows_move(struct otto_l3_ctrl *ctrl, int dst, int 
 	return 0;
 }
 
+/* An RTL839x PIE rule matches a whole IPv6 destination, in any row */
+static int otto_l3_839x_v6_slot_to_row(struct otto_l3_ctrl *ctrl, int slot)
+{
+	return MAX_ROUTES - 1 - slot;
+}
+
+static int otto_l3_839x_v6_row_to_slot(struct otto_l3_ctrl *ctrl, int row)
+{
+	return MAX_ROUTES - 1 - row;
+}
+
 static void otto_l3_839x_setup_port_macs(struct otto_l3_ctrl *ctrl)
 {
 	struct rtl838x_switch_priv *priv = ctrl->priv;
@@ -882,6 +893,27 @@ static int otto_l3_930x_route_rows_move(struct otto_l3_ctrl *ctrl, int dst, int 
 	return err;
 }
 
+/* On RTL930x an IPv6 prefix route is matched over three consecutive rows, and
+ * only rows 0 and 3 of every eight can hold the first of the three, so two rows
+ * in every eight start no route at all. The last row one may start at is four
+ * below the last row of the table. The IPv6 rows therefore run downwards from
+ * there against the IPv4 rows, which run upwards from FIRST_PREFIX_ROW (Realtek
+ * GPL SDK, dal_longan_l3.c: L3_ROUTE_TBL_USED, IS_L3_ROUTE_IPV6_IDX_VALID and
+ * L3_ROUTE_IPV6_IDX_MAX).
+ */
+#define V6_PREFIX_ROWS		3
+#define FIRST_V6_ROW		(MAX_ROUTES - 1 - 4)
+
+static int otto_l3_930x_v6_slot_to_row(struct otto_l3_ctrl *ctrl, int slot)
+{
+	return FIRST_V6_ROW - (slot / 2) * 8 - (slot % 2) * V6_PREFIX_ROWS;
+}
+
+static int otto_l3_930x_v6_row_to_slot(struct otto_l3_ctrl *ctrl, int row)
+{
+	return 2 * (FIRST_V6_ROW / 8 - row / 8) + (row % 8 ? 0 : 1);
+}
+
 /* Write a prefix route into the routing table CAM at position idx
  * Currently only IPv4 and IPv6 unicast routes are supported
  */
@@ -1363,36 +1395,19 @@ static int otto_l3_alloc_egress_intf(struct otto_l3_ctrl *ctrl, u64 mac, int vla
 /* Row 0 is not used, see otto_l3_930x_setup(). */
 #define FIRST_PREFIX_ROW	1
 
-/* On RTL930x an IPv6 prefix route is matched over three consecutive rows, and
- * only rows 0 and 3 of every eight can hold the first of the three, so two rows
- * in every eight start no route at all. The last row one may start at is four
- * below the last row of the table. The IPv6 rows therefore run downwards from
- * there against the IPv4 rows, which run upwards from FIRST_PREFIX_ROW (Realtek
- * GPL SDK, dal_longan_l3.c: L3_ROUTE_TBL_USED, IS_L3_ROUTE_IPV6_IDX_VALID and
- * L3_ROUTE_IPV6_IDX_MAX).
- */
-#define V6_PREFIX_ROWS		3
 /* One access at an entry's first row reads or writes the whole entry, so a
  * move copies that row alone
  */
 #define V6_MOVE_ROWS		1
-#define FIRST_V6_ROW		(MAX_ROUTES - 1 - 4)
 
-/* An RTL839x PIE rule matches a whole IPv6 destination, in any row */
 static int otto_l3_v6_row(struct otto_l3_ctrl *ctrl, int slot)
 {
-	if (!ctrl->cfg->use_l3_tables)
-		return MAX_ROUTES - 1 - slot;
-
-	return FIRST_V6_ROW - (slot / 2) * 8 - (slot % 2) * V6_PREFIX_ROWS;
+	return ctrl->cfg->v6_slot_to_row(ctrl, slot);
 }
 
 static int otto_l3_v6_slot(struct otto_l3_ctrl *ctrl, int row)
 {
-	if (!ctrl->cfg->use_l3_tables)
-		return MAX_ROUTES - 1 - row;
-
-	return 2 * (FIRST_V6_ROW / 8 - row / 8) + (row % 8 ? 0 : 1);
+	return ctrl->cfg->v6_row_to_slot(ctrl, row);
 }
 
 /* The programmed prefix routes of one address family sit in one dense block,
@@ -4541,6 +4556,8 @@ const struct otto_l3_config otto_l3_839x_cfg = {
 	.get_smac = otto_l3_839x_get_smac,
 	.set_smac = otto_l3_839x_set_smac,
 	.route_rows_move = otto_l3_839x_route_rows_move,
+	.v6_slot_to_row = otto_l3_839x_v6_slot_to_row,
+	.v6_row_to_slot = otto_l3_839x_v6_row_to_slot,
 	.route_write = otto_l3_839x_route_write,
 	.setup = otto_l3_839x_setup,
 	.dbgfs_init = otto_l3_839x_dbgfs_init,
@@ -4562,6 +4579,8 @@ const struct otto_l3_config otto_l3_930x_cfg = {
 	.set_nexthop = otto_l3_930x_set_nexthop,
 	.route_lookup_hw = otto_l3_930x_route_lookup_hw,
 	.route_rows_move = otto_l3_930x_route_rows_move,
+	.v6_slot_to_row = otto_l3_930x_v6_slot_to_row,
+	.v6_row_to_slot = otto_l3_930x_v6_row_to_slot,
 	.route_read = otto_l3_930x_route_read,
 	.route_write = otto_l3_930x_route_write,
 	.setup = otto_l3_930x_setup,
