@@ -1917,33 +1917,58 @@ define Device/elecom_wrc-x3000gs3
 endef
 TARGET_DEVICES += elecom_wrc-x3000gs3
 
-define Device/elecom_wrc-x6000gsd
+define Device/elecom_wrc-x6000-common
   DEVICE_VENDOR := ELECOM
-  DEVICE_MODEL := WRC-X6000GSD
-  DEVICE_DTS := mt7986b-elecom-wrc-x6000gsd
   DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware
+  KERNEL_IN_UBI := 1
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+endef
+
+define Device/elecom_wrc-x6000gsd
+  DEVICE_MODEL := WRC-X6000GSD
   DEVICE_DTS_LOADADDR := 0x47000000
+  DEVICE_DTS := mt7986b-elecom-wrc-x6000gsd
   IMAGES += factory.bin
   IMAGE/factory.bin := sysupgrade-tar | mstc-header 5.04(XZR.0)b90 YTC@ | \
 	elecom-product-header WRC-X6000GS
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
-  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware
+  $(call Device/elecom_wrc-x6000-common)
 endef
 TARGET_DEVICES += elecom_wrc-x6000gsd
 
 define Device/elecom_wrc-x6000qs
-  DEVICE_VENDOR := ELECOM
   DEVICE_MODEL := WRC-X6000QS
-  DEVICE_DTS := mt7986b-elecom-wrc-x6000qs
-  DEVICE_DTS_DIR := ../dts
   DEVICE_DTS_LOADADDR := 0x47000000
+  DEVICE_DTS := mt7986b-elecom-wrc-x6000qs
   IMAGES += factory.bin
   IMAGE/factory.bin := sysupgrade-tar | mstc-header 5.04(XZL.0)b90 COMD | \
 	elecom-product-header WRC-X6000QS
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
-  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware
+  $(call Device/elecom_wrc-x6000-common)
 endef
 TARGET_DEVICES += elecom_wrc-x6000qs
+
+define Device/elecom_wrc-x6000qs-ubi
+  DEVICE_MODEL := WRC-X6000QS
+  DEVICE_VARIANT := (UBI)
+  DEVICE_DTS := mt7986b-elecom-wrc-x6000qs-ubi
+  UBOOTENV_IN_UBI := 1
+  IMAGES := sysupgrade.itb
+  KERNEL_INITRAMFS_SUFFIX := -recovery.itb
+  KERNEL := kernel-bin | lzma
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+    fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  IMAGE/sysupgrade.itb := append-kernel | \
+    fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | append-metadata
+  ARTIFACTS := preloader.bin bl31-uboot.fip
+  ARTIFACT/preloader.bin := mt7986-bl2 spim-nand-ubi-1m-ddr3
+  ARTIFACT/bl31-uboot.fip := mt7986-bl31-uboot elecom_wrc-x6000qs-ubi
+  $(call Device/elecom_wrc-x6000-common)
+endef
+TARGET_DEVICES += elecom_wrc-x6000qs-ubi
 
 define Device/gatonetworks_gdsp
   DEVICE_VENDOR := GatoNetworks

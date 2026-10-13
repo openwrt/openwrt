@@ -6,3 +6,13 @@
 	model = "ELECOM WRC-X6000QS";
 	compatible = "elecom,wrc-x6000qs", "mediatek,mt7986b";
 };
+
+&spi_nand {
+	mediatek,nmbm;
+	mediatek,bmt-max-ratio = <1>;
+	mediatek,bmt-max-reserved-blocks = <64>;	/* up to 64 * 128 KiB = 8 MiB of spare NAND blocks reserved */
+	mediatek,bmt-remap-range =
+	<0x0000000 0x5a0000>,  /*     BL2 - Fwheader  (5.625 MiB)	*/
+	<0x37a0000 0x3b40000>, /*  Config - Fwheader2 (3.625 MiB)	*/
+	<0x6d40000 0x7580000>; /* Config2 - Backup    (8.25 MiB) 	*/
+};

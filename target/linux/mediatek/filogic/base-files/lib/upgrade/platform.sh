@@ -186,6 +186,7 @@ platform_do_upgrade() {
 	cudy,wr3000s-v1-ubootmod|\
 	cudy,wr3000h-v1-ubootmod|\
 	cudy,wr3000p-v1-ubootmod|\
+	elecom,wrc-x6000qs-ubi|\
 	gatonetworks,gdsp|\
 	glinet,gl-be10000-ubootmod|\
 	globitel,bt-r320|\
