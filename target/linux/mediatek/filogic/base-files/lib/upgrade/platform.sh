@@ -287,6 +287,7 @@ platform_do_upgrade() {
 	asus,rt-ax52|\
 	asus,rt-ax57m|\
 	asus,rt-ax59u|\
+	asus,rt-be59|\
 	asus,tuf-ax4200|\
 	asus,tuf-ax4200q|\
 	asus,tuf-ax6000|\
@@ -565,6 +566,7 @@ platform_pre_upgrade() {
 	asus,rt-ax52|\
 	asus,rt-ax57m|\
 	asus,rt-ax59u|\
+	asus,rt-be59|\
 	asus,tuf-ax4200|\
 	asus,tuf-ax4200q|\
 	asus,tuf-ax6000|\
