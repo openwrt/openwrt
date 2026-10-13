@@ -335,6 +335,10 @@ enum rtpcs_page {
 #define  RTL931X_MAIN_AMP		GENMASK(9, 5)
 #define  RTL931X_PRE_AMP		GENMASK(4, 0)
 
+#define ANA_SPD_REG13			0x0d
+#define  RTL931X_RXEQ_LEQ_MANUAL_EN	BIT(7)
+#define  RTL931X_RXEQ_LEQ_INIT		GENMASK(6, 2)
+
 #define ANA_SPD_REG15			0x0f
 #define  RTL930X_LOAD_IN_INIT_VTH	BIT(13)
 #define  RTL930X_LOAD_IN_INIT_TAP(t)	BIT((t) + 7)
@@ -355,6 +359,16 @@ enum rtpcs_page {
 #define  RTL931X_RX_DEBUG_SEL		GENMASK(11, 10)
 #define   RTL931X_RX_DEBUG_SEL_LEQ	0x01
 #define   RTL931X_RX_DEBUG_SEL_COEF	0x02
+
+#define ANA_SPD_REG22			0x16
+#define  RTL930X_RXEQ_LEQ_INIT_GRAY	GENMASK(14, 10)
+
+#define ANA_SPD_REG23			0x17
+#define  RTL930X_RXEQ_LEQ_HOLD		BIT(7)
+#define  RTL930X_RXEQ_LEQ_OFFSET		GENMASK(6, 2)
+
+#define ANA_SPD_REG24			0x18
+#define  RTL930X_RXEQ_LEQ_MANUAL_EN	BIT(15)
 
 /*
  * TAP0 in ANA_SPD_REG28, even only
@@ -390,6 +404,10 @@ enum rtpcs_page {
 #define   RTL930X_RX_COEF_SEL_VTH	0x0c
 #define   RTL930X_RX_COEF_SEL_TAP_ODD(t)	((t) + 5)
 #define   RTL930X_RX_COEF_SEL_TAP_EVEN(t)	(t)
+
+#define ANA_SPD_EXT_REG18		0x12
+#define  RTL931X_VTHN_INIT		GENMASK(11, 8)
+#define  RTL931X_VTHP_INIT		GENMASK(7, 4)
 
 #define ANA_SPD_EXT_REG24		0x18
 #define  RTL930X_TX_IMPEDANCE		GENMASK(15, 12)
@@ -2421,7 +2439,9 @@ static int rtpcs_930x_sds_rxeq_leq_set_adapt(struct rtpcs_serdes *sds, bool enab
 {
 	int ret;
 
-	ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x18, 15, 15, enable ? 0x0 : 0x1);
+	ret = rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG24,
+				   RTL930X_RXEQ_LEQ_MANUAL_EN,
+				   enable ? 0 : RTL930X_RXEQ_LEQ_MANUAL_EN);
 	if (!ret && enable)
 		msleep(100);
 
@@ -2433,11 +2453,15 @@ static int rtpcs_930x_sds_rxeq_leq_set_coef(struct rtpcs_serdes *sds, unsigned i
 {
 	int ret;
 
-	ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x17, 6, 2, offset);
+	ret = rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG23,
+				   RTL930X_RXEQ_LEQ_OFFSET,
+				   FIELD_PREP(RTL930X_RXEQ_LEQ_OFFSET, offset));
 	if (ret < 0)
 		return ret;
 
-	return rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x16, 14, 10, leq_gray);
+	return rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG22,
+				    RTL930X_RXEQ_LEQ_INIT_GRAY,
+				    FIELD_PREP(RTL930X_RXEQ_LEQ_INIT_GRAY, leq_gray));
 }
 
 static int rtpcs_930x_sds_rxeq_leq_get_coef(struct rtpcs_serdes *sds)
@@ -2456,9 +2480,11 @@ static int rtpcs_930x_sds_rxeq_leq_get_coef(struct rtpcs_serdes *sds)
 	gray = FIELD_GET(RTL93XX_RXEQ_COEF_LEQ_GRAY, ret);
 	bin = rtpcs_gray_to_binary(gray);
 
-	manual = rtpcs_sds_read_bits(sds, PAGE_ANA_10G, 0x18, 15, 15);
-	if (manual < 0)
-		return manual;
+	ret = rtpcs_sds_read(sds, PAGE_ANA_10G, ANA_SPD_REG24);
+	if (ret < 0)
+		return ret;
+
+	manual = FIELD_GET(RTL930X_RXEQ_LEQ_MANUAL_EN, ret);
 
 	dev_dbg(sds->ctrl->dev, "SerDes %u: LEQ gray: %d, LEQ bin: %d, LEQ manual: %u\n",
 		sds->id, gray, bin, manual);
@@ -2467,7 +2493,8 @@ static int rtpcs_930x_sds_rxeq_leq_get_coef(struct rtpcs_serdes *sds)
 
 static int rtpcs_930x_sds_rxeq_vth_set_adapt(struct rtpcs_serdes *sds, bool enable)
 {
-	return rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x0f, 13, 13, enable ? 0 : 1);
+	return rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG15, RTL930X_LOAD_IN_INIT_VTH,
+				    enable ? 0 : RTL930X_LOAD_IN_INIT_VTH);
 }
 
 static int rtpcs_930x_sds_rxeq_vth_set_value(struct rtpcs_serdes *sds, unsigned int vth_p,
@@ -2521,9 +2548,9 @@ static int rtpcs_930x_sds_rxeq_tap_set_adapt(struct rtpcs_serdes *sds, unsigned 
 	if (tap_id > 4)
 		return -EINVAL;
 
-	/* ##LOAD_IN_INIT[0], [11:7] = TAP0-TAP4 */
-	return rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xf, tap_id + 7, tap_id + 7,
-				    enable ? 0x0 : 0x1);
+	return rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG15,
+				    RTL930X_LOAD_IN_INIT_TAP(tap_id),
+				    enable ? 0 : RTL930X_LOAD_IN_INIT_TAP(tap_id));
 }
 
 static int rtpcs_930x_sds_rxeq_tap_set_value(struct rtpcs_serdes *sds, unsigned int tap_id,
@@ -2546,7 +2573,7 @@ static int rtpcs_930x_sds_rxeq_tap_set_value(struct rtpcs_serdes *sds, unsigned 
 			ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x09, 11, 6,
 						   abs(tap_even) & GENMASK(4, 0));
 		if (!ret)
-			ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x12, 5, 0,
+			ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, ANA_SPD_EXT_REG18, 5, 0,
 						   abs(tap_odd) & GENMASK(4, 0));
 		break;
 	case 2:
@@ -2650,7 +2677,7 @@ static void rtpcs_930x_sds_rxcal_init(struct rtpcs_serdes *sds, enum rtpcs_sds_m
 	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x04, 7, 6, 0x03);
 
 	/* LEQ (Linear Equalization) */
-	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x16, 14, 8, 0x00); /* FILTER_OUT */
+	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, ANA_SPD_REG22, 14, 8, 0x00); /* FILTER_OUT */
 
 	/* DFE (Decision Feedback Equalizer) TAPs */
 	rtpcs_930x_sds_rxeq_tap_set_value(sds, 0, tap0_init_val, 0);
@@ -2667,7 +2694,8 @@ static void rtpcs_930x_sds_rxcal_init(struct rtpcs_serdes *sds, enum rtpcs_sds_m
 	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x0f, 13, 7, 0x7f); /* load_in_init */
 
 	/* disable LEQ training, enable DFE clock */
-	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x17,  7,  2, 0x00); /* [7] = EQHOLD, [6:2] = EQOUT */
+	rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG23,
+			     RTL930X_RXEQ_LEQ_HOLD | RTL930X_RXEQ_LEQ_OFFSET, 0);
 	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x0c,  8,  8, 0x00); /* MAXHOLD_EN */
 	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x0b,  4,  4, 0x01); /* dfe_adapt_eqen */
 	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x12, 14, 14, 0x00); /* start_timer_en */
@@ -2682,11 +2710,12 @@ static void rtpcs_930x_sds_rxcal_init(struct rtpcs_serdes *sds, enum rtpcs_sds_m
 	if (hw_mode == RTPCS_SDS_MODE_10GBASER) {
 		rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x03, 13, 8, 0x1f);
 		rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x00, 13, 13, 0x01);
-		rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x16, 14, 8, 0x00); /* FILTER_OUT */
+		/* FILTER_OUT */
+		rtpcs_sds_write_bits(sds, PAGE_ANA_10G, ANA_SPD_REG22, 14, 8, 0x00);
 	}
 
 	/* REG0_LEQ_DC_GAIN, 0x01 for short DACs */
-	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x16, 3, 2, 0x02); /* LEQ_DC_GAIN */
+	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, ANA_SPD_REG22, 3, 2, 0x02); /* LEQ_DC_GAIN */
 	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x0f, 6, 0, 0x5f); /* dfe_adapt_en */
 	rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x05, 7, 2, 0x1f); /* dfe_adapt_en2 */
 	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x19, 9, 5, 0x1f); /* leq_min */
@@ -2765,7 +2794,7 @@ static void rtpcs_930x_sds_rxcal_leq_adapt_lock(struct rtpcs_serdes *sds)
 	/* 1.3.1: release LEQ auto-adapt, let it settle from zero */
 	if (!direct_serdes)
 		rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xc, 8, 8, 0x0);
-	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x17, 7, 7, 0x0);
+	rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG23, RTL930X_RXEQ_LEQ_HOLD, 0);
 	rtpcs_930x_sds_rxeq_leq_set_adapt(sds, true);
 
 	/* 1.3.2: sample the auto-adapted LEQ value 10 times over ~100ms */
@@ -2805,7 +2834,8 @@ static void rtpcs_930x_sds_rxcal_leq_adapt_lock(struct rtpcs_serdes *sds)
 
 	/* lock LEQ at corrected value for direct SerDes; PHY-attached stays in auto-adapt */
 	if (direct_serdes) {
-		rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x17, 7, 7, 0x1);
+		rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG23, RTL930X_RXEQ_LEQ_HOLD,
+				     RTL930X_RXEQ_LEQ_HOLD);
 		rtpcs_930x_sds_rxeq_leq_set_adapt(sds, false);
 		rtpcs_930x_sds_rxeq_leq_set_coef(sds, avg10, 0);
 	}
@@ -3450,12 +3480,16 @@ static int rtpcs_931x_sds_rxeq_set_debug(struct rtpcs_serdes *sds, unsigned int 
 
 static int rtpcs_931x_sds_rxeq_leq_set_adapt(struct rtpcs_serdes *sds, bool enable)
 {
-	return rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xd, 7, 7, enable ? 0x0 : 0x1);
+	return rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG13,
+				    RTL931X_RXEQ_LEQ_MANUAL_EN,
+				    enable ? 0 : RTL931X_RXEQ_LEQ_MANUAL_EN);
 }
 
 static int rtpcs_931x_sds_rxeq_leq_set_coef(struct rtpcs_serdes *sds, unsigned int gain)
 {
-	return rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xd, 6, 2, gain);
+	return rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG13,
+				    RTL931X_RXEQ_LEQ_INIT,
+				    FIELD_PREP(RTL931X_RXEQ_LEQ_INIT, gain));
 }
 
 static int rtpcs_931x_sds_rxeq_leq_get_coef(struct rtpcs_serdes *sds)
@@ -3528,9 +3562,12 @@ static int rtpcs_931x_sds_rxeq_tap_set_adapt(struct rtpcs_serdes *sds, unsigned 
 static int rtpcs_931x_sds_rxeq_vth_set_value(struct rtpcs_serdes *sds, unsigned int vth_p,
 					     unsigned int vth_n)
 {
-	return rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x12, 11, 4,
-				    FIELD_PREP(RTL931X_RXEQ_COEF_VTHP, vth_p) |
-				    FIELD_PREP(RTL931X_RXEQ_COEF_VTHN, vth_n));
+	u16 val;
+
+	val = FIELD_PREP(RTL931X_VTHP_INIT, vth_p) | FIELD_PREP(RTL931X_VTHN_INIT, vth_n);
+
+	return rtpcs_sds_write_mask(sds, PAGE_ANA_10G_EXT, ANA_SPD_EXT_REG18,
+				    RTL931X_VTHP_INIT | RTL931X_VTHN_INIT, val);
 }
 
 static int rtpcs_931x_sds_rxeq_vth_set_adapt(struct rtpcs_serdes *sds, bool enable)
@@ -3584,7 +3621,7 @@ static int rtpcs_931x_sds_reset_leq_dfe(struct rtpcs_serdes *sds)
 	rtpcs_931x_sds_rxeq_leq_set_adapt(sds, false);
 	rtpcs_931x_sds_rxeq_leq_set_coef(sds, 0);
 	/* bits [1:0] are undocumented but part of the known-good reset value */
-	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xd, 1, 0, 0x0);
+	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, ANA_SPD_REG13, 1, 0, 0x0);
 
 	/*
 	 * Force manual mode before writing values - not after like the vendor
@@ -3605,8 +3642,8 @@ static int rtpcs_931x_sds_reset_leq_dfe(struct rtpcs_serdes *sds)
 
 	rtpcs_931x_sds_rxeq_vth_set_value(sds, 0xa, 0xa);
 	/* bits [15:12] and [3:0] are undocumented but part of the known-good reset value */
-	rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x12, 15, 12, 0x0);
-	rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x12, 3, 0, 0xa);
+	rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, ANA_SPD_EXT_REG18, 15, 12, 0x0);
+	rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, ANA_SPD_EXT_REG18, 3, 0, 0xa);
 
 	return 0;
 }
@@ -3753,8 +3790,8 @@ static void rtpcs_931x_sds_rxcal_leq_adapt(struct rtpcs_serdes *sds)
 	dev_dbg(sds->ctrl->dev, "SerDes %u PHY-attached RX calibration...\n", sds->id);
 
 	rtpcs_931x_sds_rxeq_leq_set_coef(sds, 0);
-	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xd, 1, 0, 0x0);   /* undocumented */
-	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xd, 13, 13, 0x0); /* undocumented */
+	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, ANA_SPD_REG13, 1, 0, 0x0);   /* undocumented */
+	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, ANA_SPD_REG13, 13, 13, 0x0); /* undocumented */
 
 	rtpcs_931x_sds_rxeq_dfe_disable_5g(sds);
 
