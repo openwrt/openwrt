@@ -57,7 +57,7 @@ enum rtldsa_flood_type {
 #define RTL931X_MC_PMASK_ALL_PORTS (GENMASK_ULL(RTL931X_CPU_PORT, 0))
 #define MC_PMASK_ALL_PORTS_IDX	((MAX_MC_PMASKS - 1))
 
-#define RTLDSA_L2_L3_REFCOUNT_MAX	0x7f
+#define RTLDSA_L2_L3_REFCOUNT_MAX	0x7fff
 
 /* Returns the L2 ageing time in seconds. */
 int otto_l2_get_ageing_time(struct rtl838x_switch_priv *priv);
