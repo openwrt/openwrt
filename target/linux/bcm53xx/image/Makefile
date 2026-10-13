@@ -471,6 +471,7 @@ TARGET_DEVICES += meraki_mx64-a0
 define Device/meraki_mx65
   $(call Device/meraki_mx6x)
   DEVICE_MODEL := MX65
+  DEVICE_PACKAGES += kmod-dsa-qca8k
   DEVICE_DTS_CONFIG := config@3
   DEVICE_DTS := bcm958625-meraki-mx65
 endef

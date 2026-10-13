@@ -44,7 +44,7 @@
 &mdio0 {
 	status = "okay";
 
-	phy0: ethernet-switch@10 {
+	ethernet-switch@10 {
 		compatible = "qca,ar8327";
 		reg = <0x10>;
 
@@ -64,7 +64,6 @@
 &eth0 {
 	status = "okay";
 
-	phy-handle = <&phy0>;
 	phy-mode = "rgmii";
 
 	nvmem-cells = <&macaddr_art_0>;

@@ -4420,6 +4420,10 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 		}
 	}
 
+	/* Forced SGMII links cannot report PCS changes through MAC link IRQs. */
+	pcs->poll = interface == PHY_INTERFACE_MODE_SGMII &&
+		    neg_mode == PHYLINK_PCS_NEG_INBAND_ENABLED;
+
 	return changed;
 }
 

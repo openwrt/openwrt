@@ -5,6 +5,8 @@
 #include <linux/debugfs.h>
 #include <linux/etherdevice.h>
 #include <linux/seq_file.h>
+#include <linux/soc/realtek/otto_table.h>
+#include <linux/string.h>
 
 #include "l2.h"
 #include "l3.h"
@@ -56,13 +58,127 @@
 
 #define RTL839X_SPCL_TRAP_ARP_CTRL		(0x1060)
 
+int otto_l2_get_ageing_time(struct rtl838x_switch_priv *priv)
+{
+	int t = sw_r32(priv->r->l2_ctrl_1);
+
+	/* RTL838x uses a high-resolution 23-bit AGE_UNIT where one unit is
+	 * 204.8 ms. RTL839x and RTL93xx use a 21-bit AGE_UNIT where one unit
+	 * is 600 ms. An AGE_UNIT value of 0 disables dynamic address aging.
+	 */
+	if (priv->r->high_res_l2_age) {
+		t &= GENMASK(22, 0);
+		t = t * 128 / 625;
+	} else {
+		t &= GENMASK(20, 0);
+		t = t * 3 / 5;
+	}
+
+	pr_debug("L2 AGING time: %d sec\n", t);
+	pr_debug("Dynamic aging for ports: %x\n", sw_r32(priv->r->l2_port_aging_out));
+
+	return t;
+}
+
+static int otto_l2_hash_index(u32 key, int slot)
+{
+	return slot > 3 ? ((key >> 14) & 0xffff) | (slot & 3) : ((key << 2) | slot) & 0xffff;
+}
+
+/* Uses the seed to identify a hash bucket in the L2 using the derived hash key and then loops
+ * over the entries in the bucket until either a matching entry is found or an empty slot
+ * Returns the filled in rtl838x_l2_entry and the index in the bucket when an entry was found
+ * when an empty slot was found and must exist is false, the index of the slot is returned
+ * when no slots are available returns -1
+ */
+int otto_l2_find_hash_entry(struct rtl838x_switch_priv *priv, u64 seed,
+			    bool must_exist, struct rtl838x_l2_entry *e)
+{
+	u32 key = priv->r->l2_hash_key(priv, seed);
+	int free_slot = -1;
+	u64 entry;
+
+	pr_debug("%s: using key %x, for seed %016llx\n", __func__, key, seed);
+	/* Loop over all entries in the hash-bucket and over the second block on 93xx SoCs */
+	for (int i = 0; i < priv->r->l2_bucket_size; i++) {
+		entry = priv->r->read_l2_entry_using_hash(key, i, e);
+		pr_debug("valid %d, mac %016llx\n", e->valid, ether_addr_to_u64(&e->mac[0]));
+
+		/* Remember the first free slot, but keep looking: the address
+		 * may be sitting further down the bucket.
+		 */
+		if (!e->valid) {
+			if (free_slot < 0)
+				free_slot = i;
+			continue;
+		}
+
+		if ((entry & 0x0fffffffffffffffULL) == seed)
+			return otto_l2_hash_index(key, i);
+	}
+
+	if (must_exist || free_slot < 0)
+		return -1;
+
+	/* The loop leaves the last entry it read here, valid bit included.
+	 * Reading the free slot back does not undo that on RTL930x and
+	 * RTL931x, whose readers return as soon as the valid bit is clear.
+	 */
+	memset(e, 0, sizeof(*e));
+
+	return otto_l2_hash_index(key, free_slot);
+}
+
+/* Uses the seed to identify an entry in the CAM by looping over all its entries
+ * Returns the filled in rtl838x_l2_entry and the index in the CAM when an entry was found
+ * when an empty slot was found the index of the slot is returned
+ * when no slots are available returns -1
+ */
+int otto_l2_find_cam_entry(struct rtl838x_switch_priv *priv, u64 seed,
+			   bool must_exist, struct rtl838x_l2_entry *e)
+{
+	int idx = -1;
+	int cam_rows;
+	u64 entry;
+
+	cam_rows = otto_table_rows(priv->r->l2_cam_tbl);
+	if (cam_rows < 0)
+		return -1;
+
+	for (int i = 0; i < cam_rows; i++) {
+		entry = priv->r->read_cam(i, e);
+		if (!must_exist && !e->valid) {
+			if (idx < 0) /* First empty entry? */
+				idx = i;
+			break;
+		} else if ((entry & 0x0fffffffffffffffULL) == seed) {
+			pr_debug("Found entry in CAM\n");
+			idx = i;
+			break;
+		}
+	}
+
+	return idx;
+}
+
+/* RTL931x hashes its second block into rows the fib_entries count does not
+ * reach, so an index can fall outside the map and is simply not tracked.
+ */
+struct rtldsa_l2_uc *otto_l2_uc_lookup(struct rtl838x_switch_priv *priv, int idx)
+{
+	if (idx < 0 || idx >= priv->r->fib_entries)
+		return NULL;
+
+	return &priv->l2_uc_map[idx];
+}
+
 /* The count pins at its ceiling rather than wrapping: an entry that reached it
  * is never freed by the driver again, which leaks a row but never hands a live
  * one to somebody else.
  */
 static void otto_l2_uc_get(struct rtl838x_switch_priv *priv, int idx)
 {
-	struct rtldsa_l2_uc *m = rtldsa_l2_uc_lookup(priv, idx);
+	struct rtldsa_l2_uc *m = otto_l2_uc_lookup(priv, idx);
 
 	if (!m)
 		return;
@@ -77,7 +193,7 @@ static void otto_l2_uc_get(struct rtl838x_switch_priv *priv, int idx)
 
 static void otto_l2_uc_put(struct rtl838x_switch_priv *priv, int idx)
 {
-	struct rtldsa_l2_uc *m = rtldsa_l2_uc_lookup(priv, idx);
+	struct rtldsa_l2_uc *m = otto_l2_uc_lookup(priv, idx);
 
 	if (!m || !m->l3_refcount || m->l3_refcount == RTLDSA_L2_L3_REFCOUNT_MAX)
 		return;
@@ -92,7 +208,7 @@ static void otto_l2_uc_release_row(struct rtl838x_switch_priv *priv,
 				   struct otto_l3_nexthop *nh,
 				   struct rtl838x_l2_entry *e)
 {
-	struct rtldsa_l2_uc *m = rtldsa_l2_uc_lookup(priv, nh->l2_id);
+	struct rtldsa_l2_uc *m = otto_l2_uc_lookup(priv, nh->l2_id);
 
 	/* Another route is still forwarding through this entry: it has to stay
 	 * exactly as it is, next hop and route id included.
@@ -126,7 +242,7 @@ static void otto_l2_uc_put_row(struct rtl838x_switch_priv *priv,
 {
 	struct rtl838x_l2_entry e = {};
 
-	if (rtldsa_find_l2_hash_entry(priv, nh->l2_seed, true, &e) != nh->l2_id)
+	if (otto_l2_find_hash_entry(priv, nh->l2_seed, true, &e) != nh->l2_id)
 		return;
 
 	if (!e.next_hop)
@@ -137,13 +253,12 @@ static void otto_l2_uc_put_row(struct rtl838x_switch_priv *priv,
 }
 
 /* Add an L2 nexthop entry for the L3 routing system / PIE forwarding in the SoC
- * Use VID and MAC in rtl838x_l2_entry to identify either a free slot in the L2 hash table
- * or mark an existing entry as a nexthop by setting it's nexthop bit
+ * Use VID and MAC in rtl838x_l2_entry to find the entry the switch holds for the
+ * gateway and mark it as a nexthop by setting its nexthop bit
  * Called from the L3 layer
  * The index in the L2 hash table is filled into nh->l2_id;
  */
-int otto_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop *nh,
-			bool require_existing)
+int otto_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop *nh)
 {
 	struct rtl838x_l2_entry e = {};
 	u64 seed = priv->r->l2_hash_seed(nh->mac, nh->rvid);
@@ -157,70 +272,50 @@ int otto_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop
 	 */
 	guard(mutex)(&priv->reg_mutex);
 
-	idx = rtldsa_find_l2_hash_entry(priv, seed, false, &e);
+	idx = otto_l2_find_hash_entry(priv, seed, false, &e);
 	if (idx < 0) {
 		pr_err("%s: No more L2 forwarding entries available\n", __func__);
 		return -1;
 	}
 
 	/* With a next hop that has no port, an RTL930x delivers every forwarded
-	 * frame twice, once from the switch and once from the Linux stack. A
-	 * row invented here would be static, and nothing would replace it:
-	 * dsa_user_fdb_event() drops an address the software bridge learns on
-	 * an offloaded port before the driver sees it. A caller that can trap
-	 * the route leaves the slot to the address, and lets the switch learn
-	 * it.
+	 * frame twice, once from the switch and once from the Linux stack, and
+	 * an RTL839x cuts the gateway off from the switch. A row invented here
+	 * would be static, and nothing would replace it: dsa_user_fdb_event()
+	 * drops an address the software bridge learns on an offloaded port
+	 * before the driver sees it. The caller traps the route, leaves the
+	 * slot to the address, and lets the switch learn it.
 	 */
-	if (require_existing && !e.valid) {
+	if (!e.valid) {
 		if (nh->l2_installed)
 			otto_l2_uc_put_row(priv, nh);
 		nh->l2_installed = false;
 		return -ENOENT;
 	}
 
-	/* Found an existing (e->valid is true) or empty entry, make it a nexthop entry */
+	/* Found an existing entry, make it a nexthop entry */
 	if (nh->l2_installed && nh->l2_id != idx)
 		otto_l2_uc_put_row(priv, nh);
 
-	if (!nh->l2_installed || nh->l2_id != idx) {
-		struct rtldsa_l2_uc *m = rtldsa_l2_uc_lookup(priv, idx);
-
-		/* An entry nobody had claimed carries whatever its last owner
-		 * left behind, including a count for a route long gone.
-		 */
-		if (m && !e.valid)
-			*m = (struct rtldsa_l2_uc){};
-
+	if (!nh->l2_installed || nh->l2_id != idx)
 		otto_l2_uc_get(priv, idx);
-	}
 
 	nh->l2_id = idx;
 	nh->l2_seed = seed;
-	if (e.valid) {
-		nh->port = e.port;
-		nh->rvid = e.rvid;
-		nh->dev_id = e.stack_dev;
-		/* If the entry is already a valid next hop entry, don't change it,
-		 * but for the DMAC entry it names where the L3 tables hold one
-		 * per gateway MAC, the families a route traps on: every route
-		 * through the entry holds that one, and the entry may still name
-		 * one given up while it stayed a next hop.
-		 */
-		if (e.next_hop) {
-			if (!require_existing || e.nh_route_id == nh->dmac_id)
-				return 0;
-			e.nh_route_id = nh->dmac_id;
-			priv->r->write_l2_entry_using_hash(idx >> 2, idx & 0x3, &e);
+	nh->port = e.port;
+	nh->rvid = e.rvid;
+	nh->dev_id = e.stack_dev;
+	/* If the entry is already a valid next hop entry, don't change it, but
+	 * for the DMAC entry it names: every route through the entry holds that
+	 * one, and the entry may still name one given up while it stayed a next
+	 * hop, or, on RTL839x, the row of the device's old MAC.
+	 */
+	if (e.next_hop) {
+		if (e.nh_route_id == nh->dmac_id)
 			return 0;
-		}
-	} else {
-		memset(&e, 0, sizeof(e));
-		e.type = L2_UNICAST;
-		e.valid = true;
-		e.is_static = true;
-		e.rvid = nh->rvid;
-		e.port = priv->r->port_ignore;
-		u64_to_ether_addr(nh->mac, &e.mac[0]);
+		e.nh_route_id = nh->dmac_id;
+		priv->r->write_l2_entry_using_hash(idx >> 2, idx & 0x3, &e);
+		return 0;
 	}
 	e.next_hop = true;
 	e.nh_route_id = nh->dmac_id;		/* DMAC entry or route ID takes place of VID */
@@ -252,7 +347,7 @@ int otto_l2_nexthop_del(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop
 	 * the address that was installed, and it is still the same row. A
 	 * negative index means the address has left the bucket altogether.
 	 */
-	idx = rtldsa_find_l2_hash_entry(priv, nh->l2_seed, true, &e);
+	idx = otto_l2_find_hash_entry(priv, nh->l2_seed, true, &e);
 	if (idx != nh->l2_id) {
 		dev_err(priv->dev, "next hop %d is at %d now, not removing it\n",
 			nh->l2_id, idx);

@@ -157,45 +157,6 @@ static void rtl839x_init_eee(struct rtl838x_switch_priv *priv, bool enable)
 	priv->eee_enabled = enable;
 }
 
-static u32 rtl839x_packet_cntr_read(struct rtl838x_switch_priv *priv, int counter)
-{
-	u32 buf[2];
-	u32 v;
-
-	dev_dbg(priv->dev, "reading LOG packet counter %d\n", counter);
-	otto_table_read(RTL8390_TBL_LOG, counter / 2, &buf);
-
-	if (counter % 2)
-		v = buf[0];
-	else
-		v = buf[1];
-
-	return v;
-}
-
-static void rtl839x_packet_cntr_clear(struct rtl838x_switch_priv *priv, int counter)
-{
-	int tbl = otto_table_acquire(RTL8390_TBL_LOG);
-	u32 buf[2];
-
-	dev_dbg(priv->dev, "clearing LOG packet counter %d\n", counter);
-
-	/*
-	 * Two counters share one LOG table entry. Read the current entry
-	 * first so clearing one half preserves the adjacent counter.
-	 */
-	__otto_table_read(tbl, counter / 2, &buf);
-
-	if (counter % 2)
-		buf[0] = 0;
-	else
-		buf[1] = 0;
-
-	__otto_table_write(tbl, counter / 2, &buf);
-
-	otto_table_release(tbl);
-}
-
 static void rtl839x_set_igr_filter(int port,  enum igr_filter state)
 {
 	sw_w32_mask(0x3 << ((port & 0xf) << 1), state << ((port & 0xf) << 1),
@@ -248,11 +209,11 @@ const struct rtldsa_config rtldsa_839x_cfg = {
 	.stat_port_rst = RTL839X_STAT_PORT_RST,
 	.stat_rst = RTL839X_STAT_RST,
 	.stat_port_std_mib = RTL839X_STAT_PORT_STD_MIB,
-	.mib_desc = &rtldsa_839x_mib_desc,
-	.stat_counters_lock = rtldsa_counters_lock_register,
-	.stat_counters_unlock = rtldsa_counters_unlock_register,
-	.stat_update_counters_atomically = rtldsa_update_counters_atomically,
-	.stat_counter_poll_interval = RTLDSA_COUNTERS_POLL_INTERVAL,
+	.mib_desc = &otto_stats_839x_mib_desc,
+	.stat_counters_lock = otto_stats_counters_lock_register,
+	.stat_counters_unlock = otto_stats_counters_unlock_register,
+	.stat_update_counters_atomically = otto_stats_update_counters_atomically,
+	.stat_counter_poll_interval = OTTO_STATS_COUNTERS_POLL_INTERVAL,
 	.traffic_enable = rtl839x_traffic_enable,
 	.traffic_disable = rtl839x_traffic_disable,
 	.traffic_set = rtl839x_traffic_set,
@@ -289,7 +250,14 @@ const struct rtldsa_config rtldsa_839x_cfg = {
 	.set_static_move_action = otto_l2_839x_set_static_move_action,
 	.stp_get = rtldsa_839x_stp_get,
 	.stp_set = rtl839x_stp_set,
-	.mac_force_mode_mask = RTL83XX_FORCE_EN | RTL83XX_FORCE_LINK_EN,
+	.mac_force_mode = {
+		.force_en_mask = RTL83XX_FORCE_EN,
+		.link_up_mask = RTL83XX_FORCE_LINK_EN,
+		.duplex_mask = RTL839X_DUPLEX_MODE,
+		.speed_mask = RTL839X_SPEED_MASK,
+		.tx_pause_mask = RTL839X_TX_PAUSE_EN,
+		.rx_pause_mask = RTL839X_RX_PAUSE_EN,
+	},
 	.mac_force_mode_ctrl = rtl839x_mac_force_mode_ctrl,
 	.mac_link_sts = RTL839X_MAC_LINK_STS,
 	.mac_port_ctrl = rtl839x_mac_port_ctrl,
@@ -320,8 +288,8 @@ const struct rtldsa_config rtldsa_839x_cfg = {
 	.pie_rule_add = rtl839x_pie_rule_add,
 	.pie_rule_rm = rtl839x_pie_rule_rm,
 	.l2_learning_setup = otto_l2_839x_learning_setup,
-	.packet_cntr_read = rtl839x_packet_cntr_read,
-	.packet_cntr_clear = rtl839x_packet_cntr_clear,
+	.packet_cntr_read = otto_stats_839x_packet_cntr_read,
+	.packet_cntr_clear = otto_stats_839x_packet_cntr_clear,
 	.set_receive_management_action = rtl839x_set_receive_management_action,
 	.get_egress_rate = rtldsa_839x_get_egress_rate,
 	.set_egress_rate = rtldsa_839x_set_egress_rate,

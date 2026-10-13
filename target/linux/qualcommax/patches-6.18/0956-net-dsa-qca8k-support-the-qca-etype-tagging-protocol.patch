@@ -1,0 +1,166 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Julius Bairaktaris <julius@bairaktaris.de>
+Date: Sat, 10 Oct 2026 10:24:05 +0200
+Subject: [PATCH] net: dsa: qca8k: support the qca-etype tagging protocol
+
+Add change_tag_protocol so a CPU port can select "qca-etype", and set
+the header type in HEADER_CTRL to match. Register access and MIB
+autocast frames carry the type as well: build them with it, and let the
+tagger drop it on receive so the handlers keep their layout.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Julius Bairaktaris <julius@bairaktaris.de>
+--- a/drivers/net/dsa/qca/qca8k-8xxx.c
++++ b/drivers/net/dsa/qca/qca8k-8xxx.c
+@@ -216,7 +216,8 @@ static void qca8k_rw_reg_ack_handler(str
+ }
+ 
+ static struct sk_buff *qca8k_alloc_mdio_header(enum mdio_cmd cmd, u32 reg, u32 *val,
+-					       int priority, unsigned int len)
++					       int priority, unsigned int len,
++					       bool etype)
+ {
+ 	struct qca_mgmt_ethhdr *mgmt_ethhdr;
+ 	unsigned int real_len;
+@@ -261,7 +262,8 @@ static struct sk_buff *qca8k_alloc_mdio_
+ 	skb_reset_mac_header(skb);
+ 	skb_set_network_header(skb, skb->len);
+ 
+-	mgmt_ethhdr = skb_push(skb, QCA_HDR_MGMT_HEADER_LEN + QCA_HDR_LEN);
++	mgmt_ethhdr = skb_push(skb, QCA_HDR_MGMT_HEADER_LEN + QCA_HDR_LEN +
++			       (etype ? QCA_ETYPE_HDR_LEN - QCA_HDR_LEN : 0));
+ 
+ 	hdr = FIELD_PREP(QCA_HDR_XMIT_VERSION, QCA_HDR_VERSION);
+ 	hdr |= FIELD_PREP(QCA_HDR_XMIT_PRIORITY, priority);
+@@ -280,7 +282,12 @@ static struct sk_buff *qca8k_alloc_mdio_
+ 	if (cmd == MDIO_WRITE)
+ 		put_unaligned_le32(*val, &mgmt_ethhdr->mdio_data);
+ 
+-	mgmt_ethhdr->hdr = htons(hdr);
++	if (etype) {
++		mgmt_ethhdr->hdr = htons(QCA_HDR_ETYPE);
++		put_unaligned_be16(hdr, mgmt_ethhdr + 1);
++	} else {
++		mgmt_ethhdr->hdr = htons(hdr);
++	}
+ 
+ 	data2 = skb_put_zero(skb, QCA_HDR_MGMT_DATA2_LEN + QCA_HDR_MGMT_PADDING_LEN);
+ 	if (cmd == MDIO_WRITE && len > QCA_HDR_MGMT_DATA1_LEN) {
+@@ -317,7 +324,8 @@ static int qca8k_read_eth(struct qca8k_p
+ 	int ret;
+ 
+ 	skb = qca8k_alloc_mdio_header(MDIO_READ, reg, NULL,
+-				      QCA8K_ETHERNET_MDIO_PRIORITY, len);
++				      QCA8K_ETHERNET_MDIO_PRIORITY, len,
++				      priv->etype_hdr);
+ 	if (!skb)
+ 		return -ENOMEM;
+ 
+@@ -369,7 +377,8 @@ static int qca8k_write_eth(struct qca8k_
+ 	int ret;
+ 
+ 	skb = qca8k_alloc_mdio_header(MDIO_WRITE, reg, val,
+-				      QCA8K_ETHERNET_MDIO_PRIORITY, len);
++				      QCA8K_ETHERNET_MDIO_PRIORITY, len,
++				      priv->etype_hdr);
+ 	if (!skb)
+ 		return -ENOMEM;
+ 
+@@ -648,19 +657,22 @@ qca8k_phy_eth_command(struct qca8k_priv
+ 
+ 	/* Prealloc all the needed skb before the lock */
+ 	write_skb = qca8k_alloc_mdio_header(MDIO_WRITE, QCA8K_MDIO_MASTER_CTRL, &write_val,
+-					    QCA8K_ETHERNET_PHY_PRIORITY, sizeof(write_val));
++					    QCA8K_ETHERNET_PHY_PRIORITY, sizeof(write_val),
++					    priv->etype_hdr);
+ 	if (!write_skb)
+ 		return -ENOMEM;
+ 
+ 	clear_skb = qca8k_alloc_mdio_header(MDIO_WRITE, QCA8K_MDIO_MASTER_CTRL, &clear_val,
+-					    QCA8K_ETHERNET_PHY_PRIORITY, sizeof(clear_val));
++					    QCA8K_ETHERNET_PHY_PRIORITY, sizeof(clear_val),
++					    priv->etype_hdr);
+ 	if (!clear_skb) {
+ 		ret = -ENOMEM;
+ 		goto err_clear_skb;
+ 	}
+ 
+ 	read_skb = qca8k_alloc_mdio_header(MDIO_READ, QCA8K_MDIO_MASTER_CTRL, &clear_val,
+-					   QCA8K_ETHERNET_PHY_PRIORITY, sizeof(clear_val));
++					   QCA8K_ETHERNET_PHY_PRIORITY, sizeof(clear_val),
++					   priv->etype_hdr);
+ 	if (!read_skb) {
+ 		ret = -ENOMEM;
+ 		goto err_read_skb;
+@@ -1743,6 +1755,35 @@ qca8k_get_tag_protocol(struct dsa_switch
+ 	return DSA_TAG_PROTO_QCA;
+ }
+ 
++static int qca8k_change_tag_protocol(struct dsa_switch *ds,
++				     enum dsa_tag_protocol proto)
++{
++	struct qca8k_priv *priv = ds->priv;
++	u32 val;
++	int ret;
++
++	switch (proto) {
++	case DSA_TAG_PROTO_QCA:
++		val = 0;
++		break;
++	case DSA_TAG_PROTO_QCA_ETYPE:
++		val = QCA8K_HEADER_CTRL_TYPE_LEN |
++		      FIELD_PREP(QCA8K_HEADER_CTRL_TYPE_VAL, QCA_HDR_ETYPE);
++		break;
++	default:
++		return -EPROTONOSUPPORT;
++	}
++
++	/* Written in the format the switch still expects */
++	ret = qca8k_write(priv, QCA8K_REG_HEADER_CTRL, val);
++	if (ret)
++		return ret;
++
++	priv->etype_hdr = proto == DSA_TAG_PROTO_QCA_ETYPE;
++
++	return 0;
++}
++
+ static struct dsa_port *
+ qca8k_preferred_default_local_cpu_port(struct dsa_switch *ds)
+ {
+@@ -1893,6 +1934,7 @@ static int qca8k_connect_tag_protocol(st
+ 
+ 	switch (proto) {
+ 	case DSA_TAG_PROTO_QCA:
++	case DSA_TAG_PROTO_QCA_ETYPE:
+ 		tagger_data = ds->tagger_data;
+ 
+ 		tagger_data->rw_reg_ack_handler = qca8k_rw_reg_ack_handler;
+@@ -2122,6 +2164,7 @@ static const struct phylink_mac_ops qca8
+ 
+ static const struct dsa_switch_ops qca8k_switch_ops = {
+ 	.get_tag_protocol	= qca8k_get_tag_protocol,
++	.change_tag_protocol	= qca8k_change_tag_protocol,
+ 	.setup			= qca8k_setup,
+ 	.get_strings		= qca8k_get_strings,
+ 	.get_ethtool_stats	= qca8k_get_ethtool_stats,
+--- a/drivers/net/dsa/qca/qca8k.h
++++ b/drivers/net/dsa/qca/qca8k.h
+@@ -149,6 +149,9 @@
+ #define   QCA8K_PORT_STATUS_LINK_AUTO			BIT(9)
+ #define   QCA8K_PORT_STATUS_LINK_PAUSE			BIT(10)
+ #define   QCA8K_PORT_STATUS_FLOW_AUTO			BIT(12)
++#define QCA8K_REG_HEADER_CTRL				0x98
++#define   QCA8K_HEADER_CTRL_TYPE_LEN			BIT(16)
++#define   QCA8K_HEADER_CTRL_TYPE_VAL			GENMASK(15, 0)
+ #define QCA8K_REG_PORT_HDR_CTRL(_i)			(0x9c + (_i * 4))
+ #define   QCA8K_PORT_HDR_CTRL_RX_MASK			GENMASK(3, 2)
+ #define   QCA8K_PORT_HDR_CTRL_TX_MASK			GENMASK(1, 0)
+@@ -462,6 +465,7 @@ struct qca8k_priv {
+ 	struct device *dev;
+ 	struct gpio_desc *reset_gpio;
+ 	struct net_device *mgmt_conduit; /* Track if mdio/mib Ethernet is available */
++	bool etype_hdr; /* The header is behind QCA_HDR_ETYPE */
+ 	struct qca8k_mgmt_eth_data mgmt_eth_data;
+ 	struct qca8k_mib_eth_data mib_eth_data;
+ 	struct qca8k_mdio_cache mdio_cache;

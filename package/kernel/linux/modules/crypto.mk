@@ -116,10 +116,13 @@ $(eval $(call KernelPackage,crypto-ccm))
 
 define KernelPackage/crypto-chacha20poly1305
   TITLE:=ChaCha20-Poly1305 AEAD support, RFC7539 (used by strongSwan IPsec VPN)
-  DEPENDS:=+kmod-crypto-aead +kmod-crypto-manager +!LINUX_6_12:kmod-crypto-lib-poly1305
+  DEPENDS:=+kmod-crypto-aead +kmod-crypto-manager \
+	+!LINUX_6_12:kmod-crypto-lib-chacha20 \
+	+!LINUX_6_12:kmod-crypto-lib-poly1305
   KCONFIG:=CONFIG_CRYPTO_CHACHA20POLY1305
-  FILES:=$(LINUX_DIR)/crypto/chacha20poly1305.ko
-  AUTOLOAD:=$(call AutoLoad,09,chacha20poly1305)
+  FILES:=$(LINUX_DIR)/crypto/chacha20poly1305.ko \
+	$(LINUX_DIR)/crypto/chacha.ko@ge6.18
+  AUTOLOAD:=$(call AutoLoad,09,chacha@ge6.18 chacha20poly1305)
   $(call AddDepends/crypto)
 endef
 

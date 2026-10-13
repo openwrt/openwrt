@@ -395,6 +395,17 @@ static void qca_uniphy_pcs_get_state_usxgmii(struct qca_uniphy *uniphy,
 		return;
 	}
 
+	/* The PHY can report its link before it writes the new rate into
+	 * the code word, and phylink takes the speed only when the link
+	 * comes up. Report a rate change as a link drop so that phylink
+	 * resolves the link again at the new rate.
+	 */
+	if (state->speed != uniphy->usxgmii_speed) {
+		uniphy->usxgmii_speed = state->speed;
+		state->link = false;
+		return;
+	}
+
 	state->duplex = DUPLEX_FULL;
 }
 

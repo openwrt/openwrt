@@ -55,7 +55,7 @@ enum pbvlan_mode {
 	PBVLAN_MODE_ALL_PKT,
 };
 
-struct rtldsa_vlan_info {
+struct otto_vlan_info {
 	u64 untagged_ports;
 	u64 member_ports;
 	u8 profile_id;
@@ -89,8 +89,8 @@ struct rtldsa_vlan_profile {
 	   routing_ipmc:1, routing_ip6mc:1, bridge_ipmc:1, bridge_ip6mc:1;
 };
 
-void otto_vlan_838x_tables_read(u32 vlan, struct rtldsa_vlan_info *info);
-void otto_vlan_838x_set_tagged(u32 vlan, struct rtldsa_vlan_info *info);
+void otto_vlan_838x_tables_read(u32 vlan, struct otto_vlan_info *info);
+void otto_vlan_838x_set_tagged(u32 vlan, struct otto_vlan_info *info);
 void otto_vlan_838x_set_untagged(u32 vlan, u64 portmask);
 void otto_vlan_838x_port_forward_on_inner(int port, bool is_set);
 int otto_vlan_838x_profile_get(int idx, struct rtldsa_vlan_profile *profile);
@@ -100,8 +100,8 @@ void otto_vlan_838x_port_pvid_mode_set(int port, enum pbvlan_type type, enum pbv
 void otto_vlan_838x_port_pvid_set(int port, enum pbvlan_type type, int pvid);
 void otto_vlan_838x_profile_dump(struct rtl838x_switch_priv *priv, int idx);
 
-void otto_vlan_839x_tables_read(u32 vlan, struct rtldsa_vlan_info *info);
-void otto_vlan_839x_set_tagged(u32 vlan, struct rtldsa_vlan_info *info);
+void otto_vlan_839x_tables_read(u32 vlan, struct otto_vlan_info *info);
+void otto_vlan_839x_set_tagged(u32 vlan, struct otto_vlan_info *info);
 void otto_vlan_839x_set_untagged(u32 vlan, u64 portmask);
 void otto_vlan_839x_port_forward_on_inner(int port, bool is_set);
 int otto_vlan_839x_profile_get(int idx, struct rtldsa_vlan_profile *profile);
@@ -111,8 +111,8 @@ void otto_vlan_839x_port_keep_tag_set(int port, bool keep_outer, bool keep_inner
 void otto_vlan_839x_port_pvid_mode_set(int port, enum pbvlan_type type, enum pbvlan_mode mode);
 void otto_vlan_839x_port_pvid_set(int port, enum pbvlan_type type, int pvid);
 
-void otto_vlan_930x_tables_read(u32 vlan, struct rtldsa_vlan_info *info);
-void otto_vlan_930x_set_tagged(u32 vlan, struct rtldsa_vlan_info *info);
+void otto_vlan_930x_tables_read(u32 vlan, struct otto_vlan_info *info);
+void otto_vlan_930x_set_tagged(u32 vlan, struct otto_vlan_info *info);
 int otto_vlan_930x_profile_get(int idx, struct rtldsa_vlan_profile *profile);
 void otto_vlan_930x_profile_dump(struct rtl838x_switch_priv *priv, int idx);
 void otto_vlan_930x_set_untagged(u32 vlan, u64 portmask);
@@ -124,8 +124,8 @@ void otto_vlan_930x_port_pvid_set(int port, enum pbvlan_type type, int pvid);
 
 int otto_vlan_931x_profile_get(int idx, struct rtldsa_vlan_profile *profile);
 void otto_vlan_931x_profile_dump(struct rtl838x_switch_priv *priv, int idx);
-void otto_vlan_931x_tables_read(u32 vlan, struct rtldsa_vlan_info *info);
-void otto_vlan_931x_set_tagged(u32 vlan, struct rtldsa_vlan_info *info);
+void otto_vlan_931x_tables_read(u32 vlan, struct otto_vlan_info *info);
+void otto_vlan_931x_set_tagged(u32 vlan, struct otto_vlan_info *info);
 void otto_vlan_931x_set_untagged(u32 vlan, u64 portmask);
 void otto_vlan_931x_port_forward_on_inner(int port, bool is_set);
 void otto_vlan_931x_profile_setup(int profile);

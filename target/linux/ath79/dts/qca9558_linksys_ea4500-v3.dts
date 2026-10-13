@@ -162,8 +162,9 @@
 &mdio0 {
 	status = "okay";
 
-	phy0: ethernet-phy@0 {
-		reg = <0>;
+	ethernet-switch@10 {
+		compatible = "qca,ar8327";
+		reg = <0x10>;
 
 		qca,ar8327-initvals = <
 			0x04 0x07600000 /* PORT0 PAD MODE CTRL: RGMII, to eth0 */
@@ -183,12 +184,16 @@
 
 	nvmem-cells = <&cal_macaddr>;
 	nvmem-cell-names = "mac-address";
-	phy-handle = <&phy0>;
 	pll-data = <0x96000000 0x00000101 0x00001616>;
 
 	gmac-config {
 		device = <&gmac>;
 		rgmii-enabled = <1>;
+	};
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
 	};
 };
 

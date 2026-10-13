@@ -3,6 +3,7 @@
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 #include <linux/etherdevice.h>
 #include <linux/inetdevice.h>
+#include <linux/regmap.h>
 
 #include "lag.h"
 #include "l2.h"
@@ -89,6 +90,13 @@
 
 /* get shift for given led in any set */
 #define RTL930X_LED_SET_LEDX_SHIFT(x) (16 * (x % 2))
+
+#define RTL930X_SMI_MAC_TYPE_CTRL		0xca04
+#define RTL930X_SMI_MAC_TYPE_P0_23(pn)		(GENMASK(1, 0) << (((pn) / 4) * 2))
+#define RTL930X_SMI_MAC_TYPE_P24_27(pn)		(GENMASK(2, 0) << (((pn) - 24) * 3 + 12))
+#define RTL930X_SMI_MAC_TYPE_PCS		0x0
+#define RTL930X_SMI_MAC_TYPE_MULTIGIG_PHY	0x1
+#define RTL930X_SMI_MAC_TYPE_1G_PHY		0x3
 
 void rtldsa_930x_print_matrix(void)
 {
@@ -383,61 +391,6 @@ static void rtl930x_init_eee(struct rtl838x_switch_priv *priv, bool enable)
 // 	return mtu_id;
 // }
 
-/* A PIE rule logs its matched packets into the LOG table entry that carries
- * its own rule ID, in data word 1 - one entry per rule. Counters handed out
- * by rtldsa_packet_cntr_alloc() for L3 route statistics start above the PIE
- * rule ID range and pack two 32-bit counters into one 64-bit LOG entry.
- */
-#define RTL930X_PIE_RULE_IDS	(rtldsa_930x_cfg.n_pie_blocks * PIE_BLOCK_SIZE)
-
-static u32 rtl930x_packet_cntr_read(struct rtl838x_switch_priv *priv, int counter)
-{
-	u32 buf[2];
-	u32 v;
-
-	dev_dbg(priv->dev, "reading LOG packet counter %d\n", counter);
-
-	if (counter < RTL930X_PIE_RULE_IDS) {
-		otto_table_read(RTL9300_TBL_LOG, counter, &buf);
-		v = buf[1];
-	} else {
-		/* Two counters share one entry, so the parity of counter picks
-		 * which half of it to return.
-		 */
-		otto_table_read(RTL9300_TBL_LOG, counter / 2, &buf);
-		v = counter % 2 ? buf[0] : buf[1];
-	}
-
-	dev_dbg(priv->dev, "LOG entry: %08x %08x\n", buf[0], buf[1]);
-
-	return v;
-}
-
-static void rtl930x_packet_cntr_clear(struct rtl838x_switch_priv *priv, int counter)
-{
-	int tbl = otto_table_acquire(RTL9300_TBL_LOG);
-
-	u32 v[2];
-
-	dev_dbg(priv->dev, "clearing LOG packet counter %d\n", counter);
-
-	/* Read-modify-write: for a route counter the other 32-bit counter in
-	 * the same 64-bit entry must be preserved; for a PIE rule ID the entry
-	 * is ours alone but the RMW is harmless.
-	 */
-	if (counter < RTL930X_PIE_RULE_IDS) {
-		__otto_table_read(tbl, counter, &v);
-		v[1] = 0;
-		__otto_table_write(tbl, counter, &v);
-	} else {
-		__otto_table_read(tbl, counter / 2, &v);
-		v[counter % 2 ? 0 : 1] = 0;
-		__otto_table_write(tbl, counter / 2, &v);
-	}
-
-	otto_table_release(tbl);
-}
-
 static void rtl930x_set_igr_filter(int port,  enum igr_filter state)
 {
 	sw_w32_mask(0x3 << ((port & 0xf) << 1), state << ((port & 0xf) << 1),
@@ -598,6 +551,35 @@ static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
 		dev_dbg(dev, "%08x: %08x\n", 0xbb00cc00 + i * 4, sw_r32(0xcc00 + i * 4));
 }
 
+static int
+rtldsa_930x_mac_link_state_source_set(struct rtl838x_switch_priv *priv,
+				      int port,
+				      enum rtldsa_mac_link_state_source source,
+				      phy_interface_t interface)
+{
+	u32 mask, src_val;
+
+	if (port < 24)
+		mask = RTL930X_SMI_MAC_TYPE_P0_23(port);
+	else if (port < 28)
+		mask = RTL930X_SMI_MAC_TYPE_P24_27(port);
+	else
+		return 0;
+
+	if (source == RTLDSA_MAC_LINK_STATE_SOURCE_PCS)
+		src_val = RTL930X_SMI_MAC_TYPE_PCS;
+	else if (interface == PHY_INTERFACE_MODE_2500BASEX ||
+		 interface == PHY_INTERFACE_MODE_10GBASER ||
+		 interface == PHY_INTERFACE_MODE_USXGMII ||
+		 interface == PHY_INTERFACE_MODE_10G_QXGMII)
+		src_val = RTL930X_SMI_MAC_TYPE_MULTIGIG_PHY;
+	else
+		src_val = RTL930X_SMI_MAC_TYPE_1G_PHY;
+
+	return regmap_update_bits(priv->map, RTL930X_SMI_MAC_TYPE_CTRL,
+				  mask, field_prep(mask, src_val));
+}
+
 const struct rtldsa_config rtldsa_930x_cfg = {
 	.switch_ops = &rtldsa_93xx_switch_ops,
 	.phylink_mac_ops = &rtldsa_93xx_phylink_mac_ops,
@@ -619,11 +601,11 @@ const struct rtldsa_config rtldsa_930x_cfg = {
 	.stat_rst = RTL930X_STAT_RST,
 	.stat_port_std_mib = RTL930X_STAT_PORT_MIB_CNTR,
 	.stat_port_prv_mib = RTL930X_STAT_PORT_PRVTE_CNTR,
-	.mib_desc = &rtldsa_930x_mib_desc,
-	.stat_counters_lock = rtldsa_counters_lock_register,
-	.stat_counters_unlock = rtldsa_counters_unlock_register,
-	.stat_update_counters_atomically = rtldsa_update_counters_atomically,
-	.stat_counter_poll_interval = RTLDSA_COUNTERS_POLL_INTERVAL,
+	.mib_desc = &otto_stats_930x_mib_desc,
+	.stat_counters_lock = otto_stats_counters_lock_register,
+	.stat_counters_unlock = otto_stats_counters_unlock_register,
+	.stat_update_counters_atomically = otto_stats_update_counters_atomically,
+	.stat_counter_poll_interval = OTTO_STATS_COUNTERS_POLL_INTERVAL,
 	.traffic_enable = rtl930x_traffic_enable,
 	.traffic_disable = rtl930x_traffic_disable,
 	.traffic_set = rtl930x_traffic_set,
@@ -652,8 +634,18 @@ const struct rtldsa_config rtldsa_930x_cfg = {
 	.stp_get = rtldsa_930x_stp_get,
 	.stp_set = rtl930x_stp_set,
 	.mac_link_sts = RTL930X_MAC_LINK_STS,
-	.mac_force_mode_mask = RTL930X_FORCE_EN | RTL930X_FORCE_LINK_EN,
+	.mac_force_mode = {
+		.force_en_mask = RTL930X_FORCE_EN,
+		.fc_force_en_mask = RTL930X_MAC_FORCE_FC_EN,
+		.link_up_mask = RTL930X_FORCE_LINK_EN,
+		.duplex_mask = RTL930X_DUPLEX_MODE,
+		.speed_mask = RTL930X_SPEED_MASK,
+		.tx_pause_mask = RTL930X_TX_PAUSE_EN,
+		.rx_pause_mask = RTL930X_RX_PAUSE_EN,
+		.media_mask = RTL930X_MEDIA_SEL,
+	},
 	.mac_force_mode_ctrl = rtl930x_mac_force_mode_ctrl,
+	.mac_link_state_source_set = rtldsa_930x_mac_link_state_source_set,
 	.mac_port_ctrl = rtl930x_mac_port_ctrl,
 	.mac_capabilities = MAC_ASYM_PAUSE | MAC_SYM_PAUSE | MAC_10 | MAC_100 |
 			    MAC_1000FD | MAC_2500FD | MAC_5000FD | MAC_10000FD,
@@ -662,8 +654,8 @@ const struct rtldsa_config rtldsa_930x_cfg = {
 	.l2_port_new_salrn = otto_l2_930x_port_new_salrn,
 	.l2_port_new_sa_fwd = otto_l2_930x_port_new_sa_fwd,
 	.get_mirror_config = rtldsa_930x_get_mirror_config,
-	.port_rate_police_add = rtldsa_930x_port_rate_police_add,
-	.port_rate_police_del = rtldsa_930x_port_rate_police_del,
+	.port_rate_police_add = otto_tc_930x_port_rate_police_add,
+	.port_rate_police_del = otto_tc_930x_port_rate_police_del,
 	.print_matrix = rtldsa_930x_print_matrix,
 	.read_l2_entry_using_hash = otto_l2_930x_read_entry_using_hash,
 	.write_l2_entry_using_hash = otto_l2_930x_write_entry_using_hash,
@@ -686,8 +678,8 @@ const struct rtldsa_config rtldsa_930x_cfg = {
 	.pie_rule_add = rtl930x_pie_rule_add,
 	.pie_rule_rm = rtl930x_pie_rule_rm,
 	.l2_learning_setup = otto_l2_930x_learning_setup,
-	.packet_cntr_read = rtl930x_packet_cntr_read,
-	.packet_cntr_clear = rtl930x_packet_cntr_clear,
+	.packet_cntr_read = otto_stats_930x_packet_cntr_read,
+	.packet_cntr_clear = otto_stats_930x_packet_cntr_clear,
 	.led_init = rtl930x_led_init,
 	.enable_learning = otto_l2_930x_enable_learning,
 	.enable_l2_new_sa_fwd = otto_l2_930x_set_port_new_sa_fwd,
@@ -697,7 +689,7 @@ const struct rtldsa_config rtldsa_930x_cfg = {
 	.qos_init = rtldsa_930x_qos_init,
 	.trk_ctrl = RTL930X_TRK_CTRL,
 	.trk_hash_ctrl = RTL930X_TRK_HASH_CTRL,
-	.prepare_lag_fdb = rtldsa_93xx_prepare_lag_fdb,
+	.prepare_lag_fdb = otto_lag_93xx_prepare_fdb,
 	.lag_switch_init = otto_lag_93xx_switch_init,
 	.lag_set_port_members = otto_lag_93xx_set_port_members,
 	.lag_set_distribution_algorithm = otto_lag_93xx_set_distribution_algorithm,

@@ -149,7 +149,11 @@
 	nvmem-cell-names = "mac-address";
 
 	phy-mode = "rgmii";
-	phy-handle = <&phy0>;
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
 };
 
 &wmac {
@@ -178,9 +182,9 @@
 &mdio0 {
 	status = "okay";
 
-	phy0: ethernet-phy@0 {
-		reg = <0>;
-		phy-mode = "rgmii";
+	ethernet-switch@10 {
+		compatible = "qca,ar8327";
+		reg = <0x10>;
 
 		qca,ar8327-initvals = <
 			/* PORT0: RGMII, MAC0/6 exchange, tx_delay 01, No rx_delay */
