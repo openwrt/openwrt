@@ -181,6 +181,9 @@ enum rtpcs_page {
 #define SDS_EXT_REG03			0x03
 #define  RTL838X_REG_CML_SEL		BIT(1)
 
+#define SDS_EXT_REG29			0x1d
+#define  RTL930X_XSG_LINK_STS		GENMASK(8, 0)
+
 /* PAGE_FIB_EXT */
 
 #define FIB_EXT_REG19			0x13
@@ -2033,6 +2036,43 @@ static int rtpcs_930x_sds_get_phys_sds_id(int sds_id, int page)
 	return sds_id;
 }
 
+/* Caller holds ctrl->lock to serialize mode changes and SerDes access. */
+static bool rtpcs_930x_sds_rx_link_up(struct rtpcs_serdes *sds)
+{
+	int phys_sds_id, val, i;
+
+	switch (sds->hw_mode) {
+	case RTPCS_SDS_MODE_10GBASER:
+	case RTPCS_SDS_MODE_USXGMII:
+		return rtpcs_93xx_sds_10gr_link_up(sds);
+
+	case RTPCS_SDS_MODE_XSGMII:
+		if (sds->id != 2 && sds->id != 3)
+			return false;
+
+		phys_sds_id = rtpcs_930x_sds_get_phys_sds_id(sds->id, PAGE_SDS_EXT);
+
+		for (i = 0; i < 2; i++) {
+			val = __rtpcs_sds_read_raw(sds->ctrl, phys_sds_id + i,
+						  PAGE_SDS_EXT, SDS_EXT_REG29, 15, 0);
+			if (val < 0) {
+				dev_err(sds->ctrl->dev,
+					"SerDes %u: RX link-status read failed on backing SerDes %d: %d\n",
+					sds->id, phys_sds_id + i, val);
+				return false;
+			}
+
+			if ((val & RTL930X_XSG_LINK_STS) != RTL930X_XSG_LINK_STS)
+				return false;
+		}
+
+		return true;
+
+	default:
+		return false;
+	}
+}
+
 static int rtpcs_930x_sds_op_read(struct rtpcs_serdes *sds, enum rtpcs_page page, int regnum,
 				  int bithigh, int bitlow)
 {
@@ -3002,6 +3042,11 @@ static int rtpcs_930x_sds_check_calibration(struct rtpcs_serdes *sds,
 	errors1 = rtpcs_930x_sds_sym_err_get(sds, hw_mode);
 	usleep_range(1000, 2000);
 	errors2 = rtpcs_930x_sds_sym_err_get(sds, hw_mode);
+
+	if (!rtpcs_930x_sds_rx_link_up(sds)) {
+		dev_warn(sds->ctrl->dev, "SerDes %u: RX link down after calibration\n", sds->id);
+		return 1;
+	}
 
 	switch (hw_mode) {
 	case RTPCS_SDS_MODE_XSGMII:
