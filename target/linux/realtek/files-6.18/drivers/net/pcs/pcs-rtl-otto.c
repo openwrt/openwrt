@@ -823,11 +823,9 @@ static int rtpcs_generic_sds_set_autoneg(struct rtpcs_serdes *sds, unsigned int 
 	if ((sds->hw_mode == RTPCS_SDS_MODE_1000BASEX) ||
 	    (sds->hw_mode == RTPCS_SDS_MODE_2500BASEX)) {
 		adv = ADVERTISE_1000XFULL;
-		if (linkmode_test_bit(ETHTOOL_LINK_MODE_Pause_BIT,
-				      advertising))
+		if (linkmode_test_bit(ETHTOOL_LINK_MODE_Pause_BIT, advertising))
 			adv |= ADVERTISE_1000XPAUSE;
-		if (linkmode_test_bit(ETHTOOL_LINK_MODE_Asym_Pause_BIT,
-				      advertising))
+		if (linkmode_test_bit(ETHTOOL_LINK_MODE_Asym_Pause_BIT, advertising))
 			adv |= ADVERTISE_1000XPSE_ASYM;
 
 		ret = rtpcs_sds_read(sds, phy_page, MII_ADVERTISE);
