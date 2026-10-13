@@ -292,7 +292,11 @@ enum rtpcs_page {
 #define  RTL93XX_FRC_SDS_MD_ON		BIT(6)
 
 #define WDIG_REG20			0x14
-#define  RTL931X_RXEQ_COEF_LEQ_GRAY	GENMASK(7, 3)
+#define  RTL93XX_RXEQ_COEF_LEQ_GRAY	GENMASK(7, 3)
+#define  RTL93XX_RXEQ_COEF_TAPX		GENMASK(5, 0)
+#define  RTL930X_RXEQ_COEF_DCVS		GENMASK(4, 0)
+#define  RTL930X_RXEQ_COEF_VTHN		GENMASK(5, 3)
+#define  RTL930X_RXEQ_COEF_VTHP		GENMASK(2, 0)
 #define  RTL931X_RXEQ_COEF_VTHN		GENMASK(7, 4)
 #define  RTL931X_RXEQ_COEF_VTHP		GENMASK(3, 0)
 
@@ -317,6 +321,8 @@ enum rtpcs_page {
 
 #define ANA_COM_REG06			0x06
 #define  RTL930X_RX_DEBUG_SEL		GENMASK(11, 6)
+#define   RTL930X_RX_DEBUG_SEL_LEQ	0x10
+#define   RTL930X_RX_DEBUG_SEL_COEF	0x20
 
 /* PAGE_ANA_SPD - all ANA_SPD_XXXX pages share common layout */
 
@@ -330,6 +336,8 @@ enum rtpcs_page {
 #define  RTL931X_PRE_AMP		GENMASK(4, 0)
 
 #define ANA_SPD_REG15			0x0f
+#define  RTL930X_LOAD_IN_INIT_VTH	BIT(13)
+#define  RTL930X_LOAD_IN_INIT_TAP(t)	BIT((t) + 7)
 #define  RTL931X_LOAD_IN_INIT_VTH	BIT(12)
 #define  RTL931X_LOAD_IN_INIT_TAP(t)	BIT((t) + 6)
 
@@ -338,13 +346,15 @@ enum rtpcs_page {
 #define  RTL930X_VTHN_INIT		GENMASK(2, 0)
 
 #define ANA_SPD_REG20			0x14
-#define  RTL931X_RXEQ_COEF_SEL		GENMASK(10, 5)
-#define   RTL931X_RXEQ_COEF_SEL_VTH	0x0c
+#define  RTL931X_RX_COEF_SEL		GENMASK(10, 5)
+#define   RTL931X_RX_COEF_SEL_VTH	0x0c
 
 #define ANA_SPD_REG21			0x15
 #define  RTL930X_RX_EN_TEST		BIT(9)
 #define  RTL930X_RX_EN_SELF		BIT(4)
 #define  RTL931X_RX_DEBUG_SEL		GENMASK(11, 10)
+#define   RTL931X_RX_DEBUG_SEL_LEQ	0x01
+#define   RTL931X_RX_DEBUG_SEL_COEF	0x02
 
 /*
  * TAP0 in ANA_SPD_REG28, even only
@@ -373,6 +383,13 @@ enum rtpcs_page {
 #define  RTL930X_TX_MAIN_AMP		GENMASK(8, 4)
 #define  RTL930X_TX_POST_AMP_EN		BIT(3)
 #define  RTL930X_TX_PRE_AMP_EN		BIT(0)
+
+#define ANA_SPD_EXT_REG12		0x0c
+#define  RTL930X_RX_COEF_SEL		GENMASK(5, 0)
+#define   RTL930X_RX_COEF_SEL_FGCAL_BIN	0x0e
+#define   RTL930X_RX_COEF_SEL_VTH	0x0c
+#define   RTL930X_RX_COEF_SEL_TAP_ODD(t)	((t) + 5)
+#define   RTL930X_RX_COEF_SEL_TAP_EVEN(t)	(t)
 
 #define ANA_SPD_EXT_REG24		0x18
 #define  RTL930X_TX_IMPEDANCE		GENMASK(15, 12)
@@ -2373,21 +2390,22 @@ static int rtpcs_930x_sds_rxeq_dcvs_get_coef(struct rtpcs_serdes *sds, unsigned 
 	if (dcvs_id > 5)
 		return -EINVAL;
 
-	ret = rtpcs_930x_sds_rxeq_set_debug(sds, 0x20);
+	ret = rtpcs_930x_sds_rxeq_set_debug(sds, RTL930X_RX_DEBUG_SEL_COEF);
 	if (ret < 0)
 		return ret;
 
-	ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x0c, 5, 0, coeff_sel[dcvs_id]);
+	ret = rtpcs_sds_write_mask(sds, PAGE_ANA_10G_EXT, ANA_SPD_EXT_REG12,
+				   RTL930X_RX_COEF_SEL,
+				   FIELD_PREP(RTL930X_RX_COEF_SEL, coeff_sel[dcvs_id]));
 	if (ret < 0)
 		return ret;
 	usleep_range(1000, 2000);
 
-	/* ## DCVSX Read Out */
-	val = rtpcs_sds_read_bits(sds, PAGE_WDIG, 0x14, 4, 0);
+	val = rtpcs_sds_read(sds, PAGE_WDIG, WDIG_REG20);
 	if (val < 0)
 		return val;
 
-	*dcvs_coef = rtpcs_sign_mag_decode(val, 4);
+	*dcvs_coef = rtpcs_sign_mag_decode(FIELD_GET(RTL930X_RXEQ_COEF_DCVS, val), 4);
 	val = rtpcs_sds_read_bits(sds, PAGE_ANA_10G, manual_reg[dcvs_id], manual_bit[dcvs_id],
 				  manual_bit[dcvs_id]);
 	if (val < 0)
@@ -2426,16 +2444,16 @@ static int rtpcs_930x_sds_rxeq_leq_get_coef(struct rtpcs_serdes *sds)
 {
 	int bin, gray, manual, ret;
 
-	ret = rtpcs_930x_sds_rxeq_set_debug(sds, 0x10);
+	ret = rtpcs_930x_sds_rxeq_set_debug(sds, RTL930X_RX_DEBUG_SEL_LEQ);
 	if (ret < 0)
 		return ret;
 	usleep_range(1000, 2000);
 
-	/* ##LEQ Read Out */
-	gray = rtpcs_sds_read_bits(sds, PAGE_WDIG, 0x14, 7, 3);
-	if (gray < 0)
-		return gray;
+	ret = rtpcs_sds_read(sds, PAGE_WDIG, WDIG_REG20);
+	if (ret < 0)
+		return ret;
 
+	gray = FIELD_GET(RTL93XX_RXEQ_COEF_LEQ_GRAY, ret);
 	bin = rtpcs_gray_to_binary(gray);
 
 	manual = rtpcs_sds_read_bits(sds, PAGE_ANA_10G, 0x18, 15, 15);
@@ -2468,23 +2486,29 @@ static int rtpcs_930x_sds_rxeq_vth_get(struct rtpcs_serdes *sds, unsigned int *v
 {
 	int manual, ret, val;
 
-	ret = rtpcs_930x_sds_rxeq_set_debug(sds, 0x20);
+	ret = rtpcs_930x_sds_rxeq_set_debug(sds, RTL930X_RX_DEBUG_SEL_COEF);
 	if (ret < 0)
 		return ret;
 
-	ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x0c, 5, 0, 0xc); /* COEF_SEL */
+	ret = rtpcs_sds_write_mask(sds, PAGE_ANA_10G_EXT, ANA_SPD_EXT_REG12,
+				   RTL930X_RX_COEF_SEL,
+				   FIELD_PREP(RTL930X_RX_COEF_SEL, RTL930X_RX_COEF_SEL_VTH));
 	if (ret < 0)
 		return ret;
 	usleep_range(1000, 2000);
 
-	/* ##VthP & VthN Read Out */
-	val = rtpcs_sds_read_bits(sds, PAGE_WDIG, 0x14, 5, 0);
+	val = rtpcs_sds_read(sds, PAGE_WDIG, WDIG_REG20);
 	if (val < 0)
 		return val;
 
-	*vth_p = FIELD_GET(GENMASK(2, 0), val);
-	*vth_n = FIELD_GET(GENMASK(5, 3), val);
-	manual = rtpcs_sds_read_bits(sds, PAGE_ANA_10G, 0x0f, 13, 13);
+	*vth_p = FIELD_GET(RTL930X_RXEQ_COEF_VTHP, val);
+	*vth_n = FIELD_GET(RTL930X_RXEQ_COEF_VTHN, val);
+
+	val = rtpcs_sds_read(sds, PAGE_ANA_10G, ANA_SPD_REG15);
+	if (val < 0)
+		return val;
+
+	manual = FIELD_GET(RTL930X_LOAD_IN_INIT_VTH, val);
 
 	dev_dbg(sds->ctrl->dev, "SerDes %u: vth_p = %d, vth_n = %d, manual = %d\n",
 		sds->id, *vth_p, *vth_n, manual);
@@ -2559,40 +2583,46 @@ static int rtpcs_930x_sds_rxeq_tap_get(struct rtpcs_serdes *sds, unsigned int ta
 	struct device *dev = sds->ctrl->dev;
 	int ret, val;
 
-	ret = rtpcs_930x_sds_rxeq_set_debug(sds, 0x20);
+	ret = rtpcs_930x_sds_rxeq_set_debug(sds, RTL930X_RX_DEBUG_SEL_COEF);
 	if (ret < 0)
 		return ret;
 
-	ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x0c, 5, 0, tap_id); /* COEF_SEL */
+	ret = rtpcs_sds_write_mask(sds, PAGE_ANA_10G_EXT, ANA_SPD_EXT_REG12,
+				   RTL930X_RX_COEF_SEL,
+				   FIELD_PREP(RTL930X_RX_COEF_SEL,
+					      RTL930X_RX_COEF_SEL_TAP_EVEN(tap_id)));
 	if (ret < 0)
 		return ret;
 	usleep_range(1000, 2000);
 
-	val = rtpcs_sds_read_bits(sds, PAGE_WDIG, 0x14, 5, 0);
+	val = rtpcs_sds_read(sds, PAGE_WDIG, WDIG_REG20);
 	if (val < 0)
 		return val;
 
-	*tap_even = rtpcs_sign_mag_decode(val, 5);
+	*tap_even = rtpcs_sign_mag_decode(FIELD_GET(RTL93XX_RXEQ_COEF_TAPX, val), 5);
 	dev_dbg(dev, "SerDes %u: tap%d even coefficient = %d\n", sds->id, tap_id, *tap_even);
 
 	if (tap_id > 0) {
-		/* COEF_SEL */
-		ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x0c, 5, 0, (tap_id + 5));
+		ret = rtpcs_sds_write_mask(sds, PAGE_ANA_10G_EXT, ANA_SPD_EXT_REG12,
+					   RTL930X_RX_COEF_SEL,
+					   FIELD_PREP(RTL930X_RX_COEF_SEL,
+						      RTL930X_RX_COEF_SEL_TAP_ODD(tap_id)));
 		if (ret < 0)
 			return ret;
 
-		val = rtpcs_sds_read_bits(sds, PAGE_WDIG, 0x14, 5, 0);
+		val = rtpcs_sds_read(sds, PAGE_WDIG, WDIG_REG20);
 		if (val < 0)
 			return val;
 
-		*tap_odd = rtpcs_sign_mag_decode(val, 5);
+		*tap_odd = rtpcs_sign_mag_decode(FIELD_GET(RTL93XX_RXEQ_COEF_TAPX, val), 5);
 		dev_dbg(dev, "SerDes %u: tap%u odd coefficient = %d\n", sds->id, tap_id, *tap_odd);
 	}
 
-	val = rtpcs_sds_read_bits(sds, PAGE_ANA_10G, 0x0f, tap_id + 7, tap_id + 7);
+	val = rtpcs_sds_read(sds, PAGE_ANA_10G, ANA_SPD_REG15);
 	if (val < 0)
 		return val;
 
+	val = !!(val & RTL930X_LOAD_IN_INIT_TAP(tap_id));
 	dev_dbg(dev, "SerDes %u: tap%u manual = %d\n", sds->id, tap_id, val);
 	return 0;
 }
@@ -3432,7 +3462,7 @@ static int rtpcs_931x_sds_rxeq_leq_get_coef(struct rtpcs_serdes *sds)
 {
 	int ret, gray;
 
-	ret = rtpcs_931x_sds_rxeq_set_debug(sds, 0x1);
+	ret = rtpcs_931x_sds_rxeq_set_debug(sds, RTL931X_RX_DEBUG_SEL_LEQ);
 	if (ret < 0)
 		return ret;
 
@@ -3440,7 +3470,7 @@ static int rtpcs_931x_sds_rxeq_leq_get_coef(struct rtpcs_serdes *sds)
 	if (gray < 0)
 		return gray;
 
-	return rtpcs_gray_to_binary(FIELD_GET(RTL931X_RXEQ_COEF_LEQ_GRAY, gray));
+	return rtpcs_gray_to_binary(FIELD_GET(RTL93XX_RXEQ_COEF_LEQ_GRAY, gray));
 }
 
 static int rtpcs_931x_sds_rxeq_tap_set_value(struct rtpcs_serdes *sds, unsigned int tap_id,
@@ -3514,12 +3544,12 @@ static int rtpcs_931x_sds_rxeq_vth_get(struct rtpcs_serdes *sds, unsigned int *v
 {
 	int ret, val;
 
-	ret = rtpcs_931x_sds_rxeq_set_debug(sds, 0x2);
+	ret = rtpcs_931x_sds_rxeq_set_debug(sds, RTL931X_RX_DEBUG_SEL_COEF);
 	if (ret < 0)
 		return ret;
 
-	ret = rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG20, RTL931X_RXEQ_COEF_SEL,
-				   FIELD_PREP(RTL931X_RXEQ_COEF_SEL, RTL931X_RXEQ_COEF_SEL_VTH));
+	ret = rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG20, RTL931X_RX_COEF_SEL,
+				   FIELD_PREP(RTL931X_RX_COEF_SEL, RTL931X_RX_COEF_SEL_VTH));
 	if (ret < 0)
 		return ret;
 	usleep_range(1000, 2000);
