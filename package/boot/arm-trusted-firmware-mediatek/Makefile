@@ -445,6 +445,16 @@ define Trusted-Firmware-A/mt7986-spim-nand-ubi-ddr3
   UBI_START_ADDR:=0x200000
 endef
 
+define Trusted-Firmware-A/mt7986-spim-nand-ubi-1m-ddr3
+  NAME:=MediaTek MT7986 (SPI-NAND via SPIM using UBI 1MB offset, DDR3)
+  BOOT_DEVICE:=spim-nand
+  BUILD_SUBTARGET:=filogic
+  PLAT:=mt7986
+  DDR_TYPE:=ddr3
+  USE_UBI:=1
+  UBI_START_ADDR:=0x100000
+endef
+
 define Trusted-Firmware-A/mt7986-spim-nand-4k-ddr3
   NAME:=MediaTek MT7986 (SPI-NAND 4k+256 via SPIM, DDR3)
   BOOT_DEVICE:=spim-nand
@@ -788,6 +798,7 @@ TFA_TARGETS:= \
 	mt7986-sdmmc-ddr3 \
 	mt7986-snand-ddr3 \
 	mt7986-spim-nand-ddr3 \
+	mt7986-spim-nand-ubi-1m-ddr3 \
 	mt7986-spim-nand-ubi-ddr3 \
 	mt7986-spim-nand-4k-ddr3 \
 	mt7986-ram-ddr4 \
