@@ -1,0 +1,41 @@
+From 784979c2bea1656727545e202266b685be291d65 Mon Sep 17 00:00:00 2001
+From: Navid Ghahremani <ghahramani.navid@gmail.com>
+Date: Mon, 12 Oct 2026 07:49:14 +0100
+Subject: [PATCH 15/24] net: mdio: Add ZTE ZX279128S MDIO controller
+
+Provide bounded Clause 22 transactions and managed clock and MDIO-bus
+registration.
+
+Signed-off-by: Navid Ghahremani <ghahramani.navid@gmail.com>
+---
+
+--- a/drivers/net/mdio/Kconfig
++++ b/drivers/net/mdio/Kconfig
+@@ -191,6 +191,17 @@ config MDIO_THUNDER
+ 	  ThunderX SoCs when the MDIO bus device appears as a PCI
+ 	  device.
+ 
++config MDIO_ZX279128S
++	tristate "ZTE zx279128s MDIO bus controller"
++	depends on ARCH_ZTE || COMPILE_TEST
++	depends on HAS_IOMEM && OF_MDIO
++	help
++	  This driver supports the MDIO controller of the ZTE zx279128s
++	  SoC. It reaches the PHYs of the integrated switch and, on boards
++	  such as the ZTE ZXHN H3600, an external PHY.
++
++	  To compile this driver as a module, choose M here.
++
+ comment "MDIO Multiplexers"
+ 
+ config MDIO_BUS_MUX
+--- a/drivers/net/mdio/Makefile
++++ b/drivers/net/mdio/Makefile
+@@ -25,6 +25,7 @@ obj-$(CONFIG_MDIO_REGMAP)		+= mdio-regma
+ obj-$(CONFIG_MDIO_SUN4I)		+= mdio-sun4i.o
+ obj-$(CONFIG_MDIO_THUNDER)		+= mdio-thunder.o
+ obj-$(CONFIG_MDIO_XGENE)		+= mdio-xgene.o
++obj-$(CONFIG_MDIO_ZX279128S)		+= mdio-zx279128s.o
+ 
+ obj-$(CONFIG_MDIO_BUS_MUX)		+= mdio-mux.o
+ obj-$(CONFIG_MDIO_BUS_MUX_BCM6368)	+= mdio-mux-bcm6368.o
