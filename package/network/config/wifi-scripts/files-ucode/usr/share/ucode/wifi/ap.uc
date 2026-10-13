@@ -230,10 +230,6 @@ function iface_auth_type(config, band, eht) {
 	if (band == '6g' && config.wpa)
 		config.ieee80211w = 2;
 
-	/* IEEE 802.11be-2024 12.12.9: beacon protection on EHT, which needs PMF */
-	if (eht && (config.wpa & 2) && config.auth_type != 'psk-sae-compat')
-		set_default(config, 'ieee80211w', 1);
-
 	if (config.auth_type == 'psk-sae-compat') {
 		if (band != '6g') {
 			set_default(config, 'ieee80211w', 0);
@@ -255,6 +251,13 @@ function iface_auth_type(config, band, eht) {
 	/* hostapd_config_check_bss() refuses MBO with WPA2 and OCV without PMF */
 	if ((config.mbo || config.ocv) && (config.wpa & 2) && !config.ieee80211w)
 		config.ieee80211w = 1;
+
+	/* IEEE 802.11be-2024 12.12.9: beacon protection on EHT, which needs PMF */
+	if (eht && (config.wpa & 2) && config.auth_type != 'psk-sae-compat' &&
+	    config.ieee80211w == null) {
+		config.ieee80211w = 1;
+		config.eht_default_mfp = true;
+	}
 
 	if (config.auth_type == 'owe') {
 		set_default(config, 'owe_groups', '19 20 21');
@@ -773,6 +776,13 @@ export function generate(interface, data, config, vlans, stas, phy_features) {
 	iface_interworking(config);
 
 	iface.wpa_key_mgmt(config, data.config.band);
+	/* BCM4345 client firmware that selects WPA-PSK fails the 4-way handshake
+	 * when the BSS also offers WPA-PSK-SHA256. Only the EHT default drops it:
+	 * for an explicit ieee80211w=1, hostapd.conf gives both AKMs as the
+	 * common configuration of the PMF certification program. */
+	if (config.eht_default_mfp && config.wpa_key_mgmt)
+		config.wpa_key_mgmt = join(' ', filter(split(config.wpa_key_mgmt, ' '),
+			(akm) => akm != 'WPA-PSK-SHA256'));
 	append_vars(config, [
 		'wpa_key_mgmt',
 	]);
