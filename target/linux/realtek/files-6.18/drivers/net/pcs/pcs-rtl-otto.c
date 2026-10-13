@@ -3446,43 +3446,42 @@ static int rtpcs_931x_sds_rxeq_leq_get_coef(struct rtpcs_serdes *sds)
 static int rtpcs_931x_sds_rxeq_tap_set_value(struct rtpcs_serdes *sds, unsigned int tap_id,
 					     int tap_even, int tap_odd)
 {
-	int ret;
+	u16 even_val, odd_val;
+	enum rtpcs_page page;
+	int reg;
+
+	even_val = FIELD_PREP(RTL931X_TAPX_INIT_EVEN, rtpcs_sign_mag_encode(tap_even, 5));
+
+	if (tap_id == 0)
+		return rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG28,
+					    RTL931X_TAPX_INIT_EVEN, even_val);
 
 	switch (tap_id) {
-	case 0:
-		return rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x1c, 5, 0,
-					    rtpcs_sign_mag_encode(tap_even, 5));
 	case 1:
-		ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x1d, 5, 0,
-					   rtpcs_sign_mag_encode(tap_even, 5));
-		if (!ret)
-			ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x1d, 11, 6,
-						   rtpcs_sign_mag_encode(tap_odd, 5));
-		return ret;
+		page = PAGE_ANA_10G;
+		reg = ANA_SPD_REG29;
+		break;
 	case 2:
-		ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x1f, 5, 0,
-					   rtpcs_sign_mag_encode(tap_even, 5));
-		if (!ret)
-			ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x1f, 11, 6,
-						   rtpcs_sign_mag_encode(tap_odd, 5));
-		return ret;
+		page = PAGE_ANA_10G;
+		reg = ANA_SPD_REG31;
+		break;
 	case 3:
-		ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x0, 5, 0,
-					   rtpcs_sign_mag_encode(tap_even, 5));
-		if (!ret)
-			ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x0, 11, 6,
-						   rtpcs_sign_mag_encode(tap_odd, 5));
-		return ret;
+		page = PAGE_ANA_10G_EXT;
+		reg = ANA_SPD_EXT_REG00;
+		break;
 	case 4:
-		ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x1, 5, 0,
-					   rtpcs_sign_mag_encode(tap_even, 5));
-		if (!ret)
-			ret = rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x1, 11, 6,
-						   rtpcs_sign_mag_encode(tap_odd, 5));
-		return ret;
+		page = PAGE_ANA_10G_EXT;
+		reg = ANA_SPD_EXT_REG01;
+		break;
 	default:
 		return -EINVAL;
 	}
+
+	odd_val = FIELD_PREP(RTL931X_TAPX_INIT_ODD, rtpcs_sign_mag_encode(tap_odd, 5));
+
+	return rtpcs_sds_write_mask(sds, page, reg,
+				    RTL931X_TAPX_INIT_ODD | RTL931X_TAPX_INIT_EVEN,
+				    odd_val | even_val);
 }
 
 static int rtpcs_931x_sds_rxeq_tap_set_adapt(struct rtpcs_serdes *sds, unsigned int tap_id,
