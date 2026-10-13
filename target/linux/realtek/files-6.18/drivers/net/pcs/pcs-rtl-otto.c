@@ -297,6 +297,7 @@ enum rtpcs_page {
 #define  RTL930X_RXEQ_COEF_DCVS		GENMASK(4, 0)
 #define  RTL930X_RXEQ_COEF_VTHN		GENMASK(5, 3)
 #define  RTL930X_RXEQ_COEF_VTHP		GENMASK(2, 0)
+#define  RTL930X_RXCAL_FGCAL_BIN	GENMASK(5, 0)
 #define  RTL931X_RXEQ_COEF_VTHN		GENMASK(7, 4)
 #define  RTL931X_RXEQ_COEF_VTHP		GENMASK(3, 0)
 
@@ -340,8 +341,10 @@ enum rtpcs_page {
 #define  RTL931X_RXEQ_LEQ_INIT		GENMASK(6, 2)
 
 #define ANA_SPD_REG15			0x0f
+#define  RTL930X_LOAD_IN_INIT_ALL	GENMASK(13, 7) /* Includes undocumented bit 12. */
 #define  RTL930X_LOAD_IN_INIT_VTH	BIT(13)
 #define  RTL930X_LOAD_IN_INIT_TAP(t)	BIT((t) + 7)
+#define  RTL931X_LOAD_IN_INIT_ALL	GENMASK(12, 6) /* Includes undocumented bit 11. */
 #define  RTL931X_LOAD_IN_INIT_VTH	BIT(12)
 #define  RTL931X_LOAD_IN_INIT_TAP(t)	BIT((t) + 6)
 
@@ -354,7 +357,9 @@ enum rtpcs_page {
 #define   RTL931X_RX_COEF_SEL_VTH	0x0c
 
 #define ANA_SPD_REG21			0x15
+#define  RTL930X_RXCAL_OFFSET_RANGE	GENMASK(15, 14)
 #define  RTL930X_RX_EN_TEST		BIT(9)
+#define  RTL930X_RX_RUN			BIT(8)
 #define  RTL930X_RX_EN_SELF		BIT(4)
 #define  RTL931X_RX_DEBUG_SEL		GENMASK(11, 10)
 #define   RTL931X_RX_DEBUG_SEL_LEQ	0x01
@@ -2691,7 +2696,8 @@ static void rtpcs_930x_sds_rxcal_init(struct rtpcs_serdes *sds, enum rtpcs_sds_m
 	rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x0b, 5, 3, vth_min);
 
 	/* load DFE initial value */
-	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x0f, 13, 7, 0x7f); /* load_in_init */
+	rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG15,
+			     RTL930X_LOAD_IN_INIT_ALL, RTL930X_LOAD_IN_INIT_ALL);
 
 	/* disable LEQ training, enable DFE clock */
 	rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG23,
@@ -2725,8 +2731,8 @@ static void rtpcs_930x_sds_rxcal_init(struct rtpcs_serdes *sds, enum rtpcs_sds_m
 
 static void rtpcs_930x_sds_rxcal_fgcal(struct rtpcs_serdes *sds)
 {
-	u32 fgcal_binary, fgcal_gray;
-	u32 offset_range;
+	u32 fgcal_binary, offset_range;
+	int ret;
 
 	rtpcs_930x_sds_rx_reset(sds, RTPCS_SDS_MODE_10GBASER);
 
@@ -2739,38 +2745,52 @@ static void rtpcs_930x_sds_rxcal_fgcal(struct rtpcs_serdes *sds)
 	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x01, 14, 14, 0x00);
 
 	/* Force Rx-Run = 0 */
-	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x15, 8, 8, 0x0);
+	rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG21, RTL930X_RX_RUN, 0);
 	rtpcs_930x_sds_rx_reset(sds, RTPCS_SDS_MODE_10GBASER);
 
 	/* Foreground Calibration --- */
 
 	for (int run = 0; run < 10; run++) {
-		rtpcs_930x_sds_rxeq_set_debug(sds, 0x20);
-		rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x0c, 5, 0, 0xf); /* COEF_SEL */
-		/* ##FGCAL read gray */
-		fgcal_gray = rtpcs_sds_read_bits(sds, PAGE_WDIG, 0x14, 5, 0);
-		rtpcs_sds_write_bits(sds, PAGE_ANA_10G_EXT, 0x0c, 5, 0, 0xe); /* COEF_SEL */
-		/* ##FGCAL read binary */
-		fgcal_binary = rtpcs_sds_read_bits(sds, PAGE_WDIG, 0x14, 5, 0);
+		ret = rtpcs_930x_sds_rxeq_set_debug(sds, RTL930X_RX_DEBUG_SEL_COEF);
+		if (ret < 0)
+			return;
 
+		ret = rtpcs_sds_write_mask(sds, PAGE_ANA_10G_EXT, ANA_SPD_EXT_REG12,
+					   RTL930X_RX_COEF_SEL,
+					   FIELD_PREP(RTL930X_RX_COEF_SEL,
+						      RTL930X_RX_COEF_SEL_FGCAL_BIN));
+		if (ret < 0)
+			return;
+
+		ret = rtpcs_sds_read(sds, PAGE_WDIG, WDIG_REG20);
+		if (ret < 0)
+			return;
+
+		fgcal_binary = FIELD_GET(RTL930X_RXCAL_FGCAL_BIN, ret);
 		if (fgcal_binary <= 60 && fgcal_binary >= 3)
 			break;
 
-		dev_dbg(sds->ctrl->dev, "SerDes %u: fgcal_gray = %d, fgcal_binary = %d\n",
-			sds->id, fgcal_gray, fgcal_binary);
+		dev_dbg(sds->ctrl->dev, "SerDes %u: fgcal_binary = %d\n",
+			sds->id, fgcal_binary);
 
-		offset_range = rtpcs_sds_read_bits(sds, PAGE_ANA_10G, 0x15, 15, 14);
-		if (offset_range == 3) {
+		ret = rtpcs_sds_read(sds, PAGE_ANA_10G, ANA_SPD_REG21);
+		if (ret < 0)
+			return;
+
+		offset_range = FIELD_GET(RTL930X_RXCAL_OFFSET_RANGE, ret);
+		if (offset_range == FIELD_MAX(RTL930X_RXCAL_OFFSET_RANGE)) {
 			dev_dbg(sds->ctrl->dev,
 				"SerDes %u: Foreground Calibration result marginal!\n", sds->id);
 			break;
 		}
 
 		offset_range++;
-		rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x15, 15, 14, offset_range);
+		rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG21,
+				     RTL930X_RXCAL_OFFSET_RANGE,
+				     FIELD_PREP(RTL930X_RXCAL_OFFSET_RANGE, offset_range));
 
 		/* Force Rx-Run = 0 */
-		rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0x15, 8, 8, 0x0);
+		rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG21, RTL930X_RX_RUN, 0);
 		rtpcs_930x_sds_rx_reset(sds, RTPCS_SDS_MODE_10GBASER);
 	}
 }
@@ -3616,8 +3636,6 @@ static int rtpcs_931x_sds_rxeq_vth_get(struct rtpcs_serdes *sds, unsigned int *v
  */
 static int rtpcs_931x_sds_reset_leq_dfe(struct rtpcs_serdes *sds)
 {
-	u16 mask;
-
 	rtpcs_931x_sds_rxeq_leq_set_adapt(sds, false);
 	rtpcs_931x_sds_rxeq_leq_set_coef(sds, 0);
 	/* bits [1:0] are undocumented but part of the known-good reset value */
@@ -3628,11 +3646,8 @@ static int rtpcs_931x_sds_reset_leq_dfe(struct rtpcs_serdes *sds)
 	 * SDK does - to prevent the adapt engine from overwriting '0' in the
 	 * short timeframe.
 	 */
-	mask = RTL931X_LOAD_IN_INIT_VTH | RTL931X_LOAD_IN_INIT_TAP(0) |
-	       RTL931X_LOAD_IN_INIT_TAP(1) | RTL931X_LOAD_IN_INIT_TAP(2) |
-	       RTL931X_LOAD_IN_INIT_TAP(3) | RTL931X_LOAD_IN_INIT_TAP(4) |
-	       BIT(11); /* undocumented bit */
-	rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG15, mask, mask);
+	rtpcs_sds_write_mask(sds, PAGE_ANA_10G, ANA_SPD_REG15,
+			     RTL931X_LOAD_IN_INIT_ALL, RTL931X_LOAD_IN_INIT_ALL);
 
 	rtpcs_931x_sds_rxeq_tap_set_value(sds, 0, 0x1e, 0);
 	rtpcs_931x_sds_rxeq_tap_set_value(sds, 1, 0, 0);
@@ -3655,11 +3670,8 @@ static int rtpcs_931x_sds_reset_leq_dfe(struct rtpcs_serdes *sds)
  */
 static int rtpcs_931x_sds_rxeq_dfe_disable_5g(struct rtpcs_serdes *sds)
 {
-	u16 mask = RTL931X_LOAD_IN_INIT_VTH | RTL931X_LOAD_IN_INIT_TAP(0) |
-		   RTL931X_LOAD_IN_INIT_TAP(1) | RTL931X_LOAD_IN_INIT_TAP(2) |
-		   RTL931X_LOAD_IN_INIT_TAP(3) | RTL931X_LOAD_IN_INIT_TAP(4) |
-		   BIT(11); /* undocumented bit */
-	return rtpcs_sds_write_mask(sds, PAGE_ANA_5G0, ANA_SPD_REG15, mask, mask);
+	return rtpcs_sds_write_mask(sds, PAGE_ANA_5G0, ANA_SPD_REG15,
+				    RTL931X_LOAD_IN_INIT_ALL, RTL931X_LOAD_IN_INIT_ALL);
 }
 
 static int rtpcs_931x_sds_power(struct rtpcs_serdes *sds, bool power_on)
