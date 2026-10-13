@@ -159,7 +159,7 @@ struct otto_l3_config {
 	 * moves prefix rows has it.
 	 */
 	int (*route_matches)(struct otto_l3_ctrl *ctrl, int row, struct otto_l3_route *rt);
-	void (*route_write)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt);
+	int (*route_write)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt);
 	int (*setup)(struct otto_l3_ctrl *ctrl);
 	void (*dbgfs_init)(struct otto_l3_ctrl *ctrl);
 };

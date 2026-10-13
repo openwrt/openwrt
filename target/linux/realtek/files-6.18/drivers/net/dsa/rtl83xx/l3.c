@@ -172,11 +172,11 @@ static void otto_l3_838x_route_read(struct otto_l3_ctrl *ctrl, int idx, struct o
 	rt->nh.gw |= data[1];
 }
 
-static void otto_l3_838x_route_write(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt)
+static int otto_l3_838x_route_write(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt)
 {
 	u32 data[2] = { rt->nh.gw >> 32, rt->nh.gw };
 
-	otto_table_write(RTL8380_TBL_ROUTING, idx, &data);
+	return otto_table_write(RTL8380_TBL_ROUTING, idx, &data);
 }
 
 /* A ROUTING row holds a gateway's MAC and the switch MAC entry to route with
@@ -233,7 +233,7 @@ static int otto_l3_839x_set_smac(struct otto_l3_ctrl *ctrl, u32 idx, u64 mac)
  * switch's MACs (SWITCHMAC): a frame for another station with the same
  * destination goes its way. Without a route, the row is cleared.
  */
-static void otto_l3_839x_route_write(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt)
+static int otto_l3_839x_route_write(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt)
 {
 	struct rtl838x_switch_priv *priv = ctrl->priv;
 	struct pie_rule pr = {};
@@ -280,12 +280,16 @@ static void otto_l3_839x_route_write(struct otto_l3_ctrl *ctrl, int idx, struct 
 	err = rtl839x_pie_l3_rule_write(priv, idx, &pr);
 	if (err)
 		dev_err(ctrl->dev, "L3 rule %d not written: %d\n", idx, err);
+
+	return err;
 }
 
 /* A rule holds nothing its route does not, and counts its packets apart from
  * it, so a move writes the routes again at their new rows. The routes still
  * name the rows they leave. The ranges overlap by one row per insertion or
- * removal, so the copy runs away from the direction of travel.
+ * removal, so the copy runs away from the direction of travel. A rule that
+ * was not written may be half written, so a failed write leaves the block
+ * half shifted wherever it happens.
  */
 static int otto_l3_839x_route_rows_move(struct otto_l3_ctrl *ctrl, int dst, int src, int count)
 {
@@ -300,7 +304,8 @@ static int otto_l3_839x_route_rows_move(struct otto_l3_ctrl *ctrl, int dst, int 
 			}
 		}
 
-		otto_l3_839x_route_write(ctrl, dst + i, at);
+		if (otto_l3_839x_route_write(ctrl, dst + i, at))
+			return -EIO;
 	}
 
 	return 0;
@@ -977,7 +982,7 @@ static int otto_l3_930x_v6_row_to_slot(struct otto_l3_ctrl *ctrl, int row)
 /* Write a prefix route into the routing table CAM at position idx
  * Currently only IPv4 and IPv6 unicast routes are supported
  */
-static void otto_l3_930x_route_write(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt)
+static int otto_l3_930x_route_write(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt)
 {
 	struct in6_addr ip6_m;
 	u32 data[11];
@@ -1039,7 +1044,7 @@ static void otto_l3_930x_route_write(struct otto_l3_ctrl *ctrl, int idx, struct 
 	case ROUTE_TYPE_IP4MC:
 	case ROUTE_TYPE_IP6MC:
 		dev_warn(ctrl->dev, "route type not supported\n");
-		return;
+		return -EOPNOTSUPP;
 	}
 	data[10] = v;
 
@@ -1047,7 +1052,7 @@ static void otto_l3_930x_route_write(struct otto_l3_ctrl *ctrl, int idx, struct 
 		 data[0], data[1], data[2], data[3], data[4], data[5],
 		 data[6], data[7], data[8], data[9], data[10]);
 
-	otto_table_write(RTL9300_TBL_L3_PREFIX_ROUTE_IPUC, idx, &data);
+	return otto_table_write(RTL9300_TBL_L3_PREFIX_ROUTE_IPUC, idx, &data);
 }
 
 static int otto_l3_port_lower_walk(struct net_device *lower, struct netdev_nested_priv *_priv)
