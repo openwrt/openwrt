@@ -1,0 +1,148 @@
+From 33bc7af2b28122a3fc28c0cd0624d59599df97d2 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Thu, 10 Apr 2025 18:30:10 +0200
+Subject: [PATCH 2/6] net: dsa: mt7530: move pkt size and rx err MIB counter to
+ rmon stats API
+
+Drop custom handling of packet size and RX error MIB counter and handle
+them in the standard .get_rmon_stats API
+
+The MIB entry are dropped from the custom MIB table and converted to
+a define providing only the MIB offset.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Link: https://patch.msgid.link/20250410163022.3695-3-ansuelsmth@gmail.com
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ drivers/net/dsa/mt7530.c | 71 +++++++++++++++++++++++++++++++---------
+ drivers/net/dsa/mt7530.h | 17 ++++++++++
+ 2 files changed, 72 insertions(+), 16 deletions(-)
+
+--- a/drivers/net/dsa/mt7530.c
++++ b/drivers/net/dsa/mt7530.c
+@@ -43,12 +43,6 @@ static const struct mt7530_mib_desc mt75
+ 	MIB_DESC(1, 0x24, "TxLateCollision"),
+ 	MIB_DESC(1, 0x28, "TxExcessiveCollistion"),
+ 	MIB_DESC(1, 0x2c, "TxPause"),
+-	MIB_DESC(1, 0x30, "TxPktSz64"),
+-	MIB_DESC(1, 0x34, "TxPktSz65To127"),
+-	MIB_DESC(1, 0x38, "TxPktSz128To255"),
+-	MIB_DESC(1, 0x3c, "TxPktSz256To511"),
+-	MIB_DESC(1, 0x40, "TxPktSz512To1023"),
+-	MIB_DESC(1, 0x44, "Tx1024ToMax"),
+ 	MIB_DESC(2, 0x48, "TxBytes"),
+ 	MIB_DESC(1, 0x60, "RxDrop"),
+ 	MIB_DESC(1, 0x64, "RxFiltering"),
+@@ -57,17 +51,7 @@ static const struct mt7530_mib_desc mt75
+ 	MIB_DESC(1, 0x70, "RxBroadcast"),
+ 	MIB_DESC(1, 0x74, "RxAlignErr"),
+ 	MIB_DESC(1, 0x78, "RxCrcErr"),
+-	MIB_DESC(1, 0x7c, "RxUnderSizeErr"),
+-	MIB_DESC(1, 0x80, "RxFragErr"),
+-	MIB_DESC(1, 0x84, "RxOverSzErr"),
+-	MIB_DESC(1, 0x88, "RxJabberErr"),
+ 	MIB_DESC(1, 0x8c, "RxPause"),
+-	MIB_DESC(1, 0x90, "RxPktSz64"),
+-	MIB_DESC(1, 0x94, "RxPktSz65To127"),
+-	MIB_DESC(1, 0x98, "RxPktSz128To255"),
+-	MIB_DESC(1, 0x9c, "RxPktSz256To511"),
+-	MIB_DESC(1, 0xa0, "RxPktSz512To1023"),
+-	MIB_DESC(1, 0xa4, "RxPktSz1024ToMax"),
+ 	MIB_DESC(2, 0xa8, "RxBytes"),
+ 	MIB_DESC(1, 0xb0, "RxCtrlDrop"),
+ 	MIB_DESC(1, 0xb4, "RxIngressDrop"),
+@@ -810,6 +794,60 @@ mt7530_get_sset_count(struct dsa_switch
+ 	return ARRAY_SIZE(mt7530_mib);
+ }
+ 
++static const struct ethtool_rmon_hist_range mt7530_rmon_ranges[] = {
++	{ 0, 64 },
++	{ 65, 127 },
++	{ 128, 255 },
++	{ 256, 511 },
++	{ 512, 1023 },
++	{ 1024, MT7530_MAX_MTU },
++	{}
++};
++
++static void mt7530_get_rmon_stats(struct dsa_switch *ds, int port,
++				  struct ethtool_rmon_stats *rmon_stats,
++				  const struct ethtool_rmon_hist_range **ranges)
++{
++	struct mt7530_priv *priv = ds->priv;
++
++	mt7530_read_port_stats(priv, port, MT7530_PORT_MIB_RX_UNDER_SIZE_ERR, 1,
++			       &rmon_stats->undersize_pkts);
++	mt7530_read_port_stats(priv, port, MT7530_PORT_MIB_RX_OVER_SZ_ERR, 1,
++			       &rmon_stats->oversize_pkts);
++	mt7530_read_port_stats(priv, port, MT7530_PORT_MIB_RX_FRAG_ERR, 1,
++			       &rmon_stats->fragments);
++	mt7530_read_port_stats(priv, port, MT7530_PORT_MIB_RX_JABBER_ERR, 1,
++			       &rmon_stats->jabbers);
++
++	mt7530_read_port_stats(priv, port, MT7530_PORT_MIB_RX_PKT_SZ_64, 1,
++			       &rmon_stats->hist[0]);
++	mt7530_read_port_stats(priv, port, MT7530_PORT_MIB_RX_PKT_SZ_65_TO_127, 1,
++			       &rmon_stats->hist[1]);
++	mt7530_read_port_stats(priv, port, MT7530_PORT_MIB_RX_PKT_SZ_128_TO_255, 1,
++			       &rmon_stats->hist[2]);
++	mt7530_read_port_stats(priv, port, MT7530_PORT_MIB_RX_PKT_SZ_256_TO_511, 1,
++			       &rmon_stats->hist[3]);
++	mt7530_read_port_stats(priv, port, MT7530_PORT_MIB_RX_PKT_SZ_512_TO_1023, 1,
++			       &rmon_stats->hist[4]);
++	mt7530_read_port_stats(priv, port, MT7530_PORT_MIB_RX_PKT_SZ_1024_TO_MAX, 1,
++			       &rmon_stats->hist[5]);
++
++	mt7530_read_port_stats(priv, port, MT7530_PORT_MIB_TX_PKT_SZ_64, 1,
++			       &rmon_stats->hist_tx[0]);
++	mt7530_read_port_stats(priv, port, MT7530_PORT_MIB_TX_PKT_SZ_65_TO_127, 1,
++			       &rmon_stats->hist_tx[1]);
++	mt7530_read_port_stats(priv, port, MT7530_PORT_MIB_TX_PKT_SZ_128_TO_255, 1,
++			       &rmon_stats->hist_tx[2]);
++	mt7530_read_port_stats(priv, port, MT7530_PORT_MIB_TX_PKT_SZ_256_TO_511, 1,
++			       &rmon_stats->hist_tx[3]);
++	mt7530_read_port_stats(priv, port, MT7530_PORT_MIB_TX_PKT_SZ_512_TO_1023, 1,
++			       &rmon_stats->hist_tx[4]);
++	mt7530_read_port_stats(priv, port, MT7530_PORT_MIB_TX_PKT_SZ_1024_TO_MAX, 1,
++			       &rmon_stats->hist_tx[5]);
++
++	*ranges = mt7530_rmon_ranges;
++}
++
+ static int
+ mt7530_set_ageing_time(struct dsa_switch *ds, unsigned int msecs)
+ {
+@@ -3173,6 +3211,7 @@ const struct dsa_switch_ops mt7530_switc
+ 	.get_strings		= mt7530_get_strings,
+ 	.get_ethtool_stats	= mt7530_get_ethtool_stats,
+ 	.get_sset_count		= mt7530_get_sset_count,
++	.get_rmon_stats		= mt7530_get_rmon_stats,
+ 	.set_ageing_time	= mt7530_set_ageing_time,
+ 	.port_enable		= mt7530_port_enable,
+ 	.port_disable		= mt7530_port_disable,
+--- a/drivers/net/dsa/mt7530.h
++++ b/drivers/net/dsa/mt7530.h
+@@ -411,6 +411,23 @@ enum mt7530_vlan_port_acc_frm {
+ 
+ /* Register for MIB */
+ #define MT7530_PORT_MIB_COUNTER(x)	(0x4000 + (x) * 0x100)
++/* Each define is an offset of MT7530_PORT_MIB_COUNTER */
++#define   MT7530_PORT_MIB_TX_PKT_SZ_64	0x30
++#define   MT7530_PORT_MIB_TX_PKT_SZ_65_TO_127 0x34
++#define   MT7530_PORT_MIB_TX_PKT_SZ_128_TO_255 0x38
++#define   MT7530_PORT_MIB_TX_PKT_SZ_256_TO_511 0x3c
++#define   MT7530_PORT_MIB_TX_PKT_SZ_512_TO_1023 0x40
++#define   MT7530_PORT_MIB_TX_PKT_SZ_1024_TO_MAX 0x44
++#define   MT7530_PORT_MIB_RX_UNDER_SIZE_ERR 0x7c
++#define   MT7530_PORT_MIB_RX_FRAG_ERR	0x80
++#define   MT7530_PORT_MIB_RX_OVER_SZ_ERR 0x84
++#define   MT7530_PORT_MIB_RX_JABBER_ERR	0x88
++#define   MT7530_PORT_MIB_RX_PKT_SZ_64	0x90
++#define   MT7530_PORT_MIB_RX_PKT_SZ_65_TO_127 0x94
++#define   MT7530_PORT_MIB_RX_PKT_SZ_128_TO_255 0x98
++#define   MT7530_PORT_MIB_RX_PKT_SZ_256_TO_511 0x9c
++#define   MT7530_PORT_MIB_RX_PKT_SZ_512_TO_1023 0xa0
++#define   MT7530_PORT_MIB_RX_PKT_SZ_1024_TO_MAX 0xa4
+ #define MT7530_MIB_CCR			0x4fe0
+ #define  CCR_MIB_ENABLE			BIT(31)
+ #define  CCR_RX_OCT_CNT_GOOD		BIT(7)
