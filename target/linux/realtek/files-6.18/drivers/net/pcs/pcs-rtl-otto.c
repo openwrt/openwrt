@@ -3336,7 +3336,9 @@ static int rtpcs_930x_sds_post_config(struct rtpcs_serdes *sds, enum rtpcs_sds_m
 	bool calib_failed;
 	int calib_tries = 0;
 
-	if (hw_mode == RTPCS_SDS_MODE_QSGMII)
+	if (hw_mode != RTPCS_SDS_MODE_10GBASER &&
+	    hw_mode != RTPCS_SDS_MODE_XSGMII &&
+	    hw_mode != RTPCS_SDS_MODE_USXGMII)
 		return 0;
 
 	rtpcs_930x_sds_10g_idle(sds);
