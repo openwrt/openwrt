@@ -1,0 +1,83 @@
+From e12989ab719cea827cd2b8442f7dada4fd259481 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Thu, 10 Apr 2025 18:30:11 +0200
+Subject: [PATCH 3/6] net: dsa: mt7530: move pause MIB counter to eth_ctrl
+ stats API
+
+Drop custom handling of TX/RX pause frame MIB counter and handle
+them in the standard .get_eth_ctrl_stats API
+
+The MIB entry are dropped from the custom MIB table and converted to
+a define providing only the MIB offset.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Link: https://patch.msgid.link/20250410163022.3695-4-ansuelsmth@gmail.com
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ drivers/net/dsa/mt7530.c | 15 +++++++++++++--
+ drivers/net/dsa/mt7530.h |  2 ++
+ 2 files changed, 15 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/dsa/mt7530.c
++++ b/drivers/net/dsa/mt7530.c
+@@ -42,7 +42,6 @@ static const struct mt7530_mib_desc mt75
+ 	MIB_DESC(1, 0x20, "TxDeferred"),
+ 	MIB_DESC(1, 0x24, "TxLateCollision"),
+ 	MIB_DESC(1, 0x28, "TxExcessiveCollistion"),
+-	MIB_DESC(1, 0x2c, "TxPause"),
+ 	MIB_DESC(2, 0x48, "TxBytes"),
+ 	MIB_DESC(1, 0x60, "RxDrop"),
+ 	MIB_DESC(1, 0x64, "RxFiltering"),
+@@ -51,7 +50,6 @@ static const struct mt7530_mib_desc mt75
+ 	MIB_DESC(1, 0x70, "RxBroadcast"),
+ 	MIB_DESC(1, 0x74, "RxAlignErr"),
+ 	MIB_DESC(1, 0x78, "RxCrcErr"),
+-	MIB_DESC(1, 0x8c, "RxPause"),
+ 	MIB_DESC(2, 0xa8, "RxBytes"),
+ 	MIB_DESC(1, 0xb0, "RxCtrlDrop"),
+ 	MIB_DESC(1, 0xb4, "RxIngressDrop"),
+@@ -848,6 +846,18 @@ static void mt7530_get_rmon_stats(struct
+ 	*ranges = mt7530_rmon_ranges;
+ }
+ 
++static void mt7530_get_eth_ctrl_stats(struct dsa_switch *ds, int port,
++				      struct ethtool_eth_ctrl_stats *ctrl_stats)
++{
++	struct mt7530_priv *priv = ds->priv;
++
++	mt7530_read_port_stats(priv, port, MT7530_PORT_MIB_TX_PAUSE, 1,
++			       &ctrl_stats->MACControlFramesTransmitted);
++
++	mt7530_read_port_stats(priv, port, MT7530_PORT_MIB_RX_PAUSE, 1,
++			       &ctrl_stats->MACControlFramesReceived);
++}
++
+ static int
+ mt7530_set_ageing_time(struct dsa_switch *ds, unsigned int msecs)
+ {
+@@ -3212,6 +3222,7 @@ const struct dsa_switch_ops mt7530_switc
+ 	.get_ethtool_stats	= mt7530_get_ethtool_stats,
+ 	.get_sset_count		= mt7530_get_sset_count,
+ 	.get_rmon_stats		= mt7530_get_rmon_stats,
++	.get_eth_ctrl_stats	= mt7530_get_eth_ctrl_stats,
+ 	.set_ageing_time	= mt7530_set_ageing_time,
+ 	.port_enable		= mt7530_port_enable,
+ 	.port_disable		= mt7530_port_disable,
+--- a/drivers/net/dsa/mt7530.h
++++ b/drivers/net/dsa/mt7530.h
+@@ -412,6 +412,7 @@ enum mt7530_vlan_port_acc_frm {
+ /* Register for MIB */
+ #define MT7530_PORT_MIB_COUNTER(x)	(0x4000 + (x) * 0x100)
+ /* Each define is an offset of MT7530_PORT_MIB_COUNTER */
++#define   MT7530_PORT_MIB_TX_PAUSE	0x2c
+ #define   MT7530_PORT_MIB_TX_PKT_SZ_64	0x30
+ #define   MT7530_PORT_MIB_TX_PKT_SZ_65_TO_127 0x34
+ #define   MT7530_PORT_MIB_TX_PKT_SZ_128_TO_255 0x38
+@@ -422,6 +423,7 @@ enum mt7530_vlan_port_acc_frm {
+ #define   MT7530_PORT_MIB_RX_FRAG_ERR	0x80
+ #define   MT7530_PORT_MIB_RX_OVER_SZ_ERR 0x84
+ #define   MT7530_PORT_MIB_RX_JABBER_ERR	0x88
++#define   MT7530_PORT_MIB_RX_PAUSE	0x8c
+ #define   MT7530_PORT_MIB_RX_PKT_SZ_64	0x90
+ #define   MT7530_PORT_MIB_RX_PKT_SZ_65_TO_127 0x94
+ #define   MT7530_PORT_MIB_RX_PKT_SZ_128_TO_255 0x98
