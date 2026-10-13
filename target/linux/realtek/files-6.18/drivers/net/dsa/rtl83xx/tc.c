@@ -46,6 +46,7 @@ static int otto_tc_parse_flow_rule(struct rtl838x_switch_priv *priv,
 				   struct flow_rule *rule, struct rtl83xx_flow *flow)
 {
 	struct flow_dissector *dissector = rule->match.dissector;
+	struct flow_match_control control;
 	u64 supported_keys;
 
 	dev_dbg(priv->dev, "parsing flower match keys\n");
@@ -68,10 +69,6 @@ static int otto_tc_parse_flow_rule(struct rtl838x_switch_priv *priv,
 			dissector->used_keys & ~supported_keys);
 		return -EOPNOTSUPP;
 	}
-
-	if ((dissector->used_keys & BIT_ULL(FLOW_DISSECTOR_KEY_IPV4_ADDRS)) &&
-	    (dissector->used_keys & BIT_ULL(FLOW_DISSECTOR_KEY_IPV6_ADDRS)))
-		return -EOPNOTSUPP;
 
 	if (flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_BASIC)) {
 		struct flow_match_basic match;
@@ -149,7 +146,13 @@ static int otto_tc_parse_flow_rule(struct rtl838x_switch_priv *priv,
 		flow->rule.itag_m = match.mask->vlan_id;
 	}
 
-	if (flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_IPV4_ADDRS)) {
+	/* cls_flower keeps IPv4 and IPv6 addresses in one union, so an IPv4
+	 * rule shows the IPv6 key in use too: the address type tells which
+	 * one the rule holds, the key whether it matches on it at all.
+	 */
+	flow_rule_match_control(rule, &control);
+	if (control.key->addr_type == FLOW_DISSECTOR_KEY_IPV4_ADDRS &&
+	    flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_IPV4_ADDRS)) {
 		struct flow_match_ipv4_addrs match;
 
 		dev_dbg(priv->dev, "match IPV4\n");
@@ -159,7 +162,8 @@ static int otto_tc_parse_flow_rule(struct rtl838x_switch_priv *priv,
 		flow->rule.dip_m = match.mask->dst;
 		flow->rule.sip = match.key->src;
 		flow->rule.sip_m = match.mask->src;
-	} else if (flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_IPV6_ADDRS)) {
+	} else if (control.key->addr_type == FLOW_DISSECTOR_KEY_IPV6_ADDRS &&
+		   flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_IPV6_ADDRS)) {
 		struct flow_match_ipv6_addrs match;
 
 		dev_dbg(priv->dev, "match IPV6\n");
