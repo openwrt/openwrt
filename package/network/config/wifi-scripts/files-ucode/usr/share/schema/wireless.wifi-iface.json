@@ -1029,7 +1029,7 @@
 			"type": "string"
 		},
 		"sae_pwe": {
-			"description": "SAE mechanism for PWE derivation",
+			"description": "SAE mechanism for PWE derivation (0: hunting-and-pecking, 1: hash-to-element, 2: both). Default 1 on 6 GHz, 2 on other bands, unset with ppsk. sae and sae-mixed ignore 0 on an AP MLD with a 6 GHz link.",
 			"type": "number",
 			"enum": [ 0, 1, 2 ]
 		},

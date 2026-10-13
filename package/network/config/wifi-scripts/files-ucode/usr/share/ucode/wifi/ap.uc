@@ -254,6 +254,11 @@ function iface_auth_type(config, band, eht) {
 	if (config.auth_type in [ 'sae', 'psk-sae', 'psk-sae-compat' ] || config.rsno2_sae) {
 		config.sae_require_mfp = 1;
 		set_default(config, 'sae_groups', '19 20 21');
+		/* IEEE 802.11be-2024 12.6.2: same RSNXE on all links, and hostapd
+		 * enables H2E for sae_pwe 0 on 6 GHz only */
+		if (config.sae_pwe === 0 && config.mlo && index(config.mlo_bands ?? [], '6g') >= 0 &&
+		    config.auth_type in [ 'sae', 'psk-sae' ])
+			delete config.sae_pwe;
 		if (!config.ppsk) {
 			if (band == '6g')
 				set_default(config, 'sae_pwe', 1);
