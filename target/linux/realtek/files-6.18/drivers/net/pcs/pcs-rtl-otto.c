@@ -1206,17 +1206,12 @@ static int rtpcs_838x_sds_post_config(struct rtpcs_serdes *sds, enum rtpcs_sds_m
 
 /* RTL839X */
 
-/*
- * RTL839X MAC_SERDES_IF_CTRL mode values.
- * From the vendor SDK; 100BASEX (0x8), 1000BASEX/SGMII (0x7) are documented
- * but not yet exercised here.
- */
 static const s16 rtpcs_839x_sds_hw_mode_vals[RTPCS_SDS_MODE_MAX] = {
 	[0 ... RTPCS_SDS_MODE_MAX - 1]  = -1,
 	[RTPCS_SDS_MODE_OFF]            = 0x0,
-	/* [RTPCS_SDS_MODE_100BASEX]    = 0x8, */
-	/* [RTPCS_SDS_MODE_1000BASEX]   = 0x7, */
-	/* [RTPCS_SDS_MODE_SGMII]       = 0x7, */
+	[RTPCS_SDS_MODE_100BASEX]       = 0x8,
+	[RTPCS_SDS_MODE_1000BASEX]      = 0x7,
+	[RTPCS_SDS_MODE_SGMII]          = 0x7,
 	[RTPCS_SDS_MODE_QSGMII]         = 0x6,
 };
 
@@ -1264,13 +1259,11 @@ static void rtpcs_839x_sds_fill_caps(struct rtpcs_serdes *sds)
 	if (sds->id <= 12)
 		__set_bit(RTPCS_SDS_MODE_QSGMII, sds->supported_modes);
 
-	/* Uncomment this when modes are supported
 	if (sds->id >= 12) {
 		__set_bit(RTPCS_SDS_MODE_SGMII, sds->supported_modes);
 		__set_bit(RTPCS_SDS_MODE_100BASEX, sds->supported_modes);
 		__set_bit(RTPCS_SDS_MODE_1000BASEX, sds->supported_modes);
 	}
-	*/
 }
 
 static int rtpcs_839x_sds_probe(struct rtpcs_serdes *sds)
@@ -1436,6 +1429,14 @@ static int rtpcs_839x_sds_activate(struct rtpcs_serdes *sds)
  */
 static int rtpcs_839x_sds_config_hw_mode(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode)
 {
+	/* TODO: proper setup of 100Base-X, 1000Base-X and SGMII needed */
+	if (hw_mode == RTPCS_SDS_MODE_100BASEX ||
+	    hw_mode == RTPCS_SDS_MODE_1000BASEX ||
+	    hw_mode == RTPCS_SDS_MODE_SGMII)
+		dev_warn(sds->ctrl->dev,
+			 "SerDes %u: mode setup is incomplete; relying on bootloader pre-setup\n",
+			 sds->id);
+
 	return 0;
 }
 
