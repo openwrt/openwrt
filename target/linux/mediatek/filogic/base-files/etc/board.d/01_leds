@@ -32,6 +32,10 @@ asus,rt-ax57m|\
 snr,snr-cpe-ax2)
 	ucidef_set_led_netdev "wan" "wan" "blue:wan" "wan" "link tx rx"
 	;;
+asus,rt-be59)
+	ucidef_set_led_netdev "wan" "WAN" "white:wan" "eth1" "link tx rx"
+	ucidef_set_led_netdev "lan" "LAN" "white:lan" "br-lan" "link tx rx"
+	;;
 asus,tuf-ax4200)
 	ucidef_set_led_netdev "wan" "WAN" "mdio-bus:06:white:wan" "eth1" "link tx rx"
 	;;
