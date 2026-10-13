@@ -125,6 +125,25 @@ define Build/usrobotics-bin
 	mv $@.new $@
 endef
 
+define Build/legacy-usb-install-zip-bundle
+	rm -rf "$@.tmp"; \
+	fw_name="$(DEVICE_IMG_PREFIX)-squashfs.trx"; \
+	cp -a "$(TOPDIR)/target/linux/bcm47xx/image/legacy-usb-install-zip-bundle/." "$@.tmp/"; \
+	mv "$@" "$@.tmp/firmware/$$fw_name"; \
+	chmod +x "$@.tmp/install.sh" "$@.tmp/scripts/"*.sh; \
+	sed \
+		-e 's/@VERSION@/$(VERSION_NUMBER)/g' \
+		-e 's/@MODEL@/$(DEVICE_VENDOR) $(DEVICE_MODEL) $(DEVICE_VARIANT)/g' \
+		-e "s/@FIRMWARE_IMAGE@/$$fw_name/g" \
+		"$@.tmp/README.txt.in" \
+		> "$@.tmp/README.txt"; \
+	rm -f "$@.tmp/README.txt.in"; \
+	hash="$$( $(MKHASH) sha256 "$@.tmp/firmware/$$fw_name" )"; \
+	printf '%s *%s\n' "$$hash" "$$fw_name" > "$@.tmp/firmware/SHA256SUMS"; \
+	(cd "$@.tmp" && $(STAGING_DIR_HOST)/bin/zip -qr "$@" .); \
+	rm -rf "$@.tmp"
+endef
+
 #################################################
 # Devices
 #################################################
