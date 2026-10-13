@@ -482,13 +482,15 @@ struct rtldsa_config {
 	int (*lag_set_distribution_algorithm)(struct rtl838x_switch_priv *priv,
 					      int group, int algoidx,
 					      u32 algomask);
-	void (*lag_set_local_group_id)(int local_group, int global_group, bool valid);
+	void (*lag_set_local_group_id)(struct rtl838x_switch_priv *priv,
+				       int local_group, int global_group, bool valid);
 	void (*lag_write_data)(u32 data[], struct rtldsa_93xx_lag_entry *e);
 	void (*lag_fill_data)(u32 data[], struct rtldsa_93xx_lag_entry *e);
-	void (*lag_set_local_port2group)(int group, int port, bool valid);
+	void (*lag_set_local_port2group)(struct rtl838x_switch_priv *priv,
+					 int group, int port, bool valid);
 	void (*lag_set_port2group)(int group, int port, bool valid);
 	int (*lag_table)(void);
-	void (*lag_sync_tables)(void);
+	void (*lag_sync_tables)(struct rtl838x_switch_priv *priv);
 };
 
 struct rtl838x_switch_priv {
