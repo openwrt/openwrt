@@ -2828,7 +2828,7 @@ static void rtpcs_930x_sds_rxcal_leq_adapt_lock(struct rtpcs_serdes *sds)
 	}
 
 	/* rounded average of where auto-adapt settled */
-	avg10 = (sum10 / 10) + (((sum10 % 10) >= 5) ? 1 : 0);
+	avg10 = DIV_ROUND_CLOSEST(sum10, 10);
 
 	/*
 	 * Empirical correction based on attachment type.
@@ -2892,20 +2892,16 @@ static void rtpcs_930x_sds_rxcal_vth_tap0_adapt_lock(struct rtpcs_serdes *sds)
 static void rtpcs_930x_sds_rxeq_dfe_taps_adapt(struct rtpcs_serdes *sds)
 {
 	/* dfeTap1_4Enable true */
-	rtpcs_930x_sds_rxeq_tap_set_adapt(sds, 1, true);
-	rtpcs_930x_sds_rxeq_tap_set_adapt(sds, 2, true);
-	rtpcs_930x_sds_rxeq_tap_set_adapt(sds, 3, true);
-	rtpcs_930x_sds_rxeq_tap_set_adapt(sds, 4, true);
+	for (int i = 1; i <= 4; i++)
+		rtpcs_930x_sds_rxeq_tap_set_adapt(sds, i, true);
 
 	msleep(30);
 }
 
 static void rtpcs_930x_sds_rxeq_dfe_disable(struct rtpcs_serdes *sds)
 {
-	int tap_even = 0, tap_odd = 0;
-
 	for (int i = 1; i <= 4; i++) {
-		rtpcs_930x_sds_rxeq_tap_set_value(sds, i, tap_even, tap_odd);
+		rtpcs_930x_sds_rxeq_tap_set_value(sds, i, 0, 0);
 		rtpcs_930x_sds_rxeq_tap_set_adapt(sds, i, false);
 	}
 
