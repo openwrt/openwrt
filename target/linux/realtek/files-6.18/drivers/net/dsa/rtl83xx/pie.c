@@ -1621,11 +1621,16 @@ int rtl839x_pie_rule_read(struct rtl838x_switch_priv *priv, int idx, struct  pie
 	u32 r[17];
 	int block = idx / PIE_BLOCK_SIZE;
 	u32 t_select = sw_r32(RTL839X_ACL_BLK_TMPLTE_CTRL(block));
+	int err;
 
 	memset(pr, 0, sizeof(*pr));
-	__otto_table_read(tbl, idx, &r);
+	if (tbl < 0)
+		return tbl;
 
+	err = __otto_table_read(tbl, idx, &r);
 	otto_table_release(tbl);
+	if (err)
+		return err;
 
 	rtl839x_read_pie_fixed_fields(r, pr);
 	if (!pr->valid)
@@ -1647,6 +1652,10 @@ int rtl839x_pie_rule_write(struct rtl838x_switch_priv *priv, int idx, struct pie
 	u32 r[17];
 	int block = idx / PIE_BLOCK_SIZE;
 	u32 t_select = sw_r32(RTL839X_ACL_BLK_TMPLTE_CTRL(block));
+	int err;
+
+	if (tbl < 0)
+		return tbl;
 
 	pr_debug("%s: %d, t_select: %08x\n", __func__, idx, t_select);
 
@@ -1654,9 +1663,9 @@ int rtl839x_pie_rule_write(struct rtl838x_switch_priv *priv, int idx, struct pie
 		r[i] = 0;
 
 	if (!pr->valid) {
-		__otto_table_write(tbl, idx, &r);
+		err = __otto_table_write(tbl, idx, &r);
 		otto_table_release(tbl);
-		return 0;
+		return err;
 	}
 	rtl839x_write_pie_fixed_fields(r, pr);
 
@@ -1667,10 +1676,10 @@ int rtl839x_pie_rule_write(struct rtl838x_switch_priv *priv, int idx, struct pie
 
 /*	rtl839x_pie_rule_dump_raw(r); */
 
-	__otto_table_write(tbl, idx, &r);
+	err = __otto_table_write(tbl, idx, &r);
 	otto_table_release(tbl);
 
-	return 0;
+	return err;
 }
 
 static bool rtl839x_pie_templ_has(int t, enum rtl839x_template_field_id field_type)
@@ -1798,7 +1807,7 @@ int rtl839x_pie_l3_rule_write(struct rtl838x_switch_priv *priv, int idx, struct 
 	enum rtl839x_template_field_id dip = pr->is_ipv6 ? RTL839X_TEMPLATE_FIELD_DIP2 :
 							     RTL839X_TEMPLATE_FIELD_DIP0;
 	int block = idx / PIE_BLOCK_SIZE;
-	int j, t;
+	int j, t, err;
 
 	if (idx < 0 || idx >= RTL839X_PIE_L3_RULES)
 		return -EINVAL;
@@ -1817,10 +1826,10 @@ int rtl839x_pie_l3_rule_write(struct rtl838x_switch_priv *priv, int idx, struct 
 
 	mutex_lock(&priv->pie_mutex);
 	rtl839x_pie_lookup_enable(priv, idx);
-	rtl839x_pie_rule_write(priv, idx, pr);
+	err = rtl839x_pie_rule_write(priv, idx, pr);
 	mutex_unlock(&priv->pie_mutex);
 
-	return 0;
+	return err;
 }
 
 void rtl839x_pie_init(struct rtl838x_switch_priv *priv)
