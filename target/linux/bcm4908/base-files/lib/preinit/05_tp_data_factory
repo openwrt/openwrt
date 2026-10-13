@@ -1,0 +1,98 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0 OR BSD-2-Clause
+#
+# Reads TP-Link's per-unit factory data out of the "tp_data" partition
+# and stashes it in /tmp for the later boot stages to pick up.
+#
+# tp_data is a UBI volume; its DTS node is "compatible = linux,ubi", so
+# the kernel attaches it during init and all this has to do is find the
+# ubi device it landed on and mount the volume read-only.
+#
+#   default-mac  - 6 raw bytes, the board's MAC address
+#   product-info - "key:value" text, including the factory region as
+#                  "country:XX"
+#   radio_bk     - 20-byte header (magic "rado", LE u32 payload length,
+#                  flags, checksum) followed by NUL-separated key=value
+#                  nvram entries for both radios ("1:" = 5GHz, "2:" =
+#                  2.4GHz, the latter has no mainline driver and is
+#                  ignored)
+#
+# This has to run before 10_indicate_preinit: that hook calls
+# board_detect, which runs /etc/board.d/* and writes /tmp/board.json,
+# and board_detect will not regenerate a board.json that already exists.
+# Anything /etc/board.d/03_wireless needs must therefore be in place by
+# then. Writing /lib/firmware is not possible this early, so the nvram
+# merge itself is left to 81_tp_data_nvram.
+#
+# Fails soft throughout: on any error the shipped defaults are kept.
+
+tp_data_factory() {
+	. /lib/functions.sh
+
+	[ "$(board_name)" = "tplink,archer-c2300-v1" ] || return 0
+
+	local mtdnum
+	mtdnum="$(find_mtd_index tp_data)"
+	[ -n "$mtdnum" ] || return 0
+
+	# busybox sleep has no sub-second support (FLOAT_DURATION and USLEEP
+	# are both off), so this waits in whole seconds.
+	local ubidevdir ubidev cmtdnum i=0
+	while [ -z "$ubidev" ] && [ "$i" -lt 5 ]; do
+		for ubidevdir in /sys/class/ubi/ubi*; do
+			[ -e "$ubidevdir/mtd_num" ] || continue
+			cmtdnum="$(cat "$ubidevdir/mtd_num")"
+			if [ "$mtdnum" = "$cmtdnum" ]; then
+				ubidev="$(basename "$ubidevdir")"
+				break
+			fi
+		done
+		[ -n "$ubidev" ] || { sleep 1; i=$((i + 1)); }
+	done
+	[ -n "$ubidev" ] || return 0
+
+	local voldev="/dev/${ubidev}_0"
+	if [ ! -e "$voldev" ] && [ -e "/sys/class/ubi/${ubidev}_0/dev" ]; then
+		local devid major minor
+		devid="$(cat "/sys/class/ubi/${ubidev}_0/dev")"
+		major="${devid%%:*}"
+		minor="${devid##*:}"
+		mknod "$voldev" c "$major" "$minor" 2>/dev/null
+	fi
+	[ -e "$voldev" ] || return 0
+
+	local mnt="/tmp/tp_data"
+	mkdir -p "$mnt"
+	mount -t ubifs -o ro "$voldev" "$mnt" 2>/dev/null || {
+		rmdir "$mnt" 2>/dev/null
+		return 0
+	}
+
+	# The 5GHz radio's own address is the board MAC minus two, which is
+	# what the vendor firmware assigns it.
+	if [ -f "$mnt/default-mac" ] && [ "$(wc -c < "$mnt/default-mac")" -eq 6 ]; then
+		local mac_hex mac_dec wifi_hex
+		mac_hex="$(hexdump -v -e '6/1 "%02x"' "$mnt/default-mac")"
+		mac_dec=$((0x$mac_hex))
+		wifi_hex="$(printf '%012x' $(( (mac_dec - 2) & 0xffffffffffff )) )"
+		echo "$mac_hex" | sed 's/\(..\)/\1:/g;s/:$//' > /tmp/tp_data_mac
+		echo "1:macaddr=$(echo "$wifi_hex" | sed 's/\(..\)/\1:/g;s/:$//')" \
+			> /tmp/tp_data_nvram
+	fi
+
+	if [ -f "$mnt/product-info" ]; then
+		sed -n 's/^country:\([A-Za-z0-9][A-Za-z0-9]\)[[:space:]]*$/\1/p' \
+			"$mnt/product-info" | head -1 > /tmp/tp_data_country
+		[ -s /tmp/tp_data_country ] || rm -f /tmp/tp_data_country
+	fi
+
+	if [ -f "$mnt/radio_bk" ]; then
+		dd if="$mnt/radio_bk" bs=20 skip=1 2>/dev/null \
+			| tr '\0' '\n' | sed -n '/^1:/p' >> /tmp/tp_data_nvram
+	fi
+
+	umount "$mnt"
+	rmdir "$mnt" 2>/dev/null
+}
+
+boot_hook_add preinit_main tp_data_factory

@@ -11,6 +11,26 @@ bcm4908_setup_interfaces()
 	asus,gt-ac5300)
 		ucidef_set_interface_lan "lan1 lan2 lan5 lan6 sw"
 		;;
+	tplink,archer-c2300-v1)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
+		# Per-unit MACs derived from the "tp_data" factory partition,
+		# read by /lib/preinit/05_tp_data_factory. The vendor firmware
+		# hands out a contiguous block around default-mac: -2 to the
+		# 5GHz radio, -1 to the 2.4GHz radio, default-mac itself to the
+		# LAN ports and br-lan, and +1 to the WAN port.
+		#
+		# config_generate applies the lan address to the LAN ports,
+		# which br-lan then inherits, and the wan one to the wan device
+		# directly. Not ucidef_set_network_device_mac: that keys
+		# board.json by device name, and jshn rewrites "br-lan" to
+		# "br_lan", which netifd never matches against the real name.
+		[ -s /tmp/tp_data_mac ] && {
+			local mac="$(cat /tmp/tp_data_mac)"
+
+			ucidef_set_interface_macaddr "lan" "$mac"
+			ucidef_set_interface_macaddr "wan" "$(macaddr_add "$mac" 1)"
+		}
+		;;
 	*)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
 		;;
