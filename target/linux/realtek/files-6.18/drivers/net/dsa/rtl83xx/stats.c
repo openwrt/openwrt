@@ -1060,25 +1060,15 @@ u32 otto_stats_839x_packet_cntr_read(struct rtl838x_switch_priv *priv, int count
 
 void otto_stats_839x_packet_cntr_clear(struct rtl838x_switch_priv *priv, int counter)
 {
-	int tbl = otto_table_acquire(RTL8390_TBL_LOG);
-	u32 buf[2];
+	u32 buf[2] = {};
 
 	dev_dbg(priv->dev, "clearing LOG packet counter %d\n", counter);
 
-	/*
-	 * Two counters share one LOG table entry. Read the current entry
-	 * first so clearing one half preserves the adjacent counter.
+	/* A LOG entry holds two counters and takes no data: a write to the
+	 * clear address of one half zeroes that half and leaves the other.
 	 */
-	__otto_table_read(tbl, counter / 2, &buf);
-
-	if (counter % 2)
-		buf[0] = 0;
-	else
-		buf[1] = 0;
-
-	__otto_table_write(tbl, counter / 2, &buf);
-
-	otto_table_release(tbl);
+	otto_table_write(counter % 2 ? RTL8390_TBL_LOG_CLRH : RTL8390_TBL_LOG_CLRL,
+			 counter / 2, &buf);
 }
 
 /* A PIE rule logs its matched packets into the LOG table entry that carries
