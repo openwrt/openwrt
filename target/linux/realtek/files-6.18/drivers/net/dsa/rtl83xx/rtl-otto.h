@@ -359,10 +359,10 @@ struct rtldsa_config {
 	int imr_glb;
 	int n_counters;
 	int n_pie_blocks;
-	/* PIE rule ID doubles as the LOG-table counter ID (RTL930x); also
-	 * gates ingress cls_flower offload, which relies on that property.
-	 */
+	/* PIE rule ID doubles as the LOG-table counter ID (RTL930x) */
 	bool pie_rule_id_is_log_counter;
+	/* The PIE takes ingress tc flower rules */
+	bool pie_cls_flower;
 	u8 num_lag_ids;
 	u8 cpu_port;
 	u8 port_ignore;

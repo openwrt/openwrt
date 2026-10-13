@@ -114,6 +114,7 @@ static void rtldsa_port_set_salrn(struct rtl838x_switch_priv *priv,
 static int rtldsa_83xx_setup(struct dsa_switch *ds)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
+	int err;
 
 	pr_debug("%s called\n", __func__);
 
@@ -164,6 +165,12 @@ static int rtldsa_83xx_setup(struct dsa_switch *ds)
 
 	priv->r->pie_init(priv);
 
+	if (priv->r->pie_cls_flower) {
+		err = otto_tc_init(priv);
+		if (err)
+			return err;
+	}
+
 	return 0;
 }
 
@@ -209,7 +216,7 @@ static int rtldsa_93xx_setup(struct dsa_switch *ds)
 
 	priv->r->pie_init(priv);
 
-	if (priv->r->pie_rule_id_is_log_counter) {
+	if (priv->r->pie_cls_flower) {
 		err = otto_tc_init(priv);
 		if (err)
 			return err;
@@ -1404,6 +1411,10 @@ const struct dsa_switch_ops rtldsa_83xx_switch_ops = {
 
 	.port_pre_bridge_flags	= rtldsa_port_pre_bridge_flags,
 	.port_bridge_flags	= rtldsa_port_bridge_flags,
+
+	.cls_flower_add		= otto_tc_cls_flower_add,
+	.cls_flower_del		= otto_tc_cls_flower_del,
+	.cls_flower_stats	= otto_tc_cls_flower_stats,
 };
 
 const struct phylink_mac_ops rtldsa_93xx_phylink_mac_ops = {

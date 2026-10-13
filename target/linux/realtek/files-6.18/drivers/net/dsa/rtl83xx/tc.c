@@ -621,7 +621,7 @@ out_unlock:
 static int otto_tc_pie_cls_flower_add(struct rtl838x_switch_priv *priv, int port,
 				      struct flow_cls_offload *cls, bool ingress)
 {
-	if (!ingress || !priv->r->pie_rule_id_is_log_counter)
+	if (!ingress || !priv->r->pie_cls_flower)
 		return -EOPNOTSUPP;
 
 	return otto_tc_configure_flower(priv, cls, port);
@@ -630,7 +630,7 @@ static int otto_tc_pie_cls_flower_add(struct rtl838x_switch_priv *priv, int port
 static int otto_tc_pie_cls_flower_del(struct rtl838x_switch_priv *priv,
 				      struct flow_cls_offload *cls, bool ingress)
 {
-	if (!ingress || !priv->r->pie_rule_id_is_log_counter)
+	if (!ingress || !priv->r->pie_cls_flower)
 		return -ENOENT;
 
 	return otto_tc_delete_flower(priv, cls);
@@ -639,7 +639,7 @@ static int otto_tc_pie_cls_flower_del(struct rtl838x_switch_priv *priv,
 static int otto_tc_pie_cls_flower_stats(struct rtl838x_switch_priv *priv,
 					struct flow_cls_offload *cls, bool ingress)
 {
-	if (!ingress || !priv->r->pie_rule_id_is_log_counter)
+	if (!ingress || !priv->r->pie_cls_flower)
 		return -ENOENT;
 
 	return otto_tc_stats_flower(priv, cls);
