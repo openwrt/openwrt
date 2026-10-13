@@ -121,7 +121,6 @@ ramips_setup_interfaces()
 	dlink,dir-810l|\
 	netcore,nw5212|\
 	netgear,jwnr2010-v5|\
-	phicomm,k2-v22.4|\
 	phicomm,k2-v22.5|\
 	rostelecom,rt-fl-1|\
 	rostelecom,s1010|\
@@ -223,6 +222,9 @@ ramips_setup_interfaces()
 	nexx,wt3020-8m)
 		ucidef_add_switch "switch0" \
 			"4:lan" "0:wan" "6@eth0"
+		;;
+	phicomm,k2-v22.4)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
 		;;
 	phicomm,k2g|\
 	wavlink,wl-wn530hg4)
