@@ -20,7 +20,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 
 --- a/drivers/net/dsa/qca/qca8k-8xxx.c
 +++ b/drivers/net/dsa/qca/qca8k-8xxx.c
-@@ -2022,6 +2022,12 @@ qca8k_setup(struct dsa_switch *ds)
+@@ -2023,6 +2023,12 @@ qca8k_setup(struct dsa_switch *ds)
  			dev_err(priv->dev, "failed enabling QCA header mode on port %d", dp->index);
  			return ret;
  		}
@@ -33,7 +33,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	}
  
  	/* Forward all unknown frames to CPU port for Linux processing */
-@@ -2046,11 +2052,6 @@ qca8k_setup(struct dsa_switch *ds)
+@@ -2047,11 +2053,6 @@ qca8k_setup(struct dsa_switch *ds)
  		if (ret)
  			return ret;
  
@@ -45,7 +45,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  		ret = qca8k_rmw(priv, QCA8K_PORT_LOOKUP_CTRL(cpu_port),
  				BIT(port), BIT(port));
  		if (ret)
-@@ -2107,6 +2108,9 @@ qca8k_setup(struct dsa_switch *ds)
+@@ -2108,6 +2109,9 @@ qca8k_setup(struct dsa_switch *ds)
  	/* Set max number of LAGs supported */
  	ds->num_lag_ids = QCA8K_NUM_LAGS;
  

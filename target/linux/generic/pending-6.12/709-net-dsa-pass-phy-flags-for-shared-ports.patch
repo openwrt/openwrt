@@ -1,0 +1,84 @@
+From: Yongzhao Chen <yongzhao.derek@gmail.com>
+Subject: [PATCH] net: dsa: pass PHY flags when connecting shared ports
+
+DSA calls get_phy_flags() when attaching user port PHYs, but passes zero
+when attaching CPU or DSA port PHYs. This loses switch-specific PHY
+information on shared ports, such as the switch revision supplied by
+qca8k for its internal PHYs.
+
+Call the existing callback for shared ports and document its scope.
+Keep bcm_sf2 and ksz shared-port flags at zero: their existing callbacks
+were only used for user ports, and extending their power-management or
+erratum flags to shared ports would be a separate behavior change.
+
+Drivers without the callback retain zero flags. Preserve the PHY
+connection error handling.
+
+Link: https://github.com/openwrt/openwrt/issues/24696
+Signed-off-by: Yongzhao Chen <yongzhao.derek@gmail.com>
+---
+ Documentation/networking/dsa/dsa.rst   |    2 ++
+ drivers/net/dsa/bcm_sf2.c              |    4 ++++
+ drivers/net/dsa/microchip/ksz_common.c |    4 ++++
+ net/dsa/port.c                         |    6 +++++-
+ 4 files changed, 15 insertions(+), 1 deletion(-)
+
+--- a/Documentation/networking/dsa/dsa.rst
++++ b/Documentation/networking/dsa/dsa.rst
+@@ -673,6 +673,8 @@ PHY devices and link management
+   on its own (e.g.: coming from switch memory mapped registers), this function
+   should return a 32-bit bitmask of "flags" that is private between the switch
+   driver and the Ethernet PHY driver in ``drivers/net/phy/\*``.
++  It is called when connecting PHYs for user, CPU and DSA ports. Drivers
++  should return zero for ports that do not need switch-specific PHY flags.
+ 
+ - ``phy_read``: Function invoked by the DSA user MDIO bus when attempting to read
+   the switch port MDIO registers. If unavailable, return 0xffff for each read.
+--- a/drivers/net/dsa/bcm_sf2.c
++++ b/drivers/net/dsa/bcm_sf2.c
+@@ -709,6 +709,10 @@ static u32 bcm_sf2_sw_get_phy_flags(stru
+ {
+ 	struct bcm_sf2_priv *priv = bcm_sf2_to_priv(ds);
+ 
++	/* Shared ports previously received no PHY flags. */
++	if (!dsa_is_user_port(ds, port))
++		return 0;
++
+ 	/* The BCM7xxx PHY driver expects to find the integrated PHY revision
+ 	 * in bits 15:8 and the patch level in bits 7:0 which is exactly what
+ 	 * the REG_PHY_REVISION register layout is.
+--- a/drivers/net/dsa/microchip/ksz_common.c
++++ b/drivers/net/dsa/microchip/ksz_common.c
+@@ -2745,6 +2745,10 @@ static u32 ksz_get_phy_flags(struct dsa_
+ {
+ 	struct ksz_device *dev = ds->priv;
+ 
++	/* Shared ports previously received no PHY flags. */
++	if (!dsa_is_user_port(ds, port))
++		return 0;
++
+ 	switch (dev->chip_id) {
+ 	case KSZ88X3_CHIP_ID:
+ 		/* Silicon Errata Sheet (DS80000830A):
+--- a/net/dsa/port.c
++++ b/net/dsa/port.c
+@@ -1707,6 +1707,7 @@ static int dsa_shared_port_phylink_regis
+ {
+ 	struct dsa_switch *ds = dp->ds;
+ 	struct device_node *port_dn = dp->dn;
++	u32 phy_flags = 0;
+ 	int err;
+ 
+ 	dp->pl_config.dev = ds->dev;
+@@ -1716,7 +1717,10 @@ static int dsa_shared_port_phylink_regis
+ 	if (err)
+ 		return err;
+ 
+-	err = phylink_of_phy_connect(dp->pl, port_dn, 0);
++	if (ds->ops->get_phy_flags)
++		phy_flags = ds->ops->get_phy_flags(ds, dp->index);
++
++	err = phylink_of_phy_connect(dp->pl, port_dn, phy_flags);
+ 	if (err && err != -ENODEV) {
+ 		pr_err("could not attach to PHY: %d\n", err);
+ 		goto err_phy_connect;
