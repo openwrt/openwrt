@@ -2104,6 +2104,14 @@ static int otto_l3_nexthop_update(struct otto_l3_ctrl *ctrl, u8 type, int ifinde
 	struct otto_l3_route *r;
 	bool known = false;
 
+	/* A route with no gateway keeps the unspecified address in its place,
+	 * and a neighbour can be added for that address by hand. It is the
+	 * gateway of no route, and must not turn the row of one that traps
+	 * into a row forwarding to its MAC.
+	 */
+	if (type == ROUTE_TYPE_IP4UC ? !gw->s6_addr32[3] : ipv6_addr_any(gw))
+		return -ENOENT;
+
 	list_for_each_entry(r, &ctrl->routes_list, list) {
 		if (!ipv6_addr_equal(&r->gw_ip, gw))
 			continue;
