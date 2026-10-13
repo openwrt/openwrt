@@ -11,6 +11,7 @@
 
 #include "pie.h"
 #include "rtl-otto.h"
+#include "stats.h"
 #include "tc.h"
 
 struct rtl83xx_flow {
@@ -378,10 +379,7 @@ int otto_tc_init(struct rtl838x_switch_priv *priv)
 	return 0;
 }
 
-/* Zero a PIE rule's LOG-table packet counter. On RTL930x the counter id is
- * the PIE rule id itself: the rule owns it and pie_rule_rm() releases it,
- * so there is nothing to hand back to an allocator here.
- */
+/* Zero a PIE rule's LOG-table packet counter */
 static void otto_tc_packet_cntr_clear(struct rtl838x_switch_priv *priv, int counter)
 {
 	if (counter < 0 || !priv->r->packet_cntr_clear)
@@ -392,13 +390,24 @@ static void otto_tc_packet_cntr_clear(struct rtl838x_switch_priv *priv, int coun
 	mutex_unlock(&priv->reg_mutex);
 }
 
+/* A flow's counter on its way out: zeroed, and handed back to the allocator
+ * where it came from there. On RTL930x the counter id is the PIE rule id
+ * itself: the rule owns it and pie_rule_rm() releases it.
+ */
+static void otto_tc_packet_cntr_put(struct rtl838x_switch_priv *priv, int counter)
+{
+	otto_tc_packet_cntr_clear(priv, counter);
+	if (!priv->r->pie_rule_id_is_log_counter)
+		otto_stats_packet_cntr_free(priv, counter);
+}
+
 static void otto_tc_flow_free(void *ptr, void *arg)
 {
 	struct rtl83xx_flow *flow = ptr;
 	struct rtl838x_switch_priv *priv = arg;
 
 	priv->r->pie_rule_rm(priv, &flow->rule);
-	otto_tc_packet_cntr_clear(priv, flow->rule.packet_cntr);
+	otto_tc_packet_cntr_put(priv, flow->rule.packet_cntr);
 
 	/* Readers may still hold an RCU-protected reference after the
 	 * object has been removed from the hash table.
@@ -481,19 +490,28 @@ static int otto_tc_configure_flower(struct rtl838x_switch_priv *priv,
 	flow->rule.spn = ingress_port;
 	flow->rule.spn_m = 0x7f;
 
-	/* The only caller, otto_tc_pie_cls_flower_add(), is RTL930x-only, where
-	 * the PIE rule ID is also the LOG table counter ID: the counter is
-	 * implied by the rule and only known once pie_rule_add() has assigned
-	 * the ID. That range is kept out of otto_stats_packet_cntr_alloc(), so the
-	 * implied LOG entry cannot alias an L3 route PIE rule's counter.
+	/* Where the PIE rule ID is also the LOG table counter ID (RTL930x), the
+	 * counter is implied by the rule and only known once pie_rule_add() has
+	 * assigned the ID. That range is kept out of otto_stats_packet_cntr_alloc(),
+	 * so the implied LOG entry cannot alias an L3 route PIE rule's counter.
+	 * Elsewhere the rule logs into a counter of its own from the allocator.
 	 */
 	flow->rule.log_sel = true;
+	if (!priv->r->pie_rule_id_is_log_counter) {
+		flow->rule.packet_cntr = otto_stats_packet_cntr_alloc(priv);
+		if (flow->rule.packet_cntr < 0) {
+			err = -ENOSPC;
+			goto out_remove;
+		}
+		flow->rule.log_data = flow->rule.packet_cntr;
+	}
 
 	err = priv->r->pie_rule_add(priv, &flow->rule);
 	if (err)
 		goto out_remove;
 
-	flow->rule.packet_cntr = flow->rule.id;
+	if (priv->r->pie_rule_id_is_log_counter)
+		flow->rule.packet_cntr = flow->rule.id;
 	dev_dbg(priv->dev, "using PIE rule counter %d\n", flow->rule.packet_cntr);
 	otto_tc_packet_cntr_clear(priv, flow->rule.packet_cntr);
 
@@ -502,7 +520,7 @@ static int otto_tc_configure_flower(struct rtl838x_switch_priv *priv,
 
 out_remove:
 	rhashtable_remove_fast(&priv->tc_ht, &flow->node, tc_ht_params);
-	otto_tc_packet_cntr_clear(priv, flow->rule.packet_cntr);
+	otto_tc_packet_cntr_put(priv, flow->rule.packet_cntr);
 	/* published in tc_ht above; a concurrent reader may still hold a ref */
 	kfree_rcu(flow, rcu_head);
 	goto out_err;
@@ -543,7 +561,7 @@ static int otto_tc_delete_flower(struct rtl838x_switch_priv *priv,
 		goto out_unlock;
 
 	priv->r->pie_rule_rm(priv, &flow->rule);
-	otto_tc_packet_cntr_clear(priv, flow->rule.packet_cntr);
+	otto_tc_packet_cntr_put(priv, flow->rule.packet_cntr);
 
 	kfree_rcu(flow, rcu_head);
 
