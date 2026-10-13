@@ -45,5 +45,16 @@ define Device/Default
   KERNEL_INITRAMFS_SUFFIX := .uImage
 endef
 
+define Device/zte_zxhn-h3600
+  DEVICE_MODEL := ZXHN H3600
+  DEVICE_ALT0_VENDOR := ZTE
+  DEVICE_ALT0_MODEL := ZXHN H1600
+  DEVICE_DTS := zx279128s-zte-zxhn-h3600
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7915-firmware kmod-usb3 \
+	kmod-usb-dwc3-generic-plat kmod-usb-ledtrig-usbport
+  IMAGES := sysupgrade.bin
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += zte_zxhn-h3600
 
 $(eval $(call BuildImage))
