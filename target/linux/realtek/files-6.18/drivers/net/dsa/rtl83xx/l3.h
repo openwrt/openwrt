@@ -153,7 +153,6 @@ struct otto_l3_config {
 	 */
 	int (*v6_slot_to_row)(struct otto_l3_ctrl *ctrl, int slot);
 	int (*v6_row_to_slot)(struct otto_l3_ctrl *ctrl, int row);
-	void (*route_read)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt);
 	/* 1 when a prefix row holds the route, 0 when it holds nothing or
 	 * another one, negative when it could not be read. Every family that
 	 * moves prefix rows has it.

@@ -161,17 +161,6 @@ struct otto_l3_walk_data {
 	int port;
 };
 
-static void otto_l3_838x_route_read(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt)
-{
-	u32 data[2];
-
-	otto_table_read(RTL8380_TBL_ROUTING, idx, &data);
-
-	rt->nh.gw = data[0];
-	rt->nh.gw <<= 32;
-	rt->nh.gw |= data[1];
-}
-
 static int otto_l3_838x_route_write(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt)
 {
 	u32 data[2] = { rt->nh.gw >> 32, rt->nh.gw };
@@ -807,29 +796,6 @@ static bool otto_l3_930x_route_decode(const u32 *data, struct otto_l3_route *rt)
 	rt->attr.qos_prio =  v & 0x7;
 
 	return true;
-}
-
-/* Read a prefix route entry from the L3_PREFIX_ROUTE_IPUC table
- * We currently only support IPv4 and IPv6 unicast route
- */
-static void otto_l3_930x_route_read(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt)
-{
-	u32 data[11];
-
-	dev_dbg(ctrl->dev, "%s\n", __func__);
-
-	otto_table_read(RTL9300_TBL_L3_PREFIX_ROUTE_IPUC, idx, &data);
-	if (!otto_l3_930x_route_decode(data, rt)) {
-		if (rt->attr.valid)
-			dev_warn(ctrl->dev, "route type not supported\n");
-		return;
-	}
-
-	dev_dbg(ctrl->dev, "index %d is valid: %d\n", idx, rt->attr.valid);
-	dev_dbg(ctrl->dev, "next_hop: %d, hit: %d, action :%d, ttl_dec %d, ttl_check %d, dst_null %d\n",
-		rt->nh.id, rt->attr.hit, rt->attr.action,
-		rt->attr.ttl_dec, rt->attr.ttl_check, rt->attr.dst_null);
-	dev_dbg(ctrl->dev, "GW: %pI4, prefix_len: %d\n", &rt->dst_ip, rt->prefix_len);
 }
 
 static int otto_l3_930x_route_matches(struct otto_l3_ctrl *ctrl, int row,
@@ -4606,7 +4572,6 @@ static void otto_l3_930x_dbgfs_init(struct otto_l3_ctrl *ctrl)
 }
 
 const struct otto_l3_config otto_l3_838x_cfg = {
-	.route_read = otto_l3_838x_route_read,
 	.route_write = otto_l3_838x_route_write,
 };
 
@@ -4643,7 +4608,6 @@ const struct otto_l3_config otto_l3_930x_cfg = {
 	.route_rows_move = otto_l3_930x_route_rows_move,
 	.v6_slot_to_row = otto_l3_930x_v6_slot_to_row,
 	.v6_row_to_slot = otto_l3_930x_v6_row_to_slot,
-	.route_read = otto_l3_930x_route_read,
 	.route_matches = otto_l3_930x_route_matches,
 	.route_write = otto_l3_930x_route_write,
 	.setup = otto_l3_930x_setup,
