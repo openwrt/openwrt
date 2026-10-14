@@ -313,6 +313,17 @@ define Device/linksys_spnmx56
 endef
 TARGET_DEVICES += linksys_spnmx56
 
+define Device/linksys_spnmx57
+	$(call Device/linksys_ipq50xx_mx_base)
+	DEVICE_MODEL := SPNMX57
+	DEVICE_DTS_CONFIG := config@mp03.1
+	DEVICE_PACKAGES := ath11k-firmware-ipq5018 \
+		kmod-ath11k-pci \
+		ath11k-firmware-qcn9074 \
+		ipq-wifi-linksys_spnmx57
+endef
+TARGET_DEVICES += linksys_spnmx57
+
 define Device/mercusys_mr80x-v2
 	$(call Device/FitImageLzma)
 	DEVICE_VENDOR := MERCUSYS
