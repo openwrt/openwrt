@@ -1482,13 +1482,13 @@ static int rtpcs_839x_init(struct rtpcs_ctrl *ctrl)
  */
 static int rtpcs_839x_sds_deactivate(struct rtpcs_serdes *sds)
 {
-	return 0;
+	return rtpcs_sds_write_mask(sds, PAGE_FIB, MII_BMCR, BMCR_PDOWN, BMCR_PDOWN);
 }
 
 static int rtpcs_839x_sds_activate(struct rtpcs_serdes *sds)
 {
 	rtpcs_839x_sds_reset(sds);
-	return 0;
+	return rtpcs_sds_write_mask(sds, PAGE_FIB, MII_BMCR, BMCR_PDOWN, 0);
 }
 
 /*
