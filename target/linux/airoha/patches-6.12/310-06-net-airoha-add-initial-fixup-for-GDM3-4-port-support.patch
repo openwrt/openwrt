@@ -28,10 +28,10 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  
  	/* Enable split for MIB counters for GDM3 and GDM4 */
  	airoha_fe_set(eth, REG_FE_GDM_MIB_CFG(AIROHA_GDM3_IDX),
-@@ -1918,7 +1920,8 @@ static int airoha_dev_open(struct net_de
- 	if (err)
+@@ -1925,7 +1927,8 @@ static int airoha_dev_open(struct net_de
  		return err;
  
+ 	qdma = airoha_qdma_deref(dev);
 -	if (netdev_uses_dsa(netdev))
 +	/* It seems GDM3 and GDM4 needs SPORT enabled to correctly work */
 +	if (netdev_uses_dsa(netdev) || port->id > 2)

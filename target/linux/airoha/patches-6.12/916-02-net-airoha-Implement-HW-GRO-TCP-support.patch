@@ -365,7 +365,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  		WRITE_ONCE(desc->ctrl, 0);
  		WRITE_ONCE(desc->addr, 0);
  		WRITE_ONCE(desc->data, 0);
-@@ -1908,14 +2135,57 @@ static void airoha_dev_set_xmit_frame_si
+@@ -1914,14 +2141,61 @@ static void airoha_dev_set_xmit_frame_si
  					 VLAN_ETH_HLEN + netdev->mtu));
  }
  
@@ -404,12 +404,17 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  {
  	struct airoha_gdm_dev *dev = netdev_priv(netdev);
  	struct airoha_gdm_port *port = dev->port;
- 	struct airoha_qdma *qdma = dev->qdma;
-+	struct airoha_eth *eth = qdma->eth;
- 	u32 pse_port = FE_PSE_PORT_PPE1;
-+	int qdma_id = qdma - &eth->qdma[0];
+-	u32 pse_port = FE_PSE_PORT_PPE1;
+ 	struct airoha_qdma *qdma;
++	struct airoha_eth *eth;
++	u32 pse_port = FE_PSE_PORT_PPE1;
++	int qdma_id;
  	int err;
  
++	qdma = airoha_qdma_deref(dev);
++	eth = qdma->eth;
++	qdma_id = qdma - &eth->qdma[0];
++
 +	/* HW LRO is configured on the QDMA and it is shared between
 +	 * all the devices using it. Refuse to open a second device on
 +	 * the same QDMA if LRO is enabled on any device sharing it.
@@ -423,8 +428,11 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  	err = phylink_of_phy_connect(dev->phylink, netdev->dev.of_node, 0);
  	if (err) {
  		netdev_err(netdev, "could not attach PHY: %d\n", err);
-@@ -1931,21 +2201,26 @@ static int airoha_dev_open(struct net_de
+@@ -1935,24 +2209,28 @@ static int airoha_dev_open(struct net_de
+ 	if (err)
+ 		return err;
  
+-	qdma = airoha_qdma_deref(dev);
  	/* It seems GDM3 and GDM4 needs SPORT enabled to correctly work */
  	if (netdev_uses_dsa(netdev) || port->id > 2)
 -		airoha_fe_set(qdma->eth, REG_GDM_INGRESS_CFG(port->id),
@@ -454,19 +462,19 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  	return 0;
  }
  
-@@ -1954,6 +2229,7 @@ static int airoha_dev_stop(struct net_de
+@@ -1960,6 +2238,7 @@ static int airoha_dev_stop(struct net_de
+ {
  	struct airoha_gdm_dev *dev = netdev_priv(netdev);
  	struct airoha_gdm_port *port = dev->port;
- 	struct airoha_qdma *qdma = dev->qdma;
-+	struct airoha_eth *eth = qdma->eth;
++	struct airoha_eth *eth = dev->eth;
  
  	netif_tx_disable(netdev);
  	airoha_set_vip_for_gdm_port(dev, false);
-@@ -1961,9 +2237,15 @@ static int airoha_dev_stop(struct net_de
+@@ -1967,9 +2246,15 @@ static int airoha_dev_stop(struct net_de
  	if (--port->users)
  		airoha_ppe_set_xmit_frame_size(dev);
  	else
--		airoha_set_gdm_port_fwd_cfg(qdma->eth,
+-		airoha_set_gdm_port_fwd_cfg(dev->eth,
 +		airoha_set_gdm_port_fwd_cfg(eth,
  					    REG_GDM_FWD_CFG(port->id),
  					    FE_PSE_PORT_DROP);
@@ -479,7 +487,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  	return 0;
  }
  
-@@ -2041,9 +2323,6 @@ static int airoha_enable_gdm2_loopback(s
+@@ -2047,9 +2332,6 @@ static int airoha_enable_gdm2_loopback(s
  			      __field_prep(mask, AIROHA_GDM2_IDX));
  	}
  
@@ -489,7 +497,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  	return 0;
  }
  
-@@ -2232,6 +2511,38 @@ int airoha_get_fe_port(struct airoha_gdm
+@@ -2307,6 +2589,38 @@ int airoha_get_fe_port(struct airoha_gdm
  	}
  }
  
@@ -528,7 +536,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  static netdev_tx_t airoha_dev_xmit(struct sk_buff *skb,
  				   struct net_device *netdev)
  {
-@@ -3205,6 +3516,8 @@ static const struct net_device_ops airoh
+@@ -3400,6 +3714,8 @@ static const struct net_device_ops airoh
  	.ndo_stop		= airoha_dev_stop,
  	.ndo_change_mtu		= airoha_dev_change_mtu,
  	.ndo_select_queue	= airoha_dev_select_queue,
@@ -537,7 +545,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  	.ndo_start_xmit		= airoha_dev_xmit,
  	.ndo_get_stats64        = airoha_dev_get_stats64,
  	.ndo_set_mac_address	= airoha_dev_set_macaddr,
-@@ -3442,11 +3755,9 @@ static int airoha_alloc_gdm_device(struc
+@@ -3637,11 +3953,9 @@ static int airoha_alloc_gdm_device(struc
  	netdev->ethtool_ops = &airoha_ethtool_ops;
  	netdev->max_mtu = AIROHA_MAX_MTU;
  	netdev->watchdog_timeo = 5 * HZ;
@@ -573,7 +581,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  #define PSE_RSV_PAGES			128
  #define PSE_QUEUE_RSV_PAGES		64
  
-@@ -713,6 +725,18 @@ static inline bool airoha_is_7583(struct
+@@ -720,6 +732,18 @@ static inline bool airoha_is_7583(struct
  	return eth->soc->version == 0x7583;
  }
  
@@ -615,7 +623,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  #define REG_GDM_FWD_CFG(_n)		GDM_BASE(_n)
  #define GDM_PAD_EN_MASK			BIT(28)
  #define GDM_DROP_CRC_ERR_MASK		BIT(23)
-@@ -898,9 +912,15 @@
+@@ -899,9 +913,15 @@
  #define QDMA_ETH_RXMSG_SPORT_MASK	GENMASK(25, 21)
  #define QDMA_ETH_RXMSG_CRSN_MASK	GENMASK(20, 16)
  #define QDMA_ETH_RXMSG_PPE_ENTRY_MASK	GENMASK(15, 0)
