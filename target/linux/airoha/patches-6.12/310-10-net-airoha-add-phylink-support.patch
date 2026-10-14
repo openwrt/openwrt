@@ -41,8 +41,8 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +#include <linux/pcs/pcs.h>
  #include <linux/u64_stats_sync.h>
  #include <net/dst_metadata.h>
- #include <net/page_pool/helpers.h>
-@@ -1705,7 +1706,7 @@ static void airoha_update_hw_stats(struc
+ #include <net/ip6_checksum.h>
+@@ -1941,7 +1942,7 @@ static void airoha_update_hw_stats(struc
  	u32 val, i = 0;
  	u64 data;
  
@@ -51,7 +51,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  
  	/* Read relevant MIB for GDM with multiple port attached */
  	if (port->id == AIROHA_GDM3_IDX || port->id == AIROHA_GDM4_IDX)
-@@ -1899,7 +1900,7 @@ static void airoha_update_hw_stats(struc
+@@ -2135,7 +2136,7 @@ static void airoha_update_hw_stats(struc
  
  	u64_stats_update_end(&dev->stats.syncp);
  
@@ -59,10 +59,10 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +	spin_unlock(&port->lock);
  }
  
- static void airoha_dev_set_xmit_frame_size(struct net_device *netdev)
-@@ -1921,6 +1922,14 @@ static int airoha_dev_open(struct net_de
- 	struct airoha_qdma *qdma;
- 	int err;
+ static void airoha_update_netdev_features(struct airoha_gdm_dev *dev)
+@@ -2200,6 +2201,14 @@ static int airoha_dev_open(struct net_de
+ 		return -EBUSY;
+ 	}
  
 +	err = phylink_of_phy_connect(dev->phylink, netdev->dev.of_node, 0);
 +	if (err) {
@@ -75,9 +75,9 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	netif_tx_start_all_queues(netdev);
  	err = airoha_set_vip_for_gdm_port(dev, true);
  	if (err)
-@@ -2038,6 +2047,9 @@ static int airoha_enable_gdm2_loopback(s
- 			      __field_prep(mask, AIROHA_GDM2_IDX));
- 	}
+@@ -2246,6 +2255,9 @@ static int airoha_dev_stop(struct net_de
+ 	if (netdev->features & NETIF_F_LRO)
+ 		airoha_dev_lro_disable(dev);
  
 +	phylink_stop(dev->phylink);
 +	phylink_disconnect_phy(dev->phylink);
@@ -85,7 +85,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	return 0;
  }
  
-@@ -2516,6 +2528,24 @@ airoha_ethtool_get_rmon_stats(struct net
+@@ -2836,6 +2848,24 @@ airoha_ethtool_get_rmon_stats(struct net
  	} while (u64_stats_fetch_retry(&dev->stats.syncp, start));
  }
  
@@ -110,7 +110,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  static int airoha_qdma_set_chan_tx_sched(struct net_device *netdev,
  					 int channel, enum tx_sched_mode mode,
  					 const u16 *weights, u8 n_weights)
-@@ -3380,7 +3410,8 @@ static const struct ethtool_ops airoha_e
+@@ -3703,7 +3733,8 @@ static const struct ethtool_ops airoha_e
  	.get_drvinfo		= airoha_ethtool_get_drvinfo,
  	.get_eth_mac_stats      = airoha_ethtool_get_mac_stats,
  	.get_rmon_stats		= airoha_ethtool_get_rmon_stats,
@@ -120,7 +120,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	.get_link		= ethtool_op_get_link,
  };
  
-@@ -3436,6 +3467,155 @@ bool airoha_is_valid_gdm_dev(struct airo
+@@ -3759,6 +3790,155 @@ bool airoha_is_valid_gdm_dev(struct airo
  	return false;
  }
  
@@ -276,7 +276,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  static int airoha_alloc_gdm_device(struct airoha_eth *eth,
  				   struct airoha_gdm_port *port,
  				   int nbq, struct device_node *np)
-@@ -3501,7 +3681,7 @@ static int airoha_alloc_gdm_device(struc
+@@ -3822,7 +4002,7 @@ static int airoha_alloc_gdm_device(struc
  	dev->nbq = nbq;
  	port->devs[index] = dev;
  
@@ -285,7 +285,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  }
  
  static int airoha_alloc_gdm_port(struct airoha_eth *eth,
-@@ -3536,7 +3716,7 @@ static int airoha_alloc_gdm_port(struct
+@@ -3857,7 +4037,7 @@ static int airoha_alloc_gdm_port(struct
  		return -ENOMEM;
  
  	port->id = id;
@@ -294,7 +294,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	eth->ports[p] = port;
  
  	err = airoha_metadata_dst_alloc(port);
-@@ -3733,6 +3913,8 @@ error_napi_stop:
+@@ -4054,6 +4234,8 @@ error_napi_stop:
  			netdev = netdev_from_priv(dev);
  			if (netdev->reg_state == NETREG_REGISTERED)
  				unregister_netdev(netdev);
@@ -303,7 +303,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  			of_node_put(netdev->dev.of_node);
  		}
  		airoha_metadata_dst_free(port);
-@@ -3771,6 +3953,7 @@ static void airoha_remove(struct platfor
+@@ -4092,6 +4274,7 @@ static void airoha_remove(struct platfor
  
  			netdev = netdev_from_priv(dev);
  			unregister_netdev(netdev);
@@ -313,7 +313,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  		airoha_metadata_dst_free(port);
 --- a/drivers/net/ethernet/airoha/airoha_eth.h
 +++ b/drivers/net/ethernet/airoha/airoha_eth.h
-@@ -594,6 +594,9 @@ struct airoha_gdm_dev {
+@@ -608,6 +608,9 @@ struct airoha_gdm_dev {
  
  	struct airoha_hw_stats stats;
  
@@ -323,7 +323,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	/* Serialize netdev_tx_completed_queue() calls per TX queue during
  	 * QDMA migration.
  	 */
-@@ -605,8 +608,8 @@ struct airoha_gdm_port {
+@@ -619,8 +622,8 @@ struct airoha_gdm_port {
  	int id;
  	int users;
  
@@ -336,7 +336,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  };
 --- a/drivers/net/ethernet/airoha/airoha_regs.h
 +++ b/drivers/net/ethernet/airoha/airoha_regs.h
-@@ -357,6 +357,18 @@
+@@ -371,6 +371,18 @@
  #define IP_FRAGMENT_PORT_MASK		GENMASK(8, 5)
  #define IP_FRAGMENT_NBQ_MASK		GENMASK(4, 0)
  
