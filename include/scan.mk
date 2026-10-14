@@ -54,7 +54,7 @@ define PackageDir
 			$(if $(findstring c,$(OPENWRT_VERBOSE)),,2>/dev/null) || { \
 			mkdir -p "$(TOPDIR)/logs/$(SCAN_DIR)/$(2)"; \
 			$(NO_TRACE_MAKE) --no-print-dir -r DUMP=1 FEED="$(call feedname,$(2))" -C $(SCAN_DIR)/$(2) $(SCAN_MAKEOPTS) > $(TOPDIR)/logs/$(SCAN_DIR)/$(2)/dump.txt 2>&1; \
-			$$(call progress,ERROR: please fix $(SCAN_DIR)/$(2)/Makefile - see logs/$(SCAN_DIR)/$(2)/dump.txt for details\n) \
+			printf '$(if $(filter 1,$(IS_TTY)),\n)%s\n' "ERROR: please fix $(SCAN_DIR)/$(2)/Makefile - see logs/$(SCAN_DIR)/$(2)/dump.txt for details" >&2; \
 			rm -f $$@ $$@.tmp; \
 			exit 1; \
 		}; \
