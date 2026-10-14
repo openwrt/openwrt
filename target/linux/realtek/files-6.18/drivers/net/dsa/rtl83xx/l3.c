@@ -2116,11 +2116,16 @@ static void otto_l3_route_update_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_ro
 	if (ctrl->cfg->set_nexthop)
 		ctrl->cfg->set_nexthop(ctrl, r->nh.id, r->nh.l2_id, r->nh.if_id);
 
-	/* A PIE rule counts the packets of its route while a counter is free */
+	/* A PIE rule counts the packets of its route while a counter is free,
+	 * from zero: the counter may still hold the count of its last user.
+	 */
 	if (!ctrl->cfg->use_l3_tables && r->pr.packet_cntr < 0) {
 		r->pr.packet_cntr = otto_stats_packet_cntr_alloc(priv);
-		if (r->pr.packet_cntr >= 0)
+		if (r->pr.packet_cntr >= 0) {
 			dev_dbg(ctrl->dev, "Using packet counter %d\n", r->pr.packet_cntr);
+			scoped_guard(mutex, &priv->reg_mutex)
+				priv->r->packet_cntr_clear(priv, r->pr.packet_cntr);
+		}
 	}
 
 	if (otto_l3_route_install(ctrl, r)) {
