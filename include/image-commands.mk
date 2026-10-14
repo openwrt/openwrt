@@ -378,8 +378,8 @@ define Build/elecom-product-header
 	$(eval fw=$(if $(word 2,$(1)),$(word 2,$(1)),$@))
 
 	-( \
-		echo -n -e "ELECOM\x00\x00$(product)" | dd bs=40 count=1 conv=sync; \
-		echo -n "0.00" | dd bs=16 count=1 conv=sync; \
+		echo -n -e "ELECOM\x00\x00$(product)" | dd bs=40 count=1 conv=sync iflag=fullblock; \
+		echo -n "0.00" | dd bs=16 count=1 conv=sync iflag=fullblock; \
 		dd if=$(fw); \
 	) > $(fw).new \
 	&& mv $(fw).new $(fw) || rm -f $(fw)
@@ -392,7 +392,7 @@ define Build/elecom-wrc-gs-factory
 	$(MKHASH) md5 $(hash_opt) $@ >> $@
 	( \
 		echo -n "ELECOM $(product) v$(version)" | \
-			dd bs=32 count=1 conv=sync; \
+			dd bs=32 count=1 conv=sync iflag=fullblock; \
 		dd if=$@; \
 	) > $@.new
 	mv $@.new $@
@@ -403,14 +403,14 @@ define Build/elx-header
 	$(eval xor_pattern=$(word 2,$(1)))
 	( \
 		echo -ne "\x00\x00\x00\x00\x00\x00\x00\x03" | \
-			dd bs=42 count=1 conv=sync; \
+			dd bs=42 count=1 conv=sync iflag=fullblock; \
 		hw_id="$(hw_id)"; \
 		echo -ne "\x$${hw_id:0:2}\x$${hw_id:2:2}\x$${hw_id:4:2}\x$${hw_id:6:2}" | \
-			dd bs=20 count=1 conv=sync; \
+			dd bs=20 count=1 conv=sync iflag=fullblock; \
 		echo -ne "$$(printf '%08x' $$(stat -c%s $@) | fold -w2 | xargs -I {} echo \\x{} | tr -d '\n')" | \
-			dd bs=8 count=1 conv=sync; \
+			dd bs=8 count=1 conv=sync iflag=fullblock; \
 		echo -ne "$$($(MKHASH) md5 $@ | fold -w2 | xargs -I {} echo \\x{} | tr -d '\n')" | \
-			dd bs=58 count=1 conv=sync; \
+			dd bs=58 count=1 conv=sync iflag=fullblock; \
 	) > $(KDIR)/tmp/$(DEVICE_NAME).header
 	-$(call Build/xor-image,-p $(xor_pattern) -x) \
 	&& cat $(KDIR)/tmp/$(DEVICE_NAME).header $@ > $@.new \

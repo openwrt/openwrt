@@ -9,9 +9,9 @@ define Build/mstc-header
 		printf "CMOC"; \
 		tail -c+5 $@.crclen; head -c4 $@.crclen; \
 		printf '$(call toupper,$(LINUX_KARCH)) $(VERSION_DIST) Linux-$(LINUX_VERSION)' | \
-			dd bs=64 count=1 conv=sync 2>/dev/null; \
+			dd bs=64 count=1 conv=sync iflag=fullblock 2>/dev/null; \
 		printf "$(version)" | \
-			dd bs=64 count=1 conv=sync 2>/dev/null; \
+			dd bs=64 count=1 conv=sync iflag=fullblock 2>/dev/null; \
 		dd if=/dev/zero bs=$$(($(hdrlen) - 0x8c)) count=1 2>/dev/null; \
 		cat $@; \
 	) > $@.new

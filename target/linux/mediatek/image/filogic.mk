@@ -109,7 +109,7 @@ define Build/mstc-header
     printf "$(magic)"; \
     tail -c+5 $@.crclen; head -c4 $@.crclen; \
     dd if=/dev/zero bs=4 count=2; \
-    printf "$(version)" | dd bs=56 count=1 conv=sync 2>/dev/null; \
+    printf "$(version)" | dd bs=56 count=1 conv=sync iflag=fullblock 2>/dev/null; \
     dd if=/dev/zero bs=$$((0x20000 - 0x84)) count=1 conv=sync 2>/dev/null | \
       tr "\0" "\377"; \
     cat $@; \
@@ -129,9 +129,9 @@ define Build/cetron-header
 	$(eval model=$(word 2,$(1)))
 	( \
 		dd if=/dev/zero bs=856 count=1 2>/dev/null; \
-		printf "$(model)," | dd bs=128 count=1 conv=sync 2>/dev/null; \
-		md5sum $@ | cut -f1 -d" " | dd bs=32 count=1 2>/dev/null; \
-		printf "$(magic)" | dd bs=4 count=1 conv=sync 2>/dev/null; \
+		printf "$(model)," | dd bs=128 count=1 conv=sync iflag=fullblock 2>/dev/null; \
+		md5sum $@ | cut -f1 -d" " | dd bs=32 count=1 iflag=fullblock 2>/dev/null; \
+		printf "$(magic)" | dd bs=4 count=1 conv=sync iflag=fullblock 2>/dev/null; \
 		cat $@; \
 	) > $@.tmp
 	fw_crc=$$(gzip -c $@.tmp | tail -c 8 | od -An -N4 -tx4 --endian little | tr -d ' \n'); \
