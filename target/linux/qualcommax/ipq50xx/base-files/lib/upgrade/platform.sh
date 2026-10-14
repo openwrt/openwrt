@@ -232,7 +232,8 @@ platform_do_upgrade() {
 	linksys,mr5500|\
 	linksys,mx2000|\
 	linksys,mx5500|\
-	linksys,spnmx56)
+	linksys,spnmx56|\
+	linksys,spnmx57)
 		linksys_mx_pre_upgrade "$1"
 		remove_oem_ubi_volume squashfs
 		nand_do_upgrade "$1"
