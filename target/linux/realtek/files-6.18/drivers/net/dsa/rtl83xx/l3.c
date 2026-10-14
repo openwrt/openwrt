@@ -266,7 +266,7 @@ static int otto_l3_839x_route_write(struct otto_l3_ctrl *ctrl, int idx, struct o
 		}
 	}
 
-	err = rtl839x_pie_l3_rule_write(priv, idx, &pr);
+	err = otto_pie_839x_l3_rule_write(priv, idx, &pr);
 	if (err)
 		dev_err(ctrl->dev, "L3 rule %d not written: %d\n", idx, err);
 
@@ -322,7 +322,7 @@ static int otto_l3_839x_route_matches(struct otto_l3_ctrl *ctrl, int row,
 	struct pie_rule pr;
 	int err;
 
-	err = rtl839x_pie_l3_rule_read(priv, row, &pr);
+	err = otto_pie_839x_l3_rule_read(priv, row, &pr);
 	if (err)
 		return err;
 
@@ -4541,7 +4541,7 @@ static int otto_l3_839x_route_show(struct seq_file *m, void *v)
 		if (!(idx % 64))
 			cond_resched();
 
-		rtl839x_pie_l3_rule_read(priv, idx, &pr);
+		otto_pie_839x_l3_rule_read(priv, idx, &pr);
 		if (!pr.valid || !pr.fwd_sel || (pr.fwd_act != PIE_ACT_ROUTE_UC &&
 						 pr.fwd_act != PIE_ACT_REDIRECT_TO_PORT))
 			continue;
