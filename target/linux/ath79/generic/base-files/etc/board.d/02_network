@@ -270,7 +270,9 @@ ath79_setup_interfaces()
 	ubnt,routerstation)
 		ucidef_set_interfaces_lan_wan "eth1" "eth0"
 		;;
-	comfast,cf-e375ac|\
+	comfast,cf-e375ac)
+		ucidef_set_interfaces_lan_wan "lan" "wan"
+		;;
 	moxa,awk-1137c)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:wan" "2:lan"
