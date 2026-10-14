@@ -103,10 +103,10 @@ prepare-tmpinfo: FORCE
 	mkdir -p tmp/info feeds
 	[ -e $(TOPDIR)/feeds/base ] || ln -sf ../package $(TOPDIR)/feeds/base
 	+$(call scan_unchanged,packageinfo,package,5) || { \
-		$(_SINGLE)$(NO_TRACE_MAKE) -j1 -r -s -f include/scan.mk SCAN_TARGET="packageinfo" SCAN_DIR="package" SCAN_NAME="package" SCAN_DEPTH=5 SCAN_EXTRA="" && \
+		$(_SINGLE)$(NO_TRACE_MAKE) -j1 -k -r -s -f include/scan.mk SCAN_TARGET="packageinfo" SCAN_DIR="package" SCAN_NAME="package" SCAN_DEPTH=5 SCAN_EXTRA="" && \
 		touch $(call SCAN_STAMP,packageinfo); }
 	+$(call scan_unchanged,targetinfo,target/linux,3) || { \
-		$(_SINGLE)$(NO_TRACE_MAKE) -j1 -r -s -f include/scan.mk SCAN_TARGET="targetinfo" SCAN_DIR="target/linux" SCAN_NAME="target" SCAN_DEPTH=3 SCAN_EXTRA="" SCAN_MAKEOPTS="TARGET_BUILD=1" && \
+		$(_SINGLE)$(NO_TRACE_MAKE) -j1 -k -r -s -f include/scan.mk SCAN_TARGET="targetinfo" SCAN_DIR="target/linux" SCAN_NAME="target" SCAN_DEPTH=3 SCAN_EXTRA="" SCAN_MAKEOPTS="TARGET_BUILD=1" && \
 		touch $(call SCAN_STAMP,targetinfo); }
 	for type in package target; do \
 		f=tmp/.$${type}info; t=tmp/.config-$${type}.in; \
