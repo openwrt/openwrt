@@ -624,6 +624,14 @@ static int otto_tc_pie_cls_flower_add(struct rtl838x_switch_priv *priv, int port
 	if (!ingress || !priv->r->pie_cls_flower)
 		return -EOPNOTSUPP;
 
+	/* No goto chain is offloaded, so in hardware a rule of another chain
+	 * would see frames that never reach it in software.
+	 */
+	if (cls->common.chain_index) {
+		NL_SET_ERR_MSG_MOD(cls->common.extack, "only chain 0 is offloaded");
+		return -EOPNOTSUPP;
+	}
+
 	return otto_tc_configure_flower(priv, cls, port);
 }
 
