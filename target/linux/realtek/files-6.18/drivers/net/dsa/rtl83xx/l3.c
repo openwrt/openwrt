@@ -67,13 +67,13 @@
  *   interfaces share one 1536 byte MTU. The programmed state is shown in
  *   debugfs, under realtek_otto_l3.
  * - RTL839x: IPv4 and IPv6 unicast routes through a gateway are forwarded,
- *   through the first 512 PIE rules, with the MAC of the device they go out
- *   of. IPv4 rules run up from the second rule, IPv6 ones down from the
- *   last. Up to 15 MACs besides the switch's own are taken; a route out of a
- *   device whose MAC finds no entry traps. A route counts its packets from
- *   when its gateway resolves, while a counter is free. Trapped to the CPU:
- *   the same routes as on RTL930x. An event the driver could not take is not
- *   replayed.
+ *   through the last 512 ingress PIE rules, after the ingress ACL ones, with
+ *   the MAC of the device they go out of. IPv4 rules run up from the second
+ *   rule, IPv6 ones down from the last. Up to 15 MACs besides the switch's
+ *   own are taken; a route out of a device whose MAC finds no entry traps. A
+ *   route counts its packets from when its gateway resolves, while a counter
+ *   is free. Trapped to the CPU: the same routes as on RTL930x. An event the
+ *   driver could not take is not replayed.
  * - RTL838x: route table accessors only. FIB and neighbour events are ignored.
  * - RTL931x: not supported. FIB and neighbour events are ignored.
  */
@@ -322,7 +322,7 @@ static int otto_l3_839x_route_matches(struct otto_l3_ctrl *ctrl, int row,
 	struct pie_rule pr;
 	int err;
 
-	err = rtl839x_pie_rule_read(priv, row, &pr);
+	err = rtl839x_pie_l3_rule_read(priv, row, &pr);
 	if (err)
 		return err;
 
@@ -4441,7 +4441,7 @@ static int otto_l3_839x_route_show(struct seq_file *m, void *v)
 		if (!(idx % 64))
 			cond_resched();
 
-		priv->r->pie_rule_read(priv, idx, &pr);
+		rtl839x_pie_l3_rule_read(priv, idx, &pr);
 		if (!pr.valid || !pr.fwd_sel || (pr.fwd_act != PIE_ACT_ROUTE_UC &&
 						 pr.fwd_act != PIE_ACT_REDIRECT_TO_PORT))
 			continue;
@@ -4453,12 +4453,12 @@ static int otto_l3_839x_route_show(struct seq_file *m, void *v)
 			snprintf(dst, sizeof(dst), "%pI4/%d", &pr.dip, inet_mask_len(pr.dip_m));
 
 		if (pr.fwd_act == PIE_ACT_REDIRECT_TO_PORT) {
-			seq_printf(m, "%4d %-48s   trap", idx, dst);
+			seq_printf(m, "%4d %-48s   trap", RTL839X_PIE_L3_FIRST + idx, dst);
 			seq_puts(m, " -  -    -                 -    -     -                 -      -");
 			goto packets;
 		}
 
-		seq_printf(m, "%4d %-48s %6d", idx, dst, pr.fwd_data);
+		seq_printf(m, "%4d %-48s %6d", RTL839X_PIE_L3_FIRST + idx, dst, pr.fwd_data);
 
 		priv->r->read_l2_entry_using_hash(pr.fwd_data >> 2, pr.fwd_data & 0x3, &e);
 		if (!e.valid) {
