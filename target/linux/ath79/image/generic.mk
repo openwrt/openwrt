@@ -811,8 +811,10 @@ define Device/comfast_cf-e375ac
   SOC := qca9563
   DEVICE_VENDOR := COMFAST
   DEVICE_MODEL := CF-E375AC
-  DEVICE_PACKAGES := kmod-ath10k-ct \
-	ath10k-firmware-qca9888-ct -uboot-envtools
+  DEVICE_COMPAT_VERSION := 1.1
+  DEVICE_COMPAT_MESSAGE := Config cannot be migrated from swconfig to DSA
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct \
+	kmod-dsa-qca8k kmod-phy-qca83xx -swconfig -uboot-envtools
   IMAGE_SIZE := 16000k
 endef
 TARGET_DEVICES += comfast_cf-e375ac
