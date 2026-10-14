@@ -1,0 +1,36 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Luca C <clubdog123@gmail.com>
+Date: Tue, 14 Oct 2026 12:00:00 +0100
+Subject: [PATCH] net: dsa: qca: add qca8386 driver
+
+The QCA8386 (Manhattan) is the switch fabric in front of the four QCA8084
+EPHYs on IPQ5018 boards such as the Linksys SPNMX57. It has no DSA driver
+in mainline; qca8k covers the QCA8327/QCA8337 only.
+
+Add the Kconfig symbol and Makefile entry for a qca8386 DSA driver forked
+from qca8k. The driver itself is supplied via target files/.
+
+Signed-off-by: Luca C <clubdog123@gmail.com>
+---
+--- a/drivers/net/dsa/qca/Kconfig
++++ b/drivers/net/dsa/qca/Kconfig
+@@ -24,3 +24,12 @@ config NET_DSA_QCA8K_LEDS_SUPPORT
+ 	help
+ 	  This enabled support for LEDs present on the Qualcomm Atheros
+ 	  QCA8K Ethernet switch chips.
++
++config NET_DSA_QCA8386
++	tristate "Qualcomm QCA8386 (Manhattan) Ethernet switch support"
++	depends on NET_DSA
++	select NET_DSA_TAG_QCA
++	select REGMAP
++	help
++	  This enables support for the Qualcomm QCA8386 ("Manhattan"/MHT)
++	  Ethernet switch, as found on the Linksys SPNMX57 (IPQ5018).
+--- a/drivers/net/dsa/qca/Makefile
++++ b/drivers/net/dsa/qca/Makefile
+@@ -5,3 +5,4 @@ qca8k-y 			+= qca8k-common.o qca8k-8xxx.
+ ifdef CONFIG_NET_DSA_QCA8K_LEDS_SUPPORT
+ qca8k-y				+= qca8k-leds.o
+ endif
++obj-$(CONFIG_NET_DSA_QCA8386)	+= qca8386.o
