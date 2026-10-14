@@ -24,6 +24,15 @@ econet_setup_interfaces()
 		ucidef_set_interface_lan "eth0.1"
 		ucidef_set_interface_wan "eth0.2"
 		;;
+	tplink,ex20v)
+		# No external switch at all on this board (see
+		# econet,int-gsw-vlan-split in the DTS): the SoC-internal GSW is
+		# split the same way, untagged LAN VLAN (eth0.1) and untagged WAN
+		# VLAN (eth0.2) as sane defaults; the WAN port's extra tagged
+		# VLAN 35 (eth0.35) is left unconfigured here, for ISPs that need it.
+		ucidef_set_interface_lan "eth0.1"
+		ucidef_set_interface_wan "eth0.2"
+		;;
 	*)
 		# The remaining boards have no DSA switch driver yet.
 		ucidef_set_interface_lan "eth0"
