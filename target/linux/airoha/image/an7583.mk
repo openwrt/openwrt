@@ -91,3 +91,38 @@ define Device/nokia_xg-040g-mf-ubi
   ARTIFACTS := bl31-uboot.fip preloader.bin
 endef
 TARGET_DEVICES += nokia_xg-040g-mf-ubi
+
+define Device/vsol_an7583-common
+  DEVICE_VENDOR := VSOL
+  DEVICE_DTS_CONFIG := config@1
+  DEVICE_PACKAGES := fitblk
+  KERNEL_SUFFIX := -kernel.bin
+  KERNEL := kernel-bin | lzma
+  KERNEL_NAME := Image
+  KERNEL_INITRAMFS = kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(DEVICE_DTS).dtb
+  KERNEL_INITRAMFS_SUFFIX := -uImage.itb
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGE_SIZE := 32768k
+  IMAGE/sysupgrade.bin = append-kernel | fit lzma $$(KDIR)/image-$$(DEVICE_DTS).dtb \
+	external-static-with-rootfs | airoha-image-tclinux an7583 an7583_vsol | check-size | append-metadata
+  ARTIFACT/tcboot.bin := airoha-image-tcboot an7583 an7583_vsol | check-size 512k
+  ARTIFACT/tclinux.bin := append-image squashfs-sysupgrade.bin
+  ARTIFACTS := tcboot.bin tclinux.bin
+endef
+
+define Device/vsol_v2901q-a
+  $(call Device/vsol_an7583-common)
+  DEVICE_MODEL := V2901Q-A
+  DEVICE_DTS := an7583-vsol-v2901q-a
+  DEVICE_PACKAGES += kmod-phy-airoha-en8811h
+endef
+TARGET_DEVICES += vsol_v2901q-a
+
+define Device/vsol_v2902a-s
+  $(call Device/vsol_an7583-common)
+  DEVICE_MODEL := V2902A-S
+  DEVICE_DTS := an7583-vsol-v2902a-s
+  DEVICE_PACKAGES += kmod-sfp
+endef
+TARGET_DEVICES += vsol_v2902a-s

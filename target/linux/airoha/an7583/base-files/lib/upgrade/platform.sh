@@ -9,6 +9,23 @@ nokia_initial_setup()
 	fw_setenv bootcmd "flash read 0xc0000 0x800000 0x85000000; bootm 0x85000000"
 }
 
+tclinux_do_upgrade() {
+	local cmd="cat"
+
+	[ -e /dev/fit0 ] && fitblk /dev/fit0
+
+	if fwtool -q -i /dev/null "$1"; then
+		cmd="fwtool -i /dev/null -T -"
+	fi
+
+	CI_UBIPART="tclinux_slave"
+	nand_do_flash_file "$1" "$cmd" || nand_do_upgrade_failed
+	CI_UBIPART="tclinux"
+	nand_do_flash_file "$1" "$cmd" || nand_do_upgrade_failed
+	CI_DATA_UBIPART="rootfs_data"
+	nand_do_upgrade_success
+}
+
 platform_check_image() {
 	local board=$(board_name)
 
@@ -16,6 +33,10 @@ platform_check_image() {
 	nokia,xg-040g-mf-ubi)
 		fit_check_image "$1"
 		return $?
+		;;
+	vsol,v2901q-a | vsol,v2902a-s)
+		nand_do_platform_check "$board" "$1" || return $?
+		notify_firmware_no_backup
 		;;
 	*)
 		nand_do_platform_check "$board" "$1"
@@ -32,6 +53,9 @@ platform_do_upgrade() {
 	case "$board" in
 	nokia,xg-040g-mf-ubi)
 		fit_do_upgrade "$1"
+		;;
+	vsol,v2901q-a | vsol,v2902a-s)
+		tclinux_do_upgrade "$1"
 		;;
 	*)
 		nand_do_upgrade "$1"

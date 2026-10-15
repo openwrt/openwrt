@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_VERSION:=2.10
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 PKG_HASH:=88215a62291b9ba87da8e50b077741103cdc08fb6c9e1ebd34dfaace746d3201
 
 PKG_MAINTAINER:=Christian Marangi <ansuelsmth@gmail.com>
@@ -38,7 +38,9 @@ define Trusted-Firmware-A/an7583-bl2
   BUILD_SUBTARGET:=an7583
   SOC:=AN7583
   BUILD_DEVICES:=airoha_an7583-evb airoha_an7583-evb-emmc \
-	nokia_xg-040g-mf-ubi
+	nokia_xg-040g-mf-ubi \
+	vsol_v2901q-a \
+	vsol_v2902a-s
 endef
 
 define Trusted-Firmware-A/bl31/Default
@@ -59,7 +61,9 @@ define Trusted-Firmware-A/an7583-bl31
   BUILD_SUBTARGET:=an7583
   SOC:=AN7583
   BUILD_DEVICES:=airoha_an7583-evb airoha_an7583-evb-emmc \
-	nokia_xg-040g-mf-ubi
+	nokia_xg-040g-mf-ubi \
+	vsol_v2901q-a \
+	vsol_v2902a-s
 endef
 
 TFA_TARGETS:= \
