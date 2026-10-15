@@ -229,6 +229,48 @@ function assign_dev_queues_cpu(dev) {
 	}
 }
 
+let irq_names;
+
+// The CPU that takes the interrupts of a device without NAPI threads, and so
+// runs its NAPI poll, if they all go to one
+function dev_irq_cpu(dev)
+{
+	let irqs = map(glob(`${dev.path}/msi_irqs/*`), (path) => basename(path));
+
+	if (!length(irqs)) {
+		if (!irq_names) {
+			irq_names = {};
+			let f = open("/proc/interrupts", "r");
+			let line;
+			while (f && (line = f.read("line"))) {
+				let m = match(trim(line), /^(\d+):.*\s(\S+)$/);
+				if (m)
+					irq_names[m[1]] = m[2];
+			}
+			if (f)
+				f.close();
+		}
+
+		let pdev = basename(dev.path);
+		for (let irq, name in irq_names) {
+			if (name == pdev ||
+			    length(filter(dev.netdev, (netdev) =>
+					  name == netdev || index(name, `${netdev}-`) == 0)))
+				push(irqs, irq);
+		}
+	}
+
+	let cpu;
+	for (let irq in irqs) {
+		let list = trim(readfile(`/proc/irq/${irq}/effective_affinity_list`));
+		if (!match(list, /^\d+$/) || (cpu != null && cpu != +list))
+			return null;
+		cpu = +list;
+	}
+
+	return cpu;
+}
+
 function assign_dev_cpu(dev) {
 	if (length(dev.rx_queues) > 1 &&
 		length(dev.rx_tasks) > 1)
@@ -238,6 +280,11 @@ function assign_dev_cpu(dev) {
 		let cpu = dev.napi_cpu = get_next_cpu(napi_weight);
 		for (let task in dev.tasks)
 			set_task_cpu(task, cpu);
+	} else {
+		// NAPI runs where the interrupt is taken: keep RPS off that CPU
+		dev.napi_cpu = dev_irq_cpu(dev);
+		if (dev.napi_cpu != null)
+			cpu_add_weight(dev.napi_cpu, napi_weight);
 	}
 
 	if (length(dev.netdev) > 0) {
@@ -261,7 +308,7 @@ for (let devname in phys_devs) {
 // Add bias to avoid assigning other tasks to CPUs with ethernet NAPI
 for (let devname in phys_devs) {
 	let dev = phys_devs[devname];
-	if (!length(dev.tasks) || dev.napi_cpu == null)
+	if (dev.napi_cpu == null)
 		continue;
 	cpu_add_weight(dev.napi_cpu, eth_bias);
 }
