@@ -6,12 +6,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libselinux
-PKG_VERSION:=3.10
+PKG_VERSION:=3.11
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://github.com/SELinuxProject/selinux/releases/download/$(PKG_VERSION)
-PKG_HASH:=1ef216c5b56fb7e0a51cd2909787a175a17ee391e0467894807873539ebe766b
+PKG_HASH:=73d419c6e20e874adaa4019372cbd097eecf4d276e13f27ec5e67d35c0bd203c
 
 PKG_LICENSE:=libselinux-1.0
 PKG_LICENSE_FILES:=LICENSE
@@ -38,11 +38,14 @@ LIBSELINUX_UTILS := \
 	getenforce \
 	getfilecon \
 	getpidcon \
+	getpidprevcon \
+	getpolicyload \
 	getsebool \
 	getseuser \
 	matchpathcon \
 	policyvers \
 	sefcontext_compile \
+	selabel_compare \
 	selabel_digest \
 	selabel_get_digests_all_partial_matches \
 	selabel_lookup \
@@ -68,14 +71,14 @@ $(eval $(foreach a,$(LIBSELINUX_ALTS),ALTS_$(a):=300:/usr/sbin/$(a):/usr/sbin/li
 
 define Package/libselinux/Default
   TITLE:=Runtime SELinux library
-  URL:=https://github.com/selinuxproject
+  URL:=https://selinuxproject.github.io/
 endef
 
 define Package/libselinux
   $(call Package/libselinux/Default)
   SECTION:=libs
   CATEGORY:=Libraries
-  DEPENDS:=+libsepol +libpcre2 +USE_MUSL:musl-fts
+  DEPENDS:=+libsepol +libpcre2 +USE_MUSL:musl-fts $(ATOMIC64_DEPENDS)
 endef
 
 define Package/libselinux/description
@@ -119,6 +122,10 @@ HOST_MAKE_FLAGS += \
 ifeq ($(CONFIG_USE_MUSL),y)
 MAKE_FLAGS += FTS_LDLIBS=-lfts
 TARGET_CFLAGS += -D_LARGEFILE64_SOURCE
+endif
+
+ifneq ($(CONFIG_HAS_ATOMIC64),y)
+TARGET_LDFLAGS += -latomic
 endif
 
 MAKE_FLAGS += \
