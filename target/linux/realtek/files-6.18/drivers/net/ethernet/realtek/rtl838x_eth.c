@@ -13,6 +13,7 @@
 #include <linux/platform_device.h>
 #include <linux/sched.h>
 #include <linux/slab.h>
+#include <linux/soc/realtek/otto_common.h>
 #include <linux/of.h>
 #include <linux/of_net.h>
 #include <linux/of_mdio.h>
@@ -203,8 +204,13 @@ static bool rteth_839x_decode_tag(struct rteth_frag *frag, struct rteth_dsa_tag 
 	t->crc_error = frag->cpu_tag[4] & BIT(6);
 
 	pr_debug("Reason: %d\n", t->reason);
+	/* A tc trap rule leaves REASON 0 and sets ACL_HIT with its PIE row in
+	 * ACL_IDX. L3 rules set ACL_HIT too, from rows of their own.
+	 */
 	if ((t->reason >= 7 && t->reason <= 13) || /* NIC_RX_REASON_RMA */
-	    (t->reason >= 23 && t->reason <= 25))  /* NIC_RX_REASON_SPECIAL_TRAP */
+	    (t->reason >= 23 && t->reason <= 25) || /* NIC_RX_REASON_SPECIAL_TRAP */
+	    ((frag->cpu_tag[3] & BIT(15)) &&
+	     (frag->cpu_tag[2] & 0xfff) < RTL839X_PIE_L3_FIRST))
 		t->l2_offloaded = 0;
 	else
 		t->l2_offloaded = 1;
