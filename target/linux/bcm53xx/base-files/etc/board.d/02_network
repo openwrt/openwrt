@@ -36,6 +36,9 @@ bcm53xx_setup_interfaces()
 	meraki,mx65)
 		ucidef_set_interfaces_lan_wan \
 			"lan3 lan4 lan5 lan6 lan7 lan8 lan9 lan10 lan11 lan12" "wan1 wan2"
+		# WAN on the second CPU port (switch port 7, eth0)
+		ucidef_set_network_device_conduit "wan1" "eth0"
+		ucidef_set_network_device_conduit "wan2" "eth0"
 		;;
 	phicomm,k3)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
