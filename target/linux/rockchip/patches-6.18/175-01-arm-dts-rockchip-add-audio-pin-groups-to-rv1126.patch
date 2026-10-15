@@ -1,0 +1,251 @@
+From 059620f8dfd376325acdf9cca3e50840f31f23f8 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 9 Oct 2026 14:27:41 +0100
+Subject: [PATCH] ARM: dts: rockchip: add audio pin groups to rv1126
+
+Add the pin groups of the two-channel I2S controllers and the PDM
+microphone interface. The PDM clock and the I2S master clocks need the
+iomux routes that the pinctrl driver already carries.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ .../arm/boot/dts/rockchip/rv1126-pinctrl.dtsi | 228 ++++++++++++++++++
+ 1 file changed, 228 insertions(+)
+
+--- a/arch/arm/boot/dts/rockchip/rv1126-pinctrl.dtsi
++++ b/arch/arm/boot/dts/rockchip/rv1126-pinctrl.dtsi
+@@ -279,6 +279,234 @@
+ 			<3 RK_PB5 3 &pcfg_pull_none>;
+ 		};
+ 	};
++	i2s1 {
++		/omit-if-no-ref/
++		i2s1m0_lrck: i2s1m0-lrck {
++			rockchip,pins =
++				/* i2s1m0_lrck */
++				<1 RK_PA0 4 &pcfg_pull_none>;
++		};
++		/omit-if-no-ref/
++		i2s1m0_mclk: i2s1m0-mclk {
++			rockchip,pins =
++				/* i2s1m0_mclk */
++				<0 RK_PD4 4 &pcfg_pull_none>;
++		};
++		/omit-if-no-ref/
++		i2s1m0_sclk: i2s1m0-sclk {
++			rockchip,pins =
++				/* i2s1m0_sclk */
++				<1 RK_PA1 4 &pcfg_pull_none>;
++		};
++		/omit-if-no-ref/
++		i2s1m0_sdi: i2s1m0-sdi {
++			rockchip,pins =
++				/* i2s1m0_sdi */
++				<1 RK_PA2 4 &pcfg_pull_none>;
++		};
++		/omit-if-no-ref/
++		i2s1m0_sdo: i2s1m0-sdo {
++			rockchip,pins =
++				/* i2s1m0_sdo */
++				<0 RK_PD6 4 &pcfg_pull_none>;
++		};
++		/omit-if-no-ref/
++		i2s1m1_lrck: i2s1m1-lrck {
++			rockchip,pins =
++				/* i2s1m1_lrck */
++				<1 RK_PD7 2 &pcfg_pull_none>;
++		};
++		/omit-if-no-ref/
++		i2s1m1_mclk: i2s1m1-mclk {
++			rockchip,pins =
++				/* i2s1m1_mclk */
++				<1 RK_PD5 2 &pcfg_pull_none>;
++		};
++		/omit-if-no-ref/
++		i2s1m1_sclk: i2s1m1-sclk {
++			rockchip,pins =
++				/* i2s1m1_sclk */
++				<1 RK_PD6 2 &pcfg_pull_none>;
++		};
++		/omit-if-no-ref/
++		i2s1m1_sdi: i2s1m1-sdi {
++			rockchip,pins =
++				/* i2s1m1_sdi */
++				<2 RK_PA0 2 &pcfg_pull_none>;
++		};
++		/omit-if-no-ref/
++		i2s1m1_sdo: i2s1m1-sdo {
++			rockchip,pins =
++				/* i2s1m1_sdo */
++				<2 RK_PA1 2 &pcfg_pull_none>;
++		};
++		/omit-if-no-ref/
++		i2s1m2_lrck: i2s1m2-lrck {
++			rockchip,pins =
++				/* i2s1m2_lrck */
++				<2 RK_PD2 6 &pcfg_pull_none>;
++		};
++		/omit-if-no-ref/
++		i2s1m2_mclk: i2s1m2-mclk {
++			rockchip,pins =
++				/* i2s1m2_mclk */
++				<2 RK_PC7 6 &pcfg_pull_none>;
++		};
++		/omit-if-no-ref/
++		i2s1m2_sclk: i2s1m2-sclk {
++			rockchip,pins =
++				/* i2s1m2_sclk */
++				<2 RK_PD1 6 &pcfg_pull_none>;
++		};
++		/omit-if-no-ref/
++		i2s1m2_sdi: i2s1m2-sdi {
++			rockchip,pins =
++				/* i2s1m2_sdi */
++				<2 RK_PD3 6 &pcfg_pull_none>;
++		};
++		/omit-if-no-ref/
++		i2s1m2_sdo: i2s1m2-sdo {
++			rockchip,pins =
++				/* i2s1m2_sdo */
++				<2 RK_PD0 6 &pcfg_pull_none>;
++		};
++	};
++	i2s2 {
++		/omit-if-no-ref/
++		i2s2m0_lrck: i2s2m0-lrck {
++			rockchip,pins =
++				/* i2s2m0_lrck */
++				<1 RK_PC7 1 &pcfg_pull_none>;
++		};
++		/omit-if-no-ref/
++		i2s2m0_mclk: i2s2m0-mclk {
++			rockchip,pins =
++				/* i2s2m0_mclk */
++				<1 RK_PD0 1 &pcfg_pull_none>;
++		};
++		/omit-if-no-ref/
++		i2s2m0_sclk: i2s2m0-sclk {
++			rockchip,pins =
++				/* i2s2m0_sclk */
++				<1 RK_PC6 1 &pcfg_pull_none>;
++		};
++		/omit-if-no-ref/
++		i2s2m0_sdi: i2s2m0-sdi {
++			rockchip,pins =
++				/* i2s2m0_sdi */
++				<1 RK_PC5 1 &pcfg_pull_none>;
++		};
++		/omit-if-no-ref/
++		i2s2m0_sdo: i2s2m0-sdo {
++			rockchip,pins =
++				/* i2s2m0_sdo */
++				<1 RK_PC4 1 &pcfg_pull_none>;
++		};
++		/omit-if-no-ref/
++		i2s2m1_lrck: i2s2m1-lrck {
++			rockchip,pins =
++				/* i2s2m1_lrck */
++				<2 RK_PB2 2 &pcfg_pull_none>;
++		};
++		/omit-if-no-ref/
++		i2s2m1_mclk: i2s2m1-mclk {
++			rockchip,pins =
++				/* i2s2m1_mclk */
++				<2 RK_PB3 2 &pcfg_pull_none>;
++		};
++		/omit-if-no-ref/
++		i2s2m1_sclk: i2s2m1-sclk {
++			rockchip,pins =
++				/* i2s2m1_sclk */
++				<2 RK_PB1 2 &pcfg_pull_none>;
++		};
++		/omit-if-no-ref/
++		i2s2m1_sdi: i2s2m1-sdi {
++			rockchip,pins =
++				/* i2s2m1_sdi */
++				<2 RK_PB0 2 &pcfg_pull_none>;
++		};
++		/omit-if-no-ref/
++		i2s2m1_sdo: i2s2m1-sdo {
++			rockchip,pins =
++				/* i2s2m1_sdo */
++				<2 RK_PA7 2 &pcfg_pull_none>;
++		};
++	};
++	pdm {
++		/omit-if-no-ref/
++		pdmm0_clk: pdmm0-clk {
++			rockchip,pins =
++				/* pdm_clk0_m0 */
++				<3 RK_PD4 2 &pcfg_pull_none>;
++		};
++		/omit-if-no-ref/
++		pdmm0_clk1: pdmm0-clk1 {
++			rockchip,pins =
++				/* pdmm0_clk1 */
++				<3 RK_PD1 2 &pcfg_pull_none>;
++		};
++		/omit-if-no-ref/
++		pdmm0_sdi0: pdmm0-sdi0 {
++			rockchip,pins =
++				/* pdmm0_sdi0 */
++				<3 RK_PD6 2 &pcfg_pull_none>;
++		};
++		/omit-if-no-ref/
++		pdmm0_sdi1: pdmm0-sdi1 {
++			rockchip,pins =
++				/* pdmm0_sdi1 */
++				<4 RK_PA1 2 &pcfg_pull_none>;
++		};
++		/omit-if-no-ref/
++		pdmm0_sdi2: pdmm0-sdi2 {
++			rockchip,pins =
++				/* pdmm0_sdi2 */
++				<4 RK_PA0 2 &pcfg_pull_none>;
++		};
++		/omit-if-no-ref/
++		pdmm0_sdi3: pdmm0-sdi3 {
++			rockchip,pins =
++				/* pdmm0_sdi3 */
++				<3 RK_PD7 2 &pcfg_pull_none>;
++		};
++		/omit-if-no-ref/
++		pdmm1_clk: pdmm1-clk {
++			rockchip,pins =
++				/* pdm_clk0_m1 */
++				<3 RK_PC0 3 &pcfg_pull_none>;
++		};
++		/omit-if-no-ref/
++		pdmm1_clk1: pdmm1-clk1 {
++			rockchip,pins =
++				/* pdmm1_clk1 */
++				<3 RK_PC3 3 &pcfg_pull_none>;
++		};
++		/omit-if-no-ref/
++		pdmm1_sdi0: pdmm1-sdi0 {
++			rockchip,pins =
++				/* pdmm1_sdi0 */
++				<3 RK_PC1 3 &pcfg_pull_none>;
++		};
++		/omit-if-no-ref/
++		pdmm1_sdi1: pdmm1-sdi1 {
++			rockchip,pins =
++				/* pdmm1_sdi1 */
++				<3 RK_PC2 3 &pcfg_pull_none>;
++		};
++		/omit-if-no-ref/
++		pdmm1_sdi2: pdmm1-sdi2 {
++			rockchip,pins =
++				/* pdmm1_sdi2 */
++				<3 RK_PB6 3 &pcfg_pull_none>;
++		};
++		/omit-if-no-ref/
++		pdmm1_sdi3: pdmm1-sdi3 {
++			rockchip,pins =
++				/* pdmm1_sdi3 */
++				<3 RK_PB7 3 &pcfg_pull_none>;
++		};
++	};
+ 	pwm0 {
+ 		/omit-if-no-ref/
+ 		pwm0m0_pins: pwm0m0-pins {

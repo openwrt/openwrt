@@ -405,12 +405,25 @@ function device_htmode_append(config) {
 			append_vars(config, [ 'he_6ghz_reg_pwr_type', ]);
 		}
 
+		/* Before the SR Control bits, which take PSR Disallowed from it. */
+		if (!(he_phy_cap[7] & 0x1))
+			config.he_spr_psr_enabled = false;
+
 		if (config.he_bss_color_enabled) {
-			if (config.he_spr_non_srg_obss_pd_max_offset)
+			/* An offset of 0 is a valid offset, so the presence of the
+			 * option sets the Present bit, and not its value. */
+			if (config.he_spr_non_srg_obss_pd_max_offset != null)
 				config.he_spr_sr_control |= 1 << 2;
+			if (config.he_spr_srg_obss_pd_min_offset != null ||
+			    config.he_spr_srg_obss_pd_max_offset != null)
+				config.he_spr_sr_control |= 1 << 3;
 			if (!config.he_spr_psr_enabled)
 				config.he_spr_sr_control |= 1;
-			append_vars(config, [ 'he_bss_color', 'he_spr_non_srg_obss_pd_max_offset', 'he_spr_sr_control' ]);
+			append_vars(config, [
+				'he_bss_color', 'he_spr_non_srg_obss_pd_max_offset', 'he_spr_sr_control',
+				'he_spr_srg_obss_pd_min_offset', 'he_spr_srg_obss_pd_max_offset',
+				'he_spr_srg_bss_colors', 'he_spr_srg_partial_bssid'
+			]);
 		}
 
 		if (!(he_phy_cap[3] & 0x80))
@@ -419,8 +432,6 @@ function device_htmode_append(config) {
 			config.he_su_beamformee = false;
 		if (!(he_phy_cap[4] & 0x2))
 			config.he_mu_beamformer = false;
-		if (!(he_phy_cap[7] & 0x1))
-			config.he_spr_psr_enabled = false;
 		if (!(he_mac_cap[0] & 0x4))
 			config.he_twt_responder = false;
 		if (!config.he_twt_responder)

@@ -1317,10 +1317,10 @@ static void rtl839x_read_pie_templated(u32 r[], struct pie_rule *pr, enum rtl839
 
 		if (!(i % 2)) {
 			data = r[5 - i / 2];
-			data_m = r[12 - i / 2];
+			data_m = r[12 - i / 2] >> 8;
 		} else {
 			data = r[5 - i / 2] >> 16;
-			data_m = r[12 - i / 2] >> 16;
+			data_m = (r[12 - i / 2] >> 24) | (r[11 - i / 2] << 8);
 		}
 
 		switch (field_type) {
@@ -1403,27 +1403,32 @@ static void rtl839x_read_pie_templated(u32 r[], struct pie_rule *pr, enum rtl839
 			break;
 
 		case RTL839X_TEMPLATE_FIELD_DIP0:
-			pr->dip = data;
-			pr->dip_m = data_m;
+			pr->dip = (pr->dip & 0xffff0000) | data;
+			pr->dip_m = (pr->dip_m & 0xffff0000) | data_m;
+			pr->dip6.s6_addr16[7] = data;
+			pr->dip6_m.s6_addr16[7] = data_m;
 			break;
 
 		case RTL839X_TEMPLATE_FIELD_DIP1:
-			pr->dip = (pr->dip << 16) | data;
-			pr->dip_m = (pr->dip << 16) | data_m;
+			pr->dip = (pr->dip & 0xffff) | ((u32)data << 16);
+			pr->dip_m = (pr->dip_m & 0xffff) | ((u32)data_m << 16);
+			pr->dip6.s6_addr16[6] = data;
+			pr->dip6_m.s6_addr16[6] = data_m;
 			break;
 
 		case RTL839X_TEMPLATE_FIELD_DIP2:
-			pr->is_ipv6 = true;
-			ipv6_addr_set(&pr->dip6, pr->dip, r[5 - i / 2],
-				      r[4 - i / 2], r[3 - i / 2]);
-			ipv6_addr_set(&pr->dip6_m, pr->dip_m, r[5 - i / 2],
-				      r[4 - i / 2], r[3 - i / 2]);
 		case RTL839X_TEMPLATE_FIELD_DIP3:
 		case RTL839X_TEMPLATE_FIELD_DIP4:
 		case RTL839X_TEMPLATE_FIELD_DIP5:
 		case RTL839X_TEMPLATE_FIELD_DIP6:
-		case RTL839X_TEMPLATE_FIELD_DIP7:
+		case RTL839X_TEMPLATE_FIELD_DIP7: {
+			int w = 5 - (field_type - RTL839X_TEMPLATE_FIELD_DIP2);
+
+			pr->is_ipv6 = true;
+			pr->dip6.s6_addr16[w] = data;
+			pr->dip6_m.s6_addr16[w] = data_m;
 			break;
+		}
 		case RTL839X_TEMPLATE_FIELD_IP_TOS_PROTO:
 			pr->tos_proto = data;
 			pr->tos_proto_m = data_m;
@@ -1538,7 +1543,7 @@ static void rtl839x_write_pie_action(u32 r[],  struct pie_rule *pr)
 
 	r[14] |= ((u32)(pr->fwd_data & 0x3fff)) << 18;
 	r[14] |= pr->log_octets ? BIT(17) : 0;
-	r[14] |= ((u32)(pr->log_data & 0x7ff)) << 4;
+	r[14] |= ((u32)(pr->log_data & 0x7ff)) << 6;
 	r[14] |= (pr->mir_data & 0x3) << 3;
 	r[14] |= ((u32)(pr->meter_data >> 7)) & 0x7;
 	r[15] |= (u32)(pr->meter_data) << 26;
@@ -1558,11 +1563,11 @@ static void rtl839x_write_pie_action(u32 r[],  struct pie_rule *pr)
 static void rtl839x_read_pie_action(u32 r[],  struct pie_rule *pr)
 {
 	if (r[13] & BIT(3)) { /* ACT_MASK_FWD set, is it a drop? */
-		if ((r[14] & 0x7) == 1) {
+		if ((r[13] & 0x7) == 1) {
 			pr->drop = true;
 		} else {
 			pr->fwd_sel = true;
-			pr->fwd_act = r[14] & 0x7;
+			pr->fwd_act = r[13] & 0x7;
 		}
 	}
 
@@ -1575,7 +1580,10 @@ static void rtl839x_read_pie_action(u32 r[],  struct pie_rule *pr)
 	pr->mir_sel = r[13] & BIT(5);
 	pr->log_sel = r[13] & BIT(4);
 
-	/* TODO: Read in data fields */
+	pr->fwd_data = r[14] >> 18;
+	pr->log_data = (r[14] >> 6) & 0x7ff;
+
+	/* TODO: Read in the other data fields */
 
 	pr->bypass_all = r[16] & BIT(9);
 	pr->bypass_igr_stp = r[16] & BIT(8);
@@ -1613,11 +1621,16 @@ int rtl839x_pie_rule_read(struct rtl838x_switch_priv *priv, int idx, struct  pie
 	u32 r[17];
 	int block = idx / PIE_BLOCK_SIZE;
 	u32 t_select = sw_r32(RTL839X_ACL_BLK_TMPLTE_CTRL(block));
+	int err;
 
 	memset(pr, 0, sizeof(*pr));
-	__otto_table_read(tbl, idx, &r);
+	if (tbl < 0)
+		return tbl;
 
+	err = __otto_table_read(tbl, idx, &r);
 	otto_table_release(tbl);
+	if (err)
+		return err;
 
 	rtl839x_read_pie_fixed_fields(r, pr);
 	if (!pr->valid)
@@ -1639,6 +1652,10 @@ int rtl839x_pie_rule_write(struct rtl838x_switch_priv *priv, int idx, struct pie
 	u32 r[17];
 	int block = idx / PIE_BLOCK_SIZE;
 	u32 t_select = sw_r32(RTL839X_ACL_BLK_TMPLTE_CTRL(block));
+	int err;
+
+	if (tbl < 0)
+		return tbl;
 
 	pr_debug("%s: %d, t_select: %08x\n", __func__, idx, t_select);
 
@@ -1646,9 +1663,9 @@ int rtl839x_pie_rule_write(struct rtl838x_switch_priv *priv, int idx, struct pie
 		r[i] = 0;
 
 	if (!pr->valid) {
-		__otto_table_write(tbl, idx, &r);
+		err = __otto_table_write(tbl, idx, &r);
 		otto_table_release(tbl);
-		return 0;
+		return err;
 	}
 	rtl839x_write_pie_fixed_fields(r, pr);
 
@@ -1659,10 +1676,10 @@ int rtl839x_pie_rule_write(struct rtl838x_switch_priv *priv, int idx, struct pie
 
 /*	rtl839x_pie_rule_dump_raw(r); */
 
-	__otto_table_write(tbl, idx, &r);
+	err = __otto_table_write(tbl, idx, &r);
 	otto_table_release(tbl);
 
-	return 0;
+	return err;
 }
 
 static bool rtl839x_pie_templ_has(int t, enum rtl839x_template_field_id field_type)
@@ -1780,6 +1797,51 @@ void rtl839x_pie_rule_rm(struct rtl838x_switch_priv *priv, struct pie_rule *pr)
 	clear_bit(idx, priv->pie_use_bm);
 }
 
+int rtl839x_pie_l3_rule_read(struct rtl838x_switch_priv *priv, int idx, struct pie_rule *pr)
+{
+	if (idx < 0 || idx >= RTL839X_PIE_L3_RULES)
+		return -EINVAL;
+
+	return rtl839x_pie_rule_read(priv, RTL839X_PIE_L3_FIRST + idx, pr);
+}
+
+/* L3 keeps its rules in an order of its own, the longest prefix first, so it
+ * writes each one in place, in the rules rtl839x_pie_init() keeps for it. A
+ * rule matches the IPv4 or IPv6 destination and takes the template of its
+ * block that has it.
+ */
+int rtl839x_pie_l3_rule_write(struct rtl838x_switch_priv *priv, int idx, struct pie_rule *pr)
+{
+	enum rtl839x_template_field_id dip = pr->is_ipv6 ? RTL839X_TEMPLATE_FIELD_DIP2 :
+							     RTL839X_TEMPLATE_FIELD_DIP0;
+	int block, j, t, err;
+
+	if (idx < 0 || idx >= RTL839X_PIE_L3_RULES)
+		return -EINVAL;
+
+	idx += RTL839X_PIE_L3_FIRST;
+	block = idx / PIE_BLOCK_SIZE;
+
+	for (j = 0; j < 2; j++) {
+		t = (sw_r32(RTL839X_ACL_BLK_TMPLTE_CTRL(block)) >> (j * 3)) & 0x7;
+		if (rtl839x_pie_templ_has(t, dip))
+			break;
+	}
+	if (j == 2)
+		return -EOPNOTSUPP;
+
+	pr->tid = j;
+	pr->tid_m = 0x3;
+	pr->id = idx;
+
+	mutex_lock(&priv->pie_mutex);
+	rtl839x_pie_lookup_enable(priv, idx);
+	err = rtl839x_pie_rule_write(priv, idx, pr);
+	mutex_unlock(&priv->pie_mutex);
+
+	return err;
+}
+
 void rtl839x_pie_init(struct rtl838x_switch_priv *priv)
 {
 	u32 template_selectors;
@@ -1791,7 +1853,7 @@ void rtl839x_pie_init(struct rtl838x_switch_priv *priv)
 		sw_w32_mask(0, BIT(i), RTL839X_PS_ACL_PWR_CTRL);
 
 	/* Set ingress and egress ACL blocks to 50/50: first Egress block is 9 */
-	sw_w32_mask(0x1f, 9, RTL839X_ACL_CTRL);  /* Writes 9 to cutline field */
+	sw_w32_mask(0x1f, RTL839X_PIE_CUTLINE, RTL839X_ACL_CTRL);
 
 	/* Include IPG in metering */
 	sw_w32(1, RTL839X_METER_GLB_CTRL);
@@ -1799,19 +1861,17 @@ void rtl839x_pie_init(struct rtl838x_switch_priv *priv)
 	/* Delete all present rules */
 	rtl839x_pie_rule_del(priv, 0, priv->r->n_pie_blocks * PIE_BLOCK_SIZE - 1);
 
-	/* Enable predefined templates 0, 1 for blocks 0-2 */
-	template_selectors = 0 | (1 << 3);
-	for (int i = 0; i < 3; i++)
+	/* Never hand out L3's rules, see rtl839x_pie_l3_rule_write() */
+	bitmap_set(priv->pie_use_bm, RTL839X_PIE_L3_FIRST, RTL839X_PIE_L3_RULES);
+
+	/* Ingress ACL blocks: predefined templates 2, 3 */
+	template_selectors = 2 | (3 << 3);
+	for (int i = 0; i < RTL839X_PIE_L3_FIRST / PIE_BLOCK_SIZE; i++)
 		sw_w32(template_selectors, RTL839X_ACL_BLK_TMPLTE_CTRL(i));
 
-	/* Enable predefined templates 2, 3 for blocks 3-5 */
-	template_selectors = 2 | (3 << 3);
-	for (int i = 3; i < 6; i++)
-		sw_w32(template_selectors, RTL839X_ACL_BLK_TMPLTE_CTRL(i));
-
-	/* Enable predefined templates 1, 4 for blocks 6-8 */
-	template_selectors = 2 | (3 << 3);
-	for (int i = 6; i < 9; i++)
+	/* L3's blocks: template 1 for its IPv4 rules, 3 for its IPv6 ones */
+	template_selectors = 1 | (3 << 3);
+	for (int i = RTL839X_PIE_L3_FIRST / PIE_BLOCK_SIZE; i < RTL839X_PIE_CUTLINE; i++)
 		sw_w32(template_selectors, RTL839X_ACL_BLK_TMPLTE_CTRL(i));
 
 	/* Enable predefined templates 0, 1 for blocks 9-11 */

@@ -260,7 +260,7 @@ function mld_radio_index(data, freq)
 function mld_add(data, phy_list)
 {
 	let name = data.name;
-	phy_list ??= [];
+	phy_list ??= {};
 
 	wpas.printf(`Add MLD interface ${name}`);
 

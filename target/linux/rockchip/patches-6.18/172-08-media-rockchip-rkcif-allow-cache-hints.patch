@@ -1,0 +1,28 @@
+From 6d71c2fb74f0762d5d4ff1f75ce0ba9cb2558e4c Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Sun, 11 Oct 2026 14:09:14 +0100
+Subject: [PATCH] media: rockchip: rkcif: allow cache hints
+
+Without an ISP, the raw frames captured by the VICAP are processed by
+the CPU, and reading them through the uncached mapping of the default
+MMAP buffers is slow. Set allow_cache_hints so that userspace can
+request non-coherent buffers with V4L2_MEMORY_FLAG_NON_COHERENT;
+videobuf2 performs the cache maintenance when buffers are queued and
+dequeued. On the RV1126 this raises a software debayer pipeline
+streaming 1080p JPEG from 13.3 to 19.1 frames per second.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ drivers/media/platform/rockchip/rkcif/rkcif-stream.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/media/platform/rockchip/rkcif/rkcif-stream.c
++++ b/drivers/media/platform/rockchip/rkcif/rkcif-stream.c
+@@ -513,6 +513,7 @@ static int rkcif_stream_init_vb2_queue(s
+ {
+ 	q->type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
+ 	q->io_modes = VB2_MMAP | VB2_DMABUF;
++	q->allow_cache_hints = 1;
+ 	q->drv_priv = stream;
+ 	q->ops = &rkcif_stream_vb2_ops;
+ 	q->mem_ops = &vb2_dma_contig_memops;

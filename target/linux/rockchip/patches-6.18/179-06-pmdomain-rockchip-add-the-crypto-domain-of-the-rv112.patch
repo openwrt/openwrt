@@ -1,0 +1,25 @@
+From 1c9980364faf050eb4839d24e6bc8701d0d0d142 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Sat, 10 Oct 2026 11:54:19 +0100
+Subject: [PATCH] pmdomain: rockchip: add the crypto domain of the RV1126
+
+The power-down request of the crypto domain sits in the second
+request register, so it needs a request offset like the domains of
+newer SoCs have.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ drivers/pmdomain/rockchip/pm-domains.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/pmdomain/rockchip/pm-domains.c
++++ b/drivers/pmdomain/rockchip/pm-domains.c
+@@ -1112,6 +1112,8 @@ static const struct rockchip_domain_info
+ 	[RV1126_PD_NVM]		= DOMAIN_RV1126("nvm", BIT(7), BIT(11), BIT(11),  false),
+ 	[RV1126_PD_SDIO]	= DOMAIN_RV1126("sdio", BIT(8), BIT(13), BIT(13),  false),
+ 	[RV1126_PD_USB]		= DOMAIN_RV1126("usb", BIT(9), BIT(15), BIT(15),  false),
++	[RV1126_PD_CRYPTO]	= DOMAIN_M_O_R("crypto", 0, BIT(10), BIT(10), 0, 0, 0, 0x4,
++					     BIT(4), BIT(20), BIT(20), false, false),
+ };
+ 
+ static const struct rockchip_domain_info rk3036_pm_domains[] = {

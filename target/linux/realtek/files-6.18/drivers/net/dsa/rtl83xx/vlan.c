@@ -140,7 +140,7 @@ static void otto_vlan_port_pvid_set(struct rtl838x_switch_priv *priv,
 /* Initialize all VLANS */
 void otto_vlan_setup(struct rtl838x_switch_priv *priv)
 {
-	struct rtldsa_vlan_info info = {
+	struct otto_vlan_info info = {
 		.l2_tunnel_list_id = -1,
 	};
 
@@ -172,7 +172,7 @@ void otto_vlan_setup(struct rtl838x_switch_priv *priv)
 }
 
 /* RTL838x VLAN operations */
-void otto_vlan_838x_tables_read(u32 vlan, struct rtldsa_vlan_info *info)
+void otto_vlan_838x_tables_read(u32 vlan, struct otto_vlan_info *info)
 {
 	u32 buf[2];
 	u32 untag;
@@ -192,7 +192,7 @@ void otto_vlan_838x_tables_read(u32 vlan, struct rtldsa_vlan_info *info)
 	info->untagged_ports = untag;
 }
 
-void otto_vlan_838x_set_tagged(u32 vlan, struct rtldsa_vlan_info *info)
+void otto_vlan_838x_set_tagged(u32 vlan, struct otto_vlan_info *info)
 {
 	u32 buf[2];
 	u32 v;
@@ -300,7 +300,7 @@ otto_vlan_838x_profile_dump(struct rtl838x_switch_priv *priv, int idx)
 }
 
 /* RTL839x VLAN operations */
-void otto_vlan_839x_tables_read(u32 vlan, struct rtldsa_vlan_info *info)
+void otto_vlan_839x_tables_read(u32 vlan, struct otto_vlan_info *info)
 {
 	u32 buf[3], untag[2];
 	u32 u, v, w;
@@ -325,7 +325,7 @@ void otto_vlan_839x_tables_read(u32 vlan, struct rtldsa_vlan_info *info)
 	info->untagged_ports = (info->untagged_ports << 21) | ((v >> 11) & 0x1fffff);
 }
 
-void otto_vlan_839x_set_tagged(u32 vlan, struct rtldsa_vlan_info *info)
+void otto_vlan_839x_set_tagged(u32 vlan, struct otto_vlan_info *info)
 {
 	u32 buf[3];
 	u32 u, v, w;
@@ -448,7 +448,7 @@ void otto_vlan_839x_port_pvid_set(int port, enum pbvlan_type type, int pvid)
 }
 
 /* RTL930x VLAN operations */
-void otto_vlan_930x_tables_read(u32 vlan, struct rtldsa_vlan_info *info)
+void otto_vlan_930x_tables_read(u32 vlan, struct otto_vlan_info *info)
 {
 	u32 buf[2];
 	u32 v, w;
@@ -472,7 +472,7 @@ void otto_vlan_930x_tables_read(u32 vlan, struct rtldsa_vlan_info *info)
 /* Group mask bits for the IGMP and MLD actions of VLAN_APP_PKT_CTRL */
 #define RTLDSA_93XX_VLAN_GROUP_IGMP_MLD	(BIT(2) | BIT(3))
 
-void otto_vlan_930x_set_tagged(u32 vlan, struct rtldsa_vlan_info *info)
+void otto_vlan_930x_set_tagged(u32 vlan, struct otto_vlan_info *info)
 {
 	u32 v, w;
 	u32 buf[2];
@@ -648,7 +648,7 @@ otto_vlan_931x_profile_dump(struct rtl838x_switch_priv *priv, int idx)
 		p.unkn_mc_fld.pmsks.ip, p.unkn_mc_fld.pmsks.ip6);
 }
 
-void otto_vlan_931x_tables_read(u32 vlan, struct rtldsa_vlan_info *info)
+void otto_vlan_931x_tables_read(u32 vlan, struct otto_vlan_info *info)
 {
 	u32 v, w, x, y;
 	u32 buf[4], buf2[2];
@@ -680,7 +680,7 @@ void otto_vlan_931x_tables_read(u32 vlan, struct rtldsa_vlan_info *info)
 	info->untagged_ports |= buf2[1] >> 7;
 }
 
-void otto_vlan_931x_set_tagged(u32 vlan, struct rtldsa_vlan_info *info)
+void otto_vlan_931x_set_tagged(u32 vlan, struct otto_vlan_info *info)
 {
 	u32 v, w, x, y;
 	u32 buf[4];
@@ -820,8 +820,10 @@ int otto_vlan_port_add(struct dsa_switch *ds, int port,
 		       const struct switchdev_obj_port_vlan *vlan,
 		       struct netlink_ext_ack *extack)
 {
-	struct rtldsa_vlan_info info;
+	struct otto_vlan_info info;
 	struct rtl838x_switch_priv *priv = ds->priv;
+	struct net_device *bridge_dev;
+	u16 proto;
 
 	pr_debug("%s port %d, vid %d, flags %x\n",
 		 __func__, port, vlan->vid, vlan->flags);
@@ -833,6 +835,19 @@ int otto_vlan_port_add(struct dsa_switch *ds, int port,
 	if (vlan->vid >= MAX_VLANS) {
 		dev_err(priv->dev, "VLAN out of range: %d", vlan->vid);
 		return -ENOTSUPP;
+	}
+
+	/*
+	 * The hardware can handle 802.1ad. The driver just does not program
+	 * the inner and outer tag handling for it yet. A host VLAN arrives on
+	 * the CPU port, which has no bridge, and names the bridge itself.
+	 */
+	bridge_dev = vlan->obj.orig_dev;
+	if (!bridge_dev || !netif_is_bridge_master(bridge_dev))
+		bridge_dev = dsa_port_bridge_dev_get(dsa_to_port(ds, port));
+	if (bridge_dev && !br_vlan_get_proto(bridge_dev, &proto) && proto != ETH_P_8021Q) {
+		NL_SET_ERR_MSG_MOD(extack, "802.1ad bridges are not supported");
+		return -EINVAL;
 	}
 
 	mutex_lock(&priv->reg_mutex);
@@ -886,7 +901,7 @@ int otto_vlan_port_add(struct dsa_switch *ds, int port,
 int otto_vlan_port_del(struct dsa_switch *ds, int port,
 		       const struct switchdev_obj_port_vlan *vlan)
 {
-	struct rtldsa_vlan_info info;
+	struct otto_vlan_info info;
 	struct rtl838x_switch_priv *priv = ds->priv;
 	u16 pvid;
 
@@ -955,7 +970,7 @@ int otto_vlan_msti_set(struct dsa_switch *ds, struct dsa_bridge bridge,
 		       const struct switchdev_vlan_msti *msti)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
-	struct rtldsa_vlan_info info;
+	struct otto_vlan_info info;
 	u16 mst_slot_old;
 	int mst_slot;
 

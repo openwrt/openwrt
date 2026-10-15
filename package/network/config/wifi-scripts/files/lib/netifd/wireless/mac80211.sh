@@ -38,6 +38,7 @@ drv_mac80211_init_device_config() {
 	config_add_array ht_capab
 	config_add_array channels
 	config_add_array scan_list
+	config_add_array he_spr_srg_bss_colors he_spr_srg_partial_bssid
 	config_add_boolean \
 		rxldpc \
 		short_gi_80 \
@@ -54,7 +55,6 @@ drv_mac80211_init_device_config() {
 		htc_vht \
 		rx_antenna_pattern \
 		tx_antenna_pattern \
-		he_spr_sr_control \
 		he_spr_psr_enabled \
 		he_bss_color_enabled \
 		he_twt_required
@@ -68,7 +68,10 @@ drv_mac80211_init_device_config() {
 		rx_stbc \
 		tx_stbc \
 		he_bss_color \
-		he_spr_non_srg_obss_pd_max_offset
+		he_spr_sr_control \
+		he_spr_non_srg_obss_pd_max_offset \
+		he_spr_srg_obss_pd_min_offset \
+		he_spr_srg_obss_pd_max_offset
 	config_add_boolean \
 		ldpc \
 		greenfield \
@@ -452,9 +455,13 @@ mac80211_hostapd_setup_base() {
 			he_twt_required:0 \
 			he_spr_sr_control:3 \
 			he_spr_psr_enabled:0 \
-			he_spr_non_srg_obss_pd_max_offset:0 \
+			he_spr_non_srg_obss_pd_max_offset \
+			he_spr_srg_obss_pd_min_offset \
+			he_spr_srg_obss_pd_max_offset \
 			he_bss_color:128 \
 			he_bss_color_enabled:1
+		json_get_values he_spr_srg_bss_colors he_spr_srg_bss_colors
+		json_get_values he_spr_srg_partial_bssid he_spr_srg_partial_bssid
 
 		he_phy_cap=$(iw phy "$phy" info | sed -n '/HE Iftypes: .*AP/,$p' | awk -F "[()]" '/HE PHY Capabilities/ { print $2 }' | head -1)
 		he_phy_cap=${he_phy_cap:2}
@@ -475,10 +482,23 @@ mac80211_hostapd_setup_base() {
 
 		if [ "$he_bss_color_enabled" -gt 0 ]; then
 			append base_cfg "he_bss_color=$he_bss_color" "$N"
-			[ "$he_spr_non_srg_obss_pd_max_offset" -gt 0 ] && { \
+			# An offset of 0 is a valid offset, so the presence of the option
+			# sets the Present bit, and not its value.
+			[ -n "$he_spr_non_srg_obss_pd_max_offset" ] && { \
 				append base_cfg "he_spr_non_srg_obss_pd_max_offset=$he_spr_non_srg_obss_pd_max_offset" "$N"
 				he_spr_sr_control=$((he_spr_sr_control | (1 << 2)))
 			}
+			[ -n "$he_spr_srg_obss_pd_min_offset$he_spr_srg_obss_pd_max_offset" ] && {
+				he_spr_sr_control=$((he_spr_sr_control | (1 << 3)))
+				[ -n "$he_spr_srg_obss_pd_min_offset" ] && \
+					append base_cfg "he_spr_srg_obss_pd_min_offset=$he_spr_srg_obss_pd_min_offset" "$N"
+				[ -n "$he_spr_srg_obss_pd_max_offset" ] && \
+					append base_cfg "he_spr_srg_obss_pd_max_offset=$he_spr_srg_obss_pd_max_offset" "$N"
+			}
+			[ -n "$he_spr_srg_bss_colors" ] && \
+				append base_cfg "he_spr_srg_bss_colors=$he_spr_srg_bss_colors" "$N"
+			[ -n "$he_spr_srg_partial_bssid" ] && \
+				append base_cfg "he_spr_srg_partial_bssid=$he_spr_srg_partial_bssid" "$N"
 			[ "$he_spr_psr_enabled" -gt 0 ] && he_spr_psr_enabled=$((0x${he_phy_cap:14:2} & 0x1))
 			[ "$he_spr_psr_enabled" -gt 0 ] || he_spr_sr_control=$((he_spr_sr_control | (1 << 0)))
 			append base_cfg "he_spr_sr_control=$he_spr_sr_control" "$N"

@@ -10,6 +10,7 @@ ipq50xx_setup_interfaces()
 	elecom,wrc-x3000gs2|\
 	elecom,wrc-x3000gst2|\
 	iodata,wn-dax3000gr|\
+	linksys,mr2000|\
 	linksys,mr5500|\
 	tplink,archer-ax55-v1|\
 	zyxel,scr50axe)
@@ -31,6 +32,7 @@ ipq50xx_setup_interfaces()
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
 		;;
 	linksys,mx6200|\
+	wallys,dr5018s|\
 	yuncore,ax830|\
 	yuncore,ax850)
 		ucidef_set_interfaces_lan_wan "lan" "wan"
