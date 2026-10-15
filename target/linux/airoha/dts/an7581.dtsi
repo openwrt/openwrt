@@ -4,7 +4,6 @@
 #include <dt-bindings/interrupt-controller/arm-gic.h>
 #include <dt-bindings/clock/en7523-clk.h>
 #include <dt-bindings/phy/phy.h>
-#include <dt-bindings/phy/airoha,an7581-usb-phy.h>
 #include <dt-bindings/soc/airoha,scu-ssr.h>
 #include <dt-bindings/reset/airoha,en7581-reset.h>
 #include <dt-bindings/leds/common.h>
@@ -585,7 +584,7 @@
 			reg = <0x0 0x1fac0000 0x0 0x10000>;
 
 			airoha,scu = <&scuclk>;
-			airoha,usb2-monitor-clk-sel = <AIROHA_USB2_MONCLK_SEL1>;
+			airoha,usb2-monitor-clk-sel = <1>;
 			airoha,serdes-port = <AIROHA_SCU_SERDES_USB1>;
 
 			#phy-cells = <1>;
@@ -608,7 +607,7 @@
 			reg = <0x0 0x1fae0000 0x0 0x10000>;
 
 			airoha,scu = <&scuclk>;
-			airoha,usb2-monitor-clk-sel = <AIROHA_USB2_MONCLK_SEL2>;
+			airoha,usb2-monitor-clk-sel = <2>;
 			airoha,serdes-port = <AIROHA_SCU_SERDES_USB2>;
 
 			#phy-cells = <1>;
