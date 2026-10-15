@@ -466,7 +466,7 @@ as adding/removing interfaces.
  	/* With sae_track_password functionality enabled, try to first find the
  	 * next viable wildcard-address password if a password identifier was
  	 * not used. Select an wildcard-addr entry if the STA is known to have
-@@ -831,12 +836,30 @@ const char * sae_get_password(struct hos
+@@ -831,12 +836,22 @@ const char * sae_get_password(struct hos
  		pt = hapd->conf->ssid.pt;
  	}
  
@@ -475,31 +475,52 @@ as adding/removing interfaces.
  		for (psk = sta->psk; psk; psk = psk->next) {
 -			if (psk->is_passphrase) {
 -				password = psk->passphrase;
+-				break;
+-			}
 +			if (!psk->is_passphrase)
 +				continue;
 +
 +			password = psk->passphrase;
-+			if (!sta->use_sta_psk)
-+				break;
-+
-+#ifdef CONFIG_SAE
-+			if (sta->sae_pt) {
-+				pt = sta->sae_pt;
- 				break;
- 			}
-+
-+			pt = sae_derive_pt(conf->sae_groups, ssid->ssid,
-+					   ssid->ssid_len,
-+					   (const u8 *) password,
-+					   os_strlen(password),
-+					   NULL, 0);
-+			sta->sae_pt = pt;
++			if (!sta->sae_pt)
++				sta->sae_pt = sae_derive_pt(conf->sae_groups,
++							    ssid->ssid,
++							    ssid->ssid_len,
++							    (const u8 *) password,
++							    os_strlen(password),
++							    NULL, 0);
++			pt = sta->sae_pt;
 +			break;
-+#endif
  		}
  	}
  
-@@ -4640,6 +4663,12 @@ static void handle_auth(struct hostapd_d
+@@ -3442,6 +3457,9 @@ int ieee802_11_set_radius_info(struct ho
+ 	char *identity = info->identity;
+ 	char *radius_cui = info->radius_cui;
+ 
++	if (hapd->conf->wpa_psk_radius == PSK_RADIUS_IGNORED)
++		psk = NULL;
++
+ 	if (vlan_id->notempty &&
+ 	    !hostapd_vlan_valid(hapd->conf->vlan, vlan_id)) {
+ 		hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_RADIUS,
+@@ -3457,11 +3475,12 @@ int ieee802_11_set_radius_info(struct ho
+ 		hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_RADIUS,
+ 			       HOSTAPD_LEVEL_INFO, "VLAN ID %d", sta->vlan_id);
+ 
++	/* The cached RADIUS list is shared and not changed in place, so the PT
++	 * of the same list stays valid */
++	if (sta->psk != psk)
++		ap_sta_clear_sae_pt(sta);
+ 	hostapd_free_psk_list(sta->psk);
+-	if (hapd->conf->wpa_psk_radius != PSK_RADIUS_IGNORED)
+-		hostapd_copy_psk_list(&sta->psk, psk);
+-	else
+-		sta->psk = NULL;
++	hostapd_copy_psk_list(&sta->psk, psk);
+ 
+ 	os_free(sta->identity);
+ 	if (identity)
+@@ -4640,6 +4659,12 @@ static void handle_auth(struct hostapd_d
  		goto fail;
  	}
  
@@ -514,19 +535,32 @@ as adding/removing interfaces.
  
 --- a/src/ap/sta_info.c
 +++ b/src/ap/sta_info.c
-@@ -610,6 +610,11 @@ void ap_free_sta(struct hostapd_data *ha
+@@ -335,6 +335,15 @@ int ap_sta_reset_prev_assoc(struct hosta
+ #endif /* CONFIG_IEEE80211BE */
+ 
+ 
++void ap_sta_clear_sae_pt(struct sta_info *sta)
++{
++#ifdef CONFIG_SAE
++	sae_deinit_pt(sta->sae_pt);
++#endif /* CONFIG_SAE */
++	sta->sae_pt = NULL;
++}
++
++
+ void ap_free_sta(struct hostapd_data *hapd, struct sta_info *sta)
+ {
+ #ifndef CONFIG_NO_VLAN
+@@ -610,6 +619,8 @@ void ap_free_sta(struct hostapd_data *ha
  	os_free(sta->eap_auth_data.rsnxe);
  #endif /* CONFIG_IEEE8021X_AUTH */
  
-+#ifdef CONFIG_SAE
-+	if (sta->sae_pt)
-+		sae_deinit_pt(sta->sae_pt);
-+#endif
++	ap_sta_clear_sae_pt(sta);
 +
  	os_free(sta);
  }
  
-@@ -1870,6 +1875,8 @@ void ap_sta_set_authorized_event(struct
+@@ -1870,6 +1881,8 @@ void ap_sta_set_authorized_event(struct
  #endif /* CONFIG_P2P */
  	const u8 *ip_ptr = NULL;
  
@@ -547,6 +581,14 @@ as adding/removing interfaces.
  
  	char *identity; /* User-Name from RADIUS */
  	char *radius_cui; /* Chargeable-User-Identity from RADIUS */
+@@ -392,6 +395,7 @@ struct sta_info * ap_get_link_sta(struct
+ const u8 * ap_sta_link_addr(struct hostapd_data *hapd, struct sta_info *sta);
+ struct sta_info * ap_get_sta_p2p(struct hostapd_data *hapd, const u8 *addr);
+ void ap_sta_hash_add(struct hostapd_data *hapd, struct sta_info *sta);
++void ap_sta_clear_sae_pt(struct sta_info *sta);
+ void ap_free_sta(struct hostapd_data *hapd, struct sta_info *sta);
+ void ap_sta_ip6addr_del(struct hostapd_data *hapd, struct sta_info *sta);
+ void hostapd_free_stas(struct hostapd_data *hapd);
 --- a/src/ap/wpa_auth_glue.c
 +++ b/src/ap/wpa_auth_glue.c
 @@ -489,6 +489,7 @@ static const u8 * hostapd_wpa_auth_get_p

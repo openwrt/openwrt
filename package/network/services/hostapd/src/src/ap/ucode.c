@@ -1043,6 +1043,7 @@ int hostapd_ucode_sta_auth(struct hostapd_data *hapd, struct sta_info *sta)
 		next = &sta->psk;
 		hostapd_free_psk_list(*next);
 		*next = NULL;
+		ap_sta_clear_sae_pt(sta);
 
 		for (size_t i = 0; i < len; i++) {
 			uc_value_t *cur_psk;
