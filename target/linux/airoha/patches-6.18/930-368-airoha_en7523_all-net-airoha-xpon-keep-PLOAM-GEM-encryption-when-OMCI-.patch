@@ -1,0 +1,91 @@
+From e042efae04cea39670515b42fbcdeb970cf307e4 Mon Sep 17 00:00:00 2001
+From: Ifran Ali <khanu.i.i.k.2000@gmail.com>
+Date: Sat, 3 Oct 2026 12:11:10 +0530
+Subject: [PATCH] net: airoha: xpon: keep PLOAM GEM encryption when OMCI
+ creates the port
+
+A Nokia/ALCL OLT announces encryption with Encrypted_Port-ID right after
+O5, before OMCI creates the GEM ports, and leaves encryption out of the
+GEM port network CTP. The OMCI agent then writes each GEM port with
+encryption off, so the port passed ciphertext: on a PPPoE-only profile
+every PADO reached GDM2 undecrypted, failed CRC and was dropped, and
+PPPoE never left discovery.
+
+Remember which GEM ports PLOAM made encrypted and keep them encrypted
+when OMCI writes them, as the vendor stack does with its per-GEM
+encryption flag. Forget them when the GPON session is reset.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Signed-off-by: Ifran Ali <khanu.i.i.k.2000@gmail.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_xpon.c | 17 ++++++++++++++++-
+ drivers/net/ethernet/airoha/airoha_xpon.h |  2 ++
+ 2 files changed, 18 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_xpon.c b/drivers/net/ethernet/airoha/airoha_xpon.c
+index 3e0f6acec..be6023ca4 100644
+--- a/drivers/net/ethernet/airoha/airoha_xpon.c
++++ b/drivers/net/ethernet/airoha/airoha_xpon.c
+@@ -1777,8 +1777,12 @@ static void gpon_cb_set_gem_encryption(void *hw_priv, u16 port_id,
+ 	 * high-entropy frames with random MACs and nonsense ethertypes, which
+ 	 * is ciphertext handed up undecrypted.
+ 	 */
++	if (port_id && encrypt_mode == 3)
++		__set_bit(port_id, priv->encrypted_gems);
++	else
++		__clear_bit(port_id, priv->encrypted_gems);
+ 	ret = gpon_set_gem_port_hw(priv, port_id, true,
+-				   port_id && encrypt_mode == 3);
++				   test_bit(port_id, priv->encrypted_gems));
+ 	if (ret)
+ 		dev_err(priv->dev,
+ 			"failed to update GEM port %u encryption: %d\n",
+@@ -1961,6 +1965,15 @@ int airoha_gpon_omci_hw_set_gem_port(void *hw_priv, u16 entity_id,
+ 	struct xpon_priv *priv = hw_priv;
+ 	int ret;
+ 
++	/*
++	 * The OLT may announce encryption with Encrypted_Port-ID before OMCI
++	 * creates the GEM port, as Nokia/ALCL OLTs do. Keep it when OMCI then
++	 * writes the port, as the vendor stack does, or the port is left
++	 * passing ciphertext.
++	 */
++	if (gem_port_id < GPON_MAX_GEM_ID &&
++	    test_bit(gem_port_id, priv->encrypted_gems))
++		encrypted = true;
+ 	ret = gpon_set_gem_port_hw(priv, gem_port_id, valid, encrypted);
+ 	if (ret)
+ 		return ret;
+@@ -2604,6 +2617,7 @@ static void gpon_disable(struct xpon_priv *priv)
+ 	priv->gpon_o5 = false;
+ 	priv->omci_operational = false;
+ 	bitmap_zero(priv->service_gems, GPON_MAX_GEM_ID);
++	bitmap_zero(priv->encrypted_gems, GPON_MAX_GEM_ID);
+ 	mutex_unlock(&priv->link_state_lock);
+ 	gpon_refresh_netdev_link(priv, true);
+ 	dev_info(priv->dev, "GPON MAC stopped, state reset to %s\n",
+@@ -4093,6 +4107,7 @@ static int airoha_xpon_init_gpon(struct platform_device *pdev,
+ 	mutex_init(&priv->omci_config_lock);
+ 	mutex_init(&priv->link_state_lock);
+ 	bitmap_zero(priv->service_gems, GPON_MAX_GEM_ID);
++	bitmap_zero(priv->encrypted_gems, GPON_MAX_GEM_ID);
+ 	memset(priv->tcont_alloc_id, 0xff, sizeof(priv->tcont_alloc_id));
+ 	memset(priv->tcont_entity_id, 0xff, sizeof(priv->tcont_entity_id));
+ 
+diff --git a/drivers/net/ethernet/airoha/airoha_xpon.h b/drivers/net/ethernet/airoha/airoha_xpon.h
+index db65eb6ca..a62e40c49 100644
+--- a/drivers/net/ethernet/airoha/airoha_xpon.h
++++ b/drivers/net/ethernet/airoha/airoha_xpon.h
+@@ -459,6 +459,8 @@ struct xpon_priv {
+ 	/* Protects the GPON carrier readiness inputs. */
+ 	struct mutex		link_state_lock;
+ 	DECLARE_BITMAP(service_gems, GPON_MAX_GEM_ID);
++	/* GEM ports the OLT made encrypted with Encrypted_Port-ID (PLOAM) */
++	DECLARE_BITMAP(encrypted_gems, GPON_MAX_GEM_ID);
+ 	bool			gpon_o5;
+ 	bool			omci_operational;
+ 	bool			netdev_link;
+-- 
+2.55.0
+

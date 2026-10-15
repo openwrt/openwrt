@@ -1,0 +1,2161 @@
+From 4af201c30e9df208383d7e2d7c103d5cf4ee8c32 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Wed, 7 Oct 2026 21:29:09 -0300
+Subject: [PATCH] airoha: add HSDMA and GDMA
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ .../devicetree/bindings/dma/econet,gdma.yaml  |  63 ++
+ .../devicetree/bindings/dma/econet,hsdma.yaml |  60 ++
+ MAINTAINERS                                   |   9 +
+ arch/arm/boot/dts/airoha/en7523.dtsi          | 186 +++++-
+ arch/mips/boot/dts/econet/en751221.dtsi       | 196 ++++++-
+ arch/mips/boot/dts/econet/en751627.dtsi       |   8 +-
+ arch/mips/boot/dts/econet/en7526f.dtsi        |  29 +
+ arch/mips/boot/dts/econet/en7528.dtsi         | 169 +++++-
+ arch/mips/boot/dts/econet/en7580.dtsi         |  11 +-
+ drivers/dma/Kconfig                           |  24 +
+ drivers/dma/Makefile                          |   2 +
+ drivers/dma/airoha-gdma.c                     | 459 +++++++++++++++
+ drivers/dma/airoha-hsdma.c                    | 551 ++++++++++++++++++
+ 13 files changed, 1725 insertions(+), 42 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/dma/econet,gdma.yaml
+ create mode 100644 Documentation/devicetree/bindings/dma/econet,hsdma.yaml
+ create mode 100644 arch/mips/boot/dts/econet/en7526f.dtsi
+ create mode 100644 drivers/dma/airoha-gdma.c
+ create mode 100644 drivers/dma/airoha-hsdma.c
+
+diff --git a/Documentation/devicetree/bindings/dma/econet,gdma.yaml b/Documentation/devicetree/bindings/dma/econet,gdma.yaml
+new file mode 100644
+index 000000000..a8a1f5623
+--- /dev/null
++++ b/Documentation/devicetree/bindings/dma/econet,gdma.yaml
+@@ -0,0 +1,63 @@
++# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/dma/econet,gdma.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: Airoha/EcoNet general DMA controller
++
++maintainers:
++  - Matheus Sampaio Queiroga <srherobrine20@gmail.com>
++
++description: |
++  The GDMA controller has eight channels with source, destination and control
++  registers. Each hardware transfer can copy up to 65535 bytes. The DMA specifier
++  selects a channel number from 0 to 7, rather than a peripheral request line.
++  Only memory-to-memory copies are currently supported. Registers use native
++  SoC byte order; EN751221 and EN751627 are big endian, the other variants are
++  little endian. The EN7523 vendor Device Tree does not describe an interrupt,
++  so the driver also supports polling for completion.
++
++allOf:
++  - $ref: dma-controller.yaml#
++
++properties:
++  compatible:
++    enum:
++      - econet,en751221-gdma
++      - airoha,en7523-gdma
++
++  reg:
++    maxItems: 1
++
++  interrupts:
++    maxItems: 1
++
++  resets:
++    maxItems: 1
++
++  '#dma-cells':
++    const: 1
++
++  dma-channels:
++    const: 8
++
++required:
++  - compatible
++  - reg
++  - '#dma-cells'
++
++additionalProperties: false
++
++examples:
++  - |
++    #include <dt-bindings/interrupt-controller/irq.h>
++    #include <dt-bindings/interrupt-controller/mips-gic.h>
++
++    dma-controller@1fb30000 {
++        compatible = "econet,en7580-gdma";
++        reg = <0x1fb30000 0x1000>;
++        interrupts = <GIC_SHARED 14 IRQ_TYPE_LEVEL_HIGH>;
++        #dma-cells = <1>;
++        dma-channels = <8>;
++    };
+diff --git a/Documentation/devicetree/bindings/dma/econet,hsdma.yaml b/Documentation/devicetree/bindings/dma/econet,hsdma.yaml
+new file mode 100644
+index 000000000..7780f9dc0
+--- /dev/null
++++ b/Documentation/devicetree/bindings/dma/econet,hsdma.yaml
+@@ -0,0 +1,60 @@
++# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/dma/econet,hsdma.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: Airoha/EcoNet high-speed DMA controller
++
++maintainers:
++  - Matheus Sampaio Queiroga <srherobrine20@gmail.com>
++
++description: |
++  The HSDMA controller has two independent transmit/receive ring pairs and
++  uses 32-byte little-endian descriptors with a 16-bit length field. The DMA
++  specifier selects physical channel 0 or 1. Only memory copies are supported;
++  this controller does not expose a slave peripheral request interface.
++
++allOf:
++  - $ref: dma-controller.yaml#
++
++properties:
++  compatible:
++    enum:
++      - econet,en7580-hsdma
++      - airoha,en7523-hsdma
++
++  reg:
++    maxItems: 1
++
++  interrupts:
++    maxItems: 1
++
++  resets:
++    maxItems: 1
++
++  '#dma-cells':
++    const: 1
++
++  dma-channels:
++    const: 2
++
++required:
++  - compatible
++  - reg
++  - interrupts
++  - '#dma-cells'
++
++additionalProperties: false
++
++examples:
++  - |
++    #include <dt-bindings/interrupt-controller/arm-gic.h>
++
++    dma-controller@1fa01800 {
++        compatible = "econet,en7523-hsdma";
++        reg = <0x1fa01800 0x300>;
++        interrupts = <GIC_SPI 63 IRQ_TYPE_LEVEL_HIGH>;
++        #dma-cells = <1>;
++        dma-channels = <2>;
++    };
+diff --git a/MAINTAINERS b/MAINTAINERS
+index 90936701d..3f54624d2 100644
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -737,6 +737,15 @@ S:	Supported
+ F:	fs/aio.c
+ F:	include/linux/*aio*.h
+ 
++AIROHA DMA DRIVERS
++M:	Matheus Sampaio Queiroga <srherobrine20@gmail.com>
++L:	dmaengine@vger.kernel.org
++S:	Maintained
++F:	Documentation/devicetree/bindings/dma/econet,gdma.yaml
++F:	Documentation/devicetree/bindings/dma/econet,hsdma.yaml
++F:	drivers/dma/airoha-gdma.c
++F:	drivers/dma/airoha-hsdma.c
++
+ AIROHA ETHERNET DRIVER
+ M:	Lorenzo Bianconi <lorenzo@kernel.org>
+ L:	linux-arm-kernel@lists.infradead.org (moderated for non-subscribers)
+diff --git a/arch/arm/boot/dts/airoha/en7523.dtsi b/arch/arm/boot/dts/airoha/en7523.dtsi
+index 35611455f..e8962c984 100644
+--- a/arch/arm/boot/dts/airoha/en7523.dtsi
++++ b/arch/arm/boot/dts/airoha/en7523.dtsi
+@@ -5,6 +5,7 @@
+ #include <dt-bindings/clock/en7523-clk.h>
+ #include <dt-bindings/reset/airoha,en7523-reset.h>
+ #include <dt-bindings/leds/common.h>
++#include <dt-bindings/gpio/gpio.h>
+ #include <dt-bindings/soc/airoha,scu-ssr.h>
+ #include <dt-bindings/thermal/thermal.h>
+ #include <dt-bindings/phy/phy.h>
+@@ -374,6 +375,56 @@ mux {
+ 					pins = "gpio4";
+ 				};
+ 			};
++
++			/*
++			 * PCM/ISI pin groups from pinctrl-en7523.c. Mux
++			 * bits all live in chip_scu + 0x214
++			 * (REG_GPIO_SPI_CS1_MODE): pcm1 gpio 24-27 bit 12,
++			 * pcm2 gpio 16-19 bit 13, pcm_spi gpio 16-19,24-27
++			 * bit 16, pcm_spi_rst gpio 14 bit 8, pcm_spi_int
++			 * gpio 15 bit 9, pcm_spi_cs1 gpio 22 bit 17.
++			 * "pcm_spi" occupies the same eight pins as pcm1
++			 * and pcm2 together -- the SLIC control channel is
++			 * multiplexed onto the PCM pins, not a separate
++			 * bus. Do not select pcm1/pcm2 and pcm_spi at the
++			 * same time.
++			 */
++			pcm1_pins: pcm1-pins {
++				mux {
++					function = "pcm";
++					groups = "pcm1";
++				};
++			};
++
++			pcm2_pins: pcm2-pins {
++				mux {
++					function = "pcm";
++					groups = "pcm2";
++				};
++			};
++
++			/* PCM bus plus the multiplexed SLIC control channel */
++			pcm_spi_pins: pcm-spi-pins {
++				mux {
++					function = "pcm_spi";
++					groups = "pcm_spi", "pcm_spi_int", "pcm_spi_rst";
++				};
++			};
++
++			/* one chip select per SLIC; add only what the board wires */
++			pcm_spi_cs1_pins: pcm-spi-cs1-pins {
++				mux {
++					function = "pcm_spi";
++					groups = "pcm_spi_cs1";
++				};
++			};
++
++			pcm_spi_cs2_pins: pcm-spi-cs2-pins {
++				mux {
++					function = "pcm_spi";
++					groups = "pcm_spi_cs2_p128";
++				};
++			};
+ 		};
+ 
+ 		pwm: pwm {
+@@ -383,6 +434,116 @@ pwm: pwm {
+ 		};
+ 	};
+ 
++	pcm0: pcm@1fbd0000 {
++		compatible = "airoha,en7523-pcm";
++		reg = <0x1fbd0000 0x1000>;
++		reg-names = "pcm";
++
++		interrupts = <GIC_SPI 27 IRQ_TYPE_LEVEL_HIGH>;
++
++		resets = <&scuclk EN7523_PCM1_RST>;
++		reset-names = "pcm";
++
++		/*
++		 * With a pinctrl state present the driver leaves the mux
++		 * alone -- the pinctrl core applies it before probe.
++		 * Boards using the multiplexed SLIC control channel want
++		 * &pcm_spi_pins here instead of &pcm1_pins.
++		 */
++		pinctrl-names = "default";
++		pinctrl-0 = <&pcm1_pins>;
++
++		/*
++		 * The computed default from the vendor's own config node
++		 * is 0x00051306; the value below is what a stock device
++		 * reads back. If a board misbehaves, 0x00051306 is the
++		 * other candidate.
++		 */
++		airoha,pcm-interface-control = <0xf5071306>;
++
++		airoha,tx-slot-config = <0x10301020 0x10501040
++					 0x10701060 0x10901080>;
++		airoha,rx-slot-config = <0x10301020 0x10501040
++					 0x10701060 0x10901080>;
++		airoha,dma-channel-mask = <0x0f>;
++
++		status = "disabled";
++	};
++
++	/*
++	 * Second PCM instance. Present in silicon and inside the vendor's
++	 * window, but the confirmed EN7523 map exposes one PCM interrupt
++	 * (GIC SPI 27) and a separate I2S interrupt (GIC SPI 48). Do not
++	 * assign the I2S interrupt to this speculative second PCM node.
++	 * Without "interrupts" the driver uses its polling worker.
++	 */
++	pcm1: pcm@1fbd2000 {
++		compatible = "airoha,en7523-pcm";
++		reg = <0x1fbd2000 0x1000>;
++		reg-names = "pcm";
++		pinctrl-names = "default";
++		pinctrl-0 = <&pcm2_pins>;
++		airoha,pcm-interface-control = <0xf5071306>;
++		status = "disabled";
++	};
++
++	/*
++	 * ZSI. On EN7523 the SLIC serial path does not use the old SIF
++	 * block, and it does not use spi@1fa10000 either -- that is the
++	 * flash controller. It rides the PCM pins through the wrapper in
++	 * this window, which is why this node wants &pcm_spi_pins and why
++	 * a board cannot have both this and pcm1_pins on pcm0.
++	 */
++	zsi0: zsi@1fbd1000 {
++		compatible = "airoha,en7523-zsi";
++		reg = <0x1fbd1000 0x1000>;
++		reg-names = "zsi";
++		resets = <&scuclk EN7523_PCM1_ZSI_ISI_RST>;
++		reset-names = "zsi";
++		clocks = <&scuclk EN7523_CLK_SLIC>;
++		clock-names = "slic";
++
++		pinctrl-names = "default";
++		pinctrl-0 = <&pcm_spi_pins>, <&pcm_spi_cs1_pins>;
++
++		#address-cells = <1>;
++		#size-cells = <0>;
++		airoha,zsi-gap-us = <5000>;
++		status = "disabled";
++	};
++
++	/*
++	 * ISI. Same wrapper as zsi0 above, same pins, same reset line --
++	 * ISI and ZSI are alternate framings of one physical block, so a
++	 * board enables at most one of these two nodes, never both.
++	 *
++	 * Unlike zsi0, this needs the raw SCU phandles: SYS SCU 0x94
++	 * (interface mode) and chip SCU 0x214/0x1d0/0x264 (clock source,
++	 * pin routing, audio PLL) are not modelled as clock/reset
++	 * providers upstream, so en75xx_isi_spi.c reaches them directly.
++	 * EN7523 additionally needs the audio PLL (see en75xx_isi_spi.c);
++	 * that is what produces the 24.576 MHz PSCLK the SLIC needs here,
++	 * since the generic peripheral clock tops out at 5 MHz.
++	 */
++	isi0: spi@1fbd1000 {
++		compatible = "airoha,en7523-isi-spi";
++		reg = <0x1fbd1000 0x1000>;
++		reg-names = "isi";
++		resets = <&scuclk EN7523_PCM1_ZSI_ISI_RST>;
++		reset-names = "isi";
++		clocks = <&scuclk EN7523_CLK_SLIC>;
++		clock-names = "slic";
++		airoha,scu = <&scuclk>;
++		airoha,chip-scu = <&chip_scu>;
++
++		pinctrl-names = "default";
++		pinctrl-0 = <&pcm_spi_pins>, <&pcm_spi_cs1_pins>;
++
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
++
+ 	uart1: serial@1fbf0000 {
+ 		compatible = "ns16550";
+ 		reg = <0x1fbf0000 0x30>;
+@@ -430,6 +591,27 @@ crypto@1e004000 {
+ 		interrupts = <GIC_SPI 44 IRQ_TYPE_LEVEL_HIGH>;
+ 	};
+ 
++	gdma: dma-controller@1fb30000 {
++		compatible = "airoha,en7523-gdma";
++		reg = <0x1fb30000 0x1000>;
++
++		resets = <&scuclk EN7523_GDMA_RST>;
++
++		#dma-cells = <1>;
++		dma-channels = <8>;
++	};
++
++	hsdma: dma-controller@1fa01800 {
++		compatible = "airoha,en7523-hsdma";
++		reg = <0x1fa01800 0x300>;
++
++		resets = <&scuclk EN7523_HSDMA_RST>;
++		interrupts = <GIC_SPI 63 IRQ_TYPE_LEVEL_HIGH>;
++
++		#dma-cells = <1>;
++		dma-channels = <2>;
++	};
++
+ 	thermal: thermal-sensor@1efbd800 {
+ 		compatible = "airoha,en7523-thermal";
+ 		reg = <0x1efbd000 0x0fff>;
+@@ -617,6 +799,8 @@ xpon_phy: phy@1faf0000 {
+ 
+ 		airoha,scu = <&scuclk>;
+ 
++		tx-disable-gpios = <&pinctrl 16 GPIO_ACTIVE_HIGH>;
++
+ 		#phy-cells = <0>;
+ 
+ 		status = "disabled";
+@@ -762,7 +946,7 @@ eth: ethernet@1fb50000 {
+ 		         <&scuclk EN7523_GDMP_RST>;
+ 		reset-names = "fe", "pdma", "qdma",
+ 		              "hsi0-mac", "hsi1-mac", "hsi-mac",
+-									"gdmp";
++		              "gdmp";
+ 
+ 		interrupts = <GIC_SPI 37 IRQ_TYPE_LEVEL_HIGH>,
+ 		             <GIC_SPI 55 IRQ_TYPE_LEVEL_HIGH>,
+diff --git a/arch/mips/boot/dts/econet/en751221.dtsi b/arch/mips/boot/dts/econet/en751221.dtsi
+index c2677ed30..6493e91f3 100644
+--- a/arch/mips/boot/dts/econet/en751221.dtsi
++++ b/arch/mips/boot/dts/econet/en751221.dtsi
+@@ -18,6 +18,14 @@ / {
+ 	#address-cells = <1>;
+ 	#size-cells = <1>;
+ 
++	aliases {
++		serial0 = &uart1;
++	};
++
++	chosen {
++		stdout-path = "serial0:115200n8";
++	};
++
+ 	hpt_clock: clock {
+ 		compatible = "fixed-clock";
+ 		#clock-cells = <0>;
+@@ -270,7 +278,7 @@ usb: usb@1fb90000 {
+ 		usb3-lpm-capable;
+ 	};
+ 
+-	uart: serial@1fbf0000 {
++	uart1: serial@1fbf0000 {
+ 		compatible = "ns16550";
+ 		reg = <0x1fbf0000 0x30>;
+ 		reg-io-width = <4>;
+@@ -299,7 +307,7 @@ pinctrl: pinctrl {
+ 
+ 			gpio-controller;
+ 			#gpio-cells = <2>;
+-			gpio-ranges = <&pinctrl 0 13 29>;
++			gpio-ranges = <&pinctrl 0 13 31>;
+ 
+ 			interrupt-controller;
+ 			#interrupt-cells = <2>;
+@@ -317,14 +325,136 @@ mux {
+ 					groups = "pon";
+ 				};
+ 			};
++
++			/*
++			 * PCM/ZSI pin groups. Every PCM mux bit lives in
++			 * chip_scu + 0x0104 (REG_IOMUX_CONTROL1): pcm1
++			 * gpio 25-28 bit 13, pcm2 gpio 17-20 bit 14,
++			 * pcm_spi gpio 17-20 bit 12 (SPI2_MODE), pcm_spi_int
++			 * gpio 16 bit 11, pcm_spi_rst gpio 15 bit 10,
++			 * pcm_spi_cs4 gpio 22 bit 9, pcm_spi_cs3 gpio 16
++			 * bit 8. "pcm_spi" occupies the same four pins as
++			 * "pcm2", so a board using the multiplexed SLIC
++			 * control channel gives up the second PCM bus.
++			 * pcm_spi_int and pcm_spi_cs3 are both gpio 16 --
++			 * pick one.
++			 */
++			pcm1_pins: pcm1-pins {
++				mux {
++					function = "pcm";
++					groups = "pcm1";
++				};
++			};
++
++			pcm2_pins: pcm2-pins {
++				mux {
++					function = "pcm";
++					groups = "pcm2";
++				};
++			};
++
++			/* PCM bus 2 pins carrying the multiplexed SLIC control channel */
++			pcm_spi_pins: pcm-spi-pins {
++				mux {
++					function = "pcm_spi";
++					groups = "pcm_spi", "pcm_spi_rst";
++				};
++			};
++
++			pcm_spi_cs4_pins: pcm-spi-cs4-pins {
++				mux {
++					function = "pcm_spi";
++					groups = "pcm_spi_cs4";
++				};
++			};
+ 		};
+ 	};
+ 
+-	gdma: gdma@1fb30000 {
+-		compatible = "econet,en751627-gdma";
+-		reg = <0x1fb30000 0x1000>;
++	pcm0: pcm@1fbd0000 {
++		compatible = "econet,en751221-pcm";
++		reg = <0x1fbd0000 0x1000>;
++		reg-names = "pcm";
++
++		/* PCM1 input in the EN751221 interrupt controller. */
++		interrupt-parent = <&intc>;
++		interrupts = <11>;
++
++		resets = <&scuclk EN751221_PCM1_RST>;
++		reset-names = "pcm";
++
++		pinctrl-names = "default";
++		pinctrl-0 = <&pcm1_pins>;
++
++		/* read back from stock firmware; see pcm_asterisk docs/01 */
++		airoha,pcm-interface-control = <0xf5071306>;
++
++		/*
++		 * 16-bit slots at bit offsets 32, 48, 64, 80, 96, 112,
++		 * 128, 144. Two slots per register; low half is the even
++		 * slot, high half the odd one.
++		 */
++		airoha,tx-slot-config = <0x10301020 0x10501040
++					 0x10701060 0x10901080>;
++		airoha,rx-slot-config = <0x10301020 0x10501040
++					 0x10701060 0x10901080>;
++		airoha,dma-channel-mask = <0xff>;
++
++		status = "disabled";
++	};
++
++	/* Second PCM instance. Present in silicon; rarely wired up. */
++	pcm1: pcm@1fbd2000 {
++		compatible = "econet,en751221-pcm";
++		reg = <0x1fbd2000 0x1000>;
++		reg-names = "pcm";
++		/* PCM2 input; hwirq 33 is in the controller's second bank. */
++		interrupt-parent = <&intc>;
++		interrupts = <33>;
++		resets = <&scuclk EN751221_PCM2_RST>;
++		reset-names = "pcm";
++		pinctrl-names = "default";
++		pinctrl-0 = <&pcm2_pins>;
++		airoha,pcm-interface-control = <0xf5071306>;
++		status = "disabled";
++	};
++
++	/*
++	 * ZSI: the SLIC control channel multiplexed over the PCM bus.
++	 * It rides the pcm2 pins, so a board that enables this cannot
++	 * also mux pcm2 on pcm1 above.
++	 */
++	zsi0: zsi@1fbd1000 {
++		compatible = "econet,en751221-zsi";
++		reg = <0x1fbd1000 0x1000>;
++		reg-names = "zsi";
++
++		airoha,scu = <&scuclk>;
++		airoha,chip-scu = <&chip_scu>;
++		resets = <&scuclk EN751221_PCM1_ZSI_ISI_RST>;
++		reset-names = "zsi";
++
++		/*
++		 * Temporary compatibility path: the current MIPS clock provider
++		 * has no SLIC clock. These raw offsets are verified on EN751221
++		 * only and the driver rejects this property on other SoCs.
++		 */
++		airoha,legacy-scu-programming;
++
++		pinctrl-names = "default";
++		pinctrl-0 = <&pcm_spi_pins>;
++
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		/*
++		 * Inter-byte gap. The wrapper acknowledges a byte as soon
++		 * as it has sent it, but the SLIC still has to clock it
++		 * over the 8 kHz bus. Below about 2000 us the SLIC
++		 * mis-parses profile streams.
++		 */
++		airoha,zsi-gap-us = <5000>;
+ 
+-		interrupts = <GIC_SHARED 14 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
+ 	};
+ 
+ 	xpon_phy: phy@1faf0000 {
+@@ -341,6 +471,8 @@ xpon_phy: phy@1faf0000 {
+ 		airoha,scu = <&scuclk>;
+ 		airoha,chip-scu = <&chip_scu>;
+ 
++		tx-disable-gpios = <&pinctrl 16 GPIO_ACTIVE_HIGH>;
++
+ 		#phy-cells = <0>;
+ 
+ 		status = "disabled";
+@@ -380,7 +512,7 @@ xdsl: dsl@1f900000 {
+ 		interrupt-names = "dmt";
+ 
+ 		resets = <&scuclk EN751221_DMT_RST>,
+-			 <&scuclk EN751221_PTM_MAC_RST>;
++		         <&scuclk EN751221_PTM_MAC_RST>;
+ 		reset-names = "dmt", "ptm";
+ 
+ 		ethernet = <&gdm2>;
+@@ -530,13 +662,14 @@ fsw_phy0: ethernet-phy@8 {
+ 				leds {
+ 					#address-cells = <1>;
+ 					#size-cells = <0>;
+-					led@0 {
++
++					fsw_phy0_led0: led@0 {
+ 						reg = <0>;
+ 						function = LED_FUNCTION_LAN;
+ 						active-low;
+ 					};
+ 
+-					led@1 {
++					fsw_phy0_led1: led@1 {
+ 						reg = <1>;
+ 						function = LED_FUNCTION_ACTIVITY;
+ 						status = "disabled";
+@@ -556,13 +689,14 @@ fsw_phy1: ethernet-phy@9 {
+ 				leds {
+ 					#address-cells = <1>;
+ 					#size-cells = <0>;
+-					led@0 {
++
++					fsw_phy1_led0: led@0 {
+ 						reg = <0>;
+ 						function = LED_FUNCTION_LAN;
+ 						active-low;
+ 					};
+ 
+-					led@1 {
++					fsw_phy1_led1: led@1 {
+ 						reg = <1>;
+ 						function = LED_FUNCTION_ACTIVITY;
+ 						status = "disabled";
+@@ -582,13 +716,14 @@ fsw_phy2: ethernet-phy@10 {
+ 				leds {
+ 					#address-cells = <1>;
+ 					#size-cells = <0>;
+-					led@0 {
++
++					fsw_phy2_led0: led@0 {
+ 						reg = <0>;
+ 						function = LED_FUNCTION_LAN;
+ 						active-low;
+ 					};
+ 
+-					led@1 {
++					fsw_phy2_led1: led@1 {
+ 						reg = <1>;
+ 						function = LED_FUNCTION_ACTIVITY;
+ 						status = "disabled";
+@@ -608,13 +743,14 @@ fsw_phy3: ethernet-phy@11 {
+ 				leds {
+ 					#address-cells = <1>;
+ 					#size-cells = <0>;
+-					led@0 {
++
++					fsw_phy3_led0: led@0 {
+ 						reg = <0>;
+ 						function = LED_FUNCTION_LAN;
+ 						active-low;
+ 					};
+ 
+-					led@1 {
++					fsw_phy3_led1: led@1 {
+ 						reg = <1>;
+ 						function = LED_FUNCTION_ACTIVITY;
+ 						status = "disabled";
+@@ -634,13 +770,14 @@ fsw_phy4: ethernet-phy@12 {
+ 				leds {
+ 					#address-cells = <1>;
+ 					#size-cells = <0>;
+-					led@0 {
++
++					fsw_phy4_led0: led@0 {
+ 						reg = <0>;
+ 						function = LED_FUNCTION_LAN;
+ 						active-low;
+ 					};
+ 
+-					led@1 {
++					fsw_phy4_led1: led@1 {
+ 						reg = <1>;
+ 						function = LED_FUNCTION_ACTIVITY;
+ 						status = "disabled";
+@@ -728,14 +865,15 @@ gsw_phy0: ethernet-phy@0 {
+ 						leds {
+ 							#address-cells = <1>;
+ 							#size-cells = <0>;
+-							led@0 {
++
++							gsw_phy0_led0: led@0 {
+ 								reg = <0>;
+ 								function = LED_FUNCTION_LAN;
+ 								status = "disabled";
+ 								active-low;
+ 							};
+ 
+-							led@1 {
++							gsw_phy0_led1: led@1 {
+ 								reg = <1>;
+ 								function = LED_FUNCTION_ACTIVITY;
+ 								status = "disabled";
+@@ -753,14 +891,15 @@ gsw_phy1: ethernet-phy@1 {
+ 						leds {
+ 							#address-cells = <1>;
+ 							#size-cells = <0>;
+-							led@0 {
++
++							gsw_phy1_led0: led@0 {
+ 								reg = <0>;
+ 								function = LED_FUNCTION_LAN;
+ 								status = "disabled";
+ 								active-low;
+ 							};
+ 
+-							led@1 {
++							gsw_phy1_led1: led@1 {
+ 								reg = <1>;
+ 								function = LED_FUNCTION_ACTIVITY;
+ 								status = "disabled";
+@@ -778,14 +917,15 @@ gsw_phy2: ethernet-phy@2 {
+ 						leds {
+ 							#address-cells = <1>;
+ 							#size-cells = <0>;
+-							led@0 {
++
++							gsw_phy2_led0: led@0 {
+ 								reg = <0>;
+ 								function = LED_FUNCTION_LAN;
+ 								status = "disabled";
+ 								active-low;
+ 							};
+ 
+-							led@1 {
++							gsw_phy2_led1: led@1 {
+ 								reg = <1>;
+ 								function = LED_FUNCTION_ACTIVITY;
+ 								status = "disabled";
+@@ -803,14 +943,15 @@ gsw_phy3: ethernet-phy@3 {
+ 						leds {
+ 							#address-cells = <1>;
+ 							#size-cells = <0>;
+-							led@0 {
++
++							gsw_phy3_led0: led@0 {
+ 								reg = <0>;
+ 								function = LED_FUNCTION_LAN;
+ 								status = "disabled";
+ 								active-low;
+ 							};
+ 
+-							led@1 {
++							gsw_phy3_led1: led@1 {
+ 								reg = <1>;
+ 								function = LED_FUNCTION_ACTIVITY;
+ 								status = "disabled";
+@@ -828,14 +969,15 @@ gsw_phy4: ethernet-phy@4 {
+ 						leds {
+ 							#address-cells = <1>;
+ 							#size-cells = <0>;
+-							led@0 {
++
++							gsw_phy4_led0: led@0 {
+ 								reg = <0>;
+ 								function = LED_FUNCTION_LAN;
+ 								status = "disabled";
+ 								active-low;
+ 							};
+ 
+-							led@1 {
++							gsw_phy4_led1: led@1 {
+ 								reg = <1>;
+ 								function = LED_FUNCTION_ACTIVITY;
+ 								status = "disabled";
+diff --git a/arch/mips/boot/dts/econet/en751627.dtsi b/arch/mips/boot/dts/econet/en751627.dtsi
+index 29656a0dd..ae675c8da 100644
+--- a/arch/mips/boot/dts/econet/en751627.dtsi
++++ b/arch/mips/boot/dts/econet/en751627.dtsi
+@@ -418,11 +418,15 @@ slot1: pcie@1,0 {
+ 			};
+ 		};
+ 
+-		gdma: gdma@1fb30000 {
+-			compatible = "econet,en751627-gdma";
++		gdma: dma-controller@1fb30000 {
++			compatible = "econet,en751221-gdma";
+ 			reg = <0x1fb30000 0x1000>;
+ 
++			resets = <&scuclk EN751627_GDMA_RST>;
+ 			interrupts = <GIC_SHARED 14 IRQ_TYPE_LEVEL_HIGH>;
++
++			#dma-cells = <1>;
++			dma-channels = <8>;
+ 		};
+ 
+ 		xpon_phy: phy@1faf0000 {
+diff --git a/arch/mips/boot/dts/econet/en7526f.dtsi b/arch/mips/boot/dts/econet/en7526f.dtsi
+new file mode 100644
+index 000000000..cc767d472
+--- /dev/null
++++ b/arch/mips/boot/dts/econet/en7526f.dtsi
+@@ -0,0 +1,29 @@
++// SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++/dts-v1/;
++
++#include "en751221.dtsi"
++
++/ {
++	compatible = "econet,en7526f", "econet,en751221";
++};
++
++/* EN7526F only has one USB port */
++// Awaiting USB PHY driver
++// &u2port1 {
++// 	status = "disabled";
++// };
++
++// &u3port0 {
++// 	status = "disabled";
++// };
++
++&usb {
++	mediatek,u3p-dis-msk = <0x1>;
++	mediatek,u2p-dis-msk = <0x2>;
++	// phys = <&u2port0>;
++};
++
++/* EN7526F only has one PCIe port */
++&pcie1 {
++	status = "disabled";
++};
+diff --git a/arch/mips/boot/dts/econet/en7528.dtsi b/arch/mips/boot/dts/econet/en7528.dtsi
+index 397d9fbf0..f2d7d570a 100644
+--- a/arch/mips/boot/dts/econet/en7528.dtsi
++++ b/arch/mips/boot/dts/econet/en7528.dtsi
+@@ -88,6 +88,17 @@ pcie_phy0: pcie-phy@1faf2000 {
+ 			#phy-cells = <0>;
+ 		};
+ 
++		gdma: dma-controller@1fb30000 {
++			compatible = "econet,en751221-gdma";
++			reg = <0x1fb30000 0x1000>;
++
++			resets = <&scuclk EN7528_GDMA_RST>;
++			interrupts = <GIC_SHARED 14 IRQ_TYPE_LEVEL_HIGH>;
++
++			#dma-cells = <1>;
++			dma-channels = <8>;
++		};
++
+ 		pcie_phy1: pcie-phy@1fac0000 {
+ 			compatible = "econet,en7528-pcie-phy1";
+ 			reg = <0x1fac0000 0x1000>;
+@@ -217,9 +228,148 @@ mux {
+ 						groups = "gpio37";
+ 					};
+ 				};
++
++				/*
++				 * PCM/ISI pin groups. Most PCM mux bits live
++				 * in chip_scu + 0x015c (REG_PON_I2C_MODE):
++				 * pcm1 gpio 12-15 bit 19, pcm2 gpio 24-27
++				 * bit 20, pcm_spi gpio 4-7 bit 18,
++				 * pcm_spi_int gpio 1 bit 17, pcm_spi_rst
++				 * gpio 2 bit 16, pcm_spi_cs1 gpio 3 bit 14,
++				 * pcm_spi_cs2 gpio 10 (FORCE_GPIO22_EN
++				 * bit 10). pcm_spi has its own four pins
++				 * and does not overlap either PCM bus, so a
++				 * board can run both PCM buses and the SLIC
++				 * control channel (ISI, multiplexed onto
++				 * pcm_spi) at the same time.
++				 */
++				pcm1_pins: pcm1-pins {
++					mux {
++						function = "pcm";
++						groups = "pcm1";
++					};
++				};
++
++				pcm2_pins: pcm2-pins {
++					mux {
++						function = "pcm";
++						groups = "pcm2";
++					};
++				};
++
++				pcm_spi_pins: pcm-spi-pins {
++					mux {
++						function = "pcm_spi";
++						groups = "pcm_spi", "pcm_spi_int", "pcm_spi_rst";
++					};
++				};
++
++				pcm_spi_cs1_pins: pcm-spi-cs1-pins {
++					mux {
++						function = "pcm_spi";
++						groups = "pcm_spi_cs1";
++					};
++				};
++
++				pcm_spi_cs2_pins: pcm-spi-cs2-pins {
++					mux {
++						function = "pcm_spi";
++						groups = "pcm_spi_cs2";
++					};
++				};
+ 			};
+ 		};
+ 
++		pcm0: pcm@1fbd0000 {
++			compatible = "econet,en7528-pcm";
++			reg = <0x1fbd0000 0x1000>;
++			reg-names = "pcm";
++
++			interrupts = <GIC_SHARED 11 IRQ_TYPE_LEVEL_HIGH>;
++
++			resets = <&scuclk EN7528_PCM1_RST>;
++			reset-names = "pcm";
++
++			pinctrl-names = "default";
++			pinctrl-0 = <&pcm1_pins>;
++
++			airoha,chip-scu = <&chip_scu>;
++			airoha,pcm-interface-control = <0xf5071306>;
++
++			airoha,tx-slot-config = <0x10301020 0x10501040
++						 0x10701060 0x10901080>;
++			airoha,rx-slot-config = <0x10301020 0x10501040
++						 0x10701060 0x10901080>;
++			airoha,dma-channel-mask = <0xff>;
++			/*
++			 * Two independent DMA packing bugs on this SoC's
++			 * gen1 PCM engine, not the same thing: byte order
++			 * within a 16-bit sample vs. the order of the two
++			 * samples packed into each 32-bit DMA word. A board
++			 * needs whichever its own driver expects; both
++			 * default off here.
++			 */
++			/* airoha,pcm-big-endian; */
++			airoha,pcm-swap-samples;
++
++			status = "disabled";
++		};
++
++		pcm1: pcm@1fbd2000 {
++			compatible = "econet,en7528-pcm";
++			reg = <0x1fbd2000 0x1000>;
++			reg-names = "pcm";
++			interrupts = <GIC_SHARED 32 IRQ_TYPE_LEVEL_HIGH>;
++			resets = <&scuclk EN7528_PCM2_RST>;
++			reset-names = "pcm";
++			pinctrl-names = "default";
++			pinctrl-0 = <&pcm2_pins>;
++			airoha,chip-scu = <&chip_scu>;
++			airoha,pcm-interface-control = <0xf5071306>;
++			airoha,pcm-swap-samples;
++			status = "disabled";
++		};
++
++		zsi0: zsi@1fbd1000 {
++			compatible = "econet,en7528-zsi";
++			reg = <0x1fbd1000 0x1000>;
++			reg-names = "zsi";
++
++			resets = <&scuclk EN7528_PCM1_ZSI_ISI_RST>;
++			reset-names = "zsi";
++
++			pinctrl-names = "default";
++			pinctrl-0 = <&pcm_spi_pins>, <&pcm_spi_cs1_pins>;
++
++			#address-cells = <1>;
++			#size-cells = <0>;
++			airoha,zsi-gap-us = <5000>;
++			status = "disabled";
++		};
++
++		/*
++		 * ISI. Same wrapper as zsi0, same pins, same reset line --
++		 * ISI and ZSI are alternate framings of one physical block,
++		 * so a board enables at most one of the two at this address.
++		 * Chip-SCU clock-source/pinmux routing for the SLIC (chip
++		 * SCU 0x15c/0x130) lives in the SLIC driver, not here.
++		 */
++		isi0: spi@1fbd1000 {
++			compatible = "econet,en7528-isi-spi";
++			reg = <0x1fbd1000 0x1000>;
++			reg-names = "isi";
++
++			resets = <&scuclk EN7528_PCM1_ZSI_ISI_RST>,
++				 <&scuclk EN7528_PCM2_ZSI_ISI_RST>;
++			reset-names = "pcm1-isi", "pcm2-isi";
++			airoha,scu = <&scuclk>;
++			airoha,chip-scu = <&chip_scu>;
++
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "disabled";
++		};
++
+ 		timer_hpt: timer@1fbf0400 {
+ 			compatible = "econet,en7528-timer";
+ 			reg = <0x1fbf0400 0x14>,
+@@ -431,6 +581,9 @@ xpon_phy: phy@1faf0000 {
+ 			interrupts = <GIC_SHARED 27 IRQ_TYPE_LEVEL_HIGH>;
+ 			interrupt-names = "phy";
+ 			airoha,scu = <&scuclk>;
++
++			tx-disable-gpios = <&pinctrl 16 GPIO_ACTIVE_HIGH>;
++
+ 			#phy-cells = <0>;
+ 
+ 			status = "disabled";
+@@ -457,14 +610,14 @@ xpon: xmac@1fb60000 {
+ 			status = "disabled";
+ 		};
+ 
+-	  /* <GIC_SHARED 53 IRQ_TYPE_LEVEL_HIGH> => WIFI DMA 0 port 0 */
+-	  /* <GIC_SHARED 54 IRQ_TYPE_LEVEL_HIGH> => WIFI DMA 0 port 1 */
+-	  /* <GIC_SHARED 55 IRQ_TYPE_LEVEL_HIGH> => WIFI DMA 0 for WOE */
+-	  /* <GIC_SHARED 56 IRQ_TYPE_LEVEL_HIGH> => WIFI DMA 1 port 0 */
+-	  /* <GIC_SHARED 56 IRQ_TYPE_LEVEL_HIGH> => WIFI DMA 1 port 1 */
+-	  /* <GIC_SHARED 58 IRQ_TYPE_LEVEL_HIGH> => WIFI DMA 1 for WOE */
++		/* <GIC_SHARED 53 IRQ_TYPE_LEVEL_HIGH> => WIFI DMA 0 port 0 */
++		/* <GIC_SHARED 54 IRQ_TYPE_LEVEL_HIGH> => WIFI DMA 0 port 1 */
++		/* <GIC_SHARED 55 IRQ_TYPE_LEVEL_HIGH> => WIFI DMA 0 for WOE */
++		/* <GIC_SHARED 56 IRQ_TYPE_LEVEL_HIGH> => WIFI DMA 1 port 0 */
++		/* <GIC_SHARED 56 IRQ_TYPE_LEVEL_HIGH> => WIFI DMA 1 port 1 */
++		/* <GIC_SHARED 58 IRQ_TYPE_LEVEL_HIGH> => WIFI DMA 1 for WOE */
+ 		wed0: wed@1fa02000 {
+-			compatible = "econet,en7528-wed", "syscon";
++			compatible = "airoha,en7523-wed", "syscon";
+ 			reg = <0x1fa02000 0xb00>,
+ 			      <0x1fa06000 0x400>;
+ 			reg-names = "wed", "wdma";
+@@ -473,7 +626,7 @@ wed0: wed@1fa02000 {
+ 		};
+ 
+ 		wed1: wed@1fa03000 {
+-			compatible = "econet,en7528-wed", "syscon";
++			compatible = "airoha,en7523-wed", "syscon";
+ 			reg = <0x1fa03000 0xb00>,
+ 			      <0x1fa06400 0x400>;
+ 			reg-names = "wed", "wdma";
+diff --git a/arch/mips/boot/dts/econet/en7580.dtsi b/arch/mips/boot/dts/econet/en7580.dtsi
+index d9ba0d71b..d5d6de54e 100644
+--- a/arch/mips/boot/dts/econet/en7580.dtsi
++++ b/arch/mips/boot/dts/econet/en7580.dtsi
+@@ -600,22 +600,25 @@ slot1: pcie@1,0 {
+ 			};
+ 		};
+ 
+-		gdma: gdma@1fb30000 {
+-			compatible = "econet,en7580-gdma";
++		gdma: dma-controller@1fb30000 {
++			compatible = "econet,en751221-gdma";
+ 			reg = <0x1fb30000 0x1000>;
+ 
++			resets = <&scuclk EN7580_GDMA_RST>;
+ 			interrupts = <GIC_SHARED 14 IRQ_TYPE_LEVEL_HIGH>;
++
++			#dma-cells = <1>;
++			dma-channels = <8>;
+ 		};
+ 
+ 		hsdma: dma-controller@1fa01800 {
+-			compatible = "econet,en7580-hsdma";
++			compatible = "airoha,en7523-hsdma";
+ 			reg = <0x1fa01800 0x300>;
+ 
+ 			interrupts = <GIC_SHARED 47 IRQ_TYPE_LEVEL_HIGH>;
+ 
+ 			#dma-cells = <1>;
+ 			dma-channels = <2>;
+-			dma-requests = <2>;
+ 		};
+ 
+ 		xsi_pcs: pcs@1fa04000 {
+diff --git a/drivers/dma/Kconfig b/drivers/dma/Kconfig
+index b8a74b179..cee871462 100644
+--- a/drivers/dma/Kconfig
++++ b/drivers/dma/Kconfig
+@@ -57,6 +57,30 @@ config DMA_OF
+ 	select DMA_ENGINE
+ 
+ #devices
++config AIROHA_GDMA
++	tristate "Airoha/EcoNet general DMA controller"
++	depends on ARCH_AIROHA || ECONET || COMPILE_TEST
++	depends on OF
++	select DMA_ENGINE
++	select DMA_VIRTUAL_CHANNELS
++	help
++	  Enable DMA engine memory copies using the eight-channel GDMA
++	  controller on EN751221, EN751627, EN7528, EN7580 and EN7523.
++	  Completion is polled when no interrupt is described in Device Tree.
++	  Transfers to peripheral FIFOs are not supported by this driver.
++
++config AIROHA_HSDMA
++	tristate "Airoha/EcoNet high-speed DMA controller"
++	depends on ARCH_AIROHA || ECONET || COMPILE_TEST
++	depends on OF
++	select DMA_ENGINE
++	select DMA_VIRTUAL_CHANNELS
++	help
++	  Enable DMA engine memory copies using the two-channel high-speed
++	  DMA controller on EN7523 and EN7580. Each channel has independent
++	  transmit and receive descriptor rings.
++	  Transfers to peripheral FIFOs are not supported by this driver.
++
+ config ALTERA_MSGDMA
+ 	tristate "Altera / Intel mSGDMA Engine"
+ 	depends on HAS_IOMEM
+diff --git a/drivers/dma/Makefile b/drivers/dma/Makefile
+index a54d76883..119b55de2 100644
+--- a/drivers/dma/Makefile
++++ b/drivers/dma/Makefile
+@@ -13,6 +13,8 @@ obj-$(CONFIG_DMA_OF) += of-dma.o
+ obj-$(CONFIG_DMATEST) += dmatest.o
+ 
+ #devices
++obj-$(CONFIG_AIROHA_GDMA) += airoha-gdma.o
++obj-$(CONFIG_AIROHA_HSDMA) += airoha-hsdma.o
+ obj-$(CONFIG_ALTERA_MSGDMA) += altera-msgdma.o
+ obj-$(CONFIG_AMBA_PL08X) += amba-pl08x.o
+ obj-$(CONFIG_AMCC_PPC440SPE_ADMA) += ppc4xx/
+diff --git a/drivers/dma/airoha-gdma.c b/drivers/dma/airoha-gdma.c
+new file mode 100644
+index 000000000..fd3f4e6a1
+--- /dev/null
++++ b/drivers/dma/airoha-gdma.c
+@@ -0,0 +1,459 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * Copyright (c) 2026 AIROHA Inc
++ * Author: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
++ */
++
++#include <linux/bitfield.h>
++#include <linux/dma-mapping.h>
++#include <linux/hrtimer.h>
++#include <linux/iopoll.h>
++#include <linux/module.h>
++#include <linux/of_dma.h>
++#include <linux/platform_device.h>
++#include <linux/reset.h>
++#include <linux/slab.h>
++
++#include "virt-dma.h"
++
++#define GDMA_CHANNELS		8
++#define GDMA_SRC(id)		((id) * 0x10)
++#define GDMA_DST(id)		(GDMA_SRC(id) + 0x04)
++#define GDMA_CTRL0(id)		(GDMA_SRC(id) + 0x08)
++#define GDMA_CTRL1(id)		(GDMA_SRC(id) + 0x0c)
++#define GDMA_DONE		0x204
++#define GDMA_CTRL0_LEN		GENMASK(31, 16)
++#define GDMA_CTRL0_BURST	GENMASK(5, 3)
++#define GDMA_CTRL0_DONE_IRQ	BIT(2)
++#define GDMA_CTRL0_ENABLE	BIT(1)
++#define GDMA_CTRL0_SW_MODE	BIT(0)
++#define GDMA_CTRL1_COHERENT	BIT(2)
++#define GDMA_CTRL1_MASK		BIT(0)
++#define GDMA_MAX_LEN		0xffff
++#define GDMA_POLL_NS		100000
++
++struct airoha_gdma_soc {
++	u8 address_bits;
++};
++
++struct airoha_gdma_desc {
++	struct virt_dma_desc vd;
++	dma_addr_t src;
++	dma_addr_t dst;
++	size_t residue;
++};
++
++struct airoha_gdma;
++
++struct airoha_gdma_chan {
++	struct virt_dma_chan vc;
++	struct airoha_gdma *gdma;
++	struct airoha_gdma_desc *active;
++	struct hrtimer timer;
++	u32 count;
++	u8 id;
++};
++
++struct airoha_gdma {
++	struct dma_device dma;
++	void __iomem *base;
++	const struct airoha_gdma_soc *soc;
++	struct reset_control *reset;
++	struct airoha_gdma_chan chan[GDMA_CHANNELS];
++	int irq;
++};
++
++static struct airoha_gdma_chan *to_gdma_chan(struct dma_chan *chan)
++{
++	return container_of(chan, struct airoha_gdma_chan, vc.chan);
++}
++
++static struct airoha_gdma_desc *to_gdma_desc(struct virt_dma_desc *vd)
++{
++	return container_of(vd, struct airoha_gdma_desc, vd);
++}
++
++static u32 airoha_gdma_read(struct airoha_gdma *gdma, u32 reg)
++{
++	/* EcoNet MIPS uses native MMIO; its readl() does not swap I/O space. */
++	return readl(gdma->base + reg);
++}
++
++static void airoha_gdma_write(struct airoha_gdma *gdma, u32 reg, u32 val)
++{
++	writel(val, gdma->base + reg);
++}
++
++static void airoha_gdma_desc_free(struct virt_dma_desc *vd)
++{
++	dma_descriptor_unmap(&vd->tx);
++	kfree(to_gdma_desc(vd));
++}
++
++static void airoha_gdma_start(struct airoha_gdma_chan *chan)
++{
++	struct airoha_gdma *gdma = chan->gdma;
++	struct airoha_gdma_desc *desc = chan->active;
++	struct virt_dma_desc *vd;
++	u32 ctrl;
++
++	lockdep_assert_held(&chan->vc.lock);
++
++	if (!desc) {
++		vd = vchan_next_desc(&chan->vc);
++		if (!vd)
++			return;
++		list_del(&vd->node);
++		desc = to_gdma_desc(vd);
++		chan->active = desc;
++	}
++
++	chan->count = min_t(size_t, desc->residue, GDMA_MAX_LEN);
++
++	airoha_gdma_write(gdma, GDMA_DONE, BIT(chan->id));
++	airoha_gdma_write(gdma, GDMA_SRC(chan->id), desc->src);
++	airoha_gdma_write(gdma, GDMA_DST(chan->id), desc->dst);
++	/* Keep payload byte swapping disabled, including on big-endian CPUs. */
++	airoha_gdma_write(gdma, GDMA_CTRL1(chan->id), GDMA_CTRL1_COHERENT);
++
++	ctrl = FIELD_PREP(GDMA_CTRL0_LEN, chan->count) |
++	       FIELD_PREP(GDMA_CTRL0_BURST, 4) |
++	       GDMA_CTRL0_SW_MODE | GDMA_CTRL0_ENABLE;
++	if (gdma->irq >= 0)
++		ctrl |= GDMA_CTRL0_DONE_IRQ;
++
++	airoha_gdma_write(gdma, GDMA_CTRL0(chan->id), ctrl);
++}
++
++static void airoha_gdma_complete(struct airoha_gdma_chan *chan)
++{
++	struct airoha_gdma_desc *desc = chan->active;
++
++	if (!desc)
++		return;
++
++	desc->src += chan->count;
++	desc->dst += chan->count;
++	desc->residue -= chan->count;
++	if (!desc->residue) {
++		chan->active = NULL;
++		dma_descriptor_unmap(&desc->vd.tx);
++		vchan_cookie_complete(&desc->vd);
++	}
++
++	airoha_gdma_start(chan);
++}
++
++static enum hrtimer_restart airoha_gdma_poll(struct hrtimer *timer)
++{
++	struct airoha_gdma_chan *chan = container_of(timer, typeof(*chan), timer);
++	struct airoha_gdma *gdma = chan->gdma;
++	unsigned long flags;
++	bool pending;
++	spin_lock_irqsave(&chan->vc.lock, flags);
++
++	if (chan->active &&
++	    !(airoha_gdma_read(gdma, GDMA_CTRL0(chan->id)) & GDMA_CTRL0_ENABLE)) {
++		airoha_gdma_write(gdma, GDMA_DONE, BIT(chan->id));
++		airoha_gdma_complete(chan);
++	}
++
++	pending = !!chan->active;
++	if (pending)
++		hrtimer_forward_now(timer, ns_to_ktime(GDMA_POLL_NS));
++
++	spin_unlock_irqrestore(&chan->vc.lock, flags);
++
++	return pending ? HRTIMER_RESTART : HRTIMER_NORESTART;
++}
++
++static irqreturn_t airoha_gdma_irq(int irq, void *data)
++{
++	struct airoha_gdma *gdma = data;
++	irqreturn_t ret = IRQ_NONE;
++	unsigned int i;
++
++	for (i = 0; i < GDMA_CHANNELS; i++) {
++		struct airoha_gdma_chan *chan = &gdma->chan[i];
++		spin_lock(&chan->vc.lock);
++
++		/* Read and acknowledge under the lock also used for cancellation. */
++		if (airoha_gdma_read(gdma, GDMA_DONE) & BIT(i)) {
++			airoha_gdma_write(gdma, GDMA_DONE, BIT(i));
++			airoha_gdma_complete(chan);
++			ret = IRQ_HANDLED;
++		}
++
++		spin_unlock(&chan->vc.lock);
++	}
++
++	return ret;
++}
++
++static struct dma_async_tx_descriptor *
++airoha_gdma_prep_memcpy(struct dma_chan *c, dma_addr_t dst, dma_addr_t src,
++			size_t len, unsigned long flags)
++{
++	struct airoha_gdma_chan *chan = to_gdma_chan(c);
++	u64 mask = DMA_BIT_MASK(chan->gdma->soc->address_bits);
++	struct airoha_gdma_desc *desc;
++
++	if (!len || len > U32_MAX || src > mask || dst > mask ||
++	    len - 1 > mask - src || len - 1 > mask - dst)
++		return NULL;
++
++	desc = kzalloc(sizeof(*desc), GFP_NOWAIT);
++	if (!desc)
++		return NULL;
++
++	desc->src = src;
++	desc->dst = dst;
++	desc->residue = len;
++
++	return vchan_tx_prep(&chan->vc, &desc->vd, flags);
++}
++
++static void airoha_gdma_issue_pending(struct dma_chan *c)
++{
++	struct airoha_gdma_chan *chan = to_gdma_chan(c);
++	unsigned long flags;
++	spin_lock_irqsave(&chan->vc.lock, flags);
++
++	if (vchan_issue_pending(&chan->vc) && !chan->active) {
++		airoha_gdma_start(chan);
++		if (chan->gdma->irq < 0)
++			hrtimer_start(&chan->timer, ns_to_ktime(GDMA_POLL_NS),
++				      HRTIMER_MODE_REL);
++	}
++
++	spin_unlock_irqrestore(&chan->vc.lock, flags);
++}
++
++static enum dma_status airoha_gdma_tx_status(struct dma_chan *c,
++					     dma_cookie_t cookie,
++					     struct dma_tx_state *state)
++{
++	struct airoha_gdma_chan *chan = to_gdma_chan(c);
++	struct virt_dma_desc *vd;
++	unsigned long flags;
++	enum dma_status status;
++	size_t residue = 0;
++
++	spin_lock_irqsave(&chan->vc.lock, flags);
++	status = dma_cookie_status(c, cookie, state);
++	if (status != DMA_COMPLETE && state) {
++		if (chan->active && chan->active->vd.tx.cookie == cookie)
++			residue = chan->active->residue;
++		else {
++			vd = vchan_find_desc(&chan->vc, cookie);
++			if (vd)
++				residue = to_gdma_desc(vd)->residue;
++			list_for_each_entry(vd, &chan->vc.desc_submitted, node)
++				if (vd->tx.cookie == cookie)
++					residue = to_gdma_desc(vd)->residue;
++		}
++
++		dma_set_residue(state, residue);
++	}
++	spin_unlock_irqrestore(&chan->vc.lock, flags);
++
++	return status;
++}
++
++static int airoha_gdma_terminate_all(struct dma_chan *c)
++{
++	struct airoha_gdma_chan *chan = to_gdma_chan(c);
++	struct airoha_gdma *gdma = chan->gdma;
++	unsigned long flags;
++	u32 val;
++	int ret;
++	LIST_HEAD(head);
++
++	spin_lock_irqsave(&chan->vc.lock, flags);
++	airoha_gdma_write(gdma, GDMA_CTRL1(chan->id), GDMA_CTRL1_MASK);
++	airoha_gdma_write(gdma, GDMA_CTRL0(chan->id), 0);
++
++	ret = read_poll_timeout_atomic(airoha_gdma_read, val,
++				       !(val & GDMA_CTRL0_ENABLE), 1, 1000,
++				       false, gdma, GDMA_CTRL0(chan->id));
++	if (ret) {
++		spin_unlock_irqrestore(&chan->vc.lock, flags);
++		return ret;
++	}
++
++	airoha_gdma_write(gdma, GDMA_DONE, BIT(chan->id));
++	if (chan->active) {
++		vchan_terminate_vdesc(&chan->active->vd);
++		chan->active = NULL;
++	}
++
++	vchan_get_all_descriptors(&chan->vc, &head);
++	spin_unlock_irqrestore(&chan->vc.lock, flags);
++	vchan_dma_desc_free_list(&chan->vc, &head);
++
++	return 0;
++}
++
++static void airoha_gdma_synchronize(struct dma_chan *c)
++{
++	struct airoha_gdma_chan *chan = to_gdma_chan(c);
++
++	hrtimer_cancel(&chan->timer);
++	vchan_synchronize(&chan->vc);
++}
++
++static void airoha_gdma_free_chan_resources(struct dma_chan *c)
++{
++	if (airoha_gdma_terminate_all(c))
++		return;
++	airoha_gdma_synchronize(c);
++	vchan_free_chan_resources(&to_gdma_chan(c)->vc);
++}
++
++static void airoha_gdma_cleanup_channels(struct airoha_gdma *gdma)
++{
++	unsigned int i;
++
++	for (i = 0; i < GDMA_CHANNELS; i++) {
++		airoha_gdma_free_chan_resources(&gdma->chan[i].vc.chan);
++		tasklet_kill(&gdma->chan[i].vc.task);
++		list_del(&gdma->chan[i].vc.chan.device_node);
++	}
++}
++
++static int airoha_gdma_probe(struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++	struct airoha_gdma *gdma;
++	struct dma_device *dma;
++	unsigned int i;
++	int ret;
++
++	gdma = devm_kzalloc(dev, sizeof(*gdma), GFP_KERNEL);
++	if (!gdma)
++		return -ENOMEM;
++
++	gdma->soc = device_get_match_data(dev);
++	if (!gdma->soc)
++		return -ENODEV;
++
++	gdma->base = devm_platform_ioremap_resource(pdev, 0);
++	if (IS_ERR(gdma->base))
++		return PTR_ERR(gdma->base);
++
++	gdma->irq = platform_get_irq_optional(pdev, 0);
++	if (gdma->irq < 0 && gdma->irq != -ENXIO && gdma->irq != -ENODEV)
++		return dev_err_probe(dev, gdma->irq, "error on get gdma irq");
++
++	ret = dma_set_mask_and_coherent(dev, DMA_BIT_MASK(gdma->soc->address_bits));
++	if (ret)
++		return ret;
++
++	gdma->reset = devm_reset_control_get_optional_exclusive(dev, NULL);
++	if (IS_ERR(gdma->reset))
++		return dev_err_probe(dev, PTR_ERR(gdma->reset), 
++				     "error on get reset controller");
++	ret = reset_control_reset(gdma->reset);
++	if (ret)
++		return ret;
++
++	dma = &gdma->dma;
++	dma->dev = dev;
++	dma_cap_set(DMA_MEMCPY, dma->cap_mask);
++	dma->copy_align = DMAENGINE_ALIGN_1_BYTE;
++	dma->device_prep_dma_memcpy = airoha_gdma_prep_memcpy;
++	dma->device_issue_pending = airoha_gdma_issue_pending;
++	dma->device_tx_status = airoha_gdma_tx_status;
++	dma->device_terminate_all = airoha_gdma_terminate_all;
++	dma->device_synchronize = airoha_gdma_synchronize;
++	dma->device_free_chan_resources = airoha_gdma_free_chan_resources;
++	dma->residue_granularity = DMA_RESIDUE_GRANULARITY_SEGMENT;
++	INIT_LIST_HEAD(&dma->channels);
++
++	for (i = 0; i < GDMA_CHANNELS; i++) {
++		struct airoha_gdma_chan *chan = &gdma->chan[i];
++
++		chan->gdma = gdma;
++		chan->id = i;
++		chan->vc.desc_free = airoha_gdma_desc_free;
++		vchan_init(&chan->vc, dma);
++		hrtimer_setup(&chan->timer, airoha_gdma_poll, CLOCK_MONOTONIC,
++			      HRTIMER_MODE_REL);
++		airoha_gdma_write(gdma, GDMA_CTRL0(i), 0);
++		airoha_gdma_write(gdma, GDMA_CTRL1(i), GDMA_CTRL1_MASK);
++	}
++
++	airoha_gdma_write(gdma, GDMA_DONE, GENMASK(GDMA_CHANNELS - 1, 0));
++	if (gdma->irq >= 0) {
++		ret = devm_request_irq(dev, gdma->irq, airoha_gdma_irq, 0,
++				       dev_name(dev), gdma);
++		if (ret)
++			goto err_channels;
++	}
++
++	ret = dma_async_device_register(dma);
++	if (ret)
++		goto err_irq;
++
++	ret = of_dma_controller_register(dev->of_node, of_dma_xlate_by_chan_id, dma);
++	if (ret)
++		goto err_unregister;
++
++	platform_set_drvdata(pdev, gdma);
++	dev_info(dev, "8 GDMA memcpy channels (%s completion)\n",
++		 gdma->irq >= 0 ? "IRQ" : "polled");
++
++	return 0;
++
++err_unregister:
++	dma_async_device_unregister(dma);
++err_irq:
++	if (gdma->irq >= 0)
++		devm_free_irq(dev, gdma->irq, gdma);
++err_channels:
++	airoha_gdma_cleanup_channels(gdma);
++	return ret;
++}
++
++static void airoha_gdma_remove(struct platform_device *pdev)
++{
++	struct airoha_gdma *gdma = platform_get_drvdata(pdev);
++
++	of_dma_controller_free(pdev->dev.of_node);
++	dma_async_device_unregister(&gdma->dma);
++
++	if (gdma->irq >= 0)
++		devm_free_irq(&pdev->dev, gdma->irq, gdma);
++
++	airoha_gdma_cleanup_channels(gdma);
++	reset_control_assert(gdma->reset);
++}
++
++static const struct airoha_gdma_soc en751221_gdma = {
++	.address_bits = 29,
++};
++
++static const struct airoha_gdma_soc en7523_gdma = {
++	.address_bits = 32,
++};
++
++static const struct of_device_id airoha_gdma_match[] = {
++	{ .compatible = "econet,en751221-gdma", .data = &en751221_gdma },
++	{ .compatible = "airoha,en7523-gdma", .data = &en7523_gdma },
++	{ }
++};
++MODULE_DEVICE_TABLE(of, airoha_gdma_match);
++
++static struct platform_driver airoha_gdma_driver = {
++	.probe = airoha_gdma_probe,
++	.remove = airoha_gdma_remove,
++	.driver = {
++		.name = "airoha-gdma",
++		.of_match_table = airoha_gdma_match,
++		.suppress_bind_attrs = true,
++	},
++};
++module_platform_driver(airoha_gdma_driver);
++
++MODULE_DESCRIPTION("Airoha General-purpose DMA controller");
++MODULE_LICENSE("GPL");
+diff --git a/drivers/dma/airoha-hsdma.c b/drivers/dma/airoha-hsdma.c
+new file mode 100644
+index 000000000..3072e37d2
+--- /dev/null
++++ b/drivers/dma/airoha-hsdma.c
+@@ -0,0 +1,551 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * Copyright (c) 2026 AIROHA Inc
++ * Author: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
++ */
++
++#include <linux/bitfield.h>
++#include <linux/dma-mapping.h>
++#include <linux/iopoll.h>
++#include <linux/module.h>
++#include <linux/of_dma.h>
++#include <linux/platform_device.h>
++#include <linux/reset.h>
++#include <linux/slab.h>
++
++#include "virt-dma.h"
++
++#define HSDMA_CHANNELS		2
++#define HSDMA_RING_SIZE		256
++#define HSDMA_RING_MASK		(HSDMA_RING_SIZE - 1)
++#define HSDMA_RING_BYTES	(2 * HSDMA_RING_SIZE * sizeof(struct airoha_hsdma_hwdesc))
++#define HSDMA_MAX_LEN		0xffff
++#define HSDMA_TX_BASE(id)	((id) * 0x10)
++#define HSDMA_TX_COUNT(id)	(HSDMA_TX_BASE(id) + 0x04)
++#define HSDMA_TX_CPU(id)	(HSDMA_TX_BASE(id) + 0x08)
++#define HSDMA_RX_BASE(id)	(0x100 + (id) * 0x10)
++#define HSDMA_RX_COUNT(id)	(HSDMA_RX_BASE(id) + 0x04)
++#define HSDMA_RX_CPU(id)	(HSDMA_RX_BASE(id) + 0x08)
++#define HSDMA_GLO		0x204
++#define HSDMA_RESET		0x208
++#define HSDMA_DELAY_IRQ		0x20c
++#define HSDMA_FREE_THRESHOLD	0x210
++#define HSDMA_IRQ_STATUS	0x220
++#define HSDMA_IRQ_ENABLE	0x228
++#define HSDMA_GLO_READBACK	BIT(11)
++#define HSDMA_GLO_TX_WRITEBACK	BIT(6)
++#define HSDMA_GLO_BURST_128	GENMASK(5, 4)
++#define HSDMA_GLO_BUSY		(BIT(3) | BIT(1))
++#define HSDMA_GLO_DMA		(BIT(2) | BIT(0))
++#define HSDMA_GLO_CONFIG	(HSDMA_GLO_READBACK | HSDMA_GLO_TX_WRITEBACK | \
++				 HSDMA_GLO_BURST_128)
++#define HSDMA_RESET_CHAN(id)	((BIT(0) | BIT(16)) << (id))
++#define HSDMA_IRQ_RX(id)	BIT(16 + (id))
++#define HSDMA_IRQ_RX_ALL	GENMASK(17, 16)
++#define HSDMA_DESC_DONE		BIT(31)
++#define HSDMA_DESC_NLS		BIT(29)
++#define HSDMA_DESC_LEN		GENMASK(15, 0)
++
++#define HSDMA_READ(dev, reg)		readl((dev)->base + reg)
++#define HSDMA_WRITE(dev, reg, data)	writel(data, (dev)->base + reg)
++
++struct airoha_hsdma_hwdesc {
++	__le32 reserved0;
++	__le32 control;
++	__le32 address;
++	__le32 reserved1[5];
++} __aligned(32);
++
++struct airoha_hsdma_desc {
++	struct virt_dma_desc vd;
++	dma_addr_t src;
++	dma_addr_t dst;
++	size_t remaining;
++	size_t residue;
++};
++
++struct airoha_hsdma;
++
++struct airoha_hsdma_chan {
++	struct virt_dma_chan vc;
++	struct airoha_hsdma *hsdma;
++	struct airoha_hsdma_desc *active;
++	struct airoha_hsdma_hwdesc *tx;
++	struct airoha_hsdma_hwdesc *rx;
++	dma_addr_t ring_dma;
++	u16 head;
++	u16 tail;
++	u16 used;
++	u8 id;
++};
++
++struct airoha_hsdma {
++	struct dma_device dma;
++	void __iomem *base;
++	struct reset_control *reset;
++	struct airoha_hsdma_chan chan[HSDMA_CHANNELS];
++	/* Protect global registers and serialize hardware access across channels. */
++	spinlock_t lock;
++	int irq;
++};
++
++static struct airoha_hsdma_chan *to_hsdma_chan(struct dma_chan *c)
++{
++	return container_of(c, struct airoha_hsdma_chan, vc.chan);
++}
++
++static struct airoha_hsdma_desc *to_hsdma_desc(struct virt_dma_desc *vd)
++{
++	return container_of(vd, struct airoha_hsdma_desc, vd);
++}
++
++static void airoha_hsdma_desc_free(struct virt_dma_desc *vd)
++{
++	dma_descriptor_unmap(&vd->tx);
++	kfree(to_hsdma_desc(vd));
++}
++
++static int airoha_hsdma_stop(struct airoha_hsdma *hsdma)
++{
++	u32 val;
++
++	HSDMA_WRITE(hsdma, HSDMA_GLO, HSDMA_GLO_CONFIG);
++	return readl_poll_timeout_atomic(hsdma->base + HSDMA_GLO, val,
++					 !(val & HSDMA_GLO_BUSY), 1, 1000);
++}
++
++/* The engine must be stopped before resetting a ring. */
++static void airoha_hsdma_reset_ring(struct airoha_hsdma_chan *chan)
++{
++	struct airoha_hsdma *hsdma = chan->hsdma;
++	unsigned int i;
++
++	memset(chan->tx, 0, HSDMA_RING_BYTES);
++	for (i = 0; i < HSDMA_RING_SIZE; i++)
++		chan->tx[i].control = cpu_to_le32(HSDMA_DESC_DONE);
++
++	chan->head = 0;
++	chan->tail = 0;
++	chan->used = 0;
++	dma_wmb();
++	HSDMA_WRITE(hsdma, HSDMA_RESET, HSDMA_RESET_CHAN(chan->id));
++	HSDMA_WRITE(hsdma, HSDMA_TX_BASE(chan->id), chan->ring_dma);
++	HSDMA_WRITE(hsdma, HSDMA_TX_COUNT(chan->id), HSDMA_RING_SIZE);
++	HSDMA_WRITE(hsdma, HSDMA_TX_CPU(chan->id), 0);
++	HSDMA_WRITE(hsdma, HSDMA_RX_BASE(chan->id),
++		    chan->ring_dma + HSDMA_RING_BYTES / 2);
++	HSDMA_WRITE(hsdma, HSDMA_RX_COUNT(chan->id), HSDMA_RING_SIZE);
++	HSDMA_WRITE(hsdma, HSDMA_RX_CPU(chan->id), HSDMA_RING_MASK);
++}
++
++static void airoha_hsdma_fill_ring(struct airoha_hsdma_chan *chan)
++{
++	struct airoha_hsdma_desc *desc = chan->active;
++	struct virt_dma_desc *vd;
++	bool queued = false;
++
++	lockdep_assert_held(&chan->hsdma->lock);
++	lockdep_assert_held(&chan->vc.lock);
++
++	if (!desc) {
++		vd = vchan_next_desc(&chan->vc);
++		if (!vd)
++			return;
++
++		list_del(&vd->node);
++		desc = to_hsdma_desc(vd);
++		chan->active = desc;
++	}
++
++	while (desc->remaining && chan->used < HSDMA_RING_SIZE - 1) {
++		struct airoha_hsdma_hwdesc *tx = &chan->tx[chan->head];
++		struct airoha_hsdma_hwdesc *rx = &chan->rx[chan->head];
++		u32 len = min_t(size_t, desc->remaining, HSDMA_MAX_LEN);
++		u32 ctrl = FIELD_PREP(HSDMA_DESC_LEN, len);
++
++		if (desc->remaining > len)
++			ctrl |= HSDMA_DESC_NLS;
++
++		WRITE_ONCE(rx->address, cpu_to_le32(desc->dst));
++		WRITE_ONCE(tx->address, cpu_to_le32(desc->src));
++		WRITE_ONCE(rx->control, cpu_to_le32(ctrl));
++		WRITE_ONCE(tx->control, cpu_to_le32(ctrl));
++
++		desc->src += len;
++		desc->dst += len;
++		desc->remaining -= len;
++		chan->head = (chan->head + 1) & HSDMA_RING_MASK;
++		chan->used++;
++		queued = true;
++	}
++
++	if (queued) {
++		/* Publish both RX and TX descriptors before the doorbell. */
++		dma_wmb();
++		HSDMA_WRITE(chan->hsdma, HSDMA_TX_CPU(chan->id), chan->head);
++	}
++}
++
++static void airoha_hsdma_reclaim(struct airoha_hsdma_chan *chan)
++{
++	struct airoha_hsdma_desc *desc = chan->active;
++	bool reclaimed = false;
++
++	while (chan->used) {
++		struct airoha_hsdma_hwdesc *rx = &chan->rx[chan->tail];
++		u32 ctrl = le32_to_cpu(READ_ONCE(rx->control));
++
++		if (!(ctrl & HSDMA_DESC_DONE))
++			break;
++
++		dma_rmb();
++		desc->residue -= FIELD_GET(HSDMA_DESC_LEN, ctrl);
++		WRITE_ONCE(rx->address, 0);
++		WRITE_ONCE(rx->control, 0);
++		chan->tail = (chan->tail + 1) & HSDMA_RING_MASK;
++		chan->used--;
++		reclaimed = true;
++	}
++
++	if (reclaimed) {
++		dma_wmb();
++		HSDMA_WRITE(chan->hsdma, HSDMA_RX_CPU(chan->id),
++			    (chan->tail - 1) & HSDMA_RING_MASK);
++	}
++
++	if (desc && !desc->residue) {
++		chan->active = NULL;
++		dma_descriptor_unmap(&desc->vd.tx);
++		vchan_cookie_complete(&desc->vd);
++	}
++
++	airoha_hsdma_fill_ring(chan);
++}
++
++static irqreturn_t airoha_hsdma_irq(int irq, void *data)
++{
++	struct airoha_hsdma *hsdma = data;
++	u32 status;
++	unsigned int i;
++
++	spin_lock(&hsdma->lock);
++	status = HSDMA_READ(hsdma, HSDMA_IRQ_STATUS) & HSDMA_IRQ_RX_ALL;
++	if (!status) {
++		spin_unlock(&hsdma->lock);
++		return IRQ_NONE;
++	}
++
++	/* A completion arriving after this ACK remains pending for the next IRQ. */
++	HSDMA_WRITE(hsdma, HSDMA_IRQ_STATUS, status);
++
++	for (i = 0; i < HSDMA_CHANNELS; i++) {
++		struct airoha_hsdma_chan *chan = &hsdma->chan[i];
++		if (!(status & HSDMA_IRQ_RX(i)))
++			continue;
++
++		spin_lock(&chan->vc.lock);
++		airoha_hsdma_reclaim(chan);
++		spin_unlock(&chan->vc.lock);
++	}
++
++	spin_unlock(&hsdma->lock);
++	return IRQ_HANDLED;
++}
++
++static struct dma_async_tx_descriptor *
++airoha_hsdma_prep_memcpy(struct dma_chan *c, dma_addr_t dst, dma_addr_t src,
++			 size_t len, unsigned long flags)
++{
++	struct airoha_hsdma_desc *desc;
++
++	if (!len || len > U32_MAX || src > U32_MAX || dst > U32_MAX ||
++	    len - 1 > U32_MAX - src || len - 1 > U32_MAX - dst)
++		return NULL;
++
++	desc = kzalloc(sizeof(*desc), GFP_NOWAIT);
++	if (!desc)
++		return NULL;
++
++	desc->src = src;
++	desc->dst = dst;
++	desc->remaining = len;
++	desc->residue = len;
++
++	return vchan_tx_prep(&to_hsdma_chan(c)->vc, &desc->vd, flags);
++}
++
++static void airoha_hsdma_issue_pending(struct dma_chan *c)
++{
++	struct airoha_hsdma_chan *chan = to_hsdma_chan(c);
++	unsigned long flags;
++
++	spin_lock_irqsave(&chan->hsdma->lock, flags);
++	spin_lock(&chan->vc.lock);
++
++	if (vchan_issue_pending(&chan->vc))
++		airoha_hsdma_fill_ring(chan);
++
++	spin_unlock(&chan->vc.lock);
++	spin_unlock_irqrestore(&chan->hsdma->lock, flags);
++}
++
++static enum dma_status airoha_hsdma_tx_status(struct dma_chan *c,
++					      dma_cookie_t cookie,
++					      struct dma_tx_state *state)
++{
++	struct airoha_hsdma_chan *chan = to_hsdma_chan(c);
++	struct virt_dma_desc *vd;
++	unsigned long flags;
++	enum dma_status status;
++	size_t residue = 0;
++	spin_lock_irqsave(&chan->vc.lock, flags);
++
++	status = dma_cookie_status(c, cookie, state);
++	if (status != DMA_COMPLETE && state) {
++		if (chan->active && chan->active->vd.tx.cookie == cookie)
++			residue = chan->active->residue;
++		else {
++			vd = vchan_find_desc(&chan->vc, cookie);
++			if (vd)
++				residue = to_hsdma_desc(vd)->residue;
++
++			list_for_each_entry(vd, &chan->vc.desc_submitted, node)
++				if (vd->tx.cookie == cookie)
++					residue = to_hsdma_desc(vd)->residue;
++		}
++
++		dma_set_residue(state, residue);
++	}
++
++	spin_unlock_irqrestore(&chan->vc.lock, flags);
++	return status;
++}
++
++static int airoha_hsdma_terminate_all(struct dma_chan *c)
++{
++	struct airoha_hsdma_chan *chan = to_hsdma_chan(c);
++	struct airoha_hsdma *hsdma = chan->hsdma;
++	unsigned long flags;
++	int ret;
++	LIST_HEAD(head);
++
++	spin_lock_irqsave(&hsdma->lock, flags);
++	spin_lock(&chan->vc.lock);
++
++	/* Global enable bits briefly pause both channels; reset only this ring. */
++	ret = airoha_hsdma_stop(hsdma);
++	if (ret)
++		goto out_restart;
++
++	if (chan->active) {
++		vchan_terminate_vdesc(&chan->active->vd);
++		chan->active = NULL;
++	}
++
++	vchan_get_all_descriptors(&chan->vc, &head);
++	airoha_hsdma_reset_ring(chan);
++
++	HSDMA_WRITE(hsdma, HSDMA_IRQ_STATUS, HSDMA_IRQ_RX(chan->id));
++out_restart:
++	HSDMA_WRITE(hsdma, HSDMA_GLO, HSDMA_GLO_CONFIG | HSDMA_GLO_DMA);
++	spin_unlock(&chan->vc.lock);
++	spin_unlock_irqrestore(&hsdma->lock, flags);
++	vchan_dma_desc_free_list(&chan->vc, &head);
++
++	return ret;
++}
++
++static void airoha_hsdma_synchronize(struct dma_chan *c)
++{
++	vchan_synchronize(&to_hsdma_chan(c)->vc);
++}
++
++static void airoha_hsdma_free_chan_resources(struct dma_chan *c)
++{
++	if (airoha_hsdma_terminate_all(c))
++		return;
++
++	airoha_hsdma_synchronize(c);
++	vchan_free_chan_resources(&to_hsdma_chan(c)->vc);
++}
++
++static void airoha_hsdma_cleanup_channels(struct airoha_hsdma *hsdma)
++{
++	unsigned int i;
++
++	for (i = 0; i < HSDMA_CHANNELS; i++) {
++		struct airoha_hsdma_chan *chan = &hsdma->chan[i];
++
++		tasklet_kill(&chan->vc.task);
++		vchan_free_chan_resources(&chan->vc);
++
++		if (chan->active) {
++			airoha_hsdma_desc_free(&chan->active->vd);
++			chan->active = NULL;
++		}
++
++		list_del(&chan->vc.chan.device_node);
++		if (chan->tx)
++			dma_free_coherent(hsdma->dma.dev, HSDMA_RING_BYTES,
++					  chan->tx, chan->ring_dma);
++	}
++}
++
++static int airoha_hsdma_probe(struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++	struct airoha_hsdma *hsdma;
++	struct dma_device *dma;
++	unsigned int i;
++	int ret;
++
++	hsdma = devm_kzalloc(dev, sizeof(*hsdma), GFP_KERNEL);
++	if (!hsdma)
++		return -ENOMEM;
++
++	hsdma->base = devm_platform_ioremap_resource(pdev, 0);
++	if (IS_ERR(hsdma->base))
++		return PTR_ERR(hsdma->base);
++
++	hsdma->irq = platform_get_irq(pdev, 0);
++	if (hsdma->irq < 0)
++		return hsdma->irq;
++
++	ret = dma_set_mask_and_coherent(dev, DMA_BIT_MASK(32));
++	if (ret)
++		return ret;
++
++	hsdma->reset = devm_reset_control_get_optional_exclusive(dev, NULL);
++	if (IS_ERR(hsdma->reset))
++		return PTR_ERR(hsdma->reset);
++	ret = reset_control_reset(hsdma->reset);
++	if (ret)
++		return ret;
++
++	spin_lock_init(&hsdma->lock);
++
++	HSDMA_WRITE(hsdma, HSDMA_IRQ_ENABLE, 0);
++	ret = airoha_hsdma_stop(hsdma);
++	if (ret)
++		return dev_err_probe(dev, ret, "HSDMA did not become idle\n");
++
++	HSDMA_WRITE(hsdma, HSDMA_DELAY_IRQ, 0);
++	HSDMA_WRITE(hsdma, HSDMA_FREE_THRESHOLD, 0);
++	HSDMA_WRITE(hsdma, HSDMA_IRQ_STATUS, U32_MAX);
++
++	dma = &hsdma->dma;
++	dma->dev = dev;
++	dma_cap_set(DMA_MEMCPY, dma->cap_mask);
++	dma->copy_align = DMAENGINE_ALIGN_1_BYTE;
++	dma->device_prep_dma_memcpy = airoha_hsdma_prep_memcpy;
++	dma->device_issue_pending = airoha_hsdma_issue_pending;
++	dma->device_tx_status = airoha_hsdma_tx_status;
++	dma->device_terminate_all = airoha_hsdma_terminate_all;
++	dma->device_synchronize = airoha_hsdma_synchronize;
++	dma->device_free_chan_resources = airoha_hsdma_free_chan_resources;
++	dma->residue_granularity = DMA_RESIDUE_GRANULARITY_SEGMENT;
++	INIT_LIST_HEAD(&dma->channels);
++
++	for (i = 0; i < HSDMA_CHANNELS; i++) {
++		struct airoha_hsdma_chan *chan = &hsdma->chan[i];
++
++		chan->id = i;
++		chan->hsdma = hsdma;
++		chan->vc.desc_free = airoha_hsdma_desc_free;
++		vchan_init(&chan->vc, dma);
++	}
++
++	for (i = 0; i < HSDMA_CHANNELS; i++) {
++		struct airoha_hsdma_chan *chan = &hsdma->chan[i];
++
++		chan->tx = dma_alloc_coherent(dev, HSDMA_RING_BYTES,
++					      &chan->ring_dma, GFP_KERNEL);
++		if (!chan->tx) {
++			ret = -ENOMEM;
++			goto err_channels;
++		}
++
++		chan->rx = chan->tx + HSDMA_RING_SIZE;
++		airoha_hsdma_reset_ring(chan);
++	}
++
++	ret = devm_request_irq(dev, hsdma->irq, airoha_hsdma_irq, 0,
++			       dev_name(dev), hsdma);
++	if (ret)
++		goto err_channels;
++
++	HSDMA_WRITE(hsdma, HSDMA_IRQ_ENABLE, HSDMA_IRQ_RX_ALL);
++	HSDMA_WRITE(hsdma, HSDMA_GLO, HSDMA_GLO_CONFIG | HSDMA_GLO_DMA);
++
++	ret = dma_async_device_register(dma);
++	if (ret)
++		goto err_stop;
++
++	ret = of_dma_controller_register(dev->of_node, of_dma_xlate_by_chan_id, dma);
++	if (ret)
++		goto err_unregister;
++
++	platform_set_drvdata(pdev, hsdma);
++	dev_info(dev, "2 HSDMA memcpy channels\n");
++
++	return 0;
++
++err_unregister:
++	dma_async_device_unregister(dma);
++
++err_stop:
++	HSDMA_WRITE(hsdma, HSDMA_IRQ_ENABLE, 0);
++	devm_free_irq(dev, hsdma->irq, hsdma);
++	if (airoha_hsdma_stop(hsdma) &&
++	    (!hsdma->reset || reset_control_assert(hsdma->reset))) {
++		dev_err(dev, "HSDMA stuck busy; retaining DMA rings\n");
++		for (i = 0; i < HSDMA_CHANNELS; i++)
++			hsdma->chan[i].tx = NULL;
++	}
++
++err_channels:
++	airoha_hsdma_cleanup_channels(hsdma);
++	return ret;
++}
++
++static void airoha_hsdma_remove(struct platform_device *pdev)
++{
++	struct airoha_hsdma *hsdma = platform_get_drvdata(pdev);
++	unsigned int i;
++
++	of_dma_controller_free(pdev->dev.of_node);
++	dma_async_device_unregister(&hsdma->dma);
++	HSDMA_WRITE(hsdma, HSDMA_IRQ_ENABLE, 0);
++	devm_free_irq(&pdev->dev, hsdma->irq, hsdma);
++
++	/* An asserted block reset also fences any outstanding bus accesses. */
++	if (airoha_hsdma_stop(hsdma) &&
++	    (!hsdma->reset || reset_control_assert(hsdma->reset))) {
++		dev_err(&pdev->dev, "HSDMA stuck busy; retaining DMA rings\n");
++		for (i = 0; i < HSDMA_CHANNELS; i++)
++			hsdma->chan[i].tx = NULL;
++	}
++
++	airoha_hsdma_cleanup_channels(hsdma);
++	reset_control_assert(hsdma->reset);
++}
++
++static const struct of_device_id airoha_hsdma_match[] = {
++	{ .compatible = "airoha,en7523-hsdma" },
++	{ }
++};
++MODULE_DEVICE_TABLE(of, airoha_hsdma_match);
++
++static struct platform_driver airoha_hsdma_driver = {
++	.probe = airoha_hsdma_probe,
++	.remove = airoha_hsdma_remove,
++	.driver = {
++		.name = "airoha-hsdma",
++		.of_match_table = airoha_hsdma_match,
++		.suppress_bind_attrs = true,
++	},
++};
++module_platform_driver(airoha_hsdma_driver);
++
++MODULE_DESCRIPTION("Airoha High Speed DMA controller");
++MODULE_LICENSE("GPL");
+-- 
+2.55.0
+

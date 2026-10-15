@@ -1,0 +1,54 @@
+From a6680013c6e8799fbab149515ee02c53651860dd Mon Sep 17 00:00:00 2001
+From: Cristian Papa <pcristian292@gmail.com>
+Date: Fri, 25 Sep 2026 01:16:32 -0300
+Subject: [PATCH] net: airoha: floor the EN751221 LAN BQL limit at 256 KiB
+
+On EN751221 the QDMA completion timing makes DQL learn a byte limit of
+less than two Ethernet frames, and locally terminated LAN TX collapses.
+Measured on an Archer XR500v, router to a LAN host (Raspberry Pi 5):
+
+  before: 35.65 Mbit/s, 263 retransmissions (4 streams)
+  after:  298.71 Mbit/s, 0 retransmissions (1 stream)
+
+Set a 256 KiB DQL floor on the LAN GDM TX queues after registration.
+DQL still adapts above it, and the WAN is left alone.
+
+Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
+Signed-off-by: Cristian Papa <pcristian292@gmail.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
+index 7d6f8d24d..cf905c752 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -9112,6 +9112,24 @@ static int airoha_register_gdm_devices(struct airoha_eth *eth)
+ 			err = register_netdev(netdev_from_priv(dev));
+ 			if (err)
+ 				return err;
++
++#ifdef CONFIG_BQL
++			/*
++			 * EN751221 QDMA completion timing makes DQL learn a
++			 * byte limit below two Ethernet frames, and locally
++			 * terminated LAN TX collapses to ~35 Mbit/s.  256 KiB
++			 * is the tested knee; DQL still adapts above it.
++			 */
++			if (airoha_is(eth, econet_en751221) &&
++			    airoha_is_lan_gdm_dev(dev)) {
++				struct net_device *ndev = netdev_from_priv(dev);
++				unsigned int q;
++
++				for (q = 0; q < ndev->real_num_tx_queues; q++)
++					netdev_get_tx_queue(ndev, q)->dql.min_limit =
++						SZ_256K;
++			}
++#endif
+ 		}
+ 	}
+ 
+-- 
+2.55.0
+

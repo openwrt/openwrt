@@ -1,0 +1,290 @@
+From 0baa3490890ec4b3afa3d38c99140e90358a3c11 Mon Sep 17 00:00:00 2001
+From: Cristian Papa <pcristian292@gmail.com>
+Date: Wed, 7 Oct 2026 16:59:43 -0300
+Subject: [PATCH] net: xpon: omci: reboot the ONU when the OLT asks for it
+
+The agent answered an ONU-G Reboot with success and did nothing, and it
+left no trace in the log. An operator that reboots an ONT from its
+management system then sees the command succeed while the ONU stays up.
+
+Handle the Reboot action on the ONU-G instance as ITU-T G.988 describes
+it: flag 0 reboots unconditionally, flags 1 and 2 only when no call is
+in progress, and the request is answered with "device busy" otherwise.
+The reboot is an orderly one, 2 s after the response, so that the OLT
+gets the answer and the services stop cleanly.
+
+The agent does not know about voice calls, so add a voice_calls sysfs
+attribute for the voice application to keep up to date. It cannot tell
+emergency calls apart, so flag 2 is treated like flag 1. Add the
+agent_reboot configuration key, on by default, to refuse OLT reboots
+with a processing error instead. Every request is logged.
+
+Reboot on other managed entities keeps the previous behaviour.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Signed-off-by: Cristian Papa <pcristian292@gmail.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ include/uapi/linux/omci.h |  1 +
+ net/xpon/omci/agent.c     | 87 ++++++++++++++++++++++++++++++++++++++-
+ net/xpon/omci/internal.h  |  6 +++
+ net/xpon/omci/sysfs.c     | 38 +++++++++++++++++
+ 4 files changed, 131 insertions(+), 1 deletion(-)
+
+diff --git a/include/uapi/linux/omci.h b/include/uapi/linux/omci.h
+index 22f70ccc3..cdda59086 100644
+--- a/include/uapi/linux/omci.h
++++ b/include/uapi/linux/omci.h
+@@ -285,6 +285,7 @@ enum omci_config_key {
+ 	OMCI_CONFIG_HARDWARE_VERSION,
+ 	OMCI_CONFIG_SOFTWARE_VERSION_0,
+ 	OMCI_CONFIG_SOFTWARE_VERSION_1,
++	OMCI_CONFIG_AGENT_REBOOT,
+ 
+ 	__OMCI_CONFIG_MAX,
+ };
+diff --git a/net/xpon/omci/agent.c b/net/xpon/omci/agent.c
+index c992e4c8b..6a6d31e68 100644
+--- a/net/xpon/omci/agent.c
++++ b/net/xpon/omci/agent.c
+@@ -17,6 +17,7 @@
+ #include <linux/kernel.h>
+ #include <linux/math.h>
+ #include <linux/math64.h>
++#include <linux/reboot.h>
+ #include <linux/slab.h>
+ #include <linux/string.h>
+ #include <linux/unaligned.h>
+@@ -1851,6 +1852,12 @@ static int omci_agent_populate_defaults(struct omci_device *odev)
+ 	return 0;
+ }
+ 
++static void omci_agent_reboot_work(struct work_struct *work)
++{
++	/* The response has gone out; let init stop the services cleanly. */
++	orderly_reboot();
++}
++
+ int omci_agent_init(struct omci_device *odev)
+ {
+ 	struct omci_agent *agent = &odev->agent;
+@@ -1865,6 +1872,10 @@ int omci_agent_init(struct omci_device *odev)
+ 	agent->fake_omci = false;
+ 	agent->dying_gasp = false;
+ 	agent->config.dying_gasp_source = OMCI_CONFIG_SOURCE_DEFAULT;
++	agent->reboot = true;
++	agent->config.reboot_source = OMCI_CONFIG_SOURCE_DEFAULT;
++	agent->voice_calls = 0;
++	INIT_DELAYED_WORK(&agent->reboot_work, omci_agent_reboot_work);
+ 	agent->config.uni_count = 4;
+ 	agent->config.onu_type = OMCI_ONU_TYPE_HGU;
+ 	agent->config.onu_type_source = OMCI_CONFIG_SOURCE_DEFAULT;
+@@ -1911,6 +1922,7 @@ void omci_agent_cleanup(struct omci_device *odev)
+ 	struct omci_mib_object *object;
+ 	unsigned long index;
+ 
++	cancel_delayed_work_sync(&agent->reboot_work);
+ 	mutex_lock(&agent->lock);
+ 	omci_agent_reset_duplicate_locked(agent);
+ 	omci_agent_reset_table_snapshot_locked(agent);
+@@ -4045,6 +4057,56 @@ static int omci_agent_upload_next_locked(struct omci_agent *agent,
+ 	return 0;
+ }
+ 
++/* ITU-T G.988 Reboot flags, the first content byte of an ONU-G Reboot */
++#define OMCI_REBOOT_UNCONDITIONAL	0
++#define OMCI_REBOOT_IF_NO_CALLS		1
++#define OMCI_REBOOT_IF_NO_EMERGENCY	2
++/* Long enough for the response to leave before services stop */
++#define OMCI_REBOOT_DELAY_MS		2000
++
++static u8 omci_agent_reboot_locked(struct omci_device *odev, u16 class_id,
++				   u16 entity_id, const u8 *payload,
++				   size_t payload_len)
++{
++	struct omci_agent *agent = &odev->agent;
++	u8 flags = payload_len ? payload[0] : OMCI_REBOOT_UNCONDITIONAL;
++
++	/* Other managed entities still acknowledge without a reboot. */
++	if (class_id != OMCI_CLASS_ONU_G || entity_id)
++		return OMCI_RESULT_SUCCESS;
++
++	if (!agent->reboot) {
++		dev_warn(odev->parent,
++			 "OLT requested an ONU reboot (flags %u): refused, OLT reboots are disabled\n",
++			 flags);
++		return OMCI_RESULT_PROCESSING_ERROR;
++	}
++	if (flags > OMCI_REBOOT_IF_NO_EMERGENCY) {
++		dev_warn(odev->parent,
++			 "OLT requested an ONU reboot with reserved flags %u\n",
++			 flags);
++		return OMCI_RESULT_PARAMETER_ERROR;
++	}
++	/*
++	 * The voice application reports calls, not which of them are
++	 * emergency calls: treat every call as one, so that flag 2 can
++	 * never drop an emergency call.
++	 */
++	if (flags != OMCI_REBOOT_UNCONDITIONAL && agent->voice_calls) {
++		dev_warn(odev->parent,
++			 "OLT requested an ONU reboot (flags %u): device busy, %u voice call(s) in progress\n",
++			 flags, agent->voice_calls);
++		return OMCI_RESULT_DEVICE_BUSY;
++	}
++
++	dev_warn(odev->parent,
++		 "OLT requested an ONU reboot (flags %u): rebooting in %u ms\n",
++		 flags, OMCI_REBOOT_DELAY_MS);
++	schedule_delayed_work(&agent->reboot_work,
++			      msecs_to_jiffies(OMCI_REBOOT_DELAY_MS));
++	return OMCI_RESULT_SUCCESS;
++}
++
+ static int
+ omci_agent_build_response_locked(struct omci_device *odev,
+ 				 const struct omci_wire_request *request,
+@@ -4176,8 +4238,12 @@ omci_agent_build_response_locked(struct omci_device *odev,
+ 		else
+ 			content[0] = OMCI_RESULT_SUCCESS;
+ 		break;
+-	case OMCI_MSG_TYPE_SYNC_TIME:
+ 	case OMCI_MSG_TYPE_REBOOT:
++		content[0] = omci_agent_reboot_locked(odev, class_id, entity_id,
++						      request->payload,
++						      request->payload_len);
++		break;
++	case OMCI_MSG_TYPE_SYNC_TIME:
+ 	case OMCI_MSG_TYPE_TEST:
+ 		content[0] = OMCI_RESULT_SUCCESS;
+ 		break;
+@@ -4548,6 +4614,11 @@ int omci_agent_config_get(struct omci_device *odev, u16 key,
+ 		source = &scalar;
+ 		source_len = sizeof(scalar);
+ 		break;
++	case OMCI_CONFIG_AGENT_REBOOT:
++		scalar = agent->reboot;
++		source = &scalar;
++		source_len = sizeof(scalar);
++		break;
+ 	case OMCI_CONFIG_OMCC_VERSION:
+ 		scalar = agent->config.omcc_version;
+ 		source = &scalar;
+@@ -4744,6 +4815,17 @@ __omci_agent_config_set_source(struct omci_device *odev, u16 key,
+ 		agent->config.dying_gasp_source = source;
+ 		omci_agent_reset_duplicate_locked(agent);
+ 		break;
++	case OMCI_CONFIG_AGENT_REBOOT:
++		if (len != sizeof(scalar)) {
++			ret = -EINVAL;
++			break;
++		}
++		scalar = *(const u8 *)value;
++		changed = agent->reboot != !!scalar;
++		agent->reboot = !!scalar;
++		agent->config.reboot_source = source;
++		omci_agent_reset_duplicate_locked(agent);
++		break;
+ 	case OMCI_CONFIG_OMCC_VERSION:
+ 		if (len != sizeof(scalar)) {
+ 			ret = -EINVAL;
+@@ -4907,6 +4989,9 @@ int omci_agent_config_source_get(struct omci_device *odev, u16 key, u8 *source)
+ 	case OMCI_CONFIG_AGENT_DYING_GASP:
+ 		*source = agent->config.dying_gasp_source;
+ 		break;
++	case OMCI_CONFIG_AGENT_REBOOT:
++		*source = agent->config.reboot_source;
++		break;
+ 	case OMCI_CONFIG_OMCC_VERSION:
+ 		*source = agent->config.omcc_version_source;
+ 		break;
+diff --git a/net/xpon/omci/internal.h b/net/xpon/omci/internal.h
+index 9370fe365..bab2db308 100644
+--- a/net/xpon/omci/internal.h
++++ b/net/xpon/omci/internal.h
+@@ -75,6 +75,7 @@ struct omci_agent_config {
+ 	u8 olt_profile_source;
+ 	u8 olt_profile_force_source;
+ 	u8 dying_gasp_source;
++	u8 reboot_source;
+ };
+ 
+ struct omci_agent {
+@@ -89,6 +90,11 @@ struct omci_agent {
+ 	bool permissive;
+ 	bool fake_omci;
+ 	bool dying_gasp;
++	/* Honour an ONU-G Reboot from the OLT */
++	bool reboot;
++	/* Voice calls in progress, reported by the voice application */
++	u8 voice_calls;
++	struct delayed_work reboot_work;
+ 	bool operational;
+ 	u8 alarm_sequence;
+ 	u8 profile_effective;
+diff --git a/net/xpon/omci/sysfs.c b/net/xpon/omci/sysfs.c
+index 577e0b53a..62c95908f 100644
+--- a/net/xpon/omci/sysfs.c
++++ b/net/xpon/omci/sysfs.c
+@@ -194,6 +194,41 @@ static ssize_t agent_operational_show(struct device *dev,
+ }
+ static DEVICE_ATTR_RO(agent_operational);
+ 
++/*
++ * Calls in progress, kept up to date by the voice application. An ONU-G
++ * Reboot that may not interrupt a call is refused while it is non-zero.
++ */
++static ssize_t voice_calls_show(struct device *dev,
++				struct device_attribute *attr, char *buf)
++{
++	struct omci_device *odev = omci_dev_from_dev(dev);
++	u8 value;
++
++	mutex_lock(&odev->agent.lock);
++	value = odev->agent.voice_calls;
++	mutex_unlock(&odev->agent.lock);
++	return sysfs_emit(buf, "%u\n", value);
++}
++
++static ssize_t voice_calls_store(struct device *dev,
++				 struct device_attribute *attr,
++				 const char *buf, size_t count)
++{
++	struct omci_device *odev = omci_dev_from_dev(dev);
++	u8 value;
++	int ret;
++
++	ret = kstrtou8(buf, 0, &value);
++	if (ret)
++		return ret;
++
++	mutex_lock(&odev->agent.lock);
++	odev->agent.voice_calls = value;
++	mutex_unlock(&odev->agent.lock);
++	return count;
++}
++static DEVICE_ATTR_RW(voice_calls);
++
+ #define OMCI_CONFIG_U8_ATTR_RW(_name, _key) \
+ static ssize_t _name##_show(struct device *dev, \
+ 			    struct device_attribute *attr, char *buf) \
+@@ -253,6 +288,7 @@ OMCI_CONFIG_BOOL_ATTR_RW(agent_enabled, OMCI_CONFIG_AGENT_ENABLED);
+ OMCI_CONFIG_BOOL_ATTR_RW(agent_permissive, OMCI_CONFIG_AGENT_PERMISSIVE);
+ OMCI_CONFIG_BOOL_ATTR_RW(agent_fake_omci, OMCI_CONFIG_AGENT_FAKE_OMCI);
+ OMCI_CONFIG_BOOL_ATTR_RW(agent_dying_gasp, OMCI_CONFIG_AGENT_DYING_GASP);
++OMCI_CONFIG_BOOL_ATTR_RW(agent_reboot, OMCI_CONFIG_AGENT_REBOOT);
+ 
+ static ssize_t omci_sysfs_string_show(struct omci_device *odev, u16 key,
+ 				      char *buf)
+@@ -650,6 +686,8 @@ static struct attribute *omci_attrs[] = {
+ 	&dev_attr_agent_permissive.attr,
+ 	&dev_attr_agent_fake_omci.attr,
+ 	&dev_attr_agent_dying_gasp.attr,
++	&dev_attr_agent_reboot.attr,
++	&dev_attr_voice_calls.attr,
+ 	&dev_attr_serial_number.attr,
+ 	&dev_attr_vendor_id.attr,
+ 	&dev_attr_password.attr,
+-- 
+2.55.0
+

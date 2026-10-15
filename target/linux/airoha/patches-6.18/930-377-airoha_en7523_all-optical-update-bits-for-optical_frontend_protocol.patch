@@ -1,0 +1,211 @@
+From 91de9b35e9ffc1a5a3da4ac1951d1f7b20d27576 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Tue, 6 Oct 2026 23:40:32 -0300
+Subject: [PATCH] optical: update bits for optical_frontend_protocol
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/optical/airoha/airoha_lddla.h |  2 +-
+ drivers/net/optical/airoha/en7570_main.c  |  4 ++--
+ drivers/net/optical/airoha/en7571_main.c  |  4 ++--
+ drivers/net/optical/airoha/en7572_main.c  | 19 +++++++++----------
+ drivers/net/optical/core.c                | 15 ++++++++++-----
+ drivers/net/optical/semtech/gn25l95.c     |  8 ++++----
+ include/linux/optical_frontend.h          | 16 ++++++++--------
+ 7 files changed, 36 insertions(+), 32 deletions(-)
+
+diff --git a/drivers/net/optical/airoha/airoha_lddla.h b/drivers/net/optical/airoha/airoha_lddla.h
+index a63318b8d..be0bec37e 100644
+--- a/drivers/net/optical/airoha/airoha_lddla.h
++++ b/drivers/net/optical/airoha/airoha_lddla.h
+@@ -141,7 +141,7 @@ airoha_lddla_default_thresholds;
+  * @part_number: SFP MSA vendor part-number string.
+  * @serial: SFP MSA vendor serial-number string.
+  * @date_code: SFP MSA date code (6 chars).
+- * @protocols: BIT(OPTICAL_FRONTEND_PROTO_*) bitmap supported by this chip.
++ * @protocols: OPTICAL_FRONTEND_PROTO_* bitmap supported by this chip.
+  * @thresholds: normalized alarm thresholds for this chip/firmware family.
+  * @bob_format: calibration layout; defaults to the EN7570/EN7571 word table.
+  * @bob_size_min: minimum BOB/calibration image size in bytes.
+diff --git a/drivers/net/optical/airoha/en7570_main.c b/drivers/net/optical/airoha/en7570_main.c
+index 8ca8de72d..28dfb627f 100644
+--- a/drivers/net/optical/airoha/en7570_main.c
++++ b/drivers/net/optical/airoha/en7570_main.c
+@@ -400,8 +400,8 @@ static const struct airoha_lddla_ops en7570_ops = {
+ 	.part_number = "EN7570-LDDLA",
+ 	.serial = "EN7570SN00000001",
+ 	.date_code = "260608",
+-	.protocols = BIT(OPTICAL_FRONTEND_PROTO_EPON) |
+-		     BIT(OPTICAL_FRONTEND_PROTO_GPON),
++	.protocols = OPTICAL_FRONTEND_PROTO_EPON |
++		     OPTICAL_FRONTEND_PROTO_GPON,
+ 	.thresholds = &airoha_lddla_default_thresholds,
+ 	.bob_size_min = AIROHA_LDDLA_BOB_MIN_SIZE,
+ 	.bob_size_max = AIROHA_LDDLA_BOB_MAX_SIZE,
+diff --git a/drivers/net/optical/airoha/en7571_main.c b/drivers/net/optical/airoha/en7571_main.c
+index 862a60861..032ca3f4f 100644
+--- a/drivers/net/optical/airoha/en7571_main.c
++++ b/drivers/net/optical/airoha/en7571_main.c
+@@ -444,8 +444,8 @@ static const struct airoha_lddla_ops en7571_ops = {
+ 	.part_number = "EN7571-LDDLA",
+ 	.serial = "EN7571SN00000001",
+ 	.date_code = "260609",
+-	.protocols = BIT(OPTICAL_FRONTEND_PROTO_EPON) |
+-		     BIT(OPTICAL_FRONTEND_PROTO_GPON),
++	.protocols = OPTICAL_FRONTEND_PROTO_EPON |
++		     OPTICAL_FRONTEND_PROTO_GPON,
+ 	.thresholds = &airoha_lddla_default_thresholds,
+ 	.bob_size_min = AIROHA_LDDLA_BOB_MIN_SIZE,
+ 	.bob_size_max = AIROHA_LDDLA_BOB_MAX_SIZE,
+diff --git a/drivers/net/optical/airoha/en7572_main.c b/drivers/net/optical/airoha/en7572_main.c
+index b9158d963..1e07e3257 100644
+--- a/drivers/net/optical/airoha/en7572_main.c
++++ b/drivers/net/optical/airoha/en7572_main.c
+@@ -454,11 +454,11 @@ static const struct airoha_lddla_ops en7572_ops = {
+ 	.part_number	= "EN7572",
+ 	.serial		= "0000000000000000",
+ 	.date_code	= "000000",
+-	.protocols	= BIT(OPTICAL_FRONTEND_PROTO_EPON) |
+-			  BIT(OPTICAL_FRONTEND_PROTO_GPON) |
+-			  BIT(OPTICAL_FRONTEND_PROTO_XGPON) |
+-			  BIT(OPTICAL_FRONTEND_PROTO_XGSPON) |
+-			  BIT(OPTICAL_FRONTEND_PROTO_NGPON2),
++	.protocols	= OPTICAL_FRONTEND_PROTO_EPON |
++			  OPTICAL_FRONTEND_PROTO_GPON |
++			  OPTICAL_FRONTEND_PROTO_XGPON |
++			  OPTICAL_FRONTEND_PROTO_XGSPON |
++			  OPTICAL_FRONTEND_PROTO_NGPON2,
+ 	.thresholds	= &en7572_thresholds,
+ 	.bob_format	= AIROHA_LDDLA_BOB_FORMAT_A0A2,
+ 	.bob_size_min	= EN7572_BOB_SIZE,
+@@ -476,11 +476,10 @@ static const struct airoha_lddla_ops en7573_ops = {
+ 	.part_number	= "EN7573",
+ 	.serial		= "0000000000000000",
+ 	.date_code	= "000000",
+-	.protocols	= BIT(OPTICAL_FRONTEND_PROTO_EPON) |
+-			  BIT(OPTICAL_FRONTEND_PROTO_GPON) |
+-			  BIT(OPTICAL_FRONTEND_PROTO_XGPON) |
+-			  BIT(OPTICAL_FRONTEND_PROTO_XGSPON) |
+-			  BIT(OPTICAL_FRONTEND_PROTO_NGPON2),
++	.protocols	= OPTICAL_FRONTEND_PROTO_XEPON |
++			  OPTICAL_FRONTEND_PROTO_XGPON |
++			  OPTICAL_FRONTEND_PROTO_XGSPON |
++			  OPTICAL_FRONTEND_PROTO_NGPON2,
+ 	.thresholds	= &en7572_thresholds,
+ 	.bob_format	= AIROHA_LDDLA_BOB_FORMAT_A0A2,
+ 	.bob_size_min	= EN7572_BOB_SIZE,
+diff --git a/drivers/net/optical/core.c b/drivers/net/optical/core.c
+index 7647cb03e..989b91156 100644
+--- a/drivers/net/optical/core.c
++++ b/drivers/net/optical/core.c
+@@ -15,6 +15,7 @@
+ #include <linux/err.h>
+ #include <linux/idr.h>
+ #include <linux/jiffies.h>
++#include <linux/log2.h>
+ #include <linux/module.h>
+ #include <linux/minmax.h>
+ #include <linux/mutex.h>
+@@ -51,6 +52,8 @@ static const char *optical_frontend_protocol_name(enum optical_frontend_protocol
+ 		return "ethernet";
+ 	case OPTICAL_FRONTEND_PROTO_EPON:
+ 		return "epon";
++	case OPTICAL_FRONTEND_PROTO_XEPON:
++		return "xepon";
+ 	case OPTICAL_FRONTEND_PROTO_GPON:
+ 		return "gpon";
+ 	case OPTICAL_FRONTEND_PROTO_XGPON:
+@@ -116,14 +119,14 @@ static ssize_t supported_protocols_show(struct device *dev,
+ 	unsigned int protocol;
+ 
+ 	for (protocol = OPTICAL_FRONTEND_PROTO_ETHERNET;
+-	     protocol <= OPTICAL_FRONTEND_PROTO_NGPON2; protocol++) {
+-		if (!(frontend->desc->protocols & BIT(protocol)))
++	     protocol <= OPTICAL_FRONTEND_PROTO_NGPON2; protocol <<= 1) {
++		if (!(frontend->desc->protocols & protocol))
+ 			continue;
+ 		len += sysfs_emit_at(buf, len, "%s%s", len ? " " : "",
+ 				     optical_frontend_protocol_name(protocol));
+ 	}
+ 
+-	return sysfs_emit_at(buf, len, "\n");
++	return len + sysfs_emit_at(buf, len, "\n");
+ }
+ static DEVICE_ATTR_RO(supported_protocols);
+ 
+@@ -472,8 +475,10 @@ int optical_frontend_set_mode(struct optical_frontend *frontend,
+ 	if (!frontend || !mode)
+ 		return -EINVAL;
+ 
+-	if (mode->protocol >= 32 ||
+-	    !(frontend->desc->protocols & BIT(mode->protocol)))
++	if (mode->protocol < OPTICAL_FRONTEND_PROTO_ETHERNET ||
++	    mode->protocol > OPTICAL_FRONTEND_PROTO_NGPON2 ||
++	    !is_power_of_2(mode->protocol) ||
++	    !(frontend->desc->protocols & mode->protocol))
+ 		return -EOPNOTSUPP;
+ 
+ 	mutex_lock(&frontend->op_lock);
+diff --git a/drivers/net/optical/semtech/gn25l95.c b/drivers/net/optical/semtech/gn25l95.c
+index c5e2af7f2..0630ab192 100644
+--- a/drivers/net/optical/semtech/gn25l95.c
++++ b/drivers/net/optical/semtech/gn25l95.c
+@@ -188,8 +188,8 @@ static const struct gn25l95_chip_data gn25l95_data = {
+ 				OPTICAL_FRONTEND_CAP_RX_LOS |
+ 				OPTICAL_FRONTEND_CAP_BURST_TX |
+ 				OPTICAL_FRONTEND_CAP_APD,
+-		.protocols = BIT(OPTICAL_FRONTEND_PROTO_EPON) |
+-			     BIT(OPTICAL_FRONTEND_PROTO_GPON),
++		.protocols = OPTICAL_FRONTEND_PROTO_EPON |
++			     OPTICAL_FRONTEND_PROTO_GPON,
+ 		.thresholds = &gn25l95_thresholds,
+ 		.telemetry_cache_ms = 100,
+ 	},
+@@ -219,8 +219,8 @@ static const struct gn25l95_chip_data gn25l98_data = {
+ 				OPTICAL_FRONTEND_CAP_RX_LOS |
+ 				OPTICAL_FRONTEND_CAP_BURST_TX |
+ 				OPTICAL_FRONTEND_CAP_APD,
+-		.protocols = BIT(OPTICAL_FRONTEND_PROTO_EPON) |
+-			     BIT(OPTICAL_FRONTEND_PROTO_GPON),
++		.protocols = OPTICAL_FRONTEND_PROTO_EPON |
++			     OPTICAL_FRONTEND_PROTO_GPON,
+ 		.thresholds = &gn25l95_thresholds,
+ 		.telemetry_cache_ms = 100,
+ 	},
+diff --git a/include/linux/optical_frontend.h b/include/linux/optical_frontend.h
+index e56e85dc0..83c8943fb 100644
+--- a/include/linux/optical_frontend.h
++++ b/include/linux/optical_frontend.h
+@@ -52,13 +52,13 @@ struct optical_frontend;
+ 
+ enum optical_frontend_protocol {
+ 	OPTICAL_FRONTEND_PROTO_UNSPEC,
+-	OPTICAL_FRONTEND_PROTO_ETHERNET,
+-	OPTICAL_FRONTEND_PROTO_EPON,
+-	OPTICAL_FRONTEND_PROTO_XEPON,
+-	OPTICAL_FRONTEND_PROTO_GPON,
+-	OPTICAL_FRONTEND_PROTO_XGPON,
+-	OPTICAL_FRONTEND_PROTO_XGSPON,
+-	OPTICAL_FRONTEND_PROTO_NGPON2,
++	OPTICAL_FRONTEND_PROTO_ETHERNET =	BIT(1),
++	OPTICAL_FRONTEND_PROTO_EPON =		BIT(2),
++	OPTICAL_FRONTEND_PROTO_XEPON =		BIT(3),
++	OPTICAL_FRONTEND_PROTO_GPON =		BIT(4),
++	OPTICAL_FRONTEND_PROTO_XGPON =		BIT(5),
++	OPTICAL_FRONTEND_PROTO_XGSPON =		BIT(6),
++	OPTICAL_FRONTEND_PROTO_NGPON2 =		BIT(7),
+ };
+ 
+ #define OPTICAL_FRONTEND_MODE_BURST_TX	BIT(0)
+@@ -161,7 +161,7 @@ struct optical_frontend_thresholds {
+  * @serial: optional component serial number
+  * @date_code: optional SFF-style date code
+  * @capabilities: OPTICAL_FRONTEND_CAP_* bitmap
+- * @protocols: BIT(OPTICAL_FRONTEND_PROTO_*) bitmap
++ * @protocols: OPTICAL_FRONTEND_PROTO_* bitmap
+  * @thresholds: optional normalized alarm thresholds
+  * @telemetry_cache_ms: core telemetry cache lifetime; zero disables caching
+  * @groups: optional provider-specific sysfs groups on the frontend class device
+-- 
+2.55.0
+

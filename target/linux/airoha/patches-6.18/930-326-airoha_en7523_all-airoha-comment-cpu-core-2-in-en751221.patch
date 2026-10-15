@@ -1,0 +1,52 @@
+From 078fff8699092bf18806ae70a56dd54300b57d82 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Sun, 6 Sep 2026 15:36:42 -0300
+Subject: [PATCH] airoha: comment cpu core 2 in en751221
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ arch/mips/boot/dts/econet/en751221.dtsi | 24 +++++++++++++++++++++++-
+ 1 file changed, 23 insertions(+), 1 deletion(-)
+
+diff --git a/arch/mips/boot/dts/econet/en751221.dtsi b/arch/mips/boot/dts/econet/en751221.dtsi
+index 442d54a56..1c9bdc8e4 100644
+--- a/arch/mips/boot/dts/econet/en751221.dtsi
++++ b/arch/mips/boot/dts/econet/en751221.dtsi
+@@ -28,11 +28,33 @@ cpus: cpus {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 
+-		cpu@0 {
++		cpu0: cpu@0 {
+ 			device_type = "cpu";
+ 			compatible = "mips,mips34Kc";
+ 			reg = <0>;
+ 		};
++
++		/* Needs mapping and fix shadow cores
++		cpu1: cpu@1 {
++			device_type = "cpu";
++			compatible = "mips,mips34Kc";
++			reg = <1>;
++		};
++
++		cpu-map {
++			cluster0 {
++				core0 {
++					thread0 {
++						cpu = <&cpu0>;
++					};
++
++					thread1 {
++						cpu = <&cpu1>;
++					};
++				};
++			};
++		};
++		*/
+ 	};
+ 
+ 	cpuintc: interrupt-controller {
+-- 
+2.55.0
+

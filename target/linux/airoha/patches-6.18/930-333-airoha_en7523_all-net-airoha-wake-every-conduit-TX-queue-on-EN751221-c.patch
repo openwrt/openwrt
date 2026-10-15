@@ -1,0 +1,84 @@
+From 3891b25ec838daa588aa8d24e697d81acfddc55c Mon Sep 17 00:00:00 2001
+From: Cristian Papa <pcristian292@gmail.com>
+Date: Fri, 18 Sep 2026 01:30:06 +0000
+Subject: [PATCH] net: airoha: wake every conduit TX queue on EN751221
+ completion
+
+tag_mtk stores the DSA port index in skb->queue_mapping, so skb_tx_hash()
+takes it as a recorded RX queue and every user port ends up on its own
+conduit TX queue (port 2 -> tx-1, port 3 -> tx-2, ...).  All of them feed
+the single generation-1 hardware ring.  econet_qdma_xmit_mips() returns
+-EBUSY before posting the skb when the free list is exhausted and the
+conduit xmit then stops that netdev queue; econet_poll_tx_complete() only
+woke the queue of the skb it had just freed.  A queue stopped on ring-full
+owns no descriptor, so no later completion ever carries its mapping and it
+stays DRV_XOFF forever while the ring drains through the other queues: the
+port silently stops transmitting (RX keeps working, nothing is logged, no
+counter is incremented) until the conduit is re-initialised.
+
+On a TP-Link Archer XR500v (EN7526G) this killed the port carrying the home
+LAN after a few hours whenever a download burst to another port filled the
+ring.  ip link set eth0 down/up (which restarts every conduit queue) brought
+it back immediately without touching the switches.
+
+Do what airoha_qdma_wake_netdev_txqs() already does for generation 2:
+remember the netdev of any freed skb and wake all of its TX queues once
+after the drain loop.  netif_tx_wake_all_queues() only clears DRV_XOFF, so
+BQL throttling is preserved; if the ring fills again the next xmit re-stops
+the queue and the next completion re-wakes it.
+
+Signed-off-by: Cristian Papa <pcristian292@gmail.com>
+(cherry picked from commit 0519ae66a35ca29d37e0c585288502e5b84c30e5)
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c | 23 +++++++++++++++++++++--
+ 1 file changed, 21 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
+index a6a08b4e2..443259b58 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -890,6 +890,7 @@ static int econet_poll_tx_complete(struct napi_struct *napi, int budget)
+ {
+ 	struct qregs_doneq_state state;
+ 	struct econet_tx_doneq *done_q;
++	struct net_device *wake_dev = NULL;
+ 	struct airoha_qdma_mips *qdma;
+ 	int irq_queued;
+ 	u32 done = 0, head;
+@@ -959,12 +960,30 @@ static int econet_poll_tx_complete(struct napi_struct *napi, int budget)
+ 		txq = netdev_get_tx_queue(skb->dev,
+ 					  skb_get_queue_mapping(skb));
+ 		netdev_tx_completed_queue(txq, 1, skb->len);
+-		if (netif_tx_queue_stopped(txq))
+-			netif_tx_wake_queue(txq);
++		/* Every net_device TX queue of this conduit (one per DSA user
++		 * port through tag_mtk's queue_mapping, hashed for the rest)
++		 * funnels into the same hardware ring, so the gating resource
++		 * is shared.  A queue stopped on ring-full holds no descriptor
++		 * of its own (econet_qdma_xmit_mips() returns -EBUSY before
++		 * posting the skb), so it can never produce a completion that
++		 * would wake it: waking only the queue of the skb just freed
++		 * strands it forever.  Defer a device-wide wake to after the
++		 * drain loop instead.
++		 */
++		wake_dev = skb->dev;
+ 
+ 		dev_kfree_skb_any(skb);
+ 	}
+ 
++	/* Freed at least one ring slot: wake every TX queue of the conduit so
++	 * a descriptor-less stranded queue restarts.  netif_tx_wake_all_queues()
++	 * only clears DRV_XOFF, not BQL's STACK_XOFF, so BQL throttling is
++	 * preserved; if the ring fills up again the next xmit re-stops the queue
++	 * and the next completion re-wakes it.
++	 */
++	if (wake_dev)
++		netif_tx_wake_all_queues(wake_dev);
++
+ 	if (done) {
+ 		int i, len = done >> 7;
+ 
+-- 
+2.55.0
+

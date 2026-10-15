@@ -1,0 +1,51 @@
+From 2bb5a1717de5e60d2be2e077e137d79814210280 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Sun, 20 Sep 2026 21:54:54 -0300
+Subject: [PATCH] en7528: fix 7.2Mb kernel boot
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ arch/mips/boot/compressed/Makefile  | 8 +++++++-
+ arch/mips/boot/compressed/ld.script | 2 +-
+ 2 files changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/arch/mips/boot/compressed/Makefile b/arch/mips/boot/compressed/Makefile
+index e0b8ec9a9..5f3514571 100644
+--- a/arch/mips/boot/compressed/Makefile
++++ b/arch/mips/boot/compressed/Makefile
+@@ -96,12 +96,18 @@ VMLINUZ_LOAD_ADDRESS = $(shell $(obj)/calc_vmlinuz_load_addr \
+ endif
+ UIMAGE_LOADADDR = $(VMLINUZ_LOAD_ADDRESS)
+ 
++zboot-dtb-reserve-y := 0x100000
++zboot-dtb-reserve-$(CONFIG_SOC_ECONET_EN7528) := 0x20000
++
+ vmlinuzobjs-y += $(obj)/piggy.o
+ 
+ targets += ../../../../vmlinuz
+ 
+ quiet_cmd_zld = LD      $@
+-      cmd_zld = $(LD) $(KBUILD_LDFLAGS) -Ttext $(VMLINUZ_LOAD_ADDRESS) -T $< $(vmlinuzobjs-y) -o $@
++	cmd_zld = $(LD) $(KBUILD_LDFLAGS) \
++		--defsym=MIPS_ZBOOT_DTB_RESERVE=$(zboot-dtb-reserve-y) \
++		-Ttext $(VMLINUZ_LOAD_ADDRESS) -T $< \
++		$(vmlinuzobjs-y) -o $@
+ quiet_cmd_strip = STRIP   $@
+       cmd_strip = $(STRIP) -s $@
+ 
+diff --git a/arch/mips/boot/compressed/ld.script b/arch/mips/boot/compressed/ld.script
+index 0ebb66727..548b66058 100644
+--- a/arch/mips/boot/compressed/ld.script
++++ b/arch/mips/boot/compressed/ld.script
+@@ -35,7 +35,7 @@ SECTIONS
+ 	.appended_dtb : {
+ 		__appended_dtb = .;
+ 		/* leave space for appended DTB */
+-		. += 0x100000;
++		. += MIPS_ZBOOT_DTB_RESERVE;
+ 	}
+ 
+ 	_edata = .;
+-- 
+2.55.0
+

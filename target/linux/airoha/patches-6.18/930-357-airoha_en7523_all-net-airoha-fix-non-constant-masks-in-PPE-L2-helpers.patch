@@ -1,0 +1,54 @@
+From 6b4227b99167d3f18a1cf37ed45622a8261b9b84 Mon Sep 17 00:00:00 2001
+From: Ifran Ali <khanu.i.i.k.2000@gmail.com>
+Date: Wed, 23 Sep 2026 00:42:51 +0530
+Subject: [PATCH] net: airoha: fix non-constant masks in PPE L2 helpers
+
+The v1 L2 helpers pass their mask parameters to FIELD_PREP() and
+FIELD_GET(), which require compile-time constant masks. Their callers
+pass literal masks, but GCC can leave the helpers out of line and then
+fail the bitfield compile-time assertion.
+
+Force both helpers inline so the masks fold at the call sites.
+
+Signed-off-by: Ifran Ali <khanu.i.i.k.2000@gmail.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_ppe.c         | 5 +++--
+ drivers/net/ethernet/airoha/airoha_ppe_debugfs.c | 5 +++--
+ 2 files changed, 6 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_ppe.c b/drivers/net/ethernet/airoha/airoha_ppe.c
+index c48e070a7..3c78db8c5 100644
+--- a/drivers/net/ethernet/airoha/airoha_ppe.c
++++ b/drivers/net/ethernet/airoha/airoha_ppe.c
+@@ -2606,8 +2606,9 @@ static u32 *airoha_foe_v1_l2(struct airoha_foe_entry *entry)
+ 	return &entry->words[airoha_foe_v1_l2_word(entry)];
+ }
+ 
+-static void airoha_foe_v1_l2_set(struct airoha_foe_entry *entry,
+-				 unsigned int word, u32 mask, u32 val)
++static __always_inline void
++airoha_foe_v1_l2_set(struct airoha_foe_entry *entry,
++		     unsigned int word, u32 mask, u32 val)
+ {
+ 	u32 *l2 = airoha_foe_v1_l2(entry);
+ 
+diff --git a/drivers/net/ethernet/airoha/airoha_ppe_debugfs.c b/drivers/net/ethernet/airoha/airoha_ppe_debugfs.c
+index a44527504..4a9a437a0 100644
+--- a/drivers/net/ethernet/airoha/airoha_ppe_debugfs.c
++++ b/drivers/net/ethernet/airoha/airoha_ppe_debugfs.c
+@@ -359,8 +359,9 @@ static int airoha_ppe_debugfs_foe_bind_show(struct seq_file *m, void *private)
+ DEFINE_SHOW_ATTRIBUTE(airoha_ppe_debugfs_foe_bind);
+ 
+ 
+-static u32 airoha_ppe_v1_debugfs_l2_get(const struct airoha_foe_entry *entry,
+-				      unsigned int word, u32 mask)
++static __always_inline u32
++airoha_ppe_v1_debugfs_l2_get(const struct airoha_foe_entry *entry,
++			     unsigned int word, u32 mask)
+ {
+ 	const u32 *l2 = &entry->words[airoha_foe_v1_l2_word(entry)];
+ 
+-- 
+2.55.0
+

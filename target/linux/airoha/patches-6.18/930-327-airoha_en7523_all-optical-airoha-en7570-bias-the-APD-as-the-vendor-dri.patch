@@ -1,0 +1,130 @@
+From aa19bb0256145e996fee3c95083d49c25746bd9a Mon Sep 17 00:00:00 2001
+From: Cristian Papa <pcristian292@gmail.com>
+Date: Thu, 17 Sep 2026 12:13:09 +0000
+Subject: [PATCH] optical: airoha: en7570: bias the APD as the vendor driver
+ does
+
+Two independent errors in the port of mt7570_APD_control() over-bias the
+APD, increasingly with BOSA temperature, until the receiver drops into
+avalanche noise: bursts of BIP errors, loss of GEM delineation and finally
+Deactivate_ONU-ID from the OLT after hours in O5.
+
+1. flash_APD_slope1 (0x010) is the slope above 25 degC and flash_APD_slope2
+   (0x014) the slope below; flash_APD_change_point (0x018) is the APD
+   voltage at 25 degC, not a voltage knee.  The loader had the two slopes
+   swapped.
+
+2. In the single-slope mapping the vendor reads the DAC step from 0x030
+   (flash_APD_voltage_step, V/code x1000) and the code-0 voltage from
+   0x034 (flash_APD_zero_code_voltage, V x100); those words only mean the
+   four-segment anchors when both upper halves are populated.  The port
+   took the step from 0x038, which is flash_voltage_slope, the supply-ADC
+   slope used by the DDMI Vcc readout, and otherwise fell back to
+   0.09375 V/code.
+
+On a TP-Link Archer XR500v (slope1=8, slope2=14, NT=47.42 V, step=0.103,
+zero=30.00) the driver computed 50.9 V at 49.9 degC and wrote DAC code
+0xde, which is 52.9 V with the calibrated step; the vendor formula gives
+49.41 V / 0xbc.  Holding the vendor value over I2C stopped the BIP and GEM
+delineation errors immediately, and the corrected driver has since run
+with zero BIP while the reported RX power now matches the operator ONT on
+the same fibre (-20.7 dBm instead of -17 dBm, the excess APD gain is gone).
+
+Boards whose flash carries the four-segment anchors are unaffected; the
+erased-flash defaults are unchanged.
+
+Signed-off-by: Cristian Papa <pcristian292@gmail.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/optical/airoha/en7570_main.c |  8 ++++++--
+ drivers/net/optical/airoha/en7570_regs.h | 17 ++++++++++++-----
+ drivers/net/optical/airoha/en7570_txrx.c | 14 ++++++++++----
+ 3 files changed, 28 insertions(+), 11 deletions(-)
+
+diff --git a/drivers/net/optical/airoha/en7570_main.c b/drivers/net/optical/airoha/en7570_main.c
+index 76fe7d168..091b43ab8 100644
+--- a/drivers/net/optical/airoha/en7570_main.c
++++ b/drivers/net/optical/airoha/en7570_main.c
+@@ -82,12 +82,16 @@ static void en7570_load_config(struct en7570_priv *priv)
+ 	if (((w >> 16) & 0xffff) != 0xffff)
+ 		priv->env_temp_offset_mc = ((w >> 16) & 0xffff) * 100;
+ 
++	/*
++	 * Vendor mt7570_APD_control(): slope1 applies above 25 degC and
++	 * slope2 below it, around the voltage stored as the change point.
++	 */
+ 	w = lddla_flash_read(&priv->lddla, EN7570_FL_APD_SLOPE1);
+ 	if (w != EN7570_FLASH_ERASED)
+-		priv->apd_slope_dn_uv = w * 10000;	/* V/degC x100 -> uV/degC */
++		priv->apd_slope_up_uv = w * 10000;	/* V/degC x100 -> uV/degC */
+ 	w = lddla_flash_read(&priv->lddla, EN7570_FL_APD_SLOPE2);
+ 	if (w != EN7570_FLASH_ERASED)
+-		priv->apd_slope_up_uv = w * 10000;
++		priv->apd_slope_dn_uv = w * 10000;
+ 	w = lddla_flash_read(&priv->lddla, EN7570_FL_APD_CHANGE_POINT);
+ 	if (w != EN7570_FLASH_ERASED)
+ 		priv->apd_knee_mv = w * 10;		/* V x100 -> mV */
+diff --git a/drivers/net/optical/airoha/en7570_regs.h b/drivers/net/optical/airoha/en7570_regs.h
+index 40634b5e3..9dc862ae6 100644
+--- a/drivers/net/optical/airoha/en7570_regs.h
++++ b/drivers/net/optical/airoha/en7570_regs.h
+@@ -178,16 +178,23 @@
+ #define EN7570_FL_IMOD_INIT		0x004	/* initial laser modulation (10-bit) */
+ #define EN7570_FL_P0_TARGET		0x008	/* P0 (high-power) MPD target (10-bit) */
+ #define EN7570_FL_P1_TARGET		0x00c	/* P1 (low-power) MPD target (10-bit) */
+-#define EN7570_FL_APD_SLOPE1		0x010	/* APD slope below knee (V/degC x100) */
+-#define EN7570_FL_APD_SLOPE2		0x014	/* APD slope above knee (V/degC x100) */
+-#define EN7570_FL_APD_CHANGE_POINT	0x018	/* APD knee voltage (V x100) */
++#define EN7570_FL_APD_SLOPE1		0x010	/* APD slope ABOVE 25 degC (V/degC x100) */
++#define EN7570_FL_APD_SLOPE2		0x014	/* APD slope BELOW 25 degC (V/degC x100) */
++#define EN7570_FL_APD_CHANGE_POINT	0x018	/* APD voltage at 25 degC (V x100) */
+ #define EN7570_FL_T_APD			0x01c	/* APD update interval (seconds) */
+ #define EN7570_FL_LOS_HIGH_THLD		0x020	/* LOS high comparator threshold (7-bit) */
+ #define EN7570_FL_LOS_LOW_THLD		0x024	/* LOS low comparator threshold (7-bit) */
+ #define EN7570_FL_TIAGAIN		0x028	/* Rx TIA gain code (2-bit) */
+ #define EN7570_FL_INTERNAL_DDMI		0x02c	/* 0=off, 1=on, 2=fast */
+-#define EN7570_FL_APD_VOLTAGE_1		0x030	/* APD anchor voltages 0x00/0x40 (4-seg) */
+-#define EN7570_FL_APD_VOLTAGE_2		0x034	/* APD anchor voltages 0x80/0xc0 (4-seg) */
++/*
++ * 0x030/0x034 are overloaded by the factory tool: with both upper halves
++ * populated they are the four-segment anchors (V x10 pairs); otherwise
++ * 0x030 is the DAC step (V/code x1000) and 0x034 the code-0 voltage
++ * (V x100) of the single-slope mapping (flash_APD_voltage_step and
++ * flash_APD_zero_code_voltage in the vendor mt7570_reg.h).
++ */
++#define EN7570_FL_APD_VOLTAGE_1		0x030	/* anchors 0x00/0x40, or DAC step */
++#define EN7570_FL_APD_VOLTAGE_2		0x034	/* anchors 0x80/0xc0, or zero-code V */
+ #define EN7570_FL_VOLTAGE_SLOPE		0x038	/* supply-voltage ADC slope correction */
+ #define EN7570_FL_VOLTAGE_OFFSET	0x03c	/* supply-voltage ADC offset correction */
+ #define EN7570_FL_TX_K1			0x040	/* Tx K-point #1 (tx_power<<16 | mpd_K) */
+diff --git a/drivers/net/optical/airoha/en7570_txrx.c b/drivers/net/optical/airoha/en7570_txrx.c
+index f2dd97a43..ba0628c4a 100644
+--- a/drivers/net/optical/airoha/en7570_txrx.c
++++ b/drivers/net/optical/airoha/en7570_txrx.c
+@@ -390,13 +390,19 @@ static int en7570_apd_voltage_to_code(struct en7570_priv *priv, s32 v_mv)
+ 				code = 0xc0 + (step ? (v_mv - vc0) / step : 0);
+ 		}
+ 	} else {
+-		/* Legacy single-slope mode. */
++		/*
++		 * Single-slope mode as in the vendor driver: the same two words
++		 * hold the DAC step (V/code x1000) and the code-0 voltage
++		 * (V x100).  0x038 is the supply-voltage ADC slope used by the
++		 * DDMI Vcc readout and has nothing to do with the APD DAC.
++		 */
+ 		s32 zero_mv = EN7570_APD_ZERO_CODE_MV_DEF;
+ 		s32 step_uv = EN7570_APD_STEP_UV_DEF;
+-		u32 fstep = lddla_flash_read(&priv->lddla, EN7570_FL_VOLTAGE_SLOPE);
+ 
+-		if (fstep != EN7570_FLASH_ERASED && fstep)
+-			step_uv = fstep;	/* flash_APD_voltage_step (uV/code) */
++		if (w1 != EN7570_FLASH_ERASED && w1)
++			step_uv = w1 * 1000;	/* flash_APD_voltage_step */
++		if (w2 != EN7570_FLASH_ERASED && w2)
++			zero_mv = w2 * 10;	/* flash_APD_zero_code_voltage */
+ 
+ 		code = div_s64((s64)(v_mv - zero_mv) * 1000, step_uv);
+ 	}
+-- 
+2.55.0
+

@@ -1,0 +1,356 @@
+From 3323b363b785cb385c48db4aa4ef9c24c6f01015 Mon Sep 17 00:00:00 2001
+From: Cristian Papa <pcristian292@gmail.com>
+Date: Fri, 25 Sep 2026 02:07:45 -0300
+Subject: [PATCH] net: optical: airoha: en7570: check I2C transfers in the
+ control loops
+
+en7570_info() ignores the result of lddla_rd(). When the I2C read fails
+it decodes a zeroed buffer, stores that in the cached field and returns
+0. The TEC path then programs MPDL from 0 (0 + 4), bias tracking works
+from a bogus MPDL, and the bias DDMI reports 0 uA until the next good
+read.
+
+Make en7570_info() return an error code and hand the value back through
+a pointer, updating the cached field only on success. The bias DDMI
+keeps its previous value on a failed read and records whether the bias
+is valid. en7570_write_current() and en7570_write_mpd() return the
+transfer result and reject out-of-range codes; en7570_write_mpd() also
+updates the mpdl/mpdh cache. en7570_erc_restart_p0() makes one bounded
+attempt to restore START even if clearing it failed, and reports either
+failure.
+
+en7570_bias_track() and en7570_tec() now use a fresh bias reading, check
+every read, and skip an MPD step that would leave the 10-bit range. A TEC
+attempt is counted before its first write. A failed control write may
+still have reached the device, so it latches an error that stops further
+TEC and bias-tracking writes until reboot. The latch is logged once, and
+the state is shown in the debugfs diag output.
+
+With a healthy bus the loops make the same decisions as before, except
+that a bias-tracking/TEC step or an ETC target outside the 10-bit MPD
+range is now skipped instead of written. This has been in the Archer
+XR500v daily build since mid-September.
+
+Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
+Signed-off-by: Cristian Papa <pcristian292@gmail.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/optical/airoha/en7570.h         |  9 +-
+ drivers/net/optical/airoha/en7570_adcloop.c | 94 ++++++++++++++++-----
+ drivers/net/optical/airoha/en7570_ddmi.c    | 17 +++-
+ drivers/net/optical/airoha/en7570_main.c    |  3 +
+ drivers/net/optical/airoha/en7570_txrx.c    | 71 +++++++++++-----
+ 5 files changed, 148 insertions(+), 46 deletions(-)
+
+diff --git a/drivers/net/optical/airoha/en7570.h b/drivers/net/optical/airoha/en7570.h
+index a94dc7309..6f1ada2f6 100644
+--- a/drivers/net/optical/airoha/en7570.h
++++ b/drivers/net/optical/airoha/en7570.h
+@@ -100,6 +100,11 @@ struct en7570_priv {
+ 	u32 cnt7570;
+ 	s32 mpd_cal_cnt;
+ 	int tec_cnt;
++	/* Cached bias is not a fresh measurement after an I2C failure. */
++	bool bias_valid;
++	int bias_read_error;
++	/* Uncertain control write: inhibit further TEC/bias writes until reboot. */
++	int optical_control_error;
+ };
+ 
+ /*
+@@ -135,11 +140,11 @@ void en7570_tx_sd_level(struct en7570_priv *priv);
+ int en7570_tx_sd_cal(struct en7570_priv *priv);
+ void en7570_mpd_dark(struct en7570_priv *priv);
+ s32 en7570_mpd_current(struct en7570_priv *priv);
+-u32 en7570_info(struct en7570_priv *priv, u8 channel);
++int en7570_info(struct en7570_priv *priv, u8 channel, u32 *value);
+ int en7570_tgen(struct en7570_priv *priv, int mode);
+ void en7570_erc_filter(struct en7570_priv *priv);
+ void en7570_erc_restart(struct en7570_priv *priv);
+-void en7570_erc_restart_p0(struct en7570_priv *priv);
++int en7570_erc_restart_p0(struct en7570_priv *priv);
+ void en7570_cdr(struct en7570_priv *priv, bool enable);
+ int en7570_pattern_start(struct en7570_priv *priv, int mode);
+ void en7570_pattern_stop(struct en7570_priv *priv);
+diff --git a/drivers/net/optical/airoha/en7570_adcloop.c b/drivers/net/optical/airoha/en7570_adcloop.c
+index 4c18bbb47..f213b9f48 100644
+--- a/drivers/net/optical/airoha/en7570_adcloop.c
++++ b/drivers/net/optical/airoha/en7570_adcloop.c
+@@ -176,19 +176,41 @@ void en7570_temp_update(struct en7570_priv *priv)
+ /* ------------------------------------------------------------------ */
+ 
+ /* Write a 10-bit current code to a P{0,1}_PWR_CTRL_CS2 register (2 bytes). */
+-static void en7570_write_current(struct en7570_priv *priv, u16 reg, u32 code)
++static int en7570_write_current(struct en7570_priv *priv, u16 reg, u32 code)
+ {
+ 	u8 b[2] = { code & 0xff, (code >> 8) & 0xff };
+ 
+-	lddla_wr(&priv->lddla, reg, b, 2);
++	if (code > 0xfff)
++		return -ERANGE;
++	return lddla_wr(&priv->lddla, reg, b, 2);
+ }
+ 
+ /* Write a 10-bit MPD target: byteoff 0 -> MPDH (bytes 0-1), 2 -> MPDL (2-3). */
+-static void en7570_write_mpd(struct en7570_priv *priv, u16 byteoff, u32 val)
++static int en7570_write_mpd(struct en7570_priv *priv, u16 byteoff, u32 val)
+ {
+ 	u8 b[2] = { val & 0xff, (val >> 8) & 0xff };
++	int ret;
+ 
+-	lddla_wr(&priv->lddla, EN7570_MPDH + byteoff, b, 2);
++	if (byteoff != 0 && byteoff != 2)
++		return -EINVAL;
++	if (val > 0x3ff)
++		return -ERANGE;
++	ret = lddla_wr(&priv->lddla, EN7570_MPDH + byteoff, b, 2);
++	if (!ret) {
++		if (byteoff == 2)
++			priv->mpdl = val;
++		else
++			priv->mpdh = val;
++	}
++	return ret;
++}
++
++static void en7570_control_fault(struct en7570_priv *priv, int error)
++{
++	/* Do not retry an uncertain optical write, including across LOS/READY. */
++	priv->optical_control_error = error;
++	dev_err(priv->lddla.dev,
++		"EN7570 TEC/bias controls inhibited after I2C error %d\n", error);
+ }
+ 
+ /*
+@@ -369,21 +391,38 @@ void en7570_bias_track(struct en7570_priv *priv)
+ {
+ 	int idx = en7570_temp_index(priv->env_temp_mc);
+ 	u32 target = priv->lut[idx][0];
+-	u32 now = priv->bias_code;	/* last Ibias readback */
+-	u8 mode = 0;
++	u32 now, mpdl = 0;
++	u8 mode;
++	int ret, step = 0;
+ 
+-	if (target == 0xfff)
++	if (priv->optical_control_error || target >= 0xfff)
+ 		return;
+-	en7570_write_current(priv, EN7570_P0_PWR_CTRL_CS2, target);
+-
+-	lddla_rd8(&priv->lddla, EN7570_P0_PWR_CTRL_CS3, &mode);
+-	if ((mode & 0x0f) != 0x05)	/* only in the dual-closed-loop signature */
++	en7570_bias_ddmi(priv);
++	if (!priv->bias_valid)
++		return;
++	now = priv->bias_code;
++	ret = lddla_rd8(&priv->lddla, EN7570_P0_PWR_CTRL_CS3, &mode);
++	if (ret)
+ 		return;
+ 
+-	if (target > now && target - now > 0x14)
+-		en7570_write_mpd(priv, 0x02, en7570_info(priv, EN7570_INFO_P0) + 0x4);
+-	else if (target < now && now - target > 0x14)
+-		en7570_write_mpd(priv, 0x02, en7570_info(priv, EN7570_INFO_P0) - 0x4);
++	if ((mode & 0x0f) == 0x05) {	/* only in the dual-closed-loop signature */
++		if (target > now && target - now > 0x14)
++			step = 4;
++		else if (target < now && now - target > 0x14)
++			step = -4;
++	}
++	if (step) {
++		ret = en7570_info(priv, EN7570_INFO_P0, &mpdl);
++		if (ret || (step > 0 && mpdl > 0x3ff - 4) ||
++		    (step < 0 && mpdl < 4))
++			return;
++	}
++
++	ret = en7570_write_current(priv, EN7570_P0_PWR_CTRL_CS2, target);
++	if (!ret && step)
++		ret = en7570_write_mpd(priv, 0x02, (s32)mpdl + step);
++	if (ret)
++		en7570_control_fault(priv, ret);
+ }
+ 
+ /* --- ETC / temperature compensation --- */
+@@ -473,20 +512,33 @@ void en7570_etc_sol(struct en7570_priv *priv)
+ /* Tx eye correction: rescue the eye when bias falls below BOSA_lth. */
+ void en7570_tec(struct en7570_priv *priv)
+ {
+-	u8 mode = 0;
++	u32 mpdl;
++	u8 mode;
++	int ret;
+ 
+-	if (priv->tec_cnt > 7)			/* limited to 8 nudges */
++	if (priv->optical_control_error ||
++	    priv->tec_cnt >= 8)		/* bounded attempts, not successes */
++		return;
++	en7570_bias_ddmi(priv);
++	if (!priv->bias_valid)
+ 		return;
+ 
+ 	/* DDMI bias word is 2 uA/LSB; <<1 -> uA, compared to BOSA Ith (uA). */
+ 	if (((s32)priv->lddla.ddmi_current << 1) >= (s32)priv->bosa_lth_ua)
+ 		return;
+ 
+-	lddla_rd8(&priv->lddla, EN7570_P0_PWR_CTRL_CS3, &mode);
+-	if ((mode & 0x0f) != 0x05)		/* dual-closed-loop signature */
++	ret = lddla_rd8(&priv->lddla, EN7570_P0_PWR_CTRL_CS3, &mode);
++	if (ret || (mode & 0x0f) != 0x05)	/* dual-closed-loop signature */
+ 		return;
+ 
+-	en7570_write_mpd(priv, 0x02, en7570_info(priv, EN7570_INFO_P0) + 0x4);
+-	en7570_erc_restart_p0(priv);
++	ret = en7570_info(priv, EN7570_INFO_P0, &mpdl);
++	if (ret || mpdl > 0x3ff - 4)
++		return;
++	/* Count before the first write: failed/partial writes consume an attempt. */
+ 	priv->tec_cnt++;
++	ret = en7570_write_mpd(priv, 0x02, mpdl + 4);
++	if (!ret)
++		ret = en7570_erc_restart_p0(priv);
++	if (ret)
++		en7570_control_fault(priv, ret);
+ }
+diff --git a/drivers/net/optical/airoha/en7570_ddmi.c b/drivers/net/optical/airoha/en7570_ddmi.c
+index 71cb0fa52..afb3b095b 100644
+--- a/drivers/net/optical/airoha/en7570_ddmi.c
++++ b/drivers/net/optical/airoha/en7570_ddmi.c
+@@ -42,10 +42,19 @@ u16 en7570_vcc_ddmi(struct en7570_priv *priv)
+  */
+ u16 en7570_bias_ddmi(struct en7570_priv *priv)
+ {
+-	u32 code = en7570_info(priv, EN7570_INFO_IBIAS);
+-	s32 ibias_ua = (s32)code * EN7570_BIAS_UA_PER_CODE_X100 / 100;
+-	u16 word = ibias_ua / EN7570_BIAS_8472_UA_PER_LSB;
+-	s32 delta = (s32)word - (s32)priv->lddla.ddmi_current;
++	u32 code;
++	s32 ibias_ua, delta;
++	u16 word;
++	int ret;
++
++	ret = en7570_info(priv, EN7570_INFO_IBIAS, &code);
++	priv->bias_read_error = ret;
++	priv->bias_valid = !ret;
++	if (ret)
++		return priv->lddla.ddmi_current;
++	ibias_ua = (s32)code * EN7570_BIAS_UA_PER_CODE_X100 / 100;
++	word = ibias_ua / EN7570_BIAS_8472_UA_PER_LSB;
++	delta = (s32)word - (s32)priv->lddla.ddmi_current;
+ 
+ 	/*
+ 	 * A large positive jump in bias between ticks marks an optical
+diff --git a/drivers/net/optical/airoha/en7570_main.c b/drivers/net/optical/airoha/en7570_main.c
+index 5c6b21db1..8ca8de72d 100644
+--- a/drivers/net/optical/airoha/en7570_main.c
++++ b/drivers/net/optical/airoha/en7570_main.c
+@@ -379,6 +379,9 @@ static void en7570_op_diag(struct airoha_lddla *lddla, struct seq_file *s)
+ 	seq_printf(s, "loop:        %s\n",
+ 		   priv->scl ? "single-closed" : priv->dol ? "dual-open" : "dual-closed");
+ 	seq_printf(s, "etc_mode:    %d\n", priv->etc_mode);
++	seq_printf(s, "bias_valid:  %u last_error: %d control_error: %d tec_attempts: %d\n",
++		   priv->bias_valid, priv->bias_read_error,
++		   priv->optical_control_error, priv->tec_cnt);
+ 	seq_printf(s, "ic_temp:     %d.%03d degC\n",
+ 		   priv->ic_temp_mc / 1000, abs(priv->ic_temp_mc % 1000));
+ 	seq_printf(s, "bosa_temp:   %d.%03d degC\n",
+diff --git a/drivers/net/optical/airoha/en7570_txrx.c b/drivers/net/optical/airoha/en7570_txrx.c
+index 23ab0b08c..d2041dda0 100644
+--- a/drivers/net/optical/airoha/en7570_txrx.c
++++ b/drivers/net/optical/airoha/en7570_txrx.c
+@@ -68,28 +68,53 @@ void en7570_pattern_stop(struct en7570_priv *priv)
+  * readbacks in bytes 2-3 of P{0,1}_PWR_CTRL_CS3; the MPD targets live in
+  * register 0x0004 with MPDH in bytes 0-1 and MPDL in bytes 2-3.
+  */
+-u32 en7570_info(struct en7570_priv *priv, u8 sel)
++int en7570_info(struct en7570_priv *priv, u8 sel, u32 *value)
+ {
+-	u8 b[4] = { 0 };
++	u8 b[4];
++	u16 reg;
++	u32 *cache, decoded;
++	int ret;
+ 
++	if (!value)
++		return -EINVAL;
+ 	switch (sel) {
+ 	case EN7570_INFO_IMOD:
+-		lddla_rd(&priv->lddla, EN7570_P1_PWR_CTRL_CS3, b, 4);
+-		priv->mod_code = b[2] | ((b[3] & 0x0f) << 8);
+-		return priv->mod_code;
++		reg = EN7570_P1_PWR_CTRL_CS3;
++		cache = &priv->mod_code;
++		break;
++	case EN7570_INFO_P0:
++		reg = EN7570_MPDH;
++		cache = &priv->mpdl;
++		break;
++	case EN7570_INFO_P1:
++		reg = EN7570_MPDH;
++		cache = &priv->mpdh;
++		break;
++	case EN7570_INFO_IBIAS:
++		reg = EN7570_P0_PWR_CTRL_CS3;
++		cache = &priv->bias_code;
++		break;
++	default:
++		return -EINVAL;
++	}
++	ret = lddla_rd(&priv->lddla, reg, b, sizeof(b));
++	if (ret)
++		return ret;
++
++	switch (sel) {
+ 	case EN7570_INFO_P0:	/* MPDL: register 0x0004 bytes 2-3 */
+-		lddla_rd(&priv->lddla, EN7570_MPDH, b, 4);
+-		priv->mpdl = b[2] | ((b[3] & 0x03) << 8);
+-		return priv->mpdl;
++		decoded = b[2] | ((b[3] & 0x03) << 8);
++		break;
+ 	case EN7570_INFO_P1:	/* MPDH: register 0x0004 bytes 0-1 */
+-		lddla_rd(&priv->lddla, EN7570_MPDH, b, 4);
+-		priv->mpdh = b[0] | ((b[1] & 0x03) << 8);
+-		return priv->mpdh;
+-	default:		/* EN7570_INFO_IBIAS */
+-		lddla_rd(&priv->lddla, EN7570_P0_PWR_CTRL_CS3, b, 4);
+-		priv->bias_code = b[2] | ((b[3] & 0x0f) << 8);
+-		return priv->bias_code;
++		decoded = b[0] | ((b[1] & 0x03) << 8);
++		break;
++	default:		/* Ibias / Imod are 12-bit readbacks. */
++		decoded = b[2] | ((b[3] & 0x0f) << 8);
++		break;
+ 	}
++	*cache = decoded;
++	*value = decoded;
++	return 0;
+ }
+ 
+ /* Program the initial Ibias / Imod from flash, or from the LUT if absent. */
+@@ -275,11 +300,19 @@ void en7570_erc_restart(struct en7570_priv *priv)
+ }
+ 
+ /* Single-channel ERC restart for the bias rail (P0). */
+-void en7570_erc_restart_p0(struct en7570_priv *priv)
++int en7570_erc_restart_p0(struct en7570_priv *priv)
+ {
+-	lddla_update8(&priv->lddla, EN7570_P0_PWR_CTRL_CS3, EN7570_ERC_START_MASK, 0);
+-	lddla_update8(&priv->lddla, EN7570_P0_PWR_CTRL_CS3, EN7570_ERC_START_MASK,
+-		       EN7570_ERC_START);
++	int ret, restore;
++
++	ret = lddla_update8(&priv->lddla, EN7570_P0_PWR_CTRL_CS3,
++			    EN7570_ERC_START_MASK, 0);
++	/* Even an unsuccessful I2C write may have reached the device. Make
++	 * one bounded attempt to restore START, then report either failure.
++	 * Caller latches the error; it must not repeat the restart next tick.
++	 */
++	restore = lddla_update8(&priv->lddla, EN7570_P0_PWR_CTRL_CS3,
++				EN7570_ERC_START_MASK, EN7570_ERC_START);
++	return ret ? ret : restore;
+ }
+ 
+ /**
+-- 
+2.55.0
+

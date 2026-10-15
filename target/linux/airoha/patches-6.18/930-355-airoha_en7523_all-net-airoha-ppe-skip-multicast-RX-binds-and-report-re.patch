@@ -1,0 +1,196 @@
+From 86d80f7e91711d896dd3e3e2a598e8b52cfe176a Mon Sep 17 00:00:00 2001
+From: Cristian Papa <pcristian292@gmail.com>
+Date: Fri, 25 Sep 2026 01:37:29 -0300
+Subject: [PATCH] net: airoha: ppe: skip multicast RX binds and report real v1
+ flow activity
+
+airoha_ppe_v1_flow_offload_stats() reports jiffies as the last use of
+every flow, so each statistics query renews it and the flowtable never
+expires any offloaded flow. On an EN751221 GPON line about 800 of them
+piled up, and airoha_ppe_v1_rx_check() walks that whole list under the
+v1 lock for every packet sent to the CPU with an unbound reason,
+including every IPTV multicast frame. The v1 backend only installs
+unicast rewrites, so a multicast frame can never match.
+
+Return early for multicast frames (the skb is still delivered as usual)
+and count them in debugfs. Track the last real activity of each v1
+flow: its creation, software RX matches, and, while it owns a BIND/FIN
+hardware entry, that entry's timestamp against the FE clock, wrap-safe
+as the gen2 path does. With the same change on my previous EN751221
+driver, on the same line, 32160 multicast frames skipped the walk in
+about 5 minutes and the flow count went from 62 to 34 as idle flows
+aged out.
+
+Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
+Signed-off-by: Cristian Papa <pcristian292@gmail.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth.h      |  3 +
+ drivers/net/ethernet/airoha/airoha_ppe.c      | 80 ++++++++++++++++++-
+ .../net/ethernet/airoha/airoha_ppe_debugfs.c  |  2 +
+ 3 files changed, 81 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.h b/drivers/net/ethernet/airoha/airoha_eth.h
+index ffc017680..e5c435af6 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.h
++++ b/drivers/net/ethernet/airoha/airoha_eth.h
+@@ -788,6 +788,8 @@ struct airoha_flow_table_entry {
+ 	 * list and tuple are only used by the v1 bind-on-RX backend.
+ 	 */
+ 	struct list_head v1_list;
++	/* v1: last real activity (RX bind or hardware BIND timestamp). */
++	unsigned long v1_lastused;
+ 	u16 addr_type;
+ 	u16 src_port;
+ 	u16 dest_port;
+@@ -1106,6 +1108,7 @@ struct airoha_ppe_v1 {
+ 	struct list_head flows;
+ 	struct airoha_flow_table_entry **foe_owner;
+ 	bool armed;
++	u32 rx_multicast_skip;
+ };
+ 
+ struct airoha_ppe {
+diff --git a/drivers/net/ethernet/airoha/airoha_ppe.c b/drivers/net/ethernet/airoha/airoha_ppe.c
+index 6504ecc36..c48e070a7 100644
+--- a/drivers/net/ethernet/airoha/airoha_ppe.c
++++ b/drivers/net/ethernet/airoha/airoha_ppe.c
+@@ -45,7 +45,8 @@ static int airoha_ppe_v1_flow_offload_replace(struct net_device *dev,
+ 					       struct flow_cls_offload *f);
+ static int airoha_ppe_v1_flow_offload_destroy(struct net_device *dev,
+ 					       struct flow_cls_offload *f);
+-static int airoha_ppe_v1_flow_offload_stats(struct flow_cls_offload *f);
++static int airoha_ppe_v1_flow_offload_stats(struct net_device *dev,
++					    struct flow_cls_offload *f);
+ static void airoha_ppe_v1_hw_init(struct airoha_ppe *ppe);
+ 
+ static int airoha_ppe_get_num_stats_entries(struct airoha_ppe *ppe)
+@@ -2113,7 +2114,7 @@ static int airoha_ppe_flow_offload_cmd(struct airoha_eth *eth,
+ 		return v1 ? airoha_ppe_v1_flow_offload_destroy(dev, f) :
+ 			    airoha_ppe_flow_offload_destroy(eth, f);
+ 	case FLOW_CLS_STATS:
+-		return v1 ? airoha_ppe_v1_flow_offload_stats(f) :
++		return v1 ? airoha_ppe_v1_flow_offload_stats(dev, f) :
+ 			    airoha_ppe_flow_offload_stats(eth, f);
+ 	default:
+ 		return -EOPNOTSUPP;
+@@ -3114,6 +3115,18 @@ static void airoha_ppe_v1_rx_check(struct airoha_ppe *ppe, struct sk_buff *skb,
+ 	    reason != AIROHA_PPE_CPU_REASON_HIT_UNBIND &&
+ 	    reason != AIROHA_PPE_CPU_REASON_HIT_UNBIND_RATE_REACHED)
+ 		return;
++	/*
++	 * The v1 backend only installs unicast rewrites, so a received
++	 * multicast frame (IPTV on a GPON line) never matches a flow.  Do not
++	 * walk the whole flow list under the lock for each of them; the skb
++	 * is still delivered through the normal receive path.
++	 */
++	if (skb_headlen(skb) >= ETH_HLEN &&
++	    is_multicast_ether_addr(skb->data)) {
++		WRITE_ONCE(ppe->v1.rx_multicast_skip,
++			   READ_ONCE(ppe->v1.rx_multicast_skip) + 1);
++		return;
++	}
+ 	if (!airoha_foe_v1_parse_tuple(skb, &tuple))
+ 		return;
+ 
+@@ -3122,6 +3135,7 @@ static void airoha_ppe_v1_rx_check(struct airoha_ppe *ppe, struct sk_buff *skb,
+ 		if (!airoha_foe_v1_flow_matches_tuple(flow, &tuple))
+ 			continue;
+ 
++		flow->v1_lastused = jiffies;
+ 		bind_hash = airoha_ppe_v1_find_bind_way(ppe, flow, hash,
+ 						     &lookup_raw, &lookup_valid);
+ 		if (bind_hash == AIROHA_FOE_V1_INVALID_HASH)
+@@ -3714,6 +3728,7 @@ static int airoha_ppe_v1_flow_offload_replace(struct net_device *dev,
+ 	flow->src_port = ntohs(src_port);
+ 	flow->dest_port = ntohs(dest_port);
+ 	flow->hash = AIROHA_FOE_V1_INVALID_HASH;
++	flow->v1_lastused = jiffies;
+ 	INIT_LIST_HEAD(&flow->v1_list);
+ 
+ 	err = rhashtable_insert_fast(&ppe->common.eth->flow_table, &flow->node,
+@@ -3756,9 +3771,66 @@ static int airoha_ppe_v1_flow_offload_destroy(struct net_device *dev,
+ 	return 0;
+ }
+ 
+-static int airoha_ppe_v1_flow_offload_stats(struct flow_cls_offload *cls)
++/*
++ * Last real activity of a v1 flow: the later of its last software RX match
++ * and, while it owns a BIND/FIN hardware entry, that entry's timestamp.
++ * UNBIND entries carry an unrelated stamp and are never used.
++ */
++static unsigned long airoha_ppe_v1_flow_lastused(struct airoha_ppe *ppe,
++						 struct airoha_flow_table_entry *flow)
++{
++	u32 ib1, state, now, idle;
++	unsigned long lastused;
++	u16 hash = flow->hash;
++
++	lockdep_assert_held(&ppe->v1.lock);
++	if (!READ_ONCE(ppe->v1.armed) || hash == AIROHA_FOE_V1_INVALID_HASH ||
++	    hash >= ppe->common.eth->soc->ppe_dram_entries ||
++	    ppe->v1.foe_owner[hash] != flow)
++		return flow->v1_lastused;
++
++	/* Read the entry before the clock so it cannot look newer than now. */
++	dma_rmb();
++	ib1 = READ_ONCE(airoha_ppe_v1_slot(ppe, hash)[0]);
++	state = FIELD_GET(AIROHA_FOE_IB1_BIND_STATE, ib1);
++	if (state != AIROHA_FOE_STATE_BIND && state != AIROHA_FOE_STATE_FIN)
++		return flow->v1_lastused;
++
++	/* The FE clock counts seconds and wraps at the timestamp width. */
++	now = airoha_fe_rr(ppe->common.eth, REG_FE_FOE_TS);
++	idle = (now - FIELD_GET(AIROHA_FOE_IB1_BIND_TIMESTAMP, ib1)) &
++	       AIROHA_FOE_IB1_BIND_TIMESTAMP;
++	lastused = jiffies - idle * HZ;
++	if (time_after(lastused, flow->v1_lastused))
++		flow->v1_lastused = lastused;
++
++	return flow->v1_lastused;
++}
++
++static int airoha_ppe_v1_flow_offload_stats(struct net_device *dev,
++					    struct flow_cls_offload *cls)
+ {
+-	flow_stats_update(&cls->stats, 0, 0, 0, jiffies,
++	struct airoha_ppe *ppe = airoha_ppe_from_netdev(dev);
++	struct airoha_flow_table_entry *flow;
++	unsigned long lastused;
++
++	if (!ppe)
++		return -EOPNOTSUPP;
++
++	flow = rhashtable_lookup_fast(&ppe->common.eth->flow_table,
++				      &cls->cookie, airoha_flow_table_params);
++	if (!flow)
++		return -ENOENT;
++
++	spin_lock_bh(&ppe->v1.lock);
++	lastused = airoha_ppe_v1_flow_lastused(ppe, flow);
++	spin_unlock_bh(&ppe->v1.lock);
++
++	/*
++	 * A statistics query is not traffic: reporting jiffies here renewed
++	 * every flow forever, so the flowtable never expired any of them.
++	 */
++	flow_stats_update(&cls->stats, 0, 0, 0, lastused,
+ 			  FLOW_ACTION_HW_STATS_DELAYED);
+ 	return 0;
+ }
+diff --git a/drivers/net/ethernet/airoha/airoha_ppe_debugfs.c b/drivers/net/ethernet/airoha/airoha_ppe_debugfs.c
+index 844697cb6..a44527504 100644
+--- a/drivers/net/ethernet/airoha/airoha_ppe_debugfs.c
++++ b/drivers/net/ethernet/airoha/airoha_ppe_debugfs.c
+@@ -595,6 +595,8 @@ static int airoha_ppe_v1_debugfs_regs_show(struct seq_file *m, void *private)
+ 	spin_unlock_bh(&ppe->v1.lock);
+ 
+ 	seq_printf(m, "armed=%u\n", READ_ONCE(ppe->v1.armed));
++	seq_printf(m, "rx_multicast_skip=%u\n",
++		   READ_ONCE(ppe->v1.rx_multicast_skip));
+ 	seq_printf(m, "flows=%u\n", flows);
+ 	seq_printf(m, "foe_cpu=%px\n", ppe->common.foe);
+ 	seq_printf(m, "foe_dma=%pad\n", &ppe->common.foe_dma);
+-- 
+2.55.0
+

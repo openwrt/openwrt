@@ -1,0 +1,49 @@
+From 9354412d589a23f73abc4ba37b87d9ff28fc5f4f Mon Sep 17 00:00:00 2001
+From: Cristian Papa <pcristian292@gmail.com>
+Date: Sat, 3 Oct 2026 19:55:44 -0300
+Subject: [PATCH] net: airoha: xpon: restart the GPON session when the OMCI
+ agent is toggled
+
+Disabling the OMCI agent marks it not operational, and the PON netdev
+loses its carrier. Enabling it again only makes it operational once it
+answers an OLT request. An OLT that has already provisioned the ONU, and
+still sees it in O5, sends none, so the carrier stays down until a
+reboot.
+
+Restart the session when agent-enabled changes, as for the other keys
+that define it. The OLT then ranges and provisions the ONU again, and
+the agent becomes operational on its first answer.
+
+On an Archer XR500v on a Huawei OLT, the agent disabled and enabled
+again from LuCI left the link at "O5=1 OMCI=0" for minutes. One session
+restart brought it back: O5 after 7 seconds, link ready after 8, and the
+WAN session up 5 seconds later.
+
+Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
+Signed-off-by: Cristian Papa <pcristian292@gmail.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_xpon.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_xpon.c b/drivers/net/ethernet/airoha/airoha_xpon.c
+index 63d881bcd..bf56f7ff4 100644
+--- a/drivers/net/ethernet/airoha/airoha_xpon.c
++++ b/drivers/net/ethernet/airoha/airoha_xpon.c
+@@ -1848,6 +1848,13 @@ void airoha_gpon_omci_hw_set_operational(void *hw_priv, bool operational)
+ static bool airoha_gpon_config_requires_restart(u16 key)
+ {
+ 	switch (key) {
++	/*
++	 * Not a live policy toggle: disabling the agent takes the service
++	 * down, and once enabled again it only becomes operational when the
++	 * OLT next sends a request. An OLT that has already provisioned the
++	 * ONU sends none, so the link would stay down until a reboot.
++	 */
++	case OMCI_CONFIG_AGENT_ENABLED:
+ 	case OMCI_CONFIG_SERIAL_NUMBER:
+ 	case OMCI_CONFIG_VENDOR_ID:
+ 	case OMCI_CONFIG_VERSION:
+-- 
+2.55.0
+

@@ -1,0 +1,49 @@
+From 63b5446be87ed62d1198dcfb08a0020d1b82e0b0 Mon Sep 17 00:00:00 2001
+From: Cristian Papa <pcristian292@gmail.com>
+Date: Fri, 25 Sep 2026 01:14:25 -0300
+Subject: [PATCH] net: airoha: xpon: restart once after LOS without an SFP
+
+When the fibre is pulled in O5, TO2 finds the optical link still down,
+stops the MAC and powers the PHY off, and relies on gpon_sfp_link_up()
+to restart the session once the light is back. A board with an optical
+frontend instead of an SFP (Archer XR500v) never gets that callback,
+and with the PHY off nothing polls the link any more: the ONU stays in
+O1 until reboot.
+
+Without an SFP bus, schedule one restart after the orderly stop. The
+MAC then waits in O2 with the PHY powered, and the session resumes when
+the fibre returns. It is a single restart, not a periodic loop.
+
+Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
+Signed-off-by: Cristian Papa <pcristian292@gmail.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_xpon.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_xpon.c b/drivers/net/ethernet/airoha/airoha_xpon.c
+index eb691391c..4208e3c7b 100644
+--- a/drivers/net/ethernet/airoha/airoha_xpon.c
++++ b/drivers/net/ethernet/airoha/airoha_xpon.c
+@@ -2677,6 +2677,18 @@ static void gpon_to2_work_fn(struct work_struct *work)
+ 		dev_warn(priv->dev,
+ 			 "GPON TO2 expired in O6 with the optical link still down, waiting for the fibre\n");
+ 		gpon_disable(priv);
++		/*
++		 * With an SFP, gpon_sfp_link_up() restarts the session when
++		 * the fibre is back.  An optical frontend has no such
++		 * notification, and gpon_disable() powered the PHY off, so
++		 * nothing would ever notice the light returning.  Restart once:
++		 * the MAC then waits in O2 with the PHY powered and resumes
++		 * when the fibre comes back.
++		 */
++		if (!priv->sfp_bus && READ_ONCE(priv->started) &&
++		    READ_ONCE(priv->optical_active))
++			mod_delayed_work(priv->fsm_wq, &priv->restart_work,
++					 msecs_to_jiffies(GPON_DEACTIVATE_RESTART_MS));
+ 		return;
+ 	}
+ 
+-- 
+2.55.0
+

@@ -1,0 +1,72 @@
+From fd0c85606a54c3e5755b56f177f77f2781dece1f Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Thu, 17 Sep 2026 23:27:12 -0300
+Subject: [PATCH] net: dsa: mt7530: fix EN751221 MCM remove path
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/dsa/mt7530-mdio.c | 15 +++++++++++----
+ drivers/net/dsa/mt7530-mmio.c |  7 ++++++-
+ 2 files changed, 17 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/net/dsa/mt7530-mdio.c b/drivers/net/dsa/mt7530-mdio.c
+index 672349531..662c46b54 100644
+--- a/drivers/net/dsa/mt7530-mdio.c
++++ b/drivers/net/dsa/mt7530-mdio.c
+@@ -226,7 +226,12 @@ mt7530_probe(struct mdio_device *mdiodev)
+ 	if (priv->id == ID_MT7531)
+ 		priv->create_sgmii = mt7531_create_sgmii;
+ 
+-	return dsa_register_switch(priv->ds);
++	ret = dsa_register_switch(priv->ds);
++	if (ret)
++		return dev_err_probe(priv->dev, ret,
++				     "failed to register DSA switch\n");
++
++	return 0;
+ }
+ 
+ static void
+@@ -238,16 +243,18 @@ mt7530_remove(struct mdio_device *mdiodev)
+ 	if (!priv)
+ 		return;
+ 
+-	if (priv->id == ID_MT7530) {
++	if (priv->core_pwr) {
+ 		ret = regulator_disable(priv->core_pwr);
+ 		if (ret < 0)
+ 			dev_err(priv->dev,
+ 				"Failed to disable core power: %d\n", ret);
++	}
+ 
++	if (priv->io_pwr) {
+ 		ret = regulator_disable(priv->io_pwr);
+ 		if (ret < 0)
+-			dev_err(priv->dev, "Failed to disable io pwr: %d\n",
+-				ret);
++			dev_err(priv->dev,
++				"Failed to disable io pwr: %d\n", ret);
+ 	}
+ 
+ 	mt7530_remove_common(priv);
+diff --git a/drivers/net/dsa/mt7530-mmio.c b/drivers/net/dsa/mt7530-mmio.c
+index c9c60cae9..6737b464a 100644
+--- a/drivers/net/dsa/mt7530-mmio.c
++++ b/drivers/net/dsa/mt7530-mmio.c
+@@ -85,7 +85,12 @@ mt7988_probe(struct platform_device *pdev)
+ 			return ret;
+ 	}
+ 
+-	return dsa_register_switch(priv->ds);
++	ret = dsa_register_switch(priv->ds);
++	if (ret)
++		return dev_err_probe(priv->dev, ret,
++				     "failed to register DSA switch\n");
++
++	return 0;
+ }
+ 
+ static void mt7988_remove(struct platform_device *pdev)
+-- 
+2.55.0
+

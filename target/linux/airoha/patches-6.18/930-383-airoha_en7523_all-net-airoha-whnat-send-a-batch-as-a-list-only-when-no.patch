@@ -1,0 +1,74 @@
+From c68916483342c68c88711ee4caebf333cf214f5e Mon Sep 17 00:00:00 2001
+From: Cristian Papa <pcristian292@gmail.com>
+Date: Sat, 3 Oct 2026 19:05:20 -0300
+Subject: [PATCH] net: airoha: whnat: send a batch as a list only when no qdisc
+ queues
+
+The batch flush hands a vif the whole batch as one skb list when the vif
+has IFF_NO_QUEUE. dev_queue_xmit() passes such a list to the driver only
+on the qdisc-less path; a qdisc enqueues the first frame alone, and the
+rest of the list is lost along with its memory. IFF_NO_QUEUE only selects
+the default qdisc, though: a mac80211 vif keeps the flag when a qdisc is
+attached to it, as SQM or a manual fq_codel does.
+
+Check the qdisc of every TX queue of the vif instead.
+
+Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
+Signed-off-by: Cristian Papa <pcristian292@gmail.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_whnat.c | 24 +++++++++++++++++++++-
+ 1 file changed, 23 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_whnat.c b/drivers/net/ethernet/airoha/airoha_whnat.c
+index 13528a783..b9df89b55 100644
+--- a/drivers/net/ethernet/airoha/airoha_whnat.c
++++ b/drivers/net/ethernet/airoha/airoha_whnat.c
+@@ -27,6 +27,7 @@
+ #include <linux/mutex.h>
+ #include <linux/rcupdate.h>
+ #include <linux/unaligned.h>
++#include <net/sch_generic.h>
+ 
+ #include "airoha_eth.h"
+ #include "airoha_whnat.h"
+@@ -263,6 +264,27 @@ void airoha_whnat_batch_init(struct airoha_whnat_batch *batch)
+ 	}
+ }
+ 
++/*
++ * dev_queue_xmit() hands a list of frames to the driver as is only when the
++ * TX queue has no qdisc that queues; a qdisc enqueues the first frame alone
++ * and the rest of the list is lost. IFF_NO_QUEUE only selects the default
++ * qdisc: a vif keeps it when one is attached (SQM, fq_codel), so look at the
++ * qdiscs themselves.
++ */
++static bool airoha_whnat_dev_queueless(struct net_device *dev)
++{
++	unsigned int i;
++
++	for (i = 0; i < dev->real_num_tx_queues; i++) {
++		struct netdev_queue *txq = netdev_get_tx_queue(dev, i);
++
++		if (rcu_dereference_bh(txq->qdisc)->enqueue)
++			return false;
++	}
++
++	return true;
++}
++
+ void airoha_whnat_batch_flush(struct airoha_whnat_batch *batch)
+ {
+ 	int i;
+@@ -278,7 +300,7 @@ void airoha_whnat_batch_flush(struct airoha_whnat_batch *batch)
+ 		/* A queueless vif with no taps takes the whole batch as one
+ 		 * list; anything else goes through the qdisc frame by frame.
+ 		 */
+-		if (q->qlen > 1 && (dev->priv_flags & IFF_NO_QUEUE) &&
++		if (q->qlen > 1 && airoha_whnat_dev_queueless(dev) &&
+ 		    !dev_nit_active(dev)) {
+ 			while ((skb = __skb_dequeue(q))) {
+ 				if (!head)
+-- 
+2.55.0
+

@@ -1,0 +1,49 @@
+From 7a6baecda9a5a6e47549e86b99ad7a1a93d61648 Mon Sep 17 00:00:00 2001
+From: Cristian Papa <pcristian292@gmail.com>
+Date: Fri, 25 Sep 2026 14:51:54 -0300
+Subject: [PATCH] net: airoha: whnat: take the frame only when the QDMA queued
+ it
+
+econet_qdma_xmit_mips() returns 0 when it posted the descriptor, the
+positive EBUSY when it posted it and the ring is now full, and the
+result of dma_mapping_error() when the mapping failed, which can be a
+positive value too. en75_whnat_upstream_early() treats every
+nonnegative return as a handoff, so a failed mapping leaked the skb and
+lost the frame.
+
+Return -EIO for any positive value other than EBUSY, so the hook puts
+the frame back and hands it to GRO.
+
+Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
+Signed-off-by: Cristian Papa <pcristian292@gmail.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
+index 520f97cdd..c84f87a88 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -1990,6 +1990,7 @@ static int airoha_qdma_mips_xmit(struct airoha_qdma *qdma,
+ int airoha_whnat_qdma_xmit(struct airoha_qdma *qdma, struct sk_buff *skb)
+ {
+ 	union desc_msg msg = {};
++	int ret;
+ 
+ 	if (qdma->id || !qdma->econet || !READ_ONCE(qdma->users))
+ 		return -EOPNOTSUPP;
+@@ -1998,7 +1999,9 @@ int airoha_whnat_qdma_xmit(struct airoha_qdma *qdma, struct sk_buff *skb)
+ 	set_etx_queue(&msg.etx, 0);
+ 	set_etx_fport(&msg.etx, ETX_FPORT_PPE);
+ 
+-	return econet_qdma_xmit_mips(qdma->econet, skb, &msg, 0);
++	ret = econet_qdma_xmit_mips(qdma->econet, skb, &msg, 0);
++	/* Only zero and EBUSY denote an skb consumed by the descriptor ring. */
++	return ret == 0 || ret == EBUSY ? ret : ret < 0 ? ret : -EIO;
+ }
+ #endif
+ 
+-- 
+2.55.0
+

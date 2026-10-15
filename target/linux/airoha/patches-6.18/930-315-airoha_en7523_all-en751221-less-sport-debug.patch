@@ -1,0 +1,33 @@
+From feb8c69f5a5040aec12436abb74193dc691767c3 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Fri, 28 Aug 2026 00:58:35 -0300
+Subject: [PATCH] en751221: less sport debug
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
+index e9a426417..5d8eb5d77 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -9197,7 +9197,6 @@ airoha_en751221_get_dev_from_sport(struct airoha_eth *eth, u32 sport,
+ 				    u16 *port, u16 *dev)
+ {
+ 	*dev = 0;
+-	dev_info_ratelimited(eth->dev, "EN751221 RX sport %#x\n", sport);
+ 
+ 	if (sport == ETX_FPORT_GDM2 || sport == ETX_FPORT_QDMA1_CPU) {
+ 		*port = AIROHA_GDM2_IDX - 1;
+@@ -9210,6 +9209,7 @@ airoha_en751221_get_dev_from_sport(struct airoha_eth *eth, u32 sport,
+ 		return 0;
+ 	}
+ 
++	dev_info_ratelimited(eth->dev, "EN751221 RX sport %#x\n", sport);
+ 	return -EINVAL;
+ }
+ 
+-- 
+2.55.0
+

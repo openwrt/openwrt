@@ -1,0 +1,100 @@
+From 3bd7430ecf21bac53d051df750f2b918a57d68fd Mon Sep 17 00:00:00 2001
+From: Cristian Papa <pcristian292@gmail.com>
+Date: Sat, 3 Oct 2026 19:02:18 -0300
+Subject: [PATCH] net: airoha: econet: never handle an RX descriptor twice
+ after a failed refill
+
+econet_qdma_rx_process() handles the descriptors from cpu_i + 1 up to
+the hardware index and then refills them. When a page allocation fails
+during the refill, cpu_i is left at the last refilled descriptor, so the
+next pass, in the same NAPI poll or the next one, starts again from the
+first descriptor that could not be refilled. That descriptor was already
+handled: its buffer belongs to the stack, and handling it again builds a
+second skb on it, and returns that page to the pool once more when the
+frame is dropped.
+
+Keep the next descriptor to handle in its own index, next_i, separate
+from cpu_i, the last descriptor given back to the hardware. Descriptors
+between them have been handled but not refilled; only the refill touches
+them.
+
+If the hardware is left without any descriptor, it raises no RX
+interrupt that would retry the refill, so keep NAPI scheduled while
+descriptors are missing.
+
+Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
+Signed-off-by: Cristian Papa <pcristian292@gmail.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c | 18 +++++++++++++++---
+ drivers/net/ethernet/airoha/airoha_eth.h |  3 +++
+ 2 files changed, 18 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
+index 3148db24a..49a592ea1 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -516,16 +516,19 @@ static int econet_qdma_rx_process(struct econet_q_rx *q, int budget,
+ 	 */
+ 	dma_rmb();
+ 
+-	/* The stored value of cpu_i is the last entry actually handled.
+-	 * Whereas hardware_i is the next entry that has not yet been received.
++	/* next_i is the first entry not handled yet, whereas hardware_i is
++	 * the next entry that has not yet been received. Entries between
++	 * cpu_i and next_i were handled but could not be refilled: their
++	 * buffers belong to the stack now, so never handle them again.
+ 	 */
+-	cpu_i = (q->cpu_i + 1) % ndesc;
++	cpu_i = q->next_i;
+ 
+ 	for (done = 0; done < budget && cpu_i != hardware_i; done++) {
+ 		econet_qdma_rx_process_one(q, cpu_i, dir, batch);
+ 		cpu_i = (cpu_i + 1) % ndesc;
+ 	}
+ 
++	q->next_i = cpu_i;
+ 	econet_fill_rx_queue(q, cpu_i);
+ 
+ 	return done;
+@@ -725,6 +728,14 @@ static int econet_qdma_rx_napi_poll(struct napi_struct *napi, int budget)
+ 	if (pending)
+ 		airoha_whnat_batch_flush(pending);
+ 
++	/*
++	 * A failed refill leaves the hardware short of descriptors. Once it
++	 * has none left it raises no interrupt that would retry the refill,
++	 * so keep polling until the ring is whole again.
++	 */
++	if (q->next_i != (q->cpu_i + 1) % q->ndesc)
++		return budget;
++
+ 	if (done < budget && napi_complete(napi)) {
+ 		union econet_irq_purpose purpose;
+ 		union irq_bit b;
+@@ -1096,6 +1107,7 @@ static int econet_init_rx_queue(struct econet_q_rx *q,
+ 	for (int i = 0; i < q->ndesc; i++)
+ 		if (!q->entry[i].dma_addr)
+ 			return -ENOMEM;
++	q->next_i = 1;
+ 
+ 	/* The RX hardware side considers that hwi == cpui means the queue is
+ 	 * full, not empty. Since cpui starts at 0, we initialize hwi to 1. */
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.h b/drivers/net/ethernet/airoha/airoha_eth.h
+index 649130445..529eebf66 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.h
++++ b/drivers/net/ethernet/airoha/airoha_eth.h
+@@ -4828,7 +4828,10 @@ struct econet_q_rx {
+ 	 * and qdma->lock is held */
+ 	struct econet_q_rx_ent		*entry;
+ 	struct desc			*desc;
++	/* Last descriptor given back to the hardware. */
+ 	u16				cpu_i;
++	/* Next descriptor to process; past cpu_i + 1 after a failed refill. */
++	u16				next_i;
+ 
+ 	/* Not modified after init */
+ 	struct airoha_qdma_mips		*qdma;
+-- 
+2.55.0
+

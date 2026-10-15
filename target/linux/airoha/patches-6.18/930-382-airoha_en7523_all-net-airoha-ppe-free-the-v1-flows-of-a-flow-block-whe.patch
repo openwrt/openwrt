@@ -1,0 +1,258 @@
+From 609eef84c643d61a9583e509f87f9beee276fc22 Mon Sep 17 00:00:00 2001
+From: Cristian Papa <pcristian292@gmail.com>
+Date: Sat, 3 Oct 2026 18:20:00 -0300
+Subject: [PATCH] net: airoha: ppe: free the v1 flows of a flow block when it
+ is unbound
+
+A v1 flow leaves the driver only through FLOW_CLS_DESTROY or a full
+flush, and the full flush runs only when the last flow block is unbound.
+When a flowtable is replaced, which fw4 does on every reload (each
+ifup/ifupdate, PPPoE reconnect, IPv6 prefix change or LuCI apply), the
+new flowtable is bound in the prepare phase and the old one is unbound
+at commit, so the block list never empties. The old flowtable sends the
+DESTROY of its flows only after that, to a callback list this driver is
+no longer on. Its flows therefore stay listed and bound in hardware with
+their old rewrite (SNAT address, PPPoE session, next hop, GEM), and since
+the RX bind picks the first matching flow, they also win over the flows
+the new flowtable offloads for the same tuple. On an Archer XR500v, three
+reloads left 80 driver flows (48 bound in hardware) for one offloaded
+connection left in conntrack.
+
+Give each bound block its own callback private data, record it in the
+flows offloaded through it, and free those flows when the block is
+unbound. The UNBIND runs with the flowtable's flow_block_lock held for
+writing, so no REPLACE, DESTROY or STATS of those flows runs at the same
+time.
+
+Flows of a WiFi vif that went away are now kept listed but marked, so
+that they are still freed by their DESTROY, by the flush of their block
+or by a full flush, instead of only by the DESTROY.
+
+Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
+Signed-off-by: Cristian Papa <pcristian292@gmail.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth.h |  4 ++
+ drivers/net/ethernet/airoha/airoha_ppe.c | 91 +++++++++++++++++++++---
+ 2 files changed, 84 insertions(+), 11 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.h b/drivers/net/ethernet/airoha/airoha_eth.h
+index ebad9366a..79f16a281 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.h
++++ b/drivers/net/ethernet/airoha/airoha_eth.h
+@@ -796,6 +796,10 @@ struct airoha_flow_table_entry {
+ 	struct list_head v1_list;
+ 	/* v1: last real activity (RX bind or hardware BIND timestamp). */
+ 	unsigned long v1_lastused;
++	/* v1: the flow block this flow was offloaded through. */
++	const void *v1_owner;
++	/* v1: never bind again (its WiFi vif went away). */
++	bool v1_dead;
+ 	u16 addr_type;
+ 	u16 src_port;
+ 	u16 dest_port;
+diff --git a/drivers/net/ethernet/airoha/airoha_ppe.c b/drivers/net/ethernet/airoha/airoha_ppe.c
+index 3c78db8c5..1cc9dde7c 100644
+--- a/drivers/net/ethernet/airoha/airoha_ppe.c
++++ b/drivers/net/ethernet/airoha/airoha_ppe.c
+@@ -42,7 +42,8 @@ static const struct rhashtable_params airoha_l2_flow_table_params = {
+ };
+ 
+ static int airoha_ppe_v1_flow_offload_replace(struct net_device *dev,
+-					       struct flow_cls_offload *f);
++					       struct flow_cls_offload *f,
++					       const void *owner);
+ static int airoha_ppe_v1_flow_offload_destroy(struct net_device *dev,
+ 					       struct flow_cls_offload *f);
+ static int airoha_ppe_v1_flow_offload_stats(struct net_device *dev,
+@@ -2099,7 +2100,8 @@ static int airoha_ppe_flow_offload_stats(struct airoha_eth *eth,
+ 
+ static int airoha_ppe_flow_offload_cmd(struct airoha_eth *eth,
+ 				       struct net_device *dev,
+-				       struct flow_cls_offload *f)
++				       struct flow_cls_offload *f,
++				       const void *owner)
+ {
+ 	bool v1 = eth->soc->foe_format == AIROHA_FOE_FORMAT_V1;
+ 
+@@ -2108,7 +2110,7 @@ static int airoha_ppe_flow_offload_cmd(struct airoha_eth *eth,
+ 
+ 	switch (f->command) {
+ 	case FLOW_CLS_REPLACE:
+-		return v1 ? airoha_ppe_v1_flow_offload_replace(dev, f) :
++		return v1 ? airoha_ppe_v1_flow_offload_replace(dev, f, owner) :
+ 			    airoha_ppe_flow_offload_replace(eth, f);
+ 	case FLOW_CLS_DESTROY:
+ 		return v1 ? airoha_ppe_v1_flow_offload_destroy(dev, f) :
+@@ -2277,7 +2279,7 @@ int airoha_ppe_setup_tc_block_cb(struct airoha_ppe_dev *dev, void *type_data)
+ 		err = airoha_ppe_offload_setup(eth);
+ 	}
+ 	if (!err)
+-		err = airoha_ppe_flow_offload_cmd(eth, NULL, type_data);
++		err = airoha_ppe_flow_offload_cmd(eth, NULL, type_data, NULL);
+ 
+ 	mutex_unlock(&flow_offload_mutex);
+ 
+@@ -2885,7 +2887,8 @@ static void airoha_ppe_v1_release_flow_slot(struct airoha_ppe *ppe,
+ #if IS_ENABLED(CONFIG_NET_AIROHA_WHNAT)
+ /*
+  * A WiFi vif went away: stop its bound flows and keep them from being bound
+- * again. They stay in the cookie table until the flow table destroys them.
++ * again. They stay listed, so that the flow table's DESTROY, the flush of
++ * their flow block or a full flush still frees them.
+  */
+ void airoha_whnat_invalidate_vif(struct airoha_ppe *ppe, int idx)
+ {
+@@ -2900,7 +2903,7 @@ void airoha_whnat_invalidate_vif(struct airoha_ppe *ppe, int idx)
+ 			continue;
+ 
+ 		airoha_ppe_v1_release_flow_slot(ppe, flow, true);
+-		list_del_init(&flow->v1_list);
++		flow->v1_dead = true;
+ 	}
+ 	airoha_ppe_v1_cache_clean(ppe);
+ 	spin_unlock_bh(&ppe->v1.lock);
+@@ -3133,7 +3136,8 @@ static void airoha_ppe_v1_rx_check(struct airoha_ppe *ppe, struct sk_buff *skb,
+ 
+ 	spin_lock_bh(&ppe->v1.lock);
+ 	list_for_each_entry(flow, &ppe->v1.flows, v1_list) {
+-		if (!airoha_foe_v1_flow_matches_tuple(flow, &tuple))
++		if (flow->v1_dead ||
++		    !airoha_foe_v1_flow_matches_tuple(flow, &tuple))
+ 			continue;
+ 
+ 		flow->v1_lastused = jiffies;
+@@ -3191,6 +3195,40 @@ static void airoha_ppe_v1_flush(struct airoha_ppe *ppe)
+ 	airoha_ppe_v1_cache_clean(ppe);
+ }
+ 
++/*
++ * Free the flows offloaded through one flow block. A flowtable that is
++ * replaced (every fw4 reload: the new one is bound before the old one is
++ * unbound) sends the DESTROY of its flows only after the UNBIND removed this
++ * driver from its callback list, so they would otherwise stay bound in
++ * hardware with their old rewrite, and win the RX bind over the flows of the
++ * new flowtable for the same tuple. The caller holds the flowtable's
++ * flow_block_lock, so no REPLACE, DESTROY or STATS of these flows runs
++ * concurrently.
++ */
++static void airoha_ppe_v1_flush_owner(struct airoha_ppe *ppe,
++				      const void *owner)
++{
++	struct airoha_flow_table_entry *flow, *tmp;
++	LIST_HEAD(free_list);
++
++	spin_lock_bh(&ppe->v1.lock);
++	list_for_each_entry_safe(flow, tmp, &ppe->v1.flows, v1_list) {
++		if (flow->v1_owner != owner)
++			continue;
++		airoha_ppe_v1_release_flow_slot(ppe, flow, true);
++		list_move_tail(&flow->v1_list, &free_list);
++	}
++	airoha_ppe_v1_cache_clean(ppe);
++	spin_unlock_bh(&ppe->v1.lock);
++
++	list_for_each_entry_safe(flow, tmp, &free_list, v1_list) {
++		rhashtable_remove_fast(&ppe->common.eth->flow_table, &flow->node,
++				       airoha_flow_table_params);
++		list_del(&flow->v1_list);
++		kfree(flow);
++	}
++}
++
+ /*
+  * EN751221 vendor hw_nat (PPE type 3) programs the otherwise unnamed
+  * generation-1 GLO_CFG bits 1 and 8 together with byte-swap/hash-offset
+@@ -3520,7 +3558,8 @@ static int airoha_ppe_v1_flow_set_output(struct airoha_foe_entry *entry,
+ }
+ 
+ static int airoha_ppe_v1_flow_offload_replace(struct net_device *dev,
+-				       struct flow_cls_offload *cls)
++				       struct flow_cls_offload *cls,
++				       const void *owner)
+ {
+ 	struct airoha_ppe *ppe = airoha_ppe_from_netdev(dev);
+ 	struct flow_rule *rule = flow_cls_offload_flow_rule(cls);
+@@ -3730,6 +3769,7 @@ static int airoha_ppe_v1_flow_offload_replace(struct net_device *dev,
+ 	flow->dest_port = ntohs(dest_port);
+ 	flow->hash = AIROHA_FOE_V1_INVALID_HASH;
+ 	flow->v1_lastused = jiffies;
++	flow->v1_owner = owner;
+ 	INIT_LIST_HEAD(&flow->v1_list);
+ 
+ 	err = rhashtable_insert_fast(&ppe->common.eth->flow_table, &flow->node,
+@@ -3836,16 +3876,32 @@ static int airoha_ppe_v1_flow_offload_stats(struct net_device *dev,
+ 	return 0;
+ }
+ 
++/*
++ * One per bound flow block, so that the v1 flows can be told apart by the
++ * flowtable they were offloaded through: a netdev is bound to the old and
++ * the new flowtable at the same time during a reload.
++ */
++struct airoha_ppe_block_priv {
++	struct net_device *dev;
++};
++
++static void airoha_ppe_block_priv_release(void *cb_priv)
++{
++	kfree(cb_priv);
++}
++
+ static int airoha_ppe_tc_block_cb(enum tc_setup_type type, void *type_data,
+ 				void *cb_priv)
+ {
+-	struct net_device *dev = cb_priv;
++	struct airoha_ppe_block_priv *priv = cb_priv;
++	struct net_device *dev = priv->dev;
+ 	struct airoha_ppe *ppe = airoha_ppe_from_netdev(dev);
+ 
+ 	if (!ppe || type != TC_SETUP_CLSFLOWER)
+ 		return -EOPNOTSUPP;
+ 
+-	return airoha_ppe_flow_offload_cmd(ppe->common.eth, dev, type_data);
++	return airoha_ppe_flow_offload_cmd(ppe->common.eth, dev, type_data,
++					   priv);
+ }
+ 
+ static int airoha_ppe_setup_tc_block(struct net_device *dev,
+@@ -3853,6 +3909,7 @@ static int airoha_ppe_setup_tc_block(struct net_device *dev,
+ {
+ 	struct airoha_ppe *ppe = airoha_ppe_from_netdev(dev);
+ 	flow_setup_cb_t *cb = airoha_ppe_tc_block_cb;
++	struct airoha_ppe_block_priv *priv;
+ 	struct flow_block_cb *block_cb;
+ 	int err;
+ 
+@@ -3870,8 +3927,16 @@ static int airoha_ppe_setup_tc_block(struct net_device *dev,
+ 		err = airoha_ppe_v1_engine_arm(ppe);
+ 		if (err)
+ 			return err;
+-		block_cb = flow_block_cb_alloc(cb, dev, dev, NULL);
++		priv = kzalloc(sizeof(*priv), GFP_KERNEL);
++		if (priv) {
++			priv->dev = dev;
++			block_cb = flow_block_cb_alloc(cb, dev, priv,
++						       airoha_ppe_block_priv_release);
++		} else {
++			block_cb = ERR_PTR(-ENOMEM);
++		}
+ 		if (IS_ERR(block_cb)) {
++			kfree(priv);
+ 			if (list_empty(&ppe->block_cb_list) &&
+ 			    !ppe->common.eth->soc->ppe_datapath)
+ 				airoha_ppe_v1_engine_disarm(ppe);
+@@ -3886,6 +3951,10 @@ static int airoha_ppe_setup_tc_block(struct net_device *dev,
+ 		if (!block_cb)
+ 			return -ENOENT;
+ 		if (!flow_block_cb_decref(block_cb)) {
++			priv = flow_block_cb_priv(block_cb);
++			if (ppe->common.eth->soc->foe_format ==
++			    AIROHA_FOE_FORMAT_V1)
++				airoha_ppe_v1_flush_owner(ppe, priv);
+ 			flow_block_cb_remove(block_cb, offload);
+ 			list_del(&block_cb->driver_list);
+ 		}
+-- 
+2.55.0
+

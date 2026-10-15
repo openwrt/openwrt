@@ -1,0 +1,96 @@
+From 33719efa54b177fd86356fdd11f663c74d02dad8 Mon Sep 17 00:00:00 2001
+From: Cristian Papa <pcristian292@gmail.com>
+Date: Sat, 26 Sep 2026 05:37:19 -0300
+Subject: [PATCH] net: dsa: mt7530: finish the EN751221 TRGMII setup
+ synchronously
+
+DSA starts the shared ports before it sets up the user and unused
+ports. Running the TRGMII setup from mac_link_up puts it on phylink's
+resolve workqueue, where the companion PHY initialization and the strap
+changes for unused ports can overlap it.
+
+Run the same setup from mac_finish instead, after the initial MAC/PCS
+configuration and before phylink_start() returns to DSA, for port 6 of
+the EN751221 companion only. PLL values, reset delays, training and tap
+selection are unchanged. The console now shows the training complete
+before the first companion PHY profile is loaded.
+
+This removes the overlap by design. It was not what caused the
+no-window boots either; those came from the hardware poller that the
+first patch stops.
+
+Assisted-by: Codex:gpt-6-astra
+Signed-off-by: Cristian Papa <pcristian292@gmail.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/dsa/mt7530.c | 40 ++++++++++++++++++++++++++++++----------
+ 1 file changed, 30 insertions(+), 10 deletions(-)
+
+diff --git a/drivers/net/dsa/mt7530.c b/drivers/net/dsa/mt7530.c
+index 26b50a4b1..d56c45ec3 100644
+--- a/drivers/net/dsa/mt7530.c
++++ b/drivers/net/dsa/mt7530.c
+@@ -3517,6 +3517,35 @@ mt753x_phylink_mac_config(struct phylink_config *config, unsigned int mode,
+ 		mt7530_set(priv, MT753X_PMCR_P(port), PMCR_EXT_PHY);
+ }
+ 
++static int mt753x_phylink_mac_finish(struct phylink_config *config,
++				     unsigned int mode,
++				     phy_interface_t interface)
++{
++	struct dsa_port *dp = dsa_phylink_to_port(config);
++	struct mt7530_priv *priv = dp->ds->priv;
++	struct mt7530_priv *ondie;
++
++	if (dp->index != 6 || interface != PHY_INTERFACE_MODE_TRGMII ||
++	    priv->id != ID_MT7621 || !priv->mdiodev ||
++	    !of_device_is_compatible(priv->dev->of_node,
++				     "econet,en751221-switch"))
++		return 0;
++
++	ondie = en751221_trgmii_find_ondie_peer(dp->ds);
++	if (!ondie)
++		return -ENODEV;
++
++	/*
++	 * DSA starts shared ports before setting up user and unused ports.
++	 * Finish training in the synchronous initial MAC configuration,
++	 * before those ports can change PHY/core settings or MCM straps.
++	 * mac_link_up runs asynchronously and cannot provide that ordering.
++	 */
++	en751221_trgmii_pair_setup(priv, ondie);
++
++	return 0;
++}
++
+ static void mt753x_phylink_mac_link_down(struct phylink_config *config,
+ 					 unsigned int mode,
+ 					 phy_interface_t interface)
+@@ -3560,16 +3589,6 @@ static void mt753x_phylink_mac_link_up(struct phylink_config *config,
+ 
+ 	mt7530_set(priv, MT753X_PMCR_P(dp->index), mcr);
+ 
+-	if (dp->index == 6 && interface == PHY_INTERFACE_MODE_TRGMII &&
+-	    priv->id == ID_MT7621 && priv->mdiodev &&
+-	    of_device_is_compatible(priv->dev->of_node,
+-				    "econet,en751221-switch")) {
+-		struct mt7530_priv *ondie;
+-
+-		ondie = en751221_trgmii_find_ondie_peer(dp->ds);
+-		if (ondie)
+-			en751221_trgmii_pair_setup(priv, ondie);
+-	}
+ }
+ 
+ static void mt753x_phylink_mac_disable_tx_lpi(struct phylink_config *config)
+@@ -3909,6 +3928,7 @@ EXPORT_SYMBOL_GPL(mt7530_switch_ops);
+ static const struct phylink_mac_ops mt753x_phylink_mac_ops = {
+ 	.mac_select_pcs	= mt753x_phylink_mac_select_pcs,
+ 	.mac_config	= mt753x_phylink_mac_config,
++	.mac_finish	= mt753x_phylink_mac_finish,
+ 	.mac_link_down	= mt753x_phylink_mac_link_down,
+ 	.mac_link_up	= mt753x_phylink_mac_link_up,
+ 	.mac_disable_tx_lpi = mt753x_phylink_mac_disable_tx_lpi,
+-- 
+2.55.0
+

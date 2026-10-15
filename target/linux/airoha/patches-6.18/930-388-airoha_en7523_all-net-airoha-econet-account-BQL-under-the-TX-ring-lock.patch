@@ -1,0 +1,127 @@
+From dc251f495fd7a8b16ea510dddba5ea31b1f696dc Mon Sep 17 00:00:00 2001
+From: Cristian Papa <pcristian292@gmail.com>
+Date: Sat, 3 Oct 2026 19:00:03 -0300
+Subject: [PATCH] net: airoha: econet: account BQL under the TX ring lock
+
+Two paths queue to queue 0 of the PON netdev: the stack, through
+econet_qdma_xmit() under the queue's xmit lock, and the xPON OAM path
+(OMCI), through econet_xmit_xpon_oam() without it. Both called
+netdev_tx_sent_queue() before posting the frame, so the OAM path could
+update the queue's DQL concurrently with the stack. Both also undid the
+accounting with netdev_tx_completed_queue() when posting failed, which
+runs dql_completed() concurrently with the TX completion NAPI on the
+other VPE.
+
+dql_completed() supports a single completer. A lost update leaves bytes
+counted as in flight for good, and the queue can then stay stopped by
+BQL with nothing in flight to restart it. A corrupted count can also
+trip the BUG_ON() in dql_completed().
+
+Account the frame in econet_qdma_xmit_mips() instead, under the ring
+lock that the completion path takes too, once nothing can fail any
+more. That is also how the Airoha QDMA path in this driver does it.
+Nothing has to be undone then, and every frame of the netdev queue,
+from either path, is accounted under the same lock as its completion.
+
+Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
+Signed-off-by: Cristian Papa <pcristian292@gmail.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c | 35 ++++++++++--------------
+ 1 file changed, 15 insertions(+), 20 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
+index e7dc79b40..3148db24a 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -1006,8 +1006,18 @@ static int econet_qdma_xmit_mips(struct airoha_qdma_mips *qdma, struct sk_buff *
+ 	q->freelist_head = next_index;
+ 	q->free_count--;
+ 
+-	if (skb->dev)
++	if (skb->dev) {
++		/*
++		 * Account the frame here, once it can no longer fail and under
++		 * the ring lock the completion path holds too: both the stack
++		 * and the xPON OAM path queue to the same netdev queue, and a
++		 * caller undoing its accounting would race the completions.
++		 */
++		netdev_tx_sent_queue(netdev_get_tx_queue(skb->dev,
++							 skb_get_queue_mapping(skb)),
++				     skb->len);
+ 		skb_tx_timestamp(skb);
++	}
+ 
+ 	/*
+ 	 * Match the vendor QDMA handoff: the descriptor must be globally visible
+@@ -3937,7 +3947,7 @@ static netdev_tx_t econet_qdma_xmit(struct sk_buff *skb, struct net_device *dev)
+ {
+ 	struct airoha_gdm_dev *port = netdev_priv(dev);
+ 	struct airoha_qdma_skb_meta skb_meta;
+-	int qid, ret = 0, len = skb->len;
++	int qid, ret = 0;
+ 	struct netdev_queue *txq;
+ 	struct airoha_xpon_tx_info xpon_info;
+ 	union desc_msg msg = {0};
+@@ -4019,8 +4029,6 @@ static netdev_tx_t econet_qdma_xmit(struct sk_buff *skb, struct net_device *dev)
+ 			dev->stats.tx_dropped++;
+ 			return NETDEV_TX_OK;
+ 		}
+-
+-		len = skb->len;
+ 	}
+ 
+ 	/*
+@@ -4050,18 +4058,13 @@ static netdev_tx_t econet_qdma_xmit(struct sk_buff *skb, struct net_device *dev)
+ 		set_etx_tco(&msg.etx, true);
+ 	}
+ 
+-	netdev_tx_sent_queue(txq, len);
+-
+ 	ret = airoha_qdma_mips_xmit(port->qdma, skb, &msg, 0);
+ 	if (ret == -EBUSY) {
+-		netdev_tx_completed_queue(txq, 1, len);
+ 		netif_tx_stop_queue(txq);
+ 		return NETDEV_TX_BUSY;
+ 	}
+-	if (ret < 0) {
+-		netdev_tx_completed_queue(txq, 1, len);
++	if (ret < 0)
+ 		goto drop;
+-	}
+ 
+ 	/* Positive EBUSY means this packet was queued and filled the ring. */
+ 	if (ret == EBUSY)
+@@ -4506,9 +4509,8 @@ static int econet_xmit_xpon_oam(struct net_device *netdev, struct sk_buff *skb,
+ 				u8 channel, u16 gem_port_id)
+ {
+ 	struct airoha_gdm_dev *port;
+-	struct netdev_queue *txq;
+ 	union desc_msg msg = {};
+-	int len, ret;
++	int ret;
+ 
+ 	ret = econet_validate_xpon_gdm2(netdev, &port);
+ 	if (ret)
+@@ -4529,17 +4531,10 @@ static int econet_xmit_xpon_oam(struct net_device *netdev, struct sk_buff *skb,
+ 
+ 	skb->dev = netdev;
+ 	skb_set_queue_mapping(skb, 0);
+-	len = skb->len;
+-	txq = netdev_get_tx_queue(netdev, 0);
+-	netdev_tx_sent_queue(txq, len);
+ 
+ 	ret = airoha_qdma_mips_xmit(port->qdma, skb, &msg, 0);
+-	if (ret < 0) {
+-		netdev_tx_completed_queue(txq, 1, len);
+-		return ret;
+-	}
+ 
+-	return 0;
++	return ret < 0 ? ret : 0;
+ }
+ 
+ static int econet_xpon_get_tx_info(struct net_device *netdev, bool vlan_valid,
+-- 
+2.55.0
+

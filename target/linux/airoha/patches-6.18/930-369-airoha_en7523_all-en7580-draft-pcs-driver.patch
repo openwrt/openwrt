@@ -1,0 +1,1098 @@
+From 7faeeffe9ba2cbee750f9c4257437457c9262a59 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Sun, 4 Oct 2026 21:27:23 -0300
+Subject: [PATCH] en7580: draft pcs driver
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ .../bindings/net/pcs/airoha,en7580-pcs.yaml   |  65 +++
+ .../ethernet/airoha/en7580-pcs.rst            |  88 ++++
+ arch/mips/boot/dts/econet/en7580.dtsi         |  12 +
+ drivers/net/ethernet/airoha/airoha_eth.c      |   8 +-
+ drivers/net/pcs/airoha/Kconfig                |  11 +
+ drivers/net/pcs/airoha/Makefile               |   3 +-
+ drivers/net/pcs/airoha/pcs-en7580-seq.h       | 447 ++++++++++++++++++
+ drivers/net/pcs/airoha/pcs-en7580.c           | 370 +++++++++++++++
+ 8 files changed, 1002 insertions(+), 2 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/net/pcs/airoha,en7580-pcs.yaml
+ create mode 100644 Documentation/networking/device_drivers/ethernet/airoha/en7580-pcs.rst
+ create mode 100644 drivers/net/pcs/airoha/pcs-en7580-seq.h
+ create mode 100644 drivers/net/pcs/airoha/pcs-en7580.c
+
+diff --git a/Documentation/devicetree/bindings/net/pcs/airoha,en7580-pcs.yaml b/Documentation/devicetree/bindings/net/pcs/airoha,en7580-pcs.yaml
+new file mode 100644
+index 000000000..c9d87b3cb
+--- /dev/null
++++ b/Documentation/devicetree/bindings/net/pcs/airoha,en7580-pcs.yaml
+@@ -0,0 +1,65 @@
++# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/net/pcs/airoha,en7580-pcs.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: Airoha EN7580 Ethernet XSI PCS
++
++maintainers:
++  - Matheus Sampaio Queiroga <srherobrine20@gmail.com>
++
++description:
++  The EN7580 Ethernet XSI lane has an XSI MAC, a dedicated PMA and XFI/HSGMII
++  digital PCS blocks. This lane is separate from the optical PON PMA.
++  Negotiation is managed by the external Ethernet PHY.
++
++properties:
++  compatible:
++    const: airoha,en7580-pcs
++
++  reg:
++    items:
++      - description: XSI MAC
++      - description: XSI PMA
++      - description: XFI and HSGMII digital PCS blocks
++
++  reg-names:
++    items:
++      - const: mac
++      - const: pma
++      - const: pcs
++
++  airoha,scu:
++    $ref: /schemas/types.yaml#/definitions/phandle
++    description: NP SCU syscon.
++
++  airoha,chip-scu:
++    $ref: /schemas/types.yaml#/definitions/phandle
++    description: Chip SCU syscon.
++
++  '#pcs-cells':
++    const: 0
++
++required:
++  - compatible
++  - reg
++  - reg-names
++  - airoha,scu
++  - airoha,chip-scu
++  - '#pcs-cells'
++
++additionalProperties: false
++
++examples:
++  - |
++    pcs@1fa04000 {
++        compatible = "airoha,en7580-pcs";
++        reg = <0x1fa04000 0x200>,
++              <0x1faf6000 0x1000>,
++              <0x1faf7900 0x1000>;
++        reg-names = "mac", "pma", "pcs";
++        airoha,scu = <&scuclk>;
++        airoha,chip-scu = <&chip_scu>;
++        #pcs-cells = <0>;
++    };
+diff --git a/Documentation/networking/device_drivers/ethernet/airoha/en7580-pcs.rst b/Documentation/networking/device_drivers/ethernet/airoha/en7580-pcs.rst
+new file mode 100644
+index 000000000..a4a197120
+--- /dev/null
++++ b/Documentation/networking/device_drivers/ethernet/airoha/en7580-pcs.rst
+@@ -0,0 +1,88 @@
++EN7580 XSI PCS bring-up
++======================
++
++Scope
++-----
++
++This is an experimental port of the Ethernet XSI lane, recovered from the
++Quantum C6500XK vendor firmware's unstripped ``xsi_phy.ko``. It is separate
++from the optical PON PHY and from the AN7581/AN7583 PCS implementations.
++
++The provider supports out-of-band 10GBASE-R, 5GBASE-R, 2500BASE-X and
++1000BASE-X. SGMII negotiation, USXGMII, interrupts and the vendor eye-scan/TDC
++recovery paths are not implemented. In particular, 1000BASE-X must not be
++substituted for an AQR113C firmware profile that selects SGMII at 1 Gbit/s.
++The AQR113C firmware upload remains the responsibility of its PHY driver.
++
++Register map
++------------
++
++=================== ============ =========================================
++Block               Physical base Purpose
++=================== ============ =========================================
++XSI MAC             0x1fa04000   Traffic gating, pause, counters
++XSI PMA             0x1faf6000   PLL, analog settings, RX calibration
++XFI PCS             0x1faf7900   RX/TX reset and readiness at offset 0x30
++HSGMII PCS          0x1faf8108   RX/TX reset; readiness at 0x1faf821c
++NP SCU              0x1fb00000   Lane selection, reset and clock controls
++Chip SCU            0x1fa20000   XSI enable at offset 0x104
++=================== ============ =========================================
++
++Recovery evidence
++-----------------
++
++The init table is the ``xsi_init(mode)`` path (235 operations). The start
++and calibration table is ``xsi_plug_reset(1, mode)`` (174 operations).
++Vendor modes 0, 1, 4 and 5 select 10G, 5G, 2.5G and 1G respectively.
++There are 21 mode-dependent values across these 409 operations. The rest
++share the same register, mask and value. Repeated writes are retained and
++forced through regmap, including calibration/reset strobes. The external
++RX/TX PCS reset order is preserved separately around the start table.
++
++The initial device controls come from ``en7580_xfi_phy_dev_init``. The
++NP SCU reset at offset 0x830, bit 8 comes from both vendor PHY reset
++functions. It is accessed through the shared syscon regmap since this
++repository does not yet match ``econet,en7580-scu`` in the clock driver.
++That separate missing clock/reset provider is not repaired by this port.
++
++The status checks reproduce ``en7580_xfi_phy_get_api_dispatch`` (bits 12
++and 0 at 0x1faf7930) and ``en7580_hsgmii_phy_get_api_dispatch`` (low nibble
++0xa at 0x1faf821c). No AN7581 register layout is assumed.
++
++The firmware boot log reports successful XFI initialization and later
++``LineRate 2500 PhyMode 4``. This demonstrates the vendor path, not the
++operation of this new driver on hardware.
++
++Validation and testing
++----------------------
++
++All 409 register/mask/value and delay operations for each of the four
++modes were compared against an independent Unicorn MIPS32 little-endian
++emulation of the original ELF code. The traces matched exactly.
++
++The PCS object was compiled against this kernel with an x86_64 compile-test
++configuration. The Ethernet object also compiled with its pre-existing
++64-bit format warning at the GPON OAM descriptor log demoted using
++``KCFLAGS=-Wno-error=format``. These checks do not replace a MIPS build,
++module link or hardware test. Checkpatch has no errors or warnings in the new PCS source and sequence
++header. The SoC DTS compiled with dtc; the existing switch node emits an
++unnecessary address/size-cells warning.
++
++Enable ``CONFIG_PCS_AIROHA_EN7580`` and enable the ``xsi_pcs`` node in the
++board DTS. Add ``pcs-handle = <&xsi_pcs>`` to the MAC actually routed to the
++external Ethernet PHY, together with its ``phy-handle`` and verified
++``phy-mode``. Do not use ``managed = "in-band-status"`` with this port.
++The SoC node is disabled by default, and board wiring is intentionally not
++inferred from the generic SoC DTS.
++
++Confirm that the external PHY has a valid firmware image before testing.
++Start with the vendor-supported 10GBASE-R configuration, then test 5G and
++2.5G copper links while checking the PHY's host-interface selection. Record
++PCS status, negotiated interface, carrier and bidirectional traffic. Test
++unplug/replug and interface down/up. RX recovery beyond the normal initial
++calibration has not yet been ported.
++
++This patch provides a PCS/PMA bring-up candidate and phylink discovery.
++It does not establish the complete EN7580 XSI FE/QDMA forwarding path,
++source-port mapping or simultaneous operation with the xPON MAC. Those
++remain separate work before declaring the Ethernet WAN functional.
+diff --git a/arch/mips/boot/dts/econet/en7580.dtsi b/arch/mips/boot/dts/econet/en7580.dtsi
+index 9989d634b..5c96cf4d3 100644
+--- a/arch/mips/boot/dts/econet/en7580.dtsi
++++ b/arch/mips/boot/dts/econet/en7580.dtsi
+@@ -537,6 +537,18 @@ slot1: pcie@1,0 {
+ 			};
+ 		};
+ 
++		xsi_pcs: pcs@1fa04000 {
++			compatible = "airoha,en7580-pcs";
++			reg = <0x1fa04000 0x200>,
++			      <0x1faf6000 0x1000>,
++			      <0x1faf7900 0x1000>;
++			reg-names = "mac", "pma", "pcs";
++			airoha,scu = <&scuclk>;
++			airoha,chip-scu = <&chip_scu>;
++			#pcs-cells = <0>;
++			status = "disabled";
++		};
++
+ 		xpon_phy: phy@1faf0000 {
+ 			compatible = "airoha,en7580-xpon-phy";
+ 			reg = <0x1faf0000 0x5000>;
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
+index c3586fa01..7d935f469 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -8884,7 +8884,9 @@ static int airoha_setup_phylink(struct net_device *netdev)
+ 
+ 		__set_bit(PHY_INTERFACE_MODE_INTERNAL,
+ 			  config->supported_interfaces);
+-	} else if (econet) {
++	} else if (econet &&
++		   !(airoha_is(dev->eth, econet_en7580) &&
++		     of_property_present(np, "pcs-handle"))) {
+ 		config->mac_capabilities = MAC_ASYM_PAUSE | MAC_SYM_PAUSE |
+ 					   MAC_10 | MAC_100 | MAC_1000 |
+ 					   MAC_2500FD | MAC_5000FD | MAC_10000FD;
+@@ -8923,6 +8925,10 @@ static int airoha_setup_phylink(struct net_device *netdev)
+ 				  dev->common.phylink_config.supported_interfaces);
+ 		}
+ 
++		if (airoha_is(dev->eth, econet_en7580))
++			__set_bit(PHY_INTERFACE_MODE_5GBASER,
++				  config->supported_interfaces);
++
+ 		phy_interface_copy(config->pcs_interfaces,
+ 				   config->supported_interfaces);
+ 	}
+diff --git a/drivers/net/pcs/airoha/Kconfig b/drivers/net/pcs/airoha/Kconfig
+index 62a8b31df..8e4bfc3aa 100644
+--- a/drivers/net/pcs/airoha/Kconfig
++++ b/drivers/net/pcs/airoha/Kconfig
+@@ -28,3 +28,14 @@ config PCS_AIROHA_EN7523
+ 	help
+ 	  This module provides helper to phylink for managing the Airoha
+ 	  EN7523 SGMII/HSGMII PCS for PON, PCIe and USB SERDES lanes.
++
++config PCS_AIROHA_EN7580
++	tristate "Airoha EN7580 XSI PCS driver"
++	depends on OF && HAS_IOMEM
++	select PHYLINK
++	select MFD_SYSCON
++	select PCS_AIROHA
++	select REGMAP_MMIO
++	help
++	  Provide a phylink PCS for the EN7580 Ethernet XSI lane, including
++	  the XFI/HSGMII PMA initialization and receive calibration.
+diff --git a/drivers/net/pcs/airoha/Makefile b/drivers/net/pcs/airoha/Makefile
+index 70ca0873a..a30eeb17f 100644
+--- a/drivers/net/pcs/airoha/Makefile
++++ b/drivers/net/pcs/airoha/Makefile
+@@ -8,4 +8,5 @@ endif
+ ifdef CONFIG_PCS_AIROHA_AN7583
+ pcs-airoha-y			+= pcs-an7583.o
+ endif
+-obj-$(CONFIG_PCS_AIROHA_EN7523)	+= pcs-en7523.o
+\ No newline at end of file
++obj-$(CONFIG_PCS_AIROHA_EN7523)	+= pcs-en7523.o
++obj-$(CONFIG_PCS_AIROHA_EN7580)	+= pcs-en7580.o
+diff --git a/drivers/net/pcs/airoha/pcs-en7580-seq.h b/drivers/net/pcs/airoha/pcs-en7580-seq.h
+new file mode 100644
+index 000000000..e1f04c3ac
+--- /dev/null
++++ b/drivers/net/pcs/airoha/pcs-en7580-seq.h
+@@ -0,0 +1,447 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++/* EN7580 PMA sequences recovered from the C6500XK xsi_phy.ko.
++ * Preserve the order, masks and delays, including repeated writes.
++ * Mode columns: XFI 10G, XFI 5G, HSGMII 2.5G, HSGMII 1G.
++ */
++
++#define EN7580_SEQ(r, m, v) { (r), (m), { (v), (v), (v), (v) } }
++#define EN7580_MODE_SEQ(r, m, a, b, c, d) { (r), (m), { (a), (b), (c), (d) } }
++
++static const struct en7580_pcs_step en7580_pcs_init_seq[] = {
++	/* Setting_mode_XFI_DIG */
++	EN7580_MODE_SEQ(0x8094, 0x00006000, 0x00002000, 0x00002000, 0x00004000, 0x00004000),
++	/* Setting_mode_XFI_TXPLL */
++	EN7580_MODE_SEQ(0x0230, 0xffffffff, 0x07400000, 0x07400000, 0x09000000, 0x07000000),
++	EN7580_MODE_SEQ(0x0248, 0xffffffff, 0x21000000, 0x21000000, 0x28000000, 0x20000000),
++	EN7580_MODE_SEQ(0x024c, 0xffffffff, 0x21000000, 0x21000000, 0x28000000, 0x20000000),
++	/* Setting_mode_XFI_TX */
++	EN7580_MODE_SEQ(0x0070, 0x00001c00, 0x00001400, 0x00001000, 0x00001000, 0x00000800),
++	EN7580_MODE_SEQ(0x0070, 0x00000030, 0x00000020, 0x00000020, 0x00000010, 0x00000010),
++	EN7580_SEQ(0x0754, 0x00010000, 0x00000000),
++	EN7580_SEQ(0x0758, 0x00000001, 0x00000000),
++	/* Setting_mode_XFI_RX */
++	EN7580_MODE_SEQ(0x0030, 0x00006000, 0x00000000, 0x00002000, 0x00002000, 0x00006000),
++	EN7580_MODE_SEQ(0x0714, 0x00000003, 0x00000002, 0x00000002, 0x00000001, 0x00000001),
++	EN7580_MODE_SEQ(0x0754, 0x00000007, 0x00000000, 0x00000001, 0x00000004, 0x00000005),
++	EN7580_MODE_SEQ(0x0754, 0x00000700, 0x00000000, 0x00000100, 0x00000400, 0x00000500),
++	/* Setting_XFI_DIG */
++	EN7580_SEQ(0x0868, 0x00000001, 0x00000001),
++	EN7580_SEQ(0x0868, 0x00000002, 0x00000002),
++	EN7580_SEQ(0x0868, 0x00000008, 0x00000008),
++	EN7580_SEQ(0x0868, 0x00000010, 0x00000010),
++	EN7580_SEQ(0x0868, 0x00000020, 0x00000020),
++	EN7580_SEQ(0x0204, 0x00000001, 0x00000001),
++	EN7580_SEQ(0x0204, 0x0000ff00, 0x00000d00),
++	EN7580_SEQ(0x0204, 0x00ff0000, 0x00140000),
++	EN7580_SEQ(0x0804, 0x0000ffff, 0x000013ba),
++	EN7580_SEQ(0x0804, 0x00ff0000, 0x00140000),
++	EN7580_SEQ(0x090c, 0x0000ffff, 0x00000fa0),
++	EN7580_SEQ(0x090c, 0xffff0000, 0x00000000),
++	EN7580_SEQ(0x0910, 0x0000ffff, 0x0000109a),
++	EN7580_SEQ(0x0910, 0xffff0000, 0x00000000),
++	EN7580_SEQ(0x0888, 0x0000ffff, 0x000000fa),
++	EN7580_SEQ(0x0888, 0xffff0000, 0x01130000),
++	EN7580_SEQ(0x088c, 0x0000ffff, 0x00000210),
++	EN7580_SEQ(0x088c, 0xffff0000, 0x009b0000),
++	EN7580_SEQ(0x0884, 0x0000ffff, 0x00000026),
++	EN7580_SEQ(0x0884, 0xffff0000, 0x00040000),
++	EN7580_SEQ(0x0234, 0x00000003, 0x00000002),
++	EN7580_SEQ(0x022c, 0x00000f00, 0x00000700),
++	EN7580_SEQ(0x0888, 0xffff0000, 0x01130000),
++	EN7580_SEQ(0x0888, 0x0000ffff, 0x000000fa),
++	EN7580_SEQ(0x088c, 0xffff0000, 0x009b0000),
++	EN7580_SEQ(0x088c, 0x0000ffff, 0x00000210),
++	EN7580_SEQ(0x0884, 0xffff0000, 0x00040000),
++	EN7580_SEQ(0x0884, 0x0000ffff, 0x00000026),
++	EN7580_SEQ(0x0228, 0x00000700, 0x00000300),
++	EN7580_SEQ(0x0224, 0x01000000, 0x00000000),
++	EN7580_SEQ(0x0204, 0xff000000, 0x01000000),
++	EN7580_SEQ(0x0204, 0x00ff0000, 0x00010000),
++	EN7580_SEQ(0x0204, 0x0000ff00, 0x00000a00),
++	EN7580_SEQ(0x0204, 0x00000001, 0x00000001),
++	EN7580_SEQ(0x0344, 0x0000ffff, 0x00000002),
++	EN7580_SEQ(0x0344, 0xffff0000, 0x03e80000),
++	EN7580_SEQ(0x0350, 0x0000ffff, 0x00000002),
++	EN7580_SEQ(0x0350, 0xffff0000, 0x03e80000),
++	EN7580_SEQ(0x0348, 0x0000ffff, 0x00000002),
++	EN7580_SEQ(0x0348, 0xffff0000, 0x03e80000),
++	EN7580_SEQ(0x034c, 0x0000ffff, 0x00000002),
++	EN7580_SEQ(0x034c, 0xffff0000, 0x03e80000),
++	EN7580_SEQ(0x0340, 0x00ffff00, 0x00000100),
++	EN7580_SEQ(0x0340, 0x00000007, 0x00000001),
++	EN7580_SEQ(0x0358, 0x0000ffff, 0x00000002),
++	EN7580_SEQ(0x0378, 0x00000003, 0x00000003),
++	EN7580_SEQ(0x0378, 0x00001f00, 0x00000500),
++	EN7580_SEQ(0x0300, 0x07ff0000, 0x02400000),
++	EN7580_SEQ(0x0300, 0x000007ff, 0x000001c0),
++	EN7580_SEQ(0x0338, 0x00000001, 0x00000001),
++	EN7580_SEQ(0x0338, 0x00000100, 0x00000000),
++	EN7580_SEQ(0x030c, 0x00010000, 0x00010000),
++	EN7580_SEQ(0x0320, 0x0000ff00, 0x00000400),
++	EN7580_SEQ(0x0320, 0x000000ff, 0x00000004),
++	EN7580_SEQ(0x0324, 0x00ff0000, 0x00040000),
++	EN7580_SEQ(0x0324, 0x000007ff, 0x00000004),
++	EN7580_SEQ(0x0330, 0xff000000, 0xff000000),
++	EN7580_SEQ(0x0330, 0x000003ff, 0x000000d0),
++	EN7580_SEQ(0x0370, 0x000000ff, 0x00000080),
++	EN7580_SEQ(0x0370, 0x0007ff00, 0x00000000),
++	EN7580_SEQ(0x0370, 0xff000000, 0x00000000),
++	EN7580_SEQ(0x0374, 0x00000001, 0x00000001),
++	EN7580_SEQ(0x0490, 0x00000100, 0x00000000),
++	EN7580_SEQ(0x0490, 0x00000001, 0x00000001),
++	EN7580_SEQ(0x0440, 0x03000000, 0x01000000),
++	EN7580_SEQ(0x0440, 0x0000ff00, 0x00002e00),
++	EN7580_SEQ(0x0440, 0x00000001, 0x00000001),
++	EN7580_SEQ(0x0440, 0x00030000, 0x00010000),
++	EN7580_SEQ(0x0444, 0x00000001, 0x00000000),
++	EN7580_SEQ(0x0444, 0x00000f00, 0x00000000),
++	EN7580_SEQ(0x0444, 0x00030000, 0x00010000),
++	EN7580_SEQ(0x0354, 0x0000ffff, 0x00000004),
++	EN7580_SEQ(0x0354, 0xffff0000, 0x00c80000),
++	EN7580_SEQ(0x0400, 0x000000ff, 0x00000000),
++	EN7580_SEQ(0x0400, 0x00000100, 0x00000000),
++	EN7580_SEQ(0x0410, 0x00000f00, 0x00000a00),
++	EN7580_SEQ(0x0410, 0x00000001, 0x00000000),
++	EN7580_SEQ(0x0410, 0x007f0000, 0x00100000),
++	EN7580_SEQ(0x0410, 0x3f800000, 0x38000000),
++	EN7580_SEQ(0x0304, 0x0000007f, 0x00000040),
++	EN7580_SEQ(0x0304, 0x00007f00, 0x00003f00),
++	EN7580_SEQ(0x0304, 0x00010000, 0x00010000),
++	EN7580_SEQ(0x0308, 0x000fffff, 0x00000018),
++	EN7580_SEQ(0x0930, 0x0000ff00, 0x00000200),
++	EN7580_SEQ(0x0930, 0x00000002, 0x00000002),
++	EN7580_SEQ(0x0930, 0x00000001, 0x00000001),
++	EN7580_SEQ(0x0430, 0x00000700, 0x00000100),
++	EN7580_SEQ(0x0430, 0x00030000, 0x00000000),
++	EN7580_SEQ(0x0460, 0x0007ff00, 0x0000a500),
++	EN7580_SEQ(0x0460, 0x00000007, 0x00000003),
++	EN7580_SEQ(0x0460, 0x03000000, 0x00000000),
++	EN7580_SEQ(0x0464, 0x07000000, 0x04000000),
++	EN7580_SEQ(0x0464, 0x00070000, 0x00010000),
++	EN7580_SEQ(0x0474, 0x000007ff, 0x000001ff),
++	EN7580_SEQ(0x0474, 0x07ff0000, 0x04000000),
++	EN7580_SEQ(0x0468, 0x00000700, 0x00000400),
++	EN7580_SEQ(0x0468, 0x00000007, 0x00000003),
++	EN7580_SEQ(0x065c, 0x01000000, 0x01000000),
++	EN7580_SEQ(0x0490, 0x00000001, 0x00000001),
++	EN7580_SEQ(0x0490, 0x00000100, 0x00000000),
++	EN7580_SEQ(0x0410, 0x00000001, 0x00000000),
++	EN7580_SEQ(0x0410, 0x00000f00, 0x00000a00),
++	EN7580_SEQ(0x0410, 0x007f0000, 0x00100000),
++	EN7580_SEQ(0x0410, 0x3f800000, 0x38000000),
++	EN7580_SEQ(0x0400, 0x00000100, 0x00000000),
++	/* Setting_XFI_ANA */
++	EN7580_SEQ(0x0004, 0x0f000000, 0x00000000),
++	EN7580_SEQ(0x0004, 0x00006000, 0x00006000),
++	EN7580_SEQ(0x0004, 0x00000400, 0x00000400),
++	EN7580_SEQ(0x0004, 0x00000200, 0x00000200),
++	EN7580_SEQ(0x0004, 0x00000020, 0x00000020),
++	EN7580_SEQ(0x0008, 0x00060000, 0x00060000),
++	EN7580_SEQ(0x0008, 0x00018000, 0x00018000),
++	EN7580_SEQ(0x0008, 0x00006000, 0x00000000),
++	EN7580_SEQ(0x000c, 0xc0000000, 0xc0000000),
++	EN7580_SEQ(0x000c, 0x00010000, 0x00010000),
++	EN7580_SEQ(0x000c, 0x00001fe0, 0x00000000),
++	EN7580_SEQ(0x000c, 0x00000008, 0x00000008),
++	EN7580_SEQ(0x000c, 0x00000004, 0x00000004),
++	EN7580_SEQ(0x0060, 0x10000000, 0x10000000),
++	EN7580_MODE_SEQ(0x003c, 0x7f000000, 0x1c000000, 0x1c000000, 0x08000000, 0x1c000000),
++	EN7580_MODE_SEQ(0x003c, 0x0000007c, 0x00000070, 0x00000070, 0x00000020, 0x00000070),
++	EN7580_SEQ(0x002c, 0x00200000, 0x00200000),
++	EN7580_SEQ(0x0044, 0x00000080, 0x00000080),
++	EN7580_MODE_SEQ(0x002c, 0xff000000, 0x42000000, 0x42000000, 0x0a000000, 0x10000000),
++	EN7580_MODE_SEQ(0x002c, 0x00c00000, 0x00800000, 0x00800000, 0x00000000, 0x00000000),
++	EN7580_SEQ(0x0018, 0x01c00000, 0x01000000),
++	EN7580_SEQ(0x0018, 0x80000000, 0x80000000),
++	EN7580_SEQ(0x0018, 0x7e000000, 0x02000000),
++	EN7580_SEQ(0x001c, 0x80000000, 0x80000000),
++	EN7580_SEQ(0x001c, 0x40000000, 0x40000000),
++	EN7580_SEQ(0x0750, 0x00000100, 0x00000100),
++	EN7580_SEQ(0x0750, 0x00000001, 0x00000001),
++	EN7580_SEQ(0x0060, 0x00080000, 0x00080000),
++	EN7580_SEQ(0x0060, 0x00020000, 0x00000000),
++	EN7580_SEQ(0x0060, 0x00040000, 0x00000000),
++	EN7580_SEQ(0x0008, 0xe0000000, 0x80000000),
++	EN7580_SEQ(0x0008, 0x1c000000, 0x10000000),
++	EN7580_SEQ(0x0008, 0x03c00000, 0x02000000),
++	EN7580_SEQ(0x0008, 0x00200000, 0x00200000),
++	EN7580_SEQ(0x0008, 0x00060000, 0x00060000),
++	EN7580_SEQ(0x0008, 0x00018000, 0x00018000),
++	EN7580_SEQ(0x0008, 0x00000010, 0x00000010),
++	EN7580_SEQ(0x0008, 0x00001fe0, 0x00001fe0),
++	EN7580_SEQ(0x000c, 0xc0000000, 0xc0000000),
++	EN7580_SEQ(0x000c, 0x00010000, 0x00010000),
++	EN7580_SEQ(0x000c, 0x00001fe0, 0x00001000),
++	EN7580_SEQ(0x0010, 0xff000000, 0x00000000),
++	EN7580_SEQ(0x0010, 0x00ff0000, 0x00ff0000),
++	EN7580_SEQ(0x0004, 0xf0000000, 0x60000000),
++	EN7580_SEQ(0x0004, 0x0f000000, 0x03000000),
++	EN7580_SEQ(0x0004, 0x001c0000, 0x00000000),
++	EN7580_SEQ(0x0004, 0x00e00000, 0x00200000),
++	EN7580_SEQ(0x0004, 0x00038000, 0x00028000),
++	EN7580_SEQ(0x0004, 0x00000400, 0x00000400),
++	EN7580_SEQ(0x0004, 0x00000200, 0x00000200),
++	EN7580_SEQ(0x0004, 0x00000100, 0x00000100),
++	EN7580_SEQ(0x0004, 0x00000020, 0x00000020),
++	EN7580_SEQ(0x0004, 0x00000010, 0x00000010),
++	EN7580_SEQ(0x0004, 0x0000000e, 0x00000008),
++	EN7580_SEQ(0x090c, 0x0000ffff, 0x00000c80),
++	EN7580_SEQ(0x0910, 0x0000ffff, 0x00000d48),
++	EN7580_SEQ(0x0068, 0x80000000, 0x80000000),
++	EN7580_SEQ(0x0068, 0x60000000, 0x40000000),
++	EN7580_SEQ(0x0068, 0x00000020, 0x00000020),
++	EN7580_SEQ(0x006c, 0x80000000, 0x00000000),
++	EN7580_SEQ(0x006c, 0x40000000, 0x00000000),
++	EN7580_SEQ(0x006c, 0x00020000, 0x00000000),
++	EN7580_SEQ(0x0070, 0x00000300, 0x00000200),
++	EN7580_SEQ(0x0070, 0x000000c0, 0x00000080),
++	EN7580_SEQ(0x006c, 0x00fc0000, 0x00000000),
++	EN7580_SEQ(0x006c, 0x02000000, 0x00000000),
++	EN7580_SEQ(0x006c, 0x01000000, 0x00000000),
++	EN7580_SEQ(0x0068, 0x00000400, 0x00000400),
++	EN7580_SEQ(0x006c, 0x20000000, 0x20000000),
++	EN7580_SEQ(0x006c, 0x10000000, 0x00000000),
++	EN7580_SEQ(0x006c, 0x08000000, 0x08000000),
++	EN7580_SEQ(0x006c, 0x04000000, 0x04000000),
++	EN7580_MODE_SEQ(0x0068, 0x0f000000, 0x02000000, 0x00000000, 0x00000000, 0x00000000),
++	EN7580_MODE_SEQ(0x0068, 0x00f80000, 0x00080000, 0x00000000, 0x00000000, 0x00000000),
++	EN7580_MODE_SEQ(0x0068, 0x0007c000, 0x00030000, 0x00000000, 0x00000000, 0x00000000),
++	EN7580_MODE_SEQ(0x0068, 0x00003800, 0x00002000, 0x00000000, 0x00000000, 0x00000000),
++	EN7580_SEQ(0x0068, 0x000003c0, 0x00000000),
++	EN7580_SEQ(0x0048, 0x00002000, 0x00002000),
++	EN7580_SEQ(0x0048, 0x00004000, 0x00004000),
++	EN7580_SEQ(0x0048, 0x00008000, 0x00008000),
++	EN7580_SEQ(0x0048, 0x00000e00, 0x00000800),
++	EN7580_SEQ(0x0048, 0x00001000, 0x00001000),
++	EN7580_SEQ(0x0640, 0x00000100, 0x00000000),
++	EN7580_SEQ(0x0640, 0x00010000, 0x00000000),
++	EN7580_SEQ(0x0640, 0x01000000, 0x00000000),
++	EN7580_SEQ(0x0644, 0x00000001, 0x00000000),
++	EN7580_SEQ(0x0644, 0x00000100, 0x00000000),
++	EN7580_SEQ(0x0644, 0x00010000, 0x00000000),
++	EN7580_SEQ(0x0644, 0x01000000, 0x00000000),
++	EN7580_SEQ(0x0634, 0x00007f00, 0x00000000),
++	EN7580_SEQ(0x0634, 0x007f0000, 0x00000000),
++	EN7580_SEQ(0x0634, 0x7f000000, 0x00000000),
++	EN7580_SEQ(0x0638, 0x0000007f, 0x00000000),
++	EN7580_SEQ(0x0638, 0x00007f00, 0x00000000),
++	EN7580_SEQ(0x0638, 0x003f0000, 0x00000000),
++	EN7580_SEQ(0x0638, 0x7f000000, 0x00000000),
++	EN7580_SEQ(0x035c, 0x00000001, 0x00000000),
++	EN7580_SEQ(0x035c, 0x00000100, 0x00000000),
++	EN7580_SEQ(0x035c, 0x00010000, 0x00000000),
++	EN7580_SEQ(0x035c, 0x01000000, 0x00000000),
++	EN7580_SEQ(0x0360, 0x00000001, 0x00000000),
++	EN7580_SEQ(0x0034, 0xffffe000, 0x10000000),
++	EN7580_SEQ(0x002c, 0x0007ffff, 0x00078000),
++	/* Setting_XFI_DIG_reset */
++	EN7580_SEQ(0x0900, 0x00000100, 0x00000000),
++	EN7580_SEQ(0x0900, 0x00010000, 0x00000000),
++	EN7580_SEQ(0x0900, 0x00000002, 0x00000000),
++	EN7580_SEQ(0x0904, 0x01000000, 0x00000000),
++	EN7580_SEQ(0x0904, 0x00000001, 0x00000000),
++	EN7580_SEQ(0x0900, 0x00000100, 0x00000100),
++	EN7580_SEQ(0x0900, 0x00010000, 0x00010000),
++	EN7580_SEQ(0x0900, 0x00000002, 0x00000002),
++	EN7580_SEQ(0x0904, 0x01000000, 0x01000000),
++	EN7580_SEQ(0x0904, 0x00000001, 0x00000001),
++	/* seq_JCPLL_force_on */
++	EN7580_SEQ(0x0204, 0x00000001, 0x00000001),
++	EN7580_SEQ(0xffff, 0x00000000, 0x00001388),
++	EN7580_SEQ(0x0800, 0x01000000, 0x01000000),
++	EN7580_SEQ(0x0800, 0x00000001, 0x00000001),
++	EN7580_SEQ(0xffff, 0x00000000, 0x00001388),
++};
++
++static const struct en7580_pcs_step en7580_pcs_start_seq[] = {
++	/* seq_XFI_TX_on_normal */
++	EN7580_SEQ(0x0550, 0x00000001, 0x00000001),
++	EN7580_SEQ(0xffff, 0x00000000, 0x000003e8),
++	EN7580_SEQ(0x0750, 0x00000100, 0x00000100),
++	EN7580_SEQ(0x0750, 0x00000001, 0x00000001),
++	EN7580_SEQ(0x0550, 0x00000100, 0x00000100),
++	EN7580_SEQ(0x0550, 0x00000001, 0x00000001),
++	EN7580_SEQ(0x0554, 0x03000000, 0x02000000),
++	EN7580_SEQ(0x0554, 0x00000001, 0x00000001),
++	EN7580_SEQ(0x0554, 0x00000001, 0x00000000),
++	EN7580_SEQ(0x0558, 0x00000001, 0x00000001),
++	EN7580_SEQ(0x0558, 0x00000001, 0x00000000),
++	EN7580_SEQ(0x004c, 0x00300000, 0x00100000),
++	EN7580_MODE_SEQ(0x004c, 0x0003fc00, 0x00008400, 0x00008400, 0x00005000, 0x00008000),
++	EN7580_SEQ(0x004c, 0x000c0000, 0x00000000),
++	EN7580_SEQ(0x004c, 0x000003c0, 0x00000380),
++	EN7580_SEQ(0x004c, 0x0000003c, 0x00000000),
++	EN7580_SEQ(0x0050, 0xf0000000, 0x50000000),
++	EN7580_MODE_SEQ(0x0050, 0x0f800000, 0x0f800000, 0x0f800000, 0x09800000, 0x0f800000),
++	EN7580_MODE_SEQ(0x0054, 0xfc000000, 0xa0000000, 0xa0000000, 0x54000000, 0xa0000000),
++	EN7580_SEQ(0x0054, 0x00ff0000, 0x00000000),
++	EN7580_SEQ(0x0834, 0x00080000, 0x00000000),
++	EN7580_SEQ(0x0834, 0x00010000, 0x00000000),
++	EN7580_SEQ(0x083c, 0x00000001, 0x00000000),
++	EN7580_SEQ(0x0838, 0x00000100, 0x00000000),
++	EN7580_SEQ(0x0838, 0x00010000, 0x00010000),
++	EN7580_SEQ(0x0060, 0x00000001, 0x00000001),
++	EN7580_SEQ(0x0210, 0x00000100, 0x00000000),
++	EN7580_SEQ(0x0218, 0x01000000, 0x00000000),
++	EN7580_SEQ(0x0210, 0x00010000, 0x00000000),
++	EN7580_SEQ(0x0830, 0x00080000, 0x00000000),
++	EN7580_SEQ(0x0830, 0x00010000, 0x00010000),
++	EN7580_SEQ(0x0830, 0x00040000, 0x00000000),
++	EN7580_SEQ(0x0200, 0x00000100, 0x00000000),
++	EN7580_SEQ(0x0200, 0x00000001, 0x00000000),
++	EN7580_SEQ(0xffff, 0x00000000, 0x0000000a),
++	EN7580_SEQ(0x0200, 0x00000001, 0x00000001),
++	EN7580_SEQ(0xffff, 0x00000000, 0x000001f4),
++	/* seq_XFI_RX_preset */
++	EN7580_SEQ(0x0368, 0x00000100, 0x00000000),
++	EN7580_SEQ(0x0360, 0x00000100, 0x00000000),
++	EN7580_SEQ(0x0368, 0x01000000, 0x00000000),
++	EN7580_SEQ(0x0360, 0x01000000, 0x00000000),
++	EN7580_SEQ(0x0630, 0x00000003, 0x00000001),
++	EN7580_SEQ(0x063c, 0x00000001, 0x00000000),
++	EN7580_SEQ(0x0630, 0x00000700, 0x00000300),
++	EN7580_SEQ(0x063c, 0x00000100, 0x00000000),
++	EN7580_SEQ(0x0630, 0x00010000, 0x00000000),
++	EN7580_SEQ(0x0630, 0x01000000, 0x01000000),
++	EN7580_SEQ(0x063c, 0x00010000, 0x00000000),
++	EN7580_SEQ(0x063c, 0x01000000, 0x00000000),
++	EN7580_SEQ(0x066c, 0x00000100, 0x00000100),
++	EN7580_SEQ(0x0678, 0x00000100, 0x00000000),
++	EN7580_SEQ(0x066c, 0x00010000, 0x00000000),
++	EN7580_SEQ(0x0678, 0x00010000, 0x00000000),
++	EN7580_SEQ(0x0494, 0x00000001, 0x00000000),
++	EN7580_SEQ(0x0674, 0x00000001, 0x00000000),
++	EN7580_SEQ(0x0668, 0x00000001, 0x00000000),
++	EN7580_SEQ(0x0360, 0x00010000, 0x00000000),
++	EN7580_SEQ(0x0368, 0x00010000, 0x00000000),
++	/* aux_XFI_TDC_off */
++	EN7580_SEQ(0x0234, 0x00000100, 0x00000100),
++	EN7580_SEQ(0x0210, 0x00000001, 0x00000000),
++	EN7580_SEQ(0xffff, 0x00000000, 0x000003e8),
++	/* seq_XFI_RX_on */
++	EN7580_SEQ(0x068c, 0x00000100, 0x00000100),
++	EN7580_SEQ(0x068c, 0x00000001, 0x00000001),
++	EN7580_SEQ(0x068c, 0x01000000, 0x01000000),
++	EN7580_SEQ(0x068c, 0x00010000, 0x00010000),
++	EN7580_SEQ(0x0690, 0x00000001, 0x00000001),
++	EN7580_SEQ(0x068c, 0x00000100, 0x00000000),
++	EN7580_SEQ(0x068c, 0x00000001, 0x00000000),
++	EN7580_SEQ(0x068c, 0x01000000, 0x00000000),
++	EN7580_SEQ(0x068c, 0x00010000, 0x00000000),
++	EN7580_SEQ(0x0690, 0x00000001, 0x00000000),
++	EN7580_SEQ(0x068c, 0x00000100, 0x00000100),
++	EN7580_SEQ(0x068c, 0x00000001, 0x00000001),
++	EN7580_SEQ(0x068c, 0x01000000, 0x01000000),
++	EN7580_SEQ(0x068c, 0x00010000, 0x00010000),
++	EN7580_SEQ(0x0690, 0x00000001, 0x00000001),
++	EN7580_SEQ(0xffff, 0x00000000, 0x000001f4),
++	/* seq_XFI_RX_L2R */
++	EN7580_SEQ(0x0630, 0x00010000, 0x00000000),
++	EN7580_SEQ(0x0630, 0x01000000, 0x01000000),
++	EN7580_SEQ(0x063c, 0x00010000, 0x00000000),
++	EN7580_SEQ(0x063c, 0x01000000, 0x00000000),
++	EN7580_SEQ(0xffff, 0x00000000, 0x00000064),
++	/* seq_XFI_RX_pical */
++	EN7580_SEQ(0x0644, 0x01000000, 0x01000000),
++	EN7580_SEQ(0x0370, 0x000000ff, 0x00000080),
++	EN7580_SEQ(0x0430, 0x00000700, 0x00000400),
++	EN7580_SEQ(0x0494, 0x00010000, 0x00000000),
++	EN7580_SEQ(0x0664, 0x00000100, 0x00000000),
++	EN7580_SEQ(0x0670, 0x00000100, 0x00000000),
++	EN7580_SEQ(0x0664, 0x00000001, 0x00000000),
++	EN7580_SEQ(0x0670, 0x00000001, 0x00000000),
++	EN7580_SEQ(0x0654, 0x00000100, 0x00000000),
++	EN7580_SEQ(0x0660, 0x01000000, 0x00000000),
++	EN7580_SEQ(0x0364, 0x00000100, 0x00000000),
++	EN7580_SEQ(0x035c, 0x00000100, 0x00000000),
++	EN7580_SEQ(0x0494, 0x00010000, 0x00010000),
++	EN7580_SEQ(0x0664, 0x00000100, 0x00000100),
++	EN7580_SEQ(0x0664, 0x00000001, 0x00000001),
++	EN7580_SEQ(0x0654, 0x00000100, 0x00000100),
++	EN7580_SEQ(0xffff, 0x00000000, 0x000000c8),
++	EN7580_SEQ(0x0654, 0x00000100, 0x00000000),
++	EN7580_SEQ(0x0658, 0x00000001, 0x00000000),
++	EN7580_SEQ(0x0648, 0x00000001, 0x00000001),
++	/* seq_XFI_RX_pdos */
++	EN7580_SEQ(0x0368, 0x00000100, 0x00000000),
++	EN7580_SEQ(0x0360, 0x00000100, 0x00000000),
++	EN7580_SEQ(0x0640, 0x00000100, 0x00000100),
++	EN7580_SEQ(0x0640, 0x00010000, 0x00010000),
++	EN7580_SEQ(0x0640, 0x01000000, 0x01000000),
++	EN7580_SEQ(0x0644, 0x00000001, 0x00000001),
++	EN7580_SEQ(0x0644, 0x00000100, 0x00000100),
++	EN7580_SEQ(0x0668, 0x00000001, 0x00000000),
++	EN7580_SEQ(0x0674, 0x00000001, 0x00000000),
++	EN7580_SEQ(0x0334, 0x01000000, 0x00000000),
++	EN7580_SEQ(0x0334, 0x00000100, 0x00000000),
++	EN7580_SEQ(0x0668, 0x01000000, 0x00000000),
++	EN7580_SEQ(0x0674, 0x01000000, 0x00000000),
++	EN7580_SEQ(0x0334, 0x00010000, 0x00000000),
++	EN7580_SEQ(0x0334, 0x00000001, 0x00000000),
++	EN7580_SEQ(0x0490, 0x00070000, 0x00020000),
++	EN7580_SEQ(0x0664, 0x00010000, 0x00000000),
++	EN7580_SEQ(0x0670, 0x00010000, 0x00000000),
++	EN7580_SEQ(0x0498, 0x00000001, 0x00000000),
++	EN7580_SEQ(0x0364, 0x00010000, 0x00000000),
++	EN7580_SEQ(0x035c, 0x00010000, 0x00000000),
++	EN7580_SEQ(0x0364, 0x00000001, 0x00000001),
++	EN7580_SEQ(0x035c, 0x00000001, 0x00000000),
++	EN7580_SEQ(0x0664, 0x00010000, 0x00010000),
++	EN7580_SEQ(0x0498, 0x00000001, 0x00000001),
++	EN7580_SEQ(0x0364, 0x00010000, 0x00010000),
++	EN7580_SEQ(0xffff, 0x00000000, 0x000000c8),
++	EN7580_SEQ(0x0364, 0x00010000, 0x00000000),
++	EN7580_SEQ(0x0364, 0x00000001, 0x00000000),
++	EN7580_SEQ(0x0334, 0x01000000, 0x00000000),
++	EN7580_SEQ(0x0334, 0x00000100, 0x00000100),
++	EN7580_SEQ(0x0668, 0x01000000, 0x00000000),
++	EN7580_SEQ(0x0674, 0x01000000, 0x01000000),
++	EN7580_SEQ(0x0334, 0x00010000, 0x00000000),
++	EN7580_SEQ(0x0334, 0x00000001, 0x00000001),
++	EN7580_SEQ(0xffff, 0x00000000, 0x000000c8),
++	/* seq_XFI_RX_feos */
++	EN7580_SEQ(0x0368, 0x00000100, 0x00000000),
++	EN7580_SEQ(0x0360, 0x00000100, 0x00000000),
++	EN7580_SEQ(0x0644, 0x00010000, 0x00010000),
++	EN7580_SEQ(0x0668, 0x00000001, 0x00000000),
++	EN7580_SEQ(0x0674, 0x00000001, 0x00000000),
++	EN7580_SEQ(0x0400, 0x000000ff, 0x00000030),
++	EN7580_SEQ(0x0668, 0x00010000, 0x00000000),
++	EN7580_SEQ(0x0674, 0x00010000, 0x00000000),
++	EN7580_SEQ(0x0494, 0x00000100, 0x00000000),
++	EN7580_SEQ(0x0364, 0x01000000, 0x00000000),
++	EN7580_SEQ(0x035c, 0x00010000, 0x00000000),
++	EN7580_SEQ(0x0364, 0x00000001, 0x00000001),
++	EN7580_SEQ(0x035c, 0x00000001, 0x00000000),
++	EN7580_SEQ(0x0668, 0x00010000, 0x00010000),
++	EN7580_SEQ(0x0494, 0x00000100, 0x00000100),
++	EN7580_SEQ(0x0364, 0x01000000, 0x01000000),
++	EN7580_SEQ(0xffff, 0x00000000, 0x000000c8),
++	EN7580_SEQ(0x0364, 0x01000000, 0x00000000),
++	EN7580_SEQ(0x0364, 0x00000001, 0x00000000),
++	/* aux_XFI_phy_status */
++	EN7580_SEQ(0x0368, 0x00000100, 0x00000100),
++	EN7580_SEQ(0x0360, 0x00000100, 0x00000000),
++	EN7580_SEQ(0xffff, 0x00000000, 0x0000000a),
++	/* seq_XFI_RX_L2D */
++	EN7580_SEQ(0x063c, 0x00010000, 0x00000000),
++	EN7580_SEQ(0x0630, 0x00010000, 0x00010000),
++	EN7580_SEQ(0xffff, 0x00000000, 0x000000c8),
++	EN7580_SEQ(0x0368, 0x01000000, 0x01000000),
++	/* seq_XFI_RX_rxrdy */
++	EN7580_SEQ(0x0368, 0x01000000, 0x01000000),
++	EN7580_SEQ(0x0360, 0x01000000, 0x00000000),
++	EN7580_SEQ(0xffff, 0x00000000, 0x0000000a),
++	EN7580_SEQ(0x0900, 0x00010000, 0x00010000),
++	EN7580_SEQ(0x0048, 0x00060000, 0x00020000),
++	/* aux_XFI_phy_status */
++	EN7580_SEQ(0x0368, 0x00000100, 0x00000100),
++	EN7580_SEQ(0x0360, 0x00000100, 0x00000000),
++	EN7580_SEQ(0xffff, 0x00000000, 0x0000000a),
++	/* aux_XFI_R2T_sel */
++	EN7580_SEQ(0x0754, 0x00010000, 0x00000000),
++	EN7580_SEQ(0x0758, 0x00000001, 0x00000000),
++};
++
++#undef EN7580_SEQ
++#undef EN7580_MODE_SEQ
+diff --git a/drivers/net/pcs/airoha/pcs-en7580.c b/drivers/net/pcs/airoha/pcs-en7580.c
+new file mode 100644
+index 000000000..c994f1468
+--- /dev/null
++++ b/drivers/net/pcs/airoha/pcs-en7580.c
+@@ -0,0 +1,370 @@
++// SPDX-License-Identifier: GPL-2.0
++/* Airoha EN7580 XSI PCS and PMA. */
++
++#include <linux/bitfield.h>
++#include <linux/delay.h>
++#include <linux/mfd/syscon.h>
++#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/pcs/pcs-provider.h>
++#include <linux/phylink.h>
++#include <linux/platform_device.h>
++#include <linux/regmap.h>
++
++#include "pcs-airoha.h"
++
++#define EN7580_SCU_RESET			0x830
++#define EN7580_SCU_XSI_PHY_RESET		BIT(8)
++#define EN7580_SCU_XSI_CLK		0x860
++#define EN7580_SCU_XSI_CLK_PD		BIT(10)
++#define EN7580_SCU_XSI_CTRL		0x92c
++#define EN7580_SCU_XSI_DISABLE		BIT(2)
++#define EN7580_CHIP_SCU_XSI_CTRL		0x104
++#define EN7580_CHIP_SCU_XSI_ENABLE	(BIT(15) | BIT(0))
++
++/* Offsets relative to the PCS resource at 0x1faf7900. */
++#define EN7580_XFI_CTRL			0x0
++#define EN7580_XFI_STATUS		0x30
++#define EN7580_XFI_READY			(BIT(12) | BIT(0))
++#define EN7580_HSGMII_CTRL		0x808
++#define EN7580_HSGMII_STATUS		0x91c
++#define EN7580_HSGMII_STATE		GENMASK(3, 0)
++#define EN7580_HSGMII_READY		0xa
++
++#define EN7580_MAC_STOP			GENMASK(3, 0)
++#define EN7580_MAC_TX_MASK		BIT(9)
++#define EN7580_MAC_INT_STATUS		0x4
++#define EN7580_SEQ_DELAY			0xffff
++#define EN7580_SEQ_SCU			BIT(15)
++
++struct en7580_pcs_step {
++	u16 reg;
++	u32 mask;
++	u32 value[4];
++};
++
++#include "pcs-en7580-seq.h"
++
++struct en7580_pcs {
++	struct fwnode_pcs_provider *provider;
++	struct phylink_pcs pcs;
++	struct regmap *mac;
++	struct regmap *pma;
++	struct regmap *digital;
++	struct regmap *scu;
++	struct regmap *chip_scu;
++	phy_interface_t interface;
++	bool configured;
++};
++
++static struct en7580_pcs *to_en7580_pcs(struct phylink_pcs *pcs)
++{
++	return container_of(pcs, struct en7580_pcs, pcs);
++}
++
++static int en7580_pcs_mode(phy_interface_t interface)
++{
++	switch (interface) {
++	case PHY_INTERFACE_MODE_10GBASER:
++		return 0;
++	case PHY_INTERFACE_MODE_5GBASER:
++		return 1;
++	case PHY_INTERFACE_MODE_2500BASEX:
++		return 2;
++	case PHY_INTERFACE_MODE_1000BASEX:
++		return 3;
++	default:
++		return -EINVAL;
++	}
++}
++
++static int en7580_pcs_sequence(struct en7580_pcs *priv,
++			       const struct en7580_pcs_step *seq,
++			       unsigned int count, unsigned int mode)
++{
++	unsigned int i;
++	int ret;
++
++	for (i = 0; i < count; i++) {
++		struct regmap *map = priv->pma;
++		u32 value = seq[i].value[mode];
++		u16 reg = seq[i].reg;
++
++		if (reg == EN7580_SEQ_DELAY) {
++			if (value < 10)
++				udelay(value);
++			else
++				usleep_range(value, value + max(1U, value / 10));
++			continue;
++		}
++
++		if (reg & EN7580_SEQ_SCU) {
++			map = priv->scu;
++			reg &= ~EN7580_SEQ_SCU;
++		}
++
++		/* Calibration and reset strobes must always reach hardware. */
++		ret = regmap_write_bits(map, reg, seq[i].mask, value);
++		if (ret)
++			return ret;
++	}
++
++	return 0;
++}
++
++static int en7580_pcs_digital_reset(struct en7580_pcs *priv, int mode,
++				    bool release)
++{
++	u32 ctrl = mode < 2 ? EN7580_XFI_CTRL : EN7580_HSGMII_CTRL;
++	u32 first = mode < 2 ? BIT(15) : BIT(27);
++	u32 second = mode < 2 ? BIT(16) : BIT(31);
++	int ret;
++
++	/* The vendor changes RX and TX reset separately, in this order. */
++	ret = regmap_write_bits(priv->digital, ctrl, first, release ? first : 0);
++	if (ret)
++		return ret;
++	return regmap_write_bits(priv->digital, ctrl, second, release ? second : 0);
++}
++
++static unsigned int en7580_pcs_inband_caps(struct phylink_pcs *pcs,
++					 phy_interface_t interface)
++{
++	/* The recovered path uses the external PHY for negotiation. */
++	return LINK_INBAND_DISABLE;
++}
++
++static void en7580_pcs_link_down(struct phylink_pcs *pcs)
++{
++	struct en7580_pcs *priv = to_en7580_pcs(pcs);
++
++	regmap_set_bits(priv->mac, AIROHA_PCS_XFI_MAC_XFI_GIB_CFG,
++			EN7580_MAC_STOP | EN7580_MAC_TX_MASK);
++}
++
++static int en7580_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
++			     phy_interface_t interface,
++			     const unsigned long *advertising,
++			     bool permit_pause_to_mac)
++{
++	struct en7580_pcs *priv = to_en7580_pcs(pcs);
++	int mode, ret;
++
++	mode = en7580_pcs_mode(interface);
++	if (mode < 0 || neg_mode == PHYLINK_PCS_NEG_INBAND_ENABLED)
++		return -EINVAL;
++
++	if (priv->configured && priv->interface == interface)
++		return 0;
++
++	priv->configured = false;
++	en7580_pcs_link_down(pcs);
++
++	ret = regmap_set_bits(priv->scu, EN7580_SCU_RESET,
++			      EN7580_SCU_XSI_PHY_RESET);
++	if (ret)
++		return ret;
++	udelay(1);
++	ret = regmap_clear_bits(priv->scu, EN7580_SCU_RESET,
++				EN7580_SCU_XSI_PHY_RESET);
++	if (ret)
++		return ret;
++
++	ret = en7580_pcs_sequence(priv, en7580_pcs_init_seq,
++				 ARRAY_SIZE(en7580_pcs_init_seq), mode);
++	if (ret)
++		return ret;
++
++	ret = en7580_pcs_digital_reset(priv, mode, false);
++	if (ret)
++		return ret;
++
++	ret = en7580_pcs_sequence(priv, en7580_pcs_start_seq,
++				 ARRAY_SIZE(en7580_pcs_start_seq), mode);
++	if (ret)
++		return ret;
++
++	ret = en7580_pcs_digital_reset(priv, mode, true);
++	if (ret)
++		return ret;
++
++	/* Reproduce xsi_mac_itf_reset while keeping traffic stopped. */
++	ret = regmap_set_bits(priv->mac, AIROHA_PCS_XFI_MAC_XFI_CNT_CLR,
++			      AIROHA_PCS_XFI_GLB_CNT_CLR);
++	if (ret)
++		return ret;
++	ret = regmap_write(priv->mac, EN7580_MAC_INT_STATUS, U32_MAX);
++	if (ret)
++		return ret;
++
++	priv->interface = interface;
++	priv->configured = true;
++	return 0;
++}
++
++static void en7580_pcs_get_state(struct phylink_pcs *pcs, unsigned int neg_mode,
++				 struct phylink_link_state *state)
++{
++	struct en7580_pcs *priv = to_en7580_pcs(pcs);
++	u32 val;
++	int mode = en7580_pcs_mode(priv->interface);
++	static const int speeds[] = { SPEED_10000, SPEED_5000,
++				      SPEED_2500, SPEED_1000 };
++
++	state->link = false;
++	if (!priv->configured || mode < 0)
++		return;
++
++	if (mode < 2) {
++		if (regmap_read(priv->digital, EN7580_XFI_STATUS, &val))
++			return;
++		state->link = (val & EN7580_XFI_READY) == EN7580_XFI_READY;
++	} else {
++		if (regmap_read(priv->digital, EN7580_HSGMII_STATUS, &val))
++			return;
++		state->link = FIELD_GET(EN7580_HSGMII_STATE, val) ==
++			      EN7580_HSGMII_READY;
++	}
++	state->speed = speeds[mode];
++	state->duplex = DUPLEX_FULL;
++}
++
++static void en7580_pcs_link_up(struct phylink_pcs *pcs, unsigned int neg_mode,
++			      phy_interface_t interface, int speed, int duplex)
++{
++	struct en7580_pcs *priv = to_en7580_pcs(pcs);
++	u32 pause = AIROHA_PCS_XFI_TX_FC_EN | AIROHA_PCS_XFI_RX_FC_EN;
++
++	if (!priv->configured)
++		return;
++
++	regmap_update_bits(priv->mac, AIROHA_PCS_XFI_MAC_XFI_GIB_CFG,
++			   AIROHA_PCS_XFI_TX_FC_EN | AIROHA_PCS_XFI_RX_FC_EN,
++			   pause);
++	regmap_clear_bits(priv->mac, AIROHA_PCS_XFI_MAC_XFI_GIB_CFG,
++			  EN7580_MAC_STOP | EN7580_MAC_TX_MASK);
++}
++
++static const struct phylink_pcs_ops en7580_pcs_ops = {
++	.pcs_inband_caps = en7580_pcs_inband_caps,
++	.pcs_config = en7580_pcs_config,
++	.pcs_get_state = en7580_pcs_get_state,
++	.pcs_link_up = en7580_pcs_link_up,
++	.pcs_link_down = en7580_pcs_link_down,
++	.pcs_disable = en7580_pcs_link_down,
++};
++
++static struct phylink_pcs *en7580_pcs_get(struct fwnode_reference_args *args,
++					void *data)
++{
++	struct en7580_pcs *priv = data;
++
++	if (args->nargs)
++		return ERR_PTR(-EINVAL);
++	return &priv->pcs;
++}
++
++static struct regmap *en7580_pcs_map(struct platform_device *pdev,
++				   const char *name)
++{
++	struct resource *res = platform_get_resource_byname(pdev, IORESOURCE_MEM,
++							 name);
++	const struct regmap_config config = {
++		.name = name,
++		.reg_bits = 32,
++		.val_bits = 32,
++		.reg_stride = 4,
++		.max_register = res ? resource_size(res) - 4 : 0,
++	};
++	void __iomem *base;
++
++	if (!res)
++		return ERR_PTR(-EINVAL);
++	base = devm_ioremap_resource(&pdev->dev, res);
++	if (IS_ERR(base))
++		return ERR_CAST(base);
++	return devm_regmap_init_mmio(&pdev->dev, base, &config);
++}
++
++static int en7580_pcs_probe(struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++	struct en7580_pcs *priv;
++	int ret;
++
++	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
++	if (!priv)
++		return -ENOMEM;
++
++	priv->mac = en7580_pcs_map(pdev, "mac");
++	if (IS_ERR(priv->mac))
++		return dev_err_probe(dev, PTR_ERR(priv->mac), "failed to map MAC\n");
++	priv->pma = en7580_pcs_map(pdev, "pma");
++	if (IS_ERR(priv->pma))
++		return dev_err_probe(dev, PTR_ERR(priv->pma), "failed to map PMA\n");
++	priv->digital = en7580_pcs_map(pdev, "pcs");
++	if (IS_ERR(priv->digital))
++		return dev_err_probe(dev, PTR_ERR(priv->digital), "failed to map PCS\n");
++	priv->scu = syscon_regmap_lookup_by_phandle(dev->of_node, "airoha,scu");
++	if (IS_ERR(priv->scu))
++		return dev_err_probe(dev, PTR_ERR(priv->scu), "failed to get NP SCU\n");
++	priv->chip_scu = syscon_regmap_lookup_by_phandle(dev->of_node,
++						       "airoha,chip-scu");
++	if (IS_ERR(priv->chip_scu))
++		return dev_err_probe(dev, PTR_ERR(priv->chip_scu), "failed to get chip SCU\n");
++
++	/* en7580_xfi_phy_dev_init: enable XSI and its clock. */
++	ret = regmap_set_bits(priv->chip_scu, EN7580_CHIP_SCU_XSI_CTRL,
++			      EN7580_CHIP_SCU_XSI_ENABLE);
++	if (ret)
++		return ret;
++	ret = regmap_clear_bits(priv->scu, EN7580_SCU_XSI_CTRL,
++				EN7580_SCU_XSI_DISABLE);
++	if (ret)
++		return ret;
++	ret = regmap_clear_bits(priv->scu, EN7580_SCU_XSI_CLK,
++				EN7580_SCU_XSI_CLK_PD);
++	if (ret)
++		return ret;
++
++	priv->pcs.ops = &en7580_pcs_ops;
++	priv->pcs.poll = true;
++	__set_bit(PHY_INTERFACE_MODE_10GBASER, priv->pcs.supported_interfaces);
++	__set_bit(PHY_INTERFACE_MODE_5GBASER, priv->pcs.supported_interfaces);
++	__set_bit(PHY_INTERFACE_MODE_2500BASEX, priv->pcs.supported_interfaces);
++	__set_bit(PHY_INTERFACE_MODE_1000BASEX, priv->pcs.supported_interfaces);
++	platform_set_drvdata(pdev, priv);
++
++	priv->provider = fwnode_pcs_add_provider(dev_fwnode(dev), en7580_pcs_get, priv);
++	if (IS_ERR(priv->provider))
++		return dev_err_probe(dev, PTR_ERR(priv->provider),
++				     "failed to register PCS provider\n");
++
++	return 0;
++}
++
++static void en7580_pcs_remove(struct platform_device *pdev)
++{
++	struct en7580_pcs *priv = platform_get_drvdata(pdev);
++
++	fwnode_pcs_del_provider(priv->provider);
++}
++
++static const struct of_device_id en7580_pcs_of_match[] = {
++	{ .compatible = "airoha,en7580-pcs" },
++	{ }
++};
++MODULE_DEVICE_TABLE(of, en7580_pcs_of_match);
++
++static struct platform_driver en7580_pcs_driver = {
++	.probe = en7580_pcs_probe,
++	.remove = en7580_pcs_remove,
++	.driver = {
++		.name = "en7580-pcs",
++		.of_match_table = en7580_pcs_of_match,
++	},
++};
++module_platform_driver(en7580_pcs_driver);
++
++MODULE_DESCRIPTION("Airoha EN7580 XSI PCS driver");
++MODULE_LICENSE("GPL");
+-- 
+2.55.0
+

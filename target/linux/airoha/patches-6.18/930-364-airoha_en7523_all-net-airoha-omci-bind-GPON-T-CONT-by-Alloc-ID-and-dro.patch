@@ -1,0 +1,172 @@
+From fdafe2ddb3bfc696d5d559712cdd2d4768c5c2f9 Mon Sep 17 00:00:00 2001
+From: AK Sharma <maskachoska@yahoo.com>
+Date: Fri, 4 Sep 2026 21:30:00 +0530
+Subject: [PATCH] net: airoha: omci: bind GPON T-CONT by Alloc-ID and drop
+ colliding profile seeds
+
+On a Nokia/Alcatel (ALCL) GPON HGU line where the OLT OMCI-creates its own
+data GEM ports and assigns their upstream Alloc-ID over PLOAM (rather than
+reusing the 256/257 pair), the ONU reaches O5 with OMCI up and service=1 but
+never gets a PADO: upstream frames are scheduled on a T-CONT the OLT never
+grants, so PPPoE/DHCP time out.
+
+Two things combine:
+
+1. The nokia-alcl profile seeds T-CONT 0x8000/0x8001 with the placeholder
+   Alloc-ID 256/257 (for the Nokia HGU/VEIP variant that assigns those over
+   PLOAM without OMCI Create).  On an OLT that provisions its own GEMs these
+   seeds are phantoms: they claim the low hardware T-CONT channels, so the
+   PLOAM-granted Alloc-ID lands on a later channel (and gpon_set_alloc_id_hw()
+   derives its entity as 0x8000 + index - 1).
+
+2. The GEM the OLT created (e.g. GEM 247) references T-CONT *entity* 0x8000.
+   gpon_tcont_entity_to_index() resolves that entity, but after a GPON restart
+   the entity->index map is cleared and the positional fallback
+   (entity - 0x8000) + 1 returns the *seed* channel (Alloc-ID 256).  The real
+   service therefore transmits on Alloc-ID 256, which the OLT never grants.
+
+Fix both ends:
+
+- airoha_xpon: in the OMCI service-install path resolve the T-CONT strictly by
+  the OLT-granted service->alloc_id -- find it, or program it via
+  gpon_set_omci_tcont_hw() if a GPON restart cleared the map -- and only fall
+  back to the T-CONT entity when no Alloc-ID is present.  The Alloc-ID is the
+  value the OLT actually schedules the upstream on, so binding to it makes the
+  channel deterministic regardless of the order the seed and real services are
+  applied in.
+
+- net/omci: when staging a service, skip a profile reference-seed GEM
+  (origin OMCI_MIB_ORIGIN_DEFAULT) if the OLT has provisioned its own GEM CTP
+  (origin OMCI_MIB_ORIGIN_OLT).  This removes the phantom seed data services so
+  the real Alloc-ID's T-CONT takes the low channel.  The seed managed entities
+  stay in the MIB, so an OLT that genuinely uses GEM 256/257 without OMCI Create
+  (no origin-OLT GEM CTP) is unaffected.
+
+Verified on an EcoNet EN751221 Nokia G-140W-F against a live Nokia/Alcatel
+(ALCL) OLT: with the fix the ONU self-serves PPPoE on a cold boot; without it
+the upstream never gets a grant.
+
+Signed-off-by: AK Sharma <maskachoska@yahoo.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_xpon.c | 57 ++++++++++++-----------
+ net/xpon/omci/agent.c                     | 26 +++++++++++
+ 2 files changed, 57 insertions(+), 26 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_xpon.c b/drivers/net/ethernet/airoha/airoha_xpon.c
+index 69b2e2eba..3e0f6acec 100644
+--- a/drivers/net/ethernet/airoha/airoha_xpon.c
++++ b/drivers/net/ethernet/airoha/airoha_xpon.c
+@@ -1995,34 +1995,39 @@ int airoha_gpon_omci_hw_replace_service(void *hw_priv,
+ 		.pcp_valid = service->pcp_valid,
+ 		.default_service = service->default_service,
+ 	};
+-	ret = gpon_tcont_entity_to_index(priv, service->tcont_entity_id,
+-					 &tcont_index);
+-	if (ret && service->alloc_id && service->alloc_id != 0xffff) {
++	/*
++	 * Resolve the T-CONT strictly by the OLT-granted Alloc-ID -- it is the
++	 * ground truth the OLT schedules the upstream on.  Do NOT fall back to the
++	 * T-CONT entity when a valid Alloc-ID is present: the nokia-alcl profile
++	 * seeds T-CONT 0x8000/0x8001 with placeholder Alloc-ID 256/257 that claim HW
++	 * channels 1/2, so entity 0x8000 can resolve -- via the cleared-map
++	 * positional fallback (entity-0x8000)+1, or a stale early binding -- to the
++	 * SEED channel (Alloc-ID 256) instead of the real Alloc-ID 307.  GEM 247
++	 * would then queue upstream on a channel the OLT never grants and no PADO
++	 * comes back.  Binding by Alloc-ID (finding it, or programming it if a GPON
++	 * restart cleared the map) makes the channel deterministic regardless of the
++	 * order the seed and real services are applied in.
++	 */
++	if (service->alloc_id && service->alloc_id != 0xffff) {
+ 		unsigned int channel;
+-
+-		/*
+-		 * A GPON restart clears the entity->index map in
+-		 * gpon_dev_init(), but the OLT does not re-run OMCI when the
+-		 * MIB data sync still matches: it only re-sends Assign_Alloc-ID
+-		 * over PLOAM, which never reaches the OMCI agent.  The agent
+-		 * then re-applies its retained service graph, every lookup here
+-		 * returns -ENOENT, and because apply_services is all-or-nothing
+-		 * the whole set is rolled back -- leaving an ONU in O5 with OMCI
+-		 * up, service=0 and no datapath at all, permanently.
+-		 *
+-		 * The Alloc-ID is enough to rebuild it: program the T-CONT and
+-		 * re-bind entity->index, which is exactly what a first-time
+-		 * provisioning does.
+-		 */
+-		ret = gpon_set_omci_tcont_hw(priv, service->tcont_entity_id,
+-					     service->alloc_id, true, &channel);
+-		if (!ret) {
+-			tcont_index = channel;
+-			dev_info(priv->dev,
+-				 "rebuilt T-CONT %#x (alloc-id %u) as channel %u after restart\n",
+-				 service->tcont_entity_id, service->alloc_id,
+-				 channel);
++		int idx;
++
++		mutex_lock(&priv->tcont_lock);
++		idx = gpon_find_tcont_alloc_locked(priv, service->alloc_id);
++		mutex_unlock(&priv->tcont_lock);
++		if (idx >= 0) {
++			tcont_index = idx;
++			ret = 0;
++		} else {
++			ret = gpon_set_omci_tcont_hw(priv, service->tcont_entity_id,
++						     service->alloc_id, true,
++						     &channel);
++			if (!ret)
++				tcont_index = channel;
+ 		}
++	} else {
++		ret = gpon_tcont_entity_to_index(priv, service->tcont_entity_id,
++						 &tcont_index);
+ 	}
+ 	if (ret)
+ 		return ret;
+diff --git a/net/xpon/omci/agent.c b/net/xpon/omci/agent.c
+index 775a5a2e5..585edcecc 100644
+--- a/net/xpon/omci/agent.c
++++ b/net/xpon/omci/agent.c
+@@ -2869,6 +2869,19 @@ static bool omci_agent_service_vlan_valid(u16 vid)
+ 	return vid > 0 && vid < VLAN_VID_MASK;
+ }
+ 
++static bool omci_agent_has_olt_gem_ctp_locked(struct omci_agent *agent)
++{
++	struct omci_mib_object *object;
++	unsigned long index;
++
++	xa_for_each(&agent->mib, index, object) {
++		if (object->class_id == OMCI_CLASS_GEM_PORT_CTP &&
++		    object->origin == OMCI_MIB_ORIGIN_OLT)
++			return true;
++	}
++	return false;
++}
++
+ static int
+ omci_agent_stage_service_rule_locked(struct omci_device *odev,
+ 				     struct xarray *services,
+@@ -2907,6 +2920,19 @@ omci_agent_stage_service_rule_locked(struct omci_device *odev,
+ 		return -ENOENT;
+ 	if (gem->data[4] == OMCI_GEM_PORT_DIRECTION_ANI_TO_UNI)
+ 		return 0;
++	/*
++	 * Skip the profile reference-seed GEMs (256/257, origin DEFAULT) when
++	 * the OLT provisions its own data GEMs (247/248, origin OLT) and assigns
++	 * the real Alloc-ID over PLOAM.  The seeded T-CONT 0x8000/0x8001
++	 * (Alloc-ID 256/257) otherwise become phantom hardware channels that
++	 * displace the real Alloc-ID's T-CONT, so GEM 247 binds to the wrong
++	 * (seed) channel.  The seed managed entities stay in the MIB, so an OLT
++	 * that really uses GEM 256/257 without OMCI Create (no origin-OLT GEM
++	 * CTP) is unaffected.
++	 */
++	if (gem->origin == OMCI_MIB_ORIGIN_DEFAULT &&
++	    omci_agent_has_olt_gem_ctp_locked(agent))
++		return 0;
+ 
+ 	service.uni_entity_id = omci_profile_normalize_uni_entity(
+ 		agent->profile_effective, uni_entity);
+-- 
+2.55.0
+

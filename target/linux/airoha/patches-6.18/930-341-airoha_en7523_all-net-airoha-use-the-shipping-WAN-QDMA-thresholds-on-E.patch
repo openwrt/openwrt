@@ -1,0 +1,63 @@
+From c0025f03fd2212e6dd1c80a0411eb29b4710bf21 Mon Sep 17 00:00:00 2001
+From: Cristian Papa <pcristian292@gmail.com>
+Date: Sat, 26 Sep 2026 14:32:20 -0300
+Subject: [PATCH] net: airoha: use the shipping WAN QDMA thresholds on EN751221
+
+With the 4096-descriptor forwarding profile, the EN751221 WAN QDMA gets
+a PSE buffer threshold of 20/192 (channel/total) and dynamic congestion
+minimums of 2048 (total) and the auto channel value. The shipping
+firmware of the Archer XR500v runs its WAN QDMA with 32/128 and
+minimums of 819 and 160: /proc/qdma_wan/debug in steady state, and
+TXQ_DYN_TOTALTHR 0x3c000333, TXQ_DYN_CHNLTHR 0x3c0000a0 and
+TXQ_DYN_QUEUETHR 0x03330018.
+
+Use those values. Less upstream traffic then queues ahead of the GPON
+MAC, which shows up as lower latency while the upload is saturated.
+
+Measured on the XR500v over its GPON WAN, with eight TCP flows
+uploading to a speedtest server 3 ms away and 10 pings per second to
+the same server, four runs of 10 s each:
+
+  before: 718-721 Mbit/s, average ping 6.0-6.1 ms
+  after:  711-714 Mbit/s, average ping 3.3-3.5 ms
+
+That is about 1 % of upload throughput for 45 % less latency under
+load. Download throughput and latency, and Wi-Fi results, did not
+change. The LAN QDMA and the reduced-pool fallback are not touched.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Cristian Papa <pcristian292@gmail.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
+index a2079ab23..18b859d9a 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -1576,8 +1576,8 @@ static void econet_init_en751221_qdma(struct airoha_qdma_mips *qdma)
+ 		val |= FIELD_PREP(EN751221_PSE_BUF_CH_THR_MASK, 16) |
+ 		       FIELD_PREP(EN751221_PSE_BUF_TOTAL_THR_MASK, 128);
+ 	} else {
+-		val |= FIELD_PREP(EN751221_PSE_BUF_CH_THR_MASK, 20) |
+-		       FIELD_PREP(EN751221_PSE_BUF_TOTAL_THR_MASK, 192);
++		val |= FIELD_PREP(EN751221_PSE_BUF_CH_THR_MASK, 32) |
++		       FIELD_PREP(EN751221_PSE_BUF_TOTAL_THR_MASK, 128);
+ 	}
+ 	econet_wreg(val, &qdma->regs->buf_usage_cfg);
+ 
+@@ -1628,8 +1628,9 @@ static void econet_init_en751221_qdma(struct airoha_qdma_mips *qdma)
+ 		queue_max = 204;
+ 	} else if (qdma->fwd_buf_size == 2048 && qdma->qdma->id == 1 &&
+ 		   qdma->num_fwd_descs == 4096) {
+-		total_min = 2048;
++		total_min = 819;
+ 		total_max = 15360;
++		channel_min = 160;
+ 		channel_max = 15360;
+ 		queue_max = 819;
+ 	}
+-- 
+2.55.0
+

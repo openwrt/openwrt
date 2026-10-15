@@ -1,0 +1,179 @@
+From df91c77e4e526d0ca9cd914e861325ab701bd79a Mon Sep 17 00:00:00 2001
+From: Cristian Papa <pcristian292@gmail.com>
+Date: Sat, 26 Sep 2026 05:37:19 -0300
+Subject: [PATCH] net: dsa: mt7530: serialize EN751221 core access on the
+ hosted MDIO bus
+
+On EN751221, core_read() and core_write() reach the core registers of
+both switches through the indirect PHY helpers of the on-die switch,
+without holding the lock of the MDIO bus that switch hosts. The on-die
+MMIO instance has priv->bus NULL, so mt7530_mutex_lock() does nothing
+there. The companion MT7530 and its PHYs do take that bus lock and use
+the same PHY_IAC controller, so a companion access can slip in between
+an idle check and a command, or replace a read result before it is
+collected: core_read(0x404) was shown to return the other access's data
+in a test that drives the real helpers.
+
+Keep the hosted bus pointer even when the DT has an explicit MDIO node,
+and hold its lock across the whole clause-22 MMD sequence. The unlocked
+bus helpers then reach the existing controller callbacks under the same
+lock as the companion and its PHYs. PLL values, RX taps, reset timings
+and the PHY profile are unchanged.
+
+Found while chasing the boots where no SoC -> MCM TRGMII lane trains.
+Those came from the hardware poller that the first patch stops, which
+no lock can serialize; this one closes the race between the software
+users of the bus.
+
+Assisted-by: Codex:gpt-6-astra
+Signed-off-by: Cristian Papa <pcristian292@gmail.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/dsa/mt7530.c | 81 +++++++++++++++++++++++-----------------
+ drivers/net/dsa/mt7530.h |  2 +
+ 2 files changed, 48 insertions(+), 35 deletions(-)
+
+diff --git a/drivers/net/dsa/mt7530.c b/drivers/net/dsa/mt7530.c
+index 67c30d23c..26b50a4b1 100644
+--- a/drivers/net/dsa/mt7530.c
++++ b/drivers/net/dsa/mt7530.c
+@@ -57,6 +57,42 @@ mt7530_mutex_unlock(struct mt7530_priv *priv)
+ 		mutex_unlock(&priv->bus->mdio_lock);
+ }
+ 
++static int
++en751221_core_access(struct mt7530_priv *priv, u32 reg, u32 val, bool write)
++{
++	struct mii_bus *bus = priv->internal_mdio_bus;
++	int ret;
++
++	if (!bus)
++		return -ENODEV;
++
++	/*
++	 * The on-die core at PHY address 12 shares PHY_IAC with the external
++	 * switch. MMIO regmap locking only protects individual register
++	 * accesses, not an MDIO transaction. Use the hosted bus lock for the
++	 * entire C22 MMD sequence, just like the companion's core access.
++	 */
++	mutex_lock_nested(&bus->mdio_lock, MDIO_MUTEX_NESTED);
++	ret = __mdiobus_write(bus, 12, MII_MMD_CTRL, MDIO_MMD_VEND2);
++	if (ret < 0)
++		goto out;
++	ret = __mdiobus_write(bus, 12, MII_MMD_DATA, reg);
++	if (ret < 0)
++		goto out;
++	ret = __mdiobus_write(bus, 12, MII_MMD_CTRL,
++			      MDIO_MMD_VEND2 | MII_MMD_CTRL_NOINCR);
++	if (ret < 0)
++		goto out;
++	if (write)
++		ret = __mdiobus_write(bus, 12, MII_MMD_DATA, val);
++	else
++		ret = __mdiobus_read(bus, 12, MII_MMD_DATA);
++out:
++	mutex_unlock(&bus->mdio_lock);
++
++	return ret;
++}
++
+ static void
+ core_write(struct mt7530_priv *priv, u32 reg, u32 val)
+ {
+@@ -69,29 +105,11 @@ core_write(struct mt7530_priv *priv, u32 reg, u32 val)
+ 	 * normal pseudo-PHY derived from the MDIO switch address.
+ 	 */
+ 	if (priv->id == ID_EN751221) {
+-		ret = priv->info->phy_write_c22(priv, 12, MII_MMD_CTRL,
+-					       MDIO_MMD_VEND2);
+-		if (ret < 0)
+-			goto err_internal;
+-
+-		ret = priv->info->phy_write_c22(priv, 12, MII_MMD_DATA, reg);
+-		if (ret < 0)
+-			goto err_internal;
+-
+-		ret = priv->info->phy_write_c22(priv, 12, MII_MMD_CTRL,
+-					       MDIO_MMD_VEND2 | MII_MMD_CTRL_NOINCR);
+-		if (ret < 0)
+-			goto err_internal;
+-
+-		ret = priv->info->phy_write_c22(priv, 12, MII_MMD_DATA, val);
++		ret = en751221_core_access(priv, reg, val, true);
+ 		if (ret < 0)
+-			goto err_internal;
+-
+-		return;
+-
+-err_internal:
+-		dev_err(priv->dev, "failed to write EN751221 core MMD register 0x%x\n",
+-			reg);
++			dev_err(priv->dev,
++				"failed to write EN751221 core MMD register 0x%x: %d\n",
++				reg, ret);
+ 		return;
+ 	}
+ 
+@@ -132,19 +150,8 @@ core_read(struct mt7530_priv *priv, u32 reg)
+ 	int ret;
+ 
+ 	/* Same access paths as core_write(). */
+-	if (priv->id == ID_EN751221) {
+-		ret = priv->info->phy_write_c22(priv, 12, MII_MMD_CTRL,
+-					       MDIO_MMD_VEND2);
+-		if (!ret)
+-			ret = priv->info->phy_write_c22(priv, 12, MII_MMD_DATA,
+-						       reg);
+-		if (!ret)
+-			ret = priv->info->phy_write_c22(priv, 12, MII_MMD_CTRL,
+-						       MDIO_MMD_VEND2 |
+-						       MII_MMD_CTRL_NOINCR);
+-		return ret ? ret : priv->info->phy_read_c22(priv, 12,
+-							     MII_MMD_DATA);
+-	}
++	if (priv->id == ID_EN751221)
++		return en751221_core_access(priv, reg, 0, false);
+ 
+ 	mt7530_mutex_lock(priv);
+ 	ret = bus->write(bus, MT753X_CTRL_PHY_ADDR(priv->mdiodev->addr),
+@@ -2799,6 +2806,9 @@ int mt7530_setup_mdio(struct mt7530_priv *priv)
+ 	if (!mnp)
+ 		ds->user_mii_bus = bus;
+ 
++	/* Keep this even with an explicit MDIO node (no user_mii_bus). */
++	priv->internal_mdio_bus = bus;
++
+ 	bus->priv = priv;
+ 	bus->name = KBUILD_MODNAME "-mii";
+ 	snprintf(bus->id, MII_BUS_ID_SIZE, KBUILD_MODNAME "-%d", idx++);
+@@ -2814,6 +2824,7 @@ int mt7530_setup_mdio(struct mt7530_priv *priv)
+ 
+ 	ret = devm_of_mdiobus_register(dev, bus, mnp);
+ 	if (ret) {
++		priv->internal_mdio_bus = NULL;
+ 		dev_err(dev, "failed to register MDIO bus: %d\n", ret);
+ 		if (priv->irq_domain && !mnp)
+ 			mt7530_free_mdio_irq(priv);
+diff --git a/drivers/net/dsa/mt7530.h b/drivers/net/dsa/mt7530.h
+index f7e0c3853..a6796700c 100644
+--- a/drivers/net/dsa/mt7530.h
++++ b/drivers/net/dsa/mt7530.h
+@@ -889,6 +889,7 @@ struct mt753x_info {
+  * @dev:		The device pointer
+  * @ds:			The pointer to the dsa core structure
+  * @bus:		The bus used for the device and built-in PHY
++ * @internal_mdio_bus:	MDIO bus hosted by this switch, also used for core access
+  * @regmap:		The regmap instance representing all switch registers
+  * @rstc:		The pointer to reset control used by MCM
+  * @core_pwr:		The power supplied into the core
+@@ -911,6 +912,7 @@ struct mt7530_priv {
+ 	struct device		*dev;
+ 	struct dsa_switch	*ds;
+ 	struct mii_bus		*bus;
++	struct mii_bus		*internal_mdio_bus;
+ 	struct regmap		*regmap;
+ 	struct reset_control	*rstc;
+ 	struct regulator	*core_pwr;
+-- 
+2.55.0
+
