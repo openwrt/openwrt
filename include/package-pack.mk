@@ -330,6 +330,7 @@ endif
 
 ifneq ($(CONFIG_USE_APK),)
     APK_TAGS_$(1):=
+    APK_INFO_$(1):=
 
     ifneq ($$(ABIV_$(1)),)
       APK_TAGS_$(1)+=openwrt:abiversion=$$(ABIV_$(1))
@@ -609,6 +610,7 @@ else
 	  --info "name:$(1)$$(ABIV_$(1))" \
 	  --info "version:$(VERSION)" \
 	  $$(if $$(APK_TAGS_$(1)),--info "tags:$$(APK_TAGS_$(1))") \
+	  $$(APK_INFO_$(1)) \
 	  --info "description:$$(call description_escape,$$(strip $$(Package/$(1)/description)))" \
 	  $(if $(findstring all,$(PKGARCH)),--info "arch:noarch",--info "arch:$(PKGARCH)") \
 	  --info "license:$(LICENSE)" \
