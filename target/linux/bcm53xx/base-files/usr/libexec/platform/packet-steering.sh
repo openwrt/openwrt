@@ -10,6 +10,22 @@ flow_offloading_hw="$(uci -q get firewall.@defaults[0].flow_offloading_hw)"
 	exit 0
 }
 
+. /lib/functions.sh
+
+case "$(board_name)" in
+meraki,mx65)
+	# WAN uses the second CPU port (eth0), LAN the first one (eth1): give
+	# each its own CPU, RPS on top of that only costs throughput
+	for dev in eth0 eth1; do
+		echo 0 > /sys/class/net/$dev/queues/rx-0/rps_cpus
+	done
+	echo 0 > /sys/class/net/br-lan/queues/rx-0/rps_cpus
+	irq=$(awk '/ eth0$/ { sub(":", "", $1); print $1 }' /proc/interrupts)
+	[ -n "$irq" ] && echo 2 > /proc/irq/$irq/smp_affinity
+	exit 0
+	;;
+esac
+
 if [ ${flow_offloading_hw:-0} -gt 0 ]; then
 	# HW offloading
 	echo 0 > /sys/class/net/br-lan/queues/rx-0/rps_cpus
