@@ -33,6 +33,42 @@
 		gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
 	};
 
+	/* i2c of the left SFP cage: port 49 */
+	i2c0: i2c-gpio-0 {
+		compatible = "i2c-gpio";
+		sda-gpios = <&gpio0 18 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&gpio0 17 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		i2c-gpio,delay-us = <2>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+
+	sfp0: sfp-p49 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c0>;
+		los-gpios = <&gpio0 21 GPIO_ACTIVE_HIGH>;
+		mod-def0-gpios = <&gpio0 16 GPIO_ACTIVE_LOW>;
+		tx-disable-gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>;
+	};
+
+	/* i2c of the right SFP cage: port 50 */
+	i2c1: i2c-gpio-1 {
+		compatible = "i2c-gpio";
+		sda-gpios = <&gpio0 13 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&gpio0 12 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		i2c-gpio,delay-us = <2>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+
+	sfp1: sfp-p50 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c1>;
+		los-gpios = <&gpio0 22 GPIO_ACTIVE_HIGH>;
+		mod-def0-gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
+		tx-disable-gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
+	};
+
 	virtual_flash {
 		compatible = "mtd-concat";
 
@@ -260,7 +296,7 @@
 			pcs-handle = <&serdes12 0>;
 			phy-mode = "1000base-x";
 			managed = "in-band-status";
-			/* i2c and gpio not yet identified */
+			sfp = <&sfp0>;
 		};
 		port@49 {
 			reg = <49>;
@@ -268,7 +304,7 @@
 			pcs-handle = <&serdes13 0>;
 			phy-mode = "1000base-x";
 			managed = "in-band-status";
-			/* i2c and gpio not yet identified */
+			sfp = <&sfp1>;
 		};
 
 		/* CPU-Port */

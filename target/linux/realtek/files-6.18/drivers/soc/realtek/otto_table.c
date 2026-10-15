@@ -169,6 +169,9 @@ static const struct otto_table_map otto_table_maps[OTTO_TBL_COUNT] = {
 	TBL_MAP(RTL8390_TBL_IACL, OTTO_REG_8390_0, 2, 17, 2304, 0),
 	TBL_MAP(RTL8390_TBL_EACL, OTTO_REG_8390_0, 2, 17, 2304, 0),
 	TBL_MAP(RTL8390_TBL_LOG, OTTO_REG_8390_0, 4, 2, 1024, 0),
+	/* A LOG write clears a counter: ADDR[11:0] = {CLRH, CLRL, index[9:0]} */
+	TBL_MAP(RTL8390_TBL_LOG_CLRL, OTTO_REG_8390_0, 4, 2, 1024, 1024),
+	TBL_MAP(RTL8390_TBL_LOG_CLRH, OTTO_REG_8390_0, 4, 2, 1024, 2048),
 	TBL_MAP(RTL8390_TBL_MSTI, OTTO_REG_8390_0, 5, 4, 256, 0),
 
 	TBL_MAP(RTL8390_TBL_UNTAG, OTTO_REG_8390_1, 0, 2, 4096, 0),
@@ -376,7 +379,7 @@ static struct otto_table *otto_table_reg(int handle)
 }
 
 /* The command register masks the index to the width of its index field, which
- * cannot express the bound: it is wider than the table on 95 of the tables,
+ * cannot express the bound: it is wider than the table on 97 of the tables,
  * exactly as wide on the other 41, and 11 tables do not have a power-of-two
  * row count at all.
  */

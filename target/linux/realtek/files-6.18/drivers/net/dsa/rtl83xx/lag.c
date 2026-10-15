@@ -2,9 +2,9 @@
 
 #include <linux/bitfield.h>
 #include <linux/bitmap.h>
-#include <linux/iopoll.h>
 #include <linux/mutex.h>
 #include <linux/netdevice.h>
+#include <linux/regmap.h>
 #include <linux/string.h>
 #include <net/dsa.h>
 
@@ -141,7 +141,7 @@
  * @port: port id of potential LAG member
  * Return: -ENOENT when port does not belong to any lag group, lag id otherwise
  */
-int otto_lag_find_group_from_port(struct rtl838x_switch_priv *priv, int port)
+int otto_lag_find_group_from_port(struct otto_dsa_priv *priv, int port)
 {
 	if (!(priv->lagmembers & BIT_ULL(port)))
 		return -ENOENT;
@@ -190,7 +190,7 @@ static bool otto_lag_83xx_can_offload(struct dsa_switch *ds,
 int otto_lag_port_change(struct dsa_switch *ds, int port)
 {
 	struct dsa_port *dp = dsa_to_port(ds, port);
-	struct rtl838x_switch_priv *priv = ds->priv;
+	struct otto_dsa_priv *priv = ds->priv;
 	int lag_group;
 	int ret;
 
@@ -219,7 +219,7 @@ int otto_lag_port_join(struct dsa_switch *ds, int port, struct dsa_lag lag,
 		       struct netdev_lag_upper_info *info,
 		       struct netlink_ext_ack *extack)
 {
-	struct rtl838x_switch_priv *priv = ds->priv;
+	struct otto_dsa_priv *priv = ds->priv;
 	int err = 0;
 	int group;
 
@@ -260,7 +260,7 @@ out:
 int otto_lag_port_leave(struct dsa_switch *ds, int port, struct dsa_lag lag)
 {
 	int group, err;
-	struct rtl838x_switch_priv *priv = ds->priv;
+	struct otto_dsa_priv *priv = ds->priv;
 
 	mutex_lock(&priv->reg_mutex);
 
@@ -300,7 +300,7 @@ out:
 /* Caller must hold priv->reg_mutex */
 int otto_lag_add(struct dsa_switch *ds, int group, int port, struct netdev_lag_upper_info *info)
 {
-	struct rtl838x_switch_priv *priv = ds->priv;
+	struct otto_dsa_priv *priv = ds->priv;
 	int ret;
 	int i;
 
@@ -333,7 +333,7 @@ int otto_lag_add(struct dsa_switch *ds, int group, int port, struct netdev_lag_u
 /* Caller must hold priv->reg_mutex */
 int otto_lag_del(struct dsa_switch *ds, int group, int port)
 {
-	struct rtl838x_switch_priv *priv = ds->priv;
+	struct otto_dsa_priv *priv = ds->priv;
 	int ret;
 
 	if (group >= priv->ds->num_lag_ids) {
@@ -364,7 +364,7 @@ int otto_lag_del(struct dsa_switch *ds, int group, int port)
 	return 0;
 }
 
-int otto_lag_93xx_set_distribution_algorithm(struct rtl838x_switch_priv *priv,
+int otto_lag_93xx_set_distribution_algorithm(struct otto_dsa_priv *priv,
 					     int group, int algoidx, u32 algomsk)
 {
 	bool is_l3 = false;
@@ -408,12 +408,12 @@ int otto_lag_93xx_set_distribution_algorithm(struct rtl838x_switch_priv *priv,
 			newmask |= TRUNK_DISTRIBUTION_ALGO_L2_VLAN_BIT;
 	}
 
-	sw_w32(newmask, priv->r->trk_hash_ctrl + (algoidx << 2));
+	regmap_write(priv->map, priv->r->trk_hash_ctrl + (algoidx << 2), newmask);
 
 	return 0;
 }
 
-int otto_lag_83xx_setup_algomask(struct rtl838x_switch_priv *priv, int group,
+int otto_lag_83xx_setup_algomask(struct otto_dsa_priv *priv, int group,
 				 struct netdev_lag_upper_info *info)
 {
 	u32 algomsk = 0;
@@ -445,7 +445,7 @@ int otto_lag_83xx_setup_algomask(struct rtl838x_switch_priv *priv, int group,
 	return priv->r->lag_set_distribution_algorithm(priv, group, algoidx, algomsk);
 }
 
-static int otto_lag_93xx_set_group2ports(struct rtl838x_switch_priv *priv, int group,
+static int otto_lag_93xx_set_group2ports(struct otto_dsa_priv *priv, int group,
 					 struct netdev_lag_upper_info *info)
 {
 	DECLARE_BITMAP(ports, ARRAY_SIZE(priv->ports));
@@ -533,13 +533,13 @@ static int otto_lag_93xx_set_group2ports(struct rtl838x_switch_priv *priv, int g
 	return 0;
 }
 
-static inline void otto_lag_93xx_set_local_group2ports(struct rtl838x_switch_priv *priv, int group,
+static inline void otto_lag_93xx_set_local_group2ports(struct otto_dsa_priv *priv, int group,
 						       u64 ports)
 {
 	priv->r->set_port_reg_be(ports, priv->r->trk_mbr_ctr(group));
 }
 
-int otto_lag_93xx_set_port_members(struct rtl838x_switch_priv *priv, int group,
+int otto_lag_93xx_set_port_members(struct otto_dsa_priv *priv, int group,
 				   u64 members, struct netdev_lag_upper_info *info)
 {
 	DECLARE_BITMAP(affected_members, ARRAY_SIZE(priv->ports));
@@ -572,22 +572,22 @@ int otto_lag_93xx_set_port_members(struct rtl838x_switch_priv *priv, int group,
 	}
 
 	/* apply local group and port settings */
-	priv->r->lag_set_local_group_id(group, group, valid_group);
+	priv->r->lag_set_local_group_id(priv, group, group, valid_group);
 	otto_lag_93xx_set_local_group2ports(priv, group, priv->lags_port_members[group]);
 
 	for_each_set_bit(port, affected_members, ARRAY_SIZE(priv->ports)) {
 		bool valid = priv->lags_port_members[group] & BIT_ULL(port);
 
-		priv->r->lag_set_local_port2group(group, port, valid);
+		priv->r->lag_set_local_port2group(priv, group, port, valid);
 	}
 
 	/* write lag table (and maybe additional information) to SRAM */
-	priv->r->lag_sync_tables();
+	priv->r->lag_sync_tables(priv);
 
 	return 0;
 }
 
-void otto_lag_93xx_switch_init(struct rtl838x_switch_priv *priv)
+void otto_lag_93xx_switch_init(struct otto_dsa_priv *priv)
 {
 	u32 trk_ctrlmask = 0;
 	u32 algomask;
@@ -596,7 +596,7 @@ void otto_lag_93xx_switch_init(struct rtl838x_switch_priv *priv)
 	trk_ctrlmask |= RTL93XX_TRK_CTRL_TRK_STAND_ALONE_MODE;
 	trk_ctrlmask |= RTL93XX_TRK_CTRL_LOCAL_FIRST;
 
-	sw_w32(trk_ctrlmask, priv->r->trk_ctrl);
+	regmap_write(priv->map, priv->r->trk_ctrl, trk_ctrlmask);
 
 	/* Setup NETDEV_LAG_HASH_L2 on slot 0 */
 	algomask = TRUNK_DISTRIBUTION_ALGO_SMAC_BIT |
@@ -616,17 +616,17 @@ int otto_lag_838x_trk_mbr_ctr(int group)
 	return RTL838X_TRK_MBR_CTR + (group << 2);
 }
 
-int otto_lag_838x_set_distribution_algorithm(struct rtl838x_switch_priv *priv,
+int otto_lag_838x_set_distribution_algorithm(struct otto_dsa_priv *priv,
 					     int group, int algoidx, u32 algomsk)
 {
 	algoidx &= 1; /* RTL838X only supports 2 concurrent algorithms */
-	sw_w32_mask(1 << (group % 8), algoidx << (group % 8),
-		    RTL838X_TRK_HASH_IDX_CTRL + ((group >> 3) << 2));
-	sw_w32(algomsk, RTL838X_TRK_HASH_CTRL + (algoidx << 2));
+	regmap_write_bits(priv->map, RTL838X_TRK_HASH_IDX_CTRL + ((group >> 3) << 2),
+			  1 << (group % 8), algoidx << (group % 8));
+	regmap_write(priv->map, RTL838X_TRK_HASH_CTRL + (algoidx << 2), algomsk);
 	return 0;
 }
 
-int otto_lag_838x_set_port_members(struct rtl838x_switch_priv *priv, int group,
+int otto_lag_838x_set_port_members(struct otto_dsa_priv *priv, int group,
 				   u64 members, struct netdev_lag_upper_info *info)
 {
 	priv->lags_port_members[group] = members;
@@ -642,17 +642,17 @@ int otto_lag_839x_trk_mbr_ctr(int group)
 	return RTL839X_TRK_MBR_CTR + (group << 3);
 }
 
-int otto_lag_839x_set_distribution_algorithm(struct rtl838x_switch_priv *priv,
+int otto_lag_839x_set_distribution_algorithm(struct otto_dsa_priv *priv,
 					     int group, int algoidx, u32 algomsk)
 {
-	sw_w32_mask(3 << ((group & 0xf) << 1), algoidx << ((group & 0xf) << 1),
-		    RTL839X_TRK_HASH_IDX_CTRL + ((group >> 4) << 2));
-	sw_w32(algomsk, RTL839X_TRK_HASH_CTRL + (algoidx << 2));
+	regmap_write_bits(priv->map, RTL839X_TRK_HASH_IDX_CTRL + ((group >> 4) << 2),
+			  3U << ((group & 0xf) << 1), (u32)algoidx << ((group & 0xf) << 1));
+	regmap_write(priv->map, RTL839X_TRK_HASH_CTRL + (algoidx << 2), algomsk);
 
 	return 0;
 }
 
-int otto_lag_839x_set_port_members(struct rtl838x_switch_priv *priv, int group,
+int otto_lag_839x_set_port_members(struct otto_dsa_priv *priv, int group,
 				   u64 members, struct netdev_lag_upper_info *info)
 {
 	priv->lags_port_members[group] = members;
@@ -742,33 +742,35 @@ void otto_lag_930x_write_data(u32 data[], struct rtldsa_93xx_lag_entry *e)
 	data[2] |= FIELD_PREP(RTL930X_LAG_TRK_PORT0, e->trk_port0);
 }
 
-void otto_lag_930x_set_local_group_id(int local_group, int global_group, bool valid)
+void otto_lag_930x_set_local_group_id(struct otto_dsa_priv *priv,
+				      int local_group, int global_group, bool valid)
 {
 	u32 mask = 0;
 
 	mask |= valid ? RTL930X_TRK_ID_CTRL_TRK_VALID : 0;
 	mask |= FIELD_PREP(RTL930X_TRK_ID_CTRL_TRK_ID, global_group);
-	sw_w32(mask, RTL930X_TRK_ID_CTRL + (4 * local_group));
+	regmap_write(priv->map, RTL930X_TRK_ID_CTRL + (4 * local_group), mask);
 }
 
-void otto_lag_930x_set_local_port2group(int group, int port, bool valid)
+void otto_lag_930x_set_local_port2group(struct otto_dsa_priv *priv,
+					int group, int port, bool valid)
 {
 	u32 mask = 0;
 
 	mask |= valid ? RTL930X_LOCAL_PORT_TRK_MAP_IS_TRK_MBR : 0;
 	mask |= FIELD_PREP(RTL930X_LOCAL_PORT_TRK_MAP_TRK_ID, group);
-	sw_w32(mask, RTL930X_LOCAL_PORT_TRK_MAP + (4 * port));
+	regmap_write(priv->map, RTL930X_LOCAL_PORT_TRK_MAP + (4 * port), mask);
 }
 
-void otto_lag_930x_sync_tables(void)
+void otto_lag_930x_sync_tables(struct otto_dsa_priv *priv)
 {
 	u32 val;
 	int ret;
 
-	sw_w32(BIT(0), RTL930X_TRK_LOCAL_TBL_REFRESH);
+	regmap_write(priv->map, RTL930X_TRK_LOCAL_TBL_REFRESH, BIT(0));
 
-	ret = readx_poll_timeout(sw_r32, RTL930X_TRK_LOCAL_TBL_REFRESH, val,
-				 !(val & BIT(0)), 20, 10000);
+	ret = regmap_read_poll_timeout(priv->map, RTL930X_TRK_LOCAL_TBL_REFRESH,
+				       val, !(val & BIT(0)), 20, 10000);
 	if (ret)
 		pr_err("%s: timeout\n", __func__);
 }
@@ -861,33 +863,35 @@ void otto_lag_931x_write_data(u32 data[], struct rtldsa_93xx_lag_entry *e)
 	data[2] |= FIELD_PREP(RTL931X_LAG_TRK_PORT0, e->trk_port0);
 }
 
-void otto_lag_931x_set_local_group_id(int local_group, int global_group, bool valid)
+void otto_lag_931x_set_local_group_id(struct otto_dsa_priv *priv,
+				      int local_group, int global_group, bool valid)
 {
 	u32 mask = 0;
 
 	mask |= valid ? RTL931X_TRK_ID_CTRL_TRK_VALID : 0;
 	mask |= FIELD_PREP(RLT931X_TRK_ID_CTRL_TRK_ID, global_group);
-	sw_w32(mask, RTL931X_TRK_ID_CTRL + (4 * local_group));
+	regmap_write(priv->map, RTL931X_TRK_ID_CTRL + (4 * local_group), mask);
 }
 
-void otto_lag_931x_set_local_port2group(int group, int port, bool valid)
+void otto_lag_931x_set_local_port2group(struct otto_dsa_priv *priv,
+					int group, int port, bool valid)
 {
 	u32 mask = 0;
 
 	mask |= valid ? RTL931X_LOCAL_PORT_TRK_MAP_IS_TRK_MBR : 0;
 	mask |= FIELD_PREP(RTL931X_LOCAL_PORT_TRK_MAP_TRK_ID, group);
-	sw_w32(mask, RTL931X_LOCAL_PORT_TRK_MAP + (4 * port));
+	regmap_write(priv->map, RTL931X_LOCAL_PORT_TRK_MAP + (4 * port), mask);
 }
 
-void otto_lag_931x_sync_tables(void)
+void otto_lag_931x_sync_tables(struct otto_dsa_priv *priv)
 {
 	u32 val;
 	int ret;
 
-	sw_w32(BIT(0), RTL931X_TRK_LOCAL_TBL_REFRESH);
+	regmap_write(priv->map, RTL931X_TRK_LOCAL_TBL_REFRESH, BIT(0));
 
-	ret = readx_poll_timeout(sw_r32, RTL931X_TRK_LOCAL_TBL_REFRESH, val,
-				 !(val & BIT(0)), 20, 10000);
+	ret = regmap_read_poll_timeout(priv->map, RTL931X_TRK_LOCAL_TBL_REFRESH,
+				       val, !(val & BIT(0)), 20, 10000);
 	if (ret)
 		pr_err("%s: timeout\n", __func__);
 }

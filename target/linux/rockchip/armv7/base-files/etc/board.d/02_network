@@ -1,0 +1,51 @@
+. /lib/functions.sh
+. /lib/functions/system.sh
+. /lib/functions/uci-defaults.sh
+
+herospeed_param_mac_get()
+{
+	local mac part
+
+	part=$(find_mmc_part param mmcblk0)
+	[ -n "$part" ] || return
+
+	mkdir -p /tmp/param
+	mount -t ext4 -o ro,noload "$part" /tmp/param || return
+	mac=$(sed -n 's/^MAC=//p' /tmp/param/net.conf)
+	umount /tmp/param
+
+	macaddr_canonicalize "$mac"
+}
+
+rockchip_setup_interfaces()
+{
+	local board="$1"
+
+	case "$board" in
+	herospeed,rv1126-imx415)
+		ucidef_set_interface_lan 'eth0'
+		;;
+	esac
+}
+
+rockchip_setup_macs()
+{
+	local board="$1"
+	local lan_mac
+
+	case "$board" in
+	herospeed,rv1126-imx415)
+		lan_mac=$(herospeed_param_mac_get)
+		;;
+	esac
+
+	[ -n "$lan_mac" ] && ucidef_set_interface_macaddr 'lan' "$lan_mac"
+}
+
+board_config_update
+board=$(board_name)
+rockchip_setup_interfaces "$board"
+rockchip_setup_macs "$board"
+board_config_flush
+
+exit 0

@@ -260,7 +260,7 @@ static void rtldsa_931x_led_get_forced(const struct device_node *node,
 	}
 }
 
-static void rtldsa_931x_led_init(struct rtl838x_switch_priv *priv)
+static void rtldsa_931x_led_init(struct otto_dsa_priv *priv)
 {
 	u8 forced_leds_per_port[RTL931X_CPU_PORT] = {};
 	u64 pm_copper = 0, pm_fiber = 0;
@@ -389,7 +389,7 @@ static void rtldsa_931x_led_init(struct rtl838x_switch_priv *priv)
 }
 
 static int
-rtldsa_931x_mac_link_state_source_set(struct rtl838x_switch_priv *priv,
+rtldsa_931x_mac_link_state_source_set(struct otto_dsa_priv *priv,
 				      int port,
 				      enum rtldsa_mac_link_state_source source,
 				      phy_interface_t interface)
@@ -500,10 +500,10 @@ const struct rtldsa_config rtldsa_931x_cfg = {
 	.l2_hash_seed = otto_l2_931x_hash_seed,
 	.read_mcast_pmask = otto_l2_931x_read_mcast_pmask,
 	.write_mcast_pmask = otto_l2_931x_write_mcast_pmask,
-	.pie_init = rtl931x_pie_init,
-	.pie_rule_write = rtl931x_pie_rule_write,
-	.pie_rule_add = rtl931x_pie_rule_add,
-	.pie_rule_rm = rtl931x_pie_rule_rm,
+	.pie_init = otto_pie_931x_init,
+	.pie_rule_write = otto_pie_931x_rule_write,
+	.pie_rule_add = otto_pie_931x_rule_add,
+	.pie_rule_rm = otto_pie_931x_rule_rm,
 	.l2_learning_setup = otto_l2_931x_learning_setup,
 	.led_init = rtldsa_931x_led_init,
 	.enable_learning = otto_l2_931x_enable_learning,

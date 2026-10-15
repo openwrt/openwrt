@@ -5,10 +5,11 @@ define Build/dongwon-header
 	( \
 		header_crc="$$(head -c 68 $@.tmp | gzip -c | \
 			tail -c 8 | od -An -N4 -tx4 --endian little | tr -d ' \n')"; \
-		printf "$$(echo $$header_crc | sed 's/../\\x&/g')" | \
-			dd of=$@.tmp bs=4 count=1 seek=1 conv=notrunc \
-	)
-	mv $@.tmp $@
+		head -c 4 $@.tmp; \
+		printf "$$(echo $$header_crc | sed 's/../\\x&/g')"; \
+		tail -c +9 $@.tmp; \
+	) > $@
+	rm -f $@.tmp
 endef
 
 define Build/meraki-header

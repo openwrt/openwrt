@@ -95,7 +95,7 @@ int rtldsa_port_mirror_add(struct dsa_switch *ds, int port,
 			   bool ingress, struct netlink_ext_ack *extack)
 {
 	/* We support 4 mirror groups, one destination port per group */
-	struct rtl838x_switch_priv *priv = ds->priv;
+	struct otto_dsa_priv *priv = ds->priv;
 	struct rtldsa_mirror_config config;
 	int err = 0;
 	int pm_reg;
@@ -157,7 +157,7 @@ out_unlock:
 void rtldsa_port_mirror_del(struct dsa_switch *ds, int port,
 			    struct dsa_mall_mirror_tc_entry *mirror)
 {
-	struct rtl838x_switch_priv *priv = ds->priv;
+	struct otto_dsa_priv *priv = ds->priv;
 	struct rtldsa_mirror_config config;
 	int group = 0;
 	int r;

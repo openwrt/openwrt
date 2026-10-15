@@ -1,0 +1,56 @@
+From b8f795ca3df27c29562fcb23004ef2ac750c5f02 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 9 Oct 2026 13:58:54 +0100
+Subject: [PATCH] phy: rockchip: inno-usb2: add optional otg bypass controls
+
+On some Innosilicon USB2 PHY integrations the OTG suspendm bypass
+bit resets to one, which makes software responsible for setting
+otg_suspendm and LS_PAR_EN whenever the dual-role controller switches
+role. Clearing it hands that switching back to the hardware. The id
+pin pull-up additionally has to be released for a port that is
+restricted to host mode so that iddig reads as host.
+
+Add both registers as optional port configuration entries and apply
+them in the OTG port setup when the SoC provides them.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ drivers/phy/rockchip/phy-rockchip-inno-usb2.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+--- a/drivers/phy/rockchip/phy-rockchip-inno-usb2.c
++++ b/drivers/phy/rockchip/phy-rockchip-inno-usb2.c
+@@ -114,6 +114,8 @@ struct rockchip_chg_det_reg {
+ /**
+  * struct rockchip_usb2phy_port_cfg - usb-phy port configuration.
+  * @phy_sus: phy suspend register.
++ * @bypass_otgsuspendm: otg suspendm bypass control register.
++ * @idpullup: id pin pull-up control register.
+  * @bvalid_det_en: vbus valid rise detection enable register.
+  * @bvalid_det_st: vbus valid rise detection status register.
+  * @bvalid_det_clr: vbus valid rise detection clear register.
+@@ -140,6 +142,8 @@ struct rockchip_chg_det_reg {
+  */
+ struct rockchip_usb2phy_port_cfg {
+ 	struct usb2phy_reg	phy_sus;
++	struct usb2phy_reg	bypass_otgsuspendm;
++	struct usb2phy_reg	idpullup;
+ 	struct usb2phy_reg	bvalid_det_en;
+ 	struct usb2phy_reg	bvalid_det_st;
+ 	struct usb2phy_reg	bvalid_det_clr;
+@@ -1307,7 +1311,15 @@ static int rockchip_usb2phy_otg_port_ini
+ 
+ 	mutex_init(&rport->mutex);
+ 
++	if (rport->port_cfg->bypass_otgsuspendm.offset)
++		property_enable(rphy->grf, &rport->port_cfg->bypass_otgsuspendm,
++				false);
++
+ 	rport->mode = of_usb_get_dr_mode_by_phy(child_np, -1);
++	if (rport->mode == USB_DR_MODE_HOST &&
++	    rport->port_cfg->idpullup.offset)
++		property_enable(rphy->grf, &rport->port_cfg->idpullup, false);
++
+ 	if (rport->mode == USB_DR_MODE_HOST ||
+ 	    rport->mode == USB_DR_MODE_UNKNOWN) {
+ 		ret = 0;

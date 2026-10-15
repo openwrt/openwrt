@@ -136,14 +136,14 @@ define Build/iodata-mstc-header
 		data_size_crc="$$(dd if=$@ ibs=64 skip=1 2>/dev/null | gzip -c | \
 			tail -c 8 | od -An -tx8 --endian little | tr -d ' \n')"; \
 		echo -ne "$$(echo $$data_size_crc | sed 's/../\\x&/g')" | \
-			dd of=$@ bs=8 count=1 seek=7 conv=notrunc 2>/dev/null; \
+			dd of=$@ bs=8 count=1 seek=7 conv=notrunc iflag=fullblock 2>/dev/null; \
 	)
 	dd if=/dev/zero of=$@ bs=4 count=1 seek=1 conv=notrunc 2>/dev/null
 	( \
 		header_crc="$$(dd if=$@ bs=64 count=1 2>/dev/null | gzip -c | \
 			tail -c 8 | od -An -N4 -tx4 --endian little | tr -d ' \n')"; \
 		echo -ne "$$(echo $$header_crc | sed 's/../\\x&/g')" | \
-			dd of=$@ bs=4 count=1 seek=1 conv=notrunc 2>/dev/null; \
+			dd of=$@ bs=4 count=1 seek=1 conv=notrunc iflag=fullblock 2>/dev/null; \
 	)
 endef
 
@@ -155,18 +155,18 @@ define Build/iodata-mstc-header2
 		fw_len_crc=$$(gzip -c $@ | tail -c 8 | \
 			od -An -tx8 --endian little); \
 		printf "\x03\x1d\x61\x29\x07$(model)" | \
-			dd bs=21 count=1 conv=sync 2>/dev/null; \
-		printf "0.00.000" | dd bs=16 count=1 conv=sync 2>/dev/null; \
+			dd bs=21 count=1 conv=sync iflag=fullblock 2>/dev/null; \
+		printf "0.00.000" | dd bs=16 count=1 conv=sync iflag=fullblock 2>/dev/null; \
 		printf "$$(echo $(REVISION) | cut -d- -f1 | head -c8)" | \
-			dd bs=9 count=1 conv=sync 2>/dev/null; \
+			dd bs=9 count=1 conv=sync iflag=fullblock 2>/dev/null; \
 		printf "$(call toupper,$(LINUX_KARCH)) $(VERSION_DIST) Linux-$(LINUX_VERSION)" | \
-			dd bs=33 count=1 conv=sync 2>/dev/null; \
+			dd bs=33 count=1 conv=sync iflag=fullblock 2>/dev/null; \
 		date -d "@$(SOURCE_DATE_EPOCH)" "+%F" | tr -d "\n" | \
-			dd bs=15 count=1 conv=sync 2>/dev/null; \
+			dd bs=15 count=1 conv=sync iflag=fullblock 2>/dev/null; \
 		printf "$$(echo $(model_id) | sed 's/../\\x&/g')" | \
-			dd bs=8 count=1 conv=sync 2>/dev/null; \
+			dd bs=8 count=1 conv=sync iflag=fullblock 2>/dev/null; \
 		printf "$$(echo $$fw_len_crc | sed 's/../\\x&/g')" | \
-			dd bs=14 count=1 conv=sync 2>/dev/null; \
+			dd bs=14 count=1 conv=sync iflag=fullblock 2>/dev/null; \
 		cat $@; \
 	) > $@.new
 	( \
@@ -188,15 +188,15 @@ define Build/znet-header
 		payload_len="$$(dd if=$@ bs=4 count=1 skip=1 2>/dev/null | od -An -tdI --endian big | tr -d ' \n')"; \
 		payload_size_crc="$$(dd if=$@ ibs=1 count=$$payload_len 2>/dev/null | gzip -c | \
 			tail -c 8 | od -An -N4 -tx4 --endian big | tr -d ' \n')"; \
-		echo -ne "$(magic)" | dd bs=4 count=1 conv=sync 2>/dev/null; \
+		echo -ne "$(magic)" | dd bs=4 count=1 conv=sync iflag=fullblock 2>/dev/null; \
 		echo -ne "$$(printf '%08x' $$(stat -c%s $@) | fold -w2 | xargs -I {} echo \\x{} | tac | tr -d '\n')" | \
-			dd bs=4 count=1 conv=sync 2>/dev/null; \
+			dd bs=4 count=1 conv=sync iflag=fullblock 2>/dev/null; \
 		echo -ne "$$(echo $$data_size_crc | sed 's/../\\x&/g')" | \
-			dd bs=4 count=1 conv=sync 2>/dev/null; \
+			dd bs=4 count=1 conv=sync iflag=fullblock 2>/dev/null; \
 		echo -ne "$$(echo $$payload_size_crc | sed 's/../\\x&/g')" | \
-			dd bs=4 count=1 conv=sync 2>/dev/null; \
-		echo -ne "\x12\x34\x56\x78" | dd bs=4 count=1 conv=sync 2>/dev/null; \
-		echo -ne "$(version)" | dd bs=28 count=1 conv=sync 2>/dev/null; \
+			dd bs=4 count=1 conv=sync iflag=fullblock 2>/dev/null; \
+		echo -ne "\x12\x34\x56\x78" | dd bs=4 count=1 conv=sync iflag=fullblock 2>/dev/null; \
+		echo -ne "$(version)" | dd bs=28 count=1 conv=sync iflag=fullblock 2>/dev/null; \
 		dd if=/dev/zero bs=$$((0x40000 - $(hdrlen))) count=1 conv=sync 2>/dev/null | tr "\000" "\377"; \
 		cat $@; \
 	) > $@.new
@@ -216,7 +216,7 @@ define Build/belkin-header
 		fw_len_crc=$$(gzip -c $@ | tail -c 8 | od -An -tx8 | tr -d ' \n'); \
 		fw_crc_len="$${fw_len_crc:8:8}$${fw_len_crc:0:8}"; \
 		\
-		printf "$(magic)" | dd bs=4 count=1 conv=sync 2>/dev/null; \
+		printf "$(magic)" | dd bs=4 count=1 conv=sync iflag=fullblock 2>/dev/null; \
 		printf "$$(echo $${type_fw_date}$${hw_fw_ver} | \
 			sed 's/../\\x&/g')"; \
 		printf "$$(echo $${fw_crc_len}$${fw_crc_len} | \
@@ -534,7 +534,7 @@ define Device/asus_4g-ax56
   IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | \
 	check-size
   DEVICE_PACKAGES := kmod-mt7915-firmware kmod-usb3 kmod-usb-serial-option \
-	kmod-usb-net-cdc-ncm
+	kmod-usb-net-cdc-ncm comgt-ncm
 endef
 TARGET_DEVICES += asus_4g-ax56
 
@@ -3452,6 +3452,15 @@ define Device/wavlink_wl-wn533a8
   IMAGE_SIZE := 15040k
 endef
 TARGET_DEVICES += wavlink_wl-wn533a8
+
+define Device/wavlink_ws-wn552k1-c
+  $(Device/dsa-migration)
+  DEVICE_VENDOR := Wavlink
+  DEVICE_MODEL := WS-WN552K1-C
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615-firmware kmod-usb3 -uboot-envtools
+  IMAGE_SIZE := 15040k
+endef
+TARGET_DEVICES += wavlink_ws-wn552k1-c
 
 define Device/wavlink_ws-wn572hp3-4g
   $(Device/dsa-migration)

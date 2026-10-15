@@ -658,12 +658,27 @@ static void rteth_839x_hw_init(struct rteth_ctrl *ctrl)
 
 static void rteth_930x_hw_init(struct rteth_ctrl *ctrl)
 {
+	u64 q12 = 0;
+	u32 q8 = 0;
+
 	/* Trap IGMP and MLD to the CPU (IGMP_ACT = MLD_ACT = 1) in every VLAN
 	 * whose group mask selects them
 	 */
 	regmap_write(ctrl->map, RTETH_930X_VLAN_APP_PKT_CTRL, 0x9);
 	/* Flush learned FDB entries on link down of a port */
 	regmap_set_bits(ctrl->map, RTETH_930X_L2_CTRL, BIT(7));
+
+	/* Queue n of the CPU tag is queue n of the port: 3 bits per entry for
+	 * ports with 8 queues, 4 bits per entry for ports with 12
+	 */
+	for (int q = 0; q < 12; q++) {
+		if (q < 8)
+			q8 |= q << (q * 3);
+		q12 |= (u64)q << (q * 4);
+	}
+	regmap_write(ctrl->map, RTETH_930X_QM_CPUQID2QID_CTRL, q8);
+	regmap_write(ctrl->map, RTETH_930X_QM_CPUQID2XGQID_CTRL, lower_32_bits(q12));
+	regmap_write(ctrl->map, RTETH_930X_QM_CPUQID2XGQID_CTRL + 4, upper_32_bits(q12));
 }
 
 static void rteth_931x_hw_init(struct rteth_ctrl *ctrl)
@@ -858,29 +873,39 @@ static void rteth_838x_set_rx_mode(struct net_device *dev)
 static void rteth_839x_set_rx_mode(struct net_device *dev)
 {
 	struct rteth_ctrl *ctrl = netdev_priv(dev);
+	u32 rma_actions = 0;
+	u32 bypass = BIT(0) | BIT(6);
+	u32 rma0;
 
-	/* Flood all classes of RMA addresses (01-80-C2-00-00-{01..2F})
-	 * CTRL_0_FULL = GENMASK(31, 2) = 0xFFFFFFFC
-	 * Lower two bits are reserved, corresponding to RMA 01-80-C2-00-00-00
-	 * CTRL_1_FULL = CTRL_2_FULL = GENMASK(31, 0)
+	/* Each two-bit RMA action field uses: 0 = forward, 1 = drop, 2 = trap to CPU. */
+	if (dev->flags & (IFF_PROMISC | IFF_ALLMULTI))
+		rma_actions = 0xaaaaaaaaU;
+
+	/*
+	 * Always bypass STP and VLAN filtering for slow protocols:
+	 * bit 0: SLOW_PROTO_BYPASS_STP
+	 * bit 6: RMA_02_BYPASS_VLAN
+	 *
+	 * Promiscuous mode additionally enables the other RMA bypasses.
 	 */
-	if (!(dev->flags & (IFF_PROMISC | IFF_ALLMULTI))) {
-		regmap_write(ctrl->map, RTETH_839X_RMA_CTRL_0, 0);
-		regmap_write(ctrl->map, RTETH_839X_RMA_CTRL_1, 0);
-		regmap_write(ctrl->map, RTETH_839X_RMA_CTRL_2, 0);
-		regmap_write(ctrl->map, RTETH_839X_RMA_CTRL_3, 0);
-	}
-	if (dev->flags & IFF_ALLMULTI) {
-		regmap_write(ctrl->map, RTETH_839X_RMA_CTRL_0, GENMASK(31, 2));
-		regmap_write(ctrl->map, RTETH_839X_RMA_CTRL_1, GENMASK(31, 0));
-		regmap_write(ctrl->map, RTETH_839X_RMA_CTRL_2, GENMASK(31, 0));
-	}
-	if (dev->flags & IFF_PROMISC) {
-		regmap_write(ctrl->map, RTETH_839X_RMA_CTRL_0, GENMASK(31, 2));
-		regmap_write(ctrl->map, RTETH_839X_RMA_CTRL_1, GENMASK(31, 0));
-		regmap_write(ctrl->map, RTETH_839X_RMA_CTRL_2, GENMASK(31, 0));
-		regmap_write(ctrl->map, RTETH_839X_RMA_CTRL_3, GENMASK(9, 0));
-	}
+	if (dev->flags & IFF_PROMISC)
+		bypass = GENMASK(9, 0);
+
+	/*
+	 * Preserve lookup-miss handling (bit 10) and reserved bits.
+	 * Program the bypasses before enabling the traps.
+	 */
+	regmap_update_bits(ctrl->map, RTETH_839X_RMA_CTRL_3,
+			   GENMASK(9, 0), bypass);
+
+	/* Always trap 01-80-C2-00-00-02. Bits 1:0 of RMA_CTRL_0 are reserved. */
+	rma0 = (rma_actions & GENMASK(31, 2)) |
+	       RTETH_839X_RMA_CTRL_0_SLOW_TRAP;
+
+	regmap_update_bits(ctrl->map, RTETH_839X_RMA_CTRL_0,
+			   GENMASK(31, 2), rma0);
+	regmap_write(ctrl->map, RTETH_839X_RMA_CTRL_1, rma_actions);
+	regmap_write(ctrl->map, RTETH_839X_RMA_CTRL_2, rma_actions);
 }
 
 static void rteth_930x_set_rx_mode(struct net_device *dev)
@@ -1027,7 +1052,8 @@ static int rteth_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	}
 
 	if (port >= 0)
-		ctrl->cfg->create_tx_header(frag, port, 0); // TODO ok to set prio to 0?
+		ctrl->cfg->create_tx_header(frag, port, ctrl->cfg->tx_queue_from_priority ?
+					    min_t(u32, skb->priority, 7) : 0);
 
 	/* Hand frag over to switch */
 	dma_wmb();
@@ -1540,6 +1566,7 @@ static const struct rteth_cfg rteth_930x_cfg = {
 	.mac_force_mode_ctrl	= RTETH_930X_MAC_FORCE_MODE_CTRL,
 	.rst_glb_ctrl		= RTETH_930X_RST_GLB_CTRL_0,
 	.skb_headroom		= RTETH_SKB_HEADROOM_FAST,
+	.tx_queue_from_priority	= true,
 	.mac_reg		= { RTETH_930X_MAC_L2_ADDR_CTRL },
 	.l2_tbl_flush_ctrl	= RTETH_930X_L2_TBL_FLUSH_CTRL,
 	.confirm_disable_irqs	= rteth_93xx_confirm_disable_irqs,

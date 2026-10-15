@@ -210,6 +210,7 @@ platform_do_upgrade() {
 		remove_oem_ubi_volume wifi_fw
 		glinet_do_upgrade "$1"
 		;;
+	linksys,mr2000|\
 	linksys,mr5500|\
 	linksys,mx2000|\
 	linksys,mx5500|\
@@ -290,6 +291,14 @@ platform_do_upgrade() {
 		# volumes that would leave no room for ours
 		remove_oem_ubi_volume ubi_rootfs
 		remove_oem_ubi_volume tp_data
+		nand_do_upgrade "$1"
+		;;
+	wallys,dr5018s)
+		CI_UBIPART="rootfs"
+		remove_oem_ubi_volume debug
+		remove_oem_ubi_volume ubi_rootfs
+		remove_oem_ubi_volume bt_fw
+		remove_oem_ubi_volume wifi_fw
 		nand_do_upgrade "$1"
 		;;
 	xiaomi,ax6000|\

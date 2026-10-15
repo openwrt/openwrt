@@ -115,7 +115,7 @@ static void rtl839x_read_out_q_table(int port)
 	rtl839x_exec_tbl2_cmd(cmd);
 }
 
-u32 rtldsa_838x_get_egress_rate(struct rtl838x_switch_priv *priv, int port)
+u32 rtldsa_838x_get_egress_rate(struct otto_dsa_priv *priv, int port)
 {
 	if (port > priv->r->cpu_port)
 		return 0;
@@ -124,7 +124,7 @@ u32 rtldsa_838x_get_egress_rate(struct rtl838x_switch_priv *priv, int port)
 }
 
 /* Sets the rate limit, 10MBit/s is equal to a rate value of 625 */
-int rtldsa_838x_set_egress_rate(struct rtl838x_switch_priv *priv, int port, u32 rate)
+int rtldsa_838x_set_egress_rate(struct otto_dsa_priv *priv, int port, u32 rate)
 {
 	u32 old_rate;
 
@@ -138,7 +138,7 @@ int rtldsa_838x_set_egress_rate(struct rtl838x_switch_priv *priv, int port, u32 
 }
 
 /* Sets the rate limit, 10MBit/s is equal to a rate value of 625 */
-u32 rtldsa_839x_get_egress_rate(struct rtl838x_switch_priv *priv, int port)
+u32 rtldsa_839x_get_egress_rate(struct otto_dsa_priv *priv, int port)
 {
 	u32 rate;
 
@@ -160,7 +160,7 @@ u32 rtldsa_839x_get_egress_rate(struct rtl838x_switch_priv *priv, int port)
 }
 
 /* Sets the rate limit, 10MBit/s is equal to a rate value of 625, returns previous rate */
-int rtldsa_839x_set_egress_rate(struct rtl838x_switch_priv *priv, int port, u32 rate)
+int rtldsa_839x_set_egress_rate(struct otto_dsa_priv *priv, int port, u32 rate)
 {
 	u32 old_rate;
 
@@ -245,7 +245,7 @@ static void rtldsa_839x_set_ingress_priority(int port, int priority)
 	sw_w32_mask(7 << shift, priority << shift, RTL839X_PRI_SEL_PORT_PRI(port));
 }
 
-static int rtl839x_get_scheduling_algorithm(struct rtl838x_switch_priv *priv, int port)
+static int rtl839x_get_scheduling_algorithm(struct otto_dsa_priv *priv, int port)
 {
 	u32 v;
 
@@ -262,7 +262,7 @@ static int rtl839x_get_scheduling_algorithm(struct rtl838x_switch_priv *priv, in
 	return WEIGHTED_FAIR_QUEUE;
 }
 
-static void rtl839x_set_scheduling_algorithm(struct rtl838x_switch_priv *priv, int port,
+static void rtl839x_set_scheduling_algorithm(struct otto_dsa_priv *priv, int port,
 					     enum scheduler_type sched)
 {
 	enum scheduler_type t = rtl839x_get_scheduling_algorithm(priv, port);
@@ -320,7 +320,7 @@ static void rtl839x_set_scheduling_algorithm(struct rtl838x_switch_priv *priv, i
 	mutex_unlock(&priv->reg_mutex);
 }
 
-static void rtl839x_set_scheduling_queue_weights(struct rtl838x_switch_priv *priv, int port,
+static void rtl839x_set_scheduling_queue_weights(struct otto_dsa_priv *priv, int port,
 						 int *queue_weights)
 {
 	mutex_lock(&priv->reg_mutex);
@@ -344,7 +344,7 @@ static void rtl839x_set_scheduling_queue_weights(struct rtl838x_switch_priv *pri
 	mutex_unlock(&priv->reg_mutex);
 }
 
-void rtldsa_838x_qos_init(struct rtl838x_switch_priv *priv)
+void rtldsa_838x_qos_init(struct otto_dsa_priv *priv)
 {
 	u32 v;
 
@@ -389,7 +389,7 @@ void rtldsa_838x_qos_init(struct rtl838x_switch_priv *priv)
 	sw_w32_mask(0, 7, RTL838X_QM_PKT2CPU_INTPRI_1);
 }
 
-void rtldsa_839x_qos_init(struct rtl838x_switch_priv *priv)
+void rtldsa_839x_qos_init(struct otto_dsa_priv *priv)
 {
 	u32 v;
 
@@ -473,7 +473,7 @@ static void rtldsa_930x_qos_prio2queue_matrix(int *min_queues)
 	sw_w32(v, RTL930X_QM_INTPRI2QID_CTRL);
 }
 
-static void rtldsa_930x_qos_set_scheduling_queue_weights(struct rtl838x_switch_priv *priv)
+static void rtldsa_930x_qos_set_scheduling_queue_weights(struct otto_dsa_priv *priv)
 {
 	struct dsa_port *dp;
 	u32 addr;
@@ -490,7 +490,7 @@ static void rtldsa_930x_qos_set_scheduling_queue_weights(struct rtl838x_switch_p
 	}
 }
 
-void rtldsa_930x_qos_init(struct rtl838x_switch_priv *priv)
+void rtldsa_930x_qos_init(struct otto_dsa_priv *priv)
 {
 	struct dsa_port *dp;
 	u32 v;
@@ -545,7 +545,7 @@ static void rtldsa_931x_qos_prio2queue_matrix(int *min_queues)
 	sw_w32(v, RTL931X_QM_INTPRI2QID_CTRL);
 }
 
-static void rtldsa_931x_qos_set_scheduling_queue_weights(struct rtl838x_switch_priv *priv)
+static void rtldsa_931x_qos_set_scheduling_queue_weights(struct otto_dsa_priv *priv)
 {
 	struct dsa_port *dp;
 	u32 addr;
@@ -562,7 +562,7 @@ static void rtldsa_931x_qos_set_scheduling_queue_weights(struct rtl838x_switch_p
 	}
 }
 
-void rtldsa_931x_qos_init(struct rtl838x_switch_priv *priv)
+void rtldsa_931x_qos_init(struct otto_dsa_priv *priv)
 {
 	struct dsa_port *dp;
 	u32 v;

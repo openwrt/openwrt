@@ -1,0 +1,62 @@
+From 949b742268ff532658e801b827e309ccc41baa7f Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Sat, 10 Oct 2026 11:58:32 +0100
+Subject: [PATCH] ARM: dts: rockchip: add the crypto block to rv1126
+
+Describe the crypto block with its power domain, the QoS node that the
+domain needs and the Crypto V2 engine. The engine is available on the
+SoC, so the node is enabled here.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ arch/arm/boot/dts/rockchip/rv1126.dtsi | 25 +++++++++++++++++++++++++
+ 1 file changed, 25 insertions(+)
+
+--- a/arch/arm/boot/dts/rockchip/rv1126.dtsi
++++ b/arch/arm/boot/dts/rockchip/rv1126.dtsi
+@@ -314,6 +314,11 @@
+ 		reg = <0xfe8a0180 0x20>;
+ 	};
+ 
++	qos_crypto: qos@fe8d0000 {
++		compatible = "rockchip,rv1126-qos", "syscon";
++		reg = <0xfe8d0000 0x20>;
++	};
++
+ 	gic: interrupt-controller@feff0000 {
+ 		compatible = "arm,gic-400";
+ 		interrupt-controller;
+@@ -406,6 +411,16 @@
+ 				#power-domain-cells = <0>;
+ 			};
+ 
++			power-domain@RV1126_PD_CRYPTO {
++				reg = <RV1126_PD_CRYPTO>;
++				clocks = <&cru ACLK_CRYPTO>,
++					 <&cru HCLK_CRYPTO>,
++					 <&cru CLK_CRYPTO_CORE>,
++					 <&cru CLK_CRYPTO_PKA>;
++				pm_qos = <&qos_crypto>;
++				#power-domain-cells = <0>;
++			};
++
+ 			power-domain@RV1126_PD_VO {
+ 				reg = <RV1126_PD_VO>;
+ 				clocks = <&cru ACLK_RGA>,
+@@ -681,6 +696,16 @@
+ 		status = "disabled";
+ 	};
+ 
++	crypto: crypto@ff500000 {
++		compatible = "rockchip,rv1126-crypto";
++		reg = <0xff500000 0x400>;
++		interrupts = <GIC_SPI 3 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&cru CLK_CRYPTO_CORE>, <&cru ACLK_CRYPTO>,
++			 <&cru HCLK_CRYPTO>;
++		clock-names = "core", "aclk", "hclk";
++		power-domains = <&power RV1126_PD_CRYPTO>;
++	};
++
+ 	i2c3: i2c@ff520000 {
+ 		compatible = "rockchip,rv1126-i2c", "rockchip,rk3399-i2c";
+ 		reg = <0xff520000 0x1000>;

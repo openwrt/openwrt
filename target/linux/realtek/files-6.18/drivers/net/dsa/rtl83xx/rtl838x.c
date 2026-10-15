@@ -115,7 +115,7 @@ static void rtl838x_traffic_disable(int source, int dest)
 }
 
 /* Enables or disables the EEE/EEEP capability of a port */
-static void rtldsa_838x_set_mac_eee(struct rtl838x_switch_priv *priv, int port, bool enable)
+static void rtldsa_838x_set_mac_eee(struct otto_dsa_priv *priv, int port, bool enable)
 {
 	u32 v;
 
@@ -140,7 +140,7 @@ static void rtldsa_838x_set_mac_eee(struct rtl838x_switch_priv *priv, int port, 
 	priv->ports[port].eee_enabled = enable;
 }
 
-static void rtl838x_init_eee(struct rtl838x_switch_priv *priv, bool enable)
+static void rtl838x_init_eee(struct otto_dsa_priv *priv, bool enable)
 {
 	pr_debug("Setting up EEE, state: %d\n", enable);
 	sw_w32_mask(0x4, 0, RTL838X_SMI_GLB_CTRL);
@@ -285,11 +285,11 @@ const struct rtldsa_config rtldsa_838x_cfg = {
 	.l2_hash_key = otto_l2_838x_hash_key,
 	.read_mcast_pmask = otto_l2_838x_read_mcast_pmask,
 	.write_mcast_pmask = otto_l2_838x_write_mcast_pmask,
-	.pie_init = rtl838x_pie_init,
-	.pie_rule_read = rtl838x_pie_rule_read,
-	.pie_rule_write = rtl838x_pie_rule_write,
-	.pie_rule_add = rtl838x_pie_rule_add,
-	.pie_rule_rm = rtl838x_pie_rule_rm,
+	.pie_init = otto_pie_838x_init,
+	.pie_rule_read = otto_pie_838x_rule_read,
+	.pie_rule_write = otto_pie_838x_rule_write,
+	.pie_rule_add = otto_pie_838x_rule_add,
+	.pie_rule_rm = otto_pie_838x_rule_rm,
 	.l2_learning_setup = otto_l2_838x_learning_setup,
 	.packet_cntr_read = otto_stats_838x_packet_cntr_read,
 	.packet_cntr_clear = otto_stats_838x_packet_cntr_clear,
