@@ -259,12 +259,10 @@ function iface_auth_type(config, band, eht) {
 		if (config.sae_pwe === 0 && config.mlo && index(config.mlo_bands ?? [], '6g') >= 0 &&
 		    config.auth_type in [ 'sae', 'psk-sae' ])
 			delete config.sae_pwe;
-		if (!config.ppsk) {
-			if (band == '6g')
-				set_default(config, 'sae_pwe', 1);
-			else
-				set_default(config, 'sae_pwe', 2);
-		}
+		if (band == '6g')
+			set_default(config, 'sae_pwe', 1);
+		else
+			set_default(config, 'sae_pwe', 2);
 	}
 
 	if (config.own_ip_addr)
