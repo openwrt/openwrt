@@ -165,7 +165,7 @@ as adding/removing interfaces.
  ifdef CONFIG_CODE_COVERAGE
 --- a/hostapd/ctrl_iface.c
 +++ b/hostapd/ctrl_iface.c
-@@ -6059,6 +6059,7 @@ try_again:
+@@ -6062,6 +6062,7 @@ try_again:
  		return -1;
  	}
  
@@ -173,7 +173,7 @@ as adding/removing interfaces.
  	wpa_msg_register_cb(hostapd_ctrl_iface_msg_cb);
  
  	return 0;
-@@ -6160,6 +6161,8 @@ fail:
+@@ -6163,6 +6164,8 @@ fail:
  	os_free(fname);
  
  	interface->global_ctrl_sock = s;
@@ -526,7 +526,7 @@ as adding/removing interfaces.
  	os_free(sta);
  }
  
-@@ -1881,6 +1886,8 @@ void ap_sta_set_authorized_event(struct
+@@ -1870,6 +1875,8 @@ void ap_sta_set_authorized_event(struct
  #endif /* CONFIG_P2P */
  	const u8 *ip_ptr = NULL;
  

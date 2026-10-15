@@ -236,7 +236,7 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
 +	u16 eml_cap = 0;
 +
 +	/* First add the station without more information */
-+	int aRet = hostapd_sta_add(
++	hostapd_sta_add(
 +	            hapd, mgmt->bssid, sta_ret->aid, 0,
 +	            NULL, 0, 0, NULL, NULL, NULL, 0, NULL, 0, NULL,
 +	            sta_ret->flags, 0, 0, 0,
@@ -301,7 +301,7 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
 +	sta_ret->flags |= WLAN_STA_AUTH | WLAN_STA_ASSOC;
 +
 +	/* Then set the paramethers */
-+	int sRet = hostapd_sta_add(
++	hostapd_sta_add(
 +	            hapd, mgmt->bssid, sta_ret->aid,
 +	            sta_ret->capability,
 +	            sta_ret->supported_rates, sta_ret->supported_rates_len,
@@ -325,7 +325,7 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
 +	os_memset(mIfname, 0, IFNAMSIZ + 1);
 +
 +	// last param 1 means add 0 means remove
-+	int mRet = hostapd_set_wds_sta(
++	hostapd_set_wds_sta(
 +	            hapd, mIfname, mgmt->bssid, sta_ret->aid, 1);
 +
 +	wpa_printf(MSG_INFO,
@@ -436,7 +436,7 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
  	 * send_action - Transmit an Action frame
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -9374,25 +9374,15 @@ int nl80211_has_ifidx(struct wpa_driver_
+@@ -9374,24 +9374,13 @@ int nl80211_has_ifidx(struct wpa_driver_
  
  
  static int i802_set_wds_sta(void *priv, const u8 *addr, int aid, int val,
@@ -449,8 +449,8 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
 +	const char *name = ifname_wds; // Kept to reduce changes to the minimum
  	union wpa_event_data event;
  	bool add_br = false;
- 	int ret;
- 
+-	int ret;
+-
 -	ret = os_snprintf(name, sizeof(name), "%s.sta%d", bss->ifname, aid);
 -	if (ret >= (int) sizeof(name))
 -		wpa_printf(MSG_WARNING,
@@ -460,7 +460,6 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
 -
 -	if (ifname_wds)
 -		os_strlcpy(ifname_wds, name, IFNAMSIZ + 1);
--
+ 
  	wpa_printf(MSG_DEBUG, "nl80211: Set WDS STA addr=" MACSTR
  		   " aid=%d val=%d name=%s", MAC2STR(addr), aid, val, name);
- 	if (val) {

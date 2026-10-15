@@ -113,7 +113,7 @@ Subject: [PATCH] hostapd: add configurable debug message minimum priority to
  
 +#define wpa_printf(level, ...)						\
 +	do {								\
-+		if (level >= CONFIG_MSG_MIN_PRIORITY)			\
++		if ((level) >= CONFIG_MSG_MIN_PRIORITY)			\
 +			_wpa_printf(level, __VA_ARGS__);		\
 +	} while(0)
 +
@@ -140,7 +140,7 @@ Subject: [PATCH] hostapd: add configurable debug message minimum priority to
   * etc.) in debug output.
   */
 -void wpa_hexdump_key(int level, const char *title, const void *buf, size_t len);
-+static inline void wpa_hexdump_key(int level, const char *title, const u8 *buf, size_t len)
++static inline void wpa_hexdump_key(int level, const char *title, const void *buf, size_t len)
 +{
 +	if (level < CONFIG_MSG_MIN_PRIORITY)
 +		return;
@@ -157,7 +157,7 @@ Subject: [PATCH] hostapd: add configurable debug message minimum priority to
 -void wpa_hexdump_ascii(int level, const char *title, const void *buf,
 -		       size_t len);
 +static inline void wpa_hexdump_ascii(int level, const char *title,
-+				     const u8 *buf, size_t len)
++				     const void *buf, size_t len)
 +{
 +	if (level < CONFIG_MSG_MIN_PRIORITY)
 +		return;
@@ -174,7 +174,7 @@ Subject: [PATCH] hostapd: add configurable debug message minimum priority to
 -void wpa_hexdump_ascii_key(int level, const char *title, const void *buf,
 -			   size_t len);
 +static inline void wpa_hexdump_ascii_key(int level, const char *title,
-+					 const u8 *buf, size_t len)
++					 const void *buf, size_t len)
 +{
 +	if (level < CONFIG_MSG_MIN_PRIORITY)
 +		return;
@@ -192,7 +192,7 @@ Subject: [PATCH] hostapd: add configurable debug message minimum priority to
 +void _wpa_msg(void *ctx, int level, const char *fmt, ...) PRINTF_FORMAT(3, 4);
 +#define wpa_msg(ctx, level, ...)					\
 +	do {								\
-+		if (level >= CONFIG_MSG_MIN_PRIORITY)			\
++		if ((level) >= CONFIG_MSG_MIN_PRIORITY)			\
 +			_wpa_msg(ctx, level, __VA_ARGS__);		\
 +	} while(0)
  
@@ -207,7 +207,7 @@ Subject: [PATCH] hostapd: add configurable debug message minimum priority to
  PRINTF_FORMAT(3, 4);
 +#define wpa_msg_ctrl(ctx, level, ...)					\
 +	do {								\
-+		if (level >= CONFIG_MSG_MIN_PRIORITY)			\
++		if ((level) >= CONFIG_MSG_MIN_PRIORITY)			\
 +			_wpa_msg_ctrl(ctx, level, __VA_ARGS__);		\
 +	} while(0)
  
