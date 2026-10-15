@@ -254,7 +254,7 @@ void rtl9300_dump_debug(void)
 }
 
 /* Enables or disables the EEE/EEEP capability of a port */
-static void rtldsa_930x_set_mac_eee(struct rtl838x_switch_priv *priv, int port, bool enable)
+static void rtldsa_930x_set_mac_eee(struct otto_dsa_priv *priv, int port, bool enable)
 {
 	u32 v;
 
@@ -275,7 +275,7 @@ static void rtldsa_930x_set_mac_eee(struct rtl838x_switch_priv *priv, int port, 
 	priv->ports[port].eee_enabled = enable;
 }
 
-static void rtl930x_init_eee(struct rtl838x_switch_priv *priv, bool enable)
+static void rtl930x_init_eee(struct otto_dsa_priv *priv, bool enable)
 {
 	pr_debug("Setting up EEE, state: %d\n", enable);
 
@@ -342,7 +342,7 @@ static void rtl930x_init_eee(struct rtl838x_switch_priv *priv, bool enable)
 // }
 
 // Currently not used
-// static int rtl930x_l3_mtu_del(struct rtl838x_switch_priv *priv, int mtu)
+// static int rtl930x_l3_mtu_del(struct otto_dsa_priv *priv, int mtu)
 // {
 // 	int i;
 
@@ -359,7 +359,7 @@ static void rtl930x_init_eee(struct rtl838x_switch_priv *priv, bool enable)
 // }
 
 // Currently not used
-// static int rtl930x_l3_mtu_add(struct rtl838x_switch_priv *priv, int mtu)
+// static int rtl930x_l3_mtu_add(struct otto_dsa_priv *priv, int mtu)
 // {
 // 	int i, free_mtu;
 // 	int mtu_id;
@@ -424,7 +424,7 @@ static void rtldsa_930x_led_get_forced(const struct device_node *node,
 	}
 }
 
-static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
+static void rtl930x_led_init(struct otto_dsa_priv *priv)
 {
 	u8 forced_leds_per_port[RTL930X_CPU_PORT] = {};
 	struct device_node *node;
@@ -552,7 +552,7 @@ static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
 }
 
 static int
-rtldsa_930x_mac_link_state_source_set(struct rtl838x_switch_priv *priv,
+rtldsa_930x_mac_link_state_source_set(struct otto_dsa_priv *priv,
 				      int port,
 				      enum rtldsa_mac_link_state_source source,
 				      phy_interface_t interface)

@@ -18,7 +18,7 @@ struct rtl83xx_flow {
 	unsigned long cookie;
 	struct rhash_head node;
 	struct rcu_head rcu_head;
-	struct rtl838x_switch_priv *priv;
+	struct otto_dsa_priv *priv;
 	struct pie_rule rule;
 	u32 flags;
 };
@@ -43,7 +43,7 @@ struct rtl83xx_flow {
 #define RTL930X_INGRESS_FC_CTRL_EN(port)	BIT(port % 29)
 
 /* Parse the flow rule for the matching conditions */
-static int otto_tc_parse_flow_rule(struct rtl838x_switch_priv *priv,
+static int otto_tc_parse_flow_rule(struct otto_dsa_priv *priv,
 				   struct flow_rule *rule, struct rtl83xx_flow *flow)
 {
 	struct flow_dissector *dissector = rule->match.dissector;
@@ -235,7 +235,7 @@ static int otto_tc_validate_flow_actions(struct flow_rule *rule)
 	return 0;
 }
 
-static int otto_tc_parse_fwd(struct rtl838x_switch_priv *priv,
+static int otto_tc_parse_fwd(struct otto_dsa_priv *priv,
 			     const struct flow_action_entry *act, struct rtl83xx_flow *flow)
 {
 	struct net_device *dev = act->dev;
@@ -255,7 +255,7 @@ static int otto_tc_parse_fwd(struct rtl838x_switch_priv *priv,
 	return 0;
 }
 
-static int otto_tc_add_flow(struct rtl838x_switch_priv *priv, struct flow_cls_offload *f,
+static int otto_tc_add_flow(struct otto_dsa_priv *priv, struct flow_cls_offload *f,
 			    struct rtl83xx_flow *flow)
 {
 	struct flow_rule *rule = flow_cls_offload_flow_rule(f);
@@ -362,7 +362,7 @@ static const struct rhashtable_params tc_ht_params = {
 	.automatic_shrinking = true,
 };
 
-int otto_tc_init(struct rtl838x_switch_priv *priv)
+int otto_tc_init(struct otto_dsa_priv *priv)
 {
 	int err;
 
@@ -380,7 +380,7 @@ int otto_tc_init(struct rtl838x_switch_priv *priv)
 }
 
 /* Zero a PIE rule's LOG-table packet counter */
-static void otto_tc_packet_cntr_clear(struct rtl838x_switch_priv *priv, int counter)
+static void otto_tc_packet_cntr_clear(struct otto_dsa_priv *priv, int counter)
 {
 	if (counter < 0 || !priv->r->packet_cntr_clear)
 		return;
@@ -394,7 +394,7 @@ static void otto_tc_packet_cntr_clear(struct rtl838x_switch_priv *priv, int coun
  * where it came from there. On RTL930x the counter id is the PIE rule id
  * itself: the rule owns it and pie_rule_rm() releases it.
  */
-static void otto_tc_packet_cntr_put(struct rtl838x_switch_priv *priv, int counter)
+static void otto_tc_packet_cntr_put(struct otto_dsa_priv *priv, int counter)
 {
 	otto_tc_packet_cntr_clear(priv, counter);
 	if (!priv->r->pie_rule_id_is_log_counter)
@@ -404,7 +404,7 @@ static void otto_tc_packet_cntr_put(struct rtl838x_switch_priv *priv, int counte
 static void otto_tc_flow_free(void *ptr, void *arg)
 {
 	struct rtl83xx_flow *flow = ptr;
-	struct rtl838x_switch_priv *priv = arg;
+	struct otto_dsa_priv *priv = arg;
 
 	priv->r->pie_rule_rm(priv, &flow->rule);
 	otto_tc_packet_cntr_put(priv, flow->rule.packet_cntr);
@@ -415,7 +415,7 @@ static void otto_tc_flow_free(void *ptr, void *arg)
 	kfree_rcu(flow, rcu_head);
 }
 
-void otto_tc_cleanup(struct rtl838x_switch_priv *priv)
+void otto_tc_cleanup(struct otto_dsa_priv *priv)
 {
 	if (!priv->tc_initialized)
 		return;
@@ -434,7 +434,7 @@ void otto_tc_cleanup(struct rtl838x_switch_priv *priv)
 	mutex_destroy(&priv->tc_flow_lock);
 }
 
-static int otto_tc_configure_flower(struct rtl838x_switch_priv *priv,
+static int otto_tc_configure_flower(struct otto_dsa_priv *priv,
 				    struct flow_cls_offload *f, int ingress_port)
 {
 	struct rtl83xx_flow *flow;
@@ -534,7 +534,7 @@ out_unlock:
 	return err;
 }
 
-static int otto_tc_delete_flower(struct rtl838x_switch_priv *priv,
+static int otto_tc_delete_flower(struct otto_dsa_priv *priv,
 				 struct flow_cls_offload *cls_flower)
 {
 	struct rtl83xx_flow *flow;
@@ -571,7 +571,7 @@ out_unlock:
 	return err;
 }
 
-static int otto_tc_stats_flower(struct rtl838x_switch_priv *priv,
+static int otto_tc_stats_flower(struct otto_dsa_priv *priv,
 				struct flow_cls_offload *cls_flower)
 {
 	struct rtl83xx_flow *flow;
@@ -618,7 +618,7 @@ out_unlock:
 	return err;
 }
 
-static int otto_tc_pie_cls_flower_add(struct rtl838x_switch_priv *priv, int port,
+static int otto_tc_pie_cls_flower_add(struct otto_dsa_priv *priv, int port,
 				      struct flow_cls_offload *cls, bool ingress)
 {
 	if (!ingress || !priv->r->pie_cls_flower)
@@ -635,7 +635,7 @@ static int otto_tc_pie_cls_flower_add(struct rtl838x_switch_priv *priv, int port
 	return otto_tc_configure_flower(priv, cls, port);
 }
 
-static int otto_tc_pie_cls_flower_del(struct rtl838x_switch_priv *priv,
+static int otto_tc_pie_cls_flower_del(struct otto_dsa_priv *priv,
 				      struct flow_cls_offload *cls, bool ingress)
 {
 	if (!ingress || !priv->r->pie_cls_flower)
@@ -644,7 +644,7 @@ static int otto_tc_pie_cls_flower_del(struct rtl838x_switch_priv *priv,
 	return otto_tc_delete_flower(priv, cls);
 }
 
-static int otto_tc_pie_cls_flower_stats(struct rtl838x_switch_priv *priv,
+static int otto_tc_pie_cls_flower_stats(struct otto_dsa_priv *priv,
 					struct flow_cls_offload *cls, bool ingress)
 {
 	if (!ingress || !priv->r->pie_cls_flower)
@@ -728,7 +728,7 @@ int otto_tc_930x_port_rate_police_add(struct dsa_switch *ds, int port,
 				      const struct flow_action_entry *act,
 				      bool ingress)
 {
-	struct rtl838x_switch_priv *priv = ds->priv;
+	struct otto_dsa_priv *priv = ds->priv;
 	u32 burst;
 	u64 rate;
 	u32 addr;
@@ -837,7 +837,7 @@ int otto_tc_931x_port_rate_police_del(struct dsa_switch *ds, int port,
 int otto_tc_cls_flower_add(struct dsa_switch *ds, int port,
 			   struct flow_cls_offload *cls, bool ingress)
 {
-	struct rtl838x_switch_priv *priv = ds->priv;
+	struct otto_dsa_priv *priv = ds->priv;
 	struct rtldsa_port *p = &priv->ports[port];
 	const struct flow_action_entry *act;
 	int ret;
@@ -883,7 +883,7 @@ unlock:
 int otto_tc_cls_flower_del(struct dsa_switch *ds, int port,
 			   struct flow_cls_offload *cls, bool ingress)
 {
-	struct rtl838x_switch_priv *priv = ds->priv;
+	struct otto_dsa_priv *priv = ds->priv;
 	struct rtldsa_port *p = &priv->ports[port];
 	int ret;
 
@@ -924,7 +924,7 @@ unlock:
 int otto_tc_cls_flower_stats(struct dsa_switch *ds, int port,
 			     struct flow_cls_offload *cls, bool ingress)
 {
-	struct rtl838x_switch_priv *priv = ds->priv;
+	struct otto_dsa_priv *priv = ds->priv;
 	int ret;
 
 	/* only PIE flower rules provide per-rule statistics, and only ingress */

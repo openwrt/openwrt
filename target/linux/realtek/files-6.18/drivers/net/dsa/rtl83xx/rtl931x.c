@@ -260,7 +260,7 @@ static void rtldsa_931x_led_get_forced(const struct device_node *node,
 	}
 }
 
-static void rtldsa_931x_led_init(struct rtl838x_switch_priv *priv)
+static void rtldsa_931x_led_init(struct otto_dsa_priv *priv)
 {
 	u8 forced_leds_per_port[RTL931X_CPU_PORT] = {};
 	u64 pm_copper = 0, pm_fiber = 0;
@@ -389,7 +389,7 @@ static void rtldsa_931x_led_init(struct rtl838x_switch_priv *priv)
 }
 
 static int
-rtldsa_931x_mac_link_state_source_set(struct rtl838x_switch_priv *priv,
+rtldsa_931x_mac_link_state_source_set(struct otto_dsa_priv *priv,
 				      int port,
 				      enum rtldsa_mac_link_state_source source,
 				      phy_interface_t interface)

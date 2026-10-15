@@ -137,7 +137,7 @@ static enum rtl838x_template_field_id rtl838x_fixed_templates[RTL838X_N_FIXED_TE
 	},
 };
 
-static void otto_pie_838x_lookup_enable(struct rtl838x_switch_priv *priv, int index)
+static void otto_pie_838x_lookup_enable(struct otto_dsa_priv *priv, int index)
 {
 	int block = index / PIE_BLOCK_SIZE;
 	u32 block_state = sw_r32(RTL838X_ACL_BLK_LOOKUP_CTRL);
@@ -147,7 +147,7 @@ static void otto_pie_838x_lookup_enable(struct rtl838x_switch_priv *priv, int in
 		sw_w32(block_state | BIT(block), RTL838X_ACL_BLK_LOOKUP_CTRL);
 }
 
-static void otto_pie_838x_rule_del(struct rtl838x_switch_priv *priv, int index_from, int index_to)
+static void otto_pie_838x_rule_del(struct otto_dsa_priv *priv, int index_from, int index_to)
 {
 	int block_from = index_from / PIE_BLOCK_SIZE;
 	int block_to = index_to / PIE_BLOCK_SIZE;
@@ -781,7 +781,7 @@ static void otto_pie_838x_rule_dump_raw(u32 r[])
 // 	pr_debug("TID: %x, %x\n", pr->tid, pr->tid_m);
 // }
 
-int otto_pie_838x_rule_read(struct rtl838x_switch_priv *priv, int idx, struct  pie_rule *pr)
+int otto_pie_838x_rule_read(struct otto_dsa_priv *priv, int idx, struct  pie_rule *pr)
 {
 	int tbl = otto_table_acquire(RTL8380_TBL_IACL);
 	u32 r[18];
@@ -807,7 +807,7 @@ int otto_pie_838x_rule_read(struct rtl838x_switch_priv *priv, int idx, struct  p
 	return 0;
 }
 
-int otto_pie_838x_rule_write(struct rtl838x_switch_priv *priv, int idx, struct pie_rule *pr)
+int otto_pie_838x_rule_write(struct otto_dsa_priv *priv, int idx, struct pie_rule *pr)
 {
 	int tbl = otto_table_acquire(RTL8380_TBL_IACL);
 	u32 r[18];
@@ -869,7 +869,7 @@ static bool otto_pie_838x_templ_has(int t, enum rtl838x_template_field_id field_
 	return false;
 }
 
-static int otto_pie_838x_verify_template(struct rtl838x_switch_priv *priv,
+static int otto_pie_838x_verify_template(struct otto_dsa_priv *priv,
 					 struct pie_rule *pr, int t, int block)
 {
 	int i;
@@ -920,7 +920,7 @@ static int otto_pie_838x_verify_template(struct rtl838x_switch_priv *priv,
 	return i + PIE_BLOCK_SIZE * block;
 }
 
-int otto_pie_838x_rule_add(struct rtl838x_switch_priv *priv, struct pie_rule *pr)
+int otto_pie_838x_rule_add(struct otto_dsa_priv *priv, struct pie_rule *pr)
 {
 	int idx, block, j;
 
@@ -962,7 +962,7 @@ int otto_pie_838x_rule_add(struct rtl838x_switch_priv *priv, struct pie_rule *pr
 	return 0;
 }
 
-void otto_pie_838x_rule_rm(struct rtl838x_switch_priv *priv, struct pie_rule *pr)
+void otto_pie_838x_rule_rm(struct otto_dsa_priv *priv, struct pie_rule *pr)
 {
 	int idx = pr->id;
 
@@ -974,7 +974,7 @@ void otto_pie_838x_rule_rm(struct rtl838x_switch_priv *priv, struct pie_rule *pr
  * powers it up, enables default matching templates for all blocks
  * and clears all rules possibly installed by u-boot
  */
-void otto_pie_838x_init(struct rtl838x_switch_priv *priv)
+void otto_pie_838x_init(struct otto_dsa_priv *priv)
 {
 	u32 template_selectors;
 
@@ -1110,7 +1110,7 @@ static enum rtl839x_template_field_id rtl839x_fixed_templates[RTL839X_N_FIXED_TE
 	},
 };
 
-static void otto_pie_839x_lookup_enable(struct rtl838x_switch_priv *priv, int index)
+static void otto_pie_839x_lookup_enable(struct otto_dsa_priv *priv, int index)
 {
 	int block = index / PIE_BLOCK_SIZE;
 
@@ -1118,7 +1118,7 @@ static void otto_pie_839x_lookup_enable(struct rtl838x_switch_priv *priv, int in
 }
 
 /* Delete a range of Packet Inspection Engine rules */
-static int otto_pie_839x_rule_del(struct rtl838x_switch_priv *priv, int index_from, int index_to)
+static int otto_pie_839x_rule_del(struct otto_dsa_priv *priv, int index_from, int index_to)
 {
 	u32 v = (index_from << 1) | (index_to << 13) | BIT(0);
 
@@ -1615,7 +1615,7 @@ void otto_pie_839x_rule_dump(struct  pie_rule *pr)
 	pr_debug("TID: %x, %x\n", pr->tid, pr->tid_m);
 }
 
-int otto_pie_839x_rule_read(struct rtl838x_switch_priv *priv, int idx, struct  pie_rule *pr)
+int otto_pie_839x_rule_read(struct otto_dsa_priv *priv, int idx, struct  pie_rule *pr)
 {
 	int tbl = otto_table_acquire(RTL8390_TBL_IACL);
 	u32 r[17];
@@ -1646,7 +1646,7 @@ int otto_pie_839x_rule_read(struct rtl838x_switch_priv *priv, int idx, struct  p
 	return 0;
 }
 
-int otto_pie_839x_rule_write(struct rtl838x_switch_priv *priv, int idx, struct pie_rule *pr)
+int otto_pie_839x_rule_write(struct otto_dsa_priv *priv, int idx, struct pie_rule *pr)
 {
 	int tbl = otto_table_acquire(RTL8390_TBL_IACL);
 	u32 r[17];
@@ -1694,7 +1694,7 @@ static bool otto_pie_839x_templ_has(int t, enum rtl839x_template_field_id field_
 	return false;
 }
 
-static int otto_pie_839x_verify_template(struct rtl838x_switch_priv *priv,
+static int otto_pie_839x_verify_template(struct otto_dsa_priv *priv,
 					 struct pie_rule *pr, int t, int block)
 {
 	int i;
@@ -1745,7 +1745,7 @@ static int otto_pie_839x_verify_template(struct rtl838x_switch_priv *priv,
 	return i + PIE_BLOCK_SIZE * block;
 }
 
-int otto_pie_839x_rule_add(struct rtl838x_switch_priv *priv, struct pie_rule *pr)
+int otto_pie_839x_rule_add(struct otto_dsa_priv *priv, struct pie_rule *pr)
 {
 	int idx, block, j, t;
 	int min_block = 0;
@@ -1789,7 +1789,7 @@ int otto_pie_839x_rule_add(struct rtl838x_switch_priv *priv, struct pie_rule *pr
 	return 0;
 }
 
-void otto_pie_839x_rule_rm(struct rtl838x_switch_priv *priv, struct pie_rule *pr)
+void otto_pie_839x_rule_rm(struct otto_dsa_priv *priv, struct pie_rule *pr)
 {
 	int idx = pr->id;
 
@@ -1797,7 +1797,7 @@ void otto_pie_839x_rule_rm(struct rtl838x_switch_priv *priv, struct pie_rule *pr
 	clear_bit(idx, priv->pie_use_bm);
 }
 
-int otto_pie_839x_l3_rule_read(struct rtl838x_switch_priv *priv, int idx, struct pie_rule *pr)
+int otto_pie_839x_l3_rule_read(struct otto_dsa_priv *priv, int idx, struct pie_rule *pr)
 {
 	if (idx < 0 || idx >= RTL839X_PIE_L3_RULES)
 		return -EINVAL;
@@ -1810,7 +1810,7 @@ int otto_pie_839x_l3_rule_read(struct rtl838x_switch_priv *priv, int idx, struct
  * rule matches the IPv4 or IPv6 destination and takes the template of its
  * block that has it.
  */
-int otto_pie_839x_l3_rule_write(struct rtl838x_switch_priv *priv, int idx, struct pie_rule *pr)
+int otto_pie_839x_l3_rule_write(struct otto_dsa_priv *priv, int idx, struct pie_rule *pr)
 {
 	enum rtl839x_template_field_id dip = pr->is_ipv6 ? RTL839X_TEMPLATE_FIELD_DIP2 :
 							     RTL839X_TEMPLATE_FIELD_DIP0;
@@ -1842,7 +1842,7 @@ int otto_pie_839x_l3_rule_write(struct rtl838x_switch_priv *priv, int idx, struc
 	return err;
 }
 
-void otto_pie_839x_init(struct rtl838x_switch_priv *priv)
+void otto_pie_839x_init(struct otto_dsa_priv *priv)
 {
 	u32 template_selectors;
 
@@ -1983,7 +1983,7 @@ static enum rtl930x_template_field_id rtl930x_fixed_templates[RTL930X_N_FIXED_TE
 	},
 };
 
-static void otto_pie_930x_lookup_enable(struct rtl838x_switch_priv *priv, int index)
+static void otto_pie_930x_lookup_enable(struct otto_dsa_priv *priv, int index)
 {
 	int block = index / PIE_BLOCK_SIZE;
 
@@ -2300,7 +2300,7 @@ void otto_pie_930x_rule_dump_raw(u32 r[])
 	pr_debug("r 13-16: %08x %08x %08x %08x\n", r[13], r[14], r[15], r[16]);
 }
 
-int otto_pie_930x_rule_write(struct rtl838x_switch_priv *priv, int idx, struct pie_rule *pr)
+int otto_pie_930x_rule_write(struct otto_dsa_priv *priv, int idx, struct pie_rule *pr)
 {
 	int tbl = otto_table_acquire(RTL9300_TBL_IACL);
 	u32 r[19];
@@ -2348,7 +2348,7 @@ static bool otto_pie_930x_templ_has(int t, enum rtl930x_template_field_id field_
  * Note that this function is SoC specific since the values of e.g. RTL930X_TEMPLATE_FIELD_SIP0
  * depend on the SoC
  */
-static int otto_pie_930x_verify_template(struct rtl838x_switch_priv *priv,
+static int otto_pie_930x_verify_template(struct otto_dsa_priv *priv,
 					 struct pie_rule *pr, int t, int block)
 {
 	int i;
@@ -2402,7 +2402,7 @@ static int otto_pie_930x_verify_template(struct rtl838x_switch_priv *priv,
 	return i + PIE_BLOCK_SIZE * block;
 }
 
-int otto_pie_930x_rule_add(struct rtl838x_switch_priv *priv, struct pie_rule *pr)
+int otto_pie_930x_rule_add(struct otto_dsa_priv *priv, struct pie_rule *pr)
 {
 	int idx, block, j, t;
 	int min_block = 0;
@@ -2451,7 +2451,7 @@ int otto_pie_930x_rule_add(struct rtl838x_switch_priv *priv, struct pie_rule *pr
 }
 
 /* Delete a range of Packet Inspection Engine rules */
-static int otto_pie_930x_rule_del(struct rtl838x_switch_priv *priv, int index_from, int index_to)
+static int otto_pie_930x_rule_del(struct otto_dsa_priv *priv, int index_from, int index_to)
 {
 	u32 v = (index_from << 1) | (index_to << 12) | BIT(0);
 
@@ -2469,7 +2469,7 @@ static int otto_pie_930x_rule_del(struct rtl838x_switch_priv *priv, int index_fr
 	return 0;
 }
 
-void otto_pie_930x_rule_rm(struct rtl838x_switch_priv *priv, struct pie_rule *pr)
+void otto_pie_930x_rule_rm(struct otto_dsa_priv *priv, struct pie_rule *pr)
 {
 	int idx = pr->id;
 
@@ -2477,7 +2477,7 @@ void otto_pie_930x_rule_rm(struct rtl838x_switch_priv *priv, struct pie_rule *pr
 	clear_bit(idx, priv->pie_use_bm);
 }
 
-void otto_pie_930x_init(struct rtl838x_switch_priv *priv)
+void otto_pie_930x_init(struct otto_dsa_priv *priv)
 {
 	u32 template_selectors;
 
@@ -2610,7 +2610,7 @@ static enum rtl931x_template_field_id rtl931x_fixed_templates[RTL931X_N_FIXED_TE
 	},
 };
 
-static void otto_pie_931x_lookup_enable(struct rtl838x_switch_priv *priv, int index)
+static void otto_pie_931x_lookup_enable(struct otto_dsa_priv *priv, int index)
 {
 	int block = index / PIE_BLOCK_SIZE;
 
@@ -2938,7 +2938,7 @@ static void otto_pie_931x_rule_dump_raw(u32 r[])
 	pr_debug("r 13-16: %08x %08x %08x %08x\n", r[13], r[14], r[15], r[16]);
 }
 
-int otto_pie_931x_rule_write(struct rtl838x_switch_priv *priv, int idx, struct pie_rule *pr)
+int otto_pie_931x_rule_write(struct otto_dsa_priv *priv, int idx, struct pie_rule *pr)
 {
 	int tbl = otto_table_acquire(RTL9310_TBL_IACL);
 	u32 r[22];
@@ -2986,7 +2986,7 @@ static bool otto_pie_931x_templ_has(int t, enum rtl931x_template_field_id field_
  * Note that this function is SoC specific since the values of e.g. RTL931X_TEMPLATE_FIELD_SIP0
  * depend on the SoC
  */
-static int otto_pie_931x_verify_template(struct rtl838x_switch_priv *priv,
+static int otto_pie_931x_verify_template(struct otto_dsa_priv *priv,
 					 struct pie_rule *pr, int t, int block)
 {
 	int i;
@@ -3037,7 +3037,7 @@ static int otto_pie_931x_verify_template(struct rtl838x_switch_priv *priv,
 	return i + PIE_BLOCK_SIZE * block;
 }
 
-int otto_pie_931x_rule_add(struct rtl838x_switch_priv *priv, struct pie_rule *pr)
+int otto_pie_931x_rule_add(struct otto_dsa_priv *priv, struct pie_rule *pr)
 {
 	int idx, block, j;
 	int min_block = 0;
@@ -3088,7 +3088,7 @@ int otto_pie_931x_rule_add(struct rtl838x_switch_priv *priv, struct pie_rule *pr
 }
 
 /* Delete a range of Packet Inspection Engine rules */
-static int otto_pie_931x_rule_del(struct rtl838x_switch_priv *priv, int index_from, int index_to)
+static int otto_pie_931x_rule_del(struct otto_dsa_priv *priv, int index_from, int index_to)
 {
 	u32 v = (index_from << 1) | (index_to << 13) | BIT(0);
 
@@ -3107,7 +3107,7 @@ static int otto_pie_931x_rule_del(struct rtl838x_switch_priv *priv, int index_fr
 	return 0;
 }
 
-void otto_pie_931x_rule_rm(struct rtl838x_switch_priv *priv, struct pie_rule *pr)
+void otto_pie_931x_rule_rm(struct otto_dsa_priv *priv, struct pie_rule *pr)
 {
 	int idx = pr->id;
 
@@ -3115,7 +3115,7 @@ void otto_pie_931x_rule_rm(struct rtl838x_switch_priv *priv, struct pie_rule *pr
 	clear_bit(idx, priv->pie_use_bm);
 }
 
-void otto_pie_931x_init(struct rtl838x_switch_priv *priv)
+void otto_pie_931x_init(struct otto_dsa_priv *priv)
 {
 	u32 template_selectors;
 

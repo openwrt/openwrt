@@ -58,7 +58,7 @@
 
 #define RTL839X_SPCL_TRAP_ARP_CTRL		(0x1060)
 
-int otto_l2_get_ageing_time(struct rtl838x_switch_priv *priv)
+int otto_l2_get_ageing_time(struct otto_dsa_priv *priv)
 {
 	int t = sw_r32(priv->r->l2_ctrl_1);
 
@@ -91,7 +91,7 @@ static int otto_l2_hash_index(u32 key, int slot)
  * when an empty slot was found and must exist is false, the index of the slot is returned
  * when no slots are available returns -1
  */
-int otto_l2_find_hash_entry(struct rtl838x_switch_priv *priv, u64 seed,
+int otto_l2_find_hash_entry(struct otto_dsa_priv *priv, u64 seed,
 			    bool must_exist, struct rtl838x_l2_entry *e)
 {
 	u32 key = priv->r->l2_hash_key(priv, seed);
@@ -134,7 +134,7 @@ int otto_l2_find_hash_entry(struct rtl838x_switch_priv *priv, u64 seed,
  * when an empty slot was found the index of the slot is returned
  * when no slots are available returns -1
  */
-int otto_l2_find_cam_entry(struct rtl838x_switch_priv *priv, u64 seed,
+int otto_l2_find_cam_entry(struct otto_dsa_priv *priv, u64 seed,
 			   bool must_exist, struct rtl838x_l2_entry *e)
 {
 	int idx = -1;
@@ -164,7 +164,7 @@ int otto_l2_find_cam_entry(struct rtl838x_switch_priv *priv, u64 seed,
 /* RTL931x hashes its second block into rows the fib_entries count does not
  * reach, so an index can fall outside the map and is simply not tracked.
  */
-struct rtldsa_l2_uc *otto_l2_uc_lookup(struct rtl838x_switch_priv *priv, int idx)
+struct rtldsa_l2_uc *otto_l2_uc_lookup(struct otto_dsa_priv *priv, int idx)
 {
 	if (idx < 0 || idx >= priv->r->fib_entries)
 		return NULL;
@@ -176,7 +176,7 @@ struct rtldsa_l2_uc *otto_l2_uc_lookup(struct rtl838x_switch_priv *priv, int idx
  * is never freed by the driver again, which leaks a row but never hands a live
  * one to somebody else.
  */
-static void otto_l2_uc_get(struct rtl838x_switch_priv *priv, int idx)
+static void otto_l2_uc_get(struct otto_dsa_priv *priv, int idx)
 {
 	struct rtldsa_l2_uc *m = otto_l2_uc_lookup(priv, idx);
 
@@ -191,7 +191,7 @@ static void otto_l2_uc_get(struct rtl838x_switch_priv *priv, int idx)
 	m->l3_refcount++;
 }
 
-static void otto_l2_uc_put(struct rtl838x_switch_priv *priv, int idx)
+static void otto_l2_uc_put(struct otto_dsa_priv *priv, int idx)
 {
 	struct rtldsa_l2_uc *m = otto_l2_uc_lookup(priv, idx);
 
@@ -204,7 +204,7 @@ static void otto_l2_uc_put(struct rtl838x_switch_priv *priv, int idx)
 /* Give the row back once nothing forwards through it any more. @e has to be a
  * fresh read of the row at nh->l2_id.
  */
-static void otto_l2_uc_release_row(struct rtl838x_switch_priv *priv,
+static void otto_l2_uc_release_row(struct otto_dsa_priv *priv,
 				   struct otto_l3_nexthop *nh,
 				   struct rtl838x_l2_entry *e)
 {
@@ -237,7 +237,7 @@ static void otto_l2_uc_release_row(struct rtl838x_switch_priv *priv,
  * spend. Search on the seed the reference was taken on, because the caller has
  * already overwritten the address.
  */
-static void otto_l2_uc_put_row(struct rtl838x_switch_priv *priv,
+static void otto_l2_uc_put_row(struct otto_dsa_priv *priv,
 			       struct otto_l3_nexthop *nh)
 {
 	struct rtl838x_l2_entry e = {};
@@ -258,7 +258,7 @@ static void otto_l2_uc_put_row(struct rtl838x_switch_priv *priv,
  * Called from the L3 layer
  * The index in the L2 hash table is filled into nh->l2_id;
  */
-int otto_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop *nh)
+int otto_l2_nexthop_add(struct otto_dsa_priv *priv, struct otto_l3_nexthop *nh)
 {
 	struct rtl838x_l2_entry e = {};
 	u64 seed = priv->r->l2_hash_seed(nh->mac, nh->rvid);
@@ -326,7 +326,7 @@ int otto_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop
 	return 0;
 }
 
-bool otto_l2_nexthop_current(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop *nh)
+bool otto_l2_nexthop_current(struct otto_dsa_priv *priv, struct otto_l3_nexthop *nh)
 {
 	struct rtl838x_l2_entry e = {};
 
@@ -343,7 +343,7 @@ bool otto_l2_nexthop_current(struct rtl838x_switch_priv *priv, struct otto_l3_ne
  * If it was static, the entire entry is removed, otherwise the nexthop bit is cleared
  * and we wait until the entry ages out
  */
-int otto_l2_nexthop_del(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop *nh)
+int otto_l2_nexthop_del(struct otto_dsa_priv *priv, struct otto_l3_nexthop *nh)
 {
 	struct rtl838x_l2_entry e = {};
 	u32 key = nh->l2_id >> 2;
@@ -387,7 +387,7 @@ u64 otto_l2_838x_hash_seed(u64 mac, u32 vid)
 /* Applies the same hash algorithm as the one used currently by the ASIC to the seed
  * and returns a key into the L2 hash table
  */
-u32 otto_l2_838x_hash_key(struct rtl838x_switch_priv *priv, u64 seed)
+u32 otto_l2_838x_hash_key(struct otto_dsa_priv *priv, u64 seed)
 {
 	u32 h1, h2, h3, h;
 
@@ -664,7 +664,7 @@ void otto_l2_838x_set_static_move_action(int port, bool forward)
 		    RTL838X_L2_PORT_STATIC_MV_ACT(port));
 }
 
-int otto_l2_838x_fast_age(struct rtl838x_switch_priv *priv, int port, int vid)
+int otto_l2_838x_fast_age(struct otto_dsa_priv *priv, int port, int vid)
 {
 	u32 val;
 
@@ -708,7 +708,7 @@ u64 otto_l2_839x_hash_seed(u64 mac, u32 vid)
 /* Applies the same hash algorithm as the one used currently by the ASIC to the seed
  * and returns a key into the L2 hash table
  */
-u32 otto_l2_839x_hash_key(struct rtl838x_switch_priv *priv, u64 seed)
+u32 otto_l2_839x_hash_key(struct otto_dsa_priv *priv, u64 seed)
 {
 	u32 h1, h2, h;
 
@@ -981,7 +981,7 @@ void otto_l2_839x_set_static_move_action(int port, bool forward)
 		    RTL839X_L2_PORT_STATIC_MV_ACT(port));
 }
 
-int otto_l2_839x_fast_age(struct rtl838x_switch_priv *priv, int port, int vid)
+int otto_l2_839x_fast_age(struct otto_dsa_priv *priv, int port, int vid)
 {
 	u32 val;
 
@@ -1089,7 +1089,7 @@ u64 otto_l2_930x_hash_seed(u64 mac, u32 vid)
  * both hashes in the lower and higher word of the return value since only 12 bit of
  * the hash are significant
  */
-u32 otto_l2_930x_hash_key(struct rtl838x_switch_priv *priv, u64 seed)
+u32 otto_l2_930x_hash_key(struct otto_dsa_priv *priv, u64 seed)
 {
 	u32 k0, k1, h1, h2, h;
 
@@ -1352,7 +1352,7 @@ void otto_l2_930x_write_mcast_pmask(int idx, u64 portmask)
  * lower and higher word of the return value since only 12 bit of
  * the hash are significant
  */
-u32 otto_l2_930x_hash(struct rtl838x_switch_priv *priv, u64 seed)
+u32 otto_l2_930x_hash(struct otto_dsa_priv *priv, u64 seed)
 {
 	u32 k0, k1, h1, h2, h;
 
@@ -1396,7 +1396,7 @@ u32 otto_l2_930x_hash(struct rtl838x_switch_priv *priv, u64 seed)
 	return h;
 }
 
-int otto_l2_930x_fast_age(struct rtl838x_switch_priv *priv, int port, int vid)
+int otto_l2_930x_fast_age(struct otto_dsa_priv *priv, int port, int vid)
 {
 	u32 val;
 
@@ -1453,7 +1453,7 @@ u64 otto_l2_931x_hash_seed(u64 mac, u32 vid)
  * both hashes in the lower and higher word of the return value since only 12 bit of
  * the hash are significant.
  */
-u32 otto_l2_931x_hash_key(struct rtl838x_switch_priv *priv, u64 seed)
+u32 otto_l2_931x_hash_key(struct otto_dsa_priv *priv, u64 seed)
 {
 	u32 h, h0, h1, h2, h3, h4, k0, k1;
 
@@ -1806,7 +1806,7 @@ int otto_l2_931x_set_ageing_time(unsigned long msec)
 	return 0;
 }
 
-int otto_l2_931x_fast_age(struct rtl838x_switch_priv *priv, int port, int vid)
+int otto_l2_931x_fast_age(struct otto_dsa_priv *priv, int port, int vid)
 {
 	u32 val;
 
@@ -1827,7 +1827,7 @@ int otto_l2_931x_fast_age(struct rtl838x_switch_priv *priv, int port, int vid)
 	return 0;
 }
 
-static void otto_l2_dump_entry(struct seq_file *m, struct rtl838x_switch_priv *priv,
+static void otto_l2_dump_entry(struct seq_file *m, struct otto_dsa_priv *priv,
 			       struct rtl838x_l2_entry *e)
 {
 	u64 portmask;
@@ -1893,7 +1893,7 @@ static void otto_l2_dump_entry(struct seq_file *m, struct rtl838x_switch_priv *p
 
 static int otto_l2_fdb_show(struct seq_file *m, void *v)
 {
-	struct rtl838x_switch_priv *priv = m->private;
+	struct otto_dsa_priv *priv = m->private;
 	int uc_rows, cam_rows;
 
 	uc_rows = otto_table_rows(priv->r->l2_uc_tbl);
@@ -1947,7 +1947,7 @@ static void otto_l2_dbgfs_remove(void *data)
 
 #define RTLDSA_L2_DBG_ROOT_DIR	"realtek_otto_l2"
 
-void otto_l2_dbgfs_init(struct rtl838x_switch_priv *priv)
+void otto_l2_dbgfs_init(struct otto_dsa_priv *priv)
 {
 	struct device *dev = priv->dev;
 	struct dentry *root;

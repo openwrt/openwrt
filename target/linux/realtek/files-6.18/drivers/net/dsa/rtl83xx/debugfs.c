@@ -221,7 +221,7 @@ static const struct file_operations stp_state_fops = {
 static ssize_t drop_counter_read(struct file *filp, char __user *buffer, size_t count,
 				 loff_t *ppos)
 {
-	struct rtl838x_switch_priv *priv = filp->private_data;
+	struct otto_dsa_priv *priv = filp->private_data;
 	const char **d;
 	u32 v;
 	char *buf;
@@ -283,7 +283,7 @@ static const struct file_operations drop_counter_fops = {
 
 static int rtldsa_pmsks_table_raw_show(struct seq_file *m, void *v)
 {
-	struct rtl838x_switch_priv *priv = m->private;
+	struct otto_dsa_priv *priv = m->private;
 	u64 all_ports;
 
 	mutex_lock(&priv->reg_mutex);
@@ -323,7 +323,7 @@ static const struct file_operations rtldsa_pmsks_table_raw_fops = {
 
 static int rtldsa_pmsks_table_show(struct seq_file *m, void *v)
 {
-	struct rtl838x_switch_priv *priv = m->private;
+	struct otto_dsa_priv *priv = m->private;
 	u64 ports;
 
 	mutex_lock(&priv->reg_mutex);
@@ -367,7 +367,7 @@ static const struct file_operations rtldsa_pmsks_table_fops = {
 
 static int rtldsa_vlan_profiles_show(struct seq_file *m, void *v)
 {
-	struct rtl838x_switch_priv *priv = m->private;
+	struct otto_dsa_priv *priv = m->private;
 	struct rtldsa_vlan_profile profile;
 	int ret, profiles_max;
 
@@ -421,7 +421,7 @@ static const struct file_operations rtldsa_vlan_profiles_fops = {
 
 static int rtldsa_vlan_table_raw_show(struct seq_file *m, void *v)
 {
-	struct rtl838x_switch_priv *priv = m->private;
+	struct otto_dsa_priv *priv = m->private;
 	struct otto_vlan_info info;
 
 	if (!priv->r->vlan_tables_read)
@@ -463,7 +463,7 @@ static const struct file_operations rtldsa_vlan_table_raw_fops = {
 
 static int rtldsa_vlan_table_show(struct seq_file *m, void *v)
 {
-	struct rtl838x_switch_priv *priv = m->private;
+	struct otto_dsa_priv *priv = m->private;
 	struct otto_vlan_info info;
 
 	if (!priv->r->vlan_tables_read)
@@ -508,7 +508,7 @@ static ssize_t age_out_read(struct file *filp, char __user *buffer, size_t count
 {
 	struct rtldsa_port *p = filp->private_data;
 	struct dsa_switch *ds = p->dp->ds;
-	struct rtl838x_switch_priv *priv = ds->priv;
+	struct otto_dsa_priv *priv = ds->priv;
 	int value = sw_r32(priv->r->l2_port_aging_out);
 
 	if (value < 0)
@@ -544,7 +544,7 @@ static ssize_t port_egress_rate_read(struct file *filp, char __user *buffer, siz
 {
 	struct rtldsa_port *p = filp->private_data;
 	struct dsa_switch *ds = p->dp->ds;
-	struct rtl838x_switch_priv *priv = ds->priv;
+	struct otto_dsa_priv *priv = ds->priv;
 	u32 value;
 
 	value = priv->r->get_egress_rate(priv, p->dp->index);
@@ -557,7 +557,7 @@ static ssize_t port_egress_rate_write(struct file *filp, const char __user *buff
 {
 	struct rtldsa_port *p = filp->private_data;
 	struct dsa_switch *ds = p->dp->ds;
-	struct rtl838x_switch_priv *priv = ds->priv;
+	struct otto_dsa_priv *priv = ds->priv;
 	u32 value;
 	ssize_t res;
 
@@ -582,14 +582,14 @@ static const struct debugfs_reg32 port_ctrl_regs[] = {
 	{ .name = "mac_force_mode", .offset = RTL838X_MAC_FORCE_MODE_CTRL, },
 };
 
-static void rtl838x_dbgfs_cleanup(struct rtl838x_switch_priv *priv)
+static void rtl838x_dbgfs_cleanup(struct otto_dsa_priv *priv)
 {
 	debugfs_remove_recursive(priv->dbgfs_dir);
 
 /*	kfree(priv->dbgfs_entries); */
 }
 
-static int rtl838x_dbgfs_port_init(struct dentry *parent, struct rtl838x_switch_priv *priv,
+static int rtl838x_dbgfs_port_init(struct dentry *parent, struct otto_dsa_priv *priv,
 				   int port)
 {
 	struct dentry *port_dir;
@@ -635,7 +635,7 @@ static int rtl838x_dbgfs_port_init(struct dentry *parent, struct rtl838x_switch_
 	return 0;
 }
 
-static int rtl838x_dbgfs_leds(struct dentry *parent, struct rtl838x_switch_priv *priv)
+static int rtl838x_dbgfs_leds(struct dentry *parent, struct otto_dsa_priv *priv)
 {
 	struct dentry *led_dir;
 
@@ -711,7 +711,7 @@ static int rtl838x_dbgfs_leds(struct dentry *parent, struct rtl838x_switch_priv 
 	return 0;
 }
 
-void rtl838x_dbgfs_init(struct rtl838x_switch_priv *priv)
+void rtl838x_dbgfs_init(struct otto_dsa_priv *priv)
 {
 	struct dentry *rtl838x_dir;
 	struct dentry *port_dir;
@@ -848,7 +848,7 @@ err:
 	rtl838x_dbgfs_cleanup(priv);
 }
 
-void rtl930x_dbgfs_init(struct rtl838x_switch_priv *priv)
+void rtl930x_dbgfs_init(struct otto_dsa_priv *priv)
 {
 	struct dentry *dbg_dir;
 

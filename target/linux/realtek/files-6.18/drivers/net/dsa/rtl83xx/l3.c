@@ -224,7 +224,7 @@ static int otto_l3_839x_set_smac(struct otto_l3_ctrl *ctrl, u32 idx, u64 mac)
  */
 static int otto_l3_839x_route_write(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt)
 {
-	struct rtl838x_switch_priv *priv = ctrl->priv;
+	struct otto_dsa_priv *priv = ctrl->priv;
 	struct pie_rule pr = {};
 	int err;
 
@@ -317,7 +317,7 @@ static int otto_l3_839x_v6_row_to_slot(struct otto_l3_ctrl *ctrl, int row)
 static int otto_l3_839x_route_matches(struct otto_l3_ctrl *ctrl, int row,
 				      struct otto_l3_route *rt)
 {
-	struct rtl838x_switch_priv *priv = ctrl->priv;
+	struct otto_dsa_priv *priv = ctrl->priv;
 	bool fwd = rt->attr.action == ROUTE_ACT_FORWARD;
 	struct pie_rule pr;
 	int err;
@@ -346,7 +346,7 @@ static int otto_l3_839x_route_matches(struct otto_l3_ctrl *ctrl, int row,
 
 static void otto_l3_839x_setup_port_macs(struct otto_l3_ctrl *ctrl)
 {
-	struct rtl838x_switch_priv *priv = ctrl->priv;
+	struct otto_dsa_priv *priv = ctrl->priv;
 	struct net_device *dev;
 	u64 mac;
 
@@ -1024,7 +1024,7 @@ static int otto_l3_930x_route_write(struct otto_l3_ctrl *ctrl, int idx, struct o
 static int otto_l3_port_lower_walk(struct net_device *lower, struct netdev_nested_priv *_priv)
 {
 	struct otto_l3_walk_data *data = (struct otto_l3_walk_data *)_priv->data;
-	struct rtl838x_switch_priv *priv = data->ctrl->priv;
+	struct otto_dsa_priv *priv = data->ctrl->priv;
 	struct otto_l3_ctrl *ctrl = data->ctrl;
 	int ret = 0;
 	int index;
@@ -1301,7 +1301,7 @@ static void otto_l3_930x_set_egress_intf(struct otto_l3_ctrl *ctrl, int idx, str
  */
 static int otto_l3_930x_setup(struct otto_l3_ctrl *ctrl)
 {
-	struct rtl838x_switch_priv *priv = ctrl->priv;
+	struct otto_dsa_priv *priv = ctrl->priv;
 	int uncleared = 0;
 
 	/* Setup MTU with id 0 for default interface */
@@ -1986,7 +1986,7 @@ static bool otto_l3_l2_entry_taken(struct otto_l3_ctrl *ctrl, struct otto_l3_rou
 static void otto_l3_route_update_hw(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r,
 				    u64 mac)
 {
-	struct rtl838x_switch_priv *priv = ctrl->priv;
+	struct otto_dsa_priv *priv = ctrl->priv;
 	char dst[INET6_ADDRSTRLEN + sizeof("/128")];
 	bool trapped = r->attr.action == ROUTE_ACT_TRAP2CPU;
 	int old_dmac = r->nh.dmac_id;
@@ -2708,7 +2708,7 @@ static void otto_l3_route_remove(struct otto_l3_ctrl *ctrl, struct otto_l3_route
 
 static void otto_l3_route_teardown(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r)
 {
-	struct rtl838x_switch_priv *priv = ctrl->priv;
+	struct otto_dsa_priv *priv = ctrl->priv;
 
 	/* What forwards through the route goes before the next hop it forwards
 	 * to
@@ -2906,7 +2906,7 @@ static void otto_l3_route_trap_new(struct otto_l3_ctrl *ctrl, struct otto_l3_rou
 
 static int otto_l3_fib_add_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifier_info *info)
 {
-	struct rtl838x_switch_priv *priv = ctrl->priv;
+	struct otto_dsa_priv *priv = ctrl->priv;
 	struct otto_l3_route *route;
 	struct net_device *ndev;
 	struct in6_addr gw;
@@ -3887,7 +3887,7 @@ static void otto_l3_resync_request(struct otto_l3_ctrl *ctrl)
 static int otto_l3_fib_notifier(struct notifier_block *this, unsigned long event, void *ptr)
 {
 	struct otto_l3_ctrl *ctrl = container_of(this, struct otto_l3_ctrl, fib_nb);
-	struct rtl838x_switch_priv *priv = ctrl->priv;
+	struct otto_dsa_priv *priv = ctrl->priv;
 	struct otto_l3_fib_event_work *fib_work;
 	struct fib_notifier_info *info = ptr;
 
@@ -4000,7 +4000,7 @@ static bool otto_l3_is_nd_tbl(const struct neigh_table *tbl)
 static int otto_l3_netevent_notifier(struct notifier_block *this, unsigned long event, void *ptr)
 {
 	struct otto_l3_ctrl *ctrl = container_of(this, struct otto_l3_ctrl, ne_nb);
-	struct rtl838x_switch_priv *priv = ctrl->priv;
+	struct otto_dsa_priv *priv = ctrl->priv;
 	struct otto_l3_net_event_work *net_work;
 	struct neighbour *n = ptr;
 	struct net_device *dev;
@@ -4317,7 +4317,7 @@ static const struct file_operations otto_l3_930x_route_fops = {
 static int otto_l3_930x_nexthop_show(struct seq_file *m, void *v)
 {
 	struct otto_l3_ctrl *ctrl = m->private;
-	struct rtl838x_switch_priv *priv = ctrl->priv;
+	struct otto_dsa_priv *priv = ctrl->priv;
 	int l2_rows, rows;
 
 	seq_puts(m,
@@ -4525,7 +4525,7 @@ static const struct file_operations otto_l3_930x_clear_hit_fops = {
 static int otto_l3_839x_route_show(struct seq_file *m, void *v)
 {
 	struct otto_l3_ctrl *ctrl = m->private;
-	struct rtl838x_switch_priv *priv = ctrl->priv;
+	struct otto_dsa_priv *priv = ctrl->priv;
 	int rows = RTL839X_PIE_L3_RULES;
 
 	seq_puts(m,
@@ -4706,7 +4706,7 @@ static const struct of_device_id otto_l3_of_ids[] = {
 	{ /* sentinel */ }
 };
 
-void otto_l3_remove(struct rtl838x_switch_priv *priv)
+void otto_l3_remove(struct otto_dsa_priv *priv)
 {
 	struct otto_l3_ctrl *ctrl = priv->l3_ctrl;
 	struct otto_l3_rmac_dev *d, *dtmp;
@@ -4820,7 +4820,7 @@ static void otto_l3_resync_work_do(struct work_struct *work)
 	mod_delayed_work(system_long_wq, &ctrl->resync_work, ctrl->resync_delay);
 }
 
-int otto_l3_probe(struct device *dev, struct rtl838x_switch_priv *priv)
+int otto_l3_probe(struct device *dev, struct otto_dsa_priv *priv)
 {
 	const struct of_device_id *match;
 	struct otto_l3_ctrl *ctrl;

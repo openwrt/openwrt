@@ -23,32 +23,32 @@
 #define RTL839X_PIE_L3_FIRST	(RTL839X_PIE_CUTLINE * PIE_BLOCK_SIZE - RTL839X_PIE_L3_RULES)
 
 struct pie_rule;
-struct rtl838x_switch_priv;
+struct otto_dsa_priv;
 
-void otto_pie_838x_init(struct rtl838x_switch_priv *priv);
-int otto_pie_838x_rule_read(struct rtl838x_switch_priv *priv, int idx, struct pie_rule *pr);
-int otto_pie_838x_rule_write(struct rtl838x_switch_priv *priv, int idx, struct pie_rule *pr);
-int otto_pie_838x_rule_add(struct rtl838x_switch_priv *priv, struct pie_rule *pr);
-void otto_pie_838x_rule_rm(struct rtl838x_switch_priv *priv, struct pie_rule *pr);
+void otto_pie_838x_init(struct otto_dsa_priv *priv);
+int otto_pie_838x_rule_read(struct otto_dsa_priv *priv, int idx, struct pie_rule *pr);
+int otto_pie_838x_rule_write(struct otto_dsa_priv *priv, int idx, struct pie_rule *pr);
+int otto_pie_838x_rule_add(struct otto_dsa_priv *priv, struct pie_rule *pr);
+void otto_pie_838x_rule_rm(struct otto_dsa_priv *priv, struct pie_rule *pr);
 
-void otto_pie_839x_init(struct rtl838x_switch_priv *priv);
-int otto_pie_839x_rule_read(struct rtl838x_switch_priv *priv, int idx, struct pie_rule *pr);
-int otto_pie_839x_rule_write(struct rtl838x_switch_priv *priv, int idx, struct pie_rule *pr);
-int otto_pie_839x_rule_add(struct rtl838x_switch_priv *priv, struct pie_rule *pr);
-void otto_pie_839x_rule_rm(struct rtl838x_switch_priv *priv, struct pie_rule *pr);
-int otto_pie_839x_l3_rule_read(struct rtl838x_switch_priv *priv, int idx, struct pie_rule *pr);
-int otto_pie_839x_l3_rule_write(struct rtl838x_switch_priv *priv, int idx, struct pie_rule *pr);
+void otto_pie_839x_init(struct otto_dsa_priv *priv);
+int otto_pie_839x_rule_read(struct otto_dsa_priv *priv, int idx, struct pie_rule *pr);
+int otto_pie_839x_rule_write(struct otto_dsa_priv *priv, int idx, struct pie_rule *pr);
+int otto_pie_839x_rule_add(struct otto_dsa_priv *priv, struct pie_rule *pr);
+void otto_pie_839x_rule_rm(struct otto_dsa_priv *priv, struct pie_rule *pr);
+int otto_pie_839x_l3_rule_read(struct otto_dsa_priv *priv, int idx, struct pie_rule *pr);
+int otto_pie_839x_l3_rule_write(struct otto_dsa_priv *priv, int idx, struct pie_rule *pr);
 void otto_pie_839x_rule_dump(struct pie_rule *pr);
 
-void otto_pie_930x_init(struct rtl838x_switch_priv *priv);
-int otto_pie_930x_rule_write(struct rtl838x_switch_priv *priv, int idx, struct pie_rule *pr);
-int otto_pie_930x_rule_add(struct rtl838x_switch_priv *priv, struct pie_rule *pr);
-void otto_pie_930x_rule_rm(struct rtl838x_switch_priv *priv, struct pie_rule *pr);
+void otto_pie_930x_init(struct otto_dsa_priv *priv);
+int otto_pie_930x_rule_write(struct otto_dsa_priv *priv, int idx, struct pie_rule *pr);
+int otto_pie_930x_rule_add(struct otto_dsa_priv *priv, struct pie_rule *pr);
+void otto_pie_930x_rule_rm(struct otto_dsa_priv *priv, struct pie_rule *pr);
 void otto_pie_930x_rule_dump_raw(u32 r[]);
 
-void otto_pie_931x_init(struct rtl838x_switch_priv *priv);
-int otto_pie_931x_rule_write(struct rtl838x_switch_priv *priv, int idx, struct pie_rule *pr);
-int otto_pie_931x_rule_add(struct rtl838x_switch_priv *priv, struct pie_rule *pr);
-void otto_pie_931x_rule_rm(struct rtl838x_switch_priv *priv, struct pie_rule *pr);
+void otto_pie_931x_init(struct otto_dsa_priv *priv);
+int otto_pie_931x_rule_write(struct otto_dsa_priv *priv, int idx, struct pie_rule *pr);
+int otto_pie_931x_rule_add(struct otto_dsa_priv *priv, struct pie_rule *pr);
+void otto_pie_931x_rule_rm(struct otto_dsa_priv *priv, struct pie_rule *pr);
 
 #endif /* _OTTO_PIE_H */

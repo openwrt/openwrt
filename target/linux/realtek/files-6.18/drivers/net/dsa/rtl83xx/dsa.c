@@ -73,7 +73,7 @@ static enum dsa_tag_protocol rtldsa_get_tag_protocol(struct dsa_switch *ds,
 	return DSA_TAG_PROTO_RTL_OTTO;
 }
 
-static void rtldsa_83xx_mc_pmasks_setup(struct rtl838x_switch_priv *priv)
+static void rtldsa_83xx_mc_pmasks_setup(struct otto_dsa_priv *priv)
 {
 	/* RTL8380 and RTL8390 use an index into the portmask table to set the
 	 * unknown multicast portmask, setup a default at a safe location
@@ -83,25 +83,25 @@ static void rtldsa_83xx_mc_pmasks_setup(struct rtl838x_switch_priv *priv)
 	priv->r->write_mcast_pmask(MC_PMASK_ALL_PORTS_IDX, ~0);
 }
 
-static void rtldsa_setup_bpdu_traps(struct rtl838x_switch_priv *priv)
+static void rtldsa_setup_bpdu_traps(struct otto_dsa_priv *priv)
 {
 	for (int i = 0; i < priv->r->cpu_port; i++)
 		priv->r->set_receive_management_action(i, BPDU, TRAP2CPU);
 }
 
-static void rtldsa_setup_lldp_traps(struct rtl838x_switch_priv *priv)
+static void rtldsa_setup_lldp_traps(struct otto_dsa_priv *priv)
 {
 	for (int i = 0; i < priv->r->cpu_port; i++)
 		priv->r->set_receive_management_action(i, LLDP, TRAP2CPU);
 }
 
-static void rtldsa_setup_eapol_traps(struct rtl838x_switch_priv *priv)
+static void rtldsa_setup_eapol_traps(struct otto_dsa_priv *priv)
 {
 	for (int i = 0; i < priv->r->cpu_port; i++)
 		priv->r->set_receive_management_action(i, EAPOL, TRAP2CPU);
 }
 
-static void rtldsa_port_set_salrn(struct rtl838x_switch_priv *priv,
+static void rtldsa_port_set_salrn(struct otto_dsa_priv *priv,
 				  int port, bool enable)
 {
 	int shift = SALRN_PORT_SHIFT(port);
@@ -113,7 +113,7 @@ static void rtldsa_port_set_salrn(struct rtl838x_switch_priv *priv,
 
 static int rtldsa_83xx_setup(struct dsa_switch *ds)
 {
-	struct rtl838x_switch_priv *priv = ds->priv;
+	struct otto_dsa_priv *priv = ds->priv;
 	int err;
 
 	pr_debug("%s called\n", __func__);
@@ -176,7 +176,7 @@ static int rtldsa_83xx_setup(struct dsa_switch *ds)
 
 static int rtldsa_93xx_setup(struct dsa_switch *ds)
 {
-	struct rtl838x_switch_priv *priv = ds->priv;
+	struct otto_dsa_priv *priv = ds->priv;
 	int err;
 
 	pr_info("%s called\n", __func__);
@@ -241,7 +241,7 @@ static void rtldsa_phylink_get_caps(struct dsa_switch *ds, int port,
 				    struct phylink_config *config)
 {
 	struct dsa_port *dp = dsa_to_port(ds, port);
-	struct rtl838x_switch_priv *priv = ds->priv;
+	struct otto_dsa_priv *priv = ds->priv;
 	unsigned long caps = priv->r->mac_capabilities;
 
 	/* TODO: This needs to take into account the MAC to SERDES mapping */
@@ -276,7 +276,7 @@ static void rtldsa_83xx_phylink_mac_config(struct phylink_config *config,
 					   const struct phylink_link_state *state)
 {
 	struct dsa_port *dp = dsa_phylink_to_port(config);
-	struct rtl838x_switch_priv *priv = dp->ds->priv;
+	struct otto_dsa_priv *priv = dp->ds->priv;
 	int port = dp->index;
 	u32 mcr;
 
@@ -305,7 +305,7 @@ static void rtldsa_83xx_phylink_mac_config(struct phylink_config *config,
 }
 
 static void
-rtldsa_mac_link_state_source_set(struct rtl838x_switch_priv *priv, int port,
+rtldsa_mac_link_state_source_set(struct otto_dsa_priv *priv, int port,
 				 enum rtldsa_mac_link_state_source source,
 				 phy_interface_t interface)
 {
@@ -326,7 +326,7 @@ static void rtldsa_93xx_phylink_mac_config(struct phylink_config *config,
 					   const struct phylink_link_state *state)
 {
 	struct dsa_port *dp = dsa_phylink_to_port(config);
-	struct rtl838x_switch_priv *priv = dp->ds->priv;
+	struct otto_dsa_priv *priv = dp->ds->priv;
 	const struct rtldsa_mac_force_mode_cfg *cfg;
 	bool force_dynamic_phy;
 	int port = dp->index;
@@ -365,7 +365,7 @@ static void rtldsa_83xx_phylink_mac_link_down(struct phylink_config *config,
 					      phy_interface_t interface)
 {
 	struct dsa_port *dp = dsa_phylink_to_port(config);
-	struct rtl838x_switch_priv *priv = dp->ds->priv;
+	struct otto_dsa_priv *priv = dp->ds->priv;
 	const struct rtldsa_mac_force_mode_cfg *cfg;
 	int port = dp->index;
 
@@ -384,7 +384,7 @@ static void rtldsa_93xx_phylink_mac_link_down(struct phylink_config *config,
 					      phy_interface_t interface)
 {
 	struct dsa_port *dp = dsa_phylink_to_port(config);
-	struct rtl838x_switch_priv *priv = dp->ds->priv;
+	struct otto_dsa_priv *priv = dp->ds->priv;
 	const struct rtldsa_mac_force_mode_cfg *cfg;
 	bool force_dynamic_phy;
 	int port = dp->index;
@@ -426,7 +426,7 @@ static void rtldsa_83xx_phylink_mac_link_up(struct phylink_config *config,
 					    bool tx_pause, bool rx_pause)
 {
 	struct dsa_port *dp = dsa_phylink_to_port(config);
-	struct rtl838x_switch_priv *priv = dp->ds->priv;
+	struct otto_dsa_priv *priv = dp->ds->priv;
 	const struct rtldsa_mac_force_mode_cfg *cfg;
 	int port = dp->index;
 	u32 mcr, spdsel;
@@ -470,7 +470,7 @@ static void rtldsa_93xx_phylink_mac_link_up(struct phylink_config *config,
 					    bool tx_pause, bool rx_pause)
 {
 	struct dsa_port *dp = dsa_phylink_to_port(config);
-	struct rtl838x_switch_priv *priv = dp->ds->priv;
+	struct otto_dsa_priv *priv = dp->ds->priv;
 	const struct rtldsa_mac_force_mode_cfg *cfg;
 	int port = dp->index;
 	bool dynamic_phy, force_dynamic_phy, keep_forced;
@@ -574,7 +574,7 @@ restart:
 	regmap_update_bits(priv->map, priv->r->mac_port_ctrl(port), 0x3, 0x3);
 }
 
-static int rtldsa_mc_group_alloc(struct rtl838x_switch_priv *priv, int port)
+static int rtldsa_mc_group_alloc(struct otto_dsa_priv *priv, int port)
 {
 	int mc_group = find_first_zero_bit(priv->mc_group_bm, MAX_MC_GROUPS - 1);
 	u64 portmask;
@@ -589,7 +589,7 @@ static int rtldsa_mc_group_alloc(struct rtl838x_switch_priv *priv, int port)
 	return mc_group;
 }
 
-static u64 rtldsa_mc_group_add_port(struct rtl838x_switch_priv *priv, int mc_group, int port)
+static u64 rtldsa_mc_group_add_port(struct otto_dsa_priv *priv, int mc_group, int port)
 {
 	u64 portmask = priv->r->read_mcast_pmask(mc_group);
 
@@ -601,7 +601,7 @@ static u64 rtldsa_mc_group_add_port(struct rtl838x_switch_priv *priv, int mc_gro
 	return portmask;
 }
 
-static u64 rtldsa_mc_group_del_port(struct rtl838x_switch_priv *priv, int mc_group, int port)
+static u64 rtldsa_mc_group_del_port(struct otto_dsa_priv *priv, int mc_group, int port)
 {
 	u64 portmask = priv->r->read_mcast_pmask(mc_group);
 
@@ -617,7 +617,7 @@ static u64 rtldsa_mc_group_del_port(struct rtl838x_switch_priv *priv, int mc_gro
 
 static int rtldsa_port_enable(struct dsa_switch *ds, int port, struct phy_device *phydev)
 {
-	struct rtl838x_switch_priv *priv = ds->priv;
+	struct otto_dsa_priv *priv = ds->priv;
 
 	pr_debug("%s: %x %d", __func__, (u32)priv, port);
 	priv->ports[port].enable = true;
@@ -645,7 +645,7 @@ static int rtldsa_port_enable(struct dsa_switch *ds, int port, struct phy_device
 
 static void rtldsa_port_disable(struct dsa_switch *ds, int port)
 {
-	struct rtl838x_switch_priv *priv = ds->priv;
+	struct otto_dsa_priv *priv = ds->priv;
 
 	pr_debug("%s %x: %d", __func__, (u32)priv, port);
 	/* you can only disable user ports */
@@ -664,7 +664,7 @@ static void rtldsa_port_disable(struct dsa_switch *ds, int port)
 
 static int rtldsa_port_max_mtu(struct dsa_switch *ds, int port)
 {
-	struct rtl838x_switch_priv *priv = ds->priv;
+	struct otto_dsa_priv *priv = ds->priv;
 
 	/* Families that cannot limit the frame length keep advertising the
 	 * ether_setup() default their ports always had.
@@ -692,7 +692,7 @@ static int rtldsa_largest_mtu(struct dsa_switch *ds, int port, int new_mtu)
 
 static int rtldsa_port_change_mtu(struct dsa_switch *ds, int port, int new_mtu)
 {
-	struct rtl838x_switch_priv *priv = ds->priv;
+	struct otto_dsa_priv *priv = ds->priv;
 	int frame_size;
 
 	if (!priv->r->max_frame)
@@ -737,7 +737,7 @@ static int rtldsa_port_change_mtu(struct dsa_switch *ds, int port, int new_mtu)
 
 static bool rtldsa_support_eee(struct dsa_switch *ds, int port)
 {
-	struct rtl838x_switch_priv *priv = ds->priv;
+	struct otto_dsa_priv *priv = ds->priv;
 
 	/* TODO: do this better */
 	return (priv->ports[port].phy != 0);
@@ -745,7 +745,7 @@ static bool rtldsa_support_eee(struct dsa_switch *ds, int port)
 
 static int rtldsa_set_mac_eee(struct dsa_switch *ds, int port, struct ethtool_keee *e)
 {
-	struct rtl838x_switch_priv *priv = ds->priv;
+	struct otto_dsa_priv *priv = ds->priv;
 
 	if (e->eee_enabled && !priv->eee_enabled) {
 		pr_info("Globally enabling EEE\n");
@@ -764,14 +764,14 @@ static int rtldsa_set_mac_eee(struct dsa_switch *ds, int port, struct ethtool_ke
 
 static int rtldsa_set_ageing_time(struct dsa_switch *ds, unsigned int msec)
 {
-	struct rtl838x_switch_priv *priv = ds->priv;
+	struct otto_dsa_priv *priv = ds->priv;
 
 	priv->r->set_ageing_time(msec);
 
 	return 0;
 }
 
-static void rtldsa_update_port_member(struct rtl838x_switch_priv *priv, int port,
+static void rtldsa_update_port_member(struct otto_dsa_priv *priv, int port,
 				      const struct net_device *bridge_dev, bool join)
 				      __must_hold(&priv->reg_mutex)
 {
@@ -816,7 +816,7 @@ static void rtldsa_update_port_member(struct rtl838x_switch_priv *priv, int port
 static int rtldsa_port_bridge_join(struct dsa_switch *ds, int port, struct dsa_bridge bridge,
 				   bool *tx_fwd_offload, struct netlink_ext_ack *extack)
 {
-	struct rtl838x_switch_priv *priv = ds->priv;
+	struct otto_dsa_priv *priv = ds->priv;
 
 	pr_debug("%s %x: %d", __func__, (u32)priv, port);
 
@@ -841,7 +841,7 @@ static int rtldsa_port_bridge_join(struct dsa_switch *ds, int port, struct dsa_b
 
 static void rtldsa_port_bridge_leave(struct dsa_switch *ds, int port, struct dsa_bridge bridge)
 {
-	struct rtl838x_switch_priv *priv = ds->priv;
+	struct otto_dsa_priv *priv = ds->priv;
 
 	pr_debug("%s %x: %d", __func__, (u32)priv, port);
 
@@ -860,7 +860,7 @@ static void rtldsa_port_bridge_leave(struct dsa_switch *ds, int port, struct dsa
 
 void rtldsa_port_fast_age(struct dsa_switch *ds, int port)
 {
-	struct rtl838x_switch_priv *priv = ds->priv;
+	struct otto_dsa_priv *priv = ds->priv;
 
 	if (!priv->r->fast_age)
 		return;
@@ -915,7 +915,7 @@ static int rtldsa_port_fdb_add(struct dsa_switch *ds, int port,
 			       const unsigned char *addr, u16 vid,
 			       const struct dsa_db db)
 {
-	struct rtl838x_switch_priv *priv = ds->priv;
+	struct otto_dsa_priv *priv = ds->priv;
 	u64 mac = ether_addr_to_u64(addr);
 	struct rtl838x_l2_entry e;
 	int err = 0, idx;
@@ -975,7 +975,7 @@ static int rtldsa_port_fdb_del(struct dsa_switch *ds, int port,
 			       const unsigned char *addr, u16 vid,
 			       const struct dsa_db db)
 {
-	struct rtl838x_switch_priv *priv = ds->priv;
+	struct otto_dsa_priv *priv = ds->priv;
 	u64 mac = ether_addr_to_u64(addr);
 	struct rtl838x_l2_entry e;
 	int err = 0, idx;
@@ -1033,7 +1033,7 @@ out:
 static int rtldsa_port_fdb_dump(struct dsa_switch *ds, int port,
 				dsa_fdb_dump_cb_t *cb, void *data)
 {
-	struct rtl838x_switch_priv *priv = ds->priv;
+	struct otto_dsa_priv *priv = ds->priv;
 	int uc_rows, cam_rows;
 
 	uc_rows = otto_table_rows(priv->r->l2_uc_tbl);
@@ -1100,7 +1100,7 @@ static int rtldsa_83xx_port_mdb_add(struct dsa_switch *ds, int port,
 				    const struct switchdev_obj_port_mdb *mdb,
 				    const struct dsa_db db)
 {
-	struct rtl838x_switch_priv *priv = ds->priv;
+	struct otto_dsa_priv *priv = ds->priv;
 	u64 mac = ether_addr_to_u64(mdb->addr);
 	struct rtl838x_l2_entry e;
 	int err = 0, idx;
@@ -1186,7 +1186,7 @@ static int rtldsa_port_mdb_del(struct dsa_switch *ds, int port,
 			       const struct switchdev_obj_port_mdb *mdb,
 			       const struct dsa_db db)
 {
-	struct rtl838x_switch_priv *priv = ds->priv;
+	struct otto_dsa_priv *priv = ds->priv;
 	u64 mac = ether_addr_to_u64(mdb->addr);
 	struct rtl838x_l2_entry e;
 	int err = 0, idx;
@@ -1245,7 +1245,7 @@ static int rtldsa_port_pre_bridge_flags(struct dsa_switch *ds, int port,
 					struct switchdev_brport_flags flags,
 					struct netlink_ext_ack *extack)
 {
-	struct rtl838x_switch_priv *priv = ds->priv;
+	struct otto_dsa_priv *priv = ds->priv;
 	unsigned long features = BR_ISOLATED;
 
 	pr_debug("%s: %d %lX\n", __func__, port, flags.val);
@@ -1289,7 +1289,7 @@ static int rtldsa_port_bridge_flags(struct dsa_switch *ds, int port,
 				    struct switchdev_brport_flags flags,
 				    struct netlink_ext_ack *extack)
 {
-	struct rtl838x_switch_priv *priv = ds->priv;
+	struct otto_dsa_priv *priv = ds->priv;
 	struct dsa_port *dp = dsa_to_port(ds, port);
 	enum rtldsa_flood_type new_sa_fwd;
 	unsigned long cached_flags;

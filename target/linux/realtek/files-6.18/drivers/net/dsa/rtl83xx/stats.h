@@ -174,23 +174,23 @@ struct ethtool_eth_phy_stats;
 struct ethtool_pause_stats;
 struct ethtool_rmon_hist_range;
 struct ethtool_rmon_stats;
-struct rtl838x_switch_priv;
+struct otto_dsa_priv;
 struct rtnl_link_stats64;
 
-void otto_stats_init(struct rtl838x_switch_priv *priv);
-void otto_stats_init_counters(struct rtl838x_switch_priv *priv);
-void otto_stats_838x_init(struct rtl838x_switch_priv *priv);
+void otto_stats_init(struct otto_dsa_priv *priv);
+void otto_stats_init_counters(struct otto_dsa_priv *priv);
+void otto_stats_838x_init(struct otto_dsa_priv *priv);
 u64 otto_stats_931x_port_table_read(int port, unsigned int mib_size,
 				    unsigned int mib_offset, bool is_pvt);
 
-int otto_stats_packet_cntr_alloc(struct rtl838x_switch_priv *priv);
-void otto_stats_packet_cntr_free(struct rtl838x_switch_priv *priv, int idx);
-u32 otto_stats_838x_packet_cntr_read(struct rtl838x_switch_priv *priv, int counter);
-void otto_stats_838x_packet_cntr_clear(struct rtl838x_switch_priv *priv, int counter);
-u32 otto_stats_839x_packet_cntr_read(struct rtl838x_switch_priv *priv, int counter);
-void otto_stats_839x_packet_cntr_clear(struct rtl838x_switch_priv *priv, int counter);
-u32 otto_stats_930x_packet_cntr_read(struct rtl838x_switch_priv *priv, int counter);
-void otto_stats_930x_packet_cntr_clear(struct rtl838x_switch_priv *priv, int counter);
+int otto_stats_packet_cntr_alloc(struct otto_dsa_priv *priv);
+void otto_stats_packet_cntr_free(struct otto_dsa_priv *priv, int idx);
+u32 otto_stats_838x_packet_cntr_read(struct otto_dsa_priv *priv, int counter);
+void otto_stats_838x_packet_cntr_clear(struct otto_dsa_priv *priv, int counter);
+u32 otto_stats_839x_packet_cntr_read(struct otto_dsa_priv *priv, int counter);
+void otto_stats_839x_packet_cntr_clear(struct otto_dsa_priv *priv, int counter);
+u32 otto_stats_930x_packet_cntr_read(struct otto_dsa_priv *priv, int counter);
+void otto_stats_930x_packet_cntr_clear(struct otto_dsa_priv *priv, int counter);
 
 void otto_stats_get_strings(struct dsa_switch *ds, int port, u32 stringset,
 			    u8 *data);
@@ -210,15 +210,15 @@ void otto_stats_get64(struct dsa_switch *ds, int port,
 void otto_stats_get_pause(struct dsa_switch *ds, int port,
 			  struct ethtool_pause_stats *pause_stats);
 
-void otto_stats_counters_lock_register(struct rtl838x_switch_priv *priv, int port)
+void otto_stats_counters_lock_register(struct otto_dsa_priv *priv, int port)
 	__acquires(&priv->ports[port].counters.lock);
-void otto_stats_counters_unlock_register(struct rtl838x_switch_priv *priv, int port)
+void otto_stats_counters_unlock_register(struct otto_dsa_priv *priv, int port)
 	__releases(&priv->ports[port].counters.lock);
-void otto_stats_counters_lock_table(struct rtl838x_switch_priv *priv, int port)
+void otto_stats_counters_lock_table(struct otto_dsa_priv *priv, int port)
 	__acquires(&priv->counters_lock);
-void otto_stats_counters_unlock_table(struct rtl838x_switch_priv *priv, int port)
+void otto_stats_counters_unlock_table(struct otto_dsa_priv *priv, int port)
 	__releases(&priv->ports[port].counters.lock);
-void otto_stats_update_counters_atomically(struct rtl838x_switch_priv *priv,
+void otto_stats_update_counters_atomically(struct otto_dsa_priv *priv,
 					   int port);
 
 #endif /* _OTTO_STATS_H */

@@ -115,7 +115,7 @@ static void rtl838x_traffic_disable(int source, int dest)
 }
 
 /* Enables or disables the EEE/EEEP capability of a port */
-static void rtldsa_838x_set_mac_eee(struct rtl838x_switch_priv *priv, int port, bool enable)
+static void rtldsa_838x_set_mac_eee(struct otto_dsa_priv *priv, int port, bool enable)
 {
 	u32 v;
 
@@ -140,7 +140,7 @@ static void rtldsa_838x_set_mac_eee(struct rtl838x_switch_priv *priv, int port, 
 	priv->ports[port].eee_enabled = enable;
 }
 
-static void rtl838x_init_eee(struct rtl838x_switch_priv *priv, bool enable)
+static void rtl838x_init_eee(struct otto_dsa_priv *priv, bool enable)
 {
 	pr_debug("Setting up EEE, state: %d\n", enable);
 	sw_w32_mask(0x4, 0, RTL838X_SMI_GLB_CTRL);

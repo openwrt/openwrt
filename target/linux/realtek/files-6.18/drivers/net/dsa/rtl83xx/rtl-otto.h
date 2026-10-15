@@ -311,7 +311,7 @@ struct pie_rule {
 	bool bypass_ibc_sc;	/* Bypass Ingress Bandwidth Control and Storm Control */
 };
 
-struct rtl838x_switch_priv;
+struct otto_dsa_priv;
 
 struct rtldsa_config {
 	const struct dsa_switch_ops *switch_ops;
@@ -324,13 +324,13 @@ struct rtldsa_config {
 	u64 (*get_port_reg_le)(int reg);
 	int stat_port_rst;
 	int stat_rst;
-	void (*stat_init)(struct rtl838x_switch_priv *priv);
+	void (*stat_init)(struct otto_dsa_priv *priv);
 	int stat_port_std_mib;
 	int stat_port_prv_mib;
 	const struct otto_stats_mib_desc *mib_desc;
 	u64 (*stat_port_table_read)(int port, unsigned int mib_size, unsigned int offset, bool is_pvt);
-	void (*stat_counters_lock)(struct rtl838x_switch_priv *priv, int port);
-	void (*stat_counters_unlock)(struct rtl838x_switch_priv *priv, int port);
+	void (*stat_counters_lock)(struct otto_dsa_priv *priv, int port);
+	void (*stat_counters_unlock)(struct otto_dsa_priv *priv, int port);
 
 	/**
 	 * @stat_update_counters_atomically: When set, the SoC family allows atomically retrieving
@@ -341,7 +341,7 @@ struct rtldsa_config {
 	 * otto_stats_counters_(un)lock_table helpers. They are using a mutex for locking. The counters
 	 * update is therefore not atomic.
 	 */
-	void (*stat_update_counters_atomically)(struct rtl838x_switch_priv *priv, int port);
+	void (*stat_update_counters_atomically)(struct otto_dsa_priv *priv, int port);
 	unsigned long stat_counter_poll_interval;
 	int (*port_iso_ctrl)(int p);
 	void (*traffic_enable)(int source, int dest);
@@ -378,12 +378,12 @@ struct rtldsa_config {
 	void (*vlan_set_tagged)(u32 vlan, struct otto_vlan_info *info);
 	void (*vlan_set_untagged)(u32 vlan, u64 portmask);
 	int (*vlan_profile_get)(int index, struct rtldsa_vlan_profile *profile);
-	void (*vlan_profile_dump)(struct rtl838x_switch_priv *priv, int index);
+	void (*vlan_profile_dump)(struct otto_dsa_priv *priv, int index);
 	void (*vlan_profile_setup)(int profile);
 	void (*vlan_port_pvidmode_set)(int port, enum pbvlan_type type, enum pbvlan_mode mode);
 	void (*vlan_port_pvid_set)(int port, enum pbvlan_type type, int pvid);
 	void (*vlan_port_keep_tag_set)(int port, bool keep_outer, bool keep_inner);
-	int (*fast_age)(struct rtl838x_switch_priv *priv, int port, int vid);
+	int (*fast_age)(struct otto_dsa_priv *priv, int port, int vid);
 	void (*set_vlan_igr_filter)(int port, enum igr_filter state);
 	void (*set_vlan_egr_filter)(int port, enum egr_filter state);
 	void (*enable_learning)(int port, bool enable);
@@ -392,13 +392,13 @@ struct rtldsa_config {
 	void (*enable_mcast_flood)(int port, bool enable);
 	void (*enable_bcast_flood)(int port, bool enable);
 	void (*set_static_move_action)(int port, bool forward);
-	int (*stp_get)(struct rtl838x_switch_priv *priv, u16 msti, int port);
-	void (*stp_set)(struct rtl838x_switch_priv *priv, u16 msti, int port, int state);
+	int (*stp_get)(struct otto_dsa_priv *priv, u16 msti, int port);
+	void (*stp_set)(struct otto_dsa_priv *priv, u16 msti, int port, int state);
 	int mac_link_sts;
 	struct rtldsa_mac_force_mode_cfg mac_force_mode;
 	int  (*mac_force_mode_ctrl)(int port);
 	int  (*mac_port_ctrl)(int port);
-	int (*mac_link_state_source_set)(struct rtl838x_switch_priv *priv,
+	int (*mac_link_state_source_set)(struct otto_dsa_priv *priv,
 					 int port,
 					 enum rtldsa_mac_link_state_source source,
 					 phy_interface_t interface);
@@ -452,48 +452,48 @@ struct rtldsa_config {
 	void (*write_cam)(int idx, struct rtl838x_l2_entry *e);
 	int rma_bpdu_fld_pmask;
 	int spcl_trap_eapol_ctrl;
-	void (*init_eee)(struct rtl838x_switch_priv *priv, bool enable);
-	void (*set_mac_eee)(struct rtl838x_switch_priv *priv, int port, bool enable);
+	void (*init_eee)(struct otto_dsa_priv *priv, bool enable);
+	void (*set_mac_eee)(struct otto_dsa_priv *priv, int port, bool enable);
 	u64 (*l2_hash_seed)(u64 mac, u32 vid);
-	u32 (*l2_hash_key)(struct rtl838x_switch_priv *priv, u64 seed);
+	u32 (*l2_hash_key)(struct otto_dsa_priv *priv, u64 seed);
 	u64 (*read_mcast_pmask)(int idx);
 	void (*write_mcast_pmask)(int idx, u64 portmask);
 	void (*vlan_fwd_on_inner)(int port, bool is_set);
-	void (*pie_init)(struct rtl838x_switch_priv *priv);
-	int (*pie_rule_read)(struct rtl838x_switch_priv *priv, int idx, struct  pie_rule *pr);
-	int (*pie_rule_write)(struct rtl838x_switch_priv *priv, int idx, struct pie_rule *pr);
-	int (*pie_rule_add)(struct rtl838x_switch_priv *priv, struct pie_rule *rule);
-	void (*pie_rule_rm)(struct rtl838x_switch_priv *priv, struct pie_rule *rule);
+	void (*pie_init)(struct otto_dsa_priv *priv);
+	int (*pie_rule_read)(struct otto_dsa_priv *priv, int idx, struct  pie_rule *pr);
+	int (*pie_rule_write)(struct otto_dsa_priv *priv, int idx, struct pie_rule *pr);
+	int (*pie_rule_add)(struct otto_dsa_priv *priv, struct pie_rule *rule);
+	void (*pie_rule_rm)(struct otto_dsa_priv *priv, struct pie_rule *rule);
 	void (*l2_learning_setup)(void);
-	u32 (*packet_cntr_read)(struct rtl838x_switch_priv *priv, int counter);
-	void (*packet_cntr_clear)(struct rtl838x_switch_priv *priv, int counter);
+	u32 (*packet_cntr_read)(struct otto_dsa_priv *priv, int counter);
+	void (*packet_cntr_clear)(struct otto_dsa_priv *priv, int counter);
 	void (*set_receive_management_action)(int port, rma_ctrl_t type, action_type_t action);
-	void (*led_init)(struct rtl838x_switch_priv *priv);
-	u32 (*get_egress_rate)(struct rtl838x_switch_priv *priv, int port);
-	int (*set_egress_rate)(struct rtl838x_switch_priv *priv, int port, u32 rate);
-	void (*qos_init)(struct rtl838x_switch_priv *priv);
+	void (*led_init)(struct otto_dsa_priv *priv);
+	u32 (*get_egress_rate)(struct otto_dsa_priv *priv, int port);
+	int (*set_egress_rate)(struct otto_dsa_priv *priv, int port, u32 rate);
+	void (*qos_init)(struct otto_dsa_priv *priv);
 	int (*trk_mbr_ctr)(int group);
-	void (*lag_switch_init)(struct rtl838x_switch_priv *priv);
+	void (*lag_switch_init)(struct otto_dsa_priv *priv);
 	void (*prepare_lag_fdb)(struct rtl838x_l2_entry *e, int lag_group);
-	int (*lag_set_port_members)(struct rtl838x_switch_priv *priv, int group, u64 members,
+	int (*lag_set_port_members)(struct otto_dsa_priv *priv, int group, u64 members,
 				    struct netdev_lag_upper_info *info);
-	int (*lag_setup_algomask)(struct rtl838x_switch_priv *priv, int group,
+	int (*lag_setup_algomask)(struct otto_dsa_priv *priv, int group,
 				  struct netdev_lag_upper_info *info);
-	int (*lag_set_distribution_algorithm)(struct rtl838x_switch_priv *priv,
+	int (*lag_set_distribution_algorithm)(struct otto_dsa_priv *priv,
 					      int group, int algoidx,
 					      u32 algomask);
-	void (*lag_set_local_group_id)(struct rtl838x_switch_priv *priv,
+	void (*lag_set_local_group_id)(struct otto_dsa_priv *priv,
 				       int local_group, int global_group, bool valid);
 	void (*lag_write_data)(u32 data[], struct rtldsa_93xx_lag_entry *e);
 	void (*lag_fill_data)(u32 data[], struct rtldsa_93xx_lag_entry *e);
-	void (*lag_set_local_port2group)(struct rtl838x_switch_priv *priv,
+	void (*lag_set_local_port2group)(struct otto_dsa_priv *priv,
 					 int group, int port, bool valid);
 	void (*lag_set_port2group)(int group, int port, bool valid);
 	int (*lag_table)(void);
-	void (*lag_sync_tables)(struct rtl838x_switch_priv *priv);
+	void (*lag_sync_tables)(struct otto_dsa_priv *priv);
 };
 
-struct rtl838x_switch_priv {
+struct otto_dsa_priv {
 	/* Switch operation */
 	struct dsa_switch *ds;
 	struct device *dev;
@@ -562,7 +562,7 @@ struct fdb_update_work {
 };
 
 void rtldsa_port_fast_age(struct dsa_switch *ds, int port);
-int rtl83xx_port_is_under(const struct net_device *dev, struct rtl838x_switch_priv *priv);
+int rtl83xx_port_is_under(const struct net_device *dev, struct otto_dsa_priv *priv);
 /* Port register accessor functions for the RTL839x and RTL931X SoCs */
 void rtl839x_mask_port_reg_be(u64 clear, u64 set, int reg);
 u64 rtl839x_get_port_reg_be(int reg);
@@ -577,16 +577,16 @@ void rtl838x_set_port_reg(u64 set, int reg);
 u64 rtl838x_get_port_reg(int reg);
 
 /* RTL838x-specific */
-u32 rtl838x_hash(struct rtl838x_switch_priv *priv, u64 seed);
+u32 rtl838x_hash(struct otto_dsa_priv *priv, u64 seed);
 void rtldsa_838x_print_matrix(void);
 
 /* RTL839x-specific */
-u32 rtl839x_hash(struct rtl838x_switch_priv *priv, u64 seed);
+u32 rtl839x_hash(struct otto_dsa_priv *priv, u64 seed);
 void rtl839x_exec_tbl2_cmd(u32 cmd);
 void rtldsa_839x_print_matrix(void);
 
 /* RTL930x-specific */
-u32 otto_l2_930x_hash(struct rtl838x_switch_priv *priv, u64 seed);
+u32 otto_l2_930x_hash(struct otto_dsa_priv *priv, u64 seed);
 void rtldsa_930x_print_matrix(void);
 
 /* RTL931x-specific */
@@ -614,7 +614,7 @@ extern const struct rtldsa_config rtldsa_931x_cfg;
 /* TODO actually from arch/mips/rtl838x/prom.c */
 extern struct rtl83xx_soc_info soc_info;
 
-void rtl838x_dbgfs_init(struct rtl838x_switch_priv *priv);
-void rtl930x_dbgfs_init(struct rtl838x_switch_priv *priv);
+void rtl838x_dbgfs_init(struct otto_dsa_priv *priv);
+void rtl930x_dbgfs_init(struct otto_dsa_priv *priv);
 
 #endif /* _RTL838X_H */
