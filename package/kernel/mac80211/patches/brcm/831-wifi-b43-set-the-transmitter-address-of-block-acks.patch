@@ -1,0 +1,52 @@
+From edb8b00448b6a63ca198f11f188b784395361ee5 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Thu, 15 Oct 2026 02:33:38 -0700
+Subject: [PATCH 831/846] wifi: b43: set the transmitter address of block acks
+
+When receiving an A-MPDU, the firmware answers with a block ack that
+it builds from a template in template RAM. It takes the transmitter
+address from offset 16 of that template, which b43 never writes, so
+the block acks go out with a zero transmitter address. The peer drops
+them and counts every A-MPDU as lost.
+
+Write the MAC address into the block ack template, at the place
+brcmsmac uses for the same firmware family. b43 doesn't accept block
+ack sessions yet, so this has no effect on its own.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ drivers/net/wireless/broadcom/b43/b43.h  |  3 +++
+ drivers/net/wireless/broadcom/b43/main.c | 10 ++++++++++
+ 2 files changed, 13 insertions(+)
+
+--- a/drivers/net/wireless/broadcom/b43/b43.h
++++ b/drivers/net/wireless/broadcom/b43/b43.h
+@@ -395,6 +395,9 @@ enum {
+ #define B43_FWCAPA_HWCRYPTO	0x0001
+ #define B43_FWCAPA_QOS		0x0002
+ 
++/* Block ack template in template RAM */
++#define B43_TPL_BA			0x0038
++
+ /* MacFilter offsets. */
+ #define B43_MACFILTER_SELF		0x0000
+ #define B43_MACFILTER_BSSID		0x0003
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
+@@ -745,6 +745,16 @@ static void b43_write_mac_bssid_template
+ 		tmp |= (u32) (mac_bssid[i + 3]) << 24;
+ 		b43_ram_write(dev, 0x20 + i, tmp);
+ 	}
++
++	/*
++	 * The firmware sends block acks from a template, and takes their
++	 * transmitter address from offset 16 of it. Without it, block acks
++	 * go out with a zero TA and the peer drops them.
++	 */
++	if (dev->fw.hdr_format == B43_FW_HDR_598) {
++		b43_ram_write(dev, B43_TPL_BA + 16, get_unaligned_le32(mac));
++		b43_ram_write(dev, B43_TPL_BA + 20, get_unaligned_le16(mac + 4));
++	}
+ }
+ 
+ static void b43_upload_card_macaddress(struct b43_wldev *dev)

@@ -1,0 +1,132 @@
+From: Rosen Penev <rosenp@gmail.com>
+Subject: [PATCH] wifi: b43: drop RX frames spanning several buffers without losing sync
+
+When a frame is longer than an RX buffer, the device continues it in
+the next buffers. dma_rx() recycles them, but leaves the slot one past
+the last of them, and b43_dma_rx() then advances once more. That skips
+a frame, and when the next slot was not filled yet, b43_dma_rx() runs
+past the current slot of the device, as it only stops when it gets
+there: it reads buffers the device did not fill and hands the device
+slots it still has to fill. It also counts the buffers from the frame
+length alone, without the frame offset, so it can stop one short.
+
+Such frames are no longer impossible: an HT station may send A-MSDUs
+of 3839 bytes outside of A-MPDUs, and an RX buffer holds 2304 bytes of
+a frame. Recycle the first buffer in dma_rx(), and the others in
+b43_dma_rx() as the device fills them, so the slot always follows the
+device. A length longer than any frame means that the buffer does not
+start a frame; drop only that buffer then.
+
+Reported on a Netgear R6400 (BCM4331), where the RX ring lost sync for
+good and the interrupt thread hung the router.
+
+Assisted-by: LLM
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+--- a/drivers/net/wireless/broadcom/b43/dma.c
++++ b/drivers/net/wireless/broadcom/b43/dma.c
+@@ -2141,7 +2141,17 @@ out_wake:
+ 	b43_txq_pull_later(dev, ring->queue_prio);
+ }
+ 
+-static void dma_rx(struct b43_dmaring *ring, int *slot,
++/* Hand the buffer in @slot back to the device without reading it */
++static void b43_dma_rx_recycle(struct b43_dmaring *ring, int slot)
++{
++	struct b43_dmadesc_meta *meta;
++
++	ring->ops->idx2desc(ring, slot, &meta);
++	b43_poison_rx_buffer(ring, meta->skb);
++	sync_descbuffer_for_device(ring, meta->dmaaddr, ring->rx_buffersize);
++}
++
++static void dma_rx(struct b43_dmaring *ring, int slot,
+ 		   struct napi_struct *napi)
+ {
+ 	const struct b43_dma_ops *ops = ring->ops;
+@@ -2153,7 +2163,7 @@ static void dma_rx(struct b43_dmaring *r
+ 	int err;
+ 	dma_addr_t dmaaddr;
+ 
+-	desc = ops->idx2desc(ring, *slot, &meta);
++	desc = ops->idx2desc(ring, slot, &meta);
+ 
+ 	sync_descbuffer_for_cpu(ring, meta->dmaaddr, ring->rx_buffersize);
+ 	skb = meta->skb;
+@@ -2181,30 +2191,22 @@ static void dma_rx(struct b43_dmaring *r
+ 		goto drop_recycle_buffer;
+ 	}
+ 	if (unlikely(len + ring->frameoffset > ring->rx_buffersize)) {
+-		/* The data did not fit into one descriptor buffer
+-		 * and is split over multiple buffers.
+-		 * This should never happen, as we try to allocate buffers
+-		 * big enough. So simply ignore this packet.
++		/*
++		 * The frame did not fit into this buffer and continues in
++		 * the next ones, like an A-MSDU from an HT station. Drop it:
++		 * recycle this buffer, and have b43_dma_rx() recycle the
++		 * others as the device fills them. A length no frame has
++		 * means that this buffer does not start a frame, drop only
++		 * the buffer then.
+ 		 */
+-		int cnt = 0;
+-		s32 tmp = len;
+-
+-		while (1) {
+-			desc = ops->idx2desc(ring, *slot, &meta);
+-			/* recycle the descriptor buffer. */
+-			b43_poison_rx_buffer(ring, meta->skb);
+-			sync_descbuffer_for_device(ring, meta->dmaaddr,
+-						   ring->rx_buffersize);
+-			*slot = next_slot(ring, *slot);
+-			cnt++;
+-			tmp -= ring->rx_buffersize;
+-			if (tmp <= 0)
+-				break;
+-		}
++		if (len <= IEEE80211_MAX_MPDU_LEN_HT_7935)
++			ring->rx_skip = DIV_ROUND_UP(len + ring->frameoffset,
++						     ring->rx_buffersize) - 1;
+ 		b43err(ring->dev->wl, "DMA RX buffer too small "
+ 		       "(len: %u, buffer: %u, nr-dropped: %d)\n",
+-		       len, ring->rx_buffersize, cnt);
+-		goto drop;
++		       len, ring->rx_buffersize, ring->rx_skip + 1);
++		dmaaddr = meta->dmaaddr;
++		goto drop_recycle_buffer;
+ 	}
+ 
+ 	dmaaddr = meta->dmaaddr;
+@@ -2218,7 +2220,6 @@ static void dma_rx(struct b43_dmaring *r
+ 	skb_pull(skb, ring->frameoffset);
+ 
+ 	b43_rx(ring->dev, skb, rxhdr, napi);
+-drop:
+ 	return;
+ 
+ drop_recycle_buffer:
+@@ -2263,7 +2264,12 @@ int b43_dma_rx(struct b43_dmaring *ring,
+ 	slot = ring->current_slot;
+ 	for (; slot != current_slot && used_slots < budget;
+ 	     slot = next_slot(ring, slot)) {
+-		dma_rx(ring, &slot, napi);
++		if (unlikely(ring->rx_skip)) {
++			b43_dma_rx_recycle(ring, slot);
++			ring->rx_skip--;
++		} else {
++			dma_rx(ring, slot, napi);
++		}
+ 		update_max_used_slots(ring, ++used_slots);
+ 	}
+ 	wmb();
+--- a/drivers/net/wireless/broadcom/b43/dma.h
++++ b/drivers/net/wireless/broadcom/b43/dma.h
+@@ -251,6 +251,8 @@ struct b43_dmaring {
+ 	u16 mmio_base;
+ 	/* Pool of the RX buffers. NULL for a TX ring. */
+ 	struct page_pool *page_pool;
++	/* RX buffers left of a frame that spans several of them */
++	int rx_skip;
+ 	/* DMA controller index number (0-5). */
+ 	int index;
+ 	/* Boolean. Is this a TX ring? */

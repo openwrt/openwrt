@@ -1,0 +1,113 @@
+From: Rosen Penev <rosenp@gmail.com>
+Subject: [PATCH] wifi: b43: keep the queue mapping of frames without hardware QoS
+
+Without hardware QoS, as on the BCM4331, b43_tx_enqueue() sets the queue
+mapping of every frame to 0, so that it goes through the first tx_queue.
+mac80211 charges the airtime of a frame to the AC of its TXQ when it
+hands it out, but refunds it to the AC of the queue mapping when the TX
+status comes. With the airtime queue limits on, the airtime of the
+video, voice and background frames of a station was then never refunded:
+once it crossed the limit, mac80211 held back every further frame of
+that station and AC for good. The best effort AC was refunded airtime it
+was never charged, which mac80211 reports as a pending airtime
+underflow.
+
+Leave the queue mapping alone, and pick the tx_queue and the queue_prio
+of the rings from it with b43_tx_queue_num().
+
+Assisted-by: LLM
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+--- a/drivers/net/wireless/broadcom/b43/b43.h
++++ b/drivers/net/wireless/broadcom/b43/b43.h
+@@ -1185,6 +1185,16 @@ static inline bool b43_tx_direct(struct
+  * Without hardware QoS all mac80211 queues share one FIFO, so they are
+  * stopped and woken together.
+  */
++/*
++ * The tx_queue, and queue_prio of a ring, of @skb: without hardware QoS,
++ * all frames go through the first one. The queue mapping itself stays,
++ * as mac80211 charges and refunds the airtime of a frame by it.
++ */
++static inline int b43_tx_queue_num(struct b43_wldev *dev, struct sk_buff *skb)
++{
++	return dev->qos_enabled ? skb_get_queue_mapping(skb) : 0;
++}
++
+ static inline void b43_wake_queue(struct b43_wldev *dev, int queue_prio)
+ {
+ 	if (dev->qos_enabled)
+--- a/drivers/net/wireless/broadcom/b43/dma.c
++++ b/drivers/net/wireless/broadcom/b43/dma.c
+@@ -1420,7 +1420,7 @@ int b43_dma_tx(struct b43_wldev *dev, st
+ 	/* Assign the queue number to the ring (if not already done before)
+ 	 * so TX status handling can use it. The queue to ring mapping is
+ 	 * static, so we don't need to store it per frame. */
+-	ring->queue_prio = skb_get_queue_mapping(skb);
++	ring->queue_prio = b43_tx_queue_num(dev, skb);
+ 
+ 	err = dma_tx_fragment(ring, skb, true);
+ 	if (unlikely(err == -ENOKEY)) {
+@@ -1437,7 +1437,7 @@ int b43_dma_tx(struct b43_wldev *dev, st
+ 	if ((free_slots(ring) < TX_SLOTS_PER_FRAME) ||
+ 	    should_inject_overflow(ring)) {
+ 		/* This TX ring is full. */
+-		unsigned int skb_mapping = skb_get_queue_mapping(skb);
++		unsigned int skb_mapping = b43_tx_queue_num(dev, skb);
+ 		b43_stop_queue(dev, skb_mapping);
+ 		dev->wl->tx_queue_stopped[skb_mapping] = true;
+ 		ring->stopped = true;
+@@ -1838,7 +1838,7 @@ int b43_dma_tx_ampdu(struct b43_wldev *d
+ 	    free_slots(ring) < n * TX_SLOTS_PER_FRAME)
+ 		return -ENOSPC;
+ 
+-	ring->queue_prio = skb_get_queue_mapping(skbs[0]);
++	ring->queue_prio = b43_tx_queue_num(dev, skbs[0]);
+ 
+ 	rcu_read_lock();
+ 	bsta = b43_dma_ampdu_sta(dev, skbs[0]);
+@@ -1887,7 +1887,7 @@ int b43_dma_tx_ampdu(struct b43_wldev *d
+ 	ring->ampdu_inflight++;
+ 
+ 	if (free_slots(ring) < TX_SLOTS_PER_FRAME) {
+-		unsigned int skb_mapping = skb_get_queue_mapping(skbs[0]);
++		unsigned int skb_mapping = b43_tx_queue_num(dev, skbs[0]);
+ 
+ 		b43_stop_queue(dev, skb_mapping);
+ 		dev->wl->tx_queue_stopped[skb_mapping] = true;
+@@ -1968,7 +1968,7 @@ static void b43_dma_handle_ampdu_txstatu
+ 		return;
+ 
+ 	/* Resend the MPDUs ahead of the frames queued since */
+-	queue = &dev->wl->tx_queue[skb_get_queue_mapping(retry.next)];
++	queue = &dev->wl->tx_queue[b43_tx_queue_num(dev, retry.next)];
+ 	spin_lock_irqsave(&queue->lock, flags);
+ 	skb_queue_splice(&retry, queue);
+ 	spin_unlock_irqrestore(&queue->lock, flags);
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
+@@ -4289,10 +4289,9 @@ static bool b43_tx_enqueue(struct b43_wl
+ 		return false;
+ 	}
+ 
+-	/* Without hardware QoS, all frames go through the first queue */
+-	if (wl->current_dev && !wl->current_dev->qos_enabled)
+-		skb_set_queue_mapping(skb, 0);
+-	skb_queue_mapping = skb_get_queue_mapping(skb);
++	skb_queue_mapping = wl->current_dev ?
++			    b43_tx_queue_num(wl->current_dev, skb) :
++			    skb_get_queue_mapping(skb);
+ 	skb_queue_tail(&wl->tx_queue[skb_queue_mapping], skb);
+ 	if (skb_queue_len(&wl->tx_queue[skb_queue_mapping]) >=
+ 	    B43_TX_QUEUE_MAX && wl->current_dev) {
+--- a/drivers/net/wireless/broadcom/b43/pio.c
++++ b/drivers/net/wireless/broadcom/b43/pio.c
+@@ -533,7 +533,7 @@ int b43_pio_tx(struct b43_wldev *dev, st
+ 	/* Assign the queue number to the ring (if not already done before)
+ 	 * so TX status handling can use it. The mac80211-queue to b43-queue
+ 	 * mapping is static, so we don't need to store it per frame. */
+-	q->queue_prio = skb_get_queue_mapping(skb);
++	q->queue_prio = b43_tx_queue_num(dev, skb);
+ 
+ 	err = pio_tx_frame(q, skb);
+ 	if (unlikely(err == -ENOKEY)) {

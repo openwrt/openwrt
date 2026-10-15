@@ -1,0 +1,211 @@
+From b108ca06a10bad1f4e49147e41ec2c34e595d394 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Sat, 17 Oct 2026 21:13:21 -0700
+Subject: [PATCH 843/846] wifi: b43: two spatial streams with HT
+
+b43 only sends and advertises one spatial stream (MCS 0-7), although
+N-PHY devices have two cores and HT-PHY devices three. Add MCS 8-15:
+
+- TX: the rate and PHY TX control word 1 tables cover MCS 8-15 (bits
+  6-7 of the modulation byte are the number of streams minus one),
+  MCS 8-15 use the SDM mode and two HT-LTFs, STBC only applies to one
+  stream, and the legacy rate table, also used for RTS, covers MCS
+  8-15. On HT-PHY, the default antenna setting puts cores 0 and 1 in
+  the PHY TX control word, which is what MCS 8-15 need.
+- Capabilities: each device gets its own copy of its HT bands. RX MCS
+  8-15 are advertised with two or more RX chains, TX streams and TX
+  STBC follow the TX chains, from the SPROM txchain/rxchain masks (all
+  cores when unset).
+
+A BCM4331 (HT-PHY, chain masks 7) receives MCS 8-15: from an RT-N16
+access point on channel 6 running two streams, the access point sends
+at MCS 12-15.
+
+On a BCM4331 (HT-PHY rev 1, chain masks 7) on 5 GHz at -52 dBm,
+against iperf3 on the access point, minstrel moves from MCS 7 with the
+short guard interval to MCS 13-15, and the upload goes from 42-43 to
+50-58 Mbit/s in 10 s runs, and to 46 Mbit/s in a 60 s run. The
+download stays at 72-78 Mbit/s.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ drivers/net/wireless/broadcom/b43/b43.h  |  3 ++
+ drivers/net/wireless/broadcom/b43/main.c | 49 ++++++++++++++++++++----
+ drivers/net/wireless/broadcom/b43/xmit.c | 46 +++++++++++++++++-----
+ 3 files changed, 82 insertions(+), 16 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/b43/b43.h
++++ b/drivers/net/wireless/broadcom/b43/b43.h
+@@ -974,6 +974,9 @@ struct b43_wl {
+ 	bool hw_registered;
+ 	/* HT is enabled, and with it A-MPDU */
+ 	bool ampdu_tx;
++	/* The HT bands, set up for the chains of the device */
++	struct ieee80211_supported_band band_2ghz_ht;
++	struct ieee80211_supported_band band_5ghz_ht;
+ 
+ 	/* We can only have one operating interface (802.11 core)
+ 	 * at a time. General information about this interface follows.
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
+@@ -5752,6 +5752,32 @@ out:
+ 	b43info(wl, "Controller restarted\n");
+ }
+ 
++/*
++ * Add a second spatial stream for devices with at least two chains, from
++ * the SPROM chain masks (all cores when unset).
++ */
++static void b43_ht_cap_set_chains(struct b43_wldev *dev,
++				  struct ieee80211_sta_ht_cap *ht_cap)
++{
++	struct ssb_sprom *sprom = dev->dev->bus_sprom;
++	int cores = dev->phy.type == B43_PHYTYPE_HT ? 3 : 2;
++	u8 mask = (1 << cores) - 1;
++	int tx = hweight8(sprom->txchain & mask) ?: cores;
++	int rx = hweight8(sprom->rxchain & mask) ?: cores;
++	int tx_ss = min(tx, 2), rx_ss = min(rx, 2);
++
++	if (rx_ss >= 2)
++		ht_cap->mcs.rx_mask[1] = 0xff;
++	if (tx < 2)
++		ht_cap->cap &= ~IEEE80211_HT_CAP_TX_STBC;
++	if (tx_ss != rx_ss)
++		ht_cap->mcs.tx_params |= IEEE80211_HT_MCS_TX_RX_DIFF |
++			((tx_ss - 1) << IEEE80211_HT_MCS_TX_MAX_STREAMS_SHIFT);
++
++	b43dbg(dev->wl, "HT with %d TX and %d RX chains, %d/%d streams\n",
++	       tx, rx, tx_ss, rx_ss);
++}
++
+ static int b43_setup_bands(struct b43_wldev *dev,
+ 			   bool have_2ghz_phy, bool have_5ghz_phy)
+ {
+@@ -5770,10 +5796,12 @@ static int b43_setup_bands(struct b43_wl
+ 	ht = b43_ht_supported(dev);
+ 	dev->wl->ampdu_tx = ht;
+ 
+-	if (have_2ghz_phy && ht)
+-		hw->wiphy->bands[NL80211_BAND_2GHZ] = limited_2g ?
+-			&b43_band_2ghz_limited_ht : &b43_band_2ghz_ht;
+-	else if (have_2ghz_phy)
++	if (have_2ghz_phy && ht) {
++		dev->wl->band_2ghz_ht = limited_2g ? b43_band_2ghz_limited_ht :
++						     b43_band_2ghz_ht;
++		b43_ht_cap_set_chains(dev, &dev->wl->band_2ghz_ht.ht_cap);
++		hw->wiphy->bands[NL80211_BAND_2GHZ] = &dev->wl->band_2ghz_ht;
++	} else if (have_2ghz_phy)
+ 		hw->wiphy->bands[NL80211_BAND_2GHZ] = limited_2g ?
+ 			&b43_band_2ghz_limited : &b43_band_2GHz;
+ 	if (dev->phy.type == B43_PHYTYPE_N) {
+@@ -5782,9 +5810,16 @@ static int b43_setup_bands(struct b43_wl
+ 				&b43_band_5GHz_nphy_limited :
+ 				&b43_band_5GHz_nphy;
+ 	} else if (dev->phy.type == B43_PHYTYPE_HT) {
+-		if (have_5ghz_phy)
+-			hw->wiphy->bands[NL80211_BAND_5GHZ] = ht ?
+-				&b43_band_5GHz_htphy_ht : &b43_band_5GHz_htphy;
++		if (have_5ghz_phy && ht) {
++			dev->wl->band_5ghz_ht = b43_band_5GHz_htphy_ht;
++			b43_ht_cap_set_chains(dev,
++					      &dev->wl->band_5ghz_ht.ht_cap);
++			hw->wiphy->bands[NL80211_BAND_5GHZ] =
++				&dev->wl->band_5ghz_ht;
++		} else if (have_5ghz_phy) {
++			hw->wiphy->bands[NL80211_BAND_5GHZ] =
++				&b43_band_5GHz_htphy;
++		}
+ 	} else {
+ 		if (have_5ghz_phy)
+ 			hw->wiphy->bands[NL80211_BAND_5GHZ] = &b43_band_5GHz_aphy;
+--- a/drivers/net/wireless/broadcom/b43/xmit.c
++++ b/drivers/net/wireless/broadcom/b43/xmit.c
+@@ -192,28 +192,55 @@ static u16 b43_generate_tx_phy_ctl1(stru
+ 	return control;
+ }
+ 
+-/* PHY TX control word 1 modulation and coding byte for MCS 0-7 */
++/*
++ * PHY TX control word 1 modulation and coding byte for MCS 0-15. Bits 6-7
++ * hold the number of spatial streams minus one.
++ */
+ static const u8 b43_ht_phy_ctl1_mod[] = {
+ 	0x00, 0x08, 0x0a, 0x10, 0x12, 0x19, 0x1a, 0x1c,
++	0x40, 0x48, 0x4a, 0x50, 0x52, 0x59, 0x5a, 0x5c,
+ };
+ 
+-/* Data rate of MCS 0-7 at 20 MHz with the long guard interval, in kbit/s */
+-static const u16 b43_ht_rate_kbps[] = {
++/* Data rate of MCS 0-15 at 20 MHz with the long guard interval, in kbit/s */
++static const u32 b43_ht_rate_kbps[] = {
+ 	6500, 13000, 19500, 26000, 39000, 52000, 58500, 65000,
++	13000, 26000, 39000, 52000, 78000, 104000, 117000, 130000,
+ };
+ 
+-/* Legacy rate closest to MCS 0-7, for firmware without HT TX support */
++/* Legacy rate closest to MCS 0-15, for firmware without HT TX support */
+ static const u8 b43_ht_legacy_rate[] = {
+ 	B43_OFDM_RATE_6MB, B43_OFDM_RATE_12MB, B43_OFDM_RATE_18MB,
+ 	B43_OFDM_RATE_24MB, B43_OFDM_RATE_36MB, B43_OFDM_RATE_48MB,
+ 	B43_OFDM_RATE_54MB, B43_OFDM_RATE_54MB,
++	B43_OFDM_RATE_12MB, B43_OFDM_RATE_24MB, B43_OFDM_RATE_36MB,
++	B43_OFDM_RATE_48MB, B43_OFDM_RATE_54MB, B43_OFDM_RATE_54MB,
++	B43_OFDM_RATE_54MB, B43_OFDM_RATE_54MB,
+ };
+ 
++/* MCS 8-15 send two spatial streams */
++static bool b43_ht_mcs_2ss(u8 mcs)
++{
++	return mcs >= 8;
++}
++
++/* STBC only applies to a single spatial stream */
++static bool b43_ht_stbc(u8 mcs, bool stbc)
++{
++	return stbc && !b43_ht_mcs_2ss(mcs);
++}
++
+ static u16 b43_generate_tx_phy_ctl1_ht(u8 mcs, bool stbc)
+ {
+-	return B43_TXH_PHY1_BW_20 |
+-	       (stbc ? B43_TXH_PHY1_MODE_STBC : B43_TXH_PHY1_MODE_SISO) |
+-	       (b43_ht_phy_ctl1_mod[mcs] << 8);
++	u16 mode;
++
++	if (b43_ht_mcs_2ss(mcs))
++		mode = B43_TXH_PHY1_MODE_SDM;
++	else if (stbc)
++		mode = B43_TXH_PHY1_MODE_STBC;
++	else
++		mode = B43_TXH_PHY1_MODE_SISO;
++
++	return B43_TXH_PHY1_BW_20 | mode | (b43_ht_phy_ctl1_mod[mcs] << 8);
+ }
+ 
+ /* Generate a mixed-mode HT PLCP header (HT-SIG) */
+@@ -228,7 +255,7 @@ static void b43_generate_ht_plcp_hdr(str
+ 	/* Smoothing, not a sounding PPDU, reserved bit set */
+ 	plcp->raw[3] = 0x07;
+ 	/* One extra space-time stream: STBC of a single spatial stream */
+-	if (stbc)
++	if (b43_ht_stbc(mcs, stbc))
+ 		plcp->raw[3] |= 0x10;
+ 	if (sgi)
+ 		plcp->raw[3] |= 0x80;
+@@ -244,6 +271,7 @@ static u16 b43_ht_lsig_len(u8 mcs, bool
+ 	unsigned int kbps = b43_ht_rate_kbps[mcs];
+ 	unsigned int nsyms, bits;
+ 
++	stbc = b43_ht_stbc(mcs, stbc);
+ 	if (sgi)
+ 		kbps = DIV_ROUND_UP(kbps * 10, 9);
+ 
+@@ -255,7 +283,7 @@ static u16 b43_ht_lsig_len(u8 mcs, bool
+ 	else
+ 		nsyms = DIV_ROUND_UP(bits, kbps * 4);
+ 	/* An HT-LTF per space-time stream, two HT-SIG and the HT-STF */
+-	nsyms += (stbc ? 2 : 1) + 3;
++	nsyms += (stbc || b43_ht_mcs_2ss(mcs) ? 2 : 1) + 3;
+ 
+ 	return 3 * nsyms - 3;
+ }
