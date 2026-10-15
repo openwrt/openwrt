@@ -1,0 +1,48 @@
+From 1b50372d0bb0c8de3b9d1376a1a7425f4a28c97f Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Thu, 15 Oct 2026 14:40:45 -0700
+Subject: [PATCH] wifi: b43: load the N-PHY SPROM power limits for the current
+ band
+
+b43_nphy_op_recalc_txpower() always builds the per-rate power limits
+from the 2.4 GHz SPROM entries (maxpwr_2g, ofdm2gpo, mcs2gpo), even on
+5 GHz channels. The resulting maximum then overrides the per-band
+target b43_nphy_tx_power_ctl_setup() reads from the SPROM, so 5 GHz
+transmits aim at the 2.4 GHz limit.
+
+Pick the SPROM band from the current channel, splitting 5 GHz the same
+way b43_nphy_tx_power_ctl_setup() does.
+
+Fixes: 8615eb2870f1 ("b43: N-PHY: support setting custom TX power")
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ drivers/net/wireless/broadcom/b43/phy_n.c | 11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/broadcom/b43/phy_n.c
++++ b/drivers/net/wireless/broadcom/b43/phy_n.c
+@@ -5833,6 +5833,7 @@ static enum b43_txpwr_result b43_nphy_op
+ 	struct b43_phy_n *nphy = dev->phy.n;
+ 	struct ieee80211_channel *channel = dev->wl->hw->conf.chandef.chan;
+ 	struct b43_ppr *ppr = &nphy->tx_pwr_max_ppr;
++	enum b43_band band;
+ 	u8 max; /* qdBm */
+ 
+ 	if (nphy->tx_pwr_last_recalc_freq == channel->center_freq &&
+@@ -5843,7 +5844,15 @@ static enum b43_txpwr_result b43_nphy_op
+ 	b43_ppr_clear(dev, ppr);
+ 
+ 	/* HW limitations */
+-	b43_ppr_load_max_from_sprom(dev, ppr, B43_BAND_2G);
++	if (b43_current_band(dev->wl) == NL80211_BAND_2GHZ)
++		band = B43_BAND_2G;
++	else if (channel->center_freq < 5100)
++		band = B43_BAND_5G_LO;
++	else if (channel->center_freq < 5500)
++		band = B43_BAND_5G_MI;
++	else
++		band = B43_BAND_5G_HI;
++	b43_ppr_load_max_from_sprom(dev, ppr, band);
+ 
+ 	/* Regulatory & user settings */
+ 	max = INT_TO_Q52(phy->chandef->chan->max_power);

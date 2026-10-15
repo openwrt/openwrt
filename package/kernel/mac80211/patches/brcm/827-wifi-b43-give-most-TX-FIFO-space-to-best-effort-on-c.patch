@@ -1,0 +1,112 @@
+From bad46f29bddf247af11512d5db8cf56f07f04739 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Thu, 15 Oct 2026 10:19:04 -0700
+Subject: [PATCH] wifi: b43: give most TX FIFO space to best effort on core rev
+ 17
+
+The initvals of core rev 17 (BCM4716/BCM4717/BCM4718) split 60 blocks
+of 256 bytes about evenly between the six TX FIFOs, which leaves
+3.5 KiB for best effort traffic. The firmware streams an A-MPDU from
+the FIFO while DMA fills it, and with hardware encryption in the path
+DMA falls behind the PHY at high MCS. The FIFO then runs dry in the
+middle of the PPDU, the firmware reports the frames as suppressed,
+and the peer never answers with a block ack.
+
+Resize the FIFOs within the same 60 blocks so that best effort gets
+30 of them, and update the sizes the firmware keeps in shared memory.
+The FIFOs are reprogrammed the way brcmsmac does it. brcmsmac sizes them
+for its own firmware and template layout, and gives this core far more
+blocks. How much of the template RAM the b43 firmware leaves free is not
+known, so the layout stays within the 60 blocks of the initvals.
+
+This only matters once b43 sends A-MPDUs. On an ASUS RT-N16 without
+HT, WPA2 throughput stays at 14/19 Mbit/s up/down, so the FIFOs keep
+the initvals layout unless HT is enabled.
+
+Assisted-by: LLM
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ drivers/net/wireless/broadcom/b43/b43.h  |  5 +++
+ drivers/net/wireless/broadcom/b43/main.c | 43 ++++++++++++++++++++++++
+ 2 files changed, 48 insertions(+)
+
+--- a/drivers/net/wireless/broadcom/b43/b43.h
++++ b/drivers/net/wireless/broadcom/b43/b43.h
+@@ -129,6 +129,8 @@
+ #define B43_MMIO_XMTFIFO_WR_PTR		0x52A	/* core rev>= 16 only */
+ #define B43_MMIO_XMTFIFODEF1		0x52C	/* core rev>= 16 only */
+ #define B43_MMIO_XMTFIFOCMD		0x540
++#define  B43_TXFIFOCMD_FIFOSEL_SHIFT	8
++#define  B43_TXFIFOCMD_RESET		0x8000
+ #define B43_MMIO_XMTFIFOFLUSH		0x542
+ #define B43_MMIO_XMTFIFOTHRESH		0x544
+ #define B43_MMIO_XMTFIFORDY		0x546
+@@ -166,6 +168,9 @@
+ #define B43_MMIO_BTCOEX_TXCTL		0x6B8 /* Bluetooth Coexistence Transmit Control */
+ #define B43_MMIO_WEPCTL			0x7C0
+ 
++/* The TX FIFOs start after the templates, in blocks of 256 bytes */
++#define B43_TXFIFO_START_BLK		6
++
+ /* SPROM boardflags_lo values */
+ #define B43_BFL_BTCOEXIST		0x0001	/* implements Bluetooth coexistance */
+ #define B43_BFL_PACTRL			0x0002	/* GPIO 9 controlling the PA */
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
+@@ -3305,6 +3305,47 @@ static void b43_chip_exit(struct b43_wld
+ 	/* firmware is released later */
+ }
+ 
++/*
++ * The initvals of core rev 17 split 60 blocks of 256 bytes about evenly
++ * between the six TX FIFOs, which leaves 3.5 KiB for best effort. That is
++ * too small to send an A-MPDU at high rates: the FIFO runs dry in the
++ * middle of the PPDU, all the more so with encryption. Give most of the
++ * same space to best effort instead, and tell the firmware. Without HT,
++ * b43 sends no A-MPDUs and the initvals layout is enough.
++ */
++static void b43_fifo_fixup(struct b43_wldev *dev)
++{
++	/* BK, BE, VI, VO, broadcast/multicast, ATIM */
++	static const u8 sizes[] = { 6, 30, 10, 8, 4, 2 };
++	unsigned int start = B43_TXFIFO_START_BLK, end, i;
++	u16 cmd;
++
++	if (!modparam_ht || dev->dev->core_rev != 17)
++		return;
++
++	for (i = 0; i < ARRAY_SIZE(sizes); i++) {
++		end = start + sizes[i] - 1;
++		cmd = B43_TXFIFOCMD_RESET | (i << B43_TXFIFOCMD_FIFOSEL_SHIFT);
++
++		/* Reset the FIFO, resize it, and reset it again */
++		b43_write16(dev, B43_MMIO_XMTFIFOCMD, cmd);
++		b43_write16(dev, B43_MMIO_XMTFIFODEF,
++			    (start & 0xff) | ((end & 0xff) << 8));
++		b43_write16(dev, B43_MMIO_XMTFIFODEF1,
++			    ((start >> 8) & 1) | (((end >> 8) & 1) << 8));
++		b43_write16(dev, B43_MMIO_XMTFIFOCMD, cmd);
++
++		start += sizes[i];
++	}
++
++	b43_shm_write16(dev, B43_SHM_SHARED, B43_SHM_SH_SIZE01,
++			sizes[0] | (sizes[1] << 8));
++	b43_shm_write16(dev, B43_SHM_SHARED, B43_SHM_SH_SIZE23,
++			sizes[2] | (sizes[3] << 8));
++	b43_shm_write16(dev, B43_SHM_SHARED, B43_SHM_SH_SIZE45,
++			sizes[4] | (sizes[5] << 8));
++}
++
+ /* Initialize the chip
+  * https://bcm-specs.sipsolutions.net/ChipInit
+  */
+@@ -3338,6 +3379,8 @@ static int b43_chip_init(struct b43_wlde
+ 	if (err)
+ 		goto err_gpio_clean;
+ 
++	b43_fifo_fixup(dev);
++
+ 	/* Turn the Analog on and initialize the PHY. */
+ 	phy->ops->switch_analog(dev, 1);
+ 	err = b43_phy_init(dev);

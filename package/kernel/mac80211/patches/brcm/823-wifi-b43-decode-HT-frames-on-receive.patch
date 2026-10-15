@@ -1,0 +1,50 @@
+From 2c908612196437e3e42b76a599f79fdc461b8d0b Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Thu, 15 Oct 2026 00:50:04 -0700
+Subject: [PATCH] wifi: b43: decode HT frames on receive
+
+On N-PHY devices the PHY reports 802.11n frames with frame type 2
+(mixed mode) or 3 (greenfield) in the RX PHY status. b43 only tells
+OFDM from CCK, so it decodes the HT-SIG of such a frame as a CCK PLCP
+header, gets an invalid rate and drops the frame unless FIF_PLCPFAIL
+is set. HT frames never reach mac80211, not even in monitor mode.
+
+Take the MCS, the 40 MHz bit and the short guard interval from the
+HT-SIG for these frame types and report the frame as HT.
+
+Assisted-by: LLM
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ drivers/net/wireless/broadcom/b43/xmit.c | 18 ++++++++++++++++--
+ 1 file changed, 16 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/b43/xmit.c
++++ b/drivers/net/wireless/broadcom/b43/xmit.c
+@@ -741,11 +741,25 @@ void b43_rx(struct b43_wldev *dev, struc
+ 		break;
+ 	}
+ 
+-	if (phystat0 & B43_RX_PHYST0_OFDM)
++	switch (phystat0 & B43_RX_PHYST0_FTYPE) {
++	case B43_RX_PHYST0_PRE_N:
++	case B43_RX_PHYST0_STD_N:
++		/* The HT-SIG holds the MCS, bandwidth and guard interval */
++		status.encoding = RX_ENC_HT;
++		rate_idx = plcp->raw[0] & 0x7f;
++		if (plcp->raw[0] & 0x80)
++			status.bw = RATE_INFO_BW_40;
++		if (plcp->raw[3] & 0x80)
++			status.enc_flags |= RX_ENC_FLAG_SHORT_GI;
++		break;
++	case B43_RX_PHYST0_OFDM:
+ 		rate_idx = b43_plcp_get_bitrate_idx_ofdm(plcp,
+ 					!!(chanstat & B43_RX_CHAN_5GHZ));
+-	else
++		break;
++	default:
+ 		rate_idx = b43_plcp_get_bitrate_idx_cck(plcp);
++		break;
++	}
+ 	if (unlikely(rate_idx == -1)) {
+ 		/* PLCP seems to be corrupted.
+ 		 * Drop the frame, if we are not interested in corrupted frames. */

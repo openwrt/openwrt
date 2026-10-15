@@ -1,0 +1,63 @@
+From 04a52f71c1c760d0cf68c5480802a814ffeda048 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Thu, 15 Oct 2026 01:41:22 -0700
+Subject: [PATCH] wifi: b43: back off the N-PHY TX power per rate
+
+On N-PHY rev 3+ the hardware TX power control aims at the highest
+per-rate target, and an adjusted power table backs each rate group off
+from it. b43 fills that table from nphy->tx_power_offset[], but never
+sets the offsets, so they stay zero and every rate is sent at the power
+allowed for CCK.
+
+The SPROM power offsets exist to avoid this: on boards with external
+PAs, OFDM and MCS rates have to be sent a few dB lower than CCK to
+keep the PA linear. Sent at full power, 16-QAM and 64-QAM frames are
+too distorted to decode. On an ASUS RT-N16 (BCM4718, N-PHY rev 5,
+radio 2056, ofdm2gpo 0x66666666) the router could only send at 6-18
+Mbit/s and MCS 0-2, even at -50 dBm, and 24 Mbit/s and up or MCS 3 and
+up delivered nothing.
+
+Set the offsets from the per-rate targets b43 already computes from
+the SPROM, as brcmsmac does, before the table is built.
+
+b43 only operates at 20 MHz and struct b43_ppr only holds 20 MHz rate
+targets, so only the 20 MHz offsets are set. The 40 MHz entries of
+tx_power_offset[] stay zero and are never used.
+
+With this, the RT-N16 sends at 54 Mbit/s, and at MCS 7 with HT
+enabled, and TCP from the router to a client goes from 9 to 17-18
+Mbit/s.
+
+Fixes: 8615eb2870f1 ("b43: N-PHY: support setting custom TX power")
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ drivers/net/wireless/broadcom/b43/phy_n.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+--- a/drivers/net/wireless/broadcom/b43/phy_n.c
++++ b/drivers/net/wireless/broadcom/b43/phy_n.c
+@@ -5835,6 +5835,7 @@ static enum b43_txpwr_result b43_nphy_op
+ 	struct b43_ppr *ppr = &nphy->tx_pwr_max_ppr;
+ 	enum b43_band band;
+ 	u8 max; /* qdBm */
++	int i;
+ 
+ 	if (nphy->tx_pwr_last_recalc_freq == channel->center_freq &&
+ 	    nphy->tx_pwr_last_recalc_limit == phy->desired_txpower)
+@@ -5877,6 +5878,16 @@ static enum b43_txpwr_result b43_nphy_op
+ 	/* Make sure we didn't go too low */
+ 	b43_ppr_apply_min(dev, ppr, INT_TO_Q52(8));
+ 
++	/*
++	 * The hardware power control aims at the highest per-rate target.
++	 * The adjusted power table backs other rates off from it, so that
++	 * e.g. 64-QAM isn't sent at the power allowed for CCK.
++	 */
++	max = b43_ppr_get_max(dev, ppr);
++	memset(nphy->tx_power_offset, 0, sizeof(nphy->tx_power_offset));
++	for (i = 0; i < B43_PPR_RATES_NUM; i++)
++		nphy->tx_power_offset[i] = max - ppr->__all_rates[i];
++
+ 	/* Apply */
+ 	b43_mac_suspend(dev);
+ 	b43_nphy_tx_power_ctl_setup(dev);
