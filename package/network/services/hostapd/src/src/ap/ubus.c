@@ -2135,7 +2135,7 @@ hostapd_rrm_beacon_req(struct ubus_context *ctx, struct ubus_object *obj,
 	wpabuf_put_data(req, bssid, ETH_ALEN);
 
 	if ((cur = tb[BEACON_REQ_SSID]) != NULL) {
-		wpabuf_put_u8(req, WLAN_EID_SSID);
+		wpabuf_put_u8(req, WLAN_BEACON_REQUEST_SUBELEM_SSID);
 		wpabuf_put_u8(req, blobmsg_data_len(cur) - 1);
 		wpabuf_put_data(req, blobmsg_data(cur), blobmsg_data_len(cur) - 1);
 	}
