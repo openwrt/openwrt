@@ -1,0 +1,111 @@
+From 7a3ba204745938bc6cdf1ac5b7349f35a2a1740c Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Sat, 17 Oct 2026 13:10:50 -0700
+Subject: [PATCH 841/846] wifi: b43: enable the 5 GHz band on HT-PHY
+
+b43 turns the 5 GHz band off on HT-PHY devices, and
+b43_phy_ht_op_switch_channel() refuses every channel outside the
+2.4 GHz band. Most of what 5 GHz needs is there, though:
+radio_2059.c has the radio and PHY values for channels 36-64, 100-140
+and 149-165, taken from a wl MMIO dump, and the PHY code already
+switches the band, turns CCK off and picks the 5 GHz SPROM PA
+parameters.
+
+Offer the 5 GHz band on HT-PHY, with exactly the channels that
+radio_2059.c has values for, and let the channel switch through to
+b43_phy_ht_set_channel(), which rejects any frequency it has no table
+entry for.
+
+The TX gain still comes from the 2.4 GHz table and the TSSI setup is
+the 2.4 GHz one, so the TX power on 5 GHz is not calibrated.
+
+On a BCM4331 (radio 2059 rev 0, package 9) with the static TX gain
+at index 16, the 5 GHz BSS of a WPA2 access point on channel 112 is
+received at -71 to -73 dBm, where an Intel 3168 next to it gets
+-74 dBm. The BCM4331 associates, gets DHCP leases, and runs at
+54 Mbit/s in both directions with 0% ping loss and 21 Mbit/s of
+download.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ drivers/net/wireless/broadcom/b43/main.c   | 29 +++++++++++++++++++++-
+ drivers/net/wireless/broadcom/b43/phy_ht.c |  8 +++---
+ 2 files changed, 31 insertions(+), 6 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
+@@ -322,6 +322,22 @@ static struct ieee80211_channel b43_5ghz
+ 	CHAN5G(208, 0),		CHAN5G(212, 0),
+ 	CHAN5G(216, 0),
+ };
++
++/* The channels radio_2059.c has tuning values for */
++static struct ieee80211_channel b43_5ghz_htphy_chantable[] = {
++	CHAN5G(36, 0),		CHAN5G(40, 0),
++	CHAN5G(44, 0),		CHAN5G(48, 0),
++	CHAN5G(52, 0),		CHAN5G(56, 0),
++	CHAN5G(60, 0),		CHAN5G(64, 0),
++	CHAN5G(100, 0),		CHAN5G(104, 0),
++	CHAN5G(108, 0),		CHAN5G(112, 0),
++	CHAN5G(116, 0),		CHAN5G(120, 0),
++	CHAN5G(124, 0),		CHAN5G(128, 0),
++	CHAN5G(132, 0),		CHAN5G(136, 0),
++	CHAN5G(140, 0),		CHAN5G(149, 0),
++	CHAN5G(153, 0),		CHAN5G(157, 0),
++	CHAN5G(161, 0),		CHAN5G(165, 0),
++};
+ #undef CHAN4G
+ #undef CHAN5G
+ 
+@@ -341,6 +357,14 @@ static struct ieee80211_supported_band b
+ 	.n_bitrates	= b43_a_ratetable_size,
+ };
+ 
++static struct ieee80211_supported_band b43_band_5GHz_htphy = {
++	.band		= NL80211_BAND_5GHZ,
++	.channels	= b43_5ghz_htphy_chantable,
++	.n_channels	= ARRAY_SIZE(b43_5ghz_htphy_chantable),
++	.bitrates	= b43_a_ratetable,
++	.n_bitrates	= b43_a_ratetable_size,
++};
++
+ static struct ieee80211_supported_band b43_band_5GHz_aphy = {
+ 	.band		= NL80211_BAND_5GHZ,
+ 	.channels	= b43_5ghz_aphy_chantable,
+@@ -5740,6 +5764,10 @@ static int b43_setup_bands(struct b43_wl
+ 			hw->wiphy->bands[NL80211_BAND_5GHZ] = limited_5g ?
+ 				&b43_band_5GHz_nphy_limited :
+ 				&b43_band_5GHz_nphy;
++	} else if (dev->phy.type == B43_PHYTYPE_HT) {
++		if (have_5ghz_phy)
++			hw->wiphy->bands[NL80211_BAND_5GHZ] =
++				&b43_band_5GHz_htphy;
+ 	} else {
+ 		if (have_5ghz_phy)
+ 			hw->wiphy->bands[NL80211_BAND_5GHZ] = &b43_band_5GHz_aphy;
+@@ -5892,7 +5920,6 @@ static int b43_wireless_core_attach(stru
+ 		switch (dev->phy.type) {
+ 		case B43_PHYTYPE_G:
+ 		case B43_PHYTYPE_LP:
+-		case B43_PHYTYPE_HT:
+ 			b43warn(wl, "5 GHz band is unsupported on this PHY\n");
+ 			have_5ghz_phy = false;
+ 		}
+--- a/drivers/net/wireless/broadcom/b43/phy_ht.c
++++ b/drivers/net/wireless/broadcom/b43/phy_ht.c
+@@ -1169,12 +1169,10 @@ static int b43_phy_ht_op_switch_channel(
+ 	enum nl80211_channel_type channel_type =
+ 		cfg80211_get_chandef_type(&dev->wl->hw->conf.chandef);
+ 
+-	if (b43_current_band(dev->wl) == NL80211_BAND_2GHZ) {
+-		if ((new_channel < 1) || (new_channel > 14))
+-			return -EINVAL;
+-	} else {
++	/* On 5 GHz, b43_phy_ht_set_channel() rejects untabulated channels */
++	if (b43_current_band(dev->wl) == NL80211_BAND_2GHZ &&
++	    (new_channel < 1 || new_channel > 14))
+ 		return -EINVAL;
+-	}
+ 
+ 	return b43_phy_ht_set_channel(dev, channel, channel_type);
+ }

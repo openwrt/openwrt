@@ -1,0 +1,51 @@
+From a14e887a273d1e282f02526257e82b6fa9106564 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Sat, 17 Oct 2026 14:20:59 -0700
+Subject: [PATCH 820/846] wifi: b43: encrypt robust management frames in
+ software
+
+b43 sets MFP_CAPABLE, and uploads CCMP keys to the hardware with only
+IEEE80211_KEY_FLAG_GENERATE_IV. mac80211 then leaves the encryption of
+robust management frames to the hardware as well. The hardware
+encrypts every frame as a data frame, but the CCMP nonce and AAD of a
+management frame are built differently, so the peer discards these
+frames.
+
+Under MFP, this hits the block ack action frames. On a BCM4331 with HT
+enabled, associated to an access point that uses PMF, the access point
+never gets the ADDBA response of the BCM4331. It waits about 100 ms
+for it, sends its frames without aggregation, and asks again with the
+next frames it has queued, so pings take 103 ms every few frames. The
+TX block ack sessions of the BCM4331 never start either. A capture on
+a second card shows the protected ADDBA exchange before every delayed
+reply, and a new dialog each time.
+
+Set IEEE80211_KEY_FLAG_SW_MGMT_TX on CCMP keys, so that mac80211
+encrypts robust management frames in software. Data frames are still
+encrypted in hardware.
+
+With this, the block ack sessions start in both directions, ping times
+go from 146 ms average and 918 ms maximum to 2.6 ms and 3.2 ms, and
+iperf3 from 11 to 43 Mbit/s down and from 11 to 41 Mbit/s up.
+
+Fixes: 75d057bda1fb ("b43: Fix connection problem with WPA3")
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ drivers/net/wireless/broadcom/b43/main.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
+@@ -4278,6 +4278,12 @@ static int b43_op_set_key(struct ieee802
+ 		key->flags |= IEEE80211_KEY_FLAG_GENERATE_IV;
+ 		if (algorithm == B43_SEC_ALGO_TKIP)
+ 			key->flags |= IEEE80211_KEY_FLAG_GENERATE_MMIC;
++		/*
++		 * The hardware encrypts every frame as a data frame, which
++		 * is wrong for robust management frames under MFP.
++		 */
++		if (algorithm == B43_SEC_ALGO_AES)
++			key->flags |= IEEE80211_KEY_FLAG_SW_MGMT_TX;
+ 		break;
+ 	case DISABLE_KEY: {
+ 		err = b43_key_clear(dev, key->hw_key_idx);

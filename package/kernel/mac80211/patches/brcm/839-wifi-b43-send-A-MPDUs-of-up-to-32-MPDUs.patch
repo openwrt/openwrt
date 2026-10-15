@@ -1,0 +1,31 @@
+From ee76c417ade15140b19a0904c2f8894f4cd9c7c9 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Thu, 15 Oct 2026 21:31:11 -0700
+Subject: [PATCH 839/846] wifi: b43: send A-MPDUs of up to 32 MPDUs
+
+b43 puts at most 16 MPDUs in an A-MPDU. With 1500 byte frames at
+MCS 7 that is about 3.4 ms of airtime, and each A-MPDU also costs the
+RTS, the CTS, the block ack and the contention before it.
+
+Allow 32 MPDUs. The A-MPDU stays within 4 ms of airtime and the length
+the peer accepts, so at MCS 7 it ends up at about 24 MPDUs.
+
+On an ASUS RT-N16 with an Intel 3168 client, TCP from the router goes
+from 44 to 46 Mbit/s on average over three runs, open and with WPA2.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ drivers/net/wireless/broadcom/b43/b43.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/broadcom/b43/b43.h
++++ b/drivers/net/wireless/broadcom/b43/b43.h
+@@ -832,7 +832,7 @@ enum {
+ 					} while (0)
+ 
+ /* Maximum number of MPDUs b43 puts in one A-MPDU */
+-#define B43_AMPDU_MAX_FRAMES	16
++#define B43_AMPDU_MAX_FRAMES	32
+ /* Times an MPDU missing from a block ack is sent again */
+ #define B43_AMPDU_RETRY_LIMIT	5
+ 

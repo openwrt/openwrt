@@ -1,11 +1,35 @@
+b43: reduce number of RX slots
+
+Use 32 RX slots instead of 256 to save memory, except on N-PHY and
+HT-PHY devices. The firmware acknowledges a frame before DMA has put it
+in host memory, and drops it when no RX slot is free. An A-MPDU fills 16
+or more slots at once: on a BCM4331 serving a TCP download, 32 slots
+overran 104 times in 30 seconds, and the frames lost included TCP ACKs
+and the power save null frames of a phone (measured by Erik Conijn on a
+Netgear R6400). 256 slots cost about 1 MiB of RX buffers.
+---
+--- a/drivers/net/wireless/broadcom/b43/dma.c
++++ b/drivers/net/wireless/broadcom/b43/dma.c
+@@ -841,6 +841,9 @@ struct b43_dmaring *b43_setup_dmaring(st
+ 
+ 	if (for_tx)
+ 		nr_slots = B43_TXRING_SLOTS;
++	else if (dev->phy.type == B43_PHYTYPE_N ||
++		 dev->phy.type == B43_PHYTYPE_HT)
++		nr_slots = B43_RXRING_SLOTS_HT;
+ 	else
+ 		nr_slots = B43_RXRING_SLOTS;
+ 
 --- a/drivers/net/wireless/broadcom/b43/dma.h
 +++ b/drivers/net/wireless/broadcom/b43/dma.h
-@@ -170,7 +170,7 @@ struct b43_dmadesc_generic {
+@@ -170,7 +170,9 @@ struct b43_dmadesc_generic {
  
  /* DMA engine tuning knobs */
  #define B43_TXRING_SLOTS		256
 -#define B43_RXRING_SLOTS		256
 +#define B43_RXRING_SLOTS		32
++/* N-PHY and HT-PHY devices receive A-MPDUs, which take many slots at once */
++#define B43_RXRING_SLOTS_HT		256
  #define B43_DMA0_RX_FW598_BUFSIZE	(B43_DMA0_RX_FW598_FO + IEEE80211_MAX_FRAME_LEN)
  #define B43_DMA0_RX_FW351_BUFSIZE	(B43_DMA0_RX_FW351_FO + IEEE80211_MAX_FRAME_LEN)
  

@@ -1,0 +1,56 @@
+From c4f70386e34856afd29a7762fccf394a4e815817 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Sat, 17 Oct 2026 21:12:05 -0700
+Subject: [PATCH 825/846] wifi: b43: keep the HT-PHY TX power control enabled
+
+b43_phy_ht_tx_power_ctl() enables the TX power control by setting the
+enable bits in TXPCTL_CMD_C1, then writes the saved TX power index of
+each core to its command register. For core 1 that register is
+TXPCTL_CMD_C1 itself, so the write clears the enable bits again, as
+does the write of index 0x32 on 5 GHz. A TX power index is saved
+whenever the control is turned off, which b43_phy_ht_op_init() does
+before turning it back on, so the control ends up off and the TX gain
+stays where the saved index left it.
+
+Change only the index field of the command registers. With that, and
+with the TX power estimates fixed, the hardware TX power control
+(ht_txgain_idx=-1) keeps TXPCTL_CMD_C1 at 0xe019 as with wl, and a
+BCM4331 holds its 2.4 GHz target power of 19 dBm from the SPROM: the
+TX power control status registers report 19-20.3 dBm at gain indices
+14-17.
+
+Fixes: 60e8fb9233e1 ("b43: HT-PHY: implement controlling TX power control")
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ drivers/net/wireless/broadcom/b43/phy_ht.c | 13 ++++++++++---
+ 1 file changed, 10 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/b43/phy_ht.c
++++ b/drivers/net/wireless/broadcom/b43/phy_ht.c
+@@ -555,16 +555,23 @@ static void b43_phy_ht_tx_power_ctl(stru
+ 	} else {
+ 		b43_phy_set(dev, B43_PHY_HT_TXPCTL_CMD_C1, en_bits);
+ 
++		/*
++		 * Only touch the index: the enable bits are in the same
++		 * register for core 1
++		 */
+ 		if (b43_current_band(dev->wl) == NL80211_BAND_5GHZ) {
+ 			for (i = 0; i < 3; i++)
+-				b43_phy_write(dev, cmd_regs[i], 0x32);
++				b43_phy_maskset(dev, cmd_regs[i],
++						~B43_PHY_HT_TXPCTL_CMD_C1_INIT,
++						0x32);
+ 		}
+ 
+ 		for (i = 0; i < 3; i++)
+ 			if (phy_ht->tx_pwr_idx[i] <=
+ 			    B43_PHY_HT_TXPCTL_CMD_C1_INIT)
+-				b43_phy_write(dev, cmd_regs[i],
+-					      phy_ht->tx_pwr_idx[i]);
++				b43_phy_maskset(dev, cmd_regs[i],
++						~B43_PHY_HT_TXPCTL_CMD_C1_INIT,
++						phy_ht->tx_pwr_idx[i]);
+ 	}
+ 
+ 	phy_ht->tx_pwr_ctl = enable;

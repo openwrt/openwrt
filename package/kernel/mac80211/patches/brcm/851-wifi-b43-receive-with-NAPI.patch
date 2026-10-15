@@ -1,0 +1,291 @@
+From: Rosen Penev <rosenp@gmail.com>
+Subject: [PATCH] wifi: b43: receive with NAPI
+
+Every interrupt of b43 on a bcma or ssb bus wakes the interrupt thread,
+two context switches, also when it only signals received frames, which
+is most of them under receive load, and mac80211 gets the frames one by
+one. Receive the frames of such an interrupt in a NAPI poll instead,
+and hand them to mac80211 with ieee80211_rx_napi(), so that GRO merges
+TCP segments. Everything else, and SDIO, still goes through the thread.
+
+The hardirq handler keeps the device interrupts disabled until the poll
+or the thread is done, so the two never run at the same time. The poll
+only enables them again while the device is started, under
+hardirq_lock, so that it cannot undo b43_wireless_core_stop(), which
+then waits for it with napi_disable().
+
+On an Asus RT-N16 (BCM4716) with one 2x2 client, in-boot A/B, 3 runs
+each:
+
+                                       before      after
+  TCP client -> router -> wired        23.5-26.4   45.2-46.3 Mbit/s
+  TCP wired -> router -> client        30.4-45.2   39.4-52.7 Mbit/s
+  TCP client -> router                 36.2-41.3   46.6-54.6 Mbit/s
+  cycles per frame, 25 Mbit/s UDP
+  forwarded from the client            143.0K      128.5K (mean)
+
+Assisted-by: LLM
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+--- a/drivers/net/wireless/broadcom/b43/b43.h
++++ b/drivers/net/wireless/broadcom/b43/b43.h
+@@ -935,6 +935,9 @@ struct b43_wldev {
+ 	unsigned int periodic_state;
+ 
+ 	struct work_struct restart_work;
++	/* Receives the frames of interrupts that only signal RX */
++	struct net_device *napi_dev;
++	struct napi_struct napi;
+ 
+ 	/* encryption/decryption */
+ 	u16 ktp;		/* Key table pointer */
+--- a/drivers/net/wireless/broadcom/b43/dma.c
++++ b/drivers/net/wireless/broadcom/b43/dma.c
+@@ -2141,7 +2141,8 @@ out_wake:
+ 	b43_txq_pull_later(dev, ring->queue_prio);
+ }
+ 
+-static void dma_rx(struct b43_dmaring *ring, int *slot)
++static void dma_rx(struct b43_dmaring *ring, int *slot,
++		   struct napi_struct *napi)
+ {
+ 	const struct b43_dma_ops *ops = ring->ops;
+ 	struct b43_dmadesc_generic *desc;
+@@ -2216,7 +2217,7 @@ static void dma_rx(struct b43_dmaring *r
+ 	skb_put(skb, len + ring->frameoffset);
+ 	skb_pull(skb, ring->frameoffset);
+ 
+-	b43_rx(ring->dev, skb, rxhdr);
++	b43_rx(ring->dev, skb, rxhdr, napi);
+ drop:
+ 	return;
+ 
+@@ -2245,7 +2246,11 @@ void b43_dma_handle_rx_overflow(struct b
+ 	ring->ops->set_current_rxslot(ring, previous_slot);
+ }
+ 
+-void b43_dma_rx(struct b43_dmaring *ring)
++/*
++ * Receive up to @budget frames, and hand them to mac80211 through @napi
++ * unless it is NULL. Returns the number of frames received.
++ */
++int b43_dma_rx(struct b43_dmaring *ring, int budget, struct napi_struct *napi)
+ {
+ 	const struct b43_dma_ops *ops = ring->ops;
+ 	int slot, current_slot;
+@@ -2256,13 +2261,16 @@ void b43_dma_rx(struct b43_dmaring *ring
+ 	B43_WARN_ON(!(current_slot >= 0 && current_slot < ring->nr_slots));
+ 
+ 	slot = ring->current_slot;
+-	for (; slot != current_slot; slot = next_slot(ring, slot)) {
+-		dma_rx(ring, &slot);
++	for (; slot != current_slot && used_slots < budget;
++	     slot = next_slot(ring, slot)) {
++		dma_rx(ring, &slot, napi);
+ 		update_max_used_slots(ring, ++used_slots);
+ 	}
+ 	wmb();
+ 	ops->set_current_rxslot(ring, slot);
+ 	ring->current_slot = slot;
++
++	return used_slots;
+ }
+ 
+ static void b43_dma_tx_suspend_ring(struct b43_dmaring *ring)
+--- a/drivers/net/wireless/broadcom/b43/dma.h
++++ b/drivers/net/wireless/broadcom/b43/dma.h
+@@ -316,7 +316,8 @@ void b43_dma_handle_txstatus(struct b43_
+ 
+ void b43_dma_handle_rx_overflow(struct b43_dmaring *ring);
+ 
+-void b43_dma_rx(struct b43_dmaring *ring);
++int b43_dma_rx(struct b43_dmaring *ring, int budget,
++	       struct napi_struct *napi);
+ 
+ void b43_dma_direct_fifo_rx(struct b43_wldev *dev,
+ 			    unsigned int engine_index, bool enable);
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
+@@ -2172,7 +2172,7 @@ static void b43_do_interrupt_thread(stru
+ 		if (b43_using_pio_transfers(dev))
+ 			b43_pio_rx(dev->pio.rx_queue);
+ 		else
+-			b43_dma_rx(dev->dma.rx_ring);
++			b43_dma_rx(dev->dma.rx_ring, INT_MAX, NULL);
+ 	}
+ 	B43_WARN_ON(dma_reason[1] & B43_DMAIRQ_RX_DONE);
+ 	B43_WARN_ON(dma_reason[2] & B43_DMAIRQ_RX_DONE);
+@@ -2204,6 +2204,50 @@ static void b43_do_interrupt_thread(stru
+ #endif
+ }
+ 
++/*
++ * Receive the frames of an interrupt that signals nothing else. Running
++ * here instead of in the interrupt thread saves waking the thread, two
++ * context switches per interrupt, and mac80211 hands the frames to GRO.
++ * The device interrupts stay disabled until this is done, so it never
++ * runs together with the thread.
++ */
++static int b43_napi_poll(struct napi_struct *napi, int budget)
++{
++	struct b43_wldev *dev = container_of(napi, struct b43_wldev, napi);
++	struct b43_wl *wl = dev->wl;
++	int done = 0;
++
++	if (likely(b43_status(dev) == B43_STAT_STARTED))
++		done = b43_dma_rx(dev->dma.rx_ring, budget, napi);
++
++	if (done < budget && napi_complete_done(napi, done)) {
++		/* b43_wireless_core_stop() disables them under the same lock */
++		spin_lock_irq(&wl->hardirq_lock);
++		if (b43_status(dev) == B43_STAT_STARTED)
++			b43_write32(dev, B43_MMIO_GEN_IRQ_MASK, dev->irq_mask);
++		spin_unlock_irq(&wl->hardirq_lock);
++	}
++
++	return done;
++}
++
++/* Whether the interrupt being handled only signals received frames */
++static bool b43_irq_is_rx_only(struct b43_wldev *dev, u32 reason)
++{
++	int i;
++
++	if (reason != B43_IRQ_DMA ||
++	    dev->dma_reason[0] != B43_DMAIRQ_RX_DONE ||
++	    b43_using_pio_transfers(dev))
++		return false;
++	for (i = 1; i < ARRAY_SIZE(dev->dma_reason); i++) {
++		if (dev->dma_reason[i])
++			return false;
++	}
++
++	return true;
++}
++
+ /* Interrupt thread handler. Handles device interrupts in thread context. */
+ static irqreturn_t b43_interrupt_thread_handler(int irq, void *dev_id)
+ {
+@@ -2256,8 +2300,18 @@ static irqreturn_t b43_do_interrupt(stru
+ 	b43_write32(dev, B43_MMIO_DMA5_REASON, dev->dma_reason[5]);
+ */
+ 
+-	/* Disable IRQs on the device. The IRQ thread handler will re-enable them. */
++	/*
++	 * Disable IRQs on the device. The IRQ thread handler or the NAPI
++	 * poll will re-enable them.
++	 */
+ 	b43_write32(dev, B43_MMIO_GEN_IRQ_MASK, 0);
++
++	if (!b43_bus_host_is_sdio(dev->dev) &&
++	    b43_irq_is_rx_only(dev, reason)) {
++		napi_schedule(&dev->napi);
++		return IRQ_HANDLED;
++	}
++
+ 	/* Save the reason bitmasks for the IRQ thread handler. */
+ 	dev->irq_reason = reason;
+ 
+@@ -4854,6 +4908,7 @@ redo:
+ 		b43_sdio_free_irq(dev);
+ 	else
+ 		free_irq(dev->dev->irq, dev);
++	napi_disable(&orig_dev->napi);
+ 	mutex_lock(&wl->mutex);
+ 	dev = wl->current_dev;
+ 	if (!dev)
+@@ -4898,10 +4953,12 @@ static int b43_wireless_core_start(struc
+ 			goto out;
+ 		}
+ 	} else {
++		napi_enable(&dev->napi);
+ 		err = request_threaded_irq(dev->dev->irq, b43_interrupt_handler,
+ 					   b43_interrupt_thread_handler,
+ 					   IRQF_SHARED, KBUILD_MODNAME, dev);
+ 		if (err) {
++			napi_disable(&dev->napi);
+ 			b43err(dev->wl, "Cannot request IRQ-%d\n",
+ 			       dev->dev->irq);
+ 			goto out;
+@@ -6130,6 +6187,8 @@ static void b43_one_core_detach(struct b
+ 	b43_wireless_core_detach(wldev);
+ 	list_del(&wldev->list);
+ 	b43_bus_set_wldev(dev, NULL);
++	netif_napi_del(&wldev->napi);
++	free_netdev(wldev->napi_dev);
+ 	kfree(wldev);
+ }
+ 
+@@ -6151,9 +6210,14 @@ static int b43_one_core_attach(struct b4
+ 	wldev->bad_frames_preempt = modparam_bad_frames_preempt;
+ 	INIT_LIST_HEAD(&wldev->list);
+ 
++	wldev->napi_dev = alloc_netdev_dummy(0);
++	if (!wldev->napi_dev)
++		goto err_kfree_wldev;
++	netif_napi_add(wldev->napi_dev, &wldev->napi, b43_napi_poll);
++
+ 	err = b43_wireless_core_attach(wldev);
+ 	if (err)
+-		goto err_kfree_wldev;
++		goto err_free_napi;
+ 
+ 	b43_bus_set_wldev(dev, wldev);
+ 	b43_debugfs_add_device(wldev);
+@@ -6161,6 +6225,9 @@ static int b43_one_core_attach(struct b4
+       out:
+ 	return err;
+ 
++      err_free_napi:
++	netif_napi_del(&wldev->napi);
++	free_netdev(wldev->napi_dev);
+       err_kfree_wldev:
+ 	kfree(wldev);
+ 	return err;
+--- a/drivers/net/wireless/broadcom/b43/pio.c
++++ b/drivers/net/wireless/broadcom/b43/pio.c
+@@ -748,7 +748,7 @@ data_ready:
+ 		}
+ 	}
+ 
+-	b43_rx(q->dev, skb, rxhdr);
++	b43_rx(q->dev, skb, rxhdr, NULL);
+ 
+ 	return true;
+ 
+--- a/drivers/net/wireless/broadcom/b43/xmit.c
++++ b/drivers/net/wireless/broadcom/b43/xmit.c
+@@ -1031,7 +1031,8 @@ static void b43_rx_airtime(struct b43_wl
+ 	rcu_read_unlock();
+ }
+ 
+-void b43_rx(struct b43_wldev *dev, struct sk_buff *skb, const void *_rxhdr)
++void b43_rx(struct b43_wldev *dev, struct sk_buff *skb, const void *_rxhdr,
++	    struct napi_struct *napi)
+ {
+ 	struct ieee80211_rx_status status;
+ 	struct b43_plcp_hdr6 *plcp;
+@@ -1253,7 +1254,10 @@ void b43_rx(struct b43_wldev *dev, struc
+ 	b43_rx_airtime(dev, skb, &status, ppdu_start);
+ 
+ 	memcpy(IEEE80211_SKB_RXCB(skb), &status, sizeof(status));
+-	ieee80211_rx_ni(dev->wl->hw, skb);
++	if (napi)
++		ieee80211_rx_napi(dev->wl->hw, NULL, skb, napi);
++	else
++		ieee80211_rx_ni(dev->wl->hw, skb);
+ 
+ #if B43_DEBUG
+ 	dev->rx_count++;
+--- a/drivers/net/wireless/broadcom/b43/xmit.h
++++ b/drivers/net/wireless/broadcom/b43/xmit.h
+@@ -358,7 +358,8 @@ u8 b43_plcp_get_ratecode_ofdm(const u8 b
+ void b43_generate_plcp_hdr(struct b43_plcp_hdr4 *plcp,
+ 			   const u16 octets, const u8 bitrate);
+ 
+-void b43_rx(struct b43_wldev *dev, struct sk_buff *skb, const void *_rxhdr);
++void b43_rx(struct b43_wldev *dev, struct sk_buff *skb, const void *_rxhdr,
++	    struct napi_struct *napi);
+ 
+ unsigned int b43_ht_max_ampdu_len(u8 mcs);
+ unsigned int b43_tx_mpdu_len(struct sk_buff *skb);

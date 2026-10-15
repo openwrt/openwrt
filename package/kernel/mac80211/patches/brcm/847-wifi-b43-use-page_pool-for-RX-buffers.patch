@@ -1,0 +1,229 @@
+From: Rosen Penev <rosenp@gmail.com>
+Subject: [PATCH] wifi: b43: use page_pool for RX buffers
+
+Allocate the RX buffers from a page_pool instead of allocating a new skb
+and mapping it for every received frame. The pool keeps its pages
+mapped, so refilling a descriptor only needs a sync for the device, and
+buffers are recycled once the stack is done with them.
+
+A buffer of 2390 bytes plus skb_shared_info does not fit into half a
+page, so each buffer takes an order-0 page, like the 4 KiB slab object
+it came from before.
+
+On an Asus RT-N16 (BCM4716, 802.11n 2.4 GHz, 25 Mbit/s of UDP from a
+wireless client, in-boot A/B, 8 runs each), the router spends 1.2%
+fewer cycles per received frame (157.8K vs 159.8K). That is within the
+spread of the runs: the cost per frame is dominated by instruction cache
+misses elsewhere in the receive path.
+
+Map the pages DMA_BIDIRECTIONAL, and sync the buffers that way.
+b43 poisons each RX buffer before it hands it to the device, and drops
+a buffer that still carries the poison, as the device sometimes skips
+one. With DMA_FROM_DEVICE, the sync for the device only invalidates the
+cache on a non-coherent CPU like the BCM4716 or the BCM4708, so the
+poison never reached memory and a skipped buffer was read as the stale
+data of its previous use: garbage frames, or a length that sends
+dma_rx() into its path for frames spanning several buffers. Reported
+on a Netgear R6400 (BCM4708, BCM4331).
+
+Assisted-by: LLM
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+--- a/drivers/net/wireless/broadcom/b43/dma.c
++++ b/drivers/net/wireless/broadcom/b43/dma.c
+@@ -27,6 +27,7 @@
+ #include <linux/etherdevice.h>
+ #include <linux/slab.h>
+ #include <asm/div64.h>
++#include <net/page_pool/helpers.h>
+ 
+ 
+ /* Required number of TX DMA slots per TX frame.
+@@ -379,7 +380,7 @@ static inline
+ {
+ 	B43_WARN_ON(ring->tx);
+ 	dma_sync_single_for_cpu(ring->dev->dev->dma_dev,
+-				    addr, len, DMA_FROM_DEVICE);
++				    addr, len, DMA_BIDIRECTIONAL);
+ }
+ 
+ static inline
+@@ -388,7 +389,7 @@ static inline
+ {
+ 	B43_WARN_ON(ring->tx);
+ 	dma_sync_single_for_device(ring->dev->dev->dma_dev,
+-				   addr, len, DMA_FROM_DEVICE);
++				   addr, len, DMA_BIDIRECTIONAL);
+ }
+ 
+ static inline
+@@ -593,34 +594,36 @@ static int setup_rx_descbuffer(struct b4
+ 			       struct b43_dmadesc_generic *desc,
+ 			       struct b43_dmadesc_meta *meta, gfp_t gfp_flags)
+ {
++	struct page_pool *pp = ring->page_pool;
+ 	dma_addr_t dmaaddr;
+ 	struct sk_buff *skb;
++	unsigned int size;
++	struct page *page;
++	void *data;
+ 
+ 	B43_WARN_ON(ring->tx);
+ 
+-	skb = __dev_alloc_skb(ring->rx_buffersize, gfp_flags);
+-	if (unlikely(!skb))
++	size = SKB_DATA_ALIGN(NET_SKB_PAD + ring->rx_buffersize) +
++	       SKB_DATA_ALIGN(sizeof(struct skb_shared_info));
++
++	data = page_pool_alloc_va(pp, &size, gfp_flags);
++	if (unlikely(!data))
++		return -ENOMEM;
++
++	skb = build_skb(data, size);
++	if (unlikely(!skb)) {
++		page_pool_free_va(pp, data, false);
+ 		return -ENOMEM;
+-	b43_poison_rx_buffer(ring, skb);
+-	dmaaddr = map_descbuffer(ring, skb->data, ring->rx_buffersize, 0);
+-	if (b43_dma_mapping_error(ring, dmaaddr, ring->rx_buffersize, 0)) {
+-		/* ugh. try to realloc in zone_dma */
+-		gfp_flags |= GFP_DMA;
+-
+-		dev_kfree_skb_any(skb);
+-
+-		skb = __dev_alloc_skb(ring->rx_buffersize, gfp_flags);
+-		if (unlikely(!skb))
+-			return -ENOMEM;
+-		b43_poison_rx_buffer(ring, skb);
+-		dmaaddr = map_descbuffer(ring, skb->data,
+-					 ring->rx_buffersize, 0);
+-		if (b43_dma_mapping_error(ring, dmaaddr, ring->rx_buffersize, 0)) {
+-			b43err(ring->dev->wl, "RX DMA buffer allocation failed\n");
+-			dev_kfree_skb_any(skb);
+-			return -EIO;
+-		}
+ 	}
++	skb_mark_for_recycle(skb);
++	skb_reserve(skb, NET_SKB_PAD);
++
++	page = virt_to_head_page(data);
++	dmaaddr = page_pool_get_dma_addr(page) +
++		  (skb->data - (u8 *)page_address(page));
++
++	b43_poison_rx_buffer(ring, skb);
++	sync_descbuffer_for_device(ring, dmaaddr, ring->rx_buffersize);
+ 
+ 	meta->skb = skb;
+ 	meta->dmaaddr = dmaaddr;
+@@ -630,6 +633,33 @@ static int setup_rx_descbuffer(struct b4
+ 	return 0;
+ }
+ 
++static int b43_rx_page_pool_create(struct b43_dmaring *ring)
++{
++	struct page_pool_params pp_params = {};
++	struct page_pool *pp;
++
++	pp_params.order = 0;
++	pp_params.pool_size = ring->nr_slots;
++	pp_params.nid = NUMA_NO_NODE;
++	pp_params.dev = ring->dev->dev->dma_dev;
++	/*
++	 * Not DMA_FROM_DEVICE: on a non-coherent CPU, the sync for the
++	 * device would then only invalidate the cache, and the poison of
++	 * b43_poison_rx_buffer() would never reach memory.
++	 */
++	pp_params.dma_dir = DMA_BIDIRECTIONAL;
++	pp_params.flags = PP_FLAG_DMA_MAP;
++
++	pp = page_pool_create(&pp_params);
++	if (IS_ERR(pp)) {
++		b43err(ring->dev->wl, "Failed to create the RX page pool\n");
++		return PTR_ERR(pp);
++	}
++
++	ring->page_pool = pp;
++	return 0;
++}
++
+ /* Allocate the initial descbuffers.
+  * This is used for an RX ring only.
+  */
+@@ -659,7 +689,6 @@ static int alloc_initial_descbuffers(str
+ 	for (i--; i >= 0; i--) {
+ 		desc = ring->ops->idx2desc(ring, i, &meta);
+ 
+-		unmap_descbuffer(ring, meta->dmaaddr, ring->rx_buffersize, 0);
+ 		dev_kfree_skb(meta->skb);
+ 	}
+ 	goto out;
+@@ -786,13 +815,9 @@ static void free_all_descbuffers(struct
+ 			B43_WARN_ON(!ring->tx);
+ 			continue;
+ 		}
+-		if (ring->tx) {
++		if (ring->tx)
+ 			unmap_descbuffer(ring, meta->dmaaddr,
+ 					 meta->skb->len, 1);
+-		} else {
+-			unmap_descbuffer(ring, meta->dmaaddr,
+-					 ring->rx_buffersize, 0);
+-		}
+ 		free_descriptor_buffer(ring, meta);
+ 	}
+ }
+@@ -932,9 +957,15 @@ struct b43_dmaring *b43_setup_dmaring(st
+ 				 DMA_TO_DEVICE);
+ 	}
+ 
++	if (!for_tx) {
++		err = b43_rx_page_pool_create(ring);
++		if (err)
++			goto err_kfree_meta;
++	}
++
+ 	err = alloc_ringmemory(ring);
+ 	if (err)
+-		goto err_kfree_txhdr_cache;
++		goto err_destroy_page_pool;
+ 	err = dmacontroller_setup(ring);
+ 	if (err)
+ 		goto err_free_ringmemory;
+@@ -944,6 +975,9 @@ struct b43_dmaring *b43_setup_dmaring(st
+ 
+       err_free_ringmemory:
+ 	free_ringmemory(ring);
++      err_destroy_page_pool:
++	if (ring->page_pool)
++		page_pool_destroy(ring->page_pool);
+       err_kfree_txhdr_cache:
+ 	kfree(ring->txhdr_cache);
+       err_kfree_meta:
+@@ -1004,6 +1038,8 @@ static void b43_destroy_dmaring(struct b
+ 	dmacontroller_cleanup(ring);
+ 	free_all_descbuffers(ring);
+ 	free_ringmemory(ring);
++	if (ring->page_pool)
++		page_pool_destroy(ring->page_pool);
+ 
+ 	kfree(ring->txhdr_cache);
+ 	kfree(ring);
+@@ -2150,7 +2186,6 @@ static void dma_rx(struct b43_dmaring *r
+ 		goto drop_recycle_buffer;
+ 	}
+ 
+-	unmap_descbuffer(ring, dmaaddr, ring->rx_buffersize, 0);
+ 	skb_put(skb, len + ring->frameoffset);
+ 	skb_pull(skb, ring->frameoffset);
+ 
+--- a/drivers/net/wireless/broadcom/b43/dma.h
++++ b/drivers/net/wireless/broadcom/b43/dma.h
+@@ -249,6 +249,8 @@ struct b43_dmaring {
+ 	u16 rx_buffersize;
+ 	/* The MMIO base register of the DMA controller. */
+ 	u16 mmio_base;
++	/* Pool of the RX buffers. NULL for a TX ring. */
++	struct page_pool *page_pool;
+ 	/* DMA controller index number (0-5). */
+ 	int index;
+ 	/* Boolean. Is this a TX ring? */
