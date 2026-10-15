@@ -141,7 +141,7 @@ Signed-off-by: Aleksei Sviridkin <f@lex.la>
  static void mt7530_get_eth_ctrl_stats(struct dsa_switch *ds, int port,
  				      struct ethtool_eth_ctrl_stats *ctrl_stats)
  {
-@@ -3169,9 +3219,24 @@ mt753x_setup(struct dsa_switch *ds)
+@@ -3184,9 +3234,24 @@ mt753x_setup(struct dsa_switch *ds)
  	if (ret && priv->irq_domain)
  		mt7530_free_mdio_irq(priv);
  
@@ -166,7 +166,7 @@ Signed-off-by: Aleksei Sviridkin <f@lex.la>
  static int mt753x_set_mac_eee(struct dsa_switch *ds, int port,
  			      struct ethtool_keee *e)
  {
-@@ -3290,6 +3355,7 @@ static int mt7988_setup(struct dsa_switc
+@@ -3305,6 +3370,7 @@ static int mt7988_setup(struct dsa_switc
  const struct dsa_switch_ops mt7530_switch_ops = {
  	.get_tag_protocol	= mtk_get_tag_protocol,
  	.setup			= mt753x_setup,
@@ -174,7 +174,7 @@ Signed-off-by: Aleksei Sviridkin <f@lex.la>
  	.preferred_default_local_cpu_port = mt753x_preferred_default_local_cpu_port,
  	.get_strings		= mt7530_get_strings,
  	.get_ethtool_stats	= mt7530_get_ethtool_stats,
-@@ -3437,6 +3503,9 @@ mt7530_probe_common(struct mt7530_priv *
+@@ -3452,6 +3518,9 @@ mt7530_probe_common(struct mt7530_priv *
  	priv->ds->ops = &mt7530_switch_ops;
  	priv->ds->phylink_mac_ops = &mt753x_phylink_mac_ops;
  	mutex_init(&priv->reg_mutex);
