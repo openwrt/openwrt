@@ -482,6 +482,9 @@ radius_user_get_state(struct radius_user_data *u, struct blob_attr *data,
 			 &astate.attr, n_attr * sizeof(*astate.attr),
 			 &astate.buf, n_attr * sizeof(*astate.buf),
 			 &astate.attrdata, attrsize);
+	if (!state)
+		goto free;
+
 	eap = &state->data;
 	eap->salt = salt_len ? salt_buf : NULL;
 	eap->salt_len = salt_len;
@@ -614,6 +617,8 @@ static int usage(const char *progname)
 {
 	fprintf(stderr, "Usage: %s <options>\n",
 		progname);
+
+	return 1;
 }
 
 int radius_main(int argc, char **argv)
