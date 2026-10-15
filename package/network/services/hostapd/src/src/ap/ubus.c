@@ -2143,7 +2143,7 @@ hostapd_rrm_beacon_req(struct ubus_context *ctx, struct ubus_object *obj,
 	/* as per 9-106 */
 	if (reporting_detail >= 0 && reporting_detail < 3) {
 		/* as per 9-104 */
-		wpabuf_put_u8(req, 2);
+		wpabuf_put_u8(req, WLAN_BEACON_REQUEST_SUBELEM_DETAIL);
 		wpabuf_put_u8(req, 1);
 		wpabuf_put_u8(req, reporting_detail);
 	}
