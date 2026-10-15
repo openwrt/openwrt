@@ -2,6 +2,7 @@
 #ifndef _OTTO_PIE_H
 #define _OTTO_PIE_H
 
+#include <linux/soc/realtek/otto_common.h>
 #include <linux/types.h>
 
 /* PIE actions */
@@ -19,8 +20,7 @@
  * ingress comes before routing.
  */
 #define RTL839X_PIE_CUTLINE	9
-#define RTL839X_PIE_L3_RULES	(4 * PIE_BLOCK_SIZE)
-#define RTL839X_PIE_L3_FIRST	(RTL839X_PIE_CUTLINE * PIE_BLOCK_SIZE - RTL839X_PIE_L3_RULES)
+#define RTL839X_PIE_L3_RULES	(RTL839X_PIE_CUTLINE * PIE_BLOCK_SIZE - RTL839X_PIE_L3_FIRST)
 
 struct pie_rule;
 struct otto_dsa_priv;
