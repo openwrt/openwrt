@@ -576,7 +576,7 @@ else
 
 	if [ -n "$(USERID)" ]; then echo $(USERID) > $$(IDIR_$(1))/lib/apk/packages/$(1)$$(ABIV_$(1)).rusers; fi;
 	if [ -n "$(ALTERNATIVES)" ]; then echo $(ALTERNATIVES) > $$(IDIR_$(1))/lib/apk/packages/$(1)$$(ABIV_$(1)).alternatives; fi;
-	(cd $$(IDIR_$(1)) && find . -type f,l -printf "/%P\n" | sort > $(TMP_DIR)/$(1).list && mv $(TMP_DIR)/$(1).list $$(IDIR_$(1))/lib/apk/packages/$(1)$$(ABIV_$(1)).list)
+	$$(if $$(findstring layer:1,$$(APK_INFO_$(1))),,(cd $$(IDIR_$(1)) && find . -type f,l -printf "/%P\n" | sort > $(TMP_DIR)/$(1).list && mv $(TMP_DIR)/$(1).list $$(IDIR_$(1))/lib/apk/packages/$(1)$$(ABIV_$(1)).list))
 	# Move conffiles to IDIR and build conffiles_static with csums
 	if [ -f $$(ADIR_$(1))/conffiles ]; then \
 		mv -f $$(ADIR_$(1))/conffiles $$(IDIR_$(1))/lib/apk/packages/$(1)$$(ABIV_$(1)).conffiles; \
