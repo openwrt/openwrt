@@ -1,0 +1,69 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 08 Sep 2026 14:00:00 +0000
+Subject: [PATCH] wifi: mac80211: select the link a management frame asks for
+
+ieee80211_mgmt_tx() walks the links of an AP MLD to decide whether the
+frame needs an off-channel transmission. It pins the link to the one
+that holds the requested channel only when the destination is a station
+that is already associated as an MLD. A frame to an address the access
+point does not know keeps link_id at -1.
+
+ieee80211_tx_skb_tid_band() then sees a frame whose transmitter address
+is the MLD address and marks the link as IEEE80211_TX_CTRL_MLO_LINK
+unspecified. The driver picks the default link, which is not the link
+that holds the requested channel. mt7996 rewrites addr2 with the address
+of that link and hands the frame to its phy, so the frame leaves on the
+wrong band under the wrong address.
+
+A DPP Authentication Request shows this. The enrollee announces itself
+on channel 6, the access point answers on the 5 GHz link, and the
+enrollee never sees the frame.
+
+The channel the caller names identifies the link on its own. Pin the
+link whenever the frame comes from the MLD address and an active link
+holds that channel, whether or not the destination is a known station.
+ieee80211_tx_skb_tid() warns on a link id for an interface that is not
+an MLD and on one that names an inactive link, and active_links is zero
+for an interface that is not an MLD, so that one test covers both. The
+same holds for a station MLD that sends from its MLD address to an
+address other than its AP.
+
+A link whose own address is the MLD address matched the frame on that
+address first and ended the search, so the link with the requested
+channel was never reached when a lower link uses the MLD address. Skip
+such a link when the frame names another channel.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/net/mac80211/offchannel.c
++++ b/net/mac80211/offchannel.c
+@@ -926,6 +926,7 @@ int ieee80211_mgmt_tx(struct wiphy *wiph
+ 		/* Check all the links first */
+ 		for (i = 0; i < ARRAY_SIZE(sdata->vif.link_conf); i++) {
+ 			struct ieee80211_bss_conf *conf;
++			bool pin;
+ 
+ 			conf = rcu_dereference(sdata->vif.link_conf[i]);
+ 			if (!conf)
+@@ -935,12 +936,18 @@ int ieee80211_mgmt_tx(struct wiphy *wiph
+ 			if (!chanctx_conf)
+ 				continue;
+ 
+-			if (mlo_sta && params->chan == chanctx_conf->def.chan &&
+-			    ether_addr_equal(sdata->vif.addr, mgmt->sa)) {
++			pin = (mlo_sta || (sdata->vif.active_links & BIT(i))) &&
++			      ether_addr_equal(sdata->vif.addr, mgmt->sa);
++			if (pin && params->chan == chanctx_conf->def.chan) {
+ 				link_id = i;
+ 				break;
+ 			}
+ 
++			if (pin && params->chan) {
++				chanctx_conf = NULL;
++				continue;
++			}
++
+ 			if (ether_addr_equal(conf->addr, mgmt->sa)) {
+ 				/* If userspace requested Tx on a specific link
+ 				 * use the same link id if the link bss is matching

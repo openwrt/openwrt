@@ -2,7 +2,9 @@
 import * as ubus from "ubus";
 import * as uloop from "uloop";
 import { is_equal } from "./utils.uc";
-import { access } from "fs";
+import { access, lsdir } from "fs";
+
+const wds_sta_re = /^(.+)\.sta[0-9]+$/;
 
 const NOTIFY_CMD_UP = 0;
 const NOTIFY_CMD_SET_DATA = 1;
@@ -79,6 +81,18 @@ function handle_link(dev, data, up)
 			link_ext: true,
 			up,
 		});
+}
+
+function handle_wds_sta_links(data, netdevs)
+{
+	if (data.type != "vif" && data.type != "vlan")
+		return;
+
+	for (let dev in netdevs) {
+		let m = match(dev, wds_sta_re);
+		if (m && m[1] == data.ifname)
+			handle_link(dev, data, true);
+	}
 }
 
 function wdev_config_init(wdev)
@@ -472,9 +486,13 @@ function wdev_mark_up(wdev)
 
 	wdev_reset(wdev);
 
+	let netdevs = lsdir("/sys/class/net") ?? [];
 	for (let section, data in wdev.handler_data) {
-		if (data.ifname)
-			handle_link(data.ifname, data, true);
+		if (!data.ifname)
+			continue;
+
+		handle_link(data.ifname, data, true);
+		handle_wds_sta_links(data, netdevs);
 	}
 	wdev.state = "up";
 
@@ -555,7 +573,7 @@ function notify(req)
 function hotplug(name, add)
 {
 	let dev = name;
-	let m = match(name, /^(.+)\.sta[0-9]+$/);
+	let m = match(name, wds_sta_re);
 	if (m)
 		name = m[1];
 
@@ -581,6 +599,8 @@ function get_status_data(wdev, vif, parent_vif)
 	};
 	if (hdata && hdata.ifname)
 		data.ifname = hdata.ifname;
+	if (hdata?.error)
+		data.error = hdata.error;
 	return data;
 }
 

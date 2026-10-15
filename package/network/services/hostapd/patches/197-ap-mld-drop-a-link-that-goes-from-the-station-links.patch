@@ -1,0 +1,266 @@
+From 3948dff95675d76ada056c9249b1d0707ebbdcce Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@nbd.name>
+Date: Thu, 1 Oct 2026 09:18:41 +0200
+Subject: [PATCH] AP MLD: drop a link that goes from the station's links
+
+hostapd_ml_process_reconf_link() sets up an added link while it handles
+the Link Reconfiguration Request: it adds the link station and marks the
+link valid, with status success, on every station of the non-AP MLD.
+Five paths undo the addition afterwards:
+
+- the Group KDE limit in hostapd_validate_link_reconf_req();
+- a request hostapd_validate_link_reconf_req() refuses after the
+  addition (the valid-links, add-and-delete and total-links checks);
+- the reject-all path of hostapd_send_link_reconf_resp();
+- a response that could not be sent, in
+  hostapd_handle_link_reconf_req();
+- a response the station did not acknowledge, in
+  hostapd_link_reconf_resp_tx_status().
+
+The first, third and fifth freed the link station alone; the second and
+fourth freed nothing. In every case the other stations kept the link as
+valid, and the authenticator kept it in its links for the group keys
+(wpa_auth_set_ml_info() ran with the link in process_reconf_link()). The
+station's ubus get_clients, sta-authorized and sta-links-changed then
+named a link that is not set up.
+
+ap_free_link_sta() frees the station of one link and clears the link on
+the other stations and in the authenticator, as the removal of a link in
+hostapd_link_reconf_resp_tx_status() did inline; that removal now uses
+it too. hostapd_ml_reconf_adds_revert() undoes the added links on all
+five paths. Each added link holds a station this request created:
+ieee80211_ml_process_link() refuses an addition where the link already
+has a station.
+
+604 depends on this patch and 605 builds on it; the three land together.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ src/ap/ieee802_11_eht.c | 93 +++++++++++++++++++----------------------
+ src/ap/sta_info.c       | 35 ++++++++++++++++
+ src/ap/sta_info.h       |  1 +
+ 3 files changed, 78 insertions(+), 51 deletions(-)
+
+--- a/src/ap/ieee802_11_eht.c
++++ b/src/ap/ieee802_11_eht.c
+@@ -1586,6 +1586,28 @@ void ml_deinit_link_reconf_req(struct li
+ }
+ 
+ 
++/* links: the added links whose setup is reverted */
++static void hostapd_ml_reconf_adds_revert(struct hostapd_data *hapd,
++					  struct link_reconf_req_list *req_list,
++					  u16 links)
++{
++	struct link_reconf_req_info *info;
++	struct hostapd_data *lhapd;
++	struct sta_info *lsta;
++
++	dl_list_for_each(info, &req_list->add_req, struct link_reconf_req_info,
++			 list) {
++		if (!(links & BIT(info->link_id)))
++			continue;
++
++		lhapd = hostapd_mld_get_link_bss(hapd, info->link_id);
++		lsta = lhapd ? ap_get_sta(lhapd, req_list->sta_mld_addr) : NULL;
++		if (lsta)
++			ap_free_link_sta(lhapd, lsta);
++	}
++}
++
++
+ void hostapd_link_reconf_resp_tx_status(struct hostapd_data *hapd,
+ 					struct sta_info *sta,
+ 					const struct ieee80211_mgmt *mgmt,
+@@ -1636,21 +1658,8 @@ void hostapd_link_reconf_resp_tx_status(
+ 			   "; revert link additions",
+ 			   MAC2STR(mgmt->da));
+ 
+-		dl_list_for_each(info, &req_list->add_req,
+-				 struct link_reconf_req_info, list) {
+-			if (info->status != WLAN_STATUS_SUCCESS)
+-				continue;
+-
+-			lhapd = NULL;
+-			lsta = NULL;
+-			lhapd = hostapd_mld_get_link_bss(hapd, info->link_id);
+-			if (lhapd)
+-				lsta = ap_get_sta(lhapd,
+-						  req_list->sta_mld_addr);
+-
+-			if (lsta)
+-				ap_free_sta(lhapd, lsta);
+-		}
++		hostapd_ml_reconf_adds_revert(hapd, req_list,
++					      req_list->links_add_ok);
+ 		goto exit;
+ 	}
+ 
+@@ -1739,24 +1748,7 @@ void hostapd_link_reconf_resp_tx_status(
+ 		wpa_msg(hapd->msg_ctx, MSG_INFO,
+ 			WPA_EVENT_LINK_STA_REMOVED "sta=" MACSTR " link_id=%u",
+ 			MAC2STR(lsta->addr), link_id);
+-		ap_free_sta(lhapd, lsta);
+-
+-		for_each_mld_link(other_hapd, lhapd) {
+-			struct mld_link_info *link;
+-
+-			other_sta = ap_get_sta(other_hapd, mgmt->da);
+-			if (!other_sta)
+-				continue;
+-
+-			link = &other_sta->mld_info.links[link_id];
+-			os_free(link->resp_sta_profile);
+-			link->resp_sta_profile = NULL;
+-			link->resp_sta_profile_len = 0;
+-			link->valid = false;
+-		}
+-		wpa_auth_set_ml_info(assoc_sta->wpa_sm,
+-				     assoc_sta->mld_assoc_link_id,
+-				     &assoc_sta->mld_info);
++		ap_free_link_sta(lhapd, lsta);
+ 	}
+ 
+ exit:
+@@ -1850,31 +1842,20 @@ hostapd_reject_all_reconf_req(struct hos
+ 			      struct link_reconf_req_list *req_list)
+ {
+ 	struct link_reconf_req_info *info;
+-	struct hostapd_data *lhapd;
+-	struct sta_info *lsta;
+ 	u16 status;
+ 	u8 *buf = pos;
+ 
++	hostapd_ml_reconf_adds_revert(hapd, req_list, req_list->links_add_ok);
++
+ 	dl_list_for_each(info, &req_list->add_req, struct link_reconf_req_info,
+ 			 list) {
+-		lhapd = NULL;
+-		lsta = NULL;
+ 		*pos++ = info->link_id;
+ 		status = info->status != WLAN_STATUS_SUCCESS ? info->status :
+ 			WLAN_STATUS_UNSPECIFIED_FAILURE;
+ 		WPA_PUT_LE16(pos, status);
+ 
+-		if (info->status == WLAN_STATUS_SUCCESS) {
+-			lhapd = hostapd_mld_get_link_bss(hapd, info->link_id);
+-			if (lhapd)
+-				lsta = ap_get_sta(lhapd,
+-						  req_list->sta_mld_addr);
+-
+-			if (lsta)
+-				ap_free_sta(lhapd, lsta);
+-
++		if (info->status == WLAN_STATUS_SUCCESS)
+ 			info->status = WLAN_STATUS_UNSPECIFIED_FAILURE;
+-		}
+ 		wpa_printf(MSG_DEBUG, "MLD: Reject add-link=%u with status=%u",
+ 			   info->link_id, status);
+ 		pos += 2;
+@@ -2593,7 +2574,7 @@ hostapd_validate_link_reconf_req(struct
+ 						  req_list->sta_mld_addr);
+ 
+ 			if (lsta)
+-				ap_free_sta(lhapd, lsta);
++				ap_free_link_sta(lhapd, lsta);
+ 		} else {
+ 			total_kde_len += link_kde_len;
+ 			links_add_ok |= BIT(info->link_id);
+@@ -2622,14 +2603,14 @@ hostapd_validate_link_reconf_req(struct
+ 	    (links_del_ok && !(valid_links & links_del_ok))) {
+ 		wpa_printf(MSG_INFO,
+ 			   "MLD: Links requested failed to satisfy valid links");
+-		return false;
++		goto revert;
+ 	}
+ 
+ 	if (links_add_ok & links_del_ok) {
+ 		wpa_printf(MSG_INFO,
+ 			   "MLD: Links (0x%x) present in both valid add and delete requests",
+ 			   links_add_ok & links_del_ok);
+-		return false;
++		goto revert;
+ 	}
+ 
+ 	valid_links |= links_add_ok;
+@@ -2638,7 +2619,7 @@ hostapd_validate_link_reconf_req(struct
+ 		if (!recover_from_zero_links(&links_del_ok, &recovery_link)) {
+ 			wpa_printf(MSG_INFO,
+ 				   "MLD: Total-links validation failed");
+-			return false;
++			goto revert;
+ 		}
+ 		/* Add the recovery link back to valid_links */
+ 		valid_links |= BIT(recovery_link);
+@@ -2652,6 +2633,10 @@ hostapd_validate_link_reconf_req(struct
+ 	assoc_sta->reconf_req = req_list;
+ 
+ 	return true;
++
++revert:
++	hostapd_ml_reconf_adds_revert(hapd, req_list, links_add_ok);
++	return false;
+ }
+ 
+ 
+@@ -2786,6 +2771,9 @@ skip_oci_validation:
+ 
+ out:
+ 	if (ret) {
++		if (req_list)
++			hostapd_ml_reconf_adds_revert(hapd, req_list,
++						      req_list->links_add_ok);
+ 		ml_deinit_link_reconf_req(&req_list);
+ 		if (assoc_sta && assoc_sta->reconf_req)
+ 			assoc_sta->reconf_req = NULL;
+--- a/src/ap/sta_info.c
++++ b/src/ap/sta_info.c
+@@ -592,6 +592,38 @@ void hostapd_free_stas(struct hostapd_da
+ 
+ 
+ #ifdef CONFIG_IEEE80211BE
++void ap_free_link_sta(struct hostapd_data *lhapd, struct sta_info *lsta)
++{
++	struct hostapd_data *assoc_hapd, *other_hapd;
++	struct sta_info *assoc_sta, *other_sta;
++	u8 link_id = lhapd->mld_link_id;
++	u8 addr[ETH_ALEN];
++
++	os_memcpy(addr, lsta->addr, ETH_ALEN);
++	assoc_sta = hostapd_ml_get_assoc_sta(lhapd, lsta, &assoc_hapd);
++	ap_free_sta(lhapd, lsta);
++
++	for_each_mld_link(other_hapd, lhapd) {
++		struct mld_link_info *link;
++
++		other_sta = ap_get_sta(other_hapd, addr);
++		if (!other_sta)
++			continue;
++
++		link = &other_sta->mld_info.links[link_id];
++		os_free(link->resp_sta_profile);
++		link->resp_sta_profile = NULL;
++		link->resp_sta_profile_len = 0;
++		link->valid = false;
++	}
++
++	if (assoc_sta && assoc_sta != lsta && assoc_sta->wpa_sm)
++		wpa_auth_set_ml_info(assoc_sta->wpa_sm,
++				     assoc_sta->mld_assoc_link_id,
++				     &assoc_sta->mld_info);
++}
++
++
+ void hostapd_free_link_stas(struct hostapd_data *hapd)
+ {
+ 	struct sta_info *sta, *prev;
+--- a/src/ap/sta_info.h
++++ b/src/ap/sta_info.h
+@@ -481,6 +481,7 @@ static inline void ap_sta_set_mld(struct
+ 
+ void ap_sta_free_sta_profile(struct mld_info *info);
+ 
++void ap_free_link_sta(struct hostapd_data *lhapd, struct sta_info *lsta);
+ void hostapd_free_link_stas(struct hostapd_data *hapd);
+ void hostapd_free_mld_partner_stas(struct hostapd_data *hapd);
+ void set_wpa_sm_for_each_partner_link(struct hostapd_data *hapd,

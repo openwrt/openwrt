@@ -1,0 +1,49 @@
+From 4febc02cd02f021f2b6d0768332be643ef14a12d Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 26 Sep 2026 14:02:16 +0200
+Subject: [PATCH] wifi: mac80211: set info->band for 802.3 encap offload frames
+
+Unlike the 802.11 TX paths, ieee80211_8023_xmit() does not set
+info->band from the channel context on non-MLD interfaces. It stays at
+0, so ieee80211_get_tx_rates() uses the wrong band for these frames.
+
+Set it the same way as ieee80211_build_hdr(): drop the frame if there is
+no channel context, and leave the band at 0 on MLD interfaces.
+
+Reported-by: Andrea Pesaresi <andreapesaresi82@gmail.com>
+Fixes: 50ff477a8639 ("mac80211: add 802.11 encapsulation offloading support")
+Cc: stable@vger.kernel.org
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Link: https://patch.msgid.link/20260926120216.4054712-1-nbd@nbd.name
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+---
+ net/mac80211/tx.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -4677,6 +4677,7 @@ static void ieee80211_8023_xmit(struct i
+ {
+ 	struct ieee80211_tx_info *info;
+ 	struct ieee80211_local *local = sdata->local;
++	struct ieee80211_chanctx_conf *chanctx_conf;
+ 	struct tid_ampdu_tx *tid_tx = NULL;
+ 	struct sk_buff *seg, *next;
+ 	unsigned int skbs = 0, len = 0;
+@@ -4726,6 +4727,16 @@ static void ieee80211_8023_xmit(struct i
+ 		sdata = container_of(sdata->bss,
+ 				     struct ieee80211_sub_if_data, u.ap);
+ 
++	/* MLD transmissions must not rely on the band */
++	if (!ieee80211_vif_is_mld(&sdata->vif)) {
++		chanctx_conf = rcu_dereference(sdata->vif.bss_conf.chanctx_conf);
++		if (unlikely(!chanctx_conf)) {
++			kfree_skb_list(skb);
++			return;
++		}
++		info->band = chanctx_conf->def.chan->band;
++	}
++
+ 	info->flags |= IEEE80211_TX_CTL_HW_80211_ENCAP;
+ 	info->control.vif = &sdata->vif;
+ 

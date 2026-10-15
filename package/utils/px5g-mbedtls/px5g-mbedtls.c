@@ -157,7 +157,7 @@ static void gen_key(mbedtls_pk_context *key, bool rsa, int ksize, int exp,
 int dokey(bool rsa, char **arg)
 {
 	mbedtls_pk_context key;
-	unsigned int ksize = 512;
+	unsigned int ksize = 2048;
 	int exp = 65537;
 	char *path = NULL;
 	bool pem = true;
@@ -212,7 +212,7 @@ int selfsigned(char **arg)
 	size_t iplen;
 
 	char *subject = "";
-	unsigned int ksize = 512;
+	unsigned int ksize = 2048;
 	int exp = 65537;
 	unsigned int days = 30;
 	char *keypath = NULL, *certpath = NULL;

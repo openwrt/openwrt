@@ -355,6 +355,10 @@
 					macaddr_10g_2: macaddr@1e {
 						reg = <0x1e 0x6>;
 					};
+
+					caldata: calibration@0x1000 {
+						reg = <0x1000 0x20000>;
+					};
 				};
 			};
 
@@ -571,4 +575,6 @@
 	status = "okay";
 
 	qcom,ath11k-calibration-variant = "QNAP-301w";
+	nvmem-cell-names = "calibration";
+	nvmem-cells = <&caldata>;
 };

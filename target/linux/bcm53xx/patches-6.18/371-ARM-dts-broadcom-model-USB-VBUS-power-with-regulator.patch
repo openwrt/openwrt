@@ -10,9 +10,9 @@ bcma-hcd used to poke directly, one per power rail.
 
 Polarity is preserved: rails that used a GPIO_ACTIVE_HIGH are marked
 enable-active-high, while the Buffalo usb3 rails keep GPIO_ACTIVE_LOW
-and rely on the binding's active-low default. regulator-boot-on mirrors
-the rail being left enabled by CFE so the power line is never toggled
-during probe.
+and rely on the binding's active-low default. The regulators are left
+off at registration so VBUS is power-cycled after CFE; bcma-hcd enables
+the rail once the USB hosts are ready.
 
 Assisted-by: LLM
 Signed-off-by: Rosen Penev <rosenp@gmail.com>
@@ -46,7 +46,7 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
 
 --- a/arch/arm/boot/dts/broadcom/bcm4708-buffalo-wxr-1750dhp.dts
 +++ b/arch/arm/boot/dts/broadcom/bcm4708-buffalo-wxr-1750dhp.dts
-@@ -101,6 +101,16 @@
+@@ -101,6 +101,15 @@
  			trigger-sources = <&xhci_port1 &ehci_port1 &ohci_port1>;
  		};
  	};
@@ -56,14 +56,13 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
 +		regulator-name = "usb-vcc";
 +		regulator-min-microvolt = <5000000>;
 +		regulator-max-microvolt = <5000000>;
-+		regulator-boot-on;
 +		gpios = <&chipcommon 10 GPIO_ACTIVE_HIGH>;
 +		enable-active-high;
 +	};
  };
  
  &srab {
-@@ -130,7 +140,7 @@
+@@ -130,7 +139,7 @@
  };
  
  &usb3 {
@@ -74,7 +73,7 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
  &usb3_phy {
 --- a/arch/arm/boot/dts/broadcom/bcm4708-buffalo-wzr-1166dhp-common.dtsi
 +++ b/arch/arm/boot/dts/broadcom/bcm4708-buffalo-wzr-1166dhp-common.dtsi
-@@ -136,14 +136,33 @@
+@@ -136,14 +136,31 @@
  			gpios = <&chipcommon 15 GPIO_ACTIVE_LOW>;
  		};
  	};
@@ -84,7 +83,6 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
 +		regulator-name = "usb2-vcc";
 +		regulator-min-microvolt = <5000000>;
 +		regulator-max-microvolt = <5000000>;
-+		regulator-boot-on;
 +		gpios = <&chipcommon 9 GPIO_ACTIVE_HIGH>;
 +		enable-active-high;
 +	};
@@ -94,7 +92,6 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
 +		regulator-name = "usb3-vcc";
 +		regulator-min-microvolt = <5000000>;
 +		regulator-max-microvolt = <5000000>;
-+		regulator-boot-on;
 +		gpios = <&chipcommon 10 GPIO_ACTIVE_LOW>;
 +	};
  };
@@ -112,7 +109,7 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
  &spi_nor {
 --- a/arch/arm/boot/dts/broadcom/bcm4708-buffalo-wzr-1750dhp.dts
 +++ b/arch/arm/boot/dts/broadcom/bcm4708-buffalo-wzr-1750dhp.dts
-@@ -132,14 +132,33 @@
+@@ -132,14 +132,31 @@
  			gpios = <&chipcommon 15 GPIO_ACTIVE_LOW>;
  		};
  	};
@@ -122,7 +119,6 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
 +		regulator-name = "usb2-vcc";
 +		regulator-min-microvolt = <5000000>;
 +		regulator-max-microvolt = <5000000>;
-+		regulator-boot-on;
 +		gpios = <&chipcommon 9 GPIO_ACTIVE_HIGH>;
 +		enable-active-high;
 +	};
@@ -132,7 +128,6 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
 +		regulator-name = "usb3-vcc";
 +		regulator-min-microvolt = <5000000>;
 +		regulator-max-microvolt = <5000000>;
-+		regulator-boot-on;
 +		gpios = <&chipcommon 10 GPIO_ACTIVE_LOW>;
 +	};
  };
@@ -150,7 +145,7 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
  &spi_nor {
 --- a/arch/arm/boot/dts/broadcom/bcm4708-linksys-ea6300-v1.dts
 +++ b/arch/arm/boot/dts/broadcom/bcm4708-linksys-ea6300-v1.dts
-@@ -45,6 +45,16 @@
+@@ -45,6 +45,15 @@
  			gpios = <&chipcommon 11 GPIO_ACTIVE_LOW>;
  		};
  	};
@@ -160,14 +155,13 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
 +		regulator-name = "usb-vcc";
 +		regulator-min-microvolt = <5000000>;
 +		regulator-max-microvolt = <5000000>;
-+		regulator-boot-on;
 +		gpios = <&chipcommon 10 GPIO_ACTIVE_HIGH>;
 +		enable-active-high;
 +	};
  };
  
  &usb3_phy {
-@@ -93,5 +103,5 @@
+@@ -93,5 +102,5 @@
  };
  
  &usb3 {
@@ -176,7 +170,7 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
  };
 --- a/arch/arm/boot/dts/broadcom/bcm4708-linksys-ea6500-v2.dts
 +++ b/arch/arm/boot/dts/broadcom/bcm4708-linksys-ea6500-v2.dts
-@@ -38,6 +38,16 @@
+@@ -38,6 +38,15 @@
  			gpios = <&chipcommon 11 GPIO_ACTIVE_LOW>;
  		};
  	};
@@ -186,14 +180,13 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
 +		regulator-name = "usb-vcc";
 +		regulator-min-microvolt = <5000000>;
 +		regulator-max-microvolt = <5000000>;
-+		regulator-boot-on;
 +		gpios = <&chipcommon 10 GPIO_ACTIVE_HIGH>;
 +		enable-active-high;
 +	};
  };
  
  &usb3_phy {
-@@ -83,5 +93,5 @@
+@@ -83,5 +92,5 @@
  };
  
  &usb3 {
@@ -202,7 +195,7 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
  };
 --- a/arch/arm/boot/dts/broadcom/bcm4708-netgear-r6250.dts
 +++ b/arch/arm/boot/dts/broadcom/bcm4708-netgear-r6250.dts
-@@ -81,10 +81,20 @@
+@@ -81,10 +81,19 @@
  			gpios = <&chipcommon 6 GPIO_ACTIVE_LOW>;
  		};
  	};
@@ -212,7 +205,6 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
 +		regulator-name = "usb-vcc";
 +		regulator-min-microvolt = <5000000>;
 +		regulator-max-microvolt = <5000000>;
-+		regulator-boot-on;
 +		gpios = <&chipcommon 0 GPIO_ACTIVE_HIGH>;
 +		enable-active-high;
 +	};
@@ -226,7 +218,7 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
  &spi_nor {
 --- a/arch/arm/boot/dts/broadcom/bcm4708-netgear-r6300-v2.dts
 +++ b/arch/arm/boot/dts/broadcom/bcm4708-netgear-r6300-v2.dts
-@@ -77,6 +77,16 @@
+@@ -77,6 +77,15 @@
  			gpios = <&chipcommon 6 GPIO_ACTIVE_LOW>;
  		};
  	};
@@ -236,14 +228,13 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
 +		regulator-name = "usb-vcc";
 +		regulator-min-microvolt = <5000000>;
 +		regulator-max-microvolt = <5000000>;
-+		regulator-boot-on;
 +		gpios = <&chipcommon 0 GPIO_ACTIVE_HIGH>;
 +		enable-active-high;
 +	};
  };
  
  &spi_nor {
-@@ -126,5 +136,5 @@
+@@ -126,5 +135,5 @@
  };
  
  &usb3 {
@@ -252,7 +243,7 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
  };
 --- a/arch/arm/boot/dts/broadcom/bcm47081-luxul-xwr-1200.dts
 +++ b/arch/arm/boot/dts/broadcom/bcm47081-luxul-xwr-1200.dts
-@@ -104,10 +104,20 @@
+@@ -104,10 +104,19 @@
  			gpios = <&chipcommon 11 GPIO_ACTIVE_LOW>;
  		};
  	};
@@ -262,7 +253,6 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
 +		regulator-name = "usb-vcc";
 +		regulator-min-microvolt = <5000000>;
 +		regulator-max-microvolt = <5000000>;
-+		regulator-boot-on;
 +		gpios = <&chipcommon 9 GPIO_ACTIVE_HIGH>;
 +		enable-active-high;
 +	};
@@ -276,7 +266,7 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
  &gmac0 {
 --- a/arch/arm/boot/dts/broadcom/bcm47081-tplink-archer-c5-v2.dts
 +++ b/arch/arm/boot/dts/broadcom/bcm47081-tplink-archer-c5-v2.dts
-@@ -89,6 +89,16 @@
+@@ -89,6 +89,15 @@
  			gpios = <&chipcommon 7 GPIO_ACTIVE_LOW>;
  		};
  	};
@@ -286,14 +276,13 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
 +		regulator-name = "usb-vcc";
 +		regulator-min-microvolt = <5000000>;
 +		regulator-max-microvolt = <5000000>;
-+		regulator-boot-on;
 +		gpios = <&chipcommon 9 GPIO_ACTIVE_HIGH>;
 +		enable-active-high;
 +	};
  };
  
  &srab {
-@@ -147,5 +157,5 @@
+@@ -147,5 +156,5 @@
  };
  
  &usb2 {
@@ -302,7 +291,7 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
  };
 --- a/arch/arm/boot/dts/broadcom/bcm4709-asus-rt-ac3200.dts
 +++ b/arch/arm/boot/dts/broadcom/bcm4709-asus-rt-ac3200.dts
-@@ -73,6 +73,16 @@
+@@ -73,6 +73,15 @@
  			gpios = <&chipcommon 14 GPIO_ACTIVE_LOW>;
  		};
  	};
@@ -312,14 +301,13 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
 +		regulator-name = "usb-vcc";
 +		regulator-min-microvolt = <5000000>;
 +		regulator-max-microvolt = <5000000>;
-+		regulator-boot-on;
 +		gpios = <&chipcommon 9 GPIO_ACTIVE_HIGH>;
 +		enable-active-high;
 +	};
  };
  
  &gmac0 {
-@@ -142,7 +152,7 @@
+@@ -142,7 +151,7 @@
  };
  
  &usb2 {
@@ -330,7 +318,7 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
  &usb3_phy {
 --- a/arch/arm/boot/dts/broadcom/bcm4709-buffalo-wxr-1900dhp.dts
 +++ b/arch/arm/boot/dts/broadcom/bcm4709-buffalo-wxr-1900dhp.dts
-@@ -116,11 +116,20 @@
+@@ -116,11 +116,19 @@
  			gpios = <&chipcommon 20 GPIO_ACTIVE_LOW>;
  		};
  	};
@@ -341,7 +329,6 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
 +		regulator-name = "usb-vcc";
 +		regulator-min-microvolt = <5000000>;
 +		regulator-max-microvolt = <5000000>;
-+		regulator-boot-on;
 +		gpios = <&chipcommon 13 GPIO_ACTIVE_HIGH>;
 +		enable-active-high;
 +	};
@@ -355,7 +342,7 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
  &spi_nor {
 --- a/arch/arm/boot/dts/broadcom/bcm4709-linksys-ea9200.dts
 +++ b/arch/arm/boot/dts/broadcom/bcm4709-linksys-ea9200.dts
-@@ -92,6 +92,26 @@
+@@ -92,6 +92,24 @@
  			linux,default-trigger = "default-on";
  		};
  	};
@@ -365,7 +352,6 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
 +		regulator-name = "usb2-vcc";
 +		regulator-min-microvolt = <5000000>;
 +		regulator-max-microvolt = <5000000>;
-+		regulator-boot-on;
 +		gpios = <&chipcommon 13 GPIO_ACTIVE_HIGH>;
 +		enable-active-high;
 +	};
@@ -375,14 +361,13 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
 +		regulator-name = "usb3-vcc";
 +		regulator-min-microvolt = <5000000>;
 +		regulator-max-microvolt = <5000000>;
-+		regulator-boot-on;
 +		gpios = <&chipcommon 14 GPIO_ACTIVE_HIGH>;
 +		enable-active-high;
 +	};
  };
  
  &pcie_bridge0 {
-@@ -156,11 +176,11 @@
+@@ -156,11 +174,11 @@
  };
  
  &usb2 {
@@ -398,7 +383,7 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
  &gmac2 {
 --- a/arch/arm/boot/dts/broadcom/bcm4709-netgear-r7000.dts
 +++ b/arch/arm/boot/dts/broadcom/bcm4709-netgear-r7000.dts
-@@ -91,14 +91,24 @@
+@@ -91,14 +91,23 @@
  			gpios = <&chipcommon 6 GPIO_ACTIVE_LOW>;
  		};
  	};
@@ -408,7 +393,6 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
 +		regulator-name = "usb-vcc";
 +		regulator-min-microvolt = <5000000>;
 +		regulator-max-microvolt = <5000000>;
-+		regulator-boot-on;
 +		gpios = <&chipcommon 0 GPIO_ACTIVE_HIGH>;
 +		enable-active-high;
 +	};
@@ -427,8 +411,8 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
  &usb3_phy {
 --- a/arch/arm/boot/dts/broadcom/bcm4709-netgear-r8000.dts
 +++ b/arch/arm/boot/dts/broadcom/bcm4709-netgear-r8000.dts
-@@ -176,14 +176,24 @@
- 			};
+@@ -124,6 +124,15 @@
+ 			gpios = <&chipcommon 19 GPIO_ACTIVE_LOW>;
  		};
  	};
 +
@@ -437,10 +421,13 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
 +		regulator-name = "usb-vcc";
 +		regulator-min-microvolt = <5000000>;
 +		regulator-max-microvolt = <5000000>;
-+		regulator-boot-on;
 +		gpios = <&chipcommon 0 GPIO_ACTIVE_HIGH>;
 +		enable-active-high;
 +	};
+ };
+ 
+ &pcie_bridge0 {
+@@ -179,11 +188,11 @@
  };
  
  &usb2 {
@@ -456,7 +443,7 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
  &usb3_phy {
 --- a/arch/arm/boot/dts/broadcom/bcm4709-tplink-archer-c9-v1.dts
 +++ b/arch/arm/boot/dts/broadcom/bcm4709-tplink-archer-c9-v1.dts
-@@ -90,14 +90,34 @@
+@@ -90,14 +90,32 @@
  			gpios = <&chipcommon 3 GPIO_ACTIVE_LOW>;
  		};
  	};
@@ -466,7 +453,6 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
 +		regulator-name = "usb2-vcc";
 +		regulator-min-microvolt = <5000000>;
 +		regulator-max-microvolt = <5000000>;
-+		regulator-boot-on;
 +		gpios = <&chipcommon 13 GPIO_ACTIVE_HIGH>;
 +		enable-active-high;
 +	};
@@ -476,7 +462,6 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
 +		regulator-name = "usb3-vcc";
 +		regulator-min-microvolt = <5000000>;
 +		regulator-max-microvolt = <5000000>;
-+		regulator-boot-on;
 +		gpios = <&chipcommon 12 GPIO_ACTIVE_HIGH>;
 +		enable-active-high;
 +	};
@@ -495,7 +480,7 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
  &srab {
 --- a/arch/arm/boot/dts/broadcom/bcm47094-asus-rt-ac3100.dtsi
 +++ b/arch/arm/boot/dts/broadcom/bcm47094-asus-rt-ac3100.dtsi
-@@ -94,6 +94,16 @@
+@@ -94,6 +94,15 @@
  			gpios = <&chipcommon 19 GPIO_ACTIVE_LOW>;
  		};
  	};
@@ -505,14 +490,13 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
 +		regulator-name = "usb-vcc";
 +		regulator-min-microvolt = <5000000>;
 +		regulator-max-microvolt = <5000000>;
-+		regulator-boot-on;
 +		gpios = <&chipcommon 9 GPIO_ACTIVE_HIGH>;
 +		enable-active-high;
 +	};
  };
  
  &nandcs {
-@@ -160,7 +170,7 @@
+@@ -160,7 +169,7 @@
  };
  
  &usb2 {
@@ -523,7 +507,7 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
  &usb3_phy {
 --- a/arch/arm/boot/dts/broadcom/bcm47094-asus-rt-ac5300.dts
 +++ b/arch/arm/boot/dts/broadcom/bcm47094-asus-rt-ac5300.dts
-@@ -79,6 +79,16 @@
+@@ -79,6 +79,15 @@
  			gpios = <&chipcommon 19 GPIO_ACTIVE_LOW>;
  		};
  	};
@@ -533,14 +517,13 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
 +		regulator-name = "usb-vcc";
 +		regulator-min-microvolt = <5000000>;
 +		regulator-max-microvolt = <5000000>;
-+		regulator-boot-on;
 +		gpios = <&chipcommon 9 GPIO_ACTIVE_HIGH>;
 +		enable-active-high;
 +	};
  };
  
  &gmac0 {
-@@ -148,7 +158,7 @@
+@@ -148,7 +157,7 @@
  };
  
  &usb2 {
@@ -551,7 +534,7 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
  &usb3_phy {
 --- a/arch/arm/boot/dts/broadcom/bcm47094-dlink-dir-885l.dts
 +++ b/arch/arm/boot/dts/broadcom/bcm47094-dlink-dir-885l.dts
-@@ -115,10 +115,20 @@
+@@ -115,10 +115,19 @@
  			gpios = <&chipcommon 17 GPIO_ACTIVE_LOW>;
  		};
  	};
@@ -561,7 +544,6 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
 +		regulator-name = "usb-vcc";
 +		regulator-min-microvolt = <5000000>;
 +		regulator-max-microvolt = <5000000>;
-+		regulator-boot-on;
 +		gpios = <&chipcommon 18 GPIO_ACTIVE_HIGH>;
 +		enable-active-high;
 +	};
@@ -575,7 +557,7 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
  &gmac0 {
 --- a/arch/arm/boot/dts/broadcom/bcm47094-dlink-dir-890l.dts
 +++ b/arch/arm/boot/dts/broadcom/bcm47094-dlink-dir-890l.dts
-@@ -116,6 +116,26 @@
+@@ -116,6 +116,24 @@
  		et0macaddr: et0macaddr {
  		};
  	};
@@ -585,7 +567,6 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
 +		regulator-name = "usb2-vcc";
 +		regulator-min-microvolt = <5000000>;
 +		regulator-max-microvolt = <5000000>;
-+		regulator-boot-on;
 +		gpios = <&chipcommon 21 GPIO_ACTIVE_HIGH>;
 +		enable-active-high;
 +	};
@@ -595,14 +576,13 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
 +		regulator-name = "usb3-vcc";
 +		regulator-min-microvolt = <5000000>;
 +		regulator-max-microvolt = <5000000>;
-+		regulator-boot-on;
 +		gpios = <&chipcommon 18 GPIO_ACTIVE_HIGH>;
 +		enable-active-high;
 +	};
  };
  
  &gmac2 {
-@@ -157,11 +177,11 @@
+@@ -157,11 +175,11 @@
  };
  
  &usb2 {
@@ -618,7 +598,7 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
  &usb3_phy {
 --- a/arch/arm/boot/dts/broadcom/bcm47094-linksys-panamera.dts
 +++ b/arch/arm/boot/dts/broadcom/bcm47094-linksys-panamera.dts
-@@ -195,14 +195,34 @@
+@@ -195,14 +195,32 @@
  			};
  		};
  	};
@@ -628,7 +608,6 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
 +		regulator-name = "usb2-vcc";
 +		regulator-min-microvolt = <5000000>;
 +		regulator-max-microvolt = <5000000>;
-+		regulator-boot-on;
 +		gpios = <&chipcommon 13 GPIO_ACTIVE_HIGH>;
 +		enable-active-high;
 +	};
@@ -638,7 +617,6 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
 +		regulator-name = "usb3-vcc";
 +		regulator-min-microvolt = <5000000>;
 +		regulator-max-microvolt = <5000000>;
-+		regulator-boot-on;
 +		gpios = <&chipcommon 14 GPIO_ACTIVE_HIGH>;
 +		enable-active-high;
 +	};
@@ -657,7 +635,7 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
  &srab {
 --- a/arch/arm/boot/dts/broadcom/bcm47094-luxul-abr-4500.dts
 +++ b/arch/arm/boot/dts/broadcom/bcm47094-luxul-abr-4500.dts
-@@ -59,10 +59,20 @@
+@@ -59,10 +59,19 @@
  			gpios = <&chipcommon 17 GPIO_ACTIVE_LOW>;
  		};
  	};
@@ -667,7 +645,6 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
 +		regulator-name = "usb-vcc";
 +		regulator-min-microvolt = <5000000>;
 +		regulator-max-microvolt = <5000000>;
-+		regulator-boot-on;
 +		gpios = <&chipcommon 18 GPIO_ACTIVE_HIGH>;
 +		enable-active-high;
 +	};
@@ -681,7 +658,7 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
  &gmac0 {
 --- a/arch/arm/boot/dts/broadcom/bcm47094-luxul-xbr-4500.dts
 +++ b/arch/arm/boot/dts/broadcom/bcm47094-luxul-xbr-4500.dts
-@@ -59,10 +59,20 @@
+@@ -59,10 +59,19 @@
  			gpios = <&chipcommon 17 GPIO_ACTIVE_LOW>;
  		};
  	};
@@ -691,7 +668,6 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
 +		regulator-name = "usb-vcc";
 +		regulator-min-microvolt = <5000000>;
 +		regulator-max-microvolt = <5000000>;
-+		regulator-boot-on;
 +		gpios = <&chipcommon 18 GPIO_ACTIVE_HIGH>;
 +		enable-active-high;
 +	};
@@ -705,7 +681,7 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
  &gmac0 {
 --- a/arch/arm/boot/dts/broadcom/bcm47094-luxul-xwr-3100.dts
 +++ b/arch/arm/boot/dts/broadcom/bcm47094-luxul-xwr-3100.dts
-@@ -99,10 +99,20 @@
+@@ -99,10 +99,19 @@
  			gpios = <&chipcommon 17 GPIO_ACTIVE_LOW>;
  		};
  	};
@@ -715,7 +691,6 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
 +		regulator-name = "usb-vcc";
 +		regulator-min-microvolt = <5000000>;
 +		regulator-max-microvolt = <5000000>;
-+		regulator-boot-on;
 +		gpios = <&chipcommon 18 GPIO_ACTIVE_HIGH>;
 +		enable-active-high;
 +	};
@@ -729,7 +704,7 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
  &gmac0 {
 --- a/arch/arm/boot/dts/broadcom/bcm47094-luxul-xwr-3150-v1.dts
 +++ b/arch/arm/boot/dts/broadcom/bcm47094-luxul-xwr-3150-v1.dts
-@@ -74,6 +74,16 @@
+@@ -74,6 +74,15 @@
  			gpios = <&chipcommon 17 GPIO_ACTIVE_LOW>;
  		};
  	};
@@ -739,14 +714,13 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
 +		regulator-name = "usb-vcc";
 +		regulator-min-microvolt = <5000000>;
 +		regulator-max-microvolt = <5000000>;
-+		regulator-boot-on;
 +		gpios = <&chipcommon 18 GPIO_ACTIVE_HIGH>;
 +		enable-active-high;
 +	};
  };
  
  &gmac0 {
-@@ -98,7 +108,7 @@
+@@ -98,7 +107,7 @@
  };
  
  &usb3 {
@@ -757,7 +731,7 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
  &usb3_phy {
 --- a/arch/arm/boot/dts/broadcom/bcm947189acdbmr.dts
 +++ b/arch/arm/boot/dts/broadcom/bcm947189acdbmr.dts
-@@ -69,6 +69,16 @@
+@@ -69,6 +69,15 @@
  
  		/* External BCM6802 MoCA chip is connected */
  	};
@@ -767,14 +741,13 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
 +		regulator-name = "usb-vcc";
 +		regulator-min-microvolt = <5000000>;
 +		regulator-max-microvolt = <5000000>;
-+		regulator-boot-on;
 +		gpios = <&chipcommon 8 GPIO_ACTIVE_HIGH>;
 +		enable-active-high;
 +	};
  };
  
  &pcie0 {
-@@ -92,5 +102,5 @@
+@@ -92,5 +101,5 @@
  };
  
  &usb2 {

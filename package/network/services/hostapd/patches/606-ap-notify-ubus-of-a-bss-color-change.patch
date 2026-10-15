@@ -1,0 +1,67 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 3 Oct 2026 22:00:00 +0200
+Subject: [PATCH] AP: notify ubus of a BSS Color change
+
+A ubus subscriber that reports the BSS Color of a radio and the colours
+of the OBSSs around it needs to know when either changes. The kernel
+announces a colour change that the driver starts, aborts or completes,
+but hostapd takes the new colour, or leaves BSS Color disabled, only
+when it handles that event, and some changes have no event at all:
+- with no free colour left, the collision timeout disables BSS Color
+  and picks a new colour itself;
+- a collision timeout whose colour change the driver does not start
+  leaves BSS Color disabled;
+- the OBSS colours of the radio change.
+
+Send the bss-color-change ubus notification:
+- in the no free colour branch of the collision timeout;
+- after the colour change loop of the collision timeout, in every case,
+  whether the driver started the change or not;
+- at the end of hostapd_event_color_change(), after hostapd took the
+  new colour at a completion, or left BSS Color disabled at an abort;
+- when the aged set of OBSS colours of the radio changes, as a colour
+  is added or leaves it, and not at each repeated collision event.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/drv_callbacks.c
++++ b/src/ap/drv_callbacks.c
+@@ -2561,6 +2561,7 @@ static void hostapd_event_color_change(s
+ 	}
+ 
+ 	hostapd_bss_colors_in_use_update(hapd->iface);
++	hostapd_ubus_notify_bss_color(hapd);
+ }
+ #endif  /* CONFIG_IEEE80211AX */
+ 
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -5441,6 +5441,7 @@ void hostapd_switch_color_timeout_handle
+ 		hapd->iface->conf->he_op.he_bss_color = os_random() % 63 + 1;
+ 		for (b = 0; b < hapd->iface->num_bss; b++)
+ 			ieee802_11_set_beacon(hapd->iface->bss[b]);
++		hostapd_ubus_notify_bss_color(hapd);
+ 		return;
+ 	}
+ 
+@@ -5467,6 +5468,8 @@ void hostapd_switch_color_timeout_handle
+ 		free_beacon_data(&settings.beacon_after);
+ 		os_free(settings.ubpr.unsol_bcast_probe_resp_tmpl);
+ 	}
++
++	hostapd_ubus_notify_bss_color(hapd);
+ }
+ 
+ 
+@@ -5527,7 +5530,11 @@ static void hostapd_bss_colors_in_use_ag
+ 				       hostapd_bss_colors_in_use_timeout,
+ 				       iface, NULL);
+ 
++	if (in_use == iface->bss_colors_in_use)
++		return;
++
+ 	iface->bss_colors_in_use = in_use;
++	hostapd_ubus_notify_bss_color(iface->bss[0]);
+ }
+ 
+ 

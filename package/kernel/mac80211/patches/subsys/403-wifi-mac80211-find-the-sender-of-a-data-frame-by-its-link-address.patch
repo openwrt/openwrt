@@ -1,0 +1,81 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Thu, 8 Oct 2026 12:00:00 +0200
+Subject: [PATCH] wifi: mac80211: find the sender of a data frame by its link
+ address
+
+__ieee80211_rx_handle_packet() looks up the sender of a data frame by
+addr2 in the station hash, which holds the MLD address of an MLO
+station. When a driver neither passes the station nor translates the
+addresses, a data frame of an MLO station carries a link address in
+addr2 and the lookup fails. The frame then goes through the
+per-interface loop, which skips AP_VLAN interfaces. For an MLO station
+that hostapd moved to an AP_VLAN, ieee80211_rx_h_data() thus drops
+every 4-address data frame on the AP interface as unexpected.
+
+If the station hash has no match, look up the sender in the link
+station hash and hand the frame to the interface of that station, as
+the station hash path does. Data frames of an MLO station then no
+longer go through the per-interface loop.
+
+Upstream fixed this as part of commit 6d531b9af16e ("wifi: mac80211:
+rework RX packet handling"), which depends on a change of the driver RX
+API.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/net/mac80211/rx.c
++++ b/net/mac80211/rx.c
+@@ -5362,6 +5362,17 @@ static bool ieee80211_rx_for_interface(s
+ 	return ieee80211_prepare_and_rx_handle(rx, skb, consume);
+ }
+ 
++static bool ieee80211_rx_for_link_sta(struct ieee80211_rx_data *rx,
++				      struct link_sta_info *link_sta,
++				      struct sk_buff *skb, bool consume)
++{
++	rx->sdata = link_sta->sta->sdata;
++	if (!ieee80211_rx_data_set_sta(rx, link_sta->sta, link_sta->link_id))
++		return false;
++
++	return ieee80211_prepare_and_rx_handle(rx, skb, consume);
++}
++
+ /*
+  * This is the actual Rx frames handler. as it belongs to Rx path it must
+  * be called with rcu_read_lock protection.
+@@ -5427,6 +5438,7 @@ static void __ieee80211_rx_handle_packet
+ 		ieee80211_scan_rx(local, skb);
+ 
+ 	if (ieee80211_is_data(fc)) {
++		struct link_sta_info *link_sta, *prev_link_sta;
+ 		struct sta_info *sta, *prev_sta;
+ 		int link_id = -1;
+ 
+@@ -5512,6 +5524,27 @@ static void __ieee80211_rx_handle_packet
+ 				return;
+ 			goto out;
+ 		}
++
++		prev_link_sta = NULL;
++
++		for_each_link_sta_info(local, hdr->addr2, link_sta, tmp) {
++			if (!prev_link_sta) {
++				prev_link_sta = link_sta;
++				continue;
++			}
++
++			ieee80211_rx_for_link_sta(&rx, prev_link_sta, skb,
++						  false);
++
++			prev_link_sta = link_sta;
++		}
++
++		if (prev_link_sta) {
++			if (ieee80211_rx_for_link_sta(&rx, prev_link_sta, skb,
++						      true))
++				return;
++			goto out;
++		}
+ 	}
+ 
+ 	prev = NULL;

@@ -1,0 +1,487 @@
+From a18addfc7f1855a5798b9a438ee94efd85947e0c Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 29 Sep 2026 09:48:03 +0200
+Subject: [PATCH] AP MLD: remove an affiliated AP at the expiry of its timer
+
+Depends on 186-ap-mld-announce-the-removal-of-an-affiliated-ap.patch,
+which counts the AP Removal Timer and left the BSS running at 0.
+
+The BSS kept beaconing until the caller reconfigured the AP MLD, 1.64 s
+after the count reached 0 on MT7996 and 1.0 s on mac80211_hwsim.
+
+hostapd sees no TBTT of the link: nl80211 reports neither a Beacon
+transmission nor the TSF of an AP, and mt7996 gives the TSF of an
+interface's default link only, through debugfs. The count now runs from
+t1, the return of the first Beacon update with the count N, which is
+the closest sign of the driver taking it. The first Beacon with N goes
+out at a TBTT a in (t1, t1 + BI]; the update at t1 + k * BI comes
+before the TBTT a + k * BI and gives that Beacon N - k. The expiry runs
+at t1 + N * BI, after the Beacon with the count 1 and before a + N * BI,
+the TBTT the count names. So no Beacon carries the reserved value 0 of
+the AP Removal Timer, and no Beacon of the link goes out at or after
+that TBTT. At the expiry, in this order:
+
+- keep any Beacon update from rewriting the removed link;
+- rewrite the Beacons of the other links, starting on a link that runs
+  no channel or color switch, so that they drop the Reconfiguration
+  element and the removed link's entry in the Reduced Neighbor Report
+  before the wait below, and carry no count past the TBTT it names;
+- free the link stations of the non-AP MLDs that keep another link
+  (REMOVE_LINK_STA), so that the link STOP_AP flushes only the stations
+  the link alone holds;
+- send each station associated over the link a Disassociation where it
+  is not an MLD, and a Deauthentication where it is: hostapd cannot
+  move an association to another link, so it associates again. The
+  Deauthentication goes out on a partner link, with the MLD address and
+  that link's ID;
+- wait for the TX status of these frames, for at most a quarter of a
+  beacon interval, as the link STOP_AP drops the frames the driver still
+  holds (mt7996 has no flush of a station's queues);
+- stop the Beacon on that link (link STOP_AP);
+- take the BSS out of the AP MLD, and rewrite the Beacons of the other
+  links again, as the maximum number of simultaneous links in their
+  Basic Multi-Link element counts each started link of the AP MLD
+  (hostapd_get_active_links()), the removed link included until now.
+
+Then call the ucode bss_link_removed hook, which removes the BSS the way
+a configuration without it does. No group addressed Deauthentication
+goes out on the removed link, as a non-AP MLD that still holds it would
+end its whole association. The BSS delete reaches
+hostapd_bss_link_deinit() a second time, which the guard of patch 182
+makes a no-op for a BSS that already left the AP MLD.
+
+For the ucode link_remove method, hostapd_link_remove_expiry_ms() gives
+the time until the expiry, rounded down, and hostapd_link_remove_ms()
+the time until the link stops at the latest, with the wait, rounded up.
+Both count from the time the next count is due, so a repeated request
+gets the time that is left. hostapd_mld_beacons_update() is exported
+for a BSS that leaves the AP MLD another way.
+
+A request for a link in a channel or color switch is refused: such a
+link refuses a new Beacon, and the count would run without the
+announcement. A request for a BSS in an MBSSID set with other BSSes is
+refused as well: mac80211 stops the whole set when one of its links
+stops.
+
+IEEE 802.11be-2024 35.3.6.3 removes an affiliated AP from an AP MLD
+that goes on. A request for a link is therefore refused where no other
+link of the AP MLD beacons without a removal of its own. The expiry
+checks again, as the other links can stop during the countdown. Such a
+link then keeps running with its Beacon rewritten without the
+Reconfiguration element, and the caller's configuration decides whether
+it goes.
+
+The limits of this timing:
+
+- IEEE 802.11be-2024 35.3.6.3 has the BSS end at or after the TBTT the
+  count names, and a Disassociation go out after that TBTT. Here both
+  come up to one beacon interval before it, as hostapd cannot see the
+  TBTT.
+- The wait runs only where a station is associated over the link. Where
+  it does, and the first TBTT came less than the wait after t1
+  (a - t1 < BI / 4), the wait can span the TBTT the count names. The
+  link then sends one more Beacon, the one with the count 1 again, while
+  the other links already carry no Reconfiguration element. Without such
+  a station, the link stops at the expiry, before that TBTT.
+- Where the driver takes the first update only after a (a - t1 shorter
+  than its update latency), every count lands one TBTT late, the named
+  TBTT becomes a + (N + 1) * BI, and the link stops up to two beacon
+  intervals before it. Counting from the return of the update keeps
+  this to the latency of the driver behind that return.
+- A frame to a station in power save stays buffered until the station
+  wakes, and the station gets it only where it wakes within the wait.
+- A channel or color switch that starts on a link during the countdown
+  refuses that link's Beacon updates, and its Beacons keep the count
+  they had until the switch ends.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ src/ap/beacon.c     |    9 ++
+ src/ap/hostapd.c    |  267 ++++++++++++++++++++++++++++++++++++++++++++++++++-
+ src/ap/hostapd.h    |    6 +
+ src/ap/ieee802_11.c |    6 +
+ src/ap/sta_info.h   |    1 
+ 5 files changed, 283 insertions(+), 6 deletions(-)
+
+--- a/src/ap/beacon.c
++++ b/src/ap/beacon.c
+@@ -2779,6 +2779,15 @@ static int __ieee802_11_set_beacon(struc
+ 		return -1;
+ 	}
+ 
++#ifdef CONFIG_IEEE80211BE
++	if (hapd->eht_mld_link_removal_expired) {
++		wpa_printf(MSG_DEBUG,
++			   "MLD: No Beacon for link_id=%u, it is being removed",
++			   hapd->mld_link_id);
++		return 0;
++	}
++#endif /* CONFIG_IEEE80211BE */
++
+ 	if (hapd->csa_in_progress) {
+ 		wpa_printf(MSG_ERROR, "Cannot set beacons during CSA period");
+ 		return -1;
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -492,6 +492,240 @@ static void hostapd_link_remove_timeout_
+ }
+ 
+ 
++static unsigned int hostapd_link_remove_tx_wait_us(struct hostapd_data *hapd)
++{
++	return TU_TO_USEC(hapd->iconf->beacon_int) / 4;
++}
++
++
++static u64 hostapd_link_remove_expiry_us(struct hostapd_data *hapd)
++{
++	struct os_reltime now, left;
++	u64 us;
++
++	if (!hapd->eht_mld_link_removal_count)
++		return 0;
++
++	us = (u64) (hapd->eht_mld_link_removal_count - 1) *
++		TU_TO_USEC(hapd->iconf->beacon_int);
++
++	os_get_reltime(&now);
++	if (os_reltime_before(&now, &hapd->eht_mld_link_removal_due)) {
++		os_reltime_sub(&hapd->eht_mld_link_removal_due, &now, &left);
++		us += (u64) left.sec * 1000000 + left.usec;
++	}
++
++	return us;
++}
++
++
++/* Rounded down: the caller stops rendering the link no later than the
++ * expiry. */
++u64 hostapd_link_remove_expiry_ms(struct hostapd_data *hapd)
++{
++	return hostapd_link_remove_expiry_us(hapd) / 1000;
++}
++
++
++/* Rounded up, with the wait for the TX status of the frames at the expiry: the
++ * caller commits no earlier than the link stops. */
++u64 hostapd_link_remove_ms(struct hostapd_data *hapd)
++{
++	if (!hapd->eht_mld_link_removal_count)
++		return 0;
++
++	return (hostapd_link_remove_expiry_us(hapd) +
++		hostapd_link_remove_tx_wait_us(hapd) + 999) / 1000;
++}
++
++
++static bool hostapd_link_remove_pending(struct hostapd_data *hapd)
++{
++	return hapd->eht_mld_link_removal_count ||
++		hapd->eht_mld_link_removal_expired;
++}
++
++
++static struct hostapd_data *
++hostapd_link_remove_partner(struct hostapd_data *hapd, struct sta_info *sta)
++{
++	struct hostapd_data *link_bss;
++
++	for_each_mld_link(link_bss, hapd) {
++		if (link_bss == hapd || !link_bss->started ||
++		    !link_bss->beacon_set_done ||
++		    hostapd_link_remove_pending(link_bss))
++			continue;
++
++		if (sta && !sta->mld_info.links[link_bss->mld_link_id].valid)
++			continue;
++
++		return link_bss;
++	}
++
++	return NULL;
++}
++
++
++/* Start on a link without a channel or color switch, which refuses a new
++ * Beacon and would stop the rest. */
++void hostapd_mld_beacons_update(struct hostapd_data *hapd)
++{
++	struct hostapd_data *link_bss;
++
++	for_each_mld_link(link_bss, hapd) {
++		if (!link_bss->started || !link_bss->beacon_set_done ||
++		    link_bss->csa_in_progress)
++			continue;
++
++#ifdef CONFIG_IEEE80211AX
++		if (link_bss->cca_in_progress)
++			continue;
++#endif /* CONFIG_IEEE80211AX */
++
++		ieee802_11_set_beacon(link_bss);
++		return;
++	}
++}
++
++
++static void hostapd_link_remove_finish(void *eloop_data, void *user_ctx)
++{
++	struct hostapd_data *hapd = eloop_data;
++
++	eloop_cancel_timeout(hostapd_link_remove_finish, hapd, NULL);
++
++	hostapd_drv_stop_ap(hapd);
++
++	/* A group addressed Deauthentication would end the association of each
++	 * non-AP MLD (IEEE Std 802.11be-2024, 11.3.4.5) */
++	hapd->conf->broadcast_deauth = 0;
++
++	wpa_printf(MSG_DEBUG, "MLD: Removal timer expired, link_id=%u stopped",
++		   hapd->mld_link_id);
++
++	hostapd_bss_link_deinit(hapd);
++	hostapd_mld_beacons_update(hapd);
++
++	hostapd_ucode_bss_cb(hapd, "bss_link_removed");
++}
++
++
++static bool hostapd_link_remove_sta_addr(struct sta_info *sta, const u8 *addr)
++{
++	unsigned int i;
++
++	if (ether_addr_equal(sta->addr, addr))
++		return true;
++
++	for (i = 0; i < MAX_NUM_MLD_LINKS; i++)
++		if (sta->mld_info.links[i].valid &&
++		    ether_addr_equal(sta->mld_info.links[i].peer_addr, addr))
++			return true;
++
++	return false;
++}
++
++
++/* The status can arrive on any link of the AP MLD */
++void hostapd_link_remove_tx_status(struct hostapd_data *hapd, const u8 *addr)
++{
++	struct hostapd_data *link_bss;
++	struct sta_info *sta;
++
++	if (!hapd->conf->mld_ap || !hapd->mld)
++		return;
++
++	for_each_mld_link(link_bss, hapd) {
++		if (!link_bss->eht_mld_link_removal_tx)
++			continue;
++
++		for (sta = link_bss->sta_list; sta; sta = sta->next) {
++			if (!sta->link_removal_tx ||
++			    !hostapd_link_remove_sta_addr(sta, addr))
++				continue;
++
++			sta->link_removal_tx = false;
++			if (--link_bss->eht_mld_link_removal_tx)
++				break;
++
++			eloop_cancel_timeout(hostapd_link_remove_finish,
++					     link_bss, NULL);
++			eloop_register_timeout(0, 0, hostapd_link_remove_finish,
++					       link_bss, NULL);
++			break;
++		}
++	}
++}
++
++
++/* A non-AP MLD gets a Deauthentication on a partner link, as hostapd
++ * cannot move an association to another link. */
++static void hostapd_link_remove_notify_stas(struct hostapd_data *hapd)
++{
++	struct hostapd_data *tx_hapd;
++	struct sta_info *sta;
++	int res;
++
++	for (sta = hapd->sta_list; sta; sta = sta->next) {
++		if (!(sta->flags & WLAN_STA_ASSOC))
++			continue;
++
++		if (ap_sta_is_mld(hapd, sta)) {
++			tx_hapd = hostapd_link_remove_partner(hapd, sta);
++			if (!tx_hapd)
++				tx_hapd = hapd;
++			res = hostapd_drv_sta_deauth(tx_hapd, sta->addr,
++						     WLAN_REASON_DEAUTH_LEAVING);
++		} else {
++			res = hostapd_drv_sta_disassoc(
++				hapd, sta->addr,
++				WLAN_REASON_DISASSOC_STA_HAS_LEFT);
++		}
++
++		if (res)
++			continue;
++
++		sta->link_removal_tx = true;
++		hapd->eht_mld_link_removal_tx++;
++	}
++}
++
++
++static void hostapd_link_remove_expire(struct hostapd_data *hapd)
++{
++	unsigned int wait_us;
++
++	if (!hostapd_link_remove_partner(hapd, NULL)) {
++		wpa_printf(MSG_INFO,
++			   "MLD: Keep link_id=%u, no other link beacons",
++			   hapd->mld_link_id);
++		ieee802_11_set_beacon(hapd);
++		return;
++	}
++
++	hapd->eht_mld_link_removal_expired = true;
++	hapd->beacon_set_done = 0;
++	hostapd_mld_beacons_update(hapd);
++	hostapd_free_link_stas(hapd);
++	hostapd_link_remove_notify_stas(hapd);
++
++	if (!hapd->eht_mld_link_removal_tx) {
++		hostapd_link_remove_finish(hapd, NULL);
++		return;
++	}
++
++	wait_us = hostapd_link_remove_tx_wait_us(hapd);
++	wpa_printf(MSG_DEBUG,
++		   "MLD: Removal timer expired, link_id=%u waits up to %u us for %u frames",
++		   hapd->mld_link_id, wait_us, hapd->eht_mld_link_removal_tx);
++	eloop_register_timeout(0, wait_us, hostapd_link_remove_finish, hapd,
++			       NULL);
++}
++
++
++/* hostapd sees no TBTT: the countdown runs from the return of the first
++ * Beacon update and expires before the TBTT that the count names. */
+ static void hostapd_link_remove_timeout_handler(void *eloop_data,
+ 						void *user_ctx)
+ {
+@@ -505,13 +739,12 @@ static void hostapd_link_remove_timeout_
+ 		   hapd->mld_link_id,
+ 		   hapd->eht_mld_link_removal_count);
+ 
+-	ieee802_11_set_beacon(hapd);
+-
+ 	if (!hapd->eht_mld_link_removal_count) {
+-		hostapd_free_link_stas(hapd);
++		hostapd_link_remove_expire(hapd);
+ 		return;
+ 	}
+ 
++	ieee802_11_set_beacon(hapd);
+ 	hostapd_link_remove_timeout_register(hapd);
+ }
+ 
+@@ -524,9 +757,29 @@ int hostapd_link_remove(struct hostapd_d
+ 	    count > 0xffff)
+ 		return -1;
+ 
+-	if (hapd->eht_mld_link_removal_count)
++	if (hostapd_link_remove_pending(hapd))
+ 		return 0;
+ 
++	if (hapd->csa_in_progress)
++		return -1;
++
++#ifdef CONFIG_IEEE80211AX
++	if (hapd->cca_in_progress)
++		return -1;
++#endif /* CONFIG_IEEE80211AX */
++
++	/* mac80211 stops each BSS of an MBSSID set together with the one
++	 * whose link stops at the expiry. */
++	if (hapd->iconf->mbssid && hapd->iface->num_bss > 1)
++		return -1;
++
++	if (!hostapd_link_remove_partner(hapd, NULL)) {
++		wpa_printf(MSG_DEBUG,
++			   "MLD: Do not remove link_id=%u, the last link",
++			   hapd->mld_link_id);
++		return -1;
++	}
++
+ 	wpa_printf(MSG_DEBUG,
+ 		   "MLD: Remove link_id=%u in %u beacons",
+ 		   hapd->mld_link_id, count);
+@@ -537,10 +790,9 @@ int hostapd_link_remove(struct hostapd_d
+ 	if (hapd->eht_mld_bss_param_change == 255)
+ 		hapd->eht_mld_bss_param_change = 0;
+ 
++	ieee802_11_set_beacon(hapd);
+ 	os_get_reltime(&hapd->eht_mld_link_removal_due);
+ 	hostapd_link_remove_timeout_register(hapd);
+-
+-	ieee802_11_set_beacon(hapd);
+ 	return 0;
+ }
+ 
+@@ -551,7 +803,10 @@ void hostapd_free_hapd_data(struct hosta
+ {
+ #ifdef CONFIG_IEEE80211BE
+ 	eloop_cancel_timeout(hostapd_link_remove_timeout_handler, hapd, NULL);
++	eloop_cancel_timeout(hostapd_link_remove_finish, hapd, NULL);
+ 	hapd->eht_mld_link_removal_count = 0;
++	hapd->eht_mld_link_removal_expired = false;
++	hapd->eht_mld_link_removal_tx = 0;
+ #endif /* CONFIG_IEEE80211BE */
+ 
+ 	os_free(hapd->probereq_cb);
+--- a/src/ap/hostapd.h
++++ b/src/ap/hostapd.h
+@@ -546,6 +546,8 @@ struct hostapd_data {
+ 	u16 eht_mld_link_removal_start;
+ 	u16 eht_mld_link_removal_count;
+ 	struct os_reltime eht_mld_link_removal_due;
++	bool eht_mld_link_removal_expired;
++	unsigned int eht_mld_link_removal_tx;
+ #endif /* CONFIG_IEEE80211BE */
+ 
+ #ifdef CONFIG_NAN_USD
+@@ -987,6 +989,10 @@ struct hostapd_data * hostapd_mld_get_li
+ 					       u8 link_id);
+ int hostapd_link_remove(struct hostapd_data *hapd, u32 count);
+ bool hostapd_link_remove_critical_update(struct hostapd_data *hapd);
++u64 hostapd_link_remove_expiry_ms(struct hostapd_data *hapd);
++u64 hostapd_link_remove_ms(struct hostapd_data *hapd);
++void hostapd_mld_beacons_update(struct hostapd_data *hapd);
++void hostapd_link_remove_tx_status(struct hostapd_data *hapd, const u8 *addr);
+ bool hostapd_is_ml_partner(struct hostapd_data *hapd1,
+ 			   struct hostapd_data *hapd2);
+ u8 hostapd_get_mld_id(struct hostapd_data *hapd);
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -9122,10 +9122,16 @@ void ieee802_11_mgmt_cb(struct hostapd_d
+ 	case WLAN_FC_STYPE_DEAUTH:
+ 		wpa_printf(MSG_DEBUG, "mgmt::deauth cb");
+ 		handle_deauth_cb(hapd, mgmt, len, ok);
++#ifdef CONFIG_IEEE80211BE
++		hostapd_link_remove_tx_status(hapd, mgmt->da);
++#endif /* CONFIG_IEEE80211BE */
+ 		break;
+ 	case WLAN_FC_STYPE_DISASSOC:
+ 		wpa_printf(MSG_DEBUG, "mgmt::disassoc cb");
+ 		handle_disassoc_cb(hapd, mgmt, len, ok);
++#ifdef CONFIG_IEEE80211BE
++		hostapd_link_remove_tx_status(hapd, mgmt->da);
++#endif /* CONFIG_IEEE80211BE */
+ 		break;
+ 	case WLAN_FC_STYPE_ACTION:
+ 		wpa_printf(MSG_DEBUG, "mgmt::action cb ok=%d", ok);
+--- a/src/ap/sta_info.h
++++ b/src/ap/sta_info.h
+@@ -352,6 +352,7 @@ struct sta_info {
+ 	 * transaction 1 is the only peer link address available for the reply.
+ 	 */
+ 	u8 auth_link_addr[ETH_ALEN];
++	bool link_removal_tx;
+ #endif /* CONFIG_IEEE80211BE */
+ 
+ 	u16 max_idle_period; /* if nonzero, the granted BSS max idle period in

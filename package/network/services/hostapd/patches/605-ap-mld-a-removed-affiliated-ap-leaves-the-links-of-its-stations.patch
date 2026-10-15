@@ -1,0 +1,49 @@
+From 0a96501417e991ee1567f75e6ff6846ffc5518fa Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@nbd.name>
+Date: Thu, 1 Oct 2026 09:02:45 +0200
+Subject: [PATCH] AP MLD: a removed affiliated AP leaves the links of its
+ stations
+
+hostapd_free_link_stas() frees the link stations of an affiliated AP
+that leaves the AP MLD: at the expiry of its removal (603), and from
+the OpenWrt ucode.c before the link stops. The non-AP MLDs stay
+associated over their other links (188), but their other stations kept
+the removed link as valid, the authenticator kept it for the group
+keys, and nothing told a ubus subscriber: get_clients and the next
+sta-authorized named a link that is gone.
+
+Free each link station through ap_free_link_sta() and send
+sta-links-changed for the station of the association link.
+
+This depends on 604 (hostapd_ubus_notify_sta_links()) and on 197
+(ap_free_link_sta()); the three land together.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ src/ap/sta_info.c | 10 +++++++---
+ 1 file changed, 7 insertions(+), 3 deletions(-)
+
+--- a/src/ap/sta_info.c
++++ b/src/ap/sta_info.c
+@@ -631,7 +631,8 @@ void ap_free_link_sta(struct hostapd_dat
+ 
+ void hostapd_free_link_stas(struct hostapd_data *hapd)
+ {
+-	struct sta_info *sta, *prev;
++	struct hostapd_data *assoc_hapd;
++	struct sta_info *sta, *prev, *assoc_sta;
+ 
+ 	sta = hapd->sta_list;
+ 	while (sta) {
+@@ -644,7 +645,10 @@ void hostapd_free_link_stas(struct hosta
+ 		wpa_printf(MSG_DEBUG, "Removing link station from MLD " MACSTR,
+ 			   MAC2STR(prev->addr));
+ 		ap_sta_set_authorized_flag(hapd, prev, 0);
+-		ap_free_sta(hapd, prev);
++		assoc_sta = hostapd_ml_get_assoc_sta(hapd, prev, &assoc_hapd);
++		ap_free_link_sta(hapd, prev);
++		if (assoc_sta && assoc_sta != prev)
++			hostapd_ubus_notify_sta_links(assoc_hapd, assoc_sta);
+ 	}
+ }
+ #endif /* CONFIG_IEEE80211BE */

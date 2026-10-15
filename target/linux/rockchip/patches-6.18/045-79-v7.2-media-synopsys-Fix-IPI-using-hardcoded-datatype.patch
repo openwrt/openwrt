@@ -1,0 +1,62 @@
+From 8ba166ff7c921da610376156d7c0a5fc985fa983 Mon Sep 17 00:00:00 2001
+From: Guoniu Zhou <guoniu.zhou@oss.nxp.com>
+Date: Tue, 19 May 2026 10:07:38 +0800
+Subject: [PATCH] media: synopsys: Fix IPI using hardcoded datatype
+
+The imx93_csi2rx_dphy_ipi_enable() function configures the IPI datatype
+using csi2->formats->csi_dt, which is initialized during probe but never
+updated in set_fmt(). This causes the IPI to always use the probe-time
+default datatype, ignoring the actual media bus format negotiated at
+runtime. When userspace requests a different format, the IPI hardware is
+configured with the wrong datatype, resulting in incorrect image output.
+
+Fix by updating csi2->formats in the set_fmt callback to reflect the
+currently negotiated format, ensuring the IPI configuration matches the
+runtime datatype.
+
+Fixes: ec40b431f0ab ("media: synopsys: csi2rx: add i.MX93 support")
+Reviewed-by: Frank Li <Frank.Li@nxp.com>
+Signed-off-by: Guoniu Zhou <guoniu.zhou@oss.nxp.com>
+Signed-off-by: Sakari Ailus <sakari.ailus@linux.intel.com>
+---
+ drivers/media/platform/synopsys/dw-mipi-csi2rx.c | 15 +++++++++++++--
+ 1 file changed, 13 insertions(+), 2 deletions(-)
+
+--- a/drivers/media/platform/synopsys/dw-mipi-csi2rx.c
++++ b/drivers/media/platform/synopsys/dw-mipi-csi2rx.c
+@@ -311,7 +311,7 @@ dw_mipi_csi2rx_find_format(struct dw_mip
+ 	WARN_ON(csi2->formats_num == 0);
+ 
+ 	for (unsigned int i = 0; i < csi2->formats_num; i++) {
+-		const struct dw_mipi_csi2rx_format *format = &csi2->formats[i];
++		const struct dw_mipi_csi2rx_format *format = &formats[i];
+ 
+ 		if (format->code == mbus_code)
+ 			return format;
+@@ -433,7 +433,7 @@ dw_mipi_csi2rx_enum_mbus_code(struct v4l
+ 		if (code->index >= csi2->formats_num)
+ 			return -EINVAL;
+ 
+-		code->code = csi2->formats[code->index].code;
++		code->code = formats[code->index].code;
+ 		return 0;
+ 	default:
+ 		return -EINVAL;
+@@ -470,6 +470,17 @@ static int dw_mipi_csi2rx_set_fmt(struct
+ 
+ 	*src = *sink;
+ 
++	/* Store the CSIS format descriptor for active formats. */
++	if (format->which == V4L2_SUBDEV_FORMAT_ACTIVE) {
++		csi2->formats = fmt ? :
++			dw_mipi_csi2rx_find_format(csi2, default_format.code);
++
++		if (!csi2->formats) {
++			dev_err(csi2->dev, "Failed to find valid format\n");
++			return -EINVAL;
++		}
++	}
++
+ 	return 0;
+ }
+ 

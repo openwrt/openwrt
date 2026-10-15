@@ -23,8 +23,15 @@ realtek_setup_interfaces()
 	local board="$1"
 	local lan_list="$2"
 
-	ucidef_set_bridge_device switch
-	ucidef_set_interface_lan "$lan_list"
+	case $board in
+	bt-pon,bt-g711ax)
+		# No DSA switch driver yet.
+		ucidef_set_interface_lan "eth0"
+		;;
+	*)
+		ucidef_set_bridge_device switch
+		ucidef_set_interface_lan "$lan_list"
+	esac
 }
 
 realtek_setup_macs_lan()

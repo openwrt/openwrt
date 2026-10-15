@@ -1,0 +1,50 @@
+From fdbf763b921e2b184daf341612154453d5bf8bb7 Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@nbd.name>
+Date: Thu, 1 Oct 2026 08:59:58 +0200
+Subject: [PATCH] AP MLD: notify ubus when a link reconfiguration changes a
+ station's links
+
+A Link Reconfiguration adds or removes affiliated links of an associated
+non-AP MLD without a new association, so no sta-authorized names the
+new set, and a ubus subscriber that reports the links of a client MLD
+keeps the old ones.
+
+The change takes effect at the TX status of the Link Reconfiguration
+Response: an added link is undone there where the response was not
+acknowledged, and a removed link is freed there. Once the response is
+acknowledged and it accepted a link, send sta-links-changed for the
+association link's station, which holds the links after a removal moved
+the association link. The event carries the same station fields as
+sta-authorized: ap_mld_address, assoc_link_id and links.
+
+This depends on 197-ap-mld-drop-a-link-that-goes-from-the-station-links:
+without it, an added link that was undone stays valid on the station,
+and the next sta-links-changed names it. The two land together.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ src/ap/ieee802_11_eht.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- a/src/ap/ieee802_11_eht.c
++++ b/src/ap/ieee802_11_eht.c
+@@ -1663,9 +1663,6 @@ void hostapd_link_reconf_resp_tx_status(
+ 		goto exit;
+ 	}
+ 
+-	if (dl_list_empty(&req_list->del_req))
+-		goto exit;
+-
+ 	dl_list_for_each(info, &req_list->del_req, struct link_reconf_req_info,
+ 			 list) {
+ 		if (info->status != WLAN_STATUS_SUCCESS)
+@@ -1751,6 +1748,9 @@ void hostapd_link_reconf_resp_tx_status(
+ 		ap_free_link_sta(lhapd, lsta);
+ 	}
+ 
++	if (req_list->links_add_ok || req_list->links_del_ok)
++		hostapd_ubus_notify_sta_links(assoc_hapd, assoc_sta);
++
+ exit:
+ 	ml_deinit_link_reconf_req(&req_list);
+ 	if (assoc_sta && assoc_sta->reconf_req)

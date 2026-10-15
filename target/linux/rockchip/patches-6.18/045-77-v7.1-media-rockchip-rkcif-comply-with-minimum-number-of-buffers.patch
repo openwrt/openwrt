@@ -1,0 +1,92 @@
+From 48c8292d4445088d8b3c9d639c7982744a94d819 Mon Sep 17 00:00:00 2001
+From: Michael Riesch <michael.riesch@collabora.com>
+Date: Fri, 20 Feb 2026 09:15:08 +0100
+Subject: [PATCH] media: rockchip: rkcif: comply with minimum number of buffers
+ requirement
+
+Each stream requires CIF_REQ_BUFS_MIN=1 buffers to enable streaming.
+However, it failed with only one buffer provided.
+
+Comply with the minimum number of buffers requirement and accept
+exactly one buffer.
+
+Fixes: 501802e2ad51 ("media: rockchip: rkcif: add abstraction for dma blocks")
+Cc: stable@kernel.org
+Tested-by: Paul Elder <paul.elder@ideasonboard.com>
+Tested-by: Chen-Yu Tsai <wens@kernel.org>
+Signed-off-by: Michael Riesch <michael.riesch@collabora.com>
+Reviewed-by: Isaac Scott <isaac.scott@ideasonboard.com>
+Reviewed-by: Paul Elder <paul.elder@ideasonboard.com>
+Signed-off-by: Sakari Ailus <sakari.ailus@linux.intel.com>
+Signed-off-by: Mauro Carvalho Chehab <mchehab+huawei@kernel.org>
+---
+ .../platform/rockchip/rkcif/rkcif-stream.c    | 44 +++++++++----------
+ 1 file changed, 22 insertions(+), 22 deletions(-)
+
+--- a/drivers/media/platform/rockchip/rkcif/rkcif-stream.c
++++ b/drivers/media/platform/rockchip/rkcif/rkcif-stream.c
+@@ -106,42 +106,42 @@ static int rkcif_stream_init_buffers(str
+ {
+ 	struct v4l2_pix_format_mplane *pix = &stream->pix;
+ 
+-	stream->buffers[0] = rkcif_stream_pop_buffer(stream);
+-	if (!stream->buffers[0])
+-		goto err_buff_0;
+-
+-	stream->buffers[1] = rkcif_stream_pop_buffer(stream);
+-	if (!stream->buffers[1])
+-		goto err_buff_1;
+-
+-	if (stream->queue_buffer) {
+-		stream->queue_buffer(stream, 0);
+-		stream->queue_buffer(stream, 1);
+-	}
+-
+ 	stream->dummy.size = pix->num_planes * pix->plane_fmt[0].sizeimage;
+ 	stream->dummy.vaddr =
+ 		dma_alloc_attrs(stream->rkcif->dev, stream->dummy.size,
+ 				&stream->dummy.buffer.buff_addr[0], GFP_KERNEL,
+ 				DMA_ATTR_NO_KERNEL_MAPPING);
+ 	if (!stream->dummy.vaddr)
+-		goto err_dummy;
++		return -ENOMEM;
+ 
+ 	for (unsigned int i = 1; i < pix->num_planes; i++)
+ 		stream->dummy.buffer.buff_addr[i] =
+ 			stream->dummy.buffer.buff_addr[i - 1] +
+ 			pix->plane_fmt[i - 1].bytesperline * pix->height;
+ 
++	stream->buffers[0] = rkcif_stream_pop_buffer(stream);
++	if (!stream->buffers[0])
++		goto err_dummy_free;
++
++	stream->buffers[1] = rkcif_stream_pop_buffer(stream);
++	if (!stream->buffers[1]) {
++		stream->buffers[1] = &stream->dummy.buffer;
++		stream->buffers[1]->is_dummy = true;
++	}
++
++	if (stream->queue_buffer) {
++		stream->queue_buffer(stream, 0);
++		stream->queue_buffer(stream, 1);
++	}
++
+ 	return 0;
+ 
+-err_dummy:
+-	rkcif_stream_return_buffer(stream->buffers[1], VB2_BUF_STATE_QUEUED);
+-	stream->buffers[1] = NULL;
+-
+-err_buff_1:
+-	rkcif_stream_return_buffer(stream->buffers[0], VB2_BUF_STATE_QUEUED);
+-	stream->buffers[0] = NULL;
+-err_buff_0:
++err_dummy_free:
++	dma_free_attrs(stream->rkcif->dev, stream->dummy.size,
++		       stream->dummy.vaddr,
++		       stream->dummy.buffer.buff_addr[0],
++		       DMA_ATTR_NO_KERNEL_MAPPING);
++	stream->dummy.vaddr = NULL;
+ 	return -EINVAL;
+ }
+ 

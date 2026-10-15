@@ -109,7 +109,7 @@ define Build/mstc-header
     printf "$(magic)"; \
     tail -c+5 $@.crclen; head -c4 $@.crclen; \
     dd if=/dev/zero bs=4 count=2; \
-    printf "$(version)" | dd bs=56 count=1 conv=sync 2>/dev/null; \
+    printf "$(version)" | dd bs=56 count=1 conv=sync iflag=fullblock 2>/dev/null; \
     dd if=/dev/zero bs=$$((0x20000 - 0x84)) count=1 conv=sync 2>/dev/null | \
       tr "\0" "\377"; \
     cat $@; \
@@ -129,9 +129,9 @@ define Build/cetron-header
 	$(eval model=$(word 2,$(1)))
 	( \
 		dd if=/dev/zero bs=856 count=1 2>/dev/null; \
-		printf "$(model)," | dd bs=128 count=1 conv=sync 2>/dev/null; \
-		md5sum $@ | cut -f1 -d" " | dd bs=32 count=1 2>/dev/null; \
-		printf "$(magic)" | dd bs=4 count=1 conv=sync 2>/dev/null; \
+		printf "$(model)," | dd bs=128 count=1 conv=sync iflag=fullblock 2>/dev/null; \
+		md5sum $@ | cut -f1 -d" " | dd bs=32 count=1 iflag=fullblock 2>/dev/null; \
+		printf "$(magic)" | dd bs=4 count=1 conv=sync iflag=fullblock 2>/dev/null; \
 		cat $@; \
 	) > $@.tmp
 	fw_crc=$$(gzip -c $@.tmp | tail -c 8 | od -An -N4 -tx4 --endian little | tr -d ' \n'); \
@@ -386,6 +386,20 @@ $(call Device/adtran_smartrg)
   DEVICE_PACKAGES += kmod-mt7996-firmware kmod-phy-aquantia kmod-sfp kmod-usb3 mt7988-wo-firmware
 endef
 TARGET_DEVICES += smartrg_sdg-8734
+
+define Device/smartrg_sdg-9000
+$(call Device/adtran_smartrg)
+  DEVICE_MODEL := SDG-9000
+  DEVICE_DTS := mt7988a-smartrg-sdg-9000
+  DEVICE_DTS_OVERLAY := mt7988a-smartrg-sdg-9000-wan-phy mt7988a-smartrg-sdg-9000-wan-sfp
+  DEVICE_DTC_FLAGS := --pad 4096
+  DEVICE_DTS_LOADADDR := 0x47f00000
+  DEVICE_PACKAGES += -wpad-basic-mbedtls kmod-backlight-pwm kmod-gpio-pca953x kmod-hwmon-pwmfan \
+		     kmod-phy-aquantia kmod-dsa-mxl862xx kmod-input-touchscreen-hynitron-cst816x \
+		     kmod-pse-si3474 kmod-sfp kmod-usb3 input-support video-support \
+		     mipi-dbi-ph240240t004-zar
+endef
+TARGET_DEVICES += smartrg_sdg-9000
 
 define Device/airpi_ap3000m
   DEVICE_VENDOR := Airpi
@@ -4056,7 +4070,7 @@ define Device/wavlink_wl-wnt100x3-ubootmod
   DEVICE_PACKAGES := kmod-usb3 kmod-mt7915e kmod-mt7981-firmware \
   	mt7981-wo-firmware kmod-hwmon-pwmfan
   ARTIFACTS := preloader.bin bl31-uboot.fip
-  ARTIFACT/preloader.bin := mt7981-bl2 spim-nand-ddr3
+  ARTIFACT/preloader.bin := mt7981-bl2 spim-nand-ddr3-1866
   ARTIFACT/bl31-uboot.fip := mt7981-bl31-uboot wavlink_wl-wnt100x3
 endef
 TARGET_DEVICES += wavlink_wl-wnt100x3-ubootmod

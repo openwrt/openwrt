@@ -1,0 +1,71 @@
+From 166ea048d9a3ae29248ed1ce0761b975bced76e0 Mon Sep 17 00:00:00 2001
+From: Detlev Casanova <detlev.casanova@collabora.com>
+Date: Thu, 2 Apr 2026 10:06:36 -0400
+Subject: [PATCH] media: rkvdec: Introduce a global bitwriter helper
+
+The use of structures with bitfields is good when the values are
+somewhat aligned.
+More mis-alignement means that compilers need to do more gymnastics
+to edit the fields values.
+
+Some cases have been reported with CLang on specific architectures
+like armhf and hexagon, where the compiler would allocate a bigger
+local stack than needed or even completely freeze during compilation.
+
+Some fixes have been provided to ease the issues, but the real fix
+here is to use a bitwriter instead of heavily unaligned bitfields.
+
+This is a preparation commit to provide a global bitwriter interface
+for the whole driver.
+
+Signed-off-by: Detlev Casanova <detlev.casanova@collabora.com>
+Reviewed-by: Nicolas Dufresne <nicolas.dufresne@collabora.com>
+Signed-off-by: Nicolas Dufresne <nicolas.dufresne@collabora.com>
+Signed-off-by: Hans Verkuil <hverkuil+cisco@kernel.org>
+---
+ .../rockchip/rkvdec/rkvdec-bitwriter.h        | 39 +++++++++++++++++++
+ 1 file changed, 39 insertions(+)
+ create mode 100644 drivers/media/platform/rockchip/rkvdec/rkvdec-bitwriter.h
+
+--- /dev/null
++++ b/drivers/media/platform/rockchip/rkvdec/rkvdec-bitwriter.h
+@@ -0,0 +1,39 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++/*
++ * Rockchip Video Decoder bit writer
++ *
++ * Copyright (C) 2026 Collabora, Ltd.
++ *	Detlev Casanova <detlev.casanova@collabora.com>
++ * Copyright (C) 2019 Collabora, Ltd.
++ *	Boris Brezillon <boris.brezillon@collabora.com>
++ */
++
++#ifndef RKVDEC_BIT_WRITER_H_
++#define RKVDEC_BIT_WRITER_H_
++
++#include <linux/types.h>
++#include <linux/bits.h>
++
++struct rkvdec_bw_field {
++	u16 offset;
++	u8 len;
++};
++
++#define BW_FIELD(_offset, _len) ((struct rkvdec_bw_field){ _offset, _len })
++
++static inline void rkvdec_set_bw_field(u32 *buf, struct rkvdec_bw_field field, u32 value)
++{
++	u8 bit = field.offset % 32;
++	u16 word = field.offset / 32;
++	u64 mask = GENMASK_ULL(bit + field.len - 1, bit);
++	u64 val = ((u64)value << bit) & mask;
++
++	buf[word] &= ~mask;
++	buf[word] |= val;
++	if (bit + field.len > 32) {
++		buf[word + 1] &= ~(mask >> 32);
++		buf[word + 1] |= val >> 32;
++	}
++}
++
++#endif /* RKVDEC_BIT_WRITER_H_ */

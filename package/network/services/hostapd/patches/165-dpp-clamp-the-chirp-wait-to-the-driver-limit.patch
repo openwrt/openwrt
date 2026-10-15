@@ -1,0 +1,44 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sun, 27 Sep 2026 19:00:00 +0200
+Subject: [PATCH] DPP: clamp the chirp wait time to the driver limit
+
+wpas_dpp_chirp_start() sends each Presence Announcement with a wait time
+of 2000 ms. cfg80211 refuses a frame whose wait exceeds the driver's
+maximum remain-on-channel duration with -EINVAL (nl80211_tx_mgmt()), so
+on a driver with a smaller maximum, such as mac80211_hwsim with 1000 ms,
+no chirp is ever transmitted and the enrollee cannot be found.
+
+Clamp the wait time to max_remain_on_chan, as the other DPP transmit
+paths in this file do.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/wpa_supplicant/dpp_supplicant.c
++++ b/wpa_supplicant/dpp_supplicant.c
+@@ -5143,6 +5143,7 @@ static void wpas_dpp_chirp_tx_status(str
+ static void wpas_dpp_chirp_start(struct wpa_supplicant *wpa_s)
+ {
+ 	struct wpabuf *msg, *announce = NULL;
++	unsigned int wait_time;
+ 	int type;
+ 
+ 	msg = wpa_s->dpp_presence_announcement;
+@@ -5166,6 +5167,9 @@ static void wpas_dpp_chirp_start(struct
+ 			return;
+ 		type = DPP_PA_RECONFIG_ANNOUNCEMENT;
+ 	}
++	wait_time = wpa_s->max_remain_on_chan;
++	if (wait_time > 2000)
++		wait_time = 2000;
+ 	wpa_printf(MSG_DEBUG, "DPP: Chirp on %d MHz", wpa_s->dpp_chirp_freq);
+ 	wpa_msg(wpa_s, MSG_INFO, DPP_EVENT_TX "dst=" MACSTR " freq=%u type=%d",
+ 		MAC2STR(broadcast), wpa_s->dpp_chirp_freq, type);
+@@ -5173,7 +5177,7 @@ static void wpas_dpp_chirp_start(struct
+ 		    wpa_s, wpa_s->dpp_chirp_freq, broadcast,
+ 		    wpa_s->own_addr, broadcast,
+ 		    wpabuf_head(msg), wpabuf_len(msg),
+-		    2000, wpas_dpp_chirp_tx_status, 0) < 0)
++		    wait_time, wpas_dpp_chirp_tx_status, 0) < 0)
+ 		wpas_dpp_chirp_tx_status(wpa_s, wpa_s->dpp_chirp_freq,
+ 					 broadcast, wpa_s->own_addr, broadcast,
+ 					 wpabuf_head(msg), wpabuf_len(msg),

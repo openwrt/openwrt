@@ -1,0 +1,50 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Fri, 2 Oct 2026 09:44:34 +0200
+Subject: [PATCH] WNM: pass the space left in the BSS TM Request buffer to
+ mbo_add_ie()
+
+wnm_send_bss_tm_req() passed buf + sizeof(buf) - pos as the space left
+for the MBO element. buf is a pointer, so sizeof(buf) is the size of the
+pointer, and pos is always past the fixed fields of the frame. The
+difference is negative and converts to a size_t near SIZE_MAX, so the
+length check in mbo_add_ie() could never fail.
+
+The allocation holds 1000 octets plus the neighbour reports and the MBO
+attributes. The header and the fixed fields (31 octets), the BSS
+Termination Duration (12) and the Session Information URL (at most 256)
+take at most 299 of the 1000, and the MBO element header 6 more, so no
+write went past the buffer. Pass the space that is left in the
+allocation.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/src/ap/wnm_ap.c
++++ b/src/ap/wnm_ap.c
+@@ -963,6 +963,7 @@ int wnm_send_bss_tm_req(struct hostapd_d
+ 			const u8 *mbo_attrs, size_t mbo_len)
+ {
+ 	u8 *buf, *pos;
++	size_t buf_len;
+ 	struct ieee80211_mgmt *mgmt;
+ 	size_t url_len;
+ 	const u8 *own_addr = wnm_ap_get_own_addr(hapd, sta);
+@@ -972,7 +973,8 @@ int wnm_send_bss_tm_req(struct hostapd_d
+ 		   " req_mode=0x%x disassoc_timer=%d valid_int=0x%x dialog_token=%u",
+ 		   MAC2STR(sta->addr), req_mode, disassoc_timer, valid_int,
+ 		   dialog_token);
+-	buf = os_zalloc(1000 + nei_rep_len + mbo_len);
++	buf_len = 1000 + nei_rep_len + mbo_len;
++	buf = os_zalloc(buf_len);
+ 	if (buf == NULL)
+ 		return -1;
+ 	mgmt = (struct ieee80211_mgmt *) buf;
+@@ -1016,7 +1018,7 @@ int wnm_send_bss_tm_req(struct hostapd_d
+ 	}
+ 
+ 	if (mbo_len > 0) {
+-		pos += mbo_add_ie(pos, buf + sizeof(buf) - pos, mbo_attrs,
++		pos += mbo_add_ie(pos, buf + buf_len - pos, mbo_attrs,
+ 				  mbo_len);
+ 	}
+ 

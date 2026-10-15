@@ -1,0 +1,420 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robert.marko@sartura.hr>
+Date: Mon, 12 Oct 2026 19:41:50 +0200
+Subject: [PATCH] cert_create: make ECDSA signatures reproducible
+
+Generate ECDSA nonces according to RFC 6979 when SOURCE_DATE_EPOCH is
+set, using LibreSSL's public cryptographic APIs. Retry deterministically
+when either signature scalar is too short for the LAN969x boot ROM.
+
+Retain random signatures when SOURCE_DATE_EPOCH is unset and leave RSA
+signing unchanged. This makes certificate bytes stable across builds
+with fixed signing keys and payloads.
+
+Signed-off-by: Robert Marko <robert.marko@sartura.hr>
+---
+--- a/tools/cert_create/Makefile
++++ b/tools/cert_create/Makefile
+@@ -25,6 +25,7 @@ endif
+ # Common source files.
+ OBJECTS := src/cert.o \
+            src/cmd_opt.o \
++           src/deterministic_ecdsa.o \
+            src/ext.o \
+            src/key.o \
+            src/main.o \
+--- a/tools/cert_create/src/cert.c
++++ b/tools/cert_create/src/cert.c
+@@ -11,6 +11,7 @@
+ #include <time.h>
+ 
+ #include <openssl/conf.h>
++#include <openssl/crypto.h>
+ #include <openssl/err.h>
+ #include <openssl/opensslv.h>
+ #include <openssl/ec.h>
+@@ -21,6 +22,7 @@
+ #include "cert.h"
+ #include "cmd_opt.h"
+ #include "debug.h"
++#include "deterministic_ecdsa.h"
+ #include "key.h"
+ #include "sha.h"
+ 
+@@ -279,6 +281,51 @@ out:
+ 	return rc;
+ }
+ 
++/*
++ * X509_sign_ctx sets both signature algorithm fields. Replace its random
++ * ECDSA signature with one over the same TBS bytes using RFC 6979.
++ */
++static int cert_sign_deterministic(X509 *x, EVP_PKEY *ikey, int md_alg, int fb)
++{
++	const ASN1_BIT_STRING *old_sig = NULL;
++	const X509_ALGOR *alg = NULL;
++	const EVP_MD *md = get_digest(md_alg);
++	unsigned char digest[EVP_MAX_MD_SIZE];
++	unsigned char *tbs = NULL, *der_sig = NULL;
++	unsigned int digest_len = 0;
++	ECDSA_SIG *sig = NULL;
++	int tbs_len, sig_len, ok = 0;
++
++	if (md == NULL || !cert_sign_once(x, ikey, md_alg)) {
++		goto out;
++	}
++	tbs_len = i2d_re_X509_tbs(x, &tbs);
++	if (tbs_len <= 0 ||
++	    !EVP_Digest(tbs, tbs_len, digest, &digest_len, md, NULL)) {
++		goto out;
++	}
++	sig = ecdsa_sign_rfc6979(digest, digest_len, md,
++				 EVP_PKEY_get0_EC_KEY(ikey), fb,
++				 ECDSA_SIG_MAX_RETRIES);
++	if (sig == NULL) {
++		goto out;
++	}
++	sig_len = i2d_ECDSA_SIG(sig, &der_sig);
++	X509_get0_signature(&old_sig, &alg, x);
++	if (sig_len <= 0 || old_sig == NULL ||
++	    !ASN1_BIT_STRING_set((ASN1_BIT_STRING *)old_sig, der_sig, sig_len) ||
++	    X509_verify(x, ikey) != 1) {
++		goto out;
++	}
++	ok = 1;
++out:
++	OPENSSL_cleanse(digest, sizeof(digest));
++	OPENSSL_free(tbs);
++	OPENSSL_free(der_sig);
++	ECDSA_SIG_free(sig);
++	return ok;
++}
++
+ int cert_new(
+ 	int md_alg,
+ 	cert_t *cert,
+@@ -392,18 +439,25 @@ int cert_new(
+ 	 * signature almost immediate.
+ 	 */
+ 	fb = ec_operand_bytes(ikey);
+-	for (attempt = 0; attempt < ECDSA_SIG_MAX_RETRIES; attempt++) {
+-		if (!cert_sign_once(x, ikey, md_alg)) {
++	if (epoch_set && fb > 0) {
++		if (!cert_sign_deterministic(x, ikey, md_alg, fb) ||
++		    !cert_sig_full_width(x, fb)) {
+ 			goto END;
+ 		}
+-		if (fb == 0 || cert_sig_full_width(x, fb)) {
+-			break;
++	} else {
++		for (attempt = 0; attempt < ECDSA_SIG_MAX_RETRIES; attempt++) {
++			if (!cert_sign_once(x, ikey, md_alg)) {
++				goto END;
++			}
++			if (fb == 0 || cert_sig_full_width(x, fb)) {
++				break;
++			}
++		}
++		if (attempt == ECDSA_SIG_MAX_RETRIES) {
++			ERROR("%s: no full-width ECDSA signature after %d attempts\n",
++			      cert->cn, ECDSA_SIG_MAX_RETRIES);
++			goto END;
+ 		}
+-	}
+-	if (attempt == ECDSA_SIG_MAX_RETRIES) {
+-		ERROR("%s: no full-width ECDSA signature after %d attempts\n",
+-		      cert->cn, ECDSA_SIG_MAX_RETRIES);
+-		goto END;
+ 	}
+ 
+ 	/* X509 certificate signed successfully */
+--- /dev/null
++++ b/tools/cert_create/include/deterministic_ecdsa.h
+@@ -0,0 +1,16 @@
++/*
++ * SPDX-License-Identifier: BSD-3-Clause
++ */
++
++#ifndef DETERMINISTIC_ECDSA_H
++#define DETERMINISTIC_ECDSA_H
++
++#include <openssl/ec.h>
++#include <openssl/evp.h>
++
++ECDSA_SIG *ecdsa_sign_rfc6979(const unsigned char *digest,
++			      unsigned int digest_len, const EVP_MD *md,
++			      const EC_KEY *key, int full_width,
++			      int max_attempts);
++
++#endif /* DETERMINISTIC_ECDSA_H */
+--- /dev/null
++++ b/tools/cert_create/src/deterministic_ecdsa.c
+@@ -0,0 +1,268 @@
++/*
++ * Deterministic ECDSA nonce generation per RFC 6979, section 3.2.
++ *
++ * SPDX-License-Identifier: BSD-3-Clause
++ */
++
++#include <string.h>
++
++#include <openssl/bn.h>
++#include <openssl/crypto.h>
++#include <openssl/hmac.h>
++
++#include "deterministic_ecdsa.h"
++
++/* Large enough for the P-521 and Brainpool P-512 curves supported by TF-A. */
++#define MAX_ORDER_BYTES	72
++
++struct nonce_state {
++	const EVP_MD *md;
++	int hlen;
++	int qbits;
++	int rolen;
++	unsigned char k[EVP_MAX_MD_SIZE];
++	unsigned char v[EVP_MAX_MD_SIZE];
++};
++
++/* Compute through a temporary buffer, so key, input and output may alias. */
++static int hmac_step(struct nonce_state *st, const unsigned char *data,
++		     size_t data_len, unsigned char *out)
++{
++	unsigned char result[EVP_MAX_MD_SIZE];
++	unsigned int result_len = 0;
++	int ok;
++
++	ok = HMAC(st->md, st->k, st->hlen, data, data_len, result,
++		  &result_len) != NULL && result_len == (unsigned int)st->hlen;
++	if (ok) {
++		memcpy(out, result, st->hlen);
++	}
++	OPENSSL_cleanse(result, sizeof(result));
++	return ok;
++}
++
++static int nonce_init(struct nonce_state *st, const EVP_MD *md,
++		      const BIGNUM *priv, const BIGNUM *hash,
++		      int qbits, int rolen)
++{
++	unsigned char seed[EVP_MAX_MD_SIZE + 1 + 2 * MAX_ORDER_BYTES];
++	size_t seed_len;
++	int ok = 0;
++
++	st->md = md;
++	st->hlen = EVP_MD_size(md);
++	st->qbits = qbits;
++	st->rolen = rolen;
++	if (st->hlen <= 0 || st->hlen > EVP_MAX_MD_SIZE ||
++	    rolen <= 0 || rolen > MAX_ORDER_BYTES) {
++		return 0;
++	}
++
++	memset(st->k, 0, st->hlen);
++	memset(st->v, 1, st->hlen);
++	seed_len = st->hlen + 1 + 2 * rolen;
++	memcpy(seed, st->v, st->hlen);
++	if (BN_bn2binpad(priv, seed + st->hlen + 1, rolen) != rolen ||
++	    BN_bn2binpad(hash, seed + st->hlen + 1 + rolen, rolen) != rolen) {
++		goto out;
++	}
++
++	seed[st->hlen] = 0;
++	if (!hmac_step(st, seed, seed_len, st->k) ||
++	    !hmac_step(st, st->v, st->hlen, st->v)) {
++		goto out;
++	}
++	memcpy(seed, st->v, st->hlen);
++	seed[st->hlen] = 1;
++	if (!hmac_step(st, seed, seed_len, st->k) ||
++	    !hmac_step(st, st->v, st->hlen, st->v)) {
++		goto out;
++	}
++	ok = 1;
++out:
++	OPENSSL_cleanse(seed, sizeof(seed));
++	return ok;
++}
++
++/* RFC 6979 step h.2: extend T with successive HMAC_DRBG output blocks. */
++static int nonce_next(struct nonce_state *st, BIGNUM *nonce)
++{
++	unsigned char t[MAX_ORDER_BYTES];
++	int used = 0;
++	int take;
++	int ok = 0;
++
++	while (used < st->rolen) {
++		if (!hmac_step(st, st->v, st->hlen, st->v)) {
++			goto out;
++		}
++		take = st->rolen - used;
++		if (take > st->hlen) {
++			take = st->hlen;
++		}
++		memcpy(t + used, st->v, take);
++		used += take;
++	}
++	if (BN_bin2bn(t, st->rolen, nonce) == NULL) {
++		goto out;
++	}
++	if (8 * st->rolen > st->qbits &&
++	    !BN_rshift(nonce, nonce, 8 * st->rolen - st->qbits)) {
++		goto out;
++	}
++	ok = 1;
++out:
++	OPENSSL_cleanse(t, sizeof(t));
++	return ok;
++}
++
++/* RFC 6979 step h.3: advance the state after rejecting a candidate. */
++static int nonce_reject(struct nonce_state *st)
++{
++	unsigned char input[EVP_MAX_MD_SIZE + 1];
++
++	memcpy(input, st->v, st->hlen);
++	input[st->hlen] = 0;
++	if (!hmac_step(st, input, st->hlen + 1, st->k) ||
++	    !hmac_step(st, st->v, st->hlen, st->v)) {
++		return 0;
++	}
++	return 1;
++}
++
++ECDSA_SIG *ecdsa_sign_rfc6979(const unsigned char *digest,
++			      unsigned int digest_len, const EVP_MD *md,
++			      const EC_KEY *key, int full_width,
++			      int max_attempts)
++{
++	const EC_GROUP *group = EC_KEY_get0_group(key);
++	const BIGNUM *priv = EC_KEY_get0_private_key(key);
++	BIGNUM *order = NULL;
++	struct nonce_state st;
++	BN_CTX *ctx = NULL;
++	EC_POINT *point = NULL;
++	BIGNUM *hash = NULL, *nonce = NULL, *x = NULL, *r = NULL, *s = NULL;
++	BIGNUM *kinv = NULL, *blind = NULL, *blind_inv = NULL;
++	BIGNUM *a = NULL, *b = NULL, *r_copy = NULL, *s_copy = NULL;
++	ECDSA_SIG *sig = NULL;
++	int qbits, rolen, attempt;
++
++	if (group == NULL || priv == NULL || md == NULL || digest == NULL) {
++		return NULL;
++	}
++	qbits = EC_GROUP_order_bits(group);
++	rolen = (qbits + 7) / 8;
++	if (qbits < 80 || rolen > MAX_ORDER_BYTES ||
++	    digest_len > EVP_MAX_MD_SIZE || max_attempts <= 0) {
++		return NULL;
++	}
++
++	ctx = BN_CTX_new();
++	order = BN_new();
++	point = EC_POINT_new(group);
++	hash = BN_bin2bn(digest, digest_len, NULL);
++	nonce = BN_new();
++	x = BN_new();
++	r = BN_new();
++	s = BN_new();
++	kinv = BN_new();
++	blind = BN_new();
++	blind_inv = BN_new();
++	a = BN_new();
++	b = BN_new();
++	if (ctx == NULL || order == NULL || point == NULL || hash == NULL ||
++	    nonce == NULL ||
++	    x == NULL || r == NULL || s == NULL || kinv == NULL ||
++	    blind == NULL || blind_inv == NULL || a == NULL || b == NULL) {
++		goto out;
++	}
++	if (!EC_GROUP_get_order(group, order, ctx)) {
++		goto out;
++	}
++
++	/* bits2int followed by bits2octets for RFC 6979 initialization. */
++	if (8 * digest_len > (unsigned int)qbits &&
++	    !BN_rshift(hash, hash, 8 * digest_len - qbits)) {
++		goto out;
++	}
++	if (!BN_nnmod(hash, hash, order, ctx) ||
++	    !nonce_init(&st, md, priv, hash, qbits, rolen)) {
++		goto out;
++	}
++
++	for (attempt = 0; attempt < max_attempts; attempt++) {
++		if (!nonce_next(&st, nonce)) {
++			goto out;
++		}
++		if (BN_is_zero(nonce) || BN_cmp(nonce, order) >= 0) {
++			goto reject;
++		}
++		BN_set_flags(nonce, BN_FLG_CONSTTIME);
++		if (!EC_POINT_mul(group, point, nonce, NULL, NULL, ctx) ||
++		    !EC_POINT_get_affine_coordinates(group, point, x, NULL, ctx) ||
++		    !BN_nnmod(r, x, order, ctx)) {
++			goto out;
++		}
++		if (BN_is_zero(r) || (full_width && BN_num_bytes(r) != full_width)) {
++			goto reject;
++		}
++		if (BN_mod_inverse(kinv, nonce, order, ctx) == NULL) {
++			goto out;
++		}
++
++		/* Random blinding protects private-key arithmetic; it cancels out. */
++		do {
++			if (!BN_rand_range(blind, order)) {
++				goto out;
++			}
++		} while (BN_is_zero(blind));
++		BN_set_flags(blind, BN_FLG_CONSTTIME);
++		if (BN_mod_inverse(blind_inv, blind, order, ctx) == NULL ||
++		    !BN_mod_mul(a, blind, hash, order, ctx) ||
++		    !BN_mod_mul(b, blind, priv, order, ctx) ||
++		    !BN_mod_mul(b, b, r, order, ctx) ||
++		    !BN_mod_add(s, a, b, order, ctx) ||
++		    !BN_mod_mul(s, s, kinv, order, ctx) ||
++		    !BN_mod_mul(s, s, blind_inv, order, ctx)) {
++			goto out;
++		}
++		if (BN_is_zero(s) || (full_width && BN_num_bytes(s) != full_width)) {
++			goto reject;
++		}
++
++		sig = ECDSA_SIG_new();
++		r_copy = BN_dup(r);
++		s_copy = BN_dup(s);
++		if (sig == NULL || r_copy == NULL || s_copy == NULL ||
++		    !ECDSA_SIG_set0(sig, r_copy, s_copy)) {
++			ECDSA_SIG_free(sig);
++			sig = NULL;
++			goto out;
++		}
++		r_copy = NULL;
++		s_copy = NULL;
++		break;
++reject:
++		if (!nonce_reject(&st)) {
++			goto out;
++		}
++	}
++out:
++	OPENSSL_cleanse(&st, sizeof(st));
++	BN_free(r_copy);
++	BN_free(s_copy);
++	BN_clear_free(hash);
++	BN_clear_free(nonce);
++	BN_clear_free(x);
++	BN_clear_free(r);
++	BN_clear_free(s);
++	BN_clear_free(kinv);
++	BN_clear_free(blind);
++	BN_clear_free(blind_inv);
++	BN_clear_free(a);
++	BN_clear_free(b);
++	BN_free(order);
++	EC_POINT_free(point);
++	BN_CTX_free(ctx);
++	return sig;
++}

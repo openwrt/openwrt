@@ -95,6 +95,11 @@ ifeq ($(filter small_flash,$(FEATURES)),)
   DEFAULT_PACKAGES+=procd-ujail
 endif
 
+# legacy-sdcard upgrades need partx after writing the full image
+ifneq ($(filter legacy-sdcard,$(FEATURES)),)
+  DEFAULT_PACKAGES+=partx-utils
+endif
+
 # Add device specific packages (here below to allow device type set from subtarget)
 DEFAULT_PACKAGES += $(DEFAULT_PACKAGES.$(DEVICE_TYPE))
 
@@ -265,6 +270,8 @@ ifeq ($(DUMP),1)
     CPU_TYPE ?= generic
     CPU_CFLAGS_generic = -mcpu=generic
     CPU_CFLAGS_cortex-a53 = -mcpu=cortex-a53
+    CPU_CFLAGS_cortex-a72 = -mcpu=cortex-a72
+    CPU_CFLAGS_cortex-a76 = -mcpu=cortex-a76
   endif
   ifeq ($(ARCH),riscv64)
     CPU_TYPE ?= generic

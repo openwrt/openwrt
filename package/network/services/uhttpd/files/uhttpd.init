@@ -50,7 +50,7 @@ generate_keys() {
 	# Prefer px5g for certificate generation (existence evaluated last)
 	local GENKEY_CMD=""
 	local KEY_OPTS="rsa:${bits:-2048}"
-	local UNIQUEID=$(dd if=/dev/urandom bs=1 count=4 | hexdump -e '1/1 "%02x"')
+	local UNIQUEID=$(dd if=/dev/urandom bs=1 count=4 | hexdump -v -e '1/1 "%02x"')
 	[ "$key_type" = "ec" ] && KEY_OPTS="ec -pkeyopt ec_paramgen_curve:${ec_curve:-P-256}"
 	[ -x "$OPENSSL_BIN" ] && GENKEY_CMD="$OPENSSL_BIN req -x509 -sha256 -outform der -nodes"
 	[ -x "$PX5G_BIN" ] && GENKEY_CMD="$PX5G_BIN selfsigned -der"
@@ -112,14 +112,20 @@ start_instance()
 	local cfg="$1"
 	local realm="$(uci_get system.@system[0].hostname)"
 	local listen http https interpreter indexes path handler httpdconf haveauth
-	local enabled
+	local enabled vrf
 
 	config_get_bool enabled "$cfg" 'enabled' 1
 	[ $enabled -gt 0 ] || return
 
+	# The VRF device doesn't exist at boot, the interface triggers start
+	# the instance later.
+	config_get vrf "$cfg" vrf
+	[ -n "$vrf" ] && [ -n "$BOOT" ] && return 0
+
 	procd_open_instance
 	procd_set_param respawn
 	procd_set_param stderr 1
+	[ -n "$vrf" ] && procd_set_param vrf "$vrf"
 	procd_set_param command "$UHTTPD_BIN" -f
 
 	config_get config "$cfg" config
@@ -269,6 +275,18 @@ get_interface_by_ip()
 	config_foreach resolve_iface interface "$@"
 }
 
+uhttpd_vrf_trigger()
+{
+	local cfg="$1"
+	local vrf
+
+	# An instance in a VRF is not started at boot. If no listen address
+	# points to an interface, no interface trigger would start it later,
+	# so any interface coming up starts it.
+	config_get vrf "$cfg" vrf
+	[ -n "$vrf" ] && [ -z "$(uhttpd_interfaces "$cfg")" ] && all=1
+}
+
 service_triggers()
 {
 	local iface ifaces all=0
@@ -278,7 +296,8 @@ service_triggers()
 
 	config_load uhttpd
 	ips="$(config_foreach uhttpd_interfaces uhttpd)"
-	[ -z "$ips" ] && return 0
+	config_foreach uhttpd_vrf_trigger uhttpd
+	[ -z "$ips" ] && [ "$all" = 0 ] && return 0
 
 	for ip in $ips; do
 		iface="$(get_interface_by_ip $ip)"
@@ -293,6 +312,11 @@ service_triggers()
 			procd_add_raw_trigger "interface.$iface.up" 1000 /etc/init.d/uhttpd start
 		done
 	fi
+}
+
+boot() {
+	BOOT=1
+	start "$@"
 }
 
 start_service() {

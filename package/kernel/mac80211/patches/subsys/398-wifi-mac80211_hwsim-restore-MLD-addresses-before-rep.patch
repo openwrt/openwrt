@@ -1,0 +1,159 @@
+From 77a5e8cfa2024f17ba9020e53a668417d06fa13a Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@nbd.name>
+Date: Wed, 30 Sep 2026 12:31:19 +0200
+Subject: [PATCH 5/5] wifi: mac80211_hwsim: restore MLD addresses before
+ reporting TX status
+
+For a frame to an MLO station, mac80211_hwsim_tx() rewrites A1, A2 and
+possibly A3 of the frame to link addresses, and then reports the TX
+status on the same skb. ieee80211_tx_status_skb() looks up the station
+by A1 and A2, which are now link addresses, and finds none. mac80211
+then records no ACK, retry, lost frame or last TX rate for the station.
+
+Put the original addresses back before the TX status is reported. For
+frames sent via wmediumd, keep them in the driver data of the frame
+until the status arrives. An all-zero A1 marks a frame without rewrite.
+
+[Backports 7.2 has no link ID in the TX status, so this goes without the
+patch that reports it, and the driver data of a frame holds no link ID.]
+
+Fixes: 2ab60f49eb4d ("wifi: mac80211_hwsim: use MLO link ID for TX")
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/drivers/net/wireless/virtual/mac80211_hwsim_main.c
++++ b/drivers/net/wireless/virtual/mac80211_hwsim_main.c
+@@ -1643,15 +1643,41 @@ static void mac80211_hwsim_write_tsf(str
+ 	spin_unlock_bh(&data->tsf_offset_lock);
+ }
+ 
++struct hwsim_tx_cb {
++	int cookie;
++	u8 orig_addrs[sizeof_field(struct ieee80211_hdr, addrs)];
++};
++
++static struct hwsim_tx_cb *hwsim_tx_cb(struct sk_buff *skb)
++{
++	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
++
++	BUILD_BUG_ON(sizeof(struct hwsim_tx_cb) >
++		     sizeof(info->rate_driver_data));
++	return (void *)info->rate_driver_data;
++}
++
++static void hwsim_tx_addrs_restore(struct sk_buff *skb, const u8 *orig_addrs)
++{
++	struct ieee80211_hdr *hdr = (void *)skb->data;
++
++	if (is_zero_ether_addr(orig_addrs))
++		return;
++
++	memcpy(&hdr->addrs, orig_addrs, sizeof(hdr->addrs));
++}
++
+ static void mac80211_hwsim_tx_frame_nl(struct ieee80211_hw *hw,
+ 				       struct sk_buff *my_skb,
+ 				       int dst_portid,
+-				       struct ieee80211_channel *channel)
++				       struct ieee80211_channel *channel,
++				       const u8 *orig_addrs)
+ {
+ 	struct sk_buff *skb;
+ 	struct mac80211_hwsim_data *data = hw->priv;
+ 	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *) my_skb->data;
+ 	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(my_skb);
++	struct hwsim_tx_cb *cb;
+ 	void *msg_head;
+ 	unsigned int hwsim_flags = 0;
+ 	int i;
+@@ -1731,7 +1757,12 @@ static void mac80211_hwsim_tx_frame_nl(s
+ 
+ 	/* We create a cookie to identify this skb */
+ 	cookie = atomic_inc_return(&data->pending_cookie);
+-	info->rate_driver_data[0] = (void *)cookie;
++	cb = hwsim_tx_cb(my_skb);
++	cb->cookie = cookie;
++	if (orig_addrs)
++		memcpy(cb->orig_addrs, orig_addrs, sizeof(cb->orig_addrs));
++	else
++		memset(cb->orig_addrs, 0, sizeof(cb->orig_addrs));
+ 	if (nla_put_u64_64bit(skb, HWSIM_ATTR_COOKIE, cookie, HWSIM_ATTR_PAD))
+ 		goto nla_put_failure;
+ 
+@@ -2107,6 +2138,7 @@ static void mac80211_hwsim_tx(struct iee
+ {
+ 	struct mac80211_hwsim_data *data = hw->priv;
+ 	struct ieee80211_tx_info *txi = IEEE80211_SKB_CB(skb);
++	u8 orig_addrs[sizeof_field(struct ieee80211_hdr, addrs)] = {};
+ 	struct ieee80211_hdr *hdr = (void *)skb->data;
+ 	struct ieee80211_chanctx_conf *chanctx_conf;
+ 	struct ieee80211_channel *channel;
+@@ -2190,6 +2222,8 @@ static void mac80211_hwsim_tx(struct iee
+ 		 * probe response).
+ 		 */
+ 		if (sta && sta->mlo && link_sta) {
++			memcpy(orig_addrs, &hdr->addrs, sizeof(orig_addrs));
++
+ 			/* address translation to link addresses on TX */
+ 			ether_addr_copy(hdr->addr1, link_sta->addr);
+ 			ether_addr_copy(hdr->addr2, bss_conf->addr);
+@@ -2264,7 +2298,8 @@ static void mac80211_hwsim_tx(struct iee
+ 	_portid = READ_ONCE(data->wmediumd);
+ 
+ 	if (_portid || hwsim_virtio_enabled)
+-		return mac80211_hwsim_tx_frame_nl(hw, skb, _portid, channel);
++		return mac80211_hwsim_tx_frame_nl(hw, skb, _portid, channel,
++						  orig_addrs);
+ 
+ 	/* NO wmediumd detected, perfect medium simulation */
+ 	data->tx_pkts++;
+@@ -2274,6 +2309,7 @@ static void mac80211_hwsim_tx(struct iee
+ 	if (ack && skb->len >= 16)
+ 		mac80211_hwsim_monitor_ack(channel, hdr->addr2);
+ 
++	hwsim_tx_addrs_restore(skb, orig_addrs);
+ 	ieee80211_tx_info_clear_status(txi);
+ 
+ 	/* frame was transmitted at most favorable rate at first attempt */
+@@ -2410,7 +2446,7 @@ void mac80211_hwsim_tx_frame(struct ieee
+ 	}
+ 
+ 	if (_portid || hwsim_virtio_enabled)
+-		return mac80211_hwsim_tx_frame_nl(hw, skb, _portid, chan);
++		return mac80211_hwsim_tx_frame_nl(hw, skb, _portid, chan, NULL);
+ 
+ 	data->tx_pkts++;
+ 	data->tx_bytes += skb->len;
+@@ -6339,6 +6375,7 @@ static int hwsim_tx_info_frame_received_
+ 	u64 ret_skb_cookie;
+ 	struct sk_buff *skb, *tmp;
+ 	const u8 *src;
++	struct hwsim_tx_cb tx_cb;
+ 	unsigned int hwsim_flags;
+ 	int i;
+ 	unsigned long flags;
+@@ -6373,8 +6410,7 @@ static int hwsim_tx_info_frame_received_
+ 	skb_queue_walk_safe(&data2->pending, skb, tmp) {
+ 		uintptr_t skb_cookie;
+ 
+-		txi = IEEE80211_SKB_CB(skb);
+-		skb_cookie = (uintptr_t)txi->rate_driver_data[0];
++		skb_cookie = (uintptr_t)hwsim_tx_cb(skb)->cookie;
+ 
+ 		if (skb_cookie == ret_skb_cookie) {
+ 			__skb_unlink(skb, &data2->pending);
+@@ -6398,6 +6434,7 @@ static int hwsim_tx_info_frame_received_
+ 
+ 	/* now send back TX status */
+ 	txi = IEEE80211_SKB_CB(skb);
++	tx_cb = *hwsim_tx_cb(skb);
+ 
+ 	ieee80211_tx_info_clear_status(txi);
+ 
+@@ -6421,6 +6458,7 @@ static int hwsim_tx_info_frame_received_
+ 	if (hwsim_flags & HWSIM_TX_CTL_NO_ACK)
+ 		txi->flags |= IEEE80211_TX_STAT_NOACK_TRANSMITTED;
+ 
++	hwsim_tx_addrs_restore(skb, tx_cb.orig_addrs);
+ 	ieee80211_tx_status_irqsafe(data2->hw, skb);
+ 	return 0;
+ out:

@@ -1,0 +1,227 @@
+From d3df9613fd29f32143cdadcf0ed2fcd71d71e6e9 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 9 Oct 2026 14:25:42 +0100
+Subject: [PATCH] ARM: dts: rockchip: add i2c and spi pin groups to rv1126
+
+Add the pin groups of i2c1, i2c4, i2c5, spi0 and spi1. The iomux
+routes that select between the alternative pin sets of these functions
+are already known to the pinctrl driver.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ .../arm/boot/dts/rockchip/rv1126-pinctrl.dtsi | 190 ++++++++++++++++++
+ 1 file changed, 190 insertions(+)
+
+--- a/arch/arm/boot/dts/rockchip/rv1126-pinctrl.dtsi
++++ b/arch/arm/boot/dts/rockchip/rv1126-pinctrl.dtsi
+@@ -87,6 +87,16 @@
+ 				<0 RK_PB5 1 &pcfg_pull_none_drv_level_0_smt>;
+ 		};
+ 	};
++	i2c1 {
++		/omit-if-no-ref/
++		i2c1_xfer: i2c1-xfer {
++			rockchip,pins =
++				/* i2c1_scl */
++				<1 RK_PD3 1 &pcfg_pull_none_drv_level_0_smt>,
++				/* i2c1_sda */
++				<1 RK_PD2 1 &pcfg_pull_none_drv_level_0_smt>;
++		};
++	};
+ 	i2c2 {
+ 		/omit-if-no-ref/
+ 		i2c2_xfer: i2c2-xfer {
+@@ -123,6 +133,50 @@
+ 				<1 RK_PD7 3 &pcfg_pull_none>;
+ 		};
+ 	};
++	i2c4 {
++		/omit-if-no-ref/
++		i2c4m0_xfer: i2c4m0-xfer {
++			rockchip,pins =
++				/* i2c4_scl_m0 */
++				<3 RK_PA0 7 &pcfg_pull_none_drv_level_0_smt>,
++				/* i2c4_sda_m0 */
++				<3 RK_PA1 7 &pcfg_pull_none_drv_level_0_smt>;
++		};
++		/omit-if-no-ref/
++		i2c4m1_xfer: i2c4m1-xfer {
++			rockchip,pins =
++				/* i2c4_scl_m1 */
++				<4 RK_PA0 4 &pcfg_pull_none_drv_level_0_smt>,
++				/* i2c4_sda_m1 */
++				<4 RK_PA1 4 &pcfg_pull_none_drv_level_0_smt>;
++		};
++	};
++	i2c5 {
++		/omit-if-no-ref/
++		i2c5m0_xfer: i2c5m0-xfer {
++			rockchip,pins =
++				/* i2c5_scl_m0 */
++				<2 RK_PA5 7 &pcfg_pull_none_drv_level_0_smt>,
++				/* i2c5_sda_m0 */
++				<2 RK_PB3 7 &pcfg_pull_none_drv_level_0_smt>;
++		};
++		/omit-if-no-ref/
++		i2c5m1_xfer: i2c5m1-xfer {
++			rockchip,pins =
++				/* i2c5_scl_m1 */
++				<3 RK_PB0 5 &pcfg_pull_none_drv_level_0_smt>,
++				/* i2c5_sda_m1 */
++				<3 RK_PB1 5 &pcfg_pull_none_drv_level_0_smt>;
++		};
++		/omit-if-no-ref/
++		i2c5m2_xfer: i2c5m2-xfer {
++			rockchip,pins =
++				/* i2c5_scl_m2 */
++				<1 RK_PD0 4 &pcfg_pull_none_drv_level_0_smt>,
++				/* i2c5_sda_m2 */
++				<1 RK_PD1 4 &pcfg_pull_none_drv_level_0_smt>;
++		};
++	};
+ 	i2s0 {
+ 		i2s0m0_lrck_tx: i2s0m0-lrck-tx {
+ 			rockchip,pins =
+@@ -495,6 +549,142 @@
+ 				<1 RK_PD1 2 &pcfg_pull_none>;
+ 		};
+ 	};
++	spi0 {
++		/omit-if-no-ref/
++		spi0m0_pins: spi0m0-pins {
++			rockchip,pins =
++				/* spi0_clk_m0 */
++				<0 RK_PB0 1 &pcfg_pull_up_drv_level_0>,
++				/* spi0_miso_m0 */
++				<0 RK_PA7 1 &pcfg_pull_up_drv_level_0>,
++				/* spi0_mosi_m0 */
++				<0 RK_PA6 1 &pcfg_pull_up_drv_level_0>;
++		};
++		/omit-if-no-ref/
++		spi0m0_cs0: spi0m0-cs0 {
++			rockchip,pins =
++				/* spi0_cs0n_m0 */
++				<0 RK_PA5 1 &pcfg_pull_up_drv_level_0>;
++		};
++		/omit-if-no-ref/
++		spi0m0_cs1: spi0m0-cs1 {
++			rockchip,pins =
++				/* spi0_cs1n_m0 */
++				<0 RK_PA4 1 &pcfg_pull_up_drv_level_0>;
++		};
++		/omit-if-no-ref/
++		spi0m1_pins: spi0m1-pins {
++			rockchip,pins =
++				/* spi0_clk_m1 */
++				<2 RK_PA1 1 &pcfg_pull_up_drv_level_0>,
++				/* spi0_miso_m1 */
++				<1 RK_PD7 1 &pcfg_pull_up_drv_level_0>,
++				/* spi0_mosi_m1 */
++				<1 RK_PD6 1 &pcfg_pull_up_drv_level_0>;
++		};
++		/omit-if-no-ref/
++		spi0m1_cs0: spi0m1-cs0 {
++			rockchip,pins =
++				/* spi0_cs0n_m1 */
++				<2 RK_PA0 1 &pcfg_pull_up_drv_level_0>;
++		};
++		/omit-if-no-ref/
++		spi0m1_cs1: spi0m1-cs1 {
++			rockchip,pins =
++				/* spi0_cs1n_m1 */
++				<1 RK_PD5 1 &pcfg_pull_up_drv_level_0>;
++		};
++		/omit-if-no-ref/
++		spi0m2_pins: spi0m2-pins {
++			rockchip,pins =
++				/* spi0_clk_m2 */
++				<2 RK_PB2 6 &pcfg_pull_up_drv_level_0>,
++				/* spi0_miso_m2 */
++				<2 RK_PB1 6 &pcfg_pull_up_drv_level_0>,
++				/* spi0_mosi_m2 */
++				<2 RK_PB0 6 &pcfg_pull_up_drv_level_0>;
++		};
++		/omit-if-no-ref/
++		spi0m2_cs0: spi0m2-cs0 {
++			rockchip,pins =
++				/* spi0_cs0n_m2 */
++				<2 RK_PA7 6 &pcfg_pull_up_drv_level_0>;
++		};
++		/omit-if-no-ref/
++		spi0m2_cs1: spi0m2-cs1 {
++			rockchip,pins =
++				/* spi0_cs1n_m2 */
++				<2 RK_PB3 6 &pcfg_pull_up_drv_level_0>;
++		};
++	};
++	spi1 {
++		/omit-if-no-ref/
++		spi1m0_pins: spi1m0-pins {
++			rockchip,pins =
++				/* spi1_clk_m0 */
++				<3 RK_PC0 5 &pcfg_pull_up_drv_level_0>,
++				/* spi1_miso_m0 */
++				<3 RK_PB7 5 &pcfg_pull_up_drv_level_0>,
++				/* spi1_mosi_m0 */
++				<3 RK_PB6 5 &pcfg_pull_up_drv_level_0>;
++		};
++		/omit-if-no-ref/
++		spi1m0_cs0: spi1m0-cs0 {
++			rockchip,pins =
++				/* spi1_cs0n_m0 */
++				<3 RK_PB5 5 &pcfg_pull_up_drv_level_0>;
++		};
++		/omit-if-no-ref/
++		spi1m0_cs1: spi1m0-cs1 {
++			rockchip,pins =
++				/* spi1_cs1n_m0 */
++				<3 RK_PB4 5 &pcfg_pull_up_drv_level_0>;
++		};
++		/omit-if-no-ref/
++		spi1m1_pins: spi1m1-pins {
++			rockchip,pins =
++				/* spi1_clk_m1 */
++				<1 RK_PC6 3 &pcfg_pull_up_drv_level_0>,
++				/* spi1_miso_m1 */
++				<1 RK_PC5 3 &pcfg_pull_up_drv_level_0>,
++				/* spi1_mosi_m1 */
++				<1 RK_PC4 3 &pcfg_pull_up_drv_level_0>;
++		};
++		/omit-if-no-ref/
++		spi1m1_cs0: spi1m1-cs0 {
++			rockchip,pins =
++				/* spi1_cs0n_m1 */
++				<1 RK_PC7 3 &pcfg_pull_up_drv_level_0>;
++		};
++		/omit-if-no-ref/
++		spi1m1_cs1: spi1m1-cs1 {
++			rockchip,pins =
++				/* spi1_cs1n_m1 */
++				<1 RK_PD0 3 &pcfg_pull_up_drv_level_0>;
++		};
++		/omit-if-no-ref/
++		spi1m2_pins: spi1m2-pins {
++			rockchip,pins =
++				/* spi1_clk_m2 */
++				<2 RK_PD5 6 &pcfg_pull_up_drv_level_0>,
++				/* spi1_miso_m2 */
++				<2 RK_PD7 6 &pcfg_pull_up_drv_level_0>,
++				/* spi1_mosi_m2 */
++				<2 RK_PD6 6 &pcfg_pull_up_drv_level_0>;
++		};
++		/omit-if-no-ref/
++		spi1m2_cs0: spi1m2-cs0 {
++			rockchip,pins =
++				/* spi1_cs0n_m2 */
++				<2 RK_PD4 6 &pcfg_pull_up_drv_level_0>;
++		};
++		/omit-if-no-ref/
++		spi1m2_cs1: spi1m2-cs1 {
++			rockchip,pins =
++				/* spi1_cs1n_m2 */
++				<3 RK_PA0 6 &pcfg_pull_up_drv_level_0>;
++		};
++	};
+ 	uart0 {
+ 		/omit-if-no-ref/
+ 		uart0_xfer: uart0-xfer {

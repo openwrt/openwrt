@@ -83,7 +83,8 @@ const struct psch_tdm_entry cppe_psch_tdm[] = {
 };
 
 /* HPPE (IPQ807x) port scheduler TDM -- 50 entries
- * Source: ssdk_hppe.c port_schedulerTDM_PORT_CPU_tbl[] */
+ * Source: ssdk_hppe.c port_schedulerTDM_PORT_CPU_tbl[]
+ */
 const struct psch_tdm_entry hppe_psch_tdm[] = {
 	{ TDM_PORT_FAB_1, TDM_PORT_CPU },
 	{ TDM_PORT_PHY_4, TDM_PORT_FAB_0 },
@@ -238,7 +239,8 @@ const struct bm_tdm_entry cppe_bm_tdm[] = {
 };
 
 /* HPPE buffer manager TDM -- 96 entries
- * Source: ssdk_hppe.c port_tdmTDM_PORT_CPU_tbl[] */
+ * Source: ssdk_hppe.c port_tdmTDM_PORT_CPU_tbl[]
+ */
 const struct bm_tdm_entry hppe_bm_tdm[] = {
 	{ TDM_PORT_CPU, TDM_DIR_INGRESS },
 	{ TDM_PORT_FAB_0, TDM_DIR_EGRESS },
@@ -436,7 +438,7 @@ static void ppe_bm_init(struct qca_ppe_priv *priv)
 }
 
 static void ppe_qm_map_set(struct qca_ppe_priv *priv, u32 index,
-			    u8 queue_base, u8 profile)
+			   u8 queue_base, u8 profile)
 {
 	regmap_write(priv->regmap, PPE_QM_UCAST_MAP(index),
 		     FIELD_PREP(PPE_QM_PROFILE_ID, profile) |
@@ -465,7 +467,7 @@ static void ppe_qm_init(struct qca_ppe_priv *priv)
 
 	for (i = 0; i < PPE_NUM_PORTS; i++)
 		ppe_qm_map_set(priv, QM_VP_PORT_OFFSET + i,
-				port_queue_base[i], i);
+			       port_queue_base[i], i);
 
 	for (i = 0; i < PPE_NUM_PORTS; i++) {
 		u8 max_pri = port_l0_cdrr_num[i];
@@ -500,7 +502,7 @@ static void ppe_qm_init(struct qca_ppe_priv *priv)
 	}
 
 	ppe_qm_map_set(priv, QM_CPU_CODE_OFFSET + 101,
-			port_queue_base[0] + 0, 0);
+		       port_queue_base[0] + 0, 0);
 
 	for (i = 0; i < PPE_MAX_SERVICE_CODES; i++) {
 		u32 idx = QM_SERVICE_CODE_OFFSET + (1 << 8) + i;
@@ -518,7 +520,7 @@ static void ppe_qm_init(struct qca_ppe_priv *priv)
 
 	for (i = 0; i < PPE_NUM_PORTS; i++)
 		ppe_qm_map_set(priv, QM_VP_PORT_OFFSET + (1 << 8) + i,
-				port_queue_base[i], i);
+			       port_queue_base[i], i);
 
 	for (i = PPE_NUM_PORTS; i < PPE_MAX_VPORT; i++)
 		ppe_qm_map_set(priv, QM_VP_PORT_OFFSET + (1 << 8) + i, 4, 0);

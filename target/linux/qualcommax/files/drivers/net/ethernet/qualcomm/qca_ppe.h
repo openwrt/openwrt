@@ -18,8 +18,17 @@
 #define QCA_PPE_CPU_PORT		0
 #define QCA_PPE_MAX_BRIDGES		8
 
-
 /* --- Global --- */
+/* GMAC LPI: an enable bit per port from port 1, a wake and an idle timer per
+ * port in microseconds, and the PPE clock cycles that make a microsecond.
+ * qca-ssdk uses the same layout for IPQ807x and IPQ60xx.
+ */
+#define PPE_LPI_ENABLE			0x400
+#define PPE_LPI_PORT_TIMER(port)	(0x400 + (port) * 0x4)
+#define   PPE_LPI_WAKEUP_TIMER		GENMASK(15, 0)
+#define   PPE_LPI_SLEEP_TIMER		GENMASK(31, 16)
+#define PPE_LPI_1US_CNT			0x430
+
 #define PPE_PORT_MUX_CTRL		0x10
 
 /* CPPE (IPQ60xx) PORT_MUX_CTRL bit layout */

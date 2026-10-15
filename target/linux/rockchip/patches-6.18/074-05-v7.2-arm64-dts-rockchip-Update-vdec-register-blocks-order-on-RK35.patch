@@ -1,0 +1,60 @@
+From b481c11cd20a114c4df35f3b1ecd28b05e622067 Mon Sep 17 00:00:00 2001
+From: Cristian Ciocaltea <cristian.ciocaltea@collabora.com>
+Date: Wed, 4 Mar 2026 23:00:43 +0200
+Subject: [PATCH] arm64: dts: rockchip: Update vdec register blocks order on
+ RK3588
+
+With the introduction of the RK3588 SoC, three register blocks have been
+provided for the video decoder unit instead of just one, which are
+further referenced in the vendor's datasheet by 'link table', 'function'
+and 'cache'.  The former is present at the top of the listing, starting
+at video decoder unit base address, but the binding got this wrong
+initially, i.e. the 'function' block got listed before the 'link' one.
+
+Since the video decoder support for the aforementioned SoC in mainline
+driver and devicetrees hasn't been released yet (just landed in
+v7.0-rc1), address the problem by providing the register blocks for
+vdec0 & vdec1 nodes using the 'link,function,cache' listing, which
+ensures the unit address points to the primary register range.
+
+This aligns with a similar fix for RK3576, where DTC also complained
+about the bus address format.
+
+Fixes: f61731bd6062 ("arm64: dts: rockchip: Add the vdpu381 Video Decoders on RK3588")
+Signed-off-by: Cristian Ciocaltea <cristian.ciocaltea@collabora.com>
+Link: https://patch.msgid.link/20260304-vdec-reg-order-rk3576-v5-4-7006fad42c3a@collabora.com
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ arch/arm64/boot/dts/rockchip/rk3588-base.dtsi | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3588-base.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3588-base.dtsi
+@@ -1355,10 +1355,10 @@
+ 
+ 	vdec0: video-codec@fdc38000 {
+ 		compatible = "rockchip,rk3588-vdec";
+-		reg = <0x0 0xfdc38100 0x0 0x500>,
+-		      <0x0 0xfdc38000 0x0 0x100>,
++		reg = <0x0 0xfdc38000 0x0 0x100>,
++		      <0x0 0xfdc38100 0x0 0x500>,
+ 		      <0x0 0xfdc38600 0x0 0x100>;
+-		reg-names = "function", "link", "cache";
++		reg-names = "link", "function", "cache";
+ 		interrupts = <GIC_SPI 95 IRQ_TYPE_LEVEL_HIGH 0>;
+ 		clocks = <&cru ACLK_RKVDEC0>, <&cru HCLK_RKVDEC0>, <&cru CLK_RKVDEC0_CA>,
+ 			 <&cru CLK_RKVDEC0_CORE>, <&cru CLK_RKVDEC0_HEVC_CA>;
+@@ -1387,10 +1387,10 @@
+ 
+ 	vdec1: video-codec@fdc40000 {
+ 		compatible = "rockchip,rk3588-vdec";
+-		reg = <0x0 0xfdc40100 0x0 0x500>,
+-		      <0x0 0xfdc40000 0x0 0x100>,
++		reg = <0x0 0xfdc40000 0x0 0x100>,
++		      <0x0 0xfdc40100 0x0 0x500>,
+ 		      <0x0 0xfdc40600 0x0 0x100>;
+-		reg-names = "function", "link", "cache";
++		reg-names = "link", "function", "cache";
+ 		interrupts = <GIC_SPI 97 IRQ_TYPE_LEVEL_HIGH 0>;
+ 		clocks = <&cru ACLK_RKVDEC1>, <&cru HCLK_RKVDEC1>, <&cru CLK_RKVDEC1_CA>,
+ 			 <&cru CLK_RKVDEC1_CORE>, <&cru CLK_RKVDEC1_HEVC_CA>;

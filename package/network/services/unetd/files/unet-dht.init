@@ -10,7 +10,7 @@ unet_dht_id() {
 	cat \
 		/sys/class/net/eth?/address \
 		/sys/class/ieee80211/phy*/macaddress \
-		/etc/board.json | md5sum | awk '{ print $1 }'
+		/etc/board-base.json | md5sum | awk '{ print $1 }'
 }
 
 start_service() {

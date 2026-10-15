@@ -9,9 +9,9 @@ define Build/mstc-header
 		printf "CMOC"; \
 		tail -c+5 $@.crclen; head -c4 $@.crclen; \
 		printf '$(call toupper,$(LINUX_KARCH)) $(VERSION_DIST) Linux-$(LINUX_VERSION)' | \
-			dd bs=64 count=1 conv=sync 2>/dev/null; \
+			dd bs=64 count=1 conv=sync iflag=fullblock 2>/dev/null; \
 		printf "$(version)" | \
-			dd bs=64 count=1 conv=sync 2>/dev/null; \
+			dd bs=64 count=1 conv=sync iflag=fullblock 2>/dev/null; \
 		dd if=/dev/zero bs=$$(($(hdrlen) - 0x8c)) count=1 2>/dev/null; \
 		cat $@; \
 	) > $@.new
@@ -198,6 +198,17 @@ define Device/linksys_ipq50xx_mx_base
 	IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | linksys-image type=$$$$(DEVICE_MODEL)
 endef
 
+define Device/linksys_mr2000
+	$(call Device/linksys_ipq50xx_mx_base)
+	DEVICE_MODEL := MR2000
+	DEVICE_DTS_CONFIG := config@mp03.5-c1
+	DEVICE_PACKAGES := ath11k-firmware-ipq5018-qcn6122 \
+		ipq-wifi-linksys_mr2000 \
+		kmod-usb-storage \
+		kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += linksys_mr2000
+
 define Device/linksys_mr5500
 	$(call Device/linksys_ipq50xx_mx_base)
 	DEVICE_MODEL := MR5500
@@ -342,6 +353,22 @@ define Device/tplink_re700x
 		ipq-wifi-tplink_re700x kmod-phy-realtek
 endef
 TARGET_DEVICES += tplink_re700x
+
+define Device/wallys_dr5018s
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Wallys
+	DEVICE_MODEL := DR5018S
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	IMAGE_SIZE := 59392k
+	NAND_SIZE := 128m
+	SOC := ipq5018
+	DEVICE_DTS_CONFIG := config@mp03.5-c2
+	DEVICE_PACKAGES := ath11k-firmware-ipq5018-qcn6122 \
+		ipq-wifi-wallys_dr5018s
+endef
+TARGET_DEVICES += wallys_dr5018s
 
 define Device/xiaomi_ipq50xx_ax_base
 	$(call Device/FitImage)

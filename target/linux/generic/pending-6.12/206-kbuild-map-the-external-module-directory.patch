@@ -1,0 +1,35 @@
+From a352553356d2670933a9f4dc973372c57a2708fc Mon Sep 17 00:00:00 2001
+From: Paul Spooren <mail@aparcar.org>
+Date: Sun, 11 Oct 2026 17:48:27 +0200
+Subject: [PATCH] kbuild: map the directory of external modules out of __FILE__
+
+External modules are built from the absolute path given with M=, and
+only the kernel tree is mapped with -fmacro-prefix-map, so every
+__FILE__ of an external module, e.g. in WARN_ON() or pr_debug(), holds
+the absolute path of the module:
+
+  /builder/shared-workdir/build/build_dir/.../jool-4.1.15/src/mod/common/xlator.c
+
+Linux 6.13 maps the module directory itself, as srcroot. Map it here as
+well when building an external module. The map comes after the one of
+the kernel tree and before KCFLAGS, as GCC uses the last matching map.
+
+Signed-off-by: Paul Spooren <mail@aparcar.org>
+---
+ Makefile | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/Makefile
++++ b/Makefile
+@@ -1029,6 +1029,11 @@ KBUILD_CFLAGS += -fno-builtin-wcslen
+ 
+ # change __FILE__ to the relative path from the srctree
+ KBUILD_CPPFLAGS += $(call cc-option,-fmacro-prefix-map=$(srctree)/=)
++# External modules are built from the absolute path of their directory, so
++# map it as well, like Linux 6.13 and later do
++ifdef KBUILD_EXTMOD
++KBUILD_CPPFLAGS += $(call cc-option,-fmacro-prefix-map=$(abspath $(KBUILD_EXTMOD))/=)
++endif
+ 
+ # include additional Makefiles when needed
+ include-y			:= scripts/Makefile.extrawarn

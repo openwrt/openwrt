@@ -1,0 +1,42 @@
+From daa87ca42652af0d6791ef875e3c4d724b099f22 Mon Sep 17 00:00:00 2001
+From: Detlev Casanova <detlev.casanova@collabora.com>
+Date: Fri, 23 Jan 2026 14:22:44 -0500
+Subject: [PATCH] media: rkvdec: Improve handling missing short/long term RPS
+
+The values of ext_sps_st_rps and ext_sps_lt_rps in struct rkvdec_hevc_run
+are not initialized when the respective controls are not set by userspace.
+
+When this is the case, set them to NULL so the rkvdec_hevc_run_preamble
+function that parses controls does not access garbage data which leads to
+a panic on unaccessible memory.
+
+Fixes: c9a59dc2acc7 ("media: rkvdec: Add HEVC support for the VDPU381 variant")
+Reported-by: Christian Hewitt <christianshewitt@gmail.com>
+Suggested-by: Jonas Karlman <jonas@kwiboo.se>
+Signed-off-by: Detlev Casanova <detlev.casanova@collabora.com>
+Tested-by: Christian Hewitt <christianshewitt@gmail.com>
+Reviewed-by: Nicolas Dufresne <nicolas.dufresne@collabora.com>
+Signed-off-by: Nicolas Dufresne <nicolas.dufresne@collabora.com>
+Signed-off-by: Mauro Carvalho Chehab <mchehab+huawei@kernel.org>
+---
+ drivers/media/platform/rockchip/rkvdec/rkvdec-hevc-common.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/drivers/media/platform/rockchip/rkvdec/rkvdec-hevc-common.c
++++ b/drivers/media/platform/rockchip/rkvdec/rkvdec-hevc-common.c
+@@ -500,11 +500,15 @@ void rkvdec_hevc_run_preamble(struct rkv
+ 		ctrl = v4l2_ctrl_find(&ctx->ctrl_hdl,
+ 				      V4L2_CID_STATELESS_HEVC_EXT_SPS_ST_RPS);
+ 		run->ext_sps_st_rps = ctrl ? ctrl->p_cur.p : NULL;
++	} else {
++		run->ext_sps_st_rps = NULL;
+ 	}
+ 	if (ctx->has_sps_lt_rps) {
+ 		ctrl = v4l2_ctrl_find(&ctx->ctrl_hdl,
+ 				      V4L2_CID_STATELESS_HEVC_EXT_SPS_LT_RPS);
+ 		run->ext_sps_lt_rps = ctrl ? ctrl->p_cur.p : NULL;
++	} else {
++		run->ext_sps_lt_rps = NULL;
+ 	}
+ 
+ 	rkvdec_run_preamble(ctx, &run->base);

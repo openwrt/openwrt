@@ -1,0 +1,196 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Mon, 28 Sep 2026 12:00:00 +0000
+Subject: [PATCH] wifi: mac80211: retransmit the 4-address null frame until
+ it is acknowledged
+
+A station in 4-address mode sends one 4-address null data frame after
+association, or when 4-address mode is enabled while it is associated.
+The access point sets up the 4-address station only when it receives
+that frame. If the frame is lost, the access point keeps the station in
+3-address mode.
+
+If the driver reports ACK status, request TX status for the frame and
+send it again every second until the access point acknowledges it, for
+at most ten transmissions, so that a driver that loses the TX status of
+the frame does not keep it going for the whole association. The
+retransmission stops on disassociation, when 4-address mode is
+disabled, and when the interface stops. A hardware restart keeps the
+association, so it does not stop the retransmission.
+
+The TX status path runs without the wiphy mutex and cannot cancel the
+delayed work. It records the ACK instead, and the work then does
+nothing.
+
+Based on 0089-mtk-mac80211-retransmit-4addr-nullfunc-if-the-ACK-is.patch
+by Peter Chiu <chui-hao.chiu@mediatek.com> in the MediaTek feed. That
+patch uses status type 3, which is IEEE80211_STATUS_TYPE_UHR_OMP here,
+and cancels the work from the TX status path.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/net/mac80211/ieee80211_i.h
++++ b/net/mac80211/ieee80211_i.h
+@@ -100,6 +100,7 @@ enum ieee80211_status_data {
+ 	IEEE80211_STATUS_TYPE_SMPS	= 1,
+ 	IEEE80211_STATUS_TYPE_NEG_TTLM	= 2,
+ 	IEEE80211_STATUS_TYPE_UHR_OMP	= 3,
++	IEEE80211_STATUS_TYPE_4ADDR_NULLFUNC = 4,
+ 	IEEE80211_STATUS_SUBDATA_MASK	= 0x1ff0,
+ };
+ 
+@@ -578,6 +579,9 @@ struct ieee80211_if_managed {
+ 	unsigned int uapsd_max_sp_len;
+ 
+ 	u8 use_4addr;
++	bool nullfunc_4addr_acked;
++	u8 nullfunc_4addr_tries;
++	struct wiphy_delayed_work nullfunc_4addr_work;
+ 
+ 	/*
+ 	 * State variables for keeping track of RSSI of the AP currently
+--- a/net/mac80211/mlme.c
++++ b/net/mac80211/mlme.c
+@@ -44,6 +44,7 @@
+ #define IEEE80211_ASSOC_TIMEOUT_LONG	(HZ / 2)
+ #define IEEE80211_ASSOC_TIMEOUT_SHORT	(HZ / 10)
+ #define IEEE80211_ASSOC_MAX_TRIES	3
++#define IEEE80211_4ADDR_NULLFUNC_MAX_TRIES	10
+ 
+ #define IEEE80211_ADV_TTLM_SAFETY_BUFFER_MS (100 * USEC_PER_MSEC)
+ #define IEEE80211_ADV_TTLM_ST_UNDERFLOW 0xff00
+@@ -2842,15 +2843,21 @@ void ieee80211_send_nullfunc(struct ieee
+ 	ieee80211_tx_skb(sdata, skb);
+ }
+ 
+-void ieee80211_send_4addr_nullfunc(struct ieee80211_local *local,
+-				   struct ieee80211_sub_if_data *sdata)
++static void ieee80211_tx_4addr_nullfunc(struct ieee80211_sub_if_data *sdata)
+ {
++	struct ieee80211_local *local = sdata->local;
++	bool ack_status = ieee80211_hw_check(&local->hw, REPORTS_TX_ACK_STATUS);
++	struct ieee80211_tx_info *info;
+ 	struct sk_buff *skb;
+ 	struct ieee80211_hdr *nullfunc;
+ 	__le16 fc;
+ 
+-	if (WARN_ON(sdata->vif.type != NL80211_IFTYPE_STATION))
+-		return;
++	/* The AP creates the 4-address station only on receiving this frame */
++	if (ack_status &&
++	    ++sdata->u.mgd.nullfunc_4addr_tries <
++	    IEEE80211_4ADDR_NULLFUNC_MAX_TRIES)
++		wiphy_delayed_work_queue(local->hw.wiphy,
++					 &sdata->u.mgd.nullfunc_4addr_work, HZ);
+ 
+ 	skb = dev_alloc_skb(local->hw.extra_tx_headroom + 30);
+ 	if (!skb)
+@@ -2867,11 +2874,42 @@ void ieee80211_send_4addr_nullfunc(struc
+ 	memcpy(nullfunc->addr3, sdata->vif.cfg.ap_addr, ETH_ALEN);
+ 	memcpy(nullfunc->addr4, sdata->vif.addr, ETH_ALEN);
+ 
+-	IEEE80211_SKB_CB(skb)->flags |= IEEE80211_TX_INTFL_DONT_ENCRYPT;
+-	IEEE80211_SKB_CB(skb)->flags |= IEEE80211_TX_CTL_USE_MINRATE;
++	info = IEEE80211_SKB_CB(skb);
++	info->flags |= IEEE80211_TX_INTFL_DONT_ENCRYPT;
++	info->flags |= IEEE80211_TX_CTL_USE_MINRATE;
++	if (ack_status) {
++		info->flags |= IEEE80211_TX_CTL_REQ_TX_STATUS;
++		info->status_data = IEEE80211_STATUS_TYPE_4ADDR_NULLFUNC;
++	}
+ 	ieee80211_tx_skb(sdata, skb);
+ }
+ 
++static void ieee80211_nullfunc_4addr_work(struct wiphy *wiphy,
++					  struct wiphy_work *work)
++{
++	struct ieee80211_sub_if_data *sdata =
++		container_of(work, struct ieee80211_sub_if_data,
++			     u.mgd.nullfunc_4addr_work.work);
++	struct ieee80211_if_managed *ifmgd = &sdata->u.mgd;
++
++	if (!ifmgd->associated || !ifmgd->use_4addr ||
++	    READ_ONCE(ifmgd->nullfunc_4addr_acked))
++		return;
++
++	ieee80211_tx_4addr_nullfunc(sdata);
++}
++
++void ieee80211_send_4addr_nullfunc(struct ieee80211_local *local,
++				   struct ieee80211_sub_if_data *sdata)
++{
++	if (WARN_ON(sdata->vif.type != NL80211_IFTYPE_STATION))
++		return;
++
++	WRITE_ONCE(sdata->u.mgd.nullfunc_4addr_acked, false);
++	sdata->u.mgd.nullfunc_4addr_tries = 0;
++	ieee80211_tx_4addr_nullfunc(sdata);
++}
++
+ /* spectrum management related things */
+ static void ieee80211_csa_switch_work(struct wiphy *wiphy,
+ 				      struct wiphy_work *work)
+@@ -4744,6 +4782,9 @@ static void ieee80211_set_disassoc(struc
+ 	wiphy_work_cancel(sdata->local->hw.wiphy,
+ 			  &ifmgd->teardown_ttlm_work);
+ 
++	wiphy_delayed_work_cancel(sdata->local->hw.wiphy,
++				  &ifmgd->nullfunc_4addr_work);
++
+ 	/* if disconnection happens in the middle of the ML reconfiguration
+ 	 * flow, cfg80211 must called to release the BSS references obtained
+ 	 * when the flow started.
+@@ -9471,6 +9512,8 @@ void ieee80211_sta_setup_sdata(struct ie
+ 			ieee80211_teardown_ttlm_work);
+ 	wiphy_hrtimer_work_init(&ifmgd->uhr_omp.status_work,
+ 				ieee80211_uhr_omp_req_status_wk);
++	wiphy_delayed_work_init(&ifmgd->nullfunc_4addr_work,
++				ieee80211_nullfunc_4addr_work);
+ 
+ 	ifmgd->flags = 0;
+ 	ifmgd->powersave = sdata->wdev.ps;
+@@ -10787,6 +10830,8 @@ void ieee80211_mgd_stop(struct ieee80211
+ 				  &ifmgd->tdls_peer_del_work);
+ 	wiphy_hrtimer_work_cancel(sdata->local->hw.wiphy,
+ 				  &ifmgd->uhr_omp.status_work);
++	wiphy_delayed_work_cancel(sdata->local->hw.wiphy,
++				  &ifmgd->nullfunc_4addr_work);
+ 
+ 	if (ifmgd->assoc_data)
+ 		ieee80211_destroy_assoc_data(sdata, ASSOC_TIMEOUT);
+--- a/net/mac80211/status.c
++++ b/net/mac80211/status.c
+@@ -753,6 +753,23 @@ ieee80211_handle_uhr_omp_status(struct i
+ 				 us_to_ktime(sdata->u.mgd.uhr_omp.timeout_us));
+ }
+ 
++static void
++ieee80211_handle_4addr_nullfunc_status(struct ieee80211_sub_if_data *sdata,
++				       bool acked)
++{
++	if (!sdata || !ieee80211_sdata_running(sdata))
++		return;
++
++	if (!acked)
++		return;
++
++	if (sdata->vif.type != NL80211_IFTYPE_STATION)
++		return;
++
++	/* cancelling the retransmit work needs the wiphy mutex */
++	WRITE_ONCE(sdata->u.mgd.nullfunc_4addr_acked, true);
++}
++
+ static void ieee80211_report_used_skb(struct ieee80211_local *local,
+ 				      struct sk_buff *skb, bool dropped,
+ 				      ktime_t ack_hwtstamp)
+@@ -836,6 +853,9 @@ static void ieee80211_report_used_skb(st
+ 		case IEEE80211_STATUS_TYPE_UHR_OMP:
+ 			ieee80211_handle_uhr_omp_status(sdata, acked);
+ 			break;
++		case IEEE80211_STATUS_TYPE_4ADDR_NULLFUNC:
++			ieee80211_handle_4addr_nullfunc_status(sdata, acked);
++			break;
+ 		}
+ 		rcu_read_unlock();
+ 	}

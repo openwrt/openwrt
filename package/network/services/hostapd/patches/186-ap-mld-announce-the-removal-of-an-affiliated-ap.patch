@@ -1,0 +1,326 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Mon, 28 Sep 2026 10:50:00 +0200
+Subject: [PATCH] AP MLD: announce the removal of an affiliated AP
+
+IEEE 802.11be 35.3.6.3 has an AP MLD announce the removal of an
+affiliated AP in a Reconfiguration Multi-Link element in all Beacon and
+Probe Response frames of its affiliated APs, with the AP Removal Timer
+counting the TBTTs left, and 35.3.10 has each of them set the Critical
+Update flag until and including the next DTIM Beacon.
+hostapd_link_remove() builds the element only with
+CONFIG_TESTING_OPTIONS, and it looks for the link being removed among
+the first BSS of every interface rather than among the links of the AP
+MLD. At the count of 0 it disables the whole interface, which on a
+multi-radio wiphy takes down every BSS of the radio.
+
+Build hostapd_link_remove() without CONFIG_TESTING_OPTIONS. Take the
+links of the element from the AP MLD, and count its size into the
+Beacon and Probe Response length. Schedule each count from the time the
+first one was due, so the handler delay does not accumulate. Set the
+Critical Update flag in Beacon and Probe Response frames for DTIM period
+plus one counts, as the driver counts the DTIM, and keep it out of a
+complete per-STA profile, where it is reserved. A repeated request
+keeps the running count, and a BSS that is stopped drops it. At the
+count of 0 remove the link stations and leave the BSS running: the
+caller removes the affiliated AP by reconfiguring it.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/src/ap/beacon.c
++++ b/src/ap/beacon.c
+@@ -1052,6 +1052,19 @@ static u8 * hostapd_probe_resp_fill_elem
+ }
+ 
+ 
++static u16 hostapd_beacon_capab_info(struct hostapd_data *hapd)
++{
++	u16 capab_info = hostapd_own_capab_info(hapd);
++
++#ifdef CONFIG_IEEE80211BE
++	if (hostapd_link_remove_critical_update(hapd))
++		capab_info |= WLAN_CAPABILITY_CRITICAL_UPDATE;
++#endif /* CONFIG_IEEE80211BE */
++
++	return capab_info;
++}
++
++
+ static void hostapd_gen_probe_resp(struct hostapd_data *hapd,
+ 				   struct probe_resp_params *params)
+ {
+@@ -1091,7 +1104,7 @@ static void hostapd_gen_probe_resp(struc
+ 
+ 	/* hardware or low-level driver will setup seq_ctrl and timestamp */
+ 	params->resp->u.probe_resp.capab_info =
+-		host_to_le16(hostapd_own_capab_info(hapd));
++		host_to_le16(hostapd_beacon_capab_info(hapd));
+ 
+ 	pos = hostapd_probe_resp_fill_elems(hapd_probed, params,
+ 					    params->resp->u.probe_resp.variable,
+@@ -2339,7 +2352,7 @@ int ieee802_11_build_ap_params(struct ho
+ 		host_to_le16(hapd->iconf->beacon_int);
+ 
+ 	/* hardware or low-level driver will setup seq_ctrl and timestamp */
+-	capab_info = hostapd_own_capab_info(hapd);
++	capab_info = hostapd_beacon_capab_info(hapd);
+ 	head->u.beacon.capab_info = host_to_le16(capab_info);
+ 	pos = &head->u.beacon.variable[0];
+ 
+@@ -2954,8 +2967,12 @@ static size_t hostapd_add_sta_profile(st
+ 	/* Include len for capab info */
+ 	sta_profile_len += sizeof(le16);
+ 	if (sta_profile) {
+-		os_memcpy(sta_profile, &link_fdata->u.probe_resp.capab_info,
+-			  sizeof(le16));
++		/* Reserved in a complete profile (IEEE Std 802.11be-2024,
++		 * 9.4.1.4) */
++		le16 capab_info = link_fdata->u.probe_resp.capab_info &
++			~host_to_le16(WLAN_CAPABILITY_CRITICAL_UPDATE);
++
++		os_memcpy(sta_profile, &capab_info, sizeof(le16));
+ 		sta_profile += sizeof(le16);
+ 	}
+ 
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -443,7 +443,52 @@ static int hostapd_broadcast_wep_set(str
+ 
+ 
+ #ifdef CONFIG_IEEE80211BE
+-#ifdef CONFIG_TESTING_OPTIONS
++
++static void hostapd_link_remove_timeout_handler(void *eloop_data,
++						void *user_ctx);
++
++
++/* Set until and including the next DTIM Beacon (IEEE Std 802.11be-2024,
++ * 35.3.10); the driver counts DTIMs. */
++bool hostapd_link_remove_critical_update(struct hostapd_data *hapd)
++{
++	struct hostapd_data *link_bss;
++
++	if (!hapd->conf->mld_ap || !hapd->mld)
++		return false;
++
++	for_each_mld_link(link_bss, hapd) {
++		u16 announced = link_bss->eht_mld_link_removal_start -
++			link_bss->eht_mld_link_removal_count;
++
++		if (link_bss->eht_mld_link_removal_count &&
++		    announced <= hapd->conf->dtim_period)
++			return true;
++	}
++
++	return false;
++}
++
++
++/* Scheduled against the due time, so that handler delays do not add up */
++static void hostapd_link_remove_timeout_register(struct hostapd_data *hapd)
++{
++	struct os_reltime *due = &hapd->eht_mld_link_removal_due;
++	struct os_reltime now, delay;
++
++	due->usec += TU_TO_USEC(hapd->iconf->beacon_int);
++	due->sec += due->usec / 1000000;
++	due->usec %= 1000000;
++	os_get_reltime(&now);
++	if (os_reltime_before(due, &now))
++		os_memset(&delay, 0, sizeof(delay));
++	else
++		os_reltime_sub(due, &now, &delay);
++
++	eloop_register_timeout(delay.sec, delay.usec,
++			       hostapd_link_remove_timeout_handler, hapd, NULL);
++}
++
+ 
+ static void hostapd_link_remove_timeout_handler(void *eloop_data,
+ 						void *user_ctx)
+@@ -462,44 +507,51 @@ static void hostapd_link_remove_timeout_
+ 
+ 	if (!hapd->eht_mld_link_removal_count) {
+ 		hostapd_free_link_stas(hapd);
+-		hostapd_disable_iface(hapd->iface);
+ 		return;
+ 	}
+ 
+-	eloop_register_timeout(0, TU_TO_USEC(hapd->iconf->beacon_int),
+-			       hostapd_link_remove_timeout_handler,
+-			       hapd, NULL);
++	hostapd_link_remove_timeout_register(hapd);
+ }
+ 
+ 
++/* A repeated request must not set the AP Removal Timer back (IEEE Std
++ * 802.11be-2024, 35.3.6.3). */
+ int hostapd_link_remove(struct hostapd_data *hapd, u32 count)
+ {
+-	if (!hapd->conf->mld_ap)
++	if (!hapd->conf->mld_ap || !hapd->mld || !hapd->started || !count ||
++	    count > 0xffff)
+ 		return -1;
+ 
++	if (hapd->eht_mld_link_removal_count)
++		return 0;
++
+ 	wpa_printf(MSG_DEBUG,
+ 		   "MLD: Remove link_id=%u in %u beacons",
+ 		   hapd->mld_link_id, count);
+ 
++	hapd->eht_mld_link_removal_start = count;
+ 	hapd->eht_mld_link_removal_count = count;
+ 	hapd->eht_mld_bss_param_change++;
+ 	if (hapd->eht_mld_bss_param_change == 255)
+ 		hapd->eht_mld_bss_param_change = 0;
+ 
+-	eloop_register_timeout(0, TU_TO_USEC(hapd->iconf->beacon_int),
+-			       hostapd_link_remove_timeout_handler,
+-			       hapd, NULL);
++	os_get_reltime(&hapd->eht_mld_link_removal_due);
++	hostapd_link_remove_timeout_register(hapd);
+ 
+ 	ieee802_11_set_beacon(hapd);
+ 	return 0;
+ }
+ 
+-#endif /* CONFIG_TESTING_OPTIONS */
+ #endif /* CONFIG_IEEE80211BE */
+ 
+ 
+ void hostapd_free_hapd_data(struct hostapd_data *hapd)
+ {
++#ifdef CONFIG_IEEE80211BE
++	eloop_cancel_timeout(hostapd_link_remove_timeout_handler, hapd, NULL);
++	hapd->eht_mld_link_removal_count = 0;
++#endif /* CONFIG_IEEE80211BE */
++
+ 	os_free(hapd->probereq_cb);
+ 	hapd->probereq_cb = NULL;
+ 	hapd->num_probereq_cb = 0;
+@@ -653,11 +705,6 @@ void hostapd_free_hapd_data(struct hosta
+ 
+ #ifdef CONFIG_IEEE80211AX
+ 	eloop_cancel_timeout(hostapd_switch_color_timeout_handler, hapd, NULL);
+-#ifdef CONFIG_TESTING_OPTIONS
+-#ifdef CONFIG_IEEE80211BE
+-	eloop_cancel_timeout(hostapd_link_remove_timeout_handler, hapd, NULL);
+-#endif /* CONFIG_IEEE80211BE */
+-#endif /* CONFIG_TESTING_OPTIONS */
+ 
+ #endif /* CONFIG_IEEE80211AX */
+ }
+--- a/src/ap/hostapd.h
++++ b/src/ap/hostapd.h
+@@ -516,9 +516,9 @@ struct hostapd_data {
+ 	 * total, additional 7 characters required. */
+ 	char ctrl_sock_iface[IFNAMSIZ + 7 + 1];
+ 
+-#ifdef CONFIG_TESTING_OPTIONS
+-	u8 eht_mld_link_removal_count;
+-#endif /* CONFIG_TESTING_OPTIONS */
++	u16 eht_mld_link_removal_start;
++	u16 eht_mld_link_removal_count;
++	struct os_reltime eht_mld_link_removal_due;
+ #endif /* CONFIG_IEEE80211BE */
+ 
+ #ifdef CONFIG_NAN_USD
+@@ -951,6 +951,7 @@ int hostapd_mbssid_get_bss_index(struct
+ struct hostapd_data * hostapd_mld_get_link_bss(struct hostapd_data *hapd,
+ 					       u8 link_id);
+ int hostapd_link_remove(struct hostapd_data *hapd, u32 count);
++bool hostapd_link_remove_critical_update(struct hostapd_data *hapd);
+ bool hostapd_is_ml_partner(struct hostapd_data *hapd1,
+ 			   struct hostapd_data *hapd2);
+ u8 hostapd_get_mld_id(struct hostapd_data *hapd);
+--- a/src/ap/ieee802_11_eht.c
++++ b/src/ap/ieee802_11_eht.c
+@@ -745,29 +745,29 @@ out:
+ }
+ 
+ 
+-static u8 * hostapd_eid_eht_reconf_ml(struct hostapd_data *hapd, u8 *eid)
++static size_t hostapd_eid_eht_reconf_ml_len(struct hostapd_data *hapd)
+ {
+-#ifdef CONFIG_TESTING_OPTIONS
+-	struct hostapd_data *other_hapd;
+-	u16 control;
+-	u8 *pos = eid;
+-	unsigned int i;
++	struct hostapd_data *link_bss;
++	size_t len = 0;
+ 
+-	wpa_printf(MSG_DEBUG, "MLD: Reconfiguration ML");
++	if (!hapd->conf->mld_ap || !hapd->mld)
++		return 0;
+ 
+-	/* First check if the element needs to be added */
+-	for (i = 0; i < hapd->iface->interfaces->count; i++) {
+-		other_hapd = hapd->iface->interfaces->iface[i]->bss[0];
++	for_each_mld_link(link_bss, hapd)
++		if (link_bss->eht_mld_link_removal_count)
++			len += 2 + 5;
+ 
+-		wpa_printf(MSG_DEBUG, "MLD: Reconfiguration ML: %u",
+-			   other_hapd->eht_mld_link_removal_count);
++	return len ? 3 + 2 + 1 + len : 0;
++}
+ 
+-		if (other_hapd->eht_mld_link_removal_count)
+-			break;
+-	}
+ 
+-	/* No link is going to be removed */
+-	if (i == hapd->iface->interfaces->count)
++static u8 * hostapd_eid_eht_reconf_ml(struct hostapd_data *hapd, u8 *eid)
++{
++	struct hostapd_data *other_hapd;
++	u16 control;
++	u8 *pos = eid;
++
++	if (!hostapd_eid_eht_reconf_ml_len(hapd))
+ 		return eid;
+ 
+ 	wpa_printf(MSG_DEBUG, "MLD: Reconfiguration ML: Adding element");
+@@ -786,8 +786,7 @@ static u8 * hostapd_eid_eht_reconf_ml(st
+ 	*pos++ = 1;
+ 
+ 	/* Add the per station profiles */
+-	for (i = 0; i < hapd->iface->interfaces->count; i++) {
+-		other_hapd = hapd->iface->interfaces->iface[i]->bss[0];
++	for_each_mld_link(other_hapd, hapd) {
+ 		if (!other_hapd->eht_mld_link_removal_count)
+ 			continue;
+ 
+@@ -812,9 +811,6 @@ static u8 * hostapd_eid_eht_reconf_ml(st
+ 
+ 	wpa_hexdump(MSG_DEBUG, "MLD: Reconfiguration ML", eid, eid[1] + 2);
+ 	return pos;
+-#else /* CONFIG_TESTING_OPTIONS */
+-	return eid;
+-#endif /* CONFIG_TESTING_OPTIONS */
+ }
+ 
+ 
+@@ -892,7 +888,8 @@ size_t hostapd_eid_eht_ml_beacon_len(str
+ 				     struct mld_info *info,
+ 				     bool include_mld_id)
+ {
+-	return hostapd_eid_eht_ml_len(info, include_mld_id, false);
++	return hostapd_eid_eht_ml_len(info, include_mld_id, false) +
++		hostapd_eid_eht_reconf_ml_len(hapd);
+ }
+ 
+ 
+--- a/src/common/ieee802_11_defs.h
++++ b/src/common/ieee802_11_defs.h
+@@ -119,7 +119,8 @@
+ /* bit 3 is reserved (was WLAN_CAPABILITY_CF_POLL_REQUEST) */
+ #define WLAN_CAPABILITY_PRIVACY BIT(4)
+ #define WLAN_CAPABILITY_SHORT_PREAMBLE BIT(5)
+-/* bit 6 is reserved (was WLAN_CAPABILITY_PBCC) */
++/* IEEE Std 802.11be-2024, 9.4.1.4 */
++#define WLAN_CAPABILITY_CRITICAL_UPDATE BIT(6)
+ /* bit 7 is reserved (was WLAN_CAPABILITY_CHANNEL_AGILITY) */
+ #define WLAN_CAPABILITY_SPECTRUM_MGMT BIT(8)
+ #define WLAN_CAPABILITY_QOS BIT(9)

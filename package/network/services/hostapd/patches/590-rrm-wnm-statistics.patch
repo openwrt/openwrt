@@ -63,7 +63,7 @@ method.
  	wpa_printf(MSG_DEBUG, "WNM: Send BSS Transition Management Request to "
  		   MACSTR " dialog_token=%u req_mode=0x%x disassoc_timer=%u "
  		   "validity_interval=%u",
-@@ -814,10 +815,12 @@ int ieee802_11_rx_wnm_action_ap(struct h
+@@ -813,10 +814,12 @@ int ieee802_11_rx_wnm_action_ap(struct h
  					       plen);
  		return 0;
  	case WNM_BSS_TRANS_MGMT_QUERY:
@@ -76,7 +76,7 @@ method.
  		ieee802_11_rx_bss_trans_mgmt_resp(hapd, mgmt->sa, payload,
  						  plen);
  		return 0;
-@@ -865,6 +868,7 @@ int wnm_send_disassoc_imminent(struct ho
+@@ -864,6 +867,7 @@ int wnm_send_disassoc_imminent(struct ho
  
  	pos = mgmt->u.action.u.bss_tm_req.variable;
  
@@ -84,7 +84,7 @@ method.
  	wpa_printf(MSG_DEBUG, "WNM: Send BSS Transition Management Request frame to indicate imminent disassociation (disassoc_timer=%d) to "
  		   MACSTR, disassoc_timer, MAC2STR(sta->addr));
  	if (hostapd_drv_send_mlme(hapd, buf, pos - buf, 0, NULL, 0, 0) < 0) {
-@@ -947,6 +951,7 @@ int wnm_send_ess_disassoc_imminent(struc
+@@ -946,6 +950,7 @@ int wnm_send_ess_disassoc_imminent(struc
  		return -1;
  	}
  
@@ -92,7 +92,7 @@ method.
  	if (disassoc_timer) {
  		/* send disassociation frame after time-out */
  		set_disassoc_timer(hapd, sta, disassoc_timer);
-@@ -1028,6 +1033,7 @@ int wnm_send_bss_tm_req(struct hostapd_d
+@@ -1029,6 +1034,7 @@ int wnm_send_bss_tm_req(struct hostapd_d
  	}
  	os_free(buf);
  

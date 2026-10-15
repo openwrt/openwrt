@@ -1,0 +1,180 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sun, 27 Sep 2026 23:45:00 +0200
+Subject: [PATCH] wifi: mac80211_hwsim: send a frame with no rate at the peer's highest rate
+
+An MLO radio declares HAS_RATE_CONTROL, so mac80211 picks no rate for a
+frame and leaves the rate entries as the TX info was cleared, with no
+attempt count. hwsim then reports a TX status with no rate, mac80211
+records no last TX rate, and an MLD station reports no TX bit rate at
+all. A medium in userspace delivers the frame at the lowest rate.
+
+Send such a frame at the first attempt. For a data frame to a peer, take
+the highest rate a TX status can express that the peer receives on the
+channel width in use: the highest VHT MCS of its highest stream count
+outside 2.4 GHz, else the highest HT MCS, as a rate controller would
+settle on for an ideal channel. Both stop at four streams, the most
+minstrel_ht uses (MINSTREL_MAX_STREAMS) and the most the airtime
+estimate of a VHT or HT rate handles: ieee80211_get_rate_duration()
+warns above that. Other frames go at the highest legacy
+rate of the band. End the list after that entry: the medium hands the
+entries back as the TX status, and ieee80211_tx_get_rates() stops at a
+negative index only, so it took the last cleared entry, with no attempt
+count, as the rate.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/drivers/net/wireless/virtual/mac80211_hwsim_main.c
++++ b/drivers/net/wireless/virtual/mac80211_hwsim_main.c
+@@ -2132,6 +2132,124 @@ static int mac80211_hwsim_set_key(struct
+ 	return 0;
+ }
+ 
++static enum ieee80211_sta_rx_bandwidth
++mac80211_hwsim_chan_width_bw(enum nl80211_chan_width width)
++{
++	switch (width) {
++	case NL80211_CHAN_WIDTH_40:
++		return IEEE80211_STA_RX_BW_40;
++	case NL80211_CHAN_WIDTH_80:
++		return IEEE80211_STA_RX_BW_80;
++	case NL80211_CHAN_WIDTH_80P80:
++	case NL80211_CHAN_WIDTH_160:
++	case NL80211_CHAN_WIDTH_320:
++		return IEEE80211_STA_RX_BW_160;
++	default:
++		return IEEE80211_STA_RX_BW_20;
++	}
++}
++
++/* The highest VHT MCS the peer receives on nss streams, or -1 for none. */
++static int mac80211_hwsim_vht_mcs(struct ieee80211_link_sta *peer, u8 nss,
++				  enum ieee80211_sta_rx_bandwidth bw)
++{
++	u16 map = le16_to_cpu(peer->vht_cap.vht_mcs.rx_mcs_map);
++	u8 support = (map >> (2 * (nss - 1))) & 3;
++
++	if (support == IEEE80211_VHT_MCS_NOT_SUPPORTED)
++		return -1;
++
++	/* VHT MCS 9 at 20 MHz is valid for 3 and 6 streams only */
++	if (support == IEEE80211_VHT_MCS_SUPPORT_0_9 &&
++	    bw == IEEE80211_STA_RX_BW_20 && nss != 3 && nss != 6)
++		return 8;
++
++	return 7 + support;
++}
++
++static bool mac80211_hwsim_tx_vht(struct ieee80211_tx_rate *rate,
++				  struct ieee80211_link_sta *peer,
++				  enum ieee80211_sta_rx_bandwidth bw)
++{
++	u8 nss;
++
++	for (nss = clamp_t(u8, peer->rx_nss, 1, 4); nss; nss--) {
++		int mcs = mac80211_hwsim_vht_mcs(peer, nss, bw);
++
++		if (mcs < 0)
++			continue;
++
++		rate->flags = IEEE80211_TX_RC_VHT_MCS;
++		if (bw == IEEE80211_STA_RX_BW_40)
++			rate->flags |= IEEE80211_TX_RC_40_MHZ_WIDTH;
++		else if (bw == IEEE80211_STA_RX_BW_80)
++			rate->flags |= IEEE80211_TX_RC_80_MHZ_WIDTH;
++		else if (bw >= IEEE80211_STA_RX_BW_160)
++			rate->flags |= IEEE80211_TX_RC_160_MHZ_WIDTH;
++		ieee80211_rate_set_vht(rate, mcs, nss);
++		return true;
++	}
++
++	return false;
++}
++
++static bool mac80211_hwsim_tx_ht(struct ieee80211_tx_rate *rate,
++				 struct ieee80211_link_sta *peer,
++				 enum ieee80211_sta_rx_bandwidth bw)
++{
++	u8 nss;
++
++	for (nss = clamp_t(u8, peer->rx_nss, 1, 4); nss; nss--) {
++		if (!(peer->ht_cap.mcs.rx_mask[nss - 1] & 0x80))
++			continue;
++
++		rate->flags = IEEE80211_TX_RC_MCS;
++		if (bw >= IEEE80211_STA_RX_BW_40)
++			rate->flags |= IEEE80211_TX_RC_40_MHZ_WIDTH;
++		rate->idx = nss * 8 - 1;
++		return true;
++	}
++
++	return false;
++}
++
++/*
++ * mac80211 leaves the rates empty with HAS_RATE_CONTROL. Use the highest
++ * rate the peer receives, so that the TX status reports a rate.
++ */
++static void mac80211_hwsim_tx_rate_fill(struct ieee80211_hw *hw,
++					struct ieee80211_tx_info *txi,
++					struct ieee80211_hdr *hdr,
++					struct ieee80211_link_sta *peer,
++					struct ieee80211_channel *channel,
++					enum nl80211_chan_width confbw)
++{
++	struct ieee80211_tx_rate *rate = &txi->control.rates[0];
++	struct ieee80211_supported_band *sband = hw->wiphy->bands[channel->band];
++	enum ieee80211_sta_rx_bandwidth bw;
++
++	if (!ieee80211_hw_check(hw, HAS_RATE_CONTROL) ||
++	    (rate->idx >= 0 && rate->count) || !sband || !sband->n_bitrates)
++		return;
++
++	rate->idx = sband->n_bitrates - 1;
++	rate->count = 1;
++	rate->flags = 0;
++	txi->control.rates[1].idx = -1;
++
++	if (!peer || !ieee80211_is_data(hdr->frame_control))
++		return;
++
++	bw = min(peer->bandwidth, mac80211_hwsim_chan_width_bw(confbw));
++
++	if (channel->band != NL80211_BAND_2GHZ && peer->vht_cap.vht_supported &&
++	    mac80211_hwsim_tx_vht(rate, peer, bw))
++		return;
++
++	if (peer->ht_cap.ht_supported)
++		mac80211_hwsim_tx_ht(rate, peer, bw);
++}
++
+ static void mac80211_hwsim_tx(struct ieee80211_hw *hw,
+ 			      struct ieee80211_tx_control *control,
+ 			      struct sk_buff *skb)
+@@ -2143,6 +2261,8 @@ static void mac80211_hwsim_tx(struct iee
+ 	struct ieee80211_chanctx_conf *chanctx_conf;
+ 	struct ieee80211_channel *channel;
+ 	struct ieee80211_vif *vif = txi->control.vif;
++	struct ieee80211_link_sta *peer =
++		control->sta ? &control->sta->deflink : NULL;
+ 	bool ack, unicast_data;
+ 	enum nl80211_chan_width confbw = NL80211_CHAN_WIDTH_20_NOHT;
+ 	u32 _portid, i;
+@@ -2203,6 +2323,9 @@ static void mac80211_hwsim_tx(struct iee
+ 								 hdr, &link_sta);
+ 		}
+ 
++		if (link_sta)
++			peer = link_sta;
++
+ 		if (unlikely(!bss_conf)) {
+ 			/* if it's an MLO STA, it might have deactivated all
+ 			 * links temporarily - but we don't handle real PS in
+@@ -2265,6 +2388,8 @@ static void mac80211_hwsim_tx(struct iee
+ 		return;
+ 	}
+ 
++	mac80211_hwsim_tx_rate_fill(hw, txi, hdr, peer, channel, confbw);
++
+ 	if (vif)
+ 		hwsim_check_magic(vif);
+ 	if (control->sta)

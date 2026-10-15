@@ -19,10 +19,11 @@ refresh_prebuilt_tools() {
 		exit 1
 	fi
 
-	local now
-	now=$(date +%Y%m%d%H%M.%S)
+	local ref
+	ref=$(mktemp)
 	find -H "$HOST_BUILD_DIR" "$HOST_STAGING_DIR_STAMP" \
-		-type f -empty -print0 | xargs -0 touch -t "$now"
+		-type f -empty -print0 | xargs -0 touch -r "$ref"
+	rm -f "$ref"
 
 	return 0
 }

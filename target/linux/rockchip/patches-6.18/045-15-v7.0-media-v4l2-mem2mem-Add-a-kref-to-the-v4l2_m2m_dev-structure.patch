@@ -1,0 +1,103 @@
+From db6b97a4f8041e479be9ef4b8b07022636c96f50 Mon Sep 17 00:00:00 2001
+From: Nicolas Dufresne <nicolas.dufresne@collabora.com>
+Date: Fri, 5 Dec 2025 09:54:24 +0800
+Subject: [PATCH] media: v4l2-mem2mem: Add a kref to the v4l2_m2m_dev structure
+
+Adding a reference count to the v4l2_m2m_dev structure allow safely
+sharing it across multiple hardware nodes. This can be used to prevent
+running jobs concurrently on m2m cores that have some internal resource
+sharing.
+
+Signed-off-by: Ming Qian <ming.qian@oss.nxp.com>
+Reviewed-by: Frank Li <Frank.Li@nxp.com>
+Signed-off-by: Nicolas Dufresne <nicolas.dufresne@collabora.com>
+Signed-off-by: Hans Verkuil <hverkuil+cisco@kernel.org>
+[hverkuil: fix typos in v4l2_m2m_put documentation]
+---
+ drivers/media/v4l2-core/v4l2-mem2mem.c | 23 +++++++++++++++++++++++
+ include/media/v4l2-mem2mem.h           | 21 +++++++++++++++++++++
+ 2 files changed, 44 insertions(+)
+
+--- a/drivers/media/v4l2-core/v4l2-mem2mem.c
++++ b/drivers/media/v4l2-core/v4l2-mem2mem.c
+@@ -90,6 +90,7 @@ static const char * const m2m_entity_nam
+  * @job_work:		worker to run queued jobs.
+  * @job_queue_flags:	flags of the queue status, %QUEUE_PAUSED.
+  * @m2m_ops:		driver callbacks
++ * @kref:		device reference count
+  */
+ struct v4l2_m2m_dev {
+ 	struct v4l2_m2m_ctx	*curr_ctx;
+@@ -109,6 +110,8 @@ struct v4l2_m2m_dev {
+ 	unsigned long		job_queue_flags;
+ 
+ 	const struct v4l2_m2m_ops *m2m_ops;
++
++	struct kref kref;
+ };
+ 
+ static struct v4l2_m2m_queue_ctx *get_queue_ctx(struct v4l2_m2m_ctx *m2m_ctx,
+@@ -1200,6 +1203,7 @@ struct v4l2_m2m_dev *v4l2_m2m_init(const
+ 	INIT_LIST_HEAD(&m2m_dev->job_queue);
+ 	spin_lock_init(&m2m_dev->job_spinlock);
+ 	INIT_WORK(&m2m_dev->job_work, v4l2_m2m_device_run_work);
++	kref_init(&m2m_dev->kref);
+ 
+ 	return m2m_dev;
+ }
+@@ -1211,6 +1215,25 @@ void v4l2_m2m_release(struct v4l2_m2m_de
+ }
+ EXPORT_SYMBOL_GPL(v4l2_m2m_release);
+ 
++void v4l2_m2m_get(struct v4l2_m2m_dev *m2m_dev)
++{
++	kref_get(&m2m_dev->kref);
++}
++EXPORT_SYMBOL_GPL(v4l2_m2m_get);
++
++static void v4l2_m2m_release_from_kref(struct kref *kref)
++{
++	struct v4l2_m2m_dev *m2m_dev = container_of(kref, struct v4l2_m2m_dev, kref);
++
++	v4l2_m2m_release(m2m_dev);
++}
++
++void v4l2_m2m_put(struct v4l2_m2m_dev *m2m_dev)
++{
++	kref_put(&m2m_dev->kref, v4l2_m2m_release_from_kref);
++}
++EXPORT_SYMBOL_GPL(v4l2_m2m_put);
++
+ struct v4l2_m2m_ctx *v4l2_m2m_ctx_init(struct v4l2_m2m_dev *m2m_dev,
+ 		void *drv_priv,
+ 		int (*queue_init)(void *priv, struct vb2_queue *src_vq, struct vb2_queue *dst_vq))
+--- a/include/media/v4l2-mem2mem.h
++++ b/include/media/v4l2-mem2mem.h
+@@ -548,6 +548,27 @@ v4l2_m2m_register_media_controller(struc
+ void v4l2_m2m_release(struct v4l2_m2m_dev *m2m_dev);
+ 
+ /**
++ * v4l2_m2m_get() - take a reference to the m2m_dev structure
++ *
++ * @m2m_dev: opaque pointer to the internal data to handle M2M context
++ *
++ * This is used to share the M2M device across multiple devices. This
++ * can be used to avoid scheduling two hardware nodes concurrently.
++ */
++void v4l2_m2m_get(struct v4l2_m2m_dev *m2m_dev);
++
++/**
++ * v4l2_m2m_put() - remove a reference to the m2m_dev structure
++ *
++ * @m2m_dev: opaque pointer to the internal data to handle M2M context
++ *
++ * Once the M2M device has no more references, v4l2_m2m_release() will be
++ * called automatically. Users of this method should never call
++ * v4l2_m2m_release() directly. See v4l2_m2m_get() for more details.
++ */
++void v4l2_m2m_put(struct v4l2_m2m_dev *m2m_dev);
++
++/**
+  * v4l2_m2m_ctx_init() - allocate and initialize a m2m context
+  *
+  * @m2m_dev: opaque pointer to the internal data to handle M2M context

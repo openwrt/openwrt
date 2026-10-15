@@ -1,0 +1,44 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 26 Sep 2026 22:00:00 +0200
+Subject: [PATCH] wifi: mac80211_hwsim: keep radar detection on a multi-radio wiphy
+
+A radio that uses channel contexts gets no radar detection widths in its
+global interface combination, because DFS requires a combination with a
+single channel. A multi-radio radio always uses channel contexts, and
+its global combination multiplies the channel count by the number of
+radios. So it loses the radar detection widths as well, while each
+per-radio combination keeps them.
+
+mac80211 checks the channel of a radar detection against the global
+combination (ieee80211_check_combinations() with radio_idx -1 from
+_ieee80211_link_use_channel()). No combination matches, and every CAC on
+a multi-radio hwsim radio fails. hostapd reports it as "start_dfs_cac()
+failed" and disables the interface.
+
+cfg80211 exempts the global combination of a multi-radio wiphy from the
+single channel rule for DFS (wiphy_verify_iface_combinations()), since
+it only sums up the radios. Keep the radar detection widths there when
+each radio has one channel. With more than one channel per radio, clear
+them in the per-radio combination too, which cfg80211 would refuse
+otherwise.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+--- a/drivers/net/wireless/virtual/mac80211_hwsim_main.c
++++ b/drivers/net/wireless/virtual/mac80211_hwsim_main.c
+@@ -6099,8 +6099,14 @@ static int mac80211_hwsim_new_radio(stru
+ 		data->if_combination.num_different_channels *= n_bands;
+ 	}
+ 
+-	if (data->use_chanctx)
++	/*
++	 * DFS needs a single channel per combination. cfg80211 exempts the
++	 * global combination of a multi-radio wiphy.
++	 */
++	if (data->use_chanctx && (!param->multi_radio || data->channels > 1)) {
+ 		data->if_combination.radar_detect_widths = 0;
++		data->if_combination_radio.radar_detect_widths = 0;
++	}
+ 
+ 	/* By default all radios belong to the first group */
+ 	data->group = 1;

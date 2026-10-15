@@ -4,7 +4,7 @@
 define Build/buffalo-tftp-header
 	( \
 		echo -n -e "# Airstation FirmWare\nrun u_fw\nreset\n\n" | \
-			dd bs=512 count=1 conv=sync; \
+			dd bs=512 count=1 conv=sync iflag=fullblock; \
 		dd if=$@; \
 	) > $@.tmp && \
 	$(STAGING_DIR_HOST)/bin/buffalo-tftp -i $@.tmp -o $@.new

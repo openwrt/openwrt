@@ -67,10 +67,20 @@ define Device/hasivo_f1100w-4sx-4xgt-common
   DEVICE_ALT0_VENDOR := Hasivo
   DEVICE_ALT0_MODEL := F1100W-4SX-4XGT-SE
   DEVICE_PACKAGES := \
-    kmod-hasivo-mcu-sensor kmod-hasivo-mcu-wdt kmod-mfd-hasivo-stc8 \
-    kmod-phy-realtek rtl826x-firmware
+    kmod-phy-realtek rtl826x-firmware uboot-envtools
   IMAGE_SIZE := 29696k
   $(Device/kernel-lzma)
+  # Stock download patch requires a filename starting with patch, ending in .tar.gz, and no longer than 64 bytes.
+  DEVICE_IMG_NAME = $$(if $$(filter factory.patch.tar.gz,$$(2)),patch-openwrt-$$(DEVICE_NAME).tar.gz,$$(DEVICE_IMG_PREFIX)-$$(1)-$$(2))
+  # ImageBuilder and AUTOREMOVE lack prepared BusyBox sources and U-Boot objects.
+  $(if $(or $(IB),$(CONFIG_AUTOREMOVE)),,IMAGES += factory.patch.tar.gz)
+  IMAGE/factory.patch.tar.gz := \
+	append-kernel | \
+	pad-to 64k | \
+	append-rootfs | \
+	pad-rootfs | \
+	check-size | \
+	hasivo-stock-patch
 endef
 
 define Device/hasivo_f1100w-4sx-4xgt
@@ -187,6 +197,23 @@ define Device/keeplink_kp-9000-8xm
   $(Device/kernel-lzma)
 endef
 TARGET_DEVICES += keeplink_kp-9000-8xm
+
+define Device/lianguo_lg-swtgw3c8f
+  SOC := rtl9303
+  UIMAGE_MAGIC := 0x83800000
+  DEVICE_VENDOR := Lianguo
+  DEVICE_MODEL := LG-SWTGW3C8F
+  IMAGE_SIZE := 12288k
+  $(Device/kernel-lzma)
+  IMAGES += factory.bix
+  IMAGE/factory.bix := \
+	append-kernel | \
+	pad-to 64k | \
+	append-rootfs | \
+	pad-rootfs | \
+	check-size
+endef
+TARGET_DEVICES += lianguo_lg-swtgw3c8f
 
 define Device/mokerlink_2g080gm
   SOC := rtl9303

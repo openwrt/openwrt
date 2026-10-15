@@ -4,6 +4,8 @@
 #include "utils/base64.h"
 #include "drivers/driver.h"
 #include "ap/hostapd.h"
+#include "common/sae.h"
+#include "rsn_supp/wpa.h"
 #include "wpa_supplicant_i.h"
 #include "wps_supplicant.h"
 #include "ctrl_iface.h"
@@ -137,7 +139,8 @@ void wpas_ucode_event(struct wpa_supplicant *wpa_s, int event, union wpa_event_d
 	const char *state;
 	uc_value_t *val;
 
-	if (event != EVENT_CH_SWITCH_STARTED)
+	if (event != EVENT_CH_SWITCH_STARTED &&
+	    event != EVENT_LINK_CH_SWITCH_STARTED)
 		return;
 
 	val = wpa_ucode_registry_get(iface_registry, wpa_s->ucode.idx);
@@ -153,13 +156,13 @@ void wpas_ucode_event(struct wpa_supplicant *wpa_s, int event, union wpa_event_d
 	val = ucv_object_new(vm);
 	uc_value_push(ucv_get(val));
 
-	if (event == EVENT_CH_SWITCH_STARTED) {
-		ucv_object_add(val, "csa_count", ucv_int64_new(data->ch_switch.count));
-		ucv_object_add(val, "frequency", ucv_int64_new(data->ch_switch.freq));
-		ucv_object_add(val, "sec_chan_offset", ucv_int64_new(data->ch_switch.ch_offset));
-		ucv_object_add(val, "center_freq1", ucv_int64_new(data->ch_switch.cf1));
-		ucv_object_add(val, "center_freq2", ucv_int64_new(data->ch_switch.cf2));
-	}
+	ucv_object_add(val, "csa_count", ucv_int64_new(data->ch_switch.count));
+	ucv_object_add(val, "frequency", ucv_int64_new(data->ch_switch.freq));
+	ucv_object_add(val, "sec_chan_offset", ucv_int64_new(data->ch_switch.ch_offset));
+	ucv_object_add(val, "center_freq1", ucv_int64_new(data->ch_switch.cf1));
+	ucv_object_add(val, "center_freq2", ucv_int64_new(data->ch_switch.cf2));
+	if (event == EVENT_LINK_CH_SWITCH_STARTED)
+		ucv_object_add(val, "link_id", ucv_int64_new(data->ch_switch.link_id));
 
 	ucv_put(wpa_ucode_call(4));
 }
@@ -784,6 +787,114 @@ uc_wpas_iface_config(uc_vm_t *vm, size_t nargs)
 	return ret;
 }
 
+#ifdef CONFIG_SAE
+static bool
+uc_wpas_sae_password_equal(struct wpa_ssid *a, struct wpa_ssid *b)
+{
+	const char *pw_a = a->sae_password ? a->sae_password : a->passphrase;
+	const char *pw_b = b->sae_password ? b->sae_password : b->passphrase;
+
+	return pw_a && pw_b && !os_strcmp(pw_a, pw_b);
+}
+#endif /* CONFIG_SAE */
+
+static const char *
+uc_wpas_network_mismatch(struct wpa_supplicant *wpa_s, struct wpa_ssid *ssid)
+{
+	struct wpa_ssid *cur = wpa_s->current_ssid;
+	int pmf = wpas_get_ssid_pmf(wpa_s, ssid);
+	int pmf_used = wpa_sm_pmf_enabled(wpa_s->wpa);
+
+	if (cur->ssid_len != ssid->ssid_len ||
+	    os_memcmp(cur->ssid, ssid->ssid, ssid->ssid_len) != 0)
+		return "SSID";
+	if (!(ssid->key_mgmt & wpa_s->key_mgmt))
+		return "AKM";
+	if (!(ssid->proto & wpa_s->wpa_proto))
+		return "protocol";
+	if (!(ssid->pairwise_cipher & wpa_s->pairwise_cipher) ||
+	    !(ssid->group_cipher & wpa_s->group_cipher))
+		return "cipher";
+	if ((pmf == MGMT_FRAME_PROTECTION_REQUIRED && !pmf_used) ||
+	    (pmf == NO_MGMT_FRAME_PROTECTION && pmf_used))
+		return "PMF";
+	if (cur->ext_psk || ssid->ext_psk)
+		return "external password";
+	if (wpa_key_mgmt_wpa_psk_no_sae(wpa_s->key_mgmt) &&
+	    (!cur->psk_set || !ssid->psk_set ||
+	     os_memcmp(cur->psk, ssid->psk, PMK_LEN) != 0))
+		return "PSK";
+#ifdef CONFIG_SAE
+	if (wpa_key_mgmt_sae(wpa_s->key_mgmt) &&
+	    (!uc_wpas_sae_password_equal(cur, ssid) ||
+	     wpas_get_ssid_sae_pwe(wpa_s, cur) !=
+	     wpas_get_ssid_sae_pwe(wpa_s, ssid)))
+		return "SAE password or PWE";
+#endif /* CONFIG_SAE */
+
+	return NULL;
+}
+
+/*
+ * The PMKSA cache stays: flushing it deauthenticates a station that holds
+ * an SAE PMKSA.
+ */
+static void
+uc_wpas_network_move(struct wpa_ssid *cur, struct wpa_ssid *ssid)
+{
+	str_clear_free(cur->passphrase);
+	cur->passphrase = ssid->passphrase;
+	ssid->passphrase = NULL;
+	str_clear_free(cur->sae_password);
+	cur->sae_password = ssid->sae_password;
+	ssid->sae_password = NULL;
+	os_memcpy(cur->psk, ssid->psk, PMK_LEN);
+	cur->psk_set = ssid->psk_set;
+	cur->key_mgmt = ssid->key_mgmt;
+	cur->ieee80211w = ssid->ieee80211w;
+	cur->sae_pwe = ssid->sae_pwe;
+	cur->proto = ssid->proto;
+	cur->pairwise_cipher = ssid->pairwise_cipher;
+	cur->group_cipher = ssid->group_cipher;
+#ifdef CONFIG_SAE
+	sae_deinit_pt(cur->pt);
+	cur->pt = NULL;
+#endif /* CONFIG_SAE */
+}
+
+static uc_value_t *
+uc_wpas_iface_network_update(uc_vm_t *vm, size_t nargs)
+{
+	struct wpa_supplicant *wpa_s = uc_fn_thisval("wpas.iface");
+	struct wpa_config *conf;
+	const char *mismatch = "configuration";
+
+	if (!wpa_s)
+		return NULL;
+
+	if (!wpa_s->current_ssid || wpa_s->current_ssid != wpa_s->conf->ssid ||
+	    wpa_s->conf->ssid->next || wpa_s->wpa_state != WPA_COMPLETED ||
+	    !wpa_key_mgmt_wpa_psk(wpa_s->key_mgmt) || !wpa_s->confname)
+		return ucv_boolean_new(false);
+
+	conf = wpa_config_read(wpa_s->confname, NULL, false, false);
+	if (!conf)
+		return ucv_boolean_new(false);
+
+	if (conf->ssid && !conf->ssid->next)
+		mismatch = uc_wpas_network_mismatch(wpa_s, conf->ssid);
+
+	if (mismatch)
+		wpa_printf(MSG_INFO, "%s: new network does not fit the association: %s",
+			   wpa_s->ifname, mismatch);
+	else
+		uc_wpas_network_move(wpa_s->current_ssid, conf->ssid);
+
+	wpa_config_free(conf);
+
+	return ucv_boolean_new(!mismatch);
+}
+
 int wpas_ucode_init(struct wpa_global *gl)
 {
 	static const uc_function_list_t global_fns[] = {
@@ -797,6 +908,7 @@ int wpas_ucode_init(struct wpa_global *gl)
 		{ "status", uc_wpas_iface_status },
 		{ "ctrl", uc_wpas_iface_ctrl },
 		{ "config", uc_wpas_iface_config },
+		{ "network_update", uc_wpas_iface_network_update },
 		{ "wps_set_m7", uc_wpas_iface_wps_set_m7 },
 #ifdef CONFIG_DPP
 		{ "dpp_send_action", uc_wpas_iface_dpp_send_action },
