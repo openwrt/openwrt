@@ -561,6 +561,27 @@ endef
 
 $(eval $(call KernelPackage,crypto-kpp))
 
+
+define KernelPackage/crypto-krb5
+  TITLE:=Kerberos 5 crypto library
+  DEPENDS:=@!LINUX_6_12 +kmod-crypto-manager +kmod-crypto-authenc \
+	+kmod-crypto-hmac +kmod-crypto-cmac +kmod-crypto-sha1 \
+	+kmod-crypto-sha256 +kmod-crypto-sha512 +kmod-crypto-cbc \
+	+kmod-crypto-cts
+  KCONFIG:= \
+	CONFIG_CRYPTO_KRB5 \
+	CONFIG_CRYPTO_KRB5ENC \
+	CONFIG_CRYPTO_KRB5_SELFTESTS=n
+  FILES:= \
+	$(LINUX_DIR)/crypto/krb5enc.ko \
+	$(LINUX_DIR)/crypto/krb5/krb5.ko
+  AUTOLOAD:=$(call AutoLoad,09,krb5enc krb5)
+  $(call AddDepends/crypto)
+endef
+
+$(eval $(call KernelPackage,crypto-krb5))
+
+
 define KernelPackage/crypto-lib-chacha20
   TITLE:=ChaCha library interface
   KCONFIG:=CONFIG_CRYPTO_LIB_CHACHA
@@ -1129,4 +1150,3 @@ define KernelPackage/crypto-xxhash
 endef
 
 $(eval $(call KernelPackage,crypto-xxhash))
-
