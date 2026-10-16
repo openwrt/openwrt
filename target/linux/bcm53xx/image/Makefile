@@ -511,6 +511,26 @@ define Device/netgear_r6400-v1
 endef
 TARGET_DEVICES += netgear_r6400-v1
 
+define Device/netgear_r6400-v2
+  DEVICE_MODEL := R6400
+  DEVICE_VARIANT := v2
+  DEVICE_PACKAGES := $(B43) $(USB3_PACKAGES)
+  $(Device/netgear)
+  NETGEAR_BOARD_ID := U12H332T20_NETGEAR
+endef
+TARGET_DEVICES += netgear_r6400-v2
+
+define Device/netgear_r6400-v2-otp
+  DEVICE_MODEL := R6400
+  DEVICE_VARIANT := v2 OTP
+  DEVICE_PACKAGES := $(B43) $(USB3_PACKAGES)
+  DEVICE_DTS := bcm47094-netgear-r6400-v2
+  SUPPORTED_DEVICES := netgear,r6400-v2
+  $(Device/netgear)
+  NETGEAR_BOARD_ID := U12H332T30_NETGEAR
+endef
+TARGET_DEVICES += netgear_r6400-v2-otp
+
 define Device/netgear_r7000
   DEVICE_MODEL := R7000
   DEVICE_PACKAGES := $(USB3_PACKAGES)
