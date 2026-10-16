@@ -1,0 +1,124 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Yu-Cheng Chen <as95195100@gmail.com>
+Date: Fri, 16 Oct 2026 02:30:00 +0000
+Subject: [PATCH] net: phy: mediatek-ge-soc: support LED polarity on MT7988
+
+The MT7988 PHY driver predates the led_polarity_set() op and sets the
+LED polarities from the bootstrap use of the LED pins. The LTC Velo7
+Max does not follow that: its green LEDs on LED0 are active high and
+its orange LEDs on LED1 active low on every port, so LAN2's LED1 and
+LAN3's LED0 are lit while the port is down and dark while it is up.
+
+Implement led_polarity_set() for MT7988 and let the active-low and
+active-high properties of an LED node take precedence over the
+bootstrap default in mt7988_phy_fix_leds_polarities(), so the DT
+polarity is already in place when the LED pinctrl is selected. LEDs
+without either property keep the polarity set from the bootstrap use
+of the pins.
+
+On MT7988, MTK_PHY_LED_ON_POLARITY makes the pin drive high while the
+LED is on. This is the opposite of what an7581_phy_led_polarity_set()
+maps the bit to, so that one cannot be reused.
+
+Signed-off-by: Yu-Cheng Chen <as95195100@gmail.com>
+---
+--- a/drivers/net/phy/mediatek/mtk-ge-soc.c
++++ b/drivers/net/phy/mediatek/mtk-ge-soc.c
+@@ -1282,10 +1282,45 @@ static int mt798x_phy_led_hw_control_set
+ 				       MTK_GPHY_LED_TX_BLINK_SET);
+ };
+ 
++/* Return 1 if the DT node of the LED is active-high, 0 if it is active-low
++ * and -ENOENT if it does not set the polarity.
++ */
++static int mt7988_phy_led_dt_polarity(struct phy_device *phydev, int led_num)
++{
++	struct device_node *leds;
++	int ret = -ENOENT;
++	u32 index;
++
++	leds = of_get_child_by_name(phydev->mdio.dev.of_node, "leds");
++	if (!leds)
++		return -ENOENT;
++
++	for_each_available_child_of_node_scoped(leds, led) {
++		if (of_property_read_u32(led, "reg", &index) || index != led_num)
++			continue;
++
++		if (of_property_read_bool(led, "active-high"))
++			ret = 1;
++		else if (of_property_read_bool(led, "active-low"))
++			ret = 0;
++		break;
++	}
++
++	of_node_put(leds);
++
++	return ret;
++}
++
+ static bool mt7988_phy_led_get_polarity(struct phy_device *phydev, int led_num)
+ {
+ 	struct mtk_socphy_shared *priv = phy_package_get_priv(phydev);
+ 	u32 polarities;
++	int ret;
++
++	/* A polarity set in DT overrides the one inferred from bootstrap */
++	ret = mt7988_phy_led_dt_polarity(phydev, led_num);
++	if (ret >= 0)
++		return ret;
+ 
+ 	if (led_num == 0)
+ 		polarities = ~(priv->boottrap);
+@@ -1298,12 +1333,42 @@ static bool mt7988_phy_led_get_polarity(
+ 	return false;
+ }
+ 
++/* MTK_PHY_LED_ON_POLARITY makes the LED pin drive high while the LED is on.
++ * mt7988_phy_fix_leds_polarities() already applies the DT polarity at probe,
++ * so this writes the same value again.
++ */
++static int mt7988_phy_led_polarity_set(struct phy_device *phydev, int index,
++				       unsigned long modes)
++{
++	u16 val = 0;
++	u32 mode;
++
++	if (index >= MTK_PHY_MAX_LEDS)
++		return -EINVAL;
++
++	for_each_set_bit(mode, &modes, __PHY_LED_MODES_NUM) {
++		switch (mode) {
++		case PHY_LED_ACTIVE_HIGH:
++			val = MTK_PHY_LED_ON_POLARITY;
++			break;
++		case PHY_LED_ACTIVE_LOW:
++			break;
++		default:
++			return -EINVAL;
++		}
++	}
++
++	return phy_modify_mmd(phydev, MDIO_MMD_VEND2, index ?
++			      MTK_PHY_LED1_ON_CTRL : MTK_PHY_LED0_ON_CTRL,
++			      MTK_PHY_LED_ON_POLARITY, val);
++}
++
+ static int mt7988_phy_fix_leds_polarities(struct phy_device *phydev)
+ {
+ 	struct pinctrl *pinctrl;
+ 	int index;
+ 
+-	/* Setup LED polarity according to bootstrap use of LED pins */
++	/* Setup LED polarity according to DT or to bootstrap use of LED pins */
+ 	for (index = 0; index < 2; ++index)
+ 		phy_modify_mmd(phydev, MDIO_MMD_VEND2, index ?
+ 				MTK_PHY_LED1_ON_CTRL : MTK_PHY_LED0_ON_CTRL,
+@@ -1504,6 +1569,7 @@ static struct phy_driver mtk_socphy_driv
+ 		.led_hw_is_supported = mt798x_phy_led_hw_is_supported,
+ 		.led_hw_control_set = mt798x_phy_led_hw_control_set,
+ 		.led_hw_control_get = mt798x_phy_led_hw_control_get,
++		.led_polarity_set = mt7988_phy_led_polarity_set,
+ 	},
+ 	{
+ 		PHY_ID_MATCH_EXACT(MTK_GPHY_ID_AN7581),
