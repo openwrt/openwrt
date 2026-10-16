@@ -124,7 +124,10 @@ $(TARGET_STAMP)::
 
 $(TMP_DIR)/.$(SCAN_TARGET): $(TARGET_STAMP)
 	$(call progress,Collecting $(SCAN_NAME) info: merging...)
-	-cat $(FILELIST) | awk '{gsub(/\//, "_", $$0);print "$(TMP_DIR)/info/.$(SCAN_TARGET)-" $$0}' | xargs cat > $@ 2>/dev/null
+	set -o pipefail; \
+	trap 'rm -f $@.tmp' EXIT; \
+	cat $(FILELIST) | awk '{gsub(/\//, "_", $$0);print "$(TMP_DIR)/info/.$(SCAN_TARGET)-" $$0}' | \
+		xargs -r cat > $@.tmp && mv $@.tmp $@
 	$(call progress,Collecting $(SCAN_NAME) info: done)
 	echo
 
