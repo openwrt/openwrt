@@ -8,7 +8,7 @@ function phy_filename(phy, name) {
 }
 
 function phy_file(phy, name) {
-	return readfile(phy_filename(phy, name));
+	return trim(readfile(phy_filename(phy, name)));
 }
 
 function phy_index(phy) {
@@ -33,7 +33,7 @@ function __find_phy_by_path(phys, path) {
 
 function find_phy_by_macaddr(phys, macaddr) {
 	macaddr = lc(macaddr);
-	return filter(phys, (phy) => phy_file(phy, "macaddr") == macaddr)[0];
+	return filter(phys, (phy) => phy_file(phy, "macaddress") == macaddr)[0];
 }
 
 function rename_phy_by_name(phys, name, rename) {
