@@ -1,0 +1,43 @@
+From 8ecd096d018be8a6bd3bd930f3a41a85db66a67d Mon Sep 17 00:00:00 2001
+From: Chukun Pan <amadeus@jmu.edu.cn>
+Date: Tue, 1 Apr 2025 17:00:09 +0800
+Subject: [PATCH] arm64: dts: rockchip: Move SHMEM memory to reserved memory on
+ rk3588
+
+0x0 to 0xf0000000 are SDRAM memory areas where 0x10f000 is located.
+So move the SHMEM memory of arm_scmi to the reserved memory node.
+
+Fixes: c9211fa2602b ("arm64: dts: rockchip: Add base DT for rk3588 SoC")
+Signed-off-by: Chukun Pan <amadeus@jmu.edu.cn>
+Link: https://lore.kernel.org/r/20250401090009.733771-2-amadeus@jmu.edu.cn
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ arch/arm64/boot/dts/rockchip/rk3588-base.dtsi | 15 +++++++--------
+ 1 file changed, 7 insertions(+), 8 deletions(-)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3588-base.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3588-base.dtsi
+@@ -444,16 +444,15 @@
+ 		#clock-cells = <0>;
+ 	};
+ 
+-	pmu_sram: sram@10f000 {
+-		compatible = "mmio-sram";
+-		reg = <0x0 0x0010f000 0x0 0x100>;
+-		ranges = <0 0x0 0x0010f000 0x100>;
+-		#address-cells = <1>;
+-		#size-cells = <1>;
++	reserved-memory {
++		#address-cells = <2>;
++		#size-cells = <2>;
++		ranges;
+ 
+-		scmi_shmem: sram@0 {
++		scmi_shmem: shmem@10f000 {
+ 			compatible = "arm,scmi-shmem";
+-			reg = <0x0 0x100>;
++			reg = <0x0 0x0010f000 0x0 0x100>;
++			no-map;
+ 		};
+ 	};
+ 

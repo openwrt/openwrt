@@ -1,0 +1,57 @@
+From df5f6f2f62b9b50cef78f32909485b00fc7cf7f2 Mon Sep 17 00:00:00 2001
+From: Dragan Simic <dsimic@manjaro.org>
+Date: Thu, 26 Sep 2024 12:29:13 +0200
+Subject: [PATCH] arm64: dts: rockchip: Move L3 cache outside CPUs in RK3588(S)
+ SoC dtsi
+
+Move the "l3_cache" node outside the "cpus" node in the base dtsi file for
+Rockchip RK3588(S) SoCs.  The A55 and A76 CPU cores in these SoCs belong to
+the ARM DynamIQ IP core lineup, which places the L3 cache outside the CPUs
+and into the DynamIQ Shared Unit (DSU). [1]  Thus, moving the L3 cache DT
+node one level higher in the DT improves the way the physical topology of
+the RK3588(S) SoCs is represented in the SoC dtsi files.
+
+While there, add a comment that explains it briefly, to save curious readers
+from the need to reference the repository log for a clarification.
+
+[1] ARM DynamIQ Shared Unit revision r4p0 TRM, version 0400-02
+
+Fixes: c9211fa2602b ("arm64: dts: rockchip: Add base DT for rk3588 SoC")
+Helped-by: Robin Murphy <robin.murphy@arm.com>
+Signed-off-by: Dragan Simic <dsimic@manjaro.org>
+Link: https://lore.kernel.org/r/84264d0713fb51ae2b9b731e28fc14681beea853.1727345965.git.dsimic@manjaro.org
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ arch/arm64/boot/dts/rockchip/rk3588-base.dtsi | 20 +++++++++++--------
+ 1 file changed, 12 insertions(+), 8 deletions(-)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3588-base.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3588-base.dtsi
+@@ -337,15 +337,19 @@
+ 			cache-unified;
+ 			next-level-cache = <&l3_cache>;
+ 		};
++	};
+ 
+-		l3_cache: l3-cache {
+-			compatible = "cache";
+-			cache-size = <3145728>;
+-			cache-line-size = <64>;
+-			cache-sets = <4096>;
+-			cache-level = <3>;
+-			cache-unified;
+-		};
++	/*
++	 * The L3 cache belongs to the DynamIQ Shared Unit (DSU),
++	 * so it's represented here, outside the "cpus" node
++	 */
++	l3_cache: l3-cache {
++		compatible = "cache";
++		cache-size = <3145728>;
++		cache-line-size = <64>;
++		cache-sets = <4096>;
++		cache-level = <3>;
++		cache-unified;
+ 	};
+ 
+ 	display_subsystem: display-subsystem {
