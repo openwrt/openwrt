@@ -1,0 +1,21 @@
+From 65085cf6cd89a969d78f4f61dde6683dbe5241fb Mon Sep 17 00:00:00 2001
+From: Dom Cobley <popcornmix@gmail.com>
+Date: Fri, 16 Oct 2026 11:06:14 +0100
+Subject: [PATCH] fixup! drivers: iommu: Add BCM2712 IOMMU
+
+---
+ drivers/iommu/bcm2712-iommu.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/drivers/iommu/bcm2712-iommu.c
++++ b/drivers/iommu/bcm2712-iommu.c
+@@ -234,7 +234,8 @@ static int bcm2712_iommu_init(struct bcm
+ 	return 0;
+ }
+ 
+-static int bcm2712_iommu_attach_dev(struct iommu_domain *domain, struct device *dev)
++static int bcm2712_iommu_attach_dev(struct iommu_domain *domain, struct device *dev,
++				    struct iommu_domain *old)
+ {
+ 	struct bcm2712_iommu *mmu = dev ? dev_iommu_priv_get(dev) : 0;
+ 	struct bcm2712_iommu_domain *mydomain =

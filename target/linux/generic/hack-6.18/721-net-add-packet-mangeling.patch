@@ -52,7 +52,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
   */
 --- a/include/linux/skbuff.h
 +++ b/include/linux/skbuff.h
-@@ -3345,6 +3345,10 @@ static inline int pskb_trim(struct sk_bu
+@@ -3347,6 +3347,10 @@ static inline int pskb_trim(struct sk_bu
  	return (len < skb->len) ? __pskb_trim(skb, len) : 0;
  }
  
@@ -63,7 +63,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  /**
   *	pskb_trim_unique - remove end from a paged unique (not cloned) buffer
   *	@skb: buffer to alter
-@@ -3510,16 +3514,6 @@ static inline struct sk_buff *dev_alloc_
+@@ -3512,16 +3516,6 @@ static inline struct sk_buff *dev_alloc_
  }
  
  
@@ -97,7 +97,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	help
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -3887,6 +3887,11 @@ static int xmit_one(struct sk_buff *skb,
+@@ -3893,6 +3893,11 @@ static int xmit_one(struct sk_buff *skb,
  	if (dev_nit_active_rcu(dev))
  		dev_queue_xmit_nit(skb, dev);
  
