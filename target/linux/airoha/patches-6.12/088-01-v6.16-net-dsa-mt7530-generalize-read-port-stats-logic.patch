@@ -1,0 +1,62 @@
+From ee6a2db281a39a29087bc3aed81945f75c84fd26 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Thu, 10 Apr 2025 18:30:09 +0200
+Subject: [PATCH 1/6] net: dsa: mt7530: generalize read port stats logic
+
+In preparation for migration to use of standard MIB API, generalize the
+read port stats logic to a dedicated function.
+
+This will permit to manually provide the offset and size of the MIB
+counter to directly access specific counter.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Link: https://patch.msgid.link/20250410163022.3695-2-ansuelsmth@gmail.com
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ drivers/net/dsa/mt7530.c | 26 ++++++++++++++++++--------
+ 1 file changed, 18 insertions(+), 8 deletions(-)
+
+--- a/drivers/net/dsa/mt7530.c
++++ b/drivers/net/dsa/mt7530.c
+@@ -771,23 +771,33 @@ mt7530_get_strings(struct dsa_switch *ds
+ }
+ 
+ static void
++mt7530_read_port_stats(struct mt7530_priv *priv, int port,
++		       u32 offset, u8 size, uint64_t *data)
++{
++	u32 val, reg = MT7530_PORT_MIB_COUNTER(port) + offset;
++
++	val = mt7530_read(priv, reg);
++	*data = val;
++
++	if (size == 2) {
++		val = mt7530_read(priv, reg + 4);
++		*data |= (u64)val << 32;
++	}
++}
++
++static void
+ mt7530_get_ethtool_stats(struct dsa_switch *ds, int port,
+ 			 uint64_t *data)
+ {
+ 	struct mt7530_priv *priv = ds->priv;
+ 	const struct mt7530_mib_desc *mib;
+-	u32 reg, i;
+-	u64 hi;
++	int i;
+ 
+ 	for (i = 0; i < ARRAY_SIZE(mt7530_mib); i++) {
+ 		mib = &mt7530_mib[i];
+-		reg = MT7530_PORT_MIB_COUNTER(port) + mib->offset;
+ 
+-		data[i] = mt7530_read(priv, reg);
+-		if (mib->size == 2) {
+-			hi = mt7530_read(priv, reg + 4);
+-			data[i] |= hi << 32;
+-		}
++		mt7530_read_port_stats(priv, port, mib->offset, mib->size,
++				       data + i);
+ 	}
+ }
+ 
