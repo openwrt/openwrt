@@ -1,0 +1,88 @@
+From 4dfbff6d76847cf457d1a002e5fd11c0d601a158 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Thu, 15 Oct 2026 16:23:02 +0100
+Subject: [PATCH] media: rockchip: rkcif: mask MIPI interrupts when powered
+
+The MIPI interrupt enable register comes out of every reset with all
+27 sources enabled. Of those only the frame end bits are handled, so
+the line stays asserted at about a thousand interrupts per second
+while the block is powered. The kernel then reports the interrupt as
+unhandled and disables it, after which frame completion only happens
+from the spurious interrupt poll. The poll can also call the handler
+while the block is clock gated.
+
+Clear the enable register and the status bits after the block has been
+reset and clocked, and after the reset in runtime suspend. Treat any
+status bit that the handler has read and cleared as handled.
+
+Assisted-by: LLM
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ .../rockchip/rkcif/rkcif-capture-mipi.c       | 19 +++++++++++++++++++
+ .../rockchip/rkcif/rkcif-capture-mipi.h       |  2 ++
+ .../media/platform/rockchip/rkcif/rkcif-dev.c |  3 +++
+ 3 files changed, 24 insertions(+)
+
+--- a/drivers/media/platform/rockchip/rkcif/rkcif-capture-mipi.c
++++ b/drivers/media/platform/rockchip/rkcif/rkcif-capture-mipi.c
+@@ -810,6 +810,23 @@ static void rkcif_mipi_set_crop(struct r
+ 	rkcif_mipi_stream_write(stream, RKCIF_MIPI_CROP_START, val);
+ }
+ 
++void rkcif_mipi_irq_mask(struct rkcif_device *rkcif)
++{
++	if (!rkcif->match_data->mipi)
++		return;
++
++	for (unsigned int i = 0; i < rkcif->match_data->mipi->mipi_num; i++) {
++		struct rkcif_interface *interface =
++			&rkcif->interfaces[RKCIF_MIPI_BASE + i];
++
++		if (!interface->rkcif)
++			continue;
++
++		rkcif_mipi_write(interface, RKCIF_MIPI_INTEN, 0);
++		rkcif_mipi_write(interface, RKCIF_MIPI_INTSTAT, ~0);
++	}
++}
++
+ irqreturn_t rkcif_mipi_isr(int irq, void *ctx)
+ {
+ 	struct device *dev = ctx;
+@@ -823,6 +840,8 @@ irqreturn_t rkcif_mipi_isr(int irq, void
+ 
+ 		intstat = rkcif_mipi_read(interface, RKCIF_MIPI_INTSTAT);
+ 		rkcif_mipi_write(interface, RKCIF_MIPI_INTSTAT, intstat);
++		if (intstat)
++			ret = IRQ_HANDLED;
+ 
+ 		for (unsigned int j = 0; j < interface->streams_num; j++) {
+ 			struct rkcif_stream *stream = &interface->streams[j];
+--- a/drivers/media/platform/rockchip/rkcif/rkcif-capture-mipi.h
++++ b/drivers/media/platform/rockchip/rkcif/rkcif-capture-mipi.h
+@@ -21,4 +21,6 @@ void rkcif_mipi_unregister(struct rkcif_
+ 
+ irqreturn_t rkcif_mipi_isr(int irq, void *ctx);
+ 
++void rkcif_mipi_irq_mask(struct rkcif_device *rkcif);
++
+ #endif
+--- a/drivers/media/platform/rockchip/rkcif/rkcif-dev.c
++++ b/drivers/media/platform/rockchip/rkcif/rkcif-dev.c
+@@ -301,6 +301,7 @@ static int rkcif_runtime_suspend(struct
+ 	reset_control_assert(rkcif->reset);
+ 	udelay(5);
+ 	reset_control_deassert(rkcif->reset);
++	rkcif_mipi_irq_mask(rkcif);
+ 
+ 	clk_bulk_disable_unprepare(rkcif->clks_num, rkcif->clks);
+ 
+@@ -318,6 +319,8 @@ static int rkcif_runtime_resume(struct d
+ 		return ret;
+ 	}
+ 
++	rkcif_mipi_irq_mask(rkcif);
++
+ 	return 0;
+ }
+ 
