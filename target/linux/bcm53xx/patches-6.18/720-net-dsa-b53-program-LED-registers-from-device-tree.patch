@@ -1,0 +1,91 @@
+From ffb499710e33237d3b1f2efe0229bd210a29a206 Mon Sep 17 00:00:00 2001
+From: Erik Conijn <egc112@msn.com>
+Date: Tue, 13 Oct 2026 09:34:49 +0200
+Subject: [PATCH] net: dsa: b53: program LED registers from device tree
+
+Some Northstar boards drive front panel LEDs from the switch LED outputs
+and depend on the bootloader or the vendor firmware to set the switch LED
+function registers. On the Netgear R6400 the Internet LED is lit by the
+WAN port LED output of the switch, with GPIO 6/7 selecting amber or
+white, and the bootloaders leave the switch LEDs in different states:
+the v2 Internet LED stays dark, the v1 gigabit port LEDs show amber.
+
+Add optional brcm,led-func0-ctl, brcm,led-func1-ctl, brcm,led-func-map
+and brcm,led-en-map properties and write them after the switch setup.
+The registers keep their values across port and PHY bring-up.
+
+Assisted-by: Claude:claude-opus-5-5
+Signed-off-by: Erik Conijn <egc112@msn.com>
+---
+--- a/drivers/net/dsa/b53/b53_common.c
++++ b/drivers/net/dsa/b53/b53_common.c
+@@ -24,6 +24,7 @@
+ #include <linux/math.h>
+ #include <linux/minmax.h>
+ #include <linux/module.h>
++#include <linux/of.h>
+ #include <linux/platform_data/b53.h>
+ #include <linux/phy.h>
+ #include <linux/phylink.h>
+@@ -1267,6 +1268,35 @@ out:
+ }
+ EXPORT_SYMBOL(b53_setup_devlink_resources);
+ 
++/* Some boards wire front panel LEDs to the switch LED outputs and rely on
++ * the bootloader or vendor firmware to program them. Allow the device tree
++ * to provide the values.
++ */
++static void b53_setup_led_regs(struct b53_device *dev)
++{
++	static const struct {
++		const char *prop;
++		u8 reg;
++	} led_regs[] = {
++		{ "brcm,led-func0-ctl", B53_LED_FUNC0_CTL },
++		{ "brcm,led-func1-ctl", B53_LED_FUNC1_CTL },
++		{ "brcm,led-func-map", B53_LED_FUNC_MAP },
++		{ "brcm,led-en-map", B53_LED_EN_MAP },
++	};
++	struct device_node *np = dev->dev->of_node;
++	unsigned int i;
++	u32 val;
++
++	if (!np)
++		return;
++
++	for (i = 0; i < ARRAY_SIZE(led_regs); i++) {
++		if (of_property_read_u32(np, led_regs[i].prop, &val))
++			continue;
++		b53_write16(dev, B53_CTRL_PAGE, led_regs[i].reg, val);
++	}
++}
++
+ static int b53_setup(struct dsa_switch *ds)
+ {
+ 	struct b53_device *dev = ds->priv;
+@@ -1318,6 +1348,8 @@ static int b53_setup(struct dsa_switch *
+ 		return ret;
+ 	}
+ 
++	b53_setup_led_regs(dev);
++
+ 	/* Configure IMP/CPU port, disable all other ports. Enabled
+ 	 * ports will be configured with .port_enable
+ 	 */
+--- a/drivers/net/dsa/b53/b53_regs.h
++++ b/drivers/net/dsa/b53/b53_regs.h
+@@ -109,6 +109,14 @@
+ /* Bit 0 also powers down the switch. */
+ #define  PD_MODE_POWER_DOWN_PORT(i)	BIT(i)
+ 
++/* LED function control (16 bit each): which link/speed/activity
++ * function drives the port LEDs, per-port function map and enable map
++ */
++#define B53_LED_FUNC0_CTL		0x10
++#define B53_LED_FUNC1_CTL		0x12
++#define B53_LED_FUNC_MAP		0x14
++#define B53_LED_EN_MAP			0x16
++
+ /* IP Multicast control (8 bit) */
+ #define B53_IP_MULTICAST_CTRL		0x21
+ #define  B53_IP_MC			BIT(0)
