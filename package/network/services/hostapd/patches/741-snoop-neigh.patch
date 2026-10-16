@@ -1,0 +1,181 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Anders Fugmann <anders@fugmann.net>
+Date: Fri, 16 Oct 2026 19:31:43 +0200
+Subject: [PATCH] use snoop_iface for neighbour entries
+
+Pass the configured snooping interface index to neighbour add and delete
+operations. Keep using the driver's bridge index when snoop_iface is unset.
+Reject a missing configured snooping interface instead of using the bridge.
+
+Signed-off-by: Anders Fugmann <anders@fugmann.net>
+
+--- a/src/ap/ap_drv_ops.h
++++ b/src/ap/ap_drv_ops.h
+@@ -334,24 +334,36 @@ static inline int hostapd_drv_status(str
+ 	return hapd->driver->status(hapd->drv_priv, buf, buflen);
+ }
+ 
++int hostapd_get_snoop_ifindex(struct hostapd_data *hapd);
++
+ static inline int hostapd_drv_br_add_ip_neigh(struct hostapd_data *hapd,
+ 					      int version, const u8 *ipaddr,
+ 					      int prefixlen, const u8 *addr)
+ {
++	int ifsnoop;
++
+ 	if (hapd->driver == NULL || hapd->drv_priv == NULL ||
+ 	    hapd->driver->br_add_ip_neigh == NULL)
+ 		return -1;
+-	return hapd->driver->br_add_ip_neigh(hapd->drv_priv, version, ipaddr,
+-					     prefixlen, addr);
++	ifsnoop = hostapd_get_snoop_ifindex(hapd);
++	if (ifsnoop < 0)
++		return -1;
++	return hapd->driver->br_add_ip_neigh(hapd->drv_priv, ifsnoop, version,
++					     ipaddr, prefixlen, addr);
+ }
+ 
+ static inline int hostapd_drv_br_delete_ip_neigh(struct hostapd_data *hapd,
+ 						 u8 version, const u8 *ipaddr)
+ {
++	int ifsnoop;
++
+ 	if (hapd->driver == NULL || hapd->drv_priv == NULL ||
+ 	    hapd->driver->br_delete_ip_neigh == NULL)
+ 		return -1;
+-	return hapd->driver->br_delete_ip_neigh(hapd->drv_priv, version,
++	ifsnoop = hostapd_get_snoop_ifindex(hapd);
++	if (ifsnoop < 0)
++		return -1;
++	return hapd->driver->br_delete_ip_neigh(hapd->drv_priv, ifsnoop, version,
+ 						ipaddr);
+ }
+ 
+--- a/src/drivers/driver.h
++++ b/src/drivers/driver.h
+@@ -4824,25 +4824,28 @@ struct wpa_driver_ops {
+ 			   u8 qos_map_set_len);
+ 
+ 	/**
+-	 * br_add_ip_neigh - Add a neigh to the bridge ip neigh table
++	 * br_add_ip_neigh - Add an IP neighbour entry
+ 	 * @priv: Private driver interface data
++	 * @ifsnoop: Snooping interface index. If 0, defaults to the bridge interface
+ 	 * @version: IP version of the IP address, 4 or 6
+ 	 * @ipaddr: IP address for the neigh entry
+ 	 * @prefixlen: IP address prefix length
+ 	 * @addr: Corresponding MAC address
+ 	 * Returns: 0 on success, negative (<0) on failure
+ 	 */
+-	int (*br_add_ip_neigh)(void *priv, u8 version, const u8 *ipaddr,
+-			       int prefixlen, const u8 *addr);
++	int (*br_add_ip_neigh)(void *priv, int ifsnoop, u8 version,
++			       const u8 *ipaddr, int prefixlen, const u8 *addr);
+ 
+ 	/**
+-	 * br_delete_ip_neigh - Remove a neigh from the bridge ip neigh table
++	 * br_delete_ip_neigh - Remove an IP neighbour entry
+ 	 * @priv: Private driver interface data
++	 * @ifsnoop: Snooping interface index. If 0, defaults to the bridge interface
+ 	 * @version: IP version of the IP address, 4 or 6
+ 	 * @ipaddr: IP address for the neigh entry
+ 	 * Returns: 0 on success, negative (<0) on failure
+ 	 */
+-	int (*br_delete_ip_neigh)(void *priv, u8 version, const u8 *ipaddr);
++	int (*br_delete_ip_neigh)(void *priv, int ifsnoop, u8 version,
++				 const u8 *ipaddr);
+ 
+ 	/**
+ 	 * br_port_set_attr - Set a bridge port attribute
+--- a/src/drivers/driver_nl80211.c
++++ b/src/drivers/driver_nl80211.c
+@@ -13441,7 +13441,7 @@ static int nl80211_probe_mesh_link(void
+ #endif /* CONFIG_MESH */
+ 
+ 
+-static int wpa_driver_br_add_ip_neigh(void *priv, u8 version,
++static int wpa_driver_br_add_ip_neigh(void *priv, int ifsnoop, u8 version,
+ 				      const u8 *ipaddr, int prefixlen,
+ 				      const u8 *addr)
+ {
+@@ -13449,7 +13449,7 @@ static int wpa_driver_br_add_ip_neigh(vo
+ 	struct wpa_driver_nl80211_data *drv = bss->drv;
+ 	struct ndmsg nhdr = {
+ 		.ndm_state = NUD_PERMANENT,
+-		.ndm_ifindex = bss->br_ifindex,
++		.ndm_ifindex = ifsnoop ? ifsnoop : bss->br_ifindex,
+ 	};
+ 	struct nl_msg *msg;
+ 	int addrsize;
+@@ -13458,7 +13458,7 @@ static int wpa_driver_br_add_ip_neigh(vo
+ 	if (!ipaddr || prefixlen == 0 || !addr)
+ 		return -EINVAL;
+ 
+-	if (bss->br_ifindex == 0) {
++	if (nhdr.ndm_ifindex == 0) {
+ 		wpa_printf(MSG_DEBUG,
+ 			   "nl80211: bridge must be set before adding an ip neigh to it");
+ 		return -1;
+@@ -13506,14 +13506,14 @@ errout:
+ }
+ 
+ 
+-static int wpa_driver_br_delete_ip_neigh(void *priv, u8 version,
+-					 const u8 *ipaddr)
++static int wpa_driver_br_delete_ip_neigh(void *priv, int ifsnoop,
++					 u8 version, const u8 *ipaddr)
+ {
+ 	struct i802_bss *bss = priv;
+ 	struct wpa_driver_nl80211_data *drv = bss->drv;
+ 	struct ndmsg nhdr = {
+ 		.ndm_state = NUD_PERMANENT,
+-		.ndm_ifindex = bss->br_ifindex,
++		.ndm_ifindex = ifsnoop ? ifsnoop : bss->br_ifindex,
+ 	};
+ 	struct nl_msg *msg;
+ 	int addrsize;
+@@ -13532,7 +13532,7 @@ static int wpa_driver_br_delete_ip_neigh
+ 		return -EINVAL;
+ 	}
+ 
+-	if (bss->br_ifindex == 0) {
++	if (nhdr.ndm_ifindex == 0) {
+ 		wpa_printf(MSG_DEBUG,
+ 			   "nl80211: bridge must be set to delete an ip neigh");
+ 		return -1;
+--- a/src/ap/ap_drv_ops.c
++++ b/src/ap/ap_drv_ops.c
+@@ -7,6 +7,7 @@
+  */
+ 
+ #include "utils/includes.h"
++#include <net/if.h>
+ 
+ #include "utils/common.h"
+ #include "common/ieee802_11_defs.h"
+@@ -388,6 +389,25 @@ int hostapd_vlan_if_remove(struct hostap
+ }
+ 
+ 
++int hostapd_get_snoop_ifindex(struct hostapd_data *hapd)
++{
++	int ifsnoop;
++
++	if (!hapd->conf->snoop_iface[0])
++		return 0;
++
++	ifsnoop = if_nametoindex(hapd->conf->snoop_iface);
++	if (!ifsnoop) {
++		wpa_printf(MSG_DEBUG,
++			   "Failed to get index for snooping interface %s",
++			   hapd->conf->snoop_iface);
++		return -1;
++	}
++
++	return ifsnoop;
++}
++
++
+ int hostapd_set_wds_sta(struct hostapd_data *hapd, char *ifname_wds,
+ 			const u8 *addr, int aid, int val)
+ {
