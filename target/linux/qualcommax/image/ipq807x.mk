@@ -89,8 +89,9 @@ define Device/arista_c-360
 	PAGESIZE := 4096
 	DEVICE_DTS_CONFIG := config@hk09
 	SOC := ipq8074
-	DEVICE_PACKAGES := ipq-wifi-arista_c-360 kmod-ath11k-pci ath11k-firmware-qcn9074 \
-		kmod-spi-gpio kmod-gpio-nxp-74hc164 kmod-tpm-tis-spi bluetooth-uart
+	DEVICE_PACKAGES := ipq-wifi-arista_c-360 kmod-ath11k-pci \
+		kmod-spi-gpio kmod-gpio-nxp-74hc164 kmod-tpm-tis-spi bluetooth-uart \
+		ubi-utils squashfs-tools-unsquashfs
 endef
 TARGET_DEVICES += arista_c-360
 
