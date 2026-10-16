@@ -2303,7 +2303,8 @@ static int rtpcs_930x_sds_set_mode(struct rtpcs_serdes *sds, enum rtpcs_sds_mode
 	if (ret)
 		return ret;
 
-	if (hw_mode != RTPCS_SDS_MODE_OFF && rtpcs_930x_sds_wait_clock_ready(sds))
+	if (sds->type == RTPCS_SDS_TYPE_10G && hw_mode != RTPCS_SDS_MODE_OFF &&
+	    rtpcs_930x_sds_wait_clock_ready(sds))
 		dev_err(sds->ctrl->dev, "SerDes %d could not sync clock\n", sds->id);
 
 	if (rtpcs_930x_sds_init_state_machine(sds, hw_mode))
