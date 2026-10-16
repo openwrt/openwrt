@@ -90,7 +90,7 @@ define Device/arista_c360
 	DEVICE_DTS_CONFIG := config@1
 	SOC := ipq8074
 	DEVICE_PACKAGES := ipq-wifi-arista_c360 kmod-ath11k-pci ath11k-firmware-qcn9074 \
-		kmod-spi-gpio kmod-gpio-nxp-74hc164 kmod-tpm-tis-spi kmod-hci-uart
+		kmod-spi-gpio kmod-gpio-nxp-74hc164 kmod-tpm-tis-spi bluetooth-uart
 endef
 TARGET_DEVICES += arista_c360
 
