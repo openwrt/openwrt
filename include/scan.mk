@@ -75,11 +75,21 @@ endif
 
 $(FILELIST): $(OVERRIDELIST)
 	rm -f $(TMP_DIR)/info/.files-$(SCAN_TARGET)-*
-	find -L $(SCAN_DIR) -mindepth 1 $(if $(SCAN_DEPTH),-maxdepth $(SCAN_DEPTH)) $(SCAN_EXTRA) -name Makefile | xargs grep -aHE 'call $(GREP_STRING)' | sed -e 's#^$(SCAN_DIR)/##' -e 's#/Makefile:.*##' | uniq | awk -v of=$(OVERRIDELIST) -f include/scan.awk > $@
+	set -o pipefail; \
+	trap 'rm -f $@.tmp $(OVERRIDELIST).tmp' EXIT; \
+	: > $(OVERRIDELIST).tmp || exit 1; \
+	find -L $(SCAN_DIR) -mindepth 1 $(if $(SCAN_DEPTH),-maxdepth $(SCAN_DEPTH)) $(SCAN_EXTRA) -name Makefile | \
+		xargs -r sh -c 'grep -aHE "$$@" || [ $$? -eq 1 ]' -- 'call $(GREP_STRING)' | \
+		sed -e 's#^$(SCAN_DIR)/##' -e 's#/Makefile:.*##' | uniq | \
+		awk -v of=$(OVERRIDELIST).tmp -f include/scan.awk > $@.tmp || exit 1; \
+	mv $(OVERRIDELIST).tmp $(OVERRIDELIST) && mv $@.tmp $@
 
 $(TMP_DIR)/info/.files-$(SCAN_TARGET).mk: $(FILELIST)
 	( \
-		cat $< | awk '{print "$(SCAN_DIR)/" $$0 "/Makefile" }' | xargs grep -HE '^ *SCAN_DEPS *= *' | awk -F: '{ gsub(/^.*DEPS *= */, "", $$2); print "DEPS_" $$1 "=" $$2 }'; \
+		set -o pipefail; \
+		awk '{print "$(SCAN_DIR)/" $$0 "/Makefile" }' $< | \
+			xargs -r sh -c 'grep -HE "$$@" || [ $$? -eq 1 ]' -- '^ *SCAN_DEPS *= *' | \
+			awk -F: '{ gsub(/^.*DEPS *= */, "", $$2); print "DEPS_" $$1 "=" $$2 }' || exit 1; \
 		awk -F/ -v deps="$$DEPS" -v of="$(OVERRIDELIST)" ' \
 		BEGIN { \
 			while (getline < (of)) \
@@ -95,16 +105,16 @@ $(TMP_DIR)/info/.files-$(SCAN_TARGET).mk: $(FILELIST)
 				pkg=override[$$NF]; \
 			print "$$(eval $$(call PackageDir," info "," dir "," pkg "))"; \
 		} ' < $<; \
-		true; \
-	) > $@.tmp
+	) > $@.tmp || { rm -f $@.tmp; exit 1; }
 	mv $@.tmp $@
 
--include $(TMP_DIR)/info/.files-$(SCAN_TARGET).mk
+include $(TMP_DIR)/info/.files-$(SCAN_TARGET).mk
 
 $(TARGET_STAMP)::
 	+( \
-		$(NO_TRACE_MAKE) $(FILELIST); \
-		MD5SUM=$$(cat $(FILELIST) $(OVERRIDELIST) | $(MKHASH) md5 | awk '{print $$1}'); \
+		set -o pipefail; \
+		$(NO_TRACE_MAKE) $(FILELIST) || exit 1; \
+		MD5SUM=$$(cat $(FILELIST) $(OVERRIDELIST) | $(MKHASH) md5 | awk '{print $$1}') || exit 1; \
 		[ -f "$@.$$MD5SUM" ] || { \
 			rm -f $@.*; \
 			touch $@.$$MD5SUM; \
